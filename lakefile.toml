@@ -1,0 +1,6 @@
+name = "fv"
+defaultTargets = ["FV"]
+
+[[lean_lib]]
+name = "FV"
+globs = ["FV.+"]

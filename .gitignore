@@ -1,0 +1,4 @@
+/.lake/
+/target/
+/third_party/wasmtime/
+/build/

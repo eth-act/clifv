@@ -1,0 +1,86 @@
+# Repository architecture and cross-component contracts
+
+`docs/PLAN.md` is the design plan and `docs/PINS.md` lists the pinned versions. This file
+records who owns what, and the interfaces between components. Change an interface here
+first, then update its producer and its consumers together.
+
+## Layout
+
+| Path | Component | Milestone |
+| --- | --- | --- |
+| `FV/Clif/` | CLIF syntax, printer, parser, `Clif.run`, filetest runner | M0 |
+| `FV/DSL/` | `flat def` frontend: deep AST, `denote`, checker, elaborator | M1 |
+| `FV/Compile/` | DSL → CLIF emitter (`compile`) and its proof `compile_correct` | M1, M2 |
+| `FV/Arm/` | AArch64 semantics (ASL-derived), decoder, and later the encoder | M3, M5 |
+| `FV/Validate/` | per-function translation validator: Cranelift AArch64 output against CLIF | M3 |
+| `FV/Isle/` | Lean ISLE syntax, generated rule data, rule interpreter | M4 |
+| `FV/Backend/` | isel, stack-slot allocator, regalloc checker, asm/bytes emission | M4–M6 |
+| `FV/E2E/` | `backend_correct` | M7 |
+| `FVTest/` | Lean-side tests and corpora drivers (`lean_exe` targets) | all |
+| `rust/crates/clif2obj` | Cranelift driver (PLAN.md Appendix A), with relocation dumps | M1, M3 |
+| `rust/crates/clif-oracle` | runs the Cranelift interpreter and native code (qemu) on `; run:` lines, output JSON | M0, M1 |
+| `rust/crates/isle2lean` | exports ISLE rules and VeriISLE specs to Lean data | M4 |
+| `rust/crates/flat-runtime` | runtime externs (collections), built for aarch64 | M1 |
+| `corpus/` | DSL programs and generated `.clif` for differential testing | M1+ |
+| `third_party/wasmtime` | pinned Cranelift sources (fetched by `scripts/fetch-third-party.sh`, not committed) | — |
+
+## Ground rules (from PLAN.md §0, binding on every component)
+
+- No `sorry` in any merged Lean file. No new `axiom`. Each claimed theorem's `#print axioms`
+  shows only `propext`, `Classical.choice`, `Quot.sound`, plus `Lean.ofReduceBool` (and
+  `Lean.trustCompiler` where `bv_decide` requires it).
+- Lean: core and `Std` only, no Mathlib (keeps the toolchain pin to `v4.34.1` alone).
+- Lean namespaces follow the directories: `Clif`, `DSL`, `Compile`, `Arm`, `Validate`, `Isle`, `Backend`, `E2E`.
+- Anything executable that is meant as a model must be *checkable* against an external
+  oracle: Cranelift's interpreter, native execution under `qemu-aarch64-static`, or `llvm-mc`.
+
+## Building
+
+- Lean: `lake build` (all of `FV`), or `lake build FV.Clif.Run` for a single module.
+  Components are separate module trees, so concurrent builds of different trees are fine.
+- Rust: `cargo build --manifest-path rust/Cargo.toml -p <crate>`.
+- aarch64 executables: `aarch64-unknown-linux-musl` std target or freestanding objects,
+  linked with `rust-lld`, run with `qemu-aarch64-static`. No aarch64 gcc or glibc sysroot is
+  installed. `clang --target=aarch64-linux-gnu -ffreestanding -nostdlib -c` works for C shims.
+
+## Contract: CLIF in Lean (`FV/Clif`, producer M0)
+
+The authoritative API is documented in `docs/contracts/clif.md` (written by M0). Required shape:
+
+- `Clif.Ty`: integer types `i8 i16 i32 i64 i128` only. Floats and vectors are outside the subset.
+- `Clif.Val`: a width-indexed `BitVec`, e.g. `⟨ty, BitVec ty.width⟩`.
+- `Clif.Function`, `Clif.Program` (a list of functions and extern declarations), SSA values,
+  blocks with parameters, and the opcode subset listed in `docs/contracts/clif-subset.md`
+  (named, versioned; version `clif-subset-v1`).
+- `Clif.print : Program → String` and `Clif.parse : String → Except String Program`, with
+  output accepted by `cranelift-reader` 0.136.1.
+- `Clif.run`: executable and fuel-bounded:
+  `Clif.run (env : Clif.Env) (p : Program) (f : String) (args : List Val) (fuel : Nat) : Clif.Outcome`,
+  where `Outcome := returned (List Val) (Mem) | trapped TrapCode | stuck String | outOfFuel`.
+  `stuck` means a precondition was violated: an ill-typed or ill-formed program, or a
+  `notrap`/`aligned` flag that is false at run time. Flags are preconditions, not behaviour.
+  `Env` gives the semantics of extern callees as Lean functions on `(args, Mem)`.
+- Memory: byte-addressed and little-endian, with explicit allocations (stack slots are
+  allocations). An access outside every allocation traps with `heap_oob` if the access may
+  trap, and is `stuck` if it is `notrap`.
+
+## Contract: DSL (`FV/DSL`, producer M1-frontend)
+
+Documented in `docs/contracts/dsl.md`. Required: `DSL.Ty`, an intrinsically typed deep AST
+`DSL.Stmt Γ τ`, `DSL.FlatFn σ τ`, `DSL.denote`, `DSL.FlatFn.checked`, `DSL.Err`, and the `flat def`
+command, which generates the deep AST constant `<name>.ast`, the shallow `<name>`, and
+`<name>.denote_eq`. `M := Except DSL.Err`.
+
+## Contract: error-tag ABI (PLAN.md §3.2)
+
+A compiled `flat def f : σ → M τ` becomes a CLIF function returning `(i8 tag, payload...)`:
+`tag = 0` is `ok` with payload `τ`, and `tag = k > 0` is `throw (Err.ofTag k)`, with the payload
+zero-filled. Traps are never used to signal `throw`. The error enum's tag assignment is
+fixed by `DSL.Err.tag`.
+
+## Contract: Arm model (`FV/Arm`, producer M3-model)
+
+Documented in `docs/contracts/arm.md`, with the model choice in `docs/decisions/arm-model.md`.
+Required: `Arm.State` (X0–X30, SP, PC, NZCV, byte memory), `Arm.decode : BitVec 32 → Option Arm.Inst`,
+`Arm.exec : Arm.Inst → Arm.State → Arm.State` (or an error), `Arm.run` with fuel, and later
+`Arm.encode`. It must be validated against `qemu-aarch64-static` on test vectors.
