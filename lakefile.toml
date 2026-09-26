@@ -4,3 +4,10 @@ defaultTargets = ["FV"]
 [[lean_lib]]
 name = "FV"
 globs = ["FV.+"]
+
+[[lean_lib]]
+name = "FVTest"
+globs = ["FVTest.+"]
+
+# lean_exe targets: each component appends its own [[lean_exe]] section below.
+# Re-read this file right before editing it; other components edit it concurrently.
