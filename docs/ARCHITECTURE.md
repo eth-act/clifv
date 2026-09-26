@@ -18,7 +18,8 @@ first, then update its producer and its consumers together.
 | `FV/E2E/` | `backend_correct` | M7 |
 | `FVTest/` | Lean-side tests and corpora drivers (`lean_exe` targets) | all |
 | `rust/crates/clif2obj` | Cranelift driver (PLAN.md Appendix A), with relocation dumps | M1, M3 |
-| `rust/crates/clif-oracle` | runs the Cranelift interpreter and native code (qemu) on `; run:` lines, output JSON | M0, M1 |
+| `rust/crates/clif-oracle` | `clif-oracle interp <file.clif>`: runs the Cranelift interpreter on `; run:` lines, output JSON | M0 |
+| `rust/crates/clif-native` | `clif-native <file.clif>`: compiles with Cranelift for aarch64, runs `; run:` lines natively under qemu, output JSON (same schema as clif-oracle) | M1 |
 | `rust/crates/isle2lean` | exports ISLE rules and VeriISLE specs to Lean data | M4 |
 | `rust/crates/flat-runtime` | runtime externs (collections), built for aarch64 | M1 |
 | `corpus/` | DSL programs and generated `.clif` for differential testing | M1+ |

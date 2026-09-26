@@ -10,3 +10,9 @@ if [ ! -d third_party/wasmtime ]; then
   git -C third_party/wasmtime sparse-checkout set cranelift
 fi
 test "$(git -C third_party/wasmtime rev-parse HEAD)" = "$WASMTIME_COMMIT"
+LNSYM_COMMIT=5c05220ff970e3bdd7813ad0c9ef3741522c8b92
+if [ ! -d third_party/lnsym-upstream ]; then
+  git clone -q https://github.com/leanprover/LNSym third_party/lnsym-upstream
+  git -C third_party/lnsym-upstream checkout -q "$LNSYM_COMMIT"
+fi
+test "$(git -C third_party/lnsym-upstream rev-parse HEAD)" = "$LNSYM_COMMIT"
