@@ -1,6 +1,7 @@
 import FV.E2E.Statement
 import FV.E2E.RegLevelEmit
 import FV.Backend.Proof.RegallocCSem
+import FV.Backend.Proof.RegallocFwd
 
 /-!
 # The Arm machine of the register-level theorem (M6)
@@ -189,5 +190,69 @@ theorem armStepX_ins {X : ExtSem} {H : ArmHooks} {fa : FnAsm} {fb : FnBin}
   · rename_i a ha
     simp only [Except.ok.injEq] at hsem
     exact ⟨a, ha, by rw [hst, hsem]⟩
+
+end Backend.Proof
+
+namespace Backend.Proof
+
+open Backend
+
+/-- The states between the lines of a straight-line run are error-free and keep the program
+(needed only for expansions of more than one instruction). -/
+def InterOk (env : Env) (ls : List Line) (s : Arm.ArmState) : Prop :=
+  ∀ k, 0 < k → k < ls.length → ∀ s1, execLines env (ls.take k) s = some s1 →
+    Arm.r .ERR s1 = .None ∧ s1.program = s.program
+
+/-- **Straight-line code on the machine**: lines `ls` placed at line `j` (instructions, not
+hooked) run by `execLines` at the offsets of the layout are `ls.length` machine steps. -/
+theorem iterN_execLines {X : ExtSem} {H : ArmHooks} {fa : FnAsm} {fb : FnBin}
+    {lm : Std.HashMap Lbl Nat} {base : BitVec 64}
+    (hl : fa.layout = .ok fb) (hm : labelOffsets fa.lines = .ok lm)
+    (hfit : 4 * fb.words.size ≤ 2 ^ 64) :
+    ∀ (ls : List Line) (j : Nat) (s s' : Arm.ArmState),
+      (∀ k ln, ls[k]? = some ln → fa.lines.toList[j + k]? = some ln) →
+      (∀ i t, Line.ins i t ∈ ls → i.hooked = false) →
+      s.program = fb.program base →
+      Arm.r .PC s = base + BitVec.ofNat 64 (lineOffset fa.lines.toList j) →
+      Arm.r .ERR s = .None →
+      InterOk ⟨lineOffset fa.lines.toList j, (lm[·]?)⟩ ls s →
+      execLines ⟨lineOffset fa.lines.toList j, (lm[·]?)⟩ ls s = some s' →
+      iterN (ArmStepX X H fa) ls.length s = s'
+  | [], _, s, s', _, _, _, _, _, _, h => by simp [execLines] at h; exact h
+  | .label _ :: _, _, _, _, _, _, _, _, _, _, h => by simp [execLines] at h
+  | .word _ _ :: _, _, _, _, _, _, _, _, _, _, h => by simp [execLines] at h
+  | .ins i t :: ls, j, s, s', hat, hhook, hprog, hpc, herr, hinter, h => by
+    have hj : fa.lines.toList[j]? = some (.ins i t) := by simpa using hat 0 _ rfl
+    obtain ⟨a, ha, hstep⟩ := armStepX_ins (X := X) (H := H) hl hm hfit hj
+      (hhook i t (by simp)) hprog hpc herr
+    simp only [execLines, ha] at h
+    split at h
+    · rename_i hpc'
+      have hoff := lineOffset_succ fa.lines.toList j _ hj
+      simp only [Line.size] at hoff
+      simp only [List.length_cons, iterN]
+      rw [hstep]
+      cases ls with
+      | nil => simpa [execLines, iterN] using h
+      | cons ln ls' =>
+        have h1 := hinter 1 (by omega) (by simp) (Arm.exec_inst a s)
+          (by simp [execLines, ha, hpc'])
+        refine iterN_execLines (base := base) hl hm hfit (ln :: ls') (j + 1) _ s' ?_ ?_ ?_ ?_ h1.1 ?_ ?_
+        · intro k ln' hk
+          have := hat (k + 1) ln' (by simpa using hk)
+          rwa [show j + (k + 1) = j + 1 + k by omega] at this
+        · intro i' t' hm'
+          exact hhook i' t' (List.mem_cons_of_mem _ hm')
+        · rw [h1.2, hprog]
+        · rw [hpc', hpc, hoff, BitVec.add_assoc]
+          congr 1
+          apply BitVec.eq_of_toNat_eq
+          simp
+        · intro k hk0 hk s1 hs1
+          have := hinter (k + 1) (by omega) (by simp at hk ⊢; omega) s1
+            (by simp [execLines, ha, hpc']; simpa [hoff] using hs1)
+          exact ⟨this.1, by rw [this.2, h1.2]⟩
+        · simpa [hoff] using h
+    · cases h
 
 end Backend.Proof
