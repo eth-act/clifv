@@ -568,4 +568,141 @@ theorem lowerInstOk_one {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} {en
 
 end One
 
+/-! ## 6. If-lets and the negated immediate -/
+
+section IfLet
+variable {p : Program} (hp : Data p) (ctx : Ctx)
+
+/-- An if-let `(if-let lhs (t v))` whose right-hand side is a term applied to a bound variable
+matched: the term returned a value on the variable's value. -/
+theorem iflet_term_var_inv {cfg : Config} {m : Nat} {lhs : Pattern} {ty ty' : TypeId} {t : TermId}
+    {i : VarId} {e env : Interp.Env V} {s s1 : LState × Array RuleId} {a : V}
+    (h : (matchIfLets p (sem ctx) cfg (m + 4) [⟨lhs, .term ty t [.var ty' i]⟩] e).run s =
+      .ok (some env, s1))
+    (ha : e[i]? = some (some a)) :
+    ∃ v s2, (applyTerm p (sem ctx) cfg (m + 2) ty t [a]).run s = .ok (some v, s2) := by
+  rw [matchIfLets.eq_3] at h
+  simp only [evalExpr.eq_7, evalArgs.eq_3, evalExpr.eq_2, evalArgs.eq_2, ha, M.run_bind,
+    M.run_pure, M.except_ok_bind] at h
+  cases happ : (applyTerm p (sem ctx) cfg (m + 2) ty t [a]).run s with
+  | error e => rw [happ] at h; cases h
+  | ok q =>
+    obtain ⟨o, s2⟩ := q
+    cases o with
+    | none => rw [happ] at h; simp at h
+    | some v => exact ⟨v, s2, rfl⟩
+
+theorem getElem_bind_env {e e' : Interp.Env V} {x : VarId} {v : V} (hx : x < e.size)
+    (h : e' = e.set! x (some v)) : e'[x]? = some (some v) := by
+  subst h
+  simp [Array.set!_eq_setIfInBounds, Array.getElem?_setIfInBounds, hx]
+
+theorem getElem_bind_env_ne {e e' : Interp.Env V} {x y : VarId} {v : V} (hxy : x ≠ y)
+    (h : e' = e.set! x (some v)) : e'[y]? = e[y]? := by
+  subst h
+  simp [Array.set!_eq_setIfInBounds, Array.getElem?_setIfInBounds, hxy]
+
+include hp in
+/-- **`imm12_from_negated_value` succeeded on `y`**: `y` is defined by an `iconst`. -/
+theorem negated_value_inv {f : Clif.Function} (hctx : CtxInv f ctx) {cfg : Config}
+    (hc : cfg.checkOverlap = false) {m : Nat} {y : Nat} {s s2 : LState × Array RuleId} {v : V}
+    (h : (applyTerm p (sem ctx) cfg (m + 5) 64 344 [.value y]).run s = .ok (some v, s2)) :
+    ∃ j infoj ty c, ctx.defInst? y = some j ∧ ctx.insts[j]? = some infoj ∧
+      infoj.clif = some (.iconst ty c) ∧
+      infoj.data = .data 152 35 [.data 151 57 [], .int (imm64OfIconst ty c)] ∧
+      infoj.resTys.head? = some (.int ty.width) := by
+  obtain ⟨r, hr, m0, env0, s1, st, tr, hmn, hmatch, -, -⟩ :=
+    applyTerm_internal_some hc hp.t344 term_344_kind rfl h
+  rw [hp.r344, List.mem_singleton] at hr
+  rw [hp.r344, List.length_singleton] at hmn
+  subst hr
+  obtain ⟨m1, rfl⟩ : ∃ m1, m0 = m1 + 1 := ⟨m0 - 1, by omega⟩
+  obtain ⟨env1, ha, -⟩ := matchRule_some_inv hmatch
+  obtain ⟨e1, hp1, -⟩ := matchArgs_cons_inv (qs := []) ha
+  obtain ⟨j, infoj, fs, e0, hj, hij, hdj, -⟩ :=
+    defInst_match_inv hp ctx hp.t2482 term_2482_kind hp.t2341 term_2341_kind hp1
+  obtain ⟨cl, hcl, hdat⟩ := ctxInv_clif hctx hj hij
+  rw [hdj] at hdat
+  obtain ⟨ty, c, rfl, rfl⟩ := instData_iconst_inv hdat
+  obtain ⟨tys, htys, hres, -⟩ := hctx.resTys j infoj _ hij hcl
+  simp only [Clif.Inst.resultTypes, Option.some.injEq] at htys
+  subst htys
+  exact ⟨j, infoj, ty, c, hj, hij, hcl, hdj, by rw [hres]; simp [ofClif_int_width]⟩
+
+end IfLet
+
+theorem clif_width_pos (ty : Clif.Ty) : 0 < ty.width := by cases ty <;> decide
+
+theorem sextFrom_imm64OfIconst {ty : Clif.Ty} (hw : ty.width ≤ 64) (c : BitVec ty.width) :
+    sextFrom ty.width (imm64OfIconst ty c) = c.toInt := by
+  have hpos := clif_width_pos ty
+  have hlt := c.isLt
+  unfold sextFrom imm64OfIconst
+  rw [BitVec.toInt_eq_toNat_cond]
+  obtain ⟨k, hk⟩ : ∃ k, ty.width = k + 1 := ⟨ty.width - 1, by omega⟩
+  have hk1 : ty.width - 1 = k := by omega
+  simp only [Nat.pos_iff_ne_zero.mp hpos, ↓reduceIte, hk1]
+  generalize hP : 2 ^ k = P
+  have hp2 : 2 ^ ty.width = 2 * P := by rw [hk, Nat.pow_succ, hP]; omega
+  have hpi : (2 : Int) ^ ty.width = 2 * (P : Int) := by exact_mod_cast hp2
+  have hpk : (2 : Int) ^ k = (P : Int) := by exact_mod_cast hP
+  rw [hpi, hpk, hp2]
+  rw [hp2] at hlt
+  split
+  · have : ((c.toNat : Int) % (2 * (P : Int))) = c.toNat := Int.emod_eq_of_lt (by omega) (by omega)
+    rw [this]
+    split <;> split <;> omega
+  · have hk63 : k = 63 := by omega
+    subst hk63
+    subst hP
+    split <;> split <;> omega
+
+theorem ofNat_u64 {w : Nat} (hw : w ≤ 64) (z : Int) : BitVec.ofNat w (u64 z) = BitVec.ofInt w z := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ofNat, BitVec.toNat_ofInt, u64]
+  have e : (2:Int)^64 = ((2^64 : Nat) : Int) := by norm_cast
+  have hd : ((2^w : Nat) : Int) ∣ ((2^64 : Nat) : Int) :=
+    Int.natCast_dvd_natCast.mpr (Nat.pow_dvd_pow 2 hw)
+  have hpos : (0:Int) < ((2^64 : Nat) : Int) := by norm_cast
+  have hpos' : (0:Int) < ((2^w : Nat) : Int) := by norm_cast; exact Nat.two_pow_pos w
+  rw [e]
+  have h1 : (0:Int) ≤ z % ((2^64 : Nat) : Int) := Int.emod_nonneg _ (by omega)
+  have h2 : (0:Int) ≤ z % ((2^w : Nat) : Int) := Int.emod_nonneg _ (by omega)
+  apply Int.ofNat.inj
+  simp only [Int.ofNat_eq_natCast, Int.natCast_emod, Int.toNat_of_nonneg h1,
+    Int.toNat_of_nonneg h2]
+  exact Int.emod_emod_of_dvd z hd
+
+/-- The immediate `imm12_from_negated_value` builds from an `iconst` `c` stands for `-c` at the
+constant's width. -/
+theorem negImm12_value {ty : Clif.Ty} (hw : ty.width ≤ 64) (c : BitVec ty.width) {imm : Imm12}
+    (h : (if sextFrom ty.width (imm64OfIconst ty c) = -(2 ^ 63 : Int) then none
+      else Imm12.ofNat? (u64 ((u64 (-(sextFrom ty.width (imm64OfIconst ty c))) : Nat) : Int))) =
+        some imm) :
+    imm.bits < 4096 ∧ ∀ sz : OperandSize, ty.width ≤ sz.bits →
+      (BitVec.ofNat sz.bits imm.value).setWidth ty.width = -c := by
+  rw [sextFrom_imm64OfIconst hw] at h
+  split at h
+  · cases h
+  rw [u64_ofNat (u64_lt _)] at h
+  obtain ⟨hv, hb⟩ := imm12_ofNat_value h (u64_lt _)
+  refine ⟨hb, fun sz hsz => ?_⟩
+  rw [hv, BitVec.setWidth_ofNat_of_le hsz, ofNat_u64 hw, BitVec.ofInt_neg, BitVec.ofInt_toInt]
+
+/-- Width lemma, register plus an immediate standing for `k` at the CLIF width. -/
+theorem holds_add_K {ty : Clif.Ty} {sz : OperandSize} (hw : ty.width ≤ sz.bits) {a : CV}
+    {u k : BitVec ty.width} {K : Nat} (hK : (BitVec.ofNat sz.bits K).setWidth ty.width = k)
+    (ha : VHolds ⟨ty, u⟩ a) : VHolds ⟨ty, u + k⟩ (resX sz (opnd sz a + BitVec.ofNat _ K)) := by
+  have h64 := opSize_bits_le sz
+  simp only [VHolds] at ha ⊢
+  rw [resX_setWidth hw h64, BitVec.setWidth_add _ _ hw, opnd_setWidth hw h64, ha, hK]
+
+/-- Width lemma, register minus an immediate standing for `k` at the CLIF width. -/
+theorem holds_sub_K {ty : Clif.Ty} {sz : OperandSize} (hw : ty.width ≤ sz.bits) {a : CV}
+    {u k : BitVec ty.width} {K : Nat} (hK : (BitVec.ofNat sz.bits K).setWidth ty.width = k)
+    (ha : VHolds ⟨ty, u⟩ a) : VHolds ⟨ty, u - k⟩ (resX sz (opnd sz a - BitVec.ofNat _ K)) := by
+  have h64 := opSize_bits_le sz
+  simp only [VHolds] at ha ⊢
+  rw [resX_setWidth hw h64, setWidth_sub_of_le hw, opnd_setWidth hw h64, ha, hK]
+
 end Backend.Proof

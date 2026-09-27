@@ -250,4 +250,187 @@ theorem imm12_from_negated_value_none {y j w : Nat} {k : Int} {infoj : IInfo}
 
 end NegRun
 
+include hp hc in
+theorem match_98 {i x y w j w' : Nat} {k : Int} {info infoj : IInfo} {imm : Imm12}
+    (hi : ctx.insts[i]? = some info) (hty : info.resTys.head? = some (.int w)) (hw : w ≤ 64)
+    (hd : info.data = .data 152 2 [.data 151 73 [], .values [x, y]])
+    (hj : ctx.defInst? y = some j) (hij : ctx.insts[j]? = some infoj)
+    (htyj : infoj.resTys.head? = some (.int w'))
+    (hdj : infoj.data = .data 152 35 [.data 151 57 [], .int k]) (hneg : negImm12? w' k = some imm)
+    (st : LState) (tr : Array RuleId) (n : Nat) :
+    (matchRule p (sem ctx) cfg (n+40) rule_lower_98 [.inst i]).run (st, tr) =
+      .ok (some (env4 (.ty (.int w)) (.value x) (.value y) (.op (.imm12 imm))),
+        (st, tr.push rule_inst_2404.id)) := by
+  have h1 := ext_inst_data_value ctx st hi
+  rw [hd, hty, Option.getD_some] at h1
+  have h344 := fun st tr n => imm12_from_negated_value_some hp ctx hc st tr n hj hij htyj hdj hneg
+  clear hj hij htyj hdj hneg
+  cases hp
+  isel_eval [*, rule_lower_98, ext_ty_int_ref_scalar_64_extract ctx st hw, ext_value_array_2]
+
+include hp hc in
+theorem match_98_none {i x y w j w' : Nat} {k : Int} {info infoj : IInfo}
+    (hi : ctx.insts[i]? = some info) (hty : info.resTys.head? = some (.int w)) (hw : w ≤ 64)
+    (hd : info.data = .data 152 2 [.data 151 73 [], .values [x, y]])
+    (hj : ctx.defInst? y = some j) (hij : ctx.insts[j]? = some infoj)
+    (htyj : infoj.resTys.head? = some (.int w'))
+    (hdj : infoj.data = .data 152 35 [.data 151 57 [], .int k]) (hneg : negImm12? w' k = none)
+    (st : LState) (tr : Array RuleId) (n : Nat) :
+    (matchRule p (sem ctx) cfg (n+40) rule_lower_98 [.inst i]).run (st, tr) =
+      .ok (none, (st, tr)) := by
+  have h1 := ext_inst_data_value ctx st hi
+  rw [hd, hty, Option.getD_some] at h1
+  have h344 := fun st tr n => imm12_from_negated_value_none hp ctx hc st tr n hj hij htyj hdj hneg
+  clear hj hij htyj hdj hneg
+  cases hp
+  isel_eval [*, rule_lower_98, ext_ty_int_ref_scalar_64_extract ctx st hw, ext_value_array_2]
+
+include hp hc in
+theorem rhs_98 {x y w : Nat} {r : Reg} {imm : Imm12} (hr : ctx.valueReg? x = some r)
+    (hw : w ≤ 64) (st : LState) (tr : Array RuleId) (n : Nat) :
+    ∃ tr', (evalExpr p (sem ctx) cfg (n+40) rule_lower_98.rhs
+        (env4 (.ty (.int w)) (.value x) (.value y) (.op (.imm12 imm)))).run (st, tr) =
+      .ok (some (.regsVec [[(st.fresh .int).1]]),
+        ((st.fresh .int).2.emit (.aluRRImm12 .sub (szOf w) (st.fresh .int).1 r imm), tr')) := by
+  obtain ⟨ks, rid, hs, hsz⟩ := operand_size_run hp ctx hc hw
+  have h1 := fun st tr n => sub_imm_run hp ctx hc st tr n hsz hs
+  have h2 := fun st tr n => output_reg_run hp ctx hc st tr n
+  cases hp
+  refine Exists.intro ?w ?h
+  case h =>
+    isel_eval [*, rule_lower_98, ctor_put_in_reg ctx _ hr]
+    rfl
+
+include hp in
+theorem rhs_98_none {x y w : Nat} {imm : Imm12} (hr : ctx.valueReg? x = none)
+    (st : LState) (tr : Array RuleId) (n : Nat) (v : V) (s' : LState × Array RuleId) :
+    (evalExpr p (sem ctx) cfg (n+40) rule_lower_98.rhs
+        (env4 (.ty (.int w)) (.value x) (.value y) (.op (.imm12 imm)))).run (st, tr) ≠
+      .ok (some v, s') := by
+  cases hp
+  isel_eval [*, rule_lower_98, ctor_put_in_reg_none ctx _ hr]
+  exact fun h => by cases h
+
+include hp hc in
+theorem match_102 {i x y w j w' : Nat} {k : Int} {info infoj : IInfo} {imm : Imm12}
+    (hi : ctx.insts[i]? = some info) (hty : info.resTys.head? = some (.int w)) (hw : w ≤ 64)
+    (hd : info.data = .data 152 2 [.data 151 73 [], .values [x, y]])
+    (hj : ctx.defInst? x = some j) (hij : ctx.insts[j]? = some infoj)
+    (htyj : infoj.resTys.head? = some (.int w'))
+    (hdj : infoj.data = .data 152 35 [.data 151 57 [], .int k]) (hneg : negImm12? w' k = some imm)
+    (st : LState) (tr : Array RuleId) (n : Nat) :
+    (matchRule p (sem ctx) cfg (n+40) rule_lower_102 [.inst i]).run (st, tr) =
+      .ok (some (env4 (.ty (.int w)) (.value x) (.value y) (.op (.imm12 imm))),
+        (st, tr.push rule_inst_2404.id)) := by
+  have h1 := ext_inst_data_value ctx st hi
+  rw [hd, hty, Option.getD_some] at h1
+  have h344 := fun st tr n => imm12_from_negated_value_some hp ctx hc st tr n hj hij htyj hdj hneg
+  clear hj hij htyj hdj hneg
+  cases hp
+  isel_eval [*, rule_lower_102, ext_ty_int_ref_scalar_64_extract ctx st hw, ext_value_array_2]
+
+include hp hc in
+theorem match_102_none {i x y w j w' : Nat} {k : Int} {info infoj : IInfo}
+    (hi : ctx.insts[i]? = some info) (hty : info.resTys.head? = some (.int w)) (hw : w ≤ 64)
+    (hd : info.data = .data 152 2 [.data 151 73 [], .values [x, y]])
+    (hj : ctx.defInst? x = some j) (hij : ctx.insts[j]? = some infoj)
+    (htyj : infoj.resTys.head? = some (.int w'))
+    (hdj : infoj.data = .data 152 35 [.data 151 57 [], .int k]) (hneg : negImm12? w' k = none)
+    (st : LState) (tr : Array RuleId) (n : Nat) :
+    (matchRule p (sem ctx) cfg (n+40) rule_lower_102 [.inst i]).run (st, tr) =
+      .ok (none, (st, tr)) := by
+  have h1 := ext_inst_data_value ctx st hi
+  rw [hd, hty, Option.getD_some] at h1
+  have h344 := fun st tr n => imm12_from_negated_value_none hp ctx hc st tr n hj hij htyj hdj hneg
+  clear hj hij htyj hdj hneg
+  cases hp
+  isel_eval [*, rule_lower_102, ext_ty_int_ref_scalar_64_extract ctx st hw, ext_value_array_2]
+
+include hp hc in
+theorem rhs_102 {x y w : Nat} {r : Reg} {imm : Imm12} (hr : ctx.valueReg? y = some r)
+    (hw : w ≤ 64) (st : LState) (tr : Array RuleId) (n : Nat) :
+    ∃ tr', (evalExpr p (sem ctx) cfg (n+40) rule_lower_102.rhs
+        (env4 (.ty (.int w)) (.value x) (.value y) (.op (.imm12 imm)))).run (st, tr) =
+      .ok (some (.regsVec [[(st.fresh .int).1]]),
+        ((st.fresh .int).2.emit (.aluRRImm12 .sub (szOf w) (st.fresh .int).1 r imm), tr')) := by
+  obtain ⟨ks, rid, hs, hsz⟩ := operand_size_run hp ctx hc hw
+  have h1 := fun st tr n => sub_imm_run hp ctx hc st tr n hsz hs
+  have h2 := fun st tr n => output_reg_run hp ctx hc st tr n
+  cases hp
+  refine Exists.intro ?w ?h
+  case h =>
+    isel_eval [*, rule_lower_102, ctor_put_in_reg ctx _ hr]
+    rfl
+
+include hp in
+theorem rhs_102_none {x y w : Nat} {imm : Imm12} (hr : ctx.valueReg? y = none)
+    (st : LState) (tr : Array RuleId) (n : Nat) (v : V) (s' : LState × Array RuleId) :
+    (evalExpr p (sem ctx) cfg (n+40) rule_lower_102.rhs
+        (env4 (.ty (.int w)) (.value x) (.value y) (.op (.imm12 imm)))).run (st, tr) ≠
+      .ok (some v, s') := by
+  cases hp
+  isel_eval [*, rule_lower_102, ctor_put_in_reg_none ctx _ hr]
+  exact fun h => by cases h
+
+include hp hc in
+theorem match_810 {i x y w j w' : Nat} {k : Int} {info infoj : IInfo} {imm : Imm12}
+    (hi : ctx.insts[i]? = some info) (hty : info.resTys.head? = some (.int w)) (hw : w ≤ 64)
+    (hd : info.data = .data 152 2 [.data 151 74 [], .values [x, y]])
+    (hj : ctx.defInst? y = some j) (hij : ctx.insts[j]? = some infoj)
+    (htyj : infoj.resTys.head? = some (.int w'))
+    (hdj : infoj.data = .data 152 35 [.data 151 57 [], .int k]) (hneg : negImm12? w' k = some imm)
+    (st : LState) (tr : Array RuleId) (n : Nat) :
+    (matchRule p (sem ctx) cfg (n+40) rule_lower_810 [.inst i]).run (st, tr) =
+      .ok (some (env4 (.ty (.int w)) (.value x) (.value y) (.op (.imm12 imm))),
+        (st, tr.push rule_inst_2404.id)) := by
+  have h1 := ext_inst_data_value ctx st hi
+  rw [hd, hty, Option.getD_some] at h1
+  have h344 := fun st tr n => imm12_from_negated_value_some hp ctx hc st tr n hj hij htyj hdj hneg
+  clear hj hij htyj hdj hneg
+  cases hp
+  isel_eval [*, rule_lower_810, ext_ty_int_ref_scalar_64_extract ctx st hw, ext_value_array_2]
+
+include hp hc in
+theorem match_810_none {i x y w j w' : Nat} {k : Int} {info infoj : IInfo}
+    (hi : ctx.insts[i]? = some info) (hty : info.resTys.head? = some (.int w)) (hw : w ≤ 64)
+    (hd : info.data = .data 152 2 [.data 151 74 [], .values [x, y]])
+    (hj : ctx.defInst? y = some j) (hij : ctx.insts[j]? = some infoj)
+    (htyj : infoj.resTys.head? = some (.int w'))
+    (hdj : infoj.data = .data 152 35 [.data 151 57 [], .int k]) (hneg : negImm12? w' k = none)
+    (st : LState) (tr : Array RuleId) (n : Nat) :
+    (matchRule p (sem ctx) cfg (n+40) rule_lower_810 [.inst i]).run (st, tr) =
+      .ok (none, (st, tr)) := by
+  have h1 := ext_inst_data_value ctx st hi
+  rw [hd, hty, Option.getD_some] at h1
+  have h344 := fun st tr n => imm12_from_negated_value_none hp ctx hc st tr n hj hij htyj hdj hneg
+  clear hj hij htyj hdj hneg
+  cases hp
+  isel_eval [*, rule_lower_810, ext_ty_int_ref_scalar_64_extract ctx st hw, ext_value_array_2]
+
+include hp hc in
+theorem rhs_810 {x y w : Nat} {r : Reg} {imm : Imm12} (hr : ctx.valueReg? x = some r)
+    (hw : w ≤ 64) (st : LState) (tr : Array RuleId) (n : Nat) :
+    ∃ tr', (evalExpr p (sem ctx) cfg (n+40) rule_lower_810.rhs
+        (env4 (.ty (.int w)) (.value x) (.value y) (.op (.imm12 imm)))).run (st, tr) =
+      .ok (some (.regsVec [[(st.fresh .int).1]]),
+        ((st.fresh .int).2.emit (.aluRRImm12 .add (szOf w) (st.fresh .int).1 r imm), tr')) := by
+  obtain ⟨ks, rid, hs, hsz⟩ := operand_size_run hp ctx hc hw
+  have h1 := fun st tr n => add_imm_run hp ctx hc st tr n hsz hs
+  have h2 := fun st tr n => output_reg_run hp ctx hc st tr n
+  cases hp
+  refine Exists.intro ?w ?h
+  case h =>
+    isel_eval [*, rule_lower_810, ctor_put_in_reg ctx _ hr]
+    rfl
+
+include hp in
+theorem rhs_810_none {x y w : Nat} {imm : Imm12} (hr : ctx.valueReg? x = none)
+    (st : LState) (tr : Array RuleId) (n : Nat) (v : V) (s' : LState × Array RuleId) :
+    (evalExpr p (sem ctx) cfg (n+40) rule_lower_810.rhs
+        (env4 (.ty (.int w)) (.value x) (.value y) (.op (.imm12 imm)))).run (st, tr) ≠
+      .ok (some v, s') := by
+  cases hp
+  isel_eval [*, rule_lower_810, ctor_put_in_reg_none ctx _ hr]
+  exact fun h => by cases h
+
 end Backend.Proof
