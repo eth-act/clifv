@@ -66,7 +66,7 @@ inductive Loc where
   | reg (r : Reg)
   | stack (slot : Nat) (cls : RegClass)
   | save (r : Reg)
-  deriving DecidableEq, Repr, BEq, Inhabited, Hashable
+  deriving DecidableEq, Repr, Inhabited, Hashable
 
 /-- An item of an allocated block: the `k`-th VCode instruction of the block with the
 location of each operand (in `MInst.operands` order), or a move inserted by the allocator or
@@ -74,7 +74,7 @@ the frame (callee-saved save/restore). -/
 inductive RItem where
   | op (k : Nat) (allocs : Array Loc)
   | move (src dst : Loc)
-  deriving DecidableEq, Repr, BEq, Inhabited
+  deriving DecidableEq, Repr, Inhabited
 
 /-- An allocated function: one item list per block of the prepared VCode (same order). -/
 structure RFunc where
@@ -89,7 +89,7 @@ structure RFunc where
 inductive Sym where
   | vreg (n : Nat)
   | entry (r : Reg)
-  deriving DecidableEq, Repr, BEq, Inhabited
+  deriving DecidableEq, Repr, Inhabited
 
 /-- The class of a location, if it is a location of the allocated code at all. -/
 def Loc.cls? : Loc → Option RegClass
