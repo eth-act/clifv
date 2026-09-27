@@ -189,6 +189,43 @@ theorem ftList_label_split (l : Lbl) (Y : List Line) :
       · simp only [List.drop_succ_cons, List.drop_zero, List.append_assoc]
         rw [ftList_label_split l Y X']
 
+/-- `fallthrough` keeps a final label. -/
+theorem ftList_snoc_label (l : Lbl) : ∀ X : List Line, ∃ Z, ftList (X ++ [.label l]) = Z ++ [.label l]
+  | [] => ⟨[], by rw [List.nil_append, ftList_cons]; simp [ftStep, ftList]⟩
+  | [ln] => by
+      simp only [List.cons_append, List.nil_append]
+      rw [ftList_cons]
+      simp only [List.getElem?_cons_zero, List.getElem?_cons_succ, List.getElem?_nil]
+      have h2 : (ftStep ln (some (.label l)) none).2 = 1 := by
+        have h1 := ftStep_pos ln (some (.label l)) none
+        have h3 := ftStep_le ln (some (.label l)) none
+        rcases Nat.lt_or_ge (ftStep ln (some (.label l)) none).2 2 with h | h
+        · omega
+        · obtain ⟨c, e, l', -, h4, -⟩ :=
+            ftStep_two (ln := ln) (n1 := some (.label l)) (n2 := none) (by omega)
+          cases h4
+      rw [h2]
+      simp only [List.drop_succ_cons, List.drop_zero]
+      rw [ftList_cons]
+      exact ⟨(ftStep ln (some (.label l)) none).1, by simp [ftStep, ftList]⟩
+  | ln :: ln2 :: X' => by
+      simp only [List.cons_append]
+      rw [ftList_cons]
+      have hle := ftStep_le ln (ln2 :: (X' ++ [.label l]))[0]? (ln2 :: (X' ++ [.label l]))[1]?
+      have hpos := (ftStep_pos ln (ln2 :: (X' ++ [.label l]))[0]? (ln2 :: (X' ++ [.label l]))[1]?).1
+      generalize ftStep ln (ln2 :: (X' ++ [.label l]))[0]? (ln2 :: (X' ++ [.label l]))[1]? = st at *
+      obtain ⟨out, k⟩ := st
+      simp only at hle hpos ⊢
+      have hk : k = 1 ∨ k = 2 := by omega
+      rcases hk with rfl | rfl
+      · simp only [List.drop_succ_cons, List.drop_zero]
+        obtain ⟨Z, hZ⟩ := ftList_snoc_label l (ln2 :: X')
+        simp only [List.cons_append] at hZ
+        exact ⟨out ++ Z, by rw [hZ, List.append_assoc]⟩
+      · simp only [List.drop_succ_cons, List.drop_zero]
+        obtain ⟨Z, hZ⟩ := ftList_snoc_label l X'
+        exact ⟨out ++ Z, by rw [hZ, List.append_assoc]⟩
+
 /-! ## `emitFunc` as structural functions -/
 
 /-- The lines of one `AInst` (`emitFunc`'s inner loop body). -/
@@ -469,5 +506,113 @@ theorem lowerRFunc_ok {vc : VCode} {rf : RFunc} {af : AFunc} (h : lowerRFunc vc 
             cases i.assign regs with
             | error e => rfl
             | ok m => cases m <;> rfl
+
+/-! ## Block decomposition -/
+
+theorem lines_traps {c : FnCtx} {m : MInst} {ps ps' : PState} {ls : List Line}
+    (h : m.lines c ps = .ok (ls, ps')) : ps.traps.toList <+: ps'.traps.toList := by
+  unfold MInst.lines at h
+  split at h <;> simp only [bind, Except.bind, pure, Except.pure] at h
+  all_goals (repeat' (first | (split at h) | (simp only [Except.ok.injEq, Prod.mk.injEq] at h; obtain ⟨-, rfl⟩ := h)))
+  all_goals first | exact List.prefix_refl _ | simp | skip
+  all_goals first | cases h | simp [throw, throwThe, MonadExceptOf.throw] at h
+
+
+theorem ainstLines_traps {c : FnCtx} {af : AFunc} {a : AInst} {ps ps' : PState} {ls : List Line}
+    (h : ainstLines c af a ps = .ok (ls, ps')) : ps.traps.toList <+: ps'.traps.toList := by
+  cases a with
+  | inst m => exact lines_traps h
+  | _ => simp only [ainstLines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h; rw [h.2]; exact List.prefix_refl _
+
+theorem codeLinesE_traps {c : FnCtx} {af : AFunc} :
+    ∀ {code : List AInst} {ps ps' : PState} {ls : List Line},
+      codeLinesE c af code ps = .ok (ls, ps') → ps.traps.toList <+: ps'.traps.toList
+  | [], ps, ps', ls, h => by
+    simp only [codeLinesE, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h; rw [h.2]; exact List.prefix_refl _
+  | a :: as, ps, ps', ls, h => by
+    simp only [codeLinesE, bind, Except.bind] at h
+    split at h
+    · cases h
+    · rename_i r hr
+      split at h
+      · cases h
+      · rename_i r2 hr2
+        simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
+        rw [← h.2]
+        exact (ainstLines_traps hr).trans (codeLinesE_traps hr2)
+
+theorem blocksLinesE_traps {c : FnCtx} {af : AFunc} :
+    ∀ {bs : List (Label × Array AInst)} {ps ps' : PState} {ls : List Line},
+      blocksLinesE c af bs ps = .ok (ls, ps') → ps.traps.toList <+: ps'.traps.toList
+  | [], ps, ps', ls, h => by
+    simp only [blocksLinesE, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h; rw [h.2]; exact List.prefix_refl _
+  | (l, code) :: bs, ps, ps', ls, h => by
+    simp only [blocksLinesE, bind, Except.bind] at h
+    split at h
+    · cases h
+    · rename_i r hr
+      split at h
+      · cases h
+      · rename_i r2 hr2
+        simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
+        rw [← h.2]
+        exact (codeLinesE_traps hr).trans (blocksLinesE_traps hr2)
+
+/-- Block `b` in the lines before `fallthrough`: its label, its code's lines, then the next
+block's label (or the end). -/
+theorem blocksLinesE_block {c : FnCtx} {af : AFunc} :
+    ∀ {bs : List (Label × Array AInst)} {ps psF : PState} {body : List Line} {b : Nat}
+      {l : Label} {code : Array AInst},
+      blocksLinesE c af bs ps = .ok (body, psF) → bs[b]? = some (l, code) →
+      ∃ pre ls ps1 ps2 post, body = pre ++ .label (.block l) :: (ls ++ post) ∧
+        codeLinesE c af code.toList ps1 = .ok (ls, ps2) ∧
+        ps.traps.toList <+: ps1.traps.toList ∧ ps2.traps.toList <+: psF.traps.toList ∧
+        (∀ p, bs[b + 1]? = some p → ∃ post', post = .label (.block p.1) :: post') ∧
+        (bs[b + 1]? = none → post = [])
+  | [], _, _, _, _, _, _, _, hb => by simp at hb
+  | (l0, code0) :: bs, ps, psF, body, b, l, code, h, hb => by
+    simp only [blocksLinesE, bind, Except.bind] at h
+    split at h
+    · cases h
+    · rename_i r hr
+      split at h
+      · cases h
+      · rename_i r2 hr2
+        simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
+        obtain ⟨rfl, rfl⟩ := h
+        cases b with
+        | zero =>
+          simp only [List.getElem?_cons_zero, Option.some.injEq, Prod.mk.injEq] at hb
+          obtain ⟨rfl, rfl⟩ := hb
+          refine ⟨[], r.1, ps, r.2, r2.1, by simp, hr, List.prefix_refl _,
+            blocksLinesE_traps hr2, ?_, ?_⟩
+          · intro p hp
+            cases bs with
+            | nil => simp at hp
+            | cons p' bs =>
+              simp only [List.getElem?_cons_succ, List.getElem?_cons_zero, Option.some.injEq] at hp
+              subst hp
+              obtain ⟨l', code'⟩ := p'
+              simp only [blocksLinesE, bind, Except.bind] at hr2
+              split at hr2
+              · cases hr2
+              · split at hr2
+                · cases hr2
+                · simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hr2
+                  exact ⟨_, by rw [← hr2]; rfl⟩
+          · intro hp
+            cases bs with
+            | nil =>
+              simp only [blocksLinesE, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hr2
+              rw [← hr2]
+            | cons _ _ => simp at hp
+        | succ b =>
+          simp only [List.getElem?_cons_succ] at hb
+          obtain ⟨pre, ls, ps1, ps2, post, hbody, hc, hp1, hp2, hn, hn'⟩ := blocksLinesE_block hr2 hb
+          refine ⟨.label (.block l0) :: r.1 ++ pre, ls, ps1, ps2, post, ?_, hc,
+            (codeLinesE_traps hr).trans hp1, hp2, ?_, ?_⟩
+          · rw [hbody]; simp
+          · intro p hp; exact hn p (by simpa using hp)
+          · intro hp; exact hn' (by simpa using hp)
 
 end Backend
