@@ -787,4 +787,105 @@ theorem rhs_output_inv {n : Nat} {t : TermId} {args : List Expr} {env : Interp.E
 
 end Rhs
 
+/-! ## 8. Logical-immediate and shifted-register forms -/
+
+section Forms2
+
+theorem operands_aluRRImmLogic (op : ALUOp) (sz : OperandSize) (d x : Nat) (i : ImmLogic) :
+    (MInst.aluRRImmLogic op sz (.vreg d .int) (.vreg x .int) i).operands =
+      .ok #[⟨d, .int, .def, .late, .reg⟩, ⟨x, .int, .use, .early, .reg⟩] := rfl
+
+theorem vuseNums_aluRRImmLogic (op : ALUOp) (sz : OperandSize) (d x : Nat) (i : ImmLogic) :
+    vuseNums (.aluRRImmLogic op sz (.vreg d .int) (.vreg x .int) i) = [x] := rfl
+
+theorem operands_aluRRRShift (op : ALUOp) (sz : OperandSize) (d x y : Nat) (sh : ShiftOpAndAmt) :
+    (MInst.aluRRRShift op sz (.vreg d .int) (.vreg x .int) (.vreg y .int) sh).operands =
+      .ok #[⟨d, .int, .def, .late, .reg⟩, ⟨x, .int, .use, .early, .reg⟩,
+        ⟨y, .int, .use, .early, .reg⟩] := rfl
+
+theorem vuseNums_aluRRRShift (op : ALUOp) (sz : OperandSize) (d x y : Nat) (sh : ShiftOpAndAmt) :
+    vuseNums (.aluRRRShift op sz (.vreg d .int) (.vreg x .int) (.vreg y .int) sh) = [x, y] := rfl
+
+theorem vuseNums_aluRRR (op : ALUOp) (sz : OperandSize) (d x y : Nat) :
+    vuseNums (.aluRRR op sz (.vreg d .int) (.vreg x .int) (.vreg y .int)) = [x, y] := rfl
+
+theorem ispec_aluRRImmLogic {op : ALUOp} {sz : OperandSize} {d : Nat} {rn : Reg} {i : ImmLogic}
+    {a : CV} {w : Arm.ArmState} {r : BitVec sz.bits} (hi : ImmLogic.ofNat? i.value sz = some i)
+    (hop : op = .and ∨ op = .orr ∨ op = .eor ∨ op = .andNot ∨ op = .orrNot ∨ op = .eorNot)
+    (hv : aluVal op (opnd sz a) (BitVec.ofNat _ i.value) = some r) :
+    ispec (.aluRRImmLogic op sz (.vreg d .int) rn i) [a] w = some ([resX sz r], w, .next) := by
+  have hna : op ≠ .add ∧ op ≠ .sub := by
+    rcases hop with rfl | rfl | rfl | rfl | rfl | rfl <;> exact ⟨by decide, by decide⟩
+  simp only [ispec, hi, hna, ne_eq, not_false_eq_true, and_self, ↓reduceIte, hv, Option.map_some]
+  rfl
+
+theorem ispec_aluRRRShift {op : ALUOp} {sz : OperandSize} {d : Nat} {rn rm : Reg}
+    {sh : ShiftOpAndAmt} {a b : CV} {w : Arm.ArmState} {r : BitVec sz.bits}
+    (hop : op = .add ∨ op = .sub ∨ op = .and ∨ op = .orr ∨ op = .eor ∨ op = .andNot ∨
+      op = .orrNot ∨ op = .eorNot)
+    (hsh : sh.op = .lsl) (hamt : sh.amt < sz.bits)
+    (hv : aluVal op (opnd sz a) (opnd sz b <<< sh.amt) = some r) :
+    ispec (.aluRRRShift op sz (.vreg d .int) rn rm sh) [a, b] w = some ([resX sz r], w, .next) := by
+  rcases hop with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+    simp only [ispec, aluShiftable, hsh, hamt, and_self, ↓reduceIte, hv, Option.map_some] <;> rfl
+
+theorem ispec_aluRRR' {op : ALUOp} {sz : OperandSize} {d : Nat} {rn rm : Reg} {a b : CV}
+    {w : Arm.ArmState} {r : BitVec sz.bits}
+    (hop : op = .add ∨ op = .sub ∨ op = .and ∨ op = .orr ∨ op = .eor ∨ op = .andNot ∨
+      op = .orrNot ∨ op = .eorNot)
+    (hv : aluVal op (opnd sz a) (opnd sz b) = some r) :
+    ispec (.aluRRR op sz (.vreg d .int) rn rm) [a, b] w = some ([resX sz r], w, .next) := by
+  rcases hop with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+    simp only [aluVal, Option.some.injEq] at hv <;> subst hv <;> rfl
+
+/-- **Width lemma, generalized second operand**: any `B` whose low bits are `v`. -/
+theorem aluVal_holds_B {op : ALUOp} {cop : Clif.BinaryOp}
+    (hop : (op, cop) = (.add, .iadd) ∨ (op, cop) = (.sub, .isub) ∨ (op, cop) = (.and, .band) ∨
+      (op, cop) = (.orr, .bor) ∨ (op, cop) = (.eor, .bxor))
+    {ty : Clif.Ty} {sz : OperandSize} (hw : ty.width ≤ sz.bits) {a : CV} {B : BitVec sz.bits}
+    {u v : BitVec ty.width} (ha : VHolds ⟨ty, u⟩ a) (hB : B.setWidth ty.width = v) :
+    ∃ r, aluVal op (opnd sz a) B = some r ∧ VHolds ⟨ty, Clif.Sem.binary cop u v⟩ (resX sz r) := by
+  have h64 := opSize_bits_le sz
+  simp only [VHolds] at ha ⊢
+  rcases hop with h | h | h | h | h <;> simp only [Prod.mk.injEq] at h <;> obtain ⟨rfl, rfl⟩ := h <;>
+    refine ⟨_, rfl, ?_⟩ <;> rw [resX_setWidth hw h64]
+  · rw [BitVec.setWidth_add _ _ hw, opnd_setWidth hw h64, ha, hB]; rfl
+  · rw [setWidth_sub_of_le hw, opnd_setWidth hw h64, ha, hB]; rfl
+  · rw [BitVec.setWidth_and, opnd_setWidth hw h64, ha, hB]; rfl
+  · rw [BitVec.setWidth_or, opnd_setWidth hw h64, ha, hB]; rfl
+  · rw [BitVec.setWidth_xor, opnd_setWidth hw h64, ha, hB]; rfl
+
+theorem opnd_setWidth_eq {ty : Clif.Ty} {sz : OperandSize} (hw : ty.width ≤ sz.bits) {a : CV}
+    {u : BitVec ty.width} (ha : VHolds ⟨ty, u⟩ a) : (opnd sz a).setWidth ty.width = u := by
+  rw [opnd_setWidth hw (opSize_bits_le sz)]; exact ha
+
+theorem land_width_sub_one {ty : Clif.Ty} (hw : ty.width ≤ 64) (s : Nat) :
+    Nat.land s (ty.width - 1) = s % ty.width := by
+  cases ty <;> simp [Clif.Ty.width] at hw ⊢
+  all_goals first
+    | exact Nat.and_two_pow_sub_one_eq_mod s 3
+    | exact Nat.and_two_pow_sub_one_eq_mod s 4
+    | exact Nat.and_two_pow_sub_one_eq_mod s 5
+    | exact Nat.and_two_pow_sub_one_eq_mod s 6
+
+end Forms2
+
+theorem instData_iconst_eTy {f : Clif.Function} {ty : Clif.Ty} {imm : BitVec ty.width} {d : V}
+    (h : instData f (.iconst ty imm) = .ok d) : eTy ty = true := by
+  simp only [instData] at h
+  split at h
+  · assumption
+  · cases h
+
+theorem shiftImm_some {n s : Nat} (h : shiftImm? n = some s) : s = n ∧ n ≤ 63 := by
+  unfold shiftImm? at h
+  split at h
+  · cases h; exact ⟨rfl, by assumption⟩
+  · cases h
+
+theorem immLogic_ofNat_eq {v : Nat} {sz : OperandSize} {i : ImmLogic}
+    (h : ImmLogic.ofNat? v sz = some i) : i = ⟨v, sz⟩ := by
+  unfold ImmLogic.ofNat? at h
+  cases sz <;> simp only at h <;> split at h <;> first | (cases h; rfl) | cases h
+
 end Backend.Proof

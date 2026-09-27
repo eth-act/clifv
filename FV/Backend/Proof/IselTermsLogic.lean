@@ -19,8 +19,8 @@ open Isle Isle.Interp Isle.Aarch64
 
 /-- `imm_logic_from_imm64 ty k` (types narrower than 32 bits use the 32-bit encoding). -/
 def immLogicOf? (w : Nat) (k : Int) : Option ImmLogic :=
-  let b := if w < 32 then 32 else w
-  if b = 32 ∨ b = 64 then ImmLogic.ofNat? (u64 k) (.ofBits b) else none
+  if w ≤ 32 then ImmLogic.ofNat? (u64 k) .size32
+  else if w = 64 then ImmLogic.ofNat? (u64 k) .size64 else none
 
 /-- `lshl_from_imm64 ty k`: `lsl` by `k` masked to the type width, if `k < 64`. -/
 def lshlOf? (w : Nat) (k : Int) : Option ShiftOpAndAmt :=
@@ -33,42 +33,61 @@ variable (ctx : Ctx) (st : LState)
 
 theorem ctor_imm_logic_from_imm64 (w : Nat) (k : Int) :
     externCtor ctx T.imm_logic_from_imm64 [.ty (.int w), .int k] st =
-      match immLogicOf? w k with
-      | some i => .ok (.op (.immLogic i), st)
-      | none => .fail := by
-  have e : externCtor ctx T.imm_logic_from_imm64 [.ty (.int w), .int k] st =
       (let ty := if (CTy.int w).bits < 32 then CTy.int 32 else CTy.int w
-       if ty == .int 32 || ty == .int 64 then
+       if (ty == .int 32 || ty == .int 64) = true then
          match (ImmLogic.ofNat? (u64 k) (.ofBits ty.bits)).map (V.op ∘ Opnd.immLogic) with
          | some v => ExtResult.ok (v, st)
          | none => .fail
-       else .fail) := rfl
-  rw [e]
+       else .fail) := by rfl
+
+/-- `imm_logic_from_imm64` is `immLogicOf?` (by cases on the width, rewriting only: the
+reduct of `ImmLogic.ofNat?` must never be unfolded). -/
+theorem ctor_imm_logic_eq (w : Nat) (k : Int) :
+    externCtor ctx T.imm_logic_from_imm64 [.ty (.int w), .int k] st =
+      match immLogicOf? w k with
+      | some i => .ok (.op (.immLogic i), st)
+      | none => .fail := by
+  rw [ctor_imm_logic_from_imm64]
   unfold immLogicOf?
-  by_cases h : w < 32
-  · simp only [CTy.bits, h, ↓reduceIte]
-    simp only [beq_self_eq_true, Bool.true_or, ↓reduceIte, true_or]
-    cases ImmLogic.ofNat? (u64 k) (OperandSize.ofBits 32) <;> rfl
-  · simp only [CTy.bits, h, ↓reduceIte]
-    by_cases h2 : w = 32 ∨ w = 64
-    · rcases h2 with rfl | rfl
-      · simp only [beq_self_eq_true, Bool.true_or, ↓reduceIte, true_or]
-        cases ImmLogic.ofNat? (u64 k) (OperandSize.ofBits 32) <;> rfl
-      · simp only [beq_self_eq_true, Bool.or_true, ↓reduceIte, or_true]
-        cases ImmLogic.ofNat? (u64 k) (OperandSize.ofBits 64) <;> rfl
-    · have h3 : ((CTy.int w == CTy.int 32) || (CTy.int w == CTy.int 64)) = false := by
-        simp only [Bool.or_eq_false_iff, beq_eq_false_iff_ne, ne_eq, CTy.int.injEq]
-        omega
-      rw [h3, if_neg h2]
-      rfl
+  by_cases h1 : w < 32
+  · have h1' : (CTy.int w).bits < 32 := h1
+    have h2 : ((CTy.int 32 == CTy.int 32) || (CTy.int 32 == CTy.int 64)) = true := rfl
+    have h3 : OperandSize.ofBits (CTy.int 32).bits = .size32 := rfl
+    simp only [h1', if_true]
+    rw [if_pos h2, h3, if_pos (Nat.le_of_lt h1)]
+    generalize ImmLogic.ofNat? (u64 k) .size32 = I
+    cases I <;> rfl
+  · have h1' : ¬ (CTy.int w).bits < 32 := h1
+    simp only [h1', if_false]
+    by_cases h32 : w = 32
+    · subst h32
+      have h2 : ((CTy.int 32 == CTy.int 32) || (CTy.int 32 == CTy.int 64)) = true := rfl
+      have h3 : OperandSize.ofBits (CTy.int 32).bits = .size32 := rfl
+      rw [if_pos h2, h3, if_pos (Nat.le_refl _)]
+      generalize ImmLogic.ofNat? (u64 k) .size32 = I
+      cases I <;> rfl
+    · by_cases h64 : w = 64
+      · subst h64
+        have h2 : ((CTy.int 64 == CTy.int 32) || (CTy.int 64 == CTy.int 64)) = true := rfl
+        have h3 : OperandSize.ofBits (CTy.int 64).bits = .size64 := rfl
+        rw [if_pos h2, h3, if_neg (by decide), if_pos rfl]
+        generalize ImmLogic.ofNat? (u64 k) .size64 = I
+        cases I <;> rfl
+      · have h2 : ((CTy.int w == CTy.int 32) || (CTy.int w == CTy.int 64)) = false := by
+          have a1 : (CTy.int w == CTy.int 32) = false := by
+            show (w == 32) = false; exact beq_false_of_ne h32
+          have a2 : (CTy.int w == CTy.int 64) = false := by
+            show (w == 64) = false; exact beq_false_of_ne h64
+          rw [a1, a2]; rfl
+        rw [if_neg (by rw [h2]; decide), if_neg (by omega), if_neg h64]
 
 theorem ctor_imm_logic_some {w : Nat} {k : Int} {i : ImmLogic} (h : immLogicOf? w k = some i) :
     externCtor ctx T.imm_logic_from_imm64 [.ty (.int w), .int k] st = .ok (.op (.immLogic i), st) := by
-  rw [ctor_imm_logic_from_imm64, h]
+  rw [ctor_imm_logic_eq, h]
 
 theorem ctor_imm_logic_none {w : Nat} {k : Int} (h : immLogicOf? w k = none) :
     externCtor ctx T.imm_logic_from_imm64 [.ty (.int w), .int k] st = .fail := by
-  rw [ctor_imm_logic_from_imm64, h]
+  rw [ctor_imm_logic_eq, h]
 
 theorem ctor_lshl_from_imm64 (w : Nat) (k : Int) :
     externCtor ctx T.lshl_from_imm64 [.ty (.int w), .int k] st =
