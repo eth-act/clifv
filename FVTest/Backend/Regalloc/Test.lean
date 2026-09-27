@@ -157,6 +157,14 @@ structure Tally where
   muts : Array (String × Nat × Nat) := #[("swap", 0, 0), ("drop-reload", 0, 0),
     ("drop-restore", 0, 0), ("call-clobber", 0, 0)]
   bad : Nat := 0
+  /-- Items of the accepted allocations: instructions, register moves, spills, reloads,
+  callee-saved saves + restores; and instructions whose results are all unused. -/
+  insts : Nat := 0
+  regMoves : Nat := 0
+  spills : Nat := 0
+  reloads : Nat := 0
+  saveRestores : Nat := 0
+  deadInsts : Nat := 0
 
 def main (args : List String) : IO UInt32 := do
   let (small, files) := match args with
@@ -195,6 +203,25 @@ def main (args : List String) : IO UInt32 := do
           t := { t with bad := t.bad + 1 }
           continue
         let rf := res.rf
+        let used : Std.HashSet Nat := res.prepared.blocks.foldl (init := {}) fun acc b =>
+          let acc := b.branchArgs.foldl (fun acc r => match r with | .vreg n _ => acc.insert n | _ => acc) acc
+          b.insts.foldl (fun acc i => ((i.operands.toOption.getD #[]).filter (·.kind == .use)).foldl
+            (fun acc o => acc.insert o.vreg) acc) acc
+        for b in res.prepared.blocks do
+          for i in b.insts do
+            let defs := (i.operands.toOption.getD #[]).filter (·.kind == .def)
+            let pure_ := match i with
+              | .call _ | .args _ | .store .. | .load .. | .rets _ => false
+              | _ => !i.isBranch
+            if pure_ && !defs.isEmpty && defs.all (!used.contains ·.vreg) then
+              t := { t with deadInsts := t.deadInsts + 1 }
+        for (_, _, it) in positions rf do
+          t := match it with
+            | .op .. => { t with insts := t.insts + 1 }
+            | .move (.reg _) (.reg _) => { t with regMoves := t.regMoves + 1 }
+            | .move (.reg _) (.stack ..) => { t with spills := t.spills + 1 }
+            | .move (.stack ..) (.reg _) => { t with reloads := t.reloads + 1 }
+            | .move _ _ => { t with saveRestores := t.saveRestores + 1 }
         if (positions rf).any (fun (_, _, it) => it.locs.any fun | .stack .. => true | _ => false) then
           t := { t with withSpills := t.withSpills + 1 }
         if !rf.saved.isEmpty then t := { t with withSaves := t.withSaves + 1 }
@@ -210,6 +237,7 @@ def main (args : List String) : IO UInt32 := do
               t := { t with bad := t.bad + 1 }
   IO.println s!"functions {t.funcs}: Lean checker accepts {t.leanOk}, regalloc2 checker accepts {t.rustOk}, allocation errors {t.errors}"
   IO.println s!"functions with spill slots {t.withSpills}, with callee-saved registers {t.withSaves}"
+  IO.println s!"items: instructions {t.insts} (results all unused: {t.deadInsts}), register moves {t.regMoves}, spills {t.spills}, reloads {t.reloads}, callee-saved saves/restores {t.saveRestores}"
   for (k, n, rj) in t.muts do
     IO.println s!"mutation {k}: {n} mutants, {rj} rejected"
   return if t.bad == 0 then 0 else 1
