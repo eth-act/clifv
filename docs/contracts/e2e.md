@@ -193,8 +193,12 @@ reached directly or through an edge block (`jump`, no parameters/arguments) from
 branch arguments. Soundness: `prep_sound` (simulation; a split edge takes one extra `jump` step).
 
 Results (`lake exe lean-e2e-check`, corpus/clif, corpus/clif/extrt, Cranelift runtests): both
-validators accept 918/918 functions inside the theorem; 14 functions have more than 8 parameters
-(outside `InSubset`). Cost on the corpus (161 functions): `lowerFunction` 175 ms, `lowerCheck`
+validators accept 913/913 functions inside the theorem (with `brIdxOk`: no `br_table` rejected);
+19 functions are outside `InSubset`: 14 with more than 8 parameters, and since contract change
+#5 the 5 corpus functions calling an extern with more than 8 parameters (`Corpus__reverse8_w0/_w1`,
+`Corpus__bumpAll_w0/_w1`, `Corpus__bumpFirst`; still compiled, flagged unverified). Filetests after
+#5/#6 (M4Ctl, `scripts/lean-backend-filetests.sh`): corpus 114/114, extrt 22/22, runtests 3085
+pass / 0 fail, all agreeing with Cranelift-native. Cost on the corpus (161 functions): `lowerFunction` 175 ms, `lowerCheck`
 661 ms, `prepare` 2 ms, `prepCheck` 3 ms (the lowering validator re-runs isel and its checks are
 quadratic in the values of a block; functions outside the theorem are not validated).
 
