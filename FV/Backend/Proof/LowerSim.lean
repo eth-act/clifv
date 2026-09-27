@@ -135,4 +135,227 @@ theorem extraOf_nil {results : List Nat} {rss : List (List Reg)}
 
 end
 
+/-! ## Hypotheses of the driver simulation -/
+
+/-- Everything the simulation assumes: the structure of the VCode (`LowerShape`), the SSA
+certificate, the driver-level semantics facts, M4's contracts, extern-only calls, and a
+successful `VCode.cfg`. -/
+structure DriverHyp (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) (R : Reg → Reg)
+    (gn : Nat → Nat) (bl : List BLow) (A : Nat → Nat → List Clif.ValueId) (sem : Sem)
+    (MR : MemRelT) (env : Clif.Env) (p : Clif.Program) : Prop where
+  shape : LowerShape f vc ctx st0 R gn bl
+  cert : Cert f ctx st0 gn bl A
+  dsem : DriverSem sem
+  rules : LowerRulesCorrect sem MR env p
+  ext : ∀ B ∈ f.blocks, ∀ st ∈ B.body, ∀ fn args, st.inst = .call fn args →
+    ∀ e, f.extern? fn = some e → p.func? e.name = none
+  cfg : ∃ ss ps, vc.cfg = .ok (ss, ps)
+
+section
+variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg → Reg}
+  {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId} {sem : Sem}
+  {MR : MemRelT} {env : Clif.Env} {p : Clif.Program} {slots : List (Clif.SlotId × Nat)}
+
+theorem DriverHyp.blow (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) {bi : Nat}
+    {B : Clif.Block} (hB : f.blocks[bi]? = some B) : ∃ L, bl[bi]? = some L := by
+  have hlt : bi < f.blocks.length := (List.getElem?_eq_some_iff.mp hB).1
+  exact ⟨bl[bi]'(by rw [H.shape.len]; exact hlt), List.getElem?_eq_getElem _⟩
+
+/-- **Statement step.** -/
+theorem stmt_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
+    {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : Arm.ArmState}
+    (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩)
+    {stm : Clif.Stmt} {rest : List Clif.Stmt} (hbody : s.frame.body = stm :: rest) :
+    (∀ s', Clif.step env p s = .next s' →
+      ∃ vs', Star (VStep vc sem) (.run ⟨b, k, ρ, w⟩) (.run vs') ∧
+        Match f ctx R gn bl A MR slots s' vs') ∧
+    (∀ c, Clif.step env p s = .trapped c → explicitTrapInst stm.inst = true →
+      VTrapFrom vc sem ⟨b, k, ρ, w⟩ c) := by
+  obtain ⟨hcall, hfunc, hslots, hmem, B, j, hB, hterm, hj, hbd, hk, hheld, hcons⟩ := hm
+  simp only at hk hheld hcons hB hmem
+  subst hk
+  obtain ⟨hjlt, hstm, hrest⟩ := drop_cons_split (hbd ▸ hbody)
+  obtain ⟨L, hL⟩ := H.blow hB
+  obtain ⟨vb, hvb, hsllen, hstmts, -, -, -, -, hcode, htne, -⟩ := H.shape.blk b B L hB hL
+  obtain ⟨sl, hsl⟩ : ∃ sl, L.sl[j]? = some sl :=
+    ⟨L.sl[j]'(by omega), List.getElem?_eq_getElem _⟩
+  obtain ⟨⟨info, hinfo, hclif, hres⟩, hemp, hst0, ⟨tr, hrun⟩, halias⟩ := hstmts j stm sl hstm hsl
+  obtain ⟨ranges, hctx⟩ := H.shape.hctx
+  have hok := H.rules.1 f ctx ranges st0 (L.start + j) info stm.inst sl.st sl.rss sl.st' tr
+    hctx hinfo hclif hemp hrun
+  rw [hres] at hok
+  obtain ⟨hargs, hresults, hnodup, hnext, hnoclob⟩ := H.cert.stmt b B L j stm sl hB hL hstm hsl
+  have hBmem : B ∈ f.blocks := List.mem_of_getElem? hB
+  have hstmmem : stm ∈ B.body := List.mem_of_getElem? hstm
+  let fr' := restrict s.frame (A b j)
+  let ρ₀ : Nat → CV := fun n => ρ (gn n)
+  have hvh : ValsHeld fr' ρ₀ := by
+    intro x v hx
+    have hxA : x ∈ A b j := restrict_regs_isSome (by rw [hx]; rfl)
+    obtain ⟨v', hv', hh⟩ := hheld x hxA
+    rw [restrict_regs_of_mem hxA, hv'] at hx
+    cases hx
+    exact hh
+  have hrun' := hok.run fr' s.mem ρ₀ w (by simp [fr', restrict, hfunc, H.shape.func])
+    hvh hcons (by simpa [fr', restrict, hslots] using hmem)
+  have hio : instOutcome env p fr' s.mem stm.inst = instOutcome env p s.frame s.mem stm.inst :=
+    instOutcome_congr (fr := s.frame) (fr' := fr') rfl rfl env p s.mem stm.inst
+      fun x hx => restrict_regs_of_mem (hargs x hx)
+  rw [hio] at hrun'
+  have hstep := step_stmt env p s stm rest hbody fun fn args hi e he =>
+    H.ext B hBmem stm hstmmem fn args hi e (by rw [← hfunc]; exact he)
+  let D : Nat → Prop := fun n => sl.st.nextVreg ≤ n ∧ n < sl.st'.nextVreg
+  have hD : ∀ d, D d → gn d = d := fun d hd => H.shape.temps d (by simp only [D] at hd; omega)
+  have hdefs : ∀ m ∈ sl.st'.emitted.toList, ∀ d ∈ vdefs m, D d := hok.defs
+  have hAg : Agree gn D ρ₀ ρ := fun _ _ => rfl
+  have huses_of : Uses sl.st fr' sl.st'.emitted.toList →
+      ∀ m ∈ sl.st'.emitted.toList, ∀ u ∈ vuseNums m, D u ∨ ¬ D (gn u) := by
+    intro hU m hm u hu
+    rcases hU m hm u hu with h | h
+    · by_cases h' : u < sl.st'.nextVreg
+      · exact .inl ⟨h, h'⟩
+      · right
+        rw [H.shape.temps u (by omega)]
+        intro hd; exact h' hd.2
+    · right; exact hnoclob u (restrict_regs_isSome h)
+  have hren := seqRun_rename (sem := sem) (ρ₀ := ρ₀) (ρ := ρ) (w := w) H.shape.ren
+    (H.dsem.rename R gn H.shape.ren) hD hdefs
+  have hcodeseg := seg_at hcode htne hjlt
+  constructor
+  · intro s' hs
+    rw [hstep] at hs
+    cases hO : instOutcome env p s.frame s.mem stm.inst with
+    | trap c => rw [hO] at hs; cases hs
+    | stuck m => rw [hO] at hs; cases hs
+    | ok r =>
+      obtain ⟨vals, cm'⟩ := r
+      rw [hO] at hs hrun'
+      simp only [Clif.StepResult.ofRes, Clif.continueWith] at hs
+      split at hs
+      · rename_i regs' hset
+        cases hs
+        obtain ⟨hU, ρ₀', w', hsr, hrh, hmr⟩ := hrun'
+        obtain ⟨ρ', hsr', hAg'⟩ := (hren (huses_of hU) hAg).1 hsr
+        have hextra : extraOf stm.results sl.rss = [] := by
+          rcases hrh with h0 | ⟨hl, hh⟩
+          · rw [h0]; rfl
+          · apply extraOf_nil
+            intro k rs hk
+            have : k < vals.length := by
+              have := (List.getElem?_eq_some_iff.mp hk).1; omega
+            obtain ⟨out, cls, he, -, -⟩ := hh k rs vals[k] hk (List.getElem?_eq_getElem this)
+            exact ⟨out, cls, he⟩
+        have hseg : seg f R bl b j = sl.st'.emitted.toList.map (·.mapRegs R) := by
+          rw [seg_eq hB hL hstm hsl, hextra, List.append_nil]
+        obtain ⟨hsegat, hlt⟩ := hcodeseg
+        rw [hseg] at hsegat
+        rw [pos_succ, hseg] at hlt
+        have hstar := seqRun_fall_star hvb hsegat (by simpa using hlt) hsr'
+        rw [List.length_map] at hstar
+        refine ⟨_, hstar, hcall, hfunc, hslots, by simpa [fr', restrict, hslots] using hmr,
+          B, j + 1, hB, hterm, hjlt, hrest, ?_, ?_, ?_⟩
+        · simp [pos_succ, hseg]
+        · -- held
+          intro x hx
+          rcases hnext x hx with hxA | hxr
+          · have hxr : x ∉ stm.results := fun e => (hresults x e).1 hxA
+            obtain ⟨v, hv, hh⟩ := hheld x hxA
+            refine ⟨v, ?_, ?_⟩
+            · show regs' x = some v
+              rw [setMany_other hset hxr, hv]
+            have hnd : ¬ D x := by
+              have h4 : x < st0.nextVreg := H.cert.small b j x hxA
+              intro hd
+              have h3 : sl.st.nextVreg ≤ x := hd.1
+              exact absurd (Nat.lt_of_lt_of_le h4 hst0) (Nat.not_lt.mpr h3)
+            have h1 : ρ₀' x = ρ₀ x := seqRun_fall_frame (fun m hm hxm => hnd (hdefs m hm x hxm)) hsr
+            have h2 := hAg' x (.inr (hnoclob x hxA))
+            show VHolds v (ρ' (gn x))
+            rw [← h2, h1]
+            exact hh
+          · obtain ⟨m, v, hxm, hvm, hrv⟩ := setMany_mem hset hnodup x hxr
+            refine ⟨v, hrv, ?_⟩
+            rcases hrh with h0 | ⟨hl, hh⟩
+            · rw [h0] at hxr; cases hxr
+            · have hml : m < sl.rss.length := by
+                have := (List.getElem?_eq_some_iff.mp hvm).1; omega
+              obtain ⟨out, cls, he, hout, hvo⟩ :=
+                hh m sl.rss[m] v (List.getElem?_eq_getElem hml) hvm
+              have hal := halias m x out cls hxm (by rw [List.getElem?_eq_getElem hml, he])
+              have hcond : D out ∨ ¬ D (gn out) := by
+                rcases hout with h | h
+                · by_cases h' : out < sl.st'.nextVreg
+                  · exact .inl ⟨h, h'⟩
+                  · right; rw [H.shape.temps out (by omega)]; intro hd; exact h' hd.2
+                · right; exact hnoclob out (restrict_regs_isSome h)
+              show VHolds v (ρ' (gn x))
+              rw [hal, ← hAg' out hcond]
+              exact hvo
+        · -- DFG consistency
+          intro x d info' cl v hd hinfo' hcl hp hv
+          have hxA' : x ∈ A b (j + 1) := restrict_regs_isSome (by rw [hv]; rfl)
+          have hv' : regs' x = some v := by
+            have := restrict_regs_of_mem
+              (fr := { s.frame with regs := regs', body := rest }) hxA'
+            rw [this] at hv; exact hv
+          have hcl_args := H.cert.closed b (j + 1) x d info' cl hxA' hd hinfo' hcl hp
+          rcases hnext x hxA' with hxA | hxr
+          · have hxr : x ∉ stm.results := fun e => (hresults x e).1 hxA
+            have hvx : (restrict s.frame (A b j)).regs x = some v := by
+              rw [restrict_regs_of_mem hxA, ← setMany_other hset hxr]; exact hv'
+            obtain ⟨vals0, hev, hlk⟩ := hcons x d info' cl v hd hinfo' hcl hp hvx
+            refine ⟨vals0, fun cm => ?_, hlk⟩
+            rw [← hev cm]
+            refine evalInst_congr ?_ ?_ cm cl ?_
+            · rfl
+            · rfl
+            intro y hy
+            have hyA := H.cert.closed b j x d info' cl hxA hd hinfo' hcl hp y hy
+            have hyr : y ∉ stm.results := fun e => (hresults y e).1 hyA
+            rw [restrict_regs_of_mem (hcl_args y hy), restrict_regs_of_mem hyA]
+            exact setMany_other hset hyr
+          · have hd' := (hresults x hxr).2
+            rw [hd] at hd'
+            cases hd'
+            rw [hinfo] at hinfo'
+            cases hinfo'
+            rw [hclif] at hcl
+            cases hcl
+            have hev : Clif.evalInst s.frame s.mem stm.inst = .ok (vals, cm') := by
+              rw [← instOutcome_of_pure (env := env) (p := p) hp]; exact hO
+            obtain ⟨-, hall⟩ := evalInst_pure hp hev
+            obtain ⟨m, v', hxm, hvm, hrv⟩ := setMany_mem hset hnodup x hxr
+            rw [hrv] at hv'
+            cases hv'
+            refine ⟨vals, fun cm => ?_, ?_⟩
+            · rw [← hall cm]
+              refine evalInst_congr ?_ ?_ cm _ ?_
+              · rfl
+              · rfl
+              intro y hy
+              have hyA := hargs y hy
+              have hyr : y ∉ stm.results := fun e => (hresults y e).1 hyA
+              rw [restrict_regs_of_mem (hcl_args y hy)]
+              exact setMany_other hset hyr
+            · rw [hres]
+              exact lookup_zip_nodup hnodup (setMany_length hset) m x _ hxm hvm
+      · cases hs
+  · intro c hs hexp
+    rw [hstep] at hs
+    cases hO : instOutcome env p s.frame s.mem stm.inst with
+    | ok r => rw [hO] at hs; simp only [Clif.StepResult.ofRes, Clif.continueWith] at hs; split at hs <;> cases hs
+    | stuck m => rw [hO] at hs; cases hs
+    | trap c' =>
+      rw [hO] at hs hrun'
+      cases hs
+      obtain ⟨hU, k', i, ops, ρ₁, w₁, outs, w₂, hsr, htc⟩ := hrun' hexp
+      obtain ⟨ρ₁', hsr', -, -⟩ := (hren (huses_of hU) hAg).2 hsr
+      have hsegat := hcodeseg.1
+      rw [seg_eq hB hL hstm hsl, List.map_append] at hsegat
+      obtain ⟨hstar, -, hi, hops, hsem, -, -⟩ := seqRun_stop_star hvb hsegat.append_left hsr'
+      exact ⟨b, _, ρ₁', w₁, vb, _, _, outs, w₂, hstar, hvb, hi, hops, hsem,
+        by rw [trapCode?_mapRegs]; exact htc⟩
+
+end
+
 end Backend.Proof.Driver

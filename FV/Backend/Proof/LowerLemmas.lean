@@ -106,8 +106,8 @@ theorem getMany_spec {fr : Clif.Frame} :
 section
 variable {V : Type}
 
-theorem lookup_zip_nodup :
-    ∀ {ps xs : List Nat}, ps.Nodup → ps.length = xs.length →
+theorem lookup_zip_nodup {β : Type} :
+    ∀ {ps : List Nat} {xs : List β}, ps.Nodup → ps.length = xs.length →
       ∀ (m : Nat) p x, ps[m]? = some p → xs[m]? = some x → (ps.zip xs).lookup p = some x := by
   intro ps
   induction ps with
@@ -129,8 +129,8 @@ theorem lookup_zip_nodup :
         simp only [List.zip_cons_cons, List.lookup, beq_false_of_ne hne]
         exact ih hnd'.2 (by simpa using hl) m p x hp hx
 
-theorem lookup_zip_not_mem {v : Nat} :
-    ∀ {ps xs : List Nat}, v ∉ ps → (ps.zip xs).lookup v = none := by
+theorem lookup_zip_not_mem {β : Type} {v : Nat} :
+    ∀ {ps : List Nat} {xs : List β}, v ∉ ps → (ps.zip xs).lookup v = none := by
   intro ps
   induction ps with
   | nil => intro xs _; simp
@@ -173,6 +173,20 @@ theorem flatten_range_split (g : Nat → List MInst) {j n : Nat} (hj : j < n) :
 theorem length_flatten_range (g : Nat → List MInst) (j : Nat) :
     ((List.range j).map g).flatten.length = ((List.range j).map fun i => (g i).length).sum := by
   simp [List.length_flatten, List.map_map, Function.comp_def]
+
+theorem instOutcome_of_pure {env : Clif.Env} {p : Clif.Program} {fr : Clif.Frame} {cm : Clif.Mem}
+    {i : Clif.Inst} (h : pureInst i = true) : instOutcome env p fr cm i = Clif.evalInst fr cm i := by
+  cases i <;> simp [pureInst] at h <;> rfl
+
+theorem drop_cons_split {α : Type} {l : List α} {j : Nat} {a : α} {rest : List α}
+    (h : l.drop j = a :: rest) : j < l.length ∧ l[j]? = some a ∧ rest = l.drop (j + 1) := by
+  have hj : j < l.length := by
+    rcases Nat.lt_or_ge j l.length with hj | hj
+    · exact hj
+    · rw [List.drop_eq_nil_of_le hj] at h; cases h
+  rw [List.drop_eq_getElem_cons hj] at h
+  simp only [List.cons.injEq] at h
+  exact ⟨hj, by rw [List.getElem?_eq_getElem hj, h.1], h.2.symm⟩
 
 /-! ## Renamed instructions -/
 
