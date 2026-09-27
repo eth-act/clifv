@@ -1,6 +1,7 @@
 import FV.E2E.Compose
 import FV.Backend.Proof.DriverCheckSound
 import FV.Backend.Proof.PrepareSound
+import FV.Backend.Proof.IselMemArm
 
 /-!
 # M7: `backend_correct`
@@ -43,6 +44,40 @@ theorem mrStable_holds (Γ : Rel) (f : Clif.Function) :
     simp only [Arm.read_mem, Arm.read_store]
     rw [hsw.2.1 _ hF]
   · simpa [Rel.slotReg, hsp] using hs
+
+/-- The CLIF ↔ VCode relation satisfies what M4's memory rules need (`MemRelOk`, contract change
+#7): bytes/allocations/symbols from `MemRel`, slots from `SlotRel`, and a store of `n` bytes to a
+live allocation on both sides keeps `MemRel` (same allocations; the written bytes agree, the
+others are untouched on both sides) and `SlotRel` (`sp` unchanged). -/
+theorem memRelOk_holds (Γ : Rel) (f : Clif.Function) :
+    MemRelOk Γ.F Γ.slotOff Γ.syms f (fun sl cm w => Γ.holds f sl cm w) where
+  bytes := fun _ _ _ a b h ha hb => h.1.bytes a b ha hb
+  valid := fun _ _ _ a n h ha => h.1.valid a n ha
+  symbols := fun _ _ _ h => h.1.symbols
+  slots := fun _ _ w id b h hl => by
+    obtain ⟨off, ho, hb⟩ := h.2 id b hl
+    exact ⟨off, ho, by rw [hb]; rfl⟩
+  store := fun sl cm w a n y h hv => by
+    obtain ⟨hm, hs⟩ := h
+    have hA := (hm.valid a n hv).1
+    refine ⟨⟨fun a' b ha' hb => ?_, fun a' k hk => hm.valid a' k hk, hm.symbols⟩, ?_⟩
+    · rw [writeBits_valid] at ha'
+      have ha64 := (hm.valid a' 1 ha').1
+      rw [read_mem_write_mem_bytes y w hA (by omega)]
+      rw [writeBits_bytes] at hb
+      split
+      · rename_i hin
+        rw [if_pos hin] at hb
+        cases hb
+        apply BitVec.eq_of_getLsbD_eq
+        intro k hk
+        simp [hk]
+      · rename_i hin
+        rw [if_neg hin] at hb
+        exact hm.bytes a' b ha' hb
+    · have hsp : spv (Arm.write_mem_bytes n (BitVec.ofNat 64 a) y w) = spv w := by
+        simp only [spv, Arm.r_of_write_mem_bytes]
+      simpa [Rel.slotReg, hsp] using hs
 
 theorem noTail_of_subset {p : Clif.Program} {f : Clif.Function} (h : InSubset p f) :
     ∀ B ∈ f.blocks, ∀ fn args, B.term ≠ .returnCall fn args := by
@@ -133,6 +168,7 @@ theorem backend_correct {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp
     (hrules : LowerRulesCorrect Isle.Aarch64.program)
     (hex : ExcludedUnmatchable Isle.Aarch64.program)
     (hcallRules : CallRulesCorrect Isle.Aarch64.program)
+    (hmemRules : MemRulesCorrect Isle.Aarch64.program)
     (hterms : ∀ s, TermCalls (sem s) (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w))
     -- M6 + M5
     (hM6 : RegLevelCorrect sem F astep vcp af fb)
@@ -141,6 +177,9 @@ theorem backend_correct {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp
     -- the callee contract (M6, from `CalleeSound`)
     (hcalls : ∀ s, CallsRefine (F s) env (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w)
       (sem s))
+    -- the memory forms (M6: loads/stores/`loadAddr`/GOT loads of `csem` with slot base `slotOff`
+    -- and the link-time symbol addresses `syms`)
+    (hmem : ∀ s, MemRefines (F s) slotOff syms (sem s))
     -- the run
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hbe : BodyEntry af s w₀)
@@ -156,8 +195,9 @@ theorem backend_correct {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp
     shape := hshape
     cert := hcert
     dsem := hds s'
-    insts := instCalls_of_rules hrules hex hcallRules (hRef s')
-      (mrStable_holds ⟨F s', syms, slotOff⟩ f) (hcalls s')
+    insts := instCalls_of_rules hrules hex hcallRules hmemRules (hRef s')
+      (mrStable_holds ⟨F s', syms, slotOff⟩ f) (hcalls s') (hmem s')
+      (memRelOk_holds ⟨F s', syms, slotOff⟩ f)
     terms := hterms s'
     ext := fun B hB st hst fn args hi e he => hsub.externCalls B hB st hst fn args hi e he
     regArgs := callRegArgs_of_subset hsub
@@ -177,6 +217,7 @@ theorem backend_correct_of_rules {p : Clif.Program} {f : Clif.Function} {k : Nat
     (hrules : LowerRulesCorrect Isle.Aarch64.program)
     (hex : ExcludedUnmatchable Isle.Aarch64.program)
     (hcallRules : CallRulesCorrect Isle.Aarch64.program)
+    (hmemRules : MemRulesCorrect Isle.Aarch64.program)
     (htermRules : LowerTermRulesCorrect Isle.Aarch64.program)
     (htermUn : TermUnmatchable Isle.Aarch64.program)
     (hbranch : BranchRulesCorrect Isle.Aarch64.program)
@@ -188,6 +229,9 @@ theorem backend_correct_of_rules {p : Clif.Program} {f : Clif.Function} {k : Nat
     -- the callee contract (M6, from `CalleeSound`)
     (hcalls : ∀ s, CallsRefine (F s) env (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w)
       (sem s))
+    -- the memory forms (M6: loads/stores/`loadAddr`/GOT loads of `csem` with slot base `slotOff`
+    -- and the link-time symbol addresses `syms`)
+    (hmem : ∀ s, MemRefines (F s) slotOff syms (sem s))
     -- the run
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hbe : BodyEntry af s w₀)
@@ -195,10 +239,10 @@ theorem backend_correct_of_rules {p : Clif.Program} {f : Clif.Function} {k : Nat
     (hrel : Rel.holds ⟨F s, syms, slotOff⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ArmRefines fb base ra astep s (Clif.runLoop env p fuel cs) :=
-  backend_correct hsub hc hrules hex hcallRules
+  backend_correct hsub hc hrules hex hcallRules hmemRules
     (fun s' => termCalls_of_rules htermRules htermUn hbranch hbranchEx (hRef s')
       (mrStable_holds ⟨F s', syms, slotOff⟩ f))
-    hM6 hRef hds hcalls hent hres hbe hargs hcs hrel htr fuel
+    hM6 hRef hds hcalls hmem hent hres hbe hargs hcs hrel htr fuel
 
 end E2E
 
