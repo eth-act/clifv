@@ -27,9 +27,12 @@ first, then update its producer and its consumers together.
 
 ## Ground rules (from PLAN.md §0, binding on every component)
 
-- No `sorry` in any merged Lean file. No new `axiom`. Each claimed theorem's `#print axioms`
-  shows only `propext`, `Classical.choice`, `Quot.sound`, plus `Lean.ofReduceBool` (and
-  `Lean.trustCompiler` where `bv_decide` requires it).
+- No `sorry` in any merged Lean file. No new `axiom` declarations. Each claimed theorem's
+  `#print axioms` shows only `propext`, `Classical.choice`, `Quot.sound`, plus the
+  compiled-evaluation trust axioms Lean v4.34.1 auto-generates: `<thm>._native.bv_decide.ax_*`
+  (from `bv_decide` when it needs them) and `<thm>._native.native_decide.ax_*` (from `native_decide`).
+  These replace `Lean.ofReduceBool` from older toolchains, with the same trust base. Prefer
+  `omega`/`decide`/`simp` in library lemmas; keep `bv_decide` for real bit-blasting goals.
 - Lean: core and `Std` only, no Mathlib (keeps the toolchain pin to `v4.34.1` alone).
 - Lean namespaces follow the directories: `Clif`, `DSL`, `Compile`, `Arm`, `Validate`, `Isle`, `Backend`, `E2E`.
 - Anything executable that is meant as a model must be *checkable* against an external

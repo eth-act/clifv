@@ -3,3 +3,4 @@
 /third_party/wasmtime/
 /build/
 /third_party/lnsym-upstream/
+/rust/target/
