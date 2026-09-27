@@ -575,7 +575,49 @@ inductive V where
   | blockCalls (bs : List Nat)
   | data (ty : TypeId) (k : Nat) (fields : List V)
   | op (o : Opnd)
-  deriving Repr, Inhabited, BEq
+  deriving Repr, Inhabited
+
+mutual
+/-- Structural equality of ISLE values (hand-written: `deriving BEq` on this nested inductive
+gives an opaque function, about which proofs can learn nothing). -/
+def V.beq : V → V → Bool
+  | .int a, .int b => decide (a = b)
+  | .bool a, .bool b => decide (a = b)
+  | .ty a, .ty b => decide (a = b)
+  | .inst a, .inst b => decide (a = b)
+  | .value a, .value b => decide (a = b)
+  | .reg a, .reg b => decide (a = b)
+  | .regs a, .regs b => decide (a = b)
+  | .regsVec a, .regsVec b => decide (a = b)
+  | .label a, .label b => decide (a = b)
+  | .labels a, .labels b => decide (a = b)
+  | .values a, .values b => decide (a = b)
+  | .blockCalls a, .blockCalls b => decide (a = b)
+  | .data t k fs, .data t' k' fs' => decide (t = t') && decide (k = k') && V.beqList fs fs'
+  | .op a, .op b => decide (a = b)
+  | _, _ => false
+/-- `V.beq` on lists. -/
+def V.beqList : List V → List V → Bool
+  | [], [] => true
+  | a :: as, b :: bs => V.beq a b && V.beqList as bs
+  | _, _ => false
+end
+
+instance : BEq V := ⟨V.beq⟩
+
+theorem V.beq_iff (a : V) : ∀ b : V, V.beq a b = true ↔ a = b := by
+  induction a using V.rec (motive_2 := fun l => ∀ l', V.beqList l l' = true ↔ l = l') with
+  | data t k fs ih =>
+    intro b
+    cases b <;> simp only [V.beq, Bool.and_eq_true, decide_eq_true_eq, ih, V.data.injEq, and_assoc,
+      reduceCtorEq, Bool.false_eq_true]
+  | nil => rename_i l'; cases l' <;> simp [V.beqList]
+  | cons a as iha ihas => rename_i l'; cases l' <;> simp [V.beqList, iha, ihas]
+  | _ => intro b; cases b <;> simp [V.beq]
+
+instance : LawfulBEq V where
+  eq_of_beq h := (V.beq_iff _ _).1 h
+  rfl := (V.beq_iff _ _).2 rfl
 
 /-! ### ISLE type ids and enum variants
 

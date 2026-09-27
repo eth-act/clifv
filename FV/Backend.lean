@@ -5,6 +5,8 @@ import FV.Backend.Regalloc
 import FV.Backend.Asm
 import FV.Backend.Encode
 import FV.Backend.Obj
+import FV.Backend.Proof.DriverCheck
+import FV.Compile.Subset
 import Std.Data.HashSet
 
 /-!
@@ -52,17 +54,31 @@ def Allocator.ofName? (n : String) : IO (Option Allocator) := do
   | "regalloc2-small" => pure (some (.regalloc2 (← defaultRegallocBin) smallEnv))
   | _ => pure none
 
+/-- `lowerFunction`, then (if `verify`) M7's lowering validator (`lowerCheck`, whose acceptance
+the end-to-end theorem assumes, `docs/contracts/e2e.md`); a rejection is a compile error.
+Functions outside the theorem (`unverifiedReason?`) are not validated (they are reported as
+unverified instead). -/
+def lowerChecked (f : Clif.Function) (verify : Bool) : Except String VCode := do
+  let vc ← lowerFunction f
+  if verify && !Proof.Driver.lowerCheck f vc then
+    throw "lowering rejected by the M7 lowering validator (lowerCheck)"
+  pure vc
+
+/-- The theorem's conditions that do not need the rest of the file (`E2E.InSubset.subsetE`,
+`E2E.InSubset.regParams`). -/
+def verifiable (f : Clif.Function) : Bool := Compile.functionE f && f.sig.params.length ≤ 8
+
 /-- Compile one function with the stack-slot allocator (`k` = index in the file, for local
 labels); also returns the ISLE rules that fired. -/
 def compileFunction (k : Nat) (f : Clif.Function) : Except String (FnAsm × Array Isle.RuleId) := do
-  let vc ← lowerFunction f
+  let vc ← lowerChecked f (verifiable f)
   let af ← allocate vc
   pure (← emitFunc k af, vc.rulesFired)
 
 /-- Compile one function with the given allocator. -/
 def compileFunctionWith (a : Allocator) (k : Nat) (f : Clif.Function) :
     IO (Except String (FnAsm × Array Isle.RuleId)) := do
-  match lowerFunction f with
+  match lowerChecked f (verifiable f) with
   | .error e => pure (.error e)
   | .ok vc =>
     let rs ← a.run #[vc]
@@ -77,6 +93,8 @@ structure FileAsm where
   funcs : List FnAsm
   /-- Functions not compiled, with the reason. -/
   unsupported : List (String × String)
+  /-- Compiled functions outside the end-to-end theorem (`unverifiedReason?`), with the reason. -/
+  unverified : List (String × String) := []
   /-- Distinct ISLE rules fired while compiling the file (ascending ids). -/
   rules : List Isle.RuleId
 
@@ -85,6 +103,17 @@ def callees (f : Clif.Function) : List String :=
   (f.blocks.flatMap fun b => b.body.filterMap fun s => match s.inst with
     | .call fn _ => (f.extern? fn).map (·.name)
     | _ => none).eraseDups
+
+/-- Why a compiled function of `pf` is outside `E2E.backend_correct` (`E2E.InSubset`), if it is:
+outside clif-subset-v2 E, stack-passed parameters, or a call of a function of the file. -/
+def unverifiedReason? (pf : Clif.ParsedFile) (f : Clif.Function) : Option String :=
+  if !Compile.functionE f then some "outside clif-subset-v2 E"
+  else if f.sig.params.length > 8 then some "stack-passed parameters (more than 8)"
+  else
+    let own := pf.funcs.map (·.name)
+    match (callees f).find? (own.contains ·) with
+    | some c => some s!"calls %{c}, a function of the file"
+    | none => none
 
 /-- Compile every function of a parsed `.clif` file: lower each function, allocate all of
 them with `alloc` (one batch), emit. A function that calls a function of the file that is not
@@ -95,7 +124,7 @@ def compileFileWith {m : Type → Type} [Monad m]
   let lowered : Array (String × Except String (Clif.Function × VCode)) :=
     pf.funcs.toArray.map fun p => (p.name, match p.func with
       | .error e => .error e.toString
-      | .ok f => (lowerFunction f).map (f, ·))
+      | .ok f => (lowerChecked f (unverifiedReason? pf f).isNone).map (f, ·))
   let vcs := lowered.filterMap fun (_, r) => r.toOption.map (·.2)
   let afs ← alloc vcs
   let mut done : Array (FnAsm × List String) := #[]
@@ -123,7 +152,10 @@ def compileFileWith {m : Type → Type} [Monad m]
     done := keep
   let funcs := done.toList.map (·.1)
   let text := "  .text\n" ++ String.join (funcs.map (·.text ++ "\n"))
-  pure { text, funcs, unsupported := bad.toList,
+  let unverified := lowered.toList.filterMap fun (name, r) => match r with
+    | .ok (f, _) => if funcs.any (·.name == name) then (unverifiedReason? pf f).map (name, ·) else none
+    | .error _ => none
+  pure { text, funcs, unsupported := bad.toList, unverified,
          rules := rules.toArray.qsort (· < ·) |>.toList }
 
 /-- `compileFileWith` the stack-slot allocator (pure). -/

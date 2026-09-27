@@ -48,3 +48,7 @@ root = "FVTest.Backend.Encode.Test"
 [[lean_exe]]
 name = "lean-backend-regalloc-test"
 root = "FVTest.Backend.Regalloc.Test"
+
+[[lean_exe]]
+name = "lean-e2e-check"
+root = "FVTest.E2E.Check"
