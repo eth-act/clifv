@@ -17,7 +17,7 @@ left alone until their argument is known) and then normalises with `simp only` o
 laws below, the generated data facts (`isel_data`) and caller-supplied lemmas — a simp set
 with no interpreter equations, so nothing is unfolded under a binder. Each round exposes the
 next closed call. The kernel never sees `Isle.Aarch64.program`: `termOf`/`rulesOf` are
-rewritten with the `native_decide` facts of `IselData`.
+rewritten with the fields of `Data p` (`IselData`; `rfl` for the exported program).
 -/
 
 namespace Backend.Proof
