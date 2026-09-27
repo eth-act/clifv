@@ -841,6 +841,135 @@ theorem term_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     · rw [hstep] at hs; exact absurd hs ((stepTerm_branch_ne hne).1 vals cm)
     · rw [hstep] at hs; exact absurd hs ((stepTerm_branch_ne hne).2 c)
 
+/-! ## Entry -/
+
+theorem writeV_nodup {V : Type} {ρ : Nat → V} :
+    ∀ {dv : List (Operand × V)}, (dv.map (·.1.vreg)).Nodup →
+      ∀ (m : Nat) o x, dv[m]? = some (o, x) → writeV ρ dv o.vreg = x := by
+  intro dv
+  induction dv generalizing ρ with
+  | nil => intro _ m o x h; simp at h
+  | cons p dv ih =>
+    intro hnd m o x h
+    simp only [List.map_cons, List.nodup_cons] at hnd
+    change writeV (upd ρ p.1.vreg p.2) dv o.vreg = x
+    cases m with
+    | zero =>
+      simp only [List.getElem?_cons_zero, Option.some.injEq] at h
+      subst h
+      rw [writeV_other (dv := dv) (fun q hq e => hnd.1 (List.mem_map.mpr ⟨q, hq, e⟩))]
+      simp [upd]
+    | succ m =>
+      simp only [List.getElem?_cons_succ] at h
+      exact ih hnd.2 m o x h
+
+theorem vdefUpd_argOps {ns : List (Nat × Reg)} {outs : List CV} {ρ : Nat → CV}
+    (hnd : (ns.map (·.1)).Nodup) (hl : outs.length = ns.length) (m : Nat) {q : Nat × Reg} {x : CV}
+    (hq : ns[m]? = some q) (hx : outs[m]? = some x) :
+    vdefUpd (argOps ns).toArray outs ρ q.1 = x := by
+  have hdef : (argOps ns).filter Operand.isDef = argOps ns := by
+    rw [List.filter_eq_self]
+    intro o ho
+    obtain ⟨q', -, hq'⟩ := List.mem_map.mp ho
+    rw [← hq']; rfl
+  have hearly : ((argOps ns).zip outs).filter (·.1.isEarly) = [] := by
+    rw [List.filter_eq_nil_iff]
+    intro p hp
+    obtain ⟨q', -, hq'⟩ := List.mem_map.mp (List.of_mem_zip hp).1
+    rw [← hq']; simp [Operand.isEarly]
+  have hlate : ((argOps ns).zip outs).filter (·.1.isLate) = (argOps ns).zip outs := by
+    rw [List.filter_eq_self]
+    intro p hp
+    obtain ⟨q', -, hq'⟩ := List.mem_map.mp (List.of_mem_zip hp).1
+    rw [← hq']; rfl
+  simp only [vdefUpd, List.toList_toArray, hdef, hearly, hlate]
+  have hmem : ((argOps ns).zip outs)[m]? = some (⟨q.1, .int, .def, .late, .fixed q.2⟩, x) := by
+    simp [argOps, List.getElem?_zip_eq_some, hq, hx]
+  have := writeV_nodup (ρ := writeV ρ []) (dv := (argOps ns).zip outs) ?_ m _ x hmem
+  · simpa using this
+  · have : ((argOps ns).zip outs).map (·.1.vreg) = ns.map (·.1) := by
+      rw [show (fun x : Operand × CV => x.fst.vreg) = Operand.vreg ∘ Prod.fst from rfl,
+        ← List.map_map, List.map_fst_zip (by simp [argOps]; omega)]
+      simp [argOps]
+    rw [this]; exact hnd
+
+/-- **Entry**: the entry block's `Args` defines the parameters from the argument registers. -/
+theorem entry_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
+    {cs : Clif.State} {B0 : Clif.Block} (hB0 : f.blocks[0]? = some B0)
+    (hcall : cs.callers = []) (hfunc : cs.frame.func = f) (hslots : cs.frame.slots = slots)
+    (hbody : cs.frame.body = B0.body) (hterm : cs.frame.term = B0.term) {args : List Clif.Val}
+    (hregs : Clif.Regs.empty.setMany (B0.params.map (·.1)) args = some cs.frame.regs)
+    {ρ₀ : Nat → CV} {w₀ : Arm.ArmState} (hmr : MR slots cs.mem w₀)
+    (hargs : ∀ (i : Nat) v, args[i]? = some v → VHolds v (regVal w₀ (.x i))) :
+    ∃ ρ₁, VStep vc sem (.run ⟨0, 0, ρ₀, w₀⟩) (.run ⟨0, 1, ρ₁, w₀⟩) ∧
+      Match f ctx R gn bl A MR slots cs ⟨0, 1, ρ₁, w₀⟩ := by
+  obtain ⟨L, hL⟩ := H.blow hB0
+  obtain ⟨vb, hvb, -, -, -, -, -, -, hcode, htne, -⟩ := H.shape.blk 0 B0 L hB0 hL
+  obtain ⟨hnd, hA⟩ := H.cert.entry B0 hB0
+  have hB0mem : B0 ∈ f.blocks := List.mem_of_getElem? hB0
+  let ns : List (Nat × Reg) := B0.params.zipIdx.map fun q => (q.1.1, Reg.x q.2)
+  have hpre : pre f R 0 = [.args (argPairs ns)] := by
+    simp only [pre, hB0, argPairs, ns, List.map_map]
+    congr 2
+    apply List.map_congr_left
+    intro q hq
+    have hq1 : q.1 ∈ B0.params := (List.mem_zipIdx hq).2.2 ▸ List.getElem_mem _
+    simp [Function.comp_def, H.shape.ren.vreg, H.shape.params B0 hB0mem q.1 hq1]
+  have hns1 : ns.map (·.1) = B0.params.map (·.1) := by
+    simp only [ns, List.map_map, Function.comp_def]
+    rw [show (fun q : (Nat × Clif.Ty) × Nat => q.1.1) = (fun x => x.1) ∘ Prod.fst from rfl,
+      ← List.map_map, List.zipIdx_map_fst]
+  have hnsm : ∀ (m : Nat) q, B0.params[m]? = some q → ns[m]? = some (q.1, Reg.x m) := by
+    intro m q hq
+    simp [ns, List.getElem?_zipIdx, hq]
+  have hvb0 : vb.insts[0]? = some (.args (argPairs ns)) := by
+    rw [← Array.getElem?_toList, hcode, hpre]; rfl
+  have hops := operands_args ns
+  have hvu : vuses (argOps ns).toArray ρ₀ = [] := by
+    simp only [vuses, List.toList_toArray, List.map_eq_nil_iff, List.filter_eq_nil_iff]
+    intro o ho
+    obtain ⟨q', -, hq'⟩ := List.mem_map.mp ho
+    rw [← hq']; simp [Operand.isUse]
+  have hsem := H.dsem.args (argPairs ns) w₀
+  rw [← hvu] at hsem
+  have hlen : ((argPairs ns).map fun d => regVal w₀ d.2).length =
+      ((argOps ns).toArray.toList.filter Operand.isDef).length := by
+    have : (argOps ns).filter Operand.isDef = argOps ns := by
+      rw [List.filter_eq_self]
+      intro o ho
+      obtain ⟨q', -, hq'⟩ := List.mem_map.mp ho
+      rw [← hq']; rfl
+    rw [List.toList_toArray, this]
+    simp only [List.length_map, argPairs, argOps]
+  have hsz : 0 + 1 < vb.insts.size := by
+    have h1 : vb.insts.size = vb.insts.toList.length := by simp
+    have h2 : 0 < (tseg R bl 0).length := List.length_pos_iff.mpr htne
+    rw [h1, hcode, hpre]; simp only [List.length_append, List.length_singleton]; omega
+  refine ⟨_, VStep.step hvb hvb0 hops hsem hlen (VNext.next hsz), hcall, hfunc, hslots, hmr,
+    B0, 0, hB0, hterm, Nat.zero_le _, by simp [hbody], by simp [pos, hpre], ?_, ?_⟩
+  · intro x hx
+    obtain ⟨hxp, -⟩ := hA x hx
+    obtain ⟨m, hm, hxm⟩ := List.getElem_of_mem hxp
+    have hm' : m < B0.params.length := by simpa using hm
+    have hqm : B0.params[m]? = some B0.params[m] := List.getElem?_eq_getElem hm'
+    have hxq : B0.params[m].1 = x := by simpa using hxm
+    have hla := setMany_length hregs
+    have hma : m < args.length := by simp at hla; omega
+    have hrx : cs.frame.regs x = some args[m] :=
+      setMany_nodup hregs hnd m x args[m] (by rw [← hxq]; simp [hqm]) (List.getElem?_eq_getElem hma)
+    refine ⟨args[m], hrx, ?_⟩
+    have hgx : gn x = x := by
+      rw [← hxq]; exact H.shape.params B0 hB0mem _ (List.getElem_mem hm')
+    show VHolds args[m] (vdefUpd (argOps ns).toArray _ ρ₀ (gn x))
+    rw [hgx, ← hxq]
+    rw [vdefUpd_argOps (by rw [hns1]; exact hnd) (by simp [argPairs]) m (hnsm m _ hqm)
+      (x := regVal w₀ (.x m)) (by simp [argPairs, hnsm m _ hqm])]
+    exact hargs m _ (List.getElem?_eq_getElem hma)
+  · intro x d info cl v hd _ _ _ hv
+    have hx0 : x ∈ A 0 0 := restrict_regs_isSome (by rw [hv]; rfl)
+    rw [(hA x hx0).2] at hd
+    cases hd
+
 end
 
 end Backend.Proof.Driver

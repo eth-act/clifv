@@ -406,4 +406,39 @@ theorem vregNum_mapM (ns : List Nat) :
   | nil => rfl
   | cons n ns ih => simp [List.mapM_cons, vregNum, ih]; rfl
 
+/-! ## The entry `Args` -/
+
+/-- `(vreg n, p)` pairs of an `Args`. -/
+def argPairs (ns : List (Nat × Reg)) : List (Reg × Reg) := ns.map fun q => (Reg.vreg q.1 .int, q.2)
+
+/-- The operands of `Args (argPairs ns)`: fixed late defs. -/
+def argOps (ns : List (Nat × Reg)) : List Operand :=
+  ns.map fun q => (⟨q.1, .int, .def, .late, .fixed q.2⟩ : Operand)
+
+theorem except_ok_bind {ε α β : Type} (a : α) (f : α → Except ε β) :
+    (Except.ok a >>= f : Except ε β) = f a := rfl
+
+theorem except_pure {ε α : Type} (a : α) : (pure a : Except ε α) = .ok a := rfl
+
+theorem mapM_fixedDef (ns : List (Nat × Reg)) : ∀ (s : Array Operand),
+    ((argPairs ns).mapM
+      (fun (x : Reg × Reg) => do let r ← collectOp (OpSpec.fixedDef x.2) x.1; pure (r, x.2))).run s =
+      .ok (argPairs ns, s ++ (argOps ns).toArray) := by
+  induction ns with
+  | nil => intro s; simp [argPairs, argOps]; rfl
+  | cons q ns ih =>
+    intro s
+    simp only [argPairs, argOps, List.map_cons, List.mapM_cons, StateT.run_bind] at ih ⊢
+    have h1 : (collectOp (OpSpec.fixedDef q.2) (Reg.vreg q.1 .int)).run s =
+        .ok (Reg.vreg q.1 .int, s.push ⟨q.1, .int, .def, .late, .fixed q.2⟩) := rfl
+    rw [h1, except_ok_bind, StateT.run_pure, except_pure, except_ok_bind, ih, except_ok_bind,
+      StateT.run_pure, except_pure]
+    simp
+
+theorem operands_args (ns : List (Nat × Reg)) :
+    (MInst.args (argPairs ns)).operands = .ok (argOps ns).toArray := by
+  rw [operands_eq]
+  simp only [MInst.visitOperands, StateT.run_bind, mapM_fixedDef]
+  simp [bind, Except.bind, StateT.run, pure, StateT.pure, Except.pure]
+
 end Backend.Proof.Driver
