@@ -35,7 +35,8 @@ theorem internal_split {ty : TypeId} {t : TermId} {vs : List V} {term : Term} {f
 
 include hc in
 /-- `internal_split` with first-match selection: the rules before the committed one failed to
-match (from the same start state). -/
+match (from the same start state). The right-hand side runs with the call's fuel
+(`n = n' + 20`), so nested calls keep a known amount of fuel. -/
 theorem internal_split_first {ty : TypeId} {t : TermId} {vs : List V} {term : Term}
     {flags : TermFlags} {ex : Option Extractor} (ht : termOf p t = .ok term)
     (hk : term.kind = .decl flags (some .internal) ex) (hm : flags.isMulti = false)
@@ -46,12 +47,12 @@ theorem internal_split_first {ty : TypeId} {t : TermId} {vs : List V} {term : Te
       ∃ m' n' env s1 st tr,
       (matchRule p (sem ctx) cfg (m' + 20) r vs).run s = .ok (some env, s1) ∧
       (evalExpr p (sem ctx) cfg (n' + 20) r.rhs env).run s1 = .ok (some v, (st, tr)) ∧
-      s' = (st, tr.push r.id) := by
+      s' = (st, tr.push r.id) ∧ n = n' + 20 := by
   obtain ⟨r, pre, post, hL, hpre, m, env, s1, st, tr, hmn, hmt, he, rfl⟩ :=
     applyTerm_internal_some_first hc ht hk hm h
   obtain ⟨m', rfl⟩ : ∃ m', m = m' + 20 := ⟨m - 20, by omega⟩
   obtain ⟨n', rfl⟩ : ∃ n', n = n' + 20 := ⟨n - 20, by omega⟩
-  refine ⟨pre, r, post, hL, fun r' hr' => ?_, m', n', env, s1, st, tr, hmt, he, rfl⟩
+  refine ⟨pre, r, post, hL, fun r' hr' => ?_, m', n', env, s1, st, tr, hmt, he, rfl, rfl⟩
   obtain ⟨k, hk, s2, h2⟩ := hpre r' hr'
   obtain ⟨k', rfl⟩ : ∃ k', k = k' + 20 := ⟨k - 20, by omega⟩
   exact ⟨k', s2, h2⟩
@@ -69,7 +70,7 @@ macro "isel_split " hp:ident hc:ident h:ident t:num : tactic => do
   let hpre := mkIdent `hpre
   let hL := mkIdent `hL
   `(tactic| (
-    obtain ⟨_, _, _, $hL, $hpre, _, _, _, _, _, _, $hm, $he, rfl⟩ := internal_split_first $hc $tN $kN rfl (by rw [$rN:ident]; simp; omega) $h
+    obtain ⟨_, _, _, $hL, $hpre, _, _, _, _, _, _, $hm, $he, rfl, rfl⟩ := internal_split_first $hc $tN $kN rfl (by rw [$rN:ident]; simp; omega) $h
     rw [$rN:ident] at $hL:ident
     isel_rule_cases $hL
     all_goals cases $hp:ident))
@@ -80,7 +81,7 @@ include hp hc in
 theorem operand_size_ok {n : Nat} (hn : 30 ≤ n) {t : CTy} {s s' : LState × Array RuleId} {v : V}
     (h : ApplyInternal p (sem ctx) cfg n 93 305 [.ty t] s v s') :
     s'.1 = s.1 ∧ ((t.bits ≤ 32 ∧ v = .data 93 0 []) ∨ (32 < t.bits ∧ t.bits ≤ 64 ∧ v = .data 93 1 [])) := by
-  obtain ⟨pre, r, post, hL, hpre, m', n', env, s1, st, tr, hm, he, rfl⟩ :=
+  obtain ⟨pre, r, post, hL, hpre, m', n', env, s1, st, tr, hm, he, rfl, rfl⟩ :=
     internal_split_first hc hp.t305 term_305_kind rfl (by rw [hp.r305]; simp; omega) h
   rw [hp.r305] at hL
   isel_rule_cases hL
