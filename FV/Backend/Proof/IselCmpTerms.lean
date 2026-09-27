@@ -75,6 +75,22 @@ macro "isel_split " hp:ident hc:ident h:ident t:num : tactic => do
     isel_rule_cases $hL
     all_goals cases $hp:ident))
 
+open Lean in
+/-- `isel_split'`: `isel_split` keeping `hp` (for `isel_inv'`). -/
+macro "isel_split' " hp:ident hc:ident h:ident t:num : tactic => do
+  let tN := mkIdent (hp.getId ++ Name.mkSimple s!"t{t.getNat}")
+  let rN := mkIdent (hp.getId ++ Name.mkSimple s!"r{t.getNat}")
+  let kN := mkIdent (Name.mkStr `Backend.Proof s!"term_{t.getNat}_kind")
+  let hm := mkIdent `hm
+  let he := mkIdent `he
+  let hpre := mkIdent `hpre
+  let hL := mkIdent `hL
+  `(tactic| (
+    obtain ⟨_, _, _, $hL, $hpre, _, _, _, _, _, _, $hm, $he, rfl, rfl⟩ := internal_split_first $hc $tN $kN rfl (by rw [$rN:ident]; simp; omega) $h
+    clear $h
+    rw [$rN:ident] at $hL:ident
+    isel_rule_cases $hL))
+
 /-! ## `operand_size` -/
 
 include hp hc in
