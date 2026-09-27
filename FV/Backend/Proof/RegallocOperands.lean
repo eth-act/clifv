@@ -575,4 +575,180 @@ theorem operandsSound_addImm (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) 
   · intro r hr
     simp [MInst.clobbers] at hr
 
+theorem read_mem_bytes_congr {s t : Arm.ArmState} :
+    ∀ (n : Nat) (a : BitVec 64), (∀ k < n, s.mem (a + BitVec.ofNat 64 k) = t.mem (a + BitVec.ofNat 64 k)) →
+      Arm.read_mem_bytes n a s = Arm.read_mem_bytes n a t
+  | 0, _, _ => rfl
+  | n + 1, a, h => by
+    unfold Arm.read_mem_bytes
+    have h0 := h 0 (by omega)
+    simp only [BitVec.add_zero] at h0
+    have ih := read_mem_bytes_congr (s := s) (t := t) n (a + 1#64) (fun k hk => by
+      have e : a + 1#64 + BitVec.ofNat 64 k = a + BitVec.ofNat 64 (k + 1) := by
+        apply BitVec.eq_of_toNat_eq
+        simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
+        omega
+      rw [e]; exact h (k + 1) (by omega))
+    simp only [Arm.read_mem, Arm.read_store, h0, ih]
+
+theorem write_bytes_congr {m1 m2 : Arm.Memory} {b : BitVec 64} (hb : m1 b = m2 b) :
+    ∀ (n : Nat) (a : BitVec 64) (v : BitVec (n * 8)),
+      Arm.Memory.write_bytes n a v m1 b = Arm.Memory.write_bytes n a v m2 b
+  | 0, _, _ => hb
+  | n + 1, a, v => by
+    unfold Arm.Memory.write_bytes
+    simp only
+    have : ∀ m1 m2 : Arm.Memory, m1 b = m2 b →
+        Arm.Memory.write_bytes n (a + 1#64) (BitVec.setWidth (n * 8) (v >>> 8)) m1 b =
+        Arm.Memory.write_bytes n (a + 1#64) (BitVec.setWidth (n * 8) (v >>> 8)) m2 b :=
+      fun m1 m2 h => write_bytes_congr (m1 := m1) (m2 := m2) h n _ _
+    apply this
+    simp only [Arm.Memory.write, Arm.write_store]
+    split <;> simp_all
+
+theorem SameWorld.write_mem_bytes {F} {s w : Arm.ArmState} (hw : SameWorld F s w) (n : Nat)
+    (a : BitVec 64) (v : BitVec (n * 8)) :
+    SameWorld F (Arm.write_mem_bytes n a v s) (Arm.write_mem_bytes n a v w) := by
+  refine ⟨fun f hf => ?_, fun b hb => ?_, ?_⟩
+  · rw [Arm.r_of_write_mem_bytes, Arm.r_of_write_mem_bytes]; exact hw.1 f hf
+  · rw [Arm.Memory.write_mem_bytes_eq_mem_write_bytes, Arm.Memory.write_mem_bytes_eq_mem_write_bytes]
+    exact write_bytes_congr (hw.2.1 b hb) n a v
+  · rw [Arm.write_mem_bytes_program, Arm.write_mem_bytes_program]; exact hw.2.2
+
+theorem ldst_offset (off : Nat) (h8 : off % 8 = 0) (h : off / 8 < 4096) :
+    BitVec.setWidth 64 (BitVec.ofNat 12 (off / 8)) <<< 3 = BitVec.ofNat 64 off := by
+  apply BitVec.eq_of_toNat_eq
+  simp [BitVec.toNat_shiftLeft, Nat.mod_eq_of_lt h]
+  omega
+
+
+theorem regVal_write_mem_bytes (s : Arm.ArmState) (n : Nat) (a : BitVec 64) (v : BitVec (n * 8))
+    (r : Reg) : regVal (Arm.write_mem_bytes n a v s) r = regVal s r := by
+  cases r <;> simp [regVal, Arm.r_of_write_mem_bytes]
+
+theorem operandsSound_load (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (d n off : Nat)
+    (fl : Clif.MemFlags) (h8 : off % 8 = 0) (h12 : off / 8 < 4096) :
+    OperandsSound F (execMInst ctx env) (csem F)
+      (.load .uload64 (.vreg d .int) (.unsignedOffset (.vreg n .int) off) fl) := by
+  intro c wh ops regs i' s w outs w' hops hst hasg hw hsem
+  have : MInst.operands (.load .uload64 (.vreg d .int) (.unsignedOffset (.vreg n .int) off) fl) =
+      .ok #[⟨d, .int, .def, .late, .reg⟩, ⟨n, .int, .use, .early, .reg⟩] := rfl
+  rw [this] at hops
+  cases hops
+  obtain ⟨hsz, hloc, -, -⟩ := checkStatic_facts hst
+  obtain ⟨r0, r1, rfl⟩ : ∃ r0 r1, regs = #[r0, r1] := by
+    rcases regs with ⟨_ | ⟨r0, _ | ⟨r1, _ | ⟨r2, l⟩⟩⟩⟩
+    · simp at hsz
+    · simp at hsz
+    · exact ⟨r0, r1, rfl⟩
+    · simp at hsz
+  have : MInst.assign (.load .uload64 (.vreg d .int) (.unsignedOffset (.vreg n .int) off) fl)
+      #[r0, r1] = .ok (.load .uload64 r0 (.unsignedOffset r1 off) fl) := rfl
+  rw [this] at hasg
+  cases hasg
+  obtain ⟨n0, rfl, hn0⟩ := locOk_int (hloc (⟨d, .int, .def, .late, .reg⟩, .reg r0) (by simp)).1
+  obtain ⟨n1, rfl, hn1⟩ := locOk_int (hloc (⟨n, .int, .use, .early, .reg⟩, .reg r1) (by simp)).1
+  simp only [useVals, csem, Operand.isUse] at hsem
+  simp at hsem
+  obtain ⟨hav, rfl, rfl⟩ := hsem
+  · 
+    have hl : MInst.lines ctx (.load .uload64 (.x n0) (.unsignedOffset (.x n1) off) fl) {} =
+        .ok ([.ins (.load .uload64 (.x n0) (.unsignedOffset (.x n1) off)) fl.trapCode], {}) := rfl
+    have ha : Insn.toArmInst env (.load .uload64 (.x n0) (.unsignedOffset (.x n1) off)) =
+        .ok (.LDST (.Reg_unsigned_imm
+          { size := 3#2, V := 0#1, opc := 1#2, imm12 := BitVec.ofNat 12 (off / 8),
+            Rn := rnum n1, Rt := rnum n0 })) := by
+      simp [Insn.toArmInst, Insn.armFields, Arm.ArmInst.norm, LoadOp.fields, ldstFields,
+        Reg.encZR, Reg.encSP, show n0 ≤ 30 by omega, show n1 ≤ 30 by omega, rnum, uField, h8,
+        h12, LoadOp.bytes]
+      rfl
+    have he : Arm.exec_inst (.LDST (.Reg_unsigned_imm
+          { size := 3#2, V := 0#1, opc := 1#2, imm12 := BitVec.ofNat 12 (off / 8),
+            Rn := rnum n1, Rt := rnum n0 })) s =
+        Arm.w (.GPR (rnum n0))
+          (Arm.read_mem_bytes 8 (Arm.r (.GPR (rnum n1)) s + BitVec.ofNat 64 off) s)
+          (Arm.w .PC (Arm.r .PC s + 4#64) s) := by
+      rw [← ldst_offset off h8 h12, Arm.w_of_w_commute (by simp)]
+      simp [Arm.exec_inst, Arm.LDST.exec_reg_imm_unsigned_offset, Arm.LDST.exec_reg_imm_common,
+        Arm.LDST.reg_imm_operation, Arm.LDST.Reg_offset.value,
+        Arm.LDST.reg_imm_constrain_unpredictable, Arm.write_gpr_zr, Arm.read_gpr, Arm.write_gpr,
+        rnum_ne31 hn0.1, rnum_ne31 hn1.1, Arm.read_pc, Arm.write_pc, Arm.BitVec.lsb]
+      rfl
+    obtain ⟨hW, hD, hO⟩ := gpr_write_sound hn0 hw
+      (Arm.read_mem_bytes 8 (Arm.r (.GPR (rnum n1)) s + BitVec.ofNat 64 off) s)
+      (Arm.r .PC s + 4#64)
+    refine ⟨_, by simp only [execMInst, hl, execLines, ha, he], hW, ?_, ?_, ?_⟩
+    · intro p hp
+      simp [defRegs, Operand.isDef] at hp
+      subst hp
+      rw [hD, lo64_regVal_x] at *
+      congr 1
+      exact read_mem_bytes_congr 8 _ (fun k hk => hw.2.1 _ (hav k hk))
+    · intro r hr hnd _
+      have hne : r ≠ .x n0 := fun e =>
+        hnd (⟨d, .int, .def, .late, .reg⟩, .x n0) (by simp) (by simp [Operand.isDef]) e.symm
+      exact hO r hr hne
+    · intro r hr
+      simp [MInst.clobbers] at hr
+
+
+theorem operandsSound_store (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (d n off : Nat)
+    (fl : Clif.MemFlags) (h8 : off % 8 = 0) (h12 : off / 8 < 4096) :
+    OperandsSound F (execMInst ctx env) (csem F)
+      (.store .store64 (.vreg d .int) (.unsignedOffset (.vreg n .int) off) fl) := by
+  intro c wh ops regs i' s w outs w' hops hst hasg hw hsem
+  have : MInst.operands (.store .store64 (.vreg d .int) (.unsignedOffset (.vreg n .int) off) fl) =
+      .ok #[⟨d, .int, .use, .early, .reg⟩, ⟨n, .int, .use, .early, .reg⟩] := rfl
+  rw [this] at hops
+  cases hops
+  obtain ⟨hsz, hloc, -, -⟩ := checkStatic_facts hst
+  obtain ⟨r0, r1, rfl⟩ : ∃ r0 r1, regs = #[r0, r1] := by
+    rcases regs with ⟨_ | ⟨r0, _ | ⟨r1, _ | ⟨r2, l⟩⟩⟩⟩
+    · simp at hsz
+    · simp at hsz
+    · exact ⟨r0, r1, rfl⟩
+    · simp at hsz
+  have : MInst.assign (.store .store64 (.vreg d .int) (.unsignedOffset (.vreg n .int) off) fl)
+      #[r0, r1] = .ok (.store .store64 r0 (.unsignedOffset r1 off) fl) := rfl
+  rw [this] at hasg
+  cases hasg
+  obtain ⟨n0, rfl, hn0⟩ := locOk_int (hloc (⟨d, .int, .use, .early, .reg⟩, .reg r0) (by simp)).1
+  obtain ⟨n1, rfl, hn1⟩ := locOk_int (hloc (⟨n, .int, .use, .early, .reg⟩, .reg r1) (by simp)).1
+  simp only [useVals, csem, Operand.isUse] at hsem
+  simp at hsem
+  obtain ⟨hav, rfl, rfl⟩ := hsem
+  have hl : MInst.lines ctx (.store .store64 (.x n0) (.unsignedOffset (.x n1) off) fl) {} =
+      .ok ([.ins (.store .store64 (.x n0) (.unsignedOffset (.x n1) off)) fl.trapCode], {}) := rfl
+  have ha : Insn.toArmInst env (.store .store64 (.x n0) (.unsignedOffset (.x n1) off)) =
+      .ok (.LDST (.Reg_unsigned_imm
+        { size := 3#2, V := 0#1, opc := 0#2, imm12 := BitVec.ofNat 12 (off / 8),
+          Rn := rnum n1, Rt := rnum n0 })) := by
+    simp [Insn.toArmInst, Insn.armFields, Arm.ArmInst.norm, StoreOp.fields, ldstFields,
+      Reg.encZR, Reg.encSP, show n0 ≤ 30 by omega, show n1 ≤ 30 by omega, rnum, uField, h8,
+      h12, StoreOp.bytes]
+    rfl
+  have he : Arm.exec_inst (.LDST (.Reg_unsigned_imm
+        { size := 3#2, V := 0#1, opc := 0#2, imm12 := BitVec.ofNat 12 (off / 8),
+          Rn := rnum n1, Rt := rnum n0 })) s =
+      Arm.w .PC (Arm.r .PC s + 4#64)
+        (Arm.write_mem_bytes 8 (Arm.r (.GPR (rnum n1)) s + BitVec.ofNat 64 off)
+          (Arm.r (.GPR (rnum n0)) s) s) := by
+    rw [← ldst_offset off h8 h12]
+    simp [Arm.exec_inst, Arm.LDST.exec_reg_imm_unsigned_offset, Arm.LDST.exec_reg_imm_common,
+      Arm.LDST.reg_imm_operation, Arm.LDST.Reg_offset.value,
+      Arm.LDST.reg_imm_constrain_unpredictable, Arm.ldst_read, Arm.read_gpr_zr, Arm.read_gpr,
+      rnum_ne31 hn0.1, rnum_ne31 hn1.1, Arm.read_pc, Arm.write_pc, Arm.BitVec.lsb]
+    rfl
+  refine ⟨Arm.w .PC (Arm.r .PC s + 4#64)
+      (Arm.write_mem_bytes 8 (Arm.r (.GPR (rnum n1)) s + BitVec.ofNat 64 off)
+        (Arm.r (.GPR (rnum n0)) s) s), by simp only [execMInst, hl, execLines, ha, he], ?_, ?_, ?_, ?_⟩
+  · rw [lo64_regVal_x, lo64_regVal_x]
+    exact SameWorld.w_left (by simp [Masked]) (SameWorld.write_mem_bytes hw 8 _ _)
+  · intro p hp
+    simp [defRegs, Operand.isDef] at hp
+  · intro r _ _ _
+    rw [regVal_w (by cases r <;> simp [Reg.field]), regVal_write_mem_bytes]
+  · intro r hr
+    simp [MInst.clobbers] at hr
+
 end Backend.Proof
