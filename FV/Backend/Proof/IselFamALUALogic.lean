@@ -398,4 +398,92 @@ theorem aluRsImmLogicComm_ok {p : Program} (hp : Data p) {f : Clif.Function} {ct
   · exact logic_3928 hp hctx hc hk hop hw hmatch heval'
   · exact logic_3916 hp hctx hc hk hop hw hmatch heval'
 
+/-! ## The `band`/`bor`/`bxor` root rules -/
+
+set_option maxRecDepth 20000 in
+theorem variantNames_Band : (variantNames 151)[97]? = some "Band" := rfl
+set_option maxRecDepth 20000 in
+theorem variantNames_Bor : (variantNames 151)[98]? = some "Bor" := rfl
+set_option maxRecDepth 20000 in
+theorem variantNames_Bxor : (variantNames 151)[99]? = some "Bxor" := rfl
+
+theorem LogicPair.noShift {op : ALUOp} {cop : Clif.BinaryOp} (h : LogicPair op cop) :
+    cop.isShift = false := by
+  rcases h with h | h | h <;> simp only [Prod.mk.injEq] at h <;> obtain ⟨-, rfl⟩ := h <;> rfl
+
+/-- **Template: a logic root rule** `(lower (cop (fits_in_64 (ty_int ty)) x y))` →
+`(alu_rs_imm_logic_commutative op ty x y)`: its match and argument evaluation (forward lemmas)
+plus the term contract give `LowerRuleOk`. -/
+theorem logicRoot_ruleOk {p : Program} (hp : Data p) {r : Rule} {cop : Clif.BinaryOp} {op : ALUOp}
+    {k : Nat} {n : String} {opT opT2 : TermId} {to : Term} {ko : Nat} {tyPat : Pattern}
+    {rest : List Pattern}
+    (hargs : r.args = [.term 18 209 [tyPat, .term 152 2449 (.term 151 opT [] :: rest)]])
+    (hto : termOf p opT = .ok to) (hko : to.kind = .enumVariant ko)
+    (hname : (variantNames 151)[ko]? = some n) (hcop : binaryOpcode cop = some n)
+    (hk : ALUOp.ofIdx? k = some op) (hop : LogicPair op cop)
+    (hrhs : r.rhs = .term 25 172 [.term 27 565 [.term 59 opT2 [], .var 14 0, .var 15 1, .var 15 2]])
+    (hmatchF : ∀ (ctx : Ctx) (cfg : Config) ii (info : IInfo) w x y st tr m,
+      ctx.insts[ii]? = some info → info.resTys.head? = some (.int w) → w ≤ 64 →
+      info.data = .data 152 2 [.data 151 ko [], .values [x, y]] →
+      (matchRule p (sem ctx) cfg (m + 2) r [.inst ii]).run (st, tr) =
+        .ok (some (env3 (.ty (.int w)) (.value x) (.value y)), (st, tr)))
+    (hargsF : ∀ (ctx : Ctx) (cfg : Config) w x y st tr n,
+      (evalArgs p (sem ctx) cfg (n+5) [.term 59 opT2 [], .var 14 0, .var 15 1, .var 15 2]
+        (env3 (.ty (.int w)) (.value x) (.value y))).run (st, tr) =
+      .ok (some [.data 59 k [], .ty (.int w), .value x, .value y], (st, tr))) :
+    ∀ (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program),
+      Refines F isem → MRStable F MR → LowerRuleOk isem MR env cp p r := by
+  intro F isem MR env cp hR hMR f ctx hctx ii info inst hi hc cfg hco m n st tr env' s1 out st' tr'
+    hm hn _hvb _hfirst hmatch heval
+  obtain ⟨m', rfl⟩ : ∃ m', m = m' + 2 := ⟨m - 2, by omega⟩
+  obtain ⟨N, rfl⟩ : ∃ N, n = N + 100 := ⟨n - 100, by omega⟩
+  obtain ⟨ty, x, y, e0, e1, rfl, hd, hhead, hw, -, -⟩ :=
+    binary_root_inv hp hctx hi hc (m := m' + 1) hargs hto hko hname hcop hmatch
+  rw [hmatchF ctx cfg ii info ty.width x y st tr m' hi hhead hw hd] at hmatch
+  simp only [Except.ok.injEq, Prod.mk.injEq, Option.some.injEq] at hmatch
+  obtain ⟨rfl, rfl⟩ := hmatch
+  rw [hrhs] at heval
+  obtain ⟨vs, s2, a, s3, hvs, happ, hout⟩ := rhs_output_inv (n := N + 97) heval
+  rw [show N + 97 = (N + 92) + 5 from rfl, hargsF ctx cfg ty.width x y st tr (N + 92)] at hvs
+  simp only [Except.ok.injEq, Prod.mk.injEq, Option.some.injEq] at hvs
+  obtain ⟨rfl, rfl⟩ := hvs
+  obtain ⟨st3, tr3⟩ := s3
+  obtain ⟨mi, rfl, rfl, hone⟩ :=
+    aluRsImmLogicComm_ok hp hctx hco hk hop hw (n := N + 37) happ
+  rw [show N + 97 + 2 = (N + 89) + 10 from rfl, output_reg_run hp ctx hco] at hout
+  simp only [Except.ok.injEq, Prod.mk.injEq, Option.some.injEq] at hout
+  obtain ⟨rfl, rfl, -⟩ := hout
+  exact ⟨[mi], _, emitted_fresh_emit _ _, rfl,
+    OneInstOk.lowerInstOk hR hMR hop.noShift (fun _ _ => rfl) hone⟩
+
+set_option maxRecDepth 20000 in
+/-- **`band_fits_in_64`** (`lower.isle:1412`), i8..i64: `and` / `and #imm` / `and …, lsl #k`. -/
+theorem band_fits_in_64_ok {p : Program} (hp : Data p) (F : BitVec 64 → Prop) (isem : Sem)
+    (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program) (hR : Refines F isem)
+    (hMR : MRStable F MR) : LowerRuleOk isem MR env cp p rule_lower_1412 :=
+  logicRoot_ruleOk hp (cop := .band) (op := .and) (k := 4) rfl hp.t2381 term_2381_kind
+    variantNames_Band rfl rfl (.inl rfl) rfl
+    (fun ctx _ _ _ _ _ _ st tr m hi hty hw hd => match_1412 hp ctx hi hty hw hd st tr m)
+    (fun ctx _ w x y st tr n => args_1412 hp ctx w x y st tr n) F isem MR env cp hR hMR
+
+set_option maxRecDepth 20000 in
+/-- **`bor_fits_in_64`** (`lower.isle:1449`), i8..i64: `orr` / `orr #imm` / `orr …, lsl #k`. -/
+theorem bor_fits_in_64_ok {p : Program} (hp : Data p) (F : BitVec 64 → Prop) (isem : Sem)
+    (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program) (hR : Refines F isem)
+    (hMR : MRStable F MR) : LowerRuleOk isem MR env cp p rule_lower_1449 :=
+  logicRoot_ruleOk hp (cop := .bor) (op := .orr) (k := 2) rfl hp.t2382 term_2382_kind
+    variantNames_Bor rfl rfl (.inr (.inl rfl)) rfl
+    (fun ctx _ _ _ _ _ _ st tr m hi hty hw hd => match_1449 hp ctx hi hty hw hd st tr m)
+    (fun ctx _ w x y st tr n => args_1449 hp ctx w x y st tr n) F isem MR env cp hR hMR
+
+set_option maxRecDepth 20000 in
+/-- **`bxor_fits_in_64`** (`lower.isle:1516`), i8..i64: `eor` / `eor #imm` / `eor …, lsl #k`. -/
+theorem bxor_fits_in_64_ok {p : Program} (hp : Data p) (F : BitVec 64 → Prop) (isem : Sem)
+    (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program) (hR : Refines F isem)
+    (hMR : MRStable F MR) : LowerRuleOk isem MR env cp p rule_lower_1516 :=
+  logicRoot_ruleOk hp (cop := .bxor) (op := .eor) (k := 7) rfl hp.t2383 term_2383_kind
+    variantNames_Bxor rfl rfl (.inr (.inr rfl)) rfl
+    (fun ctx _ _ _ _ _ _ st tr m hi hty hw hd => match_1516 hp ctx hi hty hw hd st tr m)
+    (fun ctx _ w x y st tr n => args_1516 hp ctx w x y st tr n) F isem MR env cp hR hMR
+
 end Backend.Proof

@@ -474,4 +474,70 @@ theorem rhs_3931_none {k w y z : Nat} {kk : Int} {sh : ShiftOpAndAmt}
 
 end CommLook
 
+include hp in
+theorem match_1412 {i x y w : Nat} {info : IInfo} (hi : ctx.insts[i]? = some info)
+    (hty : info.resTys.head? = some (.int w)) (hw : w ≤ 64)
+    (hd : info.data = .data 152 2 [.data 151 97 [], .values [x, y]]) (st : LState)
+    (tr : Array RuleId) (n : Nat) :
+    (matchRule p (sem ctx) cfg (n+2) rule_lower_1412 [.inst i]).run (st, tr) =
+      .ok (some (env3 (.ty (.int w)) (.value x) (.value y)), (st, tr)) := by
+  have h1 := ext_inst_data_value ctx st hi
+  rw [hd, hty, Option.getD_some] at h1
+  have h2 := ext_fits_in_64 ctx st w
+  simp only [hw, ↓reduceIte] at h2
+  cases hp
+  isel_eval [*, rule_lower_1412, ext_ty_int, ext_value_array_2]
+
+include hp in
+theorem args_1412 (w x y : Nat) (st : LState) (tr : Array RuleId) (n : Nat) :
+    (evalArgs p (sem ctx) cfg (n+5) [.term 59 1966 [], .var 14 0, .var 15 1, .var 15 2]
+      (env3 (.ty (.int w)) (.value x) (.value y))).run (st, tr) =
+      .ok (some [.data 59 4 [], .ty (.int w), .value x, .value y], (st, tr)) := by
+  cases hp
+  isel_eval [*]
+
+include hp in
+theorem match_1449 {i x y w : Nat} {info : IInfo} (hi : ctx.insts[i]? = some info)
+    (hty : info.resTys.head? = some (.int w)) (hw : w ≤ 64)
+    (hd : info.data = .data 152 2 [.data 151 98 [], .values [x, y]]) (st : LState)
+    (tr : Array RuleId) (n : Nat) :
+    (matchRule p (sem ctx) cfg (n+2) rule_lower_1449 [.inst i]).run (st, tr) =
+      .ok (some (env3 (.ty (.int w)) (.value x) (.value y)), (st, tr)) := by
+  have h1 := ext_inst_data_value ctx st hi
+  rw [hd, hty, Option.getD_some] at h1
+  have h2 := ext_fits_in_64 ctx st w
+  simp only [hw, ↓reduceIte] at h2
+  cases hp
+  isel_eval [*, rule_lower_1449, ext_ty_int, ext_value_array_2]
+
+include hp in
+theorem args_1449 (w x y : Nat) (st : LState) (tr : Array RuleId) (n : Nat) :
+    (evalArgs p (sem ctx) cfg (n+5) [.term 59 1964 [], .var 14 0, .var 15 1, .var 15 2]
+      (env3 (.ty (.int w)) (.value x) (.value y))).run (st, tr) =
+      .ok (some [.data 59 2 [], .ty (.int w), .value x, .value y], (st, tr)) := by
+  cases hp
+  isel_eval [*]
+
+include hp in
+theorem match_1516 {i x y w : Nat} {info : IInfo} (hi : ctx.insts[i]? = some info)
+    (hty : info.resTys.head? = some (.int w)) (hw : w ≤ 64)
+    (hd : info.data = .data 152 2 [.data 151 99 [], .values [x, y]]) (st : LState)
+    (tr : Array RuleId) (n : Nat) :
+    (matchRule p (sem ctx) cfg (n+2) rule_lower_1516 [.inst i]).run (st, tr) =
+      .ok (some (env3 (.ty (.int w)) (.value x) (.value y)), (st, tr)) := by
+  have h1 := ext_inst_data_value ctx st hi
+  rw [hd, hty, Option.getD_some] at h1
+  have h2 := ext_fits_in_64 ctx st w
+  simp only [hw, ↓reduceIte] at h2
+  cases hp
+  isel_eval [*, rule_lower_1516, ext_ty_int, ext_value_array_2]
+
+include hp in
+theorem args_1516 (w x y : Nat) (st : LState) (tr : Array RuleId) (n : Nat) :
+    (evalArgs p (sem ctx) cfg (n+5) [.term 59 1969 [], .var 14 0, .var 15 1, .var 15 2]
+      (env3 (.ty (.int w)) (.value x) (.value y))).run (st, tr) =
+      .ok (some [.data 59 7 [], .ty (.int w), .value x, .value y], (st, tr)) := by
+  cases hp
+  isel_eval [*]
+
 end Backend.Proof
