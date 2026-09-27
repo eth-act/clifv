@@ -14,7 +14,7 @@ Per file:
 1. `Clif.parseFile`; functions outside subset S are `unsupported` (with the reason).
 2. Round trip: `parse (print p) = p` for the program of the supported functions.
 3. Every `; run` line of a supported function whose program callees are all supported is
-   run with `Clif.run` (empty `Env`, fuel `1_000_000`) and compared with its expectation.
+   run with `Clif.run` (empty `Env`, the file's `; data:` objects, fuel `1_000_000`) and compared with its expectation.
 4. With an oracle file (JSON lines from `clif-oracle interp`, schema in
    `docs/contracts/clif.md`), each run is also compared with the Cranelift interpreter.
 
@@ -192,7 +192,9 @@ def runFile (verbose : Bool) (path : String) (oracle : Option (List OracleRecord
   let cl := closure pf
   -- Program of all parsed functions (callers of unsupported ones are excluded from runs).
   let supported := pf.funcs.filterMap fun f => f.func.toOption
-  let prog : Program := { header := pf.header, funcs := supported }
+  let data := match pf.data with | .ok ds => ds | .error _ => []
+  if let .error e := pf.data then notes := notes.push s!"  data directives: {e}"
+  let prog : Program := { header := pf.header, data, funcs := supported }
   -- Printed program, for checking with `clif-oracle check`.
   if let some d := printDir then
     if !prog.funcs.isEmpty then

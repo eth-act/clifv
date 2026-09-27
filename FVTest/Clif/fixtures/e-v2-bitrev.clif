@@ -1,0 +1,65 @@
+; clif-subset-v2: bitrev
+test interpret
+test run
+target aarch64
+
+function %bitrev_i8(i8) -> i8 {
+block0(v0: i8):
+    v1 = bitrev v0
+    return v1
+}
+; run: %bitrev_i8(0) == 0
+; run: %bitrev_i8(1) == -128
+; run: %bitrev_i8(-1) == -1
+; run: %bitrev_i8(-128) == 1
+; run: %bitrev_i8(127) == -2
+; run: %bitrev_i8(2) == 64
+; run: %bitrev_i8(-2) == 127
+; run: %bitrev_i8(-6) == 95
+; run: %bitrev_i8(48) == 12
+
+function %bitrev_i16(i16) -> i16 {
+block0(v0: i16):
+    v1 = bitrev v0
+    return v1
+}
+; run: %bitrev_i16(0) == 0
+; run: %bitrev_i16(1) == -32768
+; run: %bitrev_i16(-1) == -1
+; run: %bitrev_i16(-32768) == 1
+; run: %bitrev_i16(32767) == -2
+; run: %bitrev_i16(2) == 16384
+; run: %bitrev_i16(-2) == 32767
+; run: %bitrev_i16(16100) == 10108
+; run: %bitrev_i16(-4284) == 8951
+
+function %bitrev_i32(i32) -> i32 {
+block0(v0: i32):
+    v1 = bitrev v0
+    return v1
+}
+; run: %bitrev_i32(0) == 0
+; run: %bitrev_i32(1) == -2147483648
+; run: %bitrev_i32(-1) == -1
+; run: %bitrev_i32(-2147483648) == 1
+; run: %bitrev_i32(2147483647) == -2
+; run: %bitrev_i32(2) == 1073741824
+; run: %bitrev_i32(-2) == 2147483647
+; run: %bitrev_i32(-1467503070) == 1148576021
+; run: %bitrev_i32(-777732066) == 2013472139
+
+function %bitrev_i64(i64) -> i64 {
+block0(v0: i64):
+    v1 = bitrev v0
+    return v1
+}
+; run: %bitrev_i64(0) == 0
+; run: %bitrev_i64(1) == -9223372036854775808
+; run: %bitrev_i64(-1) == -1
+; run: %bitrev_i64(-9223372036854775808) == 1
+; run: %bitrev_i64(9223372036854775807) == -2
+; run: %bitrev_i64(2) == 4611686018427387904
+; run: %bitrev_i64(-2) == 9223372036854775807
+; run: %bitrev_i64(9131167368231321761) == -8862934438960030338
+; run: %bitrev_i64(-3050834522066091247) == -8592582416449497685
+

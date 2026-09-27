@@ -74,10 +74,12 @@ def check (b : Bool) (msg : String) : Res Unit := if b then .ok () else .stuck m
 
 end Res
 
-/-- A live allocation `[base, base + size)`. -/
+/-- A live allocation `[base, base + size)`. Stores into a `readonly` allocation (link-time
+data not marked writable) are `stuck`. -/
 structure Alloc where
   base : Nat
   size : Nat
+  readonly : Bool := false
   deriving DecidableEq, Repr, Inhabited
 
 def Alloc.contains (a : Alloc) (addr n : Nat) : Bool :=
@@ -89,6 +91,9 @@ structure Mem where
   bytes : Nat → Option (BitVec 8) := fun _ => none
   /-- Next free address for the bump allocator. -/
   next : Nat := 0x10000
+  /-- Link-time symbol addresses (`symbol_value`), fixed by the initial image
+  (`Clif.Image.mem`); never changed by execution. -/
+  symbols : String → Option Nat := fun _ => none
 
 namespace Mem
 
@@ -106,7 +111,7 @@ def alignUp (n a : Nat) : Nat := (n + a - 1) / a * a
 base address. -/
 def alloc (m : Mem) (size align : Nat) : Nat × Mem :=
   let base := alignUp m.next (max align 16)
-  (base, { m with allocs := ⟨base, size⟩ :: m.allocs, next := base + size + 16 })
+  (base, { m with allocs := { base, size } :: m.allocs, next := base + size + 16 })
 
 /-- Free the allocations with the given base addresses. Their bytes become unreachable
 (addresses are never reused). -/
@@ -148,11 +153,66 @@ def load (m : Mem) (flags : MemFlags) (addr n w : Nat) : Res (BitVec w) := do
   Res.ofOption s!"read of uninitialised memory at {addr}"
     (m.readBits (flags.endianness == some .big) addr n w)
 
-/-- Checked store of the low `n` bytes of `x`. -/
+/-- Does `[addr, addr + n)` overlap a read-only allocation? -/
+def readonlyAt (m : Mem) (addr n : Nat) : Bool :=
+  m.allocs.any fun a => a.readonly && a.base < addr + n && addr < a.base + a.size
+
+/-- Checked store of the low `n` bytes of `x`. A store into read-only data is `stuck`. -/
 def store {w : Nat} (m : Mem) (flags : MemFlags) (addr n : Nat) (x : BitVec w) : Res Mem := do
   m.checkAccess flags addr n
+  Res.check (!m.readonlyAt addr n) s!"store to read-only data at {addr}"
   pure (m.writeBits (flags.endianness == some .big) addr n x)
 
 end Mem
+
+/-! ## Link-time image: data objects and `symbol_value` addresses -/
+
+namespace Image
+
+def itemSize : DataItem → Nat
+  | .byte _ => 1
+  | .addr .. => 8
+
+def size (o : DataObject) : Nat := (o.items.map itemSize).sum
+
+/-- Allocate the objects in order (bump allocator, alignment `max align 16`), read-only
+unless `writable`. Returns each object's address. -/
+def place (m : Mem) : List DataObject → List (String × Nat) × Mem
+  | [] => ([], m)
+  | o :: os =>
+    let (base, m1) := m.alloc (size o) o.align
+    let m1 := { m1 with allocs := m1.allocs.map fun a =>
+      if a.base == base then { a with readonly := !o.writable } else a }
+    let (rest, m2) := place m1 os
+    ((o.name, base) :: rest, m2)
+
+/-- Write the contents `items` at `addr`; relocations resolve through `syms`. -/
+def writeItems (syms : List (String × Nat)) (m : Mem) (addr : Nat) :
+    List DataItem → Res Mem
+  | [] => .ok m
+  | .byte b :: is => writeItems syms (m.writeBits false addr 1 b) (addr + 1) is
+  | .addr n off :: is => do
+    let base ← Res.ofOption s!"data relocation to unknown symbol %{n}" (syms.lookup n)
+    writeItems syms (m.writeBits false addr 8 (BitVec.ofInt 64 (base + off))) (addr + 8) is
+
+/-- The initial memory of a program with data objects `ds`: the objects allocated and
+initialised, and `symbols` mapping each object name to its address. Names must be distinct;
+relocations may only name objects of `ds`. -/
+def mem (ds : List DataObject) : Res Mem := do
+  let names := ds.map (·.name)
+  Res.check (names.eraseDups.length == names.length) "duplicate data object name"
+  let (syms, m) := place Mem.empty ds
+  let m ← ds.foldlM (init := m) fun m o => do
+    let base ← Res.ofOption "data object not placed" (syms.lookup o.name)
+    writeItems syms m base o.items
+  pure { m with symbols := fun n => syms.lookup n }
+
+end Image
+
+/-- Initial memory of a program: `Mem.empty` without data objects, else `Image.mem`. -/
+def Program.initMem (p : Program) : Res Mem :=
+  match p.data with
+  | [] => .ok Mem.empty
+  | ds => Image.mem ds
 
 end Clif

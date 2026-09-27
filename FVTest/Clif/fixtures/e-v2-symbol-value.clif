@@ -1,0 +1,133 @@
+; clif-subset-v2: symbol_value over link-time data objects (`; data:` directives,
+; docs/contracts/clif.md). The Cranelift interpreter does not implement data symbols
+; (`GlobalValueData::Symbol => unimplemented!()`), so this file has no `test interpret`;
+; it is checked as Clif.run vs native (clif-native links the data objects).
+test run
+target aarch64
+; data: %K align=8 = 982f8a4291443771cffbc0b5a5dbb5e95bc25639f111f159a4823f92d55e1cab
+; data: %msg = 68656c6c6f
+; data: %loc align=8 = %msg 0500000000000000 2a00000011000000
+; data: %loc2 align=8 = %K+8 %msg-1
+; data: %counter align=8 writable = 0000000000000000
+
+function %k_word(i64) -> i32 {
+    gv0 = symbol colocated %K
+block0(v0: i64):
+    v1 = symbol_value.i64 gv0
+    v2 = iconst.i64 2
+    v3 = ishl v0, v2
+    v4 = iadd v1, v3
+    v5 = load.i32 notrap aligned readonly v4
+    return v5
+}
+; run: %k_word(0) == 1116352408
+; run: %k_word(1) == 1899447441
+; run: %k_word(2) == -1245643825
+; run: %k_word(3) == -373957723
+; run: %k_word(4) == 961987163
+; run: %k_word(5) == 1508970993
+; run: %k_word(6) == -1841331548
+; run: %k_word(7) == -1424204075
+
+function %k_byte_off(i64) -> i8 {
+    gv0 = symbol colocated %K+3
+block0(v0: i64):
+    v1 = symbol_value.i64 gv0
+    v2 = iadd v1, v0
+    v3 = load.i8 notrap v2
+    return v3
+}
+; run: %k_byte_off(0) == 66
+; run: %k_byte_off(1) == -111
+; run: %k_byte_off(7) == -64
+; run: %k_byte_off(28) == -85
+
+function %k_u64(i64) -> i64 {
+    gv0 = symbol %K
+block0(v0: i64):
+    v1 = symbol_value.i64 gv0
+    v2 = iconst.i64 3
+    v3 = ishl v0, v2
+    v4 = iadd v1, v3
+    v5 = load.i64 notrap aligned v4
+    return v5
+}
+; run: %k_u64(0) == 8158064640682241944
+; run: %k_u64(1) == -1606136187322303537
+; run: %k_u64(2) == 6480981066509632091
+; run: %k_u64(3) == -6116909922501295452
+
+function %loc_msg_byte(i64) -> i8 {
+    gv0 = symbol colocated %loc
+block0(v0: i64):
+    v1 = symbol_value.i64 gv0
+    v2 = load.i64 notrap aligned readonly v1
+    v3 = load.i64 notrap aligned readonly v1+8
+    v4 = icmp ult v0, v3
+    brif v4, block1, block2
+
+block1:
+    v5 = iadd v2, v0
+    v6 = load.i8 notrap readonly v5
+    return v6
+
+block2:
+    v7 = iconst.i8 -1
+    return v7
+}
+; run: %loc_msg_byte(0) == 104
+; run: %loc_msg_byte(1) == 101
+; run: %loc_msg_byte(2) == 108
+; run: %loc_msg_byte(3) == 108
+; run: %loc_msg_byte(4) == 111
+; run: %loc_msg_byte(5) == -1
+; run: %loc_msg_byte(6) == -1
+
+function %loc_line_col() -> i32, i32 {
+    gv0 = symbol colocated %loc
+block0:
+    v1 = symbol_value.i64 gv0
+    v2 = load.i32 notrap aligned readonly v1+16
+    v3 = load.i32 notrap aligned readonly v1+20
+    return v2, v3
+}
+; run: %loc_line_col() == [42, 17]
+
+function %loc2_chase() -> i32, i8 {
+    gv0 = symbol colocated %loc2
+block0:
+    v1 = symbol_value.i64 gv0
+    v2 = load.i64 notrap aligned readonly v1
+    v3 = load.i32 notrap aligned readonly v2
+    v4 = load.i64 notrap aligned readonly v1+8
+    v5 = load.i8 notrap readonly v4+2
+    return v3, v5
+}
+; run: %loc2_chase() == [-1245643825, 101]
+
+function %same_symbol_twice() -> i8 {
+    gv0 = symbol colocated %K
+    gv1 = symbol %K+16
+block0:
+    v0 = symbol_value.i64 gv0
+    v1 = symbol_value.i64 gv1
+    v2 = isub v1, v0
+    v3 = iconst.i64 16
+    v4 = icmp eq v2, v3
+    return v4
+}
+; run: %same_symbol_twice() == 1
+
+function %counter_bump(i64) -> i64 {
+    gv0 = symbol colocated %counter
+block0(v0: i64):
+    v1 = symbol_value.i64 gv0
+    v2 = load.i64 notrap aligned v1
+    v3 = iadd v2, v0
+    store notrap aligned v3, v1
+    v4 = load.i64 notrap aligned v1
+    store notrap aligned v2, v1
+    return v4
+}
+; run: %counter_bump(5) == 5
+; run: %counter_bump(-1) == -1

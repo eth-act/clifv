@@ -1,0 +1,97 @@
+; clif-subset-v2: nop (cg_clif comment anchors) between instructions and before terminators
+test interpret
+test run
+target aarch64
+
+function %nop_i8(i8) -> i8 {
+block0(v0: i8):
+    nop
+    v1 = iadd v0, v0
+    nop
+    brif v1, block1, block2
+
+block1:
+    nop
+    return v1
+
+block2:
+    nop
+    nop
+    return v0
+}
+; run: %nop_i8(0) == 0
+; run: %nop_i8(1) == 2
+; run: %nop_i8(-1) == -2
+; run: %nop_i8(-128) == -128
+; run: %nop_i8(127) == -2
+; run: %nop_i8(2) == 4
+
+function %nop_i16(i16) -> i16 {
+block0(v0: i16):
+    nop
+    v1 = iadd v0, v0
+    nop
+    brif v1, block1, block2
+
+block1:
+    nop
+    return v1
+
+block2:
+    nop
+    nop
+    return v0
+}
+; run: %nop_i16(0) == 0
+; run: %nop_i16(1) == 2
+; run: %nop_i16(-1) == -2
+; run: %nop_i16(-32768) == -32768
+; run: %nop_i16(32767) == -2
+; run: %nop_i16(2) == 4
+
+function %nop_i32(i32) -> i32 {
+block0(v0: i32):
+    nop
+    v1 = iadd v0, v0
+    nop
+    brif v1, block1, block2
+
+block1:
+    nop
+    return v1
+
+block2:
+    nop
+    nop
+    return v0
+}
+; run: %nop_i32(0) == 0
+; run: %nop_i32(1) == 2
+; run: %nop_i32(-1) == -2
+; run: %nop_i32(-2147483648) == -2147483648
+; run: %nop_i32(2147483647) == -2
+; run: %nop_i32(2) == 4
+
+function %nop_i64(i64) -> i64 {
+block0(v0: i64):
+    nop
+    v1 = iadd v0, v0
+    nop
+    brif v1, block1, block2
+
+block1:
+    nop
+    return v1
+
+block2:
+    nop
+    nop
+    return v0
+}
+; run: %nop_i64(0) == 0
+; run: %nop_i64(1) == 2
+; run: %nop_i64(-1) == -2
+; run: %nop_i64(-9223372036854775808) == -9223372036854775808
+; run: %nop_i64(9223372036854775807) == -2
+; run: %nop_i64(2) == 4
+

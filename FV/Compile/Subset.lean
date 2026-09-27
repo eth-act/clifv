@@ -1,7 +1,7 @@
 import FV.Clif.Syntax
 
 /-!
-# The emitter subset E (`clif-subset-v1`, `docs/contracts/clif-subset.md`)
+# The emitter subset E (`clif-subset-v2`, `docs/contracts/clif-subset.md`)
 
 `Compile.onlySubsetE p` holds iff every instruction, terminator, type and memory flag of `p`
 is in list E: integer types `i8 … i64`; the opcodes of the E table; memory flags limited to
@@ -15,12 +15,18 @@ open Clif
 def tyE (t : Ty) : Bool := t != .i128
 
 def unaryE : UnaryOp → Bool
-  | .ineg | .bnot | .clz | .ctz | .popcnt => true
+  | .ineg | .bnot | .clz | .ctz | .popcnt | .bitrev => true
   | _ => false
+
+/-- `bswap` needs at least two bytes (the reader's `iSwappable` = i16..i128). -/
+def unaryTyE : UnaryOp → Ty → Bool
+  | .bswap, t => t != .i8 && t != .i128
+  | op, t => unaryE op && tyE t
 
 def binaryE : BinaryOp → Bool
   | .iadd | .isub | .imul | .umulhi | .smulhi | .band | .bor | .bxor
-  | .ishl | .ushr | .sshr | .rotl | .rotr => true
+  | .ishl | .ushr | .sshr | .rotl | .rotr
+  | .smin | .smax | .umin | .umax => true
   | _ => false
 
 def flagsE (f : MemFlags) : Bool :=
@@ -29,7 +35,7 @@ def flagsE (f : MemFlags) : Bool :=
 
 def instE : Inst → Bool
   | .iconst ty _ => tyE ty
-  | .unary op ty _ => unaryE op && tyE ty
+  | .unary op ty _ => unaryTyE op ty
   | .binary op ty _ _ => binaryE op && tyE ty
   | .div _ ty _ _ => tyE ty
   | .icmp _ ty _ _ => tyE ty
@@ -38,7 +44,15 @@ def instE : Inst → Bool
   | .load _ ty f _ _ => tyE ty && flagsE f
   | .store _ ty f _ _ _ => tyE ty && flagsE f
   | .stackAddr ty _ _ => tyE ty
+  | .select ty _ _ _ => tyE ty
+  | .symbolValue ty _ => ty == .i64
+  | .nop => true
   | .call _ _ => true
+  | _ => false
+
+/-- Global values: only `symbol %name[+offset]` (the target of `symbol_value`). -/
+def globalE : GlobalValue → Bool
+  | .symbol .. => true
   | _ => false
 
 def termE : Terminator → Bool
@@ -49,7 +63,7 @@ def sigE (s : Signature) : Bool :=
   s.params.all (tyE ·.ty) && s.returns.all (tyE ·.ty)
 
 def functionE (f : Function) : Bool :=
-  sigE f.sig && f.globals.isEmpty && f.externs.all (sigE ·.2.sig) &&
+  sigE f.sig && f.globals.all (globalE ·.2) && f.externs.all (sigE ·.2.sig) &&
     f.blocks.all fun b =>
       b.params.all (tyE ·.2) && b.body.all (instE ·.inst) && termE b.term
 
