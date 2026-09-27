@@ -167,6 +167,10 @@ Each milestone leaves a working toolchain. Components are replaced one at a time
 
 ### M3: Arm model and per-function validator
 
+*Status (2026-09-27):* the Arm model is done (LNSym port, co-simulated against qemu). The
+validator is **optional** now that the FV compiler is all-Lean. It is paused on branch
+`agent/validator` and only needed to ship Cranelift's own machine code with assurance.
+
 **Deliverables**
 
 - An AArch64 semantics in Lean, derived from Arm's ASL. Evaluate LNSym versus a Sail Arm export during M1 and decide by M3; this choice gates everything after it.
@@ -180,26 +184,20 @@ Each milestone leaves a working toolchain. Components are replaced one at a time
 
 **Optional:** emit Cranelift proof-carrying-code facts for loads and stores as an independent memory-safety check (§7). Check whether PCC is stable in the pinned version.
 
-### M3b: CLIF equivalence (Cranelift's mid-end, per function)
+### M3b (optional): Lean-optimised CLIF ≡ Cranelift-optimised CLIF
 
-*Added 2026-09-27.*
+*Added 2026-09-27; reframed the same day.* The FV compiler's mid-end is implemented in Lean
+and proven (see "Lean mid-end" under M7). This optional check compares, one function at a time,
+the optimised CLIF from the Lean mid-end with the optimised CLIF from Cranelift. Because Lean's is
+proven equivalent to the input, a successful check shows Cranelift's is too.
 
-**Deliverables**
-
-- A proof-producing check that Cranelift's optimised CLIF is equivalent to its input CLIF, one function at a time. It reuses M3's relation and proof generation.
-- It relies on the structure of Cranelift's mid-end. The CFG and the side-effecting skeleton (loads, stores, calls, branches, trapping ops) are kept, while pure values are rewritten in the e-graph and re-placed. The check lines up the two skeletons and proves each skeleton operand's pure expression equal in both versions with `bv_decide`. Pure ops are total, so LICM and GVN placement needs no loop invariants.
-- Extra side conditions:
-  - redundant-load elimination: no intervening store (conservative at first);
-  - constant-phi removal;
-  - unreachable-block removal;
-  - skeleton constant-folding.
-- Inputs: cg_clif already dumps `.unopt.clif` and `.opt.clif` for each function (see `docs/research/rust-clif-survey.md`).
-
-**Exit criteria**
-
-- Chaining M3b with M3 (optimised CLIF → machine code) validates Cranelift's `opt_level=speed` output on the corpus, giving Cranelift's exact optimised bytes with a proof per function.
-
-**Order:** after M3 validates at `opt_level=none`.
+- If the Lean mid-end uses the same exported Cranelift `simplify` rules, the two optimised CLIFs
+  are nearly identical and the check is mostly syntactic (matching value numbers). Where they
+  differ, fall back to skeleton alignment plus `bv_decide` on the pure values.
+- On its own this covers Cranelift's mid-end only. Shipping Cranelift's machine code also needs
+  M3 (optional).
+- Inputs: cg_clif dumps `.unopt.clif` and `.opt.clif` for each function (see
+  `docs/research/rust-clif-survey.md`).
 
 ### M4: Own AArch64 backend, simplest version
 
@@ -246,9 +244,15 @@ Each milestone leaves a working toolchain. Components are replaced one at a time
 
 - `backend_correct`, composed from the M4, M5 and M6 theorems. It holds under an explicit resource precondition (no stack or memory exhaustion), as CompCert's does.
   *Restated (2026-09-27):* the frontend is pluggable and trusted for now (the `flat def` DSL, or Rust via rustc_codegen_cranelift), so the theorem is stated over in-subset CLIF programs instead of being composed with `compile f`. Roughly: `∀ p, p ∈ subset → Arm.run (emit (regalloc (isel p))) ≈ Clif.run p`. M2 (`compile_correct`) is paused; partial work is on branch `agent/m2proof`.
-- Cranelift, the M3 validator and M3b are kept as cross-checks, not trust anchors.
+- Cranelift, and the optional M3 validator and M3b check, are kept as cross-checks, not trust anchors.
 
-**Then (not before):** mid-end rules (export Cranelift's `simplify` rules and prove each before enabling it), the DSL → Rust path, SIMD, and RISC-V.
+**Lean mid-end (part of the FV compiler; after the backend proofs are underway):**
+- Export Cranelift's `simplify` rules (`codegen/src/opts/*.isle`) with `isle2lean` and prove each one against `Clif.run` before enabling it.
+- Implement GVN, DCE and LICM as proven Lean passes.
+- The end-to-end theorem then covers the mid-end too:
+  `Arm.run (emit (regalloc (isel (opt p)))) ≈ Clif.run p`.
+
+**Then:** SIMD, RISC-V, and a verified frontend (the DSL's `compile_correct`, or a Rust path).
 
 ## 5. Trusted base by milestone
 
