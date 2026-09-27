@@ -43,8 +43,8 @@ const TRAMP_PREFIX: &str = "__clifnative_tramp_";
 /// Guest stack size given to qemu (`-s`); deep CLIF recursion needs more than qemu's 8 MiB.
 const STACK_BYTES: u64 = 1 << 30;
 
-const USAGE: &str =
-    "usage: clif-native <file.clif> [--link <obj-or-archive>]... [--keep <dir>] [--timeout <secs>]";
+const USAGE: &str = "usage: clif-native <file.clif> [--link <obj-or-archive>]... [--keep <dir>] [--timeout <secs>] \
+     [--functions-obj <obj> --functions-table <json>]";
 
 struct Tools {
     clang: String,
@@ -82,23 +82,75 @@ struct Config {
     keep: Option<PathBuf>,
     timeout: Duration,
     tools: Tools,
+    /// `--functions-obj`/`--functions-table`: a prebuilt object with the file's functions
+    /// (e.g. from the Lean backend) and its function/trap table; only the trampolines are
+    /// compiled by Cranelift.
+    functions: Option<(PathBuf, PathBuf)>,
 }
 
 fn parse_args() -> Result<Config> {
     let mut args = std::env::args().skip(1);
     let (mut file, mut links, mut keep, mut timeout) = (None, Vec::new(), None, Duration::from_secs(20));
+    let (mut fobj, mut ftable) = (None, None);
     while let Some(a) = args.next() {
         let mut value = || args.next().ok_or_else(|| anyhow!("{a} needs a value\n{USAGE}"));
         match a.as_str() {
             "--link" => links.push(PathBuf::from(value()?)),
             "--keep" => keep = Some(PathBuf::from(value()?)),
             "--timeout" => timeout = Duration::from_secs_f64(value()?.parse().context("--timeout")?),
+            "--functions-obj" => fobj = Some(PathBuf::from(value()?)),
+            "--functions-table" => ftable = Some(PathBuf::from(value()?)),
             s if s.starts_with("--") => bail!("unknown option {s}\n{USAGE}"),
             _ if file.is_none() => file = Some(a),
             _ => bail!("{USAGE}"),
         }
     }
-    Ok(Config { file: file.ok_or_else(|| anyhow!("{USAGE}"))?, links, keep, timeout, tools: Tools::from_env() })
+    let functions = match (fobj, ftable) {
+        (Some(o), Some(t)) => Some((o, t)),
+        (None, None) => None,
+        _ => bail!("--functions-obj and --functions-table go together\n{USAGE}"),
+    };
+    Ok(Config {
+        file: file.ok_or_else(|| anyhow!("{USAGE}"))?,
+        links,
+        keep,
+        timeout,
+        tools: Tools::from_env(),
+        functions,
+    })
+}
+
+/// The function/trap table of a `--functions-obj` object (schema: `docs/contracts/drivers.md`).
+struct FnTable {
+    /// Functions in the object: name, code size in bytes, trap sites (offset → code name).
+    functions: Vec<(String, usize, HashMap<u32, String>)>,
+    /// Functions of the file that are not in the object, with the producer's reason.
+    unsupported: HashMap<String, String>,
+}
+
+fn read_table(path: &Path) -> Result<FnTable> {
+    let text = std::fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
+    let v: Value = serde_json::from_str(&text).with_context(|| format!("parsing {}", path.display()))?;
+    let bad = || anyhow!("{}: not a functions table", path.display());
+    let mut functions = Vec::new();
+    for f in v["functions"].as_array().ok_or_else(bad)? {
+        let name = f["name"].as_str().ok_or_else(bad)?.to_string();
+        let size = f["size"].as_u64().ok_or_else(bad)? as usize;
+        let mut traps = HashMap::new();
+        for t in f["traps"].as_array().ok_or_else(bad)? {
+            let off = u32::try_from(t["offset"].as_u64().ok_or_else(bad)?)?;
+            traps.insert(off, t["code"].as_str().ok_or_else(bad)?.to_string());
+        }
+        functions.push((name, size, traps));
+    }
+    let mut unsupported = HashMap::new();
+    for u in v["unsupported"].as_array().ok_or_else(bad)? {
+        unsupported.insert(
+            u["name"].as_str().ok_or_else(bad)?.to_string(),
+            u["reason"].as_str().ok_or_else(bad)?.to_string(),
+        );
+    }
+    Ok(FnTable { functions, unsupported })
 }
 
 fn panic_message(p: Box<dyn std::any::Any + Send>) -> String {
@@ -254,18 +306,19 @@ fn c_string(s: &str) -> String {
     s.chars().flat_map(|c| if c == '"' || c == '\\' { vec!['\\', c] } else { vec![c] }).collect()
 }
 
-fn tables_h(runs: &[Run], compiled: &[CompiledFunc], tramp_names: &[String]) -> String {
+/// `fns`: the code the harness maps fault addresses through: symbol name and size in bytes.
+fn tables_h(runs: &[Run], fns: &[(String, usize)], tramp_names: &[String]) -> String {
     use std::fmt::Write as _;
     let slots = runs.iter().map(|r| (r.args.len() / SLOT).max(r.ret_types.len())).max().unwrap_or(1).max(1);
     let mut h = String::new();
     writeln!(h, "#define CLIFNATIVE_BUF_SIZE {}", slots * SLOT).unwrap();
     writeln!(h, "#define CLIFNATIVE_NRUNS {}", runs.len()).unwrap();
-    writeln!(h, "#define CLIFNATIVE_NFNS {}", compiled.len()).unwrap();
+    writeln!(h, "#define CLIFNATIVE_NFNS {}", fns.len()).unwrap();
     for (k, name) in tramp_names.iter().enumerate() {
         writeln!(h, "extern void clifnative_tramp_{k}(void *) __asm__(\"{}\");", c_string(name)).unwrap();
     }
-    for (k, f) in compiled.iter().enumerate() {
-        writeln!(h, "extern const u8 clifnative_fn_{k}[] __asm__(\"{}\");", c_string(&f.name)).unwrap();
+    for (k, (name, _)) in fns.iter().enumerate() {
+        writeln!(h, "extern const u8 clifnative_fn_{k}[] __asm__(\"{}\");", c_string(name)).unwrap();
     }
     for (k, r) in runs.iter().enumerate() {
         let bytes: Vec<String> = r.args.iter().map(|b| b.to_string()).collect();
@@ -284,8 +337,8 @@ fn tables_h(runs: &[Run], compiled: &[CompiledFunc], tramp_names: &[String]) -> 
         .unwrap();
     }
     writeln!(h, "}};\nstatic const struct clifnative_fn clifnative_fns[] = {{").unwrap();
-    for (k, f) in compiled.iter().enumerate() {
-        writeln!(h, "  {{clifnative_fn_{k}, {}}},", f.code.len()).unwrap();
+    for (k, (_, size)) in fns.iter().enumerate() {
+        writeln!(h, "  {{clifnative_fn_{k}, {size}}},").unwrap();
     }
     writeln!(h, "}};").unwrap();
     h
@@ -304,6 +357,10 @@ enum Build {
     FuncFailed(usize, String),
 }
 
+/// With `table` (`--functions-obj`), the file's functions come from the prebuilt object and
+/// only the trampolines are compiled; `allow_undefined` then tolerates undefined symbols that
+/// only excluded functions reference.
+#[allow(clippy::too_many_arguments)]
 fn build(
     cfg: &Config,
     isa: &OwnedTargetIsa,
@@ -311,6 +368,8 @@ fn build(
     lines: &[RunLine],
     runnable: &[usize],
     dir: &Path,
+    table: Option<&FnTable>,
+    allow_undefined: bool,
 ) -> Result<Build> {
     // Trampolines, one per invoked function.
     let mut tramp_of: HashMap<usize, usize> = HashMap::new();
@@ -334,15 +393,18 @@ fn build(
 
     let good: Vec<usize> = (0..funcs.funcs.len()).filter(|i| !funcs.bad.contains_key(i)).collect();
     let mut oc = ObjectCompiler::new(isa.clone(), Options::default())?;
-    let mut decl: Vec<&Function> = good.iter().map(|&i| funcs.funcs[i]).collect();
+    let mut decl: Vec<&Function> =
+        if table.is_some() { Vec::new() } else { good.iter().map(|&i| funcs.funcs[i]).collect() };
     decl.extend(tramps.iter());
     oc.declare(&decl)?;
     let mut compiled = Vec::new();
-    for &i in &good {
-        match catch_unwind(AssertUnwindSafe(|| oc.define(funcs.funcs[i]))) {
-            Ok(Ok(c)) => compiled.push(c),
-            Ok(Err(e)) => return Ok(Build::FuncFailed(i, format!("{e:#}"))),
-            Err(p) => return Ok(Build::FuncFailed(i, format!("Cranelift panicked: {}", panic_message(p)))),
+    if table.is_none() {
+        for &i in &good {
+            match catch_unwind(AssertUnwindSafe(|| oc.define(funcs.funcs[i]))) {
+                Ok(Ok(c)) => compiled.push(c),
+                Ok(Err(e)) => return Ok(Build::FuncFailed(i, format!("{e:#}"))),
+                Err(p) => return Ok(Build::FuncFailed(i, format!("Cranelift panicked: {}", panic_message(p)))),
+            }
         }
     }
     let mut tramp_names = Vec::new();
@@ -354,8 +416,17 @@ fn build(
     let obj = dir.join("clif.o");
     std::fs::write(&obj, oc.finish()?)?;
 
+    // The code the harness maps faults through: the prebuilt functions (if any), then
+    // everything Cranelift compiled.
+    let mut fns: Vec<(String, usize, HashMap<u32, String>)> =
+        table.map(|t| t.functions.clone()).unwrap_or_default();
+    fns.extend(compiled.iter().map(|c| {
+        (c.name.clone(), c.code.len(), c.traps.iter().map(|t| (t.offset, t.code.clone())).collect())
+    }));
+    let sizes: Vec<(String, usize)> = fns.iter().map(|(n, s, _)| (n.clone(), *s)).collect();
+
     std::fs::write(dir.join("harness.c"), HARNESS_C)?;
-    std::fs::write(dir.join("clifnative_tables.h"), tables_h(&runs, &compiled, &tramp_names))?;
+    std::fs::write(dir.join("clifnative_tables.h"), tables_h(&runs, &sizes, &tramp_names))?;
     let harness_o = dir.join("harness.o");
     let out = run_tool(
         Command::new(&cfg.tools.clang)
@@ -382,15 +453,19 @@ fn build(
     }
 
     let exe = dir.join("test.exe");
-    let out = run_tool(
-        Command::new(&cfg.tools.lld)
-            .args(["-flavor", "gnu", "-static", "--no-demangle", "-e", "_start", "-o"])
-            .arg(&exe)
-            .arg(&harness_o)
-            .arg(&obj)
-            .args(&cfg.links),
-        "rust-lld",
-    )?;
+    let mut link = Command::new(&cfg.tools.lld);
+    link.args(["-flavor", "gnu", "-static", "--no-demangle", "-e", "_start", "-o"])
+        .arg(&exe)
+        .arg(&harness_o)
+        .arg(&obj);
+    if let Some((fobj, _)) = &cfg.functions {
+        link.arg(fobj);
+    }
+    link.args(&cfg.links);
+    if allow_undefined {
+        link.arg("--unresolved-symbols=ignore-all");
+    }
+    let out = run_tool(&mut link, "rust-lld")?;
     if !out.status.success() {
         let err = String::from_utf8_lossy(&out.stderr);
         let undefined: Vec<String> = err
@@ -402,10 +477,7 @@ fn build(
         }
         return Ok(Build::Undefined(undefined, compiled));
     }
-    let fns = compiled
-        .iter()
-        .map(|c| (c.name.clone(), c.traps.iter().map(|t| (t.offset, t.code.clone())).collect()))
-        .collect();
+    let fns = fns.into_iter().map(|(n, _, t)| (n, t)).collect();
     Ok(Build::Linked(Exe { path: exe, runs, fns }))
 }
 
@@ -583,25 +655,45 @@ fn native(cfg: &Config, dir: &Path) -> Result<bool> {
             }
         }
     }
-    // Stand-alone compile check, so that one function Cranelift rejects does not take the
-    // whole file down.
-    for (i, f) in funcs.funcs.iter().enumerate() {
-        if funcs.bad.contains_key(&i) {
-            continue;
+    let table = match &cfg.functions {
+        Some((_, t)) => Some(read_table(t)?),
+        None => None,
+    };
+    if let Some(table) = &table {
+        // The prebuilt object replaces Cranelift for the file's functions: a function is
+        // available iff it is in the object.
+        for i in 0..funcs.funcs.len() {
+            if funcs.bad.contains_key(&i) || table.functions.iter().any(|(n, _, _)| n == &funcs.names[i]) {
+                continue;
+            }
+            let why = match table.unsupported.get(&funcs.names[i]) {
+                Some(r) => format!("not in the functions object: {r}"),
+                None => "not in the functions object".to_string(),
+            };
+            funcs.bad.insert(i, Excluded::not_compiled(why));
         }
-        let r = catch_unwind(AssertUnwindSafe(|| clif2obj::check_compiles(&*isa, f)));
-        let why = match r {
-            Ok(Ok(())) => continue,
-            Ok(Err(e)) => format!("{e:#}"),
-            Err(p) => format!("Cranelift panicked: {}", panic_message(p)),
-        };
-        funcs.bad.insert(i, Excluded::not_compiled(why));
+    } else {
+        // Stand-alone compile check, so that one function Cranelift rejects does not take the
+        // whole file down.
+        for (i, f) in funcs.funcs.iter().enumerate() {
+            if funcs.bad.contains_key(&i) {
+                continue;
+            }
+            let r = catch_unwind(AssertUnwindSafe(|| clif2obj::check_compiles(&*isa, f)));
+            let why = match r {
+                Ok(Ok(())) => continue,
+                Ok(Err(e)) => format!("{e:#}"),
+                Err(p) => format!("Cranelift panicked: {}", panic_message(p)),
+            };
+            funcs.bad.insert(i, Excluded::not_compiled(why));
+        }
     }
     funcs.propagate();
 
     let lines: Vec<RunLine> = test.functions.iter().flat_map(|(f, d)| run_lines(f, d)).collect();
     let mut actual: Vec<Option<Value>> = vec![None; lines.len()];
 
+    let mut allow_undefined = false;
     let exe = loop {
         let mut runnable = Vec::new();
         for (li, line) in lines.iter().enumerate() {
@@ -617,7 +709,7 @@ fn native(cfg: &Config, dir: &Path) -> Result<bool> {
         if runnable.is_empty() {
             break None;
         }
-        match build(cfg, &isa, &funcs, &lines, &runnable, dir)? {
+        match build(cfg, &isa, &funcs, &lines, &runnable, dir, table.as_ref(), allow_undefined)? {
             Build::Linked(exe) => break Some(exe),
             Build::FuncFailed(i, why) => {
                 funcs.bad.insert(i, Excluded::not_compiled(why));
@@ -625,26 +717,33 @@ fn native(cfg: &Config, dir: &Path) -> Result<bool> {
             Build::Undefined(syms, compiled) => {
                 let mut blamed = false;
                 for sym in &syms {
-                    for c in &compiled {
-                        if c.relocs.iter().any(|r| &r.target == sym)
-                            && let Some(&i) = funcs.index.get(&c.name)
-                        {
-                            funcs.bad.entry(i).or_insert_with(|| {
-                                Excluded::other(format!(
-                                    "unresolved external symbol `{sym}` (not defined in {} and not provided by --link)",
-                                    cfg.file
-                                ))
-                            });
-                            blamed = true;
-                        }
+                    let mut culprits: Vec<usize> = compiled
+                        .iter()
+                        .filter(|c| c.relocs.iter().any(|r| &r.target == sym))
+                        .filter_map(|c| funcs.index.get(&c.name).copied())
+                        .collect();
+                    if table.is_some() {
+                        // Prebuilt code has no relocation records here: blame the callers.
+                        culprits.extend((0..funcs.funcs.len()).filter(|&i| funcs.callees[i].contains(sym)));
+                    }
+                    for i in culprits {
+                        funcs.bad.entry(i).or_insert_with(|| {
+                            Excluded::other(format!(
+                                "unresolved external symbol `{sym}` (not defined in {} and not provided by --link)",
+                                cfg.file
+                            ))
+                        });
+                        blamed = true;
                     }
                 }
-                if !blamed {
+                if !blamed || allow_undefined {
                     bail!("linking failed: undefined symbols {syms:?} not referenced by any CLIF function");
                 }
                 for sym in &syms {
                     eprintln!("clif-native: {}: unresolved external symbol `{sym}`", cfg.file);
                 }
+                // The prebuilt object still contains the excluded callers; no run reaches them.
+                allow_undefined = table.is_some();
             }
         }
         funcs.propagate();
