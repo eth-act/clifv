@@ -86,7 +86,7 @@ Measured (this machine, one core per file): `IselRulesALU` (forward lemmas of 2 
 | div/rem (explicit traps) | trap outcome of `LowerInstOk`, `trapIf` spec |
 | load/store (10+7), stack_addr, symbol_value | `amode` contracts, `MemRel`/slot relation (M7), memory `ispec` |
 | call/return/trap, `lower_branch` (5) | ABI (`CallRel`), `LowerTermOk`/`BranchRuleOk` |
-| `ExcludedUnmatchable` (396 rules) | generic: an excluded rule's pattern names a non-E opcode/type test; prove with `root_match_data` + `instNames` per opcode class |
+| `ExcludedUnmatchable` (393 `lower` rules; the other 3 of the 396 are `lower_branch`, M4Ctl) | **proven** (`excludedUnmatchable`, M4Excl): abstract pattern checker, see "Excluded root rules" |
 
 Fan-out: one agent per row, each adding its `ispec` forms (tell M6Rest), a family template
 next to `aluRR_ruleOk` and a file of forward lemmas. Regenerate `IselData` with
@@ -578,3 +578,61 @@ different family-A/Cmp lemmas carry the suffix `_fb`: `lowerInstOk_one_fb`, `alu
 `extVal_fb`, `ofV_aluRRImm12_fb`, `ofV_aluRRImmLogic_fb`, `ofV_aluRRImmShift_fb`, `ofV_extend_fb`.
 `ispec`: the M4Cmp/M4Ctl forms precede the family-A generic forms (the Cmp `mSub` case is dropped:
 the generic `mulAddVal` case gives the same value).
+
+## Excluded root rules: `ExcludedUnmatchable program` (M4Excl)
+
+Branch `agent/m4-excl`. Files `FV/Backend/Proof/IselExcl{Base,Data,Sound,}.lean`, axiom audit
+`FVTest/Backend/Proof/Excl/Axioms.lean`, untrusted helper `FVTest/Backend/Proof/Excl/Gen.lean`.
+
+**Result.** `excludedUnmatchable : ExcludedUnmatchable program` (axioms `propext`,
+`Classical.choice`, `Quot.sound`). `lower` has 517 root rules: 124 closure roots (including the
+call rules 1031/1032 and the memory rules of contract change #7, which are closure roots and so
+outside this statement) and 393 excluded ones, all covered, including `call_indirect` (1033).
+The 3 excluded `lower_branch` rules (`try_call` 1034–1036) are M4Ctl's
+`branchExcludedUnmatchable`, and the `return`/`trap` side is M4Ctl's `termUnmatchable` (both in
+main; not duplicated here). **No excluded rule can match an E instruction**: nothing had to be
+moved into the closure.
+
+**Method: an abstract pattern checker, run once by the kernel.** `fails p a q : Bool`
+(`IselExclBase`) over-approximates "pattern `q` matches no value described by the abstract value
+`a`": `AV.inst` (an instruction of the context: data `instData f c`, result types `eCTys`),
+`AV.data` (the `InstructionData` of an E instruction), `AV.value`, `AV.values n`,
+`AV.tys ts` (a type among `ts`), `AV.exact v`, `AV.any`. It follows `bind`/`and` (any
+conjunct), `inst_data_value` (type ∈ `invalid :: eCTys`, data), the `InstructionData` enum
+(opcode variant ∉ `eOps` refutes; for `uextend`/`sextend`/`store` the fields are followed,
+`opShape`), `def_inst` (to `AV.inst`), `value_type` (to `AV.tys eCTys`), `value_array_2`, the
+type extractors on each concrete type (`tyExtract`: `tyPred` terms, `multi_lane`,
+`dynamic_lane`), type constants (`primTy`) and the disabled ISA-flag extractors
+`use_lse`/`use_dotprod`/`use_i8mm`. `exclOk_program` checks
+`(program.rulesOf TId.lower).all (exclOk program)` with one `decide +kernel` (15 s, 6.5 GB peak
+incl. 1.7 GB of imports); `exclOk r := closureRootIds.contains r.id || fails p .inst q` for
+`r.args = [q]`, where `closureRootIds` is a literal list (`closureRoot_eq`/`closureRootIds_eq`
+check it against `Closure.rules`; scanning `Closure.rules` per rule instead cost 9.6 GB).
+`fails_sound` (`IselExclSound`, mutual structural induction over patterns, matching
+`matchPat`/`matchAll`/`matchArgs`) proves the checker sound for every `CtxInv` context;
+`instData_shape`/`instData_fields` (`IselExclData`) characterize the data of E instructions
+(`eNamePairs`: the `instNames` image, checked against the variant indices by one small
+`decide +kernel`).
+
+What refutes the 393 rules: a non-E opcode at the root (≈ 285, some behind `and`/`bind`
+wrappers or `use_lse`), a root type test (`$I128`, vector constants, `ty_vec64/128`,
+`multi_lane`, `dynamic_lane`, `lane_fits_in_32`, `ty_float_or_vec`, `ty_dyn_vec*`,
+`fits_in_64 (ty_scalar_float _)`), a non-E opcode behind `def_inst` (1266, 1272, 1283, 1320,
+402/419 also fail on `use_dotprod`/`use_i8mm`), and `value_type` of a stored value
+(`store` 2735–2763: `$I128`, float/vector tests).
+
+**Contract change (shared, additive): two `CtxInv` fields.** The stored-value rules
+(`value_type` of an operand) and the `$I128` root rules cannot be refuted from the old `CtxInv`
+(it said nothing about `valTy`, and `stack_addr`/`call` results are not type-checked by
+`instData`). New fields, true for `buildCtx` (it rejects `i128` values and results):
+`resTysE : ctx.insts[ii]? = some info → ∀ t ∈ info.resTys, t ∈ eCTys` and
+`valTyE : ctx.valueType? x = some t → t ∈ eCTys`, with `eCTys := [.int 8, .int 16, .int 32,
+.int 64]` (`IselContract`). `ctxOk` (`DriverCheck`) decides both, `ctxOk_sound` proves them,
+`ctxInv_termCtx` keeps them. `lake exe lean-e2e-check`: `lowerCheck` 913 accepted, 0 rejected
+(19 out of scope, unchanged).
+
+**Regeneration.** After re-exporting the ISLE data run
+`lake env lean --run FVTest/Backend/Proof/Excl/Gen.lean`: it prints `closureRootIds` (paste into
+`IselExclBase` if it changed) and every `lower` rule `exclOk` rejects (must be none; otherwise
+extend the checker, or the rule is a real obligation and belongs in the closure).
+
