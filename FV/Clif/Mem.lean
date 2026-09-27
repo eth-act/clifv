@@ -72,6 +72,12 @@ def check (b : Bool) (msg : String) : Res Unit := if b then .ok () else .stuck m
 @[simp] theorem check_true (msg : String) : check true msg = .ok () := rfl
 @[simp] theorem check_false (msg : String) : check false msg = .stuck msg := rfl
 
+/-- Resource check: `trap code` unless `b`. -/
+def trapUnless (b : Bool) (code : TrapCode) : Res Unit := if b then .ok () else .trap code
+
+@[simp] theorem trapUnless_true (code : TrapCode) : trapUnless true code = .ok () := rfl
+@[simp] theorem trapUnless_false (code : TrapCode) : trapUnless false code = .trap code := rfl
+
 end Res
 
 /-- A live allocation `[base, base + size)`. -/
@@ -107,6 +113,10 @@ base address. -/
 def alloc (m : Mem) (size align : Nat) : Nat × Mem :=
   let base := alignUp m.next (max align 16)
   (base, { m with allocs := ⟨base, size⟩ :: m.allocs, next := base + size + 16 })
+
+/-- The address space is 64 bits: every allocation must end below `2^64`
+(`18446744073709551616`, a literal so that the check reduces by `rfl`/`decide`). -/
+@[simp] def fits (m : Mem) : Bool := m.next ≤ 18446744073709551616
 
 /-- Free the allocations with the given base addresses. Their bytes become unreachable
 (addresses are never reused). -/

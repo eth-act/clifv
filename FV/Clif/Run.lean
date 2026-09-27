@@ -296,7 +296,8 @@ def enterBlock (fr : Frame) (bc : BlockCall) : Res Frame := do
   pure { fr with regs, body := b.body, term := b.term }
 
 /-- Start an activation of `f` on `args`: allocate its stack slots (fresh, uninitialised)
-and enter its entry block. -/
+and enter its entry block. Slots that do not fit below `2^64` trap `stk_ovf` (resource
+exhaustion). -/
 def enterFunc (f : Function) (args : List Val) (mem : Mem) : Res (Frame × Mem) := do
   checkTys s!"arguments of %{f.name}" args (AbiParam.tys f.sig.params)
   let entry ← Res.ofOption s!"%{f.name} has no blocks" f.entry?
@@ -305,6 +306,7 @@ def enterFunc (f : Function) (args : List Val) (mem : Mem) : Res (Frame × Mem) 
       let (base, m) := acc.2.alloc s.2.size (s.2.align.getD 1)
       (acc.1 ++ [(s.1, base)], m))
     ([], mem)
+  Res.trapUnless (f.slots.isEmpty || mem'.fits) .stkOvf
   checkTys s!"entry block of %{f.name}" args (entry.params.map (·.2))
   let regs ← Res.ofOption "entry arity" (Regs.empty.setMany (entry.params.map (·.1)) args)
   pure ({ func := f, regs, slots, body := entry.body, term := entry.term }, mem')

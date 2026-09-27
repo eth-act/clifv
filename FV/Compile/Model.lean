@@ -29,8 +29,13 @@ def Res.toOutcome {α : Type} (r : Res α) (k : α → Outcome) : Outcome :=
   | .trap c => .trapped c
   | .stuck m => .stuck m
 
-/-- Entry arrays longer than this are treated as corrupt (guards the model against garbage). -/
+/-- Entry arrays longer than this are treated as corrupt (guards the model against garbage).
+`writeEntries` refuses to build longer maps (resource trap `oomTrap`). -/
 def maxEntries : Nat := 1 <<< 20
+
+/-- Resource exhaustion of the map model (a map longer than `maxEntries`, or an allocation
+that does not fit below `2^64`). The CLIF runtime traps `user1` on arena exhaustion too. -/
+def oomTrap : Clif.TrapCode := .user 1
 
 def readWord (m : Mem) (addr : Nat) : Res (BitVec 64) := m.load {} addr 8 64
 
@@ -48,7 +53,9 @@ def readEntries (m : Mem) (h : Nat) : Res (List (BitVec 64 × BitVec 64)) := do
 
 /-- Replace the entries of the map object at `h` by `es` (fresh entry array). -/
 def writeEntries (m : Mem) (h : Nat) (es : List (BitVec 64 × BitVec 64)) : Res Mem := do
+  Res.trapUnless (es.length ≤ maxEntries) oomTrap
   let (data, m) := m.alloc (16 * es.length) 16
+  Res.trapUnless m.fits oomTrap
   let m ← (es.zip (List.range es.length)).foldlM (init := m) fun m ((k, v), i) => do
     let m ← writeWord m (data + 16 * i) k
     writeWord m (data + 16 * i + 8) v
@@ -58,6 +65,7 @@ def writeEntries (m : Mem) (h : Nat) (es : List (BitVec 64 × BitVec 64)) : Res 
 /-- A new map object with entries `es`; returns its handle. -/
 def newMapObj (m : Mem) (es : List (BitVec 64 × BitVec 64)) : Res (Nat × Mem) := do
   let (h, m) := m.alloc 16 16
+  Res.trapUnless m.fits oomTrap
   let m ← writeEntries m h es
   pure (h, m)
 
@@ -174,6 +182,7 @@ def setupCall (abi : FnAbi) (args : DSL.Args abi.params) : Res CallSetup := do
       let (b, m) := m.alloc abi.bufSize 16
       (some b, m)
     else (none, m)
+  Res.trapUnless m.fits oomTrap
   pure { args := (if abi.ctx then [Val.ofNat .i64 0] else []) ++
                  (buf.map fun b => Val.ofNat .i64 b).toList ++ vs
          mem := m, buf }

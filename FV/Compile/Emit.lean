@@ -96,10 +96,11 @@ def newSlot (size : Nat) : CGM SlotId :=
     let id := s.slots.length
     (id, { s with slots := s.slots ++ [(id, { size, align := some 8 })] })
 
-/-- The function reference for callee `name` (declared once per function). -/
+/-- The function reference for callee `name` with signature `sig` (declared once per function
+and signature; a well-linked program never declares a name with two signatures). -/
 def declare (name : String) (sig : Clif.Signature) : CGM FnRef := do
   let s ← get
-  match s.externs.find? (·.2.name == name) with
+  match s.externs.find? (fun e => e.2.name == name && e.2.sig == sig) with
   | some (r, _) => pure r
   | none =>
     let r := s.externs.length
