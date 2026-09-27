@@ -478,6 +478,23 @@ and the fallback 5331 refuted by forward `isel_eval` of `hpre` (works); remainin
 `emit_icmp_ok (cc := .ult/.slt/.ugt/.sgt)` + `lower_select_ok` + `runs_flags_csel` + `output`.
 Vector min/max 1233–1251 and div/rem (1116…1211) not started.
 
+### Progress (M4Cmp4)
+
+Root rules proven (`LowerRuleOk`, axioms as icmp 2215: `propext`, `Classical.choice`,
+`Quot.sound` + the flag lemmas' `bv_decide` certificates):
+
+* **select 2267** (`select_ruleOk`, `IselCmpSelect.lean`): `is_nonzero_cmp_ok` +
+  `lower_select_ok` (Zero/NotZero/Cond; fallback 5331 refuted by forward evaluation of the failed
+  match) + `condCode_csel` (condition code, `cmp`/flag instruction, `csel` into a fresh vreg) +
+  `vholds_select`. `lower_select_cond_ok` (rule 5364, i8..i64).
+* **umin/smin/umax/smax 1222/1224/1226/1228** (`IselCmpMinMax.lean`, shared `minmax_tail`):
+  `emit_icmp_ok` at ult/slt/ugt/sgt, then as select; `minmax_sem` (`if intcc cc a b then a else
+  b` = the CLIF min/max).
+* **vector min/max 1233/1239/1245/1251** vacuous (`IselCmpVec.lean`, axioms `propext`,
+  `Classical.choice`, `Quot.sound`): `vector_size_scalar` (every `vector_size` rule needs
+  `multi_lane`/`dynamic_lane`, which fail on `.int w`), `vector_size_binary_absurd` (result type
+  of a binary E instruction is `.int ty.width`).
+
 ## Family Ctl: terminators, branches, calls (M4Ctl)
 
 Branch `agent/m4-ctl`. Files `FV/Backend/Proof/IselCtl{Base,Term,Unmatch,Branch,Call,}.lean`,
