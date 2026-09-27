@@ -44,6 +44,12 @@ theorem rotl_fin (sz : OperandSize) (X Y : CV) (a : Nat) (ha : a % sz.bits = Y.t
   rw [Nat.mod_mod, neg_mod (by cases sz <;> simp [OperandSize.bits]), opnd_mod (IW_bits sz), ha,
     Nat.mod_mod]
 
+/-- `negate_imm_shift` of an in-range amount: the opposite amount modulo the width. -/
+theorem neg_imm {w n : Nat} (hw : IW w) (hn : n < w) :
+    Nat.land ((w + 256 - n) % 256) (w - 1) = (w - n) % w := by
+  rw [land_mask_mod hw]
+  rcases hw with rfl | rfl | rfl | rfl <;> omega
+
 section Rules
 variable {F : BitVec 64 → Prop} {isem : Sem}
 
@@ -251,6 +257,262 @@ theorem rotl_64_base_case_ok {p : Program} (hp : Data p) (MR : MemRelT) (env : C
   have hX : (ρ x).setWidth 64 = u := hvals x _ hx
   rw [← hX]
   exact rotl_fin .size64 (ρ x) (ρ y) _ (amt_of_holds (IW_bits .size64) (hvals y yv hy))
+
+set_option maxHeartbeats 1000000 in
+/-- **`rotr_32_imm`** (`lower.isle:1857`). -/
+theorem rotr_32_imm_ok {p : Program} (hp : Data p) (MR : MemRelT) (env : Clif.Env)
+    (cp : Clif.Program) (hR : Refines F isem) (hMR : MRStable F MR) :
+    LowerRuleOk isem MR env cp p rule_lower_1857 := by
+  refine shift_ruleOk_gen hp (cop := .rotr) rfl rfl hp.t2386 term_2386_kind rfl rfl F isem MR env
+    cp hMR ?_
+  intro f ctx hctx cfg ii info x y w st tr m n env' s1 v s' hco hvb hi hhead hd hws hm he
+  have hp' := hp
+  cases hp
+  fbrot_inv [*, rule_lower_1857] at hm he
+  have hii := Option.some.inj (hi.symm.trans ‹ctx.insts[ii]? = some _›)
+  subst hii
+  have hdat := ‹V.data 152 2 _ = info.data›
+  rw [hd] at hdat
+  have hty := ‹_ = info.resTys.head?.getD CTy.invalid›
+  rw [hhead, Option.getD_some] at hty
+  fbrot_inv [ext_value_array_2_iff, ctor_put_in_reg_iff, ctor_value_regs_get_iff, ctor_zero_reg']
+    at hdat hty
+  simp only [CTy.int.injEq] at hty
+  subst hty
+  have hrx := ‹ctx.valueReg? x = some _›
+  obtain rfl := hctx.valueReg x _ hrx
+  have hdata := ‹V.data 152 35 _ = _›
+  have hdj := ‹ctx.defInst? y = some _›
+  have hij := ‹ctx.insts[_]? = some _›
+  obtain ⟨ty', imm, hcl, hfs⟩ := defInst_iconst_clif ctx hctx hdj hij hdata.symm
+  have hety' : eTy ty' = true := by
+    have hdat := hctx.data _ _ _ hij hcl
+    rw [← hdata] at hdat
+    exact (fb_instData_iconst hdat).1
+  simp only [List.cons.injEq, and_true] at hfs
+  subst hfs
+  obtain ⟨-, rfl, rfl⟩ := (ctor_imm_shift_iff ctx _ _ _ _ _).mp
+    ‹externCtor ctx T.imm_shift_from_imm64 _ _ = _›
+  have hL : Nat.land (u64 (imm64OfIconst ty' imm)) (32 - 1) = imm.toNat % 32 := by
+    rw [land_mask_mod (by simp [IW]), u64_imm64OfIconst_fb (eTy_width hety')]
+  have hA := ‹ApplyInternal _ _ _ _ 27 514 _ _ _ _›
+  rw [hL] at hA
+  obtain ⟨ks, hks, rfl, m1, hm1, hs1⟩ := a64_rotr_imm_ok hp' hco (by omega) hA
+  dsimp only at hm1 hs1
+  rw [ofV_aluRRImmShift_fb _ _ (rfl : ALUOp.ofIdx? 15 = some .extr) (hks.ofIdx (by simp [IW] : IW 32))] at hm1
+  cases hm1
+  have hO := ‹ApplyInternal _ _ _ _ 25 172 _ _ _ _›
+  obtain ⟨rfl, hst⟩ := output_reg_ok hp' hco (by omega) hO
+  refine ⟨_, _, rfl, by
+    rw [hst, hs1]
+    exact codeShapeU_one rfl (fun u hu => by
+      rw [show vuseNums _ = [x] from rfl] at hu; simp at hu; simp [hu]), ?_⟩
+  intro ty hty hety fr ρ u yv res _ hvals hdfg hx hy hres
+  cases ty <;> simp [Clif.Ty.width] at hty
+  have hyv := dfg_iconst_fb hdfg hdj hij hcl hy
+  subst hyv
+  have hlt : imm.toNat % 32 < OperandSize.size32.bits := Nat.mod_lt _ (by decide)
+  refine ⟨_, prun_rr hR rfl (fun w => ispec_imm_extr_fb hlt) (prun_nil _), ?_⟩
+  simp only [Clif.Sem.shift, Clif.Sem.rotr, Clif.Sem.shiftAmt, Option.some.injEq] at hres
+  subst hres
+  simp only [VHolds, upd_same]
+  have hX : (ρ x).setWidth 32 = u := hvals x _ hx
+  rw [← hX]
+  exact rot_imm_fin .size32 (ρ x) _
+
+set_option maxHeartbeats 1000000 in
+/-- **`rotr_64_imm`** (`lower.isle:1862`). -/
+theorem rotr_64_imm_ok {p : Program} (hp : Data p) (MR : MemRelT) (env : Clif.Env)
+    (cp : Clif.Program) (hR : Refines F isem) (hMR : MRStable F MR) :
+    LowerRuleOk isem MR env cp p rule_lower_1862 := by
+  refine shift_ruleOk_gen hp (cop := .rotr) rfl rfl hp.t2386 term_2386_kind rfl rfl F isem MR env
+    cp hMR ?_
+  intro f ctx hctx cfg ii info x y w st tr m n env' s1 v s' hco hvb hi hhead hd hws hm he
+  have hp' := hp
+  cases hp
+  fbrot_inv [*, rule_lower_1862] at hm he
+  have hii := Option.some.inj (hi.symm.trans ‹ctx.insts[ii]? = some _›)
+  subst hii
+  have hdat := ‹V.data 152 2 _ = info.data›
+  rw [hd] at hdat
+  have hty := ‹_ = info.resTys.head?.getD CTy.invalid›
+  rw [hhead, Option.getD_some] at hty
+  fbrot_inv [ext_value_array_2_iff, ctor_put_in_reg_iff, ctor_value_regs_get_iff, ctor_zero_reg']
+    at hdat hty
+  simp only [CTy.int.injEq] at hty
+  subst hty
+  have hrx := ‹ctx.valueReg? x = some _›
+  obtain rfl := hctx.valueReg x _ hrx
+  have hdata := ‹V.data 152 35 _ = _›
+  have hdj := ‹ctx.defInst? y = some _›
+  have hij := ‹ctx.insts[_]? = some _›
+  obtain ⟨ty', imm, hcl, hfs⟩ := defInst_iconst_clif ctx hctx hdj hij hdata.symm
+  have hety' : eTy ty' = true := by
+    have hdat := hctx.data _ _ _ hij hcl
+    rw [← hdata] at hdat
+    exact (fb_instData_iconst hdat).1
+  simp only [List.cons.injEq, and_true] at hfs
+  subst hfs
+  obtain ⟨-, rfl, rfl⟩ := (ctor_imm_shift_iff ctx _ _ _ _ _).mp
+    ‹externCtor ctx T.imm_shift_from_imm64 _ _ = _›
+  have hL : Nat.land (u64 (imm64OfIconst ty' imm)) (64 - 1) = imm.toNat % 64 := by
+    rw [land_mask_mod (by simp [IW]), u64_imm64OfIconst_fb (eTy_width hety')]
+  have hA := ‹ApplyInternal _ _ _ _ 27 514 _ _ _ _›
+  rw [hL] at hA
+  obtain ⟨ks, hks, rfl, m1, hm1, hs1⟩ := a64_rotr_imm_ok hp' hco (by omega) hA
+  dsimp only at hm1 hs1
+  rw [ofV_aluRRImmShift_fb _ _ (rfl : ALUOp.ofIdx? 15 = some .extr) (hks.ofIdx (by simp [IW] : IW 64))] at hm1
+  cases hm1
+  have hO := ‹ApplyInternal _ _ _ _ 25 172 _ _ _ _›
+  obtain ⟨rfl, hst⟩ := output_reg_ok hp' hco (by omega) hO
+  refine ⟨_, _, rfl, by
+    rw [hst, hs1]
+    exact codeShapeU_one rfl (fun u hu => by
+      rw [show vuseNums _ = [x] from rfl] at hu; simp at hu; simp [hu]), ?_⟩
+  intro ty hty hety fr ρ u yv res _ hvals hdfg hx hy hres
+  cases ty <;> simp [Clif.Ty.width] at hty
+  have hyv := dfg_iconst_fb hdfg hdj hij hcl hy
+  subst hyv
+  have hlt : imm.toNat % 64 < OperandSize.size64.bits := Nat.mod_lt _ (by decide)
+  refine ⟨_, prun_rr hR rfl (fun w => ispec_imm_extr_fb hlt) (prun_nil _), ?_⟩
+  simp only [Clif.Sem.shift, Clif.Sem.rotr, Clif.Sem.shiftAmt, Option.some.injEq] at hres
+  subst hres
+  simp only [VHolds, upd_same]
+  have hX : (ρ x).setWidth 64 = u := hvals x _ hx
+  rw [← hX]
+  exact rot_imm_fin .size64 (ρ x) _
+
+set_option maxHeartbeats 1000000 in
+/-- **`rotl_32_imm`** (`lower.isle:1803`). -/
+theorem rotl_32_imm_ok {p : Program} (hp : Data p) (MR : MemRelT) (env : Clif.Env)
+    (cp : Clif.Program) (hR : Refines F isem) (hMR : MRStable F MR) :
+    LowerRuleOk isem MR env cp p rule_lower_1803 := by
+  refine shift_ruleOk_gen hp (cop := .rotl) rfl rfl hp.t2385 term_2385_kind rfl rfl F isem MR env
+    cp hMR ?_
+  intro f ctx hctx cfg ii info x y w st tr m n env' s1 v s' hco hvb hi hhead hd hws hm he
+  have hp' := hp
+  cases hp
+  fbrot_inv [*, rule_lower_1803] at hm he
+  have hii := Option.some.inj (hi.symm.trans ‹ctx.insts[ii]? = some _›)
+  subst hii
+  have hdat := ‹V.data 152 2 _ = info.data›
+  rw [hd] at hdat
+  have hty := ‹_ = info.resTys.head?.getD CTy.invalid›
+  rw [hhead, Option.getD_some] at hty
+  fbrot_inv [ext_value_array_2_iff, ctor_put_in_reg_iff, ctor_value_regs_get_iff, ctor_zero_reg']
+    at hdat hty
+  simp only [CTy.int.injEq] at hty
+  subst hty
+  have hrx := ‹ctx.valueReg? x = some _›
+  obtain rfl := hctx.valueReg x _ hrx
+  have hdata := ‹V.data 152 35 _ = _›
+  have hdj := ‹ctx.defInst? y = some _›
+  have hij := ‹ctx.insts[_]? = some _›
+  obtain ⟨ty', imm, hcl, hfs⟩ := defInst_iconst_clif ctx hctx hdj hij hdata.symm
+  have hety' : eTy ty' = true := by
+    have hdat := hctx.data _ _ _ hij hcl
+    rw [← hdata] at hdat
+    exact (fb_instData_iconst hdat).1
+  simp only [List.cons.injEq, and_true] at hfs
+  subst hfs
+  obtain ⟨-, rfl, rfl⟩ := (ctor_imm_shift_iff ctx _ _ _ _ _).mp
+    ‹externCtor ctx T.imm_shift_from_imm64 _ _ = _›
+  have hL : Nat.land (u64 (imm64OfIconst ty' imm)) (32 - 1) = imm.toNat % 32 := by
+    rw [land_mask_mod (by simp [IW]), u64_imm64OfIconst_fb (eTy_width hety')]
+  have hA := ‹ApplyInternal _ _ _ _ 27 514 _ _ _ _›
+  have hN := ‹externCtor ctx T.negate_imm_shift _ _ = _›
+  rw [hL] at hN
+  obtain ⟨rfl, rfl⟩ := (ctor_negate_imm_shift_iff ctx _ _ _ _ _).mp hN
+  rw [neg_imm (by simp [IW]) (Nat.mod_lt _ (by decide))] at hA
+  obtain ⟨ks, hks, rfl, m1, hm1, hs1⟩ := a64_rotr_imm_ok hp' hco (by omega) hA
+  dsimp only at hm1 hs1
+  rw [ofV_aluRRImmShift_fb _ _ (rfl : ALUOp.ofIdx? 15 = some .extr) (hks.ofIdx (by simp [IW] : IW 32))] at hm1
+  cases hm1
+  have hO := ‹ApplyInternal _ _ _ _ 25 172 _ _ _ _›
+  obtain ⟨rfl, hst⟩ := output_reg_ok hp' hco (by omega) hO
+  refine ⟨_, _, rfl, by
+    rw [hst, hs1]
+    exact codeShapeU_one rfl (fun u hu => by
+      rw [show vuseNums _ = [x] from rfl] at hu; simp at hu; simp [hu]), ?_⟩
+  intro ty hty hety fr ρ u yv res _ hvals hdfg hx hy hres
+  cases ty <;> simp [Clif.Ty.width] at hty
+  have hyv := dfg_iconst_fb hdfg hdj hij hcl hy
+  subst hyv
+  have hlt : (32 - imm.toNat % 32) % 32 < OperandSize.size32.bits := Nat.mod_lt _ (by decide)
+  refine ⟨_, prun_rr hR rfl (fun w => ispec_imm_extr_fb hlt) (prun_nil _), ?_⟩
+  simp only [Clif.Sem.shift, Clif.Sem.rotl, Clif.Sem.shiftAmt, Option.some.injEq] at hres
+  subst hres
+  simp only [VHolds, upd_same]
+  have hX : (ρ x).setWidth 32 = u := hvals x _ hx
+  rw [← hX]
+  refine (rot_imm_fin .size32 (ρ x) _).trans ?_
+  exact rotr_neg (by decide) _ _ _ (by simp only [OperandSize.bits, Clif.Ty.width, Nat.mod_mod])
+
+set_option maxHeartbeats 1000000 in
+/-- **`rotl_64_imm`** (`lower.isle:1808`). -/
+theorem rotl_64_imm_ok {p : Program} (hp : Data p) (MR : MemRelT) (env : Clif.Env)
+    (cp : Clif.Program) (hR : Refines F isem) (hMR : MRStable F MR) :
+    LowerRuleOk isem MR env cp p rule_lower_1808 := by
+  refine shift_ruleOk_gen hp (cop := .rotl) rfl rfl hp.t2385 term_2385_kind rfl rfl F isem MR env
+    cp hMR ?_
+  intro f ctx hctx cfg ii info x y w st tr m n env' s1 v s' hco hvb hi hhead hd hws hm he
+  have hp' := hp
+  cases hp
+  fbrot_inv [*, rule_lower_1808] at hm he
+  have hii := Option.some.inj (hi.symm.trans ‹ctx.insts[ii]? = some _›)
+  subst hii
+  have hdat := ‹V.data 152 2 _ = info.data›
+  rw [hd] at hdat
+  have hty := ‹_ = info.resTys.head?.getD CTy.invalid›
+  rw [hhead, Option.getD_some] at hty
+  fbrot_inv [ext_value_array_2_iff, ctor_put_in_reg_iff, ctor_value_regs_get_iff, ctor_zero_reg']
+    at hdat hty
+  simp only [CTy.int.injEq] at hty
+  subst hty
+  have hrx := ‹ctx.valueReg? x = some _›
+  obtain rfl := hctx.valueReg x _ hrx
+  have hdata := ‹V.data 152 35 _ = _›
+  have hdj := ‹ctx.defInst? y = some _›
+  have hij := ‹ctx.insts[_]? = some _›
+  obtain ⟨ty', imm, hcl, hfs⟩ := defInst_iconst_clif ctx hctx hdj hij hdata.symm
+  have hety' : eTy ty' = true := by
+    have hdat := hctx.data _ _ _ hij hcl
+    rw [← hdata] at hdat
+    exact (fb_instData_iconst hdat).1
+  simp only [List.cons.injEq, and_true] at hfs
+  subst hfs
+  obtain ⟨-, rfl, rfl⟩ := (ctor_imm_shift_iff ctx _ _ _ _ _).mp
+    ‹externCtor ctx T.imm_shift_from_imm64 _ _ = _›
+  have hL : Nat.land (u64 (imm64OfIconst ty' imm)) (64 - 1) = imm.toNat % 64 := by
+    rw [land_mask_mod (by simp [IW]), u64_imm64OfIconst_fb (eTy_width hety')]
+  have hA := ‹ApplyInternal _ _ _ _ 27 514 _ _ _ _›
+  have hN := ‹externCtor ctx T.negate_imm_shift _ _ = _›
+  rw [hL] at hN
+  obtain ⟨rfl, rfl⟩ := (ctor_negate_imm_shift_iff ctx _ _ _ _ _).mp hN
+  rw [neg_imm (by simp [IW]) (Nat.mod_lt _ (by decide))] at hA
+  obtain ⟨ks, hks, rfl, m1, hm1, hs1⟩ := a64_rotr_imm_ok hp' hco (by omega) hA
+  dsimp only at hm1 hs1
+  rw [ofV_aluRRImmShift_fb _ _ (rfl : ALUOp.ofIdx? 15 = some .extr) (hks.ofIdx (by simp [IW] : IW 64))] at hm1
+  cases hm1
+  have hO := ‹ApplyInternal _ _ _ _ 25 172 _ _ _ _›
+  obtain ⟨rfl, hst⟩ := output_reg_ok hp' hco (by omega) hO
+  refine ⟨_, _, rfl, by
+    rw [hst, hs1]
+    exact codeShapeU_one rfl (fun u hu => by
+      rw [show vuseNums _ = [x] from rfl] at hu; simp at hu; simp [hu]), ?_⟩
+  intro ty hty hety fr ρ u yv res _ hvals hdfg hx hy hres
+  cases ty <;> simp [Clif.Ty.width] at hty
+  have hyv := dfg_iconst_fb hdfg hdj hij hcl hy
+  subst hyv
+  have hlt : (64 - imm.toNat % 64) % 64 < OperandSize.size64.bits := Nat.mod_lt _ (by decide)
+  refine ⟨_, prun_rr hR rfl (fun w => ispec_imm_extr_fb hlt) (prun_nil _), ?_⟩
+  simp only [Clif.Sem.shift, Clif.Sem.rotl, Clif.Sem.shiftAmt, Option.some.injEq] at hres
+  subst hres
+  simp only [VHolds, upd_same]
+  have hX : (ρ x).setWidth 64 = u := hvals x _ hx
+  rw [← hX]
+  refine (rot_imm_fin .size64 (ρ x) _).trans ?_
+  exact rotr_neg (by decide) _ _ _ (by simp only [OperandSize.bits, Clif.Ty.width, Nat.mod_mod])
 
 end Rules
 
