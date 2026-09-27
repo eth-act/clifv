@@ -395,4 +395,4 @@ the goal when the match/evaluation `h` is impossible (no destructuring, which is
 full inversions slow on rules with many variables). -/
 elab "isel_refute " hp:ident " at " h:ident : tactic => do
   let lemmaStx ← iselInvLemmas hp #[] #[h]
-  evalTactic (← `(tactic| isel_inv_simp [$lemmaStx,*] at $h:ident))
+  evalTactic (← `(tactic| isel_inv_simp [and_assoc, $lemmaStx,*] at $h:ident))
