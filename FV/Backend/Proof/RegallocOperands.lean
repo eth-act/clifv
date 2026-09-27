@@ -751,4 +751,197 @@ theorem operandsSound_store (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (
   · intro r hr
     simp [MInst.clobbers] at hr
 
+theorem writeM_not_mem {V : Type} {m : Loc → V} {l : Loc} :
+    ∀ {dl : List ((Operand × Loc) × V)}, l ∉ dl.map (·.1.2) → writeM m dl l = m l
+  | [], _ => rfl
+  | p :: dl, h => by
+    simp only [List.map_cons, List.mem_cons, not_or] at h
+    simp only [writeM, List.foldl_cons] at *
+    have := writeM_not_mem (m := upd m p.1.2 p.2) (l := l) h.2
+    simp only [writeM] at this
+    rw [this]; simp [upd, h.1]
+
+theorem writeM_mem {V : Type} {m : Loc → V} :
+    ∀ {dl : List ((Operand × Loc) × V)}, (dl.map (·.1.2)).Nodup → ∀ p ∈ dl, writeM m dl p.1.2 = p.2
+  | [], _, _, hp => by simp at hp
+  | q :: dl, hn, p, hp => by
+    rw [List.map_cons, List.nodup_cons] at hn
+    simp only [writeM, List.foldl_cons]
+    rcases List.mem_cons.mp hp with rfl | hp
+    · have := writeM_not_mem (m := upd m p.1.2 p.2) (l := p.1.2) hn.1
+      simp only [writeM] at this
+      rw [this]; simp [upd]
+    · have := writeM_mem (m := upd m q.1.2 q.2) hn.2 p hp
+      simpa only [writeM] using this
+
+theorem calleeSaved_allocatable {r : Reg} (h : r ∈ calleeSaved) : r.allocatable = true := by
+  simp only [calleeSaved, List.mem_append, List.mem_map, List.mem_range] at h
+  rw [allocatable_iff]
+  rcases h with ⟨i, hi, rfl⟩ | ⟨i, hi, rfl⟩ <;>
+    (rcases i with _|_|_|_|_|_|_|_|_|_|i <;> simp_all <;> omega)
+
+
+theorem pairs_regs (ops : Array Operand) (regs : Array Reg) :
+    (ops.zip (regs.map Loc.reg)).toList = (ops.zip regs).toList.map (fun p => (p.1, Loc.reg p.2)) := by
+  rw [Array.toList_zip, Array.toList_zip, Array.toList_map, List.zip_map_right]
+  rfl
+
+/-- The store part of `operandsSound_step`, for any list `D` of def writes whose locations are
+distinct registers holding the concrete results. -/
+theorem defs_store {s s' : Arm.ArmState} {m : Loc → CV} {clob : List Reg}
+    (D : List ((Operand × Loc) × CV)) (hnd : (D.map (·.1.2)).Nodup)
+    (hval : ∀ p ∈ D, ∃ r, p.1.2 = .reg r ∧ regVal s' r = p.2)
+    (hclobD : ∀ p ∈ D, ∀ r ∈ clob, p.1.2 ≠ .reg r)
+    (hm : ∀ r, r.allocatable = true → m (.reg r) = regVal s r)
+    (hoth : ∀ r, r.allocatable = true → (∀ p ∈ D, p.1.2 ≠ .reg r) → r ∉ clob →
+      regVal s' r = regVal s r)
+    (hcl : ∀ r ∈ clob, r ∈ calleeSaved → ckeep r (regVal s' r) = ckeep r (regVal s r)) :
+    ∃ m2, Clobbered ckeep clob (writeM m (D.filter (·.1.1.isEarly))) m2 ∧
+      (∀ r, r.allocatable = true →
+        writeM m2 (D.filter (·.1.1.isLate)) (.reg r) = regVal s' r) ∧
+      (∀ l, (∀ r, l ≠ .reg r) → writeM m2 (D.filter (·.1.1.isLate)) l = m l) := by
+  have hndE : ((D.filter (·.1.1.isEarly)).map (·.1.2)).Nodup :=
+    (List.Sublist.map _ List.filter_sublist).nodup hnd
+  have hndL : ((D.filter (·.1.1.isLate)).map (·.1.2)).Nodup :=
+    (List.Sublist.map _ List.filter_sublist).nodup hnd
+  let m1 := writeM m (D.filter (·.1.1.isEarly))
+  let m2 : Loc → CV := fun l => match l with
+    | .reg r => if r ∈ clob then regVal s' r else m1 l
+    | l => m1 l
+  have hm1 : ∀ l, l ∉ D.map (·.1.2) → m1 l = m l := fun l hl =>
+    writeM_not_mem (fun h => hl ((List.Sublist.map _ List.filter_sublist).subset h))
+  refine ⟨m2, ⟨fun l hl => ?_, fun c hc hcs => ?_⟩, fun r hr => ?_, fun l hl => ?_⟩
+  · cases l with
+    | reg r => simp only [m2, m1, show r ∉ clob from fun h => hl r h rfl, if_false]
+    | _ => rfl
+  · simp only [m2, hc, if_true]
+    have hnot : Loc.reg c ∉ D.map (·.1.2) := by
+      intro h
+      obtain ⟨p, hp, e⟩ := List.mem_map.mp h
+      exact hclobD p hp c hc e
+    have h1 := hm1 _ hnot
+    simp only [m1] at h1
+    rw [hcl c hc hcs, h1, hm c (calleeSaved_allocatable hcs)]
+  · by_cases hL : Loc.reg r ∈ (D.filter (·.1.1.isLate)).map (·.1.2)
+    · obtain ⟨p, hp, e⟩ := List.mem_map.mp hL
+      rw [← e, writeM_mem hndL p hp]
+      obtain ⟨r', hr', hv⟩ := hval p (List.mem_filter.mp hp).1
+      rw [e] at hr'
+      cases hr'
+      exact hv.symm
+    · rw [writeM_not_mem hL]
+      by_cases hc : r ∈ clob
+      · simp only [m2, hc, if_true]
+      · simp only [m2, hc, if_false]
+        by_cases hE : Loc.reg r ∈ (D.filter (·.1.1.isEarly)).map (·.1.2)
+        · obtain ⟨p, hp, e⟩ := List.mem_map.mp hE
+          show writeM m (D.filter (·.1.1.isEarly)) (Loc.reg r) = _
+          rw [← e, writeM_mem hndE p hp]
+          obtain ⟨r', hr', hv⟩ := hval p (List.mem_filter.mp hp).1
+          rw [e] at hr'
+          cases hr'
+          exact hv.symm
+        · have hnD : ∀ p ∈ D, p.1.2 ≠ .reg r := by
+            intro p hp e
+            cases hpos : p.1.1.pos
+            · exact hE (List.mem_map.mpr ⟨p, List.mem_filter.mpr ⟨hp, by
+                simp [Operand.isEarly, hpos]⟩, e⟩)
+            · exact hL (List.mem_map.mpr ⟨p, List.mem_filter.mpr ⟨hp, by
+                simp [Operand.isLate, hpos]⟩, e⟩)
+          show writeM m (D.filter (·.1.1.isEarly)) (Loc.reg r) = _
+          rw [writeM_not_mem hE, hm r hr, hoth r hr hnD hc]
+  · have hnL : l ∉ (D.filter (·.1.1.isLate)).map (·.1.2) := by
+      intro h
+      obtain ⟨p, hp, e⟩ := List.mem_map.mp h
+      obtain ⟨r, hr, _⟩ := hval p (List.mem_filter.mp hp).1
+      exact hl r (e ▸ hr)
+    rw [writeM_not_mem hnL]
+    have hnD : l ∉ D.map (·.1.2) := by
+      intro h
+      obtain ⟨p, hp, e⟩ := List.mem_map.mp h
+      obtain ⟨r, hr, _⟩ := hval p hp
+      exact hl r (e ▸ hr)
+    cases l with
+    | reg r => exact absurd rfl (hl r)
+    | _ => exact hm1 _ hnD
+
+
+/-- **`OperandsSound` makes a concrete instruction an `MStep.op`.** If the location store `m`
+agrees with the Arm state `s` on allocatable registers and `s` has the world `w`, executing the
+emitted instruction gives a state `s'` with the world `sem` computes, and a clobber havoc `m2`
+(`Clobbered ckeep`, as `MStep.op` requires) such that the store after the late defs agrees
+with `s'` on allocatable registers; frame locations are untouched. -/
+theorem operandsSound_step {F : BitVec 64 → Prop}
+    {exec : MInst → Arm.ArmState → Option Arm.ArmState}
+    {sem : ISem CV Arm.ArmState} {i : MInst} (hs : OperandsSound F exec sem i)
+    {c : CheckCtx} {wh : String} {ops : Array Operand} {regs : Array Reg} {i' : MInst}
+    (hops : i.operands = .ok ops)
+    (hst : c.checkStatic wh ops (regs.map Loc.reg) i.clobbers = .ok ())
+    (hasg : i.assign regs = .ok i') {m : Loc → CV} {s w : Arm.ArmState}
+    (hm : ∀ r, r.allocatable = true → m (.reg r) = regVal s r) (hw : SameWorld F s w)
+    {outs : List CV} {w' : Arm.ArmState}
+    (hsem : sem i (((ops.zip (regs.map Loc.reg)).toList.filter (·.1.isUse)).map (m ·.2)) w =
+      some (outs, w', .next))
+    (hlen : outs.length = ((ops.zip (regs.map Loc.reg)).toList.filter (·.1.isDef)).length) :
+    ∃ s' m2, exec i' s = some s' ∧ SameWorld F s' w' ∧
+      Clobbered ckeep i.clobbers
+        (writeM m ((((ops.zip (regs.map Loc.reg)).toList.filter (·.1.isDef)).zip outs).filter
+          (·.1.1.isEarly))) m2 ∧
+      (∀ r, r.allocatable = true →
+        writeM m2 ((((ops.zip (regs.map Loc.reg)).toList.filter (·.1.isDef)).zip outs).filter
+          (·.1.1.isLate)) (.reg r) = regVal s' r) ∧
+      (∀ l, (∀ r, l ≠ .reg r) →
+        writeM m2 ((((ops.zip (regs.map Loc.reg)).toList.filter (·.1.isDef)).zip outs).filter
+          (·.1.1.isLate)) l = m l) := by
+  obtain ⟨_, hloc, hnd, hdc⟩ := checkStatic_facts hst
+  have halloc : ∀ p ∈ (ops.zip regs).toList, p.2.allocatable = true := by
+    intro p hp
+    have := (hloc (p.1, .reg p.2) (by rw [pairs_regs]; exact List.mem_map_of_mem hp)).1
+    simp only [CheckCtx.locOk, Loc.cls?, Bool.and_eq_true] at this
+    exact this.2
+  have huse : ((ops.zip (regs.map Loc.reg)).toList.filter (·.1.isUse)).map (m ·.2) =
+      useVals ops regs s := by
+    rw [pairs_regs, useVals, List.filter_map, List.map_map]
+    apply List.map_congr_left
+    intro p hp
+    exact hm _ (halloc p (List.mem_filter.mp hp).1)
+  rw [huse] at hsem
+  obtain ⟨s', hex, hW, hdef, hoth, hcl⟩ := hs c wh ops regs i' s w outs w' hops hst hasg hw hsem
+  have htrip : ((ops.zip (regs.map Loc.reg)).toList.filter (·.1.isDef)).zip outs =
+      (defRegs ops regs outs).map (fun p => ((p.1.1, Loc.reg p.1.2), p.2)) := by
+    rw [pairs_regs, List.filter_map, defRegs, List.zip_map_left]
+    rfl
+  have hfst : (((ops.zip (regs.map Loc.reg)).toList.filter (·.1.isDef)).zip outs).map (·.1) =
+      (ops.zip (regs.map Loc.reg)).toList.filter (·.1.isDef) :=
+    List.map_fst_zip (by omega)
+  obtain ⟨m2, hc2, hr2, hl2⟩ := defs_store (s := s) (s' := s') (m := m) (clob := i.clobbers)
+    (((ops.zip (regs.map Loc.reg)).toList.filter (·.1.isDef)).zip outs)
+    (by
+      rw [show ∀ D : List ((Operand × Loc) × CV), D.map (·.1.2) = (D.map (·.1)).map (·.2) from
+        fun D => by simp, hfst]
+      exact hnd)
+    (by
+      intro p hp
+      rw [htrip] at hp
+      obtain ⟨q, hq, rfl⟩ := List.mem_map.mp hp
+      exact ⟨q.1.2, rfl, hdef q hq⟩)
+    (by
+      intro p hp r hr
+      have hp' : p.1 ∈ (ops.zip (regs.map Loc.reg)).toList.filter (·.1.isDef) := by
+        rw [← hfst]; exact List.mem_map_of_mem hp
+      have := List.mem_filter.mp hp'
+      exact hdc p.1 this.1 (by simpa [Operand.isDef] using this.2) r hr)
+    hm
+    (by
+      intro r hr hnD hc
+      refine hoth r hr (fun q hq hqd e => ?_) hc
+      have hq' : (q.1, Loc.reg q.2) ∈ (ops.zip (regs.map Loc.reg)).toList.filter (·.1.isDef) := by
+        rw [pairs_regs, List.filter_map]
+        exact List.mem_map_of_mem (List.mem_filter.mpr ⟨hq, hqd⟩)
+      rw [← hfst] at hq'
+      obtain ⟨p, hp, e'⟩ := List.mem_map.mp hq'
+      exact hnD p hp (by rw [e', e]))
+    hcl
+  exact ⟨s', m2, hex, hW, hc2, hr2, hl2⟩
+
 end Backend.Proof
