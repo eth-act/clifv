@@ -57,6 +57,13 @@ single-function stack-slot path. Functions that fail are reported with a reason,
 function that calls a function of the file that is not compiled is dropped too (its code
 would reference an undefined symbol).
 
+M7's validators (`docs/contracts/e2e.md`, "The validators"): after lowering, `lowerCheck f vc`
+(`lowerChecked`), and in the regalloc2 path after `prepare`, `prepCheck vc vcp`; a rejection is
+a compile error (the function is not compiled, with the reason). Functions outside the
+end-to-end theorem (`unverifiedReason?`: outside clif-subset-v2 E, more than 8 parameters,
+calls of functions of the file) are compiled without the lowering validator and listed in
+`FileAsm.unverified` (`lean-backend` prints them to stderr as `compiled, unverified`).
+
 ## Modules and data types
 
 ### `FV/Backend/MInst.lean`
@@ -129,7 +136,8 @@ String FnBin`, `elfObject` — see `docs/contracts/encoder.md`.
 
 ### `FV/Backend.lean`
 
-`compileFunction`, `compileFile`, `FileAsm` (functions, unsupported, fired rules;
+`compileFunction`, `compileFile`, `lowerChecked`, `unverifiedReason?`, `FileAsm` (functions,
+unsupported, unverified, fired rules;
 `FileAsm.text` assembly), `FileAsm.tableJson` (the `--functions-table` file),
 `FileAsm.layout`/`FileAsm.object` (encoded functions / ELF object), `FnBin.relocsJson`,
 `FnBin.trapsJson`.
