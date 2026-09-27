@@ -307,6 +307,43 @@ structure FnAsm where
   traps : List TrapSite
   deriving Inhabited
 
+/-- The target of a conditional branch. -/
+def Insn.condTarget? : Insn → Option Lbl
+  | .bcond c t => if c == .al || c == .nv then none else some t
+  | .cbz _ _ _ t | .tbz _ _ _ t => some t
+  | _ => none
+
+/-- The conditional branch with the opposite condition, to `target`. -/
+def Insn.invertTo (target : Lbl) : Insn → Insn
+  | .bcond c _ => .bcond c.invert target
+  | .cbz nz w r _ => .cbz (!nz) w r target
+  | .tbz nz r bit _ => .tbz (!nz) r bit target
+  | i => i
+
+/-- Branches to the next block fall through (as Cranelift's `MachBuffer` does): `b L` right
+before `L:` is dropped, and `b.c T; b E; T:` becomes `b.!c E; T:`. -/
+def fallthrough (lines : Array Line) : Array Line := Id.run do
+  let mut out : Array Line := #[]
+  let mut i := 0
+  for _ in [0:lines.size] do
+    if i ≥ lines.size then break
+    match lines[i]!, lines[i + 1]?, lines[i + 2]? with
+    | .ins c none, some (.ins (.b e) none), some (.label l) =>
+      if c.condTarget? == some l then
+        out := out.push (.ins (c.invertTo e) none)
+        i := i + 2
+        continue
+    | _, _, _ => pure ()
+    match lines[i]!, lines[i + 1]? with
+    | .ins (.b x) none, some (.label l) =>
+      if x == l then
+        i := i + 1
+        continue
+    | _, _ => pure ()
+    out := out.push lines[i]!
+    i := i + 1
+  return out
+
 /-- Expand an allocated function (`k` = its index in the file) into its final line list,
 with byte offsets of the trap sites. -/
 def emitFunc (k : Nat) (af : AFunc) : Except String FnAsm := do
@@ -317,12 +354,14 @@ def emitFunc (k : Nat) (af : AFunc) : Except String FnAsm := do
     lines := lines.push (.label (.block l))
     for i in code do
       match i with
-      | .prologue => lines := lines ++ (prologueLines af.frameSize).toArray
-      | .epilogueRet => lines := lines ++ epilogueLines.toArray
+      | .prologue => if af.frame then lines := lines ++ (prologueLines af.frameSize).toArray
+      | .epilogueRet =>
+        lines := lines ++ (if af.frame then epilogueLines.toArray else #[.ins .ret])
       | .inst m =>
         let (ls, ps') ← m.lines c ps
         ps := ps'
         lines := lines ++ ls.toArray
+  lines := fallthrough lines
   -- deferred traps (Cranelift emits them after the body)
   for (l, code) in ps.traps do
     lines := lines.push (.label l)

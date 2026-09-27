@@ -249,7 +249,14 @@ def lowerRFunc (vc : VCode) (rf : RFunc) : Except String AFunc := do
         | .rets _ => code := code.push .epilogueRet
         | m => code := code.push (.inst m)
     pure (vb.label, code)
-  pure { name := vc.name, frameSize := fr.size, blocks, slotBase := vc.outgoing }
+  -- A leaf function with an empty frame that never addresses `fp` needs no frame (x29/x30
+  -- are neither written nor read).
+  let usesFp := vc.blocks.any fun b => b.insts.any fun
+    | .load _ _ (.fpOffset _) _ | .store _ _ (.fpOffset _) _ | .loadAddr _ (.fpOffset _) => true
+    | _ => false
+  let calls := vc.blocks.any fun b => b.insts.any fun | .call _ => true | _ => false
+  let frame := fr.size != 0 || calls || usesFp
+  pure { name := vc.name, frameSize := fr.size, blocks, slotBase := vc.outgoing, frame }
 
 /-! ## The allocator -/
 

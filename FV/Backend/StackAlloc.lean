@@ -58,6 +58,10 @@ structure AFunc where
   blocks : Array (Label × Array AInst)
   /-- Offset of the explicit stack-slot region from `sp` (= the outgoing area size). -/
   slotBase : Nat
+  /-- `false`: no frame at all (a leaf function with an empty frame that never addresses
+  `fp`): `prologue` emits nothing and `epilogueRet` only `ret`, as Cranelift does when
+  `preserve_frame_pointers` is off. -/
+  frame : Bool := true
   deriving Inhabited
 
 /-- Frame layout: slot offset (from `sp`) of every vreg, and the frame size. -/
