@@ -486,4 +486,198 @@ theorem bxor_fits_in_64_ok {p : Program} (hp : Data p) (F : BitVec 64 → Prop) 
     (fun ctx _ _ _ _ _ _ st tr m hi hty hw hd => match_1516 hp ctx hi hty hw hd st tr m)
     (fun ctx _ w x y st tr n => args_1516 hp ctx w x y st tr n) F isem MR env cp hR hMR
 
+/-- **iadd_ishl_right** (`lower.isle:116`, `iadd x (ishl y (iconst k))` → `add x, y, lsl #k`), i8..i64. -/
+theorem iadd_ishl_right_ok {p : Program} (hp : Data p) (F : BitVec 64 → Prop) (isem : Sem)
+    (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program) (hR : Refines F isem)
+    (hMR : MRStable F MR) : LowerRuleOk isem MR env cp p rule_lower_116 := by
+  intro f ctx hctx ii info inst hi hc cfg hco m n st tr env' s1 out st' tr' hm hn _hvb _hfirst hmatch heval
+  obtain ⟨m', rfl⟩ : ∃ m', m = m' + 10 := ⟨m - 10, by omega⟩
+  obtain ⟨n', rfl⟩ : ∃ n', n = n' + 40 := ⟨n - 40, by omega⟩
+  obtain ⟨ty, x, y, e0, e1, rfl, hd, hhead, hw, hrest, -⟩ :=
+    binary_root_inv hp hctx hi hc (m := m' + 9) (cop := .iadd) rfl hp.t2357 term_2357_kind
+      variantNames_Iadd rfl hmatch
+  obtain ⟨e2, -, hsh0⟩ := values2_match_inv hp ctx hrest
+  obtain ⟨j1, info1, fs1, e5, hj1, hij1, hd1, hrest1⟩ :=
+    defInst_match_inv hp ctx hp.t2449 term_2449_kind hp.t2387 term_2387_kind hsh0
+  obtain ⟨cl1, hcl1, hdat1⟩ := ctxInv_clif hctx hj1 hij1
+  rw [hd1] at hdat1
+  obtain ⟨ty1, z, b, rfl, -, rfl⟩ := instData_binary_inv variantNames_Ishl (cop := .ishl) rfl hdat1
+  obtain ⟨e6, -, hpb⟩ := values2_match_inv hp ctx hrest1
+  obtain ⟨j2, info2, fs2, e7, hj2, hij2, hd2, -⟩ :=
+    defInst_match_inv hp ctx hp.t2482 term_2482_kind hp.t2341 term_2341_kind hpb
+  obtain ⟨cl2, hcl2, hdat2⟩ := ctxInv_clif hctx hj2 hij2
+  rw [hd2] at hdat2
+  obtain ⟨ty3, c3, rfl, rfl⟩ := instData_iconst_inv hdat2
+  have he3 := instData_iconst_eTy hdat2
+  cases hsh : lshlOf? ty.width (imm64OfIconst ty3 c3) with
+  | none =>
+    rw [match_116_none hp ctx st tr m' hi hhead hw hd hj1 hij1 hd1 hj2 hij2 hd2 hsh] at hmatch
+    cases hmatch
+  | some sh =>
+  rw [match_116 hp ctx st tr m' hi hhead hw hd hj1 hij1 hd1 hj2 hij2 hd2 hsh] at hmatch
+  simp only [Except.ok.injEq, Prod.mk.injEq, Option.some.injEq] at hmatch
+  obtain ⟨rfl, rfl⟩ := hmatch
+  cases hrr : ctx.valueReg? x with
+  | none => exact absurd heval (rhs_116_none hp ctx st tr n' (.inl hrr) _ _)
+  | some rr =>
+  cases hrz : ctx.valueReg? z with
+  | none => exact absurd heval (rhs_116_none hp ctx st tr n' (.inr hrz) _ _)
+  | some rz =>
+  obtain rfl := hctx.valueReg x rr hrr
+  obtain rfl := hctx.valueReg z rz hrz
+  obtain ⟨tr'', he⟩ := rhs_116 hp ctx hco st tr n' hrr hrz hw
+  rw [he] at heval
+  simp only [Except.ok.injEq, Prod.mk.injEq, Option.some.injEq] at heval
+  obtain ⟨rfl, rfl, -⟩ := heval
+  refine ⟨_, _, emitted_fresh_emit _ _, by rw [fresh_fst], ?_⟩
+  rw [fresh_fst]
+  refine OneInstOk.lowerInstOk hR hMR rfl (fun _ _ => rfl)
+    ⟨_, operands_aluRRRShift _ _ _ _ _ _, rfl, ?_⟩
+  intro fr ρ w hvals hdfg u v hx hy
+  obtain ⟨u', hz, hshl, hamt, rfl⟩ :=
+    ishl_const_value hdfg hw hj1 hij1 hcl1 hj2 hij2 hcl2 he3 hy hsh
+  refine ⟨fun q hq => ?_, ?_⟩
+  · rw [vuseNums_aluRRRShift] at hq
+    simp only [List.mem_cons, List.mem_nil_iff, or_false] at hq
+    rcases hq with rfl | rfl
+    · exact getAs_isSome hx
+    · exact getAs_isSome hz
+  · have hB : (opnd (szOf ty.width) (ρ z) <<< sh.amt).setWidth ty.width = u' <<< sh.amt := by
+      rw [BitVec.setWidth_shiftLeft_of_le (szOf_bits hw),
+        opnd_setWidth_eq (szOf_bits hw) (hvals z _ (getAs_ok hz))]
+    obtain ⟨r, hr, hh⟩ := aluVal_holds_B (op := .add) (cop := .iadd) (by simp)
+      (szOf_bits hw) (hvals x _ (getAs_ok hx)) hB
+    refine ⟨_, ispec_aluRRRShift (by simp) hshl (Nat.lt_of_lt_of_le hamt (szOf_bits hw)) hr, ?_⟩
+    exact hh
+
+/-- **iadd_ishl_left** (`lower.isle:120`, `iadd (ishl x (iconst k)) y` → `add y, x, lsl #k`), i8..i64. -/
+theorem iadd_ishl_left_ok {p : Program} (hp : Data p) (F : BitVec 64 → Prop) (isem : Sem)
+    (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program) (hR : Refines F isem)
+    (hMR : MRStable F MR) : LowerRuleOk isem MR env cp p rule_lower_120 := by
+  intro f ctx hctx ii info inst hi hc cfg hco m n st tr env' s1 out st' tr' hm hn _hvb _hfirst hmatch heval
+  obtain ⟨m', rfl⟩ : ∃ m', m = m' + 10 := ⟨m - 10, by omega⟩
+  obtain ⟨n', rfl⟩ : ∃ n', n = n' + 40 := ⟨n - 40, by omega⟩
+  obtain ⟨ty, x, y, e0, e1, rfl, hd, hhead, hw, hrest, -⟩ :=
+    binary_root_inv hp hctx hi hc (m := m' + 9) (cop := .iadd) rfl hp.t2357 term_2357_kind
+      variantNames_Iadd rfl hmatch
+  obtain ⟨e2, hsh0, -⟩ := values2_match_inv hp ctx hrest
+  obtain ⟨j1, info1, fs1, e5, hj1, hij1, hd1, hrest1⟩ :=
+    defInst_match_inv hp ctx hp.t2449 term_2449_kind hp.t2387 term_2387_kind hsh0
+  obtain ⟨cl1, hcl1, hdat1⟩ := ctxInv_clif hctx hj1 hij1
+  rw [hd1] at hdat1
+  obtain ⟨ty1, z, b, rfl, -, rfl⟩ := instData_binary_inv variantNames_Ishl (cop := .ishl) rfl hdat1
+  obtain ⟨e6, -, hpb⟩ := values2_match_inv hp ctx hrest1
+  obtain ⟨j2, info2, fs2, e7, hj2, hij2, hd2, -⟩ :=
+    defInst_match_inv hp ctx hp.t2482 term_2482_kind hp.t2341 term_2341_kind hpb
+  obtain ⟨cl2, hcl2, hdat2⟩ := ctxInv_clif hctx hj2 hij2
+  rw [hd2] at hdat2
+  obtain ⟨ty3, c3, rfl, rfl⟩ := instData_iconst_inv hdat2
+  have he3 := instData_iconst_eTy hdat2
+  cases hsh : lshlOf? ty.width (imm64OfIconst ty3 c3) with
+  | none =>
+    rw [match_120_none hp ctx st tr m' hi hhead hw hd hj1 hij1 hd1 hj2 hij2 hd2 hsh] at hmatch
+    cases hmatch
+  | some sh =>
+  rw [match_120 hp ctx st tr m' hi hhead hw hd hj1 hij1 hd1 hj2 hij2 hd2 hsh] at hmatch
+  simp only [Except.ok.injEq, Prod.mk.injEq, Option.some.injEq] at hmatch
+  obtain ⟨rfl, rfl⟩ := hmatch
+  cases hrr : ctx.valueReg? y with
+  | none => exact absurd heval (rhs_120_none hp ctx st tr n' (.inl hrr) _ _)
+  | some rr =>
+  cases hrz : ctx.valueReg? z with
+  | none => exact absurd heval (rhs_120_none hp ctx st tr n' (.inr hrz) _ _)
+  | some rz =>
+  obtain rfl := hctx.valueReg y rr hrr
+  obtain rfl := hctx.valueReg z rz hrz
+  obtain ⟨tr'', he⟩ := rhs_120 hp ctx hco st tr n' hrr hrz hw
+  rw [he] at heval
+  simp only [Except.ok.injEq, Prod.mk.injEq, Option.some.injEq] at heval
+  obtain ⟨rfl, rfl, -⟩ := heval
+  refine ⟨_, _, emitted_fresh_emit _ _, by rw [fresh_fst], ?_⟩
+  rw [fresh_fst]
+  refine OneInstOk.lowerInstOk hR hMR rfl (fun _ _ => rfl)
+    ⟨_, operands_aluRRRShift _ _ _ _ _ _, rfl, ?_⟩
+  intro fr ρ w hvals hdfg u v hx hy
+  obtain ⟨u', hz, hshl, hamt, rfl⟩ :=
+    ishl_const_value hdfg hw hj1 hij1 hcl1 hj2 hij2 hcl2 he3 hx hsh
+  refine ⟨fun q hq => ?_, ?_⟩
+  · rw [vuseNums_aluRRRShift] at hq
+    simp only [List.mem_cons, List.mem_nil_iff, or_false] at hq
+    rcases hq with rfl | rfl
+    · exact getAs_isSome hy
+    · exact getAs_isSome hz
+  · have hB : (opnd (szOf ty.width) (ρ z) <<< sh.amt).setWidth ty.width = u' <<< sh.amt := by
+      rw [BitVec.setWidth_shiftLeft_of_le (szOf_bits hw),
+        opnd_setWidth_eq (szOf_bits hw) (hvals z _ (getAs_ok hz))]
+    obtain ⟨r, hr, hh⟩ := aluVal_holds_B (op := .add) (cop := .iadd) (by simp)
+      (szOf_bits hw) (hvals y _ (getAs_ok hy)) hB
+    refine ⟨_, ispec_aluRRRShift (by simp) hshl (Nat.lt_of_lt_of_le hamt (szOf_bits hw)) hr, ?_⟩
+    show VHolds ⟨ty, _ + _⟩ _
+    rw [BitVec.add_comm]
+    exact hh
+
+/-- **isub_ishl** (`lower.isle:821`, `isub x (ishl y (iconst k))` → `sub x, y, lsl #k`), i8..i64. -/
+theorem isub_ishl_ok {p : Program} (hp : Data p) (F : BitVec 64 → Prop) (isem : Sem)
+    (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program) (hR : Refines F isem)
+    (hMR : MRStable F MR) : LowerRuleOk isem MR env cp p rule_lower_821 := by
+  intro f ctx hctx ii info inst hi hc cfg hco m n st tr env' s1 out st' tr' hm hn _hvb _hfirst hmatch heval
+  obtain ⟨m', rfl⟩ : ∃ m', m = m' + 10 := ⟨m - 10, by omega⟩
+  obtain ⟨n', rfl⟩ : ∃ n', n = n' + 40 := ⟨n - 40, by omega⟩
+  obtain ⟨ty, x, y, e0, e1, rfl, hd, hhead, hw, hrest, -⟩ :=
+    binary_root_inv hp hctx hi hc (m := m' + 9) (cop := .isub) rfl hp.t2358 term_2358_kind
+      variantNames_Isub rfl hmatch
+  obtain ⟨e2, -, hsh0⟩ := values2_match_inv hp ctx hrest
+  obtain ⟨j1, info1, fs1, e5, hj1, hij1, hd1, hrest1⟩ :=
+    defInst_match_inv hp ctx hp.t2449 term_2449_kind hp.t2387 term_2387_kind hsh0
+  obtain ⟨cl1, hcl1, hdat1⟩ := ctxInv_clif hctx hj1 hij1
+  rw [hd1] at hdat1
+  obtain ⟨ty1, z, b, rfl, -, rfl⟩ := instData_binary_inv variantNames_Ishl (cop := .ishl) rfl hdat1
+  obtain ⟨e6, -, hpb⟩ := values2_match_inv hp ctx hrest1
+  obtain ⟨j2, info2, fs2, e7, hj2, hij2, hd2, -⟩ :=
+    defInst_match_inv hp ctx hp.t2482 term_2482_kind hp.t2341 term_2341_kind hpb
+  obtain ⟨cl2, hcl2, hdat2⟩ := ctxInv_clif hctx hj2 hij2
+  rw [hd2] at hdat2
+  obtain ⟨ty3, c3, rfl, rfl⟩ := instData_iconst_inv hdat2
+  have he3 := instData_iconst_eTy hdat2
+  cases hsh : lshlOf? ty.width (imm64OfIconst ty3 c3) with
+  | none =>
+    rw [match_821_none hp ctx st tr m' hi hhead hw hd hj1 hij1 hd1 hj2 hij2 hd2 hsh] at hmatch
+    cases hmatch
+  | some sh =>
+  rw [match_821 hp ctx st tr m' hi hhead hw hd hj1 hij1 hd1 hj2 hij2 hd2 hsh] at hmatch
+  simp only [Except.ok.injEq, Prod.mk.injEq, Option.some.injEq] at hmatch
+  obtain ⟨rfl, rfl⟩ := hmatch
+  cases hrr : ctx.valueReg? x with
+  | none => exact absurd heval (rhs_821_none hp ctx st tr n' (.inl hrr) _ _)
+  | some rr =>
+  cases hrz : ctx.valueReg? z with
+  | none => exact absurd heval (rhs_821_none hp ctx st tr n' (.inr hrz) _ _)
+  | some rz =>
+  obtain rfl := hctx.valueReg x rr hrr
+  obtain rfl := hctx.valueReg z rz hrz
+  obtain ⟨tr'', he⟩ := rhs_821 hp ctx hco st tr n' hrr hrz hw
+  rw [he] at heval
+  simp only [Except.ok.injEq, Prod.mk.injEq, Option.some.injEq] at heval
+  obtain ⟨rfl, rfl, -⟩ := heval
+  refine ⟨_, _, emitted_fresh_emit _ _, by rw [fresh_fst], ?_⟩
+  rw [fresh_fst]
+  refine OneInstOk.lowerInstOk hR hMR rfl (fun _ _ => rfl)
+    ⟨_, operands_aluRRRShift _ _ _ _ _ _, rfl, ?_⟩
+  intro fr ρ w hvals hdfg u v hx hy
+  obtain ⟨u', hz, hshl, hamt, rfl⟩ :=
+    ishl_const_value hdfg hw hj1 hij1 hcl1 hj2 hij2 hcl2 he3 hy hsh
+  refine ⟨fun q hq => ?_, ?_⟩
+  · rw [vuseNums_aluRRRShift] at hq
+    simp only [List.mem_cons, List.mem_nil_iff, or_false] at hq
+    rcases hq with rfl | rfl
+    · exact getAs_isSome hx
+    · exact getAs_isSome hz
+  · have hB : (opnd (szOf ty.width) (ρ z) <<< sh.amt).setWidth ty.width = u' <<< sh.amt := by
+      rw [BitVec.setWidth_shiftLeft_of_le (szOf_bits hw),
+        opnd_setWidth_eq (szOf_bits hw) (hvals z _ (getAs_ok hz))]
+    obtain ⟨r, hr, hh⟩ := aluVal_holds_B (op := .sub) (cop := .isub) (by simp)
+      (szOf_bits hw) (hvals x _ (getAs_ok hx)) hB
+    refine ⟨_, ispec_aluRRRShift (by simp) hshl (Nat.lt_of_lt_of_le hamt (szOf_bits hw)) hr, ?_⟩
+    exact hh
+
 end Backend.Proof

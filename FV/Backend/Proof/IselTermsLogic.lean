@@ -540,4 +540,261 @@ theorem args_1516 (w x y : Nat) (st : LState) (tr : Array RuleId) (n : Nat) :
   cases hp
   isel_eval [*]
 
+/-! ## `add_shift` / `sub_shift` and the shifted-operand `iadd`/`isub` rules (116, 120, 821) -/
+
+section ShiftRules
+variable (st : LState) (tr : Array RuleId) (n : Nat)
+
+include hp hc in
+theorem add_shift_run {ks : Nat} {sz : OperandSize} {w : Nat} {rid : RuleId}
+    (hsz : ∀ st tr n, (applyTerm p (sem ctx) cfg (n+8) 93 305 [.ty (.int w)]).run (st, tr) =
+      .ok (some (.data 93 ks []), (st, tr.push rid)))
+    (hs : OperandSize.ofIdx? ks = some sz) (a b : Reg) (sh : ShiftOpAndAmt) :
+    (applyTerm p (sem ctx) cfg (n+30) 27 435 [.ty (.int w), .reg a, .reg b, .op (.shiftOpAndAmt sh)]).run
+      (st, tr) =
+      .ok (some (.reg (st.fresh .int).1),
+        ((st.fresh .int).2.emit (.aluRRRShift .add sz (st.fresh .int).1 a b sh),
+          ((tr.push rid).push rule_inst_2656.id).push rule_inst_3130.id)) := by
+  have h := fun st tr n => alu_rrr_shift_run hp ctx hc st tr n hsz (k := 0) rfl hs
+  cases hp
+  isel_eval [*, rule_inst_3130]
+
+include hp hc in
+theorem sub_shift_run {ks : Nat} {sz : OperandSize} {w : Nat} {rid : RuleId}
+    (hsz : ∀ st tr n, (applyTerm p (sem ctx) cfg (n+8) 93 305 [.ty (.int w)]).run (st, tr) =
+      .ok (some (.data 93 ks []), (st, tr.push rid)))
+    (hs : OperandSize.ofIdx? ks = some sz) (a b : Reg) (sh : ShiftOpAndAmt) :
+    (applyTerm p (sem ctx) cfg (n+30) 27 440 [.ty (.int w), .reg a, .reg b, .op (.shiftOpAndAmt sh)]).run
+      (st, tr) =
+      .ok (some (.reg (st.fresh .int).1),
+        ((st.fresh .int).2.emit (.aluRRRShift .sub sz (st.fresh .int).1 a b sh),
+          ((tr.push rid).push rule_inst_2656.id).push rule_inst_3150.id)) := by
+  have h := fun st tr n => alu_rrr_shift_run hp ctx hc st tr n hsz (k := 1) rfl hs
+  cases hp
+  isel_eval [*, rule_inst_3150]
+
+include hp in
+theorem match_116 {i x y z b w j1 j2 : Nat} {kk : Int} {info info1 info2 : IInfo} {sh : ShiftOpAndAmt}
+    (hi : ctx.insts[i]? = some info) (hty : info.resTys.head? = some (.int w)) (hw : w ≤ 64)
+    (hd : info.data = .data 152 2 [.data 151 73 [], .values [x, y]])
+    (hj1 : ctx.defInst? y = some j1) (hij1 : ctx.insts[j1]? = some info1)
+    (hd1 : info1.data = .data 152 2 [.data 151 103 [], .values [z, b]])
+    (hj2 : ctx.defInst? b = some j2) (hij2 : ctx.insts[j2]? = some info2)
+    (hd2 : info2.data = .data 152 35 [.data 151 57 [], .int kk]) (hsh : lshlOf? w kk = some sh) :
+    (matchRule p (sem ctx) cfg (n+10) rule_lower_116 [.inst i]).run (st, tr) =
+      .ok (some (env5 (.ty (.int w)) (.value x) (.value z) (.int kk) (.op (.shiftOpAndAmt sh))), (st, tr)) := by
+  have h0 := ext_inst_data_value ctx st hi
+  rw [hd, hty, Option.getD_some] at h0
+  have h1 := ext_inst_data_value ctx st hij1
+  rw [hd1] at h1
+  have h2 := ext_inst_data_value ctx st hij2
+  rw [hd2] at h2
+  have h3 := ext_def_inst_some ctx st hj1
+  have h3' := ext_def_inst_some ctx st hj2
+  have h4 := ctor_lshl_some ctx st hsh
+  cases hp
+  isel_eval [*, rule_lower_116, ext_ty_int_ref_scalar_64_extract ctx st hw, ext_value_array_2]
+
+include hp in
+theorem match_116_none {i x y z b w j1 j2 : Nat} {kk : Int} {info info1 info2 : IInfo}
+    (hi : ctx.insts[i]? = some info) (hty : info.resTys.head? = some (.int w)) (hw : w ≤ 64)
+    (hd : info.data = .data 152 2 [.data 151 73 [], .values [x, y]])
+    (hj1 : ctx.defInst? y = some j1) (hij1 : ctx.insts[j1]? = some info1)
+    (hd1 : info1.data = .data 152 2 [.data 151 103 [], .values [z, b]])
+    (hj2 : ctx.defInst? b = some j2) (hij2 : ctx.insts[j2]? = some info2)
+    (hd2 : info2.data = .data 152 35 [.data 151 57 [], .int kk]) (hsh : lshlOf? w kk = none) :
+    (matchRule p (sem ctx) cfg (n+10) rule_lower_116 [.inst i]).run (st, tr) = .ok (none, (st, tr)) := by
+  have h0 := ext_inst_data_value ctx st hi
+  rw [hd, hty, Option.getD_some] at h0
+  have h1 := ext_inst_data_value ctx st hij1
+  rw [hd1] at h1
+  have h2 := ext_inst_data_value ctx st hij2
+  rw [hd2] at h2
+  have h3 := ext_def_inst_some ctx st hj1
+  have h3' := ext_def_inst_some ctx st hj2
+  have h4 := ctor_lshl_none ctx st hsh
+  cases hp
+  isel_eval [*, rule_lower_116, ext_ty_int_ref_scalar_64_extract ctx st hw, ext_value_array_2]
+
+include hp hc in
+theorem rhs_116 {x z w : Nat} {kk : Int} {rx rz : Reg} {sh : ShiftOpAndAmt}
+    (hx : ctx.valueReg? x = some rx) (hz : ctx.valueReg? z = some rz) (hw : w ≤ 64) :
+    ∃ tr', (evalExpr p (sem ctx) cfg (n+40) rule_lower_116.rhs (env5 (.ty (.int w)) (.value x) (.value z) (.int kk) (.op (.shiftOpAndAmt sh)))).run (st, tr) =
+      .ok (some (.regsVec [[(st.fresh .int).1]]),
+        ((st.fresh .int).2.emit (.aluRRRShift .add (szOf w) (st.fresh .int).1 rx rz sh), tr')) := by
+  obtain ⟨ks, rid, hs, hsz⟩ := operand_size_run hp ctx hc hw
+  have h1 := fun st tr n => add_shift_run hp ctx hc st tr n hsz hs
+  have h2 := fun st tr n => output_reg_run hp ctx hc st tr n
+  cases hp
+  refine Exists.intro ?w ?h
+  case h =>
+    isel_eval [*, rule_lower_116, ctor_put_in_reg ctx _ hx, ctor_put_in_reg ctx _ hz]
+    rfl
+
+include hp in
+theorem rhs_116_none {x z w : Nat} {kk : Int} {sh : ShiftOpAndAmt}
+    (hxz : ctx.valueReg? x = none ∨ ctx.valueReg? z = none) (v : V) (s' : LState × Array RuleId) :
+    (evalExpr p (sem ctx) cfg (n+40) rule_lower_116.rhs (env5 (.ty (.int w)) (.value x) (.value z) (.int kk) (.op (.shiftOpAndAmt sh)))).run (st, tr) ≠ .ok (some v, s') := by
+  cases hp
+  rcases hxz with hx | hz
+  · isel_eval [*, rule_lower_116, ctor_put_in_reg_none ctx _ hx]
+    exact fun h => by cases h
+  · cases hx : ctx.valueReg? x with
+    | none =>
+      isel_eval [*, rule_lower_116, ctor_put_in_reg_none ctx _ hx]
+      exact fun h => by cases h
+    | some rx =>
+      isel_eval [*, rule_lower_116, ctor_put_in_reg ctx _ hx, ctor_put_in_reg_none ctx _ hz]
+      exact fun h => by cases h
+
+include hp in
+theorem match_120 {i x y z b w j1 j2 : Nat} {kk : Int} {info info1 info2 : IInfo} {sh : ShiftOpAndAmt}
+    (hi : ctx.insts[i]? = some info) (hty : info.resTys.head? = some (.int w)) (hw : w ≤ 64)
+    (hd : info.data = .data 152 2 [.data 151 73 [], .values [x, y]])
+    (hj1 : ctx.defInst? x = some j1) (hij1 : ctx.insts[j1]? = some info1)
+    (hd1 : info1.data = .data 152 2 [.data 151 103 [], .values [z, b]])
+    (hj2 : ctx.defInst? b = some j2) (hij2 : ctx.insts[j2]? = some info2)
+    (hd2 : info2.data = .data 152 35 [.data 151 57 [], .int kk]) (hsh : lshlOf? w kk = some sh) :
+    (matchRule p (sem ctx) cfg (n+10) rule_lower_120 [.inst i]).run (st, tr) =
+      .ok (some (env5 (.ty (.int w)) (.value z) (.int kk) (.value y) (.op (.shiftOpAndAmt sh))), (st, tr)) := by
+  have h0 := ext_inst_data_value ctx st hi
+  rw [hd, hty, Option.getD_some] at h0
+  have h1 := ext_inst_data_value ctx st hij1
+  rw [hd1] at h1
+  have h2 := ext_inst_data_value ctx st hij2
+  rw [hd2] at h2
+  have h3 := ext_def_inst_some ctx st hj1
+  have h3' := ext_def_inst_some ctx st hj2
+  have h4 := ctor_lshl_some ctx st hsh
+  cases hp
+  isel_eval [*, rule_lower_120, ext_ty_int_ref_scalar_64_extract ctx st hw, ext_value_array_2]
+
+include hp in
+theorem match_120_none {i x y z b w j1 j2 : Nat} {kk : Int} {info info1 info2 : IInfo}
+    (hi : ctx.insts[i]? = some info) (hty : info.resTys.head? = some (.int w)) (hw : w ≤ 64)
+    (hd : info.data = .data 152 2 [.data 151 73 [], .values [x, y]])
+    (hj1 : ctx.defInst? x = some j1) (hij1 : ctx.insts[j1]? = some info1)
+    (hd1 : info1.data = .data 152 2 [.data 151 103 [], .values [z, b]])
+    (hj2 : ctx.defInst? b = some j2) (hij2 : ctx.insts[j2]? = some info2)
+    (hd2 : info2.data = .data 152 35 [.data 151 57 [], .int kk]) (hsh : lshlOf? w kk = none) :
+    (matchRule p (sem ctx) cfg (n+10) rule_lower_120 [.inst i]).run (st, tr) = .ok (none, (st, tr)) := by
+  have h0 := ext_inst_data_value ctx st hi
+  rw [hd, hty, Option.getD_some] at h0
+  have h1 := ext_inst_data_value ctx st hij1
+  rw [hd1] at h1
+  have h2 := ext_inst_data_value ctx st hij2
+  rw [hd2] at h2
+  have h3 := ext_def_inst_some ctx st hj1
+  have h3' := ext_def_inst_some ctx st hj2
+  have h4 := ctor_lshl_none ctx st hsh
+  cases hp
+  isel_eval [*, rule_lower_120, ext_ty_int_ref_scalar_64_extract ctx st hw, ext_value_array_2]
+
+include hp hc in
+theorem rhs_120 {y z w : Nat} {kk : Int} {rx rz : Reg} {sh : ShiftOpAndAmt}
+    (hx : ctx.valueReg? y = some rx) (hz : ctx.valueReg? z = some rz) (hw : w ≤ 64) :
+    ∃ tr', (evalExpr p (sem ctx) cfg (n+40) rule_lower_120.rhs (env5 (.ty (.int w)) (.value z) (.int kk) (.value y) (.op (.shiftOpAndAmt sh)))).run (st, tr) =
+      .ok (some (.regsVec [[(st.fresh .int).1]]),
+        ((st.fresh .int).2.emit (.aluRRRShift .add (szOf w) (st.fresh .int).1 rx rz sh), tr')) := by
+  obtain ⟨ks, rid, hs, hsz⟩ := operand_size_run hp ctx hc hw
+  have h1 := fun st tr n => add_shift_run hp ctx hc st tr n hsz hs
+  have h2 := fun st tr n => output_reg_run hp ctx hc st tr n
+  cases hp
+  refine Exists.intro ?w ?h
+  case h =>
+    isel_eval [*, rule_lower_120, ctor_put_in_reg ctx _ hx, ctor_put_in_reg ctx _ hz]
+    rfl
+
+include hp in
+theorem rhs_120_none {y z w : Nat} {kk : Int} {sh : ShiftOpAndAmt}
+    (hxz : ctx.valueReg? y = none ∨ ctx.valueReg? z = none) (v : V) (s' : LState × Array RuleId) :
+    (evalExpr p (sem ctx) cfg (n+40) rule_lower_120.rhs (env5 (.ty (.int w)) (.value z) (.int kk) (.value y) (.op (.shiftOpAndAmt sh)))).run (st, tr) ≠ .ok (some v, s') := by
+  cases hp
+  rcases hxz with hx | hz
+  · isel_eval [*, rule_lower_120, ctor_put_in_reg_none ctx _ hx]
+    exact fun h => by cases h
+  · cases hx : ctx.valueReg? y with
+    | none =>
+      isel_eval [*, rule_lower_120, ctor_put_in_reg_none ctx _ hx]
+      exact fun h => by cases h
+    | some rx =>
+      isel_eval [*, rule_lower_120, ctor_put_in_reg ctx _ hx, ctor_put_in_reg_none ctx _ hz]
+      exact fun h => by cases h
+
+include hp in
+theorem match_821 {i x y z b w j1 j2 : Nat} {kk : Int} {info info1 info2 : IInfo} {sh : ShiftOpAndAmt}
+    (hi : ctx.insts[i]? = some info) (hty : info.resTys.head? = some (.int w)) (hw : w ≤ 64)
+    (hd : info.data = .data 152 2 [.data 151 74 [], .values [x, y]])
+    (hj1 : ctx.defInst? y = some j1) (hij1 : ctx.insts[j1]? = some info1)
+    (hd1 : info1.data = .data 152 2 [.data 151 103 [], .values [z, b]])
+    (hj2 : ctx.defInst? b = some j2) (hij2 : ctx.insts[j2]? = some info2)
+    (hd2 : info2.data = .data 152 35 [.data 151 57 [], .int kk]) (hsh : lshlOf? w kk = some sh) :
+    (matchRule p (sem ctx) cfg (n+10) rule_lower_821 [.inst i]).run (st, tr) =
+      .ok (some (env5 (.ty (.int w)) (.value x) (.value z) (.int kk) (.op (.shiftOpAndAmt sh))), (st, tr)) := by
+  have h0 := ext_inst_data_value ctx st hi
+  rw [hd, hty, Option.getD_some] at h0
+  have h1 := ext_inst_data_value ctx st hij1
+  rw [hd1] at h1
+  have h2 := ext_inst_data_value ctx st hij2
+  rw [hd2] at h2
+  have h3 := ext_def_inst_some ctx st hj1
+  have h3' := ext_def_inst_some ctx st hj2
+  have h4 := ctor_lshl_some ctx st hsh
+  cases hp
+  isel_eval [*, rule_lower_821, ext_ty_int_ref_scalar_64_extract ctx st hw, ext_value_array_2]
+
+include hp in
+theorem match_821_none {i x y z b w j1 j2 : Nat} {kk : Int} {info info1 info2 : IInfo}
+    (hi : ctx.insts[i]? = some info) (hty : info.resTys.head? = some (.int w)) (hw : w ≤ 64)
+    (hd : info.data = .data 152 2 [.data 151 74 [], .values [x, y]])
+    (hj1 : ctx.defInst? y = some j1) (hij1 : ctx.insts[j1]? = some info1)
+    (hd1 : info1.data = .data 152 2 [.data 151 103 [], .values [z, b]])
+    (hj2 : ctx.defInst? b = some j2) (hij2 : ctx.insts[j2]? = some info2)
+    (hd2 : info2.data = .data 152 35 [.data 151 57 [], .int kk]) (hsh : lshlOf? w kk = none) :
+    (matchRule p (sem ctx) cfg (n+10) rule_lower_821 [.inst i]).run (st, tr) = .ok (none, (st, tr)) := by
+  have h0 := ext_inst_data_value ctx st hi
+  rw [hd, hty, Option.getD_some] at h0
+  have h1 := ext_inst_data_value ctx st hij1
+  rw [hd1] at h1
+  have h2 := ext_inst_data_value ctx st hij2
+  rw [hd2] at h2
+  have h3 := ext_def_inst_some ctx st hj1
+  have h3' := ext_def_inst_some ctx st hj2
+  have h4 := ctor_lshl_none ctx st hsh
+  cases hp
+  isel_eval [*, rule_lower_821, ext_ty_int_ref_scalar_64_extract ctx st hw, ext_value_array_2]
+
+include hp hc in
+theorem rhs_821 {x z w : Nat} {kk : Int} {rx rz : Reg} {sh : ShiftOpAndAmt}
+    (hx : ctx.valueReg? x = some rx) (hz : ctx.valueReg? z = some rz) (hw : w ≤ 64) :
+    ∃ tr', (evalExpr p (sem ctx) cfg (n+40) rule_lower_821.rhs (env5 (.ty (.int w)) (.value x) (.value z) (.int kk) (.op (.shiftOpAndAmt sh)))).run (st, tr) =
+      .ok (some (.regsVec [[(st.fresh .int).1]]),
+        ((st.fresh .int).2.emit (.aluRRRShift .sub (szOf w) (st.fresh .int).1 rx rz sh), tr')) := by
+  obtain ⟨ks, rid, hs, hsz⟩ := operand_size_run hp ctx hc hw
+  have h1 := fun st tr n => sub_shift_run hp ctx hc st tr n hsz hs
+  have h2 := fun st tr n => output_reg_run hp ctx hc st tr n
+  cases hp
+  refine Exists.intro ?w ?h
+  case h =>
+    isel_eval [*, rule_lower_821, ctor_put_in_reg ctx _ hx, ctor_put_in_reg ctx _ hz]
+    rfl
+
+include hp in
+theorem rhs_821_none {x z w : Nat} {kk : Int} {sh : ShiftOpAndAmt}
+    (hxz : ctx.valueReg? x = none ∨ ctx.valueReg? z = none) (v : V) (s' : LState × Array RuleId) :
+    (evalExpr p (sem ctx) cfg (n+40) rule_lower_821.rhs (env5 (.ty (.int w)) (.value x) (.value z) (.int kk) (.op (.shiftOpAndAmt sh)))).run (st, tr) ≠ .ok (some v, s') := by
+  cases hp
+  rcases hxz with hx | hz
+  · isel_eval [*, rule_lower_821, ctor_put_in_reg_none ctx _ hx]
+    exact fun h => by cases h
+  · cases hx : ctx.valueReg? x with
+    | none =>
+      isel_eval [*, rule_lower_821, ctor_put_in_reg_none ctx _ hx]
+      exact fun h => by cases h
+    | some rx =>
+      isel_eval [*, rule_lower_821, ctor_put_in_reg ctx _ hx, ctor_put_in_reg_none ctx _ hz]
+      exact fun h => by cases h
+
+end ShiftRules
+
 end Backend.Proof

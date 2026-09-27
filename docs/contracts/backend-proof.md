@@ -246,3 +246,53 @@ shift amounts by `shift_mask`). With "low bits" the obligation stays local to ea
   inductive predicates) proven equivalent to the fuel-based functions; rule proofs by
   constructor application would avoid fuel arithmetic and the evaluation-order tactic.
 - **Width convention**: document "low bits, upper unspecified" as the contract (PLAN §3.4).
+
+## Family A (binary ALU with operand look-through) — M4AluA
+
+Closure root rules of the family's opcodes (`FV/Isle/Generated/Closure.lean`, `isRoot`, term
+686), with state:
+
+| Opcode | Rule (`lower.isle` line, name) | State |
+| --- | --- | --- |
+| `iadd` | 86 `iadd_base_case` | done (M4Foundation) |
+| `iadd` | 90 `iadd_imm12_right`, 93 `iadd_imm12_left` | **proven** (`iadd_imm12_right_ok`, `iadd_imm12_left_ok`) |
+| `iadd` | 98 `iadd_imm12_neg_right`, 102 `iadd_imm12_neg_left` | **proven** (`iadd_imm12_neg_right_ok`, `iadd_imm12_neg_left_ok`) |
+| `iadd` | 116 `iadd_ishl_right`, 120 `iadd_ishl_left` | **proven** (`iadd_ishl_right_ok`, `iadd_ishl_left_ok`) |
+| `iadd` | 108 `iadd_extend_right`, 111 `iadd_extend_left` | not done: needs `extended_value_from_value` inversion + `FrameTyped` (now in `DFGCons`) + `extendVal` width lemma |
+| `iadd` | 125 `iadd_imul_right`, 128 `iadd_imul_left` | not done: `madd` term run + `AluRRRR` ispec lemma (spec form exists: `mulAddVal`) |
+| `isub` | 801 `isub_base_case` | done (M4Foundation) |
+| `isub` | 805 `isub_imm12`, 810 `isub_imm12_neg`, 821 `isub_ishl` | **proven** (`isub_imm12_ok`, `isub_imm12_neg_ok`, `isub_ishl_ok`) |
+| `isub` | 132 `isub_imul`, 816 `isub_extend` | not done (as 125 / 108) |
+| `imul` | 871 `imul_base_case` | not done: `madd ty x y (zero_reg)` → `AluRRRR … xzr` (ispec case with 2 uses exists) |
+| `smulhi`/`umulhi` | 1056 `smulhi_64`, 1068 `umulhi_64` | not done: `smulh`/`umulh` via `alu_rrr` (ispec 64-bit cases exist) |
+| `smulhi`/`umulhi` | 1059, 1071 (`fits_in_32`) | not done: 4-instruction sequences (`put_in_reg_sext64/zext64` value_type dispatch → needs `FrameTyped`, `madd`, `asr_imm`/`lsr_imm`) |
+| `band`/`bor`/`bxor` | 1412, 1449, 1516 (`*_fits_in_64`) | **proven** (`band/bor/bxor_fits_in_64_ok`) via the term contract `aluRsImmLogicComm_ok` (all 5 rules: reg-reg, logical immediate either side, `ishl` by a constant either side) |
+| `band`/`bor`/`bxor` | 1429/1431, 1466/1468, 1534/1536 (`*_not_right/left`) | not done: `alu_rs_imm_logic` (3 rules, forward lemmas analogous to 565's; `bnot` look-through) |
+| `bor` | 1501, 1507 (`extr_32_or_64`) | not done: `a64_extr` + `u8_from_iconst` + extr ispec (form exists) |
+
+**Shared edits made** (all additive, announced): `FrameTyped` conjunct of `DFGCons` (f55011e,
+integrator decision); ispec forms `smulh/umulh .size64`, `AluRRRR` madd/msub (+ `ra = xzr`),
+`AluRRRShift` (lsl, `aluShiftable`) and `.extr`, `AluRRRExtend` (`extendVal`) (c74e398);
+`AluRRImmLogic` guarded to the logical operations (e2b64ab; Asm rejects add/sub). Taken
+verbatim from peers: M4Cmp 1a4de60 / 4de7914, M4AluB 1532afa / c696bfa, M7Driver 0770fd7.
+
+**Files.** `IselFamALUA.lean` (generic: `root_match_inv`, `binary_root_inv`, `values2_match_inv`,
+`defInst_match_inv`, `imm12_args_inv`, `iflet_term_var_inv`, `negated_value_inv`; CLIF
+inversion `instData_iconst_inv`/`instData_binary_inv`, `ctxInv_clif`; `dfg_single`,
+`evalInst_binary_inv`/`evalInst_shift_inv`; `seqRun_step`/`seqRun_one`, `lowerInstOk_binary`,
+`lowerInstOk_one`, `OneInstOk` + `OneInstOk.lowerInstOk`; `rhs_output_inv`; width lemmas
+`holds_add_imm`/`holds_sub_imm`/`holds_add_K`/`holds_sub_K`/`aluVal_holds_B`,
+`negImm12_value`, `sextFrom_imm64OfIconst`, `ofNat_u64`, `land_width_sub_one`);
+`IselTermsALUA.lean` (generic `ofV_*`, `operand_size_run`, `alu_rr_imm12_run`, `add_imm_run`,
+`sub_imm_run`); `IselRulesALUA.lean` (forward lemmas 90/93/805/98/102/810,
+`imm12_from_negated_value_some/none`); `IselTermsLogic.lean` (extern lemmas
+`ctor_imm_logic_*` — proven by rewriting only: a `rfl`/`simp` that lets the kernel unfold
+`ImmLogic.ofNat?` on a symbolic value ran out of 14 GB — `ctor_lshl_*`, `alu_rr_imm_logic_run`,
+`alu_rrr_shift_run`, `add/sub_shift_run`, forward lemmas of the five 565 rules and of
+116/120/821/1412/1449/1516); `IselFamALUARules.lean`, `IselFamALUALogic.lean` (rule theorems,
+`aluRsImmLogicComm_ok`, `logicRoot_ruleOk` template).
+
+**Cost** (one core, `lake env lean`): `IselFamALUA` 3 s, `IselTermsALUA` 4 s, `IselRulesALUA`
+10 s, `IselTermsLogic` 18 s / 2.9 GB peak, `IselFamALUARules` and `IselFamALUALogic` ≈ 1 s
+each: ≈ 3 s per look-through rule (forward lemmas) plus < 0.2 s per rule theorem.
+**Axioms** of every theorem above: `propext`, `Classical.choice`, `Quot.sound`.
