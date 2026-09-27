@@ -55,6 +55,7 @@ attribute [isel_monad] Bool.false_eq_true ite_true ite_false dite_true dite_fals
   Array.set!_eq_setIfInBounds beq_self_eq_true Nat.lt_irrefl decide_true decide_false
   Option.some.injEq reduceIte reduceDIte bne_self_eq_false Bool.not_false Bool.not_true
   Bool.and_true Bool.true_and Bool.and_false Bool.false_and Nat.reduceLT Nat.reduceLeDiff
+  Array.size_setIfInBounds Array.getElem?_setIfInBounds Array.getElem?_replicate
   Nat.reduceEqDiff Nat.reduceBEq Nat.reduceBNe Nat.reduceSub Nat.lt_add_one Nat.zero_lt_succ
 
 
@@ -73,14 +74,14 @@ macro "isel_unfold" : tactic => `(tactic| first
 
 /-- Normalise between interpreter steps: data facts and monad laws in separate `simp only`
 passes (one pass mixing both produced proofs whose kernel check unfolded `program`). -/
-syntax "isel_norm" ("[" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
+syntax "isel_norm" ("[" (Lean.Parser.Tactic.simpStar <|> Lean.Parser.Tactic.simpErase <|> Lean.Parser.Tactic.simpLemma),* "]")? : tactic
 macro_rules
   | `(tactic| isel_norm) => `(tactic| isel_norm [])
   | `(tactic| isel_norm [$ts,*]) => `(tactic|
       repeat (first | simp only [isel_data, $ts,*] | simp only [isel_monad, $ts,*]))
 
 /-- Evaluate the interpreter on the goal: alternate `isel_unfold` and `isel_norm`. -/
-syntax "isel_eval" ("[" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
+syntax "isel_eval" ("[" (Lean.Parser.Tactic.simpStar <|> Lean.Parser.Tactic.simpErase <|> Lean.Parser.Tactic.simpLemma),* "]")? : tactic
 macro_rules
   | `(tactic| isel_eval) => `(tactic| isel_eval [])
   | `(tactic| isel_eval [$ts,*]) => `(tactic| repeat (isel_unfold; isel_norm [$ts,*]))
