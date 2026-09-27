@@ -289,7 +289,7 @@ theorem operandsSound_mov (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (d 
     have ha : Insn.toArmInst env (.mov true (.x n0) (.x n1)) = .ok (.DPR (.Logical_shifted_reg
         { sf := 1#1, opc := 1#2, shift := 0#2, N := 0#1, Rm := rnum n1, imm6 := 0#6, Rn := 31#5,
           Rd := rnum n0 })) := by
-      simp [Insn.toArmInst, Reg.encZR, hn0', hn1', rnum, b1]; rfl
+      simp [Insn.toArmInst, Insn.armFields, Arm.ArmInst.norm, Reg.encZR, hn0', hn1', rnum, b1]; rfl
     simp only [execMInst, hl, execLines, ha]
     congr 1
     simp [Arm.exec_inst, Arm.DPR.exec_logical_shifted_reg, Arm.DPR.exec_logical_shifted_reg_op,
@@ -311,6 +311,267 @@ theorem operandsSound_mov (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (d 
       · simp only [Reg.field, ne_eq, Option.some.injEq, Arm.StateField.GPR.injEq]
         exact rnum_ne (by omega) (by omega) (fun e => hne (by rw [e]))
       · simp [Reg.field]
+  · intro r hr
+    simp [MInst.clobbers] at hr
+
+theorem rnum_ne31 {n : Nat} (h : n < 29) : rnum n ≠ 31#5 := fun e => by
+  have := congrArg BitVec.toNat e
+  simp [rnum_toNat (by omega : n < 32)] at this; omega
+
+/-- The common tail of a straight-line instruction writing one X register: world, the def
+register, every other allocatable register. -/
+theorem gpr_write_sound {F : BitVec 64 → Prop} {s w : Arm.ArmState} {n0 : Nat}
+    (hn0 : n0 < 29 ∧ n0 ≠ 16 ∧ n0 ≠ 17 ∧ n0 ≠ 18) (hw : SameWorld F s w) (v pc : BitVec 64) :
+    SameWorld F (Arm.w (.GPR (rnum n0)) v (Arm.w .PC pc s)) w ∧
+    regVal (Arm.w (.GPR (rnum n0)) v (Arm.w .PC pc s)) (.x n0) = ofX v ∧
+    ∀ r, r.allocatable = true → r ≠ .x n0 →
+      regVal (Arm.w (.GPR (rnum n0)) v (Arm.w .PC pc s)) r = regVal s r := by
+  refine ⟨SameWorld.w_left (Masked_gpr hn0.1 hn0.2.2.2) (SameWorld.w_left (by simp [Masked]) hw),
+    by simp only [regVal, Arm.r_of_w_same, ofX], ?_⟩
+  intro r hr hne
+  rw [regVal_w, regVal_w]
+  · cases r <;> simp [Reg.field]
+  · rcases allocatable_cases hr with ⟨k, rfl, hk⟩ | ⟨k, rfl, hk⟩
+    · simp only [Reg.field, ne_eq, Option.some.injEq, Arm.StateField.GPR.injEq]
+      exact rnum_ne (by omega) (by omega) (fun e => hne (by rw [e]))
+    · simp [Reg.field]
+
+theorem operandsSound_add (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (d n m : Nat) :
+    OperandsSound F (execMInst ctx env) (csem F)
+      (.aluRRR .add .size64 (.vreg d .int) (.vreg n .int) (.vreg m .int)) := by
+  intro c wh ops regs i' s w outs w' hops hst hasg hw hsem
+  have : MInst.operands (.aluRRR .add .size64 (.vreg d .int) (.vreg n .int) (.vreg m .int)) =
+      .ok #[⟨d, .int, .def, .late, .reg⟩, ⟨n, .int, .use, .early, .reg⟩,
+        ⟨m, .int, .use, .early, .reg⟩] := rfl
+  rw [this] at hops
+  cases hops
+  obtain ⟨hsz, hloc, -, -⟩ := checkStatic_facts hst
+  obtain ⟨r0, r1, r2, rfl⟩ : ∃ r0 r1 r2, regs = #[r0, r1, r2] := by
+    rcases regs with ⟨_ | ⟨r0, _ | ⟨r1, _ | ⟨r2, _ | ⟨r3, l⟩⟩⟩⟩⟩
+    · simp at hsz
+    · simp at hsz
+    · simp at hsz
+    · exact ⟨r0, r1, r2, rfl⟩
+    · simp at hsz
+  have : MInst.assign (.aluRRR .add .size64 (.vreg d .int) (.vreg n .int) (.vreg m .int))
+      #[r0, r1, r2] = .ok (.aluRRR .add .size64 r0 r1 r2) := rfl
+  rw [this] at hasg
+  cases hasg
+  obtain ⟨n0, rfl, hn0⟩ := locOk_int (hloc (⟨d, .int, .def, .late, .reg⟩, .reg r0) (by simp)).1
+  obtain ⟨n1, rfl, hn1⟩ := locOk_int (hloc (⟨n, .int, .use, .early, .reg⟩, .reg r1) (by simp)).1
+  obtain ⟨n2, rfl, hn2⟩ := locOk_int (hloc (⟨m, .int, .use, .early, .reg⟩, .reg r2) (by simp)).1
+  simp [useVals, csem, Operand.isUse] at hsem
+  obtain ⟨rfl, rfl⟩ := hsem
+  have hl : MInst.lines ctx (.aluRRR .add .size64 (.x n0) (.x n1) (.x n2)) {} =
+      .ok ([.ins (.aluRRR .add true (.x n0) (.x n1) (.x n2))], {}) := rfl
+  have ha : Insn.toArmInst env (.aluRRR .add true (.x n0) (.x n1) (.x n2)) =
+      .ok (.DPR (.Add_sub_shifted_reg
+        { sf := 1#1, op := 0#1, S := 0#1, shift := 0#2, Rm := rnum n2, imm6 := 0#6,
+          Rn := rnum n1, Rd := rnum n0 })) := by
+    simp [Insn.toArmInst, Insn.armFields, Arm.ArmInst.norm, Reg.encZR, show n0 ≤ 30 by omega, show n1 ≤ 30 by omega,
+      show n2 ≤ 30 by omega, rnum, b1, ALUOp.addSub?]
+    rfl
+  have he : Arm.exec_inst (.DPR (.Add_sub_shifted_reg
+        { sf := 1#1, op := 0#1, S := 0#1, shift := 0#2, Rm := rnum n2, imm6 := 0#6,
+          Rn := rnum n1, Rd := rnum n0 })) s =
+      Arm.w (.GPR (rnum n0)) (Arm.r (.GPR (rnum n1)) s + Arm.r (.GPR (rnum n2)) s)
+        (Arm.w .PC (Arm.r .PC s + 4#64) s) := by
+    simp [Arm.exec_inst, Arm.DPR.exec_add_sub_shifted_reg, Arm.read_gpr_zr, Arm.write_gpr_zr,
+      Arm.read_gpr, Arm.write_gpr, rnum_ne31 hn0.1, rnum_ne31 hn1.1, rnum_ne31 hn2.1,
+      Arm.decode_shift, Arm.shift_reg, Arm.read_pc, Arm.write_pc, Arm.fst_AddWithCarry_eq_add]
+  obtain ⟨hW, hD, hO⟩ := gpr_write_sound hn0 hw
+    (Arm.r (.GPR (rnum n1)) s + Arm.r (.GPR (rnum n2)) s) (Arm.r .PC s + 4#64)
+  refine ⟨_, by simp only [execMInst, hl, execLines, ha, he], hW, ?_, ?_, ?_⟩
+  · intro p hp
+    simp [defRegs, Operand.isDef] at hp
+    subst hp
+    rw [hD, lo64_regVal_x, lo64_regVal_x]
+  · intro r hr hnd _
+    have hne : r ≠ .x n0 := fun e =>
+      hnd (⟨d, .int, .def, .late, .reg⟩, .x n0) (by simp) (by simp [Operand.isDef]) e.symm
+    exact hO r hr hne
+  · intro r hr
+    simp [MInst.clobbers] at hr
+
+
+theorem ConditionHolds_sameWorld {F} {s w : Arm.ArmState} (hw : SameWorld F s w) (c : BitVec 4) :
+    Arm.ConditionHolds c s = Arm.ConditionHolds c w := by
+  have hf : ∀ f, Arm.read_flag f s = Arm.read_flag f w := fun f =>
+    hw.1 (.FLAG f) (by simp [Masked])
+  simp only [Arm.ConditionHolds, hf]
+
+theorem operandsSound_csel (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (d n m : Nat)
+    (cc : Cond) :
+    OperandsSound F (execMInst ctx env) (csem F)
+      (.csel (.vreg d .int) (.vreg n .int) (.vreg m .int) cc) := by
+  intro c wh ops regs i' s w outs w' hops hst hasg hw hsem
+  have : MInst.operands (.csel (.vreg d .int) (.vreg n .int) (.vreg m .int) cc) =
+      .ok #[⟨d, .int, .def, .late, .reg⟩, ⟨n, .int, .use, .early, .reg⟩,
+        ⟨m, .int, .use, .early, .reg⟩] := rfl
+  rw [this] at hops
+  cases hops
+  obtain ⟨hsz, hloc, -, -⟩ := checkStatic_facts hst
+  obtain ⟨r0, r1, r2, rfl⟩ : ∃ r0 r1 r2, regs = #[r0, r1, r2] := by
+    rcases regs with ⟨_ | ⟨r0, _ | ⟨r1, _ | ⟨r2, _ | ⟨r3, l⟩⟩⟩⟩⟩
+    · simp at hsz
+    · simp at hsz
+    · simp at hsz
+    · exact ⟨r0, r1, r2, rfl⟩
+    · simp at hsz
+  have : MInst.assign (.csel (.vreg d .int) (.vreg n .int) (.vreg m .int) cc)
+      #[r0, r1, r2] = .ok (.csel r0 r1 r2 cc) := rfl
+  rw [this] at hasg
+  cases hasg
+  obtain ⟨n0, rfl, hn0⟩ := locOk_int (hloc (⟨d, .int, .def, .late, .reg⟩, .reg r0) (by simp)).1
+  obtain ⟨n1, rfl, hn1⟩ := locOk_int (hloc (⟨n, .int, .use, .early, .reg⟩, .reg r1) (by simp)).1
+  obtain ⟨n2, rfl, hn2⟩ := locOk_int (hloc (⟨m, .int, .use, .early, .reg⟩, .reg r2) (by simp)).1
+  simp [useVals, csem, Operand.isUse] at hsem
+  obtain ⟨rfl, rfl⟩ := hsem
+  have hl : MInst.lines ctx (.csel (.x n0) (.x n1) (.x n2) cc) {} =
+      .ok ([.ins (.csel (.x n0) (.x n1) (.x n2) cc)], {}) := rfl
+  have ha : Insn.toArmInst env (.csel (.x n0) (.x n1) (.x n2) cc) =
+      .ok (.DPR (.Conditional_select
+        { sf := 1#1, op := 0#1, S := 0#1, Rm := rnum n2, cond := cc.bits, op2 := 0#2,
+          Rn := rnum n1, Rd := rnum n0 })) := by
+    simp [Insn.toArmInst, Insn.armFields, Arm.ArmInst.norm, Reg.encZR, show n0 ≤ 30 by omega,
+      show n1 ≤ 30 by omega, show n2 ≤ 30 by omega, rnum]
+    rfl
+  have he : Arm.exec_inst (.DPR (.Conditional_select
+        { sf := 1#1, op := 0#1, S := 0#1, Rm := rnum n2, cond := cc.bits, op2 := 0#2,
+          Rn := rnum n1, Rd := rnum n0 })) s =
+      Arm.w (.GPR (rnum n0))
+        (if Arm.ConditionHolds cc.bits s then Arm.r (.GPR (rnum n1)) s else Arm.r (.GPR (rnum n2)) s)
+        (Arm.w .PC (Arm.r .PC s + 4#64) s) := by
+    simp [Arm.exec_inst, Arm.DPR.exec_conditional_select, Arm.read_gpr_zr, Arm.write_gpr_zr,
+      Arm.read_gpr, Arm.write_gpr, rnum_ne31 hn0.1, rnum_ne31 hn1.1, rnum_ne31 hn2.1,
+      Arm.read_pc, Arm.write_pc, Arm.BitVec.lsb]
+  obtain ⟨hW, hD, hO⟩ := gpr_write_sound hn0 hw
+    (if Arm.ConditionHolds cc.bits s then Arm.r (.GPR (rnum n1)) s else Arm.r (.GPR (rnum n2)) s)
+    (Arm.r .PC s + 4#64)
+  refine ⟨_, by simp only [execMInst, hl, execLines, ha, he], hW, ?_, ?_, ?_⟩
+  · intro p hp
+    simp [defRegs, Operand.isDef] at hp
+    subst hp
+    rw [hD, lo64_regVal_x, lo64_regVal_x, ConditionHolds_sameWorld hw]
+  · intro r hr hnd _
+    have hne : r ≠ .x n0 := fun e =>
+      hnd (⟨d, .int, .def, .late, .reg⟩, .x n0) (by simp) (by simp [Operand.isDef]) e.symm
+    exact hO r hr hne
+  · intro r hr
+    simp [MInst.clobbers] at hr
+
+theorem operandsSound_cset (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (d : Nat)
+    (cc : Cond) (hcc : cc ≠ .al ∧ cc ≠ .nv) :
+    OperandsSound F (execMInst ctx env) (csem F) (.cset (.vreg d .int) cc) := by
+  intro c wh ops regs i' s w outs w' hops hst hasg hw hsem
+  have : MInst.operands (.cset (.vreg d .int) cc) = .ok #[⟨d, .int, .def, .late, .reg⟩] := rfl
+  rw [this] at hops
+  cases hops
+  obtain ⟨hsz, hloc, -, -⟩ := checkStatic_facts hst
+  obtain ⟨r0, rfl⟩ : ∃ r0, regs = #[r0] := by
+    rcases regs with ⟨_ | ⟨r0, _ | ⟨r1, l⟩⟩⟩
+    · simp at hsz
+    · exact ⟨r0, rfl⟩
+    · simp at hsz
+  have : MInst.assign (.cset (.vreg d .int) cc) #[r0] = .ok (.cset r0 cc) := rfl
+  rw [this] at hasg
+  cases hasg
+  obtain ⟨n0, rfl, hn0⟩ := locOk_int (hloc (⟨d, .int, .def, .late, .reg⟩, .reg r0) (by simp)).1
+  simp [useVals, csem, Operand.isUse] at hsem
+  obtain ⟨rfl, rfl⟩ := hsem
+  have hl : MInst.lines ctx (.cset (.x n0) cc) {} = .ok ([.ins (.cset (.x n0) cc)], {}) := rfl
+  have ha : Insn.toArmInst env (.cset (.x n0) cc) =
+      .ok (.DPR (.Conditional_select
+        { sf := 1#1, op := 0#1, S := 0#1, Rm := 31#5, cond := cc.invert.bits, op2 := 1#2,
+          Rn := 31#5, Rd := rnum n0 })) := by
+    have h1 : (cc == .al || cc == .nv) = false := by
+      cases cc <;> first | rfl | (exfalso; simp_all)
+    simp [Insn.toArmInst, Insn.armFields, Arm.ArmInst.norm, Reg.encZR, show n0 ≤ 30 by omega,
+      rnum, h1]
+    rfl
+  have he : Arm.exec_inst (.DPR (.Conditional_select
+        { sf := 1#1, op := 0#1, S := 0#1, Rm := 31#5, cond := cc.invert.bits, op2 := 1#2,
+          Rn := 31#5, Rd := rnum n0 })) s =
+      Arm.w (.GPR (rnum n0)) (if Arm.ConditionHolds cc.invert.bits s then 0#64 else 1#64)
+        (Arm.w .PC (Arm.r .PC s + 4#64) s) := by
+    simp [Arm.exec_inst, Arm.DPR.exec_conditional_select, Arm.read_gpr_zr, Arm.write_gpr_zr,
+      Arm.read_gpr, Arm.write_gpr, rnum_ne31 hn0.1, Arm.read_pc, Arm.write_pc, Arm.BitVec.lsb]
+  obtain ⟨hW, hD, hO⟩ := gpr_write_sound hn0 hw
+    (if Arm.ConditionHolds cc.invert.bits s then 0#64 else 1#64) (Arm.r .PC s + 4#64)
+  refine ⟨_, by simp only [execMInst, hl, execLines, ha, he], hW, ?_, ?_, ?_⟩
+  · intro p hp
+    simp [defRegs, Operand.isDef] at hp
+    subst hp
+    rw [hD, ConditionHolds_sameWorld hw]
+  · intro r hr hnd _
+    have hne : r ≠ .x n0 := fun e =>
+      hnd (⟨d, .int, .def, .late, .reg⟩, .x n0) (by simp) (by simp [Operand.isDef]) e.symm
+    exact hO r hr hne
+  · intro r hr
+    simp [MInst.clobbers] at hr
+
+
+theorem addImm_value (imm : Imm12) (h : imm.bits < 4096) :
+    BitVec.zeroExtend 64 (if b1 imm.shift12 = 0#1 then 0#52 ++ BitVec.ofNat 12 imm.bits
+      else (0#52 ++ BitVec.ofNat 12 imm.bits) <<< 12) = BitVec.ofNat 64 imm.value := by
+  have ht : (0#52 ++ BitVec.ofNat 12 imm.bits).toNat = imm.bits := by
+    rw [BitVec.toNat_append]; simp [Nat.mod_eq_of_lt h]
+  apply BitVec.eq_of_toNat_eq
+  cases hs : imm.shift12 <;> simp [b1, hs, Imm12.value, BitVec.toNat_shiftLeft, ht] <;> omega
+
+theorem operandsSound_addImm (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (d n : Nat)
+    (imm : Imm12) (himm : imm.bits < 4096) :
+    OperandsSound F (execMInst ctx env) (csem F)
+      (.aluRRImm12 .add .size64 (.vreg d .int) (.vreg n .int) imm) := by
+  intro c wh ops regs i' s w outs w' hops hst hasg hw hsem
+  have : MInst.operands (.aluRRImm12 .add .size64 (.vreg d .int) (.vreg n .int) imm) =
+      .ok #[⟨d, .int, .def, .late, .reg⟩, ⟨n, .int, .use, .early, .reg⟩] := rfl
+  rw [this] at hops
+  cases hops
+  obtain ⟨hsz, hloc, -, -⟩ := checkStatic_facts hst
+  obtain ⟨r0, r1, rfl⟩ : ∃ r0 r1, regs = #[r0, r1] := by
+    rcases regs with ⟨_ | ⟨r0, _ | ⟨r1, _ | ⟨r2, l⟩⟩⟩⟩
+    · simp at hsz
+    · simp at hsz
+    · exact ⟨r0, r1, rfl⟩
+    · simp at hsz
+  have : MInst.assign (.aluRRImm12 .add .size64 (.vreg d .int) (.vreg n .int) imm) #[r0, r1] =
+      .ok (.aluRRImm12 .add .size64 r0 r1 imm) := rfl
+  rw [this] at hasg
+  cases hasg
+  obtain ⟨n0, rfl, hn0⟩ := locOk_int (hloc (⟨d, .int, .def, .late, .reg⟩, .reg r0) (by simp)).1
+  obtain ⟨n1, rfl, hn1⟩ := locOk_int (hloc (⟨n, .int, .use, .early, .reg⟩, .reg r1) (by simp)).1
+  simp [useVals, csem, Operand.isUse] at hsem
+  obtain ⟨rfl, rfl⟩ := hsem
+  have hl : MInst.lines ctx (.aluRRImm12 .add .size64 (.x n0) (.x n1) imm) {} =
+      .ok ([.ins (.aluImm12 .add true (.x n0) (.x n1) imm)], {}) := rfl
+  have ha : Insn.toArmInst env (.aluImm12 .add true (.x n0) (.x n1) imm) =
+      .ok (.DPI (.Add_sub_imm
+        { sf := 1#1, op := 0#1, S := 0#1, sh := b1 imm.shift12, imm12 := BitVec.ofNat 12 imm.bits,
+          Rn := rnum n1, Rd := rnum n0 })) := by
+    simp [Insn.toArmInst, Insn.armFields, Arm.ArmInst.norm, Reg.encSP, show n0 ≤ 30 by omega,
+      show n1 ≤ 30 by omega, rnum, ALUOp.addSub?, uField, himm]
+    rfl
+  have he : Arm.exec_inst (.DPI (.Add_sub_imm
+        { sf := 1#1, op := 0#1, S := 0#1, sh := b1 imm.shift12, imm12 := BitVec.ofNat 12 imm.bits,
+          Rn := rnum n1, Rd := rnum n0 })) s =
+      Arm.w (.GPR (rnum n0)) (Arm.r (.GPR (rnum n1)) s + BitVec.ofNat 64 imm.value)
+        (Arm.w .PC (Arm.r .PC s + 4#64) s) := by
+    rw [← addImm_value imm himm]
+    simp [Arm.exec_inst, Arm.DPI.exec_add_sub_imm, Arm.read_gpr_zr, Arm.write_gpr_zr,
+      Arm.read_gpr, Arm.write_gpr, rnum_ne31 hn0.1, Arm.read_pc, Arm.write_pc,
+      Arm.fst_AddWithCarry_eq_add]
+  obtain ⟨hW, hD, hO⟩ := gpr_write_sound hn0 hw
+    (Arm.r (.GPR (rnum n1)) s + BitVec.ofNat 64 imm.value) (Arm.r .PC s + 4#64)
+  refine ⟨_, by simp only [execMInst, hl, execLines, ha, he], hW, ?_, ?_, ?_⟩
+  · intro p hp
+    simp [defRegs, Operand.isDef] at hp
+    subst hp
+    rw [hD, lo64_regVal_x]
+  · intro r hr hnd _
+    have hne : r ≠ .x n0 := fun e =>
+      hnd (⟨d, .int, .def, .late, .reg⟩, .x n0) (by simp) (by simp [Operand.isDef]) e.symm
+    exact hO r hr hne
   · intro r hr
     simp [MInst.clobbers] at hr
 
