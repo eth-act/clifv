@@ -411,6 +411,9 @@ theorem operands_aluRRImm12 (op : ALUOp) (sz : OperandSize) (d x : Nat) (i : Imm
     (MInst.aluRRImm12 op sz (.vreg d .int) (.vreg x .int) i).operands =
       .ok #[⟨d, .int, .def, .late, .reg⟩, ⟨x, .int, .use, .early, .reg⟩] := rfl
 
+theorem vuseNums_aluRRImm12 (op : ALUOp) (sz : OperandSize) (d x : Nat) (i : Imm12) :
+    vuseNums (.aluRRImm12 op sz (.vreg d .int) (.vreg x .int) i) = [x] := rfl
+
 theorem ispec_aluRRImm12_add {sz : OperandSize} {d : Nat} {rn : Reg} {i : Imm12} {a : CV}
     {w : Arm.ArmState} (h : i.bits < 4096) :
     ispec (.aluRRImm12 .add sz (.vreg d .int) rn i) [a] w =
@@ -512,5 +515,57 @@ theorem imm12_args_inv {st : LState} {k : Int} {v : VarId} {e e' : Interp.Env V}
     exact ⟨imm, rfl, matchPat_bind_wild_inv ctx hp3⟩
 
 end Inversion2
+
+/-! ## 5. One-instruction lowerings -/
+
+section One
+
+theorem emitted_fresh_emit (st : LState) (m : MInst) :
+    ((st.fresh .int).2.emit m).emitted = st.emitted ++ [m].toArray := by
+  show st.emitted.push m = _
+  rw [Array.push_eq_append]
+
+theorem nextVreg_fresh_emit (st : LState) (m : MInst) :
+    ((st.fresh .int).2.emit m).nextVreg = st.nextVreg + 1 := by
+  simp [LState.emit, LState.fresh]
+
+theorem fresh_fst (st : LState) : (st.fresh .int).1 = .vreg st.nextVreg .int := by
+  simp [LState.fresh]
+
+/-- **A two-operand instruction lowered to one instruction** `mi` defining the fresh vreg
+`st.nextVreg`: `LowerInstOk` follows from the value-level meaning of `mi` (its uses are
+defined values, and its `ispec` result holds `cop u v`). -/
+theorem lowerInstOk_one {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} {env : Clif.Env}
+    {cp : Clif.Program} {ctx : Ctx} (hR : Refines F isem) (hMR : MRStable F MR)
+    {cop : Clif.BinaryOp} {ty : Clif.Ty} {x y : Nat} {results : List Nat} {st : LState}
+    {mi : MInst} {ops : Array Operand} (hshift : cop.isShift = false)
+    (hops : mi.operands = .ok ops)
+    (hdefs : ops.toList.filter Operand.isDef = [⟨st.nextVreg, .int, .def, .late, .reg⟩])
+    (hsem : ∀ (fr : Clif.Frame) (ρ : Nat → CV) (w : Arm.ArmState), ValsHeld fr ρ →
+      DFGCons ctx fr → ∀ u v, fr.getAs x ty = .ok u → fr.getAs y ty = .ok v →
+      (∀ z ∈ vuseNums mi, (fr.regs z).isSome) ∧
+      ∃ r, ispec mi (vuses ops ρ) w = some ([r], w, .next) ∧
+        VHolds ⟨ty, Clif.Sem.binary cop u v⟩ r) :
+    LowerInstOk isem MR env cp ctx (.binary cop ty x y) results st [[.vreg st.nextVreg .int]]
+      ((st.fresh .int).2.emit mi) [mi] := by
+  have hvd : vdefs mi = [st.nextVreg] := by simp [vdefs, hops, hdefs]
+  apply lowerInstOk_binary hMR hshift (by rw [nextVreg_fresh_emit]; omega) ?_ (Nat.le_refl _)
+  · intro fr ρ w _ hvals hdfg u v hx hy
+    obtain ⟨hus, r, hs, hh⟩ := hsem fr ρ w hvals hdfg u v hx hy
+    refine ⟨fun m hm z hz => ?_, ?_⟩
+    · simp only [List.mem_singleton] at hm
+      subst hm
+      exact .inr (hus z hz)
+    · obtain ⟨w', hrun, hsw⟩ := seqRun_one hR hops hdefs hs
+      exact ⟨_, w', hrun, hsw, by simpa [upd] using hh⟩
+  · intro m hm d hd
+    simp only [List.mem_singleton] at hm
+    subst hm
+    rw [hvd, List.mem_singleton] at hd
+    subst hd
+    rw [nextVreg_fresh_emit]
+    omega
+
+end One
 
 end Backend.Proof
