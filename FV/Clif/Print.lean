@@ -116,6 +116,7 @@ def inst (tys : ValueId → Option Ty) : Inst → String
   | .store op ty f x p off =>
     s!"{StoreOp.name op}.{ty.name}{memFlags f} {v x}, {v p}{offset off}"
   | .stackAddr ty s off => s!"stack_addr.{ty.name} ss{s}{offset off}"
+  | .symbolValue ty gv => s!"symbol_value.{ty.name} gv{gv}"
   | .call f args => s!"call fn{f}({vs args})"
   | .atomicRmw op ty f p x => s!"atomic_rmw.{ty.name}{memFlags f} {op.name} {v p}, {v x}"
   | .atomicCas ty f p e x => s!"atomic_cas.{ty.name}{memFlags f} {v p}, {v e}, {v x}"
@@ -192,8 +193,29 @@ def Function.print (f : Function) : String :=
   s!"function %{f.name}{Print.signature f.sig} \{\n{declText}{body}}\n{runs}"
 
 /-- Print a program as a `.clif` file. -/
+def hexByte (b : BitVec 8) : String :=
+  let d := fun (n : Nat) => "0123456789abcdef".toList.getD n '0'
+  String.ofList [d (b.toNat / 16), d (b.toNat % 16)]
+
+/-- Items as `; data:` tokens: runs of bytes as one hex token, relocations as `%sym[+N]`. -/
+def printDataItems : List DataItem → List String
+  | [] => []
+  | .addr n off :: is =>
+    (s!"%{n}" ++ (if off == 0 then "" else if off > 0 then s!"+{off}" else s!"{off}")) ::
+      printDataItems is
+  | .byte b :: is =>
+    match printDataItems is with
+    | t :: ts => if t.startsWith "%" then hexByte b :: t :: ts else (hexByte b ++ t) :: ts
+    | [] => [hexByte b]
+
+/-- A `; data:` directive. -/
+def dataObject (o : DataObject) : String :=
+  s!"; data: %{o.name} align={o.align}{if o.writable then " writable" else ""} =" ++
+    String.join ((printDataItems o.items).map (" " ++ ·))
+
 def print (p : Program) : String :=
   let hdr := if p.header.isEmpty then "" else String.join (p.header.map (· ++ "\n")) ++ "\n"
+  let hdr := hdr ++ String.join (p.data.map (dataObject · ++ "\n"))
   hdr ++ "\n".intercalate (p.funcs.map Function.print)
 
 end Clif

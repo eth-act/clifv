@@ -2,7 +2,7 @@
 
 Producer: M0. Consumers: M1 (emitter produces `Clif.Program`), M2 (`Clif.run (compile f) =
 denote f`), M3 (validator relates Arm states to CLIF), M4 (ISLE rules vs per-op semantics).
-Subset: `clif-subset-v1` (`docs/contracts/clif-subset.md`). Pinned against Cranelift 0.136.1.
+Subset: `clif-subset-v2` (`docs/contracts/clif-subset.md`). Pinned against Cranelift 0.136.1.
 
 ## Status
 
@@ -53,7 +53,8 @@ All names are in namespace `Clif` (per-op semantics in `Clif.Sem`).
   `load op ty flags p offset` · `store op ty flags x p offset` (`ty` = type of `x`) ·
   `stackAddr ty slot offset` · `call fn args` · `atomicRmw op ty flags p x` ·
   `atomicCas ty flags p e x` · `atomicLoad ty flags p` · `atomicStore ty flags x p` · `fence` ·
-  `bitcast ty flags x` · `trapz c code` · `trapnz c code` · `nop`.
+  `bitcast ty flags x` · `trapz c code` · `trapnz c code` · `nop` ·
+  `symbolValue ty gv` (`symbol_value.ty gvN`; v2).
   Every value-producing instruction carries its controlling type explicitly.
 - `inductive Terminator | jump dest | brif c thenDest elseDest | brTable x default table |
   ret vals | returnCall fn args | trap code`.
@@ -101,9 +102,18 @@ Semantics notes (all checked against the runtests and the interpreter):
 - `inductive Res (α) | ok a | trap code | stuck msg` with `Monad` and `LawfulMonad`
   instances; simp lemmas `Res.ok_bind`, `trap_bind`, `stuck_bind`, `ofOption_some/none`,
   `ofExcept_ok/error`, `check_true/false`. `Res.ofOption`, `Res.ofExcept`, `Res.check`.
-- `structure Alloc where base size : Nat`; `Alloc.contains`.
-- `structure Mem where allocs : List Alloc; bytes : Nat → Option (BitVec 8); next : Nat`
-  (`Mem.empty`: no allocations, `next = 0x10000`).
+- `structure Alloc where base size : Nat; readonly : Bool := false`; `Alloc.contains`.
+- `structure Mem where allocs : List Alloc; bytes : Nat → Option (BitVec 8); next : Nat;
+  symbols : String → Option Nat` (`Mem.empty`: no allocations, `next = 0x10000`, no symbols).
+  `symbols` is the link-time symbol table read by `symbol_value`; execution never changes it.
+- `Mem.readonlyAt m addr n`; `Mem.store` is `stuck` if the bytes overlap a `readonly`
+  allocation ("store to read-only data").
+- Link-time image (v2): `Image.itemSize`, `Image.size`, `Image.place`, `Image.writeItems`,
+  `Image.mem (ds : List DataObject) : Res Mem` (objects allocated in order with the bump
+  allocator, alignment `max align 16`, read-only unless `writable`; `.addr n k` items written as
+  the 8-byte little-endian address of object `n` plus `k`; `symbols n` = address of object `n`;
+  duplicate names or relocations to unknown objects are `stuck`).
+  `Program.initMem p : Res Mem` = `.ok Mem.empty` if `p.data = []`, else `Image.mem p.data`.
 - `Mem.valid m addr n`, `Mem.alloc m size align : Nat × Mem`, `Mem.free m bases`,
   `Mem.readBits m big addr n w : Option (BitVec w)`, `Mem.writeBits m big addr n x`,
   `Mem.checkAccess`, `Mem.load m flags addr n w : Res (BitVec w)`,
@@ -119,7 +129,8 @@ Memory invariants:
 - `alloc` is a bump allocator (alignment `max align 16`, 16-byte gap after every
   allocation); addresses are never reused, freed allocations make later accesses through
   stale pointers invalid;
-- `readonly`, `can_move` are not checked.
+- the `readonly`/`can_move` *flags* are not checked; stores into read-only data objects are
+  `stuck`.
 
 ### `FV/Clif/Run.lean`
 
@@ -147,7 +158,8 @@ def runLoop (env : Env) (p : Program) : Nat → State → Outcome
 def initState (p : Program) (f : String) (args : List Val) (mem : Mem) : Res State
 def runWith (env : Env) (p : Program) (f : String) (args : List Val) (mem : Mem) (fuel : Nat) : Outcome
 def run (env : Env) (p : Program) (f : String) (args : List Val) (fuel : Nat) : Outcome
-  -- = runWith env p f args Mem.empty fuel
+  -- = runWith env p f args m fuel where p.initMem = .ok m (stuck/trapped otherwise)
+theorem run_of_data_nil : p.data = [] → run env p f args fuel = runWith env p f args Mem.empty fuel
 ```
 
 Lemmas for stepping: `runLoop_zero` (simp), `runLoop_succ`, `step_term`, `step_call`,
@@ -226,6 +238,28 @@ The interpreter runs as in `cranelift/filetests/src/test_interpret.rs` (one `Fun
 for the file, fresh state per command, same libcall handler), with fuel `10^8` and a
 1 GiB stack. `clif-oracle check FILE.clif` exits 0 iff the file parses and every function
 passes the verifier (default flags).
+
+## Link-time data and `symbol_value` (clif-subset-v2)
+
+- Syntax: `Program.data : List DataObject := []`; `DataObject` = `name`, `align := 1`,
+  `writable := false`, `items : List DataItem`; `DataItem | byte (b : BitVec 8) |
+  addr (name : String) (addend : Int)` (an `Abs8` relocation).
+- Text: before the first function, `; data: %name [align=N] [writable] = item…`, where an
+  item is an even-length hex string (bytes in memory order) or `%sym[+N|-N]` (8-byte absolute
+  address). A comment, so cranelift-reader ignores it. `Clif.parseFile` returns them in
+  `ParsedFile.data` (`Except String`), `Clif.parse` puts them in `Program.data`, `Clif.print`
+  prints them back (round trip), `clif-filetest` runs with them, and `clif-native` assembles
+  them into a linked object (`docs/contracts/drivers.md`).
+- `symbol_value.ty gvN`: `gvN` must be `symbol [colocated] %s[+k]` (other kinds are `stuck`);
+  the result is `Val.ofInt ty (addr + k)` with `addr = mem.symbols s` (`stuck` if undefined).
+  `colocated` has no effect on the value. Loads from the address follow the normal `load`
+  rules (bounds = the object's allocation).
+- Checked: `FVTest/Clif/fixtures/e-v2-symbol-value.clif` (28 runs: tables, offsets, relocated
+  pointers, a writable object) pass in `Clif.run` and agree with native Cranelift code
+  (`clif-native`, 28/28). The Cranelift interpreter does not implement data symbols
+  (`GlobalValueData::Symbol => unimplemented!()`), so those 28 runs are `oracle-error`.
+- Not modelled: function symbols in data (vtables of `fn` pointers), `tls`, data symbols of
+  other functions' `gv` offsets beyond the object (out-of-bounds reads trap/stuck as usual).
 
 ## S-list additions (M0)
 

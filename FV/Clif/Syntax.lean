@@ -267,6 +267,10 @@ inductive Inst where
   | trapz (c : ValueId) (code : TrapCode)
   | trapnz (c : ValueId) (code : TrapCode)
   | nop
+  /-- `symbol_value.ty gvN`: the address of the global value `gvN`, which must be a
+  `symbol %name[+offset]` declaration; resolved through the link-time image
+  (`Clif.Image`, `Mem.symbols`). `ty` is the address type (`i64`, or `i32`). -/
+  | symbolValue (ty : Ty) (gv : Nat)
   deriving DecidableEq, Repr, Inhabited
 
 /-- Block terminators. -/
@@ -344,8 +348,8 @@ structure StackSlot where
   align : Option Nat := none
   deriving DecidableEq, Repr, Inhabited
 
-/-- Global value declarations `gvN = ...`. They are carried for printing only: the
-`global_value` instruction is outside subset S, so `Clif.run` never reads them. -/
+/-- Global value declarations `gvN = ...`. Only `symbol` declarations have a meaning in
+`Clif.run` (through `symbol_value`); the `global_value` instruction is outside subset S. -/
 inductive GlobalValue where
   /-- `gvN = vmctx` -/
   | vmctx
@@ -396,10 +400,29 @@ structure Function where
   runs : List RunCommand := []
   deriving DecidableEq, Repr, Inhabited
 
-/-- A CLIF file: header lines (`test ...`, `target ...`, `set ...`, kept verbatim) and
-functions. -/
+/-- One item of a data object's contents. -/
+inductive DataItem where
+  /-- One byte. -/
+  | byte (b : BitVec 8)
+  /-- The 8-byte little-endian absolute address `&name + addend` (an `Abs8` relocation). -/
+  | addr (name : String) (addend : Int)
+  deriving DecidableEq, Repr, Inhabited
+
+/-- A link-time data object (`; data:` directive of a filetest, see `docs/contracts/clif.md`):
+a symbol `name` with initial contents, placed at an address aligned to `align`. Read-only
+unless `writable`. -/
+structure DataObject where
+  name : String
+  align : Nat := 1
+  writable : Bool := false
+  items : List DataItem
+  deriving DecidableEq, Repr, Inhabited
+
+/-- A CLIF file: header lines (`test ...`, `target ...`, `set ...`, kept verbatim), link-time
+data objects (`; data:` directives, empty for emitted code) and functions. -/
 structure Program where
   header : List String := []
+  data : List DataObject := []
   funcs : List Function
   deriving DecidableEq, Repr, Inhabited
 
@@ -427,7 +450,7 @@ def Inst.resultTypes (sigOf : FnRef → Option Signature) : Inst → Option (Lis
   | .uaddOverflowTrap ty _ _ _ | .select ty _ _ _ | .selectSpectreGuard ty _ _ _
   | .bitselect ty _ _ _ | .bmask ty _ | .extend _ ty _ | .ireduce ty _
   | .load _ ty _ _ _ | .stackAddr ty _ _ | .atomicRmw _ ty _ _ _ | .atomicCas ty _ _ _ _
-  | .atomicLoad ty _ _ | .bitcast ty _ _ => some [ty]
+  | .atomicLoad ty _ _ | .bitcast ty _ _ | .symbolValue ty _ => some [ty]
   | .overflow _ ty _ _ | .carry _ ty _ _ _ => some [ty, .i8]
   | .icmp .. => some [.i8]
   | .iconcat ty _ _ => ty.double?.map fun t => [t]

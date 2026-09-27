@@ -1,0 +1,50 @@
+; clif-subset-v2: bswap
+test interpret
+test run
+target aarch64
+
+function %bswap_i16(i16) -> i16 {
+block0(v0: i16):
+    v1 = bswap v0
+    return v1
+}
+; run: %bswap_i16(0) == 0
+; run: %bswap_i16(1) == 256
+; run: %bswap_i16(-1) == -1
+; run: %bswap_i16(-32768) == 128
+; run: %bswap_i16(32767) == -129
+; run: %bswap_i16(2) == 512
+; run: %bswap_i16(-2) == -257
+; run: %bswap_i16(29208) == 6258
+; run: %bswap_i16(-32763) == 1408
+
+function %bswap_i32(i32) -> i32 {
+block0(v0: i32):
+    v1 = bswap v0
+    return v1
+}
+; run: %bswap_i32(0) == 0
+; run: %bswap_i32(1) == 16777216
+; run: %bswap_i32(-1) == -1
+; run: %bswap_i32(-2147483648) == 128
+; run: %bswap_i32(2147483647) == -129
+; run: %bswap_i32(2) == 33554432
+; run: %bswap_i32(-2) == -16777217
+; run: %bswap_i32(1161884710) == 653541445
+; run: %bswap_i32(1490358043) == 454022488
+
+function %bswap_i64(i64) -> i64 {
+block0(v0: i64):
+    v1 = bswap v0
+    return v1
+}
+; run: %bswap_i64(0) == 0
+; run: %bswap_i64(1) == 72057594037927936
+; run: %bswap_i64(-1) == -1
+; run: %bswap_i64(-9223372036854775808) == 128
+; run: %bswap_i64(9223372036854775807) == -129
+; run: %bswap_i64(2) == 144115188075855872
+; run: %bswap_i64(-2) == -72057594037927937
+; run: %bswap_i64(4619964224269417558) == 6232023105769315648
+; run: %bswap_i64(283085898842997568) == 4648687922440695043
+

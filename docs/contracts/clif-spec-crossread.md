@@ -193,6 +193,48 @@ istore32_bits`: `istoreN` stores `extract (N-1) 0 value`. Trap/flag differences 
 ```
 Agrees: `trap_eq` (`stepTerm _ _ _ (.trap c) = .trapped c`).
 
+### `smin`, `smax`, `umin`, `umax` (E since `clif-subset-v2`)
+```
+(spec (smin ty x y) (provide (= result (if (bvsle x y) x y)) ...))   ; bv_binary_8_to_64
+(spec (umin ty x y) (provide (= result (if (bvule x y) x y)) ...))
+(spec (smax ty x y) (provide (= result (if (bvsge x y) x y)) ...))
+(spec (umax ty x y) (provide (= result (if (bvuge x y) x y)) ...))
+```
+Agree: `smin_eq smax_eq umin_eq umax_eq` (all widths) and `smin_i8 … umax_i64`. Note that
+`smax`/`umax` return `x` on equality, as `Sem.smax`/`Sem.umax` do (`if y ≤ x then x else y`);
+the values are equal then, so the choice is unobservable.
+
+### `bswap` (E since `clif-subset-v2`, i16/i32/i64)
+```
+(macro (bswap16 x) (concat (extract  7  0 x) (extract 15  8 x)))
+(macro (bswap32 x) (concat (bswap16! x) (concat (extract 23 16 x) (extract 31 24 x))))
+(macro (bswap64 x) (concat (bswap32! x) (concat (extract 39 32 x) ... (extract 63 56 x))))
+(spec (bswap ty x) (provide (= (:bits ty) (widthof result))
+  (let ((w (conv_to 64 x))) (= result (conv_to (widthof result)
+    (switch (widthof x) (16 (conv_to 64 (bswap16! w))) (32 (conv_to 64 (bswap32! w)))
+                        (64 (bswap64! w))))))))
+(instantiate bswap ((args (named Type) (bv 16)) (ret (bv 16))) ... 32 ... 64)
+```
+Agrees: `bswap_i16 bswap_i32 bswap_i64` (`Spec.bswapI16/32/64` transcribe the macros with
+`concat a b = a ++ b`, `extract h l = extractLsb' l (h-l+1)`, widening `conv_to 64 x` =
+zero-extension; proved by `bv_decide`). `bswap.i8` is not valid CLIF (`iSwappable` =
+i16..i128); `bswap.i128` has no spec instantiation and is outside E.
+
+### Added to E without a VeriISLE spec (`clif-subset-v2`)
+Checked against `inst_specs.isle` at the pin: there is **no** `(spec ...)` for `select`
+(only the `(attr select_spectre_guard (tag spectre))`/`wasm_category_stack` tags), `bitrev`,
+`nop` or `symbol_value`. Their semantics is defined only in `FV/Clif/Sem.lean`/`Run.lean`:
+
+- `select c, x, y` = `if c ≠ 0 then x else y` (`Sem.select`; interpreter `step.rs`:
+  `choose(arg(0).into_bool()?, arg(1), arg(2))`, `into_bool` = non-zero);
+- `bitrev x` = `x.reverse` (`Sem.bitrev`; interpreter `DataValueExt::reverse_bits`);
+- `nop`: no effect (interpreter `ControlFlow::Continue`);
+- `symbol_value.i64 gvN` with `gvN = symbol [colocated] %s[+k]` = the link-time address of
+  `%s` plus `k` (`Mem.symbols`, `Clif.Image`; the interpreter does not implement data symbols:
+  `GlobalValueData::Symbol => unimplemented!()`, so this is checked against native code only).
+
+All four are checked by the `FVTest/Clif/fixtures/e-v2-*.clif` runs (interpreter and native).
+
 ### No VeriISLE spec (not cross-read)
 `stack_addr`, `jump`, `brif`, `br_table`, `return`, `call`. Their semantics is defined only
 in `FV/Clif/Run.lean` (see `docs/contracts/clif.md`) and checked against the Cranelift
@@ -203,8 +245,7 @@ interpreter by the filetests.
 | Opcode | Theorems | Result |
 | --- | --- | --- |
 | `iabs` (`if (bvsge x 0) x (bvneg x)`) | `iabs_eq`, `iabs_i*` | agrees (`iabs MIN = MIN`) |
-| `smin umin smax umax` | `smin_eq umin_eq smax_eq umax_eq` | agree |
 | `bitselect` (`bvor (bvand c x) (bvand (bvnot c) y)`) | `bitselect_eq` | agrees |
 | `uadd_overflow_trap` (32/64: carry bit of the 65-bit sum) | `uaddOverflowTrap_i32/_i64` | agrees (trap code is the instruction's) |
 | `trapz` (`clif_trap = bv_is_zero! val`) | — | agrees by definition (`evalInst`: trap iff the value is 0) |
-| `cls`, `bswap`, `umul_overflow`, `smul_overflow` | — | not cross-read (not in E); covered by the filetests |
+| `cls`, `umul_overflow`, `smul_overflow` | — | not cross-read (not in E); covered by the filetests |

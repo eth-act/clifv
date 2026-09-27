@@ -283,6 +283,13 @@ def evalInst (fr : Frame) (mem : Mem) : Inst → Res (List Val × Mem)
     let cv ← fr.get c
     if Sem.truthy cv.bits then .trap code else pure ([], mem)
   | .nop => pure ([], mem)
+  | .symbolValue ty gv => do
+    let g ← Res.ofOption s!"unknown global value gv{gv}" (fr.func.globals.lookup gv)
+    match g with
+    | .symbol name offset _ =>
+      let base ← Res.ofOption s!"symbol_value: undefined symbol %{name}" (mem.symbols name)
+      pure ([Val.ofInt ty (base + offset)], mem)
+    | _ => .stuck s!"symbol_value: gv{gv} is not a symbol"
 
 /-! ## Control flow -/
 
@@ -480,8 +487,17 @@ def runWith (env : Env) (p : Program) (f : String) (args : List Val) (mem : Mem)
   | .trap c => .trapped c
   | .stuck m => .stuck m
 
-/-- Run `f` on `args` from empty memory for at most `fuel` steps. -/
+/-- Run `f` on `args` for at most `fuel` steps, from the program's initial memory
+(`Program.initMem`: empty without data objects, else the link-time image). -/
 def run (env : Env) (p : Program) (f : String) (args : List Val) (fuel : Nat) : Outcome :=
-  runWith env p f args Mem.empty fuel
+  match p.initMem with
+  | .ok mem => runWith env p f args mem fuel
+  | .trap c => .trapped c
+  | .stuck m => .stuck m
+
+/-- Without data objects, `run` starts from empty memory. -/
+theorem run_of_data_nil (env : Env) (p : Program) (f : String) (args : List Val) (fuel : Nat)
+    (h : p.data = []) : run env p f args fuel = runWith env p f args Mem.empty fuel := by
+  simp [run, Program.initMem, h]
 
 end Clif

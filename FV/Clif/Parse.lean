@@ -9,7 +9,8 @@ runner: functions outside S are reported as `ParseError.unsupported` with a reas
 others are parsed normally.
 
 Accepted input (Cranelift 0.136.1 reader syntax):
-* header lines `test ...`, `target ...`, `set ...` before the first function (kept verbatim);
+* header lines `test ...`, `target ...`, `set ...` before the first function (kept verbatim),
+  and `; data:` directives there (link-time data objects, see `dataDirective`);
 * `function %name(params) [-> returns] [callconv] { preamble blocks }`;
 * preamble: `ssN = explicit_slot N[, align = K]`, `gvN = vmctx | load.ty flags gvM[+off] |
   iadd_imm.ty gvM, off | symbol [colocated] %name[+off]`, `fnN = [colocated] %name(sig)`;
@@ -528,6 +529,9 @@ def item (op : String) (sfx : Option Ty) : P Item := do
     let s ← entity "ss"
     let off ← optOffset
     return .inst (.stackAddr t s off)
+  | "symbol_value" =>
+    let t ← needTy op sfx
+    return .inst (.symbolValue t (← entity "gv"))
   | "call" =>
     let f ← entity "fn"
     expectPunct '('
@@ -748,7 +752,74 @@ structure ParsedFunction where
 
 structure ParsedFile where
   header : List String
+  /-- The `; data:` directives of the header (or the first malformed one). -/
+  data : Except String (List DataObject) := .ok []
   funcs : List ParsedFunction
+
+/-! ## Data directives
+
+`; data: %name [align=N] [writable] = item item ...` before the first function declares a
+link-time data object (`Clif.DataObject`). An item is either an even-length string of hex
+digits (bytes in memory order, e.g. `deadbeef` = bytes `de ad be ef`) or `%sym[+N|-N]`
+(8-byte little-endian absolute address of data object `sym` plus the addend). -/
+
+def hexDigit? (c : Char) : Option Nat :=
+  if c.isDigit then some (c.toNat - '0'.toNat)
+  else if 'a' ≤ c ∧ c ≤ 'f' then some (c.toNat - 'a'.toNat + 10)
+  else if 'A' ≤ c ∧ c ≤ 'F' then some (c.toNat - 'A'.toNat + 10)
+  else none
+
+def hexBytes? : List Char → Option (List (BitVec 8))
+  | [] => some []
+  | h :: l :: rest => do
+    let a ← hexDigit? h
+    let b ← hexDigit? l
+    let r ← hexBytes? rest
+    pure (BitVec.ofNat 8 (16 * a + b) :: r)
+  | [_] => none
+
+def dataItems (w : String) : Except String (List DataItem) :=
+  if w.startsWith "%" then
+    let body := (w.drop 1).toString
+    let (n, off) := match body.splitOn "+", body.splitOn "-" with
+      | [n, o], _ => (n, (Parse.parseIntLit o))
+      | _, [n, o] => (n, (Parse.parseIntLit o).map (- ·))
+      | _, _ => (body, some 0)
+    match off with
+    | some o => if n.isEmpty then .error s!"bad data item {w}" else .ok [.addr n o]
+    | none => .error s!"bad addend in data item {w}"
+  else match hexBytes? w.toList with
+    | some bs => .ok (bs.map .byte)
+    | none => .error s!"bad data item {w} (expected hex bytes or %sym[+N])"
+
+/-- If the comment body `text` is a `data:` directive, parse it. -/
+def dataDirective (text : String) : Option (Except String DataObject) :=
+  let t := (String.ofList (text.toList.dropWhile (fun c => c == ' ' || c == ';'))).trimAscii.toString
+  if !t.startsWith "data:" then none else some do
+    let ws := ((t.drop 5).toString.splitOn " ").filter (!·.isEmpty)
+    match ws with
+    | nm :: rest =>
+      if !nm.startsWith "%" || nm.length < 2 then throw s!"data: expected %name, got {nm}"
+      let mut o : DataObject := { name := (nm.drop 1).toString, items := [] }
+      let mut rest := rest
+      let mut done := false
+      while !done do
+        match rest with
+        | "writable" :: r => o := { o with writable := true }; rest := r
+        | "=" :: r => rest := r; done := true
+        | w :: r =>
+          if w.startsWith "align=" then
+            match (w.drop 6).toString.toNat? with
+            | some a => if a == 0 then throw "data: align must be positive"
+                        o := { o with align := a }; rest := r
+            | none => throw s!"data: bad {w}"
+          else throw s!"data: unexpected {w}"
+        | [] => throw "data: missing '='"
+      let mut items := #[]
+      for w in rest do
+        items := items ++ (← dataItems w).toArray
+      pure { o with items := items.toList }
+    | [] => throw "data: missing name"
 
 def isFunctionLine (l : String) : Bool :=
   let t := l.trimAscii.toString
@@ -789,6 +860,7 @@ def parseChunk (lines : List String) : ParsedFunction := Id.run do
 def parseFile (src : String) : ParsedFile := Id.run do
   let lines := src.splitOn "\n"
   let mut header := #[]
+  let mut data : Except String (Array DataObject) := .ok #[]
   let mut chunks : Array (Array String) := #[]
   for l in lines do
     if isFunctionLine l then
@@ -796,18 +868,26 @@ def parseFile (src : String) : ParsedFile := Id.run do
     else if chunks.isEmpty then
       let t := (l.toList.takeWhile (· != ';') |> String.ofList).trimAscii.toString
       if !t.isEmpty then header := header.push t
+      let c := l.toList.dropWhile (· != ';')
+      if !c.isEmpty then
+        match dataDirective (String.ofList c), data with
+        | some (.ok o), .ok ds => data := .ok (ds.push o)
+        | some (.error e), .ok _ => data := .error e
+        | _, _ => pure ()
     else
       chunks := chunks.modify (chunks.size - 1) (·.push l)
-  return { header := header.toList, funcs := chunks.toList.map (parseChunk ·.toList) }
+  return { header := header.toList, data := data.map (·.toList),
+           funcs := chunks.toList.map (parseChunk ·.toList) }
 
 /-- Parse a `.clif` file; every function must be in subset S. -/
 def parse (src : String) : Except String Program := do
   let pf := parseFile src
+  let data ← pf.data
   let mut funcs := #[]
   for f in pf.funcs do
     match f.func with
     | .ok fn => funcs := funcs.push fn
     | .error e => throw s!"%{f.name}: {e}"
-  return { header := pf.header, funcs := funcs.toList }
+  return { header := pf.header, data, funcs := funcs.toList }
 
 end Clif

@@ -65,7 +65,7 @@ set_option maxHeartbeats 2000000 in
 theorem max_run (x y : BitVec 32) :
     (run {} prog "max" [⟨.i32, x⟩, ⟨.i32, y⟩] 10).returnedVals? =
       some [⟨.i32, if y.ult x then x else y⟩] := by
-  cases h : y.ult x <;> simp [run, runWith, initState, enterFunc, runLoop, step,
+  cases h : y.ult x <;> simp [run, Program.initMem, runWith, initState, enterFunc, runLoop, step,
     stepTerm, evalInst, enterBlock, continueWith, returnValues, Frame.get, Frame.getAs,
     Frame.getMany, checkTys, Sem.icmp, Sem.intcc, Sem.bool8, Sem.truthy, prog, addFn, maxFn,
     twiceFn, slotFn, Function.block?, Function.entry?, Program.func?, AbiParam.tys,

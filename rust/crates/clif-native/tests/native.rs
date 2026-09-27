@@ -92,3 +92,15 @@ fn externs_from_link_objects() {
     assert_eq!(actual[2], ret(&[("i64", "0x0000000000000004")]), "functions without the extern still run");
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+#[test]
+fn data_objects_from_directives() {
+    let file = fixture("data.clif");
+    let (actual, stderr, code) = native(&[file.to_str().unwrap()]);
+    assert_eq!(code, 0, "{stderr}");
+    assert_eq!(actual.len(), 4);
+    assert_eq!(actual[0], ret(&[("i64", "0x0807060504030201")]));
+    assert_eq!(actual[1], ret(&[("i8", "0x05")]), "an Abs8 relocation inside data points at %tab+4");
+    assert_eq!(actual[2], ret(&[("i64", "0x0000000000000009")]));
+    assert!(error_text(&actual[3]).starts_with("SIGSEGV at %ro_store+0x"), "read-only data: {}", actual[3]);
+}

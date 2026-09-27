@@ -93,7 +93,18 @@ file): register 31 is XZR, not SP, in CBZ/CBNZ, BR/BLR/RET, MOVZ/MOVN/MOVK, LDP/
 `SignExtend(imm19:'00')` (upstream lost `imm19<18:17>`). The GPR single-register load/store
 decode follows the ASL for every `size`/`opc`.
 
-## Required instructions (Cranelift 0.136.1, `opt_level=none`, `clif-subset-v1` at i8–i64)
+## Required instructions (Cranelift 0.136.1, `opt_level=none`, `clif-subset-v1` at i8–i64, plus the v2 probe)
+
+**`clif-subset-v2` probe** (2026-09-27: `clif2obj` on `FVTest/Clif/fixtures/e-v2-*.clif`,
+`llvm-objdump-18 -dr`). Mnemonics emitted for the nine new opcodes:
+`select` → `cmp` (reg / extended `uxtb`/`uxth` for i8/i16 conditions) or `tst`, then
+`csel x, x, x, ne`; `smin`/`smax`/`umin`/`umax` → `sxtb`/`sxth`/`uxtb`/`uxth` (i8/i16),
+`cmp` (extended for i8/i16), `csel … lt/gt/lo/hi`; `bswap` → `rev16 w` (i16), `rev w` (i32),
+`rev x` (i64); `bitrev` → `rbit w` + `lsr w, #24/#16` (i8/i16), `rbit w`/`rbit x`;
+`nop` → nothing; `symbol_value` (with `is_pic`) → `adrp x, :got:sym` + `ldr x, [x, :got_lo12:sym]`
+(`R_AARCH64_ADR_GOT_PAGE`, `R_AARCH64_LD64_GOT_LO12_NC`), plus `mov`/`movz` + `add` for a
+non-zero offset. The only forms not already modelled were `REV16`/`REV` (and they were: LNSym's
+`Data_processing_one_source.lean` has `REV`, `REV16`, `REV32`); their cosim specs are new.
 
 Status: **port** = in upstream LNSym; **port+fix** = in upstream, semantics fixed; **added** = FV
 addition, transcribed from the Arm ARM ASL (cited in the file header); **extra** = not emitted,
@@ -130,9 +141,10 @@ failures.
 | `madd` (`mul`) | port | imul | 200/0 |
 | `msub` | added | urem/srem | 200/0 |
 | `smulh` / `umulh` | added | smulhi/umulhi | 200/0 each |
-| `clz` / `rbit` | added | clz, ctz | 200/0 each |
+| `clz` / `rbit` | added | clz, ctz; `rbit` w/x for bitrev (v2) | 200/0 each |
+| `rev16` (w), `rev` (w), `rev` (x); `rev16` (x), `rev32` (x) extra | port (LNSym `REV*`) | bswap i16/i32/i64 (v2) | 200/0 each (1000/0 at seed 12345) |
 | `cls` | added (extra) | — | 200/0 |
-| `csel` | port | br_table index clamp | 200/0 |
+| `csel` | port | br_table index clamp; select, smin/smax/umin/umax (v2, x form) | 200/0 |
 | `csinc` (`cset`) | added | icmp | 200/0 |
 | `csinv` / `csneg` | added (extra) | — | 200/0 each |
 | `ccmp` (imm) | added | sdiv/srem overflow guard | 200/0 |
