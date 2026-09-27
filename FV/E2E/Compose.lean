@@ -10,7 +10,7 @@ import FV.E2E.Statement
 
 namespace E2E
 
-open Backend Backend.Proof
+open Backend Backend.Proof Backend.Proof.Driver
 
 theorem regVal_x (s : Arm.ArmState) (n : Nat) : regVal s (.x n) = ofX (xreg n s) := rfl
 

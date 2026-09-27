@@ -2,6 +2,7 @@ import FV.Backend
 import FV.Backend.Proof.RegallocSound
 import FV.Backend.Proof.RegallocOperands
 import FV.Backend.Proof.EncodeStep
+import FV.Backend.Proof.LowerSim
 import FV.Compile.Subset
 
 /-!
@@ -37,16 +38,13 @@ agreed content; they are swapped for the owners' predicates when those land (see
 
 namespace E2E
 
-open Backend Backend.Proof
+open Backend Backend.Proof Backend.Proof.Driver
 
-/-! ## Values: the width convention -/
+/-! ## Values: the width convention
 
-/-- The VCode-level instruction semantics (M6's `csem` is the instance). -/
-abbrev Sem := ISem CV Arm.ArmState
-
-/-- A CLIF value of type `ty` is the low `ty.width` bits of a register value; the upper bits
-are unspecified (PLAN.md §3.4). -/
-def VHolds (v : Clif.Val) (x : CV) : Prop := x.setWidth v.ty.width = v.bits
+`Sem` (the VCode-level instruction semantics, M6's `csem` is the instance), `VHolds` (a CLIF
+value of type `ty` is the low `ty.width` bits of a register value, upper bits unspecified,
+PLAN.md §3.4) and `AllHold` are the driver's (`Backend.Proof.Driver`, shared with M4). -/
 
 /-- `VHolds` for a 64-bit X register. For the subset's types (width ≤ 64) this is
 `x.setWidth v.ty.width = v.bits` (`XHolds_iff`). -/
@@ -136,17 +134,6 @@ def Rel.holds (Γ : Rel) (f : Clif.Function) (slots : List (Clif.SlotId × Nat))
 def MemAgree (cm : Clif.Mem) (s : Arm.ArmState) : Prop :=
   ∀ a b, cm.valid a 1 = true → cm.bytes a = some b → Arm.read_mem (BitVec.ofNat 64 a) s = b
 
-/-- `s'` is reachable from `s` by CLIF steps that continue. -/
-inductive Reach (env : Clif.Env) (p : Clif.Program) : Clif.State → Clif.State → Prop
-  | refl (s : Clif.State) : Reach env p s s
-  | step {s s' s'' : Clif.State} : Clif.step env p s = .next s' → Reach env p s' s'' →
-      Reach env p s s''
-
-/-- Instructions whose trap the backend makes explicit (a check and a trap instruction). -/
-def explicitTrapInst : Clif.Inst → Bool
-  | .div .. => true
-  | _ => false
-
 /-- Every trap of the CLIF run is explicit: a `trap` terminator, or a division (whose lowering
 checks and traps). Memory-access traps (`heap_oob`) and traps inside externs are excluded: the
 Arm model has no memory faults and callees are outside the theorem. For DSL output this holds
@@ -203,33 +190,15 @@ structure TrapAt (fb : FnBin) (base : BitVec 64) (c : Clif.TrapCode) (s : Arm.Ar
 
 /-! ## VCode observables -/
 
-/-- Trap code of a trapping VCode instruction. -/
-def trapCode? : MInst → Option Clif.TrapCode
-  | .udf c | .trapIf _ c => some c
-  | _ => none
-
-/-- Use values of an instruction with operands `ops` in the vreg file `ρ` (`VStep`'s read). -/
-def vuses (ops : Array Operand) (ρ : Nat → CV) : List CV :=
-  (ops.toList.filter Operand.isUse).map (ρ ·.vreg)
-
 /-- The VCode run from the entry executes `rets us` (use values `vals`), final world `w`. -/
 def VReturns (vc : VCode) (sem : Sem) (ρ₀ : Nat → CV) (w₀ : Arm.ArmState)
     (us : List (Reg × Reg)) (vals : List CV) (w : Arm.ArmState) : Prop :=
-  ∃ b k ρ w₁ vb ops outs, Star (VStep vc sem) (VConf.init ρ₀ w₀) (.run ⟨b, k, ρ, w₁⟩) ∧
-    vc.blocks[b]? = some vb ∧ vb.insts[k]? = some (.rets us) ∧
-    (MInst.rets us).operands = .ok ops ∧ vals = vuses ops ρ ∧
-    sem (.rets us) vals w₁ = some (outs, w, .ret)
+  VRetFrom vc sem ⟨0, 0, ρ₀, w₀⟩ us vals w
 
 /-- The VCode run from the entry reaches an instruction that halts with trap code `c`. -/
 def VTraps (vc : VCode) (sem : Sem) (ρ₀ : Nat → CV) (w₀ : Arm.ArmState) (c : Clif.TrapCode) :
     Prop :=
-  ∃ b k ρ w vb i ops outs w', Star (VStep vc sem) (VConf.init ρ₀ w₀) (.run ⟨b, k, ρ, w⟩) ∧
-    vc.blocks[b]? = some vb ∧ vb.insts[k]? = some i ∧ i.operands = .ok ops ∧
-    sem i (vuses ops ρ) w = some (outs, w', .halt) ∧ trapCode? i = some c
-
-/-- `vals` are held (low bits) by the register values `xs`, index by index. -/
-def AllHold (vals : List Clif.Val) (xs : List CV) : Prop :=
-  vals.length = xs.length ∧ ∀ (j : Nat) v x, vals[j]? = some v → xs[j]? = some x → VHolds v x
+  VTrapFrom vc sem ⟨0, 0, ρ₀, w₀⟩ c
 
 /-! ## The layer statements -/
 
