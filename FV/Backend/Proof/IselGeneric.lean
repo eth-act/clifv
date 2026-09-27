@@ -221,6 +221,127 @@ theorem applyTerm_internal_some (hc : cfg.checkOverlap = false) {n : Nat} {ty : 
           obtain ⟨rfl, rfl⟩ := h
           exact ⟨r, hr, m, env, s1, st, tr, hmn, hmatch, he, rfl⟩
 
+/-- A failed `tryRule` ran the match phase, which failed, and restored the state. -/
+theorem tryRule_none_match {n : Nat} {r : Rule} {vs : List V} {s s' : σ × Array RuleId}
+    (h : (tryRule p sem cfg (n + 1) r vs).run s = .ok (none, s')) :
+    s' = s ∧ ∃ s1, (matchRule p sem cfg n r vs).run s = .ok (none, s1) := by
+  rw [tryRule] at h
+  simp only [M.except_ok_bind, M.run_bind, M.run_get] at h
+  cases hm : (matchRule p sem cfg n r vs).run s with
+  | error e => rw [hm] at h; cases h
+  | ok q =>
+    obtain ⟨m, s1⟩ := q
+    rw [hm] at h
+    cases m with
+    | some env => simp only [M.except_ok_bind, M.run_pure] at h; cases h
+    | none =>
+      simp only [M.except_ok_bind, M.run_bind, M.run_set, M.run_pure] at h
+      injection h with h; injection h with _ h2
+      exact ⟨h2.symm, s1, rfl⟩
+
+/-- **Selection is first match.** With overlap checking off, if rule selection returns
+`(r, env)`, then `r` occurs in the candidates after a prefix `pre` whose rules were all tried
+from the selection's start state and failed to match (with a fuel of at least the selection's
+fuel minus the number of candidates). -/
+theorem selectRule_some_first (hc : cfg.checkOverlap = false) :
+    ∀ {n : Nat} {term : Term} {rs : List Rule} {vs : List V} {s s' : σ × Array RuleId}
+      {r : Rule} {env : Env V},
+      (selectRule p sem cfg n term rs vs).run s = .ok (some (r, env), s') →
+      ∃ pre post, rs = pre ++ r :: post ∧ ∀ r' ∈ pre, ∃ m', n ≤ m' + 2 + rs.length ∧
+        ∃ s1, (matchRule p sem cfg m' r' vs).run s = .ok (none, s1)
+  | 0, _, _, _, _, _, _, _, h => by rw [selectRule.eq_1] at h; cases h
+  | n + 1, _, [], _, _, _, _, _, h => by rw [selectRule.eq_2] at h; cases h
+  | n + 1, term, r' :: rs, vs, s, s', r, env, h => by
+    rw [selectRule.eq_3] at h
+    simp only [M.run_bind] at h
+    cases n with
+    | zero => rw [tryRule.eq_1] at h; cases h
+    | succ k =>
+      cases ht : (tryRule p sem cfg (k + 1) r' vs).run s with
+      | error e => rw [ht] at h; cases h
+      | ok q =>
+        obtain ⟨res, s1⟩ := q
+        rw [ht] at h
+        simp only [M.except_ok_bind] at h
+        cases res with
+        | some env' =>
+          simp only [hc, Bool.false_eq_true, ↓reduceIte, M.run_pure, Except.ok.injEq,
+            Prod.mk.injEq, Option.some.injEq] at h
+          obtain ⟨⟨rfl, rfl⟩, rfl⟩ := h
+          exact ⟨[], rs, rfl, fun _ h => by cases h⟩
+        | none =>
+          obtain ⟨rfl, s2, hm⟩ := tryRule_none_match ht
+          obtain ⟨pre, post, hrs, hpre⟩ := selectRule_some_first hc h
+          refine ⟨r' :: pre, post, by rw [hrs]; rfl, ?_⟩
+          intro r'' hr''
+          rcases List.mem_cons.mp hr'' with rfl | hr''
+          · exact ⟨k, by simp, s2, hm⟩
+          · obtain ⟨m', hm', s3, h3⟩ := hpre r'' hr''
+            exact ⟨m', by simp; omega, s3, h3⟩
+
+/-- `applyTerm_internal_some` with first-match selection: the committed rule `r` is preceded in
+`p.rulesOf t` by rules that all failed to match from the start state. -/
+theorem applyTerm_internal_some_first (hc : cfg.checkOverlap = false) {n : Nat} {ty : TypeId}
+    {t : TermId} {vs : List V} {term : Term} {flags : TermFlags} {ex : Option Extractor}
+    (ht : termOf p t = .ok term) (hk : term.kind = .decl flags (some .internal) ex)
+    (hm : flags.isMulti = false) {s s' : σ × Array RuleId} {v : V}
+    (h : (applyTerm p sem cfg (n + 1) ty t vs).run s = .ok (some v, s')) :
+    ∃ r pre post, p.rulesOf t = pre ++ r :: post ∧
+      (∀ r' ∈ pre, ∃ m', n ≤ m' + 2 + (p.rulesOf t).length ∧
+        ∃ s1, (matchRule p sem cfg m' r' vs).run s = .ok (none, s1)) ∧
+      ∃ m env s1 st tr, n ≤ m + 2 + (p.rulesOf t).length ∧
+      (matchRule p sem cfg m r vs).run s = .ok (some env, s1) ∧
+      (evalExpr p sem cfg n r.rhs env).run s1 = .ok (some v, (st, tr)) ∧
+      s' = (st, tr.push r.id) := by
+  rw [applyTerm_internal_run ht hk hm] at h
+  cases hs : (selectRule p sem cfg n term (p.rulesOf t) vs).run s with
+  | error e => rw [hs] at h; cases h
+  | ok q =>
+    obtain ⟨sel, s1⟩ := q
+    rw [hs] at h
+    simp only [M.except_ok_bind] at h
+    cases sel with
+    | none =>
+      simp only at h
+      split at h
+      · simp at h
+      · cases h
+    | some re =>
+      obtain ⟨r, env⟩ := re
+      obtain ⟨-, m, hmn, hmatch⟩ := selectRule_some hc hs
+      obtain ⟨pre, post, hrs, hpre⟩ := selectRule_some_first hc hs
+      simp only [M.run_bind] at h
+      cases he : (evalExpr p sem cfg n r.rhs env).run s1 with
+      | error e => rw [he] at h; cases h
+      | ok q =>
+        obtain ⟨ev, st, tr⟩ := q
+        rw [he] at h
+        simp only [M.except_ok_bind] at h
+        cases ev with
+        | none => simp at h
+        | some w =>
+          simp only [M.run_fire_pure, Except.ok.injEq, Prod.mk.injEq, Option.some.injEq] at h
+          obtain ⟨rfl, rfl⟩ := h
+          exact ⟨r, pre, post, hrs, hpre, m, env, s1, st, tr, hmn, hmatch, he, rfl⟩
+
+/-- In a list without duplicates, the prefix before an element is unique. -/
+theorem prefix_unique_of_nodup {α : Type} {x : α} :
+    ∀ {pre pre' post post' : List α}, (pre ++ x :: post).Nodup →
+      pre ++ x :: post = pre' ++ x :: post' → pre' = pre
+  | [], [], _, _, _, _ => rfl
+  | [], y :: pre', post, post', hn, he => by
+    simp only [List.nil_append, List.cons_append, List.cons.injEq] at he
+    obtain ⟨rfl, rfl⟩ := he
+    exact absurd (List.mem_append_right _ (List.mem_cons_self ..)) (List.nodup_cons.mp hn).1
+  | y :: pre, [], post, post', hn, he => by
+    simp only [List.nil_append, List.cons_append, List.cons.injEq] at he
+    obtain ⟨rfl, rfl⟩ := he
+    exact absurd (List.mem_append_right _ (List.mem_cons_self ..)) (List.nodup_cons.mp hn).1
+  | y :: pre, z :: pre', post, post', hn, he => by
+    simp only [List.cons_append, List.cons.injEq] at he
+    obtain ⟨rfl, he⟩ := he
+    rw [prefix_unique_of_nodup (List.nodup_cons.mp hn).2 he]
+
 /-- **Partial-constructor failure.** If `applyTerm` of the internal constructor `t` returns
 `none`, then either no rule matched (the term is `partial`, and the state is unchanged) or a
 rule matched and its right-hand side returned `none` (a partial constructor failed inside it;
