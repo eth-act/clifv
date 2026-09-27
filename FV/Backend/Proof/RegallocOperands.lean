@@ -944,4 +944,80 @@ theorem operandsSound_step {F : BitVec 64 → Prop}
     hcl
   exact ⟨s', m2, hex, hW, hc2, hr2, hl2⟩
 
+/-- Execution with calls: a call runs the external `callee` (from the `bl` to the return; the
+Arm model does not execute other functions), everything else runs as `execMInst`. -/
+def execWithCalls (callee : CallInfo → Arm.ArmState → Option Arm.ArmState) (ctx : FnCtx)
+    (env : Env) : MInst → Arm.ArmState → Option Arm.ArmState
+  | .call info, s => callee info s
+  | i, s => execMInst ctx env i s
+
+/-- `csem` with calls given by `callSem dest args w = (results, world)`. -/
+noncomputable def csemWith (F : BitVec 64 → Prop)
+    (callSem : CallDest → List CV → Arm.ArmState → Option (List CV × Arm.ArmState)) :
+    ISem CV Arm.ArmState := fun i uses w =>
+  match i with
+  | .call info => (callSem info.dest uses w).map fun (o, w') => (o, w', .next)
+  | i => csem F i uses w
+
+/-- **AAPCS64 callee contract**: called with the argument registers holding `args` in a
+state with world `w`, the callee returns the results `callSem` computes in the return
+registers, with world `w'`; it preserves every allocatable register outside
+`DEFAULT_AAPCS_CLOBBERS` and the low 64 bits of v8–v15. -/
+def CalleeSound (F : BitVec 64 → Prop) (callee : CallInfo → Arm.ArmState → Option Arm.ArmState)
+    (callSem : CallDest → List CV → Arm.ArmState → Option (List CV × Arm.ArmState)) : Prop :=
+  ∀ (info : CallInfo) (s w : Arm.ArmState) (outs : List CV) (w' : Arm.ArmState),
+    SameWorld F s w → callSem info.dest (info.uses.map fun p => regVal s p.2) w = some (outs, w') →
+    ∃ s', callee info s = some s' ∧ SameWorld F s' w' ∧
+      (∀ p ∈ (info.defs.map (·.1)).zip outs, regVal s' p.1 = p.2) ∧
+      (∀ r, r.allocatable = true → r ∉ defaultAapcsClobbers → regVal s' r = regVal s r) ∧
+      (∀ r ∈ calleeSaved, ckeep r (regVal s' r) = ckeep r (regVal s r))
+
+/-- A call with one argument and one result (both in x0), under the callee contract: the
+operand view (fixed use/def x0, clobbers `DEFAULT_AAPCS_CLOBBERS` minus x0) is sound. -/
+theorem operandsSound_call (F : BitVec 64 → Prop) (callee : CallInfo → Arm.ArmState → Option Arm.ArmState)
+    (callSem : CallDest → List CV → Arm.ArmState → Option (List CV × Arm.ArmState))
+    (hcallee : CalleeSound F callee callSem) (ctx : FnCtx) (env : Env) (nm : String) (a r : Nat) :
+    OperandsSound F (execWithCalls callee ctx env) (csemWith F callSem)
+      (.call ⟨.sym nm, [(.vreg a .int, .x 0)], [(.x 0, .vreg r .int)]⟩) := by
+  intro c wh ops regs i' s w outs w' hops hst hasg hw hsem
+  have : MInst.operands (.call ⟨.sym nm, [(.vreg a .int, .x 0)], [(.x 0, .vreg r .int)]⟩) =
+      .ok #[⟨a, .int, .use, .early, .fixed (.x 0)⟩, ⟨r, .int, .def, .late, .fixed (.x 0)⟩] := rfl
+  rw [this] at hops
+  cases hops
+  obtain ⟨hsz, hloc, -, -⟩ := checkStatic_facts hst
+  obtain ⟨r0, r1, rfl⟩ : ∃ r0 r1, regs = #[r0, r1] := by
+    rcases regs with ⟨_ | ⟨r0, _ | ⟨r1, _ | ⟨r2, l⟩⟩⟩⟩
+    · simp at hsz
+    · simp at hsz
+    · exact ⟨r0, r1, rfl⟩
+    · simp at hsz
+  have e0 := (hloc (⟨a, .int, .use, .early, .fixed (.x 0)⟩, .reg r0) (by simp)).2 (.x 0) rfl
+  have e1 := (hloc (⟨r, .int, .def, .late, .fixed (.x 0)⟩, .reg r1) (by simp)).2 (.x 0) rfl
+  cases e0
+  cases e1
+  have : MInst.assign (.call ⟨.sym nm, [(.vreg a .int, .x 0)], [(.x 0, .vreg r .int)]⟩)
+      #[.x 0, .x 0] = .ok (.call ⟨.sym nm, [(.x 0, .x 0)], [(.x 0, .x 0)]⟩) := rfl
+  rw [this] at hasg
+  cases hasg
+  simp only [csemWith, useVals] at hsem
+  simp [Operand.isUse] at hsem
+  obtain ⟨s', hs', hW, hres, hpres, hcs'⟩ := hcallee ⟨.sym nm, [(.x 0, .x 0)], [(.x 0, .x 0)]⟩ s w
+    outs w' hw (by simpa using hsem)
+  refine ⟨s', hs', hW, ?_, ?_, ?_⟩
+  · intro p hp
+    simp [defRegs, Operand.isDef] at hp
+    cases outs with
+    | nil => simp at hp
+    | cons o t =>
+      simp at hp
+      subst hp
+      simpa using hres (.x 0, o) (by simp)
+  · intro r' hr hnd hnc
+    have hne : Reg.x 0 ≠ r' := hnd (⟨r, .int, .def, .late, .fixed (.x 0)⟩, .x 0) (by simp)
+      (by simp [Operand.isDef])
+    refine hpres r' hr (fun hd => hnc ?_)
+    simp [MInst.clobbers, hd, hne]
+  · intro r hr hcs
+    exact hcs' r hcs
+
 end Backend.Proof
