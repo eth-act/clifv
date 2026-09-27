@@ -157,6 +157,10 @@ structure CheckCtx where
   rf : RFunc
   size : Nat
 
+/-- `pure ()` if `b`, else the error `msg ()` (built only on failure). -/
+def ensure (b : Bool) (msg : Unit → String) : Except String Unit :=
+  if b then pure () else throw (msg ())
+
 section
 variable (c : CheckCtx)
 
@@ -176,19 +180,20 @@ def CheckCtx.locOk (l : Loc) (cls : RegClass) : Bool :=
 def CheckCtx.checkOperand (where_ : String) (ops : Array Operand) (allocs : Array Loc) :
     (Operand × Loc) × Nat → Except String Unit
   | ((o, l), j) => do
-    if !(c.locOk l o.cls) || l matches .save _ then
-      throw s!"{where_}: operand {j} (v{o.vreg}) in invalid location {repr l}"
+    ensure (c.locOk l o.cls && !(l matches .save _)) fun _ =>
+      s!"{where_}: operand {j} (v{o.vreg}) in invalid location {repr l}"
     match o.con with
     | .any => pure ()
-    | .reg => if !l.isReg then throw s!"{where_}: operand {j} (v{o.vreg}) must be in a register"
-    | .stack => if l.isReg then throw s!"{where_}: operand {j} (v{o.vreg}) must be on the stack"
+    | .reg => ensure l.isReg fun _ => s!"{where_}: operand {j} (v{o.vreg}) must be in a register"
+    | .stack => ensure (!l.isReg) fun _ => s!"{where_}: operand {j} (v{o.vreg}) must be on the stack"
     | .fixed p =>
-      if l != .reg p then throw s!"{where_}: operand {j} (v{o.vreg}) must be in {repr p}, is in {repr l}"
+      ensure (l == .reg p) fun _ =>
+        s!"{where_}: operand {j} (v{o.vreg}) must be in {repr p}, is in {repr l}"
     | .reuse i =>
       match ops[i]?, allocs[i]? with
       | some oi, some li =>
-        if oi.kind != .use || !l.isReg || l != li then
-          throw s!"{where_}: operand {j} (v{o.vreg}) must reuse operand {i}'s register"
+        ensure (oi.kind == .use && l.isReg && l == li) fun _ =>
+          s!"{where_}: operand {j} (v{o.vreg}) must reuse operand {i}'s register"
       | _, _ => throw s!"{where_}: reuse of a missing operand"
 
 /-- The locations a def must not share: every use and clobber (early def), every late use and
@@ -200,25 +205,23 @@ def defConflicts (uses : List (Operand × Loc)) (clobLocs : List Loc) : OpPos �
 /-- Static checks of one instruction's allocation (state-independent). -/
 def CheckCtx.checkStatic (where_ : String) (ops : Array Operand) (allocs : Array Loc)
     (clob : List Reg) : Except String Unit := do
-  if ops.size != allocs.size then
-    throw s!"{where_}: {allocs.size} allocations for {ops.size} operands"
+  ensure (ops.size == allocs.size) fun _ =>
+    s!"{where_}: {allocs.size} allocations for {ops.size} operands"
   let pairs := (ops.zip allocs).toList
   pairs.zipIdx.forM (c.checkOperand where_ ops allocs)
   let clobLocs := clob.map Loc.reg
   let defs := pairs.filter (·.1.kind == .def)
   let uses := pairs.filter (·.1.kind == .use)
-  let defLocs := defs.map (·.2)
-  if !defLocs.Nodup then
-    throw s!"{where_}: two defs in the same location"
-  defs.forM fun (o, l) => do
-    if (defConflicts uses clobLocs o.pos).contains l then
-      throw s!"{where_}: def of v{o.vreg} in {repr l} overwrites an input or clobber"
-  (uses.filter (·.1.pos == .late)).forM fun (o, l) => do
-    if clobLocs.contains l then throw s!"{where_}: late use of v{o.vreg} in clobbered {repr l}"
+  ensure (decide (defs.map (·.2)).Nodup) fun _ => s!"{where_}: two defs in the same location"
+  defs.forM fun (o, l) =>
+    ensure (!(defConflicts uses clobLocs o.pos).contains l) fun _ =>
+      s!"{where_}: def of v{o.vreg} in {repr l} overwrites an input or clobber"
+  (uses.filter (·.1.pos == .late)).forM fun (o, l) =>
+    ensure (!clobLocs.contains l) fun _ => s!"{where_}: late use of v{o.vreg} in clobbered {repr l}"
 
 def needs (where_ : String) (a : AState) (l : Loc) (s : Sym) : Except String Unit :=
-  if (a.get l).contains s then pure ()
-  else throw s!"{where_}: {repr l} does not hold {repr s} (holds {repr (a.get l)})"
+  ensure ((a.get l).contains s) fun _ =>
+    s!"{where_}: {repr l} does not hold {repr s} (holds {repr (a.get l)})"
 
 /-- The operand–location pairs of kind `k` at position `p`. -/
 def atPos (pairs : List (Operand × Loc)) (k : OpKind) (p : OpPos) : List (Operand × Loc) :=
@@ -233,69 +236,92 @@ the callee preserves d8–d15, which Cranelift's clobber set over-approximates a
 def clobberAll (a : AState) (clob : List Reg) : AState :=
   clob.foldl (fun a r => a.put (.reg r) ((a.get (.reg r)).filter (· == .entry r))) a
 
-/-- Transfer (with the state-dependent checks) of one original instruction. -/
+/-- The transfer of an original instruction with operand–location pairs `pairs`, in execution
+order: early defs, clobbers, late defs. -/
+def transferOp (i : MInst) (pairs : List (Operand × Loc)) (a : AState) : AState :=
+  defineAll (clobberAll (defineAll a (atPos pairs .def .early)) i.clobbers) (atPos pairs .def .late)
+
+/-- At a `Rets`: every callee-saved register holds its entry value. -/
+def retCheck (where_ : String) (i : MInst) (a : AState) : Except String Unit :=
+  match i with
+  | .rets _ => calleeSaved.forM fun r =>
+      needs s!"{where_} (return: callee-saved register not restored)" a (.reg r) (.entry r)
+  | _ => pure ()
+
+/-- Transfer (with the state-dependent checks) of one original instruction: early uses are
+checked in the in-state, late uses after the early defs. -/
 def CheckCtx.stepOp (where_ : String) (i : MInst) (ops : Array Operand) (allocs : Array Loc)
     (a : AState) : Except String AState := do
-  let clob := i.clobbers
-  c.checkStatic where_ ops allocs clob
+  c.checkStatic where_ ops allocs i.clobbers
   let pairs := (ops.zip allocs).toList
-  (atPos pairs .use .early).forM fun (o, l) => needs where_ a l (.vreg o.vreg)
-  let a := defineAll a (atPos pairs .def .early)
-  (atPos pairs .use .late).forM fun (o, l) => needs where_ a l (.vreg o.vreg)
-  let a := clobberAll a clob
-  let a := defineAll a (atPos pairs .def .late)
-  if i matches .rets _ then
-    calleeSaved.forM fun r =>
-      needs s!"{where_} (return: callee-saved register not restored)" a (.reg r) (.entry r)
-  pure a
+  (atPos pairs .use .early).forM fun p => needs where_ a p.2 (.vreg p.1.vreg)
+  (atPos pairs .use .late).forM fun p =>
+    needs where_ (defineAll a (atPos pairs .def .early)) p.2 (.vreg p.1.vreg)
+  let a' := transferOp i pairs a
+  retCheck where_ i a'
+  pure a'
+
+/-- Static checks of a move: at least one side a register, both of one class, a callee-save
+slot only with its own register. -/
+def CheckCtx.checkMove (where_ : String) (src dst : Loc) : Except String Unit :=
+  match src.cls? with
+  | none => throw s!"{where_}: bad move source {repr src}"
+  | some cls => do
+    ensure (c.locOk src cls && c.locOk dst cls) fun _ =>
+      s!"{where_}: move {repr src} → {repr dst}: invalid location or class mismatch"
+    ensure (src.isReg || dst.isReg) fun _ => s!"{where_}: memory-to-memory move"
+    match src, dst with
+    | .save r, .reg r' | .reg r', .save r =>
+      ensure (r == r') fun _ => s!"{where_}: save slot of {repr r} used with {repr r'}"
+    | _, _ => pure ()
 
 def CheckCtx.stepMove (where_ : String) (src dst : Loc) (a : AState) : Except String AState := do
-  let some cls := src.cls? | throw s!"{where_}: bad move source {repr src}"
-  if !(c.locOk src cls && c.locOk dst cls) then
-    throw s!"{where_}: move {repr src} → {repr dst}: invalid location or class mismatch"
-  if !src.isReg && !dst.isReg then throw s!"{where_}: memory-to-memory move"
-  match src, dst with
-  | .save r, .reg r' | .reg r', .save r =>
-    if r != r' then throw s!"{where_}: save slot of {repr r} used with {repr r'}"
-  | _, _ => pure ()
+  c.checkMove where_ src dst
   pure (a.put dst (a.get src))
 
 /-- Run the items of block `vb` from its in-state, `next` being the index of the next VCode
 instruction due: structural checks, transfer and checks of every item. Returns the
 out-state. -/
 def CheckCtx.runItems (vb : VBlock) : Nat → List RItem → AState → Except String AState
-  | next, [], a =>
-    if next != vb.insts.size then throw s!"block {vb.label}: missing instructions" else pure a
+  | next, [], a => do
+    ensure (next == vb.insts.size) fun _ => s!"block {vb.label}: missing instructions"
+    pure a
   | next, it :: its, a => do
-    if next == vb.insts.size then throw s!"block {vb.label}: code after the terminator"
+    ensure (next != vb.insts.size) fun _ => s!"block {vb.label}: code after the terminator"
     match it with
-    | .move src dst =>
+    | .move src dst => do
       let a ← c.stepMove s!"block {vb.label}" src dst a
       CheckCtx.runItems vb next its a
-    | .op k allocs =>
-      if k != next then throw s!"block {vb.label}: instruction {k} where {next} is due"
-      let some i := vb.insts[k]? | throw s!"block {vb.label}: no instruction {k}"
-      let ops ← i.operands
-      let a ← c.stepOp s!"block {vb.label} inst {k}" i ops allocs a
-      CheckCtx.runItems vb (next + 1) its a
+    | .op k allocs => do
+      ensure (k == next) fun _ => s!"block {vb.label}: instruction {k} where {next} is due"
+      match vb.insts[k]? with
+      | none => throw s!"block {vb.label}: no instruction {k}"
+      | some i => do
+        let ops ← i.operands
+        let a ← c.stepOp s!"block {vb.label} inst {k}" i ops allocs a
+        CheckCtx.runItems vb (next + 1) its a
 
 /-- Run one block from its in-state. Returns the out-state. -/
-def CheckCtx.runBlock (b : Nat) (a : AState) : Except String AState := do
-  let some vb := c.vc.blocks[b]? | throw s!"no block {b}"
-  let some items := c.rf.blocks[b]? | throw s!"no allocated block {b}"
-  c.runItems vb 0 items.toList a
+def CheckCtx.runBlock (b : Nat) (a : AState) : Except String AState :=
+  match c.vc.blocks[b]?, c.rf.blocks[b]? with
+  | some vb, some items => c.runItems vb 0 items.toList a
+  | none, _ => throw s!"no block {b}"
+  | _, none => throw s!"no allocated block {b}"
 
 /-- The state entering successor `s` of block `b` (branch arguments as a parallel copy). -/
-def CheckCtx.edge (b s : Nat) (a : AState) : Except String AState := do
-  let some vb := c.vc.blocks[b]? | throw s!"no block {b}"
-  let some sb := c.vc.blocks[s]? | throw s!"no block {s}"
-  if vb.branchArgs.size != sb.params.size then
-    throw s!"edge {vb.label} → {sb.label}: {vb.branchArgs.size} arguments for {sb.params.size} parameters"
-  if vb.branchArgs.isEmpty then return a
-  let ps ← sb.params.toList.mapM vregNum
-  let xs ← vb.branchArgs.toList.mapM vregNum
-  if !ps.Nodup then throw s!"block {sb.label}: parameters are not distinct"
-  pure (a.parCopy ps xs)
+def CheckCtx.edge (b s : Nat) (a : AState) : Except String AState :=
+  match c.vc.blocks[b]?, c.vc.blocks[s]? with
+  | some vb, some sb => do
+    ensure (vb.branchArgs.size == sb.params.size) fun _ =>
+      s!"edge {vb.label} → {sb.label}: {vb.branchArgs.size} arguments for {sb.params.size} parameters"
+    if vb.branchArgs.isEmpty then pure a
+    else do
+      let ps ← sb.params.toList.mapM vregNum
+      let xs ← vb.branchArgs.toList.mapM vregNum
+      ensure (decide ps.Nodup) fun _ => s!"block {sb.label}: parameters are not distinct"
+      pure (a.parCopy ps xs)
+  | none, _ => throw s!"no block {b}"
+  | _, none => throw s!"no block {s}"
 
 /-- One round over all blocks; returns the new in-states and whether any changed. -/
 def CheckCtx.round (ins : Array (Option AState)) : Except String (Array (Option AState) × Bool) := do
@@ -325,13 +351,16 @@ def CheckCtx.fixpoint (fuel : Nat) (ins : Array (Option AState)) :
 
 /-- Block `b` of the proposed in-states `ins`: reached, its items check from its in-state, and
 every successor's in-state is included in the state the edge produces. -/
-def CheckCtx.verifyBlock (ins : Array (Option AState)) (b : Nat) : Except String Unit := do
-  let some (some a) := ins[b]? | throw s!"block {b} is never reached"
-  let out ← c.runBlock b a
-  (c.succs[b]?.getD #[]).toList.forM fun s => do
-    let e ← c.edge b s out
-    let some (some a') := ins[s]? | throw s!"block {s} is never reached"
-    if !a'.le e then throw s!"block {s}: in-state is not a fixpoint"
+def CheckCtx.verifyBlock (ins : Array (Option AState)) (b : Nat) : Except String Unit :=
+  match ins[b]? with
+  | some (some a) => do
+    let out ← c.runBlock b a
+    (c.succs[b]?.getD #[]).toList.forM fun s => do
+      let e ← c.edge b s out
+      match ins[s]? with
+      | some (some a') => ensure (a'.le e) fun _ => s!"block {s}: in-state is not a fixpoint"
+      | _ => throw s!"block {s} is never reached"
+  | _ => throw s!"block {b} is never reached"
 
 end
 
@@ -341,19 +370,22 @@ def entryState (size : Nat) : AState :=
 
 /-- Check the proposed in-states: the entry block's is included in `entryState`, every block
 passes `verifyBlock`. This (not the iteration) is what the soundness proof relies on. -/
-def CheckCtx.verify (c : CheckCtx) (ins : Array (Option AState)) : Except String Unit := do
-  let some (some a0) := ins[0]? | throw "the entry block is never reached"
-  if !a0.le (entryState c.size) then throw "entry in-state is not the entry state"
-  (List.range c.vc.blocks.size).forM (c.verifyBlock ins)
+def CheckCtx.verify (c : CheckCtx) (ins : Array (Option AState)) : Except String Unit :=
+  match ins[0]? with
+  | some (some a0) => do
+    ensure (a0.le (entryState c.size)) fun _ => "entry in-state is not the entry state"
+    (List.range c.vc.blocks.size).forM (c.verifyBlock ins)
+  | _ => throw "the entry block is never reached"
 
 /-- Check an allocated function against the (prepared) VCode it was allocated from. -/
 def checkAlloc (vc : VCode) (rf : RFunc) : Except String Unit := do
   let (succs, preds) ← vc.cfg
-  if vc.blocks.size == 0 then throw "no blocks"
-  if rf.blocks.size != vc.blocks.size then throw "block count differs"
-  if !(preds[0]!).isEmpty then throw "the entry block is a branch target"
-  if !(vc.blocks[0]!).params.isEmpty then throw "the entry block has parameters"
-  if !rf.saved.all calleeSaved.contains then throw "save slot for a register that is not callee-saved"
+  ensure (vc.blocks.size != 0) fun _ => "no blocks"
+  ensure (rf.blocks.size == vc.blocks.size) fun _ => "block count differs"
+  ensure (preds[0]!).isEmpty fun _ => "the entry block is a branch target"
+  ensure (vc.blocks[0]!).params.isEmpty fun _ => "the entry block has parameters"
+  ensure (rf.saved.all calleeSaved.contains) fun _ =>
+    "save slot for a register that is not callee-saved"
   -- every instruction has an operand view
   let _ ← vc.blocks.mapM fun b => b.insts.mapM MInst.operands
   let size := 128 + 2 * rf.spillSlots
@@ -362,8 +394,8 @@ def checkAlloc (vc : VCode) (rf : RFunc) : Except String Unit := do
   let fuel := vc.blocks.size * (size * nsyms + 1) + 2
   let ins0 := (Array.replicate vc.blocks.size none).set! 0 (some (entryState size))
   let ins ← c.fixpoint fuel ins0
-  for (s, b) in ins.zipIdx do
-    if s.isNone then throw s!"block {(vc.blocks[b]!).label} is never reached"
+  ins.zipIdx.toList.forM fun (s, b) =>
+    ensure s.isSome fun _ => s!"block {(vc.blocks[b]!).label} is never reached"
   c.verify ins
 
 end Backend
