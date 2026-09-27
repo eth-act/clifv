@@ -213,22 +213,12 @@ def pureInst : Clif.Inst → Bool
   | .stackAddr .. => true
   | _ => false
 
-/-- The frame is typed as the context says: a defined value's CLIF type is its `valueType?`
-(`buildCtx` sets `valTy` from the declared parameter/result types). Rules dispatching on
-`value_type` (`extended_value_from_value`, `put_in_reg_zext32/sext32/zext64/sext64`, …) need
-it. -/
-def FrameTyped (ctx : Ctx) (fr : Clif.Frame) : Prop :=
-  ∀ (x : Nat) (t : CTy) (v : Clif.Val), ctx.valueType? x = some t → fr.regs x = some v →
-    CTy.ofClif v.ty = t
-
 /-- DFG consistency: a defined value whose definition is a pure instruction equals that
-instruction re-evaluated in the current frame (what `def_inst` look-through relies on), and
-the frame is typed as the context says (`FrameTyped`). -/
+instruction re-evaluated in the current frame (what `def_inst` look-through relies on). -/
 def DFGCons (ctx : Ctx) (fr : Clif.Frame) : Prop :=
-  (∀ (x j : Nat) (info : IInfo) (cl : Clif.Inst) (v : Clif.Val), ctx.defInst? x = some j → ctx.insts[j]? = some info → info.clif = some cl →
+  ∀ (x j : Nat) (info : IInfo) (cl : Clif.Inst) (v : Clif.Val), ctx.defInst? x = some j → ctx.insts[j]? = some info → info.clif = some cl →
     pureInst cl = true → fr.regs x = some v →
-    ∃ vals, (∀ cm, Clif.evalInst fr cm cl = .ok (vals, cm)) ∧ (info.results.zip vals).lookup x = some v) ∧
-  FrameTyped ctx fr
+    ∃ vals, (∀ cm, Clif.evalInst fr cm cl = .ok (vals, cm)) ∧ (info.results.zip vals).lookup x = some v
 
 /-! ## The per-instruction obligation (agreed with M7) -/
 
