@@ -249,7 +249,7 @@ shift amounts by `shift_mask`). With "low bits" the obligation stays local to ea
 
 ## Family B: unary ALU, shifts, rotates (M4AluB, branch `agent/m4-alu-b`)
 
-**Proven `LowerRuleOk` (i8..i64 where the rule's type pattern allows), 16 rules** — rule ids
+**Proven `LowerRuleOk` (i8..i64 where the rule's type pattern allows), 13 rules** — rule ids
 (`Rule.id`) / `lower.isle` line / theorem:
 
 | id | line | rule | theorem (file) |
@@ -268,7 +268,6 @@ shift amounts by `shift_mask`). With "low bits" the obligation stays local to ea
 | 933 | 2038 | `bswap.i32` | `bswap_i32_ok` |
 | 934 | 2041 | `bswap.i64` | `bswap_i64_ok` |
 
-(13 theorems; `ineg` and the three `bitrev` rules proved first, then clz/ctz/bswap.)
 Axioms of every theorem: `propext`, `Classical.choice`, `Quot.sound` and the
 `<thm>._native.bv_decide.ax_*` certificates of the width lemmas. No `sorry`.
 
