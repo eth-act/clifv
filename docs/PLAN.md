@@ -180,6 +180,27 @@ Each milestone leaves a working toolchain. Components are replaced one at a time
 
 **Optional:** emit Cranelift proof-carrying-code facts for loads and stores as an independent memory-safety check (§7). Check whether PCC is stable in the pinned version.
 
+### M3b: CLIF equivalence (Cranelift's mid-end, per function)
+
+*Added 2026-09-27.*
+
+**Deliverables**
+
+- A proof-producing check that Cranelift's optimised CLIF is equivalent to its input CLIF, one function at a time. It reuses M3's relation and proof generation.
+- It relies on the structure of Cranelift's mid-end. The CFG and the side-effecting skeleton (loads, stores, calls, branches, trapping ops) are kept, while pure values are rewritten in the e-graph and re-placed. The check lines up the two skeletons and proves each skeleton operand's pure expression equal in both versions with `bv_decide`. Pure ops are total, so LICM and GVN placement needs no loop invariants.
+- Extra side conditions:
+  - redundant-load elimination: no intervening store (conservative at first);
+  - constant-phi removal;
+  - unreachable-block removal;
+  - skeleton constant-folding.
+- Inputs: cg_clif already dumps `.unopt.clif` and `.opt.clif` for each function (see `docs/research/rust-clif-survey.md`).
+
+**Exit criteria**
+
+- Chaining M3b with M3 (optimised CLIF → machine code) validates Cranelift's `opt_level=speed` output on the corpus, giving Cranelift's exact optimised bytes with a proof per function.
+
+**Order:** after M3 validates at `opt_level=none`.
+
 ### M4: Own AArch64 backend, simplest version
 
 **Deliverables**
@@ -211,7 +232,7 @@ Each milestone leaves a working toolchain. Components are replaced one at a time
 
 **Deliverables**
 
-- An untrusted allocator (linear scan is fine to start).
+- An untrusted allocator. *Decision (2026-09-27): use the `regalloc2` crate unchanged (0.15.2, the version Cranelift 0.136.1 uses), driven from Lean through `rust/crates/lean-regalloc`, instead of a hand-written linear scan.*
 - A checker proven in Lean, following Rideau & Leroy's approach.
 
 **Exit criteria**
@@ -223,8 +244,9 @@ Each milestone leaves a working toolchain. Components are replaced one at a time
 
 **Deliverables**
 
-- `backend_correct`, composed from the M2, M4, M5 and M6 theorems. It holds under an explicit resource precondition (no stack or memory exhaustion), as CompCert's does.
-- Cranelift and the M3 validator are kept as cross-checks, not trust anchors.
+- `backend_correct`, composed from the M4, M5 and M6 theorems. It holds under an explicit resource precondition (no stack or memory exhaustion), as CompCert's does.
+  *Restated (2026-09-27):* the frontend is pluggable and trusted for now (the `flat def` DSL, or Rust via rustc_codegen_cranelift), so the theorem is stated over in-subset CLIF programs instead of being composed with `compile f`. Roughly: `∀ p, p ∈ subset → Arm.run (emit (regalloc (isel p))) ≈ Clif.run p`. M2 (`compile_correct`) is paused; partial work is on branch `agent/m2proof`.
+- Cranelift, the M3 validator and M3b are kept as cross-checks, not trust anchors.
 
 **Then (not before):** mid-end rules (export Cranelift's `simplify` rules and prove each before enabling it), the DSL → Rust path, SIMD, and RISC-V.
 
