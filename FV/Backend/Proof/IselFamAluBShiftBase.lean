@@ -98,7 +98,8 @@ theorem shift_ruleOk {p : Program} (hp : Data p) {r : Rule} {cop : Clif.BinaryOp
       (matchRule p (sem ctx) cfg (m + 10) r [.inst ii]).run (st, tr) = .ok (some env', s1) →
       env' = E w x y ∧ s1 = (st, tr) ∧ P w)
     (hrhs : ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx → ∀ (cfg : Config) x y w
-      (st : LState) tr n v s', cfg.checkOverlap = false → ValsBelow ctx st → w ≤ 64 → P w →
+      (st : LState) tr n v s', cfg.checkOverlap = false → ValsBelow ctx st → w ≤ 64 →
+      (w = 8 ∨ w = 16 ∨ w = 32 ∨ w = 64) → P w →
       (evalExpr p (sem ctx) cfg (n + 200) r.rhs (E w x y)).run (st, tr) = .ok (some v, s') →
       ∃ ms d, v = .regsVec [[.vreg d .int]] ∧ CodeShapeU st s'.1 ms d [x, y] ∧
         ∀ (ty : Clif.Ty), ty.width = w → eTy ty = true →
@@ -116,8 +117,10 @@ theorem shift_ruleOk {p : Program} (hp : Data p) {r : Rule} {cop : Clif.BinaryOp
   have hw := eTy_width hety
   obtain ⟨rfl, rfl, hP⟩ :=
     hmatch ctx cfg ii info ty.width x y st tr m' env' s1 hi hhead hw hd hfirst hmatch'
+  have hws : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64 := by
+    cases ty <;> simp [eTy, Clif.Ty.width] at hety ⊢
   obtain ⟨ms, d, rfl, hsh, hsem⟩ :=
-    hrhs f ctx hctx cfg x y ty.width st tr n' out (st', tr') hco hvb hw hP heval
+    hrhs f ctx hctx cfg x y ty.width st tr n' out (st', tr') hco hvb hw hws hP heval
   refine ⟨ms, _, hsh.emitted, rfl, ?_⟩
   refine lowerInstOk_one_fb hMR hsh.mono hsh.defs rfl ?_
   intro fr cm ρ vals cm' hf hvals hdfg ho

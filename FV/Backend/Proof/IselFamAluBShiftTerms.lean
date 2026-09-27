@@ -251,8 +251,8 @@ of `xa` by the amount modulo `w`, in every frame. -/
 def ShiftRes (F : BitVec 64 → Prop) (isem : Sem) (ctx : Ctx) (op : ALUOp) (w xa y : Nat)
     (st st' : LState) (v : V) : Prop :=
   ∃ ms d, v = .reg (.vreg d .int) ∧ CodeShapeU st st' ms d [xa, y] ∧
-    ∀ (fr : Clif.Frame) (ρ : Nat → CV) (yv : Clif.Val), ValsHeld fr ρ → DFGCons ctx fr →
-      fr.regs y = some yv →
+    ∀ (fr : Clif.Frame) (ρ : Nat → CV) (yv : Clif.Val), DFGCons ctx fr → fr.regs y = some yv →
+      (∀ r, ctx.valueReg? y = some r → VHolds yv (ρ y)) →
       ∃ ρ', PRun F isem ms ρ ρ' ∧
         opnd (szOf w) (ρ' d) = shiftF op (opnd (szOf w) (ρ xa)) (yv.bits.toNat % w)
 
@@ -309,7 +309,7 @@ theorem shiftRes_imm (hR : Refines F isem) {op : ALUOp} (hop : IsShift op) {w : 
   have hsz : w ≤ (szOf w).bits := szOf_bits hw.le
   have hLt : Nat.land (u64 (imm64OfIconst ty imm)) (w - 1) < (szOf w).bits := by
     rw [hL]; have := Nat.mod_lt imm.toNat hw.pos; omega
-  refine ⟨_, _, rfl, codeShapeU_one rfl (by simp [vdu_aluRRImmShift]), fun fr ρ yv _ hdfg hy => ?_⟩
+  refine ⟨_, _, rfl, codeShapeU_one rfl (by simp [vdu_aluRRImmShift]), fun fr ρ yv hdfg hy _ => ?_⟩
   have hyv := dfg_iconst_fb hdfg hj hi hcl hy
   subst hyv
   refine ⟨_, prun_rr hR rfl (fun w => ispec_imm_shift_fb hop hLt) (prun_nil _), ?_⟩
@@ -318,25 +318,27 @@ theorem shiftRes_imm (hR : Refines F isem) {op : ALUOp} (hop : IsShift op) {w : 
 /-- Rules 1622/1623: one register shift at 32/64 bits (the hardware takes the amount modulo the
 width). -/
 theorem shiftRes_rrr (hR : Refines F isem) {op : ALUOp} (hop : IsShift op) {w : Nat}
-    (hw : w = 32 ∨ w = 64) {xa y : Nat} (st : LState) :
+    (hw : w = 32 ∨ w = 64) {xa y : Nat} (hry : ctx.valueReg? y = some (.vreg y .int))
+    (st : LState) :
     ShiftRes F isem ctx op w xa y st
       ((st.fresh .int).2.emit (.aluRRR op (szOf w) (st.fresh .int).1 (.vreg xa .int) (.vreg y .int)))
       (.reg (st.fresh .int).1) := by
   have hf : (st.fresh .int).1 = .vreg st.nextVreg .int := rfl
   rw [hf]
   have hW : IW w := by rcases hw with rfl | rfl <;> simp [IW]
-  refine ⟨_, _, rfl, codeShapeU_one rfl (by simp [vdu_aluRRR]), fun fr ρ yv hvals _ hy => ?_⟩
+  refine ⟨_, _, rfl, codeShapeU_one rfl (by simp [vdu_aluRRR]), fun fr ρ yv _ hy hv => ?_⟩
   refine ⟨_, prun_rrr hR (operands_aluRRR _ _ _ _ _) (fun w => ispec_rrr_shift_fb hop)
     (prun_nil _), ?_⟩
   have hb : (szOf w).bits = w := by rcases hw with rfl | rfl <;> rfl
   rw [upd_same, opnd_resX]
   congr 1
-  rw [amt_of_holds hW (hvals y yv hy), ← opnd_mod hW (szOf w) (ρ y)]
+  rw [amt_of_holds hW (hv _ hry), ← opnd_mod hW (szOf w) (ρ y)]
   exact congrArg (fun m => (opnd (szOf w) (ρ y)).toNat % m) hb
 
 /-- Rule 1612 (`i8`/`i16`): mask the amount with `w - 1`, then a 32-bit register shift. -/
 theorem shiftRes_mask (hR : Refines F isem) {op : ALUOp} (hop : IsShift op) {w : Nat}
-    (hw : w = 8 ∨ w = 16) {xa y : Nat} (st : LState) (hxa : xa < st.nextVreg)
+    (hw : w = 8 ∨ w = 16) {xa y : Nat} (hry : ctx.valueReg? y = some (.vreg y .int))
+    (st : LState) (hxa : xa < st.nextVreg)
     (hi : ImmLogic.ofNat? (w - 1) .size32 = some ⟨w - 1, .size32⟩) :
     ShiftRes F isem ctx op w xa y st
       ((((st.fresh .int).2.emit (.aluRRImmLogic .and .size32 (st.fresh .int).1 (.vreg y .int)
@@ -352,7 +354,7 @@ theorem shiftRes_mask (hR : Refines F isem) {op : ALUOp} (hop : IsShift op) {w :
   have hW : IW w := by rcases hw with rfl | rfl <;> simp [IW]
   have hsz : szOf w = .size32 := by rcases hw with rfl | rfl <;> rfl
   refine ⟨_, _, rfl, codeShapeU_two rfl rfl (by simp [vdu_aluRRImmLogic])
-    (by simp [vdu_aluRRR]), fun fr ρ yv hvals _ hy => ?_⟩
+    (by simp [vdu_aluRRR]), fun fr ρ yv _ hy hv => ?_⟩
   refine ⟨_, prun_rr hR rfl (fun w => ispec_and_imm_fb hi) (prun_rrr hR (operands_aluRRR _ _ _ _ _)
     (fun w => ispec_rrr_shift_fb hop) (prun_nil _)), ?_⟩
   have hne : xa ≠ st.nextVreg := by omega
@@ -367,7 +369,7 @@ theorem shiftRes_mask (hR : Refines F isem) {op : ALUOp} (hop : IsShift op) {w :
   rw [hamt, Nat.mod_eq_of_lt (show (opnd .size32 (ρ y)).toNat % w < OperandSize.size32.bits by
       have := Nat.mod_lt (opnd .size32 (ρ y)).toNat hW.pos
       rcases hw with rfl | rfl <;> simp [OperandSize.bits] <;> omega),
-    opnd_mod hW, amt_of_holds hW (hvals y yv hy)]
+    opnd_mod hW, amt_of_holds hW (hv _ hry)]
 
 theorem OSz.ofIdx {w ks : Nat} (hw : IW w) (h : OSz (.int w) ks) :
     OperandSize.ofIdx? ks = some (szOf w) := by
@@ -420,7 +422,7 @@ theorem do_shift_ok (hR : Refines F isem) {f : Clif.Function} (hctx : CtxInv f c
     rw [ofV_aluRRR hk.ofIdx (hks.ofIdx hw)] at hm'
     cases hm'
     rw [hs']
-    exact shiftRes_rrr hR hk.isShift (by simp) _
+    exact shiftRes_rrr hR hk.isShift (by simp) hry _
   · fb_inv [*, rule_lower_1623] at hm he
     have hwe := ‹CTy.int w = CTy.int 64›
     simp only [CTy.int.injEq] at hwe
@@ -436,7 +438,7 @@ theorem do_shift_ok (hR : Refines F isem) {f : Clif.Function} (hctx : CtxInv f c
     rw [ofV_aluRRR hk.ofIdx (hks.ofIdx hw)] at hm'
     cases hm'
     rw [hs']
-    exact shiftRes_rrr hR hk.isShift (by simp) _
+    exact shiftRes_rrr hR hk.isShift (by simp) hry _
   · fb_inv [*, rule_lower_1612] at hm he
     have h16 := ‹(CTy.int w).bits ≤ 16›
     have hry := ‹ctx.valueReg? y = some _›
@@ -465,7 +467,7 @@ theorem do_shift_ok (hR : Refines F isem) {f : Clif.Function} (hctx : CtxInv f c
       rw [ofV_aluRRR hk.ofIdx (hks2.ofIdx h32)] at hm2
       cases hm2
       rw [hs2, hs1]
-      exact shiftRes_mask hR hk.isShift (by simp) _ hxa rfl
+      exact shiftRes_mask hR hk.isShift (by simp) hry _ hxa rfl
 
 end Sem
 
