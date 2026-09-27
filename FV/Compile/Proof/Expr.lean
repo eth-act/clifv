@@ -49,21 +49,24 @@ structure Prog (c : Ctx) (H : Heap) (s : State) (n : Nat) (H' : Heap) (s' : Stat
   ext : Ext H H'
   grows : Grows H H' s.mem.next
   mem : s.mem.next ≤ s'.mem.next
+  /-- allocations of this and the calling frames survive -/
+  sub : ∀ al ∈ s.mem.allocs, al ∈ s'.mem.allocs
 
 theorem Prog.trans {c : Ctx} {H H₁ H₂ : Heap} {s s₁ s₂ : State} {n n₁ : Nat}
     (h₁ : Prog c H s n H₁ s₁) (h₂ : Prog c H₁ s₁ n₁ H₂ s₂) (hn : n ≤ n₁) :
     Prog c H s n H₂ s₂ :=
   ⟨h₁.agree.trans h₂.agree hn, h₂.inv, h₁.ext.trans h₂.ext, h₁.grows.trans h₂.grows h₁.mem,
-    Nat.le_trans h₁.mem h₂.mem⟩
+    Nat.le_trans h₁.mem h₂.mem, fun al h => h₂.sub al (h₁.sub al h)⟩
 
 theorem Prog.regs {c : Ctx} {H H' : Heap} {s s' : State} {n m : Nat}
     (h : Prog c H s n H' s') {fr : Frame} (hf : fr.func = s'.frame.func)
     (hs : fr.slots = s'.frame.slots) (ha : Agree s'.frame.regs fr.regs m) (hnm : n ≤ m)
     (hn0 : c.n0 ≤ m) : Prog c H s n H' { s' with frame := fr } :=
-  ⟨h.agree.trans ha hnm, h.inv.frame hf hs ha hn0, h.ext, h.grows, h.mem⟩
+  ⟨h.agree.trans ha hnm, h.inv.frame hf hs ha hn0, h.ext, h.grows, h.mem, h.sub⟩
 
 theorem Prog.refl {c : Ctx} {H : Heap} {s : State} (n : Nat) (hI : c.Inv H s) :
-    Prog c H s n H s := ⟨Agree.refl _ _, hI, Ext.refl _, Grows.refl _ _, Nat.le_refl _⟩
+    Prog c H s n H s := ⟨Agree.refl _ _, hI, Ext.refl _, Grows.refl _ _, Nat.le_refl _,
+      fun _ h => h⟩
 
 /-- Postcondition of an expression. -/
 def XPost (c : Ctx) (Γ : List Ty) {t : Ty} (vals : List (List Val)) (st st' : CheckSt)
@@ -190,7 +193,8 @@ theorem Prog.call {c : Ctx} {H H' : Heap} {s : State} {m' : Mem} {fr' : Frame} {
     (hnext : s.mem.next ≤ m'.next) (hf : fr'.func = s.frame.func)
     (hs : fr'.slots = s.frame.slots) (ha : Agree s.frame.regs fr'.regs n) (hn : c.n0 ≤ n) :
     Prog c H s n H' { s with frame := fr', mem := m' } :=
-  ⟨ha, hI.mem_step hm hg (fun al hal _ => hk al hal) hf hs ha hn, hext, hg, hnext⟩
+  ⟨ha, hI.mem_step hm hg (fun al hal _ => hk al hal) hf hs ha hn, hext, hg, hnext,
+    fun al hal => (hk al hal hal).1⟩
 
 theorem ctx_val {c : Ctx} {r : Regs} (h : c.RegsOK r) (hs : c.fc.ctx.isSome = true) :
     ∃ v : BitVec 64, r (c.fc.ctx.getD 0) = some ⟨.i64, v⟩ ∧ c.fc.ctx.getD 0 < c.n0 := by
