@@ -503,4 +503,106 @@ theorem bxor_not_left_ok {p : Program} (hp : Data p) (F : BitVec 64 → Prop) (i
       match_1536 hp ctx st tr m hi hty hw hd hj hij hdj)
     (fun ctx _ w a b st tr n => enum_EorNot hp ctx w a b st tr n) F isem MR env cp hR hMR
 
+/-! ## `bnot (bxor x y)` (rule 1406, family B's fusion, proven here for M4AluB2) -/
+
+theorem instData_unary_eTy {f : Clif.Function} {op : Clif.UnaryOp} {ty : Clif.Ty} {x : Nat}
+    {d : V} (h : instData f (.unary op ty x) = .ok d) : eTy ty = true := by
+  simp only [instData] at h
+  split at h
+  · split at h
+    · cases h
+    · rename_i hne
+      simpa using hne
+  · cases h
+
+/-- **`LowerInstOk` of a unary instruction `cop ty z` lowered to one instruction `mi`** that
+computes `g u v` from values `x`, `y` (`OneInstOk`), when `z`'s value `a` determines them with
+`cop a = g u v` (look-through of `z`'s definition). -/
+theorem lowerInstOk_unary_look {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT}
+    {env : Clif.Env} {cp : Clif.Program} {ctx : Ctx} (hR : Refines F isem) (hMR : MRStable F MR)
+    {cop : Clif.UnaryOp} {ty : Clif.Ty} {z x y : Nat} {results : List Nat} {st : LState}
+    {mi : MInst} {g : BitVec ty.width → BitVec ty.width → BitVec ty.width}
+    (h : OneInstOk ctx st ty x y g mi)
+    (hz : ∀ fr, DFGCons ctx fr → ∀ a, fr.getAs z ty = .ok a →
+      ∃ u v, fr.getAs x ty = .ok u ∧ fr.getAs y ty = .ok v ∧ Clif.Sem.unary cop a = g u v) :
+    LowerInstOk isem MR env cp ctx (.unary cop ty z) results st [[.vreg st.nextVreg .int]]
+      ((st.fresh .int).2.emit mi) [mi] := by
+  obtain ⟨ops, hops, hdefs, hsem⟩ := h
+  have hvd : vdefs mi = [st.nextVreg] := by simp [vdefs, hops, hdefs]
+  refine ⟨by rw [nextVreg_fresh_emit]; omega, ?_, ?_⟩
+  · intro m hm d hd
+    simp only [List.mem_singleton] at hm
+    subst hm
+    rw [hvd, List.mem_singleton] at hd
+    subst hd
+    rw [nextVreg_fresh_emit]
+    omega
+  intro fr cm ρ w _ hvals hdfg hmr
+  have hout : instOutcome env cp fr cm (.unary cop ty z) = Clif.evalInst fr cm (.unary cop ty z) := rfl
+  rw [hout]
+  simp only [Clif.evalInst]
+  cases hzv : fr.getAs z ty with
+  | trap c => simp [bind, Clif.Res.bind, explicitTrapInst]
+  | stuck msg => simp [bind, Clif.Res.bind]
+  | ok a =>
+  simp only [bind, Clif.Res.bind, pure]
+  obtain ⟨u, v, hx, hy, hg⟩ := hz fr hdfg a hzv
+  obtain ⟨hus, r, hs, hh⟩ := hsem fr ρ w hvals hdfg u v hx hy
+  obtain ⟨w', hrun, hsw⟩ := seqRun_one hR hops hdefs hs
+  refine ⟨fun m hm q hq => ?_, _, w', hrun, .inr ⟨rfl, ?_⟩, hMR _ _ _ _ hsw.nf hmr⟩
+  · simp only [List.mem_singleton] at hm
+    subst hm
+    exact .inr (hus q hq)
+  · intro j rs val hrs hval
+    match j, hrs, hval with
+    | 0, hrs, hval =>
+      simp only [List.getElem?_cons_zero, Option.some.injEq] at hrs hval
+      subst hrs; subst hval
+      refine ⟨st.nextVreg, .int, rfl, .inl (Nat.le_refl _), ?_⟩
+      rw [hg]
+      simpa [upd] using hh
+    | _ + 1, hrs, _ => simp at hrs
+
+set_option maxRecDepth 20000 in
+/-- **`bnot (bxor x y)`** (`lower.isle:1406`, → `eon x, y`), i8..i64. -/
+theorem bnot_bxor_ok {p : Program} (hp : Data p) (F : BitVec 64 → Prop) (isem : Sem)
+    (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program) (hR : Refines F isem)
+    (hMR : MRStable F MR) : LowerRuleOk isem MR env cp p rule_lower_1406 := by
+  intro f ctx hctx ii info inst hi hc cfg hco m n st tr env' s1 out st' tr' hm hn _hvb _hfirst
+    hmatch heval
+  obtain ⟨m', rfl⟩ : ∃ m', m = m' + 10 := ⟨m - 10, by omega⟩
+  obtain ⟨N, rfl⟩ : ∃ N, n = N + 100 := ⟨n - 100, by omega⟩
+  obtain ⟨info', fs, e0, e1, hi', hd, hrest, -⟩ :=
+    root_match_inv hp ctx (m := m' + 9) rfl hp.t2476 term_2476_kind hp.t2384 term_2384_kind hmatch
+  rw [hi] at hi'
+  cases hi'
+  have hdat := hctx.data ii info inst hi hc
+  rw [hd] at hdat
+  obtain ⟨ty, z, rfl, rfl⟩ := instData_bnot_inv hdat
+  have hw := eTy_width (instData_unary_eTy hdat)
+  obtain ⟨tys, htys, hres, -⟩ := hctx.resTys ii info _ hi hc
+  simp only [Clif.Inst.resultTypes, Option.some.injEq] at htys
+  subst htys
+  have hhead : info.resTys.head? = some (.int ty.width) := by
+    rw [hres]; simp [ofClif_int_width]
+  obtain ⟨e2, hpz, -⟩ := matchArgs_cons_inv hrest
+  obtain ⟨j, infoj, fs', e3, hj, hij, hdj, -⟩ :=
+    defInst_match_inv hp ctx hp.t2449 term_2449_kind hp.t2383 term_2383_kind hpz
+  obtain ⟨cl, hcl, hdatj⟩ := ctxInv_clif hctx hj hij
+  rw [hdj] at hdatj
+  obtain ⟨ty1, x, y, rfl, -, rfl⟩ := instData_binary_inv variantNames_Bxor (cop := .bxor) rfl hdatj
+  rw [match_1406 hp ctx st tr m' hi hhead hw hd hj hij hdj] at hmatch
+  simp only [Except.ok.injEq, Prod.mk.injEq, Option.some.injEq] at hmatch
+  obtain ⟨rfl, rfl⟩ := hmatch
+  obtain ⟨mi, rfl, rfl, hone⟩ := notRoot_rhs hp hctx hco (k := 8) rfl (.inr (.inr rfl)) hw rfl
+    (fun st tr n => args_not_right hp ctx st tr n 1970 8 ty.width x y (enum_EorNot hp ctx ty.width x y))
+    heval
+  refine ⟨[mi], _, emitted_fresh_emit _ _, rfl, lowerInstOk_unary_look hR hMR hone ?_⟩
+  intro fr hdfg a hz
+  obtain ⟨vals, hev, hl⟩ := hdfg.1 z j infoj _ _ hj hij hcl rfl (getAs_ok hz)
+  obtain ⟨u, v, hx, hy, rfl⟩ := evalInst_binary_inv rfl (hev default)
+  have hv := lookup_zip_single hl
+  cases hv
+  exact ⟨u, v, hx, hy, BitVec.not_xor_right⟩
+
 end Backend.Proof

@@ -353,6 +353,26 @@ theorem enum_EorNot (w a b : Nat) (st : LState) (tr : Array RuleId) (n : Nat) :
   cases hp
   isel_eval [*]
 
+include hp in
+/-- `bnot (bxor x y)` (rule 1406, family B's `bnot` fusion): the `bnot` root instruction, the
+`bxor` defining its operand. -/
+theorem match_1406 {i x y z w j : Nat} {info infoj : IInfo} (hi : ctx.insts[i]? = some info)
+    (hty : info.resTys.head? = some (.int w)) (hw : w ≤ 64)
+    (hd : info.data = .data 152 29 [.data 151 100 [], .value z])
+    (hj : ctx.defInst? z = some j) (hij : ctx.insts[j]? = some infoj)
+    (hdj : infoj.data = .data 152 2 [.data 151 99 [], .values [x, y]]) :
+    (matchRule p (sem ctx) cfg (n+10) rule_lower_1406 [.inst i]).run (st, tr) =
+      .ok (some (env3 (.ty (.int w)) (.value x) (.value y)), (st, tr)) := by
+  have h1 := ext_inst_data_value ctx st hi
+  rw [hd, hty, Option.getD_some] at h1
+  have h2 := ext_fits_in_64 ctx st w
+  simp only [hw, ↓reduceIte] at h2
+  have h3 := ext_inst_data_value ctx st hij
+  rw [hdj] at h3
+  have h4 := ext_def_inst_some ctx st hj
+  cases hp
+  isel_eval [*, rule_lower_1406, ext_ty_int, ext_value_array_2]
+
 end Roots
 
 end Backend.Proof
