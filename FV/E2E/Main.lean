@@ -53,6 +53,21 @@ theorem noTail_of_subset {p : Clif.Program} {f : Clif.Function} (h : InSubset p 
   rw [ht] at this
   simp [Compile.termE] at this
 
+theorem lookup_mem {α β : Type} [BEq α] [LawfulBEq α] :
+    ∀ {l : List (α × β)} {a : α} {b : β}, l.lookup a = some b → (a, b) ∈ l
+  | [], _, _, h => by simp at h
+  | (k, v) :: l, a, b, h => by
+    by_cases hk : a = k
+    · subst hk; simp at h; subst h; simp
+    · simp only [List.lookup, show (a == k) = false from by simpa using hk] at h
+      exact List.mem_cons_of_mem _ (lookup_mem h)
+
+theorem callRegArgs_of_subset {p : Clif.Program} {f : Clif.Function} (h : InSubset p f) :
+    CallRegArgs f := by
+  intro fn e he
+  unfold Clif.Function.extern? at he
+  exact h.callRegArgs (fn, e) (lookup_mem he)
+
 theorem cfg_of_prepare {vc vcp : VCode} (h : prepare vc = .ok vcp) :
     ∃ ss ps, vc.cfg = .ok (ss, ps) := by
   unfold prepare at h
@@ -117,11 +132,15 @@ theorem backend_correct {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp
     -- M4
     (hrules : LowerRulesCorrect Isle.Aarch64.program)
     (hex : ExcludedUnmatchable Isle.Aarch64.program)
+    (hcallRules : CallRulesCorrect Isle.Aarch64.program)
     (hterms : ∀ s, TermCalls (sem s) (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w))
     -- M6 + M5
     (hM6 : RegLevelCorrect sem F astep vcp af fb)
     -- the shared VCode semantics (M6's `csem`)
     (hRef : ∀ s, Refines (F s) (sem s)) (hds : ∀ s, DriverSem (sem s))
+    -- the callee contract (M6, from `CalleeSound`)
+    (hcalls : ∀ s, CallsRefine (F s) env (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w)
+      (sem s))
     -- the run
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hbe : BodyEntry af s w₀)
@@ -129,7 +148,7 @@ theorem backend_correct {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp
     (hrel : Rel.holds ⟨F s, syms, slotOff⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ArmRefines fb base ra astep s (Clif.runLoop env p fuel cs) := by
-  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert⟩ := loweringObligations_of_check hc.lowerOk
+  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr⟩ := loweringObligations_of_check hc.lowerOk
   refine backend_correct_of_layers (fun s' => iselSim_of_driver (ctx := ctx) (st0 := st0) (R := R)
     (gn := gn) (bl := bl) (A := A) ?_) (fun s' => prepareCorrect_of_check (hds s') hc.prepOk) hM6
     hent hres hbe (argsIn_body hsub hcs hbe hargs) hcs hrel htr fuel
@@ -137,9 +156,12 @@ theorem backend_correct {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp
     shape := hshape
     cert := hcert
     dsem := hds s'
-    insts := instCalls_of_rules hrules hex (hRef s') (mrStable_holds ⟨F s', syms, slotOff⟩ f)
+    insts := instCalls_of_rules hrules hex hcallRules (hRef s')
+      (mrStable_holds ⟨F s', syms, slotOff⟩ f) (hcalls s')
     terms := hterms s'
     ext := fun B hB st hst fn args hi e he => hsub.externCalls B hB st hst fn args hi e he
+    regArgs := callRegArgs_of_subset hsub
+    brIdx := hbr
     noTail := noTail_of_subset hsub
     cfg := cfg_of_prepare hc.prepare }
 
@@ -154,6 +176,7 @@ theorem backend_correct_of_rules {p : Clif.Program} {f : Clif.Function} {k : Nat
     -- M4
     (hrules : LowerRulesCorrect Isle.Aarch64.program)
     (hex : ExcludedUnmatchable Isle.Aarch64.program)
+    (hcallRules : CallRulesCorrect Isle.Aarch64.program)
     (htermRules : LowerTermRulesCorrect Isle.Aarch64.program)
     (htermUn : TermUnmatchable Isle.Aarch64.program)
     (hbranch : BranchRulesCorrect Isle.Aarch64.program)
@@ -162,6 +185,9 @@ theorem backend_correct_of_rules {p : Clif.Program} {f : Clif.Function} {k : Nat
     (hM6 : RegLevelCorrect sem F astep vcp af fb)
     -- the shared VCode semantics (M6's `csem`)
     (hRef : ∀ s, Refines (F s) (sem s)) (hds : ∀ s, DriverSem (sem s))
+    -- the callee contract (M6, from `CalleeSound`)
+    (hcalls : ∀ s, CallsRefine (F s) env (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w)
+      (sem s))
     -- the run
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hbe : BodyEntry af s w₀)
@@ -169,10 +195,10 @@ theorem backend_correct_of_rules {p : Clif.Program} {f : Clif.Function} {k : Nat
     (hrel : Rel.holds ⟨F s, syms, slotOff⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ArmRefines fb base ra astep s (Clif.runLoop env p fuel cs) :=
-  backend_correct hsub hc hrules hex
+  backend_correct hsub hc hrules hex hcallRules
     (fun s' => termCalls_of_rules htermRules htermUn hbranch hbranchEx (hRef s')
       (mrStable_holds ⟨F s', syms, slotOff⟩ f))
-    hM6 hRef hds hent hres hbe hargs hcs hrel htr fuel
+    hM6 hRef hds hcalls hent hres hbe hargs hcs hrel htr fuel
 
 end E2E
 

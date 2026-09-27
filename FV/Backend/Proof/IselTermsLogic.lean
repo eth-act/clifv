@@ -118,11 +118,7 @@ theorem ctor_lshl_none {w : Nat} {k : Int} (h : lshlOf? w k = none) :
 
 end Extern
 
-/-- Rule environments with 5 and 6 variables, as the matcher builds them. -/
-abbrev env5 (a b c d e : V) : Interp.Env V :=
-  (((((Array.replicate 5 none).setIfInBounds 0 (some a)).setIfInBounds 1 (some b)).setIfInBounds 2
-    (some c)).setIfInBounds 3 (some d)).setIfInBounds 4 (some e)
-
+/-- Rule environment with 6 variables, as the matcher builds it. -/
 abbrev env6 (a b c d e g : V) : Interp.Env V :=
   ((((((Array.replicate 6 none).setIfInBounds 0 (some a)).setIfInBounds 1 (some b)).setIfInBounds 2
     (some c)).setIfInBounds 3 (some d)).setIfInBounds 4 (some e)).setIfInBounds 5 (some g)

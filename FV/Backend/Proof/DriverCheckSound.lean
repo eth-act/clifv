@@ -524,8 +524,19 @@ theorem cert_of_ok {f : Clif.Function} {ctx : Ctx} {st0 : LState} {gn : Nat → 
 
 /-- **Soundness of the lowering validator**: `lowerCheck f vc = true` gives the structure of
 the VCode and an SSA availability certificate (M7's lowering obligations). -/
+theorem brIdx_of_ok {f : Clif.Function} {ctx : Ctx} (h : brIdxOk f ctx = true) :
+    ∀ B ∈ f.blocks, BrIdxTyped ctx B.term := by
+  intro B hB x d tbl ht
+  have := List.all_eq_true.mp h B hB
+  rw [ht] at this
+  simp only at this
+  split at this
+  · exact ⟨_, by simpa using this, ‹_›⟩
+  · cases this
+
 theorem lowering_of_check {f : Clif.Function} {vc : VCode} (h : lowerCheck f vc = true) :
-    ∃ ctx st0 R gn bl A, LowerShape f vc ctx st0 R gn bl ∧ Cert f ctx st0 gn bl A := by
+    ∃ ctx st0 R gn bl A, LowerShape f vc ctx st0 R gn bl ∧ Cert f ctx st0 gn bl A ∧
+      ∀ B ∈ f.blocks, BrIdxTyped ctx B.term := by
   unfold lowerCheck at h
   split at h
   · cases h
@@ -535,7 +546,7 @@ theorem lowering_of_check {f : Clif.Function} {vc : VCode} (h : lowerCheck f vc 
     · rename_i bl hl
       simp only [Bool.and_eq_true] at h
       have hS := lowerShape_of_ok (gn := gnOf st0.nextVreg (aliasOf f bl)) hb hl
-        (fun n hn => gnOf_temp hn) h.1
-      exact ⟨ctx, st0, _, _, bl, _, hS, cert_of_ok hS.len h.2⟩
+        (fun n hn => gnOf_temp hn) h.1.1
+      exact ⟨ctx, st0, _, _, bl, _, hS, cert_of_ok hS.len h.1.2, brIdx_of_ok h.2⟩
 
 end Backend.Proof.Driver

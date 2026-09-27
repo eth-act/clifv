@@ -2,6 +2,8 @@
 
 ## Changelog / Status
 
+- **2026-09-27 (M4Ctl, contract change #6)**: `br_table` index restricted to at most 32 bits
+  (see the terminator row below); enforced by the lowering validator, not by `Compile.functionE`.
 - **v2 (2026-09-27)**: E gains `nop`, `symbol_value`, `select`, `smin`, `smax`, `umin`, `umax`,
   `bswap`, `bitrev`. Source: the rustc_codegen_cranelift survey
   (`docs/research/rust-clif-survey.md`, §2 and §7): with these nine, every function of the
@@ -48,7 +50,7 @@ VeriISLE run excludes the `i128` tag. Floats and vectors are in neither list.
 | `uextend` `sextend` `ireduce` | yes | width changes |
 | `load` `store` `uload8/16/32` `sload8/16/32` `istore8/16/32` | yes | flags: `notrap`/`aligned` only when justified (PLAN.md §3.2); little-endian |
 | `stack_addr` | no | explicit stack slots for fixed-size aggregates |
-| `jump` `brif` `br_table` `return` | no (terminators) | control flow |
+| `jump` `brif` `br_table` `return` | no (terminators) | control flow; `br_table`'s index must be `i8`/`i16`/`i32` (Cranelift's verifier requires `i32`; `Clif.run` does not check it). The lowering compares and dispatches on the low 32 bits, so M7's `lowerCheck` rejects an `i64` index (compile error; `BrIdxTyped`, contract change #6) |
 | `call` | no | direct calls to other `flat def`s and to runtime externs, default call conv |
 | `trap` | yes | **only** in provably unreachable positions (PLAN.md §3.2) |
 | `nop` | no | v2: no effect (cg_clif comment anchors) |

@@ -165,11 +165,6 @@ def negImm12? (w : Nat) (k : Int) : Option Imm12 :=
   if sextFrom w k = -(2 ^ 63 : Int) then none
   else Imm12.ofNat? (u64 ((u64 (-(sextFrom w k)) : Nat) : Int))
 
-/-- A four-variable rule environment as the matcher builds it. -/
-abbrev env4 (a b c d : V) : Interp.Env V :=
-  ((((Array.replicate 4 none).setIfInBounds 0 (some a)).setIfInBounds 1 (some b)).setIfInBounds 2
-    (some c)).setIfInBounds 3 (some d)
-
 section Neg
 variable (st : LState)
 

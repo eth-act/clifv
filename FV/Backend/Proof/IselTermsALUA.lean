@@ -14,12 +14,6 @@ namespace Backend.Proof
 
 open Isle Isle.Interp Isle.Aarch64
 
-/-- The operand size the rules choose for an integer type of width `w`. -/
-abbrev szOf (w : Nat) : OperandSize := if w ≤ 32 then .size32 else .size64
-
-theorem szOf_bits {w : Nat} (hw : w ≤ 64) : w ≤ (szOf w).bits := by
-  by_cases h : w ≤ 32 <;> simp [szOf, h, OperandSize.bits] <;> omega
-
 /-! ## `MInst.ofV` and `emit`, generic in the operation and size -/
 
 section Emit

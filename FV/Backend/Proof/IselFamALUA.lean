@@ -325,11 +325,6 @@ end Root
 
 section Code
 
-theorem SameWorld.trans' {F : BitVec 64 → Prop} {s t u : Arm.ArmState} (h1 : SameWorld F s t)
-    (h2 : SameWorld F t u) : SameWorld F s u :=
-  ⟨fun f hf => (h1.1 f hf).trans (h2.1 f hf), fun a ha => (h1.2.1 a ha).trans (h2.2.1 a ha),
-    h1.2.2.trans h2.2.2⟩
-
 /-- **One instruction** with a single late def `d`, whose `ispec` meaning `r` leaves the
 world unchanged, run under any `isem` refining `ispec`. -/
 theorem seqRun_step {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem) {m : MInst}
@@ -814,10 +809,9 @@ theorem ispec_aluRRImmLogic {op : ALUOp} {sz : OperandSize} {d : Nat} {rn : Reg}
     (hop : op = .and ∨ op = .orr ∨ op = .eor ∨ op = .andNot ∨ op = .orrNot ∨ op = .eorNot)
     (hv : aluVal op (opnd sz a) (BitVec.ofNat _ i.value) = some r) :
     ispec (.aluRRImmLogic op sz (.vreg d .int) rn i) [a] w = some ([resX sz r], w, .next) := by
-  have hna : op ≠ .add ∧ op ≠ .sub := by
-    rcases hop with rfl | rfl | rfl | rfl | rfl | rfl <;> exact ⟨by decide, by decide⟩
-  simp only [ispec, hi, hna, ne_eq, not_false_eq_true, and_self, ↓reduceIte, hv, Option.map_some]
-  rfl
+  rcases hop with rfl | rfl | rfl | rfl | rfl | rfl <;>
+    simp only [ispec, hi, ne_eq, reduceCtorEq, not_false_eq_true, and_self, ↓reduceIte, hv,
+      Option.map_some] <;> rfl
 
 theorem ispec_aluRRRShift {op : ALUOp} {sz : OperandSize} {d : Nat} {rn rm : Reg}
     {sh : ShiftOpAndAmt} {a b : CV} {w : Arm.ArmState} {r : BitVec sz.bits}

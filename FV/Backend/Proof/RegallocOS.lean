@@ -1,11 +1,12 @@
 import FV.Backend.Proof.RegallocInstsInt
 import FV.Backend.Proof.RegallocInstsZR
+import FV.Backend.Proof.RegallocInstsFP
 
 /-!
 # `OperandsSound` for every straight-line instruction form (M6 proof)
 
 `os_of_corr` applied to the `Corr` theorems of `RegallocInstsInt.lean` (integer forms),
-and `RegallocInstsZR.lean` (zero-register operands).
+`RegallocInstsZR.lean` (zero-register operands) and `RegallocInstsFP.lean` (float/vector).
 -/
 
 namespace Backend.Proof
@@ -140,5 +141,35 @@ theorem os_aluRRRR_raZ (op : ALUOp3) (sz : OperandSize) (d n m : Nat) :
     OperandsSound F (execMInst ctx env) (csem F ctx X)
       (.aluRRRR op sz (.vreg d .int) (.vreg n .int) (.vreg m .int) .xzr) :=
   os_of_corr rfl _ (by assign_tac) rfl rfl (corr_aluRRRR_raZ F ctx env op sz d n m)
+
+theorem os_aluRRR_rmZ (op : ALUOp) (sz : OperandSize) (d n : Nat) :
+    OperandsSound F (execMInst ctx env) (csem F ctx X) (.aluRRR op sz (.vreg d .int) (.vreg n .int) .xzr) :=
+  os_of_corr rfl _ (by assign_tac) rfl rfl (corr_aluRRR_rmZ F ctx env op sz d n)
+
+theorem os_aluRRR_rdZ_rmZ (op : ALUOp) (sz : OperandSize) (n : Nat) :
+    OperandsSound F (execMInst ctx env) (csem F ctx X) (.aluRRR op sz .xzr (.vreg n .int) .xzr) :=
+  os_of_corr rfl _ (by assign_tac) rfl rfl (corr_aluRRR_rdZ_rmZ F ctx env op sz n)
+
+theorem os_movToFpu (sz : ScalarSize) (d n : Nat) :
+    OperandsSound F (execMInst ctx env) (csem F ctx X) (.movToFpu (.vreg d .float) (.vreg n .int) sz) :=
+  os_of_corr rfl _ (by assign_tac) rfl rfl (corr_movToFpu F ctx env sz d n)
+
+theorem os_movFromVec (idx : Nat) (sz : ScalarSize) (d n : Nat) :
+    OperandsSound F (execMInst ctx env) (csem F ctx X)
+      (.movFromVec (.vreg d .int) (.vreg n .float) idx sz) :=
+  os_of_corr rfl _ (by assign_tac) rfl rfl (corr_movFromVec F ctx env idx sz d n)
+
+theorem os_vecMisc (op : VecMisc2) (sz : VectorSize) (d n : Nat) :
+    OperandsSound F (execMInst ctx env) (csem F ctx X) (.vecMisc op (.vreg d .float) (.vreg n .float) sz) :=
+  os_of_corr rfl _ (by assign_tac) rfl rfl (corr_vecMisc F ctx env op sz d n)
+
+theorem os_vecLanes (op : VecLanesOp) (sz : VectorSize) (d n : Nat) :
+    OperandsSound F (execMInst ctx env) (csem F ctx X) (.vecLanes op (.vreg d .float) (.vreg n .float) sz) :=
+  os_of_corr rfl _ (by assign_tac) rfl rfl (corr_vecLanes F ctx env op sz d n)
+
+theorem os_vecRRR (op : VecALUOp) (sz : VectorSize) (d n m : Nat) :
+    OperandsSound F (execMInst ctx env) (csem F ctx X)
+      (.vecRRR op (.vreg d .float) (.vreg n .float) (.vreg m .float) sz) :=
+  os_of_corr rfl _ (by assign_tac) rfl rfl (corr_vecRRR F ctx env op sz d n m)
 
 end Backend.Proof

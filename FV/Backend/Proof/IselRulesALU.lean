@@ -157,4 +157,19 @@ theorem rhs_86_none {x y w : Nat} (hxy : ctx.valueReg? x = none ∨ ctx.valueReg
       isel_eval [*, rule_lower_86, ctor_put_in_reg ctx _ hx, ctor_put_in_reg_none ctx _ hy]
       exact fun h => by cases h
 
+/-! Shared helpers (sizes, interpreter environments). -/
+
+abbrev szOf (w : Nat) : OperandSize := if w ≤ 32 then .size32 else .size64
+
+theorem szOf_bits {w : Nat} (hw : w ≤ 64) : w ≤ (szOf w).bits := by
+  by_cases h : w ≤ 32 <;> simp [szOf, h, OperandSize.bits] <;> omega
+
+abbrev env4 (a b c d : V) : Interp.Env V :=
+  ((((Array.replicate 4 none).setIfInBounds 0 (some a)).setIfInBounds 1 (some b)).setIfInBounds 2
+    (some c)).setIfInBounds 3 (some d)
+
+abbrev env5 (a b c d e : V) : Interp.Env V :=
+  (((((Array.replicate 5 none).setIfInBounds 0 (some a)).setIfInBounds 1 (some b)).setIfInBounds 2
+    (some c)).setIfInBounds 3 (some d)).setIfInBounds 4 (some e)
+
 end Backend.Proof

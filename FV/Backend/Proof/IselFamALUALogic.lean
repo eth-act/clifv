@@ -70,10 +70,6 @@ theorem immLogicOf_spec {ty : Clif.Ty} (hw : ty.width ≤ 64) {c : BitVec ty.wid
       exact ⟨rfl, by rw [hs]; exact h⟩
     · cases h
 
-theorem getAs_isSome {fr : Clif.Frame} {x : Nat} {ty : Clif.Ty} {u : BitVec ty.width}
-    (h : fr.getAs x ty = .ok u) : (fr.regs x).isSome := by
-  simp [getAs_ok h]
-
 section Cases
 variable {p : Program} (hp : Data p) {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx)
   {cfg : Config} (hc : cfg.checkOverlap = false) {k : Nat} {op : ALUOp} {cop : Clif.BinaryOp}
