@@ -100,10 +100,12 @@ def binaryOpcode : Clif.BinaryOp → Option String
   | .iadd => "Iadd" | .isub => "Isub" | .imul => "Imul" | .umulhi => "Umulhi"
   | .smulhi => "Smulhi" | .band => "Band" | .bor => "Bor" | .bxor => "Bxor"
   | .ishl => "Ishl" | .ushr => "Ushr" | .sshr => "Sshr" | .rotl => "Rotl" | .rotr => "Rotr"
+  | .smin => "Smin" | .smax => "Smax" | .umin => "Umin" | .umax => "Umax"
   | _ => none
 
 def unaryOpcode : Clif.UnaryOp → Option String
   | .ineg => "Ineg" | .bnot => "Bnot" | .clz => "Clz" | .ctz => "Ctz" | .popcnt => "Popcnt"
+  | .bswap => "Bswap" | .bitrev => "Bitrev"
   | _ => none
 
 def divOpcode : Clif.DivOp → String
@@ -143,7 +145,11 @@ def instData (f : Clif.Function) : Clif.Inst → Except String V
     else throw "iconst.i128"
   | .unary op ty x =>
     match unaryOpcode op with
-    | some n => if eTy ty then pure (instDataV "Unary" [opcodeV n, .value x]) else throw s!"{n}.i128"
+    | some n =>
+      if !eTy ty then throw s!"{n}.i128"
+      -- the verifier rejects `bswap.i8` (`clif-subset.md`: `bswap` at i16..i64)
+      else if op == .bswap && ty == .i8 then throw "bswap.i8"
+      else pure (instDataV "Unary" [opcodeV n, .value x])
     | none => throw s!"`{instText (.unary op ty x)}` is not in E"
   | .binary op ty x y =>
     match binaryOpcode op with
@@ -172,6 +178,17 @@ def instData (f : Clif.Function) : Clif.Inst → Except String V
     else if flags.endianness == some .big then throw "big-endian store"
     else pure (instDataV "Store"
       [opcodeV (storeOpcode op), .values [x, p], .op (.memFlags flags), .int off])
+  | .select ty c x y =>
+    if eTy ty then pure (instDataV "Ternary" [opcodeV "Select", .values [c, x, y]])
+    else throw "select.i128"
+  | .nop => pure (instDataV "NullAry" [opcodeV "Nop"])
+  | .symbolValue ty gv =>
+    if ty != .i64 then throw "symbol_value with a non-i64 address type"
+    else match f.globals.lookup gv with
+      | some (.symbol ..) =>
+        pure (instDataV "UnaryGlobalValue" [opcodeV "SymbolValue", .op (.globalValue gv)])
+      | some _ => throw s!"symbol_value of gv{gv}, which is not a `symbol`"
+      | none => throw s!"unknown gv{gv}"
   | .stackAddr _ slot off =>
     pure (instDataV "StackAddr" [opcodeV "StackAddr", .op (.stackSlot slot), .int off])
   | .call fn args =>
@@ -360,6 +377,15 @@ def externExtract (ctx : Ctx) (t : Term) (v : V) (_st : LState) : ExtResult (Lis
   | "jump_table_targets", .labels [] => .fail
   | "value_list_slice", .values vs => .ok [.values vs]
   | "value_array_2", .values [a, b] => .ok [.value a, .value b]
+  -- `unpack_value_array_3` (isle_prelude.rs:942)
+  | "value_array_3", .values [a, b, c] => .ok [.value a, .value b, .value c]
+  -- `symbol_value_data` (machinst/isle.rs:397, `Lower::symbol_value_data` lower.rs:1510):
+  -- `Symbol { name, offset, colocated }` → `(name, Near iff colocated, offset)`, else `None`
+  | "symbol_value_data", .op (.globalValue gv) => match ctx.func.globals.lookup gv with
+    | some (.symbol name off colocated) =>
+      .ok [.op (.extName name), mkVariant tyRelocDistance (if colocated then "Near" else "Far"),
+           .int off]
+    | _ => .fail
   | "block_array_2", .blockCalls [a, b] => .ok [.blockCalls [a], .blockCalls [b]]
   | "func_ref_data", .op (.funcRef fn) => match ctx.func.extern? fn with
     | some ext =>
@@ -474,6 +500,8 @@ def externCtor (ctx : Ctx) (t : Term) (args : List V) (st : LState) : ExtResult 
     | none => .unmodeled "value_regs_get index"
   | "jump_table_size", [.labels ls] => ok (.int ls.length)
   | "writable_reg_to_reg", [r] => ok r
+  -- `invalid_reg` (machinst/isle.rs:107): `Reg::invalid_sentinel()`
+  | "invalid_reg", [] => ok (.reg Reg.invalid)
   | "is_sinkable_inst", [_] => .fail
   | "emit", [i] => match MInst.ofV i with
     | some m => .ok (.op .unit, st.emit m)
@@ -639,6 +667,8 @@ def externCtor (ctx : Ctx) (t : Term) (args : List V) (st : LState) : ExtResult 
   | "i64_cast_unsigned", [.int a] => ok (.int (u64 a))
   -- clif_lower.isle
   | "value_array_2", [.value a, .value b] => ok (.values [a, b])
+  -- `pack_value_array_3` (isle_prelude.rs:948)
+  | "value_array_3", [.value a, .value b, .value c] => ok (.values [a, b, c])
   | "block_array_2", [.blockCalls a, .blockCalls b] => ok (.blockCalls (a ++ b))
   | name, args => .unmodeled s!"constructor {name} ({args.length} args)"
 
@@ -810,7 +840,10 @@ def lowerFunction (f : Clif.Function) : Except String VCode := do
       let (out, st, n) ← runTerm ctx "lower" [.inst i] { d.st with emitted := #[] }
       let some (.regsVec rss) := out
         | throw s!"no lowering rule for {(repr info.clif).pretty.take 80}"
-      if rss.length != info.results.length then throw "lowering produced a wrong number of results"
+      -- `lower.rs:953` zips the outputs with the results; only `nop` (no results, one
+      -- `invalid_reg` output) has a different count, and its output is dropped.
+      if rss.length != info.results.length && !info.results.isEmpty then
+        throw "lowering produced a wrong number of results"
       let mut st := st
       let mut extra : Array MInst := #[]
       for (r, rs) in info.results.zip rss do
