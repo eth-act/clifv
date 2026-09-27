@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # End-to-end smoke test of cg_clif CLIF through our pipeline. For scalar corpus functions that
-# `lean-backend` compiles (release profile, `nop` dropped), attach `; run:` lines whose
+# `lean-backend` compiles (release profile, `nop` kept), attach `; run:` lines whose
 # expected values come from the same Rust source compiled by rustc's LLVM backend, then run
 #   - clif-filetest (Lean `Clif.run`, compared with Cranelift's interpreter), and
 #   - scripts/lean-backend-filetests.sh (Lean backend -> llvm-mc -> qemu, compared with
@@ -32,7 +32,7 @@ from pathlib import Path
 tools, runs, out = Path(sys.argv[1]), sys.argv[2], sys.argv[3]
 funcs, header = {}, None
 for crate in ("a_arith", "c_structs_enums", "d_loops_iters", "h_dyn_generic"):
-    text = (tools / f"release-{crate}.unopt.nonop.clif").read_text()
+    text = (tools / f"release-{crate}.unopt.reader.clif").read_text()
     head, _, rest = text.partition("\nfunction ")
     header = header or head
     for body in ("function " + rest).split("\n\nfunction "):
