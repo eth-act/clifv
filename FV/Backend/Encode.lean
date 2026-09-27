@@ -175,6 +175,111 @@ def armBits : ArmInst → BitVec 32
   -- C4.1 Reserved: UDF
   | .RES (.Udf x) => 0#16 ++ x.imm16
 
+/-- `a` with every `_fixed` field reset to the value the decoder puts there (the structure's
+default): the fields `armBits` ignores. Identity on every value `Insn.armFields` builds (they
+are structure literals that leave `_fixed` at its default); `decode_raw_inst (armBits a) =
+some a.norm` for every `a` (`Backend.decode_armBits`, `FV/Backend/Proof/Encode.lean`). -/
+def _root_.Arm.ArmInst.norm : ArmInst → ArmInst
+  | .DPI (.Add_sub_imm x) =>
+    .DPI (.Add_sub_imm { sf := x.sf, op := x.op, S := x.S, sh := x.sh, imm12 := x.imm12,
+                         Rn := x.Rn, Rd := x.Rd })
+  | .DPI (.Logical_imm x) =>
+    .DPI (.Logical_imm { sf := x.sf, opc := x.opc, N := x.N, immr := x.immr, imms := x.imms,
+                         Rn := x.Rn, Rd := x.Rd })
+  | .DPI (.PC_rel_addressing x) =>
+    .DPI (.PC_rel_addressing { op := x.op, immlo := x.immlo, immhi := x.immhi, Rd := x.Rd })
+  | .DPI (.Bitfield x) =>
+    .DPI (.Bitfield { sf := x.sf, opc := x.opc, N := x.N, immr := x.immr, imms := x.imms,
+                      Rn := x.Rn, Rd := x.Rd })
+  | .DPI (.Move_wide_imm x) =>
+    .DPI (.Move_wide_imm { sf := x.sf, opc := x.opc, hw := x.hw, imm16 := x.imm16, Rd := x.Rd })
+  | .DPI (.Extract x) =>
+    .DPI (.Extract { sf := x.sf, op21 := x.op21, N := x.N, o0 := x.o0, Rm := x.Rm,
+                     imms := x.imms, Rn := x.Rn, Rd := x.Rd })
+  | .BR (.Compare_branch x) =>
+    .BR (.Compare_branch { sf := x.sf, op := x.op, imm19 := x.imm19, Rt := x.Rt })
+  | .BR (.Uncond_branch_imm x) => .BR (.Uncond_branch_imm { op := x.op, imm26 := x.imm26 })
+  | .BR (.Uncond_branch_reg x) =>
+    .BR (.Uncond_branch_reg { opc := x.opc, op2 := x.op2, op3 := x.op3, Rn := x.Rn, op4 := x.op4 })
+  | .BR (.Cond_branch_imm x) =>
+    .BR (.Cond_branch_imm { imm19 := x.imm19, o0 := x.o0, cond := x.cond })
+  | .BR (.Hints x) => .BR (.Hints { CRm := x.CRm, op2 := x.op2 })
+  | .BR (.Test_branch x) =>
+    .BR (.Test_branch { b5 := x.b5, op := x.op, b40 := x.b40, imm14 := x.imm14, Rt := x.Rt })
+  | .DPR (.Add_sub_carry x) =>
+    .DPR (.Add_sub_carry { sf := x.sf, op := x.op, S := x.S, Rm := x.Rm, Rn := x.Rn, Rd := x.Rd })
+  | .DPR (.Add_sub_shifted_reg x) =>
+    .DPR (.Add_sub_shifted_reg { sf := x.sf, op := x.op, S := x.S, shift := x.shift, Rm := x.Rm,
+                                 imm6 := x.imm6, Rn := x.Rn, Rd := x.Rd })
+  | .DPR (.Add_sub_ext_reg x) =>
+    .DPR (.Add_sub_ext_reg { sf := x.sf, op := x.op, S := x.S, opt := x.opt, Rm := x.Rm,
+                             option := x.option, imm3 := x.imm3, Rn := x.Rn, Rd := x.Rd })
+  | .DPR (.Conditional_compare_imm x) =>
+    .DPR (.Conditional_compare_imm { sf := x.sf, op := x.op, S := x.S, imm5 := x.imm5,
+                                     cond := x.cond, o2 := x.o2, Rn := x.Rn, o3 := x.o3,
+                                     nzcv := x.nzcv })
+  | .DPR (.Conditional_compare_reg x) =>
+    .DPR (.Conditional_compare_reg { sf := x.sf, op := x.op, S := x.S, Rm := x.Rm,
+                                     cond := x.cond, o2 := x.o2, Rn := x.Rn, o3 := x.o3,
+                                     nzcv := x.nzcv })
+  | .DPR (.Conditional_select x) =>
+    .DPR (.Conditional_select { sf := x.sf, op := x.op, S := x.S, Rm := x.Rm, cond := x.cond,
+                                op2 := x.op2, Rn := x.Rn, Rd := x.Rd })
+  | .DPR (.Data_processing_one_source x) =>
+    .DPR (.Data_processing_one_source { sf := x.sf, S := x.S, opcode2 := x.opcode2,
+                                        opcode := x.opcode, Rn := x.Rn, Rd := x.Rd })
+  | .DPR (.Data_processing_two_source x) =>
+    .DPR (.Data_processing_two_source { sf := x.sf, S := x.S, Rm := x.Rm, opcode := x.opcode,
+                                        Rn := x.Rn, Rd := x.Rd })
+  | .DPR (.Logical_shifted_reg x) =>
+    .DPR (.Logical_shifted_reg { sf := x.sf, opc := x.opc, shift := x.shift, N := x.N,
+                                 Rm := x.Rm, imm6 := x.imm6, Rn := x.Rn, Rd := x.Rd })
+  | .DPR (.Data_processing_three_source x) =>
+    .DPR (.Data_processing_three_source { sf := x.sf, op54 := x.op54, op31 := x.op31,
+                                          Rm := x.Rm, o0 := x.o0, Ra := x.Ra, Rn := x.Rn,
+                                          Rd := x.Rd })
+  | .DPSFP (.Advanced_simd_two_reg_misc x) =>
+    .DPSFP (.Advanced_simd_two_reg_misc { Q := x.Q, U := x.U, size := x.size,
+                                          opcode := x.opcode, Rn := x.Rn, Rd := x.Rd })
+  | .DPSFP (.Advanced_simd_copy x) =>
+    .DPSFP (.Advanced_simd_copy { Q := x.Q, op := x.op, imm5 := x.imm5, imm4 := x.imm4,
+                                  Rn := x.Rn, Rd := x.Rd })
+  | .DPSFP (.Advanced_simd_three_same x) =>
+    .DPSFP (.Advanced_simd_three_same { Q := x.Q, U := x.U, size := x.size, Rm := x.Rm,
+                                        opcode := x.opcode, Rn := x.Rn, Rd := x.Rd })
+  | .DPSFP (.Conversion_between_FP_and_Int x) =>
+    .DPSFP (.Conversion_between_FP_and_Int { sf := x.sf, S := x.S, ftype := x.ftype,
+                                             rmode := x.rmode, opcode := x.opcode, Rn := x.Rn,
+                                             Rd := x.Rd })
+  | .DPSFP (.Advanced_simd_across_lanes x) =>
+    .DPSFP (.Advanced_simd_across_lanes { Q := x.Q, U := x.U, size := x.size,
+                                          opcode := x.opcode, Rn := x.Rn, Rd := x.Rd })
+  | .LDST (.Reg_imm_post_indexed x) =>
+    .LDST (.Reg_imm_post_indexed { size := x.size, V := x.V, opc := x.opc, imm9 := x.imm9,
+                                   Rn := x.Rn, Rt := x.Rt })
+  | .LDST (.Reg_unsigned_imm x) =>
+    .LDST (.Reg_unsigned_imm { size := x.size, V := x.V, opc := x.opc, imm12 := x.imm12,
+                               Rn := x.Rn, Rt := x.Rt })
+  | .LDST (.Reg_unscaled_imm x) =>
+    .LDST (.Reg_unscaled_imm { size := x.size, VR := x.VR, opc := x.opc, imm9 := x.imm9,
+                               Rn := x.Rn, Rt := x.Rt })
+  | .LDST (.Reg_pair_pre_indexed x) =>
+    .LDST (.Reg_pair_pre_indexed { opc := x.opc, V := x.V, L := x.L, imm7 := x.imm7,
+                                   Rt2 := x.Rt2, Rn := x.Rn, Rt := x.Rt })
+  | .LDST (.Reg_pair_post_indexed x) =>
+    .LDST (.Reg_pair_post_indexed { opc := x.opc, V := x.V, L := x.L, imm7 := x.imm7,
+                                    Rt2 := x.Rt2, Rn := x.Rn, Rt := x.Rt })
+  | .LDST (.Reg_pair_signed_offset x) =>
+    .LDST (.Reg_pair_signed_offset { opc := x.opc, V := x.V, L := x.L, imm7 := x.imm7,
+                                     Rt2 := x.Rt2, Rn := x.Rn, Rt := x.Rt })
+  | .LDST (.Reg_imm_pre_indexed x) =>
+    .LDST (.Reg_imm_pre_indexed { size := x.size, V := x.V, opc := x.opc, imm9 := x.imm9,
+                                  Rn := x.Rn, Rt := x.Rt })
+  | .LDST (.Reg_reg_offset x) =>
+    .LDST (.Reg_reg_offset { size := x.size, V := x.V, opc := x.opc, Rm := x.Rm,
+                             option := x.option, S := x.S, Rn := x.Rn, Rt := x.Rt })
+  | .RES (.Udf x) => .RES (.Udf { imm16 := x.imm16 })
+
 /-! ## Instruction → fields (Arm ARM C6/C7 instruction pages) -/
 
 /-- Where the encoder is: the instruction's byte offset and the byte offsets of the
@@ -255,8 +360,9 @@ def ldstFields (size : BitVec 2) (V : BitVec 1) (opc : BitVec 2) (bytes : Nat) (
                                    Rn := ← rn.encSP, Rt }))
   | m => throw s!"addressing mode {repr m} is not final"
 
-/-- The encoding-class fields of one instruction at `env.pc`. -/
-def Insn.toArmInst (env : Env) (i : Insn) : Except String ArmInst := do
+/-- The encoding-class fields of one instruction at `env.pc` (structure literals: the
+`_fixed` fields keep their defaults). -/
+def Insn.armFields (env : Env) (i : Insn) : Except String ArmInst := do
   match i with
   | .aluRRR op w rd rn rm =>
     let sf := b1 w
@@ -527,6 +633,12 @@ where
   /-- Data-processing (2 source) with `S = 0`. -/
   dp2 (sf : BitVec 1) (opcode : BitVec 6) (Rm Rn Rd : BitVec 5) : ArmInst :=
     .DPR (.Data_processing_two_source { sf, S := 0, Rm, opcode, Rn, Rd })
+
+/-- The encoding-class fields of one instruction at `env.pc`, as the decoder returns them
+(`ArmInst.norm` is the identity on `armFields`' literals; it makes the `_fixed` fields
+irrelevant by construction, so `decode_encode` needs no per-constructor case analysis). -/
+def Insn.toArmInst (env : Env) (i : Insn) : Except String ArmInst :=
+  ArmInst.norm <$> i.armFields env
 
 /-- The machine word of an instruction at `env.pc`. -/
 def Insn.encode (env : Env) (i : Insn) : Except String (BitVec 32) :=
