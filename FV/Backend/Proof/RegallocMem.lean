@@ -8,6 +8,10 @@ final addressing mode (`FinalAM`: unsigned or unscaled immediate, register offse
 extended) encodes, and the model executes it as the value-level access at `AMode.addr`:
 `ldX op a s` into the target register, or `write_mem_bytes` of the register's low bytes; the
 pc advances by 4. Base registers may be `sp` (then `sp` must be aligned).
+
+`steps_loadConst64`: the `movz`/`movk` sequence of `loadConst64 (x n) v` leaves `v` in `x n`;
+`StepsOk` (every line encodes, advances the pc by 4 and keeps the error flag and the program)
+gives both its `execLines` run and the error-free intermediate states.
 -/
 
 namespace Backend.Proof
@@ -402,5 +406,239 @@ theorem exec_store_line (env : Env) (ctx : FnCtx) (op : StoreOp) (hop : op ≠ .
       simp only [AMode.addr, Arm.LDST.Reg_offset.value, hr, hrm]
       rfl
   | _ => simp [FinalAM] at hm
+
+/-! ## Constant loads (`loadConst64`) -/
+
+theorem partInstall_chunk (v p : Nat) (_hp : p + 16 ≤ 64) :
+    Arm.BitVec.partInstall p 16 (BitVec.ofNat 16 ((v / 2 ^ p) % 2 ^ 16)) (BitVec.ofNat 64 (v % 2 ^ p)) =
+      BitVec.ofNat 64 (v % 2 ^ (p + 16)) := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  simp only [Arm.BitVec.partInstall, BitVec.truncate_eq_setWidth, BitVec.getLsbD_or, BitVec.getLsbD_and,
+    BitVec.getLsbD_not, BitVec.getLsbD_shiftLeft, hi, decide_true, Bool.true_and,
+    BitVec.getLsbD_setWidth, BitVec.getLsbD_allOnes, Bool.not_and, Bool.not_not,
+    BitVec.getLsbD_ofNat, Nat.testBit_mod_two_pow, Nat.testBit_div_two_pow]
+  by_cases h1 : i < p
+  · simp [h1, show i < p + 16 by omega]
+  · by_cases h2 : i < p + 16
+    · simp [h1, h2, show i - p < 16 by omega, show i - p < 64 by omega, show i - p + p = i by omega]
+    · simp [h1, h2, show ¬ i - p < 16 by omega]
+
+theorem ofNat5_ne31 {n : Nat} (hn : n ≤ 30) : BitVec.ofNat 5 n ≠ 31#5 := by
+  intro e; have := congrArg BitVec.toNat e; simp at this; omega
+
+/-- `MOVZ`/`MOVK` (64-bit). -/
+def mwInst (opc hw : BitVec 2) (imm16 : BitVec 16) (Rd : BitVec 5) : Arm.ArmInst :=
+  .DPI (.Move_wide_imm { sf := 1#1, opc := opc, hw := hw, imm16 := imm16, Rd := Rd })
+
+theorem exec_movz (env : Env) {n c : Nat} (hn : n ≤ 30) (hc : c < 2 ^ 16) (s : Arm.ArmState) :
+    ∃ ai, Insn.toArmInst env (.movWide .movZ true (.x n) ⟨c, 0⟩) = .ok ai ∧
+      Arm.exec_inst ai s =
+        Arm.w .PC (Arm.r .PC s + 4#64) (Arm.w (.GPR (BitVec.ofNat 5 n)) (BitVec.ofNat 64 c) s) := by
+  refine ⟨mwInst 2#2 0#2 (BitVec.ofNat 16 c) (BitVec.ofNat 5 n),
+    by simp [Insn.toArmInst, Insn.armFields, Reg.encZR, hn, uField, hc, b1, Arm.ArmInst.norm, mwInst], ?_⟩
+  have := partInstall_chunk c 0 (by omega)
+  simp only [Nat.pow_zero, Nat.div_one, Nat.mod_one, Nat.mod_eq_of_lt hc, Nat.zero_add] at this
+  simp [mwInst, Arm.exec_inst, Arm.DPI.exec_move_wide_imm, Arm.write_gpr_zr, ofNat5_ne31 hn,
+    Arm.write_gpr, Arm.write_pc, Arm.read_pc, this]
+
+theorem exec_movk (env : Env) {n c i : Nat} (hn : n ≤ 30) (hc : c < 2 ^ 16) (hi : i < 4)
+    (s : Arm.ArmState) :
+    ∃ ai, Insn.toArmInst env (.movk true (.x n) ⟨c, i⟩) = .ok ai ∧
+      Arm.exec_inst ai s =
+        Arm.w .PC (Arm.r .PC s + 4#64) (Arm.w (.GPR (BitVec.ofNat 5 n))
+          (Arm.BitVec.partInstall (16 * i) 16 (BitVec.ofNat 16 c) (Arm.r (.GPR (BitVec.ofNat 5 n)) s)) s) := by
+  refine ⟨mwInst 3#2 (BitVec.ofNat 2 i) (BitVec.ofNat 16 c) (BitVec.ofNat 5 n),
+    by simp [Insn.toArmInst, Insn.armFields, Reg.encZR, hn, uField, hc, b1, Arm.ArmInst.norm, mwInst,
+      show ¬ 4 ≤ i by omega], ?_⟩
+  have hpos : (BitVec.ofNat 2 i ++ 0#4).toNat = 16 * i := by
+    rw [BitVec.toNat_append]; simp [Nat.shiftLeft_eq, Nat.mod_eq_of_lt hi]; omega
+  simp [mwInst, Arm.exec_inst, Arm.DPI.exec_move_wide_imm, Arm.write_gpr_zr, ofNat5_ne31 hn,
+    Arm.write_gpr, Arm.write_pc, Arm.read_pc, Arm.read_gpr_zr, Arm.read_gpr, hpos]
+
+/-- Straight-line lines each of which encodes, advances the pc by 4, and keeps the error flag
+and the program, ending in `s'`. -/
+def StepsOk : Env → List Line → Arm.ArmState → Arm.ArmState → Prop
+  | _, [], s, s' => s' = s
+  | env, .ins i _ :: ls, s, s' => ∃ ai, i.toArmInst env = .ok ai ∧
+      Arm.r .PC (Arm.exec_inst ai s) = Arm.r .PC s + 4#64 ∧
+      Arm.r .ERR (Arm.exec_inst ai s) = Arm.r .ERR s ∧ (Arm.exec_inst ai s).program = s.program ∧
+      StepsOk { env with pc := env.pc + 4 } ls (Arm.exec_inst ai s) s'
+  | _, _ :: _, _, _ => False
+
+theorem StepsOk.exec : ∀ {env : Env} {ls : List Line} {s s' : Arm.ArmState},
+    StepsOk env ls s s' → execLines env ls s = some s'
+  | _, [], _, _, h => by simp [StepsOk] at h; simp [execLines, h]
+  | _, .ins i t :: ls, s, s', h => by
+    obtain ⟨ai, ha, hpc, -, -, h⟩ := h
+    simp [execLines, ha, hpc, StepsOk.exec h]
+  | _, .label _ :: _, _, _, h => h.elim
+  | _, .word _ _ :: _, _, _, h => h.elim
+
+theorem StepsOk.err : ∀ {env : Env} {ls : List Line} {s s' : Arm.ArmState},
+    StepsOk env ls s s' → Arm.r .ERR s' = Arm.r .ERR s ∧ s'.program = s.program
+  | _, [], _, _, h => by simp [StepsOk] at h; subst h; simp
+  | _, .ins i t :: ls, s, s', h => by
+    obtain ⟨ai, -, -, he, hp, h⟩ := h
+    obtain ⟨h1, h2⟩ := StepsOk.err h
+    exact ⟨h1.trans he, h2.trans hp⟩
+  | _, .label _ :: _, _, _, h => h.elim
+  | _, .word _ _ :: _, _, _, h => h.elim
+
+theorem StepsOk.take : ∀ {env : Env} {ls : List Line} {s s' : Arm.ArmState} (k : Nat),
+    StepsOk env ls s s' → ∃ s1, StepsOk env (ls.take k) s s1
+  | _, [], s, _, k, _ => ⟨s, by simp [StepsOk]⟩
+  | _, .ins i t :: ls, s, s', 0, _ => ⟨s, by simp [StepsOk]⟩
+  | _, .ins i t :: ls, s, s', k + 1, h => by
+    obtain ⟨ai, ha, hpc, he, hp, h⟩ := h
+    obtain ⟨s1, h1⟩ := StepsOk.take k h
+    exact ⟨s1, ai, ha, hpc, he, hp, h1⟩
+  | _, .label _ :: _, _, _, _, h => h.elim
+  | _, .word _ _ :: _, _, _, _, h => h.elim
+
+theorem StepsOk.append : ∀ {env : Env} {A B : List Line} {s s1 s2 : Arm.ArmState},
+    StepsOk env A s s1 → StepsOk { env with pc := env.pc + 4 * A.length } B s1 s2 →
+    StepsOk env (A ++ B) s s2
+  | env, [], B, s, s1, s2, hA, hB => by
+    simp [StepsOk] at hA; subst hA; simpa using hB
+  | env, .ins i t :: A, B, s, s1, s2, hA, hB => by
+    obtain ⟨ai, ha, hpc, he, hp, hA⟩ := hA
+    refine ⟨ai, ha, hpc, he, hp, StepsOk.append hA ?_⟩
+    simp only [List.length_cons] at hB
+    have e : ({ { env with pc := env.pc + 4 } with pc := env.pc + 4 + 4 * A.length } : Env) =
+        { env with pc := env.pc + 4 * (A.length + 1) } := by
+      cases env; simp; omega
+    rw [e]; exact hB
+  | _, .label _ :: _, _, _, _, _, h, _ => h.elim
+  | _, .word _ _ :: _, _, _, _, _, h, _ => h.elim
+
+theorem steps_cons {env : Env} {i : Insn} {t : Option Clif.TrapCode} {ls : List Line}
+    {s s' : Arm.ArmState} {ai : Arm.ArmInst} (ha : i.toArmInst env = .ok ai)
+    (hpc : Arm.r .PC (Arm.exec_inst ai s) = Arm.r .PC s + 4#64)
+    (he : Arm.r .ERR (Arm.exec_inst ai s) = Arm.r .ERR s)
+    (hp : (Arm.exec_inst ai s).program = s.program)
+    (h : StepsOk { env with pc := env.pc + 4 } ls (Arm.exec_inst ai s) s') :
+    StepsOk env (.ins i t :: ls) s s' := ⟨ai, ha, hpc, he, hp, h⟩
+
+/-- The pc/`x n` shape of the states of a constant load. -/
+def pcx (s : Arm.ArmState) (n : Nat) (P X : BitVec 64) : Arm.ArmState :=
+  Arm.w .PC P (Arm.w (.GPR (BitVec.ofNat 5 n)) X s)
+
+theorem pcx_step (s : Arm.ArmState) (n : Nat) (P X Y : BitVec 64) :
+    Arm.w .PC (Arm.r .PC (pcx s n P X) + 4#64) (Arm.w (.GPR (BitVec.ofNat 5 n)) Y (pcx s n P X)) =
+      pcx s n (P + 4#64) Y := by
+  simp only [pcx, Arm.r_of_w_same]
+  rw [Arm.w_of_w_commute (fld1 := .GPR _) (fld2 := .PC) (by simp), Arm.w_of_w_shadow, Arm.w_of_w_shadow]
+
+theorem pcx_facts (s : Arm.ArmState) (n : Nat) (P X : BitVec 64) :
+    Arm.r .PC (pcx s n P X) = P ∧ Arm.r .ERR (pcx s n P X) = Arm.r .ERR s ∧
+      (pcx s n P X).program = s.program ∧ Arm.r (.GPR (BitVec.ofNat 5 n)) (pcx s n P X) = X := by
+  simp [pcx, Arm.r_of_w_same, Arm.r_of_w_different, Arm.w_program]
+
+/-- `movk` lines for `(chunk, shift)` pairs. -/
+def movkLines (n : Nat) : List (Nat × Nat) → List Line
+  | [] => []
+  | (c, i) :: ks => .ins (.movk true (.x n) ⟨c, i⟩) none :: movkLines n ks
+
+theorem movkLines_length (n : Nat) : ∀ ks : List (Nat × Nat), (movkLines n ks).length = ks.length
+  | [] => rfl
+  | _ :: ks => by simp [movkLines, movkLines_length n ks]
+
+theorem steps_movks (n : Nat) (hn : n ≤ 30) (s : Arm.ArmState) :
+    ∀ (ks : List (Nat × Nat)) (env : Env) (P X : BitVec 64), (∀ p ∈ ks, p.1 < 2 ^ 16 ∧ p.2 < 4) →
+      StepsOk env (movkLines n ks) (pcx s n P X)
+        (pcx s n (P + BitVec.ofNat 64 (4 * ks.length))
+          (ks.foldl (fun X p => Arm.BitVec.partInstall (16 * p.2) 16 (BitVec.ofNat 16 p.1) X) X))
+  | [], env, P, X, _ => by simp [movkLines, StepsOk]
+  | (c, i) :: ks, env, P, X, hk => by
+    obtain ⟨hc, hi⟩ := hk (c, i) (by simp)
+    obtain ⟨ai, ha, he⟩ := exec_movk env hn hc hi (pcx s n P X)
+    obtain ⟨f1, f2, f3, f4⟩ := pcx_facts s n P X
+    rw [f4, pcx_step] at he
+    obtain ⟨g1, g2, g3, -⟩ := pcx_facts s n (P + 4#64)
+      (Arm.BitVec.partInstall (16 * i) 16 (BitVec.ofNat 16 c) X)
+    refine steps_cons ha (by rw [he, g1, f1]) (by rw [he, g2, f2]) (by rw [he, g3, f3]) ?_
+    rw [he]
+    have := steps_movks n hn s ks { env with pc := env.pc + 4 } (P + 4#64)
+      (Arm.BitVec.partInstall (16 * i) 16 (BitVec.ofNat 16 c) X) (fun p hp => hk p (by simp [hp]))
+    simp only [movkLines, List.length_cons, List.foldl_cons] at this ⊢
+    have e : P + 4#64 + BitVec.ofNat 64 (4 * ks.length) = P + BitVec.ofNat 64 (4 * (ks.length + 1)) := by
+      rw [BitVec.add_assoc]; congr 1; apply BitVec.eq_of_toNat_eq; simp; omega
+    rw [e] at this
+    exact this
+
+/-- 16-bit chunk `i` of `v`. -/
+def chunk16 (v i : Nat) : Nat := (v / 2 ^ (16 * i)) % 2 ^ 16
+
+theorem chunk_step (V i : Nat) (hi : 16 * i + 16 ≤ 64) :
+    (if chunk16 V i ≠ 0 then Arm.BitVec.partInstall (16 * i) 16 (BitVec.ofNat 16 (chunk16 V i))
+        (BitVec.ofNat 64 (V % 2 ^ (16 * i)))
+      else BitVec.ofNat 64 (V % 2 ^ (16 * i))) = BitVec.ofNat 64 (V % 2 ^ (16 * i + 16)) := by
+  split
+  · exact partInstall_chunk V (16 * i) hi
+  · rename_i h
+    simp only [chunk16, Decidable.not_not] at h
+    congr 1
+    rw [Nat.pow_add, Nat.mod_mul, h]; simp
+
+theorem foldl_filter {α β : Type} (g : β → α → β) (P : α → Bool) :
+    ∀ (L : List α) (X : β), (L.filter P).foldl g X = L.foldl (fun X p => if P p then g X p else X) X
+  | [], X => rfl
+  | a :: L, X => by
+    by_cases h : P a <;> simp [List.filter_cons, h, foldl_filter g P L]
+
+theorem loadConst64_eq (n v : Nat) :
+    loadConst64 (.x n) v = .ins (.movWide .movZ true (.x n) ⟨chunk16 (mask64 v) 0, 0⟩) none ::
+      movkLines n (([1, 2, 3].map fun i => (chunk16 (mask64 v) i, i)).filter (·.1 != 0)) := by
+  simp only [loadConst64, chunk16]
+  congr 1
+  by_cases h1 : mask64 v / 2 ^ (16 * 1) % 2 ^ 16 = 0 <;>
+  by_cases h2 : mask64 v / 2 ^ (16 * 2) % 2 ^ 16 = 0 <;>
+  by_cases h3 : mask64 v / 2 ^ (16 * 3) % 2 ^ 16 = 0 <;>
+  simp_all [List.range_succ, List.filterMap_append, movkLines, List.filter_cons, bne_iff_ne]
+
+theorem mask64_lt (v : Nat) : mask64 v < 2 ^ 64 := Nat.mod_lt _ (by decide)
+
+theorem chunk16_lt (V i : Nat) : chunk16 V i < 2 ^ 16 := Nat.mod_lt _ (by decide)
+
+/-- **The constant load** `loadConst64 (x n) v`: `movz`, then `movk` of the non-zero chunks;
+`x n` ends as `v` (mod 2^64), the pc advances by 4 per line, nothing else changes. -/
+theorem steps_loadConst64 (env : Env) {n : Nat} (hn : n ≤ 30) (v : Nat) (s : Arm.ArmState) :
+    StepsOk env (loadConst64 (.x n) v) s
+      (pcx s n (Arm.r .PC s + BitVec.ofNat 64 (4 * (loadConst64 (.x n) v).length)) (BitVec.ofNat 64 v)) := by
+  rw [loadConst64_eq]
+  obtain ⟨ai, ha, he⟩ := exec_movz env hn (chunk16_lt (mask64 v) 0) s
+  have e0 : Arm.exec_inst ai s = pcx s n (Arm.r .PC s + 4#64) (BitVec.ofNat 64 (chunk16 (mask64 v) 0)) := he
+  obtain ⟨g1, g2, g3, -⟩ := pcx_facts s n (Arm.r .PC s + 4#64) (BitVec.ofNat 64 (chunk16 (mask64 v) 0))
+  refine steps_cons ha (by rw [e0, g1]) (by rw [e0, g2]) (by rw [e0, g3]) ?_
+  rw [e0]
+  have hk := steps_movks n hn s (([1, 2, 3].map fun i => (chunk16 (mask64 v) i, i)).filter (·.1 != 0))
+    { env with pc := env.pc + 4 } (Arm.r .PC s + 4#64) (BitVec.ofNat 64 (chunk16 (mask64 v) 0))
+    (fun p hp => by
+      simp only [List.mem_filter, List.mem_map] at hp
+      obtain ⟨⟨i, hi, rfl⟩, -⟩ := hp
+      simp at hi
+      exact ⟨chunk16_lt _ _, by omega⟩)
+  have hv : ((([1, 2, 3].map fun i => (chunk16 (mask64 v) i, i)).filter (·.1 != 0)).foldl
+      (fun X p => Arm.BitVec.partInstall (16 * p.2) 16 (BitVec.ofNat 16 p.1) X)
+      (BitVec.ofNat 64 (chunk16 (mask64 v) 0))) = BitVec.ofNat 64 v := by
+    rw [foldl_filter]
+    have c0 : BitVec.ofNat 64 (chunk16 (mask64 v) 0) = BitVec.ofNat 64 (mask64 v % 2 ^ (16 * 1)) := by
+      simp [chunk16]
+    have c1 := chunk_step (mask64 v) 1 (by omega)
+    have c2 := chunk_step (mask64 v) 2 (by omega)
+    have c3 := chunk_step (mask64 v) 3 (by omega)
+    simp only [List.map_cons, List.map_nil, List.foldl_cons, List.foldl_nil, bne_iff_ne, ne_eq,
+      decide_eq_true_eq] at c1 c2 c3 ⊢
+    rw [c0, c1, show 16 * 1 + 16 = 16 * 2 by rfl, c2, show 16 * 2 + 16 = 16 * 3 by rfl, c3]
+    apply BitVec.eq_of_toNat_eq
+    simp [mask64]
+  rw [hv] at hk
+  have e : Arm.r .PC s + 4#64 + BitVec.ofNat 64 (4 * (([1, 2, 3].map fun i => (chunk16 (mask64 v) i, i)).filter (·.1 != 0)).length) =
+      Arm.r .PC s + BitVec.ofNat 64 (4 * (Line.ins (.movWide .movZ true (.x n) ⟨chunk16 (mask64 v) 0, 0⟩) none ::
+        movkLines n (([1, 2, 3].map fun i => (chunk16 (mask64 v) i, i)).filter (·.1 != 0))).length) := by
+    rw [BitVec.add_assoc]; congr 1; apply BitVec.eq_of_toNat_eq; simp [movkLines_length]; omega
+  rw [e] at hk
+  exact hk
 
 end Backend.Proof
