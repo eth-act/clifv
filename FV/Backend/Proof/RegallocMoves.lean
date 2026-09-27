@@ -18,7 +18,8 @@ open Backend
 the pc). -/
 def ExecAll (ctx : FnCtx) : List MInst → Arm.ArmState → Arm.ArmState → Prop
   | [], s, s' => s' = s
-  | i :: is, s, s' => ∃ t, (∀ env, execMInst ctx env i s = some t) ∧ ExecAll ctx is t s'
+  | i :: is, s, s' => ∃ t, (∀ env, execMInst ctx env i s = some t) ∧
+      Arm.r .ERR t = Arm.r .ERR s ∧ t.program = s.program ∧ ExecAll ctx is t s'
 
 /-- The state facts a move keeps. -/
 structure MoveOk (fr : RAFrame) (L : Loc → Prop) (F : BitVec 64 → Prop) (sp0 : BitVec 64)
@@ -26,6 +27,42 @@ structure MoveOk (fr : RAFrame) (L : Loc → Prop) (F : BitVec 64 → Prop) (sp0
   world : SameWorld F s' w
   sp : spOf s' = sp0
   store : ∀ l, ValidLoc l → L l → locVal fr s' l = upd (locVal fr s) dst v l
+  /-- memory outside the frame's slot area `[sp0, sp0 + size)` is unchanged -/
+  mem : ∀ a, (∀ o, o < fr.size → a ≠ sp0 + BitVec.ofNat 64 o) → s'.mem a = s.mem a
+
+theorem stSt_err (s : Arm.ArmState) (o n : Nat) (v : BitVec (n * 8)) :
+    Arm.r .ERR (stSt s o n v) = Arm.r .ERR s := by
+  rw [stSt, Arm.r_of_w_different (by simp), Arm.r_of_write_mem_bytes]
+
+theorem stSt_prog (s : Arm.ArmState) (o n : Nat) (v : BitVec (n * 8)) :
+    (stSt s o n v).program = s.program := by
+  rw [stSt, Arm.w_program, Arm.write_mem_bytes_program]
+
+theorem stSt_mem {s : Arm.ArmState} {o n : Nat} {v : BitVec (n * 8)} {a : BitVec 64}
+    (h : ∀ k < n, a ≠ spOf s + BitVec.ofNat 64 o + BitVec.ofNat 64 k) :
+    (stSt s o n v).mem a = s.mem a := by
+  rw [stSt, Arm.ArmState.mem_w_eq_mem, Arm.Memory.write_mem_bytes_eq_mem_write_bytes]
+  exact write_bytes_outside n _ v _ h
+
+theorem ldIntSt_err (s : Arm.ArmState) (o n : Nat) : Arm.r .ERR (ldIntSt s o n) = Arm.r .ERR s := by
+  rw [ldIntSt, Arm.r_of_w_different (by simp), Arm.r_of_w_different (by simp)]
+theorem ldIntSt_prog (s : Arm.ArmState) (o n : Nat) : (ldIntSt s o n).program = s.program := by
+  rw [ldIntSt, Arm.w_program, Arm.w_program]
+theorem ldIntSt_mem (s : Arm.ArmState) (o n : Nat) : (ldIntSt s o n).mem = s.mem := by
+  rw [ldIntSt, Arm.ArmState.mem_w_eq_mem, Arm.ArmState.mem_w_eq_mem]
+theorem ldFSt_err (s : Arm.ArmState) (o n : Nat) : Arm.r .ERR (ldFSt s o n) = Arm.r .ERR s := by
+  rw [ldFSt, Arm.r_of_w_different (by simp), Arm.r_of_w_different (by simp)]
+theorem ldFSt_prog (s : Arm.ArmState) (o n : Nat) : (ldFSt s o n).program = s.program := by
+  rw [ldFSt, Arm.w_program, Arm.w_program]
+theorem ldFSt_mem (s : Arm.ArmState) (o n : Nat) : (ldFSt s o n).mem = s.mem := by
+  rw [ldFSt, Arm.ArmState.mem_w_eq_mem, Arm.ArmState.mem_w_eq_mem]
+
+theorem ne_slot_addr {sp0 a : BitVec 64} {size o n : Nat} (hsz : size < 32768) (hle : o + n ≤ size)
+    (h : ∀ o', o' < size → a ≠ sp0 + BitVec.ofNat 64 o') :
+    ∀ k < n, a ≠ sp0 + BitVec.ofNat 64 o + BitVec.ofNat 64 k := by
+  intro k hk
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add]
+  exact h _ (by omega)
 
 theorem align_of_sp {s t : Arm.ArmState} (h : spOf t = spOf s) (ha : Arm.CheckSPAlignment s) :
     Arm.CheckSPAlignment t := by
@@ -47,9 +84,10 @@ theorem move_store_int (hfr : FrameOk FR (Live rf) T sp0 F) (hsz : (FR).size < 3
   rcases allocatable_cases ha with ⟨a', ea, hha⟩ | ⟨_, ea, _⟩ <;> cases ea
   obtain ⟨hal, hle⟩ := live_align hD hoff
   rw [h8] at hal hle
-  refine ⟨_, ⟨_, fun env => exec_store_int ctx env hha.1 hal (by omega) halign, rfl⟩, ?_⟩
+  refine ⟨_, ⟨_, fun env => exec_store_int ctx env hha.1 hal (by omega) halign,
+    stSt_err _ _ _ _, stSt_prog _ _ _ _, rfl⟩, ?_⟩
   obtain ⟨hW, hS, hO⟩ := store_effect hfr hw hsp hD hoff h8 (Arm.r (.GPR (rnum a)) s)
-  refine ⟨hW, hS, fun l _ hl => ?_⟩
+  refine ⟨hW, hS, fun l _ hl => ?_, fun a' ha' => stSt_mem (by rw [hsp]; exact ne_slot_addr hsz hle ha')⟩
   by_cases e : l = dst
   · subst e; simp only [upd, if_true]; rw [store_dst8 hoff h8]; rfl
   · simp only [upd, e, if_false]; exact hO l hl e
@@ -63,9 +101,10 @@ theorem move_store_float (hfr : FrameOk FR (Live rf) T sp0 F) (hsz : (FR).size <
       MoveOk FR (Live rf) F sp0 s s' w dst (locVal FR s (.reg (.v a))) := by
   obtain ⟨hal, hle⟩ := live_align hD hoff
   rw [h16] at hal hle
-  refine ⟨_, ⟨_, fun env => exec_store_float ctx env ha hal (by omega) halign, rfl⟩, ?_⟩
+  refine ⟨_, ⟨_, fun env => exec_store_float ctx env ha hal (by omega) halign,
+    stSt_err _ _ _ _, stSt_prog _ _ _ _, rfl⟩, ?_⟩
   obtain ⟨hW, hS, hO⟩ := store_effect hfr hw hsp hD hoff h16 (Arm.r (.SFP (rnum a)) s)
-  refine ⟨hW, hS, fun l _ hl => ?_⟩
+  refine ⟨hW, hS, fun l _ hl => ?_, fun a' ha' => stSt_mem (by rw [hsp]; exact ne_slot_addr hsz hle ha')⟩
   by_cases e : l = dst
   · subst e; simp only [upd, if_true]; rw [store_dst16 hoff h16]; rfl
   · simp only [upd, e, if_false]; exact hO l hl e
@@ -80,9 +119,10 @@ theorem move_load_int (hsz : (FR).size < 32768) (ctx : FnCtx) {b : Nat}
   rcases allocatable_cases hb with ⟨b', eb, hhb⟩ | ⟨_, eb, _⟩ <;> cases eb
   obtain ⟨hal, hle⟩ := live_align hD hoff
   rw [h8] at hal hle
-  refine ⟨_, ⟨_, fun env => exec_load_int ctx env hhb.1 hal (by omega) halign, rfl⟩, ?_⟩
+  refine ⟨_, ⟨_, fun env => exec_load_int ctx env hhb.1 hal (by omega) halign,
+    ldIntSt_err _ _ _, ldIntSt_prog _ _ _, rfl⟩, ?_⟩
   obtain ⟨hW, hS, hO⟩ := loadInt_effect (fr := FR) hw hb hoff h8
-  exact ⟨hW, hS.trans hsp, fun l hl _ => hO l hl⟩
+  exact ⟨hW, hS.trans hsp, fun l hl _ => hO l hl, fun a _ => by rw [ldIntSt_mem]⟩
 
 theorem move_load_float (hsz : (FR).size < 32768) (ctx : FnCtx) {b : Nat} (hb : b < 32)
     {src : Loc} {o : Nat} (hD : Live rf src) (hoff : (FR).offset src = .ok o)
@@ -92,9 +132,10 @@ theorem move_load_float (hsz : (FR).size < 32768) (ctx : FnCtx) {b : Nat} (hb : 
       MoveOk FR (Live rf) F sp0 s s' w (.reg (.v b)) (locVal FR s src) := by
   obtain ⟨hal, hle⟩ := live_align hD hoff
   rw [h16] at hal hle
-  refine ⟨_, ⟨_, fun env => exec_load_float ctx env hb hal (by omega) halign, rfl⟩, ?_⟩
+  refine ⟨_, ⟨_, fun env => exec_load_float ctx env hb hal (by omega) halign,
+    ldFSt_err _ _ _, ldFSt_prog _ _ _, rfl⟩, ?_⟩
   obtain ⟨hW, hS, hO⟩ := loadFloat_effect (fr := FR) hw hb hoff h16
-  exact ⟨hW, hS.trans hsp, fun l hl _ => hO l hl⟩
+  exact ⟨hW, hS.trans hsp, fun l hl _ => hO l hl, fun a _ => by rw [ldFSt_mem]⟩
 
 theorem move_reg_int (ctx : FnCtx) {a b : Nat} (ha : (Reg.x a).allocatable = true)
     (hb : (Reg.x b).allocatable = true) {s w : Arm.ArmState} (hw : SameWorld F s w)
@@ -106,7 +147,13 @@ theorem move_reg_int (ctx : FnCtx) {a b : Nat} (ha : (Reg.x a).allocatable = tru
   rcases allocatable_cases hb with ⟨b', eb, hhb⟩ | ⟨_, eb, _⟩ <;> cases eb
   have hex' : ∀ env, execMInst ctx env (.mov .size64 (.x b) (.x a)) s = some s' := fun env => by
     rw [exec_mov64 ctx env hhb.1 hha.1 s]; rw [exec_mov64 ctx (⟨0, fun _ => none⟩ : Env) hhb.1 hha.1 s] at hex; exact hex
-  exact ⟨s', ⟨s', hex', rfl⟩, hW, hS.trans hsp, fun l hl _ => hO l hl⟩
+  have hs' : s' = Arm.w (.GPR (rnum b)) (Arm.r (.GPR (rnum a)) s) (Arm.w .PC (Arm.r .PC s + 4#64) s) := by
+    have := hex' (⟨0, fun _ => none⟩ : Env)
+    rw [exec_mov64 ctx _ hhb.1 hha.1 s] at this
+    exact (Option.some.inj this).symm
+  exact ⟨s', ⟨s', hex', by rw [hs', Arm.r_of_w_different (by simp), Arm.r_of_w_different (by simp)],
+    by rw [hs', Arm.w_program, Arm.w_program], rfl⟩, hW, hS.trans hsp, fun l hl _ => hO l hl,
+    fun a _ => by rw [hs', Arm.ArmState.mem_w_eq_mem, Arm.ArmState.mem_w_eq_mem]⟩
 
 /-- A float register move: store to `fmoveTmp`, load from it. -/
 theorem move_reg_float (hfr : FrameOk FR (Live rf) T sp0 F) (hT : T) (hsz : (FR).size < 32768)
@@ -122,8 +169,10 @@ theorem move_reg_float (hfr : FrameOk FR (Live rf) T sp0 F) (hT : T) (hsz : (FR)
     (SameWorld.write_mem_bytes_inF hw _ _ _ (fun j hj => by rw [hsp]; exact hfr.tmpF hT j hj))
   have htal : Arm.CheckSPAlignment t := align_of_sp (by simp only [t, stSt, spOf_write]) halign
   refine ⟨ldFSt t (FR).fmoveTmp b,
-    ⟨t, fun env => exec_store_float ctx env ha hal (by omega) halign,
-      ⟨_, fun env => exec_load_float ctx env hb hal (by omega) htal, rfl⟩⟩, ?_⟩
+    ⟨t, fun env => exec_store_float ctx env ha hal (by omega) halign, stSt_err _ _ _ _,
+      stSt_prog _ _ _ _,
+      ⟨_, fun env => exec_load_float ctx env hb hal (by omega) htal, ldFSt_err _ _ _,
+        ldFSt_prog _ _ _, rfl⟩⟩, ?_⟩
   -- the load reads what the store wrote
   have hrd : Arm.read_mem_bytes 16 (spOf t + BitVec.ofNat 64 (FR).fmoveTmp) t = Arm.r (.SFP (rnum a)) s := by
     simp only [t, stSt, spOf_write]
@@ -142,7 +191,7 @@ theorem move_reg_float (hfr : FrameOk FR (Live rf) T sp0 F) (hT : T) (hsz : (FR)
       exact locVal_frame_write (fun r h => Loc.noConfusion h) (fun o ho => by
         rw [hsp]; exact hfr.tmpSep hT _ o hL ho)
   refine ⟨SameWorld.w_left (by simp [Masked]) (SameWorld.w_left (by simp [Masked]) htw), ?_,
-    fun l hl hL => ?_⟩
+    fun l hl hL => ?_, fun a' ha' => ?_⟩
   · simp only [spOf, ldFSt]
     rw [Arm.r_of_w_different (by simp), Arm.r_of_w_different (by simp)]
     exact htsp
@@ -168,6 +217,8 @@ theorem move_reg_float (hfr : FrameOk FR (Live rf) T sp0 F) (hT : T) (hsz : (FR)
         exact locVal_frame_congr (fun r h => Loc.noConfusion h)
           (by simp only [spOf, ldFSt]; rw [Arm.r_of_w_different (by simp), Arm.r_of_w_different (by simp)])
           (by simp only [ldFSt]; rw [Arm.ArmState.mem_w_eq_mem, Arm.ArmState.mem_w_eq_mem])
+  · rw [ldFSt_mem]
+    exact stSt_mem (by rw [hsp]; exact ne_slot_addr hsz htmp ha')
 
 end
 
