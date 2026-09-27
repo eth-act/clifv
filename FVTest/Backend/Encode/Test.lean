@@ -1,4 +1,5 @@
 import FV.Backend
+import FVTest.Backend.Encode.Examples
 
 /-!
 # Encoder tests (`lake exe lean-backend-encode-test`, `docs/contracts/encoder.md`)
