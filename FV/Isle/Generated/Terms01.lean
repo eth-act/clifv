@@ -7,1295 +7,4184 @@ set_option maxRecDepth 100000
 namespace Isle.Aarch64
 open Isle
 
-def terms_3 : Array Term := #[
-  ⟨1200, "u64_matches_odd", [0], 4, (.decl ⟨true, false, false, false⟩ none (some (.external "u64_matches_odd" false))), ⟨"<OUT_DIR>/numerics.isle", 2232⟩⟩,
-  ⟨1201, "u64_extract_odd", [4], 4, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u64_extract_odd"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u64_matches_odd"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 2234⟩⟩,
-  ⟨1202, "u64_when_odd", [], 4, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u64_when_odd")]), (.list [(.atom "u64_matches_odd"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 2236⟩⟩,
-  ⟨1203, "u64_when_not_odd", [], 4, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u64_when_not_odd")]), (.list [(.atom "u64_matches_odd"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 2238⟩⟩,
-  ⟨1204, "u64_is_even", [4], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u64_is_even")) none), ⟨"<OUT_DIR>/numerics.isle", 2241⟩⟩,
-  ⟨1205, "u64_matches_even", [0], 4, (.decl ⟨true, false, false, false⟩ none (some (.external "u64_matches_even" false))), ⟨"<OUT_DIR>/numerics.isle", 2245⟩⟩,
-  ⟨1206, "u64_extract_even", [4], 4, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u64_extract_even"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u64_matches_even"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 2247⟩⟩,
-  ⟨1207, "u64_when_even", [], 4, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u64_when_even")]), (.list [(.atom "u64_matches_even"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 2249⟩⟩,
-  ⟨1208, "u64_when_not_even", [], 4, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u64_when_not_even")]), (.list [(.atom "u64_matches_even"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 2251⟩⟩,
-  ⟨1209, "u64_checked_ilog2", [4], 3, (.decl ⟨true, false, true, false⟩ (some (.external "u64_checked_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 2254⟩⟩,
-  ⟨1210, "u64_ilog2", [4], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u64_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 2259⟩⟩,
-  ⟨1211, "u64_trailing_zeros", [4], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u64_trailing_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 2264⟩⟩,
-  ⟨1212, "u64_trailing_ones", [4], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u64_trailing_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 2269⟩⟩,
-  ⟨1213, "u64_leading_zeros", [4], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u64_leading_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 2274⟩⟩,
-  ⟨1214, "u64_leading_ones", [4], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u64_leading_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 2279⟩⟩,
-  ⟨1215, "u64_is_power_of_two", [4], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u64_is_power_of_two")) none), ⟨"<OUT_DIR>/numerics.isle", 2284⟩⟩,
-  ⟨1216, "u64_matches_power_of_two", [0], 4, (.decl ⟨true, false, false, false⟩ none (some (.external "u64_matches_power_of_two" false))), ⟨"<OUT_DIR>/numerics.isle", 2288⟩⟩,
-  ⟨1217, "u64_extract_power_of_two", [4], 4, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u64_extract_power_of_two"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u64_matches_power_of_two"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 2290⟩⟩,
-  ⟨1218, "u64_when_power_of_two", [], 4, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u64_when_power_of_two")]), (.list [(.atom "u64_matches_power_of_two"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 2292⟩⟩,
-  ⟨1219, "u64_when_not_power_of_two", [], 4, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u64_when_not_power_of_two")]), (.list [(.atom "u64_matches_power_of_two"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 2294⟩⟩,
-  ⟨1220, "i128_eq", [11, 11], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i128_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 2297⟩⟩,
-  ⟨1221, "i128_ne", [11, 11], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i128_ne")) none), ⟨"<OUT_DIR>/numerics.isle", 2303⟩⟩,
-  ⟨1222, "i128_lt", [11, 11], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i128_lt")) none), ⟨"<OUT_DIR>/numerics.isle", 2309⟩⟩,
-  ⟨1223, "i128_lt_eq", [11, 11], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i128_lt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 2315⟩⟩,
-  ⟨1224, "i128_gt", [11, 11], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i128_gt")) none), ⟨"<OUT_DIR>/numerics.isle", 2321⟩⟩,
-  ⟨1225, "i128_gt_eq", [11, 11], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i128_gt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 2327⟩⟩,
-  ⟨1226, "i128_checked_add", [11, 11], 11, (.decl ⟨true, false, true, false⟩ (some (.external "i128_checked_add")) none), ⟨"<OUT_DIR>/numerics.isle", 2333⟩⟩,
-  ⟨1227, "i128_wrapping_add", [11, 11], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_wrapping_add")) none), ⟨"<OUT_DIR>/numerics.isle", 2339⟩⟩,
-  ⟨1228, "i128_add", [11, 11], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_add")) none), ⟨"<OUT_DIR>/numerics.isle", 2345⟩⟩,
-  ⟨1229, "i128_checked_sub", [11, 11], 11, (.decl ⟨true, false, true, false⟩ (some (.external "i128_checked_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 2351⟩⟩,
-  ⟨1230, "i128_wrapping_sub", [11, 11], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_wrapping_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 2357⟩⟩,
-  ⟨1231, "i128_sub", [11, 11], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 2363⟩⟩,
-  ⟨1232, "i128_checked_mul", [11, 11], 11, (.decl ⟨true, false, true, false⟩ (some (.external "i128_checked_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 2369⟩⟩,
-  ⟨1233, "i128_wrapping_mul", [11, 11], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_wrapping_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 2375⟩⟩,
-  ⟨1234, "i128_mul", [11, 11], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 2381⟩⟩,
-  ⟨1235, "i128_checked_div", [11, 11], 11, (.decl ⟨true, false, true, false⟩ (some (.external "i128_checked_div")) none), ⟨"<OUT_DIR>/numerics.isle", 2387⟩⟩,
-  ⟨1236, "i128_wrapping_div", [11, 11], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_wrapping_div")) none), ⟨"<OUT_DIR>/numerics.isle", 2393⟩⟩,
-  ⟨1237, "i128_div", [11, 11], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_div")) none), ⟨"<OUT_DIR>/numerics.isle", 2399⟩⟩,
-  ⟨1238, "i128_checked_rem", [11, 11], 11, (.decl ⟨true, false, true, false⟩ (some (.external "i128_checked_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 2405⟩⟩,
-  ⟨1239, "i128_rem", [11, 11], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 2411⟩⟩,
-  ⟨1240, "i128_and", [11, 11], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_and")) none), ⟨"<OUT_DIR>/numerics.isle", 2417⟩⟩,
-  ⟨1241, "i128_or", [11, 11], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_or")) none), ⟨"<OUT_DIR>/numerics.isle", 2423⟩⟩,
-  ⟨1242, "i128_xor", [11, 11], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_xor")) none), ⟨"<OUT_DIR>/numerics.isle", 2429⟩⟩,
-  ⟨1243, "i128_not", [11], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_not")) none), ⟨"<OUT_DIR>/numerics.isle", 2435⟩⟩,
-  ⟨1244, "i128_checked_shl", [11, 3], 11, (.decl ⟨true, false, true, false⟩ (some (.external "i128_checked_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 2440⟩⟩,
-  ⟨1245, "i128_wrapping_shl", [11, 3], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_wrapping_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 2446⟩⟩,
-  ⟨1246, "i128_shl", [11, 3], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 2452⟩⟩,
-  ⟨1247, "i128_checked_shr", [11, 3], 11, (.decl ⟨true, false, true, false⟩ (some (.external "i128_checked_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 2458⟩⟩,
-  ⟨1248, "i128_wrapping_shr", [11, 3], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_wrapping_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 2464⟩⟩,
-  ⟨1249, "i128_shr", [11, 3], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 2470⟩⟩,
-  ⟨1250, "i128_rotl", [11, 3], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_rotl")) none), ⟨"<OUT_DIR>/numerics.isle", 2476⟩⟩,
-  ⟨1251, "i128_rotr", [11, 3], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_rotr")) none), ⟨"<OUT_DIR>/numerics.isle", 2482⟩⟩,
-  ⟨1252, "i128_is_zero", [11], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i128_is_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 2488⟩⟩,
-  ⟨1253, "i128_matches_zero", [0], 11, (.decl ⟨true, false, false, false⟩ none (some (.external "i128_matches_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 2492⟩⟩,
-  ⟨1254, "i128_extract_zero", [11], 11, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i128_extract_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i128_matches_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 2494⟩⟩,
-  ⟨1255, "i128_when_zero", [], 11, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i128_when_zero")]), (.list [(.atom "i128_matches_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 2496⟩⟩,
-  ⟨1256, "i128_when_not_zero", [], 11, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i128_when_not_zero")]), (.list [(.atom "i128_matches_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 2498⟩⟩,
-  ⟨1257, "i128_is_non_zero", [11], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i128_is_non_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 2501⟩⟩,
-  ⟨1258, "i128_matches_non_zero", [0], 11, (.decl ⟨true, false, false, false⟩ none (some (.external "i128_matches_non_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 2505⟩⟩,
-  ⟨1259, "i128_extract_non_zero", [11], 11, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i128_extract_non_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i128_matches_non_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 2507⟩⟩,
-  ⟨1260, "i128_when_non_zero", [], 11, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i128_when_non_zero")]), (.list [(.atom "i128_matches_non_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 2509⟩⟩,
-  ⟨1261, "i128_when_not_non_zero", [], 11, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i128_when_not_non_zero")]), (.list [(.atom "i128_matches_non_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 2511⟩⟩,
-  ⟨1262, "i128_is_odd", [11], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i128_is_odd")) none), ⟨"<OUT_DIR>/numerics.isle", 2514⟩⟩,
-  ⟨1263, "i128_matches_odd", [0], 11, (.decl ⟨true, false, false, false⟩ none (some (.external "i128_matches_odd" false))), ⟨"<OUT_DIR>/numerics.isle", 2518⟩⟩,
-  ⟨1264, "i128_extract_odd", [11], 11, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i128_extract_odd"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i128_matches_odd"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 2520⟩⟩,
-  ⟨1265, "i128_when_odd", [], 11, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i128_when_odd")]), (.list [(.atom "i128_matches_odd"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 2522⟩⟩,
-  ⟨1266, "i128_when_not_odd", [], 11, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i128_when_not_odd")]), (.list [(.atom "i128_matches_odd"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 2524⟩⟩,
-  ⟨1267, "i128_is_even", [11], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i128_is_even")) none), ⟨"<OUT_DIR>/numerics.isle", 2527⟩⟩,
-  ⟨1268, "i128_matches_even", [0], 11, (.decl ⟨true, false, false, false⟩ none (some (.external "i128_matches_even" false))), ⟨"<OUT_DIR>/numerics.isle", 2531⟩⟩,
-  ⟨1269, "i128_extract_even", [11], 11, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i128_extract_even"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i128_matches_even"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 2533⟩⟩,
-  ⟨1270, "i128_when_even", [], 11, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i128_when_even")]), (.list [(.atom "i128_matches_even"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 2535⟩⟩,
-  ⟨1271, "i128_when_not_even", [], 11, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i128_when_not_even")]), (.list [(.atom "i128_matches_even"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 2537⟩⟩,
-  ⟨1272, "i128_checked_ilog2", [11], 3, (.decl ⟨true, false, true, false⟩ (some (.external "i128_checked_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 2540⟩⟩,
-  ⟨1273, "i128_ilog2", [11], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i128_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 2545⟩⟩,
-  ⟨1274, "i128_trailing_zeros", [11], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i128_trailing_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 2550⟩⟩,
-  ⟨1275, "i128_trailing_ones", [11], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i128_trailing_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 2555⟩⟩,
-  ⟨1276, "i128_leading_zeros", [11], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i128_leading_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 2560⟩⟩,
-  ⟨1277, "i128_leading_ones", [11], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i128_leading_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 2565⟩⟩,
-  ⟨1278, "i128_checked_neg", [11], 11, (.decl ⟨true, false, true, false⟩ (some (.external "i128_checked_neg")) none), ⟨"<OUT_DIR>/numerics.isle", 2570⟩⟩,
-  ⟨1279, "i128_wrapping_neg", [11], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_wrapping_neg")) none), ⟨"<OUT_DIR>/numerics.isle", 2575⟩⟩,
-  ⟨1280, "i128_neg", [11], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_neg")) none), ⟨"<OUT_DIR>/numerics.isle", 2580⟩⟩,
-  ⟨1281, "u128_eq", [5, 5], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u128_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 2585⟩⟩,
-  ⟨1282, "u128_ne", [5, 5], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u128_ne")) none), ⟨"<OUT_DIR>/numerics.isle", 2591⟩⟩,
-  ⟨1283, "u128_lt", [5, 5], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u128_lt")) none), ⟨"<OUT_DIR>/numerics.isle", 2597⟩⟩,
-  ⟨1284, "u128_lt_eq", [5, 5], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u128_lt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 2603⟩⟩,
-  ⟨1285, "u128_gt", [5, 5], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u128_gt")) none), ⟨"<OUT_DIR>/numerics.isle", 2609⟩⟩,
-  ⟨1286, "u128_gt_eq", [5, 5], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u128_gt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 2615⟩⟩,
-  ⟨1287, "u128_checked_add", [5, 5], 5, (.decl ⟨true, false, true, false⟩ (some (.external "u128_checked_add")) none), ⟨"<OUT_DIR>/numerics.isle", 2621⟩⟩,
-  ⟨1288, "u128_wrapping_add", [5, 5], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u128_wrapping_add")) none), ⟨"<OUT_DIR>/numerics.isle", 2627⟩⟩,
-  ⟨1289, "u128_add", [5, 5], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u128_add")) none), ⟨"<OUT_DIR>/numerics.isle", 2633⟩⟩,
-  ⟨1290, "u128_checked_sub", [5, 5], 5, (.decl ⟨true, false, true, false⟩ (some (.external "u128_checked_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 2639⟩⟩,
-  ⟨1291, "u128_wrapping_sub", [5, 5], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u128_wrapping_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 2645⟩⟩,
-  ⟨1292, "u128_sub", [5, 5], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u128_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 2651⟩⟩,
-  ⟨1293, "u128_checked_mul", [5, 5], 5, (.decl ⟨true, false, true, false⟩ (some (.external "u128_checked_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 2657⟩⟩,
-  ⟨1294, "u128_wrapping_mul", [5, 5], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u128_wrapping_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 2663⟩⟩,
-  ⟨1295, "u128_mul", [5, 5], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u128_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 2669⟩⟩,
-  ⟨1296, "u128_checked_div", [5, 5], 5, (.decl ⟨true, false, true, false⟩ (some (.external "u128_checked_div")) none), ⟨"<OUT_DIR>/numerics.isle", 2675⟩⟩,
-  ⟨1297, "u128_wrapping_div", [5, 5], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u128_wrapping_div")) none), ⟨"<OUT_DIR>/numerics.isle", 2681⟩⟩,
-  ⟨1298, "u128_div", [5, 5], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u128_div")) none), ⟨"<OUT_DIR>/numerics.isle", 2687⟩⟩,
-  ⟨1299, "u128_checked_rem", [5, 5], 5, (.decl ⟨true, false, true, false⟩ (some (.external "u128_checked_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 2693⟩⟩,
-  ⟨1300, "u128_rem", [5, 5], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u128_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 2699⟩⟩,
-  ⟨1301, "u128_and", [5, 5], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u128_and")) none), ⟨"<OUT_DIR>/numerics.isle", 2705⟩⟩,
-  ⟨1302, "u128_or", [5, 5], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u128_or")) none), ⟨"<OUT_DIR>/numerics.isle", 2711⟩⟩,
-  ⟨1303, "u128_xor", [5, 5], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u128_xor")) none), ⟨"<OUT_DIR>/numerics.isle", 2717⟩⟩,
-  ⟨1304, "u128_not", [5], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u128_not")) none), ⟨"<OUT_DIR>/numerics.isle", 2723⟩⟩,
-  ⟨1305, "u128_checked_shl", [5, 3], 5, (.decl ⟨true, false, true, false⟩ (some (.external "u128_checked_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 2728⟩⟩,
-  ⟨1306, "u128_wrapping_shl", [5, 3], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u128_wrapping_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 2734⟩⟩,
-  ⟨1307, "u128_shl", [5, 3], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u128_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 2740⟩⟩,
-  ⟨1308, "u128_checked_shr", [5, 3], 5, (.decl ⟨true, false, true, false⟩ (some (.external "u128_checked_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 2746⟩⟩,
-  ⟨1309, "u128_wrapping_shr", [5, 3], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u128_wrapping_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 2752⟩⟩,
-  ⟨1310, "u128_shr", [5, 3], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u128_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 2758⟩⟩,
-  ⟨1311, "u128_rotl", [5, 3], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u128_rotl")) none), ⟨"<OUT_DIR>/numerics.isle", 2764⟩⟩,
-  ⟨1312, "u128_rotr", [5, 3], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u128_rotr")) none), ⟨"<OUT_DIR>/numerics.isle", 2770⟩⟩,
-  ⟨1313, "u128_is_zero", [5], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u128_is_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 2776⟩⟩,
-  ⟨1314, "u128_matches_zero", [0], 5, (.decl ⟨true, false, false, false⟩ none (some (.external "u128_matches_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 2780⟩⟩,
-  ⟨1315, "u128_extract_zero", [5], 5, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u128_extract_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u128_matches_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 2782⟩⟩,
-  ⟨1316, "u128_when_zero", [], 5, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u128_when_zero")]), (.list [(.atom "u128_matches_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 2784⟩⟩,
-  ⟨1317, "u128_when_not_zero", [], 5, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u128_when_not_zero")]), (.list [(.atom "u128_matches_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 2786⟩⟩,
-  ⟨1318, "u128_is_non_zero", [5], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u128_is_non_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 2789⟩⟩,
-  ⟨1319, "u128_matches_non_zero", [0], 5, (.decl ⟨true, false, false, false⟩ none (some (.external "u128_matches_non_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 2793⟩⟩,
-  ⟨1320, "u128_extract_non_zero", [5], 5, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u128_extract_non_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u128_matches_non_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 2795⟩⟩,
-  ⟨1321, "u128_when_non_zero", [], 5, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u128_when_non_zero")]), (.list [(.atom "u128_matches_non_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 2797⟩⟩,
-  ⟨1322, "u128_when_not_non_zero", [], 5, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u128_when_not_non_zero")]), (.list [(.atom "u128_matches_non_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 2799⟩⟩,
-  ⟨1323, "u128_is_odd", [5], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u128_is_odd")) none), ⟨"<OUT_DIR>/numerics.isle", 2802⟩⟩,
-  ⟨1324, "u128_matches_odd", [0], 5, (.decl ⟨true, false, false, false⟩ none (some (.external "u128_matches_odd" false))), ⟨"<OUT_DIR>/numerics.isle", 2806⟩⟩,
-  ⟨1325, "u128_extract_odd", [5], 5, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u128_extract_odd"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u128_matches_odd"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 2808⟩⟩,
-  ⟨1326, "u128_when_odd", [], 5, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u128_when_odd")]), (.list [(.atom "u128_matches_odd"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 2810⟩⟩,
-  ⟨1327, "u128_when_not_odd", [], 5, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u128_when_not_odd")]), (.list [(.atom "u128_matches_odd"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 2812⟩⟩,
-  ⟨1328, "u128_is_even", [5], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u128_is_even")) none), ⟨"<OUT_DIR>/numerics.isle", 2815⟩⟩,
-  ⟨1329, "u128_matches_even", [0], 5, (.decl ⟨true, false, false, false⟩ none (some (.external "u128_matches_even" false))), ⟨"<OUT_DIR>/numerics.isle", 2819⟩⟩,
-  ⟨1330, "u128_extract_even", [5], 5, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u128_extract_even"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u128_matches_even"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 2821⟩⟩,
-  ⟨1331, "u128_when_even", [], 5, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u128_when_even")]), (.list [(.atom "u128_matches_even"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 2823⟩⟩,
-  ⟨1332, "u128_when_not_even", [], 5, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u128_when_not_even")]), (.list [(.atom "u128_matches_even"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 2825⟩⟩,
-  ⟨1333, "u128_checked_ilog2", [5], 3, (.decl ⟨true, false, true, false⟩ (some (.external "u128_checked_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 2828⟩⟩,
-  ⟨1334, "u128_ilog2", [5], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u128_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 2833⟩⟩,
-  ⟨1335, "u128_trailing_zeros", [5], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u128_trailing_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 2838⟩⟩,
-  ⟨1336, "u128_trailing_ones", [5], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u128_trailing_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 2843⟩⟩,
-  ⟨1337, "u128_leading_zeros", [5], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u128_leading_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 2848⟩⟩,
-  ⟨1338, "u128_leading_ones", [5], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u128_leading_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 2853⟩⟩,
-  ⟨1339, "u128_is_power_of_two", [5], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u128_is_power_of_two")) none), ⟨"<OUT_DIR>/numerics.isle", 2858⟩⟩,
-  ⟨1340, "u128_matches_power_of_two", [0], 5, (.decl ⟨true, false, false, false⟩ none (some (.external "u128_matches_power_of_two" false))), ⟨"<OUT_DIR>/numerics.isle", 2862⟩⟩,
-  ⟨1341, "u128_extract_power_of_two", [5], 5, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u128_extract_power_of_two"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u128_matches_power_of_two"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 2864⟩⟩,
-  ⟨1342, "u128_when_power_of_two", [], 5, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u128_when_power_of_two")]), (.list [(.atom "u128_matches_power_of_two"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 2866⟩⟩,
-  ⟨1343, "u128_when_not_power_of_two", [], 5, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u128_when_not_power_of_two")]), (.list [(.atom "u128_matches_power_of_two"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 2868⟩⟩,
-  ⟨1344, "i8_try_into_u8", [7], 1, (.decl ⟨true, false, true, false⟩ (some (.external "i8_try_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 2871⟩⟩,
-  ⟨1345, "i8_unwrap_into_u8", [7], 1, (.decl ⟨true, false, false, false⟩ (some (.external "i8_unwrap_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 2873⟩⟩,
-  ⟨1346, "i8_cast_unsigned", [7], 1, (.decl ⟨true, false, false, false⟩ (some (.external "i8_cast_unsigned")) none), ⟨"<OUT_DIR>/numerics.isle", 2875⟩⟩,
-  ⟨1347, "u8_from_i8", [1], 7, (.decl ⟨true, false, false, false⟩ none (some (.external "i8_from_u8" false))), ⟨"<OUT_DIR>/numerics.isle", 2877⟩⟩,
-  ⟨1348, "i8_into_i16", [7], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i8_into_i16")) none), ⟨"<OUT_DIR>/numerics.isle", 2880⟩⟩,
-  ⟨1349, "i16_from_i8", [8], 7, (.decl ⟨true, false, false, false⟩ none (some (.external "i8_from_i16" false))), ⟨"<OUT_DIR>/numerics.isle", 2883⟩⟩,
-  ⟨1350, "i8_try_into_u16", [7], 2, (.decl ⟨true, false, true, false⟩ (some (.external "i8_try_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 2886⟩⟩,
-  ⟨1351, "i8_unwrap_into_u16", [7], 2, (.decl ⟨true, false, false, false⟩ (some (.external "i8_unwrap_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 2888⟩⟩,
-  ⟨1352, "u16_from_i8", [2], 7, (.decl ⟨true, false, false, false⟩ none (some (.external "i8_from_u16" false))), ⟨"<OUT_DIR>/numerics.isle", 2890⟩⟩,
-  ⟨1353, "i8_into_i32", [7], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i8_into_i32")) none), ⟨"<OUT_DIR>/numerics.isle", 2893⟩⟩,
-  ⟨1354, "i32_from_i8", [9], 7, (.decl ⟨true, false, false, false⟩ none (some (.external "i8_from_i32" false))), ⟨"<OUT_DIR>/numerics.isle", 2896⟩⟩,
-  ⟨1355, "i8_try_into_u32", [7], 3, (.decl ⟨true, false, true, false⟩ (some (.external "i8_try_into_u32")) none), ⟨"<OUT_DIR>/numerics.isle", 2899⟩⟩,
-  ⟨1356, "i8_unwrap_into_u32", [7], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i8_unwrap_into_u32")) none), ⟨"<OUT_DIR>/numerics.isle", 2901⟩⟩,
-  ⟨1357, "u32_from_i8", [3], 7, (.decl ⟨true, false, false, false⟩ none (some (.external "i8_from_u32" false))), ⟨"<OUT_DIR>/numerics.isle", 2903⟩⟩,
-  ⟨1358, "i8_into_i64", [7], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i8_into_i64")) none), ⟨"<OUT_DIR>/numerics.isle", 2906⟩⟩,
-  ⟨1359, "i64_from_i8", [10], 7, (.decl ⟨true, false, false, false⟩ none (some (.external "i8_from_i64" false))), ⟨"<OUT_DIR>/numerics.isle", 2909⟩⟩,
-  ⟨1360, "i8_try_into_u64", [7], 4, (.decl ⟨true, false, true, false⟩ (some (.external "i8_try_into_u64")) none), ⟨"<OUT_DIR>/numerics.isle", 2912⟩⟩,
-  ⟨1361, "i8_unwrap_into_u64", [7], 4, (.decl ⟨true, false, false, false⟩ (some (.external "i8_unwrap_into_u64")) none), ⟨"<OUT_DIR>/numerics.isle", 2914⟩⟩,
-  ⟨1362, "u64_from_i8", [4], 7, (.decl ⟨true, false, false, false⟩ none (some (.external "i8_from_u64" false))), ⟨"<OUT_DIR>/numerics.isle", 2916⟩⟩,
-  ⟨1363, "i8_into_i128", [7], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i8_into_i128")) none), ⟨"<OUT_DIR>/numerics.isle", 2919⟩⟩,
-  ⟨1364, "i128_from_i8", [11], 7, (.decl ⟨true, false, false, false⟩ none (some (.external "i8_from_i128" false))), ⟨"<OUT_DIR>/numerics.isle", 2922⟩⟩,
-  ⟨1365, "i8_try_into_u128", [7], 5, (.decl ⟨true, false, true, false⟩ (some (.external "i8_try_into_u128")) none), ⟨"<OUT_DIR>/numerics.isle", 2925⟩⟩,
-  ⟨1366, "i8_unwrap_into_u128", [7], 5, (.decl ⟨true, false, false, false⟩ (some (.external "i8_unwrap_into_u128")) none), ⟨"<OUT_DIR>/numerics.isle", 2927⟩⟩,
-  ⟨1367, "u128_from_i8", [5], 7, (.decl ⟨true, false, false, false⟩ none (some (.external "i8_from_u128" false))), ⟨"<OUT_DIR>/numerics.isle", 2929⟩⟩,
-  ⟨1368, "u8_try_into_i8", [1], 7, (.decl ⟨true, false, true, false⟩ (some (.external "u8_try_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 2932⟩⟩,
-  ⟨1369, "u8_unwrap_into_i8", [1], 7, (.decl ⟨true, false, false, false⟩ (some (.external "u8_unwrap_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 2934⟩⟩,
-  ⟨1370, "u8_cast_signed", [1], 7, (.decl ⟨true, false, false, false⟩ (some (.external "u8_cast_signed")) none), ⟨"<OUT_DIR>/numerics.isle", 2936⟩⟩,
-  ⟨1371, "i8_from_u8", [7], 1, (.decl ⟨true, false, false, false⟩ none (some (.external "u8_from_i8" false))), ⟨"<OUT_DIR>/numerics.isle", 2938⟩⟩,
-  ⟨1372, "u8_into_i16", [1], 8, (.decl ⟨true, false, false, false⟩ (some (.external "u8_into_i16")) none), ⟨"<OUT_DIR>/numerics.isle", 2941⟩⟩,
-  ⟨1373, "i16_from_u8", [8], 1, (.decl ⟨true, false, false, false⟩ none (some (.external "u8_from_i16" false))), ⟨"<OUT_DIR>/numerics.isle", 2944⟩⟩,
-  ⟨1374, "u8_into_u16", [1], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u8_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 2947⟩⟩,
-  ⟨1375, "u16_from_u8", [2], 1, (.decl ⟨true, false, false, false⟩ none (some (.external "u8_from_u16" false))), ⟨"<OUT_DIR>/numerics.isle", 2950⟩⟩,
-  ⟨1376, "u8_into_i32", [1], 9, (.decl ⟨true, false, false, false⟩ (some (.external "u8_into_i32")) none), ⟨"<OUT_DIR>/numerics.isle", 2953⟩⟩,
-  ⟨1377, "i32_from_u8", [9], 1, (.decl ⟨true, false, false, false⟩ none (some (.external "u8_from_i32" false))), ⟨"<OUT_DIR>/numerics.isle", 2956⟩⟩,
-  ⟨1378, "u8_into_u32", [1], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u8_into_u32")) none), ⟨"<OUT_DIR>/numerics.isle", 2959⟩⟩,
-  ⟨1379, "u32_from_u8", [3], 1, (.decl ⟨true, false, false, false⟩ none (some (.external "u8_from_u32" false))), ⟨"<OUT_DIR>/numerics.isle", 2962⟩⟩,
-  ⟨1380, "u8_into_i64", [1], 10, (.decl ⟨true, false, false, false⟩ (some (.external "u8_into_i64")) none), ⟨"<OUT_DIR>/numerics.isle", 2965⟩⟩,
-  ⟨1381, "i64_from_u8", [10], 1, (.decl ⟨true, false, false, false⟩ none (some (.external "u8_from_i64" false))), ⟨"<OUT_DIR>/numerics.isle", 2968⟩⟩,
-  ⟨1382, "u8_into_u64", [1], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u8_into_u64")) none), ⟨"<OUT_DIR>/numerics.isle", 2971⟩⟩,
-  ⟨1383, "u64_from_u8", [4], 1, (.decl ⟨true, false, false, false⟩ none (some (.external "u8_from_u64" false))), ⟨"<OUT_DIR>/numerics.isle", 2974⟩⟩,
-  ⟨1384, "u8_into_i128", [1], 11, (.decl ⟨true, false, false, false⟩ (some (.external "u8_into_i128")) none), ⟨"<OUT_DIR>/numerics.isle", 2977⟩⟩,
-  ⟨1385, "i128_from_u8", [11], 1, (.decl ⟨true, false, false, false⟩ none (some (.external "u8_from_i128" false))), ⟨"<OUT_DIR>/numerics.isle", 2980⟩⟩,
-  ⟨1386, "u8_into_u128", [1], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u8_into_u128")) none), ⟨"<OUT_DIR>/numerics.isle", 2983⟩⟩,
-  ⟨1387, "u128_from_u8", [5], 1, (.decl ⟨true, false, false, false⟩ none (some (.external "u8_from_u128" false))), ⟨"<OUT_DIR>/numerics.isle", 2986⟩⟩,
-  ⟨1388, "i16_try_into_i8", [8], 7, (.decl ⟨true, false, true, false⟩ (some (.external "i16_try_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 2989⟩⟩,
-  ⟨1389, "i16_unwrap_into_i8", [8], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i16_unwrap_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 2991⟩⟩,
-  ⟨1390, "i16_truncate_into_i8", [8], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i16_truncate_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 2993⟩⟩,
-  ⟨1391, "i8_from_i16", [7], 8, (.decl ⟨true, false, false, false⟩ none (some (.external "i16_from_i8" false))), ⟨"<OUT_DIR>/numerics.isle", 2995⟩⟩,
-  ⟨1392, "i16_try_into_u8", [8], 1, (.decl ⟨true, false, true, false⟩ (some (.external "i16_try_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 2998⟩⟩,
-  ⟨1393, "i16_unwrap_into_u8", [8], 1, (.decl ⟨true, false, false, false⟩ (some (.external "i16_unwrap_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 3000⟩⟩,
-  ⟨1394, "u8_from_i16", [1], 8, (.decl ⟨true, false, false, false⟩ none (some (.external "i16_from_u8" false))), ⟨"<OUT_DIR>/numerics.isle", 3002⟩⟩,
-  ⟨1395, "i16_try_into_u16", [8], 2, (.decl ⟨true, false, true, false⟩ (some (.external "i16_try_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 3005⟩⟩,
-  ⟨1396, "i16_unwrap_into_u16", [8], 2, (.decl ⟨true, false, false, false⟩ (some (.external "i16_unwrap_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 3007⟩⟩,
-  ⟨1397, "i16_cast_unsigned", [8], 2, (.decl ⟨true, false, false, false⟩ (some (.external "i16_cast_unsigned")) none), ⟨"<OUT_DIR>/numerics.isle", 3009⟩⟩,
-  ⟨1398, "u16_from_i16", [2], 8, (.decl ⟨true, false, false, false⟩ none (some (.external "i16_from_u16" false))), ⟨"<OUT_DIR>/numerics.isle", 3011⟩⟩,
-  ⟨1399, "i16_into_i32", [8], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i16_into_i32")) none), ⟨"<OUT_DIR>/numerics.isle", 3014⟩⟩,
-  ⟨1400, "i32_from_i16", [9], 8, (.decl ⟨true, false, false, false⟩ none (some (.external "i16_from_i32" false))), ⟨"<OUT_DIR>/numerics.isle", 3017⟩⟩,
-  ⟨1401, "i16_try_into_u32", [8], 3, (.decl ⟨true, false, true, false⟩ (some (.external "i16_try_into_u32")) none), ⟨"<OUT_DIR>/numerics.isle", 3020⟩⟩,
-  ⟨1402, "i16_unwrap_into_u32", [8], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i16_unwrap_into_u32")) none), ⟨"<OUT_DIR>/numerics.isle", 3022⟩⟩,
-  ⟨1403, "u32_from_i16", [3], 8, (.decl ⟨true, false, false, false⟩ none (some (.external "i16_from_u32" false))), ⟨"<OUT_DIR>/numerics.isle", 3024⟩⟩,
-  ⟨1404, "i16_into_i64", [8], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i16_into_i64")) none), ⟨"<OUT_DIR>/numerics.isle", 3027⟩⟩,
-  ⟨1405, "i64_from_i16", [10], 8, (.decl ⟨true, false, false, false⟩ none (some (.external "i16_from_i64" false))), ⟨"<OUT_DIR>/numerics.isle", 3030⟩⟩,
-  ⟨1406, "i16_try_into_u64", [8], 4, (.decl ⟨true, false, true, false⟩ (some (.external "i16_try_into_u64")) none), ⟨"<OUT_DIR>/numerics.isle", 3033⟩⟩,
-  ⟨1407, "i16_unwrap_into_u64", [8], 4, (.decl ⟨true, false, false, false⟩ (some (.external "i16_unwrap_into_u64")) none), ⟨"<OUT_DIR>/numerics.isle", 3035⟩⟩,
-  ⟨1408, "u64_from_i16", [4], 8, (.decl ⟨true, false, false, false⟩ none (some (.external "i16_from_u64" false))), ⟨"<OUT_DIR>/numerics.isle", 3037⟩⟩,
-  ⟨1409, "i16_into_i128", [8], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i16_into_i128")) none), ⟨"<OUT_DIR>/numerics.isle", 3040⟩⟩,
-  ⟨1410, "i128_from_i16", [11], 8, (.decl ⟨true, false, false, false⟩ none (some (.external "i16_from_i128" false))), ⟨"<OUT_DIR>/numerics.isle", 3043⟩⟩,
-  ⟨1411, "i16_try_into_u128", [8], 5, (.decl ⟨true, false, true, false⟩ (some (.external "i16_try_into_u128")) none), ⟨"<OUT_DIR>/numerics.isle", 3046⟩⟩,
-  ⟨1412, "i16_unwrap_into_u128", [8], 5, (.decl ⟨true, false, false, false⟩ (some (.external "i16_unwrap_into_u128")) none), ⟨"<OUT_DIR>/numerics.isle", 3048⟩⟩,
-  ⟨1413, "u128_from_i16", [5], 8, (.decl ⟨true, false, false, false⟩ none (some (.external "i16_from_u128" false))), ⟨"<OUT_DIR>/numerics.isle", 3050⟩⟩,
-  ⟨1414, "u16_try_into_i8", [2], 7, (.decl ⟨true, false, true, false⟩ (some (.external "u16_try_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 3053⟩⟩,
-  ⟨1415, "u16_unwrap_into_i8", [2], 7, (.decl ⟨true, false, false, false⟩ (some (.external "u16_unwrap_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 3055⟩⟩,
-  ⟨1416, "i8_from_u16", [7], 2, (.decl ⟨true, false, false, false⟩ none (some (.external "u16_from_i8" false))), ⟨"<OUT_DIR>/numerics.isle", 3057⟩⟩,
-  ⟨1417, "u16_try_into_u8", [2], 1, (.decl ⟨true, false, true, false⟩ (some (.external "u16_try_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 3060⟩⟩,
-  ⟨1418, "u16_unwrap_into_u8", [2], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u16_unwrap_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 3062⟩⟩,
-  ⟨1419, "u16_truncate_into_u8", [2], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u16_truncate_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 3064⟩⟩,
-  ⟨1420, "u8_from_u16", [1], 2, (.decl ⟨true, false, false, false⟩ none (some (.external "u16_from_u8" false))), ⟨"<OUT_DIR>/numerics.isle", 3066⟩⟩,
-  ⟨1421, "u16_try_into_i16", [2], 8, (.decl ⟨true, false, true, false⟩ (some (.external "u16_try_into_i16")) none), ⟨"<OUT_DIR>/numerics.isle", 3069⟩⟩,
-  ⟨1422, "u16_unwrap_into_i16", [2], 8, (.decl ⟨true, false, false, false⟩ (some (.external "u16_unwrap_into_i16")) none), ⟨"<OUT_DIR>/numerics.isle", 3071⟩⟩,
-  ⟨1423, "u16_cast_signed", [2], 8, (.decl ⟨true, false, false, false⟩ (some (.external "u16_cast_signed")) none), ⟨"<OUT_DIR>/numerics.isle", 3073⟩⟩,
-  ⟨1424, "i16_from_u16", [8], 2, (.decl ⟨true, false, false, false⟩ none (some (.external "u16_from_i16" false))), ⟨"<OUT_DIR>/numerics.isle", 3075⟩⟩,
-  ⟨1425, "u16_into_i32", [2], 9, (.decl ⟨true, false, false, false⟩ (some (.external "u16_into_i32")) none), ⟨"<OUT_DIR>/numerics.isle", 3078⟩⟩,
-  ⟨1426, "i32_from_u16", [9], 2, (.decl ⟨true, false, false, false⟩ none (some (.external "u16_from_i32" false))), ⟨"<OUT_DIR>/numerics.isle", 3081⟩⟩,
-  ⟨1427, "u16_into_u32", [2], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u16_into_u32")) none), ⟨"<OUT_DIR>/numerics.isle", 3084⟩⟩,
-  ⟨1428, "u32_from_u16", [3], 2, (.decl ⟨true, false, false, false⟩ none (some (.external "u16_from_u32" false))), ⟨"<OUT_DIR>/numerics.isle", 3087⟩⟩,
-  ⟨1429, "u16_into_i64", [2], 10, (.decl ⟨true, false, false, false⟩ (some (.external "u16_into_i64")) none), ⟨"<OUT_DIR>/numerics.isle", 3090⟩⟩,
-  ⟨1430, "i64_from_u16", [10], 2, (.decl ⟨true, false, false, false⟩ none (some (.external "u16_from_i64" false))), ⟨"<OUT_DIR>/numerics.isle", 3093⟩⟩,
-  ⟨1431, "u16_into_u64", [2], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u16_into_u64")) none), ⟨"<OUT_DIR>/numerics.isle", 3096⟩⟩,
-  ⟨1432, "u64_from_u16", [4], 2, (.decl ⟨true, false, false, false⟩ none (some (.external "u16_from_u64" false))), ⟨"<OUT_DIR>/numerics.isle", 3099⟩⟩,
-  ⟨1433, "u16_into_i128", [2], 11, (.decl ⟨true, false, false, false⟩ (some (.external "u16_into_i128")) none), ⟨"<OUT_DIR>/numerics.isle", 3102⟩⟩,
-  ⟨1434, "i128_from_u16", [11], 2, (.decl ⟨true, false, false, false⟩ none (some (.external "u16_from_i128" false))), ⟨"<OUT_DIR>/numerics.isle", 3105⟩⟩,
-  ⟨1435, "u16_into_u128", [2], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u16_into_u128")) none), ⟨"<OUT_DIR>/numerics.isle", 3108⟩⟩,
-  ⟨1436, "u128_from_u16", [5], 2, (.decl ⟨true, false, false, false⟩ none (some (.external "u16_from_u128" false))), ⟨"<OUT_DIR>/numerics.isle", 3111⟩⟩,
-  ⟨1437, "i32_try_into_i8", [9], 7, (.decl ⟨true, false, true, false⟩ (some (.external "i32_try_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 3114⟩⟩,
-  ⟨1438, "i32_unwrap_into_i8", [9], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i32_unwrap_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 3116⟩⟩,
-  ⟨1439, "i32_truncate_into_i8", [9], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i32_truncate_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 3118⟩⟩,
-  ⟨1440, "i8_from_i32", [7], 9, (.decl ⟨true, false, false, false⟩ none (some (.external "i32_from_i8" false))), ⟨"<OUT_DIR>/numerics.isle", 3120⟩⟩,
-  ⟨1441, "i32_try_into_u8", [9], 1, (.decl ⟨true, false, true, false⟩ (some (.external "i32_try_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 3123⟩⟩,
-  ⟨1442, "i32_unwrap_into_u8", [9], 1, (.decl ⟨true, false, false, false⟩ (some (.external "i32_unwrap_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 3125⟩⟩,
-  ⟨1443, "u8_from_i32", [1], 9, (.decl ⟨true, false, false, false⟩ none (some (.external "i32_from_u8" false))), ⟨"<OUT_DIR>/numerics.isle", 3127⟩⟩,
-  ⟨1444, "i32_try_into_i16", [9], 8, (.decl ⟨true, false, true, false⟩ (some (.external "i32_try_into_i16")) none), ⟨"<OUT_DIR>/numerics.isle", 3130⟩⟩,
-  ⟨1445, "i32_unwrap_into_i16", [9], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i32_unwrap_into_i16")) none), ⟨"<OUT_DIR>/numerics.isle", 3132⟩⟩,
-  ⟨1446, "i32_truncate_into_i16", [9], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i32_truncate_into_i16")) none), ⟨"<OUT_DIR>/numerics.isle", 3134⟩⟩,
-  ⟨1447, "i16_from_i32", [8], 9, (.decl ⟨true, false, false, false⟩ none (some (.external "i32_from_i16" false))), ⟨"<OUT_DIR>/numerics.isle", 3136⟩⟩,
-  ⟨1448, "i32_try_into_u16", [9], 2, (.decl ⟨true, false, true, false⟩ (some (.external "i32_try_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 3139⟩⟩,
-  ⟨1449, "i32_unwrap_into_u16", [9], 2, (.decl ⟨true, false, false, false⟩ (some (.external "i32_unwrap_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 3141⟩⟩,
-  ⟨1450, "u16_from_i32", [2], 9, (.decl ⟨true, false, false, false⟩ none (some (.external "i32_from_u16" false))), ⟨"<OUT_DIR>/numerics.isle", 3143⟩⟩,
-  ⟨1451, "i32_try_into_u32", [9], 3, (.decl ⟨true, false, true, false⟩ (some (.external "i32_try_into_u32")) none), ⟨"<OUT_DIR>/numerics.isle", 3146⟩⟩,
-  ⟨1452, "i32_unwrap_into_u32", [9], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i32_unwrap_into_u32")) none), ⟨"<OUT_DIR>/numerics.isle", 3148⟩⟩,
-  ⟨1453, "i32_cast_unsigned", [9], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i32_cast_unsigned")) none), ⟨"<OUT_DIR>/numerics.isle", 3150⟩⟩,
-  ⟨1454, "u32_from_i32", [3], 9, (.decl ⟨true, false, false, false⟩ none (some (.external "i32_from_u32" false))), ⟨"<OUT_DIR>/numerics.isle", 3152⟩⟩,
-  ⟨1455, "i32_into_i64", [9], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i32_into_i64")) none), ⟨"<OUT_DIR>/numerics.isle", 3155⟩⟩,
-  ⟨1456, "i64_from_i32", [10], 9, (.decl ⟨true, false, false, false⟩ none (some (.external "i32_from_i64" false))), ⟨"<OUT_DIR>/numerics.isle", 3158⟩⟩,
-  ⟨1457, "i32_try_into_u64", [9], 4, (.decl ⟨true, false, true, false⟩ (some (.external "i32_try_into_u64")) none), ⟨"<OUT_DIR>/numerics.isle", 3161⟩⟩,
-  ⟨1458, "i32_unwrap_into_u64", [9], 4, (.decl ⟨true, false, false, false⟩ (some (.external "i32_unwrap_into_u64")) none), ⟨"<OUT_DIR>/numerics.isle", 3163⟩⟩,
-  ⟨1459, "u64_from_i32", [4], 9, (.decl ⟨true, false, false, false⟩ none (some (.external "i32_from_u64" false))), ⟨"<OUT_DIR>/numerics.isle", 3165⟩⟩,
-  ⟨1460, "i32_into_i128", [9], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i32_into_i128")) none), ⟨"<OUT_DIR>/numerics.isle", 3168⟩⟩,
-  ⟨1461, "i128_from_i32", [11], 9, (.decl ⟨true, false, false, false⟩ none (some (.external "i32_from_i128" false))), ⟨"<OUT_DIR>/numerics.isle", 3171⟩⟩,
-  ⟨1462, "i32_try_into_u128", [9], 5, (.decl ⟨true, false, true, false⟩ (some (.external "i32_try_into_u128")) none), ⟨"<OUT_DIR>/numerics.isle", 3174⟩⟩,
-  ⟨1463, "i32_unwrap_into_u128", [9], 5, (.decl ⟨true, false, false, false⟩ (some (.external "i32_unwrap_into_u128")) none), ⟨"<OUT_DIR>/numerics.isle", 3176⟩⟩,
-  ⟨1464, "u128_from_i32", [5], 9, (.decl ⟨true, false, false, false⟩ none (some (.external "i32_from_u128" false))), ⟨"<OUT_DIR>/numerics.isle", 3178⟩⟩,
-  ⟨1465, "u32_try_into_i8", [3], 7, (.decl ⟨true, false, true, false⟩ (some (.external "u32_try_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 3181⟩⟩,
-  ⟨1466, "u32_unwrap_into_i8", [3], 7, (.decl ⟨true, false, false, false⟩ (some (.external "u32_unwrap_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 3183⟩⟩,
-  ⟨1467, "i8_from_u32", [7], 3, (.decl ⟨true, false, false, false⟩ none (some (.external "u32_from_i8" false))), ⟨"<OUT_DIR>/numerics.isle", 3185⟩⟩,
-  ⟨1468, "u32_try_into_u8", [3], 1, (.decl ⟨true, false, true, false⟩ (some (.external "u32_try_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 3188⟩⟩,
-  ⟨1469, "u32_unwrap_into_u8", [3], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u32_unwrap_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 3190⟩⟩,
-  ⟨1470, "u32_truncate_into_u8", [3], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u32_truncate_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 3192⟩⟩,
-  ⟨1471, "u8_from_u32", [1], 3, (.decl ⟨true, false, false, false⟩ none (some (.external "u32_from_u8" false))), ⟨"<OUT_DIR>/numerics.isle", 3194⟩⟩,
-  ⟨1472, "u32_try_into_i16", [3], 8, (.decl ⟨true, false, true, false⟩ (some (.external "u32_try_into_i16")) none), ⟨"<OUT_DIR>/numerics.isle", 3197⟩⟩,
-  ⟨1473, "u32_unwrap_into_i16", [3], 8, (.decl ⟨true, false, false, false⟩ (some (.external "u32_unwrap_into_i16")) none), ⟨"<OUT_DIR>/numerics.isle", 3199⟩⟩,
-  ⟨1474, "i16_from_u32", [8], 3, (.decl ⟨true, false, false, false⟩ none (some (.external "u32_from_i16" false))), ⟨"<OUT_DIR>/numerics.isle", 3201⟩⟩,
-  ⟨1475, "u32_try_into_u16", [3], 2, (.decl ⟨true, false, true, false⟩ (some (.external "u32_try_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 3204⟩⟩,
-  ⟨1476, "u32_unwrap_into_u16", [3], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u32_unwrap_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 3206⟩⟩,
-  ⟨1477, "u32_truncate_into_u16", [3], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u32_truncate_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 3208⟩⟩,
-  ⟨1478, "u16_from_u32", [2], 3, (.decl ⟨true, false, false, false⟩ none (some (.external "u32_from_u16" false))), ⟨"<OUT_DIR>/numerics.isle", 3210⟩⟩,
-  ⟨1479, "u32_try_into_i32", [3], 9, (.decl ⟨true, false, true, false⟩ (some (.external "u32_try_into_i32")) none), ⟨"<OUT_DIR>/numerics.isle", 3213⟩⟩,
-  ⟨1480, "u32_unwrap_into_i32", [3], 9, (.decl ⟨true, false, false, false⟩ (some (.external "u32_unwrap_into_i32")) none), ⟨"<OUT_DIR>/numerics.isle", 3215⟩⟩,
-  ⟨1481, "u32_cast_signed", [3], 9, (.decl ⟨true, false, false, false⟩ (some (.external "u32_cast_signed")) none), ⟨"<OUT_DIR>/numerics.isle", 3217⟩⟩,
-  ⟨1482, "i32_from_u32", [9], 3, (.decl ⟨true, false, false, false⟩ none (some (.external "u32_from_i32" false))), ⟨"<OUT_DIR>/numerics.isle", 3219⟩⟩,
-  ⟨1483, "u32_into_i64", [3], 10, (.decl ⟨true, false, false, false⟩ (some (.external "u32_into_i64")) none), ⟨"<OUT_DIR>/numerics.isle", 3222⟩⟩,
-  ⟨1484, "i64_from_u32", [10], 3, (.decl ⟨true, false, false, false⟩ none (some (.external "u32_from_i64" false))), ⟨"<OUT_DIR>/numerics.isle", 3225⟩⟩,
-  ⟨1485, "u32_into_u64", [3], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u32_into_u64")) none), ⟨"<OUT_DIR>/numerics.isle", 3228⟩⟩,
-  ⟨1486, "u64_from_u32", [4], 3, (.decl ⟨true, false, false, false⟩ none (some (.external "u32_from_u64" false))), ⟨"<OUT_DIR>/numerics.isle", 3231⟩⟩,
-  ⟨1487, "u32_into_i128", [3], 11, (.decl ⟨true, false, false, false⟩ (some (.external "u32_into_i128")) none), ⟨"<OUT_DIR>/numerics.isle", 3234⟩⟩,
-  ⟨1488, "i128_from_u32", [11], 3, (.decl ⟨true, false, false, false⟩ none (some (.external "u32_from_i128" false))), ⟨"<OUT_DIR>/numerics.isle", 3237⟩⟩,
-  ⟨1489, "u32_into_u128", [3], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u32_into_u128")) none), ⟨"<OUT_DIR>/numerics.isle", 3240⟩⟩,
-  ⟨1490, "u128_from_u32", [5], 3, (.decl ⟨true, false, false, false⟩ none (some (.external "u32_from_u128" false))), ⟨"<OUT_DIR>/numerics.isle", 3243⟩⟩,
-  ⟨1491, "i64_try_into_i8", [10], 7, (.decl ⟨true, false, true, false⟩ (some (.external "i64_try_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 3246⟩⟩,
-  ⟨1492, "i64_unwrap_into_i8", [10], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i64_unwrap_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 3248⟩⟩,
-  ⟨1493, "i64_truncate_into_i8", [10], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i64_truncate_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 3250⟩⟩,
-  ⟨1494, "i8_from_i64", [7], 10, (.decl ⟨true, false, false, false⟩ none (some (.external "i64_from_i8" false))), ⟨"<OUT_DIR>/numerics.isle", 3252⟩⟩,
-  ⟨1495, "i64_try_into_u8", [10], 1, (.decl ⟨true, false, true, false⟩ (some (.external "i64_try_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 3255⟩⟩,
-  ⟨1496, "i64_unwrap_into_u8", [10], 1, (.decl ⟨true, false, false, false⟩ (some (.external "i64_unwrap_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 3257⟩⟩,
-  ⟨1497, "u8_from_i64", [1], 10, (.decl ⟨true, false, false, false⟩ none (some (.external "i64_from_u8" false))), ⟨"<OUT_DIR>/numerics.isle", 3259⟩⟩,
-  ⟨1498, "i64_try_into_i16", [10], 8, (.decl ⟨true, false, true, false⟩ (some (.external "i64_try_into_i16")) none), ⟨"<OUT_DIR>/numerics.isle", 3262⟩⟩,
-  ⟨1499, "i64_unwrap_into_i16", [10], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i64_unwrap_into_i16")) none), ⟨"<OUT_DIR>/numerics.isle", 3264⟩⟩,
-  ⟨1500, "i64_truncate_into_i16", [10], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i64_truncate_into_i16")) none), ⟨"<OUT_DIR>/numerics.isle", 3266⟩⟩,
-  ⟨1501, "i16_from_i64", [8], 10, (.decl ⟨true, false, false, false⟩ none (some (.external "i64_from_i16" false))), ⟨"<OUT_DIR>/numerics.isle", 3268⟩⟩,
-  ⟨1502, "i64_try_into_u16", [10], 2, (.decl ⟨true, false, true, false⟩ (some (.external "i64_try_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 3271⟩⟩,
-  ⟨1503, "i64_unwrap_into_u16", [10], 2, (.decl ⟨true, false, false, false⟩ (some (.external "i64_unwrap_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 3273⟩⟩,
-  ⟨1504, "u16_from_i64", [2], 10, (.decl ⟨true, false, false, false⟩ none (some (.external "i64_from_u16" false))), ⟨"<OUT_DIR>/numerics.isle", 3275⟩⟩,
-  ⟨1505, "i64_try_into_i32", [10], 9, (.decl ⟨true, false, true, false⟩ (some (.external "i64_try_into_i32")) none), ⟨"<OUT_DIR>/numerics.isle", 3278⟩⟩,
-  ⟨1506, "i64_unwrap_into_i32", [10], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i64_unwrap_into_i32")) none), ⟨"<OUT_DIR>/numerics.isle", 3280⟩⟩,
-  ⟨1507, "i64_truncate_into_i32", [10], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i64_truncate_into_i32")) none), ⟨"<OUT_DIR>/numerics.isle", 3282⟩⟩,
-  ⟨1508, "i32_from_i64", [9], 10, (.decl ⟨true, false, false, false⟩ none (some (.external "i64_from_i32" false))), ⟨"<OUT_DIR>/numerics.isle", 3284⟩⟩,
-  ⟨1509, "i64_try_into_u32", [10], 3, (.decl ⟨true, false, true, false⟩ (some (.external "i64_try_into_u32")) none), ⟨"<OUT_DIR>/numerics.isle", 3287⟩⟩,
-  ⟨1510, "i64_unwrap_into_u32", [10], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i64_unwrap_into_u32")) none), ⟨"<OUT_DIR>/numerics.isle", 3289⟩⟩,
-  ⟨1511, "u32_from_i64", [3], 10, (.decl ⟨true, false, false, false⟩ none (some (.external "i64_from_u32" false))), ⟨"<OUT_DIR>/numerics.isle", 3291⟩⟩,
-  ⟨1512, "i64_try_into_u64", [10], 4, (.decl ⟨true, false, true, false⟩ (some (.external "i64_try_into_u64")) none), ⟨"<OUT_DIR>/numerics.isle", 3294⟩⟩,
-  ⟨1513, "i64_unwrap_into_u64", [10], 4, (.decl ⟨true, false, false, false⟩ (some (.external "i64_unwrap_into_u64")) none), ⟨"<OUT_DIR>/numerics.isle", 3296⟩⟩,
-  ⟨1514, "i64_cast_unsigned", [10], 4, (.decl ⟨true, false, false, false⟩ (some (.external "i64_cast_unsigned")) none), ⟨"<OUT_DIR>/numerics.isle", 3298⟩⟩,
-  ⟨1515, "u64_from_i64", [4], 10, (.decl ⟨true, false, false, false⟩ none (some (.external "i64_from_u64" false))), ⟨"<OUT_DIR>/numerics.isle", 3300⟩⟩,
-  ⟨1516, "i64_into_i128", [10], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i64_into_i128")) none), ⟨"<OUT_DIR>/numerics.isle", 3303⟩⟩,
-  ⟨1517, "i128_from_i64", [11], 10, (.decl ⟨true, false, false, false⟩ none (some (.external "i64_from_i128" false))), ⟨"<OUT_DIR>/numerics.isle", 3306⟩⟩,
-  ⟨1518, "i64_try_into_u128", [10], 5, (.decl ⟨true, false, true, false⟩ (some (.external "i64_try_into_u128")) none), ⟨"<OUT_DIR>/numerics.isle", 3309⟩⟩,
-  ⟨1519, "i64_unwrap_into_u128", [10], 5, (.decl ⟨true, false, false, false⟩ (some (.external "i64_unwrap_into_u128")) none), ⟨"<OUT_DIR>/numerics.isle", 3311⟩⟩,
-  ⟨1520, "u128_from_i64", [5], 10, (.decl ⟨true, false, false, false⟩ none (some (.external "i64_from_u128" false))), ⟨"<OUT_DIR>/numerics.isle", 3313⟩⟩,
-  ⟨1521, "u64_try_into_i8", [4], 7, (.decl ⟨true, false, true, false⟩ (some (.external "u64_try_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 3316⟩⟩,
-  ⟨1522, "u64_unwrap_into_i8", [4], 7, (.decl ⟨true, false, false, false⟩ (some (.external "u64_unwrap_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 3318⟩⟩,
-  ⟨1523, "i8_from_u64", [7], 4, (.decl ⟨true, false, false, false⟩ none (some (.external "u64_from_i8" false))), ⟨"<OUT_DIR>/numerics.isle", 3320⟩⟩,
-  ⟨1524, "u64_try_into_u8", [4], 1, (.decl ⟨true, false, true, false⟩ (some (.external "u64_try_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 3323⟩⟩,
-  ⟨1525, "u64_unwrap_into_u8", [4], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u64_unwrap_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 3325⟩⟩,
-  ⟨1526, "u64_truncate_into_u8", [4], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u64_truncate_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 3327⟩⟩,
-  ⟨1527, "u8_from_u64", [1], 4, (.decl ⟨true, false, false, false⟩ none (some (.external "u64_from_u8" false))), ⟨"<OUT_DIR>/numerics.isle", 3329⟩⟩,
-  ⟨1528, "u64_try_into_i16", [4], 8, (.decl ⟨true, false, true, false⟩ (some (.external "u64_try_into_i16")) none), ⟨"<OUT_DIR>/numerics.isle", 3332⟩⟩,
-  ⟨1529, "u64_unwrap_into_i16", [4], 8, (.decl ⟨true, false, false, false⟩ (some (.external "u64_unwrap_into_i16")) none), ⟨"<OUT_DIR>/numerics.isle", 3334⟩⟩,
-  ⟨1530, "i16_from_u64", [8], 4, (.decl ⟨true, false, false, false⟩ none (some (.external "u64_from_i16" false))), ⟨"<OUT_DIR>/numerics.isle", 3336⟩⟩,
-  ⟨1531, "u64_try_into_u16", [4], 2, (.decl ⟨true, false, true, false⟩ (some (.external "u64_try_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 3339⟩⟩,
-  ⟨1532, "u64_unwrap_into_u16", [4], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u64_unwrap_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 3341⟩⟩,
-  ⟨1533, "u64_truncate_into_u16", [4], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u64_truncate_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 3343⟩⟩,
-  ⟨1534, "u16_from_u64", [2], 4, (.decl ⟨true, false, false, false⟩ none (some (.external "u64_from_u16" false))), ⟨"<OUT_DIR>/numerics.isle", 3345⟩⟩,
-  ⟨1535, "u64_try_into_i32", [4], 9, (.decl ⟨true, false, true, false⟩ (some (.external "u64_try_into_i32")) none), ⟨"<OUT_DIR>/numerics.isle", 3348⟩⟩,
-  ⟨1536, "u64_unwrap_into_i32", [4], 9, (.decl ⟨true, false, false, false⟩ (some (.external "u64_unwrap_into_i32")) none), ⟨"<OUT_DIR>/numerics.isle", 3350⟩⟩,
-  ⟨1537, "i32_from_u64", [9], 4, (.decl ⟨true, false, false, false⟩ none (some (.external "u64_from_i32" false))), ⟨"<OUT_DIR>/numerics.isle", 3352⟩⟩,
-  ⟨1538, "u64_try_into_u32", [4], 3, (.decl ⟨true, false, true, false⟩ (some (.external "u64_try_into_u32")) none), ⟨"<OUT_DIR>/numerics.isle", 3355⟩⟩,
-  ⟨1539, "u64_unwrap_into_u32", [4], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u64_unwrap_into_u32")) none), ⟨"<OUT_DIR>/numerics.isle", 3357⟩⟩,
-  ⟨1540, "u64_truncate_into_u32", [4], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u64_truncate_into_u32")) none), ⟨"<OUT_DIR>/numerics.isle", 3359⟩⟩,
-  ⟨1541, "u32_from_u64", [3], 4, (.decl ⟨true, false, false, false⟩ none (some (.external "u64_from_u32" false))), ⟨"<OUT_DIR>/numerics.isle", 3361⟩⟩,
-  ⟨1542, "u64_try_into_i64", [4], 10, (.decl ⟨true, false, true, false⟩ (some (.external "u64_try_into_i64")) none), ⟨"<OUT_DIR>/numerics.isle", 3364⟩⟩,
-  ⟨1543, "u64_unwrap_into_i64", [4], 10, (.decl ⟨true, false, false, false⟩ (some (.external "u64_unwrap_into_i64")) none), ⟨"<OUT_DIR>/numerics.isle", 3366⟩⟩,
-  ⟨1544, "u64_cast_signed", [4], 10, (.decl ⟨true, false, false, false⟩ (some (.external "u64_cast_signed")) none), ⟨"<OUT_DIR>/numerics.isle", 3368⟩⟩,
-  ⟨1545, "i64_from_u64", [10], 4, (.decl ⟨true, false, false, false⟩ none (some (.external "u64_from_i64" false))), ⟨"<OUT_DIR>/numerics.isle", 3370⟩⟩,
-  ⟨1546, "u64_into_i128", [4], 11, (.decl ⟨true, false, false, false⟩ (some (.external "u64_into_i128")) none), ⟨"<OUT_DIR>/numerics.isle", 3373⟩⟩,
-  ⟨1547, "i128_from_u64", [11], 4, (.decl ⟨true, false, false, false⟩ none (some (.external "u64_from_i128" false))), ⟨"<OUT_DIR>/numerics.isle", 3376⟩⟩,
-  ⟨1548, "u64_into_u128", [4], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u64_into_u128")) none), ⟨"<OUT_DIR>/numerics.isle", 3379⟩⟩,
-  ⟨1549, "u128_from_u64", [5], 4, (.decl ⟨true, false, false, false⟩ none (some (.external "u64_from_u128" false))), ⟨"<OUT_DIR>/numerics.isle", 3382⟩⟩,
-  ⟨1550, "i128_try_into_i8", [11], 7, (.decl ⟨true, false, true, false⟩ (some (.external "i128_try_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 3385⟩⟩,
-  ⟨1551, "i128_unwrap_into_i8", [11], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i128_unwrap_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 3387⟩⟩,
-  ⟨1552, "i128_truncate_into_i8", [11], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i128_truncate_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 3389⟩⟩,
-  ⟨1553, "i8_from_i128", [7], 11, (.decl ⟨true, false, false, false⟩ none (some (.external "i128_from_i8" false))), ⟨"<OUT_DIR>/numerics.isle", 3391⟩⟩,
-  ⟨1554, "i128_try_into_u8", [11], 1, (.decl ⟨true, false, true, false⟩ (some (.external "i128_try_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 3394⟩⟩,
-  ⟨1555, "i128_unwrap_into_u8", [11], 1, (.decl ⟨true, false, false, false⟩ (some (.external "i128_unwrap_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 3396⟩⟩,
-  ⟨1556, "u8_from_i128", [1], 11, (.decl ⟨true, false, false, false⟩ none (some (.external "i128_from_u8" false))), ⟨"<OUT_DIR>/numerics.isle", 3398⟩⟩,
-  ⟨1557, "i128_try_into_i16", [11], 8, (.decl ⟨true, false, true, false⟩ (some (.external "i128_try_into_i16")) none), ⟨"<OUT_DIR>/numerics.isle", 3401⟩⟩,
-  ⟨1558, "i128_unwrap_into_i16", [11], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i128_unwrap_into_i16")) none), ⟨"<OUT_DIR>/numerics.isle", 3403⟩⟩,
-  ⟨1559, "i128_truncate_into_i16", [11], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i128_truncate_into_i16")) none), ⟨"<OUT_DIR>/numerics.isle", 3405⟩⟩,
-  ⟨1560, "i16_from_i128", [8], 11, (.decl ⟨true, false, false, false⟩ none (some (.external "i128_from_i16" false))), ⟨"<OUT_DIR>/numerics.isle", 3407⟩⟩,
-  ⟨1561, "i128_try_into_u16", [11], 2, (.decl ⟨true, false, true, false⟩ (some (.external "i128_try_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 3410⟩⟩,
-  ⟨1562, "i128_unwrap_into_u16", [11], 2, (.decl ⟨true, false, false, false⟩ (some (.external "i128_unwrap_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 3412⟩⟩,
-  ⟨1563, "u16_from_i128", [2], 11, (.decl ⟨true, false, false, false⟩ none (some (.external "i128_from_u16" false))), ⟨"<OUT_DIR>/numerics.isle", 3414⟩⟩,
-  ⟨1564, "i128_try_into_i32", [11], 9, (.decl ⟨true, false, true, false⟩ (some (.external "i128_try_into_i32")) none), ⟨"<OUT_DIR>/numerics.isle", 3417⟩⟩,
-  ⟨1565, "i128_unwrap_into_i32", [11], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i128_unwrap_into_i32")) none), ⟨"<OUT_DIR>/numerics.isle", 3419⟩⟩,
-  ⟨1566, "i128_truncate_into_i32", [11], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i128_truncate_into_i32")) none), ⟨"<OUT_DIR>/numerics.isle", 3421⟩⟩,
-  ⟨1567, "i32_from_i128", [9], 11, (.decl ⟨true, false, false, false⟩ none (some (.external "i128_from_i32" false))), ⟨"<OUT_DIR>/numerics.isle", 3423⟩⟩,
-  ⟨1568, "i128_try_into_u32", [11], 3, (.decl ⟨true, false, true, false⟩ (some (.external "i128_try_into_u32")) none), ⟨"<OUT_DIR>/numerics.isle", 3426⟩⟩,
-  ⟨1569, "i128_unwrap_into_u32", [11], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i128_unwrap_into_u32")) none), ⟨"<OUT_DIR>/numerics.isle", 3428⟩⟩,
-  ⟨1570, "u32_from_i128", [3], 11, (.decl ⟨true, false, false, false⟩ none (some (.external "i128_from_u32" false))), ⟨"<OUT_DIR>/numerics.isle", 3430⟩⟩,
-  ⟨1571, "i128_try_into_i64", [11], 10, (.decl ⟨true, false, true, false⟩ (some (.external "i128_try_into_i64")) none), ⟨"<OUT_DIR>/numerics.isle", 3433⟩⟩,
-  ⟨1572, "i128_unwrap_into_i64", [11], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i128_unwrap_into_i64")) none), ⟨"<OUT_DIR>/numerics.isle", 3435⟩⟩,
-  ⟨1573, "i128_truncate_into_i64", [11], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i128_truncate_into_i64")) none), ⟨"<OUT_DIR>/numerics.isle", 3437⟩⟩,
-  ⟨1574, "i64_from_i128", [10], 11, (.decl ⟨true, false, false, false⟩ none (some (.external "i128_from_i64" false))), ⟨"<OUT_DIR>/numerics.isle", 3439⟩⟩,
-  ⟨1575, "i128_try_into_u64", [11], 4, (.decl ⟨true, false, true, false⟩ (some (.external "i128_try_into_u64")) none), ⟨"<OUT_DIR>/numerics.isle", 3442⟩⟩,
-  ⟨1576, "i128_unwrap_into_u64", [11], 4, (.decl ⟨true, false, false, false⟩ (some (.external "i128_unwrap_into_u64")) none), ⟨"<OUT_DIR>/numerics.isle", 3444⟩⟩,
-  ⟨1577, "u64_from_i128", [4], 11, (.decl ⟨true, false, false, false⟩ none (some (.external "i128_from_u64" false))), ⟨"<OUT_DIR>/numerics.isle", 3446⟩⟩,
-  ⟨1578, "i128_try_into_u128", [11], 5, (.decl ⟨true, false, true, false⟩ (some (.external "i128_try_into_u128")) none), ⟨"<OUT_DIR>/numerics.isle", 3449⟩⟩,
-  ⟨1579, "i128_unwrap_into_u128", [11], 5, (.decl ⟨true, false, false, false⟩ (some (.external "i128_unwrap_into_u128")) none), ⟨"<OUT_DIR>/numerics.isle", 3451⟩⟩,
-  ⟨1580, "i128_cast_unsigned", [11], 5, (.decl ⟨true, false, false, false⟩ (some (.external "i128_cast_unsigned")) none), ⟨"<OUT_DIR>/numerics.isle", 3453⟩⟩,
-  ⟨1581, "u128_from_i128", [5], 11, (.decl ⟨true, false, false, false⟩ none (some (.external "i128_from_u128" false))), ⟨"<OUT_DIR>/numerics.isle", 3455⟩⟩,
-  ⟨1582, "u128_try_into_i8", [5], 7, (.decl ⟨true, false, true, false⟩ (some (.external "u128_try_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 3458⟩⟩,
-  ⟨1583, "u128_unwrap_into_i8", [5], 7, (.decl ⟨true, false, false, false⟩ (some (.external "u128_unwrap_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 3460⟩⟩,
-  ⟨1584, "i8_from_u128", [7], 5, (.decl ⟨true, false, false, false⟩ none (some (.external "u128_from_i8" false))), ⟨"<OUT_DIR>/numerics.isle", 3462⟩⟩,
-  ⟨1585, "u128_try_into_u8", [5], 1, (.decl ⟨true, false, true, false⟩ (some (.external "u128_try_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 3465⟩⟩,
-  ⟨1586, "u128_unwrap_into_u8", [5], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u128_unwrap_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 3467⟩⟩,
-  ⟨1587, "u128_truncate_into_u8", [5], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u128_truncate_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 3469⟩⟩,
-  ⟨1588, "u8_from_u128", [1], 5, (.decl ⟨true, false, false, false⟩ none (some (.external "u128_from_u8" false))), ⟨"<OUT_DIR>/numerics.isle", 3471⟩⟩,
-  ⟨1589, "u128_try_into_i16", [5], 8, (.decl ⟨true, false, true, false⟩ (some (.external "u128_try_into_i16")) none), ⟨"<OUT_DIR>/numerics.isle", 3474⟩⟩,
-  ⟨1590, "u128_unwrap_into_i16", [5], 8, (.decl ⟨true, false, false, false⟩ (some (.external "u128_unwrap_into_i16")) none), ⟨"<OUT_DIR>/numerics.isle", 3476⟩⟩,
-  ⟨1591, "i16_from_u128", [8], 5, (.decl ⟨true, false, false, false⟩ none (some (.external "u128_from_i16" false))), ⟨"<OUT_DIR>/numerics.isle", 3478⟩⟩,
-  ⟨1592, "u128_try_into_u16", [5], 2, (.decl ⟨true, false, true, false⟩ (some (.external "u128_try_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 3481⟩⟩,
-  ⟨1593, "u128_unwrap_into_u16", [5], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u128_unwrap_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 3483⟩⟩,
-  ⟨1594, "u128_truncate_into_u16", [5], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u128_truncate_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 3485⟩⟩,
-  ⟨1595, "u16_from_u128", [2], 5, (.decl ⟨true, false, false, false⟩ none (some (.external "u128_from_u16" false))), ⟨"<OUT_DIR>/numerics.isle", 3487⟩⟩,
-  ⟨1596, "u128_try_into_i32", [5], 9, (.decl ⟨true, false, true, false⟩ (some (.external "u128_try_into_i32")) none), ⟨"<OUT_DIR>/numerics.isle", 3490⟩⟩,
-  ⟨1597, "u128_unwrap_into_i32", [5], 9, (.decl ⟨true, false, false, false⟩ (some (.external "u128_unwrap_into_i32")) none), ⟨"<OUT_DIR>/numerics.isle", 3492⟩⟩,
-  ⟨1598, "i32_from_u128", [9], 5, (.decl ⟨true, false, false, false⟩ none (some (.external "u128_from_i32" false))), ⟨"<OUT_DIR>/numerics.isle", 3494⟩⟩,
-  ⟨1599, "u128_try_into_u32", [5], 3, (.decl ⟨true, false, true, false⟩ (some (.external "u128_try_into_u32")) none), ⟨"<OUT_DIR>/numerics.isle", 3497⟩⟩]
+/-- term 1140 -/
+def T.«i64_extract_odd» : Term :=
+  ⟨1140, "i64_extract_odd", [10], 10, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i64_extract_odd"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i64_matches_odd"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 1946⟩⟩
 
-def terms_4 : Array Term := #[
-  ⟨1600, "u128_unwrap_into_u32", [5], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u128_unwrap_into_u32")) none), ⟨"<OUT_DIR>/numerics.isle", 3499⟩⟩,
-  ⟨1601, "u128_truncate_into_u32", [5], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u128_truncate_into_u32")) none), ⟨"<OUT_DIR>/numerics.isle", 3501⟩⟩,
-  ⟨1602, "u32_from_u128", [3], 5, (.decl ⟨true, false, false, false⟩ none (some (.external "u128_from_u32" false))), ⟨"<OUT_DIR>/numerics.isle", 3503⟩⟩,
-  ⟨1603, "u128_try_into_i64", [5], 10, (.decl ⟨true, false, true, false⟩ (some (.external "u128_try_into_i64")) none), ⟨"<OUT_DIR>/numerics.isle", 3506⟩⟩,
-  ⟨1604, "u128_unwrap_into_i64", [5], 10, (.decl ⟨true, false, false, false⟩ (some (.external "u128_unwrap_into_i64")) none), ⟨"<OUT_DIR>/numerics.isle", 3508⟩⟩,
-  ⟨1605, "i64_from_u128", [10], 5, (.decl ⟨true, false, false, false⟩ none (some (.external "u128_from_i64" false))), ⟨"<OUT_DIR>/numerics.isle", 3510⟩⟩,
-  ⟨1606, "u128_try_into_u64", [5], 4, (.decl ⟨true, false, true, false⟩ (some (.external "u128_try_into_u64")) none), ⟨"<OUT_DIR>/numerics.isle", 3513⟩⟩,
-  ⟨1607, "u128_unwrap_into_u64", [5], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u128_unwrap_into_u64")) none), ⟨"<OUT_DIR>/numerics.isle", 3515⟩⟩,
-  ⟨1608, "u128_truncate_into_u64", [5], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u128_truncate_into_u64")) none), ⟨"<OUT_DIR>/numerics.isle", 3517⟩⟩,
-  ⟨1609, "u64_from_u128", [4], 5, (.decl ⟨true, false, false, false⟩ none (some (.external "u128_from_u64" false))), ⟨"<OUT_DIR>/numerics.isle", 3519⟩⟩,
-  ⟨1610, "u128_try_into_i128", [5], 11, (.decl ⟨true, false, true, false⟩ (some (.external "u128_try_into_i128")) none), ⟨"<OUT_DIR>/numerics.isle", 3522⟩⟩,
-  ⟨1611, "u128_unwrap_into_i128", [5], 11, (.decl ⟨true, false, false, false⟩ (some (.external "u128_unwrap_into_i128")) none), ⟨"<OUT_DIR>/numerics.isle", 3524⟩⟩,
-  ⟨1612, "u128_cast_signed", [5], 11, (.decl ⟨true, false, false, false⟩ (some (.external "u128_cast_signed")) none), ⟨"<OUT_DIR>/numerics.isle", 3526⟩⟩,
-  ⟨1613, "i128_from_u128", [11], 5, (.decl ⟨true, false, false, false⟩ none (some (.external "u128_from_i128" false))), ⟨"<OUT_DIR>/numerics.isle", 3528⟩⟩,
-  ⟨1614, "value_array_2", [15, 15], 147, (.decl ⟨false, false, false, false⟩ (some (.external "pack_value_array_2")) (some (.external "unpack_value_array_2" true))), ⟨"<OUT_DIR>/clif_lower.isle", 100⟩⟩,
-  ⟨1615, "value_array_3", [15, 15, 15], 148, (.decl ⟨false, false, false, false⟩ (some (.external "pack_value_array_3")) (some (.external "unpack_value_array_3" true))), ⟨"<OUT_DIR>/clif_lower.isle", 107⟩⟩,
-  ⟨1616, "block_array_2", [17, 17], 149, (.decl ⟨false, false, false, false⟩ (some (.external "pack_block_array_2")) (some (.external "unpack_block_array_2" true))), ⟨"<OUT_DIR>/clif_lower.isle", 116⟩⟩,
-  ⟨1617, "jump", [17], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "jump"), (.atom "block_call")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.Jump"), (.list [(.atom "Opcode.Jump")]), (.atom "block_call")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 337⟩⟩,
-  ⟨1618, "brif", [15, 17, 17], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "brif"), (.atom "c"), (.atom "block_then"), (.atom "block_else")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.Brif"), (.list [(.atom "Opcode.Brif")]), (.atom "c"), (.list [(.atom "block_array_2"), (.atom "block_then"), (.atom "block_else")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 343⟩⟩,
-  ⟨1619, "br_table", [15, 136], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "br_table"), (.atom "x"), (.atom "JT")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.BranchTable"), (.list [(.atom "Opcode.BrTable")]), (.atom "x"), (.atom "JT")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 349⟩⟩,
-  ⟨1620, "debugtrap", [], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "debugtrap")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.NullAry"), (.list [(.atom "Opcode.Debugtrap")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 355⟩⟩,
-  ⟨1621, "trap", [146], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "trap"), (.atom "code")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.Trap"), (.list [(.atom "Opcode.Trap")]), (.atom "code")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 361⟩⟩,
-  ⟨1622, "trapz", [15, 146], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "trapz"), (.atom "c"), (.atom "code")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.CondTrap"), (.list [(.atom "Opcode.Trapz")]), (.atom "c"), (.atom "code")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 367⟩⟩,
-  ⟨1623, "trapnz", [15, 146], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "trapnz"), (.atom "c"), (.atom "code")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.CondTrap"), (.list [(.atom "Opcode.Trapnz")]), (.atom "c"), (.atom "code")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 373⟩⟩,
-  ⟨1624, "return", [19], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "return"), (.atom "rvals")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.MultiAry"), (.list [(.atom "Opcode.Return")]), (.list [(.atom "value_list_slice"), (.atom "rvals")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 379⟩⟩,
-  ⟨1625, "call", [129, 19], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "call"), (.atom "FN"), (.atom "args")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.Call"), (.list [(.atom "Opcode.Call")]), (.list [(.atom "value_list_slice"), (.atom "args")]), (.atom "FN")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 385⟩⟩,
-  ⟨1626, "call_indirect", [139, 15, 19], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "call_indirect"), (.atom "SIG"), (.atom "callee"), (.atom "args")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.CallIndirect"), (.list [(.atom "Opcode.CallIndirect")]), (.list [(.atom "unwrap_head_value_list_1"), (.atom "callee"), (.atom "args")]), (.atom "SIG")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 391⟩⟩,
-  ⟨1627, "return_call", [129, 19], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "return_call"), (.atom "FN"), (.atom "args")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.Call"), (.list [(.atom "Opcode.ReturnCall")]), (.list [(.atom "value_list_slice"), (.atom "args")]), (.atom "FN")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 397⟩⟩,
-  ⟨1628, "return_call_indirect", [139, 15, 19], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "return_call_indirect"), (.atom "SIG"), (.atom "callee"), (.atom "args")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.CallIndirect"), (.list [(.atom "Opcode.ReturnCallIndirect")]), (.list [(.atom "unwrap_head_value_list_1"), (.atom "callee"), (.atom "args")]), (.atom "SIG")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 403⟩⟩,
-  ⟨1629, "func_addr", [14, 129], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "func_addr"), (.atom "ty"), (.atom "FN")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.FuncAddr"), (.list [(.atom "Opcode.FuncAddr")]), (.atom "FN")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 409⟩⟩,
-  ⟨1630, "try_call", [129, 19, 128], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "try_call"), (.atom "callee"), (.atom "args"), (.atom "ET")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.TryCall"), (.list [(.atom "Opcode.TryCall")]), (.list [(.atom "value_list_slice"), (.atom "args")]), (.atom "callee"), (.atom "ET")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 415⟩⟩,
-  ⟨1631, "try_call_indirect", [15, 19, 128], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "try_call_indirect"), (.atom "callee"), (.atom "args"), (.atom "ET")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.TryCallIndirect"), (.list [(.atom "Opcode.TryCallIndirect")]), (.list [(.atom "unwrap_head_value_list_1"), (.atom "callee"), (.atom "args")]), (.atom "ET")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 421⟩⟩,
-  ⟨1632, "splat", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "splat"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Splat")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 427⟩⟩,
-  ⟨1633, "swizzle", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "swizzle"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Swizzle")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 433⟩⟩,
-  ⟨1634, "x86_pshufb", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "x86_pshufb"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.X86Pshufb")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 439⟩⟩,
-  ⟨1635, "insertlane", [14, 15, 15, 141], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "insertlane"), (.atom "ty"), (.atom "x"), (.atom "y"), (.atom "Idx")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.TernaryImm8"), (.list [(.atom "Opcode.Insertlane")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")]), (.atom "Idx")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 445⟩⟩,
-  ⟨1636, "extractlane", [14, 15, 141], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "extractlane"), (.atom "ty"), (.atom "x"), (.atom "Idx")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.BinaryImm8"), (.list [(.atom "Opcode.Extractlane")]), (.atom "x"), (.atom "Idx")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 451⟩⟩,
-  ⟨1637, "smin", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "smin"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Smin")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 457⟩⟩,
-  ⟨1638, "umin", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "umin"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Umin")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 463⟩⟩,
-  ⟨1639, "smax", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "smax"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Smax")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 469⟩⟩,
-  ⟨1640, "umax", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "umax"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Umax")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 475⟩⟩,
-  ⟨1641, "avg_round", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "avg_round"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.AvgRound")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 481⟩⟩,
-  ⟨1642, "uadd_sat", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "uadd_sat"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.UaddSat")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 487⟩⟩,
-  ⟨1643, "sadd_sat", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "sadd_sat"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.SaddSat")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 493⟩⟩,
-  ⟨1644, "usub_sat", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "usub_sat"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.UsubSat")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 499⟩⟩,
-  ⟨1645, "ssub_sat", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "ssub_sat"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.SsubSat")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 505⟩⟩,
-  ⟨1646, "load", [14, 137, 15, 138], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "load"), (.atom "ty"), (.atom "MemFlags"), (.atom "p"), (.atom "Offset")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Load"), (.list [(.atom "Opcode.Load")]), (.atom "p"), (.atom "MemFlags"), (.atom "Offset")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 511⟩⟩,
-  ⟨1647, "store", [137, 15, 15, 138], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "store"), (.atom "MemFlags"), (.atom "x"), (.atom "p"), (.atom "Offset")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.Store"), (.list [(.atom "Opcode.Store")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "p")]), (.atom "MemFlags"), (.atom "Offset")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 517⟩⟩,
-  ⟨1648, "uload8", [14, 137, 15, 138], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "uload8"), (.atom "ty"), (.atom "MemFlags"), (.atom "p"), (.atom "Offset")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Load"), (.list [(.atom "Opcode.Uload8")]), (.atom "p"), (.atom "MemFlags"), (.atom "Offset")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 523⟩⟩,
-  ⟨1649, "sload8", [14, 137, 15, 138], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "sload8"), (.atom "ty"), (.atom "MemFlags"), (.atom "p"), (.atom "Offset")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Load"), (.list [(.atom "Opcode.Sload8")]), (.atom "p"), (.atom "MemFlags"), (.atom "Offset")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 529⟩⟩,
-  ⟨1650, "istore8", [137, 15, 15, 138], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "istore8"), (.atom "MemFlags"), (.atom "x"), (.atom "p"), (.atom "Offset")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.Store"), (.list [(.atom "Opcode.Istore8")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "p")]), (.atom "MemFlags"), (.atom "Offset")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 535⟩⟩,
-  ⟨1651, "uload16", [14, 137, 15, 138], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "uload16"), (.atom "ty"), (.atom "MemFlags"), (.atom "p"), (.atom "Offset")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Load"), (.list [(.atom "Opcode.Uload16")]), (.atom "p"), (.atom "MemFlags"), (.atom "Offset")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 541⟩⟩,
-  ⟨1652, "sload16", [14, 137, 15, 138], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "sload16"), (.atom "ty"), (.atom "MemFlags"), (.atom "p"), (.atom "Offset")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Load"), (.list [(.atom "Opcode.Sload16")]), (.atom "p"), (.atom "MemFlags"), (.atom "Offset")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 547⟩⟩,
-  ⟨1653, "istore16", [137, 15, 15, 138], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "istore16"), (.atom "MemFlags"), (.atom "x"), (.atom "p"), (.atom "Offset")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.Store"), (.list [(.atom "Opcode.Istore16")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "p")]), (.atom "MemFlags"), (.atom "Offset")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 553⟩⟩,
-  ⟨1654, "uload32", [14, 137, 15, 138], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "uload32"), (.atom "ty"), (.atom "MemFlags"), (.atom "p"), (.atom "Offset")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Load"), (.list [(.atom "Opcode.Uload32")]), (.atom "p"), (.atom "MemFlags"), (.atom "Offset")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 559⟩⟩,
-  ⟨1655, "sload32", [14, 137, 15, 138], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "sload32"), (.atom "ty"), (.atom "MemFlags"), (.atom "p"), (.atom "Offset")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Load"), (.list [(.atom "Opcode.Sload32")]), (.atom "p"), (.atom "MemFlags"), (.atom "Offset")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 565⟩⟩,
-  ⟨1656, "istore32", [137, 15, 15, 138], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "istore32"), (.atom "MemFlags"), (.atom "x"), (.atom "p"), (.atom "Offset")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.Store"), (.list [(.atom "Opcode.Istore32")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "p")]), (.atom "MemFlags"), (.atom "Offset")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 571⟩⟩,
-  ⟨1657, "stack_switch", [14, 15, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "stack_switch"), (.atom "ty"), (.atom "store_context_ptr"), (.atom "load_context_ptr"), (.atom "in_payload0")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Ternary"), (.list [(.atom "Opcode.StackSwitch")]), (.list [(.atom "value_array_3"), (.atom "store_context_ptr"), (.atom "load_context_ptr"), (.atom "in_payload0")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 577⟩⟩,
-  ⟨1658, "uload8x8", [14, 137, 15, 138], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "uload8x8"), (.atom "ty"), (.atom "MemFlags"), (.atom "p"), (.atom "Offset")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Load"), (.list [(.atom "Opcode.Uload8x8")]), (.atom "p"), (.atom "MemFlags"), (.atom "Offset")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 583⟩⟩,
-  ⟨1659, "sload8x8", [14, 137, 15, 138], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "sload8x8"), (.atom "ty"), (.atom "MemFlags"), (.atom "p"), (.atom "Offset")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Load"), (.list [(.atom "Opcode.Sload8x8")]), (.atom "p"), (.atom "MemFlags"), (.atom "Offset")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 589⟩⟩,
-  ⟨1660, "uload16x4", [14, 137, 15, 138], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "uload16x4"), (.atom "ty"), (.atom "MemFlags"), (.atom "p"), (.atom "Offset")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Load"), (.list [(.atom "Opcode.Uload16x4")]), (.atom "p"), (.atom "MemFlags"), (.atom "Offset")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 595⟩⟩,
-  ⟨1661, "sload16x4", [14, 137, 15, 138], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "sload16x4"), (.atom "ty"), (.atom "MemFlags"), (.atom "p"), (.atom "Offset")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Load"), (.list [(.atom "Opcode.Sload16x4")]), (.atom "p"), (.atom "MemFlags"), (.atom "Offset")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 601⟩⟩,
-  ⟨1662, "uload32x2", [14, 137, 15, 138], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "uload32x2"), (.atom "ty"), (.atom "MemFlags"), (.atom "p"), (.atom "Offset")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Load"), (.list [(.atom "Opcode.Uload32x2")]), (.atom "p"), (.atom "MemFlags"), (.atom "Offset")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 607⟩⟩,
-  ⟨1663, "sload32x2", [14, 137, 15, 138], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "sload32x2"), (.atom "ty"), (.atom "MemFlags"), (.atom "p"), (.atom "Offset")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Load"), (.list [(.atom "Opcode.Sload32x2")]), (.atom "p"), (.atom "MemFlags"), (.atom "Offset")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 613⟩⟩,
-  ⟨1664, "stack_addr", [14, 140, 138], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "stack_addr"), (.atom "ty"), (.atom "SS"), (.atom "Offset")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.StackAddr"), (.list [(.atom "Opcode.StackAddr")]), (.atom "SS"), (.atom "Offset")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 619⟩⟩,
-  ⟨1665, "dynamic_stack_addr", [14, 127], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "dynamic_stack_addr"), (.atom "ty"), (.atom "DSS")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.DynamicStackAddr"), (.list [(.atom "Opcode.DynamicStackAddr")]), (.atom "DSS")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 625⟩⟩,
-  ⟨1666, "symbol_value", [14, 130], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "symbol_value"), (.atom "ty"), (.atom "GV")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.UnaryGlobalValue"), (.list [(.atom "Opcode.SymbolValue")]), (.atom "GV")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 631⟩⟩,
-  ⟨1667, "tls_value", [14, 130], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "tls_value"), (.atom "ty"), (.atom "GV")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.UnaryGlobalValue"), (.list [(.atom "Opcode.TlsValue")]), (.atom "GV")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 637⟩⟩,
-  ⟨1668, "get_pinned_reg", [14], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "get_pinned_reg"), (.atom "ty")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.NullAry"), (.list [(.atom "Opcode.GetPinnedReg")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 643⟩⟩,
-  ⟨1669, "set_pinned_reg", [15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "set_pinned_reg"), (.atom "addr")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.SetPinnedReg")]), (.atom "addr")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 649⟩⟩,
-  ⟨1670, "get_frame_pointer", [14], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "get_frame_pointer"), (.atom "ty")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.NullAry"), (.list [(.atom "Opcode.GetFramePointer")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 655⟩⟩,
-  ⟨1671, "get_stack_pointer", [14], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "get_stack_pointer"), (.atom "ty")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.NullAry"), (.list [(.atom "Opcode.GetStackPointer")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 661⟩⟩,
-  ⟨1672, "get_return_address", [14], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "get_return_address"), (.atom "ty")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.NullAry"), (.list [(.atom "Opcode.GetReturnAddress")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 667⟩⟩,
-  ⟨1673, "get_exception_handler_address", [14, 150, 134], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "get_exception_handler_address"), (.atom "ty"), (.atom "block"), (.atom "index")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.ExceptionHandlerAddress"), (.list [(.atom "Opcode.GetExceptionHandlerAddress")]), (.atom "block"), (.atom "index")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 673⟩⟩,
-  ⟨1674, "iconst", [14, 134], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "iconst"), (.atom "ty"), (.atom "N")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.UnaryImm"), (.list [(.atom "Opcode.Iconst")]), (.atom "N")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 679⟩⟩,
-  ⟨1675, "f16const", [14, 131], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "f16const"), (.atom "ty"), (.atom "N")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.UnaryIeee16"), (.list [(.atom "Opcode.F16const")]), (.atom "N")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 685⟩⟩,
-  ⟨1676, "f32const", [14, 132], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "f32const"), (.atom "ty"), (.atom "N")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.UnaryIeee32"), (.list [(.atom "Opcode.F32const")]), (.atom "N")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 691⟩⟩,
-  ⟨1677, "f64const", [14, 133], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "f64const"), (.atom "ty"), (.atom "N")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.UnaryIeee64"), (.list [(.atom "Opcode.F64const")]), (.atom "N")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 697⟩⟩,
-  ⟨1678, "f128const", [14, 126], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "f128const"), (.atom "ty"), (.atom "N")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.UnaryConst"), (.list [(.atom "Opcode.F128const")]), (.atom "N")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 703⟩⟩,
-  ⟨1679, "vconst", [14, 126], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "vconst"), (.atom "ty"), (.atom "N")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.UnaryConst"), (.list [(.atom "Opcode.Vconst")]), (.atom "N")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 709⟩⟩,
-  ⟨1680, "shuffle", [14, 15, 15, 135], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "shuffle"), (.atom "ty"), (.atom "a"), (.atom "b"), (.atom "mask")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Shuffle"), (.list [(.atom "Opcode.Shuffle")]), (.list [(.atom "value_array_2"), (.atom "a"), (.atom "b")]), (.atom "mask")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 715⟩⟩,
-  ⟨1681, "nop", [], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "nop")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.NullAry"), (.list [(.atom "Opcode.Nop")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 721⟩⟩,
-  ⟨1682, "select", [14, 15, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "select"), (.atom "ty"), (.atom "c"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Ternary"), (.list [(.atom "Opcode.Select")]), (.list [(.atom "value_array_3"), (.atom "c"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 727⟩⟩,
-  ⟨1683, "select_spectre_guard", [14, 15, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "select_spectre_guard"), (.atom "ty"), (.atom "c"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Ternary"), (.list [(.atom "Opcode.SelectSpectreGuard")]), (.list [(.atom "value_array_3"), (.atom "c"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 733⟩⟩,
-  ⟨1684, "bitselect", [14, 15, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "bitselect"), (.atom "ty"), (.atom "c"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Ternary"), (.list [(.atom "Opcode.Bitselect")]), (.list [(.atom "value_array_3"), (.atom "c"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 739⟩⟩,
-  ⟨1685, "blendv", [14, 15, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "blendv"), (.atom "ty"), (.atom "c"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Ternary"), (.list [(.atom "Opcode.Blendv")]), (.list [(.atom "value_array_3"), (.atom "c"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 745⟩⟩,
-  ⟨1686, "vany_true", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "vany_true"), (.atom "ty"), (.atom "a")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.VanyTrue")]), (.atom "a")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 751⟩⟩,
-  ⟨1687, "vall_true", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "vall_true"), (.atom "ty"), (.atom "a")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.VallTrue")]), (.atom "a")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 757⟩⟩,
-  ⟨1688, "vhigh_bits", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "vhigh_bits"), (.atom "ty"), (.atom "a")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.VhighBits")]), (.atom "a")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 763⟩⟩,
-  ⟨1689, "icmp", [14, 145, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "icmp"), (.atom "ty"), (.atom "Cond"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.IntCompare"), (.list [(.atom "Opcode.Icmp")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")]), (.atom "Cond")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 769⟩⟩,
-  ⟨1690, "iadd", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "iadd"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Iadd")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 775⟩⟩,
-  ⟨1691, "isub", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "isub"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Isub")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 781⟩⟩,
-  ⟨1692, "ineg", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "ineg"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Ineg")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 787⟩⟩,
-  ⟨1693, "iabs", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "iabs"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Iabs")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 793⟩⟩,
-  ⟨1694, "imul", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "imul"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Imul")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 799⟩⟩,
-  ⟨1695, "umulhi", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "umulhi"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Umulhi")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 805⟩⟩,
-  ⟨1696, "smulhi", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "smulhi"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Smulhi")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 811⟩⟩,
-  ⟨1697, "sqmul_round_sat", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "sqmul_round_sat"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.SqmulRoundSat")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 817⟩⟩,
-  ⟨1698, "x86_pmulhrsw", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "x86_pmulhrsw"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.X86Pmulhrsw")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 823⟩⟩,
-  ⟨1699, "udiv", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "udiv"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Udiv")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 829⟩⟩,
-  ⟨1700, "sdiv", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "sdiv"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Sdiv")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 835⟩⟩,
-  ⟨1701, "urem", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "urem"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Urem")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 841⟩⟩,
-  ⟨1702, "srem", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "srem"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Srem")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 847⟩⟩,
-  ⟨1703, "sadd_overflow_cin", [14, 15, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "sadd_overflow_cin"), (.atom "ty"), (.atom "x"), (.atom "y"), (.atom "c_in")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Ternary"), (.list [(.atom "Opcode.SaddOverflowCin")]), (.list [(.atom "value_array_3"), (.atom "x"), (.atom "y"), (.atom "c_in")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 853⟩⟩,
-  ⟨1704, "uadd_overflow_cin", [14, 15, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "uadd_overflow_cin"), (.atom "ty"), (.atom "x"), (.atom "y"), (.atom "c_in")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Ternary"), (.list [(.atom "Opcode.UaddOverflowCin")]), (.list [(.atom "value_array_3"), (.atom "x"), (.atom "y"), (.atom "c_in")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 859⟩⟩,
-  ⟨1705, "uadd_overflow", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "uadd_overflow"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.UaddOverflow")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 865⟩⟩,
-  ⟨1706, "sadd_overflow", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "sadd_overflow"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.SaddOverflow")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 871⟩⟩,
-  ⟨1707, "usub_overflow", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "usub_overflow"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.UsubOverflow")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 877⟩⟩,
-  ⟨1708, "ssub_overflow", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "ssub_overflow"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.SsubOverflow")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 883⟩⟩,
-  ⟨1709, "umul_overflow", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "umul_overflow"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.UmulOverflow")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 889⟩⟩,
-  ⟨1710, "smul_overflow", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "smul_overflow"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.SmulOverflow")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 895⟩⟩,
-  ⟨1711, "uadd_overflow_trap", [14, 15, 15, 146], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "uadd_overflow_trap"), (.atom "ty"), (.atom "x"), (.atom "y"), (.atom "code")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.IntAddTrap"), (.list [(.atom "Opcode.UaddOverflowTrap")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")]), (.atom "code")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 901⟩⟩,
-  ⟨1712, "ssub_overflow_bin", [14, 15, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "ssub_overflow_bin"), (.atom "ty"), (.atom "x"), (.atom "y"), (.atom "b_in")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Ternary"), (.list [(.atom "Opcode.SsubOverflowBin")]), (.list [(.atom "value_array_3"), (.atom "x"), (.atom "y"), (.atom "b_in")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 907⟩⟩,
-  ⟨1713, "usub_overflow_bin", [14, 15, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "usub_overflow_bin"), (.atom "ty"), (.atom "x"), (.atom "y"), (.atom "b_in")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Ternary"), (.list [(.atom "Opcode.UsubOverflowBin")]), (.list [(.atom "value_array_3"), (.atom "x"), (.atom "y"), (.atom "b_in")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 913⟩⟩,
-  ⟨1714, "band", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "band"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Band")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 919⟩⟩,
-  ⟨1715, "bor", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "bor"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Bor")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 925⟩⟩,
-  ⟨1716, "bxor", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "bxor"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Bxor")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 931⟩⟩,
-  ⟨1717, "bnot", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "bnot"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Bnot")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 937⟩⟩,
-  ⟨1718, "rotl", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "rotl"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Rotl")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 943⟩⟩,
-  ⟨1719, "rotr", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "rotr"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Rotr")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 949⟩⟩,
-  ⟨1720, "ishl", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "ishl"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Ishl")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 955⟩⟩,
-  ⟨1721, "ushr", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "ushr"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Ushr")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 961⟩⟩,
-  ⟨1722, "sshr", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "sshr"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Sshr")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 967⟩⟩,
-  ⟨1723, "bitrev", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "bitrev"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Bitrev")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 973⟩⟩,
-  ⟨1724, "clz", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "clz"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Clz")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 979⟩⟩,
-  ⟨1725, "cls", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "cls"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Cls")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 985⟩⟩,
-  ⟨1726, "ctz", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "ctz"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Ctz")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 991⟩⟩,
-  ⟨1727, "bswap", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "bswap"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Bswap")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 997⟩⟩,
-  ⟨1728, "popcnt", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "popcnt"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Popcnt")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1003⟩⟩,
-  ⟨1729, "fcmp", [14, 144, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fcmp"), (.atom "ty"), (.atom "Cond"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.FloatCompare"), (.list [(.atom "Opcode.Fcmp")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")]), (.atom "Cond")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1009⟩⟩,
-  ⟨1730, "fadd", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fadd"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Fadd")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1015⟩⟩,
-  ⟨1731, "fsub", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fsub"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Fsub")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1021⟩⟩,
-  ⟨1732, "fmul", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fmul"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Fmul")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1027⟩⟩,
-  ⟨1733, "fdiv", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fdiv"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Fdiv")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1033⟩⟩,
-  ⟨1734, "sqrt", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "sqrt"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Sqrt")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1039⟩⟩,
-  ⟨1735, "fma", [14, 15, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fma"), (.atom "ty"), (.atom "x"), (.atom "y"), (.atom "z")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Ternary"), (.list [(.atom "Opcode.Fma")]), (.list [(.atom "value_array_3"), (.atom "x"), (.atom "y"), (.atom "z")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1045⟩⟩,
-  ⟨1736, "fneg", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fneg"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Fneg")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1051⟩⟩,
-  ⟨1737, "fabs", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fabs"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Fabs")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1057⟩⟩,
-  ⟨1738, "fcopysign", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fcopysign"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Fcopysign")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1063⟩⟩,
-  ⟨1739, "fmin", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fmin"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Fmin")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1069⟩⟩,
-  ⟨1740, "fmax", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fmax"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Fmax")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1075⟩⟩,
-  ⟨1741, "ceil", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "ceil"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Ceil")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1081⟩⟩,
-  ⟨1742, "floor", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "floor"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Floor")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1087⟩⟩,
-  ⟨1743, "trunc", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "trunc"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Trunc")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1093⟩⟩,
-  ⟨1744, "nearest", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "nearest"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Nearest")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1099⟩⟩,
-  ⟨1745, "bitcast", [14, 137, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "bitcast"), (.atom "ty"), (.atom "MemFlags"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.LoadNoOffset"), (.list [(.atom "Opcode.Bitcast")]), (.atom "x"), (.atom "MemFlags")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1105⟩⟩,
-  ⟨1746, "scalar_to_vector", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "scalar_to_vector"), (.atom "ty"), (.atom "s")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.ScalarToVector")]), (.atom "s")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1111⟩⟩,
-  ⟨1747, "bmask", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "bmask"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Bmask")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1117⟩⟩,
-  ⟨1748, "ireduce", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "ireduce"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Ireduce")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1123⟩⟩,
-  ⟨1749, "snarrow", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "snarrow"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Snarrow")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1129⟩⟩,
-  ⟨1750, "unarrow", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "unarrow"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Unarrow")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1135⟩⟩,
-  ⟨1751, "uunarrow", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "uunarrow"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Uunarrow")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1141⟩⟩,
-  ⟨1752, "swiden_low", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "swiden_low"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.SwidenLow")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1147⟩⟩,
-  ⟨1753, "swiden_high", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "swiden_high"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.SwidenHigh")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1153⟩⟩,
-  ⟨1754, "uwiden_low", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "uwiden_low"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.UwidenLow")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1159⟩⟩,
-  ⟨1755, "uwiden_high", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "uwiden_high"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.UwidenHigh")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1165⟩⟩,
-  ⟨1756, "iadd_pairwise", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "iadd_pairwise"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.IaddPairwise")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1171⟩⟩,
-  ⟨1757, "x86_pmaddubsw", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "x86_pmaddubsw"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.X86Pmaddubsw")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1177⟩⟩,
-  ⟨1758, "uextend", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "uextend"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Uextend")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1183⟩⟩,
-  ⟨1759, "sextend", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "sextend"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Sextend")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1189⟩⟩,
-  ⟨1760, "fpromote", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fpromote"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Fpromote")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1195⟩⟩,
-  ⟨1761, "fdemote", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fdemote"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Fdemote")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1201⟩⟩,
-  ⟨1762, "fvdemote", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fvdemote"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Fvdemote")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1207⟩⟩,
-  ⟨1763, "fvpromote_low", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fvpromote_low"), (.atom "ty"), (.atom "a")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.FvpromoteLow")]), (.atom "a")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1213⟩⟩,
-  ⟨1764, "fcvt_to_uint", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fcvt_to_uint"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.FcvtToUint")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1219⟩⟩,
-  ⟨1765, "fcvt_to_sint", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fcvt_to_sint"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.FcvtToSint")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1225⟩⟩,
-  ⟨1766, "fcvt_to_uint_sat", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fcvt_to_uint_sat"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.FcvtToUintSat")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1231⟩⟩,
-  ⟨1767, "fcvt_to_sint_sat", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fcvt_to_sint_sat"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.FcvtToSintSat")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1237⟩⟩,
-  ⟨1768, "x86_cvtt2dq", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "x86_cvtt2dq"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.X86Cvtt2dq")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1243⟩⟩,
-  ⟨1769, "fcvt_from_uint", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fcvt_from_uint"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.FcvtFromUint")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1249⟩⟩,
-  ⟨1770, "fcvt_from_sint", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fcvt_from_sint"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.FcvtFromSint")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1255⟩⟩,
-  ⟨1771, "isplit", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "isplit"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Isplit")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1261⟩⟩,
-  ⟨1772, "iconcat", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "iconcat"), (.atom "ty"), (.atom "lo"), (.atom "hi")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Iconcat")]), (.list [(.atom "value_array_2"), (.atom "lo"), (.atom "hi")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1267⟩⟩,
-  ⟨1773, "atomic_rmw", [14, 137, 143, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "atomic_rmw"), (.atom "ty"), (.atom "MemFlags"), (.atom "AtomicRmwOp"), (.atom "p"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.AtomicRmw"), (.list [(.atom "Opcode.AtomicRmw")]), (.list [(.atom "value_array_2"), (.atom "p"), (.atom "x")]), (.atom "MemFlags"), (.atom "AtomicRmwOp")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1273⟩⟩,
-  ⟨1774, "atomic_cas", [14, 137, 15, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "atomic_cas"), (.atom "ty"), (.atom "MemFlags"), (.atom "p"), (.atom "e"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.AtomicCas"), (.list [(.atom "Opcode.AtomicCas")]), (.list [(.atom "value_array_3"), (.atom "p"), (.atom "e"), (.atom "x")]), (.atom "MemFlags")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1279⟩⟩,
-  ⟨1775, "atomic_load", [14, 137, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "atomic_load"), (.atom "ty"), (.atom "MemFlags"), (.atom "p")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.LoadNoOffset"), (.list [(.atom "Opcode.AtomicLoad")]), (.atom "p"), (.atom "MemFlags")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1285⟩⟩,
-  ⟨1776, "atomic_store", [137, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "atomic_store"), (.atom "MemFlags"), (.atom "x"), (.atom "p")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.StoreNoOffset"), (.list [(.atom "Opcode.AtomicStore")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "p")]), (.atom "MemFlags")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1291⟩⟩,
-  ⟨1777, "fence", [], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fence")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.NullAry"), (.list [(.atom "Opcode.Fence")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1297⟩⟩,
-  ⟨1778, "extract_vector", [14, 15, 141], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "extract_vector"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.BinaryImm8"), (.list [(.atom "Opcode.ExtractVector")]), (.atom "x"), (.atom "y")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1303⟩⟩,
-  ⟨1779, "sequence_point", [], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "sequence_point")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.NullAry"), (.list [(.atom "Opcode.SequencePoint")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1309⟩⟩,
-  ⟨1780, "MultiReg.Empty", [], 26, (.enumVariant 0), ⟨"src/prelude_lower.isle", 28⟩⟩,
-  ⟨1781, "MultiReg.One", [27], 26, (.enumVariant 1), ⟨"src/prelude_lower.isle", 29⟩⟩,
-  ⟨1782, "MultiReg.Two", [27, 27], 26, (.enumVariant 2), ⟨"src/prelude_lower.isle", 30⟩⟩,
-  ⟨1783, "MultiReg.Three", [27, 27, 27], 26, (.enumVariant 3), ⟨"src/prelude_lower.isle", 31⟩⟩,
-  ⟨1784, "MultiReg.Four", [27, 27, 27, 27], 26, (.enumVariant 4), ⟨"src/prelude_lower.isle", 32⟩⟩,
-  ⟨1785, "RelocDistance.Near", [], 38, (.enumVariant 0), ⟨"src/prelude_lower.isle", 220⟩⟩,
-  ⟨1786, "RelocDistance.Far", [], 38, (.enumVariant 1), ⟨"src/prelude_lower.isle", 220⟩⟩,
-  ⟨1787, "SideEffectNoResult.Inst", [58], 46, (.enumVariant 0), ⟨"src/prelude_lower.isle", 512⟩⟩,
-  ⟨1788, "SideEffectNoResult.Inst2", [58, 58], 46, (.enumVariant 1), ⟨"src/prelude_lower.isle", 513⟩⟩,
-  ⟨1789, "SideEffectNoResult.Inst3", [58, 58, 58], 46, (.enumVariant 2), ⟨"src/prelude_lower.isle", 515⟩⟩,
-  ⟨1790, "ProducesFlags.AlreadyExistingFlags", [], 47, (.enumVariant 0), ⟨"src/prelude_lower.isle", 573⟩⟩,
-  ⟨1791, "ProducesFlags.ProducesFlagsSideEffect", [58], 47, (.enumVariant 1), ⟨"src/prelude_lower.isle", 574⟩⟩,
-  ⟨1792, "ProducesFlags.ProducesFlagsTwiceSideEffect", [58, 58], 47, (.enumVariant 2), ⟨"src/prelude_lower.isle", 575⟩⟩,
-  ⟨1793, "ProducesFlags.ProducesFlagsReturnsReg", [58, 27], 47, (.enumVariant 3), ⟨"src/prelude_lower.isle", 578⟩⟩,
-  ⟨1794, "ProducesFlags.ProducesFlagsReturnsResultWithConsumer", [58, 27], 47, (.enumVariant 4), ⟨"src/prelude_lower.isle", 579⟩⟩,
-  ⟨1795, "ProducesFlags.ProducesFlagsOpportunisticDef", [58, 27, 15], 47, (.enumVariant 5), ⟨"src/prelude_lower.isle", 596⟩⟩,
-  ⟨1796, "ProducesFlags.ProducesFlagsOpportunisticDef2", [58, 27, 15, 58], 47, (.enumVariant 6), ⟨"src/prelude_lower.isle", 599⟩⟩,
-  ⟨1797, "ConsumesAndProducesFlags.SideEffect", [58], 48, (.enumVariant 0), ⟨"src/prelude_lower.isle", 649⟩⟩,
-  ⟨1798, "ConsumesAndProducesFlags.ReturnsReg", [58, 27], 48, (.enumVariant 1), ⟨"src/prelude_lower.isle", 650⟩⟩,
-  ⟨1799, "ConsumesFlags.ConsumesFlagsSideEffect", [58], 49, (.enumVariant 0), ⟨"src/prelude_lower.isle", 663⟩⟩,
-  ⟨1800, "ConsumesFlags.ConsumesFlagsSideEffect2", [58, 58], 49, (.enumVariant 1), ⟨"src/prelude_lower.isle", 664⟩⟩,
-  ⟨1801, "ConsumesFlags.ConsumesFlagsReturnsResultWithProducer", [58, 27], 49, (.enumVariant 2), ⟨"src/prelude_lower.isle", 665⟩⟩,
-  ⟨1802, "ConsumesFlags.ConsumesFlagsReturnsReg", [58, 27], 49, (.enumVariant 3), ⟨"src/prelude_lower.isle", 666⟩⟩,
-  ⟨1803, "ConsumesFlags.ConsumesFlagsTwiceReturnsValueRegs", [58, 58, 22], 49, (.enumVariant 4), ⟨"src/prelude_lower.isle", 667⟩⟩,
-  ⟨1804, "ConsumesFlags.ConsumesFlagsFourTimesReturnsValueRegs", [58, 58, 58, 58, 22], 49, (.enumVariant 5), ⟨"src/prelude_lower.isle", 670⟩⟩,
-  ⟨1805, "ConsumesFlags.ConsumesFlagsNop", [], 49, (.enumVariant 6), ⟨"src/prelude_lower.isle", 675⟩⟩,
-  ⟨1806, "TlsModel.None", [], 50, (.enumVariant 0), ⟨"src/prelude_lower.isle", 1303⟩⟩,
-  ⟨1807, "TlsModel.ElfGd", [], 50, (.enumVariant 1), ⟨"src/prelude_lower.isle", 1303⟩⟩,
-  ⟨1808, "TlsModel.Macho", [], 50, (.enumVariant 2), ⟨"src/prelude_lower.isle", 1303⟩⟩,
-  ⟨1809, "TlsModel.Coff", [], 50, (.enumVariant 3), ⟨"src/prelude_lower.isle", 1303⟩⟩,
-  ⟨1810, "StackSwitchModel.None", [], 51, (.enumVariant 0), ⟨"src/prelude_lower.isle", 1322⟩⟩,
-  ⟨1811, "StackSwitchModel.Basic", [], 51, (.enumVariant 1), ⟨"src/prelude_lower.isle", 1322⟩⟩,
-  ⟨1812, "StackSwitchModel.UpdateWindowsTib", [], 51, (.enumVariant 2), ⟨"src/prelude_lower.isle", 1322⟩⟩,
-  ⟨1813, "ABIArgSlot.Reg", [55, 14, 56], 54, (.enumVariant 0), ⟨"src/prelude_lower.isle", 1405⟩⟩,
-  ⟨1814, "ABIArgSlot.Stack", [10, 14, 56], 54, (.enumVariant 1), ⟨"src/prelude_lower.isle", 1409⟩⟩,
-  ⟨1815, "ArgumentExtension.None", [], 56, (.enumVariant 0), ⟨"src/prelude_lower.isle", 1420⟩⟩,
-  ⟨1816, "ArgumentExtension.Uext", [], 56, (.enumVariant 1), ⟨"src/prelude_lower.isle", 1421⟩⟩,
-  ⟨1817, "ArgumentExtension.Sext", [], 56, (.enumVariant 2), ⟨"src/prelude_lower.isle", 1422⟩⟩,
-  ⟨1818, "MInst.Nop0", [], 58, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 13⟩⟩,
-  ⟨1819, "MInst.Nop4", [], 58, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 16⟩⟩,
-  ⟨1820, "MInst.AluRRR", [59, 93, 28, 27, 27], 58, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 19⟩⟩,
-  ⟨1821, "MInst.AluRRRR", [60, 93, 28, 27, 27, 27], 58, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 27⟩⟩,
-  ⟨1822, "MInst.AluRRImm12", [59, 93, 28, 27, 64], 58, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 37⟩⟩,
-  ⟨1823, "MInst.AluRRImmLogic", [59, 93, 28, 27, 65], 58, (.enumVariant 5), ⟨"src/isa/aarch64/inst.isle", 45⟩⟩,
-  ⟨1824, "MInst.AluRRImmShift", [59, 93, 28, 27, 66], 58, (.enumVariant 6), ⟨"src/isa/aarch64/inst.isle", 53⟩⟩,
-  ⟨1825, "MInst.AluRRRShift", [59, 93, 28, 27, 27, 68], 58, (.enumVariant 7), ⟨"src/isa/aarch64/inst.isle", 62⟩⟩,
-  ⟨1826, "MInst.AluRRRExtend", [59, 93, 28, 27, 27, 84], 58, (.enumVariant 8), ⟨"src/isa/aarch64/inst.isle", 72⟩⟩,
-  ⟨1827, "MInst.BitRR", [85, 93, 28, 27], 58, (.enumVariant 9), ⟨"src/isa/aarch64/inst.isle", 81⟩⟩,
-  ⟨1828, "MInst.ULoad8", [28, 89, 142], 58, (.enumVariant 10), ⟨"src/isa/aarch64/inst.isle", 88⟩⟩,
-  ⟨1829, "MInst.SLoad8", [28, 89, 142], 58, (.enumVariant 11), ⟨"src/isa/aarch64/inst.isle", 94⟩⟩,
-  ⟨1830, "MInst.ULoad16", [28, 89, 142], 58, (.enumVariant 12), ⟨"src/isa/aarch64/inst.isle", 100⟩⟩,
-  ⟨1831, "MInst.SLoad16", [28, 89, 142], 58, (.enumVariant 13), ⟨"src/isa/aarch64/inst.isle", 106⟩⟩,
-  ⟨1832, "MInst.ULoad32", [28, 89, 142], 58, (.enumVariant 14), ⟨"src/isa/aarch64/inst.isle", 112⟩⟩,
-  ⟨1833, "MInst.SLoad32", [28, 89, 142], 58, (.enumVariant 15), ⟨"src/isa/aarch64/inst.isle", 118⟩⟩,
-  ⟨1834, "MInst.ULoad64", [28, 89, 142], 58, (.enumVariant 16), ⟨"src/isa/aarch64/inst.isle", 124⟩⟩,
-  ⟨1835, "MInst.Store8", [27, 89, 142], 58, (.enumVariant 17), ⟨"src/isa/aarch64/inst.isle", 130⟩⟩,
-  ⟨1836, "MInst.Store16", [27, 89, 142], 58, (.enumVariant 18), ⟨"src/isa/aarch64/inst.isle", 136⟩⟩,
-  ⟨1837, "MInst.Store32", [27, 89, 142], 58, (.enumVariant 19), ⟨"src/isa/aarch64/inst.isle", 142⟩⟩,
-  ⟨1838, "MInst.Store64", [27, 89, 142], 58, (.enumVariant 20), ⟨"src/isa/aarch64/inst.isle", 148⟩⟩,
-  ⟨1839, "MInst.StoreP64", [27, 27, 90, 142], 58, (.enumVariant 21), ⟨"src/isa/aarch64/inst.isle", 154⟩⟩,
-  ⟨1840, "MInst.LoadP64", [28, 28, 90, 142], 58, (.enumVariant 22), ⟨"src/isa/aarch64/inst.isle", 161⟩⟩,
-  ⟨1841, "MInst.Mov", [93, 28, 27], 58, (.enumVariant 23), ⟨"src/isa/aarch64/inst.isle", 171⟩⟩,
-  ⟨1842, "MInst.MovFromPReg", [28, 32], 58, (.enumVariant 24), ⟨"src/isa/aarch64/inst.isle", 178⟩⟩,
-  ⟨1843, "MInst.MovToPReg", [32, 27], 58, (.enumVariant 25), ⟨"src/isa/aarch64/inst.isle", 184⟩⟩,
-  ⟨1844, "MInst.MovWide", [61, 28, 69, 93], 58, (.enumVariant 26), ⟨"src/isa/aarch64/inst.isle", 189⟩⟩,
-  ⟨1845, "MInst.MovK", [28, 27, 69, 93], 58, (.enumVariant 27), ⟨"src/isa/aarch64/inst.isle", 198⟩⟩,
-  ⟨1846, "MInst.Extend", [28, 27, 0, 1, 1], 58, (.enumVariant 28), ⟨"src/isa/aarch64/inst.isle", 205⟩⟩,
-  ⟨1847, "MInst.BitfieldMove", [93, 62, 28, 27, 67, 67], 58, (.enumVariant 29), ⟨"src/isa/aarch64/inst.isle", 214⟩⟩,
-  ⟨1848, "MInst.BitfieldMoveMod", [93, 28, 27, 27, 67, 67], 58, (.enumVariant 30), ⟨"src/isa/aarch64/inst.isle", 225⟩⟩,
-  ⟨1849, "MInst.CSel", [28, 96, 27, 27], 58, (.enumVariant 31), ⟨"src/isa/aarch64/inst.isle", 234⟩⟩,
-  ⟨1850, "MInst.CSNeg", [28, 96, 27, 27], 58, (.enumVariant 32), ⟨"src/isa/aarch64/inst.isle", 241⟩⟩,
-  ⟨1851, "MInst.CSet", [28, 96], 58, (.enumVariant 33), ⟨"src/isa/aarch64/inst.isle", 248⟩⟩,
-  ⟨1852, "MInst.CSetm", [28, 96], 58, (.enumVariant 34), ⟨"src/isa/aarch64/inst.isle", 253⟩⟩,
-  ⟨1853, "MInst.CCmp", [93, 27, 27, 70, 96], 58, (.enumVariant 35), ⟨"src/isa/aarch64/inst.isle", 258⟩⟩,
-  ⟨1854, "MInst.CCmpImm", [93, 27, 63, 70, 96], 58, (.enumVariant 36), ⟨"src/isa/aarch64/inst.isle", 266⟩⟩,
-  ⟨1855, "MInst.AtomicRMWLoop", [14, 118, 142, 27, 27, 28, 28, 28], 58, (.enumVariant 37), ⟨"src/isa/aarch64/inst.isle", 285⟩⟩,
-  ⟨1856, "MInst.AtomicCASLoop", [14, 142, 27, 27, 27, 28, 28], 58, (.enumVariant 38), ⟨"src/isa/aarch64/inst.isle", 304⟩⟩,
-  ⟨1857, "MInst.AtomicRMW", [117, 27, 28, 27, 14, 142], 58, (.enumVariant 39), ⟨"src/isa/aarch64/inst.isle", 316⟩⟩,
-  ⟨1858, "MInst.AtomicCAS", [28, 27, 27, 27, 14, 142], 58, (.enumVariant 40), ⟨"src/isa/aarch64/inst.isle", 327⟩⟩,
-  ⟨1859, "MInst.AtomicCAS128", [80], 58, (.enumVariant 41), ⟨"src/isa/aarch64/inst.isle", 339⟩⟩,
-  ⟨1860, "MInst.LoadAcquire", [14, 28, 27, 142], 58, (.enumVariant 42), ⟨"src/isa/aarch64/inst.isle", 344⟩⟩,
-  ⟨1861, "MInst.StoreRelease", [14, 27, 27, 142], 58, (.enumVariant 43), ⟨"src/isa/aarch64/inst.isle", 352⟩⟩,
-  ⟨1862, "MInst.Fence", [], 58, (.enumVariant 44), ⟨"src/isa/aarch64/inst.isle", 361⟩⟩,
-  ⟨1863, "MInst.Csdb", [], 58, (.enumVariant 45), ⟨"src/isa/aarch64/inst.isle", 364⟩⟩,
-  ⟨1864, "MInst.FpuMove32", [28, 27], 58, (.enumVariant 46), ⟨"src/isa/aarch64/inst.isle", 367⟩⟩,
-  ⟨1865, "MInst.FpuMove64", [28, 27], 58, (.enumVariant 47), ⟨"src/isa/aarch64/inst.isle", 373⟩⟩,
-  ⟨1866, "MInst.FpuMove128", [28, 27], 58, (.enumVariant 48), ⟨"src/isa/aarch64/inst.isle", 378⟩⟩,
-  ⟨1867, "MInst.FpuMoveFromVec", [28, 27, 1, 97], 58, (.enumVariant 49), ⟨"src/isa/aarch64/inst.isle", 383⟩⟩,
-  ⟨1868, "MInst.FpuExtend", [28, 27, 95], 58, (.enumVariant 50), ⟨"src/isa/aarch64/inst.isle", 391⟩⟩,
-  ⟨1869, "MInst.FpuRR", [98, 95, 28, 27], 58, (.enumVariant 51), ⟨"src/isa/aarch64/inst.isle", 397⟩⟩,
-  ⟨1870, "MInst.FpuRRR", [99, 95, 28, 27, 27], 58, (.enumVariant 52), ⟨"src/isa/aarch64/inst.isle", 404⟩⟩,
-  ⟨1871, "MInst.FpuRRI", [91, 28, 27], 58, (.enumVariant 53), ⟨"src/isa/aarch64/inst.isle", 411⟩⟩,
-  ⟨1872, "MInst.FpuRRIMod", [92, 28, 27, 27], 58, (.enumVariant 54), ⟨"src/isa/aarch64/inst.isle", 419⟩⟩,
-  ⟨1873, "MInst.FpuRRRR", [100, 95, 28, 27, 27, 27], 58, (.enumVariant 55), ⟨"src/isa/aarch64/inst.isle", 427⟩⟩,
-  ⟨1874, "MInst.FpuCmp", [95, 27, 27], 58, (.enumVariant 56), ⟨"src/isa/aarch64/inst.isle", 436⟩⟩,
-  ⟨1875, "MInst.FpuLoad16", [28, 89, 142], 58, (.enumVariant 57), ⟨"src/isa/aarch64/inst.isle", 442⟩⟩,
-  ⟨1876, "MInst.FpuStore16", [27, 89, 142], 58, (.enumVariant 58), ⟨"src/isa/aarch64/inst.isle", 448⟩⟩,
-  ⟨1877, "MInst.FpuLoad32", [28, 89, 142], 58, (.enumVariant 59), ⟨"src/isa/aarch64/inst.isle", 454⟩⟩,
-  ⟨1878, "MInst.FpuStore32", [27, 89, 142], 58, (.enumVariant 60), ⟨"src/isa/aarch64/inst.isle", 460⟩⟩,
-  ⟨1879, "MInst.FpuLoad64", [28, 89, 142], 58, (.enumVariant 61), ⟨"src/isa/aarch64/inst.isle", 466⟩⟩,
-  ⟨1880, "MInst.FpuStore64", [27, 89, 142], 58, (.enumVariant 62), ⟨"src/isa/aarch64/inst.isle", 472⟩⟩,
-  ⟨1881, "MInst.FpuLoad128", [28, 89, 142], 58, (.enumVariant 63), ⟨"src/isa/aarch64/inst.isle", 478⟩⟩,
-  ⟨1882, "MInst.FpuStore128", [27, 89, 142], 58, (.enumVariant 64), ⟨"src/isa/aarch64/inst.isle", 484⟩⟩,
-  ⟨1883, "MInst.FpuLoadP64", [28, 28, 90, 142], 58, (.enumVariant 65), ⟨"src/isa/aarch64/inst.isle", 490⟩⟩,
-  ⟨1884, "MInst.FpuStoreP64", [27, 27, 90, 142], 58, (.enumVariant 66), ⟨"src/isa/aarch64/inst.isle", 497⟩⟩,
-  ⟨1885, "MInst.FpuLoadP128", [28, 28, 90, 142], 58, (.enumVariant 67), ⟨"src/isa/aarch64/inst.isle", 504⟩⟩,
-  ⟨1886, "MInst.FpuStoreP128", [27, 27, 90, 142], 58, (.enumVariant 68), ⟨"src/isa/aarch64/inst.isle", 511⟩⟩,
-  ⟨1887, "MInst.FpuToInt", [101, 28, 27], 58, (.enumVariant 69), ⟨"src/isa/aarch64/inst.isle", 518⟩⟩,
-  ⟨1888, "MInst.IntToFpu", [102, 28, 27], 58, (.enumVariant 70), ⟨"src/isa/aarch64/inst.isle", 524⟩⟩,
-  ⟨1889, "MInst.FpuCSel16", [28, 27, 27, 96], 58, (.enumVariant 71), ⟨"src/isa/aarch64/inst.isle", 531⟩⟩,
-  ⟨1890, "MInst.FpuCSel32", [28, 27, 27, 96], 58, (.enumVariant 72), ⟨"src/isa/aarch64/inst.isle", 538⟩⟩,
-  ⟨1891, "MInst.FpuCSel64", [28, 27, 27, 96], 58, (.enumVariant 73), ⟨"src/isa/aarch64/inst.isle", 545⟩⟩,
-  ⟨1892, "MInst.FpuRound", [103, 28, 27], 58, (.enumVariant 74), ⟨"src/isa/aarch64/inst.isle", 552⟩⟩,
-  ⟨1893, "MInst.MovToFpu", [28, 27, 95], 58, (.enumVariant 75), ⟨"src/isa/aarch64/inst.isle", 560⟩⟩,
-  ⟨1894, "MInst.FpuMoveFPImm", [28, 71, 95], 58, (.enumVariant 76), ⟨"src/isa/aarch64/inst.isle", 566⟩⟩,
-  ⟨1895, "MInst.MovToVec", [28, 27, 27, 1, 97], 58, (.enumVariant 77), ⟨"src/isa/aarch64/inst.isle", 572⟩⟩,
-  ⟨1896, "MInst.MovFromVec", [28, 27, 1, 95], 58, (.enumVariant 78), ⟨"src/isa/aarch64/inst.isle", 580⟩⟩,
-  ⟨1897, "MInst.MovFromVecSigned", [28, 27, 1, 97, 93], 58, (.enumVariant 79), ⟨"src/isa/aarch64/inst.isle", 587⟩⟩,
-  ⟨1898, "MInst.VecDup", [28, 27, 97], 58, (.enumVariant 80), ⟨"src/isa/aarch64/inst.isle", 595⟩⟩,
-  ⟨1899, "MInst.VecDupFromFpu", [28, 27, 97, 1], 58, (.enumVariant 81), ⟨"src/isa/aarch64/inst.isle", 601⟩⟩,
-  ⟨1900, "MInst.VecDupFPImm", [28, 71, 97], 58, (.enumVariant 82), ⟨"src/isa/aarch64/inst.isle", 608⟩⟩,
-  ⟨1901, "MInst.VecDupImm", [28, 72, 0, 97], 58, (.enumVariant 83), ⟨"src/isa/aarch64/inst.isle", 614⟩⟩,
-  ⟨1902, "MInst.VecExtend", [104, 28, 27, 0, 95], 58, (.enumVariant 84), ⟨"src/isa/aarch64/inst.isle", 621⟩⟩,
-  ⟨1903, "MInst.VecMovElement", [28, 27, 27, 1, 1, 97], 58, (.enumVariant 85), ⟨"src/isa/aarch64/inst.isle", 629⟩⟩,
-  ⟨1904, "MInst.VecRRLong", [108, 28, 27, 0], 58, (.enumVariant 86), ⟨"src/isa/aarch64/inst.isle", 638⟩⟩,
-  ⟨1905, "MInst.VecRRNarrowLow", [109, 28, 27, 95], 58, (.enumVariant 87), ⟨"src/isa/aarch64/inst.isle", 645⟩⟩,
-  ⟨1906, "MInst.VecRRNarrowHigh", [109, 28, 27, 27, 95], 58, (.enumVariant 88), ⟨"src/isa/aarch64/inst.isle", 652⟩⟩,
-  ⟨1907, "MInst.VecRRPair", [112, 28, 27], 58, (.enumVariant 89), ⟨"src/isa/aarch64/inst.isle", 660⟩⟩,
-  ⟨1908, "MInst.VecRRRLong", [110, 28, 27, 27, 0], 58, (.enumVariant 90), ⟨"src/isa/aarch64/inst.isle", 667⟩⟩,
-  ⟨1909, "MInst.VecRRRLongMod", [111, 28, 27, 27, 27, 0], 58, (.enumVariant 91), ⟨"src/isa/aarch64/inst.isle", 677⟩⟩,
-  ⟨1910, "MInst.VecRRPairLong", [113, 28, 27], 58, (.enumVariant 92), ⟨"src/isa/aarch64/inst.isle", 688⟩⟩,
-  ⟨1911, "MInst.VecRRR", [105, 28, 27, 27, 97], 58, (.enumVariant 93), ⟨"src/isa/aarch64/inst.isle", 694⟩⟩,
-  ⟨1912, "MInst.VecRRRMod", [106, 28, 27, 27, 27, 97], 58, (.enumVariant 94), ⟨"src/isa/aarch64/inst.isle", 702⟩⟩,
-  ⟨1913, "MInst.VecFmlaElem", [106, 28, 27, 27, 27, 97, 1], 58, (.enumVariant 95), ⟨"src/isa/aarch64/inst.isle", 711⟩⟩,
-  ⟨1914, "MInst.VecMisc", [107, 28, 27, 97], 58, (.enumVariant 96), ⟨"src/isa/aarch64/inst.isle", 721⟩⟩,
-  ⟨1915, "MInst.VecLanes", [114, 28, 27, 97], 58, (.enumVariant 97), ⟨"src/isa/aarch64/inst.isle", 728⟩⟩,
-  ⟨1916, "MInst.VecShiftImm", [115, 28, 27, 97, 1], 58, (.enumVariant 98), ⟨"src/isa/aarch64/inst.isle", 739⟩⟩,
-  ⟨1917, "MInst.VecShiftImmMod", [116, 28, 27, 27, 97, 1], 58, (.enumVariant 99), ⟨"src/isa/aarch64/inst.isle", 747⟩⟩,
-  ⟨1918, "MInst.VecExtract", [28, 27, 27, 1], 58, (.enumVariant 100), ⟨"src/isa/aarch64/inst.isle", 757⟩⟩,
-  ⟨1919, "MInst.VecTbl", [28, 27, 27], 58, (.enumVariant 101), ⟨"src/isa/aarch64/inst.isle", 768⟩⟩,
-  ⟨1920, "MInst.VecTblExt", [28, 27, 27, 27], 58, (.enumVariant 102), ⟨"src/isa/aarch64/inst.isle", 779⟩⟩,
-  ⟨1921, "MInst.VecTbl2", [28, 27, 27, 27], 58, (.enumVariant 103), ⟨"src/isa/aarch64/inst.isle", 792⟩⟩,
-  ⟨1922, "MInst.VecTbl2Ext", [28, 27, 27, 27, 27], 58, (.enumVariant 104), ⟨"src/isa/aarch64/inst.isle", 806⟩⟩,
-  ⟨1923, "MInst.VecLoadReplicate", [28, 27, 97, 142], 58, (.enumVariant 105), ⟨"src/isa/aarch64/inst.isle", 814⟩⟩,
-  ⟨1924, "MInst.VecCSel", [28, 27, 27, 96], 58, (.enumVariant 106), ⟨"src/isa/aarch64/inst.isle", 822⟩⟩,
-  ⟨1925, "MInst.MovToNZCV", [27], 58, (.enumVariant 107), ⟨"src/isa/aarch64/inst.isle", 829⟩⟩,
-  ⟨1926, "MInst.MovFromNZCV", [28], 58, (.enumVariant 108), ⟨"src/isa/aarch64/inst.isle", 833⟩⟩,
-  ⟨1927, "MInst.Call", [74], 58, (.enumVariant 109), ⟨"src/isa/aarch64/inst.isle", 840⟩⟩,
-  ⟨1928, "MInst.CallInd", [75], 58, (.enumVariant 110), ⟨"src/isa/aarch64/inst.isle", 843⟩⟩,
-  ⟨1929, "MInst.ReturnCall", [76], 58, (.enumVariant 111), ⟨"src/isa/aarch64/inst.isle", 846⟩⟩,
-  ⟨1930, "MInst.ReturnCallInd", [77], 58, (.enumVariant 112), ⟨"src/isa/aarch64/inst.isle", 849⟩⟩,
-  ⟨1931, "MInst.Args", [39], 58, (.enumVariant 113), ⟨"src/isa/aarch64/inst.isle", 852⟩⟩,
-  ⟨1932, "MInst.Rets", [40], 58, (.enumVariant 114), ⟨"src/isa/aarch64/inst.isle", 856⟩⟩,
-  ⟨1933, "MInst.Ret", [], 58, (.enumVariant 115), ⟨"src/isa/aarch64/inst.isle", 862⟩⟩,
-  ⟨1934, "MInst.AuthenticatedRet", [119, 0], 58, (.enumVariant 116), ⟨"src/isa/aarch64/inst.isle", 869⟩⟩,
-  ⟨1935, "MInst.Jump", [78], 58, (.enumVariant 117), ⟨"src/isa/aarch64/inst.isle", 874⟩⟩,
-  ⟨1936, "MInst.CondBr", [78, 78, 83], 58, (.enumVariant 118), ⟨"src/isa/aarch64/inst.isle", 881⟩⟩,
-  ⟨1937, "MInst.TestBitAndBranch", [94, 78, 78, 27, 1], 58, (.enumVariant 119), ⟨"src/isa/aarch64/inst.isle", 888⟩⟩,
-  ⟨1938, "MInst.TrapIf", [83, 146], 58, (.enumVariant 120), ⟨"src/isa/aarch64/inst.isle", 903⟩⟩,
-  ⟨1939, "MInst.IndirectBr", [27, 82], 58, (.enumVariant 121), ⟨"src/isa/aarch64/inst.isle", 909⟩⟩,
-  ⟨1940, "MInst.Brk", [], 58, (.enumVariant 122), ⟨"src/isa/aarch64/inst.isle", 914⟩⟩,
-  ⟨1941, "MInst.Udf", [146], 58, (.enumVariant 123), ⟨"src/isa/aarch64/inst.isle", 918⟩⟩,
-  ⟨1942, "MInst.Adr", [28, 9], 58, (.enumVariant 124), ⟨"src/isa/aarch64/inst.isle", 925⟩⟩,
-  ⟨1943, "MInst.Adrp", [28, 9], 58, (.enumVariant 125), ⟨"src/isa/aarch64/inst.isle", 931⟩⟩,
-  ⟨1944, "MInst.Word4", [3], 58, (.enumVariant 126), ⟨"src/isa/aarch64/inst.isle", 936⟩⟩,
-  ⟨1945, "MInst.Word8", [4], 58, (.enumVariant 127), ⟨"src/isa/aarch64/inst.isle", 940⟩⟩,
-  ⟨1946, "MInst.JTSequence", [33, 44, 27, 28, 28], 58, (.enumVariant 128), ⟨"src/isa/aarch64/inst.isle", 944⟩⟩,
-  ⟨1947, "MInst.LoadExtNameGot", [28, 37], 58, (.enumVariant 129), ⟨"src/isa/aarch64/inst.isle", 952⟩⟩,
-  ⟨1948, "MInst.LoadExtNameNear", [28, 37, 10], 58, (.enumVariant 130), ⟨"src/isa/aarch64/inst.isle", 955⟩⟩,
-  ⟨1949, "MInst.LoadExtNameFar", [28, 37, 10], 58, (.enumVariant 131), ⟨"src/isa/aarch64/inst.isle", 959⟩⟩,
-  ⟨1950, "MInst.LoadAddr", [28, 89], 58, (.enumVariant 132), ⟨"src/isa/aarch64/inst.isle", 965⟩⟩,
-  ⟨1951, "MInst.Paci", [119], 58, (.enumVariant 133), ⟨"src/isa/aarch64/inst.isle", 972⟩⟩,
-  ⟨1952, "MInst.Xpaclri", [], 58, (.enumVariant 134), ⟨"src/isa/aarch64/inst.isle", 978⟩⟩,
-  ⟨1953, "MInst.Bti", [120], 58, (.enumVariant 135), ⟨"src/isa/aarch64/inst.isle", 982⟩⟩,
-  ⟨1954, "MInst.EmitIsland", [81], 58, (.enumVariant 136), ⟨"src/isa/aarch64/inst.isle", 1005⟩⟩,
-  ⟨1955, "MInst.ElfTlsGetAddr", [37, 28, 28], 58, (.enumVariant 137), ⟨"src/isa/aarch64/inst.isle", 1010⟩⟩,
-  ⟨1956, "MInst.MachOTlsGetAddr", [36, 28], 58, (.enumVariant 138), ⟨"src/isa/aarch64/inst.isle", 1015⟩⟩,
-  ⟨1957, "MInst.Unwind", [35], 58, (.enumVariant 139), ⟨"src/isa/aarch64/inst.isle", 1020⟩⟩,
-  ⟨1958, "MInst.DummyUse", [27], 58, (.enumVariant 140), ⟨"src/isa/aarch64/inst.isle", 1024⟩⟩,
-  ⟨1959, "MInst.LabelAddress", [28, 33], 58, (.enumVariant 141), ⟨"src/isa/aarch64/inst.isle", 1028⟩⟩,
-  ⟨1960, "MInst.SequencePoint", [], 58, (.enumVariant 142), ⟨"src/isa/aarch64/inst.isle", 1032⟩⟩,
-  ⟨1961, "MInst.StackProbeLoop", [28, 27, 64], 58, (.enumVariant 143), ⟨"src/isa/aarch64/inst.isle", 1039⟩⟩,
-  ⟨1962, "ALUOp.Add", [], 59, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1238⟩⟩,
-  ⟨1963, "ALUOp.Sub", [], 59, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1239⟩⟩,
-  ⟨1964, "ALUOp.Orr", [], 59, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1240⟩⟩,
-  ⟨1965, "ALUOp.OrrNot", [], 59, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1241⟩⟩,
-  ⟨1966, "ALUOp.And", [], 59, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 1242⟩⟩,
-  ⟨1967, "ALUOp.AndS", [], 59, (.enumVariant 5), ⟨"src/isa/aarch64/inst.isle", 1243⟩⟩,
-  ⟨1968, "ALUOp.AndNot", [], 59, (.enumVariant 6), ⟨"src/isa/aarch64/inst.isle", 1244⟩⟩,
-  ⟨1969, "ALUOp.Eor", [], 59, (.enumVariant 7), ⟨"src/isa/aarch64/inst.isle", 1246⟩⟩,
-  ⟨1970, "ALUOp.EorNot", [], 59, (.enumVariant 8), ⟨"src/isa/aarch64/inst.isle", 1248⟩⟩,
-  ⟨1971, "ALUOp.AddS", [], 59, (.enumVariant 9), ⟨"src/isa/aarch64/inst.isle", 1250⟩⟩,
-  ⟨1972, "ALUOp.SubS", [], 59, (.enumVariant 10), ⟨"src/isa/aarch64/inst.isle", 1252⟩⟩,
-  ⟨1973, "ALUOp.SMulH", [], 59, (.enumVariant 11), ⟨"src/isa/aarch64/inst.isle", 1254⟩⟩,
-  ⟨1974, "ALUOp.UMulH", [], 59, (.enumVariant 12), ⟨"src/isa/aarch64/inst.isle", 1256⟩⟩,
-  ⟨1975, "ALUOp.SDiv", [], 59, (.enumVariant 13), ⟨"src/isa/aarch64/inst.isle", 1257⟩⟩,
-  ⟨1976, "ALUOp.UDiv", [], 59, (.enumVariant 14), ⟨"src/isa/aarch64/inst.isle", 1258⟩⟩,
-  ⟨1977, "ALUOp.Extr", [], 59, (.enumVariant 15), ⟨"src/isa/aarch64/inst.isle", 1259⟩⟩,
-  ⟨1978, "ALUOp.Lsr", [], 59, (.enumVariant 16), ⟨"src/isa/aarch64/inst.isle", 1260⟩⟩,
-  ⟨1979, "ALUOp.Asr", [], 59, (.enumVariant 17), ⟨"src/isa/aarch64/inst.isle", 1261⟩⟩,
-  ⟨1980, "ALUOp.Lsl", [], 59, (.enumVariant 18), ⟨"src/isa/aarch64/inst.isle", 1262⟩⟩,
-  ⟨1981, "ALUOp.Adc", [], 59, (.enumVariant 19), ⟨"src/isa/aarch64/inst.isle", 1264⟩⟩,
-  ⟨1982, "ALUOp.AdcS", [], 59, (.enumVariant 20), ⟨"src/isa/aarch64/inst.isle", 1266⟩⟩,
-  ⟨1983, "ALUOp.Sbc", [], 59, (.enumVariant 21), ⟨"src/isa/aarch64/inst.isle", 1268⟩⟩,
-  ⟨1984, "ALUOp.SbcS", [], 59, (.enumVariant 22), ⟨"src/isa/aarch64/inst.isle", 1270⟩⟩,
-  ⟨1985, "ALUOp3.MAdd", [], 60, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1277⟩⟩,
-  ⟨1986, "ALUOp3.MSub", [], 60, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1279⟩⟩,
-  ⟨1987, "ALUOp3.UMAddL", [], 60, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1281⟩⟩,
-  ⟨1988, "ALUOp3.SMAddL", [], 60, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1283⟩⟩,
-  ⟨1989, "MoveWideOp.MovZ", [], 61, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1288⟩⟩,
-  ⟨1990, "MoveWideOp.MovN", [], 61, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1289⟩⟩,
-  ⟨1991, "BfmOp.UBfm", [], 62, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1296⟩⟩,
-  ⟨1992, "BfmOp.SBfm", [], 62, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1297⟩⟩,
-  ⟨1993, "CondBrKind.Zero", [27, 93], 83, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1387⟩⟩,
-  ⟨1994, "CondBrKind.NotZero", [27, 93], 83, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1388⟩⟩,
-  ⟨1995, "CondBrKind.Cond", [96], 83, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1389⟩⟩,
-  ⟨1996, "ExtendOp.UXTB", [], 84, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1398⟩⟩,
-  ⟨1997, "ExtendOp.UXTH", [], 84, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1399⟩⟩,
-  ⟨1998, "ExtendOp.UXTW", [], 84, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1400⟩⟩,
-  ⟨1999, "ExtendOp.UXTX", [], 84, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1401⟩⟩]
+/-- term 1141 -/
+def T.«i64_when_odd» : Term :=
+  ⟨1141, "i64_when_odd", [], 10, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i64_when_odd")]), (.list [(.atom "i64_matches_odd"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 1948⟩⟩
 
-def terms_5 : Array Term := #[
-  ⟨2000, "ExtendOp.SXTB", [], 84, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 1402⟩⟩,
-  ⟨2001, "ExtendOp.SXTH", [], 84, (.enumVariant 5), ⟨"src/isa/aarch64/inst.isle", 1403⟩⟩,
-  ⟨2002, "ExtendOp.SXTW", [], 84, (.enumVariant 6), ⟨"src/isa/aarch64/inst.isle", 1404⟩⟩,
-  ⟨2003, "ExtendOp.SXTX", [], 84, (.enumVariant 7), ⟨"src/isa/aarch64/inst.isle", 1405⟩⟩,
-  ⟨2004, "BitOp.RBit", [], 85, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1413⟩⟩,
-  ⟨2005, "BitOp.Clz", [], 85, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1414⟩⟩,
-  ⟨2006, "BitOp.Cls", [], 85, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1415⟩⟩,
-  ⟨2007, "BitOp.Rev16", [], 85, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1417⟩⟩,
-  ⟨2008, "BitOp.Rev32", [], 85, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 1418⟩⟩,
-  ⟨2009, "BitOp.Rev64", [], 85, (.enumVariant 5), ⟨"src/isa/aarch64/inst.isle", 1419⟩⟩,
-  ⟨2010, "AMode.SPPostIndexed", [87], 89, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1440⟩⟩,
-  ⟨2011, "AMode.SPPreIndexed", [87], 89, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1446⟩⟩,
-  ⟨2012, "AMode.RegReg", [27, 27], 89, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1454⟩⟩,
-  ⟨2013, "AMode.RegScaled", [27, 27], 89, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1459⟩⟩,
-  ⟨2014, "AMode.RegScaledExtended", [27, 27, 84], 89, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 1465⟩⟩,
-  ⟨2015, "AMode.RegExtended", [27, 27, 84], 89, (.enumVariant 5), ⟨"src/isa/aarch64/inst.isle", 1472⟩⟩,
-  ⟨2016, "AMode.Unscaled", [27, 87], 89, (.enumVariant 6), ⟨"src/isa/aarch64/inst.isle", 1478⟩⟩,
-  ⟨2017, "AMode.UnsignedOffset", [27, 88], 89, (.enumVariant 7), ⟨"src/isa/aarch64/inst.isle", 1483⟩⟩,
-  ⟨2018, "AMode.Label", [86], 89, (.enumVariant 8), ⟨"src/isa/aarch64/inst.isle", 1490⟩⟩,
-  ⟨2019, "AMode.RegOffset", [27, 10], 89, (.enumVariant 9), ⟨"src/isa/aarch64/inst.isle", 1495⟩⟩,
-  ⟨2020, "AMode.SPOffset", [10], 89, (.enumVariant 10), ⟨"src/isa/aarch64/inst.isle", 1500⟩⟩,
-  ⟨2021, "AMode.FPOffset", [10], 89, (.enumVariant 11), ⟨"src/isa/aarch64/inst.isle", 1504⟩⟩,
-  ⟨2022, "AMode.Const", [45], 89, (.enumVariant 12), ⟨"src/isa/aarch64/inst.isle", 1509⟩⟩,
-  ⟨2023, "AMode.IncomingArg", [10], 89, (.enumVariant 13), ⟨"src/isa/aarch64/inst.isle", 1517⟩⟩,
-  ⟨2024, "AMode.SlotOffset", [10], 89, (.enumVariant 14), ⟨"src/isa/aarch64/inst.isle", 1530⟩⟩,
-  ⟨2025, "PairAMode.SignedOffset", [27, 73], 90, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1548⟩⟩,
-  ⟨2026, "PairAMode.SPPreIndexed", [73], 90, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1553⟩⟩,
-  ⟨2027, "PairAMode.SPPostIndexed", [73], 90, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1556⟩⟩,
-  ⟨2028, "OperandSize.Size32", [], 93, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1578⟩⟩,
-  ⟨2029, "OperandSize.Size64", [], 93, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1579⟩⟩,
-  ⟨2030, "TestBitAndBranchKind.Z", [], 94, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1581⟩⟩,
-  ⟨2031, "TestBitAndBranchKind.NZ", [], 94, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1581⟩⟩,
-  ⟨2032, "ScalarSize.Size8", [], 95, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1603⟩⟩,
-  ⟨2033, "ScalarSize.Size16", [], 95, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1604⟩⟩,
-  ⟨2034, "ScalarSize.Size32", [], 95, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1605⟩⟩,
-  ⟨2035, "ScalarSize.Size64", [], 95, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1606⟩⟩,
-  ⟨2036, "ScalarSize.Size128", [], 95, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 1607⟩⟩,
-  ⟨2037, "Cond.Eq", [], 96, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1658⟩⟩,
-  ⟨2038, "Cond.Ne", [], 96, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1659⟩⟩,
-  ⟨2039, "Cond.Hs", [], 96, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1660⟩⟩,
-  ⟨2040, "Cond.Lo", [], 96, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1661⟩⟩,
-  ⟨2041, "Cond.Mi", [], 96, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 1662⟩⟩,
-  ⟨2042, "Cond.Pl", [], 96, (.enumVariant 5), ⟨"src/isa/aarch64/inst.isle", 1663⟩⟩,
-  ⟨2043, "Cond.Vs", [], 96, (.enumVariant 6), ⟨"src/isa/aarch64/inst.isle", 1664⟩⟩,
-  ⟨2044, "Cond.Vc", [], 96, (.enumVariant 7), ⟨"src/isa/aarch64/inst.isle", 1665⟩⟩,
-  ⟨2045, "Cond.Hi", [], 96, (.enumVariant 8), ⟨"src/isa/aarch64/inst.isle", 1666⟩⟩,
-  ⟨2046, "Cond.Ls", [], 96, (.enumVariant 9), ⟨"src/isa/aarch64/inst.isle", 1667⟩⟩,
-  ⟨2047, "Cond.Ge", [], 96, (.enumVariant 10), ⟨"src/isa/aarch64/inst.isle", 1668⟩⟩,
-  ⟨2048, "Cond.Lt", [], 96, (.enumVariant 11), ⟨"src/isa/aarch64/inst.isle", 1669⟩⟩,
-  ⟨2049, "Cond.Gt", [], 96, (.enumVariant 12), ⟨"src/isa/aarch64/inst.isle", 1670⟩⟩,
-  ⟨2050, "Cond.Le", [], 96, (.enumVariant 13), ⟨"src/isa/aarch64/inst.isle", 1671⟩⟩,
-  ⟨2051, "Cond.Al", [], 96, (.enumVariant 14), ⟨"src/isa/aarch64/inst.isle", 1672⟩⟩,
-  ⟨2052, "Cond.Nv", [], 96, (.enumVariant 15), ⟨"src/isa/aarch64/inst.isle", 1673⟩⟩,
-  ⟨2053, "VectorSize.Size8x8", [], 97, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1678⟩⟩,
-  ⟨2054, "VectorSize.Size8x16", [], 97, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1679⟩⟩,
-  ⟨2055, "VectorSize.Size16x4", [], 97, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1680⟩⟩,
-  ⟨2056, "VectorSize.Size16x8", [], 97, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1681⟩⟩,
-  ⟨2057, "VectorSize.Size32x2", [], 97, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 1682⟩⟩,
-  ⟨2058, "VectorSize.Size32x4", [], 97, (.enumVariant 5), ⟨"src/isa/aarch64/inst.isle", 1683⟩⟩,
-  ⟨2059, "VectorSize.Size64x2", [], 97, (.enumVariant 6), ⟨"src/isa/aarch64/inst.isle", 1684⟩⟩,
-  ⟨2060, "FPUOp1.Abs", [], 98, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1715⟩⟩,
-  ⟨2061, "FPUOp1.Neg", [], 98, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1716⟩⟩,
-  ⟨2062, "FPUOp1.Sqrt", [], 98, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1717⟩⟩,
-  ⟨2063, "FPUOp1.Cvt32To64", [], 98, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1718⟩⟩,
-  ⟨2064, "FPUOp1.Cvt64To32", [], 98, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 1719⟩⟩,
-  ⟨2065, "FPUOp2.Add", [], 99, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1725⟩⟩,
-  ⟨2066, "FPUOp2.Sub", [], 99, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1726⟩⟩,
-  ⟨2067, "FPUOp2.Mul", [], 99, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1727⟩⟩,
-  ⟨2068, "FPUOp2.Div", [], 99, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1728⟩⟩,
-  ⟨2069, "FPUOp2.Max", [], 99, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 1729⟩⟩,
-  ⟨2070, "FPUOp2.Min", [], 99, (.enumVariant 5), ⟨"src/isa/aarch64/inst.isle", 1730⟩⟩,
-  ⟨2071, "FPUOp3.MAdd", [], 100, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1737⟩⟩,
-  ⟨2072, "FPUOp3.MSub", [], 100, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1739⟩⟩,
-  ⟨2073, "FPUOp3.NMAdd", [], 100, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1741⟩⟩,
-  ⟨2074, "FPUOp3.NMSub", [], 100, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1743⟩⟩,
-  ⟨2075, "FpuToIntOp.F32ToU32", [], 101, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1749⟩⟩,
-  ⟨2076, "FpuToIntOp.F32ToI32", [], 101, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1750⟩⟩,
-  ⟨2077, "FpuToIntOp.F32ToU64", [], 101, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1751⟩⟩,
-  ⟨2078, "FpuToIntOp.F32ToI64", [], 101, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1752⟩⟩,
-  ⟨2079, "FpuToIntOp.F64ToU32", [], 101, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 1753⟩⟩,
-  ⟨2080, "FpuToIntOp.F64ToI32", [], 101, (.enumVariant 5), ⟨"src/isa/aarch64/inst.isle", 1754⟩⟩,
-  ⟨2081, "FpuToIntOp.F64ToU64", [], 101, (.enumVariant 6), ⟨"src/isa/aarch64/inst.isle", 1755⟩⟩,
-  ⟨2082, "FpuToIntOp.F64ToI64", [], 101, (.enumVariant 7), ⟨"src/isa/aarch64/inst.isle", 1756⟩⟩,
-  ⟨2083, "IntToFpuOp.U32ToF32", [], 102, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1762⟩⟩,
-  ⟨2084, "IntToFpuOp.I32ToF32", [], 102, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1763⟩⟩,
-  ⟨2085, "IntToFpuOp.U32ToF64", [], 102, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1764⟩⟩,
-  ⟨2086, "IntToFpuOp.I32ToF64", [], 102, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1765⟩⟩,
-  ⟨2087, "IntToFpuOp.U64ToF32", [], 102, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 1766⟩⟩,
-  ⟨2088, "IntToFpuOp.I64ToF32", [], 102, (.enumVariant 5), ⟨"src/isa/aarch64/inst.isle", 1767⟩⟩,
-  ⟨2089, "IntToFpuOp.U64ToF64", [], 102, (.enumVariant 6), ⟨"src/isa/aarch64/inst.isle", 1768⟩⟩,
-  ⟨2090, "IntToFpuOp.I64ToF64", [], 102, (.enumVariant 7), ⟨"src/isa/aarch64/inst.isle", 1769⟩⟩,
-  ⟨2091, "FpuRoundMode.Minus32", [], 103, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1776⟩⟩,
-  ⟨2092, "FpuRoundMode.Minus64", [], 103, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1777⟩⟩,
-  ⟨2093, "FpuRoundMode.Plus32", [], 103, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1778⟩⟩,
-  ⟨2094, "FpuRoundMode.Plus64", [], 103, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1779⟩⟩,
-  ⟨2095, "FpuRoundMode.Zero32", [], 103, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 1780⟩⟩,
-  ⟨2096, "FpuRoundMode.Zero64", [], 103, (.enumVariant 5), ⟨"src/isa/aarch64/inst.isle", 1781⟩⟩,
-  ⟨2097, "FpuRoundMode.Nearest32", [], 103, (.enumVariant 6), ⟨"src/isa/aarch64/inst.isle", 1782⟩⟩,
-  ⟨2098, "FpuRoundMode.Nearest64", [], 103, (.enumVariant 7), ⟨"src/isa/aarch64/inst.isle", 1783⟩⟩,
-  ⟨2099, "VecExtendOp.Sxtl", [], 104, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1790⟩⟩,
-  ⟨2100, "VecExtendOp.Uxtl", [], 104, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1792⟩⟩,
-  ⟨2101, "VecALUOp.Sqadd", [], 105, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1799⟩⟩,
-  ⟨2102, "VecALUOp.Uqadd", [], 105, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1801⟩⟩,
-  ⟨2103, "VecALUOp.Sqsub", [], 105, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1803⟩⟩,
-  ⟨2104, "VecALUOp.Uqsub", [], 105, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1805⟩⟩,
-  ⟨2105, "VecALUOp.Cmeq", [], 105, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 1807⟩⟩,
-  ⟨2106, "VecALUOp.Cmge", [], 105, (.enumVariant 5), ⟨"src/isa/aarch64/inst.isle", 1809⟩⟩,
-  ⟨2107, "VecALUOp.Cmgt", [], 105, (.enumVariant 6), ⟨"src/isa/aarch64/inst.isle", 1811⟩⟩,
-  ⟨2108, "VecALUOp.Cmhs", [], 105, (.enumVariant 7), ⟨"src/isa/aarch64/inst.isle", 1813⟩⟩,
-  ⟨2109, "VecALUOp.Cmhi", [], 105, (.enumVariant 8), ⟨"src/isa/aarch64/inst.isle", 1815⟩⟩,
-  ⟨2110, "VecALUOp.Fcmeq", [], 105, (.enumVariant 9), ⟨"src/isa/aarch64/inst.isle", 1817⟩⟩,
-  ⟨2111, "VecALUOp.Fcmgt", [], 105, (.enumVariant 10), ⟨"src/isa/aarch64/inst.isle", 1819⟩⟩,
-  ⟨2112, "VecALUOp.Fcmge", [], 105, (.enumVariant 11), ⟨"src/isa/aarch64/inst.isle", 1821⟩⟩,
-  ⟨2113, "VecALUOp.And", [], 105, (.enumVariant 12), ⟨"src/isa/aarch64/inst.isle", 1823⟩⟩,
-  ⟨2114, "VecALUOp.Bic", [], 105, (.enumVariant 13), ⟨"src/isa/aarch64/inst.isle", 1825⟩⟩,
-  ⟨2115, "VecALUOp.Orr", [], 105, (.enumVariant 14), ⟨"src/isa/aarch64/inst.isle", 1827⟩⟩,
-  ⟨2116, "VecALUOp.Orn", [], 105, (.enumVariant 15), ⟨"src/isa/aarch64/inst.isle", 1829⟩⟩,
-  ⟨2117, "VecALUOp.Eor", [], 105, (.enumVariant 16), ⟨"src/isa/aarch64/inst.isle", 1831⟩⟩,
-  ⟨2118, "VecALUOp.Umaxp", [], 105, (.enumVariant 17), ⟨"src/isa/aarch64/inst.isle", 1833⟩⟩,
-  ⟨2119, "VecALUOp.Add", [], 105, (.enumVariant 18), ⟨"src/isa/aarch64/inst.isle", 1835⟩⟩,
-  ⟨2120, "VecALUOp.Sub", [], 105, (.enumVariant 19), ⟨"src/isa/aarch64/inst.isle", 1837⟩⟩,
-  ⟨2121, "VecALUOp.Mul", [], 105, (.enumVariant 20), ⟨"src/isa/aarch64/inst.isle", 1839⟩⟩,
-  ⟨2122, "VecALUOp.Sshl", [], 105, (.enumVariant 21), ⟨"src/isa/aarch64/inst.isle", 1841⟩⟩,
-  ⟨2123, "VecALUOp.Ushl", [], 105, (.enumVariant 22), ⟨"src/isa/aarch64/inst.isle", 1843⟩⟩,
-  ⟨2124, "VecALUOp.Umin", [], 105, (.enumVariant 23), ⟨"src/isa/aarch64/inst.isle", 1845⟩⟩,
-  ⟨2125, "VecALUOp.Smin", [], 105, (.enumVariant 24), ⟨"src/isa/aarch64/inst.isle", 1847⟩⟩,
-  ⟨2126, "VecALUOp.Umax", [], 105, (.enumVariant 25), ⟨"src/isa/aarch64/inst.isle", 1849⟩⟩,
-  ⟨2127, "VecALUOp.Smax", [], 105, (.enumVariant 26), ⟨"src/isa/aarch64/inst.isle", 1851⟩⟩,
-  ⟨2128, "VecALUOp.Urhadd", [], 105, (.enumVariant 27), ⟨"src/isa/aarch64/inst.isle", 1853⟩⟩,
-  ⟨2129, "VecALUOp.Fadd", [], 105, (.enumVariant 28), ⟨"src/isa/aarch64/inst.isle", 1855⟩⟩,
-  ⟨2130, "VecALUOp.Fsub", [], 105, (.enumVariant 29), ⟨"src/isa/aarch64/inst.isle", 1857⟩⟩,
-  ⟨2131, "VecALUOp.Fdiv", [], 105, (.enumVariant 30), ⟨"src/isa/aarch64/inst.isle", 1859⟩⟩,
-  ⟨2132, "VecALUOp.Fmax", [], 105, (.enumVariant 31), ⟨"src/isa/aarch64/inst.isle", 1861⟩⟩,
-  ⟨2133, "VecALUOp.Fmin", [], 105, (.enumVariant 32), ⟨"src/isa/aarch64/inst.isle", 1863⟩⟩,
-  ⟨2134, "VecALUOp.Fmul", [], 105, (.enumVariant 33), ⟨"src/isa/aarch64/inst.isle", 1865⟩⟩,
-  ⟨2135, "VecALUOp.Addp", [], 105, (.enumVariant 34), ⟨"src/isa/aarch64/inst.isle", 1867⟩⟩,
-  ⟨2136, "VecALUOp.Zip1", [], 105, (.enumVariant 35), ⟨"src/isa/aarch64/inst.isle", 1869⟩⟩,
-  ⟨2137, "VecALUOp.Zip2", [], 105, (.enumVariant 36), ⟨"src/isa/aarch64/inst.isle", 1871⟩⟩,
-  ⟨2138, "VecALUOp.Sqrdmulh", [], 105, (.enumVariant 37), ⟨"src/isa/aarch64/inst.isle", 1873⟩⟩,
-  ⟨2139, "VecALUOp.Uzp1", [], 105, (.enumVariant 38), ⟨"src/isa/aarch64/inst.isle", 1875⟩⟩,
-  ⟨2140, "VecALUOp.Uzp2", [], 105, (.enumVariant 39), ⟨"src/isa/aarch64/inst.isle", 1877⟩⟩,
-  ⟨2141, "VecALUOp.Trn1", [], 105, (.enumVariant 40), ⟨"src/isa/aarch64/inst.isle", 1879⟩⟩,
-  ⟨2142, "VecALUOp.Trn2", [], 105, (.enumVariant 41), ⟨"src/isa/aarch64/inst.isle", 1881⟩⟩,
-  ⟨2143, "VecALUModOp.Bsl", [], 106, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1888⟩⟩,
-  ⟨2144, "VecALUModOp.Fmla", [], 106, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1890⟩⟩,
-  ⟨2145, "VecALUModOp.Fmls", [], 106, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1892⟩⟩,
-  ⟨2146, "VecALUModOp.Sdot", [], 106, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1894⟩⟩,
-  ⟨2147, "VecALUModOp.Usdot", [], 106, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 1896⟩⟩,
-  ⟨2148, "VecMisc2.Not", [], 107, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1903⟩⟩,
-  ⟨2149, "VecMisc2.Neg", [], 107, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1905⟩⟩,
-  ⟨2150, "VecMisc2.Abs", [], 107, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1907⟩⟩,
-  ⟨2151, "VecMisc2.Fabs", [], 107, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1909⟩⟩,
-  ⟨2152, "VecMisc2.Fneg", [], 107, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 1911⟩⟩,
-  ⟨2153, "VecMisc2.Fsqrt", [], 107, (.enumVariant 5), ⟨"src/isa/aarch64/inst.isle", 1913⟩⟩,
-  ⟨2154, "VecMisc2.Rev16", [], 107, (.enumVariant 6), ⟨"src/isa/aarch64/inst.isle", 1915⟩⟩,
-  ⟨2155, "VecMisc2.Rev32", [], 107, (.enumVariant 7), ⟨"src/isa/aarch64/inst.isle", 1917⟩⟩,
-  ⟨2156, "VecMisc2.Rev64", [], 107, (.enumVariant 8), ⟨"src/isa/aarch64/inst.isle", 1919⟩⟩,
-  ⟨2157, "VecMisc2.Fcvtzs", [], 107, (.enumVariant 9), ⟨"src/isa/aarch64/inst.isle", 1921⟩⟩,
-  ⟨2158, "VecMisc2.Fcvtzu", [], 107, (.enumVariant 10), ⟨"src/isa/aarch64/inst.isle", 1923⟩⟩,
-  ⟨2159, "VecMisc2.Scvtf", [], 107, (.enumVariant 11), ⟨"src/isa/aarch64/inst.isle", 1925⟩⟩,
-  ⟨2160, "VecMisc2.Ucvtf", [], 107, (.enumVariant 12), ⟨"src/isa/aarch64/inst.isle", 1927⟩⟩,
-  ⟨2161, "VecMisc2.Frintn", [], 107, (.enumVariant 13), ⟨"src/isa/aarch64/inst.isle", 1929⟩⟩,
-  ⟨2162, "VecMisc2.Frintz", [], 107, (.enumVariant 14), ⟨"src/isa/aarch64/inst.isle", 1931⟩⟩,
-  ⟨2163, "VecMisc2.Frintm", [], 107, (.enumVariant 15), ⟨"src/isa/aarch64/inst.isle", 1933⟩⟩,
-  ⟨2164, "VecMisc2.Frintp", [], 107, (.enumVariant 16), ⟨"src/isa/aarch64/inst.isle", 1935⟩⟩,
-  ⟨2165, "VecMisc2.Cnt", [], 107, (.enumVariant 17), ⟨"src/isa/aarch64/inst.isle", 1937⟩⟩,
-  ⟨2166, "VecMisc2.Cmeq0", [], 107, (.enumVariant 18), ⟨"src/isa/aarch64/inst.isle", 1939⟩⟩,
-  ⟨2167, "VecMisc2.Cmge0", [], 107, (.enumVariant 19), ⟨"src/isa/aarch64/inst.isle", 1941⟩⟩,
-  ⟨2168, "VecMisc2.Cmgt0", [], 107, (.enumVariant 20), ⟨"src/isa/aarch64/inst.isle", 1943⟩⟩,
-  ⟨2169, "VecMisc2.Cmle0", [], 107, (.enumVariant 21), ⟨"src/isa/aarch64/inst.isle", 1945⟩⟩,
-  ⟨2170, "VecMisc2.Cmlt0", [], 107, (.enumVariant 22), ⟨"src/isa/aarch64/inst.isle", 1947⟩⟩,
-  ⟨2171, "VecMisc2.Fcmeq0", [], 107, (.enumVariant 23), ⟨"src/isa/aarch64/inst.isle", 1949⟩⟩,
-  ⟨2172, "VecMisc2.Fcmge0", [], 107, (.enumVariant 24), ⟨"src/isa/aarch64/inst.isle", 1951⟩⟩,
-  ⟨2173, "VecMisc2.Fcmgt0", [], 107, (.enumVariant 25), ⟨"src/isa/aarch64/inst.isle", 1953⟩⟩,
-  ⟨2174, "VecMisc2.Fcmle0", [], 107, (.enumVariant 26), ⟨"src/isa/aarch64/inst.isle", 1955⟩⟩,
-  ⟨2175, "VecMisc2.Fcmlt0", [], 107, (.enumVariant 27), ⟨"src/isa/aarch64/inst.isle", 1957⟩⟩,
-  ⟨2176, "VecRRLongOp.Fcvtl16", [], 108, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1964⟩⟩,
-  ⟨2177, "VecRRLongOp.Fcvtl32", [], 108, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1966⟩⟩,
-  ⟨2178, "VecRRLongOp.Shll8", [], 108, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1968⟩⟩,
-  ⟨2179, "VecRRLongOp.Shll16", [], 108, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1970⟩⟩,
-  ⟨2180, "VecRRLongOp.Shll32", [], 108, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 1972⟩⟩,
-  ⟨2181, "VecRRNarrowOp.Xtn", [], 109, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1979⟩⟩,
-  ⟨2182, "VecRRNarrowOp.Sqxtn", [], 109, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1981⟩⟩,
-  ⟨2183, "VecRRNarrowOp.Sqxtun", [], 109, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1983⟩⟩,
-  ⟨2184, "VecRRNarrowOp.Uqxtn", [], 109, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1985⟩⟩,
-  ⟨2185, "VecRRNarrowOp.Fcvtn", [], 109, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 1987⟩⟩,
-  ⟨2186, "VecRRRLongOp.Smull8", [], 110, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1993⟩⟩,
-  ⟨2187, "VecRRRLongOp.Smull16", [], 110, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1994⟩⟩,
-  ⟨2188, "VecRRRLongOp.Smull32", [], 110, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1995⟩⟩,
-  ⟨2189, "VecRRRLongOp.Umull8", [], 110, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1997⟩⟩,
-  ⟨2190, "VecRRRLongOp.Umull16", [], 110, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 1998⟩⟩,
-  ⟨2191, "VecRRRLongOp.Umull32", [], 110, (.enumVariant 5), ⟨"src/isa/aarch64/inst.isle", 1999⟩⟩,
-  ⟨2192, "VecRRRLongModOp.Umlal8", [], 111, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 2005⟩⟩,
-  ⟨2193, "VecRRRLongModOp.Umlal16", [], 111, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 2006⟩⟩,
-  ⟨2194, "VecRRRLongModOp.Umlal32", [], 111, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 2007⟩⟩,
-  ⟨2195, "VecPairOp.Addp", [], 112, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 2014⟩⟩,
-  ⟨2196, "VecRRPairLongOp.Saddlp8", [], 113, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 2022⟩⟩,
-  ⟨2197, "VecRRPairLongOp.Saddlp16", [], 113, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 2023⟩⟩,
-  ⟨2198, "VecRRPairLongOp.Uaddlp8", [], 113, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 2025⟩⟩,
-  ⟨2199, "VecRRPairLongOp.Uaddlp16", [], 113, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 2026⟩⟩,
-  ⟨2200, "VecLanesOp.Addv", [], 114, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 2033⟩⟩,
-  ⟨2201, "VecLanesOp.Uminv", [], 114, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 2035⟩⟩,
-  ⟨2202, "VecShiftImmOp.Shl", [], 115, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 2042⟩⟩,
-  ⟨2203, "VecShiftImmOp.Ushr", [], 115, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 2044⟩⟩,
-  ⟨2204, "VecShiftImmOp.Sshr", [], 115, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 2046⟩⟩,
-  ⟨2205, "VecShiftImmModOp.Sli", [], 116, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 2053⟩⟩,
-  ⟨2206, "AtomicRMWOp.Add", [], 117, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 2059⟩⟩,
-  ⟨2207, "AtomicRMWOp.Clr", [], 117, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 2060⟩⟩,
-  ⟨2208, "AtomicRMWOp.Eor", [], 117, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 2061⟩⟩,
-  ⟨2209, "AtomicRMWOp.Set", [], 117, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 2062⟩⟩,
-  ⟨2210, "AtomicRMWOp.Smax", [], 117, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 2063⟩⟩,
-  ⟨2211, "AtomicRMWOp.Smin", [], 117, (.enumVariant 5), ⟨"src/isa/aarch64/inst.isle", 2064⟩⟩,
-  ⟨2212, "AtomicRMWOp.Umax", [], 117, (.enumVariant 6), ⟨"src/isa/aarch64/inst.isle", 2065⟩⟩,
-  ⟨2213, "AtomicRMWOp.Umin", [], 117, (.enumVariant 7), ⟨"src/isa/aarch64/inst.isle", 2066⟩⟩,
-  ⟨2214, "AtomicRMWOp.Swp", [], 117, (.enumVariant 8), ⟨"src/isa/aarch64/inst.isle", 2067⟩⟩,
-  ⟨2215, "AtomicRMWLoopOp.Add", [], 118, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 2074⟩⟩,
-  ⟨2216, "AtomicRMWLoopOp.Sub", [], 118, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 2075⟩⟩,
-  ⟨2217, "AtomicRMWLoopOp.And", [], 118, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 2076⟩⟩,
-  ⟨2218, "AtomicRMWLoopOp.Nand", [], 118, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 2077⟩⟩,
-  ⟨2219, "AtomicRMWLoopOp.Eor", [], 118, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 2078⟩⟩,
-  ⟨2220, "AtomicRMWLoopOp.Orr", [], 118, (.enumVariant 5), ⟨"src/isa/aarch64/inst.isle", 2079⟩⟩,
-  ⟨2221, "AtomicRMWLoopOp.Smax", [], 118, (.enumVariant 6), ⟨"src/isa/aarch64/inst.isle", 2080⟩⟩,
-  ⟨2222, "AtomicRMWLoopOp.Smin", [], 118, (.enumVariant 7), ⟨"src/isa/aarch64/inst.isle", 2081⟩⟩,
-  ⟨2223, "AtomicRMWLoopOp.Umax", [], 118, (.enumVariant 8), ⟨"src/isa/aarch64/inst.isle", 2082⟩⟩,
-  ⟨2224, "AtomicRMWLoopOp.Umin", [], 118, (.enumVariant 9), ⟨"src/isa/aarch64/inst.isle", 2083⟩⟩,
-  ⟨2225, "AtomicRMWLoopOp.Xchg", [], 118, (.enumVariant 10), ⟨"src/isa/aarch64/inst.isle", 2084⟩⟩,
-  ⟨2226, "APIKey.ASP", [], 119, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 2091⟩⟩,
-  ⟨2227, "APIKey.BSP", [], 119, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 2093⟩⟩,
-  ⟨2228, "APIKey.AZ", [], 119, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 2095⟩⟩,
-  ⟨2229, "APIKey.BZ", [], 119, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 2097⟩⟩,
-  ⟨2230, "BranchTargetType.None", [], 120, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 2103⟩⟩,
-  ⟨2231, "BranchTargetType.C", [], 120, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 2104⟩⟩,
-  ⟨2232, "BranchTargetType.J", [], 120, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 2105⟩⟩,
-  ⟨2233, "BranchTargetType.JC", [], 120, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 2106⟩⟩,
-  ⟨2234, "ImmExtend.Sign", [], 122, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 3724⟩⟩,
-  ⟨2235, "ImmExtend.Zero", [], 122, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 3725⟩⟩,
-  ⟨2236, "CondResult.Zero", [27, 93], 123, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 4945⟩⟩,
-  ⟨2237, "CondResult.NotZero", [27, 93], 123, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 4946⟩⟩,
-  ⟨2238, "CondResult.Cond", [47, 96], 123, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 4947⟩⟩,
-  ⟨2239, "CondResult.Or", [47, 96, 96], 123, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 4948⟩⟩,
-  ⟨2240, "CondResult.And", [47, 96, 96], 123, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 4949⟩⟩,
-  ⟨2241, "FlagsAndCC.FlagsAndCC", [47, 145], 124, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 5258⟩⟩,
-  ⟨2242, "ExtType.Signed", [], 125, (.enumVariant 0), ⟨"src/isa/aarch64/lower.isle", 1085⟩⟩,
-  ⟨2243, "ExtType.Unsigned", [], 125, (.enumVariant 1), ⟨"src/isa/aarch64/lower.isle", 1086⟩⟩,
-  ⟨2244, "AtomicRmwOp.Add", [], 143, (.enumVariant 0), ⟨"<OUT_DIR>/clif_lower.isle", 31⟩⟩,
-  ⟨2245, "AtomicRmwOp.And", [], 143, (.enumVariant 1), ⟨"<OUT_DIR>/clif_lower.isle", 32⟩⟩,
-  ⟨2246, "AtomicRmwOp.Nand", [], 143, (.enumVariant 2), ⟨"<OUT_DIR>/clif_lower.isle", 33⟩⟩,
-  ⟨2247, "AtomicRmwOp.Or", [], 143, (.enumVariant 3), ⟨"<OUT_DIR>/clif_lower.isle", 34⟩⟩,
-  ⟨2248, "AtomicRmwOp.Smax", [], 143, (.enumVariant 4), ⟨"<OUT_DIR>/clif_lower.isle", 35⟩⟩,
-  ⟨2249, "AtomicRmwOp.Smin", [], 143, (.enumVariant 5), ⟨"<OUT_DIR>/clif_lower.isle", 36⟩⟩,
-  ⟨2250, "AtomicRmwOp.Sub", [], 143, (.enumVariant 6), ⟨"<OUT_DIR>/clif_lower.isle", 37⟩⟩,
-  ⟨2251, "AtomicRmwOp.Umax", [], 143, (.enumVariant 7), ⟨"<OUT_DIR>/clif_lower.isle", 38⟩⟩,
-  ⟨2252, "AtomicRmwOp.Umin", [], 143, (.enumVariant 8), ⟨"<OUT_DIR>/clif_lower.isle", 39⟩⟩,
-  ⟨2253, "AtomicRmwOp.Xchg", [], 143, (.enumVariant 9), ⟨"<OUT_DIR>/clif_lower.isle", 40⟩⟩,
-  ⟨2254, "AtomicRmwOp.Xor", [], 143, (.enumVariant 10), ⟨"<OUT_DIR>/clif_lower.isle", 41⟩⟩,
-  ⟨2255, "FloatCC.Equal", [], 144, (.enumVariant 0), ⟨"<OUT_DIR>/clif_lower.isle", 49⟩⟩,
-  ⟨2256, "FloatCC.GreaterThan", [], 144, (.enumVariant 1), ⟨"<OUT_DIR>/clif_lower.isle", 50⟩⟩,
-  ⟨2257, "FloatCC.GreaterThanOrEqual", [], 144, (.enumVariant 2), ⟨"<OUT_DIR>/clif_lower.isle", 51⟩⟩,
-  ⟨2258, "FloatCC.LessThan", [], 144, (.enumVariant 3), ⟨"<OUT_DIR>/clif_lower.isle", 52⟩⟩,
-  ⟨2259, "FloatCC.LessThanOrEqual", [], 144, (.enumVariant 4), ⟨"<OUT_DIR>/clif_lower.isle", 53⟩⟩,
-  ⟨2260, "FloatCC.NotEqual", [], 144, (.enumVariant 5), ⟨"<OUT_DIR>/clif_lower.isle", 54⟩⟩,
-  ⟨2261, "FloatCC.Ordered", [], 144, (.enumVariant 6), ⟨"<OUT_DIR>/clif_lower.isle", 55⟩⟩,
-  ⟨2262, "FloatCC.OrderedNotEqual", [], 144, (.enumVariant 7), ⟨"<OUT_DIR>/clif_lower.isle", 56⟩⟩,
-  ⟨2263, "FloatCC.Unordered", [], 144, (.enumVariant 8), ⟨"<OUT_DIR>/clif_lower.isle", 57⟩⟩,
-  ⟨2264, "FloatCC.UnorderedOrEqual", [], 144, (.enumVariant 9), ⟨"<OUT_DIR>/clif_lower.isle", 58⟩⟩,
-  ⟨2265, "FloatCC.UnorderedOrGreaterThan", [], 144, (.enumVariant 10), ⟨"<OUT_DIR>/clif_lower.isle", 59⟩⟩,
-  ⟨2266, "FloatCC.UnorderedOrGreaterThanOrEqual", [], 144, (.enumVariant 11), ⟨"<OUT_DIR>/clif_lower.isle", 60⟩⟩,
-  ⟨2267, "FloatCC.UnorderedOrLessThan", [], 144, (.enumVariant 12), ⟨"<OUT_DIR>/clif_lower.isle", 61⟩⟩,
-  ⟨2268, "FloatCC.UnorderedOrLessThanOrEqual", [], 144, (.enumVariant 13), ⟨"<OUT_DIR>/clif_lower.isle", 62⟩⟩,
-  ⟨2269, "IntCC.Equal", [], 145, (.enumVariant 0), ⟨"<OUT_DIR>/clif_lower.isle", 70⟩⟩,
-  ⟨2270, "IntCC.NotEqual", [], 145, (.enumVariant 1), ⟨"<OUT_DIR>/clif_lower.isle", 71⟩⟩,
-  ⟨2271, "IntCC.SignedGreaterThan", [], 145, (.enumVariant 2), ⟨"<OUT_DIR>/clif_lower.isle", 72⟩⟩,
-  ⟨2272, "IntCC.SignedGreaterThanOrEqual", [], 145, (.enumVariant 3), ⟨"<OUT_DIR>/clif_lower.isle", 73⟩⟩,
-  ⟨2273, "IntCC.SignedLessThan", [], 145, (.enumVariant 4), ⟨"<OUT_DIR>/clif_lower.isle", 74⟩⟩,
-  ⟨2274, "IntCC.SignedLessThanOrEqual", [], 145, (.enumVariant 5), ⟨"<OUT_DIR>/clif_lower.isle", 75⟩⟩,
-  ⟨2275, "IntCC.UnsignedGreaterThan", [], 145, (.enumVariant 6), ⟨"<OUT_DIR>/clif_lower.isle", 76⟩⟩,
-  ⟨2276, "IntCC.UnsignedGreaterThanOrEqual", [], 145, (.enumVariant 7), ⟨"<OUT_DIR>/clif_lower.isle", 77⟩⟩,
-  ⟨2277, "IntCC.UnsignedLessThan", [], 145, (.enumVariant 8), ⟨"<OUT_DIR>/clif_lower.isle", 78⟩⟩,
-  ⟨2278, "IntCC.UnsignedLessThanOrEqual", [], 145, (.enumVariant 9), ⟨"<OUT_DIR>/clif_lower.isle", 79⟩⟩,
-  ⟨2279, "TrapCode.BAD_CONVERSION_TO_INTEGER", [], 146, (.enumVariant 0), ⟨"<OUT_DIR>/clif_lower.isle", 87⟩⟩,
-  ⟨2280, "TrapCode.HEAP_OUT_OF_BOUNDS", [], 146, (.enumVariant 1), ⟨"<OUT_DIR>/clif_lower.isle", 88⟩⟩,
-  ⟨2281, "TrapCode.INTEGER_DIVISION_BY_ZERO", [], 146, (.enumVariant 2), ⟨"<OUT_DIR>/clif_lower.isle", 89⟩⟩,
-  ⟨2282, "TrapCode.INTEGER_OVERFLOW", [], 146, (.enumVariant 3), ⟨"<OUT_DIR>/clif_lower.isle", 90⟩⟩,
-  ⟨2283, "TrapCode.STACK_OVERFLOW", [], 146, (.enumVariant 4), ⟨"<OUT_DIR>/clif_lower.isle", 91⟩⟩,
-  ⟨2284, "Opcode.Jump", [], 151, (.enumVariant 0), ⟨"<OUT_DIR>/clif_lower.isle", 126⟩⟩,
-  ⟨2285, "Opcode.Brif", [], 151, (.enumVariant 1), ⟨"<OUT_DIR>/clif_lower.isle", 127⟩⟩,
-  ⟨2286, "Opcode.BrTable", [], 151, (.enumVariant 2), ⟨"<OUT_DIR>/clif_lower.isle", 128⟩⟩,
-  ⟨2287, "Opcode.Debugtrap", [], 151, (.enumVariant 3), ⟨"<OUT_DIR>/clif_lower.isle", 129⟩⟩,
-  ⟨2288, "Opcode.Trap", [], 151, (.enumVariant 4), ⟨"<OUT_DIR>/clif_lower.isle", 130⟩⟩,
-  ⟨2289, "Opcode.Trapz", [], 151, (.enumVariant 5), ⟨"<OUT_DIR>/clif_lower.isle", 131⟩⟩,
-  ⟨2290, "Opcode.Trapnz", [], 151, (.enumVariant 6), ⟨"<OUT_DIR>/clif_lower.isle", 132⟩⟩,
-  ⟨2291, "Opcode.Return", [], 151, (.enumVariant 7), ⟨"<OUT_DIR>/clif_lower.isle", 133⟩⟩,
-  ⟨2292, "Opcode.Call", [], 151, (.enumVariant 8), ⟨"<OUT_DIR>/clif_lower.isle", 134⟩⟩,
-  ⟨2293, "Opcode.CallIndirect", [], 151, (.enumVariant 9), ⟨"<OUT_DIR>/clif_lower.isle", 135⟩⟩,
-  ⟨2294, "Opcode.ReturnCall", [], 151, (.enumVariant 10), ⟨"<OUT_DIR>/clif_lower.isle", 136⟩⟩,
-  ⟨2295, "Opcode.ReturnCallIndirect", [], 151, (.enumVariant 11), ⟨"<OUT_DIR>/clif_lower.isle", 137⟩⟩,
-  ⟨2296, "Opcode.FuncAddr", [], 151, (.enumVariant 12), ⟨"<OUT_DIR>/clif_lower.isle", 138⟩⟩,
-  ⟨2297, "Opcode.TryCall", [], 151, (.enumVariant 13), ⟨"<OUT_DIR>/clif_lower.isle", 139⟩⟩,
-  ⟨2298, "Opcode.TryCallIndirect", [], 151, (.enumVariant 14), ⟨"<OUT_DIR>/clif_lower.isle", 140⟩⟩,
-  ⟨2299, "Opcode.Splat", [], 151, (.enumVariant 15), ⟨"<OUT_DIR>/clif_lower.isle", 141⟩⟩,
-  ⟨2300, "Opcode.Swizzle", [], 151, (.enumVariant 16), ⟨"<OUT_DIR>/clif_lower.isle", 142⟩⟩,
-  ⟨2301, "Opcode.X86Pshufb", [], 151, (.enumVariant 17), ⟨"<OUT_DIR>/clif_lower.isle", 143⟩⟩,
-  ⟨2302, "Opcode.Insertlane", [], 151, (.enumVariant 18), ⟨"<OUT_DIR>/clif_lower.isle", 144⟩⟩,
-  ⟨2303, "Opcode.Extractlane", [], 151, (.enumVariant 19), ⟨"<OUT_DIR>/clif_lower.isle", 145⟩⟩,
-  ⟨2304, "Opcode.Smin", [], 151, (.enumVariant 20), ⟨"<OUT_DIR>/clif_lower.isle", 146⟩⟩,
-  ⟨2305, "Opcode.Umin", [], 151, (.enumVariant 21), ⟨"<OUT_DIR>/clif_lower.isle", 147⟩⟩,
-  ⟨2306, "Opcode.Smax", [], 151, (.enumVariant 22), ⟨"<OUT_DIR>/clif_lower.isle", 148⟩⟩,
-  ⟨2307, "Opcode.Umax", [], 151, (.enumVariant 23), ⟨"<OUT_DIR>/clif_lower.isle", 149⟩⟩,
-  ⟨2308, "Opcode.AvgRound", [], 151, (.enumVariant 24), ⟨"<OUT_DIR>/clif_lower.isle", 150⟩⟩,
-  ⟨2309, "Opcode.UaddSat", [], 151, (.enumVariant 25), ⟨"<OUT_DIR>/clif_lower.isle", 151⟩⟩,
-  ⟨2310, "Opcode.SaddSat", [], 151, (.enumVariant 26), ⟨"<OUT_DIR>/clif_lower.isle", 152⟩⟩,
-  ⟨2311, "Opcode.UsubSat", [], 151, (.enumVariant 27), ⟨"<OUT_DIR>/clif_lower.isle", 153⟩⟩,
-  ⟨2312, "Opcode.SsubSat", [], 151, (.enumVariant 28), ⟨"<OUT_DIR>/clif_lower.isle", 154⟩⟩,
-  ⟨2313, "Opcode.Load", [], 151, (.enumVariant 29), ⟨"<OUT_DIR>/clif_lower.isle", 155⟩⟩,
-  ⟨2314, "Opcode.Store", [], 151, (.enumVariant 30), ⟨"<OUT_DIR>/clif_lower.isle", 156⟩⟩,
-  ⟨2315, "Opcode.Uload8", [], 151, (.enumVariant 31), ⟨"<OUT_DIR>/clif_lower.isle", 157⟩⟩,
-  ⟨2316, "Opcode.Sload8", [], 151, (.enumVariant 32), ⟨"<OUT_DIR>/clif_lower.isle", 158⟩⟩,
-  ⟨2317, "Opcode.Istore8", [], 151, (.enumVariant 33), ⟨"<OUT_DIR>/clif_lower.isle", 159⟩⟩,
-  ⟨2318, "Opcode.Uload16", [], 151, (.enumVariant 34), ⟨"<OUT_DIR>/clif_lower.isle", 160⟩⟩,
-  ⟨2319, "Opcode.Sload16", [], 151, (.enumVariant 35), ⟨"<OUT_DIR>/clif_lower.isle", 161⟩⟩,
-  ⟨2320, "Opcode.Istore16", [], 151, (.enumVariant 36), ⟨"<OUT_DIR>/clif_lower.isle", 162⟩⟩,
-  ⟨2321, "Opcode.Uload32", [], 151, (.enumVariant 37), ⟨"<OUT_DIR>/clif_lower.isle", 163⟩⟩,
-  ⟨2322, "Opcode.Sload32", [], 151, (.enumVariant 38), ⟨"<OUT_DIR>/clif_lower.isle", 164⟩⟩,
-  ⟨2323, "Opcode.Istore32", [], 151, (.enumVariant 39), ⟨"<OUT_DIR>/clif_lower.isle", 165⟩⟩,
-  ⟨2324, "Opcode.StackSwitch", [], 151, (.enumVariant 40), ⟨"<OUT_DIR>/clif_lower.isle", 166⟩⟩,
-  ⟨2325, "Opcode.Uload8x8", [], 151, (.enumVariant 41), ⟨"<OUT_DIR>/clif_lower.isle", 167⟩⟩,
-  ⟨2326, "Opcode.Sload8x8", [], 151, (.enumVariant 42), ⟨"<OUT_DIR>/clif_lower.isle", 168⟩⟩,
-  ⟨2327, "Opcode.Uload16x4", [], 151, (.enumVariant 43), ⟨"<OUT_DIR>/clif_lower.isle", 169⟩⟩,
-  ⟨2328, "Opcode.Sload16x4", [], 151, (.enumVariant 44), ⟨"<OUT_DIR>/clif_lower.isle", 170⟩⟩,
-  ⟨2329, "Opcode.Uload32x2", [], 151, (.enumVariant 45), ⟨"<OUT_DIR>/clif_lower.isle", 171⟩⟩,
-  ⟨2330, "Opcode.Sload32x2", [], 151, (.enumVariant 46), ⟨"<OUT_DIR>/clif_lower.isle", 172⟩⟩,
-  ⟨2331, "Opcode.StackAddr", [], 151, (.enumVariant 47), ⟨"<OUT_DIR>/clif_lower.isle", 173⟩⟩,
-  ⟨2332, "Opcode.DynamicStackAddr", [], 151, (.enumVariant 48), ⟨"<OUT_DIR>/clif_lower.isle", 174⟩⟩,
-  ⟨2333, "Opcode.SymbolValue", [], 151, (.enumVariant 49), ⟨"<OUT_DIR>/clif_lower.isle", 175⟩⟩,
-  ⟨2334, "Opcode.TlsValue", [], 151, (.enumVariant 50), ⟨"<OUT_DIR>/clif_lower.isle", 176⟩⟩,
-  ⟨2335, "Opcode.GetPinnedReg", [], 151, (.enumVariant 51), ⟨"<OUT_DIR>/clif_lower.isle", 177⟩⟩,
-  ⟨2336, "Opcode.SetPinnedReg", [], 151, (.enumVariant 52), ⟨"<OUT_DIR>/clif_lower.isle", 178⟩⟩,
-  ⟨2337, "Opcode.GetFramePointer", [], 151, (.enumVariant 53), ⟨"<OUT_DIR>/clif_lower.isle", 179⟩⟩,
-  ⟨2338, "Opcode.GetStackPointer", [], 151, (.enumVariant 54), ⟨"<OUT_DIR>/clif_lower.isle", 180⟩⟩,
-  ⟨2339, "Opcode.GetReturnAddress", [], 151, (.enumVariant 55), ⟨"<OUT_DIR>/clif_lower.isle", 181⟩⟩,
-  ⟨2340, "Opcode.GetExceptionHandlerAddress", [], 151, (.enumVariant 56), ⟨"<OUT_DIR>/clif_lower.isle", 182⟩⟩,
-  ⟨2341, "Opcode.Iconst", [], 151, (.enumVariant 57), ⟨"<OUT_DIR>/clif_lower.isle", 183⟩⟩,
-  ⟨2342, "Opcode.F16const", [], 151, (.enumVariant 58), ⟨"<OUT_DIR>/clif_lower.isle", 184⟩⟩,
-  ⟨2343, "Opcode.F32const", [], 151, (.enumVariant 59), ⟨"<OUT_DIR>/clif_lower.isle", 185⟩⟩,
-  ⟨2344, "Opcode.F64const", [], 151, (.enumVariant 60), ⟨"<OUT_DIR>/clif_lower.isle", 186⟩⟩,
-  ⟨2345, "Opcode.F128const", [], 151, (.enumVariant 61), ⟨"<OUT_DIR>/clif_lower.isle", 187⟩⟩,
-  ⟨2346, "Opcode.Vconst", [], 151, (.enumVariant 62), ⟨"<OUT_DIR>/clif_lower.isle", 188⟩⟩,
-  ⟨2347, "Opcode.Shuffle", [], 151, (.enumVariant 63), ⟨"<OUT_DIR>/clif_lower.isle", 189⟩⟩,
-  ⟨2348, "Opcode.Nop", [], 151, (.enumVariant 64), ⟨"<OUT_DIR>/clif_lower.isle", 190⟩⟩,
-  ⟨2349, "Opcode.Select", [], 151, (.enumVariant 65), ⟨"<OUT_DIR>/clif_lower.isle", 191⟩⟩,
-  ⟨2350, "Opcode.SelectSpectreGuard", [], 151, (.enumVariant 66), ⟨"<OUT_DIR>/clif_lower.isle", 192⟩⟩,
-  ⟨2351, "Opcode.Bitselect", [], 151, (.enumVariant 67), ⟨"<OUT_DIR>/clif_lower.isle", 193⟩⟩,
-  ⟨2352, "Opcode.Blendv", [], 151, (.enumVariant 68), ⟨"<OUT_DIR>/clif_lower.isle", 194⟩⟩,
-  ⟨2353, "Opcode.VanyTrue", [], 151, (.enumVariant 69), ⟨"<OUT_DIR>/clif_lower.isle", 195⟩⟩,
-  ⟨2354, "Opcode.VallTrue", [], 151, (.enumVariant 70), ⟨"<OUT_DIR>/clif_lower.isle", 196⟩⟩,
-  ⟨2355, "Opcode.VhighBits", [], 151, (.enumVariant 71), ⟨"<OUT_DIR>/clif_lower.isle", 197⟩⟩,
-  ⟨2356, "Opcode.Icmp", [], 151, (.enumVariant 72), ⟨"<OUT_DIR>/clif_lower.isle", 198⟩⟩,
-  ⟨2357, "Opcode.Iadd", [], 151, (.enumVariant 73), ⟨"<OUT_DIR>/clif_lower.isle", 199⟩⟩,
-  ⟨2358, "Opcode.Isub", [], 151, (.enumVariant 74), ⟨"<OUT_DIR>/clif_lower.isle", 200⟩⟩,
-  ⟨2359, "Opcode.Ineg", [], 151, (.enumVariant 75), ⟨"<OUT_DIR>/clif_lower.isle", 201⟩⟩,
-  ⟨2360, "Opcode.Iabs", [], 151, (.enumVariant 76), ⟨"<OUT_DIR>/clif_lower.isle", 202⟩⟩,
-  ⟨2361, "Opcode.Imul", [], 151, (.enumVariant 77), ⟨"<OUT_DIR>/clif_lower.isle", 203⟩⟩,
-  ⟨2362, "Opcode.Umulhi", [], 151, (.enumVariant 78), ⟨"<OUT_DIR>/clif_lower.isle", 204⟩⟩,
-  ⟨2363, "Opcode.Smulhi", [], 151, (.enumVariant 79), ⟨"<OUT_DIR>/clif_lower.isle", 205⟩⟩,
-  ⟨2364, "Opcode.SqmulRoundSat", [], 151, (.enumVariant 80), ⟨"<OUT_DIR>/clif_lower.isle", 206⟩⟩,
-  ⟨2365, "Opcode.X86Pmulhrsw", [], 151, (.enumVariant 81), ⟨"<OUT_DIR>/clif_lower.isle", 207⟩⟩,
-  ⟨2366, "Opcode.Udiv", [], 151, (.enumVariant 82), ⟨"<OUT_DIR>/clif_lower.isle", 208⟩⟩,
-  ⟨2367, "Opcode.Sdiv", [], 151, (.enumVariant 83), ⟨"<OUT_DIR>/clif_lower.isle", 209⟩⟩,
-  ⟨2368, "Opcode.Urem", [], 151, (.enumVariant 84), ⟨"<OUT_DIR>/clif_lower.isle", 210⟩⟩,
-  ⟨2369, "Opcode.Srem", [], 151, (.enumVariant 85), ⟨"<OUT_DIR>/clif_lower.isle", 211⟩⟩,
-  ⟨2370, "Opcode.SaddOverflowCin", [], 151, (.enumVariant 86), ⟨"<OUT_DIR>/clif_lower.isle", 212⟩⟩,
-  ⟨2371, "Opcode.UaddOverflowCin", [], 151, (.enumVariant 87), ⟨"<OUT_DIR>/clif_lower.isle", 213⟩⟩,
-  ⟨2372, "Opcode.UaddOverflow", [], 151, (.enumVariant 88), ⟨"<OUT_DIR>/clif_lower.isle", 214⟩⟩,
-  ⟨2373, "Opcode.SaddOverflow", [], 151, (.enumVariant 89), ⟨"<OUT_DIR>/clif_lower.isle", 215⟩⟩,
-  ⟨2374, "Opcode.UsubOverflow", [], 151, (.enumVariant 90), ⟨"<OUT_DIR>/clif_lower.isle", 216⟩⟩,
-  ⟨2375, "Opcode.SsubOverflow", [], 151, (.enumVariant 91), ⟨"<OUT_DIR>/clif_lower.isle", 217⟩⟩,
-  ⟨2376, "Opcode.UmulOverflow", [], 151, (.enumVariant 92), ⟨"<OUT_DIR>/clif_lower.isle", 218⟩⟩,
-  ⟨2377, "Opcode.SmulOverflow", [], 151, (.enumVariant 93), ⟨"<OUT_DIR>/clif_lower.isle", 219⟩⟩,
-  ⟨2378, "Opcode.UaddOverflowTrap", [], 151, (.enumVariant 94), ⟨"<OUT_DIR>/clif_lower.isle", 220⟩⟩,
-  ⟨2379, "Opcode.SsubOverflowBin", [], 151, (.enumVariant 95), ⟨"<OUT_DIR>/clif_lower.isle", 221⟩⟩,
-  ⟨2380, "Opcode.UsubOverflowBin", [], 151, (.enumVariant 96), ⟨"<OUT_DIR>/clif_lower.isle", 222⟩⟩,
-  ⟨2381, "Opcode.Band", [], 151, (.enumVariant 97), ⟨"<OUT_DIR>/clif_lower.isle", 223⟩⟩,
-  ⟨2382, "Opcode.Bor", [], 151, (.enumVariant 98), ⟨"<OUT_DIR>/clif_lower.isle", 224⟩⟩,
-  ⟨2383, "Opcode.Bxor", [], 151, (.enumVariant 99), ⟨"<OUT_DIR>/clif_lower.isle", 225⟩⟩,
-  ⟨2384, "Opcode.Bnot", [], 151, (.enumVariant 100), ⟨"<OUT_DIR>/clif_lower.isle", 226⟩⟩,
-  ⟨2385, "Opcode.Rotl", [], 151, (.enumVariant 101), ⟨"<OUT_DIR>/clif_lower.isle", 227⟩⟩,
-  ⟨2386, "Opcode.Rotr", [], 151, (.enumVariant 102), ⟨"<OUT_DIR>/clif_lower.isle", 228⟩⟩,
-  ⟨2387, "Opcode.Ishl", [], 151, (.enumVariant 103), ⟨"<OUT_DIR>/clif_lower.isle", 229⟩⟩,
-  ⟨2388, "Opcode.Ushr", [], 151, (.enumVariant 104), ⟨"<OUT_DIR>/clif_lower.isle", 230⟩⟩,
-  ⟨2389, "Opcode.Sshr", [], 151, (.enumVariant 105), ⟨"<OUT_DIR>/clif_lower.isle", 231⟩⟩,
-  ⟨2390, "Opcode.Bitrev", [], 151, (.enumVariant 106), ⟨"<OUT_DIR>/clif_lower.isle", 232⟩⟩,
-  ⟨2391, "Opcode.Clz", [], 151, (.enumVariant 107), ⟨"<OUT_DIR>/clif_lower.isle", 233⟩⟩,
-  ⟨2392, "Opcode.Cls", [], 151, (.enumVariant 108), ⟨"<OUT_DIR>/clif_lower.isle", 234⟩⟩,
-  ⟨2393, "Opcode.Ctz", [], 151, (.enumVariant 109), ⟨"<OUT_DIR>/clif_lower.isle", 235⟩⟩,
-  ⟨2394, "Opcode.Bswap", [], 151, (.enumVariant 110), ⟨"<OUT_DIR>/clif_lower.isle", 236⟩⟩,
-  ⟨2395, "Opcode.Popcnt", [], 151, (.enumVariant 111), ⟨"<OUT_DIR>/clif_lower.isle", 237⟩⟩,
-  ⟨2396, "Opcode.Fcmp", [], 151, (.enumVariant 112), ⟨"<OUT_DIR>/clif_lower.isle", 238⟩⟩,
-  ⟨2397, "Opcode.Fadd", [], 151, (.enumVariant 113), ⟨"<OUT_DIR>/clif_lower.isle", 239⟩⟩,
-  ⟨2398, "Opcode.Fsub", [], 151, (.enumVariant 114), ⟨"<OUT_DIR>/clif_lower.isle", 240⟩⟩,
-  ⟨2399, "Opcode.Fmul", [], 151, (.enumVariant 115), ⟨"<OUT_DIR>/clif_lower.isle", 241⟩⟩]
+/-- term 1142 -/
+def T.«i64_when_not_odd» : Term :=
+  ⟨1142, "i64_when_not_odd", [], 10, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i64_when_not_odd")]), (.list [(.atom "i64_matches_odd"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 1950⟩⟩
 
-def terms_6 : Array Term := #[
-  ⟨2400, "Opcode.Fdiv", [], 151, (.enumVariant 116), ⟨"<OUT_DIR>/clif_lower.isle", 242⟩⟩,
-  ⟨2401, "Opcode.Sqrt", [], 151, (.enumVariant 117), ⟨"<OUT_DIR>/clif_lower.isle", 243⟩⟩,
-  ⟨2402, "Opcode.Fma", [], 151, (.enumVariant 118), ⟨"<OUT_DIR>/clif_lower.isle", 244⟩⟩,
-  ⟨2403, "Opcode.Fneg", [], 151, (.enumVariant 119), ⟨"<OUT_DIR>/clif_lower.isle", 245⟩⟩,
-  ⟨2404, "Opcode.Fabs", [], 151, (.enumVariant 120), ⟨"<OUT_DIR>/clif_lower.isle", 246⟩⟩,
-  ⟨2405, "Opcode.Fcopysign", [], 151, (.enumVariant 121), ⟨"<OUT_DIR>/clif_lower.isle", 247⟩⟩,
-  ⟨2406, "Opcode.Fmin", [], 151, (.enumVariant 122), ⟨"<OUT_DIR>/clif_lower.isle", 248⟩⟩,
-  ⟨2407, "Opcode.Fmax", [], 151, (.enumVariant 123), ⟨"<OUT_DIR>/clif_lower.isle", 249⟩⟩,
-  ⟨2408, "Opcode.Ceil", [], 151, (.enumVariant 124), ⟨"<OUT_DIR>/clif_lower.isle", 250⟩⟩,
-  ⟨2409, "Opcode.Floor", [], 151, (.enumVariant 125), ⟨"<OUT_DIR>/clif_lower.isle", 251⟩⟩,
-  ⟨2410, "Opcode.Trunc", [], 151, (.enumVariant 126), ⟨"<OUT_DIR>/clif_lower.isle", 252⟩⟩,
-  ⟨2411, "Opcode.Nearest", [], 151, (.enumVariant 127), ⟨"<OUT_DIR>/clif_lower.isle", 253⟩⟩,
-  ⟨2412, "Opcode.Bitcast", [], 151, (.enumVariant 128), ⟨"<OUT_DIR>/clif_lower.isle", 254⟩⟩,
-  ⟨2413, "Opcode.ScalarToVector", [], 151, (.enumVariant 129), ⟨"<OUT_DIR>/clif_lower.isle", 255⟩⟩,
-  ⟨2414, "Opcode.Bmask", [], 151, (.enumVariant 130), ⟨"<OUT_DIR>/clif_lower.isle", 256⟩⟩,
-  ⟨2415, "Opcode.Ireduce", [], 151, (.enumVariant 131), ⟨"<OUT_DIR>/clif_lower.isle", 257⟩⟩,
-  ⟨2416, "Opcode.Snarrow", [], 151, (.enumVariant 132), ⟨"<OUT_DIR>/clif_lower.isle", 258⟩⟩,
-  ⟨2417, "Opcode.Unarrow", [], 151, (.enumVariant 133), ⟨"<OUT_DIR>/clif_lower.isle", 259⟩⟩,
-  ⟨2418, "Opcode.Uunarrow", [], 151, (.enumVariant 134), ⟨"<OUT_DIR>/clif_lower.isle", 260⟩⟩,
-  ⟨2419, "Opcode.SwidenLow", [], 151, (.enumVariant 135), ⟨"<OUT_DIR>/clif_lower.isle", 261⟩⟩,
-  ⟨2420, "Opcode.SwidenHigh", [], 151, (.enumVariant 136), ⟨"<OUT_DIR>/clif_lower.isle", 262⟩⟩,
-  ⟨2421, "Opcode.UwidenLow", [], 151, (.enumVariant 137), ⟨"<OUT_DIR>/clif_lower.isle", 263⟩⟩,
-  ⟨2422, "Opcode.UwidenHigh", [], 151, (.enumVariant 138), ⟨"<OUT_DIR>/clif_lower.isle", 264⟩⟩,
-  ⟨2423, "Opcode.IaddPairwise", [], 151, (.enumVariant 139), ⟨"<OUT_DIR>/clif_lower.isle", 265⟩⟩,
-  ⟨2424, "Opcode.X86Pmaddubsw", [], 151, (.enumVariant 140), ⟨"<OUT_DIR>/clif_lower.isle", 266⟩⟩,
-  ⟨2425, "Opcode.Uextend", [], 151, (.enumVariant 141), ⟨"<OUT_DIR>/clif_lower.isle", 267⟩⟩,
-  ⟨2426, "Opcode.Sextend", [], 151, (.enumVariant 142), ⟨"<OUT_DIR>/clif_lower.isle", 268⟩⟩,
-  ⟨2427, "Opcode.Fpromote", [], 151, (.enumVariant 143), ⟨"<OUT_DIR>/clif_lower.isle", 269⟩⟩,
-  ⟨2428, "Opcode.Fdemote", [], 151, (.enumVariant 144), ⟨"<OUT_DIR>/clif_lower.isle", 270⟩⟩,
-  ⟨2429, "Opcode.Fvdemote", [], 151, (.enumVariant 145), ⟨"<OUT_DIR>/clif_lower.isle", 271⟩⟩,
-  ⟨2430, "Opcode.FvpromoteLow", [], 151, (.enumVariant 146), ⟨"<OUT_DIR>/clif_lower.isle", 272⟩⟩,
-  ⟨2431, "Opcode.FcvtToUint", [], 151, (.enumVariant 147), ⟨"<OUT_DIR>/clif_lower.isle", 273⟩⟩,
-  ⟨2432, "Opcode.FcvtToSint", [], 151, (.enumVariant 148), ⟨"<OUT_DIR>/clif_lower.isle", 274⟩⟩,
-  ⟨2433, "Opcode.FcvtToUintSat", [], 151, (.enumVariant 149), ⟨"<OUT_DIR>/clif_lower.isle", 275⟩⟩,
-  ⟨2434, "Opcode.FcvtToSintSat", [], 151, (.enumVariant 150), ⟨"<OUT_DIR>/clif_lower.isle", 276⟩⟩,
-  ⟨2435, "Opcode.X86Cvtt2dq", [], 151, (.enumVariant 151), ⟨"<OUT_DIR>/clif_lower.isle", 277⟩⟩,
-  ⟨2436, "Opcode.FcvtFromUint", [], 151, (.enumVariant 152), ⟨"<OUT_DIR>/clif_lower.isle", 278⟩⟩,
-  ⟨2437, "Opcode.FcvtFromSint", [], 151, (.enumVariant 153), ⟨"<OUT_DIR>/clif_lower.isle", 279⟩⟩,
-  ⟨2438, "Opcode.Isplit", [], 151, (.enumVariant 154), ⟨"<OUT_DIR>/clif_lower.isle", 280⟩⟩,
-  ⟨2439, "Opcode.Iconcat", [], 151, (.enumVariant 155), ⟨"<OUT_DIR>/clif_lower.isle", 281⟩⟩,
-  ⟨2440, "Opcode.AtomicRmw", [], 151, (.enumVariant 156), ⟨"<OUT_DIR>/clif_lower.isle", 282⟩⟩,
-  ⟨2441, "Opcode.AtomicCas", [], 151, (.enumVariant 157), ⟨"<OUT_DIR>/clif_lower.isle", 283⟩⟩,
-  ⟨2442, "Opcode.AtomicLoad", [], 151, (.enumVariant 158), ⟨"<OUT_DIR>/clif_lower.isle", 284⟩⟩,
-  ⟨2443, "Opcode.AtomicStore", [], 151, (.enumVariant 159), ⟨"<OUT_DIR>/clif_lower.isle", 285⟩⟩,
-  ⟨2444, "Opcode.Fence", [], 151, (.enumVariant 160), ⟨"<OUT_DIR>/clif_lower.isle", 286⟩⟩,
-  ⟨2445, "Opcode.ExtractVector", [], 151, (.enumVariant 161), ⟨"<OUT_DIR>/clif_lower.isle", 287⟩⟩,
-  ⟨2446, "Opcode.SequencePoint", [], 151, (.enumVariant 162), ⟨"<OUT_DIR>/clif_lower.isle", 288⟩⟩,
-  ⟨2447, "InstructionData.AtomicCas", [151, 148, 137], 152, (.enumVariant 0), ⟨"<OUT_DIR>/clif_lower.isle", 296⟩⟩,
-  ⟨2448, "InstructionData.AtomicRmw", [151, 147, 137, 143], 152, (.enumVariant 1), ⟨"<OUT_DIR>/clif_lower.isle", 297⟩⟩,
-  ⟨2449, "InstructionData.Binary", [151, 147], 152, (.enumVariant 2), ⟨"<OUT_DIR>/clif_lower.isle", 298⟩⟩,
-  ⟨2450, "InstructionData.BinaryImm8", [151, 15, 141], 152, (.enumVariant 3), ⟨"<OUT_DIR>/clif_lower.isle", 299⟩⟩,
-  ⟨2451, "InstructionData.BranchTable", [151, 15, 136], 152, (.enumVariant 4), ⟨"<OUT_DIR>/clif_lower.isle", 300⟩⟩,
-  ⟨2452, "InstructionData.Brif", [151, 15, 149], 152, (.enumVariant 5), ⟨"<OUT_DIR>/clif_lower.isle", 301⟩⟩,
-  ⟨2453, "InstructionData.Call", [151, 16, 129], 152, (.enumVariant 6), ⟨"<OUT_DIR>/clif_lower.isle", 302⟩⟩,
-  ⟨2454, "InstructionData.CallIndirect", [151, 16, 139], 152, (.enumVariant 7), ⟨"<OUT_DIR>/clif_lower.isle", 303⟩⟩,
-  ⟨2455, "InstructionData.CondTrap", [151, 15, 146], 152, (.enumVariant 8), ⟨"<OUT_DIR>/clif_lower.isle", 304⟩⟩,
-  ⟨2456, "InstructionData.DynamicStackAddr", [151, 127], 152, (.enumVariant 9), ⟨"<OUT_DIR>/clif_lower.isle", 305⟩⟩,
-  ⟨2457, "InstructionData.ExceptionHandlerAddress", [151, 150, 134], 152, (.enumVariant 10), ⟨"<OUT_DIR>/clif_lower.isle", 306⟩⟩,
-  ⟨2458, "InstructionData.FloatCompare", [151, 147, 144], 152, (.enumVariant 11), ⟨"<OUT_DIR>/clif_lower.isle", 307⟩⟩,
-  ⟨2459, "InstructionData.FuncAddr", [151, 129], 152, (.enumVariant 12), ⟨"<OUT_DIR>/clif_lower.isle", 308⟩⟩,
-  ⟨2460, "InstructionData.IntAddTrap", [151, 147, 146], 152, (.enumVariant 13), ⟨"<OUT_DIR>/clif_lower.isle", 309⟩⟩,
-  ⟨2461, "InstructionData.IntCompare", [151, 147, 145], 152, (.enumVariant 14), ⟨"<OUT_DIR>/clif_lower.isle", 310⟩⟩,
-  ⟨2462, "InstructionData.Jump", [151, 17], 152, (.enumVariant 15), ⟨"<OUT_DIR>/clif_lower.isle", 311⟩⟩,
-  ⟨2463, "InstructionData.Load", [151, 15, 137, 138], 152, (.enumVariant 16), ⟨"<OUT_DIR>/clif_lower.isle", 312⟩⟩,
-  ⟨2464, "InstructionData.LoadNoOffset", [151, 15, 137], 152, (.enumVariant 17), ⟨"<OUT_DIR>/clif_lower.isle", 313⟩⟩,
-  ⟨2465, "InstructionData.MultiAry", [151, 16], 152, (.enumVariant 18), ⟨"<OUT_DIR>/clif_lower.isle", 314⟩⟩,
-  ⟨2466, "InstructionData.NullAry", [151], 152, (.enumVariant 19), ⟨"<OUT_DIR>/clif_lower.isle", 315⟩⟩,
-  ⟨2467, "InstructionData.Shuffle", [151, 147, 135], 152, (.enumVariant 20), ⟨"<OUT_DIR>/clif_lower.isle", 316⟩⟩,
-  ⟨2468, "InstructionData.StackAddr", [151, 140, 138], 152, (.enumVariant 21), ⟨"<OUT_DIR>/clif_lower.isle", 317⟩⟩,
-  ⟨2469, "InstructionData.Store", [151, 147, 137, 138], 152, (.enumVariant 22), ⟨"<OUT_DIR>/clif_lower.isle", 318⟩⟩,
-  ⟨2470, "InstructionData.StoreNoOffset", [151, 147, 137], 152, (.enumVariant 23), ⟨"<OUT_DIR>/clif_lower.isle", 319⟩⟩,
-  ⟨2471, "InstructionData.Ternary", [151, 148], 152, (.enumVariant 24), ⟨"<OUT_DIR>/clif_lower.isle", 320⟩⟩,
-  ⟨2472, "InstructionData.TernaryImm8", [151, 147, 141], 152, (.enumVariant 25), ⟨"<OUT_DIR>/clif_lower.isle", 321⟩⟩,
-  ⟨2473, "InstructionData.Trap", [151, 146], 152, (.enumVariant 26), ⟨"<OUT_DIR>/clif_lower.isle", 322⟩⟩,
-  ⟨2474, "InstructionData.TryCall", [151, 16, 129, 128], 152, (.enumVariant 27), ⟨"<OUT_DIR>/clif_lower.isle", 323⟩⟩,
-  ⟨2475, "InstructionData.TryCallIndirect", [151, 16, 128], 152, (.enumVariant 28), ⟨"<OUT_DIR>/clif_lower.isle", 324⟩⟩,
-  ⟨2476, "InstructionData.Unary", [151, 15], 152, (.enumVariant 29), ⟨"<OUT_DIR>/clif_lower.isle", 325⟩⟩,
-  ⟨2477, "InstructionData.UnaryConst", [151, 126], 152, (.enumVariant 30), ⟨"<OUT_DIR>/clif_lower.isle", 326⟩⟩,
-  ⟨2478, "InstructionData.UnaryGlobalValue", [151, 130], 152, (.enumVariant 31), ⟨"<OUT_DIR>/clif_lower.isle", 327⟩⟩,
-  ⟨2479, "InstructionData.UnaryIeee16", [151, 131], 152, (.enumVariant 32), ⟨"<OUT_DIR>/clif_lower.isle", 328⟩⟩,
-  ⟨2480, "InstructionData.UnaryIeee32", [151, 132], 152, (.enumVariant 33), ⟨"<OUT_DIR>/clif_lower.isle", 329⟩⟩,
-  ⟨2481, "InstructionData.UnaryIeee64", [151, 133], 152, (.enumVariant 34), ⟨"<OUT_DIR>/clif_lower.isle", 330⟩⟩,
-  ⟨2482, "InstructionData.UnaryImm", [151, 134], 152, (.enumVariant 35), ⟨"<OUT_DIR>/clif_lower.isle", 331⟩⟩]
+/-- term 1143 -/
+def T.«i64_is_even» : Term :=
+  ⟨1143, "i64_is_even", [10], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i64_is_even")) none), ⟨"<OUT_DIR>/numerics.isle", 1953⟩⟩
+
+/-- term 1144 -/
+def T.«i64_matches_even» : Term :=
+  ⟨1144, "i64_matches_even", [0], 10, (.decl ⟨true, false, false, false⟩ none (some (.external "i64_matches_even" false))), ⟨"<OUT_DIR>/numerics.isle", 1957⟩⟩
+
+/-- term 1145 -/
+def T.«i64_extract_even» : Term :=
+  ⟨1145, "i64_extract_even", [10], 10, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i64_extract_even"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i64_matches_even"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 1959⟩⟩
+
+/-- term 1146 -/
+def T.«i64_when_even» : Term :=
+  ⟨1146, "i64_when_even", [], 10, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i64_when_even")]), (.list [(.atom "i64_matches_even"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 1961⟩⟩
+
+/-- term 1147 -/
+def T.«i64_when_not_even» : Term :=
+  ⟨1147, "i64_when_not_even", [], 10, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i64_when_not_even")]), (.list [(.atom "i64_matches_even"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 1963⟩⟩
+
+/-- term 1148 -/
+def T.«i64_checked_ilog2» : Term :=
+  ⟨1148, "i64_checked_ilog2", [10], 3, (.decl ⟨true, false, true, false⟩ (some (.external "i64_checked_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 1966⟩⟩
+
+/-- term 1149 -/
+def T.«i64_ilog2» : Term :=
+  ⟨1149, "i64_ilog2", [10], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i64_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 1971⟩⟩
+
+/-- term 1150 -/
+def T.«i64_trailing_zeros» : Term :=
+  ⟨1150, "i64_trailing_zeros", [10], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i64_trailing_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 1976⟩⟩
+
+/-- term 1151 -/
+def T.«i64_trailing_ones» : Term :=
+  ⟨1151, "i64_trailing_ones", [10], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i64_trailing_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 1981⟩⟩
+
+/-- term 1152 -/
+def T.«i64_leading_zeros» : Term :=
+  ⟨1152, "i64_leading_zeros", [10], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i64_leading_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 1986⟩⟩
+
+/-- term 1153 -/
+def T.«i64_leading_ones» : Term :=
+  ⟨1153, "i64_leading_ones", [10], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i64_leading_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 1991⟩⟩
+
+/-- term 1154 -/
+def T.«i64_checked_neg» : Term :=
+  ⟨1154, "i64_checked_neg", [10], 10, (.decl ⟨true, false, true, false⟩ (some (.external "i64_checked_neg")) none), ⟨"<OUT_DIR>/numerics.isle", 1996⟩⟩
+
+/-- term 1155 -/
+def T.«i64_wrapping_neg» : Term :=
+  ⟨1155, "i64_wrapping_neg", [10], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_wrapping_neg")) none), ⟨"<OUT_DIR>/numerics.isle", 2001⟩⟩
+
+/-- term 1156 -/
+def T.«i64_neg» : Term :=
+  ⟨1156, "i64_neg", [10], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_neg")) none), ⟨"<OUT_DIR>/numerics.isle", 2006⟩⟩
+
+/-- term 1157 -/
+def T.«u64_eq» : Term :=
+  ⟨1157, "u64_eq", [4, 4], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u64_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 2011⟩⟩
+
+/-- term 1158 -/
+def T.«u64_ne» : Term :=
+  ⟨1158, "u64_ne", [4, 4], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u64_ne")) none), ⟨"<OUT_DIR>/numerics.isle", 2017⟩⟩
+
+/-- term 1159 -/
+def T.«u64_lt» : Term :=
+  ⟨1159, "u64_lt", [4, 4], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u64_lt")) none), ⟨"<OUT_DIR>/numerics.isle", 2023⟩⟩
+
+/-- term 1160 -/
+def T.«u64_lt_eq» : Term :=
+  ⟨1160, "u64_lt_eq", [4, 4], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u64_lt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 2029⟩⟩
+
+/-- term 1161 -/
+def T.«u64_gt» : Term :=
+  ⟨1161, "u64_gt", [4, 4], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u64_gt")) none), ⟨"<OUT_DIR>/numerics.isle", 2035⟩⟩
+
+/-- term 1162 -/
+def T.«u64_gt_eq» : Term :=
+  ⟨1162, "u64_gt_eq", [4, 4], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u64_gt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 2041⟩⟩
+
+/-- term 1163 -/
+def T.«u64_checked_add» : Term :=
+  ⟨1163, "u64_checked_add", [4, 4], 4, (.decl ⟨true, false, true, false⟩ (some (.external "u64_checked_add")) none), ⟨"<OUT_DIR>/numerics.isle", 2047⟩⟩
+
+/-- term 1164 -/
+def T.«u64_wrapping_add» : Term :=
+  ⟨1164, "u64_wrapping_add", [4, 4], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_wrapping_add")) none), ⟨"<OUT_DIR>/numerics.isle", 2053⟩⟩
+
+/-- term 1165 -/
+def T.«u64_add» : Term :=
+  ⟨1165, "u64_add", [4, 4], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_add")) none), ⟨"<OUT_DIR>/numerics.isle", 2059⟩⟩
+
+/-- term 1166 -/
+def T.«u64_checked_sub» : Term :=
+  ⟨1166, "u64_checked_sub", [4, 4], 4, (.decl ⟨true, false, true, false⟩ (some (.external "u64_checked_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 2065⟩⟩
+
+/-- term 1167 -/
+def T.«u64_wrapping_sub» : Term :=
+  ⟨1167, "u64_wrapping_sub", [4, 4], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_wrapping_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 2071⟩⟩
+
+/-- term 1168 -/
+def T.«u64_sub» : Term :=
+  ⟨1168, "u64_sub", [4, 4], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 2077⟩⟩
+
+/-- term 1169 -/
+def T.«u64_checked_mul» : Term :=
+  ⟨1169, "u64_checked_mul", [4, 4], 4, (.decl ⟨true, false, true, false⟩ (some (.external "u64_checked_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 2083⟩⟩
+
+/-- term 1170 -/
+def T.«u64_wrapping_mul» : Term :=
+  ⟨1170, "u64_wrapping_mul", [4, 4], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_wrapping_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 2089⟩⟩
+
+/-- term 1171 -/
+def T.«u64_mul» : Term :=
+  ⟨1171, "u64_mul", [4, 4], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 2095⟩⟩
+
+/-- term 1172 -/
+def T.«u64_checked_div» : Term :=
+  ⟨1172, "u64_checked_div", [4, 4], 4, (.decl ⟨true, false, true, false⟩ (some (.external "u64_checked_div")) none), ⟨"<OUT_DIR>/numerics.isle", 2101⟩⟩
+
+/-- term 1173 -/
+def T.«u64_wrapping_div» : Term :=
+  ⟨1173, "u64_wrapping_div", [4, 4], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_wrapping_div")) none), ⟨"<OUT_DIR>/numerics.isle", 2107⟩⟩
+
+/-- term 1174 -/
+def T.«u64_div» : Term :=
+  ⟨1174, "u64_div", [4, 4], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_div")) none), ⟨"<OUT_DIR>/numerics.isle", 2113⟩⟩
+
+/-- term 1175 -/
+def T.«u64_checked_rem» : Term :=
+  ⟨1175, "u64_checked_rem", [4, 4], 4, (.decl ⟨true, false, true, false⟩ (some (.external "u64_checked_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 2119⟩⟩
+
+/-- term 1176 -/
+def T.«u64_rem» : Term :=
+  ⟨1176, "u64_rem", [4, 4], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 2125⟩⟩
+
+/-- term 1177 -/
+def T.«u64_and» : Term :=
+  ⟨1177, "u64_and", [4, 4], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_and")) none), ⟨"<OUT_DIR>/numerics.isle", 2131⟩⟩
+
+/-- term 1178 -/
+def T.«u64_or» : Term :=
+  ⟨1178, "u64_or", [4, 4], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_or")) none), ⟨"<OUT_DIR>/numerics.isle", 2137⟩⟩
+
+/-- term 1179 -/
+def T.«u64_xor» : Term :=
+  ⟨1179, "u64_xor", [4, 4], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_xor")) none), ⟨"<OUT_DIR>/numerics.isle", 2143⟩⟩
+
+/-- term 1180 -/
+def T.«u64_not» : Term :=
+  ⟨1180, "u64_not", [4], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_not")) none), ⟨"<OUT_DIR>/numerics.isle", 2149⟩⟩
+
+/-- term 1181 -/
+def T.«u64_checked_shl» : Term :=
+  ⟨1181, "u64_checked_shl", [4, 3], 4, (.decl ⟨true, false, true, false⟩ (some (.external "u64_checked_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 2154⟩⟩
+
+/-- term 1182 -/
+def T.«u64_wrapping_shl» : Term :=
+  ⟨1182, "u64_wrapping_shl", [4, 3], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_wrapping_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 2160⟩⟩
+
+/-- term 1183 -/
+def T.«u64_shl» : Term :=
+  ⟨1183, "u64_shl", [4, 3], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 2166⟩⟩
+
+/-- term 1184 -/
+def T.«u64_checked_shr» : Term :=
+  ⟨1184, "u64_checked_shr", [4, 3], 4, (.decl ⟨true, false, true, false⟩ (some (.external "u64_checked_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 2172⟩⟩
+
+/-- term 1185 -/
+def T.«u64_wrapping_shr» : Term :=
+  ⟨1185, "u64_wrapping_shr", [4, 3], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_wrapping_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 2178⟩⟩
+
+/-- term 1186 -/
+def T.«u64_shr» : Term :=
+  ⟨1186, "u64_shr", [4, 3], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 2184⟩⟩
+
+/-- term 1187 -/
+def T.«u64_rotl» : Term :=
+  ⟨1187, "u64_rotl", [4, 3], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_rotl")) none), ⟨"<OUT_DIR>/numerics.isle", 2190⟩⟩
+
+/-- term 1188 -/
+def T.«u64_rotr» : Term :=
+  ⟨1188, "u64_rotr", [4, 3], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_rotr")) none), ⟨"<OUT_DIR>/numerics.isle", 2196⟩⟩
+
+/-- term 1189 -/
+def T.«u64_is_zero» : Term :=
+  ⟨1189, "u64_is_zero", [4], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u64_is_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 2202⟩⟩
+
+/-- term 1190 -/
+def T.«u64_matches_zero» : Term :=
+  ⟨1190, "u64_matches_zero", [0], 4, (.decl ⟨true, false, false, false⟩ none (some (.external "u64_matches_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 2206⟩⟩
+
+/-- term 1191 -/
+def T.«u64_extract_zero» : Term :=
+  ⟨1191, "u64_extract_zero", [4], 4, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u64_extract_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u64_matches_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 2208⟩⟩
+
+/-- term 1192 -/
+def T.«u64_when_zero» : Term :=
+  ⟨1192, "u64_when_zero", [], 4, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u64_when_zero")]), (.list [(.atom "u64_matches_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 2210⟩⟩
+
+/-- term 1193 -/
+def T.«u64_when_not_zero» : Term :=
+  ⟨1193, "u64_when_not_zero", [], 4, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u64_when_not_zero")]), (.list [(.atom "u64_matches_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 2212⟩⟩
+
+/-- term 1194 -/
+def T.«u64_is_non_zero» : Term :=
+  ⟨1194, "u64_is_non_zero", [4], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u64_is_non_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 2215⟩⟩
+
+/-- term 1195 -/
+def T.«u64_matches_non_zero» : Term :=
+  ⟨1195, "u64_matches_non_zero", [0], 4, (.decl ⟨true, false, false, false⟩ none (some (.external "u64_matches_non_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 2219⟩⟩
+
+/-- term 1196 -/
+def T.«u64_extract_non_zero» : Term :=
+  ⟨1196, "u64_extract_non_zero", [4], 4, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u64_extract_non_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u64_matches_non_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 2221⟩⟩
+
+/-- term 1197 -/
+def T.«u64_when_non_zero» : Term :=
+  ⟨1197, "u64_when_non_zero", [], 4, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u64_when_non_zero")]), (.list [(.atom "u64_matches_non_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 2223⟩⟩
+
+/-- term 1198 -/
+def T.«u64_when_not_non_zero» : Term :=
+  ⟨1198, "u64_when_not_non_zero", [], 4, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u64_when_not_non_zero")]), (.list [(.atom "u64_matches_non_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 2225⟩⟩
+
+/-- term 1199 -/
+def T.«u64_is_odd» : Term :=
+  ⟨1199, "u64_is_odd", [4], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u64_is_odd")) none), ⟨"<OUT_DIR>/numerics.isle", 2228⟩⟩
+
+/-- term 1200 -/
+def T.«u64_matches_odd» : Term :=
+  ⟨1200, "u64_matches_odd", [0], 4, (.decl ⟨true, false, false, false⟩ none (some (.external "u64_matches_odd" false))), ⟨"<OUT_DIR>/numerics.isle", 2232⟩⟩
+
+/-- term 1201 -/
+def T.«u64_extract_odd» : Term :=
+  ⟨1201, "u64_extract_odd", [4], 4, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u64_extract_odd"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u64_matches_odd"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 2234⟩⟩
+
+/-- term 1202 -/
+def T.«u64_when_odd» : Term :=
+  ⟨1202, "u64_when_odd", [], 4, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u64_when_odd")]), (.list [(.atom "u64_matches_odd"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 2236⟩⟩
+
+/-- term 1203 -/
+def T.«u64_when_not_odd» : Term :=
+  ⟨1203, "u64_when_not_odd", [], 4, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u64_when_not_odd")]), (.list [(.atom "u64_matches_odd"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 2238⟩⟩
+
+/-- term 1204 -/
+def T.«u64_is_even» : Term :=
+  ⟨1204, "u64_is_even", [4], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u64_is_even")) none), ⟨"<OUT_DIR>/numerics.isle", 2241⟩⟩
+
+/-- term 1205 -/
+def T.«u64_matches_even» : Term :=
+  ⟨1205, "u64_matches_even", [0], 4, (.decl ⟨true, false, false, false⟩ none (some (.external "u64_matches_even" false))), ⟨"<OUT_DIR>/numerics.isle", 2245⟩⟩
+
+/-- term 1206 -/
+def T.«u64_extract_even» : Term :=
+  ⟨1206, "u64_extract_even", [4], 4, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u64_extract_even"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u64_matches_even"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 2247⟩⟩
+
+/-- term 1207 -/
+def T.«u64_when_even» : Term :=
+  ⟨1207, "u64_when_even", [], 4, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u64_when_even")]), (.list [(.atom "u64_matches_even"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 2249⟩⟩
+
+/-- term 1208 -/
+def T.«u64_when_not_even» : Term :=
+  ⟨1208, "u64_when_not_even", [], 4, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u64_when_not_even")]), (.list [(.atom "u64_matches_even"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 2251⟩⟩
+
+/-- term 1209 -/
+def T.«u64_checked_ilog2» : Term :=
+  ⟨1209, "u64_checked_ilog2", [4], 3, (.decl ⟨true, false, true, false⟩ (some (.external "u64_checked_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 2254⟩⟩
+
+/-- term 1210 -/
+def T.«u64_ilog2» : Term :=
+  ⟨1210, "u64_ilog2", [4], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u64_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 2259⟩⟩
+
+/-- term 1211 -/
+def T.«u64_trailing_zeros» : Term :=
+  ⟨1211, "u64_trailing_zeros", [4], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u64_trailing_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 2264⟩⟩
+
+/-- term 1212 -/
+def T.«u64_trailing_ones» : Term :=
+  ⟨1212, "u64_trailing_ones", [4], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u64_trailing_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 2269⟩⟩
+
+/-- term 1213 -/
+def T.«u64_leading_zeros» : Term :=
+  ⟨1213, "u64_leading_zeros", [4], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u64_leading_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 2274⟩⟩
+
+/-- term 1214 -/
+def T.«u64_leading_ones» : Term :=
+  ⟨1214, "u64_leading_ones", [4], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u64_leading_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 2279⟩⟩
+
+/-- term 1215 -/
+def T.«u64_is_power_of_two» : Term :=
+  ⟨1215, "u64_is_power_of_two", [4], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u64_is_power_of_two")) none), ⟨"<OUT_DIR>/numerics.isle", 2284⟩⟩
+
+/-- term 1216 -/
+def T.«u64_matches_power_of_two» : Term :=
+  ⟨1216, "u64_matches_power_of_two", [0], 4, (.decl ⟨true, false, false, false⟩ none (some (.external "u64_matches_power_of_two" false))), ⟨"<OUT_DIR>/numerics.isle", 2288⟩⟩
+
+/-- term 1217 -/
+def T.«u64_extract_power_of_two» : Term :=
+  ⟨1217, "u64_extract_power_of_two", [4], 4, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u64_extract_power_of_two"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u64_matches_power_of_two"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 2290⟩⟩
+
+/-- term 1218 -/
+def T.«u64_when_power_of_two» : Term :=
+  ⟨1218, "u64_when_power_of_two", [], 4, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u64_when_power_of_two")]), (.list [(.atom "u64_matches_power_of_two"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 2292⟩⟩
+
+/-- term 1219 -/
+def T.«u64_when_not_power_of_two» : Term :=
+  ⟨1219, "u64_when_not_power_of_two", [], 4, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u64_when_not_power_of_two")]), (.list [(.atom "u64_matches_power_of_two"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 2294⟩⟩
+
+/-- term 1220 -/
+def T.«i128_eq» : Term :=
+  ⟨1220, "i128_eq", [11, 11], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i128_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 2297⟩⟩
+
+/-- term 1221 -/
+def T.«i128_ne» : Term :=
+  ⟨1221, "i128_ne", [11, 11], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i128_ne")) none), ⟨"<OUT_DIR>/numerics.isle", 2303⟩⟩
+
+/-- term 1222 -/
+def T.«i128_lt» : Term :=
+  ⟨1222, "i128_lt", [11, 11], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i128_lt")) none), ⟨"<OUT_DIR>/numerics.isle", 2309⟩⟩
+
+/-- term 1223 -/
+def T.«i128_lt_eq» : Term :=
+  ⟨1223, "i128_lt_eq", [11, 11], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i128_lt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 2315⟩⟩
+
+/-- term 1224 -/
+def T.«i128_gt» : Term :=
+  ⟨1224, "i128_gt", [11, 11], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i128_gt")) none), ⟨"<OUT_DIR>/numerics.isle", 2321⟩⟩
+
+/-- term 1225 -/
+def T.«i128_gt_eq» : Term :=
+  ⟨1225, "i128_gt_eq", [11, 11], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i128_gt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 2327⟩⟩
+
+/-- term 1226 -/
+def T.«i128_checked_add» : Term :=
+  ⟨1226, "i128_checked_add", [11, 11], 11, (.decl ⟨true, false, true, false⟩ (some (.external "i128_checked_add")) none), ⟨"<OUT_DIR>/numerics.isle", 2333⟩⟩
+
+/-- term 1227 -/
+def T.«i128_wrapping_add» : Term :=
+  ⟨1227, "i128_wrapping_add", [11, 11], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_wrapping_add")) none), ⟨"<OUT_DIR>/numerics.isle", 2339⟩⟩
+
+/-- term 1228 -/
+def T.«i128_add» : Term :=
+  ⟨1228, "i128_add", [11, 11], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_add")) none), ⟨"<OUT_DIR>/numerics.isle", 2345⟩⟩
+
+/-- term 1229 -/
+def T.«i128_checked_sub» : Term :=
+  ⟨1229, "i128_checked_sub", [11, 11], 11, (.decl ⟨true, false, true, false⟩ (some (.external "i128_checked_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 2351⟩⟩
+
+/-- term 1230 -/
+def T.«i128_wrapping_sub» : Term :=
+  ⟨1230, "i128_wrapping_sub", [11, 11], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_wrapping_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 2357⟩⟩
+
+/-- term 1231 -/
+def T.«i128_sub» : Term :=
+  ⟨1231, "i128_sub", [11, 11], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 2363⟩⟩
+
+/-- term 1232 -/
+def T.«i128_checked_mul» : Term :=
+  ⟨1232, "i128_checked_mul", [11, 11], 11, (.decl ⟨true, false, true, false⟩ (some (.external "i128_checked_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 2369⟩⟩
+
+/-- term 1233 -/
+def T.«i128_wrapping_mul» : Term :=
+  ⟨1233, "i128_wrapping_mul", [11, 11], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_wrapping_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 2375⟩⟩
+
+/-- term 1234 -/
+def T.«i128_mul» : Term :=
+  ⟨1234, "i128_mul", [11, 11], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 2381⟩⟩
+
+/-- term 1235 -/
+def T.«i128_checked_div» : Term :=
+  ⟨1235, "i128_checked_div", [11, 11], 11, (.decl ⟨true, false, true, false⟩ (some (.external "i128_checked_div")) none), ⟨"<OUT_DIR>/numerics.isle", 2387⟩⟩
+
+/-- term 1236 -/
+def T.«i128_wrapping_div» : Term :=
+  ⟨1236, "i128_wrapping_div", [11, 11], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_wrapping_div")) none), ⟨"<OUT_DIR>/numerics.isle", 2393⟩⟩
+
+/-- term 1237 -/
+def T.«i128_div» : Term :=
+  ⟨1237, "i128_div", [11, 11], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_div")) none), ⟨"<OUT_DIR>/numerics.isle", 2399⟩⟩
+
+/-- term 1238 -/
+def T.«i128_checked_rem» : Term :=
+  ⟨1238, "i128_checked_rem", [11, 11], 11, (.decl ⟨true, false, true, false⟩ (some (.external "i128_checked_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 2405⟩⟩
+
+/-- term 1239 -/
+def T.«i128_rem» : Term :=
+  ⟨1239, "i128_rem", [11, 11], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 2411⟩⟩
+
+/-- term 1240 -/
+def T.«i128_and» : Term :=
+  ⟨1240, "i128_and", [11, 11], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_and")) none), ⟨"<OUT_DIR>/numerics.isle", 2417⟩⟩
+
+/-- term 1241 -/
+def T.«i128_or» : Term :=
+  ⟨1241, "i128_or", [11, 11], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_or")) none), ⟨"<OUT_DIR>/numerics.isle", 2423⟩⟩
+
+/-- term 1242 -/
+def T.«i128_xor» : Term :=
+  ⟨1242, "i128_xor", [11, 11], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_xor")) none), ⟨"<OUT_DIR>/numerics.isle", 2429⟩⟩
+
+/-- term 1243 -/
+def T.«i128_not» : Term :=
+  ⟨1243, "i128_not", [11], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_not")) none), ⟨"<OUT_DIR>/numerics.isle", 2435⟩⟩
+
+/-- term 1244 -/
+def T.«i128_checked_shl» : Term :=
+  ⟨1244, "i128_checked_shl", [11, 3], 11, (.decl ⟨true, false, true, false⟩ (some (.external "i128_checked_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 2440⟩⟩
+
+/-- term 1245 -/
+def T.«i128_wrapping_shl» : Term :=
+  ⟨1245, "i128_wrapping_shl", [11, 3], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_wrapping_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 2446⟩⟩
+
+/-- term 1246 -/
+def T.«i128_shl» : Term :=
+  ⟨1246, "i128_shl", [11, 3], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 2452⟩⟩
+
+/-- term 1247 -/
+def T.«i128_checked_shr» : Term :=
+  ⟨1247, "i128_checked_shr", [11, 3], 11, (.decl ⟨true, false, true, false⟩ (some (.external "i128_checked_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 2458⟩⟩
+
+/-- term 1248 -/
+def T.«i128_wrapping_shr» : Term :=
+  ⟨1248, "i128_wrapping_shr", [11, 3], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_wrapping_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 2464⟩⟩
+
+/-- term 1249 -/
+def T.«i128_shr» : Term :=
+  ⟨1249, "i128_shr", [11, 3], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 2470⟩⟩
+
+/-- term 1250 -/
+def T.«i128_rotl» : Term :=
+  ⟨1250, "i128_rotl", [11, 3], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_rotl")) none), ⟨"<OUT_DIR>/numerics.isle", 2476⟩⟩
+
+/-- term 1251 -/
+def T.«i128_rotr» : Term :=
+  ⟨1251, "i128_rotr", [11, 3], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_rotr")) none), ⟨"<OUT_DIR>/numerics.isle", 2482⟩⟩
+
+/-- term 1252 -/
+def T.«i128_is_zero» : Term :=
+  ⟨1252, "i128_is_zero", [11], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i128_is_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 2488⟩⟩
+
+/-- term 1253 -/
+def T.«i128_matches_zero» : Term :=
+  ⟨1253, "i128_matches_zero", [0], 11, (.decl ⟨true, false, false, false⟩ none (some (.external "i128_matches_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 2492⟩⟩
+
+/-- term 1254 -/
+def T.«i128_extract_zero» : Term :=
+  ⟨1254, "i128_extract_zero", [11], 11, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i128_extract_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i128_matches_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 2494⟩⟩
+
+/-- term 1255 -/
+def T.«i128_when_zero» : Term :=
+  ⟨1255, "i128_when_zero", [], 11, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i128_when_zero")]), (.list [(.atom "i128_matches_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 2496⟩⟩
+
+/-- term 1256 -/
+def T.«i128_when_not_zero» : Term :=
+  ⟨1256, "i128_when_not_zero", [], 11, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i128_when_not_zero")]), (.list [(.atom "i128_matches_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 2498⟩⟩
+
+/-- term 1257 -/
+def T.«i128_is_non_zero» : Term :=
+  ⟨1257, "i128_is_non_zero", [11], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i128_is_non_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 2501⟩⟩
+
+/-- term 1258 -/
+def T.«i128_matches_non_zero» : Term :=
+  ⟨1258, "i128_matches_non_zero", [0], 11, (.decl ⟨true, false, false, false⟩ none (some (.external "i128_matches_non_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 2505⟩⟩
+
+/-- term 1259 -/
+def T.«i128_extract_non_zero» : Term :=
+  ⟨1259, "i128_extract_non_zero", [11], 11, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i128_extract_non_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i128_matches_non_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 2507⟩⟩
+
+/-- term 1260 -/
+def T.«i128_when_non_zero» : Term :=
+  ⟨1260, "i128_when_non_zero", [], 11, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i128_when_non_zero")]), (.list [(.atom "i128_matches_non_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 2509⟩⟩
+
+/-- term 1261 -/
+def T.«i128_when_not_non_zero» : Term :=
+  ⟨1261, "i128_when_not_non_zero", [], 11, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i128_when_not_non_zero")]), (.list [(.atom "i128_matches_non_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 2511⟩⟩
+
+/-- term 1262 -/
+def T.«i128_is_odd» : Term :=
+  ⟨1262, "i128_is_odd", [11], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i128_is_odd")) none), ⟨"<OUT_DIR>/numerics.isle", 2514⟩⟩
+
+/-- term 1263 -/
+def T.«i128_matches_odd» : Term :=
+  ⟨1263, "i128_matches_odd", [0], 11, (.decl ⟨true, false, false, false⟩ none (some (.external "i128_matches_odd" false))), ⟨"<OUT_DIR>/numerics.isle", 2518⟩⟩
+
+/-- term 1264 -/
+def T.«i128_extract_odd» : Term :=
+  ⟨1264, "i128_extract_odd", [11], 11, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i128_extract_odd"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i128_matches_odd"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 2520⟩⟩
+
+/-- term 1265 -/
+def T.«i128_when_odd» : Term :=
+  ⟨1265, "i128_when_odd", [], 11, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i128_when_odd")]), (.list [(.atom "i128_matches_odd"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 2522⟩⟩
+
+/-- term 1266 -/
+def T.«i128_when_not_odd» : Term :=
+  ⟨1266, "i128_when_not_odd", [], 11, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i128_when_not_odd")]), (.list [(.atom "i128_matches_odd"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 2524⟩⟩
+
+/-- term 1267 -/
+def T.«i128_is_even» : Term :=
+  ⟨1267, "i128_is_even", [11], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i128_is_even")) none), ⟨"<OUT_DIR>/numerics.isle", 2527⟩⟩
+
+/-- term 1268 -/
+def T.«i128_matches_even» : Term :=
+  ⟨1268, "i128_matches_even", [0], 11, (.decl ⟨true, false, false, false⟩ none (some (.external "i128_matches_even" false))), ⟨"<OUT_DIR>/numerics.isle", 2531⟩⟩
+
+/-- term 1269 -/
+def T.«i128_extract_even» : Term :=
+  ⟨1269, "i128_extract_even", [11], 11, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i128_extract_even"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i128_matches_even"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 2533⟩⟩
+
+/-- term 1270 -/
+def T.«i128_when_even» : Term :=
+  ⟨1270, "i128_when_even", [], 11, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i128_when_even")]), (.list [(.atom "i128_matches_even"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 2535⟩⟩
+
+/-- term 1271 -/
+def T.«i128_when_not_even» : Term :=
+  ⟨1271, "i128_when_not_even", [], 11, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i128_when_not_even")]), (.list [(.atom "i128_matches_even"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 2537⟩⟩
+
+/-- term 1272 -/
+def T.«i128_checked_ilog2» : Term :=
+  ⟨1272, "i128_checked_ilog2", [11], 3, (.decl ⟨true, false, true, false⟩ (some (.external "i128_checked_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 2540⟩⟩
+
+/-- term 1273 -/
+def T.«i128_ilog2» : Term :=
+  ⟨1273, "i128_ilog2", [11], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i128_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 2545⟩⟩
+
+/-- term 1274 -/
+def T.«i128_trailing_zeros» : Term :=
+  ⟨1274, "i128_trailing_zeros", [11], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i128_trailing_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 2550⟩⟩
+
+/-- term 1275 -/
+def T.«i128_trailing_ones» : Term :=
+  ⟨1275, "i128_trailing_ones", [11], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i128_trailing_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 2555⟩⟩
+
+/-- term 1276 -/
+def T.«i128_leading_zeros» : Term :=
+  ⟨1276, "i128_leading_zeros", [11], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i128_leading_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 2560⟩⟩
+
+/-- term 1277 -/
+def T.«i128_leading_ones» : Term :=
+  ⟨1277, "i128_leading_ones", [11], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i128_leading_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 2565⟩⟩
+
+/-- term 1278 -/
+def T.«i128_checked_neg» : Term :=
+  ⟨1278, "i128_checked_neg", [11], 11, (.decl ⟨true, false, true, false⟩ (some (.external "i128_checked_neg")) none), ⟨"<OUT_DIR>/numerics.isle", 2570⟩⟩
+
+/-- term 1279 -/
+def T.«i128_wrapping_neg» : Term :=
+  ⟨1279, "i128_wrapping_neg", [11], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_wrapping_neg")) none), ⟨"<OUT_DIR>/numerics.isle", 2575⟩⟩
+
+/-- term 1280 -/
+def T.«i128_neg» : Term :=
+  ⟨1280, "i128_neg", [11], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i128_neg")) none), ⟨"<OUT_DIR>/numerics.isle", 2580⟩⟩
+
+/-- term 1281 -/
+def T.«u128_eq» : Term :=
+  ⟨1281, "u128_eq", [5, 5], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u128_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 2585⟩⟩
+
+/-- term 1282 -/
+def T.«u128_ne» : Term :=
+  ⟨1282, "u128_ne", [5, 5], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u128_ne")) none), ⟨"<OUT_DIR>/numerics.isle", 2591⟩⟩
+
+/-- term 1283 -/
+def T.«u128_lt» : Term :=
+  ⟨1283, "u128_lt", [5, 5], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u128_lt")) none), ⟨"<OUT_DIR>/numerics.isle", 2597⟩⟩
+
+/-- term 1284 -/
+def T.«u128_lt_eq» : Term :=
+  ⟨1284, "u128_lt_eq", [5, 5], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u128_lt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 2603⟩⟩
+
+/-- term 1285 -/
+def T.«u128_gt» : Term :=
+  ⟨1285, "u128_gt", [5, 5], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u128_gt")) none), ⟨"<OUT_DIR>/numerics.isle", 2609⟩⟩
+
+/-- term 1286 -/
+def T.«u128_gt_eq» : Term :=
+  ⟨1286, "u128_gt_eq", [5, 5], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u128_gt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 2615⟩⟩
+
+/-- term 1287 -/
+def T.«u128_checked_add» : Term :=
+  ⟨1287, "u128_checked_add", [5, 5], 5, (.decl ⟨true, false, true, false⟩ (some (.external "u128_checked_add")) none), ⟨"<OUT_DIR>/numerics.isle", 2621⟩⟩
+
+/-- term 1288 -/
+def T.«u128_wrapping_add» : Term :=
+  ⟨1288, "u128_wrapping_add", [5, 5], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u128_wrapping_add")) none), ⟨"<OUT_DIR>/numerics.isle", 2627⟩⟩
+
+/-- term 1289 -/
+def T.«u128_add» : Term :=
+  ⟨1289, "u128_add", [5, 5], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u128_add")) none), ⟨"<OUT_DIR>/numerics.isle", 2633⟩⟩
+
+/-- term 1290 -/
+def T.«u128_checked_sub» : Term :=
+  ⟨1290, "u128_checked_sub", [5, 5], 5, (.decl ⟨true, false, true, false⟩ (some (.external "u128_checked_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 2639⟩⟩
+
+/-- term 1291 -/
+def T.«u128_wrapping_sub» : Term :=
+  ⟨1291, "u128_wrapping_sub", [5, 5], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u128_wrapping_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 2645⟩⟩
+
+/-- term 1292 -/
+def T.«u128_sub» : Term :=
+  ⟨1292, "u128_sub", [5, 5], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u128_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 2651⟩⟩
+
+/-- term 1293 -/
+def T.«u128_checked_mul» : Term :=
+  ⟨1293, "u128_checked_mul", [5, 5], 5, (.decl ⟨true, false, true, false⟩ (some (.external "u128_checked_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 2657⟩⟩
+
+/-- term 1294 -/
+def T.«u128_wrapping_mul» : Term :=
+  ⟨1294, "u128_wrapping_mul", [5, 5], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u128_wrapping_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 2663⟩⟩
+
+/-- term 1295 -/
+def T.«u128_mul» : Term :=
+  ⟨1295, "u128_mul", [5, 5], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u128_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 2669⟩⟩
+
+/-- term 1296 -/
+def T.«u128_checked_div» : Term :=
+  ⟨1296, "u128_checked_div", [5, 5], 5, (.decl ⟨true, false, true, false⟩ (some (.external "u128_checked_div")) none), ⟨"<OUT_DIR>/numerics.isle", 2675⟩⟩
+
+/-- term 1297 -/
+def T.«u128_wrapping_div» : Term :=
+  ⟨1297, "u128_wrapping_div", [5, 5], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u128_wrapping_div")) none), ⟨"<OUT_DIR>/numerics.isle", 2681⟩⟩
+
+/-- term 1298 -/
+def T.«u128_div» : Term :=
+  ⟨1298, "u128_div", [5, 5], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u128_div")) none), ⟨"<OUT_DIR>/numerics.isle", 2687⟩⟩
+
+/-- term 1299 -/
+def T.«u128_checked_rem» : Term :=
+  ⟨1299, "u128_checked_rem", [5, 5], 5, (.decl ⟨true, false, true, false⟩ (some (.external "u128_checked_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 2693⟩⟩
+
+/-- term 1300 -/
+def T.«u128_rem» : Term :=
+  ⟨1300, "u128_rem", [5, 5], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u128_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 2699⟩⟩
+
+/-- term 1301 -/
+def T.«u128_and» : Term :=
+  ⟨1301, "u128_and", [5, 5], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u128_and")) none), ⟨"<OUT_DIR>/numerics.isle", 2705⟩⟩
+
+/-- term 1302 -/
+def T.«u128_or» : Term :=
+  ⟨1302, "u128_or", [5, 5], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u128_or")) none), ⟨"<OUT_DIR>/numerics.isle", 2711⟩⟩
+
+/-- term 1303 -/
+def T.«u128_xor» : Term :=
+  ⟨1303, "u128_xor", [5, 5], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u128_xor")) none), ⟨"<OUT_DIR>/numerics.isle", 2717⟩⟩
+
+/-- term 1304 -/
+def T.«u128_not» : Term :=
+  ⟨1304, "u128_not", [5], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u128_not")) none), ⟨"<OUT_DIR>/numerics.isle", 2723⟩⟩
+
+/-- term 1305 -/
+def T.«u128_checked_shl» : Term :=
+  ⟨1305, "u128_checked_shl", [5, 3], 5, (.decl ⟨true, false, true, false⟩ (some (.external "u128_checked_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 2728⟩⟩
+
+/-- term 1306 -/
+def T.«u128_wrapping_shl» : Term :=
+  ⟨1306, "u128_wrapping_shl", [5, 3], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u128_wrapping_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 2734⟩⟩
+
+/-- term 1307 -/
+def T.«u128_shl» : Term :=
+  ⟨1307, "u128_shl", [5, 3], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u128_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 2740⟩⟩
+
+/-- term 1308 -/
+def T.«u128_checked_shr» : Term :=
+  ⟨1308, "u128_checked_shr", [5, 3], 5, (.decl ⟨true, false, true, false⟩ (some (.external "u128_checked_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 2746⟩⟩
+
+/-- term 1309 -/
+def T.«u128_wrapping_shr» : Term :=
+  ⟨1309, "u128_wrapping_shr", [5, 3], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u128_wrapping_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 2752⟩⟩
+
+/-- term 1310 -/
+def T.«u128_shr» : Term :=
+  ⟨1310, "u128_shr", [5, 3], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u128_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 2758⟩⟩
+
+/-- term 1311 -/
+def T.«u128_rotl» : Term :=
+  ⟨1311, "u128_rotl", [5, 3], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u128_rotl")) none), ⟨"<OUT_DIR>/numerics.isle", 2764⟩⟩
+
+/-- term 1312 -/
+def T.«u128_rotr» : Term :=
+  ⟨1312, "u128_rotr", [5, 3], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u128_rotr")) none), ⟨"<OUT_DIR>/numerics.isle", 2770⟩⟩
+
+/-- term 1313 -/
+def T.«u128_is_zero» : Term :=
+  ⟨1313, "u128_is_zero", [5], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u128_is_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 2776⟩⟩
+
+/-- term 1314 -/
+def T.«u128_matches_zero» : Term :=
+  ⟨1314, "u128_matches_zero", [0], 5, (.decl ⟨true, false, false, false⟩ none (some (.external "u128_matches_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 2780⟩⟩
+
+/-- term 1315 -/
+def T.«u128_extract_zero» : Term :=
+  ⟨1315, "u128_extract_zero", [5], 5, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u128_extract_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u128_matches_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 2782⟩⟩
+
+/-- term 1316 -/
+def T.«u128_when_zero» : Term :=
+  ⟨1316, "u128_when_zero", [], 5, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u128_when_zero")]), (.list [(.atom "u128_matches_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 2784⟩⟩
+
+/-- term 1317 -/
+def T.«u128_when_not_zero» : Term :=
+  ⟨1317, "u128_when_not_zero", [], 5, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u128_when_not_zero")]), (.list [(.atom "u128_matches_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 2786⟩⟩
+
+/-- term 1318 -/
+def T.«u128_is_non_zero» : Term :=
+  ⟨1318, "u128_is_non_zero", [5], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u128_is_non_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 2789⟩⟩
+
+/-- term 1319 -/
+def T.«u128_matches_non_zero» : Term :=
+  ⟨1319, "u128_matches_non_zero", [0], 5, (.decl ⟨true, false, false, false⟩ none (some (.external "u128_matches_non_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 2793⟩⟩
+
+/-- term 1320 -/
+def T.«u128_extract_non_zero» : Term :=
+  ⟨1320, "u128_extract_non_zero", [5], 5, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u128_extract_non_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u128_matches_non_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 2795⟩⟩
+
+/-- term 1321 -/
+def T.«u128_when_non_zero» : Term :=
+  ⟨1321, "u128_when_non_zero", [], 5, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u128_when_non_zero")]), (.list [(.atom "u128_matches_non_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 2797⟩⟩
+
+/-- term 1322 -/
+def T.«u128_when_not_non_zero» : Term :=
+  ⟨1322, "u128_when_not_non_zero", [], 5, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u128_when_not_non_zero")]), (.list [(.atom "u128_matches_non_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 2799⟩⟩
+
+/-- term 1323 -/
+def T.«u128_is_odd» : Term :=
+  ⟨1323, "u128_is_odd", [5], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u128_is_odd")) none), ⟨"<OUT_DIR>/numerics.isle", 2802⟩⟩
+
+/-- term 1324 -/
+def T.«u128_matches_odd» : Term :=
+  ⟨1324, "u128_matches_odd", [0], 5, (.decl ⟨true, false, false, false⟩ none (some (.external "u128_matches_odd" false))), ⟨"<OUT_DIR>/numerics.isle", 2806⟩⟩
+
+/-- term 1325 -/
+def T.«u128_extract_odd» : Term :=
+  ⟨1325, "u128_extract_odd", [5], 5, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u128_extract_odd"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u128_matches_odd"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 2808⟩⟩
+
+/-- term 1326 -/
+def T.«u128_when_odd» : Term :=
+  ⟨1326, "u128_when_odd", [], 5, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u128_when_odd")]), (.list [(.atom "u128_matches_odd"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 2810⟩⟩
+
+/-- term 1327 -/
+def T.«u128_when_not_odd» : Term :=
+  ⟨1327, "u128_when_not_odd", [], 5, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u128_when_not_odd")]), (.list [(.atom "u128_matches_odd"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 2812⟩⟩
+
+/-- term 1328 -/
+def T.«u128_is_even» : Term :=
+  ⟨1328, "u128_is_even", [5], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u128_is_even")) none), ⟨"<OUT_DIR>/numerics.isle", 2815⟩⟩
+
+/-- term 1329 -/
+def T.«u128_matches_even» : Term :=
+  ⟨1329, "u128_matches_even", [0], 5, (.decl ⟨true, false, false, false⟩ none (some (.external "u128_matches_even" false))), ⟨"<OUT_DIR>/numerics.isle", 2819⟩⟩
+
+/-- term 1330 -/
+def T.«u128_extract_even» : Term :=
+  ⟨1330, "u128_extract_even", [5], 5, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u128_extract_even"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u128_matches_even"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 2821⟩⟩
+
+/-- term 1331 -/
+def T.«u128_when_even» : Term :=
+  ⟨1331, "u128_when_even", [], 5, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u128_when_even")]), (.list [(.atom "u128_matches_even"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 2823⟩⟩
+
+/-- term 1332 -/
+def T.«u128_when_not_even» : Term :=
+  ⟨1332, "u128_when_not_even", [], 5, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u128_when_not_even")]), (.list [(.atom "u128_matches_even"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 2825⟩⟩
+
+/-- term 1333 -/
+def T.«u128_checked_ilog2» : Term :=
+  ⟨1333, "u128_checked_ilog2", [5], 3, (.decl ⟨true, false, true, false⟩ (some (.external "u128_checked_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 2828⟩⟩
+
+/-- term 1334 -/
+def T.«u128_ilog2» : Term :=
+  ⟨1334, "u128_ilog2", [5], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u128_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 2833⟩⟩
+
+/-- term 1335 -/
+def T.«u128_trailing_zeros» : Term :=
+  ⟨1335, "u128_trailing_zeros", [5], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u128_trailing_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 2838⟩⟩
+
+/-- term 1336 -/
+def T.«u128_trailing_ones» : Term :=
+  ⟨1336, "u128_trailing_ones", [5], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u128_trailing_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 2843⟩⟩
+
+/-- term 1337 -/
+def T.«u128_leading_zeros» : Term :=
+  ⟨1337, "u128_leading_zeros", [5], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u128_leading_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 2848⟩⟩
+
+/-- term 1338 -/
+def T.«u128_leading_ones» : Term :=
+  ⟨1338, "u128_leading_ones", [5], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u128_leading_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 2853⟩⟩
+
+/-- term 1339 -/
+def T.«u128_is_power_of_two» : Term :=
+  ⟨1339, "u128_is_power_of_two", [5], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u128_is_power_of_two")) none), ⟨"<OUT_DIR>/numerics.isle", 2858⟩⟩
+
+/-- term 1340 -/
+def T.«u128_matches_power_of_two» : Term :=
+  ⟨1340, "u128_matches_power_of_two", [0], 5, (.decl ⟨true, false, false, false⟩ none (some (.external "u128_matches_power_of_two" false))), ⟨"<OUT_DIR>/numerics.isle", 2862⟩⟩
+
+/-- term 1341 -/
+def T.«u128_extract_power_of_two» : Term :=
+  ⟨1341, "u128_extract_power_of_two", [5], 5, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u128_extract_power_of_two"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u128_matches_power_of_two"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 2864⟩⟩
+
+/-- term 1342 -/
+def T.«u128_when_power_of_two» : Term :=
+  ⟨1342, "u128_when_power_of_two", [], 5, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u128_when_power_of_two")]), (.list [(.atom "u128_matches_power_of_two"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 2866⟩⟩
+
+/-- term 1343 -/
+def T.«u128_when_not_power_of_two» : Term :=
+  ⟨1343, "u128_when_not_power_of_two", [], 5, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u128_when_not_power_of_two")]), (.list [(.atom "u128_matches_power_of_two"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 2868⟩⟩
+
+/-- term 1344 -/
+def T.«i8_try_into_u8» : Term :=
+  ⟨1344, "i8_try_into_u8", [7], 1, (.decl ⟨true, false, true, false⟩ (some (.external "i8_try_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 2871⟩⟩
+
+/-- term 1345 -/
+def T.«i8_unwrap_into_u8» : Term :=
+  ⟨1345, "i8_unwrap_into_u8", [7], 1, (.decl ⟨true, false, false, false⟩ (some (.external "i8_unwrap_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 2873⟩⟩
+
+/-- term 1346 -/
+def T.«i8_cast_unsigned» : Term :=
+  ⟨1346, "i8_cast_unsigned", [7], 1, (.decl ⟨true, false, false, false⟩ (some (.external "i8_cast_unsigned")) none), ⟨"<OUT_DIR>/numerics.isle", 2875⟩⟩
+
+/-- term 1347 -/
+def T.«u8_from_i8» : Term :=
+  ⟨1347, "u8_from_i8", [1], 7, (.decl ⟨true, false, false, false⟩ none (some (.external "i8_from_u8" false))), ⟨"<OUT_DIR>/numerics.isle", 2877⟩⟩
+
+/-- term 1348 -/
+def T.«i8_into_i16» : Term :=
+  ⟨1348, "i8_into_i16", [7], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i8_into_i16")) none), ⟨"<OUT_DIR>/numerics.isle", 2880⟩⟩
+
+/-- term 1349 -/
+def T.«i16_from_i8» : Term :=
+  ⟨1349, "i16_from_i8", [8], 7, (.decl ⟨true, false, false, false⟩ none (some (.external "i8_from_i16" false))), ⟨"<OUT_DIR>/numerics.isle", 2883⟩⟩
+
+/-- term 1350 -/
+def T.«i8_try_into_u16» : Term :=
+  ⟨1350, "i8_try_into_u16", [7], 2, (.decl ⟨true, false, true, false⟩ (some (.external "i8_try_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 2886⟩⟩
+
+/-- term 1351 -/
+def T.«i8_unwrap_into_u16» : Term :=
+  ⟨1351, "i8_unwrap_into_u16", [7], 2, (.decl ⟨true, false, false, false⟩ (some (.external "i8_unwrap_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 2888⟩⟩
+
+/-- term 1352 -/
+def T.«u16_from_i8» : Term :=
+  ⟨1352, "u16_from_i8", [2], 7, (.decl ⟨true, false, false, false⟩ none (some (.external "i8_from_u16" false))), ⟨"<OUT_DIR>/numerics.isle", 2890⟩⟩
+
+/-- term 1353 -/
+def T.«i8_into_i32» : Term :=
+  ⟨1353, "i8_into_i32", [7], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i8_into_i32")) none), ⟨"<OUT_DIR>/numerics.isle", 2893⟩⟩
+
+/-- term 1354 -/
+def T.«i32_from_i8» : Term :=
+  ⟨1354, "i32_from_i8", [9], 7, (.decl ⟨true, false, false, false⟩ none (some (.external "i8_from_i32" false))), ⟨"<OUT_DIR>/numerics.isle", 2896⟩⟩
+
+/-- term 1355 -/
+def T.«i8_try_into_u32» : Term :=
+  ⟨1355, "i8_try_into_u32", [7], 3, (.decl ⟨true, false, true, false⟩ (some (.external "i8_try_into_u32")) none), ⟨"<OUT_DIR>/numerics.isle", 2899⟩⟩
+
+/-- term 1356 -/
+def T.«i8_unwrap_into_u32» : Term :=
+  ⟨1356, "i8_unwrap_into_u32", [7], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i8_unwrap_into_u32")) none), ⟨"<OUT_DIR>/numerics.isle", 2901⟩⟩
+
+/-- term 1357 -/
+def T.«u32_from_i8» : Term :=
+  ⟨1357, "u32_from_i8", [3], 7, (.decl ⟨true, false, false, false⟩ none (some (.external "i8_from_u32" false))), ⟨"<OUT_DIR>/numerics.isle", 2903⟩⟩
+
+/-- term 1358 -/
+def T.«i8_into_i64» : Term :=
+  ⟨1358, "i8_into_i64", [7], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i8_into_i64")) none), ⟨"<OUT_DIR>/numerics.isle", 2906⟩⟩
+
+/-- term 1359 -/
+def T.«i64_from_i8» : Term :=
+  ⟨1359, "i64_from_i8", [10], 7, (.decl ⟨true, false, false, false⟩ none (some (.external "i8_from_i64" false))), ⟨"<OUT_DIR>/numerics.isle", 2909⟩⟩
+
+/-- term 1360 -/
+def T.«i8_try_into_u64» : Term :=
+  ⟨1360, "i8_try_into_u64", [7], 4, (.decl ⟨true, false, true, false⟩ (some (.external "i8_try_into_u64")) none), ⟨"<OUT_DIR>/numerics.isle", 2912⟩⟩
+
+/-- term 1361 -/
+def T.«i8_unwrap_into_u64» : Term :=
+  ⟨1361, "i8_unwrap_into_u64", [7], 4, (.decl ⟨true, false, false, false⟩ (some (.external "i8_unwrap_into_u64")) none), ⟨"<OUT_DIR>/numerics.isle", 2914⟩⟩
+
+/-- term 1362 -/
+def T.«u64_from_i8» : Term :=
+  ⟨1362, "u64_from_i8", [4], 7, (.decl ⟨true, false, false, false⟩ none (some (.external "i8_from_u64" false))), ⟨"<OUT_DIR>/numerics.isle", 2916⟩⟩
+
+/-- term 1363 -/
+def T.«i8_into_i128» : Term :=
+  ⟨1363, "i8_into_i128", [7], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i8_into_i128")) none), ⟨"<OUT_DIR>/numerics.isle", 2919⟩⟩
+
+/-- term 1364 -/
+def T.«i128_from_i8» : Term :=
+  ⟨1364, "i128_from_i8", [11], 7, (.decl ⟨true, false, false, false⟩ none (some (.external "i8_from_i128" false))), ⟨"<OUT_DIR>/numerics.isle", 2922⟩⟩
+
+/-- term 1365 -/
+def T.«i8_try_into_u128» : Term :=
+  ⟨1365, "i8_try_into_u128", [7], 5, (.decl ⟨true, false, true, false⟩ (some (.external "i8_try_into_u128")) none), ⟨"<OUT_DIR>/numerics.isle", 2925⟩⟩
+
+/-- term 1366 -/
+def T.«i8_unwrap_into_u128» : Term :=
+  ⟨1366, "i8_unwrap_into_u128", [7], 5, (.decl ⟨true, false, false, false⟩ (some (.external "i8_unwrap_into_u128")) none), ⟨"<OUT_DIR>/numerics.isle", 2927⟩⟩
+
+/-- term 1367 -/
+def T.«u128_from_i8» : Term :=
+  ⟨1367, "u128_from_i8", [5], 7, (.decl ⟨true, false, false, false⟩ none (some (.external "i8_from_u128" false))), ⟨"<OUT_DIR>/numerics.isle", 2929⟩⟩
+
+/-- term 1368 -/
+def T.«u8_try_into_i8» : Term :=
+  ⟨1368, "u8_try_into_i8", [1], 7, (.decl ⟨true, false, true, false⟩ (some (.external "u8_try_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 2932⟩⟩
+
+/-- term 1369 -/
+def T.«u8_unwrap_into_i8» : Term :=
+  ⟨1369, "u8_unwrap_into_i8", [1], 7, (.decl ⟨true, false, false, false⟩ (some (.external "u8_unwrap_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 2934⟩⟩
+
+/-- term 1370 -/
+def T.«u8_cast_signed» : Term :=
+  ⟨1370, "u8_cast_signed", [1], 7, (.decl ⟨true, false, false, false⟩ (some (.external "u8_cast_signed")) none), ⟨"<OUT_DIR>/numerics.isle", 2936⟩⟩
+
+/-- term 1371 -/
+def T.«i8_from_u8» : Term :=
+  ⟨1371, "i8_from_u8", [7], 1, (.decl ⟨true, false, false, false⟩ none (some (.external "u8_from_i8" false))), ⟨"<OUT_DIR>/numerics.isle", 2938⟩⟩
+
+/-- term 1372 -/
+def T.«u8_into_i16» : Term :=
+  ⟨1372, "u8_into_i16", [1], 8, (.decl ⟨true, false, false, false⟩ (some (.external "u8_into_i16")) none), ⟨"<OUT_DIR>/numerics.isle", 2941⟩⟩
+
+/-- term 1373 -/
+def T.«i16_from_u8» : Term :=
+  ⟨1373, "i16_from_u8", [8], 1, (.decl ⟨true, false, false, false⟩ none (some (.external "u8_from_i16" false))), ⟨"<OUT_DIR>/numerics.isle", 2944⟩⟩
+
+/-- term 1374 -/
+def T.«u8_into_u16» : Term :=
+  ⟨1374, "u8_into_u16", [1], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u8_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 2947⟩⟩
+
+/-- term 1375 -/
+def T.«u16_from_u8» : Term :=
+  ⟨1375, "u16_from_u8", [2], 1, (.decl ⟨true, false, false, false⟩ none (some (.external "u8_from_u16" false))), ⟨"<OUT_DIR>/numerics.isle", 2950⟩⟩
+
+/-- term 1376 -/
+def T.«u8_into_i32» : Term :=
+  ⟨1376, "u8_into_i32", [1], 9, (.decl ⟨true, false, false, false⟩ (some (.external "u8_into_i32")) none), ⟨"<OUT_DIR>/numerics.isle", 2953⟩⟩
+
+/-- term 1377 -/
+def T.«i32_from_u8» : Term :=
+  ⟨1377, "i32_from_u8", [9], 1, (.decl ⟨true, false, false, false⟩ none (some (.external "u8_from_i32" false))), ⟨"<OUT_DIR>/numerics.isle", 2956⟩⟩
+
+/-- term 1378 -/
+def T.«u8_into_u32» : Term :=
+  ⟨1378, "u8_into_u32", [1], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u8_into_u32")) none), ⟨"<OUT_DIR>/numerics.isle", 2959⟩⟩
+
+/-- term 1379 -/
+def T.«u32_from_u8» : Term :=
+  ⟨1379, "u32_from_u8", [3], 1, (.decl ⟨true, false, false, false⟩ none (some (.external "u8_from_u32" false))), ⟨"<OUT_DIR>/numerics.isle", 2962⟩⟩
+
+/-- term 1380 -/
+def T.«u8_into_i64» : Term :=
+  ⟨1380, "u8_into_i64", [1], 10, (.decl ⟨true, false, false, false⟩ (some (.external "u8_into_i64")) none), ⟨"<OUT_DIR>/numerics.isle", 2965⟩⟩
+
+/-- term 1381 -/
+def T.«i64_from_u8» : Term :=
+  ⟨1381, "i64_from_u8", [10], 1, (.decl ⟨true, false, false, false⟩ none (some (.external "u8_from_i64" false))), ⟨"<OUT_DIR>/numerics.isle", 2968⟩⟩
+
+/-- term 1382 -/
+def T.«u8_into_u64» : Term :=
+  ⟨1382, "u8_into_u64", [1], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u8_into_u64")) none), ⟨"<OUT_DIR>/numerics.isle", 2971⟩⟩
+
+/-- term 1383 -/
+def T.«u64_from_u8» : Term :=
+  ⟨1383, "u64_from_u8", [4], 1, (.decl ⟨true, false, false, false⟩ none (some (.external "u8_from_u64" false))), ⟨"<OUT_DIR>/numerics.isle", 2974⟩⟩
+
+/-- term 1384 -/
+def T.«u8_into_i128» : Term :=
+  ⟨1384, "u8_into_i128", [1], 11, (.decl ⟨true, false, false, false⟩ (some (.external "u8_into_i128")) none), ⟨"<OUT_DIR>/numerics.isle", 2977⟩⟩
+
+/-- term 1385 -/
+def T.«i128_from_u8» : Term :=
+  ⟨1385, "i128_from_u8", [11], 1, (.decl ⟨true, false, false, false⟩ none (some (.external "u8_from_i128" false))), ⟨"<OUT_DIR>/numerics.isle", 2980⟩⟩
+
+/-- term 1386 -/
+def T.«u8_into_u128» : Term :=
+  ⟨1386, "u8_into_u128", [1], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u8_into_u128")) none), ⟨"<OUT_DIR>/numerics.isle", 2983⟩⟩
+
+/-- term 1387 -/
+def T.«u128_from_u8» : Term :=
+  ⟨1387, "u128_from_u8", [5], 1, (.decl ⟨true, false, false, false⟩ none (some (.external "u8_from_u128" false))), ⟨"<OUT_DIR>/numerics.isle", 2986⟩⟩
+
+/-- term 1388 -/
+def T.«i16_try_into_i8» : Term :=
+  ⟨1388, "i16_try_into_i8", [8], 7, (.decl ⟨true, false, true, false⟩ (some (.external "i16_try_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 2989⟩⟩
+
+/-- term 1389 -/
+def T.«i16_unwrap_into_i8» : Term :=
+  ⟨1389, "i16_unwrap_into_i8", [8], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i16_unwrap_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 2991⟩⟩
+
+/-- term 1390 -/
+def T.«i16_truncate_into_i8» : Term :=
+  ⟨1390, "i16_truncate_into_i8", [8], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i16_truncate_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 2993⟩⟩
+
+/-- term 1391 -/
+def T.«i8_from_i16» : Term :=
+  ⟨1391, "i8_from_i16", [7], 8, (.decl ⟨true, false, false, false⟩ none (some (.external "i16_from_i8" false))), ⟨"<OUT_DIR>/numerics.isle", 2995⟩⟩
+
+/-- term 1392 -/
+def T.«i16_try_into_u8» : Term :=
+  ⟨1392, "i16_try_into_u8", [8], 1, (.decl ⟨true, false, true, false⟩ (some (.external "i16_try_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 2998⟩⟩
+
+/-- term 1393 -/
+def T.«i16_unwrap_into_u8» : Term :=
+  ⟨1393, "i16_unwrap_into_u8", [8], 1, (.decl ⟨true, false, false, false⟩ (some (.external "i16_unwrap_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 3000⟩⟩
+
+/-- term 1394 -/
+def T.«u8_from_i16» : Term :=
+  ⟨1394, "u8_from_i16", [1], 8, (.decl ⟨true, false, false, false⟩ none (some (.external "i16_from_u8" false))), ⟨"<OUT_DIR>/numerics.isle", 3002⟩⟩
+
+/-- term 1395 -/
+def T.«i16_try_into_u16» : Term :=
+  ⟨1395, "i16_try_into_u16", [8], 2, (.decl ⟨true, false, true, false⟩ (some (.external "i16_try_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 3005⟩⟩
+
+/-- term 1396 -/
+def T.«i16_unwrap_into_u16» : Term :=
+  ⟨1396, "i16_unwrap_into_u16", [8], 2, (.decl ⟨true, false, false, false⟩ (some (.external "i16_unwrap_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 3007⟩⟩
+
+/-- term 1397 -/
+def T.«i16_cast_unsigned» : Term :=
+  ⟨1397, "i16_cast_unsigned", [8], 2, (.decl ⟨true, false, false, false⟩ (some (.external "i16_cast_unsigned")) none), ⟨"<OUT_DIR>/numerics.isle", 3009⟩⟩
+
+/-- term 1398 -/
+def T.«u16_from_i16» : Term :=
+  ⟨1398, "u16_from_i16", [2], 8, (.decl ⟨true, false, false, false⟩ none (some (.external "i16_from_u16" false))), ⟨"<OUT_DIR>/numerics.isle", 3011⟩⟩
+
+/-- term 1399 -/
+def T.«i16_into_i32» : Term :=
+  ⟨1399, "i16_into_i32", [8], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i16_into_i32")) none), ⟨"<OUT_DIR>/numerics.isle", 3014⟩⟩
+
+/-- term 1400 -/
+def T.«i32_from_i16» : Term :=
+  ⟨1400, "i32_from_i16", [9], 8, (.decl ⟨true, false, false, false⟩ none (some (.external "i16_from_i32" false))), ⟨"<OUT_DIR>/numerics.isle", 3017⟩⟩
+
+/-- term 1401 -/
+def T.«i16_try_into_u32» : Term :=
+  ⟨1401, "i16_try_into_u32", [8], 3, (.decl ⟨true, false, true, false⟩ (some (.external "i16_try_into_u32")) none), ⟨"<OUT_DIR>/numerics.isle", 3020⟩⟩
+
+/-- term 1402 -/
+def T.«i16_unwrap_into_u32» : Term :=
+  ⟨1402, "i16_unwrap_into_u32", [8], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i16_unwrap_into_u32")) none), ⟨"<OUT_DIR>/numerics.isle", 3022⟩⟩
+
+/-- term 1403 -/
+def T.«u32_from_i16» : Term :=
+  ⟨1403, "u32_from_i16", [3], 8, (.decl ⟨true, false, false, false⟩ none (some (.external "i16_from_u32" false))), ⟨"<OUT_DIR>/numerics.isle", 3024⟩⟩
+
+/-- term 1404 -/
+def T.«i16_into_i64» : Term :=
+  ⟨1404, "i16_into_i64", [8], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i16_into_i64")) none), ⟨"<OUT_DIR>/numerics.isle", 3027⟩⟩
+
+/-- term 1405 -/
+def T.«i64_from_i16» : Term :=
+  ⟨1405, "i64_from_i16", [10], 8, (.decl ⟨true, false, false, false⟩ none (some (.external "i16_from_i64" false))), ⟨"<OUT_DIR>/numerics.isle", 3030⟩⟩
+
+/-- term 1406 -/
+def T.«i16_try_into_u64» : Term :=
+  ⟨1406, "i16_try_into_u64", [8], 4, (.decl ⟨true, false, true, false⟩ (some (.external "i16_try_into_u64")) none), ⟨"<OUT_DIR>/numerics.isle", 3033⟩⟩
+
+/-- term 1407 -/
+def T.«i16_unwrap_into_u64» : Term :=
+  ⟨1407, "i16_unwrap_into_u64", [8], 4, (.decl ⟨true, false, false, false⟩ (some (.external "i16_unwrap_into_u64")) none), ⟨"<OUT_DIR>/numerics.isle", 3035⟩⟩
+
+/-- term 1408 -/
+def T.«u64_from_i16» : Term :=
+  ⟨1408, "u64_from_i16", [4], 8, (.decl ⟨true, false, false, false⟩ none (some (.external "i16_from_u64" false))), ⟨"<OUT_DIR>/numerics.isle", 3037⟩⟩
+
+/-- term 1409 -/
+def T.«i16_into_i128» : Term :=
+  ⟨1409, "i16_into_i128", [8], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i16_into_i128")) none), ⟨"<OUT_DIR>/numerics.isle", 3040⟩⟩
+
+/-- term 1410 -/
+def T.«i128_from_i16» : Term :=
+  ⟨1410, "i128_from_i16", [11], 8, (.decl ⟨true, false, false, false⟩ none (some (.external "i16_from_i128" false))), ⟨"<OUT_DIR>/numerics.isle", 3043⟩⟩
+
+/-- term 1411 -/
+def T.«i16_try_into_u128» : Term :=
+  ⟨1411, "i16_try_into_u128", [8], 5, (.decl ⟨true, false, true, false⟩ (some (.external "i16_try_into_u128")) none), ⟨"<OUT_DIR>/numerics.isle", 3046⟩⟩
+
+/-- term 1412 -/
+def T.«i16_unwrap_into_u128» : Term :=
+  ⟨1412, "i16_unwrap_into_u128", [8], 5, (.decl ⟨true, false, false, false⟩ (some (.external "i16_unwrap_into_u128")) none), ⟨"<OUT_DIR>/numerics.isle", 3048⟩⟩
+
+/-- term 1413 -/
+def T.«u128_from_i16» : Term :=
+  ⟨1413, "u128_from_i16", [5], 8, (.decl ⟨true, false, false, false⟩ none (some (.external "i16_from_u128" false))), ⟨"<OUT_DIR>/numerics.isle", 3050⟩⟩
+
+/-- term 1414 -/
+def T.«u16_try_into_i8» : Term :=
+  ⟨1414, "u16_try_into_i8", [2], 7, (.decl ⟨true, false, true, false⟩ (some (.external "u16_try_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 3053⟩⟩
+
+/-- term 1415 -/
+def T.«u16_unwrap_into_i8» : Term :=
+  ⟨1415, "u16_unwrap_into_i8", [2], 7, (.decl ⟨true, false, false, false⟩ (some (.external "u16_unwrap_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 3055⟩⟩
+
+/-- term 1416 -/
+def T.«i8_from_u16» : Term :=
+  ⟨1416, "i8_from_u16", [7], 2, (.decl ⟨true, false, false, false⟩ none (some (.external "u16_from_i8" false))), ⟨"<OUT_DIR>/numerics.isle", 3057⟩⟩
+
+/-- term 1417 -/
+def T.«u16_try_into_u8» : Term :=
+  ⟨1417, "u16_try_into_u8", [2], 1, (.decl ⟨true, false, true, false⟩ (some (.external "u16_try_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 3060⟩⟩
+
+/-- term 1418 -/
+def T.«u16_unwrap_into_u8» : Term :=
+  ⟨1418, "u16_unwrap_into_u8", [2], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u16_unwrap_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 3062⟩⟩
+
+/-- term 1419 -/
+def T.«u16_truncate_into_u8» : Term :=
+  ⟨1419, "u16_truncate_into_u8", [2], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u16_truncate_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 3064⟩⟩
+
+/-- term 1420 -/
+def T.«u8_from_u16» : Term :=
+  ⟨1420, "u8_from_u16", [1], 2, (.decl ⟨true, false, false, false⟩ none (some (.external "u16_from_u8" false))), ⟨"<OUT_DIR>/numerics.isle", 3066⟩⟩
+
+/-- term 1421 -/
+def T.«u16_try_into_i16» : Term :=
+  ⟨1421, "u16_try_into_i16", [2], 8, (.decl ⟨true, false, true, false⟩ (some (.external "u16_try_into_i16")) none), ⟨"<OUT_DIR>/numerics.isle", 3069⟩⟩
+
+/-- term 1422 -/
+def T.«u16_unwrap_into_i16» : Term :=
+  ⟨1422, "u16_unwrap_into_i16", [2], 8, (.decl ⟨true, false, false, false⟩ (some (.external "u16_unwrap_into_i16")) none), ⟨"<OUT_DIR>/numerics.isle", 3071⟩⟩
+
+/-- term 1423 -/
+def T.«u16_cast_signed» : Term :=
+  ⟨1423, "u16_cast_signed", [2], 8, (.decl ⟨true, false, false, false⟩ (some (.external "u16_cast_signed")) none), ⟨"<OUT_DIR>/numerics.isle", 3073⟩⟩
+
+/-- term 1424 -/
+def T.«i16_from_u16» : Term :=
+  ⟨1424, "i16_from_u16", [8], 2, (.decl ⟨true, false, false, false⟩ none (some (.external "u16_from_i16" false))), ⟨"<OUT_DIR>/numerics.isle", 3075⟩⟩
+
+/-- term 1425 -/
+def T.«u16_into_i32» : Term :=
+  ⟨1425, "u16_into_i32", [2], 9, (.decl ⟨true, false, false, false⟩ (some (.external "u16_into_i32")) none), ⟨"<OUT_DIR>/numerics.isle", 3078⟩⟩
+
+/-- term 1426 -/
+def T.«i32_from_u16» : Term :=
+  ⟨1426, "i32_from_u16", [9], 2, (.decl ⟨true, false, false, false⟩ none (some (.external "u16_from_i32" false))), ⟨"<OUT_DIR>/numerics.isle", 3081⟩⟩
+
+/-- term 1427 -/
+def T.«u16_into_u32» : Term :=
+  ⟨1427, "u16_into_u32", [2], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u16_into_u32")) none), ⟨"<OUT_DIR>/numerics.isle", 3084⟩⟩
+
+/-- term 1428 -/
+def T.«u32_from_u16» : Term :=
+  ⟨1428, "u32_from_u16", [3], 2, (.decl ⟨true, false, false, false⟩ none (some (.external "u16_from_u32" false))), ⟨"<OUT_DIR>/numerics.isle", 3087⟩⟩
+
+/-- term 1429 -/
+def T.«u16_into_i64» : Term :=
+  ⟨1429, "u16_into_i64", [2], 10, (.decl ⟨true, false, false, false⟩ (some (.external "u16_into_i64")) none), ⟨"<OUT_DIR>/numerics.isle", 3090⟩⟩
+
+/-- term 1430 -/
+def T.«i64_from_u16» : Term :=
+  ⟨1430, "i64_from_u16", [10], 2, (.decl ⟨true, false, false, false⟩ none (some (.external "u16_from_i64" false))), ⟨"<OUT_DIR>/numerics.isle", 3093⟩⟩
+
+/-- term 1431 -/
+def T.«u16_into_u64» : Term :=
+  ⟨1431, "u16_into_u64", [2], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u16_into_u64")) none), ⟨"<OUT_DIR>/numerics.isle", 3096⟩⟩
+
+/-- term 1432 -/
+def T.«u64_from_u16» : Term :=
+  ⟨1432, "u64_from_u16", [4], 2, (.decl ⟨true, false, false, false⟩ none (some (.external "u16_from_u64" false))), ⟨"<OUT_DIR>/numerics.isle", 3099⟩⟩
+
+/-- term 1433 -/
+def T.«u16_into_i128» : Term :=
+  ⟨1433, "u16_into_i128", [2], 11, (.decl ⟨true, false, false, false⟩ (some (.external "u16_into_i128")) none), ⟨"<OUT_DIR>/numerics.isle", 3102⟩⟩
+
+/-- term 1434 -/
+def T.«i128_from_u16» : Term :=
+  ⟨1434, "i128_from_u16", [11], 2, (.decl ⟨true, false, false, false⟩ none (some (.external "u16_from_i128" false))), ⟨"<OUT_DIR>/numerics.isle", 3105⟩⟩
+
+/-- term 1435 -/
+def T.«u16_into_u128» : Term :=
+  ⟨1435, "u16_into_u128", [2], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u16_into_u128")) none), ⟨"<OUT_DIR>/numerics.isle", 3108⟩⟩
+
+/-- term 1436 -/
+def T.«u128_from_u16» : Term :=
+  ⟨1436, "u128_from_u16", [5], 2, (.decl ⟨true, false, false, false⟩ none (some (.external "u16_from_u128" false))), ⟨"<OUT_DIR>/numerics.isle", 3111⟩⟩
+
+/-- term 1437 -/
+def T.«i32_try_into_i8» : Term :=
+  ⟨1437, "i32_try_into_i8", [9], 7, (.decl ⟨true, false, true, false⟩ (some (.external "i32_try_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 3114⟩⟩
+
+/-- term 1438 -/
+def T.«i32_unwrap_into_i8» : Term :=
+  ⟨1438, "i32_unwrap_into_i8", [9], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i32_unwrap_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 3116⟩⟩
+
+/-- term 1439 -/
+def T.«i32_truncate_into_i8» : Term :=
+  ⟨1439, "i32_truncate_into_i8", [9], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i32_truncate_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 3118⟩⟩
+
+/-- term 1440 -/
+def T.«i8_from_i32» : Term :=
+  ⟨1440, "i8_from_i32", [7], 9, (.decl ⟨true, false, false, false⟩ none (some (.external "i32_from_i8" false))), ⟨"<OUT_DIR>/numerics.isle", 3120⟩⟩
+
+/-- term 1441 -/
+def T.«i32_try_into_u8» : Term :=
+  ⟨1441, "i32_try_into_u8", [9], 1, (.decl ⟨true, false, true, false⟩ (some (.external "i32_try_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 3123⟩⟩
+
+/-- term 1442 -/
+def T.«i32_unwrap_into_u8» : Term :=
+  ⟨1442, "i32_unwrap_into_u8", [9], 1, (.decl ⟨true, false, false, false⟩ (some (.external "i32_unwrap_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 3125⟩⟩
+
+/-- term 1443 -/
+def T.«u8_from_i32» : Term :=
+  ⟨1443, "u8_from_i32", [1], 9, (.decl ⟨true, false, false, false⟩ none (some (.external "i32_from_u8" false))), ⟨"<OUT_DIR>/numerics.isle", 3127⟩⟩
+
+/-- term 1444 -/
+def T.«i32_try_into_i16» : Term :=
+  ⟨1444, "i32_try_into_i16", [9], 8, (.decl ⟨true, false, true, false⟩ (some (.external "i32_try_into_i16")) none), ⟨"<OUT_DIR>/numerics.isle", 3130⟩⟩
+
+/-- term 1445 -/
+def T.«i32_unwrap_into_i16» : Term :=
+  ⟨1445, "i32_unwrap_into_i16", [9], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i32_unwrap_into_i16")) none), ⟨"<OUT_DIR>/numerics.isle", 3132⟩⟩
+
+/-- term 1446 -/
+def T.«i32_truncate_into_i16» : Term :=
+  ⟨1446, "i32_truncate_into_i16", [9], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i32_truncate_into_i16")) none), ⟨"<OUT_DIR>/numerics.isle", 3134⟩⟩
+
+/-- term 1447 -/
+def T.«i16_from_i32» : Term :=
+  ⟨1447, "i16_from_i32", [8], 9, (.decl ⟨true, false, false, false⟩ none (some (.external "i32_from_i16" false))), ⟨"<OUT_DIR>/numerics.isle", 3136⟩⟩
+
+/-- term 1448 -/
+def T.«i32_try_into_u16» : Term :=
+  ⟨1448, "i32_try_into_u16", [9], 2, (.decl ⟨true, false, true, false⟩ (some (.external "i32_try_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 3139⟩⟩
+
+/-- term 1449 -/
+def T.«i32_unwrap_into_u16» : Term :=
+  ⟨1449, "i32_unwrap_into_u16", [9], 2, (.decl ⟨true, false, false, false⟩ (some (.external "i32_unwrap_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 3141⟩⟩
+
+/-- term 1450 -/
+def T.«u16_from_i32» : Term :=
+  ⟨1450, "u16_from_i32", [2], 9, (.decl ⟨true, false, false, false⟩ none (some (.external "i32_from_u16" false))), ⟨"<OUT_DIR>/numerics.isle", 3143⟩⟩
+
+/-- term 1451 -/
+def T.«i32_try_into_u32» : Term :=
+  ⟨1451, "i32_try_into_u32", [9], 3, (.decl ⟨true, false, true, false⟩ (some (.external "i32_try_into_u32")) none), ⟨"<OUT_DIR>/numerics.isle", 3146⟩⟩
+
+/-- term 1452 -/
+def T.«i32_unwrap_into_u32» : Term :=
+  ⟨1452, "i32_unwrap_into_u32", [9], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i32_unwrap_into_u32")) none), ⟨"<OUT_DIR>/numerics.isle", 3148⟩⟩
+
+/-- term 1453 -/
+def T.«i32_cast_unsigned» : Term :=
+  ⟨1453, "i32_cast_unsigned", [9], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i32_cast_unsigned")) none), ⟨"<OUT_DIR>/numerics.isle", 3150⟩⟩
+
+/-- term 1454 -/
+def T.«u32_from_i32» : Term :=
+  ⟨1454, "u32_from_i32", [3], 9, (.decl ⟨true, false, false, false⟩ none (some (.external "i32_from_u32" false))), ⟨"<OUT_DIR>/numerics.isle", 3152⟩⟩
+
+/-- term 1455 -/
+def T.«i32_into_i64» : Term :=
+  ⟨1455, "i32_into_i64", [9], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i32_into_i64")) none), ⟨"<OUT_DIR>/numerics.isle", 3155⟩⟩
+
+/-- term 1456 -/
+def T.«i64_from_i32» : Term :=
+  ⟨1456, "i64_from_i32", [10], 9, (.decl ⟨true, false, false, false⟩ none (some (.external "i32_from_i64" false))), ⟨"<OUT_DIR>/numerics.isle", 3158⟩⟩
+
+/-- term 1457 -/
+def T.«i32_try_into_u64» : Term :=
+  ⟨1457, "i32_try_into_u64", [9], 4, (.decl ⟨true, false, true, false⟩ (some (.external "i32_try_into_u64")) none), ⟨"<OUT_DIR>/numerics.isle", 3161⟩⟩
+
+/-- term 1458 -/
+def T.«i32_unwrap_into_u64» : Term :=
+  ⟨1458, "i32_unwrap_into_u64", [9], 4, (.decl ⟨true, false, false, false⟩ (some (.external "i32_unwrap_into_u64")) none), ⟨"<OUT_DIR>/numerics.isle", 3163⟩⟩
+
+/-- term 1459 -/
+def T.«u64_from_i32» : Term :=
+  ⟨1459, "u64_from_i32", [4], 9, (.decl ⟨true, false, false, false⟩ none (some (.external "i32_from_u64" false))), ⟨"<OUT_DIR>/numerics.isle", 3165⟩⟩
+
+/-- term 1460 -/
+def T.«i32_into_i128» : Term :=
+  ⟨1460, "i32_into_i128", [9], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i32_into_i128")) none), ⟨"<OUT_DIR>/numerics.isle", 3168⟩⟩
+
+/-- term 1461 -/
+def T.«i128_from_i32» : Term :=
+  ⟨1461, "i128_from_i32", [11], 9, (.decl ⟨true, false, false, false⟩ none (some (.external "i32_from_i128" false))), ⟨"<OUT_DIR>/numerics.isle", 3171⟩⟩
+
+/-- term 1462 -/
+def T.«i32_try_into_u128» : Term :=
+  ⟨1462, "i32_try_into_u128", [9], 5, (.decl ⟨true, false, true, false⟩ (some (.external "i32_try_into_u128")) none), ⟨"<OUT_DIR>/numerics.isle", 3174⟩⟩
+
+/-- term 1463 -/
+def T.«i32_unwrap_into_u128» : Term :=
+  ⟨1463, "i32_unwrap_into_u128", [9], 5, (.decl ⟨true, false, false, false⟩ (some (.external "i32_unwrap_into_u128")) none), ⟨"<OUT_DIR>/numerics.isle", 3176⟩⟩
+
+/-- term 1464 -/
+def T.«u128_from_i32» : Term :=
+  ⟨1464, "u128_from_i32", [5], 9, (.decl ⟨true, false, false, false⟩ none (some (.external "i32_from_u128" false))), ⟨"<OUT_DIR>/numerics.isle", 3178⟩⟩
+
+/-- term 1465 -/
+def T.«u32_try_into_i8» : Term :=
+  ⟨1465, "u32_try_into_i8", [3], 7, (.decl ⟨true, false, true, false⟩ (some (.external "u32_try_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 3181⟩⟩
+
+/-- term 1466 -/
+def T.«u32_unwrap_into_i8» : Term :=
+  ⟨1466, "u32_unwrap_into_i8", [3], 7, (.decl ⟨true, false, false, false⟩ (some (.external "u32_unwrap_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 3183⟩⟩
+
+/-- term 1467 -/
+def T.«i8_from_u32» : Term :=
+  ⟨1467, "i8_from_u32", [7], 3, (.decl ⟨true, false, false, false⟩ none (some (.external "u32_from_i8" false))), ⟨"<OUT_DIR>/numerics.isle", 3185⟩⟩
+
+/-- term 1468 -/
+def T.«u32_try_into_u8» : Term :=
+  ⟨1468, "u32_try_into_u8", [3], 1, (.decl ⟨true, false, true, false⟩ (some (.external "u32_try_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 3188⟩⟩
+
+/-- term 1469 -/
+def T.«u32_unwrap_into_u8» : Term :=
+  ⟨1469, "u32_unwrap_into_u8", [3], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u32_unwrap_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 3190⟩⟩
+
+/-- term 1470 -/
+def T.«u32_truncate_into_u8» : Term :=
+  ⟨1470, "u32_truncate_into_u8", [3], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u32_truncate_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 3192⟩⟩
+
+/-- term 1471 -/
+def T.«u8_from_u32» : Term :=
+  ⟨1471, "u8_from_u32", [1], 3, (.decl ⟨true, false, false, false⟩ none (some (.external "u32_from_u8" false))), ⟨"<OUT_DIR>/numerics.isle", 3194⟩⟩
+
+/-- term 1472 -/
+def T.«u32_try_into_i16» : Term :=
+  ⟨1472, "u32_try_into_i16", [3], 8, (.decl ⟨true, false, true, false⟩ (some (.external "u32_try_into_i16")) none), ⟨"<OUT_DIR>/numerics.isle", 3197⟩⟩
+
+/-- term 1473 -/
+def T.«u32_unwrap_into_i16» : Term :=
+  ⟨1473, "u32_unwrap_into_i16", [3], 8, (.decl ⟨true, false, false, false⟩ (some (.external "u32_unwrap_into_i16")) none), ⟨"<OUT_DIR>/numerics.isle", 3199⟩⟩
+
+/-- term 1474 -/
+def T.«i16_from_u32» : Term :=
+  ⟨1474, "i16_from_u32", [8], 3, (.decl ⟨true, false, false, false⟩ none (some (.external "u32_from_i16" false))), ⟨"<OUT_DIR>/numerics.isle", 3201⟩⟩
+
+/-- term 1475 -/
+def T.«u32_try_into_u16» : Term :=
+  ⟨1475, "u32_try_into_u16", [3], 2, (.decl ⟨true, false, true, false⟩ (some (.external "u32_try_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 3204⟩⟩
+
+/-- term 1476 -/
+def T.«u32_unwrap_into_u16» : Term :=
+  ⟨1476, "u32_unwrap_into_u16", [3], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u32_unwrap_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 3206⟩⟩
+
+/-- term 1477 -/
+def T.«u32_truncate_into_u16» : Term :=
+  ⟨1477, "u32_truncate_into_u16", [3], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u32_truncate_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 3208⟩⟩
+
+/-- term 1478 -/
+def T.«u16_from_u32» : Term :=
+  ⟨1478, "u16_from_u32", [2], 3, (.decl ⟨true, false, false, false⟩ none (some (.external "u32_from_u16" false))), ⟨"<OUT_DIR>/numerics.isle", 3210⟩⟩
+
+/-- term 1479 -/
+def T.«u32_try_into_i32» : Term :=
+  ⟨1479, "u32_try_into_i32", [3], 9, (.decl ⟨true, false, true, false⟩ (some (.external "u32_try_into_i32")) none), ⟨"<OUT_DIR>/numerics.isle", 3213⟩⟩
+
+/-- term 1480 -/
+def T.«u32_unwrap_into_i32» : Term :=
+  ⟨1480, "u32_unwrap_into_i32", [3], 9, (.decl ⟨true, false, false, false⟩ (some (.external "u32_unwrap_into_i32")) none), ⟨"<OUT_DIR>/numerics.isle", 3215⟩⟩
+
+/-- term 1481 -/
+def T.«u32_cast_signed» : Term :=
+  ⟨1481, "u32_cast_signed", [3], 9, (.decl ⟨true, false, false, false⟩ (some (.external "u32_cast_signed")) none), ⟨"<OUT_DIR>/numerics.isle", 3217⟩⟩
+
+/-- term 1482 -/
+def T.«i32_from_u32» : Term :=
+  ⟨1482, "i32_from_u32", [9], 3, (.decl ⟨true, false, false, false⟩ none (some (.external "u32_from_i32" false))), ⟨"<OUT_DIR>/numerics.isle", 3219⟩⟩
+
+/-- term 1483 -/
+def T.«u32_into_i64» : Term :=
+  ⟨1483, "u32_into_i64", [3], 10, (.decl ⟨true, false, false, false⟩ (some (.external "u32_into_i64")) none), ⟨"<OUT_DIR>/numerics.isle", 3222⟩⟩
+
+/-- term 1484 -/
+def T.«i64_from_u32» : Term :=
+  ⟨1484, "i64_from_u32", [10], 3, (.decl ⟨true, false, false, false⟩ none (some (.external "u32_from_i64" false))), ⟨"<OUT_DIR>/numerics.isle", 3225⟩⟩
+
+/-- term 1485 -/
+def T.«u32_into_u64» : Term :=
+  ⟨1485, "u32_into_u64", [3], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u32_into_u64")) none), ⟨"<OUT_DIR>/numerics.isle", 3228⟩⟩
+
+/-- term 1486 -/
+def T.«u64_from_u32» : Term :=
+  ⟨1486, "u64_from_u32", [4], 3, (.decl ⟨true, false, false, false⟩ none (some (.external "u32_from_u64" false))), ⟨"<OUT_DIR>/numerics.isle", 3231⟩⟩
+
+/-- term 1487 -/
+def T.«u32_into_i128» : Term :=
+  ⟨1487, "u32_into_i128", [3], 11, (.decl ⟨true, false, false, false⟩ (some (.external "u32_into_i128")) none), ⟨"<OUT_DIR>/numerics.isle", 3234⟩⟩
+
+/-- term 1488 -/
+def T.«i128_from_u32» : Term :=
+  ⟨1488, "i128_from_u32", [11], 3, (.decl ⟨true, false, false, false⟩ none (some (.external "u32_from_i128" false))), ⟨"<OUT_DIR>/numerics.isle", 3237⟩⟩
+
+/-- term 1489 -/
+def T.«u32_into_u128» : Term :=
+  ⟨1489, "u32_into_u128", [3], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u32_into_u128")) none), ⟨"<OUT_DIR>/numerics.isle", 3240⟩⟩
+
+/-- term 1490 -/
+def T.«u128_from_u32» : Term :=
+  ⟨1490, "u128_from_u32", [5], 3, (.decl ⟨true, false, false, false⟩ none (some (.external "u32_from_u128" false))), ⟨"<OUT_DIR>/numerics.isle", 3243⟩⟩
+
+/-- term 1491 -/
+def T.«i64_try_into_i8» : Term :=
+  ⟨1491, "i64_try_into_i8", [10], 7, (.decl ⟨true, false, true, false⟩ (some (.external "i64_try_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 3246⟩⟩
+
+/-- term 1492 -/
+def T.«i64_unwrap_into_i8» : Term :=
+  ⟨1492, "i64_unwrap_into_i8", [10], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i64_unwrap_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 3248⟩⟩
+
+/-- term 1493 -/
+def T.«i64_truncate_into_i8» : Term :=
+  ⟨1493, "i64_truncate_into_i8", [10], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i64_truncate_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 3250⟩⟩
+
+/-- term 1494 -/
+def T.«i8_from_i64» : Term :=
+  ⟨1494, "i8_from_i64", [7], 10, (.decl ⟨true, false, false, false⟩ none (some (.external "i64_from_i8" false))), ⟨"<OUT_DIR>/numerics.isle", 3252⟩⟩
+
+/-- term 1495 -/
+def T.«i64_try_into_u8» : Term :=
+  ⟨1495, "i64_try_into_u8", [10], 1, (.decl ⟨true, false, true, false⟩ (some (.external "i64_try_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 3255⟩⟩
+
+/-- term 1496 -/
+def T.«i64_unwrap_into_u8» : Term :=
+  ⟨1496, "i64_unwrap_into_u8", [10], 1, (.decl ⟨true, false, false, false⟩ (some (.external "i64_unwrap_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 3257⟩⟩
+
+/-- term 1497 -/
+def T.«u8_from_i64» : Term :=
+  ⟨1497, "u8_from_i64", [1], 10, (.decl ⟨true, false, false, false⟩ none (some (.external "i64_from_u8" false))), ⟨"<OUT_DIR>/numerics.isle", 3259⟩⟩
+
+/-- term 1498 -/
+def T.«i64_try_into_i16» : Term :=
+  ⟨1498, "i64_try_into_i16", [10], 8, (.decl ⟨true, false, true, false⟩ (some (.external "i64_try_into_i16")) none), ⟨"<OUT_DIR>/numerics.isle", 3262⟩⟩
+
+/-- term 1499 -/
+def T.«i64_unwrap_into_i16» : Term :=
+  ⟨1499, "i64_unwrap_into_i16", [10], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i64_unwrap_into_i16")) none), ⟨"<OUT_DIR>/numerics.isle", 3264⟩⟩
+
+/-- term 1500 -/
+def T.«i64_truncate_into_i16» : Term :=
+  ⟨1500, "i64_truncate_into_i16", [10], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i64_truncate_into_i16")) none), ⟨"<OUT_DIR>/numerics.isle", 3266⟩⟩
+
+/-- term 1501 -/
+def T.«i16_from_i64» : Term :=
+  ⟨1501, "i16_from_i64", [8], 10, (.decl ⟨true, false, false, false⟩ none (some (.external "i64_from_i16" false))), ⟨"<OUT_DIR>/numerics.isle", 3268⟩⟩
+
+/-- term 1502 -/
+def T.«i64_try_into_u16» : Term :=
+  ⟨1502, "i64_try_into_u16", [10], 2, (.decl ⟨true, false, true, false⟩ (some (.external "i64_try_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 3271⟩⟩
+
+/-- term 1503 -/
+def T.«i64_unwrap_into_u16» : Term :=
+  ⟨1503, "i64_unwrap_into_u16", [10], 2, (.decl ⟨true, false, false, false⟩ (some (.external "i64_unwrap_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 3273⟩⟩
+
+/-- term 1504 -/
+def T.«u16_from_i64» : Term :=
+  ⟨1504, "u16_from_i64", [2], 10, (.decl ⟨true, false, false, false⟩ none (some (.external "i64_from_u16" false))), ⟨"<OUT_DIR>/numerics.isle", 3275⟩⟩
+
+/-- term 1505 -/
+def T.«i64_try_into_i32» : Term :=
+  ⟨1505, "i64_try_into_i32", [10], 9, (.decl ⟨true, false, true, false⟩ (some (.external "i64_try_into_i32")) none), ⟨"<OUT_DIR>/numerics.isle", 3278⟩⟩
+
+/-- term 1506 -/
+def T.«i64_unwrap_into_i32» : Term :=
+  ⟨1506, "i64_unwrap_into_i32", [10], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i64_unwrap_into_i32")) none), ⟨"<OUT_DIR>/numerics.isle", 3280⟩⟩
+
+/-- term 1507 -/
+def T.«i64_truncate_into_i32» : Term :=
+  ⟨1507, "i64_truncate_into_i32", [10], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i64_truncate_into_i32")) none), ⟨"<OUT_DIR>/numerics.isle", 3282⟩⟩
+
+/-- term 1508 -/
+def T.«i32_from_i64» : Term :=
+  ⟨1508, "i32_from_i64", [9], 10, (.decl ⟨true, false, false, false⟩ none (some (.external "i64_from_i32" false))), ⟨"<OUT_DIR>/numerics.isle", 3284⟩⟩
+
+/-- term 1509 -/
+def T.«i64_try_into_u32» : Term :=
+  ⟨1509, "i64_try_into_u32", [10], 3, (.decl ⟨true, false, true, false⟩ (some (.external "i64_try_into_u32")) none), ⟨"<OUT_DIR>/numerics.isle", 3287⟩⟩
+
+/-- term 1510 -/
+def T.«i64_unwrap_into_u32» : Term :=
+  ⟨1510, "i64_unwrap_into_u32", [10], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i64_unwrap_into_u32")) none), ⟨"<OUT_DIR>/numerics.isle", 3289⟩⟩
+
+/-- term 1511 -/
+def T.«u32_from_i64» : Term :=
+  ⟨1511, "u32_from_i64", [3], 10, (.decl ⟨true, false, false, false⟩ none (some (.external "i64_from_u32" false))), ⟨"<OUT_DIR>/numerics.isle", 3291⟩⟩
+
+/-- term 1512 -/
+def T.«i64_try_into_u64» : Term :=
+  ⟨1512, "i64_try_into_u64", [10], 4, (.decl ⟨true, false, true, false⟩ (some (.external "i64_try_into_u64")) none), ⟨"<OUT_DIR>/numerics.isle", 3294⟩⟩
+
+/-- term 1513 -/
+def T.«i64_unwrap_into_u64» : Term :=
+  ⟨1513, "i64_unwrap_into_u64", [10], 4, (.decl ⟨true, false, false, false⟩ (some (.external "i64_unwrap_into_u64")) none), ⟨"<OUT_DIR>/numerics.isle", 3296⟩⟩
+
+/-- term 1514 -/
+def T.«i64_cast_unsigned» : Term :=
+  ⟨1514, "i64_cast_unsigned", [10], 4, (.decl ⟨true, false, false, false⟩ (some (.external "i64_cast_unsigned")) none), ⟨"<OUT_DIR>/numerics.isle", 3298⟩⟩
+
+/-- term 1515 -/
+def T.«u64_from_i64» : Term :=
+  ⟨1515, "u64_from_i64", [4], 10, (.decl ⟨true, false, false, false⟩ none (some (.external "i64_from_u64" false))), ⟨"<OUT_DIR>/numerics.isle", 3300⟩⟩
+
+/-- term 1516 -/
+def T.«i64_into_i128» : Term :=
+  ⟨1516, "i64_into_i128", [10], 11, (.decl ⟨true, false, false, false⟩ (some (.external "i64_into_i128")) none), ⟨"<OUT_DIR>/numerics.isle", 3303⟩⟩
+
+/-- term 1517 -/
+def T.«i128_from_i64» : Term :=
+  ⟨1517, "i128_from_i64", [11], 10, (.decl ⟨true, false, false, false⟩ none (some (.external "i64_from_i128" false))), ⟨"<OUT_DIR>/numerics.isle", 3306⟩⟩
+
+/-- term 1518 -/
+def T.«i64_try_into_u128» : Term :=
+  ⟨1518, "i64_try_into_u128", [10], 5, (.decl ⟨true, false, true, false⟩ (some (.external "i64_try_into_u128")) none), ⟨"<OUT_DIR>/numerics.isle", 3309⟩⟩
+
+/-- term 1519 -/
+def T.«i64_unwrap_into_u128» : Term :=
+  ⟨1519, "i64_unwrap_into_u128", [10], 5, (.decl ⟨true, false, false, false⟩ (some (.external "i64_unwrap_into_u128")) none), ⟨"<OUT_DIR>/numerics.isle", 3311⟩⟩
+
+/-- term 1520 -/
+def T.«u128_from_i64» : Term :=
+  ⟨1520, "u128_from_i64", [5], 10, (.decl ⟨true, false, false, false⟩ none (some (.external "i64_from_u128" false))), ⟨"<OUT_DIR>/numerics.isle", 3313⟩⟩
+
+/-- term 1521 -/
+def T.«u64_try_into_i8» : Term :=
+  ⟨1521, "u64_try_into_i8", [4], 7, (.decl ⟨true, false, true, false⟩ (some (.external "u64_try_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 3316⟩⟩
+
+/-- term 1522 -/
+def T.«u64_unwrap_into_i8» : Term :=
+  ⟨1522, "u64_unwrap_into_i8", [4], 7, (.decl ⟨true, false, false, false⟩ (some (.external "u64_unwrap_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 3318⟩⟩
+
+/-- term 1523 -/
+def T.«i8_from_u64» : Term :=
+  ⟨1523, "i8_from_u64", [7], 4, (.decl ⟨true, false, false, false⟩ none (some (.external "u64_from_i8" false))), ⟨"<OUT_DIR>/numerics.isle", 3320⟩⟩
+
+/-- term 1524 -/
+def T.«u64_try_into_u8» : Term :=
+  ⟨1524, "u64_try_into_u8", [4], 1, (.decl ⟨true, false, true, false⟩ (some (.external "u64_try_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 3323⟩⟩
+
+/-- term 1525 -/
+def T.«u64_unwrap_into_u8» : Term :=
+  ⟨1525, "u64_unwrap_into_u8", [4], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u64_unwrap_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 3325⟩⟩
+
+/-- term 1526 -/
+def T.«u64_truncate_into_u8» : Term :=
+  ⟨1526, "u64_truncate_into_u8", [4], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u64_truncate_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 3327⟩⟩
+
+/-- term 1527 -/
+def T.«u8_from_u64» : Term :=
+  ⟨1527, "u8_from_u64", [1], 4, (.decl ⟨true, false, false, false⟩ none (some (.external "u64_from_u8" false))), ⟨"<OUT_DIR>/numerics.isle", 3329⟩⟩
+
+/-- term 1528 -/
+def T.«u64_try_into_i16» : Term :=
+  ⟨1528, "u64_try_into_i16", [4], 8, (.decl ⟨true, false, true, false⟩ (some (.external "u64_try_into_i16")) none), ⟨"<OUT_DIR>/numerics.isle", 3332⟩⟩
+
+/-- term 1529 -/
+def T.«u64_unwrap_into_i16» : Term :=
+  ⟨1529, "u64_unwrap_into_i16", [4], 8, (.decl ⟨true, false, false, false⟩ (some (.external "u64_unwrap_into_i16")) none), ⟨"<OUT_DIR>/numerics.isle", 3334⟩⟩
+
+/-- term 1530 -/
+def T.«i16_from_u64» : Term :=
+  ⟨1530, "i16_from_u64", [8], 4, (.decl ⟨true, false, false, false⟩ none (some (.external "u64_from_i16" false))), ⟨"<OUT_DIR>/numerics.isle", 3336⟩⟩
+
+/-- term 1531 -/
+def T.«u64_try_into_u16» : Term :=
+  ⟨1531, "u64_try_into_u16", [4], 2, (.decl ⟨true, false, true, false⟩ (some (.external "u64_try_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 3339⟩⟩
+
+/-- term 1532 -/
+def T.«u64_unwrap_into_u16» : Term :=
+  ⟨1532, "u64_unwrap_into_u16", [4], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u64_unwrap_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 3341⟩⟩
+
+/-- term 1533 -/
+def T.«u64_truncate_into_u16» : Term :=
+  ⟨1533, "u64_truncate_into_u16", [4], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u64_truncate_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 3343⟩⟩
+
+/-- term 1534 -/
+def T.«u16_from_u64» : Term :=
+  ⟨1534, "u16_from_u64", [2], 4, (.decl ⟨true, false, false, false⟩ none (some (.external "u64_from_u16" false))), ⟨"<OUT_DIR>/numerics.isle", 3345⟩⟩
+
+/-- term 1535 -/
+def T.«u64_try_into_i32» : Term :=
+  ⟨1535, "u64_try_into_i32", [4], 9, (.decl ⟨true, false, true, false⟩ (some (.external "u64_try_into_i32")) none), ⟨"<OUT_DIR>/numerics.isle", 3348⟩⟩
+
+/-- term 1536 -/
+def T.«u64_unwrap_into_i32» : Term :=
+  ⟨1536, "u64_unwrap_into_i32", [4], 9, (.decl ⟨true, false, false, false⟩ (some (.external "u64_unwrap_into_i32")) none), ⟨"<OUT_DIR>/numerics.isle", 3350⟩⟩
+
+/-- term 1537 -/
+def T.«i32_from_u64» : Term :=
+  ⟨1537, "i32_from_u64", [9], 4, (.decl ⟨true, false, false, false⟩ none (some (.external "u64_from_i32" false))), ⟨"<OUT_DIR>/numerics.isle", 3352⟩⟩
+
+/-- term 1538 -/
+def T.«u64_try_into_u32» : Term :=
+  ⟨1538, "u64_try_into_u32", [4], 3, (.decl ⟨true, false, true, false⟩ (some (.external "u64_try_into_u32")) none), ⟨"<OUT_DIR>/numerics.isle", 3355⟩⟩
+
+/-- term 1539 -/
+def T.«u64_unwrap_into_u32» : Term :=
+  ⟨1539, "u64_unwrap_into_u32", [4], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u64_unwrap_into_u32")) none), ⟨"<OUT_DIR>/numerics.isle", 3357⟩⟩
+
+/-- term 1540 -/
+def T.«u64_truncate_into_u32» : Term :=
+  ⟨1540, "u64_truncate_into_u32", [4], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u64_truncate_into_u32")) none), ⟨"<OUT_DIR>/numerics.isle", 3359⟩⟩
+
+/-- term 1541 -/
+def T.«u32_from_u64» : Term :=
+  ⟨1541, "u32_from_u64", [3], 4, (.decl ⟨true, false, false, false⟩ none (some (.external "u64_from_u32" false))), ⟨"<OUT_DIR>/numerics.isle", 3361⟩⟩
+
+/-- term 1542 -/
+def T.«u64_try_into_i64» : Term :=
+  ⟨1542, "u64_try_into_i64", [4], 10, (.decl ⟨true, false, true, false⟩ (some (.external "u64_try_into_i64")) none), ⟨"<OUT_DIR>/numerics.isle", 3364⟩⟩
+
+/-- term 1543 -/
+def T.«u64_unwrap_into_i64» : Term :=
+  ⟨1543, "u64_unwrap_into_i64", [4], 10, (.decl ⟨true, false, false, false⟩ (some (.external "u64_unwrap_into_i64")) none), ⟨"<OUT_DIR>/numerics.isle", 3366⟩⟩
+
+/-- term 1544 -/
+def T.«u64_cast_signed» : Term :=
+  ⟨1544, "u64_cast_signed", [4], 10, (.decl ⟨true, false, false, false⟩ (some (.external "u64_cast_signed")) none), ⟨"<OUT_DIR>/numerics.isle", 3368⟩⟩
+
+/-- term 1545 -/
+def T.«i64_from_u64» : Term :=
+  ⟨1545, "i64_from_u64", [10], 4, (.decl ⟨true, false, false, false⟩ none (some (.external "u64_from_i64" false))), ⟨"<OUT_DIR>/numerics.isle", 3370⟩⟩
+
+/-- term 1546 -/
+def T.«u64_into_i128» : Term :=
+  ⟨1546, "u64_into_i128", [4], 11, (.decl ⟨true, false, false, false⟩ (some (.external "u64_into_i128")) none), ⟨"<OUT_DIR>/numerics.isle", 3373⟩⟩
+
+/-- term 1547 -/
+def T.«i128_from_u64» : Term :=
+  ⟨1547, "i128_from_u64", [11], 4, (.decl ⟨true, false, false, false⟩ none (some (.external "u64_from_i128" false))), ⟨"<OUT_DIR>/numerics.isle", 3376⟩⟩
+
+/-- term 1548 -/
+def T.«u64_into_u128» : Term :=
+  ⟨1548, "u64_into_u128", [4], 5, (.decl ⟨true, false, false, false⟩ (some (.external "u64_into_u128")) none), ⟨"<OUT_DIR>/numerics.isle", 3379⟩⟩
+
+/-- term 1549 -/
+def T.«u128_from_u64» : Term :=
+  ⟨1549, "u128_from_u64", [5], 4, (.decl ⟨true, false, false, false⟩ none (some (.external "u64_from_u128" false))), ⟨"<OUT_DIR>/numerics.isle", 3382⟩⟩
+
+/-- term 1550 -/
+def T.«i128_try_into_i8» : Term :=
+  ⟨1550, "i128_try_into_i8", [11], 7, (.decl ⟨true, false, true, false⟩ (some (.external "i128_try_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 3385⟩⟩
+
+/-- term 1551 -/
+def T.«i128_unwrap_into_i8» : Term :=
+  ⟨1551, "i128_unwrap_into_i8", [11], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i128_unwrap_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 3387⟩⟩
+
+/-- term 1552 -/
+def T.«i128_truncate_into_i8» : Term :=
+  ⟨1552, "i128_truncate_into_i8", [11], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i128_truncate_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 3389⟩⟩
+
+/-- term 1553 -/
+def T.«i8_from_i128» : Term :=
+  ⟨1553, "i8_from_i128", [7], 11, (.decl ⟨true, false, false, false⟩ none (some (.external "i128_from_i8" false))), ⟨"<OUT_DIR>/numerics.isle", 3391⟩⟩
+
+/-- term 1554 -/
+def T.«i128_try_into_u8» : Term :=
+  ⟨1554, "i128_try_into_u8", [11], 1, (.decl ⟨true, false, true, false⟩ (some (.external "i128_try_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 3394⟩⟩
+
+/-- term 1555 -/
+def T.«i128_unwrap_into_u8» : Term :=
+  ⟨1555, "i128_unwrap_into_u8", [11], 1, (.decl ⟨true, false, false, false⟩ (some (.external "i128_unwrap_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 3396⟩⟩
+
+/-- term 1556 -/
+def T.«u8_from_i128» : Term :=
+  ⟨1556, "u8_from_i128", [1], 11, (.decl ⟨true, false, false, false⟩ none (some (.external "i128_from_u8" false))), ⟨"<OUT_DIR>/numerics.isle", 3398⟩⟩
+
+/-- term 1557 -/
+def T.«i128_try_into_i16» : Term :=
+  ⟨1557, "i128_try_into_i16", [11], 8, (.decl ⟨true, false, true, false⟩ (some (.external "i128_try_into_i16")) none), ⟨"<OUT_DIR>/numerics.isle", 3401⟩⟩
+
+/-- term 1558 -/
+def T.«i128_unwrap_into_i16» : Term :=
+  ⟨1558, "i128_unwrap_into_i16", [11], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i128_unwrap_into_i16")) none), ⟨"<OUT_DIR>/numerics.isle", 3403⟩⟩
+
+/-- term 1559 -/
+def T.«i128_truncate_into_i16» : Term :=
+  ⟨1559, "i128_truncate_into_i16", [11], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i128_truncate_into_i16")) none), ⟨"<OUT_DIR>/numerics.isle", 3405⟩⟩
+
+/-- term 1560 -/
+def T.«i16_from_i128» : Term :=
+  ⟨1560, "i16_from_i128", [8], 11, (.decl ⟨true, false, false, false⟩ none (some (.external "i128_from_i16" false))), ⟨"<OUT_DIR>/numerics.isle", 3407⟩⟩
+
+/-- term 1561 -/
+def T.«i128_try_into_u16» : Term :=
+  ⟨1561, "i128_try_into_u16", [11], 2, (.decl ⟨true, false, true, false⟩ (some (.external "i128_try_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 3410⟩⟩
+
+/-- term 1562 -/
+def T.«i128_unwrap_into_u16» : Term :=
+  ⟨1562, "i128_unwrap_into_u16", [11], 2, (.decl ⟨true, false, false, false⟩ (some (.external "i128_unwrap_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 3412⟩⟩
+
+/-- term 1563 -/
+def T.«u16_from_i128» : Term :=
+  ⟨1563, "u16_from_i128", [2], 11, (.decl ⟨true, false, false, false⟩ none (some (.external "i128_from_u16" false))), ⟨"<OUT_DIR>/numerics.isle", 3414⟩⟩
+
+/-- term 1564 -/
+def T.«i128_try_into_i32» : Term :=
+  ⟨1564, "i128_try_into_i32", [11], 9, (.decl ⟨true, false, true, false⟩ (some (.external "i128_try_into_i32")) none), ⟨"<OUT_DIR>/numerics.isle", 3417⟩⟩
+
+/-- term 1565 -/
+def T.«i128_unwrap_into_i32» : Term :=
+  ⟨1565, "i128_unwrap_into_i32", [11], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i128_unwrap_into_i32")) none), ⟨"<OUT_DIR>/numerics.isle", 3419⟩⟩
+
+/-- term 1566 -/
+def T.«i128_truncate_into_i32» : Term :=
+  ⟨1566, "i128_truncate_into_i32", [11], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i128_truncate_into_i32")) none), ⟨"<OUT_DIR>/numerics.isle", 3421⟩⟩
+
+/-- term 1567 -/
+def T.«i32_from_i128» : Term :=
+  ⟨1567, "i32_from_i128", [9], 11, (.decl ⟨true, false, false, false⟩ none (some (.external "i128_from_i32" false))), ⟨"<OUT_DIR>/numerics.isle", 3423⟩⟩
+
+/-- term 1568 -/
+def T.«i128_try_into_u32» : Term :=
+  ⟨1568, "i128_try_into_u32", [11], 3, (.decl ⟨true, false, true, false⟩ (some (.external "i128_try_into_u32")) none), ⟨"<OUT_DIR>/numerics.isle", 3426⟩⟩
+
+/-- term 1569 -/
+def T.«i128_unwrap_into_u32» : Term :=
+  ⟨1569, "i128_unwrap_into_u32", [11], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i128_unwrap_into_u32")) none), ⟨"<OUT_DIR>/numerics.isle", 3428⟩⟩
+
+/-- term 1570 -/
+def T.«u32_from_i128» : Term :=
+  ⟨1570, "u32_from_i128", [3], 11, (.decl ⟨true, false, false, false⟩ none (some (.external "i128_from_u32" false))), ⟨"<OUT_DIR>/numerics.isle", 3430⟩⟩
+
+/-- term 1571 -/
+def T.«i128_try_into_i64» : Term :=
+  ⟨1571, "i128_try_into_i64", [11], 10, (.decl ⟨true, false, true, false⟩ (some (.external "i128_try_into_i64")) none), ⟨"<OUT_DIR>/numerics.isle", 3433⟩⟩
+
+/-- term 1572 -/
+def T.«i128_unwrap_into_i64» : Term :=
+  ⟨1572, "i128_unwrap_into_i64", [11], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i128_unwrap_into_i64")) none), ⟨"<OUT_DIR>/numerics.isle", 3435⟩⟩
+
+/-- term 1573 -/
+def T.«i128_truncate_into_i64» : Term :=
+  ⟨1573, "i128_truncate_into_i64", [11], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i128_truncate_into_i64")) none), ⟨"<OUT_DIR>/numerics.isle", 3437⟩⟩
+
+/-- term 1574 -/
+def T.«i64_from_i128» : Term :=
+  ⟨1574, "i64_from_i128", [10], 11, (.decl ⟨true, false, false, false⟩ none (some (.external "i128_from_i64" false))), ⟨"<OUT_DIR>/numerics.isle", 3439⟩⟩
+
+/-- term 1575 -/
+def T.«i128_try_into_u64» : Term :=
+  ⟨1575, "i128_try_into_u64", [11], 4, (.decl ⟨true, false, true, false⟩ (some (.external "i128_try_into_u64")) none), ⟨"<OUT_DIR>/numerics.isle", 3442⟩⟩
+
+/-- term 1576 -/
+def T.«i128_unwrap_into_u64» : Term :=
+  ⟨1576, "i128_unwrap_into_u64", [11], 4, (.decl ⟨true, false, false, false⟩ (some (.external "i128_unwrap_into_u64")) none), ⟨"<OUT_DIR>/numerics.isle", 3444⟩⟩
+
+/-- term 1577 -/
+def T.«u64_from_i128» : Term :=
+  ⟨1577, "u64_from_i128", [4], 11, (.decl ⟨true, false, false, false⟩ none (some (.external "i128_from_u64" false))), ⟨"<OUT_DIR>/numerics.isle", 3446⟩⟩
+
+/-- term 1578 -/
+def T.«i128_try_into_u128» : Term :=
+  ⟨1578, "i128_try_into_u128", [11], 5, (.decl ⟨true, false, true, false⟩ (some (.external "i128_try_into_u128")) none), ⟨"<OUT_DIR>/numerics.isle", 3449⟩⟩
+
+/-- term 1579 -/
+def T.«i128_unwrap_into_u128» : Term :=
+  ⟨1579, "i128_unwrap_into_u128", [11], 5, (.decl ⟨true, false, false, false⟩ (some (.external "i128_unwrap_into_u128")) none), ⟨"<OUT_DIR>/numerics.isle", 3451⟩⟩
+
+/-- term 1580 -/
+def T.«i128_cast_unsigned» : Term :=
+  ⟨1580, "i128_cast_unsigned", [11], 5, (.decl ⟨true, false, false, false⟩ (some (.external "i128_cast_unsigned")) none), ⟨"<OUT_DIR>/numerics.isle", 3453⟩⟩
+
+/-- term 1581 -/
+def T.«u128_from_i128» : Term :=
+  ⟨1581, "u128_from_i128", [5], 11, (.decl ⟨true, false, false, false⟩ none (some (.external "i128_from_u128" false))), ⟨"<OUT_DIR>/numerics.isle", 3455⟩⟩
+
+/-- term 1582 -/
+def T.«u128_try_into_i8» : Term :=
+  ⟨1582, "u128_try_into_i8", [5], 7, (.decl ⟨true, false, true, false⟩ (some (.external "u128_try_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 3458⟩⟩
+
+/-- term 1583 -/
+def T.«u128_unwrap_into_i8» : Term :=
+  ⟨1583, "u128_unwrap_into_i8", [5], 7, (.decl ⟨true, false, false, false⟩ (some (.external "u128_unwrap_into_i8")) none), ⟨"<OUT_DIR>/numerics.isle", 3460⟩⟩
+
+/-- term 1584 -/
+def T.«i8_from_u128» : Term :=
+  ⟨1584, "i8_from_u128", [7], 5, (.decl ⟨true, false, false, false⟩ none (some (.external "u128_from_i8" false))), ⟨"<OUT_DIR>/numerics.isle", 3462⟩⟩
+
+/-- term 1585 -/
+def T.«u128_try_into_u8» : Term :=
+  ⟨1585, "u128_try_into_u8", [5], 1, (.decl ⟨true, false, true, false⟩ (some (.external "u128_try_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 3465⟩⟩
+
+/-- term 1586 -/
+def T.«u128_unwrap_into_u8» : Term :=
+  ⟨1586, "u128_unwrap_into_u8", [5], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u128_unwrap_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 3467⟩⟩
+
+/-- term 1587 -/
+def T.«u128_truncate_into_u8» : Term :=
+  ⟨1587, "u128_truncate_into_u8", [5], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u128_truncate_into_u8")) none), ⟨"<OUT_DIR>/numerics.isle", 3469⟩⟩
+
+/-- term 1588 -/
+def T.«u8_from_u128» : Term :=
+  ⟨1588, "u8_from_u128", [1], 5, (.decl ⟨true, false, false, false⟩ none (some (.external "u128_from_u8" false))), ⟨"<OUT_DIR>/numerics.isle", 3471⟩⟩
+
+/-- term 1589 -/
+def T.«u128_try_into_i16» : Term :=
+  ⟨1589, "u128_try_into_i16", [5], 8, (.decl ⟨true, false, true, false⟩ (some (.external "u128_try_into_i16")) none), ⟨"<OUT_DIR>/numerics.isle", 3474⟩⟩
+
+/-- term 1590 -/
+def T.«u128_unwrap_into_i16» : Term :=
+  ⟨1590, "u128_unwrap_into_i16", [5], 8, (.decl ⟨true, false, false, false⟩ (some (.external "u128_unwrap_into_i16")) none), ⟨"<OUT_DIR>/numerics.isle", 3476⟩⟩
+
+/-- term 1591 -/
+def T.«i16_from_u128» : Term :=
+  ⟨1591, "i16_from_u128", [8], 5, (.decl ⟨true, false, false, false⟩ none (some (.external "u128_from_i16" false))), ⟨"<OUT_DIR>/numerics.isle", 3478⟩⟩
+
+/-- term 1592 -/
+def T.«u128_try_into_u16» : Term :=
+  ⟨1592, "u128_try_into_u16", [5], 2, (.decl ⟨true, false, true, false⟩ (some (.external "u128_try_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 3481⟩⟩
+
+/-- term 1593 -/
+def T.«u128_unwrap_into_u16» : Term :=
+  ⟨1593, "u128_unwrap_into_u16", [5], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u128_unwrap_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 3483⟩⟩
+
+/-- term 1594 -/
+def T.«u128_truncate_into_u16» : Term :=
+  ⟨1594, "u128_truncate_into_u16", [5], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u128_truncate_into_u16")) none), ⟨"<OUT_DIR>/numerics.isle", 3485⟩⟩
+
+/-- term 1595 -/
+def T.«u16_from_u128» : Term :=
+  ⟨1595, "u16_from_u128", [2], 5, (.decl ⟨true, false, false, false⟩ none (some (.external "u128_from_u16" false))), ⟨"<OUT_DIR>/numerics.isle", 3487⟩⟩
+
+/-- term 1596 -/
+def T.«u128_try_into_i32» : Term :=
+  ⟨1596, "u128_try_into_i32", [5], 9, (.decl ⟨true, false, true, false⟩ (some (.external "u128_try_into_i32")) none), ⟨"<OUT_DIR>/numerics.isle", 3490⟩⟩
+
+/-- term 1597 -/
+def T.«u128_unwrap_into_i32» : Term :=
+  ⟨1597, "u128_unwrap_into_i32", [5], 9, (.decl ⟨true, false, false, false⟩ (some (.external "u128_unwrap_into_i32")) none), ⟨"<OUT_DIR>/numerics.isle", 3492⟩⟩
+
+/-- term 1598 -/
+def T.«i32_from_u128» : Term :=
+  ⟨1598, "i32_from_u128", [9], 5, (.decl ⟨true, false, false, false⟩ none (some (.external "u128_from_i32" false))), ⟨"<OUT_DIR>/numerics.isle", 3494⟩⟩
+
+/-- term 1599 -/
+def T.«u128_try_into_u32» : Term :=
+  ⟨1599, "u128_try_into_u32", [5], 3, (.decl ⟨true, false, true, false⟩ (some (.external "u128_try_into_u32")) none), ⟨"<OUT_DIR>/numerics.isle", 3497⟩⟩
+
+/-- term 1600 -/
+def T.«u128_unwrap_into_u32» : Term :=
+  ⟨1600, "u128_unwrap_into_u32", [5], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u128_unwrap_into_u32")) none), ⟨"<OUT_DIR>/numerics.isle", 3499⟩⟩
+
+/-- term 1601 -/
+def T.«u128_truncate_into_u32» : Term :=
+  ⟨1601, "u128_truncate_into_u32", [5], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u128_truncate_into_u32")) none), ⟨"<OUT_DIR>/numerics.isle", 3501⟩⟩
+
+/-- term 1602 -/
+def T.«u32_from_u128» : Term :=
+  ⟨1602, "u32_from_u128", [3], 5, (.decl ⟨true, false, false, false⟩ none (some (.external "u128_from_u32" false))), ⟨"<OUT_DIR>/numerics.isle", 3503⟩⟩
+
+/-- term 1603 -/
+def T.«u128_try_into_i64» : Term :=
+  ⟨1603, "u128_try_into_i64", [5], 10, (.decl ⟨true, false, true, false⟩ (some (.external "u128_try_into_i64")) none), ⟨"<OUT_DIR>/numerics.isle", 3506⟩⟩
+
+/-- term 1604 -/
+def T.«u128_unwrap_into_i64» : Term :=
+  ⟨1604, "u128_unwrap_into_i64", [5], 10, (.decl ⟨true, false, false, false⟩ (some (.external "u128_unwrap_into_i64")) none), ⟨"<OUT_DIR>/numerics.isle", 3508⟩⟩
+
+/-- term 1605 -/
+def T.«i64_from_u128» : Term :=
+  ⟨1605, "i64_from_u128", [10], 5, (.decl ⟨true, false, false, false⟩ none (some (.external "u128_from_i64" false))), ⟨"<OUT_DIR>/numerics.isle", 3510⟩⟩
+
+/-- term 1606 -/
+def T.«u128_try_into_u64» : Term :=
+  ⟨1606, "u128_try_into_u64", [5], 4, (.decl ⟨true, false, true, false⟩ (some (.external "u128_try_into_u64")) none), ⟨"<OUT_DIR>/numerics.isle", 3513⟩⟩
+
+/-- term 1607 -/
+def T.«u128_unwrap_into_u64» : Term :=
+  ⟨1607, "u128_unwrap_into_u64", [5], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u128_unwrap_into_u64")) none), ⟨"<OUT_DIR>/numerics.isle", 3515⟩⟩
+
+/-- term 1608 -/
+def T.«u128_truncate_into_u64» : Term :=
+  ⟨1608, "u128_truncate_into_u64", [5], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u128_truncate_into_u64")) none), ⟨"<OUT_DIR>/numerics.isle", 3517⟩⟩
+
+/-- term 1609 -/
+def T.«u64_from_u128» : Term :=
+  ⟨1609, "u64_from_u128", [4], 5, (.decl ⟨true, false, false, false⟩ none (some (.external "u128_from_u64" false))), ⟨"<OUT_DIR>/numerics.isle", 3519⟩⟩
+
+/-- term 1610 -/
+def T.«u128_try_into_i128» : Term :=
+  ⟨1610, "u128_try_into_i128", [5], 11, (.decl ⟨true, false, true, false⟩ (some (.external "u128_try_into_i128")) none), ⟨"<OUT_DIR>/numerics.isle", 3522⟩⟩
+
+/-- term 1611 -/
+def T.«u128_unwrap_into_i128» : Term :=
+  ⟨1611, "u128_unwrap_into_i128", [5], 11, (.decl ⟨true, false, false, false⟩ (some (.external "u128_unwrap_into_i128")) none), ⟨"<OUT_DIR>/numerics.isle", 3524⟩⟩
+
+/-- term 1612 -/
+def T.«u128_cast_signed» : Term :=
+  ⟨1612, "u128_cast_signed", [5], 11, (.decl ⟨true, false, false, false⟩ (some (.external "u128_cast_signed")) none), ⟨"<OUT_DIR>/numerics.isle", 3526⟩⟩
+
+/-- term 1613 -/
+def T.«i128_from_u128» : Term :=
+  ⟨1613, "i128_from_u128", [11], 5, (.decl ⟨true, false, false, false⟩ none (some (.external "u128_from_i128" false))), ⟨"<OUT_DIR>/numerics.isle", 3528⟩⟩
+
+/-- term 1614 -/
+def T.«value_array_2» : Term :=
+  ⟨1614, "value_array_2", [15, 15], 147, (.decl ⟨false, false, false, false⟩ (some (.external "pack_value_array_2")) (some (.external "unpack_value_array_2" true))), ⟨"<OUT_DIR>/clif_lower.isle", 100⟩⟩
+
+/-- term 1615 -/
+def T.«value_array_3» : Term :=
+  ⟨1615, "value_array_3", [15, 15, 15], 148, (.decl ⟨false, false, false, false⟩ (some (.external "pack_value_array_3")) (some (.external "unpack_value_array_3" true))), ⟨"<OUT_DIR>/clif_lower.isle", 107⟩⟩
+
+/-- term 1616 -/
+def T.«block_array_2» : Term :=
+  ⟨1616, "block_array_2", [17, 17], 149, (.decl ⟨false, false, false, false⟩ (some (.external "pack_block_array_2")) (some (.external "unpack_block_array_2" true))), ⟨"<OUT_DIR>/clif_lower.isle", 116⟩⟩
+
+/-- term 1617 -/
+def T.«jump» : Term :=
+  ⟨1617, "jump", [17], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "jump"), (.atom "block_call")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.Jump"), (.list [(.atom "Opcode.Jump")]), (.atom "block_call")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 337⟩⟩
+
+/-- term 1618 -/
+def T.«brif» : Term :=
+  ⟨1618, "brif", [15, 17, 17], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "brif"), (.atom "c"), (.atom "block_then"), (.atom "block_else")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.Brif"), (.list [(.atom "Opcode.Brif")]), (.atom "c"), (.list [(.atom "block_array_2"), (.atom "block_then"), (.atom "block_else")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 343⟩⟩
+
+/-- term 1619 -/
+def T.«br_table» : Term :=
+  ⟨1619, "br_table", [15, 136], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "br_table"), (.atom "x"), (.atom "JT")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.BranchTable"), (.list [(.atom "Opcode.BrTable")]), (.atom "x"), (.atom "JT")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 349⟩⟩
+
+/-- term 1620 -/
+def T.«debugtrap» : Term :=
+  ⟨1620, "debugtrap", [], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "debugtrap")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.NullAry"), (.list [(.atom "Opcode.Debugtrap")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 355⟩⟩
+
+/-- term 1621 -/
+def T.«trap» : Term :=
+  ⟨1621, "trap", [146], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "trap"), (.atom "code")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.Trap"), (.list [(.atom "Opcode.Trap")]), (.atom "code")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 361⟩⟩
+
+/-- term 1622 -/
+def T.«trapz» : Term :=
+  ⟨1622, "trapz", [15, 146], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "trapz"), (.atom "c"), (.atom "code")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.CondTrap"), (.list [(.atom "Opcode.Trapz")]), (.atom "c"), (.atom "code")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 367⟩⟩
+
+/-- term 1623 -/
+def T.«trapnz» : Term :=
+  ⟨1623, "trapnz", [15, 146], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "trapnz"), (.atom "c"), (.atom "code")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.CondTrap"), (.list [(.atom "Opcode.Trapnz")]), (.atom "c"), (.atom "code")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 373⟩⟩
+
+/-- term 1624 -/
+def T.«return» : Term :=
+  ⟨1624, "return", [19], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "return"), (.atom "rvals")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.MultiAry"), (.list [(.atom "Opcode.Return")]), (.list [(.atom "value_list_slice"), (.atom "rvals")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 379⟩⟩
+
+/-- term 1625 -/
+def T.«call» : Term :=
+  ⟨1625, "call", [129, 19], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "call"), (.atom "FN"), (.atom "args")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.Call"), (.list [(.atom "Opcode.Call")]), (.list [(.atom "value_list_slice"), (.atom "args")]), (.atom "FN")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 385⟩⟩
+
+/-- term 1626 -/
+def T.«call_indirect» : Term :=
+  ⟨1626, "call_indirect", [139, 15, 19], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "call_indirect"), (.atom "SIG"), (.atom "callee"), (.atom "args")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.CallIndirect"), (.list [(.atom "Opcode.CallIndirect")]), (.list [(.atom "unwrap_head_value_list_1"), (.atom "callee"), (.atom "args")]), (.atom "SIG")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 391⟩⟩
+
+/-- term 1627 -/
+def T.«return_call» : Term :=
+  ⟨1627, "return_call", [129, 19], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "return_call"), (.atom "FN"), (.atom "args")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.Call"), (.list [(.atom "Opcode.ReturnCall")]), (.list [(.atom "value_list_slice"), (.atom "args")]), (.atom "FN")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 397⟩⟩
+
+/-- term 1628 -/
+def T.«return_call_indirect» : Term :=
+  ⟨1628, "return_call_indirect", [139, 15, 19], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "return_call_indirect"), (.atom "SIG"), (.atom "callee"), (.atom "args")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.CallIndirect"), (.list [(.atom "Opcode.ReturnCallIndirect")]), (.list [(.atom "unwrap_head_value_list_1"), (.atom "callee"), (.atom "args")]), (.atom "SIG")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 403⟩⟩
+
+/-- term 1629 -/
+def T.«func_addr» : Term :=
+  ⟨1629, "func_addr", [14, 129], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "func_addr"), (.atom "ty"), (.atom "FN")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.FuncAddr"), (.list [(.atom "Opcode.FuncAddr")]), (.atom "FN")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 409⟩⟩
+
+/-- term 1630 -/
+def T.«try_call» : Term :=
+  ⟨1630, "try_call", [129, 19, 128], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "try_call"), (.atom "callee"), (.atom "args"), (.atom "ET")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.TryCall"), (.list [(.atom "Opcode.TryCall")]), (.list [(.atom "value_list_slice"), (.atom "args")]), (.atom "callee"), (.atom "ET")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 415⟩⟩
+
+/-- term 1631 -/
+def T.«try_call_indirect» : Term :=
+  ⟨1631, "try_call_indirect", [15, 19, 128], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "try_call_indirect"), (.atom "callee"), (.atom "args"), (.atom "ET")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.TryCallIndirect"), (.list [(.atom "Opcode.TryCallIndirect")]), (.list [(.atom "unwrap_head_value_list_1"), (.atom "callee"), (.atom "args")]), (.atom "ET")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 421⟩⟩
+
+/-- term 1632 -/
+def T.«splat» : Term :=
+  ⟨1632, "splat", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "splat"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Splat")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 427⟩⟩
+
+/-- term 1633 -/
+def T.«swizzle» : Term :=
+  ⟨1633, "swizzle", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "swizzle"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Swizzle")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 433⟩⟩
+
+/-- term 1634 -/
+def T.«x86_pshufb» : Term :=
+  ⟨1634, "x86_pshufb", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "x86_pshufb"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.X86Pshufb")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 439⟩⟩
+
+/-- term 1635 -/
+def T.«insertlane» : Term :=
+  ⟨1635, "insertlane", [14, 15, 15, 141], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "insertlane"), (.atom "ty"), (.atom "x"), (.atom "y"), (.atom "Idx")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.TernaryImm8"), (.list [(.atom "Opcode.Insertlane")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")]), (.atom "Idx")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 445⟩⟩
+
+/-- term 1636 -/
+def T.«extractlane» : Term :=
+  ⟨1636, "extractlane", [14, 15, 141], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "extractlane"), (.atom "ty"), (.atom "x"), (.atom "Idx")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.BinaryImm8"), (.list [(.atom "Opcode.Extractlane")]), (.atom "x"), (.atom "Idx")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 451⟩⟩
+
+/-- term 1637 -/
+def T.«smin» : Term :=
+  ⟨1637, "smin", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "smin"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Smin")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 457⟩⟩
+
+/-- term 1638 -/
+def T.«umin» : Term :=
+  ⟨1638, "umin", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "umin"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Umin")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 463⟩⟩
+
+/-- term 1639 -/
+def T.«smax» : Term :=
+  ⟨1639, "smax", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "smax"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Smax")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 469⟩⟩
+
+/-- term 1640 -/
+def T.«umax» : Term :=
+  ⟨1640, "umax", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "umax"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Umax")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 475⟩⟩
+
+/-- term 1641 -/
+def T.«avg_round» : Term :=
+  ⟨1641, "avg_round", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "avg_round"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.AvgRound")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 481⟩⟩
+
+/-- term 1642 -/
+def T.«uadd_sat» : Term :=
+  ⟨1642, "uadd_sat", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "uadd_sat"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.UaddSat")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 487⟩⟩
+
+/-- term 1643 -/
+def T.«sadd_sat» : Term :=
+  ⟨1643, "sadd_sat", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "sadd_sat"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.SaddSat")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 493⟩⟩
+
+/-- term 1644 -/
+def T.«usub_sat» : Term :=
+  ⟨1644, "usub_sat", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "usub_sat"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.UsubSat")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 499⟩⟩
+
+/-- term 1645 -/
+def T.«ssub_sat» : Term :=
+  ⟨1645, "ssub_sat", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "ssub_sat"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.SsubSat")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 505⟩⟩
+
+/-- term 1646 -/
+def T.«load» : Term :=
+  ⟨1646, "load", [14, 137, 15, 138], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "load"), (.atom "ty"), (.atom "MemFlags"), (.atom "p"), (.atom "Offset")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Load"), (.list [(.atom "Opcode.Load")]), (.atom "p"), (.atom "MemFlags"), (.atom "Offset")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 511⟩⟩
+
+/-- term 1647 -/
+def T.«store» : Term :=
+  ⟨1647, "store", [137, 15, 15, 138], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "store"), (.atom "MemFlags"), (.atom "x"), (.atom "p"), (.atom "Offset")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.Store"), (.list [(.atom "Opcode.Store")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "p")]), (.atom "MemFlags"), (.atom "Offset")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 517⟩⟩
+
+/-- term 1648 -/
+def T.«uload8» : Term :=
+  ⟨1648, "uload8", [14, 137, 15, 138], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "uload8"), (.atom "ty"), (.atom "MemFlags"), (.atom "p"), (.atom "Offset")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Load"), (.list [(.atom "Opcode.Uload8")]), (.atom "p"), (.atom "MemFlags"), (.atom "Offset")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 523⟩⟩
+
+/-- term 1649 -/
+def T.«sload8» : Term :=
+  ⟨1649, "sload8", [14, 137, 15, 138], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "sload8"), (.atom "ty"), (.atom "MemFlags"), (.atom "p"), (.atom "Offset")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Load"), (.list [(.atom "Opcode.Sload8")]), (.atom "p"), (.atom "MemFlags"), (.atom "Offset")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 529⟩⟩
+
+/-- term 1650 -/
+def T.«istore8» : Term :=
+  ⟨1650, "istore8", [137, 15, 15, 138], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "istore8"), (.atom "MemFlags"), (.atom "x"), (.atom "p"), (.atom "Offset")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.Store"), (.list [(.atom "Opcode.Istore8")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "p")]), (.atom "MemFlags"), (.atom "Offset")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 535⟩⟩
+
+/-- term 1651 -/
+def T.«uload16» : Term :=
+  ⟨1651, "uload16", [14, 137, 15, 138], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "uload16"), (.atom "ty"), (.atom "MemFlags"), (.atom "p"), (.atom "Offset")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Load"), (.list [(.atom "Opcode.Uload16")]), (.atom "p"), (.atom "MemFlags"), (.atom "Offset")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 541⟩⟩
+
+/-- term 1652 -/
+def T.«sload16» : Term :=
+  ⟨1652, "sload16", [14, 137, 15, 138], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "sload16"), (.atom "ty"), (.atom "MemFlags"), (.atom "p"), (.atom "Offset")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Load"), (.list [(.atom "Opcode.Sload16")]), (.atom "p"), (.atom "MemFlags"), (.atom "Offset")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 547⟩⟩
+
+/-- term 1653 -/
+def T.«istore16» : Term :=
+  ⟨1653, "istore16", [137, 15, 15, 138], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "istore16"), (.atom "MemFlags"), (.atom "x"), (.atom "p"), (.atom "Offset")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.Store"), (.list [(.atom "Opcode.Istore16")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "p")]), (.atom "MemFlags"), (.atom "Offset")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 553⟩⟩
+
+/-- term 1654 -/
+def T.«uload32» : Term :=
+  ⟨1654, "uload32", [14, 137, 15, 138], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "uload32"), (.atom "ty"), (.atom "MemFlags"), (.atom "p"), (.atom "Offset")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Load"), (.list [(.atom "Opcode.Uload32")]), (.atom "p"), (.atom "MemFlags"), (.atom "Offset")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 559⟩⟩
+
+/-- term 1655 -/
+def T.«sload32» : Term :=
+  ⟨1655, "sload32", [14, 137, 15, 138], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "sload32"), (.atom "ty"), (.atom "MemFlags"), (.atom "p"), (.atom "Offset")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Load"), (.list [(.atom "Opcode.Sload32")]), (.atom "p"), (.atom "MemFlags"), (.atom "Offset")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 565⟩⟩
+
+/-- term 1656 -/
+def T.«istore32» : Term :=
+  ⟨1656, "istore32", [137, 15, 15, 138], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "istore32"), (.atom "MemFlags"), (.atom "x"), (.atom "p"), (.atom "Offset")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.Store"), (.list [(.atom "Opcode.Istore32")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "p")]), (.atom "MemFlags"), (.atom "Offset")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 571⟩⟩
+
+/-- term 1657 -/
+def T.«stack_switch» : Term :=
+  ⟨1657, "stack_switch", [14, 15, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "stack_switch"), (.atom "ty"), (.atom "store_context_ptr"), (.atom "load_context_ptr"), (.atom "in_payload0")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Ternary"), (.list [(.atom "Opcode.StackSwitch")]), (.list [(.atom "value_array_3"), (.atom "store_context_ptr"), (.atom "load_context_ptr"), (.atom "in_payload0")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 577⟩⟩
+
+/-- term 1658 -/
+def T.«uload8x8» : Term :=
+  ⟨1658, "uload8x8", [14, 137, 15, 138], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "uload8x8"), (.atom "ty"), (.atom "MemFlags"), (.atom "p"), (.atom "Offset")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Load"), (.list [(.atom "Opcode.Uload8x8")]), (.atom "p"), (.atom "MemFlags"), (.atom "Offset")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 583⟩⟩
+
+/-- term 1659 -/
+def T.«sload8x8» : Term :=
+  ⟨1659, "sload8x8", [14, 137, 15, 138], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "sload8x8"), (.atom "ty"), (.atom "MemFlags"), (.atom "p"), (.atom "Offset")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Load"), (.list [(.atom "Opcode.Sload8x8")]), (.atom "p"), (.atom "MemFlags"), (.atom "Offset")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 589⟩⟩
+
+/-- term 1660 -/
+def T.«uload16x4» : Term :=
+  ⟨1660, "uload16x4", [14, 137, 15, 138], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "uload16x4"), (.atom "ty"), (.atom "MemFlags"), (.atom "p"), (.atom "Offset")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Load"), (.list [(.atom "Opcode.Uload16x4")]), (.atom "p"), (.atom "MemFlags"), (.atom "Offset")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 595⟩⟩
+
+/-- term 1661 -/
+def T.«sload16x4» : Term :=
+  ⟨1661, "sload16x4", [14, 137, 15, 138], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "sload16x4"), (.atom "ty"), (.atom "MemFlags"), (.atom "p"), (.atom "Offset")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Load"), (.list [(.atom "Opcode.Sload16x4")]), (.atom "p"), (.atom "MemFlags"), (.atom "Offset")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 601⟩⟩
+
+/-- term 1662 -/
+def T.«uload32x2» : Term :=
+  ⟨1662, "uload32x2", [14, 137, 15, 138], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "uload32x2"), (.atom "ty"), (.atom "MemFlags"), (.atom "p"), (.atom "Offset")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Load"), (.list [(.atom "Opcode.Uload32x2")]), (.atom "p"), (.atom "MemFlags"), (.atom "Offset")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 607⟩⟩
+
+/-- term 1663 -/
+def T.«sload32x2» : Term :=
+  ⟨1663, "sload32x2", [14, 137, 15, 138], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "sload32x2"), (.atom "ty"), (.atom "MemFlags"), (.atom "p"), (.atom "Offset")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Load"), (.list [(.atom "Opcode.Sload32x2")]), (.atom "p"), (.atom "MemFlags"), (.atom "Offset")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 613⟩⟩
+
+/-- term 1664 -/
+def T.«stack_addr» : Term :=
+  ⟨1664, "stack_addr", [14, 140, 138], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "stack_addr"), (.atom "ty"), (.atom "SS"), (.atom "Offset")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.StackAddr"), (.list [(.atom "Opcode.StackAddr")]), (.atom "SS"), (.atom "Offset")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 619⟩⟩
+
+/-- term 1665 -/
+def T.«dynamic_stack_addr» : Term :=
+  ⟨1665, "dynamic_stack_addr", [14, 127], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "dynamic_stack_addr"), (.atom "ty"), (.atom "DSS")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.DynamicStackAddr"), (.list [(.atom "Opcode.DynamicStackAddr")]), (.atom "DSS")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 625⟩⟩
+
+/-- term 1666 -/
+def T.«symbol_value» : Term :=
+  ⟨1666, "symbol_value", [14, 130], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "symbol_value"), (.atom "ty"), (.atom "GV")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.UnaryGlobalValue"), (.list [(.atom "Opcode.SymbolValue")]), (.atom "GV")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 631⟩⟩
+
+/-- term 1667 -/
+def T.«tls_value» : Term :=
+  ⟨1667, "tls_value", [14, 130], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "tls_value"), (.atom "ty"), (.atom "GV")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.UnaryGlobalValue"), (.list [(.atom "Opcode.TlsValue")]), (.atom "GV")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 637⟩⟩
+
+/-- term 1668 -/
+def T.«get_pinned_reg» : Term :=
+  ⟨1668, "get_pinned_reg", [14], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "get_pinned_reg"), (.atom "ty")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.NullAry"), (.list [(.atom "Opcode.GetPinnedReg")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 643⟩⟩
+
+/-- term 1669 -/
+def T.«set_pinned_reg» : Term :=
+  ⟨1669, "set_pinned_reg", [15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "set_pinned_reg"), (.atom "addr")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.SetPinnedReg")]), (.atom "addr")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 649⟩⟩
+
+/-- term 1670 -/
+def T.«get_frame_pointer» : Term :=
+  ⟨1670, "get_frame_pointer", [14], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "get_frame_pointer"), (.atom "ty")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.NullAry"), (.list [(.atom "Opcode.GetFramePointer")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 655⟩⟩
+
+/-- term 1671 -/
+def T.«get_stack_pointer» : Term :=
+  ⟨1671, "get_stack_pointer", [14], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "get_stack_pointer"), (.atom "ty")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.NullAry"), (.list [(.atom "Opcode.GetStackPointer")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 661⟩⟩
+
+/-- term 1672 -/
+def T.«get_return_address» : Term :=
+  ⟨1672, "get_return_address", [14], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "get_return_address"), (.atom "ty")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.NullAry"), (.list [(.atom "Opcode.GetReturnAddress")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 667⟩⟩
+
+/-- term 1673 -/
+def T.«get_exception_handler_address» : Term :=
+  ⟨1673, "get_exception_handler_address", [14, 150, 134], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "get_exception_handler_address"), (.atom "ty"), (.atom "block"), (.atom "index")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.ExceptionHandlerAddress"), (.list [(.atom "Opcode.GetExceptionHandlerAddress")]), (.atom "block"), (.atom "index")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 673⟩⟩
+
+/-- term 1674 -/
+def T.«iconst» : Term :=
+  ⟨1674, "iconst", [14, 134], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "iconst"), (.atom "ty"), (.atom "N")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.UnaryImm"), (.list [(.atom "Opcode.Iconst")]), (.atom "N")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 679⟩⟩
+
+/-- term 1675 -/
+def T.«f16const» : Term :=
+  ⟨1675, "f16const", [14, 131], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "f16const"), (.atom "ty"), (.atom "N")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.UnaryIeee16"), (.list [(.atom "Opcode.F16const")]), (.atom "N")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 685⟩⟩
+
+/-- term 1676 -/
+def T.«f32const» : Term :=
+  ⟨1676, "f32const", [14, 132], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "f32const"), (.atom "ty"), (.atom "N")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.UnaryIeee32"), (.list [(.atom "Opcode.F32const")]), (.atom "N")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 691⟩⟩
+
+/-- term 1677 -/
+def T.«f64const» : Term :=
+  ⟨1677, "f64const", [14, 133], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "f64const"), (.atom "ty"), (.atom "N")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.UnaryIeee64"), (.list [(.atom "Opcode.F64const")]), (.atom "N")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 697⟩⟩
+
+/-- term 1678 -/
+def T.«f128const» : Term :=
+  ⟨1678, "f128const", [14, 126], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "f128const"), (.atom "ty"), (.atom "N")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.UnaryConst"), (.list [(.atom "Opcode.F128const")]), (.atom "N")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 703⟩⟩
+
+/-- term 1679 -/
+def T.«vconst» : Term :=
+  ⟨1679, "vconst", [14, 126], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "vconst"), (.atom "ty"), (.atom "N")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.UnaryConst"), (.list [(.atom "Opcode.Vconst")]), (.atom "N")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 709⟩⟩
+
+/-- term 1680 -/
+def T.«shuffle» : Term :=
+  ⟨1680, "shuffle", [14, 15, 15, 135], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "shuffle"), (.atom "ty"), (.atom "a"), (.atom "b"), (.atom "mask")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Shuffle"), (.list [(.atom "Opcode.Shuffle")]), (.list [(.atom "value_array_2"), (.atom "a"), (.atom "b")]), (.atom "mask")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 715⟩⟩
+
+/-- term 1681 -/
+def T.«nop» : Term :=
+  ⟨1681, "nop", [], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "nop")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.NullAry"), (.list [(.atom "Opcode.Nop")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 721⟩⟩
+
+/-- term 1682 -/
+def T.«select» : Term :=
+  ⟨1682, "select", [14, 15, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "select"), (.atom "ty"), (.atom "c"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Ternary"), (.list [(.atom "Opcode.Select")]), (.list [(.atom "value_array_3"), (.atom "c"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 727⟩⟩
+
+/-- term 1683 -/
+def T.«select_spectre_guard» : Term :=
+  ⟨1683, "select_spectre_guard", [14, 15, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "select_spectre_guard"), (.atom "ty"), (.atom "c"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Ternary"), (.list [(.atom "Opcode.SelectSpectreGuard")]), (.list [(.atom "value_array_3"), (.atom "c"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 733⟩⟩
+
+/-- term 1684 -/
+def T.«bitselect» : Term :=
+  ⟨1684, "bitselect", [14, 15, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "bitselect"), (.atom "ty"), (.atom "c"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Ternary"), (.list [(.atom "Opcode.Bitselect")]), (.list [(.atom "value_array_3"), (.atom "c"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 739⟩⟩
+
+/-- term 1685 -/
+def T.«blendv» : Term :=
+  ⟨1685, "blendv", [14, 15, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "blendv"), (.atom "ty"), (.atom "c"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Ternary"), (.list [(.atom "Opcode.Blendv")]), (.list [(.atom "value_array_3"), (.atom "c"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 745⟩⟩
+
+/-- term 1686 -/
+def T.«vany_true» : Term :=
+  ⟨1686, "vany_true", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "vany_true"), (.atom "ty"), (.atom "a")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.VanyTrue")]), (.atom "a")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 751⟩⟩
+
+/-- term 1687 -/
+def T.«vall_true» : Term :=
+  ⟨1687, "vall_true", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "vall_true"), (.atom "ty"), (.atom "a")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.VallTrue")]), (.atom "a")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 757⟩⟩
+
+/-- term 1688 -/
+def T.«vhigh_bits» : Term :=
+  ⟨1688, "vhigh_bits", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "vhigh_bits"), (.atom "ty"), (.atom "a")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.VhighBits")]), (.atom "a")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 763⟩⟩
+
+/-- term 1689 -/
+def T.«icmp» : Term :=
+  ⟨1689, "icmp", [14, 145, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "icmp"), (.atom "ty"), (.atom "Cond"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.IntCompare"), (.list [(.atom "Opcode.Icmp")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")]), (.atom "Cond")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 769⟩⟩
+
+/-- term 1690 -/
+def T.«iadd» : Term :=
+  ⟨1690, "iadd", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "iadd"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Iadd")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 775⟩⟩
+
+/-- term 1691 -/
+def T.«isub» : Term :=
+  ⟨1691, "isub", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "isub"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Isub")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 781⟩⟩
+
+/-- term 1692 -/
+def T.«ineg» : Term :=
+  ⟨1692, "ineg", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "ineg"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Ineg")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 787⟩⟩
+
+/-- term 1693 -/
+def T.«iabs» : Term :=
+  ⟨1693, "iabs", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "iabs"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Iabs")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 793⟩⟩
+
+/-- term 1694 -/
+def T.«imul» : Term :=
+  ⟨1694, "imul", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "imul"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Imul")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 799⟩⟩
+
+/-- term 1695 -/
+def T.«umulhi» : Term :=
+  ⟨1695, "umulhi", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "umulhi"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Umulhi")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 805⟩⟩
+
+/-- term 1696 -/
+def T.«smulhi» : Term :=
+  ⟨1696, "smulhi", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "smulhi"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Smulhi")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 811⟩⟩
+
+/-- term 1697 -/
+def T.«sqmul_round_sat» : Term :=
+  ⟨1697, "sqmul_round_sat", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "sqmul_round_sat"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.SqmulRoundSat")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 817⟩⟩
+
+/-- term 1698 -/
+def T.«x86_pmulhrsw» : Term :=
+  ⟨1698, "x86_pmulhrsw", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "x86_pmulhrsw"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.X86Pmulhrsw")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 823⟩⟩
+
+/-- term 1699 -/
+def T.«udiv» : Term :=
+  ⟨1699, "udiv", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "udiv"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Udiv")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 829⟩⟩
+
+/-- term 1700 -/
+def T.«sdiv» : Term :=
+  ⟨1700, "sdiv", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "sdiv"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Sdiv")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 835⟩⟩
+
+/-- term 1701 -/
+def T.«urem» : Term :=
+  ⟨1701, "urem", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "urem"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Urem")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 841⟩⟩
+
+/-- term 1702 -/
+def T.«srem» : Term :=
+  ⟨1702, "srem", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "srem"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Srem")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 847⟩⟩
+
+/-- term 1703 -/
+def T.«sadd_overflow_cin» : Term :=
+  ⟨1703, "sadd_overflow_cin", [14, 15, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "sadd_overflow_cin"), (.atom "ty"), (.atom "x"), (.atom "y"), (.atom "c_in")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Ternary"), (.list [(.atom "Opcode.SaddOverflowCin")]), (.list [(.atom "value_array_3"), (.atom "x"), (.atom "y"), (.atom "c_in")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 853⟩⟩
+
+/-- term 1704 -/
+def T.«uadd_overflow_cin» : Term :=
+  ⟨1704, "uadd_overflow_cin", [14, 15, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "uadd_overflow_cin"), (.atom "ty"), (.atom "x"), (.atom "y"), (.atom "c_in")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Ternary"), (.list [(.atom "Opcode.UaddOverflowCin")]), (.list [(.atom "value_array_3"), (.atom "x"), (.atom "y"), (.atom "c_in")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 859⟩⟩
+
+/-- term 1705 -/
+def T.«uadd_overflow» : Term :=
+  ⟨1705, "uadd_overflow", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "uadd_overflow"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.UaddOverflow")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 865⟩⟩
+
+/-- term 1706 -/
+def T.«sadd_overflow» : Term :=
+  ⟨1706, "sadd_overflow", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "sadd_overflow"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.SaddOverflow")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 871⟩⟩
+
+/-- term 1707 -/
+def T.«usub_overflow» : Term :=
+  ⟨1707, "usub_overflow", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "usub_overflow"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.UsubOverflow")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 877⟩⟩
+
+/-- term 1708 -/
+def T.«ssub_overflow» : Term :=
+  ⟨1708, "ssub_overflow", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "ssub_overflow"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.SsubOverflow")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 883⟩⟩
+
+/-- term 1709 -/
+def T.«umul_overflow» : Term :=
+  ⟨1709, "umul_overflow", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "umul_overflow"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.UmulOverflow")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 889⟩⟩
+
+/-- term 1710 -/
+def T.«smul_overflow» : Term :=
+  ⟨1710, "smul_overflow", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "smul_overflow"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.SmulOverflow")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 895⟩⟩
+
+/-- term 1711 -/
+def T.«uadd_overflow_trap» : Term :=
+  ⟨1711, "uadd_overflow_trap", [14, 15, 15, 146], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "uadd_overflow_trap"), (.atom "ty"), (.atom "x"), (.atom "y"), (.atom "code")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.IntAddTrap"), (.list [(.atom "Opcode.UaddOverflowTrap")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")]), (.atom "code")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 901⟩⟩
+
+/-- term 1712 -/
+def T.«ssub_overflow_bin» : Term :=
+  ⟨1712, "ssub_overflow_bin", [14, 15, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "ssub_overflow_bin"), (.atom "ty"), (.atom "x"), (.atom "y"), (.atom "b_in")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Ternary"), (.list [(.atom "Opcode.SsubOverflowBin")]), (.list [(.atom "value_array_3"), (.atom "x"), (.atom "y"), (.atom "b_in")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 907⟩⟩
+
+/-- term 1713 -/
+def T.«usub_overflow_bin» : Term :=
+  ⟨1713, "usub_overflow_bin", [14, 15, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "usub_overflow_bin"), (.atom "ty"), (.atom "x"), (.atom "y"), (.atom "b_in")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Ternary"), (.list [(.atom "Opcode.UsubOverflowBin")]), (.list [(.atom "value_array_3"), (.atom "x"), (.atom "y"), (.atom "b_in")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 913⟩⟩
+
+/-- term 1714 -/
+def T.«band» : Term :=
+  ⟨1714, "band", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "band"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Band")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 919⟩⟩
+
+/-- term 1715 -/
+def T.«bor» : Term :=
+  ⟨1715, "bor", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "bor"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Bor")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 925⟩⟩
+
+/-- term 1716 -/
+def T.«bxor» : Term :=
+  ⟨1716, "bxor", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "bxor"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Bxor")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 931⟩⟩
+
+/-- term 1717 -/
+def T.«bnot» : Term :=
+  ⟨1717, "bnot", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "bnot"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Bnot")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 937⟩⟩
+
+/-- term 1718 -/
+def T.«rotl» : Term :=
+  ⟨1718, "rotl", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "rotl"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Rotl")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 943⟩⟩
+
+/-- term 1719 -/
+def T.«rotr» : Term :=
+  ⟨1719, "rotr", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "rotr"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Rotr")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 949⟩⟩
+
+/-- term 1720 -/
+def T.«ishl» : Term :=
+  ⟨1720, "ishl", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "ishl"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Ishl")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 955⟩⟩
+
+/-- term 1721 -/
+def T.«ushr» : Term :=
+  ⟨1721, "ushr", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "ushr"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Ushr")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 961⟩⟩
+
+/-- term 1722 -/
+def T.«sshr» : Term :=
+  ⟨1722, "sshr", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "sshr"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Sshr")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 967⟩⟩
+
+/-- term 1723 -/
+def T.«bitrev» : Term :=
+  ⟨1723, "bitrev", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "bitrev"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Bitrev")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 973⟩⟩
+
+/-- term 1724 -/
+def T.«clz» : Term :=
+  ⟨1724, "clz", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "clz"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Clz")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 979⟩⟩
+
+/-- term 1725 -/
+def T.«cls» : Term :=
+  ⟨1725, "cls", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "cls"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Cls")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 985⟩⟩
+
+/-- term 1726 -/
+def T.«ctz» : Term :=
+  ⟨1726, "ctz", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "ctz"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Ctz")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 991⟩⟩
+
+/-- term 1727 -/
+def T.«bswap» : Term :=
+  ⟨1727, "bswap", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "bswap"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Bswap")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 997⟩⟩
+
+/-- term 1728 -/
+def T.«popcnt» : Term :=
+  ⟨1728, "popcnt", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "popcnt"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Popcnt")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1003⟩⟩
+
+/-- term 1729 -/
+def T.«fcmp» : Term :=
+  ⟨1729, "fcmp", [14, 144, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fcmp"), (.atom "ty"), (.atom "Cond"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.FloatCompare"), (.list [(.atom "Opcode.Fcmp")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")]), (.atom "Cond")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1009⟩⟩
+
+/-- term 1730 -/
+def T.«fadd» : Term :=
+  ⟨1730, "fadd", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fadd"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Fadd")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1015⟩⟩
+
+/-- term 1731 -/
+def T.«fsub» : Term :=
+  ⟨1731, "fsub", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fsub"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Fsub")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1021⟩⟩
+
+/-- term 1732 -/
+def T.«fmul» : Term :=
+  ⟨1732, "fmul", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fmul"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Fmul")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1027⟩⟩
+
+/-- term 1733 -/
+def T.«fdiv» : Term :=
+  ⟨1733, "fdiv", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fdiv"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Fdiv")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1033⟩⟩
+
+/-- term 1734 -/
+def T.«sqrt» : Term :=
+  ⟨1734, "sqrt", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "sqrt"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Sqrt")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1039⟩⟩
+
+/-- term 1735 -/
+def T.«fma» : Term :=
+  ⟨1735, "fma", [14, 15, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fma"), (.atom "ty"), (.atom "x"), (.atom "y"), (.atom "z")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Ternary"), (.list [(.atom "Opcode.Fma")]), (.list [(.atom "value_array_3"), (.atom "x"), (.atom "y"), (.atom "z")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1045⟩⟩
+
+/-- term 1736 -/
+def T.«fneg» : Term :=
+  ⟨1736, "fneg", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fneg"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Fneg")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1051⟩⟩
+
+/-- term 1737 -/
+def T.«fabs» : Term :=
+  ⟨1737, "fabs", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fabs"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Fabs")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1057⟩⟩
+
+/-- term 1738 -/
+def T.«fcopysign» : Term :=
+  ⟨1738, "fcopysign", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fcopysign"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Fcopysign")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1063⟩⟩
+
+/-- term 1739 -/
+def T.«fmin» : Term :=
+  ⟨1739, "fmin", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fmin"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Fmin")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1069⟩⟩
+
+/-- term 1740 -/
+def T.«fmax» : Term :=
+  ⟨1740, "fmax", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fmax"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Fmax")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1075⟩⟩
+
+/-- term 1741 -/
+def T.«ceil» : Term :=
+  ⟨1741, "ceil", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "ceil"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Ceil")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1081⟩⟩
+
+/-- term 1742 -/
+def T.«floor» : Term :=
+  ⟨1742, "floor", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "floor"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Floor")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1087⟩⟩
+
+/-- term 1743 -/
+def T.«trunc» : Term :=
+  ⟨1743, "trunc", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "trunc"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Trunc")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1093⟩⟩
+
+/-- term 1744 -/
+def T.«nearest» : Term :=
+  ⟨1744, "nearest", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "nearest"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Nearest")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1099⟩⟩
+
+/-- term 1745 -/
+def T.«bitcast» : Term :=
+  ⟨1745, "bitcast", [14, 137, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "bitcast"), (.atom "ty"), (.atom "MemFlags"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.LoadNoOffset"), (.list [(.atom "Opcode.Bitcast")]), (.atom "x"), (.atom "MemFlags")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1105⟩⟩
+
+/-- term 1746 -/
+def T.«scalar_to_vector» : Term :=
+  ⟨1746, "scalar_to_vector", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "scalar_to_vector"), (.atom "ty"), (.atom "s")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.ScalarToVector")]), (.atom "s")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1111⟩⟩
+
+/-- term 1747 -/
+def T.«bmask» : Term :=
+  ⟨1747, "bmask", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "bmask"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Bmask")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1117⟩⟩
+
+/-- term 1748 -/
+def T.«ireduce» : Term :=
+  ⟨1748, "ireduce", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "ireduce"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Ireduce")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1123⟩⟩
+
+/-- term 1749 -/
+def T.«snarrow» : Term :=
+  ⟨1749, "snarrow", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "snarrow"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Snarrow")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1129⟩⟩
+
+/-- term 1750 -/
+def T.«unarrow» : Term :=
+  ⟨1750, "unarrow", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "unarrow"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Unarrow")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1135⟩⟩
+
+/-- term 1751 -/
+def T.«uunarrow» : Term :=
+  ⟨1751, "uunarrow", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "uunarrow"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Uunarrow")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1141⟩⟩
+
+/-- term 1752 -/
+def T.«swiden_low» : Term :=
+  ⟨1752, "swiden_low", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "swiden_low"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.SwidenLow")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1147⟩⟩
+
+/-- term 1753 -/
+def T.«swiden_high» : Term :=
+  ⟨1753, "swiden_high", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "swiden_high"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.SwidenHigh")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1153⟩⟩
+
+/-- term 1754 -/
+def T.«uwiden_low» : Term :=
+  ⟨1754, "uwiden_low", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "uwiden_low"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.UwidenLow")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1159⟩⟩
+
+/-- term 1755 -/
+def T.«uwiden_high» : Term :=
+  ⟨1755, "uwiden_high", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "uwiden_high"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.UwidenHigh")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1165⟩⟩
+
+/-- term 1756 -/
+def T.«iadd_pairwise» : Term :=
+  ⟨1756, "iadd_pairwise", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "iadd_pairwise"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.IaddPairwise")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1171⟩⟩
+
+/-- term 1757 -/
+def T.«x86_pmaddubsw» : Term :=
+  ⟨1757, "x86_pmaddubsw", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "x86_pmaddubsw"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.X86Pmaddubsw")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "y")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1177⟩⟩
+
+/-- term 1758 -/
+def T.«uextend» : Term :=
+  ⟨1758, "uextend", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "uextend"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Uextend")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1183⟩⟩
+
+/-- term 1759 -/
+def T.«sextend» : Term :=
+  ⟨1759, "sextend", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "sextend"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Sextend")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1189⟩⟩
+
+/-- term 1760 -/
+def T.«fpromote» : Term :=
+  ⟨1760, "fpromote", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fpromote"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Fpromote")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1195⟩⟩
+
+/-- term 1761 -/
+def T.«fdemote» : Term :=
+  ⟨1761, "fdemote", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fdemote"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Fdemote")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1201⟩⟩
+
+/-- term 1762 -/
+def T.«fvdemote» : Term :=
+  ⟨1762, "fvdemote", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fvdemote"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Fvdemote")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1207⟩⟩
+
+/-- term 1763 -/
+def T.«fvpromote_low» : Term :=
+  ⟨1763, "fvpromote_low", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fvpromote_low"), (.atom "ty"), (.atom "a")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.FvpromoteLow")]), (.atom "a")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1213⟩⟩
+
+/-- term 1764 -/
+def T.«fcvt_to_uint» : Term :=
+  ⟨1764, "fcvt_to_uint", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fcvt_to_uint"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.FcvtToUint")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1219⟩⟩
+
+/-- term 1765 -/
+def T.«fcvt_to_sint» : Term :=
+  ⟨1765, "fcvt_to_sint", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fcvt_to_sint"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.FcvtToSint")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1225⟩⟩
+
+/-- term 1766 -/
+def T.«fcvt_to_uint_sat» : Term :=
+  ⟨1766, "fcvt_to_uint_sat", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fcvt_to_uint_sat"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.FcvtToUintSat")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1231⟩⟩
+
+/-- term 1767 -/
+def T.«fcvt_to_sint_sat» : Term :=
+  ⟨1767, "fcvt_to_sint_sat", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fcvt_to_sint_sat"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.FcvtToSintSat")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1237⟩⟩
+
+/-- term 1768 -/
+def T.«x86_cvtt2dq» : Term :=
+  ⟨1768, "x86_cvtt2dq", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "x86_cvtt2dq"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.X86Cvtt2dq")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1243⟩⟩
+
+/-- term 1769 -/
+def T.«fcvt_from_uint» : Term :=
+  ⟨1769, "fcvt_from_uint", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fcvt_from_uint"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.FcvtFromUint")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1249⟩⟩
+
+/-- term 1770 -/
+def T.«fcvt_from_sint» : Term :=
+  ⟨1770, "fcvt_from_sint", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fcvt_from_sint"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.FcvtFromSint")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1255⟩⟩
+
+/-- term 1771 -/
+def T.«isplit» : Term :=
+  ⟨1771, "isplit", [14, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "isplit"), (.atom "ty"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Unary"), (.list [(.atom "Opcode.Isplit")]), (.atom "x")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1261⟩⟩
+
+/-- term 1772 -/
+def T.«iconcat» : Term :=
+  ⟨1772, "iconcat", [14, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "iconcat"), (.atom "ty"), (.atom "lo"), (.atom "hi")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.Binary"), (.list [(.atom "Opcode.Iconcat")]), (.list [(.atom "value_array_2"), (.atom "lo"), (.atom "hi")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1267⟩⟩
+
+/-- term 1773 -/
+def T.«atomic_rmw» : Term :=
+  ⟨1773, "atomic_rmw", [14, 137, 143, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "atomic_rmw"), (.atom "ty"), (.atom "MemFlags"), (.atom "AtomicRmwOp"), (.atom "p"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.AtomicRmw"), (.list [(.atom "Opcode.AtomicRmw")]), (.list [(.atom "value_array_2"), (.atom "p"), (.atom "x")]), (.atom "MemFlags"), (.atom "AtomicRmwOp")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1273⟩⟩
+
+/-- term 1774 -/
+def T.«atomic_cas» : Term :=
+  ⟨1774, "atomic_cas", [14, 137, 15, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "atomic_cas"), (.atom "ty"), (.atom "MemFlags"), (.atom "p"), (.atom "e"), (.atom "x")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.AtomicCas"), (.list [(.atom "Opcode.AtomicCas")]), (.list [(.atom "value_array_3"), (.atom "p"), (.atom "e"), (.atom "x")]), (.atom "MemFlags")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1279⟩⟩
+
+/-- term 1775 -/
+def T.«atomic_load» : Term :=
+  ⟨1775, "atomic_load", [14, 137, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "atomic_load"), (.atom "ty"), (.atom "MemFlags"), (.atom "p")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.LoadNoOffset"), (.list [(.atom "Opcode.AtomicLoad")]), (.atom "p"), (.atom "MemFlags")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1285⟩⟩
+
+/-- term 1776 -/
+def T.«atomic_store» : Term :=
+  ⟨1776, "atomic_store", [137, 15, 15], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "atomic_store"), (.atom "MemFlags"), (.atom "x"), (.atom "p")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.StoreNoOffset"), (.list [(.atom "Opcode.AtomicStore")]), (.list [(.atom "value_array_2"), (.atom "x"), (.atom "p")]), (.atom "MemFlags")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1291⟩⟩
+
+/-- term 1777 -/
+def T.«fence» : Term :=
+  ⟨1777, "fence", [], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "fence")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.NullAry"), (.list [(.atom "Opcode.Fence")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1297⟩⟩
+
+/-- term 1778 -/
+def T.«extract_vector» : Term :=
+  ⟨1778, "extract_vector", [14, 15, 141], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "extract_vector"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "inst_data_value"), (.atom "ty"), (.list [(.atom "InstructionData.BinaryImm8"), (.list [(.atom "Opcode.ExtractVector")]), (.atom "x"), (.atom "y")])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1303⟩⟩
+
+/-- term 1779 -/
+def T.«sequence_point» : Term :=
+  ⟨1779, "sequence_point", [], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "sequence_point")]), (.list [(.atom "inst_data_value"), (.atom "_"), (.list [(.atom "InstructionData.NullAry"), (.list [(.atom "Opcode.SequencePoint")])])])])))), ⟨"<OUT_DIR>/clif_lower.isle", 1309⟩⟩
+
+/-- term 1780 -/
+def T.«MultiReg.Empty» : Term :=
+  ⟨1780, "MultiReg.Empty", [], 26, (.enumVariant 0), ⟨"src/prelude_lower.isle", 28⟩⟩
+
+/-- term 1781 -/
+def T.«MultiReg.One» : Term :=
+  ⟨1781, "MultiReg.One", [27], 26, (.enumVariant 1), ⟨"src/prelude_lower.isle", 29⟩⟩
+
+/-- term 1782 -/
+def T.«MultiReg.Two» : Term :=
+  ⟨1782, "MultiReg.Two", [27, 27], 26, (.enumVariant 2), ⟨"src/prelude_lower.isle", 30⟩⟩
+
+/-- term 1783 -/
+def T.«MultiReg.Three» : Term :=
+  ⟨1783, "MultiReg.Three", [27, 27, 27], 26, (.enumVariant 3), ⟨"src/prelude_lower.isle", 31⟩⟩
+
+/-- term 1784 -/
+def T.«MultiReg.Four» : Term :=
+  ⟨1784, "MultiReg.Four", [27, 27, 27, 27], 26, (.enumVariant 4), ⟨"src/prelude_lower.isle", 32⟩⟩
+
+/-- term 1785 -/
+def T.«RelocDistance.Near» : Term :=
+  ⟨1785, "RelocDistance.Near", [], 38, (.enumVariant 0), ⟨"src/prelude_lower.isle", 220⟩⟩
+
+/-- term 1786 -/
+def T.«RelocDistance.Far» : Term :=
+  ⟨1786, "RelocDistance.Far", [], 38, (.enumVariant 1), ⟨"src/prelude_lower.isle", 220⟩⟩
+
+/-- term 1787 -/
+def T.«SideEffectNoResult.Inst» : Term :=
+  ⟨1787, "SideEffectNoResult.Inst", [58], 46, (.enumVariant 0), ⟨"src/prelude_lower.isle", 512⟩⟩
+
+/-- term 1788 -/
+def T.«SideEffectNoResult.Inst2» : Term :=
+  ⟨1788, "SideEffectNoResult.Inst2", [58, 58], 46, (.enumVariant 1), ⟨"src/prelude_lower.isle", 513⟩⟩
+
+/-- term 1789 -/
+def T.«SideEffectNoResult.Inst3» : Term :=
+  ⟨1789, "SideEffectNoResult.Inst3", [58, 58, 58], 46, (.enumVariant 2), ⟨"src/prelude_lower.isle", 515⟩⟩
+
+/-- term 1790 -/
+def T.«ProducesFlags.AlreadyExistingFlags» : Term :=
+  ⟨1790, "ProducesFlags.AlreadyExistingFlags", [], 47, (.enumVariant 0), ⟨"src/prelude_lower.isle", 573⟩⟩
+
+/-- term 1791 -/
+def T.«ProducesFlags.ProducesFlagsSideEffect» : Term :=
+  ⟨1791, "ProducesFlags.ProducesFlagsSideEffect", [58], 47, (.enumVariant 1), ⟨"src/prelude_lower.isle", 574⟩⟩
+
+/-- term 1792 -/
+def T.«ProducesFlags.ProducesFlagsTwiceSideEffect» : Term :=
+  ⟨1792, "ProducesFlags.ProducesFlagsTwiceSideEffect", [58, 58], 47, (.enumVariant 2), ⟨"src/prelude_lower.isle", 575⟩⟩
+
+/-- term 1793 -/
+def T.«ProducesFlags.ProducesFlagsReturnsReg» : Term :=
+  ⟨1793, "ProducesFlags.ProducesFlagsReturnsReg", [58, 27], 47, (.enumVariant 3), ⟨"src/prelude_lower.isle", 578⟩⟩
+
+/-- term 1794 -/
+def T.«ProducesFlags.ProducesFlagsReturnsResultWithConsumer» : Term :=
+  ⟨1794, "ProducesFlags.ProducesFlagsReturnsResultWithConsumer", [58, 27], 47, (.enumVariant 4), ⟨"src/prelude_lower.isle", 579⟩⟩
+
+/-- term 1795 -/
+def T.«ProducesFlags.ProducesFlagsOpportunisticDef» : Term :=
+  ⟨1795, "ProducesFlags.ProducesFlagsOpportunisticDef", [58, 27, 15], 47, (.enumVariant 5), ⟨"src/prelude_lower.isle", 596⟩⟩
+
+/-- term 1796 -/
+def T.«ProducesFlags.ProducesFlagsOpportunisticDef2» : Term :=
+  ⟨1796, "ProducesFlags.ProducesFlagsOpportunisticDef2", [58, 27, 15, 58], 47, (.enumVariant 6), ⟨"src/prelude_lower.isle", 599⟩⟩
+
+/-- term 1797 -/
+def T.«ConsumesAndProducesFlags.SideEffect» : Term :=
+  ⟨1797, "ConsumesAndProducesFlags.SideEffect", [58], 48, (.enumVariant 0), ⟨"src/prelude_lower.isle", 649⟩⟩
+
+/-- term 1798 -/
+def T.«ConsumesAndProducesFlags.ReturnsReg» : Term :=
+  ⟨1798, "ConsumesAndProducesFlags.ReturnsReg", [58, 27], 48, (.enumVariant 1), ⟨"src/prelude_lower.isle", 650⟩⟩
+
+/-- term 1799 -/
+def T.«ConsumesFlags.ConsumesFlagsSideEffect» : Term :=
+  ⟨1799, "ConsumesFlags.ConsumesFlagsSideEffect", [58], 49, (.enumVariant 0), ⟨"src/prelude_lower.isle", 663⟩⟩
+
+/-- term 1800 -/
+def T.«ConsumesFlags.ConsumesFlagsSideEffect2» : Term :=
+  ⟨1800, "ConsumesFlags.ConsumesFlagsSideEffect2", [58, 58], 49, (.enumVariant 1), ⟨"src/prelude_lower.isle", 664⟩⟩
+
+/-- term 1801 -/
+def T.«ConsumesFlags.ConsumesFlagsReturnsResultWithProducer» : Term :=
+  ⟨1801, "ConsumesFlags.ConsumesFlagsReturnsResultWithProducer", [58, 27], 49, (.enumVariant 2), ⟨"src/prelude_lower.isle", 665⟩⟩
+
+/-- term 1802 -/
+def T.«ConsumesFlags.ConsumesFlagsReturnsReg» : Term :=
+  ⟨1802, "ConsumesFlags.ConsumesFlagsReturnsReg", [58, 27], 49, (.enumVariant 3), ⟨"src/prelude_lower.isle", 666⟩⟩
+
+/-- term 1803 -/
+def T.«ConsumesFlags.ConsumesFlagsTwiceReturnsValueRegs» : Term :=
+  ⟨1803, "ConsumesFlags.ConsumesFlagsTwiceReturnsValueRegs", [58, 58, 22], 49, (.enumVariant 4), ⟨"src/prelude_lower.isle", 667⟩⟩
+
+/-- term 1804 -/
+def T.«ConsumesFlags.ConsumesFlagsFourTimesReturnsValueRegs» : Term :=
+  ⟨1804, "ConsumesFlags.ConsumesFlagsFourTimesReturnsValueRegs", [58, 58, 58, 58, 22], 49, (.enumVariant 5), ⟨"src/prelude_lower.isle", 670⟩⟩
+
+/-- term 1805 -/
+def T.«ConsumesFlags.ConsumesFlagsNop» : Term :=
+  ⟨1805, "ConsumesFlags.ConsumesFlagsNop", [], 49, (.enumVariant 6), ⟨"src/prelude_lower.isle", 675⟩⟩
+
+/-- term 1806 -/
+def T.«TlsModel.None» : Term :=
+  ⟨1806, "TlsModel.None", [], 50, (.enumVariant 0), ⟨"src/prelude_lower.isle", 1303⟩⟩
+
+/-- term 1807 -/
+def T.«TlsModel.ElfGd» : Term :=
+  ⟨1807, "TlsModel.ElfGd", [], 50, (.enumVariant 1), ⟨"src/prelude_lower.isle", 1303⟩⟩
+
+/-- term 1808 -/
+def T.«TlsModel.Macho» : Term :=
+  ⟨1808, "TlsModel.Macho", [], 50, (.enumVariant 2), ⟨"src/prelude_lower.isle", 1303⟩⟩
+
+/-- term 1809 -/
+def T.«TlsModel.Coff» : Term :=
+  ⟨1809, "TlsModel.Coff", [], 50, (.enumVariant 3), ⟨"src/prelude_lower.isle", 1303⟩⟩
+
+/-- term 1810 -/
+def T.«StackSwitchModel.None» : Term :=
+  ⟨1810, "StackSwitchModel.None", [], 51, (.enumVariant 0), ⟨"src/prelude_lower.isle", 1322⟩⟩
+
+/-- term 1811 -/
+def T.«StackSwitchModel.Basic» : Term :=
+  ⟨1811, "StackSwitchModel.Basic", [], 51, (.enumVariant 1), ⟨"src/prelude_lower.isle", 1322⟩⟩
+
+/-- term 1812 -/
+def T.«StackSwitchModel.UpdateWindowsTib» : Term :=
+  ⟨1812, "StackSwitchModel.UpdateWindowsTib", [], 51, (.enumVariant 2), ⟨"src/prelude_lower.isle", 1322⟩⟩
+
+/-- term 1813 -/
+def T.«ABIArgSlot.Reg» : Term :=
+  ⟨1813, "ABIArgSlot.Reg", [55, 14, 56], 54, (.enumVariant 0), ⟨"src/prelude_lower.isle", 1405⟩⟩
+
+/-- term 1814 -/
+def T.«ABIArgSlot.Stack» : Term :=
+  ⟨1814, "ABIArgSlot.Stack", [10, 14, 56], 54, (.enumVariant 1), ⟨"src/prelude_lower.isle", 1409⟩⟩
+
+/-- term 1815 -/
+def T.«ArgumentExtension.None» : Term :=
+  ⟨1815, "ArgumentExtension.None", [], 56, (.enumVariant 0), ⟨"src/prelude_lower.isle", 1420⟩⟩
+
+/-- term 1816 -/
+def T.«ArgumentExtension.Uext» : Term :=
+  ⟨1816, "ArgumentExtension.Uext", [], 56, (.enumVariant 1), ⟨"src/prelude_lower.isle", 1421⟩⟩
+
+/-- term 1817 -/
+def T.«ArgumentExtension.Sext» : Term :=
+  ⟨1817, "ArgumentExtension.Sext", [], 56, (.enumVariant 2), ⟨"src/prelude_lower.isle", 1422⟩⟩
+
+/-- term 1818 -/
+def T.«MInst.Nop0» : Term :=
+  ⟨1818, "MInst.Nop0", [], 58, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 13⟩⟩
+
+/-- term 1819 -/
+def T.«MInst.Nop4» : Term :=
+  ⟨1819, "MInst.Nop4", [], 58, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 16⟩⟩
+
+/-- term 1820 -/
+def T.«MInst.AluRRR» : Term :=
+  ⟨1820, "MInst.AluRRR", [59, 93, 28, 27, 27], 58, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 19⟩⟩
+
+/-- term 1821 -/
+def T.«MInst.AluRRRR» : Term :=
+  ⟨1821, "MInst.AluRRRR", [60, 93, 28, 27, 27, 27], 58, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 27⟩⟩
+
+/-- term 1822 -/
+def T.«MInst.AluRRImm12» : Term :=
+  ⟨1822, "MInst.AluRRImm12", [59, 93, 28, 27, 64], 58, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 37⟩⟩
+
+/-- term 1823 -/
+def T.«MInst.AluRRImmLogic» : Term :=
+  ⟨1823, "MInst.AluRRImmLogic", [59, 93, 28, 27, 65], 58, (.enumVariant 5), ⟨"src/isa/aarch64/inst.isle", 45⟩⟩
+
+/-- term 1824 -/
+def T.«MInst.AluRRImmShift» : Term :=
+  ⟨1824, "MInst.AluRRImmShift", [59, 93, 28, 27, 66], 58, (.enumVariant 6), ⟨"src/isa/aarch64/inst.isle", 53⟩⟩
+
+/-- term 1825 -/
+def T.«MInst.AluRRRShift» : Term :=
+  ⟨1825, "MInst.AluRRRShift", [59, 93, 28, 27, 27, 68], 58, (.enumVariant 7), ⟨"src/isa/aarch64/inst.isle", 62⟩⟩
+
+/-- term 1826 -/
+def T.«MInst.AluRRRExtend» : Term :=
+  ⟨1826, "MInst.AluRRRExtend", [59, 93, 28, 27, 27, 84], 58, (.enumVariant 8), ⟨"src/isa/aarch64/inst.isle", 72⟩⟩
+
+/-- term 1827 -/
+def T.«MInst.BitRR» : Term :=
+  ⟨1827, "MInst.BitRR", [85, 93, 28, 27], 58, (.enumVariant 9), ⟨"src/isa/aarch64/inst.isle", 81⟩⟩
+
+/-- term 1828 -/
+def T.«MInst.ULoad8» : Term :=
+  ⟨1828, "MInst.ULoad8", [28, 89, 142], 58, (.enumVariant 10), ⟨"src/isa/aarch64/inst.isle", 88⟩⟩
+
+/-- term 1829 -/
+def T.«MInst.SLoad8» : Term :=
+  ⟨1829, "MInst.SLoad8", [28, 89, 142], 58, (.enumVariant 11), ⟨"src/isa/aarch64/inst.isle", 94⟩⟩
+
+/-- term 1830 -/
+def T.«MInst.ULoad16» : Term :=
+  ⟨1830, "MInst.ULoad16", [28, 89, 142], 58, (.enumVariant 12), ⟨"src/isa/aarch64/inst.isle", 100⟩⟩
+
+/-- term 1831 -/
+def T.«MInst.SLoad16» : Term :=
+  ⟨1831, "MInst.SLoad16", [28, 89, 142], 58, (.enumVariant 13), ⟨"src/isa/aarch64/inst.isle", 106⟩⟩
+
+/-- term 1832 -/
+def T.«MInst.ULoad32» : Term :=
+  ⟨1832, "MInst.ULoad32", [28, 89, 142], 58, (.enumVariant 14), ⟨"src/isa/aarch64/inst.isle", 112⟩⟩
+
+/-- term 1833 -/
+def T.«MInst.SLoad32» : Term :=
+  ⟨1833, "MInst.SLoad32", [28, 89, 142], 58, (.enumVariant 15), ⟨"src/isa/aarch64/inst.isle", 118⟩⟩
+
+/-- term 1834 -/
+def T.«MInst.ULoad64» : Term :=
+  ⟨1834, "MInst.ULoad64", [28, 89, 142], 58, (.enumVariant 16), ⟨"src/isa/aarch64/inst.isle", 124⟩⟩
+
+/-- term 1835 -/
+def T.«MInst.Store8» : Term :=
+  ⟨1835, "MInst.Store8", [27, 89, 142], 58, (.enumVariant 17), ⟨"src/isa/aarch64/inst.isle", 130⟩⟩
+
+/-- term 1836 -/
+def T.«MInst.Store16» : Term :=
+  ⟨1836, "MInst.Store16", [27, 89, 142], 58, (.enumVariant 18), ⟨"src/isa/aarch64/inst.isle", 136⟩⟩
+
+/-- term 1837 -/
+def T.«MInst.Store32» : Term :=
+  ⟨1837, "MInst.Store32", [27, 89, 142], 58, (.enumVariant 19), ⟨"src/isa/aarch64/inst.isle", 142⟩⟩
+
+/-- term 1838 -/
+def T.«MInst.Store64» : Term :=
+  ⟨1838, "MInst.Store64", [27, 89, 142], 58, (.enumVariant 20), ⟨"src/isa/aarch64/inst.isle", 148⟩⟩
+
+/-- term 1839 -/
+def T.«MInst.StoreP64» : Term :=
+  ⟨1839, "MInst.StoreP64", [27, 27, 90, 142], 58, (.enumVariant 21), ⟨"src/isa/aarch64/inst.isle", 154⟩⟩
+
+/-- term 1840 -/
+def T.«MInst.LoadP64» : Term :=
+  ⟨1840, "MInst.LoadP64", [28, 28, 90, 142], 58, (.enumVariant 22), ⟨"src/isa/aarch64/inst.isle", 161⟩⟩
+
+/-- term 1841 -/
+def T.«MInst.Mov» : Term :=
+  ⟨1841, "MInst.Mov", [93, 28, 27], 58, (.enumVariant 23), ⟨"src/isa/aarch64/inst.isle", 171⟩⟩
+
+/-- term 1842 -/
+def T.«MInst.MovFromPReg» : Term :=
+  ⟨1842, "MInst.MovFromPReg", [28, 32], 58, (.enumVariant 24), ⟨"src/isa/aarch64/inst.isle", 178⟩⟩
+
+/-- term 1843 -/
+def T.«MInst.MovToPReg» : Term :=
+  ⟨1843, "MInst.MovToPReg", [32, 27], 58, (.enumVariant 25), ⟨"src/isa/aarch64/inst.isle", 184⟩⟩
+
+/-- term 1844 -/
+def T.«MInst.MovWide» : Term :=
+  ⟨1844, "MInst.MovWide", [61, 28, 69, 93], 58, (.enumVariant 26), ⟨"src/isa/aarch64/inst.isle", 189⟩⟩
+
+/-- term 1845 -/
+def T.«MInst.MovK» : Term :=
+  ⟨1845, "MInst.MovK", [28, 27, 69, 93], 58, (.enumVariant 27), ⟨"src/isa/aarch64/inst.isle", 198⟩⟩
+
+/-- term 1846 -/
+def T.«MInst.Extend» : Term :=
+  ⟨1846, "MInst.Extend", [28, 27, 0, 1, 1], 58, (.enumVariant 28), ⟨"src/isa/aarch64/inst.isle", 205⟩⟩
+
+/-- term 1847 -/
+def T.«MInst.BitfieldMove» : Term :=
+  ⟨1847, "MInst.BitfieldMove", [93, 62, 28, 27, 67, 67], 58, (.enumVariant 29), ⟨"src/isa/aarch64/inst.isle", 214⟩⟩
+
+/-- term 1848 -/
+def T.«MInst.BitfieldMoveMod» : Term :=
+  ⟨1848, "MInst.BitfieldMoveMod", [93, 28, 27, 27, 67, 67], 58, (.enumVariant 30), ⟨"src/isa/aarch64/inst.isle", 225⟩⟩
+
+/-- term 1849 -/
+def T.«MInst.CSel» : Term :=
+  ⟨1849, "MInst.CSel", [28, 96, 27, 27], 58, (.enumVariant 31), ⟨"src/isa/aarch64/inst.isle", 234⟩⟩
+
+/-- term 1850 -/
+def T.«MInst.CSNeg» : Term :=
+  ⟨1850, "MInst.CSNeg", [28, 96, 27, 27], 58, (.enumVariant 32), ⟨"src/isa/aarch64/inst.isle", 241⟩⟩
+
+/-- term 1851 -/
+def T.«MInst.CSet» : Term :=
+  ⟨1851, "MInst.CSet", [28, 96], 58, (.enumVariant 33), ⟨"src/isa/aarch64/inst.isle", 248⟩⟩
+
+/-- term 1852 -/
+def T.«MInst.CSetm» : Term :=
+  ⟨1852, "MInst.CSetm", [28, 96], 58, (.enumVariant 34), ⟨"src/isa/aarch64/inst.isle", 253⟩⟩
+
+/-- term 1853 -/
+def T.«MInst.CCmp» : Term :=
+  ⟨1853, "MInst.CCmp", [93, 27, 27, 70, 96], 58, (.enumVariant 35), ⟨"src/isa/aarch64/inst.isle", 258⟩⟩
+
+/-- term 1854 -/
+def T.«MInst.CCmpImm» : Term :=
+  ⟨1854, "MInst.CCmpImm", [93, 27, 63, 70, 96], 58, (.enumVariant 36), ⟨"src/isa/aarch64/inst.isle", 266⟩⟩
+
+/-- term 1855 -/
+def T.«MInst.AtomicRMWLoop» : Term :=
+  ⟨1855, "MInst.AtomicRMWLoop", [14, 118, 142, 27, 27, 28, 28, 28], 58, (.enumVariant 37), ⟨"src/isa/aarch64/inst.isle", 285⟩⟩
+
+/-- term 1856 -/
+def T.«MInst.AtomicCASLoop» : Term :=
+  ⟨1856, "MInst.AtomicCASLoop", [14, 142, 27, 27, 27, 28, 28], 58, (.enumVariant 38), ⟨"src/isa/aarch64/inst.isle", 304⟩⟩
+
+/-- term 1857 -/
+def T.«MInst.AtomicRMW» : Term :=
+  ⟨1857, "MInst.AtomicRMW", [117, 27, 28, 27, 14, 142], 58, (.enumVariant 39), ⟨"src/isa/aarch64/inst.isle", 316⟩⟩
+
+/-- term 1858 -/
+def T.«MInst.AtomicCAS» : Term :=
+  ⟨1858, "MInst.AtomicCAS", [28, 27, 27, 27, 14, 142], 58, (.enumVariant 40), ⟨"src/isa/aarch64/inst.isle", 327⟩⟩
+
+/-- term 1859 -/
+def T.«MInst.AtomicCAS128» : Term :=
+  ⟨1859, "MInst.AtomicCAS128", [80], 58, (.enumVariant 41), ⟨"src/isa/aarch64/inst.isle", 339⟩⟩
+
+/-- term 1860 -/
+def T.«MInst.LoadAcquire» : Term :=
+  ⟨1860, "MInst.LoadAcquire", [14, 28, 27, 142], 58, (.enumVariant 42), ⟨"src/isa/aarch64/inst.isle", 344⟩⟩
+
+/-- term 1861 -/
+def T.«MInst.StoreRelease» : Term :=
+  ⟨1861, "MInst.StoreRelease", [14, 27, 27, 142], 58, (.enumVariant 43), ⟨"src/isa/aarch64/inst.isle", 352⟩⟩
+
+/-- term 1862 -/
+def T.«MInst.Fence» : Term :=
+  ⟨1862, "MInst.Fence", [], 58, (.enumVariant 44), ⟨"src/isa/aarch64/inst.isle", 361⟩⟩
+
+/-- term 1863 -/
+def T.«MInst.Csdb» : Term :=
+  ⟨1863, "MInst.Csdb", [], 58, (.enumVariant 45), ⟨"src/isa/aarch64/inst.isle", 364⟩⟩
+
+/-- term 1864 -/
+def T.«MInst.FpuMove32» : Term :=
+  ⟨1864, "MInst.FpuMove32", [28, 27], 58, (.enumVariant 46), ⟨"src/isa/aarch64/inst.isle", 367⟩⟩
+
+/-- term 1865 -/
+def T.«MInst.FpuMove64» : Term :=
+  ⟨1865, "MInst.FpuMove64", [28, 27], 58, (.enumVariant 47), ⟨"src/isa/aarch64/inst.isle", 373⟩⟩
+
+/-- term 1866 -/
+def T.«MInst.FpuMove128» : Term :=
+  ⟨1866, "MInst.FpuMove128", [28, 27], 58, (.enumVariant 48), ⟨"src/isa/aarch64/inst.isle", 378⟩⟩
+
+/-- term 1867 -/
+def T.«MInst.FpuMoveFromVec» : Term :=
+  ⟨1867, "MInst.FpuMoveFromVec", [28, 27, 1, 97], 58, (.enumVariant 49), ⟨"src/isa/aarch64/inst.isle", 383⟩⟩
+
+/-- term 1868 -/
+def T.«MInst.FpuExtend» : Term :=
+  ⟨1868, "MInst.FpuExtend", [28, 27, 95], 58, (.enumVariant 50), ⟨"src/isa/aarch64/inst.isle", 391⟩⟩
+
+/-- term 1869 -/
+def T.«MInst.FpuRR» : Term :=
+  ⟨1869, "MInst.FpuRR", [98, 95, 28, 27], 58, (.enumVariant 51), ⟨"src/isa/aarch64/inst.isle", 397⟩⟩
+
+/-- term 1870 -/
+def T.«MInst.FpuRRR» : Term :=
+  ⟨1870, "MInst.FpuRRR", [99, 95, 28, 27, 27], 58, (.enumVariant 52), ⟨"src/isa/aarch64/inst.isle", 404⟩⟩
+
+/-- term 1871 -/
+def T.«MInst.FpuRRI» : Term :=
+  ⟨1871, "MInst.FpuRRI", [91, 28, 27], 58, (.enumVariant 53), ⟨"src/isa/aarch64/inst.isle", 411⟩⟩
+
+/-- term 1872 -/
+def T.«MInst.FpuRRIMod» : Term :=
+  ⟨1872, "MInst.FpuRRIMod", [92, 28, 27, 27], 58, (.enumVariant 54), ⟨"src/isa/aarch64/inst.isle", 419⟩⟩
+
+/-- term 1873 -/
+def T.«MInst.FpuRRRR» : Term :=
+  ⟨1873, "MInst.FpuRRRR", [100, 95, 28, 27, 27, 27], 58, (.enumVariant 55), ⟨"src/isa/aarch64/inst.isle", 427⟩⟩
+
+/-- term 1874 -/
+def T.«MInst.FpuCmp» : Term :=
+  ⟨1874, "MInst.FpuCmp", [95, 27, 27], 58, (.enumVariant 56), ⟨"src/isa/aarch64/inst.isle", 436⟩⟩
+
+/-- term 1875 -/
+def T.«MInst.FpuLoad16» : Term :=
+  ⟨1875, "MInst.FpuLoad16", [28, 89, 142], 58, (.enumVariant 57), ⟨"src/isa/aarch64/inst.isle", 442⟩⟩
+
+/-- term 1876 -/
+def T.«MInst.FpuStore16» : Term :=
+  ⟨1876, "MInst.FpuStore16", [27, 89, 142], 58, (.enumVariant 58), ⟨"src/isa/aarch64/inst.isle", 448⟩⟩
+
+/-- term 1877 -/
+def T.«MInst.FpuLoad32» : Term :=
+  ⟨1877, "MInst.FpuLoad32", [28, 89, 142], 58, (.enumVariant 59), ⟨"src/isa/aarch64/inst.isle", 454⟩⟩
+
+/-- term 1878 -/
+def T.«MInst.FpuStore32» : Term :=
+  ⟨1878, "MInst.FpuStore32", [27, 89, 142], 58, (.enumVariant 60), ⟨"src/isa/aarch64/inst.isle", 460⟩⟩
+
+/-- term 1879 -/
+def T.«MInst.FpuLoad64» : Term :=
+  ⟨1879, "MInst.FpuLoad64", [28, 89, 142], 58, (.enumVariant 61), ⟨"src/isa/aarch64/inst.isle", 466⟩⟩
+
+/-- term 1880 -/
+def T.«MInst.FpuStore64» : Term :=
+  ⟨1880, "MInst.FpuStore64", [27, 89, 142], 58, (.enumVariant 62), ⟨"src/isa/aarch64/inst.isle", 472⟩⟩
+
+/-- term 1881 -/
+def T.«MInst.FpuLoad128» : Term :=
+  ⟨1881, "MInst.FpuLoad128", [28, 89, 142], 58, (.enumVariant 63), ⟨"src/isa/aarch64/inst.isle", 478⟩⟩
+
+/-- term 1882 -/
+def T.«MInst.FpuStore128» : Term :=
+  ⟨1882, "MInst.FpuStore128", [27, 89, 142], 58, (.enumVariant 64), ⟨"src/isa/aarch64/inst.isle", 484⟩⟩
+
+/-- term 1883 -/
+def T.«MInst.FpuLoadP64» : Term :=
+  ⟨1883, "MInst.FpuLoadP64", [28, 28, 90, 142], 58, (.enumVariant 65), ⟨"src/isa/aarch64/inst.isle", 490⟩⟩
+
+/-- term 1884 -/
+def T.«MInst.FpuStoreP64» : Term :=
+  ⟨1884, "MInst.FpuStoreP64", [27, 27, 90, 142], 58, (.enumVariant 66), ⟨"src/isa/aarch64/inst.isle", 497⟩⟩
+
+/-- term 1885 -/
+def T.«MInst.FpuLoadP128» : Term :=
+  ⟨1885, "MInst.FpuLoadP128", [28, 28, 90, 142], 58, (.enumVariant 67), ⟨"src/isa/aarch64/inst.isle", 504⟩⟩
+
+/-- term 1886 -/
+def T.«MInst.FpuStoreP128» : Term :=
+  ⟨1886, "MInst.FpuStoreP128", [27, 27, 90, 142], 58, (.enumVariant 68), ⟨"src/isa/aarch64/inst.isle", 511⟩⟩
+
+/-- term 1887 -/
+def T.«MInst.FpuToInt» : Term :=
+  ⟨1887, "MInst.FpuToInt", [101, 28, 27], 58, (.enumVariant 69), ⟨"src/isa/aarch64/inst.isle", 518⟩⟩
+
+/-- term 1888 -/
+def T.«MInst.IntToFpu» : Term :=
+  ⟨1888, "MInst.IntToFpu", [102, 28, 27], 58, (.enumVariant 70), ⟨"src/isa/aarch64/inst.isle", 524⟩⟩
+
+/-- term 1889 -/
+def T.«MInst.FpuCSel16» : Term :=
+  ⟨1889, "MInst.FpuCSel16", [28, 27, 27, 96], 58, (.enumVariant 71), ⟨"src/isa/aarch64/inst.isle", 531⟩⟩
+
+/-- term 1890 -/
+def T.«MInst.FpuCSel32» : Term :=
+  ⟨1890, "MInst.FpuCSel32", [28, 27, 27, 96], 58, (.enumVariant 72), ⟨"src/isa/aarch64/inst.isle", 538⟩⟩
+
+/-- term 1891 -/
+def T.«MInst.FpuCSel64» : Term :=
+  ⟨1891, "MInst.FpuCSel64", [28, 27, 27, 96], 58, (.enumVariant 73), ⟨"src/isa/aarch64/inst.isle", 545⟩⟩
+
+/-- term 1892 -/
+def T.«MInst.FpuRound» : Term :=
+  ⟨1892, "MInst.FpuRound", [103, 28, 27], 58, (.enumVariant 74), ⟨"src/isa/aarch64/inst.isle", 552⟩⟩
+
+/-- term 1893 -/
+def T.«MInst.MovToFpu» : Term :=
+  ⟨1893, "MInst.MovToFpu", [28, 27, 95], 58, (.enumVariant 75), ⟨"src/isa/aarch64/inst.isle", 560⟩⟩
+
+/-- term 1894 -/
+def T.«MInst.FpuMoveFPImm» : Term :=
+  ⟨1894, "MInst.FpuMoveFPImm", [28, 71, 95], 58, (.enumVariant 76), ⟨"src/isa/aarch64/inst.isle", 566⟩⟩
+
+/-- term 1895 -/
+def T.«MInst.MovToVec» : Term :=
+  ⟨1895, "MInst.MovToVec", [28, 27, 27, 1, 97], 58, (.enumVariant 77), ⟨"src/isa/aarch64/inst.isle", 572⟩⟩
+
+/-- term 1896 -/
+def T.«MInst.MovFromVec» : Term :=
+  ⟨1896, "MInst.MovFromVec", [28, 27, 1, 95], 58, (.enumVariant 78), ⟨"src/isa/aarch64/inst.isle", 580⟩⟩
+
+/-- term 1897 -/
+def T.«MInst.MovFromVecSigned» : Term :=
+  ⟨1897, "MInst.MovFromVecSigned", [28, 27, 1, 97, 93], 58, (.enumVariant 79), ⟨"src/isa/aarch64/inst.isle", 587⟩⟩
+
+/-- term 1898 -/
+def T.«MInst.VecDup» : Term :=
+  ⟨1898, "MInst.VecDup", [28, 27, 97], 58, (.enumVariant 80), ⟨"src/isa/aarch64/inst.isle", 595⟩⟩
+
+/-- term 1899 -/
+def T.«MInst.VecDupFromFpu» : Term :=
+  ⟨1899, "MInst.VecDupFromFpu", [28, 27, 97, 1], 58, (.enumVariant 81), ⟨"src/isa/aarch64/inst.isle", 601⟩⟩
+
+/-- term 1900 -/
+def T.«MInst.VecDupFPImm» : Term :=
+  ⟨1900, "MInst.VecDupFPImm", [28, 71, 97], 58, (.enumVariant 82), ⟨"src/isa/aarch64/inst.isle", 608⟩⟩
+
+/-- term 1901 -/
+def T.«MInst.VecDupImm» : Term :=
+  ⟨1901, "MInst.VecDupImm", [28, 72, 0, 97], 58, (.enumVariant 83), ⟨"src/isa/aarch64/inst.isle", 614⟩⟩
+
+/-- term 1902 -/
+def T.«MInst.VecExtend» : Term :=
+  ⟨1902, "MInst.VecExtend", [104, 28, 27, 0, 95], 58, (.enumVariant 84), ⟨"src/isa/aarch64/inst.isle", 621⟩⟩
+
+/-- term 1903 -/
+def T.«MInst.VecMovElement» : Term :=
+  ⟨1903, "MInst.VecMovElement", [28, 27, 27, 1, 1, 97], 58, (.enumVariant 85), ⟨"src/isa/aarch64/inst.isle", 629⟩⟩
+
+/-- term 1904 -/
+def T.«MInst.VecRRLong» : Term :=
+  ⟨1904, "MInst.VecRRLong", [108, 28, 27, 0], 58, (.enumVariant 86), ⟨"src/isa/aarch64/inst.isle", 638⟩⟩
+
+/-- term 1905 -/
+def T.«MInst.VecRRNarrowLow» : Term :=
+  ⟨1905, "MInst.VecRRNarrowLow", [109, 28, 27, 95], 58, (.enumVariant 87), ⟨"src/isa/aarch64/inst.isle", 645⟩⟩
+
+/-- term 1906 -/
+def T.«MInst.VecRRNarrowHigh» : Term :=
+  ⟨1906, "MInst.VecRRNarrowHigh", [109, 28, 27, 27, 95], 58, (.enumVariant 88), ⟨"src/isa/aarch64/inst.isle", 652⟩⟩
+
+/-- term 1907 -/
+def T.«MInst.VecRRPair» : Term :=
+  ⟨1907, "MInst.VecRRPair", [112, 28, 27], 58, (.enumVariant 89), ⟨"src/isa/aarch64/inst.isle", 660⟩⟩
+
+/-- term 1908 -/
+def T.«MInst.VecRRRLong» : Term :=
+  ⟨1908, "MInst.VecRRRLong", [110, 28, 27, 27, 0], 58, (.enumVariant 90), ⟨"src/isa/aarch64/inst.isle", 667⟩⟩
+
+/-- term 1909 -/
+def T.«MInst.VecRRRLongMod» : Term :=
+  ⟨1909, "MInst.VecRRRLongMod", [111, 28, 27, 27, 27, 0], 58, (.enumVariant 91), ⟨"src/isa/aarch64/inst.isle", 677⟩⟩
+
+/-- term 1910 -/
+def T.«MInst.VecRRPairLong» : Term :=
+  ⟨1910, "MInst.VecRRPairLong", [113, 28, 27], 58, (.enumVariant 92), ⟨"src/isa/aarch64/inst.isle", 688⟩⟩
+
+/-- term 1911 -/
+def T.«MInst.VecRRR» : Term :=
+  ⟨1911, "MInst.VecRRR", [105, 28, 27, 27, 97], 58, (.enumVariant 93), ⟨"src/isa/aarch64/inst.isle", 694⟩⟩
+
+/-- term 1912 -/
+def T.«MInst.VecRRRMod» : Term :=
+  ⟨1912, "MInst.VecRRRMod", [106, 28, 27, 27, 27, 97], 58, (.enumVariant 94), ⟨"src/isa/aarch64/inst.isle", 702⟩⟩
+
+/-- term 1913 -/
+def T.«MInst.VecFmlaElem» : Term :=
+  ⟨1913, "MInst.VecFmlaElem", [106, 28, 27, 27, 27, 97, 1], 58, (.enumVariant 95), ⟨"src/isa/aarch64/inst.isle", 711⟩⟩
+
+/-- term 1914 -/
+def T.«MInst.VecMisc» : Term :=
+  ⟨1914, "MInst.VecMisc", [107, 28, 27, 97], 58, (.enumVariant 96), ⟨"src/isa/aarch64/inst.isle", 721⟩⟩
+
+/-- term 1915 -/
+def T.«MInst.VecLanes» : Term :=
+  ⟨1915, "MInst.VecLanes", [114, 28, 27, 97], 58, (.enumVariant 97), ⟨"src/isa/aarch64/inst.isle", 728⟩⟩
+
+/-- term 1916 -/
+def T.«MInst.VecShiftImm» : Term :=
+  ⟨1916, "MInst.VecShiftImm", [115, 28, 27, 97, 1], 58, (.enumVariant 98), ⟨"src/isa/aarch64/inst.isle", 739⟩⟩
+
+/-- term 1917 -/
+def T.«MInst.VecShiftImmMod» : Term :=
+  ⟨1917, "MInst.VecShiftImmMod", [116, 28, 27, 27, 97, 1], 58, (.enumVariant 99), ⟨"src/isa/aarch64/inst.isle", 747⟩⟩
+
+/-- term 1918 -/
+def T.«MInst.VecExtract» : Term :=
+  ⟨1918, "MInst.VecExtract", [28, 27, 27, 1], 58, (.enumVariant 100), ⟨"src/isa/aarch64/inst.isle", 757⟩⟩
+
+/-- term 1919 -/
+def T.«MInst.VecTbl» : Term :=
+  ⟨1919, "MInst.VecTbl", [28, 27, 27], 58, (.enumVariant 101), ⟨"src/isa/aarch64/inst.isle", 768⟩⟩
+
+/-- term 1920 -/
+def T.«MInst.VecTblExt» : Term :=
+  ⟨1920, "MInst.VecTblExt", [28, 27, 27, 27], 58, (.enumVariant 102), ⟨"src/isa/aarch64/inst.isle", 779⟩⟩
+
+/-- term 1921 -/
+def T.«MInst.VecTbl2» : Term :=
+  ⟨1921, "MInst.VecTbl2", [28, 27, 27, 27], 58, (.enumVariant 103), ⟨"src/isa/aarch64/inst.isle", 792⟩⟩
+
+/-- term 1922 -/
+def T.«MInst.VecTbl2Ext» : Term :=
+  ⟨1922, "MInst.VecTbl2Ext", [28, 27, 27, 27, 27], 58, (.enumVariant 104), ⟨"src/isa/aarch64/inst.isle", 806⟩⟩
+
+/-- term 1923 -/
+def T.«MInst.VecLoadReplicate» : Term :=
+  ⟨1923, "MInst.VecLoadReplicate", [28, 27, 97, 142], 58, (.enumVariant 105), ⟨"src/isa/aarch64/inst.isle", 814⟩⟩
+
+/-- term 1924 -/
+def T.«MInst.VecCSel» : Term :=
+  ⟨1924, "MInst.VecCSel", [28, 27, 27, 96], 58, (.enumVariant 106), ⟨"src/isa/aarch64/inst.isle", 822⟩⟩
+
+/-- term 1925 -/
+def T.«MInst.MovToNZCV» : Term :=
+  ⟨1925, "MInst.MovToNZCV", [27], 58, (.enumVariant 107), ⟨"src/isa/aarch64/inst.isle", 829⟩⟩
+
+/-- term 1926 -/
+def T.«MInst.MovFromNZCV» : Term :=
+  ⟨1926, "MInst.MovFromNZCV", [28], 58, (.enumVariant 108), ⟨"src/isa/aarch64/inst.isle", 833⟩⟩
+
+/-- term 1927 -/
+def T.«MInst.Call» : Term :=
+  ⟨1927, "MInst.Call", [74], 58, (.enumVariant 109), ⟨"src/isa/aarch64/inst.isle", 840⟩⟩
+
+/-- term 1928 -/
+def T.«MInst.CallInd» : Term :=
+  ⟨1928, "MInst.CallInd", [75], 58, (.enumVariant 110), ⟨"src/isa/aarch64/inst.isle", 843⟩⟩
+
+/-- term 1929 -/
+def T.«MInst.ReturnCall» : Term :=
+  ⟨1929, "MInst.ReturnCall", [76], 58, (.enumVariant 111), ⟨"src/isa/aarch64/inst.isle", 846⟩⟩
+
+/-- term 1930 -/
+def T.«MInst.ReturnCallInd» : Term :=
+  ⟨1930, "MInst.ReturnCallInd", [77], 58, (.enumVariant 112), ⟨"src/isa/aarch64/inst.isle", 849⟩⟩
+
+/-- term 1931 -/
+def T.«MInst.Args» : Term :=
+  ⟨1931, "MInst.Args", [39], 58, (.enumVariant 113), ⟨"src/isa/aarch64/inst.isle", 852⟩⟩
+
+/-- term 1932 -/
+def T.«MInst.Rets» : Term :=
+  ⟨1932, "MInst.Rets", [40], 58, (.enumVariant 114), ⟨"src/isa/aarch64/inst.isle", 856⟩⟩
+
+/-- term 1933 -/
+def T.«MInst.Ret» : Term :=
+  ⟨1933, "MInst.Ret", [], 58, (.enumVariant 115), ⟨"src/isa/aarch64/inst.isle", 862⟩⟩
+
+/-- term 1934 -/
+def T.«MInst.AuthenticatedRet» : Term :=
+  ⟨1934, "MInst.AuthenticatedRet", [119, 0], 58, (.enumVariant 116), ⟨"src/isa/aarch64/inst.isle", 869⟩⟩
+
+/-- term 1935 -/
+def T.«MInst.Jump» : Term :=
+  ⟨1935, "MInst.Jump", [78], 58, (.enumVariant 117), ⟨"src/isa/aarch64/inst.isle", 874⟩⟩
+
+/-- term 1936 -/
+def T.«MInst.CondBr» : Term :=
+  ⟨1936, "MInst.CondBr", [78, 78, 83], 58, (.enumVariant 118), ⟨"src/isa/aarch64/inst.isle", 881⟩⟩
+
+/-- term 1937 -/
+def T.«MInst.TestBitAndBranch» : Term :=
+  ⟨1937, "MInst.TestBitAndBranch", [94, 78, 78, 27, 1], 58, (.enumVariant 119), ⟨"src/isa/aarch64/inst.isle", 888⟩⟩
+
+/-- term 1938 -/
+def T.«MInst.TrapIf» : Term :=
+  ⟨1938, "MInst.TrapIf", [83, 146], 58, (.enumVariant 120), ⟨"src/isa/aarch64/inst.isle", 903⟩⟩
+
+/-- term 1939 -/
+def T.«MInst.IndirectBr» : Term :=
+  ⟨1939, "MInst.IndirectBr", [27, 82], 58, (.enumVariant 121), ⟨"src/isa/aarch64/inst.isle", 909⟩⟩
+
+/-- term 1940 -/
+def T.«MInst.Brk» : Term :=
+  ⟨1940, "MInst.Brk", [], 58, (.enumVariant 122), ⟨"src/isa/aarch64/inst.isle", 914⟩⟩
+
+/-- term 1941 -/
+def T.«MInst.Udf» : Term :=
+  ⟨1941, "MInst.Udf", [146], 58, (.enumVariant 123), ⟨"src/isa/aarch64/inst.isle", 918⟩⟩
+
+/-- term 1942 -/
+def T.«MInst.Adr» : Term :=
+  ⟨1942, "MInst.Adr", [28, 9], 58, (.enumVariant 124), ⟨"src/isa/aarch64/inst.isle", 925⟩⟩
+
+/-- term 1943 -/
+def T.«MInst.Adrp» : Term :=
+  ⟨1943, "MInst.Adrp", [28, 9], 58, (.enumVariant 125), ⟨"src/isa/aarch64/inst.isle", 931⟩⟩
+
+/-- term 1944 -/
+def T.«MInst.Word4» : Term :=
+  ⟨1944, "MInst.Word4", [3], 58, (.enumVariant 126), ⟨"src/isa/aarch64/inst.isle", 936⟩⟩
+
+/-- term 1945 -/
+def T.«MInst.Word8» : Term :=
+  ⟨1945, "MInst.Word8", [4], 58, (.enumVariant 127), ⟨"src/isa/aarch64/inst.isle", 940⟩⟩
+
+/-- term 1946 -/
+def T.«MInst.JTSequence» : Term :=
+  ⟨1946, "MInst.JTSequence", [33, 44, 27, 28, 28], 58, (.enumVariant 128), ⟨"src/isa/aarch64/inst.isle", 944⟩⟩
+
+/-- term 1947 -/
+def T.«MInst.LoadExtNameGot» : Term :=
+  ⟨1947, "MInst.LoadExtNameGot", [28, 37], 58, (.enumVariant 129), ⟨"src/isa/aarch64/inst.isle", 952⟩⟩
+
+/-- term 1948 -/
+def T.«MInst.LoadExtNameNear» : Term :=
+  ⟨1948, "MInst.LoadExtNameNear", [28, 37, 10], 58, (.enumVariant 130), ⟨"src/isa/aarch64/inst.isle", 955⟩⟩
+
+/-- term 1949 -/
+def T.«MInst.LoadExtNameFar» : Term :=
+  ⟨1949, "MInst.LoadExtNameFar", [28, 37, 10], 58, (.enumVariant 131), ⟨"src/isa/aarch64/inst.isle", 959⟩⟩
+
+/-- term 1950 -/
+def T.«MInst.LoadAddr» : Term :=
+  ⟨1950, "MInst.LoadAddr", [28, 89], 58, (.enumVariant 132), ⟨"src/isa/aarch64/inst.isle", 965⟩⟩
+
+/-- term 1951 -/
+def T.«MInst.Paci» : Term :=
+  ⟨1951, "MInst.Paci", [119], 58, (.enumVariant 133), ⟨"src/isa/aarch64/inst.isle", 972⟩⟩
+
+/-- term 1952 -/
+def T.«MInst.Xpaclri» : Term :=
+  ⟨1952, "MInst.Xpaclri", [], 58, (.enumVariant 134), ⟨"src/isa/aarch64/inst.isle", 978⟩⟩
+
+/-- term 1953 -/
+def T.«MInst.Bti» : Term :=
+  ⟨1953, "MInst.Bti", [120], 58, (.enumVariant 135), ⟨"src/isa/aarch64/inst.isle", 982⟩⟩
+
+/-- term 1954 -/
+def T.«MInst.EmitIsland» : Term :=
+  ⟨1954, "MInst.EmitIsland", [81], 58, (.enumVariant 136), ⟨"src/isa/aarch64/inst.isle", 1005⟩⟩
+
+/-- term 1955 -/
+def T.«MInst.ElfTlsGetAddr» : Term :=
+  ⟨1955, "MInst.ElfTlsGetAddr", [37, 28, 28], 58, (.enumVariant 137), ⟨"src/isa/aarch64/inst.isle", 1010⟩⟩
+
+/-- term 1956 -/
+def T.«MInst.MachOTlsGetAddr» : Term :=
+  ⟨1956, "MInst.MachOTlsGetAddr", [36, 28], 58, (.enumVariant 138), ⟨"src/isa/aarch64/inst.isle", 1015⟩⟩
+
+/-- term 1957 -/
+def T.«MInst.Unwind» : Term :=
+  ⟨1957, "MInst.Unwind", [35], 58, (.enumVariant 139), ⟨"src/isa/aarch64/inst.isle", 1020⟩⟩
+
+/-- term 1958 -/
+def T.«MInst.DummyUse» : Term :=
+  ⟨1958, "MInst.DummyUse", [27], 58, (.enumVariant 140), ⟨"src/isa/aarch64/inst.isle", 1024⟩⟩
+
+/-- term 1959 -/
+def T.«MInst.LabelAddress» : Term :=
+  ⟨1959, "MInst.LabelAddress", [28, 33], 58, (.enumVariant 141), ⟨"src/isa/aarch64/inst.isle", 1028⟩⟩
+
+/-- term 1960 -/
+def T.«MInst.SequencePoint» : Term :=
+  ⟨1960, "MInst.SequencePoint", [], 58, (.enumVariant 142), ⟨"src/isa/aarch64/inst.isle", 1032⟩⟩
+
+/-- term 1961 -/
+def T.«MInst.StackProbeLoop» : Term :=
+  ⟨1961, "MInst.StackProbeLoop", [28, 27, 64], 58, (.enumVariant 143), ⟨"src/isa/aarch64/inst.isle", 1039⟩⟩
+
+/-- term 1962 -/
+def T.«ALUOp.Add» : Term :=
+  ⟨1962, "ALUOp.Add", [], 59, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1238⟩⟩
+
+/-- term 1963 -/
+def T.«ALUOp.Sub» : Term :=
+  ⟨1963, "ALUOp.Sub", [], 59, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1239⟩⟩
+
+/-- term 1964 -/
+def T.«ALUOp.Orr» : Term :=
+  ⟨1964, "ALUOp.Orr", [], 59, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1240⟩⟩
+
+/-- term 1965 -/
+def T.«ALUOp.OrrNot» : Term :=
+  ⟨1965, "ALUOp.OrrNot", [], 59, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1241⟩⟩
+
+/-- term 1966 -/
+def T.«ALUOp.And» : Term :=
+  ⟨1966, "ALUOp.And", [], 59, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 1242⟩⟩
+
+/-- term 1967 -/
+def T.«ALUOp.AndS» : Term :=
+  ⟨1967, "ALUOp.AndS", [], 59, (.enumVariant 5), ⟨"src/isa/aarch64/inst.isle", 1243⟩⟩
+
+/-- term 1968 -/
+def T.«ALUOp.AndNot» : Term :=
+  ⟨1968, "ALUOp.AndNot", [], 59, (.enumVariant 6), ⟨"src/isa/aarch64/inst.isle", 1244⟩⟩
+
+/-- term 1969 -/
+def T.«ALUOp.Eor» : Term :=
+  ⟨1969, "ALUOp.Eor", [], 59, (.enumVariant 7), ⟨"src/isa/aarch64/inst.isle", 1246⟩⟩
+
+/-- term 1970 -/
+def T.«ALUOp.EorNot» : Term :=
+  ⟨1970, "ALUOp.EorNot", [], 59, (.enumVariant 8), ⟨"src/isa/aarch64/inst.isle", 1248⟩⟩
+
+/-- term 1971 -/
+def T.«ALUOp.AddS» : Term :=
+  ⟨1971, "ALUOp.AddS", [], 59, (.enumVariant 9), ⟨"src/isa/aarch64/inst.isle", 1250⟩⟩
+
+/-- term 1972 -/
+def T.«ALUOp.SubS» : Term :=
+  ⟨1972, "ALUOp.SubS", [], 59, (.enumVariant 10), ⟨"src/isa/aarch64/inst.isle", 1252⟩⟩
+
+/-- term 1973 -/
+def T.«ALUOp.SMulH» : Term :=
+  ⟨1973, "ALUOp.SMulH", [], 59, (.enumVariant 11), ⟨"src/isa/aarch64/inst.isle", 1254⟩⟩
+
+/-- term 1974 -/
+def T.«ALUOp.UMulH» : Term :=
+  ⟨1974, "ALUOp.UMulH", [], 59, (.enumVariant 12), ⟨"src/isa/aarch64/inst.isle", 1256⟩⟩
+
+/-- term 1975 -/
+def T.«ALUOp.SDiv» : Term :=
+  ⟨1975, "ALUOp.SDiv", [], 59, (.enumVariant 13), ⟨"src/isa/aarch64/inst.isle", 1257⟩⟩
+
+/-- term 1976 -/
+def T.«ALUOp.UDiv» : Term :=
+  ⟨1976, "ALUOp.UDiv", [], 59, (.enumVariant 14), ⟨"src/isa/aarch64/inst.isle", 1258⟩⟩
+
+/-- term 1977 -/
+def T.«ALUOp.Extr» : Term :=
+  ⟨1977, "ALUOp.Extr", [], 59, (.enumVariant 15), ⟨"src/isa/aarch64/inst.isle", 1259⟩⟩
+
+/-- term 1978 -/
+def T.«ALUOp.Lsr» : Term :=
+  ⟨1978, "ALUOp.Lsr", [], 59, (.enumVariant 16), ⟨"src/isa/aarch64/inst.isle", 1260⟩⟩
+
+/-- term 1979 -/
+def T.«ALUOp.Asr» : Term :=
+  ⟨1979, "ALUOp.Asr", [], 59, (.enumVariant 17), ⟨"src/isa/aarch64/inst.isle", 1261⟩⟩
+
+/-- term 1980 -/
+def T.«ALUOp.Lsl» : Term :=
+  ⟨1980, "ALUOp.Lsl", [], 59, (.enumVariant 18), ⟨"src/isa/aarch64/inst.isle", 1262⟩⟩
+
+/-- term 1981 -/
+def T.«ALUOp.Adc» : Term :=
+  ⟨1981, "ALUOp.Adc", [], 59, (.enumVariant 19), ⟨"src/isa/aarch64/inst.isle", 1264⟩⟩
+
+/-- term 1982 -/
+def T.«ALUOp.AdcS» : Term :=
+  ⟨1982, "ALUOp.AdcS", [], 59, (.enumVariant 20), ⟨"src/isa/aarch64/inst.isle", 1266⟩⟩
+
+/-- term 1983 -/
+def T.«ALUOp.Sbc» : Term :=
+  ⟨1983, "ALUOp.Sbc", [], 59, (.enumVariant 21), ⟨"src/isa/aarch64/inst.isle", 1268⟩⟩
+
+/-- term 1984 -/
+def T.«ALUOp.SbcS» : Term :=
+  ⟨1984, "ALUOp.SbcS", [], 59, (.enumVariant 22), ⟨"src/isa/aarch64/inst.isle", 1270⟩⟩
+
+/-- term 1985 -/
+def T.«ALUOp3.MAdd» : Term :=
+  ⟨1985, "ALUOp3.MAdd", [], 60, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1277⟩⟩
+
+/-- term 1986 -/
+def T.«ALUOp3.MSub» : Term :=
+  ⟨1986, "ALUOp3.MSub", [], 60, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1279⟩⟩
+
+/-- term 1987 -/
+def T.«ALUOp3.UMAddL» : Term :=
+  ⟨1987, "ALUOp3.UMAddL", [], 60, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1281⟩⟩
+
+/-- term 1988 -/
+def T.«ALUOp3.SMAddL» : Term :=
+  ⟨1988, "ALUOp3.SMAddL", [], 60, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1283⟩⟩
+
+/-- term 1989 -/
+def T.«MoveWideOp.MovZ» : Term :=
+  ⟨1989, "MoveWideOp.MovZ", [], 61, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1288⟩⟩
+
+/-- term 1990 -/
+def T.«MoveWideOp.MovN» : Term :=
+  ⟨1990, "MoveWideOp.MovN", [], 61, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1289⟩⟩
+
+/-- term 1991 -/
+def T.«BfmOp.UBfm» : Term :=
+  ⟨1991, "BfmOp.UBfm", [], 62, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1296⟩⟩
+
+/-- term 1992 -/
+def T.«BfmOp.SBfm» : Term :=
+  ⟨1992, "BfmOp.SBfm", [], 62, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1297⟩⟩
+
+/-- term 1993 -/
+def T.«CondBrKind.Zero» : Term :=
+  ⟨1993, "CondBrKind.Zero", [27, 93], 83, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1387⟩⟩
+
+/-- term 1994 -/
+def T.«CondBrKind.NotZero» : Term :=
+  ⟨1994, "CondBrKind.NotZero", [27, 93], 83, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1388⟩⟩
+
+/-- term 1995 -/
+def T.«CondBrKind.Cond» : Term :=
+  ⟨1995, "CondBrKind.Cond", [96], 83, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1389⟩⟩
+
+/-- term 1996 -/
+def T.«ExtendOp.UXTB» : Term :=
+  ⟨1996, "ExtendOp.UXTB", [], 84, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1398⟩⟩
+
+/-- term 1997 -/
+def T.«ExtendOp.UXTH» : Term :=
+  ⟨1997, "ExtendOp.UXTH", [], 84, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1399⟩⟩
+
+/-- term 1998 -/
+def T.«ExtendOp.UXTW» : Term :=
+  ⟨1998, "ExtendOp.UXTW", [], 84, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1400⟩⟩
+
+/-- term 1999 -/
+def T.«ExtendOp.UXTX» : Term :=
+  ⟨1999, "ExtendOp.UXTX", [], 84, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1401⟩⟩
+
+/-- term 2000 -/
+def T.«ExtendOp.SXTB» : Term :=
+  ⟨2000, "ExtendOp.SXTB", [], 84, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 1402⟩⟩
+
+/-- term 2001 -/
+def T.«ExtendOp.SXTH» : Term :=
+  ⟨2001, "ExtendOp.SXTH", [], 84, (.enumVariant 5), ⟨"src/isa/aarch64/inst.isle", 1403⟩⟩
+
+/-- term 2002 -/
+def T.«ExtendOp.SXTW» : Term :=
+  ⟨2002, "ExtendOp.SXTW", [], 84, (.enumVariant 6), ⟨"src/isa/aarch64/inst.isle", 1404⟩⟩
+
+/-- term 2003 -/
+def T.«ExtendOp.SXTX» : Term :=
+  ⟨2003, "ExtendOp.SXTX", [], 84, (.enumVariant 7), ⟨"src/isa/aarch64/inst.isle", 1405⟩⟩
+
+/-- term 2004 -/
+def T.«BitOp.RBit» : Term :=
+  ⟨2004, "BitOp.RBit", [], 85, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1413⟩⟩
+
+/-- term 2005 -/
+def T.«BitOp.Clz» : Term :=
+  ⟨2005, "BitOp.Clz", [], 85, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1414⟩⟩
+
+/-- term 2006 -/
+def T.«BitOp.Cls» : Term :=
+  ⟨2006, "BitOp.Cls", [], 85, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1415⟩⟩
+
+/-- term 2007 -/
+def T.«BitOp.Rev16» : Term :=
+  ⟨2007, "BitOp.Rev16", [], 85, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1417⟩⟩
+
+/-- term 2008 -/
+def T.«BitOp.Rev32» : Term :=
+  ⟨2008, "BitOp.Rev32", [], 85, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 1418⟩⟩
+
+/-- term 2009 -/
+def T.«BitOp.Rev64» : Term :=
+  ⟨2009, "BitOp.Rev64", [], 85, (.enumVariant 5), ⟨"src/isa/aarch64/inst.isle", 1419⟩⟩
+
+/-- term 2010 -/
+def T.«AMode.SPPostIndexed» : Term :=
+  ⟨2010, "AMode.SPPostIndexed", [87], 89, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1440⟩⟩
+
+/-- term 2011 -/
+def T.«AMode.SPPreIndexed» : Term :=
+  ⟨2011, "AMode.SPPreIndexed", [87], 89, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1446⟩⟩
+
+/-- term 2012 -/
+def T.«AMode.RegReg» : Term :=
+  ⟨2012, "AMode.RegReg", [27, 27], 89, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1454⟩⟩
+
+/-- term 2013 -/
+def T.«AMode.RegScaled» : Term :=
+  ⟨2013, "AMode.RegScaled", [27, 27], 89, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1459⟩⟩
+
+/-- term 2014 -/
+def T.«AMode.RegScaledExtended» : Term :=
+  ⟨2014, "AMode.RegScaledExtended", [27, 27, 84], 89, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 1465⟩⟩
+
+/-- term 2015 -/
+def T.«AMode.RegExtended» : Term :=
+  ⟨2015, "AMode.RegExtended", [27, 27, 84], 89, (.enumVariant 5), ⟨"src/isa/aarch64/inst.isle", 1472⟩⟩
+
+/-- term 2016 -/
+def T.«AMode.Unscaled» : Term :=
+  ⟨2016, "AMode.Unscaled", [27, 87], 89, (.enumVariant 6), ⟨"src/isa/aarch64/inst.isle", 1478⟩⟩
+
+/-- term 2017 -/
+def T.«AMode.UnsignedOffset» : Term :=
+  ⟨2017, "AMode.UnsignedOffset", [27, 88], 89, (.enumVariant 7), ⟨"src/isa/aarch64/inst.isle", 1483⟩⟩
+
+/-- term 2018 -/
+def T.«AMode.Label» : Term :=
+  ⟨2018, "AMode.Label", [86], 89, (.enumVariant 8), ⟨"src/isa/aarch64/inst.isle", 1490⟩⟩
+
+/-- term 2019 -/
+def T.«AMode.RegOffset» : Term :=
+  ⟨2019, "AMode.RegOffset", [27, 10], 89, (.enumVariant 9), ⟨"src/isa/aarch64/inst.isle", 1495⟩⟩
+
+/-- term 2020 -/
+def T.«AMode.SPOffset» : Term :=
+  ⟨2020, "AMode.SPOffset", [10], 89, (.enumVariant 10), ⟨"src/isa/aarch64/inst.isle", 1500⟩⟩
+
+/-- term 2021 -/
+def T.«AMode.FPOffset» : Term :=
+  ⟨2021, "AMode.FPOffset", [10], 89, (.enumVariant 11), ⟨"src/isa/aarch64/inst.isle", 1504⟩⟩
+
+/-- term 2022 -/
+def T.«AMode.Const» : Term :=
+  ⟨2022, "AMode.Const", [45], 89, (.enumVariant 12), ⟨"src/isa/aarch64/inst.isle", 1509⟩⟩
+
+/-- term 2023 -/
+def T.«AMode.IncomingArg» : Term :=
+  ⟨2023, "AMode.IncomingArg", [10], 89, (.enumVariant 13), ⟨"src/isa/aarch64/inst.isle", 1517⟩⟩
+
+/-- term 2024 -/
+def T.«AMode.SlotOffset» : Term :=
+  ⟨2024, "AMode.SlotOffset", [10], 89, (.enumVariant 14), ⟨"src/isa/aarch64/inst.isle", 1530⟩⟩
+
+/-- term 2025 -/
+def T.«PairAMode.SignedOffset» : Term :=
+  ⟨2025, "PairAMode.SignedOffset", [27, 73], 90, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1548⟩⟩
+
+/-- term 2026 -/
+def T.«PairAMode.SPPreIndexed» : Term :=
+  ⟨2026, "PairAMode.SPPreIndexed", [73], 90, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1553⟩⟩
+
+/-- term 2027 -/
+def T.«PairAMode.SPPostIndexed» : Term :=
+  ⟨2027, "PairAMode.SPPostIndexed", [73], 90, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1556⟩⟩
+
+/-- term 2028 -/
+def T.«OperandSize.Size32» : Term :=
+  ⟨2028, "OperandSize.Size32", [], 93, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1578⟩⟩
+
+/-- term 2029 -/
+def T.«OperandSize.Size64» : Term :=
+  ⟨2029, "OperandSize.Size64", [], 93, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1579⟩⟩
+
+/-- term 2030 -/
+def T.«TestBitAndBranchKind.Z» : Term :=
+  ⟨2030, "TestBitAndBranchKind.Z", [], 94, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1581⟩⟩
+
+/-- term 2031 -/
+def T.«TestBitAndBranchKind.NZ» : Term :=
+  ⟨2031, "TestBitAndBranchKind.NZ", [], 94, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1581⟩⟩
+
+/-- term 2032 -/
+def T.«ScalarSize.Size8» : Term :=
+  ⟨2032, "ScalarSize.Size8", [], 95, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1603⟩⟩
+
+/-- term 2033 -/
+def T.«ScalarSize.Size16» : Term :=
+  ⟨2033, "ScalarSize.Size16", [], 95, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1604⟩⟩
+
+/-- term 2034 -/
+def T.«ScalarSize.Size32» : Term :=
+  ⟨2034, "ScalarSize.Size32", [], 95, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1605⟩⟩
+
+/-- term 2035 -/
+def T.«ScalarSize.Size64» : Term :=
+  ⟨2035, "ScalarSize.Size64", [], 95, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1606⟩⟩
+
+/-- term 2036 -/
+def T.«ScalarSize.Size128» : Term :=
+  ⟨2036, "ScalarSize.Size128", [], 95, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 1607⟩⟩
+
+/-- term 2037 -/
+def T.«Cond.Eq» : Term :=
+  ⟨2037, "Cond.Eq", [], 96, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1658⟩⟩
+
+/-- term 2038 -/
+def T.«Cond.Ne» : Term :=
+  ⟨2038, "Cond.Ne", [], 96, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1659⟩⟩
+
+/-- term 2039 -/
+def T.«Cond.Hs» : Term :=
+  ⟨2039, "Cond.Hs", [], 96, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1660⟩⟩
+
+/-- term 2040 -/
+def T.«Cond.Lo» : Term :=
+  ⟨2040, "Cond.Lo", [], 96, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1661⟩⟩
+
+/-- term 2041 -/
+def T.«Cond.Mi» : Term :=
+  ⟨2041, "Cond.Mi", [], 96, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 1662⟩⟩
+
+/-- term 2042 -/
+def T.«Cond.Pl» : Term :=
+  ⟨2042, "Cond.Pl", [], 96, (.enumVariant 5), ⟨"src/isa/aarch64/inst.isle", 1663⟩⟩
+
+/-- term 2043 -/
+def T.«Cond.Vs» : Term :=
+  ⟨2043, "Cond.Vs", [], 96, (.enumVariant 6), ⟨"src/isa/aarch64/inst.isle", 1664⟩⟩
+
+/-- term 2044 -/
+def T.«Cond.Vc» : Term :=
+  ⟨2044, "Cond.Vc", [], 96, (.enumVariant 7), ⟨"src/isa/aarch64/inst.isle", 1665⟩⟩
+
+/-- term 2045 -/
+def T.«Cond.Hi» : Term :=
+  ⟨2045, "Cond.Hi", [], 96, (.enumVariant 8), ⟨"src/isa/aarch64/inst.isle", 1666⟩⟩
+
+/-- term 2046 -/
+def T.«Cond.Ls» : Term :=
+  ⟨2046, "Cond.Ls", [], 96, (.enumVariant 9), ⟨"src/isa/aarch64/inst.isle", 1667⟩⟩
+
+/-- term 2047 -/
+def T.«Cond.Ge» : Term :=
+  ⟨2047, "Cond.Ge", [], 96, (.enumVariant 10), ⟨"src/isa/aarch64/inst.isle", 1668⟩⟩
+
+/-- term 2048 -/
+def T.«Cond.Lt» : Term :=
+  ⟨2048, "Cond.Lt", [], 96, (.enumVariant 11), ⟨"src/isa/aarch64/inst.isle", 1669⟩⟩
+
+/-- term 2049 -/
+def T.«Cond.Gt» : Term :=
+  ⟨2049, "Cond.Gt", [], 96, (.enumVariant 12), ⟨"src/isa/aarch64/inst.isle", 1670⟩⟩
+
+/-- term 2050 -/
+def T.«Cond.Le» : Term :=
+  ⟨2050, "Cond.Le", [], 96, (.enumVariant 13), ⟨"src/isa/aarch64/inst.isle", 1671⟩⟩
+
+/-- term 2051 -/
+def T.«Cond.Al» : Term :=
+  ⟨2051, "Cond.Al", [], 96, (.enumVariant 14), ⟨"src/isa/aarch64/inst.isle", 1672⟩⟩
+
+/-- term 2052 -/
+def T.«Cond.Nv» : Term :=
+  ⟨2052, "Cond.Nv", [], 96, (.enumVariant 15), ⟨"src/isa/aarch64/inst.isle", 1673⟩⟩
+
+/-- term 2053 -/
+def T.«VectorSize.Size8x8» : Term :=
+  ⟨2053, "VectorSize.Size8x8", [], 97, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1678⟩⟩
+
+/-- term 2054 -/
+def T.«VectorSize.Size8x16» : Term :=
+  ⟨2054, "VectorSize.Size8x16", [], 97, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1679⟩⟩
+
+/-- term 2055 -/
+def T.«VectorSize.Size16x4» : Term :=
+  ⟨2055, "VectorSize.Size16x4", [], 97, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1680⟩⟩
+
+/-- term 2056 -/
+def T.«VectorSize.Size16x8» : Term :=
+  ⟨2056, "VectorSize.Size16x8", [], 97, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1681⟩⟩
+
+/-- term 2057 -/
+def T.«VectorSize.Size32x2» : Term :=
+  ⟨2057, "VectorSize.Size32x2", [], 97, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 1682⟩⟩
+
+/-- term 2058 -/
+def T.«VectorSize.Size32x4» : Term :=
+  ⟨2058, "VectorSize.Size32x4", [], 97, (.enumVariant 5), ⟨"src/isa/aarch64/inst.isle", 1683⟩⟩
+
+/-- term 2059 -/
+def T.«VectorSize.Size64x2» : Term :=
+  ⟨2059, "VectorSize.Size64x2", [], 97, (.enumVariant 6), ⟨"src/isa/aarch64/inst.isle", 1684⟩⟩
+
+/-- term 2060 -/
+def T.«FPUOp1.Abs» : Term :=
+  ⟨2060, "FPUOp1.Abs", [], 98, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1715⟩⟩
+
+/-- term 2061 -/
+def T.«FPUOp1.Neg» : Term :=
+  ⟨2061, "FPUOp1.Neg", [], 98, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1716⟩⟩
+
+/-- term 2062 -/
+def T.«FPUOp1.Sqrt» : Term :=
+  ⟨2062, "FPUOp1.Sqrt", [], 98, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1717⟩⟩
+
+/-- term 2063 -/
+def T.«FPUOp1.Cvt32To64» : Term :=
+  ⟨2063, "FPUOp1.Cvt32To64", [], 98, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1718⟩⟩
+
+/-- term 2064 -/
+def T.«FPUOp1.Cvt64To32» : Term :=
+  ⟨2064, "FPUOp1.Cvt64To32", [], 98, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 1719⟩⟩
+
+/-- term 2065 -/
+def T.«FPUOp2.Add» : Term :=
+  ⟨2065, "FPUOp2.Add", [], 99, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1725⟩⟩
+
+/-- term 2066 -/
+def T.«FPUOp2.Sub» : Term :=
+  ⟨2066, "FPUOp2.Sub", [], 99, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1726⟩⟩
+
+/-- term 2067 -/
+def T.«FPUOp2.Mul» : Term :=
+  ⟨2067, "FPUOp2.Mul", [], 99, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1727⟩⟩
+
+/-- term 2068 -/
+def T.«FPUOp2.Div» : Term :=
+  ⟨2068, "FPUOp2.Div", [], 99, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1728⟩⟩
+
+/-- term 2069 -/
+def T.«FPUOp2.Max» : Term :=
+  ⟨2069, "FPUOp2.Max", [], 99, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 1729⟩⟩
+
+/-- term 2070 -/
+def T.«FPUOp2.Min» : Term :=
+  ⟨2070, "FPUOp2.Min", [], 99, (.enumVariant 5), ⟨"src/isa/aarch64/inst.isle", 1730⟩⟩
+
+/-- term 2071 -/
+def T.«FPUOp3.MAdd» : Term :=
+  ⟨2071, "FPUOp3.MAdd", [], 100, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1737⟩⟩
+
+/-- term 2072 -/
+def T.«FPUOp3.MSub» : Term :=
+  ⟨2072, "FPUOp3.MSub", [], 100, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1739⟩⟩
+
+/-- term 2073 -/
+def T.«FPUOp3.NMAdd» : Term :=
+  ⟨2073, "FPUOp3.NMAdd", [], 100, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1741⟩⟩
+
+/-- term 2074 -/
+def T.«FPUOp3.NMSub» : Term :=
+  ⟨2074, "FPUOp3.NMSub", [], 100, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1743⟩⟩
+
+/-- term 2075 -/
+def T.«FpuToIntOp.F32ToU32» : Term :=
+  ⟨2075, "FpuToIntOp.F32ToU32", [], 101, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1749⟩⟩
+
+/-- term 2076 -/
+def T.«FpuToIntOp.F32ToI32» : Term :=
+  ⟨2076, "FpuToIntOp.F32ToI32", [], 101, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1750⟩⟩
+
+/-- term 2077 -/
+def T.«FpuToIntOp.F32ToU64» : Term :=
+  ⟨2077, "FpuToIntOp.F32ToU64", [], 101, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1751⟩⟩
+
+/-- term 2078 -/
+def T.«FpuToIntOp.F32ToI64» : Term :=
+  ⟨2078, "FpuToIntOp.F32ToI64", [], 101, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1752⟩⟩
+
+/-- term 2079 -/
+def T.«FpuToIntOp.F64ToU32» : Term :=
+  ⟨2079, "FpuToIntOp.F64ToU32", [], 101, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 1753⟩⟩
+
+/-- term 2080 -/
+def T.«FpuToIntOp.F64ToI32» : Term :=
+  ⟨2080, "FpuToIntOp.F64ToI32", [], 101, (.enumVariant 5), ⟨"src/isa/aarch64/inst.isle", 1754⟩⟩
+
+/-- term 2081 -/
+def T.«FpuToIntOp.F64ToU64» : Term :=
+  ⟨2081, "FpuToIntOp.F64ToU64", [], 101, (.enumVariant 6), ⟨"src/isa/aarch64/inst.isle", 1755⟩⟩
+
+/-- term 2082 -/
+def T.«FpuToIntOp.F64ToI64» : Term :=
+  ⟨2082, "FpuToIntOp.F64ToI64", [], 101, (.enumVariant 7), ⟨"src/isa/aarch64/inst.isle", 1756⟩⟩
+
+/-- term 2083 -/
+def T.«IntToFpuOp.U32ToF32» : Term :=
+  ⟨2083, "IntToFpuOp.U32ToF32", [], 102, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1762⟩⟩
+
+/-- term 2084 -/
+def T.«IntToFpuOp.I32ToF32» : Term :=
+  ⟨2084, "IntToFpuOp.I32ToF32", [], 102, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1763⟩⟩
+
+/-- term 2085 -/
+def T.«IntToFpuOp.U32ToF64» : Term :=
+  ⟨2085, "IntToFpuOp.U32ToF64", [], 102, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1764⟩⟩
+
+/-- term 2086 -/
+def T.«IntToFpuOp.I32ToF64» : Term :=
+  ⟨2086, "IntToFpuOp.I32ToF64", [], 102, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1765⟩⟩
+
+/-- term 2087 -/
+def T.«IntToFpuOp.U64ToF32» : Term :=
+  ⟨2087, "IntToFpuOp.U64ToF32", [], 102, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 1766⟩⟩
+
+/-- term 2088 -/
+def T.«IntToFpuOp.I64ToF32» : Term :=
+  ⟨2088, "IntToFpuOp.I64ToF32", [], 102, (.enumVariant 5), ⟨"src/isa/aarch64/inst.isle", 1767⟩⟩
+
+/-- term 2089 -/
+def T.«IntToFpuOp.U64ToF64» : Term :=
+  ⟨2089, "IntToFpuOp.U64ToF64", [], 102, (.enumVariant 6), ⟨"src/isa/aarch64/inst.isle", 1768⟩⟩
+
+/-- term 2090 -/
+def T.«IntToFpuOp.I64ToF64» : Term :=
+  ⟨2090, "IntToFpuOp.I64ToF64", [], 102, (.enumVariant 7), ⟨"src/isa/aarch64/inst.isle", 1769⟩⟩
+
+/-- term 2091 -/
+def T.«FpuRoundMode.Minus32» : Term :=
+  ⟨2091, "FpuRoundMode.Minus32", [], 103, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1776⟩⟩
+
+/-- term 2092 -/
+def T.«FpuRoundMode.Minus64» : Term :=
+  ⟨2092, "FpuRoundMode.Minus64", [], 103, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1777⟩⟩
+
+/-- term 2093 -/
+def T.«FpuRoundMode.Plus32» : Term :=
+  ⟨2093, "FpuRoundMode.Plus32", [], 103, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1778⟩⟩
+
+/-- term 2094 -/
+def T.«FpuRoundMode.Plus64» : Term :=
+  ⟨2094, "FpuRoundMode.Plus64", [], 103, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1779⟩⟩
+
+/-- term 2095 -/
+def T.«FpuRoundMode.Zero32» : Term :=
+  ⟨2095, "FpuRoundMode.Zero32", [], 103, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 1780⟩⟩
+
+/-- term 2096 -/
+def T.«FpuRoundMode.Zero64» : Term :=
+  ⟨2096, "FpuRoundMode.Zero64", [], 103, (.enumVariant 5), ⟨"src/isa/aarch64/inst.isle", 1781⟩⟩
+
+/-- term 2097 -/
+def T.«FpuRoundMode.Nearest32» : Term :=
+  ⟨2097, "FpuRoundMode.Nearest32", [], 103, (.enumVariant 6), ⟨"src/isa/aarch64/inst.isle", 1782⟩⟩
+
+/-- term 2098 -/
+def T.«FpuRoundMode.Nearest64» : Term :=
+  ⟨2098, "FpuRoundMode.Nearest64", [], 103, (.enumVariant 7), ⟨"src/isa/aarch64/inst.isle", 1783⟩⟩
+
+/-- term 2099 -/
+def T.«VecExtendOp.Sxtl» : Term :=
+  ⟨2099, "VecExtendOp.Sxtl", [], 104, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1790⟩⟩
+
+/-- term 2100 -/
+def T.«VecExtendOp.Uxtl» : Term :=
+  ⟨2100, "VecExtendOp.Uxtl", [], 104, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1792⟩⟩
+
+/-- term 2101 -/
+def T.«VecALUOp.Sqadd» : Term :=
+  ⟨2101, "VecALUOp.Sqadd", [], 105, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1799⟩⟩
+
+/-- term 2102 -/
+def T.«VecALUOp.Uqadd» : Term :=
+  ⟨2102, "VecALUOp.Uqadd", [], 105, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1801⟩⟩
+
+/-- term 2103 -/
+def T.«VecALUOp.Sqsub» : Term :=
+  ⟨2103, "VecALUOp.Sqsub", [], 105, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1803⟩⟩
+
+/-- term 2104 -/
+def T.«VecALUOp.Uqsub» : Term :=
+  ⟨2104, "VecALUOp.Uqsub", [], 105, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1805⟩⟩
+
+/-- term 2105 -/
+def T.«VecALUOp.Cmeq» : Term :=
+  ⟨2105, "VecALUOp.Cmeq", [], 105, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 1807⟩⟩
+
+/-- term 2106 -/
+def T.«VecALUOp.Cmge» : Term :=
+  ⟨2106, "VecALUOp.Cmge", [], 105, (.enumVariant 5), ⟨"src/isa/aarch64/inst.isle", 1809⟩⟩
+
+/-- term 2107 -/
+def T.«VecALUOp.Cmgt» : Term :=
+  ⟨2107, "VecALUOp.Cmgt", [], 105, (.enumVariant 6), ⟨"src/isa/aarch64/inst.isle", 1811⟩⟩
+
+/-- term 2108 -/
+def T.«VecALUOp.Cmhs» : Term :=
+  ⟨2108, "VecALUOp.Cmhs", [], 105, (.enumVariant 7), ⟨"src/isa/aarch64/inst.isle", 1813⟩⟩
+
+/-- term 2109 -/
+def T.«VecALUOp.Cmhi» : Term :=
+  ⟨2109, "VecALUOp.Cmhi", [], 105, (.enumVariant 8), ⟨"src/isa/aarch64/inst.isle", 1815⟩⟩
+
+/-- term 2110 -/
+def T.«VecALUOp.Fcmeq» : Term :=
+  ⟨2110, "VecALUOp.Fcmeq", [], 105, (.enumVariant 9), ⟨"src/isa/aarch64/inst.isle", 1817⟩⟩
+
+/-- term 2111 -/
+def T.«VecALUOp.Fcmgt» : Term :=
+  ⟨2111, "VecALUOp.Fcmgt", [], 105, (.enumVariant 10), ⟨"src/isa/aarch64/inst.isle", 1819⟩⟩
+
+/-- term 2112 -/
+def T.«VecALUOp.Fcmge» : Term :=
+  ⟨2112, "VecALUOp.Fcmge", [], 105, (.enumVariant 11), ⟨"src/isa/aarch64/inst.isle", 1821⟩⟩
+
+/-- term 2113 -/
+def T.«VecALUOp.And» : Term :=
+  ⟨2113, "VecALUOp.And", [], 105, (.enumVariant 12), ⟨"src/isa/aarch64/inst.isle", 1823⟩⟩
+
+/-- term 2114 -/
+def T.«VecALUOp.Bic» : Term :=
+  ⟨2114, "VecALUOp.Bic", [], 105, (.enumVariant 13), ⟨"src/isa/aarch64/inst.isle", 1825⟩⟩
+
+/-- term 2115 -/
+def T.«VecALUOp.Orr» : Term :=
+  ⟨2115, "VecALUOp.Orr", [], 105, (.enumVariant 14), ⟨"src/isa/aarch64/inst.isle", 1827⟩⟩
+
+/-- term 2116 -/
+def T.«VecALUOp.Orn» : Term :=
+  ⟨2116, "VecALUOp.Orn", [], 105, (.enumVariant 15), ⟨"src/isa/aarch64/inst.isle", 1829⟩⟩
+
+/-- term 2117 -/
+def T.«VecALUOp.Eor» : Term :=
+  ⟨2117, "VecALUOp.Eor", [], 105, (.enumVariant 16), ⟨"src/isa/aarch64/inst.isle", 1831⟩⟩
+
+/-- term 2118 -/
+def T.«VecALUOp.Umaxp» : Term :=
+  ⟨2118, "VecALUOp.Umaxp", [], 105, (.enumVariant 17), ⟨"src/isa/aarch64/inst.isle", 1833⟩⟩
+
+/-- term 2119 -/
+def T.«VecALUOp.Add» : Term :=
+  ⟨2119, "VecALUOp.Add", [], 105, (.enumVariant 18), ⟨"src/isa/aarch64/inst.isle", 1835⟩⟩
+
+/-- term 2120 -/
+def T.«VecALUOp.Sub» : Term :=
+  ⟨2120, "VecALUOp.Sub", [], 105, (.enumVariant 19), ⟨"src/isa/aarch64/inst.isle", 1837⟩⟩
+
+/-- term 2121 -/
+def T.«VecALUOp.Mul» : Term :=
+  ⟨2121, "VecALUOp.Mul", [], 105, (.enumVariant 20), ⟨"src/isa/aarch64/inst.isle", 1839⟩⟩
+
+/-- term 2122 -/
+def T.«VecALUOp.Sshl» : Term :=
+  ⟨2122, "VecALUOp.Sshl", [], 105, (.enumVariant 21), ⟨"src/isa/aarch64/inst.isle", 1841⟩⟩
+
+/-- term 2123 -/
+def T.«VecALUOp.Ushl» : Term :=
+  ⟨2123, "VecALUOp.Ushl", [], 105, (.enumVariant 22), ⟨"src/isa/aarch64/inst.isle", 1843⟩⟩
+
+/-- term 2124 -/
+def T.«VecALUOp.Umin» : Term :=
+  ⟨2124, "VecALUOp.Umin", [], 105, (.enumVariant 23), ⟨"src/isa/aarch64/inst.isle", 1845⟩⟩
+
+/-- term 2125 -/
+def T.«VecALUOp.Smin» : Term :=
+  ⟨2125, "VecALUOp.Smin", [], 105, (.enumVariant 24), ⟨"src/isa/aarch64/inst.isle", 1847⟩⟩
+
+/-- term 2126 -/
+def T.«VecALUOp.Umax» : Term :=
+  ⟨2126, "VecALUOp.Umax", [], 105, (.enumVariant 25), ⟨"src/isa/aarch64/inst.isle", 1849⟩⟩
+
+/-- term 2127 -/
+def T.«VecALUOp.Smax» : Term :=
+  ⟨2127, "VecALUOp.Smax", [], 105, (.enumVariant 26), ⟨"src/isa/aarch64/inst.isle", 1851⟩⟩
+
+/-- term 2128 -/
+def T.«VecALUOp.Urhadd» : Term :=
+  ⟨2128, "VecALUOp.Urhadd", [], 105, (.enumVariant 27), ⟨"src/isa/aarch64/inst.isle", 1853⟩⟩
+
+/-- term 2129 -/
+def T.«VecALUOp.Fadd» : Term :=
+  ⟨2129, "VecALUOp.Fadd", [], 105, (.enumVariant 28), ⟨"src/isa/aarch64/inst.isle", 1855⟩⟩
+
+/-- term 2130 -/
+def T.«VecALUOp.Fsub» : Term :=
+  ⟨2130, "VecALUOp.Fsub", [], 105, (.enumVariant 29), ⟨"src/isa/aarch64/inst.isle", 1857⟩⟩
+
+/-- term 2131 -/
+def T.«VecALUOp.Fdiv» : Term :=
+  ⟨2131, "VecALUOp.Fdiv", [], 105, (.enumVariant 30), ⟨"src/isa/aarch64/inst.isle", 1859⟩⟩
+
+/-- term 2132 -/
+def T.«VecALUOp.Fmax» : Term :=
+  ⟨2132, "VecALUOp.Fmax", [], 105, (.enumVariant 31), ⟨"src/isa/aarch64/inst.isle", 1861⟩⟩
+
+/-- term 2133 -/
+def T.«VecALUOp.Fmin» : Term :=
+  ⟨2133, "VecALUOp.Fmin", [], 105, (.enumVariant 32), ⟨"src/isa/aarch64/inst.isle", 1863⟩⟩
+
+/-- term 2134 -/
+def T.«VecALUOp.Fmul» : Term :=
+  ⟨2134, "VecALUOp.Fmul", [], 105, (.enumVariant 33), ⟨"src/isa/aarch64/inst.isle", 1865⟩⟩
+
+/-- term 2135 -/
+def T.«VecALUOp.Addp» : Term :=
+  ⟨2135, "VecALUOp.Addp", [], 105, (.enumVariant 34), ⟨"src/isa/aarch64/inst.isle", 1867⟩⟩
+
+/-- term 2136 -/
+def T.«VecALUOp.Zip1» : Term :=
+  ⟨2136, "VecALUOp.Zip1", [], 105, (.enumVariant 35), ⟨"src/isa/aarch64/inst.isle", 1869⟩⟩
+
+/-- term 2137 -/
+def T.«VecALUOp.Zip2» : Term :=
+  ⟨2137, "VecALUOp.Zip2", [], 105, (.enumVariant 36), ⟨"src/isa/aarch64/inst.isle", 1871⟩⟩
+
+/-- term 2138 -/
+def T.«VecALUOp.Sqrdmulh» : Term :=
+  ⟨2138, "VecALUOp.Sqrdmulh", [], 105, (.enumVariant 37), ⟨"src/isa/aarch64/inst.isle", 1873⟩⟩
+
+/-- term 2139 -/
+def T.«VecALUOp.Uzp1» : Term :=
+  ⟨2139, "VecALUOp.Uzp1", [], 105, (.enumVariant 38), ⟨"src/isa/aarch64/inst.isle", 1875⟩⟩
+
+/-- term 2140 -/
+def T.«VecALUOp.Uzp2» : Term :=
+  ⟨2140, "VecALUOp.Uzp2", [], 105, (.enumVariant 39), ⟨"src/isa/aarch64/inst.isle", 1877⟩⟩
+
+/-- term 2141 -/
+def T.«VecALUOp.Trn1» : Term :=
+  ⟨2141, "VecALUOp.Trn1", [], 105, (.enumVariant 40), ⟨"src/isa/aarch64/inst.isle", 1879⟩⟩
+
+/-- term 2142 -/
+def T.«VecALUOp.Trn2» : Term :=
+  ⟨2142, "VecALUOp.Trn2", [], 105, (.enumVariant 41), ⟨"src/isa/aarch64/inst.isle", 1881⟩⟩
+
+/-- term 2143 -/
+def T.«VecALUModOp.Bsl» : Term :=
+  ⟨2143, "VecALUModOp.Bsl", [], 106, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1888⟩⟩
+
+/-- term 2144 -/
+def T.«VecALUModOp.Fmla» : Term :=
+  ⟨2144, "VecALUModOp.Fmla", [], 106, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1890⟩⟩
+
+/-- term 2145 -/
+def T.«VecALUModOp.Fmls» : Term :=
+  ⟨2145, "VecALUModOp.Fmls", [], 106, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1892⟩⟩
+
+/-- term 2146 -/
+def T.«VecALUModOp.Sdot» : Term :=
+  ⟨2146, "VecALUModOp.Sdot", [], 106, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1894⟩⟩
+
+/-- term 2147 -/
+def T.«VecALUModOp.Usdot» : Term :=
+  ⟨2147, "VecALUModOp.Usdot", [], 106, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 1896⟩⟩
+
+/-- term 2148 -/
+def T.«VecMisc2.Not» : Term :=
+  ⟨2148, "VecMisc2.Not", [], 107, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1903⟩⟩
+
+/-- term 2149 -/
+def T.«VecMisc2.Neg» : Term :=
+  ⟨2149, "VecMisc2.Neg", [], 107, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1905⟩⟩
+
+/-- term 2150 -/
+def T.«VecMisc2.Abs» : Term :=
+  ⟨2150, "VecMisc2.Abs", [], 107, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1907⟩⟩
+
+/-- term 2151 -/
+def T.«VecMisc2.Fabs» : Term :=
+  ⟨2151, "VecMisc2.Fabs", [], 107, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1909⟩⟩
+
+/-- term 2152 -/
+def T.«VecMisc2.Fneg» : Term :=
+  ⟨2152, "VecMisc2.Fneg", [], 107, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 1911⟩⟩
+
+/-- term 2153 -/
+def T.«VecMisc2.Fsqrt» : Term :=
+  ⟨2153, "VecMisc2.Fsqrt", [], 107, (.enumVariant 5), ⟨"src/isa/aarch64/inst.isle", 1913⟩⟩
+
+/-- term 2154 -/
+def T.«VecMisc2.Rev16» : Term :=
+  ⟨2154, "VecMisc2.Rev16", [], 107, (.enumVariant 6), ⟨"src/isa/aarch64/inst.isle", 1915⟩⟩
+
+/-- term 2155 -/
+def T.«VecMisc2.Rev32» : Term :=
+  ⟨2155, "VecMisc2.Rev32", [], 107, (.enumVariant 7), ⟨"src/isa/aarch64/inst.isle", 1917⟩⟩
+
+/-- term 2156 -/
+def T.«VecMisc2.Rev64» : Term :=
+  ⟨2156, "VecMisc2.Rev64", [], 107, (.enumVariant 8), ⟨"src/isa/aarch64/inst.isle", 1919⟩⟩
+
+/-- term 2157 -/
+def T.«VecMisc2.Fcvtzs» : Term :=
+  ⟨2157, "VecMisc2.Fcvtzs", [], 107, (.enumVariant 9), ⟨"src/isa/aarch64/inst.isle", 1921⟩⟩
+
+/-- term 2158 -/
+def T.«VecMisc2.Fcvtzu» : Term :=
+  ⟨2158, "VecMisc2.Fcvtzu", [], 107, (.enumVariant 10), ⟨"src/isa/aarch64/inst.isle", 1923⟩⟩
+
+/-- term 2159 -/
+def T.«VecMisc2.Scvtf» : Term :=
+  ⟨2159, "VecMisc2.Scvtf", [], 107, (.enumVariant 11), ⟨"src/isa/aarch64/inst.isle", 1925⟩⟩
+
+/-- term 2160 -/
+def T.«VecMisc2.Ucvtf» : Term :=
+  ⟨2160, "VecMisc2.Ucvtf", [], 107, (.enumVariant 12), ⟨"src/isa/aarch64/inst.isle", 1927⟩⟩
+
+/-- term 2161 -/
+def T.«VecMisc2.Frintn» : Term :=
+  ⟨2161, "VecMisc2.Frintn", [], 107, (.enumVariant 13), ⟨"src/isa/aarch64/inst.isle", 1929⟩⟩
+
+/-- term 2162 -/
+def T.«VecMisc2.Frintz» : Term :=
+  ⟨2162, "VecMisc2.Frintz", [], 107, (.enumVariant 14), ⟨"src/isa/aarch64/inst.isle", 1931⟩⟩
+
+/-- term 2163 -/
+def T.«VecMisc2.Frintm» : Term :=
+  ⟨2163, "VecMisc2.Frintm", [], 107, (.enumVariant 15), ⟨"src/isa/aarch64/inst.isle", 1933⟩⟩
+
+/-- term 2164 -/
+def T.«VecMisc2.Frintp» : Term :=
+  ⟨2164, "VecMisc2.Frintp", [], 107, (.enumVariant 16), ⟨"src/isa/aarch64/inst.isle", 1935⟩⟩
+
+/-- term 2165 -/
+def T.«VecMisc2.Cnt» : Term :=
+  ⟨2165, "VecMisc2.Cnt", [], 107, (.enumVariant 17), ⟨"src/isa/aarch64/inst.isle", 1937⟩⟩
+
+/-- term 2166 -/
+def T.«VecMisc2.Cmeq0» : Term :=
+  ⟨2166, "VecMisc2.Cmeq0", [], 107, (.enumVariant 18), ⟨"src/isa/aarch64/inst.isle", 1939⟩⟩
+
+/-- term 2167 -/
+def T.«VecMisc2.Cmge0» : Term :=
+  ⟨2167, "VecMisc2.Cmge0", [], 107, (.enumVariant 19), ⟨"src/isa/aarch64/inst.isle", 1941⟩⟩
+
+/-- term 2168 -/
+def T.«VecMisc2.Cmgt0» : Term :=
+  ⟨2168, "VecMisc2.Cmgt0", [], 107, (.enumVariant 20), ⟨"src/isa/aarch64/inst.isle", 1943⟩⟩
+
+/-- term 2169 -/
+def T.«VecMisc2.Cmle0» : Term :=
+  ⟨2169, "VecMisc2.Cmle0", [], 107, (.enumVariant 21), ⟨"src/isa/aarch64/inst.isle", 1945⟩⟩
+
+/-- term 2170 -/
+def T.«VecMisc2.Cmlt0» : Term :=
+  ⟨2170, "VecMisc2.Cmlt0", [], 107, (.enumVariant 22), ⟨"src/isa/aarch64/inst.isle", 1947⟩⟩
+
+/-- term 2171 -/
+def T.«VecMisc2.Fcmeq0» : Term :=
+  ⟨2171, "VecMisc2.Fcmeq0", [], 107, (.enumVariant 23), ⟨"src/isa/aarch64/inst.isle", 1949⟩⟩
+
+/-- term 2172 -/
+def T.«VecMisc2.Fcmge0» : Term :=
+  ⟨2172, "VecMisc2.Fcmge0", [], 107, (.enumVariant 24), ⟨"src/isa/aarch64/inst.isle", 1951⟩⟩
+
+/-- term 2173 -/
+def T.«VecMisc2.Fcmgt0» : Term :=
+  ⟨2173, "VecMisc2.Fcmgt0", [], 107, (.enumVariant 25), ⟨"src/isa/aarch64/inst.isle", 1953⟩⟩
+
+/-- term 2174 -/
+def T.«VecMisc2.Fcmle0» : Term :=
+  ⟨2174, "VecMisc2.Fcmle0", [], 107, (.enumVariant 26), ⟨"src/isa/aarch64/inst.isle", 1955⟩⟩
+
+/-- term 2175 -/
+def T.«VecMisc2.Fcmlt0» : Term :=
+  ⟨2175, "VecMisc2.Fcmlt0", [], 107, (.enumVariant 27), ⟨"src/isa/aarch64/inst.isle", 1957⟩⟩
+
+/-- term 2176 -/
+def T.«VecRRLongOp.Fcvtl16» : Term :=
+  ⟨2176, "VecRRLongOp.Fcvtl16", [], 108, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1964⟩⟩
+
+/-- term 2177 -/
+def T.«VecRRLongOp.Fcvtl32» : Term :=
+  ⟨2177, "VecRRLongOp.Fcvtl32", [], 108, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1966⟩⟩
+
+/-- term 2178 -/
+def T.«VecRRLongOp.Shll8» : Term :=
+  ⟨2178, "VecRRLongOp.Shll8", [], 108, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1968⟩⟩
+
+/-- term 2179 -/
+def T.«VecRRLongOp.Shll16» : Term :=
+  ⟨2179, "VecRRLongOp.Shll16", [], 108, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1970⟩⟩
+
+/-- term 2180 -/
+def T.«VecRRLongOp.Shll32» : Term :=
+  ⟨2180, "VecRRLongOp.Shll32", [], 108, (.enumVariant 4), ⟨"src/isa/aarch64/inst.isle", 1972⟩⟩
+
+/-- term 2181 -/
+def T.«VecRRNarrowOp.Xtn» : Term :=
+  ⟨2181, "VecRRNarrowOp.Xtn", [], 109, (.enumVariant 0), ⟨"src/isa/aarch64/inst.isle", 1979⟩⟩
+
+/-- term 2182 -/
+def T.«VecRRNarrowOp.Sqxtn» : Term :=
+  ⟨2182, "VecRRNarrowOp.Sqxtn", [], 109, (.enumVariant 1), ⟨"src/isa/aarch64/inst.isle", 1981⟩⟩
+
+/-- term 2183 -/
+def T.«VecRRNarrowOp.Sqxtun» : Term :=
+  ⟨2183, "VecRRNarrowOp.Sqxtun", [], 109, (.enumVariant 2), ⟨"src/isa/aarch64/inst.isle", 1983⟩⟩
+
+/-- term 2184 -/
+def T.«VecRRNarrowOp.Uqxtn» : Term :=
+  ⟨2184, "VecRRNarrowOp.Uqxtn", [], 109, (.enumVariant 3), ⟨"src/isa/aarch64/inst.isle", 1985⟩⟩
 
 end Isle.Aarch64
