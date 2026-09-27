@@ -86,7 +86,7 @@ Measured (this machine, one core per file): `IselRulesALU` (forward lemmas of 2 
 | div/rem (explicit traps) | trap outcome of `LowerInstOk`, `trapIf` spec |
 | load/store (10+7), stack_addr, symbol_value | `amode` contracts, `MemRel`/slot relation (M7), memory `ispec` |
 | call/return/trap, `lower_branch` (5) | ABI (`CallRel`), `LowerTermOk`/`BranchRuleOk` |
-| `ExcludedUnmatchable` (396 rules) | generic: an excluded rule's pattern names a non-E opcode/type test; prove with `root_match_data` + `instNames` per opcode class |
+| `ExcludedUnmatchable` (393 `lower` rules; the other 3 of the 396 are `lower_branch`, M4Ctl) | **proven** (`excludedUnmatchable`, M4Excl): abstract pattern checker, see "Excluded root rules" |
 
 Fan-out: one agent per row, each adding its `ispec` forms (tell M6Rest), a family template
 next to `aluRR_ruleOk` and a file of forward lemmas. Regenerate `IselData` with
@@ -424,6 +424,60 @@ it avoids having to show which rule is selected.
    `seqRun_append_fall_stop`. Needed: `imm` from M4AluB (`IselTermsImm`),
    `trap_if_div_overflow` (`ccmpImm`) and `intmin_check` (`aluRRImmShift`).
 
+### Progress (M4Cmp2, resumed from 8daa6d2)
+
+**Still no root rule of family C proven** (request budget exhausted). Proven term contracts and
+infrastructure (all building, no `sorry`; axioms `propext`, `Classical.choice`, `Quot.sound`
+plus `bv_decide` certificates):
+
+* Tactics (`IselCmpBase`): `isel_inv' hp [lemmas] at h…` unfolds the rule constants found in the
+  hypotheses and passes only their `hp.tN` data facts (no `cases hp`: the ~1400 facts in the
+  context made every inversion round slow); `isel_refute hp at hm` (one simp pass, cheap
+  refutation of rules whose pattern cannot match); `isel_call hp hc [contracts]` (applies callee
+  contracts `c hp hc (hn := _) (h := _)` to every `ApplyInternal` hypothesis, repeatedly).
+  `isel_split'` (`IselCmpTerms`) splits without `cases hp`; `internal_split_first` now returns
+  `n = n' + 20`, so nested calls keep a known fuel (contracts take `B ≤ n` bounds).
+* `IselCmpExt`: `zext32_ok`/`sext32_ok`/`zext64_ok`/`sext64_ok` (syntactic `ExtOut`, the
+  32-bit ones use the failed `$I32` rule), `ExtOut.sem` (the returned vreg holds the value,
+  `ExtHolds`: low bits and the sign/zero extension to 32/64 bits; `Frag`, freshness, `UsesLo`).
+* `IselCmpCond`: `SetsFlags`, `CondShape`, `CondSem`, `CondFlag`; `Runs.flags`,
+  `runs_flags_cset`, `runs_flags_csel`; `with_flags_ok` (rule 818, the other 15 refuted);
+  `lcrb_ok` + `lcrb_run` (`lower_cond_result_bool`: flag instruction + `cset` into a fresh vreg
+  holding the condition as 0/1); `opcode_absurd` + `isel_opcode_absurd hctx` (a `def_inst`
+  pattern naming a non-E opcode never matches, via `CtxInv`, `instData_inv_names`,
+  `eOpNames`).
+* `IselCmpIcmp`: `CondCode` (semantic contract of a condition producer), `CondCode.flag`,
+  `CondCode.notZero`, `CondCode.inv`; `cri_ok` (`cond_result_invert`); `tst_imm_ok`.
+  `is_nonzero_ok` is drafted in a comment at the end of the file (rules 4–10 and I128 already
+  refuted by its first lines; the I8/I64/fits_in_32 cases need small fixes).
+
+**Next steps**: finish `is_nonzero_ok`; `emit_icmp_ok` as a `CondCode` with
+`T fr b := ∃ ty a b', fr.regs x = ⟨ty,a⟩ ∧ fr.regs y = ⟨ty,b'⟩ ∧ b = intcc cc a b'` (rules 7/8
+through `is_nonzero`/`CondCode.inv`; rules 5/6/3 need an `iconst` inversion lemma from
+`CtxInv.data` + `DFGCons` giving `fr.regs y = ⟨ty, imm⟩` with `u64 (imm64OfIconst ty imm) =
+imm.toNat`; rules 0/1 need `lower_extend_op` and `Arm.extend_reg` for UXT/SXT B/H; rule 4 is
+refuted by `value_regs_get … 1` on a one-register value); `is_nonzero_cmp_ok`; then root rule
+2215 = `lcrb_ok`/`lcrb_run` after `emit_icmp_ok` (+ `output_reg`), 1281 likewise, select/min/max
+via `lower_select` (`CondFlag cmpXzr`, `runs_flags_csel`, `lower_select_cond` rule 5364 only for
+integer types). Division needs `imm_ok` from M4AluB (`eac2707`, `IselTermsImm.lean`; merge
+agent/m4-alu-b). M4Ctl consumes `is_nonzero_cmp_ok`/`CondSem` for `brif`.
+
+### Progress (M4Cmp3)
+
+Root rules proven (`LowerRuleOk`): **icmp 2215** (`icmp_ruleOk`), **uextend(icmp) 1281**
+(`uextend_icmp_ruleOk`), both in `IselCmpRoot.lean`. Contracts: `is_nonzero_ok` (IselCmpIcmp),
+`emit_icmp_ok` (all 12 rules, `IcmpT`), `lower_extend_op_ok`, iconst look-through (IselCmpEmit),
+`is_nonzero_cmp_ok`, `output_reg_ok`, `condCode_lcrb`, `lowerInstOk_runs` (IselCmpRoot).
+Main ddf0955 merged. Never use `git stash` (shared across worktrees).
+
+**Next**: `lower_select_cond_ok` (int widths, rule 5364) is proven in the WIP draft
+`/tmp/m4cmp3_IselCmpSelect_WIP.lean`; `lower_select_ok` there has the Zero/NotZero/Cond cases
+and the fallback 5331 refuted by forward `isel_eval` of `hpre` (works); remaining bug: the
+`obtain ⟨he⟩ … := ⟨‹_›⟩` of the state equation escapes `try` in the Cond case (use
+`rename_i`/`first` instead). Then select 2267 / min-max 1222–1228 = `is_nonzero_cmp_ok` or
+`emit_icmp_ok (cc := .ult/.slt/.ugt/.sgt)` + `lower_select_ok` + `runs_flags_csel` + `output`.
+Vector min/max 1233–1251 and div/rem (1116…1211) not started.
+
 ## Family Ctl: terminators, branches, calls (M4Ctl)
 
 Branch `agent/m4-ctl`. Files `FV/Backend/Proof/IselCtl{Base,Term,Unmatch,Branch,Call,}.lean`,
@@ -578,3 +632,106 @@ different family-A/Cmp lemmas carry the suffix `_fb`: `lowerInstOk_one_fb`, `alu
 `extVal_fb`, `ofV_aluRRImm12_fb`, `ofV_aluRRImmLogic_fb`, `ofV_aluRRImmShift_fb`, `ofV_extend_fb`.
 `ispec`: the M4Cmp/M4Ctl forms precede the family-A generic forms (the Cmp `mSub` case is dropped:
 the generic `mulAddVal` case gives the same value).
+
+## Excluded root rules: `ExcludedUnmatchable program` (M4Excl)
+
+Branch `agent/m4-excl`. Files `FV/Backend/Proof/IselExcl{Base,Data,Sound,}.lean`, axiom audit
+`FVTest/Backend/Proof/Excl/Axioms.lean`, untrusted helper `FVTest/Backend/Proof/Excl/Gen.lean`.
+
+**Result.** `excludedUnmatchable : ExcludedUnmatchable program` (axioms `propext`,
+`Classical.choice`, `Quot.sound`). `lower` has 517 root rules: 124 closure roots (including the
+call rules 1031/1032 and the memory rules of contract change #7, which are closure roots and so
+outside this statement) and 393 excluded ones, all covered, including `call_indirect` (1033).
+The 3 excluded `lower_branch` rules (`try_call` 1034–1036) are M4Ctl's
+`branchExcludedUnmatchable`, and the `return`/`trap` side is M4Ctl's `termUnmatchable` (both in
+main; not duplicated here). **No excluded rule can match an E instruction**: nothing had to be
+moved into the closure.
+
+**Method: an abstract pattern checker, run once by the kernel.** `fails p a q : Bool`
+(`IselExclBase`) over-approximates "pattern `q` matches no value described by the abstract value
+`a`": `AV.inst` (an instruction of the context: data `instData f c`, result types `eCTys`),
+`AV.data` (the `InstructionData` of an E instruction), `AV.value`, `AV.values n`,
+`AV.tys ts` (a type among `ts`), `AV.exact v`, `AV.any`. It follows `bind`/`and` (any
+conjunct), `inst_data_value` (type ∈ `invalid :: eCTys`, data), the `InstructionData` enum
+(opcode variant ∉ `eOps` refutes; for `uextend`/`sextend`/`store` the fields are followed,
+`opShape`), `def_inst` (to `AV.inst`), `value_type` (to `AV.tys eCTys`), `value_array_2`, the
+type extractors on each concrete type (`tyExtract`: `tyPred` terms, `multi_lane`,
+`dynamic_lane`), type constants (`primTy`) and the disabled ISA-flag extractors
+`use_lse`/`use_dotprod`/`use_i8mm`. `exclOk_program` checks
+`(program.rulesOf TId.lower).all (exclOk program)` with one `decide +kernel` (15 s, 6.5 GB peak
+incl. 1.7 GB of imports); `exclOk r := closureRootIds.contains r.id || fails p .inst q` for
+`r.args = [q]`, where `closureRootIds` is a literal list (`closureRoot_eq`/`closureRootIds_eq`
+check it against `Closure.rules`; scanning `Closure.rules` per rule instead cost 9.6 GB).
+`fails_sound` (`IselExclSound`, mutual structural induction over patterns, matching
+`matchPat`/`matchAll`/`matchArgs`) proves the checker sound for every `CtxInv` context;
+`instData_shape`/`instData_fields` (`IselExclData`) characterize the data of E instructions
+(`eNamePairs`: the `instNames` image, checked against the variant indices by one small
+`decide +kernel`).
+
+What refutes the 393 rules: a non-E opcode at the root (≈ 285, some behind `and`/`bind`
+wrappers or `use_lse`), a root type test (`$I128`, vector constants, `ty_vec64/128`,
+`multi_lane`, `dynamic_lane`, `lane_fits_in_32`, `ty_float_or_vec`, `ty_dyn_vec*`,
+`fits_in_64 (ty_scalar_float _)`), a non-E opcode behind `def_inst` (1266, 1272, 1283, 1320,
+402/419 also fail on `use_dotprod`/`use_i8mm`), and `value_type` of a stored value
+(`store` 2735–2763: `$I128`, float/vector tests).
+
+**Contract change (shared, additive): two `CtxInv` fields.** The stored-value rules
+(`value_type` of an operand) and the `$I128` root rules cannot be refuted from the old `CtxInv`
+(it said nothing about `valTy`, and `stack_addr`/`call` results are not type-checked by
+`instData`). New fields, true for `buildCtx` (it rejects `i128` values and results):
+`resTysE : ctx.insts[ii]? = some info → ∀ t ∈ info.resTys, t ∈ eCTys` and
+`valTyE : ctx.valueType? x = some t → t ∈ eCTys`, with `eCTys := [.int 8, .int 16, .int 32,
+.int 64]` (`IselContract`). `ctxOk` (`DriverCheck`) decides both, `ctxOk_sound` proves them,
+`ctxInv_termCtx` keeps them. `lake exe lean-e2e-check`: `lowerCheck` 913 accepted, 0 rejected
+(19 out of scope, unchanged).
+
+**Regeneration.** After re-exporting the ISLE data run
+`lake env lean --run FVTest/Backend/Proof/Excl/Gen.lean`: it prints `closureRootIds` (paste into
+`IselExclBase` if it changed) and every `lower` rule `exclOk` rejects (must be none; otherwise
+extend the checker, or the rule is a real obligation and belongs in the closure).
+
+## Memory family (loads/stores/stack_addr/symbol_value) — M4Mem
+
+**Status: contract + infrastructure; no memory root rule proven yet** (request budget).
+Branch `agent/m4-mem`.
+
+**Contract change #7** (335353d, on main ddf0955; announced to all): memory rules cannot be
+`LowerRuleOk` for an arbitrary `MR`, so, like calls (#5), they are split out.
+* `IselContract`: `amodeAddr sb am bytes uses w` (effective address of the emitted amode forms,
+  immediates as the ISLE rules check them, as M6's `AMode.addr`), `loadSigned`, `loadVal`,
+  `MemRefines F sb syms isem` (M6 obligation for `csem`: loads/stores through `amodeAddr`
+  avoiding `F`, `loadAddr (slotOffset off) = sp + off + sb`, `loadExtNameGot` of a linked symbol
+  = its address — with `CallsRefine` this pins its `sym` on linked symbols), `MemRelOk F sb syms f MR`
+  (bytes, allocations outside `F` and below 2⁶⁴, `symbols = syms`, slot `id` at
+  `sp + sb + off(id)`, stores on both sides keep the relation), `memRootRule` (815, 824, 1027,
+  1041–1044, 1052–1057, 1064–1070, 1093), `MemRuleOk`, `MemRulesCorrect`; `LowerRulesCorrect`
+  gains `memRootRule r = false →`.
+* Soundness gap closed: `Clif.run` accepts a load/store address of any type, but the lowering uses
+  the whole 64-bit register as base, so the rules are false for `i32` addresses. `buildCtx`
+  already rejects them; `CtxInv.addr64` records it (`ctxOk` decides it, `ctxOk_sound` proves it).
+* `InstCalls f …` is now indexed by the function (the slot relation is per function);
+  `instCalls_of_rules`/`lowerInstOk_of_rules`/`lowerInstOk_runTerm` take `MemRulesCorrect`,
+  `MemRefines`, `MemRelOk`; `E2E.memRelOk_holds` proves `MemRelOk` for `Rel.holds`;
+  `backend_correct(_of_rules)` take `hmemRules : MemRulesCorrect program` and
+  `hmem : ∀ s, MemRefines (F s) slotOff syms (sem s)`.
+
+**Files.** `IselMemArm` (CLIF `readBits`/`writeBits` ↔ Arm `read_mem_bytes`/`write_mem_bytes`:
+`readBits_getLsbD_eq`, `read_mem_write_mem_bytes`, `writeBits_bytes`, `writeBits_setWidth`),
+`IselMemBase` (extern `iff` lemmas of the memory helpers; tactics `mem_inv hp [..] at h…`,
+`mem_refute`, `mem_split hp hc h t` — `isel_inv'`-style, keeps `hp`), `IselMemRun` (`RtOk`,
+`amVregs`/`amUses`, `load_ops`/`store_ops` operand views, `seqRun_isem_one`, `lo64_of_holds`,
+`Runs.of_prun`), `IselMemAmode` (`AddOk`, `amode_add_ok`: all three rules of `amode_add`;
+`add64_inv`, `add_imm64_inv`, `imm64_inv`, `addOk_imm12`, `addOk_add`).
+
+**Remaining (plan).** Contracts `amode_reg_scaled` (576, 3 rules), `amode_no_more_iconst`
+(575, 9 rules), `amode` (574, 4 rules incl. `stack_addr` → `SlotOffset`) with the statement
+`Frag ∧ ∃ am, amv.amode? = some am ∧ AmVregs am ∧ ∀ fr ρ w pv, RtOk … → fr.regs x = some pv →
+pv.ty = .i64 → UsesLo … ∧ Runs … (amodeAddr sb am bytes (amUses am ρ') w' = some (ofInt 64
+(pv.toNat + off)))` (DFG look-through via `binary_value`/`extend_value`/`shift_const_value`);
+helper terms `aarch64_{u,s}load*` (529–535), `aarch64_store*` (541–544) + `side_effect_inst_ok`,
+`compute_stack_addr` (643), `load_ext_name` (570: rules 3991/3996 fail since `is_pic`),
+`load_ext_name_got` (571); root rules by `root_match_data` + `instData` inversion (load format 16,
+store 22); 815/824 are vacuous (`ctor_is_sinkable_inst`). Byte lemmas for the load value / store
+are in `IselMemArm`.
+
+**Axioms**: `memRelOk_holds`, `readBits_getLsbD_eq`, `backend_correct_of_rules`: `propext`, `Classical.choice`, `Quot.sound`; `amode_add_ok` additionally the `bv_decide` certificates of M4AluB's `movK_ident` (via `imm_ok`). No `sorry`.

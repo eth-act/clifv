@@ -145,7 +145,7 @@ theorem renOf_vrenaming (gn : Nat → Nat) : VRenaming (renOf gn) gn := by
 
 theorem ctxOk_sound {f : Clif.Function} {ctx : Ctx} (h : ctxOk f ctx = true) : CtxInv f ctx := by
   simp only [ctxOk, Bool.and_eq_true, decide_eq_true_eq] at h
-  obtain ⟨⟨⟨⟨⟨hfunc, hinsts⟩, hreg⟩, hty⟩, hdef⟩, hslot⟩ := h
+  obtain ⟨⟨⟨⟨⟨⟨⟨⟨hfunc, hinsts⟩, hreg⟩, hty⟩, hdef⟩, hslot⟩, hres⟩, hvt⟩, haddr⟩ := h
   have hinst : ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info →
       info.clif = some inst →
       (instData f inst = .ok info.data) ∧
@@ -168,7 +168,7 @@ theorem ctxOk_sound {f : Clif.Function} {ctx : Ctx} (h : ctxOk f ctx = true) : C
         exact ⟨tys, ht, h2.1, h2.2⟩
       · cases h2
   refine ⟨hfunc, fun ii info inst hi hc => (hinst ii info inst hi hc).1,
-    fun ii info inst hi hc => (hinst ii info inst hi hc).2, ?_, ?_, ?_, ?_, hslot⟩
+    fun ii info inst hi hc => (hinst ii info inst hi hc).2, ?_, ?_, ?_, ?_, hslot, ?_, ?_, ?_⟩
   · intro x r hx
     have hlt : x < ctx.valReg.size := by
       simp only [Ctx.valueReg?] at hx
@@ -211,6 +211,30 @@ theorem ctxOk_sound {f : Clif.Function} {ctx : Ctx} (h : ctxOk f ctx = true) : C
     rw [hx] at this
     simp only [hi, Bool.and_eq_true] at this
     exact this.2
+  · intro ii info hi t ht
+    have hm : info ∈ ctx.insts.toList := by
+      rw [Array.mem_toList_iff]; exact Array.mem_of_getElem? hi
+    have := List.all_eq_true.mp (List.all_eq_true.mp hres info hm) t ht
+    obtain ⟨u, hu, he⟩ := List.any_eq_true.mp this
+    rw [of_decide_eq_true he]; exact hu
+  · intro x t hx
+    have hlt : x < ctx.valTy.size := by
+      simp only [Ctx.valueType?] at hx
+      cases h : ctx.valTy[x]? with
+      | none => rw [h] at hx; cases hx
+      | some _ => exact (Array.getElem?_eq_some_iff.mp h).1
+    have := all_range hvt hlt
+    rw [hx] at this
+    dsimp only at this
+    obtain ⟨u, hu, he⟩ := List.any_eq_true.mp this
+    rw [of_decide_eq_true he]; exact hu
+  · intro ii info inst x hi hc hx
+    have hm : info ∈ ctx.insts.toList := by
+      rw [Array.mem_toList_iff]; exact Array.mem_of_getElem? hi
+    have := List.all_eq_true.mp haddr info hm
+    rw [hc] at this
+    cases inst <;> simp only [memAddr?, reduceCtorEq, Option.some.injEq] at hx <;> subst hx <;>
+      simpa using this
 
 /-! ## `LowerShape` -/
 
