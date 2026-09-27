@@ -201,6 +201,21 @@ def uaddOverflowTrap (x y : BitVec w) : SpecOut w :=
   let sum := x.zeroExtend 65 + y.zeroExtend 65
   if sum.getLsbD w then .trap else .val (sum.setWidth w)
 
+/-! `bswap` (clif-subset-v2): the macros `bswap16!/32!/64!` of `inst_specs.isle` on the 64-bit
+widening `w = conv_to 64 x`; `concat a b` puts `a` in the high part, `extract h l` is
+`extractLsb' l (h-l+1)`. The spec is `conv_to (widthof result) (switch (widthof x) ...)`. -/
+
+def byteAt (x : BitVec 64) (i : Nat) : BitVec 8 := x.extractLsb' (8 * i) 8
+def bswap16 (x : BitVec 64) : BitVec 16 := byteAt x 0 ++ byteAt x 1
+def bswap32 (x : BitVec 64) : BitVec 32 := bswap16 x ++ (byteAt x 2 ++ byteAt x 3)
+def bswap64 (x : BitVec 64) : BitVec 64 :=
+  bswap32 x ++ (byteAt x 4 ++ (byteAt x 5 ++ (byteAt x 6 ++ byteAt x 7)))
+/-- `(conv_to 64 x)` for `x` of width ≤ 64: zero-extension. -/
+def convTo64 (x : BitVec w) : BitVec 64 := x.setWidth 64
+def bswapI16 (x : BitVec 16) : BitVec 16 := ((bswap16 (convTo64 x)).setWidth 64).setWidth 16
+def bswapI32 (x : BitVec 32) : BitVec 32 := ((bswap32 (convTo64 x)).setWidth 64).setWidth 32
+def bswapI64 (x : BitVec 64) : BitVec 64 := (bswap64 (convTo64 x)).setWidth 64
+
 end Spec
 
 /-! ## Agreement: generic lemmas -/
@@ -680,6 +695,38 @@ theorem uaddOverflowTrap_i64 (x y : BitVec 64) (c : TrapCode) :
   unfold Sem.uaddOverflowTrap Spec.uaddOverflowTrap
   simp only [hc, hs]
   split <;> rfl
+
+theorem smin_i8 (x y : BitVec 8) : Sem.smin x y = Spec.smin x y := smin_eq x y
+theorem smin_i16 (x y : BitVec 16) : Sem.smin x y = Spec.smin x y := smin_eq x y
+theorem smin_i32 (x y : BitVec 32) : Sem.smin x y = Spec.smin x y := smin_eq x y
+theorem smin_i64 (x y : BitVec 64) : Sem.smin x y = Spec.smin x y := smin_eq x y
+theorem smax_i8 (x y : BitVec 8) : Sem.smax x y = Spec.smax x y := smax_eq x y
+theorem smax_i16 (x y : BitVec 16) : Sem.smax x y = Spec.smax x y := smax_eq x y
+theorem smax_i32 (x y : BitVec 32) : Sem.smax x y = Spec.smax x y := smax_eq x y
+theorem smax_i64 (x y : BitVec 64) : Sem.smax x y = Spec.smax x y := smax_eq x y
+theorem umin_i8 (x y : BitVec 8) : Sem.umin x y = Spec.umin x y := umin_eq x y
+theorem umin_i16 (x y : BitVec 16) : Sem.umin x y = Spec.umin x y := umin_eq x y
+theorem umin_i32 (x y : BitVec 32) : Sem.umin x y = Spec.umin x y := umin_eq x y
+theorem umin_i64 (x y : BitVec 64) : Sem.umin x y = Spec.umin x y := umin_eq x y
+theorem umax_i8 (x y : BitVec 8) : Sem.umax x y = Spec.umax x y := umax_eq x y
+theorem umax_i16 (x y : BitVec 16) : Sem.umax x y = Spec.umax x y := umax_eq x y
+theorem umax_i32 (x y : BitVec 32) : Sem.umax x y = Spec.umax x y := umax_eq x y
+theorem umax_i64 (x y : BitVec 64) : Sem.umax x y = Spec.umax x y := umax_eq x y
+
+/-! ### `bswap` (i16/i32/i64, the spec's instantiations) -/
+
+theorem bswap_i16 (x : BitVec 16) : Sem.bswap x = Spec.bswapI16 x := by
+  simp [Sem.bswap, Spec.bswapI16, Spec.bswap16, Spec.byteAt, Spec.convTo64, List.range,
+    List.range.loop, List.foldl]
+  bv_decide
+theorem bswap_i32 (x : BitVec 32) : Sem.bswap x = Spec.bswapI32 x := by
+  simp [Sem.bswap, Spec.bswapI32, Spec.bswap32, Spec.bswap16, Spec.byteAt, Spec.convTo64,
+    List.range, List.range.loop, List.foldl]
+  bv_decide
+theorem bswap_i64 (x : BitVec 64) : Sem.bswap x = Spec.bswapI64 x := by
+  simp [Sem.bswap, Spec.bswapI64, Spec.bswap64, Spec.bswap32, Spec.bswap16, Spec.byteAt,
+    Spec.convTo64, List.range, List.range.loop, List.foldl]
+  bv_decide
 
 end PerWidth
 
