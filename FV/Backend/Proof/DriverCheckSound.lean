@@ -112,10 +112,10 @@ theorem lowBlocks_spec {f : Clif.Function} {call : StmtCall} {tcall : TermCallF}
             | some o =>
               cases hrec : lowBlocks f call tcall (start + B.body.length + 1) Bs
                   { tst' with emitted := #[] } nl' with
-              | none => simp only [hdata, htg, hterm, hrec, Option.isSome_some, if_true,
+              | none => simp only [hdata, htg, hterm, hrec, Option.isSome_some, ite_true,
                   Option.map_none] at h; cases h
               | some bl' =>
-                simp only [hdata, htg, hterm, hrec, Option.isSome_some, if_true, Option.map_some,
+                simp only [hdata, htg, hterm, hrec, Option.isSome_some, ite_true, Option.map_some,
                   Option.some.injEq] at h
                 subst h
                 obtain ⟨hlen, hbl⟩ := ih hrec
@@ -271,7 +271,7 @@ theorem succOk_sound {f : Clif.Function} {vc : VCode} {R : Reg → Reg} {B : Cli
     · rename_i tl htlb
       refine ⟨tl, htlb, fun ha => ?_, fun ha => ?_⟩
       · simpa [ha] using this
-      · rw [if_neg ha] at this
+      · simp only [ha, ite_false] at this
         split at this
         · rename_i eb heb
           simp only [Bool.and_eq_true, decide_eq_true_eq] at this

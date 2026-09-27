@@ -79,7 +79,7 @@ theorem keptOk_sound {vc vcp : VCode} {ss ss' : Array (Array Nat)} {b b' : Nat}
       by_cases hl : k < vb.insts.size - 1
       · refine ⟨i, ?_, .inl rfl⟩
         have e := congrArg (·[k]?) hpop
-        simp only [Array.getElem?_pop, hsz, hl, if_true] at e
+        simp only [Array.getElem?_pop, hsz, hl, ite_true] at e
         rw [e, hi]
       · have hk' : k = vb.insts.size - 1 := by omega
         subst hk'
