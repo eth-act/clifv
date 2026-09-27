@@ -381,7 +381,8 @@ structure ExtSem where
   sym : String → Int → BitVec 64
 
 open Classical in
-/-- A straight-line instruction: the Arm run of its canonical allocation. -/
+/-- A straight-line instruction: the Arm run of its canonical allocation (which must end
+without error, with the program unchanged). -/
 noncomputable def straightSem (F : BitVec 64 → Prop) (ctx : FnCtx) (i : MInst) (uses : List CV)
     (w : Arm.ArmState) : Option (List CV × Arm.ArmState × Ctl) :=
   match i.operands with
@@ -393,7 +394,9 @@ noncomputable def straightSem (F : BitVec 64 → Prop) (ctx : FnCtx) (i : MInst)
       if AccessOk F ctx ic (placeUses ops (canonRegs ops) uses w) then
         match execMInst ctx env0 ic (placeUses ops (canonRegs ops) uses w) with
         | some t' =>
-          if Arm.r .ERR t' = .None then some (defVals ops (canonRegs ops) t', t', .next) else none
+          if Arm.r .ERR t' = .None ∧ t'.program = w.program then
+            some (defVals ops (canonRegs ops) t', t', .next)
+          else none
         | none => none
       else none
 
@@ -487,7 +490,7 @@ theorem os_of_corr {F : BitVec 64 → Prop} {ctx : FnCtx} {env : Env} {X : ExtSe
       · rename_i herr
         simp only [Option.some.injEq, Prod.mk.injEq] at hsem
         obtain ⟨rfl, rfl, -⟩ := hsem
-        obtain ⟨s', hs', hW, hK, hD, hO⟩ := hc regs s w t' ha hw hacc ht herr
+        obtain ⟨s', hs', hW, hK, hD, hO⟩ := hc regs s w t' ha hw hacc ht herr.1
         refine ⟨s', hs', hW, hK, ?_, fun r hr hnd _ => hO r hr hnd, fun r hr => by simp [hcl] at hr⟩
         intro p hp
         rw [defRegs, ← hD, defVals] at hp
@@ -495,6 +498,28 @@ theorem os_of_corr {F : BitVec 64 → Prop} {ctx : FnCtx} {env : Env} {X : ExtSe
       · simp at hsem
     · simp at hsem
   · simp at hsem
+
+/-- What a defined straight-line step gives: control `next`, a world without error, the same
+program. -/
+theorem straightSem_some {F : BitVec 64 → Prop} {ctx : FnCtx} {i : MInst} {uses : List CV}
+    {w : Arm.ArmState} {outs : List CV} {w' : Arm.ArmState} {ctl : Ctl}
+    (h : straightSem F ctx i uses w = some (outs, w', ctl)) :
+    ctl = .next ∧ Arm.r .ERR w' = .None ∧ w'.program = w.program := by
+  unfold straightSem at h
+  split at h
+  · cases h
+  · split at h
+    · cases h
+    · split at h
+      · split at h
+        · split at h
+          · rename_i herr
+            simp only [Option.some.injEq, Prod.mk.injEq] at h
+            obtain ⟨-, rfl, rfl⟩ := h
+            exact ⟨rfl, herr.1, herr.2⟩
+          · cases h
+        · cases h
+      · cases h
 
 /-! ## Tactics -/
 

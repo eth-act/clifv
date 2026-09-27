@@ -324,7 +324,13 @@ Done (sorry-free):
   reaches `Q` at the next item with `MStep.move`'s store (the `Realizes` move case).
   `StRel.store` is now over `ValidLoc ∧ Live`.
 
-Remaining (in the order of the plan above): the `op` case of `Realizes` (straight-line via
+- **Straight-line items** (`FV/E2E/RegLevelOp.lean`): `realizes_op_next` — the `op`/`next`
+  case of `Realizes`, given `OperandsSound` of the instruction and `LinesOk` of its allocated
+  form (plain unhooked lines; `linesOk_of_oneLine` for one-line forms); `csem_next_world`
+  (non-call `next` steps keep the program, error-free world). `straightSem` now also requires
+  the canonical run to keep the program (needed for `StRel.prog`; `os_of_corr` unchanged).
+
+Remaining (in the order of the plan above): per-form `LinesOk`/coverage for the `op` of `Realizes` (straight-line via
 `operandsSound_step` + an `InterOk` fact for multi-line expansions — `execLines` does not
 check the error flag of intermediate states, so each multi-line form, i.e. the x16 address
 sequence, needs it — and the coverage of every `vcp` form), `Args`, calls, control flow,
