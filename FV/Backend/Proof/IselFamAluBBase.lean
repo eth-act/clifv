@@ -231,6 +231,15 @@ macro_rules
         simp only [VHolds, resX, opnd, ofX, lo64, upd, ↓reduceIte, $ls,*] at * <;>
         dsimp only [Clif.Ty.width, OperandSize.bits] at * <;> bv_decide))
 
+/-- `wfix [defs]`: a `VHolds` goal at a concrete type (and concrete operand sizes). -/
+syntax "wfix" (" [" (Lean.Parser.Tactic.simpLemma),* "]")? : tactic
+macro_rules
+  | `(tactic| wfix) => `(tactic| wfix [])
+  | `(tactic| wfix [$ls,*]) => `(tactic| (
+      simp only [VHolds, resX, opnd, ofX, lo64, upd, ↓reduceIte, Nat.left_eq_add,
+        Nat.add_right_cancel_iff, Nat.add_eq_left, Nat.succ_ne_self, $ls,*] at * <;>
+        dsimp only [Clif.Ty.width, OperandSize.bits] at * <;> bv_decide))
+
 /-! ## Instruction shapes -/
 
 theorem vdefs_rr {i : MInst} {d x : Nat}
@@ -243,6 +252,59 @@ theorem vdefs_rrr {i : MInst} {d x y : Nat}
       ⟨y, .int, .use, .early, .reg⟩]) :
     vdefs i = [d] ∧ vuseNums i = [x, y] := by
   simp only [vdefs, vuseNums, h]; exact ⟨rfl, rfl⟩
+
+/-! ## Operand facts of the emitted forms (for the templates' `hdefs`/`huses`) -/
+
+section Facts
+variable (op : ALUOp) (bop : BitOp) (sz : OperandSize) (d x y : Nat)
+
+theorem vd_aluRRR : vdefs (.aluRRR op sz (.vreg d .int) (.vreg x .int) (.vreg y .int)) = [d] ∧
+    vuseNums (.aluRRR op sz (.vreg d .int) (.vreg x .int) (.vreg y .int)) = [x, y] := ⟨rfl, rfl⟩
+theorem vd_aluRRR_xzr : vdefs (.aluRRR op sz (.vreg d .int) .xzr (.vreg y .int)) = [d] ∧
+    vuseNums (.aluRRR op sz (.vreg d .int) .xzr (.vreg y .int)) = [y] := ⟨rfl, rfl⟩
+theorem vd_aluRRImm12 (i : Imm12) : vdefs (.aluRRImm12 op sz (.vreg d .int) (.vreg x .int) i) = [d] ∧
+    vuseNums (.aluRRImm12 op sz (.vreg d .int) (.vreg x .int) i) = [x] := ⟨rfl, rfl⟩
+theorem vd_aluRRImmLogic (i : ImmLogic) :
+    vdefs (.aluRRImmLogic op sz (.vreg d .int) (.vreg x .int) i) = [d] ∧
+    vuseNums (.aluRRImmLogic op sz (.vreg d .int) (.vreg x .int) i) = [x] := ⟨rfl, rfl⟩
+theorem vd_aluRRImmShift (i : Nat) :
+    vdefs (.aluRRImmShift op sz (.vreg d .int) (.vreg x .int) i) = [d] ∧
+    vuseNums (.aluRRImmShift op sz (.vreg d .int) (.vreg x .int) i) = [x] := ⟨rfl, rfl⟩
+theorem vd_bitRR : vdefs (.bitRR bop sz (.vreg d .int) (.vreg x .int)) = [d] ∧
+    vuseNums (.bitRR bop sz (.vreg d .int) (.vreg x .int)) = [x] := ⟨rfl, rfl⟩
+theorem vd_extend (sg : Bool) (a b : Nat) : vdefs (.extend (.vreg d .int) (.vreg x .int) sg a b) = [d] ∧
+    vuseNums (.extend (.vreg d .int) (.vreg x .int) sg a b) = [x] := ⟨rfl, rfl⟩
+
+end Facts
+
+/-- Discharge a template's `hdefs`/`huses` for a concrete code list. -/
+macro "code_facts" : tactic => `(tactic| (
+  intros
+  simp_all only [List.mem_cons, List.mem_nil_iff, or_false, (vd_aluRRR _ _ _ _ _).1,
+    (vd_aluRRR _ _ _ _ _).2, (vd_aluRRR_xzr _ _ _ _).1, (vd_aluRRR_xzr _ _ _ _).2,
+    (vd_aluRRImm12 _ _ _ _ _).1, (vd_aluRRImm12 _ _ _ _ _).2,
+    (vd_aluRRImmLogic _ _ _ _ _).1, (vd_aluRRImmLogic _ _ _ _ _).2,
+    (vd_aluRRImmShift _ _ _ _ _).1, (vd_aluRRImmShift _ _ _ _ _).2,
+    (vd_bitRR _ _ _ _).1, (vd_bitRR _ _ _ _).2, (vd_extend _ _ _ _ _).1, (vd_extend _ _ _ _ _).2]
+  omega))
+
+/-- A one-variable rule environment. -/
+abbrev env1 (a : V) : Interp.Env V := (Array.replicate 1 none).setIfInBounds 0 (some a)
+
+/-- A rule at index `j` of a list comes before the rule at index `i > j`. -/
+theorem earlier_of_idx {L : List Rule} {r r' : Rule} {i j : Nat} (hi : L[i]? = some r)
+    (hj : L[j]? = some r') (hji : j < i) : ∃ pre post, L = pre ++ r :: post ∧ r' ∈ pre := by
+  obtain ⟨hlt, hget⟩ := List.getElem?_eq_some_iff.mp hi
+  refine ⟨L.take i, L.drop (i + 1), ?_, ?_⟩
+  · conv => lhs; rw [← List.take_append_drop i L]
+    rw [List.drop_eq_getElem_cons hlt, hget]
+  · obtain ⟨hlt', hget'⟩ := List.getElem?_eq_some_iff.mp hj
+    rw [← hget']
+    exact List.mem_iff_getElem.mpr ⟨j, by simp; omega, by simp⟩
+
+theorem ty_eq_of_width {ty ty' : Clif.Ty} (h : ty.width = ty'.width) (h' : ty'.width ≠ 128) :
+    ty = ty' := by
+  cases ty <;> cases ty' <;> simp_all [Clif.Ty.width]
 
 /-! ## Template: a unary root rule emitting straight-line code into fresh vregs -/
 
