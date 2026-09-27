@@ -456,8 +456,17 @@ def certOk (f : Clif.Function) (ctx : Ctx) (st0 : LState) (gn : Nat → Nat) (bl
     | none => true) &&
   f.blocks.all (fun B => B.params.all fun q => decide (ctx.valueType? q.1 = some (CTy.ofClif q.2)))
 
+/-- Every `br_table` index has an integer type of at most 32 bits (`BrIdxTyped`; Cranelift's
+verifier requires `i32`). -/
+def brIdxOk (f : Clif.Function) (ctx : Ctx) : Bool :=
+  f.blocks.all fun B => match B.term with
+    | .brTable x _ _ => match ctx.valueType? x with
+      | some (.int w) => decide (w ≤ 32)
+      | _ => false
+    | _ => true
+
 /-- **The lowering validator.** Accepts `vc` iff it is the lowering of `f` in the structure
-the driver proof needs, with an SSA availability certificate. -/
+the driver proof needs, with an SSA availability certificate, and every `br_table` index has at most 32 bits. -/
 def lowerCheck (f : Clif.Function) (vc : VCode) : Bool :=
   match buildCtx f with
   | .error _ => false
@@ -466,6 +475,6 @@ def lowerCheck (f : Clif.Function) (vc : VCode) : Bool :=
     | none => false
     | some bl =>
       let gn := gnOf st0.nextVreg (aliasOf f bl)
-      shapeOk f vc ctx st0 gn bl && certOk f ctx st0 gn bl (inFix f gn)
+      shapeOk f vc ctx st0 gn bl && certOk f ctx st0 gn bl (inFix f gn) && brIdxOk f ctx
 
 end Backend.Proof.Driver

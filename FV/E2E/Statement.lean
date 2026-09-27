@@ -64,15 +64,17 @@ def spv (s : Arm.ArmState) : BitVec 64 := Arm.r (.GPR 31#5) s
 /-! ## The subset -/
 
 /-- The CLIF functions the theorem covers: clif-subset-v2 E (`Compile.functionE`), plus the
-current restrictions of the proof (e2e.md, "Remaining"): parameters passed in registers, and
+current restrictions of the proof (e2e.md, "Remaining"): parameters passed in registers,
 calls only to externs (calls between compiled functions compose by induction on the call
-depth, not done yet). -/
+depth, not done yet), and externs with at most 8 (register) parameters (no stack-passed call
+arguments). -/
 structure InSubset (p : Clif.Program) (f : Clif.Function) : Prop where
   func : p.func? f.name = some f
   subsetE : Compile.functionE f = true
   regParams : f.sig.params.length ≤ 8
   externCalls : ∀ b ∈ f.blocks, ∀ st ∈ b.body, ∀ fn args, st.inst = .call fn args →
     ∀ e, f.extern? fn = some e → p.func? e.name = none
+  callRegArgs : ∀ e ∈ f.externs, e.2.sig.params.length ≤ 8
 
 /-! ## The compiled code -/
 
@@ -178,7 +180,7 @@ def StackAvail (af : AFunc) (s : Arm.ArmState) : Prop := af.frameSize + 16 ≤ (
 
 /-- The state the function body starts in, relative to the ABI entry state `s`: the prologue
 (when `af.frame`) pushed fp/lr and set up the frame: `sp` lowered by `16 + frameSize`, `x29` the
-frame pointer `sp_entry - 16`; x0–x7 (arguments), memory, the program and every field outside
+frame pointer `sp_entry - 16`; x0–x7 and v0–v7 (arguments), memory, the program and every field outside
 the allocatable/temporary registers (x18, x30, flags, …) as at entry. -/
 def frameDrop (af : AFunc) : Nat := if af.frame then af.frameSize + 16 else 0
 
@@ -186,6 +188,7 @@ structure BodyEntry (af : AFunc) (s w₀ : Arm.ArmState) : Prop where
   sp : spv w₀ = spv s - BitVec.ofNat 64 (frameDrop af)
   fp : xreg 29 w₀ = if af.frame then spv s - 16#64 else xreg 29 s
   args : ∀ i < 8, xreg i w₀ = xreg i s
+  argsV : ∀ i < 8, Arm.r (.SFP (BitVec.ofNat 5 i)) w₀ = Arm.r (.SFP (BitVec.ofNat 5 i)) s
   other : ∀ f, ¬ Masked f → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → Arm.r f w₀ = Arm.r f s
   mem : w₀.mem = s.mem
   program : w₀.program = s.program
@@ -260,7 +263,8 @@ def RegLevelCorrect (sem : Arm.ArmState → Sem) (F : Arm.ArmState → BitVec 64
 (`LowerShape`, incl. `CtxInv`), and an SSA availability certificate exists (`Cert`).
 Discharged by `lowerCheck` (`loweringObligations_of_check`). -/
 def LoweringObligations (f : Clif.Function) (vc : VCode) : Prop :=
-  ∃ ctx st0 R gn bl A, LowerShape f vc ctx st0 R gn bl ∧ Cert f ctx st0 gn bl A
+  ∃ ctx st0 R gn bl A, LowerShape f vc ctx st0 R gn bl ∧ Cert f ctx st0 gn bl A ∧
+    ∀ B ∈ f.blocks, BrIdxTyped ctx B.term
 
 /-! ## The theorem's conclusion -/
 

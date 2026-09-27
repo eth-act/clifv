@@ -247,6 +247,111 @@ shift amounts by `shift_mask`). With "low bits" the obligation stays local to ea
   constructor application would avoid fuel arithmetic and the evaluation-order tactic.
 - **Width convention**: document "low bits, upper unspecified" as the contract (PLAN §3.4).
 
+## Family A (binary ALU with operand look-through) — M4AluA
+
+Closure root rules of the family's opcodes (`FV/Isle/Generated/Closure.lean`, `isRoot`, term
+686), with state:
+
+| Opcode | Rule (`lower.isle` line, name) | State |
+| --- | --- | --- |
+| `iadd` | 86 `iadd_base_case` | done (M4Foundation) |
+| `iadd` | 90 `iadd_imm12_right`, 93 `iadd_imm12_left` | **proven** (`iadd_imm12_right_ok`, `iadd_imm12_left_ok`) |
+| `iadd` | 98 `iadd_imm12_neg_right`, 102 `iadd_imm12_neg_left` | **proven** (`iadd_imm12_neg_right_ok`, `iadd_imm12_neg_left_ok`) |
+| `iadd` | 116 `iadd_ishl_right`, 120 `iadd_ishl_left` | **proven** (`iadd_ishl_right_ok`, `iadd_ishl_left_ok`) |
+| `iadd` | 108 `iadd_extend_right`, 111 `iadd_extend_left` | **proven** (M4AluA2: `iadd_extend_right_ok`, `iadd_extend_left_ok`) |
+| `iadd` | 125 `iadd_imul_right`, 128 `iadd_imul_left` | **proven** (M4AluA2: `iadd_imul_right_ok`, `iadd_imul_left_ok`) |
+| `isub` | 801 `isub_base_case` | done (M4Foundation) |
+| `isub` | 805 `isub_imm12`, 810 `isub_imm12_neg`, 821 `isub_ishl` | **proven** (`isub_imm12_ok`, `isub_imm12_neg_ok`, `isub_ishl_ok`) |
+| `isub` | 132 `isub_imul`, 816 `isub_extend` | **proven** (M4AluA2: `isub_imul_ok`, `isub_extend_ok`) |
+| `imul` | 871 `imul_base_case` | **proven** (M4AluA2: `imul_base_case_ok`) |
+| `smulhi`/`umulhi` | 1056 `smulhi_64`, 1068 `umulhi_64` | **proven** (M4AluA2: `smulhi_64_ok`, `umulhi_64_ok`) |
+| `smulhi`/`umulhi` | 1059, 1071 (`fits_in_32`) | **proven** (M4AluA2: `smulhi_fits_in_32_ok`, `umulhi_fits_in_32_ok`), i8/i16/i32 |
+| `band`/`bor`/`bxor` | 1412, 1449, 1516 (`*_fits_in_64`) | **proven** (`band/bor/bxor_fits_in_64_ok`) via the term contract `aluRsImmLogicComm_ok` (all 5 rules: reg-reg, logical immediate either side, `ishl` by a constant either side) |
+| `band`/`bor`/`bxor` | 1429/1431, 1466/1468, 1534/1536 (`*_not_right/left`) | **proven** (M4AluA2: `band/bor/bxor_not_right/left_ok`) via the term contract `aluRsImmLogic_ok` (term 566, all 3 rules) |
+| `bor` | 1501, 1507 (`extr_32_or_64`) | **proven** (M4AluA2: `extr_32_or_64_ok`, `extr_32_or_64_2_ok`), I32/I64 |
+| `bnot` (family B) | 1406 (`bnot (bxor x y)`) | **proven** for M4AluB2 (M4AluA2: `bnot_bxor_ok`, via `aluRsImmLogic_ok` with `EorNot`) |
+
+**Shared edits made** (all additive, announced): `FrameTyped` conjunct of `DFGCons` (f55011e,
+integrator decision); ispec forms `smulh/umulh .size64`, `AluRRRR` madd/msub (+ `ra = xzr`),
+`AluRRRShift` (lsl, `aluShiftable`) and `.extr`, `AluRRRExtend` (`extendVal`) (c74e398);
+`AluRRImmLogic` guarded to the logical operations (e2b64ab; Asm rejects add/sub). Taken
+verbatim from peers: M4Cmp 1a4de60 / 4de7914, M4AluB 1532afa / c696bfa, M7Driver 0770fd7.
+
+**Files.** `IselFamALUA.lean` (generic: `root_match_inv`, `binary_root_inv`, `values2_match_inv`,
+`defInst_match_inv`, `imm12_args_inv`, `iflet_term_var_inv`, `negated_value_inv`; CLIF
+inversion `instData_iconst_inv`/`instData_binary_inv`, `ctxInv_clif`; `dfg_single`,
+`evalInst_binary_inv`/`evalInst_shift_inv`; `seqRun_step`/`seqRun_one`, `lowerInstOk_binary`,
+`lowerInstOk_one`, `OneInstOk` + `OneInstOk.lowerInstOk`; `rhs_output_inv`; width lemmas
+`holds_add_imm`/`holds_sub_imm`/`holds_add_K`/`holds_sub_K`/`aluVal_holds_B`,
+`negImm12_value`, `sextFrom_imm64OfIconst`, `ofNat_u64`, `land_width_sub_one`);
+`IselTermsALUA.lean` (generic `ofV_*`, `operand_size_run`, `alu_rr_imm12_run`, `add_imm_run`,
+`sub_imm_run`); `IselRulesALUA.lean` (forward lemmas 90/93/805/98/102/810,
+`imm12_from_negated_value_some/none`); `IselTermsLogic.lean` (extern lemmas
+`ctor_imm_logic_*` — proven by rewriting only: a `rfl`/`simp` that lets the kernel unfold
+`ImmLogic.ofNat?` on a symbolic value ran out of 14 GB — `ctor_lshl_*`, `alu_rr_imm_logic_run`,
+`alu_rrr_shift_run`, `add/sub_shift_run`, forward lemmas of the five 565 rules and of
+116/120/821/1412/1449/1516); `IselFamALUARules.lean`, `IselFamALUALogic.lean` (rule theorems,
+`aluRsImmLogicComm_ok`, `logicRoot_ruleOk` template).
+
+**Cost** (one core, `lake env lean`): `IselFamALUA` 3 s, `IselTermsALUA` 4 s, `IselRulesALUA`
+10 s, `IselTermsLogic` 18 s / 2.9 GB peak, `IselFamALUARules` and `IselFamALUALogic` ≈ 1 s
+each: ≈ 3 s per look-through rule (forward lemmas) plus < 0.2 s per rule theorem.
+**Axioms** of every theorem above: `propext`, `Classical.choice`, `Quot.sound`.
+
+### M4AluA2 (successor): the remaining 19 family-A rules and rule 1406
+
+All 31 closure root rules of family A are now proven (plus family B's 1406, requested by
+M4AluB2), each `LowerRuleOk` for any `isem` refining `ispec` and any `MRStable` memory relation,
+at every width the rule's type pattern admits. No shared file was changed (no `ispec` form or
+contract edit was needed; `main` a156415 merged in).
+
+**Term contracts.** `aluRsImmLogic_ok` (`alu_rs_imm_logic`, term 566; `NotOp op` =
+`AndNot`/`OrrNot`/`EorNot`, value `notOpVal op x y`; the shape of `aluRsImmLogicComm_ok`, one
+instruction, `LogicOut`), `notRoot_rhs` (a right-hand side `(output_reg (alu_rs_imm_logic …))`).
+`sext64_inv`/`zext64_inv` (`put_in_reg_sext64/zext64`, terms 557/558: narrow type → `extend` to
+64 bits, `I64` → the operand's register, else no match); helper runs `alu_rrrr_run`, `madd_run`,
+`msub_run`, `smulh_run`, `umulh_run`, `alu_rrr_extend_run`, `alu_rr_extend_reg_run`,
+`add/sub_extend_run`, `a64_extr_run_32/64`, `alu_rr_imm_shift_run_fa`, `asr/lsr_imm_run`,
+`extend_run_fa`.
+
+**Look-through and value lemmas.** `instData_bnot_inv`/`bnot_value`, `binary_value` (any
+non-shift op), `shift_const_value` (shift by an `iconst`), `ext_extended_inv` +
+`extend_value` (`extended_value_from_value`: `ctx.defClif?` + `valueType?`, value by `DFGCons`,
+source width by `FrameTyped`); `ExtrOk`/`extrOk_nat` (the `extr` if-lets). Width lemmas:
+`aluVal_holds_not`, `holds_madd`/`holds_msub`/`holds_mul0`, `smulh_holds`/`umulh_holds`,
+`extendVal_holds`, `extr_bits`/`extr_holds`, `mulhi_narrow_s/u` (bits `w..2w-1` of the 64-bit
+product of the extensions = the high half of the `2w`-bit product).
+
+**Multi-instruction rules (1059/1071).** `evalExpr_let_inv`, `evalBinds_cons_inv`,
+`evalArgs_var1` invert a `let` right-hand side to its sub-calls; the contracts fix each operand
+part, abstracted as `PartOk` (code, fresh defs, uses only the operand, 64-bit extension in the
+result vreg, vregs below the start state kept); the `I64` arm is vacuous at a narrow type by
+`FrameTyped`; `seqRun_append_fall_fa` composes the runs; `mulhiN_lowerInstOk` is the back half
+(`madd … xzr`, `asr`/`lsr` by the width) for both rules. `ValsBelow` keeps the second operand's
+vreg untouched by the first part.
+
+**Constant type patterns** (`I64` in 1056/1068, `ty_32_or_64`, `fits_in_32`): a `*_ne`/`*_ty`
+forward lemma shows the match fails at other widths (`sem_eq_beq_fa` + `beq` on `V.ty`).
+Rules whose if-lets can fail (1501/1507: `u8` range, `xs + ys = w`, positivity) have a single
+`match_*_none` lemma under `¬ ExtrOk` (a case split per condition, `maxHeartbeats 2000000`
+locally: the 5-deep look-through pattern exceeds the default).
+
+**Files.** `IselTermsLogicNot`/`IselFamALUALogicNot` (566 contract, 1429–1536, 1406),
+`IselTermsALUAMul`/`IselFamALUAMul` (1056, 1068, 871, 125, 128, 132),
+`IselTermsALUAExt`/`IselFamALUAExt` (108, 111, 816), `IselTermsALUAExtr`/`IselFamALUAExtr`
+(1501, 1507), `IselTermsALUAMulN`/`IselFamALUAMulN` (1059, 1071).
+
+**Cost** (`lake env lean`, this machine): forward-lemma files 6–13 s each except
+`IselTermsALUAExtr` ≈ 55 s (the two `extr` match/none lemmas); rule-theorem files 1–3 s.
+Peak memory well under the 10 GB cap.
+
+**Integration notes.** Names that peers' branches also define were suffixed `_fa`
+(`ctor_zero_reg_fa`, `ext_fits_in_32_ty_fa`, `ctor_ty_bits_ty_fa`, `ofV_extend_fa`,
+`ext_value_type_none_fa`, `extend_run_fa`, `alu_rr_imm_shift_run_fa`, `seqRun_append_fall_fa`,
+`operands_extend_fa`, `sem_eq_beq_fa`, `variantNames_Unary_fa`). Pre-existing clashes from the
+predecessor's files remain for the integrator: M4AluB's branch also defines `szOf`,
+`getAs_isSome`, `lowerInstOk_one`, `SameWorld.trans'` in `Backend.Proof`.
+**Axioms** of every theorem above: `propext`, `Classical.choice`, `Quot.sound`.
 ## Family C: flags, select, min/max, div/rem (M4Cmp)
 
 **Status: infrastructure only — no root rule proven yet.** Branch `agent/m4-cmp`.
@@ -356,3 +461,158 @@ refuted by `value_regs_get … 1` on a one-register value); `is_nonzero_cmp_ok`;
 via `lower_select` (`CondFlag cmpXzr`, `runs_flags_csel`, `lower_select_cond` rule 5364 only for
 integer types). Division needs `imm_ok` from M4AluB (`eac2707`, `IselTermsImm.lean`; merge
 agent/m4-alu-b). M4Ctl consumes `is_nonzero_cmp_ok`/`CondSem` for `brif`.
+
+## Family Ctl: terminators, branches, calls (M4Ctl)
+
+Branch `agent/m4-ctl`. Files `FV/Backend/Proof/IselCtl{Base,Term,Unmatch,Branch,Call,}.lean`,
+axiom audit `FVTest/Backend/Proof/Ctl/Axioms.lean`.
+
+**Statements proven for `Isle.Aarch64.program`** (axioms `propext`, `Classical.choice`,
+`Quot.sound`):
+
+| Statement | Theorem | Notes |
+| --- | --- | --- |
+| `LowerTermRulesCorrect program` | `lowerTermRulesCorrect` | `trap` 964 (`udf`, `trap_ruleOk`), `return` 1037 (`lower_return` → `rets` of the value vregs pinned to x0.., `ret_ruleOk`) |
+| `TermUnmatchable program` | `termUnmatchable` | root-format check: `ruleFmt` + one `decide +kernel` over the 517 `lower` rules (`lower_fmts`), generic `ruleFmt_match` |
+| `BranchExcludedUnmatchable program` | `branchExcludedUnmatchable` | same, `lower_branch_fmts` (try_call rules 1034/1035/1036) |
+
+**Per-rule status (`lower_branch`, `BranchRulesCorrect` still open):**
+
+| Rule | State |
+| --- | --- |
+| 1139 `jump` | **proven** (`jump_ruleOk`, `jump_termOk`) |
+| 1132 `brif` base (`br_cond_result (is_nonzero_cmp v)`) | open: needs family C's `is_nonzero_cmp`/`emit_icmp` contracts (`CondSem`/`CondCode` on `agent/m4-cmp`@6e60c71, not finished) and a `br_cond_result` contract (4 rules) |
+| 1137 `tbnz`, 1138 `tbz` (look through `band x (iconst 2^k)`, `icmp eq … 0`) | open: `def_inst` look-through + `test_and_compare_bit_const` lemmas |
+| 1140 `br_table` | open (now provable: `BrIdxTyped`, change #6): `emit_island`, `put_in_reg_zext32` (`ExtOut`, family C), `br_table_impl` (2 rules; needs `imm` from family B), `jt_sequence` |
+
+**Calls (`CallRulesCorrect`, open):** rules 1031 (`bl`) and 1032 (GOT + `blr`); `call_indirect`
+(`rule_lower_2529`, 1033) is not in E. The extern/ABI lemmas are proven (`IselCtlCall.lean`:
+`func_ref_data`, `gen_call_output` = `outRegs`/`freshN`, `argLocs_eq` (≤ 8 arguments all in
+x0..), `gen_call_args`/`gen_call_rets`/`gen_call_info`/`gen_call_ind_info`, `is_pic`); the two
+rule theorems (operand view of `call`, `CallsRefine` application, `ResultsHeld` of the fresh
+output vregs) are not written.
+
+**Shared changes (integrator-approved, announced):** #5 `38600e8` (calls: `CallsRefine`,
+`CallRegArgs`, `CallRuleOk`/`CallRulesCorrect`, `LowerRulesCorrect` excludes `callRootRule`,
+ispec control forms `rets`/`jump`/`condBr`/`testBitAndBranch`/`emitIsland`/`jtSequence` as M6's
+`csem` 350a4c7, E2E threading, `InSubset.callRegArgs`, compiler flags >8-parameter externs
+unverified); #6 `e597895` (`BrIdxTyped` premise of `BranchRuleOk`/`TermCalls`, `lowerCheck`'s
+`brIdxOk`). `callRootRule` corrected to rule ids 1031/1032 (first version named 1027, which is
+`symbol_value`; reported by M4Mem). Merged `agent/m4-cmp`@b455355 (family C infrastructure).
+
+**Techniques.** Inverse evaluation (`isel_inv`, `ctl_inv` = `isel_inv` + the family's extern
+lemmas each round); fuel as `n' + 100` so the iff lemmas apply; callee contracts passed in
+before `cases hp` (which clears `hp`); a terminator's format from the matched rule
+(`ruleFmt_term`) instead of evaluating the mismatching cases (which timed out).
+## Family B: unary ALU, shifts, rotates (M4AluB, branch `agent/m4-alu-b`)
+
+**Proven `LowerRuleOk` (i8..i64 where the rule's type pattern allows), 13 rules** — rule ids
+(`Rule.id`) / `lower.isle` line / theorem:
+
+| id | line | rule | theorem (file) |
+| --- | --- | --- | --- |
+| 756 | 857 | `ineg_base_case` | `ineg_base_case_ok` (`IselFamAluBUnary`) |
+| 915 | 1931 | `bitrev.i8` | `bitrev_i8_ok` (`IselFamAluBBitrev`) |
+| 916 | 1937 | `bitrev.i16` | `bitrev_i16_ok` |
+| 918 | 1946 | `bitrev` (i32/i64) | `bitrev_ok` (first-match: 1931/1937) |
+| 919 | 1951 | `clz_8` | `clz_i8_ok` (`IselFamAluBClz`) |
+| 920 | 1955 | `clz_16` | `clz_i16_ok` |
+| 922 | 1961 | `clz_32_64` | `clz_ok` (first-match: 1951/1955) |
+| 924 | 1982 | `ctz_8` | `ctz_i8_ok` |
+| 925 | 1986 | `ctz_16` | `ctz_i16_ok` |
+| 927 | 1995 | `ctz_32_64` | `ctz_ok` (first-match: 1982/1986) |
+| 932 | 2035 | `bswap.i16` | `bswap_i16_ok` (`IselFamAluBBswap`) |
+| 933 | 2038 | `bswap.i32` | `bswap_i32_ok` |
+| 934 | 2041 | `bswap.i64` | `bswap_i64_ok` |
+
+Axioms of every theorem: `propext`, `Classical.choice`, `Quot.sound` and the
+`<thm>._native.bv_decide.ax_*` certificates of the width lemmas. No `sorry`.
+
+**Shared changes made (all additive, taken byte-identically by the other families):**
+`1532afa` (ispec: `aluVal` andNot/orrNot/eorNot, `shiftVal`, `rrrVal` for AluRRR shifts mod
+width, `aluRRImm12 .sub`, `aluRRImmShift`, `bitRR` rbit/clz/rev16/rev32/rev64, `extend` 8→16,
+AluRRR with `xzr` first operand; `CtxInv.defClif`), `c696bfa` (contract change #3:
+`LowerRuleOk` assumes the rules before `r` in `lower` failed to match — the generic
+`bitrev`/`clz`/`ctz` rules are *wrong* at i8/i16 and only correct because selection is first
+match; `selectRule_some_first`, `applyTerm_internal_some_first`, `lower_rules_nodup`).
+
+**Infrastructure** (`IselFamAluBBase`, `IselTermsAluB`): `PRun` (world-independent
+straight-line runs, `prun_cons`/`prun_rr`/`prun_rrr`), `lowerInstOk_one`, `unary_front`,
+templates `unary_ruleOk` (code a function of width) and `unary_ruleOk'` (per-evaluation
+`CodeShape` + meaning; for `value_type`-dependent code), tactics `wcases`/`wfix` (width lemmas by
+`bv_decide -enums`; `-enums` is needed so two modules can be imported together), `code_facts`,
+`st_facts`, `earlier_of_idx` (first-match side conditions from rule indices in `lower`).
+Term contracts: `bit_rr_run`, `alu_rr_imm_shift_run`, `alu_rr_imm12_run`, `alu_rr_imm_logic_run`,
+`extend_run`, `put_in_reg_zext32` (`zext32_pass32/pass64/ext/none/big`, all `value_type`
+cases — the code depends on the operand's `valueType?`, which `CtxInv` does not relate to the
+instruction; `FrameTyped` makes the other cases vacuous at run time).
+
+**Cost** (this machine, one module at a time, 10 GB cap): `IselFamAluBBase` 1.5 s,
+`IselTermsAluB` 8 s, `IselFamAluBUnary` 4 s, `IselFamAluBBitrev` 10 s, `IselFamAluBClz` 24 s,
+`IselFamAluBBswap` 7 s; i.e. ~2–4 s per rule. Rule index lemmas (`lower_idx_*`, `rfl` on the
+517-entry list) ~1 s each.
+
+**Continuation (M4AluB2, same branch).** 7 more rules proven (20 total), plus the `imm`
+contract; merged `main` at `4da7bdc` (only conflict: my additive `ispec` arms).
+
+| id | line | rule | theorem (file) |
+| --- | --- | --- | --- |
+| 582 | 53 | `iconst` | `iconst_ok` (`IselFamAluBIconst`) |
+| 587 | 78 | `nop` | `nop_ok` (`IselFamAluBMisc`) |
+| 828 | 1377 | `bnot_base_case` | `bnot_base_case_ok` (`IselFamAluBMisc`) |
+| 946 | 2146 | `ireduce` | `ireduce_ok` (`IselFamAluBMisc`) |
+| 808 | 1261 | `uextend` | `uextend_ok` (`IselFamAluBExtend`) |
+| 819 | 1315 | `sextend` | `sextend_ok` (`IselFamAluBExtend`) |
+| 834 | 1406 | `bnot (bxor x y)` | proven by **M4AluA2** on `agent/m4-alu-a` (`6b431d6`, `bnot_bxor_ok`), since it needs their `alu_rs_imm_logic` (term 566) contract |
+
+Axioms: `propext`, `Classical.choice`, `Quot.sound`, plus `bv_decide` certificates
+(`extend_sem`, `bnot_base_case_ok`, and `movK_ident` for `iconst`). No `sorry`, no axiom.
+
+* **`imm` contract** (`IselTermsImm.imm_ok`, all five rules, `i8..i64`, `ImmExtend` Zero/Sign;
+  shared with M4Cmp2): from `applyTerm … 553 [.ty (.int w), .data 122 e [], .int i] = some v`,
+  `ImmOut`: fresh vreg `d`, `CodeShape`, and on every run a 64-bit value `X` in `d` with
+  `X % 2^w = u64 i % 2^w`, equal to `immVal w (e == 0) (u64 i)` (= `load_constant_full`'s value)
+  except for an `i32` zero-extended constant `≥ 2^32`. Proof is *inverse*: `applyTerm_internal_some`
+  picks the fired rule, per-rule forward match/rhs lemmas (`match_37xx`, `rhs_37xx`), then the
+  meaning per case (`imm_case_*`).
+* **`load_constant_full`** (`IselLcf.lcf_run`): the `movz`/`movn` + `movk` loop leaves
+  `lcfValue …` in the result vreg, for every value (16-bit slice arithmetic `slice16`/`replace16`
+  with concrete slice indices by `omega`; `movk` masking a `bv_decide` identity).
+* **New `ispec` forms** (additive, before `| _, _ => none`; M6Rest2 told): `movWide` (`movWideVal`),
+  `movK` (`movKVal`), `aluRRImmLogic op sz rd .xzr imm, []`.
+* **Shift/rotate infrastructure**: `IselFamAluBShiftBase.shift_ruleOk` (template for binary
+  shift/rotate rules, per-evaluation `CodeShapeU` + meaning in every `DFGCons` frame),
+  `binary_front`, `evalInst_shift_ok`; `IselTermsShift`: `do_shift` per-rule forward lemmas
+  (`match_1631/1622/1623/1612` and their `_none`), `defInst_iconst_inv` + `defInst_iconst_clif`
+  (the `iconst` look-through of `do_shift_imm`: amount's definition, via `CtxInv.defClif`).
+* **Lesson (kernel blow-up):** evaluating a whole multi-rule term forward with `isel_eval` and
+  closing an `∃ tr'` by `rfl` made the *kernel* check use >15 GB (elaboration 2 GB); the same
+  facts proved per rule (match lemma + rhs lemma, then `applyTerm_internal_some`) check in
+  seconds. Use the per-rule inverse route for multi-rule terms.
+
+**Remaining (not proven), with the route:**
+- shifts 1545/1549/1638/1642/1695/1699: finish `do_shift_ok` — rhs lemmas for the four rules
+  (`alu_rr_imm_shift_run`, `alu_rrr_run`, `and_imm` = `alu_rr_imm_logic_run` with
+  `ctor_shift_mask_i8/_i16`), then the contract by `applyTerm_internal_some` (as `imm_ok`), the
+  amount lemma `((ρ y).setWidth yw).toNat % w = (ρ y).toNat % w` (`w ∣ 2^yw`), and
+  `put_in_reg_sext32/zext64/sext64` (same shape as `zext32_*`); each rule then through
+  `shift_ruleOk`.
+- `bnot_ishl` 1401: `ishl`/`iconst` look-through (`defInst_iconst_inv` pattern) and an `ispec`
+  arm for `aluRRRShift .orrNot` with `xzr` first operand (M4AluA2 has the `[a, b]` arm).
+- `sbfm`/`ubfm` 1704/1707: two look-throughs, `bfm_immr/imms`, ispec `bitfieldMove`.
+- rotates 1772–1808, 1840–1862: `small_rotr`/`small_rotr_imm`, `rotr_mask`,
+  `rotr_opposite_amount`, iconst look-through; ispec forms exist (`extr`); `shift_ruleOk` applies.
+- `popcnt` 2074–2092: vector ispec forms (`movToFpu`, `vecMisc cnt`, `vecRRR addp`,
+  `vecLanes addv`, `movFromVec`) not yet specified.
+- Name collisions for the integrator: `szOf`, `getAs_isSome`, `lowerInstOk_one`,
+  `SameWorld.trans'` exist in both this branch and `agent/m4-alu-a`.
+
+### Integration note (Integrate1: m4-ctl + m4-alu-b)
+
+Shared helpers deduplicated: `szOf`, `szOf_bits`, `env4`, `env5` now live in `IselRulesALU.lean`;
+`SameWorld.trans'`, `getAs_isSome` in `IselFamily.lean`. Family-B lemmas whose names clashed with
+different family-A/Cmp lemmas carry the suffix `_fb`: `lowerInstOk_one_fb`, `alu_rr_imm12_run_fb`,
+`alu_rr_imm_logic_run_fb`, `ctor_imm_logic_some_fb`, `ctor_imm_logic_none_fb`, `ctor_zero_reg_fb'`,
+`extVal_fb`, `ofV_aluRRImm12_fb`, `ofV_aluRRImmLogic_fb`, `ofV_aluRRImmShift_fb`, `ofV_extend_fb`.
+`ispec`: the M4Cmp/M4Ctl forms precede the family-A generic forms (the Cmp `mSub` case is dropped:
+the generic `mulAddVal` case gives the same value).

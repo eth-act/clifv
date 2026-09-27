@@ -78,11 +78,15 @@ theorem exec_mov64 (ctx : FnCtx) (env : Env) {n0 n1 : Nat} (hn0 : n0 < 29) (hn1 
         Rd := rnum n0 })) := by
     simp [Insn.toArmInst, Insn.armFields, Arm.ArmInst.norm, Reg.encZR, show n0 ≤ 30 by omega,
       show n1 ≤ 30 by omega, rnum, b1]; rfl
-  simp only [execMInst, hl, execLines, ha]
-  congr 1
-  simp [Arm.exec_inst, Arm.DPR.exec_logical_shifted_reg, Arm.DPR.exec_logical_shifted_reg_op,
-    Arm.DPR.decode_op, Arm.read_gpr_zr, Arm.write_gpr_zr, Arm.read_gpr, Arm.write_gpr,
-    rnum_ne31 hn0, rnum_ne31 hn1, Arm.decode_shift, Arm.shift_reg, Arm.read_pc, Arm.write_pc]
+  have he : Arm.exec_inst (.DPR (.Logical_shifted_reg
+      { sf := 1#1, opc := 1#2, shift := 0#2, N := 0#1, Rm := rnum n1, imm6 := 0#6, Rn := 31#5,
+        Rd := rnum n0 })) s =
+      Arm.w (.GPR (rnum n0)) (Arm.r (.GPR (rnum n1)) s) (Arm.w .PC (Arm.r .PC s + 4#64) s) := by
+    simp [Arm.exec_inst, Arm.DPR.exec_logical_shifted_reg, Arm.DPR.exec_logical_shifted_reg_op,
+      Arm.DPR.decode_op, Arm.read_gpr_zr, Arm.write_gpr_zr, Arm.read_gpr, Arm.write_gpr,
+      rnum_ne31 hn0, rnum_ne31 hn1, Arm.decode_shift, Arm.shift_reg, Arm.read_pc, Arm.write_pc]
+  simp only [execMInst, hl]
+  rw [execLines_one ha (by rw [he, Arm.r_of_w_different (by simp), Arm.r_of_w_same]), he]
 
 /-- **Lowering of an int register move** (`mov xb, xa`) implements `MStep.move`: the store
 becomes `m[reg b ↦ m (reg a)]`, the world and `sp` are unchanged. -/
@@ -230,7 +234,8 @@ theorem lower_spill_int (fr : RAFrame) {sp0 : BitVec 64} {F : BitVec 64 → Prop
     rfl
   refine ⟨Arm.w .PC (Arm.r .PC s + 4#64)
       (Arm.write_mem_bytes 8 (spOf s + BitVec.ofNat 64 off) (Arm.r (.GPR (rnum a)) s) s),
-    by simp only [execMInst, hl, execLines, ha', he], ?_, ?_, ?_⟩
+    by simp only [execMInst, hl]
+       rw [execLines_one ha' (by rw [he, Arm.r_of_w_same]), he], ?_, ?_, ?_⟩
   · exact SameWorld.w_left (by simp [Masked]) (SameWorld.write_mem_bytes_inF hw 8 _ _
       (fun j hj => by rw [hsp]; exact hfr.inF _ off hoff j hj))
   · rw [spOf_write, hsp]
@@ -300,7 +305,10 @@ theorem lower_reload_int (fr : RAFrame) {F : BitVec 64 → Prop} (ctx : FnCtx) (
     simp only [spOf]
     rw [Arm.r_of_w_different (by simpa using (rnum_ne31 hhb.1).symm),
       Arm.r_of_w_different (by simp)]
-  refine ⟨_, by simp only [execMInst, hl, execLines, ha', he], hW, hsp, fun l hl => ?_⟩
+  refine ⟨_, by
+      simp only [execMInst, hl]
+      rw [execLines_one ha' (by rw [he, Arm.r_of_w_different (by simp), Arm.r_of_w_same]), he],
+    hW, hsp, fun l hl => ?_⟩
   by_cases e : l = .reg (.x b)
   · subst e; simp only [upd, if_true, locVal, hD, hoff, slotBytes]
   · simp only [upd, e, if_false]

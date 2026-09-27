@@ -424,6 +424,17 @@ noncomputable def csem (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) : ISe
     | _ => none
   | .trapIf k _ => some ([], w, if k.holds uses w then .halt else .next)
   | .udf _ => some ([], w, .halt)
+  | .emitIsland _ => some ([], w, .next)
+  | .jtSequence _ ts _ _ _ =>
+    -- `b.hs default` on the flags of the preceding bounds check, else the table entry of the
+    -- index's low 32 bits. The temporaries' values are unspecified (dead after the branch).
+    match uses with
+    | [a] =>
+      if Arm.ConditionHolds Cond.hs.bits w then some ([ofX 0, ofX 0], w, .goto 0)
+      else
+        let i := ((lo64 a).setWidth 32).toNat
+        if i < ts.length then some ([ofX 0, ofX 0], w, .goto (i + 1)) else none
+    | _ => none
   | i => straightSem F ctx i uses w
 
 /-! ## Reduction of `OperandsSound` to `Corr` -/

@@ -395,4 +395,13 @@ theorem aluRR_ruleOk {p : Program} (hp : Data p) {r : Rule} {cop : Clif.BinaryOp
       exact ⟨st.nextVreg, .int, rfl, .inl (Nat.le_refl _), by simpa [upd] using hheld⟩
     | _ + 1, hrs, _ => simp at hrs
 
+theorem SameWorld.trans' {F : BitVec 64 → Prop} {s t u : Arm.ArmState} (h1 : SameWorld F s t)
+    (h2 : SameWorld F t u) : SameWorld F s u :=
+  ⟨fun f hf => (h1.1 f hf).trans (h2.1 f hf), fun a ha => (h1.2.1 a ha).trans (h2.2.1 a ha),
+    h1.2.2.trans h2.2.2⟩
+
+theorem getAs_isSome {fr : Clif.Frame} {x : Nat} {ty : Clif.Ty} {u : BitVec ty.width}
+    (h : fr.getAs x ty = .ok u) : (fr.regs x).isSome := by
+  simp [getAs_ok h]
+
 end Backend.Proof

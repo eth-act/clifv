@@ -125,6 +125,31 @@ def defOut (rd : Reg) (x : CV) : List CV :=
   | .vreg .. => [x]
   | _ => []
 
+/-- The multiply-add operations (`madd`/`msub`: `c ± a * b`), at width `n`. -/
+def mulAddVal {n : Nat} (op : ALUOp3) (a b c : BitVec n) : Option (BitVec n) :=
+  match op with
+  | .mAdd => some (c + a * b)
+  | .mSub => some (c - a * b)
+  | _ => none
+
+/-- The operations with a shifted-register form (`add`/`sub`/logical). -/
+def aluShiftable : ALUOp → Bool
+  | .add | .sub | .and | .orr | .eor | .andNot | .orrNot | .eorNot => true
+  | _ => false
+
+/-- The extended-register operand (amount 0): the low 8/16/32/64 bits of the register, zero-
+or sign-extended to the operation width `n`. -/
+def extendVal (e : ExtendOp) (n : Nat) (b : CV) : BitVec n :=
+  match e with
+  | .uxtb => ((lo64 b).setWidth 8).setWidth n
+  | .uxth => ((lo64 b).setWidth 16).setWidth n
+  | .uxtw => ((lo64 b).setWidth 32).setWidth n
+  | .uxtx => (lo64 b).setWidth n
+  | .sxtb => ((lo64 b).setWidth 8).signExtend n
+  | .sxth => ((lo64 b).setWidth 16).signExtend n
+  | .sxtw => ((lo64 b).setWidth 32).signExtend n
+  | .sxtx => (lo64 b).signExtend n
+
 /-- The non-flag-setting two-operand ALU operations, at width `n`. -/
 def aluVal {n : Nat} (op : ALUOp) (a b : BitVec n) : Option (BitVec n) :=
   match op with
@@ -170,6 +195,17 @@ def condBrHolds (k : CondBrKind) (uses : List CV) (w : Arm.ArmState) : Bool :=
 def andsFlags {n : Nat} (r : BitVec n) : Arm.PState :=
   Arm.make_pstate (Arm.BitVec.lsb r (n - 1)) (if r = 0#n then 1#1 else 0#1) 0#1 0#1
 
+/-- `MOVZ`/`MOVN` at width `n`: `imm.bits << 16·imm.shift`, inverted for `MOVN`. -/
+def movWideVal (op : MoveWideOp) (n : Nat) (imm : MoveWideConst) : BitVec n :=
+  match op with
+  | .movZ => BitVec.ofNat n imm.bits <<< (16 * imm.shift)
+  | .movN => ~~~(BitVec.ofNat n imm.bits <<< (16 * imm.shift))
+
+/-- `MOVK` at width `n`: the 16-bit slice `imm.shift` of `a` replaced by `imm.bits`. -/
+def movKVal {n : Nat} (a : BitVec n) (imm : MoveWideConst) : BitVec n :=
+  (a &&& ~~~(BitVec.ofNat n 0xFFFF <<< (16 * imm.shift))) |||
+    (BitVec.ofNat n imm.bits <<< (16 * imm.shift))
+
 /-- **Value-level meaning of the instruction forms the proven rules emit**, in terms of the
 Arm model's operations (`AddWithCarry`, `write_pstate`, `ConditionHolds`): the def values
 (in operand order) and the world after. `none`: form not specified (yet). A 32-bit operation
@@ -202,8 +238,6 @@ def ispec : Sem := fun i uses w =>
   | .aluRRR .uDiv sz rd _ _, [a, b] => some (defOut rd (resX sz (opnd sz a / opnd sz b)), w, .next)
   | .aluRRR .sDiv sz rd _ _, [a, b] =>
     some (defOut rd (resX sz ((opnd sz a).sdiv (opnd sz b))), w, .next)
-  | .aluRRRR .mSub sz rd _ _ _, [a, b, c] =>
-    some (defOut rd (resX sz (opnd sz c - opnd sz a * opnd sz b)), w, .next)
   | .csel rd _ _ c, [a, b] =>
     some (defOut rd (ofX (if Arm.ConditionHolds c.bits w then lo64 a else lo64 b)), w, .next)
   | .ccmpImm sz _ imm nzcv c, [a] =>
@@ -216,6 +250,45 @@ def ispec : Sem := fun i uses w =>
     else none
   | .trapIf k _, us => some ([], w, if condBrHolds k us w then .halt else .next)
   | .udf _, [] => some ([], w, .halt)
+  -- control flow (M4Ctl; as M6's `csem`): returns, branches, jump-table dispatch
+  | .rets _, _ => some ([], w, .ret)
+  | .jump _, [] => some ([], w, .goto 0)
+  | .condBr _ _ k, us => some ([], w, .goto (if condBrHolds k us w then 0 else 1))
+  | .testBitAndBranch k _ _ _ bit, [a] =>
+    some ([], w, .goto (if ((lo64 a).getLsbD bit == (k == .nz)) then 0 else 1))
+  | .emitIsland _, [] => some ([], w, .next)
+  | .jtSequence _ ts _ _ _, [a] =>
+    if Arm.ConditionHolds Cond.hs.bits w then some ([ofX 0, ofX 0], w, .goto 0)
+    else if ((lo64 a).setWidth 32).toNat < ts.length then
+      some ([ofX 0, ofX 0], w, .goto (((lo64 a).setWidth 32).toNat + 1))
+    else none
+  -- multiply-high (64-bit only), multiply-add/sub (`ra = xzr`: no third use), extract, and
+  -- the shifted/extended-register forms
+  | .aluRRR .sMulH .size64 rd _ _, [a, b] =>
+    some (defOut rd (resX .size64 (((opnd .size64 a).signExtend 128 *
+      (opnd .size64 b).signExtend 128).extractLsb' 64 64)), w, .next)
+  | .aluRRR .uMulH .size64 rd _ _, [a, b] =>
+    some (defOut rd (resX .size64 (((opnd .size64 a).zeroExtend 128 *
+      (opnd .size64 b).zeroExtend 128).extractLsb' 64 64)), w, .next)
+  | .aluRRRR op sz rd _ _ _, [a, b, c] =>
+    (mulAddVal op (opnd sz a) (opnd sz b) (opnd sz c)).map fun r =>
+      (defOut rd (resX sz r), w, .next)
+  | .aluRRRR op sz rd (.vreg ..) (.vreg ..) .xzr, [a, b] =>
+    (mulAddVal op (opnd sz a) (opnd sz b) 0).map fun r => (defOut rd (resX sz r), w, .next)
+  | .aluRRRShift .extr sz rd _ _ sh, [a, b] =>
+    if sh.amt < sz.bits then
+      some (defOut rd (resX sz (((opnd sz a ++ opnd sz b) >>> sh.amt).setWidth sz.bits)), w, .next)
+    else none
+  | .aluRRRShift op sz rd _ _ sh, [a, b] =>
+    if aluShiftable op = true ∧ sh.op = .lsl ∧ sh.amt < sz.bits then
+      (aluVal op (opnd sz a) (opnd sz b <<< sh.amt)).map fun r =>
+        (defOut rd (resX sz r), w, .next)
+    else none
+  | .aluRRRExtend op sz rd _ _ e, [a, b] =>
+    if op = .add ∨ op = .sub then
+      (aluVal op (opnd sz a) (extendVal e sz.bits b)).map fun r =>
+        (defOut rd (resX sz r), w, .next)
+    else none
   | .aluRRR .subS sz rd _ _, [a, b] =>
     let r := Arm.AddWithCarry (opnd sz a) (~~~(opnd sz b)) 1#1
     some (defOut rd (resX sz r.1), Arm.write_pstate r.2 w, .next)
@@ -246,7 +319,7 @@ def ispec : Sem := fun i uses w =>
     let x := (lo64 a).setWidth 8
     some (defOut rd (ofX (if sg then (x.signExtend 32).setWidth 64 else x.setWidth 64)), w, .next)
   | .aluRRImmLogic op sz rd _ imm, [a] =>
-    if ImmLogic.ofNat? imm.value sz = some imm then
+    if ImmLogic.ofNat? imm.value sz = some imm ∧ op ≠ .add ∧ op ≠ .sub then
       (aluVal op (opnd sz a) (BitVec.ofNat _ imm.value)).map fun r =>
         (defOut rd (resX sz r), w, .next)
     else none
@@ -262,6 +335,21 @@ def ispec : Sem := fun i uses w =>
     else some (defOut rd (ofX (if Arm.ConditionHolds c.invert.bits w then 0#64 else 1#64)), w, .next)
   | .aluRRR op sz rd .xzr _, [b] =>
     (rrrVal op (0#sz.bits) (opnd sz b)).map fun r => (defOut rd (resX sz r), w, .next)
+  -- Family B (M4AluB2): wide moves (`imm`, `load_constant_full`), `orr` of an immediate into
+  -- the zero register
+  | .movWide op rd imm sz, [] =>
+    if imm.bits < 2 ^ 16 ∧ 16 * imm.shift < sz.bits then
+      some (defOut rd (resX sz (movWideVal op sz.bits imm)), w, .next)
+    else none
+  | .movK rd _ imm sz, [a] =>
+    if imm.bits < 2 ^ 16 ∧ 16 * imm.shift < sz.bits then
+      some (defOut rd (resX sz (movKVal (opnd sz a) imm)), w, .next)
+    else none
+  | .aluRRImmLogic op sz rd .xzr imm, [] =>
+    if ImmLogic.ofNat? imm.value sz = some imm ∧ op ≠ .add ∧ op ≠ .sub then
+      (aluVal op (0#sz.bits) (BitVec.ofNat _ imm.value)).map fun r =>
+        (defOut rd (resX sz r), w, .next)
+    else none
   | _, _ => none
 
 /-- **The semantic hypothesis of the rule statements**: on every form `ispec` specifies, the
@@ -453,13 +541,72 @@ def LowerRuleOk (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
     ∃ ms rss, st'.emitted = st.emitted ++ ms.toArray ∧ out = .regsVec rss ∧
       LowerInstOk isem MR env cp ctx inst info.results st rss st' ms
 
+/-- The root rules of `lower` on `call`: `rule_lower_2508` (colocated callee, `bl`, rule id
+1031) and `rule_lower_2518` (callee through the GOT, `loadExtNameGot` + `blr`, rule id 1032).
+They are proven under the callee contract `CallsRefine` (`CallRulesCorrect`), not in
+`LowerRulesCorrect`. (`call_indirect`, `rule_lower_2529`, is not in E.) -/
+def callRootRule (r : Rule) : Bool := r.id == 1031 || r.id == 1032
+
 /-- **M4's target (`lower`).** For every VCode semantics refining `ispec` and every stable
-memory relation, every root rule of `lower` in the E-closure is correct. This is the M4
-hypothesis of M7's theorem (with `data_program`: `lowerInstOk_runTerm`). -/
+memory relation, every root rule of `lower` in the E-closure other than the call rules
+(`callRootRule`, see `CallRulesCorrect`) is correct. This is the M4 hypothesis of M7's theorem
+(with `data_program`: `lowerInstOk_runTerm`). -/
 def LowerRulesCorrect (p : Program) : Prop :=
   ∀ (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program),
     Refines F isem → MRStable F MR →
-    ∀ r ∈ p.rulesOf TId.lower, closureRoot r = true → LowerRuleOk isem MR env cp p r
+    ∀ r ∈ p.rulesOf TId.lower, closureRoot r = true → callRootRule r = false →
+      LowerRuleOk isem MR env cp p r
+
+/-! ### Calls (contract change #5) -/
+
+/-- **The callee contract at the VCode level** (M6 discharges it for `csem` from `CalleeSound`
+and `ExtSem.sym`): there is a link-time address `sym n` for every symbol such that
+`loadExtNameGot rd n` loads it (changing nothing else the memory relation sees), and a call of
+the extern `name` (`bl name`, or `blr` of a register holding `sym name`, whose value is then the
+first use) with at most 8 argument values in x0.. (`AllHold`: low bits) returns the extern's
+results in x0.. (the defs, in order) and a world related to the extern's memory. -/
+def CallsRefine (F : BitVec 64 → Prop) (env : Clif.Env) (MR : MemRelT) (isem : Sem) : Prop :=
+  ∃ sym : String → BitVec 64,
+    (∀ (rd : Reg) (n : String) (w : Arm.ArmState), ∃ w',
+      isem (.loadExtNameGot rd n) [] w = some ([ofX (sym n)], w', .next) ∧ SameWorldNF F w' w) ∧
+    ∀ (name : String) g (sl : List (Clif.SlotId × Nat)) (cm : Clif.Mem) (w : Arm.ArmState)
+      (dest : CallDest) (us ds : List (Reg × Reg)) (uses args : List CV)
+      (vals rvals : List Clif.Val) (cm' : Clif.Mem),
+      env.extern name = some g →
+      (dest = .sym name ∧ uses = args ∨ ∃ r, dest = .reg r ∧ uses = ofX (sym name) :: args) →
+      us.map (·.2) = (List.range us.length).map Reg.x →
+      ds.map (·.1) = (List.range ds.length).map Reg.x →
+      vals.length ≤ 8 → AllHold vals args → MR sl cm w →
+      g vals cm = .returned rvals cm' → ds.length = rvals.length →
+      ∃ outs w', isem (.call ⟨dest, us, ds⟩) uses w = some (outs, w', .next) ∧
+        AllHold rvals outs ∧ MR sl cm' w'
+
+/-- Every extern of `f` takes at most 8 parameters (all in registers; `E2E.InSubset.callRegArgs`):
+calls with stack-passed arguments are outside the theorem. -/
+def CallRegArgs (f : Clif.Function) : Prop :=
+  ∀ (fn : Clif.FnRef) (e : Clif.ExtFunc), f.extern? fn = some e → e.sig.params.length ≤ 8
+
+/-- `LowerRuleOk` for a call rule: additionally assumes `CallRegArgs f`. -/
+def CallRuleOk (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
+    (p : Program) (r : Rule) : Prop :=
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx → CallRegArgs f →
+  ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info → info.clif = some inst →
+  ∀ (cfg : Config), cfg.checkOverlap = false →
+  ∀ (m n : Nat) (st : LState) (tr : Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId)
+    (out : V) (st' : LState) (tr' : Array RuleId), 1000 ≤ m → 1000 ≤ n → ValsBelow ctx st →
+    (∀ pre post, p.rulesOf TId.lower = pre ++ r :: post → ∀ r' ∈ pre, ∃ m', 1000 ≤ m' ∧
+      ∃ s', (matchRule p (sem ctx) cfg m' r' [.inst ii]).run (st, tr) = .ok (none, s')) →
+    (matchRule p (sem ctx) cfg m r [.inst ii]).run (st, tr) = .ok (some env', s1) →
+    (evalExpr p (sem ctx) cfg n r.rhs env').run s1 = .ok (some out, (st', tr')) →
+    ∃ ms rss, st'.emitted = st.emitted ++ ms.toArray ∧ out = .regsVec rss ∧
+      LowerInstOk isem MR env cp ctx inst info.results st rss st' ms
+
+/-- **M4's target for the call rules**: under the callee contract, the call root rules are
+correct. -/
+def CallRulesCorrect (p : Program) : Prop :=
+  ∀ (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program),
+    Refines F isem → MRStable F MR → CallsRefine F env MR isem →
+    ∀ r ∈ p.rulesOf TId.lower, callRootRule r = true → CallRuleOk isem MR env cp p r
 
 /-- The root rules of `lower` outside the closure (their patterns name a non-E opcode, a
 non-`i8..i64` type or a vector/float type test) never match an instruction of a context
@@ -470,13 +617,19 @@ def ExcludedUnmatchable (p : Program) : Prop :=
   ∀ (cfg : Config) (m : Nat) (s : LState × Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId),
     (matchRule p (sem ctx) cfg m r [.inst ii]).run s ≠ .ok (some env', s1)
 
+/-- The index of a `br_table` has at most 32 bits (contract change #6): the lowering compares and
+dispatches on the low 32 bits, and Cranelift's verifier requires an `i32` index. M7's `lowerCheck`
+decides it for every terminator (`brIdxOk`). -/
+def BrIdxTyped (ctx : Ctx) (t : Clif.Terminator) : Prop :=
+  ∀ x d tbl, t = .brTable x d tbl → ∃ w, w ≤ 32 ∧ ctx.valueType? x = some (.int w)
+
 /-- **Root rule correctness (`lower_branch`)**, on the terminator `t` lowered in the driver's
 context `ctx` (instruction `ti` holds the terminator's data; `CtxInv`, `ValsBelow` and "the
 rules before `r` failed" as for `LowerRuleOk`), with branch targets `targets`. -/
 def BranchRuleOk (isem : Sem) (MR : MemRelT) (p : Program) (r : Rule) : Prop :=
   ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx →
   ∀ (ti : Nat) (t : Clif.Terminator) (data : V) (targets : List Label), termData t = .ok data →
-  ctx.insts[ti]? = some ⟨data, [], [], none⟩ →
+  ctx.insts[ti]? = some ⟨data, [], [], none⟩ → BrIdxTyped ctx t →
   ∀ (cfg : Config), cfg.checkOverlap = false →
   ∀ (m n : Nat) (st : LState) (tr : Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId)
     (out : V) (st' : LState) (tr' : Array RuleId), 1000 ≤ m → 1000 ≤ n → ValsBelow ctx st →
@@ -505,9 +658,10 @@ theorem lower_rules_nodup {p : Program} (hp : Data p) : (p.rulesOf TId.lower).No
   decide +kernel
 
 theorem lowerInstOk_of_rules {p : Program} (hp : Data p) (hrules : LowerRulesCorrect p)
-    (hex : ExcludedUnmatchable p) {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT}
-    {env : Clif.Env} {cp : Clif.Program} (hR : Refines F isem) (hMR : MRStable F MR)
-    {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) {ii : Nat} {info : IInfo}
+    (hex : ExcludedUnmatchable p) (hcalls : CallRulesCorrect p) {F : BitVec 64 → Prop}
+    {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program} (hR : Refines F isem)
+    (hMR : MRStable F MR) (hcr : CallsRefine F env MR isem)
+    {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) (hra : CallRegArgs f) {ii : Nat} {info : IInfo}
     {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
     {cfg : Config} (hco : cfg.checkOverlap = false) {n : Nat}
     (hn : 1002 + (p.rulesOf TId.lower).length ≤ n) {ty : TypeId} {st : LState}
@@ -533,16 +687,21 @@ theorem lowerInstOk_of_rules {p : Program} (hp : Data p) (hrules : LowerRulesCor
   rw [← hs.1] at heval
   cases hroot : closureRoot r
   · exact absurd hmatch (hex r hr hroot f ctx hctx ii info inst hi hc cfg m (st, tr) env' s1)
-  · exact hrules F isem MR env cp hR hMR r hr hroot f ctx hctx ii info inst hi hc cfg hco m n st tr
-      env' s1 out st' tr2 (by omega) (by omega) hvb hfirst hmatch heval
+  · cases hcall : callRootRule r
+    · exact hrules F isem MR env cp hR hMR r hr hroot hcall f ctx hctx ii info inst hi hc cfg hco m
+        n st tr env' s1 out st' tr2 (by omega) (by omega) hvb hfirst hmatch heval
+    · exact hcalls F isem MR env cp hR hMR hcr r hr hcall f ctx hctx hra ii info inst hi hc cfg hco
+        m n st tr env' s1 out st' tr2 (by omega) (by omega) hvb hfirst hmatch heval
 
 set_option maxRecDepth 20000 in
 /-- `lowerInstOk_of_rules` for the exported program and the backend's own call
 (`runTerm ctx "lower" [.inst ii]`, as `lowerFunction` makes it). -/
 theorem lowerInstOk_runTerm (hrules : LowerRulesCorrect program)
-    (hex : ExcludedUnmatchable program) {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT}
+    (hex : ExcludedUnmatchable program) (hcalls : CallRulesCorrect program)
+    {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT}
     {env : Clif.Env} {cp : Clif.Program} (hR : Refines F isem) (hMR : MRStable F MR)
-    {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) {ii : Nat} {info : IInfo}
+    (hcr : CallsRefine F env MR isem)
+    {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) (hra : CallRegArgs f) {ii : Nat} {info : IInfo}
     {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
     {st : LState} {out : V} {st' : LState} {tr : List RuleId} (hvb : ValsBelow ctx st)
     (h : runTerm ctx "lower" [.inst ii] st = .ok (some out, st', tr)) :
@@ -565,8 +724,8 @@ theorem lowerInstOk_runTerm (hrules : LowerRulesCorrect program)
     subst h2
     have hlen : (program.rulesOf TId.lower).length ≤ 1000 := by
       rw [show TId.lower = 686 from rfl, data_program.r686]; decide
-    obtain ⟨ms, rss, h1, h2, h3⟩ := lowerInstOk_of_rules data_program hrules hex hR hMR hctx hi hc
-      rfl (by omega) hvb ha
+    obtain ⟨ms, rss, h1, h2, h3⟩ := lowerInstOk_of_rules data_program hrules hex hcalls hR hMR hcr
+      hctx hra hi hc rfl (by omega) hvb ha
     exact ⟨ms, rss, by simpa using h1, h2, h3⟩
 
 /-! ## Terminators (stated by M7; M4's obligations `LowerTermRulesCorrect`, `TermUnmatchable`,
@@ -669,7 +828,7 @@ theorem branchOk_of_rules {p : Program} (hp : Data p) (hrules : BranchRulesCorre
     (hR : Refines F isem) (hMR : MRStable F MR) {f : Clif.Function} {ctx : Ctx}
     (hctx : CtxInv f ctx) {ti : Nat} {t : Clif.Terminator} {data : V} {targets : List Label}
     (hrt : retOrTrap t = false) (hd : termData t = .ok data)
-    (hi : ctx.insts[ti]? = some ⟨data, [], [], none⟩)
+    (hi : ctx.insts[ti]? = some ⟨data, [], [], none⟩) (hbt : BrIdxTyped ctx t)
     {cfg : Config} (hco : cfg.checkOverlap = false) {n : Nat}
     (hn : 1002 + (p.rulesOf TId.lower_branch).length ≤ n) {ty : TypeId} {st : LState}
     {tr : Array RuleId} {out : V} {st' : LState} {tr' : Array RuleId} (hvb : ValsBelow ctx st)
@@ -694,8 +853,8 @@ theorem branchOk_of_rules {p : Program} (hp : Data p) (hrules : BranchRulesCorre
   rw [← hs.1] at heval
   cases hroot : closureRoot r
   · exact absurd hmatch (hex r hr hroot f ctx hctx ti t data targets hrt hd hi cfg m (st, tr) env' s1)
-  · exact hrules F isem MR hR hMR r hr hroot f ctx hctx ti t data targets hd hi cfg hco m n st tr
-      env' s1 out st' tr2 (by omega) (by omega) hvb hfirst hmatch heval
+  · exact hrules F isem MR hR hMR r hr hroot f ctx hctx ti t data targets hd hi hbt cfg hco m n st
+      tr env' s1 out st' tr2 (by omega) (by omega) hvb hfirst hmatch heval
 
 theorem program_termByName_lower_branch :
     program.termByName? "lower_branch" = some T.lower_branch := by
@@ -741,7 +900,7 @@ theorem branchOk_runTerm (hrules : BranchRulesCorrect program)
     {MR : MemRelT} (hR : Refines F isem) (hMR : MRStable F MR) {f : Clif.Function} {ctx : Ctx}
     (hctx : CtxInv f ctx) {ti : Nat} {t : Clif.Terminator} {data : V} {targets : List Label}
     (hrt : retOrTrap t = false) (hd : termData t = .ok data)
-    (hi : ctx.insts[ti]? = some ⟨data, [], [], none⟩)
+    (hi : ctx.insts[ti]? = some ⟨data, [], [], none⟩) (hbt : BrIdxTyped ctx t)
     {st : LState} {out : V} {st' : LState} {tr : List RuleId} (hvb : ValsBelow ctx st)
     (h : runTerm ctx "lower_branch" [.inst ti, .labels targets] st = .ok (some out, st', tr)) :
     ∃ ms, st'.emitted = st.emitted ++ ms.toArray ∧ LowerTermOk isem MR ctx t targets st st' ms := by
@@ -762,7 +921,7 @@ theorem branchOk_runTerm (hrules : BranchRulesCorrect program)
     subst h2
     have hlen : (program.rulesOf TId.lower_branch).length ≤ 1000 := by
       rw [show TId.lower_branch = 687 from rfl, data_program.r687]; decide
-    obtain ⟨ms, h1, h2⟩ := branchOk_of_rules data_program hrules hex hR hMR hctx hrt hd hi
+    obtain ⟨ms, h1, h2⟩ := branchOk_of_rules data_program hrules hex hR hMR hctx hrt hd hi hbt
       rfl (by omega) hvb ha
     exact ⟨ms, by simpa using h1, h2⟩
 

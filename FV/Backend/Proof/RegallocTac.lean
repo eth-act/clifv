@@ -74,18 +74,20 @@ macro_rules
     intro regs s w t' ha hw hacc hex herr
     have hsz := ha.size
     simp only [List.size_toArray, List.length_cons, List.length_nil] at hsz
-    first
-      | (obtain ⟨r0, r1, r2, r3, rfl⟩ := regs4 hsz)
-      | (obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz)
-      | (obtain ⟨r0, r1, rfl⟩ := regs2 hsz)
-      | (obtain ⟨r0, rfl⟩ := regs1 hsz)
     have hf := ha.fits
-    simp [RegFits] at hf
     first
-      | (rcases hf with ⟨⟨n0, rfl, hn0⟩, ⟨n1, rfl, hn1⟩, ⟨n2, rfl, hn2⟩, ⟨n3, rfl, hn3⟩⟩)
-      | (rcases hf with ⟨⟨n0, rfl, hn0⟩, ⟨n1, rfl, hn1⟩, ⟨n2, rfl, hn2⟩⟩)
-      | (rcases hf with ⟨⟨n0, rfl, hn0⟩, ⟨n1, rfl, hn1⟩⟩)
-      | (rcases hf with ⟨n0, rfl, hn0⟩)
+      | (obtain ⟨r0, r1, r2, r3, rfl⟩ := regs4 hsz
+         simp [RegFits] at hf
+         rcases hf with ⟨⟨n0, rfl, hn0⟩, ⟨n1, rfl, hn1⟩, ⟨n2, rfl, hn2⟩, ⟨n3, rfl, hn3⟩⟩)
+      | (obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+         simp [RegFits] at hf
+         rcases hf with ⟨⟨n0, rfl, hn0⟩, ⟨n1, rfl, hn1⟩, ⟨n2, rfl, hn2⟩⟩)
+      | (obtain ⟨r0, r1, rfl⟩ := regs2 hsz
+         simp [RegFits] at hf
+         rcases hf with ⟨⟨n0, rfl, hn0⟩, ⟨n1, rfl, hn1⟩⟩)
+      | (obtain ⟨r0, rfl⟩ := regs1 hsz
+         simp [RegFits] at hf
+         rcases hf with ⟨n0, rfl, hn0⟩)
     try (have hre := ha.reuse 1 0 rfl; simp at hre; subst hre)
     have hfl : ∀ f, Arm.r (.FLAG f) w = Arm.r (.FLAG f) s :=
       fun f => (hw.1 (.FLAG f) (by simp [Masked])).symm
@@ -134,6 +136,8 @@ macro_rules
         · try simp [Operand.isDef] at hnd
           try have hnd' := Ne.symm hnd
           simp (config := {decide := true}) (disch := omega) [csimp_rules, ofNat5_eq_iff, *]
-        · simp (config := {decide := true}) [csimp_rules, *])))
+        · try simp [Operand.isDef] at hnd
+          try have hnd' := Ne.symm hnd
+          simp (config := {decide := true}) (disch := omega) [csimp_rules, ofNat5_eq_iff, *])))
 
 end Backend.Proof

@@ -79,4 +79,20 @@ theorem corr_aluRRRR_raZ (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (op 
       (fun r => .aluRRRR op sz (r.getD 0 .xzr) (r.getD 1 .xzr) (r.getD 2 .xzr) .xzr) := by
   cases op <;> cases sz <;> corr_tac
 
+set_option maxHeartbeats 4000000 in
+/-- `op rd, rn, xzr` (e.g. `subs rd, rn, xzr`: compare with zero). -/
+theorem corr_aluRRR_rmZ (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (op : ALUOp)
+    (sz : OperandSize) (d n : Nat) :
+    Corr F ctx env #[⟨d, .int, .def, .late, .reg⟩, ⟨n, .int, .use, .early, .reg⟩]
+      (fun r => .aluRRR op sz (r.getD 0 .xzr) (r.getD 1 .xzr) .xzr) := by
+  cases op <;> cases sz <;> corr_tac
+
+set_option maxHeartbeats 4000000 in
+/-- `op xzr, rn, xzr` (e.g. `cmp rn, xzr`). -/
+theorem corr_aluRRR_rdZ_rmZ (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (op : ALUOp)
+    (sz : OperandSize) (n : Nat) :
+    Corr F ctx env #[⟨n, .int, .use, .early, .reg⟩]
+      (fun r => .aluRRR op sz .xzr (r.getD 0 .xzr) .xzr) := by
+  cases op <;> cases sz <;> corr_tac
+
 end Backend.Proof

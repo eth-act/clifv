@@ -64,9 +64,14 @@ def lowerChecked (f : Clif.Function) (verify : Bool) : Except String VCode := do
     throw "lowering rejected by the M7 lowering validator (lowerCheck)"
   pure vc
 
+/-- Every extern of `f` takes at most 8 parameters (`E2E.InSubset.callRegArgs`: calls pass all
+their arguments in registers). -/
+def regArgCalls (f : Clif.Function) : Bool := f.externs.all fun e => e.2.sig.params.length ≤ 8
+
 /-- The theorem's conditions that do not need the rest of the file (`E2E.InSubset.subsetE`,
-`E2E.InSubset.regParams`). -/
-def verifiable (f : Clif.Function) : Bool := Compile.functionE f && f.sig.params.length ≤ 8
+`E2E.InSubset.regParams`, `E2E.InSubset.callRegArgs`). -/
+def verifiable (f : Clif.Function) : Bool :=
+  Compile.functionE f && f.sig.params.length ≤ 8 && regArgCalls f
 
 /-- Compile one function with the stack-slot allocator (`k` = index in the file, for local
 labels); also returns the ISLE rules that fired. -/
@@ -105,10 +110,12 @@ def callees (f : Clif.Function) : List String :=
     | _ => none).eraseDups
 
 /-- Why a compiled function of `pf` is outside `E2E.backend_correct` (`E2E.InSubset`), if it is:
-outside clif-subset-v2 E, stack-passed parameters, or a call of a function of the file. -/
+outside clif-subset-v2 E, stack-passed parameters, stack-passed call arguments (an extern with
+more than 8 parameters), or a call of a function of the file. -/
 def unverifiedReason? (pf : Clif.ParsedFile) (f : Clif.Function) : Option String :=
   if !Compile.functionE f then some "outside clif-subset-v2 E"
   else if f.sig.params.length > 8 then some "stack-passed parameters (more than 8)"
+  else if !regArgCalls f then some "stack-passed call arguments (an extern with more than 8 parameters)"
   else
     let own := pf.funcs.map (·.name)
     match (callees f).find? (own.contains ·) with

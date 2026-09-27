@@ -12,7 +12,8 @@ The contracts themselves (`LowerInstOk`, `LowerTermOk`, `seqRun`, …) are M4's
 
 * `InstCalls sem MR env p`: every `lower` call on a statement that `lowerFunction` makes (in a
   context satisfying `CtxInv`) satisfies `LowerInstOk`. **Proven** from M4's
-  `LowerRulesCorrect program` + `ExcludedUnmatchable program` (`instCalls_of_rules`).
+  `LowerRulesCorrect program` + `ExcludedUnmatchable program` + `CallRulesCorrect program`
+  under the callee contract `CallsRefine` (`instCalls_of_rules`).
 * `TermCalls sem MR`: every terminator call (`lower` on `return`/`trap`, `lower_branch` on a
   branch) satisfies `LowerTermOk`. **Proven** from M4's terminator statements
   `LowerTermRulesCorrect`/`TermUnmatchable` (`lower` rules 964/1037) and
@@ -28,7 +29,7 @@ open Backend Backend.Proof
 /-- Every `lower` call `lowerFunction` makes on a statement (from a state whose fresh vregs are
 above every value's vreg, `ValsBelow`) satisfies M4's `LowerInstOk`. -/
 def InstCalls (sem : Sem) (MR : MemRelT) (env : Clif.Env) (p : Clif.Program) : Prop :=
-  ∀ f ctx ii info inst st rss st' tr, CtxInv f ctx → ctx.insts[ii]? = some info →
+  ∀ f ctx ii info inst st rss st' tr, CtxInv f ctx → CallRegArgs f → ctx.insts[ii]? = some info →
     info.clif = some inst → st.emitted = #[] → ValsBelow ctx st →
     runTerm ctx "lower" [.inst ii] st = .ok (some (.regsVec rss), st', tr) →
     LowerInstOk sem MR env p ctx inst info.results st rss st' st'.emitted.toList
@@ -37,7 +38,7 @@ def InstCalls (sem : Sem) (MR : MemRelT) (env : Clif.Env) (p : Clif.Program) : P
 `ti` is `buildCtx`'s terminator placeholder, from a state above every value's vreg) satisfies
 M4's `LowerTermOk`. From M4's terminator rule statements: `termCalls_of_rules`. -/
 def TermCalls (sem : Sem) (MR : MemRelT) : Prop :=
-  ∀ f ctx ti t data targets out st st' tr, CtxInv f ctx →
+  ∀ f ctx ti t data targets out st st' tr, CtxInv f ctx → BrIdxTyped ctx t →
     ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩ → ValsBelow ctx st →
     termData t = .ok data → st.emitted = #[] →
     runTerm (termCtx ctx ti data) (termCall t ti targets).1 (termCall t ti targets).2 st =
@@ -46,12 +47,13 @@ def TermCalls (sem : Sem) (MR : MemRelT) : Prop :=
 
 /-- **From M4's rule theorems to the driver's `lower` calls.** -/
 theorem instCalls_of_rules (hrules : LowerRulesCorrect Isle.Aarch64.program)
-    (hex : ExcludedUnmatchable Isle.Aarch64.program) {F : BitVec 64 → Prop} {sem : Sem}
+    (hex : ExcludedUnmatchable Isle.Aarch64.program)
+    (hcalls : CallRulesCorrect Isle.Aarch64.program) {F : BitVec 64 → Prop} {sem : Sem}
     {MR : MemRelT} {env : Clif.Env} {p : Clif.Program} (hR : Refines F sem)
-    (hMR : MRStable F MR) : InstCalls sem MR env p := by
-  intro f ctx ii info inst st rss st' tr hctx hi hc hemp hvb hrun
-  obtain ⟨ms, rss', hem, hout, hok⟩ := lowerInstOk_runTerm hrules hex (env := env) (cp := p) hR hMR
-    hctx hi hc hvb hrun
+    (hMR : MRStable F MR) (hcr : CallsRefine F env MR sem) : InstCalls sem MR env p := by
+  intro f ctx ii info inst st rss st' tr hctx hra hi hc hemp hvb hrun
+  obtain ⟨ms, rss', hem, hout, hok⟩ := lowerInstOk_runTerm hrules hex hcalls (env := env) (cp := p)
+    hR hMR hcr hctx hra hi hc hvb hrun
   cases hout
   rw [hemp, Array.empty_append] at hem
   rw [hem, List.toList_toArray]
@@ -169,7 +171,7 @@ theorem termCalls_of_rules (hlt : LowerTermRulesCorrect Isle.Aarch64.program)
     (hbr : BranchRulesCorrect Isle.Aarch64.program)
     (hbex : BranchExcludedUnmatchable Isle.Aarch64.program) {F : BitVec 64 → Prop} {sem : Sem}
     {MR : MemRelT} (hR : Refines F sem) (hMR : MRStable F MR) : TermCalls sem MR := by
-  intro f ctx ti t data targets out st st' tr hctx hph hvb hd hemp hrun
+  intro f ctx ti t data targets out st st' tr hctx hbt hph hvb hd hemp hrun
   have hctx' := ctxInv_termCtx hctx hph data
   have hi := termCtx_insts_self hph data
   have hvb' : ValsBelow (termCtx ctx ti data) st := hvb
@@ -179,7 +181,7 @@ theorem termCalls_of_rules (hlt : LowerTermRulesCorrect Isle.Aarch64.program)
   · have hc : termCall t ti targets = ("lower_branch", [.inst ti, .labels targets]) := by
       cases t <;> simp [retOrTrap] at hrt <;> rfl
     rw [hc] at hrun
-    obtain ⟨ms, hem, hok⟩ := branchOk_runTerm hbr hbex hR hMR hctx' hrt hd hi hvb' hrun
+    obtain ⟨ms, hem, hok⟩ := branchOk_runTerm hbr hbex hR hMR hctx' hrt hd hi hbt hvb' hrun
     rw [← key ms hem]; exact hok
   · have hc : termCall t ti targets = ("lower", [.inst ti]) := by
       cases t <;> simp [retOrTrap] at hrt <;> rfl

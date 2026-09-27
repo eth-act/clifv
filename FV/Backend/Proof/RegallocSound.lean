@@ -212,6 +212,12 @@ structure IsSimulation (R : MConf V W → VConf V W → Prop) : Prop where
   ret : ∀ {vals m w v}, R (.ret vals m w) v → v = .ret vals w
   halt : ∀ {w v}, R (.halt w) v → v = .halt w
   run : ∀ {s v}, R (.run s) v → ∃ s', v = .run s'
+  /-- a move keeps the relation with the same VCode configuration -/
+  move : ∀ {b src dst its m w v}, R (.run ⟨b, .move src dst :: its, m, w⟩) v →
+    R (.run ⟨b, its, upd m dst (m src), w⟩) v
+  /-- at an instruction item, the VCode is at that instruction, with the same world -/
+  at_op : ∀ {b k a its m w vs}, R (.run ⟨b, .op k a :: its, m, w⟩) (.run vs) →
+    vs.b = b ∧ vs.k = k ∧ vs.w = w
 
 /-- The initial configuration of the allocated code: block 0, store `m₀`, world `w₀`. -/
 def MConf.init (m₀ : Loc → V) (w₀ : W) : MConf V W := .run ⟨0, rf.blocks[0]!.toList, m₀, w₀⟩
@@ -229,7 +235,7 @@ theorem checkAlloc_sound (h : checkAlloc vc rf = .ok ()) (m₀ : Loc → V) (ρ�
       ∀ {vals m w v}, R (.ret vals m w) v →
         ∀ r ∈ calleeSaved, keep r (m (.reg r)) = keep r (m₀ (.reg r)) := by
   obtain ⟨c, ins, hc⟩ := checked_of_checkAlloc h
-  refine ⟨Match c ins keep (fun r => m₀ (.reg r)), ⟨?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩
+  refine ⟨Match c ins keep (fun r => m₀ (.reg r)), ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩
   · intro cf v c' hR hs
     cases cf with
     | run ms =>
@@ -263,6 +269,17 @@ theorem checkAlloc_sound (h : checkAlloc vc rf = .ok ()) (m₀ : Loc → V) (ρ�
     cases v with
     | run s' => exact ⟨s', rfl⟩
     | _ => exact hR.elim
+  · intro b src dst its m w v hR
+    cases v with
+    | run vs =>
+      obtain ⟨hb, hw, vb, a, out, hvb, hrun, hinv, hedges⟩ := hR
+      obtain ⟨-, hrun'⟩ := runItems_move hrun
+      exact ⟨hb, hw, vb, _, out, hvb, hrun', Inv_move _ _ hinv, hedges⟩
+    | _ => exact hR.elim
+  · intro b k a its m w vs hR
+    obtain ⟨hb, hw, vb, a, out, hvb, hrun, -⟩ := hR
+    obtain ⟨-, hk, -⟩ := runItems_op hrun
+    exact ⟨hb.symm, hk.symm, hw.symm⟩
   · obtain ⟨a0, h0, hle⟩ := hc.entry
     obtain ⟨a, out, ha, hrb, hedges⟩ :=
       verifyBlock_ok (hc.blocks 0 (Nat.pos_of_ne_zero hc.nonempty))

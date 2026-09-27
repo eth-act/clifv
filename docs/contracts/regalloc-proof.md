@@ -222,21 +222,85 @@ restore `sp`).
    `Arm.stepi`. Branch lowering, prologue/epilogue and the remaining `OperandsSound`/frame
    cases above are the open pieces of this step.
 
-## Remaining (2026-09-28, handed over)
+## Status update (M6Rest2, 2026-09-27)
 
-1. Memory forms: `Corr` for `load`/`store` per addressing mode; `corr_tac` computes both runs,
-   the missing lemmas rewrite the model's addresses (`signExtend (ofInt 9 off)`,
-   `zeroExtend imm12 <<< scale`, the x16 `movz/movk` constant) into `AMode.addr` so
-   `read_mem_bytes_sameWorld`/`AccessOk` apply.
-2. `jtSequence`: its early defs are not a function of (uses, world) (default path leaves them
-   unwritten, `adr` is pc-relative). Planned fix: the checker forgets the defs of a branch
-   (`transferOp`), `MStep` havocs them on `goto`; behaviour-preserving (they are dead temps).
-3. Frame lowering (stur/ldur, x16 sequence, float moves via `fmoveTmp`, save slots,
-   `FrameOk` for `RAFrame.compute`, prologue/epilogue), the `Args` check, and the composed
-   `E2E.RegLevelCorrect` (statement agreed with M7Skeleton, `FV/E2E/Statement.lean`) are not
-   proven yet.
+Done (sorry-free, committed on `agent/m6-rest2`):
+
+- **Float/vector `OperandsSound`** (`RegallocInstsFP.lean`, wrappers in `RegallocOS.lean`):
+  `movToFpu` (all sizes), `movFromVec` (every size, every lane index: `umov`'s `match_bv`
+  decoding needs the index concrete, the valid ones are enumerated), `vecMisc cnt`,
+  `vecLanes addv/uaddlv`, `vecRRR addp`, all arrangements. `corr_tac` fixed: the operand
+  pattern now matches the operand count (a trailing float operand was destructured as `Nat.le`).
+- **`rm = xzr` forms** (M4Cmp's `subs rd, rn, xzr`): `os_aluRRR_rmZ`, `os_aluRRR_rdZ_rmZ`.
+- **umaddl/smaddl**: the Arm model does implement `UMADDL`/`SMADDL`
+  (`Data_processing_three_source.lean`); `corr_aluRRRR` covers them. Non-issue.
+- **`csem`**: explicit clauses for `emitIsland` (`next`) and `jtSequence` (agreed with M4Ctl:
+  `goto 0` on `hs`, else `goto (i+1)` for the index's low 32 bits `< targets.length`, temporaries
+  `[0, 0]`). `execLines` now also checks that each instruction advances the pc by 4 (needed to
+  run straight-line code on the machine; all `Corr` proofs unchanged).
+- **Statement** (with M7Driver): `BodyEntry` (body-entry world after the prologue),
+  `sem : ArmState → Sem` per activation, `BodyEntry.argsV` (v0–v7).
+- **`IsSimulation`** gains `move` (a move keeps the relation) and `at_op` (at an instruction
+  item the VCode is at that instruction).
+- **Forward simulation** (`RegallocFwd.lean`): `VStep_det`; `forward` (a machine that
+  `Realizes` the allocated code realises every VCode run, through `checkAlloc_sound`'s
+  relation); `forward_op` (advance past pending moves to the instruction item).
+- **Emission structure** (`FV/E2E/RegLevelEmit.lean`): `fallthrough_eq` (the imperative loop is
+  the structural `ftList`), `ftList_label_split` (never looks past a label),
+  `ftList_snoc_label`, `ftList_plain_append` (plain lines pass through), `emitFunc_ok`
+  (`emitFunc` = `blocksLinesE` + `fallthrough` + trap section), `lowerRFunc_ok` (block code =
+  prologue + `itemsCode`), `blocksLinesE_block`, trap-table prefix monotonicity, `emit_block`
+  (block `b` in the final lines: its label, then `ftList (lines ++ next label)`).
+- **Machine** (`FV/E2E/RegLevelMachine.lean`): `ArmStepX X H fa` = `stepi` except `bl`/`blr`
+  (callee hook `H.call`) and the relocated `adrp`/`ldr got`/`add lo12` pairs (`X.sym`); base
+  from the program (`progBase`); `insnAt_line`, `armStepX_ins` (one step at a non-hooked line =
+  the encoder's instruction at that offset, from M5's `FnAsm.stepi_eq_sem`),
+  `iterN_execLines` (straight-line code = `execLines` at the layout's offsets).
+- **Relation** (`FV/E2E/RegLevelSim.lean`): `frameF` (frame addresses `[sp_body + intBase,
+  sp_entry)`), `RL` (activation data), `StRel` (store = `locVal`, same world, no error,
+  program, sp, alignment, fp/lr), `Q` (code position via `emit_block`/`ftList` + `StRel`).
+
+## Remaining (precise, for the next agent)
+
+1. `Realizes (R.sem) ckeep R.step (Q R)` by cases on the item:
+   * moves: `lower_*` for every move kind (unsigned-offset int spill/reload/reg move done;
+     missing: `stur`/`ldur` (offset < 256), x16 sequence, float moves via `fmoveTmp`, float
+     spills, save/restore slots) and `FrameOk (RAFrame.compute …) spB F`;
+     plumbing: `codeLinesE_append`, `itemsCode_cons`, `execLines_pc`,
+     `lineOffset_drop_ins`, `ftList_plain_append` (+ "body lines have no trap label") are ready;
+   * straight-line ops: `operandsSound_step` + `iterN_execLines`; needs
+     `MInst.lines c m ps = (lines c m {}).1, ps` for non-`trapIf`/`jtSequence` and a coverage
+     statement that every instruction of `vcp` has an `os_*` instance (missing forms:
+     loads/stores — address lemmas to `AMode.addr`; `loadAddr`; `aluRRImmLogic` with
+     `rn = xzr`, M4AluB2's batch);
+   * `Args`: 0 lines; needs a checker check "Args is instruction 0 of block 0, no earlier item
+     writes x0–x7/v0–v7, no edge into block 0" (behaviour-preserving on the corpus; not added);
+   * calls: `OperandsSound F (hook exec) csem (.call _)` is exactly the AAPCS callee contract
+     (state it as the hypothesis `CalleeOk`, plus `H.call` returns to pc+4 with no error and the
+     same program); `loadExtNameGot/Near`: two hooked lines;
+   * control: `jump`/`condBr`/`testBitAndBranch` via `FnAsm.layout_branch` and
+     `emit_block` of the target (label = block index via `VCode.cfg`); the `fallthrough`
+     variants of the terminator (`ftStep`); `trapIf` not taken; `jtSequence` needs readable
+     code bytes (the table is loaded from memory; propose `AbiEntry.code` + code in `F`) and
+     the checker/`MStep` havoc of branch defs.
+2. Prologue (from `AbiEntry` to `Q` at block 0 after `prologueLines`, `StRel` incl. `fplr`),
+   epilogue (`rets`: `ArmRet`, values, memory, callee-saved from `checkAlloc_sound`'s `keep`
+   conclusion), traps (`trapIf` taken / `udf` → `TrapAt` via `layout_traps`/`layout_trap_word`;
+   `forward_op` then the halting item).
+3. Assemble `RegLevelCorrect (fun s => csem (frameF intBase af s) ctx X) (frameF …)
+   (ArmStepX X H fa) vcp af fb` with `forward`/`forward_op`.
+4. csem obligations of `backend_correct`: `Refines`, `DriverSem` (incl. `retarget`),
+   `CallsRefine` (M4Ctl's contract #5; discharge from an `ExtSem` contract hypothesis).
 
 ## `#print axioms`
+
+New (2026-09-27): `os_movFromVec`, `os_vecRRR`, `os_aluRRR_rmZ`, `checkAlloc_sound`, `forward`,
+`emitFunc_ok`, `fallthrough_eq`, `lowerRFunc_ok`, `emit_block`:
+`[propext, Classical.choice, Quot.sound]`; `forward_op`: `[propext]`; `ftList_label_split`,
+`ftList_plain_append`: `[propext, Quot.sound]`; `iterN_execLines`: those plus M5's
+`decode_armBits_*._native.bv_decide` axioms (inherited from `FnAsm.stepi_eq_sem`).
+
+Earlier:
 
 ```
 checkAlloc_sound, checkAlloc_ret, checkAlloc_halt, checkAlloc_stuck, checkAlloc_diverges,
