@@ -99,7 +99,7 @@ open Isle Isle.Aarch64
 "
 
 def roots : List String := ["rule_lower_86", "rule_lower_90", "rule_lower_2215", "rule_lower_1638"]
-def extra : List Nat := []
+def extra : List Nat := [686]
 
 def main : IO Unit := do
   let rs := roots.filterMap program.ruleByName?
@@ -107,15 +107,32 @@ def main : IO Unit := do
   let terms := terms.mergeSort (· ≤ ·)
   IO.println (header roots extra)
   IO.println s!"-- terms: {terms.length}, internal-constructor rules: {rules.length}\n"
+  let mut fields : Array String := #[]
+  let mut proofs : Array String := #[]
   for t in terms do
     let some tm := program.term? t | continue
     if let some (.internal _) := (match tm.kind with | .decl _ _ e => e | _ => none) then
       IO.println s!"-- WARNING internal extractor {tm.name}"
-    IO.println s!"/-- `{tm.name}` -/\ndef term_{t} : Isle.Term :=\n  {termStr tm}\ntheorem program_term_{t} : program.term? {t} = some term_{t} := by native_decide\n@[isel_data] theorem termOf_{t} : Interp.termOf program {t} = pure term_{t} := by\n  rw [Interp.termOf, program_term_{t}]\n@[isel_data] theorem term_{t}_kind : term_{t}.kind = {kindStr tm.kind} := rfl\n@[isel_data] theorem term_{t}_name : term_{t}.name = {q tm.name} := rfl\n"
-    if tm.hasInternalCtor && t != 686 then
+    IO.println s!"/-- `{tm.name}` -/\ndef term_{t} : Isle.Term :=\n  {termStr tm}\ntheorem program_term_{t} : program.term? {t} = some term_{t} := by native_decide\n@[isel_data] theorem term_{t}_kind : term_{t}.kind = {kindStr tm.kind} := rfl\n@[isel_data] theorem term_{t}_name : term_{t}.name = {q tm.name} := rfl\n"
+    fields := fields.push s!"  t{t} : Interp.termOf p {t} = pure term_{t}"
+    proofs := proofs.push s!"  t{t} := by rw [Interp.termOf, program_term_{t}]"
+    if tm.hasInternalCtor then
       let names := (program.rulesOf t).map (·.name)
-      IO.println s!"@[isel_data] theorem program_rulesOf_{t} : program.rulesOf {t} = [{", ".intercalate names}] := by native_decide\n"
-
+      IO.println s!"theorem program_rulesOf_{t} : program.rulesOf {t} =\n    [{", ".intercalate names}] := by\n  native_decide\n"
+      fields := fields.push s!"  r{t} : p.rulesOf {t} =\n    [{", ".intercalate names}]"
+      proofs := proofs.push s!"  r{t} := program_rulesOf_{t}"
+  IO.println "theorem program_termByName_lower : program.termByName? \"lower\" = some term_686 := by\n  native_decide\n"
+  fields := fields.push "  lower : p.termByName? \"lower\" = some term_686"
+  proofs := proofs.push "  lower := program_termByName_lower"
+  IO.println "/-- The facts about the exported program that the isel proofs use. Proofs are stated for
+an arbitrary `p : Program` with `Data p`, never for `Isle.Aarch64.program` itself, so the kernel
+cannot unfold the program data while checking them (with `program` directly, some `simp` proof
+steps made the kernel reduce the program and run out of memory); `data_program` instantiates. -/
+structure Data (p : Program) : Prop where"
+  for f in fields do IO.println f
+  IO.println "\n-- elaborating a ~200-field structure instance nests deeply (no kernel reduction involved)\nset_option maxRecDepth 4000 in\ntheorem data_program : Data program where"
+  for f in proofs do IO.println f
+  IO.println ""
   -- enum variants, `$Type` constants, integer literals of all rules involved
   let allRules := rs ++ rules.filterMap program.ruleByName?
   let (vs, prims, ints) := (allRules.map ruleNodes).foldl
