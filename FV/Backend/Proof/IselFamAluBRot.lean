@@ -50,6 +50,34 @@ theorem neg_imm {w n : Nat} (hw : IW w) (hn : n < w) :
   rw [land_mask_mod hw]
   rcases hw with rfl | rfl | rfl | rfl <;> omega
 
+/-- Operand preparation `ms1` (reading `x`, result `k`), then code reading `k`, `y` and fresh
+vregs: the whole reads only `x`, `y` and fresh vregs. -/
+theorem codeShapeU_compose {x y k d : Nat} {st st1 st2 : LState} {ms1 ms2 : List MInst}
+    (hem : st1.emitted = st.emitted ++ ms1.toArray) (hmono : st.nextVreg ≤ st1.nextVreg)
+    (hdefs : ∀ mi ∈ ms1, ∀ e ∈ vdefs mi, st.nextVreg ≤ e ∧ e < st1.nextVreg)
+    (huses : ∀ mi ∈ ms1, ∀ u ∈ vuseNums mi, st.nextVreg ≤ u ∨ u = x)
+    (hk : k = x ∨ st.nextVreg ≤ k) (hsh : CodeShapeU st1 st2 ms2 d [k, y]) :
+    CodeShapeU st st2 (ms1 ++ ms2) d [x, y] := by
+  refine ⟨?_, by have := hsh.mono; omega, by have := hsh.res; omega, ?_, ?_⟩
+  · rw [hsh.emitted, hem]; simp
+  · intro mi hmi e he
+    rcases List.mem_append.mp hmi with h | h
+    · have := hdefs mi h e he; have := hsh.mono; omega
+    · have := hsh.defs mi h e he; omega
+  · intro mi hmi u hu
+    rcases List.mem_append.mp hmi with h | h
+    · rcases huses mi h u hu with h' | h'
+      · exact .inl h'
+      · exact .inr (by simp [h'])
+    · rcases hsh.uses mi h u hu with h' | h'
+      · exact .inl (by omega)
+      · simp only [List.mem_cons, List.mem_nil_iff, or_false] at h'
+        rcases h' with rfl | rfl
+        · rcases hk with rfl | h''
+          · exact .inr (by simp)
+          · exact .inl h''
+        · exact .inr (by simp)
+
 section Rules
 variable {F : BitVec 64 → Prop} {isem : Sem}
 
@@ -513,6 +541,51 @@ theorem rotl_64_imm_ok {p : Program} (hp : Data p) (MR : MemRelT) (env : Clif.En
   rw [← hX]
   refine (rot_imm_fin .size64 (ρ x) _).trans ?_
   exact rotr_neg (by decide) _ _ _ (by simp only [OperandSize.bits, Clif.Ty.width, Nat.mod_mod])
+
+set_option maxHeartbeats 1000000 in
+/-- **`rotr_fits_in_16`** (`lower.isle:1840`), i8/i16. -/
+theorem rotr_fits_in_16_ok {p : Program} (hp : Data p) (MR : MemRelT) (env : Clif.Env)
+    (cp : Clif.Program) (hR : Refines F isem) (hMR : MRStable F MR) :
+    LowerRuleOk isem MR env cp p rule_lower_1840 := by
+  refine shift_ruleOk_gen hp (cop := .rotr) rfl rfl hp.t2386 term_2386_kind rfl rfl F isem MR env
+    cp hMR ?_
+  intro f ctx hctx cfg ii info x y w st tr m n env' s1 v s' hco hvb hi hhead hd hws hm he
+  have hp' := hp
+  cases hp
+  fbrot_inv [*, rule_lower_1840] at hm he
+  have hii := Option.some.inj (hi.symm.trans ‹ctx.insts[ii]? = some _›)
+  subst hii
+  have hdat := ‹V.data 152 2 _ = info.data›
+  rw [hd] at hdat
+  fbrot_inv [ext_value_array_2_iff, ctor_put_in_reg_iff, ctor_value_regs_get_iff, ctor_zero_reg']
+    at hdat
+  simp only [hhead, Option.getD_some] at *
+  have h16 : w ≤ 16 := ‹_›
+  have hw : w = 8 ∨ w = 16 := by omega
+  have hry := ‹ctx.valueReg? y = some _›
+  obtain rfl := hctx.valueReg y _ hry
+  have hylt := vreg_lt hvb hry
+  have hZ := ‹ApplyInternal _ _ _ _ 27 556 _ _ _ _›
+  have hE := zext32_ok hp' hco (by omega) hZ
+  obtain ⟨k, ms1, rfl, hem, hmono, hdefs, huses, hkx, hklt, hsem1⟩ :=
+    extOut_prun hR hctx hvb (.inl rfl) (by simp) (by simp) hE
+  have hS := ‹ApplyInternal _ _ _ _ 27 710 _ _ _ _›
+  obtain ⟨ms2, d, rfl, hsh, hsem2⟩ := small_rotr_ok hp' hco hR (by omega) hw hklt (by omega) hS
+  have hO := ‹ApplyInternal _ _ _ _ 25 172 _ _ _ _›
+  obtain ⟨rfl, hst⟩ := output_reg_ok hp' hco (by omega) hO
+  refine ⟨ms1 ++ ms2, d, rfl, by rw [hst]; exact codeShapeU_compose hem hmono hdefs huses hkx hsh, ?_⟩
+  intro ty hty hety fr ρ u yv res _ hvals hdfg hx hy hres
+  subst hty
+  obtain ⟨ρ1, hr1, hfr, hext⟩ := hsem1 fr ρ ⟨_, u⟩ hvals hdfg hx
+  obtain ⟨ρ', hr2, -, hrot⟩ := hsem2 ρ1
+  refine ⟨ρ', prun_append hr1 hr2, ?_⟩
+  simp only [Clif.Sem.shift, Clif.Sem.rotr, Clif.Sem.shiftAmt, Option.some.injEq] at hres
+  subst hres
+  have hA := hext.2 (show ty.width ≤ 32 by omega)
+  simp only [Bool.false_eq_true, ↓reduceIte] at hA
+  have hW : IW ty.width := by rcases hw with h | h <;> simp [IW, h]
+  simp only [VHolds]
+  rw [hrot u (by exact hA), hfr y hylt, amt_of_holds hW (hvals y yv hy)]
 
 end Rules
 
