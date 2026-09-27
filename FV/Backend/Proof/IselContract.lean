@@ -133,7 +133,29 @@ def aluVal {n : Nat} (op : ALUOp) (a b : BitVec n) : Option (BitVec n) :=
   | .and => some (a &&& b)
   | .orr => some (a ||| b)
   | .eor => some (a ^^^ b)
+  | .andNot => some (a &&& ~~~b)
+  | .orrNot => some (a ||| ~~~b)
+  | .eorNot => some (a ^^^ ~~~b)
   | _ => none
+
+/-- The shift operations (`LSLV`/`LSRV`/`ASRV`/`RORV` as `AluRRR`, `LSL`/`LSR`/`ASR`/`ROR`
+immediate as `AluRRImmShift`; `extr` is Cranelift's rotate), by `amt`, at width `n`. -/
+def shiftVal {n : Nat} (op : ALUOp) (a : BitVec n) (amt : Nat) : Option (BitVec n) :=
+  match op with
+  | .lsl => some (a <<< amt)
+  | .lsr => some (a >>> amt)
+  | .asr => some (a.sshiftRight amt)
+  | .extr => some (a.rotateRight amt)
+  | _ => none
+
+/-- A register-register ALU operation (`AluRRR`): the two-operand operations, then the shifts
+by the second operand modulo the width (`exec_data_processing_shift`). -/
+def rrrVal {n : Nat} (op : ALUOp) (a b : BitVec n) : Option (BitVec n) :=
+  (aluVal op a b).orElse fun _ => shiftVal op a (b.toNat % n)
+
+/-- `REV16` on a 32-bit register: swap the bytes of each halfword. -/
+def rev16w (x : BitVec 32) : BitVec 32 :=
+  ((x >>> 8) &&& 0x00FF00FF#32) ||| ((x <<< 8) &&& 0xFF00FF00#32)
 
 /-- **Value-level meaning of the instruction forms the proven rules emit**, in terms of the
 Arm model's operations (`AddWithCarry`, `write_pstate`, `ConditionHolds`): the def values
@@ -147,11 +169,29 @@ def ispec : Sem := fun i uses w =>
   | .aluRRR .lsr .size32 rd _ _, [a, b] =>
     some (defOut rd (resX .size32 (opnd .size32 a >>> ((opnd .size32 b).toNat % 32))), w, .next)
   | .aluRRR op sz rd _ _, [a, b] =>
-    (aluVal op (opnd sz a) (opnd sz b)).map fun r => (defOut rd (resX sz r), w, .next)
+    (rrrVal op (opnd sz a) (opnd sz b)).map fun r => (defOut rd (resX sz r), w, .next)
   | .aluRRImm12 .add sz rd _ imm, [a] =>
     if imm.bits < 4096 then
       some (defOut rd (resX sz (opnd sz a + BitVec.ofNat _ imm.value)), w, .next)
     else none
+  | .aluRRImm12 .sub sz rd _ imm, [a] =>
+    if imm.bits < 4096 then
+      some (defOut rd (resX sz (opnd sz a - BitVec.ofNat _ imm.value)), w, .next)
+    else none
+  | .aluRRImmShift op sz rd _ imm, [a] =>
+    if imm < sz.bits then
+      (shiftVal op (opnd sz a) imm).map fun r => (defOut rd (resX sz r), w, .next)
+    else none
+  | .bitRR .rbit sz rd _, [a] => some (defOut rd (resX sz (opnd sz a).reverse), w, .next)
+  | .bitRR .clz sz rd _, [a] => some (defOut rd (resX sz (opnd sz a).clz), w, .next)
+  | .bitRR .rev16 .size32 rd _, [a] => some (defOut rd (resX .size32 (rev16w (opnd .size32 a))), w, .next)
+  | .bitRR .rev32 .size32 rd _, [a] =>
+    some (defOut rd (resX .size32 (Clif.Sem.bswap (opnd .size32 a))), w, .next)
+  | .bitRR .rev64 .size64 rd _, [a] =>
+    some (defOut rd (resX .size64 (Clif.Sem.bswap (opnd .size64 a))), w, .next)
+  | .extend rd _ sg 8 16, [a] =>
+    let x := (lo64 a).setWidth 8
+    some (defOut rd (ofX (if sg then (x.signExtend 32).setWidth 64 else x.setWidth 64)), w, .next)
   | .aluRRImmLogic op sz rd _ imm, [a] =>
     if ImmLogic.ofNat? imm.value sz = some imm then
       (aluVal op (opnd sz a) (BitVec.ofNat _ imm.value)).map fun r =>
@@ -167,6 +207,8 @@ def ispec : Sem := fun i uses w =>
   | .cset rd c, [] =>
     if c = .al ∨ c = .nv then none
     else some (defOut rd (ofX (if Arm.ConditionHolds c.invert.bits w then 0#64 else 1#64)), w, .next)
+  | .aluRRR op sz rd .xzr _, [b] =>
+    (rrrVal op (0#sz.bits) (opnd sz b)).map fun r => (defOut rd (resX sz r), w, .next)
   | _, _ => none
 
 /-- **The semantic hypothesis of the rule statements**: on every form `ispec` specifies, the
@@ -205,6 +247,8 @@ structure CtxInv (f : Clif.Function) (ctx : Ctx) : Prop where
   valueReg : ∀ (x : Nat) (r : Reg), ctx.valueReg? x = some r → r = .vreg x .int
   typedReg : ∀ (x : Nat) (t : CTy), ctx.valueType? x = some t → ctx.valueReg? x = some (.vreg x .int)
   defInst : ∀ (x d : Nat), ctx.defInst? x = some d → ∃ info, ctx.insts[d]? = some info ∧ x ∈ info.results
+  defClif : ∀ (x d : Nat) (info : IInfo), ctx.defInst? x = some d → ctx.insts[d]? = some info →
+    info.clif.isSome = true
   slotOff : ctx.slotOff = (slotLayout f.slots).1
 
 /-- Instructions the rules may look through (`def_inst`): their value is a function of their
