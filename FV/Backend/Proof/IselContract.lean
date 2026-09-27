@@ -265,6 +265,11 @@ def ResultsHeld (lo : Nat) (fr : Clif.Frame) (rss : List (List Reg)) (vals : Lis
     ∀ (j : Nat) rs v, rss[j]? = some rs → vals[j]? = some v →
       ∃ out cls, rs = [.vreg out cls] ∧ (lo ≤ out ∨ (fr.regs out).isSome) ∧ VHolds v (ρ out)
 
+/-- The emitted code reads only fresh vregs (`≥ st.nextVreg`) or vregs of values defined in
+`fr`. Required on the runs that continue (an undefined operand makes CLIF `stuck`). -/
+def UsesOk (st : LState) (fr : Clif.Frame) (ms : List MInst) : Prop :=
+  ∀ m ∈ ms, ∀ u ∈ vuseNums m, st.nextVreg ≤ u ∨ (fr.regs u).isSome
+
 /-- **`lower` on a non-terminator** (results `results`; lowering state `st` → `st'`, emitted
 code `ms`). -/
 structure LowerInstOk (isem : Sem) (MR : MemRelT) (env : Clif.Env) (p : Clif.Program)
@@ -274,11 +279,10 @@ structure LowerInstOk (isem : Sem) (MR : MemRelT) (env : Clif.Env) (p : Clif.Pro
   defs : ∀ m ∈ ms, ∀ d ∈ vdefs m, st.nextVreg ≤ d ∧ d < st'.nextVreg
   run : ∀ (fr : Clif.Frame) (cm : Clif.Mem) (ρ : Nat → CV) (w : Arm.ArmState),
     fr.func = ctx.func → ValsHeld fr ρ → DFGCons ctx fr → MR fr.slots cm w →
-    (∀ m ∈ ms, ∀ u ∈ vuseNums m, st.nextVreg ≤ u ∨ (fr.regs u).isSome) ∧
     match instOutcome env p fr cm inst with
-    | .ok (vals, cm') => ∃ ρ' w', seqRun isem ms ρ w = some (.fall ρ' w') ∧
+    | .ok (vals, cm') => UsesOk st fr ms ∧ ∃ ρ' w', seqRun isem ms ρ w = some (.fall ρ' w') ∧
         (results = [] ∨ ResultsHeld st.nextVreg fr rss vals ρ') ∧ MR fr.slots cm' w'
-    | .trap c => explicitTrapInst inst = true →
+    | .trap c => explicitTrapInst inst = true → UsesOk st fr ms ∧
         ∃ k i ops ρ₁ w₁ outs w₂, seqRun isem ms ρ w = some (.stop k i ops ρ₁ w₁ outs w₂ .halt) ∧
           trapCode? i = some c
     | .stuck _ => True
@@ -299,17 +303,16 @@ structure LowerTermOk (isem : Sem) (MR : MemRelT) (ctx : Ctx) (t : Clif.Terminat
   defs : ∀ m ∈ ms, ∀ d ∈ vdefs m, st.nextVreg ≤ d ∧ d < st'.nextVreg
   run : ∀ (fr : Clif.Frame) (cm : Clif.Mem) (ρ : Nat → CV) (w : Arm.ArmState),
     fr.func = ctx.func → ValsHeld fr ρ → DFGCons ctx fr → MR fr.slots cm w →
-    (∀ m ∈ ms, ∀ u ∈ vuseNums m, st.nextVreg ≤ u ∨ (fr.regs u).isSome) ∧
     match t with
-    | .ret xs => ∀ vals, fr.getMany xs = .ok vals →
+    | .ret xs => ∀ vals, fr.getMany xs = .ok vals → UsesOk st fr ms ∧
         ∃ k us ops ρ₁ w₁ outs w₂,
           seqRun isem ms ρ w = some (.stop k (.rets us) ops ρ₁ w₁ outs w₂ .ret) ∧
           us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = vals.length ∧
           AllHold vals (vuses ops ρ₁) ∧ MR fr.slots cm w₂
-    | .trap c => ∃ k i ops ρ₁ w₁ outs w₂,
+    | .trap c => UsesOk st fr ms ∧ ∃ k i ops ρ₁ w₁ outs w₂,
         seqRun isem ms ρ w = some (.stop k i ops ρ₁ w₁ outs w₂ .halt) ∧ trapCode? i = some c
     | t => (∀ i, ms.getLast? = some i → i.targets = targets) ∧ ∀ j, branchIdx fr t = .ok j →
-        ∃ k i ops ρ₁ w₁ outs w₂,
+        UsesOk st fr ms ∧ ∃ k i ops ρ₁ w₁ outs w₂,
           seqRun isem ms ρ w = some (.stop k i ops ρ₁ w₁ outs w₂ (.goto j)) ∧ k + 1 = ms.length ∧
           MR fr.slots cm w₂
 
