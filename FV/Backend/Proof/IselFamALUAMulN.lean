@@ -9,7 +9,7 @@ import FV.Backend.Proof.IselFamALUAExtr
 `umulhi` the same with `uxt` and `lsr`. The operand parts are abstracted as `PartOk` (code, fresh
 defs, uses, and the 64-bit extension it leaves in its result register); the `I64` arm of
 `put_in_reg_*ext64` is impossible at a narrow type by `FrameTyped` (its `PartOk` is vacuous).
-The straight-line run is composed with `seqRun_append_fall`; `mulhi_narrow_s/u` are the width
+The straight-line run is composed with `seqRun_append_fall_fa`; `mulhi_narrow_s/u` are the width
 lemmas (the high half of the `2w`-bit product sits in bits `w..2w-1` of the 64-bit product).
 -/
 
@@ -72,7 +72,7 @@ end LetInv
 
 /-! ## Straight-line code -/
 
-theorem seqRun_append_fall {isem : Sem} :
+theorem seqRun_append_fall_fa {isem : Sem} :
     ∀ {ms1 ms2 : List MInst} {ρ ρ1 ρ2 : Nat → CV} {w w1 w2 : Arm.ArmState},
       seqRun isem ms1 ρ w = some (.fall ρ1 w1) → seqRun isem ms2 ρ1 w1 = some (.fall ρ2 w2) →
       seqRun isem (ms1 ++ ms2) ρ w = some (.fall ρ2 w2)
@@ -105,7 +105,7 @@ theorem seqRun_append_fall {isem : Sem} :
           | fall ρ' w'' =>
             simp only [Option.map_some, SeqEnd.succ, Option.some.injEq, SeqEnd.fall.injEq] at h1
             obtain ⟨rfl, rfl⟩ := h1
-            rw [seqRun_append_fall hr h2]
+            rw [seqRun_append_fall_fa hr h2]
             rfl
           | stop _ _ _ _ _ _ _ _ => simp [SeqEnd.succ] at h1
       | _ => simp at h1
@@ -114,7 +114,7 @@ theorem seqRun_append_fall {isem : Sem} :
 
 /-! ## Instruction forms -/
 
-theorem operands_extend (d x : Nat) (sg : Bool) (a b : Nat) :
+theorem operands_extend_fa (d x : Nat) (sg : Bool) (a b : Nat) :
     (MInst.extend (.vreg d .int) (.vreg x .int) sg a b).operands =
       .ok #[⟨d, .int, .def, .late, .reg⟩, ⟨x, .int, .use, .early, .reg⟩] := rfl
 
@@ -243,7 +243,7 @@ theorem partOk_narrow {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem
     have hb : (CTy.int ty.width).bits = 8 ∨ (CTy.int ty.width).bits = 16 ∨
         (CTy.int ty.width).bits = 32 := by
       cases ty <;> simp [Clif.Ty.width, CTy.bits] at hw ⊢
-    obtain ⟨w', hrun, hsw⟩ := seqRun_one hR (operands_extend _ _ _ _ _) rfl
+    obtain ⟨w', hrun, hsw⟩ := seqRun_one hR (operands_extend_fa _ _ _ _ _) rfl
       (ispec_extend64 (d := st.nextVreg) (rn := .vreg x .int) (sg := sg) (a := ρ x) (w := w) hb)
     refine ⟨_, w', hrun, hsw, fun q hq => ?_, ?_⟩
     · simp only [upd, show ¬ (q = st.nextVreg) by omega, ↓reduceIte]
@@ -329,7 +329,7 @@ theorem mulhiN_lowerInstOk {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} 
     obtain ⟨w4, hr4, hsw4⟩ := seqRun_one hR (operands_aluRRImmShift _ _ _ _ _) rfl
       (ispec_aluRRImmShift (d := sy.nextVreg + 1) (rn := .vreg sy.nextVreg .int) (w := w3)
         (show ty.width < OperandSize.bits .size64 by simp [OperandSize.bits]; omega) hsv')
-    refine ⟨?_, _, w4, seqRun_append_fall (seqRun_append_fall hr1 hr2) (by rw [hstep, hr4]; rfl),
+    refine ⟨?_, _, w4, seqRun_append_fall_fa (seqRun_append_fall_fa hr1 hr2) (by rw [hstep, hr4]; rfl),
       hsw4.trans' (hw3.trans' (hsw2.trans' hsw1)), ?_⟩
     · intro m hm q hq
       simp only [List.mem_append, List.mem_cons, List.mem_nil_iff, or_false] at hm

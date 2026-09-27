@@ -22,7 +22,7 @@ abbrev env2a (a b : V) : Interp.Env V :=
 
 theorem sem_eq_beq_fa (a b : V) : (sem ctx).eq a b = (a == b) := rfl
 
-theorem ctor_zero_reg (st : LState) : externCtor ctx T.zero_reg [] st = .ok (.reg .xzr, st) := rfl
+theorem ctor_zero_reg_fa (st : LState) : externCtor ctx T.zero_reg [] st = .ok (.reg .xzr, st) := rfl
 
 /-! ## `alu_rrrr`, `madd`, `msub`; `smulh`, `umulh` -/
 
@@ -250,7 +250,7 @@ theorem rhs_871 {x y w : Nat} {rx ry : Reg} (hx : ctx.valueReg? x = some rx)
   refine Exists.intro ?w ?h
   case h =>
     isel_eval [*, rule_lower_871, ctor_put_in_reg ctx _ hx, ctor_put_in_reg ctx _ hy,
-      ctor_zero_reg]
+      ctor_zero_reg_fa]
     rfl
 
 include hp in
