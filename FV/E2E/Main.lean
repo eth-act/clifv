@@ -1,12 +1,16 @@
 import FV.E2E.Compose
+import FV.Backend.Proof.DriverCheckSound
+import FV.Backend.Proof.PrepareSound
 
 /-!
 # M7: `backend_correct`
 
 The end-to-end theorem from the layer hypotheses: M4's rule theorems (`LowerRulesCorrect`,
-`ExcludedUnmatchable`, and the terminator calls `TermCalls`), M6+M5's register-level theorem
-(`RegLevelCorrect`), the semantics facts `Refines`/`DriverSem` of the shared VCode semantics,
-and M7's own remaining obligations (`LoweringObligations`, `PrepareCorrect`). The CLIF → VCode
+`ExcludedUnmatchable`, and the terminator calls `TermCalls`, themselves proven from M4's
+terminator rule statements in `backend_correct_of_rules`), M6+M5's register-level theorem
+(`RegLevelCorrect`) and the semantics facts `Refines`/`DriverSem` of the shared VCode semantics.
+M7's own obligations are discharged by the validators the pipeline runs (`Compiled.lowerOk`,
+`Compiled.prepOk`): `loweringObligations_of_check`, `prepareCorrect_of_check`. The CLIF → VCode
 driver simulation (`driver_correct`) and the composition (`backend_correct_of_layers`) are
 proven.
 -/
@@ -75,48 +79,100 @@ theorem iselSim_of_driver {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LS
   · rw [h] at hrun
     exact hrun
 
+/-- **M7's lowering obligations** from the lowering validator. -/
+theorem loweringObligations_of_check {f : Clif.Function} {vc : VCode} (h : lowerCheck f vc = true) :
+    LoweringObligations f vc :=
+  lowering_of_check h
+
+/-- **`prepare` preserves returns and traps**, from the `prepare` validator. -/
+theorem prepareCorrect_of_check {sem : Sem} {vc vcp : VCode} (hds : DriverSem sem)
+    (h : prepCheck vc vcp = true) : PrepareCorrect sem vc vcp :=
+  fun ρ₀ w₀ => prep_sound hds h ρ₀ w₀
+
+/-- The arguments are in x0–x7 of the body-entry world too. -/
+theorem argsIn_body {p : Clif.Program} {f : Clif.Function} {args : List Clif.Val} {cs : Clif.State}
+    {af : AFunc} {s w₀ : Arm.ArmState} (hsub : InSubset p f) (hcs : ClifEntry f args cs)
+    (hbe : BodyEntry af s w₀) (h : ArgsIn args s) : ArgsIn args w₀ := by
+  intro i v hi
+  have hlen : args.length = f.sig.params.length := by
+    have := congrArg List.length hcs.sig; simpa using this
+  have hi8 : i < 8 := by
+    have := (List.getElem?_eq_some_iff.mp hi).1; have := hsub.regParams; omega
+  rw [XHolds, show xreg i w₀ = xreg i s from hbe.args i hi8]
+  exact h i v hi
+
 /-- **`backend_correct` (M7).** For an in-subset CLIF function `f` of `p`, compiled by the
-Lean backend (`Compiled`) and loaded at `base`, an Arm execution from an ABI entry state with
-enough stack, whose CLIF counterpart `cs` has its stack slots at the Arm frame's slot region
-and its memory related to the Arm memory, refines the CLIF run: returns with the same values
-(low bits) and memory, traps at a trap site with the same code (explicit traps). Hypotheses:
-M4 (`hrules`, `hex`, `hterms`), M6+M5 (`hM6`), the shared VCode semantics (`hRef`, `hds`),
-M7's remaining obligations (`hlow`, `hprep`). -/
+Lean backend (`Compiled`, including M7's validators) and loaded at `base`, an Arm execution
+from an ABI entry state `s` with enough stack, whose CLIF counterpart `cs` has its stack slots at
+the body frame's slot region (relative to the body-entry world `w₀`) and its memory related to the
+Arm memory, refines the CLIF run: returns with the same values (low bits) and memory, traps at a
+trap site with the same code (explicit traps). Hypotheses: M4 (`hrules`, `hex`, `hterms`),
+M6+M5 (`hM6`), the shared VCode semantics of each activation (`hRef`, `hds`). -/
 theorem backend_correct {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}
     {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb)
-    {sem : Sem} {F : Arm.ArmState → BitVec 64 → Prop} {syms : String → Option Nat}
-    {slotOff : Nat} {astep : Arm.ArmState → Arm.ArmState} {env : Clif.Env}
+    {sem : Arm.ArmState → Sem} {F : Arm.ArmState → BitVec 64 → Prop}
+    {syms : String → Option Nat} {slotOff : Nat} {astep : Arm.ArmState → Arm.ArmState}
+    {env : Clif.Env}
     -- M4
     (hrules : LowerRulesCorrect Isle.Aarch64.program)
     (hex : ExcludedUnmatchable Isle.Aarch64.program)
-    (hterms : ∀ s, TermCalls sem (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w))
+    (hterms : ∀ s, TermCalls (sem s) (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w))
     -- M6 + M5
     (hM6 : RegLevelCorrect sem F astep vcp af fb)
     -- the shared VCode semantics (M6's `csem`)
-    (hRef : ∀ s, Refines (F s) sem) (hds : DriverSem sem)
-    -- M7, remaining
-    (hlow : LoweringObligations f vc) (hprep : PrepareCorrect sem vc vcp)
+    (hRef : ∀ s, Refines (F s) (sem s)) (hds : ∀ s, DriverSem (sem s))
     -- the run
-    {base ra : BitVec 64} {s : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
-    (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hargs : ArgsIn args s)
-    (hcs : ClifEntry f args cs)
-    (hrel : Rel.holds ⟨F s, syms, slotOff⟩ f cs.frame.slots cs.mem s)
+    {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
+    (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hbe : BodyEntry af s w₀)
+    (hargs : ArgsIn args s) (hcs : ClifEntry f args cs)
+    (hrel : Rel.holds ⟨F s, syms, slotOff⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ArmRefines fb base ra astep s (Clif.runLoop env p fuel cs) := by
-  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert⟩ := hlow
+  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert⟩ := loweringObligations_of_check hc.lowerOk
   refine backend_correct_of_layers (fun s' => iselSim_of_driver (ctx := ctx) (st0 := st0) (R := R)
-    (gn := gn) (bl := bl) (A := A) ?_) hprep hM6 hent hres hargs hcs
-    hrel htr fuel
+    (gn := gn) (bl := bl) (A := A) ?_) (fun s' => prepareCorrect_of_check (hds s') hc.prepOk) hM6
+    hent hres hbe (argsIn_body hsub hcs hbe hargs) hcs hrel htr fuel
   exact {
     shape := hshape
     cert := hcert
-    dsem := hds
+    dsem := hds s'
     insts := instCalls_of_rules hrules hex (hRef s') (mrStable_holds ⟨F s', syms, slotOff⟩ f)
     terms := hterms s'
     ext := fun B hB st hst fn args hi e he => hsub.externCalls B hB st hst fn args hi e he
     noTail := noTail_of_subset hsub
     cfg := cfg_of_prepare hc.prepare }
+
+/-- **`backend_correct` from M4's rule statements only**: the terminator calls (`TermCalls`)
+from M4's terminator rules (`termCalls_of_rules`). -/
+theorem backend_correct_of_rules {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}
+    {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
+    (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb)
+    {sem : Arm.ArmState → Sem} {F : Arm.ArmState → BitVec 64 → Prop}
+    {syms : String → Option Nat} {slotOff : Nat} {astep : Arm.ArmState → Arm.ArmState}
+    {env : Clif.Env}
+    -- M4
+    (hrules : LowerRulesCorrect Isle.Aarch64.program)
+    (hex : ExcludedUnmatchable Isle.Aarch64.program)
+    (htermRules : LowerTermRulesCorrect Isle.Aarch64.program)
+    (htermUn : TermUnmatchable Isle.Aarch64.program)
+    (hbranch : BranchRulesCorrect Isle.Aarch64.program)
+    (hbranchEx : BranchExcludedUnmatchable Isle.Aarch64.program)
+    -- M6 + M5
+    (hM6 : RegLevelCorrect sem F astep vcp af fb)
+    -- the shared VCode semantics (M6's `csem`)
+    (hRef : ∀ s, Refines (F s) (sem s)) (hds : ∀ s, DriverSem (sem s))
+    -- the run
+    {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
+    (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hbe : BodyEntry af s w₀)
+    (hargs : ArgsIn args s) (hcs : ClifEntry f args cs)
+    (hrel : Rel.holds ⟨F s, syms, slotOff⟩ f cs.frame.slots cs.mem w₀)
+    (htr : TrapsExplicit env p cs) (fuel : Nat) :
+    ArmRefines fb base ra astep s (Clif.runLoop env p fuel cs) :=
+  backend_correct hsub hc hrules hex
+    (fun s' => termCalls_of_rules htermRules htermUn hbranch hbranchEx (hRef s')
+      (mrStable_holds ⟨F s', syms, slotOff⟩ f))
+    hM6 hRef hds hent hres hbe hargs hcs hrel htr fuel
 
 end E2E
 

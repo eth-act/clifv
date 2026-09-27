@@ -268,14 +268,16 @@ def entryCand (f : Clif.Function) (gn : Nat → Nat) (tl : Nat) : List Clif.Valu
       decide (x ∉ TB.params.map (·.1)) && decide (gn x ∉ TB.params.map (·.1))
   | none => []
 
-/-- One round of the must-dataflow. -/
+/-- One round of the must-dataflow (the values available at every block end computed once). -/
 def inStep (f : Clif.Function) (gn : Nat → Nat) (In : List (List Clif.ValueId)) :
     List (List Clif.ValueId) :=
+  let outs : Array (List Clif.ValueId) := ((List.range f.blocks.length).map fun bi =>
+    match f.blocks[bi]? with
+    | some B => availOf f In bi B.body.length
+    | none => []).toArray
   (List.range f.blocks.length).map fun tl =>
     (entryCand f gn tl).filter fun x => (predsOf f tl).all fun bi =>
-      match f.blocks[bi]? with
-      | some B => decide (x ∈ availOf f In bi B.body.length)
-      | none => true
+      decide (x ∈ outs.getD bi [])
 
 /-- Iterate to a fixpoint (at most `fuel` rounds). -/
 def inIter (f : Clif.Function) (gn : Nat → Nat) : Nat → List (List Clif.ValueId) →
