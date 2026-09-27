@@ -1,5 +1,6 @@
 import FV.Backend
 import FVTest.Backend.Encode.Examples
+import FVTest.Backend.Encode.Range
 
 /-!
 # Encoder tests (`lake exe lean-backend-encode-test`, `docs/contracts/encoder.md`)
@@ -18,6 +19,8 @@ import FVTest.Backend.Encode.Examples
   object (`OUT.o`) for `scripts/lean-backend-encode-check.sh --random` to compare byte for byte.
   Also checks that the encoder's bitmask-immediate encoder accepts exactly the values
   `ImmLogic.ofNat?` (the isel's predicate) accepts.
+* `range`: the branch-range policy at the encoder, layout (large functions) and whole-backend
+  (generated CLIF) levels (`FVTest/Backend/Encode/Range.lean`).
 
 Exit status 0 iff every check passes.
 -/
@@ -61,7 +64,7 @@ def decodeMain (files : List String) : IO UInt32 := do
       for (f, fb) in fbs do
         nfuncs := nfuncs + 1
         nwords := nwords + fb.words.size
-        let lbls := labelOffsets f.lines
+        let lbls := (labelOffsets f.lines).toOption.getD {}
         for (pc, i) in fb.insns do
           ninsns := ninsns + 1
           counts := bump counts (mnemonic i)
@@ -289,7 +292,7 @@ def randomMain (outS outO : String) (n seed : Nat) : IO UInt32 := do
     | .error e => IO.println s!"{f.name}: encoding failed: {e}"; bad := bad + 1
     | .ok fb =>
       laid := laid.push (f, fb)
-      let lbls := labelOffsets f.lines
+      let lbls := (labelOffsets f.lines).toOption.getD {}
       let mut ok := 0
       for (pc, i) in fb.insns do
         if i.decodeOk { pc, lbl := (lbls[·]?) } then ok := ok + 1
@@ -316,6 +319,7 @@ def randomMain (outS outO : String) (n seed : Nat) : IO UInt32 := do
 def main (args : List String) : IO UInt32 := do
   match args with
   | "decode" :: files => decodeMain files
+  | ["range"] => Backend.RangeTest.rangeMain
   | "random" :: s :: o :: rest =>
     let rec opts (n seed : Nat) : List String → Option (Nat × Nat)
       | [] => some (n, seed)
@@ -328,4 +332,5 @@ def main (args : List String) : IO UInt32 := do
   | _ =>
     IO.eprintln "usage: lean-backend-encode-test decode [FILE.clif...]"
     IO.eprintln "       lean-backend-encode-test random OUT.s OUT.o [--n N] [--seed S]"
+    IO.eprintln "       lean-backend-encode-test range"
     return 2

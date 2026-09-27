@@ -2,7 +2,7 @@ import FV.Backend.Asm
 import FV.Arm.Decode
 
 /-!
-# Machine-code encoder (M5, unproven)
+# Machine-code encoder (M5, proven against the Arm model's decoder)
 
 `Insn.encode env i = armBits <$> Insn.toArmInst env i`:
 
@@ -12,12 +12,15 @@ import FV.Arm.Decode
   chapter C7 "A64 Advanced SIMD and Floating-point Instruction Descriptions") fixes them, with
   aliases translated per their "Alias conditions"/"is equivalent to" rules. Operand
   constraints (register 31 as SP or ZR, immediate ranges, branch ranges) are checked here.
+  (`Insn.armFields` builds the structure literals; `toArmInst` = `ArmInst.norm <$> armFields`.)
 * `armBits` concatenates the fields of an encoding class in the order of the class's
   encoding diagram (Arm ARM C4.1 "A64 instruction set encoding").
 
-The executable check `decode_raw_inst (encode env i) = some (toArmInst env i)` is the M5
-theorem `decode ∘ encode = id` restricted to what the backend emits
-(`FVTest/Backend/Encode/DecodeCheck.lean`); `Insn.decodeOk` states it per instruction.
+M5 theorem (`FV/Backend/Proof/Encode.lean`): `Insn.decode_encode` —
+`i.encode env = .ok w → ∃ a, i.toArmInst env = .ok a ∧ decode_raw_inst w = some a`, for every
+`Insn` and position. Layout correctness and the branch-range policy:
+`FV/Backend/Proof/EncodeLayout.lean`, `EncodeBranch.lean`; the `stepi` link:
+`EncodeStep.lean`. `Insn.decodeOk` is the executable form (`lean-backend-encode-test decode`).
 
 Relocatable operands (`bl`, `adrp`, `:got_lo12:`, `:lo12:`) are encoded with a zero
 immediate; `Insn.reloc?` gives the ELF relocation (`R_AARCH64_*`, RELA addend), which is what
@@ -68,10 +71,6 @@ def uField (what : String) (w n : Nat) : Except String (BitVec w) :=
 def sField (what : String) (w : Nat) (i : Int) : Except String (BitVec w) :=
   if -(2 ^ (w - 1) : Int) ≤ i ∧ i < 2 ^ (w - 1) then pure (BitVec.ofInt w i)
   else throw s!"{what} {i} does not fit in {w} signed bits"
-
-/-- `i / 4` for a 4-byte aligned byte offset. -/
-def wordOffset (what : String) (i : Int) : Except String Int :=
-  if i % 4 == 0 then pure (i / 4) else throw s!"{what} offset {i} is not a multiple of 4"
 
 /-- Rotate the `e`-bit value `x` right by `r`. -/
 def rorN (e x r : Nat) : Nat := (x >>> r) ||| ((x <<< (e - r)) % 2 ^ e)
@@ -175,6 +174,111 @@ def armBits : ArmInst → BitVec 32
   -- C4.1 Reserved: UDF
   | .RES (.Udf x) => 0#16 ++ x.imm16
 
+/-- `a` with every `_fixed` field reset to the value the decoder puts there (the structure's
+default): the fields `armBits` ignores. Identity on every value `Insn.armFields` builds (they
+are structure literals that leave `_fixed` at its default); `decode_raw_inst (armBits a) =
+some a.norm` for every `a` (`Backend.decode_armBits`, `FV/Backend/Proof/Encode.lean`). -/
+def _root_.Arm.ArmInst.norm : ArmInst → ArmInst
+  | .DPI (.Add_sub_imm x) =>
+    .DPI (.Add_sub_imm { sf := x.sf, op := x.op, S := x.S, sh := x.sh, imm12 := x.imm12,
+                         Rn := x.Rn, Rd := x.Rd })
+  | .DPI (.Logical_imm x) =>
+    .DPI (.Logical_imm { sf := x.sf, opc := x.opc, N := x.N, immr := x.immr, imms := x.imms,
+                         Rn := x.Rn, Rd := x.Rd })
+  | .DPI (.PC_rel_addressing x) =>
+    .DPI (.PC_rel_addressing { op := x.op, immlo := x.immlo, immhi := x.immhi, Rd := x.Rd })
+  | .DPI (.Bitfield x) =>
+    .DPI (.Bitfield { sf := x.sf, opc := x.opc, N := x.N, immr := x.immr, imms := x.imms,
+                      Rn := x.Rn, Rd := x.Rd })
+  | .DPI (.Move_wide_imm x) =>
+    .DPI (.Move_wide_imm { sf := x.sf, opc := x.opc, hw := x.hw, imm16 := x.imm16, Rd := x.Rd })
+  | .DPI (.Extract x) =>
+    .DPI (.Extract { sf := x.sf, op21 := x.op21, N := x.N, o0 := x.o0, Rm := x.Rm,
+                     imms := x.imms, Rn := x.Rn, Rd := x.Rd })
+  | .BR (.Compare_branch x) =>
+    .BR (.Compare_branch { sf := x.sf, op := x.op, imm19 := x.imm19, Rt := x.Rt })
+  | .BR (.Uncond_branch_imm x) => .BR (.Uncond_branch_imm { op := x.op, imm26 := x.imm26 })
+  | .BR (.Uncond_branch_reg x) =>
+    .BR (.Uncond_branch_reg { opc := x.opc, op2 := x.op2, op3 := x.op3, Rn := x.Rn, op4 := x.op4 })
+  | .BR (.Cond_branch_imm x) =>
+    .BR (.Cond_branch_imm { imm19 := x.imm19, o0 := x.o0, cond := x.cond })
+  | .BR (.Hints x) => .BR (.Hints { CRm := x.CRm, op2 := x.op2 })
+  | .BR (.Test_branch x) =>
+    .BR (.Test_branch { b5 := x.b5, op := x.op, b40 := x.b40, imm14 := x.imm14, Rt := x.Rt })
+  | .DPR (.Add_sub_carry x) =>
+    .DPR (.Add_sub_carry { sf := x.sf, op := x.op, S := x.S, Rm := x.Rm, Rn := x.Rn, Rd := x.Rd })
+  | .DPR (.Add_sub_shifted_reg x) =>
+    .DPR (.Add_sub_shifted_reg { sf := x.sf, op := x.op, S := x.S, shift := x.shift, Rm := x.Rm,
+                                 imm6 := x.imm6, Rn := x.Rn, Rd := x.Rd })
+  | .DPR (.Add_sub_ext_reg x) =>
+    .DPR (.Add_sub_ext_reg { sf := x.sf, op := x.op, S := x.S, opt := x.opt, Rm := x.Rm,
+                             option := x.option, imm3 := x.imm3, Rn := x.Rn, Rd := x.Rd })
+  | .DPR (.Conditional_compare_imm x) =>
+    .DPR (.Conditional_compare_imm { sf := x.sf, op := x.op, S := x.S, imm5 := x.imm5,
+                                     cond := x.cond, o2 := x.o2, Rn := x.Rn, o3 := x.o3,
+                                     nzcv := x.nzcv })
+  | .DPR (.Conditional_compare_reg x) =>
+    .DPR (.Conditional_compare_reg { sf := x.sf, op := x.op, S := x.S, Rm := x.Rm,
+                                     cond := x.cond, o2 := x.o2, Rn := x.Rn, o3 := x.o3,
+                                     nzcv := x.nzcv })
+  | .DPR (.Conditional_select x) =>
+    .DPR (.Conditional_select { sf := x.sf, op := x.op, S := x.S, Rm := x.Rm, cond := x.cond,
+                                op2 := x.op2, Rn := x.Rn, Rd := x.Rd })
+  | .DPR (.Data_processing_one_source x) =>
+    .DPR (.Data_processing_one_source { sf := x.sf, S := x.S, opcode2 := x.opcode2,
+                                        opcode := x.opcode, Rn := x.Rn, Rd := x.Rd })
+  | .DPR (.Data_processing_two_source x) =>
+    .DPR (.Data_processing_two_source { sf := x.sf, S := x.S, Rm := x.Rm, opcode := x.opcode,
+                                        Rn := x.Rn, Rd := x.Rd })
+  | .DPR (.Logical_shifted_reg x) =>
+    .DPR (.Logical_shifted_reg { sf := x.sf, opc := x.opc, shift := x.shift, N := x.N,
+                                 Rm := x.Rm, imm6 := x.imm6, Rn := x.Rn, Rd := x.Rd })
+  | .DPR (.Data_processing_three_source x) =>
+    .DPR (.Data_processing_three_source { sf := x.sf, op54 := x.op54, op31 := x.op31,
+                                          Rm := x.Rm, o0 := x.o0, Ra := x.Ra, Rn := x.Rn,
+                                          Rd := x.Rd })
+  | .DPSFP (.Advanced_simd_two_reg_misc x) =>
+    .DPSFP (.Advanced_simd_two_reg_misc { Q := x.Q, U := x.U, size := x.size,
+                                          opcode := x.opcode, Rn := x.Rn, Rd := x.Rd })
+  | .DPSFP (.Advanced_simd_copy x) =>
+    .DPSFP (.Advanced_simd_copy { Q := x.Q, op := x.op, imm5 := x.imm5, imm4 := x.imm4,
+                                  Rn := x.Rn, Rd := x.Rd })
+  | .DPSFP (.Advanced_simd_three_same x) =>
+    .DPSFP (.Advanced_simd_three_same { Q := x.Q, U := x.U, size := x.size, Rm := x.Rm,
+                                        opcode := x.opcode, Rn := x.Rn, Rd := x.Rd })
+  | .DPSFP (.Conversion_between_FP_and_Int x) =>
+    .DPSFP (.Conversion_between_FP_and_Int { sf := x.sf, S := x.S, ftype := x.ftype,
+                                             rmode := x.rmode, opcode := x.opcode, Rn := x.Rn,
+                                             Rd := x.Rd })
+  | .DPSFP (.Advanced_simd_across_lanes x) =>
+    .DPSFP (.Advanced_simd_across_lanes { Q := x.Q, U := x.U, size := x.size,
+                                          opcode := x.opcode, Rn := x.Rn, Rd := x.Rd })
+  | .LDST (.Reg_imm_post_indexed x) =>
+    .LDST (.Reg_imm_post_indexed { size := x.size, V := x.V, opc := x.opc, imm9 := x.imm9,
+                                   Rn := x.Rn, Rt := x.Rt })
+  | .LDST (.Reg_unsigned_imm x) =>
+    .LDST (.Reg_unsigned_imm { size := x.size, V := x.V, opc := x.opc, imm12 := x.imm12,
+                               Rn := x.Rn, Rt := x.Rt })
+  | .LDST (.Reg_unscaled_imm x) =>
+    .LDST (.Reg_unscaled_imm { size := x.size, VR := x.VR, opc := x.opc, imm9 := x.imm9,
+                               Rn := x.Rn, Rt := x.Rt })
+  | .LDST (.Reg_pair_pre_indexed x) =>
+    .LDST (.Reg_pair_pre_indexed { opc := x.opc, V := x.V, L := x.L, imm7 := x.imm7,
+                                   Rt2 := x.Rt2, Rn := x.Rn, Rt := x.Rt })
+  | .LDST (.Reg_pair_post_indexed x) =>
+    .LDST (.Reg_pair_post_indexed { opc := x.opc, V := x.V, L := x.L, imm7 := x.imm7,
+                                    Rt2 := x.Rt2, Rn := x.Rn, Rt := x.Rt })
+  | .LDST (.Reg_pair_signed_offset x) =>
+    .LDST (.Reg_pair_signed_offset { opc := x.opc, V := x.V, L := x.L, imm7 := x.imm7,
+                                     Rt2 := x.Rt2, Rn := x.Rn, Rt := x.Rt })
+  | .LDST (.Reg_imm_pre_indexed x) =>
+    .LDST (.Reg_imm_pre_indexed { size := x.size, V := x.V, opc := x.opc, imm9 := x.imm9,
+                                  Rn := x.Rn, Rt := x.Rt })
+  | .LDST (.Reg_reg_offset x) =>
+    .LDST (.Reg_reg_offset { size := x.size, V := x.V, opc := x.opc, Rm := x.Rm,
+                             option := x.option, S := x.S, Rn := x.Rn, Rt := x.Rt })
+  | .RES (.Udf x) => .RES (.Udf { imm16 := x.imm16 })
+
 /-! ## Instruction → fields (Arm ARM C6/C7 instruction pages) -/
 
 /-- Where the encoder is: the instruction's byte offset and the byte offsets of the
@@ -188,6 +292,29 @@ def Env.rel (env : Env) (l : Lbl) : Except String Int :=
   match env.lbl l with
   | some t => pure ((t : Int) - env.pc)
   | none => throw s!"undefined label {repr l}"
+
+/-- `n` bytes as text (`128 MiB`, `1 MiB`, `32 KiB`). -/
+def byteSizeText (n : Nat) : String :=
+  if n % 2 ^ 20 == 0 then s!"{n / 2 ^ 20} MiB"
+  else if n % 2 ^ 10 == 0 then s!"{n / 2 ^ 10} KiB" else s!"{n} bytes"
+
+/-- The PC-relative immediate of a label operand: the byte offset to `l` divided by `scale`,
+as a `bits`-bit signed field (C6.2 B: 26 bits, B.cond/CBZ/CBNZ: 19, TBZ/TBNZ: 14, all
+`scale` 4; ADR: 21 bits, `scale` 1).
+
+**Branch-range policy** (PLAN.md §3.4: bounded function sizes, no relaxation): a target
+outside the field's range (±128 MiB, ±1 MiB, ±32 KiB, ±1 MiB) is a compile error naming the
+instruction and the distance; the word is never truncated. `Insn.encode_inRange`
+(`FV/Backend/Proof/EncodeBranch.lean`) proves every encoded label operand is in range. -/
+def Env.pcRel (env : Env) (what : String) (bits scale : Nat) (l : Lbl) :
+    Except String (BitVec bits) := do
+  let off ← env.rel l
+  if off % scale != 0 then throw s!"{what} offset {off} is not a multiple of {scale}"
+  let q := off / scale
+  if -(2 ^ (bits - 1) : Int) ≤ q ∧ q < 2 ^ (bits - 1) then pure (BitVec.ofInt bits q)
+  else throw s!"branch out of range: {what} to {repr l} is {off} bytes away, beyond the \
+    ±{byteSizeText (2 ^ (bits - 1) * scale)} of {what} (no branch relaxation, PLAN.md §3.4: \
+    the function is too large)"
 
 /-- `sf`, `opc`, `N` of the logical (shifted register / immediate) instructions
 (C6.2 AND, BIC, ORR, ORN, EOR, EON, ANDS, BICS: `opc` 00 and, 01 orr, 10 eor, 11 ands). -/
@@ -255,8 +382,9 @@ def ldstFields (size : BitVec 2) (V : BitVec 1) (opc : BitVec 2) (bytes : Nat) (
                                    Rn := ← rn.encSP, Rt }))
   | m => throw s!"addressing mode {repr m} is not final"
 
-/-- The encoding-class fields of one instruction at `env.pc`. -/
-def Insn.toArmInst (env : Env) (i : Insn) : Except String ArmInst := do
+/-- The encoding-class fields of one instruction at `env.pc` (structure literals: the
+`_fixed` fields keep their defaults). -/
+def Insn.armFields (env : Env) (i : Insn) : Except String ArmInst := do
   match i with
   | .aluRRR op w rd rn rm =>
     let sf := b1 w
@@ -472,25 +600,21 @@ def Insn.toArmInst (env : Env) (i : Insn) : Except String ArmInst := do
                                               Rn := ← rn.encV, Rd := ← rd.encV }))
   | .b t =>
     -- C6.2 B: imm26 = offset / 4, ±128 MiB (Cranelift `enc_jump26`)
-    let off ← wordOffset "b" (← env.rel t)
-    pure (.BR (.Uncond_branch_imm { op := 0, imm26 := ← sField "b offset" 26 off }))
+    pure (.BR (.Uncond_branch_imm { op := 0, imm26 := ← env.pcRel "b" 26 4 t }))
   | .bcond c t =>
     -- C6.2 B.cond: imm19, ±1 MiB (Cranelift `enc_cbr`)
-    let off ← wordOffset "b.cond" (← env.rel t)
-    pure (.BR (.Cond_branch_imm { imm19 := ← sField "b.cond offset" 19 off, o0 := 0,
+    pure (.BR (.Cond_branch_imm { imm19 := ← env.pcRel "b.cond" 19 4 t, o0 := 0,
                                   cond := c.bits }))
   | .cbz nz w rt t =>
-    -- C6.2 CBZ/CBNZ (Compare and branch (immediate); Cranelift `enc_cmpbr`)
-    let off ← wordOffset "cbz" (← env.rel t)
-    pure (.BR (.Compare_branch { sf := b1 w, op := b1 nz, imm19 := ← sField "cbz offset" 19 off,
+    -- C6.2 CBZ/CBNZ (Compare and branch (immediate), imm19, ±1 MiB; Cranelift `enc_cmpbr`)
+    pure (.BR (.Compare_branch { sf := b1 w, op := b1 nz, imm19 := ← env.pcRel "cbz" 19 4 t,
                                  Rt := ← rt.encZR }))
   | .tbz nz rt bit t =>
     -- C6.2 TBZ/TBNZ: b5:b40 = bit number, imm14, ±32 KiB (Cranelift `enc_test_bit_and_branch`)
     if bit ≥ 64 then throw s!"tbz bit {bit}"
-    let off ← wordOffset "tbz" (← env.rel t)
     pure (.BR (.Test_branch { b5 := BitVec.ofNat 1 (bit / 32), op := b1 nz,
                               b40 := BitVec.ofNat 5 (bit % 32),
-                              imm14 := ← sField "tbz offset" 14 off, Rt := ← rt.encZR }))
+                              imm14 := ← env.pcRel "tbz" 14 4 t, Rt := ← rt.encZR }))
   | .bl _ =>
     -- C6.2 BL, imm26 from R_AARCH64_CALL26
     pure (.BR (.Uncond_branch_imm { op := 1, imm26 := 0 }))
@@ -508,8 +632,7 @@ def Insn.toArmInst (env : Env) (i : Insn) : Except String ArmInst := do
     pure (.RES (.Udf { imm16 := ← uField "udf immediate" 16 imm }))
   | .adr rd t =>
     -- C6.2 ADR: immhi:immlo = byte offset, ±1 MiB (Cranelift `enc_adr`)
-    let off ← env.rel t
-    let imm ← sField "adr offset" 21 off
+    let imm ← env.pcRel "adr" 21 1 t
     pure (.DPI (.PC_rel_addressing { op := 0, immlo := imm.extractLsb' 0 2,
                                      immhi := imm.extractLsb' 2 19, Rd := ← rd.encZR }))
   | .adrpGot rd _ | .adrp rd _ _ =>
@@ -527,6 +650,12 @@ where
   /-- Data-processing (2 source) with `S = 0`. -/
   dp2 (sf : BitVec 1) (opcode : BitVec 6) (Rm Rn Rd : BitVec 5) : ArmInst :=
     .DPR (.Data_processing_two_source { sf, S := 0, Rm, opcode, Rn, Rd })
+
+/-- The encoding-class fields of one instruction at `env.pc`, as the decoder returns them
+(`ArmInst.norm` is the identity on `armFields`' literals; it makes the `_fixed` fields
+irrelevant by construction, so `decode_encode` needs no per-constructor case analysis). -/
+def Insn.toArmInst (env : Env) (i : Insn) : Except String ArmInst :=
+  ArmInst.norm <$> i.armFields env
 
 /-- The machine word of an instruction at `env.pc`. -/
 def Insn.encode (env : Env) (i : Insn) : Except String (BitVec 32) :=
@@ -595,41 +724,85 @@ structure FnBin where
 
 def FnBin.size (f : FnBin) : Nat := 4 * f.words.size
 
-/-- Byte offsets of the labels of a line list (every instruction and data word is 4 bytes). -/
-def labelOffsets (lines : Array Line) : Std.HashMap Lbl Nat := Id.run do
-  let mut m : Std.HashMap Lbl Nat := {}
-  let mut off := 0
-  for ln in lines do
-    if let .label l := ln then m := m.insert l off
-    off := off + ln.size
-  return m
+/-- Byte offset of line `j` of a line list: the sizes of the lines before it. -/
+def lineOffset (lines : List Line) (j : Nat) : Nat := ((lines.take j).map Line.size).sum
 
-/-- Lay out a function: resolve labels, encode every instruction, collect relocations; the
-jump-table words are `target - table` (signed 32-bit). -/
-def FnAsm.layout (f : FnAsm) : Except String FnBin := do
-  let lbls := labelOffsets f.lines
-  let lbl (l : Lbl) : Option Nat := lbls[l]?
-  let mut words : Array (BitVec 32) := #[]
-  let mut relocs : Array Reloc := #[]
-  let mut insns : Array (Nat × Insn) := #[]
-  for ln in f.lines do
-    let pc := 4 * words.size
+def Line.isLabel : Line → Bool
+  | .label _ => true
+  | _ => false
+
+/-- The code lines (instructions and jump-table words, 4 bytes each): the `k`-th one is at
+byte offset `4 * k`, and is word `k` of the function. -/
+def codeLines (lines : List Line) : List Line := lines.filter (!·.isLabel)
+
+/-- `labelOffsets` from byte offset `off` with the labels found so far in `m`. -/
+def labelOffsets.go : List Line → Nat → Std.HashMap Lbl Nat → Except String (Std.HashMap Lbl Nat)
+  | [], _, m => pure m
+  | ln :: rest, off, m =>
     match ln with
-    | .ins i _ =>
-      let w ← (i.encode { pc, lbl }).mapError fun e => s!"{f.name}+{pc}: `{i.asm f.k}`: {e}"
-      words := words.push w
-      insns := insns.push (pc, i)
-      if let some (type, sym, addend) := i.reloc? then
-        relocs := relocs.push { offset := pc, type, sym, addend }
-    | .word t b =>
-      match lbl t, lbl b with
-      | some t, some b =>
-        words := words.push (← (sField "jump-table entry" 32 ((t : Int) - b)).mapError
-          fun e => s!"{f.name}+{pc}: {e}")
-      | _, _ => throw s!"{f.name}+{pc}: undefined label in jump table"
-    | .label _ => pure ()
+    | .label l =>
+      if m.contains l then throw s!"label {repr l} is defined twice"
+      else go rest off (m.insert l off)
+    | _ => go rest (off + ln.size) m
+
+/-- Byte offsets of the labels of a line list (every label defined once, else an error). -/
+def labelOffsets (lines : Array Line) : Except String (Std.HashMap Lbl Nat) :=
+  labelOffsets.go lines.toList 0 {}
+
+/-- The word of a code line at byte offset `pc`; jump-table words are `target - base`
+(signed 32-bit). -/
+def Line.encodeAt (lbl : Lbl → Option Nat) (pc : Nat) : Line → Except String (BitVec 32)
+  | .ins i _ => i.encode { pc, lbl }
+  | .word t b =>
+    match lbl t, lbl b with
+    | some t, some b => sField "jump-table entry" 32 ((t : Int) - b)
+    | _, _ => throw "undefined label in jump table"
+  | .label _ => throw "a label has no word"
+
+/-- Encode code lines, appending to `acc` (word `k` at byte offset `4 * k`); `ctx pc ln e`
+is the error message. -/
+def encodeCode (ctx : Nat → Line → String → String) (lbl : Lbl → Option Nat) :
+    List Line → Array (BitVec 32) → Except String (Array (BitVec 32))
+  | [], acc => pure acc
+  | ln :: rest, acc =>
+    match ln.encodeAt lbl (4 * acc.size) with
+    | .ok w => encodeCode ctx lbl rest (acc.push w)
+    | .error e => throw (ctx (4 * acc.size) ln e)
+
+/-- Relocations of code lines (at the instruction's offset). -/
+def codeRelocs (code : List Line) : List Reloc :=
+  code.zipIdx.filterMap fun (ln, k) => match ln with
+    | .ins i _ => i.reloc?.map fun (type, sym, addend) => { offset := 4 * k, type, sym, addend }
+    | _ => none
+
+/-- Trap sites of code lines: the offsets of the instructions that carry a trap code. -/
+def codeTraps (code : List Line) : List TrapSite :=
+  code.zipIdx.filterMap fun (ln, k) => match ln with
+    | .ins _ (some c) => some ⟨4 * k, c⟩
+    | _ => none
+
+/-- Instructions of code lines with their offsets. -/
+def codeInsns (code : List Line) : List (Nat × Insn) :=
+  code.zipIdx.filterMap fun (ln, k) => match ln with
+    | .ins i _ => some (4 * k, i)
+    | _ => none
+
+/-- Lay out a function: resolve labels, encode every code line at its offset, collect
+relocations and trap sites (checked against `emitFunc`'s trap table). Specification and
+proof: `FnAsm.layout_*` in `FV/Backend/Proof/EncodeLayout.lean`. -/
+def FnAsm.layout (f : FnAsm) : Except String FnBin := do
+  let lbls ← (labelOffsets f.lines).mapError (s!"{f.name}: " ++ ·)
+  let lbl (l : Lbl) : Option Nat := lbls[l]?
+  let code := codeLines f.lines.toList
+  let ctx (pc : Nat) (ln : Line) (e : String) : String := match ln with
+    | .ins i _ => s!"{f.name}+{pc}: `{i.asm f.k}`: {e}"
+    | _ => s!"{f.name}+{pc}: {e}"
+  let words ← encodeCode ctx lbl code #[]
   if 4 * words.size != f.size then throw s!"{f.name}: size {4 * words.size} ≠ {f.size}"
-  pure { name := f.name, words, relocs := relocs.toList, traps := f.traps, insns }
+  let traps := codeTraps code
+  if traps != f.traps then throw s!"{f.name}: trap table differs from the trap sites"
+  pure { name := f.name, words, relocs := codeRelocs code, traps,
+         insns := (codeInsns code).toArray }
 
 /-- Little-endian bytes of code words. -/
 def wordsBytes (ws : Array (BitVec 32)) : ByteArray := Id.run do

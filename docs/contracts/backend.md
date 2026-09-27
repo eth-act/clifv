@@ -479,10 +479,12 @@ results/traps compared with `Clif.run`:
    preconditions in `Clif.run`, and hit neighbouring slots natively, as with Cranelift).
 7. **ABI**: AAPCS64 as above; callee-saved registers preserved (regalloc2: saved/restored,
    checked by `checkAlloc`; stack: untouched).
-8. **Encoding**: the Lean encoder (M5, `docs/contracts/encoder.md`; unproven, checked
-   byte-for-byte against `llvm-mc` and by the decoder round trip). Functions must stay below
-   ±1 MiB (conditional-branch range), ±32 KiB for `tbz` — no branch relaxation, as PLAN.md §3.4
-   requires; the encoder rejects an out-of-range branch (the corpus is far below).
+8. **Encoding**: the Lean encoder (M5, `docs/contracts/encoder.md`; `decode ∘ encode =
+   toArmInst` and layout correctness proven, also checked byte-for-byte against `llvm-mc`).
+   Functions must stay below ±1 MiB (conditional-branch range), ±32 KiB for `tbz` — no branch
+   relaxation, as PLAN.md §3.4 requires; an out-of-range branch is a compile error naming the
+   function, the instruction and the distance (proved: `Insn.encode_error_of_out_of_range`;
+   tested: `lean-backend-encode-test range`). The corpus is far below.
 9. **Traps**: `udf #0xc11f` + the trap table; `TrapIf` branches to out-of-line `udf`s.
 10. **Register allocation**: regalloc2 is untrusted; `checkAlloc`'s soundness theorem
    (`docs/contracts/regalloc.md`) is the proof obligation, with the operand view, `prepare`,
@@ -496,4 +498,5 @@ results/traps compared with `Clif.run`:
 - `Arm.run` samples exclude calls and memory accesses (they need a linker and a heap in the
   model); memory-accessing and calling functions are covered by qemu only.
 - Branch ranges are checked by the encoder but not relaxed (see 8): a function whose
-  conditional branches exceed ±1 MiB fails to compile (encoding error).
+  conditional branches exceed ±1 MiB (`tbz`: ±32 KiB) fails to compile (encoding error), where
+  Cranelift would relax with veneers.
