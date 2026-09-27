@@ -1,4 +1,5 @@
 import FV.Backend.Asm
+import FV.Backend.Regalloc
 
 /-!
 # `emitFunc`'s code structure (M6 proof, register level)
@@ -307,4 +308,166 @@ theorem emitFunc_ok {k : Nat} {af : AFunc} {fa : FnAsm} (h : emitFunc k af = .ok
       cases a <;> simp [ainstLines]
       · cases af.frame <;> simp
       · cases af.frame <;> simp
+/-! ## `lowerRFunc` as structural functions -/
+
+/-- `lowerRFunc`'s loop body on one item (appending to `code`). -/
+def itemStep (fr : RAFrame) (vb : VBlock) (code : Array AInst) : RItem → Except String (Array AInst)
+  | .move src dst => do
+    let l ← fr.moveInsts src dst
+    pure (code ++ l.toArray)
+  | .op k allocs => do
+    let regs ← allocs.mapM (fun x => match x with
+      | Loc.reg r => pure r
+      | l => throw (toString "operand in " ++ toString (repr l)))
+    match vb.insts[k]? with
+    | some i => do
+      match ← i.assign regs with
+      | .args _ => pure code
+      | .rets _ => pure (code.push .epilogueRet)
+      | m => pure (code.push (.inst m))
+    | none => throw "missing instruction"
+
+/-- The code of one item. -/
+def itemCode (fr : RAFrame) (vb : VBlock) (it : RItem) : Except String (List AInst) :=
+  (·.toList) <$> itemStep fr vb #[] it
+
+theorem itemStep_eq (fr : RAFrame) (vb : VBlock) (code : Array AInst) (it : RItem) :
+    itemStep fr vb code it = (fun l => code ++ l.toArray) <$> itemCode fr vb it := by
+  unfold itemCode
+  cases it with
+  | move src dst =>
+    simp only [itemStep]
+    cases fr.moveInsts src dst <;> simp [bind, Except.bind, pure, Except.pure, Functor.map, Except.map]
+  | op k allocs =>
+    simp only [itemStep, bind, Except.bind]
+    split
+    · rfl
+    · split
+      · split
+        · rfl
+        · rename_i m _
+          cases m <;> simp [pure, Except.pure, Functor.map, Except.map]
+      · rfl
+
+/-- The code of an item list. -/
+def itemsCode (fr : RAFrame) (vb : VBlock) : List RItem → Except String (List AInst)
+  | [] => pure []
+  | it :: its => do
+    let c1 ← itemCode fr vb it
+    let c2 ← itemsCode fr vb its
+    pure (c1 ++ c2)
+
+theorem itemsCode_foldl (fr : RAFrame) (vb : VBlock) :
+    ∀ (its : List RItem) (code : Array AInst),
+      its.foldlM (fun c it => itemStep fr vb c it) code =
+        (fun l => code ++ l.toArray) <$> itemsCode fr vb its
+  | [], code => by simp [itemsCode, pure, Except.pure, Functor.map, Except.map]
+  | it :: its, code => by
+    simp only [List.foldlM_cons, itemsCode]
+    rw [itemStep_eq]
+    cases itemCode fr vb it with
+    | error e => rfl
+    | ok c1 =>
+      have := itemsCode_foldl fr vb its (code ++ c1.toArray)
+      simp only [Functor.map, Except.map, bind, Except.bind] at this ⊢
+      rw [this]
+      cases itemsCode fr vb its <;> simp [pure, Except.pure]
+
+theorem mapIdxM_go_ok {α β ε : Type} {f : Nat → α → Except ε β} :
+    ∀ (l : List α) (acc : Array β) (out : List β), List.mapIdxM.go f l acc = .ok out →
+      out.length = acc.size + l.length ∧ (∀ i < acc.size, out[i]? = acc[i]?) ∧
+      ∀ j a, l[j]? = some a → ∃ b, f (acc.size + j) a = .ok b ∧ out[acc.size + j]? = some b
+  | [], acc, out, h => by
+    simp only [List.mapIdxM.go, pure, Except.pure, Except.ok.injEq] at h
+    subst h
+    refine ⟨by simp, fun i hi => by simp, fun j a hj => by simp at hj⟩
+  | a :: l, acc, out, h => by
+    simp only [List.mapIdxM.go, bind, Except.bind] at h
+    cases hf : f acc.size a with
+    | error e => rw [hf] at h; cases h
+    | ok b =>
+      rw [hf] at h
+      obtain ⟨h1, h2, h3⟩ := mapIdxM_go_ok l (acc.push b) out h
+      refine ⟨by simp at h1 ⊢; omega, fun i hi => by rw [h2 i (by simp; omega)]; simp [Array.getElem?_push, show i ≠ acc.size by omega], ?_⟩
+      intro j a' hj
+      cases j with
+      | zero =>
+        simp at hj
+        subst hj
+        refine ⟨b, hf, ?_⟩
+        rw [Nat.add_zero, h2 acc.size (by simp)]
+        simp
+      | succ j =>
+        simp at hj
+        obtain ⟨b', hb', hout⟩ := h3 j a' hj
+        simp only [Array.size_push] at hb' hout
+        exact ⟨b', by rw [show acc.size + (j + 1) = acc.size + 1 + j by omega]; exact hb',
+          by rw [show acc.size + (j + 1) = acc.size + 1 + j by omega]; exact hout⟩
+
+theorem array_mapIdxM_ok {α β ε : Type} {f : Nat → α → Except ε β} {as : Array α} {bs : Array β}
+    (h : as.mapIdxM f = .ok bs) :
+    bs.size = as.size ∧ ∀ i a, as[i]? = some a → ∃ b, f i a = .ok b ∧ bs[i]? = some b := by
+  have e := Array.toList_mapIdxM (xs := as) (f := f)
+  rw [h] at e
+  simp only [Functor.map, Except.map, List.mapIdxM] at e
+  obtain ⟨h1, -, h3⟩ := mapIdxM_go_ok as.toList #[] bs.toList e.symm
+  refine ⟨by simpa using h1, fun i a hi => ?_⟩
+  obtain ⟨b, hb, hb'⟩ := h3 i a (by simpa using hi)
+  exact ⟨b, by simpa using hb, by simpa using hb'⟩
+
+
+/-- **`lowerRFunc` as a structural function**: block `b`'s code is the prologue (block 0) and
+the items' code. -/
+theorem lowerRFunc_ok {vc : VCode} {rf : RFunc} {af : AFunc} (h : lowerRFunc vc rf = .ok af) :
+    af.frameSize = (RAFrame.compute vc rf).size ∧ af.slotBase = vc.outgoing ∧
+      af.blocks.size = (vc.blocks.zip rf.blocks).size ∧
+      ∀ b vb items, vc.blocks[b]? = some vb → rf.blocks[b]? = some items →
+        ∃ code, itemsCode (RAFrame.compute vc rf) vb items.toList = .ok code ∧
+          af.blocks[b]? = some (vb.label, ((if b = 0 then [AInst.prologue] else []) ++ code).toArray) := by
+  unfold lowerRFunc at h
+  simp only [bind, Except.bind] at h
+  split at h
+  · cases h
+  · rename_i blocks hb
+    simp only [pure, Except.pure, Except.ok.injEq] at h
+    subst h
+    obtain ⟨hsz, hel⟩ := array_mapIdxM_ok hb
+    refine ⟨rfl, rfl, hsz, fun b vb items hvb hit => ?_⟩
+    have hz : (vc.blocks.zip rf.blocks)[b]? = some (vb, items) := by
+      rw [Array.getElem?_zip_eq_some]; exact ⟨hvb, hit⟩
+    obtain ⟨p, hp, hbp⟩ := hel b _ hz
+    simp only at hp
+    rw [← Array.forIn_toList, forIn_except_yield _ _ _ (fun it c => itemStep (RAFrame.compute vc rf) vb c it)] at hp
+    · rw [itemsCode_foldl] at hp
+      cases hc : itemsCode (RAFrame.compute vc rf) vb items.toList with
+      | error e => rw [hc] at hp; cases hp
+      | ok code =>
+        rw [hc] at hp
+        simp only [Functor.map, Except.map, pure, Except.pure, Except.ok.injEq] at hp
+        subst hp
+        refine ⟨code, rfl, ?_⟩
+        rw [hbp]
+        by_cases h0 : b = 0 <;> simp [h0]
+    · intro it c
+      cases it with
+      | move src dst =>
+        simp only [itemStep]
+        cases (RAFrame.compute vc rf).moveInsts src dst <;> rfl
+      | op k allocs =>
+        simp only [itemStep, bind, Except.bind]
+        generalize (Array.mapM (fun x => match x with
+          | Loc.reg r => (pure r : Except String Reg)
+          | l => throw (toString "operand in " ++ toString (repr l))) allocs) = M
+        cases M with
+        | error e => rfl
+        | ok regs =>
+          simp only
+          cases vb.insts[k]? with
+          | none => rfl
+          | some i =>
+            simp only
+            cases i.assign regs with
+            | error e => rfl
+            | ok m => cases m <;> rfl
+
 end Backend
