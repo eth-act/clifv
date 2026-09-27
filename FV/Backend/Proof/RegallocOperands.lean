@@ -81,15 +81,24 @@ theorem SameWorld.w_left {F} {s t : Arm.ArmState} {f : Arm.StateField} {v} (hf :
 
 /-! ## Executing an allocated instruction -/
 
-/-- Run the lines of an instruction expansion (straight-line: instructions only); `env.pc`
-advances by 4 per instruction. -/
+/-- Run the lines of an instruction expansion (straight-line: instructions only, each one
+advancing the pc by 4); `env.pc` advances by 4 per instruction. -/
 def execLines : Env → List Line → Arm.ArmState → Option Arm.ArmState
   | _, [], s => some s
   | env, .ins i _ :: ls, s =>
     match i.toArmInst env with
-    | .ok ai => execLines { env with pc := env.pc + 4 } ls (Arm.exec_inst ai s)
+    | .ok ai =>
+      if Arm.r .PC (Arm.exec_inst ai s) = Arm.r .PC s + 4#64 then
+        execLines { env with pc := env.pc + 4 } ls (Arm.exec_inst ai s)
+      else none
     | .error _ => none
   | _, _ :: _, _ => none
+
+theorem execLines_one {env : Env} {i : Insn} {t : Option Clif.TrapCode} {s : Arm.ArmState}
+    {ai : Arm.ArmInst} (ha : i.toArmInst env = .ok ai)
+    (hpc : Arm.r .PC (Arm.exec_inst ai s) = Arm.r .PC s + 4#64) :
+    execLines env [.ins i t] s = some (Arm.exec_inst ai s) := by
+  simp [execLines, ha, hpc]
 
 /-- Execute an allocated (real-register) instruction: its expansion, encoded and executed by
 the Arm model. -/
