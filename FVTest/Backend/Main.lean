@@ -2,8 +2,12 @@ import FV.Backend
 
 /-!
 `lake exe lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>]
-[--dump <dir>]`: compile every function of a `.clif` file with the Lean backend
-(`FV/Backend.lean`). If the output path ends in `.o`, write an ELF relocatable object encoded
+[--dump <dir>] [--regalloc regalloc2|stack|regalloc2-small]`: compile every function of a `.clif` file with the
+Lean backend (`FV/Backend.lean`). Register allocation: `regalloc2` (default; the
+`lean-regalloc` oracle, `$LEAN_REGALLOC` or `rust/target/release/lean-regalloc`, every
+allocation validated by the Lean checker, `docs/contracts/regalloc.md`), `stack` (the
+stack-slot baseline), or `regalloc2-small` (regalloc2 with the 10-register stress environment
+`smallEnv`, for testing spill code). If the output path ends in `.o`, write an ELF relocatable object encoded
 by the Lean encoder (`FV/Backend/{Encode,Obj}.lean`, no assembler); otherwise write assembly
 text (for `llvm-mc`, the encoder's test oracle). Optionally write the function/trap table that
 `clif-native --functions-obj` reads (`--traps`), the names of the ISLE rules that fired
@@ -18,7 +22,7 @@ names the function and instruction).
 open Backend
 
 def usage : String :=
-  "usage: lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>] [--dump <dir>]"
+  "usage: lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>] [--dump <dir>] [--regalloc regalloc2|stack|regalloc2-small]"
 
 def closureIds : Std.HashSet Isle.RuleId :=
   Isle.Aarch64.Closure.rules.foldl (fun s r => s.insert r.rule) {}
@@ -27,10 +31,13 @@ structure Opts where
   traps : Option String := none
   rules : Option String := none
   dump : Option String := none
+  regalloc : String := "regalloc2"
 
 def run (input output : String) (o : Opts) : IO UInt32 := do
   let src ← IO.FS.readFile input
-  let fa := compileFile (Clif.parseFile src)
+  let some alloc ← Allocator.ofName? o.regalloc
+    | do IO.eprintln s!"lean-backend: unknown allocator {o.regalloc}"; return 2
+  let fa ← compileFileIO alloc (Clif.parseFile src)
   if output.endsWith ".o" || o.dump.isSome then
     match fa.layout with
     | .error e =>
@@ -61,6 +68,7 @@ def main (args : List String) : IO UInt32 := do
     | "--traps" :: t :: rest => opts { o with traps := some t } rest
     | "--rules" :: r :: rest => opts { o with rules := some r } rest
     | "--dump" :: d :: rest => opts { o with dump := some d } rest
+    | "--regalloc" :: a :: rest => opts { o with regalloc := a } rest
     | _ => none
   match args with
   | i :: out :: rest =>

@@ -1,7 +1,9 @@
 # Contract: the Lean AArch64 backend (`FV/Backend`, milestone M4, unproven)
 
 Producer: M4 backend. Consumers: M4 proofs (ISLE rules, extern helpers, allocator), M5
-(the encoder, `docs/contracts/encoder.md`, which replaced `llvm-mc`), M6 (real allocator + checker replaces `StackAlloc`), M7
+(the encoder, `docs/contracts/encoder.md`, which replaced `llvm-mc`), M6 (regalloc2 + the Lean
+allocation checker, `docs/contracts/regalloc.md`, the default allocator; `StackAlloc` kept as
+`--regalloc stack`), M7
 (`backend_correct`). Inputs: `docs/contracts/clif.md` (`Clif.Program`, `Clif.parseFile`,
 `Clif.run`), `docs/contracts/isle.md` (exported rules, closure, `Isle.Interp.run`),
 `docs/contracts/drivers.md` (`clif-native`), `docs/contracts/arm.md` (Arm model).
@@ -23,6 +25,9 @@ Complete (2026-09-27); no `sorry`, no `axiom`, no warnings in `FV/Backend`, `FVT
       path, same results): corpus **114/114** run lines pass and agree with
       Cranelift-native; `extrt` (Rust runtime) 22/22; runtests **2791 pass, 0 fail,
       0 disagree** (48 files entirely in E: 1416 runs; 11 more files partly)
+- [x] M6 (2026-09-27): regalloc2 (untrusted, `lean-regalloc`) is the default allocator; every
+      allocation is validated by the Lean checker `checkAlloc`; all results below hold for
+      both `--regalloc regalloc2` and `--regalloc stack` (`docs/contracts/regalloc.md`)
 - [x] `lake exe lean-backend-armrun` (`FVTest/Backend/ArmRun.lean`): Arm-model runs agree with
       `Clif.run` (corpus 25 functions / 73 runs; 14 runtest files 221 functions / 883 runs)
 - [x] `FVTest/Backend/Names.lean`: ISLE names the backend builds values from exist
@@ -34,17 +39,20 @@ Complete (2026-09-27); no `sorry`, no `axiom`, no warnings in `FV/Backend`, `FVT
 ```mermaid
 flowchart LR
   A["Clif.parseFile"] --> B["Isel.lowerFunction<br/>(ISLE lower / lower_branch<br/>via Isle.Interp.run)"]
-  B -- "VCode (MInst over vregs)" --> C["StackAlloc.allocate"]
+  B -- "VCode (MInst over vregs,<br/>block params, branch args)" --> C["Allocator.run<br/>regalloc2 (default): prepare → lean-regalloc<br/>→ checkAlloc → lowerRFunc<br/>stack: StackAlloc.allocate"]
   C -- "AFunc (real regs, frame)" --> D["Asm.emitFunc"]
   D -- "FnAsm (Line list over Insn) + trap table" --> E["Encode: FnAsm.layout<br/>Obj: elfObject"]
   E -- ".o" --> F["clif-native --functions-obj<br/>(harness, Cranelift trampolines,<br/>rust-lld, qemu)"]
   D -. "FnAsm.text (test oracle)" .-> G["llvm-mc"]
 ```
 
-`Backend.compileFunction k f = emitFunc k (← allocate (← lowerFunction f))`;
-`Backend.compileFile : Clif.ParsedFile → FileAsm` compiles every function, reports the others
-with a reason, and also drops (with reason) any function that calls a function of the file
-that is not compiled (its code would reference an undefined symbol).
+`Backend.compileFileWith alloc pf` lowers every function of a file, allocates them in one
+batch with `Allocator.run` (`.regalloc2 bin env`: one `lean-regalloc` process per file, every
+allocation checked by `checkAlloc`, rejection = the function is not compiled, with the
+reason; `.stack`: `StackAlloc.allocate` per function), then emits. `compileFunction` is the
+single-function stack-slot path. Functions that fail are reported with a reason, and any
+function that calls a function of the file that is not compiled is dropped too (its code
+would reference an undefined symbol).
 
 ## Modules and data types
 
@@ -97,6 +105,12 @@ that is not compiled (its code would reference an undefined symbol).
 
 `Frame.compute`, `Frame.allocInst`, `allocate : VCode → Except String AFunc`;
 `AInst := inst MInst | prologue | epilogueRet`.
+
+### `FV/Backend/{RegallocOps,RegallocCheck,Regalloc}.lean`
+
+regalloc2 operands/`MachineEnv`/`prepare`, the checker `checkAlloc`, and the glue
+(`allocateRegalloc2`, `buildRFunc`, `RAFrame`, `lowerRFunc`); see
+`docs/contracts/regalloc.md`.
 
 ### `FV/Backend/Asm.lean`
 
@@ -305,13 +319,18 @@ and `tls_model` (default `none`).
 - Results: `x0..x7` in order (so multiple results, e.g. the error-tag ABI's `(i8 tag,
   payload…)`, come back in `x0, x1, …`); more than 8 is unsupported, as in Cranelift without
   `enable_multi_ret_implicit_sret`.
-- Callee-saved registers `x19..x28`, `v8..v15` (low halves) are never written, so none are
-  saved; `x29`/`x30` are saved by the prologue.
+- Callee-saved registers `x19..x28`, `v8..v15` (low halves): with regalloc2 (default) every
+  one the allocation uses is saved at entry and restored before every return (frame slots,
+  `docs/contracts/regalloc.md`), and the Lean checker verifies they hold their entry values
+  at every `Rets`; the stack-slot allocator never writes them. `x29`/`x30` are saved by the
+  prologue (regalloc2 path: omitted for frameless leaf functions that never address `fp`).
+- Register allocation (regalloc2 path): allocatable x0–x15, x19–x28, v0–v31; x16/x17 are the
+  emitter's temporaries, x18 platform; calls clobber x0–x17, v0–v31 minus result registers.
 - Calls: colocated callees `bl sym`; others (`is_pic`) `adrp x, :got:sym`,
   `ldr x, [x, :got_lo12:sym]`, `blr x` (the ISLE rules' choice, through
   `load_ext_name`/`gen_call_ind_info`). The static link (`rust-lld -static`) resolves both.
 
-## Stack-slot allocation and frame (`StackAlloc`)
+## Stack-slot allocation and frame (`StackAlloc`, `--regalloc stack`)
 
 Every vreg has its own slot; around each instruction its used vregs are loaded into scratch
 registers, the instruction runs on them, its defined vregs are stored back.
@@ -371,12 +390,14 @@ Traps are `udf #0xc11f` (Cranelift's `TRAP_OPCODE`); the trap table maps the off
 
 ```sh
 lake build FV.Backend lean-backend lean-backend-armrun lean-backend-encode-test FVTest.Backend.Names
-.lake/build/bin/lean-backend IN.clif OUT.o [--traps OUT.json] [--rules RULES.txt] [--dump DIR]
+.lake/build/bin/lean-backend IN.clif OUT.o [--traps OUT.json] [--rules RULES.txt] [--dump DIR] [--regalloc regalloc2|stack|regalloc2-small]
 .lake/build/bin/lean-backend IN.clif OUT.s ...        # assembly instead (for llvm-mc, test oracle)
 rust/target/release/clif-native IN.clif --functions-obj OUT.o --functions-table OUT.json [--link LIB]
-scripts/lean-backend-filetests.sh [-v] [--asm] [--corpus | --runtests | FILE.clif...]   # default: both sets
-scripts/lean-backend-encode-check.sh [-v] [--corpus | --runtests | --random | FILE.clif...]
-.lake/build/bin/lean-backend-armrun [FILE.clif...]                               # default: corpus/clif
+scripts/lean-backend-filetests.sh [-v] [--asm] [--regalloc regalloc2|stack] [--corpus | --runtests | FILE.clif...]   # default: both sets
+scripts/lean-backend-encode-check.sh [-v] [--regalloc regalloc2|stack] [--corpus | --runtests | --random | FILE.clif...]
+.lake/build/bin/lean-backend-armrun [--regalloc regalloc2|stack] [--bins DIR] [FILE.clif...]   # default: corpus/clif
+.lake/build/bin/lean-backend-regalloc-test [--small] [FILE.clif...]              # checker acceptance + mutations
+scripts/lean-backend-metrics.sh [FILE.clif...]                                    # code size, dynamic counts
 ```
 
 ## Results (2026-09-27)
@@ -408,8 +429,10 @@ outside E: `smin/umin/smax/umax`, `iconcat`, `select`, `bitselect`, `bmask`,
 Trap mapping (`clif-native/tests/traps.clif` through the Lean backend): `sdiv` by zero →
 `int_divz`, `MIN/-1` → `int_ovf`, an out-of-bounds load → `heap_oob`, same as Cranelift.
 
-Code size: the corpus is 171 372 bytes with the Lean backend vs 29 636 with Cranelift
-(×5.8), the cost of the stack-slot allocator.
+Code size (`scripts/lean-backend-metrics.sh`, corpus incl. runtime): regalloc2 51 668 bytes,
+stack-slot 171 476, Cranelift 30 424 (regalloc2 ×1.70 of Cranelift; stack ×3.32 of
+regalloc2). Executed instructions on the Arm model (corpus runs): regalloc2 5 691, stack
+17 930, Cranelift 3 032. Per-file tables: `docs/contracts/regalloc.md`.
 
 `lean-backend-armrun` (Arm model, code bytes from the Lean encoder, `Arm.run` from a state with the code at `0x10000`, the code
 bytes also in data memory for jump tables, arguments per `argLocs`, `sp = 0x7fff0000`,
@@ -438,12 +461,16 @@ results/traps compared with `Clif.run`:
 6. **Frame**: fixed after the prologue (`sp` constant), slots disjoint, 16-byte alignment;
    CLIF stack slots laid out as Cranelift does (accesses outside a slot are `notrap`
    preconditions in `Clif.run`, and hit neighbouring slots natively, as with Cranelift).
-7. **ABI**: AAPCS64 as above; callee-saved registers untouched.
+7. **ABI**: AAPCS64 as above; callee-saved registers preserved (regalloc2: saved/restored,
+   checked by `checkAlloc`; stack: untouched).
 8. **Encoding**: the Lean encoder (M5, `docs/contracts/encoder.md`; unproven, checked
    byte-for-byte against `llvm-mc` and by the decoder round trip). Functions must stay below
    ±1 MiB (conditional-branch range), ±32 KiB for `tbz` — no branch relaxation, as PLAN.md §3.4
    requires; the encoder rejects an out-of-range branch (the corpus is far below).
 9. **Traps**: `udf #0xc11f` + the trap table; `TrapIf` branches to out-of-line `udf`s.
+10. **Register allocation**: regalloc2 is untrusted; `checkAlloc`'s soundness theorem
+   (`docs/contracts/regalloc.md`) is the proof obligation, with the operand view, `prepare`,
+   frame layout and move lowering.
 
 ## Known gaps
 

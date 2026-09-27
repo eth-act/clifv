@@ -24,9 +24,11 @@ The driver (`lowerFunction`) plays the part of `machinst/lower.rs`:
   instructions). Here `is_sinkable_inst` always fails and `opportunistic_def` is a no-op,
   both of which are valid behaviours of the Rust helpers (they only enable optimisations),
   and every instruction is lowered, dead or not;
-* block parameters are assigned by parallel moves: every branch argument is first copied
-  into a fresh temporary, then the temporaries into the parameters; `brif`/`br_table` edges
-  with arguments get their own edge block (critical-edge splitting);
+* block parameters stay block parameters (`VBlock.params`, the CLIF parameters' vregs) and
+  branch arguments are attached to the `jump` that passes them (`VBlock.branchArgs`), as in
+  Cranelift's `VCode`; `brif`/`br_table` edges with arguments get their own edge block
+  (a `jump` with the arguments). The allocator turns them into parallel moves
+  (`StackAlloc.lowerBlockArgs` for the stack-slot allocator, regalloc2 for the other);
 * the entry block starts with Cranelift's `Args` pseudo-instruction (register arguments) and
   loads of stack arguments, as `gen_arg_setup` does.
 
@@ -655,10 +657,16 @@ def sem (ctx : Ctx) : Isle.Sem V LState where
 
 /-! ## The lowering driver (`machinst/lower.rs`) -/
 
-/-- A block of VCode. -/
+/-- A block of VCode. `params` are the block's parameter vregs (empty for the entry block,
+whose parameters the `Args` pseudo-instruction and the stack-argument loads define);
+`branchArgs` are the arguments of the block's terminating `jump` to its successor's
+parameters (empty for every other terminator: branches with arguments to a target go
+through an edge block). -/
 structure VBlock where
   label : Label
   insts : Array MInst
+  params : Array Reg := #[]
+  branchArgs : Array Reg := #[]
   deriving Inhabited, Repr
 
 /-- The selected code of one function, over virtual registers. -/
@@ -760,23 +768,14 @@ structure DState where
   nextLabel : Nat
   rules : Array RuleId := #[]
 
-/-- Parallel moves for a branch to `bc`: copy every argument into a fresh temporary, then
-each temporary into the target parameter's vreg. -/
-def blockArgMoves (ctx : Ctx) (f : Clif.Function) (bc : Clif.BlockCall) (st : LState) :
-    Except String (List MInst × LState) := do
+/-- The argument vregs of a branch to `bc` (Cranelift's branch block arguments). -/
+def blockArgRegs (ctx : Ctx) (f : Clif.Function) (bc : Clif.BlockCall) :
+    Except String (Array Reg) := do
   let some tb := f.block? bc.block | throw s!"unknown block{bc.block}"
   if tb.params.length != bc.args.length then throw s!"block{bc.block}: argument count"
-  let mut st := st
-  let mut first : Array MInst := #[]
-  let mut second : Array MInst := #[]
-  for (a, (p, _)) in bc.args.zip tb.params do
-    let some ra := ctx.valueReg? a | throw s!"unknown value v{a}"
-    let some rp := ctx.valueReg? p | throw s!"unknown value v{p}"
-    let (t, st') := st.fresh .int
-    st := st'
-    first := first.push (.mov .size64 t ra)
-    second := second.push (.mov .size64 rp t)
-  pure ((first ++ second).toList, st)
+  bc.args.toArray.mapM fun a => match ctx.valueReg? a with
+    | some r => pure r
+    | none => throw s!"unknown value v{a}"
 
 /-- Lower one function to VCode. -/
 def lowerFunction (f : Clif.Function) : Except String VCode := do
@@ -837,21 +836,20 @@ def lowerFunction (f : Clif.Function) : Except String VCode := do
       | .brif _ t e => [t, e]
       | .brTable _ dflt tbl => dflt :: tbl
       | _ => []
+    let mut jumpArgs : Array Reg := #[]
     match b.term with
     | .jump bc =>
-      let (moves, st) ← blockArgMoves ctx f bc d.st
-      d := { d with st }
-      code := code ++ moves.toArray
+      jumpArgs ← blockArgRegs ctx f bc
       targets := targets.push (← blockIdx bc.block)
     | _ =>
       for bc in dests do
         let tl ← blockIdx bc.block
         if bc.args.isEmpty then targets := targets.push tl
         else
-          let (moves, st) ← blockArgMoves ctx f bc d.st
+          let args ← blockArgRegs ctx f bc
           let l := d.nextLabel
-          d := { d with st, nextLabel := l + 1,
-                        edges := d.edges.push ⟨l, (moves ++ [MInst.jump tl]).toArray⟩ }
+          d := { d with nextLabel := l + 1,
+                        edges := d.edges.push { label := l, insts := #[MInst.jump tl], branchArgs := args } }
           targets := targets.push l
     let (term, args) : String × List V := match b.term with
       | .ret _ | .trap _ => ("lower", [.inst ti])
@@ -859,8 +857,12 @@ def lowerFunction (f : Clif.Function) : Except String VCode := do
     let (out, st, n) ← runTerm ctx' term args { d.st with emitted := #[] }
     if out.isNone then throw s!"no lowering rule for terminator {(repr b.term).pretty.take 80}"
     code := code ++ st.emitted
+    let params ← if bi == 0 then pure #[] else
+      b.params.toArray.mapM fun (v, _) => match ctx.valueReg? v with
+        | some r => pure r
+        | none => throw s!"unknown value v{v}"
     d := { d with st := { st with emitted := #[] }, rules := d.rules ++ n.toArray,
-                  blocks := d.blocks.push ⟨bi, code⟩ }
+                  blocks := d.blocks.push { label := bi, insts := code, params, branchArgs := jumpArgs } }
   -- resolve aliases (chains are acyclic: an alias target is defined by the instruction that
   -- defines the aliased value, which only reads earlier values)
   let alias := d.alias
@@ -872,7 +874,9 @@ def lowerFunction (f : Clif.Function) : Except String VCode := do
       | none => r
     | _, _ => r
   let fuel := alias.size + 1
-  let fixBlock (vb : VBlock) : VBlock := ⟨vb.label, vb.insts.map (MInst.mapRegs (resolve fuel))⟩
+  let fixBlock (vb : VBlock) : VBlock :=
+    { vb with insts := vb.insts.map (MInst.mapRegs (resolve fuel)),
+              branchArgs := vb.branchArgs.map (resolve fuel) }
   let (_, slotBytes) := slotLayout f.slots
   pure { name := f.name, blocks := (d.blocks ++ d.edges).map fixBlock, classes := d.st.classes,
          slotBytes, outgoing := d.st.outgoing, rulesFired := d.rules }
