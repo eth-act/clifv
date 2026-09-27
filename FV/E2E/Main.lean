@@ -148,7 +148,7 @@ theorem backend_correct {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp
     (hrel : Rel.holds ⟨F s, syms, slotOff⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ArmRefines fb base ra astep s (Clif.runLoop env p fuel cs) := by
-  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert⟩ := loweringObligations_of_check hc.lowerOk
+  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr⟩ := loweringObligations_of_check hc.lowerOk
   refine backend_correct_of_layers (fun s' => iselSim_of_driver (ctx := ctx) (st0 := st0) (R := R)
     (gn := gn) (bl := bl) (A := A) ?_) (fun s' => prepareCorrect_of_check (hds s') hc.prepOk) hM6
     hent hres hbe (argsIn_body hsub hcs hbe hargs) hcs hrel htr fuel
@@ -161,6 +161,7 @@ theorem backend_correct {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp
     terms := hterms s'
     ext := fun B hB st hst fn args hi e he => hsub.externCalls B hB st hst fn args hi e he
     regArgs := callRegArgs_of_subset hsub
+    brIdx := hbr
     noTail := noTail_of_subset hsub
     cfg := cfg_of_prepare hc.prepare }
 

@@ -541,13 +541,19 @@ def ExcludedUnmatchable (p : Program) : Prop :=
   ∀ (cfg : Config) (m : Nat) (s : LState × Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId),
     (matchRule p (sem ctx) cfg m r [.inst ii]).run s ≠ .ok (some env', s1)
 
+/-- The index of a `br_table` has at most 32 bits (contract change #6): the lowering compares and
+dispatches on the low 32 bits, and Cranelift's verifier requires an `i32` index. M7's `lowerCheck`
+decides it for every terminator (`brIdxOk`). -/
+def BrIdxTyped (ctx : Ctx) (t : Clif.Terminator) : Prop :=
+  ∀ x d tbl, t = .brTable x d tbl → ∃ w, w ≤ 32 ∧ ctx.valueType? x = some (.int w)
+
 /-- **Root rule correctness (`lower_branch`)**, on the terminator `t` lowered in the driver's
 context `ctx` (instruction `ti` holds the terminator's data; `CtxInv`, `ValsBelow` and "the
 rules before `r` failed" as for `LowerRuleOk`), with branch targets `targets`. -/
 def BranchRuleOk (isem : Sem) (MR : MemRelT) (p : Program) (r : Rule) : Prop :=
   ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx →
   ∀ (ti : Nat) (t : Clif.Terminator) (data : V) (targets : List Label), termData t = .ok data →
-  ctx.insts[ti]? = some ⟨data, [], [], none⟩ →
+  ctx.insts[ti]? = some ⟨data, [], [], none⟩ → BrIdxTyped ctx t →
   ∀ (cfg : Config), cfg.checkOverlap = false →
   ∀ (m n : Nat) (st : LState) (tr : Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId)
     (out : V) (st' : LState) (tr' : Array RuleId), 1000 ≤ m → 1000 ≤ n → ValsBelow ctx st →
@@ -746,7 +752,7 @@ theorem branchOk_of_rules {p : Program} (hp : Data p) (hrules : BranchRulesCorre
     (hR : Refines F isem) (hMR : MRStable F MR) {f : Clif.Function} {ctx : Ctx}
     (hctx : CtxInv f ctx) {ti : Nat} {t : Clif.Terminator} {data : V} {targets : List Label}
     (hrt : retOrTrap t = false) (hd : termData t = .ok data)
-    (hi : ctx.insts[ti]? = some ⟨data, [], [], none⟩)
+    (hi : ctx.insts[ti]? = some ⟨data, [], [], none⟩) (hbt : BrIdxTyped ctx t)
     {cfg : Config} (hco : cfg.checkOverlap = false) {n : Nat}
     (hn : 1002 + (p.rulesOf TId.lower_branch).length ≤ n) {ty : TypeId} {st : LState}
     {tr : Array RuleId} {out : V} {st' : LState} {tr' : Array RuleId} (hvb : ValsBelow ctx st)
@@ -771,8 +777,8 @@ theorem branchOk_of_rules {p : Program} (hp : Data p) (hrules : BranchRulesCorre
   rw [← hs.1] at heval
   cases hroot : closureRoot r
   · exact absurd hmatch (hex r hr hroot f ctx hctx ti t data targets hrt hd hi cfg m (st, tr) env' s1)
-  · exact hrules F isem MR hR hMR r hr hroot f ctx hctx ti t data targets hd hi cfg hco m n st tr
-      env' s1 out st' tr2 (by omega) (by omega) hvb hfirst hmatch heval
+  · exact hrules F isem MR hR hMR r hr hroot f ctx hctx ti t data targets hd hi hbt cfg hco m n st
+      tr env' s1 out st' tr2 (by omega) (by omega) hvb hfirst hmatch heval
 
 theorem program_termByName_lower_branch :
     program.termByName? "lower_branch" = some T.lower_branch := by
@@ -818,7 +824,7 @@ theorem branchOk_runTerm (hrules : BranchRulesCorrect program)
     {MR : MemRelT} (hR : Refines F isem) (hMR : MRStable F MR) {f : Clif.Function} {ctx : Ctx}
     (hctx : CtxInv f ctx) {ti : Nat} {t : Clif.Terminator} {data : V} {targets : List Label}
     (hrt : retOrTrap t = false) (hd : termData t = .ok data)
-    (hi : ctx.insts[ti]? = some ⟨data, [], [], none⟩)
+    (hi : ctx.insts[ti]? = some ⟨data, [], [], none⟩) (hbt : BrIdxTyped ctx t)
     {st : LState} {out : V} {st' : LState} {tr : List RuleId} (hvb : ValsBelow ctx st)
     (h : runTerm ctx "lower_branch" [.inst ti, .labels targets] st = .ok (some out, st', tr)) :
     ∃ ms, st'.emitted = st.emitted ++ ms.toArray ∧ LowerTermOk isem MR ctx t targets st st' ms := by
@@ -839,7 +845,7 @@ theorem branchOk_runTerm (hrules : BranchRulesCorrect program)
     subst h2
     have hlen : (program.rulesOf TId.lower_branch).length ≤ 1000 := by
       rw [show TId.lower_branch = 687 from rfl, data_program.r687]; decide
-    obtain ⟨ms, h1, h2⟩ := branchOk_of_rules data_program hrules hex hR hMR hctx hrt hd hi
+    obtain ⟨ms, h1, h2⟩ := branchOk_of_rules data_program hrules hex hR hMR hctx hrt hd hi hbt
       rfl (by omega) hvb ha
     exact ⟨ms, by simpa using h1, h2⟩
 

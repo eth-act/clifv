@@ -262,7 +262,8 @@ def RegLevelCorrect (sem : Arm.ArmState → Sem) (F : Arm.ArmState → BitVec 64
 (`LowerShape`, incl. `CtxInv`), and an SSA availability certificate exists (`Cert`).
 Discharged by `lowerCheck` (`loweringObligations_of_check`). -/
 def LoweringObligations (f : Clif.Function) (vc : VCode) : Prop :=
-  ∃ ctx st0 R gn bl A, LowerShape f vc ctx st0 R gn bl ∧ Cert f ctx st0 gn bl A
+  ∃ ctx st0 R gn bl A, LowerShape f vc ctx st0 R gn bl ∧ Cert f ctx st0 gn bl A ∧
+    ∀ B ∈ f.blocks, BrIdxTyped ctx B.term
 
 /-! ## The theorem's conclusion -/
 
