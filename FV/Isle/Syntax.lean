@@ -484,19 +484,25 @@ structure Program where
   consts : Array Const
   converters : Array Converter
   specs : Array SpecDef
-  /-- For each term, the ids of its rules in `ruleBefore` order. -/
-  rulesByTerm : Array (Array RuleId)
+  /-- For each term (indexed by `TermId`), its rules in `ruleBefore` order. -/
+  ruleLists : Array (List Rule)
   deriving Inhabited
+
+/-- The per-term rule lists of `rules` in `ruleBefore` order (bucket by term, then sort). The
+generated `Isle.Aarch64.program` stores these lists as literals; `FVTest/Isle/Data.lean` checks
+that they equal this computation. -/
+def Program.bucketRules (nterms : Nat) (rules : Array Rule) : Array (List Rule) :=
+  let buckets : Array (Array Rule) := rules.foldl
+    (fun acc r => if r.term < acc.size then acc.modify r.term (·.push r) else acc)
+    (Array.replicate nterms #[])
+  buckets.map fun rs => (rs.qsort ruleBefore).toList
 
 /-- Build a program, computing the per-term rule index. -/
 def Program.build (name : String) (files : Array String) (types : Array TypeDef)
     (terms : Array Term) (rules : Array Rule) (consts : Array Const)
     (converters : Array Converter) (specs : Array SpecDef) : Program :=
-  let buckets : Array (Array Rule) := rules.foldl
-    (fun acc r => if r.term < acc.size then acc.modify r.term (·.push r) else acc)
-    (Array.replicate terms.size #[])
   { name, files, types, terms, rules, consts, converters, specs
-    rulesByTerm := buckets.map fun rs => (rs.qsort ruleBefore).map (·.id) }
+    ruleLists := Program.bucketRules terms.size rules }
 
 namespace Program
 
@@ -518,8 +524,7 @@ def termByName? (p : Program) (n : String) : Option Term := p.terms.find? (·.na
 def ruleByName? (p : Program) (n : String) : Option Rule := p.rules.find? (·.name == n)
 
 /-- Rules of a term, in matching order. -/
-def rulesOf (p : Program) (t : TermId) : List Rule :=
-  ((p.rulesByTerm[t]?).getD #[]).toList.filterMap p.rule?
+def rulesOf (p : Program) (t : TermId) : List Rule := (p.ruleLists[t]?).getD []
 
 /-- Specs attached to a term. -/
 def specsOf (p : Program) (t : TermId) : List SpecDef :=

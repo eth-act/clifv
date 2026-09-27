@@ -103,8 +103,8 @@ Users only ever prove things about the shallow definitions. They never see CLIF 
 - **Instruction selection** interprets Cranelift's existing ISLE lowering rules, exported to Lean as data. Each rule used is a theorem about CLIF meaning versus Arm meaning. You do not write ISLE from scratch.
 - **Register allocation** follows CompCert's approach: an untrusted allocator plus a checker proven in Lean.
 - **Encoding** is proven via `decode (encode i) = i` against an ASL-derived decoder.
-- **Only long-range branches, or bounded function sizes**, so branch relaxation never arises.
-- **Type invariants for register-width conventions**, for example a `CanonReg w` carrying a proof that upper bits are zero. This turns cross-rule invariants into local obligations.
+- **Branch range is checked, never silently truncated.** *Implemented in M5:* encoding fails with a compile error when a branch target is out of range (`Insn.encode_inRange` / `encode_error_of_out_of_range`).
+- **Register-width convention: an i8/i16/i32 value occupies the low `w` bits of a 64-bit register; the upper bits are unspecified** (`Holds ty s r v`). This is Cranelift's convention. *Finding from the isel probe (2026-09-27):* a `CanonReg w` "upper bits zero" invariant is false for rule outputs (e.g. `iadd` at i8 leaves bits 8..31 dirty). Rules that need clean bits re-extend their operands themselves, so every obligation stays local to its rule. See `docs/contracts/backend-proof.md`.
 
 ## 4. Milestones
 
