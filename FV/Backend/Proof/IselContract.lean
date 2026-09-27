@@ -125,6 +125,31 @@ def defOut (rd : Reg) (x : CV) : List CV :=
   | .vreg .. => [x]
   | _ => []
 
+/-- The multiply-add operations (`madd`/`msub`: `c ± a * b`), at width `n`. -/
+def mulAddVal {n : Nat} (op : ALUOp3) (a b c : BitVec n) : Option (BitVec n) :=
+  match op with
+  | .mAdd => some (c + a * b)
+  | .mSub => some (c - a * b)
+  | _ => none
+
+/-- The operations with a shifted-register form (`add`/`sub`/logical). -/
+def aluShiftable : ALUOp → Bool
+  | .add | .sub | .and | .orr | .eor | .andNot | .orrNot | .eorNot => true
+  | _ => false
+
+/-- The extended-register operand (amount 0): the low 8/16/32/64 bits of the register, zero-
+or sign-extended to the operation width `n`. -/
+def extendVal (e : ExtendOp) (n : Nat) (b : CV) : BitVec n :=
+  match e with
+  | .uxtb => ((lo64 b).setWidth 8).setWidth n
+  | .uxth => ((lo64 b).setWidth 16).setWidth n
+  | .uxtw => ((lo64 b).setWidth 32).setWidth n
+  | .uxtx => (lo64 b).setWidth n
+  | .sxtb => ((lo64 b).setWidth 8).signExtend n
+  | .sxth => ((lo64 b).setWidth 16).signExtend n
+  | .sxtw => ((lo64 b).setWidth 32).signExtend n
+  | .sxtx => (lo64 b).signExtend n
+
 /-- The non-flag-setting two-operand ALU operations, at width `n`. -/
 def aluVal {n : Nat} (op : ALUOp) (a b : BitVec n) : Option (BitVec n) :=
   match op with
@@ -163,6 +188,33 @@ Arm model's operations (`AddWithCarry`, `write_pstate`, `ConditionHolds`): the d
 reads the low 32 bits of its operands and zero-extends its result (Arm `W` registers). -/
 def ispec : Sem := fun i uses w =>
   match i, uses with
+  -- multiply-high (64-bit only), multiply-add/sub (`ra = xzr`: no third use), extract, and
+  -- the shifted/extended-register forms
+  | .aluRRR .sMulH .size64 rd _ _, [a, b] =>
+    some (defOut rd (resX .size64 (((opnd .size64 a).signExtend 128 *
+      (opnd .size64 b).signExtend 128).extractLsb' 64 64)), w, .next)
+  | .aluRRR .uMulH .size64 rd _ _, [a, b] =>
+    some (defOut rd (resX .size64 (((opnd .size64 a).zeroExtend 128 *
+      (opnd .size64 b).zeroExtend 128).extractLsb' 64 64)), w, .next)
+  | .aluRRRR op sz rd _ _ _, [a, b, c] =>
+    (mulAddVal op (opnd sz a) (opnd sz b) (opnd sz c)).map fun r =>
+      (defOut rd (resX sz r), w, .next)
+  | .aluRRRR op sz rd (.vreg ..) (.vreg ..) .xzr, [a, b] =>
+    (mulAddVal op (opnd sz a) (opnd sz b) 0).map fun r => (defOut rd (resX sz r), w, .next)
+  | .aluRRRShift .extr sz rd _ _ sh, [a, b] =>
+    if sh.amt < sz.bits then
+      some (defOut rd (resX sz (((opnd sz a ++ opnd sz b) >>> sh.amt).setWidth sz.bits)), w, .next)
+    else none
+  | .aluRRRShift op sz rd _ _ sh, [a, b] =>
+    if aluShiftable op = true ∧ sh.op = .lsl ∧ sh.amt < sz.bits then
+      (aluVal op (opnd sz a) (opnd sz b <<< sh.amt)).map fun r =>
+        (defOut rd (resX sz r), w, .next)
+    else none
+  | .aluRRRExtend op sz rd _ _ e, [a, b] =>
+    if op = .add ∨ op = .sub then
+      (aluVal op (opnd sz a) (extendVal e sz.bits b)).map fun r =>
+        (defOut rd (resX sz r), w, .next)
+    else none
   | .aluRRR .subS sz rd _ _, [a, b] =>
     let r := Arm.AddWithCarry (opnd sz a) (~~~(opnd sz b)) 1#1
     some (defOut rd (resX sz r.1), Arm.write_pstate r.2 w, .next)
@@ -193,7 +245,7 @@ def ispec : Sem := fun i uses w =>
     let x := (lo64 a).setWidth 8
     some (defOut rd (ofX (if sg then (x.signExtend 32).setWidth 64 else x.setWidth 64)), w, .next)
   | .aluRRImmLogic op sz rd _ imm, [a] =>
-    if ImmLogic.ofNat? imm.value sz = some imm then
+    if ImmLogic.ofNat? imm.value sz = some imm ∧ op ≠ .add ∧ op ≠ .sub then
       (aluVal op (opnd sz a) (BitVec.ofNat _ imm.value)).map fun r =>
         (defOut rd (resX sz r), w, .next)
     else none
