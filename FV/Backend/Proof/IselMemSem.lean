@@ -266,7 +266,8 @@ theorem store_lower_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem)
     {am : AMode} {aop : StoreOp} {op : Clif.StoreOp} {ty : Clif.Ty} {fl : Clif.MemFlags}
     {x p : Nat} {off : Int} {results : List Nat}
     (hok : AmOk F isem sb ctx st st2 ms am aop.bytes p off) (haop : aop ≠ .fpuStore128)
-    (hsz : aop.bytes = op.size ty) (hw : ty.width ≤ 64)
+    (hsz : ∀ (fr : Clif.Frame) (a : BitVec ty.width), DFGCons ctx fr → fr.getAs x ty = .ok a →
+      aop.bytes = op.size ty) (hw : ty.width ≤ 64)
     (hfl : fl.endianness ≠ some .big) (hp64 : ctx.valueType? p = some (.int 64))
     (hx : x < st.nextVreg) :
     LowerInstOk isem MR env cp ctx (.store op ty fl x p off) results st []
@@ -283,6 +284,7 @@ theorem store_lower_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem)
   obtain ⟨vals, cm'⟩ := r
   obtain ⟨a, pv, hax, hpv, hle, hvalid, rfl, rfl⟩ := evalInst_store_inv hfl he
   dsimp only
+  have hsz := hsz fr a hdfg hax
   have hrt := rtOk_of hctx hMRo hf hv hdfg hmr
   obtain ⟨hU, hAv, ρ1, w1, hr1, hw1, haddr⟩ := hok.run fr ρ w pv hrt hpv (pv_i64 hdfg hp64 hpv)
   have hmr1 := hMR _ _ _ _ hw1 hmr
