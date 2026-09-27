@@ -476,21 +476,24 @@ axiom audit `FVTest/Backend/Proof/Ctl/Axioms.lean`.
 | `TermUnmatchable program` | `termUnmatchable` | root-format check: `ruleFmt` + one `decide +kernel` over the 517 `lower` rules (`lower_fmts`), generic `ruleFmt_match` |
 | `BranchExcludedUnmatchable program` | `branchExcludedUnmatchable` | same, `lower_branch_fmts` (try_call rules 1034/1035/1036) |
 
-**Per-rule status (`lower_branch`, `BranchRulesCorrect` still open):**
+**Per-rule status (`lower_branch`, `BranchRulesCorrect` still open) — M4Ctl2 update:**
 
 | Rule | State |
 | --- | --- |
-| 1139 `jump` | **proven** (`jump_ruleOk`, `jump_termOk`) |
-| 1132 `brif` base (`br_cond_result (is_nonzero_cmp v)`) | open: needs family C's `is_nonzero_cmp`/`emit_icmp` contracts (`CondSem`/`CondCode` on `agent/m4-cmp`@6e60c71, not finished) and a `br_cond_result` contract (4 rules) |
-| 1137 `tbnz`, 1138 `tbz` (look through `band x (iconst 2^k)`, `icmp eq … 0`) | open: `def_inst` look-through + `test_and_compare_bit_const` lemmas |
-| 1140 `br_table` | open (now provable: `BrIdxTyped`, change #6): `emit_island`, `put_in_reg_zext32` (`ExtOut`, family C), `br_table_impl` (2 rules; needs `imm` from family B), `jt_sequence` |
+| 1139 `jump` | **proven** (`jump_ruleOk`) |
+| 1132 `lower_brif` | **proven** (`brif_ruleOk`, `IselCtlBrif.lean`): `is_nonzero_cmp_ok` (M4Cmp3, applied from agent/m4-cmp 049a3c8), `br_cond_result_ok` (4 rules; rule 0 refuted by first-match on the three E shapes), `brif_termOk_gen` |
+| 1137 `tbnz` | **proven** (`tbnz_ruleOk`, `IselCtlTbz.lean`): band/iconst look-through, `tcbc`/`tcbc_spec` (single set bit), `truthy_and_pow` |
+| 1138 `tbz` | open: same pattern plus the `icmp eq … (iconst 0)` layer (`icmp_truthy`); a draft `tbz_termOk` was nearly done (remaining: `imm0 = 0` from `u64_iconst` needs `imm0.toNat < 2^64`, and the final `Bool` case) — not committed |
+| 1140 `br_table` | open, now provable after contract change #8 (`TargetsLen`): needs `emit_island`, `put_in_reg_zext32` (3 rules), `br_table_impl` (2 rules, `imm12_from_u64` / `imm`), `jt_sequence`, `cmp_imm` flags vs `jtSequence`'s `hs` test |
 
-**Calls (`CallRulesCorrect`, open):** rules 1031 (`bl`) and 1032 (GOT + `blr`); `call_indirect`
-(`rule_lower_2529`, 1033) is not in E. The extern/ABI lemmas are proven (`IselCtlCall.lean`:
-`func_ref_data`, `gen_call_output` = `outRegs`/`freshN`, `argLocs_eq` (≤ 8 arguments all in
-x0..), `gen_call_args`/`gen_call_rets`/`gen_call_info`/`gen_call_ind_info`, `is_pic`); the two
-rule theorems (operand view of `call`, `CallsRefine` application, `ResultsHeld` of the fresh
-output vregs) are not written.
+**Calls: `CallRulesCorrect program` proven** (`callRulesCorrect`, `IselCtl.lean`; rule theorems
+`call_bl_ruleOk` 1031, `call_got_ruleOk` 1032 in `IselCtlCallRules.lean`: `call` operand view,
+`CallsRefine` application, `resultsHeld_call` via `writeV_nodup_ctl`). `call_indirect` 1033 is
+covered by `ExcludedUnmatchable` (closureRoot false; M4Excl).
+
+**Contract change #8** (fd746ab, integrator-approved): `TargetsLen t targets` premise of
+`BranchRuleOk`/`TermCalls` (`br_table`: `targets.length = tbl.length + 1`), discharged in
+`LowerSim.term_step` from the block shape.
 
 **Shared changes (integrator-approved, announced):** #5 `38600e8` (calls: `CallsRefine`,
 `CallRegArgs`, `CallRuleOk`/`CallRulesCorrect`, `LowerRulesCorrect` excludes `callRootRule`,
