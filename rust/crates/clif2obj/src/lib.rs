@@ -21,7 +21,7 @@ use cranelift_codegen::isa::{self, OwnedTargetIsa};
 use cranelift_codegen::FinalizedRelocTarget;
 use cranelift_codegen::settings::{self, Configurable};
 use cranelift_codegen::{CodegenError, Context};
-use cranelift_module::{FuncId, Linkage, Module, ModuleError};
+use cranelift_module::{DataId, FuncId, Linkage, Module, ModuleError};
 use cranelift_object::{ObjectBuilder, ObjectModule};
 use cranelift_reader::{ParseOptions, TestFile};
 use serde_json::{Value, json};
@@ -182,6 +182,7 @@ pub fn check_compiles(isa: &dyn isa::TargetIsa, func: &Function) -> Result<()> {
 pub struct ObjectCompiler {
     module: ObjectModule,
     ids: HashMap<String, FuncId>,
+    data_ids: HashMap<String, DataId>,
     opts: Options,
     ctx: Context,
 }
@@ -189,7 +190,7 @@ pub struct ObjectCompiler {
 impl ObjectCompiler {
     pub fn new(isa: OwnedTargetIsa, opts: Options) -> Result<Self> {
         let builder = ObjectBuilder::new(isa, "clif", cranelift_module::default_libcall_names())?;
-        Ok(Self { module: ObjectModule::new(builder), ids: HashMap::new(), opts, ctx: Context::new() })
+        Ok(Self { module: ObjectModule::new(builder), ids: HashMap::new(), data_ids: HashMap::new(), opts, ctx: Context::new() })
     }
 
     /// Declares `funcs` as exported functions of the object. Every function must be
@@ -215,12 +216,33 @@ impl ObjectCompiler {
         let name = symbol_name(&func.name)?;
         let id = *self.ids.get(&name).ok_or_else(|| anyhow!("%{name} was not declared"))?;
         let clif = func.display().to_string();
-        for gv in func.global_values.values() {
-            if let GlobalValueData::Symbol { name: ExternalName::TestCase(t), .. } = gv {
-                bail!("%{name}: symbol global value {t} is not supported (only `fnN` function references are)");
+        let mut f = func.clone();
+
+        // `gvN = symbol [colocated] %sym` → imported data symbol `sym` (defined by a linked
+        // object, e.g. `clif-native`'s `; data:` objects).
+        let gvs: Vec<_> = f.global_values.keys().collect();
+        for gv in gvs {
+            let GlobalValueData::Symbol { name: sym, .. } = &f.global_values[gv] else { continue };
+            let ExternalName::TestCase(t) = sym else {
+                bail!("%{name}: unsupported symbol global value {sym:?}")
+            };
+            let dname = t.to_string().trim_start_matches('%').to_string();
+            let did = match self.data_ids.get(&dname) {
+                Some(id) => *id,
+                None => {
+                    let id = self
+                        .module
+                        .declare_data(&dname, Linkage::Import, false, false)
+                        .map_err(|e| anyhow!("%{name}: declaring data %{dname}: {e}"))?;
+                    self.data_ids.insert(dname, id);
+                    id
+                }
+            };
+            let r = f.params.ensure_user_func_name(UserExternalName::new(1, did.as_u32()));
+            if let GlobalValueData::Symbol { name, .. } = &mut f.global_values[gv] {
+                *name = ExternalName::user(r);
             }
         }
-        let mut f = func.clone();
 
         // `fnN = %callee(...)` → module symbol `callee` (an import unless declared).
         let refs: Vec<_> = f.dfg.ext_funcs.keys().collect();
@@ -263,8 +285,13 @@ impl ObjectCompiler {
             let (target, addend) = match &r.target {
                 FinalizedRelocTarget::ExternalName(ExternalName::User(u)) => {
                     let uname = &self.ctx.func.params.user_named_funcs()[*u];
-                    let fid = FuncId::from_u32(uname.index);
-                    (self.module.declarations().get_function_decl(fid).linkage_name(fid).into_owned(), r.addend)
+                    if uname.namespace == 1 {
+                        let did = DataId::from_u32(uname.index);
+                        (self.module.declarations().get_data_decl(did).linkage_name(did).into_owned(), r.addend)
+                    } else {
+                        let fid = FuncId::from_u32(uname.index);
+                        (self.module.declarations().get_function_decl(fid).linkage_name(fid).into_owned(), r.addend)
+                    }
                 }
                 FinalizedRelocTarget::ExternalName(ExternalName::LibCall(lc)) => {
                     ((cranelift_module::default_libcall_names())(*lc), r.addend)

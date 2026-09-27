@@ -370,6 +370,7 @@ fn build(
     dir: &Path,
     table: Option<&FnTable>,
     allow_undefined: bool,
+    data: Option<&str>,
 ) -> Result<Build> {
     // Trampolines, one per invoked function.
     let mut tramp_of: HashMap<usize, usize> = HashMap::new();
@@ -452,12 +453,32 @@ fn build(
         bail!("compiling the harness failed:\n{}", String::from_utf8_lossy(&out.stderr));
     }
 
+    let data_o = match data {
+        Some(asm) => {
+            let src = dir.join("data.s");
+            std::fs::write(&src, asm)?;
+            let o = dir.join("data.o");
+            let out = run_tool(
+                Command::new(&cfg.tools.clang).args(["--target=aarch64-linux-gnu", "-c"]).arg(&src).arg("-o").arg(&o),
+                "clang",
+            )?;
+            if !out.status.success() {
+                bail!("assembling the data objects failed:\n{}", String::from_utf8_lossy(&out.stderr));
+            }
+            Some(o)
+        }
+        None => None,
+    };
+
     let exe = dir.join("test.exe");
     let mut link = Command::new(&cfg.tools.lld);
     link.args(["-flavor", "gnu", "-static", "--no-demangle", "-e", "_start", "-o"])
         .arg(&exe)
         .arg(&harness_o)
         .arg(&obj);
+    if let Some(o) = &data_o {
+        link.arg(o);
+    }
     if let Some((fobj, _)) = &cfg.functions {
         link.arg(fobj);
     }
@@ -616,9 +637,68 @@ fn execute(cfg: &Config, exe: &Exe) -> Result<Vec<Value>> {
     Ok(out)
 }
 
+/// Assembly for the file's `; data: %name [align=N] [writable] = items` directives (before the
+/// first function; grammar in `docs/contracts/clif.md`): each object is a global symbol in
+/// `.rodata` (or `.data` if `writable`); `%sym[+N|-N]` items are `.quad sym+N`. `None` if
+/// there are no directives.
+fn data_asm(text: &str) -> Result<Option<String>> {
+    use std::fmt::Write as _;
+    let mut out = String::new();
+    for line in text.lines() {
+        let t = line.trim_start();
+        if t.starts_with("function") {
+            break;
+        }
+        let Some(c) = t.strip_prefix(';') else { continue };
+        let c = c.trim_start_matches(|ch| ch == ' ' || ch == ';');
+        let Some(d) = c.strip_prefix("data:") else { continue };
+        let mut ws = d.split_whitespace();
+        let name = ws
+            .next()
+            .and_then(|n| n.strip_prefix('%'))
+            .filter(|n| !n.is_empty())
+            .ok_or_else(|| anyhow!("data directive without %name: {line}"))?;
+        let (mut align, mut writable) = (1u64, false);
+        loop {
+            match ws.next() {
+                Some("=") => break,
+                Some("writable") => writable = true,
+                Some(w) if w.starts_with("align=") => {
+                    align = w[6..].parse().ok().filter(|a| *a > 0).ok_or_else(|| anyhow!("bad {w}"))?
+                }
+                Some(w) => bail!("data directive: unexpected {w}"),
+                None => bail!("data directive: missing '=': {line}"),
+            }
+        }
+        if !align.is_power_of_two() {
+            bail!("data directive: align={align} is not a power of two");
+        }
+        let section = if writable { ".data" } else { ".section .rodata" };
+        writeln!(out, "{section}\n.balign {}\n.globl {name}\n{name}:", align.max(16)).unwrap();
+        for w in ws {
+            if let Some(sym) = w.strip_prefix('%') {
+                let (s, off) = match sym.find(['+', '-']) {
+                    Some(i) => (&sym[..i], sym[i..].parse::<i64>().map_err(|_| anyhow!("bad addend in {w}"))?),
+                    None => (sym, 0),
+                };
+                writeln!(out, ".quad {s}{off:+}").unwrap();
+            } else {
+                if w.len() % 2 != 0 || !w.chars().all(|c| c.is_ascii_hexdigit()) {
+                    bail!("data directive: bad item {w}");
+                }
+                let bytes: Vec<String> = (0..w.len()).step_by(2).map(|i| format!("0x{}", &w[i..i + 2])).collect();
+                writeln!(out, ".byte {}", bytes.join(", ")).unwrap();
+            }
+        }
+        writeln!(out, ".size {name}, .-{name}").unwrap();
+    }
+    Ok(if out.is_empty() { None } else { Some(out) })
+}
+
 fn native(cfg: &Config, dir: &Path) -> Result<bool> {
     let text = std::fs::read_to_string(&cfg.file).with_context(|| format!("reading {}", cfg.file))?;
     let isa = clif2obj::isa(TRIPLE)?;
+    let data = data_asm(&text).with_context(|| format!("{}: data directives", cfg.file))?;
     let test = match clif2obj::parse_file(&text, &*isa) {
         Ok(t) => t,
         Err(e) => {
@@ -709,7 +789,7 @@ fn native(cfg: &Config, dir: &Path) -> Result<bool> {
         if runnable.is_empty() {
             break None;
         }
-        match build(cfg, &isa, &funcs, &lines, &runnable, dir, table.as_ref(), allow_undefined)? {
+        match build(cfg, &isa, &funcs, &lines, &runnable, dir, table.as_ref(), allow_undefined, data.as_deref())? {
             Build::Linked(exe) => break Some(exe),
             Build::FuncFailed(i, why) => {
                 funcs.bad.insert(i, Excluded::not_compiled(why));
