@@ -32,8 +32,6 @@ def slotBytes : Loc → Nat
   | .save (.x _) => 8
   | _ => 16
 
-def spOf (s : Arm.ArmState) : BitVec 64 := Arm.r (.GPR 31#5) s
-
 /-- The value of location `l` in Arm state `s` for frame `fr`: registers by `regVal`, frame
 slots by the bytes at `sp + offset` (an 8-byte slot zero-extended). -/
 def locVal (fr : RAFrame) (s : Arm.ArmState) : Loc → CV
