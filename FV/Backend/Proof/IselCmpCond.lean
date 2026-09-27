@@ -264,6 +264,62 @@ theorem lcrb_run {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem) {c 
   obtain ⟨h1, h2, -, -⟩ := hf.shape cmpImm0_regs hsh
   exact runs_flags_cset hR hsf hb ⟨h1, h2⟩ d w
 
+/-! ## Instructions a pattern can see through `def_inst` -/
+
+/-- Every opcode name `instData` can produce (`instNames`). -/
+def eOpNames : List String :=
+  ["", "Iconst", "Ineg", "Bnot", "Clz", "Ctz", "Popcnt", "Bswap", "Bitrev", "Iadd", "Isub", "Imul",
+   "Umulhi", "Smulhi", "Band", "Bor", "Bxor", "Ishl", "Ushr", "Sshr", "Rotl", "Rotr", "Smin", "Smax",
+   "Umin", "Umax", "Udiv", "Sdiv", "Urem", "Srem", "Icmp", "Uextend", "Sextend", "Ireduce", "Load",
+   "Uload8", "Sload8", "Uload16", "Sload16", "Uload32", "Sload32", "Store", "Istore8", "Istore16",
+   "Istore32", "Select", "Nop", "SymbolValue", "StackAddr", "Call"]
+
+theorem instNames_snd_mem (cl : Clif.Inst) : (instNames cl).2 ∈ eOpNames := by
+  cases cl <;> simp only [instNames] <;> try decide
+  all_goals first
+    | (rename_i op _ _; cases op <;> decide)
+    | (rename_i op _ _ _; cases op <;> decide)
+    | (rename_i op _ _ _ _; cases op <;> decide)
+    | (rename_i op _ _ _ _ _; cases op <;> decide)
+    | (rename_i op _ _ _ _ _ _; cases op <;> decide)
+
+/-- An instruction reached through `def_inst` has an opcode of E: a pattern naming another
+opcode never matches. -/
+theorem opcode_absurd {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) {x j : Nat}
+    {info : IInfo} (hd : ctx.defInst? x = some j) (hi : ctx.insts[j]? = some info) {kf ko : Nat}
+    {fs : List V} (he : V.data 152 kf (V.data 151 ko [] :: fs) = info.data) {s : String}
+    (hs : (variantNames 151)[ko]? = some s) (hns : s ∉ eOpNames) : False := by
+  have hcl := hctx.defClif x j info hd hi
+  obtain ⟨cl, hcl'⟩ := Option.isSome_iff_exists.mp hcl
+  have hdata := hctx.data j info cl hi hcl'
+  rw [← he] at hdata
+  have := (instData_inv_names hdata).2
+  rw [hs] at this
+  cases this
+  exact hns (instNames_snd_mem cl)
+
+open Lean Elab Tactic Meta in
+/-- Close a goal whose hypotheses say an instruction reached through `def_inst` has a non-E
+opcode (`opcode_absurd` over every fitting triple of hypotheses). -/
+elab "isel_opcode_absurd " hctx:ident : tactic => withMainContext do
+  let lctx ← getLCtx
+  let hs := lctx.decls.toList.filterMap id |>.filter (!·.isImplementationDetail)
+  for he in hs do
+    let t ← instantiateMVars he.type
+    unless t.isAppOfArity ``Eq 3 do continue
+    unless (t.getArg! 1).isAppOf ``Backend.V.data do continue
+    for hi in hs do
+      for hd in hs do
+        let s ← saveState
+        try
+          let a ← Term.exprToSyntax (mkFVar hd.fvarId)
+          let b ← Term.exprToSyntax (mkFVar hi.fvarId)
+          let c ← Term.exprToSyntax (mkFVar he.fvarId)
+          evalTactic (← `(tactic| exact (opcode_absurd $hctx $a $b $c rfl (by decide)).elim))
+          return
+        catch _ => s.restore
+  throwError "isel_opcode_absurd: no fitting hypotheses"
+
 /-! ## `with_flags`, `lower_cond_result_bool` -/
 
 section Cons

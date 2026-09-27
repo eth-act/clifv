@@ -318,3 +318,41 @@ it avoids having to show which rule is selected.
 4. Division: the `trapIf`/`udf` halt arms go through `seqRun_one_halt` and
    `seqRun_append_fall_stop`. Needed: `imm` from M4AluB (`IselTermsImm`),
    `trap_if_div_overflow` (`ccmpImm`) and `intmin_check` (`aluRRImmShift`).
+
+### Progress (M4Cmp2, resumed from 8daa6d2)
+
+**Still no root rule of family C proven** (request budget exhausted). Proven term contracts and
+infrastructure (all building, no `sorry`; axioms `propext`, `Classical.choice`, `Quot.sound`
+plus `bv_decide` certificates):
+
+* Tactics (`IselCmpBase`): `isel_inv' hp [lemmas] at h…` unfolds the rule constants found in the
+  hypotheses and passes only their `hp.tN` data facts (no `cases hp`: the ~1400 facts in the
+  context made every inversion round slow); `isel_refute hp at hm` (one simp pass, cheap
+  refutation of rules whose pattern cannot match); `isel_call hp hc [contracts]` (applies callee
+  contracts `c hp hc (hn := _) (h := _)` to every `ApplyInternal` hypothesis, repeatedly).
+  `isel_split'` (`IselCmpTerms`) splits without `cases hp`; `internal_split_first` now returns
+  `n = n' + 20`, so nested calls keep a known fuel (contracts take `B ≤ n` bounds).
+* `IselCmpExt`: `zext32_ok`/`sext32_ok`/`zext64_ok`/`sext64_ok` (syntactic `ExtOut`, the
+  32-bit ones use the failed `$I32` rule), `ExtOut.sem` (the returned vreg holds the value,
+  `ExtHolds`: low bits and the sign/zero extension to 32/64 bits; `Frag`, freshness, `UsesLo`).
+* `IselCmpCond`: `SetsFlags`, `CondShape`, `CondSem`, `CondFlag`; `Runs.flags`,
+  `runs_flags_cset`, `runs_flags_csel`; `with_flags_ok` (rule 818, the other 15 refuted);
+  `lcrb_ok` + `lcrb_run` (`lower_cond_result_bool`: flag instruction + `cset` into a fresh vreg
+  holding the condition as 0/1); `opcode_absurd` + `isel_opcode_absurd hctx` (a `def_inst`
+  pattern naming a non-E opcode never matches, via `CtxInv`, `instData_inv_names`,
+  `eOpNames`).
+* `IselCmpIcmp`: `CondCode` (semantic contract of a condition producer), `CondCode.flag`,
+  `CondCode.notZero`, `CondCode.inv`; `cri_ok` (`cond_result_invert`); `tst_imm_ok`.
+  `is_nonzero_ok` is drafted in a comment at the end of the file (rules 4–10 and I128 already
+  refuted by its first lines; the I8/I64/fits_in_32 cases need small fixes).
+
+**Next steps**: finish `is_nonzero_ok`; `emit_icmp_ok` as a `CondCode` with
+`T fr b := ∃ ty a b', fr.regs x = ⟨ty,a⟩ ∧ fr.regs y = ⟨ty,b'⟩ ∧ b = intcc cc a b'` (rules 7/8
+through `is_nonzero`/`CondCode.inv`; rules 5/6/3 need an `iconst` inversion lemma from
+`CtxInv.data` + `DFGCons` giving `fr.regs y = ⟨ty, imm⟩` with `u64 (imm64OfIconst ty imm) =
+imm.toNat`; rules 0/1 need `lower_extend_op` and `Arm.extend_reg` for UXT/SXT B/H; rule 4 is
+refuted by `value_regs_get … 1` on a one-register value); `is_nonzero_cmp_ok`; then root rule
+2215 = `lcrb_ok`/`lcrb_run` after `emit_icmp_ok` (+ `output_reg`), 1281 likewise, select/min/max
+via `lower_select` (`CondFlag cmpXzr`, `runs_flags_csel`, `lower_select_cond` rule 5364 only for
+integer types). Division needs `imm_ok` from M4AluB (`eac2707`, `IselTermsImm.lean`; merge
+agent/m4-alu-b). M4Ctl consumes `is_nonzero_cmp_ok`/`CondSem` for `brif`.
