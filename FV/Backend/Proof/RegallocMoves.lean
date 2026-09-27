@@ -267,6 +267,13 @@ theorem reg_int {r : Reg} (h : r.realClass? = some .int) : ∃ n, r = .x n := by
 theorem reg_float {r : Reg} (h : r.realClass? = some .float) : ∃ n, r = .v n := by
   cases r <;> simp_all [Reg.realClass?]
 
+/-- The instructions move code consists of: `mov` between X registers, slot stores and loads
+at an aligned offset of a frame below 32 KiB. -/
+def MoveInst (i : MInst) : Prop :=
+  (∃ a b, i = .mov .size64 (.x b) (.x a)) ∨
+    ∃ cls r off, off % 8 = 0 ∧ (cls = .float → off % 16 = 0) ∧ off < 32768 ∧
+      (i = slotStore cls r off ∨ i = slotLoad cls r off)
+
 /-- **Lowering of a checked move.** -/
 theorem lower_move {vc : VCode} {rf : RFunc} {sp0 : BitVec 64} {F : BitVec 64 → Prop}
     (hfr : FrameOk (RAFrame.compute vc rf) (Live rf) (rf.floatMove = true) sp0 F)
@@ -276,7 +283,8 @@ theorem lower_move {vc : VCode} {rf : RFunc} {sp0 : BitVec 64} {F : BitVec 64 �
     {code : List AInst} (hmi : (RAFrame.compute vc rf).moveInsts src dst = .ok code)
     {s w : Arm.ArmState} (hw : SameWorld F s w) (hsp : spOf s = sp0)
     (halign : Arm.CheckSPAlignment s) :
-    ValidLoc src ∧ ValidLoc dst ∧ ∃ is s', code = is.map AInst.inst ∧ ExecAll ctx is s s' ∧
+    ValidLoc src ∧ ValidLoc dst ∧ ∃ is s', code = is.map AInst.inst ∧ (∀ i ∈ is, MoveInst i) ∧
+      ExecAll ctx is s s' ∧
       MoveOk (RAFrame.compute vc rf) (Live rf) F sp0 s s' w dst (locVal (RAFrame.compute vc rf) s src) := by
   obtain ⟨cls, hcls, hs, hd, hreg⟩ := checkMove_facts hchk
   have vloc : ∀ l, c.locOk l cls = true → ValidLoc l := fun l h r e => by
@@ -296,7 +304,7 @@ theorem lower_move {vc : VCode} {rf : RFunc} {sp0 : BitVec 64} {F : BitVec 64 �
         simp only [RAFrame.moveInsts, hac, pure, Except.pure, Except.ok.injEq] at hmi
         subst hmi
         obtain ⟨s', hx, hm⟩ := move_reg_int (vc := vc) (rf := rf) ctx haa hba hw hsp
-        exact ⟨_, s', rfl, hx, hm⟩
+        exact ⟨_, s', rfl, by simp [MoveInst], hx, hm⟩
       | float =>
         obtain ⟨a', rfl⟩ := reg_float hac
         obtain ⟨b', rfl⟩ := reg_float hbc
@@ -307,7 +315,13 @@ theorem lower_move {vc : VCode} {rf : RFunc} {sp0 : BitVec 64} {F : BitVec 64 �
         rcases allocatable_cases hba with ⟨_, e, _⟩ | ⟨_, e, hb⟩ <;> cases e
         obtain ⟨s', hx, hm⟩ := move_reg_float hfr hfm hsz ctx ha hb hw hsp halign
           ((compute_facts vc rf).2.2.2 hfm)
-        exact ⟨_, s', rfl, hx, hm⟩
+        have htmp := (compute_facts vc rf).2.2.2 hfm
+        have hal := (compute_align vc rf).2.2
+        refine ⟨_, s', rfl, fun i hi => ?_, hx, hm⟩
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
+        rcases hi with rfl | rfl
+        · exact .inr ⟨.float, _, _, by omega, fun _ => hal, by omega, .inl rfl⟩
+        · exact .inr ⟨.float, _, _, by omega, fun _ => hal, by omega, .inr rfl⟩
     | stack k cl | save r =>
       all_goals
         simp only [RAFrame.moveInsts, bind, Except.bind] at hmi
@@ -319,15 +333,21 @@ theorem lower_move {vc : VCode} {rf : RFunc} {sp0 : BitVec 64} {F : BitVec 64 �
         cases cls with
         | int =>
           obtain ⟨a', rfl⟩ := reg_int hac
-          obtain ⟨s', hx, hm⟩ := move_store_int hfr hsz ctx haa hLd hoff
-            (slotBytes_int (fun _ h => by cases h) hdcls) hw hsp halign
-          exact ⟨_, s', by simp [Reg.realClass?], hx, hm⟩
+          have hsb := slotBytes_int (fun _ h => by cases h) hdcls
+          obtain ⟨s', hx, hm⟩ := move_store_int hfr hsz ctx haa hLd hoff hsb hw hsp halign
+          have hal := live_align hLd hoff
+          rw [hsb] at hal
+          exact ⟨_, s', by simp [Reg.realClass?], fun i hi => .inr ⟨.int, _, _, hal.1, nofun, by omega,
+            .inl (by simpa using hi)⟩, hx, hm⟩
         | float =>
           obtain ⟨a', rfl⟩ := reg_float hac
           rcases allocatable_cases haa with ⟨_, e, _⟩ | ⟨_, e, ha⟩ <;> cases e
-          obtain ⟨s', hx, hm⟩ := move_store_float hfr hsz ctx ha hLd hoff
-            (slotBytes_float (fun _ h => by cases h) hdcls) hw hsp halign
-          exact ⟨_, s', by simp [Reg.realClass?], hx, hm⟩
+          have hsb := slotBytes_float (fun _ h => by cases h) hdcls
+          obtain ⟨s', hx, hm⟩ := move_store_float hfr hsz ctx ha hLd hoff hsb hw hsp halign
+          have hal := live_align hLd hoff
+          rw [hsb] at hal
+          exact ⟨_, s', by simp [Reg.realClass?], fun i hi => .inr ⟨.float, _, _, by omega,
+            fun _ => hal.1, by omega, .inl (by simpa using hi)⟩, hx, hm⟩
   | stack k cl | save r =>
     all_goals
       cases dst with
@@ -343,14 +363,20 @@ theorem lower_move {vc : VCode} {rf : RFunc} {sp0 : BitVec 64} {F : BitVec 64 �
         cases cls with
         | int =>
           obtain ⟨b', rfl⟩ := reg_int hbc
-          obtain ⟨s', hx, hm⟩ := move_load_int hsz ctx hba hLs hoff
-            (slotBytes_int (fun _ h => by cases h) hcls) hw hsp halign
-          exact ⟨_, s', by simp [Reg.realClass?], hx, hm⟩
+          have hsb := slotBytes_int (fun _ h => by cases h) hcls
+          obtain ⟨s', hx, hm⟩ := move_load_int hsz ctx hba hLs hoff hsb hw hsp halign
+          have hal := live_align hLs hoff
+          rw [hsb] at hal
+          exact ⟨_, s', by simp [Reg.realClass?], fun i hi => .inr ⟨.int, _, _, hal.1, nofun, by omega,
+            .inr (by simpa using hi)⟩, hx, hm⟩
         | float =>
           obtain ⟨b', rfl⟩ := reg_float hbc
           rcases allocatable_cases hba with ⟨_, e, _⟩ | ⟨_, e, hb⟩ <;> cases e
-          obtain ⟨s', hx, hm⟩ := move_load_float hsz ctx hb hLs hoff
-            (slotBytes_float (fun _ h => by cases h) hcls) hw hsp halign
-          exact ⟨_, s', by simp [Reg.realClass?], hx, hm⟩
+          have hsb := slotBytes_float (fun _ h => by cases h) hcls
+          obtain ⟨s', hx, hm⟩ := move_load_float hsz ctx hb hLs hoff hsb hw hsp halign
+          have hal := live_align hLs hoff
+          rw [hsb] at hal
+          exact ⟨_, s', by simp [Reg.realClass?], fun i hi => .inr ⟨.float, _, _, by omega,
+            fun _ => hal.1, by omega, .inr (by simpa using hi)⟩, hx, hm⟩
 
 end Backend.Proof
