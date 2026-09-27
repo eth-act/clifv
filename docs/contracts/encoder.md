@@ -174,6 +174,7 @@ scripts/lean-backend-filetests.sh [-v] [--asm] [--corpus | --runtests | FILE.cli
    | corpus/clif + extrt + all 395 runtests | 445 (110 with compiled functions) | 845 | **845** | 59 698 | 473 |
    | random (`--n 200`, seed 24301) | 1 | 39 (one per form) | **39** | 8 151 | 600 |
    | random (`--n 1000`, seeds 1, 2, 3, 12345, 99991) | 5 | 5 × 39 | **195** | 5 × 39 351 | 5 × 3 000 |
+   | default run (all of the above sets at `--n 200`; exit 0) | 446 | 884 | **884** | 67 849 | 1 073 |
 
    A deliberately broken encoder (CSET without the condition inversion) makes 105 of the
    156 corpus/clif functions differ, so the comparison is sensitive.
