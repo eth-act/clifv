@@ -157,6 +157,17 @@ def rrrVal {n : Nat} (op : ALUOp) (a b : BitVec n) : Option (BitVec n) :=
 def rev16w (x : BitVec 32) : BitVec 32 :=
   ((x >>> 8) &&& 0x00FF00FF#32) ||| ((x <<< 8) &&& 0xFF00FF00#32)
 
+/-- `MOVZ`/`MOVN` at width `n`: `imm.bits << 16·imm.shift`, inverted for `MOVN`. -/
+def movWideVal (op : MoveWideOp) (n : Nat) (imm : MoveWideConst) : BitVec n :=
+  match op with
+  | .movZ => BitVec.ofNat n imm.bits <<< (16 * imm.shift)
+  | .movN => ~~~(BitVec.ofNat n imm.bits <<< (16 * imm.shift))
+
+/-- `MOVK` at width `n`: the 16-bit slice `imm.shift` of `a` replaced by `imm.bits`. -/
+def movKVal {n : Nat} (a : BitVec n) (imm : MoveWideConst) : BitVec n :=
+  (a &&& ~~~(BitVec.ofNat n 0xFFFF <<< (16 * imm.shift))) |||
+    (BitVec.ofNat n imm.bits <<< (16 * imm.shift))
+
 /-- **Value-level meaning of the instruction forms the proven rules emit**, in terms of the
 Arm model's operations (`AddWithCarry`, `write_pstate`, `ConditionHolds`): the def values
 (in operand order) and the world after. `none`: form not specified (yet). A 32-bit operation
@@ -209,6 +220,21 @@ def ispec : Sem := fun i uses w =>
     else some (defOut rd (ofX (if Arm.ConditionHolds c.invert.bits w then 0#64 else 1#64)), w, .next)
   | .aluRRR op sz rd .xzr _, [b] =>
     (rrrVal op (0#sz.bits) (opnd sz b)).map fun r => (defOut rd (resX sz r), w, .next)
+  -- Family B (M4AluB2): wide moves (`imm`, `load_constant_full`), `orr` of an immediate into
+  -- the zero register
+  | .movWide op rd imm sz, [] =>
+    if imm.bits < 2 ^ 16 ∧ 16 * imm.shift < sz.bits then
+      some (defOut rd (resX sz (movWideVal op sz.bits imm)), w, .next)
+    else none
+  | .movK rd _ imm sz, [a] =>
+    if imm.bits < 2 ^ 16 ∧ 16 * imm.shift < sz.bits then
+      some (defOut rd (resX sz (movKVal (opnd sz a) imm)), w, .next)
+    else none
+  | .aluRRImmLogic op sz rd .xzr imm, [] =>
+    if ImmLogic.ofNat? imm.value sz = some imm ∧ op ≠ .add ∧ op ≠ .sub then
+      (aluVal op (0#sz.bits) (BitVec.ofNat _ imm.value)).map fun r =>
+        (defOut rd (resX sz r), w, .next)
+    else none
   | _, _ => none
 
 /-- **The semantic hypothesis of the rule statements**: on every form `ispec` specifies, the
