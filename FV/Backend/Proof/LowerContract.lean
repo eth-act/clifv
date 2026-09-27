@@ -59,11 +59,14 @@ theorem instCalls_of_rules (hrules : LowerRulesCorrect Isle.Aarch64.program)
 
 /-- Facts about the driver-emitted pseudo-instructions and alias resolution that the VCode
 semantics must satisfy (M6's `csem`: `Args` reads the argument registers of the world, an edge
-block's `jump` goes to its only successor, renaming invariance). -/
+block's `jump` goes to its only successor, renaming invariance, label invariance). -/
 structure DriverSem (sem : Sem) : Prop where
   args : ∀ ds w, sem (.args ds) [] w = some (ds.map (fun d => regVal w d.2), w, .next)
   jump : ∀ l w, sem (.jump l) [] w = some ([], w, .goto 0)
   rename : ∀ g gn, VRenaming g gn → ∀ i, sem (i.mapRegs g) = sem i
+  /-- a branch's semantics does not depend on its label values (`prepare` retargets split
+  critical edges) -/
+  retarget : ∀ i ls i', MInst.setTargets i ls = some i' → sem i' = sem i
 
 /-! ## `Clif.step` on a statement is `instOutcome` -/
 

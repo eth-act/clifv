@@ -1,10 +1,12 @@
 import FV.Backend
 import FV.Backend.Proof.DriverCheck
+import FV.Backend.Proof.PrepareCheck
 
 /-!
 # The M7 validators on real code (`lake exe lean-e2e-check [FILE.clif...]`)
 
-Runs the lowering validator `lowerCheck f vc` on every function the backend lowers (default:
+Runs the lowering validator `lowerCheck f vc` and the `prepare` validator `prepCheck vc vcp` on
+every function the backend lowers (default:
 `corpus/clif/*.clif`, `corpus/clif/extrt/*.clif`, Cranelift's `runtests/*.clif`) and prints
 every rejection with the failing part. Exit status 0 iff every lowered function is accepted.
 -/
@@ -97,6 +99,8 @@ def main (args : List String) : IO UInt32 := do
   let mut ok := 0
   let mut bad := 0
   let mut skipped := 0
+  let mut pok := 0
+  let mut pbad := 0
   for file in files do
     let pf := Clif.parseFile (← IO.FS.readFile file)
     for p in pf.funcs do
@@ -110,10 +114,18 @@ def main (args : List String) : IO UInt32 := do
       let r := lowerCheck f vc
       let t2 ← IO.monoMsNow
       if t2 - t0 > 2000 then IO.println s!"{file}: %{f.name}: lowerFunction {t1 - t0} ms, lowerCheck {t2 - t1} ms"
+      match prepare vc with
+      | .ok vcp =>
+        if prepCheck vc vcp then pok := pok + 1
+        else
+          pbad := pbad + 1
+          IO.println s!"{file}: %{f.name}: prepCheck rejects"
+      | .error _ => pure ()
       if r then ok := ok + 1
       else
         bad := bad + 1
         IO.println s!"{file}: %{f.name}: lowerCheck rejects ({diagnose f vc})"
         IO.println (detail f vc)
   IO.println s!"lowerCheck: {ok} accepted, {bad} rejected, {skipped} out of scope (stack parameters)"
-  return if bad == 0 then 0 else 1
+  IO.println s!"prepCheck: {pok} accepted, {pbad} rejected"
+  return if bad == 0 && pbad == 0 then 0 else 1
