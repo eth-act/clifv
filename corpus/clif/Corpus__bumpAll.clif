@@ -1,0 +1,216 @@
+test interpret
+test run
+target aarch64
+
+function %Corpus__bumpAll(i64, i8, i8, i8, i8, i8, i8, i8, i8) -> i8 {
+block0(v0: i64, v1: i8, v2: i8, v3: i8, v4: i8, v5: i8, v6: i8, v7: i8, v8: i8):
+    v26 = iconst.i64 0
+    jump block3(v26, v1, v2, v3, v4, v5, v6, v7, v8)
+
+block3(v17: i64, v18: i8, v19: i8, v20: i8, v21: i8, v22: i8, v23: i8, v24: i8, v25: i8):
+    v27 = iconst.i64 8
+    v28 = icmp.i64 ult v17, v27
+    brif.i8 v28, block4, block5
+
+block4:
+    v30 = iconst.i64 8
+    v31 = icmp.i64 uge v17, v30
+    v32 = iconst.i8 3
+    brif.i8 v31, block1(v32), block8
+
+block8:
+    v33 = iconst.i64 1
+    v34 = icmp.i64 eq v17, v33
+    brif.i8 v34, block9(v19), block9(v18)
+
+block9(v35: i8):
+    v36 = iconst.i64 2
+    v37 = icmp.i64 eq v17, v36
+    brif.i8 v37, block10(v20), block10(v35)
+
+block10(v38: i8):
+    v39 = iconst.i64 3
+    v40 = icmp.i64 eq v17, v39
+    brif.i8 v40, block11(v21), block11(v38)
+
+block11(v41: i8):
+    v42 = iconst.i64 4
+    v43 = icmp.i64 eq v17, v42
+    brif.i8 v43, block12(v22), block12(v41)
+
+block12(v44: i8):
+    v45 = iconst.i64 5
+    v46 = icmp.i64 eq v17, v45
+    brif.i8 v46, block13(v23), block13(v44)
+
+block13(v47: i8):
+    v48 = iconst.i64 6
+    v49 = icmp.i64 eq v17, v48
+    brif.i8 v49, block14(v24), block14(v47)
+
+block14(v50: i8):
+    v51 = iconst.i64 7
+    v52 = icmp.i64 eq v17, v51
+    brif.i8 v52, block15(v25), block15(v50)
+
+block15(v53: i8):
+    jump block7(v53)
+
+block7(v29: i8):
+    v55 = iconst.i8 1
+    v56 = iadd.i8 v29, v55
+    v57 = icmp.i8 ult v56, v29
+    v58 = iconst.i8 1
+    brif.i8 v57, block1(v58), block17
+
+block17:
+    jump block16(v56)
+
+block16(v54: i8):
+    v59 = iconst.i64 8
+    v60 = icmp.i64 uge v17, v59
+    v61 = iconst.i8 3
+    brif.i8 v60, block1(v61), block18
+
+block18:
+    v62 = iconst.i64 0
+    v63 = icmp.i64 eq v17, v62
+    brif.i8 v63, block19(v54), block19(v18)
+
+block19(v64: i8):
+    v65 = iconst.i64 1
+    v66 = icmp.i64 eq v17, v65
+    brif.i8 v66, block20(v54), block20(v19)
+
+block20(v67: i8):
+    v68 = iconst.i64 2
+    v69 = icmp.i64 eq v17, v68
+    brif.i8 v69, block21(v54), block21(v20)
+
+block21(v70: i8):
+    v71 = iconst.i64 3
+    v72 = icmp.i64 eq v17, v71
+    brif.i8 v72, block22(v54), block22(v21)
+
+block22(v73: i8):
+    v74 = iconst.i64 4
+    v75 = icmp.i64 eq v17, v74
+    brif.i8 v75, block23(v54), block23(v22)
+
+block23(v76: i8):
+    v77 = iconst.i64 5
+    v78 = icmp.i64 eq v17, v77
+    brif.i8 v78, block24(v54), block24(v23)
+
+block24(v79: i8):
+    v80 = iconst.i64 6
+    v81 = icmp.i64 eq v17, v80
+    brif.i8 v81, block25(v54), block25(v24)
+
+block25(v82: i8):
+    v83 = iconst.i64 7
+    v84 = icmp.i64 eq v17, v83
+    brif.i8 v84, block26(v54), block26(v25)
+
+block26(v85: i8):
+    jump block6(v64, v67, v70, v73, v76, v79, v82, v85)
+
+block6(v86: i8, v87: i8, v88: i8, v89: i8, v90: i8, v91: i8, v92: i8, v93: i8):
+    v94 = iconst.i64 1
+    v95 = iadd.i64 v17, v94
+    jump block3(v95, v86, v87, v88, v89, v90, v91, v92, v93)
+
+block5:
+    jump block2(v18, v19, v20, v21, v22, v23, v24, v25)
+
+block2(v9: i8, v10: i8, v11: i8, v12: i8, v13: i8, v14: i8, v15: i8, v16: i8):
+    v96 = iconst.i8 0
+    store.i8 v9, v0
+    store.i8 v10, v0+8
+    store.i8 v11, v0+16
+    store.i8 v12, v0+24
+    store.i8 v13, v0+32
+    store.i8 v14, v0+40
+    store.i8 v15, v0+48
+    store.i8 v16, v0+56
+    return v96
+
+block1(v97: i8):
+    v98 = iconst.i8 0
+    v99 = iconst.i8 0
+    v100 = iconst.i8 0
+    v101 = iconst.i8 0
+    v102 = iconst.i8 0
+    v103 = iconst.i8 0
+    v104 = iconst.i8 0
+    v105 = iconst.i8 0
+    store.i8 v98, v0
+    store.i8 v99, v0+8
+    store.i8 v100, v0+16
+    store.i8 v101, v0+24
+    store.i8 v102, v0+32
+    store.i8 v103, v0+40
+    store.i8 v104, v0+48
+    store.i8 v105, v0+56
+    return v97
+}
+
+function %Corpus__bumpAll_w0(i8, i8, i8, i8, i8, i8, i8, i8) -> i8, i8, i8, i8, i8, i8, i8, i8 {
+    ss0 = explicit_slot 64, align = 8
+    fn0 = %Corpus__bumpAll(i64, i8, i8, i8, i8, i8, i8, i8, i8) -> i8
+
+block0(v0: i8, v1: i8, v2: i8, v3: i8, v4: i8, v5: i8, v6: i8, v7: i8):
+    v8 = stack_addr.i64 ss0
+    v9 = call fn0(v8, v0, v1, v2, v3, v4, v5, v6, v7)
+    brif.i8 v9, block3, block2
+
+block3:
+    v10 = iconst.i8 0
+    v11 = iconst.i8 0
+    v12 = iconst.i8 0
+    v13 = iconst.i8 0
+    v14 = iconst.i8 0
+    v15 = iconst.i8 0
+    v16 = iconst.i8 0
+    return v9, v10, v11, v12, v13, v14, v15, v16
+
+block2:
+    v17 = load.i8 notrap aligned v8
+    v18 = load.i8 notrap aligned v8+8
+    v19 = load.i8 notrap aligned v8+16
+    v20 = load.i8 notrap aligned v8+24
+    v21 = load.i8 notrap aligned v8+32
+    v22 = load.i8 notrap aligned v8+40
+    v23 = load.i8 notrap aligned v8+48
+    v24 = load.i8 notrap aligned v8+56
+    return v9, v17, v18, v19, v20, v21, v22, v23
+}
+; run: %Corpus__bumpAll_w0(1, 2, 3, 4, 5, 6, 7, 8) == [0, 2, 3, 4, 5, 6, 7, 8]
+; run: %Corpus__bumpAll_w0(1, 2, 3, 4, 5, 6, 7, -1) == [1, 0, 0, 0, 0, 0, 0, 0]
+
+function %Corpus__bumpAll_w1(i8, i8, i8, i8, i8, i8, i8, i8) -> i8, i8 {
+    ss0 = explicit_slot 64, align = 8
+    fn0 = %Corpus__bumpAll(i64, i8, i8, i8, i8, i8, i8, i8, i8) -> i8
+
+block0(v0: i8, v1: i8, v2: i8, v3: i8, v4: i8, v5: i8, v6: i8, v7: i8):
+    v8 = stack_addr.i64 ss0
+    v9 = call fn0(v8, v0, v1, v2, v3, v4, v5, v6, v7)
+    brif.i8 v9, block3, block2
+
+block3:
+    v10 = iconst.i8 0
+    return v9, v10
+
+block2:
+    v11 = load.i8 notrap aligned v8
+    v12 = load.i8 notrap aligned v8+8
+    v13 = load.i8 notrap aligned v8+16
+    v14 = load.i8 notrap aligned v8+24
+    v15 = load.i8 notrap aligned v8+32
+    v16 = load.i8 notrap aligned v8+40
+    v17 = load.i8 notrap aligned v8+48
+    v18 = load.i8 notrap aligned v8+56
+    return v9, v18
+}
+; run: %Corpus__bumpAll_w1(1, 2, 3, 4, 5, 6, 7, 8) == [0, 9]
+; run: %Corpus__bumpAll_w1(1, 2, 3, 4, 5, 6, 7, -1) == [1, 0]

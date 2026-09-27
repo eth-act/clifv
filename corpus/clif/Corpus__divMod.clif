@@ -1,0 +1,37 @@
+test interpret
+test run
+target aarch64
+
+function %Corpus__divMod(i32, i32) -> i8, i32, i32 {
+block0(v0: i32, v1: i32):
+    v3 = iconst.i32 0
+    v4 = icmp.i32 eq v1, v3
+    v5 = iconst.i8 2
+    brif.i8 v4, block1(v5), block3
+
+block3:
+    v6 = udiv.i32 v0, v1
+    jump block2(v6)
+
+block2(v2: i32):
+    v8 = iconst.i32 0
+    v9 = icmp.i32 eq v1, v8
+    v10 = iconst.i8 2
+    brif.i8 v9, block1(v10), block5
+
+block5:
+    v11 = urem.i32 v0, v1
+    jump block4(v11)
+
+block4(v7: i32):
+    v12 = iconst.i8 0
+    return v12, v2, v7
+
+block1(v13: i8):
+    v14 = iconst.i32 0
+    v15 = iconst.i32 0
+    return v13, v14, v15
+}
+; run: %Corpus__divMod(17, 5) == [0, 3, 2]
+; run: %Corpus__divMod(17, 0) == [2, 0, 0]
+; run: %Corpus__divMod(-1, 1) == [0, -1, 0]

@@ -1,0 +1,70 @@
+test interpret
+test run
+target aarch64
+
+function %Corpus__sumChecked(i64, i64, i64, i64) -> i8, i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64):
+    v4 = iconst.i64 0
+    v8 = iconst.i64 0
+    jump block3(v8, v4)
+
+block3(v6: i64, v7: i64):
+    v9 = iconst.i64 4
+    v10 = icmp.i64 ult v6, v9
+    brif.i8 v10, block4, block5
+
+block4:
+    v12 = iconst.i64 4
+    v13 = icmp.i64 uge v6, v12
+    v14 = iconst.i8 3
+    brif.i8 v13, block1(v14), block8
+
+block8:
+    v15 = iconst.i64 1
+    v16 = icmp.i64 eq v6, v15
+    brif.i8 v16, block9(v1), block9(v0)
+
+block9(v17: i64):
+    v18 = iconst.i64 2
+    v19 = icmp.i64 eq v6, v18
+    brif.i8 v19, block10(v2), block10(v17)
+
+block10(v20: i64):
+    v21 = iconst.i64 3
+    v22 = icmp.i64 eq v6, v21
+    brif.i8 v22, block11(v3), block11(v20)
+
+block11(v23: i64):
+    jump block7(v23)
+
+block7(v11: i64):
+    v25 = iadd.i64 v7, v11
+    v26 = icmp.i64 ult v25, v7
+    v27 = iconst.i8 1
+    brif.i8 v26, block1(v27), block13
+
+block13:
+    jump block12(v25)
+
+block12(v24: i64):
+    jump block6(v24)
+
+block6(v28: i64):
+    v29 = iconst.i64 1
+    v30 = iadd.i64 v6, v29
+    jump block3(v30, v28)
+
+block5:
+    jump block2(v7)
+
+block2(v5: i64):
+    v31 = iconst.i8 0
+    return v31, v5
+
+block1(v32: i8):
+    v33 = iconst.i64 0
+    return v32, v33
+}
+; run: %Corpus__sumChecked(1, 2, 3, 4) == [0, 10]
+; run: %Corpus__sumChecked(1, 2, 3, -1) == [1, 0]
+; run: %Corpus__sumChecked(0, 0, 0, 0) == [0, 0]

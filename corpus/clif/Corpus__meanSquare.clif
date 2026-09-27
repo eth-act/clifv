@@ -1,0 +1,150 @@
+test interpret
+test run
+target aarch64
+
+function %Corpus__meanSquare(i32, i32, i32, i32, i64) -> i8, i64 {
+    fn0 = %Corpus__sumSquares(i32, i32, i32, i32) -> i8, i32
+    fn1 = %Corpus__safeDiv(i64, i64) -> i8, i64
+
+block0(v0: i32, v1: i32, v2: i32, v3: i32, v4: i64):
+    v6, v7 = call fn0(v0, v1, v2, v3)
+    brif.i8 v6, block1(v6), block3
+
+block3:
+    jump block2(v7)
+
+block2(v5: i32):
+    v8 = uextend.i64 v5
+    v9, v10 = call fn1(v8, v4)
+    brif.i8 v9, block1(v9), block4
+
+block4:
+    v11 = iconst.i8 0
+    return v11, v10
+
+block1(v12: i8):
+    v13 = iconst.i64 0
+    return v12, v13
+}
+; run: %Corpus__meanSquare(1, 2, 3, 4, 3) == [0, 10]
+; run: %Corpus__meanSquare(1, 2, 3, 4, 0) == [63, 0]
+
+function %Corpus__sumSquares(i32, i32, i32, i32) -> i8, i32 {
+    fn0 = %Corpus__square(i32) -> i8, i32
+
+block0(v0: i32, v1: i32, v2: i32, v3: i32):
+    v4 = iconst.i32 0
+    v8 = iconst.i64 0
+    jump block3(v8, v4)
+
+block3(v6: i64, v7: i32):
+    v9 = iconst.i64 4
+    v10 = icmp.i64 ult v6, v9
+    brif.i8 v10, block4, block5
+
+block4:
+    v12 = iconst.i64 4
+    v13 = icmp.i64 uge v6, v12
+    v14 = iconst.i8 3
+    brif.i8 v13, block1(v14), block8
+
+block8:
+    v15 = iconst.i64 1
+    v16 = icmp.i64 eq v6, v15
+    brif.i8 v16, block9(v1), block9(v0)
+
+block9(v17: i32):
+    v18 = iconst.i64 2
+    v19 = icmp.i64 eq v6, v18
+    brif.i8 v19, block10(v2), block10(v17)
+
+block10(v20: i32):
+    v21 = iconst.i64 3
+    v22 = icmp.i64 eq v6, v21
+    brif.i8 v22, block11(v3), block11(v20)
+
+block11(v23: i32):
+    jump block7(v23)
+
+block7(v11: i32):
+    v25, v26 = call fn0(v11)
+    brif.i8 v25, block1(v25), block13
+
+block13:
+    jump block12(v26)
+
+block12(v24: i32):
+    v28 = iadd.i32 v7, v24
+    v29 = icmp.i32 ult v28, v7
+    v30 = iconst.i8 1
+    brif.i8 v29, block1(v30), block15
+
+block15:
+    jump block14(v28)
+
+block14(v27: i32):
+    jump block6(v27)
+
+block6(v31: i32):
+    v32 = iconst.i64 1
+    v33 = iadd.i64 v6, v32
+    jump block3(v33, v31)
+
+block5:
+    jump block2(v7)
+
+block2(v5: i32):
+    v34 = iconst.i8 0
+    return v34, v5
+
+block1(v35: i8):
+    v36 = iconst.i32 0
+    return v35, v36
+}
+
+function %Corpus__square(i32) -> i8, i32 {
+block0(v0: i32):
+    v1 = imul.i32 v0, v0
+    v2 = umulhi.i32 v0, v0
+    v3 = iconst.i32 0
+    v4 = icmp.i32 ne v2, v3
+    v5 = iconst.i8 1
+    brif.i8 v4, block1(v5), block2
+
+block2:
+    v6 = iconst.i8 0
+    return v6, v1
+
+block1(v7: i8):
+    v8 = iconst.i32 0
+    return v7, v8
+}
+
+function %Corpus__safeDiv(i64, i64) -> i8, i64 {
+block0(v0: i64, v1: i64):
+    v2 = iconst.i64 0
+    v3 = icmp.i64 eq v1, v2
+    brif.i8 v3, block3, block4
+
+block3:
+    v4 = iconst.i8 63
+    jump block1(v4)
+
+block4:
+    jump block2
+
+block2:
+    v5 = iconst.i64 0
+    v6 = icmp.i64 eq v1, v5
+    v7 = iconst.i8 2
+    brif.i8 v6, block1(v7), block5
+
+block5:
+    v8 = udiv.i64 v0, v1
+    v9 = iconst.i8 0
+    return v9, v8
+
+block1(v10: i8):
+    v11 = iconst.i64 0
+    return v10, v11
+}

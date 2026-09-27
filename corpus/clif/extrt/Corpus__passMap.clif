@@ -1,0 +1,79 @@
+test interpret
+test run
+target aarch64
+
+function %Corpus__passMap(i64, i8) -> i8, i64, i8 {
+block0(v0: i64, v1: i8):
+    v2 = iconst.i8 1
+    v3 = iadd.i8 v1, v2
+    v4 = iconst.i8 0
+    return v4, v0, v3
+
+block1(v5: i8):
+    v6 = iconst.i64 0
+    v7 = iconst.i8 0
+    return v5, v6, v7
+}
+
+function %Corpus__passMap_w0(i64, i64, i64, i64, i64, i8) -> i8, i64, i64, i64, i64, i64, i8 {
+    ss0 = explicit_slot 65536, align = 8
+    ss1 = explicit_slot 16, align = 8
+    fn0 = %flat_map_new(i64) -> i64
+    fn1 = %flat_map_insert(i64, i64, i64, i64)
+    fn2 = %Corpus__passMap(i64, i8) -> i8, i64, i8
+    fn3 = %flat_map_len(i64, i64) -> i64
+    fn4 = %flat_map_entry(i64, i64, i64, i64, i64)
+
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i8):
+    v6 = stack_addr.i64 ss0
+    v7 = iconst.i64 16
+    store.i64 notrap aligned v7, v6
+    v8 = iconst.i64 65536
+    store.i64 notrap aligned v8, v6+8
+    v9 = call fn0(v6)
+    v10 = iconst.i64 0
+    v11 = icmp.i64 ult v10, v0
+    brif.i8 v11, block2, block3
+
+block2:
+    call fn1(v6, v9, v1, v2)
+    jump block3
+
+block3:
+    v12 = iconst.i64 1
+    v13 = icmp.i64 ult v12, v0
+    brif.i8 v13, block4, block5
+
+block4:
+    call fn1(v6, v9, v3, v4)
+    jump block5
+
+block5:
+    v14, v15, v16 = call fn2(v9, v5)
+    brif.i8 v14, block7, block6
+
+block7:
+    v17 = iconst.i64 0
+    v18 = iconst.i64 0
+    v19 = iconst.i64 0
+    v20 = iconst.i64 0
+    v21 = iconst.i64 0
+    v22 = iconst.i8 0
+    return v14, v17, v18, v19, v20, v21, v22
+
+block6:
+    v23 = stack_addr.i64 ss1
+    v24 = stack_addr.i64 ss1+8
+    v25 = call fn3(v6, v15)
+    v26 = iconst.i64 0
+    call fn4(v6, v15, v26, v23, v24)
+    v27 = load.i64 notrap aligned v23
+    v28 = load.i64 notrap aligned v24
+    v29 = iconst.i64 1
+    call fn4(v6, v15, v29, v23, v24)
+    v30 = load.i64 notrap aligned v23
+    v31 = load.i64 notrap aligned v24
+    return v14, v25, v27, v28, v30, v31, v16
+}
+; run: %Corpus__passMap_w0(2, 4, 1, 9, 0, 7) == [0, 2, 4, 1, 9, 0, 8]
+; run: %Corpus__passMap_w0(0, 0, 0, 0, 0, -1) == [0, 0, 0, 0, 0, 0, 0]

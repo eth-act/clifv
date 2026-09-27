@@ -1,0 +1,88 @@
+test interpret
+test run
+target aarch64
+
+function %Corpus__useCallee(i64, i8, i8) -> i8, i8 {
+    fn0 = %flat_map_new(i64) -> i64
+    fn1 = %flat_map_insert(i64, i64, i64, i64)
+    fn2 = %flat_map_clone(i64, i64) -> i64
+    fn3 = %Corpus__countIn(i64, i64, i8) -> i8, i8
+
+block0(v0: i64, v1: i8, v2: i8):
+    v3 = call fn0(v0)
+    v4 = uextend.i64 v1
+    v5 = iconst.i8 1
+    v6 = uextend.i64 v5
+    call fn1(v0, v3, v4, v6)
+    v8 = call fn2(v0, v3)
+    v9, v10 = call fn3(v0, v8, v2)
+    brif.i8 v9, block1(v9), block3
+
+block3:
+    jump block2(v10)
+
+block2(v7: i8):
+    v12, v13 = call fn3(v0, v3, v1)
+    brif.i8 v12, block1(v12), block5
+
+block5:
+    jump block4(v13)
+
+block4(v11: i8):
+    v14 = iadd.i8 v7, v11
+    v15 = iconst.i8 0
+    return v15, v14
+
+block1(v16: i8):
+    v17 = iconst.i8 0
+    return v16, v17
+}
+
+function %Corpus__countIn(i64, i64, i8) -> i8, i8 {
+    fn0 = %flat_map_contains(i64, i64, i64) -> i8
+
+block0(v0: i64, v1: i64, v2: i8):
+    v3 = uextend.i64 v2
+    v4 = call fn0(v0, v1, v3)
+    brif.i8 v4, block2, block3
+
+block2:
+    v5 = iconst.i8 1
+    v6 = iconst.i8 0
+    return v6, v5
+
+block3:
+    v7 = iconst.i8 0
+    v8 = iconst.i8 0
+    return v8, v7
+
+block1(v9: i8):
+    v10 = iconst.i8 0
+    return v9, v10
+}
+
+function %Corpus__useCallee_w0(i8, i8) -> i8, i8 {
+    ss0 = explicit_slot 65536, align = 8
+    ss1 = explicit_slot 16, align = 8
+    fn0 = %Corpus__useCallee(i64, i8, i8) -> i8, i8
+
+block0(v0: i8, v1: i8):
+    v2 = stack_addr.i64 ss0
+    v3 = iconst.i64 16
+    store.i64 notrap aligned v3, v2
+    v4 = iconst.i64 65536
+    store.i64 notrap aligned v4, v2+8
+    v5, v6 = call fn0(v2, v0, v1)
+    brif.i8 v5, block3, block2
+
+block3:
+    v7 = iconst.i8 0
+    return v5, v7
+
+block2:
+    v8 = stack_addr.i64 ss1
+    v9 = stack_addr.i64 ss1+8
+    return v5, v6
+}
+; run: %Corpus__useCallee_w0(3, 3) == [0, 2]
+; run: %Corpus__useCallee_w0(3, 4) == [0, 1]

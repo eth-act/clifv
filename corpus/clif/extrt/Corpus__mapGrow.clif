@@ -1,0 +1,129 @@
+test interpret
+test run
+target aarch64
+
+function %Corpus__mapGrow(i64, i64, i64) -> i8, i64 {
+    ss0 = explicit_slot 8, align = 8
+    ss1 = explicit_slot 8, align = 8
+    fn0 = %flat_map_new(i64) -> i64
+    fn1 = %flat_map_insert(i64, i64, i64, i64)
+    fn2 = %flat_map_get(i64, i64, i64, i64) -> i8
+
+block0(v0: i64, v1: i64, v2: i64):
+    v3 = call fn0(v0)
+    v7 = iconst.i64 0
+    jump block3(v7, v3)
+
+block3(v5: i64, v6: i64):
+    v8 = iconst.i64 10
+    v9 = icmp.i64 ult v5, v8
+    brif.i8 v9, block4, block5
+
+block4:
+    v10 = iconst.i64 3
+    v11 = imul.i64 v5, v10
+    v12 = iadd.i64 v1, v5
+    call fn1(v0, v6, v11, v12)
+    jump block6(v6)
+
+block6(v13: i64):
+    v14 = iconst.i64 1
+    v15 = iadd.i64 v5, v14
+    jump block3(v15, v13)
+
+block5:
+    jump block2(v6)
+
+block2(v4: i64):
+    v16 = iconst.i64 0
+    v20 = iconst.i64 0
+    jump block8(v20, v16)
+
+block8(v18: i64, v19: i64):
+    v21 = iconst.i64 10
+    v22 = icmp.i64 ult v18, v21
+    brif.i8 v22, block9, block10
+
+block9:
+    v24 = iconst.i64 3
+    v25 = imul.i64 v18, v24
+    v26 = stack_addr.i64 ss0
+    v27 = call fn2(v0, v4, v25, v26)
+    v28 = iconst.i8 4
+    brif.i8 v27, block13, block1(v28)
+
+block13:
+    v29 = load.i64 notrap aligned v26
+    jump block12(v29)
+
+block12(v23: i64):
+    v31 = iadd.i64 v19, v23
+    v32 = icmp.i64 ult v31, v19
+    v33 = iconst.i8 1
+    brif.i8 v32, block1(v33), block15
+
+block15:
+    jump block14(v31)
+
+block14(v30: i64):
+    jump block11(v30)
+
+block11(v34: i64):
+    v35 = iconst.i64 1
+    v36 = iadd.i64 v18, v35
+    jump block8(v36, v34)
+
+block10:
+    jump block7(v19)
+
+block7(v17: i64):
+    v38 = stack_addr.i64 ss1
+    v39 = call fn2(v0, v4, v2, v38)
+    v40 = iconst.i8 4
+    brif.i8 v39, block17, block1(v40)
+
+block17:
+    v41 = load.i64 notrap aligned v38
+    jump block16(v41)
+
+block16(v37: i64):
+    v42 = iadd.i64 v17, v37
+    v43 = icmp.i64 ult v42, v17
+    v44 = iconst.i8 1
+    brif.i8 v43, block1(v44), block18
+
+block18:
+    v45 = iconst.i8 0
+    return v45, v42
+
+block1(v46: i8):
+    v47 = iconst.i64 0
+    return v46, v47
+}
+
+function %Corpus__mapGrow_w0(i64, i64) -> i8, i64 {
+    ss0 = explicit_slot 65536, align = 8
+    ss1 = explicit_slot 16, align = 8
+    fn0 = %Corpus__mapGrow(i64, i64, i64) -> i8, i64
+
+block0(v0: i64, v1: i64):
+    v2 = stack_addr.i64 ss0
+    v3 = iconst.i64 16
+    store.i64 notrap aligned v3, v2
+    v4 = iconst.i64 65536
+    store.i64 notrap aligned v4, v2+8
+    v5, v6 = call fn0(v2, v0, v1)
+    brif.i8 v5, block3, block2
+
+block3:
+    v7 = iconst.i64 0
+    return v5, v7
+
+block2:
+    v8 = stack_addr.i64 ss1
+    v9 = stack_addr.i64 ss1+8
+    return v5, v6
+}
+; run: %Corpus__mapGrow_w0(100, 27) == [0, 1154]
+; run: %Corpus__mapGrow_w0(100, 28) == [4, 0]
+; run: %Corpus__mapGrow_w0(-16, 0) == [1, 0]

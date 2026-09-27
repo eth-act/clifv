@@ -1,0 +1,77 @@
+test interpret
+test run
+target aarch64
+
+function %Corpus__nested(i16, i16, i16, i16, i16, i16, i64) -> i8, i8 {
+block0(v0: i16, v1: i16, v2: i16, v3: i16, v4: i16, v5: i16, v6: i64):
+    v9 = iconst.i64 3
+    v10 = icmp.i64 uge v6, v9
+    v11 = iconst.i8 3
+    brif.i8 v10, block1(v11), block3
+
+block3:
+    v12 = iconst.i64 1
+    v13 = icmp.i64 eq v6, v12
+    brif.i8 v13, block4(v2, v3), block4(v0, v1)
+
+block4(v14: i16, v15: i16):
+    v16 = iconst.i64 2
+    v17 = icmp.i64 eq v6, v16
+    brif.i8 v17, block5(v4, v5), block5(v14, v15)
+
+block5(v18: i16, v19: i16):
+    jump block2(v18, v19)
+
+block2(v7: i16, v8: i16):
+    v21 = iconst.i64 0
+    v22 = iconst.i64 2
+    v23 = icmp.i64 uge v21, v22
+    v24 = iconst.i8 3
+    brif.i8 v23, block1(v24), block7
+
+block7:
+    v25 = iconst.i64 1
+    v26 = icmp.i64 eq v21, v25
+    brif.i8 v26, block8(v8), block8(v7)
+
+block8(v27: i16):
+    jump block6(v27)
+
+block6(v20: i16):
+    v29 = iconst.i64 1
+    v30 = iconst.i64 2
+    v31 = icmp.i64 uge v29, v30
+    v32 = iconst.i8 3
+    brif.i8 v31, block1(v32), block10
+
+block10:
+    v33 = iconst.i64 1
+    v34 = icmp.i64 eq v29, v33
+    brif.i8 v34, block11(v8), block11(v7)
+
+block11(v35: i16):
+    jump block9(v35)
+
+block9(v28: i16):
+    v37 = imul.i16 v20, v28
+    v38 = umulhi.i16 v20, v28
+    v39 = iconst.i16 0
+    v40 = icmp.i16 ne v38, v39
+    v41 = iconst.i8 1
+    brif.i8 v40, block1(v41), block13
+
+block13:
+    jump block12(v37)
+
+block12(v36: i16):
+    v42 = ireduce.i8 v36
+    v43 = iconst.i8 0
+    return v43, v42
+
+block1(v44: i8):
+    v45 = iconst.i8 0
+    return v44, v45
+}
+; run: %Corpus__nested(1, 2, 3, 4, 300, 300, 1) == [0, 12]
+; run: %Corpus__nested(1, 2, 3, 4, 300, 300, 2) == [1, 0]
+; run: %Corpus__nested(1, 2, 3, 4, 300, 300, 3) == [3, 0]

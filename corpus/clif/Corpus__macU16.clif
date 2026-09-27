@@ -1,0 +1,34 @@
+test interpret
+test run
+target aarch64
+
+function %Corpus__macU16(i16, i16, i16) -> i8, i16 {
+block0(v0: i16, v1: i16, v2: i16):
+    v4 = imul.i16 v0, v1
+    v5 = umulhi.i16 v0, v1
+    v6 = iconst.i16 0
+    v7 = icmp.i16 ne v5, v6
+    v8 = iconst.i8 1
+    brif.i8 v7, block1(v8), block3
+
+block3:
+    jump block2(v4)
+
+block2(v3: i16):
+    v9 = iadd.i16 v3, v2
+    v10 = icmp.i16 ult v9, v3
+    v11 = iconst.i8 1
+    brif.i8 v10, block1(v11), block4
+
+block4:
+    v12 = iconst.i8 0
+    return v12, v9
+
+block1(v13: i8):
+    v14 = iconst.i16 0
+    return v13, v14
+}
+; run: %Corpus__macU16(300, 200, 5) == [0, -5531]
+; run: %Corpus__macU16(300, 300, 0) == [1, 0]
+; run: %Corpus__macU16(255, 257, 1) == [1, 0]
+; run: %Corpus__macU16(-1, 1, 1) == [1, 0]

@@ -1,0 +1,115 @@
+test interpret
+test run
+target aarch64
+
+function %Corpus__squares(i32, i32, i32, i32) -> i8, i32, i32, i32, i32 {
+    fn0 = %Corpus__square(i32) -> i8, i32
+
+block0(v0: i32, v1: i32, v2: i32, v3: i32):
+    v13 = iconst.i64 0
+    jump block3(v13, v0, v1, v2, v3)
+
+block3(v8: i64, v9: i32, v10: i32, v11: i32, v12: i32):
+    v14 = iconst.i64 4
+    v15 = icmp.i64 ult v8, v14
+    brif.i8 v15, block4, block5
+
+block4:
+    v17 = iconst.i64 4
+    v18 = icmp.i64 uge v8, v17
+    v19 = iconst.i8 3
+    brif.i8 v18, block1(v19), block8
+
+block8:
+    v20 = iconst.i64 1
+    v21 = icmp.i64 eq v8, v20
+    brif.i8 v21, block9(v10), block9(v9)
+
+block9(v22: i32):
+    v23 = iconst.i64 2
+    v24 = icmp.i64 eq v8, v23
+    brif.i8 v24, block10(v11), block10(v22)
+
+block10(v25: i32):
+    v26 = iconst.i64 3
+    v27 = icmp.i64 eq v8, v26
+    brif.i8 v27, block11(v12), block11(v25)
+
+block11(v28: i32):
+    jump block7(v28)
+
+block7(v16: i32):
+    v30, v31 = call fn0(v16)
+    brif.i8 v30, block1(v30), block13
+
+block13:
+    jump block12(v31)
+
+block12(v29: i32):
+    v32 = iconst.i64 4
+    v33 = icmp.i64 uge v8, v32
+    v34 = iconst.i8 3
+    brif.i8 v33, block1(v34), block14
+
+block14:
+    v35 = iconst.i64 0
+    v36 = icmp.i64 eq v8, v35
+    brif.i8 v36, block15(v29), block15(v9)
+
+block15(v37: i32):
+    v38 = iconst.i64 1
+    v39 = icmp.i64 eq v8, v38
+    brif.i8 v39, block16(v29), block16(v10)
+
+block16(v40: i32):
+    v41 = iconst.i64 2
+    v42 = icmp.i64 eq v8, v41
+    brif.i8 v42, block17(v29), block17(v11)
+
+block17(v43: i32):
+    v44 = iconst.i64 3
+    v45 = icmp.i64 eq v8, v44
+    brif.i8 v45, block18(v29), block18(v12)
+
+block18(v46: i32):
+    jump block6(v37, v40, v43, v46)
+
+block6(v47: i32, v48: i32, v49: i32, v50: i32):
+    v51 = iconst.i64 1
+    v52 = iadd.i64 v8, v51
+    jump block3(v52, v47, v48, v49, v50)
+
+block5:
+    jump block2(v9, v10, v11, v12)
+
+block2(v4: i32, v5: i32, v6: i32, v7: i32):
+    v53 = iconst.i8 0
+    return v53, v4, v5, v6, v7
+
+block1(v54: i8):
+    v55 = iconst.i32 0
+    v56 = iconst.i32 0
+    v57 = iconst.i32 0
+    v58 = iconst.i32 0
+    return v54, v55, v56, v57, v58
+}
+; run: %Corpus__squares(1, 2, 3, 4) == [0, 1, 4, 9, 16]
+; run: %Corpus__squares(1, 2, 65536, 4) == [1, 0, 0, 0, 0]
+
+function %Corpus__square(i32) -> i8, i32 {
+block0(v0: i32):
+    v1 = imul.i32 v0, v0
+    v2 = umulhi.i32 v0, v0
+    v3 = iconst.i32 0
+    v4 = icmp.i32 ne v2, v3
+    v5 = iconst.i8 1
+    brif.i8 v4, block1(v5), block2
+
+block2:
+    v6 = iconst.i8 0
+    return v6, v1
+
+block1(v7: i8):
+    v8 = iconst.i32 0
+    return v7, v8
+}

@@ -1,0 +1,24 @@
+test interpret
+test run
+target aarch64
+
+function %Corpus__square(i32) -> i8, i32 {
+block0(v0: i32):
+    v1 = imul.i32 v0, v0
+    v2 = umulhi.i32 v0, v0
+    v3 = iconst.i32 0
+    v4 = icmp.i32 ne v2, v3
+    v5 = iconst.i8 1
+    brif.i8 v4, block1(v5), block2
+
+block2:
+    v6 = iconst.i8 0
+    return v6, v1
+
+block1(v7: i8):
+    v8 = iconst.i32 0
+    return v7, v8
+}
+; run: %Corpus__square(3) == [0, 9]
+; run: %Corpus__square(65536) == [1, 0]
+; run: %Corpus__square(65535) == [0, -131071]

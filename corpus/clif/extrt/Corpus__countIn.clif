@@ -1,0 +1,64 @@
+test interpret
+test run
+target aarch64
+
+function %Corpus__countIn(i64, i64, i8) -> i8, i8 {
+    fn0 = %flat_map_contains(i64, i64, i64) -> i8
+
+block0(v0: i64, v1: i64, v2: i8):
+    v3 = uextend.i64 v2
+    v4 = call fn0(v0, v1, v3)
+    brif.i8 v4, block2, block3
+
+block2:
+    v5 = iconst.i8 1
+    v6 = iconst.i8 0
+    return v6, v5
+
+block3:
+    v7 = iconst.i8 0
+    v8 = iconst.i8 0
+    return v8, v7
+
+block1(v9: i8):
+    v10 = iconst.i8 0
+    return v9, v10
+}
+
+function %Corpus__countIn_w0(i64, i64, i64, i8) -> i8, i8 {
+    ss0 = explicit_slot 65536, align = 8
+    ss1 = explicit_slot 16, align = 8
+    fn0 = %flat_map_new(i64) -> i64
+    fn1 = %flat_map_insert(i64, i64, i64, i64)
+    fn2 = %Corpus__countIn(i64, i64, i8) -> i8, i8
+
+block0(v0: i64, v1: i64, v2: i64, v3: i8):
+    v4 = stack_addr.i64 ss0
+    v5 = iconst.i64 16
+    store.i64 notrap aligned v5, v4
+    v6 = iconst.i64 65536
+    store.i64 notrap aligned v6, v4+8
+    v7 = call fn0(v4)
+    v8 = iconst.i64 0
+    v9 = icmp.i64 ult v8, v0
+    brif.i8 v9, block2, block3
+
+block2:
+    call fn1(v4, v7, v1, v2)
+    jump block3
+
+block3:
+    v10, v11 = call fn2(v4, v7, v3)
+    brif.i8 v10, block5, block4
+
+block5:
+    v12 = iconst.i8 0
+    return v10, v12
+
+block4:
+    v13 = stack_addr.i64 ss1
+    v14 = stack_addr.i64 ss1+8
+    return v10, v11
+}
+; run: %Corpus__countIn_w0(1, 4, 1, 4) == [0, 1]
+; run: %Corpus__countIn_w0(1, 4, 1, 5) == [0, 0]

@@ -1,0 +1,82 @@
+test interpret
+test run
+target aarch64
+
+function %Corpus__minMax(i16, i16, i16, i16) -> i8, i16, i16 {
+block0(v0: i16, v1: i16, v2: i16, v3: i16):
+    v4 = iconst.i16 -1
+    v5 = iconst.i16 0
+    v11 = iconst.i64 0
+    jump block3(v11, v4, v5)
+
+block3(v8: i64, v9: i16, v10: i16):
+    v12 = iconst.i64 4
+    v13 = icmp.i64 ult v8, v12
+    brif.i8 v13, block4, block5
+
+block4:
+    v15 = iconst.i64 4
+    v16 = icmp.i64 uge v8, v15
+    v17 = iconst.i8 3
+    brif.i8 v16, block1(v17), block8
+
+block8:
+    v18 = iconst.i64 1
+    v19 = icmp.i64 eq v8, v18
+    brif.i8 v19, block9(v1), block9(v0)
+
+block9(v20: i16):
+    v21 = iconst.i64 2
+    v22 = icmp.i64 eq v8, v21
+    brif.i8 v22, block10(v2), block10(v20)
+
+block10(v23: i16):
+    v24 = iconst.i64 3
+    v25 = icmp.i64 eq v8, v24
+    brif.i8 v25, block11(v3), block11(v23)
+
+block11(v26: i16):
+    jump block7(v26)
+
+block7(v14: i16):
+    v28 = icmp.i16 ult v14, v9
+    brif.i8 v28, block13, block14
+
+block13:
+    jump block12(v14)
+
+block14:
+    jump block12(v9)
+
+block12(v27: i16):
+    v30 = icmp.i16 ult v10, v14
+    brif.i8 v30, block16, block17
+
+block16:
+    jump block15(v14)
+
+block17:
+    jump block15(v10)
+
+block15(v29: i16):
+    jump block6(v27, v29)
+
+block6(v31: i16, v32: i16):
+    v33 = iconst.i64 1
+    v34 = iadd.i64 v8, v33
+    jump block3(v34, v31, v32)
+
+block5:
+    jump block2(v9, v10)
+
+block2(v6: i16, v7: i16):
+    v35 = iconst.i8 0
+    return v35, v6, v7
+
+block1(v36: i8):
+    v37 = iconst.i16 0
+    v38 = iconst.i16 0
+    return v36, v37, v38
+}
+; run: %Corpus__minMax(3, 9, 1, 4) == [0, 1, 9]
+; run: %Corpus__minMax(7, 7, 7, 7) == [0, 7, 7]

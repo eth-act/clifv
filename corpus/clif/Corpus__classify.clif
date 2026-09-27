@@ -1,0 +1,47 @@
+test interpret
+test run
+target aarch64
+
+function %Corpus__classify(i16) -> i8, i8 {
+block0(v0: i16):
+    v1 = iconst.i16 0
+    v2 = icmp.i16 eq v0, v1
+    brif.i8 v2, block2, block3
+
+block2:
+    v3 = iconst.i8 0
+    v4 = iconst.i8 0
+    return v4, v3
+
+block3:
+    v5 = iconst.i16 100
+    v6 = icmp.i16 ult v0, v5
+    brif.i8 v6, block4, block5
+
+block4:
+    v7 = iconst.i8 1
+    v8 = iconst.i8 0
+    return v8, v7
+
+block5:
+    v9 = iconst.i16 1000
+    v10 = icmp.i16 ult v0, v9
+    brif.i8 v10, block6, block7
+
+block6:
+    v11 = iconst.i8 2
+    v12 = iconst.i8 0
+    return v12, v11
+
+block7:
+    v13 = iconst.i8 -1
+    jump block1(v13)
+
+block1(v14: i8):
+    v15 = iconst.i8 0
+    return v14, v15
+}
+; run: %Corpus__classify(0) == [0, 0]
+; run: %Corpus__classify(50) == [0, 1]
+; run: %Corpus__classify(500) == [0, 2]
+; run: %Corpus__classify(5000) == [-1, 0]

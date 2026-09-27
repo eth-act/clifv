@@ -1,0 +1,102 @@
+test interpret
+test run
+target aarch64
+
+function %Corpus__findIdx(i8, i8, i8, i8, i8, i8, i8, i8, i8) -> i8, i64 {
+block0(v0: i8, v1: i8, v2: i8, v3: i8, v4: i8, v5: i8, v6: i8, v7: i8, v8: i8):
+    v9 = iconst.i8 0
+    v10 = iconst.i64 0
+    v16 = iconst.i64 0
+    jump block3(v16, v9, v10)
+
+block3(v13: i64, v14: i8, v15: i64):
+    v17 = iconst.i64 8
+    v18 = icmp.i64 ult v13, v17
+    brif.i8 v18, block4, block5
+
+block4:
+    v22 = iconst.i64 8
+    v23 = icmp.i64 uge v13, v22
+    v24 = iconst.i8 3
+    brif.i8 v23, block1(v24), block9
+
+block9:
+    v25 = iconst.i64 1
+    v26 = icmp.i64 eq v13, v25
+    brif.i8 v26, block10(v1), block10(v0)
+
+block10(v27: i8):
+    v28 = iconst.i64 2
+    v29 = icmp.i64 eq v13, v28
+    brif.i8 v29, block11(v2), block11(v27)
+
+block11(v30: i8):
+    v31 = iconst.i64 3
+    v32 = icmp.i64 eq v13, v31
+    brif.i8 v32, block12(v3), block12(v30)
+
+block12(v33: i8):
+    v34 = iconst.i64 4
+    v35 = icmp.i64 eq v13, v34
+    brif.i8 v35, block13(v4), block13(v33)
+
+block13(v36: i8):
+    v37 = iconst.i64 5
+    v38 = icmp.i64 eq v13, v37
+    brif.i8 v38, block14(v5), block14(v36)
+
+block14(v39: i8):
+    v40 = iconst.i64 6
+    v41 = icmp.i64 eq v13, v40
+    brif.i8 v41, block15(v6), block15(v39)
+
+block15(v42: i8):
+    v43 = iconst.i64 7
+    v44 = icmp.i64 eq v13, v43
+    brif.i8 v44, block16(v7), block16(v42)
+
+block16(v45: i8):
+    jump block8(v45)
+
+block8(v21: i8):
+    v46 = iconst.i8 1
+    v47 = bxor.i8 v14, v46
+    v48 = icmp.i8 eq v21, v8
+    v49 = band.i8 v47, v48
+    brif.i8 v49, block17, block18
+
+block17:
+    v50 = iconst.i8 1
+    jump block7(v50, v13)
+
+block18:
+    jump block7(v14, v15)
+
+block7(v19: i8, v20: i64):
+    jump block6(v19, v20)
+
+block6(v51: i8, v52: i64):
+    v53 = iconst.i64 1
+    v54 = iadd.i64 v13, v53
+    jump block3(v54, v51, v52)
+
+block5:
+    jump block2(v14, v15)
+
+block2(v11: i8, v12: i64):
+    brif.i8 v11, block19, block20
+
+block19:
+    v55 = iconst.i8 0
+    return v55, v12
+
+block20:
+    v56 = iconst.i8 4
+    jump block1(v56)
+
+block1(v57: i8):
+    v58 = iconst.i64 0
+    return v57, v58
+}
+; run: %Corpus__findIdx(5, 6, 7, 8, 9, 10, 7, 12, 7) == [0, 2]
+; run: %Corpus__findIdx(5, 6, 7, 8, 9, 10, 7, 12, 1) == [4, 0]

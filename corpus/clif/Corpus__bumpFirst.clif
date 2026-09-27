@@ -1,0 +1,442 @@
+test interpret
+test run
+target aarch64
+
+function %Corpus__bumpFirst(i8, i8, i8, i8, i8, i8, i8, i8) -> i8, i8 {
+    ss0 = explicit_slot 64, align = 8
+    ss1 = explicit_slot 64, align = 8
+    fn0 = %Corpus__bumpAll(i64, i8, i8, i8, i8, i8, i8, i8, i8) -> i8
+    fn1 = %Corpus__reverse8(i64, i8, i8, i8, i8, i8, i8, i8, i8) -> i8
+
+block0(v0: i8, v1: i8, v2: i8, v3: i8, v4: i8, v5: i8, v6: i8, v7: i8):
+    v16 = stack_addr.i64 ss0
+    v17 = call fn0(v16, v0, v1, v2, v3, v4, v5, v6, v7)
+    brif.i8 v17, block1(v17), block3
+
+block3:
+    v18 = load.i8 notrap aligned v16
+    v19 = load.i8 notrap aligned v16+8
+    v20 = load.i8 notrap aligned v16+16
+    v21 = load.i8 notrap aligned v16+24
+    v22 = load.i8 notrap aligned v16+32
+    v23 = load.i8 notrap aligned v16+40
+    v24 = load.i8 notrap aligned v16+48
+    v25 = load.i8 notrap aligned v16+56
+    jump block2(v18, v19, v20, v21, v22, v23, v24, v25)
+
+block2(v8: i8, v9: i8, v10: i8, v11: i8, v12: i8, v13: i8, v14: i8, v15: i8):
+    v34 = stack_addr.i64 ss1
+    v35 = call fn1(v34, v8, v9, v10, v11, v12, v13, v14, v15)
+    brif.i8 v35, block1(v35), block5
+
+block5:
+    v36 = load.i8 notrap aligned v34
+    v37 = load.i8 notrap aligned v34+8
+    v38 = load.i8 notrap aligned v34+16
+    v39 = load.i8 notrap aligned v34+24
+    v40 = load.i8 notrap aligned v34+32
+    v41 = load.i8 notrap aligned v34+40
+    v42 = load.i8 notrap aligned v34+48
+    v43 = load.i8 notrap aligned v34+56
+    jump block4(v36, v37, v38, v39, v40, v41, v42, v43)
+
+block4(v26: i8, v27: i8, v28: i8, v29: i8, v30: i8, v31: i8, v32: i8, v33: i8):
+    v45 = iconst.i64 7
+    v46 = iconst.i64 8
+    v47 = icmp.i64 uge v45, v46
+    v48 = iconst.i8 3
+    brif.i8 v47, block1(v48), block7
+
+block7:
+    v49 = iconst.i64 1
+    v50 = icmp.i64 eq v45, v49
+    brif.i8 v50, block8(v27), block8(v26)
+
+block8(v51: i8):
+    v52 = iconst.i64 2
+    v53 = icmp.i64 eq v45, v52
+    brif.i8 v53, block9(v28), block9(v51)
+
+block9(v54: i8):
+    v55 = iconst.i64 3
+    v56 = icmp.i64 eq v45, v55
+    brif.i8 v56, block10(v29), block10(v54)
+
+block10(v57: i8):
+    v58 = iconst.i64 4
+    v59 = icmp.i64 eq v45, v58
+    brif.i8 v59, block11(v30), block11(v57)
+
+block11(v60: i8):
+    v61 = iconst.i64 5
+    v62 = icmp.i64 eq v45, v61
+    brif.i8 v62, block12(v31), block12(v60)
+
+block12(v63: i8):
+    v64 = iconst.i64 6
+    v65 = icmp.i64 eq v45, v64
+    brif.i8 v65, block13(v32), block13(v63)
+
+block13(v66: i8):
+    v67 = iconst.i64 7
+    v68 = icmp.i64 eq v45, v67
+    brif.i8 v68, block14(v33), block14(v66)
+
+block14(v69: i8):
+    jump block6(v69)
+
+block6(v44: i8):
+    v71 = iconst.i64 0
+    v72 = iconst.i64 8
+    v73 = icmp.i64 uge v71, v72
+    v74 = iconst.i8 3
+    brif.i8 v73, block1(v74), block16
+
+block16:
+    v75 = iconst.i64 1
+    v76 = icmp.i64 eq v71, v75
+    brif.i8 v76, block17(v27), block17(v26)
+
+block17(v77: i8):
+    v78 = iconst.i64 2
+    v79 = icmp.i64 eq v71, v78
+    brif.i8 v79, block18(v28), block18(v77)
+
+block18(v80: i8):
+    v81 = iconst.i64 3
+    v82 = icmp.i64 eq v71, v81
+    brif.i8 v82, block19(v29), block19(v80)
+
+block19(v83: i8):
+    v84 = iconst.i64 4
+    v85 = icmp.i64 eq v71, v84
+    brif.i8 v85, block20(v30), block20(v83)
+
+block20(v86: i8):
+    v87 = iconst.i64 5
+    v88 = icmp.i64 eq v71, v87
+    brif.i8 v88, block21(v31), block21(v86)
+
+block21(v89: i8):
+    v90 = iconst.i64 6
+    v91 = icmp.i64 eq v71, v90
+    brif.i8 v91, block22(v32), block22(v89)
+
+block22(v92: i8):
+    v93 = iconst.i64 7
+    v94 = icmp.i64 eq v71, v93
+    brif.i8 v94, block23(v33), block23(v92)
+
+block23(v95: i8):
+    jump block15(v95)
+
+block15(v70: i8):
+    v96 = isub.i8 v44, v70
+    v97 = iconst.i8 0
+    return v97, v96
+
+block1(v98: i8):
+    v99 = iconst.i8 0
+    return v98, v99
+}
+; run: %Corpus__bumpFirst(1, 2, 3, 4, 5, 6, 7, 8) == [0, -7]
+; run: %Corpus__bumpFirst(-1, 2, 3, 4, 5, 6, 7, 8) == [1, 0]
+
+function %Corpus__bumpAll(i64, i8, i8, i8, i8, i8, i8, i8, i8) -> i8 {
+block0(v0: i64, v1: i8, v2: i8, v3: i8, v4: i8, v5: i8, v6: i8, v7: i8, v8: i8):
+    v26 = iconst.i64 0
+    jump block3(v26, v1, v2, v3, v4, v5, v6, v7, v8)
+
+block3(v17: i64, v18: i8, v19: i8, v20: i8, v21: i8, v22: i8, v23: i8, v24: i8, v25: i8):
+    v27 = iconst.i64 8
+    v28 = icmp.i64 ult v17, v27
+    brif.i8 v28, block4, block5
+
+block4:
+    v30 = iconst.i64 8
+    v31 = icmp.i64 uge v17, v30
+    v32 = iconst.i8 3
+    brif.i8 v31, block1(v32), block8
+
+block8:
+    v33 = iconst.i64 1
+    v34 = icmp.i64 eq v17, v33
+    brif.i8 v34, block9(v19), block9(v18)
+
+block9(v35: i8):
+    v36 = iconst.i64 2
+    v37 = icmp.i64 eq v17, v36
+    brif.i8 v37, block10(v20), block10(v35)
+
+block10(v38: i8):
+    v39 = iconst.i64 3
+    v40 = icmp.i64 eq v17, v39
+    brif.i8 v40, block11(v21), block11(v38)
+
+block11(v41: i8):
+    v42 = iconst.i64 4
+    v43 = icmp.i64 eq v17, v42
+    brif.i8 v43, block12(v22), block12(v41)
+
+block12(v44: i8):
+    v45 = iconst.i64 5
+    v46 = icmp.i64 eq v17, v45
+    brif.i8 v46, block13(v23), block13(v44)
+
+block13(v47: i8):
+    v48 = iconst.i64 6
+    v49 = icmp.i64 eq v17, v48
+    brif.i8 v49, block14(v24), block14(v47)
+
+block14(v50: i8):
+    v51 = iconst.i64 7
+    v52 = icmp.i64 eq v17, v51
+    brif.i8 v52, block15(v25), block15(v50)
+
+block15(v53: i8):
+    jump block7(v53)
+
+block7(v29: i8):
+    v55 = iconst.i8 1
+    v56 = iadd.i8 v29, v55
+    v57 = icmp.i8 ult v56, v29
+    v58 = iconst.i8 1
+    brif.i8 v57, block1(v58), block17
+
+block17:
+    jump block16(v56)
+
+block16(v54: i8):
+    v59 = iconst.i64 8
+    v60 = icmp.i64 uge v17, v59
+    v61 = iconst.i8 3
+    brif.i8 v60, block1(v61), block18
+
+block18:
+    v62 = iconst.i64 0
+    v63 = icmp.i64 eq v17, v62
+    brif.i8 v63, block19(v54), block19(v18)
+
+block19(v64: i8):
+    v65 = iconst.i64 1
+    v66 = icmp.i64 eq v17, v65
+    brif.i8 v66, block20(v54), block20(v19)
+
+block20(v67: i8):
+    v68 = iconst.i64 2
+    v69 = icmp.i64 eq v17, v68
+    brif.i8 v69, block21(v54), block21(v20)
+
+block21(v70: i8):
+    v71 = iconst.i64 3
+    v72 = icmp.i64 eq v17, v71
+    brif.i8 v72, block22(v54), block22(v21)
+
+block22(v73: i8):
+    v74 = iconst.i64 4
+    v75 = icmp.i64 eq v17, v74
+    brif.i8 v75, block23(v54), block23(v22)
+
+block23(v76: i8):
+    v77 = iconst.i64 5
+    v78 = icmp.i64 eq v17, v77
+    brif.i8 v78, block24(v54), block24(v23)
+
+block24(v79: i8):
+    v80 = iconst.i64 6
+    v81 = icmp.i64 eq v17, v80
+    brif.i8 v81, block25(v54), block25(v24)
+
+block25(v82: i8):
+    v83 = iconst.i64 7
+    v84 = icmp.i64 eq v17, v83
+    brif.i8 v84, block26(v54), block26(v25)
+
+block26(v85: i8):
+    jump block6(v64, v67, v70, v73, v76, v79, v82, v85)
+
+block6(v86: i8, v87: i8, v88: i8, v89: i8, v90: i8, v91: i8, v92: i8, v93: i8):
+    v94 = iconst.i64 1
+    v95 = iadd.i64 v17, v94
+    jump block3(v95, v86, v87, v88, v89, v90, v91, v92, v93)
+
+block5:
+    jump block2(v18, v19, v20, v21, v22, v23, v24, v25)
+
+block2(v9: i8, v10: i8, v11: i8, v12: i8, v13: i8, v14: i8, v15: i8, v16: i8):
+    v96 = iconst.i8 0
+    store.i8 v9, v0
+    store.i8 v10, v0+8
+    store.i8 v11, v0+16
+    store.i8 v12, v0+24
+    store.i8 v13, v0+32
+    store.i8 v14, v0+40
+    store.i8 v15, v0+48
+    store.i8 v16, v0+56
+    return v96
+
+block1(v97: i8):
+    v98 = iconst.i8 0
+    v99 = iconst.i8 0
+    v100 = iconst.i8 0
+    v101 = iconst.i8 0
+    v102 = iconst.i8 0
+    v103 = iconst.i8 0
+    v104 = iconst.i8 0
+    v105 = iconst.i8 0
+    store.i8 v98, v0
+    store.i8 v99, v0+8
+    store.i8 v100, v0+16
+    store.i8 v101, v0+24
+    store.i8 v102, v0+32
+    store.i8 v103, v0+40
+    store.i8 v104, v0+48
+    store.i8 v105, v0+56
+    return v97
+}
+
+function %Corpus__reverse8(i64, i8, i8, i8, i8, i8, i8, i8, i8) -> i8 {
+block0(v0: i64, v1: i8, v2: i8, v3: i8, v4: i8, v5: i8, v6: i8, v7: i8, v8: i8):
+    v9 = iconst.i8 0
+    v27 = iconst.i64 0
+    jump block3(v27, v9, v9, v9, v9, v9, v9, v9, v9)
+
+block3(v18: i64, v19: i8, v20: i8, v21: i8, v22: i8, v23: i8, v24: i8, v25: i8, v26: i8):
+    v28 = iconst.i64 8
+    v29 = icmp.i64 ult v18, v28
+    brif.i8 v29, block4, block5
+
+block4:
+    v31 = iconst.i64 8
+    v32 = icmp.i64 uge v18, v31
+    v33 = iconst.i8 3
+    brif.i8 v32, block1(v33), block8
+
+block8:
+    v34 = iconst.i64 1
+    v35 = icmp.i64 eq v18, v34
+    brif.i8 v35, block9(v2), block9(v1)
+
+block9(v36: i8):
+    v37 = iconst.i64 2
+    v38 = icmp.i64 eq v18, v37
+    brif.i8 v38, block10(v3), block10(v36)
+
+block10(v39: i8):
+    v40 = iconst.i64 3
+    v41 = icmp.i64 eq v18, v40
+    brif.i8 v41, block11(v4), block11(v39)
+
+block11(v42: i8):
+    v43 = iconst.i64 4
+    v44 = icmp.i64 eq v18, v43
+    brif.i8 v44, block12(v5), block12(v42)
+
+block12(v45: i8):
+    v46 = iconst.i64 5
+    v47 = icmp.i64 eq v18, v46
+    brif.i8 v47, block13(v6), block13(v45)
+
+block13(v48: i8):
+    v49 = iconst.i64 6
+    v50 = icmp.i64 eq v18, v49
+    brif.i8 v50, block14(v7), block14(v48)
+
+block14(v51: i8):
+    v52 = iconst.i64 7
+    v53 = icmp.i64 eq v18, v52
+    brif.i8 v53, block15(v8), block15(v51)
+
+block15(v54: i8):
+    jump block7(v54)
+
+block7(v30: i8):
+    v55 = iconst.i64 7
+    v56 = isub.i64 v55, v18
+    v57 = iconst.i64 8
+    v58 = icmp.i64 uge v56, v57
+    v59 = iconst.i8 3
+    brif.i8 v58, block1(v59), block16
+
+block16:
+    v60 = iconst.i64 0
+    v61 = icmp.i64 eq v56, v60
+    brif.i8 v61, block17(v30), block17(v19)
+
+block17(v62: i8):
+    v63 = iconst.i64 1
+    v64 = icmp.i64 eq v56, v63
+    brif.i8 v64, block18(v30), block18(v20)
+
+block18(v65: i8):
+    v66 = iconst.i64 2
+    v67 = icmp.i64 eq v56, v66
+    brif.i8 v67, block19(v30), block19(v21)
+
+block19(v68: i8):
+    v69 = iconst.i64 3
+    v70 = icmp.i64 eq v56, v69
+    brif.i8 v70, block20(v30), block20(v22)
+
+block20(v71: i8):
+    v72 = iconst.i64 4
+    v73 = icmp.i64 eq v56, v72
+    brif.i8 v73, block21(v30), block21(v23)
+
+block21(v74: i8):
+    v75 = iconst.i64 5
+    v76 = icmp.i64 eq v56, v75
+    brif.i8 v76, block22(v30), block22(v24)
+
+block22(v77: i8):
+    v78 = iconst.i64 6
+    v79 = icmp.i64 eq v56, v78
+    brif.i8 v79, block23(v30), block23(v25)
+
+block23(v80: i8):
+    v81 = iconst.i64 7
+    v82 = icmp.i64 eq v56, v81
+    brif.i8 v82, block24(v30), block24(v26)
+
+block24(v83: i8):
+    jump block6(v62, v65, v68, v71, v74, v77, v80, v83)
+
+block6(v84: i8, v85: i8, v86: i8, v87: i8, v88: i8, v89: i8, v90: i8, v91: i8):
+    v92 = iconst.i64 1
+    v93 = iadd.i64 v18, v92
+    jump block3(v93, v84, v85, v86, v87, v88, v89, v90, v91)
+
+block5:
+    jump block2(v19, v20, v21, v22, v23, v24, v25, v26)
+
+block2(v10: i8, v11: i8, v12: i8, v13: i8, v14: i8, v15: i8, v16: i8, v17: i8):
+    v94 = iconst.i8 0
+    store.i8 v10, v0
+    store.i8 v11, v0+8
+    store.i8 v12, v0+16
+    store.i8 v13, v0+24
+    store.i8 v14, v0+32
+    store.i8 v15, v0+40
+    store.i8 v16, v0+48
+    store.i8 v17, v0+56
+    return v94
+
+block1(v95: i8):
+    v96 = iconst.i8 0
+    v97 = iconst.i8 0
+    v98 = iconst.i8 0
+    v99 = iconst.i8 0
+    v100 = iconst.i8 0
+    v101 = iconst.i8 0
+    v102 = iconst.i8 0
+    v103 = iconst.i8 0
+    store.i8 v96, v0
+    store.i8 v97, v0+8
+    store.i8 v98, v0+16
+    store.i8 v99, v0+24
+    store.i8 v100, v0+32
+    store.i8 v101, v0+40
+    store.i8 v102, v0+48
+    store.i8 v103, v0+56
+    return v95
+}

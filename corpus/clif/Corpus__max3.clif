@@ -1,0 +1,38 @@
+test interpret
+test run
+target aarch64
+
+function %Corpus__max3(i16, i16, i16) -> i8, i16 {
+block0(v0: i16, v1: i16, v2: i16):
+    v3 = icmp.i16 ult v1, v0
+    brif.i8 v3, block2(v0), block2(v1)
+
+block2(v4: i16):
+    v5 = icmp.i16 ult v2, v4
+    v6 = icmp.i16 eq v4, v2
+    v7 = bor.i8 v5, v6
+    brif.i8 v7, block3(v4), block3(v2)
+
+block3(v8: i16):
+    v9 = iconst.i16 0
+    v10 = icmp.i16 sle v8, v9
+    brif.i8 v10, block5, block6
+
+block5:
+    v11 = iconst.i8 56
+    jump block1(v11)
+
+block6:
+    jump block4
+
+block4:
+    v12 = iconst.i8 0
+    return v12, v8
+
+block1(v13: i8):
+    v14 = iconst.i16 0
+    return v13, v14
+}
+; run: %Corpus__max3(1, 5, 3) == [0, 5]
+; run: %Corpus__max3(1, 5, 9) == [0, 9]
+; run: %Corpus__max3(-32768, -28672, -32767) == [56, 0]

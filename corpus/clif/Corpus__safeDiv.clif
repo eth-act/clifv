@@ -1,0 +1,34 @@
+test interpret
+test run
+target aarch64
+
+function %Corpus__safeDiv(i64, i64) -> i8, i64 {
+block0(v0: i64, v1: i64):
+    v2 = iconst.i64 0
+    v3 = icmp.i64 eq v1, v2
+    brif.i8 v3, block3, block4
+
+block3:
+    v4 = iconst.i8 63
+    jump block1(v4)
+
+block4:
+    jump block2
+
+block2:
+    v5 = iconst.i64 0
+    v6 = icmp.i64 eq v1, v5
+    v7 = iconst.i8 2
+    brif.i8 v6, block1(v7), block5
+
+block5:
+    v8 = udiv.i64 v0, v1
+    v9 = iconst.i8 0
+    return v9, v8
+
+block1(v10: i8):
+    v11 = iconst.i64 0
+    return v10, v11
+}
+; run: %Corpus__safeDiv(7, 0) == [63, 0]
+; run: %Corpus__safeDiv(7, 2) == [0, 3]

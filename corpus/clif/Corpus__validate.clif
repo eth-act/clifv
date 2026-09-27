@@ -1,0 +1,74 @@
+test interpret
+test run
+target aarch64
+
+function %Corpus__validate(i32, i32, i32) -> i8, i32 {
+block0(v0: i32, v1: i32, v2: i32):
+    v3 = icmp.i32 ult v2, v1
+    brif.i8 v3, block3, block4
+
+block3:
+    v4 = iconst.i8 57
+    jump block1(v4)
+
+block4:
+    v5 = icmp.i32 ult v0, v1
+    brif.i8 v5, block5, block6
+
+block5:
+    v6 = iconst.i8 58
+    jump block1(v6)
+
+block6:
+    v7 = icmp.i32 ult v2, v0
+    brif.i8 v7, block7, block8
+
+block7:
+    v8 = iconst.i8 59
+    jump block1(v8)
+
+block8:
+    jump block2
+
+block2:
+    v10 = isub.i32 v2, v1
+    v11 = icmp.i32 ult v2, v1
+    v12 = iconst.i8 1
+    brif.i8 v11, block1(v12), block10
+
+block10:
+    jump block9(v10)
+
+block9(v9: i32):
+    v14 = isub.i32 v0, v1
+    v15 = icmp.i32 ult v0, v1
+    v16 = iconst.i8 1
+    brif.i8 v15, block1(v16), block12
+
+block12:
+    jump block11(v14)
+
+block11(v13: i32):
+    v17 = icmp.i32 eq v13, v9
+    brif.i8 v17, block14, block15
+
+block14:
+    v18 = iconst.i8 1
+    jump block1(v18)
+
+block15:
+    jump block13
+
+block13:
+    v19 = iconst.i8 0
+    return v19, v13
+
+block1(v20: i8):
+    v21 = iconst.i32 0
+    return v20, v21
+}
+; run: %Corpus__validate(5, 1, 9) == [0, 4]
+; run: %Corpus__validate(5, 9, 1) == [57, 0]
+; run: %Corpus__validate(0, 1, 9) == [58, 0]
+; run: %Corpus__validate(10, 1, 9) == [59, 0]
+; run: %Corpus__validate(9, 1, 9) == [1, 0]

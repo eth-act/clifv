@@ -1,0 +1,29 @@
+test interpret
+test run
+target aarch64
+
+function %Corpus__absDiff(i32, i32) -> i8, i32 {
+block0(v0: i32, v1: i32):
+    v2 = iconst.i32 0
+    v4 = icmp.i32 ule v1, v0
+    brif.i8 v4, block3, block4
+
+block3:
+    v5 = isub.i32 v0, v1
+    jump block2(v5)
+
+block4:
+    v6 = isub.i32 v1, v0
+    jump block2(v6)
+
+block2(v3: i32):
+    v7 = iconst.i8 0
+    return v7, v3
+
+block1(v8: i8):
+    v9 = iconst.i32 0
+    return v8, v9
+}
+; run: %Corpus__absDiff(3, 10) == [0, 7]
+; run: %Corpus__absDiff(10, 3) == [0, 7]
+; run: %Corpus__absDiff(0, -1) == [0, -1]

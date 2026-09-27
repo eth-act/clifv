@@ -1,0 +1,300 @@
+test interpret
+test run
+target aarch64
+
+function %Corpus__passMap(i64, i8) -> i8, i64, i8 {
+block0(v0: i64, v1: i8):
+    v2 = iconst.i8 1
+    v3 = iadd.i8 v1, v2
+    v4 = iconst.i8 0
+    return v4, v0, v3
+
+block1(v5: i8):
+    v6 = iconst.i64 0
+    v7 = iconst.i8 0
+    return v5, v6, v7
+}
+
+function %Corpus__passMap_w0(i64, i64, i64, i64, i64, i8) -> i8, i64, i64, i64, i64, i64, i8 {
+    ss0 = explicit_slot 65536, align = 8
+    ss1 = explicit_slot 16, align = 8
+    fn0 = %flat_map_new(i64) -> i64
+    fn1 = %flat_map_insert(i64, i64, i64, i64)
+    fn2 = %Corpus__passMap(i64, i8) -> i8, i64, i8
+    fn3 = %flat_map_len(i64, i64) -> i64
+    fn4 = %flat_map_entry(i64, i64, i64, i64, i64)
+
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i8):
+    v6 = stack_addr.i64 ss0
+    v7 = iconst.i64 16
+    store.i64 notrap aligned v7, v6
+    v8 = iconst.i64 65536
+    store.i64 notrap aligned v8, v6+8
+    v9 = call fn0(v6)
+    v10 = iconst.i64 0
+    v11 = icmp.i64 ult v10, v0
+    brif.i8 v11, block2, block3
+
+block2:
+    call fn1(v6, v9, v1, v2)
+    jump block3
+
+block3:
+    v12 = iconst.i64 1
+    v13 = icmp.i64 ult v12, v0
+    brif.i8 v13, block4, block5
+
+block4:
+    call fn1(v6, v9, v3, v4)
+    jump block5
+
+block5:
+    v14, v15, v16 = call fn2(v9, v5)
+    brif.i8 v14, block7, block6
+
+block7:
+    v17 = iconst.i64 0
+    v18 = iconst.i64 0
+    v19 = iconst.i64 0
+    v20 = iconst.i64 0
+    v21 = iconst.i64 0
+    v22 = iconst.i8 0
+    return v14, v17, v18, v19, v20, v21, v22
+
+block6:
+    v23 = stack_addr.i64 ss1
+    v24 = stack_addr.i64 ss1+8
+    v25 = call fn3(v6, v15)
+    v26 = iconst.i64 0
+    call fn4(v6, v15, v26, v23, v24)
+    v27 = load.i64 notrap aligned v23
+    v28 = load.i64 notrap aligned v24
+    v29 = iconst.i64 1
+    call fn4(v6, v15, v29, v23, v24)
+    v30 = load.i64 notrap aligned v23
+    v31 = load.i64 notrap aligned v24
+    return v14, v25, v27, v28, v30, v31, v16
+}
+; run: %Corpus__passMap_w0(2, 4, 1, 9, 0, 7) == [0, 2, 4, 1, 9, 0, 8]
+; run: %Corpus__passMap_w0(0, 0, 0, 0, 0, -1) == [0, 0, 0, 0, 0, 0, 0]
+
+function %flat_rt_alloc(i64, i64) -> i64 {
+block0(v0: i64, v1: i64):
+    v2 = load.i64 v0
+    v3 = load.i64 v0+8
+    v4 = iadd.i64 v2, v1
+    v5 = icmp.i64 ugt v4, v3
+    brif.i8 v5, block1, block2
+
+block1:
+    trap user1
+
+block2:
+    store.i64 v4, v0
+    v6 = iadd.i64 v0, v2
+    return v6
+}
+
+function %flat_rt_find(i64, i64) -> i64 {
+block0(v0: i64, v1: i64):
+    v2 = load.i64 v0
+    v3 = load.i64 v0+16
+    v4 = iconst.i64 0
+    jump block1(v4)
+
+block1(v5: i64):
+    v6 = icmp.i64 uge v5, v2
+    brif.i8 v6, block3(v2), block2
+
+block2:
+    v7 = iconst.i64 4
+    v8 = ishl.i64 v5, v7
+    v9 = iadd.i64 v3, v8
+    v10 = load.i64 v9
+    v11 = icmp.i64 eq v10, v1
+    v12 = iconst.i64 1
+    v13 = iadd.i64 v5, v12
+    brif.i8 v11, block3(v5), block1(v13)
+
+block3(v14: i64):
+    return v14
+}
+
+function %flat_rt_copy(i64, i64, i64) {
+block0(v0: i64, v1: i64, v2: i64):
+    v3 = iconst.i64 0
+    jump block1(v3)
+
+block1(v4: i64):
+    v5 = icmp.i64 uge v4, v2
+    brif.i8 v5, block3, block2
+
+block2:
+    v6 = iconst.i64 3
+    v7 = ishl.i64 v4, v6
+    v8 = iadd.i64 v1, v7
+    v9 = load.i64 v8
+    v10 = iadd.i64 v0, v7
+    store.i64 v9, v10
+    v11 = iconst.i64 1
+    v12 = iadd.i64 v4, v11
+    jump block1(v12)
+
+block3:
+    return
+}
+
+function %flat_map_new(i64) -> i64 {
+    fn0 = %flat_rt_alloc(i64, i64) -> i64
+
+block0(v0: i64):
+    v1 = iconst.i64 24
+    v2 = call fn0(v0, v1)
+    v3 = iconst.i64 0
+    store.i64 v3, v2
+    store.i64 v3, v2+8
+    store.i64 v3, v2+16
+    return v2
+}
+
+function %flat_map_insert(i64, i64, i64, i64) {
+    fn0 = %flat_rt_find(i64, i64) -> i64
+    fn1 = %flat_rt_alloc(i64, i64) -> i64
+    fn2 = %flat_rt_copy(i64, i64, i64)
+
+block0(v0: i64, v1: i64, v2: i64, v3: i64):
+    v4 = call fn0(v1, v2)
+    v5 = load.i64 v1
+    v6 = icmp.i64 ult v4, v5
+    brif.i8 v6, block1, block2
+
+block1:
+    v7 = load.i64 v1+16
+    v8 = iconst.i64 4
+    v9 = ishl.i64 v4, v8
+    v10 = iadd.i64 v7, v9
+    store.i64 v3, v10+8
+    return
+
+block2:
+    v11 = load.i64 v1+8
+    v12 = icmp.i64 eq v5, v11
+    brif.i8 v12, block3, block5
+
+block3:
+    v13 = iconst.i64 4
+    v14 = iconst.i64 1
+    v15 = ishl.i64 v11, v14
+    v16 = iconst.i64 0
+    v17 = icmp.i64 eq v11, v16
+    brif.i8 v17, block4(v13), block4(v15)
+
+block4(v18: i64):
+    v19 = iconst.i64 4
+    v20 = ishl.i64 v18, v19
+    v21 = call fn1(v0, v20)
+    v22 = load.i64 v1+16
+    v23 = iconst.i64 1
+    v24 = ishl.i64 v5, v23
+    call fn2(v21, v22, v24)
+    store.i64 v21, v1+16
+    store.i64 v18, v1+8
+    jump block5
+
+block5:
+    v25 = load.i64 v1+16
+    v26 = iconst.i64 4
+    v27 = ishl.i64 v5, v26
+    v28 = iadd.i64 v25, v27
+    store.i64 v2, v28
+    store.i64 v3, v28+8
+    v29 = iconst.i64 1
+    v30 = iadd.i64 v5, v29
+    store.i64 v30, v1
+    return
+}
+
+function %flat_map_contains(i64, i64, i64) -> i8 {
+    fn0 = %flat_rt_find(i64, i64) -> i64
+
+block0(v0: i64, v1: i64, v2: i64):
+    v3 = call fn0(v1, v2)
+    v4 = load.i64 v1
+    v5 = icmp.i64 ult v3, v4
+    return v5
+}
+
+function %flat_map_get(i64, i64, i64, i64) -> i8 {
+    fn0 = %flat_rt_find(i64, i64) -> i64
+
+block0(v0: i64, v1: i64, v2: i64, v3: i64):
+    v4 = call fn0(v1, v2)
+    v5 = load.i64 v1
+    v6 = icmp.i64 ult v4, v5
+    brif.i8 v6, block1, block2
+
+block1:
+    v7 = load.i64 v1+16
+    v8 = iconst.i64 4
+    v9 = ishl.i64 v4, v8
+    v10 = iadd.i64 v7, v9
+    v11 = load.i64 v10+8
+    store.i64 v11, v3
+    v12 = iconst.i8 1
+    return v12
+
+block2:
+    v13 = iconst.i8 0
+    return v13
+}
+
+function %flat_map_clone(i64, i64) -> i64 {
+    fn0 = %flat_rt_alloc(i64, i64) -> i64
+    fn1 = %flat_rt_copy(i64, i64, i64)
+
+block0(v0: i64, v1: i64):
+    v2 = load.i64 v1
+    v3 = load.i64 v1+16
+    v4 = iconst.i64 4
+    v5 = ishl.i64 v2, v4
+    v6 = call fn0(v0, v5)
+    v7 = iconst.i64 24
+    v8 = call fn0(v0, v7)
+    store.i64 v2, v8
+    store.i64 v2, v8+8
+    store.i64 v6, v8+16
+    v9 = iconst.i64 1
+    v10 = ishl.i64 v2, v9
+    call fn1(v6, v3, v10)
+    return v8
+}
+
+function %flat_map_len(i64, i64) -> i64 {
+block0(v0: i64, v1: i64):
+    v2 = load.i64 v1
+    return v2
+}
+
+function %flat_map_entry(i64, i64, i64, i64, i64) {
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64):
+    v5 = load.i64 v1
+    v6 = icmp.i64 ult v2, v5
+    brif.i8 v6, block1, block2
+
+block1:
+    v7 = load.i64 v1+16
+    v8 = iconst.i64 4
+    v9 = ishl.i64 v2, v8
+    v10 = iadd.i64 v7, v9
+    v11 = load.i64 v10
+    v12 = load.i64 v10+8
+    store.i64 v11, v3
+    store.i64 v12, v4
+    return
+
+block2:
+    v13 = iconst.i64 0
+    store.i64 v13, v3
+    store.i64 v13, v4
+    return
+}

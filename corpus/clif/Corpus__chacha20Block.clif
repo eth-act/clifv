@@ -1,0 +1,4547 @@
+test interpret
+test run
+target aarch64
+
+function %Corpus__chacha20Block(i64, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32) -> i8 {
+block0(v0: i64, v1: i32, v2: i32, v3: i32, v4: i32, v5: i32, v6: i32, v7: i32, v8: i32, v9: i32, v10: i32, v11: i32, v12: i32, v13: i32, v14: i32, v15: i32, v16: i32):
+    v18 = iconst.i64 0
+    v19 = iconst.i64 16
+    v20 = icmp.i64 uge v18, v19
+    v21 = iconst.i8 3
+    brif.i8 v20, block1(v21), block3
+
+block3:
+    v22 = iconst.i64 1
+    v23 = icmp.i64 eq v18, v22
+    brif.i8 v23, block4(v2), block4(v1)
+
+block4(v24: i32):
+    v25 = iconst.i64 2
+    v26 = icmp.i64 eq v18, v25
+    brif.i8 v26, block5(v3), block5(v24)
+
+block5(v27: i32):
+    v28 = iconst.i64 3
+    v29 = icmp.i64 eq v18, v28
+    brif.i8 v29, block6(v4), block6(v27)
+
+block6(v30: i32):
+    v31 = iconst.i64 4
+    v32 = icmp.i64 eq v18, v31
+    brif.i8 v32, block7(v5), block7(v30)
+
+block7(v33: i32):
+    v34 = iconst.i64 5
+    v35 = icmp.i64 eq v18, v34
+    brif.i8 v35, block8(v6), block8(v33)
+
+block8(v36: i32):
+    v37 = iconst.i64 6
+    v38 = icmp.i64 eq v18, v37
+    brif.i8 v38, block9(v7), block9(v36)
+
+block9(v39: i32):
+    v40 = iconst.i64 7
+    v41 = icmp.i64 eq v18, v40
+    brif.i8 v41, block10(v8), block10(v39)
+
+block10(v42: i32):
+    v43 = iconst.i64 8
+    v44 = icmp.i64 eq v18, v43
+    brif.i8 v44, block11(v9), block11(v42)
+
+block11(v45: i32):
+    v46 = iconst.i64 9
+    v47 = icmp.i64 eq v18, v46
+    brif.i8 v47, block12(v10), block12(v45)
+
+block12(v48: i32):
+    v49 = iconst.i64 10
+    v50 = icmp.i64 eq v18, v49
+    brif.i8 v50, block13(v11), block13(v48)
+
+block13(v51: i32):
+    v52 = iconst.i64 11
+    v53 = icmp.i64 eq v18, v52
+    brif.i8 v53, block14(v12), block14(v51)
+
+block14(v54: i32):
+    v55 = iconst.i64 12
+    v56 = icmp.i64 eq v18, v55
+    brif.i8 v56, block15(v13), block15(v54)
+
+block15(v57: i32):
+    v58 = iconst.i64 13
+    v59 = icmp.i64 eq v18, v58
+    brif.i8 v59, block16(v14), block16(v57)
+
+block16(v60: i32):
+    v61 = iconst.i64 14
+    v62 = icmp.i64 eq v18, v61
+    brif.i8 v62, block17(v15), block17(v60)
+
+block17(v63: i32):
+    v64 = iconst.i64 15
+    v65 = icmp.i64 eq v18, v64
+    brif.i8 v65, block18(v16), block18(v63)
+
+block18(v66: i32):
+    jump block2(v66)
+
+block2(v17: i32):
+    v68 = iconst.i64 1
+    v69 = iconst.i64 16
+    v70 = icmp.i64 uge v68, v69
+    v71 = iconst.i8 3
+    brif.i8 v70, block1(v71), block20
+
+block20:
+    v72 = iconst.i64 1
+    v73 = icmp.i64 eq v68, v72
+    brif.i8 v73, block21(v2), block21(v1)
+
+block21(v74: i32):
+    v75 = iconst.i64 2
+    v76 = icmp.i64 eq v68, v75
+    brif.i8 v76, block22(v3), block22(v74)
+
+block22(v77: i32):
+    v78 = iconst.i64 3
+    v79 = icmp.i64 eq v68, v78
+    brif.i8 v79, block23(v4), block23(v77)
+
+block23(v80: i32):
+    v81 = iconst.i64 4
+    v82 = icmp.i64 eq v68, v81
+    brif.i8 v82, block24(v5), block24(v80)
+
+block24(v83: i32):
+    v84 = iconst.i64 5
+    v85 = icmp.i64 eq v68, v84
+    brif.i8 v85, block25(v6), block25(v83)
+
+block25(v86: i32):
+    v87 = iconst.i64 6
+    v88 = icmp.i64 eq v68, v87
+    brif.i8 v88, block26(v7), block26(v86)
+
+block26(v89: i32):
+    v90 = iconst.i64 7
+    v91 = icmp.i64 eq v68, v90
+    brif.i8 v91, block27(v8), block27(v89)
+
+block27(v92: i32):
+    v93 = iconst.i64 8
+    v94 = icmp.i64 eq v68, v93
+    brif.i8 v94, block28(v9), block28(v92)
+
+block28(v95: i32):
+    v96 = iconst.i64 9
+    v97 = icmp.i64 eq v68, v96
+    brif.i8 v97, block29(v10), block29(v95)
+
+block29(v98: i32):
+    v99 = iconst.i64 10
+    v100 = icmp.i64 eq v68, v99
+    brif.i8 v100, block30(v11), block30(v98)
+
+block30(v101: i32):
+    v102 = iconst.i64 11
+    v103 = icmp.i64 eq v68, v102
+    brif.i8 v103, block31(v12), block31(v101)
+
+block31(v104: i32):
+    v105 = iconst.i64 12
+    v106 = icmp.i64 eq v68, v105
+    brif.i8 v106, block32(v13), block32(v104)
+
+block32(v107: i32):
+    v108 = iconst.i64 13
+    v109 = icmp.i64 eq v68, v108
+    brif.i8 v109, block33(v14), block33(v107)
+
+block33(v110: i32):
+    v111 = iconst.i64 14
+    v112 = icmp.i64 eq v68, v111
+    brif.i8 v112, block34(v15), block34(v110)
+
+block34(v113: i32):
+    v114 = iconst.i64 15
+    v115 = icmp.i64 eq v68, v114
+    brif.i8 v115, block35(v16), block35(v113)
+
+block35(v116: i32):
+    jump block19(v116)
+
+block19(v67: i32):
+    v118 = iconst.i64 2
+    v119 = iconst.i64 16
+    v120 = icmp.i64 uge v118, v119
+    v121 = iconst.i8 3
+    brif.i8 v120, block1(v121), block37
+
+block37:
+    v122 = iconst.i64 1
+    v123 = icmp.i64 eq v118, v122
+    brif.i8 v123, block38(v2), block38(v1)
+
+block38(v124: i32):
+    v125 = iconst.i64 2
+    v126 = icmp.i64 eq v118, v125
+    brif.i8 v126, block39(v3), block39(v124)
+
+block39(v127: i32):
+    v128 = iconst.i64 3
+    v129 = icmp.i64 eq v118, v128
+    brif.i8 v129, block40(v4), block40(v127)
+
+block40(v130: i32):
+    v131 = iconst.i64 4
+    v132 = icmp.i64 eq v118, v131
+    brif.i8 v132, block41(v5), block41(v130)
+
+block41(v133: i32):
+    v134 = iconst.i64 5
+    v135 = icmp.i64 eq v118, v134
+    brif.i8 v135, block42(v6), block42(v133)
+
+block42(v136: i32):
+    v137 = iconst.i64 6
+    v138 = icmp.i64 eq v118, v137
+    brif.i8 v138, block43(v7), block43(v136)
+
+block43(v139: i32):
+    v140 = iconst.i64 7
+    v141 = icmp.i64 eq v118, v140
+    brif.i8 v141, block44(v8), block44(v139)
+
+block44(v142: i32):
+    v143 = iconst.i64 8
+    v144 = icmp.i64 eq v118, v143
+    brif.i8 v144, block45(v9), block45(v142)
+
+block45(v145: i32):
+    v146 = iconst.i64 9
+    v147 = icmp.i64 eq v118, v146
+    brif.i8 v147, block46(v10), block46(v145)
+
+block46(v148: i32):
+    v149 = iconst.i64 10
+    v150 = icmp.i64 eq v118, v149
+    brif.i8 v150, block47(v11), block47(v148)
+
+block47(v151: i32):
+    v152 = iconst.i64 11
+    v153 = icmp.i64 eq v118, v152
+    brif.i8 v153, block48(v12), block48(v151)
+
+block48(v154: i32):
+    v155 = iconst.i64 12
+    v156 = icmp.i64 eq v118, v155
+    brif.i8 v156, block49(v13), block49(v154)
+
+block49(v157: i32):
+    v158 = iconst.i64 13
+    v159 = icmp.i64 eq v118, v158
+    brif.i8 v159, block50(v14), block50(v157)
+
+block50(v160: i32):
+    v161 = iconst.i64 14
+    v162 = icmp.i64 eq v118, v161
+    brif.i8 v162, block51(v15), block51(v160)
+
+block51(v163: i32):
+    v164 = iconst.i64 15
+    v165 = icmp.i64 eq v118, v164
+    brif.i8 v165, block52(v16), block52(v163)
+
+block52(v166: i32):
+    jump block36(v166)
+
+block36(v117: i32):
+    v168 = iconst.i64 3
+    v169 = iconst.i64 16
+    v170 = icmp.i64 uge v168, v169
+    v171 = iconst.i8 3
+    brif.i8 v170, block1(v171), block54
+
+block54:
+    v172 = iconst.i64 1
+    v173 = icmp.i64 eq v168, v172
+    brif.i8 v173, block55(v2), block55(v1)
+
+block55(v174: i32):
+    v175 = iconst.i64 2
+    v176 = icmp.i64 eq v168, v175
+    brif.i8 v176, block56(v3), block56(v174)
+
+block56(v177: i32):
+    v178 = iconst.i64 3
+    v179 = icmp.i64 eq v168, v178
+    brif.i8 v179, block57(v4), block57(v177)
+
+block57(v180: i32):
+    v181 = iconst.i64 4
+    v182 = icmp.i64 eq v168, v181
+    brif.i8 v182, block58(v5), block58(v180)
+
+block58(v183: i32):
+    v184 = iconst.i64 5
+    v185 = icmp.i64 eq v168, v184
+    brif.i8 v185, block59(v6), block59(v183)
+
+block59(v186: i32):
+    v187 = iconst.i64 6
+    v188 = icmp.i64 eq v168, v187
+    brif.i8 v188, block60(v7), block60(v186)
+
+block60(v189: i32):
+    v190 = iconst.i64 7
+    v191 = icmp.i64 eq v168, v190
+    brif.i8 v191, block61(v8), block61(v189)
+
+block61(v192: i32):
+    v193 = iconst.i64 8
+    v194 = icmp.i64 eq v168, v193
+    brif.i8 v194, block62(v9), block62(v192)
+
+block62(v195: i32):
+    v196 = iconst.i64 9
+    v197 = icmp.i64 eq v168, v196
+    brif.i8 v197, block63(v10), block63(v195)
+
+block63(v198: i32):
+    v199 = iconst.i64 10
+    v200 = icmp.i64 eq v168, v199
+    brif.i8 v200, block64(v11), block64(v198)
+
+block64(v201: i32):
+    v202 = iconst.i64 11
+    v203 = icmp.i64 eq v168, v202
+    brif.i8 v203, block65(v12), block65(v201)
+
+block65(v204: i32):
+    v205 = iconst.i64 12
+    v206 = icmp.i64 eq v168, v205
+    brif.i8 v206, block66(v13), block66(v204)
+
+block66(v207: i32):
+    v208 = iconst.i64 13
+    v209 = icmp.i64 eq v168, v208
+    brif.i8 v209, block67(v14), block67(v207)
+
+block67(v210: i32):
+    v211 = iconst.i64 14
+    v212 = icmp.i64 eq v168, v211
+    brif.i8 v212, block68(v15), block68(v210)
+
+block68(v213: i32):
+    v214 = iconst.i64 15
+    v215 = icmp.i64 eq v168, v214
+    brif.i8 v215, block69(v16), block69(v213)
+
+block69(v216: i32):
+    jump block53(v216)
+
+block53(v167: i32):
+    v218 = iconst.i64 4
+    v219 = iconst.i64 16
+    v220 = icmp.i64 uge v218, v219
+    v221 = iconst.i8 3
+    brif.i8 v220, block1(v221), block71
+
+block71:
+    v222 = iconst.i64 1
+    v223 = icmp.i64 eq v218, v222
+    brif.i8 v223, block72(v2), block72(v1)
+
+block72(v224: i32):
+    v225 = iconst.i64 2
+    v226 = icmp.i64 eq v218, v225
+    brif.i8 v226, block73(v3), block73(v224)
+
+block73(v227: i32):
+    v228 = iconst.i64 3
+    v229 = icmp.i64 eq v218, v228
+    brif.i8 v229, block74(v4), block74(v227)
+
+block74(v230: i32):
+    v231 = iconst.i64 4
+    v232 = icmp.i64 eq v218, v231
+    brif.i8 v232, block75(v5), block75(v230)
+
+block75(v233: i32):
+    v234 = iconst.i64 5
+    v235 = icmp.i64 eq v218, v234
+    brif.i8 v235, block76(v6), block76(v233)
+
+block76(v236: i32):
+    v237 = iconst.i64 6
+    v238 = icmp.i64 eq v218, v237
+    brif.i8 v238, block77(v7), block77(v236)
+
+block77(v239: i32):
+    v240 = iconst.i64 7
+    v241 = icmp.i64 eq v218, v240
+    brif.i8 v241, block78(v8), block78(v239)
+
+block78(v242: i32):
+    v243 = iconst.i64 8
+    v244 = icmp.i64 eq v218, v243
+    brif.i8 v244, block79(v9), block79(v242)
+
+block79(v245: i32):
+    v246 = iconst.i64 9
+    v247 = icmp.i64 eq v218, v246
+    brif.i8 v247, block80(v10), block80(v245)
+
+block80(v248: i32):
+    v249 = iconst.i64 10
+    v250 = icmp.i64 eq v218, v249
+    brif.i8 v250, block81(v11), block81(v248)
+
+block81(v251: i32):
+    v252 = iconst.i64 11
+    v253 = icmp.i64 eq v218, v252
+    brif.i8 v253, block82(v12), block82(v251)
+
+block82(v254: i32):
+    v255 = iconst.i64 12
+    v256 = icmp.i64 eq v218, v255
+    brif.i8 v256, block83(v13), block83(v254)
+
+block83(v257: i32):
+    v258 = iconst.i64 13
+    v259 = icmp.i64 eq v218, v258
+    brif.i8 v259, block84(v14), block84(v257)
+
+block84(v260: i32):
+    v261 = iconst.i64 14
+    v262 = icmp.i64 eq v218, v261
+    brif.i8 v262, block85(v15), block85(v260)
+
+block85(v263: i32):
+    v264 = iconst.i64 15
+    v265 = icmp.i64 eq v218, v264
+    brif.i8 v265, block86(v16), block86(v263)
+
+block86(v266: i32):
+    jump block70(v266)
+
+block70(v217: i32):
+    v268 = iconst.i64 5
+    v269 = iconst.i64 16
+    v270 = icmp.i64 uge v268, v269
+    v271 = iconst.i8 3
+    brif.i8 v270, block1(v271), block88
+
+block88:
+    v272 = iconst.i64 1
+    v273 = icmp.i64 eq v268, v272
+    brif.i8 v273, block89(v2), block89(v1)
+
+block89(v274: i32):
+    v275 = iconst.i64 2
+    v276 = icmp.i64 eq v268, v275
+    brif.i8 v276, block90(v3), block90(v274)
+
+block90(v277: i32):
+    v278 = iconst.i64 3
+    v279 = icmp.i64 eq v268, v278
+    brif.i8 v279, block91(v4), block91(v277)
+
+block91(v280: i32):
+    v281 = iconst.i64 4
+    v282 = icmp.i64 eq v268, v281
+    brif.i8 v282, block92(v5), block92(v280)
+
+block92(v283: i32):
+    v284 = iconst.i64 5
+    v285 = icmp.i64 eq v268, v284
+    brif.i8 v285, block93(v6), block93(v283)
+
+block93(v286: i32):
+    v287 = iconst.i64 6
+    v288 = icmp.i64 eq v268, v287
+    brif.i8 v288, block94(v7), block94(v286)
+
+block94(v289: i32):
+    v290 = iconst.i64 7
+    v291 = icmp.i64 eq v268, v290
+    brif.i8 v291, block95(v8), block95(v289)
+
+block95(v292: i32):
+    v293 = iconst.i64 8
+    v294 = icmp.i64 eq v268, v293
+    brif.i8 v294, block96(v9), block96(v292)
+
+block96(v295: i32):
+    v296 = iconst.i64 9
+    v297 = icmp.i64 eq v268, v296
+    brif.i8 v297, block97(v10), block97(v295)
+
+block97(v298: i32):
+    v299 = iconst.i64 10
+    v300 = icmp.i64 eq v268, v299
+    brif.i8 v300, block98(v11), block98(v298)
+
+block98(v301: i32):
+    v302 = iconst.i64 11
+    v303 = icmp.i64 eq v268, v302
+    brif.i8 v303, block99(v12), block99(v301)
+
+block99(v304: i32):
+    v305 = iconst.i64 12
+    v306 = icmp.i64 eq v268, v305
+    brif.i8 v306, block100(v13), block100(v304)
+
+block100(v307: i32):
+    v308 = iconst.i64 13
+    v309 = icmp.i64 eq v268, v308
+    brif.i8 v309, block101(v14), block101(v307)
+
+block101(v310: i32):
+    v311 = iconst.i64 14
+    v312 = icmp.i64 eq v268, v311
+    brif.i8 v312, block102(v15), block102(v310)
+
+block102(v313: i32):
+    v314 = iconst.i64 15
+    v315 = icmp.i64 eq v268, v314
+    brif.i8 v315, block103(v16), block103(v313)
+
+block103(v316: i32):
+    jump block87(v316)
+
+block87(v267: i32):
+    v318 = iconst.i64 6
+    v319 = iconst.i64 16
+    v320 = icmp.i64 uge v318, v319
+    v321 = iconst.i8 3
+    brif.i8 v320, block1(v321), block105
+
+block105:
+    v322 = iconst.i64 1
+    v323 = icmp.i64 eq v318, v322
+    brif.i8 v323, block106(v2), block106(v1)
+
+block106(v324: i32):
+    v325 = iconst.i64 2
+    v326 = icmp.i64 eq v318, v325
+    brif.i8 v326, block107(v3), block107(v324)
+
+block107(v327: i32):
+    v328 = iconst.i64 3
+    v329 = icmp.i64 eq v318, v328
+    brif.i8 v329, block108(v4), block108(v327)
+
+block108(v330: i32):
+    v331 = iconst.i64 4
+    v332 = icmp.i64 eq v318, v331
+    brif.i8 v332, block109(v5), block109(v330)
+
+block109(v333: i32):
+    v334 = iconst.i64 5
+    v335 = icmp.i64 eq v318, v334
+    brif.i8 v335, block110(v6), block110(v333)
+
+block110(v336: i32):
+    v337 = iconst.i64 6
+    v338 = icmp.i64 eq v318, v337
+    brif.i8 v338, block111(v7), block111(v336)
+
+block111(v339: i32):
+    v340 = iconst.i64 7
+    v341 = icmp.i64 eq v318, v340
+    brif.i8 v341, block112(v8), block112(v339)
+
+block112(v342: i32):
+    v343 = iconst.i64 8
+    v344 = icmp.i64 eq v318, v343
+    brif.i8 v344, block113(v9), block113(v342)
+
+block113(v345: i32):
+    v346 = iconst.i64 9
+    v347 = icmp.i64 eq v318, v346
+    brif.i8 v347, block114(v10), block114(v345)
+
+block114(v348: i32):
+    v349 = iconst.i64 10
+    v350 = icmp.i64 eq v318, v349
+    brif.i8 v350, block115(v11), block115(v348)
+
+block115(v351: i32):
+    v352 = iconst.i64 11
+    v353 = icmp.i64 eq v318, v352
+    brif.i8 v353, block116(v12), block116(v351)
+
+block116(v354: i32):
+    v355 = iconst.i64 12
+    v356 = icmp.i64 eq v318, v355
+    brif.i8 v356, block117(v13), block117(v354)
+
+block117(v357: i32):
+    v358 = iconst.i64 13
+    v359 = icmp.i64 eq v318, v358
+    brif.i8 v359, block118(v14), block118(v357)
+
+block118(v360: i32):
+    v361 = iconst.i64 14
+    v362 = icmp.i64 eq v318, v361
+    brif.i8 v362, block119(v15), block119(v360)
+
+block119(v363: i32):
+    v364 = iconst.i64 15
+    v365 = icmp.i64 eq v318, v364
+    brif.i8 v365, block120(v16), block120(v363)
+
+block120(v366: i32):
+    jump block104(v366)
+
+block104(v317: i32):
+    v368 = iconst.i64 7
+    v369 = iconst.i64 16
+    v370 = icmp.i64 uge v368, v369
+    v371 = iconst.i8 3
+    brif.i8 v370, block1(v371), block122
+
+block122:
+    v372 = iconst.i64 1
+    v373 = icmp.i64 eq v368, v372
+    brif.i8 v373, block123(v2), block123(v1)
+
+block123(v374: i32):
+    v375 = iconst.i64 2
+    v376 = icmp.i64 eq v368, v375
+    brif.i8 v376, block124(v3), block124(v374)
+
+block124(v377: i32):
+    v378 = iconst.i64 3
+    v379 = icmp.i64 eq v368, v378
+    brif.i8 v379, block125(v4), block125(v377)
+
+block125(v380: i32):
+    v381 = iconst.i64 4
+    v382 = icmp.i64 eq v368, v381
+    brif.i8 v382, block126(v5), block126(v380)
+
+block126(v383: i32):
+    v384 = iconst.i64 5
+    v385 = icmp.i64 eq v368, v384
+    brif.i8 v385, block127(v6), block127(v383)
+
+block127(v386: i32):
+    v387 = iconst.i64 6
+    v388 = icmp.i64 eq v368, v387
+    brif.i8 v388, block128(v7), block128(v386)
+
+block128(v389: i32):
+    v390 = iconst.i64 7
+    v391 = icmp.i64 eq v368, v390
+    brif.i8 v391, block129(v8), block129(v389)
+
+block129(v392: i32):
+    v393 = iconst.i64 8
+    v394 = icmp.i64 eq v368, v393
+    brif.i8 v394, block130(v9), block130(v392)
+
+block130(v395: i32):
+    v396 = iconst.i64 9
+    v397 = icmp.i64 eq v368, v396
+    brif.i8 v397, block131(v10), block131(v395)
+
+block131(v398: i32):
+    v399 = iconst.i64 10
+    v400 = icmp.i64 eq v368, v399
+    brif.i8 v400, block132(v11), block132(v398)
+
+block132(v401: i32):
+    v402 = iconst.i64 11
+    v403 = icmp.i64 eq v368, v402
+    brif.i8 v403, block133(v12), block133(v401)
+
+block133(v404: i32):
+    v405 = iconst.i64 12
+    v406 = icmp.i64 eq v368, v405
+    brif.i8 v406, block134(v13), block134(v404)
+
+block134(v407: i32):
+    v408 = iconst.i64 13
+    v409 = icmp.i64 eq v368, v408
+    brif.i8 v409, block135(v14), block135(v407)
+
+block135(v410: i32):
+    v411 = iconst.i64 14
+    v412 = icmp.i64 eq v368, v411
+    brif.i8 v412, block136(v15), block136(v410)
+
+block136(v413: i32):
+    v414 = iconst.i64 15
+    v415 = icmp.i64 eq v368, v414
+    brif.i8 v415, block137(v16), block137(v413)
+
+block137(v416: i32):
+    jump block121(v416)
+
+block121(v367: i32):
+    v418 = iconst.i64 8
+    v419 = iconst.i64 16
+    v420 = icmp.i64 uge v418, v419
+    v421 = iconst.i8 3
+    brif.i8 v420, block1(v421), block139
+
+block139:
+    v422 = iconst.i64 1
+    v423 = icmp.i64 eq v418, v422
+    brif.i8 v423, block140(v2), block140(v1)
+
+block140(v424: i32):
+    v425 = iconst.i64 2
+    v426 = icmp.i64 eq v418, v425
+    brif.i8 v426, block141(v3), block141(v424)
+
+block141(v427: i32):
+    v428 = iconst.i64 3
+    v429 = icmp.i64 eq v418, v428
+    brif.i8 v429, block142(v4), block142(v427)
+
+block142(v430: i32):
+    v431 = iconst.i64 4
+    v432 = icmp.i64 eq v418, v431
+    brif.i8 v432, block143(v5), block143(v430)
+
+block143(v433: i32):
+    v434 = iconst.i64 5
+    v435 = icmp.i64 eq v418, v434
+    brif.i8 v435, block144(v6), block144(v433)
+
+block144(v436: i32):
+    v437 = iconst.i64 6
+    v438 = icmp.i64 eq v418, v437
+    brif.i8 v438, block145(v7), block145(v436)
+
+block145(v439: i32):
+    v440 = iconst.i64 7
+    v441 = icmp.i64 eq v418, v440
+    brif.i8 v441, block146(v8), block146(v439)
+
+block146(v442: i32):
+    v443 = iconst.i64 8
+    v444 = icmp.i64 eq v418, v443
+    brif.i8 v444, block147(v9), block147(v442)
+
+block147(v445: i32):
+    v446 = iconst.i64 9
+    v447 = icmp.i64 eq v418, v446
+    brif.i8 v447, block148(v10), block148(v445)
+
+block148(v448: i32):
+    v449 = iconst.i64 10
+    v450 = icmp.i64 eq v418, v449
+    brif.i8 v450, block149(v11), block149(v448)
+
+block149(v451: i32):
+    v452 = iconst.i64 11
+    v453 = icmp.i64 eq v418, v452
+    brif.i8 v453, block150(v12), block150(v451)
+
+block150(v454: i32):
+    v455 = iconst.i64 12
+    v456 = icmp.i64 eq v418, v455
+    brif.i8 v456, block151(v13), block151(v454)
+
+block151(v457: i32):
+    v458 = iconst.i64 13
+    v459 = icmp.i64 eq v418, v458
+    brif.i8 v459, block152(v14), block152(v457)
+
+block152(v460: i32):
+    v461 = iconst.i64 14
+    v462 = icmp.i64 eq v418, v461
+    brif.i8 v462, block153(v15), block153(v460)
+
+block153(v463: i32):
+    v464 = iconst.i64 15
+    v465 = icmp.i64 eq v418, v464
+    brif.i8 v465, block154(v16), block154(v463)
+
+block154(v466: i32):
+    jump block138(v466)
+
+block138(v417: i32):
+    v468 = iconst.i64 9
+    v469 = iconst.i64 16
+    v470 = icmp.i64 uge v468, v469
+    v471 = iconst.i8 3
+    brif.i8 v470, block1(v471), block156
+
+block156:
+    v472 = iconst.i64 1
+    v473 = icmp.i64 eq v468, v472
+    brif.i8 v473, block157(v2), block157(v1)
+
+block157(v474: i32):
+    v475 = iconst.i64 2
+    v476 = icmp.i64 eq v468, v475
+    brif.i8 v476, block158(v3), block158(v474)
+
+block158(v477: i32):
+    v478 = iconst.i64 3
+    v479 = icmp.i64 eq v468, v478
+    brif.i8 v479, block159(v4), block159(v477)
+
+block159(v480: i32):
+    v481 = iconst.i64 4
+    v482 = icmp.i64 eq v468, v481
+    brif.i8 v482, block160(v5), block160(v480)
+
+block160(v483: i32):
+    v484 = iconst.i64 5
+    v485 = icmp.i64 eq v468, v484
+    brif.i8 v485, block161(v6), block161(v483)
+
+block161(v486: i32):
+    v487 = iconst.i64 6
+    v488 = icmp.i64 eq v468, v487
+    brif.i8 v488, block162(v7), block162(v486)
+
+block162(v489: i32):
+    v490 = iconst.i64 7
+    v491 = icmp.i64 eq v468, v490
+    brif.i8 v491, block163(v8), block163(v489)
+
+block163(v492: i32):
+    v493 = iconst.i64 8
+    v494 = icmp.i64 eq v468, v493
+    brif.i8 v494, block164(v9), block164(v492)
+
+block164(v495: i32):
+    v496 = iconst.i64 9
+    v497 = icmp.i64 eq v468, v496
+    brif.i8 v497, block165(v10), block165(v495)
+
+block165(v498: i32):
+    v499 = iconst.i64 10
+    v500 = icmp.i64 eq v468, v499
+    brif.i8 v500, block166(v11), block166(v498)
+
+block166(v501: i32):
+    v502 = iconst.i64 11
+    v503 = icmp.i64 eq v468, v502
+    brif.i8 v503, block167(v12), block167(v501)
+
+block167(v504: i32):
+    v505 = iconst.i64 12
+    v506 = icmp.i64 eq v468, v505
+    brif.i8 v506, block168(v13), block168(v504)
+
+block168(v507: i32):
+    v508 = iconst.i64 13
+    v509 = icmp.i64 eq v468, v508
+    brif.i8 v509, block169(v14), block169(v507)
+
+block169(v510: i32):
+    v511 = iconst.i64 14
+    v512 = icmp.i64 eq v468, v511
+    brif.i8 v512, block170(v15), block170(v510)
+
+block170(v513: i32):
+    v514 = iconst.i64 15
+    v515 = icmp.i64 eq v468, v514
+    brif.i8 v515, block171(v16), block171(v513)
+
+block171(v516: i32):
+    jump block155(v516)
+
+block155(v467: i32):
+    v518 = iconst.i64 10
+    v519 = iconst.i64 16
+    v520 = icmp.i64 uge v518, v519
+    v521 = iconst.i8 3
+    brif.i8 v520, block1(v521), block173
+
+block173:
+    v522 = iconst.i64 1
+    v523 = icmp.i64 eq v518, v522
+    brif.i8 v523, block174(v2), block174(v1)
+
+block174(v524: i32):
+    v525 = iconst.i64 2
+    v526 = icmp.i64 eq v518, v525
+    brif.i8 v526, block175(v3), block175(v524)
+
+block175(v527: i32):
+    v528 = iconst.i64 3
+    v529 = icmp.i64 eq v518, v528
+    brif.i8 v529, block176(v4), block176(v527)
+
+block176(v530: i32):
+    v531 = iconst.i64 4
+    v532 = icmp.i64 eq v518, v531
+    brif.i8 v532, block177(v5), block177(v530)
+
+block177(v533: i32):
+    v534 = iconst.i64 5
+    v535 = icmp.i64 eq v518, v534
+    brif.i8 v535, block178(v6), block178(v533)
+
+block178(v536: i32):
+    v537 = iconst.i64 6
+    v538 = icmp.i64 eq v518, v537
+    brif.i8 v538, block179(v7), block179(v536)
+
+block179(v539: i32):
+    v540 = iconst.i64 7
+    v541 = icmp.i64 eq v518, v540
+    brif.i8 v541, block180(v8), block180(v539)
+
+block180(v542: i32):
+    v543 = iconst.i64 8
+    v544 = icmp.i64 eq v518, v543
+    brif.i8 v544, block181(v9), block181(v542)
+
+block181(v545: i32):
+    v546 = iconst.i64 9
+    v547 = icmp.i64 eq v518, v546
+    brif.i8 v547, block182(v10), block182(v545)
+
+block182(v548: i32):
+    v549 = iconst.i64 10
+    v550 = icmp.i64 eq v518, v549
+    brif.i8 v550, block183(v11), block183(v548)
+
+block183(v551: i32):
+    v552 = iconst.i64 11
+    v553 = icmp.i64 eq v518, v552
+    brif.i8 v553, block184(v12), block184(v551)
+
+block184(v554: i32):
+    v555 = iconst.i64 12
+    v556 = icmp.i64 eq v518, v555
+    brif.i8 v556, block185(v13), block185(v554)
+
+block185(v557: i32):
+    v558 = iconst.i64 13
+    v559 = icmp.i64 eq v518, v558
+    brif.i8 v559, block186(v14), block186(v557)
+
+block186(v560: i32):
+    v561 = iconst.i64 14
+    v562 = icmp.i64 eq v518, v561
+    brif.i8 v562, block187(v15), block187(v560)
+
+block187(v563: i32):
+    v564 = iconst.i64 15
+    v565 = icmp.i64 eq v518, v564
+    brif.i8 v565, block188(v16), block188(v563)
+
+block188(v566: i32):
+    jump block172(v566)
+
+block172(v517: i32):
+    v568 = iconst.i64 11
+    v569 = iconst.i64 16
+    v570 = icmp.i64 uge v568, v569
+    v571 = iconst.i8 3
+    brif.i8 v570, block1(v571), block190
+
+block190:
+    v572 = iconst.i64 1
+    v573 = icmp.i64 eq v568, v572
+    brif.i8 v573, block191(v2), block191(v1)
+
+block191(v574: i32):
+    v575 = iconst.i64 2
+    v576 = icmp.i64 eq v568, v575
+    brif.i8 v576, block192(v3), block192(v574)
+
+block192(v577: i32):
+    v578 = iconst.i64 3
+    v579 = icmp.i64 eq v568, v578
+    brif.i8 v579, block193(v4), block193(v577)
+
+block193(v580: i32):
+    v581 = iconst.i64 4
+    v582 = icmp.i64 eq v568, v581
+    brif.i8 v582, block194(v5), block194(v580)
+
+block194(v583: i32):
+    v584 = iconst.i64 5
+    v585 = icmp.i64 eq v568, v584
+    brif.i8 v585, block195(v6), block195(v583)
+
+block195(v586: i32):
+    v587 = iconst.i64 6
+    v588 = icmp.i64 eq v568, v587
+    brif.i8 v588, block196(v7), block196(v586)
+
+block196(v589: i32):
+    v590 = iconst.i64 7
+    v591 = icmp.i64 eq v568, v590
+    brif.i8 v591, block197(v8), block197(v589)
+
+block197(v592: i32):
+    v593 = iconst.i64 8
+    v594 = icmp.i64 eq v568, v593
+    brif.i8 v594, block198(v9), block198(v592)
+
+block198(v595: i32):
+    v596 = iconst.i64 9
+    v597 = icmp.i64 eq v568, v596
+    brif.i8 v597, block199(v10), block199(v595)
+
+block199(v598: i32):
+    v599 = iconst.i64 10
+    v600 = icmp.i64 eq v568, v599
+    brif.i8 v600, block200(v11), block200(v598)
+
+block200(v601: i32):
+    v602 = iconst.i64 11
+    v603 = icmp.i64 eq v568, v602
+    brif.i8 v603, block201(v12), block201(v601)
+
+block201(v604: i32):
+    v605 = iconst.i64 12
+    v606 = icmp.i64 eq v568, v605
+    brif.i8 v606, block202(v13), block202(v604)
+
+block202(v607: i32):
+    v608 = iconst.i64 13
+    v609 = icmp.i64 eq v568, v608
+    brif.i8 v609, block203(v14), block203(v607)
+
+block203(v610: i32):
+    v611 = iconst.i64 14
+    v612 = icmp.i64 eq v568, v611
+    brif.i8 v612, block204(v15), block204(v610)
+
+block204(v613: i32):
+    v614 = iconst.i64 15
+    v615 = icmp.i64 eq v568, v614
+    brif.i8 v615, block205(v16), block205(v613)
+
+block205(v616: i32):
+    jump block189(v616)
+
+block189(v567: i32):
+    v618 = iconst.i64 12
+    v619 = iconst.i64 16
+    v620 = icmp.i64 uge v618, v619
+    v621 = iconst.i8 3
+    brif.i8 v620, block1(v621), block207
+
+block207:
+    v622 = iconst.i64 1
+    v623 = icmp.i64 eq v618, v622
+    brif.i8 v623, block208(v2), block208(v1)
+
+block208(v624: i32):
+    v625 = iconst.i64 2
+    v626 = icmp.i64 eq v618, v625
+    brif.i8 v626, block209(v3), block209(v624)
+
+block209(v627: i32):
+    v628 = iconst.i64 3
+    v629 = icmp.i64 eq v618, v628
+    brif.i8 v629, block210(v4), block210(v627)
+
+block210(v630: i32):
+    v631 = iconst.i64 4
+    v632 = icmp.i64 eq v618, v631
+    brif.i8 v632, block211(v5), block211(v630)
+
+block211(v633: i32):
+    v634 = iconst.i64 5
+    v635 = icmp.i64 eq v618, v634
+    brif.i8 v635, block212(v6), block212(v633)
+
+block212(v636: i32):
+    v637 = iconst.i64 6
+    v638 = icmp.i64 eq v618, v637
+    brif.i8 v638, block213(v7), block213(v636)
+
+block213(v639: i32):
+    v640 = iconst.i64 7
+    v641 = icmp.i64 eq v618, v640
+    brif.i8 v641, block214(v8), block214(v639)
+
+block214(v642: i32):
+    v643 = iconst.i64 8
+    v644 = icmp.i64 eq v618, v643
+    brif.i8 v644, block215(v9), block215(v642)
+
+block215(v645: i32):
+    v646 = iconst.i64 9
+    v647 = icmp.i64 eq v618, v646
+    brif.i8 v647, block216(v10), block216(v645)
+
+block216(v648: i32):
+    v649 = iconst.i64 10
+    v650 = icmp.i64 eq v618, v649
+    brif.i8 v650, block217(v11), block217(v648)
+
+block217(v651: i32):
+    v652 = iconst.i64 11
+    v653 = icmp.i64 eq v618, v652
+    brif.i8 v653, block218(v12), block218(v651)
+
+block218(v654: i32):
+    v655 = iconst.i64 12
+    v656 = icmp.i64 eq v618, v655
+    brif.i8 v656, block219(v13), block219(v654)
+
+block219(v657: i32):
+    v658 = iconst.i64 13
+    v659 = icmp.i64 eq v618, v658
+    brif.i8 v659, block220(v14), block220(v657)
+
+block220(v660: i32):
+    v661 = iconst.i64 14
+    v662 = icmp.i64 eq v618, v661
+    brif.i8 v662, block221(v15), block221(v660)
+
+block221(v663: i32):
+    v664 = iconst.i64 15
+    v665 = icmp.i64 eq v618, v664
+    brif.i8 v665, block222(v16), block222(v663)
+
+block222(v666: i32):
+    jump block206(v666)
+
+block206(v617: i32):
+    v668 = iconst.i64 13
+    v669 = iconst.i64 16
+    v670 = icmp.i64 uge v668, v669
+    v671 = iconst.i8 3
+    brif.i8 v670, block1(v671), block224
+
+block224:
+    v672 = iconst.i64 1
+    v673 = icmp.i64 eq v668, v672
+    brif.i8 v673, block225(v2), block225(v1)
+
+block225(v674: i32):
+    v675 = iconst.i64 2
+    v676 = icmp.i64 eq v668, v675
+    brif.i8 v676, block226(v3), block226(v674)
+
+block226(v677: i32):
+    v678 = iconst.i64 3
+    v679 = icmp.i64 eq v668, v678
+    brif.i8 v679, block227(v4), block227(v677)
+
+block227(v680: i32):
+    v681 = iconst.i64 4
+    v682 = icmp.i64 eq v668, v681
+    brif.i8 v682, block228(v5), block228(v680)
+
+block228(v683: i32):
+    v684 = iconst.i64 5
+    v685 = icmp.i64 eq v668, v684
+    brif.i8 v685, block229(v6), block229(v683)
+
+block229(v686: i32):
+    v687 = iconst.i64 6
+    v688 = icmp.i64 eq v668, v687
+    brif.i8 v688, block230(v7), block230(v686)
+
+block230(v689: i32):
+    v690 = iconst.i64 7
+    v691 = icmp.i64 eq v668, v690
+    brif.i8 v691, block231(v8), block231(v689)
+
+block231(v692: i32):
+    v693 = iconst.i64 8
+    v694 = icmp.i64 eq v668, v693
+    brif.i8 v694, block232(v9), block232(v692)
+
+block232(v695: i32):
+    v696 = iconst.i64 9
+    v697 = icmp.i64 eq v668, v696
+    brif.i8 v697, block233(v10), block233(v695)
+
+block233(v698: i32):
+    v699 = iconst.i64 10
+    v700 = icmp.i64 eq v668, v699
+    brif.i8 v700, block234(v11), block234(v698)
+
+block234(v701: i32):
+    v702 = iconst.i64 11
+    v703 = icmp.i64 eq v668, v702
+    brif.i8 v703, block235(v12), block235(v701)
+
+block235(v704: i32):
+    v705 = iconst.i64 12
+    v706 = icmp.i64 eq v668, v705
+    brif.i8 v706, block236(v13), block236(v704)
+
+block236(v707: i32):
+    v708 = iconst.i64 13
+    v709 = icmp.i64 eq v668, v708
+    brif.i8 v709, block237(v14), block237(v707)
+
+block237(v710: i32):
+    v711 = iconst.i64 14
+    v712 = icmp.i64 eq v668, v711
+    brif.i8 v712, block238(v15), block238(v710)
+
+block238(v713: i32):
+    v714 = iconst.i64 15
+    v715 = icmp.i64 eq v668, v714
+    brif.i8 v715, block239(v16), block239(v713)
+
+block239(v716: i32):
+    jump block223(v716)
+
+block223(v667: i32):
+    v718 = iconst.i64 14
+    v719 = iconst.i64 16
+    v720 = icmp.i64 uge v718, v719
+    v721 = iconst.i8 3
+    brif.i8 v720, block1(v721), block241
+
+block241:
+    v722 = iconst.i64 1
+    v723 = icmp.i64 eq v718, v722
+    brif.i8 v723, block242(v2), block242(v1)
+
+block242(v724: i32):
+    v725 = iconst.i64 2
+    v726 = icmp.i64 eq v718, v725
+    brif.i8 v726, block243(v3), block243(v724)
+
+block243(v727: i32):
+    v728 = iconst.i64 3
+    v729 = icmp.i64 eq v718, v728
+    brif.i8 v729, block244(v4), block244(v727)
+
+block244(v730: i32):
+    v731 = iconst.i64 4
+    v732 = icmp.i64 eq v718, v731
+    brif.i8 v732, block245(v5), block245(v730)
+
+block245(v733: i32):
+    v734 = iconst.i64 5
+    v735 = icmp.i64 eq v718, v734
+    brif.i8 v735, block246(v6), block246(v733)
+
+block246(v736: i32):
+    v737 = iconst.i64 6
+    v738 = icmp.i64 eq v718, v737
+    brif.i8 v738, block247(v7), block247(v736)
+
+block247(v739: i32):
+    v740 = iconst.i64 7
+    v741 = icmp.i64 eq v718, v740
+    brif.i8 v741, block248(v8), block248(v739)
+
+block248(v742: i32):
+    v743 = iconst.i64 8
+    v744 = icmp.i64 eq v718, v743
+    brif.i8 v744, block249(v9), block249(v742)
+
+block249(v745: i32):
+    v746 = iconst.i64 9
+    v747 = icmp.i64 eq v718, v746
+    brif.i8 v747, block250(v10), block250(v745)
+
+block250(v748: i32):
+    v749 = iconst.i64 10
+    v750 = icmp.i64 eq v718, v749
+    brif.i8 v750, block251(v11), block251(v748)
+
+block251(v751: i32):
+    v752 = iconst.i64 11
+    v753 = icmp.i64 eq v718, v752
+    brif.i8 v753, block252(v12), block252(v751)
+
+block252(v754: i32):
+    v755 = iconst.i64 12
+    v756 = icmp.i64 eq v718, v755
+    brif.i8 v756, block253(v13), block253(v754)
+
+block253(v757: i32):
+    v758 = iconst.i64 13
+    v759 = icmp.i64 eq v718, v758
+    brif.i8 v759, block254(v14), block254(v757)
+
+block254(v760: i32):
+    v761 = iconst.i64 14
+    v762 = icmp.i64 eq v718, v761
+    brif.i8 v762, block255(v15), block255(v760)
+
+block255(v763: i32):
+    v764 = iconst.i64 15
+    v765 = icmp.i64 eq v718, v764
+    brif.i8 v765, block256(v16), block256(v763)
+
+block256(v766: i32):
+    jump block240(v766)
+
+block240(v717: i32):
+    v768 = iconst.i64 15
+    v769 = iconst.i64 16
+    v770 = icmp.i64 uge v768, v769
+    v771 = iconst.i8 3
+    brif.i8 v770, block1(v771), block258
+
+block258:
+    v772 = iconst.i64 1
+    v773 = icmp.i64 eq v768, v772
+    brif.i8 v773, block259(v2), block259(v1)
+
+block259(v774: i32):
+    v775 = iconst.i64 2
+    v776 = icmp.i64 eq v768, v775
+    brif.i8 v776, block260(v3), block260(v774)
+
+block260(v777: i32):
+    v778 = iconst.i64 3
+    v779 = icmp.i64 eq v768, v778
+    brif.i8 v779, block261(v4), block261(v777)
+
+block261(v780: i32):
+    v781 = iconst.i64 4
+    v782 = icmp.i64 eq v768, v781
+    brif.i8 v782, block262(v5), block262(v780)
+
+block262(v783: i32):
+    v784 = iconst.i64 5
+    v785 = icmp.i64 eq v768, v784
+    brif.i8 v785, block263(v6), block263(v783)
+
+block263(v786: i32):
+    v787 = iconst.i64 6
+    v788 = icmp.i64 eq v768, v787
+    brif.i8 v788, block264(v7), block264(v786)
+
+block264(v789: i32):
+    v790 = iconst.i64 7
+    v791 = icmp.i64 eq v768, v790
+    brif.i8 v791, block265(v8), block265(v789)
+
+block265(v792: i32):
+    v793 = iconst.i64 8
+    v794 = icmp.i64 eq v768, v793
+    brif.i8 v794, block266(v9), block266(v792)
+
+block266(v795: i32):
+    v796 = iconst.i64 9
+    v797 = icmp.i64 eq v768, v796
+    brif.i8 v797, block267(v10), block267(v795)
+
+block267(v798: i32):
+    v799 = iconst.i64 10
+    v800 = icmp.i64 eq v768, v799
+    brif.i8 v800, block268(v11), block268(v798)
+
+block268(v801: i32):
+    v802 = iconst.i64 11
+    v803 = icmp.i64 eq v768, v802
+    brif.i8 v803, block269(v12), block269(v801)
+
+block269(v804: i32):
+    v805 = iconst.i64 12
+    v806 = icmp.i64 eq v768, v805
+    brif.i8 v806, block270(v13), block270(v804)
+
+block270(v807: i32):
+    v808 = iconst.i64 13
+    v809 = icmp.i64 eq v768, v808
+    brif.i8 v809, block271(v14), block271(v807)
+
+block271(v810: i32):
+    v811 = iconst.i64 14
+    v812 = icmp.i64 eq v768, v811
+    brif.i8 v812, block272(v15), block272(v810)
+
+block272(v813: i32):
+    v814 = iconst.i64 15
+    v815 = icmp.i64 eq v768, v814
+    brif.i8 v815, block273(v16), block273(v813)
+
+block273(v816: i32):
+    jump block257(v816)
+
+block257(v767: i32):
+    v850 = iconst.i64 0
+    jump block275(v850, v17, v67, v117, v167, v217, v267, v317, v367, v417, v467, v517, v567, v617, v667, v717, v767)
+
+block275(v833: i64, v834: i32, v835: i32, v836: i32, v837: i32, v838: i32, v839: i32, v840: i32, v841: i32, v842: i32, v843: i32, v844: i32, v845: i32, v846: i32, v847: i32, v848: i32, v849: i32):
+    v851 = iconst.i64 10
+    v852 = icmp.i64 ult v833, v851
+    brif.i8 v852, block276, block277
+
+block276:
+    v853 = iadd.i32 v834, v838
+    v854 = bxor.i32 v846, v853
+    v855 = iconst.i32 16
+    v856 = ishl.i32 v854, v855
+    v857 = iconst.i32 16
+    v858 = ushr.i32 v854, v857
+    v859 = bor.i32 v856, v858
+    v860 = iadd.i32 v842, v859
+    v861 = bxor.i32 v838, v860
+    v862 = iconst.i32 12
+    v863 = ishl.i32 v861, v862
+    v864 = iconst.i32 20
+    v865 = ushr.i32 v861, v864
+    v866 = bor.i32 v863, v865
+    v867 = iadd.i32 v853, v866
+    v868 = bxor.i32 v859, v867
+    v869 = iconst.i32 8
+    v870 = ishl.i32 v868, v869
+    v871 = iconst.i32 24
+    v872 = ushr.i32 v868, v871
+    v873 = bor.i32 v870, v872
+    v874 = iadd.i32 v860, v873
+    v875 = bxor.i32 v866, v874
+    v876 = iconst.i32 7
+    v877 = ishl.i32 v875, v876
+    v878 = iconst.i32 25
+    v879 = ushr.i32 v875, v878
+    v880 = bor.i32 v877, v879
+    v881 = iadd.i32 v835, v839
+    v882 = bxor.i32 v847, v881
+    v883 = iconst.i32 16
+    v884 = ishl.i32 v882, v883
+    v885 = iconst.i32 16
+    v886 = ushr.i32 v882, v885
+    v887 = bor.i32 v884, v886
+    v888 = iadd.i32 v843, v887
+    v889 = bxor.i32 v839, v888
+    v890 = iconst.i32 12
+    v891 = ishl.i32 v889, v890
+    v892 = iconst.i32 20
+    v893 = ushr.i32 v889, v892
+    v894 = bor.i32 v891, v893
+    v895 = iadd.i32 v881, v894
+    v896 = bxor.i32 v887, v895
+    v897 = iconst.i32 8
+    v898 = ishl.i32 v896, v897
+    v899 = iconst.i32 24
+    v900 = ushr.i32 v896, v899
+    v901 = bor.i32 v898, v900
+    v902 = iadd.i32 v888, v901
+    v903 = bxor.i32 v894, v902
+    v904 = iconst.i32 7
+    v905 = ishl.i32 v903, v904
+    v906 = iconst.i32 25
+    v907 = ushr.i32 v903, v906
+    v908 = bor.i32 v905, v907
+    v909 = iadd.i32 v836, v840
+    v910 = bxor.i32 v848, v909
+    v911 = iconst.i32 16
+    v912 = ishl.i32 v910, v911
+    v913 = iconst.i32 16
+    v914 = ushr.i32 v910, v913
+    v915 = bor.i32 v912, v914
+    v916 = iadd.i32 v844, v915
+    v917 = bxor.i32 v840, v916
+    v918 = iconst.i32 12
+    v919 = ishl.i32 v917, v918
+    v920 = iconst.i32 20
+    v921 = ushr.i32 v917, v920
+    v922 = bor.i32 v919, v921
+    v923 = iadd.i32 v909, v922
+    v924 = bxor.i32 v915, v923
+    v925 = iconst.i32 8
+    v926 = ishl.i32 v924, v925
+    v927 = iconst.i32 24
+    v928 = ushr.i32 v924, v927
+    v929 = bor.i32 v926, v928
+    v930 = iadd.i32 v916, v929
+    v931 = bxor.i32 v922, v930
+    v932 = iconst.i32 7
+    v933 = ishl.i32 v931, v932
+    v934 = iconst.i32 25
+    v935 = ushr.i32 v931, v934
+    v936 = bor.i32 v933, v935
+    v937 = iadd.i32 v837, v841
+    v938 = bxor.i32 v849, v937
+    v939 = iconst.i32 16
+    v940 = ishl.i32 v938, v939
+    v941 = iconst.i32 16
+    v942 = ushr.i32 v938, v941
+    v943 = bor.i32 v940, v942
+    v944 = iadd.i32 v845, v943
+    v945 = bxor.i32 v841, v944
+    v946 = iconst.i32 12
+    v947 = ishl.i32 v945, v946
+    v948 = iconst.i32 20
+    v949 = ushr.i32 v945, v948
+    v950 = bor.i32 v947, v949
+    v951 = iadd.i32 v937, v950
+    v952 = bxor.i32 v943, v951
+    v953 = iconst.i32 8
+    v954 = ishl.i32 v952, v953
+    v955 = iconst.i32 24
+    v956 = ushr.i32 v952, v955
+    v957 = bor.i32 v954, v956
+    v958 = iadd.i32 v944, v957
+    v959 = bxor.i32 v950, v958
+    v960 = iconst.i32 7
+    v961 = ishl.i32 v959, v960
+    v962 = iconst.i32 25
+    v963 = ushr.i32 v959, v962
+    v964 = bor.i32 v961, v963
+    v965 = iadd.i32 v867, v908
+    v966 = bxor.i32 v957, v965
+    v967 = iconst.i32 16
+    v968 = ishl.i32 v966, v967
+    v969 = iconst.i32 16
+    v970 = ushr.i32 v966, v969
+    v971 = bor.i32 v968, v970
+    v972 = iadd.i32 v930, v971
+    v973 = bxor.i32 v908, v972
+    v974 = iconst.i32 12
+    v975 = ishl.i32 v973, v974
+    v976 = iconst.i32 20
+    v977 = ushr.i32 v973, v976
+    v978 = bor.i32 v975, v977
+    v979 = iadd.i32 v965, v978
+    v980 = bxor.i32 v971, v979
+    v981 = iconst.i32 8
+    v982 = ishl.i32 v980, v981
+    v983 = iconst.i32 24
+    v984 = ushr.i32 v980, v983
+    v985 = bor.i32 v982, v984
+    v986 = iadd.i32 v972, v985
+    v987 = bxor.i32 v978, v986
+    v988 = iconst.i32 7
+    v989 = ishl.i32 v987, v988
+    v990 = iconst.i32 25
+    v991 = ushr.i32 v987, v990
+    v992 = bor.i32 v989, v991
+    v993 = iadd.i32 v895, v936
+    v994 = bxor.i32 v873, v993
+    v995 = iconst.i32 16
+    v996 = ishl.i32 v994, v995
+    v997 = iconst.i32 16
+    v998 = ushr.i32 v994, v997
+    v999 = bor.i32 v996, v998
+    v1000 = iadd.i32 v958, v999
+    v1001 = bxor.i32 v936, v1000
+    v1002 = iconst.i32 12
+    v1003 = ishl.i32 v1001, v1002
+    v1004 = iconst.i32 20
+    v1005 = ushr.i32 v1001, v1004
+    v1006 = bor.i32 v1003, v1005
+    v1007 = iadd.i32 v993, v1006
+    v1008 = bxor.i32 v999, v1007
+    v1009 = iconst.i32 8
+    v1010 = ishl.i32 v1008, v1009
+    v1011 = iconst.i32 24
+    v1012 = ushr.i32 v1008, v1011
+    v1013 = bor.i32 v1010, v1012
+    v1014 = iadd.i32 v1000, v1013
+    v1015 = bxor.i32 v1006, v1014
+    v1016 = iconst.i32 7
+    v1017 = ishl.i32 v1015, v1016
+    v1018 = iconst.i32 25
+    v1019 = ushr.i32 v1015, v1018
+    v1020 = bor.i32 v1017, v1019
+    v1021 = iadd.i32 v923, v964
+    v1022 = bxor.i32 v901, v1021
+    v1023 = iconst.i32 16
+    v1024 = ishl.i32 v1022, v1023
+    v1025 = iconst.i32 16
+    v1026 = ushr.i32 v1022, v1025
+    v1027 = bor.i32 v1024, v1026
+    v1028 = iadd.i32 v874, v1027
+    v1029 = bxor.i32 v964, v1028
+    v1030 = iconst.i32 12
+    v1031 = ishl.i32 v1029, v1030
+    v1032 = iconst.i32 20
+    v1033 = ushr.i32 v1029, v1032
+    v1034 = bor.i32 v1031, v1033
+    v1035 = iadd.i32 v1021, v1034
+    v1036 = bxor.i32 v1027, v1035
+    v1037 = iconst.i32 8
+    v1038 = ishl.i32 v1036, v1037
+    v1039 = iconst.i32 24
+    v1040 = ushr.i32 v1036, v1039
+    v1041 = bor.i32 v1038, v1040
+    v1042 = iadd.i32 v1028, v1041
+    v1043 = bxor.i32 v1034, v1042
+    v1044 = iconst.i32 7
+    v1045 = ishl.i32 v1043, v1044
+    v1046 = iconst.i32 25
+    v1047 = ushr.i32 v1043, v1046
+    v1048 = bor.i32 v1045, v1047
+    v1049 = iadd.i32 v951, v880
+    v1050 = bxor.i32 v929, v1049
+    v1051 = iconst.i32 16
+    v1052 = ishl.i32 v1050, v1051
+    v1053 = iconst.i32 16
+    v1054 = ushr.i32 v1050, v1053
+    v1055 = bor.i32 v1052, v1054
+    v1056 = iadd.i32 v902, v1055
+    v1057 = bxor.i32 v880, v1056
+    v1058 = iconst.i32 12
+    v1059 = ishl.i32 v1057, v1058
+    v1060 = iconst.i32 20
+    v1061 = ushr.i32 v1057, v1060
+    v1062 = bor.i32 v1059, v1061
+    v1063 = iadd.i32 v1049, v1062
+    v1064 = bxor.i32 v1055, v1063
+    v1065 = iconst.i32 8
+    v1066 = ishl.i32 v1064, v1065
+    v1067 = iconst.i32 24
+    v1068 = ushr.i32 v1064, v1067
+    v1069 = bor.i32 v1066, v1068
+    v1070 = iadd.i32 v1056, v1069
+    v1071 = bxor.i32 v1062, v1070
+    v1072 = iconst.i32 7
+    v1073 = ishl.i32 v1071, v1072
+    v1074 = iconst.i32 25
+    v1075 = ushr.i32 v1071, v1074
+    v1076 = bor.i32 v1073, v1075
+    jump block278(v979, v1007, v1035, v1063, v1076, v992, v1020, v1048, v1042, v1070, v986, v1014, v1013, v1041, v1069, v985)
+
+block278(v1077: i32, v1078: i32, v1079: i32, v1080: i32, v1081: i32, v1082: i32, v1083: i32, v1084: i32, v1085: i32, v1086: i32, v1087: i32, v1088: i32, v1089: i32, v1090: i32, v1091: i32, v1092: i32):
+    v1093 = iconst.i64 1
+    v1094 = iadd.i64 v833, v1093
+    jump block275(v1094, v1077, v1078, v1079, v1080, v1081, v1082, v1083, v1084, v1085, v1086, v1087, v1088, v1089, v1090, v1091, v1092)
+
+block277:
+    jump block274(v834, v835, v836, v837, v838, v839, v840, v841, v842, v843, v844, v845, v846, v847, v848, v849)
+
+block274(v817: i32, v818: i32, v819: i32, v820: i32, v821: i32, v822: i32, v823: i32, v824: i32, v825: i32, v826: i32, v827: i32, v828: i32, v829: i32, v830: i32, v831: i32, v832: i32):
+    v1096 = iconst.i64 0
+    v1097 = iconst.i64 16
+    v1098 = icmp.i64 uge v1096, v1097
+    v1099 = iconst.i8 3
+    brif.i8 v1098, block1(v1099), block280
+
+block280:
+    v1100 = iconst.i64 1
+    v1101 = icmp.i64 eq v1096, v1100
+    brif.i8 v1101, block281(v2), block281(v1)
+
+block281(v1102: i32):
+    v1103 = iconst.i64 2
+    v1104 = icmp.i64 eq v1096, v1103
+    brif.i8 v1104, block282(v3), block282(v1102)
+
+block282(v1105: i32):
+    v1106 = iconst.i64 3
+    v1107 = icmp.i64 eq v1096, v1106
+    brif.i8 v1107, block283(v4), block283(v1105)
+
+block283(v1108: i32):
+    v1109 = iconst.i64 4
+    v1110 = icmp.i64 eq v1096, v1109
+    brif.i8 v1110, block284(v5), block284(v1108)
+
+block284(v1111: i32):
+    v1112 = iconst.i64 5
+    v1113 = icmp.i64 eq v1096, v1112
+    brif.i8 v1113, block285(v6), block285(v1111)
+
+block285(v1114: i32):
+    v1115 = iconst.i64 6
+    v1116 = icmp.i64 eq v1096, v1115
+    brif.i8 v1116, block286(v7), block286(v1114)
+
+block286(v1117: i32):
+    v1118 = iconst.i64 7
+    v1119 = icmp.i64 eq v1096, v1118
+    brif.i8 v1119, block287(v8), block287(v1117)
+
+block287(v1120: i32):
+    v1121 = iconst.i64 8
+    v1122 = icmp.i64 eq v1096, v1121
+    brif.i8 v1122, block288(v9), block288(v1120)
+
+block288(v1123: i32):
+    v1124 = iconst.i64 9
+    v1125 = icmp.i64 eq v1096, v1124
+    brif.i8 v1125, block289(v10), block289(v1123)
+
+block289(v1126: i32):
+    v1127 = iconst.i64 10
+    v1128 = icmp.i64 eq v1096, v1127
+    brif.i8 v1128, block290(v11), block290(v1126)
+
+block290(v1129: i32):
+    v1130 = iconst.i64 11
+    v1131 = icmp.i64 eq v1096, v1130
+    brif.i8 v1131, block291(v12), block291(v1129)
+
+block291(v1132: i32):
+    v1133 = iconst.i64 12
+    v1134 = icmp.i64 eq v1096, v1133
+    brif.i8 v1134, block292(v13), block292(v1132)
+
+block292(v1135: i32):
+    v1136 = iconst.i64 13
+    v1137 = icmp.i64 eq v1096, v1136
+    brif.i8 v1137, block293(v14), block293(v1135)
+
+block293(v1138: i32):
+    v1139 = iconst.i64 14
+    v1140 = icmp.i64 eq v1096, v1139
+    brif.i8 v1140, block294(v15), block294(v1138)
+
+block294(v1141: i32):
+    v1142 = iconst.i64 15
+    v1143 = icmp.i64 eq v1096, v1142
+    brif.i8 v1143, block295(v16), block295(v1141)
+
+block295(v1144: i32):
+    jump block279(v1144)
+
+block279(v1095: i32):
+    v1145 = iconst.i64 0
+    v1146 = iadd.i32 v817, v1095
+    v1147 = iconst.i64 16
+    v1148 = icmp.i64 uge v1145, v1147
+    v1149 = iconst.i8 3
+    brif.i8 v1148, block1(v1149), block296
+
+block296:
+    v1150 = iconst.i64 0
+    v1151 = icmp.i64 eq v1145, v1150
+    brif.i8 v1151, block297(v1146), block297(v1)
+
+block297(v1152: i32):
+    v1153 = iconst.i64 1
+    v1154 = icmp.i64 eq v1145, v1153
+    brif.i8 v1154, block298(v1146), block298(v2)
+
+block298(v1155: i32):
+    v1156 = iconst.i64 2
+    v1157 = icmp.i64 eq v1145, v1156
+    brif.i8 v1157, block299(v1146), block299(v3)
+
+block299(v1158: i32):
+    v1159 = iconst.i64 3
+    v1160 = icmp.i64 eq v1145, v1159
+    brif.i8 v1160, block300(v1146), block300(v4)
+
+block300(v1161: i32):
+    v1162 = iconst.i64 4
+    v1163 = icmp.i64 eq v1145, v1162
+    brif.i8 v1163, block301(v1146), block301(v5)
+
+block301(v1164: i32):
+    v1165 = iconst.i64 5
+    v1166 = icmp.i64 eq v1145, v1165
+    brif.i8 v1166, block302(v1146), block302(v6)
+
+block302(v1167: i32):
+    v1168 = iconst.i64 6
+    v1169 = icmp.i64 eq v1145, v1168
+    brif.i8 v1169, block303(v1146), block303(v7)
+
+block303(v1170: i32):
+    v1171 = iconst.i64 7
+    v1172 = icmp.i64 eq v1145, v1171
+    brif.i8 v1172, block304(v1146), block304(v8)
+
+block304(v1173: i32):
+    v1174 = iconst.i64 8
+    v1175 = icmp.i64 eq v1145, v1174
+    brif.i8 v1175, block305(v1146), block305(v9)
+
+block305(v1176: i32):
+    v1177 = iconst.i64 9
+    v1178 = icmp.i64 eq v1145, v1177
+    brif.i8 v1178, block306(v1146), block306(v10)
+
+block306(v1179: i32):
+    v1180 = iconst.i64 10
+    v1181 = icmp.i64 eq v1145, v1180
+    brif.i8 v1181, block307(v1146), block307(v11)
+
+block307(v1182: i32):
+    v1183 = iconst.i64 11
+    v1184 = icmp.i64 eq v1145, v1183
+    brif.i8 v1184, block308(v1146), block308(v12)
+
+block308(v1185: i32):
+    v1186 = iconst.i64 12
+    v1187 = icmp.i64 eq v1145, v1186
+    brif.i8 v1187, block309(v1146), block309(v13)
+
+block309(v1188: i32):
+    v1189 = iconst.i64 13
+    v1190 = icmp.i64 eq v1145, v1189
+    brif.i8 v1190, block310(v1146), block310(v14)
+
+block310(v1191: i32):
+    v1192 = iconst.i64 14
+    v1193 = icmp.i64 eq v1145, v1192
+    brif.i8 v1193, block311(v1146), block311(v15)
+
+block311(v1194: i32):
+    v1195 = iconst.i64 15
+    v1196 = icmp.i64 eq v1145, v1195
+    brif.i8 v1196, block312(v1146), block312(v16)
+
+block312(v1197: i32):
+    v1199 = iconst.i64 1
+    v1200 = iconst.i64 16
+    v1201 = icmp.i64 uge v1199, v1200
+    v1202 = iconst.i8 3
+    brif.i8 v1201, block1(v1202), block314
+
+block314:
+    v1203 = iconst.i64 1
+    v1204 = icmp.i64 eq v1199, v1203
+    brif.i8 v1204, block315(v2), block315(v1)
+
+block315(v1205: i32):
+    v1206 = iconst.i64 2
+    v1207 = icmp.i64 eq v1199, v1206
+    brif.i8 v1207, block316(v3), block316(v1205)
+
+block316(v1208: i32):
+    v1209 = iconst.i64 3
+    v1210 = icmp.i64 eq v1199, v1209
+    brif.i8 v1210, block317(v4), block317(v1208)
+
+block317(v1211: i32):
+    v1212 = iconst.i64 4
+    v1213 = icmp.i64 eq v1199, v1212
+    brif.i8 v1213, block318(v5), block318(v1211)
+
+block318(v1214: i32):
+    v1215 = iconst.i64 5
+    v1216 = icmp.i64 eq v1199, v1215
+    brif.i8 v1216, block319(v6), block319(v1214)
+
+block319(v1217: i32):
+    v1218 = iconst.i64 6
+    v1219 = icmp.i64 eq v1199, v1218
+    brif.i8 v1219, block320(v7), block320(v1217)
+
+block320(v1220: i32):
+    v1221 = iconst.i64 7
+    v1222 = icmp.i64 eq v1199, v1221
+    brif.i8 v1222, block321(v8), block321(v1220)
+
+block321(v1223: i32):
+    v1224 = iconst.i64 8
+    v1225 = icmp.i64 eq v1199, v1224
+    brif.i8 v1225, block322(v9), block322(v1223)
+
+block322(v1226: i32):
+    v1227 = iconst.i64 9
+    v1228 = icmp.i64 eq v1199, v1227
+    brif.i8 v1228, block323(v10), block323(v1226)
+
+block323(v1229: i32):
+    v1230 = iconst.i64 10
+    v1231 = icmp.i64 eq v1199, v1230
+    brif.i8 v1231, block324(v11), block324(v1229)
+
+block324(v1232: i32):
+    v1233 = iconst.i64 11
+    v1234 = icmp.i64 eq v1199, v1233
+    brif.i8 v1234, block325(v12), block325(v1232)
+
+block325(v1235: i32):
+    v1236 = iconst.i64 12
+    v1237 = icmp.i64 eq v1199, v1236
+    brif.i8 v1237, block326(v13), block326(v1235)
+
+block326(v1238: i32):
+    v1239 = iconst.i64 13
+    v1240 = icmp.i64 eq v1199, v1239
+    brif.i8 v1240, block327(v14), block327(v1238)
+
+block327(v1241: i32):
+    v1242 = iconst.i64 14
+    v1243 = icmp.i64 eq v1199, v1242
+    brif.i8 v1243, block328(v15), block328(v1241)
+
+block328(v1244: i32):
+    v1245 = iconst.i64 15
+    v1246 = icmp.i64 eq v1199, v1245
+    brif.i8 v1246, block329(v16), block329(v1244)
+
+block329(v1247: i32):
+    jump block313(v1247)
+
+block313(v1198: i32):
+    v1248 = iconst.i64 1
+    v1249 = iadd.i32 v818, v1198
+    v1250 = iconst.i64 16
+    v1251 = icmp.i64 uge v1248, v1250
+    v1252 = iconst.i8 3
+    brif.i8 v1251, block1(v1252), block330
+
+block330:
+    v1253 = iconst.i64 0
+    v1254 = icmp.i64 eq v1248, v1253
+    brif.i8 v1254, block331(v1249), block331(v1152)
+
+block331(v1255: i32):
+    v1256 = iconst.i64 1
+    v1257 = icmp.i64 eq v1248, v1256
+    brif.i8 v1257, block332(v1249), block332(v1155)
+
+block332(v1258: i32):
+    v1259 = iconst.i64 2
+    v1260 = icmp.i64 eq v1248, v1259
+    brif.i8 v1260, block333(v1249), block333(v1158)
+
+block333(v1261: i32):
+    v1262 = iconst.i64 3
+    v1263 = icmp.i64 eq v1248, v1262
+    brif.i8 v1263, block334(v1249), block334(v1161)
+
+block334(v1264: i32):
+    v1265 = iconst.i64 4
+    v1266 = icmp.i64 eq v1248, v1265
+    brif.i8 v1266, block335(v1249), block335(v1164)
+
+block335(v1267: i32):
+    v1268 = iconst.i64 5
+    v1269 = icmp.i64 eq v1248, v1268
+    brif.i8 v1269, block336(v1249), block336(v1167)
+
+block336(v1270: i32):
+    v1271 = iconst.i64 6
+    v1272 = icmp.i64 eq v1248, v1271
+    brif.i8 v1272, block337(v1249), block337(v1170)
+
+block337(v1273: i32):
+    v1274 = iconst.i64 7
+    v1275 = icmp.i64 eq v1248, v1274
+    brif.i8 v1275, block338(v1249), block338(v1173)
+
+block338(v1276: i32):
+    v1277 = iconst.i64 8
+    v1278 = icmp.i64 eq v1248, v1277
+    brif.i8 v1278, block339(v1249), block339(v1176)
+
+block339(v1279: i32):
+    v1280 = iconst.i64 9
+    v1281 = icmp.i64 eq v1248, v1280
+    brif.i8 v1281, block340(v1249), block340(v1179)
+
+block340(v1282: i32):
+    v1283 = iconst.i64 10
+    v1284 = icmp.i64 eq v1248, v1283
+    brif.i8 v1284, block341(v1249), block341(v1182)
+
+block341(v1285: i32):
+    v1286 = iconst.i64 11
+    v1287 = icmp.i64 eq v1248, v1286
+    brif.i8 v1287, block342(v1249), block342(v1185)
+
+block342(v1288: i32):
+    v1289 = iconst.i64 12
+    v1290 = icmp.i64 eq v1248, v1289
+    brif.i8 v1290, block343(v1249), block343(v1188)
+
+block343(v1291: i32):
+    v1292 = iconst.i64 13
+    v1293 = icmp.i64 eq v1248, v1292
+    brif.i8 v1293, block344(v1249), block344(v1191)
+
+block344(v1294: i32):
+    v1295 = iconst.i64 14
+    v1296 = icmp.i64 eq v1248, v1295
+    brif.i8 v1296, block345(v1249), block345(v1194)
+
+block345(v1297: i32):
+    v1298 = iconst.i64 15
+    v1299 = icmp.i64 eq v1248, v1298
+    brif.i8 v1299, block346(v1249), block346(v1197)
+
+block346(v1300: i32):
+    v1302 = iconst.i64 2
+    v1303 = iconst.i64 16
+    v1304 = icmp.i64 uge v1302, v1303
+    v1305 = iconst.i8 3
+    brif.i8 v1304, block1(v1305), block348
+
+block348:
+    v1306 = iconst.i64 1
+    v1307 = icmp.i64 eq v1302, v1306
+    brif.i8 v1307, block349(v2), block349(v1)
+
+block349(v1308: i32):
+    v1309 = iconst.i64 2
+    v1310 = icmp.i64 eq v1302, v1309
+    brif.i8 v1310, block350(v3), block350(v1308)
+
+block350(v1311: i32):
+    v1312 = iconst.i64 3
+    v1313 = icmp.i64 eq v1302, v1312
+    brif.i8 v1313, block351(v4), block351(v1311)
+
+block351(v1314: i32):
+    v1315 = iconst.i64 4
+    v1316 = icmp.i64 eq v1302, v1315
+    brif.i8 v1316, block352(v5), block352(v1314)
+
+block352(v1317: i32):
+    v1318 = iconst.i64 5
+    v1319 = icmp.i64 eq v1302, v1318
+    brif.i8 v1319, block353(v6), block353(v1317)
+
+block353(v1320: i32):
+    v1321 = iconst.i64 6
+    v1322 = icmp.i64 eq v1302, v1321
+    brif.i8 v1322, block354(v7), block354(v1320)
+
+block354(v1323: i32):
+    v1324 = iconst.i64 7
+    v1325 = icmp.i64 eq v1302, v1324
+    brif.i8 v1325, block355(v8), block355(v1323)
+
+block355(v1326: i32):
+    v1327 = iconst.i64 8
+    v1328 = icmp.i64 eq v1302, v1327
+    brif.i8 v1328, block356(v9), block356(v1326)
+
+block356(v1329: i32):
+    v1330 = iconst.i64 9
+    v1331 = icmp.i64 eq v1302, v1330
+    brif.i8 v1331, block357(v10), block357(v1329)
+
+block357(v1332: i32):
+    v1333 = iconst.i64 10
+    v1334 = icmp.i64 eq v1302, v1333
+    brif.i8 v1334, block358(v11), block358(v1332)
+
+block358(v1335: i32):
+    v1336 = iconst.i64 11
+    v1337 = icmp.i64 eq v1302, v1336
+    brif.i8 v1337, block359(v12), block359(v1335)
+
+block359(v1338: i32):
+    v1339 = iconst.i64 12
+    v1340 = icmp.i64 eq v1302, v1339
+    brif.i8 v1340, block360(v13), block360(v1338)
+
+block360(v1341: i32):
+    v1342 = iconst.i64 13
+    v1343 = icmp.i64 eq v1302, v1342
+    brif.i8 v1343, block361(v14), block361(v1341)
+
+block361(v1344: i32):
+    v1345 = iconst.i64 14
+    v1346 = icmp.i64 eq v1302, v1345
+    brif.i8 v1346, block362(v15), block362(v1344)
+
+block362(v1347: i32):
+    v1348 = iconst.i64 15
+    v1349 = icmp.i64 eq v1302, v1348
+    brif.i8 v1349, block363(v16), block363(v1347)
+
+block363(v1350: i32):
+    jump block347(v1350)
+
+block347(v1301: i32):
+    v1351 = iconst.i64 2
+    v1352 = iadd.i32 v819, v1301
+    v1353 = iconst.i64 16
+    v1354 = icmp.i64 uge v1351, v1353
+    v1355 = iconst.i8 3
+    brif.i8 v1354, block1(v1355), block364
+
+block364:
+    v1356 = iconst.i64 0
+    v1357 = icmp.i64 eq v1351, v1356
+    brif.i8 v1357, block365(v1352), block365(v1255)
+
+block365(v1358: i32):
+    v1359 = iconst.i64 1
+    v1360 = icmp.i64 eq v1351, v1359
+    brif.i8 v1360, block366(v1352), block366(v1258)
+
+block366(v1361: i32):
+    v1362 = iconst.i64 2
+    v1363 = icmp.i64 eq v1351, v1362
+    brif.i8 v1363, block367(v1352), block367(v1261)
+
+block367(v1364: i32):
+    v1365 = iconst.i64 3
+    v1366 = icmp.i64 eq v1351, v1365
+    brif.i8 v1366, block368(v1352), block368(v1264)
+
+block368(v1367: i32):
+    v1368 = iconst.i64 4
+    v1369 = icmp.i64 eq v1351, v1368
+    brif.i8 v1369, block369(v1352), block369(v1267)
+
+block369(v1370: i32):
+    v1371 = iconst.i64 5
+    v1372 = icmp.i64 eq v1351, v1371
+    brif.i8 v1372, block370(v1352), block370(v1270)
+
+block370(v1373: i32):
+    v1374 = iconst.i64 6
+    v1375 = icmp.i64 eq v1351, v1374
+    brif.i8 v1375, block371(v1352), block371(v1273)
+
+block371(v1376: i32):
+    v1377 = iconst.i64 7
+    v1378 = icmp.i64 eq v1351, v1377
+    brif.i8 v1378, block372(v1352), block372(v1276)
+
+block372(v1379: i32):
+    v1380 = iconst.i64 8
+    v1381 = icmp.i64 eq v1351, v1380
+    brif.i8 v1381, block373(v1352), block373(v1279)
+
+block373(v1382: i32):
+    v1383 = iconst.i64 9
+    v1384 = icmp.i64 eq v1351, v1383
+    brif.i8 v1384, block374(v1352), block374(v1282)
+
+block374(v1385: i32):
+    v1386 = iconst.i64 10
+    v1387 = icmp.i64 eq v1351, v1386
+    brif.i8 v1387, block375(v1352), block375(v1285)
+
+block375(v1388: i32):
+    v1389 = iconst.i64 11
+    v1390 = icmp.i64 eq v1351, v1389
+    brif.i8 v1390, block376(v1352), block376(v1288)
+
+block376(v1391: i32):
+    v1392 = iconst.i64 12
+    v1393 = icmp.i64 eq v1351, v1392
+    brif.i8 v1393, block377(v1352), block377(v1291)
+
+block377(v1394: i32):
+    v1395 = iconst.i64 13
+    v1396 = icmp.i64 eq v1351, v1395
+    brif.i8 v1396, block378(v1352), block378(v1294)
+
+block378(v1397: i32):
+    v1398 = iconst.i64 14
+    v1399 = icmp.i64 eq v1351, v1398
+    brif.i8 v1399, block379(v1352), block379(v1297)
+
+block379(v1400: i32):
+    v1401 = iconst.i64 15
+    v1402 = icmp.i64 eq v1351, v1401
+    brif.i8 v1402, block380(v1352), block380(v1300)
+
+block380(v1403: i32):
+    v1405 = iconst.i64 3
+    v1406 = iconst.i64 16
+    v1407 = icmp.i64 uge v1405, v1406
+    v1408 = iconst.i8 3
+    brif.i8 v1407, block1(v1408), block382
+
+block382:
+    v1409 = iconst.i64 1
+    v1410 = icmp.i64 eq v1405, v1409
+    brif.i8 v1410, block383(v2), block383(v1)
+
+block383(v1411: i32):
+    v1412 = iconst.i64 2
+    v1413 = icmp.i64 eq v1405, v1412
+    brif.i8 v1413, block384(v3), block384(v1411)
+
+block384(v1414: i32):
+    v1415 = iconst.i64 3
+    v1416 = icmp.i64 eq v1405, v1415
+    brif.i8 v1416, block385(v4), block385(v1414)
+
+block385(v1417: i32):
+    v1418 = iconst.i64 4
+    v1419 = icmp.i64 eq v1405, v1418
+    brif.i8 v1419, block386(v5), block386(v1417)
+
+block386(v1420: i32):
+    v1421 = iconst.i64 5
+    v1422 = icmp.i64 eq v1405, v1421
+    brif.i8 v1422, block387(v6), block387(v1420)
+
+block387(v1423: i32):
+    v1424 = iconst.i64 6
+    v1425 = icmp.i64 eq v1405, v1424
+    brif.i8 v1425, block388(v7), block388(v1423)
+
+block388(v1426: i32):
+    v1427 = iconst.i64 7
+    v1428 = icmp.i64 eq v1405, v1427
+    brif.i8 v1428, block389(v8), block389(v1426)
+
+block389(v1429: i32):
+    v1430 = iconst.i64 8
+    v1431 = icmp.i64 eq v1405, v1430
+    brif.i8 v1431, block390(v9), block390(v1429)
+
+block390(v1432: i32):
+    v1433 = iconst.i64 9
+    v1434 = icmp.i64 eq v1405, v1433
+    brif.i8 v1434, block391(v10), block391(v1432)
+
+block391(v1435: i32):
+    v1436 = iconst.i64 10
+    v1437 = icmp.i64 eq v1405, v1436
+    brif.i8 v1437, block392(v11), block392(v1435)
+
+block392(v1438: i32):
+    v1439 = iconst.i64 11
+    v1440 = icmp.i64 eq v1405, v1439
+    brif.i8 v1440, block393(v12), block393(v1438)
+
+block393(v1441: i32):
+    v1442 = iconst.i64 12
+    v1443 = icmp.i64 eq v1405, v1442
+    brif.i8 v1443, block394(v13), block394(v1441)
+
+block394(v1444: i32):
+    v1445 = iconst.i64 13
+    v1446 = icmp.i64 eq v1405, v1445
+    brif.i8 v1446, block395(v14), block395(v1444)
+
+block395(v1447: i32):
+    v1448 = iconst.i64 14
+    v1449 = icmp.i64 eq v1405, v1448
+    brif.i8 v1449, block396(v15), block396(v1447)
+
+block396(v1450: i32):
+    v1451 = iconst.i64 15
+    v1452 = icmp.i64 eq v1405, v1451
+    brif.i8 v1452, block397(v16), block397(v1450)
+
+block397(v1453: i32):
+    jump block381(v1453)
+
+block381(v1404: i32):
+    v1454 = iconst.i64 3
+    v1455 = iadd.i32 v820, v1404
+    v1456 = iconst.i64 16
+    v1457 = icmp.i64 uge v1454, v1456
+    v1458 = iconst.i8 3
+    brif.i8 v1457, block1(v1458), block398
+
+block398:
+    v1459 = iconst.i64 0
+    v1460 = icmp.i64 eq v1454, v1459
+    brif.i8 v1460, block399(v1455), block399(v1358)
+
+block399(v1461: i32):
+    v1462 = iconst.i64 1
+    v1463 = icmp.i64 eq v1454, v1462
+    brif.i8 v1463, block400(v1455), block400(v1361)
+
+block400(v1464: i32):
+    v1465 = iconst.i64 2
+    v1466 = icmp.i64 eq v1454, v1465
+    brif.i8 v1466, block401(v1455), block401(v1364)
+
+block401(v1467: i32):
+    v1468 = iconst.i64 3
+    v1469 = icmp.i64 eq v1454, v1468
+    brif.i8 v1469, block402(v1455), block402(v1367)
+
+block402(v1470: i32):
+    v1471 = iconst.i64 4
+    v1472 = icmp.i64 eq v1454, v1471
+    brif.i8 v1472, block403(v1455), block403(v1370)
+
+block403(v1473: i32):
+    v1474 = iconst.i64 5
+    v1475 = icmp.i64 eq v1454, v1474
+    brif.i8 v1475, block404(v1455), block404(v1373)
+
+block404(v1476: i32):
+    v1477 = iconst.i64 6
+    v1478 = icmp.i64 eq v1454, v1477
+    brif.i8 v1478, block405(v1455), block405(v1376)
+
+block405(v1479: i32):
+    v1480 = iconst.i64 7
+    v1481 = icmp.i64 eq v1454, v1480
+    brif.i8 v1481, block406(v1455), block406(v1379)
+
+block406(v1482: i32):
+    v1483 = iconst.i64 8
+    v1484 = icmp.i64 eq v1454, v1483
+    brif.i8 v1484, block407(v1455), block407(v1382)
+
+block407(v1485: i32):
+    v1486 = iconst.i64 9
+    v1487 = icmp.i64 eq v1454, v1486
+    brif.i8 v1487, block408(v1455), block408(v1385)
+
+block408(v1488: i32):
+    v1489 = iconst.i64 10
+    v1490 = icmp.i64 eq v1454, v1489
+    brif.i8 v1490, block409(v1455), block409(v1388)
+
+block409(v1491: i32):
+    v1492 = iconst.i64 11
+    v1493 = icmp.i64 eq v1454, v1492
+    brif.i8 v1493, block410(v1455), block410(v1391)
+
+block410(v1494: i32):
+    v1495 = iconst.i64 12
+    v1496 = icmp.i64 eq v1454, v1495
+    brif.i8 v1496, block411(v1455), block411(v1394)
+
+block411(v1497: i32):
+    v1498 = iconst.i64 13
+    v1499 = icmp.i64 eq v1454, v1498
+    brif.i8 v1499, block412(v1455), block412(v1397)
+
+block412(v1500: i32):
+    v1501 = iconst.i64 14
+    v1502 = icmp.i64 eq v1454, v1501
+    brif.i8 v1502, block413(v1455), block413(v1400)
+
+block413(v1503: i32):
+    v1504 = iconst.i64 15
+    v1505 = icmp.i64 eq v1454, v1504
+    brif.i8 v1505, block414(v1455), block414(v1403)
+
+block414(v1506: i32):
+    v1508 = iconst.i64 4
+    v1509 = iconst.i64 16
+    v1510 = icmp.i64 uge v1508, v1509
+    v1511 = iconst.i8 3
+    brif.i8 v1510, block1(v1511), block416
+
+block416:
+    v1512 = iconst.i64 1
+    v1513 = icmp.i64 eq v1508, v1512
+    brif.i8 v1513, block417(v2), block417(v1)
+
+block417(v1514: i32):
+    v1515 = iconst.i64 2
+    v1516 = icmp.i64 eq v1508, v1515
+    brif.i8 v1516, block418(v3), block418(v1514)
+
+block418(v1517: i32):
+    v1518 = iconst.i64 3
+    v1519 = icmp.i64 eq v1508, v1518
+    brif.i8 v1519, block419(v4), block419(v1517)
+
+block419(v1520: i32):
+    v1521 = iconst.i64 4
+    v1522 = icmp.i64 eq v1508, v1521
+    brif.i8 v1522, block420(v5), block420(v1520)
+
+block420(v1523: i32):
+    v1524 = iconst.i64 5
+    v1525 = icmp.i64 eq v1508, v1524
+    brif.i8 v1525, block421(v6), block421(v1523)
+
+block421(v1526: i32):
+    v1527 = iconst.i64 6
+    v1528 = icmp.i64 eq v1508, v1527
+    brif.i8 v1528, block422(v7), block422(v1526)
+
+block422(v1529: i32):
+    v1530 = iconst.i64 7
+    v1531 = icmp.i64 eq v1508, v1530
+    brif.i8 v1531, block423(v8), block423(v1529)
+
+block423(v1532: i32):
+    v1533 = iconst.i64 8
+    v1534 = icmp.i64 eq v1508, v1533
+    brif.i8 v1534, block424(v9), block424(v1532)
+
+block424(v1535: i32):
+    v1536 = iconst.i64 9
+    v1537 = icmp.i64 eq v1508, v1536
+    brif.i8 v1537, block425(v10), block425(v1535)
+
+block425(v1538: i32):
+    v1539 = iconst.i64 10
+    v1540 = icmp.i64 eq v1508, v1539
+    brif.i8 v1540, block426(v11), block426(v1538)
+
+block426(v1541: i32):
+    v1542 = iconst.i64 11
+    v1543 = icmp.i64 eq v1508, v1542
+    brif.i8 v1543, block427(v12), block427(v1541)
+
+block427(v1544: i32):
+    v1545 = iconst.i64 12
+    v1546 = icmp.i64 eq v1508, v1545
+    brif.i8 v1546, block428(v13), block428(v1544)
+
+block428(v1547: i32):
+    v1548 = iconst.i64 13
+    v1549 = icmp.i64 eq v1508, v1548
+    brif.i8 v1549, block429(v14), block429(v1547)
+
+block429(v1550: i32):
+    v1551 = iconst.i64 14
+    v1552 = icmp.i64 eq v1508, v1551
+    brif.i8 v1552, block430(v15), block430(v1550)
+
+block430(v1553: i32):
+    v1554 = iconst.i64 15
+    v1555 = icmp.i64 eq v1508, v1554
+    brif.i8 v1555, block431(v16), block431(v1553)
+
+block431(v1556: i32):
+    jump block415(v1556)
+
+block415(v1507: i32):
+    v1557 = iconst.i64 4
+    v1558 = iadd.i32 v821, v1507
+    v1559 = iconst.i64 16
+    v1560 = icmp.i64 uge v1557, v1559
+    v1561 = iconst.i8 3
+    brif.i8 v1560, block1(v1561), block432
+
+block432:
+    v1562 = iconst.i64 0
+    v1563 = icmp.i64 eq v1557, v1562
+    brif.i8 v1563, block433(v1558), block433(v1461)
+
+block433(v1564: i32):
+    v1565 = iconst.i64 1
+    v1566 = icmp.i64 eq v1557, v1565
+    brif.i8 v1566, block434(v1558), block434(v1464)
+
+block434(v1567: i32):
+    v1568 = iconst.i64 2
+    v1569 = icmp.i64 eq v1557, v1568
+    brif.i8 v1569, block435(v1558), block435(v1467)
+
+block435(v1570: i32):
+    v1571 = iconst.i64 3
+    v1572 = icmp.i64 eq v1557, v1571
+    brif.i8 v1572, block436(v1558), block436(v1470)
+
+block436(v1573: i32):
+    v1574 = iconst.i64 4
+    v1575 = icmp.i64 eq v1557, v1574
+    brif.i8 v1575, block437(v1558), block437(v1473)
+
+block437(v1576: i32):
+    v1577 = iconst.i64 5
+    v1578 = icmp.i64 eq v1557, v1577
+    brif.i8 v1578, block438(v1558), block438(v1476)
+
+block438(v1579: i32):
+    v1580 = iconst.i64 6
+    v1581 = icmp.i64 eq v1557, v1580
+    brif.i8 v1581, block439(v1558), block439(v1479)
+
+block439(v1582: i32):
+    v1583 = iconst.i64 7
+    v1584 = icmp.i64 eq v1557, v1583
+    brif.i8 v1584, block440(v1558), block440(v1482)
+
+block440(v1585: i32):
+    v1586 = iconst.i64 8
+    v1587 = icmp.i64 eq v1557, v1586
+    brif.i8 v1587, block441(v1558), block441(v1485)
+
+block441(v1588: i32):
+    v1589 = iconst.i64 9
+    v1590 = icmp.i64 eq v1557, v1589
+    brif.i8 v1590, block442(v1558), block442(v1488)
+
+block442(v1591: i32):
+    v1592 = iconst.i64 10
+    v1593 = icmp.i64 eq v1557, v1592
+    brif.i8 v1593, block443(v1558), block443(v1491)
+
+block443(v1594: i32):
+    v1595 = iconst.i64 11
+    v1596 = icmp.i64 eq v1557, v1595
+    brif.i8 v1596, block444(v1558), block444(v1494)
+
+block444(v1597: i32):
+    v1598 = iconst.i64 12
+    v1599 = icmp.i64 eq v1557, v1598
+    brif.i8 v1599, block445(v1558), block445(v1497)
+
+block445(v1600: i32):
+    v1601 = iconst.i64 13
+    v1602 = icmp.i64 eq v1557, v1601
+    brif.i8 v1602, block446(v1558), block446(v1500)
+
+block446(v1603: i32):
+    v1604 = iconst.i64 14
+    v1605 = icmp.i64 eq v1557, v1604
+    brif.i8 v1605, block447(v1558), block447(v1503)
+
+block447(v1606: i32):
+    v1607 = iconst.i64 15
+    v1608 = icmp.i64 eq v1557, v1607
+    brif.i8 v1608, block448(v1558), block448(v1506)
+
+block448(v1609: i32):
+    v1611 = iconst.i64 5
+    v1612 = iconst.i64 16
+    v1613 = icmp.i64 uge v1611, v1612
+    v1614 = iconst.i8 3
+    brif.i8 v1613, block1(v1614), block450
+
+block450:
+    v1615 = iconst.i64 1
+    v1616 = icmp.i64 eq v1611, v1615
+    brif.i8 v1616, block451(v2), block451(v1)
+
+block451(v1617: i32):
+    v1618 = iconst.i64 2
+    v1619 = icmp.i64 eq v1611, v1618
+    brif.i8 v1619, block452(v3), block452(v1617)
+
+block452(v1620: i32):
+    v1621 = iconst.i64 3
+    v1622 = icmp.i64 eq v1611, v1621
+    brif.i8 v1622, block453(v4), block453(v1620)
+
+block453(v1623: i32):
+    v1624 = iconst.i64 4
+    v1625 = icmp.i64 eq v1611, v1624
+    brif.i8 v1625, block454(v5), block454(v1623)
+
+block454(v1626: i32):
+    v1627 = iconst.i64 5
+    v1628 = icmp.i64 eq v1611, v1627
+    brif.i8 v1628, block455(v6), block455(v1626)
+
+block455(v1629: i32):
+    v1630 = iconst.i64 6
+    v1631 = icmp.i64 eq v1611, v1630
+    brif.i8 v1631, block456(v7), block456(v1629)
+
+block456(v1632: i32):
+    v1633 = iconst.i64 7
+    v1634 = icmp.i64 eq v1611, v1633
+    brif.i8 v1634, block457(v8), block457(v1632)
+
+block457(v1635: i32):
+    v1636 = iconst.i64 8
+    v1637 = icmp.i64 eq v1611, v1636
+    brif.i8 v1637, block458(v9), block458(v1635)
+
+block458(v1638: i32):
+    v1639 = iconst.i64 9
+    v1640 = icmp.i64 eq v1611, v1639
+    brif.i8 v1640, block459(v10), block459(v1638)
+
+block459(v1641: i32):
+    v1642 = iconst.i64 10
+    v1643 = icmp.i64 eq v1611, v1642
+    brif.i8 v1643, block460(v11), block460(v1641)
+
+block460(v1644: i32):
+    v1645 = iconst.i64 11
+    v1646 = icmp.i64 eq v1611, v1645
+    brif.i8 v1646, block461(v12), block461(v1644)
+
+block461(v1647: i32):
+    v1648 = iconst.i64 12
+    v1649 = icmp.i64 eq v1611, v1648
+    brif.i8 v1649, block462(v13), block462(v1647)
+
+block462(v1650: i32):
+    v1651 = iconst.i64 13
+    v1652 = icmp.i64 eq v1611, v1651
+    brif.i8 v1652, block463(v14), block463(v1650)
+
+block463(v1653: i32):
+    v1654 = iconst.i64 14
+    v1655 = icmp.i64 eq v1611, v1654
+    brif.i8 v1655, block464(v15), block464(v1653)
+
+block464(v1656: i32):
+    v1657 = iconst.i64 15
+    v1658 = icmp.i64 eq v1611, v1657
+    brif.i8 v1658, block465(v16), block465(v1656)
+
+block465(v1659: i32):
+    jump block449(v1659)
+
+block449(v1610: i32):
+    v1660 = iconst.i64 5
+    v1661 = iadd.i32 v822, v1610
+    v1662 = iconst.i64 16
+    v1663 = icmp.i64 uge v1660, v1662
+    v1664 = iconst.i8 3
+    brif.i8 v1663, block1(v1664), block466
+
+block466:
+    v1665 = iconst.i64 0
+    v1666 = icmp.i64 eq v1660, v1665
+    brif.i8 v1666, block467(v1661), block467(v1564)
+
+block467(v1667: i32):
+    v1668 = iconst.i64 1
+    v1669 = icmp.i64 eq v1660, v1668
+    brif.i8 v1669, block468(v1661), block468(v1567)
+
+block468(v1670: i32):
+    v1671 = iconst.i64 2
+    v1672 = icmp.i64 eq v1660, v1671
+    brif.i8 v1672, block469(v1661), block469(v1570)
+
+block469(v1673: i32):
+    v1674 = iconst.i64 3
+    v1675 = icmp.i64 eq v1660, v1674
+    brif.i8 v1675, block470(v1661), block470(v1573)
+
+block470(v1676: i32):
+    v1677 = iconst.i64 4
+    v1678 = icmp.i64 eq v1660, v1677
+    brif.i8 v1678, block471(v1661), block471(v1576)
+
+block471(v1679: i32):
+    v1680 = iconst.i64 5
+    v1681 = icmp.i64 eq v1660, v1680
+    brif.i8 v1681, block472(v1661), block472(v1579)
+
+block472(v1682: i32):
+    v1683 = iconst.i64 6
+    v1684 = icmp.i64 eq v1660, v1683
+    brif.i8 v1684, block473(v1661), block473(v1582)
+
+block473(v1685: i32):
+    v1686 = iconst.i64 7
+    v1687 = icmp.i64 eq v1660, v1686
+    brif.i8 v1687, block474(v1661), block474(v1585)
+
+block474(v1688: i32):
+    v1689 = iconst.i64 8
+    v1690 = icmp.i64 eq v1660, v1689
+    brif.i8 v1690, block475(v1661), block475(v1588)
+
+block475(v1691: i32):
+    v1692 = iconst.i64 9
+    v1693 = icmp.i64 eq v1660, v1692
+    brif.i8 v1693, block476(v1661), block476(v1591)
+
+block476(v1694: i32):
+    v1695 = iconst.i64 10
+    v1696 = icmp.i64 eq v1660, v1695
+    brif.i8 v1696, block477(v1661), block477(v1594)
+
+block477(v1697: i32):
+    v1698 = iconst.i64 11
+    v1699 = icmp.i64 eq v1660, v1698
+    brif.i8 v1699, block478(v1661), block478(v1597)
+
+block478(v1700: i32):
+    v1701 = iconst.i64 12
+    v1702 = icmp.i64 eq v1660, v1701
+    brif.i8 v1702, block479(v1661), block479(v1600)
+
+block479(v1703: i32):
+    v1704 = iconst.i64 13
+    v1705 = icmp.i64 eq v1660, v1704
+    brif.i8 v1705, block480(v1661), block480(v1603)
+
+block480(v1706: i32):
+    v1707 = iconst.i64 14
+    v1708 = icmp.i64 eq v1660, v1707
+    brif.i8 v1708, block481(v1661), block481(v1606)
+
+block481(v1709: i32):
+    v1710 = iconst.i64 15
+    v1711 = icmp.i64 eq v1660, v1710
+    brif.i8 v1711, block482(v1661), block482(v1609)
+
+block482(v1712: i32):
+    v1714 = iconst.i64 6
+    v1715 = iconst.i64 16
+    v1716 = icmp.i64 uge v1714, v1715
+    v1717 = iconst.i8 3
+    brif.i8 v1716, block1(v1717), block484
+
+block484:
+    v1718 = iconst.i64 1
+    v1719 = icmp.i64 eq v1714, v1718
+    brif.i8 v1719, block485(v2), block485(v1)
+
+block485(v1720: i32):
+    v1721 = iconst.i64 2
+    v1722 = icmp.i64 eq v1714, v1721
+    brif.i8 v1722, block486(v3), block486(v1720)
+
+block486(v1723: i32):
+    v1724 = iconst.i64 3
+    v1725 = icmp.i64 eq v1714, v1724
+    brif.i8 v1725, block487(v4), block487(v1723)
+
+block487(v1726: i32):
+    v1727 = iconst.i64 4
+    v1728 = icmp.i64 eq v1714, v1727
+    brif.i8 v1728, block488(v5), block488(v1726)
+
+block488(v1729: i32):
+    v1730 = iconst.i64 5
+    v1731 = icmp.i64 eq v1714, v1730
+    brif.i8 v1731, block489(v6), block489(v1729)
+
+block489(v1732: i32):
+    v1733 = iconst.i64 6
+    v1734 = icmp.i64 eq v1714, v1733
+    brif.i8 v1734, block490(v7), block490(v1732)
+
+block490(v1735: i32):
+    v1736 = iconst.i64 7
+    v1737 = icmp.i64 eq v1714, v1736
+    brif.i8 v1737, block491(v8), block491(v1735)
+
+block491(v1738: i32):
+    v1739 = iconst.i64 8
+    v1740 = icmp.i64 eq v1714, v1739
+    brif.i8 v1740, block492(v9), block492(v1738)
+
+block492(v1741: i32):
+    v1742 = iconst.i64 9
+    v1743 = icmp.i64 eq v1714, v1742
+    brif.i8 v1743, block493(v10), block493(v1741)
+
+block493(v1744: i32):
+    v1745 = iconst.i64 10
+    v1746 = icmp.i64 eq v1714, v1745
+    brif.i8 v1746, block494(v11), block494(v1744)
+
+block494(v1747: i32):
+    v1748 = iconst.i64 11
+    v1749 = icmp.i64 eq v1714, v1748
+    brif.i8 v1749, block495(v12), block495(v1747)
+
+block495(v1750: i32):
+    v1751 = iconst.i64 12
+    v1752 = icmp.i64 eq v1714, v1751
+    brif.i8 v1752, block496(v13), block496(v1750)
+
+block496(v1753: i32):
+    v1754 = iconst.i64 13
+    v1755 = icmp.i64 eq v1714, v1754
+    brif.i8 v1755, block497(v14), block497(v1753)
+
+block497(v1756: i32):
+    v1757 = iconst.i64 14
+    v1758 = icmp.i64 eq v1714, v1757
+    brif.i8 v1758, block498(v15), block498(v1756)
+
+block498(v1759: i32):
+    v1760 = iconst.i64 15
+    v1761 = icmp.i64 eq v1714, v1760
+    brif.i8 v1761, block499(v16), block499(v1759)
+
+block499(v1762: i32):
+    jump block483(v1762)
+
+block483(v1713: i32):
+    v1763 = iconst.i64 6
+    v1764 = iadd.i32 v823, v1713
+    v1765 = iconst.i64 16
+    v1766 = icmp.i64 uge v1763, v1765
+    v1767 = iconst.i8 3
+    brif.i8 v1766, block1(v1767), block500
+
+block500:
+    v1768 = iconst.i64 0
+    v1769 = icmp.i64 eq v1763, v1768
+    brif.i8 v1769, block501(v1764), block501(v1667)
+
+block501(v1770: i32):
+    v1771 = iconst.i64 1
+    v1772 = icmp.i64 eq v1763, v1771
+    brif.i8 v1772, block502(v1764), block502(v1670)
+
+block502(v1773: i32):
+    v1774 = iconst.i64 2
+    v1775 = icmp.i64 eq v1763, v1774
+    brif.i8 v1775, block503(v1764), block503(v1673)
+
+block503(v1776: i32):
+    v1777 = iconst.i64 3
+    v1778 = icmp.i64 eq v1763, v1777
+    brif.i8 v1778, block504(v1764), block504(v1676)
+
+block504(v1779: i32):
+    v1780 = iconst.i64 4
+    v1781 = icmp.i64 eq v1763, v1780
+    brif.i8 v1781, block505(v1764), block505(v1679)
+
+block505(v1782: i32):
+    v1783 = iconst.i64 5
+    v1784 = icmp.i64 eq v1763, v1783
+    brif.i8 v1784, block506(v1764), block506(v1682)
+
+block506(v1785: i32):
+    v1786 = iconst.i64 6
+    v1787 = icmp.i64 eq v1763, v1786
+    brif.i8 v1787, block507(v1764), block507(v1685)
+
+block507(v1788: i32):
+    v1789 = iconst.i64 7
+    v1790 = icmp.i64 eq v1763, v1789
+    brif.i8 v1790, block508(v1764), block508(v1688)
+
+block508(v1791: i32):
+    v1792 = iconst.i64 8
+    v1793 = icmp.i64 eq v1763, v1792
+    brif.i8 v1793, block509(v1764), block509(v1691)
+
+block509(v1794: i32):
+    v1795 = iconst.i64 9
+    v1796 = icmp.i64 eq v1763, v1795
+    brif.i8 v1796, block510(v1764), block510(v1694)
+
+block510(v1797: i32):
+    v1798 = iconst.i64 10
+    v1799 = icmp.i64 eq v1763, v1798
+    brif.i8 v1799, block511(v1764), block511(v1697)
+
+block511(v1800: i32):
+    v1801 = iconst.i64 11
+    v1802 = icmp.i64 eq v1763, v1801
+    brif.i8 v1802, block512(v1764), block512(v1700)
+
+block512(v1803: i32):
+    v1804 = iconst.i64 12
+    v1805 = icmp.i64 eq v1763, v1804
+    brif.i8 v1805, block513(v1764), block513(v1703)
+
+block513(v1806: i32):
+    v1807 = iconst.i64 13
+    v1808 = icmp.i64 eq v1763, v1807
+    brif.i8 v1808, block514(v1764), block514(v1706)
+
+block514(v1809: i32):
+    v1810 = iconst.i64 14
+    v1811 = icmp.i64 eq v1763, v1810
+    brif.i8 v1811, block515(v1764), block515(v1709)
+
+block515(v1812: i32):
+    v1813 = iconst.i64 15
+    v1814 = icmp.i64 eq v1763, v1813
+    brif.i8 v1814, block516(v1764), block516(v1712)
+
+block516(v1815: i32):
+    v1817 = iconst.i64 7
+    v1818 = iconst.i64 16
+    v1819 = icmp.i64 uge v1817, v1818
+    v1820 = iconst.i8 3
+    brif.i8 v1819, block1(v1820), block518
+
+block518:
+    v1821 = iconst.i64 1
+    v1822 = icmp.i64 eq v1817, v1821
+    brif.i8 v1822, block519(v2), block519(v1)
+
+block519(v1823: i32):
+    v1824 = iconst.i64 2
+    v1825 = icmp.i64 eq v1817, v1824
+    brif.i8 v1825, block520(v3), block520(v1823)
+
+block520(v1826: i32):
+    v1827 = iconst.i64 3
+    v1828 = icmp.i64 eq v1817, v1827
+    brif.i8 v1828, block521(v4), block521(v1826)
+
+block521(v1829: i32):
+    v1830 = iconst.i64 4
+    v1831 = icmp.i64 eq v1817, v1830
+    brif.i8 v1831, block522(v5), block522(v1829)
+
+block522(v1832: i32):
+    v1833 = iconst.i64 5
+    v1834 = icmp.i64 eq v1817, v1833
+    brif.i8 v1834, block523(v6), block523(v1832)
+
+block523(v1835: i32):
+    v1836 = iconst.i64 6
+    v1837 = icmp.i64 eq v1817, v1836
+    brif.i8 v1837, block524(v7), block524(v1835)
+
+block524(v1838: i32):
+    v1839 = iconst.i64 7
+    v1840 = icmp.i64 eq v1817, v1839
+    brif.i8 v1840, block525(v8), block525(v1838)
+
+block525(v1841: i32):
+    v1842 = iconst.i64 8
+    v1843 = icmp.i64 eq v1817, v1842
+    brif.i8 v1843, block526(v9), block526(v1841)
+
+block526(v1844: i32):
+    v1845 = iconst.i64 9
+    v1846 = icmp.i64 eq v1817, v1845
+    brif.i8 v1846, block527(v10), block527(v1844)
+
+block527(v1847: i32):
+    v1848 = iconst.i64 10
+    v1849 = icmp.i64 eq v1817, v1848
+    brif.i8 v1849, block528(v11), block528(v1847)
+
+block528(v1850: i32):
+    v1851 = iconst.i64 11
+    v1852 = icmp.i64 eq v1817, v1851
+    brif.i8 v1852, block529(v12), block529(v1850)
+
+block529(v1853: i32):
+    v1854 = iconst.i64 12
+    v1855 = icmp.i64 eq v1817, v1854
+    brif.i8 v1855, block530(v13), block530(v1853)
+
+block530(v1856: i32):
+    v1857 = iconst.i64 13
+    v1858 = icmp.i64 eq v1817, v1857
+    brif.i8 v1858, block531(v14), block531(v1856)
+
+block531(v1859: i32):
+    v1860 = iconst.i64 14
+    v1861 = icmp.i64 eq v1817, v1860
+    brif.i8 v1861, block532(v15), block532(v1859)
+
+block532(v1862: i32):
+    v1863 = iconst.i64 15
+    v1864 = icmp.i64 eq v1817, v1863
+    brif.i8 v1864, block533(v16), block533(v1862)
+
+block533(v1865: i32):
+    jump block517(v1865)
+
+block517(v1816: i32):
+    v1866 = iconst.i64 7
+    v1867 = iadd.i32 v824, v1816
+    v1868 = iconst.i64 16
+    v1869 = icmp.i64 uge v1866, v1868
+    v1870 = iconst.i8 3
+    brif.i8 v1869, block1(v1870), block534
+
+block534:
+    v1871 = iconst.i64 0
+    v1872 = icmp.i64 eq v1866, v1871
+    brif.i8 v1872, block535(v1867), block535(v1770)
+
+block535(v1873: i32):
+    v1874 = iconst.i64 1
+    v1875 = icmp.i64 eq v1866, v1874
+    brif.i8 v1875, block536(v1867), block536(v1773)
+
+block536(v1876: i32):
+    v1877 = iconst.i64 2
+    v1878 = icmp.i64 eq v1866, v1877
+    brif.i8 v1878, block537(v1867), block537(v1776)
+
+block537(v1879: i32):
+    v1880 = iconst.i64 3
+    v1881 = icmp.i64 eq v1866, v1880
+    brif.i8 v1881, block538(v1867), block538(v1779)
+
+block538(v1882: i32):
+    v1883 = iconst.i64 4
+    v1884 = icmp.i64 eq v1866, v1883
+    brif.i8 v1884, block539(v1867), block539(v1782)
+
+block539(v1885: i32):
+    v1886 = iconst.i64 5
+    v1887 = icmp.i64 eq v1866, v1886
+    brif.i8 v1887, block540(v1867), block540(v1785)
+
+block540(v1888: i32):
+    v1889 = iconst.i64 6
+    v1890 = icmp.i64 eq v1866, v1889
+    brif.i8 v1890, block541(v1867), block541(v1788)
+
+block541(v1891: i32):
+    v1892 = iconst.i64 7
+    v1893 = icmp.i64 eq v1866, v1892
+    brif.i8 v1893, block542(v1867), block542(v1791)
+
+block542(v1894: i32):
+    v1895 = iconst.i64 8
+    v1896 = icmp.i64 eq v1866, v1895
+    brif.i8 v1896, block543(v1867), block543(v1794)
+
+block543(v1897: i32):
+    v1898 = iconst.i64 9
+    v1899 = icmp.i64 eq v1866, v1898
+    brif.i8 v1899, block544(v1867), block544(v1797)
+
+block544(v1900: i32):
+    v1901 = iconst.i64 10
+    v1902 = icmp.i64 eq v1866, v1901
+    brif.i8 v1902, block545(v1867), block545(v1800)
+
+block545(v1903: i32):
+    v1904 = iconst.i64 11
+    v1905 = icmp.i64 eq v1866, v1904
+    brif.i8 v1905, block546(v1867), block546(v1803)
+
+block546(v1906: i32):
+    v1907 = iconst.i64 12
+    v1908 = icmp.i64 eq v1866, v1907
+    brif.i8 v1908, block547(v1867), block547(v1806)
+
+block547(v1909: i32):
+    v1910 = iconst.i64 13
+    v1911 = icmp.i64 eq v1866, v1910
+    brif.i8 v1911, block548(v1867), block548(v1809)
+
+block548(v1912: i32):
+    v1913 = iconst.i64 14
+    v1914 = icmp.i64 eq v1866, v1913
+    brif.i8 v1914, block549(v1867), block549(v1812)
+
+block549(v1915: i32):
+    v1916 = iconst.i64 15
+    v1917 = icmp.i64 eq v1866, v1916
+    brif.i8 v1917, block550(v1867), block550(v1815)
+
+block550(v1918: i32):
+    v1920 = iconst.i64 8
+    v1921 = iconst.i64 16
+    v1922 = icmp.i64 uge v1920, v1921
+    v1923 = iconst.i8 3
+    brif.i8 v1922, block1(v1923), block552
+
+block552:
+    v1924 = iconst.i64 1
+    v1925 = icmp.i64 eq v1920, v1924
+    brif.i8 v1925, block553(v2), block553(v1)
+
+block553(v1926: i32):
+    v1927 = iconst.i64 2
+    v1928 = icmp.i64 eq v1920, v1927
+    brif.i8 v1928, block554(v3), block554(v1926)
+
+block554(v1929: i32):
+    v1930 = iconst.i64 3
+    v1931 = icmp.i64 eq v1920, v1930
+    brif.i8 v1931, block555(v4), block555(v1929)
+
+block555(v1932: i32):
+    v1933 = iconst.i64 4
+    v1934 = icmp.i64 eq v1920, v1933
+    brif.i8 v1934, block556(v5), block556(v1932)
+
+block556(v1935: i32):
+    v1936 = iconst.i64 5
+    v1937 = icmp.i64 eq v1920, v1936
+    brif.i8 v1937, block557(v6), block557(v1935)
+
+block557(v1938: i32):
+    v1939 = iconst.i64 6
+    v1940 = icmp.i64 eq v1920, v1939
+    brif.i8 v1940, block558(v7), block558(v1938)
+
+block558(v1941: i32):
+    v1942 = iconst.i64 7
+    v1943 = icmp.i64 eq v1920, v1942
+    brif.i8 v1943, block559(v8), block559(v1941)
+
+block559(v1944: i32):
+    v1945 = iconst.i64 8
+    v1946 = icmp.i64 eq v1920, v1945
+    brif.i8 v1946, block560(v9), block560(v1944)
+
+block560(v1947: i32):
+    v1948 = iconst.i64 9
+    v1949 = icmp.i64 eq v1920, v1948
+    brif.i8 v1949, block561(v10), block561(v1947)
+
+block561(v1950: i32):
+    v1951 = iconst.i64 10
+    v1952 = icmp.i64 eq v1920, v1951
+    brif.i8 v1952, block562(v11), block562(v1950)
+
+block562(v1953: i32):
+    v1954 = iconst.i64 11
+    v1955 = icmp.i64 eq v1920, v1954
+    brif.i8 v1955, block563(v12), block563(v1953)
+
+block563(v1956: i32):
+    v1957 = iconst.i64 12
+    v1958 = icmp.i64 eq v1920, v1957
+    brif.i8 v1958, block564(v13), block564(v1956)
+
+block564(v1959: i32):
+    v1960 = iconst.i64 13
+    v1961 = icmp.i64 eq v1920, v1960
+    brif.i8 v1961, block565(v14), block565(v1959)
+
+block565(v1962: i32):
+    v1963 = iconst.i64 14
+    v1964 = icmp.i64 eq v1920, v1963
+    brif.i8 v1964, block566(v15), block566(v1962)
+
+block566(v1965: i32):
+    v1966 = iconst.i64 15
+    v1967 = icmp.i64 eq v1920, v1966
+    brif.i8 v1967, block567(v16), block567(v1965)
+
+block567(v1968: i32):
+    jump block551(v1968)
+
+block551(v1919: i32):
+    v1969 = iconst.i64 8
+    v1970 = iadd.i32 v825, v1919
+    v1971 = iconst.i64 16
+    v1972 = icmp.i64 uge v1969, v1971
+    v1973 = iconst.i8 3
+    brif.i8 v1972, block1(v1973), block568
+
+block568:
+    v1974 = iconst.i64 0
+    v1975 = icmp.i64 eq v1969, v1974
+    brif.i8 v1975, block569(v1970), block569(v1873)
+
+block569(v1976: i32):
+    v1977 = iconst.i64 1
+    v1978 = icmp.i64 eq v1969, v1977
+    brif.i8 v1978, block570(v1970), block570(v1876)
+
+block570(v1979: i32):
+    v1980 = iconst.i64 2
+    v1981 = icmp.i64 eq v1969, v1980
+    brif.i8 v1981, block571(v1970), block571(v1879)
+
+block571(v1982: i32):
+    v1983 = iconst.i64 3
+    v1984 = icmp.i64 eq v1969, v1983
+    brif.i8 v1984, block572(v1970), block572(v1882)
+
+block572(v1985: i32):
+    v1986 = iconst.i64 4
+    v1987 = icmp.i64 eq v1969, v1986
+    brif.i8 v1987, block573(v1970), block573(v1885)
+
+block573(v1988: i32):
+    v1989 = iconst.i64 5
+    v1990 = icmp.i64 eq v1969, v1989
+    brif.i8 v1990, block574(v1970), block574(v1888)
+
+block574(v1991: i32):
+    v1992 = iconst.i64 6
+    v1993 = icmp.i64 eq v1969, v1992
+    brif.i8 v1993, block575(v1970), block575(v1891)
+
+block575(v1994: i32):
+    v1995 = iconst.i64 7
+    v1996 = icmp.i64 eq v1969, v1995
+    brif.i8 v1996, block576(v1970), block576(v1894)
+
+block576(v1997: i32):
+    v1998 = iconst.i64 8
+    v1999 = icmp.i64 eq v1969, v1998
+    brif.i8 v1999, block577(v1970), block577(v1897)
+
+block577(v2000: i32):
+    v2001 = iconst.i64 9
+    v2002 = icmp.i64 eq v1969, v2001
+    brif.i8 v2002, block578(v1970), block578(v1900)
+
+block578(v2003: i32):
+    v2004 = iconst.i64 10
+    v2005 = icmp.i64 eq v1969, v2004
+    brif.i8 v2005, block579(v1970), block579(v1903)
+
+block579(v2006: i32):
+    v2007 = iconst.i64 11
+    v2008 = icmp.i64 eq v1969, v2007
+    brif.i8 v2008, block580(v1970), block580(v1906)
+
+block580(v2009: i32):
+    v2010 = iconst.i64 12
+    v2011 = icmp.i64 eq v1969, v2010
+    brif.i8 v2011, block581(v1970), block581(v1909)
+
+block581(v2012: i32):
+    v2013 = iconst.i64 13
+    v2014 = icmp.i64 eq v1969, v2013
+    brif.i8 v2014, block582(v1970), block582(v1912)
+
+block582(v2015: i32):
+    v2016 = iconst.i64 14
+    v2017 = icmp.i64 eq v1969, v2016
+    brif.i8 v2017, block583(v1970), block583(v1915)
+
+block583(v2018: i32):
+    v2019 = iconst.i64 15
+    v2020 = icmp.i64 eq v1969, v2019
+    brif.i8 v2020, block584(v1970), block584(v1918)
+
+block584(v2021: i32):
+    v2023 = iconst.i64 9
+    v2024 = iconst.i64 16
+    v2025 = icmp.i64 uge v2023, v2024
+    v2026 = iconst.i8 3
+    brif.i8 v2025, block1(v2026), block586
+
+block586:
+    v2027 = iconst.i64 1
+    v2028 = icmp.i64 eq v2023, v2027
+    brif.i8 v2028, block587(v2), block587(v1)
+
+block587(v2029: i32):
+    v2030 = iconst.i64 2
+    v2031 = icmp.i64 eq v2023, v2030
+    brif.i8 v2031, block588(v3), block588(v2029)
+
+block588(v2032: i32):
+    v2033 = iconst.i64 3
+    v2034 = icmp.i64 eq v2023, v2033
+    brif.i8 v2034, block589(v4), block589(v2032)
+
+block589(v2035: i32):
+    v2036 = iconst.i64 4
+    v2037 = icmp.i64 eq v2023, v2036
+    brif.i8 v2037, block590(v5), block590(v2035)
+
+block590(v2038: i32):
+    v2039 = iconst.i64 5
+    v2040 = icmp.i64 eq v2023, v2039
+    brif.i8 v2040, block591(v6), block591(v2038)
+
+block591(v2041: i32):
+    v2042 = iconst.i64 6
+    v2043 = icmp.i64 eq v2023, v2042
+    brif.i8 v2043, block592(v7), block592(v2041)
+
+block592(v2044: i32):
+    v2045 = iconst.i64 7
+    v2046 = icmp.i64 eq v2023, v2045
+    brif.i8 v2046, block593(v8), block593(v2044)
+
+block593(v2047: i32):
+    v2048 = iconst.i64 8
+    v2049 = icmp.i64 eq v2023, v2048
+    brif.i8 v2049, block594(v9), block594(v2047)
+
+block594(v2050: i32):
+    v2051 = iconst.i64 9
+    v2052 = icmp.i64 eq v2023, v2051
+    brif.i8 v2052, block595(v10), block595(v2050)
+
+block595(v2053: i32):
+    v2054 = iconst.i64 10
+    v2055 = icmp.i64 eq v2023, v2054
+    brif.i8 v2055, block596(v11), block596(v2053)
+
+block596(v2056: i32):
+    v2057 = iconst.i64 11
+    v2058 = icmp.i64 eq v2023, v2057
+    brif.i8 v2058, block597(v12), block597(v2056)
+
+block597(v2059: i32):
+    v2060 = iconst.i64 12
+    v2061 = icmp.i64 eq v2023, v2060
+    brif.i8 v2061, block598(v13), block598(v2059)
+
+block598(v2062: i32):
+    v2063 = iconst.i64 13
+    v2064 = icmp.i64 eq v2023, v2063
+    brif.i8 v2064, block599(v14), block599(v2062)
+
+block599(v2065: i32):
+    v2066 = iconst.i64 14
+    v2067 = icmp.i64 eq v2023, v2066
+    brif.i8 v2067, block600(v15), block600(v2065)
+
+block600(v2068: i32):
+    v2069 = iconst.i64 15
+    v2070 = icmp.i64 eq v2023, v2069
+    brif.i8 v2070, block601(v16), block601(v2068)
+
+block601(v2071: i32):
+    jump block585(v2071)
+
+block585(v2022: i32):
+    v2072 = iconst.i64 9
+    v2073 = iadd.i32 v826, v2022
+    v2074 = iconst.i64 16
+    v2075 = icmp.i64 uge v2072, v2074
+    v2076 = iconst.i8 3
+    brif.i8 v2075, block1(v2076), block602
+
+block602:
+    v2077 = iconst.i64 0
+    v2078 = icmp.i64 eq v2072, v2077
+    brif.i8 v2078, block603(v2073), block603(v1976)
+
+block603(v2079: i32):
+    v2080 = iconst.i64 1
+    v2081 = icmp.i64 eq v2072, v2080
+    brif.i8 v2081, block604(v2073), block604(v1979)
+
+block604(v2082: i32):
+    v2083 = iconst.i64 2
+    v2084 = icmp.i64 eq v2072, v2083
+    brif.i8 v2084, block605(v2073), block605(v1982)
+
+block605(v2085: i32):
+    v2086 = iconst.i64 3
+    v2087 = icmp.i64 eq v2072, v2086
+    brif.i8 v2087, block606(v2073), block606(v1985)
+
+block606(v2088: i32):
+    v2089 = iconst.i64 4
+    v2090 = icmp.i64 eq v2072, v2089
+    brif.i8 v2090, block607(v2073), block607(v1988)
+
+block607(v2091: i32):
+    v2092 = iconst.i64 5
+    v2093 = icmp.i64 eq v2072, v2092
+    brif.i8 v2093, block608(v2073), block608(v1991)
+
+block608(v2094: i32):
+    v2095 = iconst.i64 6
+    v2096 = icmp.i64 eq v2072, v2095
+    brif.i8 v2096, block609(v2073), block609(v1994)
+
+block609(v2097: i32):
+    v2098 = iconst.i64 7
+    v2099 = icmp.i64 eq v2072, v2098
+    brif.i8 v2099, block610(v2073), block610(v1997)
+
+block610(v2100: i32):
+    v2101 = iconst.i64 8
+    v2102 = icmp.i64 eq v2072, v2101
+    brif.i8 v2102, block611(v2073), block611(v2000)
+
+block611(v2103: i32):
+    v2104 = iconst.i64 9
+    v2105 = icmp.i64 eq v2072, v2104
+    brif.i8 v2105, block612(v2073), block612(v2003)
+
+block612(v2106: i32):
+    v2107 = iconst.i64 10
+    v2108 = icmp.i64 eq v2072, v2107
+    brif.i8 v2108, block613(v2073), block613(v2006)
+
+block613(v2109: i32):
+    v2110 = iconst.i64 11
+    v2111 = icmp.i64 eq v2072, v2110
+    brif.i8 v2111, block614(v2073), block614(v2009)
+
+block614(v2112: i32):
+    v2113 = iconst.i64 12
+    v2114 = icmp.i64 eq v2072, v2113
+    brif.i8 v2114, block615(v2073), block615(v2012)
+
+block615(v2115: i32):
+    v2116 = iconst.i64 13
+    v2117 = icmp.i64 eq v2072, v2116
+    brif.i8 v2117, block616(v2073), block616(v2015)
+
+block616(v2118: i32):
+    v2119 = iconst.i64 14
+    v2120 = icmp.i64 eq v2072, v2119
+    brif.i8 v2120, block617(v2073), block617(v2018)
+
+block617(v2121: i32):
+    v2122 = iconst.i64 15
+    v2123 = icmp.i64 eq v2072, v2122
+    brif.i8 v2123, block618(v2073), block618(v2021)
+
+block618(v2124: i32):
+    v2126 = iconst.i64 10
+    v2127 = iconst.i64 16
+    v2128 = icmp.i64 uge v2126, v2127
+    v2129 = iconst.i8 3
+    brif.i8 v2128, block1(v2129), block620
+
+block620:
+    v2130 = iconst.i64 1
+    v2131 = icmp.i64 eq v2126, v2130
+    brif.i8 v2131, block621(v2), block621(v1)
+
+block621(v2132: i32):
+    v2133 = iconst.i64 2
+    v2134 = icmp.i64 eq v2126, v2133
+    brif.i8 v2134, block622(v3), block622(v2132)
+
+block622(v2135: i32):
+    v2136 = iconst.i64 3
+    v2137 = icmp.i64 eq v2126, v2136
+    brif.i8 v2137, block623(v4), block623(v2135)
+
+block623(v2138: i32):
+    v2139 = iconst.i64 4
+    v2140 = icmp.i64 eq v2126, v2139
+    brif.i8 v2140, block624(v5), block624(v2138)
+
+block624(v2141: i32):
+    v2142 = iconst.i64 5
+    v2143 = icmp.i64 eq v2126, v2142
+    brif.i8 v2143, block625(v6), block625(v2141)
+
+block625(v2144: i32):
+    v2145 = iconst.i64 6
+    v2146 = icmp.i64 eq v2126, v2145
+    brif.i8 v2146, block626(v7), block626(v2144)
+
+block626(v2147: i32):
+    v2148 = iconst.i64 7
+    v2149 = icmp.i64 eq v2126, v2148
+    brif.i8 v2149, block627(v8), block627(v2147)
+
+block627(v2150: i32):
+    v2151 = iconst.i64 8
+    v2152 = icmp.i64 eq v2126, v2151
+    brif.i8 v2152, block628(v9), block628(v2150)
+
+block628(v2153: i32):
+    v2154 = iconst.i64 9
+    v2155 = icmp.i64 eq v2126, v2154
+    brif.i8 v2155, block629(v10), block629(v2153)
+
+block629(v2156: i32):
+    v2157 = iconst.i64 10
+    v2158 = icmp.i64 eq v2126, v2157
+    brif.i8 v2158, block630(v11), block630(v2156)
+
+block630(v2159: i32):
+    v2160 = iconst.i64 11
+    v2161 = icmp.i64 eq v2126, v2160
+    brif.i8 v2161, block631(v12), block631(v2159)
+
+block631(v2162: i32):
+    v2163 = iconst.i64 12
+    v2164 = icmp.i64 eq v2126, v2163
+    brif.i8 v2164, block632(v13), block632(v2162)
+
+block632(v2165: i32):
+    v2166 = iconst.i64 13
+    v2167 = icmp.i64 eq v2126, v2166
+    brif.i8 v2167, block633(v14), block633(v2165)
+
+block633(v2168: i32):
+    v2169 = iconst.i64 14
+    v2170 = icmp.i64 eq v2126, v2169
+    brif.i8 v2170, block634(v15), block634(v2168)
+
+block634(v2171: i32):
+    v2172 = iconst.i64 15
+    v2173 = icmp.i64 eq v2126, v2172
+    brif.i8 v2173, block635(v16), block635(v2171)
+
+block635(v2174: i32):
+    jump block619(v2174)
+
+block619(v2125: i32):
+    v2175 = iconst.i64 10
+    v2176 = iadd.i32 v827, v2125
+    v2177 = iconst.i64 16
+    v2178 = icmp.i64 uge v2175, v2177
+    v2179 = iconst.i8 3
+    brif.i8 v2178, block1(v2179), block636
+
+block636:
+    v2180 = iconst.i64 0
+    v2181 = icmp.i64 eq v2175, v2180
+    brif.i8 v2181, block637(v2176), block637(v2079)
+
+block637(v2182: i32):
+    v2183 = iconst.i64 1
+    v2184 = icmp.i64 eq v2175, v2183
+    brif.i8 v2184, block638(v2176), block638(v2082)
+
+block638(v2185: i32):
+    v2186 = iconst.i64 2
+    v2187 = icmp.i64 eq v2175, v2186
+    brif.i8 v2187, block639(v2176), block639(v2085)
+
+block639(v2188: i32):
+    v2189 = iconst.i64 3
+    v2190 = icmp.i64 eq v2175, v2189
+    brif.i8 v2190, block640(v2176), block640(v2088)
+
+block640(v2191: i32):
+    v2192 = iconst.i64 4
+    v2193 = icmp.i64 eq v2175, v2192
+    brif.i8 v2193, block641(v2176), block641(v2091)
+
+block641(v2194: i32):
+    v2195 = iconst.i64 5
+    v2196 = icmp.i64 eq v2175, v2195
+    brif.i8 v2196, block642(v2176), block642(v2094)
+
+block642(v2197: i32):
+    v2198 = iconst.i64 6
+    v2199 = icmp.i64 eq v2175, v2198
+    brif.i8 v2199, block643(v2176), block643(v2097)
+
+block643(v2200: i32):
+    v2201 = iconst.i64 7
+    v2202 = icmp.i64 eq v2175, v2201
+    brif.i8 v2202, block644(v2176), block644(v2100)
+
+block644(v2203: i32):
+    v2204 = iconst.i64 8
+    v2205 = icmp.i64 eq v2175, v2204
+    brif.i8 v2205, block645(v2176), block645(v2103)
+
+block645(v2206: i32):
+    v2207 = iconst.i64 9
+    v2208 = icmp.i64 eq v2175, v2207
+    brif.i8 v2208, block646(v2176), block646(v2106)
+
+block646(v2209: i32):
+    v2210 = iconst.i64 10
+    v2211 = icmp.i64 eq v2175, v2210
+    brif.i8 v2211, block647(v2176), block647(v2109)
+
+block647(v2212: i32):
+    v2213 = iconst.i64 11
+    v2214 = icmp.i64 eq v2175, v2213
+    brif.i8 v2214, block648(v2176), block648(v2112)
+
+block648(v2215: i32):
+    v2216 = iconst.i64 12
+    v2217 = icmp.i64 eq v2175, v2216
+    brif.i8 v2217, block649(v2176), block649(v2115)
+
+block649(v2218: i32):
+    v2219 = iconst.i64 13
+    v2220 = icmp.i64 eq v2175, v2219
+    brif.i8 v2220, block650(v2176), block650(v2118)
+
+block650(v2221: i32):
+    v2222 = iconst.i64 14
+    v2223 = icmp.i64 eq v2175, v2222
+    brif.i8 v2223, block651(v2176), block651(v2121)
+
+block651(v2224: i32):
+    v2225 = iconst.i64 15
+    v2226 = icmp.i64 eq v2175, v2225
+    brif.i8 v2226, block652(v2176), block652(v2124)
+
+block652(v2227: i32):
+    v2229 = iconst.i64 11
+    v2230 = iconst.i64 16
+    v2231 = icmp.i64 uge v2229, v2230
+    v2232 = iconst.i8 3
+    brif.i8 v2231, block1(v2232), block654
+
+block654:
+    v2233 = iconst.i64 1
+    v2234 = icmp.i64 eq v2229, v2233
+    brif.i8 v2234, block655(v2), block655(v1)
+
+block655(v2235: i32):
+    v2236 = iconst.i64 2
+    v2237 = icmp.i64 eq v2229, v2236
+    brif.i8 v2237, block656(v3), block656(v2235)
+
+block656(v2238: i32):
+    v2239 = iconst.i64 3
+    v2240 = icmp.i64 eq v2229, v2239
+    brif.i8 v2240, block657(v4), block657(v2238)
+
+block657(v2241: i32):
+    v2242 = iconst.i64 4
+    v2243 = icmp.i64 eq v2229, v2242
+    brif.i8 v2243, block658(v5), block658(v2241)
+
+block658(v2244: i32):
+    v2245 = iconst.i64 5
+    v2246 = icmp.i64 eq v2229, v2245
+    brif.i8 v2246, block659(v6), block659(v2244)
+
+block659(v2247: i32):
+    v2248 = iconst.i64 6
+    v2249 = icmp.i64 eq v2229, v2248
+    brif.i8 v2249, block660(v7), block660(v2247)
+
+block660(v2250: i32):
+    v2251 = iconst.i64 7
+    v2252 = icmp.i64 eq v2229, v2251
+    brif.i8 v2252, block661(v8), block661(v2250)
+
+block661(v2253: i32):
+    v2254 = iconst.i64 8
+    v2255 = icmp.i64 eq v2229, v2254
+    brif.i8 v2255, block662(v9), block662(v2253)
+
+block662(v2256: i32):
+    v2257 = iconst.i64 9
+    v2258 = icmp.i64 eq v2229, v2257
+    brif.i8 v2258, block663(v10), block663(v2256)
+
+block663(v2259: i32):
+    v2260 = iconst.i64 10
+    v2261 = icmp.i64 eq v2229, v2260
+    brif.i8 v2261, block664(v11), block664(v2259)
+
+block664(v2262: i32):
+    v2263 = iconst.i64 11
+    v2264 = icmp.i64 eq v2229, v2263
+    brif.i8 v2264, block665(v12), block665(v2262)
+
+block665(v2265: i32):
+    v2266 = iconst.i64 12
+    v2267 = icmp.i64 eq v2229, v2266
+    brif.i8 v2267, block666(v13), block666(v2265)
+
+block666(v2268: i32):
+    v2269 = iconst.i64 13
+    v2270 = icmp.i64 eq v2229, v2269
+    brif.i8 v2270, block667(v14), block667(v2268)
+
+block667(v2271: i32):
+    v2272 = iconst.i64 14
+    v2273 = icmp.i64 eq v2229, v2272
+    brif.i8 v2273, block668(v15), block668(v2271)
+
+block668(v2274: i32):
+    v2275 = iconst.i64 15
+    v2276 = icmp.i64 eq v2229, v2275
+    brif.i8 v2276, block669(v16), block669(v2274)
+
+block669(v2277: i32):
+    jump block653(v2277)
+
+block653(v2228: i32):
+    v2278 = iconst.i64 11
+    v2279 = iadd.i32 v828, v2228
+    v2280 = iconst.i64 16
+    v2281 = icmp.i64 uge v2278, v2280
+    v2282 = iconst.i8 3
+    brif.i8 v2281, block1(v2282), block670
+
+block670:
+    v2283 = iconst.i64 0
+    v2284 = icmp.i64 eq v2278, v2283
+    brif.i8 v2284, block671(v2279), block671(v2182)
+
+block671(v2285: i32):
+    v2286 = iconst.i64 1
+    v2287 = icmp.i64 eq v2278, v2286
+    brif.i8 v2287, block672(v2279), block672(v2185)
+
+block672(v2288: i32):
+    v2289 = iconst.i64 2
+    v2290 = icmp.i64 eq v2278, v2289
+    brif.i8 v2290, block673(v2279), block673(v2188)
+
+block673(v2291: i32):
+    v2292 = iconst.i64 3
+    v2293 = icmp.i64 eq v2278, v2292
+    brif.i8 v2293, block674(v2279), block674(v2191)
+
+block674(v2294: i32):
+    v2295 = iconst.i64 4
+    v2296 = icmp.i64 eq v2278, v2295
+    brif.i8 v2296, block675(v2279), block675(v2194)
+
+block675(v2297: i32):
+    v2298 = iconst.i64 5
+    v2299 = icmp.i64 eq v2278, v2298
+    brif.i8 v2299, block676(v2279), block676(v2197)
+
+block676(v2300: i32):
+    v2301 = iconst.i64 6
+    v2302 = icmp.i64 eq v2278, v2301
+    brif.i8 v2302, block677(v2279), block677(v2200)
+
+block677(v2303: i32):
+    v2304 = iconst.i64 7
+    v2305 = icmp.i64 eq v2278, v2304
+    brif.i8 v2305, block678(v2279), block678(v2203)
+
+block678(v2306: i32):
+    v2307 = iconst.i64 8
+    v2308 = icmp.i64 eq v2278, v2307
+    brif.i8 v2308, block679(v2279), block679(v2206)
+
+block679(v2309: i32):
+    v2310 = iconst.i64 9
+    v2311 = icmp.i64 eq v2278, v2310
+    brif.i8 v2311, block680(v2279), block680(v2209)
+
+block680(v2312: i32):
+    v2313 = iconst.i64 10
+    v2314 = icmp.i64 eq v2278, v2313
+    brif.i8 v2314, block681(v2279), block681(v2212)
+
+block681(v2315: i32):
+    v2316 = iconst.i64 11
+    v2317 = icmp.i64 eq v2278, v2316
+    brif.i8 v2317, block682(v2279), block682(v2215)
+
+block682(v2318: i32):
+    v2319 = iconst.i64 12
+    v2320 = icmp.i64 eq v2278, v2319
+    brif.i8 v2320, block683(v2279), block683(v2218)
+
+block683(v2321: i32):
+    v2322 = iconst.i64 13
+    v2323 = icmp.i64 eq v2278, v2322
+    brif.i8 v2323, block684(v2279), block684(v2221)
+
+block684(v2324: i32):
+    v2325 = iconst.i64 14
+    v2326 = icmp.i64 eq v2278, v2325
+    brif.i8 v2326, block685(v2279), block685(v2224)
+
+block685(v2327: i32):
+    v2328 = iconst.i64 15
+    v2329 = icmp.i64 eq v2278, v2328
+    brif.i8 v2329, block686(v2279), block686(v2227)
+
+block686(v2330: i32):
+    v2332 = iconst.i64 12
+    v2333 = iconst.i64 16
+    v2334 = icmp.i64 uge v2332, v2333
+    v2335 = iconst.i8 3
+    brif.i8 v2334, block1(v2335), block688
+
+block688:
+    v2336 = iconst.i64 1
+    v2337 = icmp.i64 eq v2332, v2336
+    brif.i8 v2337, block689(v2), block689(v1)
+
+block689(v2338: i32):
+    v2339 = iconst.i64 2
+    v2340 = icmp.i64 eq v2332, v2339
+    brif.i8 v2340, block690(v3), block690(v2338)
+
+block690(v2341: i32):
+    v2342 = iconst.i64 3
+    v2343 = icmp.i64 eq v2332, v2342
+    brif.i8 v2343, block691(v4), block691(v2341)
+
+block691(v2344: i32):
+    v2345 = iconst.i64 4
+    v2346 = icmp.i64 eq v2332, v2345
+    brif.i8 v2346, block692(v5), block692(v2344)
+
+block692(v2347: i32):
+    v2348 = iconst.i64 5
+    v2349 = icmp.i64 eq v2332, v2348
+    brif.i8 v2349, block693(v6), block693(v2347)
+
+block693(v2350: i32):
+    v2351 = iconst.i64 6
+    v2352 = icmp.i64 eq v2332, v2351
+    brif.i8 v2352, block694(v7), block694(v2350)
+
+block694(v2353: i32):
+    v2354 = iconst.i64 7
+    v2355 = icmp.i64 eq v2332, v2354
+    brif.i8 v2355, block695(v8), block695(v2353)
+
+block695(v2356: i32):
+    v2357 = iconst.i64 8
+    v2358 = icmp.i64 eq v2332, v2357
+    brif.i8 v2358, block696(v9), block696(v2356)
+
+block696(v2359: i32):
+    v2360 = iconst.i64 9
+    v2361 = icmp.i64 eq v2332, v2360
+    brif.i8 v2361, block697(v10), block697(v2359)
+
+block697(v2362: i32):
+    v2363 = iconst.i64 10
+    v2364 = icmp.i64 eq v2332, v2363
+    brif.i8 v2364, block698(v11), block698(v2362)
+
+block698(v2365: i32):
+    v2366 = iconst.i64 11
+    v2367 = icmp.i64 eq v2332, v2366
+    brif.i8 v2367, block699(v12), block699(v2365)
+
+block699(v2368: i32):
+    v2369 = iconst.i64 12
+    v2370 = icmp.i64 eq v2332, v2369
+    brif.i8 v2370, block700(v13), block700(v2368)
+
+block700(v2371: i32):
+    v2372 = iconst.i64 13
+    v2373 = icmp.i64 eq v2332, v2372
+    brif.i8 v2373, block701(v14), block701(v2371)
+
+block701(v2374: i32):
+    v2375 = iconst.i64 14
+    v2376 = icmp.i64 eq v2332, v2375
+    brif.i8 v2376, block702(v15), block702(v2374)
+
+block702(v2377: i32):
+    v2378 = iconst.i64 15
+    v2379 = icmp.i64 eq v2332, v2378
+    brif.i8 v2379, block703(v16), block703(v2377)
+
+block703(v2380: i32):
+    jump block687(v2380)
+
+block687(v2331: i32):
+    v2381 = iconst.i64 12
+    v2382 = iadd.i32 v829, v2331
+    v2383 = iconst.i64 16
+    v2384 = icmp.i64 uge v2381, v2383
+    v2385 = iconst.i8 3
+    brif.i8 v2384, block1(v2385), block704
+
+block704:
+    v2386 = iconst.i64 0
+    v2387 = icmp.i64 eq v2381, v2386
+    brif.i8 v2387, block705(v2382), block705(v2285)
+
+block705(v2388: i32):
+    v2389 = iconst.i64 1
+    v2390 = icmp.i64 eq v2381, v2389
+    brif.i8 v2390, block706(v2382), block706(v2288)
+
+block706(v2391: i32):
+    v2392 = iconst.i64 2
+    v2393 = icmp.i64 eq v2381, v2392
+    brif.i8 v2393, block707(v2382), block707(v2291)
+
+block707(v2394: i32):
+    v2395 = iconst.i64 3
+    v2396 = icmp.i64 eq v2381, v2395
+    brif.i8 v2396, block708(v2382), block708(v2294)
+
+block708(v2397: i32):
+    v2398 = iconst.i64 4
+    v2399 = icmp.i64 eq v2381, v2398
+    brif.i8 v2399, block709(v2382), block709(v2297)
+
+block709(v2400: i32):
+    v2401 = iconst.i64 5
+    v2402 = icmp.i64 eq v2381, v2401
+    brif.i8 v2402, block710(v2382), block710(v2300)
+
+block710(v2403: i32):
+    v2404 = iconst.i64 6
+    v2405 = icmp.i64 eq v2381, v2404
+    brif.i8 v2405, block711(v2382), block711(v2303)
+
+block711(v2406: i32):
+    v2407 = iconst.i64 7
+    v2408 = icmp.i64 eq v2381, v2407
+    brif.i8 v2408, block712(v2382), block712(v2306)
+
+block712(v2409: i32):
+    v2410 = iconst.i64 8
+    v2411 = icmp.i64 eq v2381, v2410
+    brif.i8 v2411, block713(v2382), block713(v2309)
+
+block713(v2412: i32):
+    v2413 = iconst.i64 9
+    v2414 = icmp.i64 eq v2381, v2413
+    brif.i8 v2414, block714(v2382), block714(v2312)
+
+block714(v2415: i32):
+    v2416 = iconst.i64 10
+    v2417 = icmp.i64 eq v2381, v2416
+    brif.i8 v2417, block715(v2382), block715(v2315)
+
+block715(v2418: i32):
+    v2419 = iconst.i64 11
+    v2420 = icmp.i64 eq v2381, v2419
+    brif.i8 v2420, block716(v2382), block716(v2318)
+
+block716(v2421: i32):
+    v2422 = iconst.i64 12
+    v2423 = icmp.i64 eq v2381, v2422
+    brif.i8 v2423, block717(v2382), block717(v2321)
+
+block717(v2424: i32):
+    v2425 = iconst.i64 13
+    v2426 = icmp.i64 eq v2381, v2425
+    brif.i8 v2426, block718(v2382), block718(v2324)
+
+block718(v2427: i32):
+    v2428 = iconst.i64 14
+    v2429 = icmp.i64 eq v2381, v2428
+    brif.i8 v2429, block719(v2382), block719(v2327)
+
+block719(v2430: i32):
+    v2431 = iconst.i64 15
+    v2432 = icmp.i64 eq v2381, v2431
+    brif.i8 v2432, block720(v2382), block720(v2330)
+
+block720(v2433: i32):
+    v2435 = iconst.i64 13
+    v2436 = iconst.i64 16
+    v2437 = icmp.i64 uge v2435, v2436
+    v2438 = iconst.i8 3
+    brif.i8 v2437, block1(v2438), block722
+
+block722:
+    v2439 = iconst.i64 1
+    v2440 = icmp.i64 eq v2435, v2439
+    brif.i8 v2440, block723(v2), block723(v1)
+
+block723(v2441: i32):
+    v2442 = iconst.i64 2
+    v2443 = icmp.i64 eq v2435, v2442
+    brif.i8 v2443, block724(v3), block724(v2441)
+
+block724(v2444: i32):
+    v2445 = iconst.i64 3
+    v2446 = icmp.i64 eq v2435, v2445
+    brif.i8 v2446, block725(v4), block725(v2444)
+
+block725(v2447: i32):
+    v2448 = iconst.i64 4
+    v2449 = icmp.i64 eq v2435, v2448
+    brif.i8 v2449, block726(v5), block726(v2447)
+
+block726(v2450: i32):
+    v2451 = iconst.i64 5
+    v2452 = icmp.i64 eq v2435, v2451
+    brif.i8 v2452, block727(v6), block727(v2450)
+
+block727(v2453: i32):
+    v2454 = iconst.i64 6
+    v2455 = icmp.i64 eq v2435, v2454
+    brif.i8 v2455, block728(v7), block728(v2453)
+
+block728(v2456: i32):
+    v2457 = iconst.i64 7
+    v2458 = icmp.i64 eq v2435, v2457
+    brif.i8 v2458, block729(v8), block729(v2456)
+
+block729(v2459: i32):
+    v2460 = iconst.i64 8
+    v2461 = icmp.i64 eq v2435, v2460
+    brif.i8 v2461, block730(v9), block730(v2459)
+
+block730(v2462: i32):
+    v2463 = iconst.i64 9
+    v2464 = icmp.i64 eq v2435, v2463
+    brif.i8 v2464, block731(v10), block731(v2462)
+
+block731(v2465: i32):
+    v2466 = iconst.i64 10
+    v2467 = icmp.i64 eq v2435, v2466
+    brif.i8 v2467, block732(v11), block732(v2465)
+
+block732(v2468: i32):
+    v2469 = iconst.i64 11
+    v2470 = icmp.i64 eq v2435, v2469
+    brif.i8 v2470, block733(v12), block733(v2468)
+
+block733(v2471: i32):
+    v2472 = iconst.i64 12
+    v2473 = icmp.i64 eq v2435, v2472
+    brif.i8 v2473, block734(v13), block734(v2471)
+
+block734(v2474: i32):
+    v2475 = iconst.i64 13
+    v2476 = icmp.i64 eq v2435, v2475
+    brif.i8 v2476, block735(v14), block735(v2474)
+
+block735(v2477: i32):
+    v2478 = iconst.i64 14
+    v2479 = icmp.i64 eq v2435, v2478
+    brif.i8 v2479, block736(v15), block736(v2477)
+
+block736(v2480: i32):
+    v2481 = iconst.i64 15
+    v2482 = icmp.i64 eq v2435, v2481
+    brif.i8 v2482, block737(v16), block737(v2480)
+
+block737(v2483: i32):
+    jump block721(v2483)
+
+block721(v2434: i32):
+    v2484 = iconst.i64 13
+    v2485 = iadd.i32 v830, v2434
+    v2486 = iconst.i64 16
+    v2487 = icmp.i64 uge v2484, v2486
+    v2488 = iconst.i8 3
+    brif.i8 v2487, block1(v2488), block738
+
+block738:
+    v2489 = iconst.i64 0
+    v2490 = icmp.i64 eq v2484, v2489
+    brif.i8 v2490, block739(v2485), block739(v2388)
+
+block739(v2491: i32):
+    v2492 = iconst.i64 1
+    v2493 = icmp.i64 eq v2484, v2492
+    brif.i8 v2493, block740(v2485), block740(v2391)
+
+block740(v2494: i32):
+    v2495 = iconst.i64 2
+    v2496 = icmp.i64 eq v2484, v2495
+    brif.i8 v2496, block741(v2485), block741(v2394)
+
+block741(v2497: i32):
+    v2498 = iconst.i64 3
+    v2499 = icmp.i64 eq v2484, v2498
+    brif.i8 v2499, block742(v2485), block742(v2397)
+
+block742(v2500: i32):
+    v2501 = iconst.i64 4
+    v2502 = icmp.i64 eq v2484, v2501
+    brif.i8 v2502, block743(v2485), block743(v2400)
+
+block743(v2503: i32):
+    v2504 = iconst.i64 5
+    v2505 = icmp.i64 eq v2484, v2504
+    brif.i8 v2505, block744(v2485), block744(v2403)
+
+block744(v2506: i32):
+    v2507 = iconst.i64 6
+    v2508 = icmp.i64 eq v2484, v2507
+    brif.i8 v2508, block745(v2485), block745(v2406)
+
+block745(v2509: i32):
+    v2510 = iconst.i64 7
+    v2511 = icmp.i64 eq v2484, v2510
+    brif.i8 v2511, block746(v2485), block746(v2409)
+
+block746(v2512: i32):
+    v2513 = iconst.i64 8
+    v2514 = icmp.i64 eq v2484, v2513
+    brif.i8 v2514, block747(v2485), block747(v2412)
+
+block747(v2515: i32):
+    v2516 = iconst.i64 9
+    v2517 = icmp.i64 eq v2484, v2516
+    brif.i8 v2517, block748(v2485), block748(v2415)
+
+block748(v2518: i32):
+    v2519 = iconst.i64 10
+    v2520 = icmp.i64 eq v2484, v2519
+    brif.i8 v2520, block749(v2485), block749(v2418)
+
+block749(v2521: i32):
+    v2522 = iconst.i64 11
+    v2523 = icmp.i64 eq v2484, v2522
+    brif.i8 v2523, block750(v2485), block750(v2421)
+
+block750(v2524: i32):
+    v2525 = iconst.i64 12
+    v2526 = icmp.i64 eq v2484, v2525
+    brif.i8 v2526, block751(v2485), block751(v2424)
+
+block751(v2527: i32):
+    v2528 = iconst.i64 13
+    v2529 = icmp.i64 eq v2484, v2528
+    brif.i8 v2529, block752(v2485), block752(v2427)
+
+block752(v2530: i32):
+    v2531 = iconst.i64 14
+    v2532 = icmp.i64 eq v2484, v2531
+    brif.i8 v2532, block753(v2485), block753(v2430)
+
+block753(v2533: i32):
+    v2534 = iconst.i64 15
+    v2535 = icmp.i64 eq v2484, v2534
+    brif.i8 v2535, block754(v2485), block754(v2433)
+
+block754(v2536: i32):
+    v2538 = iconst.i64 14
+    v2539 = iconst.i64 16
+    v2540 = icmp.i64 uge v2538, v2539
+    v2541 = iconst.i8 3
+    brif.i8 v2540, block1(v2541), block756
+
+block756:
+    v2542 = iconst.i64 1
+    v2543 = icmp.i64 eq v2538, v2542
+    brif.i8 v2543, block757(v2), block757(v1)
+
+block757(v2544: i32):
+    v2545 = iconst.i64 2
+    v2546 = icmp.i64 eq v2538, v2545
+    brif.i8 v2546, block758(v3), block758(v2544)
+
+block758(v2547: i32):
+    v2548 = iconst.i64 3
+    v2549 = icmp.i64 eq v2538, v2548
+    brif.i8 v2549, block759(v4), block759(v2547)
+
+block759(v2550: i32):
+    v2551 = iconst.i64 4
+    v2552 = icmp.i64 eq v2538, v2551
+    brif.i8 v2552, block760(v5), block760(v2550)
+
+block760(v2553: i32):
+    v2554 = iconst.i64 5
+    v2555 = icmp.i64 eq v2538, v2554
+    brif.i8 v2555, block761(v6), block761(v2553)
+
+block761(v2556: i32):
+    v2557 = iconst.i64 6
+    v2558 = icmp.i64 eq v2538, v2557
+    brif.i8 v2558, block762(v7), block762(v2556)
+
+block762(v2559: i32):
+    v2560 = iconst.i64 7
+    v2561 = icmp.i64 eq v2538, v2560
+    brif.i8 v2561, block763(v8), block763(v2559)
+
+block763(v2562: i32):
+    v2563 = iconst.i64 8
+    v2564 = icmp.i64 eq v2538, v2563
+    brif.i8 v2564, block764(v9), block764(v2562)
+
+block764(v2565: i32):
+    v2566 = iconst.i64 9
+    v2567 = icmp.i64 eq v2538, v2566
+    brif.i8 v2567, block765(v10), block765(v2565)
+
+block765(v2568: i32):
+    v2569 = iconst.i64 10
+    v2570 = icmp.i64 eq v2538, v2569
+    brif.i8 v2570, block766(v11), block766(v2568)
+
+block766(v2571: i32):
+    v2572 = iconst.i64 11
+    v2573 = icmp.i64 eq v2538, v2572
+    brif.i8 v2573, block767(v12), block767(v2571)
+
+block767(v2574: i32):
+    v2575 = iconst.i64 12
+    v2576 = icmp.i64 eq v2538, v2575
+    brif.i8 v2576, block768(v13), block768(v2574)
+
+block768(v2577: i32):
+    v2578 = iconst.i64 13
+    v2579 = icmp.i64 eq v2538, v2578
+    brif.i8 v2579, block769(v14), block769(v2577)
+
+block769(v2580: i32):
+    v2581 = iconst.i64 14
+    v2582 = icmp.i64 eq v2538, v2581
+    brif.i8 v2582, block770(v15), block770(v2580)
+
+block770(v2583: i32):
+    v2584 = iconst.i64 15
+    v2585 = icmp.i64 eq v2538, v2584
+    brif.i8 v2585, block771(v16), block771(v2583)
+
+block771(v2586: i32):
+    jump block755(v2586)
+
+block755(v2537: i32):
+    v2587 = iconst.i64 14
+    v2588 = iadd.i32 v831, v2537
+    v2589 = iconst.i64 16
+    v2590 = icmp.i64 uge v2587, v2589
+    v2591 = iconst.i8 3
+    brif.i8 v2590, block1(v2591), block772
+
+block772:
+    v2592 = iconst.i64 0
+    v2593 = icmp.i64 eq v2587, v2592
+    brif.i8 v2593, block773(v2588), block773(v2491)
+
+block773(v2594: i32):
+    v2595 = iconst.i64 1
+    v2596 = icmp.i64 eq v2587, v2595
+    brif.i8 v2596, block774(v2588), block774(v2494)
+
+block774(v2597: i32):
+    v2598 = iconst.i64 2
+    v2599 = icmp.i64 eq v2587, v2598
+    brif.i8 v2599, block775(v2588), block775(v2497)
+
+block775(v2600: i32):
+    v2601 = iconst.i64 3
+    v2602 = icmp.i64 eq v2587, v2601
+    brif.i8 v2602, block776(v2588), block776(v2500)
+
+block776(v2603: i32):
+    v2604 = iconst.i64 4
+    v2605 = icmp.i64 eq v2587, v2604
+    brif.i8 v2605, block777(v2588), block777(v2503)
+
+block777(v2606: i32):
+    v2607 = iconst.i64 5
+    v2608 = icmp.i64 eq v2587, v2607
+    brif.i8 v2608, block778(v2588), block778(v2506)
+
+block778(v2609: i32):
+    v2610 = iconst.i64 6
+    v2611 = icmp.i64 eq v2587, v2610
+    brif.i8 v2611, block779(v2588), block779(v2509)
+
+block779(v2612: i32):
+    v2613 = iconst.i64 7
+    v2614 = icmp.i64 eq v2587, v2613
+    brif.i8 v2614, block780(v2588), block780(v2512)
+
+block780(v2615: i32):
+    v2616 = iconst.i64 8
+    v2617 = icmp.i64 eq v2587, v2616
+    brif.i8 v2617, block781(v2588), block781(v2515)
+
+block781(v2618: i32):
+    v2619 = iconst.i64 9
+    v2620 = icmp.i64 eq v2587, v2619
+    brif.i8 v2620, block782(v2588), block782(v2518)
+
+block782(v2621: i32):
+    v2622 = iconst.i64 10
+    v2623 = icmp.i64 eq v2587, v2622
+    brif.i8 v2623, block783(v2588), block783(v2521)
+
+block783(v2624: i32):
+    v2625 = iconst.i64 11
+    v2626 = icmp.i64 eq v2587, v2625
+    brif.i8 v2626, block784(v2588), block784(v2524)
+
+block784(v2627: i32):
+    v2628 = iconst.i64 12
+    v2629 = icmp.i64 eq v2587, v2628
+    brif.i8 v2629, block785(v2588), block785(v2527)
+
+block785(v2630: i32):
+    v2631 = iconst.i64 13
+    v2632 = icmp.i64 eq v2587, v2631
+    brif.i8 v2632, block786(v2588), block786(v2530)
+
+block786(v2633: i32):
+    v2634 = iconst.i64 14
+    v2635 = icmp.i64 eq v2587, v2634
+    brif.i8 v2635, block787(v2588), block787(v2533)
+
+block787(v2636: i32):
+    v2637 = iconst.i64 15
+    v2638 = icmp.i64 eq v2587, v2637
+    brif.i8 v2638, block788(v2588), block788(v2536)
+
+block788(v2639: i32):
+    v2641 = iconst.i64 15
+    v2642 = iconst.i64 16
+    v2643 = icmp.i64 uge v2641, v2642
+    v2644 = iconst.i8 3
+    brif.i8 v2643, block1(v2644), block790
+
+block790:
+    v2645 = iconst.i64 1
+    v2646 = icmp.i64 eq v2641, v2645
+    brif.i8 v2646, block791(v2), block791(v1)
+
+block791(v2647: i32):
+    v2648 = iconst.i64 2
+    v2649 = icmp.i64 eq v2641, v2648
+    brif.i8 v2649, block792(v3), block792(v2647)
+
+block792(v2650: i32):
+    v2651 = iconst.i64 3
+    v2652 = icmp.i64 eq v2641, v2651
+    brif.i8 v2652, block793(v4), block793(v2650)
+
+block793(v2653: i32):
+    v2654 = iconst.i64 4
+    v2655 = icmp.i64 eq v2641, v2654
+    brif.i8 v2655, block794(v5), block794(v2653)
+
+block794(v2656: i32):
+    v2657 = iconst.i64 5
+    v2658 = icmp.i64 eq v2641, v2657
+    brif.i8 v2658, block795(v6), block795(v2656)
+
+block795(v2659: i32):
+    v2660 = iconst.i64 6
+    v2661 = icmp.i64 eq v2641, v2660
+    brif.i8 v2661, block796(v7), block796(v2659)
+
+block796(v2662: i32):
+    v2663 = iconst.i64 7
+    v2664 = icmp.i64 eq v2641, v2663
+    brif.i8 v2664, block797(v8), block797(v2662)
+
+block797(v2665: i32):
+    v2666 = iconst.i64 8
+    v2667 = icmp.i64 eq v2641, v2666
+    brif.i8 v2667, block798(v9), block798(v2665)
+
+block798(v2668: i32):
+    v2669 = iconst.i64 9
+    v2670 = icmp.i64 eq v2641, v2669
+    brif.i8 v2670, block799(v10), block799(v2668)
+
+block799(v2671: i32):
+    v2672 = iconst.i64 10
+    v2673 = icmp.i64 eq v2641, v2672
+    brif.i8 v2673, block800(v11), block800(v2671)
+
+block800(v2674: i32):
+    v2675 = iconst.i64 11
+    v2676 = icmp.i64 eq v2641, v2675
+    brif.i8 v2676, block801(v12), block801(v2674)
+
+block801(v2677: i32):
+    v2678 = iconst.i64 12
+    v2679 = icmp.i64 eq v2641, v2678
+    brif.i8 v2679, block802(v13), block802(v2677)
+
+block802(v2680: i32):
+    v2681 = iconst.i64 13
+    v2682 = icmp.i64 eq v2641, v2681
+    brif.i8 v2682, block803(v14), block803(v2680)
+
+block803(v2683: i32):
+    v2684 = iconst.i64 14
+    v2685 = icmp.i64 eq v2641, v2684
+    brif.i8 v2685, block804(v15), block804(v2683)
+
+block804(v2686: i32):
+    v2687 = iconst.i64 15
+    v2688 = icmp.i64 eq v2641, v2687
+    brif.i8 v2688, block805(v16), block805(v2686)
+
+block805(v2689: i32):
+    jump block789(v2689)
+
+block789(v2640: i32):
+    v2690 = iconst.i64 15
+    v2691 = iadd.i32 v832, v2640
+    v2692 = iconst.i64 16
+    v2693 = icmp.i64 uge v2690, v2692
+    v2694 = iconst.i8 3
+    brif.i8 v2693, block1(v2694), block806
+
+block806:
+    v2695 = iconst.i64 0
+    v2696 = icmp.i64 eq v2690, v2695
+    brif.i8 v2696, block807(v2691), block807(v2594)
+
+block807(v2697: i32):
+    v2698 = iconst.i64 1
+    v2699 = icmp.i64 eq v2690, v2698
+    brif.i8 v2699, block808(v2691), block808(v2597)
+
+block808(v2700: i32):
+    v2701 = iconst.i64 2
+    v2702 = icmp.i64 eq v2690, v2701
+    brif.i8 v2702, block809(v2691), block809(v2600)
+
+block809(v2703: i32):
+    v2704 = iconst.i64 3
+    v2705 = icmp.i64 eq v2690, v2704
+    brif.i8 v2705, block810(v2691), block810(v2603)
+
+block810(v2706: i32):
+    v2707 = iconst.i64 4
+    v2708 = icmp.i64 eq v2690, v2707
+    brif.i8 v2708, block811(v2691), block811(v2606)
+
+block811(v2709: i32):
+    v2710 = iconst.i64 5
+    v2711 = icmp.i64 eq v2690, v2710
+    brif.i8 v2711, block812(v2691), block812(v2609)
+
+block812(v2712: i32):
+    v2713 = iconst.i64 6
+    v2714 = icmp.i64 eq v2690, v2713
+    brif.i8 v2714, block813(v2691), block813(v2612)
+
+block813(v2715: i32):
+    v2716 = iconst.i64 7
+    v2717 = icmp.i64 eq v2690, v2716
+    brif.i8 v2717, block814(v2691), block814(v2615)
+
+block814(v2718: i32):
+    v2719 = iconst.i64 8
+    v2720 = icmp.i64 eq v2690, v2719
+    brif.i8 v2720, block815(v2691), block815(v2618)
+
+block815(v2721: i32):
+    v2722 = iconst.i64 9
+    v2723 = icmp.i64 eq v2690, v2722
+    brif.i8 v2723, block816(v2691), block816(v2621)
+
+block816(v2724: i32):
+    v2725 = iconst.i64 10
+    v2726 = icmp.i64 eq v2690, v2725
+    brif.i8 v2726, block817(v2691), block817(v2624)
+
+block817(v2727: i32):
+    v2728 = iconst.i64 11
+    v2729 = icmp.i64 eq v2690, v2728
+    brif.i8 v2729, block818(v2691), block818(v2627)
+
+block818(v2730: i32):
+    v2731 = iconst.i64 12
+    v2732 = icmp.i64 eq v2690, v2731
+    brif.i8 v2732, block819(v2691), block819(v2630)
+
+block819(v2733: i32):
+    v2734 = iconst.i64 13
+    v2735 = icmp.i64 eq v2690, v2734
+    brif.i8 v2735, block820(v2691), block820(v2633)
+
+block820(v2736: i32):
+    v2737 = iconst.i64 14
+    v2738 = icmp.i64 eq v2690, v2737
+    brif.i8 v2738, block821(v2691), block821(v2636)
+
+block821(v2739: i32):
+    v2740 = iconst.i64 15
+    v2741 = icmp.i64 eq v2690, v2740
+    brif.i8 v2741, block822(v2691), block822(v2639)
+
+block822(v2742: i32):
+    v2743 = iconst.i8 0
+    store.i32 v2697, v0
+    store.i32 v2700, v0+8
+    store.i32 v2703, v0+16
+    store.i32 v2706, v0+24
+    store.i32 v2709, v0+32
+    store.i32 v2712, v0+40
+    store.i32 v2715, v0+48
+    store.i32 v2718, v0+56
+    store.i32 v2721, v0+64
+    store.i32 v2724, v0+72
+    store.i32 v2727, v0+80
+    store.i32 v2730, v0+88
+    store.i32 v2733, v0+96
+    store.i32 v2736, v0+104
+    store.i32 v2739, v0+112
+    store.i32 v2742, v0+120
+    return v2743
+
+block1(v2744: i8):
+    v2745 = iconst.i32 0
+    v2746 = iconst.i32 0
+    v2747 = iconst.i32 0
+    v2748 = iconst.i32 0
+    v2749 = iconst.i32 0
+    v2750 = iconst.i32 0
+    v2751 = iconst.i32 0
+    v2752 = iconst.i32 0
+    v2753 = iconst.i32 0
+    v2754 = iconst.i32 0
+    v2755 = iconst.i32 0
+    v2756 = iconst.i32 0
+    v2757 = iconst.i32 0
+    v2758 = iconst.i32 0
+    v2759 = iconst.i32 0
+    v2760 = iconst.i32 0
+    store.i32 v2745, v0
+    store.i32 v2746, v0+8
+    store.i32 v2747, v0+16
+    store.i32 v2748, v0+24
+    store.i32 v2749, v0+32
+    store.i32 v2750, v0+40
+    store.i32 v2751, v0+48
+    store.i32 v2752, v0+56
+    store.i32 v2753, v0+64
+    store.i32 v2754, v0+72
+    store.i32 v2755, v0+80
+    store.i32 v2756, v0+88
+    store.i32 v2757, v0+96
+    store.i32 v2758, v0+104
+    store.i32 v2759, v0+112
+    store.i32 v2760, v0+120
+    return v2744
+}
+
+function %Corpus__chacha20Block_w0(i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32) -> i8, i32, i32, i32, i32, i32, i32, i32 {
+    ss0 = explicit_slot 128, align = 8
+    fn0 = %Corpus__chacha20Block(i64, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32) -> i8
+
+block0(v0: i32, v1: i32, v2: i32, v3: i32, v4: i32, v5: i32, v6: i32, v7: i32, v8: i32, v9: i32, v10: i32, v11: i32, v12: i32, v13: i32, v14: i32, v15: i32):
+    v16 = stack_addr.i64 ss0
+    v17 = call fn0(v16, v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15)
+    brif.i8 v17, block3, block2
+
+block3:
+    v18 = iconst.i32 0
+    v19 = iconst.i32 0
+    v20 = iconst.i32 0
+    v21 = iconst.i32 0
+    v22 = iconst.i32 0
+    v23 = iconst.i32 0
+    v24 = iconst.i32 0
+    return v17, v18, v19, v20, v21, v22, v23, v24
+
+block2:
+    v25 = load.i32 notrap aligned v16
+    v26 = load.i32 notrap aligned v16+8
+    v27 = load.i32 notrap aligned v16+16
+    v28 = load.i32 notrap aligned v16+24
+    v29 = load.i32 notrap aligned v16+32
+    v30 = load.i32 notrap aligned v16+40
+    v31 = load.i32 notrap aligned v16+48
+    v32 = load.i32 notrap aligned v16+56
+    v33 = load.i32 notrap aligned v16+64
+    v34 = load.i32 notrap aligned v16+72
+    v35 = load.i32 notrap aligned v16+80
+    v36 = load.i32 notrap aligned v16+88
+    v37 = load.i32 notrap aligned v16+96
+    v38 = load.i32 notrap aligned v16+104
+    v39 = load.i32 notrap aligned v16+112
+    v40 = load.i32 notrap aligned v16+120
+    return v17, v25, v26, v27, v28, v29, v30, v31
+}
+; run: %Corpus__chacha20Block_w0(1634760805, 857760878, 2036477234, 1797285236, 50462976, 117835012, 185207048, 252579084, 319951120, 387323156, 454695192, 522067228, 1, 150994944, 1241513984, 0) == [0, -454561520, 358169553, 534581072, -999219037, -940256825, 57196595, -1700126204]
+
+function %Corpus__chacha20Block_w1(i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32) -> i8, i32, i32, i32, i32, i32, i32, i32 {
+    ss0 = explicit_slot 128, align = 8
+    fn0 = %Corpus__chacha20Block(i64, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32) -> i8
+
+block0(v0: i32, v1: i32, v2: i32, v3: i32, v4: i32, v5: i32, v6: i32, v7: i32, v8: i32, v9: i32, v10: i32, v11: i32, v12: i32, v13: i32, v14: i32, v15: i32):
+    v16 = stack_addr.i64 ss0
+    v17 = call fn0(v16, v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15)
+    brif.i8 v17, block3, block2
+
+block3:
+    v18 = iconst.i32 0
+    v19 = iconst.i32 0
+    v20 = iconst.i32 0
+    v21 = iconst.i32 0
+    v22 = iconst.i32 0
+    v23 = iconst.i32 0
+    v24 = iconst.i32 0
+    return v17, v18, v19, v20, v21, v22, v23, v24
+
+block2:
+    v25 = load.i32 notrap aligned v16
+    v26 = load.i32 notrap aligned v16+8
+    v27 = load.i32 notrap aligned v16+16
+    v28 = load.i32 notrap aligned v16+24
+    v29 = load.i32 notrap aligned v16+32
+    v30 = load.i32 notrap aligned v16+40
+    v31 = load.i32 notrap aligned v16+48
+    v32 = load.i32 notrap aligned v16+56
+    v33 = load.i32 notrap aligned v16+64
+    v34 = load.i32 notrap aligned v16+72
+    v35 = load.i32 notrap aligned v16+80
+    v36 = load.i32 notrap aligned v16+88
+    v37 = load.i32 notrap aligned v16+96
+    v38 = load.i32 notrap aligned v16+104
+    v39 = load.i32 notrap aligned v16+112
+    v40 = load.i32 notrap aligned v16+120
+    return v17, v32, v33, v34, v35, v36, v37, v38
+}
+; run: %Corpus__chacha20Block_w1(1634760805, 857760878, 2036477234, 1797285236, 50462976, 117835012, 185207048, 252579084, 319951120, 387323156, 454695192, 522067228, 1, 150994944, 1241513984, 0) == [0, 1315755203, 1180992210, 162176775, 98026004, -1576891431, -778300747, -1186064674]
+
+function %Corpus__chacha20Block_w2(i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32) -> i8, i32, i32 {
+    ss0 = explicit_slot 128, align = 8
+    fn0 = %Corpus__chacha20Block(i64, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32) -> i8
+
+block0(v0: i32, v1: i32, v2: i32, v3: i32, v4: i32, v5: i32, v6: i32, v7: i32, v8: i32, v9: i32, v10: i32, v11: i32, v12: i32, v13: i32, v14: i32, v15: i32):
+    v16 = stack_addr.i64 ss0
+    v17 = call fn0(v16, v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15)
+    brif.i8 v17, block3, block2
+
+block3:
+    v18 = iconst.i32 0
+    v19 = iconst.i32 0
+    return v17, v18, v19
+
+block2:
+    v20 = load.i32 notrap aligned v16
+    v21 = load.i32 notrap aligned v16+8
+    v22 = load.i32 notrap aligned v16+16
+    v23 = load.i32 notrap aligned v16+24
+    v24 = load.i32 notrap aligned v16+32
+    v25 = load.i32 notrap aligned v16+40
+    v26 = load.i32 notrap aligned v16+48
+    v27 = load.i32 notrap aligned v16+56
+    v28 = load.i32 notrap aligned v16+64
+    v29 = load.i32 notrap aligned v16+72
+    v30 = load.i32 notrap aligned v16+80
+    v31 = load.i32 notrap aligned v16+88
+    v32 = load.i32 notrap aligned v16+96
+    v33 = load.i32 notrap aligned v16+104
+    v34 = load.i32 notrap aligned v16+112
+    v35 = load.i32 notrap aligned v16+120
+    return v17, v34, v35
+}
+; run: %Corpus__chacha20Block_w2(1634760805, 857760878, 2036477234, 1797285236, 50462976, 117835012, 185207048, 252579084, 319951120, 387323156, 454695192, 522067228, 1, 150994944, 1241513984, 0) == [0, -394014517, 1312575650]

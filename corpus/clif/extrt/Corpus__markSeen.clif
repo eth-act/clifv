@@ -1,0 +1,78 @@
+test interpret
+test run
+target aarch64
+
+function %Corpus__markSeen(i64, i64, i16) -> i8, i64, i8 {
+    fn0 = %flat_map_contains(i64, i64, i64) -> i8
+    fn1 = %flat_map_insert(i64, i64, i64, i64)
+
+block0(v0: i64, v1: i64, v2: i16):
+    v3 = uextend.i64 v2
+    v4 = call fn0(v0, v1, v3)
+    v5 = uextend.i64 v2
+    v6 = iconst.i8 1
+    v7 = uextend.i64 v6
+    call fn1(v0, v1, v5, v7)
+    v8 = iconst.i8 0
+    return v8, v1, v4
+
+block1(v9: i8):
+    v10 = iconst.i64 0
+    v11 = iconst.i8 0
+    return v9, v10, v11
+}
+
+function %Corpus__markSeen_w0(i64, i64, i64, i16) -> i8, i64, i64, i64, i64, i64, i8 {
+    ss0 = explicit_slot 65536, align = 8
+    ss1 = explicit_slot 16, align = 8
+    fn0 = %flat_map_new(i64) -> i64
+    fn1 = %flat_map_insert(i64, i64, i64, i64)
+    fn2 = %Corpus__markSeen(i64, i64, i16) -> i8, i64, i8
+    fn3 = %flat_map_len(i64, i64) -> i64
+    fn4 = %flat_map_entry(i64, i64, i64, i64, i64)
+
+block0(v0: i64, v1: i64, v2: i64, v3: i16):
+    v4 = stack_addr.i64 ss0
+    v5 = iconst.i64 16
+    store.i64 notrap aligned v5, v4
+    v6 = iconst.i64 65536
+    store.i64 notrap aligned v6, v4+8
+    v7 = call fn0(v4)
+    v8 = iconst.i64 0
+    v9 = icmp.i64 ult v8, v0
+    brif.i8 v9, block2, block3
+
+block2:
+    call fn1(v4, v7, v1, v2)
+    jump block3
+
+block3:
+    v10, v11, v12 = call fn2(v4, v7, v3)
+    brif.i8 v10, block5, block4
+
+block5:
+    v13 = iconst.i64 0
+    v14 = iconst.i64 0
+    v15 = iconst.i64 0
+    v16 = iconst.i64 0
+    v17 = iconst.i64 0
+    v18 = iconst.i8 0
+    return v10, v13, v14, v15, v16, v17, v18
+
+block4:
+    v19 = stack_addr.i64 ss1
+    v20 = stack_addr.i64 ss1+8
+    v21 = call fn3(v4, v11)
+    v22 = iconst.i64 0
+    call fn4(v4, v11, v22, v19, v20)
+    v23 = load.i64 notrap aligned v19
+    v24 = load.i64 notrap aligned v20
+    v25 = iconst.i64 1
+    call fn4(v4, v11, v25, v19, v20)
+    v26 = load.i64 notrap aligned v19
+    v27 = load.i64 notrap aligned v20
+    return v10, v21, v23, v24, v26, v27, v12
+}
+; run: %Corpus__markSeen_w0(0, 0, 0, 5) == [0, 1, 5, 1, 0, 0, 0]
+; run: %Corpus__markSeen_w0(1, 5, 1, 5) == [0, 1, 5, 1, 0, 0, 1]
+; run: %Corpus__markSeen_w0(1, 1, 0, 5) == [0, 2, 1, 0, 5, 1, 0]

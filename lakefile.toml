@@ -24,3 +24,11 @@ root = "FVTest.Clif.Filetest"
 name = "Corpus"
 srcDir = "corpus/dsl"
 globs = ["Corpus.+"]
+
+[[lean_exe]]
+name = "emit"
+root = "FVTest.Compile.EmitMain"
+
+[[lean_exe]]
+name = "compile-diff"
+root = "FVTest.Compile.Diff"

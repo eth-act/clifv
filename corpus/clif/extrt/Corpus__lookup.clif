@@ -1,0 +1,64 @@
+test interpret
+test run
+target aarch64
+
+function %Corpus__lookup(i64, i32, i64, i64) -> i8, i64 {
+    ss0 = explicit_slot 8, align = 8
+    fn0 = %flat_map_new(i64) -> i64
+    fn1 = %flat_map_insert(i64, i64, i64, i64)
+    fn2 = %flat_map_get(i64, i64, i64, i64) -> i8
+
+block0(v0: i64, v1: i32, v2: i64, v3: i64):
+    v4 = call fn0(v0)
+    v5 = iconst.i32 1
+    v6 = uextend.i64 v5
+    call fn1(v0, v4, v6, v2)
+    v7 = iconst.i32 2
+    v8 = uextend.i64 v7
+    call fn1(v0, v4, v8, v3)
+    v9 = iconst.i32 1
+    v10 = uextend.i64 v9
+    v11 = iadd.i64 v2, v3
+    call fn1(v0, v4, v10, v11)
+    v12 = uextend.i64 v1
+    v13 = stack_addr.i64 ss0
+    v14 = call fn2(v0, v4, v12, v13)
+    v15 = iconst.i8 4
+    brif.i8 v14, block2, block1(v15)
+
+block2:
+    v16 = load.i64 notrap aligned v13
+    v17 = iconst.i8 0
+    return v17, v16
+
+block1(v18: i8):
+    v19 = iconst.i64 0
+    return v18, v19
+}
+
+function %Corpus__lookup_w0(i32, i64, i64) -> i8, i64 {
+    ss0 = explicit_slot 65536, align = 8
+    ss1 = explicit_slot 16, align = 8
+    fn0 = %Corpus__lookup(i64, i32, i64, i64) -> i8, i64
+
+block0(v0: i32, v1: i64, v2: i64):
+    v3 = stack_addr.i64 ss0
+    v4 = iconst.i64 16
+    store.i64 notrap aligned v4, v3
+    v5 = iconst.i64 65536
+    store.i64 notrap aligned v5, v3+8
+    v6, v7 = call fn0(v3, v0, v1, v2)
+    brif.i8 v6, block3, block2
+
+block3:
+    v8 = iconst.i64 0
+    return v6, v8
+
+block2:
+    v9 = stack_addr.i64 ss1
+    v10 = stack_addr.i64 ss1+8
+    return v6, v7
+}
+; run: %Corpus__lookup_w0(1, 10, 20) == [0, 30]
+; run: %Corpus__lookup_w0(2, 10, 20) == [0, 20]
+; run: %Corpus__lookup_w0(3, 10, 20) == [4, 0]

@@ -1,0 +1,31 @@
+test interpret
+test run
+target aarch64
+
+function %Corpus__sub3(i64, i64, i64) -> i8, i64 {
+block0(v0: i64, v1: i64, v2: i64):
+    v4 = isub.i64 v0, v1
+    v5 = icmp.i64 ult v0, v1
+    v6 = iconst.i8 1
+    brif.i8 v5, block1(v6), block3
+
+block3:
+    jump block2(v4)
+
+block2(v3: i64):
+    v7 = isub.i64 v3, v2
+    v8 = icmp.i64 ult v3, v2
+    v9 = iconst.i8 1
+    brif.i8 v8, block1(v9), block4
+
+block4:
+    v10 = iconst.i8 0
+    return v10, v7
+
+block1(v11: i8):
+    v12 = iconst.i64 0
+    return v11, v12
+}
+; run: %Corpus__sub3(10, 3, 7) == [0, 0]
+; run: %Corpus__sub3(10, 3, 8) == [1, 0]
+; run: %Corpus__sub3(0, 1, 0) == [1, 0]

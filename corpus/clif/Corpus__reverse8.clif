@@ -1,0 +1,207 @@
+test interpret
+test run
+target aarch64
+
+function %Corpus__reverse8(i64, i8, i8, i8, i8, i8, i8, i8, i8) -> i8 {
+block0(v0: i64, v1: i8, v2: i8, v3: i8, v4: i8, v5: i8, v6: i8, v7: i8, v8: i8):
+    v9 = iconst.i8 0
+    v27 = iconst.i64 0
+    jump block3(v27, v9, v9, v9, v9, v9, v9, v9, v9)
+
+block3(v18: i64, v19: i8, v20: i8, v21: i8, v22: i8, v23: i8, v24: i8, v25: i8, v26: i8):
+    v28 = iconst.i64 8
+    v29 = icmp.i64 ult v18, v28
+    brif.i8 v29, block4, block5
+
+block4:
+    v31 = iconst.i64 8
+    v32 = icmp.i64 uge v18, v31
+    v33 = iconst.i8 3
+    brif.i8 v32, block1(v33), block8
+
+block8:
+    v34 = iconst.i64 1
+    v35 = icmp.i64 eq v18, v34
+    brif.i8 v35, block9(v2), block9(v1)
+
+block9(v36: i8):
+    v37 = iconst.i64 2
+    v38 = icmp.i64 eq v18, v37
+    brif.i8 v38, block10(v3), block10(v36)
+
+block10(v39: i8):
+    v40 = iconst.i64 3
+    v41 = icmp.i64 eq v18, v40
+    brif.i8 v41, block11(v4), block11(v39)
+
+block11(v42: i8):
+    v43 = iconst.i64 4
+    v44 = icmp.i64 eq v18, v43
+    brif.i8 v44, block12(v5), block12(v42)
+
+block12(v45: i8):
+    v46 = iconst.i64 5
+    v47 = icmp.i64 eq v18, v46
+    brif.i8 v47, block13(v6), block13(v45)
+
+block13(v48: i8):
+    v49 = iconst.i64 6
+    v50 = icmp.i64 eq v18, v49
+    brif.i8 v50, block14(v7), block14(v48)
+
+block14(v51: i8):
+    v52 = iconst.i64 7
+    v53 = icmp.i64 eq v18, v52
+    brif.i8 v53, block15(v8), block15(v51)
+
+block15(v54: i8):
+    jump block7(v54)
+
+block7(v30: i8):
+    v55 = iconst.i64 7
+    v56 = isub.i64 v55, v18
+    v57 = iconst.i64 8
+    v58 = icmp.i64 uge v56, v57
+    v59 = iconst.i8 3
+    brif.i8 v58, block1(v59), block16
+
+block16:
+    v60 = iconst.i64 0
+    v61 = icmp.i64 eq v56, v60
+    brif.i8 v61, block17(v30), block17(v19)
+
+block17(v62: i8):
+    v63 = iconst.i64 1
+    v64 = icmp.i64 eq v56, v63
+    brif.i8 v64, block18(v30), block18(v20)
+
+block18(v65: i8):
+    v66 = iconst.i64 2
+    v67 = icmp.i64 eq v56, v66
+    brif.i8 v67, block19(v30), block19(v21)
+
+block19(v68: i8):
+    v69 = iconst.i64 3
+    v70 = icmp.i64 eq v56, v69
+    brif.i8 v70, block20(v30), block20(v22)
+
+block20(v71: i8):
+    v72 = iconst.i64 4
+    v73 = icmp.i64 eq v56, v72
+    brif.i8 v73, block21(v30), block21(v23)
+
+block21(v74: i8):
+    v75 = iconst.i64 5
+    v76 = icmp.i64 eq v56, v75
+    brif.i8 v76, block22(v30), block22(v24)
+
+block22(v77: i8):
+    v78 = iconst.i64 6
+    v79 = icmp.i64 eq v56, v78
+    brif.i8 v79, block23(v30), block23(v25)
+
+block23(v80: i8):
+    v81 = iconst.i64 7
+    v82 = icmp.i64 eq v56, v81
+    brif.i8 v82, block24(v30), block24(v26)
+
+block24(v83: i8):
+    jump block6(v62, v65, v68, v71, v74, v77, v80, v83)
+
+block6(v84: i8, v85: i8, v86: i8, v87: i8, v88: i8, v89: i8, v90: i8, v91: i8):
+    v92 = iconst.i64 1
+    v93 = iadd.i64 v18, v92
+    jump block3(v93, v84, v85, v86, v87, v88, v89, v90, v91)
+
+block5:
+    jump block2(v19, v20, v21, v22, v23, v24, v25, v26)
+
+block2(v10: i8, v11: i8, v12: i8, v13: i8, v14: i8, v15: i8, v16: i8, v17: i8):
+    v94 = iconst.i8 0
+    store.i8 v10, v0
+    store.i8 v11, v0+8
+    store.i8 v12, v0+16
+    store.i8 v13, v0+24
+    store.i8 v14, v0+32
+    store.i8 v15, v0+40
+    store.i8 v16, v0+48
+    store.i8 v17, v0+56
+    return v94
+
+block1(v95: i8):
+    v96 = iconst.i8 0
+    v97 = iconst.i8 0
+    v98 = iconst.i8 0
+    v99 = iconst.i8 0
+    v100 = iconst.i8 0
+    v101 = iconst.i8 0
+    v102 = iconst.i8 0
+    v103 = iconst.i8 0
+    store.i8 v96, v0
+    store.i8 v97, v0+8
+    store.i8 v98, v0+16
+    store.i8 v99, v0+24
+    store.i8 v100, v0+32
+    store.i8 v101, v0+40
+    store.i8 v102, v0+48
+    store.i8 v103, v0+56
+    return v95
+}
+
+function %Corpus__reverse8_w0(i8, i8, i8, i8, i8, i8, i8, i8) -> i8, i8, i8, i8, i8, i8, i8, i8 {
+    ss0 = explicit_slot 64, align = 8
+    fn0 = %Corpus__reverse8(i64, i8, i8, i8, i8, i8, i8, i8, i8) -> i8
+
+block0(v0: i8, v1: i8, v2: i8, v3: i8, v4: i8, v5: i8, v6: i8, v7: i8):
+    v8 = stack_addr.i64 ss0
+    v9 = call fn0(v8, v0, v1, v2, v3, v4, v5, v6, v7)
+    brif.i8 v9, block3, block2
+
+block3:
+    v10 = iconst.i8 0
+    v11 = iconst.i8 0
+    v12 = iconst.i8 0
+    v13 = iconst.i8 0
+    v14 = iconst.i8 0
+    v15 = iconst.i8 0
+    v16 = iconst.i8 0
+    return v9, v10, v11, v12, v13, v14, v15, v16
+
+block2:
+    v17 = load.i8 notrap aligned v8
+    v18 = load.i8 notrap aligned v8+8
+    v19 = load.i8 notrap aligned v8+16
+    v20 = load.i8 notrap aligned v8+24
+    v21 = load.i8 notrap aligned v8+32
+    v22 = load.i8 notrap aligned v8+40
+    v23 = load.i8 notrap aligned v8+48
+    v24 = load.i8 notrap aligned v8+56
+    return v9, v17, v18, v19, v20, v21, v22, v23
+}
+; run: %Corpus__reverse8_w0(1, 2, 3, 4, 5, 6, 7, 8) == [0, 8, 7, 6, 5, 4, 3, 2]
+
+function %Corpus__reverse8_w1(i8, i8, i8, i8, i8, i8, i8, i8) -> i8, i8 {
+    ss0 = explicit_slot 64, align = 8
+    fn0 = %Corpus__reverse8(i64, i8, i8, i8, i8, i8, i8, i8, i8) -> i8
+
+block0(v0: i8, v1: i8, v2: i8, v3: i8, v4: i8, v5: i8, v6: i8, v7: i8):
+    v8 = stack_addr.i64 ss0
+    v9 = call fn0(v8, v0, v1, v2, v3, v4, v5, v6, v7)
+    brif.i8 v9, block3, block2
+
+block3:
+    v10 = iconst.i8 0
+    return v9, v10
+
+block2:
+    v11 = load.i8 notrap aligned v8
+    v12 = load.i8 notrap aligned v8+8
+    v13 = load.i8 notrap aligned v8+16
+    v14 = load.i8 notrap aligned v8+24
+    v15 = load.i8 notrap aligned v8+32
+    v16 = load.i8 notrap aligned v8+40
+    v17 = load.i8 notrap aligned v8+48
+    v18 = load.i8 notrap aligned v8+56
+    return v9, v18
+}
+; run: %Corpus__reverse8_w1(1, 2, 3, 4, 5, 6, 7, 8) == [0, 1]

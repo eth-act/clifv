@@ -1,0 +1,21 @@
+test interpret
+test run
+target aarch64
+
+function %Corpus__casts(i8) -> i8, i64 {
+block0(v0: i8):
+    v1 = uextend.i64 v0
+    v2 = sextend.i32 v0
+    v3 = ireduce.i16 v2
+    v4 = uextend.i64 v3
+    v5 = iadd.i64 v1, v4
+    v6 = iconst.i8 0
+    return v6, v5
+
+block1(v7: i8):
+    v8 = iconst.i64 0
+    return v7, v8
+}
+; run: %Corpus__casts(-1) == [0, 65790]
+; run: %Corpus__casts(127) == [0, 254]
+; run: %Corpus__casts(0) == [0, 0]

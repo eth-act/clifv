@@ -220,6 +220,10 @@ runtime handle. A compiled `f : FlatFn σ τ` is a CLIF function named after `f.
 
 Keys and values (`int`/`bool` only) are passed zero-extended in an `i64`; `bool` is 0/1.
 
+**Amended by the emitter (`docs/contracts/compile.md` §4, authoritative for the ABI):** every
+extern below takes an extra first parameter `int64_t ctx` (the runtime arena), e.g.
+`int64_t flat_map_new(int64_t ctx)`; `flat_map_free` is not emitted.
+
 | DSL | Extern | C signature |
 | --- | --- | --- |
 | `Expr.mapEmpty` | `flat_map_new` | `int64_t flat_map_new(void)` |

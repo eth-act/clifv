@@ -1,0 +1,45 @@
+test interpret
+test run
+target aarch64
+
+function %Corpus__incrTwice(i16) -> i8, i16 {
+    fn0 = %Corpus__incr(i16) -> i8, i16
+
+block0(v0: i16):
+    v2, v3 = call fn0(v0)
+    brif.i8 v2, block1(v2), block3
+
+block3:
+    jump block2(v3)
+
+block2(v1: i16):
+    v4, v5 = call fn0(v1)
+    brif.i8 v4, block1(v4), block4
+
+block4:
+    v6 = iconst.i8 0
+    return v6, v5
+
+block1(v7: i8):
+    v8 = iconst.i16 0
+    return v7, v8
+}
+; run: %Corpus__incrTwice(1) == [0, 3]
+; run: %Corpus__incrTwice(-2) == [1, 0]
+
+function %Corpus__incr(i16) -> i8, i16 {
+block0(v0: i16):
+    v1 = iconst.i16 1
+    v2 = iadd.i16 v0, v1
+    v3 = icmp.i16 ult v2, v0
+    v4 = iconst.i8 1
+    brif.i8 v3, block1(v4), block2
+
+block2:
+    v5 = iconst.i8 0
+    return v5, v2
+
+block1(v6: i8):
+    v7 = iconst.i16 0
+    return v6, v7
+}

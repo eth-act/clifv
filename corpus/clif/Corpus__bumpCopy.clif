@@ -1,0 +1,60 @@
+test interpret
+test run
+target aarch64
+
+function %Corpus__bumpCopy(i16, i16) -> i8, i16, i16, i16, i16 {
+block0(v0: i16, v1: i16):
+    v3 = iconst.i64 0
+    v4 = iconst.i64 2
+    v5 = icmp.i64 uge v3, v4
+    v6 = iconst.i8 3
+    brif.i8 v5, block1(v6), block3
+
+block3:
+    v7 = iconst.i64 1
+    v8 = icmp.i64 eq v3, v7
+    brif.i8 v8, block4(v1), block4(v0)
+
+block4(v9: i16):
+    jump block2(v9)
+
+block2(v2: i16):
+    v11 = iconst.i16 1
+    v12 = iadd.i16 v2, v11
+    v13 = icmp.i16 ult v12, v2
+    v14 = iconst.i8 1
+    brif.i8 v13, block1(v14), block6
+
+block6:
+    jump block5(v12)
+
+block5(v10: i16):
+    v15 = iconst.i64 0
+    v16 = iconst.i64 2
+    v17 = icmp.i64 uge v15, v16
+    v18 = iconst.i8 3
+    brif.i8 v17, block1(v18), block7
+
+block7:
+    v19 = iconst.i64 0
+    v20 = icmp.i64 eq v15, v19
+    brif.i8 v20, block8(v10), block8(v0)
+
+block8(v21: i16):
+    v22 = iconst.i64 1
+    v23 = icmp.i64 eq v15, v22
+    brif.i8 v23, block9(v10), block9(v1)
+
+block9(v24: i16):
+    v25 = iconst.i8 0
+    return v25, v0, v1, v21, v24
+
+block1(v26: i8):
+    v27 = iconst.i16 0
+    v28 = iconst.i16 0
+    v29 = iconst.i16 0
+    v30 = iconst.i16 0
+    return v26, v27, v28, v29, v30
+}
+; run: %Corpus__bumpCopy(1, 2) == [0, 1, 2, 2, 2]
+; run: %Corpus__bumpCopy(-1, 2) == [1, 0, 0, 0, 0]

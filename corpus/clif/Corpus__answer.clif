@@ -1,0 +1,15 @@
+test interpret
+test run
+target aarch64
+
+function %Corpus__answer() -> i8, i64 {
+block0:
+    v0 = iconst.i64 42
+    v1 = iconst.i8 0
+    return v1, v0
+
+block1(v2: i8):
+    v3 = iconst.i64 0
+    return v2, v3
+}
+; run: %Corpus__answer() == [0, 42]
