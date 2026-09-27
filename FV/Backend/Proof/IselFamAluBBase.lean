@@ -256,21 +256,24 @@ theorem unary_ruleOk {p : Program} (hp : Data p) {r : Rule} {cop : Clif.UnaryOp}
     (hargs : r.args = [.term 18 209 [tyPat, .term 152 2476 (.term 151 opT [] :: rest)]])
     (hto : termOf p opT = .ok to) (hko : to.kind = .enumVariant ko)
     (hname : (variantNames 151)[ko]? = some n) (hcop : unaryOpcode cop = some n)
+    (E : Nat → Nat → Interp.Env V)
     (P : Nat → Prop) (k : Nat) (code : Nat → Nat → Nat → List MInst) (res : Nat → Nat → Nat)
     (hmatch : ∀ (ctx : Ctx) (cfg : Config) ii (info : IInfo) w x st tr m env' s1,
       ctx.insts[ii]? = some info → info.resTys.head? = some (.int w) → w ≤ 64 →
       info.data = .data 152 29 [.data 151 ko [], .value x] →
+      (∀ pre post, p.rulesOf TId.lower = pre ++ r :: post → ∀ r' ∈ pre, ∃ m', 1000 ≤ m' ∧
+        ∃ s', (matchRule p (sem ctx) cfg m' r' [.inst ii]).run (st, tr) = .ok (none, s')) →
       (matchRule p (sem ctx) cfg (m + 2) r [.inst ii]).run (st, tr) = .ok (some env', s1) →
-      env' = env2 (.ty (.int w)) (.value x) ∧ s1 = (st, tr) ∧ P w)
+      env' = E w x ∧ s1 = (st, tr) ∧ P w)
     (hrhs : ∀ (ctx : Ctx) (cfg : Config) x w (st : LState) tr n,
       cfg.checkOverlap = false → ctx.valueReg? x = some (.vreg x .int) → w ≤ 64 → P w →
       ∃ (tr' : Array RuleId) (st'' : LState), (evalExpr p (sem ctx) cfg (n + 40) r.rhs
-          (env2 (.ty (.int w)) (.value x))).run (st, tr) =
+          (E w x)).run (st, tr) =
         .ok (some (.regsVec [[.vreg (res w st.nextVreg) .int]]), (st'', tr')) ∧
         st''.emitted = st.emitted ++ (code w st.nextVreg x).toArray ∧
         st''.nextVreg = st.nextVreg + k)
     (hnone : ∀ (ctx : Ctx) (cfg : Config) x w st tr n v s', ctx.valueReg? x = none →
-      (evalExpr p (sem ctx) cfg (n + 40) r.rhs (env2 (.ty (.int w)) (.value x))).run (st, tr) ≠
+      (evalExpr p (sem ctx) cfg (n + 40) r.rhs (E w x)).run (st, tr) ≠
         .ok (some v, s'))
     (hres : ∀ w b, b ≤ res w b)
     (hdefs : ∀ w b x, ∀ mi ∈ code w b x, ∀ d ∈ vdefs mi, b ≤ d ∧ d < b + k)
@@ -282,14 +285,14 @@ theorem unary_ruleOk {p : Program} (hp : Data p) {r : Rule} {cop : Clif.UnaryOp}
       ∃ ρ', PRun F isem (code ty.width b x) ρ ρ' ∧
         VHolds ⟨ty, Clif.Sem.unary cop u⟩ (ρ' (res ty.width b))) :
     LowerRuleOk isem MR env cp p r := by
-  intro f ctx hctx ii info inst hi hc cfg hco m n st tr env' s1 out st' tr' hm hn hvb _hfirst
+  intro f ctx hctx ii info inst hi hc cfg hco m n st tr env' s1 out st' tr' hm hn hvb hfirst
     hmatch' heval
   obtain ⟨m', rfl⟩ : ∃ m', m = m' + 2 := ⟨m - 2, by omega⟩
   obtain ⟨n', rfl⟩ : ∃ n', n = n' + 40 := ⟨n - 40, by omega⟩
   obtain ⟨ty, x, rfl, hety, hbs, hd, hhead⟩ :=
     unary_front hp hargs hto hko hname hcop hctx hi hc (m := m' + 1) hmatch'
   have hw := eTy_width hety
-  obtain ⟨rfl, rfl, hP⟩ := hmatch ctx cfg ii info ty.width x st tr m' env' s1 hi hhead hw hd hmatch'
+  obtain ⟨rfl, rfl, hP⟩ := hmatch ctx cfg ii info ty.width x st tr m' env' s1 hi hhead hw hd hfirst hmatch'
   cases hrx : ctx.valueReg? x with
   | none => exact absurd heval (hnone ctx cfg x ty.width st tr n' out (st', tr') hrx)
   | some rx =>

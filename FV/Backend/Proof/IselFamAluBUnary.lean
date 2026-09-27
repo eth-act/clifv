@@ -89,9 +89,9 @@ theorem ineg_base_case_ok (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (
     (cp : Clif.Program) (hR : Refines F isem) (hMR : MRStable F MR) :
     LowerRuleOk isem MR env cp p rule_lower_857 :=
   unary_ruleOk hp (cop := .ineg) rfl hp.t2359 term_2359_kind variantNames_Ineg rfl
-    (fun _ => True) 1 (fun w b x => [.aluRRR .sub (szOf w) (.vreg b .int) .xzr (.vreg x .int)])
+    (fun w x => env2 (.ty (.int w)) (.value x)) (fun _ => True) 1 (fun w b x => [.aluRRR .sub (szOf w) (.vreg b .int) .xzr (.vreg x .int)])
     (fun _ b => b)
-    (fun ctx _ _ _ _ _ st tr m _ _ hi hty hw hd h => by
+    (fun ctx _ _ _ _ _ st tr m _ _ hi hty hw hd _ h => by
       rw [match_857 hp ctx hi hty hw hd st tr m] at h
       simp only [Except.ok.injEq, Prod.mk.injEq, Option.some.injEq] at h
       exact ⟨h.1.symm, h.2.symm, trivial⟩)
