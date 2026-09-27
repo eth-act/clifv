@@ -155,4 +155,97 @@ theorem extend_run (a : Reg) (sg : Bool) (fb tb : Nat) :
 
 end
 
+/-! ## `put_in_reg_zext32` (three rules: `$I32`/`$I64` pass through, `fits_in_32` extends) -/
+
+section
+variable (st : LState) (tr : Array RuleId) (n : Nat)
+
+theorem ext_value_type_none {v : Nat} (h : ctx.valueType? v = none) :
+    externExtract ctx T.value_type (.value v) st = .unmodeled s!"value_type of unknown v{v}" := by
+  have : externExtract ctx T.value_type (.value v) st = match ctx.valueType? v with
+    | some ty => .ok [.ty ty]
+    | none => .unmodeled s!"value_type of unknown v{v}" := rfl
+  rw [this, h]
+
+theorem ext_fits_in_32_ty (t : CTy) :
+    externExtract ctx T.fits_in_32 (.ty t) st = if t.bits ≤ 32 then .ok [.ty t] else .fail := by
+  have : externExtract ctx T.fits_in_32 (.ty t) st =
+    if decide (t.bits ≤ 32) = true then .ok [.ty t] else .fail := rfl
+  rw [this]; by_cases h : t.bits ≤ 32 <;> simp [h]
+
+theorem ctor_ty_bits_ty (t : CTy) : externCtor ctx T.ty_bits [.ty t] st = .ok (.int t.bits, st) :=
+  rfl
+
+theorem sem_eq_beq' (a b : V) : (sem ctx).eq a b = (a == b) := rfl
+
+include hp hc in
+theorem zext32_pass32 {x : Nat} {rx : Reg} (hx : ctx.valueReg? x = some rx)
+    (hT : ctx.valueType? x = some (.int 32)) :
+    (applyTerm p (sem ctx) cfg (n+20) 27 556 [.value x]).run (st, tr) =
+      .ok (some (.reg rx), (st, tr.push rule_inst_3813.id)) := by
+  have h1 := ext_value_type ctx st hT
+  have he := sem_eq_beq' ctx
+  cases hp
+  isel_eval [*, rule_inst_3809, rule_inst_3813, rule_inst_3814, ctor_put_in_reg ctx _ hx]
+
+include hp hc in
+theorem zext32_pass64 {x : Nat} {rx : Reg} (hx : ctx.valueReg? x = some rx)
+    (hT : ctx.valueType? x = some (.int 64)) :
+    (applyTerm p (sem ctx) cfg (n+20) 27 556 [.value x]).run (st, tr) =
+      .ok (some (.reg rx), (st, tr.push rule_inst_3814.id)) := by
+  have h1 := ext_value_type ctx st hT
+  have he := sem_eq_beq' ctx
+  have hne : (V.ty (.int 64) == V.ty (.int 32)) = false := by decide
+  cases hp
+  isel_eval [*, rule_inst_3809, rule_inst_3813, rule_inst_3814, ctor_put_in_reg ctx _ hx]
+
+include hp hc in
+theorem zext32_ext {x : Nat} {rx : Reg} {t : CTy} (hx : ctx.valueReg? x = some rx)
+    (hT : ctx.valueType? x = some t) (h32 : t ≠ .int 32) (h64 : t ≠ .int 64) (hb : t.bits ≤ 32) :
+    (applyTerm p (sem ctx) cfg (n+40) 27 556 [.value x]).run (st, tr) =
+      .ok (some (.reg (st.fresh .int).1),
+        ((st.fresh .int).2.emit (.extend (st.fresh .int).1 rx false t.bits 32),
+          (tr.push rule_inst_2991.id).push rule_inst_3809.id)) := by
+  have h1 := ext_value_type ctx st hT
+  have he := sem_eq_beq' ctx
+  have hne32 : (V.ty t == V.ty (.int 32)) = false := by simp [h32]
+  have hne64 : (V.ty t == V.ty (.int 64)) = false := by simp [h64]
+  have hf := ext_fits_in_32_ty ctx st t
+  simp only [hb, ↓reduceIte] at hf
+  have hbits := ctor_ty_bits_ty ctx
+  have hext : ∀ st tr n a, (applyTerm p (sem ctx) cfg (n+20) 27 417
+      [.reg a, .bool false, .int t.bits, .int 32]).run (st, tr) =
+      .ok (some (.reg (st.fresh .int).1),
+        ((st.fresh .int).2.emit (.extend (st.fresh .int).1 a false t.bits 32),
+          tr.push rule_inst_2991.id)) :=
+    fun st tr n a => extend_run hp ctx hc st tr n a false t.bits 32
+  cases hp
+  isel_eval [*, rule_inst_3809, rule_inst_3813, rule_inst_3814, ctor_put_in_reg ctx _ hx]
+
+theorem except_throw_eq {ε α : Type} (e : ε) : (throw e : Except ε α) = .error e := rfl
+
+include hp in
+theorem zext32_none {x : Nat} (hT : ctx.valueType? x = none) :
+    (applyTerm p (sem ctx) cfg (n+20) 27 556 [.value x]).run (st, tr) =
+      .error (.unmodeled s!"value_type of unknown v{x}") := by
+  have h1 := ext_value_type_none ctx st hT
+  cases hp
+  isel_eval [*, rule_inst_3809, rule_inst_3813, rule_inst_3814, except_throw_eq]
+
+include hp in
+theorem zext32_big {x : Nat} {t : CTy} (hT : ctx.valueType? x = some t) (h32 : t ≠ .int 32)
+    (h64 : t ≠ .int 64) (hb : ¬ t.bits ≤ 32) :
+    (applyTerm p (sem ctx) cfg (n+20) 27 556 [.value x]).run (st, tr) =
+      .error (.noRule "put_in_reg_zext32") := by
+  have h1 := ext_value_type ctx st hT
+  have he := sem_eq_beq' ctx
+  have hne32 : (V.ty t == V.ty (.int 32)) = false := by simp [h32]
+  have hne64 : (V.ty t == V.ty (.int 64)) = false := by simp [h64]
+  have hf := ext_fits_in_32_ty ctx st t
+  simp only [hb, ↓reduceIte] at hf
+  cases hp
+  isel_eval [*, rule_inst_3809, rule_inst_3813, rule_inst_3814]
+
+end
+
 end Backend.Proof

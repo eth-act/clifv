@@ -416,3 +416,90 @@ theorem unary_ruleOk {p : Program} (hp : Data p) {r : Rule} {cop : Clif.UnaryOp}
     simp [hxv]
 
 end Backend.Proof
+
+namespace Backend.Proof
+
+open Backend Isle Isle.Interp Isle.Aarch64
+
+/-! ## Template with per-evaluation code facts
+
+For rules whose code depends on more than the width (e.g. on `value_type` of the operand,
+`put_in_reg_zext32`), the right-hand side lemma `hrhs` states, for every successful
+evaluation, the code's shape (`CodeShape`) and its meaning. -/
+
+/-- Code `ms`, emitted from `st` to `st'`, defines only fresh vregs, reads fresh vregs or `x`,
+and its result `d` is fresh. -/
+structure CodeShape (st st' : LState) (ms : List MInst) (d x : Nat) : Prop where
+  emitted : st'.emitted = st.emitted ++ ms.toArray
+  mono : st.nextVreg ≤ st'.nextVreg
+  res : st.nextVreg ≤ d
+  defs : ∀ mi ∈ ms, ∀ e ∈ vdefs mi, st.nextVreg ≤ e ∧ e < st'.nextVreg
+  uses : ∀ mi ∈ ms, ∀ u ∈ vuseNums mi, st.nextVreg ≤ u ∨ u = x
+
+theorem unary_ruleOk' {p : Program} (hp : Data p) {r : Rule} {cop : Clif.UnaryOp} {n : String}
+    {opT : TermId} {to : Term} {ko : Nat} {tyPat : Pattern} {rest : List Pattern}
+    (hargs : r.args = [.term 18 209 [tyPat, .term 152 2476 (.term 151 opT [] :: rest)]])
+    (hto : termOf p opT = .ok to) (hko : to.kind = .enumVariant ko)
+    (hname : (variantNames 151)[ko]? = some n) (hcop : unaryOpcode cop = some n)
+    (E : Nat → Nat → Interp.Env V) (P : Nat → Prop)
+    (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
+    (hMR : MRStable F MR)
+    (hmatch : ∀ (ctx : Ctx) (cfg : Config) ii (info : IInfo) w x st tr m env' s1,
+      ctx.insts[ii]? = some info → info.resTys.head? = some (.int w) → w ≤ 64 →
+      info.data = .data 152 29 [.data 151 ko [], .value x] →
+      (∀ pre post, p.rulesOf TId.lower = pre ++ r :: post → ∀ r' ∈ pre, ∃ m', 1000 ≤ m' ∧
+        ∃ s', (matchRule p (sem ctx) cfg m' r' [.inst ii]).run (st, tr) = .ok (none, s')) →
+      (matchRule p (sem ctx) cfg (m + 2) r [.inst ii]).run (st, tr) = .ok (some env', s1) →
+      env' = E w x ∧ s1 = (st, tr) ∧ P w)
+    (hnone : ∀ (ctx : Ctx) (cfg : Config) x w st tr n v s', ctx.valueReg? x = none →
+      (evalExpr p (sem ctx) cfg (n + 40) r.rhs (E w x)).run (st, tr) ≠ .ok (some v, s'))
+    (hrhs : ∀ (ctx : Ctx) (cfg : Config) x w (st : LState) tr n v s',
+      cfg.checkOverlap = false → ctx.valueReg? x = some (.vreg x .int) → x < st.nextVreg →
+      w ≤ 64 → P w →
+      (evalExpr p (sem ctx) cfg (n + 40) r.rhs (E w x)).run (st, tr) = .ok (some v, s') →
+      ∃ ms d, v = .regsVec [[.vreg d .int]] ∧ CodeShape st s'.1 ms d x ∧
+        ∀ (ty : Clif.Ty), ty.width = w → eTy ty = true → (cop = .bswap → ty ≠ .i8) →
+        (ctx.valueType? x = none ∨ ctx.valueType? x = some (.int w)) →
+        ∀ (ρ : Nat → CV) (u : BitVec ty.width), VHolds ⟨ty, u⟩ (ρ x) →
+        ∃ ρ', PRun F isem ms ρ ρ' ∧ VHolds ⟨ty, Clif.Sem.unary cop u⟩ (ρ' d)) :
+    LowerRuleOk isem MR env cp p r := by
+  intro f ctx hctx ii info inst hi hc cfg hco m n st tr env' s1 out st' tr' hm hn hvb hfirst
+    hmatch' heval
+  obtain ⟨m', rfl⟩ : ∃ m', m = m' + 2 := ⟨m - 2, by omega⟩
+  obtain ⟨n', rfl⟩ : ∃ n', n = n' + 40 := ⟨n - 40, by omega⟩
+  obtain ⟨ty, x, rfl, hety, hbs, hd, hhead⟩ :=
+    unary_front hp hargs hto hko hname hcop hctx hi hc (m := m' + 1) hmatch'
+  have hw := eTy_width hety
+  obtain ⟨rfl, rfl, hP⟩ :=
+    hmatch ctx cfg ii info ty.width x st tr m' env' s1 hi hhead hw hd hfirst hmatch'
+  cases hrx : ctx.valueReg? x with
+  | none => exact absurd heval (hnone ctx cfg x ty.width st tr n' out (st', tr') hrx)
+  | some rx =>
+  have ex := hctx.valueReg x rx hrx
+  subst ex
+  have hxlt := hvb x _ hrx
+  obtain ⟨ms, d, rfl, hsh, hsem⟩ :=
+    hrhs ctx cfg x ty.width st tr n' out (st', tr') hco hrx hxlt hw hP heval
+  refine ⟨ms, _, hsh.emitted, rfl, ?_⟩
+  refine lowerInstOk_one hMR hsh.mono hsh.defs rfl ?_
+  intro fr cm ρ vals cm' _ hvals hdfg ho
+  obtain ⟨u, hu, rfl, rfl⟩ := evalInst_unary_ok ho
+  have hxv := getAs_ok hu
+  have hT : ctx.valueType? x = none ∨ ctx.valueType? x = some (.int ty.width) := by
+    cases hT : ctx.valueType? x with
+    | none => exact .inl rfl
+    | some t =>
+      have := hdfg.2 x t _ hT hxv
+      exact .inr (by rw [← this, ofClif_int_width])
+  obtain ⟨ρ', hrun, hheld⟩ := hsem ty rfl hety hbs hT ρ u (hvals x _ hxv)
+  refine ⟨rfl, usesOk_of [x] ?_ ?_, .inl hsh.res, _, ρ', rfl, hrun, hheld⟩
+  · intro mi hmi u hu
+    rcases hsh.uses mi hmi u hu with h | h
+    · exact .inl h
+    · exact .inr (by simp [h])
+  · intro y hy
+    simp only [List.mem_singleton] at hy
+    subst hy
+    simp [hxv]
+
+end Backend.Proof
