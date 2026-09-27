@@ -71,6 +71,9 @@ first, then update its producer and its consumers together.
   wholesale with the kernel or `decide`/`rfl`/`native_decide`. Reason about individual rules
   or per-opcode slices, and keep `maxHeartbeats` and `maxRecDepth` at their defaults, unless
   a local, justified increase is needed.
+- Never use `git stash` in a worktree: the stash is shared by every worktree of the repository,
+  so one agent can pop or drop another's entry. To set work aside, commit it on your own branch.
+- Temporary files go under private names (`/tmp/<agent>_*`), because `/tmp` is shared.
 
 ## Contract: CLIF in Lean (`FV/Clif`, producer M0)
 
