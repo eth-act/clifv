@@ -441,6 +441,43 @@ theorem small_rotr_ok (hR : Refines F isem) {n : Nat} (hn : 100 ≤ n) {w : Nat}
     simp
     all_goals decide
 
+set_option maxHeartbeats 1000000 in
+include hp hc in
+/-- **Contract of `small_rotr_imm`** (`lower.isle:1902`) at `i8`/`i16`, amount `n < w`. -/
+theorem small_rotr_imm_ok (hR : Refines F isem) {n : Nat} (hn : 100 ≤ n) {w : Nat}
+    (hw : w = 8 ∨ w = 16) {xv k : Nat} (hk : k < w) {s s' : LState × Array RuleId} {v : V}
+    (hxv : xv < s.1.nextVreg)
+    (h : ApplyInternal p (sem ctx) cfg n 27 712
+      [.ty (.int w), .reg (.vreg xv .int), .op (.immShift k)] s v s') :
+    SmallRotImm F isem w xv k s.1 s'.1 v := by
+  have hp' := hp
+  isel_split hp hc h 712
+  all_goals fbrot_inv [*, rule_lower_1902] at hm he
+  all_goals
+    have hA1 := ‹ApplyInternal _ _ _ _ 27 489 _ _ _ _›
+    have hA2 := ‹ApplyInternal _ _ _ _ 27 491 _ _ _ _›
+    have hA3 := ‹ApplyInternal _ _ _ _ 27 497 _ _ _ _›
+    have h32 : IW 32 := by simp [IW]
+    obtain ⟨k1, hk1, rfl, m1, hm1, hs1⟩ := lsr_imm_fb_ok hp' hc (by omega) hA1
+    dsimp only at hm1 hs1
+    rw [ofV_aluRRImmShift_fb _ _ (rfl : ALUOp.ofIdx? 16 = some .lsr) (hk1.ofIdx h32)] at hm1
+    cases hm1
+    obtain ⟨k2, hk2, rfl, m2, hm2, hs2⟩ := lsl_imm_fb_ok hp' hc (by omega) hA2
+    dsimp only at hm2 hs2
+    rw [ofV_aluRRImmShift_fb _ _ (rfl : ALUOp.ofIdx? 18 = some .lsl) (hk2.ofIdx h32)] at hm2
+    cases hm2
+    obtain ⟨k3, hk3, rfl, m3, hm3, hs3⟩ := orr_fb_ok hp' hc (by omega) hA3
+    dsimp only at hm3 hs3
+    rw [ofV_aluRRR (rfl : ALUOp.ofIdx? 2 = some .orr) (hk3.ofIdx h32)] at hm3
+    cases hm3
+    subst hs3
+    simp only [hs1, hs2]
+    refine small_rotr_imm_run hR (by first | exact .inl rfl | exact .inr rfl) hk hxv ?_ rfl
+    simp only [LState.emit, LState.fresh, szOf, Nat.add_assoc, Nat.reduceAdd, Nat.reduceLeDiff,
+      ↓reduceIte]
+    apply Array.ext'
+    simp
+
 end Sem
 
 end Backend.Proof
