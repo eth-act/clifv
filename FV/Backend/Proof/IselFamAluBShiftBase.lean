@@ -98,7 +98,8 @@ theorem shift_ruleOk {p : Program} (hp : Data p) {r : Rule} {cop : Clif.BinaryOp
       (matchRule p (sem ctx) cfg (m + 10) r [.inst ii]).run (st, tr) = .ok (some env', s1) →
       env' = E w x y ∧ s1 = (st, tr) ∧ P w)
     (hrhs : ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx → ∀ (cfg : Config) x y w
-      (st : LState) tr n v s', cfg.checkOverlap = false → ValsBelow ctx st → w ≤ 64 → P w →
+      (st : LState) tr n v s', cfg.checkOverlap = false → ValsBelow ctx st → w ≤ 64 →
+      (w = 8 ∨ w = 16 ∨ w = 32 ∨ w = 64) → P w →
       (evalExpr p (sem ctx) cfg (n + 200) r.rhs (E w x y)).run (st, tr) = .ok (some v, s') →
       ∃ ms d, v = .regsVec [[.vreg d .int]] ∧ CodeShapeU st s'.1 ms d [x, y] ∧
         ∀ (ty : Clif.Ty), ty.width = w → eTy ty = true →
@@ -116,8 +117,62 @@ theorem shift_ruleOk {p : Program} (hp : Data p) {r : Rule} {cop : Clif.BinaryOp
   have hw := eTy_width hety
   obtain ⟨rfl, rfl, hP⟩ :=
     hmatch ctx cfg ii info ty.width x y st tr m' env' s1 hi hhead hw hd hfirst hmatch'
+  have hws : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64 := by
+    cases ty <;> simp [eTy, Clif.Ty.width] at hety ⊢
   obtain ⟨ms, d, rfl, hsh, hsem⟩ :=
-    hrhs f ctx hctx cfg x y ty.width st tr n' out (st', tr') hco hvb hw hP heval
+    hrhs f ctx hctx cfg x y ty.width st tr n' out (st', tr') hco hvb hw hws hP heval
+  refine ⟨ms, _, hsh.emitted, rfl, ?_⟩
+  refine lowerInstOk_one_fb hMR hsh.mono hsh.defs rfl ?_
+  intro fr cm ρ vals cm' hf hvals hdfg ho
+  obtain ⟨u, yv, res, hu, hy, hres, rfl, rfl⟩ := evalInst_shift_ok hshift ho
+  have hxv := getAs_ok hu
+  obtain ⟨ρ', hrun, hheld⟩ := hsem ty rfl hety fr ρ u yv res hf hvals hdfg hxv hy hres
+  refine ⟨rfl, usesOk_of [x, y] ?_ ?_, .inl hsh.res, _, ρ', rfl, hrun, hheld⟩
+  · intro mi hmi v hv
+    exact hsh.uses mi hmi v hv
+  · intro z hz
+    simp only [List.mem_cons, List.mem_nil_iff, or_false] at hz
+    rcases hz with rfl | rfl
+    · simp [hxv]
+    · simp [hy]
+
+/-- **Template: a shift/rotate root rule, match inverted by the caller.** As `shift_ruleOk`, but
+the right-hand side obligation receives the successful match itself (for rules whose
+environment depends on looked-through definitions, e.g. an `iconst` amount). -/
+theorem shift_ruleOk_gen {p : Program} (hp : Data p) {r : Rule} {cop : Clif.BinaryOp} {n : String}
+    (hshift : cop.isShift = true)
+    {opT : TermId} {to : Term} {ko : Nat} {tyPat : Pattern} {rest : List Pattern}
+    (hargs : r.args = [.term 18 209 [tyPat, .term 152 2449 (.term 151 opT [] :: rest)]])
+    (hto : termOf p opT = .ok to) (hko : to.kind = .enumVariant ko)
+    (hname : (variantNames 151)[ko]? = some n) (hcop : binaryOpcode cop = some n)
+    (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
+    (hMR : MRStable F MR)
+    (hrhs : ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx → ∀ (cfg : Config) ii (info : IInfo)
+      x y w (st : LState) tr m n env' s1 v s', cfg.checkOverlap = false → ValsBelow ctx st →
+      ctx.insts[ii]? = some info → info.resTys.head? = some (.int w) →
+      info.data = .data 152 2 [.data 151 ko [], .values [x, y]] →
+      (w = 8 ∨ w = 16 ∨ w = 32 ∨ w = 64) →
+      (matchRule p (sem ctx) cfg (m + 10) r [.inst ii]).run (st, tr) = .ok (some env', s1) →
+      (evalExpr p (sem ctx) cfg (n + 200) r.rhs env').run s1 = .ok (some v, s') →
+      ∃ ms d, v = .regsVec [[.vreg d .int]] ∧ CodeShapeU st s'.1 ms d [x, y] ∧
+        ∀ (ty : Clif.Ty), ty.width = w → eTy ty = true →
+        ∀ (fr : Clif.Frame) (ρ : Nat → CV) (u : BitVec ty.width) (yv : Clif.Val) (res : BitVec ty.width),
+          fr.func = ctx.func → ValsHeld fr ρ → DFGCons ctx fr → fr.regs x = some ⟨ty, u⟩ →
+          fr.regs y = some yv → Clif.Sem.shift cop u yv.bits = some res →
+          ∃ ρ', PRun F isem ms ρ ρ' ∧ VHolds ⟨ty, res⟩ (ρ' d)) :
+    LowerRuleOk isem MR env cp p r := by
+  intro f ctx hctx ii info inst hi hc cfg hco m n st tr env' s1 out st' tr' hm hn hvb hfirst
+    hmatch' heval
+  obtain ⟨m', rfl⟩ : ∃ m', m = m' + 10 := ⟨m - 10, by omega⟩
+  obtain ⟨n', rfl⟩ : ∃ n', n = n' + 200 := ⟨n - 200, by omega⟩
+  obtain ⟨ty, x, y, rfl, hety, hd, hhead⟩ :=
+    binary_front hp hargs hto hko hname hcop hctx hi hc (m := m' + 9) hmatch'
+  have hw := eTy_width hety
+  have hws : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64 := by
+    cases ty <;> simp [eTy, Clif.Ty.width] at hety ⊢
+  obtain ⟨ms, d, rfl, hsh, hsem⟩ :=
+    hrhs f ctx hctx cfg ii info x y ty.width st tr m' n' env' s1 out (st', tr') hco hvb hi hhead hd
+      hws hmatch' heval
   refine ⟨ms, _, hsh.emitted, rfl, ?_⟩
   refine lowerInstOk_one_fb hMR hsh.mono hsh.defs rfl ?_
   intro fr cm ρ vals cm' hf hvals hdfg ho

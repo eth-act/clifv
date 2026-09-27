@@ -623,6 +623,36 @@ Axioms: `propext`, `Classical.choice`, `Quot.sound`, plus `bv_decide` certificat
 - Name collisions for the integrator: `szOf`, `getAs_isSome`, `lowerInstOk_one`,
   `SameWorld.trans'` exist in both this branch and `agent/m4-alu-a`.
 
+**Continuation (M4AluB3).** 6 more rules proven (26 total):
+
+| id | line | rule | theorem (file) |
+| --- | --- | --- | --- |
+| 873 | 1545 | `ishl_fits_in_32` | `ishl_fits_in_32_ok` (`IselFamAluBShift`) |
+| 874 | 1549 | `ishl_64` | `ishl_64_ok` |
+| 883 | 1638 | `ushr_fits_in_32` | `ushr_fits_in_32_ok` |
+| 884 | 1642 | `ushr_64` | `ushr_64_ok` |
+| 890 | 1695 | `sshr_fits_in_32` | `sshr_fits_in_32_ok` |
+| 891 | 1699 | `sshr_64` | `sshr_64_ok` |
+
+Axioms: `propext`, `Classical.choice`, `Quot.sound` + `bv_decide` certificates (`extHolds_extend`,
+`extOut_prun`, `small_rot_neg`). Infrastructure (all proven): `IselFamAluBShiftTerms` — inverse
+contracts `alu_rrr_ok`/`alu_rr_imm_shift_ok`/`alu_rr_imm_logic_ok`/`and_imm_ok`/`output_reg_ok`
+(`EmitOut`, `OSz`), `do_shift_ok` (all four `do_shift` rules → `ShiftRes`), `fb_inv` tactic;
+`IselFamAluBShift` — `extOut_prun` (PRun meaning of family C's `ExtOut`), `shift_compose`,
+width lemmas `shl_setWidth`/`lsr_zext`/`asr_sext`; `IselFamAluBShiftBase.shift_ruleOk` now also
+passes `w ∈ {8,16,32,64}`, new `shift_ruleOk_gen` (rhs obligation receives the match itself, for
+`iconst`-amount rules); `IselFamAluBRotTerms` — wrappers `sub/sub_imm/lsr/lsl/orr/lsr_imm/lsl_imm/
+a64_rotr/a64_rotr_imm _ok`, `alu_rr_imm12_ok`, extern iffs (`rotr_mask`, `u8_into_imm12`,
+`negate_imm_shift`, `rotr_opposite_amount`), `rotr_neg`, `neg_mod`, `small_rotr_ok` (→ `SmallRot`),
+`small_rotr_imm_ok` (→ `SmallRotImm`), ispec lemmas for `extr`, `sub xzr`, `sub imm12`, `orr`.
+
+**Remaining:** rotate root rules (12) — contracts done; left: the root proofs via
+`shift_ruleOk_gen` (inversion recipe: `fbrot_inv [*, rule] at hm he`, then
+`subst (Option.some.inj (hi.symm.trans ‹insts[ii]? = some _›))` and a repeat pass with `[hd, hhead,
+…]` — verified to leave exactly `valueReg? x/y = some _` and the `ApplyInternal 513/172`
+hypotheses for `rotr_32/64_base_case`), composition like `shift_compose`, `rotr_neg` for `rotl`.
+popcnt (vector ispec forms), `bnot_ishl` 1401, `sbfm`/`ubfm` 1704/1707: not started.
+
 ### Integration note (Integrate1: m4-ctl + m4-alu-b)
 
 Shared helpers deduplicated: `szOf`, `szOf_bits`, `env4`, `env5` now live in `IselRulesALU.lean`;
