@@ -305,7 +305,7 @@ theorem aluRR_ruleOk {p : Program} (hp : Data p) {r : Rule} {cop : Clif.BinaryOp
     ∀ (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program),
       Refines F isem → MRStable F MR → LowerRuleOk isem MR env cp p r := by
   intro F isem MR env cp hR hMR f ctx hctx ii info inst hi hc cfg hco m n st tr env' s1 out st' tr'
-    hm hn hmatch' heval
+    hm hn _hvb hmatch' heval
   obtain ⟨m', rfl⟩ : ∃ m', m = m' + 2 := ⟨m - 2, by omega⟩
   obtain ⟨n', rfl⟩ : ∃ n', n = n' + 40 := ⟨n - 40, by omega⟩
   -- 1. the instruction
