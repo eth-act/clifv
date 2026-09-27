@@ -462,6 +462,22 @@ via `lower_select` (`CondFlag cmpXzr`, `runs_flags_csel`, `lower_select_cond` ru
 integer types). Division needs `imm_ok` from M4AluB (`eac2707`, `IselTermsImm.lean`; merge
 agent/m4-alu-b). M4Ctl consumes `is_nonzero_cmp_ok`/`CondSem` for `brif`.
 
+### Progress (M4Cmp3)
+
+Root rules proven (`LowerRuleOk`): **icmp 2215** (`icmp_ruleOk`), **uextend(icmp) 1281**
+(`uextend_icmp_ruleOk`), both in `IselCmpRoot.lean`. Contracts: `is_nonzero_ok` (IselCmpIcmp),
+`emit_icmp_ok` (all 12 rules, `IcmpT`), `lower_extend_op_ok`, iconst look-through (IselCmpEmit),
+`is_nonzero_cmp_ok`, `output_reg_ok`, `condCode_lcrb`, `lowerInstOk_runs` (IselCmpRoot).
+Main ddf0955 merged. Never use `git stash` (shared across worktrees).
+
+**Next**: `lower_select_cond_ok` (int widths, rule 5364) is proven in the WIP draft
+`/tmp/m4cmp3_IselCmpSelect_WIP.lean`; `lower_select_ok` there has the Zero/NotZero/Cond cases
+and the fallback 5331 refuted by forward `isel_eval` of `hpre` (works); remaining bug: the
+`obtain ⟨he⟩ … := ⟨‹_›⟩` of the state equation escapes `try` in the Cond case (use
+`rename_i`/`first` instead). Then select 2267 / min-max 1222–1228 = `is_nonzero_cmp_ok` or
+`emit_icmp_ok (cc := .ult/.slt/.ugt/.sgt)` + `lower_select_ok` + `runs_flags_csel` + `output`.
+Vector min/max 1233–1251 and div/rem (1116…1211) not started.
+
 ## Family Ctl: terminators, branches, calls (M4Ctl)
 
 Branch `agent/m4-ctl`. Files `FV/Backend/Proof/IselCtl{Base,Term,Unmatch,Branch,Call,}.lean`,
