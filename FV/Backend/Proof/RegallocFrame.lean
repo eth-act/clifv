@@ -42,13 +42,27 @@ def locVal (fr : RAFrame) (s : Arm.ArmState) : Loc → CV
       else Arm.read_mem_bytes 16 (spOf s + BitVec.ofNat 64 off) s
     | .error _ => 0
 
-/-- The frame layout facts the lowering relies on, for stack pointer `sp0` and frame
-addresses `F`: distinct frame locations have separate slots, and every slot lies in `F`. -/
-structure FrameOk (fr : RAFrame) (sp0 : BitVec 64) (F : BitVec 64 → Prop) : Prop where
-  sep : ∀ l l' o o', l ≠ l' → fr.offset l = .ok o → fr.offset l' = .ok o' →
+/-- The frame locations the allocated code can use: int spill slots below `spillSlots`, float
+spill slots below `spillSlots` when the code uses float slots at all (otherwise the float area
+is empty), every save slot (`offset` fails for registers without one). -/
+def Live (rf : RFunc) : Loc → Prop
+  | .stack k .int => k < rf.spillSlots
+  | .stack k .float => k < rf.spillSlots ∧ rf.floatStack = true
+  | _ => True
+
+/-- The frame layout facts the lowering relies on, for the live locations `D`, stack pointer
+`sp0` and frame addresses `F`: distinct live frame locations have separate slots, every slot
+lies in `F`; when `T` (the code has float register moves) the 16-byte `fmoveTmp` slot is in
+`F` and separate from every live slot. -/
+structure FrameOk (fr : RAFrame) (D : Loc → Prop) (T : Prop) (sp0 : BitVec 64)
+    (F : BitVec 64 → Prop) : Prop where
+  sep : ∀ l l' o o', D l → D l' → l ≠ l' → fr.offset l = .ok o → fr.offset l' = .ok o' →
     Arm.mem_separate' (sp0 + BitVec.ofNat 64 o) (slotBytes l) (sp0 + BitVec.ofNat 64 o') (slotBytes l')
-  inF : ∀ l o, fr.offset l = .ok o → ∀ k < slotBytes l,
+  inF : ∀ l o, D l → fr.offset l = .ok o → ∀ k < slotBytes l,
     F (sp0 + BitVec.ofNat 64 o + BitVec.ofNat 64 k)
+  tmpSep : T → ∀ l o, D l → fr.offset l = .ok o →
+    Arm.mem_separate' (sp0 + BitVec.ofNat 64 o) (slotBytes l) (sp0 + BitVec.ofNat 64 fr.fmoveTmp) 16
+  tmpF : T → ∀ k < 16, F (sp0 + BitVec.ofNat 64 fr.fmoveTmp + BitVec.ofNat 64 k)
 
 theorem offset_reg (fr : RAFrame) (r : Reg) : ∃ e, fr.offset (.reg r) = .error e := ⟨_, rfl⟩
 
@@ -193,15 +207,16 @@ theorem locVal_frame_write {fr : RAFrame} {s : Arm.ArmState} {l : Loc} (hl : ∀
 `256 ≤ off`, `off` a multiple of 8 below 32768) implements `MStep.move` for
 `reg (x a) → stack k int`, given the frame layout `FrameOk` and an aligned `sp`. -/
 theorem lower_spill_int (fr : RAFrame) {sp0 : BitVec 64} {F : BitVec 64 → Prop}
-    (hfr : FrameOk fr sp0 F) (ctx : FnCtx) (env : Env) {a k off : Nat}
+    {D : Loc → Prop} {T : Prop} (hfr : FrameOk fr D T sp0 F) (ctx : FnCtx) (env : Env) {a k off : Nat}
     (ha : (Reg.x a).allocatable = true) (hoff : fr.offset (.stack k .int) = .ok off)
+    (hD : D (.stack k .int))
     (h256 : 256 ≤ off) (h8 : off % 8 = 0) (h12 : off / 8 < 4096)
     {s w : Arm.ArmState} (hw : SameWorld F s w) (hsp : spOf s = sp0)
     (halign : Arm.CheckSPAlignment s) :
     fr.moveInsts (.reg (.x a)) (.stack k .int) = .ok [.inst (slotStore .int (.x a) off)] ∧
     ∃ s', execMInst ctx env (slotStore .int (.x a) off) s = some s' ∧ SameWorld F s' w ∧
       spOf s' = sp0 ∧
-      ∀ l, ValidLoc l →
+      ∀ l, ValidLoc l → D l →
         locVal fr s' l = upd (locVal fr s) (.stack k .int) (locVal fr s (.reg (.x a))) l := by
   rcases allocatable_cases ha with ⟨a', ea, hha⟩ | ⟨_, ea, _⟩ <;> cases ea
   refine ⟨by simp [RAFrame.moveInsts, hoff, Reg.realClass?]; rfl, ?_⟩
@@ -237,9 +252,9 @@ theorem lower_spill_int (fr : RAFrame) {sp0 : BitVec 64} {F : BitVec 64 → Prop
     by simp only [execMInst, hl]
        rw [execLines_one ha' (by rw [he, Arm.r_of_w_same]), he], ?_, ?_, ?_⟩
   · exact SameWorld.w_left (by simp [Masked]) (SameWorld.write_mem_bytes_inF hw 8 _ _
-      (fun j hj => by rw [hsp]; exact hfr.inF _ off hoff j hj))
+      (fun j hj => by rw [hsp]; exact hfr.inF _ off hD hoff j hj))
   · rw [spOf_write, hsp]
-  · intro l hl
+  · intro l hl hDl
     by_cases e : l = .stack k .int
     · subst e
       simp only [upd, if_true, locVal, hoff, slotBytes, spOf_write]
@@ -252,10 +267,10 @@ theorem lower_spill_int (fr : RAFrame) {sp0 : BitVec 64} {F : BitVec 64 → Prop
         rw [regVal_w (by cases r <;> simp [Reg.field]), regVal_write_mem_bytes]
       | stack k' c =>
         exact locVal_frame_write (fun r h => Loc.noConfusion h) (fun o ho => by
-          rw [hsp]; exact hfr.sep _ _ o off e ho hoff)
+          rw [hsp]; exact hfr.sep _ _ o off hDl hD e ho hoff)
       | save r =>
         exact locVal_frame_write (fun r h => Loc.noConfusion h) (fun o ho => by
-          rw [hsp]; exact hfr.sep _ _ o off e ho hoff)
+          rw [hsp]; exact hfr.sep _ _ o off hDl hD e ho hoff)
 
 
 /-- **Lowering of an int reload** (`ldr xb, [sp, #off]`, unsigned-offset encoding) implements

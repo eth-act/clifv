@@ -1,5 +1,5 @@
 import FV.E2E.RegLevelMachine
-import FV.Backend.Proof.RegallocFrame
+import FV.Backend.Proof.RegallocLayout
 
 /-!
 # The register-level simulation relation (M6)
@@ -69,7 +69,7 @@ end RL
 
 /-- The Arm state `s` represents store `m` and world `w`. -/
 structure StRel (R : RL) (s : Arm.ArmState) (m : Loc → CV) (w : Arm.ArmState) : Prop where
-  store : ∀ l, ValidLoc l → m l = locVal R.fr s l
+  store : ∀ l, ValidLoc l → Live R.rf l → m l = locVal R.fr s l
   world : SameWorld R.F s w
   err : Arm.r .ERR s = .None
   prog : s.program = R.fb.program R.base

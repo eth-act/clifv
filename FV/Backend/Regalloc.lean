@@ -199,12 +199,19 @@ structure RAFrame where
   size : Nat
   deriving Repr, Inhabited
 
-def RAFrame.compute (vc : VCode) (rf : RFunc) : RAFrame :=
-  let items := rf.blocks.foldl (· ++ ·) #[]
-  let floatStack := items.any fun it => it.locs.any fun | .stack _ .float => true | _ => false
-  let floatMove := items.any fun
+/-- Does the allocated code use a float spill slot? -/
+def RFunc.floatStack (rf : RFunc) : Bool :=
+  (rf.blocks.foldl (· ++ ·) #[]).any fun it => it.locs.any fun | .stack _ .float => true | _ => false
+
+/-- Does the allocated code move between float registers (needs `fmoveTmp`)? -/
+def RFunc.floatMove (rf : RFunc) : Bool :=
+  (rf.blocks.foldl (· ++ ·) #[]).any fun
     | .move (.reg (.v _)) (.reg (.v _)) => true
     | _ => false
+
+def RAFrame.compute (vc : VCode) (rf : RFunc) : RAFrame :=
+  let floatStack := rf.floatStack
+  let floatMove := rf.floatMove
   let intBase := alignTo (vc.outgoing + vc.slotBytes) 16
   let floatBase := alignTo (intBase + 8 * rf.spillSlots) 16
   let saveBase := floatBase + (if floatStack then 16 * rf.spillSlots else 0)
