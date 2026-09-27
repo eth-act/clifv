@@ -12,7 +12,7 @@ every register read is either written by the code itself or not clobbered by it.
 
 namespace Backend.Proof.Driver
 
-open Backend
+open Backend Backend.Proof
 
 /-- `g` renames virtual registers (`vreg n c ↦ vreg (gn n) c`) and fixes real registers. -/
 structure VRenaming (g : Reg → Reg) (gn : Nat → Nat) : Prop where

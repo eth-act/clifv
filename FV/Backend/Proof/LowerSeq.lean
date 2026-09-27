@@ -1,9 +1,9 @@
-import FV.Backend.Proof.VCodeSem
+import FV.Backend.Proof.IselContract
 
 /-!
 # Straight-line VCode execution (M7 driver, M4 rule statements)
 
-`seqRun sem ms ρ w` runs the instruction list `ms` with `VStep`'s per-instruction rule (read the
+`seqRun sem ms ρ w` (`Backend.Proof.seqRun`, `IselContract.lean`) runs the instruction list `ms` with `VStep`'s per-instruction rule (read the
 use vregs, write early then late defs) until the list ends (`fall`) or an instruction's control
 is not `next` (`stop`, with the state *before* that instruction and its outputs). A segment of a
 VCode block that `seqRun` executes is a sequence of `VStep`s (`seqRun_fall_star`,
@@ -12,58 +12,10 @@ VCode block that `seqRun` executes is a sequence of `VStep`s (`seqRun_fall_star`
 
 namespace Backend.Proof.Driver
 
-open Backend
+open Backend Backend.Proof
 
 section
 variable {V W : Type}
-
-/-- Use values of an instruction with operands `ops` in the vreg file `ρ`. -/
-def vuses (ops : Array Operand) (ρ : Nat → V) : List V :=
-  (ops.toList.filter Operand.isUse).map (ρ ·.vreg)
-
-/-- `VStep`'s register-file update: early defs, then late defs. -/
-def vdefUpd (ops : Array Operand) (outs : List V) (ρ : Nat → V) : Nat → V :=
-  writeV (writeV ρ (((ops.toList.filter Operand.isDef).zip outs).filter (·.1.isEarly)))
-    (((ops.toList.filter Operand.isDef).zip outs).filter (·.1.isLate))
-
-/-- Def vregs of an instruction (empty if it has no operand view). -/
-def vdefs (i : MInst) : List Nat :=
-  match i.operands with
-  | .ok ops => (ops.toList.filter Operand.isDef).map (·.vreg)
-  | .error _ => []
-
-/-- Use vregs of an instruction (empty if it has no operand view). -/
-def vuseNums (i : MInst) : List Nat :=
-  match i.operands with
-  | .ok ops => (ops.toList.filter Operand.isUse).map (·.vreg)
-  | .error _ => []
-
-/-- How a straight-line run ended. `stop k i ops ρ w outs w' ctl`: instruction `k` (`i`, operands
-`ops`) ran in state `ρ, w`, produced `outs, w'` and control `ctl ≠ next`. -/
-inductive SeqEnd (V W : Type) where
-  | fall (ρ : Nat → V) (w : W)
-  | stop (k : Nat) (i : MInst) (ops : Array Operand) (ρ : Nat → V) (w : W) (outs : List V)
-      (w' : W) (ctl : Ctl)
-
-def SeqEnd.succ : SeqEnd V W → SeqEnd V W
-  | .fall ρ w => .fall ρ w
-  | .stop k i ops ρ w outs w' ctl => .stop (k + 1) i ops ρ w outs w' ctl
-
-/-- Straight-line run of `ms`. -/
-def seqRun (sem : ISem V W) : List MInst → (Nat → V) → W → Option (SeqEnd V W)
-  | [], ρ, w => some (.fall ρ w)
-  | i :: ms, ρ, w =>
-    match i.operands with
-    | .error _ => none
-    | .ok ops =>
-      match sem i (vuses ops ρ) w with
-      | none => none
-      | some (outs, w', ctl) =>
-        if outs.length = (ops.toList.filter Operand.isDef).length then
-          match ctl with
-          | .next => (seqRun sem ms (vdefUpd ops outs ρ) w').map SeqEnd.succ
-          | ctl => some (.stop 0 i ops ρ w outs w' ctl)
-        else none
 
 /-- The segment `ms` is at index `k0` of block `vb`. -/
 def SegAt (vb : VBlock) (k0 : Nat) (ms : List MInst) : Prop :=

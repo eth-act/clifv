@@ -11,7 +11,7 @@ stale ones. `instOutcome_congr`/`evalInst_congr`: an instruction only reads its 
 
 namespace Backend.Proof.Driver
 
-open Backend
+open Backend Backend.Proof
 
 /-- The value operands of a CLIF instruction. -/
 def instArgs : Clif.Inst → List Clif.ValueId
@@ -117,7 +117,7 @@ theorem evalInst_pure {fr : Clif.Frame} {cm cm' : Clif.Mem} {cl : Clif.Inst}
   | stuck => rw [hE] at h; cases h
 
 /-- Filling in a terminator's data keeps DFG consistency (terminators define no values). -/
-theorem DFGCons.termCtx {ctx : Ctx} {fr : Clif.Frame} (h : DFGCons ctx fr) (ti : Nat) (data : V) :
+theorem dfgCons_termCtx {ctx : Ctx} {fr : Clif.Frame} (h : DFGCons ctx fr) (ti : Nat) (data : V) :
     DFGCons (termCtx ctx ti data) fr := by
   intro x j info cl v hd hj hcl hp hv
   have hd' : ctx.defInst? x = some j := hd

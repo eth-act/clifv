@@ -10,7 +10,7 @@ facts about renamed instructions.
 
 namespace Backend.Proof.Driver
 
-open Backend
+open Backend Backend.Proof
 
 /-! ## CLIF register files -/
 
@@ -404,7 +404,7 @@ theorem vregNum_mapM (ns : List Nat) :
     (ns.map (fun n => Reg.vreg n .int)).mapM vregNum = .ok ns := by
   induction ns with
   | nil => rfl
-  | cons n ns ih => simp [List.mapM_cons, vregNum, ih]; rfl
+  | cons n ns ih => simp [List.mapM_cons, vregNum, ih] <;> rfl
 
 /-! ## The entry `Args` -/
 
@@ -425,7 +425,7 @@ theorem mapM_fixedDef (ns : List (Nat × Reg)) : ∀ (s : Array Operand),
       (fun (x : Reg × Reg) => do let r ← collectOp (OpSpec.fixedDef x.2) x.1; pure (r, x.2))).run s =
       .ok (argPairs ns, s ++ (argOps ns).toArray) := by
   induction ns with
-  | nil => intro s; simp [argPairs, argOps]; rfl
+  | nil => intro s; simp [argPairs, argOps] <;> rfl
   | cons q ns ih =>
     intro s
     simp only [argPairs, argOps, List.map_cons, List.mapM_cons, StateT.run_bind] at ih ⊢

@@ -18,7 +18,7 @@ tracked values is DFG-consistent; memory and world are related by `MR`.
 
 namespace Backend.Proof.Driver
 
-open Backend
+open Backend Backend.Proof
 
 /-- Every tracked value is held by its resolved vreg. -/
 def Held (gn : Nat → Nat) (A : List Clif.ValueId) (ρ : Nat → CV) (fr : Clif.Frame) : Prop :=
@@ -146,7 +146,10 @@ structure DriverHyp (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) 
   shape : LowerShape f vc ctx st0 R gn bl
   cert : Cert f ctx st0 gn bl A
   dsem : DriverSem sem
-  rules : LowerRulesCorrect sem MR env p
+  /-- M4: `lower` on statements (`instCalls_of_rules`) -/
+  insts : InstCalls sem MR env p
+  /-- M4 (open): terminator calls -/
+  terms : TermCalls sem MR
   ext : ∀ B ∈ f.blocks, ∀ st ∈ B.body, ∀ fn args, st.inst = .call fn args →
     ∀ e, f.extern? fn = some e → p.func? e.name = none
   /-- no tail calls (`return_call` is outside clif-subset-v2 E) -/
@@ -183,8 +186,8 @@ theorem stmt_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     ⟨L.sl[j]'(by omega), List.getElem?_eq_getElem _⟩
   obtain ⟨⟨info, hinfo, hclif, hres⟩, hemp, hst0, ⟨tr, hrun⟩, halias⟩ := hstmts j stm sl hstm hsl
   obtain ⟨ranges, hctx⟩ := H.shape.hctx
-  have hok := H.rules.1 f ctx ranges st0 (L.start + j) info stm.inst sl.st sl.rss sl.st' tr
-    hctx hinfo hclif hemp hrun
+  have hok := H.insts f ctx (L.start + j) info stm.inst sl.st sl.rss sl.st' tr
+    H.shape.ctxInv hinfo hclif hemp hrun
   rw [hres] at hok
   obtain ⟨hargs, hresults, hnodup, hnext, hnoclob⟩ := H.cert.stmt b B L j stm sl hB hL hstm hsl
   have hBmem : B ∈ f.blocks := List.mem_of_getElem? hB
@@ -198,7 +201,7 @@ theorem stmt_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     rw [restrict_regs_of_mem hxA, hv'] at hx
     cases hx
     exact hh
-  have hrun' := hok.run fr' s.mem ρ₀ w (by simp [fr', restrict, hfunc, H.shape.func])
+  have hrun' := hok.run fr' s.mem ρ₀ w (by simp [fr', restrict, hfunc, H.shape.ctxInv.func])
     hvh hcons (by simpa [fr', restrict, hslots] using hmem)
   have hio : instOutcome env p fr' s.mem stm.inst = instOutcome env p s.frame s.mem stm.inst :=
     instOutcome_congr (fr := s.frame) (fr' := fr') rfl rfl env p s.mem stm.inst
@@ -210,7 +213,7 @@ theorem stmt_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
   have hD : ∀ d, D d → gn d = d := fun d hd => H.shape.temps d (by simp only [D] at hd; omega)
   have hdefs : ∀ m ∈ sl.st'.emitted.toList, ∀ d ∈ vdefs m, D d := hok.defs
   have hAg : Agree gn D ρ₀ ρ := fun _ _ => rfl
-  have huses_of : Uses sl.st fr' sl.st'.emitted.toList →
+  have huses_of : UsesOk sl.st fr' sl.st'.emitted.toList →
       ∀ m ∈ sl.st'.emitted.toList, ∀ u ∈ vuseNums m, D u ∨ ¬ D (gn u) := by
     intro hU m hm u hu
     rcases hU m hm u hu with h | h
@@ -384,7 +387,7 @@ theorem edgeEnv_eq {V : Type} {vc : VCode} {b s : Nat} {vb sb : VBlock}
     intro ns
     induction ns with
     | nil => rfl
-    | cons n ns ih => simp [List.mapM_cons, vregNum, ih]; rfl
+    | cons n ns ih => simp [List.mapM_cons, vregNum, ih] <;> rfl
   simp [hvb, hsb, hba, hpa, hl, Except.toOption, hv]
 
 /-- **Entering a successor block.** The CLIF frame after `enterBlock` and the VCode file after
@@ -622,7 +625,7 @@ theorem term_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
   obtain ⟨vb, hvb, -, -, hdata, htemp, hst0t, ⟨out, tr, hrunT⟩, hcode, htne, -, hbargs, hsucc⟩ :=
     H.shape.blk b B L hB hL
   obtain ⟨ranges, hctx⟩ := H.shape.hctx
-  have hok := H.rules.2 f ctx ranges st0 (L.start + B.body.length) B.term L.data L.targets out
+  have hok := H.terms f ctx ranges st0 (L.start + B.body.length) B.term L.data L.targets out
     L.tst L.tst' tr hctx hdata htemp hrunT
   obtain ⟨hargsT, hnoclobT, -⟩ := H.cert.term b B L hB hL
   let fr' := restrict s.frame (A b B.body.length)
@@ -635,14 +638,14 @@ theorem term_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     cases hx
     exact hh
   have hrun' := hok.run fr' s.mem ρ₀ w
-    (by simp [fr', restrict, hfunc, termCtx, H.shape.func]) hvh (hcons.termCtx _ _)
+    (by simp [fr', restrict, hfunc, termCtx, H.shape.ctxInv.func]) hvh (dfgCons_termCtx hcons _ _)
     (by simpa [fr', restrict, hslots] using hmem)
   let D : Nat → Prop := fun n => L.tst.nextVreg ≤ n ∧ n < L.tst'.nextVreg
   have hD : ∀ d, D d → gn d = d := fun d hd => H.shape.temps d (by
     have : L.tst.nextVreg ≤ d := hd.1; omega)
   have hdefs : ∀ m ∈ L.tst'.emitted.toList, ∀ d ∈ vdefs m, D d := hok.defs
   have hAg : Agree gn D ρ₀ ρ := fun _ _ => rfl
-  have huses_of : Uses L.tst fr' L.tst'.emitted.toList →
+  have huses_of : UsesOk L.tst fr' L.tst'.emitted.toList →
       ∀ m ∈ L.tst'.emitted.toList, ∀ u ∈ vuseNums m, D u ∨ ¬ D (gn u) := by
     intro hU m hm u hu
     rcases hU m hm u hu with h | h
@@ -682,7 +685,7 @@ theorem term_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     rw [hstep] at hs
     obtain ⟨j', bc, fr2, hbi, hbc, hent, rfl⟩ := stepTerm_branch hne hs
     have hbr : (∀ i, L.tst'.emitted.toList.getLast? = some i → i.targets = L.targets) ∧
-        ∀ j, branchIdx fr' B.term = .ok j → Uses L.tst fr' L.tst'.emitted.toList ∧
+        ∀ j, branchIdx fr' B.term = .ok j → UsesOk L.tst fr' L.tst'.emitted.toList ∧
           ∃ k i ops ρ₁ w₁ outs w₂,
             seqRun sem L.tst'.emitted.toList ρ₀ w = some (.stop k i ops ρ₁ w₁ outs w₂ (.goto j)) ∧
             k + 1 = L.tst'.emitted.toList.length ∧ MR fr'.slots s.mem w₂ := by

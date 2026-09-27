@@ -18,7 +18,7 @@ dominates the point (obligation: a certificate checker, or a proof from SSA domi
 
 namespace Backend.Proof.Driver
 
-open Backend
+open Backend Backend.Proof
 
 /-- `lowerFunction`'s block index of block id `b`. -/
 def blockIdx? (f : Clif.Function) (b : Clif.BlockId) : Option Nat := f.blocks.findIdx? (·.id == b)
@@ -85,7 +85,8 @@ def pos (bi j : Nat) : Nat :=
 /-- **The structure of `lowerFunction f`'s VCode.** -/
 structure LowerShape : Prop where
   hctx : ∃ ranges, buildCtx f = .ok (ctx, ranges, st0)
-  func : ctx.func = f
+  /-- M4's context invariants (`buildCtx` ⇒ `CtxInv`, the probe's gap) -/
+  ctxInv : CtxInv f ctx
   ren : VRenaming R gn
   temps : ∀ n, st0.nextVreg ≤ n → gn n = n
   params : ∀ B ∈ f.blocks, ∀ p ∈ B.params, gn p.1 = p.1
