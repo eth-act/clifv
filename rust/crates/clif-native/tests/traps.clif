@@ -1,0 +1,66 @@
+; Outcomes checked by tests/native.rs: traps map to their CLIF trap codes, faults outside
+; trap sites and hangs are errors, and every later run command still runs.
+test run
+
+function %sdiv(i32, i32) -> i32 {
+block0(v0: i32, v1: i32):
+    v2 = sdiv v0, v1
+    return v2
+}
+; run: %sdiv(7, 2) == 3
+; run: %sdiv(7, 0) == 0
+; run: %sdiv(0x80000000, -1) == 0
+; run: %sdiv(-7, 2) == -3
+
+function %chk(i64, i64) -> i64 {
+block0(v0: i64, v1: i64):
+    v2, v3 = uadd_overflow v0, v1
+    trapnz v3, int_ovf
+    return v2
+}
+; run: %chk(-1, 2) == 1
+; run: %chk(5, 5) == 10
+
+function %uot(i32, i32) -> i32 {
+block0(v0: i32, v1: i32):
+    v2 = uadd_overflow_trap v0, v1, user7
+    return v2
+}
+; run: %uot(-1, 1) == 0
+
+function %ld(i64) -> i64 {
+block0(v0: i64):
+    v1 = load.i64 v0
+    return v1
+}
+; run: %ld(8) == 0
+
+function %ldnotrap(i64) -> i64 {
+block0(v0: i64):
+    v1 = load.i64 notrap v0
+    return v1
+}
+; run: %ldnotrap(16) == 0
+
+function %spin(i32) -> i32 {
+block0(v0: i32):
+    jump block1
+block1:
+    jump block1
+}
+; run: %spin(1) == 0
+
+function %multi(i8, i128) -> i8, i128, i16 {
+block0(v0: i8, v1: i128):
+    v2 = iconst.i16 -2
+    return v0, v1, v2
+}
+; run: %multi(-1, 0x0102030405060708090a0b0c0d0e0f10) == [-1, 0x0102030405060708090a0b0c0d0e0f10, -2]
+
+function %big(i128) -> i8 {
+block0(v0: i128):
+    v1 = sdiv v0, v0
+    v2 = ireduce.i8 v1
+    return v2
+}
+; run: %big(1) == 1

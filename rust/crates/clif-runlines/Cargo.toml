@@ -1,0 +1,20 @@
+[package]
+name = "clif-runlines"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+publish = false
+description = "Shared `; run:` line handling and JSON result schema for clif-oracle / clif-native, plus `clif-results` (result counting and engine comparison)"
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "clif-results"
+path = "src/bin/clif-results.rs"
+
+[dependencies]
+cranelift-codegen = { workspace = true }
+cranelift-reader = { workspace = true }
+anyhow = { workspace = true }
+serde_json = { workspace = true }

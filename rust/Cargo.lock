@@ -30,15 +30,58 @@ dependencies = [
 ]
 
 [[package]]
+name = "cfg-if"
+version = "1.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4e7648175b45a9a48536d676f68d918270699102aa8dab5496df06904c914600"
+
+[[package]]
+name = "clif-native"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clif-runlines",
+ "clif2obj",
+ "cranelift-codegen",
+ "cranelift-frontend",
+ "cranelift-reader",
+ "serde_json",
+]
+
+[[package]]
 name = "clif-oracle"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "clif-runlines",
  "cranelift-codegen",
  "cranelift-interpreter",
  "cranelift-reader",
  "serde_json",
  "smallvec",
+]
+
+[[package]]
+name = "clif-runlines"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cranelift-codegen",
+ "cranelift-reader",
+ "serde_json",
+]
+
+[[package]]
+name = "clif2obj"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cranelift-codegen",
+ "cranelift-module",
+ "cranelift-object",
+ "cranelift-reader",
+ "serde_json",
+ "target-lexicon",
 ]
 
 [[package]]
@@ -145,6 +188,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "cranelift-frontend"
+version = "0.136.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5ed70ab5849184973c42b57366f57611dc81c3e355d5b612c68a2900bea92242"
+dependencies = [
+ "cranelift-codegen",
+ "hashbrown 0.17.1",
+ "log",
+ "smallvec",
+ "target-lexicon",
+]
+
+[[package]]
 name = "cranelift-interpreter"
 version = "0.136.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -165,6 +221,34 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "379f10a451c9b1bf4f59e4ce38061c53ca2454783041a3c1fafa6deef3c37108"
 
 [[package]]
+name = "cranelift-module"
+version = "0.136.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d4bed10b93e21e2c826535c9a19efcfdc907c2512ab2726aad00b6ad15deb1cf"
+dependencies = [
+ "anyhow",
+ "cranelift-codegen",
+ "cranelift-control",
+ "hashbrown 0.17.1",
+]
+
+[[package]]
+name = "cranelift-object"
+version = "0.136.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b48e6beb2413ac8a251c8d47487f90c7ffd01375f41114a815ed026d233e529e"
+dependencies = [
+ "anyhow",
+ "cranelift-codegen",
+ "cranelift-control",
+ "cranelift-module",
+ "gimli",
+ "log",
+ "object",
+ "target-lexicon",
+]
+
+[[package]]
 name = "cranelift-reader"
 version = "0.136.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -181,6 +265,15 @@ name = "cranelift-srcgen"
 version = "0.136.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "89643801d9192df80c294f174d5fe0416395e7edb0bb3024784ba10fc933e76f"
+
+[[package]]
+name = "crc32fast"
+version = "1.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "01a7799fd6b852db0e61728dde9a204c423b44d689dbd432522543614b490e78"
+dependencies = [
+ "cfg-if",
+]
 
 [[package]]
 name = "equivalent"
@@ -266,6 +359,18 @@ name = "memchr"
 version = "2.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
+
+[[package]]
+name = "object"
+version = "0.40.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dd229a0361b9d0d4396176e02d65897f487eebeab7caa6d443855ee152ca0b9c"
+dependencies = [
+ "crc32fast",
+ "hashbrown 0.17.1",
+ "indexmap",
+ "memchr",
+]
 
 [[package]]
 name = "proc-macro2"

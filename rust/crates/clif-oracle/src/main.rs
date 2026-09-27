@@ -12,13 +12,14 @@ use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::process::ExitCode;
 
 use anyhow::{Context, Result, bail};
+use clif_runlines::{run_lines, values_json};
 use cranelift_codegen::data_value::DataValue;
 use cranelift_codegen::ir::{Function, LibCall};
 use cranelift_codegen::settings;
 use cranelift_interpreter::environment::FunctionStore;
 use cranelift_interpreter::interpreter::{Interpreter, InterpreterState, LibCallValues};
 use cranelift_interpreter::step::{ControlFlow, CraneliftTrap};
-use cranelift_reader::{Comparison, Details, ParseOptions, RunCommand, parse_run_command};
+use cranelift_reader::{Details, ParseOptions};
 use serde_json::{Value, json};
 
 /// Instruction budget per run command (the interpreter's `fuel`).
@@ -26,21 +27,6 @@ use serde_json::{Value, json};
 /// Stack size of the interpreter thread.
 const STACK_BYTES: usize = 1 << 30;
 const FUEL: u64 = 100_000_000;
-
-/// `{"ty": "i32", "bits": "0x0000002a"}`: the value's bytes as a little-endian unsigned
-/// number, zero-padded to the type's width.
-fn value_json(v: &DataValue) -> Value {
-    let ty = v.ty();
-    let n = ty.bytes() as usize;
-    let mut buf = vec![0u8; n];
-    v.write_to_slice_le(&mut buf);
-    let hex: String = buf.iter().rev().map(|b| format!("{b:02x}")).collect();
-    json!({ "ty": ty.to_string(), "bits": format!("0x{hex}") })
-}
-
-fn values_json(vs: &[DataValue]) -> Value {
-    Value::Array(vs.iter().map(value_json).collect())
-}
 
 fn trap_name(t: &CraneliftTrap) -> String {
     match t {
@@ -93,51 +79,14 @@ fn invoke(store: &FunctionStore, name: &str, args: &[DataValue]) -> Value {
     }
 }
 
-/// Function name without the leading `%` (testcase names) or its display form.
-fn plain_name(f: &Function) -> String {
-    let s = f.name.to_string();
-    s.strip_prefix('%').map(str::to_string).unwrap_or(s)
-}
-
 fn interp_function(store: &FunctionStore, func: &Function, details: &Details) -> Vec<Value> {
-    let attached = plain_name(func);
-    let mut out = Vec::new();
-    for comment in &details.comments {
-        let cmd = match parse_run_command(comment.text, &func.signature) {
-            Ok(Some(cmd)) => cmd,
-            Ok(None) => continue,
-            Err(e) => {
-                out.push(json!({
-                    "attached": attached, "func": attached, "args": [],
-                    "expected": Value::Null,
-                    "actual": { "error": format!("run command does not parse: {e}") },
-                }));
-                continue;
-            }
-        };
-        let (inv, expected) = match &cmd {
-            RunCommand::Print(inv) => (inv, Value::Null),
-            RunCommand::Run(inv, cmp, vals) => {
-                let cmp = match cmp {
-                    Comparison::Equals => "==",
-                    Comparison::NotEquals => "!=",
-                };
-                (inv, json!({ "cmp": cmp, "values": values_json(vals) }))
-            }
-        };
-        // A bare `; run` has the invocation name `default`: it means the attached function
-        // (as in `test run`).
-        let name = if inv.func == "default" { attached.clone() } else { inv.func.clone() };
-        let actual = invoke(store, &name, &inv.args);
-        out.push(json!({
-            "attached": attached,
-            "func": name,
-            "args": values_json(&inv.args),
-            "expected": expected,
-            "actual": actual,
-        }));
-    }
-    out
+    run_lines(func, details)
+        .iter()
+        .map(|line| {
+            line.parse_error_record()
+                .unwrap_or_else(|| line.record(invoke(store, &line.func, &line.args)))
+        })
+        .collect()
 }
 
 fn interp(path: &str) -> Result<bool> {
