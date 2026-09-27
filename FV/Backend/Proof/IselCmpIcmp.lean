@@ -130,6 +130,9 @@ theorem ofV_tst (rd rn : Reg) (imm : ImmLogic) :
     MInst.ofV (.data 58 5 [.data 59 5 [], .data 93 0 [], .reg rd, .reg rn, .op (.immLogic imm)]) =
       some (.aluRRImmLogic .andS .size32 rd rn imm) := rfl
 
+theorem vuseNums_tst (x : Nat) (imm : ImmLogic) :
+    vuseNums (.aluRRImmLogic .andS .size32 .xzr (.vreg x .int) imm) = [x] := rfl
+
 theorem immLogic_255 : ImmLogic.ofNat? 255 .size32 = some ⟨255, .size32⟩ := by decide
 
 theorem setsFlags_tst255 (x : Nat) (ρ : Nat → CV) :
@@ -189,16 +192,6 @@ theorem tst_imm_ok {n : Nat} (hn : 40 ≤ n) {t : CTy} {a b : V} {s s' : LState 
   isel_call hp hc [operand_size_ok]
   exact ⟨‹_›, ‹_›⟩
 
-
-
-end
-
-end Backend.Proof
-
-/- DRAFT (M4Cmp2, not yet compiling; the seven overflow rules and the I128 rule are already
-refuted by the first three tactic lines; remaining: `CondCode.flag`/`CondCode.notZero` need their
-implicit `cond`/`i` given explicitly, and the `fits_in_32` case must find its hypotheses by type).
-
 set_option maxHeartbeats 4000000 in
 include hp hc in
 theorem is_nonzero_ok {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem) {f : Clif.Function}
@@ -213,14 +206,14 @@ theorem is_nonzero_ok {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem
   all_goals isel_call hp hc [tst_imm_ok, zext32_ok]
   · -- I8: `tst x, #255` then `ne`
     have hT : ctx.valueType? x = some (.int 8) := ‹_›
-    obtain ⟨rx, hx⟩ : ∃ r, ctx.valueReg? x = some r := ⟨_, ‹_›⟩
+    have hx : ctx.valueReg? x = some _ := ‹_›
     have hrx := hctx.valueReg x _ hx; subst hrx
     rcases ‹(CTy.int 32).bits ≤ 32 ∧ _ ∨ _› with ⟨-, rfl⟩ | ⟨h, -⟩
-    · refine CondCode.flag (ms := []) (Frag.nil _) (ofV_tst _ _ _) (by decide) rfl ?_ ?_
-      · intro u hu; simp only [vuseNums] at hu; simp at hu; subst hu; exact vreg_lt hvb hx
+    · refine CondCode.flag (ms := []) (cond := .ne) (Frag.nil _) (ofV_tst _ _ _) (by decide) rfl ?_ ?_
+      · intro u hu; rw [vuseNums_tst, List.mem_singleton] at hu; subst hu; exact vreg_lt hvb hx
       · rintro fr ρ b hh hdf ⟨v, hv, rfl⟩
         refine ⟨UsesLo.nil _ _, fun u hu => ?_, fun w => Runs.nil ⟨_, setsFlags_tst255 x ρ, ?_⟩⟩
-        · simp only [vuseNums] at hu; simp at hu; subst hu; exact .inr (by simp [hv])
+        · rw [vuseNums_tst, List.mem_singleton] at hu; subst hu; exact .inr (by simp [hv])
         · have ht := vholds_ty hdf hT hv
           obtain ⟨vty, vb⟩ := v
           cases vty <;> simp [CTy.ofClif] at ht
@@ -228,9 +221,9 @@ theorem is_nonzero_ok {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem
     · simp [CTy.bits] at h
   · -- I64: `NotZero x, 64`
     have hT : ctx.valueType? x = some (.int 64) := ‹_›
-    obtain ⟨rx, hx⟩ : ∃ r, ctx.valueReg? x = some r := ⟨_, ‹_›⟩
+    have hx : ctx.valueReg? x = some _ := ‹_›
     have hrx := hctx.valueReg x _ hx; subst hrx
-    refine CondCode.notZero (ms := []) rfl (Frag.nil _) (vreg_lt hvb hx) ?_
+    refine CondCode.notZero (ms := []) (i := 1) (sz := .size64) rfl (Frag.nil _) (vreg_lt hvb hx) ?_
     rintro fr ρ b hh hdf ⟨v, hv, rfl⟩
     refine ⟨UsesLo.nil _ _, .inr (by simp [hv]), fun w => Runs.nil ?_⟩
     have ht := vholds_ty hdf hT hv
@@ -238,12 +231,12 @@ theorem is_nonzero_ok {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem
     cases vty <;> simp [CTy.ofClif] at ht
     rw [opnd64_vholds (hh x _ hv)]; rfl
   · -- fits_in_32: `NotZero (zext32 x), 32`
-    obtain ⟨t, hT⟩ : ∃ t, ctx.valueType? x = some t := ⟨_, ‹_›⟩
-    have hb : t.bits ≤ 32 := ‹_›
+    have hT : ctx.valueType? x = some _ := ‹_›
+    have hb := ‹CTy.bits _ ≤ 32›
     have hz : ExtOut ctx x false 32 [.int 32, .int 64] _ _ _ := ‹_›
     obtain ⟨k, ms, rfl, hf, hk, hkx, hrun⟩ := ExtOut.sem hR hctx hvb (.inl rfl)
       (by simp) (fun _ => by simp) hz
-    refine CondCode.notZero rfl hf hk ?_
+    refine CondCode.notZero (i := 0) (sz := .size32) rfl hf hk ?_
     rintro fr ρ b hh hdf ⟨v, hv, rfl⟩
     obtain ⟨hu, hr⟩ := hrun fr ρ v hh hdf hv
     refine ⟨hu, ?_, fun w => (hr w).imp fun ρ' _ _ ⟨h1, h2⟩ => ?_⟩
@@ -258,4 +251,8 @@ theorem is_nonzero_ok {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem
       rw [show (ρ' k).setWidth 64 = lo64 (ρ' k) from rfl, this]
       exact truthy_setWidth32 hw _
 
--/
+
+end
+
+end Backend.Proof
+
