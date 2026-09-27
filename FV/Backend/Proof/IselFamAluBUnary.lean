@@ -89,25 +89,28 @@ theorem ineg_base_case_ok (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (
     (cp : Clif.Program) (hR : Refines F isem) (hMR : MRStable F MR) :
     LowerRuleOk isem MR env cp p rule_lower_857 :=
   unary_ruleOk hp (cop := .ineg) rfl hp.t2359 term_2359_kind variantNames_Ineg rfl
-    (fun w x => env2 (.ty (.int w)) (.value x)) (fun _ => True) 1 (fun w b x => [.aluRRR .sub (szOf w) (.vreg b .int) .xzr (.vreg x .int)])
-    (fun _ b => b)
+    (fun w x => env2 (.ty (.int w)) (.value x)) (fun _ => True) (fun _ _ => True) (fun _ _ => 1)
+    (fun w _ b x => [.aluRRR .sub (szOf w) (.vreg b .int) .xzr (.vreg x .int)]) (fun _ _ b => b)
     (fun ctx _ _ _ _ _ st tr m _ _ hi hty hw hd _ h => by
       rw [match_857 hp ctx hi hty hw hd st tr m] at h
       simp only [Except.ok.injEq, Prod.mk.injEq, Option.some.injEq] at h
       exact ⟨h.1.symm, h.2.symm, trivial⟩)
-    (fun ctx _ _ _ st tr n hc hx hw _ => by
+    (fun ctx _ _ _ st tr n hc hx hw _ _ => by
       obtain ⟨tr', h⟩ := rhs_857 hp ctx hc hx hw st tr n
       exact ⟨tr', _, h, by simp [LState.emit, LState.fresh], rfl⟩)
-    (fun ctx _ _ _ st tr n v s' hx => rhs_857_none hp ctx hx st tr n v s')
-    (fun _ _ => Nat.le_refl _)
-    (fun _ b _ mi hmi d hd => by
+    (fun ctx _ _ _ st tr n v s' hx => by
+      rcases hx with hx | hx
+      · exact rhs_857_none hp ctx hx st tr n v s'
+      · exact absurd trivial hx)
+    (fun _ _ _ => Nat.le_refl _)
+    (fun _ _ b _ mi hmi d hd => by
       simp only [List.mem_singleton] at hmi; subst hmi
       rw [(vdefs_rr rfl).1] at hd; simp at hd; omega)
-    (fun _ b x mi hmi u hu => by
+    (fun _ _ b x mi hmi u hu => by
       simp only [List.mem_singleton] at hmi; subst hmi
       rw [(vdefs_rr rfl).2] at hu; simp at hu; exact .inr hu)
     F isem MR env cp hMR
-    (fun ty b x ρ u hety _ _ _ hu => ⟨_, prun_rr hR rfl (fun w => ispec_xzr_sub _ _ _ _ w)
+    (fun ty _ b x ρ u hety _ _ _ _ _ hu => ⟨_, prun_rr hR rfl (fun w => ispec_xzr_sub _ _ _ _ w)
       (prun_nil _), by
         have hu' : (ρ x).setWidth ty.width = u := hu
         subst hu'

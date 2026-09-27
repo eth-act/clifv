@@ -256,8 +256,9 @@ theorem unary_ruleOk {p : Program} (hp : Data p) {r : Rule} {cop : Clif.UnaryOp}
     (hargs : r.args = [.term 18 209 [tyPat, .term 152 2476 (.term 151 opT [] :: rest)]])
     (hto : termOf p opT = .ok to) (hko : to.kind = .enumVariant ko)
     (hname : (variantNames 151)[ko]? = some n) (hcop : unaryOpcode cop = some n)
-    (E : Nat → Nat → Interp.Env V)
-    (P : Nat → Prop) (k : Nat) (code : Nat → Nat → Nat → List MInst) (res : Nat → Nat → Nat)
+    (E : Nat → Nat → Interp.Env V) (P : Nat → Prop) (Q : Nat → Option CTy → Prop)
+    (k : Nat → Option CTy → Nat) (code : Nat → Option CTy → Nat → Nat → List MInst)
+    (res : Nat → Option CTy → Nat → Nat)
     (hmatch : ∀ (ctx : Ctx) (cfg : Config) ii (info : IInfo) w x st tr m env' s1,
       ctx.insts[ii]? = some info → info.resTys.head? = some (.int w) → w ≤ 64 →
       info.data = .data 152 29 [.data 151 ko [], .value x] →
@@ -267,23 +268,25 @@ theorem unary_ruleOk {p : Program} (hp : Data p) {r : Rule} {cop : Clif.UnaryOp}
       env' = E w x ∧ s1 = (st, tr) ∧ P w)
     (hrhs : ∀ (ctx : Ctx) (cfg : Config) x w (st : LState) tr n,
       cfg.checkOverlap = false → ctx.valueReg? x = some (.vreg x .int) → w ≤ 64 → P w →
+      Q w (ctx.valueType? x) →
       ∃ (tr' : Array RuleId) (st'' : LState), (evalExpr p (sem ctx) cfg (n + 40) r.rhs
           (E w x)).run (st, tr) =
-        .ok (some (.regsVec [[.vreg (res w st.nextVreg) .int]]), (st'', tr')) ∧
-        st''.emitted = st.emitted ++ (code w st.nextVreg x).toArray ∧
-        st''.nextVreg = st.nextVreg + k)
-    (hnone : ∀ (ctx : Ctx) (cfg : Config) x w st tr n v s', ctx.valueReg? x = none →
-      (evalExpr p (sem ctx) cfg (n + 40) r.rhs (E w x)).run (st, tr) ≠
-        .ok (some v, s'))
-    (hres : ∀ w b, b ≤ res w b)
-    (hdefs : ∀ w b x, ∀ mi ∈ code w b x, ∀ d ∈ vdefs mi, b ≤ d ∧ d < b + k)
-    (huses : ∀ w b x, ∀ mi ∈ code w b x, ∀ u ∈ vuseNums mi, b ≤ u ∨ u = x)
+        .ok (some (.regsVec [[.vreg (res w (ctx.valueType? x) st.nextVreg) .int]]), (st'', tr')) ∧
+        st''.emitted = st.emitted ++ (code w (ctx.valueType? x) st.nextVreg x).toArray ∧
+        st''.nextVreg = st.nextVreg + k w (ctx.valueType? x))
+    (hnone : ∀ (ctx : Ctx) (cfg : Config) x w st tr n v s',
+      (ctx.valueReg? x = none ∨ ¬ Q w (ctx.valueType? x)) →
+      (evalExpr p (sem ctx) cfg (n + 40) r.rhs (E w x)).run (st, tr) ≠ .ok (some v, s'))
+    (hres : ∀ w T b, b ≤ res w T b)
+    (hdefs : ∀ w T b x, ∀ mi ∈ code w T b x, ∀ d ∈ vdefs mi, b ≤ d ∧ d < b + k w T)
+    (huses : ∀ w T b x, ∀ mi ∈ code w T b x, ∀ u ∈ vuseNums mi, b ≤ u ∨ u = x)
     (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
     (hMR : MRStable F MR)
-    (hsem : ∀ (ty : Clif.Ty) (b x : Nat) (ρ : Nat → CV) (u : BitVec ty.width), eTy ty = true →
-      (cop = .bswap → ty ≠ .i8) → P ty.width → x < b → VHolds ⟨ty, u⟩ (ρ x) →
-      ∃ ρ', PRun F isem (code ty.width b x) ρ ρ' ∧
-        VHolds ⟨ty, Clif.Sem.unary cop u⟩ (ρ' (res ty.width b))) :
+    (hsem : ∀ (ty : Clif.Ty) (T : Option CTy) (b x : Nat) (ρ : Nat → CV) (u : BitVec ty.width),
+      eTy ty = true → (cop = .bswap → ty ≠ .i8) → P ty.width → Q ty.width T →
+      (T = none ∨ T = some (.int ty.width)) → x < b → VHolds ⟨ty, u⟩ (ρ x) →
+      ∃ ρ', PRun F isem (code ty.width T b x) ρ ρ' ∧
+        VHolds ⟨ty, Clif.Sem.unary cop u⟩ (ρ' (res ty.width T b))) :
     LowerRuleOk isem MR env cp p r := by
   intro f ctx hctx ii info inst hi hc cfg hco m n st tr env' s1 out st' tr' hm hn hvb hfirst
     hmatch' heval
@@ -292,27 +295,37 @@ theorem unary_ruleOk {p : Program} (hp : Data p) {r : Rule} {cop : Clif.UnaryOp}
   obtain ⟨ty, x, rfl, hety, hbs, hd, hhead⟩ :=
     unary_front hp hargs hto hko hname hcop hctx hi hc (m := m' + 1) hmatch'
   have hw := eTy_width hety
-  obtain ⟨rfl, rfl, hP⟩ := hmatch ctx cfg ii info ty.width x st tr m' env' s1 hi hhead hw hd hfirst hmatch'
+  obtain ⟨rfl, rfl, hP⟩ :=
+    hmatch ctx cfg ii info ty.width x st tr m' env' s1 hi hhead hw hd hfirst hmatch'
   cases hrx : ctx.valueReg? x with
-  | none => exact absurd heval (hnone ctx cfg x ty.width st tr n' out (st', tr') hrx)
+  | none => exact absurd heval (hnone ctx cfg x ty.width st tr n' out (st', tr') (.inl hrx))
   | some rx =>
   have ex := hctx.valueReg x rx hrx
   subst ex
   have hxlt := hvb x _ hrx
-  obtain ⟨tr'', st'', he, hem, hnx⟩ := hrhs ctx cfg x ty.width st tr n' hco hrx hw hP
+  by_cases hQ : Q ty.width (ctx.valueType? x)
+  case neg => exact absurd heval (hnone ctx cfg x ty.width st tr n' out (st', tr') (.inr hQ))
+  obtain ⟨tr'', st'', he, hem, hnx⟩ := hrhs ctx cfg x ty.width st tr n' hco hrx hw hP hQ
   rw [he] at heval
   simp only [Except.ok.injEq, Prod.mk.injEq, Option.some.injEq] at heval
   obtain ⟨rfl, rfl, -⟩ := heval
-  refine ⟨code ty.width st.nextVreg x, _, hem, rfl, ?_⟩
+  refine ⟨code ty.width (ctx.valueType? x) st.nextVreg x, _, hem, rfl, ?_⟩
   refine lowerInstOk_one hMR (by omega) (fun mi hmi d hd => ?_) rfl ?_
-  · have := hdefs _ _ _ mi hmi d hd; omega
-  intro fr cm ρ vals cm' _ hvals _ ho
+  · have := hdefs _ _ _ _ mi hmi d hd; omega
+  intro fr cm ρ vals cm' _ hvals hdfg ho
   obtain ⟨u, hu, rfl, rfl⟩ := evalInst_unary_ok ho
   have hxv := getAs_ok hu
-  obtain ⟨ρ', hrun, hheld⟩ := hsem ty st.nextVreg x ρ u hety hbs hP hxlt (hvals x _ hxv)
-  refine ⟨rfl, usesOk_of [x] ?_ ?_, .inl (hres _ _), _, ρ', rfl, hrun, hheld⟩
+  have hT : ctx.valueType? x = none ∨ ctx.valueType? x = some (.int ty.width) := by
+    cases hT : ctx.valueType? x with
+    | none => exact .inl rfl
+    | some t =>
+      have := hdfg.2 x t _ hT hxv
+      exact .inr (by rw [← this, ofClif_int_width])
+  obtain ⟨ρ', hrun, hheld⟩ :=
+    hsem ty (ctx.valueType? x) st.nextVreg x ρ u hety hbs hP hQ hT hxlt (hvals x _ hxv)
+  refine ⟨rfl, usesOk_of [x] ?_ ?_, .inl (hres _ _ _), _, ρ', rfl, hrun, hheld⟩
   · intro mi hmi u hu
-    rcases huses _ _ _ mi hmi u hu with h | h
+    rcases huses _ _ _ _ mi hmi u hu with h | h
     · exact .inl h
     · exact .inr (by simp [h])
   · intro y hy
