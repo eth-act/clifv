@@ -1,0 +1,215 @@
+import FV.Backend.Proof.IselFamily
+import FV.Backend.Proof.IselRulesALU
+
+/-!
+# Family B (unary ALU, shifts, rotates): shared proof infrastructure
+
+* **World-independent straight-line code** (`PRun`): every form the family emits reads and
+  writes vregs only (`ispec` returns the world unchanged), so a run of the emitted code under
+  any `isem` refining `ispec` is described by the final vreg file alone, up to `SameWorld`.
+  `prun_cons` composes one instruction; `prun_rr`/`prun_rrr` are its one- and two-use shapes.
+* **`LowerInstOk` for one-result pure instructions** (`lowerInstOk_one`): from the monotone
+  fresh-vreg facts and a `PRun` whose final file holds the CLIF result.
+* **Which instruction matched** (`unary_front`, `binary_front`, …): the root rule's pattern and
+  `CtxInv` fix the CLIF instruction, its type and its data.
+-/
+
+namespace Backend.Proof
+
+open Backend Isle Isle.Interp Isle.Aarch64
+
+/-- A two-variable rule environment as the matcher builds it. -/
+abbrev env2 (a b : V) : Interp.Env V :=
+  ((Array.replicate 2 none).setIfInBounds 0 (some a)).setIfInBounds 1 (some b)
+
+/-! ## World-independent straight-line runs -/
+
+section Run
+variable {F : BitVec 64 → Prop} {isem : Sem}
+
+theorem SameWorld.rfl' (s : Arm.ArmState) : SameWorld F s s :=
+  ⟨fun _ _ => rfl, fun _ _ => rfl, rfl⟩
+
+theorem SameWorld.trans' {a b c : Arm.ArmState} (h1 : SameWorld F a b) (h2 : SameWorld F b c) :
+    SameWorld F a c :=
+  ⟨fun f hf => (h1.1 f hf).trans (h2.1 f hf), fun x hx => (h1.2.1 x hx).trans (h2.2.1 x hx),
+    h1.2.2.trans h2.2.2⟩
+
+/-- `ms` runs to completion from the vreg file `ρ`, ending in `ρ'`, from every world, with a
+world that agrees with the start outside the allocatable registers. -/
+def PRun (F : BitVec 64 → Prop) (isem : Sem) (ms : List MInst) (ρ ρ' : Nat → CV) : Prop :=
+  ∀ w, ∃ w', seqRun isem ms ρ w = some (.fall ρ' w') ∧ SameWorld F w' w
+
+theorem prun_nil (ρ : Nat → CV) : PRun F isem [] ρ ρ := fun w => ⟨w, rfl, SameWorld.rfl' w⟩
+
+theorem prun_cons (hR : Refines F isem) {i : MInst} {ms : List MInst} {ρ ρ' : Nat → CV}
+    {ops : Array Operand} {outs : List CV} (hops : i.operands = .ok ops)
+    (hs : ∀ w, ispec i (vuses ops ρ) w = some (outs, w, .next))
+    (hlen : outs.length = (ops.toList.filter Operand.isDef).length)
+    (ht : PRun F isem ms (vdefUpd ops outs ρ) ρ') : PRun F isem (i :: ms) ρ ρ' := by
+  intro w
+  obtain ⟨w1, h1, s1⟩ := hR _ _ _ _ _ (hs w)
+  obtain ⟨w2, h2, s2⟩ := ht w1
+  refine ⟨w2, ?_, s2.trans' s1⟩
+  simp only [seqRun, hops, h1, hlen, ↓reduceIte, h2, Option.map_some]
+  rfl
+
+/-- One instruction with one (late) def `d` and one use `x`. -/
+theorem prun_rr (hR : Refines F isem) {i : MInst} {ms : List MInst} {ρ ρ' : Nat → CV}
+    {d x : Nat} {r : CV}
+    (hops : i.operands = .ok #[⟨d, .int, .def, .late, .reg⟩, ⟨x, .int, .use, .early, .reg⟩])
+    (hs : ∀ w, ispec i [ρ x] w = some ([r], w, .next)) (ht : PRun F isem ms (upd ρ d r) ρ') :
+    PRun F isem (i :: ms) ρ ρ' :=
+  prun_cons hR hops hs rfl ht
+
+/-- One instruction with one (late) def `d` and two uses `x`, `y`. -/
+theorem prun_rrr (hR : Refines F isem) {i : MInst} {ms : List MInst} {ρ ρ' : Nat → CV}
+    {d x y : Nat} {r : CV}
+    (hops : i.operands = .ok #[⟨d, .int, .def, .late, .reg⟩, ⟨x, .int, .use, .early, .reg⟩,
+      ⟨y, .int, .use, .early, .reg⟩])
+    (hs : ∀ w, ispec i [ρ x, ρ y] w = some ([r], w, .next)) (ht : PRun F isem ms (upd ρ d r) ρ') :
+    PRun F isem (i :: ms) ρ ρ' :=
+  prun_cons hR hops hs rfl ht
+
+end Run
+
+/-! ## `LowerInstOk` for an instruction with one result computed by pure code -/
+
+theorem usesOk_of {st : LState} {fr : Clif.Frame} {ms : List MInst} (xs : List Nat)
+    (hu : ∀ m ∈ ms, ∀ u ∈ vuseNums m, st.nextVreg ≤ u ∨ u ∈ xs)
+    (hx : ∀ x ∈ xs, (fr.regs x).isSome) : UsesOk st fr ms := by
+  intro m hm u hu'
+  rcases hu m hm u hu' with h | h
+  · exact .inl h
+  · exact .inr (hx u h)
+
+/-- **`LowerInstOk` from a pure run.** The emitted code `ms` defines only fresh vregs, and on
+every successful CLIF evaluation (a pure instruction: memory unchanged) it reads fresh vregs or
+defined values and runs (`PRun`) to a vreg file holding the single result in `d`, a fresh vreg
+or a defined value's vreg. -/
+theorem lowerInstOk_one {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} {env : Clif.Env}
+    {cp : Clif.Program} {ctx : Ctx} {inst : Clif.Inst} {results : List Nat} {st st' : LState}
+    {ms : List MInst} {d : Nat} (hMR : MRStable F MR)
+    (hmono : st.nextVreg ≤ st'.nextVreg)
+    (hdefs : ∀ m ∈ ms, ∀ d ∈ vdefs m, st.nextVreg ≤ d ∧ d < st'.nextVreg)
+    (htrap : explicitTrapInst inst = false)
+    (hrun : ∀ (fr : Clif.Frame) (cm : Clif.Mem) (ρ : Nat → CV) vals cm', fr.func = ctx.func →
+      ValsHeld fr ρ → DFGCons ctx fr → instOutcome env cp fr cm inst = .ok (vals, cm') →
+      cm' = cm ∧ UsesOk st fr ms ∧ (st.nextVreg ≤ d ∨ (fr.regs d).isSome) ∧
+        ∃ v ρ', vals = [v] ∧ PRun F isem ms ρ ρ' ∧ VHolds v (ρ' d)) :
+    LowerInstOk isem MR env cp ctx inst results st [[.vreg d .int]] st' ms := by
+  refine ⟨hmono, hdefs, ?_⟩
+  intro fr cm ρ w hf hv hdfg hmr
+  split
+  · rename_i vals cm' ho
+    obtain ⟨rfl, hu, hd, v, ρ', rfl, hp, hh⟩ := hrun fr cm ρ vals cm' hf hv hdfg ho
+    obtain ⟨w', hs, hw⟩ := hp w
+    refine ⟨hu, ρ', w', hs, .inr ⟨rfl, ?_⟩, hMR _ _ _ _ hw.nf hmr⟩
+    intro j rs val hrs hval
+    match j, hrs, hval with
+    | 0, hrs, hval =>
+      simp only [List.getElem?_cons_zero, Option.some.injEq] at hrs hval
+      subst hrs; subst hval
+      exact ⟨d, .int, rfl, hd, hh⟩
+    | _ + 1, hrs, _ => simp at hrs
+  · intro h; rw [htrap] at h; cases h
+  · trivial
+
+/-! ## CLIF evaluation of the family's instructions -/
+
+theorem getAs_isSome {fr : Clif.Frame} {x : Nat} {ty : Clif.Ty} {u : BitVec ty.width}
+    (h : fr.getAs x ty = .ok u) : (fr.regs x).isSome := by
+  rw [getAs_ok h]; rfl
+
+theorem evalInst_unary_ok {fr : Clif.Frame} {cm cm' : Clif.Mem} {op : Clif.UnaryOp}
+    {ty : Clif.Ty} {x : Nat} {vals : List Clif.Val}
+    (h : Clif.evalInst fr cm (.unary op ty x) = .ok (vals, cm')) :
+    ∃ u, fr.getAs x ty = .ok u ∧ vals = [⟨ty, Clif.Sem.unary op u⟩] ∧ cm' = cm := by
+  simp only [Clif.evalInst] at h
+  cases hx : fr.getAs x ty with
+  | ok u =>
+    rw [hx] at h
+    simp only [bind, Clif.Res.bind, pure] at h
+    cases h
+    exact ⟨u, rfl, rfl, rfl⟩
+  | trap c => rw [hx] at h; cases h
+  | stuck m => rw [hx] at h; cases h
+
+/-! ## Which instruction a root rule matched -/
+
+set_option maxRecDepth 20000 in
+theorem variantNames_Unary : (variantNames 152)[29]? = some "Unary" := rfl
+
+theorem unaryOpcode_inj {a b : Clif.UnaryOp} {n : String} (ha : unaryOpcode a = some n)
+    (hb : unaryOpcode b = some n) : a = b := by
+  cases a <;> cases b <;> simp [unaryOpcode] at ha hb <;> subst ha <;> first | rfl | simp at hb
+
+/-- A `Unary`-format instruction whose opcode name is that of the unary operation `cop` is
+`cop` (the extends and `ireduce` have other names). -/
+theorem instNames_unary {c : Clif.Inst} {cop : Clif.UnaryOp} {n : String}
+    (hcop : unaryOpcode cop = some n) (h : instNames c = ("Unary", n)) :
+    ∃ ty x, c = .unary cop ty x := by
+  cases c <;> simp only [instNames, Prod.mk.injEq] at h <;> simp at h
+  case unary op ty x =>
+    have : unaryOpcode op = some n := by
+      cases hb : unaryOpcode op with
+      | none => rw [hb] at h; simp at h; subst h; cases cop <;> simp [unaryOpcode] at hcop
+      | some m => rw [hb] at h; simp at h; rw [h]
+    exact ⟨ty, x, by rw [unaryOpcode_inj this hcop]⟩
+  case extend op ty x =>
+    exfalso; cases op <;> cases cop <;> simp [unaryOpcode] at h hcop <;> subst hcop <;> simp at h
+  case ireduce ty x =>
+    exfalso; cases cop <;> simp [unaryOpcode] at hcop <;> subst hcop <;> simp at h
+
+/-- The instruction data and result type of a unary instruction `cop` (from `instData`). -/
+theorem instData_unary_data {f : Clif.Function} {cop : Clif.UnaryOp} {n : String}
+    (hcop : unaryOpcode cop = some n) {ty : Clif.Ty} {x ko : Nat} {fs : List V}
+    (h : instData f (.unary cop ty x) = .ok (.data 152 29 (.data 151 ko [] :: fs))) :
+    eTy ty = true ∧ (cop = .bswap → ty ≠ .i8) ∧ fs = [.value x] := by
+  simp only [instData, hcop] at h
+  split at h
+  · cases h
+  · rename_i he
+    simp only [Bool.not_eq_true', Bool.not_eq_false] at he
+    split at h
+    · cases h
+    · rename_i hb
+      refine ⟨he, fun hc hty => hb (by simp [hc, hty]), ?_⟩
+      simp only [pure, Except.pure, Except.ok.injEq] at h
+      obtain ⟨-, -, h3⟩ := mkVariant_eq_data h
+      injection h3 with _ h4
+
+/-- **Front end of a unary root rule** `(inst_data_value tyPat (Unary (O) x))`: the matched
+instruction is the unary operation `cop` of the opcode `O`, at a type `ty` (not `i128`, not
+`bswap.i8`), with data `Unary O x` and result type `ty`. -/
+theorem unary_front {p : Program} (hp : Data p) {r : Rule} {cop : Clif.UnaryOp} {n : String}
+    {opT : TermId} {to : Term} {ko : Nat} {tyPat : Pattern} {rest : List Pattern}
+    (hargs : r.args = [.term 18 209 [tyPat, .term 152 2476 (.term 151 opT [] :: rest)]])
+    (hto : termOf p opT = .ok to) (hko : to.kind = .enumVariant ko)
+    (hname : (variantNames 151)[ko]? = some n) (hcop : unaryOpcode cop = some n)
+    {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) {ii : Nat} {info : IInfo}
+    {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
+    {cfg : Config} {m : Nat} {s s1 : LState × Array RuleId} {env : Interp.Env V}
+    (h : (matchRule p (sem ctx) cfg (m + 1) r [.inst ii]).run s = .ok (some env, s1)) :
+    ∃ ty x, inst = .unary cop ty x ∧ eTy ty = true ∧ (cop = .bswap → ty ≠ .i8) ∧
+      info.data = .data 152 29 [.data 151 ko [], .value x] ∧
+      info.resTys.head? = some (.int ty.width) := by
+  obtain ⟨info', fs, hi', hd⟩ := root_match_data hp ctx hargs hp.t2476 term_2476_kind hto hko h
+  rw [hi] at hi'
+  cases hi'
+  have hdat := hctx.data ii info inst hi hc
+  rw [hd] at hdat
+  obtain ⟨hf, ho⟩ := instData_inv_names hdat
+  rw [variantNames_Unary] at hf
+  rw [hname] at ho
+  have hnm : instNames inst = ("Unary", n) :=
+    Prod.ext (Option.some.inj hf).symm (Option.some.inj ho).symm
+  obtain ⟨ty, x, rfl⟩ := instNames_unary hcop hnm
+  obtain ⟨hety, hb, hfs⟩ := instData_unary_data hcop hdat
+  subst hfs
+  obtain ⟨tys, htys, hres, -⟩ := hctx.resTys ii info _ hi hc
+  simp only [Clif.Inst.resultTypes, Option.some.injEq] at htys
+  subst htys
+  exact ⟨ty, x, rfl, hety, hb, hd, by rw [hres]; simp [ofClif_int_width]⟩
+
+end Backend.Proof
