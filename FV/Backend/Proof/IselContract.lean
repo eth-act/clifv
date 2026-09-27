@@ -623,13 +623,19 @@ decides it for every terminator (`brIdxOk`). -/
 def BrIdxTyped (ctx : Ctx) (t : Clif.Terminator) : Prop :=
   ∀ x d tbl, t = .brTable x d tbl → ∃ w, w ≤ 32 ∧ ctx.valueType? x = some (.int w)
 
+/-- The driver's successor labels of a `br_table` are one per jump-table entry plus the default
+(contract change #8): the lowering dispatches on the length of the label list
+(`jump_table_size`), CLIF on the table's. M7 discharges it from `targetsOf` (`dests`). -/
+def TargetsLen (t : Clif.Terminator) (targets : List Label) : Prop :=
+  ∀ x d tbl, t = .brTable x d tbl → targets.length = tbl.length + 1
+
 /-- **Root rule correctness (`lower_branch`)**, on the terminator `t` lowered in the driver's
 context `ctx` (instruction `ti` holds the terminator's data; `CtxInv`, `ValsBelow` and "the
 rules before `r` failed" as for `LowerRuleOk`), with branch targets `targets`. -/
 def BranchRuleOk (isem : Sem) (MR : MemRelT) (p : Program) (r : Rule) : Prop :=
   ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx →
   ∀ (ti : Nat) (t : Clif.Terminator) (data : V) (targets : List Label), termData t = .ok data →
-  ctx.insts[ti]? = some ⟨data, [], [], none⟩ → BrIdxTyped ctx t →
+  ctx.insts[ti]? = some ⟨data, [], [], none⟩ → BrIdxTyped ctx t → TargetsLen t targets →
   ∀ (cfg : Config), cfg.checkOverlap = false →
   ∀ (m n : Nat) (st : LState) (tr : Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId)
     (out : V) (st' : LState) (tr' : Array RuleId), 1000 ≤ m → 1000 ≤ n → ValsBelow ctx st →
@@ -829,7 +835,7 @@ theorem branchOk_of_rules {p : Program} (hp : Data p) (hrules : BranchRulesCorre
     (hctx : CtxInv f ctx) {ti : Nat} {t : Clif.Terminator} {data : V} {targets : List Label}
     (hrt : retOrTrap t = false) (hd : termData t = .ok data)
     (hi : ctx.insts[ti]? = some ⟨data, [], [], none⟩) (hbt : BrIdxTyped ctx t)
-    {cfg : Config} (hco : cfg.checkOverlap = false) {n : Nat}
+    (htl : TargetsLen t targets) {cfg : Config} (hco : cfg.checkOverlap = false) {n : Nat}
     (hn : 1002 + (p.rulesOf TId.lower_branch).length ≤ n) {ty : TypeId} {st : LState}
     {tr : Array RuleId} {out : V} {st' : LState} {tr' : Array RuleId} (hvb : ValsBelow ctx st)
     (h : (applyTerm p (sem ctx) cfg (n + 1) ty TId.lower_branch [.inst ti, .labels targets]).run
@@ -853,7 +859,7 @@ theorem branchOk_of_rules {p : Program} (hp : Data p) (hrules : BranchRulesCorre
   rw [← hs.1] at heval
   cases hroot : closureRoot r
   · exact absurd hmatch (hex r hr hroot f ctx hctx ti t data targets hrt hd hi cfg m (st, tr) env' s1)
-  · exact hrules F isem MR hR hMR r hr hroot f ctx hctx ti t data targets hd hi hbt cfg hco m n st
+  · exact hrules F isem MR hR hMR r hr hroot f ctx hctx ti t data targets hd hi hbt htl cfg hco m n st
       tr env' s1 out st' tr2 (by omega) (by omega) hvb hfirst hmatch heval
 
 theorem program_termByName_lower_branch :
@@ -901,7 +907,7 @@ theorem branchOk_runTerm (hrules : BranchRulesCorrect program)
     (hctx : CtxInv f ctx) {ti : Nat} {t : Clif.Terminator} {data : V} {targets : List Label}
     (hrt : retOrTrap t = false) (hd : termData t = .ok data)
     (hi : ctx.insts[ti]? = some ⟨data, [], [], none⟩) (hbt : BrIdxTyped ctx t)
-    {st : LState} {out : V} {st' : LState} {tr : List RuleId} (hvb : ValsBelow ctx st)
+    (htl : TargetsLen t targets) {st : LState} {out : V} {st' : LState} {tr : List RuleId} (hvb : ValsBelow ctx st)
     (h : runTerm ctx "lower_branch" [.inst ti, .labels targets] st = .ok (some out, st', tr)) :
     ∃ ms, st'.emitted = st.emitted ++ ms.toArray ∧ LowerTermOk isem MR ctx t targets st st' ms := by
   unfold runTerm Interp.run at h
@@ -921,7 +927,7 @@ theorem branchOk_runTerm (hrules : BranchRulesCorrect program)
     subst h2
     have hlen : (program.rulesOf TId.lower_branch).length ≤ 1000 := by
       rw [show TId.lower_branch = 687 from rfl, data_program.r687]; decide
-    obtain ⟨ms, h1, h2⟩ := branchOk_of_rules data_program hrules hex hR hMR hctx hrt hd hi hbt
+    obtain ⟨ms, h1, h2⟩ := branchOk_of_rules data_program hrules hex hR hMR hctx hrt hd hi hbt htl
       rfl (by omega) hvb ha
     exact ⟨ms, by simpa using h1, h2⟩
 

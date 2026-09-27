@@ -341,7 +341,7 @@ set_option maxHeartbeats 4000000 in
 /-- **`lower_brif`** (`rule_lower_3231`, rule id 1132). -/
 theorem brif_ruleOk {p : Program} (hp : Data p) {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT}
     (hR : Refines F isem) (hMR : MRStable F MR) : BranchRuleOk isem MR p rule_lower_3231 := by
-  intro f ctx hctx ti t data targets hd hi _ cfg hc m n st tr env' s1 out st' tr' hm hn hvb _ hmatch
+  intro f ctx hctx ti t data targets hd hi _ _ cfg hc m n st tr env' s1 out st' tr' hm hn hvb _ hmatch
     heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
   obtain ⟨n, rfl⟩ : ∃ n', n = n' + 400 := ⟨n - 400, by omega⟩

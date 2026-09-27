@@ -78,7 +78,7 @@ theorem jump_termOk {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} (hR : R
 /-- **`jump`** (`rule_lower_3270`, rule id 1139). -/
 theorem jump_ruleOk {p : Program} (hp : Data p) {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT}
     (hR : Refines F isem) (hMR : MRStable F MR) : BranchRuleOk isem MR p rule_lower_3270 := by
-  intro f ctx hctx ti t data targets hd hi _ cfg hc m n st tr env' s1 out st' tr' hm hn hvb _ hmatch
+  intro f ctx hctx ti t data targets hd hi _ _ cfg hc m n st tr env' s1 out st' tr' hm hn hvb _ hmatch
     heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
   obtain ⟨n, rfl⟩ : ∃ n', n = n' + 100 := ⟨n - 100, by omega⟩
