@@ -1,4 +1,4 @@
-import FV.Backend.Proof.RegallocState
+import FV.Backend.Proof.RegallocLemmas
 
 /-!
 # Soundness of the register-allocation checker (M6)
@@ -6,341 +6,368 @@ import FV.Backend.Proof.RegallocState
 `checkAlloc_sound`: if `checkAlloc vc rf = .ok ()`, the allocated code `rf` (abstract
 semantics `MStep`, `FV/Backend/Proof/VCodeSem.lean`) simulates the VCode `vc` (`VStep`), for
 every instruction semantics `sem`, every `keep` (the part of a callee-saved register the
-callee preserves) and every initial state: the allocated code only takes steps the VCode can
-match (moves are silent and strictly decrease a measure), it can always step when the VCode
-can, it returns the values the VCode returns with the same world, callee-saved registers hold
-their entry values (`keep`-part), and it halts exactly with the VCode's world.
+callee preserves) and every initial state (`IsSimulation`): each step of the allocated code is
+matched by one VCode step or is a move (no VCode step, strictly smaller measure); the
+allocated code can step whenever the VCode can; related returns have equal values and worlds;
+at a return, callee-saved registers hold their entry values (`keep`-part).
+Corollaries: `checkAlloc_ret`, `checkAlloc_halt`, `checkAlloc_stuck`, `checkAlloc_diverges`.
 
-Proof: `op_sound` (one original instruction: the use checks give equal inputs, the
-invariant survives early defs, clobbers and late defs), `Inv_move`, `edge_ok` (parallel copy),
-`Inv_mono` against the verified in-states (`verify_ok`, `verifyBlock_ok`), `Inv_entryState`.
+Proof: the relation `Match` says the machine store and the VCode vreg file satisfy the
+checker's abstract state (`Inv`) at the current item, and the block's out-state feeds the
+verified successor in-states (`EdgesOk`). `sim_step` (moves by `Inv_move`, instructions by
+`op_sound`, branches by `edge_ok` and `Inv_mono` against the verified in-state) and
+`sim_progress`; the entry by `Inv_entryState`.
 -/
 
 namespace Backend.Proof
-
 open Backend
 
-theorem Except.bind_ok {ε α β : Type} {x : Except ε α} {f : α → Except ε β} {b : β}
-    (h : (x >>= f) = .ok b) : ∃ a, x = .ok a ∧ f a = .ok b := by
-  cases x with
-  | error e => cases h
-  | ok a => exact ⟨a, rfl, h⟩
+section
+variable {V W : Type}
 
-theorem Except.seq_ok {ε β : Type} {x : Except ε PUnit} {f : PUnit → Except ε β} {b : β}
-    (h : (x >>= f) = .ok b) : x = .ok () ∧ f () = .ok b := by
-  obtain ⟨⟨⟩, h1, h2⟩ := Except.bind_ok h
-  exact ⟨h1, h2⟩
+/-- The simulation relation between run states: same block and world; the machine's remaining
+items check from an abstract state `a` that the machine store and the VCode vreg file satisfy;
+the block's out-state feeds the verified successors. -/
+def MatchRun (c : CheckCtx) (ins : Array (Option AState)) (keep : Reg → V → V) (r₀ : Reg → V)
+    (ms : MState V W) (vs : VState V W) : Prop :=
+  ms.b = vs.b ∧ ms.w = vs.w ∧ ∃ vb a out, c.vc.blocks[vs.b]? = some vb ∧
+    c.runItems vb vs.k ms.its a = .ok out ∧ Inv keep a ms.m vs.ρ r₀ ∧ EdgesOk c ins vs.b out
 
-theorem ensure_ok {b : Bool} {msg : Unit → String} (h : ensure b msg = .ok ()) : b = true := by
-  unfold ensure at h
-  split at h
-  · assumption
-  · cases h
+def Match (c : CheckCtx) (ins : Array (Option AState)) (keep : Reg → V → V) (r₀ : Reg → V) :
+    MConf V W → VConf V W → Prop
+  | .run ms, .run vs => MatchRun c ins keep r₀ ms vs
+  | .ret vals m w, .ret vals' w' =>
+    vals = vals' ∧ w = w' ∧ ∀ r ∈ calleeSaved, keep r (m (.reg r)) = keep r (r₀ r)
+  | .halt w, .halt w' => w = w'
+  | _, _ => False
 
-theorem forM_ok {ε α : Type} {l : List α} {f : α → Except ε PUnit}
-    (h : l.forM f = .ok ()) : ∀ x ∈ l, f x = .ok () := by
-  induction l with
-  | nil => simp
-  | cons y l ih =>
-    have h' : (f y >>= fun _ => l.forM f) = .ok () := h
-    obtain ⟨hu, hr⟩ := Except.seq_ok h'
-    intro x hx
-    rcases List.mem_cons.mp hx with rfl | hx
-    · exact hu
-    · exact ih hr x hx
+/-- What `checkAlloc vc rf = .ok ()` establishes (`checked_of_checkAlloc`). -/
+structure Checked (vc : VCode) (rf : RFunc) (c : CheckCtx) (ins : Array (Option AState)) :
+    Prop where
+  vc_eq : c.vc = vc
+  rf_eq : c.rf = rf
+  cfg : ∃ preds, vc.cfg = .ok (c.succs, preds)
+  size : rf.blocks.size = vc.blocks.size
+  nonempty : vc.blocks.size ≠ 0
+  entry : ∃ a0, ins[0]? = some (some a0) ∧ a0.le (entryState c.size) = true
+  blocks : ∀ b < vc.blocks.size, c.verifyBlock ins b = .ok ()
 
-theorem needs_ok {w : String} {a : AState} {l : Loc} {s : Sym} (h : needs w a l s = .ok ()) :
-    s ∈ a.get l := by
-  simpa using ensure_ok h
+theorem checked_of_checkAlloc {vc : VCode} {rf : RFunc} (h : checkAlloc vc rf = .ok ()) :
+    ∃ c ins, Checked vc rf c ins := by
+  obtain ⟨succs, preds, ins, hcfg, hne, hsz, hv⟩ := checkAlloc_ok h
+  obtain ⟨he, hb⟩ := verify_ok hv
+  exact ⟨_, ins, ⟨rfl, rfl, ⟨preds, hcfg⟩, hsz, hne, he, hb⟩⟩
 
-variable {c : CheckCtx}
+variable {vc : VCode} {rf : RFunc} {c : CheckCtx} {ins : Array (Option AState)}
+  (sem : ISem V W) (keep : Reg → V → V) {r₀ : Reg → V}
 
-theorem stepMove_ok {w : String} {src dst : Loc} {a a' : AState}
-    (h : c.stepMove w src dst a = .ok a') : a' = a.put dst (a.get src) := by
-  obtain ⟨_, h⟩ := Except.seq_ok h
-  exact (Except.ok.inj h).symm
+/-- Entering block `s` with an environment satisfying the (verified) in-state of `s`. -/
+theorem enter_block (hc : Checked vc rf c ins) {s : Nat} {e a' : AState} {m : Loc → V}
+    {ρ : Nat → V} {w : W} (hs : s < vc.blocks.size) (hins : ins[s]? = some (some a'))
+    (hle : a'.le e = true) (hinv : Inv keep e m ρ r₀) :
+    ∃ items, rf.blocks[s]? = some items ∧
+      MatchRun c ins keep r₀ ⟨s, items.toList, m, w⟩ ⟨s, 0, ρ, w⟩ := by
+  obtain ⟨a₁, out, h1, h2, h3⟩ := verifyBlock_ok (hc.blocks s hs)
+  rw [hins] at h1
+  cases h1
+  obtain ⟨vb, items, hvb, hitems, hrun⟩ := runBlock_ok h2
+  rw [hc.rf_eq] at hitems
+  exact ⟨items, hitems, rfl, rfl, vb, a', out, hvb, hrun, Inv_mono hle hinv, h3⟩
 
-theorem stepOp_ok {w : String} {i : MInst} {ops : Array Operand} {allocs : Array Loc} {a a' : AState}
-    (h : c.stepOp w i ops allocs a = .ok a') :
-    c.checkStatic w ops allocs i.clobbers = .ok () ∧
-    (∀ p ∈ atPos (ops.zip allocs).toList .use .early, Sym.vreg p.1.vreg ∈ a.get p.2) ∧
-    (∀ p ∈ atPos (ops.zip allocs).toList .use .late,
-      Sym.vreg p.1.vreg ∈ (defineAll a (atPos (ops.zip allocs).toList .def .early)).get p.2) ∧
-    a' = transferOp i (ops.zip allocs).toList a ∧
-    retCheck w i a' = .ok () := by
-  obtain ⟨h1, h⟩ := Except.seq_ok h
-  obtain ⟨h2, h⟩ := Except.seq_ok h
-  obtain ⟨h3, h⟩ := Except.seq_ok h
-  obtain ⟨h4, h⟩ := Except.seq_ok h
-  have h5 := (Except.ok.inj h).symm
-  subst h5
-  exact ⟨h1, fun p hp => needs_ok (forM_ok h2 p hp), fun p hp => needs_ok (forM_ok h3 p hp), rfl, h4⟩
+theorem edgeEnv_lt {b s : Nat} {ρ ρ' : Nat → V} (h : edgeEnv vc b s ρ = some ρ') :
+    s < vc.blocks.size := by
+  unfold edgeEnv at h
+  cases hs : vc.blocks[s]? with
+  | none => cases hb : vc.blocks[b]? <;> simp [hs, hb] at h
+  | some sb => exact (Array.getElem?_eq_some_iff.mp hs).1
 
-theorem retCheck_ok {w : String} {us : List (Reg × Reg)} {a : AState}
-    (h : retCheck w (.rets us) a = .ok ()) : ∀ r ∈ calleeSaved, Sym.entry r ∈ a.get (.reg r) :=
-  fun r hr => needs_ok (forM_ok h r hr)
+theorem sim_step (hc : Checked vc rf c ins) {ms : MState V W} {vs : VState V W} {c' : MConf V W}
+    (hm : MatchRun c ins keep r₀ ms vs) (hs : MStep vc sem keep rf (.run ms) c') :
+    (∃ ms', c' = .run ms' ∧ MatchRun c ins keep r₀ ms' vs ∧ ms'.its.length < ms.its.length) ∨
+    (∃ v', VStep vc sem (.run vs) v' ∧ Match c ins keep r₀ c' v') := by
+  obtain ⟨b, its, m, w⟩ := ms
+  obtain ⟨b', k, ρ, w''⟩ := vs
+  obtain ⟨hb, hw, vb, a, out, hvb, hrun, hinv, hedges⟩ := hm
+  simp only at hb hw
+  subst hb hw
+  cases hs with
+  | move =>
+    obtain ⟨_, hrun'⟩ := runItems_move hrun
+    left
+    exact ⟨_, rfl, ⟨rfl, rfl, vb, _, out, hvb, hrun', Inv_move _ _ hinv, hedges⟩, by simp⟩
+  | @op _ _ allocs its _ _ _ i ops outs w' ctl m2 _ hvb' hi hops hsz hsem hlen hclob hnext =>
+    right
+    rw [hc.vc_eq] at hvb
+    rw [hvb] at hvb'
+    cases hvb'
+    obtain ⟨_, hk, i', ops', a', hi', hops', hstep, hrun'⟩ := runItems_op hrun
+    subst hk
+    rw [hi] at hi'
+    cases hi'
+    rw [hops] at hops'
+    cases hops'
+    obtain ⟨_, huse, hinv', hret⟩ := op_sound hstep hinv hlen hclob
+    rw [huse] at hsem hnext
+    have hlen' : outs.length = (ops.toList.filter Operand.isDef).length := by
+      rw [hlen, ← pairs_fst hsz.symm, List.length_map]
+    have hvbc : c.vc.blocks[b]? = some vb := by rw [hc.vc_eq]; exact hvb
+    cases hnext with
+    | next hk1 =>
+      exact ⟨_, VStep.step hvb hi hops hsem hlen' (VNext.next hk1),
+        rfl, rfl, vb, _, out, hvbc, hrun', hinv', hedges⟩
+    | ret hus =>
+      exact ⟨_, VStep.step hvb hi hops hsem hlen' (VNext.ret hus), rfl, rfl,
+        fun r hr => (hinv' _ _ (hret _ hus r hr)).2⟩
+    | halt =>
+      exact ⟨_, VStep.step hvb hi hops hsem hlen' VNext.halt, rfl⟩
+    | goto hk1 hsucc hitems =>
+      have hits : its = [] := by
+        cases its with
+        | nil => rfl
+        | cons it its =>
+          cases it with
+          | move => exact absurd hk1 (runItems_move hrun').1
+          | op => exact absurd hk1 (runItems_op hrun').1
+      subst hits
+      obtain ⟨_, rfl⟩ := runItems_nil hrun'
+      obtain ⟨preds, hcfg⟩ := hc.cfg
+      obtain ⟨e, a'', hedge, hins, hle⟩ := hedges _ (succOf_mem hcfg hsucc)
+      obtain ⟨ρ', henv, hinve⟩ := edge_ok hedge hinv'
+      rw [hc.vc_eq] at henv
+      obtain ⟨items', hitems', hmr⟩ := enter_block keep hc (w := w') (edgeEnv_lt henv) hins hle hinve
+      rw [hitems] at hitems'
+      cases hitems'
+      exact ⟨_, VStep.step hvb hi hops hsem hlen' (VNext.goto hk1 hsucc henv), hmr⟩
 
-theorem runItems_nil {vb : VBlock} {next : Nat} {a out : AState}
-    (h : c.runItems vb next [] a = .ok out) : next = vb.insts.size ∧ out = a := by
-  unfold CheckCtx.runItems at h
-  obtain ⟨h1, h⟩ := Except.seq_ok h
-  exact ⟨by simpa using ensure_ok h1, (Except.ok.inj h).symm⟩
-
-theorem runItems_move {vb : VBlock} {next : Nat} {src dst : Loc} {its : List RItem} {a out : AState}
-    (h : c.runItems vb next (.move src dst :: its) a = .ok out) :
-    next ≠ vb.insts.size ∧ c.runItems vb next its (a.put dst (a.get src)) = .ok out := by
-  unfold CheckCtx.runItems at h
-  obtain ⟨h1, h⟩ := Except.seq_ok h
-  obtain ⟨a', h2, h⟩ := Except.bind_ok h
-  rw [stepMove_ok h2] at h
-  exact ⟨by simpa using ensure_ok h1, h⟩
-
-theorem runItems_op {vb : VBlock} {next k : Nat} {allocs : Array Loc} {its : List RItem} {a out : AState}
-    (h : c.runItems vb next (.op k allocs :: its) a = .ok out) :
-    next ≠ vb.insts.size ∧ k = next ∧ ∃ i ops a', vb.insts[k]? = some i ∧ i.operands = .ok ops ∧
-      c.stepOp s!"block {vb.label} inst {k}" i ops allocs a = .ok a' ∧
-      c.runItems vb (next + 1) its a' = .ok out := by
-  unfold CheckCtx.runItems at h
-  obtain ⟨h1, h⟩ := Except.seq_ok h
-  obtain ⟨h2, h⟩ := Except.seq_ok h
-  refine ⟨by simpa using ensure_ok h1, by simpa using ensure_ok h2, ?_⟩
-  split at h
-  · cases h
-  · rename_i i hi
-    obtain ⟨ops, h3, h⟩ := Except.bind_ok h
-    obtain ⟨a', h4, h⟩ := Except.bind_ok h
-    exact ⟨i, ops, a', hi, h3, h4, h⟩
-
-theorem runBlock_ok {b : Nat} {a out : AState} (h : c.runBlock b a = .ok out) :
-    ∃ vb items, c.vc.blocks[b]? = some vb ∧ c.rf.blocks[b]? = some items ∧
-      c.runItems vb 0 items.toList a = .ok out := by
-  unfold CheckCtx.runBlock at h
-  split at h
-  · exact ⟨_, _, ‹_›, ‹_›, h⟩
-  · cases h
-  · cases h
-
-
-theorem checkStatic_ok {w : String} {ops : Array Operand} {allocs : Array Loc} {clob : List Reg}
-    (h : c.checkStatic w ops allocs clob = .ok ()) :
-    ops.size = allocs.size ∧
-    ∀ d ∈ atPos (ops.zip allocs).toList .def .early, ∀ u ∈ (ops.zip allocs).toList,
-      u.1.kind = .use → u.2 ≠ d.2 := by
-  unfold CheckCtx.checkStatic at h
-  obtain ⟨h1, h⟩ := Except.seq_ok h
-  dsimp only at h
-  obtain ⟨_, h⟩ := Except.seq_ok h
-  obtain ⟨_, h⟩ := Except.seq_ok h
-  obtain ⟨h4, _⟩ := Except.seq_ok h
-  refine ⟨by simpa using ensure_ok h1, ?_⟩
-  intro d hd u hu hk e
-  simp only [atPos, List.mem_filter, Bool.and_eq_true, beq_iff_eq] at hd
-  have hd' : d ∈ (ops.zip allocs).toList.filter (·.1.kind == .def) :=
-    List.mem_filter.mpr ⟨hd.1, by simp [hd.2.1]⟩
-  have := ensure_ok (forM_ok h4 d hd')
-  rw [hd.2.2] at this
-  have hmem : d.2 ∈ defConflicts ((ops.zip allocs).toList.filter (·.1.kind == .use))
-      (clob.map Loc.reg) .early := by
-    simp only [defConflicts, List.mem_append, List.mem_map]
-    exact .inl ⟨u, List.mem_filter.mpr ⟨hu, by simp [hk]⟩, e⟩
-  simp at this
-  exact this (by simpa using hmem)
-
-
-/-- The successor facts `verifyBlock` establishes for the out-state `out` of block `b`. -/
-def EdgesOk (c : CheckCtx) (ins : Array (Option AState)) (b : Nat) (out : AState) : Prop :=
-  ∀ s ∈ (c.succs[b]?.getD #[]).toList, ∃ e a', c.edge b s out = .ok e ∧
-    ins[s]? = some (some a') ∧ a'.le e = true
-
-theorem verifyBlock_ok {ins : Array (Option AState)} {b : Nat} (h : c.verifyBlock ins b = .ok ()) :
-    ∃ a out, ins[b]? = some (some a) ∧ c.runBlock b a = .ok out ∧ EdgesOk c ins b out := by
-  unfold CheckCtx.verifyBlock at h
-  split at h
-  · rename_i a ha
-    obtain ⟨out, h1, h⟩ := Except.bind_ok h
-    refine ⟨a, out, ha, h1, ?_⟩
-    intro s hs
-    obtain ⟨e, h2, h⟩ := Except.bind_ok (forM_ok h s hs)
-    split at h
-    · rename_i a' ha'
-      exact ⟨e, a', h2, ha', ensure_ok h⟩
-    · cases h
-  · cases h
-
-theorem verify_ok {ins : Array (Option AState)} (h : c.verify ins = .ok ()) :
-    (∃ a0, ins[0]? = some (some a0) ∧ a0.le (entryState c.size) = true) ∧
-    ∀ b < c.vc.blocks.size, c.verifyBlock ins b = .ok () := by
-  unfold CheckCtx.verify at h
-  split at h
-  · rename_i a0 ha0
-    obtain ⟨h1, h⟩ := Except.seq_ok h
-    exact ⟨⟨a0, ha0, ensure_ok h1⟩, fun b hb => forM_ok h b (List.mem_range.mpr hb)⟩
-  · cases h
-
-theorem checkAlloc_ok {vc : VCode} {rf : RFunc} (h : checkAlloc vc rf = .ok ()) :
-    ∃ succs preds ins, vc.cfg = .ok (succs, preds) ∧ vc.blocks.size ≠ 0 ∧
-      rf.blocks.size = vc.blocks.size ∧
-      CheckCtx.verify ⟨vc, succs, rf, 128 + 2 * rf.spillSlots⟩ ins = .ok () := by
-  unfold checkAlloc at h
-  obtain ⟨⟨succs, preds⟩, hcfg, h⟩ := Except.bind_ok h
-  dsimp only at h
-  obtain ⟨h1, h⟩ := Except.seq_ok h
-  obtain ⟨h2, h⟩ := Except.seq_ok h
-  obtain ⟨_, h⟩ := Except.seq_ok h
-  obtain ⟨_, h⟩ := Except.seq_ok h
-  obtain ⟨_, h⟩ := Except.seq_ok h
-  obtain ⟨_, _, h⟩ := Except.bind_ok h
-  obtain ⟨ins, _, h⟩ := Except.bind_ok h
-  obtain ⟨_, h⟩ := Except.seq_ok h
-  exact ⟨succs, preds, ins, hcfg, by simpa using ensure_ok h1, by simpa using ensure_ok h2, h⟩
-
-theorem edge_ok {V : Type} {keep : Reg → V → V} {b s : Nat} {out e : AState}
-    (h : c.edge b s out = .ok e) {m : Loc → V} {ρ : Nat → V} {r₀ : Reg → V}
-    (hi : Inv keep out m ρ r₀) :
-    ∃ ρ', edgeEnv c.vc b s ρ = some ρ' ∧ Inv keep e m ρ' r₀ := by
-  unfold CheckCtx.edge at h
-  split at h
-  · rename_i vb sb hb hs
-    obtain ⟨h1, h⟩ := Except.seq_ok h
-    have hsz : vb.branchArgs.size = sb.params.size := by simpa using ensure_ok h1
-    split at h
-    · rename_i he
-      have e1 : vb.branchArgs.toList = [] := by simpa using he
-      have e2 : sb.params.toList = [] := by
-        have : sb.params.size = 0 := by rw [← hsz]; simpa using he
-        simpa using this
-      refine ⟨ρ, ?_, ?_⟩
-      · have : parCopyEnv ρ [] [] = ρ := by funext v; simp [parCopyEnv]
-        simp [edgeEnv, hb, hs, hsz, e1, e2, Except.toOption, List.mapM_nil, this]
-        rfl
-      · rw [(Except.ok.inj h).symm]; exact hi
-    · obtain ⟨ps, hps, h⟩ := Except.bind_ok h
-      obtain ⟨xs, hxs, h⟩ := Except.bind_ok h
-      obtain ⟨h3, h⟩ := Except.seq_ok h
-      refine ⟨parCopyEnv ρ ps xs, ?_, ?_⟩
-      · simp [edgeEnv, hb, hs, hsz, hps, hxs, Except.toOption]
-      · rw [(Except.ok.inj h).symm]
-        exact Inv_parCopy (by simpa using ensure_ok h3) hi
-  · cases h
-  · cases h
-
-theorem succOf_mem {vc : VCode} {succs preds} (hcfg : vc.cfg = .ok (succs, preds)) {b j s : Nat}
-    (h : succOf vc b j = some s) : s ∈ (succs[b]?.getD #[]).toList := by
-  simp only [succOf, hcfg] at h
-  cases hb : succs[b]? with
-  | none => simp [hb] at h
-  | some ss =>
-    simp only [hb, Option.bind_some] at h
-    simp only [Option.getD_some, Array.mem_toList_iff]
-    exact Array.mem_of_getElem? h
+theorem sim_progress (hc : Checked vc rf c ins) {ms : MState V W} {vs : VState V W}
+    {v' : VConf V W} (hm : MatchRun c ins keep r₀ ms vs) (hv : VStep vc sem (.run vs) v') :
+    ∃ c', MStep vc sem keep rf (.run ms) c' := by
+  obtain ⟨b, its, m, w⟩ := ms
+  obtain ⟨b', k, ρ, w''⟩ := vs
+  obtain ⟨hb, hw, vb, a, out, hvb, hrun, hinv, hedges⟩ := hm
+  simp only at hb hw
+  subst hb hw
+  rw [hc.vc_eq] at hvb
+  cases hv with
+  | @step _ _ _ _ _ i ops outs w' ctl _ hvb' hi hops hsem hlen hnext =>
+  rw [hvb] at hvb'
+  cases hvb'
+  cases its with
+  | nil =>
+    obtain ⟨hk, _⟩ := runItems_nil hrun
+    subst hk
+    simp at hi
+  | cons it its =>
+    cases it with
+    | move src dst => exact ⟨_, MStep.move⟩
+    | op k' allocs =>
+      obtain ⟨_, hk, i', ops', a', hi', hops', hstep, _⟩ := runItems_op hrun
+      subst hk
+      rw [hi] at hi'
+      cases hi'
+      rw [hops] at hops'
+      cases hops'
+      obtain ⟨hst, -⟩ := stepOp_ok hstep
+      obtain ⟨hsz, -⟩ := checkStatic_ok hst
+      have hlen' : outs.length = ((ops.zip allocs).toList.filter (·.1.isDef)).length := by
+        rw [hlen, ← pairs_fst hsz, List.length_map]
+      have hclob : Clobbered keep i.clobbers
+          (writeM m ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs).filter (·.1.1.isEarly)))
+          (writeM m ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs).filter (·.1.1.isEarly))) :=
+        ⟨fun _ _ => rfl, fun _ _ _ => rfl⟩
+      obtain ⟨-, huse, -, -⟩ := op_sound hstep hinv hlen' hclob
+      rw [← huse] at hsem hnext
+      cases hnext with
+      | next h => exact ⟨_, MStep.op hvb hi hops hsz.symm hsem hlen' hclob (MNext.next h)⟩
+      | ret h => exact ⟨_, MStep.op hvb hi hops hsz.symm hsem hlen' hclob (MNext.ret h)⟩
+      | halt => exact ⟨_, MStep.op hvb hi hops hsz.symm hsem hlen' hclob MNext.halt⟩
+      | goto h hsucc henv =>
+        have hs := edgeEnv_lt henv
+        rw [← hc.size] at hs
+        exact ⟨_, MStep.op hvb hi hops hsz.symm hsem hlen' hclob
+          (MNext.goto h hsucc (Array.getElem?_eq_getElem hs))⟩
 
 
-/-! ## Operand lists of the two semantics -/
+end
 
-theorem filter_zip_fst {α β : Type} (q : α → Bool) :
-    ∀ (l1 : List α) (l2 : List β), l1.length = l2.length →
-      ((l1.zip l2).filter (fun p => q p.1)).map Prod.fst = l1.filter q
-  | [], _, _ => by simp
-  | _ :: _, [], h => by simp at h
-  | a :: l1, b :: l2, h => by
-    simp only [List.length_cons, Nat.add_right_cancel_iff] at h
-    simp only [List.zip_cons_cons, List.filter_cons]
-    split <;> simp [filter_zip_fst q l1 l2 h]
-
-theorem pairs_fst {ops : Array Operand} {allocs : Array Loc} (hsz : ops.size = allocs.size)
-    (q : Operand → Bool) :
-    ((ops.zip allocs).toList.filter (fun p => q p.1)).map Prod.fst = ops.toList.filter q := by
-  rw [Array.toList_zip]
-  exact filter_zip_fst q _ _ (by simp [hsz])
-
-theorem uses_eq {V : Type} {ops : Array Operand} {allocs : Array Loc} (hsz : ops.size = allocs.size)
-    {m : Loc → V} {ρ : Nat → V}
-    (hU : ∀ p ∈ (ops.zip allocs).toList, p.1.isUse = true → m p.2 = ρ p.1.vreg) :
-    ((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2) =
-      (ops.toList.filter Operand.isUse).map (ρ ·.vreg) := by
-  rw [← pairs_fst hsz Operand.isUse, List.map_map]
-  apply List.map_congr_left
-  intro p hp
-  rw [List.mem_filter] at hp
-  exact hU p hp.1 hp.2
-
-theorem defs_early {V : Type} {ops : Array Operand} {allocs : Array Loc} {outs : List V}
-    (hlen : outs.length = ((ops.zip allocs).toList.filter (·.1.isDef)).length) :
-    ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs).filter (·.1.1.isEarly)).map (·.1) =
-      atPos (ops.zip allocs).toList .def .early := by
-  rw [filter_zip_fst (fun p : Operand × Loc => p.1.isEarly) _ _ hlen.symm, List.filter_filter]
-  apply List.filter_congr
-  intro p _
-  simp [Operand.isEarly, Operand.isDef, atPos, Bool.and_comm]
-
-theorem defs_late {V : Type} {ops : Array Operand} {allocs : Array Loc} {outs : List V}
-    (hlen : outs.length = ((ops.zip allocs).toList.filter (·.1.isDef)).length) :
-    ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs).filter (·.1.1.isLate)).map (·.1) =
-      atPos (ops.zip allocs).toList .def .late := by
-  rw [filter_zip_fst (fun p : Operand × Loc => p.1.isLate) _ _ hlen.symm, List.filter_filter]
-  apply List.filter_congr
-  intro p _
-  simp [Operand.isLate, Operand.isDef, atPos, Bool.and_comm]
-
-theorem defs_vcode {V : Type} {ops : Array Operand} {allocs : Array Loc} (hsz : ops.size = allocs.size)
-    (outs : List V) (q : Operand → Bool) :
-    ((ops.toList.filter Operand.isDef).zip outs).filter (fun p => q p.1) =
-      ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs).filter (fun p => q p.1.1)).map
-        (fun p => (p.1.1, p.2)) := by
-  rw [← pairs_fst hsz Operand.isDef, List.zip_map_left, List.filter_map]
-  rfl
-
-
-/-! ## One original instruction -/
+/-! ## The theorem -/
 
 section
-variable {V : Type} {keep : Reg → V → V}
+variable {V W : Type}
 
-/-- The checker's step of an original instruction is sound: the allocated code reads the
-values the VCode reads, and the invariant holds after the instruction (early defs, clobbers,
-late defs). -/
-theorem op_sound {w : String} {i : MInst} {ops : Array Operand} {allocs : Array Loc}
-    {a a' : AState} (hstep : c.stepOp w i ops allocs a = .ok a')
-    {m : Loc → V} {ρ : Nat → V} {r₀ : Reg → V} (hinv : Inv keep a m ρ r₀)
-    {outs : List V} (hlen : outs.length = ((ops.zip allocs).toList.filter (·.1.isDef)).length)
-    {m2 : Loc → V}
-    (hclob : Clobbered keep i.clobbers
-      (writeM m ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs).filter (·.1.1.isEarly))) m2) :
-    ops.size = allocs.size ∧
-    ((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2) =
-      (ops.toList.filter Operand.isUse).map (ρ ·.vreg) ∧
-    Inv keep a'
-      (writeM m2 ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs).filter (·.1.1.isLate)))
-      (writeV (writeV ρ (((ops.toList.filter Operand.isDef).zip outs).filter (·.1.isEarly)))
-        (((ops.toList.filter Operand.isDef).zip outs).filter (·.1.isLate))) r₀ ∧
-    (∀ us, i = .rets us → ∀ r ∈ calleeSaved, Sym.entry r ∈ a'.get (.reg r)) := by
-  obtain ⟨hst, hE, hL, rfl, hret⟩ := stepOp_ok hstep
-  obtain ⟨hsz, hdisj⟩ := checkStatic_ok hst
-  refine ⟨hsz, ?_, ?_, ?_⟩
-  · apply uses_eq hsz
-    intro p hp hu
-    have hk : p.1.kind = .use := by simpa [Operand.isUse] using hu
-    cases hpos : p.1.pos with
-    | early =>
-      have := hE p (List.mem_filter.mpr ⟨hp, by simp [hk, hpos]⟩)
-      exact hinv _ _ this
-    | late =>
-      have := hL p (List.mem_filter.mpr ⟨hp, by simp [hk, hpos]⟩)
-      refine hinv _ _ (mem_get_defineAll ?_ this)
-      intro hm
-      obtain ⟨d, hd, e⟩ := List.mem_map.mp hm
-      exact hdisj d hd p hp hk e.symm
-  · have h1 := Inv_defineAll
-      ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs).filter (·.1.1.isEarly)) hinv
-    rw [defs_early hlen, ← defs_vcode hsz outs Operand.isEarly] at h1
-    have h2 := Inv_clobberAll h1 hclob
-    have h3 := Inv_defineAll
-      ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs).filter (·.1.1.isLate)) h2
-    rw [defs_late hlen, ← defs_vcode hsz outs Operand.isLate] at h3
-    exact h3
-  · intro us hi
-    subst hi
-    exact retCheck_ok hret
+def MConf.measure : MConf V W → Nat
+  | .run s => s.its.length
+  | _ => 0
+
+variable (vc : VCode) (rf : RFunc) (sem : ISem V W) (keep : Reg → V → V)
+
+/-- `R` relates configurations of the allocated code (left) to VCode configurations (right) such
+that every step of the allocated code is matched by zero VCode steps with a strictly smaller
+measure (a move) or by one VCode step; the allocated code can step whenever the VCode can; and
+related final configurations are equal (same returned values, same world). -/
+structure IsSimulation (R : MConf V W → VConf V W → Prop) : Prop where
+  step : ∀ {c v c'}, R c v → MStep vc sem keep rf c c' →
+    (R c' v ∧ c'.measure < c.measure) ∨ ∃ v', VStep vc sem v v' ∧ R c' v'
+  progress : ∀ {c v v'}, R c v → VStep vc sem v v' → ∃ c', MStep vc sem keep rf c c'
+  ret : ∀ {vals m w v}, R (.ret vals m w) v → v = .ret vals w
+  halt : ∀ {w v}, R (.halt w) v → v = .halt w
+  run : ∀ {s v}, R (.run s) v → ∃ s', v = .run s'
+
+/-- The initial configuration of the allocated code: block 0, store `m₀`, world `w₀`. -/
+def MConf.init (m₀ : Loc → V) (w₀ : W) : MConf V W := .run ⟨0, rf.blocks[0]!.toList, m₀, w₀⟩
+
+/-- The initial configuration of the VCode: block 0, vreg file `ρ₀`, world `w₀`. -/
+def VConf.init (ρ₀ : Nat → V) (w₀ : W) : VConf V W := .run ⟨0, 0, ρ₀, w₀⟩
+
+/-- **Soundness of the register-allocation checker.** If `checkAlloc vc rf` accepts, then for
+every instruction semantics `sem`, every notion `keep` of the callee-preserved part of a
+register, every initial store `m₀` (its registers are the entry register file), vreg file `ρ₀`
+and world `w₀`, the allocated code simulates the VCode from the initial configurations, and
+whenever it returns, every callee-saved register holds its entry value (`keep`-part). -/
+theorem checkAlloc_sound (h : checkAlloc vc rf = .ok ()) (m₀ : Loc → V) (ρ₀ : Nat → V) (w₀ : W) :
+    ∃ R, IsSimulation vc rf sem keep R ∧ R (MConf.init rf m₀ w₀) (VConf.init ρ₀ w₀) ∧
+      ∀ {vals m w v}, R (.ret vals m w) v →
+        ∀ r ∈ calleeSaved, keep r (m (.reg r)) = keep r (m₀ (.reg r)) := by
+  obtain ⟨c, ins, hc⟩ := checked_of_checkAlloc h
+  refine ⟨Match c ins keep (fun r => m₀ (.reg r)), ⟨?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩
+  · intro cf v c' hR hs
+    cases cf with
+    | run ms =>
+      cases v with
+      | run vs =>
+        rcases sim_step sem keep hc hR hs with ⟨ms', rfl, hmr, hlt⟩ | hr
+        · exact .inl ⟨hmr, hlt⟩
+        · exact .inr hr
+      | ret => exact hR.elim
+      | halt => exact hR.elim
+    | ret => cases hs
+    | halt => cases hs
+  · intro cf v v' hR hv
+    cases cf with
+    | run ms =>
+      cases v with
+      | run vs => exact sim_progress sem keep hc hR hv
+      | ret => exact hR.elim
+      | halt => exact hR.elim
+    | ret => cases v <;> first | exact hR.elim | cases hv
+    | halt => cases v <;> first | exact hR.elim | cases hv
+  · intro vals m w v hR
+    cases v with
+    | ret vals' w' => obtain ⟨rfl, rfl, -⟩ := hR; rfl
+    | _ => exact hR.elim
+  · intro w v hR
+    cases v with
+    | halt w' => cases hR; rfl
+    | _ => exact hR.elim
+  · intro s v hR
+    cases v with
+    | run s' => exact ⟨s', rfl⟩
+    | _ => exact hR.elim
+  · obtain ⟨a0, h0, hle⟩ := hc.entry
+    obtain ⟨a, out, ha, hrb, hedges⟩ :=
+      verifyBlock_ok (hc.blocks 0 (Nat.pos_of_ne_zero hc.nonempty))
+    rw [h0] at ha
+    cases ha
+    obtain ⟨vb, items, hvb, hitems, hrun⟩ := runBlock_ok hrb
+    rw [hc.rf_eq] at hitems
+    have : rf.blocks[0]! = items := by simp [getElem!_def, hitems]
+    simp only [MConf.init, VConf.init, this]
+    exact ⟨rfl, rfl, vb, a0, out, hvb, hrun, Inv_mono hle Inv_entryState, hedges⟩
+  · intro vals m w v hR
+    cases v with
+    | ret => exact hR.2.2
+    | _ => exact hR.elim
+
+variable {vc rf sem keep}
+
+theorem IsSimulation.star {R : MConf V W → VConf V W → Prop} (hR : IsSimulation vc rf sem keep R)
+    {c c' : MConf V W} {v : VConf V W} (hs : Star (MStep vc sem keep rf) c c') (h : R c v) :
+    ∃ v', Star (VStep vc sem) v v' ∧ R c' v' := by
+  induction hs generalizing v with
+  | refl => exact ⟨v, .refl _, h⟩
+  | step hs _ ih =>
+    rcases hR.step h hs with ⟨h', _⟩ | ⟨v', hv, h'⟩
+    · exact ih h'
+    · obtain ⟨v'', hv', h''⟩ := ih h'
+      exact ⟨v'', .step hv hv', h''⟩
+
+/-- A return of the allocated code is a return of the VCode with the same values and world,
+and callee-saved registers are restored. -/
+theorem checkAlloc_ret (h : checkAlloc vc rf = .ok ()) {m₀ : Loc → V} (ρ₀ : Nat → V) {w₀ : W}
+    {vals : List V} {m : Loc → V} {w : W}
+    (hs : Star (MStep vc sem keep rf) (MConf.init rf m₀ w₀) (.ret vals m w)) :
+    Star (VStep vc sem) (VConf.init ρ₀ w₀) (.ret vals w) ∧
+      ∀ r ∈ calleeSaved, keep r (m (.reg r)) = keep r (m₀ (.reg r)) := by
+  obtain ⟨R, hR, h0, hcs⟩ := checkAlloc_sound vc rf sem keep h m₀ ρ₀ w₀
+  obtain ⟨v, hv, hRv⟩ := hR.star hs h0
+  rw [hR.ret hRv] at hv
+  exact ⟨hv, hcs hRv⟩
+
+/-- A trap (halt) of the allocated code is a halt of the VCode with the same world. -/
+theorem checkAlloc_halt (h : checkAlloc vc rf = .ok ()) {m₀ : Loc → V} (ρ₀ : Nat → V) {w₀ w : W}
+    (hs : Star (MStep vc sem keep rf) (MConf.init rf m₀ w₀) (.halt w)) :
+    Star (VStep vc sem) (VConf.init ρ₀ w₀) (.halt w) := by
+  obtain ⟨R, hR, h0, -⟩ := checkAlloc_sound vc rf sem keep h m₀ ρ₀ w₀
+  obtain ⟨v, hv, hRv⟩ := hR.star hs h0
+  rw [hR.halt hRv] at hv
+  exact hv
+
+/-- The allocated code gets stuck only where the VCode gets stuck. -/
+theorem checkAlloc_stuck (h : checkAlloc vc rf = .ok ()) {m₀ : Loc → V} (ρ₀ : Nat → V) {w₀ : W}
+    {s : MState V W} (hs : Star (MStep vc sem keep rf) (MConf.init rf m₀ w₀) (.run s))
+    (hstuck : ∀ c', ¬ MStep vc sem keep rf (.run s) c') :
+    ∃ vs, Star (VStep vc sem) (VConf.init ρ₀ w₀) (.run vs) ∧ ∀ v', ¬ VStep vc sem (.run vs) v' := by
+  obtain ⟨R, hR, h0, -⟩ := checkAlloc_sound vc rf sem keep h m₀ ρ₀ w₀
+  obtain ⟨v, hv, hRv⟩ := hR.star hs h0
+  obtain ⟨vs, rfl⟩ := hR.run hRv
+  refine ⟨vs, hv, fun v' hv' => ?_⟩
+  obtain ⟨c', hc'⟩ := hR.progress hRv hv'
+  exact hstuck c' hc'
+
+/-- Exactly `n` steps. -/
+inductive StepsN {α : Type} (r : α → α → Prop) : Nat → α → α → Prop
+  | zero (a : α) : StepsN r 0 a a
+  | succ {n : Nat} {a b c : α} : r a b → StepsN r n b c → StepsN r (n + 1) a c
+
+theorem StepsN.snoc {α : Type} {r : α → α → Prop} {n : Nat} {a b c : α}
+    (h : StepsN r n a b) (h' : r b c) : StepsN r (n + 1) a c := by
+  induction h with
+  | zero => exact .succ h' (.zero _)
+  | succ hab _ ih => exact .succ hab (ih h')
+
+theorem IsSimulation.next_vstep {R : MConf V W → VConf V W → Prop}
+    (hR : IsSimulation vc rf sem keep R) {f : Nat → MConf V W}
+    (hf : ∀ n, MStep vc sem keep rf (f n) (f (n + 1))) :
+    ∀ k n v, R (f n) v → (f n).measure ≤ k → ∃ n' v', VStep vc sem v v' ∧ R (f n') v' := by
+  intro k
+  induction k with
+  | zero =>
+    intro n v h hk
+    rcases hR.step h (hf n) with ⟨_, hlt⟩ | ⟨v', hv, h'⟩
+    · omega
+    · exact ⟨n + 1, v', hv, h'⟩
+  | succ k ih =>
+    intro n v h hk
+    rcases hR.step h (hf n) with ⟨h', hlt⟩ | ⟨v', hv, h'⟩
+    · exact ih (n + 1) v h' (by omega)
+    · exact ⟨n + 1, v', hv, h'⟩
+
+/-- An infinite execution of the allocated code is matched by VCode executions of every
+length (the VCode diverges too). -/
+theorem checkAlloc_diverges (h : checkAlloc vc rf = .ok ()) {m₀ : Loc → V} (ρ₀ : Nat → V)
+    {w₀ : W} (f : Nat → MConf V W) (h0 : f 0 = MConf.init rf m₀ w₀)
+    (hf : ∀ n, MStep vc sem keep rf (f n) (f (n + 1))) :
+    ∀ N, ∃ v, StepsN (VStep vc sem) N (VConf.init ρ₀ w₀) v := by
+  obtain ⟨R, hR, hinit, -⟩ := checkAlloc_sound vc rf sem keep h m₀ ρ₀ w₀
+  suffices ∀ N, ∃ n v, StepsN (VStep vc sem) N (VConf.init ρ₀ w₀) v ∧ R (f n) v from
+    fun N => (this N).elim fun _ ⟨v, hv, _⟩ => ⟨v, hv⟩
+  intro N
+  induction N with
+  | zero => exact ⟨0, _, .zero _, h0 ▸ hinit⟩
+  | succ N ih =>
+    obtain ⟨n, v, hv, hRv⟩ := ih
+    obtain ⟨n', v', hvv, hR'⟩ := hR.next_vstep hf _ n v hRv (Nat.le_refl _)
+    exact ⟨n', v', hv.snoc hvv, hR'⟩
 
 end
 
