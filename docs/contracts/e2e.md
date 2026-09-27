@@ -156,11 +156,29 @@ memory related by `MR`. Key steps:
 3. **`PrepareCorrect`** (M7): `prepare` (unreachable blocks dropped, critical edges split by
    `jump` blocks, RPO reordering) preserves VCode returns and traps.
 4. **`TermCalls`** (M4): see the table.
-5. **`FrameTyped`** (M7, integrator decision 2026-09-27): once `DFGCons` gains the conjunct
-   `FrameTyped ctx fr` (M4AluA), the driver must maintain it: needs a typing lemma for
-   `evalInst`/`instOutcome` on E instructions (results have `resultTypes`), `CtxInv` facts
-   relating `valueType?` to parameter/result types, and `enterBlock`'s type check.
-6. **Scope extensions**: calls between compiled functions (induction on call depth, using
+5. **Contract changes not yet taken into this branch** (they break the driver until adapted;
+   this branch builds against main's `IselContract` 2a3ad9e):
+   * `FrameTyped` conjunct of `DFGCons` (M4AluA f55011e). The driver must maintain it in
+     `Match.cons`: statement results (typing lemma `evalInst`/`instOutcome` results have
+     `resultTypes` — a generic bind/split tactic closes all cases except
+     overflow/carry/iconcat/isplit/stackAddr/symbolValue, which need `Val.ofBool`/`Val.ofInt`
+     type simp lemmas), block parameters (`enterBlock`'s `checkTys`), entry (`ClifEntry.entry`
+     types); plus two `LowerShape` facts from `buildCtx`: `valueType? r = ofClif tys[m]` for
+     results and `valueType? p = ofClif ty` for parameters (last write wins in `buildCtx`, so
+     these need unique definitions — add to `Cert`). `dfgCons_termCtx` needs `.1`/`.2`.
+   * `ValsBelow ctx st` premise of `LowerRuleOk`/`lowerInstOk_runTerm` (M4Cmp 1a4de60): add a
+     `LowerShape` field `∀ x r, ctx.valueReg? x = some r → x < st0.nextVreg` (buildCtx: `maxV`)
+     and derive `ValsBelow ctx sl.st` from `st0.nextVreg ≤ sl.st.nextVreg` (already in
+     `LowerShape`) in `instCalls_of_rules`.
+   * `Refines` generalized to all controls (M4Cmp 1a4de60): no driver change
+     (`hRef` is passed through); M6's `csem` lemmas must provide the stronger form.
+6. **M4 terminator statements** (integrator plan 2026-09-27, M7 to state, not done in this
+   run): `LowerTermRuleOk isem MR p r` (argument `[.inst ti]`, context `termCtx`) for the
+   `lower` root rules on `MultiAry Return` / `Trap` (rule_lower_2574, rule_lower_2237), required
+   by `LowerRulesCorrect`; a `lower_branch` analogue of `lowerInstOk_runTerm` from
+   `BranchRulesCorrect` plus an `ExcludedUnmatchable` analogue for `lower_branch`. Together they
+   discharge `TermCalls` (which stays the named hypothesis of `backend_correct`).
+7. **Scope extensions**: calls between compiled functions (induction on call depth, using
    `backend_correct` of the callee as its callee contract); stack-passed parameters
    (`InSubset.regParams`); memory-access traps (need a fault model).
 
