@@ -282,8 +282,8 @@ theorem unary_ruleOk {p : Program} (hp : Data p) {r : Rule} {cop : Clif.UnaryOp}
       ∃ ρ', PRun F isem (code ty.width b x) ρ ρ' ∧
         VHolds ⟨ty, Clif.Sem.unary cop u⟩ (ρ' (res ty.width b))) :
     LowerRuleOk isem MR env cp p r := by
-  intro f ctx hctx ii info inst hi hc cfg hco m n st tr env' s1 out st' tr' hm hn hvb hmatch'
-    heval
+  intro f ctx hctx ii info inst hi hc cfg hco m n st tr env' s1 out st' tr' hm hn hvb _hfirst
+    hmatch' heval
   obtain ⟨m', rfl⟩ : ∃ m', m = m' + 2 := ⟨m - 2, by omega⟩
   obtain ⟨n', rfl⟩ : ∃ n', n = n' + 40 := ⟨n - 40, by omega⟩
   obtain ⟨ty, x, rfl, hety, hbs, hd, hhead⟩ :=
