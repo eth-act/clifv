@@ -85,6 +85,7 @@ def pos (bi j : Nat) : Nat :=
 /-- **The structure of `lowerFunction f`'s VCode.** -/
 structure LowerShape : Prop where
   hctx : ∃ ranges, buildCtx f = .ok (ctx, ranges, st0)
+  func : ctx.func = f
   ren : VRenaming R gn
   temps : ∀ n, st0.nextVreg ≤ n → gn n = n
   params : ∀ B ∈ f.blocks, ∀ p ∈ B.params, gn p.1 = p.1
@@ -144,6 +145,8 @@ structure Cert (A : Nat → Nat → List Clif.ValueId) : Prop where
     (∀ r ∈ stm.results, r ∉ A bi j ∧ ctx.defInst? r = some (L.start + j)) ∧ stm.results.Nodup ∧
     (∀ x ∈ A bi (j + 1), x ∈ A bi j ∨ x ∈ stm.results) ∧
     (∀ x ∈ A bi j, ¬ (sl.st.nextVreg ≤ gn x ∧ gn x < sl.st'.nextVreg))
+  /-- no branch targets the entry block (CLIF verifier rule) -/
+  noEntry : ∀ (bi : Nat) (B : Clif.Block), f.blocks[bi]? = some B → ∀ bc ∈ dests B.term, blockIdx? f bc.block ≠ some 0
   /-- terminators and edges -/
   term : ∀ bi B L, f.blocks[bi]? = some B → bl[bi]? = some L →
     (∀ y ∈ termArgs B.term, y ∈ A bi B.body.length) ∧

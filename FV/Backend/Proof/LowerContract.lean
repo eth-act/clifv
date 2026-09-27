@@ -102,6 +102,10 @@ def ResultsHeld (lo : Nat) (fr : Clif.Frame) (rss : List (List Reg)) (vals : Lis
     ∀ (j : Nat) rs v, rss[j]? = some rs → vals[j]? = some v →
       ∃ out cls, rs = [.vreg out cls] ∧ (lo ≤ out ∨ (fr.regs out).isSome) ∧ VHolds v (ρ out)
 
+/-- The emitted code reads only fresh vregs or defined values. -/
+def Uses (st : LState) (fr : Clif.Frame) (ms : List MInst) : Prop :=
+  ∀ m ∈ ms, ∀ u ∈ vuseNums m, st.nextVreg ≤ u ∨ (fr.regs u).isSome
+
 /-- **`lower` on a non-terminator** (results `results`; lowering state `st` → `st'`, emitted
 code `ms`). -/
 structure LowerInstOk (sem : Sem) (MR : MemRelT) (env : Clif.Env) (p : Clif.Program) (ctx : Ctx)
@@ -111,11 +115,10 @@ structure LowerInstOk (sem : Sem) (MR : MemRelT) (env : Clif.Env) (p : Clif.Prog
   defs : ∀ m ∈ ms, ∀ d ∈ vdefs m, st.nextVreg ≤ d ∧ d < st'.nextVreg
   run : ∀ (fr : Clif.Frame) (cm : Clif.Mem) (ρ : Nat → CV) (w : Arm.ArmState),
     fr.func = ctx.func → ValsHeld fr ρ → DFGCons ctx fr → MR fr.slots cm w →
-    (∀ m ∈ ms, ∀ u ∈ vuseNums m, st.nextVreg ≤ u ∨ (fr.regs u).isSome) ∧
     match instOutcome env p fr cm inst with
-    | .ok (vals, cm') => ∃ ρ' w', seqRun sem ms ρ w = some (.fall ρ' w') ∧
+    | .ok (vals, cm') => Uses st fr ms ∧ ∃ ρ' w', seqRun sem ms ρ w = some (.fall ρ' w') ∧
         (results = [] ∨ ResultsHeld st.nextVreg fr rss vals ρ') ∧ MR fr.slots cm' w'
-    | .trap c => explicitTrapInst inst = true →
+    | .trap c => explicitTrapInst inst = true → Uses st fr ms ∧
         ∃ k i ops ρ₁ w₁ outs w₂, seqRun sem ms ρ w = some (.stop k i ops ρ₁ w₁ outs w₂ .halt) ∧
           trapCode? i = some c
     | .stuck _ => True
@@ -129,31 +132,24 @@ def branchIdx (fr : Clif.Frame) : Clif.Terminator → Clif.Res Nat
       .ok (if v.toNat < tbl.length then v.toNat + 1 else 0)
   | _ => .stuck "not a branch"
 
-/-- Is the terminator a branch (`lower_branch`)? -/
-def isBranch : Clif.Terminator → Bool
-  | .jump _ | .brif .. | .brTable .. => true
-  | _ => false
-
 /-- **`lower` on `return`/`trap`, `lower_branch` on a branch** (terminator `t`, successor labels
 `targets`). -/
 structure LowerTermOk (sem : Sem) (MR : MemRelT) (ctx : Ctx) (t : Clif.Terminator)
     (targets : List Label) (st st' : LState) (ms : List MInst) : Prop where
   mono : st.nextVreg ≤ st'.nextVreg
   defs : ∀ m ∈ ms, ∀ d ∈ vdefs m, st.nextVreg ≤ d ∧ d < st'.nextVreg
-  /-- the emitted branch carries the given successor labels (`VCode.cfg` reads them) -/
-  targets : isBranch t = true → ∀ i, ms.getLast? = some i → i.targets = targets
   run : ∀ (fr : Clif.Frame) (cm : Clif.Mem) (ρ : Nat → CV) (w : Arm.ArmState),
     fr.func = ctx.func → ValsHeld fr ρ → DFGCons ctx fr → MR fr.slots cm w →
-    (∀ m ∈ ms, ∀ u ∈ vuseNums m, st.nextVreg ≤ u ∨ (fr.regs u).isSome) ∧
     match t with
-    | .ret xs => ∀ vals, fr.getMany xs = .ok vals →
+    | .ret xs => ∀ vals, fr.getMany xs = .ok vals → Uses st fr ms ∧
         ∃ k us ops ρ₁ w₁ outs w₂,
           seqRun sem ms ρ w = some (.stop k (.rets us) ops ρ₁ w₁ outs w₂ .ret) ∧
           us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = vals.length ∧
           AllHold vals (vuses ops ρ₁) ∧ MR fr.slots cm w₂
-    | .trap c => ∃ k i ops ρ₁ w₁ outs w₂,
+    | .trap c => Uses st fr ms ∧ ∃ k i ops ρ₁ w₁ outs w₂,
         seqRun sem ms ρ w = some (.stop k i ops ρ₁ w₁ outs w₂ .halt) ∧ trapCode? i = some c
-    | t => ∀ j, branchIdx fr t = .ok j →
+    | t => (∀ i, ms.getLast? = some i → i.targets = targets) ∧
+        ∀ j, branchIdx fr t = .ok j → Uses st fr ms ∧
         ∃ k i ops ρ₁ w₁ outs w₂,
           seqRun sem ms ρ w = some (.stop k i ops ρ₁ w₁ outs w₂ (.goto j)) ∧ k + 1 = ms.length ∧
           MR fr.slots cm w₂
