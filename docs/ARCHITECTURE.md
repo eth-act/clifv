@@ -47,6 +47,19 @@ first, then update its producer and its consumers together.
   linked with `rust-lld`, run with `qemu-aarch64-static`. No aarch64 gcc or glibc sysroot is
   installed. `clang --target=aarch64-linux-gnu -ffreestanding -nostdlib -c` works for C shims.
 
+## Workflow: one git worktree per agent
+
+- The main checkout belongs to the integrator. Every agent works in its own worktree,
+  created by `scripts/agent-worktree.sh <name>`, at `../clifv-wt/<name>` on branch
+  `agent/<name>`. The script copies warm `.lake`/`rust/target` caches and symlinks the pinned
+  `third_party` sources.
+- Agents commit on their own branch after every meaningful step. They never push, merge,
+  rebase, or touch other branches or worktrees.
+- The integrator pushes agent branches to `origin` at each check-in, verifies finished work,
+  merges it into `main` (`--no-ff`), pushes `main`, then removes the worktree.
+- Scripts must not hardcode an absolute checkout path. Derive the repo root from the script's
+  own location.
+
 ## Contract: CLIF in Lean (`FV/Clif`, producer M0)
 
 The authoritative API is documented in `docs/contracts/clif.md` (written by M0). Required shape:
