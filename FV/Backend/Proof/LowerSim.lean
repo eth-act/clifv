@@ -970,6 +970,120 @@ theorem entry_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     rw [(hA x hx0).2] at hd
     cases hd
 
+/-! ## Whole runs -/
+
+end
+
+/-- `s'` is reachable from `s` by CLIF steps that continue. -/
+inductive Reach (env : Clif.Env) (p : Clif.Program) : Clif.State → Clif.State → Prop
+  | refl (s : Clif.State) : Reach env p s s
+  | step {s s' s'' : Clif.State} : Clif.step env p s = .next s' → Reach env p s' s'' →
+      Reach env p s s''
+
+theorem Reach.snoc {env : Clif.Env} {p : Clif.Program} {s s' s'' : Clif.State}
+    (h : Reach env p s s') (h' : Clif.step env p s' = .next s'') : Reach env p s s'' := by
+  induction h with
+  | refl => exact .step h' (.refl _)
+  | step h1 _ ih => exact .step h1 (ih h')
+
+theorem stmt_not_done {env : Clif.Env} {p : Clif.Program} {s : Clif.State} {st : Clif.Stmt}
+    {rest : List Clif.Stmt} (h : s.frame.body = st :: rest)
+    (hext : ∀ fn args, st.inst = .call fn args → ∀ e, s.frame.func.extern? fn = some e →
+      p.func? e.name = none) {vals : List Clif.Val} {cm : Clif.Mem} :
+    Clif.step env p s ≠ .done vals cm := by
+  rw [step_stmt env p s st rest h hext]
+  cases instOutcome env p s.frame s.mem st.inst with
+  | ok r =>
+    simp only [Clif.StepResult.ofRes, Clif.continueWith]
+    split <;> simp
+  | _ => simp [Clif.StepResult.ofRes]
+
+section
+variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg → Reg}
+  {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId} {sem : Sem}
+  {MR : MemRelT} {env : Clif.Env} {p : Clif.Program} {slots : List (Clif.SlotId × Nat)}
+
+/-- What a VCode run from `vs` does when the CLIF run from the matching state ends. -/
+def RunOk (vc : VCode) (sem : Sem) (MR : MemRelT) (slots : List (Clif.SlotId × Nat))
+    (vs : VState CV Arm.ArmState) : Clif.Outcome → Prop
+  | .returned vals cm => ∃ us outs w cm0, VRetFrom vc sem vs us outs w ∧
+      us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+      AllHold vals outs ∧ MR slots cm0 w ∧ cm = cm0.free (slots.map (·.2))
+  | .trapped c => VTrapFrom vc sem vs c
+  | .stuck _ | .outOfFuel => True
+
+theorem RunOk.prefix {vs vs' : VState CV Arm.ArmState} {o : Clif.Outcome}
+    (h : Star (VStep vc sem) (.run vs) (.run vs')) (h' : RunOk vc sem MR slots vs' o) :
+    RunOk vc sem MR slots vs o := by
+  cases o with
+  | returned vals cm =>
+    obtain ⟨us, outs, w, cm0, hr, h1⟩ := h'
+    exact ⟨us, outs, w, cm0, VRetFrom.prefix h hr, h1⟩
+  | trapped c => exact VTrapFrom.prefix h h'
+  | _ => trivial
+
+/-- **Whole runs**: from matching states, every CLIF outcome is realised by the VCode run. -/
+theorem sim_run (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) {cs : Clif.State}
+    (htr : ∀ s c st rest, Reach env p cs s → Clif.step env p s = .trapped c →
+      s.frame.body = st :: rest → explicitTrapInst st.inst = true) :
+    ∀ fuel s (vs : VState CV Arm.ArmState), Reach env p cs s →
+      Match f ctx R gn bl A MR slots s vs → RunOk vc sem MR slots vs (Clif.runLoop env p fuel s) := by
+  intro fuel
+  induction fuel with
+  | zero => intro _ _ _ _; trivial
+  | succ n ih =>
+    intro s vs hr hm
+    obtain ⟨b, k, ρ, w⟩ := vs
+    rw [Clif.runLoop_succ]
+    have hfunc : s.frame.func = f := hm.2.1
+    cases hbody : s.frame.body with
+    | nil =>
+      obtain ⟨T1, T2, T3⟩ := term_step H hm hbody
+      cases hs : Clif.step env p s with
+      | next s' =>
+        obtain ⟨vs', hstar, hm'⟩ := T1 s' hs
+        exact RunOk.prefix hstar (ih s' vs' (hr.snoc hs) hm')
+      | done vals cm =>
+        obtain ⟨us, outs, w', hret, h1, h2, h3, h4, h5⟩ := T2 vals cm hs
+        exact ⟨us, outs, w', s.mem, hret, h1, h2, h3, h4, h5⟩
+      | trapped c => exact T3 c hs
+      | stuck => trivial
+    | cons st rest =>
+      have hext : ∀ fn args, st.inst = .call fn args → ∀ e, s.frame.func.extern? fn = some e →
+          p.func? e.name = none := by
+        obtain ⟨-, -, -, -, B, j, hB, -, -, hbd, -⟩ := hm
+        have hst : st ∈ B.body := by
+          rw [hbd] at hbody
+          exact List.mem_of_mem_drop (hbody ▸ List.mem_cons_self)
+        intro fn args hi e he
+        exact H.ext B (List.mem_of_getElem? hB) st hst fn args hi e (hfunc ▸ he)
+      obtain ⟨S1, S2⟩ := stmt_step H hm hbody
+      cases hs : Clif.step env p s with
+      | next s' =>
+        obtain ⟨vs', hstar, hm'⟩ := S1 s' hs
+        exact RunOk.prefix hstar (ih s' vs' (hr.snoc hs) hm')
+      | done vals cm => exact absurd hs (stmt_not_done hbody hext)
+      | trapped c => exact S2 c hs (htr s c st rest hr hs hbody)
+      | stuck => trivial
+
+/-- **The driver lemma (CLIF → VCode).** A CLIF run of `f` from an entry state (parameters
+bound to `args`, which the VCode world holds in x0..) is realised by the VCode run from the
+entry: returns through `rets` with the returned values held, and memory related; explicit traps
+reach an instruction halting with the same code. -/
+theorem driver_correct (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
+    {cs : Clif.State} {B0 : Clif.Block} (hB0 : f.blocks[0]? = some B0)
+    (hcall : cs.callers = []) (hfunc : cs.frame.func = f) (hslots : cs.frame.slots = slots)
+    (hbody : cs.frame.body = B0.body) (hterm : cs.frame.term = B0.term) {args : List Clif.Val}
+    (hregs : Clif.Regs.empty.setMany (B0.params.map (·.1)) args = some cs.frame.regs)
+    {ρ₀ : Nat → CV} {w₀ : Arm.ArmState} (hmr : MR slots cs.mem w₀)
+    (hargs : ∀ (i : Nat) v, args[i]? = some v → VHolds v (regVal w₀ (.x i)))
+    (htr : ∀ s c st rest, Reach env p cs s → Clif.step env p s = .trapped c →
+      s.frame.body = st :: rest → explicitTrapInst st.inst = true) (fuel : Nat) :
+    RunOk vc sem MR slots ⟨0, 0, ρ₀, w₀⟩ (Clif.runLoop env p fuel cs) := by
+  obtain ⟨ρ₁, hstep, hm⟩ := entry_step H hB0 hcall hfunc hslots hbody hterm hregs hmr hargs
+    (ρ₀ := ρ₀)
+  exact RunOk.prefix (Star.single hstep) (sim_run H htr fuel cs _ (.refl _) hm)
+
 end
 
 end Backend.Proof.Driver
