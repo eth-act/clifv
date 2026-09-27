@@ -705,4 +705,86 @@ theorem holds_sub_K {ty : Clif.Ty} {sz : OperandSize} (hw : ty.width ≤ sz.bits
   simp only [VHolds] at ha ⊢
   rw [resX_setWidth hw h64, setWidth_sub_of_le hw, opnd_setWidth hw h64, ha, hK]
 
+/-! ## 7. One-instruction lowerings of a value, and right-hand sides through `output_reg` -/
+
+/-- **`mi` computes `g u v` into the fresh vreg `st.nextVreg`** from the operands `x`, `y` of
+type `ty` (the per-instruction part of `lowerInstOk_one`). Term contracts conclude it. -/
+def OneInstOk (ctx : Ctx) (st : LState) (ty : Clif.Ty) (x y : Nat)
+    (g : BitVec ty.width → BitVec ty.width → BitVec ty.width) (mi : MInst) : Prop :=
+  ∃ ops, mi.operands = .ok ops ∧
+    ops.toList.filter Operand.isDef = [⟨st.nextVreg, .int, .def, .late, .reg⟩] ∧
+    ∀ (fr : Clif.Frame) (ρ : Nat → CV) (w : Arm.ArmState), ValsHeld fr ρ → DFGCons ctx fr →
+      ∀ u v, fr.getAs x ty = .ok u → fr.getAs y ty = .ok v →
+      (∀ z ∈ vuseNums mi, (fr.regs z).isSome) ∧
+      ∃ r, ispec mi (vuses ops ρ) w = some ([r], w, .next) ∧ VHolds ⟨ty, g u v⟩ r
+
+theorem OneInstOk.lowerInstOk {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT}
+    {env : Clif.Env} {cp : Clif.Program} {ctx : Ctx} (hR : Refines F isem) (hMR : MRStable F MR)
+    {cop : Clif.BinaryOp} {ty : Clif.Ty} {x y : Nat} {results : List Nat} {st : LState}
+    {mi : MInst} (hshift : cop.isShift = false)
+    {g : BitVec ty.width → BitVec ty.width → BitVec ty.width}
+    (hg : ∀ u v, Clif.Sem.binary cop u v = g u v) (h : OneInstOk ctx st ty x y g mi) :
+    LowerInstOk isem MR env cp ctx (.binary cop ty x y) results st [[.vreg st.nextVreg .int]]
+      ((st.fresh .int).2.emit mi) [mi] := by
+  obtain ⟨ops, hops, hdefs, hsem⟩ := h
+  refine lowerInstOk_one hR hMR hshift hops hdefs fun fr ρ w hv hd u v hx hy => ?_
+  rw [hg]
+  exact hsem fr ρ w hv hd u v hx hy
+
+section Rhs
+variable {p : Program} {σ : Type} {sem' : Isle.Sem V σ} {cfg : Config}
+
+theorem evalExpr_term_inv {n : Nat} {ty : TypeId} {t : TermId} {args : List Expr}
+    {env : Interp.Env V} {s s' : σ × Array RuleId} {v : V}
+    (h : (evalExpr p sem' cfg (n + 1) (.term ty t args) env).run s = .ok (some v, s')) :
+    ∃ vs s1, (evalArgs p sem' cfg n args env).run s = .ok (some vs, s1) ∧
+      (applyTerm p sem' cfg n ty t vs).run s1 = .ok (some v, s') := by
+  rw [evalExpr.eq_7] at h
+  simp only [M.run_bind] at h
+  cases ha : (evalArgs p sem' cfg n args env).run s with
+  | error e => rw [ha] at h; cases h
+  | ok q =>
+    obtain ⟨o, s1⟩ := q
+    rw [ha] at h
+    cases o with
+    | none => simp at h
+    | some vs => exact ⟨vs, s1, rfl, h⟩
+
+theorem evalArgs_single_inv {n : Nat} {e : Expr} {env : Interp.Env V} {s s' : σ × Array RuleId}
+    {vs : List V} (h : (evalArgs p sem' cfg (n + 1) [e] env).run s = .ok (some vs, s')) :
+    ∃ a, vs = [a] ∧ (evalExpr p sem' cfg n e env).run s = .ok (some a, s') := by
+  rw [evalArgs.eq_3] at h
+  simp only [M.run_bind] at h
+  cases he : (evalExpr p sem' cfg n e env).run s with
+  | error e => rw [he] at h; cases h
+  | ok q =>
+    obtain ⟨o, s1⟩ := q
+    rw [he] at h
+    cases o with
+    | none => simp at h
+    | some a =>
+      cases n with
+      | zero => simp [evalArgs.eq_1] at h; cases h
+      | succ n =>
+        simp only [M.except_ok_bind, evalArgs.eq_2, M.run_bind, M.run_pure] at h
+        simp only [Except.ok.injEq, Prod.mk.injEq, Option.some.injEq] at h
+        obtain ⟨rfl, rfl⟩ := h
+        exact ⟨a, rfl, by first | rfl | rw [he]⟩
+
+/-- A right-hand side `(output_reg (t args…))`: the inner term returned `a`, then
+`output_reg` of `a` returned the value. -/
+theorem rhs_output_inv {n : Nat} {t : TermId} {args : List Expr} {env : Interp.Env V}
+    {s s' : σ × Array RuleId} {out : V}
+    (h : (evalExpr p sem' cfg (n + 3) (.term 25 172 [.term 27 t args]) env).run s =
+      .ok (some out, s')) :
+    ∃ vs s1 a s2, (evalArgs p sem' cfg n args env).run s = .ok (some vs, s1) ∧
+      (applyTerm p sem' cfg n 27 t vs).run s1 = .ok (some a, s2) ∧
+      (applyTerm p sem' cfg (n + 2) 25 172 [a]).run s2 = .ok (some out, s') := by
+  obtain ⟨vs0, s2, h1, h2⟩ := evalExpr_term_inv h
+  obtain ⟨a, rfl, h3⟩ := evalArgs_single_inv h1
+  obtain ⟨vs, s1, h4, h5⟩ := evalExpr_term_inv h3
+  exact ⟨vs, s1, a, s2, h4, h5, h2⟩
+
+end Rhs
+
 end Backend.Proof
