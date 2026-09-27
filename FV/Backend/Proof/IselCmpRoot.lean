@@ -156,16 +156,22 @@ theorem instData_uextend_inv {f : Clif.Function} {cl : Clif.Inst} {w : V}
 
 theorem evalInst_uextend_ok {fr : Clif.Frame} {cm cm' : Clif.Mem} {ty : Clif.Ty} {z : Nat}
     {vals : List Clif.Val} (h : Clif.evalInst fr cm (.extend .uextend ty z) = .ok (vals, cm')) :
-    ∃ v, fr.regs z = some v ∧ vals = [⟨ty, Clif.Sem.uextend ty.width v.bits⟩] ∧ cm' = cm := by
+    ∃ v, fr.regs z = some v ∧ v.ty.width < ty.width ∧
+      vals = [⟨ty, Clif.Sem.uextend ty.width v.bits⟩] ∧ cm' = cm := by
   simp only [Clif.evalInst] at h
   cases hz : fr.get z with
   | ok v =>
     rw [hz] at h
     simp only [bind, Clif.Res.bind, Clif.Res.check] at h
     split at h
-    · simp only [pure] at h
+    · rename_i hc
+      simp only [pure] at h
       cases h
-      refine ⟨v, ?_, rfl, rfl⟩
+      refine ⟨v, ?_, ?_, rfl, rfl⟩
+      rotate_left
+      · split at hc
+        · exact of_decide_eq_true ‹_›
+        · cases hc
       unfold Clif.Frame.get at hz
       cases hr : fr.regs z <;> simp [hr, Clif.Res.ofOption] at hz
       rw [hz]
@@ -176,6 +182,107 @@ theorem evalInst_uextend_ok {fr : Clif.Frame} {cm cm' : Clif.Mem} {ty : Clif.Ty}
 theorem vholds_uextend_bool8 {ty : Clif.Ty} (he : eTy ty = true) (b : Bool) :
     VHolds ⟨ty, Clif.Sem.uextend ty.width (Clif.Sem.bool8 b)⟩ (ofX (if b then 1#64 else 0#64)) := by
   cases ty <;> simp [eTy] at he <;> cases b <;> rfl
+
+/-! ## `is_nonzero_cmp` -/
+
+theorem truthy_bool8 (c : Bool) : Clif.Sem.truthy (Clif.Sem.bool8 c) = c := by cases c <;> rfl
+
+theorem truthy_uextend8 {w : Nat} (hw : 8 ≤ w) (x : BitVec 8) :
+    Clif.Sem.truthy (Clif.Sem.uextend w x) = Clif.Sem.truthy x := by
+  simp only [Clif.Sem.truthy, Clif.Sem.uextend, bne]
+  congr 1
+  have hlt := x.isLt
+  have : 2 ^ 8 ≤ 2 ^ w := Nat.pow_le_pow_right (by omega) hw
+  cases h : x == 0 <;> simp only [beq_iff_eq, beq_eq_false_iff_ne, ne_eq] at h ⊢
+  · intro h'; apply h; apply BitVec.eq_of_toNat_eq
+    have := congrArg BitVec.toNat h'
+    simp [BitVec.toNat_setWidth] at this
+    rw [Nat.mod_eq_of_lt (by omega)] at this; simpa using this
+  · subst h; simp
+
+/-- A value defined by `icmp cc ty a b` is the truth of `cc` on `a`, `b`. -/
+theorem icmp_truthy {ctx : Ctx} {fr : Clif.Frame} (hdf : DFGCons ctx fr) {z j : Nat} {info : IInfo}
+    {cc : Clif.IntCC} {ty : Clif.Ty} {a b : Nat} {v : Clif.Val} (hj : ctx.defInst? z = some j)
+    (hi : ctx.insts[j]? = some info) (hcl : info.clif = some (.icmp cc ty a b))
+    (hv : fr.regs z = some v) : v.ty = .i8 ∧ IcmpT cc a b fr (Clif.Sem.truthy v.bits) := by
+  obtain ⟨vals, hev, hl⟩ := hdf.1 z j info _ v hj hi hcl rfl hv
+  obtain ⟨a', b', hx, hy, rfl, -⟩ := evalInst_icmp_ok (hev default)
+  have := lookup_zip_single hl
+  subst this
+  exact ⟨rfl, ty, a', b', getAs_ok hx, getAs_ok hy, truthy_bool8 _⟩
+
+theorem defClif_inv {ctx : Ctx} {x : Nat} {cl : Clif.Inst} (h : ctx.defClif? x = some cl) :
+    ∃ j info, ctx.defInst? x = some j ∧ ctx.insts[j]? = some info ∧ info.clif = some cl := by
+  unfold Ctx.defClif? at h
+  cases hd : ctx.defInst? x with
+  | none => simp [hd] at h
+  | some j =>
+    cases hi : ctx.insts[j]? with
+    | none => simp [hd, hi] at h
+    | some info =>
+      simp [hd, hi] at h
+      exact ⟨j, info, rfl, hi, h⟩
+
+section
+variable {p : Program} (hp : Data p) {ctx : Ctx} {cfg : Config} (hc : cfg.checkOverlap = false)
+
+set_option maxHeartbeats 8000000 in
+include hp hc in
+/-- **`is_nonzero_cmp`** on an integer value: the condition is the value's truth. -/
+theorem is_nonzero_cmp_ok {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem)
+    {f : Clif.Function} (hctx : CtxInv f ctx) {n : Nat} (hn : 300 ≤ n) {x : Nat}
+    {s s' : LState × Array RuleId} {c : V} (hvb : ValsBelow ctx s.1)
+    (h : ApplyInternal p (sem ctx) cfg n 123 650 [.value x] s c s') :
+    CondCode F isem ctx s.1 s'.1 c
+      (fun fr b => ∃ v, fr.regs x = some v ∧ b = Clif.Sem.truthy v.bits) := by
+  isel_split' hp hc h 650
+  all_goals (try (isel_refute hp at hm; done))
+  all_goals isel_inv' hp [] at hm he
+  · -- 4965 (fcmp): no `fcmp` in E
+    rcases ‹(∃ _ _, _) ∨ _› with ⟨_, _, _, rfl⟩ | ⟨-, rfl⟩ <;> isel_inv_simp [] at * <;> isel_destruct <;>
+      subst_vars <;> isel_inv_simp [] at * <;> isel_destruct <;> subst_vars
+    all_goals
+      obtain ⟨hj⟩ : Nonempty (ctx.defInst? _ = some _) := ⟨‹_›⟩
+      obtain ⟨hi⟩ : Nonempty (ctx.insts[_]? = some _) := ⟨‹_›⟩
+      obtain ⟨hd⟩ : Nonempty (V.data 152 11 _ = _) := ⟨‹_›⟩
+      exact (opcode_absurd hctx hj hi hd rfl (by decide)).elim
+  · -- 4966 (maybe_uextend (icmp …)): `emit_icmp`
+    rcases ‹(∃ _ _, _) ∨ _› with ⟨uty, z, hdc, rfl⟩ | ⟨-, rfl⟩ <;> isel_inv_simp [] at * <;>
+      isel_destruct <;> subst_vars <;> isel_inv_simp [] at * <;> isel_destruct <;> subst_vars
+    all_goals
+      obtain ⟨hj⟩ : Nonempty (ctx.defInst? _ = some _) := ⟨‹_›⟩
+      obtain ⟨hi⟩ : Nonempty (ctx.insts[_]? = some _) := ⟨‹_›⟩
+      obtain ⟨hd⟩ : Nonempty (V.data 152 14 _ = _) := ⟨‹_›⟩
+      obtain ⟨cl, hcl, hdat⟩ := ctxInv_clif hctx hj hi
+      rw [← hd] at hdat
+      obtain ⟨cc, ty, a, b, rfl, rfl, rfl⟩ := instData_icmp_inv hdat
+      isel_inv_simp [] at *
+      isel_destruct
+      subst_vars
+      obtain ⟨h652⟩ : Nonempty (ApplyInternal p (sem ctx) cfg _ 123 652 _ _ _ _) := ⟨‹_›⟩
+      refine (emit_icmp_ok hp hc hR hctx (hn := by omega) hvb h652).weaken ?_
+      rintro fr ρ bb hh hdf ⟨v, hv, rfl⟩
+    · obtain ⟨jx, infox, hjx, hix, hclx⟩ := defClif_inv hdc
+      obtain ⟨vals, hev, hl⟩ := hdf.1 x jx infox _ v hjx hix hclx rfl hv
+      obtain ⟨vz, hzv, hlt, rfl, -⟩ := evalInst_uextend_ok (hev default)
+      have := lookup_zip_single hl
+      subst this
+      obtain ⟨hty8, hT⟩ := icmp_truthy hdf hj hi hcl hzv
+      obtain ⟨vt, vb⟩ := vz
+      simp only at hty8
+      subst hty8
+      change BitVec 8 at vb
+      have h8 : 8 < uty.width := hlt
+      have e := truthy_uextend8 (w := uty.width) (by omega) vb
+      show IcmpT cc a b fr (Clif.Sem.truthy (Clif.Sem.uextend (w := 8) uty.width vb))
+      rw [e]
+      exact hT
+    · exact (icmp_truthy hdf hj hi hcl hv).2
+  · -- 4967: `is_nonzero`
+    obtain ⟨h651⟩ : Nonempty (ApplyInternal p (sem ctx) cfg _ 123 651 _ _ _ _) := ⟨‹_›⟩
+    exact is_nonzero_ok hp hc hR hctx (hn := by omega) hvb h651
+
+end
 
 section Root
 variable {p : Program} (hp : Data p)
@@ -248,7 +355,7 @@ theorem uextend_icmp_ruleOk (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT)
   rw [hst]
   refine ⟨ms, hf.emitted, _, rfl, lowerInstOk_runs hMR hf.mono hf.defs rfl ?_⟩
   intro fr cm ρ w vals cm' _ hh hdf ho
-  obtain ⟨v, hzv, rfl, rfl⟩ := evalInst_uextend_ok ho
+  obtain ⟨v, hzv, -, rfl, rfl⟩ := evalInst_uextend_ok ho
   obtain ⟨vals2, hev, hl⟩ := hdf.1 z _ _ _ v hj hi2 hcl rfl hzv
   obtain ⟨a, b, hx, hy, rfl, -⟩ := evalInst_icmp_ok (hev default)
   have hv := lookup_zip_single hl
