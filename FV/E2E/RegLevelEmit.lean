@@ -615,4 +615,50 @@ theorem blocksLinesE_block {c : FnCtx} {af : AFunc} :
           · intro p hp; exact hn p (by simpa using hp)
           · intro hp; exact hn' (by simpa using hp)
 
+/-! ## The final lines, block by block -/
+
+/-- The label of the block after `b` (the lookahead of `fallthrough` at the end of `b`). -/
+def nxtOf (af : AFunc) (b : Nat) : List Line :=
+  match af.blocks[b + 1]? with
+  | some p => [.label (.block p.1)]
+  | none => []
+
+/-- The trap section appended after the body. -/
+def trapLines (ts : List (Lbl × Clif.TrapCode)) : List Line :=
+  ts.flatMap (fun p => [Line.label p.1, Line.ins (.udf 0xc11f) (some p.2)])
+
+/-- **Block `b` in the final lines**: its label at line `j`, then the `fallthrough` of its code's
+lines followed by the next block's label. -/
+theorem emit_block {k : Nat} {af : AFunc} {fa : FnAsm} (h : emitFunc k af = .ok fa) :
+    ∃ body psF, blocksLinesE ⟨k, af.slotBase⟩ af af.blocks.toList {} = .ok (body, psF) ∧
+      fa.lines.toList = ftList body ++ trapLines psF.traps.toList ∧
+      ∀ b l code, af.blocks[b]? = some (l, code) →
+        ∃ j ls ps1 ps2 R, fa.lines.toList[j]? = some (.label (.block l)) ∧
+          fa.lines.toList.drop (j + 1) = ftList (ls ++ nxtOf af b) ++ R ∧
+          codeLinesE ⟨k, af.slotBase⟩ af code.toList ps1 = .ok (ls, ps2) ∧
+          ps2.traps.toList <+: psF.traps.toList := by
+  obtain ⟨body, psF, hb, hL, -⟩ := emitFunc_ok h
+  have hL' : fa.lines.toList = ftList body ++ trapLines psF.traps.toList := by
+    rw [hL]; simp [trapLines]
+  refine ⟨body, psF, hb, hL', fun b l code hbc => ?_⟩
+  obtain ⟨pre, ls, ps1, ps2, post, hbody, hc, -, hp2, hn, hn'⟩ :=
+    blocksLinesE_block hb (by simpa using hbc)
+  obtain ⟨Z, hZ⟩ := ftList_snoc_label (.block l) pre
+  have hsplit := ftList_label_split (.block l) (ls ++ post) pre
+  rw [← hbody, hZ] at hsplit
+  have hpost : ∃ R0, ftList (ls ++ post) = ftList (ls ++ nxtOf af b) ++ R0 := by
+    unfold nxtOf
+    cases hb1 : af.blocks[b + 1]? with
+    | none =>
+      rw [hn' (by simpa using hb1)]
+      exact ⟨[], by simp⟩
+    | some p =>
+      obtain ⟨post', rfl⟩ := hn p (by simpa using hb1)
+      exact ⟨ftList post', ftList_label_split _ post' ls⟩
+  obtain ⟨R0, hR0⟩ := hpost
+  refine ⟨Z.length, ls, ps1, ps2, R0 ++ trapLines psF.traps.toList, ?_, ?_, hc, hp2⟩
+  · rw [hL', hsplit]; simp
+  · rw [hL', hsplit, hR0]
+    simp [List.drop_append]
+
 end Backend
