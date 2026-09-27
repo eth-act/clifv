@@ -23,12 +23,15 @@ namespace Backend.Proof
 
 open Backend E2E
 
-/-- The frame addresses of the activation entered in `s` (`lo` = the frame's `intBase`): from
-the spill slots of the body's frame up to the entry `sp` (spill, float, save slots, the float
-move temporary, padding, fp/lr). Empty without a frame. -/
-def frameF (lo : Nat) (af : AFunc) (s : Arm.ArmState) (a : BitVec 64) : Prop :=
-  lo ≤ (a - (spv s - BitVec.ofNat 64 (frameDrop af))).toNat ∧
-    (a - (spv s - BitVec.ofNat 64 (frameDrop af))).toNat < frameDrop af
+/-- The allocator-private frame addresses of the activation entered in `s` (`lo`, `hi` = the
+frame's `intBase`, `size`): the spill, save and float-move slots `[sp_body + lo, sp_body + hi)`
+and the padding and fp/lr above the CLIF slots `[sp_body + frameSize, sp_entry)`. The explicit
+CLIF slots in between belong to the world. Empty without a frame. -/
+def frameF (lo hi : Nat) (af : AFunc) (s : Arm.ArmState) (a : BitVec 64) : Prop :=
+  (lo ≤ (a - (spv s - BitVec.ofNat 64 (frameDrop af))).toNat ∧
+    (a - (spv s - BitVec.ofNat 64 (frameDrop af))).toNat < hi) ∨
+  (af.frameSize ≤ (a - (spv s - BitVec.ofNat 64 (frameDrop af))).toNat ∧
+    (a - (spv s - BitVec.ofNat 64 (frameDrop af))).toNat < frameDrop af)
 
 /-- The fixed data of one activation. -/
 structure RL where
@@ -55,7 +58,7 @@ def ctx : FnCtx := ⟨R.fa.k, R.af.slotBase⟩
 /-- `sp` in the body. -/
 def spB : BitVec 64 := spv R.s0 - BitVec.ofNat 64 (frameDrop R.af)
 /-- The frame addresses. -/
-def F : BitVec 64 → Prop := frameF R.fr.intBase R.af R.s0
+def F : BitVec 64 → Prop := frameF R.fr.intBase R.fr.size R.af R.s0
 /-- Address of line `j`. -/
 def pcOf (j : Nat) : BitVec 64 := R.base + BitVec.ofNat 64 (lineOffset R.L j)
 /-- The encoder's environment at line `j`. -/

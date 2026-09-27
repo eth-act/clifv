@@ -456,12 +456,12 @@ theorem array_mapIdxM_ok {α β ε : Type} {f : Nat → α → Except ε β} {as
 /-- **`lowerRFunc` as a structural function**: block `b`'s code is the prologue (block 0) and
 the items' code. -/
 theorem lowerRFunc_ok {vc : VCode} {rf : RFunc} {af : AFunc} (h : lowerRFunc vc rf = .ok af) :
-    (af.frameSize = (RAFrame.compute vc rf).size ∧ af.slotBase = vc.outgoing ∧
+    (af.frameSize = (RAFrame.compute vc rf).total ∧ af.slotBase = (RAFrame.compute vc rf).size ∧
       af.blocks.size = (vc.blocks.zip rf.blocks).size ∧
       ∀ b vb items, vc.blocks[b]? = some vb → rf.blocks[b]? = some items →
         ∃ code, itemsCode (RAFrame.compute vc rf) vb items.toList = .ok code ∧
           af.blocks[b]? = some (vb.label, ((if b = 0 then [AInst.prologue] else []) ++ code).toArray)) ∧
-      (RAFrame.compute vc rf).size < 32768 ∧ ((RAFrame.compute vc rf).size ≠ 0 → af.frame = true) := by
+      (RAFrame.compute vc rf).size < 32768 ∧ ((RAFrame.compute vc rf).total ≠ 0 → af.frame = true) := by
   unfold lowerRFunc at h
   simp only [bind, Except.bind] at h
   split at h

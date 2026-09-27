@@ -107,22 +107,20 @@ theorem locVal_frame_keep {fr : RAFrame} {D : Loc → Prop} {T : Prop} {sp0 : Bi
 theorem fplr_inF {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) :
     ∀ k < 16, R.F (spv R.s0 - 16#64 + BitVec.ofNat 64 k) := by
   obtain ⟨⟨hfs, -⟩, hlt, -⟩ := lowerRFunc_ok hR.alloc
-  have hlt' : R.fr.size < 32768 := hlt
   have hst := hR.stack
   simp only [StackAvail] at hst
-  have hd : frameDrop R.af = R.fr.size + 16 := by
+  have hd : frameDrop R.af = R.fr.total + 16 := by
     simp only [frameDrop, hframe, ite_true, hfs, RL.fr]
-  obtain ⟨h1, h2, h3, -⟩ := compute_facts R.vc R.rf
   intro k hk
   simp only [RL.F, frameF, hd]
   rw [hfs] at hst
   simp only [RL.fr] at *
-  have hm : (R.fr.size + 16) % 2 ^ 64 = R.fr.size + 16 := Nat.mod_eq_of_lt (by simp [RL.fr]; omega)
+  have hm : (R.fr.total + 16) % 2 ^ 64 = R.fr.total + 16 := Nat.mod_eq_of_lt (by simp [RL.fr]; omega)
   have e : (spv R.s0 - 16#64 + BitVec.ofNat 64 k -
-      (spv R.s0 - BitVec.ofNat 64 ((RAFrame.compute R.vc R.rf).size + 16))).toNat =
-      (RAFrame.compute R.vc R.rf).size + k := by
-    have : spv R.s0 - 16#64 + BitVec.ofNat 64 k - (spv R.s0 - BitVec.ofNat 64 ((RAFrame.compute R.vc R.rf).size + 16))
-        = BitVec.ofNat 64 ((RAFrame.compute R.vc R.rf).size + k) := by
+      (spv R.s0 - BitVec.ofNat 64 ((RAFrame.compute R.vc R.rf).total + 16))).toNat =
+      (RAFrame.compute R.vc R.rf).total + k := by
+    have : spv R.s0 - 16#64 + BitVec.ofNat 64 k - (spv R.s0 - BitVec.ofNat 64 ((RAFrame.compute R.vc R.rf).total + 16))
+        = BitVec.ofNat 64 ((RAFrame.compute R.vc R.rf).total + k) := by
       apply BitVec.eq_of_toNat_eq
       have := (spv R.s0).isLt
       simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
@@ -130,8 +128,8 @@ theorem fplr_inF {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) :
       rw [hm, Nat.mod_eq_of_lt (a := k) (by omega)]
       omega
     rw [this, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  rw [e]
-  constructor <;> omega
+  rw [e, hfs]
+  exact .inr ⟨by omega, by omega⟩
 
 /-- The checker's facts at an instruction item. -/
 theorem op_checked {R : RL} {vb : VBlock} {k : Nat} {allocs : Array Loc} {its : List RItem}

@@ -245,28 +245,29 @@ theorem RL.frameOk {R : RL} (hR : R.Wf) :
     FrameOk R.fr (Live R.rf) (R.rf.floatMove = true) R.spB R.F := by
   obtain ⟨⟨hfs, -⟩, hlt, hfr⟩ := lowerRFunc_ok hR.alloc
   have hlt' : R.fr.size < 32768 := hlt
+  have hle : R.fr.size ≤ R.fr.total := compute_size_le_total R.vc R.rf
   have hst := hR.stack
   simp only [StackAvail] at hst
-  by_cases h0 : R.fr.size = 0
+  have hst' : R.fr.total + 16 ≤ (spv R.s0).toNat := by rw [hfs] at hst; exact hst
+  by_cases h0 : R.fr.total = 0
   · -- empty frame: no live slot has an offset below `size`
-    refine frameOk_compute R.vc R.rf R.spB R.F (by simp only [RL.fr] at h0; rw [h0]; omega) ?_
-    intro o _ ho; simp only [RL.fr] at h0; omega
+    refine frameOk_compute R.vc R.rf R.spB R.F (by simp only [RL.fr] at h0 hle; omega) ?_
+    intro o _ ho; simp only [RL.fr] at h0 hle; omega
   · have hframe := hfr h0
-    have hd : frameDrop R.af = R.fr.size + 16 := by
+    have hd : frameDrop R.af = R.fr.total + 16 := by
       simp only [frameDrop, hframe, ite_true, hfs, RL.fr]
-    have hsp : R.spB.toNat = (spv R.s0).toNat - (R.fr.size + 16) := by
+    have hsp : R.spB.toNat = (spv R.s0).toNat - (R.fr.total + 16) := by
       simp only [RL.spB, hd]
-      have hm : (R.fr.size + 16) % 2 ^ 64 = R.fr.size + 16 := Nat.mod_eq_of_lt (by omega)
+      have hm : (R.fr.total + 16) % 2 ^ 64 = R.fr.total + 16 := Nat.mod_eq_of_lt (by omega)
       rw [BitVec.toNat_sub_of_le] <;> simp only [BitVec.le_def, BitVec.toNat_ofNat, hm, RL.fr] at * <;> omega
-    refine frameOk_compute R.vc R.rf R.spB R.F (by simp only [RL.fr] at hsp ⊢; omega) ?_
+    refine frameOk_compute R.vc R.rf R.spB R.F (by simp only [RL.fr] at hsp hle ⊢; omega) ?_
     intro o hlo hhi
     simp only [RL.F, frameF, ← RL.spB.eq_def]
     have : (R.spB + BitVec.ofNat 64 o - R.spB).toNat = o := by
       rw [BitVec.add_comm, BitVec.add_sub_cancel]; simp; omega
     simp only [RL.spB] at this ⊢
-    rw [this, hd]
-    simp only [RL.fr] at hhi hlo ⊢
-    omega
+    rw [this]
+    exact .inl ⟨hlo, hhi⟩
 
 
 theorem mem_blocks_flat {rf : RFunc} {b : Nat} {items : Array RItem} {it : RItem}
@@ -341,14 +342,16 @@ theorem fplr_outside {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) :
     ∀ k < 16, ∀ o, o < R.fr.size → spv R.s0 - 16#64 + BitVec.ofNat 64 k ≠ R.spB + BitVec.ofNat 64 o := by
   obtain ⟨⟨hfs, -⟩, hlt, -⟩ := lowerRFunc_ok hR.alloc
   have hlt' : R.fr.size < 32768 := hlt
+  have hle : R.fr.size ≤ R.fr.total := compute_size_le_total R.vc R.rf
   have hst := hR.stack
   simp only [StackAvail] at hst
-  have hd : frameDrop R.af = R.fr.size + 16 := by
+  have hst' : R.fr.total + 16 ≤ (spv R.s0).toNat := by rw [hfs] at hst; exact hst
+  have hd : frameDrop R.af = R.fr.total + 16 := by
     simp only [frameDrop, hframe, ite_true, hfs, RL.fr]
   intro k hk o ho e
   have := congrArg BitVec.toNat e
   simp only [RL.spB, hd] at this
-  have hm : (R.fr.size + 16) % 2 ^ 64 = R.fr.size + 16 := Nat.mod_eq_of_lt (by omega)
+  have hm : (R.fr.total + 16) % 2 ^ 64 = R.fr.total + 16 := Nat.mod_eq_of_lt (by omega)
   rw [hfs] at hst
   simp only [RL.fr] at *
   rw [BitVec.toNat_add, BitVec.toNat_add, BitVec.toNat_sub_of_le, BitVec.toNat_sub_of_le] at this

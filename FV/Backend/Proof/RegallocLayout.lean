@@ -15,6 +15,8 @@ The layout (all offsets from `sp0`):
 [e1, e2)                           int save slots, 8 bytes each
 [fmoveTmp, fmoveTmp + 16)          float move temporary     (if used)
                                    size = alignTo _ 16
+[size, size + slotBytes)           explicit CLIF slots (not the allocator's)
+                                   total = alignTo _ 16
 ```
 -/
 
@@ -124,6 +126,11 @@ theorem compute_facts (vc : VCode) (rf : RFunc) :
   rw [e2]
   dsimp only
   refine ⟨le_alignTo16 _, le_alignTo16 _, (align_facts _ _).1, (align_facts _ _).2⟩
+
+theorem compute_size_le_total (vc : VCode) (rf : RFunc) :
+    (RAFrame.compute vc rf).size ≤ (RAFrame.compute vc rf).total := by
+  simp only [RAFrame.compute]
+  exact Nat.le_trans (Nat.le_add_right _ _) (le_alignTo16 _)
 
 theorem toNat_add_ofNat {a : BitVec 64} {o : Nat} (h : a.toNat + o < 2 ^ 64) :
     (a + BitVec.ofNat 64 o).toNat = a.toNat + o := by
