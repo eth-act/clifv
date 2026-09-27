@@ -10,7 +10,8 @@
 #   - the function symbol (value, size, type, binding),
 # and per file the mapping symbols ($x/$d kind and value) and the set of undefined symbols.
 #
-# usage: scripts/lean-backend-encode-check.sh [-v] [--corpus | --runtests | --random |
+# usage: scripts/lean-backend-encode-check.sh [-v] [--regalloc regalloc2|stack]
+#                                             [--corpus | --runtests | --random |
 #                                             --n N | --seed S | FILE.clif...]
 #   default: --corpus (corpus/clif/*.clif, corpus/clif/extrt/*.clif), --runtests
 #   (every file of Cranelift's runtests/; functions outside E are not compiled) and --random
@@ -27,6 +28,7 @@ RUNTESTS=third_party/wasmtime/cranelift/filetests/filetests/runtests
 LLVM_MC=${LLVM_MC:-/usr/lib/llvm-18/bin/llvm-mc}
 
 VERBOSE=0
+RA=regalloc2
 FILES=()
 SETS=()
 N=200
@@ -34,6 +36,7 @@ SEED=24301
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -v) VERBOSE=1 ;;
+    --regalloc) RA=$2; shift ;;
     --corpus) SETS+=(corpus) ;;
     --runtests) SETS+=(runtests) ;;
     --random) SETS+=(random) ;;
@@ -55,6 +58,7 @@ done
 
 echo "== build"
 lake build lean-backend lean-backend-encode-test 2>&1 | tail -1
+cargo build --quiet --release --manifest-path rust/Cargo.toml -p lean-regalloc
 
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
@@ -72,8 +76,8 @@ one() {
       echo "lean-encode-failed" > "$WORK/$b.status"; return 0
     fi
   else
-    .lake/build/bin/lean-backend "$f" "$WORK/$b.s" 2>/dev/null
-    if ! .lake/build/bin/lean-backend "$f" "$WORK/$b.o" 2> "$WORK/$b.err"; then
+    .lake/build/bin/lean-backend "$f" "$WORK/$b.s" --regalloc "$RA" 2>/dev/null
+    if ! .lake/build/bin/lean-backend "$f" "$WORK/$b.o" --regalloc "$RA" 2> "$WORK/$b.err"; then
       echo "lean-encode-failed" > "$WORK/$b.status"; return 0
     fi
   fi
@@ -83,7 +87,7 @@ one() {
   echo ok > "$WORK/$b.status"
 }
 export -f one
-export WORK LLVM_MC N SEED
+export WORK LLVM_MC N SEED RA
 printf '%s\0' "${FILES[@]}" | xargs -0 -n1 -P "$(nproc)" bash -c 'one "$1"' _
 
 python3 - "$WORK" "$VERBOSE" "${FILES[@]}" <<'EOF'
