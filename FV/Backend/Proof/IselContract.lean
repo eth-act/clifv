@@ -245,7 +245,7 @@ def ispec : Sem := fun i uses w =>
     let x := (lo64 a).setWidth 8
     some (defOut rd (ofX (if sg then (x.signExtend 32).setWidth 64 else x.setWidth 64)), w, .next)
   | .aluRRImmLogic op sz rd _ imm, [a] =>
-    if ImmLogic.ofNat? imm.value sz = some imm then
+    if ImmLogic.ofNat? imm.value sz = some imm ∧ op ≠ .add ∧ op ≠ .sub then
       (aluVal op (opnd sz a) (BitVec.ofNat _ imm.value)).map fun r =>
         (defOut rd (resX sz r), w, .next)
     else none
