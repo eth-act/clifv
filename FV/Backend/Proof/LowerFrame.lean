@@ -14,27 +14,6 @@ namespace Backend.Proof.Driver
 
 open Backend Backend.Proof
 
-/-- The value operands of a CLIF instruction. -/
-def instArgs : Clif.Inst → List Clif.ValueId
-  | .iconst .. | .stackAddr .. | .fence | .nop | .symbolValue .. => []
-  | .unary _ _ x | .bmask _ x | .extend _ _ x | .ireduce _ x | .isplit _ x
-  | .load _ _ _ x _ | .atomicLoad _ _ x | .bitcast _ _ x | .trapz x _ | .trapnz x _ => [x]
-  | .binary _ _ x y | .div _ _ x y | .overflow _ _ x y | .icmp _ _ x y
-  | .uaddOverflowTrap _ x y _ | .iconcat _ x y | .store _ _ _ x y _ | .atomicRmw _ _ _ x y
-  | .atomicStore _ _ x y => [x, y]
-  | .carry _ _ x y z | .select _ x y z | .selectSpectreGuard _ x y z | .bitselect _ x y z
-  | .atomicCas _ _ x y z => [x, y, z]
-  | .call _ args => args
-
-/-- The value operands of a terminator. -/
-def termArgs : Clif.Terminator → List Clif.ValueId
-  | .jump bc => bc.args
-  | .brif c t e => c :: t.args ++ e.args
-  | .brTable x d tbl => x :: d.args ++ tbl.flatMap (·.args)
-  | .ret xs => xs
-  | .returnCall _ args => args
-  | .trap _ => []
-
 /-- `fr` with only the values in `A` defined. -/
 def restrict (fr : Clif.Frame) (A : List Clif.ValueId) : Clif.Frame :=
   { fr with regs := fun x => if x ∈ A then fr.regs x else none }

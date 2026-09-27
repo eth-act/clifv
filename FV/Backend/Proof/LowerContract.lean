@@ -1,4 +1,5 @@
 import FV.Backend.Isel
+import FV.Backend.Proof.DriverCheck
 import FV.Clif.Run
 import FV.Backend.Proof.LowerRename
 import FV.Backend.Proof.RegallocOperands
@@ -23,16 +24,6 @@ The contracts themselves (`LowerInstOk`, `LowerTermOk`, `seqRun`, …) are M4's
 namespace Backend.Proof.Driver
 
 open Backend Backend.Proof
-
-/-- The context `lowerFunction` lowers a terminator in (its data filled in). -/
-def termCtx (ctx : Ctx) (ti : Nat) (data : V) : Ctx :=
-  { ctx with insts := ctx.insts.set! ti ⟨data, [], [], none⟩ }
-
-/-- The ISLE root term and arguments `lowerFunction` uses for a terminator. -/
-def termCall (t : Clif.Terminator) (ti : Nat) (targets : List Label) : String × List V :=
-  match t with
-  | .ret _ | .trap _ => ("lower", [.inst ti])
-  | _ => ("lower_branch", [.inst ti, .labels targets])
 
 /-- Every `lower` call `lowerFunction` makes on a statement (from a state whose fresh vregs are
 above every value's vreg, `ValsBelow`) satisfies M4's `LowerInstOk`. -/

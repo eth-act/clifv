@@ -506,10 +506,7 @@ theorem enter_match (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
       intro y hy
       have hy0 := H.cert.closed tl 0 x d info cl hx0 hd hinfo hcl hp y hy
       have hyA := H.cert.closed b B.body.length x d info cl hxA hd hinfo hcl hp y hy
-      have hyp : y ∉ TB.params.map (·.1) := by
-        intro e
-        obtain ⟨q, hq, rfl⟩ := List.mem_map.mp e
-        exact hpA q hq hyA
+      have hyp : y ∉ TB.params.map (·.1) := hpA x hx0 hxp d info cl hd hinfo hcl y hy
       rw [restrict_regs_of_mem hy0, restrict_regs_of_mem hyA]
       exact setMany_other hset hyp
 

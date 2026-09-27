@@ -6,81 +6,23 @@ import FV.Backend.Proof.LowerFrame
 `LowerShape f vc …`: the structure of the VCode `lowerFunction f` returns, per CLIF block —
 the entry `Args`, one segment per statement (the `lower` call's emitted code, renamed by the
 alias resolution `R`), the terminator's segment (`lower`/`lower_branch`), block parameters,
-jump arguments, edge blocks, labels = indices. (Obligation `lowerFunction_shape`: `lowerFunction f
-= ok vc` implies it; open, see e2e.md.)
+jump arguments, edge blocks, labels = indices (the shared definitions `seg`, `pre`, `tseg`, … are
+in `DriverCheck.lean`). Discharged by the lowering validator: `lowerCheck f vc = true` implies it
+(`DriverCheckSound.lean`).
 
 `Cert f … A`: an availability annotation `A bi j` (the values the driver tracks before statement
 `j` of block `bi`) with local, checkable conditions: operands available, results fresh, no
 available value's register is written by the lowering of the statement, closure under pure
 definitions, edges. It holds for SSA input with `A` = the values whose definition strictly
-dominates the point (obligation: a certificate checker, or a proof from SSA dominance).
+dominates the point; the validator computes `A` by a must-dataflow and checks the conditions.
 -/
 
 namespace Backend.Proof.Driver
 
 open Backend Backend.Proof
 
-/-- `lowerFunction`'s block index of block id `b`. -/
-def blockIdx? (f : Clif.Function) (b : Clif.BlockId) : Option Nat := f.blocks.findIdx? (·.id == b)
-
-/-- One statement's lowering: state before (nothing emitted), result registers, state after. -/
-structure SLow where
-  st : LState
-  rss : List (List Reg)
-  st' : LState
-
-/-- One block's lowering. -/
-structure BLow where
-  /-- index of the block's first statement in `ctx.insts` -/
-  start : Nat
-  sl : List SLow
-  /-- terminator: `InstructionData`, successor labels, states before/after -/
-  data : V
-  targets : List Label
-  tst : LState
-  tst' : LState
-
-/-- `lowerFunction`'s `mov` for a result the rules returned in a real register. -/
-def extraOf (results : List Nat) (rss : List (List Reg)) : List MInst :=
-  (results.zip rss).filterMap fun (r, rs) => match rs with
-    | [.vreg ..] => none
-    | [out] => some (.mov .size64 (.vreg r .int) out)
-    | _ => none
-
-/-- The successors of a terminator (`lowerFunction`'s `dests`). -/
-def dests : Clif.Terminator → List Clif.BlockCall
-  | .jump bc => [bc]
-  | .brif _ t e => [t, e]
-  | .brTable _ d tbl => d :: tbl
-  | _ => []
-
 variable (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) (R : Reg → Reg)
   (gn : Nat → Nat) (bl : List BLow)
-
-/-- The VCode segment of statement `j` of block `bi`. -/
-def seg (bi j : Nat) : List MInst :=
-  match f.blocks[bi]?, bl[bi]? with
-  | some B, some L =>
-    match B.body[j]?, L.sl[j]? with
-    | some stm, some sl => (sl.st'.emitted.toList ++ extraOf stm.results sl.rss).map (·.mapRegs R)
-    | _, _ => []
-  | _, _ => []
-
-/-- The entry block's `Args`. -/
-def pre (bi : Nat) : List MInst :=
-  match bi, f.blocks[bi]? with
-  | 0, some B => [.args ((B.params.zipIdx).map fun ((v, _), k) => (R (.vreg v .int), .x k))]
-  | _, _ => []
-
-/-- The terminator's segment. -/
-def tseg (bi : Nat) : List MInst :=
-  match bl[bi]? with
-  | some L => L.tst'.emitted.toList.map (·.mapRegs R)
-  | none => []
-
-/-- Index in block `bi` where statement `j`'s segment starts. -/
-def pos (bi j : Nat) : Nat :=
-  (pre f R bi).length + ((List.range j).map fun j' => (seg f R bl bi j').length).sum
 
 /-- **The structure of `lowerFunction f`'s VCode.** -/
 structure LowerShape : Prop where
@@ -159,7 +101,9 @@ structure Cert (A : Nat → Nat → List Clif.ValueId) : Prop where
     (∀ x ∈ A bi B.body.length, ¬ (L.tst.nextVreg ≤ gn x ∧ gn x < L.tst'.nextVreg)) ∧
     ∀ bc ∈ dests B.term, ∀ tl TB, blockIdx? f bc.block = some tl → f.blocks[tl]? = some TB →
       (TB.params.map (·.1)).Nodup ∧
-      (∀ p ∈ TB.params, p.1 ∉ A bi B.body.length) ∧
+      (∀ x ∈ A tl 0, x ∉ TB.params.map (·.1) → ∀ d info cl, ctx.defInst? x = some d →
+        ctx.insts[d]? = some info → info.clif = some cl → ∀ y ∈ instArgs cl,
+          y ∉ TB.params.map (·.1)) ∧
       ∀ x ∈ A tl 0, (x ∈ TB.params.map (·.1) ∧ ctx.defInst? x = none) ∨
         (x ∉ TB.params.map (·.1) ∧ x ∈ A bi B.body.length ∧ gn x ∉ TB.params.map (·.1))
   /-- a statement result's context type is its declared type (`buildCtx` writes `valTy` for
