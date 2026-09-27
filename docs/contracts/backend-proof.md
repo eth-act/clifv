@@ -1,8 +1,98 @@
-# Backend proofs: early probe of the isel slice (M4 shape), findings and plan
+# Backend proofs: isel (M4) foundation, contract and template; probe findings
 
-Producer: probe agent (`agent/probe-isel`), 2026-09-27. Consumers: M4 isel proof, M6 (checker
-composition), M7. Code: `FV/Backend/Proof/Isel*.lean`, `FVTest/Backend/Proof/Probe/`. No backend
-code was changed; everything below that needs a backend/exporter change is a **finding**.
+Producers: probe agent (`agent/probe-isel`), then M4Foundation (`agent/m4-foundation`),
+2026-09-27. Consumers: M4 fan-out, M6 (checker composition), M7 (driver). Code:
+`FV/Backend/Proof/Isel*.lean`, `FVTest/Backend/Proof/Probe/`.
+
+## M4 foundation status (M4Foundation)
+
+| Deliverable | State |
+| --- | --- |
+| 1. Exporter/backend redesign | **done** (`971c344`). Details below the table. Behaviour unchanged: corpus 114/114, runtests 3085/0/0, encode-check 971/971 identical, regalloc 932/932, `FVTest.Isle` (incl. Cranelift trace equality) passes; regeneration deterministic. |
+| 2. Full-closure `Data p` | **done** (`c80737a`): 129 root rules, 536 terms, 838 rules (the lists of `lower`/`lower_branch` include the 396 excluded rules), every fact `rfl`; `IselData` builds in **110 s, 6.1 GB**; `data_program` axioms: `propext` only. |
+| 3. Generic interpreter lemmas | **done** (`IselGeneric.lean`): `selectRule_some` (committed rule ∈ candidates, matched from the start state, fuel ≥ start − #candidates − 2), `selectRule_none`, `applyTerm_internal_some` (value = RHS of a committed matched rule, rule appended to the trace), `applyTerm_internal_none` (partial term with no match and unchanged state, or matched rule whose RHS returned `none`); match inversion `matchRule_some_inv`, `matchArgs_cons_inv`, `matchPat_enum_inv`, `matchPat_extract_inv`, `matchPat_bind_inv`. |
+| 4. Contract framework + `LowerRulesCorrect` | **done** (`IselContract.lean`), shapes agreed with M7Skeleton (see "Contract"). `lowerInstOk_of_rules` / `lowerInstOk_runTerm` proven. |
+| 5. Batching template | **partial**: the template `aluRR_ruleOk` and `iadd_base_case_ok`, `isub_base_case_ok` (`LowerRuleOk`, i8..i64) are proven. **Not done**: `band`/`bor`/`bxor` (their base rules go through `alu_rs_imm_logic_commutative`, 5 rules incl. iconst/ishl look-through), and the probe gaps (b) `iadd_imm12`, (c) `icmp`→`cset`, (d) `ushr` narrow. See "Remaining". |
+| 6. This document | done |
+
+**Exporter/backend changes (1).** `isle2lean` now emits one `def T.«term»` per term, one
+`def R.«term» : List Rule` per term with rules (matching order), flat tables `terms`,
+`rules`, `types`, `ruleLists` (`TermTable`, `RuleArray`, `TypeArray`, `RuleTable`), and
+`Ids.lean` with `@[match_pattern]` constants `TyId.«T»`, `VIdx.«T».«V»` and `TId.«t»`.
+`program` is a structure literal (no `Program.build`); `Program.rulesByTerm` became
+`ruleLists : Array (List Rule)` (`rulesOf p t = (p.ruleLists[t]?).getD []`), and
+`FVTest/Isle/Data.lean` checks it against `Program.bucketRules`. The backend (`MInst.lean`)
+decodes enum values by generated index (`MInst.ofV`, `V.enum?`, `ALUOp.ofIdx?`, …) and
+`externCtor`/`externExtract`/`tyPred` dispatch on the term id (`TId.*`), so a renamed
+variant or term is a compile error. By-name construction remains only for CLIF-side values
+(`instData`: `InstructionData`, `Opcode`, `IntCC`), checked by `FVTest/Backend/Names.lean`.
+Data facts are now `rfl` (~0.1 s each with `maxRecDepth 20000`; `Meta` indexes the list);
+`termByName? "lower"` is `decide +kernel` (12 s: string comparisons).
+
+## Contract (`IselContract.lean`), agreed with M7
+
+* VCode level, abstract semantics `isem : Sem := ISem CV Arm.ArmState` (M6's `csem F ctx` is
+  the instance). The rules need only `Refines F isem`: on every form `ispec` specifies, `isem`
+  gives the same def values, falls through, and a world `SameWorld F`-equal to `ispec`'s.
+  `ispec` (value level, Arm-model operations): `AluRRR` add/sub/and/orr/eor, `subS` (flags via
+  `AddWithCarry`/`write_pstate`), 32-bit `lsr`, `AluRRImm12` add, `AluRRImmLogic`, `Extend`,
+  `CSet`. M6Rest confirmed its `csem` characterization lemmas have this shape.
+* `MRStable F MR`: the memory relation ignores allocatable registers, pc and NZCV
+  (`SameWorldNF`).
+* `CtxInv f ctx` (M7 proves it from `buildCtx`): `instData f inst = .ok info.data`, result
+  types, value `x` ↦ vreg `x`, def sites, slot offsets.
+* Per instruction (M7's shapes, verbatim): `seqRun`, `VHolds` (low bits), `ValsHeld`, `DFGCons`,
+  `instOutcome`, `ResultsHeld`, `UsesOk` (inside the continuing outcome arms), `LowerInstOk`,
+  `LowerTermOk` (with the branch targets).
+* Per rule: `LowerRuleOk isem MR env cp p r` — if root rule `r` matches `[.inst ii]` and its RHS
+  returns `out` (fuels ≥ 1000; no fuel monotonicity needed), then
+  `∃ ms rss, st'.emitted = st.emitted ++ ms ∧ out = .regsVec rss ∧ LowerInstOk …`.
+* **Target**: `LowerRulesCorrect p := ∀ F isem MR env cp, Refines F isem → MRStable F MR →
+  ∀ r ∈ p.rulesOf TId.lower, closureRoot r = true → LowerRuleOk isem MR env cp p r`;
+  `ExcludedUnmatchable p` (non-closure root rules never match an instruction of a `CtxInv`
+  context); `BranchRuleOk`/`BranchRulesCorrect` for `lower_branch` (stated, not proven).
+* `lowerInstOk_runTerm : LowerRulesCorrect program → ExcludedUnmatchable program →
+  Refines F isem → MRStable F MR → CtxInv f ctx → ctx.insts[ii]? = some info →
+  info.clif = some inst → runTerm ctx "lower" [.inst ii] st = .ok (some out, st', tr) →
+  ∃ ms rss, st'.emitted = st.emitted ++ ms.toArray ∧ out = .regsVec rss ∧ LowerInstOk …`.
+
+## Template (`IselFamily.lean`) and measured cost
+
+All 129 closure root rules have the argument pattern
+`(inst_data_value tyPat (InstructionData.K (Opcode.O …) …))`, so one lemma
+(`root_match_data`) recovers format and opcode from "the rule matched";
+`instData_names`/`instNames` + `instNames_binary` invert `instData` to the CLIF instruction;
+the rule's forward lemmas (`isel_eval`) then fix environment and emitted code by determinism;
+`seqRun_aluRRR` + `aluVal_holds` give the meaning at every width. `aluRR_ruleOk` packages it:
+a two-register ALU rule costs **three forward lemmas** (match, RHS at every width, RHS failing
+when an operand has no register) **and one line**.
+
+Measured (this machine, one core per file): `IselRulesALU` (forward lemmas of 2 rules plus
+`sub_run`) **4.0 s**, i.e. ~2 s per rule; `IselFamilyALU` (the two rule theorems) 0.7 s;
+`IselFamily` (template, once) 1.6 s. Axioms of `iadd_base_case_ok`, `isub_base_case_ok`,
+`lowerInstOk_runTerm`: `propext`, `Classical.choice`, `Quot.sound`.
+
+## Remaining root rules: families and fan-out plan
+
+| Family (root rules) | Needs |
+| --- | --- |
+| reg-reg ALU base cases: iadd 86, isub 801 | **done** |
+| logic ops via `alu_rs_imm_logic_commutative` (band/bor/bxor 1412/1449/1516) | term contract over its 5 rules: iconst look-through (`DFGCons`) + `ImmLogic` value, `ishl` look-through + `AluRRRShift` spec; then template |
+| imm12 / neg-imm12 / extend / shifted-operand variants of iadd/isub (90, 93, 98, 102, 108, 111, 116, 120, 805, 810, 816, 821) | look-through lemmas (iconst, uextend/sextend, ishl) + `ispec` for `AluRRImm12`, `AluRRRExtend`, `AluRRRShift`; template variant with one look-through |
+| madd/msub fusions (125, 128, 132), imul, umulhi/smulhi | `AluRRRR` spec, multiply width lemmas |
+| unary ALU (ineg, bnot + fusions, clz/ctz/popcnt/bitrev/bswap, ireduce, extends) | per-op width lemma; popcnt uses vector `cnt` (hand work) |
+| shifts/rotates (ishl/ushr/sshr/rotl/rotr) | `do_shift`, `put_in_reg_zext32/sext32` contracts, masking lemmas |
+| `icmp`, `select`, min/max | `emit_icmp` (12 rules), `with_flags` (16), `lower_select`, flag lemma `ConditionHolds (condOf cc).invert ↔ intcc cc` (10 codes × 2 widths) |
+| div/rem (explicit traps) | trap outcome of `LowerInstOk`, `trapIf` spec |
+| load/store (10+7), stack_addr, symbol_value | `amode` contracts, `MemRel`/slot relation (M7), memory `ispec` |
+| call/return/trap, `lower_branch` (5) | ABI (`CallRel`), `LowerTermOk`/`BranchRuleOk` |
+| `ExcludedUnmatchable` (396 rules) | generic: an excluded rule's pattern names a non-E opcode/type test; prove with `root_match_data` + `instNames` per opcode class |
+
+Fan-out: one agent per row, each adding its `ispec` forms (tell M6Rest), a family template
+next to `aluRR_ruleOk` and a file of forward lemmas. Regenerate `IselData` with
+`lake env lean --run FVTest/Backend/Proof/Probe/GenData.lean closure`.
+
+# Probe findings (earlier)
 
 ## Status
 
@@ -143,7 +233,7 @@ shift amounts by `shift_mask`). With "low bits" the obligation stays local to ea
    (flags) — ~3–4 weeks.
 5. Glue: `buildCtx` invariants, VCode semantics (with M6), `lower_branch`.
 
-## Design changes that would make proofs substantially easier (findings, not done)
+## Design changes that would make proofs substantially easier (findings; the exporter/backend ones are done, see "M4 foundation status")
 
 - **Exporter**: emit per-term rule-list constants (`def rulesOf_lower : List Rule := […]` in
   `ruleBefore` order) and per-term `Term` constants, and build `Program.rulesByTerm` from them;

@@ -7,1210 +7,4564 @@ set_option maxRecDepth 100000
 namespace Isle.Aarch64
 open Isle
 
-def terms_0 : Array Term := #[
-  ⟨0, "unit", [], 13, (.decl ⟨true, false, false, false⟩ (some (.external "unit")) none), ⟨"src/prelude.isle", 13⟩⟩,
-  ⟨1, "def_inst", [18], 15, (.decl ⟨false, false, false, false⟩ none (some (.external "def_inst" false))), ⟨"src/prelude.isle", 29⟩⟩,
-  ⟨2, "value_type", [14], 15, (.decl ⟨false, false, false, false⟩ none (some (.external "value_type" true))), ⟨"src/prelude.isle", 37⟩⟩,
-  ⟨3, "u32_nonnegative", [3], 3, (.decl ⟨false, false, false, false⟩ none (some (.external "u32_nonnegative" false))), ⟨"src/prelude.isle", 41⟩⟩,
-  ⟨4, "offset32", [9], 138, (.decl ⟨false, false, false, false⟩ none (some (.external "offset32" true))), ⟨"src/prelude.isle", 46⟩⟩,
-  ⟨5, "checked_add_with_type", [14, 4, 4], 4, (.decl ⟨true, false, true, false⟩ (some (.external "checked_add_with_type")) none), ⟨"src/prelude.isle", 51⟩⟩,
-  ⟨6, "add_overflows_with_type", [14, 4, 4], 0, (.decl ⟨true, false, false, false⟩ (some (.external "add_overflows_with_type")) none), ⟨"src/prelude.isle", 54⟩⟩,
-  ⟨7, "imm64_sdiv", [14, 134, 134], 134, (.decl ⟨true, false, true, false⟩ (some (.external "imm64_sdiv")) none), ⟨"src/prelude.isle", 57⟩⟩,
-  ⟨8, "imm64_udiv", [14, 134, 134], 134, (.decl ⟨true, false, true, false⟩ (some (.external "imm64_udiv")) none), ⟨"src/prelude.isle", 60⟩⟩,
-  ⟨9, "imm64_srem", [14, 134, 134], 134, (.decl ⟨true, false, true, false⟩ (some (.external "imm64_srem")) none), ⟨"src/prelude.isle", 63⟩⟩,
-  ⟨10, "imm64_urem", [14, 134, 134], 134, (.decl ⟨true, false, true, false⟩ (some (.external "imm64_urem")) none), ⟨"src/prelude.isle", 66⟩⟩,
-  ⟨11, "imm64_add", [14, 134, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_add")) none), ⟨"src/prelude.isle", 69⟩⟩,
-  ⟨12, "imm64_sub", [14, 134, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_sub")) none), ⟨"src/prelude.isle", 72⟩⟩,
-  ⟨13, "imm64_mul", [14, 134, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_mul")) none), ⟨"src/prelude.isle", 75⟩⟩,
-  ⟨14, "imm64_and", [14, 134, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_and")) none), ⟨"src/prelude.isle", 78⟩⟩,
-  ⟨15, "imm64_or", [14, 134, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_or")) none), ⟨"src/prelude.isle", 81⟩⟩,
-  ⟨16, "imm64_xor", [14, 134, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_xor")) none), ⟨"src/prelude.isle", 84⟩⟩,
-  ⟨17, "imm64_not", [14, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_not")) none), ⟨"src/prelude.isle", 87⟩⟩,
-  ⟨18, "imm64_neg", [14, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_neg")) none), ⟨"src/prelude.isle", 90⟩⟩,
-  ⟨19, "imm64_abs", [14, 134], 134, (.decl ⟨true, false, true, false⟩ (some (.external "imm64_abs")) none), ⟨"src/prelude.isle", 93⟩⟩,
-  ⟨20, "imm64_ilog2", [14, 134], 134, (.decl ⟨true, false, true, false⟩ (some (.external "imm64_ilog2")) none), ⟨"src/prelude.isle", 96⟩⟩,
-  ⟨21, "imm64_umin", [14, 134, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_umin")) none), ⟨"src/prelude.isle", 99⟩⟩,
-  ⟨22, "imm64_umax", [14, 134, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_umax")) none), ⟨"src/prelude.isle", 102⟩⟩,
-  ⟨23, "imm64_smin", [14, 134, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_smin")) none), ⟨"src/prelude.isle", 105⟩⟩,
-  ⟨24, "imm64_smax", [14, 134, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_smax")) none), ⟨"src/prelude.isle", 108⟩⟩,
-  ⟨25, "imm64_shl", [14, 134, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_shl")) none), ⟨"src/prelude.isle", 111⟩⟩,
-  ⟨26, "imm64_ushr", [14, 134, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_ushr")) none), ⟨"src/prelude.isle", 114⟩⟩,
-  ⟨27, "imm64_sshr", [14, 134, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_sshr")) none), ⟨"src/prelude.isle", 117⟩⟩,
-  ⟨28, "imm64_rotl", [14, 134, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_rotl")) none), ⟨"src/prelude.isle", 120⟩⟩,
-  ⟨29, "imm64_rotr", [14, 134, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_rotr")) none), ⟨"src/prelude.isle", 123⟩⟩,
-  ⟨30, "i64_sextend_u64", [14, 4], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_sextend_u64")) none), ⟨"src/prelude.isle", 127⟩⟩,
-  ⟨31, "i64_sextend_imm64", [14, 134], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_sextend_imm64")) none), ⟨"src/prelude.isle", 131⟩⟩,
-  ⟨32, "u64_uextend_imm64", [14, 134], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_uextend_imm64")) none), ⟨"src/prelude.isle", 134⟩⟩,
-  ⟨33, "imm64_icmp", [14, 145, 134, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_icmp")) none), ⟨"src/prelude.isle", 137⟩⟩,
-  ⟨34, "imm64_clz", [14, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_clz")) none), ⟨"src/prelude.isle", 140⟩⟩,
-  ⟨35, "imm64_ctz", [14, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_ctz")) none), ⟨"src/prelude.isle", 143⟩⟩,
-  ⟨36, "u128_replicated_u64", [4], 5, (.decl ⟨false, false, false, false⟩ none (some (.external "u128_replicated_u64" false))), ⟨"src/prelude.isle", 148⟩⟩,
-  ⟨37, "u64_replicated_u32", [3], 4, (.decl ⟨false, false, false, false⟩ none (some (.external "u64_replicated_u32" false))), ⟨"src/prelude.isle", 150⟩⟩,
-  ⟨38, "u32_replicated_u16", [2], 3, (.decl ⟨false, false, false, false⟩ none (some (.external "u32_replicated_u16" false))), ⟨"src/prelude.isle", 152⟩⟩,
-  ⟨39, "u16_replicated_u8", [1], 2, (.decl ⟨false, false, false, false⟩ none (some (.external "u16_replicated_u8" false))), ⟨"src/prelude.isle", 154⟩⟩,
-  ⟨40, "u128_replicated_u32", [3], 5, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u128_replicated_u32"), (.atom "n")]), (.list [(.atom "u128_replicated_u64"), (.list [(.atom "u64_replicated_u32"), (.atom "n")])])])))), ⟨"src/prelude.isle", 158⟩⟩,
-  ⟨41, "u128_replicated_u16", [2], 5, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u128_replicated_u16"), (.atom "n")]), (.list [(.atom "u128_replicated_u32"), (.list [(.atom "u32_replicated_u16"), (.atom "n")])])])))), ⟨"src/prelude.isle", 160⟩⟩,
-  ⟨42, "u128_replicated_u8", [1], 5, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u128_replicated_u8"), (.atom "n")]), (.list [(.atom "u128_replicated_u16"), (.list [(.atom "u16_replicated_u8"), (.atom "n")])])])))), ⟨"src/prelude.isle", 162⟩⟩,
-  ⟨43, "u128_low_bits", [5], 4, (.decl ⟨false, false, false, false⟩ (some (.external "u128_low_bits")) none), ⟨"src/prelude.isle", 166⟩⟩,
-  ⟨44, "u128_high_bits", [5], 4, (.decl ⟨false, false, false, false⟩ (some (.external "u128_high_bits")) none), ⟨"src/prelude.isle", 168⟩⟩,
-  ⟨45, "f16_min", [131, 131], 131, (.decl ⟨true, false, true, false⟩ (some (.external "f16_min")) none), ⟨"src/prelude.isle", 173⟩⟩,
-  ⟨46, "f16_max", [131, 131], 131, (.decl ⟨true, false, true, false⟩ (some (.external "f16_max")) none), ⟨"src/prelude.isle", 175⟩⟩,
-  ⟨47, "f16_neg", [131], 131, (.decl ⟨true, false, false, false⟩ (some (.external "f16_neg")) none), ⟨"src/prelude.isle", 177⟩⟩,
-  ⟨48, "f16_abs", [131], 131, (.decl ⟨true, false, false, false⟩ (some (.external "f16_abs")) none), ⟨"src/prelude.isle", 179⟩⟩,
-  ⟨49, "f16_copysign", [131, 131], 131, (.decl ⟨true, false, false, false⟩ (some (.external "f16_copysign")) none), ⟨"src/prelude.isle", 181⟩⟩,
-  ⟨50, "f32_add", [132, 132], 132, (.decl ⟨true, false, true, false⟩ (some (.external "f32_add")) none), ⟨"src/prelude.isle", 183⟩⟩,
-  ⟨51, "f32_sub", [132, 132], 132, (.decl ⟨true, false, true, false⟩ (some (.external "f32_sub")) none), ⟨"src/prelude.isle", 185⟩⟩,
-  ⟨52, "f32_mul", [132, 132], 132, (.decl ⟨true, false, true, false⟩ (some (.external "f32_mul")) none), ⟨"src/prelude.isle", 187⟩⟩,
-  ⟨53, "f32_div", [132, 132], 132, (.decl ⟨true, false, true, false⟩ (some (.external "f32_div")) none), ⟨"src/prelude.isle", 189⟩⟩,
-  ⟨54, "f32_sqrt", [132], 132, (.decl ⟨true, false, true, false⟩ (some (.external "f32_sqrt")) none), ⟨"src/prelude.isle", 191⟩⟩,
-  ⟨55, "f32_ceil", [132], 132, (.decl ⟨true, false, true, false⟩ (some (.external "f32_ceil")) none), ⟨"src/prelude.isle", 193⟩⟩,
-  ⟨56, "f32_floor", [132], 132, (.decl ⟨true, false, true, false⟩ (some (.external "f32_floor")) none), ⟨"src/prelude.isle", 195⟩⟩,
-  ⟨57, "f32_trunc", [132], 132, (.decl ⟨true, false, true, false⟩ (some (.external "f32_trunc")) none), ⟨"src/prelude.isle", 197⟩⟩,
-  ⟨58, "f32_nearest", [132], 132, (.decl ⟨true, false, true, false⟩ (some (.external "f32_nearest")) none), ⟨"src/prelude.isle", 199⟩⟩,
-  ⟨59, "f32_min", [132, 132], 132, (.decl ⟨true, false, true, false⟩ (some (.external "f32_min")) none), ⟨"src/prelude.isle", 201⟩⟩,
-  ⟨60, "f32_max", [132, 132], 132, (.decl ⟨true, false, true, false⟩ (some (.external "f32_max")) none), ⟨"src/prelude.isle", 203⟩⟩,
-  ⟨61, "f32_neg", [132], 132, (.decl ⟨true, false, false, false⟩ (some (.external "f32_neg")) none), ⟨"src/prelude.isle", 205⟩⟩,
-  ⟨62, "f32_abs", [132], 132, (.decl ⟨true, false, false, false⟩ (some (.external "f32_abs")) none), ⟨"src/prelude.isle", 207⟩⟩,
-  ⟨63, "f32_copysign", [132, 132], 132, (.decl ⟨true, false, false, false⟩ (some (.external "f32_copysign")) none), ⟨"src/prelude.isle", 209⟩⟩,
-  ⟨64, "f64_add", [133, 133], 133, (.decl ⟨true, false, true, false⟩ (some (.external "f64_add")) none), ⟨"src/prelude.isle", 211⟩⟩,
-  ⟨65, "f64_sub", [133, 133], 133, (.decl ⟨true, false, true, false⟩ (some (.external "f64_sub")) none), ⟨"src/prelude.isle", 213⟩⟩,
-  ⟨66, "f64_mul", [133, 133], 133, (.decl ⟨true, false, true, false⟩ (some (.external "f64_mul")) none), ⟨"src/prelude.isle", 215⟩⟩,
-  ⟨67, "f64_div", [133, 133], 133, (.decl ⟨true, false, true, false⟩ (some (.external "f64_div")) none), ⟨"src/prelude.isle", 217⟩⟩,
-  ⟨68, "f64_sqrt", [133], 133, (.decl ⟨true, false, true, false⟩ (some (.external "f64_sqrt")) none), ⟨"src/prelude.isle", 219⟩⟩,
-  ⟨69, "f64_ceil", [133], 133, (.decl ⟨true, false, true, false⟩ (some (.external "f64_ceil")) none), ⟨"src/prelude.isle", 221⟩⟩,
-  ⟨70, "f64_floor", [133], 133, (.decl ⟨true, false, true, false⟩ (some (.external "f64_floor")) none), ⟨"src/prelude.isle", 223⟩⟩,
-  ⟨71, "f64_trunc", [133], 133, (.decl ⟨true, false, true, false⟩ (some (.external "f64_trunc")) none), ⟨"src/prelude.isle", 225⟩⟩,
-  ⟨72, "f64_nearest", [133], 133, (.decl ⟨true, false, true, false⟩ (some (.external "f64_nearest")) none), ⟨"src/prelude.isle", 227⟩⟩,
-  ⟨73, "f64_min", [133, 133], 133, (.decl ⟨true, false, true, false⟩ (some (.external "f64_min")) none), ⟨"src/prelude.isle", 229⟩⟩,
-  ⟨74, "f64_max", [133, 133], 133, (.decl ⟨true, false, true, false⟩ (some (.external "f64_max")) none), ⟨"src/prelude.isle", 231⟩⟩,
-  ⟨75, "f64_neg", [133], 133, (.decl ⟨true, false, false, false⟩ (some (.external "f64_neg")) none), ⟨"src/prelude.isle", 233⟩⟩,
-  ⟨76, "f64_abs", [133], 133, (.decl ⟨true, false, false, false⟩ (some (.external "f64_abs")) none), ⟨"src/prelude.isle", 235⟩⟩,
-  ⟨77, "f64_copysign", [133, 133], 133, (.decl ⟨true, false, false, false⟩ (some (.external "f64_copysign")) none), ⟨"src/prelude.isle", 237⟩⟩,
-  ⟨78, "f128_min", [20, 20], 20, (.decl ⟨true, false, true, false⟩ (some (.external "f128_min")) none), ⟨"src/prelude.isle", 239⟩⟩,
-  ⟨79, "f128_max", [20, 20], 20, (.decl ⟨true, false, true, false⟩ (some (.external "f128_max")) none), ⟨"src/prelude.isle", 241⟩⟩,
-  ⟨80, "f128_neg", [20], 20, (.decl ⟨true, false, false, false⟩ (some (.external "f128_neg")) none), ⟨"src/prelude.isle", 243⟩⟩,
-  ⟨81, "f128_abs", [20], 20, (.decl ⟨true, false, false, false⟩ (some (.external "f128_abs")) none), ⟨"src/prelude.isle", 245⟩⟩,
-  ⟨82, "f128_copysign", [20, 20], 20, (.decl ⟨true, false, false, false⟩ (some (.external "f128_copysign")) none), ⟨"src/prelude.isle", 247⟩⟩,
-  ⟨83, "ty_umin", [14], 4, (.decl ⟨true, false, false, false⟩ (some (.external "ty_umin")) none), ⟨"src/prelude.isle", 280⟩⟩,
-  ⟨84, "ty_umax", [14], 4, (.decl ⟨true, false, false, false⟩ (some (.external "ty_umax")) none), ⟨"src/prelude.isle", 284⟩⟩,
-  ⟨85, "ty_smin", [14], 4, (.decl ⟨true, false, false, false⟩ (some (.external "ty_smin")) none), ⟨"src/prelude.isle", 288⟩⟩,
-  ⟨86, "ty_smax", [14], 4, (.decl ⟨true, false, false, false⟩ (some (.external "ty_smax")) none), ⟨"src/prelude.isle", 292⟩⟩,
-  ⟨87, "ty_bits", [14], 1, (.decl ⟨true, false, false, false⟩ (some (.external "ty_bits")) none), ⟨"src/prelude.isle", 297⟩⟩,
-  ⟨88, "ty_bits_u16", [14], 2, (.decl ⟨true, false, false, false⟩ (some (.external "ty_bits_u16")) none), ⟨"src/prelude.isle", 302⟩⟩,
-  ⟨89, "ty_bits_u64", [14], 4, (.decl ⟨true, false, false, false⟩ (some (.external "ty_bits_u64")) none), ⟨"src/prelude.isle", 306⟩⟩,
-  ⟨90, "ty_mask", [14], 4, (.decl ⟨true, false, false, false⟩ (some (.external "ty_mask")) none), ⟨"src/prelude.isle", 310⟩⟩,
-  ⟨91, "ty_lane_mask", [14], 4, (.decl ⟨true, false, false, false⟩ (some (.external "ty_lane_mask")) none), ⟨"src/prelude.isle", 314⟩⟩,
-  ⟨92, "ty_lane_count", [14], 4, (.decl ⟨true, false, false, false⟩ (some (.external "ty_lane_count")) none), ⟨"src/prelude.isle", 318⟩⟩,
-  ⟨93, "ty_bytes", [14], 2, (.decl ⟨true, false, false, false⟩ (some (.external "ty_bytes")) none), ⟨"src/prelude.isle", 323⟩⟩,
-  ⟨94, "lane_type", [14], 14, (.decl ⟨true, false, false, false⟩ (some (.external "lane_type")) none), ⟨"src/prelude.isle", 327⟩⟩,
-  ⟨95, "ty_half_lanes", [14], 14, (.decl ⟨true, false, true, false⟩ (some (.external "ty_half_lanes")) none), ⟨"src/prelude.isle", 333⟩⟩,
-  ⟨96, "ty_half_width", [14], 14, (.decl ⟨true, false, true, false⟩ (some (.external "ty_half_width")) none), ⟨"src/prelude.isle", 337⟩⟩,
-  ⟨97, "ty_shift_mask", [14], 4, (.decl ⟨true, false, false, false⟩ (some .internal) none), ⟨"src/prelude.isle", 342⟩⟩,
-  ⟨98, "ty_equal", [14, 14], 0, (.decl ⟨true, false, false, false⟩ (some (.external "ty_equal")) none), ⟨"src/prelude.isle", 346⟩⟩,
-  ⟨99, "mem_flags_trusted", [], 137, (.decl ⟨false, false, false, false⟩ (some (.external "mem_flags_trusted")) none), ⟨"src/prelude.isle", 356⟩⟩,
-  ⟨100, "mem_flags_data", [142], 137, (.decl ⟨false, false, false, false⟩ none (some (.external "mem_flags_data" false))), ⟨"src/prelude.isle", 360⟩⟩,
-  ⟨101, "mem_flags_intern", [142], 137, (.decl ⟨false, false, false, false⟩ (some (.external "mem_flags_intern")) none), ⟨"src/prelude.isle", 364⟩⟩,
-  ⟨102, "mem_flags_trusted_data", [], 142, (.decl ⟨true, false, false, false⟩ (some (.external "mem_flags_trusted_data")) none), ⟨"src/prelude.isle", 370⟩⟩,
-  ⟨103, "little_or_native_endian", [142], 137, (.decl ⟨false, false, false, false⟩ none (some (.external "little_or_native_endian" false))), ⟨"src/prelude.isle", 376⟩⟩,
-  ⟨104, "intcc_swap_args", [145], 145, (.decl ⟨false, false, false, false⟩ (some (.external "intcc_swap_args")) none), ⟨"src/prelude.isle", 382⟩⟩,
-  ⟨105, "intcc_complement", [145], 145, (.decl ⟨false, false, false, false⟩ (some (.external "intcc_complement")) none), ⟨"src/prelude.isle", 386⟩⟩,
-  ⟨106, "intcc_without_eq", [145], 145, (.decl ⟨true, false, false, false⟩ (some (.external "intcc_without_eq")) none), ⟨"src/prelude.isle", 392⟩⟩,
-  ⟨107, "floatcc_swap_args", [144], 144, (.decl ⟨false, false, false, false⟩ (some (.external "floatcc_swap_args")) none), ⟨"src/prelude.isle", 396⟩⟩,
-  ⟨108, "floatcc_complement", [144], 144, (.decl ⟨false, false, false, false⟩ (some (.external "floatcc_complement")) none), ⟨"src/prelude.isle", 400⟩⟩,
-  ⟨109, "floatcc_unordered", [144], 0, (.decl ⟨true, false, false, false⟩ (some (.external "floatcc_unordered")) none), ⟨"src/prelude.isle", 404⟩⟩,
-  ⟨110, "fits_in_16", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "fits_in_16" false))), ⟨"src/prelude.isle", 413⟩⟩,
-  ⟨111, "fits_in_32", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "fits_in_32" false))), ⟨"src/prelude.isle", 420⟩⟩,
-  ⟨112, "lane_fits_in_32", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "lane_fits_in_32" false))), ⟨"src/prelude.isle", 424⟩⟩,
-  ⟨113, "fits_in_64", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "fits_in_64" false))), ⟨"src/prelude.isle", 431⟩⟩,
-  ⟨114, "ty_16", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_16" false))), ⟨"src/prelude.isle", 435⟩⟩,
-  ⟨115, "ty_32", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_32" false))), ⟨"src/prelude.isle", 442⟩⟩,
-  ⟨116, "ty_64", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_64" false))), ⟨"src/prelude.isle", 449⟩⟩,
-  ⟨117, "ty_128", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_128" false))), ⟨"src/prelude.isle", 453⟩⟩,
-  ⟨118, "ty_int_ref_scalar_64", [14], 14, (.decl ⟨true, false, true, false⟩ (some (.external "ty_int_ref_scalar_64")) none), ⟨"src/prelude.isle", 466⟩⟩,
-  ⟨119, "ty_int_ref_scalar_64_extract", [14], 14, (.decl ⟨true, false, true, false⟩ none (some (.external "ty_int_ref_scalar_64_extract" false))), ⟨"src/prelude.isle", 477⟩⟩,
-  ⟨120, "ty_32_or_64", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_32_or_64" false))), ⟨"src/prelude.isle", 484⟩⟩,
-  ⟨121, "ty_8_or_16", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_8_or_16" false))), ⟨"src/prelude.isle", 488⟩⟩,
-  ⟨122, "ty_16_or_32", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_16_or_32" false))), ⟨"src/prelude.isle", 492⟩⟩,
-  ⟨123, "int_fits_in_32", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "int_fits_in_32" false))), ⟨"src/prelude.isle", 496⟩⟩,
-  ⟨124, "ty_int_ref_64", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_int_ref_64" false))), ⟨"src/prelude.isle", 500⟩⟩,
-  ⟨125, "ty_int_ref_16_to_64", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_int_ref_16_to_64" false))), ⟨"src/prelude.isle", 504⟩⟩,
-  ⟨126, "ty_int", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_int" false))), ⟨"src/prelude.isle", 509⟩⟩,
-  ⟨127, "ty_scalar", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_scalar" false))), ⟨"src/prelude.isle", 513⟩⟩,
-  ⟨128, "ty_scalar_float", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_scalar_float" false))), ⟨"src/prelude.isle", 520⟩⟩,
-  ⟨129, "ty_float_or_vec", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_float_or_vec" false))), ⟨"src/prelude.isle", 527⟩⟩,
-  ⟨130, "ty_vector_float", [14], 14, (.decl ⟨true, false, true, false⟩ (some (.external "ty_vector_float")) none), ⟨"src/prelude.isle", 531⟩⟩,
-  ⟨131, "ty_vector_not_float", [14], 14, (.decl ⟨true, false, true, false⟩ (some (.external "ty_vector_not_float")) none), ⟨"src/prelude.isle", 536⟩⟩,
-  ⟨132, "ty_vec64", [14], 14, (.decl ⟨true, false, true, false⟩ (some (.external "ty_vec64_ctor")) (some (.external "ty_vec64" false))), ⟨"src/prelude.isle", 541⟩⟩,
-  ⟨133, "ty_vec128", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_vec128" false))), ⟨"src/prelude.isle", 547⟩⟩,
-  ⟨134, "ty_int_vec128", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_int_vec128" false))), ⟨"src/prelude.isle", 551⟩⟩,
-  ⟨135, "ty_dyn_vec64", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_dyn_vec64" false))), ⟨"src/prelude.isle", 557⟩⟩,
-  ⟨136, "ty_dyn_vec128", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_dyn_vec128" false))), ⟨"src/prelude.isle", 562⟩⟩,
-  ⟨137, "ty_vec64_int", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_vec64_int" false))), ⟨"src/prelude.isle", 567⟩⟩,
-  ⟨138, "ty_vec128_int", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_vec128_int" false))), ⟨"src/prelude.isle", 572⟩⟩,
-  ⟨139, "ty_addr64", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_addr64" false))), ⟨"src/prelude.isle", 576⟩⟩,
-  ⟨140, "not_vec32x2", [14], 14, (.decl ⟨true, false, true, false⟩ (some (.external "not_vec32x2")) none), ⟨"src/prelude.isle", 580⟩⟩,
-  ⟨141, "not_i64x2", [], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "not_i64x2" false))), ⟨"src/prelude.isle", 584⟩⟩,
-  ⟨142, "u8_from_uimm8", [1], 141, (.decl ⟨false, false, false, false⟩ none (some (.external "u8_from_uimm8" true))), ⟨"src/prelude.isle", 588⟩⟩,
-  ⟨143, "u64_from_bool", [4], 0, (.decl ⟨false, false, false, false⟩ none (some (.external "u64_from_bool" true))), ⟨"src/prelude.isle", 592⟩⟩,
-  ⟨144, "u64_from_imm64", [4], 134, (.decl ⟨false, false, false, false⟩ none (some (.external "u64_from_imm64" true))), ⟨"src/prelude.isle", 597⟩⟩,
-  ⟨145, "nonzero_u64_from_imm64", [4], 134, (.decl ⟨false, false, false, false⟩ none (some (.external "nonzero_u64_from_imm64" false))), ⟨"src/prelude.isle", 604⟩⟩,
-  ⟨146, "imm64_power_of_two", [4], 134, (.decl ⟨false, false, false, false⟩ none (some (.external "imm64_power_of_two" false))), ⟨"src/prelude.isle", 608⟩⟩,
-  ⟨147, "imm64", [4], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64")) none), ⟨"src/prelude.isle", 612⟩⟩,
-  ⟨148, "imm64_masked", [14, 4], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_masked")) none), ⟨"src/prelude.isle", 616⟩⟩,
-  ⟨149, "u16_from_ieee16", [2], 131, (.decl ⟨false, false, false, false⟩ none (some (.external "u16_from_ieee16" true))), ⟨"src/prelude.isle", 620⟩⟩,
-  ⟨150, "u32_from_ieee32", [3], 132, (.decl ⟨false, false, false, false⟩ none (some (.external "u32_from_ieee32" true))), ⟨"src/prelude.isle", 625⟩⟩,
-  ⟨151, "u64_from_ieee64", [4], 133, (.decl ⟨false, false, false, false⟩ none (some (.external "u64_from_ieee64" true))), ⟨"src/prelude.isle", 630⟩⟩,
-  ⟨152, "multi_lane", [3, 3], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "multi_lane" false))), ⟨"src/prelude.isle", 635⟩⟩,
-  ⟨153, "dynamic_lane", [3, 3], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "dynamic_lane" false))), ⟨"src/prelude.isle", 640⟩⟩,
-  ⟨154, "ty_dyn64_int", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_dyn64_int" false))), ⟨"src/prelude.isle", 645⟩⟩,
-  ⟨155, "ty_dyn128_int", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_dyn128_int" false))), ⟨"src/prelude.isle", 650⟩⟩,
-  ⟨156, "offset32_to_i32", [138], 9, (.decl ⟨true, false, false, false⟩ (some (.external "offset32_to_i32")) none), ⟨"src/prelude.isle", 655⟩⟩,
-  ⟨157, "i32_to_offset32", [9], 138, (.decl ⟨true, false, false, false⟩ (some (.external "i32_to_offset32")) none), ⟨"src/prelude.isle", 660⟩⟩,
-  ⟨158, "intcc_unsigned", [145], 145, (.decl ⟨true, false, false, false⟩ (some (.external "intcc_unsigned")) none), ⟨"src/prelude.isle", 684⟩⟩,
-  ⟨159, "signed_cond_code", [145], 145, (.decl ⟨true, false, true, false⟩ (some (.external "signed_cond_code")) none), ⟨"src/prelude.isle", 705⟩⟩,
-  ⟨160, "unsigned_cond_code", [145], 145, (.decl ⟨true, false, true, false⟩ (some (.external "unsigned_cond_code")) none), ⟨"src/prelude.isle", 725⟩⟩,
-  ⟨161, "trap_code_division_by_zero", [], 146, (.decl ⟨true, false, false, false⟩ (some (.external "trap_code_division_by_zero")) none), ⟨"src/prelude.isle", 730⟩⟩,
-  ⟨162, "trap_code_integer_overflow", [], 146, (.decl ⟨true, false, false, false⟩ (some (.external "trap_code_integer_overflow")) none), ⟨"src/prelude.isle", 734⟩⟩,
-  ⟨163, "trap_code_bad_conversion_to_integer", [], 146, (.decl ⟨true, false, false, false⟩ (some (.external "trap_code_bad_conversion_to_integer")) none), ⟨"src/prelude.isle", 739⟩⟩,
-  ⟨164, "value_reg", [27], 22, (.decl ⟨false, false, false, false⟩ (some (.external "value_reg")) none), ⟨"src/prelude_lower.isle", 48⟩⟩,
-  ⟨165, "writable_value_reg", [28], 23, (.decl ⟨false, false, false, false⟩ (some (.external "writable_value_reg")) none), ⟨"src/prelude_lower.isle", 52⟩⟩,
-  ⟨166, "value_regs", [27, 27], 22, (.decl ⟨false, false, false, false⟩ (some (.external "value_regs")) none), ⟨"src/prelude_lower.isle", 59⟩⟩,
-  ⟨167, "writable_value_regs", [28, 28], 23, (.decl ⟨false, false, false, false⟩ (some (.external "writable_value_regs")) none), ⟨"src/prelude_lower.isle", 63⟩⟩,
-  ⟨168, "value_regs_invalid", [], 22, (.decl ⟨false, false, false, false⟩ (some (.external "value_regs_invalid")) none), ⟨"src/prelude_lower.isle", 68⟩⟩,
-  ⟨169, "output_none", [], 25, (.decl ⟨false, false, false, false⟩ (some (.external "output_none")) none), ⟨"src/prelude_lower.isle", 73⟩⟩,
-  ⟨170, "output", [22], 25, (.decl ⟨false, false, false, false⟩ (some (.external "output")) none), ⟨"src/prelude_lower.isle", 86⟩⟩,
-  ⟨171, "output_pair", [22, 22], 25, (.decl ⟨false, false, false, false⟩ (some (.external "output_pair")) none), ⟨"src/prelude_lower.isle", 100⟩⟩,
-  ⟨172, "output_reg", [27], 25, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 104⟩⟩,
-  ⟨173, "output_value", [15], 25, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 108⟩⟩,
-  ⟨174, "output_vec", [24], 25, (.decl ⟨false, false, false, false⟩ (some (.external "output_vec")) none), ⟨"src/prelude_lower.isle", 112⟩⟩,
-  ⟨175, "temp_writable_reg", [14], 28, (.decl ⟨false, false, false, false⟩ (some (.external "temp_writable_reg")) none), ⟨"src/prelude_lower.isle", 117⟩⟩,
-  ⟨176, "temp_reg", [14], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 122⟩⟩,
-  ⟨177, "is_valid_reg", [0], 27, (.decl ⟨false, false, false, false⟩ none (some (.external "is_valid_reg" true))), ⟨"src/prelude_lower.isle", 126⟩⟩,
-  ⟨178, "invalid_reg", [], 27, (.decl ⟨false, false, false, false⟩ (some (.external "invalid_reg")) (some (.internal (.list [(.atom "extractor"), (.list [(.atom "invalid_reg")]), (.list [(.atom "is_valid_reg"), (.atom "false")])])))), ⟨"src/prelude_lower.isle", 130⟩⟩,
-  ⟨179, "valid_reg", [27], 27, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "valid_reg"), (.atom "reg")]), (.list [(.atom "and"), (.list [(.atom "is_valid_reg"), (.atom "true")]), (.atom "reg")])])))), ⟨"src/prelude_lower.isle", 135⟩⟩,
-  ⟨180, "mark_value_used", [15], 13, (.decl ⟨false, false, false, false⟩ (some (.external "mark_value_used")) none), ⟨"src/prelude_lower.isle", 139⟩⟩,
-  ⟨181, "opportunistic_def", [15, 22], 13, (.decl ⟨false, false, false, false⟩ (some (.external "opportunistic_def")) none), ⟨"src/prelude_lower.isle", 147⟩⟩,
-  ⟨182, "put_in_reg", [15], 27, (.decl ⟨false, false, false, false⟩ (some (.external "put_in_reg")) none), ⟨"src/prelude_lower.isle", 159⟩⟩,
-  ⟨183, "put_in_regs", [15], 22, (.decl ⟨false, false, false, false⟩ (some (.external "put_in_regs")) none), ⟨"src/prelude_lower.isle", 169⟩⟩,
-  ⟨184, "put_in_regs_vec", [19], 24, (.decl ⟨false, false, false, false⟩ (some (.external "put_in_regs_vec")) none), ⟨"src/prelude_lower.isle", 173⟩⟩,
-  ⟨185, "value_regs_get", [22, 6], 27, (.decl ⟨false, false, false, false⟩ (some (.external "value_regs_get")) none), ⟨"src/prelude_lower.isle", 182⟩⟩,
-  ⟨186, "value_regs_len", [22], 6, (.decl ⟨true, false, false, false⟩ (some (.external "value_regs_len")) none), ⟨"src/prelude_lower.isle", 186⟩⟩,
-  ⟨187, "lo_reg", [15], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 197⟩⟩,
-  ⟨188, "preg_to_reg", [32], 27, (.decl ⟨false, false, false, false⟩ (some (.external "preg_to_reg")) none), ⟨"src/prelude_lower.isle", 203⟩⟩,
-  ⟨189, "multi_reg_to_pair_and_single", [26], 25, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 209⟩⟩,
-  ⟨190, "single_target", [33], 43, (.decl ⟨false, false, false, false⟩ none (some (.external "single_target" false))), ⟨"src/prelude_lower.isle", 229⟩⟩,
-  ⟨191, "two_targets", [33, 33], 43, (.decl ⟨false, false, false, false⟩ none (some (.external "two_targets" false))), ⟨"src/prelude_lower.isle", 233⟩⟩,
-  ⟨192, "jump_table_targets", [33, 44], 43, (.decl ⟨false, false, false, false⟩ none (some (.external "jump_table_targets" false))), ⟨"src/prelude_lower.isle", 237⟩⟩,
-  ⟨193, "jump_table_size", [44], 3, (.decl ⟨false, false, false, false⟩ (some (.external "jump_table_size")) none), ⟨"src/prelude_lower.isle", 241⟩⟩,
-  ⟨194, "value_list_slice", [19], 16, (.decl ⟨false, false, false, false⟩ none (some (.external "value_list_slice" true))), ⟨"src/prelude_lower.isle", 247⟩⟩,
-  ⟨195, "value_slice_empty", [], 19, (.decl ⟨false, false, false, false⟩ none (some (.external "value_slice_empty" false))), ⟨"src/prelude_lower.isle", 251⟩⟩,
-  ⟨196, "value_slice_unwrap", [15, 19], 19, (.decl ⟨false, false, false, false⟩ none (some (.external "value_slice_unwrap" false))), ⟨"src/prelude_lower.isle", 255⟩⟩,
-  ⟨197, "value_slice_len", [19], 6, (.decl ⟨false, false, false, false⟩ (some (.external "value_slice_len")) none), ⟨"src/prelude_lower.isle", 259⟩⟩,
-  ⟨198, "value_slice_get", [19, 6], 15, (.decl ⟨false, false, false, false⟩ (some (.external "value_slice_get")) none), ⟨"src/prelude_lower.isle", 263⟩⟩,
-  ⟨199, "unwrap_head_value_list_1", [15, 19], 16, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "unwrap_head_value_list_1"), (.atom "head"), (.atom "tail")]), (.list [(.atom "value_list_slice"), (.list [(.atom "value_slice_unwrap"), (.atom "head"), (.atom "tail")])])])))), ⟨"src/prelude_lower.isle", 268⟩⟩,
-  ⟨200, "unwrap_head_value_list_2", [15, 15, 19], 16, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "unwrap_head_value_list_2"), (.atom "head1"), (.atom "head2"), (.atom "tail")]), (.list [(.atom "value_list_slice"), (.list [(.atom "value_slice_unwrap"), (.atom "head1"), (.list [(.atom "value_slice_unwrap"), (.atom "head2"), (.atom "tail")])])])])))), ⟨"src/prelude_lower.isle", 274⟩⟩,
-  ⟨201, "writable_reg_to_reg", [28], 27, (.decl ⟨true, false, false, false⟩ (some (.external "writable_reg_to_reg")) none), ⟨"src/prelude_lower.isle", 280⟩⟩,
-  ⟨202, "inst_results", [19], 18, (.decl ⟨false, false, false, false⟩ none (some (.external "inst_results" true))), ⟨"src/prelude_lower.isle", 284⟩⟩,
-  ⟨203, "value_is_unused", [15], 0, (.decl ⟨true, false, false, false⟩ (some (.external "value_is_unused")) none), ⟨"src/prelude_lower.isle", 289⟩⟩,
-  ⟨204, "value_used", [15], 0, (.decl ⟨true, false, false, false⟩ (some (.external "value_used")) none), ⟨"src/prelude_lower.isle", 296⟩⟩,
-  ⟨205, "first_result", [15], 18, (.decl ⟨false, false, false, false⟩ none (some (.external "first_result" false))), ⟨"src/prelude_lower.isle", 300⟩⟩,
-  ⟨206, "second_result", [15], 18, (.decl ⟨false, false, false, false⟩ none (some (.external "second_result" false))), ⟨"src/prelude_lower.isle", 312⟩⟩,
-  ⟨207, "is_second_result", [15], 15, (.decl ⟨false, false, false, false⟩ none (some (.external "is_second_result" false))), ⟨"src/prelude_lower.isle", 318⟩⟩,
-  ⟨208, "second_result_used", [18], 0, (.decl ⟨true, false, false, false⟩ (some (.external "second_result_used")) none), ⟨"src/prelude_lower.isle", 326⟩⟩,
-  ⟨209, "inst_data_value", [14, 152], 18, (.decl ⟨false, false, false, false⟩ none (some (.external "inst_data_value" true))), ⟨"src/prelude_lower.isle", 330⟩⟩,
-  ⟨210, "result_type", [14], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "result_type"), (.atom "ty")]), (.list [(.atom "first_result"), (.list [(.atom "value_type"), (.atom "ty")])])])))), ⟨"src/prelude_lower.isle", 334⟩⟩,
-  ⟨211, "has_type", [14, 18], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "has_type"), (.atom "ty"), (.atom "inst")]), (.list [(.atom "and"), (.list [(.atom "result_type"), (.atom "ty")]), (.atom "inst")])])))), ⟨"src/prelude_lower.isle", 344⟩⟩,
-  ⟨212, "u8_from_iconst", [1], 15, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u8_from_iconst"), (.atom "x")]), (.list [(.atom "u64_from_iconst"), (.list [(.atom "u8_from_u64"), (.atom "x")])])])))), ⟨"src/prelude_lower.isle", 351⟩⟩,
-  ⟨213, "u16_from_iconst", [2], 15, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u16_from_iconst"), (.atom "x")]), (.list [(.atom "u64_from_iconst"), (.list [(.atom "u16_from_u64"), (.atom "x")])])])))), ⟨"src/prelude_lower.isle", 355⟩⟩,
-  ⟨214, "u32_from_iconst", [3], 15, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u32_from_iconst"), (.atom "x")]), (.list [(.atom "u64_from_iconst"), (.list [(.atom "u32_from_u64"), (.atom "x")])])])))), ⟨"src/prelude_lower.isle", 359⟩⟩,
-  ⟨215, "u64_from_iconst", [4], 15, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u64_from_iconst"), (.atom "x")]), (.list [(.atom "def_inst"), (.list [(.atom "iconst"), (.atom "_"), (.list [(.atom "u64_from_imm64"), (.atom "x")])])])])))), ⟨"src/prelude_lower.isle", 365⟩⟩,
-  ⟨216, "i8_from_iconst", [7], 15, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i8_from_iconst"), (.atom "x")]), (.list [(.atom "i64_from_iconst"), (.list [(.atom "i8_from_i64"), (.atom "x")])])])))), ⟨"src/prelude_lower.isle", 369⟩⟩,
-  ⟨217, "i16_from_iconst", [8], 15, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i16_from_iconst"), (.atom "x")]), (.list [(.atom "i64_from_iconst"), (.list [(.atom "i16_from_i64"), (.atom "x")])])])))), ⟨"src/prelude_lower.isle", 373⟩⟩,
-  ⟨218, "i32_from_iconst", [9], 15, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i32_from_iconst"), (.atom "x")]), (.list [(.atom "i64_from_iconst"), (.list [(.atom "i32_from_i64"), (.atom "x")])])])))), ⟨"src/prelude_lower.isle", 391⟩⟩,
-  ⟨219, "i64_from_iconst", [10], 15, (.decl ⟨false, false, false, false⟩ none (some (.external "i64_from_iconst" false))), ⟨"src/prelude_lower.isle", 397⟩⟩,
-  ⟨220, "zero_value", [15], 15, (.decl ⟨true, false, true, false⟩ (some (.external "zero_value")) none), ⟨"src/prelude_lower.isle", 401⟩⟩,
-  ⟨221, "is_sinkable_inst", [15], 18, (.decl ⟨true, false, true, false⟩ (some (.external "is_sinkable_inst")) none), ⟨"src/prelude_lower.isle", 406⟩⟩,
-  ⟨222, "maybe_uextend", [15], 15, (.decl ⟨false, false, false, false⟩ none (some (.external "maybe_uextend" false))), ⟨"src/prelude_lower.isle", 411⟩⟩,
-  ⟨223, "uimm8", [1], 134, (.decl ⟨false, false, false, false⟩ none (some (.external "uimm8" false))), ⟨"src/prelude_lower.isle", 420⟩⟩,
-  ⟨224, "eq", [14, 15, 15], 15, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "eq"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "icmp"), (.atom "ty"), (.list [(.atom "IntCC.Equal")]), (.atom "x"), (.atom "y")])])))), ⟨"src/prelude_lower.isle", 423⟩⟩,
-  ⟨225, "ne", [14, 15, 15], 15, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "ne"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "icmp"), (.atom "ty"), (.list [(.atom "IntCC.NotEqual")]), (.atom "x"), (.atom "y")])])))), ⟨"src/prelude_lower.isle", 426⟩⟩,
-  ⟨226, "ult", [14, 15, 15], 15, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "ult"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "icmp"), (.atom "ty"), (.list [(.atom "IntCC.UnsignedLessThan")]), (.atom "x"), (.atom "y")])])))), ⟨"src/prelude_lower.isle", 429⟩⟩,
-  ⟨227, "ule", [14, 15, 15], 15, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "ule"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "icmp"), (.atom "ty"), (.list [(.atom "IntCC.UnsignedLessThanOrEqual")]), (.atom "x"), (.atom "y")])])))), ⟨"src/prelude_lower.isle", 432⟩⟩,
-  ⟨228, "ugt", [14, 15, 15], 15, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "ugt"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "icmp"), (.atom "ty"), (.list [(.atom "IntCC.UnsignedGreaterThan")]), (.atom "x"), (.atom "y")])])))), ⟨"src/prelude_lower.isle", 435⟩⟩,
-  ⟨229, "uge", [14, 15, 15], 15, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "uge"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "icmp"), (.atom "ty"), (.list [(.atom "IntCC.UnsignedGreaterThanOrEqual")]), (.atom "x"), (.atom "y")])])))), ⟨"src/prelude_lower.isle", 438⟩⟩,
-  ⟨230, "slt", [14, 15, 15], 15, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "slt"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "icmp"), (.atom "ty"), (.list [(.atom "IntCC.SignedLessThan")]), (.atom "x"), (.atom "y")])])))), ⟨"src/prelude_lower.isle", 441⟩⟩,
-  ⟨231, "sle", [14, 15, 15], 15, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "sle"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "icmp"), (.atom "ty"), (.list [(.atom "IntCC.SignedLessThanOrEqual")]), (.atom "x"), (.atom "y")])])))), ⟨"src/prelude_lower.isle", 444⟩⟩,
-  ⟨232, "sgt", [14, 15, 15], 15, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "sgt"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "icmp"), (.atom "ty"), (.list [(.atom "IntCC.SignedGreaterThan")]), (.atom "x"), (.atom "y")])])))), ⟨"src/prelude_lower.isle", 447⟩⟩,
-  ⟨233, "sge", [14, 15, 15], 15, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "sge"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "icmp"), (.atom "ty"), (.list [(.atom "IntCC.SignedGreaterThanOrEqual")]), (.atom "x"), (.atom "y")])])))), ⟨"src/prelude_lower.isle", 450⟩⟩,
-  ⟨234, "block_exn_successor_label", [150, 4], 33, (.decl ⟨false, false, false, false⟩ (some (.external "block_exn_successor_label")) none), ⟨"src/prelude_lower.isle", 455⟩⟩,
-  ⟨235, "emit", [58], 13, (.decl ⟨false, false, false, false⟩ (some (.external "emit")) none), ⟨"src/prelude_lower.isle", 465⟩⟩,
-  ⟨236, "sink_inst", [18], 13, (.decl ⟨false, false, false, false⟩ (some (.external "sink_inst")) none), ⟨"src/prelude_lower.isle", 474⟩⟩,
-  ⟨237, "emit_u64_le_const", [4], 45, (.decl ⟨false, false, false, false⟩ (some (.external "emit_u64_le_const")) none), ⟨"src/prelude_lower.isle", 484⟩⟩,
-  ⟨238, "emit_u64_be_const", [4], 45, (.decl ⟨false, false, false, false⟩ (some (.external "emit_u64_be_const")) none), ⟨"src/prelude_lower.isle", 490⟩⟩,
-  ⟨239, "emit_u128_le_const", [5], 45, (.decl ⟨false, false, false, false⟩ (some (.external "emit_u128_le_const")) none), ⟨"src/prelude_lower.isle", 496⟩⟩,
-  ⟨240, "emit_u128_be_const", [5], 45, (.decl ⟨false, false, false, false⟩ (some (.external "emit_u128_be_const")) none), ⟨"src/prelude_lower.isle", 502⟩⟩,
-  ⟨241, "const_to_vconst", [126], 45, (.decl ⟨false, false, false, false⟩ (some (.external "const_to_vconst")) none), ⟨"src/prelude_lower.isle", 506⟩⟩,
-  ⟨242, "emit_side_effect", [46], 13, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 521⟩⟩,
-  ⟨243, "side_effect", [46], 25, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 534⟩⟩,
-  ⟨244, "side_effect_concat", [46, 46], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 540⟩⟩,
-  ⟨245, "side_effect_as_invalid", [46], 25, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 550⟩⟩,
-  ⟨246, "produces_flags_concat", [47, 47], 47, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 643⟩⟩,
-  ⟨247, "produces_flags_get_reg", [47], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 699⟩⟩,
-  ⟨248, "produces_flags_ignore", [47], 47, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 705⟩⟩,
-  ⟨249, "produces_flags_opportunistic_def", [47, 15], 47, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 714⟩⟩,
-  ⟨250, "produces_flags_opportunistic_def2", [58, 27, 15, 58], 47, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 724⟩⟩,
-  ⟨251, "consumes_flags_concat", [49, 49], 49, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 731⟩⟩,
-  ⟨252, "consumes_flags_get_reg", [49], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 756⟩⟩,
-  ⟨253, "consumes_flags_get_regs", [49], 22, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 758⟩⟩,
-  ⟨254, "with_flags", [47, 49], 22, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 787⟩⟩,
-  ⟨255, "with_flags_reg", [47, 49], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 983⟩⟩,
-  ⟨256, "with_flags_side_effect", [47, 49], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 994⟩⟩,
-  ⟨257, "with_flags_chained", [47, 48, 49], 26, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 1056⟩⟩,
-  ⟨258, "tls_model", [50], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "tls_model" true))), ⟨"src/prelude_lower.isle", 1305⟩⟩,
-  ⟨259, "tls_model_is_elf_gd", [], 13, (.decl ⟨true, false, true, false⟩ (some (.external "tls_model_is_elf_gd")) none), ⟨"src/prelude_lower.isle", 1308⟩⟩,
-  ⟨260, "tls_model_is_macho", [], 13, (.decl ⟨true, false, true, false⟩ (some (.external "tls_model_is_macho")) none), ⟨"src/prelude_lower.isle", 1311⟩⟩,
-  ⟨261, "tls_model_is_coff", [], 13, (.decl ⟨true, false, true, false⟩ (some (.external "tls_model_is_coff")) none), ⟨"src/prelude_lower.isle", 1314⟩⟩,
-  ⟨262, "preserve_frame_pointers", [], 13, (.decl ⟨true, false, true, false⟩ (some (.external "preserve_frame_pointers")) none), ⟨"src/prelude_lower.isle", 1317⟩⟩,
-  ⟨263, "stack_switch_model", [], 51, (.decl ⟨true, false, true, false⟩ (some (.external "stack_switch_model")) none), ⟨"src/prelude_lower.isle", 1324⟩⟩,
-  ⟨264, "box_external_name", [36], 37, (.decl ⟨false, false, false, false⟩ (some (.external "box_external_name")) none), ⟨"src/prelude_lower.isle", 1329⟩⟩,
-  ⟨265, "func_ref_data", [139, 36, 38, 0], 129, (.decl ⟨false, false, false, false⟩ none (some (.external "func_ref_data" true))), ⟨"src/prelude_lower.isle", 1334⟩⟩,
-  ⟨266, "exception_sig", [139], 128, (.decl ⟨false, false, false, false⟩ none (some (.external "exception_sig" true))), ⟨"src/prelude_lower.isle", 1338⟩⟩,
-  ⟨267, "symbol_value_data", [36, 38, 10], 130, (.decl ⟨false, false, false, false⟩ none (some (.external "symbol_value_data" false))), ⟨"src/prelude_lower.isle", 1343⟩⟩,
-  ⟨268, "vec_mask_from_immediate", [21], 135, (.decl ⟨false, false, false, false⟩ none (some (.external "vec_mask_from_immediate" false))), ⟨"src/prelude_lower.isle", 1348⟩⟩,
-  ⟨269, "u128_from_immediate", [5], 135, (.decl ⟨false, false, false, false⟩ none (some (.external "u128_from_immediate" false))), ⟨"src/prelude_lower.isle", 1353⟩⟩,
-  ⟨270, "vconst_from_immediate", [45], 135, (.decl ⟨false, false, false, false⟩ none (some (.external "vconst_from_immediate" false))), ⟨"src/prelude_lower.isle", 1358⟩⟩,
-  ⟨271, "u128_from_constant", [5], 126, (.decl ⟨false, false, false, false⟩ none (some (.external "u128_from_constant" false))), ⟨"src/prelude_lower.isle", 1363⟩⟩,
-  ⟨272, "u64_from_constant", [4], 126, (.decl ⟨false, false, false, false⟩ none (some (.external "u64_from_constant" false))), ⟨"src/prelude_lower.isle", 1368⟩⟩,
-  ⟨273, "shuffle64_from_imm", [1, 1], 135, (.decl ⟨false, false, false, false⟩ none (some (.external "shuffle64_from_imm" false))), ⟨"src/prelude_lower.isle", 1376⟩⟩,
-  ⟨274, "shuffle32_from_imm", [1, 1, 1, 1], 135, (.decl ⟨false, false, false, false⟩ none (some (.external "shuffle32_from_imm" false))), ⟨"src/prelude_lower.isle", 1378⟩⟩,
-  ⟨275, "shuffle16_from_imm", [1, 1, 1, 1, 1, 1, 1, 1], 135, (.decl ⟨false, false, false, false⟩ none (some (.external "shuffle16_from_imm" false))), ⟨"src/prelude_lower.isle", 1380⟩⟩,
-  ⟨276, "only_writable_reg", [28], 23, (.decl ⟨false, false, false, false⟩ none (some (.external "only_writable_reg" false))), ⟨"src/prelude_lower.isle", 1387⟩⟩,
-  ⟨277, "writable_regs_get", [23, 6], 28, (.decl ⟨false, false, false, false⟩ (some (.external "writable_regs_get")) none), ⟨"src/prelude_lower.isle", 1391⟩⟩,
-  ⟨278, "abi_sig", [139], 52, (.decl ⟨false, false, false, false⟩ (some (.external "abi_sig")) none), ⟨"src/prelude_lower.isle", 1425⟩⟩,
-  ⟨279, "abi_num_args", [52], 6, (.decl ⟨false, false, false, false⟩ (some (.external "abi_num_args")) none), ⟨"src/prelude_lower.isle", 1429⟩⟩,
-  ⟨280, "abi_get_arg", [52, 6], 53, (.decl ⟨false, false, false, false⟩ (some (.external "abi_get_arg")) none), ⟨"src/prelude_lower.isle", 1433⟩⟩,
-  ⟨281, "abi_num_rets", [52], 6, (.decl ⟨false, false, false, false⟩ (some (.external "abi_num_rets")) none), ⟨"src/prelude_lower.isle", 1437⟩⟩,
-  ⟨282, "abi_get_ret", [52, 6], 53, (.decl ⟨false, false, false, false⟩ (some (.external "abi_get_ret")) none), ⟨"src/prelude_lower.isle", 1441⟩⟩,
-  ⟨283, "abi_ret_arg", [53], 52, (.decl ⟨false, false, false, false⟩ none (some (.external "abi_ret_arg" false))), ⟨"src/prelude_lower.isle", 1446⟩⟩,
-  ⟨284, "abi_no_ret_arg", [], 52, (.decl ⟨false, false, false, false⟩ none (some (.external "abi_no_ret_arg" false))), ⟨"src/prelude_lower.isle", 1450⟩⟩,
-  ⟨285, "abi_unwrap_ret_area_ptr", [], 27, (.decl ⟨false, false, false, false⟩ (some (.external "abi_unwrap_ret_area_ptr")) none), ⟨"src/prelude_lower.isle", 1454⟩⟩,
-  ⟨286, "abi_stackslot_addr", [28, 140, 138], 58, (.decl ⟨false, false, false, false⟩ (some (.external "abi_stackslot_addr")) none), ⟨"src/prelude_lower.isle", 1458⟩⟩,
-  ⟨287, "abi_stackslot_offset_into_slot_region", [140, 138, 138], 9, (.decl ⟨false, false, false, false⟩ (some (.external "abi_stackslot_offset_into_slot_region")) none), ⟨"src/prelude_lower.isle", 1462⟩⟩,
-  ⟨288, "abi_dynamic_stackslot_addr", [28, 127], 58, (.decl ⟨false, false, false, false⟩ (some (.external "abi_dynamic_stackslot_addr")) none), ⟨"src/prelude_lower.isle", 1466⟩⟩,
-  ⟨289, "abi_arg_only_slot", [54], 53, (.decl ⟨false, false, false, false⟩ none (some (.external "abi_arg_only_slot" false))), ⟨"src/prelude_lower.isle", 1471⟩⟩,
-  ⟨290, "abi_arg_implicit_pointer", [54, 10, 14], 53, (.decl ⟨false, false, false, false⟩ none (some (.external "abi_arg_implicit_pointer" false))), ⟨"src/prelude_lower.isle", 1476⟩⟩,
-  ⟨291, "real_reg_to_reg", [55], 27, (.decl ⟨false, false, false, false⟩ (some (.external "real_reg_to_reg")) none), ⟨"src/prelude_lower.isle", 1480⟩⟩,
-  ⟨292, "real_reg_to_writable_reg", [55], 28, (.decl ⟨false, false, false, false⟩ (some (.external "real_reg_to_writable_reg")) none), ⟨"src/prelude_lower.isle", 1484⟩⟩,
-  ⟨293, "gen_move", [14, 28, 27], 58, (.decl ⟨false, false, false, false⟩ (some (.external "gen_move")) none), ⟨"src/prelude_lower.isle", 1488⟩⟩,
-  ⟨294, "lower_return", [19], 25, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 1492⟩⟩,
-  ⟨295, "gen_return", [24], 13, (.decl ⟨false, false, false, false⟩ (some (.external "gen_return")) none), ⟨"src/prelude_lower.isle", 1497⟩⟩,
-  ⟨296, "gen_call_output", [139], 24, (.decl ⟨false, false, false, false⟩ (some (.external "gen_call_output")) none), ⟨"src/prelude_lower.isle", 1500⟩⟩,
-  ⟨297, "gen_call_args", [52, 24], 41, (.decl ⟨false, false, false, false⟩ (some (.external "gen_call_args")) none), ⟨"src/prelude_lower.isle", 1503⟩⟩,
-  ⟨298, "gen_return_call_args", [52, 24], 41, (.decl ⟨false, false, false, false⟩ (some (.external "gen_return_call_args")) none), ⟨"src/prelude_lower.isle", 1506⟩⟩,
-  ⟨299, "gen_call_rets", [52, 24], 42, (.decl ⟨false, false, false, false⟩ (some (.external "gen_call_rets")) none), ⟨"src/prelude_lower.isle", 1509⟩⟩,
-  ⟨300, "gen_try_call_rets", [52], 42, (.decl ⟨false, false, false, false⟩ (some (.external "gen_try_call_rets")) none), ⟨"src/prelude_lower.isle", 1512⟩⟩,
-  ⟨301, "gen_patchable_call_rets", [], 42, (.decl ⟨false, false, false, false⟩ (some (.external "gen_patchable_call_rets")) none), ⟨"src/prelude_lower.isle", 1515⟩⟩,
-  ⟨302, "try_call_info", [128, 43], 57, (.decl ⟨false, false, false, false⟩ (some (.external "try_call_info")) none), ⟨"src/prelude_lower.isle", 1519⟩⟩,
-  ⟨303, "try_call_none", [], 57, (.decl ⟨false, false, false, false⟩ (some (.external "try_call_none")) none), ⟨"src/prelude_lower.isle", 1521⟩⟩,
-  ⟨304, "safe_divisor_from_imm64", [14, 134], 4, (.decl ⟨true, false, true, false⟩ (some (.external "safe_divisor_from_imm64")) none), ⟨"src/prelude_lower.isle", 1539⟩⟩,
-  ⟨305, "operand_size", [14], 93, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 1589⟩⟩,
-  ⟨306, "diff_from_32", [14], 1, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 1598⟩⟩,
-  ⟨307, "scalar_size", [14], 95, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 1621⟩⟩,
-  ⟨308, "lane_size", [14], 95, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 1635⟩⟩,
-  ⟨309, "vector_lane_size", [97], 95, (.decl ⟨true, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 1647⟩⟩,
-  ⟨310, "vector_size", [14], 97, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 1689⟩⟩,
-  ⟨311, "float_vector_size_in_64", [14], 97, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 1707⟩⟩,
-  ⟨312, "sign_return_address_disabled", [], 13, (.decl ⟨true, false, true, false⟩ (some (.external "sign_return_address_disabled")) none), ⟨"src/isa/aarch64/inst.isle", 2110⟩⟩,
-  ⟨313, "use_lse", [], 18, (.decl ⟨false, false, false, false⟩ none (some (.external "use_lse" false))), ⟨"src/isa/aarch64/inst.isle", 2113⟩⟩,
-  ⟨314, "use_dotprod", [], 18, (.decl ⟨false, false, false, false⟩ none (some (.external "use_dotprod" false))), ⟨"src/isa/aarch64/inst.isle", 2117⟩⟩,
-  ⟨315, "use_i8mm", [], 18, (.decl ⟨false, false, false, false⟩ none (some (.external "use_i8mm" false))), ⟨"src/isa/aarch64/inst.isle", 2121⟩⟩,
-  ⟨316, "use_fp16", [], 0, (.decl ⟨true, false, false, false⟩ (some (.external "use_fp16")) none), ⟨"src/isa/aarch64/inst.isle", 2125⟩⟩,
-  ⟨317, "use_csdb", [], 0, (.decl ⟨true, false, false, false⟩ (some (.external "use_csdb")) none), ⟨"src/isa/aarch64/inst.isle", 2128⟩⟩,
-  ⟨318, "move_wide_const_from_u64", [14, 4], 69, (.decl ⟨true, false, true, false⟩ (some (.external "move_wide_const_from_u64")) none), ⟨"src/isa/aarch64/inst.isle", 2155⟩⟩,
-  ⟨319, "move_wide_const_from_inverted_u64", [14, 4], 69, (.decl ⟨true, false, true, false⟩ (some (.external "move_wide_const_from_inverted_u64")) none), ⟨"src/isa/aarch64/inst.isle", 2183⟩⟩,
-  ⟨320, "imm_logic_from_u64", [14, 4], 65, (.decl ⟨true, false, true, false⟩ (some (.external "imm_logic_from_u64")) none), ⟨"src/isa/aarch64/inst.isle", 2190⟩⟩,
-  ⟨321, "imm_size_from_type", [14], 2, (.decl ⟨true, false, true, false⟩ (some (.external "imm_size_from_type")) none), ⟨"src/isa/aarch64/inst.isle", 2197⟩⟩,
-  ⟨322, "imm_logic_from_imm64", [14, 134], 65, (.decl ⟨true, false, true, false⟩ (some (.external "imm_logic_from_imm64")) none), ⟨"src/isa/aarch64/inst.isle", 2203⟩⟩,
-  ⟨323, "imm_shift_from_imm64", [14, 134], 66, (.decl ⟨true, false, true, false⟩ (some (.external "imm_shift_from_imm64")) none), ⟨"src/isa/aarch64/inst.isle", 2220⟩⟩,
-  ⟨324, "imm_shift_from_u8", [1], 66, (.decl ⟨false, false, false, false⟩ (some (.external "imm_shift_from_u8")) none), ⟨"src/isa/aarch64/inst.isle", 2227⟩⟩,
-  ⟨325, "imm12_from_u64", [64], 4, (.decl ⟨false, false, false, false⟩ none (some (.external "imm12_from_u64" false))), ⟨"src/isa/aarch64/inst.isle", 2248⟩⟩,
-  ⟨326, "u8_into_uimm5", [1], 63, (.decl ⟨false, false, false, false⟩ (some (.external "u8_into_uimm5")) none), ⟨"src/isa/aarch64/inst.isle", 2255⟩⟩,
-  ⟨327, "u8_into_imm12", [1], 64, (.decl ⟨false, false, false, false⟩ (some (.external "u8_into_imm12")) none), ⟨"src/isa/aarch64/inst.isle", 2264⟩⟩,
-  ⟨328, "u64_into_imm_logic", [14, 4], 65, (.decl ⟨false, false, false, false⟩ (some (.external "u64_into_imm_logic")) none), ⟨"src/isa/aarch64/inst.isle", 2270⟩⟩,
-  ⟨329, "branch_target", [33], 78, (.decl ⟨false, false, false, false⟩ (some (.external "branch_target")) none), ⟨"src/isa/aarch64/inst.isle", 2273⟩⟩,
-  ⟨330, "targets_jt_space", [44], 81, (.decl ⟨false, false, false, false⟩ (some (.external "targets_jt_space")) none), ⟨"src/isa/aarch64/inst.isle", 2277⟩⟩,
-  ⟨331, "min_fp_value", [0, 1, 1], 27, (.decl ⟨false, false, false, false⟩ (some (.external "min_fp_value")) none), ⟨"src/isa/aarch64/inst.isle", 2285⟩⟩,
-  ⟨332, "max_fp_value", [0, 1, 1], 27, (.decl ⟨false, false, false, false⟩ (some (.external "max_fp_value")) none), ⟨"src/isa/aarch64/inst.isle", 2293⟩⟩,
-  ⟨333, "fpu_op_ri_ushr", [1, 1], 91, (.decl ⟨false, false, false, false⟩ (some (.external "fpu_op_ri_ushr")) none), ⟨"src/isa/aarch64/inst.isle", 2305⟩⟩,
-  ⟨334, "fpu_op_ri_sli", [1, 1], 92, (.decl ⟨false, false, false, false⟩ (some (.external "fpu_op_ri_sli")) none), ⟨"src/isa/aarch64/inst.isle", 2317⟩⟩,
-  ⟨335, "lshr_from_u64", [14, 4], 68, (.decl ⟨true, false, true, false⟩ (some (.external "lshr_from_u64")) none), ⟨"src/isa/aarch64/inst.isle", 2320⟩⟩,
-  ⟨336, "lshl_from_imm64", [14, 134], 68, (.decl ⟨true, false, true, false⟩ (some (.external "lshl_from_imm64")) none), ⟨"src/isa/aarch64/inst.isle", 2341⟩⟩,
-  ⟨337, "lshl_from_u64", [14, 4], 68, (.decl ⟨true, false, true, false⟩ (some (.external "lshl_from_u64")) none), ⟨"src/isa/aarch64/inst.isle", 2344⟩⟩,
-  ⟨338, "ashr_from_u64", [14, 4], 68, (.decl ⟨true, false, true, false⟩ (some (.external "ashr_from_u64")) none), ⟨"src/isa/aarch64/inst.isle", 2347⟩⟩,
-  ⟨339, "integral_ty", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "integral_ty" false))), ⟨"src/isa/aarch64/inst.isle", 2357⟩⟩,
-  ⟨340, "valid_atomic_transaction", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "valid_atomic_transaction" false))), ⟨"src/isa/aarch64/inst.isle", 2361⟩⟩,
-  ⟨341, "is_zero_simm9", [87], 13, (.decl ⟨true, false, true, false⟩ (some (.external "is_zero_simm9")) none), ⟨"src/isa/aarch64/inst.isle", 2364⟩⟩,
-  ⟨342, "is_zero_uimm12", [88], 13, (.decl ⟨true, false, true, false⟩ (some (.external "is_zero_uimm12")) none), ⟨"src/isa/aarch64/inst.isle", 2367⟩⟩,
-  ⟨343, "imm12_from_value", [64], 15, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "imm12_from_value"), (.atom "n")]), (.list [(.atom "iconst"), (.atom "_"), (.list [(.atom "u64_from_imm64"), (.list [(.atom "imm12_from_u64"), (.atom "n")])])])])))), ⟨"src/isa/aarch64/inst.isle", 2396⟩⟩,
-  ⟨344, "imm12_from_negated_value", [15], 64, (.decl ⟨true, false, true, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2403⟩⟩,
-  ⟨345, "extended_value_from_value", [121], 15, (.decl ⟨false, false, false, false⟩ none (some (.external "extended_value_from_value" false))), ⟨"src/isa/aarch64/inst.isle", 2447⟩⟩,
-  ⟨346, "put_extended_in_reg", [121], 27, (.decl ⟨false, false, false, false⟩ (some (.external "put_extended_in_reg")) none), ⟨"src/isa/aarch64/inst.isle", 2454⟩⟩,
-  ⟨347, "get_extended_op", [121], 84, (.decl ⟨false, false, false, false⟩ (some (.external "get_extended_op")) none), ⟨"src/isa/aarch64/inst.isle", 2458⟩⟩,
-  ⟨348, "nzcv", [0, 0, 0, 0], 70, (.decl ⟨false, false, false, false⟩ (some (.external "nzcv")) none), ⟨"src/isa/aarch64/inst.isle", 2469⟩⟩,
-  ⟨349, "cond_br_zero", [27, 93], 83, (.decl ⟨false, false, false, false⟩ (some (.external "cond_br_zero")) none), ⟨"src/isa/aarch64/inst.isle", 2473⟩⟩,
-  ⟨350, "cond_br_not_zero", [27, 93], 83, (.decl ⟨false, false, false, false⟩ (some (.external "cond_br_not_zero")) none), ⟨"src/isa/aarch64/inst.isle", 2476⟩⟩,
-  ⟨351, "cond_br_cond", [96], 83, (.decl ⟨false, false, false, false⟩ (some (.external "cond_br_cond")) none), ⟨"src/isa/aarch64/inst.isle", 2480⟩⟩,
-  ⟨352, "zero_reg", [], 27, (.decl ⟨false, false, false, false⟩ (some (.external "zero_reg")) none), ⟨"src/isa/aarch64/inst.isle", 2487⟩⟩,
-  ⟨353, "fp_reg", [], 27, (.decl ⟨false, false, false, false⟩ (some (.external "fp_reg")) none), ⟨"src/isa/aarch64/inst.isle", 2490⟩⟩,
-  ⟨354, "stack_reg", [], 27, (.decl ⟨false, false, false, false⟩ (some (.external "stack_reg")) none), ⟨"src/isa/aarch64/inst.isle", 2493⟩⟩,
-  ⟨355, "writable_link_reg", [], 28, (.decl ⟨false, false, false, false⟩ (some (.external "writable_link_reg")) none), ⟨"src/isa/aarch64/inst.isle", 2496⟩⟩,
-  ⟨356, "writable_zero_reg", [], 28, (.decl ⟨false, false, false, false⟩ (some (.external "writable_zero_reg")) none), ⟨"src/isa/aarch64/inst.isle", 2500⟩⟩,
-  ⟨357, "value_regs_zero", [], 22, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2504⟩⟩,
-  ⟨358, "movz", [69, 93], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2512⟩⟩,
-  ⟨359, "movn", [69, 93], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2520⟩⟩,
-  ⟨360, "alu_rr_imm_logic", [59, 14, 27, 65], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2528⟩⟩,
-  ⟨361, "alu_rr_imm_shift", [59, 14, 27, 66], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2536⟩⟩,
-  ⟨362, "alu_rrr", [59, 14, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2544⟩⟩,
-  ⟨363, "vec_rrr", [105, 27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2551⟩⟩,
-  ⟨364, "fpu_rr", [98, 27, 95], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2559⟩⟩,
-  ⟨365, "vec_rrr_mod", [106, 27, 27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2567⟩⟩,
-  ⟨366, "vec_fmla_elem", [106, 27, 27, 27, 97, 1], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2575⟩⟩,
-  ⟨367, "fpu_rri", [91, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2582⟩⟩,
-  ⟨368, "fpu_rrr", [99, 27, 27, 95], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2590⟩⟩,
-  ⟨369, "fpu_rrrr", [100, 95, 27, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2597⟩⟩,
-  ⟨370, "fpu_cmp", [95, 27, 27], 47, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2605⟩⟩,
-  ⟨371, "vec_lanes", [114, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2611⟩⟩,
-  ⟨372, "vec_shift_imm", [115, 1, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2618⟩⟩,
-  ⟨373, "vec_dup", [27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2625⟩⟩,
-  ⟨374, "vec_dup_from_fpu", [27, 97, 1], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2632⟩⟩,
-  ⟨375, "vec_dup_imm", [72, 0, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2639⟩⟩,
-  ⟨376, "alu_rr_imm12", [59, 14, 27, 64], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2647⟩⟩,
-  ⟨377, "alu_rrr_shift", [59, 14, 27, 27, 68], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2655⟩⟩,
-  ⟨378, "cmp_rr_shift", [93, 27, 27, 4], 47, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2664⟩⟩,
-  ⟨379, "cmp_rr_shift_asr", [93, 27, 27, 4], 47, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2674⟩⟩,
-  ⟨380, "alu_rrr_extend", [59, 14, 27, 27, 84], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2683⟩⟩,
-  ⟨381, "alu_rr_extend_reg", [59, 14, 27, 121], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2692⟩⟩,
-  ⟨382, "alu_rrrr", [60, 14, 27, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2700⟩⟩,
-  ⟨383, "alu_rrr_with_flags_paired", [14, 27, 27, 59], 47, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2708⟩⟩,
-  ⟨384, "alu_rrr_with_flags_chained", [14, 27, 27, 59], 48, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2716⟩⟩,
-  ⟨385, "sbcs_side_effect", [14, 27, 27], 47, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2725⟩⟩,
-  ⟨386, "bit_rr", [85, 14, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2732⟩⟩,
-  ⟨387, "add_with_flags_paired", [14, 27, 27], 47, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2740⟩⟩,
-  ⟨388, "adc_paired", [14, 27, 27], 49, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2749⟩⟩,
-  ⟨389, "sub_with_flags_paired", [14, 27, 27], 47, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2758⟩⟩,
-  ⟨390, "cmp", [93, 27, 27], 47, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2766⟩⟩,
-  ⟨391, "cmp_imm", [93, 27, 64], 47, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2773⟩⟩,
-  ⟨392, "cmp64_imm", [27, 64], 47, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2780⟩⟩,
-  ⟨393, "cmp_extend", [93, 27, 27, 84], 47, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2785⟩⟩,
-  ⟨394, "sbc_paired", [14, 27, 27], 49, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2793⟩⟩,
-  ⟨395, "vec_misc", [107, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2801⟩⟩,
-  ⟨396, "vec_tbl", [27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2808⟩⟩,
-  ⟨397, "vec_tbl_ext", [27, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2814⟩⟩,
-  ⟨398, "vec_tbl2", [27, 27, 27, 14], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2821⟩⟩,
-  ⟨399, "vec_tbl2_ext", [27, 27, 27, 27, 14], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2830⟩⟩]
+/-- term 0 -/
+def T.«unit» : Term :=
+  ⟨0, "unit", [], 13, (.decl ⟨true, false, false, false⟩ (some (.external "unit")) none), ⟨"src/prelude.isle", 13⟩⟩
 
-def terms_1 : Array Term := #[
-  ⟨400, "vec_rrr_long", [110, 27, 27, 0], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2839⟩⟩,
-  ⟨401, "vec_rr_pair_long", [113, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2846⟩⟩,
-  ⟨402, "vec_rrrr_long", [111, 27, 27, 27, 0], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2853⟩⟩,
-  ⟨403, "vec_rr_narrow_low", [109, 27, 95], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2860⟩⟩,
-  ⟨404, "vec_rr_narrow_high", [109, 27, 27, 95], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2868⟩⟩,
-  ⟨405, "vec_rr_long", [108, 27, 0], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2875⟩⟩,
-  ⟨406, "fpu_csel", [14, 96, 27, 27], 49, (.decl ⟨false, false, false, true⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2885⟩⟩,
-  ⟨407, "vec_csel", [96, 27, 27], 49, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2911⟩⟩,
-  ⟨408, "fpu_round", [103, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2920⟩⟩,
-  ⟨409, "mov_to_fpu", [27, 95], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2929⟩⟩,
-  ⟨410, "size_for_mov_to_fpu", [95], 95, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2937⟩⟩,
-  ⟨411, "fpu_move_fp_imm", [71, 95], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2947⟩⟩,
-  ⟨412, "mov_to_vec", [27, 27, 1, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2954⟩⟩,
-  ⟨413, "mov_vec_elem", [27, 27, 1, 1, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2961⟩⟩,
-  ⟨414, "mov_from_vec", [27, 1, 95], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2969⟩⟩,
-  ⟨415, "mov_from_vec_signed", [27, 1, 97, 93], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2976⟩⟩,
-  ⟨416, "fpu_move_from_vec", [27, 1, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2982⟩⟩,
-  ⟨417, "extend", [27, 0, 1, 1], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2990⟩⟩,
-  ⟨418, "bitfield_move", [14, 62, 27, 67, 67], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2998⟩⟩,
-  ⟨419, "fpu_extend", [27, 95], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3006⟩⟩,
-  ⟨420, "vec_extend", [104, 27, 0, 95], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3013⟩⟩,
-  ⟨421, "vec_extract", [27, 27, 1], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3020⟩⟩,
-  ⟨422, "load_acquire", [14, 142, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3027⟩⟩,
-  ⟨423, "store_release", [14, 142, 27, 27], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3034⟩⟩,
-  ⟨424, "tst_imm", [14, 27, 65], 47, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3043⟩⟩,
-  ⟨425, "csel", [96, 27, 27], 49, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3058⟩⟩,
-  ⟨426, "cset", [96], 49, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3067⟩⟩,
-  ⟨427, "cset_paired", [96], 49, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3075⟩⟩,
-  ⟨428, "csetm", [96], 49, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3081⟩⟩,
-  ⟨429, "csneg", [96, 27, 27], 49, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3092⟩⟩,
-  ⟨430, "ccmp", [93, 27, 27, 70, 96, 47], 47, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3102⟩⟩,
-  ⟨431, "ccmp_imm", [93, 27, 63, 70, 96], 49, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3107⟩⟩,
-  ⟨432, "add", [14, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3117⟩⟩,
-  ⟨433, "add_imm", [14, 27, 64], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3121⟩⟩,
-  ⟨434, "add_extend", [14, 27, 121], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3125⟩⟩,
-  ⟨435, "add_shift", [14, 27, 27, 68], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3129⟩⟩,
-  ⟨436, "add_vec", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3132⟩⟩,
-  ⟨437, "sub", [14, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3137⟩⟩,
-  ⟨438, "sub_imm", [14, 27, 64], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3141⟩⟩,
-  ⟨439, "sub_extend", [14, 27, 121], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3145⟩⟩,
-  ⟨440, "sub_shift", [14, 27, 27, 68], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3149⟩⟩,
-  ⟨441, "sub_vec", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3152⟩⟩,
-  ⟨442, "sub_i128", [22, 22], 22, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3156⟩⟩,
-  ⟨443, "madd", [14, 27, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3176⟩⟩,
-  ⟨444, "msub", [14, 27, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3181⟩⟩,
-  ⟨445, "umaddl", [27, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3186⟩⟩,
-  ⟨446, "smaddl", [27, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3191⟩⟩,
-  ⟨447, "uqadd", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3195⟩⟩,
-  ⟨448, "sqadd", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3199⟩⟩,
-  ⟨449, "uqsub", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3203⟩⟩,
-  ⟨450, "sqsub", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3207⟩⟩,
-  ⟨451, "umulh", [14, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3212⟩⟩,
-  ⟨452, "smulh", [14, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3217⟩⟩,
-  ⟨453, "mul", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3221⟩⟩,
-  ⟨454, "neg", [27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3225⟩⟩,
-  ⟨455, "rev16", [27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3229⟩⟩,
-  ⟨456, "rev32", [27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3233⟩⟩,
-  ⟨457, "rev64", [27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3237⟩⟩,
-  ⟨458, "xtn", [27, 95], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3241⟩⟩,
-  ⟨459, "fcvtn", [27, 95], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3245⟩⟩,
-  ⟨460, "sqxtn", [27, 95], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3249⟩⟩,
-  ⟨461, "sqxtn2", [27, 27, 95], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3253⟩⟩,
-  ⟨462, "sqxtun", [27, 95], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3257⟩⟩,
-  ⟨463, "sqxtun2", [27, 27, 95], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3261⟩⟩,
-  ⟨464, "uqxtn", [27, 95], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3265⟩⟩,
-  ⟨465, "uqxtn2", [27, 27, 95], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3269⟩⟩,
-  ⟨466, "aarch64_fence", [], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3273⟩⟩,
-  ⟨467, "csdb", [], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3278⟩⟩,
-  ⟨468, "brk", [], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3283⟩⟩,
-  ⟨469, "addp", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3289⟩⟩,
-  ⟨470, "zip1", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3293⟩⟩,
-  ⟨471, "vec_abs", [27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3297⟩⟩,
-  ⟨472, "abs", [93, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3303⟩⟩,
-  ⟨473, "addv", [27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3310⟩⟩,
-  ⟨474, "shll32", [27, 0], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3314⟩⟩,
-  ⟨475, "saddlp8", [27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3319⟩⟩,
-  ⟨476, "saddlp16", [27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3322⟩⟩,
-  ⟨477, "uaddlp8", [27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3325⟩⟩,
-  ⟨478, "uaddlp16", [27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3328⟩⟩,
-  ⟨479, "umlal32", [27, 27, 27, 0], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3332⟩⟩,
-  ⟨480, "smull8", [27, 27, 0], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3336⟩⟩,
-  ⟨481, "umull8", [27, 27, 0], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3340⟩⟩,
-  ⟨482, "smull16", [27, 27, 0], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3344⟩⟩,
-  ⟨483, "umull16", [27, 27, 0], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3348⟩⟩,
-  ⟨484, "smull32", [27, 27, 0], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3352⟩⟩,
-  ⟨485, "umull32", [27, 27, 0], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3356⟩⟩,
-  ⟨486, "asr", [14, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3361⟩⟩,
-  ⟨487, "asr_imm", [14, 27, 66], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3365⟩⟩,
-  ⟨488, "lsr", [14, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3370⟩⟩,
-  ⟨489, "lsr_imm", [14, 27, 66], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3374⟩⟩,
-  ⟨490, "lsl", [14, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3379⟩⟩,
-  ⟨491, "lsl_imm", [14, 27, 66], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3383⟩⟩,
-  ⟨492, "a64_udiv", [14, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3388⟩⟩,
-  ⟨493, "a64_sdiv", [14, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3393⟩⟩,
-  ⟨494, "not", [27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3397⟩⟩,
-  ⟨495, "orr_not", [14, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3402⟩⟩,
-  ⟨496, "orr_not_shift", [14, 27, 27, 68], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3406⟩⟩,
-  ⟨497, "orr", [14, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3411⟩⟩,
-  ⟨498, "orr_imm", [14, 27, 65], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3415⟩⟩,
-  ⟨499, "orr_vec", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3418⟩⟩,
-  ⟨500, "orn_vec", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3421⟩⟩,
-  ⟨501, "and_reg", [14, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3426⟩⟩,
-  ⟨502, "and_imm", [14, 27, 65], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3430⟩⟩,
-  ⟨503, "and_vec", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3433⟩⟩,
-  ⟨504, "eor", [14, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3438⟩⟩,
-  ⟨505, "eor_vec", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3441⟩⟩,
-  ⟨506, "bic", [14, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3446⟩⟩,
-  ⟨507, "bic_vec", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3449⟩⟩,
-  ⟨508, "sshl", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3453⟩⟩,
-  ⟨509, "ushl", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3457⟩⟩,
-  ⟨510, "ushl_vec_imm", [27, 1, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3461⟩⟩,
-  ⟨511, "ushr_vec_imm", [27, 1, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3465⟩⟩,
-  ⟨512, "sshr_vec_imm", [27, 1, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3469⟩⟩,
-  ⟨513, "a64_rotr", [14, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3477⟩⟩,
-  ⟨514, "a64_rotr_imm", [14, 27, 66], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3481⟩⟩,
-  ⟨515, "a64_extr", [14, 27, 27, 66], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3486⟩⟩,
-  ⟨516, "a64_extr_imm", [14, 66], 68, (.decl ⟨false, false, false, false⟩ (some (.external "a64_extr_imm")) none), ⟨"src/isa/aarch64/inst.isle", 3506⟩⟩,
-  ⟨517, "rbit", [14, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3511⟩⟩,
-  ⟨518, "a64_clz", [14, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3516⟩⟩,
-  ⟨519, "a64_cls", [14, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3521⟩⟩,
-  ⟨520, "a64_rev16", [14, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3526⟩⟩,
-  ⟨521, "a64_rev32", [14, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3530⟩⟩,
-  ⟨522, "a64_rev64", [14, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3534⟩⟩,
-  ⟨523, "eon", [14, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3539⟩⟩,
-  ⟨524, "vec_cnt", [27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3544⟩⟩,
-  ⟨525, "bsl", [14, 27, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3549⟩⟩,
-  ⟨526, "sdot", [27, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3555⟩⟩,
-  ⟨527, "usdot", [27, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3562⟩⟩,
-  ⟨528, "udf", [146], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3568⟩⟩,
-  ⟨529, "aarch64_uload8", [89, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3575⟩⟩,
-  ⟨530, "aarch64_sload8", [89, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3582⟩⟩,
-  ⟨531, "aarch64_uload16", [89, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3589⟩⟩,
-  ⟨532, "aarch64_sload16", [89, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3596⟩⟩,
-  ⟨533, "aarch64_uload32", [89, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3603⟩⟩,
-  ⟨534, "aarch64_sload32", [89, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3611⟩⟩,
-  ⟨535, "aarch64_uload64", [89, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3618⟩⟩,
-  ⟨536, "aarch64_fpuload16", [89, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3624⟩⟩,
-  ⟨537, "aarch64_fpuload32", [89, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3631⟩⟩,
-  ⟨538, "aarch64_fpuload64", [89, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3638⟩⟩,
-  ⟨539, "aarch64_fpuload128", [89, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3643⟩⟩,
-  ⟨540, "aarch64_loadp64", [90, 142], 22, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3648⟩⟩,
-  ⟨541, "aarch64_store8", [89, 142, 27], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3658⟩⟩,
-  ⟨542, "aarch64_store16", [89, 142, 27], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3664⟩⟩,
-  ⟨543, "aarch64_store32", [89, 142, 27], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3670⟩⟩,
-  ⟨544, "aarch64_store64", [89, 142, 27], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3676⟩⟩,
-  ⟨545, "aarch64_fpustore16", [89, 142, 27], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3680⟩⟩,
-  ⟨546, "aarch64_fpustore32", [89, 142, 27], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3683⟩⟩,
-  ⟨547, "aarch64_fpustore64", [89, 142, 27], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3688⟩⟩,
-  ⟨548, "aarch64_fpustore128", [89, 142, 27], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3691⟩⟩,
-  ⟨549, "aarch64_storep64", [90, 142, 27, 27], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3694⟩⟩,
-  ⟨550, "trap_if_cond", [96, 146], 49, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3702⟩⟩,
-  ⟨551, "trap_if_zero", [27, 93, 146], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3708⟩⟩,
-  ⟨552, "trap_if_not_zero", [27, 93, 146], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3713⟩⟩,
-  ⟨553, "imm", [14, 122, 4], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3738⟩⟩,
-  ⟨554, "load_constant_full", [14, 122, 93, 4], 27, (.decl ⟨false, false, false, false⟩ (some (.external "load_constant_full")) none), ⟨"src/isa/aarch64/inst.isle", 3756⟩⟩,
-  ⟨555, "put_in_reg_sext32", [15], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3798⟩⟩,
-  ⟨556, "put_in_reg_zext32", [15], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3808⟩⟩,
-  ⟨557, "put_in_reg_sext64", [15], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3818⟩⟩,
-  ⟨558, "put_in_reg_zext64", [15], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3828⟩⟩,
-  ⟨559, "trap_if_zero_divisor", [27, 93], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3837⟩⟩,
-  ⟨560, "size_from_ty", [14], 93, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3851⟩⟩,
-  ⟨561, "trap_if_div_overflow", [14, 27, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3860⟩⟩,
-  ⟨562, "intmin_check", [14, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3885⟩⟩,
-  ⟨563, "trap_if_overflow", [47, 146], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3896⟩⟩,
-  ⟨564, "sink_atomic_load", [18], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3904⟩⟩,
-  ⟨565, "alu_rs_imm_logic_commutative", [59, 14, 15, 15], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3913⟩⟩,
-  ⟨566, "alu_rs_imm_logic", [59, 14, 15, 15], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3938⟩⟩,
-  ⟨567, "i128_alu_bitop", [59, 14, 15, 15], 22, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3952⟩⟩,
-  ⟨568, "ld1r", [27, 97, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3967⟩⟩,
-  ⟨569, "is_pic", [], 0, (.decl ⟨true, false, false, false⟩ (some (.external "is_pic")) none), ⟨"src/isa/aarch64/inst.isle", 3973⟩⟩,
-  ⟨570, "load_ext_name", [37, 10, 38], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3978⟩⟩,
-  ⟨571, "load_ext_name_got", [37], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4001⟩⟩,
-  ⟨572, "load_ext_name_near", [37, 10], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4008⟩⟩,
-  ⟨573, "load_ext_name_far", [37, 10], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4015⟩⟩,
-  ⟨574, "amode", [14, 15, 9], 89, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4036⟩⟩,
-  ⟨575, "amode_no_more_iconst", [14, 15, 9], 89, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4053⟩⟩,
-  ⟨576, "amode_reg_scaled", [27, 15], 89, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4108⟩⟩,
-  ⟨577, "amode_add", [27, 9], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4119⟩⟩,
-  ⟨578, "pair_amode", [15, 9], 90, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4130⟩⟩,
-  ⟨579, "simm7_scaled_from_i64", [10, 14], 73, (.decl ⟨true, false, true, false⟩ (some (.external "simm7_scaled_from_i64")) none), ⟨"src/isa/aarch64/inst.isle", 4142⟩⟩,
-  ⟨580, "uimm12_scaled_from_i64", [10, 14], 88, (.decl ⟨true, false, true, false⟩ (some (.external "uimm12_scaled_from_i64")) none), ⟨"src/isa/aarch64/inst.isle", 4163⟩⟩,
-  ⟨581, "uimm12_scaled_nonzero_from_i64", [10, 14], 88, (.decl ⟨true, false, true, false⟩ (some (.external "uimm12_scaled_nonzero_from_i64")) none), ⟨"src/isa/aarch64/inst.isle", 4186⟩⟩,
-  ⟨582, "simm9_from_i64", [10], 87, (.decl ⟨true, false, true, false⟩ (some (.external "simm9_from_i64")) none), ⟨"src/isa/aarch64/inst.isle", 4198⟩⟩,
-  ⟨583, "sink_load_into_addr", [14, 18], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4202⟩⟩,
-  ⟨584, "add_imm_to_addr", [27, 4], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4208⟩⟩,
-  ⟨585, "constant_f16", [2], 27, (.decl ⟨false, false, false, true⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4220⟩⟩,
-  ⟨586, "constant_f32", [3], 27, (.decl ⟨false, false, false, true⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4241⟩⟩,
-  ⟨587, "constant_f64", [4], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4263⟩⟩,
-  ⟨588, "u64_low32_bits_unset", [4], 4, (.decl ⟨false, false, false, false⟩ none (some (.external "u64_low32_bits_unset" false))), ⟨"src/isa/aarch64/inst.isle", 4283⟩⟩,
-  ⟨589, "constant_f128", [5], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4287⟩⟩,
-  ⟨590, "splat_const", [4, 97], 27, (.decl ⟨false, false, false, true⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4311⟩⟩,
-  ⟨591, "vec_dup_fp_imm_supports_lane_size", [95], 0, (.decl ⟨true, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4350⟩⟩,
-  ⟨592, "cond_code", [145], 96, (.decl ⟨false, false, false, false⟩ (some (.external "cond_code")) none), ⟨"src/isa/aarch64/inst.isle", 4379⟩⟩,
-  ⟨593, "invert_cond", [96], 96, (.decl ⟨false, false, false, false⟩ (some (.external "invert_cond")) none), ⟨"src/isa/aarch64/inst.isle", 4384⟩⟩,
-  ⟨594, "float_cc_cmp_zero_to_vec_misc_op", [144], 107, (.decl ⟨false, false, false, false⟩ (some (.external "float_cc_cmp_zero_to_vec_misc_op")) none), ⟨"src/isa/aarch64/inst.isle", 4413⟩⟩,
-  ⟨595, "float_cc_cmp_zero_to_vec_misc_op_swap", [144], 107, (.decl ⟨false, false, false, false⟩ (some (.external "float_cc_cmp_zero_to_vec_misc_op_swap")) none), ⟨"src/isa/aarch64/inst.isle", 4416⟩⟩,
-  ⟨596, "fcmp_zero_cond", [144], 144, (.decl ⟨false, false, false, false⟩ none (some (.external "fcmp_zero_cond" false))), ⟨"src/isa/aarch64/inst.isle", 4420⟩⟩,
-  ⟨597, "fcmp_zero_cond_not_eq", [144], 144, (.decl ⟨false, false, false, false⟩ none (some (.external "fcmp_zero_cond_not_eq" false))), ⟨"src/isa/aarch64/inst.isle", 4424⟩⟩,
-  ⟨598, "float_cmp_zero", [144, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4428⟩⟩,
-  ⟨599, "float_cmp_zero_swap", [144, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4433⟩⟩,
-  ⟨600, "fcmeq0", [27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4438⟩⟩,
-  ⟨601, "int_cc_cmp_zero_to_vec_misc_op", [145], 107, (.decl ⟨false, false, false, false⟩ (some (.external "int_cc_cmp_zero_to_vec_misc_op")) none), ⟨"src/isa/aarch64/inst.isle", 4443⟩⟩,
-  ⟨602, "int_cc_cmp_zero_to_vec_misc_op_swap", [145], 107, (.decl ⟨false, false, false, false⟩ (some (.external "int_cc_cmp_zero_to_vec_misc_op_swap")) none), ⟨"src/isa/aarch64/inst.isle", 4446⟩⟩,
-  ⟨603, "icmp_zero_cond", [145], 145, (.decl ⟨false, false, false, false⟩ none (some (.external "icmp_zero_cond" false))), ⟨"src/isa/aarch64/inst.isle", 4450⟩⟩,
-  ⟨604, "icmp_zero_cond_not_eq", [145], 145, (.decl ⟨false, false, false, false⟩ none (some (.external "icmp_zero_cond_not_eq" false))), ⟨"src/isa/aarch64/inst.isle", 4454⟩⟩,
-  ⟨605, "int_cmp_zero", [145, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4458⟩⟩,
-  ⟨606, "int_cmp_zero_swap", [145, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4463⟩⟩,
-  ⟨607, "cmeq0", [27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4468⟩⟩,
-  ⟨608, "lse_atomic_rmw", [117, 15, 27, 14, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4473⟩⟩,
-  ⟨609, "lse_atomic_cas", [27, 27, 27, 14, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4483⟩⟩,
-  ⟨610, "atomic_cas_128_args", [28, 28, 27, 27, 27, 27, 27, 142], 80, (.decl ⟨false, false, false, false⟩ (some (.external "atomic_cas_128_args")) none), ⟨"src/isa/aarch64/inst.isle", 4492⟩⟩,
-  ⟨611, "lse_atomic_cas_128", [27, 22, 22, 142], 22, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4496⟩⟩,
-  ⟨612, "atomic_rmw_loop", [118, 27, 27, 14, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4517⟩⟩,
-  ⟨613, "atomic_cas_loop", [27, 27, 27, 14, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4531⟩⟩,
-  ⟨614, "mov_from_preg", [32], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4540⟩⟩,
-  ⟨615, "mov_to_preg", [32, 27], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4547⟩⟩,
-  ⟨616, "preg_sp", [], 32, (.decl ⟨false, false, false, false⟩ (some (.external "preg_sp")) none), ⟨"src/isa/aarch64/inst.isle", 4552⟩⟩,
-  ⟨617, "preg_fp", [], 32, (.decl ⟨false, false, false, false⟩ (some (.external "preg_fp")) none), ⟨"src/isa/aarch64/inst.isle", 4556⟩⟩,
-  ⟨618, "preg_link", [], 32, (.decl ⟨false, false, false, false⟩ (some (.external "preg_link")) none), ⟨"src/isa/aarch64/inst.isle", 4559⟩⟩,
-  ⟨619, "preg_pinned", [], 32, (.decl ⟨false, false, false, false⟩ (some (.external "preg_pinned")) none), ⟨"src/isa/aarch64/inst.isle", 4563⟩⟩,
-  ⟨620, "aarch64_sp", [], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4566⟩⟩,
-  ⟨621, "aarch64_fp", [], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4570⟩⟩,
-  ⟨622, "aarch64_link", [], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4574⟩⟩,
-  ⟨623, "max_shift", [14], 1, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4605⟩⟩,
-  ⟨624, "fcopy_sign", [27, 27, 14], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4611⟩⟩,
-  ⟨625, "fpu_to_int_nan_check", [95, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4627⟩⟩,
-  ⟨626, "fpu_to_int_underflow_check", [0, 14, 14, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4641⟩⟩,
-  ⟨627, "fpu_to_int_overflow_check", [95, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4680⟩⟩,
-  ⟨628, "fpu_to_int_cvt", [101, 27, 0, 14, 14], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4697⟩⟩,
-  ⟨629, "fpu_to_int_cvt_sat", [101, 27, 0, 14], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4715⟩⟩,
-  ⟨630, "signed_min", [14], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4739⟩⟩,
-  ⟨631, "signed_max", [14], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4744⟩⟩,
-  ⟨632, "fpu_to_int", [101, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4749⟩⟩,
-  ⟨633, "int_to_fpu", [102, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4757⟩⟩,
-  ⟨634, "gen_call_info", [52, 36, 41, 42, 57, 0], 74, (.decl ⟨false, false, false, false⟩ (some (.external "gen_call_info")) none), ⟨"src/isa/aarch64/inst.isle", 4765⟩⟩,
-  ⟨635, "gen_call_ind_info", [52, 27, 41, 42, 57], 75, (.decl ⟨false, false, false, false⟩ (some (.external "gen_call_ind_info")) none), ⟨"src/isa/aarch64/inst.isle", 4768⟩⟩,
-  ⟨636, "gen_return_call_info", [52, 36, 41], 76, (.decl ⟨false, false, false, false⟩ (some (.external "gen_return_call_info")) none), ⟨"src/isa/aarch64/inst.isle", 4771⟩⟩,
-  ⟨637, "gen_return_call_ind_info", [52, 27, 41], 77, (.decl ⟨false, false, false, false⟩ (some (.external "gen_return_call_ind_info")) none), ⟨"src/isa/aarch64/inst.isle", 4774⟩⟩,
-  ⟨638, "call_impl", [74], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4779⟩⟩,
-  ⟨639, "call_ind_impl", [75], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4785⟩⟩,
-  ⟨640, "return_call_impl", [76], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4791⟩⟩,
-  ⟨641, "return_call_ind_impl", [77], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4797⟩⟩,
-  ⟨642, "write_pinned_reg", [27], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4803⟩⟩,
-  ⟨643, "compute_stack_addr", [140, 138], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4809⟩⟩,
-  ⟨644, "vec_cmp_vc", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4817⟩⟩,
-  ⟨645, "vec_cmp", [27, 27, 14, 96], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4825⟩⟩,
-  ⟨646, "vanytrue", [27, 14], 47, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4903⟩⟩,
-  ⟨647, "elf_tls_get_addr", [36], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4917⟩⟩,
-  ⟨648, "macho_tls_get_addr", [36], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4925⟩⟩,
-  ⟨649, "cond_result_invert", [123], 123, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4953⟩⟩,
-  ⟨650, "is_nonzero_cmp", [15], 123, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4963⟩⟩,
-  ⟨651, "is_nonzero", [15], 123, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4976⟩⟩,
-  ⟨652, "emit_icmp", [145, 15, 15], 123, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5105⟩⟩,
-  ⟨653, "emit_icmp_i128", [145, 27, 27, 27, 27], 123, (.decl ⟨false, false, false, true⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5176⟩⟩,
-  ⟨654, "emit_icmp_i128_eq_ne", [27, 27, 27, 27], 47, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5194⟩⟩,
-  ⟨655, "emit_fcmp", [144, 15, 15], 123, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5209⟩⟩,
-  ⟨656, "fp_cond_code", [144], 96, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5230⟩⟩,
-  ⟨657, "lower_extend_op", [14, 56], 84, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5263⟩⟩,
-  ⟨658, "lower_bmask", [14, 14, 22], 22, (.decl ⟨false, false, false, true⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5270⟩⟩,
-  ⟨659, "lower_select", [14, 123, 15, 15], 22, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5319⟩⟩,
-  ⟨660, "lower_select_cond", [14, 47, 96, 15, 15], 22, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5340⟩⟩,
-  ⟨661, "aarch64_jump", [78], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5370⟩⟩,
-  ⟨662, "jt_sequence", [27, 33, 44], 49, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5393⟩⟩,
-  ⟨663, "a64_br_cond", [96, 78, 78], 49, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5405⟩⟩,
-  ⟨664, "a64_br_zero", [27, 93, 78, 78], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5411⟩⟩,
-  ⟨665, "a64_br_not_zero", [27, 93, 78, 78], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5417⟩⟩,
-  ⟨666, "test_branch", [94, 78, 78, 27, 1], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5424⟩⟩,
-  ⟨667, "tbnz", [78, 78, 27, 1], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5430⟩⟩,
-  ⟨668, "tbz", [78, 78, 27, 1], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5436⟩⟩,
-  ⟨669, "emit_island", [81], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5442⟩⟩,
-  ⟨670, "br_table_impl", [4, 27, 33, 44], 13, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5449⟩⟩,
-  ⟨671, "vec_uzp1", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5461⟩⟩,
-  ⟨672, "vec_uzp2", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5465⟩⟩,
-  ⟨673, "vec_zip1", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5469⟩⟩,
-  ⟨674, "vec_zip2", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5473⟩⟩,
-  ⟨675, "vec_trn1", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5477⟩⟩,
-  ⟨676, "vec_trn2", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5481⟩⟩,
-  ⟨677, "asimd_mov_mod_imm_zero", [95], 72, (.decl ⟨false, false, false, false⟩ (some (.external "asimd_mov_mod_imm_zero")) none), ⟨"src/isa/aarch64/inst.isle", 5486⟩⟩,
-  ⟨678, "asimd_mov_mod_imm_from_u64", [4, 95], 72, (.decl ⟨true, false, true, false⟩ (some (.external "asimd_mov_mod_imm_from_u64")) none), ⟨"src/isa/aarch64/inst.isle", 5490⟩⟩,
-  ⟨679, "asimd_fp_mod_imm_from_u64", [4, 95], 71, (.decl ⟨true, false, true, false⟩ (some (.external "asimd_fp_mod_imm_from_u64")) none), ⟨"src/isa/aarch64/inst.isle", 5535⟩⟩,
-  ⟨680, "vec_dup_fp_imm", [71, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5539⟩⟩,
-  ⟨681, "fpu_load64", [89, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5547⟩⟩,
-  ⟨682, "fpu_load128", [89, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5554⟩⟩,
-  ⟨683, "a64_label_address", [33], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5562⟩⟩,
-  ⟨684, "a64_sequence_point", [], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5569⟩⟩,
-  ⟨685, "fpu_move_128", [27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst_neon.isle", 3⟩⟩,
-  ⟨686, "lower", [18], 25, (.decl ⟨false, false, true, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 38⟩⟩,
-  ⟨687, "lower_branch", [18, 43], 13, (.decl ⟨false, false, true, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 49⟩⟩,
-  ⟨688, "shuffle_dup8_from_imm", [1], 135, (.decl ⟨false, false, false, false⟩ none (some (.external "shuffle_dup8_from_imm" false))), ⟨"src/isa/aarch64/lower.isle", 179⟩⟩,
-  ⟨689, "shuffle_dup16_from_imm", [1], 135, (.decl ⟨false, false, false, false⟩ none (some (.external "shuffle_dup16_from_imm" false))), ⟨"src/isa/aarch64/lower.isle", 181⟩⟩,
-  ⟨690, "shuffle_dup32_from_imm", [1], 135, (.decl ⟨false, false, false, false⟩ none (some (.external "shuffle_dup32_from_imm" false))), ⟨"src/isa/aarch64/lower.isle", 183⟩⟩,
-  ⟨691, "shuffle_dup64_from_imm", [1], 135, (.decl ⟨false, false, false, false⟩ none (some (.external "shuffle_dup64_from_imm" false))), ⟨"src/isa/aarch64/lower.isle", 185⟩⟩,
-  ⟨692, "vec_extract_imm4_from_immediate", [1], 135, (.decl ⟨false, false, false, false⟩ none (some (.external "vec_extract_imm4_from_immediate" false))), ⟨"src/isa/aarch64/lower.isle", 198⟩⟩,
-  ⟨693, "fmadd", [14, 15, 15, 15], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 619⟩⟩,
-  ⟨694, "fnmadd", [14, 15, 15, 15], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 622⟩⟩,
-  ⟨695, "fmsub", [14, 15, 15, 15], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 625⟩⟩,
-  ⟨696, "fnmsub", [14, 15, 15, 15], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 628⟩⟩,
-  ⟨697, "lower_fmla", [106, 15, 15, 15, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 650⟩⟩,
-  ⟨698, "put_nonzero_in_reg", [15, 125, 14], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 1091⟩⟩,
-  ⟨699, "aarch64_uload", [14, 89, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 1306⟩⟩,
-  ⟨700, "aarch64_sload", [14, 89, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 1365⟩⟩,
-  ⟨701, "lower_shl128", [22, 27], 22, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 1565⟩⟩,
-  ⟨702, "shift_masked_imm", [14, 4], 1, (.decl ⟨true, false, false, false⟩ (some (.external "shift_masked_imm")) none), ⟨"src/isa/aarch64/lower.isle", 1591⟩⟩,
-  ⟨703, "do_shift", [59, 14, 27, 15], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 1601⟩⟩,
-  ⟨704, "shift_mask", [14], 65, (.decl ⟨false, false, false, false⟩ (some (.external "shift_mask")) none), ⟨"src/isa/aarch64/lower.isle", 1618⟩⟩,
-  ⟨705, "lower_ushr128", [22, 27], 22, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 1674⟩⟩,
-  ⟨706, "bfm_immr", [14, 4, 4], 67, (.decl ⟨false, false, false, false⟩ (some (.external "bfm_immr")) none), ⟨"src/isa/aarch64/lower.isle", 1713⟩⟩,
-  ⟨707, "bfm_imms", [14, 4, 4], 67, (.decl ⟨false, false, false, false⟩ (some (.external "bfm_imms")) none), ⟨"src/isa/aarch64/lower.isle", 1716⟩⟩,
-  ⟨708, "lower_sshr128", [22, 27], 22, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 1750⟩⟩,
-  ⟨709, "negate_imm_shift", [14, 66], 66, (.decl ⟨false, false, false, false⟩ (some (.external "negate_imm_shift")) none), ⟨"src/isa/aarch64/lower.isle", 1821⟩⟩,
-  ⟨710, "small_rotr", [14, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 1878⟩⟩,
-  ⟨711, "rotr_mask", [14], 65, (.decl ⟨false, false, false, false⟩ (some (.external "rotr_mask")) none), ⟨"src/isa/aarch64/lower.isle", 1888⟩⟩,
-  ⟨712, "small_rotr_imm", [14, 27, 66], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 1901⟩⟩,
-  ⟨713, "rotr_opposite_amount", [14, 66], 66, (.decl ⟨false, false, false, false⟩ (some (.external "rotr_opposite_amount")) none), ⟨"src/isa/aarch64/lower.isle", 1910⟩⟩,
-  ⟨714, "lower_clz128", [22], 22, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 1969⟩⟩,
-  ⟨715, "lower_cond_result_bool", [123], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 2221⟩⟩,
-  ⟨716, "trap_if_cond_result", [123, 146], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 2246⟩⟩,
-  ⟨717, "maybe_csdb_after_select", [22], 22, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 2272⟩⟩,
-  ⟨718, "put_in_reg_ext32", [15, 56], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 2933⟩⟩,
-  ⟨719, "overflow_op_small", [14, 15, 15, 56, 59], 25, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 2941⟩⟩,
-  ⟨720, "overflow_op_normal", [14, 15, 15, 59, 96], 25, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 2970⟩⟩,
-  ⟨721, "overflow_op_128", [15, 15, 59, 59, 96], 25, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 2981⟩⟩,
-  ⟨722, "br_cond_result", [123, 33, 33], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 3235⟩⟩,
-  ⟨723, "test_and_compare_bit_const", [14, 4], 1, (.decl ⟨true, false, true, false⟩ (some (.external "test_and_compare_bit_const")) none), ⟨"src/isa/aarch64/lower.isle", 3265⟩⟩,
-  ⟨724, "i8_eq", [7, 7], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i8_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 1⟩⟩,
-  ⟨725, "i8_ne", [7, 7], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i8_ne")) none), ⟨"<OUT_DIR>/numerics.isle", 7⟩⟩,
-  ⟨726, "i8_lt", [7, 7], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i8_lt")) none), ⟨"<OUT_DIR>/numerics.isle", 13⟩⟩,
-  ⟨727, "i8_lt_eq", [7, 7], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i8_lt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 19⟩⟩,
-  ⟨728, "i8_gt", [7, 7], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i8_gt")) none), ⟨"<OUT_DIR>/numerics.isle", 25⟩⟩,
-  ⟨729, "i8_gt_eq", [7, 7], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i8_gt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 31⟩⟩,
-  ⟨730, "i8_checked_add", [7, 7], 7, (.decl ⟨true, false, true, false⟩ (some (.external "i8_checked_add")) none), ⟨"<OUT_DIR>/numerics.isle", 37⟩⟩,
-  ⟨731, "i8_wrapping_add", [7, 7], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_wrapping_add")) none), ⟨"<OUT_DIR>/numerics.isle", 43⟩⟩,
-  ⟨732, "i8_add", [7, 7], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_add")) none), ⟨"<OUT_DIR>/numerics.isle", 49⟩⟩,
-  ⟨733, "i8_checked_sub", [7, 7], 7, (.decl ⟨true, false, true, false⟩ (some (.external "i8_checked_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 55⟩⟩,
-  ⟨734, "i8_wrapping_sub", [7, 7], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_wrapping_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 61⟩⟩,
-  ⟨735, "i8_sub", [7, 7], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 67⟩⟩,
-  ⟨736, "i8_checked_mul", [7, 7], 7, (.decl ⟨true, false, true, false⟩ (some (.external "i8_checked_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 73⟩⟩,
-  ⟨737, "i8_wrapping_mul", [7, 7], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_wrapping_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 79⟩⟩,
-  ⟨738, "i8_mul", [7, 7], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 85⟩⟩,
-  ⟨739, "i8_checked_div", [7, 7], 7, (.decl ⟨true, false, true, false⟩ (some (.external "i8_checked_div")) none), ⟨"<OUT_DIR>/numerics.isle", 91⟩⟩,
-  ⟨740, "i8_wrapping_div", [7, 7], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_wrapping_div")) none), ⟨"<OUT_DIR>/numerics.isle", 97⟩⟩,
-  ⟨741, "i8_div", [7, 7], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_div")) none), ⟨"<OUT_DIR>/numerics.isle", 103⟩⟩,
-  ⟨742, "i8_checked_rem", [7, 7], 7, (.decl ⟨true, false, true, false⟩ (some (.external "i8_checked_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 109⟩⟩,
-  ⟨743, "i8_rem", [7, 7], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 115⟩⟩,
-  ⟨744, "i8_and", [7, 7], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_and")) none), ⟨"<OUT_DIR>/numerics.isle", 121⟩⟩,
-  ⟨745, "i8_or", [7, 7], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_or")) none), ⟨"<OUT_DIR>/numerics.isle", 127⟩⟩,
-  ⟨746, "i8_xor", [7, 7], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_xor")) none), ⟨"<OUT_DIR>/numerics.isle", 133⟩⟩,
-  ⟨747, "i8_not", [7], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_not")) none), ⟨"<OUT_DIR>/numerics.isle", 139⟩⟩,
-  ⟨748, "i8_checked_shl", [7, 3], 7, (.decl ⟨true, false, true, false⟩ (some (.external "i8_checked_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 144⟩⟩,
-  ⟨749, "i8_wrapping_shl", [7, 3], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_wrapping_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 150⟩⟩,
-  ⟨750, "i8_shl", [7, 3], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 156⟩⟩,
-  ⟨751, "i8_checked_shr", [7, 3], 7, (.decl ⟨true, false, true, false⟩ (some (.external "i8_checked_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 162⟩⟩,
-  ⟨752, "i8_wrapping_shr", [7, 3], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_wrapping_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 168⟩⟩,
-  ⟨753, "i8_shr", [7, 3], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 174⟩⟩,
-  ⟨754, "i8_rotl", [7, 3], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_rotl")) none), ⟨"<OUT_DIR>/numerics.isle", 180⟩⟩,
-  ⟨755, "i8_rotr", [7, 3], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_rotr")) none), ⟨"<OUT_DIR>/numerics.isle", 186⟩⟩,
-  ⟨756, "i8_is_zero", [7], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i8_is_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 192⟩⟩,
-  ⟨757, "i8_matches_zero", [0], 7, (.decl ⟨true, false, false, false⟩ none (some (.external "i8_matches_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 196⟩⟩,
-  ⟨758, "i8_extract_zero", [7], 7, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i8_extract_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i8_matches_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 198⟩⟩,
-  ⟨759, "i8_when_zero", [], 7, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i8_when_zero")]), (.list [(.atom "i8_matches_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 200⟩⟩,
-  ⟨760, "i8_when_not_zero", [], 7, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i8_when_not_zero")]), (.list [(.atom "i8_matches_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 202⟩⟩,
-  ⟨761, "i8_is_non_zero", [7], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i8_is_non_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 205⟩⟩,
-  ⟨762, "i8_matches_non_zero", [0], 7, (.decl ⟨true, false, false, false⟩ none (some (.external "i8_matches_non_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 209⟩⟩,
-  ⟨763, "i8_extract_non_zero", [7], 7, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i8_extract_non_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i8_matches_non_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 211⟩⟩,
-  ⟨764, "i8_when_non_zero", [], 7, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i8_when_non_zero")]), (.list [(.atom "i8_matches_non_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 213⟩⟩,
-  ⟨765, "i8_when_not_non_zero", [], 7, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i8_when_not_non_zero")]), (.list [(.atom "i8_matches_non_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 215⟩⟩,
-  ⟨766, "i8_is_odd", [7], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i8_is_odd")) none), ⟨"<OUT_DIR>/numerics.isle", 218⟩⟩,
-  ⟨767, "i8_matches_odd", [0], 7, (.decl ⟨true, false, false, false⟩ none (some (.external "i8_matches_odd" false))), ⟨"<OUT_DIR>/numerics.isle", 222⟩⟩,
-  ⟨768, "i8_extract_odd", [7], 7, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i8_extract_odd"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i8_matches_odd"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 224⟩⟩,
-  ⟨769, "i8_when_odd", [], 7, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i8_when_odd")]), (.list [(.atom "i8_matches_odd"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 226⟩⟩,
-  ⟨770, "i8_when_not_odd", [], 7, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i8_when_not_odd")]), (.list [(.atom "i8_matches_odd"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 228⟩⟩,
-  ⟨771, "i8_is_even", [7], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i8_is_even")) none), ⟨"<OUT_DIR>/numerics.isle", 231⟩⟩,
-  ⟨772, "i8_matches_even", [0], 7, (.decl ⟨true, false, false, false⟩ none (some (.external "i8_matches_even" false))), ⟨"<OUT_DIR>/numerics.isle", 235⟩⟩,
-  ⟨773, "i8_extract_even", [7], 7, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i8_extract_even"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i8_matches_even"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 237⟩⟩,
-  ⟨774, "i8_when_even", [], 7, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i8_when_even")]), (.list [(.atom "i8_matches_even"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 239⟩⟩,
-  ⟨775, "i8_when_not_even", [], 7, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i8_when_not_even")]), (.list [(.atom "i8_matches_even"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 241⟩⟩,
-  ⟨776, "i8_checked_ilog2", [7], 3, (.decl ⟨true, false, true, false⟩ (some (.external "i8_checked_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 244⟩⟩,
-  ⟨777, "i8_ilog2", [7], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i8_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 249⟩⟩,
-  ⟨778, "i8_trailing_zeros", [7], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i8_trailing_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 254⟩⟩,
-  ⟨779, "i8_trailing_ones", [7], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i8_trailing_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 259⟩⟩,
-  ⟨780, "i8_leading_zeros", [7], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i8_leading_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 264⟩⟩,
-  ⟨781, "i8_leading_ones", [7], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i8_leading_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 269⟩⟩,
-  ⟨782, "i8_checked_neg", [7], 7, (.decl ⟨true, false, true, false⟩ (some (.external "i8_checked_neg")) none), ⟨"<OUT_DIR>/numerics.isle", 274⟩⟩,
-  ⟨783, "i8_wrapping_neg", [7], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_wrapping_neg")) none), ⟨"<OUT_DIR>/numerics.isle", 279⟩⟩,
-  ⟨784, "i8_neg", [7], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_neg")) none), ⟨"<OUT_DIR>/numerics.isle", 284⟩⟩,
-  ⟨785, "u8_eq", [1, 1], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u8_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 289⟩⟩,
-  ⟨786, "u8_ne", [1, 1], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u8_ne")) none), ⟨"<OUT_DIR>/numerics.isle", 295⟩⟩,
-  ⟨787, "u8_lt", [1, 1], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u8_lt")) none), ⟨"<OUT_DIR>/numerics.isle", 301⟩⟩,
-  ⟨788, "u8_lt_eq", [1, 1], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u8_lt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 307⟩⟩,
-  ⟨789, "u8_gt", [1, 1], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u8_gt")) none), ⟨"<OUT_DIR>/numerics.isle", 313⟩⟩,
-  ⟨790, "u8_gt_eq", [1, 1], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u8_gt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 319⟩⟩,
-  ⟨791, "u8_checked_add", [1, 1], 1, (.decl ⟨true, false, true, false⟩ (some (.external "u8_checked_add")) none), ⟨"<OUT_DIR>/numerics.isle", 325⟩⟩,
-  ⟨792, "u8_wrapping_add", [1, 1], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u8_wrapping_add")) none), ⟨"<OUT_DIR>/numerics.isle", 331⟩⟩,
-  ⟨793, "u8_add", [1, 1], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u8_add")) none), ⟨"<OUT_DIR>/numerics.isle", 337⟩⟩,
-  ⟨794, "u8_checked_sub", [1, 1], 1, (.decl ⟨true, false, true, false⟩ (some (.external "u8_checked_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 343⟩⟩,
-  ⟨795, "u8_wrapping_sub", [1, 1], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u8_wrapping_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 349⟩⟩,
-  ⟨796, "u8_sub", [1, 1], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u8_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 355⟩⟩,
-  ⟨797, "u8_checked_mul", [1, 1], 1, (.decl ⟨true, false, true, false⟩ (some (.external "u8_checked_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 361⟩⟩,
-  ⟨798, "u8_wrapping_mul", [1, 1], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u8_wrapping_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 367⟩⟩,
-  ⟨799, "u8_mul", [1, 1], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u8_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 373⟩⟩]
+/-- term 1 -/
+def T.«def_inst» : Term :=
+  ⟨1, "def_inst", [18], 15, (.decl ⟨false, false, false, false⟩ none (some (.external "def_inst" false))), ⟨"src/prelude.isle", 29⟩⟩
 
-def terms_2 : Array Term := #[
-  ⟨800, "u8_checked_div", [1, 1], 1, (.decl ⟨true, false, true, false⟩ (some (.external "u8_checked_div")) none), ⟨"<OUT_DIR>/numerics.isle", 379⟩⟩,
-  ⟨801, "u8_wrapping_div", [1, 1], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u8_wrapping_div")) none), ⟨"<OUT_DIR>/numerics.isle", 385⟩⟩,
-  ⟨802, "u8_div", [1, 1], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u8_div")) none), ⟨"<OUT_DIR>/numerics.isle", 391⟩⟩,
-  ⟨803, "u8_checked_rem", [1, 1], 1, (.decl ⟨true, false, true, false⟩ (some (.external "u8_checked_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 397⟩⟩,
-  ⟨804, "u8_rem", [1, 1], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u8_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 403⟩⟩,
-  ⟨805, "u8_and", [1, 1], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u8_and")) none), ⟨"<OUT_DIR>/numerics.isle", 409⟩⟩,
-  ⟨806, "u8_or", [1, 1], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u8_or")) none), ⟨"<OUT_DIR>/numerics.isle", 415⟩⟩,
-  ⟨807, "u8_xor", [1, 1], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u8_xor")) none), ⟨"<OUT_DIR>/numerics.isle", 421⟩⟩,
-  ⟨808, "u8_not", [1], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u8_not")) none), ⟨"<OUT_DIR>/numerics.isle", 427⟩⟩,
-  ⟨809, "u8_checked_shl", [1, 3], 1, (.decl ⟨true, false, true, false⟩ (some (.external "u8_checked_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 432⟩⟩,
-  ⟨810, "u8_wrapping_shl", [1, 3], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u8_wrapping_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 438⟩⟩,
-  ⟨811, "u8_shl", [1, 3], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u8_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 444⟩⟩,
-  ⟨812, "u8_checked_shr", [1, 3], 1, (.decl ⟨true, false, true, false⟩ (some (.external "u8_checked_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 450⟩⟩,
-  ⟨813, "u8_wrapping_shr", [1, 3], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u8_wrapping_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 456⟩⟩,
-  ⟨814, "u8_shr", [1, 3], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u8_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 462⟩⟩,
-  ⟨815, "u8_rotl", [1, 3], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u8_rotl")) none), ⟨"<OUT_DIR>/numerics.isle", 468⟩⟩,
-  ⟨816, "u8_rotr", [1, 3], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u8_rotr")) none), ⟨"<OUT_DIR>/numerics.isle", 474⟩⟩,
-  ⟨817, "u8_is_zero", [1], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u8_is_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 480⟩⟩,
-  ⟨818, "u8_matches_zero", [0], 1, (.decl ⟨true, false, false, false⟩ none (some (.external "u8_matches_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 484⟩⟩,
-  ⟨819, "u8_extract_zero", [1], 1, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u8_extract_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u8_matches_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 486⟩⟩,
-  ⟨820, "u8_when_zero", [], 1, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u8_when_zero")]), (.list [(.atom "u8_matches_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 488⟩⟩,
-  ⟨821, "u8_when_not_zero", [], 1, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u8_when_not_zero")]), (.list [(.atom "u8_matches_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 490⟩⟩,
-  ⟨822, "u8_is_non_zero", [1], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u8_is_non_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 493⟩⟩,
-  ⟨823, "u8_matches_non_zero", [0], 1, (.decl ⟨true, false, false, false⟩ none (some (.external "u8_matches_non_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 497⟩⟩,
-  ⟨824, "u8_extract_non_zero", [1], 1, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u8_extract_non_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u8_matches_non_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 499⟩⟩,
-  ⟨825, "u8_when_non_zero", [], 1, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u8_when_non_zero")]), (.list [(.atom "u8_matches_non_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 501⟩⟩,
-  ⟨826, "u8_when_not_non_zero", [], 1, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u8_when_not_non_zero")]), (.list [(.atom "u8_matches_non_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 503⟩⟩,
-  ⟨827, "u8_is_odd", [1], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u8_is_odd")) none), ⟨"<OUT_DIR>/numerics.isle", 506⟩⟩,
-  ⟨828, "u8_matches_odd", [0], 1, (.decl ⟨true, false, false, false⟩ none (some (.external "u8_matches_odd" false))), ⟨"<OUT_DIR>/numerics.isle", 510⟩⟩,
-  ⟨829, "u8_extract_odd", [1], 1, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u8_extract_odd"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u8_matches_odd"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 512⟩⟩,
-  ⟨830, "u8_when_odd", [], 1, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u8_when_odd")]), (.list [(.atom "u8_matches_odd"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 514⟩⟩,
-  ⟨831, "u8_when_not_odd", [], 1, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u8_when_not_odd")]), (.list [(.atom "u8_matches_odd"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 516⟩⟩,
-  ⟨832, "u8_is_even", [1], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u8_is_even")) none), ⟨"<OUT_DIR>/numerics.isle", 519⟩⟩,
-  ⟨833, "u8_matches_even", [0], 1, (.decl ⟨true, false, false, false⟩ none (some (.external "u8_matches_even" false))), ⟨"<OUT_DIR>/numerics.isle", 523⟩⟩,
-  ⟨834, "u8_extract_even", [1], 1, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u8_extract_even"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u8_matches_even"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 525⟩⟩,
-  ⟨835, "u8_when_even", [], 1, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u8_when_even")]), (.list [(.atom "u8_matches_even"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 527⟩⟩,
-  ⟨836, "u8_when_not_even", [], 1, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u8_when_not_even")]), (.list [(.atom "u8_matches_even"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 529⟩⟩,
-  ⟨837, "u8_checked_ilog2", [1], 3, (.decl ⟨true, false, true, false⟩ (some (.external "u8_checked_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 532⟩⟩,
-  ⟨838, "u8_ilog2", [1], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u8_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 537⟩⟩,
-  ⟨839, "u8_trailing_zeros", [1], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u8_trailing_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 542⟩⟩,
-  ⟨840, "u8_trailing_ones", [1], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u8_trailing_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 547⟩⟩,
-  ⟨841, "u8_leading_zeros", [1], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u8_leading_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 552⟩⟩,
-  ⟨842, "u8_leading_ones", [1], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u8_leading_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 557⟩⟩,
-  ⟨843, "u8_is_power_of_two", [1], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u8_is_power_of_two")) none), ⟨"<OUT_DIR>/numerics.isle", 562⟩⟩,
-  ⟨844, "u8_matches_power_of_two", [0], 1, (.decl ⟨true, false, false, false⟩ none (some (.external "u8_matches_power_of_two" false))), ⟨"<OUT_DIR>/numerics.isle", 566⟩⟩,
-  ⟨845, "u8_extract_power_of_two", [1], 1, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u8_extract_power_of_two"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u8_matches_power_of_two"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 568⟩⟩,
-  ⟨846, "u8_when_power_of_two", [], 1, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u8_when_power_of_two")]), (.list [(.atom "u8_matches_power_of_two"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 570⟩⟩,
-  ⟨847, "u8_when_not_power_of_two", [], 1, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u8_when_not_power_of_two")]), (.list [(.atom "u8_matches_power_of_two"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 572⟩⟩,
-  ⟨848, "i16_eq", [8, 8], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i16_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 575⟩⟩,
-  ⟨849, "i16_ne", [8, 8], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i16_ne")) none), ⟨"<OUT_DIR>/numerics.isle", 581⟩⟩,
-  ⟨850, "i16_lt", [8, 8], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i16_lt")) none), ⟨"<OUT_DIR>/numerics.isle", 587⟩⟩,
-  ⟨851, "i16_lt_eq", [8, 8], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i16_lt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 593⟩⟩,
-  ⟨852, "i16_gt", [8, 8], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i16_gt")) none), ⟨"<OUT_DIR>/numerics.isle", 599⟩⟩,
-  ⟨853, "i16_gt_eq", [8, 8], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i16_gt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 605⟩⟩,
-  ⟨854, "i16_checked_add", [8, 8], 8, (.decl ⟨true, false, true, false⟩ (some (.external "i16_checked_add")) none), ⟨"<OUT_DIR>/numerics.isle", 611⟩⟩,
-  ⟨855, "i16_wrapping_add", [8, 8], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_wrapping_add")) none), ⟨"<OUT_DIR>/numerics.isle", 617⟩⟩,
-  ⟨856, "i16_add", [8, 8], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_add")) none), ⟨"<OUT_DIR>/numerics.isle", 623⟩⟩,
-  ⟨857, "i16_checked_sub", [8, 8], 8, (.decl ⟨true, false, true, false⟩ (some (.external "i16_checked_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 629⟩⟩,
-  ⟨858, "i16_wrapping_sub", [8, 8], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_wrapping_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 635⟩⟩,
-  ⟨859, "i16_sub", [8, 8], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 641⟩⟩,
-  ⟨860, "i16_checked_mul", [8, 8], 8, (.decl ⟨true, false, true, false⟩ (some (.external "i16_checked_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 647⟩⟩,
-  ⟨861, "i16_wrapping_mul", [8, 8], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_wrapping_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 653⟩⟩,
-  ⟨862, "i16_mul", [8, 8], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 659⟩⟩,
-  ⟨863, "i16_checked_div", [8, 8], 8, (.decl ⟨true, false, true, false⟩ (some (.external "i16_checked_div")) none), ⟨"<OUT_DIR>/numerics.isle", 665⟩⟩,
-  ⟨864, "i16_wrapping_div", [8, 8], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_wrapping_div")) none), ⟨"<OUT_DIR>/numerics.isle", 671⟩⟩,
-  ⟨865, "i16_div", [8, 8], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_div")) none), ⟨"<OUT_DIR>/numerics.isle", 677⟩⟩,
-  ⟨866, "i16_checked_rem", [8, 8], 8, (.decl ⟨true, false, true, false⟩ (some (.external "i16_checked_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 683⟩⟩,
-  ⟨867, "i16_rem", [8, 8], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 689⟩⟩,
-  ⟨868, "i16_and", [8, 8], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_and")) none), ⟨"<OUT_DIR>/numerics.isle", 695⟩⟩,
-  ⟨869, "i16_or", [8, 8], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_or")) none), ⟨"<OUT_DIR>/numerics.isle", 701⟩⟩,
-  ⟨870, "i16_xor", [8, 8], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_xor")) none), ⟨"<OUT_DIR>/numerics.isle", 707⟩⟩,
-  ⟨871, "i16_not", [8], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_not")) none), ⟨"<OUT_DIR>/numerics.isle", 713⟩⟩,
-  ⟨872, "i16_checked_shl", [8, 3], 8, (.decl ⟨true, false, true, false⟩ (some (.external "i16_checked_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 718⟩⟩,
-  ⟨873, "i16_wrapping_shl", [8, 3], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_wrapping_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 724⟩⟩,
-  ⟨874, "i16_shl", [8, 3], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 730⟩⟩,
-  ⟨875, "i16_checked_shr", [8, 3], 8, (.decl ⟨true, false, true, false⟩ (some (.external "i16_checked_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 736⟩⟩,
-  ⟨876, "i16_wrapping_shr", [8, 3], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_wrapping_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 742⟩⟩,
-  ⟨877, "i16_shr", [8, 3], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 748⟩⟩,
-  ⟨878, "i16_rotl", [8, 3], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_rotl")) none), ⟨"<OUT_DIR>/numerics.isle", 754⟩⟩,
-  ⟨879, "i16_rotr", [8, 3], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_rotr")) none), ⟨"<OUT_DIR>/numerics.isle", 760⟩⟩,
-  ⟨880, "i16_is_zero", [8], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i16_is_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 766⟩⟩,
-  ⟨881, "i16_matches_zero", [0], 8, (.decl ⟨true, false, false, false⟩ none (some (.external "i16_matches_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 770⟩⟩,
-  ⟨882, "i16_extract_zero", [8], 8, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i16_extract_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i16_matches_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 772⟩⟩,
-  ⟨883, "i16_when_zero", [], 8, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i16_when_zero")]), (.list [(.atom "i16_matches_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 774⟩⟩,
-  ⟨884, "i16_when_not_zero", [], 8, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i16_when_not_zero")]), (.list [(.atom "i16_matches_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 776⟩⟩,
-  ⟨885, "i16_is_non_zero", [8], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i16_is_non_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 779⟩⟩,
-  ⟨886, "i16_matches_non_zero", [0], 8, (.decl ⟨true, false, false, false⟩ none (some (.external "i16_matches_non_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 783⟩⟩,
-  ⟨887, "i16_extract_non_zero", [8], 8, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i16_extract_non_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i16_matches_non_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 785⟩⟩,
-  ⟨888, "i16_when_non_zero", [], 8, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i16_when_non_zero")]), (.list [(.atom "i16_matches_non_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 787⟩⟩,
-  ⟨889, "i16_when_not_non_zero", [], 8, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i16_when_not_non_zero")]), (.list [(.atom "i16_matches_non_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 789⟩⟩,
-  ⟨890, "i16_is_odd", [8], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i16_is_odd")) none), ⟨"<OUT_DIR>/numerics.isle", 792⟩⟩,
-  ⟨891, "i16_matches_odd", [0], 8, (.decl ⟨true, false, false, false⟩ none (some (.external "i16_matches_odd" false))), ⟨"<OUT_DIR>/numerics.isle", 796⟩⟩,
-  ⟨892, "i16_extract_odd", [8], 8, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i16_extract_odd"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i16_matches_odd"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 798⟩⟩,
-  ⟨893, "i16_when_odd", [], 8, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i16_when_odd")]), (.list [(.atom "i16_matches_odd"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 800⟩⟩,
-  ⟨894, "i16_when_not_odd", [], 8, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i16_when_not_odd")]), (.list [(.atom "i16_matches_odd"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 802⟩⟩,
-  ⟨895, "i16_is_even", [8], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i16_is_even")) none), ⟨"<OUT_DIR>/numerics.isle", 805⟩⟩,
-  ⟨896, "i16_matches_even", [0], 8, (.decl ⟨true, false, false, false⟩ none (some (.external "i16_matches_even" false))), ⟨"<OUT_DIR>/numerics.isle", 809⟩⟩,
-  ⟨897, "i16_extract_even", [8], 8, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i16_extract_even"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i16_matches_even"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 811⟩⟩,
-  ⟨898, "i16_when_even", [], 8, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i16_when_even")]), (.list [(.atom "i16_matches_even"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 813⟩⟩,
-  ⟨899, "i16_when_not_even", [], 8, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i16_when_not_even")]), (.list [(.atom "i16_matches_even"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 815⟩⟩,
-  ⟨900, "i16_checked_ilog2", [8], 3, (.decl ⟨true, false, true, false⟩ (some (.external "i16_checked_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 818⟩⟩,
-  ⟨901, "i16_ilog2", [8], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i16_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 823⟩⟩,
-  ⟨902, "i16_trailing_zeros", [8], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i16_trailing_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 828⟩⟩,
-  ⟨903, "i16_trailing_ones", [8], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i16_trailing_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 833⟩⟩,
-  ⟨904, "i16_leading_zeros", [8], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i16_leading_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 838⟩⟩,
-  ⟨905, "i16_leading_ones", [8], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i16_leading_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 843⟩⟩,
-  ⟨906, "i16_checked_neg", [8], 8, (.decl ⟨true, false, true, false⟩ (some (.external "i16_checked_neg")) none), ⟨"<OUT_DIR>/numerics.isle", 848⟩⟩,
-  ⟨907, "i16_wrapping_neg", [8], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_wrapping_neg")) none), ⟨"<OUT_DIR>/numerics.isle", 853⟩⟩,
-  ⟨908, "i16_neg", [8], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_neg")) none), ⟨"<OUT_DIR>/numerics.isle", 858⟩⟩,
-  ⟨909, "u16_eq", [2, 2], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u16_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 863⟩⟩,
-  ⟨910, "u16_ne", [2, 2], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u16_ne")) none), ⟨"<OUT_DIR>/numerics.isle", 869⟩⟩,
-  ⟨911, "u16_lt", [2, 2], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u16_lt")) none), ⟨"<OUT_DIR>/numerics.isle", 875⟩⟩,
-  ⟨912, "u16_lt_eq", [2, 2], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u16_lt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 881⟩⟩,
-  ⟨913, "u16_gt", [2, 2], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u16_gt")) none), ⟨"<OUT_DIR>/numerics.isle", 887⟩⟩,
-  ⟨914, "u16_gt_eq", [2, 2], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u16_gt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 893⟩⟩,
-  ⟨915, "u16_checked_add", [2, 2], 2, (.decl ⟨true, false, true, false⟩ (some (.external "u16_checked_add")) none), ⟨"<OUT_DIR>/numerics.isle", 899⟩⟩,
-  ⟨916, "u16_wrapping_add", [2, 2], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u16_wrapping_add")) none), ⟨"<OUT_DIR>/numerics.isle", 905⟩⟩,
-  ⟨917, "u16_add", [2, 2], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u16_add")) none), ⟨"<OUT_DIR>/numerics.isle", 911⟩⟩,
-  ⟨918, "u16_checked_sub", [2, 2], 2, (.decl ⟨true, false, true, false⟩ (some (.external "u16_checked_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 917⟩⟩,
-  ⟨919, "u16_wrapping_sub", [2, 2], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u16_wrapping_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 923⟩⟩,
-  ⟨920, "u16_sub", [2, 2], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u16_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 929⟩⟩,
-  ⟨921, "u16_checked_mul", [2, 2], 2, (.decl ⟨true, false, true, false⟩ (some (.external "u16_checked_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 935⟩⟩,
-  ⟨922, "u16_wrapping_mul", [2, 2], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u16_wrapping_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 941⟩⟩,
-  ⟨923, "u16_mul", [2, 2], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u16_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 947⟩⟩,
-  ⟨924, "u16_checked_div", [2, 2], 2, (.decl ⟨true, false, true, false⟩ (some (.external "u16_checked_div")) none), ⟨"<OUT_DIR>/numerics.isle", 953⟩⟩,
-  ⟨925, "u16_wrapping_div", [2, 2], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u16_wrapping_div")) none), ⟨"<OUT_DIR>/numerics.isle", 959⟩⟩,
-  ⟨926, "u16_div", [2, 2], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u16_div")) none), ⟨"<OUT_DIR>/numerics.isle", 965⟩⟩,
-  ⟨927, "u16_checked_rem", [2, 2], 2, (.decl ⟨true, false, true, false⟩ (some (.external "u16_checked_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 971⟩⟩,
-  ⟨928, "u16_rem", [2, 2], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u16_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 977⟩⟩,
-  ⟨929, "u16_and", [2, 2], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u16_and")) none), ⟨"<OUT_DIR>/numerics.isle", 983⟩⟩,
-  ⟨930, "u16_or", [2, 2], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u16_or")) none), ⟨"<OUT_DIR>/numerics.isle", 989⟩⟩,
-  ⟨931, "u16_xor", [2, 2], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u16_xor")) none), ⟨"<OUT_DIR>/numerics.isle", 995⟩⟩,
-  ⟨932, "u16_not", [2], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u16_not")) none), ⟨"<OUT_DIR>/numerics.isle", 1001⟩⟩,
-  ⟨933, "u16_checked_shl", [2, 3], 2, (.decl ⟨true, false, true, false⟩ (some (.external "u16_checked_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 1006⟩⟩,
-  ⟨934, "u16_wrapping_shl", [2, 3], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u16_wrapping_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 1012⟩⟩,
-  ⟨935, "u16_shl", [2, 3], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u16_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 1018⟩⟩,
-  ⟨936, "u16_checked_shr", [2, 3], 2, (.decl ⟨true, false, true, false⟩ (some (.external "u16_checked_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 1024⟩⟩,
-  ⟨937, "u16_wrapping_shr", [2, 3], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u16_wrapping_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 1030⟩⟩,
-  ⟨938, "u16_shr", [2, 3], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u16_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 1036⟩⟩,
-  ⟨939, "u16_rotl", [2, 3], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u16_rotl")) none), ⟨"<OUT_DIR>/numerics.isle", 1042⟩⟩,
-  ⟨940, "u16_rotr", [2, 3], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u16_rotr")) none), ⟨"<OUT_DIR>/numerics.isle", 1048⟩⟩,
-  ⟨941, "u16_is_zero", [2], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u16_is_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 1054⟩⟩,
-  ⟨942, "u16_matches_zero", [0], 2, (.decl ⟨true, false, false, false⟩ none (some (.external "u16_matches_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 1058⟩⟩,
-  ⟨943, "u16_extract_zero", [2], 2, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u16_extract_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u16_matches_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 1060⟩⟩,
-  ⟨944, "u16_when_zero", [], 2, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u16_when_zero")]), (.list [(.atom "u16_matches_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 1062⟩⟩,
-  ⟨945, "u16_when_not_zero", [], 2, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u16_when_not_zero")]), (.list [(.atom "u16_matches_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 1064⟩⟩,
-  ⟨946, "u16_is_non_zero", [2], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u16_is_non_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 1067⟩⟩,
-  ⟨947, "u16_matches_non_zero", [0], 2, (.decl ⟨true, false, false, false⟩ none (some (.external "u16_matches_non_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 1071⟩⟩,
-  ⟨948, "u16_extract_non_zero", [2], 2, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u16_extract_non_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u16_matches_non_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 1073⟩⟩,
-  ⟨949, "u16_when_non_zero", [], 2, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u16_when_non_zero")]), (.list [(.atom "u16_matches_non_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 1075⟩⟩,
-  ⟨950, "u16_when_not_non_zero", [], 2, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u16_when_not_non_zero")]), (.list [(.atom "u16_matches_non_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 1077⟩⟩,
-  ⟨951, "u16_is_odd", [2], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u16_is_odd")) none), ⟨"<OUT_DIR>/numerics.isle", 1080⟩⟩,
-  ⟨952, "u16_matches_odd", [0], 2, (.decl ⟨true, false, false, false⟩ none (some (.external "u16_matches_odd" false))), ⟨"<OUT_DIR>/numerics.isle", 1084⟩⟩,
-  ⟨953, "u16_extract_odd", [2], 2, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u16_extract_odd"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u16_matches_odd"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 1086⟩⟩,
-  ⟨954, "u16_when_odd", [], 2, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u16_when_odd")]), (.list [(.atom "u16_matches_odd"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 1088⟩⟩,
-  ⟨955, "u16_when_not_odd", [], 2, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u16_when_not_odd")]), (.list [(.atom "u16_matches_odd"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 1090⟩⟩,
-  ⟨956, "u16_is_even", [2], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u16_is_even")) none), ⟨"<OUT_DIR>/numerics.isle", 1093⟩⟩,
-  ⟨957, "u16_matches_even", [0], 2, (.decl ⟨true, false, false, false⟩ none (some (.external "u16_matches_even" false))), ⟨"<OUT_DIR>/numerics.isle", 1097⟩⟩,
-  ⟨958, "u16_extract_even", [2], 2, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u16_extract_even"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u16_matches_even"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 1099⟩⟩,
-  ⟨959, "u16_when_even", [], 2, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u16_when_even")]), (.list [(.atom "u16_matches_even"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 1101⟩⟩,
-  ⟨960, "u16_when_not_even", [], 2, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u16_when_not_even")]), (.list [(.atom "u16_matches_even"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 1103⟩⟩,
-  ⟨961, "u16_checked_ilog2", [2], 3, (.decl ⟨true, false, true, false⟩ (some (.external "u16_checked_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 1106⟩⟩,
-  ⟨962, "u16_ilog2", [2], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u16_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 1111⟩⟩,
-  ⟨963, "u16_trailing_zeros", [2], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u16_trailing_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 1116⟩⟩,
-  ⟨964, "u16_trailing_ones", [2], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u16_trailing_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 1121⟩⟩,
-  ⟨965, "u16_leading_zeros", [2], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u16_leading_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 1126⟩⟩,
-  ⟨966, "u16_leading_ones", [2], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u16_leading_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 1131⟩⟩,
-  ⟨967, "u16_is_power_of_two", [2], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u16_is_power_of_two")) none), ⟨"<OUT_DIR>/numerics.isle", 1136⟩⟩,
-  ⟨968, "u16_matches_power_of_two", [0], 2, (.decl ⟨true, false, false, false⟩ none (some (.external "u16_matches_power_of_two" false))), ⟨"<OUT_DIR>/numerics.isle", 1140⟩⟩,
-  ⟨969, "u16_extract_power_of_two", [2], 2, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u16_extract_power_of_two"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u16_matches_power_of_two"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 1142⟩⟩,
-  ⟨970, "u16_when_power_of_two", [], 2, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u16_when_power_of_two")]), (.list [(.atom "u16_matches_power_of_two"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 1144⟩⟩,
-  ⟨971, "u16_when_not_power_of_two", [], 2, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u16_when_not_power_of_two")]), (.list [(.atom "u16_matches_power_of_two"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 1146⟩⟩,
-  ⟨972, "i32_eq", [9, 9], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i32_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 1149⟩⟩,
-  ⟨973, "i32_ne", [9, 9], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i32_ne")) none), ⟨"<OUT_DIR>/numerics.isle", 1155⟩⟩,
-  ⟨974, "i32_lt", [9, 9], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i32_lt")) none), ⟨"<OUT_DIR>/numerics.isle", 1161⟩⟩,
-  ⟨975, "i32_lt_eq", [9, 9], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i32_lt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 1167⟩⟩,
-  ⟨976, "i32_gt", [9, 9], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i32_gt")) none), ⟨"<OUT_DIR>/numerics.isle", 1173⟩⟩,
-  ⟨977, "i32_gt_eq", [9, 9], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i32_gt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 1179⟩⟩,
-  ⟨978, "i32_checked_add", [9, 9], 9, (.decl ⟨true, false, true, false⟩ (some (.external "i32_checked_add")) none), ⟨"<OUT_DIR>/numerics.isle", 1185⟩⟩,
-  ⟨979, "i32_wrapping_add", [9, 9], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_wrapping_add")) none), ⟨"<OUT_DIR>/numerics.isle", 1191⟩⟩,
-  ⟨980, "i32_add", [9, 9], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_add")) none), ⟨"<OUT_DIR>/numerics.isle", 1197⟩⟩,
-  ⟨981, "i32_checked_sub", [9, 9], 9, (.decl ⟨true, false, true, false⟩ (some (.external "i32_checked_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 1203⟩⟩,
-  ⟨982, "i32_wrapping_sub", [9, 9], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_wrapping_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 1209⟩⟩,
-  ⟨983, "i32_sub", [9, 9], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 1215⟩⟩,
-  ⟨984, "i32_checked_mul", [9, 9], 9, (.decl ⟨true, false, true, false⟩ (some (.external "i32_checked_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 1221⟩⟩,
-  ⟨985, "i32_wrapping_mul", [9, 9], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_wrapping_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 1227⟩⟩,
-  ⟨986, "i32_mul", [9, 9], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 1233⟩⟩,
-  ⟨987, "i32_checked_div", [9, 9], 9, (.decl ⟨true, false, true, false⟩ (some (.external "i32_checked_div")) none), ⟨"<OUT_DIR>/numerics.isle", 1239⟩⟩,
-  ⟨988, "i32_wrapping_div", [9, 9], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_wrapping_div")) none), ⟨"<OUT_DIR>/numerics.isle", 1245⟩⟩,
-  ⟨989, "i32_div", [9, 9], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_div")) none), ⟨"<OUT_DIR>/numerics.isle", 1251⟩⟩,
-  ⟨990, "i32_checked_rem", [9, 9], 9, (.decl ⟨true, false, true, false⟩ (some (.external "i32_checked_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 1257⟩⟩,
-  ⟨991, "i32_rem", [9, 9], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 1263⟩⟩,
-  ⟨992, "i32_and", [9, 9], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_and")) none), ⟨"<OUT_DIR>/numerics.isle", 1269⟩⟩,
-  ⟨993, "i32_or", [9, 9], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_or")) none), ⟨"<OUT_DIR>/numerics.isle", 1275⟩⟩,
-  ⟨994, "i32_xor", [9, 9], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_xor")) none), ⟨"<OUT_DIR>/numerics.isle", 1281⟩⟩,
-  ⟨995, "i32_not", [9], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_not")) none), ⟨"<OUT_DIR>/numerics.isle", 1287⟩⟩,
-  ⟨996, "i32_checked_shl", [9, 3], 9, (.decl ⟨true, false, true, false⟩ (some (.external "i32_checked_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 1292⟩⟩,
-  ⟨997, "i32_wrapping_shl", [9, 3], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_wrapping_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 1298⟩⟩,
-  ⟨998, "i32_shl", [9, 3], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 1304⟩⟩,
-  ⟨999, "i32_checked_shr", [9, 3], 9, (.decl ⟨true, false, true, false⟩ (some (.external "i32_checked_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 1310⟩⟩,
-  ⟨1000, "i32_wrapping_shr", [9, 3], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_wrapping_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 1316⟩⟩,
-  ⟨1001, "i32_shr", [9, 3], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 1322⟩⟩,
-  ⟨1002, "i32_rotl", [9, 3], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_rotl")) none), ⟨"<OUT_DIR>/numerics.isle", 1328⟩⟩,
-  ⟨1003, "i32_rotr", [9, 3], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_rotr")) none), ⟨"<OUT_DIR>/numerics.isle", 1334⟩⟩,
-  ⟨1004, "i32_is_zero", [9], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i32_is_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 1340⟩⟩,
-  ⟨1005, "i32_matches_zero", [0], 9, (.decl ⟨true, false, false, false⟩ none (some (.external "i32_matches_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 1344⟩⟩,
-  ⟨1006, "i32_extract_zero", [9], 9, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i32_extract_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i32_matches_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 1346⟩⟩,
-  ⟨1007, "i32_when_zero", [], 9, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i32_when_zero")]), (.list [(.atom "i32_matches_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 1348⟩⟩,
-  ⟨1008, "i32_when_not_zero", [], 9, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i32_when_not_zero")]), (.list [(.atom "i32_matches_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 1350⟩⟩,
-  ⟨1009, "i32_is_non_zero", [9], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i32_is_non_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 1353⟩⟩,
-  ⟨1010, "i32_matches_non_zero", [0], 9, (.decl ⟨true, false, false, false⟩ none (some (.external "i32_matches_non_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 1357⟩⟩,
-  ⟨1011, "i32_extract_non_zero", [9], 9, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i32_extract_non_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i32_matches_non_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 1359⟩⟩,
-  ⟨1012, "i32_when_non_zero", [], 9, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i32_when_non_zero")]), (.list [(.atom "i32_matches_non_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 1361⟩⟩,
-  ⟨1013, "i32_when_not_non_zero", [], 9, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i32_when_not_non_zero")]), (.list [(.atom "i32_matches_non_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 1363⟩⟩,
-  ⟨1014, "i32_is_odd", [9], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i32_is_odd")) none), ⟨"<OUT_DIR>/numerics.isle", 1366⟩⟩,
-  ⟨1015, "i32_matches_odd", [0], 9, (.decl ⟨true, false, false, false⟩ none (some (.external "i32_matches_odd" false))), ⟨"<OUT_DIR>/numerics.isle", 1370⟩⟩,
-  ⟨1016, "i32_extract_odd", [9], 9, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i32_extract_odd"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i32_matches_odd"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 1372⟩⟩,
-  ⟨1017, "i32_when_odd", [], 9, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i32_when_odd")]), (.list [(.atom "i32_matches_odd"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 1374⟩⟩,
-  ⟨1018, "i32_when_not_odd", [], 9, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i32_when_not_odd")]), (.list [(.atom "i32_matches_odd"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 1376⟩⟩,
-  ⟨1019, "i32_is_even", [9], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i32_is_even")) none), ⟨"<OUT_DIR>/numerics.isle", 1379⟩⟩,
-  ⟨1020, "i32_matches_even", [0], 9, (.decl ⟨true, false, false, false⟩ none (some (.external "i32_matches_even" false))), ⟨"<OUT_DIR>/numerics.isle", 1383⟩⟩,
-  ⟨1021, "i32_extract_even", [9], 9, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i32_extract_even"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i32_matches_even"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 1385⟩⟩,
-  ⟨1022, "i32_when_even", [], 9, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i32_when_even")]), (.list [(.atom "i32_matches_even"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 1387⟩⟩,
-  ⟨1023, "i32_when_not_even", [], 9, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i32_when_not_even")]), (.list [(.atom "i32_matches_even"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 1389⟩⟩,
-  ⟨1024, "i32_checked_ilog2", [9], 3, (.decl ⟨true, false, true, false⟩ (some (.external "i32_checked_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 1392⟩⟩,
-  ⟨1025, "i32_ilog2", [9], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i32_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 1397⟩⟩,
-  ⟨1026, "i32_trailing_zeros", [9], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i32_trailing_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 1402⟩⟩,
-  ⟨1027, "i32_trailing_ones", [9], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i32_trailing_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 1407⟩⟩,
-  ⟨1028, "i32_leading_zeros", [9], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i32_leading_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 1412⟩⟩,
-  ⟨1029, "i32_leading_ones", [9], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i32_leading_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 1417⟩⟩,
-  ⟨1030, "i32_checked_neg", [9], 9, (.decl ⟨true, false, true, false⟩ (some (.external "i32_checked_neg")) none), ⟨"<OUT_DIR>/numerics.isle", 1422⟩⟩,
-  ⟨1031, "i32_wrapping_neg", [9], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_wrapping_neg")) none), ⟨"<OUT_DIR>/numerics.isle", 1427⟩⟩,
-  ⟨1032, "i32_neg", [9], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_neg")) none), ⟨"<OUT_DIR>/numerics.isle", 1432⟩⟩,
-  ⟨1033, "u32_eq", [3, 3], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u32_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 1437⟩⟩,
-  ⟨1034, "u32_ne", [3, 3], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u32_ne")) none), ⟨"<OUT_DIR>/numerics.isle", 1443⟩⟩,
-  ⟨1035, "u32_lt", [3, 3], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u32_lt")) none), ⟨"<OUT_DIR>/numerics.isle", 1449⟩⟩,
-  ⟨1036, "u32_lt_eq", [3, 3], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u32_lt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 1455⟩⟩,
-  ⟨1037, "u32_gt", [3, 3], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u32_gt")) none), ⟨"<OUT_DIR>/numerics.isle", 1461⟩⟩,
-  ⟨1038, "u32_gt_eq", [3, 3], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u32_gt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 1467⟩⟩,
-  ⟨1039, "u32_checked_add", [3, 3], 3, (.decl ⟨true, false, true, false⟩ (some (.external "u32_checked_add")) none), ⟨"<OUT_DIR>/numerics.isle", 1473⟩⟩,
-  ⟨1040, "u32_wrapping_add", [3, 3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_wrapping_add")) none), ⟨"<OUT_DIR>/numerics.isle", 1479⟩⟩,
-  ⟨1041, "u32_add", [3, 3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_add")) none), ⟨"<OUT_DIR>/numerics.isle", 1485⟩⟩,
-  ⟨1042, "u32_checked_sub", [3, 3], 3, (.decl ⟨true, false, true, false⟩ (some (.external "u32_checked_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 1491⟩⟩,
-  ⟨1043, "u32_wrapping_sub", [3, 3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_wrapping_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 1497⟩⟩,
-  ⟨1044, "u32_sub", [3, 3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 1503⟩⟩,
-  ⟨1045, "u32_checked_mul", [3, 3], 3, (.decl ⟨true, false, true, false⟩ (some (.external "u32_checked_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 1509⟩⟩,
-  ⟨1046, "u32_wrapping_mul", [3, 3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_wrapping_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 1515⟩⟩,
-  ⟨1047, "u32_mul", [3, 3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 1521⟩⟩,
-  ⟨1048, "u32_checked_div", [3, 3], 3, (.decl ⟨true, false, true, false⟩ (some (.external "u32_checked_div")) none), ⟨"<OUT_DIR>/numerics.isle", 1527⟩⟩,
-  ⟨1049, "u32_wrapping_div", [3, 3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_wrapping_div")) none), ⟨"<OUT_DIR>/numerics.isle", 1533⟩⟩,
-  ⟨1050, "u32_div", [3, 3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_div")) none), ⟨"<OUT_DIR>/numerics.isle", 1539⟩⟩,
-  ⟨1051, "u32_checked_rem", [3, 3], 3, (.decl ⟨true, false, true, false⟩ (some (.external "u32_checked_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 1545⟩⟩,
-  ⟨1052, "u32_rem", [3, 3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 1551⟩⟩,
-  ⟨1053, "u32_and", [3, 3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_and")) none), ⟨"<OUT_DIR>/numerics.isle", 1557⟩⟩,
-  ⟨1054, "u32_or", [3, 3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_or")) none), ⟨"<OUT_DIR>/numerics.isle", 1563⟩⟩,
-  ⟨1055, "u32_xor", [3, 3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_xor")) none), ⟨"<OUT_DIR>/numerics.isle", 1569⟩⟩,
-  ⟨1056, "u32_not", [3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_not")) none), ⟨"<OUT_DIR>/numerics.isle", 1575⟩⟩,
-  ⟨1057, "u32_checked_shl", [3, 3], 3, (.decl ⟨true, false, true, false⟩ (some (.external "u32_checked_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 1580⟩⟩,
-  ⟨1058, "u32_wrapping_shl", [3, 3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_wrapping_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 1586⟩⟩,
-  ⟨1059, "u32_shl", [3, 3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 1592⟩⟩,
-  ⟨1060, "u32_checked_shr", [3, 3], 3, (.decl ⟨true, false, true, false⟩ (some (.external "u32_checked_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 1598⟩⟩,
-  ⟨1061, "u32_wrapping_shr", [3, 3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_wrapping_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 1604⟩⟩,
-  ⟨1062, "u32_shr", [3, 3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 1610⟩⟩,
-  ⟨1063, "u32_rotl", [3, 3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_rotl")) none), ⟨"<OUT_DIR>/numerics.isle", 1616⟩⟩,
-  ⟨1064, "u32_rotr", [3, 3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_rotr")) none), ⟨"<OUT_DIR>/numerics.isle", 1622⟩⟩,
-  ⟨1065, "u32_is_zero", [3], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u32_is_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 1628⟩⟩,
-  ⟨1066, "u32_matches_zero", [0], 3, (.decl ⟨true, false, false, false⟩ none (some (.external "u32_matches_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 1632⟩⟩,
-  ⟨1067, "u32_extract_zero", [3], 3, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u32_extract_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u32_matches_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 1634⟩⟩,
-  ⟨1068, "u32_when_zero", [], 3, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u32_when_zero")]), (.list [(.atom "u32_matches_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 1636⟩⟩,
-  ⟨1069, "u32_when_not_zero", [], 3, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u32_when_not_zero")]), (.list [(.atom "u32_matches_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 1638⟩⟩,
-  ⟨1070, "u32_is_non_zero", [3], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u32_is_non_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 1641⟩⟩,
-  ⟨1071, "u32_matches_non_zero", [0], 3, (.decl ⟨true, false, false, false⟩ none (some (.external "u32_matches_non_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 1645⟩⟩,
-  ⟨1072, "u32_extract_non_zero", [3], 3, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u32_extract_non_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u32_matches_non_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 1647⟩⟩,
-  ⟨1073, "u32_when_non_zero", [], 3, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u32_when_non_zero")]), (.list [(.atom "u32_matches_non_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 1649⟩⟩,
-  ⟨1074, "u32_when_not_non_zero", [], 3, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u32_when_not_non_zero")]), (.list [(.atom "u32_matches_non_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 1651⟩⟩,
-  ⟨1075, "u32_is_odd", [3], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u32_is_odd")) none), ⟨"<OUT_DIR>/numerics.isle", 1654⟩⟩,
-  ⟨1076, "u32_matches_odd", [0], 3, (.decl ⟨true, false, false, false⟩ none (some (.external "u32_matches_odd" false))), ⟨"<OUT_DIR>/numerics.isle", 1658⟩⟩,
-  ⟨1077, "u32_extract_odd", [3], 3, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u32_extract_odd"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u32_matches_odd"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 1660⟩⟩,
-  ⟨1078, "u32_when_odd", [], 3, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u32_when_odd")]), (.list [(.atom "u32_matches_odd"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 1662⟩⟩,
-  ⟨1079, "u32_when_not_odd", [], 3, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u32_when_not_odd")]), (.list [(.atom "u32_matches_odd"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 1664⟩⟩,
-  ⟨1080, "u32_is_even", [3], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u32_is_even")) none), ⟨"<OUT_DIR>/numerics.isle", 1667⟩⟩,
-  ⟨1081, "u32_matches_even", [0], 3, (.decl ⟨true, false, false, false⟩ none (some (.external "u32_matches_even" false))), ⟨"<OUT_DIR>/numerics.isle", 1671⟩⟩,
-  ⟨1082, "u32_extract_even", [3], 3, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u32_extract_even"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u32_matches_even"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 1673⟩⟩,
-  ⟨1083, "u32_when_even", [], 3, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u32_when_even")]), (.list [(.atom "u32_matches_even"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 1675⟩⟩,
-  ⟨1084, "u32_when_not_even", [], 3, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u32_when_not_even")]), (.list [(.atom "u32_matches_even"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 1677⟩⟩,
-  ⟨1085, "u32_checked_ilog2", [3], 3, (.decl ⟨true, false, true, false⟩ (some (.external "u32_checked_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 1680⟩⟩,
-  ⟨1086, "u32_ilog2", [3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 1685⟩⟩,
-  ⟨1087, "u32_trailing_zeros", [3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_trailing_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 1690⟩⟩,
-  ⟨1088, "u32_trailing_ones", [3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_trailing_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 1695⟩⟩,
-  ⟨1089, "u32_leading_zeros", [3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_leading_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 1700⟩⟩,
-  ⟨1090, "u32_leading_ones", [3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_leading_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 1705⟩⟩,
-  ⟨1091, "u32_is_power_of_two", [3], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u32_is_power_of_two")) none), ⟨"<OUT_DIR>/numerics.isle", 1710⟩⟩,
-  ⟨1092, "u32_matches_power_of_two", [0], 3, (.decl ⟨true, false, false, false⟩ none (some (.external "u32_matches_power_of_two" false))), ⟨"<OUT_DIR>/numerics.isle", 1714⟩⟩,
-  ⟨1093, "u32_extract_power_of_two", [3], 3, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u32_extract_power_of_two"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u32_matches_power_of_two"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 1716⟩⟩,
-  ⟨1094, "u32_when_power_of_two", [], 3, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u32_when_power_of_two")]), (.list [(.atom "u32_matches_power_of_two"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 1718⟩⟩,
-  ⟨1095, "u32_when_not_power_of_two", [], 3, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u32_when_not_power_of_two")]), (.list [(.atom "u32_matches_power_of_two"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 1720⟩⟩,
-  ⟨1096, "i64_eq", [10, 10], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i64_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 1723⟩⟩,
-  ⟨1097, "i64_ne", [10, 10], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i64_ne")) none), ⟨"<OUT_DIR>/numerics.isle", 1729⟩⟩,
-  ⟨1098, "i64_lt", [10, 10], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i64_lt")) none), ⟨"<OUT_DIR>/numerics.isle", 1735⟩⟩,
-  ⟨1099, "i64_lt_eq", [10, 10], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i64_lt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 1741⟩⟩,
-  ⟨1100, "i64_gt", [10, 10], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i64_gt")) none), ⟨"<OUT_DIR>/numerics.isle", 1747⟩⟩,
-  ⟨1101, "i64_gt_eq", [10, 10], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i64_gt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 1753⟩⟩,
-  ⟨1102, "i64_checked_add", [10, 10], 10, (.decl ⟨true, false, true, false⟩ (some (.external "i64_checked_add")) none), ⟨"<OUT_DIR>/numerics.isle", 1759⟩⟩,
-  ⟨1103, "i64_wrapping_add", [10, 10], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_wrapping_add")) none), ⟨"<OUT_DIR>/numerics.isle", 1765⟩⟩,
-  ⟨1104, "i64_add", [10, 10], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_add")) none), ⟨"<OUT_DIR>/numerics.isle", 1771⟩⟩,
-  ⟨1105, "i64_checked_sub", [10, 10], 10, (.decl ⟨true, false, true, false⟩ (some (.external "i64_checked_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 1777⟩⟩,
-  ⟨1106, "i64_wrapping_sub", [10, 10], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_wrapping_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 1783⟩⟩,
-  ⟨1107, "i64_sub", [10, 10], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 1789⟩⟩,
-  ⟨1108, "i64_checked_mul", [10, 10], 10, (.decl ⟨true, false, true, false⟩ (some (.external "i64_checked_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 1795⟩⟩,
-  ⟨1109, "i64_wrapping_mul", [10, 10], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_wrapping_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 1801⟩⟩,
-  ⟨1110, "i64_mul", [10, 10], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 1807⟩⟩,
-  ⟨1111, "i64_checked_div", [10, 10], 10, (.decl ⟨true, false, true, false⟩ (some (.external "i64_checked_div")) none), ⟨"<OUT_DIR>/numerics.isle", 1813⟩⟩,
-  ⟨1112, "i64_wrapping_div", [10, 10], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_wrapping_div")) none), ⟨"<OUT_DIR>/numerics.isle", 1819⟩⟩,
-  ⟨1113, "i64_div", [10, 10], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_div")) none), ⟨"<OUT_DIR>/numerics.isle", 1825⟩⟩,
-  ⟨1114, "i64_checked_rem", [10, 10], 10, (.decl ⟨true, false, true, false⟩ (some (.external "i64_checked_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 1831⟩⟩,
-  ⟨1115, "i64_rem", [10, 10], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 1837⟩⟩,
-  ⟨1116, "i64_and", [10, 10], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_and")) none), ⟨"<OUT_DIR>/numerics.isle", 1843⟩⟩,
-  ⟨1117, "i64_or", [10, 10], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_or")) none), ⟨"<OUT_DIR>/numerics.isle", 1849⟩⟩,
-  ⟨1118, "i64_xor", [10, 10], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_xor")) none), ⟨"<OUT_DIR>/numerics.isle", 1855⟩⟩,
-  ⟨1119, "i64_not", [10], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_not")) none), ⟨"<OUT_DIR>/numerics.isle", 1861⟩⟩,
-  ⟨1120, "i64_checked_shl", [10, 3], 10, (.decl ⟨true, false, true, false⟩ (some (.external "i64_checked_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 1866⟩⟩,
-  ⟨1121, "i64_wrapping_shl", [10, 3], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_wrapping_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 1872⟩⟩,
-  ⟨1122, "i64_shl", [10, 3], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 1878⟩⟩,
-  ⟨1123, "i64_checked_shr", [10, 3], 10, (.decl ⟨true, false, true, false⟩ (some (.external "i64_checked_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 1884⟩⟩,
-  ⟨1124, "i64_wrapping_shr", [10, 3], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_wrapping_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 1890⟩⟩,
-  ⟨1125, "i64_shr", [10, 3], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 1896⟩⟩,
-  ⟨1126, "i64_rotl", [10, 3], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_rotl")) none), ⟨"<OUT_DIR>/numerics.isle", 1902⟩⟩,
-  ⟨1127, "i64_rotr", [10, 3], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_rotr")) none), ⟨"<OUT_DIR>/numerics.isle", 1908⟩⟩,
-  ⟨1128, "i64_is_zero", [10], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i64_is_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 1914⟩⟩,
-  ⟨1129, "i64_matches_zero", [0], 10, (.decl ⟨true, false, false, false⟩ none (some (.external "i64_matches_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 1918⟩⟩,
-  ⟨1130, "i64_extract_zero", [10], 10, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i64_extract_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i64_matches_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 1920⟩⟩,
-  ⟨1131, "i64_when_zero", [], 10, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i64_when_zero")]), (.list [(.atom "i64_matches_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 1922⟩⟩,
-  ⟨1132, "i64_when_not_zero", [], 10, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i64_when_not_zero")]), (.list [(.atom "i64_matches_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 1924⟩⟩,
-  ⟨1133, "i64_is_non_zero", [10], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i64_is_non_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 1927⟩⟩,
-  ⟨1134, "i64_matches_non_zero", [0], 10, (.decl ⟨true, false, false, false⟩ none (some (.external "i64_matches_non_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 1931⟩⟩,
-  ⟨1135, "i64_extract_non_zero", [10], 10, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i64_extract_non_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i64_matches_non_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 1933⟩⟩,
-  ⟨1136, "i64_when_non_zero", [], 10, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i64_when_non_zero")]), (.list [(.atom "i64_matches_non_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 1935⟩⟩,
-  ⟨1137, "i64_when_not_non_zero", [], 10, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i64_when_not_non_zero")]), (.list [(.atom "i64_matches_non_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 1937⟩⟩,
-  ⟨1138, "i64_is_odd", [10], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i64_is_odd")) none), ⟨"<OUT_DIR>/numerics.isle", 1940⟩⟩,
-  ⟨1139, "i64_matches_odd", [0], 10, (.decl ⟨true, false, false, false⟩ none (some (.external "i64_matches_odd" false))), ⟨"<OUT_DIR>/numerics.isle", 1944⟩⟩,
-  ⟨1140, "i64_extract_odd", [10], 10, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i64_extract_odd"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i64_matches_odd"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 1946⟩⟩,
-  ⟨1141, "i64_when_odd", [], 10, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i64_when_odd")]), (.list [(.atom "i64_matches_odd"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 1948⟩⟩,
-  ⟨1142, "i64_when_not_odd", [], 10, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i64_when_not_odd")]), (.list [(.atom "i64_matches_odd"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 1950⟩⟩,
-  ⟨1143, "i64_is_even", [10], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i64_is_even")) none), ⟨"<OUT_DIR>/numerics.isle", 1953⟩⟩,
-  ⟨1144, "i64_matches_even", [0], 10, (.decl ⟨true, false, false, false⟩ none (some (.external "i64_matches_even" false))), ⟨"<OUT_DIR>/numerics.isle", 1957⟩⟩,
-  ⟨1145, "i64_extract_even", [10], 10, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i64_extract_even"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i64_matches_even"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 1959⟩⟩,
-  ⟨1146, "i64_when_even", [], 10, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i64_when_even")]), (.list [(.atom "i64_matches_even"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 1961⟩⟩,
-  ⟨1147, "i64_when_not_even", [], 10, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i64_when_not_even")]), (.list [(.atom "i64_matches_even"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 1963⟩⟩,
-  ⟨1148, "i64_checked_ilog2", [10], 3, (.decl ⟨true, false, true, false⟩ (some (.external "i64_checked_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 1966⟩⟩,
-  ⟨1149, "i64_ilog2", [10], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i64_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 1971⟩⟩,
-  ⟨1150, "i64_trailing_zeros", [10], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i64_trailing_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 1976⟩⟩,
-  ⟨1151, "i64_trailing_ones", [10], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i64_trailing_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 1981⟩⟩,
-  ⟨1152, "i64_leading_zeros", [10], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i64_leading_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 1986⟩⟩,
-  ⟨1153, "i64_leading_ones", [10], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i64_leading_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 1991⟩⟩,
-  ⟨1154, "i64_checked_neg", [10], 10, (.decl ⟨true, false, true, false⟩ (some (.external "i64_checked_neg")) none), ⟨"<OUT_DIR>/numerics.isle", 1996⟩⟩,
-  ⟨1155, "i64_wrapping_neg", [10], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_wrapping_neg")) none), ⟨"<OUT_DIR>/numerics.isle", 2001⟩⟩,
-  ⟨1156, "i64_neg", [10], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_neg")) none), ⟨"<OUT_DIR>/numerics.isle", 2006⟩⟩,
-  ⟨1157, "u64_eq", [4, 4], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u64_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 2011⟩⟩,
-  ⟨1158, "u64_ne", [4, 4], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u64_ne")) none), ⟨"<OUT_DIR>/numerics.isle", 2017⟩⟩,
-  ⟨1159, "u64_lt", [4, 4], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u64_lt")) none), ⟨"<OUT_DIR>/numerics.isle", 2023⟩⟩,
-  ⟨1160, "u64_lt_eq", [4, 4], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u64_lt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 2029⟩⟩,
-  ⟨1161, "u64_gt", [4, 4], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u64_gt")) none), ⟨"<OUT_DIR>/numerics.isle", 2035⟩⟩,
-  ⟨1162, "u64_gt_eq", [4, 4], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u64_gt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 2041⟩⟩,
-  ⟨1163, "u64_checked_add", [4, 4], 4, (.decl ⟨true, false, true, false⟩ (some (.external "u64_checked_add")) none), ⟨"<OUT_DIR>/numerics.isle", 2047⟩⟩,
-  ⟨1164, "u64_wrapping_add", [4, 4], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_wrapping_add")) none), ⟨"<OUT_DIR>/numerics.isle", 2053⟩⟩,
-  ⟨1165, "u64_add", [4, 4], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_add")) none), ⟨"<OUT_DIR>/numerics.isle", 2059⟩⟩,
-  ⟨1166, "u64_checked_sub", [4, 4], 4, (.decl ⟨true, false, true, false⟩ (some (.external "u64_checked_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 2065⟩⟩,
-  ⟨1167, "u64_wrapping_sub", [4, 4], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_wrapping_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 2071⟩⟩,
-  ⟨1168, "u64_sub", [4, 4], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 2077⟩⟩,
-  ⟨1169, "u64_checked_mul", [4, 4], 4, (.decl ⟨true, false, true, false⟩ (some (.external "u64_checked_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 2083⟩⟩,
-  ⟨1170, "u64_wrapping_mul", [4, 4], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_wrapping_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 2089⟩⟩,
-  ⟨1171, "u64_mul", [4, 4], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 2095⟩⟩,
-  ⟨1172, "u64_checked_div", [4, 4], 4, (.decl ⟨true, false, true, false⟩ (some (.external "u64_checked_div")) none), ⟨"<OUT_DIR>/numerics.isle", 2101⟩⟩,
-  ⟨1173, "u64_wrapping_div", [4, 4], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_wrapping_div")) none), ⟨"<OUT_DIR>/numerics.isle", 2107⟩⟩,
-  ⟨1174, "u64_div", [4, 4], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_div")) none), ⟨"<OUT_DIR>/numerics.isle", 2113⟩⟩,
-  ⟨1175, "u64_checked_rem", [4, 4], 4, (.decl ⟨true, false, true, false⟩ (some (.external "u64_checked_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 2119⟩⟩,
-  ⟨1176, "u64_rem", [4, 4], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 2125⟩⟩,
-  ⟨1177, "u64_and", [4, 4], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_and")) none), ⟨"<OUT_DIR>/numerics.isle", 2131⟩⟩,
-  ⟨1178, "u64_or", [4, 4], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_or")) none), ⟨"<OUT_DIR>/numerics.isle", 2137⟩⟩,
-  ⟨1179, "u64_xor", [4, 4], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_xor")) none), ⟨"<OUT_DIR>/numerics.isle", 2143⟩⟩,
-  ⟨1180, "u64_not", [4], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_not")) none), ⟨"<OUT_DIR>/numerics.isle", 2149⟩⟩,
-  ⟨1181, "u64_checked_shl", [4, 3], 4, (.decl ⟨true, false, true, false⟩ (some (.external "u64_checked_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 2154⟩⟩,
-  ⟨1182, "u64_wrapping_shl", [4, 3], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_wrapping_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 2160⟩⟩,
-  ⟨1183, "u64_shl", [4, 3], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 2166⟩⟩,
-  ⟨1184, "u64_checked_shr", [4, 3], 4, (.decl ⟨true, false, true, false⟩ (some (.external "u64_checked_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 2172⟩⟩,
-  ⟨1185, "u64_wrapping_shr", [4, 3], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_wrapping_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 2178⟩⟩,
-  ⟨1186, "u64_shr", [4, 3], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 2184⟩⟩,
-  ⟨1187, "u64_rotl", [4, 3], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_rotl")) none), ⟨"<OUT_DIR>/numerics.isle", 2190⟩⟩,
-  ⟨1188, "u64_rotr", [4, 3], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_rotr")) none), ⟨"<OUT_DIR>/numerics.isle", 2196⟩⟩,
-  ⟨1189, "u64_is_zero", [4], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u64_is_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 2202⟩⟩,
-  ⟨1190, "u64_matches_zero", [0], 4, (.decl ⟨true, false, false, false⟩ none (some (.external "u64_matches_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 2206⟩⟩,
-  ⟨1191, "u64_extract_zero", [4], 4, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u64_extract_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u64_matches_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 2208⟩⟩,
-  ⟨1192, "u64_when_zero", [], 4, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u64_when_zero")]), (.list [(.atom "u64_matches_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 2210⟩⟩,
-  ⟨1193, "u64_when_not_zero", [], 4, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u64_when_not_zero")]), (.list [(.atom "u64_matches_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 2212⟩⟩,
-  ⟨1194, "u64_is_non_zero", [4], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u64_is_non_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 2215⟩⟩,
-  ⟨1195, "u64_matches_non_zero", [0], 4, (.decl ⟨true, false, false, false⟩ none (some (.external "u64_matches_non_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 2219⟩⟩,
-  ⟨1196, "u64_extract_non_zero", [4], 4, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u64_extract_non_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u64_matches_non_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 2221⟩⟩,
-  ⟨1197, "u64_when_non_zero", [], 4, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u64_when_non_zero")]), (.list [(.atom "u64_matches_non_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 2223⟩⟩,
-  ⟨1198, "u64_when_not_non_zero", [], 4, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u64_when_not_non_zero")]), (.list [(.atom "u64_matches_non_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 2225⟩⟩,
-  ⟨1199, "u64_is_odd", [4], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u64_is_odd")) none), ⟨"<OUT_DIR>/numerics.isle", 2228⟩⟩]
+/-- term 2 -/
+def T.«value_type» : Term :=
+  ⟨2, "value_type", [14], 15, (.decl ⟨false, false, false, false⟩ none (some (.external "value_type" true))), ⟨"src/prelude.isle", 37⟩⟩
+
+/-- term 3 -/
+def T.«u32_nonnegative» : Term :=
+  ⟨3, "u32_nonnegative", [3], 3, (.decl ⟨false, false, false, false⟩ none (some (.external "u32_nonnegative" false))), ⟨"src/prelude.isle", 41⟩⟩
+
+/-- term 4 -/
+def T.«offset32» : Term :=
+  ⟨4, "offset32", [9], 138, (.decl ⟨false, false, false, false⟩ none (some (.external "offset32" true))), ⟨"src/prelude.isle", 46⟩⟩
+
+/-- term 5 -/
+def T.«checked_add_with_type» : Term :=
+  ⟨5, "checked_add_with_type", [14, 4, 4], 4, (.decl ⟨true, false, true, false⟩ (some (.external "checked_add_with_type")) none), ⟨"src/prelude.isle", 51⟩⟩
+
+/-- term 6 -/
+def T.«add_overflows_with_type» : Term :=
+  ⟨6, "add_overflows_with_type", [14, 4, 4], 0, (.decl ⟨true, false, false, false⟩ (some (.external "add_overflows_with_type")) none), ⟨"src/prelude.isle", 54⟩⟩
+
+/-- term 7 -/
+def T.«imm64_sdiv» : Term :=
+  ⟨7, "imm64_sdiv", [14, 134, 134], 134, (.decl ⟨true, false, true, false⟩ (some (.external "imm64_sdiv")) none), ⟨"src/prelude.isle", 57⟩⟩
+
+/-- term 8 -/
+def T.«imm64_udiv» : Term :=
+  ⟨8, "imm64_udiv", [14, 134, 134], 134, (.decl ⟨true, false, true, false⟩ (some (.external "imm64_udiv")) none), ⟨"src/prelude.isle", 60⟩⟩
+
+/-- term 9 -/
+def T.«imm64_srem» : Term :=
+  ⟨9, "imm64_srem", [14, 134, 134], 134, (.decl ⟨true, false, true, false⟩ (some (.external "imm64_srem")) none), ⟨"src/prelude.isle", 63⟩⟩
+
+/-- term 10 -/
+def T.«imm64_urem» : Term :=
+  ⟨10, "imm64_urem", [14, 134, 134], 134, (.decl ⟨true, false, true, false⟩ (some (.external "imm64_urem")) none), ⟨"src/prelude.isle", 66⟩⟩
+
+/-- term 11 -/
+def T.«imm64_add» : Term :=
+  ⟨11, "imm64_add", [14, 134, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_add")) none), ⟨"src/prelude.isle", 69⟩⟩
+
+/-- term 12 -/
+def T.«imm64_sub» : Term :=
+  ⟨12, "imm64_sub", [14, 134, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_sub")) none), ⟨"src/prelude.isle", 72⟩⟩
+
+/-- term 13 -/
+def T.«imm64_mul» : Term :=
+  ⟨13, "imm64_mul", [14, 134, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_mul")) none), ⟨"src/prelude.isle", 75⟩⟩
+
+/-- term 14 -/
+def T.«imm64_and» : Term :=
+  ⟨14, "imm64_and", [14, 134, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_and")) none), ⟨"src/prelude.isle", 78⟩⟩
+
+/-- term 15 -/
+def T.«imm64_or» : Term :=
+  ⟨15, "imm64_or", [14, 134, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_or")) none), ⟨"src/prelude.isle", 81⟩⟩
+
+/-- term 16 -/
+def T.«imm64_xor» : Term :=
+  ⟨16, "imm64_xor", [14, 134, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_xor")) none), ⟨"src/prelude.isle", 84⟩⟩
+
+/-- term 17 -/
+def T.«imm64_not» : Term :=
+  ⟨17, "imm64_not", [14, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_not")) none), ⟨"src/prelude.isle", 87⟩⟩
+
+/-- term 18 -/
+def T.«imm64_neg» : Term :=
+  ⟨18, "imm64_neg", [14, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_neg")) none), ⟨"src/prelude.isle", 90⟩⟩
+
+/-- term 19 -/
+def T.«imm64_abs» : Term :=
+  ⟨19, "imm64_abs", [14, 134], 134, (.decl ⟨true, false, true, false⟩ (some (.external "imm64_abs")) none), ⟨"src/prelude.isle", 93⟩⟩
+
+/-- term 20 -/
+def T.«imm64_ilog2» : Term :=
+  ⟨20, "imm64_ilog2", [14, 134], 134, (.decl ⟨true, false, true, false⟩ (some (.external "imm64_ilog2")) none), ⟨"src/prelude.isle", 96⟩⟩
+
+/-- term 21 -/
+def T.«imm64_umin» : Term :=
+  ⟨21, "imm64_umin", [14, 134, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_umin")) none), ⟨"src/prelude.isle", 99⟩⟩
+
+/-- term 22 -/
+def T.«imm64_umax» : Term :=
+  ⟨22, "imm64_umax", [14, 134, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_umax")) none), ⟨"src/prelude.isle", 102⟩⟩
+
+/-- term 23 -/
+def T.«imm64_smin» : Term :=
+  ⟨23, "imm64_smin", [14, 134, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_smin")) none), ⟨"src/prelude.isle", 105⟩⟩
+
+/-- term 24 -/
+def T.«imm64_smax» : Term :=
+  ⟨24, "imm64_smax", [14, 134, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_smax")) none), ⟨"src/prelude.isle", 108⟩⟩
+
+/-- term 25 -/
+def T.«imm64_shl» : Term :=
+  ⟨25, "imm64_shl", [14, 134, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_shl")) none), ⟨"src/prelude.isle", 111⟩⟩
+
+/-- term 26 -/
+def T.«imm64_ushr» : Term :=
+  ⟨26, "imm64_ushr", [14, 134, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_ushr")) none), ⟨"src/prelude.isle", 114⟩⟩
+
+/-- term 27 -/
+def T.«imm64_sshr» : Term :=
+  ⟨27, "imm64_sshr", [14, 134, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_sshr")) none), ⟨"src/prelude.isle", 117⟩⟩
+
+/-- term 28 -/
+def T.«imm64_rotl» : Term :=
+  ⟨28, "imm64_rotl", [14, 134, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_rotl")) none), ⟨"src/prelude.isle", 120⟩⟩
+
+/-- term 29 -/
+def T.«imm64_rotr» : Term :=
+  ⟨29, "imm64_rotr", [14, 134, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_rotr")) none), ⟨"src/prelude.isle", 123⟩⟩
+
+/-- term 30 -/
+def T.«i64_sextend_u64» : Term :=
+  ⟨30, "i64_sextend_u64", [14, 4], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_sextend_u64")) none), ⟨"src/prelude.isle", 127⟩⟩
+
+/-- term 31 -/
+def T.«i64_sextend_imm64» : Term :=
+  ⟨31, "i64_sextend_imm64", [14, 134], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_sextend_imm64")) none), ⟨"src/prelude.isle", 131⟩⟩
+
+/-- term 32 -/
+def T.«u64_uextend_imm64» : Term :=
+  ⟨32, "u64_uextend_imm64", [14, 134], 4, (.decl ⟨true, false, false, false⟩ (some (.external "u64_uextend_imm64")) none), ⟨"src/prelude.isle", 134⟩⟩
+
+/-- term 33 -/
+def T.«imm64_icmp» : Term :=
+  ⟨33, "imm64_icmp", [14, 145, 134, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_icmp")) none), ⟨"src/prelude.isle", 137⟩⟩
+
+/-- term 34 -/
+def T.«imm64_clz» : Term :=
+  ⟨34, "imm64_clz", [14, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_clz")) none), ⟨"src/prelude.isle", 140⟩⟩
+
+/-- term 35 -/
+def T.«imm64_ctz» : Term :=
+  ⟨35, "imm64_ctz", [14, 134], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_ctz")) none), ⟨"src/prelude.isle", 143⟩⟩
+
+/-- term 36 -/
+def T.«u128_replicated_u64» : Term :=
+  ⟨36, "u128_replicated_u64", [4], 5, (.decl ⟨false, false, false, false⟩ none (some (.external "u128_replicated_u64" false))), ⟨"src/prelude.isle", 148⟩⟩
+
+/-- term 37 -/
+def T.«u64_replicated_u32» : Term :=
+  ⟨37, "u64_replicated_u32", [3], 4, (.decl ⟨false, false, false, false⟩ none (some (.external "u64_replicated_u32" false))), ⟨"src/prelude.isle", 150⟩⟩
+
+/-- term 38 -/
+def T.«u32_replicated_u16» : Term :=
+  ⟨38, "u32_replicated_u16", [2], 3, (.decl ⟨false, false, false, false⟩ none (some (.external "u32_replicated_u16" false))), ⟨"src/prelude.isle", 152⟩⟩
+
+/-- term 39 -/
+def T.«u16_replicated_u8» : Term :=
+  ⟨39, "u16_replicated_u8", [1], 2, (.decl ⟨false, false, false, false⟩ none (some (.external "u16_replicated_u8" false))), ⟨"src/prelude.isle", 154⟩⟩
+
+/-- term 40 -/
+def T.«u128_replicated_u32» : Term :=
+  ⟨40, "u128_replicated_u32", [3], 5, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u128_replicated_u32"), (.atom "n")]), (.list [(.atom "u128_replicated_u64"), (.list [(.atom "u64_replicated_u32"), (.atom "n")])])])))), ⟨"src/prelude.isle", 158⟩⟩
+
+/-- term 41 -/
+def T.«u128_replicated_u16» : Term :=
+  ⟨41, "u128_replicated_u16", [2], 5, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u128_replicated_u16"), (.atom "n")]), (.list [(.atom "u128_replicated_u32"), (.list [(.atom "u32_replicated_u16"), (.atom "n")])])])))), ⟨"src/prelude.isle", 160⟩⟩
+
+/-- term 42 -/
+def T.«u128_replicated_u8» : Term :=
+  ⟨42, "u128_replicated_u8", [1], 5, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u128_replicated_u8"), (.atom "n")]), (.list [(.atom "u128_replicated_u16"), (.list [(.atom "u16_replicated_u8"), (.atom "n")])])])))), ⟨"src/prelude.isle", 162⟩⟩
+
+/-- term 43 -/
+def T.«u128_low_bits» : Term :=
+  ⟨43, "u128_low_bits", [5], 4, (.decl ⟨false, false, false, false⟩ (some (.external "u128_low_bits")) none), ⟨"src/prelude.isle", 166⟩⟩
+
+/-- term 44 -/
+def T.«u128_high_bits» : Term :=
+  ⟨44, "u128_high_bits", [5], 4, (.decl ⟨false, false, false, false⟩ (some (.external "u128_high_bits")) none), ⟨"src/prelude.isle", 168⟩⟩
+
+/-- term 45 -/
+def T.«f16_min» : Term :=
+  ⟨45, "f16_min", [131, 131], 131, (.decl ⟨true, false, true, false⟩ (some (.external "f16_min")) none), ⟨"src/prelude.isle", 173⟩⟩
+
+/-- term 46 -/
+def T.«f16_max» : Term :=
+  ⟨46, "f16_max", [131, 131], 131, (.decl ⟨true, false, true, false⟩ (some (.external "f16_max")) none), ⟨"src/prelude.isle", 175⟩⟩
+
+/-- term 47 -/
+def T.«f16_neg» : Term :=
+  ⟨47, "f16_neg", [131], 131, (.decl ⟨true, false, false, false⟩ (some (.external "f16_neg")) none), ⟨"src/prelude.isle", 177⟩⟩
+
+/-- term 48 -/
+def T.«f16_abs» : Term :=
+  ⟨48, "f16_abs", [131], 131, (.decl ⟨true, false, false, false⟩ (some (.external "f16_abs")) none), ⟨"src/prelude.isle", 179⟩⟩
+
+/-- term 49 -/
+def T.«f16_copysign» : Term :=
+  ⟨49, "f16_copysign", [131, 131], 131, (.decl ⟨true, false, false, false⟩ (some (.external "f16_copysign")) none), ⟨"src/prelude.isle", 181⟩⟩
+
+/-- term 50 -/
+def T.«f32_add» : Term :=
+  ⟨50, "f32_add", [132, 132], 132, (.decl ⟨true, false, true, false⟩ (some (.external "f32_add")) none), ⟨"src/prelude.isle", 183⟩⟩
+
+/-- term 51 -/
+def T.«f32_sub» : Term :=
+  ⟨51, "f32_sub", [132, 132], 132, (.decl ⟨true, false, true, false⟩ (some (.external "f32_sub")) none), ⟨"src/prelude.isle", 185⟩⟩
+
+/-- term 52 -/
+def T.«f32_mul» : Term :=
+  ⟨52, "f32_mul", [132, 132], 132, (.decl ⟨true, false, true, false⟩ (some (.external "f32_mul")) none), ⟨"src/prelude.isle", 187⟩⟩
+
+/-- term 53 -/
+def T.«f32_div» : Term :=
+  ⟨53, "f32_div", [132, 132], 132, (.decl ⟨true, false, true, false⟩ (some (.external "f32_div")) none), ⟨"src/prelude.isle", 189⟩⟩
+
+/-- term 54 -/
+def T.«f32_sqrt» : Term :=
+  ⟨54, "f32_sqrt", [132], 132, (.decl ⟨true, false, true, false⟩ (some (.external "f32_sqrt")) none), ⟨"src/prelude.isle", 191⟩⟩
+
+/-- term 55 -/
+def T.«f32_ceil» : Term :=
+  ⟨55, "f32_ceil", [132], 132, (.decl ⟨true, false, true, false⟩ (some (.external "f32_ceil")) none), ⟨"src/prelude.isle", 193⟩⟩
+
+/-- term 56 -/
+def T.«f32_floor» : Term :=
+  ⟨56, "f32_floor", [132], 132, (.decl ⟨true, false, true, false⟩ (some (.external "f32_floor")) none), ⟨"src/prelude.isle", 195⟩⟩
+
+/-- term 57 -/
+def T.«f32_trunc» : Term :=
+  ⟨57, "f32_trunc", [132], 132, (.decl ⟨true, false, true, false⟩ (some (.external "f32_trunc")) none), ⟨"src/prelude.isle", 197⟩⟩
+
+/-- term 58 -/
+def T.«f32_nearest» : Term :=
+  ⟨58, "f32_nearest", [132], 132, (.decl ⟨true, false, true, false⟩ (some (.external "f32_nearest")) none), ⟨"src/prelude.isle", 199⟩⟩
+
+/-- term 59 -/
+def T.«f32_min» : Term :=
+  ⟨59, "f32_min", [132, 132], 132, (.decl ⟨true, false, true, false⟩ (some (.external "f32_min")) none), ⟨"src/prelude.isle", 201⟩⟩
+
+/-- term 60 -/
+def T.«f32_max» : Term :=
+  ⟨60, "f32_max", [132, 132], 132, (.decl ⟨true, false, true, false⟩ (some (.external "f32_max")) none), ⟨"src/prelude.isle", 203⟩⟩
+
+/-- term 61 -/
+def T.«f32_neg» : Term :=
+  ⟨61, "f32_neg", [132], 132, (.decl ⟨true, false, false, false⟩ (some (.external "f32_neg")) none), ⟨"src/prelude.isle", 205⟩⟩
+
+/-- term 62 -/
+def T.«f32_abs» : Term :=
+  ⟨62, "f32_abs", [132], 132, (.decl ⟨true, false, false, false⟩ (some (.external "f32_abs")) none), ⟨"src/prelude.isle", 207⟩⟩
+
+/-- term 63 -/
+def T.«f32_copysign» : Term :=
+  ⟨63, "f32_copysign", [132, 132], 132, (.decl ⟨true, false, false, false⟩ (some (.external "f32_copysign")) none), ⟨"src/prelude.isle", 209⟩⟩
+
+/-- term 64 -/
+def T.«f64_add» : Term :=
+  ⟨64, "f64_add", [133, 133], 133, (.decl ⟨true, false, true, false⟩ (some (.external "f64_add")) none), ⟨"src/prelude.isle", 211⟩⟩
+
+/-- term 65 -/
+def T.«f64_sub» : Term :=
+  ⟨65, "f64_sub", [133, 133], 133, (.decl ⟨true, false, true, false⟩ (some (.external "f64_sub")) none), ⟨"src/prelude.isle", 213⟩⟩
+
+/-- term 66 -/
+def T.«f64_mul» : Term :=
+  ⟨66, "f64_mul", [133, 133], 133, (.decl ⟨true, false, true, false⟩ (some (.external "f64_mul")) none), ⟨"src/prelude.isle", 215⟩⟩
+
+/-- term 67 -/
+def T.«f64_div» : Term :=
+  ⟨67, "f64_div", [133, 133], 133, (.decl ⟨true, false, true, false⟩ (some (.external "f64_div")) none), ⟨"src/prelude.isle", 217⟩⟩
+
+/-- term 68 -/
+def T.«f64_sqrt» : Term :=
+  ⟨68, "f64_sqrt", [133], 133, (.decl ⟨true, false, true, false⟩ (some (.external "f64_sqrt")) none), ⟨"src/prelude.isle", 219⟩⟩
+
+/-- term 69 -/
+def T.«f64_ceil» : Term :=
+  ⟨69, "f64_ceil", [133], 133, (.decl ⟨true, false, true, false⟩ (some (.external "f64_ceil")) none), ⟨"src/prelude.isle", 221⟩⟩
+
+/-- term 70 -/
+def T.«f64_floor» : Term :=
+  ⟨70, "f64_floor", [133], 133, (.decl ⟨true, false, true, false⟩ (some (.external "f64_floor")) none), ⟨"src/prelude.isle", 223⟩⟩
+
+/-- term 71 -/
+def T.«f64_trunc» : Term :=
+  ⟨71, "f64_trunc", [133], 133, (.decl ⟨true, false, true, false⟩ (some (.external "f64_trunc")) none), ⟨"src/prelude.isle", 225⟩⟩
+
+/-- term 72 -/
+def T.«f64_nearest» : Term :=
+  ⟨72, "f64_nearest", [133], 133, (.decl ⟨true, false, true, false⟩ (some (.external "f64_nearest")) none), ⟨"src/prelude.isle", 227⟩⟩
+
+/-- term 73 -/
+def T.«f64_min» : Term :=
+  ⟨73, "f64_min", [133, 133], 133, (.decl ⟨true, false, true, false⟩ (some (.external "f64_min")) none), ⟨"src/prelude.isle", 229⟩⟩
+
+/-- term 74 -/
+def T.«f64_max» : Term :=
+  ⟨74, "f64_max", [133, 133], 133, (.decl ⟨true, false, true, false⟩ (some (.external "f64_max")) none), ⟨"src/prelude.isle", 231⟩⟩
+
+/-- term 75 -/
+def T.«f64_neg» : Term :=
+  ⟨75, "f64_neg", [133], 133, (.decl ⟨true, false, false, false⟩ (some (.external "f64_neg")) none), ⟨"src/prelude.isle", 233⟩⟩
+
+/-- term 76 -/
+def T.«f64_abs» : Term :=
+  ⟨76, "f64_abs", [133], 133, (.decl ⟨true, false, false, false⟩ (some (.external "f64_abs")) none), ⟨"src/prelude.isle", 235⟩⟩
+
+/-- term 77 -/
+def T.«f64_copysign» : Term :=
+  ⟨77, "f64_copysign", [133, 133], 133, (.decl ⟨true, false, false, false⟩ (some (.external "f64_copysign")) none), ⟨"src/prelude.isle", 237⟩⟩
+
+/-- term 78 -/
+def T.«f128_min» : Term :=
+  ⟨78, "f128_min", [20, 20], 20, (.decl ⟨true, false, true, false⟩ (some (.external "f128_min")) none), ⟨"src/prelude.isle", 239⟩⟩
+
+/-- term 79 -/
+def T.«f128_max» : Term :=
+  ⟨79, "f128_max", [20, 20], 20, (.decl ⟨true, false, true, false⟩ (some (.external "f128_max")) none), ⟨"src/prelude.isle", 241⟩⟩
+
+/-- term 80 -/
+def T.«f128_neg» : Term :=
+  ⟨80, "f128_neg", [20], 20, (.decl ⟨true, false, false, false⟩ (some (.external "f128_neg")) none), ⟨"src/prelude.isle", 243⟩⟩
+
+/-- term 81 -/
+def T.«f128_abs» : Term :=
+  ⟨81, "f128_abs", [20], 20, (.decl ⟨true, false, false, false⟩ (some (.external "f128_abs")) none), ⟨"src/prelude.isle", 245⟩⟩
+
+/-- term 82 -/
+def T.«f128_copysign» : Term :=
+  ⟨82, "f128_copysign", [20, 20], 20, (.decl ⟨true, false, false, false⟩ (some (.external "f128_copysign")) none), ⟨"src/prelude.isle", 247⟩⟩
+
+/-- term 83 -/
+def T.«ty_umin» : Term :=
+  ⟨83, "ty_umin", [14], 4, (.decl ⟨true, false, false, false⟩ (some (.external "ty_umin")) none), ⟨"src/prelude.isle", 280⟩⟩
+
+/-- term 84 -/
+def T.«ty_umax» : Term :=
+  ⟨84, "ty_umax", [14], 4, (.decl ⟨true, false, false, false⟩ (some (.external "ty_umax")) none), ⟨"src/prelude.isle", 284⟩⟩
+
+/-- term 85 -/
+def T.«ty_smin» : Term :=
+  ⟨85, "ty_smin", [14], 4, (.decl ⟨true, false, false, false⟩ (some (.external "ty_smin")) none), ⟨"src/prelude.isle", 288⟩⟩
+
+/-- term 86 -/
+def T.«ty_smax» : Term :=
+  ⟨86, "ty_smax", [14], 4, (.decl ⟨true, false, false, false⟩ (some (.external "ty_smax")) none), ⟨"src/prelude.isle", 292⟩⟩
+
+/-- term 87 -/
+def T.«ty_bits» : Term :=
+  ⟨87, "ty_bits", [14], 1, (.decl ⟨true, false, false, false⟩ (some (.external "ty_bits")) none), ⟨"src/prelude.isle", 297⟩⟩
+
+/-- term 88 -/
+def T.«ty_bits_u16» : Term :=
+  ⟨88, "ty_bits_u16", [14], 2, (.decl ⟨true, false, false, false⟩ (some (.external "ty_bits_u16")) none), ⟨"src/prelude.isle", 302⟩⟩
+
+/-- term 89 -/
+def T.«ty_bits_u64» : Term :=
+  ⟨89, "ty_bits_u64", [14], 4, (.decl ⟨true, false, false, false⟩ (some (.external "ty_bits_u64")) none), ⟨"src/prelude.isle", 306⟩⟩
+
+/-- term 90 -/
+def T.«ty_mask» : Term :=
+  ⟨90, "ty_mask", [14], 4, (.decl ⟨true, false, false, false⟩ (some (.external "ty_mask")) none), ⟨"src/prelude.isle", 310⟩⟩
+
+/-- term 91 -/
+def T.«ty_lane_mask» : Term :=
+  ⟨91, "ty_lane_mask", [14], 4, (.decl ⟨true, false, false, false⟩ (some (.external "ty_lane_mask")) none), ⟨"src/prelude.isle", 314⟩⟩
+
+/-- term 92 -/
+def T.«ty_lane_count» : Term :=
+  ⟨92, "ty_lane_count", [14], 4, (.decl ⟨true, false, false, false⟩ (some (.external "ty_lane_count")) none), ⟨"src/prelude.isle", 318⟩⟩
+
+/-- term 93 -/
+def T.«ty_bytes» : Term :=
+  ⟨93, "ty_bytes", [14], 2, (.decl ⟨true, false, false, false⟩ (some (.external "ty_bytes")) none), ⟨"src/prelude.isle", 323⟩⟩
+
+/-- term 94 -/
+def T.«lane_type» : Term :=
+  ⟨94, "lane_type", [14], 14, (.decl ⟨true, false, false, false⟩ (some (.external "lane_type")) none), ⟨"src/prelude.isle", 327⟩⟩
+
+/-- term 95 -/
+def T.«ty_half_lanes» : Term :=
+  ⟨95, "ty_half_lanes", [14], 14, (.decl ⟨true, false, true, false⟩ (some (.external "ty_half_lanes")) none), ⟨"src/prelude.isle", 333⟩⟩
+
+/-- term 96 -/
+def T.«ty_half_width» : Term :=
+  ⟨96, "ty_half_width", [14], 14, (.decl ⟨true, false, true, false⟩ (some (.external "ty_half_width")) none), ⟨"src/prelude.isle", 337⟩⟩
+
+/-- term 97 -/
+def T.«ty_shift_mask» : Term :=
+  ⟨97, "ty_shift_mask", [14], 4, (.decl ⟨true, false, false, false⟩ (some .internal) none), ⟨"src/prelude.isle", 342⟩⟩
+
+/-- term 98 -/
+def T.«ty_equal» : Term :=
+  ⟨98, "ty_equal", [14, 14], 0, (.decl ⟨true, false, false, false⟩ (some (.external "ty_equal")) none), ⟨"src/prelude.isle", 346⟩⟩
+
+/-- term 99 -/
+def T.«mem_flags_trusted» : Term :=
+  ⟨99, "mem_flags_trusted", [], 137, (.decl ⟨false, false, false, false⟩ (some (.external "mem_flags_trusted")) none), ⟨"src/prelude.isle", 356⟩⟩
+
+/-- term 100 -/
+def T.«mem_flags_data» : Term :=
+  ⟨100, "mem_flags_data", [142], 137, (.decl ⟨false, false, false, false⟩ none (some (.external "mem_flags_data" false))), ⟨"src/prelude.isle", 360⟩⟩
+
+/-- term 101 -/
+def T.«mem_flags_intern» : Term :=
+  ⟨101, "mem_flags_intern", [142], 137, (.decl ⟨false, false, false, false⟩ (some (.external "mem_flags_intern")) none), ⟨"src/prelude.isle", 364⟩⟩
+
+/-- term 102 -/
+def T.«mem_flags_trusted_data» : Term :=
+  ⟨102, "mem_flags_trusted_data", [], 142, (.decl ⟨true, false, false, false⟩ (some (.external "mem_flags_trusted_data")) none), ⟨"src/prelude.isle", 370⟩⟩
+
+/-- term 103 -/
+def T.«little_or_native_endian» : Term :=
+  ⟨103, "little_or_native_endian", [142], 137, (.decl ⟨false, false, false, false⟩ none (some (.external "little_or_native_endian" false))), ⟨"src/prelude.isle", 376⟩⟩
+
+/-- term 104 -/
+def T.«intcc_swap_args» : Term :=
+  ⟨104, "intcc_swap_args", [145], 145, (.decl ⟨false, false, false, false⟩ (some (.external "intcc_swap_args")) none), ⟨"src/prelude.isle", 382⟩⟩
+
+/-- term 105 -/
+def T.«intcc_complement» : Term :=
+  ⟨105, "intcc_complement", [145], 145, (.decl ⟨false, false, false, false⟩ (some (.external "intcc_complement")) none), ⟨"src/prelude.isle", 386⟩⟩
+
+/-- term 106 -/
+def T.«intcc_without_eq» : Term :=
+  ⟨106, "intcc_without_eq", [145], 145, (.decl ⟨true, false, false, false⟩ (some (.external "intcc_without_eq")) none), ⟨"src/prelude.isle", 392⟩⟩
+
+/-- term 107 -/
+def T.«floatcc_swap_args» : Term :=
+  ⟨107, "floatcc_swap_args", [144], 144, (.decl ⟨false, false, false, false⟩ (some (.external "floatcc_swap_args")) none), ⟨"src/prelude.isle", 396⟩⟩
+
+/-- term 108 -/
+def T.«floatcc_complement» : Term :=
+  ⟨108, "floatcc_complement", [144], 144, (.decl ⟨false, false, false, false⟩ (some (.external "floatcc_complement")) none), ⟨"src/prelude.isle", 400⟩⟩
+
+/-- term 109 -/
+def T.«floatcc_unordered» : Term :=
+  ⟨109, "floatcc_unordered", [144], 0, (.decl ⟨true, false, false, false⟩ (some (.external "floatcc_unordered")) none), ⟨"src/prelude.isle", 404⟩⟩
+
+/-- term 110 -/
+def T.«fits_in_16» : Term :=
+  ⟨110, "fits_in_16", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "fits_in_16" false))), ⟨"src/prelude.isle", 413⟩⟩
+
+/-- term 111 -/
+def T.«fits_in_32» : Term :=
+  ⟨111, "fits_in_32", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "fits_in_32" false))), ⟨"src/prelude.isle", 420⟩⟩
+
+/-- term 112 -/
+def T.«lane_fits_in_32» : Term :=
+  ⟨112, "lane_fits_in_32", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "lane_fits_in_32" false))), ⟨"src/prelude.isle", 424⟩⟩
+
+/-- term 113 -/
+def T.«fits_in_64» : Term :=
+  ⟨113, "fits_in_64", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "fits_in_64" false))), ⟨"src/prelude.isle", 431⟩⟩
+
+/-- term 114 -/
+def T.«ty_16» : Term :=
+  ⟨114, "ty_16", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_16" false))), ⟨"src/prelude.isle", 435⟩⟩
+
+/-- term 115 -/
+def T.«ty_32» : Term :=
+  ⟨115, "ty_32", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_32" false))), ⟨"src/prelude.isle", 442⟩⟩
+
+/-- term 116 -/
+def T.«ty_64» : Term :=
+  ⟨116, "ty_64", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_64" false))), ⟨"src/prelude.isle", 449⟩⟩
+
+/-- term 117 -/
+def T.«ty_128» : Term :=
+  ⟨117, "ty_128", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_128" false))), ⟨"src/prelude.isle", 453⟩⟩
+
+/-- term 118 -/
+def T.«ty_int_ref_scalar_64» : Term :=
+  ⟨118, "ty_int_ref_scalar_64", [14], 14, (.decl ⟨true, false, true, false⟩ (some (.external "ty_int_ref_scalar_64")) none), ⟨"src/prelude.isle", 466⟩⟩
+
+/-- term 119 -/
+def T.«ty_int_ref_scalar_64_extract» : Term :=
+  ⟨119, "ty_int_ref_scalar_64_extract", [14], 14, (.decl ⟨true, false, true, false⟩ none (some (.external "ty_int_ref_scalar_64_extract" false))), ⟨"src/prelude.isle", 477⟩⟩
+
+/-- term 120 -/
+def T.«ty_32_or_64» : Term :=
+  ⟨120, "ty_32_or_64", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_32_or_64" false))), ⟨"src/prelude.isle", 484⟩⟩
+
+/-- term 121 -/
+def T.«ty_8_or_16» : Term :=
+  ⟨121, "ty_8_or_16", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_8_or_16" false))), ⟨"src/prelude.isle", 488⟩⟩
+
+/-- term 122 -/
+def T.«ty_16_or_32» : Term :=
+  ⟨122, "ty_16_or_32", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_16_or_32" false))), ⟨"src/prelude.isle", 492⟩⟩
+
+/-- term 123 -/
+def T.«int_fits_in_32» : Term :=
+  ⟨123, "int_fits_in_32", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "int_fits_in_32" false))), ⟨"src/prelude.isle", 496⟩⟩
+
+/-- term 124 -/
+def T.«ty_int_ref_64» : Term :=
+  ⟨124, "ty_int_ref_64", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_int_ref_64" false))), ⟨"src/prelude.isle", 500⟩⟩
+
+/-- term 125 -/
+def T.«ty_int_ref_16_to_64» : Term :=
+  ⟨125, "ty_int_ref_16_to_64", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_int_ref_16_to_64" false))), ⟨"src/prelude.isle", 504⟩⟩
+
+/-- term 126 -/
+def T.«ty_int» : Term :=
+  ⟨126, "ty_int", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_int" false))), ⟨"src/prelude.isle", 509⟩⟩
+
+/-- term 127 -/
+def T.«ty_scalar» : Term :=
+  ⟨127, "ty_scalar", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_scalar" false))), ⟨"src/prelude.isle", 513⟩⟩
+
+/-- term 128 -/
+def T.«ty_scalar_float» : Term :=
+  ⟨128, "ty_scalar_float", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_scalar_float" false))), ⟨"src/prelude.isle", 520⟩⟩
+
+/-- term 129 -/
+def T.«ty_float_or_vec» : Term :=
+  ⟨129, "ty_float_or_vec", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_float_or_vec" false))), ⟨"src/prelude.isle", 527⟩⟩
+
+/-- term 130 -/
+def T.«ty_vector_float» : Term :=
+  ⟨130, "ty_vector_float", [14], 14, (.decl ⟨true, false, true, false⟩ (some (.external "ty_vector_float")) none), ⟨"src/prelude.isle", 531⟩⟩
+
+/-- term 131 -/
+def T.«ty_vector_not_float» : Term :=
+  ⟨131, "ty_vector_not_float", [14], 14, (.decl ⟨true, false, true, false⟩ (some (.external "ty_vector_not_float")) none), ⟨"src/prelude.isle", 536⟩⟩
+
+/-- term 132 -/
+def T.«ty_vec64» : Term :=
+  ⟨132, "ty_vec64", [14], 14, (.decl ⟨true, false, true, false⟩ (some (.external "ty_vec64_ctor")) (some (.external "ty_vec64" false))), ⟨"src/prelude.isle", 541⟩⟩
+
+/-- term 133 -/
+def T.«ty_vec128» : Term :=
+  ⟨133, "ty_vec128", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_vec128" false))), ⟨"src/prelude.isle", 547⟩⟩
+
+/-- term 134 -/
+def T.«ty_int_vec128» : Term :=
+  ⟨134, "ty_int_vec128", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_int_vec128" false))), ⟨"src/prelude.isle", 551⟩⟩
+
+/-- term 135 -/
+def T.«ty_dyn_vec64» : Term :=
+  ⟨135, "ty_dyn_vec64", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_dyn_vec64" false))), ⟨"src/prelude.isle", 557⟩⟩
+
+/-- term 136 -/
+def T.«ty_dyn_vec128» : Term :=
+  ⟨136, "ty_dyn_vec128", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_dyn_vec128" false))), ⟨"src/prelude.isle", 562⟩⟩
+
+/-- term 137 -/
+def T.«ty_vec64_int» : Term :=
+  ⟨137, "ty_vec64_int", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_vec64_int" false))), ⟨"src/prelude.isle", 567⟩⟩
+
+/-- term 138 -/
+def T.«ty_vec128_int» : Term :=
+  ⟨138, "ty_vec128_int", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_vec128_int" false))), ⟨"src/prelude.isle", 572⟩⟩
+
+/-- term 139 -/
+def T.«ty_addr64» : Term :=
+  ⟨139, "ty_addr64", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_addr64" false))), ⟨"src/prelude.isle", 576⟩⟩
+
+/-- term 140 -/
+def T.«not_vec32x2» : Term :=
+  ⟨140, "not_vec32x2", [14], 14, (.decl ⟨true, false, true, false⟩ (some (.external "not_vec32x2")) none), ⟨"src/prelude.isle", 580⟩⟩
+
+/-- term 141 -/
+def T.«not_i64x2» : Term :=
+  ⟨141, "not_i64x2", [], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "not_i64x2" false))), ⟨"src/prelude.isle", 584⟩⟩
+
+/-- term 142 -/
+def T.«u8_from_uimm8» : Term :=
+  ⟨142, "u8_from_uimm8", [1], 141, (.decl ⟨false, false, false, false⟩ none (some (.external "u8_from_uimm8" true))), ⟨"src/prelude.isle", 588⟩⟩
+
+/-- term 143 -/
+def T.«u64_from_bool» : Term :=
+  ⟨143, "u64_from_bool", [4], 0, (.decl ⟨false, false, false, false⟩ none (some (.external "u64_from_bool" true))), ⟨"src/prelude.isle", 592⟩⟩
+
+/-- term 144 -/
+def T.«u64_from_imm64» : Term :=
+  ⟨144, "u64_from_imm64", [4], 134, (.decl ⟨false, false, false, false⟩ none (some (.external "u64_from_imm64" true))), ⟨"src/prelude.isle", 597⟩⟩
+
+/-- term 145 -/
+def T.«nonzero_u64_from_imm64» : Term :=
+  ⟨145, "nonzero_u64_from_imm64", [4], 134, (.decl ⟨false, false, false, false⟩ none (some (.external "nonzero_u64_from_imm64" false))), ⟨"src/prelude.isle", 604⟩⟩
+
+/-- term 146 -/
+def T.«imm64_power_of_two» : Term :=
+  ⟨146, "imm64_power_of_two", [4], 134, (.decl ⟨false, false, false, false⟩ none (some (.external "imm64_power_of_two" false))), ⟨"src/prelude.isle", 608⟩⟩
+
+/-- term 147 -/
+def T.«imm64» : Term :=
+  ⟨147, "imm64", [4], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64")) none), ⟨"src/prelude.isle", 612⟩⟩
+
+/-- term 148 -/
+def T.«imm64_masked» : Term :=
+  ⟨148, "imm64_masked", [14, 4], 134, (.decl ⟨true, false, false, false⟩ (some (.external "imm64_masked")) none), ⟨"src/prelude.isle", 616⟩⟩
+
+/-- term 149 -/
+def T.«u16_from_ieee16» : Term :=
+  ⟨149, "u16_from_ieee16", [2], 131, (.decl ⟨false, false, false, false⟩ none (some (.external "u16_from_ieee16" true))), ⟨"src/prelude.isle", 620⟩⟩
+
+/-- term 150 -/
+def T.«u32_from_ieee32» : Term :=
+  ⟨150, "u32_from_ieee32", [3], 132, (.decl ⟨false, false, false, false⟩ none (some (.external "u32_from_ieee32" true))), ⟨"src/prelude.isle", 625⟩⟩
+
+/-- term 151 -/
+def T.«u64_from_ieee64» : Term :=
+  ⟨151, "u64_from_ieee64", [4], 133, (.decl ⟨false, false, false, false⟩ none (some (.external "u64_from_ieee64" true))), ⟨"src/prelude.isle", 630⟩⟩
+
+/-- term 152 -/
+def T.«multi_lane» : Term :=
+  ⟨152, "multi_lane", [3, 3], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "multi_lane" false))), ⟨"src/prelude.isle", 635⟩⟩
+
+/-- term 153 -/
+def T.«dynamic_lane» : Term :=
+  ⟨153, "dynamic_lane", [3, 3], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "dynamic_lane" false))), ⟨"src/prelude.isle", 640⟩⟩
+
+/-- term 154 -/
+def T.«ty_dyn64_int» : Term :=
+  ⟨154, "ty_dyn64_int", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_dyn64_int" false))), ⟨"src/prelude.isle", 645⟩⟩
+
+/-- term 155 -/
+def T.«ty_dyn128_int» : Term :=
+  ⟨155, "ty_dyn128_int", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "ty_dyn128_int" false))), ⟨"src/prelude.isle", 650⟩⟩
+
+/-- term 156 -/
+def T.«offset32_to_i32» : Term :=
+  ⟨156, "offset32_to_i32", [138], 9, (.decl ⟨true, false, false, false⟩ (some (.external "offset32_to_i32")) none), ⟨"src/prelude.isle", 655⟩⟩
+
+/-- term 157 -/
+def T.«i32_to_offset32» : Term :=
+  ⟨157, "i32_to_offset32", [9], 138, (.decl ⟨true, false, false, false⟩ (some (.external "i32_to_offset32")) none), ⟨"src/prelude.isle", 660⟩⟩
+
+/-- term 158 -/
+def T.«intcc_unsigned» : Term :=
+  ⟨158, "intcc_unsigned", [145], 145, (.decl ⟨true, false, false, false⟩ (some (.external "intcc_unsigned")) none), ⟨"src/prelude.isle", 684⟩⟩
+
+/-- term 159 -/
+def T.«signed_cond_code» : Term :=
+  ⟨159, "signed_cond_code", [145], 145, (.decl ⟨true, false, true, false⟩ (some (.external "signed_cond_code")) none), ⟨"src/prelude.isle", 705⟩⟩
+
+/-- term 160 -/
+def T.«unsigned_cond_code» : Term :=
+  ⟨160, "unsigned_cond_code", [145], 145, (.decl ⟨true, false, true, false⟩ (some (.external "unsigned_cond_code")) none), ⟨"src/prelude.isle", 725⟩⟩
+
+/-- term 161 -/
+def T.«trap_code_division_by_zero» : Term :=
+  ⟨161, "trap_code_division_by_zero", [], 146, (.decl ⟨true, false, false, false⟩ (some (.external "trap_code_division_by_zero")) none), ⟨"src/prelude.isle", 730⟩⟩
+
+/-- term 162 -/
+def T.«trap_code_integer_overflow» : Term :=
+  ⟨162, "trap_code_integer_overflow", [], 146, (.decl ⟨true, false, false, false⟩ (some (.external "trap_code_integer_overflow")) none), ⟨"src/prelude.isle", 734⟩⟩
+
+/-- term 163 -/
+def T.«trap_code_bad_conversion_to_integer» : Term :=
+  ⟨163, "trap_code_bad_conversion_to_integer", [], 146, (.decl ⟨true, false, false, false⟩ (some (.external "trap_code_bad_conversion_to_integer")) none), ⟨"src/prelude.isle", 739⟩⟩
+
+/-- term 164 -/
+def T.«value_reg» : Term :=
+  ⟨164, "value_reg", [27], 22, (.decl ⟨false, false, false, false⟩ (some (.external "value_reg")) none), ⟨"src/prelude_lower.isle", 48⟩⟩
+
+/-- term 165 -/
+def T.«writable_value_reg» : Term :=
+  ⟨165, "writable_value_reg", [28], 23, (.decl ⟨false, false, false, false⟩ (some (.external "writable_value_reg")) none), ⟨"src/prelude_lower.isle", 52⟩⟩
+
+/-- term 166 -/
+def T.«value_regs» : Term :=
+  ⟨166, "value_regs", [27, 27], 22, (.decl ⟨false, false, false, false⟩ (some (.external "value_regs")) none), ⟨"src/prelude_lower.isle", 59⟩⟩
+
+/-- term 167 -/
+def T.«writable_value_regs» : Term :=
+  ⟨167, "writable_value_regs", [28, 28], 23, (.decl ⟨false, false, false, false⟩ (some (.external "writable_value_regs")) none), ⟨"src/prelude_lower.isle", 63⟩⟩
+
+/-- term 168 -/
+def T.«value_regs_invalid» : Term :=
+  ⟨168, "value_regs_invalid", [], 22, (.decl ⟨false, false, false, false⟩ (some (.external "value_regs_invalid")) none), ⟨"src/prelude_lower.isle", 68⟩⟩
+
+/-- term 169 -/
+def T.«output_none» : Term :=
+  ⟨169, "output_none", [], 25, (.decl ⟨false, false, false, false⟩ (some (.external "output_none")) none), ⟨"src/prelude_lower.isle", 73⟩⟩
+
+/-- term 170 -/
+def T.«output» : Term :=
+  ⟨170, "output", [22], 25, (.decl ⟨false, false, false, false⟩ (some (.external "output")) none), ⟨"src/prelude_lower.isle", 86⟩⟩
+
+/-- term 171 -/
+def T.«output_pair» : Term :=
+  ⟨171, "output_pair", [22, 22], 25, (.decl ⟨false, false, false, false⟩ (some (.external "output_pair")) none), ⟨"src/prelude_lower.isle", 100⟩⟩
+
+/-- term 172 -/
+def T.«output_reg» : Term :=
+  ⟨172, "output_reg", [27], 25, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 104⟩⟩
+
+/-- term 173 -/
+def T.«output_value» : Term :=
+  ⟨173, "output_value", [15], 25, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 108⟩⟩
+
+/-- term 174 -/
+def T.«output_vec» : Term :=
+  ⟨174, "output_vec", [24], 25, (.decl ⟨false, false, false, false⟩ (some (.external "output_vec")) none), ⟨"src/prelude_lower.isle", 112⟩⟩
+
+/-- term 175 -/
+def T.«temp_writable_reg» : Term :=
+  ⟨175, "temp_writable_reg", [14], 28, (.decl ⟨false, false, false, false⟩ (some (.external "temp_writable_reg")) none), ⟨"src/prelude_lower.isle", 117⟩⟩
+
+/-- term 176 -/
+def T.«temp_reg» : Term :=
+  ⟨176, "temp_reg", [14], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 122⟩⟩
+
+/-- term 177 -/
+def T.«is_valid_reg» : Term :=
+  ⟨177, "is_valid_reg", [0], 27, (.decl ⟨false, false, false, false⟩ none (some (.external "is_valid_reg" true))), ⟨"src/prelude_lower.isle", 126⟩⟩
+
+/-- term 178 -/
+def T.«invalid_reg» : Term :=
+  ⟨178, "invalid_reg", [], 27, (.decl ⟨false, false, false, false⟩ (some (.external "invalid_reg")) (some (.internal (.list [(.atom "extractor"), (.list [(.atom "invalid_reg")]), (.list [(.atom "is_valid_reg"), (.atom "false")])])))), ⟨"src/prelude_lower.isle", 130⟩⟩
+
+/-- term 179 -/
+def T.«valid_reg» : Term :=
+  ⟨179, "valid_reg", [27], 27, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "valid_reg"), (.atom "reg")]), (.list [(.atom "and"), (.list [(.atom "is_valid_reg"), (.atom "true")]), (.atom "reg")])])))), ⟨"src/prelude_lower.isle", 135⟩⟩
+
+/-- term 180 -/
+def T.«mark_value_used» : Term :=
+  ⟨180, "mark_value_used", [15], 13, (.decl ⟨false, false, false, false⟩ (some (.external "mark_value_used")) none), ⟨"src/prelude_lower.isle", 139⟩⟩
+
+/-- term 181 -/
+def T.«opportunistic_def» : Term :=
+  ⟨181, "opportunistic_def", [15, 22], 13, (.decl ⟨false, false, false, false⟩ (some (.external "opportunistic_def")) none), ⟨"src/prelude_lower.isle", 147⟩⟩
+
+/-- term 182 -/
+def T.«put_in_reg» : Term :=
+  ⟨182, "put_in_reg", [15], 27, (.decl ⟨false, false, false, false⟩ (some (.external "put_in_reg")) none), ⟨"src/prelude_lower.isle", 159⟩⟩
+
+/-- term 183 -/
+def T.«put_in_regs» : Term :=
+  ⟨183, "put_in_regs", [15], 22, (.decl ⟨false, false, false, false⟩ (some (.external "put_in_regs")) none), ⟨"src/prelude_lower.isle", 169⟩⟩
+
+/-- term 184 -/
+def T.«put_in_regs_vec» : Term :=
+  ⟨184, "put_in_regs_vec", [19], 24, (.decl ⟨false, false, false, false⟩ (some (.external "put_in_regs_vec")) none), ⟨"src/prelude_lower.isle", 173⟩⟩
+
+/-- term 185 -/
+def T.«value_regs_get» : Term :=
+  ⟨185, "value_regs_get", [22, 6], 27, (.decl ⟨false, false, false, false⟩ (some (.external "value_regs_get")) none), ⟨"src/prelude_lower.isle", 182⟩⟩
+
+/-- term 186 -/
+def T.«value_regs_len» : Term :=
+  ⟨186, "value_regs_len", [22], 6, (.decl ⟨true, false, false, false⟩ (some (.external "value_regs_len")) none), ⟨"src/prelude_lower.isle", 186⟩⟩
+
+/-- term 187 -/
+def T.«lo_reg» : Term :=
+  ⟨187, "lo_reg", [15], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 197⟩⟩
+
+/-- term 188 -/
+def T.«preg_to_reg» : Term :=
+  ⟨188, "preg_to_reg", [32], 27, (.decl ⟨false, false, false, false⟩ (some (.external "preg_to_reg")) none), ⟨"src/prelude_lower.isle", 203⟩⟩
+
+/-- term 189 -/
+def T.«multi_reg_to_pair_and_single» : Term :=
+  ⟨189, "multi_reg_to_pair_and_single", [26], 25, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 209⟩⟩
+
+/-- term 190 -/
+def T.«single_target» : Term :=
+  ⟨190, "single_target", [33], 43, (.decl ⟨false, false, false, false⟩ none (some (.external "single_target" false))), ⟨"src/prelude_lower.isle", 229⟩⟩
+
+/-- term 191 -/
+def T.«two_targets» : Term :=
+  ⟨191, "two_targets", [33, 33], 43, (.decl ⟨false, false, false, false⟩ none (some (.external "two_targets" false))), ⟨"src/prelude_lower.isle", 233⟩⟩
+
+/-- term 192 -/
+def T.«jump_table_targets» : Term :=
+  ⟨192, "jump_table_targets", [33, 44], 43, (.decl ⟨false, false, false, false⟩ none (some (.external "jump_table_targets" false))), ⟨"src/prelude_lower.isle", 237⟩⟩
+
+/-- term 193 -/
+def T.«jump_table_size» : Term :=
+  ⟨193, "jump_table_size", [44], 3, (.decl ⟨false, false, false, false⟩ (some (.external "jump_table_size")) none), ⟨"src/prelude_lower.isle", 241⟩⟩
+
+/-- term 194 -/
+def T.«value_list_slice» : Term :=
+  ⟨194, "value_list_slice", [19], 16, (.decl ⟨false, false, false, false⟩ none (some (.external "value_list_slice" true))), ⟨"src/prelude_lower.isle", 247⟩⟩
+
+/-- term 195 -/
+def T.«value_slice_empty» : Term :=
+  ⟨195, "value_slice_empty", [], 19, (.decl ⟨false, false, false, false⟩ none (some (.external "value_slice_empty" false))), ⟨"src/prelude_lower.isle", 251⟩⟩
+
+/-- term 196 -/
+def T.«value_slice_unwrap» : Term :=
+  ⟨196, "value_slice_unwrap", [15, 19], 19, (.decl ⟨false, false, false, false⟩ none (some (.external "value_slice_unwrap" false))), ⟨"src/prelude_lower.isle", 255⟩⟩
+
+/-- term 197 -/
+def T.«value_slice_len» : Term :=
+  ⟨197, "value_slice_len", [19], 6, (.decl ⟨false, false, false, false⟩ (some (.external "value_slice_len")) none), ⟨"src/prelude_lower.isle", 259⟩⟩
+
+/-- term 198 -/
+def T.«value_slice_get» : Term :=
+  ⟨198, "value_slice_get", [19, 6], 15, (.decl ⟨false, false, false, false⟩ (some (.external "value_slice_get")) none), ⟨"src/prelude_lower.isle", 263⟩⟩
+
+/-- term 199 -/
+def T.«unwrap_head_value_list_1» : Term :=
+  ⟨199, "unwrap_head_value_list_1", [15, 19], 16, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "unwrap_head_value_list_1"), (.atom "head"), (.atom "tail")]), (.list [(.atom "value_list_slice"), (.list [(.atom "value_slice_unwrap"), (.atom "head"), (.atom "tail")])])])))), ⟨"src/prelude_lower.isle", 268⟩⟩
+
+/-- term 200 -/
+def T.«unwrap_head_value_list_2» : Term :=
+  ⟨200, "unwrap_head_value_list_2", [15, 15, 19], 16, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "unwrap_head_value_list_2"), (.atom "head1"), (.atom "head2"), (.atom "tail")]), (.list [(.atom "value_list_slice"), (.list [(.atom "value_slice_unwrap"), (.atom "head1"), (.list [(.atom "value_slice_unwrap"), (.atom "head2"), (.atom "tail")])])])])))), ⟨"src/prelude_lower.isle", 274⟩⟩
+
+/-- term 201 -/
+def T.«writable_reg_to_reg» : Term :=
+  ⟨201, "writable_reg_to_reg", [28], 27, (.decl ⟨true, false, false, false⟩ (some (.external "writable_reg_to_reg")) none), ⟨"src/prelude_lower.isle", 280⟩⟩
+
+/-- term 202 -/
+def T.«inst_results» : Term :=
+  ⟨202, "inst_results", [19], 18, (.decl ⟨false, false, false, false⟩ none (some (.external "inst_results" true))), ⟨"src/prelude_lower.isle", 284⟩⟩
+
+/-- term 203 -/
+def T.«value_is_unused» : Term :=
+  ⟨203, "value_is_unused", [15], 0, (.decl ⟨true, false, false, false⟩ (some (.external "value_is_unused")) none), ⟨"src/prelude_lower.isle", 289⟩⟩
+
+/-- term 204 -/
+def T.«value_used» : Term :=
+  ⟨204, "value_used", [15], 0, (.decl ⟨true, false, false, false⟩ (some (.external "value_used")) none), ⟨"src/prelude_lower.isle", 296⟩⟩
+
+/-- term 205 -/
+def T.«first_result» : Term :=
+  ⟨205, "first_result", [15], 18, (.decl ⟨false, false, false, false⟩ none (some (.external "first_result" false))), ⟨"src/prelude_lower.isle", 300⟩⟩
+
+/-- term 206 -/
+def T.«second_result» : Term :=
+  ⟨206, "second_result", [15], 18, (.decl ⟨false, false, false, false⟩ none (some (.external "second_result" false))), ⟨"src/prelude_lower.isle", 312⟩⟩
+
+/-- term 207 -/
+def T.«is_second_result» : Term :=
+  ⟨207, "is_second_result", [15], 15, (.decl ⟨false, false, false, false⟩ none (some (.external "is_second_result" false))), ⟨"src/prelude_lower.isle", 318⟩⟩
+
+/-- term 208 -/
+def T.«second_result_used» : Term :=
+  ⟨208, "second_result_used", [18], 0, (.decl ⟨true, false, false, false⟩ (some (.external "second_result_used")) none), ⟨"src/prelude_lower.isle", 326⟩⟩
+
+/-- term 209 -/
+def T.«inst_data_value» : Term :=
+  ⟨209, "inst_data_value", [14, 152], 18, (.decl ⟨false, false, false, false⟩ none (some (.external "inst_data_value" true))), ⟨"src/prelude_lower.isle", 330⟩⟩
+
+/-- term 210 -/
+def T.«result_type» : Term :=
+  ⟨210, "result_type", [14], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "result_type"), (.atom "ty")]), (.list [(.atom "first_result"), (.list [(.atom "value_type"), (.atom "ty")])])])))), ⟨"src/prelude_lower.isle", 334⟩⟩
+
+/-- term 211 -/
+def T.«has_type» : Term :=
+  ⟨211, "has_type", [14, 18], 18, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "has_type"), (.atom "ty"), (.atom "inst")]), (.list [(.atom "and"), (.list [(.atom "result_type"), (.atom "ty")]), (.atom "inst")])])))), ⟨"src/prelude_lower.isle", 344⟩⟩
+
+/-- term 212 -/
+def T.«u8_from_iconst» : Term :=
+  ⟨212, "u8_from_iconst", [1], 15, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u8_from_iconst"), (.atom "x")]), (.list [(.atom "u64_from_iconst"), (.list [(.atom "u8_from_u64"), (.atom "x")])])])))), ⟨"src/prelude_lower.isle", 351⟩⟩
+
+/-- term 213 -/
+def T.«u16_from_iconst» : Term :=
+  ⟨213, "u16_from_iconst", [2], 15, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u16_from_iconst"), (.atom "x")]), (.list [(.atom "u64_from_iconst"), (.list [(.atom "u16_from_u64"), (.atom "x")])])])))), ⟨"src/prelude_lower.isle", 355⟩⟩
+
+/-- term 214 -/
+def T.«u32_from_iconst» : Term :=
+  ⟨214, "u32_from_iconst", [3], 15, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u32_from_iconst"), (.atom "x")]), (.list [(.atom "u64_from_iconst"), (.list [(.atom "u32_from_u64"), (.atom "x")])])])))), ⟨"src/prelude_lower.isle", 359⟩⟩
+
+/-- term 215 -/
+def T.«u64_from_iconst» : Term :=
+  ⟨215, "u64_from_iconst", [4], 15, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u64_from_iconst"), (.atom "x")]), (.list [(.atom "def_inst"), (.list [(.atom "iconst"), (.atom "_"), (.list [(.atom "u64_from_imm64"), (.atom "x")])])])])))), ⟨"src/prelude_lower.isle", 365⟩⟩
+
+/-- term 216 -/
+def T.«i8_from_iconst» : Term :=
+  ⟨216, "i8_from_iconst", [7], 15, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i8_from_iconst"), (.atom "x")]), (.list [(.atom "i64_from_iconst"), (.list [(.atom "i8_from_i64"), (.atom "x")])])])))), ⟨"src/prelude_lower.isle", 369⟩⟩
+
+/-- term 217 -/
+def T.«i16_from_iconst» : Term :=
+  ⟨217, "i16_from_iconst", [8], 15, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i16_from_iconst"), (.atom "x")]), (.list [(.atom "i64_from_iconst"), (.list [(.atom "i16_from_i64"), (.atom "x")])])])))), ⟨"src/prelude_lower.isle", 373⟩⟩
+
+/-- term 218 -/
+def T.«i32_from_iconst» : Term :=
+  ⟨218, "i32_from_iconst", [9], 15, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i32_from_iconst"), (.atom "x")]), (.list [(.atom "i64_from_iconst"), (.list [(.atom "i32_from_i64"), (.atom "x")])])])))), ⟨"src/prelude_lower.isle", 391⟩⟩
+
+/-- term 219 -/
+def T.«i64_from_iconst» : Term :=
+  ⟨219, "i64_from_iconst", [10], 15, (.decl ⟨false, false, false, false⟩ none (some (.external "i64_from_iconst" false))), ⟨"src/prelude_lower.isle", 397⟩⟩
+
+/-- term 220 -/
+def T.«zero_value» : Term :=
+  ⟨220, "zero_value", [15], 15, (.decl ⟨true, false, true, false⟩ (some (.external "zero_value")) none), ⟨"src/prelude_lower.isle", 401⟩⟩
+
+/-- term 221 -/
+def T.«is_sinkable_inst» : Term :=
+  ⟨221, "is_sinkable_inst", [15], 18, (.decl ⟨true, false, true, false⟩ (some (.external "is_sinkable_inst")) none), ⟨"src/prelude_lower.isle", 406⟩⟩
+
+/-- term 222 -/
+def T.«maybe_uextend» : Term :=
+  ⟨222, "maybe_uextend", [15], 15, (.decl ⟨false, false, false, false⟩ none (some (.external "maybe_uextend" false))), ⟨"src/prelude_lower.isle", 411⟩⟩
+
+/-- term 223 -/
+def T.«uimm8» : Term :=
+  ⟨223, "uimm8", [1], 134, (.decl ⟨false, false, false, false⟩ none (some (.external "uimm8" false))), ⟨"src/prelude_lower.isle", 420⟩⟩
+
+/-- term 224 -/
+def T.«eq» : Term :=
+  ⟨224, "eq", [14, 15, 15], 15, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "eq"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "icmp"), (.atom "ty"), (.list [(.atom "IntCC.Equal")]), (.atom "x"), (.atom "y")])])))), ⟨"src/prelude_lower.isle", 423⟩⟩
+
+/-- term 225 -/
+def T.«ne» : Term :=
+  ⟨225, "ne", [14, 15, 15], 15, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "ne"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "icmp"), (.atom "ty"), (.list [(.atom "IntCC.NotEqual")]), (.atom "x"), (.atom "y")])])))), ⟨"src/prelude_lower.isle", 426⟩⟩
+
+/-- term 226 -/
+def T.«ult» : Term :=
+  ⟨226, "ult", [14, 15, 15], 15, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "ult"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "icmp"), (.atom "ty"), (.list [(.atom "IntCC.UnsignedLessThan")]), (.atom "x"), (.atom "y")])])))), ⟨"src/prelude_lower.isle", 429⟩⟩
+
+/-- term 227 -/
+def T.«ule» : Term :=
+  ⟨227, "ule", [14, 15, 15], 15, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "ule"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "icmp"), (.atom "ty"), (.list [(.atom "IntCC.UnsignedLessThanOrEqual")]), (.atom "x"), (.atom "y")])])))), ⟨"src/prelude_lower.isle", 432⟩⟩
+
+/-- term 228 -/
+def T.«ugt» : Term :=
+  ⟨228, "ugt", [14, 15, 15], 15, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "ugt"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "icmp"), (.atom "ty"), (.list [(.atom "IntCC.UnsignedGreaterThan")]), (.atom "x"), (.atom "y")])])))), ⟨"src/prelude_lower.isle", 435⟩⟩
+
+/-- term 229 -/
+def T.«uge» : Term :=
+  ⟨229, "uge", [14, 15, 15], 15, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "uge"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "icmp"), (.atom "ty"), (.list [(.atom "IntCC.UnsignedGreaterThanOrEqual")]), (.atom "x"), (.atom "y")])])))), ⟨"src/prelude_lower.isle", 438⟩⟩
+
+/-- term 230 -/
+def T.«slt» : Term :=
+  ⟨230, "slt", [14, 15, 15], 15, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "slt"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "icmp"), (.atom "ty"), (.list [(.atom "IntCC.SignedLessThan")]), (.atom "x"), (.atom "y")])])))), ⟨"src/prelude_lower.isle", 441⟩⟩
+
+/-- term 231 -/
+def T.«sle» : Term :=
+  ⟨231, "sle", [14, 15, 15], 15, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "sle"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "icmp"), (.atom "ty"), (.list [(.atom "IntCC.SignedLessThanOrEqual")]), (.atom "x"), (.atom "y")])])))), ⟨"src/prelude_lower.isle", 444⟩⟩
+
+/-- term 232 -/
+def T.«sgt» : Term :=
+  ⟨232, "sgt", [14, 15, 15], 15, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "sgt"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "icmp"), (.atom "ty"), (.list [(.atom "IntCC.SignedGreaterThan")]), (.atom "x"), (.atom "y")])])))), ⟨"src/prelude_lower.isle", 447⟩⟩
+
+/-- term 233 -/
+def T.«sge» : Term :=
+  ⟨233, "sge", [14, 15, 15], 15, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "sge"), (.atom "ty"), (.atom "x"), (.atom "y")]), (.list [(.atom "icmp"), (.atom "ty"), (.list [(.atom "IntCC.SignedGreaterThanOrEqual")]), (.atom "x"), (.atom "y")])])))), ⟨"src/prelude_lower.isle", 450⟩⟩
+
+/-- term 234 -/
+def T.«block_exn_successor_label» : Term :=
+  ⟨234, "block_exn_successor_label", [150, 4], 33, (.decl ⟨false, false, false, false⟩ (some (.external "block_exn_successor_label")) none), ⟨"src/prelude_lower.isle", 455⟩⟩
+
+/-- term 235 -/
+def T.«emit» : Term :=
+  ⟨235, "emit", [58], 13, (.decl ⟨false, false, false, false⟩ (some (.external "emit")) none), ⟨"src/prelude_lower.isle", 465⟩⟩
+
+/-- term 236 -/
+def T.«sink_inst» : Term :=
+  ⟨236, "sink_inst", [18], 13, (.decl ⟨false, false, false, false⟩ (some (.external "sink_inst")) none), ⟨"src/prelude_lower.isle", 474⟩⟩
+
+/-- term 237 -/
+def T.«emit_u64_le_const» : Term :=
+  ⟨237, "emit_u64_le_const", [4], 45, (.decl ⟨false, false, false, false⟩ (some (.external "emit_u64_le_const")) none), ⟨"src/prelude_lower.isle", 484⟩⟩
+
+/-- term 238 -/
+def T.«emit_u64_be_const» : Term :=
+  ⟨238, "emit_u64_be_const", [4], 45, (.decl ⟨false, false, false, false⟩ (some (.external "emit_u64_be_const")) none), ⟨"src/prelude_lower.isle", 490⟩⟩
+
+/-- term 239 -/
+def T.«emit_u128_le_const» : Term :=
+  ⟨239, "emit_u128_le_const", [5], 45, (.decl ⟨false, false, false, false⟩ (some (.external "emit_u128_le_const")) none), ⟨"src/prelude_lower.isle", 496⟩⟩
+
+/-- term 240 -/
+def T.«emit_u128_be_const» : Term :=
+  ⟨240, "emit_u128_be_const", [5], 45, (.decl ⟨false, false, false, false⟩ (some (.external "emit_u128_be_const")) none), ⟨"src/prelude_lower.isle", 502⟩⟩
+
+/-- term 241 -/
+def T.«const_to_vconst» : Term :=
+  ⟨241, "const_to_vconst", [126], 45, (.decl ⟨false, false, false, false⟩ (some (.external "const_to_vconst")) none), ⟨"src/prelude_lower.isle", 506⟩⟩
+
+/-- term 242 -/
+def T.«emit_side_effect» : Term :=
+  ⟨242, "emit_side_effect", [46], 13, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 521⟩⟩
+
+/-- term 243 -/
+def T.«side_effect» : Term :=
+  ⟨243, "side_effect", [46], 25, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 534⟩⟩
+
+/-- term 244 -/
+def T.«side_effect_concat» : Term :=
+  ⟨244, "side_effect_concat", [46, 46], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 540⟩⟩
+
+/-- term 245 -/
+def T.«side_effect_as_invalid» : Term :=
+  ⟨245, "side_effect_as_invalid", [46], 25, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 550⟩⟩
+
+/-- term 246 -/
+def T.«produces_flags_concat» : Term :=
+  ⟨246, "produces_flags_concat", [47, 47], 47, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 643⟩⟩
+
+/-- term 247 -/
+def T.«produces_flags_get_reg» : Term :=
+  ⟨247, "produces_flags_get_reg", [47], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 699⟩⟩
+
+/-- term 248 -/
+def T.«produces_flags_ignore» : Term :=
+  ⟨248, "produces_flags_ignore", [47], 47, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 705⟩⟩
+
+/-- term 249 -/
+def T.«produces_flags_opportunistic_def» : Term :=
+  ⟨249, "produces_flags_opportunistic_def", [47, 15], 47, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 714⟩⟩
+
+/-- term 250 -/
+def T.«produces_flags_opportunistic_def2» : Term :=
+  ⟨250, "produces_flags_opportunistic_def2", [58, 27, 15, 58], 47, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 724⟩⟩
+
+/-- term 251 -/
+def T.«consumes_flags_concat» : Term :=
+  ⟨251, "consumes_flags_concat", [49, 49], 49, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 731⟩⟩
+
+/-- term 252 -/
+def T.«consumes_flags_get_reg» : Term :=
+  ⟨252, "consumes_flags_get_reg", [49], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 756⟩⟩
+
+/-- term 253 -/
+def T.«consumes_flags_get_regs» : Term :=
+  ⟨253, "consumes_flags_get_regs", [49], 22, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 758⟩⟩
+
+/-- term 254 -/
+def T.«with_flags» : Term :=
+  ⟨254, "with_flags", [47, 49], 22, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 787⟩⟩
+
+/-- term 255 -/
+def T.«with_flags_reg» : Term :=
+  ⟨255, "with_flags_reg", [47, 49], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 983⟩⟩
+
+/-- term 256 -/
+def T.«with_flags_side_effect» : Term :=
+  ⟨256, "with_flags_side_effect", [47, 49], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 994⟩⟩
+
+/-- term 257 -/
+def T.«with_flags_chained» : Term :=
+  ⟨257, "with_flags_chained", [47, 48, 49], 26, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 1056⟩⟩
+
+/-- term 258 -/
+def T.«tls_model» : Term :=
+  ⟨258, "tls_model", [50], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "tls_model" true))), ⟨"src/prelude_lower.isle", 1305⟩⟩
+
+/-- term 259 -/
+def T.«tls_model_is_elf_gd» : Term :=
+  ⟨259, "tls_model_is_elf_gd", [], 13, (.decl ⟨true, false, true, false⟩ (some (.external "tls_model_is_elf_gd")) none), ⟨"src/prelude_lower.isle", 1308⟩⟩
+
+/-- term 260 -/
+def T.«tls_model_is_macho» : Term :=
+  ⟨260, "tls_model_is_macho", [], 13, (.decl ⟨true, false, true, false⟩ (some (.external "tls_model_is_macho")) none), ⟨"src/prelude_lower.isle", 1311⟩⟩
+
+/-- term 261 -/
+def T.«tls_model_is_coff» : Term :=
+  ⟨261, "tls_model_is_coff", [], 13, (.decl ⟨true, false, true, false⟩ (some (.external "tls_model_is_coff")) none), ⟨"src/prelude_lower.isle", 1314⟩⟩
+
+/-- term 262 -/
+def T.«preserve_frame_pointers» : Term :=
+  ⟨262, "preserve_frame_pointers", [], 13, (.decl ⟨true, false, true, false⟩ (some (.external "preserve_frame_pointers")) none), ⟨"src/prelude_lower.isle", 1317⟩⟩
+
+/-- term 263 -/
+def T.«stack_switch_model» : Term :=
+  ⟨263, "stack_switch_model", [], 51, (.decl ⟨true, false, true, false⟩ (some (.external "stack_switch_model")) none), ⟨"src/prelude_lower.isle", 1324⟩⟩
+
+/-- term 264 -/
+def T.«box_external_name» : Term :=
+  ⟨264, "box_external_name", [36], 37, (.decl ⟨false, false, false, false⟩ (some (.external "box_external_name")) none), ⟨"src/prelude_lower.isle", 1329⟩⟩
+
+/-- term 265 -/
+def T.«func_ref_data» : Term :=
+  ⟨265, "func_ref_data", [139, 36, 38, 0], 129, (.decl ⟨false, false, false, false⟩ none (some (.external "func_ref_data" true))), ⟨"src/prelude_lower.isle", 1334⟩⟩
+
+/-- term 266 -/
+def T.«exception_sig» : Term :=
+  ⟨266, "exception_sig", [139], 128, (.decl ⟨false, false, false, false⟩ none (some (.external "exception_sig" true))), ⟨"src/prelude_lower.isle", 1338⟩⟩
+
+/-- term 267 -/
+def T.«symbol_value_data» : Term :=
+  ⟨267, "symbol_value_data", [36, 38, 10], 130, (.decl ⟨false, false, false, false⟩ none (some (.external "symbol_value_data" false))), ⟨"src/prelude_lower.isle", 1343⟩⟩
+
+/-- term 268 -/
+def T.«vec_mask_from_immediate» : Term :=
+  ⟨268, "vec_mask_from_immediate", [21], 135, (.decl ⟨false, false, false, false⟩ none (some (.external "vec_mask_from_immediate" false))), ⟨"src/prelude_lower.isle", 1348⟩⟩
+
+/-- term 269 -/
+def T.«u128_from_immediate» : Term :=
+  ⟨269, "u128_from_immediate", [5], 135, (.decl ⟨false, false, false, false⟩ none (some (.external "u128_from_immediate" false))), ⟨"src/prelude_lower.isle", 1353⟩⟩
+
+/-- term 270 -/
+def T.«vconst_from_immediate» : Term :=
+  ⟨270, "vconst_from_immediate", [45], 135, (.decl ⟨false, false, false, false⟩ none (some (.external "vconst_from_immediate" false))), ⟨"src/prelude_lower.isle", 1358⟩⟩
+
+/-- term 271 -/
+def T.«u128_from_constant» : Term :=
+  ⟨271, "u128_from_constant", [5], 126, (.decl ⟨false, false, false, false⟩ none (some (.external "u128_from_constant" false))), ⟨"src/prelude_lower.isle", 1363⟩⟩
+
+/-- term 272 -/
+def T.«u64_from_constant» : Term :=
+  ⟨272, "u64_from_constant", [4], 126, (.decl ⟨false, false, false, false⟩ none (some (.external "u64_from_constant" false))), ⟨"src/prelude_lower.isle", 1368⟩⟩
+
+/-- term 273 -/
+def T.«shuffle64_from_imm» : Term :=
+  ⟨273, "shuffle64_from_imm", [1, 1], 135, (.decl ⟨false, false, false, false⟩ none (some (.external "shuffle64_from_imm" false))), ⟨"src/prelude_lower.isle", 1376⟩⟩
+
+/-- term 274 -/
+def T.«shuffle32_from_imm» : Term :=
+  ⟨274, "shuffle32_from_imm", [1, 1, 1, 1], 135, (.decl ⟨false, false, false, false⟩ none (some (.external "shuffle32_from_imm" false))), ⟨"src/prelude_lower.isle", 1378⟩⟩
+
+/-- term 275 -/
+def T.«shuffle16_from_imm» : Term :=
+  ⟨275, "shuffle16_from_imm", [1, 1, 1, 1, 1, 1, 1, 1], 135, (.decl ⟨false, false, false, false⟩ none (some (.external "shuffle16_from_imm" false))), ⟨"src/prelude_lower.isle", 1380⟩⟩
+
+/-- term 276 -/
+def T.«only_writable_reg» : Term :=
+  ⟨276, "only_writable_reg", [28], 23, (.decl ⟨false, false, false, false⟩ none (some (.external "only_writable_reg" false))), ⟨"src/prelude_lower.isle", 1387⟩⟩
+
+/-- term 277 -/
+def T.«writable_regs_get» : Term :=
+  ⟨277, "writable_regs_get", [23, 6], 28, (.decl ⟨false, false, false, false⟩ (some (.external "writable_regs_get")) none), ⟨"src/prelude_lower.isle", 1391⟩⟩
+
+/-- term 278 -/
+def T.«abi_sig» : Term :=
+  ⟨278, "abi_sig", [139], 52, (.decl ⟨false, false, false, false⟩ (some (.external "abi_sig")) none), ⟨"src/prelude_lower.isle", 1425⟩⟩
+
+/-- term 279 -/
+def T.«abi_num_args» : Term :=
+  ⟨279, "abi_num_args", [52], 6, (.decl ⟨false, false, false, false⟩ (some (.external "abi_num_args")) none), ⟨"src/prelude_lower.isle", 1429⟩⟩
+
+/-- term 280 -/
+def T.«abi_get_arg» : Term :=
+  ⟨280, "abi_get_arg", [52, 6], 53, (.decl ⟨false, false, false, false⟩ (some (.external "abi_get_arg")) none), ⟨"src/prelude_lower.isle", 1433⟩⟩
+
+/-- term 281 -/
+def T.«abi_num_rets» : Term :=
+  ⟨281, "abi_num_rets", [52], 6, (.decl ⟨false, false, false, false⟩ (some (.external "abi_num_rets")) none), ⟨"src/prelude_lower.isle", 1437⟩⟩
+
+/-- term 282 -/
+def T.«abi_get_ret» : Term :=
+  ⟨282, "abi_get_ret", [52, 6], 53, (.decl ⟨false, false, false, false⟩ (some (.external "abi_get_ret")) none), ⟨"src/prelude_lower.isle", 1441⟩⟩
+
+/-- term 283 -/
+def T.«abi_ret_arg» : Term :=
+  ⟨283, "abi_ret_arg", [53], 52, (.decl ⟨false, false, false, false⟩ none (some (.external "abi_ret_arg" false))), ⟨"src/prelude_lower.isle", 1446⟩⟩
+
+/-- term 284 -/
+def T.«abi_no_ret_arg» : Term :=
+  ⟨284, "abi_no_ret_arg", [], 52, (.decl ⟨false, false, false, false⟩ none (some (.external "abi_no_ret_arg" false))), ⟨"src/prelude_lower.isle", 1450⟩⟩
+
+/-- term 285 -/
+def T.«abi_unwrap_ret_area_ptr» : Term :=
+  ⟨285, "abi_unwrap_ret_area_ptr", [], 27, (.decl ⟨false, false, false, false⟩ (some (.external "abi_unwrap_ret_area_ptr")) none), ⟨"src/prelude_lower.isle", 1454⟩⟩
+
+/-- term 286 -/
+def T.«abi_stackslot_addr» : Term :=
+  ⟨286, "abi_stackslot_addr", [28, 140, 138], 58, (.decl ⟨false, false, false, false⟩ (some (.external "abi_stackslot_addr")) none), ⟨"src/prelude_lower.isle", 1458⟩⟩
+
+/-- term 287 -/
+def T.«abi_stackslot_offset_into_slot_region» : Term :=
+  ⟨287, "abi_stackslot_offset_into_slot_region", [140, 138, 138], 9, (.decl ⟨false, false, false, false⟩ (some (.external "abi_stackslot_offset_into_slot_region")) none), ⟨"src/prelude_lower.isle", 1462⟩⟩
+
+/-- term 288 -/
+def T.«abi_dynamic_stackslot_addr» : Term :=
+  ⟨288, "abi_dynamic_stackslot_addr", [28, 127], 58, (.decl ⟨false, false, false, false⟩ (some (.external "abi_dynamic_stackslot_addr")) none), ⟨"src/prelude_lower.isle", 1466⟩⟩
+
+/-- term 289 -/
+def T.«abi_arg_only_slot» : Term :=
+  ⟨289, "abi_arg_only_slot", [54], 53, (.decl ⟨false, false, false, false⟩ none (some (.external "abi_arg_only_slot" false))), ⟨"src/prelude_lower.isle", 1471⟩⟩
+
+/-- term 290 -/
+def T.«abi_arg_implicit_pointer» : Term :=
+  ⟨290, "abi_arg_implicit_pointer", [54, 10, 14], 53, (.decl ⟨false, false, false, false⟩ none (some (.external "abi_arg_implicit_pointer" false))), ⟨"src/prelude_lower.isle", 1476⟩⟩
+
+/-- term 291 -/
+def T.«real_reg_to_reg» : Term :=
+  ⟨291, "real_reg_to_reg", [55], 27, (.decl ⟨false, false, false, false⟩ (some (.external "real_reg_to_reg")) none), ⟨"src/prelude_lower.isle", 1480⟩⟩
+
+/-- term 292 -/
+def T.«real_reg_to_writable_reg» : Term :=
+  ⟨292, "real_reg_to_writable_reg", [55], 28, (.decl ⟨false, false, false, false⟩ (some (.external "real_reg_to_writable_reg")) none), ⟨"src/prelude_lower.isle", 1484⟩⟩
+
+/-- term 293 -/
+def T.«gen_move» : Term :=
+  ⟨293, "gen_move", [14, 28, 27], 58, (.decl ⟨false, false, false, false⟩ (some (.external "gen_move")) none), ⟨"src/prelude_lower.isle", 1488⟩⟩
+
+/-- term 294 -/
+def T.«lower_return» : Term :=
+  ⟨294, "lower_return", [19], 25, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/prelude_lower.isle", 1492⟩⟩
+
+/-- term 295 -/
+def T.«gen_return» : Term :=
+  ⟨295, "gen_return", [24], 13, (.decl ⟨false, false, false, false⟩ (some (.external "gen_return")) none), ⟨"src/prelude_lower.isle", 1497⟩⟩
+
+/-- term 296 -/
+def T.«gen_call_output» : Term :=
+  ⟨296, "gen_call_output", [139], 24, (.decl ⟨false, false, false, false⟩ (some (.external "gen_call_output")) none), ⟨"src/prelude_lower.isle", 1500⟩⟩
+
+/-- term 297 -/
+def T.«gen_call_args» : Term :=
+  ⟨297, "gen_call_args", [52, 24], 41, (.decl ⟨false, false, false, false⟩ (some (.external "gen_call_args")) none), ⟨"src/prelude_lower.isle", 1503⟩⟩
+
+/-- term 298 -/
+def T.«gen_return_call_args» : Term :=
+  ⟨298, "gen_return_call_args", [52, 24], 41, (.decl ⟨false, false, false, false⟩ (some (.external "gen_return_call_args")) none), ⟨"src/prelude_lower.isle", 1506⟩⟩
+
+/-- term 299 -/
+def T.«gen_call_rets» : Term :=
+  ⟨299, "gen_call_rets", [52, 24], 42, (.decl ⟨false, false, false, false⟩ (some (.external "gen_call_rets")) none), ⟨"src/prelude_lower.isle", 1509⟩⟩
+
+/-- term 300 -/
+def T.«gen_try_call_rets» : Term :=
+  ⟨300, "gen_try_call_rets", [52], 42, (.decl ⟨false, false, false, false⟩ (some (.external "gen_try_call_rets")) none), ⟨"src/prelude_lower.isle", 1512⟩⟩
+
+/-- term 301 -/
+def T.«gen_patchable_call_rets» : Term :=
+  ⟨301, "gen_patchable_call_rets", [], 42, (.decl ⟨false, false, false, false⟩ (some (.external "gen_patchable_call_rets")) none), ⟨"src/prelude_lower.isle", 1515⟩⟩
+
+/-- term 302 -/
+def T.«try_call_info» : Term :=
+  ⟨302, "try_call_info", [128, 43], 57, (.decl ⟨false, false, false, false⟩ (some (.external "try_call_info")) none), ⟨"src/prelude_lower.isle", 1519⟩⟩
+
+/-- term 303 -/
+def T.«try_call_none» : Term :=
+  ⟨303, "try_call_none", [], 57, (.decl ⟨false, false, false, false⟩ (some (.external "try_call_none")) none), ⟨"src/prelude_lower.isle", 1521⟩⟩
+
+/-- term 304 -/
+def T.«safe_divisor_from_imm64» : Term :=
+  ⟨304, "safe_divisor_from_imm64", [14, 134], 4, (.decl ⟨true, false, true, false⟩ (some (.external "safe_divisor_from_imm64")) none), ⟨"src/prelude_lower.isle", 1539⟩⟩
+
+/-- term 305 -/
+def T.«operand_size» : Term :=
+  ⟨305, "operand_size", [14], 93, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 1589⟩⟩
+
+/-- term 306 -/
+def T.«diff_from_32» : Term :=
+  ⟨306, "diff_from_32", [14], 1, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 1598⟩⟩
+
+/-- term 307 -/
+def T.«scalar_size» : Term :=
+  ⟨307, "scalar_size", [14], 95, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 1621⟩⟩
+
+/-- term 308 -/
+def T.«lane_size» : Term :=
+  ⟨308, "lane_size", [14], 95, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 1635⟩⟩
+
+/-- term 309 -/
+def T.«vector_lane_size» : Term :=
+  ⟨309, "vector_lane_size", [97], 95, (.decl ⟨true, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 1647⟩⟩
+
+/-- term 310 -/
+def T.«vector_size» : Term :=
+  ⟨310, "vector_size", [14], 97, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 1689⟩⟩
+
+/-- term 311 -/
+def T.«float_vector_size_in_64» : Term :=
+  ⟨311, "float_vector_size_in_64", [14], 97, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 1707⟩⟩
+
+/-- term 312 -/
+def T.«sign_return_address_disabled» : Term :=
+  ⟨312, "sign_return_address_disabled", [], 13, (.decl ⟨true, false, true, false⟩ (some (.external "sign_return_address_disabled")) none), ⟨"src/isa/aarch64/inst.isle", 2110⟩⟩
+
+/-- term 313 -/
+def T.«use_lse» : Term :=
+  ⟨313, "use_lse", [], 18, (.decl ⟨false, false, false, false⟩ none (some (.external "use_lse" false))), ⟨"src/isa/aarch64/inst.isle", 2113⟩⟩
+
+/-- term 314 -/
+def T.«use_dotprod» : Term :=
+  ⟨314, "use_dotprod", [], 18, (.decl ⟨false, false, false, false⟩ none (some (.external "use_dotprod" false))), ⟨"src/isa/aarch64/inst.isle", 2117⟩⟩
+
+/-- term 315 -/
+def T.«use_i8mm» : Term :=
+  ⟨315, "use_i8mm", [], 18, (.decl ⟨false, false, false, false⟩ none (some (.external "use_i8mm" false))), ⟨"src/isa/aarch64/inst.isle", 2121⟩⟩
+
+/-- term 316 -/
+def T.«use_fp16» : Term :=
+  ⟨316, "use_fp16", [], 0, (.decl ⟨true, false, false, false⟩ (some (.external "use_fp16")) none), ⟨"src/isa/aarch64/inst.isle", 2125⟩⟩
+
+/-- term 317 -/
+def T.«use_csdb» : Term :=
+  ⟨317, "use_csdb", [], 0, (.decl ⟨true, false, false, false⟩ (some (.external "use_csdb")) none), ⟨"src/isa/aarch64/inst.isle", 2128⟩⟩
+
+/-- term 318 -/
+def T.«move_wide_const_from_u64» : Term :=
+  ⟨318, "move_wide_const_from_u64", [14, 4], 69, (.decl ⟨true, false, true, false⟩ (some (.external "move_wide_const_from_u64")) none), ⟨"src/isa/aarch64/inst.isle", 2155⟩⟩
+
+/-- term 319 -/
+def T.«move_wide_const_from_inverted_u64» : Term :=
+  ⟨319, "move_wide_const_from_inverted_u64", [14, 4], 69, (.decl ⟨true, false, true, false⟩ (some (.external "move_wide_const_from_inverted_u64")) none), ⟨"src/isa/aarch64/inst.isle", 2183⟩⟩
+
+/-- term 320 -/
+def T.«imm_logic_from_u64» : Term :=
+  ⟨320, "imm_logic_from_u64", [14, 4], 65, (.decl ⟨true, false, true, false⟩ (some (.external "imm_logic_from_u64")) none), ⟨"src/isa/aarch64/inst.isle", 2190⟩⟩
+
+/-- term 321 -/
+def T.«imm_size_from_type» : Term :=
+  ⟨321, "imm_size_from_type", [14], 2, (.decl ⟨true, false, true, false⟩ (some (.external "imm_size_from_type")) none), ⟨"src/isa/aarch64/inst.isle", 2197⟩⟩
+
+/-- term 322 -/
+def T.«imm_logic_from_imm64» : Term :=
+  ⟨322, "imm_logic_from_imm64", [14, 134], 65, (.decl ⟨true, false, true, false⟩ (some (.external "imm_logic_from_imm64")) none), ⟨"src/isa/aarch64/inst.isle", 2203⟩⟩
+
+/-- term 323 -/
+def T.«imm_shift_from_imm64» : Term :=
+  ⟨323, "imm_shift_from_imm64", [14, 134], 66, (.decl ⟨true, false, true, false⟩ (some (.external "imm_shift_from_imm64")) none), ⟨"src/isa/aarch64/inst.isle", 2220⟩⟩
+
+/-- term 324 -/
+def T.«imm_shift_from_u8» : Term :=
+  ⟨324, "imm_shift_from_u8", [1], 66, (.decl ⟨false, false, false, false⟩ (some (.external "imm_shift_from_u8")) none), ⟨"src/isa/aarch64/inst.isle", 2227⟩⟩
+
+/-- term 325 -/
+def T.«imm12_from_u64» : Term :=
+  ⟨325, "imm12_from_u64", [64], 4, (.decl ⟨false, false, false, false⟩ none (some (.external "imm12_from_u64" false))), ⟨"src/isa/aarch64/inst.isle", 2248⟩⟩
+
+/-- term 326 -/
+def T.«u8_into_uimm5» : Term :=
+  ⟨326, "u8_into_uimm5", [1], 63, (.decl ⟨false, false, false, false⟩ (some (.external "u8_into_uimm5")) none), ⟨"src/isa/aarch64/inst.isle", 2255⟩⟩
+
+/-- term 327 -/
+def T.«u8_into_imm12» : Term :=
+  ⟨327, "u8_into_imm12", [1], 64, (.decl ⟨false, false, false, false⟩ (some (.external "u8_into_imm12")) none), ⟨"src/isa/aarch64/inst.isle", 2264⟩⟩
+
+/-- term 328 -/
+def T.«u64_into_imm_logic» : Term :=
+  ⟨328, "u64_into_imm_logic", [14, 4], 65, (.decl ⟨false, false, false, false⟩ (some (.external "u64_into_imm_logic")) none), ⟨"src/isa/aarch64/inst.isle", 2270⟩⟩
+
+/-- term 329 -/
+def T.«branch_target» : Term :=
+  ⟨329, "branch_target", [33], 78, (.decl ⟨false, false, false, false⟩ (some (.external "branch_target")) none), ⟨"src/isa/aarch64/inst.isle", 2273⟩⟩
+
+/-- term 330 -/
+def T.«targets_jt_space» : Term :=
+  ⟨330, "targets_jt_space", [44], 81, (.decl ⟨false, false, false, false⟩ (some (.external "targets_jt_space")) none), ⟨"src/isa/aarch64/inst.isle", 2277⟩⟩
+
+/-- term 331 -/
+def T.«min_fp_value» : Term :=
+  ⟨331, "min_fp_value", [0, 1, 1], 27, (.decl ⟨false, false, false, false⟩ (some (.external "min_fp_value")) none), ⟨"src/isa/aarch64/inst.isle", 2285⟩⟩
+
+/-- term 332 -/
+def T.«max_fp_value» : Term :=
+  ⟨332, "max_fp_value", [0, 1, 1], 27, (.decl ⟨false, false, false, false⟩ (some (.external "max_fp_value")) none), ⟨"src/isa/aarch64/inst.isle", 2293⟩⟩
+
+/-- term 333 -/
+def T.«fpu_op_ri_ushr» : Term :=
+  ⟨333, "fpu_op_ri_ushr", [1, 1], 91, (.decl ⟨false, false, false, false⟩ (some (.external "fpu_op_ri_ushr")) none), ⟨"src/isa/aarch64/inst.isle", 2305⟩⟩
+
+/-- term 334 -/
+def T.«fpu_op_ri_sli» : Term :=
+  ⟨334, "fpu_op_ri_sli", [1, 1], 92, (.decl ⟨false, false, false, false⟩ (some (.external "fpu_op_ri_sli")) none), ⟨"src/isa/aarch64/inst.isle", 2317⟩⟩
+
+/-- term 335 -/
+def T.«lshr_from_u64» : Term :=
+  ⟨335, "lshr_from_u64", [14, 4], 68, (.decl ⟨true, false, true, false⟩ (some (.external "lshr_from_u64")) none), ⟨"src/isa/aarch64/inst.isle", 2320⟩⟩
+
+/-- term 336 -/
+def T.«lshl_from_imm64» : Term :=
+  ⟨336, "lshl_from_imm64", [14, 134], 68, (.decl ⟨true, false, true, false⟩ (some (.external "lshl_from_imm64")) none), ⟨"src/isa/aarch64/inst.isle", 2341⟩⟩
+
+/-- term 337 -/
+def T.«lshl_from_u64» : Term :=
+  ⟨337, "lshl_from_u64", [14, 4], 68, (.decl ⟨true, false, true, false⟩ (some (.external "lshl_from_u64")) none), ⟨"src/isa/aarch64/inst.isle", 2344⟩⟩
+
+/-- term 338 -/
+def T.«ashr_from_u64» : Term :=
+  ⟨338, "ashr_from_u64", [14, 4], 68, (.decl ⟨true, false, true, false⟩ (some (.external "ashr_from_u64")) none), ⟨"src/isa/aarch64/inst.isle", 2347⟩⟩
+
+/-- term 339 -/
+def T.«integral_ty» : Term :=
+  ⟨339, "integral_ty", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "integral_ty" false))), ⟨"src/isa/aarch64/inst.isle", 2357⟩⟩
+
+/-- term 340 -/
+def T.«valid_atomic_transaction» : Term :=
+  ⟨340, "valid_atomic_transaction", [14], 14, (.decl ⟨false, false, false, false⟩ none (some (.external "valid_atomic_transaction" false))), ⟨"src/isa/aarch64/inst.isle", 2361⟩⟩
+
+/-- term 341 -/
+def T.«is_zero_simm9» : Term :=
+  ⟨341, "is_zero_simm9", [87], 13, (.decl ⟨true, false, true, false⟩ (some (.external "is_zero_simm9")) none), ⟨"src/isa/aarch64/inst.isle", 2364⟩⟩
+
+/-- term 342 -/
+def T.«is_zero_uimm12» : Term :=
+  ⟨342, "is_zero_uimm12", [88], 13, (.decl ⟨true, false, true, false⟩ (some (.external "is_zero_uimm12")) none), ⟨"src/isa/aarch64/inst.isle", 2367⟩⟩
+
+/-- term 343 -/
+def T.«imm12_from_value» : Term :=
+  ⟨343, "imm12_from_value", [64], 15, (.decl ⟨false, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "imm12_from_value"), (.atom "n")]), (.list [(.atom "iconst"), (.atom "_"), (.list [(.atom "u64_from_imm64"), (.list [(.atom "imm12_from_u64"), (.atom "n")])])])])))), ⟨"src/isa/aarch64/inst.isle", 2396⟩⟩
+
+/-- term 344 -/
+def T.«imm12_from_negated_value» : Term :=
+  ⟨344, "imm12_from_negated_value", [15], 64, (.decl ⟨true, false, true, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2403⟩⟩
+
+/-- term 345 -/
+def T.«extended_value_from_value» : Term :=
+  ⟨345, "extended_value_from_value", [121], 15, (.decl ⟨false, false, false, false⟩ none (some (.external "extended_value_from_value" false))), ⟨"src/isa/aarch64/inst.isle", 2447⟩⟩
+
+/-- term 346 -/
+def T.«put_extended_in_reg» : Term :=
+  ⟨346, "put_extended_in_reg", [121], 27, (.decl ⟨false, false, false, false⟩ (some (.external "put_extended_in_reg")) none), ⟨"src/isa/aarch64/inst.isle", 2454⟩⟩
+
+/-- term 347 -/
+def T.«get_extended_op» : Term :=
+  ⟨347, "get_extended_op", [121], 84, (.decl ⟨false, false, false, false⟩ (some (.external "get_extended_op")) none), ⟨"src/isa/aarch64/inst.isle", 2458⟩⟩
+
+/-- term 348 -/
+def T.«nzcv» : Term :=
+  ⟨348, "nzcv", [0, 0, 0, 0], 70, (.decl ⟨false, false, false, false⟩ (some (.external "nzcv")) none), ⟨"src/isa/aarch64/inst.isle", 2469⟩⟩
+
+/-- term 349 -/
+def T.«cond_br_zero» : Term :=
+  ⟨349, "cond_br_zero", [27, 93], 83, (.decl ⟨false, false, false, false⟩ (some (.external "cond_br_zero")) none), ⟨"src/isa/aarch64/inst.isle", 2473⟩⟩
+
+/-- term 350 -/
+def T.«cond_br_not_zero» : Term :=
+  ⟨350, "cond_br_not_zero", [27, 93], 83, (.decl ⟨false, false, false, false⟩ (some (.external "cond_br_not_zero")) none), ⟨"src/isa/aarch64/inst.isle", 2476⟩⟩
+
+/-- term 351 -/
+def T.«cond_br_cond» : Term :=
+  ⟨351, "cond_br_cond", [96], 83, (.decl ⟨false, false, false, false⟩ (some (.external "cond_br_cond")) none), ⟨"src/isa/aarch64/inst.isle", 2480⟩⟩
+
+/-- term 352 -/
+def T.«zero_reg» : Term :=
+  ⟨352, "zero_reg", [], 27, (.decl ⟨false, false, false, false⟩ (some (.external "zero_reg")) none), ⟨"src/isa/aarch64/inst.isle", 2487⟩⟩
+
+/-- term 353 -/
+def T.«fp_reg» : Term :=
+  ⟨353, "fp_reg", [], 27, (.decl ⟨false, false, false, false⟩ (some (.external "fp_reg")) none), ⟨"src/isa/aarch64/inst.isle", 2490⟩⟩
+
+/-- term 354 -/
+def T.«stack_reg» : Term :=
+  ⟨354, "stack_reg", [], 27, (.decl ⟨false, false, false, false⟩ (some (.external "stack_reg")) none), ⟨"src/isa/aarch64/inst.isle", 2493⟩⟩
+
+/-- term 355 -/
+def T.«writable_link_reg» : Term :=
+  ⟨355, "writable_link_reg", [], 28, (.decl ⟨false, false, false, false⟩ (some (.external "writable_link_reg")) none), ⟨"src/isa/aarch64/inst.isle", 2496⟩⟩
+
+/-- term 356 -/
+def T.«writable_zero_reg» : Term :=
+  ⟨356, "writable_zero_reg", [], 28, (.decl ⟨false, false, false, false⟩ (some (.external "writable_zero_reg")) none), ⟨"src/isa/aarch64/inst.isle", 2500⟩⟩
+
+/-- term 357 -/
+def T.«value_regs_zero» : Term :=
+  ⟨357, "value_regs_zero", [], 22, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2504⟩⟩
+
+/-- term 358 -/
+def T.«movz» : Term :=
+  ⟨358, "movz", [69, 93], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2512⟩⟩
+
+/-- term 359 -/
+def T.«movn» : Term :=
+  ⟨359, "movn", [69, 93], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2520⟩⟩
+
+/-- term 360 -/
+def T.«alu_rr_imm_logic» : Term :=
+  ⟨360, "alu_rr_imm_logic", [59, 14, 27, 65], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2528⟩⟩
+
+/-- term 361 -/
+def T.«alu_rr_imm_shift» : Term :=
+  ⟨361, "alu_rr_imm_shift", [59, 14, 27, 66], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2536⟩⟩
+
+/-- term 362 -/
+def T.«alu_rrr» : Term :=
+  ⟨362, "alu_rrr", [59, 14, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2544⟩⟩
+
+/-- term 363 -/
+def T.«vec_rrr» : Term :=
+  ⟨363, "vec_rrr", [105, 27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2551⟩⟩
+
+/-- term 364 -/
+def T.«fpu_rr» : Term :=
+  ⟨364, "fpu_rr", [98, 27, 95], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2559⟩⟩
+
+/-- term 365 -/
+def T.«vec_rrr_mod» : Term :=
+  ⟨365, "vec_rrr_mod", [106, 27, 27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2567⟩⟩
+
+/-- term 366 -/
+def T.«vec_fmla_elem» : Term :=
+  ⟨366, "vec_fmla_elem", [106, 27, 27, 27, 97, 1], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2575⟩⟩
+
+/-- term 367 -/
+def T.«fpu_rri» : Term :=
+  ⟨367, "fpu_rri", [91, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2582⟩⟩
+
+/-- term 368 -/
+def T.«fpu_rrr» : Term :=
+  ⟨368, "fpu_rrr", [99, 27, 27, 95], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2590⟩⟩
+
+/-- term 369 -/
+def T.«fpu_rrrr» : Term :=
+  ⟨369, "fpu_rrrr", [100, 95, 27, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2597⟩⟩
+
+/-- term 370 -/
+def T.«fpu_cmp» : Term :=
+  ⟨370, "fpu_cmp", [95, 27, 27], 47, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2605⟩⟩
+
+/-- term 371 -/
+def T.«vec_lanes» : Term :=
+  ⟨371, "vec_lanes", [114, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2611⟩⟩
+
+/-- term 372 -/
+def T.«vec_shift_imm» : Term :=
+  ⟨372, "vec_shift_imm", [115, 1, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2618⟩⟩
+
+/-- term 373 -/
+def T.«vec_dup» : Term :=
+  ⟨373, "vec_dup", [27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2625⟩⟩
+
+/-- term 374 -/
+def T.«vec_dup_from_fpu» : Term :=
+  ⟨374, "vec_dup_from_fpu", [27, 97, 1], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2632⟩⟩
+
+/-- term 375 -/
+def T.«vec_dup_imm» : Term :=
+  ⟨375, "vec_dup_imm", [72, 0, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2639⟩⟩
+
+/-- term 376 -/
+def T.«alu_rr_imm12» : Term :=
+  ⟨376, "alu_rr_imm12", [59, 14, 27, 64], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2647⟩⟩
+
+/-- term 377 -/
+def T.«alu_rrr_shift» : Term :=
+  ⟨377, "alu_rrr_shift", [59, 14, 27, 27, 68], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2655⟩⟩
+
+/-- term 378 -/
+def T.«cmp_rr_shift» : Term :=
+  ⟨378, "cmp_rr_shift", [93, 27, 27, 4], 47, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2664⟩⟩
+
+/-- term 379 -/
+def T.«cmp_rr_shift_asr» : Term :=
+  ⟨379, "cmp_rr_shift_asr", [93, 27, 27, 4], 47, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2674⟩⟩
+
+/-- term 380 -/
+def T.«alu_rrr_extend» : Term :=
+  ⟨380, "alu_rrr_extend", [59, 14, 27, 27, 84], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2683⟩⟩
+
+/-- term 381 -/
+def T.«alu_rr_extend_reg» : Term :=
+  ⟨381, "alu_rr_extend_reg", [59, 14, 27, 121], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2692⟩⟩
+
+/-- term 382 -/
+def T.«alu_rrrr» : Term :=
+  ⟨382, "alu_rrrr", [60, 14, 27, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2700⟩⟩
+
+/-- term 383 -/
+def T.«alu_rrr_with_flags_paired» : Term :=
+  ⟨383, "alu_rrr_with_flags_paired", [14, 27, 27, 59], 47, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2708⟩⟩
+
+/-- term 384 -/
+def T.«alu_rrr_with_flags_chained» : Term :=
+  ⟨384, "alu_rrr_with_flags_chained", [14, 27, 27, 59], 48, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2716⟩⟩
+
+/-- term 385 -/
+def T.«sbcs_side_effect» : Term :=
+  ⟨385, "sbcs_side_effect", [14, 27, 27], 47, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2725⟩⟩
+
+/-- term 386 -/
+def T.«bit_rr» : Term :=
+  ⟨386, "bit_rr", [85, 14, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2732⟩⟩
+
+/-- term 387 -/
+def T.«add_with_flags_paired» : Term :=
+  ⟨387, "add_with_flags_paired", [14, 27, 27], 47, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2740⟩⟩
+
+/-- term 388 -/
+def T.«adc_paired» : Term :=
+  ⟨388, "adc_paired", [14, 27, 27], 49, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2749⟩⟩
+
+/-- term 389 -/
+def T.«sub_with_flags_paired» : Term :=
+  ⟨389, "sub_with_flags_paired", [14, 27, 27], 47, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2758⟩⟩
+
+/-- term 390 -/
+def T.«cmp» : Term :=
+  ⟨390, "cmp", [93, 27, 27], 47, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2766⟩⟩
+
+/-- term 391 -/
+def T.«cmp_imm» : Term :=
+  ⟨391, "cmp_imm", [93, 27, 64], 47, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2773⟩⟩
+
+/-- term 392 -/
+def T.«cmp64_imm» : Term :=
+  ⟨392, "cmp64_imm", [27, 64], 47, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2780⟩⟩
+
+/-- term 393 -/
+def T.«cmp_extend» : Term :=
+  ⟨393, "cmp_extend", [93, 27, 27, 84], 47, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2785⟩⟩
+
+/-- term 394 -/
+def T.«sbc_paired» : Term :=
+  ⟨394, "sbc_paired", [14, 27, 27], 49, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2793⟩⟩
+
+/-- term 395 -/
+def T.«vec_misc» : Term :=
+  ⟨395, "vec_misc", [107, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2801⟩⟩
+
+/-- term 396 -/
+def T.«vec_tbl» : Term :=
+  ⟨396, "vec_tbl", [27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2808⟩⟩
+
+/-- term 397 -/
+def T.«vec_tbl_ext» : Term :=
+  ⟨397, "vec_tbl_ext", [27, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2814⟩⟩
+
+/-- term 398 -/
+def T.«vec_tbl2» : Term :=
+  ⟨398, "vec_tbl2", [27, 27, 27, 14], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2821⟩⟩
+
+/-- term 399 -/
+def T.«vec_tbl2_ext» : Term :=
+  ⟨399, "vec_tbl2_ext", [27, 27, 27, 27, 14], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2830⟩⟩
+
+/-- term 400 -/
+def T.«vec_rrr_long» : Term :=
+  ⟨400, "vec_rrr_long", [110, 27, 27, 0], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2839⟩⟩
+
+/-- term 401 -/
+def T.«vec_rr_pair_long» : Term :=
+  ⟨401, "vec_rr_pair_long", [113, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2846⟩⟩
+
+/-- term 402 -/
+def T.«vec_rrrr_long» : Term :=
+  ⟨402, "vec_rrrr_long", [111, 27, 27, 27, 0], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2853⟩⟩
+
+/-- term 403 -/
+def T.«vec_rr_narrow_low» : Term :=
+  ⟨403, "vec_rr_narrow_low", [109, 27, 95], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2860⟩⟩
+
+/-- term 404 -/
+def T.«vec_rr_narrow_high» : Term :=
+  ⟨404, "vec_rr_narrow_high", [109, 27, 27, 95], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2868⟩⟩
+
+/-- term 405 -/
+def T.«vec_rr_long» : Term :=
+  ⟨405, "vec_rr_long", [108, 27, 0], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2875⟩⟩
+
+/-- term 406 -/
+def T.«fpu_csel» : Term :=
+  ⟨406, "fpu_csel", [14, 96, 27, 27], 49, (.decl ⟨false, false, false, true⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2885⟩⟩
+
+/-- term 407 -/
+def T.«vec_csel» : Term :=
+  ⟨407, "vec_csel", [96, 27, 27], 49, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2911⟩⟩
+
+/-- term 408 -/
+def T.«fpu_round» : Term :=
+  ⟨408, "fpu_round", [103, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2920⟩⟩
+
+/-- term 409 -/
+def T.«mov_to_fpu» : Term :=
+  ⟨409, "mov_to_fpu", [27, 95], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2929⟩⟩
+
+/-- term 410 -/
+def T.«size_for_mov_to_fpu» : Term :=
+  ⟨410, "size_for_mov_to_fpu", [95], 95, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2937⟩⟩
+
+/-- term 411 -/
+def T.«fpu_move_fp_imm» : Term :=
+  ⟨411, "fpu_move_fp_imm", [71, 95], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2947⟩⟩
+
+/-- term 412 -/
+def T.«mov_to_vec» : Term :=
+  ⟨412, "mov_to_vec", [27, 27, 1, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2954⟩⟩
+
+/-- term 413 -/
+def T.«mov_vec_elem» : Term :=
+  ⟨413, "mov_vec_elem", [27, 27, 1, 1, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2961⟩⟩
+
+/-- term 414 -/
+def T.«mov_from_vec» : Term :=
+  ⟨414, "mov_from_vec", [27, 1, 95], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2969⟩⟩
+
+/-- term 415 -/
+def T.«mov_from_vec_signed» : Term :=
+  ⟨415, "mov_from_vec_signed", [27, 1, 97, 93], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2976⟩⟩
+
+/-- term 416 -/
+def T.«fpu_move_from_vec» : Term :=
+  ⟨416, "fpu_move_from_vec", [27, 1, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2982⟩⟩
+
+/-- term 417 -/
+def T.«extend» : Term :=
+  ⟨417, "extend", [27, 0, 1, 1], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2990⟩⟩
+
+/-- term 418 -/
+def T.«bitfield_move» : Term :=
+  ⟨418, "bitfield_move", [14, 62, 27, 67, 67], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 2998⟩⟩
+
+/-- term 419 -/
+def T.«fpu_extend» : Term :=
+  ⟨419, "fpu_extend", [27, 95], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3006⟩⟩
+
+/-- term 420 -/
+def T.«vec_extend» : Term :=
+  ⟨420, "vec_extend", [104, 27, 0, 95], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3013⟩⟩
+
+/-- term 421 -/
+def T.«vec_extract» : Term :=
+  ⟨421, "vec_extract", [27, 27, 1], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3020⟩⟩
+
+/-- term 422 -/
+def T.«load_acquire» : Term :=
+  ⟨422, "load_acquire", [14, 142, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3027⟩⟩
+
+/-- term 423 -/
+def T.«store_release» : Term :=
+  ⟨423, "store_release", [14, 142, 27, 27], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3034⟩⟩
+
+/-- term 424 -/
+def T.«tst_imm» : Term :=
+  ⟨424, "tst_imm", [14, 27, 65], 47, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3043⟩⟩
+
+/-- term 425 -/
+def T.«csel» : Term :=
+  ⟨425, "csel", [96, 27, 27], 49, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3058⟩⟩
+
+/-- term 426 -/
+def T.«cset» : Term :=
+  ⟨426, "cset", [96], 49, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3067⟩⟩
+
+/-- term 427 -/
+def T.«cset_paired» : Term :=
+  ⟨427, "cset_paired", [96], 49, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3075⟩⟩
+
+/-- term 428 -/
+def T.«csetm» : Term :=
+  ⟨428, "csetm", [96], 49, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3081⟩⟩
+
+/-- term 429 -/
+def T.«csneg» : Term :=
+  ⟨429, "csneg", [96, 27, 27], 49, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3092⟩⟩
+
+/-- term 430 -/
+def T.«ccmp» : Term :=
+  ⟨430, "ccmp", [93, 27, 27, 70, 96, 47], 47, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3102⟩⟩
+
+/-- term 431 -/
+def T.«ccmp_imm» : Term :=
+  ⟨431, "ccmp_imm", [93, 27, 63, 70, 96], 49, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3107⟩⟩
+
+/-- term 432 -/
+def T.«add» : Term :=
+  ⟨432, "add", [14, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3117⟩⟩
+
+/-- term 433 -/
+def T.«add_imm» : Term :=
+  ⟨433, "add_imm", [14, 27, 64], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3121⟩⟩
+
+/-- term 434 -/
+def T.«add_extend» : Term :=
+  ⟨434, "add_extend", [14, 27, 121], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3125⟩⟩
+
+/-- term 435 -/
+def T.«add_shift» : Term :=
+  ⟨435, "add_shift", [14, 27, 27, 68], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3129⟩⟩
+
+/-- term 436 -/
+def T.«add_vec» : Term :=
+  ⟨436, "add_vec", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3132⟩⟩
+
+/-- term 437 -/
+def T.«sub» : Term :=
+  ⟨437, "sub", [14, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3137⟩⟩
+
+/-- term 438 -/
+def T.«sub_imm» : Term :=
+  ⟨438, "sub_imm", [14, 27, 64], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3141⟩⟩
+
+/-- term 439 -/
+def T.«sub_extend» : Term :=
+  ⟨439, "sub_extend", [14, 27, 121], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3145⟩⟩
+
+/-- term 440 -/
+def T.«sub_shift» : Term :=
+  ⟨440, "sub_shift", [14, 27, 27, 68], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3149⟩⟩
+
+/-- term 441 -/
+def T.«sub_vec» : Term :=
+  ⟨441, "sub_vec", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3152⟩⟩
+
+/-- term 442 -/
+def T.«sub_i128» : Term :=
+  ⟨442, "sub_i128", [22, 22], 22, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3156⟩⟩
+
+/-- term 443 -/
+def T.«madd» : Term :=
+  ⟨443, "madd", [14, 27, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3176⟩⟩
+
+/-- term 444 -/
+def T.«msub» : Term :=
+  ⟨444, "msub", [14, 27, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3181⟩⟩
+
+/-- term 445 -/
+def T.«umaddl» : Term :=
+  ⟨445, "umaddl", [27, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3186⟩⟩
+
+/-- term 446 -/
+def T.«smaddl» : Term :=
+  ⟨446, "smaddl", [27, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3191⟩⟩
+
+/-- term 447 -/
+def T.«uqadd» : Term :=
+  ⟨447, "uqadd", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3195⟩⟩
+
+/-- term 448 -/
+def T.«sqadd» : Term :=
+  ⟨448, "sqadd", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3199⟩⟩
+
+/-- term 449 -/
+def T.«uqsub» : Term :=
+  ⟨449, "uqsub", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3203⟩⟩
+
+/-- term 450 -/
+def T.«sqsub» : Term :=
+  ⟨450, "sqsub", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3207⟩⟩
+
+/-- term 451 -/
+def T.«umulh» : Term :=
+  ⟨451, "umulh", [14, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3212⟩⟩
+
+/-- term 452 -/
+def T.«smulh» : Term :=
+  ⟨452, "smulh", [14, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3217⟩⟩
+
+/-- term 453 -/
+def T.«mul» : Term :=
+  ⟨453, "mul", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3221⟩⟩
+
+/-- term 454 -/
+def T.«neg» : Term :=
+  ⟨454, "neg", [27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3225⟩⟩
+
+/-- term 455 -/
+def T.«rev16» : Term :=
+  ⟨455, "rev16", [27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3229⟩⟩
+
+/-- term 456 -/
+def T.«rev32» : Term :=
+  ⟨456, "rev32", [27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3233⟩⟩
+
+/-- term 457 -/
+def T.«rev64» : Term :=
+  ⟨457, "rev64", [27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3237⟩⟩
+
+/-- term 458 -/
+def T.«xtn» : Term :=
+  ⟨458, "xtn", [27, 95], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3241⟩⟩
+
+/-- term 459 -/
+def T.«fcvtn» : Term :=
+  ⟨459, "fcvtn", [27, 95], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3245⟩⟩
+
+/-- term 460 -/
+def T.«sqxtn» : Term :=
+  ⟨460, "sqxtn", [27, 95], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3249⟩⟩
+
+/-- term 461 -/
+def T.«sqxtn2» : Term :=
+  ⟨461, "sqxtn2", [27, 27, 95], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3253⟩⟩
+
+/-- term 462 -/
+def T.«sqxtun» : Term :=
+  ⟨462, "sqxtun", [27, 95], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3257⟩⟩
+
+/-- term 463 -/
+def T.«sqxtun2» : Term :=
+  ⟨463, "sqxtun2", [27, 27, 95], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3261⟩⟩
+
+/-- term 464 -/
+def T.«uqxtn» : Term :=
+  ⟨464, "uqxtn", [27, 95], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3265⟩⟩
+
+/-- term 465 -/
+def T.«uqxtn2» : Term :=
+  ⟨465, "uqxtn2", [27, 27, 95], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3269⟩⟩
+
+/-- term 466 -/
+def T.«aarch64_fence» : Term :=
+  ⟨466, "aarch64_fence", [], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3273⟩⟩
+
+/-- term 467 -/
+def T.«csdb» : Term :=
+  ⟨467, "csdb", [], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3278⟩⟩
+
+/-- term 468 -/
+def T.«brk» : Term :=
+  ⟨468, "brk", [], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3283⟩⟩
+
+/-- term 469 -/
+def T.«addp» : Term :=
+  ⟨469, "addp", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3289⟩⟩
+
+/-- term 470 -/
+def T.«zip1» : Term :=
+  ⟨470, "zip1", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3293⟩⟩
+
+/-- term 471 -/
+def T.«vec_abs» : Term :=
+  ⟨471, "vec_abs", [27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3297⟩⟩
+
+/-- term 472 -/
+def T.«abs» : Term :=
+  ⟨472, "abs", [93, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3303⟩⟩
+
+/-- term 473 -/
+def T.«addv» : Term :=
+  ⟨473, "addv", [27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3310⟩⟩
+
+/-- term 474 -/
+def T.«shll32» : Term :=
+  ⟨474, "shll32", [27, 0], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3314⟩⟩
+
+/-- term 475 -/
+def T.«saddlp8» : Term :=
+  ⟨475, "saddlp8", [27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3319⟩⟩
+
+/-- term 476 -/
+def T.«saddlp16» : Term :=
+  ⟨476, "saddlp16", [27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3322⟩⟩
+
+/-- term 477 -/
+def T.«uaddlp8» : Term :=
+  ⟨477, "uaddlp8", [27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3325⟩⟩
+
+/-- term 478 -/
+def T.«uaddlp16» : Term :=
+  ⟨478, "uaddlp16", [27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3328⟩⟩
+
+/-- term 479 -/
+def T.«umlal32» : Term :=
+  ⟨479, "umlal32", [27, 27, 27, 0], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3332⟩⟩
+
+/-- term 480 -/
+def T.«smull8» : Term :=
+  ⟨480, "smull8", [27, 27, 0], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3336⟩⟩
+
+/-- term 481 -/
+def T.«umull8» : Term :=
+  ⟨481, "umull8", [27, 27, 0], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3340⟩⟩
+
+/-- term 482 -/
+def T.«smull16» : Term :=
+  ⟨482, "smull16", [27, 27, 0], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3344⟩⟩
+
+/-- term 483 -/
+def T.«umull16» : Term :=
+  ⟨483, "umull16", [27, 27, 0], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3348⟩⟩
+
+/-- term 484 -/
+def T.«smull32» : Term :=
+  ⟨484, "smull32", [27, 27, 0], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3352⟩⟩
+
+/-- term 485 -/
+def T.«umull32» : Term :=
+  ⟨485, "umull32", [27, 27, 0], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3356⟩⟩
+
+/-- term 486 -/
+def T.«asr» : Term :=
+  ⟨486, "asr", [14, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3361⟩⟩
+
+/-- term 487 -/
+def T.«asr_imm» : Term :=
+  ⟨487, "asr_imm", [14, 27, 66], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3365⟩⟩
+
+/-- term 488 -/
+def T.«lsr» : Term :=
+  ⟨488, "lsr", [14, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3370⟩⟩
+
+/-- term 489 -/
+def T.«lsr_imm» : Term :=
+  ⟨489, "lsr_imm", [14, 27, 66], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3374⟩⟩
+
+/-- term 490 -/
+def T.«lsl» : Term :=
+  ⟨490, "lsl", [14, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3379⟩⟩
+
+/-- term 491 -/
+def T.«lsl_imm» : Term :=
+  ⟨491, "lsl_imm", [14, 27, 66], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3383⟩⟩
+
+/-- term 492 -/
+def T.«a64_udiv» : Term :=
+  ⟨492, "a64_udiv", [14, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3388⟩⟩
+
+/-- term 493 -/
+def T.«a64_sdiv» : Term :=
+  ⟨493, "a64_sdiv", [14, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3393⟩⟩
+
+/-- term 494 -/
+def T.«not» : Term :=
+  ⟨494, "not", [27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3397⟩⟩
+
+/-- term 495 -/
+def T.«orr_not» : Term :=
+  ⟨495, "orr_not", [14, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3402⟩⟩
+
+/-- term 496 -/
+def T.«orr_not_shift» : Term :=
+  ⟨496, "orr_not_shift", [14, 27, 27, 68], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3406⟩⟩
+
+/-- term 497 -/
+def T.«orr» : Term :=
+  ⟨497, "orr", [14, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3411⟩⟩
+
+/-- term 498 -/
+def T.«orr_imm» : Term :=
+  ⟨498, "orr_imm", [14, 27, 65], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3415⟩⟩
+
+/-- term 499 -/
+def T.«orr_vec» : Term :=
+  ⟨499, "orr_vec", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3418⟩⟩
+
+/-- term 500 -/
+def T.«orn_vec» : Term :=
+  ⟨500, "orn_vec", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3421⟩⟩
+
+/-- term 501 -/
+def T.«and_reg» : Term :=
+  ⟨501, "and_reg", [14, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3426⟩⟩
+
+/-- term 502 -/
+def T.«and_imm» : Term :=
+  ⟨502, "and_imm", [14, 27, 65], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3430⟩⟩
+
+/-- term 503 -/
+def T.«and_vec» : Term :=
+  ⟨503, "and_vec", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3433⟩⟩
+
+/-- term 504 -/
+def T.«eor» : Term :=
+  ⟨504, "eor", [14, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3438⟩⟩
+
+/-- term 505 -/
+def T.«eor_vec» : Term :=
+  ⟨505, "eor_vec", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3441⟩⟩
+
+/-- term 506 -/
+def T.«bic» : Term :=
+  ⟨506, "bic", [14, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3446⟩⟩
+
+/-- term 507 -/
+def T.«bic_vec» : Term :=
+  ⟨507, "bic_vec", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3449⟩⟩
+
+/-- term 508 -/
+def T.«sshl» : Term :=
+  ⟨508, "sshl", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3453⟩⟩
+
+/-- term 509 -/
+def T.«ushl» : Term :=
+  ⟨509, "ushl", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3457⟩⟩
+
+/-- term 510 -/
+def T.«ushl_vec_imm» : Term :=
+  ⟨510, "ushl_vec_imm", [27, 1, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3461⟩⟩
+
+/-- term 511 -/
+def T.«ushr_vec_imm» : Term :=
+  ⟨511, "ushr_vec_imm", [27, 1, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3465⟩⟩
+
+/-- term 512 -/
+def T.«sshr_vec_imm» : Term :=
+  ⟨512, "sshr_vec_imm", [27, 1, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3469⟩⟩
+
+/-- term 513 -/
+def T.«a64_rotr» : Term :=
+  ⟨513, "a64_rotr", [14, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3477⟩⟩
+
+/-- term 514 -/
+def T.«a64_rotr_imm» : Term :=
+  ⟨514, "a64_rotr_imm", [14, 27, 66], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3481⟩⟩
+
+/-- term 515 -/
+def T.«a64_extr» : Term :=
+  ⟨515, "a64_extr", [14, 27, 27, 66], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3486⟩⟩
+
+/-- term 516 -/
+def T.«a64_extr_imm» : Term :=
+  ⟨516, "a64_extr_imm", [14, 66], 68, (.decl ⟨false, false, false, false⟩ (some (.external "a64_extr_imm")) none), ⟨"src/isa/aarch64/inst.isle", 3506⟩⟩
+
+/-- term 517 -/
+def T.«rbit» : Term :=
+  ⟨517, "rbit", [14, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3511⟩⟩
+
+/-- term 518 -/
+def T.«a64_clz» : Term :=
+  ⟨518, "a64_clz", [14, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3516⟩⟩
+
+/-- term 519 -/
+def T.«a64_cls» : Term :=
+  ⟨519, "a64_cls", [14, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3521⟩⟩
+
+/-- term 520 -/
+def T.«a64_rev16» : Term :=
+  ⟨520, "a64_rev16", [14, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3526⟩⟩
+
+/-- term 521 -/
+def T.«a64_rev32» : Term :=
+  ⟨521, "a64_rev32", [14, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3530⟩⟩
+
+/-- term 522 -/
+def T.«a64_rev64» : Term :=
+  ⟨522, "a64_rev64", [14, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3534⟩⟩
+
+/-- term 523 -/
+def T.«eon» : Term :=
+  ⟨523, "eon", [14, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3539⟩⟩
+
+/-- term 524 -/
+def T.«vec_cnt» : Term :=
+  ⟨524, "vec_cnt", [27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3544⟩⟩
+
+/-- term 525 -/
+def T.«bsl» : Term :=
+  ⟨525, "bsl", [14, 27, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3549⟩⟩
+
+/-- term 526 -/
+def T.«sdot» : Term :=
+  ⟨526, "sdot", [27, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3555⟩⟩
+
+/-- term 527 -/
+def T.«usdot» : Term :=
+  ⟨527, "usdot", [27, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3562⟩⟩
+
+/-- term 528 -/
+def T.«udf» : Term :=
+  ⟨528, "udf", [146], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3568⟩⟩
+
+/-- term 529 -/
+def T.«aarch64_uload8» : Term :=
+  ⟨529, "aarch64_uload8", [89, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3575⟩⟩
+
+/-- term 530 -/
+def T.«aarch64_sload8» : Term :=
+  ⟨530, "aarch64_sload8", [89, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3582⟩⟩
+
+/-- term 531 -/
+def T.«aarch64_uload16» : Term :=
+  ⟨531, "aarch64_uload16", [89, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3589⟩⟩
+
+/-- term 532 -/
+def T.«aarch64_sload16» : Term :=
+  ⟨532, "aarch64_sload16", [89, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3596⟩⟩
+
+/-- term 533 -/
+def T.«aarch64_uload32» : Term :=
+  ⟨533, "aarch64_uload32", [89, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3603⟩⟩
+
+/-- term 534 -/
+def T.«aarch64_sload32» : Term :=
+  ⟨534, "aarch64_sload32", [89, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3611⟩⟩
+
+/-- term 535 -/
+def T.«aarch64_uload64» : Term :=
+  ⟨535, "aarch64_uload64", [89, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3618⟩⟩
+
+/-- term 536 -/
+def T.«aarch64_fpuload16» : Term :=
+  ⟨536, "aarch64_fpuload16", [89, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3624⟩⟩
+
+/-- term 537 -/
+def T.«aarch64_fpuload32» : Term :=
+  ⟨537, "aarch64_fpuload32", [89, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3631⟩⟩
+
+/-- term 538 -/
+def T.«aarch64_fpuload64» : Term :=
+  ⟨538, "aarch64_fpuload64", [89, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3638⟩⟩
+
+/-- term 539 -/
+def T.«aarch64_fpuload128» : Term :=
+  ⟨539, "aarch64_fpuload128", [89, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3643⟩⟩
+
+/-- term 540 -/
+def T.«aarch64_loadp64» : Term :=
+  ⟨540, "aarch64_loadp64", [90, 142], 22, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3648⟩⟩
+
+/-- term 541 -/
+def T.«aarch64_store8» : Term :=
+  ⟨541, "aarch64_store8", [89, 142, 27], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3658⟩⟩
+
+/-- term 542 -/
+def T.«aarch64_store16» : Term :=
+  ⟨542, "aarch64_store16", [89, 142, 27], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3664⟩⟩
+
+/-- term 543 -/
+def T.«aarch64_store32» : Term :=
+  ⟨543, "aarch64_store32", [89, 142, 27], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3670⟩⟩
+
+/-- term 544 -/
+def T.«aarch64_store64» : Term :=
+  ⟨544, "aarch64_store64", [89, 142, 27], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3676⟩⟩
+
+/-- term 545 -/
+def T.«aarch64_fpustore16» : Term :=
+  ⟨545, "aarch64_fpustore16", [89, 142, 27], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3680⟩⟩
+
+/-- term 546 -/
+def T.«aarch64_fpustore32» : Term :=
+  ⟨546, "aarch64_fpustore32", [89, 142, 27], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3683⟩⟩
+
+/-- term 547 -/
+def T.«aarch64_fpustore64» : Term :=
+  ⟨547, "aarch64_fpustore64", [89, 142, 27], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3688⟩⟩
+
+/-- term 548 -/
+def T.«aarch64_fpustore128» : Term :=
+  ⟨548, "aarch64_fpustore128", [89, 142, 27], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3691⟩⟩
+
+/-- term 549 -/
+def T.«aarch64_storep64» : Term :=
+  ⟨549, "aarch64_storep64", [90, 142, 27, 27], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3694⟩⟩
+
+/-- term 550 -/
+def T.«trap_if_cond» : Term :=
+  ⟨550, "trap_if_cond", [96, 146], 49, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3702⟩⟩
+
+/-- term 551 -/
+def T.«trap_if_zero» : Term :=
+  ⟨551, "trap_if_zero", [27, 93, 146], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3708⟩⟩
+
+/-- term 552 -/
+def T.«trap_if_not_zero» : Term :=
+  ⟨552, "trap_if_not_zero", [27, 93, 146], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3713⟩⟩
+
+/-- term 553 -/
+def T.«imm» : Term :=
+  ⟨553, "imm", [14, 122, 4], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3738⟩⟩
+
+/-- term 554 -/
+def T.«load_constant_full» : Term :=
+  ⟨554, "load_constant_full", [14, 122, 93, 4], 27, (.decl ⟨false, false, false, false⟩ (some (.external "load_constant_full")) none), ⟨"src/isa/aarch64/inst.isle", 3756⟩⟩
+
+/-- term 555 -/
+def T.«put_in_reg_sext32» : Term :=
+  ⟨555, "put_in_reg_sext32", [15], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3798⟩⟩
+
+/-- term 556 -/
+def T.«put_in_reg_zext32» : Term :=
+  ⟨556, "put_in_reg_zext32", [15], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3808⟩⟩
+
+/-- term 557 -/
+def T.«put_in_reg_sext64» : Term :=
+  ⟨557, "put_in_reg_sext64", [15], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3818⟩⟩
+
+/-- term 558 -/
+def T.«put_in_reg_zext64» : Term :=
+  ⟨558, "put_in_reg_zext64", [15], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3828⟩⟩
+
+/-- term 559 -/
+def T.«trap_if_zero_divisor» : Term :=
+  ⟨559, "trap_if_zero_divisor", [27, 93], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3837⟩⟩
+
+/-- term 560 -/
+def T.«size_from_ty» : Term :=
+  ⟨560, "size_from_ty", [14], 93, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3851⟩⟩
+
+/-- term 561 -/
+def T.«trap_if_div_overflow» : Term :=
+  ⟨561, "trap_if_div_overflow", [14, 27, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3860⟩⟩
+
+/-- term 562 -/
+def T.«intmin_check» : Term :=
+  ⟨562, "intmin_check", [14, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3885⟩⟩
+
+/-- term 563 -/
+def T.«trap_if_overflow» : Term :=
+  ⟨563, "trap_if_overflow", [47, 146], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3896⟩⟩
+
+/-- term 564 -/
+def T.«sink_atomic_load» : Term :=
+  ⟨564, "sink_atomic_load", [18], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3904⟩⟩
+
+/-- term 565 -/
+def T.«alu_rs_imm_logic_commutative» : Term :=
+  ⟨565, "alu_rs_imm_logic_commutative", [59, 14, 15, 15], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3913⟩⟩
+
+/-- term 566 -/
+def T.«alu_rs_imm_logic» : Term :=
+  ⟨566, "alu_rs_imm_logic", [59, 14, 15, 15], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3938⟩⟩
+
+/-- term 567 -/
+def T.«i128_alu_bitop» : Term :=
+  ⟨567, "i128_alu_bitop", [59, 14, 15, 15], 22, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3952⟩⟩
+
+/-- term 568 -/
+def T.«ld1r» : Term :=
+  ⟨568, "ld1r", [27, 97, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3967⟩⟩
+
+/-- term 569 -/
+def T.«is_pic» : Term :=
+  ⟨569, "is_pic", [], 0, (.decl ⟨true, false, false, false⟩ (some (.external "is_pic")) none), ⟨"src/isa/aarch64/inst.isle", 3973⟩⟩
+
+/-- term 570 -/
+def T.«load_ext_name» : Term :=
+  ⟨570, "load_ext_name", [37, 10, 38], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 3978⟩⟩
+
+/-- term 571 -/
+def T.«load_ext_name_got» : Term :=
+  ⟨571, "load_ext_name_got", [37], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4001⟩⟩
+
+/-- term 572 -/
+def T.«load_ext_name_near» : Term :=
+  ⟨572, "load_ext_name_near", [37, 10], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4008⟩⟩
+
+/-- term 573 -/
+def T.«load_ext_name_far» : Term :=
+  ⟨573, "load_ext_name_far", [37, 10], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4015⟩⟩
+
+/-- term 574 -/
+def T.«amode» : Term :=
+  ⟨574, "amode", [14, 15, 9], 89, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4036⟩⟩
+
+/-- term 575 -/
+def T.«amode_no_more_iconst» : Term :=
+  ⟨575, "amode_no_more_iconst", [14, 15, 9], 89, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4053⟩⟩
+
+/-- term 576 -/
+def T.«amode_reg_scaled» : Term :=
+  ⟨576, "amode_reg_scaled", [27, 15], 89, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4108⟩⟩
+
+/-- term 577 -/
+def T.«amode_add» : Term :=
+  ⟨577, "amode_add", [27, 9], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4119⟩⟩
+
+/-- term 578 -/
+def T.«pair_amode» : Term :=
+  ⟨578, "pair_amode", [15, 9], 90, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4130⟩⟩
+
+/-- term 579 -/
+def T.«simm7_scaled_from_i64» : Term :=
+  ⟨579, "simm7_scaled_from_i64", [10, 14], 73, (.decl ⟨true, false, true, false⟩ (some (.external "simm7_scaled_from_i64")) none), ⟨"src/isa/aarch64/inst.isle", 4142⟩⟩
+
+/-- term 580 -/
+def T.«uimm12_scaled_from_i64» : Term :=
+  ⟨580, "uimm12_scaled_from_i64", [10, 14], 88, (.decl ⟨true, false, true, false⟩ (some (.external "uimm12_scaled_from_i64")) none), ⟨"src/isa/aarch64/inst.isle", 4163⟩⟩
+
+/-- term 581 -/
+def T.«uimm12_scaled_nonzero_from_i64» : Term :=
+  ⟨581, "uimm12_scaled_nonzero_from_i64", [10, 14], 88, (.decl ⟨true, false, true, false⟩ (some (.external "uimm12_scaled_nonzero_from_i64")) none), ⟨"src/isa/aarch64/inst.isle", 4186⟩⟩
+
+/-- term 582 -/
+def T.«simm9_from_i64» : Term :=
+  ⟨582, "simm9_from_i64", [10], 87, (.decl ⟨true, false, true, false⟩ (some (.external "simm9_from_i64")) none), ⟨"src/isa/aarch64/inst.isle", 4198⟩⟩
+
+/-- term 583 -/
+def T.«sink_load_into_addr» : Term :=
+  ⟨583, "sink_load_into_addr", [14, 18], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4202⟩⟩
+
+/-- term 584 -/
+def T.«add_imm_to_addr» : Term :=
+  ⟨584, "add_imm_to_addr", [27, 4], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4208⟩⟩
+
+/-- term 585 -/
+def T.«constant_f16» : Term :=
+  ⟨585, "constant_f16", [2], 27, (.decl ⟨false, false, false, true⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4220⟩⟩
+
+/-- term 586 -/
+def T.«constant_f32» : Term :=
+  ⟨586, "constant_f32", [3], 27, (.decl ⟨false, false, false, true⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4241⟩⟩
+
+/-- term 587 -/
+def T.«constant_f64» : Term :=
+  ⟨587, "constant_f64", [4], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4263⟩⟩
+
+/-- term 588 -/
+def T.«u64_low32_bits_unset» : Term :=
+  ⟨588, "u64_low32_bits_unset", [4], 4, (.decl ⟨false, false, false, false⟩ none (some (.external "u64_low32_bits_unset" false))), ⟨"src/isa/aarch64/inst.isle", 4283⟩⟩
+
+/-- term 589 -/
+def T.«constant_f128» : Term :=
+  ⟨589, "constant_f128", [5], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4287⟩⟩
+
+/-- term 590 -/
+def T.«splat_const» : Term :=
+  ⟨590, "splat_const", [4, 97], 27, (.decl ⟨false, false, false, true⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4311⟩⟩
+
+/-- term 591 -/
+def T.«vec_dup_fp_imm_supports_lane_size» : Term :=
+  ⟨591, "vec_dup_fp_imm_supports_lane_size", [95], 0, (.decl ⟨true, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4350⟩⟩
+
+/-- term 592 -/
+def T.«cond_code» : Term :=
+  ⟨592, "cond_code", [145], 96, (.decl ⟨false, false, false, false⟩ (some (.external "cond_code")) none), ⟨"src/isa/aarch64/inst.isle", 4379⟩⟩
+
+/-- term 593 -/
+def T.«invert_cond» : Term :=
+  ⟨593, "invert_cond", [96], 96, (.decl ⟨false, false, false, false⟩ (some (.external "invert_cond")) none), ⟨"src/isa/aarch64/inst.isle", 4384⟩⟩
+
+/-- term 594 -/
+def T.«float_cc_cmp_zero_to_vec_misc_op» : Term :=
+  ⟨594, "float_cc_cmp_zero_to_vec_misc_op", [144], 107, (.decl ⟨false, false, false, false⟩ (some (.external "float_cc_cmp_zero_to_vec_misc_op")) none), ⟨"src/isa/aarch64/inst.isle", 4413⟩⟩
+
+/-- term 595 -/
+def T.«float_cc_cmp_zero_to_vec_misc_op_swap» : Term :=
+  ⟨595, "float_cc_cmp_zero_to_vec_misc_op_swap", [144], 107, (.decl ⟨false, false, false, false⟩ (some (.external "float_cc_cmp_zero_to_vec_misc_op_swap")) none), ⟨"src/isa/aarch64/inst.isle", 4416⟩⟩
+
+/-- term 596 -/
+def T.«fcmp_zero_cond» : Term :=
+  ⟨596, "fcmp_zero_cond", [144], 144, (.decl ⟨false, false, false, false⟩ none (some (.external "fcmp_zero_cond" false))), ⟨"src/isa/aarch64/inst.isle", 4420⟩⟩
+
+/-- term 597 -/
+def T.«fcmp_zero_cond_not_eq» : Term :=
+  ⟨597, "fcmp_zero_cond_not_eq", [144], 144, (.decl ⟨false, false, false, false⟩ none (some (.external "fcmp_zero_cond_not_eq" false))), ⟨"src/isa/aarch64/inst.isle", 4424⟩⟩
+
+/-- term 598 -/
+def T.«float_cmp_zero» : Term :=
+  ⟨598, "float_cmp_zero", [144, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4428⟩⟩
+
+/-- term 599 -/
+def T.«float_cmp_zero_swap» : Term :=
+  ⟨599, "float_cmp_zero_swap", [144, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4433⟩⟩
+
+/-- term 600 -/
+def T.«fcmeq0» : Term :=
+  ⟨600, "fcmeq0", [27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4438⟩⟩
+
+/-- term 601 -/
+def T.«int_cc_cmp_zero_to_vec_misc_op» : Term :=
+  ⟨601, "int_cc_cmp_zero_to_vec_misc_op", [145], 107, (.decl ⟨false, false, false, false⟩ (some (.external "int_cc_cmp_zero_to_vec_misc_op")) none), ⟨"src/isa/aarch64/inst.isle", 4443⟩⟩
+
+/-- term 602 -/
+def T.«int_cc_cmp_zero_to_vec_misc_op_swap» : Term :=
+  ⟨602, "int_cc_cmp_zero_to_vec_misc_op_swap", [145], 107, (.decl ⟨false, false, false, false⟩ (some (.external "int_cc_cmp_zero_to_vec_misc_op_swap")) none), ⟨"src/isa/aarch64/inst.isle", 4446⟩⟩
+
+/-- term 603 -/
+def T.«icmp_zero_cond» : Term :=
+  ⟨603, "icmp_zero_cond", [145], 145, (.decl ⟨false, false, false, false⟩ none (some (.external "icmp_zero_cond" false))), ⟨"src/isa/aarch64/inst.isle", 4450⟩⟩
+
+/-- term 604 -/
+def T.«icmp_zero_cond_not_eq» : Term :=
+  ⟨604, "icmp_zero_cond_not_eq", [145], 145, (.decl ⟨false, false, false, false⟩ none (some (.external "icmp_zero_cond_not_eq" false))), ⟨"src/isa/aarch64/inst.isle", 4454⟩⟩
+
+/-- term 605 -/
+def T.«int_cmp_zero» : Term :=
+  ⟨605, "int_cmp_zero", [145, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4458⟩⟩
+
+/-- term 606 -/
+def T.«int_cmp_zero_swap» : Term :=
+  ⟨606, "int_cmp_zero_swap", [145, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4463⟩⟩
+
+/-- term 607 -/
+def T.«cmeq0» : Term :=
+  ⟨607, "cmeq0", [27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4468⟩⟩
+
+/-- term 608 -/
+def T.«lse_atomic_rmw» : Term :=
+  ⟨608, "lse_atomic_rmw", [117, 15, 27, 14, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4473⟩⟩
+
+/-- term 609 -/
+def T.«lse_atomic_cas» : Term :=
+  ⟨609, "lse_atomic_cas", [27, 27, 27, 14, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4483⟩⟩
+
+/-- term 610 -/
+def T.«atomic_cas_128_args» : Term :=
+  ⟨610, "atomic_cas_128_args", [28, 28, 27, 27, 27, 27, 27, 142], 80, (.decl ⟨false, false, false, false⟩ (some (.external "atomic_cas_128_args")) none), ⟨"src/isa/aarch64/inst.isle", 4492⟩⟩
+
+/-- term 611 -/
+def T.«lse_atomic_cas_128» : Term :=
+  ⟨611, "lse_atomic_cas_128", [27, 22, 22, 142], 22, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4496⟩⟩
+
+/-- term 612 -/
+def T.«atomic_rmw_loop» : Term :=
+  ⟨612, "atomic_rmw_loop", [118, 27, 27, 14, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4517⟩⟩
+
+/-- term 613 -/
+def T.«atomic_cas_loop» : Term :=
+  ⟨613, "atomic_cas_loop", [27, 27, 27, 14, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4531⟩⟩
+
+/-- term 614 -/
+def T.«mov_from_preg» : Term :=
+  ⟨614, "mov_from_preg", [32], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4540⟩⟩
+
+/-- term 615 -/
+def T.«mov_to_preg» : Term :=
+  ⟨615, "mov_to_preg", [32, 27], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4547⟩⟩
+
+/-- term 616 -/
+def T.«preg_sp» : Term :=
+  ⟨616, "preg_sp", [], 32, (.decl ⟨false, false, false, false⟩ (some (.external "preg_sp")) none), ⟨"src/isa/aarch64/inst.isle", 4552⟩⟩
+
+/-- term 617 -/
+def T.«preg_fp» : Term :=
+  ⟨617, "preg_fp", [], 32, (.decl ⟨false, false, false, false⟩ (some (.external "preg_fp")) none), ⟨"src/isa/aarch64/inst.isle", 4556⟩⟩
+
+/-- term 618 -/
+def T.«preg_link» : Term :=
+  ⟨618, "preg_link", [], 32, (.decl ⟨false, false, false, false⟩ (some (.external "preg_link")) none), ⟨"src/isa/aarch64/inst.isle", 4559⟩⟩
+
+/-- term 619 -/
+def T.«preg_pinned» : Term :=
+  ⟨619, "preg_pinned", [], 32, (.decl ⟨false, false, false, false⟩ (some (.external "preg_pinned")) none), ⟨"src/isa/aarch64/inst.isle", 4563⟩⟩
+
+/-- term 620 -/
+def T.«aarch64_sp» : Term :=
+  ⟨620, "aarch64_sp", [], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4566⟩⟩
+
+/-- term 621 -/
+def T.«aarch64_fp» : Term :=
+  ⟨621, "aarch64_fp", [], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4570⟩⟩
+
+/-- term 622 -/
+def T.«aarch64_link» : Term :=
+  ⟨622, "aarch64_link", [], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4574⟩⟩
+
+/-- term 623 -/
+def T.«max_shift» : Term :=
+  ⟨623, "max_shift", [14], 1, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4605⟩⟩
+
+/-- term 624 -/
+def T.«fcopy_sign» : Term :=
+  ⟨624, "fcopy_sign", [27, 27, 14], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4611⟩⟩
+
+/-- term 625 -/
+def T.«fpu_to_int_nan_check» : Term :=
+  ⟨625, "fpu_to_int_nan_check", [95, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4627⟩⟩
+
+/-- term 626 -/
+def T.«fpu_to_int_underflow_check» : Term :=
+  ⟨626, "fpu_to_int_underflow_check", [0, 14, 14, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4641⟩⟩
+
+/-- term 627 -/
+def T.«fpu_to_int_overflow_check» : Term :=
+  ⟨627, "fpu_to_int_overflow_check", [95, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4680⟩⟩
+
+/-- term 628 -/
+def T.«fpu_to_int_cvt» : Term :=
+  ⟨628, "fpu_to_int_cvt", [101, 27, 0, 14, 14], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4697⟩⟩
+
+/-- term 629 -/
+def T.«fpu_to_int_cvt_sat» : Term :=
+  ⟨629, "fpu_to_int_cvt_sat", [101, 27, 0, 14], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4715⟩⟩
+
+/-- term 630 -/
+def T.«signed_min» : Term :=
+  ⟨630, "signed_min", [14], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4739⟩⟩
+
+/-- term 631 -/
+def T.«signed_max» : Term :=
+  ⟨631, "signed_max", [14], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4744⟩⟩
+
+/-- term 632 -/
+def T.«fpu_to_int» : Term :=
+  ⟨632, "fpu_to_int", [101, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4749⟩⟩
+
+/-- term 633 -/
+def T.«int_to_fpu» : Term :=
+  ⟨633, "int_to_fpu", [102, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4757⟩⟩
+
+/-- term 634 -/
+def T.«gen_call_info» : Term :=
+  ⟨634, "gen_call_info", [52, 36, 41, 42, 57, 0], 74, (.decl ⟨false, false, false, false⟩ (some (.external "gen_call_info")) none), ⟨"src/isa/aarch64/inst.isle", 4765⟩⟩
+
+/-- term 635 -/
+def T.«gen_call_ind_info» : Term :=
+  ⟨635, "gen_call_ind_info", [52, 27, 41, 42, 57], 75, (.decl ⟨false, false, false, false⟩ (some (.external "gen_call_ind_info")) none), ⟨"src/isa/aarch64/inst.isle", 4768⟩⟩
+
+/-- term 636 -/
+def T.«gen_return_call_info» : Term :=
+  ⟨636, "gen_return_call_info", [52, 36, 41], 76, (.decl ⟨false, false, false, false⟩ (some (.external "gen_return_call_info")) none), ⟨"src/isa/aarch64/inst.isle", 4771⟩⟩
+
+/-- term 637 -/
+def T.«gen_return_call_ind_info» : Term :=
+  ⟨637, "gen_return_call_ind_info", [52, 27, 41], 77, (.decl ⟨false, false, false, false⟩ (some (.external "gen_return_call_ind_info")) none), ⟨"src/isa/aarch64/inst.isle", 4774⟩⟩
+
+/-- term 638 -/
+def T.«call_impl» : Term :=
+  ⟨638, "call_impl", [74], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4779⟩⟩
+
+/-- term 639 -/
+def T.«call_ind_impl» : Term :=
+  ⟨639, "call_ind_impl", [75], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4785⟩⟩
+
+/-- term 640 -/
+def T.«return_call_impl» : Term :=
+  ⟨640, "return_call_impl", [76], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4791⟩⟩
+
+/-- term 641 -/
+def T.«return_call_ind_impl» : Term :=
+  ⟨641, "return_call_ind_impl", [77], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4797⟩⟩
+
+/-- term 642 -/
+def T.«write_pinned_reg» : Term :=
+  ⟨642, "write_pinned_reg", [27], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4803⟩⟩
+
+/-- term 643 -/
+def T.«compute_stack_addr» : Term :=
+  ⟨643, "compute_stack_addr", [140, 138], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4809⟩⟩
+
+/-- term 644 -/
+def T.«vec_cmp_vc» : Term :=
+  ⟨644, "vec_cmp_vc", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4817⟩⟩
+
+/-- term 645 -/
+def T.«vec_cmp» : Term :=
+  ⟨645, "vec_cmp", [27, 27, 14, 96], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4825⟩⟩
+
+/-- term 646 -/
+def T.«vanytrue» : Term :=
+  ⟨646, "vanytrue", [27, 14], 47, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4903⟩⟩
+
+/-- term 647 -/
+def T.«elf_tls_get_addr» : Term :=
+  ⟨647, "elf_tls_get_addr", [36], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4917⟩⟩
+
+/-- term 648 -/
+def T.«macho_tls_get_addr» : Term :=
+  ⟨648, "macho_tls_get_addr", [36], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4925⟩⟩
+
+/-- term 649 -/
+def T.«cond_result_invert» : Term :=
+  ⟨649, "cond_result_invert", [123], 123, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4953⟩⟩
+
+/-- term 650 -/
+def T.«is_nonzero_cmp» : Term :=
+  ⟨650, "is_nonzero_cmp", [15], 123, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4963⟩⟩
+
+/-- term 651 -/
+def T.«is_nonzero» : Term :=
+  ⟨651, "is_nonzero", [15], 123, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 4976⟩⟩
+
+/-- term 652 -/
+def T.«emit_icmp» : Term :=
+  ⟨652, "emit_icmp", [145, 15, 15], 123, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5105⟩⟩
+
+/-- term 653 -/
+def T.«emit_icmp_i128» : Term :=
+  ⟨653, "emit_icmp_i128", [145, 27, 27, 27, 27], 123, (.decl ⟨false, false, false, true⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5176⟩⟩
+
+/-- term 654 -/
+def T.«emit_icmp_i128_eq_ne» : Term :=
+  ⟨654, "emit_icmp_i128_eq_ne", [27, 27, 27, 27], 47, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5194⟩⟩
+
+/-- term 655 -/
+def T.«emit_fcmp» : Term :=
+  ⟨655, "emit_fcmp", [144, 15, 15], 123, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5209⟩⟩
+
+/-- term 656 -/
+def T.«fp_cond_code» : Term :=
+  ⟨656, "fp_cond_code", [144], 96, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5230⟩⟩
+
+/-- term 657 -/
+def T.«lower_extend_op» : Term :=
+  ⟨657, "lower_extend_op", [14, 56], 84, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5263⟩⟩
+
+/-- term 658 -/
+def T.«lower_bmask» : Term :=
+  ⟨658, "lower_bmask", [14, 14, 22], 22, (.decl ⟨false, false, false, true⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5270⟩⟩
+
+/-- term 659 -/
+def T.«lower_select» : Term :=
+  ⟨659, "lower_select", [14, 123, 15, 15], 22, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5319⟩⟩
+
+/-- term 660 -/
+def T.«lower_select_cond» : Term :=
+  ⟨660, "lower_select_cond", [14, 47, 96, 15, 15], 22, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5340⟩⟩
+
+/-- term 661 -/
+def T.«aarch64_jump» : Term :=
+  ⟨661, "aarch64_jump", [78], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5370⟩⟩
+
+/-- term 662 -/
+def T.«jt_sequence» : Term :=
+  ⟨662, "jt_sequence", [27, 33, 44], 49, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5393⟩⟩
+
+/-- term 663 -/
+def T.«a64_br_cond» : Term :=
+  ⟨663, "a64_br_cond", [96, 78, 78], 49, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5405⟩⟩
+
+/-- term 664 -/
+def T.«a64_br_zero» : Term :=
+  ⟨664, "a64_br_zero", [27, 93, 78, 78], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5411⟩⟩
+
+/-- term 665 -/
+def T.«a64_br_not_zero» : Term :=
+  ⟨665, "a64_br_not_zero", [27, 93, 78, 78], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5417⟩⟩
+
+/-- term 666 -/
+def T.«test_branch» : Term :=
+  ⟨666, "test_branch", [94, 78, 78, 27, 1], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5424⟩⟩
+
+/-- term 667 -/
+def T.«tbnz» : Term :=
+  ⟨667, "tbnz", [78, 78, 27, 1], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5430⟩⟩
+
+/-- term 668 -/
+def T.«tbz» : Term :=
+  ⟨668, "tbz", [78, 78, 27, 1], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5436⟩⟩
+
+/-- term 669 -/
+def T.«emit_island» : Term :=
+  ⟨669, "emit_island", [81], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5442⟩⟩
+
+/-- term 670 -/
+def T.«br_table_impl» : Term :=
+  ⟨670, "br_table_impl", [4, 27, 33, 44], 13, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5449⟩⟩
+
+/-- term 671 -/
+def T.«vec_uzp1» : Term :=
+  ⟨671, "vec_uzp1", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5461⟩⟩
+
+/-- term 672 -/
+def T.«vec_uzp2» : Term :=
+  ⟨672, "vec_uzp2", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5465⟩⟩
+
+/-- term 673 -/
+def T.«vec_zip1» : Term :=
+  ⟨673, "vec_zip1", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5469⟩⟩
+
+/-- term 674 -/
+def T.«vec_zip2» : Term :=
+  ⟨674, "vec_zip2", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5473⟩⟩
+
+/-- term 675 -/
+def T.«vec_trn1» : Term :=
+  ⟨675, "vec_trn1", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5477⟩⟩
+
+/-- term 676 -/
+def T.«vec_trn2» : Term :=
+  ⟨676, "vec_trn2", [27, 27, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5481⟩⟩
+
+/-- term 677 -/
+def T.«asimd_mov_mod_imm_zero» : Term :=
+  ⟨677, "asimd_mov_mod_imm_zero", [95], 72, (.decl ⟨false, false, false, false⟩ (some (.external "asimd_mov_mod_imm_zero")) none), ⟨"src/isa/aarch64/inst.isle", 5486⟩⟩
+
+/-- term 678 -/
+def T.«asimd_mov_mod_imm_from_u64» : Term :=
+  ⟨678, "asimd_mov_mod_imm_from_u64", [4, 95], 72, (.decl ⟨true, false, true, false⟩ (some (.external "asimd_mov_mod_imm_from_u64")) none), ⟨"src/isa/aarch64/inst.isle", 5490⟩⟩
+
+/-- term 679 -/
+def T.«asimd_fp_mod_imm_from_u64» : Term :=
+  ⟨679, "asimd_fp_mod_imm_from_u64", [4, 95], 71, (.decl ⟨true, false, true, false⟩ (some (.external "asimd_fp_mod_imm_from_u64")) none), ⟨"src/isa/aarch64/inst.isle", 5535⟩⟩
+
+/-- term 680 -/
+def T.«vec_dup_fp_imm» : Term :=
+  ⟨680, "vec_dup_fp_imm", [71, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5539⟩⟩
+
+/-- term 681 -/
+def T.«fpu_load64» : Term :=
+  ⟨681, "fpu_load64", [89, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5547⟩⟩
+
+/-- term 682 -/
+def T.«fpu_load128» : Term :=
+  ⟨682, "fpu_load128", [89, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5554⟩⟩
+
+/-- term 683 -/
+def T.«a64_label_address» : Term :=
+  ⟨683, "a64_label_address", [33], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5562⟩⟩
+
+/-- term 684 -/
+def T.«a64_sequence_point» : Term :=
+  ⟨684, "a64_sequence_point", [], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst.isle", 5569⟩⟩
+
+/-- term 685 -/
+def T.«fpu_move_128» : Term :=
+  ⟨685, "fpu_move_128", [27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/inst_neon.isle", 3⟩⟩
+
+/-- term 686 -/
+def T.«lower» : Term :=
+  ⟨686, "lower", [18], 25, (.decl ⟨false, false, true, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 38⟩⟩
+
+/-- term 687 -/
+def T.«lower_branch» : Term :=
+  ⟨687, "lower_branch", [18, 43], 13, (.decl ⟨false, false, true, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 49⟩⟩
+
+/-- term 688 -/
+def T.«shuffle_dup8_from_imm» : Term :=
+  ⟨688, "shuffle_dup8_from_imm", [1], 135, (.decl ⟨false, false, false, false⟩ none (some (.external "shuffle_dup8_from_imm" false))), ⟨"src/isa/aarch64/lower.isle", 179⟩⟩
+
+/-- term 689 -/
+def T.«shuffle_dup16_from_imm» : Term :=
+  ⟨689, "shuffle_dup16_from_imm", [1], 135, (.decl ⟨false, false, false, false⟩ none (some (.external "shuffle_dup16_from_imm" false))), ⟨"src/isa/aarch64/lower.isle", 181⟩⟩
+
+/-- term 690 -/
+def T.«shuffle_dup32_from_imm» : Term :=
+  ⟨690, "shuffle_dup32_from_imm", [1], 135, (.decl ⟨false, false, false, false⟩ none (some (.external "shuffle_dup32_from_imm" false))), ⟨"src/isa/aarch64/lower.isle", 183⟩⟩
+
+/-- term 691 -/
+def T.«shuffle_dup64_from_imm» : Term :=
+  ⟨691, "shuffle_dup64_from_imm", [1], 135, (.decl ⟨false, false, false, false⟩ none (some (.external "shuffle_dup64_from_imm" false))), ⟨"src/isa/aarch64/lower.isle", 185⟩⟩
+
+/-- term 692 -/
+def T.«vec_extract_imm4_from_immediate» : Term :=
+  ⟨692, "vec_extract_imm4_from_immediate", [1], 135, (.decl ⟨false, false, false, false⟩ none (some (.external "vec_extract_imm4_from_immediate" false))), ⟨"src/isa/aarch64/lower.isle", 198⟩⟩
+
+/-- term 693 -/
+def T.«fmadd» : Term :=
+  ⟨693, "fmadd", [14, 15, 15, 15], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 619⟩⟩
+
+/-- term 694 -/
+def T.«fnmadd» : Term :=
+  ⟨694, "fnmadd", [14, 15, 15, 15], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 622⟩⟩
+
+/-- term 695 -/
+def T.«fmsub» : Term :=
+  ⟨695, "fmsub", [14, 15, 15, 15], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 625⟩⟩
+
+/-- term 696 -/
+def T.«fnmsub» : Term :=
+  ⟨696, "fnmsub", [14, 15, 15, 15], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 628⟩⟩
+
+/-- term 697 -/
+def T.«lower_fmla» : Term :=
+  ⟨697, "lower_fmla", [106, 15, 15, 15, 97], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 650⟩⟩
+
+/-- term 698 -/
+def T.«put_nonzero_in_reg» : Term :=
+  ⟨698, "put_nonzero_in_reg", [15, 125, 14], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 1091⟩⟩
+
+/-- term 699 -/
+def T.«aarch64_uload» : Term :=
+  ⟨699, "aarch64_uload", [14, 89, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 1306⟩⟩
+
+/-- term 700 -/
+def T.«aarch64_sload» : Term :=
+  ⟨700, "aarch64_sload", [14, 89, 142], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 1365⟩⟩
+
+/-- term 701 -/
+def T.«lower_shl128» : Term :=
+  ⟨701, "lower_shl128", [22, 27], 22, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 1565⟩⟩
+
+/-- term 702 -/
+def T.«shift_masked_imm» : Term :=
+  ⟨702, "shift_masked_imm", [14, 4], 1, (.decl ⟨true, false, false, false⟩ (some (.external "shift_masked_imm")) none), ⟨"src/isa/aarch64/lower.isle", 1591⟩⟩
+
+/-- term 703 -/
+def T.«do_shift» : Term :=
+  ⟨703, "do_shift", [59, 14, 27, 15], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 1601⟩⟩
+
+/-- term 704 -/
+def T.«shift_mask» : Term :=
+  ⟨704, "shift_mask", [14], 65, (.decl ⟨false, false, false, false⟩ (some (.external "shift_mask")) none), ⟨"src/isa/aarch64/lower.isle", 1618⟩⟩
+
+/-- term 705 -/
+def T.«lower_ushr128» : Term :=
+  ⟨705, "lower_ushr128", [22, 27], 22, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 1674⟩⟩
+
+/-- term 706 -/
+def T.«bfm_immr» : Term :=
+  ⟨706, "bfm_immr", [14, 4, 4], 67, (.decl ⟨false, false, false, false⟩ (some (.external "bfm_immr")) none), ⟨"src/isa/aarch64/lower.isle", 1713⟩⟩
+
+/-- term 707 -/
+def T.«bfm_imms» : Term :=
+  ⟨707, "bfm_imms", [14, 4, 4], 67, (.decl ⟨false, false, false, false⟩ (some (.external "bfm_imms")) none), ⟨"src/isa/aarch64/lower.isle", 1716⟩⟩
+
+/-- term 708 -/
+def T.«lower_sshr128» : Term :=
+  ⟨708, "lower_sshr128", [22, 27], 22, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 1750⟩⟩
+
+/-- term 709 -/
+def T.«negate_imm_shift» : Term :=
+  ⟨709, "negate_imm_shift", [14, 66], 66, (.decl ⟨false, false, false, false⟩ (some (.external "negate_imm_shift")) none), ⟨"src/isa/aarch64/lower.isle", 1821⟩⟩
+
+/-- term 710 -/
+def T.«small_rotr» : Term :=
+  ⟨710, "small_rotr", [14, 27, 27], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 1878⟩⟩
+
+/-- term 711 -/
+def T.«rotr_mask» : Term :=
+  ⟨711, "rotr_mask", [14], 65, (.decl ⟨false, false, false, false⟩ (some (.external "rotr_mask")) none), ⟨"src/isa/aarch64/lower.isle", 1888⟩⟩
+
+/-- term 712 -/
+def T.«small_rotr_imm» : Term :=
+  ⟨712, "small_rotr_imm", [14, 27, 66], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 1901⟩⟩
+
+/-- term 713 -/
+def T.«rotr_opposite_amount» : Term :=
+  ⟨713, "rotr_opposite_amount", [14, 66], 66, (.decl ⟨false, false, false, false⟩ (some (.external "rotr_opposite_amount")) none), ⟨"src/isa/aarch64/lower.isle", 1910⟩⟩
+
+/-- term 714 -/
+def T.«lower_clz128» : Term :=
+  ⟨714, "lower_clz128", [22], 22, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 1969⟩⟩
+
+/-- term 715 -/
+def T.«lower_cond_result_bool» : Term :=
+  ⟨715, "lower_cond_result_bool", [123], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 2221⟩⟩
+
+/-- term 716 -/
+def T.«trap_if_cond_result» : Term :=
+  ⟨716, "trap_if_cond_result", [123, 146], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 2246⟩⟩
+
+/-- term 717 -/
+def T.«maybe_csdb_after_select» : Term :=
+  ⟨717, "maybe_csdb_after_select", [22], 22, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 2272⟩⟩
+
+/-- term 718 -/
+def T.«put_in_reg_ext32» : Term :=
+  ⟨718, "put_in_reg_ext32", [15, 56], 27, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 2933⟩⟩
+
+/-- term 719 -/
+def T.«overflow_op_small» : Term :=
+  ⟨719, "overflow_op_small", [14, 15, 15, 56, 59], 25, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 2941⟩⟩
+
+/-- term 720 -/
+def T.«overflow_op_normal» : Term :=
+  ⟨720, "overflow_op_normal", [14, 15, 15, 59, 96], 25, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 2970⟩⟩
+
+/-- term 721 -/
+def T.«overflow_op_128» : Term :=
+  ⟨721, "overflow_op_128", [15, 15, 59, 59, 96], 25, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 2981⟩⟩
+
+/-- term 722 -/
+def T.«br_cond_result» : Term :=
+  ⟨722, "br_cond_result", [123, 33, 33], 46, (.decl ⟨false, false, false, false⟩ (some .internal) none), ⟨"src/isa/aarch64/lower.isle", 3235⟩⟩
+
+/-- term 723 -/
+def T.«test_and_compare_bit_const» : Term :=
+  ⟨723, "test_and_compare_bit_const", [14, 4], 1, (.decl ⟨true, false, true, false⟩ (some (.external "test_and_compare_bit_const")) none), ⟨"src/isa/aarch64/lower.isle", 3265⟩⟩
+
+/-- term 724 -/
+def T.«i8_eq» : Term :=
+  ⟨724, "i8_eq", [7, 7], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i8_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 1⟩⟩
+
+/-- term 725 -/
+def T.«i8_ne» : Term :=
+  ⟨725, "i8_ne", [7, 7], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i8_ne")) none), ⟨"<OUT_DIR>/numerics.isle", 7⟩⟩
+
+/-- term 726 -/
+def T.«i8_lt» : Term :=
+  ⟨726, "i8_lt", [7, 7], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i8_lt")) none), ⟨"<OUT_DIR>/numerics.isle", 13⟩⟩
+
+/-- term 727 -/
+def T.«i8_lt_eq» : Term :=
+  ⟨727, "i8_lt_eq", [7, 7], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i8_lt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 19⟩⟩
+
+/-- term 728 -/
+def T.«i8_gt» : Term :=
+  ⟨728, "i8_gt", [7, 7], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i8_gt")) none), ⟨"<OUT_DIR>/numerics.isle", 25⟩⟩
+
+/-- term 729 -/
+def T.«i8_gt_eq» : Term :=
+  ⟨729, "i8_gt_eq", [7, 7], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i8_gt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 31⟩⟩
+
+/-- term 730 -/
+def T.«i8_checked_add» : Term :=
+  ⟨730, "i8_checked_add", [7, 7], 7, (.decl ⟨true, false, true, false⟩ (some (.external "i8_checked_add")) none), ⟨"<OUT_DIR>/numerics.isle", 37⟩⟩
+
+/-- term 731 -/
+def T.«i8_wrapping_add» : Term :=
+  ⟨731, "i8_wrapping_add", [7, 7], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_wrapping_add")) none), ⟨"<OUT_DIR>/numerics.isle", 43⟩⟩
+
+/-- term 732 -/
+def T.«i8_add» : Term :=
+  ⟨732, "i8_add", [7, 7], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_add")) none), ⟨"<OUT_DIR>/numerics.isle", 49⟩⟩
+
+/-- term 733 -/
+def T.«i8_checked_sub» : Term :=
+  ⟨733, "i8_checked_sub", [7, 7], 7, (.decl ⟨true, false, true, false⟩ (some (.external "i8_checked_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 55⟩⟩
+
+/-- term 734 -/
+def T.«i8_wrapping_sub» : Term :=
+  ⟨734, "i8_wrapping_sub", [7, 7], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_wrapping_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 61⟩⟩
+
+/-- term 735 -/
+def T.«i8_sub» : Term :=
+  ⟨735, "i8_sub", [7, 7], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 67⟩⟩
+
+/-- term 736 -/
+def T.«i8_checked_mul» : Term :=
+  ⟨736, "i8_checked_mul", [7, 7], 7, (.decl ⟨true, false, true, false⟩ (some (.external "i8_checked_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 73⟩⟩
+
+/-- term 737 -/
+def T.«i8_wrapping_mul» : Term :=
+  ⟨737, "i8_wrapping_mul", [7, 7], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_wrapping_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 79⟩⟩
+
+/-- term 738 -/
+def T.«i8_mul» : Term :=
+  ⟨738, "i8_mul", [7, 7], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 85⟩⟩
+
+/-- term 739 -/
+def T.«i8_checked_div» : Term :=
+  ⟨739, "i8_checked_div", [7, 7], 7, (.decl ⟨true, false, true, false⟩ (some (.external "i8_checked_div")) none), ⟨"<OUT_DIR>/numerics.isle", 91⟩⟩
+
+/-- term 740 -/
+def T.«i8_wrapping_div» : Term :=
+  ⟨740, "i8_wrapping_div", [7, 7], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_wrapping_div")) none), ⟨"<OUT_DIR>/numerics.isle", 97⟩⟩
+
+/-- term 741 -/
+def T.«i8_div» : Term :=
+  ⟨741, "i8_div", [7, 7], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_div")) none), ⟨"<OUT_DIR>/numerics.isle", 103⟩⟩
+
+/-- term 742 -/
+def T.«i8_checked_rem» : Term :=
+  ⟨742, "i8_checked_rem", [7, 7], 7, (.decl ⟨true, false, true, false⟩ (some (.external "i8_checked_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 109⟩⟩
+
+/-- term 743 -/
+def T.«i8_rem» : Term :=
+  ⟨743, "i8_rem", [7, 7], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 115⟩⟩
+
+/-- term 744 -/
+def T.«i8_and» : Term :=
+  ⟨744, "i8_and", [7, 7], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_and")) none), ⟨"<OUT_DIR>/numerics.isle", 121⟩⟩
+
+/-- term 745 -/
+def T.«i8_or» : Term :=
+  ⟨745, "i8_or", [7, 7], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_or")) none), ⟨"<OUT_DIR>/numerics.isle", 127⟩⟩
+
+/-- term 746 -/
+def T.«i8_xor» : Term :=
+  ⟨746, "i8_xor", [7, 7], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_xor")) none), ⟨"<OUT_DIR>/numerics.isle", 133⟩⟩
+
+/-- term 747 -/
+def T.«i8_not» : Term :=
+  ⟨747, "i8_not", [7], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_not")) none), ⟨"<OUT_DIR>/numerics.isle", 139⟩⟩
+
+/-- term 748 -/
+def T.«i8_checked_shl» : Term :=
+  ⟨748, "i8_checked_shl", [7, 3], 7, (.decl ⟨true, false, true, false⟩ (some (.external "i8_checked_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 144⟩⟩
+
+/-- term 749 -/
+def T.«i8_wrapping_shl» : Term :=
+  ⟨749, "i8_wrapping_shl", [7, 3], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_wrapping_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 150⟩⟩
+
+/-- term 750 -/
+def T.«i8_shl» : Term :=
+  ⟨750, "i8_shl", [7, 3], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 156⟩⟩
+
+/-- term 751 -/
+def T.«i8_checked_shr» : Term :=
+  ⟨751, "i8_checked_shr", [7, 3], 7, (.decl ⟨true, false, true, false⟩ (some (.external "i8_checked_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 162⟩⟩
+
+/-- term 752 -/
+def T.«i8_wrapping_shr» : Term :=
+  ⟨752, "i8_wrapping_shr", [7, 3], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_wrapping_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 168⟩⟩
+
+/-- term 753 -/
+def T.«i8_shr» : Term :=
+  ⟨753, "i8_shr", [7, 3], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 174⟩⟩
+
+/-- term 754 -/
+def T.«i8_rotl» : Term :=
+  ⟨754, "i8_rotl", [7, 3], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_rotl")) none), ⟨"<OUT_DIR>/numerics.isle", 180⟩⟩
+
+/-- term 755 -/
+def T.«i8_rotr» : Term :=
+  ⟨755, "i8_rotr", [7, 3], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_rotr")) none), ⟨"<OUT_DIR>/numerics.isle", 186⟩⟩
+
+/-- term 756 -/
+def T.«i8_is_zero» : Term :=
+  ⟨756, "i8_is_zero", [7], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i8_is_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 192⟩⟩
+
+/-- term 757 -/
+def T.«i8_matches_zero» : Term :=
+  ⟨757, "i8_matches_zero", [0], 7, (.decl ⟨true, false, false, false⟩ none (some (.external "i8_matches_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 196⟩⟩
+
+/-- term 758 -/
+def T.«i8_extract_zero» : Term :=
+  ⟨758, "i8_extract_zero", [7], 7, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i8_extract_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i8_matches_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 198⟩⟩
+
+/-- term 759 -/
+def T.«i8_when_zero» : Term :=
+  ⟨759, "i8_when_zero", [], 7, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i8_when_zero")]), (.list [(.atom "i8_matches_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 200⟩⟩
+
+/-- term 760 -/
+def T.«i8_when_not_zero» : Term :=
+  ⟨760, "i8_when_not_zero", [], 7, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i8_when_not_zero")]), (.list [(.atom "i8_matches_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 202⟩⟩
+
+/-- term 761 -/
+def T.«i8_is_non_zero» : Term :=
+  ⟨761, "i8_is_non_zero", [7], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i8_is_non_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 205⟩⟩
+
+/-- term 762 -/
+def T.«i8_matches_non_zero» : Term :=
+  ⟨762, "i8_matches_non_zero", [0], 7, (.decl ⟨true, false, false, false⟩ none (some (.external "i8_matches_non_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 209⟩⟩
+
+/-- term 763 -/
+def T.«i8_extract_non_zero» : Term :=
+  ⟨763, "i8_extract_non_zero", [7], 7, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i8_extract_non_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i8_matches_non_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 211⟩⟩
+
+/-- term 764 -/
+def T.«i8_when_non_zero» : Term :=
+  ⟨764, "i8_when_non_zero", [], 7, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i8_when_non_zero")]), (.list [(.atom "i8_matches_non_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 213⟩⟩
+
+/-- term 765 -/
+def T.«i8_when_not_non_zero» : Term :=
+  ⟨765, "i8_when_not_non_zero", [], 7, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i8_when_not_non_zero")]), (.list [(.atom "i8_matches_non_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 215⟩⟩
+
+/-- term 766 -/
+def T.«i8_is_odd» : Term :=
+  ⟨766, "i8_is_odd", [7], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i8_is_odd")) none), ⟨"<OUT_DIR>/numerics.isle", 218⟩⟩
+
+/-- term 767 -/
+def T.«i8_matches_odd» : Term :=
+  ⟨767, "i8_matches_odd", [0], 7, (.decl ⟨true, false, false, false⟩ none (some (.external "i8_matches_odd" false))), ⟨"<OUT_DIR>/numerics.isle", 222⟩⟩
+
+/-- term 768 -/
+def T.«i8_extract_odd» : Term :=
+  ⟨768, "i8_extract_odd", [7], 7, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i8_extract_odd"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i8_matches_odd"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 224⟩⟩
+
+/-- term 769 -/
+def T.«i8_when_odd» : Term :=
+  ⟨769, "i8_when_odd", [], 7, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i8_when_odd")]), (.list [(.atom "i8_matches_odd"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 226⟩⟩
+
+/-- term 770 -/
+def T.«i8_when_not_odd» : Term :=
+  ⟨770, "i8_when_not_odd", [], 7, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i8_when_not_odd")]), (.list [(.atom "i8_matches_odd"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 228⟩⟩
+
+/-- term 771 -/
+def T.«i8_is_even» : Term :=
+  ⟨771, "i8_is_even", [7], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i8_is_even")) none), ⟨"<OUT_DIR>/numerics.isle", 231⟩⟩
+
+/-- term 772 -/
+def T.«i8_matches_even» : Term :=
+  ⟨772, "i8_matches_even", [0], 7, (.decl ⟨true, false, false, false⟩ none (some (.external "i8_matches_even" false))), ⟨"<OUT_DIR>/numerics.isle", 235⟩⟩
+
+/-- term 773 -/
+def T.«i8_extract_even» : Term :=
+  ⟨773, "i8_extract_even", [7], 7, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i8_extract_even"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i8_matches_even"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 237⟩⟩
+
+/-- term 774 -/
+def T.«i8_when_even» : Term :=
+  ⟨774, "i8_when_even", [], 7, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i8_when_even")]), (.list [(.atom "i8_matches_even"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 239⟩⟩
+
+/-- term 775 -/
+def T.«i8_when_not_even» : Term :=
+  ⟨775, "i8_when_not_even", [], 7, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i8_when_not_even")]), (.list [(.atom "i8_matches_even"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 241⟩⟩
+
+/-- term 776 -/
+def T.«i8_checked_ilog2» : Term :=
+  ⟨776, "i8_checked_ilog2", [7], 3, (.decl ⟨true, false, true, false⟩ (some (.external "i8_checked_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 244⟩⟩
+
+/-- term 777 -/
+def T.«i8_ilog2» : Term :=
+  ⟨777, "i8_ilog2", [7], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i8_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 249⟩⟩
+
+/-- term 778 -/
+def T.«i8_trailing_zeros» : Term :=
+  ⟨778, "i8_trailing_zeros", [7], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i8_trailing_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 254⟩⟩
+
+/-- term 779 -/
+def T.«i8_trailing_ones» : Term :=
+  ⟨779, "i8_trailing_ones", [7], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i8_trailing_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 259⟩⟩
+
+/-- term 780 -/
+def T.«i8_leading_zeros» : Term :=
+  ⟨780, "i8_leading_zeros", [7], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i8_leading_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 264⟩⟩
+
+/-- term 781 -/
+def T.«i8_leading_ones» : Term :=
+  ⟨781, "i8_leading_ones", [7], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i8_leading_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 269⟩⟩
+
+/-- term 782 -/
+def T.«i8_checked_neg» : Term :=
+  ⟨782, "i8_checked_neg", [7], 7, (.decl ⟨true, false, true, false⟩ (some (.external "i8_checked_neg")) none), ⟨"<OUT_DIR>/numerics.isle", 274⟩⟩
+
+/-- term 783 -/
+def T.«i8_wrapping_neg» : Term :=
+  ⟨783, "i8_wrapping_neg", [7], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_wrapping_neg")) none), ⟨"<OUT_DIR>/numerics.isle", 279⟩⟩
+
+/-- term 784 -/
+def T.«i8_neg» : Term :=
+  ⟨784, "i8_neg", [7], 7, (.decl ⟨true, false, false, false⟩ (some (.external "i8_neg")) none), ⟨"<OUT_DIR>/numerics.isle", 284⟩⟩
+
+/-- term 785 -/
+def T.«u8_eq» : Term :=
+  ⟨785, "u8_eq", [1, 1], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u8_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 289⟩⟩
+
+/-- term 786 -/
+def T.«u8_ne» : Term :=
+  ⟨786, "u8_ne", [1, 1], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u8_ne")) none), ⟨"<OUT_DIR>/numerics.isle", 295⟩⟩
+
+/-- term 787 -/
+def T.«u8_lt» : Term :=
+  ⟨787, "u8_lt", [1, 1], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u8_lt")) none), ⟨"<OUT_DIR>/numerics.isle", 301⟩⟩
+
+/-- term 788 -/
+def T.«u8_lt_eq» : Term :=
+  ⟨788, "u8_lt_eq", [1, 1], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u8_lt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 307⟩⟩
+
+/-- term 789 -/
+def T.«u8_gt» : Term :=
+  ⟨789, "u8_gt", [1, 1], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u8_gt")) none), ⟨"<OUT_DIR>/numerics.isle", 313⟩⟩
+
+/-- term 790 -/
+def T.«u8_gt_eq» : Term :=
+  ⟨790, "u8_gt_eq", [1, 1], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u8_gt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 319⟩⟩
+
+/-- term 791 -/
+def T.«u8_checked_add» : Term :=
+  ⟨791, "u8_checked_add", [1, 1], 1, (.decl ⟨true, false, true, false⟩ (some (.external "u8_checked_add")) none), ⟨"<OUT_DIR>/numerics.isle", 325⟩⟩
+
+/-- term 792 -/
+def T.«u8_wrapping_add» : Term :=
+  ⟨792, "u8_wrapping_add", [1, 1], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u8_wrapping_add")) none), ⟨"<OUT_DIR>/numerics.isle", 331⟩⟩
+
+/-- term 793 -/
+def T.«u8_add» : Term :=
+  ⟨793, "u8_add", [1, 1], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u8_add")) none), ⟨"<OUT_DIR>/numerics.isle", 337⟩⟩
+
+/-- term 794 -/
+def T.«u8_checked_sub» : Term :=
+  ⟨794, "u8_checked_sub", [1, 1], 1, (.decl ⟨true, false, true, false⟩ (some (.external "u8_checked_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 343⟩⟩
+
+/-- term 795 -/
+def T.«u8_wrapping_sub» : Term :=
+  ⟨795, "u8_wrapping_sub", [1, 1], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u8_wrapping_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 349⟩⟩
+
+/-- term 796 -/
+def T.«u8_sub» : Term :=
+  ⟨796, "u8_sub", [1, 1], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u8_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 355⟩⟩
+
+/-- term 797 -/
+def T.«u8_checked_mul» : Term :=
+  ⟨797, "u8_checked_mul", [1, 1], 1, (.decl ⟨true, false, true, false⟩ (some (.external "u8_checked_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 361⟩⟩
+
+/-- term 798 -/
+def T.«u8_wrapping_mul» : Term :=
+  ⟨798, "u8_wrapping_mul", [1, 1], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u8_wrapping_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 367⟩⟩
+
+/-- term 799 -/
+def T.«u8_mul» : Term :=
+  ⟨799, "u8_mul", [1, 1], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u8_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 373⟩⟩
+
+/-- term 800 -/
+def T.«u8_checked_div» : Term :=
+  ⟨800, "u8_checked_div", [1, 1], 1, (.decl ⟨true, false, true, false⟩ (some (.external "u8_checked_div")) none), ⟨"<OUT_DIR>/numerics.isle", 379⟩⟩
+
+/-- term 801 -/
+def T.«u8_wrapping_div» : Term :=
+  ⟨801, "u8_wrapping_div", [1, 1], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u8_wrapping_div")) none), ⟨"<OUT_DIR>/numerics.isle", 385⟩⟩
+
+/-- term 802 -/
+def T.«u8_div» : Term :=
+  ⟨802, "u8_div", [1, 1], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u8_div")) none), ⟨"<OUT_DIR>/numerics.isle", 391⟩⟩
+
+/-- term 803 -/
+def T.«u8_checked_rem» : Term :=
+  ⟨803, "u8_checked_rem", [1, 1], 1, (.decl ⟨true, false, true, false⟩ (some (.external "u8_checked_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 397⟩⟩
+
+/-- term 804 -/
+def T.«u8_rem» : Term :=
+  ⟨804, "u8_rem", [1, 1], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u8_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 403⟩⟩
+
+/-- term 805 -/
+def T.«u8_and» : Term :=
+  ⟨805, "u8_and", [1, 1], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u8_and")) none), ⟨"<OUT_DIR>/numerics.isle", 409⟩⟩
+
+/-- term 806 -/
+def T.«u8_or» : Term :=
+  ⟨806, "u8_or", [1, 1], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u8_or")) none), ⟨"<OUT_DIR>/numerics.isle", 415⟩⟩
+
+/-- term 807 -/
+def T.«u8_xor» : Term :=
+  ⟨807, "u8_xor", [1, 1], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u8_xor")) none), ⟨"<OUT_DIR>/numerics.isle", 421⟩⟩
+
+/-- term 808 -/
+def T.«u8_not» : Term :=
+  ⟨808, "u8_not", [1], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u8_not")) none), ⟨"<OUT_DIR>/numerics.isle", 427⟩⟩
+
+/-- term 809 -/
+def T.«u8_checked_shl» : Term :=
+  ⟨809, "u8_checked_shl", [1, 3], 1, (.decl ⟨true, false, true, false⟩ (some (.external "u8_checked_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 432⟩⟩
+
+/-- term 810 -/
+def T.«u8_wrapping_shl» : Term :=
+  ⟨810, "u8_wrapping_shl", [1, 3], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u8_wrapping_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 438⟩⟩
+
+/-- term 811 -/
+def T.«u8_shl» : Term :=
+  ⟨811, "u8_shl", [1, 3], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u8_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 444⟩⟩
+
+/-- term 812 -/
+def T.«u8_checked_shr» : Term :=
+  ⟨812, "u8_checked_shr", [1, 3], 1, (.decl ⟨true, false, true, false⟩ (some (.external "u8_checked_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 450⟩⟩
+
+/-- term 813 -/
+def T.«u8_wrapping_shr» : Term :=
+  ⟨813, "u8_wrapping_shr", [1, 3], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u8_wrapping_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 456⟩⟩
+
+/-- term 814 -/
+def T.«u8_shr» : Term :=
+  ⟨814, "u8_shr", [1, 3], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u8_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 462⟩⟩
+
+/-- term 815 -/
+def T.«u8_rotl» : Term :=
+  ⟨815, "u8_rotl", [1, 3], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u8_rotl")) none), ⟨"<OUT_DIR>/numerics.isle", 468⟩⟩
+
+/-- term 816 -/
+def T.«u8_rotr» : Term :=
+  ⟨816, "u8_rotr", [1, 3], 1, (.decl ⟨true, false, false, false⟩ (some (.external "u8_rotr")) none), ⟨"<OUT_DIR>/numerics.isle", 474⟩⟩
+
+/-- term 817 -/
+def T.«u8_is_zero» : Term :=
+  ⟨817, "u8_is_zero", [1], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u8_is_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 480⟩⟩
+
+/-- term 818 -/
+def T.«u8_matches_zero» : Term :=
+  ⟨818, "u8_matches_zero", [0], 1, (.decl ⟨true, false, false, false⟩ none (some (.external "u8_matches_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 484⟩⟩
+
+/-- term 819 -/
+def T.«u8_extract_zero» : Term :=
+  ⟨819, "u8_extract_zero", [1], 1, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u8_extract_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u8_matches_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 486⟩⟩
+
+/-- term 820 -/
+def T.«u8_when_zero» : Term :=
+  ⟨820, "u8_when_zero", [], 1, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u8_when_zero")]), (.list [(.atom "u8_matches_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 488⟩⟩
+
+/-- term 821 -/
+def T.«u8_when_not_zero» : Term :=
+  ⟨821, "u8_when_not_zero", [], 1, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u8_when_not_zero")]), (.list [(.atom "u8_matches_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 490⟩⟩
+
+/-- term 822 -/
+def T.«u8_is_non_zero» : Term :=
+  ⟨822, "u8_is_non_zero", [1], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u8_is_non_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 493⟩⟩
+
+/-- term 823 -/
+def T.«u8_matches_non_zero» : Term :=
+  ⟨823, "u8_matches_non_zero", [0], 1, (.decl ⟨true, false, false, false⟩ none (some (.external "u8_matches_non_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 497⟩⟩
+
+/-- term 824 -/
+def T.«u8_extract_non_zero» : Term :=
+  ⟨824, "u8_extract_non_zero", [1], 1, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u8_extract_non_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u8_matches_non_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 499⟩⟩
+
+/-- term 825 -/
+def T.«u8_when_non_zero» : Term :=
+  ⟨825, "u8_when_non_zero", [], 1, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u8_when_non_zero")]), (.list [(.atom "u8_matches_non_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 501⟩⟩
+
+/-- term 826 -/
+def T.«u8_when_not_non_zero» : Term :=
+  ⟨826, "u8_when_not_non_zero", [], 1, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u8_when_not_non_zero")]), (.list [(.atom "u8_matches_non_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 503⟩⟩
+
+/-- term 827 -/
+def T.«u8_is_odd» : Term :=
+  ⟨827, "u8_is_odd", [1], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u8_is_odd")) none), ⟨"<OUT_DIR>/numerics.isle", 506⟩⟩
+
+/-- term 828 -/
+def T.«u8_matches_odd» : Term :=
+  ⟨828, "u8_matches_odd", [0], 1, (.decl ⟨true, false, false, false⟩ none (some (.external "u8_matches_odd" false))), ⟨"<OUT_DIR>/numerics.isle", 510⟩⟩
+
+/-- term 829 -/
+def T.«u8_extract_odd» : Term :=
+  ⟨829, "u8_extract_odd", [1], 1, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u8_extract_odd"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u8_matches_odd"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 512⟩⟩
+
+/-- term 830 -/
+def T.«u8_when_odd» : Term :=
+  ⟨830, "u8_when_odd", [], 1, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u8_when_odd")]), (.list [(.atom "u8_matches_odd"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 514⟩⟩
+
+/-- term 831 -/
+def T.«u8_when_not_odd» : Term :=
+  ⟨831, "u8_when_not_odd", [], 1, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u8_when_not_odd")]), (.list [(.atom "u8_matches_odd"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 516⟩⟩
+
+/-- term 832 -/
+def T.«u8_is_even» : Term :=
+  ⟨832, "u8_is_even", [1], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u8_is_even")) none), ⟨"<OUT_DIR>/numerics.isle", 519⟩⟩
+
+/-- term 833 -/
+def T.«u8_matches_even» : Term :=
+  ⟨833, "u8_matches_even", [0], 1, (.decl ⟨true, false, false, false⟩ none (some (.external "u8_matches_even" false))), ⟨"<OUT_DIR>/numerics.isle", 523⟩⟩
+
+/-- term 834 -/
+def T.«u8_extract_even» : Term :=
+  ⟨834, "u8_extract_even", [1], 1, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u8_extract_even"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u8_matches_even"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 525⟩⟩
+
+/-- term 835 -/
+def T.«u8_when_even» : Term :=
+  ⟨835, "u8_when_even", [], 1, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u8_when_even")]), (.list [(.atom "u8_matches_even"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 527⟩⟩
+
+/-- term 836 -/
+def T.«u8_when_not_even» : Term :=
+  ⟨836, "u8_when_not_even", [], 1, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u8_when_not_even")]), (.list [(.atom "u8_matches_even"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 529⟩⟩
+
+/-- term 837 -/
+def T.«u8_checked_ilog2» : Term :=
+  ⟨837, "u8_checked_ilog2", [1], 3, (.decl ⟨true, false, true, false⟩ (some (.external "u8_checked_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 532⟩⟩
+
+/-- term 838 -/
+def T.«u8_ilog2» : Term :=
+  ⟨838, "u8_ilog2", [1], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u8_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 537⟩⟩
+
+/-- term 839 -/
+def T.«u8_trailing_zeros» : Term :=
+  ⟨839, "u8_trailing_zeros", [1], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u8_trailing_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 542⟩⟩
+
+/-- term 840 -/
+def T.«u8_trailing_ones» : Term :=
+  ⟨840, "u8_trailing_ones", [1], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u8_trailing_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 547⟩⟩
+
+/-- term 841 -/
+def T.«u8_leading_zeros» : Term :=
+  ⟨841, "u8_leading_zeros", [1], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u8_leading_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 552⟩⟩
+
+/-- term 842 -/
+def T.«u8_leading_ones» : Term :=
+  ⟨842, "u8_leading_ones", [1], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u8_leading_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 557⟩⟩
+
+/-- term 843 -/
+def T.«u8_is_power_of_two» : Term :=
+  ⟨843, "u8_is_power_of_two", [1], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u8_is_power_of_two")) none), ⟨"<OUT_DIR>/numerics.isle", 562⟩⟩
+
+/-- term 844 -/
+def T.«u8_matches_power_of_two» : Term :=
+  ⟨844, "u8_matches_power_of_two", [0], 1, (.decl ⟨true, false, false, false⟩ none (some (.external "u8_matches_power_of_two" false))), ⟨"<OUT_DIR>/numerics.isle", 566⟩⟩
+
+/-- term 845 -/
+def T.«u8_extract_power_of_two» : Term :=
+  ⟨845, "u8_extract_power_of_two", [1], 1, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u8_extract_power_of_two"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u8_matches_power_of_two"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 568⟩⟩
+
+/-- term 846 -/
+def T.«u8_when_power_of_two» : Term :=
+  ⟨846, "u8_when_power_of_two", [], 1, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u8_when_power_of_two")]), (.list [(.atom "u8_matches_power_of_two"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 570⟩⟩
+
+/-- term 847 -/
+def T.«u8_when_not_power_of_two» : Term :=
+  ⟨847, "u8_when_not_power_of_two", [], 1, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u8_when_not_power_of_two")]), (.list [(.atom "u8_matches_power_of_two"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 572⟩⟩
+
+/-- term 848 -/
+def T.«i16_eq» : Term :=
+  ⟨848, "i16_eq", [8, 8], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i16_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 575⟩⟩
+
+/-- term 849 -/
+def T.«i16_ne» : Term :=
+  ⟨849, "i16_ne", [8, 8], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i16_ne")) none), ⟨"<OUT_DIR>/numerics.isle", 581⟩⟩
+
+/-- term 850 -/
+def T.«i16_lt» : Term :=
+  ⟨850, "i16_lt", [8, 8], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i16_lt")) none), ⟨"<OUT_DIR>/numerics.isle", 587⟩⟩
+
+/-- term 851 -/
+def T.«i16_lt_eq» : Term :=
+  ⟨851, "i16_lt_eq", [8, 8], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i16_lt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 593⟩⟩
+
+/-- term 852 -/
+def T.«i16_gt» : Term :=
+  ⟨852, "i16_gt", [8, 8], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i16_gt")) none), ⟨"<OUT_DIR>/numerics.isle", 599⟩⟩
+
+/-- term 853 -/
+def T.«i16_gt_eq» : Term :=
+  ⟨853, "i16_gt_eq", [8, 8], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i16_gt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 605⟩⟩
+
+/-- term 854 -/
+def T.«i16_checked_add» : Term :=
+  ⟨854, "i16_checked_add", [8, 8], 8, (.decl ⟨true, false, true, false⟩ (some (.external "i16_checked_add")) none), ⟨"<OUT_DIR>/numerics.isle", 611⟩⟩
+
+/-- term 855 -/
+def T.«i16_wrapping_add» : Term :=
+  ⟨855, "i16_wrapping_add", [8, 8], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_wrapping_add")) none), ⟨"<OUT_DIR>/numerics.isle", 617⟩⟩
+
+/-- term 856 -/
+def T.«i16_add» : Term :=
+  ⟨856, "i16_add", [8, 8], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_add")) none), ⟨"<OUT_DIR>/numerics.isle", 623⟩⟩
+
+/-- term 857 -/
+def T.«i16_checked_sub» : Term :=
+  ⟨857, "i16_checked_sub", [8, 8], 8, (.decl ⟨true, false, true, false⟩ (some (.external "i16_checked_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 629⟩⟩
+
+/-- term 858 -/
+def T.«i16_wrapping_sub» : Term :=
+  ⟨858, "i16_wrapping_sub", [8, 8], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_wrapping_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 635⟩⟩
+
+/-- term 859 -/
+def T.«i16_sub» : Term :=
+  ⟨859, "i16_sub", [8, 8], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 641⟩⟩
+
+/-- term 860 -/
+def T.«i16_checked_mul» : Term :=
+  ⟨860, "i16_checked_mul", [8, 8], 8, (.decl ⟨true, false, true, false⟩ (some (.external "i16_checked_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 647⟩⟩
+
+/-- term 861 -/
+def T.«i16_wrapping_mul» : Term :=
+  ⟨861, "i16_wrapping_mul", [8, 8], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_wrapping_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 653⟩⟩
+
+/-- term 862 -/
+def T.«i16_mul» : Term :=
+  ⟨862, "i16_mul", [8, 8], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 659⟩⟩
+
+/-- term 863 -/
+def T.«i16_checked_div» : Term :=
+  ⟨863, "i16_checked_div", [8, 8], 8, (.decl ⟨true, false, true, false⟩ (some (.external "i16_checked_div")) none), ⟨"<OUT_DIR>/numerics.isle", 665⟩⟩
+
+/-- term 864 -/
+def T.«i16_wrapping_div» : Term :=
+  ⟨864, "i16_wrapping_div", [8, 8], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_wrapping_div")) none), ⟨"<OUT_DIR>/numerics.isle", 671⟩⟩
+
+/-- term 865 -/
+def T.«i16_div» : Term :=
+  ⟨865, "i16_div", [8, 8], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_div")) none), ⟨"<OUT_DIR>/numerics.isle", 677⟩⟩
+
+/-- term 866 -/
+def T.«i16_checked_rem» : Term :=
+  ⟨866, "i16_checked_rem", [8, 8], 8, (.decl ⟨true, false, true, false⟩ (some (.external "i16_checked_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 683⟩⟩
+
+/-- term 867 -/
+def T.«i16_rem» : Term :=
+  ⟨867, "i16_rem", [8, 8], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 689⟩⟩
+
+/-- term 868 -/
+def T.«i16_and» : Term :=
+  ⟨868, "i16_and", [8, 8], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_and")) none), ⟨"<OUT_DIR>/numerics.isle", 695⟩⟩
+
+/-- term 869 -/
+def T.«i16_or» : Term :=
+  ⟨869, "i16_or", [8, 8], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_or")) none), ⟨"<OUT_DIR>/numerics.isle", 701⟩⟩
+
+/-- term 870 -/
+def T.«i16_xor» : Term :=
+  ⟨870, "i16_xor", [8, 8], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_xor")) none), ⟨"<OUT_DIR>/numerics.isle", 707⟩⟩
+
+/-- term 871 -/
+def T.«i16_not» : Term :=
+  ⟨871, "i16_not", [8], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_not")) none), ⟨"<OUT_DIR>/numerics.isle", 713⟩⟩
+
+/-- term 872 -/
+def T.«i16_checked_shl» : Term :=
+  ⟨872, "i16_checked_shl", [8, 3], 8, (.decl ⟨true, false, true, false⟩ (some (.external "i16_checked_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 718⟩⟩
+
+/-- term 873 -/
+def T.«i16_wrapping_shl» : Term :=
+  ⟨873, "i16_wrapping_shl", [8, 3], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_wrapping_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 724⟩⟩
+
+/-- term 874 -/
+def T.«i16_shl» : Term :=
+  ⟨874, "i16_shl", [8, 3], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 730⟩⟩
+
+/-- term 875 -/
+def T.«i16_checked_shr» : Term :=
+  ⟨875, "i16_checked_shr", [8, 3], 8, (.decl ⟨true, false, true, false⟩ (some (.external "i16_checked_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 736⟩⟩
+
+/-- term 876 -/
+def T.«i16_wrapping_shr» : Term :=
+  ⟨876, "i16_wrapping_shr", [8, 3], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_wrapping_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 742⟩⟩
+
+/-- term 877 -/
+def T.«i16_shr» : Term :=
+  ⟨877, "i16_shr", [8, 3], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 748⟩⟩
+
+/-- term 878 -/
+def T.«i16_rotl» : Term :=
+  ⟨878, "i16_rotl", [8, 3], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_rotl")) none), ⟨"<OUT_DIR>/numerics.isle", 754⟩⟩
+
+/-- term 879 -/
+def T.«i16_rotr» : Term :=
+  ⟨879, "i16_rotr", [8, 3], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_rotr")) none), ⟨"<OUT_DIR>/numerics.isle", 760⟩⟩
+
+/-- term 880 -/
+def T.«i16_is_zero» : Term :=
+  ⟨880, "i16_is_zero", [8], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i16_is_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 766⟩⟩
+
+/-- term 881 -/
+def T.«i16_matches_zero» : Term :=
+  ⟨881, "i16_matches_zero", [0], 8, (.decl ⟨true, false, false, false⟩ none (some (.external "i16_matches_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 770⟩⟩
+
+/-- term 882 -/
+def T.«i16_extract_zero» : Term :=
+  ⟨882, "i16_extract_zero", [8], 8, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i16_extract_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i16_matches_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 772⟩⟩
+
+/-- term 883 -/
+def T.«i16_when_zero» : Term :=
+  ⟨883, "i16_when_zero", [], 8, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i16_when_zero")]), (.list [(.atom "i16_matches_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 774⟩⟩
+
+/-- term 884 -/
+def T.«i16_when_not_zero» : Term :=
+  ⟨884, "i16_when_not_zero", [], 8, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i16_when_not_zero")]), (.list [(.atom "i16_matches_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 776⟩⟩
+
+/-- term 885 -/
+def T.«i16_is_non_zero» : Term :=
+  ⟨885, "i16_is_non_zero", [8], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i16_is_non_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 779⟩⟩
+
+/-- term 886 -/
+def T.«i16_matches_non_zero» : Term :=
+  ⟨886, "i16_matches_non_zero", [0], 8, (.decl ⟨true, false, false, false⟩ none (some (.external "i16_matches_non_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 783⟩⟩
+
+/-- term 887 -/
+def T.«i16_extract_non_zero» : Term :=
+  ⟨887, "i16_extract_non_zero", [8], 8, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i16_extract_non_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i16_matches_non_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 785⟩⟩
+
+/-- term 888 -/
+def T.«i16_when_non_zero» : Term :=
+  ⟨888, "i16_when_non_zero", [], 8, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i16_when_non_zero")]), (.list [(.atom "i16_matches_non_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 787⟩⟩
+
+/-- term 889 -/
+def T.«i16_when_not_non_zero» : Term :=
+  ⟨889, "i16_when_not_non_zero", [], 8, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i16_when_not_non_zero")]), (.list [(.atom "i16_matches_non_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 789⟩⟩
+
+/-- term 890 -/
+def T.«i16_is_odd» : Term :=
+  ⟨890, "i16_is_odd", [8], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i16_is_odd")) none), ⟨"<OUT_DIR>/numerics.isle", 792⟩⟩
+
+/-- term 891 -/
+def T.«i16_matches_odd» : Term :=
+  ⟨891, "i16_matches_odd", [0], 8, (.decl ⟨true, false, false, false⟩ none (some (.external "i16_matches_odd" false))), ⟨"<OUT_DIR>/numerics.isle", 796⟩⟩
+
+/-- term 892 -/
+def T.«i16_extract_odd» : Term :=
+  ⟨892, "i16_extract_odd", [8], 8, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i16_extract_odd"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i16_matches_odd"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 798⟩⟩
+
+/-- term 893 -/
+def T.«i16_when_odd» : Term :=
+  ⟨893, "i16_when_odd", [], 8, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i16_when_odd")]), (.list [(.atom "i16_matches_odd"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 800⟩⟩
+
+/-- term 894 -/
+def T.«i16_when_not_odd» : Term :=
+  ⟨894, "i16_when_not_odd", [], 8, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i16_when_not_odd")]), (.list [(.atom "i16_matches_odd"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 802⟩⟩
+
+/-- term 895 -/
+def T.«i16_is_even» : Term :=
+  ⟨895, "i16_is_even", [8], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i16_is_even")) none), ⟨"<OUT_DIR>/numerics.isle", 805⟩⟩
+
+/-- term 896 -/
+def T.«i16_matches_even» : Term :=
+  ⟨896, "i16_matches_even", [0], 8, (.decl ⟨true, false, false, false⟩ none (some (.external "i16_matches_even" false))), ⟨"<OUT_DIR>/numerics.isle", 809⟩⟩
+
+/-- term 897 -/
+def T.«i16_extract_even» : Term :=
+  ⟨897, "i16_extract_even", [8], 8, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i16_extract_even"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i16_matches_even"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 811⟩⟩
+
+/-- term 898 -/
+def T.«i16_when_even» : Term :=
+  ⟨898, "i16_when_even", [], 8, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i16_when_even")]), (.list [(.atom "i16_matches_even"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 813⟩⟩
+
+/-- term 899 -/
+def T.«i16_when_not_even» : Term :=
+  ⟨899, "i16_when_not_even", [], 8, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i16_when_not_even")]), (.list [(.atom "i16_matches_even"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 815⟩⟩
+
+/-- term 900 -/
+def T.«i16_checked_ilog2» : Term :=
+  ⟨900, "i16_checked_ilog2", [8], 3, (.decl ⟨true, false, true, false⟩ (some (.external "i16_checked_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 818⟩⟩
+
+/-- term 901 -/
+def T.«i16_ilog2» : Term :=
+  ⟨901, "i16_ilog2", [8], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i16_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 823⟩⟩
+
+/-- term 902 -/
+def T.«i16_trailing_zeros» : Term :=
+  ⟨902, "i16_trailing_zeros", [8], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i16_trailing_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 828⟩⟩
+
+/-- term 903 -/
+def T.«i16_trailing_ones» : Term :=
+  ⟨903, "i16_trailing_ones", [8], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i16_trailing_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 833⟩⟩
+
+/-- term 904 -/
+def T.«i16_leading_zeros» : Term :=
+  ⟨904, "i16_leading_zeros", [8], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i16_leading_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 838⟩⟩
+
+/-- term 905 -/
+def T.«i16_leading_ones» : Term :=
+  ⟨905, "i16_leading_ones", [8], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i16_leading_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 843⟩⟩
+
+/-- term 906 -/
+def T.«i16_checked_neg» : Term :=
+  ⟨906, "i16_checked_neg", [8], 8, (.decl ⟨true, false, true, false⟩ (some (.external "i16_checked_neg")) none), ⟨"<OUT_DIR>/numerics.isle", 848⟩⟩
+
+/-- term 907 -/
+def T.«i16_wrapping_neg» : Term :=
+  ⟨907, "i16_wrapping_neg", [8], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_wrapping_neg")) none), ⟨"<OUT_DIR>/numerics.isle", 853⟩⟩
+
+/-- term 908 -/
+def T.«i16_neg» : Term :=
+  ⟨908, "i16_neg", [8], 8, (.decl ⟨true, false, false, false⟩ (some (.external "i16_neg")) none), ⟨"<OUT_DIR>/numerics.isle", 858⟩⟩
+
+/-- term 909 -/
+def T.«u16_eq» : Term :=
+  ⟨909, "u16_eq", [2, 2], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u16_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 863⟩⟩
+
+/-- term 910 -/
+def T.«u16_ne» : Term :=
+  ⟨910, "u16_ne", [2, 2], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u16_ne")) none), ⟨"<OUT_DIR>/numerics.isle", 869⟩⟩
+
+/-- term 911 -/
+def T.«u16_lt» : Term :=
+  ⟨911, "u16_lt", [2, 2], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u16_lt")) none), ⟨"<OUT_DIR>/numerics.isle", 875⟩⟩
+
+/-- term 912 -/
+def T.«u16_lt_eq» : Term :=
+  ⟨912, "u16_lt_eq", [2, 2], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u16_lt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 881⟩⟩
+
+/-- term 913 -/
+def T.«u16_gt» : Term :=
+  ⟨913, "u16_gt", [2, 2], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u16_gt")) none), ⟨"<OUT_DIR>/numerics.isle", 887⟩⟩
+
+/-- term 914 -/
+def T.«u16_gt_eq» : Term :=
+  ⟨914, "u16_gt_eq", [2, 2], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u16_gt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 893⟩⟩
+
+/-- term 915 -/
+def T.«u16_checked_add» : Term :=
+  ⟨915, "u16_checked_add", [2, 2], 2, (.decl ⟨true, false, true, false⟩ (some (.external "u16_checked_add")) none), ⟨"<OUT_DIR>/numerics.isle", 899⟩⟩
+
+/-- term 916 -/
+def T.«u16_wrapping_add» : Term :=
+  ⟨916, "u16_wrapping_add", [2, 2], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u16_wrapping_add")) none), ⟨"<OUT_DIR>/numerics.isle", 905⟩⟩
+
+/-- term 917 -/
+def T.«u16_add» : Term :=
+  ⟨917, "u16_add", [2, 2], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u16_add")) none), ⟨"<OUT_DIR>/numerics.isle", 911⟩⟩
+
+/-- term 918 -/
+def T.«u16_checked_sub» : Term :=
+  ⟨918, "u16_checked_sub", [2, 2], 2, (.decl ⟨true, false, true, false⟩ (some (.external "u16_checked_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 917⟩⟩
+
+/-- term 919 -/
+def T.«u16_wrapping_sub» : Term :=
+  ⟨919, "u16_wrapping_sub", [2, 2], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u16_wrapping_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 923⟩⟩
+
+/-- term 920 -/
+def T.«u16_sub» : Term :=
+  ⟨920, "u16_sub", [2, 2], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u16_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 929⟩⟩
+
+/-- term 921 -/
+def T.«u16_checked_mul» : Term :=
+  ⟨921, "u16_checked_mul", [2, 2], 2, (.decl ⟨true, false, true, false⟩ (some (.external "u16_checked_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 935⟩⟩
+
+/-- term 922 -/
+def T.«u16_wrapping_mul» : Term :=
+  ⟨922, "u16_wrapping_mul", [2, 2], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u16_wrapping_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 941⟩⟩
+
+/-- term 923 -/
+def T.«u16_mul» : Term :=
+  ⟨923, "u16_mul", [2, 2], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u16_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 947⟩⟩
+
+/-- term 924 -/
+def T.«u16_checked_div» : Term :=
+  ⟨924, "u16_checked_div", [2, 2], 2, (.decl ⟨true, false, true, false⟩ (some (.external "u16_checked_div")) none), ⟨"<OUT_DIR>/numerics.isle", 953⟩⟩
+
+/-- term 925 -/
+def T.«u16_wrapping_div» : Term :=
+  ⟨925, "u16_wrapping_div", [2, 2], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u16_wrapping_div")) none), ⟨"<OUT_DIR>/numerics.isle", 959⟩⟩
+
+/-- term 926 -/
+def T.«u16_div» : Term :=
+  ⟨926, "u16_div", [2, 2], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u16_div")) none), ⟨"<OUT_DIR>/numerics.isle", 965⟩⟩
+
+/-- term 927 -/
+def T.«u16_checked_rem» : Term :=
+  ⟨927, "u16_checked_rem", [2, 2], 2, (.decl ⟨true, false, true, false⟩ (some (.external "u16_checked_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 971⟩⟩
+
+/-- term 928 -/
+def T.«u16_rem» : Term :=
+  ⟨928, "u16_rem", [2, 2], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u16_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 977⟩⟩
+
+/-- term 929 -/
+def T.«u16_and» : Term :=
+  ⟨929, "u16_and", [2, 2], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u16_and")) none), ⟨"<OUT_DIR>/numerics.isle", 983⟩⟩
+
+/-- term 930 -/
+def T.«u16_or» : Term :=
+  ⟨930, "u16_or", [2, 2], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u16_or")) none), ⟨"<OUT_DIR>/numerics.isle", 989⟩⟩
+
+/-- term 931 -/
+def T.«u16_xor» : Term :=
+  ⟨931, "u16_xor", [2, 2], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u16_xor")) none), ⟨"<OUT_DIR>/numerics.isle", 995⟩⟩
+
+/-- term 932 -/
+def T.«u16_not» : Term :=
+  ⟨932, "u16_not", [2], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u16_not")) none), ⟨"<OUT_DIR>/numerics.isle", 1001⟩⟩
+
+/-- term 933 -/
+def T.«u16_checked_shl» : Term :=
+  ⟨933, "u16_checked_shl", [2, 3], 2, (.decl ⟨true, false, true, false⟩ (some (.external "u16_checked_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 1006⟩⟩
+
+/-- term 934 -/
+def T.«u16_wrapping_shl» : Term :=
+  ⟨934, "u16_wrapping_shl", [2, 3], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u16_wrapping_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 1012⟩⟩
+
+/-- term 935 -/
+def T.«u16_shl» : Term :=
+  ⟨935, "u16_shl", [2, 3], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u16_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 1018⟩⟩
+
+/-- term 936 -/
+def T.«u16_checked_shr» : Term :=
+  ⟨936, "u16_checked_shr", [2, 3], 2, (.decl ⟨true, false, true, false⟩ (some (.external "u16_checked_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 1024⟩⟩
+
+/-- term 937 -/
+def T.«u16_wrapping_shr» : Term :=
+  ⟨937, "u16_wrapping_shr", [2, 3], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u16_wrapping_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 1030⟩⟩
+
+/-- term 938 -/
+def T.«u16_shr» : Term :=
+  ⟨938, "u16_shr", [2, 3], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u16_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 1036⟩⟩
+
+/-- term 939 -/
+def T.«u16_rotl» : Term :=
+  ⟨939, "u16_rotl", [2, 3], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u16_rotl")) none), ⟨"<OUT_DIR>/numerics.isle", 1042⟩⟩
+
+/-- term 940 -/
+def T.«u16_rotr» : Term :=
+  ⟨940, "u16_rotr", [2, 3], 2, (.decl ⟨true, false, false, false⟩ (some (.external "u16_rotr")) none), ⟨"<OUT_DIR>/numerics.isle", 1048⟩⟩
+
+/-- term 941 -/
+def T.«u16_is_zero» : Term :=
+  ⟨941, "u16_is_zero", [2], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u16_is_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 1054⟩⟩
+
+/-- term 942 -/
+def T.«u16_matches_zero» : Term :=
+  ⟨942, "u16_matches_zero", [0], 2, (.decl ⟨true, false, false, false⟩ none (some (.external "u16_matches_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 1058⟩⟩
+
+/-- term 943 -/
+def T.«u16_extract_zero» : Term :=
+  ⟨943, "u16_extract_zero", [2], 2, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u16_extract_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u16_matches_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 1060⟩⟩
+
+/-- term 944 -/
+def T.«u16_when_zero» : Term :=
+  ⟨944, "u16_when_zero", [], 2, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u16_when_zero")]), (.list [(.atom "u16_matches_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 1062⟩⟩
+
+/-- term 945 -/
+def T.«u16_when_not_zero» : Term :=
+  ⟨945, "u16_when_not_zero", [], 2, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u16_when_not_zero")]), (.list [(.atom "u16_matches_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 1064⟩⟩
+
+/-- term 946 -/
+def T.«u16_is_non_zero» : Term :=
+  ⟨946, "u16_is_non_zero", [2], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u16_is_non_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 1067⟩⟩
+
+/-- term 947 -/
+def T.«u16_matches_non_zero» : Term :=
+  ⟨947, "u16_matches_non_zero", [0], 2, (.decl ⟨true, false, false, false⟩ none (some (.external "u16_matches_non_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 1071⟩⟩
+
+/-- term 948 -/
+def T.«u16_extract_non_zero» : Term :=
+  ⟨948, "u16_extract_non_zero", [2], 2, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u16_extract_non_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u16_matches_non_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 1073⟩⟩
+
+/-- term 949 -/
+def T.«u16_when_non_zero» : Term :=
+  ⟨949, "u16_when_non_zero", [], 2, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u16_when_non_zero")]), (.list [(.atom "u16_matches_non_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 1075⟩⟩
+
+/-- term 950 -/
+def T.«u16_when_not_non_zero» : Term :=
+  ⟨950, "u16_when_not_non_zero", [], 2, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u16_when_not_non_zero")]), (.list [(.atom "u16_matches_non_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 1077⟩⟩
+
+/-- term 951 -/
+def T.«u16_is_odd» : Term :=
+  ⟨951, "u16_is_odd", [2], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u16_is_odd")) none), ⟨"<OUT_DIR>/numerics.isle", 1080⟩⟩
+
+/-- term 952 -/
+def T.«u16_matches_odd» : Term :=
+  ⟨952, "u16_matches_odd", [0], 2, (.decl ⟨true, false, false, false⟩ none (some (.external "u16_matches_odd" false))), ⟨"<OUT_DIR>/numerics.isle", 1084⟩⟩
+
+/-- term 953 -/
+def T.«u16_extract_odd» : Term :=
+  ⟨953, "u16_extract_odd", [2], 2, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u16_extract_odd"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u16_matches_odd"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 1086⟩⟩
+
+/-- term 954 -/
+def T.«u16_when_odd» : Term :=
+  ⟨954, "u16_when_odd", [], 2, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u16_when_odd")]), (.list [(.atom "u16_matches_odd"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 1088⟩⟩
+
+/-- term 955 -/
+def T.«u16_when_not_odd» : Term :=
+  ⟨955, "u16_when_not_odd", [], 2, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u16_when_not_odd")]), (.list [(.atom "u16_matches_odd"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 1090⟩⟩
+
+/-- term 956 -/
+def T.«u16_is_even» : Term :=
+  ⟨956, "u16_is_even", [2], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u16_is_even")) none), ⟨"<OUT_DIR>/numerics.isle", 1093⟩⟩
+
+/-- term 957 -/
+def T.«u16_matches_even» : Term :=
+  ⟨957, "u16_matches_even", [0], 2, (.decl ⟨true, false, false, false⟩ none (some (.external "u16_matches_even" false))), ⟨"<OUT_DIR>/numerics.isle", 1097⟩⟩
+
+/-- term 958 -/
+def T.«u16_extract_even» : Term :=
+  ⟨958, "u16_extract_even", [2], 2, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u16_extract_even"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u16_matches_even"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 1099⟩⟩
+
+/-- term 959 -/
+def T.«u16_when_even» : Term :=
+  ⟨959, "u16_when_even", [], 2, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u16_when_even")]), (.list [(.atom "u16_matches_even"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 1101⟩⟩
+
+/-- term 960 -/
+def T.«u16_when_not_even» : Term :=
+  ⟨960, "u16_when_not_even", [], 2, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u16_when_not_even")]), (.list [(.atom "u16_matches_even"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 1103⟩⟩
+
+/-- term 961 -/
+def T.«u16_checked_ilog2» : Term :=
+  ⟨961, "u16_checked_ilog2", [2], 3, (.decl ⟨true, false, true, false⟩ (some (.external "u16_checked_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 1106⟩⟩
+
+/-- term 962 -/
+def T.«u16_ilog2» : Term :=
+  ⟨962, "u16_ilog2", [2], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u16_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 1111⟩⟩
+
+/-- term 963 -/
+def T.«u16_trailing_zeros» : Term :=
+  ⟨963, "u16_trailing_zeros", [2], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u16_trailing_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 1116⟩⟩
+
+/-- term 964 -/
+def T.«u16_trailing_ones» : Term :=
+  ⟨964, "u16_trailing_ones", [2], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u16_trailing_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 1121⟩⟩
+
+/-- term 965 -/
+def T.«u16_leading_zeros» : Term :=
+  ⟨965, "u16_leading_zeros", [2], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u16_leading_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 1126⟩⟩
+
+/-- term 966 -/
+def T.«u16_leading_ones» : Term :=
+  ⟨966, "u16_leading_ones", [2], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u16_leading_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 1131⟩⟩
+
+/-- term 967 -/
+def T.«u16_is_power_of_two» : Term :=
+  ⟨967, "u16_is_power_of_two", [2], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u16_is_power_of_two")) none), ⟨"<OUT_DIR>/numerics.isle", 1136⟩⟩
+
+/-- term 968 -/
+def T.«u16_matches_power_of_two» : Term :=
+  ⟨968, "u16_matches_power_of_two", [0], 2, (.decl ⟨true, false, false, false⟩ none (some (.external "u16_matches_power_of_two" false))), ⟨"<OUT_DIR>/numerics.isle", 1140⟩⟩
+
+/-- term 969 -/
+def T.«u16_extract_power_of_two» : Term :=
+  ⟨969, "u16_extract_power_of_two", [2], 2, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u16_extract_power_of_two"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u16_matches_power_of_two"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 1142⟩⟩
+
+/-- term 970 -/
+def T.«u16_when_power_of_two» : Term :=
+  ⟨970, "u16_when_power_of_two", [], 2, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u16_when_power_of_two")]), (.list [(.atom "u16_matches_power_of_two"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 1144⟩⟩
+
+/-- term 971 -/
+def T.«u16_when_not_power_of_two» : Term :=
+  ⟨971, "u16_when_not_power_of_two", [], 2, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u16_when_not_power_of_two")]), (.list [(.atom "u16_matches_power_of_two"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 1146⟩⟩
+
+/-- term 972 -/
+def T.«i32_eq» : Term :=
+  ⟨972, "i32_eq", [9, 9], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i32_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 1149⟩⟩
+
+/-- term 973 -/
+def T.«i32_ne» : Term :=
+  ⟨973, "i32_ne", [9, 9], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i32_ne")) none), ⟨"<OUT_DIR>/numerics.isle", 1155⟩⟩
+
+/-- term 974 -/
+def T.«i32_lt» : Term :=
+  ⟨974, "i32_lt", [9, 9], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i32_lt")) none), ⟨"<OUT_DIR>/numerics.isle", 1161⟩⟩
+
+/-- term 975 -/
+def T.«i32_lt_eq» : Term :=
+  ⟨975, "i32_lt_eq", [9, 9], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i32_lt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 1167⟩⟩
+
+/-- term 976 -/
+def T.«i32_gt» : Term :=
+  ⟨976, "i32_gt", [9, 9], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i32_gt")) none), ⟨"<OUT_DIR>/numerics.isle", 1173⟩⟩
+
+/-- term 977 -/
+def T.«i32_gt_eq» : Term :=
+  ⟨977, "i32_gt_eq", [9, 9], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i32_gt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 1179⟩⟩
+
+/-- term 978 -/
+def T.«i32_checked_add» : Term :=
+  ⟨978, "i32_checked_add", [9, 9], 9, (.decl ⟨true, false, true, false⟩ (some (.external "i32_checked_add")) none), ⟨"<OUT_DIR>/numerics.isle", 1185⟩⟩
+
+/-- term 979 -/
+def T.«i32_wrapping_add» : Term :=
+  ⟨979, "i32_wrapping_add", [9, 9], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_wrapping_add")) none), ⟨"<OUT_DIR>/numerics.isle", 1191⟩⟩
+
+/-- term 980 -/
+def T.«i32_add» : Term :=
+  ⟨980, "i32_add", [9, 9], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_add")) none), ⟨"<OUT_DIR>/numerics.isle", 1197⟩⟩
+
+/-- term 981 -/
+def T.«i32_checked_sub» : Term :=
+  ⟨981, "i32_checked_sub", [9, 9], 9, (.decl ⟨true, false, true, false⟩ (some (.external "i32_checked_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 1203⟩⟩
+
+/-- term 982 -/
+def T.«i32_wrapping_sub» : Term :=
+  ⟨982, "i32_wrapping_sub", [9, 9], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_wrapping_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 1209⟩⟩
+
+/-- term 983 -/
+def T.«i32_sub» : Term :=
+  ⟨983, "i32_sub", [9, 9], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 1215⟩⟩
+
+/-- term 984 -/
+def T.«i32_checked_mul» : Term :=
+  ⟨984, "i32_checked_mul", [9, 9], 9, (.decl ⟨true, false, true, false⟩ (some (.external "i32_checked_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 1221⟩⟩
+
+/-- term 985 -/
+def T.«i32_wrapping_mul» : Term :=
+  ⟨985, "i32_wrapping_mul", [9, 9], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_wrapping_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 1227⟩⟩
+
+/-- term 986 -/
+def T.«i32_mul» : Term :=
+  ⟨986, "i32_mul", [9, 9], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 1233⟩⟩
+
+/-- term 987 -/
+def T.«i32_checked_div» : Term :=
+  ⟨987, "i32_checked_div", [9, 9], 9, (.decl ⟨true, false, true, false⟩ (some (.external "i32_checked_div")) none), ⟨"<OUT_DIR>/numerics.isle", 1239⟩⟩
+
+/-- term 988 -/
+def T.«i32_wrapping_div» : Term :=
+  ⟨988, "i32_wrapping_div", [9, 9], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_wrapping_div")) none), ⟨"<OUT_DIR>/numerics.isle", 1245⟩⟩
+
+/-- term 989 -/
+def T.«i32_div» : Term :=
+  ⟨989, "i32_div", [9, 9], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_div")) none), ⟨"<OUT_DIR>/numerics.isle", 1251⟩⟩
+
+/-- term 990 -/
+def T.«i32_checked_rem» : Term :=
+  ⟨990, "i32_checked_rem", [9, 9], 9, (.decl ⟨true, false, true, false⟩ (some (.external "i32_checked_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 1257⟩⟩
+
+/-- term 991 -/
+def T.«i32_rem» : Term :=
+  ⟨991, "i32_rem", [9, 9], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 1263⟩⟩
+
+/-- term 992 -/
+def T.«i32_and» : Term :=
+  ⟨992, "i32_and", [9, 9], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_and")) none), ⟨"<OUT_DIR>/numerics.isle", 1269⟩⟩
+
+/-- term 993 -/
+def T.«i32_or» : Term :=
+  ⟨993, "i32_or", [9, 9], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_or")) none), ⟨"<OUT_DIR>/numerics.isle", 1275⟩⟩
+
+/-- term 994 -/
+def T.«i32_xor» : Term :=
+  ⟨994, "i32_xor", [9, 9], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_xor")) none), ⟨"<OUT_DIR>/numerics.isle", 1281⟩⟩
+
+/-- term 995 -/
+def T.«i32_not» : Term :=
+  ⟨995, "i32_not", [9], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_not")) none), ⟨"<OUT_DIR>/numerics.isle", 1287⟩⟩
+
+/-- term 996 -/
+def T.«i32_checked_shl» : Term :=
+  ⟨996, "i32_checked_shl", [9, 3], 9, (.decl ⟨true, false, true, false⟩ (some (.external "i32_checked_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 1292⟩⟩
+
+/-- term 997 -/
+def T.«i32_wrapping_shl» : Term :=
+  ⟨997, "i32_wrapping_shl", [9, 3], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_wrapping_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 1298⟩⟩
+
+/-- term 998 -/
+def T.«i32_shl» : Term :=
+  ⟨998, "i32_shl", [9, 3], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 1304⟩⟩
+
+/-- term 999 -/
+def T.«i32_checked_shr» : Term :=
+  ⟨999, "i32_checked_shr", [9, 3], 9, (.decl ⟨true, false, true, false⟩ (some (.external "i32_checked_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 1310⟩⟩
+
+/-- term 1000 -/
+def T.«i32_wrapping_shr» : Term :=
+  ⟨1000, "i32_wrapping_shr", [9, 3], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_wrapping_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 1316⟩⟩
+
+/-- term 1001 -/
+def T.«i32_shr» : Term :=
+  ⟨1001, "i32_shr", [9, 3], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 1322⟩⟩
+
+/-- term 1002 -/
+def T.«i32_rotl» : Term :=
+  ⟨1002, "i32_rotl", [9, 3], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_rotl")) none), ⟨"<OUT_DIR>/numerics.isle", 1328⟩⟩
+
+/-- term 1003 -/
+def T.«i32_rotr» : Term :=
+  ⟨1003, "i32_rotr", [9, 3], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_rotr")) none), ⟨"<OUT_DIR>/numerics.isle", 1334⟩⟩
+
+/-- term 1004 -/
+def T.«i32_is_zero» : Term :=
+  ⟨1004, "i32_is_zero", [9], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i32_is_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 1340⟩⟩
+
+/-- term 1005 -/
+def T.«i32_matches_zero» : Term :=
+  ⟨1005, "i32_matches_zero", [0], 9, (.decl ⟨true, false, false, false⟩ none (some (.external "i32_matches_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 1344⟩⟩
+
+/-- term 1006 -/
+def T.«i32_extract_zero» : Term :=
+  ⟨1006, "i32_extract_zero", [9], 9, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i32_extract_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i32_matches_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 1346⟩⟩
+
+/-- term 1007 -/
+def T.«i32_when_zero» : Term :=
+  ⟨1007, "i32_when_zero", [], 9, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i32_when_zero")]), (.list [(.atom "i32_matches_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 1348⟩⟩
+
+/-- term 1008 -/
+def T.«i32_when_not_zero» : Term :=
+  ⟨1008, "i32_when_not_zero", [], 9, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i32_when_not_zero")]), (.list [(.atom "i32_matches_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 1350⟩⟩
+
+/-- term 1009 -/
+def T.«i32_is_non_zero» : Term :=
+  ⟨1009, "i32_is_non_zero", [9], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i32_is_non_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 1353⟩⟩
+
+/-- term 1010 -/
+def T.«i32_matches_non_zero» : Term :=
+  ⟨1010, "i32_matches_non_zero", [0], 9, (.decl ⟨true, false, false, false⟩ none (some (.external "i32_matches_non_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 1357⟩⟩
+
+/-- term 1011 -/
+def T.«i32_extract_non_zero» : Term :=
+  ⟨1011, "i32_extract_non_zero", [9], 9, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i32_extract_non_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i32_matches_non_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 1359⟩⟩
+
+/-- term 1012 -/
+def T.«i32_when_non_zero» : Term :=
+  ⟨1012, "i32_when_non_zero", [], 9, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i32_when_non_zero")]), (.list [(.atom "i32_matches_non_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 1361⟩⟩
+
+/-- term 1013 -/
+def T.«i32_when_not_non_zero» : Term :=
+  ⟨1013, "i32_when_not_non_zero", [], 9, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i32_when_not_non_zero")]), (.list [(.atom "i32_matches_non_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 1363⟩⟩
+
+/-- term 1014 -/
+def T.«i32_is_odd» : Term :=
+  ⟨1014, "i32_is_odd", [9], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i32_is_odd")) none), ⟨"<OUT_DIR>/numerics.isle", 1366⟩⟩
+
+/-- term 1015 -/
+def T.«i32_matches_odd» : Term :=
+  ⟨1015, "i32_matches_odd", [0], 9, (.decl ⟨true, false, false, false⟩ none (some (.external "i32_matches_odd" false))), ⟨"<OUT_DIR>/numerics.isle", 1370⟩⟩
+
+/-- term 1016 -/
+def T.«i32_extract_odd» : Term :=
+  ⟨1016, "i32_extract_odd", [9], 9, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i32_extract_odd"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i32_matches_odd"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 1372⟩⟩
+
+/-- term 1017 -/
+def T.«i32_when_odd» : Term :=
+  ⟨1017, "i32_when_odd", [], 9, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i32_when_odd")]), (.list [(.atom "i32_matches_odd"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 1374⟩⟩
+
+/-- term 1018 -/
+def T.«i32_when_not_odd» : Term :=
+  ⟨1018, "i32_when_not_odd", [], 9, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i32_when_not_odd")]), (.list [(.atom "i32_matches_odd"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 1376⟩⟩
+
+/-- term 1019 -/
+def T.«i32_is_even» : Term :=
+  ⟨1019, "i32_is_even", [9], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i32_is_even")) none), ⟨"<OUT_DIR>/numerics.isle", 1379⟩⟩
+
+/-- term 1020 -/
+def T.«i32_matches_even» : Term :=
+  ⟨1020, "i32_matches_even", [0], 9, (.decl ⟨true, false, false, false⟩ none (some (.external "i32_matches_even" false))), ⟨"<OUT_DIR>/numerics.isle", 1383⟩⟩
+
+/-- term 1021 -/
+def T.«i32_extract_even» : Term :=
+  ⟨1021, "i32_extract_even", [9], 9, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i32_extract_even"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i32_matches_even"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 1385⟩⟩
+
+/-- term 1022 -/
+def T.«i32_when_even» : Term :=
+  ⟨1022, "i32_when_even", [], 9, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i32_when_even")]), (.list [(.atom "i32_matches_even"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 1387⟩⟩
+
+/-- term 1023 -/
+def T.«i32_when_not_even» : Term :=
+  ⟨1023, "i32_when_not_even", [], 9, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i32_when_not_even")]), (.list [(.atom "i32_matches_even"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 1389⟩⟩
+
+/-- term 1024 -/
+def T.«i32_checked_ilog2» : Term :=
+  ⟨1024, "i32_checked_ilog2", [9], 3, (.decl ⟨true, false, true, false⟩ (some (.external "i32_checked_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 1392⟩⟩
+
+/-- term 1025 -/
+def T.«i32_ilog2» : Term :=
+  ⟨1025, "i32_ilog2", [9], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i32_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 1397⟩⟩
+
+/-- term 1026 -/
+def T.«i32_trailing_zeros» : Term :=
+  ⟨1026, "i32_trailing_zeros", [9], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i32_trailing_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 1402⟩⟩
+
+/-- term 1027 -/
+def T.«i32_trailing_ones» : Term :=
+  ⟨1027, "i32_trailing_ones", [9], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i32_trailing_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 1407⟩⟩
+
+/-- term 1028 -/
+def T.«i32_leading_zeros» : Term :=
+  ⟨1028, "i32_leading_zeros", [9], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i32_leading_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 1412⟩⟩
+
+/-- term 1029 -/
+def T.«i32_leading_ones» : Term :=
+  ⟨1029, "i32_leading_ones", [9], 3, (.decl ⟨true, false, false, false⟩ (some (.external "i32_leading_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 1417⟩⟩
+
+/-- term 1030 -/
+def T.«i32_checked_neg» : Term :=
+  ⟨1030, "i32_checked_neg", [9], 9, (.decl ⟨true, false, true, false⟩ (some (.external "i32_checked_neg")) none), ⟨"<OUT_DIR>/numerics.isle", 1422⟩⟩
+
+/-- term 1031 -/
+def T.«i32_wrapping_neg» : Term :=
+  ⟨1031, "i32_wrapping_neg", [9], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_wrapping_neg")) none), ⟨"<OUT_DIR>/numerics.isle", 1427⟩⟩
+
+/-- term 1032 -/
+def T.«i32_neg» : Term :=
+  ⟨1032, "i32_neg", [9], 9, (.decl ⟨true, false, false, false⟩ (some (.external "i32_neg")) none), ⟨"<OUT_DIR>/numerics.isle", 1432⟩⟩
+
+/-- term 1033 -/
+def T.«u32_eq» : Term :=
+  ⟨1033, "u32_eq", [3, 3], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u32_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 1437⟩⟩
+
+/-- term 1034 -/
+def T.«u32_ne» : Term :=
+  ⟨1034, "u32_ne", [3, 3], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u32_ne")) none), ⟨"<OUT_DIR>/numerics.isle", 1443⟩⟩
+
+/-- term 1035 -/
+def T.«u32_lt» : Term :=
+  ⟨1035, "u32_lt", [3, 3], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u32_lt")) none), ⟨"<OUT_DIR>/numerics.isle", 1449⟩⟩
+
+/-- term 1036 -/
+def T.«u32_lt_eq» : Term :=
+  ⟨1036, "u32_lt_eq", [3, 3], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u32_lt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 1455⟩⟩
+
+/-- term 1037 -/
+def T.«u32_gt» : Term :=
+  ⟨1037, "u32_gt", [3, 3], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u32_gt")) none), ⟨"<OUT_DIR>/numerics.isle", 1461⟩⟩
+
+/-- term 1038 -/
+def T.«u32_gt_eq» : Term :=
+  ⟨1038, "u32_gt_eq", [3, 3], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u32_gt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 1467⟩⟩
+
+/-- term 1039 -/
+def T.«u32_checked_add» : Term :=
+  ⟨1039, "u32_checked_add", [3, 3], 3, (.decl ⟨true, false, true, false⟩ (some (.external "u32_checked_add")) none), ⟨"<OUT_DIR>/numerics.isle", 1473⟩⟩
+
+/-- term 1040 -/
+def T.«u32_wrapping_add» : Term :=
+  ⟨1040, "u32_wrapping_add", [3, 3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_wrapping_add")) none), ⟨"<OUT_DIR>/numerics.isle", 1479⟩⟩
+
+/-- term 1041 -/
+def T.«u32_add» : Term :=
+  ⟨1041, "u32_add", [3, 3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_add")) none), ⟨"<OUT_DIR>/numerics.isle", 1485⟩⟩
+
+/-- term 1042 -/
+def T.«u32_checked_sub» : Term :=
+  ⟨1042, "u32_checked_sub", [3, 3], 3, (.decl ⟨true, false, true, false⟩ (some (.external "u32_checked_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 1491⟩⟩
+
+/-- term 1043 -/
+def T.«u32_wrapping_sub» : Term :=
+  ⟨1043, "u32_wrapping_sub", [3, 3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_wrapping_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 1497⟩⟩
+
+/-- term 1044 -/
+def T.«u32_sub» : Term :=
+  ⟨1044, "u32_sub", [3, 3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 1503⟩⟩
+
+/-- term 1045 -/
+def T.«u32_checked_mul» : Term :=
+  ⟨1045, "u32_checked_mul", [3, 3], 3, (.decl ⟨true, false, true, false⟩ (some (.external "u32_checked_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 1509⟩⟩
+
+/-- term 1046 -/
+def T.«u32_wrapping_mul» : Term :=
+  ⟨1046, "u32_wrapping_mul", [3, 3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_wrapping_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 1515⟩⟩
+
+/-- term 1047 -/
+def T.«u32_mul» : Term :=
+  ⟨1047, "u32_mul", [3, 3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 1521⟩⟩
+
+/-- term 1048 -/
+def T.«u32_checked_div» : Term :=
+  ⟨1048, "u32_checked_div", [3, 3], 3, (.decl ⟨true, false, true, false⟩ (some (.external "u32_checked_div")) none), ⟨"<OUT_DIR>/numerics.isle", 1527⟩⟩
+
+/-- term 1049 -/
+def T.«u32_wrapping_div» : Term :=
+  ⟨1049, "u32_wrapping_div", [3, 3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_wrapping_div")) none), ⟨"<OUT_DIR>/numerics.isle", 1533⟩⟩
+
+/-- term 1050 -/
+def T.«u32_div» : Term :=
+  ⟨1050, "u32_div", [3, 3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_div")) none), ⟨"<OUT_DIR>/numerics.isle", 1539⟩⟩
+
+/-- term 1051 -/
+def T.«u32_checked_rem» : Term :=
+  ⟨1051, "u32_checked_rem", [3, 3], 3, (.decl ⟨true, false, true, false⟩ (some (.external "u32_checked_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 1545⟩⟩
+
+/-- term 1052 -/
+def T.«u32_rem» : Term :=
+  ⟨1052, "u32_rem", [3, 3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 1551⟩⟩
+
+/-- term 1053 -/
+def T.«u32_and» : Term :=
+  ⟨1053, "u32_and", [3, 3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_and")) none), ⟨"<OUT_DIR>/numerics.isle", 1557⟩⟩
+
+/-- term 1054 -/
+def T.«u32_or» : Term :=
+  ⟨1054, "u32_or", [3, 3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_or")) none), ⟨"<OUT_DIR>/numerics.isle", 1563⟩⟩
+
+/-- term 1055 -/
+def T.«u32_xor» : Term :=
+  ⟨1055, "u32_xor", [3, 3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_xor")) none), ⟨"<OUT_DIR>/numerics.isle", 1569⟩⟩
+
+/-- term 1056 -/
+def T.«u32_not» : Term :=
+  ⟨1056, "u32_not", [3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_not")) none), ⟨"<OUT_DIR>/numerics.isle", 1575⟩⟩
+
+/-- term 1057 -/
+def T.«u32_checked_shl» : Term :=
+  ⟨1057, "u32_checked_shl", [3, 3], 3, (.decl ⟨true, false, true, false⟩ (some (.external "u32_checked_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 1580⟩⟩
+
+/-- term 1058 -/
+def T.«u32_wrapping_shl» : Term :=
+  ⟨1058, "u32_wrapping_shl", [3, 3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_wrapping_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 1586⟩⟩
+
+/-- term 1059 -/
+def T.«u32_shl» : Term :=
+  ⟨1059, "u32_shl", [3, 3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 1592⟩⟩
+
+/-- term 1060 -/
+def T.«u32_checked_shr» : Term :=
+  ⟨1060, "u32_checked_shr", [3, 3], 3, (.decl ⟨true, false, true, false⟩ (some (.external "u32_checked_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 1598⟩⟩
+
+/-- term 1061 -/
+def T.«u32_wrapping_shr» : Term :=
+  ⟨1061, "u32_wrapping_shr", [3, 3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_wrapping_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 1604⟩⟩
+
+/-- term 1062 -/
+def T.«u32_shr» : Term :=
+  ⟨1062, "u32_shr", [3, 3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 1610⟩⟩
+
+/-- term 1063 -/
+def T.«u32_rotl» : Term :=
+  ⟨1063, "u32_rotl", [3, 3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_rotl")) none), ⟨"<OUT_DIR>/numerics.isle", 1616⟩⟩
+
+/-- term 1064 -/
+def T.«u32_rotr» : Term :=
+  ⟨1064, "u32_rotr", [3, 3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_rotr")) none), ⟨"<OUT_DIR>/numerics.isle", 1622⟩⟩
+
+/-- term 1065 -/
+def T.«u32_is_zero» : Term :=
+  ⟨1065, "u32_is_zero", [3], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u32_is_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 1628⟩⟩
+
+/-- term 1066 -/
+def T.«u32_matches_zero» : Term :=
+  ⟨1066, "u32_matches_zero", [0], 3, (.decl ⟨true, false, false, false⟩ none (some (.external "u32_matches_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 1632⟩⟩
+
+/-- term 1067 -/
+def T.«u32_extract_zero» : Term :=
+  ⟨1067, "u32_extract_zero", [3], 3, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u32_extract_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u32_matches_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 1634⟩⟩
+
+/-- term 1068 -/
+def T.«u32_when_zero» : Term :=
+  ⟨1068, "u32_when_zero", [], 3, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u32_when_zero")]), (.list [(.atom "u32_matches_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 1636⟩⟩
+
+/-- term 1069 -/
+def T.«u32_when_not_zero» : Term :=
+  ⟨1069, "u32_when_not_zero", [], 3, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u32_when_not_zero")]), (.list [(.atom "u32_matches_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 1638⟩⟩
+
+/-- term 1070 -/
+def T.«u32_is_non_zero» : Term :=
+  ⟨1070, "u32_is_non_zero", [3], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u32_is_non_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 1641⟩⟩
+
+/-- term 1071 -/
+def T.«u32_matches_non_zero» : Term :=
+  ⟨1071, "u32_matches_non_zero", [0], 3, (.decl ⟨true, false, false, false⟩ none (some (.external "u32_matches_non_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 1645⟩⟩
+
+/-- term 1072 -/
+def T.«u32_extract_non_zero» : Term :=
+  ⟨1072, "u32_extract_non_zero", [3], 3, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u32_extract_non_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u32_matches_non_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 1647⟩⟩
+
+/-- term 1073 -/
+def T.«u32_when_non_zero» : Term :=
+  ⟨1073, "u32_when_non_zero", [], 3, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u32_when_non_zero")]), (.list [(.atom "u32_matches_non_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 1649⟩⟩
+
+/-- term 1074 -/
+def T.«u32_when_not_non_zero» : Term :=
+  ⟨1074, "u32_when_not_non_zero", [], 3, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u32_when_not_non_zero")]), (.list [(.atom "u32_matches_non_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 1651⟩⟩
+
+/-- term 1075 -/
+def T.«u32_is_odd» : Term :=
+  ⟨1075, "u32_is_odd", [3], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u32_is_odd")) none), ⟨"<OUT_DIR>/numerics.isle", 1654⟩⟩
+
+/-- term 1076 -/
+def T.«u32_matches_odd» : Term :=
+  ⟨1076, "u32_matches_odd", [0], 3, (.decl ⟨true, false, false, false⟩ none (some (.external "u32_matches_odd" false))), ⟨"<OUT_DIR>/numerics.isle", 1658⟩⟩
+
+/-- term 1077 -/
+def T.«u32_extract_odd» : Term :=
+  ⟨1077, "u32_extract_odd", [3], 3, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u32_extract_odd"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u32_matches_odd"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 1660⟩⟩
+
+/-- term 1078 -/
+def T.«u32_when_odd» : Term :=
+  ⟨1078, "u32_when_odd", [], 3, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u32_when_odd")]), (.list [(.atom "u32_matches_odd"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 1662⟩⟩
+
+/-- term 1079 -/
+def T.«u32_when_not_odd» : Term :=
+  ⟨1079, "u32_when_not_odd", [], 3, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u32_when_not_odd")]), (.list [(.atom "u32_matches_odd"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 1664⟩⟩
+
+/-- term 1080 -/
+def T.«u32_is_even» : Term :=
+  ⟨1080, "u32_is_even", [3], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u32_is_even")) none), ⟨"<OUT_DIR>/numerics.isle", 1667⟩⟩
+
+/-- term 1081 -/
+def T.«u32_matches_even» : Term :=
+  ⟨1081, "u32_matches_even", [0], 3, (.decl ⟨true, false, false, false⟩ none (some (.external "u32_matches_even" false))), ⟨"<OUT_DIR>/numerics.isle", 1671⟩⟩
+
+/-- term 1082 -/
+def T.«u32_extract_even» : Term :=
+  ⟨1082, "u32_extract_even", [3], 3, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u32_extract_even"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u32_matches_even"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 1673⟩⟩
+
+/-- term 1083 -/
+def T.«u32_when_even» : Term :=
+  ⟨1083, "u32_when_even", [], 3, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u32_when_even")]), (.list [(.atom "u32_matches_even"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 1675⟩⟩
+
+/-- term 1084 -/
+def T.«u32_when_not_even» : Term :=
+  ⟨1084, "u32_when_not_even", [], 3, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u32_when_not_even")]), (.list [(.atom "u32_matches_even"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 1677⟩⟩
+
+/-- term 1085 -/
+def T.«u32_checked_ilog2» : Term :=
+  ⟨1085, "u32_checked_ilog2", [3], 3, (.decl ⟨true, false, true, false⟩ (some (.external "u32_checked_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 1680⟩⟩
+
+/-- term 1086 -/
+def T.«u32_ilog2» : Term :=
+  ⟨1086, "u32_ilog2", [3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_ilog2")) none), ⟨"<OUT_DIR>/numerics.isle", 1685⟩⟩
+
+/-- term 1087 -/
+def T.«u32_trailing_zeros» : Term :=
+  ⟨1087, "u32_trailing_zeros", [3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_trailing_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 1690⟩⟩
+
+/-- term 1088 -/
+def T.«u32_trailing_ones» : Term :=
+  ⟨1088, "u32_trailing_ones", [3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_trailing_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 1695⟩⟩
+
+/-- term 1089 -/
+def T.«u32_leading_zeros» : Term :=
+  ⟨1089, "u32_leading_zeros", [3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_leading_zeros")) none), ⟨"<OUT_DIR>/numerics.isle", 1700⟩⟩
+
+/-- term 1090 -/
+def T.«u32_leading_ones» : Term :=
+  ⟨1090, "u32_leading_ones", [3], 3, (.decl ⟨true, false, false, false⟩ (some (.external "u32_leading_ones")) none), ⟨"<OUT_DIR>/numerics.isle", 1705⟩⟩
+
+/-- term 1091 -/
+def T.«u32_is_power_of_two» : Term :=
+  ⟨1091, "u32_is_power_of_two", [3], 0, (.decl ⟨true, false, false, false⟩ (some (.external "u32_is_power_of_two")) none), ⟨"<OUT_DIR>/numerics.isle", 1710⟩⟩
+
+/-- term 1092 -/
+def T.«u32_matches_power_of_two» : Term :=
+  ⟨1092, "u32_matches_power_of_two", [0], 3, (.decl ⟨true, false, false, false⟩ none (some (.external "u32_matches_power_of_two" false))), ⟨"<OUT_DIR>/numerics.isle", 1714⟩⟩
+
+/-- term 1093 -/
+def T.«u32_extract_power_of_two» : Term :=
+  ⟨1093, "u32_extract_power_of_two", [3], 3, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u32_extract_power_of_two"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "u32_matches_power_of_two"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 1716⟩⟩
+
+/-- term 1094 -/
+def T.«u32_when_power_of_two» : Term :=
+  ⟨1094, "u32_when_power_of_two", [], 3, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u32_when_power_of_two")]), (.list [(.atom "u32_matches_power_of_two"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 1718⟩⟩
+
+/-- term 1095 -/
+def T.«u32_when_not_power_of_two» : Term :=
+  ⟨1095, "u32_when_not_power_of_two", [], 3, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "u32_when_not_power_of_two")]), (.list [(.atom "u32_matches_power_of_two"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 1720⟩⟩
+
+/-- term 1096 -/
+def T.«i64_eq» : Term :=
+  ⟨1096, "i64_eq", [10, 10], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i64_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 1723⟩⟩
+
+/-- term 1097 -/
+def T.«i64_ne» : Term :=
+  ⟨1097, "i64_ne", [10, 10], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i64_ne")) none), ⟨"<OUT_DIR>/numerics.isle", 1729⟩⟩
+
+/-- term 1098 -/
+def T.«i64_lt» : Term :=
+  ⟨1098, "i64_lt", [10, 10], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i64_lt")) none), ⟨"<OUT_DIR>/numerics.isle", 1735⟩⟩
+
+/-- term 1099 -/
+def T.«i64_lt_eq» : Term :=
+  ⟨1099, "i64_lt_eq", [10, 10], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i64_lt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 1741⟩⟩
+
+/-- term 1100 -/
+def T.«i64_gt» : Term :=
+  ⟨1100, "i64_gt", [10, 10], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i64_gt")) none), ⟨"<OUT_DIR>/numerics.isle", 1747⟩⟩
+
+/-- term 1101 -/
+def T.«i64_gt_eq» : Term :=
+  ⟨1101, "i64_gt_eq", [10, 10], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i64_gt_eq")) none), ⟨"<OUT_DIR>/numerics.isle", 1753⟩⟩
+
+/-- term 1102 -/
+def T.«i64_checked_add» : Term :=
+  ⟨1102, "i64_checked_add", [10, 10], 10, (.decl ⟨true, false, true, false⟩ (some (.external "i64_checked_add")) none), ⟨"<OUT_DIR>/numerics.isle", 1759⟩⟩
+
+/-- term 1103 -/
+def T.«i64_wrapping_add» : Term :=
+  ⟨1103, "i64_wrapping_add", [10, 10], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_wrapping_add")) none), ⟨"<OUT_DIR>/numerics.isle", 1765⟩⟩
+
+/-- term 1104 -/
+def T.«i64_add» : Term :=
+  ⟨1104, "i64_add", [10, 10], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_add")) none), ⟨"<OUT_DIR>/numerics.isle", 1771⟩⟩
+
+/-- term 1105 -/
+def T.«i64_checked_sub» : Term :=
+  ⟨1105, "i64_checked_sub", [10, 10], 10, (.decl ⟨true, false, true, false⟩ (some (.external "i64_checked_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 1777⟩⟩
+
+/-- term 1106 -/
+def T.«i64_wrapping_sub» : Term :=
+  ⟨1106, "i64_wrapping_sub", [10, 10], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_wrapping_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 1783⟩⟩
+
+/-- term 1107 -/
+def T.«i64_sub» : Term :=
+  ⟨1107, "i64_sub", [10, 10], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_sub")) none), ⟨"<OUT_DIR>/numerics.isle", 1789⟩⟩
+
+/-- term 1108 -/
+def T.«i64_checked_mul» : Term :=
+  ⟨1108, "i64_checked_mul", [10, 10], 10, (.decl ⟨true, false, true, false⟩ (some (.external "i64_checked_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 1795⟩⟩
+
+/-- term 1109 -/
+def T.«i64_wrapping_mul» : Term :=
+  ⟨1109, "i64_wrapping_mul", [10, 10], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_wrapping_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 1801⟩⟩
+
+/-- term 1110 -/
+def T.«i64_mul» : Term :=
+  ⟨1110, "i64_mul", [10, 10], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_mul")) none), ⟨"<OUT_DIR>/numerics.isle", 1807⟩⟩
+
+/-- term 1111 -/
+def T.«i64_checked_div» : Term :=
+  ⟨1111, "i64_checked_div", [10, 10], 10, (.decl ⟨true, false, true, false⟩ (some (.external "i64_checked_div")) none), ⟨"<OUT_DIR>/numerics.isle", 1813⟩⟩
+
+/-- term 1112 -/
+def T.«i64_wrapping_div» : Term :=
+  ⟨1112, "i64_wrapping_div", [10, 10], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_wrapping_div")) none), ⟨"<OUT_DIR>/numerics.isle", 1819⟩⟩
+
+/-- term 1113 -/
+def T.«i64_div» : Term :=
+  ⟨1113, "i64_div", [10, 10], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_div")) none), ⟨"<OUT_DIR>/numerics.isle", 1825⟩⟩
+
+/-- term 1114 -/
+def T.«i64_checked_rem» : Term :=
+  ⟨1114, "i64_checked_rem", [10, 10], 10, (.decl ⟨true, false, true, false⟩ (some (.external "i64_checked_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 1831⟩⟩
+
+/-- term 1115 -/
+def T.«i64_rem» : Term :=
+  ⟨1115, "i64_rem", [10, 10], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_rem")) none), ⟨"<OUT_DIR>/numerics.isle", 1837⟩⟩
+
+/-- term 1116 -/
+def T.«i64_and» : Term :=
+  ⟨1116, "i64_and", [10, 10], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_and")) none), ⟨"<OUT_DIR>/numerics.isle", 1843⟩⟩
+
+/-- term 1117 -/
+def T.«i64_or» : Term :=
+  ⟨1117, "i64_or", [10, 10], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_or")) none), ⟨"<OUT_DIR>/numerics.isle", 1849⟩⟩
+
+/-- term 1118 -/
+def T.«i64_xor» : Term :=
+  ⟨1118, "i64_xor", [10, 10], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_xor")) none), ⟨"<OUT_DIR>/numerics.isle", 1855⟩⟩
+
+/-- term 1119 -/
+def T.«i64_not» : Term :=
+  ⟨1119, "i64_not", [10], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_not")) none), ⟨"<OUT_DIR>/numerics.isle", 1861⟩⟩
+
+/-- term 1120 -/
+def T.«i64_checked_shl» : Term :=
+  ⟨1120, "i64_checked_shl", [10, 3], 10, (.decl ⟨true, false, true, false⟩ (some (.external "i64_checked_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 1866⟩⟩
+
+/-- term 1121 -/
+def T.«i64_wrapping_shl» : Term :=
+  ⟨1121, "i64_wrapping_shl", [10, 3], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_wrapping_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 1872⟩⟩
+
+/-- term 1122 -/
+def T.«i64_shl» : Term :=
+  ⟨1122, "i64_shl", [10, 3], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_shl")) none), ⟨"<OUT_DIR>/numerics.isle", 1878⟩⟩
+
+/-- term 1123 -/
+def T.«i64_checked_shr» : Term :=
+  ⟨1123, "i64_checked_shr", [10, 3], 10, (.decl ⟨true, false, true, false⟩ (some (.external "i64_checked_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 1884⟩⟩
+
+/-- term 1124 -/
+def T.«i64_wrapping_shr» : Term :=
+  ⟨1124, "i64_wrapping_shr", [10, 3], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_wrapping_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 1890⟩⟩
+
+/-- term 1125 -/
+def T.«i64_shr» : Term :=
+  ⟨1125, "i64_shr", [10, 3], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_shr")) none), ⟨"<OUT_DIR>/numerics.isle", 1896⟩⟩
+
+/-- term 1126 -/
+def T.«i64_rotl» : Term :=
+  ⟨1126, "i64_rotl", [10, 3], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_rotl")) none), ⟨"<OUT_DIR>/numerics.isle", 1902⟩⟩
+
+/-- term 1127 -/
+def T.«i64_rotr» : Term :=
+  ⟨1127, "i64_rotr", [10, 3], 10, (.decl ⟨true, false, false, false⟩ (some (.external "i64_rotr")) none), ⟨"<OUT_DIR>/numerics.isle", 1908⟩⟩
+
+/-- term 1128 -/
+def T.«i64_is_zero» : Term :=
+  ⟨1128, "i64_is_zero", [10], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i64_is_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 1914⟩⟩
+
+/-- term 1129 -/
+def T.«i64_matches_zero» : Term :=
+  ⟨1129, "i64_matches_zero", [0], 10, (.decl ⟨true, false, false, false⟩ none (some (.external "i64_matches_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 1918⟩⟩
+
+/-- term 1130 -/
+def T.«i64_extract_zero» : Term :=
+  ⟨1130, "i64_extract_zero", [10], 10, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i64_extract_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i64_matches_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 1920⟩⟩
+
+/-- term 1131 -/
+def T.«i64_when_zero» : Term :=
+  ⟨1131, "i64_when_zero", [], 10, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i64_when_zero")]), (.list [(.atom "i64_matches_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 1922⟩⟩
+
+/-- term 1132 -/
+def T.«i64_when_not_zero» : Term :=
+  ⟨1132, "i64_when_not_zero", [], 10, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i64_when_not_zero")]), (.list [(.atom "i64_matches_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 1924⟩⟩
+
+/-- term 1133 -/
+def T.«i64_is_non_zero» : Term :=
+  ⟨1133, "i64_is_non_zero", [10], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i64_is_non_zero")) none), ⟨"<OUT_DIR>/numerics.isle", 1927⟩⟩
+
+/-- term 1134 -/
+def T.«i64_matches_non_zero» : Term :=
+  ⟨1134, "i64_matches_non_zero", [0], 10, (.decl ⟨true, false, false, false⟩ none (some (.external "i64_matches_non_zero" false))), ⟨"<OUT_DIR>/numerics.isle", 1931⟩⟩
+
+/-- term 1135 -/
+def T.«i64_extract_non_zero» : Term :=
+  ⟨1135, "i64_extract_non_zero", [10], 10, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i64_extract_non_zero"), (.atom "x")]), (.list [(.atom "and"), (.list [(.atom "i64_matches_non_zero"), (.atom "true")]), (.atom "x")])])))), ⟨"<OUT_DIR>/numerics.isle", 1933⟩⟩
+
+/-- term 1136 -/
+def T.«i64_when_non_zero» : Term :=
+  ⟨1136, "i64_when_non_zero", [], 10, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i64_when_non_zero")]), (.list [(.atom "i64_matches_non_zero"), (.atom "true")])])))), ⟨"<OUT_DIR>/numerics.isle", 1935⟩⟩
+
+/-- term 1137 -/
+def T.«i64_when_not_non_zero» : Term :=
+  ⟨1137, "i64_when_not_non_zero", [], 10, (.decl ⟨true, false, false, false⟩ none (some (.internal (.list [(.atom "extractor"), (.list [(.atom "i64_when_not_non_zero")]), (.list [(.atom "i64_matches_non_zero"), (.atom "false")])])))), ⟨"<OUT_DIR>/numerics.isle", 1937⟩⟩
+
+/-- term 1138 -/
+def T.«i64_is_odd» : Term :=
+  ⟨1138, "i64_is_odd", [10], 0, (.decl ⟨true, false, false, false⟩ (some (.external "i64_is_odd")) none), ⟨"<OUT_DIR>/numerics.isle", 1940⟩⟩
+
+/-- term 1139 -/
+def T.«i64_matches_odd» : Term :=
+  ⟨1139, "i64_matches_odd", [0], 10, (.decl ⟨true, false, false, false⟩ none (some (.external "i64_matches_odd" false))), ⟨"<OUT_DIR>/numerics.isle", 1944⟩⟩
 
 end Isle.Aarch64

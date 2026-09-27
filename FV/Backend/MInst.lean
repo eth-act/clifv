@@ -577,14 +577,17 @@ inductive V where
   | op (o : Opnd)
   deriving Repr, Inhabited, BEq
 
-/-! ### ISLE enum names -/
+/-! ### ISLE type ids and enum variants
+
+Type ids and variant indices are the generated constants `Isle.Aarch64.TyId.*` and
+`Isle.Aarch64.VIdx.*` (`FV/Isle/Generated/Ids.lean`): decoding matches on them (a `Nat`-literal
+match, which proofs reduce by `rfl`), and a Cranelift upgrade that renames a type or variant
+the backend uses is a compile error here. Values the backend builds from CLIF by *name*
+(`mkVariant`, used for `Opcode`/`InstructionData`) go through `variantIdx`;
+`FVTest/Backend/Names.lean` checks those names. -/
 
 open Isle.Aarch64 in
-/-- The ISLE program's type named `name` (types are looked up once, at initialisation). -/
-def islTy (name : String) : TypeId :=
-  ((program.types.find? (·.name == name)).map (·.id)).getD 0
-
-open Isle.Aarch64 in
+/-- Variant names of the enum type `ty` (messages and by-name construction). -/
 def variantNames (ty : TypeId) : List String :=
   match program.type? ty with
   | some ⟨_, _, .enum _ vs, _⟩ => vs.map (·.name)
@@ -599,47 +602,59 @@ def mkVariant (ty : TypeId) (name : String) (fs : List V := []) : V :=
   | some k => .data ty k fs
   | none => .op .unit   -- unreachable for the names the backend uses (`FVTest/Backend/Names.lean`)
 
-def tyMInst : TypeId := islTy "MInst"
-def tyALUOp : TypeId := islTy "ALUOp"
-def tyALUOp3 : TypeId := islTy "ALUOp3"
-def tyOperandSize : TypeId := islTy "OperandSize"
-def tyCond : TypeId := islTy "Cond"
-def tyExtendOp : TypeId := islTy "ExtendOp"
-def tyAMode : TypeId := islTy "AMode"
-def tyCondBrKind : TypeId := islTy "CondBrKind"
-def tyMoveWideOp : TypeId := islTy "MoveWideOp"
-def tyBfmOp : TypeId := islTy "BfmOp"
-def tyBitOp : TypeId := islTy "BitOp"
-def tyScalarSize : TypeId := islTy "ScalarSize"
-def tyVectorSize : TypeId := islTy "VectorSize"
-def tyVecMisc2 : TypeId := islTy "VecMisc2"
-def tyVecLanesOp : TypeId := islTy "VecLanesOp"
-def tyVecALUOp : TypeId := islTy "VecALUOp"
-def tyTBKind : TypeId := islTy "TestBitAndBranchKind"
-def tyIntCC : TypeId := islTy "IntCC"
-def tyOpcode : TypeId := islTy "Opcode"
-def tyInstData : TypeId := islTy "InstructionData"
-def tyRelocDistance : TypeId := islTy "RelocDistance"
+open Isle.Aarch64
 
-/-- The variant name of an enum value. -/
+abbrev tyMInst : TypeId := TyId.MInst
+abbrev tyALUOp : TypeId := TyId.ALUOp
+abbrev tyALUOp3 : TypeId := TyId.ALUOp3
+abbrev tyOperandSize : TypeId := TyId.OperandSize
+abbrev tyCond : TypeId := TyId.Cond
+abbrev tyExtendOp : TypeId := TyId.ExtendOp
+abbrev tyAMode : TypeId := TyId.AMode
+abbrev tyCondBrKind : TypeId := TyId.CondBrKind
+abbrev tyMoveWideOp : TypeId := TyId.MoveWideOp
+abbrev tyBfmOp : TypeId := TyId.BfmOp
+abbrev tyBitOp : TypeId := TyId.BitOp
+abbrev tyScalarSize : TypeId := TyId.ScalarSize
+abbrev tyVectorSize : TypeId := TyId.VectorSize
+abbrev tyVecMisc2 : TypeId := TyId.VecMisc2
+abbrev tyVecLanesOp : TypeId := TyId.VecLanesOp
+abbrev tyVecALUOp : TypeId := TyId.VecALUOp
+abbrev tyTBKind : TypeId := TyId.TestBitAndBranchKind
+abbrev tyIntCC : TypeId := TyId.IntCC
+abbrev tyOpcode : TypeId := TyId.Opcode
+abbrev tyInstData : TypeId := TyId.InstructionData
+abbrev tyRelocDistance : TypeId := TyId.RelocDistance
+abbrev tyTlsModel : TypeId := TyId.TlsModel
+abbrev tyImmExtend : TypeId := TyId.ImmExtend
+
+/-- The variant name of an enum value (messages only). -/
 def V.variant? : V → Option (TypeId × String × List V)
   | .data t k fs => ((variantNames t)[k]?).map fun n => (t, n, fs)
   | _ => none
 
+/-- Variant index and fields of a value of the enum type `ty`. -/
+def V.enumOf? (ty : TypeId) : V → Option (Nat × List V)
+  | .data t k fs => if t = ty then some (k, fs) else none
+  | _ => none
+
 /-! ### Conversion to the typed view (`V → MInst`) -/
 
-def ALUOp.ofName? : String → Option ALUOp
-  | "Add" => some .add | "Sub" => some .sub | "Orr" => some .orr | "OrrNot" => some .orrNot
-  | "And" => some .and | "AndS" => some .andS | "AndNot" => some .andNot | "Eor" => some .eor
-  | "EorNot" => some .eorNot | "AddS" => some .addS | "SubS" => some .subS
-  | "SMulH" => some .sMulH | "UMulH" => some .uMulH | "SDiv" => some .sDiv
-  | "UDiv" => some .uDiv | "Extr" => some .extr | "Lsr" => some .lsr | "Asr" => some .asr
-  | "Lsl" => some .lsl | "Adc" => some .adc | "AdcS" => some .adcS | "Sbc" => some .sbc
-  | "SbcS" => some .sbcS | _ => none
+def ALUOp.ofIdx? : Nat → Option ALUOp
+  | VIdx.ALUOp.Add => some .add | VIdx.ALUOp.Sub => some .sub | VIdx.ALUOp.Orr => some .orr
+  | VIdx.ALUOp.OrrNot => some .orrNot | VIdx.ALUOp.And => some .and
+  | VIdx.ALUOp.AndS => some .andS | VIdx.ALUOp.AndNot => some .andNot
+  | VIdx.ALUOp.Eor => some .eor | VIdx.ALUOp.EorNot => some .eorNot
+  | VIdx.ALUOp.AddS => some .addS | VIdx.ALUOp.SubS => some .subS
+  | VIdx.ALUOp.SMulH => some .sMulH | VIdx.ALUOp.UMulH => some .uMulH
+  | VIdx.ALUOp.SDiv => some .sDiv | VIdx.ALUOp.UDiv => some .uDiv
+  | VIdx.ALUOp.Extr => some .extr | VIdx.ALUOp.Lsr => some .lsr | VIdx.ALUOp.Asr => some .asr
+  | VIdx.ALUOp.Lsl => some .lsl | VIdx.ALUOp.Adc => some .adc | VIdx.ALUOp.AdcS => some .adcS
+  | VIdx.ALUOp.Sbc => some .sbc | VIdx.ALUOp.SbcS => some .sbcS | _ => none
 
-def ALUOp3.ofName? : String → Option ALUOp3
-  | "MAdd" => some .mAdd | "MSub" => some .mSub | "UMAddL" => some .uMAddL
-  | "SMAddL" => some .sMAddL | _ => none
+def ALUOp3.ofIdx? : Nat → Option ALUOp3
+  | VIdx.ALUOp3.MAdd => some .mAdd | VIdx.ALUOp3.MSub => some .mSub
+  | VIdx.ALUOp3.UMAddL => some .uMAddL | VIdx.ALUOp3.SMAddL => some .sMAddL | _ => none
 
 def Cond.all : List Cond :=
   [.eq, .ne, .hs, .lo, .mi, .pl, .vs, .vc, .hi, .ls, .ge, .lt, .gt, .le, .al, .nv]
@@ -649,7 +664,20 @@ def Cond.name : Cond → String
   | .vs => "Vs" | .vc => "Vc" | .hi => "Hi" | .ls => "Ls" | .ge => "Ge" | .lt => "Lt"
   | .gt => "Gt" | .le => "Le" | .al => "Al" | .nv => "Nv"
 
-def Cond.ofName? (s : String) : Option Cond := Cond.all.find? (·.name == s)
+/-- Variant index of a condition in the ISLE enum `Cond`. -/
+def Cond.idx : Cond → Nat
+  | .eq => VIdx.Cond.Eq | .ne => VIdx.Cond.Ne | .hs => VIdx.Cond.Hs | .lo => VIdx.Cond.Lo
+  | .mi => VIdx.Cond.Mi | .pl => VIdx.Cond.Pl | .vs => VIdx.Cond.Vs | .vc => VIdx.Cond.Vc
+  | .hi => VIdx.Cond.Hi | .ls => VIdx.Cond.Ls | .ge => VIdx.Cond.Ge | .lt => VIdx.Cond.Lt
+  | .gt => VIdx.Cond.Gt | .le => VIdx.Cond.Le | .al => VIdx.Cond.Al | .nv => VIdx.Cond.Nv
+
+def Cond.ofIdx? : Nat → Option Cond
+  | VIdx.Cond.Eq => some .eq | VIdx.Cond.Ne => some .ne | VIdx.Cond.Hs => some .hs
+  | VIdx.Cond.Lo => some .lo | VIdx.Cond.Mi => some .mi | VIdx.Cond.Pl => some .pl
+  | VIdx.Cond.Vs => some .vs | VIdx.Cond.Vc => some .vc | VIdx.Cond.Hi => some .hi
+  | VIdx.Cond.Ls => some .ls | VIdx.Cond.Ge => some .ge | VIdx.Cond.Lt => some .lt
+  | VIdx.Cond.Gt => some .gt | VIdx.Cond.Le => some .le | VIdx.Cond.Al => some .al
+  | VIdx.Cond.Nv => some .nv | _ => none
 
 def ExtendOp.all : List ExtendOp := [.uxtb, .uxth, .uxtw, .uxtx, .sxtb, .sxth, .sxtw, .sxtx]
 
@@ -657,52 +685,66 @@ def ExtendOp.name : ExtendOp → String
   | .uxtb => "UXTB" | .uxth => "UXTH" | .uxtw => "UXTW" | .uxtx => "UXTX"
   | .sxtb => "SXTB" | .sxth => "SXTH" | .sxtw => "SXTW" | .sxtx => "SXTX"
 
-def ExtendOp.ofName? (s : String) : Option ExtendOp := ExtendOp.all.find? (·.name == s)
+/-- Variant index of an extend op in the ISLE enum `ExtendOp`. -/
+def ExtendOp.idx : ExtendOp → Nat
+  | .uxtb => VIdx.ExtendOp.UXTB | .uxth => VIdx.ExtendOp.UXTH | .uxtw => VIdx.ExtendOp.UXTW
+  | .uxtx => VIdx.ExtendOp.UXTX | .sxtb => VIdx.ExtendOp.SXTB | .sxth => VIdx.ExtendOp.SXTH
+  | .sxtw => VIdx.ExtendOp.SXTW | .sxtx => VIdx.ExtendOp.SXTX
+
+def ExtendOp.ofIdx? : Nat → Option ExtendOp
+  | VIdx.ExtendOp.UXTB => some .uxtb | VIdx.ExtendOp.UXTH => some .uxth
+  | VIdx.ExtendOp.UXTW => some .uxtw | VIdx.ExtendOp.UXTX => some .uxtx
+  | VIdx.ExtendOp.SXTB => some .sxtb | VIdx.ExtendOp.SXTH => some .sxth
+  | VIdx.ExtendOp.SXTW => some .sxtw | VIdx.ExtendOp.SXTX => some .sxtx | _ => none
 
 def OperandSize.name : OperandSize → String
   | .size32 => "Size32" | .size64 => "Size64"
 
-def OperandSize.ofName? : String → Option OperandSize
-  | "Size32" => some .size32 | "Size64" => some .size64 | _ => none
+def OperandSize.ofIdx? : Nat → Option OperandSize
+  | VIdx.OperandSize.Size32 => some .size32 | VIdx.OperandSize.Size64 => some .size64 | _ => none
 
-def ScalarSize.ofName? : String → Option ScalarSize
-  | "Size8" => some .size8 | "Size16" => some .size16 | "Size32" => some .size32
-  | "Size64" => some .size64 | "Size128" => some .size128 | _ => none
+def ScalarSize.ofIdx? : Nat → Option ScalarSize
+  | VIdx.ScalarSize.Size8 => some .size8 | VIdx.ScalarSize.Size16 => some .size16
+  | VIdx.ScalarSize.Size32 => some .size32 | VIdx.ScalarSize.Size64 => some .size64
+  | VIdx.ScalarSize.Size128 => some .size128 | _ => none
 
-def VectorSize.ofName? : String → Option VectorSize
-  | "Size8x8" => some .size8x8 | "Size8x16" => some .size8x16 | "Size16x4" => some .size16x4
-  | "Size16x8" => some .size16x8 | "Size32x2" => some .size32x2
-  | "Size32x4" => some .size32x4 | "Size64x2" => some .size64x2 | _ => none
+def VectorSize.ofIdx? : Nat → Option VectorSize
+  | VIdx.VectorSize.Size8x8 => some .size8x8 | VIdx.VectorSize.Size8x16 => some .size8x16
+  | VIdx.VectorSize.Size16x4 => some .size16x4 | VIdx.VectorSize.Size16x8 => some .size16x8
+  | VIdx.VectorSize.Size32x2 => some .size32x2 | VIdx.VectorSize.Size32x4 => some .size32x4
+  | VIdx.VectorSize.Size64x2 => some .size64x2 | _ => none
 
-def BitOp.ofName? : String → Option BitOp
-  | "RBit" => some .rbit | "Clz" => some .clz | "Cls" => some .cls | "Rev16" => some .rev16
-  | "Rev32" => some .rev32 | "Rev64" => some .rev64 | _ => none
+def BitOp.ofIdx? : Nat → Option BitOp
+  | VIdx.BitOp.RBit => some .rbit | VIdx.BitOp.Clz => some .clz | VIdx.BitOp.Cls => some .cls
+  | VIdx.BitOp.Rev16 => some .rev16 | VIdx.BitOp.Rev32 => some .rev32
+  | VIdx.BitOp.Rev64 => some .rev64 | _ => none
 
-/-- Decode an enum value of type `ty` through `f` on its variant name. -/
-def V.enum? (ty : TypeId) (f : String → Option α) (v : V) : Option α := do
-  let (ty', n, _) ← v.variant?
-  if ty' == ty then f n else none
+/-- Decode an enum value of type `ty` through `f` on its variant index. -/
+def V.enum? (ty : TypeId) (f : Nat → Option α) (v : V) : Option α := do
+  let (k, _) ← v.enumOf? ty
+  f k
 
-def V.aluOp? := V.enum? tyALUOp ALUOp.ofName?
-def V.aluOp3? := V.enum? tyALUOp3 ALUOp3.ofName?
-def V.size? := V.enum? tyOperandSize OperandSize.ofName?
-def V.cond? := V.enum? tyCond Cond.ofName?
-def V.extendOp? := V.enum? tyExtendOp ExtendOp.ofName?
-def V.scalarSize? := V.enum? tyScalarSize ScalarSize.ofName?
-def V.vectorSize? := V.enum? tyVectorSize VectorSize.ofName?
-def V.bitOp? := V.enum? tyBitOp BitOp.ofName?
+def V.aluOp? := V.enum? tyALUOp ALUOp.ofIdx?
+def V.aluOp3? := V.enum? tyALUOp3 ALUOp3.ofIdx?
+def V.size? := V.enum? tyOperandSize OperandSize.ofIdx?
+def V.cond? := V.enum? tyCond Cond.ofIdx?
+def V.extendOp? := V.enum? tyExtendOp ExtendOp.ofIdx?
+def V.scalarSize? := V.enum? tyScalarSize ScalarSize.ofIdx?
+def V.vectorSize? := V.enum? tyVectorSize VectorSize.ofIdx?
+def V.bitOp? := V.enum? tyBitOp BitOp.ofIdx?
 def V.moveWideOp? := V.enum? tyMoveWideOp fun
-  | "MovZ" => some MoveWideOp.movZ | "MovN" => some .movN | _ => none
+  | VIdx.MoveWideOp.MovZ => some MoveWideOp.movZ | VIdx.MoveWideOp.MovN => some .movN | _ => none
 def V.bfmOp? := V.enum? tyBfmOp fun
-  | "UBfm" => some BfmOp.uBfm | "SBfm" => some .sBfm | _ => none
+  | VIdx.BfmOp.UBfm => some BfmOp.uBfm | VIdx.BfmOp.SBfm => some .sBfm | _ => none
 def V.tbKind? := V.enum? tyTBKind fun
-  | "Z" => some TestBitAndBranchKind.z | "NZ" => some .nz | _ => none
+  | VIdx.TestBitAndBranchKind.Z => some TestBitAndBranchKind.z
+  | VIdx.TestBitAndBranchKind.NZ => some .nz | _ => none
 def V.vecMisc2? := V.enum? tyVecMisc2 fun
-  | "Cnt" => some VecMisc2.cnt | _ => none
+  | VIdx.VecMisc2.Cnt => some VecMisc2.cnt | _ => none
 def V.vecLanesOp? := V.enum? tyVecLanesOp fun
-  | "Addv" => some VecLanesOp.addv | "Uaddlv" => some .uaddlv | _ => none
+  | VIdx.VecLanesOp.Addv => some VecLanesOp.addv | _ => none
 def V.vecALUOp? := V.enum? tyVecALUOp fun
-  | "Addp" => some VecALUOp.addp | _ => none
+  | VIdx.VecALUOp.Addp => some VecALUOp.addp | _ => none
 
 def V.reg? : V → Option Reg
   | .reg r => some r
@@ -770,105 +812,107 @@ def V.int? : V → Option Int
 
 /-- `AMode` from its ISLE value. -/
 def V.amode? (v : V) : Option AMode := do
-  let (t, n, fs) ← v.variant?
-  if t != tyAMode then none
-  match n, fs with
-  | "RegReg", [a, b] => return .regReg (← a.reg?) (← b.reg?)
-  | "RegScaled", [a, b] => return .regScaled (← a.reg?) (← b.reg?)
-  | "RegScaledExtended", [a, b, e] => return .regScaledExtended (← a.reg?) (← b.reg?) (← e.extendOp?)
-  | "RegExtended", [a, b, e] => return .regExtended (← a.reg?) (← b.reg?) (← e.extendOp?)
-  | "Unscaled", [a, .op (.simm9 i)] => return .unscaled (← a.reg?) i
-  | "UnsignedOffset", [a, .op (.uimm12Scaled o)] => return .unsignedOffset (← a.reg?) o
-  | "RegOffset", [a, o] => return .regOffset (← a.reg?) (← o.int?)
-  | "SPOffset", [o] => return .spOffset (← o.int?)
-  | "FPOffset", [o] => return .fpOffset (← o.int?)
-  | "IncomingArg", [o] => return .incomingArg (← o.int?)
-  | "SlotOffset", [o] => return .slotOffset (← o.int?)
-  | "SPPreIndexed", [.op (.simm9 i)] => return .spPreIndexed i
-  | "SPPostIndexed", [.op (.simm9 i)] => return .spPostIndexed i
+  let (k, fs) ← v.enumOf? tyAMode
+  match k, fs with
+  | VIdx.AMode.RegReg, [a, b] => return .regReg (← a.reg?) (← b.reg?)
+  | VIdx.AMode.RegScaled, [a, b] => return .regScaled (← a.reg?) (← b.reg?)
+  | VIdx.AMode.RegScaledExtended, [a, b, e] =>
+    return .regScaledExtended (← a.reg?) (← b.reg?) (← e.extendOp?)
+  | VIdx.AMode.RegExtended, [a, b, e] => return .regExtended (← a.reg?) (← b.reg?) (← e.extendOp?)
+  | VIdx.AMode.Unscaled, [a, .op (.simm9 i)] => return .unscaled (← a.reg?) i
+  | VIdx.AMode.UnsignedOffset, [a, .op (.uimm12Scaled o)] => return .unsignedOffset (← a.reg?) o
+  | VIdx.AMode.RegOffset, [a, o] => return .regOffset (← a.reg?) (← o.int?)
+  | VIdx.AMode.SPOffset, [o] => return .spOffset (← o.int?)
+  | VIdx.AMode.FPOffset, [o] => return .fpOffset (← o.int?)
+  | VIdx.AMode.IncomingArg, [o] => return .incomingArg (← o.int?)
+  | VIdx.AMode.SlotOffset, [o] => return .slotOffset (← o.int?)
+  | VIdx.AMode.SPPreIndexed, [.op (.simm9 i)] => return .spPreIndexed i
+  | VIdx.AMode.SPPostIndexed, [.op (.simm9 i)] => return .spPostIndexed i
   | _, _ => none
 
 /-- `CondBrKind` from its ISLE value. -/
 def V.condBrKind? (v : V) : Option CondBrKind := do
-  let (t, n, fs) ← v.variant?
-  if t != tyCondBrKind then none
-  match n, fs with
-  | "Zero", [r, s] => return .zero (← r.reg?) (← s.size?)
-  | "NotZero", [r, s] => return .notZero (← r.reg?) (← s.size?)
-  | "Cond", [c] => return .cond (← c.cond?)
+  let (k, fs) ← v.enumOf? tyCondBrKind
+  match k, fs with
+  | VIdx.CondBrKind.Zero, [r, s] => return .zero (← r.reg?) (← s.size?)
+  | VIdx.CondBrKind.NotZero, [r, s] => return .notZero (← r.reg?) (← s.size?)
+  | VIdx.CondBrKind.Cond, [c] => return .cond (← c.cond?)
   | _, _ => none
 
-def loadOpOfName? : String → Option LoadOp
-  | "ULoad8" => some .uload8 | "SLoad8" => some .sload8 | "ULoad16" => some .uload16
-  | "SLoad16" => some .sload16 | "ULoad32" => some .uload32 | "SLoad32" => some .sload32
-  | "ULoad64" => some .uload64 | _ => none
+def loadOpOfIdx? : Nat → Option LoadOp
+  | VIdx.MInst.ULoad8 => some .uload8 | VIdx.MInst.SLoad8 => some .sload8
+  | VIdx.MInst.ULoad16 => some .uload16 | VIdx.MInst.SLoad16 => some .sload16
+  | VIdx.MInst.ULoad32 => some .uload32 | VIdx.MInst.SLoad32 => some .sload32
+  | VIdx.MInst.ULoad64 => some .uload64 | _ => none
 
-def storeOpOfName? : String → Option StoreOp
-  | "Store8" => some .store8 | "Store16" => some .store16 | "Store32" => some .store32
-  | "Store64" => some .store64 | _ => none
+def storeOpOfIdx? : Nat → Option StoreOp
+  | VIdx.MInst.Store8 => some .store8 | VIdx.MInst.Store16 => some .store16
+  | VIdx.MInst.Store32 => some .store32 | VIdx.MInst.Store64 => some .store64 | _ => none
 
 /-- The typed instruction of an ISLE `MInst` value (`none`: not in the modelled subset).
 `BranchTarget` values are labels (`branch_target` is the identity on labels). -/
 def MInst.ofV (v : V) : Option MInst := do
-  let (t, n, fs) ← v.variant?
-  if t != tyMInst then none
-  match n, fs with
-  | "AluRRR", [op, s, rd, rn, rm] =>
+  let (k, fs) ← v.enumOf? tyMInst
+  match k, fs with
+  | VIdx.MInst.AluRRR, [op, s, rd, rn, rm] =>
     return .aluRRR (← op.aluOp?) (← s.size?) (← rd.reg?) (← rn.reg?) (← rm.reg?)
-  | "AluRRRR", [op, s, rd, rn, rm, ra] =>
+  | VIdx.MInst.AluRRRR, [op, s, rd, rn, rm, ra] =>
     return .aluRRRR (← op.aluOp3?) (← s.size?) (← rd.reg?) (← rn.reg?) (← rm.reg?) (← ra.reg?)
-  | "AluRRImm12", [op, s, rd, rn, i] =>
+  | VIdx.MInst.AluRRImm12, [op, s, rd, rn, i] =>
     return .aluRRImm12 (← op.aluOp?) (← s.size?) (← rd.reg?) (← rn.reg?) (← i.imm12?)
-  | "AluRRImmLogic", [op, s, rd, rn, i] =>
+  | VIdx.MInst.AluRRImmLogic, [op, s, rd, rn, i] =>
     return .aluRRImmLogic (← op.aluOp?) (← s.size?) (← rd.reg?) (← rn.reg?) (← i.immLogic?)
-  | "AluRRImmShift", [op, s, rd, rn, i] =>
+  | VIdx.MInst.AluRRImmShift, [op, s, rd, rn, i] =>
     return .aluRRImmShift (← op.aluOp?) (← s.size?) (← rd.reg?) (← rn.reg?) (← i.immShift?)
-  | "AluRRRShift", [op, s, rd, rn, rm, sh] =>
+  | VIdx.MInst.AluRRRShift, [op, s, rd, rn, rm, sh] =>
     return .aluRRRShift (← op.aluOp?) (← s.size?) (← rd.reg?) (← rn.reg?) (← rm.reg?)
       (← sh.shiftOpAndAmt?)
-  | "AluRRRExtend", [op, s, rd, rn, rm, e] =>
+  | VIdx.MInst.AluRRRExtend, [op, s, rd, rn, rm, e] =>
     return .aluRRRExtend (← op.aluOp?) (← s.size?) (← rd.reg?) (← rn.reg?) (← rm.reg?)
       (← e.extendOp?)
-  | "BitRR", [op, s, rd, rn] => return .bitRR (← op.bitOp?) (← s.size?) (← rd.reg?) (← rn.reg?)
-  | "Mov", [s, rd, rm] => return .mov (← s.size?) (← rd.reg?) (← rm.reg?)
-  | "MovWide", [op, rd, i, s] =>
+  | VIdx.MInst.BitRR, [op, s, rd, rn] =>
+    return .bitRR (← op.bitOp?) (← s.size?) (← rd.reg?) (← rn.reg?)
+  | VIdx.MInst.Mov, [s, rd, rm] => return .mov (← s.size?) (← rd.reg?) (← rm.reg?)
+  | VIdx.MInst.MovWide, [op, rd, i, s] =>
     return .movWide (← op.moveWideOp?) (← rd.reg?) (← i.moveWideConst?) (← s.size?)
-  | "MovK", [rd, rn, i, s] => return .movK (← rd.reg?) (← rn.reg?) (← i.moveWideConst?) (← s.size?)
-  | "Extend", [rd, rn, sg, a, b] =>
+  | VIdx.MInst.MovK, [rd, rn, i, s] =>
+    return .movK (← rd.reg?) (← rn.reg?) (← i.moveWideConst?) (← s.size?)
+  | VIdx.MInst.Extend, [rd, rn, sg, a, b] =>
     return .extend (← rd.reg?) (← rn.reg?) (← sg.bool?) (← a.nat?) (← b.nat?)
-  | "BitfieldMove", [s, op, rd, rn, a, b] =>
+  | VIdx.MInst.BitfieldMove, [s, op, rd, rn, a, b] =>
     return .bitfieldMove (← s.size?) (← op.bfmOp?) (← rd.reg?) (← rn.reg?) (← a.uimm6?) (← b.uimm6?)
-  | "CSet", [rd, c] => return .cset (← rd.reg?) (← c.cond?)
-  | "CSel", [rd, c, rn, rm] => return .csel (← rd.reg?) (← rn.reg?) (← rm.reg?) (← c.cond?)
-  | "CCmp", [s, rn, rm, f, c] =>
+  | VIdx.MInst.CSet, [rd, c] => return .cset (← rd.reg?) (← c.cond?)
+  | VIdx.MInst.CSel, [rd, c, rn, rm] => return .csel (← rd.reg?) (← rn.reg?) (← rm.reg?) (← c.cond?)
+  | VIdx.MInst.CCmp, [s, rn, rm, f, c] =>
     return .ccmp (← s.size?) (← rn.reg?) (← rm.reg?) (← f.nzcv?) (← c.cond?)
-  | "CCmpImm", [s, rn, i, f, c] =>
+  | VIdx.MInst.CCmpImm, [s, rn, i, f, c] =>
     return .ccmpImm (← s.size?) (← rn.reg?) (← i.uimm5?) (← f.nzcv?) (← c.cond?)
-  | "MovToFpu", [rd, rn, s] => return .movToFpu (← rd.reg?) (← rn.reg?) (← s.scalarSize?)
-  | "MovFromVec", [rd, rn, i, s] =>
+  | VIdx.MInst.MovToFpu, [rd, rn, s] => return .movToFpu (← rd.reg?) (← rn.reg?) (← s.scalarSize?)
+  | VIdx.MInst.MovFromVec, [rd, rn, i, s] =>
     return .movFromVec (← rd.reg?) (← rn.reg?) (← i.nat?) (← s.scalarSize?)
-  | "VecMisc", [op, rd, rn, s] =>
+  | VIdx.MInst.VecMisc, [op, rd, rn, s] =>
     return .vecMisc (← op.vecMisc2?) (← rd.reg?) (← rn.reg?) (← s.vectorSize?)
-  | "VecLanes", [op, rd, rn, s] =>
+  | VIdx.MInst.VecLanes, [op, rd, rn, s] =>
     return .vecLanes (← op.vecLanesOp?) (← rd.reg?) (← rn.reg?) (← s.vectorSize?)
-  | "VecRRR", [op, rd, rn, rm, s] =>
+  | VIdx.MInst.VecRRR, [op, rd, rn, rm, s] =>
     return .vecRRR (← op.vecALUOp?) (← rd.reg?) (← rn.reg?) (← rm.reg?) (← s.vectorSize?)
-  | "Call", [i] => return .call (← i.callInfo?)
-  | "CallInd", [i] => return .call (← i.callInfo?)
-  | "Jump", [t] => return .jump (← t.label?)
-  | "CondBr", [t, e, k] => return .condBr (← t.label?) (← e.label?) (← k.condBrKind?)
-  | "TestBitAndBranch", [k, t, e, rn, b] =>
+  | VIdx.MInst.Call, [i] => return .call (← i.callInfo?)
+  | VIdx.MInst.CallInd, [i] => return .call (← i.callInfo?)
+  | VIdx.MInst.Jump, [t] => return .jump (← t.label?)
+  | VIdx.MInst.CondBr, [t, e, k] => return .condBr (← t.label?) (← e.label?) (← k.condBrKind?)
+  | VIdx.MInst.TestBitAndBranch, [k, t, e, rn, b] =>
     return .testBitAndBranch (← k.tbKind?) (← t.label?) (← e.label?) (← rn.reg?) (← b.nat?)
-  | "TrapIf", [k, c] => return .trapIf (← k.condBrKind?) (← c.trapCode?)
-  | "Udf", [c] => return .udf (← c.trapCode?)
-  | "JTSequence", [d, ts, ridx, t1, t2] =>
+  | VIdx.MInst.TrapIf, [k, c] => return .trapIf (← k.condBrKind?) (← c.trapCode?)
+  | VIdx.MInst.Udf, [c] => return .udf (← c.trapCode?)
+  | VIdx.MInst.JTSequence, [d, ts, ridx, t1, t2] =>
     return .jtSequence (← d.label?) (← ts.labels?) (← ridx.reg?) (← t1.reg?) (← t2.reg?)
-  | "LoadExtNameGot", [rd, nm] => return .loadExtNameGot (← rd.reg?) (← nm.extName?)
-  | "LoadExtNameNear", [rd, nm, o] => return .loadExtNameNear (← rd.reg?) (← nm.extName?) (← o.int?)
-  | "LoadAddr", [rd, m] => return .loadAddr (← rd.reg?) (← m.amode?)
-  | "EmitIsland", [n] => return .emitIsland (← n.nat?)
-  | name, [rd, m, fl] =>
-    match loadOpOfName? name, storeOpOfName? name with
+  | VIdx.MInst.LoadExtNameGot, [rd, nm] => return .loadExtNameGot (← rd.reg?) (← nm.extName?)
+  | VIdx.MInst.LoadExtNameNear, [rd, nm, o] =>
+    return .loadExtNameNear (← rd.reg?) (← nm.extName?) (← o.int?)
+  | VIdx.MInst.LoadAddr, [rd, m] => return .loadAddr (← rd.reg?) (← m.amode?)
+  | VIdx.MInst.EmitIsland, [n] => return .emitIsland (← n.nat?)
+  | k, [rd, m, fl] =>
+    match loadOpOfIdx? k, storeOpOfIdx? k with
     | some op, _ => return .load op (← rd.reg?) (← m.amode?) (← fl.memFlags?)
     | none, some op => return .store op (← rd.reg?) (← m.amode?) (← fl.memFlags?)
     | none, none => none

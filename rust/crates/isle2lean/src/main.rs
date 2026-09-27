@@ -113,37 +113,44 @@ fn module_header(imports: &[&str]) -> String {
     s
 }
 
-/// Modules of named `def`s plus a trailing `def <array>_<k> : Array <ty>`.
-fn named_def_modules(
-    prefix: &str,
-    array: &str,
-    ty: &str,
-    names: &[String],
-    blocks: &[String],
-    max_items: usize,
-) -> (Vec<Module>, Vec<String>) {
-    let mut mods = Vec::new();
-    let mut arrays = Vec::new();
-    for (k, r) in chunk(blocks, max_items).into_iter().enumerate() {
-        let mut body = module_header(&["FV.Isle.Syntax"]);
-        for b in &blocks[r.clone()] {
-            body.push_str(b);
-            body.push('\n');
-        }
-        let arr = format!("{array}_{k}");
-        let _ = writeln!(body, "def {arr} : Array {ty} := #[");
-        let items: Vec<&str> = names[r].iter().map(|s| s.as_str()).collect();
-        for (i, n) in items.iter().enumerate() {
-            let _ = writeln!(body, "  {n}{}", if i + 1 < items.len() { "," } else { "]" });
-        }
-        body.push_str("\nend Isle.Aarch64\n");
-        mods.push(Module {
-            name: format!("{prefix}{k:02}"),
-            body,
-        });
-        arrays.push(arr);
+/// Modules of `def` blocks (each ending in a newline), chunked by `chunk`.
+fn def_modules(prefix: &str, imports: &[&str], blocks: &[String]) -> Vec<Module> {
+    chunk(blocks, usize::MAX)
+        .into_iter()
+        .enumerate()
+        .map(|(k, r)| {
+            let mut body = module_header(imports);
+            for b in &blocks[r] {
+                body.push_str(b);
+                body.push('\n');
+            }
+            body.push_str("end Isle.Aarch64\n");
+            Module {
+                name: format!("{prefix}{k:02}"),
+                body,
+            }
+        })
+        .collect()
+}
+
+/// A module holding one flat array literal `def <name> : Array <ty> := #[...]`, one item per
+/// line with its index. Flat (not an append of chunks) so that the kernel can index it: the
+/// isel proofs' data facts (`program.terms[t]? = some T.x`) are `rfl`.
+fn table_module(module: &str, imports: &[&str], doc: &str, name: &str, ty: &str, items: &[String]) -> Module {
+    let mut body = module_header(imports);
+    let _ = writeln!(body, "/-- {doc} -/\ndef {name} : Array {ty} := #[");
+    for (i, it) in items.iter().enumerate() {
+        let _ = writeln!(body, "  {it}{} -- {i}", if i + 1 < items.len() { "," } else { "]" });
     }
-    (mods, arrays)
+    body.push_str("\nend Isle.Aarch64\n");
+    Module {
+        name: module.into(),
+        body,
+    }
+}
+
+fn module_names(mods: &[Module]) -> Vec<String> {
+    mods.iter().map(|m| format!("FV.Isle.Generated.{}", m.name)).collect()
 }
 
 /// Modules holding inline array literals `def <array>_<k> : Array <ty> := #[...]`.
@@ -233,7 +240,7 @@ fn main() -> Result<()> {
 
     let mut modules: Vec<Module> = Vec::new();
 
-    // Types.
+    // Types: one `def ty_<name>` each.
     let type_blocks: Vec<String> = u
         .tyenv
         .types
@@ -241,20 +248,36 @@ fn main() -> Result<()> {
         .zip(&type_names)
         .map(|(t, n)| format!("def {n} : TypeDef :=\n  {}\n", lean::type_def(&u, t)))
         .collect();
-    let (m, type_arrays) =
-        named_def_modules("Types", "types", "TypeDef", &type_names, &type_blocks, MAX_ITEMS);
-    modules.extend(m);
+    let type_mods = def_modules("Types", &["FV.Isle.Syntax"], &type_blocks);
 
-    // Terms.
+    // Ids: `TyId.«T»`, `VIdx.«T».«V»`, `TId.«t»` (match patterns for the backend's dispatch).
+    let ids = Module {
+        name: "Ids".into(),
+        body: lean::ids_module(&u, &module_header(&["FV.Isle.Syntax"])),
+    };
+
+    // Terms: one `def T.«name»` each.
     let extractors = lean::extractor_forms(&u);
-    let term_items: Vec<String> = u
+    let term_consts: Vec<String> = u
         .termenv
         .terms
         .iter()
-        .map(|t| lean::term(&u, &extractors, t))
+        .map(|t| format!("T.{}", lean::lname(u.sym(t.name))))
         .collect();
-    let (m, term_arrays) = inline_modules("Terms", "terms", "Term", &term_items);
-    modules.extend(m);
+    let term_blocks: Vec<String> = u
+        .termenv
+        .terms
+        .iter()
+        .zip(&term_consts)
+        .map(|(t, n)| {
+            format!(
+                "/-- term {} -/\ndef {n} : Term :=\n  {}\n",
+                t.id.index(),
+                lean::term(&u, &extractors, t)
+            )
+        })
+        .collect();
+    let term_mods = def_modules("Terms", &["FV.Isle.Syntax"], &term_blocks);
 
     // Rules: one def each.
     let named = lean::explicitly_named_rules(&u);
@@ -265,23 +288,106 @@ fn main() -> Result<()> {
         .zip(&rule_names)
         .map(|(r, n)| lean::rule_def(&u, r, n, named.contains(&r.pos)))
         .collect();
-    let (m, rule_arrays) =
-        named_def_modules("Rules", "rules", "Rule", &rule_names, &rule_blocks, MAX_ITEMS);
-    modules.extend(m);
+    let rule_mods = def_modules("Rules", &["FV.Isle.Syntax"], &rule_blocks);
+
+    // Per-term rule lists `R.«term»`, in matching order (`ruleBefore`: priority descending,
+    // then rule id ascending), for every term that has rules.
+    let mut by_term: Vec<Vec<usize>> = vec![Vec::new(); u.termenv.terms.len()];
+    for r in &u.termenv.rules {
+        by_term[r.root_term.index()].push(r.id.index());
+    }
+    for rs in &mut by_term {
+        rs.sort_by_key(|&i| (std::cmp::Reverse(u.termenv.rules[i].prio), i));
+    }
+    let mut rl_blocks = Vec::new();
+    let mut rule_lists = Vec::new();
+    for (t, rs) in by_term.iter().enumerate() {
+        if rs.is_empty() {
+            rule_lists.push("[]".to_string());
+            continue;
+        }
+        let name = format!("R.{}", lean::lname(u.sym(u.termenv.terms[t].name)));
+        let mut b = format!("/-- Rules of term {t}, in matching order. -/\ndef {name} : List Rule := [");
+        for (i, &r) in rs.iter().enumerate() {
+            let _ = write!(b, "{}\n  {}", if i > 0 { "," } else { "" }, rule_names[r]);
+        }
+        b.push_str("]\n");
+        rl_blocks.push(b);
+        rule_lists.push(name);
+    }
+    let rule_mod_names = module_names(&rule_mods);
+    let rl_mods = def_modules(
+        "RuleLists",
+        &rule_mod_names.iter().map(|s| s.as_str()).collect::<Vec<_>>(),
+        &rl_blocks,
+    );
 
     // Specs.
     let specs = lean::spec_items(&u);
     let spec_items: Vec<String> = specs.iter().map(|s| lean::spec_item(&u, s)).collect();
-    let (m, spec_arrays) = inline_modules("Specs", "specs", "SpecDef", &spec_items);
-    modules.extend(m);
+    let (spec_mods, spec_arrays) = inline_modules("Specs", "specs", "SpecDef", &spec_items);
 
-    // Program.
-    let data_imports: Vec<String> = modules
+    // Flat tables.
+    let term_mod_names = module_names(&term_mods);
+    let term_table = table_module(
+        "TermTable",
+        &term_mod_names.iter().map(|s| s.as_str()).collect::<Vec<_>>(),
+        "All terms, indexed by `TermId`.",
+        "terms",
+        "Term",
+        &term_consts,
+    );
+    let rl_mod_names = module_names(&rl_mods);
+    let rule_table = table_module(
+        "RuleTable",
+        &rl_mod_names.iter().map(|s| s.as_str()).collect::<Vec<_>>(),
+        "The rules of each term (indexed by `TermId`) in matching order.",
+        "ruleLists",
+        "(List Rule)",
+        &rule_lists,
+    );
+    let type_mod_names = module_names(&type_mods);
+    let rule_array = table_module(
+        "RuleArray",
+        &rule_mod_names.iter().map(|s| s.as_str()).collect::<Vec<_>>(),
+        "All rules, indexed by `RuleId`.",
+        "rules",
+        "Rule",
+        &rule_names,
+    );
+    let type_array = table_module(
+        "TypeArray",
+        &type_mod_names.iter().map(|s| s.as_str()).collect::<Vec<_>>(),
+        "All types, indexed by `TypeId`.",
+        "types",
+        "TypeDef",
+        &type_names,
+    );
+    modules.extend(type_mods);
+    modules.push(ids);
+    modules.extend(term_mods);
+    modules.extend(rule_mods);
+    modules.extend(rl_mods);
+    modules.extend(spec_mods);
+    let spec_mod_names: Vec<String> = modules
+        .iter()
+        .filter(|m| m.name.starts_with("Specs"))
+        .map(|m| format!("FV.Isle.Generated.{}", m.name))
+        .collect();
+    let table_names: Vec<String> = [&type_array, &term_table, &rule_array, &rule_table]
         .iter()
         .map(|m| format!("FV.Isle.Generated.{}", m.name))
         .collect();
+    modules.push(type_array);
+    modules.push(term_table);
+    modules.push(rule_array);
+    modules.push(rule_table);
+
+    // Program.
     {
-        let imports: Vec<&str> = data_imports.iter().map(|s| s.as_str()).collect();
+        let mut imports: Vec<&str> = vec!["FV.Isle.Generated.Ids"];
+        imports.extend(table_names.iter().map(|s| s.as_str()));
+        imports.extend(spec_mod_names.iter().map(|s| s.as_str()));
         let mut body = module_header(&imports);
         body.push_str("/-- Input files of the aarch64 compilation unit, in load order. -/\n");
         body.push_str("def files : Array String := #[\n");
@@ -334,13 +440,14 @@ fn main() -> Result<()> {
             }
         }
         body.push_str("]\n\n");
-        let _ = writeln!(body, "def types : Array TypeDef := {}\n", concat(&type_arrays));
-        let _ = writeln!(body, "def terms : Array Term := {}\n", concat(&term_arrays));
-        let _ = writeln!(body, "def rules : Array Rule := {}\n", concat(&rule_arrays));
         let _ = writeln!(body, "def specs : Array SpecDef := {}\n", concat(&spec_arrays));
         body.push_str(
-            "/-- The aarch64 lowering unit, with the per-term rule index built. -/\n\
-             def program : Program :=\n  Program.build \"aarch64\" files types terms rules consts converters specs\n\n\
+            "/-- The aarch64 lowering unit. A structure literal over flat tables (no computation), so\n\
+             that the kernel evaluates `program.term? t`, `program.rulesOf t` by `rfl`;\n\
+             `FVTest/Isle/Data.lean` checks `ruleLists` against `Program.build`'s bucket sort. -/\n\
+             def program : Program where\n  name := \"aarch64\"\n  files := files\n  types := types\n  \
+             terms := terms\n  rules := rules\n  consts := consts\n  converters := converters\n  \
+             specs := specs\n  ruleLists := ruleLists\n\n\
              end Isle.Aarch64\n",
         );
         modules.push(Module {

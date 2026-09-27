@@ -87,13 +87,13 @@ def intccName : Clif.IntCC → String
   | .uge => "UnsignedGreaterThanOrEqual" | .ugt => "UnsignedGreaterThan"
   | .ule => "UnsignedLessThanOrEqual"
 
-/-- `lower_condcode`. -/
-def condOfIntCC : String → Option Cond
-  | "Equal" => some .eq | "NotEqual" => some .ne
-  | "SignedGreaterThanOrEqual" => some .ge | "SignedGreaterThan" => some .gt
-  | "SignedLessThanOrEqual" => some .le | "SignedLessThan" => some .lt
-  | "UnsignedGreaterThanOrEqual" => some .hs | "UnsignedGreaterThan" => some .hi
-  | "UnsignedLessThanOrEqual" => some .ls | "UnsignedLessThan" => some .lo
+/-- `lower_condcode`, on the variant index of an ISLE `IntCC` value. -/
+def condOfIntCC : Nat → Option Cond
+  | VIdx.IntCC.Equal => some .eq | VIdx.IntCC.NotEqual => some .ne
+  | VIdx.IntCC.SignedGreaterThanOrEqual => some .ge | VIdx.IntCC.SignedGreaterThan => some .gt
+  | VIdx.IntCC.SignedLessThanOrEqual => some .le | VIdx.IntCC.SignedLessThan => some .lt
+  | VIdx.IntCC.UnsignedGreaterThanOrEqual => some .hs | VIdx.IntCC.UnsignedGreaterThan => some .hi
+  | VIdx.IntCC.UnsignedLessThanOrEqual => some .ls | VIdx.IntCC.UnsignedLessThan => some .lo
   | _ => none
 
 def binaryOpcode : Clif.BinaryOp → Option String
@@ -277,76 +277,76 @@ def sextFrom (bits : Nat) (i : Int) : Int :=
 /-- `u64` view of an `i64`/`Imm64`. -/
 def u64 (i : Int) : Nat := (i % (2 ^ 64 : Int)).toNat
 
-/-- Extern `Type → Option Type` predicates of `isle_prelude.rs` / `aarch64/lower/isle.rs`
-(no dynamic vectors exist here: `is_dynamic_vector` is false). -/
-def tyPred : String → Option (CTy → Bool)
-  | "fits_in_16" => some fun t => t.bits ≤ 16
-  | "fits_in_32" => some fun t => t.bits ≤ 32
-  | "fits_in_64" => some fun t => t.bits ≤ 64
-  | "ty_int_ref_scalar_64" | "ty_int_ref_scalar_64_extract" =>
+/-- Extern `Type → Option Type` predicates of `isle_prelude.rs` / `aarch64/lower/isle.rs`, by
+term id (no dynamic vectors exist here: `is_dynamic_vector` is false). -/
+def tyPred : TermId → Option (CTy → Bool)
+  | TId.fits_in_16 => some fun t => t.bits ≤ 16
+  | TId.fits_in_32 => some fun t => t.bits ≤ 32
+  | TId.fits_in_64 => some fun t => t.bits ≤ 64
+  | TId.ty_int_ref_scalar_64 | TId.ty_int_ref_scalar_64_extract =>
     some fun t => t.bits ≤ 64 && !t.isFloat && !t.isVector
-  | "ty_32_or_64" => some fun t => t.bits == 32 || t.bits == 64
-  | "ty_8_or_16" => some fun t => t.bits == 8 || t.bits == 16
-  | "ty_16_or_32" => some fun t => t.bits == 16 || t.bits == 32
-  | "ty_16" => some fun t => t.bits == 16
-  | "ty_32" => some fun t => t.bits == 32
-  | "ty_64" => some fun t => t.bits == 64
-  | "ty_128" => some fun t => t.bits == 128
-  | "ty_int" => some CTy.isInt
-  | "ty_scalar" => some fun t => t.laneCount == 1
-  | "ty_scalar_float" => some CTy.isFloat
-  | "ty_float_or_vec" => some fun t => t.isFloat || t.isVector
-  | "ty_vector_float" => some fun t => match t with | .vec _ _ f => f | _ => false
-  | "ty_vector_not_float" => some fun t => match t with | .vec _ _ f => !f | _ => false
-  | "ty_vec64" => some fun t => t.isVector && t.bits == 64
-  | "ty_vec128" => some fun t => t.isVector && t.bits == 128
-  | "ty_vec64_int" => some fun t => match t with | .vec _ _ f => !f && t.bits == 64 | _ => false
-  | "ty_vec128_int" => some fun t => match t with | .vec _ _ f => !f && t.bits == 128 | _ => false
-  | "ty_dyn_vec64" | "ty_dyn_vec128" | "ty_dyn64_int" | "ty_dyn128_int" => some fun _ => false
-  | "lane_fits_in_32" => some fun t => t.isVector && t.laneBits ≤ 32
-  | "int_fits_in_32" => some fun t => t == .int 8 || t == .int 16 || t == .int 32
-  | "ty_int_ref_64" => some fun t => t == .int 64
-  | "ty_int_ref_16_to_64" => some fun t => t == .int 16 || t == .int 32 || t == .int 64
-  | "integral_ty" | "valid_atomic_transaction" =>
+  | TId.ty_32_or_64 => some fun t => t.bits == 32 || t.bits == 64
+  | TId.ty_8_or_16 => some fun t => t.bits == 8 || t.bits == 16
+  | TId.ty_16_or_32 => some fun t => t.bits == 16 || t.bits == 32
+  | TId.ty_16 => some fun t => t.bits == 16
+  | TId.ty_32 => some fun t => t.bits == 32
+  | TId.ty_64 => some fun t => t.bits == 64
+  | TId.ty_128 => some fun t => t.bits == 128
+  | TId.ty_int => some CTy.isInt
+  | TId.ty_scalar => some fun t => t.laneCount == 1
+  | TId.ty_scalar_float => some CTy.isFloat
+  | TId.ty_float_or_vec => some fun t => t.isFloat || t.isVector
+  | TId.ty_vector_float => some fun t => match t with | .vec _ _ f => f | _ => false
+  | TId.ty_vector_not_float => some fun t => match t with | .vec _ _ f => !f | _ => false
+  | TId.ty_vec64 => some fun t => t.isVector && t.bits == 64
+  | TId.ty_vec128 => some fun t => t.isVector && t.bits == 128
+  | TId.ty_vec64_int => some fun t => match t with | .vec _ _ f => !f && t.bits == 64 | _ => false
+  | TId.ty_vec128_int => some fun t => match t with | .vec _ _ f => !f && t.bits == 128 | _ => false
+  | TId.ty_dyn_vec64 | TId.ty_dyn_vec128 | TId.ty_dyn64_int | TId.ty_dyn128_int => some fun _ => false
+  | TId.lane_fits_in_32 => some fun t => t.isVector && t.laneBits ≤ 32
+  | TId.int_fits_in_32 => some fun t => t == .int 8 || t == .int 16 || t == .int 32
+  | TId.ty_int_ref_64 => some fun t => t == .int 64
+  | TId.ty_int_ref_16_to_64 => some fun t => t == .int 16 || t == .int 32 || t == .int 64
+  | TId.integral_ty | TId.valid_atomic_transaction =>
     some fun t => t == .int 8 || t == .int 16 || t == .int 32 || t == .int 64
   | _ => none
 
-/-- The IntCC variant name of a value. -/
-def V.intcc? : V → Option String := V.enum? tyIntCC some
+/-- The variant index of an `IntCC` value. -/
+def V.intcc? : V → Option Nat := V.enum? tyIntCC some
 
 open Isle (ExtResult) in
-/-- Extern extractors: the input value to the term's argument values. -/
+/-- Extern extractors: the input value to the term's argument values. Dispatch is on the term
+id (`Isle.Aarch64.TId.*`, generated), a `Nat`-literal match. -/
 def externExtract (ctx : Ctx) (t : Term) (v : V) (_st : LState) : ExtResult (List V) :=
-  let name := t.name
-  match tyPred name, v with
+  match tyPred t.id, v with
   | some p, .ty ty => if p ty then .ok [.ty ty] else .fail
-  | some _, _ => .unmodeled s!"{name} on a non-type"
+  | some _, _ => .unmodeled s!"{t.name} on a non-type"
   | none, _ =>
-  match name, v with
-  | "def_inst", .value n => match ctx.defInst? n with
+  match t.id, v with
+  | TId.def_inst, .value n => match ctx.defInst? n with
     | some i => .ok [.inst i]
     | none => .fail
-  | "value_type", .value n => match ctx.valueType? n with
+  | TId.value_type, .value n => match ctx.valueType? n with
     | some ty => .ok [.ty ty]
     | none => .unmodeled s!"value_type of unknown v{n}"
-  | "inst_data_value", .inst i => match ctx.insts[i]? with
+  | TId.inst_data_value, .inst i => match ctx.insts[i]? with
     | some info => .ok [.ty (info.resTys.head?.getD .invalid), info.data]
     | none => .unmodeled s!"inst {i}"
-  | "first_result", .inst i => match ctx.insts[i]? with
+  | TId.first_result, .inst i => match ctx.insts[i]? with
     | some info => match info.results.head? with
       | some r => .ok [.value r]
       | none => .fail
     | none => .unmodeled s!"inst {i}"
-  | "is_second_result", .value n => match ctx.defInst? n >>= (ctx.insts[·]?) with
+  | TId.is_second_result, .value n => match ctx.defInst? n >>= (ctx.insts[·]?) with
     | some info => if info.results[1]? == some n then .ok [.value n] else .fail
     | none => .fail
-  | "i64_from_iconst", .value n => match ctx.defClif? n with
+  | TId.i64_from_iconst, .value n => match ctx.defClif? n with
     | some (.iconst ty imm) => .ok [.int (sextFrom ty.width (imm64OfIconst ty imm))]
     | _ => .fail
-  | "maybe_uextend", .value n => match ctx.defClif? n with
+  | TId.maybe_uextend, .value n => match ctx.defClif? n with
     | some (.extend .uextend _ x) => .ok [.value x]
     | _ => .ok [.value n]
-  | "extended_value_from_value", .value n => match ctx.defClif? n with
+  | TId.extended_value_from_value, .value n => match ctx.defClif? n with
     | some (.extend op _ x) =>
       match ctx.valueType? x with
       | some (.int b) =>
@@ -360,49 +360,51 @@ def externExtract (ctx : Ctx) (t : Term) (v : V) (_st : LState) : ExtResult (Lis
         | none => .unmodeled "get_as_extended_value: bad width"
       | _ => .unmodeled "get_as_extended_value: operand type"
     | _ => .fail
-  | "little_or_native_endian", .op (.memFlags f) =>
+  | TId.little_or_native_endian, .op (.memFlags f) =>
     if f.endianness == some .big then .fail else .ok [.op (.memFlags f)]
-  | "u64_from_imm64", .int i => .ok [.int (u64 i)]
-  | "nonzero_u64_from_imm64", .int i => if i == 0 then .fail else .ok [.int (u64 i)]
-  | "imm12_from_u64", .int i => match Imm12.ofNat? (u64 i) with
+  | TId.u64_from_imm64, .int i => .ok [.int (u64 i)]
+  | TId.nonzero_u64_from_imm64, .int i => if i == 0 then .fail else .ok [.int (u64 i)]
+  | TId.imm12_from_u64, .int i => match Imm12.ofNat? (u64 i) with
     | some imm => .ok [.op (.imm12 imm)]
     | none => .fail
-  | "i32_from_i64", .int i => if -(2 ^ 31 : Int) ≤ i ∧ i < 2 ^ 31 then .ok [.int i] else .fail
-  | "u8_from_u64", .int i => if 0 ≤ i ∧ i < 256 then .ok [.int i] else .fail
-  | "single_target", .labels [l] => .ok [.label l]
-  | "single_target", .labels _ => .fail
-  | "two_targets", .labels [a, b] => .ok [.label a, .label b]
-  | "two_targets", .labels _ => .fail
-  | "jump_table_targets", .labels (d :: ts) => .ok [.label d, .labels ts]
-  | "jump_table_targets", .labels [] => .fail
-  | "value_list_slice", .values vs => .ok [.values vs]
-  | "value_array_2", .values [a, b] => .ok [.value a, .value b]
+  | TId.i32_from_i64, .int i => if -(2 ^ 31 : Int) ≤ i ∧ i < 2 ^ 31 then .ok [.int i] else .fail
+  | TId.u8_from_u64, .int i => if 0 ≤ i ∧ i < 256 then .ok [.int i] else .fail
+  | TId.single_target, .labels [l] => .ok [.label l]
+  | TId.single_target, .labels _ => .fail
+  | TId.two_targets, .labels [a, b] => .ok [.label a, .label b]
+  | TId.two_targets, .labels _ => .fail
+  | TId.jump_table_targets, .labels (d :: ts) => .ok [.label d, .labels ts]
+  | TId.jump_table_targets, .labels [] => .fail
+  | TId.value_list_slice, .values vs => .ok [.values vs]
+  | TId.value_array_2, .values [a, b] => .ok [.value a, .value b]
   -- `unpack_value_array_3` (isle_prelude.rs:942)
-  | "value_array_3", .values [a, b, c] => .ok [.value a, .value b, .value c]
+  | TId.value_array_3, .values [a, b, c] => .ok [.value a, .value b, .value c]
   -- `symbol_value_data` (machinst/isle.rs:397, `Lower::symbol_value_data` lower.rs:1510):
   -- `Symbol { name, offset, colocated }` → `(name, Near iff colocated, offset)`, else `None`
-  | "symbol_value_data", .op (.globalValue gv) => match ctx.func.globals.lookup gv with
+  | TId.symbol_value_data, .op (.globalValue gv) => match ctx.func.globals.lookup gv with
     | some (.symbol name off colocated) =>
-      .ok [.op (.extName name), mkVariant tyRelocDistance (if colocated then "Near" else "Far"),
+      .ok [.op (.extName name),
+           .data tyRelocDistance (if colocated then VIdx.RelocDistance.Near else VIdx.RelocDistance.Far) [],
            .int off]
     | _ => .fail
-  | "block_array_2", .blockCalls [a, b] => .ok [.blockCalls [a], .blockCalls [b]]
-  | "func_ref_data", .op (.funcRef fn) => match ctx.func.extern? fn with
+  | TId.block_array_2, .blockCalls [a, b] => .ok [.blockCalls [a], .blockCalls [b]]
+  | TId.func_ref_data, .op (.funcRef fn) => match ctx.func.extern? fn with
     | some ext =>
       .ok [.op (.sig ext.sig), .op (.extName ext.name),
-           mkVariant tyRelocDistance (if ext.colocated then "Near" else "Far"), .bool false]
+           .data tyRelocDistance (if ext.colocated then VIdx.RelocDistance.Near else VIdx.RelocDistance.Far) [],
+           .bool false]
     | none => .unmodeled s!"fn{fn}"
   -- `lane_count() > 1` / `is_dynamic_vector()`
-  | "multi_lane", .ty ty =>
+  | TId.multi_lane, .ty ty =>
     if ty.laneCount > 1 then .ok [.int ty.laneBits, .int ty.laneCount] else .fail
-  | "dynamic_lane", .ty _ => .fail
-  | "not_i64x2", .ty ty => if ty == .vec 64 2 false then .fail else .ok []
+  | TId.dynamic_lane, .ty _ => .fail
+  | TId.not_i64x2, .ty ty => if ty == .vec 64 2 false then .fail else .ok []
   -- aarch64 ISA flags: every extension is off by default (`has_lse`, `has_dotprod`, ...).
-  | "use_lse", .inst _ | "use_dotprod", .inst _ | "use_i8mm", .inst _ => .fail
-  | "sign_return_address_disabled", _ => .ok []
+  | TId.use_lse, .inst _ | TId.use_dotprod, .inst _ | TId.use_i8mm, .inst _ => .fail
+  | TId.sign_return_address_disabled, _ => .ok []
   -- shared flag `tls_model`, default `none`
-  | "tls_model", .ty _ => .ok [mkVariant (islTy "TlsModel") "None"]
-  | name, v => .unmodeled s!"extractor {name} on {(repr v).pretty.take 60}"
+  | TId.tls_model, .ty _ => .ok [.data tyTlsModel VIdx.TlsModel.None []]
+  | _, v => .unmodeled s!"extractor {t.name} on {(repr v).pretty.take 60}"
 
 /-- `load_constant_full` (`aarch64/lower/isle.rs`): a `movz`/`movn` and `movk`s. -/
 def loadConstantFull (bits : Nat) (signExt : Bool) (extendTo : OperandSize) (value : Nat)
@@ -445,88 +447,88 @@ def regsOf? : V → Option (List (List Reg))
   | _ => none
 
 open Isle (ExtResult) in
-/-- Extern constructors. -/
+/-- Extern constructors, dispatched on the term id (`Isle.Aarch64.TId.*`). -/
 def externCtor (ctx : Ctx) (t : Term) (args : List V) (st : LState) : ExtResult (V × LState) :=
   let ok (v : V) : ExtResult (V × LState) := .ok (v, st)
   let optOk (o : Option V) : ExtResult (V × LState) := match o with
     | some v => .ok (v, st)
     | none => .fail
-  let name := t.name
-  match tyPred name, args with
+  match tyPred t.id, args with
   | some p, [.ty ty] => if p ty then ok (.ty ty) else .fail
   | _, _ =>
-  match name, args with
+  match t.id, args with
   -- prelude.isle / isle_prelude.rs
-  | "i64_sextend_imm64", [.ty ty, .int x] => ok (.int (sextFrom ty.bits x))
-  | "ty_bits", [.ty ty] => ok (.int ty.bits)
-  | "ty_bytes", [.ty ty] => ok (.int ty.bytes)
-  | "offset32_to_i32", [.int i] => ok (.int i)
-  | "i32_to_offset32", [.int i] => ok (.int i)
-  | "signed_cond_code", [cc] => match cc.intcc? with
-    | some n => if ["SignedGreaterThanOrEqual", "SignedGreaterThan", "SignedLessThanOrEqual",
-        "SignedLessThan"].contains n then ok cc else .fail
+  | TId.i64_sextend_imm64, [.ty ty, .int x] => ok (.int (sextFrom ty.bits x))
+  | TId.ty_bits, [.ty ty] => ok (.int ty.bits)
+  | TId.ty_bytes, [.ty ty] => ok (.int ty.bytes)
+  | TId.offset32_to_i32, [.int i] => ok (.int i)
+  | TId.i32_to_offset32, [.int i] => ok (.int i)
+  | TId.signed_cond_code, [cc] => match cc.intcc? with
+    | some n => if [VIdx.IntCC.SignedGreaterThanOrEqual, VIdx.IntCC.SignedGreaterThan,
+        VIdx.IntCC.SignedLessThanOrEqual, VIdx.IntCC.SignedLessThan].contains n then ok cc else .fail
     | none => .unmodeled "signed_cond_code"
-  | "unsigned_cond_code", [cc] => match cc.intcc? with
-    | some n => if ["Equal", "UnsignedGreaterThanOrEqual", "UnsignedGreaterThan",
-        "UnsignedLessThanOrEqual", "UnsignedLessThan", "NotEqual"].contains n then ok cc else .fail
+  | TId.unsigned_cond_code, [cc] => match cc.intcc? with
+    | some n => if [VIdx.IntCC.Equal, VIdx.IntCC.UnsignedGreaterThanOrEqual,
+        VIdx.IntCC.UnsignedGreaterThan, VIdx.IntCC.UnsignedLessThanOrEqual,
+        VIdx.IntCC.UnsignedLessThan, VIdx.IntCC.NotEqual].contains n then ok cc else .fail
     | none => .unmodeled "unsigned_cond_code"
-  | "trap_code_division_by_zero", [] => ok (.op (.trapCode .intDivz))
-  | "trap_code_integer_overflow", [] => ok (.op (.trapCode .intOvf))
-  | "safe_divisor_from_imm64", [.ty ty, .int v] =>
+  | TId.trap_code_division_by_zero, [] => ok (.op (.trapCode .intDivz))
+  | TId.trap_code_integer_overflow, [] => ok (.op (.trapCode .intOvf))
+  | TId.safe_divisor_from_imm64, [.ty ty, .int v] =>
     let minusOne : Nat := 2 ^ (ty.bytes * 8) - 1
     let bits := u64 v % 2 ^ (ty.bytes * 8)
     if bits == 0 || bits == minusOne then .fail else ok (.int bits)
   -- prelude_lower.isle / machinst/isle.rs
-  | "value_reg", [.reg r] => ok (.regs [r])
-  | "value_regs", [.reg a, .reg b] => ok (.regs [a, b])
-  | "output_none", [] => ok (.regsVec [])
-  | "output", [.regs rs] => ok (.regsVec [rs])
-  | "output_vec", [.regsVec rss] => ok (.regsVec rss)
-  | "temp_writable_reg", [.ty ty] => match ty.regClass? with
+  | TId.value_reg, [.reg r] => ok (.regs [r])
+  | TId.value_regs, [.reg a, .reg b] => ok (.regs [a, b])
+  | TId.output_none, [] => ok (.regsVec [])
+  | TId.output, [.regs rs] => ok (.regsVec [rs])
+  | TId.output_vec, [.regsVec rss] => ok (.regsVec rss)
+  | TId.temp_writable_reg, [.ty ty] => match ty.regClass? with
     | some cls => let (r, st) := st.fresh cls; .ok (.reg r, st)
     | none => .unmodeled s!"temp_writable_reg of {repr ty}"
-  | "opportunistic_def", [_, _] => ok (.op .unit)
-  | "put_in_reg", [.value n] => match ctx.valueReg? n with
+  | TId.opportunistic_def, [_, _] => ok (.op .unit)
+  | TId.put_in_reg, [.value n] => match ctx.valueReg? n with
     | some r => ok (.reg r)
     | none => .unmodeled s!"put_in_reg v{n}"
-  | "put_in_regs", [.value n] => match ctx.valueReg? n with
+  | TId.put_in_regs, [.value n] => match ctx.valueReg? n with
     | some r => ok (.regs [r])
     | none => .unmodeled s!"put_in_regs v{n}"
-  | "put_in_regs_vec", [.values vs] => match vs.mapM ctx.valueReg? with
+  | TId.put_in_regs_vec, [.values vs] => match vs.mapM ctx.valueReg? with
     | some rs => ok (.regsVec (rs.map fun r => [r]))
     | none => .unmodeled "put_in_regs_vec"
-  | "value_regs_get", [.regs rs, .int i] => match rs[i.toNat]? with
+  | TId.value_regs_get, [.regs rs, .int i] => match rs[i.toNat]? with
     | some r => ok (.reg r)
     | none => .unmodeled "value_regs_get index"
-  | "jump_table_size", [.labels ls] => ok (.int ls.length)
-  | "writable_reg_to_reg", [r] => ok r
+  | TId.jump_table_size, [.labels ls] => ok (.int ls.length)
+  | TId.writable_reg_to_reg, [r] => ok r
   -- `invalid_reg` (machinst/isle.rs:107): `Reg::invalid_sentinel()`
-  | "invalid_reg", [] => ok (.reg Reg.invalid)
-  | "is_sinkable_inst", [_] => .fail
-  | "emit", [i] => match MInst.ofV i with
+  | TId.invalid_reg, [] => ok (.reg Reg.invalid)
+  | TId.is_sinkable_inst, [_] => .fail
+  | TId.emit, [i] => match MInst.ofV i with
     | some m => .ok (.op .unit, st.emit m)
     | none => .unmodeled s!"emit of {((i.variant?).map (·.2.1)).getD "?"}"
-  | "box_external_name", [n] => ok n
-  | "abi_sig", [s] => ok s
-  | "abi_stackslot_addr", [rd, .op (.stackSlot s), .int off] =>
+  | TId.box_external_name, [n] => ok n
+  | TId.abi_sig, [s] => ok s
+  | TId.abi_stackslot_addr, [rd, .op (.stackSlot s), .int off] =>
     match ctx.slotOff.lookup s with
     | some base =>
-      ok (mkVariant tyMInst "LoadAddr" [rd, mkVariant tyAMode "SlotOffset" [.int (base + off)]])
+      ok (.data tyMInst VIdx.MInst.LoadAddr [rd, .data tyAMode VIdx.AMode.SlotOffset [.int (base + off)]])
     | none => .unmodeled s!"stack slot ss{s}"
-  | "abi_stackslot_offset_into_slot_region", [.op (.stackSlot s), .int a, .int b] =>
+  | TId.abi_stackslot_offset_into_slot_region, [.op (.stackSlot s), .int a, .int b] =>
     match ctx.slotOff.lookup s with
     | some base => ok (.int (base + a + b))
     | none => .unmodeled s!"stack slot ss{s}"
-  | "gen_return", [.regsVec rss] =>
+  | TId.gen_return, [.regsVec rss] =>
     match retRegs rss.length, rss.mapM (fun | [r] => some r | _ => none) with
     | some ps, some rs => .ok (.op .unit, st.emit (.rets (rs.zip ps)))
     | _, _ => .unmodeled "gen_return: more than 8 return values or multi-register values"
-  | "gen_call_output", [.op (.sig s)] =>
+  | TId.gen_call_output, [.op (.sig s)] =>
     let (rs, st) := s.returns.foldl (init := (#[], st)) fun (acc, st) _ =>
       let (r, st) := st.fresh .int
       (acc.push [r], st)
     .ok (.regsVec rs.toList, st)
-  | "gen_call_args", [.op (.sig s), .regsVec rss] =>
+  | TId.gen_call_args, [.op (.sig s), .regsVec rss] =>
     match sigParamBytes s, rss.mapM (fun | [r] => some r | _ => none) with
     | .ok bytes, some rs =>
       let (locs, _) := argLocs bytes
@@ -537,146 +539,146 @@ def externCtor (ctx : Ctx) (t : Term) (args : List V) (st : LState) : ExtResult 
       .ok (.op (.callArgs uses.toList), st)
     | .error e, _ => .unmodeled s!"gen_call_args: {e}"
     | _, none => .unmodeled "gen_call_args: multi-register value"
-  | "gen_call_rets", [.op (.sig _), .regsVec rss] =>
+  | TId.gen_call_rets, [.op (.sig _), .regsVec rss] =>
     match retRegs rss.length, rss.mapM (fun | [r] => some r | _ => none) with
     | some ps, some rs => ok (.op (.callRets (ps.zip rs)))
     | _, _ => .unmodeled "gen_call_rets: more than 8 return values"
-  | "try_call_none", [] => ok (.op .tryCallNone)
-  | "gen_call_info", [.op (.sig s), .op (.extName n), .op (.callArgs us), .op (.callRets ds), _, _] =>
+  | TId.try_call_none, [] => ok (.op .tryCallNone)
+  | TId.gen_call_info, [.op (.sig s), .op (.extName n), .op (.callArgs us), .op (.callRets ds), _, _] =>
     match sigParamBytes s with
     | .ok bytes =>
       .ok (.op (.callInfo ⟨.sym n, us, ds⟩), { st with outgoing := max st.outgoing (argLocs bytes).2 })
     | .error e => .unmodeled s!"gen_call_info: {e}"
-  | "gen_call_ind_info", [.op (.sig s), .reg r, .op (.callArgs us), .op (.callRets ds), _] =>
+  | TId.gen_call_ind_info, [.op (.sig s), .reg r, .op (.callArgs us), .op (.callRets ds), _] =>
     match sigParamBytes s with
     | .ok bytes =>
       .ok (.op (.callInfo ⟨.reg r, us, ds⟩), { st with outgoing := max st.outgoing (argLocs bytes).2 })
     | .error e => .unmodeled s!"gen_call_ind_info: {e}"
   -- aarch64 inst.isle / lower.isle helpers (aarch64/lower/isle.rs)
-  | "use_fp16", [] => ok (.bool false)
-  | "is_pic", [] => ok (.bool true)
-  | "move_wide_const_from_u64", [.ty ty, .int n] =>
+  | TId.use_fp16, [] => ok (.bool false)
+  | TId.is_pic, [] => ok (.bool true)
+  | TId.move_wide_const_from_u64, [.ty ty, .int n] =>
     let n := if ty.bits < 64 then u64 n % 2 ^ ty.bits else u64 n
     optOk ((MoveWideConst.ofNat? n).map (.op ∘ .moveWideConst))
-  | "move_wide_const_from_inverted_u64", [.ty ty, .int n] =>
+  | TId.move_wide_const_from_inverted_u64, [.ty ty, .int n] =>
     let n := 2 ^ 64 - 1 - u64 n
     let n := if ty.bits < 64 then n % 2 ^ ty.bits else n
     optOk ((MoveWideConst.ofNat? n).map (.op ∘ .moveWideConst))
-  | "imm_logic_from_u64", [.ty ty, .int n] =>
+  | TId.imm_logic_from_u64, [.ty ty, .int n] =>
     if ty == .int 32 || ty == .int 64 then
       optOk ((ImmLogic.ofNat? (u64 n) (.ofBits ty.bits)).map (.op ∘ .immLogic))
     else .fail
-  | "imm_size_from_type", [.ty ty] =>
+  | TId.imm_size_from_type, [.ty ty] =>
     if ty == .int 32 then ok (.int 32) else if ty == .int 64 then ok (.int 64) else .fail
-  | "imm_logic_from_imm64", [.ty ty, .int n] =>
+  | TId.imm_logic_from_imm64, [.ty ty, .int n] =>
     let ty := if ty.bits < 32 then CTy.int 32 else ty
     if ty == .int 32 || ty == .int 64 then
       optOk ((ImmLogic.ofNat? (u64 n) (.ofBits ty.bits)).map (.op ∘ .immLogic))
     else .fail
-  | "imm_shift_from_imm64", [.ty ty, .int n] =>
+  | TId.imm_shift_from_imm64, [.ty ty, .int n] =>
     let v := Nat.land (u64 n) (ty.bits - 1)
     if v < 64 then ok (.op (.immShift v)) else .fail
-  | "imm_shift_from_u8", [.int n] => if n < 64 then ok (.op (.immShift n.toNat)) else .fail
-  | "u8_into_uimm5", [.int n] => if n < 32 then ok (.op (.uimm5 n.toNat)) else .fail
-  | "u8_into_imm12", [.int n] => optOk ((Imm12.ofNat? n.toNat).map (.op ∘ .imm12))
-  | "u64_into_imm_logic", [.ty ty, .int n] =>
+  | TId.imm_shift_from_u8, [.int n] => if n < 64 then ok (.op (.immShift n.toNat)) else .fail
+  | TId.u8_into_uimm5, [.int n] => if n < 32 then ok (.op (.uimm5 n.toNat)) else .fail
+  | TId.u8_into_imm12, [.int n] => optOk ((Imm12.ofNat? n.toNat).map (.op ∘ .imm12))
+  | TId.u64_into_imm_logic, [.ty ty, .int n] =>
     if ty == .int 32 || ty == .int 64 then
       optOk ((ImmLogic.ofNat? (u64 n) (.ofBits ty.bits)).map (.op ∘ .immLogic))
     else .fail
-  | "branch_target", [.label l] => ok (.label l)
-  | "targets_jt_space", [.labels ls] => ok (.int (4 * (8 + ls.length)))
-  | "lshl_from_imm64", [.ty ty, .int n] =>
+  | TId.branch_target, [.label l] => ok (.label l)
+  | TId.targets_jt_space, [.labels ls] => ok (.int (4 * (8 + ls.length)))
+  | TId.lshl_from_imm64, [.ty ty, .int n] =>
     match shiftImm? (u64 n) with
     | some s => if ty.bits ≤ 255 then ok (.op (.shiftOpAndAmt ⟨.lsl, Nat.land s (ty.bits - 1)⟩))
       else .fail
     | none => .fail
-  | "ashr_from_u64", [.ty ty, .int n] =>
+  | TId.ashr_from_u64, [.ty ty, .int n] =>
     match shiftImm? n.toNat with
     | some s => if ty.bits ≤ 255 then ok (.op (.shiftOpAndAmt ⟨.asr, Nat.land s (ty.bits - 1)⟩))
       else .fail
     | none => .fail
-  | "put_extended_in_reg", [.op (.extended x _)] => match ctx.valueReg? x with
+  | TId.put_extended_in_reg, [.op (.extended x _)] => match ctx.valueReg? x with
     | some r => ok (.reg r)
     | none => .unmodeled "put_extended_in_reg"
-  | "get_extended_op", [.op (.extended _ e)] => ok (mkVariant tyExtendOp e.name)
-  | "nzcv", [.bool n, .bool z, .bool c, .bool v] => ok (.op (.nzcv ⟨n, z, c, v⟩))
-  | "cond_br_zero", [r, s] => ok (mkVariant tyCondBrKind "Zero" [r, s])
-  | "cond_br_not_zero", [r, s] => ok (mkVariant tyCondBrKind "NotZero" [r, s])
-  | "cond_br_cond", [c] => ok (mkVariant tyCondBrKind "Cond" [c])
-  | "zero_reg", [] => ok (.reg .xzr)
-  | "writable_zero_reg", [] => ok (.reg .xzr)
-  | "a64_extr_imm", [.ty ty, .op (.immShift s)] =>
+  | TId.get_extended_op, [.op (.extended _ e)] => ok (.data tyExtendOp e.idx [])
+  | TId.nzcv, [.bool n, .bool z, .bool c, .bool v] => ok (.op (.nzcv ⟨n, z, c, v⟩))
+  | TId.cond_br_zero, [r, s] => ok (.data tyCondBrKind VIdx.CondBrKind.Zero [r, s])
+  | TId.cond_br_not_zero, [r, s] => ok (.data tyCondBrKind VIdx.CondBrKind.NotZero [r, s])
+  | TId.cond_br_cond, [c] => ok (.data tyCondBrKind VIdx.CondBrKind.Cond [c])
+  | TId.zero_reg, [] => ok (.reg .xzr)
+  | TId.writable_zero_reg, [] => ok (.reg .xzr)
+  | TId.a64_extr_imm, [.ty ty, .op (.immShift s)] =>
     if ty == .int 32 then ok (.op (.shiftOpAndAmt ⟨.lsl, s⟩))
     else if ty == .int 64 then ok (.op (.shiftOpAndAmt ⟨.lsr, s⟩))
     else .fail
-  | "load_constant_full", [.ty ty, ext, sz, .int v] =>
-    match ext.variant?, sz.size? with
-    | some (_, e, _), some size =>
-      let (r, st) := loadConstantFull ty.bits (e == "Sign") size (u64 v) st
+  | TId.load_constant_full, [.ty ty, ext, sz, .int v] =>
+    match ext.enumOf? tyImmExtend, sz.size? with
+    | some (e, _), some size =>
+      let (r, st) := loadConstantFull ty.bits (e == VIdx.ImmExtend.Sign) size (u64 v) st
       .ok (.reg r, st)
     | _, _ => .unmodeled "load_constant_full"
-  | "uimm12_scaled_from_i64", [.int v, .ty ty] =>
+  | TId.uimm12_scaled_from_i64, [.int v, .ty ty] =>
     optOk ((uimm12Scaled? v ty.bytes).map (.op ∘ .uimm12Scaled))
-  | "uimm12_scaled_nonzero_from_i64", [.int v, .ty ty] =>
+  | TId.uimm12_scaled_nonzero_from_i64, [.int v, .ty ty] =>
     if v == 0 then .fail else optOk ((uimm12Scaled? v ty.bytes).map (.op ∘ .uimm12Scaled))
-  | "simm9_from_i64", [.int v] => optOk ((simm9? v).map (.op ∘ .simm9))
-  | "cond_code", [cc] => match cc.intcc? >>= condOfIntCC with
-    | some c => ok (mkVariant tyCond c.name)
+  | TId.simm9_from_i64, [.int v] => optOk ((simm9? v).map (.op ∘ .simm9))
+  | TId.cond_code, [cc] => match cc.intcc? >>= condOfIntCC with
+    | some c => ok (.data tyCond c.idx [])
     | none => .unmodeled "cond_code"
-  | "invert_cond", [c] => match c.cond? with
-    | some c => ok (mkVariant tyCond c.invert.name)
+  | TId.invert_cond, [c] => match c.cond? with
+    | some c => ok (.data tyCond c.invert.idx [])
     | none => .unmodeled "invert_cond"
-  | "shift_masked_imm", [.ty ty, .int n] => ok (.int (Nat.land (u64 n % 256) (ty.laneBits - 1)))
-  | "shift_mask", [.ty ty] => optOk ((ImmLogic.ofNat? (ty.laneBits - 1) .size32).map (.op ∘ .immLogic))
-  | "bfm_immr", [.ty ty, .int a, .int b] =>
+  | TId.shift_masked_imm, [.ty ty, .int n] => ok (.int (Nat.land (u64 n % 256) (ty.laneBits - 1)))
+  | TId.shift_mask, [.ty ty] => optOk ((ImmLogic.ofNat? (ty.laneBits - 1) .size32).map (.op ∘ .immLogic))
+  | TId.bfm_immr, [.ty ty, .int a, .int b] =>
     let w := ty.laneBits
     let a := Nat.land (u64 a % 256) (w - 1)
     let b := Nat.land (u64 b % 256) (w - 1)
     ok (.op (.uimm6 (if a ≤ b then b - a else w - (a - b))))
-  | "bfm_imms", [.ty ty, .int a, .int _] =>
+  | TId.bfm_imms, [.ty ty, .int a, .int _] =>
     let w := ty.laneBits
     let a := Nat.land (u64 a % 256) (w - 1)
     ok (.op (.uimm6 (w - 1 - a)))
-  | "negate_imm_shift", [.ty ty, .op (.immShift s)] =>
+  | TId.negate_imm_shift, [.ty ty, .op (.immShift s)] =>
     let size := ty.bits
     ok (.op (.immShift (Nat.land ((size + 256 - s) % 256) (size - 1))))
-  | "rotr_mask", [.ty ty] => optOk ((ImmLogic.ofNat? (ty.bits - 1) .size32).map (.op ∘ .immLogic))
-  | "rotr_opposite_amount", [.ty ty, .op (.immShift s)] =>
+  | TId.rotr_mask, [.ty ty] => optOk ((ImmLogic.ofNat? (ty.bits - 1) .size32).map (.op ∘ .immLogic))
+  | TId.rotr_opposite_amount, [.ty ty, .op (.immShift s)] =>
     let amount := Nat.land s (ty.bits - 1)
     let r := ty.bits - amount
     if r < 64 then ok (.op (.immShift r)) else .fail
-  | "test_and_compare_bit_const", [.ty ty, .int n] =>
+  | TId.test_and_compare_bit_const, [.ty ty, .int n] =>
     let n := u64 n
     let ones := (List.range 64).filter (n.testBit ·)
     match ones with
     | [bit] => if bit < ty.bits then ok (.int bit) else .fail
     | _ => .fail
   -- numerics.isle (generated `isle_numerics.rs`)
-  | "i32_checked_add", [.int a, .int b] =>
+  | TId.i32_checked_add, [.int a, .int b] =>
     let s := a + b
     if -(2 ^ 31 : Int) ≤ s ∧ s < 2 ^ 31 then ok (.int s) else .fail
-  | "i64_checked_neg", [.int a] => if a == -(2 ^ 63 : Int) then .fail else ok (.int (-a))
-  | "u64_eq", [.int a, .int b] => ok (.bool (a == b))
-  | "u64_gt", [.int a, .int b] => ok (.bool (a > b))
-  | "u64_wrapping_add", [.int a, .int b] => ok (.int (u64 (a + b)))
-  | "u64_wrapping_sub", [.int a, .int b] => ok (.int (u64 (a - b)))
-  | "u64_wrapping_shl", [.int a, .int b] => ok (.int (u64 (a * 2 ^ (b.toNat % 64))))
-  | "u64_is_odd", [.int a] => ok (.bool (a % 2 == 1))
-  | "u8_into_u32", [.int a] | "u8_into_u64", [.int a] | "u16_into_u64", [.int a]
-  | "i32_into_i64", [.int a] | "u32_into_u64", [.int a] => ok (.int a)
-  | "i64_cast_unsigned", [.int a] => ok (.int (u64 a))
+  | TId.i64_checked_neg, [.int a] => if a == -(2 ^ 63 : Int) then .fail else ok (.int (-a))
+  | TId.u64_eq, [.int a, .int b] => ok (.bool (a == b))
+  | TId.u64_gt, [.int a, .int b] => ok (.bool (a > b))
+  | TId.u64_wrapping_add, [.int a, .int b] => ok (.int (u64 (a + b)))
+  | TId.u64_wrapping_sub, [.int a, .int b] => ok (.int (u64 (a - b)))
+  | TId.u64_wrapping_shl, [.int a, .int b] => ok (.int (u64 (a * 2 ^ (b.toNat % 64))))
+  | TId.u64_is_odd, [.int a] => ok (.bool (a % 2 == 1))
+  | TId.u8_into_u32, [.int a] | TId.u8_into_u64, [.int a] | TId.u16_into_u64, [.int a]
+  | TId.i32_into_i64, [.int a] | TId.u32_into_u64, [.int a] => ok (.int a)
+  | TId.i64_cast_unsigned, [.int a] => ok (.int (u64 a))
   -- clif_lower.isle
-  | "value_array_2", [.value a, .value b] => ok (.values [a, b])
+  | TId.value_array_2, [.value a, .value b] => ok (.values [a, b])
   -- `pack_value_array_3` (isle_prelude.rs:948)
-  | "value_array_3", [.value a, .value b, .value c] => ok (.values [a, b, c])
-  | "block_array_2", [.blockCalls a, .blockCalls b] => ok (.blockCalls (a ++ b))
-  | name, args => .unmodeled s!"constructor {name} ({args.length} args)"
+  | TId.value_array_3, [.value a, .value b, .value c] => ok (.values [a, b, c])
+  | TId.block_array_2, [.blockCalls a, .blockCalls b] => ok (.blockCalls (a ++ b))
+  | _, args => .unmodeled s!"constructor {t.name} ({args.length} args)"
 
 /-- The embedding: ISLE constants, data, and the extern helpers. -/
 def sem (ctx : Ctx) : Isle.Sem V LState where
   int ty i := .int (normInt ty i)
   bool b := .bool b
-  prim ty n := if program.typeName ty == "Type" then (CTy.ofName? n).map .ty else none
+  prim ty n := if ty == TyId.Type then (CTy.ofName? n).map .ty else none
   eq a b := a == b
   mkData ty k fs := .data ty k fs
   unData ty v := match v with
