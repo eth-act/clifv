@@ -24,38 +24,38 @@ variable {p : Program} (hp : Data p) (ctx : Ctx) {cfg : Config} (hc : cfg.checkO
 section Emit
 variable (st : LState) (rd rn rm : Reg)
 
-theorem emit_add_32 : externCtor ctx term_235
+theorem emit_add_32 : externCtor ctx T.emit
     [.data 58 2 [.data 59 0 [], .data 93 0 [], .reg rd, .reg rn, .reg rm]] st =
     .ok (.op .unit, st.emit (.aluRRR .add .size32 rd rn rm)) := ctor_emit _ _ (ofV_aluRRR_add_32 ..)
-theorem emit_add_64 : externCtor ctx term_235
+theorem emit_add_64 : externCtor ctx T.emit
     [.data 58 2 [.data 59 0 [], .data 93 1 [], .reg rd, .reg rn, .reg rm]] st =
     .ok (.op .unit, st.emit (.aluRRR .add .size64 rd rn rm)) := ctor_emit _ _ (ofV_aluRRR_add_64 ..)
-theorem emit_subs_32 : externCtor ctx term_235
+theorem emit_subs_32 : externCtor ctx T.emit
     [.data 58 2 [.data 59 10 [], .data 93 0 [], .reg rd, .reg rn, .reg rm]] st =
     .ok (.op .unit, st.emit (.aluRRR .subS .size32 rd rn rm)) := ctor_emit _ _ (ofV_aluRRR_subs_32 ..)
-theorem emit_subs_64 : externCtor ctx term_235
+theorem emit_subs_64 : externCtor ctx T.emit
     [.data 58 2 [.data 59 10 [], .data 93 1 [], .reg rd, .reg rn, .reg rm]] st =
     .ok (.op .unit, st.emit (.aluRRR .subS .size64 rd rn rm)) := ctor_emit _ _ (ofV_aluRRR_subs_64 ..)
-theorem emit_lsr_32 : externCtor ctx term_235
+theorem emit_lsr_32 : externCtor ctx T.emit
     [.data 58 2 [.data 59 16 [], .data 93 0 [], .reg rd, .reg rn, .reg rm]] st =
     .ok (.op .unit, st.emit (.aluRRR .lsr .size32 rd rn rm)) := ctor_emit _ _ (ofV_aluRRR_lsr_32 ..)
-theorem emit_addi_32 (i : Imm12) : externCtor ctx term_235
+theorem emit_addi_32 (i : Imm12) : externCtor ctx T.emit
     [.data 58 4 [.data 59 0 [], .data 93 0 [], .reg rd, .reg rn, .op (.imm12 i)]] st =
     .ok (.op .unit, st.emit (.aluRRImm12 .add .size32 rd rn i)) :=
   ctor_emit _ _ (ofV_aluRRImm12_add_32 ..)
-theorem emit_addi_64 (i : Imm12) : externCtor ctx term_235
+theorem emit_addi_64 (i : Imm12) : externCtor ctx T.emit
     [.data 58 4 [.data 59 0 [], .data 93 1 [], .reg rd, .reg rn, .op (.imm12 i)]] st =
     .ok (.op .unit, st.emit (.aluRRImm12 .add .size64 rd rn i)) :=
   ctor_emit _ _ (ofV_aluRRImm12_add_64 ..)
-theorem emit_andi_32 (i : ImmLogic) : externCtor ctx term_235
+theorem emit_andi_32 (i : ImmLogic) : externCtor ctx T.emit
     [.data 58 5 [.data 59 4 [], .data 93 0 [], .reg rd, .reg rn, .op (.immLogic i)]] st =
     .ok (.op .unit, st.emit (.aluRRImmLogic .and .size32 rd rn i)) :=
   ctor_emit _ _ (ofV_aluRRImmLogic_and_32 ..)
-theorem emit_uxt8_32 : externCtor ctx term_235
+theorem emit_uxt8_32 : externCtor ctx T.emit
     [.data 58 28 [.reg rd, .reg rn, .bool false, .int 8, .int 32]] st =
     .ok (.op .unit, st.emit (.extend rd rn false 8 32)) := ctor_emit _ _ (ofV_extend_u8_32 ..)
-theorem emit_cset (c : Cond) : externCtor ctx term_235
-    [.data 58 33 [.reg rd, mkVariant tyCond c.name]] st =
+theorem emit_cset (c : Cond) : externCtor ctx T.emit
+    [.data 58 33 [.reg rd, .data tyCond c.idx []]] st =
     .ok (.op .unit, st.emit (.cset rd c)) := ctor_emit _ _ (ofV_cset ..)
 
 end Emit
@@ -94,7 +94,7 @@ include hp hc in
 theorem alu_rrr_run {k ks : Nat} {op : ALUOp} {sz : OperandSize} {w : Nat} {rid : RuleId}
     (hsz : ∀ st tr n, (applyTerm p (sem ctx) cfg (n+8) 93 305 [.ty (.int w)]).run (st, tr) =
       .ok (some (.data 93 ks []), (st, tr.push rid)))
-    (hemit : ∀ st rd rn rm, externCtor ctx term_235
+    (hemit : ∀ st rd rn rm, externCtor ctx T.emit
       [.data 58 2 [.data 59 k [], .data 93 ks [], .reg rd, .reg rn, .reg rm]] st =
       .ok (.op .unit, st.emit (.aluRRR op sz rd rn rm)))
     (a b : Reg) :
@@ -111,7 +111,7 @@ include hp hc in
 theorem add_run {ks : Nat} {sz : OperandSize} {w : Nat} {rid : RuleId}
     (hsz : ∀ st tr n, (applyTerm p (sem ctx) cfg (n+8) 93 305 [.ty (.int w)]).run (st, tr) =
       .ok (some (.data 93 ks []), (st, tr.push rid)))
-    (hemit : ∀ st rd rn rm, externCtor ctx term_235
+    (hemit : ∀ st rd rn rm, externCtor ctx T.emit
       [.data 58 2 [.data 59 0 [], .data 93 ks [], .reg rd, .reg rn, .reg rm]] st =
       .ok (.op .unit, st.emit (.aluRRR .add sz rd rn rm)))
     (a b : Reg) :

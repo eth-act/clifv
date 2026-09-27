@@ -37,6 +37,13 @@ pub fn sanitize(s: &str) -> String {
         .collect()
 }
 
+/// A Lean name component for an arbitrary ISLE symbol: `«name»` (ISLE names may contain `.`,
+/// and some are Lean keywords).
+pub fn lname(s: &str) -> String {
+    assert!(!s.contains('»') && !s.contains('«'), "ISLE name {s} cannot be quoted");
+    format!("«{s}»")
+}
+
 pub fn lint(i: i128) -> String {
     if i < 0 { format!("({i})") } else { i.to_string() }
 }
@@ -210,6 +217,47 @@ pub fn type_def(u: &Unit, t: &sema::Type) -> String {
         }
     };
     format!("⟨{id}, {name}, {kind}, {p}⟩")
+}
+
+/// The `Ids` module body (after `header`): `@[match_pattern]` constants for every type id
+/// (`TyId.«T»`), every enum variant index (`VIdx.«T».«V»`) and every term id (`TId.«t»`), so
+/// the backend decodes enum values and dispatches extern helpers on generated numbers (a
+/// `Nat`-literal match) instead of by-name lookups into `program`.
+pub fn ids_module(u: &Unit, header: &str) -> String {
+    let mut o = String::from(header);
+    o.push_str("/-! ### Type ids -/\n\n");
+    for t in &u.tyenv.types {
+        let _ = writeln!(
+            o,
+            "@[match_pattern] abbrev TyId.{} : TypeId := {}",
+            lname(t.name(&u.tyenv)),
+            t.id().index()
+        );
+    }
+    o.push_str("\n/-! ### Enum variant indices -/\n\n");
+    for t in &u.tyenv.types {
+        if let sema::Type::Enum { variants, .. } = t {
+            for (k, v) in variants.iter().enumerate() {
+                let _ = writeln!(
+                    o,
+                    "@[match_pattern] abbrev VIdx.{}.{} : Nat := {k}",
+                    lname(t.name(&u.tyenv)),
+                    lname(u.sym(v.name))
+                );
+            }
+        }
+    }
+    o.push_str("\n/-! ### Term ids -/\n\n");
+    for t in &u.termenv.terms {
+        let _ = writeln!(
+            o,
+            "@[match_pattern] abbrev TId.{} : TermId := {}",
+            lname(u.sym(t.name)),
+            t.id.index()
+        );
+    }
+    o.push_str("\nend Isle.Aarch64\n");
+    o
 }
 
 /// Source forms `(extractor (T args..) template)` of internal extractors, by

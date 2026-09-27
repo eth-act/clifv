@@ -6,7 +6,7 @@ import FV.Backend.Proof.IselSem
 
 * Width convention (Cranelift's, which the exported rules rely on): a CLIF value of type `ty`
   lives in the low `ty.width` bits of its 64-bit register; the upper bits are unspecified
-  (`Holds`). `iadd_base_case` at i8/i16 emits a 32-bit `add` that leaves garbage in bits
+  (`ArmHolds`). `iadd_base_case` at i8/i16 emits a 32-bit `add` that leaves garbage in bits
   `ty.width..31`; a zero-upper-bits invariant (`CanonReg`) would therefore be *false* for
   rule outputs. Rules that need clean upper bits re-extend (`put_in_reg_zext32`, …), so the
   obligation stays local to each rule.
@@ -17,7 +17,7 @@ namespace Backend.Proof
 open Arm Isle Isle.Interp Isle.Aarch64
 
 /-- A CLIF value `v : ty` is held by `x k` (low `ty.width` bits; upper bits unspecified). -/
-def Holds (ty : Clif.Ty) (s : ArmState) (k : Nat) (v : BitVec ty.width) : Prop :=
+def ArmHolds (ty : Clif.Ty) (s : ArmState) (k : Nat) (v : BitVec ty.width) : Prop :=
   (X k s).setWidth ty.width = v
 
 theorem frame_write_gpr {d : Nat} (hd : d ≤ 30) (v pc : BitVec 64) (s : ArmState) :
@@ -46,12 +46,12 @@ theorem trunc_add32 (w : Nat) (hw : w ≤ 32) (A B : BitVec 64) :
 /-- Arm meaning of the 32-bit `add` the rule emits for i8/i16/i32. -/
 theorem add32_correct {d a b : Nat} (hd : d ≤ 30) (ha : a ≤ 30) (hb : b ≤ 30) (ty : Clif.Ty)
     (hty : ty.width ≤ 32) (s : ArmState) (u v : BitVec ty.width)
-    (hu : Holds ty s a u) (hv : Holds ty s b v) :
+    (hu : ArmHolds ty s a u) (hv : ArmHolds ty s b v) :
     ∃ s', MInst.sem (.aluRRR .add .size32 (.x d) (.x a) (.x b)) s = .ok s' ∧
-      Holds ty s' d (Clif.Sem.iadd u v) ∧ Frame [d] false s s' ∧ read_pc s' = read_pc s + 4#64 := by
+      ArmHolds ty s' d (Clif.Sem.iadd u v) ∧ Frame [d] false s s' ∧ read_pc s' = read_pc s + 4#64 := by
   rw [sem_add32 hd ha hb]
   refine ⟨_, rfl, ?_, ?_, ?_⟩
-  · simp only [Holds, X, write_gpr, write_pc, read_gpr, r_of_w_same] at *
+  · simp only [ArmHolds, X, write_gpr, write_pc, read_gpr, r_of_w_same] at *
     subst hu hv
     exact trunc_add32 _ hty _ _
   · exact frame_write_gpr hd _ _ s
@@ -59,12 +59,12 @@ theorem add32_correct {d a b : Nat} (hd : d ≤ 30) (ha : a ≤ 30) (hb : b ≤ 
 
 /-- Arm meaning of the 64-bit `add` the rule emits for i64. -/
 theorem add64_correct {d a b : Nat} (hd : d ≤ 30) (ha : a ≤ 30) (hb : b ≤ 30) (s : ArmState)
-    (u v : BitVec 64) (hu : Holds .i64 s a u) (hv : Holds .i64 s b v) :
+    (u v : BitVec 64) (hu : ArmHolds .i64 s a u) (hv : ArmHolds .i64 s b v) :
     ∃ s', MInst.sem (.aluRRR .add .size64 (.x d) (.x a) (.x b)) s = .ok s' ∧
-      Holds .i64 s' d (Clif.Sem.iadd u v) ∧ Frame [d] false s s' ∧ read_pc s' = read_pc s + 4#64 := by
+      ArmHolds .i64 s' d (Clif.Sem.iadd u v) ∧ Frame [d] false s s' ∧ read_pc s' = read_pc s + 4#64 := by
   rw [sem_add64 hd ha hb]
   refine ⟨_, rfl, ?_, ?_, ?_⟩
-  · simp only [Holds, X, write_gpr, write_pc, read_gpr, r_of_w_same] at *
+  · simp only [ArmHolds, X, write_gpr, write_pc, read_gpr, r_of_w_same] at *
     subst hu hv
     simp [Clif.Ty.width, Clif.Sem.iadd]; rfl
   · exact frame_write_gpr hd _ _ s
@@ -93,9 +93,9 @@ theorem iadd_base_case_correct_32 (ty : Clif.Ty) (hty : ty.width ≤ 32)
         .ok (some (.regsVec [[.vreg dst .int]]), (st', tr')) ∧
       st'.emitted = st.emitted.push m ∧
       ∀ (ρ : Nat → Nat), ρ vx ≤ 30 → ρ vy ≤ 30 → ρ dst ≤ 30 →
-      ∀ (s : ArmState) (u v : BitVec ty.width), Holds ty s (ρ vx) u → Holds ty s (ρ vy) v →
+      ∀ (s : ArmState) (u v : BitVec ty.width), ArmHolds ty s (ρ vx) u → ArmHolds ty s (ρ vy) v →
         ∃ s', MInst.sem (m.mapRegs (alloc ρ)) s = .ok s' ∧
-          Holds ty s' (ρ dst) (Clif.Sem.iadd u v) ∧ Frame [ρ dst] false s s' := by
+          ArmHolds ty s' (ρ dst) (Clif.Sem.iadd u v) ∧ Frame [ρ dst] false s s' := by
   refine ⟨_, _, st.nextVreg, _, _, match_86 hp ctx hi hres (by omega) hd st tr n,
     rhs_86_32 hp ctx hc hx hy hty st tr n, rfl, ?_⟩
   intro ρ h1 h2 h3 s u v hu hv

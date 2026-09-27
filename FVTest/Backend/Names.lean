@@ -1,32 +1,29 @@
 import FV.Backend
 
 /-!
-Consistency of the backend with the exported ISLE program (`FV/Isle/Generated`): every ISLE
-type and enum variant the backend builds values of by name exists. A Cranelift upgrade that
-renames one of them fails here instead of producing values no rule matches.
+Consistency of the backend with the exported ISLE program (`FV/Isle/Generated`). Types and
+enum variants the backend decodes or builds by *index* are the generated constants
+`Isle.Aarch64.TyId.*` / `VIdx.*` (a Cranelift upgrade that renames one is a compile error);
+the ones it still builds by *name* from CLIF (`mkVariant`: `InstructionData`, `Opcode`, `IntCC`)
+are checked here, so a rename fails here instead of producing values no rule matches.
 `lake build FVTest.Backend.Names`.
 -/
 
 open Backend
 
-#guard ["MInst", "ALUOp", "ALUOp3", "OperandSize", "Cond", "ExtendOp", "AMode", "CondBrKind",
-  "MoveWideOp", "BfmOp", "BitOp", "ScalarSize", "VectorSize", "VecMisc2", "VecLanesOp",
-  "VecALUOp", "TestBitAndBranchKind", "IntCC", "Opcode", "InstructionData", "RelocDistance",
-  "TlsModel"].all fun n => (Isle.Aarch64.program.types.find? (·.name == n)).isSome
-
-#guard [(tyMInst, "LoadAddr"), (tyAMode, "SlotOffset"), (tyCondBrKind, "Zero"),
-  (tyCondBrKind, "NotZero"), (tyCondBrKind, "Cond"), (tyRelocDistance, "Near"),
-  (tyRelocDistance, "Far"), (islTy "TlsModel", "None"),
-  (tyInstData, "UnaryImm"), (tyInstData, "Unary"), (tyInstData, "Binary"),
+#guard [(tyInstData, "UnaryImm"), (tyInstData, "Unary"), (tyInstData, "Binary"),
   (tyInstData, "IntCompare"), (tyInstData, "Load"), (tyInstData, "Store"),
   (tyInstData, "StackAddr"), (tyInstData, "Call"), (tyInstData, "Jump"),
   (tyInstData, "Brif"), (tyInstData, "BranchTable"), (tyInstData, "MultiAry"),
   (tyInstData, "Trap"), (tyInstData, "Ternary"), (tyInstData, "NullAry"),
   (tyInstData, "UnaryGlobalValue")].all fun (t, n) => (variantIdx t n).isSome
 
-#guard Cond.all.all fun c => (variantIdx tyCond c.name).isSome
-#guard ExtendOp.all.all fun e => (variantIdx tyExtendOp e.name).isSome
 #guard Clif.IntCC.all.all fun cc => (variantIdx tyIntCC (intccName cc)).isSome
+
+-- The index tables of the typed view round-trip and agree with the variant names.
+#guard Cond.all.all fun c => Cond.ofIdx? c.idx == some c && variantIdx tyCond c.name == some c.idx
+#guard ExtendOp.all.all fun e =>
+  ExtendOp.ofIdx? e.idx == some e && variantIdx tyExtendOp e.name == some e.idx
 
 /-- Every opcode name the backend produces for E. -/
 def eOpcodeNames : List String :=

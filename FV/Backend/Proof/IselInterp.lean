@@ -17,7 +17,7 @@ left alone until their argument is known) and then normalises with `simp only` o
 laws below, the generated data facts (`isel_data`) and caller-supplied lemmas — a simp set
 with no interpreter equations, so nothing is unfolded under a binder. Each round exposes the
 next closed call. The kernel never sees `Isle.Aarch64.program`: `termOf`/`rulesOf` are
-rewritten with the `native_decide` facts of `IselData`.
+rewritten with the fields of `Data p` (`IselData`; `rfl` for the exported program).
 -/
 
 namespace Backend.Proof
@@ -32,6 +32,8 @@ variable {σ α β ε : Type}
 @[isel_monad] theorem except_ok_bind (a : α) (f : α → Except ε β) :
     (Except.ok a >>= f : Except ε β) = f a := rfl
 @[isel_monad] theorem except_pure (a : α) : (pure a : Except ε α) = .ok a := rfl
+@[isel_monad] theorem except_error_bind (e : ε) (f : α → Except ε β) :
+    (Except.error e >>= f : Except ε β) = .error e := rfl
 @[isel_monad] theorem run_liftM (e : Except Err α) (s : σ × Array RuleId) :
     (liftM e : M σ α).run s = (e >>= fun a => Except.ok (a, s)) := by
   cases e <;> rfl
