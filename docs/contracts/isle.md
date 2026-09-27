@@ -145,7 +145,8 @@ Type defs are `ty_<sanitised type name>`.
 ## Closure for the emitter subset (`FV/Isle/Generated/Closure.lean`)
 
 This is the set of rules reachable from roots `lower` and `lower_branch` for the E opcodes of
-`clif-subset-v1` at `i8`..`i64`.
+`clif-subset-v2` at `i8`..`i64` (the root filter is `E_OPCODES` in
+`rust/crates/isle2lean/src/closure.rs`).
 
 **Selecting root rules.** This step is sound for E programs, because every value has type
 `i8`/`i16`/`i32`/`i64` and every instruction has an E opcode. A root rule is dropped only if
@@ -177,15 +178,15 @@ Counts (`Closure.summary`):
 
 | | |
 | --- | --- |
-| closure rules | 392, of which 112 are root rules (`lower`/`lower_branch`), over 140 terms |
-| root rules excluded | 413 |
-| terms mentioned | 488 (115 carry the VeriISLE `chain` attribute) |
-| extern terms (Rust helpers) | 119: 93 extern constructors, 28 extern extractors (2 terms have both) |
-| extern terms with a VeriISLE `spec` | 86 of 119 |
-| rules whose expansions `--default-excludes` skips (by tags) | 25 |
-| non-root rules with `lhsReasons` | 14 (`scalar_size` of I128/F16/F32/F64, `is_nonzero` of fcmp and overflow ops, `emit_icmp` of I128) |
+| closure rules | 442, of which 129 are root rules (`lower`/`lower_branch`) |
+| root rules excluded | 396 |
+| terms mentioned | 536 |
+| extern terms (Rust helpers) | 128: 96 extern constructors, 36 extern extractors |
+| extern terms with a VeriISLE `spec` | 87 of 128 |
+| rules whose expansions `--default-excludes` skips (by tags) | 47 |
+| rules with `lhsReasons` | 36 (v1: 14 — `scalar_size` of I128/F16/F32/F64, `is_nonzero` of fcmp and overflow ops, `emit_icmp` of I128; v2 adds the vector/float/I128 arms of `lower_select_cond`, `csel` variants and the vector `umin`… root rules, whose types are variables) |
 
-The 33 extern terms in the closure that have **no** VeriISLE spec:
+The v1 closure had 33 extern terms without a VeriISLE spec:
 
 - `output_vec`, `opportunistic_def`, `put_in_regs_vec`
 - `single_target`, `two_targets`, `jump_table_targets`, `jump_table_size`
@@ -197,7 +198,48 @@ The 33 extern terms in the closure that have **no** VeriISLE spec:
 - `gen_call_info`, `gen_call_ind_info`, `test_and_compare_bit_const`
 - `i32_from_i64`, `u8_from_u64`, `value_array_2`, `block_array_2`
 
-`Closure.terms` lists all 488 terms with their Rust function names, spec status, `chain` flag
+**`clif-subset-v2` delta** (regenerated 2026-09-27; old closure 392 rules / 112 roots / 488
+terms / 119 externs): **+50 rules** (17 root rules), **+48 terms**, **+9 extern terms**:
+
+| New extern term | Kind | VeriISLE spec | Needed at i8..i64 for |
+| --- | --- | --- | --- |
+| `invalid_reg` | constructor | no (tag `TODO`) | `(lower (nop))` result |
+| `symbol_value_data` | extractor | no | `symbol_value` (name, `RelocDistance`, offset) |
+| `value_array_3` | ctor + extractor (`pack/unpack_value_array_3`) | no | `select` operands (`InstructionData.Ternary`) |
+| `ty_scalar_float` | extractor | yes | fails at integer types (float arm of `lower_select_cond`) |
+| `ty_vec64`, `ty_vec128` | extractor (+ `ty_vec64_ctor`) | no | fail at integer types (vector `umin`… rules) |
+| `not_i64x2`, `multi_lane`, `dynamic_lane` | extractor | no | fail at integer types |
+
+New internal terms: `lower_select`, `lower_select_cond`, `csel`, `a64_rev16/32/64`, `fpu_csel`,
+`vec_csel`, `vector_size`; new MInst variants `MInst.CSel` (has a spec),
+`FpuCSel16/32/64`, `VecCSel`; `BitOp.Rev16/Rev32/Rev64`.
+New root rules: `lower.isle` 78 (`nop` → `invalid_reg`), 1222–1228 (`umin`/`smin`/`umax`/`smax`
+at `ty_int` → `lower_select` of `emit_icmp`), 1233–1251 (vector min/max, tag `vector`),
+1931/1937/1946 (`bitrev` i8/i16 → `rbit.32` + `lsr`; other widths `rbit`), 2035/2038/2041
+(`bswap` i16/i32/i64 → `rev16`/`rev32`/`rev64`), 2267 (`select` → `lower_select` of
+`is_nonzero_cmp`), 2491 (`symbol_value` → `load_ext_name`; with `is_pic` (our setting)
+`LoadExtNameGot` (+ `add` of the offset if non-zero)).
+
+**Default VeriISLE coverage of the v2 expansions** (tags; no solver run — cvc5/z3 are not
+installed and the veri crate does not build outside the full wasmtime workspace):
+- `nop` (`invalid_reg`: `TODO`) and `symbol_value` (`load_ext_name`: `TODO`): skipped — veri
+  skips `TODO`-tagged expansions unless `--no-skip-todo` (`veri.rs` `skip_todo`). Neither has
+  a CLIF spec either.
+- `select`, `smin`/`smax`/`umin`/`umax`: the root rules carry no tag, but they chain into
+  `lower_select` → `lower_select_cond` rule 1 (`inst.isle` 5364), which uses `with_flags`
+  (`TODO`), so the expanded rule is skipped by default **[inference: chained terms are
+  inlined into the expansion, whose tags are the union over its terms]**. `select` also has no
+  CLIF spec. The survey's note that `select` is excluded by `wasm_category_stack`
+  (`inst_tags.isle`) does not apply: `select` is an extractor macro, so its term never occurs
+  in an expansion (the same holds in isle2lean's tag computation).
+- `bswap` (`rev16`/`rev32`/`rev64`, `bit_rr`): no excluding tag; CLIF spec exists → in the
+  default run.
+- `bitrev`: no excluding tag, but no CLIF spec → cannot be verified by VeriISLE.
+
+So of the nine, only `bswap` is covered by the default VeriISLE run; the others need Lean
+proofs without a VeriISLE cross-check.
+
+`Closure.terms` lists all 536 terms with their Rust function names, spec status, `chain` flag
 and tags.
 
 **Coverage by the default VeriISLE run.** This is determined from tags. Each `ClosureRule`

@@ -1,5 +1,5 @@
 //! Rules reachable from `lower`/`lower_branch` for the emitter opcode subset E
-//! (`docs/contracts/clif-subset.md`, `clif-subset-v1`) at `i8`..`i64`.
+//! (`docs/contracts/clif-subset.md`, `clif-subset-v2`) at `i8`..`i64`.
 //!
 //! Root selection (sound for E programs, whose values all have types
 //! `i8 i16 i32 i64` and whose instructions all have E opcodes): a root rule
@@ -26,13 +26,15 @@ use cranelift_isle::sema::{self, RuleId, TermId, TermKind};
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::fmt::Write;
 
-/// E opcodes (CLIF names), `clif-subset-v1`.
+/// E opcodes (CLIF names), `clif-subset-v2`.
 pub const E_OPCODES: &[&str] = &[
     "iconst", "iadd", "isub", "ineg", "imul", "umulhi", "smulhi", "udiv", "urem", "sdiv", "srem",
     "band", "bor", "bxor", "bnot", "ishl", "ushr", "sshr", "rotl", "rotr", "clz", "ctz", "popcnt",
     "icmp", "uextend", "sextend", "ireduce", "load", "store", "uload8", "uload16", "uload32",
     "sload8", "sload16", "sload32", "istore8", "istore16", "istore32", "stack_addr", "jump",
     "brif", "br_table", "return", "call", "trap",
+    // clif-subset-v2 (docs/research/rust-clif-survey.md):
+    "nop", "symbol_value", "select", "smin", "smax", "umin", "umax", "bswap", "bitrev",
 ];
 
 pub const ROOTS: &[&str] = &["lower", "lower_branch"];
