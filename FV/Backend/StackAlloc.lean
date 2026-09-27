@@ -58,6 +58,10 @@ structure AFunc where
   blocks : Array (Label × Array AInst)
   /-- Offset of the explicit stack-slot region from `sp` (= the outgoing area size). -/
   slotBase : Nat
+  /-- `false`: no frame at all (a leaf function with an empty frame that never addresses
+  `fp`): `prologue` emits nothing and `epilogueRet` only `ret`, as Cranelift does when
+  `preserve_frame_pointers` is off. -/
+  frame : Bool := true
   deriving Inhabited
 
 /-- Frame layout: slot offset (from `sp`) of every vreg, and the frame size. -/
@@ -165,8 +169,36 @@ def Frame.allocInst (m : MInst) : Except String (List AInst) := do
 
 end
 
+/-- Block arguments as moves (the stack-slot allocator has no block parameters): before a
+`jump` with arguments, every argument is copied into a fresh temporary, then every temporary
+into the target's parameter (a parallel copy, safe when arguments and parameters overlap). -/
+def lowerBlockArgs (vc : VCode) : Except String VCode := do
+  let mut classes := vc.classes
+  let mut blocks : Array VBlock := #[]
+  for b in vc.blocks do
+    if b.branchArgs.isEmpty then
+      blocks := blocks.push b
+      continue
+    let some (.jump tl) := b.insts.back? | throw s!"block {b.label}: arguments without a jump"
+    let some tb := vc.blocks.find? (·.label == tl) | throw s!"unknown block {tl}"
+    if tb.params.size != b.branchArgs.size then throw s!"block {tl}: argument count"
+    let mut first : Array MInst := #[]
+    let mut second : Array MInst := #[]
+    for (a, p) in b.branchArgs.zip tb.params do
+      let cls := match p with
+        | .vreg _ c => c
+        | _ => .int
+      let t := Reg.vreg classes.size cls
+      classes := classes.push cls
+      first := first.push (.mov .size64 t a)
+      second := second.push (.mov .size64 p t)
+    blocks := blocks.push { b with insts := b.insts.pop ++ first ++ second ++ #[.jump tl],
+                                   branchArgs := #[] }
+  pure { vc with blocks, classes }
+
 /-- Allocate a function. -/
 def allocate (vc : VCode) : Except String AFunc := do
+  let vc ← lowerBlockArgs vc
   let fr := Frame.compute vc
   let blocks ← vc.blocks.mapIdxM fun i b => do
     let code ← b.insts.toList.flatMapM fr.allocInst

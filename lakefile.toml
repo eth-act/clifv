@@ -44,3 +44,7 @@ root = "FVTest.Backend.ArmRun"
 [[lean_exe]]
 name = "lean-backend-encode-test"
 root = "FVTest.Backend.Encode.Test"
+
+[[lean_exe]]
+name = "lean-backend-regalloc-test"
+root = "FVTest.Backend.Regalloc.Test"

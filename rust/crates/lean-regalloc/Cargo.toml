@@ -1,0 +1,17 @@
+[package]
+name = "lean-regalloc"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+publish = false
+description = "Untrusted register-allocation oracle for the Lean backend: runs regalloc2 0.15.2 (unchanged, Cranelift 0.136.1's options) on VCode given as JSON; the Lean checker (FV/Backend/RegallocCheck.lean) validates every result"
+
+[[bin]]
+name = "lean-regalloc"
+path = "src/main.rs"
+
+[dependencies]
+# Exactly the version Cranelift 0.136.1 uses (rust/Cargo.lock), with the `checker` feature
+# Cranelift enables (`regalloc_checker`), used here as an extra cross-check.
+regalloc2 = { version = "=0.15.2", features = ["checker"] }
+serde_json = { workspace = true }
