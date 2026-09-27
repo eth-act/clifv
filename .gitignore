@@ -1,7 +1,7 @@
 /.lake/
 /target/
-/third_party/wasmtime/
+/third_party/wasmtime
 /build/
-/third_party/lnsym-upstream/
+/third_party/lnsym-upstream
 /rust/target/
 /rust/crates/isle2lean/oracle/target/
