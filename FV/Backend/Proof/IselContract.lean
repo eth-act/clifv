@@ -283,6 +283,9 @@ def SameWorldNF (F : BitVec 64 → Prop) (s t : Arm.ArmState) : Prop :=
 def MRStable (F : BitVec 64 → Prop) (MR : MemRelT) : Prop :=
   ∀ sl cm w w', SameWorldNF F w' w → MR sl cm w → MR sl cm w'
 
+/-- The types of the E integer types `i8..i64` (`buildCtx` rejects `i128` values). -/
+def eCTys : List CTy := [.int 8, .int 16, .int 32, .int 64]
+
 /-! ## The lowering context -/
 
 /-- Facts about the lowering context `buildCtx f` builds (M7 proves `buildCtx f = .ok (ctx, …)
@@ -302,6 +305,10 @@ structure CtxInv (f : Clif.Function) (ctx : Ctx) : Prop where
   defClif : ∀ (x d : Nat) (info : IInfo), ctx.defInst? x = some d → ctx.insts[d]? = some info →
     info.clif.isSome = true
   slotOff : ctx.slotOff = (slotLayout f.slots).1
+  /-- Result types are `i8..i64` (`buildCtx` rejects `i128` results). -/
+  resTysE : ∀ (ii : Nat) (info : IInfo), ctx.insts[ii]? = some info → ∀ t ∈ info.resTys, t ∈ eCTys
+  /-- Value types are `i8..i64` (`buildCtx` rejects `i128` values). -/
+  valTyE : ∀ (x : Nat) (t : CTy), ctx.valueType? x = some t → t ∈ eCTys
 
 /-- Instructions the rules may look through (`def_inst`): their value is a function of their
 operands (and the frame's slot bases). -/
