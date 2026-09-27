@@ -466,6 +466,136 @@ theorem enter_match (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
       rw [restrict_regs_of_mem hy0, restrict_regs_of_mem hyA]
       exact setMany_other hset hyp
 
+/-! ## CLIF terminator steps -/
+
+theorem stepTerm_branch {env : Clif.Env} {p : Clif.Program} {s s' : Clif.State}
+    {t : Clif.Terminator} (hb : dests t ≠ [])
+    (h : Clif.stepTerm env p s t = .next s') :
+    ∃ j bc fr2, branchIdx s.frame t = .ok j ∧ (dests t)[j]? = some bc ∧
+      Clif.enterBlock s.frame bc = .ok fr2 ∧ s' = { s with frame := fr2 } := by
+  cases t with
+  | jump bc =>
+    simp only [Clif.stepTerm] at h
+    cases he : Clif.enterBlock s.frame bc with
+    | ok fr2 =>
+      rw [he] at h; simp only [Clif.StepResult.ofRes, Clif.StepResult.next.injEq] at h
+      exact ⟨0, bc, fr2, rfl, rfl, he, h.symm⟩
+    | _ => rw [he] at h; cases h
+  | brif c t e =>
+    simp only [Clif.stepTerm] at h
+    cases hc : s.frame.get c with
+    | ok cv =>
+      rw [hc] at h
+      simp only [Clif.StepResult.ofRes] at h
+      cases he : Clif.enterBlock s.frame (if Clif.Sem.truthy cv.bits then t else e) with
+      | ok fr2 =>
+        rw [he] at h; simp only [Clif.StepResult.next.injEq] at h
+        refine ⟨if Clif.Sem.truthy cv.bits then 0 else 1, _, fr2, ?_, ?_, he, h.symm⟩
+        · simp [branchIdx, hc, Clif.Res.bind]
+        · split <;> simp [dests]
+      | _ => rw [he] at h; cases h
+    | _ => rw [hc] at h; cases h
+  | brTable x d tbl =>
+    simp only [Clif.stepTerm] at h
+    cases hc : s.frame.get x with
+    | ok xv =>
+      rw [hc] at h
+      simp only [Clif.StepResult.ofRes] at h
+      cases he : Clif.enterBlock s.frame (tbl[xv.toNat]?.getD d) with
+      | ok fr2 =>
+        rw [he] at h; simp only [Clif.StepResult.next.injEq] at h
+        refine ⟨if xv.toNat < tbl.length then xv.toNat + 1 else 0, _, fr2, ?_, ?_, he, h.symm⟩
+        · simp [branchIdx, hc, Clif.Res.bind]
+        · split
+          · rename_i hlt; simp [dests, List.getElem?_eq_getElem hlt]
+          · rename_i hge; simp [dests, List.getElem?_eq_none (Nat.le_of_not_lt hge)]
+      | _ => rw [he] at h; cases h
+    | _ => rw [hc] at h; cases h
+  | _ => simp [dests] at hb
+
+theorem stepTerm_branch_ne {env : Clif.Env} {p : Clif.Program} {s : Clif.State}
+    {t : Clif.Terminator} (hb : dests t ≠ []) :
+    (∀ vals cm, Clif.stepTerm env p s t ≠ .done vals cm) ∧
+    (∀ c, Clif.stepTerm env p s t ≠ .trapped c) := by
+  constructor
+  · intro vals cm h
+    cases t with
+    | jump bc =>
+      simp only [Clif.stepTerm] at h
+      cases he : Clif.enterBlock s.frame bc <;> rw [he] at h <;> cases h
+    | brif c t e =>
+      simp only [Clif.stepTerm] at h
+      cases hc : s.frame.get c with
+      | ok cv =>
+        rw [hc] at h; simp only [Clif.StepResult.ofRes] at h
+        cases he : Clif.enterBlock s.frame (if Clif.Sem.truthy cv.bits then t else e) <;>
+          rw [he] at h <;> cases h
+      | _ => rw [hc] at h; cases h
+    | brTable x d tbl =>
+      simp only [Clif.stepTerm] at h
+      cases hc : s.frame.get x with
+      | ok xv =>
+        rw [hc] at h; simp only [Clif.StepResult.ofRes] at h
+        cases he : Clif.enterBlock s.frame (tbl[xv.toNat]?.getD d) <;> rw [he] at h <;> cases h
+      | _ => rw [hc] at h; cases h
+    | _ => simp [dests] at hb
+  · intro c h
+    cases t with
+    | jump bc =>
+      simp only [Clif.stepTerm] at h
+      cases he : Clif.enterBlock s.frame bc with
+      | trap c' => exact enterBlock_ne_trap he
+      | _ => rw [he] at h; cases h
+    | brif c t e =>
+      simp only [Clif.stepTerm] at h
+      cases hc : s.frame.get c with
+      | ok cv =>
+        rw [hc] at h; simp only [Clif.StepResult.ofRes] at h
+        cases he : Clif.enterBlock s.frame (if Clif.Sem.truthy cv.bits then t else e) with
+        | trap c' => exact enterBlock_ne_trap he
+        | _ => rw [he] at h; cases h
+      | trap c' => simp [Clif.Frame.get, Clif.Res.ofOption] at hc; split at hc <;> cases hc
+      | stuck => rw [hc] at h; cases h
+    | brTable x d tbl =>
+      simp only [Clif.stepTerm] at h
+      cases hc : s.frame.get x with
+      | ok xv =>
+        rw [hc] at h; simp only [Clif.StepResult.ofRes] at h
+        cases he : Clif.enterBlock s.frame (tbl[xv.toNat]?.getD d) with
+        | trap c' => exact enterBlock_ne_trap he
+        | _ => rw [he] at h; cases h
+      | trap c' => simp [Clif.Frame.get, Clif.Res.ofOption] at hc; split at hc <;> cases hc
+      | stuck => rw [hc] at h; cases h
+    | _ => simp [dests] at hb
+
+theorem stepTerm_ret {env : Clif.Env} {p : Clif.Program} {s : Clif.State} {xs : List Clif.ValueId}
+    (hcall : s.callers = []) :
+    (∀ s', Clif.stepTerm env p s (.ret xs) ≠ .next s') ∧
+    (∀ c, Clif.stepTerm env p s (.ret xs) ≠ .trapped c) ∧
+    (∀ vals cm, Clif.stepTerm env p s (.ret xs) = .done vals cm →
+      s.frame.getMany xs = .ok vals ∧ cm = s.mem.free (s.frame.slots.map (·.2))) := by
+  have key : ∀ r, Clif.stepTerm env p s (.ret xs) = r →
+      (∃ vals, s.frame.getMany xs = .ok vals ∧ r = .done vals (s.mem.free (s.frame.slots.map (·.2)))) ∨
+      ∃ m, r = .stuck m := by
+    intro r h
+    subst h
+    simp only [Clif.stepTerm]
+    cases hg : s.frame.getMany xs with
+    | ok vals =>
+      simp only [Clif.StepResult.ofRes, Clif.returnValues, hcall]
+      rcases checkTys_cases s!"return values of %{s.frame.func.name}" vals
+        (Clif.AbiParam.tys s.frame.func.sig.returns) with ⟨hc, -⟩ | ⟨m, hc⟩
+      · rw [hc]; exact .inl ⟨vals, rfl, rfl⟩
+      · rw [hc]; exact .inr ⟨m, rfl⟩
+    | trap c => exact absurd hg getMany_ne_trap
+    | stuck m => exact .inr ⟨m, rfl⟩
+  refine ⟨fun s' h => ?_, fun c h => ?_, fun vals cm h => ?_⟩
+  · rcases key _ h with ⟨_, _, e⟩ | ⟨_, e⟩ <;> cases e
+  · rcases key _ h with ⟨_, _, e⟩ | ⟨_, e⟩ <;> cases e
+  · rcases key _ h with ⟨vals', hg, e⟩ | ⟨_, e⟩
+    · cases e; exact ⟨hg, rfl⟩
+    · cases e
+
 end
 
 end Backend.Proof.Driver
