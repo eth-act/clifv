@@ -228,16 +228,37 @@ def ofX (x : BitVec 64) : CV := x.setWidth 128
 theorem lo64_regVal_x (s : Arm.ArmState) (n : Nat) : lo64 (regVal s (.x n)) = Arm.r (.GPR (rnum n)) s := by
   simp [lo64, regVal, BitVec.setWidth_setWidth_of_le]
 
+/-- `n` bytes from `a` avoid the frame addresses `F`. -/
+def Avoids (F : BitVec 64 → Prop) (n : Nat) (a : BitVec 64) : Prop :=
+  ∀ k < n, ¬ F (a + BitVec.ofNat 64 k)
+
 open Classical in
-/-- Value-level semantics of the representative instructions (the Arm model's operations on
-the operand values; `w` is the world). -/
-noncomputable def csem : ISem CV Arm.ArmState := fun i uses w =>
+/-- Value-level semantics of the representative instructions: the Arm model's operations on
+the operand values, with world `w` (flags, memory). A memory access must avoid the frame
+addresses `F` (source memory safety: the program's own accesses never touch the allocator's
+frame slots); otherwise the semantics is undefined. -/
+noncomputable def csem (F : BitVec 64 → Prop) : ISem CV Arm.ArmState := fun i uses w =>
   match i, uses with
   | .mov .size64 _ _, [a] => some ([ofX (lo64 a)], w, .next)
+  | .aluRRR .add .size64 _ _ _, [a, b] => some ([ofX (lo64 a + lo64 b)], w, .next)
+  | .aluRRImm12 .add .size64 _ _ imm, [a] =>
+    some ([ofX (lo64 a + BitVec.ofNat 64 imm.value)], w, .next)
+  | .csel _ _ _ c, [a, b] =>
+    some ([ofX (if Arm.ConditionHolds c.bits w then lo64 a else lo64 b)], w, .next)
+  | .cset _ c, [] =>
+    some ([ofX (if Arm.ConditionHolds c.invert.bits w then 0#64 else 1#64)], w, .next)
+  | .load .uload64 _ (.unsignedOffset _ off) _, [base] =>
+    if Avoids F 8 (lo64 base + BitVec.ofNat 64 off) then
+      some ([ofX (Arm.read_mem_bytes 8 (lo64 base + BitVec.ofNat 64 off) w)], w, .next)
+    else none
+  | .store .store64 _ (.unsignedOffset _ off) _, [data, base] =>
+    if Avoids F 8 (lo64 base + BitVec.ofNat 64 off) then
+      some ([], Arm.write_mem_bytes 8 (lo64 base + BitVec.ofNat 64 off) (lo64 data) w, .next)
+    else none
   | _, _ => none
 
 theorem operandsSound_mov (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (d m : Nat) :
-    OperandsSound F (execMInst ctx env) csem (.mov .size64 (.vreg d .int) (.vreg m .int)) := by
+    OperandsSound F (execMInst ctx env) (csem F) (.mov .size64 (.vreg d .int) (.vreg m .int)) := by
   intro c wh ops regs i' s w outs w' hops hst hasg hw hsem
   have : MInst.operands (.mov .size64 (.vreg d .int) (.vreg m .int)) =
       .ok #[⟨d, .int, .def, .late, .reg⟩, ⟨m, .int, .use, .early, .reg⟩] := rfl
