@@ -49,6 +49,12 @@ def Reg.isVirtual : Reg → Bool
 def Reg.fp : Reg := .x 29
 def Reg.lr : Reg := .x 30
 
+/-- `Reg::invalid_sentinel()` (`machinst/valueregs.rs:54`) = `VReg::invalid()`, the virtual
+register with regalloc2's maximal index `VReg::MAX = 2^21 - 1`. Only the `nop` lowering
+(`invalid_reg`) produces it; the driver drops the outputs of result-less instructions, so it
+never reaches VCode. -/
+def Reg.invalid : Reg := .vreg (2 ^ 21 - 1) .int
+
 /-! ## CLIF types as seen by the ISLE rules (`Type` values) -/
 
 /-- A Cranelift `Type`: scalar integers `I8..I128`, floats, fixed vectors and `INVALID` (the
@@ -294,6 +300,8 @@ inductive MInst where
   | extend (rd rn : Reg) (signed : Bool) (fromBits toBits : Nat)
   | bitfieldMove (size : OperandSize) (op : BfmOp) (rd rn : Reg) (immr imms : Nat)
   | cset (rd : Reg) (c : Cond)
+  /-- `csel xd, xn, xm, cond` (always 64-bit, `emit.rs:1438`). -/
+  | csel (rd rn rm : Reg) (c : Cond)
   | ccmp (size : OperandSize) (rn rm : Reg) (nzcv : NZCV) (c : Cond)
   | ccmpImm (size : OperandSize) (rn : Reg) (imm : Nat) (nzcv : NZCV) (c : Cond)
   | movToFpu (rd rn : Reg) (size : ScalarSize)
@@ -359,6 +367,7 @@ def MInst.uses : MInst → List Reg
   | .extend _ rn _ _ _ => [rn]
   | .bitfieldMove _ _ _ rn _ _ => [rn]
   | .cset .. => []
+  | .csel _ rn rm _ => [rn, rm]
   | .ccmp _ rn rm _ _ => [rn, rm]
   | .ccmpImm _ rn _ _ _ => [rn]
   | .movToFpu _ rn _ | .movFromVec _ rn _ _ | .vecMisc _ _ rn _ | .vecLanes _ _ rn _ => [rn]
@@ -382,7 +391,7 @@ def MInst.defs : MInst → List Reg
   | .aluRRImmLogic _ _ rd _ _ | .aluRRImmShift _ _ rd _ _ | .aluRRRShift _ _ rd _ _ _
   | .aluRRRExtend _ _ rd _ _ _ | .bitRR _ _ rd _ | .load _ rd _ _ | .mov _ rd _
   | .movWide _ rd _ _ | .movK rd _ _ _ | .extend rd _ _ _ _ | .bitfieldMove _ _ rd _ _ _
-  | .cset rd _ | .movToFpu rd _ _ | .movFromVec rd _ _ _ | .vecMisc _ rd _ _
+  | .cset rd _ | .csel rd _ _ _ | .movToFpu rd _ _ | .movFromVec rd _ _ _ | .vecMisc _ rd _ _
   | .vecLanes _ rd _ _ | .vecRRR _ rd _ _ _ | .loadExtNameGot rd _ | .loadExtNameNear rd _ _
   | .loadAddr rd _ => [rd]
   | .jtSequence _ _ _ t1 t2 => [t1, t2]
@@ -407,6 +416,7 @@ def MInst.mapRegs (f : Reg → Reg) : MInst → MInst
   | .extend rd rn sg a b => .extend (f rd) (f rn) sg a b
   | .bitfieldMove s op rd rn a b => .bitfieldMove s op (f rd) (f rn) a b
   | .cset rd c => .cset (f rd) c
+  | .csel rd rn rm c => .csel (f rd) (f rn) (f rm) c
   | .ccmp s rn rm n c => .ccmp s (f rn) (f rm) n c
   | .ccmpImm s rn i n c => .ccmpImm s (f rn) i n c
   | .movToFpu rd rn s => .movToFpu (f rd) (f rn) s
@@ -523,6 +533,8 @@ inductive Opnd where
   | trapCode (c : Clif.TrapCode)
   | stackSlot (n : Nat)
   | funcRef (n : Nat)
+  /-- `GlobalValue` (`gvN`). -/
+  | globalValue (n : Nat)
   /-- `SigRef`/`Sig`: the callee signature itself. -/
   | sig (s : Clif.Signature)
   | extName (name : String)
@@ -827,6 +839,7 @@ def MInst.ofV (v : V) : Option MInst := do
   | "BitfieldMove", [s, op, rd, rn, a, b] =>
     return .bitfieldMove (← s.size?) (← op.bfmOp?) (← rd.reg?) (← rn.reg?) (← a.uimm6?) (← b.uimm6?)
   | "CSet", [rd, c] => return .cset (← rd.reg?) (← c.cond?)
+  | "CSel", [rd, c, rn, rm] => return .csel (← rd.reg?) (← rn.reg?) (← rm.reg?) (← c.cond?)
   | "CCmp", [s, rn, rm, f, c] =>
     return .ccmp (← s.size?) (← rn.reg?) (← rm.reg?) (← f.nzcv?) (← c.cond?)
   | "CCmpImm", [s, rn, i, f, c] =>

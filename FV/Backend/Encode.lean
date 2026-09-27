@@ -358,10 +358,11 @@ def Insn.toArmInst (env : Env) (i : Insn) : Except String ArmInst := do
                                    option := e.bits, imm3 := 0, Rn := ← rn.encSP, Rd }))
   | .bitRR op w rd rn =>
     -- C6.2 RBIT, REV16, REV32, REV, CLZ, CLS (Data-processing (1 source); Cranelift `enc_bit_rr`)
-    let opcode : BitVec 6 ← match op, w with
-      | .rbit, _ => pure 0 | .rev16, _ => pure 1 | .rev32, true => pure 2
-      | .rev64, true => pure 3 | .rev64, false => pure 2 | .clz, _ => pure 4 | .cls, _ => pure 5
-      | .rev32, false => throw "rev32 has no 32-bit form"
+    -- `Rev32` at `Size32` is opcode `0b000010` with `sf = 0` (`emit.rs:971`) = `rev w`; the
+    -- printer's `rev w` for `rev64` at `w` is the same instruction.
+    let opcode : BitVec 6 := match op, w with
+      | .rbit, _ => 0 | .rev16, _ => 1 | .rev32, _ => 2
+      | .rev64, true => 3 | .rev64, false => 2 | .clz, _ => 4 | .cls, _ => 5
     pure (.DPR (.Data_processing_one_source { sf := b1 w, S := 0, opcode2 := 0, opcode,
                                               Rn := ← rn.encZR, Rd := ← rd.encZR }))
   | .load op rt m =>

@@ -233,6 +233,7 @@ def MInst.lines (c : FnCtx) (m : MInst) (ps : PState) : Except String (List Line
     else one (.bfm .uBfm false rd rn 0 (fromBits - 1))
   | .bitfieldMove s op rd rn immr imms => one (.bfm op s.is64 rd rn immr imms)
   | .cset rd cond => one (.cset rd cond)
+  | .csel rd rn rm cond => one (.csel rd rn rm cond)
   | .ccmp s rn rm f cond => one (.ccmp s.is64 rn rm f cond)
   | .ccmpImm s rn i f cond => one (.ccmpImm s.is64 rn i f cond)
   | .movToFpu rd rn s => one (.fmovToFp s rd rn)
@@ -458,8 +459,11 @@ def ALUOp.rrr : ALUOp → String
 def ALUOp3.asm : ALUOp3 → String
   | .mAdd => "madd" | .mSub => "msub" | .uMAddL => "umaddl" | .sMAddL => "smaddl"
 
-def BitOp.asm : BitOp → String
-  | .rbit => "rbit" | .clz => "clz" | .cls => "cls" | .rev16 => "rev16" | .rev32 => "rev32"
+/-- Mnemonic at width `is64`: `Rev32` at `Size32` is Cranelift's opcode `0b000010` with
+`sf = 0` (`emit.rs:971`), i.e. `rev wd, wn` (A64 has no 32-bit `rev32`). -/
+def BitOp.asm (is64 : Bool) : BitOp → String
+  | .rbit => "rbit" | .clz => "clz" | .cls => "cls" | .rev16 => "rev16"
+  | .rev32 => if is64 then "rev32" else "rev"
   | .rev64 => "rev"
 
 def ScalarSize.fpreg (s : ScalarSize) (n : String) : String :=
@@ -501,7 +505,7 @@ def Insn.asm (k : Nat) : Insn → String
   | .extr w rd rn rm lsb => s!"extr {rd.gpr w}, {rn.gpr w}, {rm.gpr w}, #{lsb}"
   | .aluRRRExtend op w rd rn rm e =>
     s!"{op.rrr} {rd.gpr w}, {rn.gpr w}, {rm.gpr (e.is64 && w)}, {e.asm}"
-  | .bitRR op w rd rn => s!"{op.asm} {rd.gpr w}, {rn.gpr w}"
+  | .bitRR op w rd rn => s!"{op.asm w} {rd.gpr w}, {rn.gpr w}"
   | .load op rt m =>
     let (mn, r) := op.asm rt m.isUnscaled
     s!"{mn} {r}, {m.asm op.bytes}"

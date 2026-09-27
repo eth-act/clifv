@@ -6,7 +6,8 @@ import FV.Arm
 
 `lake exe lean-backend-armrun [--regalloc regalloc2|stack|regalloc2-small] [--bins DIR] [FILE.clif...]`
 (default: every `corpus/clif/*.clif`, regalloc2). For every function of the files that makes no
-calls and no memory accesses (other than its own frame) and has `; run:` commands:
+calls, no memory accesses (other than its own frame) and no `symbol_value`, and has `; run:`
+commands:
 
 1. compile it alone with the Lean backend (`Backend.compileFunctionWith`, the chosen
    allocator); with `--bins DIR`, take Cranelift's code for it instead (`DIR/NAME.bin`, as
@@ -32,10 +33,11 @@ def codeBase : Nat := 0x10000
 def stackTop : Nat := 0x7fff0000
 def sentinel : Nat := 0xdead0000
 
-/-- Is `f` free of calls and of memory accesses? -/
+/-- Is `f` free of calls, of memory accesses and of `symbol_value` (GOT relocations, which
+need a linker the model does not have)? -/
 def selfContained (f : Clif.Function) : Bool :=
   f.blocks.all fun b => b.body.all fun s => match s.inst with
-    | .call .. | .load .. | .store .. => false
+    | .call .. | .load .. | .store .. | .symbolValue .. => false
     | _ => true
 
 /-- The value the callee-saved register `x{19 + i}` holds at the call. -/

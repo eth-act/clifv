@@ -62,6 +62,15 @@ first, then update its producer and its consumers together.
 - The agent file tools (read/edit/write/grep) resolve relative paths against the integrator's
   checkout, not the agent's worktree. Every tool path an agent uses must therefore be absolute,
   under `/home/kev/work/clifv-wt/<name>/`. In bash, `cd` into the worktree in the same command.
+- Every Lean/lake, cargo, or test command an agent runs must go through `scripts/memcap.sh`
+  (a per-command cgroup memory cap, `FV_MEMCAP`, default 16G), e.g.
+  `cd <worktree> && scripts/memcap.sh lake build FV.Backend`. A runaway `lean` process then
+  dies alone. Without the cap, `lean` processes reaching 37–58 GB triggered global OOM kills
+  on this 62 GB machine; those aborted the agent harness and killed every running agent.
+- Never reduce the exported ISLE program (`Isle.Aarch64.program`, the generated rule data)
+  wholesale with the kernel or `decide`/`rfl`/`native_decide`. Reason about individual rules
+  or per-opcode slices, and keep `maxHeartbeats` and `maxRecDepth` at their defaults, unless
+  a local, justified increase is needed.
 
 ## Contract: CLIF in Lean (`FV/Clif`, producer M0)
 

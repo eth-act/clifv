@@ -53,7 +53,7 @@ done
 echo "-- functions by profile/stage and parse status"
 bystage "$tools/parse.tsv"
 echo "-- first rejection reason (normalised unopt, all profiles)"
-grep '\.unopt\.lean\.clif' "$tools/parse.tsv" | cut -f3,4 | grep -v '^ok' | reasons
+grep '\.unopt\.reader\.clif' "$tools/parse.tsv" | cut -f3,4 | grep -v '^ok' | reasons
 
 echo "== 4. clif2obj (pinned Cranelift, aarch64) per function on the normalised unopt files"
 : >"$tools/clif2obj.tsv"
@@ -72,8 +72,8 @@ done
 echo "-- clif2obj failure reasons (all profiles)"
 awk -F'\t' '$2 == "fail" { print $3 }' "$tools/clif2obj.tsv" | reasons
 
-echo "== 5. lean-backend on the normalised unopt files (as dumped, and with nop dropped)"
-for kind in lean nonop; do
+echo "== 5. lean-backend on the normalised unopt files (as dumped (\`reader\`, nop kept), and with nop dropped)"
+for kind in reader nonop; do
   for f in "$tools"/*.unopt.$kind.clif; do
     b=${f%.clif}
     "$backend" "$f" "$b.s" --traps "$b.traps.json" >"$b.backend.log" 2>&1
@@ -89,19 +89,22 @@ done
 
 core="$out/../core/clif"
 if [[ -d "$core" ]]; then
-  echo "== 6. core/alloc (scripts/rust-clif/core.sh): Lean parse and lean-backend, nop dropped"
+  echo "== 6. core/alloc (scripts/rust-clif/core.sh): Lean parse and lean-backend (nop kept, and dropped)"
   for c in core alloc; do
+    norm "$core/$c" unopt "$tools/lib-$c.unopt.reader.clif"
     norm "$core/$c" unopt "$tools/lib-$c.unopt.nonop.clif" --drop-nop
-    "$backend" "$tools/lib-$c.unopt.nonop.clif" "$tools/lib-$c.s" >"$tools/lib-$c.backend.log" 2>&1
-    n=$(grep -c '^function ' "$tools/lib-$c.unopt.nonop.clif")
-    u=$(grep -c ': unsupported: ' "$tools/lib-$c.backend.log")
-    echo "$c: functions $n, lean-backend compiled $((n - u)), unsupported $u"
+    for kind in reader nonop; do
+      "$backend" "$tools/lib-$c.unopt.$kind.clif" "$tools/lib-$c.$kind.s" >"$tools/lib-$c.$kind.backend.log" 2>&1
+      n=$(grep -c '^function ' "$tools/lib-$c.unopt.$kind.clif")
+      u=$(grep -c ': unsupported: ' "$tools/lib-$c.$kind.backend.log")
+      echo "$c ($kind): functions $n, lean-backend compiled $((n - u)), unsupported $u"
+    done
   done
-  (cd "$root" && lake env lean --run "$here/ParseCheck.lean" "$tools"/lib-*.unopt.nonop.clif) >"$tools/parse-lib.tsv"
+  (cd "$root" && lake env lean --run "$here/ParseCheck.lean" "$tools"/lib-*.unopt.reader.clif) >"$tools/parse-lib.tsv"
   echo "-- Lean parse status"
   cut -f3 "$tools/parse-lib.tsv" | sort | uniq -c
   echo "-- first Lean parse rejection reason"
   cut -f3,4 "$tools/parse-lib.tsv" | grep -v '^ok' | reasons
-  echo "-- lean-backend unsupported reasons"
-  cat "$tools"/lib-*.backend.log | grep ': unsupported: ' | sed -E 's/.*: unsupported: //' | reasons
+  echo "-- lean-backend unsupported reasons (nop kept)"
+  cat "$tools"/lib-*.reader.backend.log | grep ': unsupported: ' | sed -E 's/.*: unsupported: //' | reasons
 fi

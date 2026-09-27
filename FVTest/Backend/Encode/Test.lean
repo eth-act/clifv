@@ -178,8 +178,7 @@ def forms : List (String × G Insn) := [
     pure (.aluRRRExtend op w rd (← gprSP) (← gprZR) e)),
   ("bit_rr", do
     let w ← coin
-    let op ← pick (if w then [.rbit, .clz, .cls, .rev16, .rev32, .rev64]
-                   else [.rbit, .clz, .cls, .rev16, .rev64])
+    let op ← pick [.rbit, .clz, .cls, .rev16, .rev32, .rev64]
     pure (.bitRR op w (← gprZR) (← gprZR))),
   ("load", do
     let op ← pick [.uload8, .sload8, .uload16, .sload16, .uload32, .sload32, .uload64]

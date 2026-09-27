@@ -184,6 +184,9 @@ def MInst.visitOperands : MInst → m MInst
   | .bitfieldMove s op rd rn a b => do
     let rd ← f .def_ rd; let rn ← f .use rn; pure (.bitfieldMove s op rd rn a b)
   | .cset rd c => do pure (.cset (← f .def_ rd) c)
+  | .csel rd rn rm c => do
+    -- `mod.rs:453`: `reg_def(rd); reg_use(rn); reg_use(rm)`
+    let rd ← f .def_ rd; let rn ← f .use rn; let rm ← f .use rm; pure (.csel rd rn rm c)
   | .ccmp s rn rm n c => do let rn ← f .use rn; let rm ← f .use rm; pure (.ccmp s rn rm n c)
   | .ccmpImm s rn i n c => do pure (.ccmpImm s (← f .use rn) i n c)
   | .movToFpu rd rn s => do let rd ← f .def_ rd; let rn ← f .use rn; pure (.movToFpu rd rn s)

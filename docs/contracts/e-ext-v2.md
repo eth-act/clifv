@@ -7,8 +7,20 @@ differentially tested; proofs later.
 ## Status
 
 - [x] Phase 1 (CLIF side, spec cross-read, ISLE closure, Arm model, native path) — done.
-- [ ] Phase 2 (Lean backend) — **blocked on the merge of `agent/regalloc2` into `main`**
-      (it rewrites `FV/Backend/{Isel,MInst,StackAlloc,Asm}.lean`, `FV/Backend.lean`); plan below.
+- [x] Phase 2 (Lean backend) — done (2026-09-27); results below, plan kept for reference.
+
+## Phase 2 results (2026-09-27)
+
+| Item | Result |
+| --- | --- |
+| Isel | 9 opcodes → `InstructionData` (`NullAry Nop`, `UnaryGlobalValue SymbolValue`, `Ternary Select`, `Binary Smin…Umax`, `Unary Bswap/Bitrev`); externs `invalid_reg`, `value_array_3` (ctor + extractor), `symbol_value_data` added to the backend.md transcription table; `nop`'s `invalid_reg` output dropped (`lower.rs:953`) |
+| MInst / regalloc operands | `MInst.csel` (`def rd; use rn; use rm`, `mod.rs:453`); `LoadExtNameGot` (`def rd`) reused for data symbols |
+| Encoder / printer | standalone `csel`; `BitOp.rev32` at 32 bits = `rev wd, wn`; GOT relocations against undefined `STT_NOTYPE` data symbols |
+| e-v2 fixtures (360 runs) | Lean backend native 360/360 pass, 360/360 agree with Cranelift-native, both `--regalloc regalloc2` and `stack`, and `--asm`; `Clif.run` 360/360 |
+| Runtests | **3085 pass** / 0 fail / 0 disagree (was 2791), 53 files fully E (+`arithmetic`, `bitrev`, `integer-minmax`, `issue-5498`, `issue5839`), 12 partly (`select` 147/175, `bswap` 13/14); corpus 114/114, extrt 22/22; same for both allocators |
+| `lean-backend-encode-check.sh` | 971/971 functions byte-identical (both allocators); e-v2 fixtures 52/52 |
+| `lean-backend-regalloc-test` | 932/932 accepted by the Lean checker; all mutants rejected |
+| Rust survey (nop kept) | cg_clif corpus **760 / 933** (was 368 with nop dropped), core+alloc **267 / 1575** (was 228); smoke 88/88; details `docs/research/rust-clif-survey.md` §5 "Post-v2" |
 
 ## Phase 1 results (2026-09-27)
 

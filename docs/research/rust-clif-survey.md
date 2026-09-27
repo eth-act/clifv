@@ -431,6 +431,37 @@ small: `f32`/`f64` methods, and `f16` conversions via libcalls.
 
   So, for this slice, Rust source → cg_clif → our backend already agrees with rustc/LLVM.
 
+### Post-v2 (2026-09-27, `clif-subset-v2` in the Lean backend, `docs/contracts/e-ext-v2.md`)
+
+Re-run of `dump.sh` + `tools.sh` + `smoke.sh` (same nightly/cg_clif, corpus unchanged) with
+`nop` **kept** (`*.unopt.reader.clif`, the normalised files as dumped); the `--drop-nop`
+variant (`*.unopt.nonop.clif`) gives identical counts, so `nop` no longer costs anything.
+
+- Lean parse: 918 / 933 unopt functions (15 `call_indirect` `declaration 'sigN'`).
+- `clif2obj`: 933 / 933 (phase 1 added data symbols; was 625 / 933).
+- **`lean-backend`: 760 / 933** (debug 383 / 454, release 188 / 239, release-oc 189 / 240);
+  before v2: 0 / 933 as dumped, 368 / 933 with `nop` dropped. Remaining reasons (all
+  profiles; first reason per function):
+
+| reason | functions |
+| --- | --- |
+| special-purpose parameter (`sret`), incl. 30 `gen_call_args` | 99 |
+| i128 parameter / return / `extend to i128` | 34 |
+| calls a function of the file that is not compiled | 25 |
+| `declaration 'sigN'` (`call_indirect`) | 15 |
+
+- **core / alloc: 267 / 1575** (core 199 / 1237, alloc 68 / 338; before: 228 / 1575 with
+  `nop` dropped). Lean parse 1408 / 1575. Unsupported reasons: calls a function that is not
+  compiled 801, `sret` 201 (+98 `gen_call_args`), `func_addr` 51, `declaration 'sigN'` 38,
+  `f16/f32/f64` 26 each, `load.i128` 16, i128 parameter/return/extend 13, atomics 13.
+- Smoke (`smoke.sh`, now without `--drop-nop`): 24 functions, 88 run lines: `Clif.run` 88
+  pass / 88 agree with the interpreter; Lean backend (regalloc2, Lean-written objects) 88
+  pass / 88 agree with Cranelift-native. The smoke's selection (scalar signatures, no data
+  objects) is unchanged, so the same 24 functions are picked.
+
+Next blockers in order: `sret`/special-purpose parameters, callee closure (follows), i128,
+`call_indirect`, then `func_addr` and floats for core.
+
 ## 6. Runtime and ABI pieces Rust code needs beyond CLIF
 
 Undefined symbols of the corpus objects (`nm -u`, union over the crates):
