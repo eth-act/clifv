@@ -40,3 +40,7 @@ root = "FVTest.Backend.Main"
 [[lean_exe]]
 name = "lean-backend-armrun"
 root = "FVTest.Backend.ArmRun"
+
+[[lean_exe]]
+name = "lean-backend-encode-test"
+root = "FVTest.Backend.Encode.Test"

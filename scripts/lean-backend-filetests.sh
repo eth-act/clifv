@@ -1,19 +1,22 @@
 #!/usr/bin/env bash
 # Differential tests of the Lean AArch64 backend (FV/Backend, docs/contracts/backend.md).
 #
-# For each .clif file: `lake exe lean-backend` (ISLE isel + stack-slot allocation + asm)
-# -> llvm-mc -> object; `clif-native --functions-obj` links that object with the harness and
-# Cranelift-compiled trampolines and runs every `; run:` line under qemu-aarch64-static.
+# For each .clif file: `lake exe lean-backend` (ISLE isel + stack-slot allocation + Lean
+# encoder + Lean ELF writer) -> object, with no assembler (with --asm: assembly text ->
+# llvm-mc -> object, the pre-M5 path); `clif-native --functions-obj` links that object with
+# the harness and Cranelift-compiled trampolines and runs every `; run:` line under
+# qemu-aarch64-static.
 # The same file is also run through plain `clif-native` (Cranelift's own aarch64 code), and
 # the two record streams are compared (`clif-results compare`).
 #
-# usage: scripts/lean-backend-filetests.sh [-v] [--corpus | --runtests | FILE.clif...]
+# usage: scripts/lean-backend-filetests.sh [-v] [--asm] [--corpus | --runtests | FILE.clif...]
 #   default: --corpus and --runtests
 #   --corpus:   corpus/clif/*.clif, and corpus/clif/extrt/*.clif linked with the Rust
 #               flat-runtime (as scripts/diff-corpus.sh does)
 #   --runtests: every file in Cranelift's runtests/ directory; functions outside
 #               clif-subset-v1 E (or i128, floats, vectors) are reported as unsupported
 #   -v: per-file lines for every file, and every non-passing run
+#   --asm: assemble the Lean backend's assembly with llvm-mc instead of using its object
 #
 # Output per set: one line per file that is not fully passing (or every file with -v):
 #   FILE: lean pass P fail F error E unsupported U | native pass ... | agree A disagree D
@@ -27,11 +30,13 @@ RUNTESTS=third_party/wasmtime/cranelift/filetests/filetests/runtests
 LLVM_MC=${LLVM_MC:-/usr/lib/llvm-18/bin/llvm-mc}
 
 VERBOSE=0
+ASM=0
 SETS=()
 FILES=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -v) VERBOSE=1 ;;
+    --asm) ASM=1 ;;
     --corpus) SETS+=(corpus) ;;
     --runtests) SETS+=(runtests) ;;
     -*) echo "unknown option $1" >&2; exit 2 ;;
@@ -42,7 +47,7 @@ done
 if [[ ${#FILES[@]} -gt 0 ]]; then SETS+=(files); fi
 if [[ ${#SETS[@]} -eq 0 ]]; then SETS=(corpus runtests); fi
 
-echo "== build"
+echo "== build (objects: $([[ $ASM == 1 ]] && echo "llvm-mc from the Lean assembly" || echo "Lean encoder, no assembler"))"
 lake build lean-backend 2>&1 | tail -1
 cargo build --quiet --release --manifest-path rust/Cargo.toml -p clif-native -p clif-runlines
 BIN=rust/target/release
@@ -62,20 +67,30 @@ run_one() {
   d="$WORK/$set"
   local links=()
   [[ -n "$link" ]] && links=(--link "$link")
-  .lake/build/bin/lean-backend "$f" "$d/obj/$b.s" --traps "$d/obj/$b.traps.json" \
-    2> "$d/obj/$b.unsupported.txt"
-  if ! "$LLVM_MC" -triple=aarch64-linux-gnu -filetype=obj "$d/obj/$b.s" -o "$d/obj/$b.o" \
-       2> "$d/obj/$b.mc.txt"; then
-    echo "{\"file_error\": \"llvm-mc rejected the Lean backend's assembly for $f\"}" > "$d/lean/$b.json"
-    cat "$d/obj/$b.mc.txt" >&2
-  else
+  local ok=1
+  if [[ $ASM == 1 ]]; then
+    .lake/build/bin/lean-backend "$f" "$d/obj/$b.s" --traps "$d/obj/$b.traps.json" \
+      2> "$d/obj/$b.unsupported.txt"
+    if ! "$LLVM_MC" -triple=aarch64-linux-gnu -filetype=obj "$d/obj/$b.s" -o "$d/obj/$b.o" \
+         2> "$d/obj/$b.mc.txt"; then
+      echo "{\"file_error\": \"llvm-mc rejected the Lean backend's assembly for $f\"}" > "$d/lean/$b.json"
+      cat "$d/obj/$b.mc.txt" >&2
+      ok=0
+    fi
+  elif ! .lake/build/bin/lean-backend "$f" "$d/obj/$b.o" --traps "$d/obj/$b.traps.json" \
+         2> "$d/obj/$b.unsupported.txt"; then
+    echo "{\"file_error\": \"the Lean encoder failed for $f\"}" > "$d/lean/$b.json"
+    grep -v ': unsupported: ' "$d/obj/$b.unsupported.txt" >&2 || true
+    ok=0
+  fi
+  if [[ $ok == 1 ]]; then
     "$BIN/clif-native" "$f" "${links[@]}" --functions-obj "$d/obj/$b.o" \
       --functions-table "$d/obj/$b.traps.json" > "$d/lean/$b.json" || [[ $? -eq 1 ]]
   fi
   "$BIN/clif-native" "$f" "${links[@]}" > "$d/native/$b.json" || [[ $? -eq 1 ]]
 }
 export -f run_one
-export BIN WORK LLVM_MC
+export BIN WORK LLVM_MC ASM
 
 status=0
 # report SET: per-file and total counts from the two record streams.

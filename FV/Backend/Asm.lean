@@ -1,39 +1,340 @@
 import FV.Backend.StackAlloc
 
 /-!
-# Assembly text output (GNU/LLVM syntax for `llvm-mc`)
+# Final instruction list and assembly text
 
-Each allocated instruction is printed as the instruction sequence Cranelift's
+`MInst.lines` expands each allocated instruction into the instruction sequence Cranelift's
 `isa/aarch64/inst/emit.rs` produces for it (including `mem_finalize` for pseudo addressing
 modes, and the expansions of `Extend`, `CSet`, `CondBr`, `TrapIf`, `JTSequence`,
-`LoadExtNameGot`, `LoadAddr`). Every printed line is one 4-byte instruction or data word, so
-byte offsets (for the trap table) are computed here; the assembler checks them (`.ifne`
-guards after every function and at every trap site).
+`LoadExtNameGot`, `LoadAddr`). The result is a list of `Line`s over one structured
+instruction type, `Insn`: one `Insn` is exactly one line of assembly and one 4-byte machine
+word. Both outputs consume it:
 
-* Labels: `.L<k>_b<label>` for blocks, `.L<k>_t<n>` for out-of-line traps (Cranelift's
-  deferred traps, emitted after the function body), `.L<k>_jt<n>` for jump tables.
+* `FnAsm.text` prints GNU/LLVM assembly (for `llvm-mc`, now only a test oracle);
+* `FV/Backend/Encode.lean` encodes it to machine words (`Insn.encode`), lays functions out
+  (labels, relocations, trap table) and `FV/Backend/Obj.lean` writes the ELF object.
+
+So comparing `llvm-mc`'s bytes for `FnAsm.text` with the encoder's bytes checks the encoder
+against the assembler's reading of the same instruction list.
+
+* Labels (`Lbl`): blocks `.L<k>_b<label>`, out-of-line traps `.L<k>_t<n>` (Cranelift's
+  deferred traps, emitted after the function body), jump tables `.L<k>_jt<n>`.
 * Calls: `bl sym` for colocated callees, and for others (`is_pic`) `adrp x, :got:sym` /
-  `ldr x, [x, :got_lo12:sym]` / `blr x` — exactly the sequences the ISLE rules select. The
-  static linker resolves both (it builds a GOT for the `:got:` relocations).
+  `ldr x, [x, :got_lo12:sym]` / `blr x` — exactly the sequences the ISLE rules select.
 * Traps: `udf #0xc11f` (Cranelift's `TRAP_OPCODE`); the code is in the trap table.
 -/
 
 namespace Backend
 
-/-- One output line: an instruction (4 bytes, optionally a trap site), a data word (4 bytes),
-a label, or a 0-byte directive. -/
+/-! ## Labels and instructions -/
+
+/-- A function-local label. -/
+inductive Lbl where
+  | block (l : Label)
+  | trap (n : Nat)
+  | jt (n : Nat)
+  deriving DecidableEq, Repr, Inhabited, BEq, Hashable
+
+/-- Assembly name of a label of function `k` (its index in the file). -/
+def Lbl.name (k : Nat) : Lbl → String
+  | .block l => s!".L{k}_b{l}"
+  | .trap n => s!".L{k}_t{n}"
+  | .jt n => s!".L{k}_jt{n}"
+
+/-- One AArch64 instruction over real registers: one line of assembly, one 4-byte word.
+Constructors follow the assembly the backend prints (including the aliases `mov`, `cset`,
+`lsl`/`lsr`/`asr`/`ror #imm`), so that `llvm-mc` checks the alias translation the encoder does.
+`is64` selects `x` (true) or `w` registers. Branch targets are local labels; symbol operands
+become relocations. -/
+inductive Insn where
+  /-- Three-register ALU op: `add/sub/adds/subs/and/orr/eor/ands/orn/bic/eon` (shifted
+  register, `lsl #0`), `sdiv/udiv/lslv/lsrv/asrv/rorv`, `smulh/umulh`, `adc/adcs/sbc/sbcs`. -/
+  | aluRRR (op : ALUOp) (is64 : Bool) (rd rn rm : Reg)
+  /-- `madd/msub` (`is64`), `smaddl/umaddl` (always `x rd, w rn, w rm, x ra`). -/
+  | aluRRRR (op : ALUOp3) (is64 : Bool) (rd rn rm ra : Reg)
+  /-- `add/sub/adds/subs rd, rn, #imm12{, lsl #12}`. -/
+  | aluImm12 (op : ALUOp) (is64 : Bool) (rd rn : Reg) (imm : Imm12)
+  /-- `and/orr/eor/ands rd, rn, #value` with a bitmask immediate (`value < 2^size`). -/
+  | logicImm (op : ALUOp) (is64 : Bool) (rd rn : Reg) (value : Nat)
+  /-- `lsl/lsr/asr/ror rd, rn, #amt` (aliases of `ubfm`/`sbfm`/`extr`). -/
+  | shiftImm (op : ShiftOp) (is64 : Bool) (rd rn : Reg) (amt : Nat)
+  /-- `op rd, rn, rm, shift #amt` (add/sub/logical, shifted register). -/
+  | aluRRRShift (op : ALUOp) (is64 : Bool) (rd rn rm : Reg) (sh : ShiftOpAndAmt)
+  /-- `extr rd, rn, rm, #lsb`. -/
+  | extr (is64 : Bool) (rd rn rm : Reg) (lsb : Nat)
+  /-- `add/sub/adds/subs rd, rn, rm, ext` (extended register, amount 0). -/
+  | aluRRRExtend (op : ALUOp) (is64 : Bool) (rd rn rm : Reg) (e : ExtendOp)
+  /-- `rbit/clz/cls/rev16/rev32/rev rd, rn`. -/
+  | bitRR (op : BitOp) (is64 : Bool) (rd rn : Reg)
+  /-- Single-register load; `m` is a final mode (`unscaled` prints `ldur*`). -/
+  | load (op : LoadOp) (rt : Reg) (m : AMode)
+  /-- Single-register store; `m` is a final mode (`unscaled` prints `stur*`). -/
+  | store (op : StoreOp) (rt : Reg) (m : AMode)
+  /-- `ldp xt, xt2, m` (`m` = `spPostIndexed`/`spPreIndexed`, byte offset). -/
+  | ldp (rt rt2 : Reg) (m : AMode)
+  /-- `stp xt, xt2, m`. -/
+  | stp (rt rt2 : Reg) (m : AMode)
+  /-- `mov rd, rm`: `orr rd, zr, rm`, or `add rd, rn, #0` when either is `sp`. -/
+  | mov (is64 : Bool) (rd rm : Reg)
+  /-- `movz/movn rd, #bits, lsl #16*shift`. -/
+  | movWide (op : MoveWideOp) (is64 : Bool) (rd : Reg) (imm : MoveWideConst)
+  /-- `movk rd, #bits, lsl #16*shift`. -/
+  | movk (is64 : Bool) (rd : Reg) (imm : MoveWideConst)
+  /-- `sbfm/ubfm rd, rn, #immr, #imms`. -/
+  | bfm (op : BfmOp) (is64 : Bool) (rd rn : Reg) (immr imms : Nat)
+  /-- `cset xd, cond` (`csinc xd, xzr, xzr, !cond`). -/
+  | cset (rd : Reg) (c : Cond)
+  /-- `csel xd, xn, xm, cond`. -/
+  | csel (rd rn rm : Reg) (c : Cond)
+  /-- `ccmp rn, rm, #nzcv, cond`. -/
+  | ccmp (is64 : Bool) (rn rm : Reg) (nzcv : NZCV) (c : Cond)
+  /-- `ccmp rn, #imm5, #nzcv, cond`. -/
+  | ccmpImm (is64 : Bool) (rn : Reg) (imm : Nat) (nzcv : NZCV) (c : Cond)
+  /-- `fmov h/s/d rd, w/w/x rn`. -/
+  | fmovToFp (size : ScalarSize) (rd rn : Reg)
+  /-- `umov w/x rd, vn.<T>[idx]`. -/
+  | umov (size : ScalarSize) (rd rn : Reg) (idx : Nat)
+  /-- `cnt vd.<T>, vn.<T>` (8b/16b). -/
+  | cnt (size : VectorSize) (rd rn : Reg)
+  /-- `addv/uaddlv <lane>d, vn.<T>`. -/
+  | vecLanes (op : VecLanesOp) (size : VectorSize) (rd rn : Reg)
+  /-- `addp vd.<T>, vn.<T>, vm.<T>`. -/
+  | addp (size : VectorSize) (rd rn rm : Reg)
+  | b (target : Lbl)
+  | bcond (c : Cond) (target : Lbl)
+  /-- `cbz` (`nz = false`) / `cbnz` (`nz = true`). -/
+  | cbz (nz : Bool) (is64 : Bool) (rt : Reg) (target : Lbl)
+  /-- `tbz` (`nz = false`) / `tbnz` (`nz = true`) `xt, #bit, target`. -/
+  | tbz (nz : Bool) (rt : Reg) (bit : Nat) (target : Lbl)
+  /-- `bl sym` (relocation `R_AARCH64_CALL26`). -/
+  | bl (sym : String)
+  | blr (rn : Reg)
+  | br (rn : Reg)
+  /-- `ret` (x30). -/
+  | ret
+  | udf (imm : Nat)
+  /-- `adr xd, target`. -/
+  | adr (rd : Reg) (target : Lbl)
+  /-- `adrp xd, :got:sym` (`R_AARCH64_ADR_GOT_PAGE`). -/
+  | adrpGot (rd : Reg) (sym : String)
+  /-- `ldr xd, [xn, :got_lo12:sym]` (`R_AARCH64_LD64_GOT_LO12_NC`). -/
+  | ldrGotLo12 (rd rn : Reg) (sym : String)
+  /-- `adrp xd, sym+addend` (`R_AARCH64_ADR_PREL_PG_HI21`). -/
+  | adrp (rd : Reg) (sym : String) (addend : Int)
+  /-- `add xd, xn, :lo12:sym+addend` (`R_AARCH64_ADD_ABS_LO12_NC`). -/
+  | addLo12 (rd rn : Reg) (sym : String) (addend : Int)
+  deriving DecidableEq, Repr, Inhabited, BEq
+
+/-- One element of a function's code: an instruction (4 bytes, optionally a trap site), a
+jump-table word `target - base` (4 bytes of data), or a label (0 bytes). -/
 inductive Line where
-  | ins (text : String) (trap : Option Clif.TrapCode := none)
-  | word (text : String)
-  | label (name : String)
-  | dir (text : String)
+  | ins (i : Insn) (trap : Option Clif.TrapCode := none)
+  | word (target base : Lbl)
+  | label (l : Lbl)
   deriving Repr, Inhabited
 
 def Line.size : Line → Nat
-  | .ins .. | .word _ => 4
-  | _ => 0
+  | .ins .. | .word .. => 4
+  | .label _ => 0
 
-/-! ## Registers and operands -/
+/-! ## Expansion of allocated instructions (`emit.rs`) -/
+
+def OperandSize.is64 (s : OperandSize) : Bool := s == .size64
+
+def hex (n : Nat) : String := "0x" ++ String.ofList (Nat.toDigits 16 n)
+
+/-- `movz`/`movk` sequence for a 64-bit constant (a correct, not necessarily minimal,
+replacement of `Inst::load_constant`; used only for address offsets). -/
+def loadConst64 (rd : Reg) (value : Nat) : List Line :=
+  let value := mask64 value
+  let chunk (i : Nat) := (value / 2 ^ (16 * i)) % 2 ^ 16
+  let first := .ins (.movWide .movZ true rd ⟨chunk 0, 0⟩)
+  first :: ((List.range 3).filterMap fun j =>
+    let i := j + 1
+    if chunk i != 0 then some (.ins (.movk true rd ⟨chunk i, i⟩)) else none)
+
+/-- Context for expanding one function. -/
+structure FnCtx where
+  /-- Function index in the file (for local label names). -/
+  k : Nat
+  slotBase : Nat
+  deriving Inhabited
+
+/-- `mem_finalize`: turn pseudo addressing modes into real ones (`x16` holds large
+offsets). Returns the extra instructions and the final mode. -/
+def memFinalize (c : FnCtx) (m : AMode) (accessBytes : Nat) : Except String (List Line × AMode) :=
+  let fin (base : Reg) (off : Int) : List Line × AMode :=
+    match simm9? off with
+    | some s => ([], .unscaled base s)
+    | none => match uimm12Scaled? off accessBytes with
+      | some o => ([], .unsignedOffset base o)
+      | none => (loadConst64 (.x 16) (u64 off), .regExtended base (.x 16) .sxtx)
+  match m with
+  | .regOffset rn off => pure (fin rn off)
+  | .spOffset off => pure (fin .sp off)
+  | .fpOffset off => pure (fin Reg.fp off)
+  | .slotOffset off => pure (fin .sp (off + c.slotBase))
+  | .incomingArg _ => throw "memFinalize: IncomingArg is not supported"
+  | m => pure ([], m)
+
+/-- State while expanding a function: counters for local labels and the deferred traps. -/
+structure PState where
+  jt : Nat := 0
+  traps : Array (Lbl × Clif.TrapCode) := #[]
+
+/-- The branch of a `CondBrKind` to `target`. -/
+def CondBrKind.insn (k : CondBrKind) (target : Lbl) : Insn :=
+  match k with
+  | .zero r s => .cbz false s.is64 r target
+  | .notZero r s => .cbz true s.is64 r target
+  | .cond c => .bcond c target
+
+/-- Expand one allocated instruction (real registers only). -/
+def MInst.lines (c : FnCtx) (m : MInst) (ps : PState) : Except String (List Line × PState) := do
+  let one (i : Insn) : Except String (List Line × PState) := pure ([.ins i], ps)
+  match m with
+  | .aluRRR op s rd rn rm => one (.aluRRR op (s.is64 || op == .sMulH || op == .uMulH) rd rn rm)
+  | .aluRRRR op s rd rn rm ra => one (.aluRRRR op s.is64 rd rn rm ra)
+  | .aluRRImm12 op s rd rn i => one (.aluImm12 op s.is64 rd rn i)
+  | .aluRRImmLogic op s rd rn i =>
+    let (op, i) ← match op with
+      | .orr | .and | .andS | .eor => pure (op, i)
+      | .orrNot => pure (.orr, i.invert) | .andNot => pure (.and, i.invert)
+      | .eorNot => pure (.eor, i.invert)
+      | _ => throw s!"AluRRImmLogic {repr op}"
+    let v := match s with
+      | .size32 => mask64 i.value % 2 ^ 32
+      | .size64 => mask64 i.value
+    one (.logicImm op s.is64 rd rn v)
+  | .aluRRImmShift op s rd rn amt =>
+    let sop ← match op with
+      | .lsr => pure ShiftOp.lsr | .asr => pure .asr | .lsl => pure .lsl | .extr => pure .ror
+      | _ => throw s!"AluRRImmShift {repr op}"
+    one (.shiftImm sop s.is64 rd rn amt)
+  | .aluRRRShift op s rd rn rm sh =>
+    match op with
+    | .extr => one (.extr s.is64 rd rn rm sh.amt)
+    | _ => one (.aluRRRShift op s.is64 rd rn rm sh)
+  | .aluRRRExtend op s rd rn rm e => one (.aluRRRExtend op s.is64 rd rn rm e)
+  | .bitRR op s rd rn => one (.bitRR op s.is64 rd rn)
+  | .load op rd mem fl =>
+    let (pre, mem) ← memFinalize c mem op.bytes
+    pure (pre ++ [.ins (.load op rd mem) fl.trapCode], ps)
+  | .store op rd mem fl =>
+    let (pre, mem) ← memFinalize c mem op.bytes
+    pure (pre ++ [.ins (.store op rd mem) fl.trapCode], ps)
+  | .mov s rd rm => one (if rm == .sp then .mov true rd rm else .mov s.is64 rd rm)
+  | .movWide op rd i s => one (.movWide op s.is64 rd i)
+  | .movK rd _ i s => one (.movk s.is64 rd i)
+  | .extend rd rn signed fromBits toBits =>
+    if !signed && fromBits == 1 then one (.logicImm .and false rd rn 1)
+    else if !signed && fromBits == 32 && toBits == 64 then one (.mov false rd rn)
+    else if signed then one (.bfm .sBfm (toBits > 32) rd rn 0 (fromBits - 1))
+    else one (.bfm .uBfm false rd rn 0 (fromBits - 1))
+  | .bitfieldMove s op rd rn immr imms => one (.bfm op s.is64 rd rn immr imms)
+  | .cset rd cond => one (.cset rd cond)
+  | .ccmp s rn rm f cond => one (.ccmp s.is64 rn rm f cond)
+  | .ccmpImm s rn i f cond => one (.ccmpImm s.is64 rn i f cond)
+  | .movToFpu rd rn s => one (.fmovToFp s rd rn)
+  | .movFromVec rd rn idx s => one (.umov s rd rn idx)
+  | .vecMisc .cnt rd rn s => one (.cnt s rd rn)
+  | .vecLanes op rd rn s => one (.vecLanes op s rd rn)
+  | .vecRRR .addp rd rn rm s => one (.addp s rd rn rm)
+  | .call info =>
+    match info.dest with
+    | .sym n => one (.bl n)
+    | .reg r => one (.blr r)
+  | .args _ | .rets _ => throw "args/rets after allocation"
+  | .jump l => one (.b (.block l))
+  | .condBr t e k => pure ([.ins (k.insn (.block t)), .ins (.b (.block e))], ps)
+  | .testBitAndBranch k t e rn bit =>
+    pure ([.ins (.tbz (k == .nz) rn bit (.block t)), .ins (.b (.block e))], ps)
+  | .trapIf k code =>
+    let l := Lbl.trap ps.traps.size
+    pure ([.ins (k.insn l)], { ps with traps := ps.traps.push (l, code) })
+  | .udf code => pure ([.ins (.udf 0xc11f) (some code)], ps)
+  | .jtSequence dflt targets ridx t1 t2 =>
+    let jt := Lbl.jt ps.jt
+    let body : List Line :=
+      [.ins (.bcond .hs (.block dflt)), .ins (.csel t2 .xzr ridx .hs), .ins (.adr t1 jt),
+       .ins (.load .sload32 t2 (.regScaledExtended t1 t2 .uxtw)),
+       .ins (.aluRRR .add true t1 t1 t2), .ins (.br t1), .label jt] ++
+      targets.map fun l => .word (.block l) jt
+    pure (body, { ps with jt := ps.jt + 1 })
+  | .loadExtNameGot rd n => pure ([.ins (.adrpGot rd n), .ins (.ldrGotLo12 rd rd n)], ps)
+  | .loadExtNameNear rd n off => pure ([.ins (.adrp rd n off), .ins (.addLo12 rd rd n off)], ps)
+  | .loadAddr rd mem =>
+    let (pre, mem) ← memFinalize c mem 1
+    let tail : List Line ← match mem with
+      | .regExtended rn rm e => pure [.ins (.aluRRRExtend .add true rd rn rm e)]
+      | .unscaled rn off => pure (addOff rd rn off)
+      | .unsignedOffset rn off => pure (addOff rd rn off)
+      | _ => throw "LoadAddr amode"
+    pure (pre ++ tail, ps)
+  | .emitIsland _ => pure ([], ps)
+where
+  /-- `LoadAddr` with an immediate offset (`emit.rs`). -/
+  addOff (rd rn : Reg) (off : Int) : List Line :=
+    if off == 0 then
+      if rn == rd then [] else [.ins (.mov true rd rn)]
+    else if off > 0 then [.ins (.aluImm12 .add true rd rn ⟨off.toNat, false⟩)]
+    else [.ins (.aluImm12 .sub true rd rn ⟨(-off).toNat, false⟩)]
+
+/-- Prologue and epilogue (frame size a multiple of 16). -/
+def prologueLines (size : Nat) : List Line :=
+  [.ins (.stp Reg.fp Reg.lr (.spPreIndexed (-16))), .ins (.mov true Reg.fp .sp)] ++
+  (if size == 0 then []
+   else match Imm12.ofNat? size with
+     | some i => [.ins (.aluImm12 .sub true .sp .sp i)]
+     | none => loadConst64 (.x 16) size ++ [.ins (.aluRRRExtend .sub true .sp .sp (.x 16) .uxtx)])
+
+def epilogueLines : List Line :=
+  [.ins (.mov true .sp Reg.fp), .ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16)), .ins .ret]
+
+/-- A trap site: byte offset from the function start and trap code. -/
+structure TrapSite where
+  offset : Nat
+  code : Clif.TrapCode
+  deriving Repr, Inhabited
+
+/-- A function's final code: the line list, its size in bytes and trap table. -/
+structure FnAsm where
+  name : String
+  /-- Index of the function in its file (local label names). -/
+  k : Nat
+  lines : Array Line
+  size : Nat
+  traps : List TrapSite
+  deriving Inhabited
+
+/-- Expand an allocated function (`k` = its index in the file) into its final line list,
+with byte offsets of the trap sites. -/
+def emitFunc (k : Nat) (af : AFunc) : Except String FnAsm := do
+  let c : FnCtx := { k, slotBase := af.slotBase }
+  let mut ps : PState := {}
+  let mut lines : Array Line := #[]
+  for (l, code) in af.blocks do
+    lines := lines.push (.label (.block l))
+    for i in code do
+      match i with
+      | .prologue => lines := lines ++ (prologueLines af.frameSize).toArray
+      | .epilogueRet => lines := lines ++ epilogueLines.toArray
+      | .inst m =>
+        let (ls, ps') ← m.lines c ps
+        ps := ps'
+        lines := lines ++ ls.toArray
+  -- deferred traps (Cranelift emits them after the body)
+  for (l, code) in ps.traps do
+    lines := lines.push (.label l)
+    lines := lines.push (.ins (.udf 0xc11f) (some code))
+  let mut off := 0
+  let mut traps : Array TrapSite := #[]
+  for ln in lines do
+    if let .ins _ (some code) := ln then traps := traps.push ⟨off, code⟩
+    off := off + ln.size
+  pure { name := af.name, k, lines, size := off, traps := traps.toList }
+
+/-! ## Assembly text (GNU/LLVM syntax) -/
 
 /-- A general-purpose register at 64 (`x`) or 32 (`w`) bits. -/
 def Reg.gpr (r : Reg) (is64 : Bool := true) : String :=
@@ -48,8 +349,6 @@ def Reg.vnum (r : Reg) : String :=
   match r with
   | .v n => toString n
   | _ => "<not-v>"
-
-def OperandSize.is64 (s : OperandSize) : Bool := s == .size64
 
 def Cond.asm : Cond → String
   | .eq => "eq" | .ne => "ne" | .hs => "hs" | .lo => "lo" | .mi => "mi" | .pl => "pl"
@@ -67,48 +366,6 @@ def ExtendOp.is64 : ExtendOp → Bool
 
 def ShiftOp.asm : ShiftOp → String
   | .lsl => "lsl" | .lsr => "lsr" | .asr => "asr" | .ror => "ror"
-
-def hex (n : Nat) : String := "0x" ++ String.ofList (Nat.toDigits 16 n)
-
-def imm (i : Int) : String := "#" ++ toString i
-
-/-! ## `mem_finalize` and constants -/
-
-/-- `movz`/`movk` sequence for a 64-bit constant (a correct, not necessarily minimal,
-replacement of `Inst::load_constant`; used only for address offsets). -/
-def loadConst64 (rd : String) (value : Nat) : List Line :=
-  let value := mask64 value
-  let chunk (i : Nat) := (value / 2 ^ (16 * i)) % 2 ^ 16
-  let first := .ins s!"movz {rd}, #{hex (chunk 0)}"
-  first :: ((List.range 3).filterMap fun j =>
-    let i := j + 1
-    if chunk i != 0 then some (.ins s!"movk {rd}, #{hex (chunk i)}, lsl #{16 * i}") else none)
-
-/-- Context for printing one function. -/
-structure FnCtx where
-  /-- Function index in the file (for local label names). -/
-  k : Nat
-  slotBase : Nat
-  deriving Inhabited
-
-def FnCtx.blockLabel (c : FnCtx) (l : Label) : String := s!".L{c.k}_b{l}"
-
-/-- `mem_finalize`: turn pseudo addressing modes into real ones (`x16` holds large
-offsets). Returns the extra instructions and the final mode. -/
-def memFinalize (c : FnCtx) (m : AMode) (accessBytes : Nat) : List Line × AMode :=
-  let fin (base : Reg) (off : Int) : List Line × AMode :=
-    match simm9? off with
-    | some s => ([], .unscaled base s)
-    | none => match uimm12Scaled? off accessBytes with
-      | some o => ([], .unsignedOffset base o)
-      | none => (loadConst64 "x16" (u64 off), .regExtended base (.x 16) .sxtx)
-  match m with
-  | .regOffset rn off => fin rn off
-  | .spOffset off => fin .sp off
-  | .fpOffset off => fin Reg.fp off
-  | .slotOffset off => fin .sp (off + c.slotBase)
-  | .incomingArg _ => ([.ins "<incomingArg unsupported>"], m)
-  | m => ([], m)
 
 def log2 (n : Nat) : Nat := match n with
   | 1 => 0 | 2 => 1 | 4 => 2 | 8 => 3 | 16 => 4 | _ => 0
@@ -152,8 +409,6 @@ def StoreOp.asm (op : StoreOp) (rd : Reg) (unscaled : Bool) : String × String :
   | .store64 => (s, rd.gpr true)
   | .fpuStore128 => (s, "q" ++ rd.vnum)
 
-/-! ## Instructions -/
-
 def ALUOp.rrr : ALUOp → String
   | .add => "add" | .sub => "sub" | .orr => "orr" | .orrNot => "orn" | .and => "and"
   | .andS => "ands" | .andNot => "bic" | .eor => "eor" | .eorNot => "eon" | .addS => "adds"
@@ -161,11 +416,12 @@ def ALUOp.rrr : ALUOp → String
   | .uDiv => "udiv" | .extr => "rorv" | .lsr => "lsrv" | .asr => "asrv" | .lsl => "lslv"
   | .adc => "adc" | .adcS => "adcs" | .sbc => "sbc" | .sbcS => "sbcs"
 
-def CondBrKind.branch (k : CondBrKind) (target : String) : String :=
-  match k with
-  | .zero r s => s!"cbz {r.gpr s.is64}, {target}"
-  | .notZero r s => s!"cbnz {r.gpr s.is64}, {target}"
-  | .cond c => s!"b.{c.asm} {target}"
+def ALUOp3.asm : ALUOp3 → String
+  | .mAdd => "madd" | .mSub => "msub" | .uMAddL => "umaddl" | .sMAddL => "smaddl"
+
+def BitOp.asm : BitOp → String
+  | .rbit => "rbit" | .clz => "clz" | .cls => "cls" | .rev16 => "rev16" | .rev32 => "rev32"
+  | .rev64 => "rev"
 
 def ScalarSize.fpreg (s : ScalarSize) (n : String) : String :=
   match s with
@@ -181,214 +437,90 @@ def VectorSize.lane : VectorSize → String
   | .size8x8 | .size8x16 => "b" | .size16x4 | .size16x8 => "h"
   | .size32x2 | .size32x4 => "s" | .size64x2 => "d"
 
-/-- State while printing a function: counters for local labels and the deferred traps. -/
-structure PState where
-  jt : Nat := 0
-  traps : Array (String × Clif.TrapCode) := #[]
+/-- The destination lane letter of `uaddlv` (twice the source lane width). -/
+def VectorSize.wideLane : VectorSize → String
+  | .size8x8 | .size8x16 => "h" | .size16x4 | .size16x8 => "s"
+  | .size32x2 | .size32x4 | .size64x2 => "d"
 
-/-- Print one instruction (real registers only). -/
-def MInst.asm (c : FnCtx) (m : MInst) (ps : PState) : Except String (List Line × PState) := do
-  let one (s : String) : Except String (List Line × PState) := pure ([.ins s], ps)
-  match m with
-  | .aluRRR op s rd rn rm =>
-    let is64 := s.is64 || op == .sMulH || op == .uMulH
-    one s!"{op.rrr} {rd.gpr is64}, {rn.gpr is64}, {rm.gpr is64}"
-  | .aluRRRR op s rd rn rm ra =>
+def symOff (sym : String) (off : Int) : String :=
+  if off == 0 then sym else if off > 0 then s!"{sym}+{off}" else s!"{sym}{off}"
+
+/-- One instruction as assembly text (`k` = function index, for label names). -/
+def Insn.asm (k : Nat) : Insn → String
+  | .aluRRR op w rd rn rm => s!"{op.rrr} {rd.gpr w}, {rn.gpr w}, {rm.gpr w}"
+  | .aluRRRR op w rd rn rm ra =>
     match op with
-    | .mAdd => one s!"madd {rd.gpr s.is64}, {rn.gpr s.is64}, {rm.gpr s.is64}, {ra.gpr s.is64}"
-    | .mSub => one s!"msub {rd.gpr s.is64}, {rn.gpr s.is64}, {rm.gpr s.is64}, {ra.gpr s.is64}"
-    | .uMAddL => one s!"umaddl {rd.gpr}, {rn.gpr false}, {rm.gpr false}, {ra.gpr}"
-    | .sMAddL => one s!"smaddl {rd.gpr}, {rn.gpr false}, {rm.gpr false}, {ra.gpr}"
-  | .aluRRImm12 op s rd rn i =>
-    let mn ← match op with
-      | .add => pure "add" | .sub => pure "sub" | .addS => pure "adds" | .subS => pure "subs"
-      | _ => throw s!"AluRRImm12 {repr op}"
+    | .mAdd | .mSub => s!"{op.asm} {rd.gpr w}, {rn.gpr w}, {rm.gpr w}, {ra.gpr w}"
+    | .uMAddL | .sMAddL => s!"{op.asm} {rd.gpr}, {rn.gpr false}, {rm.gpr false}, {ra.gpr}"
+  | .aluImm12 op w rd rn i =>
     let sh := if i.shift12 then ", lsl #12" else ""
-    one s!"{mn} {rd.gpr s.is64}, {rn.gpr s.is64}, #{i.bits}{sh}"
-  | .aluRRImmLogic op s rd rn i =>
-    let (mn, i) ← match op with
-      | .orr => pure ("orr", i) | .and => pure ("and", i) | .andS => pure ("ands", i)
-      | .eor => pure ("eor", i) | .orrNot => pure ("orr", i.invert)
-      | .andNot => pure ("and", i.invert) | .eorNot => pure ("eor", i.invert)
-      | _ => throw s!"AluRRImmLogic {repr op}"
-    let v := match s with
-      | .size32 => mask64 i.value % 2 ^ 32
-      | .size64 => mask64 i.value
-    one s!"{mn} {rd.gpr s.is64}, {rn.gpr s.is64}, #{hex v}"
-  | .aluRRImmShift op s rd rn amt =>
-    let mn ← match op with
-      | .lsr => pure "lsr" | .asr => pure "asr" | .lsl => pure "lsl" | .extr => pure "ror"
-      | _ => throw s!"AluRRImmShift {repr op}"
-    one s!"{mn} {rd.gpr s.is64}, {rn.gpr s.is64}, #{amt}"
-  | .aluRRRShift op s rd rn rm sh =>
-    match op with
-    | .extr => one s!"extr {rd.gpr s.is64}, {rn.gpr s.is64}, {rm.gpr s.is64}, #{sh.amt}"
-    | _ => one s!"{op.rrr} {rd.gpr s.is64}, {rn.gpr s.is64}, {rm.gpr s.is64}, {sh.op.asm} #{sh.amt}"
-  | .aluRRRExtend op s rd rn rm e =>
-    let mn ← match op with
-      | .add => pure "add" | .sub => pure "sub" | .addS => pure "adds" | .subS => pure "subs"
-      | _ => throw s!"AluRRRExtend {repr op}"
-    one s!"{mn} {rd.gpr s.is64}, {rn.gpr s.is64}, {rm.gpr (e.is64 && s.is64)}, {e.asm}"
-  | .bitRR op s rd rn =>
-    let mn := match op with
-      | .rbit => "rbit" | .clz => "clz" | .cls => "cls" | .rev16 => "rev16" | .rev32 => "rev32"
-      | .rev64 => "rev"
-    one s!"{mn} {rd.gpr s.is64}, {rn.gpr s.is64}"
-  | .load op rd mem fl =>
-    let (pre, mem) := memFinalize c mem op.bytes
-    let (mn, r) := op.asm rd mem.isUnscaled
-    pure (pre ++ [.ins s!"{mn} {r}, {mem.asm op.bytes}" fl.trapCode], ps)
-  | .store op rd mem fl =>
-    let (pre, mem) := memFinalize c mem op.bytes
-    let (mn, r) := op.asm rd mem.isUnscaled
-    pure (pre ++ [.ins s!"{mn} {r}, {mem.asm op.bytes}" fl.trapCode], ps)
-  | .mov s rd rm =>
-    if rm == .sp then one s!"mov {rd.gpr}, sp"
-    else one s!"mov {rd.gpr s.is64}, {rm.gpr s.is64}"
-  | .movWide op rd i s =>
-    let mn := if op == .movZ then "movz" else "movn"
-    one s!"{mn} {rd.gpr s.is64}, #{hex i.bits}, lsl #{16 * i.shift}"
-  | .movK rd _ i s => one s!"movk {rd.gpr s.is64}, #{hex i.bits}, lsl #{16 * i.shift}"
-  | .extend rd rn signed fromBits toBits =>
-    if !signed && fromBits == 1 then one s!"and {rd.gpr false}, {rn.gpr false}, #0x1"
-    else if !signed && fromBits == 32 && toBits == 64 then one s!"mov {rd.gpr false}, {rn.gpr false}"
-    else if signed then
-      let is64 := toBits > 32
-      one s!"sbfm {rd.gpr is64}, {rn.gpr is64}, #0, #{fromBits - 1}"
-    else one s!"ubfm {rd.gpr false}, {rn.gpr false}, #0, #{fromBits - 1}"
-  | .bitfieldMove s op rd rn immr imms =>
-    let mn := if op == .sBfm then "sbfm" else "ubfm"
-    one s!"{mn} {rd.gpr s.is64}, {rn.gpr s.is64}, #{immr}, #{imms}"
-  | .cset rd cond => one s!"cset {rd.gpr}, {cond.asm}"
-  | .ccmp s rn rm f cond => one s!"ccmp {rn.gpr s.is64}, {rm.gpr s.is64}, #{f.bits}, {cond.asm}"
-  | .ccmpImm s rn i f cond => one s!"ccmp {rn.gpr s.is64}, #{i}, #{f.bits}, {cond.asm}"
-  | .movToFpu rd rn s =>
-    match s with
-    | .size16 => one s!"fmov h{rd.vnum}, {rn.gpr false}"
-    | .size32 => one s!"fmov s{rd.vnum}, {rn.gpr false}"
-    | .size64 => one s!"fmov d{rd.vnum}, {rn.gpr}"
-    | _ => throw "MovToFpu size"
-  | .movFromVec rd rn idx s =>
-    match s with
-    | .size8 => one s!"umov {rd.gpr false}, v{rn.vnum}.b[{idx}]"
-    | .size16 => one s!"umov {rd.gpr false}, v{rn.vnum}.h[{idx}]"
-    | .size32 => one s!"umov {rd.gpr false}, v{rn.vnum}.s[{idx}]"
-    | .size64 => one s!"umov {rd.gpr}, v{rn.vnum}.d[{idx}]"
-    | _ => throw "MovFromVec size"
-  | .vecMisc .cnt rd rn s => one s!"cnt v{rd.vnum}.{s.arr}, v{rn.vnum}.{s.arr}"
-  | .vecLanes op rd rn s =>
-    let mn := if op == .addv then "addv" else "uaddlv"
-    one s!"{mn} {s.lane}{rd.vnum}, v{rn.vnum}.{s.arr}"
-  | .vecRRR .addp rd rn rm s => one s!"addp v{rd.vnum}.{s.arr}, v{rn.vnum}.{s.arr}, v{rm.vnum}.{s.arr}"
-  | .call info =>
-    match info.dest with
-    | .sym n => one s!"bl {n}"
-    | .reg r => one s!"blr {r.gpr}"
-  | .args _ | .rets _ => throw "args/rets after allocation"
-  | .jump l => one s!"b {c.blockLabel l}"
-  | .condBr t e k => pure ([.ins (k.branch (c.blockLabel t)), .ins s!"b {c.blockLabel e}"], ps)
-  | .testBitAndBranch k t e rn bit =>
-    let mn := if k == .z then "tbz" else "tbnz"
-    pure ([.ins s!"{mn} {rn.gpr}, #{bit}, {c.blockLabel t}", .ins s!"b {c.blockLabel e}"], ps)
-  | .trapIf k code =>
-    let l := s!".L{c.k}_t{ps.traps.size}"
-    pure ([.ins (k.branch l)], { ps with traps := ps.traps.push (l, code) })
-  | .udf code => pure ([.ins "udf #0xc11f" (some code)], ps)
-  | .jtSequence dflt targets ridx t1 t2 =>
-    let jt := s!".L{c.k}_jt{ps.jt}"
-    let body : List Line :=
-      [.ins s!"b.hs {c.blockLabel dflt}", .ins s!"csel {t2.gpr}, xzr, {ridx.gpr}, hs",
-       .ins s!"adr {t1.gpr}, {jt}", .ins s!"ldrsw {t2.gpr}, [{t1.gpr}, {t2.gpr false}, uxtw #2]",
-       .ins s!"add {t1.gpr}, {t1.gpr}, {t2.gpr}", .ins s!"br {t1.gpr}", .label jt] ++
-      targets.map fun l => .word s!".word {c.blockLabel l} - {jt}"
-    pure (body, { ps with jt := ps.jt + 1 })
-  | .loadExtNameGot rd n =>
-    pure ([.ins s!"adrp {rd.gpr}, :got:{n}", .ins s!"ldr {rd.gpr}, [{rd.gpr}, :got_lo12:{n}]"], ps)
-  | .loadExtNameNear rd n off =>
-    let sym := if off == 0 then n else if off > 0 then s!"{n}+{off}" else s!"{n}{off}"
-    pure ([.ins s!"adrp {rd.gpr}, {sym}", .ins s!"add {rd.gpr}, {rd.gpr}, :lo12:{sym}"], ps)
-  | .loadAddr rd mem =>
-    let (pre, mem) := memFinalize c mem 1
-    let tail : List Line ← match mem with
-      | .regExtended rn rm e => pure [.ins s!"add {rd.gpr}, {rn.gpr}, {rm.gpr e.is64}, {e.asm}"]
-      | .unscaled rn off => pure (addOff rd rn off)
-      | .unsignedOffset rn off => pure (addOff rd rn off)
-      | _ => throw "LoadAddr amode"
-    pure (pre ++ tail, ps)
-  | .emitIsland _ => pure ([], ps)
-where
-  /-- `LoadAddr` with an immediate offset (`emit.rs`). -/
-  addOff (rd rn : Reg) (off : Int) : List Line :=
-    if off == 0 then
-      if rn == rd then []
-      else if rn == .sp then [.ins s!"mov {rd.gpr}, sp"]
-      else [.ins s!"mov {rd.gpr}, {rn.gpr}"]
-    else if off > 0 then [.ins s!"add {rd.gpr}, {rn.gpr}, #{off}"]
-    else [.ins s!"sub {rd.gpr}, {rn.gpr}, #{-off}"]
+    s!"{op.rrr} {rd.gpr w}, {rn.gpr w}, #{i.bits}{sh}"
+  | .logicImm op w rd rn v => s!"{op.rrr} {rd.gpr w}, {rn.gpr w}, #{hex v}"
+  | .shiftImm op w rd rn amt => s!"{op.asm} {rd.gpr w}, {rn.gpr w}, #{amt}"
+  | .aluRRRShift op w rd rn rm sh =>
+    s!"{op.rrr} {rd.gpr w}, {rn.gpr w}, {rm.gpr w}, {sh.op.asm} #{sh.amt}"
+  | .extr w rd rn rm lsb => s!"extr {rd.gpr w}, {rn.gpr w}, {rm.gpr w}, #{lsb}"
+  | .aluRRRExtend op w rd rn rm e =>
+    s!"{op.rrr} {rd.gpr w}, {rn.gpr w}, {rm.gpr (e.is64 && w)}, {e.asm}"
+  | .bitRR op w rd rn => s!"{op.asm} {rd.gpr w}, {rn.gpr w}"
+  | .load op rt m =>
+    let (mn, r) := op.asm rt m.isUnscaled
+    s!"{mn} {r}, {m.asm op.bytes}"
+  | .store op rt m =>
+    let (mn, r) := op.asm rt m.isUnscaled
+    s!"{mn} {r}, {m.asm op.bytes}"
+  | .ldp rt rt2 m => s!"ldp {rt.gpr}, {rt2.gpr}, {m.asm 8}"
+  | .stp rt rt2 m => s!"stp {rt.gpr}, {rt2.gpr}, {m.asm 8}"
+  | .mov w rd rm => s!"mov {rd.gpr w}, {rm.gpr w}"
+  | .movWide op w rd i =>
+    s!"{if op == .movZ then "movz" else "movn"} {rd.gpr w}, #{hex i.bits}, lsl #{16 * i.shift}"
+  | .movk w rd i => s!"movk {rd.gpr w}, #{hex i.bits}, lsl #{16 * i.shift}"
+  | .bfm op w rd rn immr imms =>
+    s!"{if op == .sBfm then "sbfm" else "ubfm"} {rd.gpr w}, {rn.gpr w}, #{immr}, #{imms}"
+  | .cset rd c => s!"cset {rd.gpr}, {c.asm}"
+  | .csel rd rn rm c => s!"csel {rd.gpr}, {rn.gpr}, {rm.gpr}, {c.asm}"
+  | .ccmp w rn rm f c => s!"ccmp {rn.gpr w}, {rm.gpr w}, #{f.bits}, {c.asm}"
+  | .ccmpImm w rn i f c => s!"ccmp {rn.gpr w}, #{i}, #{f.bits}, {c.asm}"
+  | .fmovToFp s rd rn => s!"fmov {s.fpreg rd.vnum}, {rn.gpr (s == .size64)}"
+  | .umov s rd rn idx => s!"umov {rd.gpr (s == .size64)}, v{rn.vnum}.{s.fpreg ""}[{idx}]"
+  | .cnt s rd rn => s!"cnt v{rd.vnum}.{s.arr}, v{rn.vnum}.{s.arr}"
+  | .vecLanes op s rd rn =>
+    if op == .addv then s!"addv {s.lane}{rd.vnum}, v{rn.vnum}.{s.arr}"
+    else s!"uaddlv {s.wideLane}{rd.vnum}, v{rn.vnum}.{s.arr}"
+  | .addp s rd rn rm => s!"addp v{rd.vnum}.{s.arr}, v{rn.vnum}.{s.arr}, v{rm.vnum}.{s.arr}"
+  | .b t => s!"b {t.name k}"
+  | .bcond c t => s!"b.{c.asm} {t.name k}"
+  | .cbz nz w rt t => s!"{if nz then "cbnz" else "cbz"} {rt.gpr w}, {t.name k}"
+  | .tbz nz rt bit t => s!"{if nz then "tbnz" else "tbz"} {rt.gpr}, #{bit}, {t.name k}"
+  | .bl sym => s!"bl {sym}"
+  | .blr rn => s!"blr {rn.gpr}"
+  | .br rn => s!"br {rn.gpr}"
+  | .ret => "ret"
+  | .udf i => s!"udf #{hex i}"
+  | .adr rd t => s!"adr {rd.gpr}, {t.name k}"
+  | .adrpGot rd sym => s!"adrp {rd.gpr}, :got:{sym}"
+  | .ldrGotLo12 rd rn sym => s!"ldr {rd.gpr}, [{rn.gpr}, :got_lo12:{sym}]"
+  | .adrp rd sym off => s!"adrp {rd.gpr}, {symOff sym off}"
+  | .addLo12 rd rn sym off => s!"add {rd.gpr}, {rn.gpr}, :lo12:{symOff sym off}"
 
-/-- Prologue and epilogue (frame size a multiple of 16). -/
-def prologueLines (size : Nat) : List Line :=
-  [.ins "stp x29, x30, [sp, #-16]!", .ins "mov x29, sp"] ++
-  (if size == 0 then []
-   else match Imm12.ofNat? size with
-     | some i => [.ins s!"sub sp, sp, #{i.bits}{if i.shift12 then ", lsl #12" else ""}"]
-     | none => loadConst64 "x16" size ++ [.ins "sub sp, sp, x16, uxtx"])
-
-def epilogueLines : List Line :=
-  [.ins "mov sp, x29", .ins "ldp x29, x30, [sp], #16", .ins "ret"]
-
-/-- A trap site: byte offset from the function start and trap code. -/
-structure TrapSite where
-  offset : Nat
-  code : Clif.TrapCode
-  deriving Repr, Inhabited
-
-/-- Printed function: text, size in bytes, trap table. -/
-structure FnAsm where
-  name : String
-  text : String
-  size : Nat
-  traps : List TrapSite
-  deriving Inhabited
-
-/-- Print an allocated function (`k` = its index in the file). -/
-def printFunc (k : Nat) (af : AFunc) : Except String FnAsm := do
-  let c : FnCtx := { k, slotBase := af.slotBase }
-  let mut ps : PState := {}
-  let mut lines : Array Line := #[]
-  for (l, code) in af.blocks do
-    lines := lines.push (.label (c.blockLabel l))
-    for i in code do
-      match i with
-      | .prologue => lines := lines ++ (prologueLines af.frameSize).toArray
-      | .epilogueRet => lines := lines ++ epilogueLines.toArray
-      | .inst m =>
-        let (ls, ps') ← m.asm c ps
-        ps := ps'
-        lines := lines ++ ls.toArray
-  -- deferred traps (Cranelift emits them after the body)
-  for (l, code) in ps.traps do
-    lines := lines.push (.label l)
-    lines := lines.push (.ins "udf #0xc11f" (some code))
-  -- offsets, trap table and text
+/-- Assembly text of a function. Every line is 4 bytes, so offsets are computed here;
+`.ifne . - f - N / .error` guards make `llvm-mc` reject the file if a trap offset or the
+function size differ from the assembler's. -/
+def FnAsm.text (f : FnAsm) : String := Id.run do
+  let n := f.name
+  let mut out : Array String := #[s!"  .globl {n}", s!"  .type {n}, %function", "  .p2align 2", s!"{n}:"]
   let mut off := 0
-  let mut traps : Array TrapSite := #[]
-  let mut out : Array String := #[]
-  let n := af.name
-  out := out ++ #[s!"  .globl {n}", s!"  .type {n}, %function", "  .p2align 2", s!"{n}:"]
-  for ln in lines do
+  for ln in f.lines do
     match ln with
-    | .ins t tr =>
-      if let some code := tr then
-        traps := traps.push ⟨off, code⟩
+    | .ins i tr =>
+      if tr.isSome then
         out := out.push s!"  .ifne . - {n} - {off}\n  .error \"trap offset mismatch\"\n  .endif"
-      out := out.push s!"  {t}"
-    | .word t => out := out.push s!"  {t}"
-    | .label l => out := out.push s!"{l}:"
-    | .dir t => out := out.push s!"  {t}"
+      out := out.push s!"  {i.asm f.k}"
+    | .word t b => out := out.push s!"  .word {t.name f.k} - {b.name f.k}"
+    | .label l => out := out.push s!"{l.name f.k}:"
     off := off + ln.size
   out := out ++ #[s!"  .ifne . - {n} - {off}\n  .error \"function size mismatch\"\n  .endif",
                   s!"  .size {n}, . - {n}"]
-  pure { name := n, text := "\n".intercalate out.toList ++ "\n", size := off, traps := traps.toList }
+  return "\n".intercalate out.toList ++ "\n"
 
 end Backend

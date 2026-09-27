@@ -1,7 +1,7 @@
 # Contract: the Lean AArch64 backend (`FV/Backend`, milestone M4, unproven)
 
 Producer: M4 backend. Consumers: M4 proofs (ISLE rules, extern helpers, allocator), M5
-(encoder replaces `llvm-mc`), M6 (real allocator + checker replaces `StackAlloc`), M7
+(the encoder, `docs/contracts/encoder.md`, which replaced `llvm-mc`), M6 (real allocator + checker replaces `StackAlloc`), M7
 (`backend_correct`). Inputs: `docs/contracts/clif.md` (`Clif.Program`, `Clif.parseFile`,
 `Clif.run`), `docs/contracts/isle.md` (exported rules, closure, `Isle.Interp.run`),
 `docs/contracts/drivers.md` (`clif-native`), `docs/contracts/arm.md` (Arm model).
@@ -15,9 +15,12 @@ total functions, no `partial`, explicit state, data-driven rules.
 Complete (2026-09-27); no `sorry`, no `axiom`, no warnings in `FV/Backend`, `FVTest/Backend`.
 
 - [x] `FV/Backend/{MInst,Isel,StackAlloc,Asm}.lean`, umbrella `FV/Backend.lean`
+- [x] M5 (2026-09-27): `FV/Backend/{Encode,Obj}.lean` encode the final instruction list and
+      write the ELF object; no assembler in the pipeline (`docs/contracts/encoder.md`)
 - [x] `lake exe lean-backend` (`FVTest/Backend/Main.lean`)
 - [x] `clif-native --functions-obj/--functions-table` (`docs/contracts/drivers.md`)
-- [x] `scripts/lean-backend-filetests.sh`: corpus **114/114** run lines pass and agree with
+- [x] `scripts/lean-backend-filetests.sh` (Lean-written objects; `--asm` for the `llvm-mc`
+      path, same results): corpus **114/114** run lines pass and agree with
       Cranelift-native; `extrt` (Rust runtime) 22/22; runtests **2791 pass, 0 fail,
       0 disagree** (48 files entirely in E: 1416 runs; 11 more files partly)
 - [x] `lake exe lean-backend-armrun` (`FVTest/Backend/ArmRun.lean`): Arm-model runs agree with
@@ -32,12 +35,13 @@ Complete (2026-09-27); no `sorry`, no `axiom`, no warnings in `FV/Backend`, `FVT
 flowchart LR
   A["Clif.parseFile"] --> B["Isel.lowerFunction<br/>(ISLE lower / lower_branch<br/>via Isle.Interp.run)"]
   B -- "VCode (MInst over vregs)" --> C["StackAlloc.allocate"]
-  C -- "AFunc (real regs, frame)" --> D["Asm.printFunc"]
-  D -- ".s + trap table" --> E["llvm-mc"]
+  C -- "AFunc (real regs, frame)" --> D["Asm.emitFunc"]
+  D -- "FnAsm (Line list over Insn) + trap table" --> E["Encode: FnAsm.layout<br/>Obj: elfObject"]
   E -- ".o" --> F["clif-native --functions-obj<br/>(harness, Cranelift trampolines,<br/>rust-lld, qemu)"]
+  D -. "FnAsm.text (test oracle)" .-> G["llvm-mc"]
 ```
 
-`Backend.compileFunction k f = printFunc k (← allocate (← lowerFunction f))`;
+`Backend.compileFunction k f = emitFunc k (← allocate (← lowerFunction f))`;
 `Backend.compileFile : Clif.ParsedFile → FileAsm` compiles every function, reports the others
 with a reason, and also drops (with reason) any function that calls a function of the file
 that is not compiled (its code would reference an undefined symbol).
@@ -96,14 +100,22 @@ that is not compiled (its code would reference an undefined symbol).
 
 ### `FV/Backend/Asm.lean`
 
-`MInst.asm` (one instruction → lines, following `emit.rs`), `memFinalize`,
-`prologueLines`/`epilogueLines`, `printFunc : Nat → AFunc → Except String FnAsm`
-(`FnAsm`: name, text, size in bytes, trap sites).
+`Insn` (one instruction = one assembly line = one word; shared by printer and encoder),
+`Lbl`, `Line`, `MInst.lines` (one allocated instruction → lines, following `emit.rs`),
+`memFinalize`, `prologueLines`/`epilogueLines`, `emitFunc : Nat → AFunc → Except String FnAsm`
+(`FnAsm`: name, index, lines, size in bytes, trap sites), `Insn.asm`, `FnAsm.text`.
+
+### `FV/Backend/Encode.lean`, `FV/Backend/Obj.lean`
+
+`Insn.toArmInst`, `armBits`, `Insn.encode`, `Insn.reloc?`, `FnAsm.layout : FnAsm → Except
+String FnBin`, `elfObject` — see `docs/contracts/encoder.md`.
 
 ### `FV/Backend.lean`
 
-`compileFunction`, `compileFile`, `FileAsm` (text, functions, unsupported, fired rules),
-`FileAsm.tableJson` (the `--functions-table` file).
+`compileFunction`, `compileFile`, `FileAsm` (functions, unsupported, fired rules;
+`FileAsm.text` assembly), `FileAsm.tableJson` (the `--functions-table` file),
+`FileAsm.layout`/`FileAsm.object` (encoded functions / ELF object), `FnBin.relocsJson`,
+`FnBin.trapsJson`.
 
 ## Instruction selection
 
@@ -332,16 +344,19 @@ ldp x29, x30, [sp], #16; ret`. Spill code is `ldr`/`str` (`ldur`/`stur` for offs
 `rn` into `rd`'s scratch; terminators have no stores after them; `Rets` loads `x0..` then runs
 the epilogue.
 
-## Assembly (`Asm`)
+## Final instructions and assembly (`Asm`)
 
-One `.text` section; per function `.globl`, `.type`, `.p2align 2`, block labels `.L<k>_b<l>`,
+The allocated instructions are expanded into a `Line` list over `Insn`; the encoder
+(`docs/contracts/encoder.md`) and the assembly printer both consume it. The printed form: one
+`.text` section; per function `.globl`, `.type`, `.p2align 2`, block labels `.L<k>_b<l>`,
 out-of-line trap labels `.L<k>_t<n>` (Cranelift's deferred traps, after the body), jump
 tables `.L<k>_jt<n>` (`.word target - table`, after the `br`). Each instruction is printed as
 `emit.rs` emits it (e.g. `CondBr` = `b.cond`/`cbz`/`cbnz` + `b`; `TrapIf` = branch to an
 out-of-line `udf`; `JTSequence` = `b.hs default; csel; adr; ldrsw [t1, w2, uxtw #2]; add;
 br`; `Extend` = `and #1`/`mov w`/`sbfm`/`ubfm`; `AluRRR Extr` = `rorv`; `LoadAddr` via
 `mem_finalize`). Every line is 4 bytes, so trap offsets and function sizes are computed in
-Lean; `.ifne . - f - N / .error` guards make `llvm-mc` reject the file if they are wrong.
+Lean; `.ifne . - f - N / .error` guards make `llvm-mc` reject the file if they are wrong
+(in the object path, `FnAsm.layout` checks the size and the encoder resolves the labels).
 Traps are `udf #0xc11f` (Cranelift's `TRAP_OPCODE`); the trap table maps the offsets of
 `udf`s and of loads/stores whose flags carry a trap code (the access instruction itself).
 
@@ -355,17 +370,19 @@ Traps are `udf #0xc11f` (Cranelift's `TRAP_OPCODE`); the trap table maps the off
 ## Commands
 
 ```sh
-lake build FV.Backend lean-backend lean-backend-armrun FVTest.Backend.Names
-.lake/build/bin/lean-backend IN.clif OUT.s [--traps OUT.json] [--rules RULES.txt]
-/usr/lib/llvm-18/bin/llvm-mc -triple=aarch64-linux-gnu -filetype=obj OUT.s -o OUT.o
+lake build FV.Backend lean-backend lean-backend-armrun lean-backend-encode-test FVTest.Backend.Names
+.lake/build/bin/lean-backend IN.clif OUT.o [--traps OUT.json] [--rules RULES.txt] [--dump DIR]
+.lake/build/bin/lean-backend IN.clif OUT.s ...        # assembly instead (for llvm-mc, test oracle)
 rust/target/release/clif-native IN.clif --functions-obj OUT.o --functions-table OUT.json [--link LIB]
-scripts/lean-backend-filetests.sh [-v] [--corpus | --runtests | FILE.clif...]   # default: both sets
+scripts/lean-backend-filetests.sh [-v] [--asm] [--corpus | --runtests | FILE.clif...]   # default: both sets
+scripts/lean-backend-encode-check.sh [-v] [--corpus | --runtests | --random | FILE.clif...]
 .lake/build/bin/lean-backend-armrun [FILE.clif...]                               # default: corpus/clif
 ```
 
 ## Results (2026-09-27)
 
-`scripts/lean-backend-filetests.sh` (exit status 0):
+`scripts/lean-backend-filetests.sh` (exit status 0; identical with the Lean encoder's objects,
+the default since M5, and with `--asm`):
 
 | Set | Files | Lean pass | fail | error | unsupported (not E) | agree with Cranelift-native | disagree |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -394,7 +411,7 @@ Trap mapping (`clif-native/tests/traps.clif` through the Lean backend): `sdiv` b
 Code size: the corpus is 171 372 bytes with the Lean backend vs 29 636 with Cranelift
 (×5.8), the cost of the stack-slot allocator.
 
-`lean-backend-armrun` (Arm model, `Arm.run` from a state with the code at `0x10000`, the code
+`lean-backend-armrun` (Arm model, code bytes from the Lean encoder, `Arm.run` from a state with the code at `0x10000`, the code
 bytes also in data memory for jump tables, arguments per `argLocs`, `sp = 0x7fff0000`,
 `x30` = sentinel): every compiled call-free, memory-free function with run lines;
 results/traps compared with `Clif.run`:
@@ -422,10 +439,10 @@ results/traps compared with `Clif.run`:
    CLIF stack slots laid out as Cranelift does (accesses outside a slot are `notrap`
    preconditions in `Clif.run`, and hit neighbouring slots natively, as with Cranelift).
 7. **ABI**: AAPCS64 as above; callee-saved registers untouched.
-8. **Assembler**: `llvm-mc` is trusted (M5 replaces it); jump tables and trap offsets are
-   checked by assembler guards; functions must stay below ±1 MiB (conditional-branch
-   range) — no branch relaxation, as PLAN.md §3.4 requires (not checked; the corpus is far
-   below).
+8. **Encoding**: the Lean encoder (M5, `docs/contracts/encoder.md`; unproven, checked
+   byte-for-byte against `llvm-mc` and by the decoder round trip). Functions must stay below
+   ±1 MiB (conditional-branch range), ±32 KiB for `tbz` — no branch relaxation, as PLAN.md §3.4
+   requires; the encoder rejects an out-of-range branch (the corpus is far below).
 9. **Traps**: `udf #0xc11f` + the trap table; `TrapIf` branches to out-of-line `udf`s.
 
 ## Known gaps
@@ -435,4 +452,5 @@ results/traps compared with `Clif.run`:
   `instData` and (for some) extern helpers are needed.
 - `Arm.run` samples exclude calls and memory accesses (they need a linker and a heap in the
   model); memory-accessing and calling functions are covered by qemu only.
-- Branch range is not checked (see 8).
+- Branch ranges are checked by the encoder but not relaxed (see 8): a function whose
+  conditional branches exceed ±1 MiB fails to compile (encoding error).

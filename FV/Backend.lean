@@ -2,16 +2,20 @@ import FV.Backend.MInst
 import FV.Backend.Isel
 import FV.Backend.StackAlloc
 import FV.Backend.Asm
+import FV.Backend.Encode
+import FV.Backend.Obj
 import Std.Data.HashSet
 
 /-!
-# The Lean AArch64 backend (M4, unproven): CLIF → assembly
+# The Lean AArch64 backend (M4/M5, unproven): CLIF → machine code
 
-`Backend.compileFunction f` = `printFunc ∘ allocate ∘ lowerFunction`: ISLE instruction
-selection (`Isel`), stack-slot allocation and frame layout (`StackAlloc`), assembly text
-(`Asm`). `Backend.compileFile` does this for every function of a `.clif` file and reports the
-functions it does not support (outside `clif-subset-v1` E, or not parsed by `Clif.parseFile`).
-Contract: `docs/contracts/backend.md`.
+`Backend.compileFunction f` = `emitFunc ∘ allocate ∘ lowerFunction`: ISLE instruction
+selection (`Isel`), stack-slot allocation and frame layout (`StackAlloc`), the final
+instruction list (`Asm`). `Backend.compileFile` does this for every function of a `.clif` file
+and reports the functions it does not support (outside `clif-subset-v1` E, or not parsed by
+`Clif.parseFile`). The result is printed as assembly (`FileAsm.text`) or encoded and laid out
+(`Encode`) into an ELF relocatable object (`FileAsm.object`, `Obj`).
+Contracts: `docs/contracts/backend.md`, `docs/contracts/encoder.md`.
 -/
 
 namespace Backend
@@ -21,7 +25,7 @@ rules that fired. -/
 def compileFunction (k : Nat) (f : Clif.Function) : Except String (FnAsm × Array Isle.RuleId) := do
   let vc ← lowerFunction f
   let af ← allocate vc
-  pure (← printFunc k af, vc.rulesFired)
+  pure (← emitFunc k af, vc.rulesFired)
 
 /-- Result of compiling a file. -/
 structure FileAsm where
@@ -84,5 +88,25 @@ def FileAsm.tableJson (fa : FileAsm) : String :=
     s!"  \{\"name\": {jsonString p.1}, \"reason\": {jsonString p.2}}"
   "{\"functions\": [\n" ++ ",\n".intercalate (fa.funcs.map fn) ++ "\n],\n\"unsupported\": [\n" ++
     ",\n".intercalate (fa.unsupported.map bad) ++ "\n]}\n"
+
+/-- Encode and lay out every compiled function (an error is an encoder or backend bug). -/
+def FileAsm.layout (fa : FileAsm) : Except String (List (FnAsm × FnBin)) :=
+  fa.funcs.mapM fun f => do pure (f, ← f.layout)
+
+/-- The ELF relocatable object of the compiled functions (no assembler). -/
+def FileAsm.object (fa : FileAsm) : Except String ByteArray :=
+  elfObject <$> fa.layout
+
+/-- `name.relocs.json` of a laid-out function (the `clif2obj` schema,
+`docs/contracts/drivers.md`). -/
+def FnBin.relocsJson (f : FnBin) : String :=
+  "[" ++ ",\n ".intercalate (f.relocs.map fun r =>
+    s!"\{\"offset\": {r.offset}, \"kind\": {jsonString r.type.craneliftName}, " ++
+    s!"\"target\": {jsonString r.sym}, \"addend\": {r.addend}}") ++ "]\n"
+
+/-- `name.traps.json` of a laid-out function (the `clif2obj` schema). -/
+def FnBin.trapsJson (f : FnBin) : String :=
+  "[" ++ ", ".intercalate (f.traps.map fun t =>
+    s!"\{\"offset\": {t.offset}, \"code\": {jsonString t.code.name}}") ++ "]\n"
 
 end Backend
