@@ -6,7 +6,7 @@ namespace Isle.Aarch64.Closure
 open Isle
 
 /-! Rules and terms reachable from `lower`/`lower_branch` for the emitter subset E
-(`clif-subset-v1`) at `i8`..`i64`; see `docs/contracts/isle.md` ("Closure") for the
+(`clif-subset-v2`) at `i8`..`i64`; see `docs/contracts/isle.md` ("Closure") for the
 selection method and what `lhsReasons` / `defaultExcludedBy` mean. -/
 
 def opcodes : List String := ["band", "bitrev", "bnot", "bor", "br_table", "brif", "bswap", "bxor", "call", "clz", "ctz", "iadd", "icmp", "iconst", "imul", "ineg", "ireduce", "ishl", "istore16", "istore32", "istore8", "isub", "jump", "load", "nop", "popcnt", "return", "rotl", "rotr", "sdiv", "select", "sextend", "sload16", "sload32", "sload8", "smax", "smin", "smulhi", "srem", "sshr", "stack_addr", "store", "symbol_value", "trap", "udiv", "uextend", "uload16", "uload32", "uload8", "umax", "umin", "umulhi", "urem", "ushr"]

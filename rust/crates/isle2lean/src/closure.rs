@@ -326,7 +326,7 @@ pub fn render(u: &Unit, rule_names: &[String]) -> Result<String> {
     );
     o.push_str(
         "/-! Rules and terms reachable from `lower`/`lower_branch` for the emitter subset E\n\
-         (`clif-subset-v1`) at `i8`..`i64`; see `docs/contracts/isle.md` (\"Closure\") for the\n\
+         (`clif-subset-v2`) at `i8`..`i64`; see `docs/contracts/isle.md` (\"Closure\") for the\n\
          selection method and what `lhsReasons` / `defaultExcludedBy` mean. -/\n\n",
     );
     let mut ops: Vec<String> = E_OPCODES.iter().map(|s| s.to_string()).collect();
