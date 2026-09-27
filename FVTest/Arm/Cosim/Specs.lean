@@ -318,6 +318,8 @@ def allSpecs : List Spec :=
     dp3 none 0b000 0 false "madd", dp3 none 0b000 1 false "msub",
     dp3 (some 1) 0b010 0 true "smulh", dp3 (some 1) 0b110 0 true "umulh",
     dp1 none 0b000000 "rbit", dp1 none 0b000100 "clz", dp1 none 0b000101 "cls",
+    dp1 none 0b000001 "rev16", dp1 (some 0) 0b000010 "rev (32)", dp1 (some 1) 0b000010 "rev32",
+    dp1 (some 1) 0b000011 "rev (64)",
     condSel 0 0 "csel", condSel 0 1 "csinc", condSel 1 0 "csinv", condSel 1 1 "csneg",
     condCmp 1 1 "ccmp (imm)", condCmp 0 1 "ccmn (imm)", condCmp 1 0 "ccmp (reg)",
     condCmp 0 0 "ccmn (reg)",
