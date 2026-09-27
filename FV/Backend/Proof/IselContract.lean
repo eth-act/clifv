@@ -444,13 +444,18 @@ def ExcludedUnmatchable (p : Program) : Prop :=
     (matchRule p (sem ctx) cfg m r [.inst ii]).run s ≠ .ok (some env', s1)
 
 /-- **Root rule correctness (`lower_branch`)**, on the terminator `t` lowered in the driver's
-context `ctx` (instruction `ti` holds the terminator's data), with branch targets `targets`. -/
+context `ctx` (instruction `ti` holds the terminator's data; `CtxInv`, `ValsBelow` and "the
+rules before `r` failed" as for `LowerRuleOk`), with branch targets `targets`. -/
 def BranchRuleOk (isem : Sem) (MR : MemRelT) (p : Program) (r : Rule) : Prop :=
-  ∀ (ctx : Ctx) (ti : Nat) (t : Clif.Terminator) (data : V) (targets : List Label), termData t = .ok data →
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx →
+  ∀ (ti : Nat) (t : Clif.Terminator) (data : V) (targets : List Label), termData t = .ok data →
   ctx.insts[ti]? = some ⟨data, [], [], none⟩ →
   ∀ (cfg : Config), cfg.checkOverlap = false →
   ∀ (m n : Nat) (st : LState) (tr : Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId)
-    (out : V) (st' : LState) (tr' : Array RuleId), 1000 ≤ m → 1000 ≤ n →
+    (out : V) (st' : LState) (tr' : Array RuleId), 1000 ≤ m → 1000 ≤ n → ValsBelow ctx st →
+    (∀ pre post, p.rulesOf TId.lower_branch = pre ++ r :: post → ∀ r' ∈ pre, ∃ m', 1000 ≤ m' ∧
+      ∃ s', (matchRule p (sem ctx) cfg m' r' [.inst ti, .labels targets]).run (st, tr) =
+        .ok (none, s')) →
     (matchRule p (sem ctx) cfg m r [.inst ti, .labels targets]).run (st, tr) =
       .ok (some env', s1) →
     (evalExpr p (sem ctx) cfg n r.rhs env').run s1 = .ok (some out, (st', tr')) →
@@ -536,5 +541,202 @@ theorem lowerInstOk_runTerm (hrules : LowerRulesCorrect program)
     obtain ⟨ms, rss, h1, h2, h3⟩ := lowerInstOk_of_rules data_program hrules hex hR hMR hctx hi hc
       rfl (by omega) hvb ha
     exact ⟨ms, rss, by simpa using h1, h2, h3⟩
+
+/-! ## Terminators (stated by M7; M4's obligations `LowerTermRulesCorrect`, `TermUnmatchable`,
+`BranchRulesCorrect`, `BranchExcludedUnmatchable`)
+
+`lowerFunction` lowers `return`/`trap` with `lower` and the branches with `lower_branch`, in
+its terminator context: instruction `ti` holds the terminator's data (`termData`), no results,
+no CLIF instruction. `lowerTermOk_runTerm` / `branchOk_runTerm` turn the per-rule statements
+into `LowerTermOk` for every successful call, as `lowerInstOk_runTerm` does for statements. -/
+
+/-- The root rules of `lower` on terminators: `rule_lower_2237` (`trap`, rule id 964) and
+`rule_lower_2574` (`return`, rule id 1037). -/
+def termRootRule (r : Rule) : Bool := r.id == 964 || r.id == 1037
+
+/-- Terminators lowered by `lower` (the others by `lower_branch`). -/
+def retOrTrap : Clif.Terminator → Bool
+  | .ret _ | .trap _ => true
+  | _ => false
+
+/-- **Root rule correctness (`lower`, terminators)**: whenever rule `r` matches the
+`return`/`trap` terminator at `ti` (the rules before it having failed) and its right-hand side
+returns, the instructions it appended are a correct lowering of the terminator. -/
+def LowerTermRuleOk (isem : Sem) (MR : MemRelT) (p : Program) (r : Rule) : Prop :=
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx →
+  ∀ (ti : Nat) (t : Clif.Terminator) (data : V), retOrTrap t = true → termData t = .ok data →
+  ctx.insts[ti]? = some ⟨data, [], [], none⟩ →
+  ∀ (cfg : Config), cfg.checkOverlap = false →
+  ∀ (m n : Nat) (st : LState) (tr : Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId)
+    (out : V) (st' : LState) (tr' : Array RuleId), 1000 ≤ m → 1000 ≤ n → ValsBelow ctx st →
+    (∀ pre post, p.rulesOf TId.lower = pre ++ r :: post → ∀ r' ∈ pre, ∃ m', 1000 ≤ m' ∧
+      ∃ s', (matchRule p (sem ctx) cfg m' r' [.inst ti]).run (st, tr) = .ok (none, s')) →
+    (matchRule p (sem ctx) cfg m r [.inst ti]).run (st, tr) = .ok (some env', s1) →
+    (evalExpr p (sem ctx) cfg n r.rhs env').run s1 = .ok (some out, (st', tr')) →
+    ∃ ms, st'.emitted = st.emitted ++ ms.toArray ∧ LowerTermOk isem MR ctx t [] st st' ms
+
+/-- **M4's target (`lower` on terminators)**: the two terminator root rules are correct. -/
+def LowerTermRulesCorrect (p : Program) : Prop :=
+  ∀ (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT), Refines F isem → MRStable F MR →
+    ∀ r ∈ p.rulesOf TId.lower, termRootRule r = true → LowerTermRuleOk isem MR p r
+
+/-- The other rules of `lower` never match a `return`/`trap` terminator. -/
+def TermUnmatchable (p : Program) : Prop :=
+  ∀ r ∈ p.rulesOf TId.lower, termRootRule r = false →
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx →
+  ∀ (ti : Nat) (t : Clif.Terminator) (data : V), retOrTrap t = true → termData t = .ok data →
+  ctx.insts[ti]? = some ⟨data, [], [], none⟩ →
+  ∀ (cfg : Config) (m : Nat) (s : LState × Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId),
+    (matchRule p (sem ctx) cfg m r [.inst ti]).run s ≠ .ok (some env', s1)
+
+/-- The root rules of `lower_branch` outside the closure never match a branch terminator. -/
+def BranchExcludedUnmatchable (p : Program) : Prop :=
+  ∀ r ∈ p.rulesOf TId.lower_branch, closureRoot r = false →
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx →
+  ∀ (ti : Nat) (t : Clif.Terminator) (data : V) (targets : List Label), retOrTrap t = false →
+  termData t = .ok data → ctx.insts[ti]? = some ⟨data, [], [], none⟩ →
+  ∀ (cfg : Config) (m : Nat) (s : LState × Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId),
+    (matchRule p (sem ctx) cfg m r [.inst ti, .labels targets]).run s ≠ .ok (some env', s1)
+
+set_option maxRecDepth 100000 in
+theorem lower_branch_rules_nodup {p : Program} (hp : Data p) :
+    (p.rulesOf TId.lower_branch).Nodup := by
+  rw [show TId.lower_branch = 687 from rfl, hp.r687]
+  refine List.Pairwise.of_map (S := fun a b : Nat => a ≠ b) Rule.id
+    (fun _ _ h e => h (congrArg Rule.id e)) ?_
+  decide +kernel
+
+theorem lowerTermOk_of_rules {p : Program} (hp : Data p) (hrules : LowerTermRulesCorrect p)
+    (hun : TermUnmatchable p) {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT}
+    (hR : Refines F isem) (hMR : MRStable F MR) {f : Clif.Function} {ctx : Ctx}
+    (hctx : CtxInv f ctx) {ti : Nat} {t : Clif.Terminator} {data : V} (hrt : retOrTrap t = true)
+    (hd : termData t = .ok data) (hi : ctx.insts[ti]? = some ⟨data, [], [], none⟩)
+    {cfg : Config} (hco : cfg.checkOverlap = false) {n : Nat}
+    (hn : 1002 + (p.rulesOf TId.lower).length ≤ n) {ty : TypeId} {st : LState}
+    {tr : Array RuleId} {out : V} {st' : LState} {tr' : Array RuleId} (hvb : ValsBelow ctx st)
+    (h : (applyTerm p (sem ctx) cfg (n + 1) ty TId.lower [.inst ti]).run (st, tr) =
+      .ok (some out, (st', tr'))) :
+    ∃ ms, st'.emitted = st.emitted ++ ms.toArray ∧ LowerTermOk isem MR ctx t [] st st' ms := by
+  change 1002 + (p.rulesOf 686).length ≤ n at hn
+  obtain ⟨r, pre0, post0, hsplit, hpre0, m, env', s1, st2, tr2, hmn, hmatch, heval, hs⟩ :=
+    applyTerm_internal_some_first hco hp.t686 term_686_kind rfl h
+  have hr : r ∈ p.rulesOf TId.lower := by
+    change r ∈ p.rulesOf 686; rw [hsplit]; simp
+  have hfirst : ∀ pre post, p.rulesOf TId.lower = pre ++ r :: post → ∀ r' ∈ pre, ∃ m', 1000 ≤ m' ∧
+      ∃ s', (matchRule p (sem ctx) cfg m' r' [.inst ti]).run (st, tr) = .ok (none, s') := by
+    intro pre post hsp r' hr'
+    have hnd : (pre0 ++ r :: post0).Nodup := hsplit ▸ lower_rules_nodup hp
+    have hpre := prefix_unique_of_nodup hnd (hsplit.symm.trans hsp)
+    subst hpre
+    obtain ⟨m', hm', s', h'⟩ := hpre0 r' hr'
+    exact ⟨m', by omega, s', h'⟩
+  simp only [Prod.mk.injEq] at hs
+  rw [← hs.1] at heval
+  cases hroot : termRootRule r
+  · exact absurd hmatch (hun r hr hroot f ctx hctx ti t data hrt hd hi cfg m (st, tr) env' s1)
+  · exact hrules F isem MR hR hMR r hr hroot f ctx hctx ti t data hrt hd hi cfg hco m n st tr
+      env' s1 out st' tr2 (by omega) (by omega) hvb hfirst hmatch heval
+
+theorem branchOk_of_rules {p : Program} (hp : Data p) (hrules : BranchRulesCorrect p)
+    (hex : BranchExcludedUnmatchable p) {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT}
+    (hR : Refines F isem) (hMR : MRStable F MR) {f : Clif.Function} {ctx : Ctx}
+    (hctx : CtxInv f ctx) {ti : Nat} {t : Clif.Terminator} {data : V} {targets : List Label}
+    (hrt : retOrTrap t = false) (hd : termData t = .ok data)
+    (hi : ctx.insts[ti]? = some ⟨data, [], [], none⟩)
+    {cfg : Config} (hco : cfg.checkOverlap = false) {n : Nat}
+    (hn : 1002 + (p.rulesOf TId.lower_branch).length ≤ n) {ty : TypeId} {st : LState}
+    {tr : Array RuleId} {out : V} {st' : LState} {tr' : Array RuleId} (hvb : ValsBelow ctx st)
+    (h : (applyTerm p (sem ctx) cfg (n + 1) ty TId.lower_branch [.inst ti, .labels targets]).run
+      (st, tr) = .ok (some out, (st', tr'))) :
+    ∃ ms, st'.emitted = st.emitted ++ ms.toArray ∧ LowerTermOk isem MR ctx t targets st st' ms := by
+  change 1002 + (p.rulesOf 687).length ≤ n at hn
+  obtain ⟨r, pre0, post0, hsplit, hpre0, m, env', s1, st2, tr2, hmn, hmatch, heval, hs⟩ :=
+    applyTerm_internal_some_first hco hp.t687 term_687_kind rfl h
+  have hr : r ∈ p.rulesOf TId.lower_branch := by
+    change r ∈ p.rulesOf 687; rw [hsplit]; simp
+  have hfirst : ∀ pre post, p.rulesOf TId.lower_branch = pre ++ r :: post → ∀ r' ∈ pre,
+      ∃ m', 1000 ≤ m' ∧ ∃ s', (matchRule p (sem ctx) cfg m' r' [.inst ti, .labels targets]).run
+        (st, tr) = .ok (none, s') := by
+    intro pre post hsp r' hr'
+    have hnd : (pre0 ++ r :: post0).Nodup := hsplit ▸ lower_branch_rules_nodup hp
+    have hpre := prefix_unique_of_nodup hnd (hsplit.symm.trans hsp)
+    subst hpre
+    obtain ⟨m', hm', s', h'⟩ := hpre0 r' hr'
+    exact ⟨m', by omega, s', h'⟩
+  simp only [Prod.mk.injEq] at hs
+  rw [← hs.1] at heval
+  cases hroot : closureRoot r
+  · exact absurd hmatch (hex r hr hroot f ctx hctx ti t data targets hrt hd hi cfg m (st, tr) env' s1)
+  · exact hrules F isem MR hR hMR r hr hroot f ctx hctx ti t data targets hd hi cfg hco m n st tr
+      env' s1 out st' tr2 (by omega) (by omega) hvb hfirst hmatch heval
+
+theorem program_termByName_lower_branch :
+    program.termByName? "lower_branch" = some T.lower_branch := by
+  decide +kernel
+
+set_option maxRecDepth 20000 in
+/-- `lowerTermOk_of_rules` for the exported program and the backend's call
+(`runTerm ctx "lower" [.inst ti]` on a `return`/`trap`). -/
+theorem lowerTermOk_runTerm (hrules : LowerTermRulesCorrect program)
+    (hun : TermUnmatchable program) {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT}
+    (hR : Refines F isem) (hMR : MRStable F MR) {f : Clif.Function} {ctx : Ctx}
+    (hctx : CtxInv f ctx) {ti : Nat} {t : Clif.Terminator} {data : V} (hrt : retOrTrap t = true)
+    (hd : termData t = .ok data) (hi : ctx.insts[ti]? = some ⟨data, [], [], none⟩)
+    {st : LState} {out : V} {st' : LState} {tr : List RuleId} (hvb : ValsBelow ctx st)
+    (h : runTerm ctx "lower" [.inst ti] st = .ok (some out, st', tr)) :
+    ∃ ms, st'.emitted = st.emitted ++ ms.toArray ∧ LowerTermOk isem MR ctx t [] st st' ms := by
+  unfold runTerm Interp.run at h
+  rw [program_termByName_lower] at h
+  dsimp only at h
+  cases ha : (applyTerm program (sem ctx) {} 1000000 T.lower.ret T.lower.id [.inst ti]).run
+      (st, #[]) with
+  | error e => rw [ha] at h; cases h
+  | ok q =>
+    obtain ⟨v, st2, tr2⟩ := q
+    rw [ha] at h
+    simp only [bind, Except.bind, pure, Except.pure] at h
+    injection h with h
+    injection h with h1 h2
+    subst h1
+    injection h2 with h2 _
+    subst h2
+    have hlen : (program.rulesOf TId.lower).length ≤ 1000 := by
+      rw [show TId.lower = 686 from rfl, data_program.r686]; decide
+    obtain ⟨ms, h1, h2⟩ := lowerTermOk_of_rules data_program hrules hun hR hMR hctx hrt hd hi
+      rfl (by omega) hvb ha
+    exact ⟨ms, by simpa using h1, h2⟩
+
+set_option maxRecDepth 20000 in
+/-- `branchOk_of_rules` for the exported program and the backend's call
+(`runTerm ctx "lower_branch" [.inst ti, .labels targets]`). -/
+theorem branchOk_runTerm (hrules : BranchRulesCorrect program)
+    (hex : BranchExcludedUnmatchable program) {F : BitVec 64 → Prop} {isem : Sem}
+    {MR : MemRelT} (hR : Refines F isem) (hMR : MRStable F MR) {f : Clif.Function} {ctx : Ctx}
+    (hctx : CtxInv f ctx) {ti : Nat} {t : Clif.Terminator} {data : V} {targets : List Label}
+    (hrt : retOrTrap t = false) (hd : termData t = .ok data)
+    (hi : ctx.insts[ti]? = some ⟨data, [], [], none⟩)
+    {st : LState} {out : V} {st' : LState} {tr : List RuleId} (hvb : ValsBelow ctx st)
+    (h : runTerm ctx "lower_branch" [.inst ti, .labels targets] st = .ok (some out, st', tr)) :
+    ∃ ms, st'.emitted = st.emitted ++ ms.toArray ∧ LowerTermOk isem MR ctx t targets st st' ms := by
+  unfold runTerm Interp.run at h
+  rw [program_termByName_lower_branch] at h
+  dsimp only at h
+  cases ha : (applyTerm program (sem ctx) {} 1000000 T.lower_branch.ret T.lower_branch.id
+      [.inst ti, .labels targets]).run (st, #[]) with
+  | error e => rw [ha] at h; cases h
+  | ok q =>
+    obtain ⟨v, st2, tr2⟩ := q
+    rw [ha] at h
+    simp only [bind, Except.bind, pure, Except.pure] at h
+    injection h with h
+    injection h with h1 h2
+    subst h1
+    injection h2 with h2 _
+    subst h2
+    have hlen : (program.rulesOf TId.lower_branch).length ≤ 1000 := by
+      rw [show TId.lower_branch = 687 from rfl, data_program.r687]; decide
+    obtain ⟨ms, h1, h2⟩ := branchOk_of_rules data_program hrules hex hR hMR hctx hrt hd hi
+      rfl (by omega) hvb ha
+    exact ⟨ms, by simpa using h1, h2⟩
 
 end Backend.Proof

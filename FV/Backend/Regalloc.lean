@@ -1,5 +1,6 @@
 import FV.Backend.RegallocCheck
 import Lean.Data.Json
+import FV.Backend.Proof.PrepareCheck
 
 /-!
 # regalloc2 as the backend's register allocator (M6)
@@ -308,7 +309,12 @@ def runLeanRegalloc (bin : String) (env : MachineEnv) (vcs : Array VCode) : IO (
 /-- Allocate a batch of functions with regalloc2 (one `lean-regalloc` run); every result is
 checked by `checkAlloc`. -/
 def allocateRegalloc2 (bin : String) (env : MachineEnv) (vcs : Array VCode) : IO (Array (Except String AFunc)) := do
-  let prepared := vcs.map prepare
+  -- `prepare`, then M7's `prepare` validator (`prepCheck`, assumed by the end-to-end theorem)
+  let prepared := vcs.map fun vc => do
+    let vcp ← prepare vc
+    if !Proof.Driver.prepCheck vc vcp then
+      throw "prepare rejected by the M7 prepare validator (prepCheck)"
+    pure vcp
   let ok := prepared.filterMap (·.toOption)
   match ← runLeanRegalloc bin env ok with
   | .error e => pure (vcs.map fun _ => .error e)
