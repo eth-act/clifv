@@ -595,8 +595,8 @@ a64_rotr/a64_rotr_imm _ok`, `alu_rr_imm12_ok`, extern iffs (`rotr_mask`, `u8_int
 **Remaining:** rotate root rules (12) — contracts done; left: the root proofs via
 `shift_ruleOk_gen` (inversion recipe: `fbrot_inv [*, rule] at hm he`, then
 `subst (Option.some.inj (hi.symm.trans ‹insts[ii]? = some _›))` and a repeat pass with `[hd, hhead,
-…]`; caution: in that pass the `ApplyInternal 513` hypothesis was lost in the first attempt —
-investigate before relying on `at *`), composition like `shift_compose`, `rotr_neg` for `rotl`.
+…]` — verified to leave exactly `valueReg? x/y = some _` and the `ApplyInternal 513/172`
+hypotheses for `rotr_32/64_base_case`), composition like `shift_compose`, `rotr_neg` for `rotl`.
 popcnt (vector ispec forms), `bnot_ishl` 1401, `sbfm`/`ubfm` 1704/1707: not started.
 
 ### Integration note (Integrate1: m4-ctl + m4-alu-b)
