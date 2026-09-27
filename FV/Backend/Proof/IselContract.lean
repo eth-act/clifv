@@ -157,12 +157,65 @@ def rrrVal {n : Nat} (op : ALUOp) (a b : BitVec n) : Option (BitVec n) :=
 def rev16w (x : BitVec 32) : BitVec 32 :=
   ((x >>> 8) &&& 0x00FF00FF#32) ||| ((x <<< 8) &&& 0xFF00FF00#32)
 
+/-- The condition of a `CondBrKind` on the use values and the world's flags (`cbz`/`cbnz` test
+the low 32 or 64 bits of the register; `b.cond` tests the flags). -/
+def condBrHolds (k : CondBrKind) (uses : List CV) (w : Arm.ArmState) : Bool :=
+  match k, uses with
+  | .cond c, _ => Arm.ConditionHolds c.bits w
+  | .zero _ sz, [a] => if sz.is64 then lo64 a == 0 else (lo64 a).setWidth 32 == 0
+  | .notZero _ sz, [a] => if sz.is64 then lo64 a != 0 else (lo64 a).setWidth 32 != 0
+  | _, _ => false
+
+/-- The flags of `ANDS` (`TST`): `N` = sign bit, `Z` = result is zero, `C = V = 0`. -/
+def andsFlags {n : Nat} (r : BitVec n) : Arm.PState :=
+  Arm.make_pstate (Arm.BitVec.lsb r (n - 1)) (if r = 0#n then 1#1 else 0#1) 0#1 0#1
+
 /-- **Value-level meaning of the instruction forms the proven rules emit**, in terms of the
 Arm model's operations (`AddWithCarry`, `write_pstate`, `ConditionHolds`): the def values
 (in operand order) and the world after. `none`: form not specified (yet). A 32-bit operation
 reads the low 32 bits of its operands and zero-extends its result (Arm `W` registers). -/
 def ispec : Sem := fun i uses w =>
   match i, uses with
+  -- flags / select / division forms (M4Cmp)
+  | .aluRRImm12 .subS sz rd _ imm, [a] =>
+    if imm.bits < 4096 then
+      let r := Arm.AddWithCarry (opnd sz a) (~~~(BitVec.ofNat sz.bits imm.value)) 1#1
+      some (defOut rd (resX sz r.1), Arm.write_pstate r.2 w, .next)
+    else none
+  | .aluRRImm12 .addS sz rd _ imm, [a] =>
+    if imm.bits < 4096 then
+      let r := Arm.AddWithCarry (opnd sz a) (BitVec.ofNat sz.bits imm.value) 0#1
+      some (defOut rd (resX sz r.1), Arm.write_pstate r.2 w, .next)
+    else none
+  | .aluRRR .subS sz rd _ .xzr, [a] =>
+    let r := Arm.AddWithCarry (opnd sz a) (~~~(0#sz.bits)) 1#1
+    some (defOut rd (resX sz r.1), Arm.write_pstate r.2 w, .next)
+  | .aluRRRExtend .subS sz rd _ _ e, [a, b] =>
+    let r := Arm.AddWithCarry (opnd sz a)
+      (~~~(Arm.extend_reg (opnd sz b) (Arm.decode_reg_extend e.bits) 0)) 1#1
+    some (defOut rd (resX sz r.1), Arm.write_pstate r.2 w, .next)
+  | .aluRRImmLogic .andS sz rd _ imm, [a] =>
+    if ImmLogic.ofNat? imm.value sz = some imm then
+      let r := opnd sz a &&& BitVec.ofNat sz.bits imm.value
+      some (defOut rd (resX sz r), Arm.write_pstate (andsFlags r) w, .next)
+    else none
+  | .aluRRR .uDiv sz rd _ _, [a, b] => some (defOut rd (resX sz (opnd sz a / opnd sz b)), w, .next)
+  | .aluRRR .sDiv sz rd _ _, [a, b] =>
+    some (defOut rd (resX sz ((opnd sz a).sdiv (opnd sz b))), w, .next)
+  | .aluRRRR .mSub sz rd _ _ _, [a, b, c] =>
+    some (defOut rd (resX sz (opnd sz c - opnd sz a * opnd sz b)), w, .next)
+  | .csel rd _ _ c, [a, b] =>
+    some (defOut rd (ofX (if Arm.ConditionHolds c.bits w then lo64 a else lo64 b)), w, .next)
+  | .ccmpImm sz _ imm nzcv c, [a] =>
+    if imm < 32 then
+      let fl := if Arm.ConditionHolds c.bits w then
+          (Arm.AddWithCarry (opnd sz a) (~~~(BitVec.ofNat sz.bits imm)) 1#1).2
+        else Arm.make_pstate (BitVec.ofBool nzcv.n) (BitVec.ofBool nzcv.z) (BitVec.ofBool nzcv.c)
+          (BitVec.ofBool nzcv.v)
+      some ([], Arm.write_pstate fl w, .next)
+    else none
+  | .trapIf k _, us => some ([], w, if condBrHolds k us w then .halt else .next)
+  | .udf _, [] => some ([], w, .halt)
   | .aluRRR .subS sz rd _ _, [a, b] =>
     let r := Arm.AddWithCarry (opnd sz a) (~~~(opnd sz b)) 1#1
     some (defOut rd (resX sz r.1), Arm.write_pstate r.2 w, .next)
