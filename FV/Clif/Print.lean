@@ -151,7 +151,7 @@ def globalValue : GlobalValue → String
   | .vmctx => "vmctx"
   | .load ty f base off => s!"load.{ty.name}{memFlags f} gv{base}{offset off}"
   | .iaddImm ty base off => s!"iadd_imm.{ty.name} gv{base}, {off}"
-  | .symbol n off col => s!"{if col then "colocated " else ""}symbol %{n}{offset off}"
+  | .symbol n off col => s!"symbol {if col then "colocated " else ""}%{n}{offset off}"
 
 def dataValue (x : Val) : String := toString x.toInt
 

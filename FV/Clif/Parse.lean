@@ -12,7 +12,7 @@ Accepted input (Cranelift 0.136.1 reader syntax):
 * header lines `test ...`, `target ...`, `set ...` before the first function (kept verbatim);
 * `function %name(params) [-> returns] [callconv] { preamble blocks }`;
 * preamble: `ssN = explicit_slot N[, align = K]`, `gvN = vmctx | load.ty flags gvM[+off] |
-  iadd_imm.ty gvM, off | [colocated] symbol %name[+off]`, `fnN = [colocated] %name(sig)`;
+  iadd_imm.ty gvM, off | symbol [colocated] %name[+off]`, `fnN = [colocated] %name(sig)`;
 * blocks `blockN[(vA: ty, ...)] [cold]:`, value aliases `vA -> vB` (resolved away), and the
   instructions of S with optional `.ty` suffixes (inferred from the typevar operand when
   omitted);
@@ -227,6 +227,8 @@ def optOffset : P Int := do
 
 /-! ## Values -/
 
+/-- Follow the alias map (filled for the whole function before its body is read, so
+uses may precede the alias line). The map is checked acyclic by `collectAliases`. -/
 def resolveAlias (v : ValueId) : P ValueId := do
   let al := (← get).aliases
   let rec go : Nat → ValueId → ValueId
@@ -235,6 +237,26 @@ def resolveAlias (v : ValueId) : P ValueId := do
       | some w => go n w
       | none => v
   return go (al.length + 1) v
+
+/-- Pre-scan the token stream for every alias `vA -> vB` (as cranelift-reader resolves
+aliases after reading the whole function), rejecting duplicate aliases and cycles. -/
+def collectAliases : P Unit := do
+  let toks ← read
+  let mut al : List (ValueId × ValueId) := []
+  for i in [0:toks.size] do
+    if let (some (.word a), some .arrow, some (.word b)) := (toks[i]?, toks[i+1]?, toks[i+2]?) then
+      if let (some a, some b) := (numSuffix? "v" a, numSuffix? "v" b) then
+        if (al.lookup a).isSome then malformed s!"v{a} is aliased twice"
+        al := (a, b) :: al
+  for (a, _) in al do
+    let mut v := a
+    for _ in [0:al.length] do
+      match al.lookup v with
+      | some w =>
+        if w == a then malformed s!"alias cycle through v{a}"
+        v := w
+      | none => break
+  modify fun s => { s with aliases := al }
 
 /-- A value use (aliases resolved). -/
 def value : P ValueId := do resolveAlias (← entity "v")
@@ -353,15 +375,12 @@ def decl : P Decl := do
       expectPunct ','
       let off ← anyInt
       return .global id (.iaddImm t base off)
-    | "colocated" =>
-      expectWord "symbol"
-      let n ← anyName
-      let off ← optOffset
-      return .global id (.symbol n off true)
     | "symbol" =>
+      let colocated ← optWord "colocated"
+      if ← optWord "tls" then unsupported "tls symbol global value"
       let n ← anyName
       let off ← optOffset
-      return .global id (.symbol n off false)
+      return .global id (.symbol n off colocated)
     | w => unsupported s!"global value kind {w}"
   else if isEntity "fn" t then
     let id ← entity "fn"
@@ -581,11 +600,9 @@ def resultTypes (i : Inst) : P (List Ty) := do
 def bodyLine : P (Option (Sum Stmt Terminator)) := do
   -- alias `vA -> vB`
   if isEntity "v" (← peek) && (← peekAt 1) == some .arrow then
-    let a ← entity "v"; advance
-    let b ← value
-    let t ← typeOf b
-    modify fun s => { s with aliases := (a, b) :: s.aliases }
-    defineValue a t
+    -- already recorded by `collectAliases`; uses resolve through the alias map
+    let _ ← entity "v"; advance
+    let _ ← entity "v"
     return none
   let results ←
     if isEntity "v" (← peek) then do
@@ -633,6 +650,7 @@ def block : P Block := do
 
 /-- `function %name sig { decls blocks }` -/
 def function : P Function := do
+  collectAliases
   expectWord "function"
   let name ← anyName
   let sig ← signature

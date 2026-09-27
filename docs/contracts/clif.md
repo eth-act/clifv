@@ -190,9 +190,10 @@ Machine structure and invariants:
   (`header`, `funcs`); `Clif.parseFile : String → ParsedFile` (per function; functions
   outside S are `unsupported` with the reason: non-integer type, opcode, declaration).
 - Accepted: `test`/`target`/`set` headers (kept verbatim), `function %name(sig) [-> …] [cc]`,
-  `ssN = explicit_slot N[, align = K]`, `gvN = vmctx | load… | iadd_imm… | [colocated]
-  symbol…`, `fnN = [colocated] %name(sig)`, blocks with parameters and `cold`, value aliases
-  `vA -> vB` (resolved away), optional `.ty` suffixes (inferred from the typevar operand as
+  `ssN = explicit_slot N[, align = K]`, `gvN = vmctx | load… | iadd_imm… | symbol
+  [colocated] %name[+off]` (the reader's order; `tls` is unsupported), `fnN = [colocated] %name(sig)`, blocks with parameters and `cold`, value aliases
+  `vA -> vB` (collected for the whole function before the body is read, so a use may precede
+  its alias line, as in cranelift-reader; chains followed, duplicates and cycles `malformed`), optional `.ty` suffixes (inferred from the typevar operand as
   the reader does), memflags, trap codes, `; run: %f(args) == v` / `!= v` / `== [v, …]`,
   bare `; run`, `; print: …`. Literals: decimal, negative, `0x` hex with `_`, reduced mod
   `2^w`. Run arguments/expectations are typed by the signature of the function the comment

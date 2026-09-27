@@ -44,13 +44,12 @@ for d in "$out"/*/*/*.clif; do
   for stage in unopt opt; do
     base="$tools/$prof-$crate.$stage"
     norm "$d" "$stage" "$base.reader.clif"
-    norm "$d" "$stage" "$base.lean.clif" --lean-gv-order
-    norm "$d" "$stage" "$base.nonop.clif" --lean-gv-order --drop-nop
+    norm "$d" "$stage" "$base.nonop.clif" --drop-nop
     "$oracle" check "$base.reader.clif" >"$base.check.log" 2>&1 || echo "reader rejects $base.reader.clif"
   done
   norm "$d" unopt "$tools/split/$prof-$crate" --split
 done
-(cd "$root" && lake env lean --run "$here/ParseCheck.lean" "$tools"/*.lean.clif) >"$tools/parse.tsv"
+(cd "$root" && lake env lean --run "$here/ParseCheck.lean" "$tools"/*.reader.clif) >"$tools/parse.tsv"
 echo "-- functions by profile/stage and parse status"
 bystage "$tools/parse.tsv"
 echo "-- first rejection reason (normalised unopt, all profiles)"
@@ -92,7 +91,7 @@ core="$out/../core/clif"
 if [[ -d "$core" ]]; then
   echo "== 6. core/alloc (scripts/rust-clif/core.sh): Lean parse and lean-backend, nop dropped"
   for c in core alloc; do
-    norm "$core/$c" unopt "$tools/lib-$c.unopt.nonop.clif" --lean-gv-order --drop-nop
+    norm "$core/$c" unopt "$tools/lib-$c.unopt.nonop.clif" --drop-nop
     "$backend" "$tools/lib-$c.unopt.nonop.clif" "$tools/lib-$c.s" >"$tools/lib-$c.backend.log" 2>&1
     n=$(grep -c '^function ' "$tools/lib-$c.unopt.nonop.clif")
     u=$(grep -c ': unsupported: ' "$tools/lib-$c.backend.log")
