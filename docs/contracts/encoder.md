@@ -123,7 +123,7 @@ encoded by `armBits`); "Page" is the instruction description in C6.2 (base) or C
 | `aluRRRShift` | `DPR.Add_sub_shifted_reg` / `DPR.Logical_shifted_reg` | (shifted register) forms; ROR only for logical | `enc_arith_rrr` |
 | `extr` | `DPI.Extract` | EXTR | `Inst::AluRRRShift` (`Extr`) |
 | `aluRRRExtend` | `DPR.Add_sub_ext_reg` (imm3 = 0) | ADD/SUB/ADDS/SUBS (extended register) | `Inst::AluRRRExtend` |
-| `bitRR` | `DPR.Data_processing_one_source` | RBIT, REV16, REV32, REV, CLZ, CLS | `enc_bit_rr` |
+| `bitRR` | `DPR.Data_processing_one_source` | RBIT, REV16, REV32, REV, CLZ, CLS; `BitOp.rev32` at 32 bits = REV Wd (opc 0b000010, sf 0, `emit.rs:971`, `bswap.i32`) | `enc_bit_rr` |
 | `load`/`store` `unsignedOffset` | `LDST.Reg_unsigned_imm` | LDR*/STR* (immediate, unsigned offset) | `enc_ldst_uimm12` |
 | `load`/`store` `unscaled` | `LDST.Reg_unscaled_imm` | LDUR*/STUR* | `enc_ldst_simm9` |
 | `load`/`store` `spPreIndexed`/`spPostIndexed` | `LDST.Reg_imm_pre_indexed` / `Reg_imm_post_indexed` | LDR*/STR* (immediate, pre/post-index) | `enc_ldst_simm9` |
@@ -134,7 +134,7 @@ encoded by `armBits`); "Page" is the instruction description in C6.2 (base) or C
 | `movWide`, `movk` | `DPI.Move_wide_imm` | MOVZ, MOVN, MOVK | `enc_move_wide`, `enc_movk` |
 | `bfm` | `DPI.Bitfield` | SBFM, UBFM | `enc_bfm` |
 | `cset` | `DPR.Conditional_select` (op2 01) | CSET → CSINC Rd, ZR, ZR, invert(cond) | `enc_csel` |
-| `csel` | `DPR.Conditional_select` | CSEL | `enc_csel` |
+| `csel` | `DPR.Conditional_select` | CSEL (standalone `MInst.csel`, `select`/min/max; also in `JTSequence`) | `enc_csel` |
 | `ccmp`, `ccmpImm` | `DPR.Conditional_compare_reg` / `_imm` | CCMP (register / immediate) | `enc_ccmp`, `enc_ccmp_imm` |
 | `fmovToFp` | `DPSFP.Conversion_between_FP_and_Int` | FMOV (general) | `Inst::MovToFpu` |
 | `umov` | `DPSFP.Advanced_simd_copy` | UMOV | `Inst::MovFromVec` |
@@ -148,7 +148,7 @@ encoded by `armBits`); "Page" is the instruction description in C6.2 (base) or C
 | `blr`, `br`, `ret` | `BR.Uncond_branch_reg` | BLR, BR, RET | `enc_br` … |
 | `udf` | `RES.Udf` | UDF | `Inst::Udf` |
 | `adr` | `DPI.PC_rel_addressing` (op 0) | ADR | `enc_adr` |
-| `adrpGot`, `adrp` | `DPI.PC_rel_addressing` (op 1, imm 0) | ADRP (+ relocation) | `Inst::LoadExtNameGot/Near` |
+| `adrpGot`, `adrp` | `DPI.PC_rel_addressing` (op 1, imm 0) | ADRP (+ relocation; `R_AARCH64_ADR_GOT_PAGE` against function or, for `symbol_value`, undefined `STT_NOTYPE` data symbols) | `Inst::LoadExtNameGot/Near` |
 | `ldrGotLo12` | `LDST.Reg_unsigned_imm` (imm12 0) | LDR (immediate, 64-bit) (+ relocation) | `Inst::LoadExtNameGot` |
 | `addLo12` | `DPI.Add_sub_imm` (imm12 0) | ADD (immediate) (+ relocation) | `Inst::LoadExtNameNear` |
 
@@ -228,7 +228,7 @@ intended effect of `i`.
   symbol comparison with `llvm-mc`'s object.
 - Operand combinations the backend never produces are rejected, not encoded: `ldp`/`stp`
   other than `sp` pre/post-index, `AluRRImmLogic` with `bic`-style ops after inversion
-  other than `and/orr/eor/ands`, `rev32` at 32 bits, `cset al/nv`, load/store extends other
+  other than `and/orr/eor/ands`, `cset al/nv`, load/store extends other
   than `uxtw/uxtx/sxtw/sxtx`, unfinalized addressing modes. `toArmInst` throws with the
   reason and layout fails loudly (`lean-backend` exits 1 naming the function and instruction).
 - `fmov h, w` needs FEAT_FP16 (the backend never emits it for E; encoded and tested anyway).
