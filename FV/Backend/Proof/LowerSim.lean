@@ -668,8 +668,16 @@ theorem term_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
   obtain ⟨vb, hvb, -, -, hdata, htemp, hst0t, ⟨out, tr, hrunT⟩, hcode, htne, -, hbargs, hsucc⟩ :=
     H.shape.blk b B L hB hL
   obtain ⟨ranges, hctx⟩ := H.shape.hctx
+  have htlen : TargetsLen B.term L.targets := by
+    intro x d tbl hT
+    have hs := hsucc
+    rw [hT] at hs
+    obtain ⟨hlt, -⟩ := hs
+    rw [hlt]
+    simp [dests]
   have hok := H.terms f ctx (L.start + B.body.length) B.term L.data L.targets out
-    L.tst L.tst' tr H.shape.ctxInv (H.brIdx B (List.mem_of_getElem? hB)) (H.shape.tslot b B L hB hL)
+    L.tst L.tst' tr H.shape.ctxInv (H.brIdx B (List.mem_of_getElem? hB)) htlen
+    (H.shape.tslot b B L hB hL)
     (fun x r h => Nat.lt_of_lt_of_le (H.shape.valsBelow x r h) hst0t) hdata htemp hrunT
   obtain ⟨hargsT, hnoclobT, -⟩ := H.cert.term b B L hB hL
   let fr' := restrict s.frame (A b B.body.length)

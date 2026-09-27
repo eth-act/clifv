@@ -1,12 +1,13 @@
 import FV.Backend.Proof.IselCtlTerm
 import FV.Backend.Proof.IselCtlUnmatch
+import FV.Backend.Proof.IselCtlCallRules
 
 /-!
 # Family Ctl: the terminator/branch/call statements for the exported program
 
 Assembly of the per-rule theorems into M4's statements: `lowerTermRulesCorrect`
 (`LowerTermRulesCorrect program`), with `termUnmatchable`, `branchExcludedUnmatchable`
-(`IselCtlUnmatch`).
+(`IselCtlUnmatch`), `callRulesCorrect` (`CallRulesCorrect program`, `IselCtlCallRules`).
 -/
 
 namespace Backend.Proof
@@ -50,5 +51,22 @@ theorem lowerTermRulesCorrect : LowerTermRulesCorrect program := by
     exact trap_ruleOk data_program hR
   · rw [eq_of_mem_of_id lower_ids_nodup hr mem_lower_2574 (by rw [h]; rfl)]
     exact ret_ruleOk data_program hR hMR
+
+theorem mem_lower_2508 : rule_lower_2508 ∈ program.rulesOf TId.lower :=
+  List.mem_iff_getElem?.mpr ⟨161, by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl⟩
+
+theorem mem_lower_2518 : rule_lower_2518 ∈ program.rulesOf TId.lower :=
+  List.mem_iff_getElem?.mpr ⟨344, by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl⟩
+
+/-- **`CallRulesCorrect`**: under the callee contract, the `call` rules of `lower` (`bl`, rule id
+1031; GOT + `blr`, rule id 1032) are correct. -/
+theorem callRulesCorrect : CallRulesCorrect program := by
+  intro F isem MR env cp hR hMR hCR r hr hroot
+  simp only [callRootRule, Bool.or_eq_true, beq_iff_eq] at hroot
+  rcases hroot with h | h
+  · rw [eq_of_mem_of_id lower_ids_nodup hr mem_lower_2508 (by rw [h]; rfl)]
+    exact call_bl_ruleOk data_program hR hMR hCR
+  · rw [eq_of_mem_of_id lower_ids_nodup hr mem_lower_2518 (by rw [h]; rfl)]
+    exact call_got_ruleOk data_program hR hMR hCR
 
 end Backend.Proof
