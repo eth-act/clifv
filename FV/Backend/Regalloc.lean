@@ -279,6 +279,7 @@ def RAResult.finish (r : RAResult) : Except String AFunc := do
 
 /-- Run `lean-regalloc` on prepared functions. -/
 def runLeanRegalloc (bin : String) (env : MachineEnv) (vcs : Array VCode) : IO (Except String (Array (Except String RAResult))) := do
+  if vcs.isEmpty then return .ok #[]
   let mut funcs : Array String := #[]
   for vc in vcs do
     match vcodeJson vc with
