@@ -181,7 +181,7 @@ memory related by `MR`. Key steps:
 
 ```
 E2E.backend_correct, E2E.iselSim_of_driver, Backend.Proof.Driver.driver_correct,
-Backend.Proof.Driver.instCalls_of_rules, E2E.clifEntry_initState:
+Backend.Proof.Driver.instCalls_of_rules:
   [propext, Classical.choice, Quot.sound]
-E2E.backend_correct_of_layers: [propext, Quot.sound]
+E2E.backend_correct_of_layers, E2E.clifEntry_initState: [propext, Quot.sound]
 ```
