@@ -61,7 +61,7 @@ def decodeMain (files : List String) : IO UInt32 := do
       for (f, fb) in fbs do
         nfuncs := nfuncs + 1
         nwords := nwords + fb.words.size
-        let lbls := labelOffsets f.lines
+        let lbls := (labelOffsets f.lines).toOption.getD {}
         for (pc, i) in fb.insns do
           ninsns := ninsns + 1
           counts := bump counts (mnemonic i)
@@ -289,7 +289,7 @@ def randomMain (outS outO : String) (n seed : Nat) : IO UInt32 := do
     | .error e => IO.println s!"{f.name}: encoding failed: {e}"; bad := bad + 1
     | .ok fb =>
       laid := laid.push (f, fb)
-      let lbls := labelOffsets f.lines
+      let lbls := (labelOffsets f.lines).toOption.getD {}
       let mut ok := 0
       for (pc, i) in fb.insns do
         if i.decodeOk { pc, lbl := (lbls[·]?) } then ok := ok + 1

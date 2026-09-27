@@ -69,10 +69,6 @@ def sField (what : String) (w : Nat) (i : Int) : Except String (BitVec w) :=
   if -(2 ^ (w - 1) : Int) ≤ i ∧ i < 2 ^ (w - 1) then pure (BitVec.ofInt w i)
   else throw s!"{what} {i} does not fit in {w} signed bits"
 
-/-- `i / 4` for a 4-byte aligned byte offset. -/
-def wordOffset (what : String) (i : Int) : Except String Int :=
-  if i % 4 == 0 then pure (i / 4) else throw s!"{what} offset {i} is not a multiple of 4"
-
 /-- Rotate the `e`-bit value `x` right by `r`. -/
 def rorN (e x r : Nat) : Nat := (x >>> r) ||| ((x <<< (e - r)) % 2 ^ e)
 
@@ -293,6 +289,29 @@ def Env.rel (env : Env) (l : Lbl) : Except String Int :=
   match env.lbl l with
   | some t => pure ((t : Int) - env.pc)
   | none => throw s!"undefined label {repr l}"
+
+/-- `n` bytes as text (`128 MiB`, `1 MiB`, `32 KiB`). -/
+def byteSizeText (n : Nat) : String :=
+  if n % 2 ^ 20 == 0 then s!"{n / 2 ^ 20} MiB"
+  else if n % 2 ^ 10 == 0 then s!"{n / 2 ^ 10} KiB" else s!"{n} bytes"
+
+/-- The PC-relative immediate of a label operand: the byte offset to `l` divided by `scale`,
+as a `bits`-bit signed field (C6.2 B: 26 bits, B.cond/CBZ/CBNZ: 19, TBZ/TBNZ: 14, all
+`scale` 4; ADR: 21 bits, `scale` 1).
+
+**Branch-range policy** (PLAN.md §3.4: bounded function sizes, no relaxation): a target
+outside the field's range (±128 MiB, ±1 MiB, ±32 KiB, ±1 MiB) is a compile error naming the
+instruction and the distance; the word is never truncated. `Insn.encode_inRange`
+(`FV/Backend/Proof/EncodeLayout.lean`) proves every encoded label operand is in range. -/
+def Env.pcRel (env : Env) (what : String) (bits scale : Nat) (l : Lbl) :
+    Except String (BitVec bits) := do
+  let off ← env.rel l
+  if off % scale != 0 then throw s!"{what} offset {off} is not a multiple of {scale}"
+  let q := off / scale
+  if -(2 ^ (bits - 1) : Int) ≤ q ∧ q < 2 ^ (bits - 1) then pure (BitVec.ofInt bits q)
+  else throw s!"branch out of range: {what} to {repr l} is {off} bytes away, beyond the \
+    ±{byteSizeText (2 ^ (bits - 1) * scale)} of {what} (no branch relaxation, PLAN.md §3.4: \
+    the function is too large)"
 
 /-- `sf`, `opc`, `N` of the logical (shifted register / immediate) instructions
 (C6.2 AND, BIC, ORR, ORN, EOR, EON, ANDS, BICS: `opc` 00 and, 01 orr, 10 eor, 11 ands). -/
@@ -578,25 +597,21 @@ def Insn.armFields (env : Env) (i : Insn) : Except String ArmInst := do
                                               Rn := ← rn.encV, Rd := ← rd.encV }))
   | .b t =>
     -- C6.2 B: imm26 = offset / 4, ±128 MiB (Cranelift `enc_jump26`)
-    let off ← wordOffset "b" (← env.rel t)
-    pure (.BR (.Uncond_branch_imm { op := 0, imm26 := ← sField "b offset" 26 off }))
+    pure (.BR (.Uncond_branch_imm { op := 0, imm26 := ← env.pcRel "b" 26 4 t }))
   | .bcond c t =>
     -- C6.2 B.cond: imm19, ±1 MiB (Cranelift `enc_cbr`)
-    let off ← wordOffset "b.cond" (← env.rel t)
-    pure (.BR (.Cond_branch_imm { imm19 := ← sField "b.cond offset" 19 off, o0 := 0,
+    pure (.BR (.Cond_branch_imm { imm19 := ← env.pcRel "b.cond" 19 4 t, o0 := 0,
                                   cond := c.bits }))
   | .cbz nz w rt t =>
-    -- C6.2 CBZ/CBNZ (Compare and branch (immediate); Cranelift `enc_cmpbr`)
-    let off ← wordOffset "cbz" (← env.rel t)
-    pure (.BR (.Compare_branch { sf := b1 w, op := b1 nz, imm19 := ← sField "cbz offset" 19 off,
+    -- C6.2 CBZ/CBNZ (Compare and branch (immediate), imm19, ±1 MiB; Cranelift `enc_cmpbr`)
+    pure (.BR (.Compare_branch { sf := b1 w, op := b1 nz, imm19 := ← env.pcRel "cbz" 19 4 t,
                                  Rt := ← rt.encZR }))
   | .tbz nz rt bit t =>
     -- C6.2 TBZ/TBNZ: b5:b40 = bit number, imm14, ±32 KiB (Cranelift `enc_test_bit_and_branch`)
     if bit ≥ 64 then throw s!"tbz bit {bit}"
-    let off ← wordOffset "tbz" (← env.rel t)
     pure (.BR (.Test_branch { b5 := BitVec.ofNat 1 (bit / 32), op := b1 nz,
                               b40 := BitVec.ofNat 5 (bit % 32),
-                              imm14 := ← sField "tbz offset" 14 off, Rt := ← rt.encZR }))
+                              imm14 := ← env.pcRel "tbz" 14 4 t, Rt := ← rt.encZR }))
   | .bl _ =>
     -- C6.2 BL, imm26 from R_AARCH64_CALL26
     pure (.BR (.Uncond_branch_imm { op := 1, imm26 := 0 }))
@@ -614,8 +629,7 @@ def Insn.armFields (env : Env) (i : Insn) : Except String ArmInst := do
     pure (.RES (.Udf { imm16 := ← uField "udf immediate" 16 imm }))
   | .adr rd t =>
     -- C6.2 ADR: immhi:immlo = byte offset, ±1 MiB (Cranelift `enc_adr`)
-    let off ← env.rel t
-    let imm ← sField "adr offset" 21 off
+    let imm ← env.pcRel "adr" 21 1 t
     pure (.DPI (.PC_rel_addressing { op := 0, immlo := imm.extractLsb' 0 2,
                                      immhi := imm.extractLsb' 2 19, Rd := ← rd.encZR }))
   | .adrpGot rd _ | .adrp rd _ _ =>
@@ -707,41 +721,85 @@ structure FnBin where
 
 def FnBin.size (f : FnBin) : Nat := 4 * f.words.size
 
-/-- Byte offsets of the labels of a line list (every instruction and data word is 4 bytes). -/
-def labelOffsets (lines : Array Line) : Std.HashMap Lbl Nat := Id.run do
-  let mut m : Std.HashMap Lbl Nat := {}
-  let mut off := 0
-  for ln in lines do
-    if let .label l := ln then m := m.insert l off
-    off := off + ln.size
-  return m
+/-- Byte offset of line `j` of a line list: the sizes of the lines before it. -/
+def lineOffset (lines : List Line) (j : Nat) : Nat := ((lines.take j).map Line.size).sum
 
-/-- Lay out a function: resolve labels, encode every instruction, collect relocations; the
-jump-table words are `target - table` (signed 32-bit). -/
-def FnAsm.layout (f : FnAsm) : Except String FnBin := do
-  let lbls := labelOffsets f.lines
-  let lbl (l : Lbl) : Option Nat := lbls[l]?
-  let mut words : Array (BitVec 32) := #[]
-  let mut relocs : Array Reloc := #[]
-  let mut insns : Array (Nat × Insn) := #[]
-  for ln in f.lines do
-    let pc := 4 * words.size
+def Line.isLabel : Line → Bool
+  | .label _ => true
+  | _ => false
+
+/-- The code lines (instructions and jump-table words, 4 bytes each): the `k`-th one is at
+byte offset `4 * k`, and is word `k` of the function. -/
+def codeLines (lines : List Line) : List Line := lines.filter (!·.isLabel)
+
+/-- `labelOffsets` from byte offset `off` with the labels found so far in `m`. -/
+def labelOffsets.go : List Line → Nat → Std.HashMap Lbl Nat → Except String (Std.HashMap Lbl Nat)
+  | [], _, m => pure m
+  | ln :: rest, off, m =>
     match ln with
-    | .ins i _ =>
-      let w ← (i.encode { pc, lbl }).mapError fun e => s!"{f.name}+{pc}: `{i.asm f.k}`: {e}"
-      words := words.push w
-      insns := insns.push (pc, i)
-      if let some (type, sym, addend) := i.reloc? then
-        relocs := relocs.push { offset := pc, type, sym, addend }
-    | .word t b =>
-      match lbl t, lbl b with
-      | some t, some b =>
-        words := words.push (← (sField "jump-table entry" 32 ((t : Int) - b)).mapError
-          fun e => s!"{f.name}+{pc}: {e}")
-      | _, _ => throw s!"{f.name}+{pc}: undefined label in jump table"
-    | .label _ => pure ()
+    | .label l =>
+      if m.contains l then throw s!"label {repr l} is defined twice"
+      else go rest off (m.insert l off)
+    | _ => go rest (off + ln.size) m
+
+/-- Byte offsets of the labels of a line list (every label defined once, else an error). -/
+def labelOffsets (lines : Array Line) : Except String (Std.HashMap Lbl Nat) :=
+  labelOffsets.go lines.toList 0 {}
+
+/-- The word of a code line at byte offset `pc`; jump-table words are `target - base`
+(signed 32-bit). -/
+def Line.encodeAt (lbl : Lbl → Option Nat) (pc : Nat) : Line → Except String (BitVec 32)
+  | .ins i _ => i.encode { pc, lbl }
+  | .word t b =>
+    match lbl t, lbl b with
+    | some t, some b => sField "jump-table entry" 32 ((t : Int) - b)
+    | _, _ => throw "undefined label in jump table"
+  | .label _ => throw "a label has no word"
+
+/-- Encode code lines, appending to `acc` (word `k` at byte offset `4 * k`); `ctx pc ln e`
+is the error message. -/
+def encodeCode (ctx : Nat → Line → String → String) (lbl : Lbl → Option Nat) :
+    List Line → Array (BitVec 32) → Except String (Array (BitVec 32))
+  | [], acc => pure acc
+  | ln :: rest, acc =>
+    match ln.encodeAt lbl (4 * acc.size) with
+    | .ok w => encodeCode ctx lbl rest (acc.push w)
+    | .error e => throw (ctx (4 * acc.size) ln e)
+
+/-- Relocations of code lines (at the instruction's offset). -/
+def codeRelocs (code : List Line) : List Reloc :=
+  code.zipIdx.filterMap fun (ln, k) => match ln with
+    | .ins i _ => i.reloc?.map fun (type, sym, addend) => { offset := 4 * k, type, sym, addend }
+    | _ => none
+
+/-- Trap sites of code lines: the offsets of the instructions that carry a trap code. -/
+def codeTraps (code : List Line) : List TrapSite :=
+  code.zipIdx.filterMap fun (ln, k) => match ln with
+    | .ins _ (some c) => some ⟨4 * k, c⟩
+    | _ => none
+
+/-- Instructions of code lines with their offsets. -/
+def codeInsns (code : List Line) : List (Nat × Insn) :=
+  code.zipIdx.filterMap fun (ln, k) => match ln with
+    | .ins i _ => some (4 * k, i)
+    | _ => none
+
+/-- Lay out a function: resolve labels, encode every code line at its offset, collect
+relocations and trap sites (checked against `emitFunc`'s trap table). Specification and
+proof: `FnAsm.layout_*` in `FV/Backend/Proof/EncodeLayout.lean`. -/
+def FnAsm.layout (f : FnAsm) : Except String FnBin := do
+  let lbls ← (labelOffsets f.lines).mapError (s!"{f.name}: " ++ ·)
+  let lbl (l : Lbl) : Option Nat := lbls[l]?
+  let code := codeLines f.lines.toList
+  let ctx (pc : Nat) (ln : Line) (e : String) : String := match ln with
+    | .ins i _ => s!"{f.name}+{pc}: `{i.asm f.k}`: {e}"
+    | _ => s!"{f.name}+{pc}: {e}"
+  let words ← encodeCode ctx lbl code #[]
   if 4 * words.size != f.size then throw s!"{f.name}: size {4 * words.size} ≠ {f.size}"
-  pure { name := f.name, words, relocs := relocs.toList, traps := f.traps, insns }
+  let traps := codeTraps code
+  if traps != f.traps then throw s!"{f.name}: trap table differs from the trap sites"
+  pure { name := f.name, words, relocs := codeRelocs code, traps,
+         insns := (codeInsns code).toArray }
 
 /-- Little-endian bytes of code words. -/
 def wordsBytes (ws : Array (BitVec 32)) : ByteArray := Id.run do

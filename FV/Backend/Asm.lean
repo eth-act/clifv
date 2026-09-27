@@ -33,7 +33,8 @@ inductive Lbl where
   | block (l : Label)
   | trap (n : Nat)
   | jt (n : Nat)
-  deriving DecidableEq, Repr, Inhabited, BEq, Hashable
+  -- `BEq` is the lawful one from `DecidableEq` (the layout proof uses `Std.HashMap` lemmas)
+  deriving DecidableEq, Repr, Inhabited, Hashable
 
 /-- Assembly name of a label of function `k` (its index in the file). -/
 def Lbl.name (k : Nat) : Lbl → String
@@ -296,7 +297,7 @@ def epilogueLines : List Line :=
 structure TrapSite where
   offset : Nat
   code : Clif.TrapCode
-  deriving Repr, Inhabited
+  deriving DecidableEq, Repr, Inhabited
 
 /-- A function's final code: the line list, its size in bytes and trap table. -/
 structure FnAsm where
