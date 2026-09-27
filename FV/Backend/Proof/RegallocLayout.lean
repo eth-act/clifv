@@ -165,6 +165,27 @@ theorem live_slot {vc : VCode} {rf : RFunc} {l : Loc} {o : Nat} (hD : Live rf l)
       · exact .inr (.inr (.inr ⟨r, i, rfl, hi, hr, hoe, hs⟩))
     · cases ho
 
+
+theorem alignTo16_mod (x : Nat) : alignTo x 16 % 16 = 0 := by
+  unfold alignTo; omega
+
+theorem compute_align (vc : VCode) (rf : RFunc) :
+    (RAFrame.compute vc rf).intBase % 16 = 0 ∧ (RAFrame.compute vc rf).floatBase % 16 = 0 ∧
+      (RAFrame.compute vc rf).fmoveTmp % 16 = 0 :=
+  ⟨alignTo16_mod _, alignTo16_mod _, alignTo16_mod _⟩
+
+/-- A live slot is aligned to its size and lies below the frame size. -/
+theorem live_align {vc : VCode} {rf : RFunc} {l : Loc} {o : Nat} (hD : Live rf l)
+    (ho : (RAFrame.compute vc rf).offset l = .ok o) :
+    o % slotBytes l = 0 ∧ o + slotBytes l ≤ (RAFrame.compute vc rf).size := by
+  obtain ⟨a1, a2, a3⟩ := compute_align vc rf
+  obtain ⟨h1, h2, h3, h4⟩ := compute_facts vc rf
+  rcases live_slot hD ho with ⟨k, rfl, hk, rfl, hs⟩ | ⟨k, rfl, hk, hfs, rfl, hs⟩ |
+      ⟨r, i, rfl, hi, _, rfl, hs⟩ | ⟨r, i, rfl, hi, _, rfl, hs⟩ <;> rw [hs]
+  · omega
+  · simp only [hfs, ite_true] at h2; omega
+  all_goals by_cases hfs : rf.floatStack = true <;> simp [hfs] at h2 ⊢ <;> omega
+
 /-- **The computed frame is laid out correctly** (for a frame that does not wrap around and
 frame addresses covering `[sp0 + intBase, sp0 + size)`). -/
 theorem frameOk_compute (vc : VCode) (rf : RFunc) (sp0 : BitVec 64) (F : BitVec 64 → Prop)

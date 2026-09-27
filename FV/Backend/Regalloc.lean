@@ -244,6 +244,9 @@ def RAFrame.moveInsts (fr : RAFrame) (src dst : Loc) : Except String (List AInst
 /-- Lower a checked allocated function to `AFunc`. -/
 def lowerRFunc (vc : VCode) (rf : RFunc) : Except String AFunc := do
   let fr := RAFrame.compute vc rf
+  -- Slots are addressed `[sp, #off]` (`ldur`/`stur` or scaled `ldr`/`str`); the model has no
+  -- SIMD&FP register-offset form, so larger frames are rejected (proof: `RegallocSlots`).
+  if fr.size ≥ 32768 then throw s!"frame of {fr.size} bytes is too large"
   let blocks ← (vc.blocks.zip rf.blocks).mapIdxM fun bi (vb, items) => do
     let mut code : Array AInst := if bi == 0 then #[.prologue] else #[]
     for it in items do
