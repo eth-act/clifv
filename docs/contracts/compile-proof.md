@@ -2,7 +2,7 @@
 
 ## Status (kept current for resumption)
 
-**In progress. `Compile.compile_correct` is NOT yet proven.** Everything listed as proven
+**Paused (M2 deprioritized by the owner, 2026-09-27). `Compile.compile_correct` is NOT proven.** Everything listed as proven
 below builds (`lake build FV.Compile.Proof`), contains no `sorry` and no `axiom`.
 Branch `agent/m2proof`, worktree `/home/kev/work/clifv-wt/m2proof`.
 
@@ -17,7 +17,7 @@ Branch `agent/m2proof`, worktree `/home/kev/work/clifv-wt/m2proof`.
 | Control-flow primitives (`reach_selectVals`, `reach_errIf`, extern calls) | proven |
 | **`expr_sim`: every `Expr` constructor (incl. `cond`, `clone`, `mapEmpty`, `mapContains`)** | **proven** |
 | `exprs_sim` (call arguments) | not started (same pattern as `pair`) |
-| `op_sim` (`iop` checks, `vget`/`selectElem`, `mapGet`) | not started; overflow lemmas prototyped (below) |
+| `op_sim` (`iop` checks, `vget`/`selectElem`, `mapGet`) | not started; building blocks proven in `Arith.lean`: `add_ult_eq`, `ult_eq_usub`, `umulhi_ne` (overflow checks = `uaddOverflow`/`usubOverflow`/`umulOverflow`), `eval_umulhi`, `eval_icmp_uge`, `intV_zero` |
 | `stmt_sim` (all statements, loop invariant, calls) | not started |
 | function level (`compileBody`: entry, error block, block-id uniqueness) | not started |
 | top level (`setupCall`, `decodeResult`), `compile_correct`, `FVTest/Compile/ProofExample.lean` | not started |
@@ -66,6 +66,23 @@ theorem Compile.compile_correct {σ τ} (f : DSL.FlatFn σ τ) (hf : f.checked)
   some (compileBody c.name c.body)) ∧ ∀ n ∈ rtNames, (compile f).func? n = none`.
 * No vector-size bound is needed: the exhaustion trap covers huge buffers.
 
+## Design notes for resumption (worked out, not implemented)
+
+* Statement postcondition: heap-only progress `HProg c H s T H' s'` (invariant, objects
+  outside `T` unchanged, `Dom`, `Grows`, `next`, allocs ⊆) with touched set
+  `T = selHdl (touch lim st st') Γ vals`, `touch i := alive st i && !frozen lim i &&
+  (!alive st' i || mutd st' i)`; composition `HProg.trans` needs `T₁ ⊆ T` and `T₂ ⊆ T ∪ fresh(H)`.
+  Ok case: `Agree` below the env bound `n`, result `Enc`/nodup/provenance and `KontAt kont`
+  (`jump j`: at `j`'s entry with params = result, params `≥ n`; `ret`: `ret` terminator next,
+  buffer holds result in sret mode). Error case: `ErrIn` (entered `block1` with the tag).
+* Loop invariant uses the tighter `T = selHdl (moved st st₁)` (init's moves) so outer
+  alive-but-`mutd` variables stay intact.
+* Call case: structural induction on `Stmt` gives the IH for the callee body; a function-level
+  lemma `SimS body → FnSim name body` avoids mutual recursion. `linkOk` enters as
+  `Linked P s := ∀ c ∈ Stmt.callees s, P.func? (mangle c.name) = some (compileBody c.name c.body)`.
+* Block-id uniqueness: relations `FrO`/`FrC` on `CG` (new done ids nodup, within
+  `{cur} ∪ [nextBlock, nextBlock')`, last new block has id `cur`) proven per generator action.
+
 ## Proof architecture (implemented part)
 
 * `Reach E P Q X s`: from `s` the machine reaches a state in `Q`, or ends with an outcome in
@@ -88,13 +105,10 @@ theorem Compile.compile_correct {σ τ} (f : DSL.FlatFn σ τ) (hf : f.checked)
 
 ## Remaining work, precisely
 
-1. `Prog` needs one more field `sub : s.mem.allocs ⊆ s'.mem.allocs` (the caller's
-   allocations survive callee frames: callee slot bases are `≥` the caller's `next`), and
-   `ErrAt` must carry `Grows`/`next`/`allocs` progress relative to the start state (needed by
+1. DONE: `Prog.sub` (caller allocations survive). Remaining: `ErrAt` must carry `Grows`/`next`/`allocs` progress relative to the start state (needed by
    the caller after a callee error). Both are small edits of `Expr.lean`/`Prims.lean`.
-2. `op_sim`: overflow checks. Proven in a scratch file, to be added to `Arith.lean`:
-   `(a + b).ult a = uaddOverflow a b`, `a.ult b = usubOverflow a b`,
-   `umulhi-extract a b != 0 = umulOverflow a b` (generic in the width, `omega` only).
+2. `op_sim`: overflow lemmas DONE (`Arith.lean`). Still missing: `eval_udiv`/`eval_urem`
+   (width casts need care: `BitVec.ofNat (intTy w).width b.toNat` vs `b`).
    `vget`: induction over `selectElem`'s fold (invariant: accumulator holds element
    `if i < K then i else 0`); `mapGet`: `spec_get` + `readBits_writeBits` for the
    `notrap aligned` load (slot base `≡ 0 mod 16`); needs `SlotIdx F` (slot keys = indices,
