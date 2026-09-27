@@ -394,4 +394,123 @@ theorem lowerInstOk_binary {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} 
 
 end Code
 
+/-! ## 4. Instruction forms and width lemmas -/
+
+section Forms
+
+theorem seqRun_one {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem) {m : MInst}
+    {ops : Array Operand} {ρ : Nat → CV} {w : Arm.ArmState} {d : Nat} {r : CV}
+    (hops : m.operands = .ok ops)
+    (hdefs : ops.toList.filter Operand.isDef = [⟨d, .int, .def, .late, .reg⟩])
+    (hs : ispec m (vuses ops ρ) w = some ([r], w, .next)) :
+    ∃ w', seqRun isem [m] ρ w = some (.fall (upd ρ d r) w') ∧ SameWorld F w' w := by
+  obtain ⟨w1, hw, he⟩ := seqRun_step (ms := []) hR hops hdefs hs
+  exact ⟨w1, by rw [he]; rfl, hw⟩
+
+theorem operands_aluRRImm12 (op : ALUOp) (sz : OperandSize) (d x : Nat) (i : Imm12) :
+    (MInst.aluRRImm12 op sz (.vreg d .int) (.vreg x .int) i).operands =
+      .ok #[⟨d, .int, .def, .late, .reg⟩, ⟨x, .int, .use, .early, .reg⟩] := rfl
+
+theorem ispec_aluRRImm12_add {sz : OperandSize} {d : Nat} {rn : Reg} {i : Imm12} {a : CV}
+    {w : Arm.ArmState} (h : i.bits < 4096) :
+    ispec (.aluRRImm12 .add sz (.vreg d .int) rn i) [a] w =
+      some ([resX sz (opnd sz a + BitVec.ofNat _ i.value)], w, .next) := by
+  simp only [ispec, h, ↓reduceIte]; rfl
+
+theorem ispec_aluRRImm12_sub {sz : OperandSize} {d : Nat} {rn : Reg} {i : Imm12} {a : CV}
+    {w : Arm.ArmState} (h : i.bits < 4096) :
+    ispec (.aluRRImm12 .sub sz (.vreg d .int) rn i) [a] w =
+      some ([resX sz (opnd sz a - BitVec.ofNat _ i.value)], w, .next) := by
+  simp only [ispec, h, ↓reduceIte]; rfl
+
+theorem u64_ofNat {m : Nat} (h : m < 2 ^ 64) : u64 (m : Int) = m := by
+  unfold u64; omega
+
+theorem u64_imm64OfIconst {ty : Clif.Ty} (hw : ty.width ≤ 64) (c : BitVec ty.width) :
+    u64 (imm64OfIconst ty c) = c.toNat := by
+  unfold imm64OfIconst
+  have hlt := c.isLt
+  split
+  · exact u64_ofNat (Nat.lt_of_lt_of_le hlt (Nat.pow_le_pow_right (by omega) hw))
+  · have h64 : ty.width = 64 := by omega
+    unfold u64
+    rw [BitVec.toInt_eq_toNat_cond]
+    have h2 : (2 : Nat) ^ ty.width = 2 ^ 64 := by rw [h64]
+    rw [h2] at hlt ⊢
+    split <;> omega
+
+theorem imm12_ofNat_value {v : Nat} {i : Imm12} (h : Imm12.ofNat? v = some i) (hv : v < 2 ^ 64) :
+    i.value = v ∧ i.bits < 4096 := by
+  unfold Imm12.ofNat? mask64 at h
+  rw [Nat.mod_eq_of_lt hv] at h
+  simp only at h
+  split at h
+  · cases h; exact ⟨rfl, by assumption⟩
+  · split at h
+    · cases h
+      rename_i h1
+      simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h1
+      refine ⟨?_, by simp; omega⟩
+      simp only [Imm12.value, ↓reduceIte]
+      omega
+    · cases h
+
+theorem setWidth_ofNat_toNat {n w : Nat} (hw : w ≤ n) (c : BitVec w) :
+    (BitVec.ofNat n c.toNat).setWidth w = c := by
+  rw [BitVec.setWidth_ofNat_of_le hw]; simp
+
+/-- Width lemma, register plus immediate. -/
+theorem holds_add_imm {ty : Clif.Ty} {sz : OperandSize} (hw : ty.width ≤ sz.bits) {a : CV}
+    {u c : BitVec ty.width} (ha : VHolds ⟨ty, u⟩ a) :
+    VHolds ⟨ty, u + c⟩ (resX sz (opnd sz a + BitVec.ofNat _ c.toNat)) := by
+  have h64 := opSize_bits_le sz
+  simp only [VHolds] at ha ⊢
+  rw [resX_setWidth hw h64, BitVec.setWidth_add _ _ hw, opnd_setWidth hw h64, ha,
+    setWidth_ofNat_toNat hw]
+
+/-- Width lemma, register minus immediate. -/
+theorem holds_sub_imm {ty : Clif.Ty} {sz : OperandSize} (hw : ty.width ≤ sz.bits) {a : CV}
+    {u c : BitVec ty.width} (ha : VHolds ⟨ty, u⟩ a) :
+    VHolds ⟨ty, u - c⟩ (resX sz (opnd sz a - BitVec.ofNat _ c.toNat)) := by
+  have h64 := opSize_bits_le sz
+  simp only [VHolds] at ha ⊢
+  rw [resX_setWidth hw h64, setWidth_sub_of_le hw, opnd_setWidth hw h64, ha,
+    setWidth_ofNat_toNat hw]
+
+end Forms
+
+theorem u64_lt (i : Int) : u64 i < 2 ^ 64 := by unfold u64; omega
+
+section Inversion2
+variable {p : Program} (hp : Data p) (ctx : Ctx)
+
+include hp in
+/-- The `(u64_from_imm64 (imm12_from_u64 v))` field of a matched `iconst`. -/
+theorem imm12_args_inv {st : LState} {k : Int} {v : VarId} {e e' : Interp.Env V}
+    (h : matchArgs p (sem ctx) st [.term 134 144 [.term 4 325 [.bind 64 v (.wildcard 64)]]] [.int k] e =
+      .ok (some e')) :
+    ∃ imm, Imm12.ofNat? (u64 k) = some imm ∧ e' = e.set! v (some (.op (.imm12 imm))) := by
+  obtain ⟨e1, hp1, hn⟩ := matchArgs_cons_inv h
+  have := matchArgs_nil_nil ctx hn
+  subst this
+  obtain ⟨fs, hx, hm⟩ := matchPat_extract_inv hp.t144 term_144_kind rfl hp1
+  rw [sem_extract, ext_u64_from_imm64] at hx
+  cases hx
+  obtain ⟨e2, hp2, hn2⟩ := matchArgs_cons_inv hm
+  have := matchArgs_nil_nil ctx hn2
+  subst this
+  obtain ⟨fs2, hx2, hm2⟩ := matchPat_extract_inv hp.t325 term_325_kind rfl hp2
+  rw [sem_extract, ext_imm12_from_u64, u64_ofNat (u64_lt k)] at hx2
+  cases himm : Imm12.ofNat? (u64 k) with
+  | none => rw [himm] at hx2; cases hx2
+  | some imm =>
+    rw [himm] at hx2
+    cases hx2
+    obtain ⟨e3, hp3, hn3⟩ := matchArgs_cons_inv hm2
+    have := matchArgs_nil_nil ctx hn3
+    subst this
+    exact ⟨imm, rfl, matchPat_bind_wild_inv ctx hp3⟩
+
+end Inversion2
+
 end Backend.Proof
