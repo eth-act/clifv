@@ -84,6 +84,6 @@ macro_rules
 syntax "isel_eval" ("[" (Lean.Parser.Tactic.simpStar <|> Lean.Parser.Tactic.simpErase <|> Lean.Parser.Tactic.simpLemma),* "]")? : tactic
 macro_rules
   | `(tactic| isel_eval) => `(tactic| isel_eval [])
-  | `(tactic| isel_eval [$ts,*]) => `(tactic| repeat (isel_unfold; isel_norm [$ts,*]))
+  | `(tactic| isel_eval [$ts,*]) => `(tactic| (isel_norm [$ts,*]; repeat (isel_unfold; isel_norm [$ts,*])))
 
 end Backend.Proof
