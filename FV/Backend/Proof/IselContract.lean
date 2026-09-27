@@ -170,12 +170,13 @@ def ispec : Sem := fun i uses w =>
   | _, _ => none
 
 /-- **The semantic hypothesis of the rule statements**: on every form `ispec` specifies, the
-VCode semantics gives the same def values and falls through, with a world that agrees with
-`ispec`'s outside the allocatable registers and the frame addresses `F` (M6's `SameWorld`).
-M6's `csem F ctx` satisfies it form by form (its characterization lemmas). -/
+VCode semantics gives the same def values and the same control (`ispec` only produces `next`,
+and `halt` for the trap forms), with a world that agrees with `ispec`'s outside the
+allocatable registers and the frame addresses `F` (M6's `SameWorld`). M6's `csem F ctx`
+satisfies it form by form (its characterization lemmas). -/
 def Refines (F : BitVec 64 → Prop) (isem : Sem) : Prop :=
-  ∀ i us w outs w', ispec i us w = some (outs, w', .next) →
-    ∃ w'', isem i us w = some (outs, w'', .next) ∧ SameWorld F w'' w'
+  ∀ i us w outs w' {ctl : Ctl}, ispec i us w = some (outs, w', ctl) →
+    ∃ w'', isem i us w = some (outs, w'', ctl) ∧ SameWorld F w'' w'
 
 /-- `SameWorld` without NZCV: `s` and `t` agree on every unmasked field except the flags, on
 memory outside `F`, and on the program. -/
@@ -331,6 +332,12 @@ structure LowerTermOk (isem : Sem) (MR : MemRelT) (ctx : Ctx) (t : Clif.Terminat
 /-- Rule `r` is a root rule of the emitter-subset closure (`Isle.Aarch64.Closure`). -/
 def closureRoot (r : Rule) : Bool := Closure.rules.any fun c => c.isRoot && c.rule == r.id
 
+/-- The vreg of every value with a register is below the lowering state's next fresh vreg
+(`buildCtx` starts `nextVreg` above every value's vreg and lowering only increases it), so
+fresh temporaries never alias an operand. -/
+def ValsBelow (ctx : Ctx) (st : LState) : Prop :=
+  ∀ (x : Nat) (r : Reg), ctx.valueReg? x = some r → x < st.nextVreg
+
 /-- **Root rule correctness (`lower`).** Whenever rule `r` matches instruction `ii` (from any
 lowering state) and its right-hand side returns `out`, the instructions it appended are a
 correct lowering of the CLIF instruction: `out` lists the result registers and
@@ -341,7 +348,7 @@ def LowerRuleOk (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
   ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx → ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info → info.clif = some inst →
   ∀ (cfg : Config), cfg.checkOverlap = false →
   ∀ (m n : Nat) (st : LState) (tr : Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId)
-    (out : V) (st' : LState) (tr' : Array RuleId), 1000 ≤ m → 1000 ≤ n →
+    (out : V) (st' : LState) (tr' : Array RuleId), 1000 ≤ m → 1000 ≤ n → ValsBelow ctx st →
     (matchRule p (sem ctx) cfg m r [.inst ii]).run (st, tr) = .ok (some env', s1) →
     (evalExpr p (sem ctx) cfg n r.rhs env').run s1 = .ok (some out, (st', tr')) →
     ∃ ms rss, st'.emitted = st.emitted ++ ms.toArray ∧ out = .regsVec rss ∧
@@ -392,7 +399,7 @@ theorem lowerInstOk_of_rules {p : Program} (hp : Data p) (hrules : LowerRulesCor
     {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
     {cfg : Config} (hco : cfg.checkOverlap = false) {n : Nat}
     (hn : 1002 + (p.rulesOf TId.lower).length ≤ n) {ty : TypeId} {st : LState}
-    {tr : Array RuleId} {out : V} {st' : LState} {tr' : Array RuleId}
+    {tr : Array RuleId} {out : V} {st' : LState} {tr' : Array RuleId} (hvb : ValsBelow ctx st)
     (h : (applyTerm p (sem ctx) cfg (n + 1) ty TId.lower [.inst ii]).run (st, tr) =
       .ok (some out, (st', tr'))) :
     ∃ ms rss, st'.emitted = st.emitted ++ ms.toArray ∧ out = .regsVec rss ∧
@@ -405,7 +412,7 @@ theorem lowerInstOk_of_rules {p : Program} (hp : Data p) (hrules : LowerRulesCor
   cases hroot : closureRoot r
   · exact absurd hmatch (hex r hr hroot f ctx hctx ii info inst hi hc cfg m (st, tr) env' s1)
   · exact hrules F isem MR env cp hR hMR r hr hroot f ctx hctx ii info inst hi hc cfg hco m n st tr
-      env' s1 out st' tr2 (by omega) (by omega) hmatch heval
+      env' s1 out st' tr2 (by omega) (by omega) hvb hmatch heval
 
 set_option maxRecDepth 20000 in
 /-- `lowerInstOk_of_rules` for the exported program and the backend's own call
@@ -415,7 +422,7 @@ theorem lowerInstOk_runTerm (hrules : LowerRulesCorrect program)
     {env : Clif.Env} {cp : Clif.Program} (hR : Refines F isem) (hMR : MRStable F MR)
     {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) {ii : Nat} {info : IInfo}
     {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
-    {st : LState} {out : V} {st' : LState} {tr : List RuleId}
+    {st : LState} {out : V} {st' : LState} {tr : List RuleId} (hvb : ValsBelow ctx st)
     (h : runTerm ctx "lower" [.inst ii] st = .ok (some out, st', tr)) :
     ∃ ms rss, st'.emitted = st.emitted ++ ms.toArray ∧ out = .regsVec rss ∧
       LowerInstOk isem MR env cp ctx inst info.results st rss st' ms := by
@@ -437,7 +444,7 @@ theorem lowerInstOk_runTerm (hrules : LowerRulesCorrect program)
     have hlen : (program.rulesOf TId.lower).length ≤ 1000 := by
       rw [show TId.lower = 686 from rfl, data_program.r686]; decide
     obtain ⟨ms, rss, h1, h2, h3⟩ := lowerInstOk_of_rules data_program hrules hex hR hMR hctx hi hc
-      rfl (by omega) ha
+      rfl (by omega) hvb ha
     exact ⟨ms, rss, by simpa using h1, h2, h3⟩
 
 end Backend.Proof
