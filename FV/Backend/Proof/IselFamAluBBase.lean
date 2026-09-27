@@ -238,7 +238,8 @@ macro_rules
   | `(tactic| wfix [$ls,*]) => `(tactic| (
       simp only [VHolds, resX, opnd, ofX, lo64, upd, ↓reduceIte, Nat.left_eq_add,
         Nat.add_right_cancel_iff, Nat.add_eq_left, Nat.succ_ne_self, $ls,*] at * <;>
-        dsimp only [Clif.Ty.width, OperandSize.bits] at * <;> bv_decide -enums))
+        dsimp only [Clif.Ty.width, OperandSize.bits] at * <;> (try simp only [$ls,*] at *) <;>
+        bv_decide -enums))
 
 /-! ## Instruction shapes -/
 
