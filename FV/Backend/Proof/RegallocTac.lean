@@ -1,12 +1,12 @@
 import FV.Backend.Proof.RegallocCSem
 
 /-!
-# `OperandsSound` for the straight-line instructions (M6 proof)
+# Tactics for the per-instruction proofs (M6 proof)
 
-Every straight-line `MInst` form the backend emits, with vreg operands, satisfies
-`OperandsSound F (execMInst ctx env) (csem F ctx X)`. Each proof is `os_of_corr` plus `Corr`
-by `corr_tac`, which computes the allocated run (symbolic registers) and the canonical run
-(`x 0`, `x 1`, …) with the same `simp` set and matches them (`sw_tac` for the world).
+`csimp_rules`: the unfolding set for runs of emitted code. `corr_tac` proves `Corr` for a
+concrete instruction form: it destructures the allocation (`AllocOk`), computes the allocated
+run (symbolic registers) and the canonical run (`x 0`, `x 1`, …) with the same `simp` set and
+matches them (`sw_tac` for the world, `FrameKeep`, def values, untouched registers).
 -/
 
 namespace Backend.Proof
@@ -33,7 +33,37 @@ attribute [csimp_rules] execMInst MInst.lines execLines
   Arm.DPI.exec_extract Arm.DPI.exec_move_wide_imm
   Arm.read_gpr_zr Arm.write_gpr_zr Arm.read_gpr Arm.write_gpr Arm.decode_shift
   Arm.shift_reg Arm.read_pc Arm.write_pc Arm.write_pstate Arm.read_flag rnum lo64
-  regVal spOf
+  regVal spOf Arm.ConditionHolds Cond.invert Cond.bits Arm.write_err Arm.read_err beq_eq_decide'
+  bitmaskEnc_false_one
+
+/-- Close an equality of two values computed by the two runs. -/
+syntax "veq_tac" : tactic
+set_option hygiene false in
+macro_rules
+  | `(tactic| veq_tac) => `(tactic| first
+    | with_reducible rfl
+    | (simp (config := {decide := true}) [csimp_rules, *]; done)
+    | (rcases bv1_cases (Arm.r (.FLAG .N) s) with hN | hN <;>
+        rcases bv1_cases (Arm.r (.FLAG .Z) s) with hZ | hZ <;>
+        rcases bv1_cases (Arm.r (.FLAG .C) s) with hC | hC <;>
+        rcases bv1_cases (Arm.r (.FLAG .V) s) with hV | hV <;>
+        simp (config := {decide := true}) [csimp_rules, hN, hZ, hC, hV]))
+
+/-- The world of the canonical run: strip masked register/pc writes from either side, match
+equal writes of unmasked fields. -/
+syntax "sw_tac" : tactic
+set_option hygiene false in
+macro_rules
+  | `(tactic| sw_tac) => `(tactic| repeat (first
+    | assumption
+    | contradiction
+    | (refine SameWorld.ite_both (fun _ => ?_) (fun _ => ?_))
+    | (refine SameWorld.w_left ?_ ?_; · (simp [Masked]; try omega))
+    | (refine SameWorld.w_right ?_ ?_; · (simp [Masked]; try omega))
+    | (refine SameWorld.w_both' ?_ ?_; · veq_tac)
+    | (refine SameWorld.write_mem_bytes' ?_ ?_ ?_; · veq_tac
+       · veq_tac)
+    | simp only [*]))
 
 /-- Proves `Corr F ctx env ops mk` for a concrete instruction form whose operands are all
 `reg`-constrained (no fixed / reuse). -/
@@ -41,7 +71,7 @@ syntax "corr_tac" : tactic
 set_option hygiene false in
 macro_rules
   | `(tactic| corr_tac) => `(tactic| (
-    intro regs s w t' ha hw hacc hex
+    intro regs s w t' ha hw hacc hex herr
     have hsz := ha.size
     simp only [List.size_toArray, List.length_cons, List.length_nil] at hsz
     first
@@ -56,6 +86,7 @@ macro_rules
       | (rcases hf with ⟨⟨n0, rfl, hn0⟩, ⟨n1, rfl, hn1⟩, ⟨n2, rfl, hn2⟩⟩)
       | (rcases hf with ⟨⟨n0, rfl, hn0⟩, ⟨n1, rfl, hn1⟩⟩)
       | (rcases hf with ⟨n0, rfl, hn0⟩)
+    try (have hre := ha.reuse 1 0 rfl; simp at hre; subst hre)
     have hfl : ∀ f, Arm.r (.FLAG f) w = Arm.r (.FLAG f) s :=
       fun f => (hw.1 (.FLAG f) (by simp [Masked])).symm
     have hsp : Arm.r (.GPR 31#5) w = Arm.r (.GPR 31#5) s :=
@@ -81,33 +112,28 @@ macro_rules
       List.length_nil, List.range_succ, List.range_zero, List.nil_append, List.cons_append,
       List.map_cons, List.map_nil, List.getElem?_toArray, List.getElem?_cons_zero,
       List.getElem?_cons_succ] at hex hacc ⊢
-    simp (config := {decide := true}) [csimp_rules, hfl, hsp, hx29, *] at hex ⊢
-    subst hex
-    refine ⟨?_, ?_, ?_, ?_⟩
-    · sw_tac
-    · refine ⟨by simp (config := {decide := true}) [csimp_rules, *], fun a _ => by simp [csimp_rules, Arm.ArmState.mem_w_eq_mem]⟩
-    · first | with_reducible rfl | simp (config := {decide := true}) [csimp_rules, *]
-    · intro r hr hnd
-      rcases allocatable_cases hr with ⟨k, rfl, hk⟩|⟨k, rfl, hk⟩
-      · simp at hnd
-        simp (config := {decide := true}) (disch := omega) [csimp_rules, ofNat5_eq_iff, Ne.symm, *]
-      · simp (config := {decide := true}) [csimp_rules, *]))
-
-/-! ## ALU, three registers -/
-
-set_option maxHeartbeats 4000000 in
-theorem corr_aluRRR (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (op : ALUOp)
-    (sz : OperandSize) (d n m : Nat) :
-    Corr F ctx env #[⟨d, .int, .def, .late, .reg⟩, ⟨n, .int, .use, .early, .reg⟩,
-      ⟨m, .int, .use, .early, .reg⟩]
-      (fun r => .aluRRR op sz (r.getD 0 .xzr) (r.getD 1 .xzr) (r.getD 2 .xzr)) := by
-  cases op <;> cases sz <;> corr_tac
-
-theorem os_aluRRR (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (X : ExtSem) (op : ALUOp)
-    (sz : OperandSize) (d n m : Nat) :
-    OperandsSound F (execMInst ctx env) (csem F ctx X)
-      (.aluRRR op sz (.vreg d .int) (.vreg n .int) (.vreg m .int)) :=
-  os_of_corr rfl _ (fun regs h => by obtain ⟨a, b, c, rfl⟩ := regs3 (by simpa using h); rfl)
-    rfl rfl (corr_aluRRR F ctx env op sz d n m)
+    generalize hA : execMInst ctx env _ s = oa
+    simp (config := {decide := true}) [csimp_rules, hfl, hsp, hx29, *] at hex hA
+    all_goals (repeat' (first
+      | subst hex
+      | (split at hex <;> try simp (config := {decide := true}) [csimp_rules, *] at hex hA)))
+    all_goals subst hA
+    all_goals (try simp (config := {decide := true}) [csimp_rules] at herr)
+    all_goals (repeat' (split at herr <;> try simp (config := {decide := true}) [csimp_rules, *] at herr))
+    all_goals (
+      refine ⟨_, rfl, ?_, ?_, ?_, ?_⟩
+      · sw_tac
+      · refine ⟨?_, fun a _ => ?_⟩
+        · simp (config := {decide := true}) [csimp_rules, *]
+        · first
+            | (simp [csimp_rules, Arm.ArmState.mem_w_eq_mem, *]; done)
+            | ((repeat' split) <;> simp [csimp_rules, Arm.ArmState.mem_w_eq_mem, *])
+      · veq_tac
+      · intro r hr hnd
+        rcases allocatable_cases hr with ⟨k, rfl, hk⟩|⟨k, rfl, hk⟩
+        · try simp [Operand.isDef] at hnd
+          try have hnd' := Ne.symm hnd
+          simp (config := {decide := true}) (disch := omega) [csimp_rules, ofNat5_eq_iff, *]
+        · simp (config := {decide := true}) [csimp_rules, *])))
 
 end Backend.Proof

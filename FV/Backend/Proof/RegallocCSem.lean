@@ -40,6 +40,10 @@ namespace Backend.Proof
 
 open Backend
 
+deriving instance ReflBEq, LawfulBEq for OperandSize, ALUOp, ALUOp3, MoveWideOp, BfmOp, BitOp,
+  Cond, ExtendOp, ShiftOp, ScalarSize, VectorSize, VecMisc2, VecLanesOp, VecALUOp,
+  TestBitAndBranchKind, LoadOp, StoreOp
+
 /-! ## Canonical allocation -/
 
 /-- Canonical register of operand `k`, ignoring `reuse`. -/
@@ -56,6 +60,13 @@ def canonReg (ops : Array Operand) (k : Nat) : Reg :=
   | _ => canonBase ops k
 
 def canonRegs (ops : Array Operand) : Array Reg := ⟨(List.range ops.size).map (canonReg ops)⟩
+
+theorem beq_eq_decide' {α : Type} [DecidableEq α] [BEq α] [LawfulBEq α] (a b : α) :
+    (a == b) = decide (a = b) := by
+  by_cases h : a = b <;> simp [h]
+
+/-- The bitmask immediate of `uxt` from one bit (`extend` from 1 bit is `and wd, wn, #1`). -/
+theorem bitmaskEnc_false_one : bitmaskEnc? false 1 = some (0#1, 0#6, 0#6) := by rfl
 
 /-- Write a value into a register (X registers get the low 64 bits). -/
 def setReg (s : Arm.ArmState) : Reg → CV → Arm.ArmState
@@ -78,6 +89,9 @@ def defVals (ops : Array Operand) (regs : Array Reg) (s : Arm.ArmState) : List C
     (Except.ok a >>= f) = f a := rfl
 @[simp] theorem except_bind_error {ε α β : Type} (e : ε) (f : α → Except ε β) :
     (Except.error e >>= f) = .error e := rfl
+@[simp] theorem except_throw_eq {ε α : Type} (e : ε) : (throw e : Except ε α) = .error e := rfl
+@[simp] theorem except_map_error {ε α β : Type} (e : ε) (f : α → β) :
+    (f <$> (Except.error e : Except ε α)) = .error e := rfl
 @[simp] theorem except_map_ok {ε α β : Type} (a : α) (f : α → β) :
     (f <$> (Except.ok a : Except ε α)) = .ok (f a) := rfl
 @[simp] theorem setReg_x (s : Arm.ArmState) (n : Nat) (v : CV) :
@@ -198,6 +212,17 @@ theorem SameWorld.write_mem_bytes' {F} {s t : Arm.ArmState} {n : Nat} {a1 a2 : B
     {v1 v2 : BitVec (n * 8)} (ha : a1 = a2) (hv : v1 = v2) (h : SameWorld F s t) :
     SameWorld F (Arm.write_mem_bytes n a1 v1 s) (Arm.write_mem_bytes n a2 v2 t) :=
   ha ▸ hv ▸ SameWorld.write_mem_bytes h n a1 v1
+
+theorem SameWorld.ite_both {F} {c : Prop} [Decidable c] {s s' t t' : Arm.ArmState}
+    (h1 : c → SameWorld F s t) (h2 : ¬c → SameWorld F s' t') :
+    SameWorld F (if c then s else s') (if c then t else t') := by
+  by_cases hc : c <;> simp [hc, h1, h2]
+
+theorem bv1_cases (x : BitVec 1) : x = 0#1 ∨ x = 1#1 := by
+  rcases x with ⟨⟨_ | _ | n, h⟩⟩
+  · left; rfl
+  · right; rfl
+  · simp at h; omega
 
 theorem SameWorld.symm {F} {s t : Arm.ArmState} (h : SameWorld F s t) : SameWorld F t s :=
   ⟨fun f hf => (h.1 f hf).symm, fun a ha => (h.2.1 a ha).symm, h.2.2.symm⟩
@@ -367,7 +392,8 @@ noncomputable def straightSem (F : BitVec 64 → Prop) (ctx : FnCtx) (i : MInst)
     | .ok ic =>
       if AccessOk F ctx ic (placeUses ops (canonRegs ops) uses w) then
         match execMInst ctx env0 ic (placeUses ops (canonRegs ops) uses w) with
-        | some t' => some (defVals ops (canonRegs ops) t', t', .next)
+        | some t' =>
+          if Arm.r .ERR t' = .None then some (defVals ops (canonRegs ops) t', t', .next) else none
         | none => none
       else none
 
@@ -409,7 +435,7 @@ def Corr (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (ops : Array Operand
   ∀ (regs : Array Reg) (s w t' : Arm.ArmState), AllocOk ops regs → SameWorld F s w →
     AccessOk F ctx (mk (canonRegs ops)) (placeUses ops (canonRegs ops) (useVals ops regs s) w) →
     execMInst ctx env0 (mk (canonRegs ops)) (placeUses ops (canonRegs ops) (useVals ops regs s) w) =
-      some t' →
+      some t' → Arm.r .ERR t' = .None →
     ∃ s', execMInst ctx env (mk regs) s = some s' ∧ SameWorld F s' t' ∧ FrameKeep F s s' ∧
       defVals ops regs s' = defVals ops (canonRegs ops) t' ∧
       ∀ r, r.allocatable = true → (∀ p ∈ (ops.zip regs).toList, p.1.isDef = true → p.2 ≠ r) →
@@ -446,13 +472,16 @@ theorem os_of_corr {F : BitVec 64 → Prop} {ctx : FnCtx} {env : Env} {X : ExtSe
   · rename_i hacc
     split at hsem
     · rename_i t' ht
-      simp only [Option.some.injEq, Prod.mk.injEq] at hsem
-      obtain ⟨rfl, rfl, -⟩ := hsem
-      obtain ⟨s', hs', hW, hK, hD, hO⟩ := hc regs s w t' ha hw hacc ht
-      refine ⟨s', hs', hW, hK, ?_, fun r hr hnd _ => hO r hr hnd, fun r hr => by simp [hcl] at hr⟩
-      intro p hp
-      rw [defRegs, ← hD, defVals] at hp
-      exact (mem_zip_map hp).symm
+      split at hsem
+      · rename_i herr
+        simp only [Option.some.injEq, Prod.mk.injEq] at hsem
+        obtain ⟨rfl, rfl, -⟩ := hsem
+        obtain ⟨s', hs', hW, hK, hD, hO⟩ := hc regs s w t' ha hw hacc ht herr
+        refine ⟨s', hs', hW, hK, ?_, fun r hr hnd _ => hO r hr hnd, fun r hr => by simp [hcl] at hr⟩
+        intro p hp
+        rw [defRegs, ← hD, defVals] at hp
+        exact (mem_zip_map hp).symm
+      · simp at hsem
     · simp at hsem
   · simp at hsem
 
@@ -473,18 +502,5 @@ theorem regs3 {regs : Array Reg} (h : regs.size = 3) : ∃ a b c, regs = #[a, b,
 theorem regs4 {regs : Array Reg} (h : regs.size = 4) : ∃ a b c d, regs = #[a, b, c, d] := by
   rcases regs with ⟨_ | ⟨a, _ | ⟨b, _ | ⟨c, _ | ⟨d, _ | ⟨_, _⟩⟩⟩⟩⟩⟩ <;> simp at h
   exact ⟨a, b, c, d, rfl⟩
-
-/-- The world of the canonical run: strip masked register/pc writes from either side, match
-equal writes of unmasked fields. -/
-syntax "sw_tac" : tactic
-set_option hygiene false in
-macro_rules
-  | `(tactic| sw_tac) => `(tactic| repeat (first
-    | assumption
-    | (refine SameWorld.w_left ?_ ?_; · (simp [Masked]; try omega))
-    | (refine SameWorld.w_right ?_ ?_; · (simp [Masked]; try omega))
-    | (refine SameWorld.w_both' ?_ ?_; · first | with_reducible rfl | simp)
-    | (refine SameWorld.write_mem_bytes' ?_ ?_ ?_; · first | with_reducible rfl | simp
-       · first | with_reducible rfl | simp)))
 
 end Backend.Proof
