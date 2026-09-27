@@ -4,7 +4,7 @@ import Lean.Data.Json
 /-!
 # regalloc2 as the backend's register allocator (M6)
 
-`allocateRegalloc2 bin vcs` allocates a batch of functions (one `.clif` file) with the
+`allocateRegalloc2 bin env vcs` allocates a batch of functions (one `.clif` file) with the
 external, untrusted `lean-regalloc` (`rust/crates/lean-regalloc`, regalloc2 0.15.2 with
 Cranelift 0.136.1's options):
 
@@ -271,13 +271,13 @@ def RAResult.finish (r : RAResult) : Except String AFunc := do
   lowerRFunc r.prepared r.rf
 
 /-- Run `lean-regalloc` on prepared functions. -/
-def runLeanRegalloc (bin : String) (vcs : Array VCode) : IO (Except String (Array (Except String RAResult))) := do
+def runLeanRegalloc (bin : String) (env : MachineEnv) (vcs : Array VCode) : IO (Except String (Array (Except String RAResult))) := do
   let mut funcs : Array String := #[]
   for vc in vcs do
     match vcodeJson vc with
     | .ok j => funcs := funcs.push j
     | .error e => return .error s!"%{vc.name}: {e}"
-  let input := s!"\{\"env\":{envJson aarch64Env},\"functions\":[" ++ ",".intercalate funcs.toList ++ "]}\n"
+  let input := s!"\{\"env\":{envJson env},\"functions\":[" ++ ",".intercalate funcs.toList ++ "]}\n"
   let (h, path) ← IO.FS.createTempFile
   h.putStr input
   h.flush
@@ -299,10 +299,10 @@ def runLeanRegalloc (bin : String) (vcs : Array VCode) : IO (Except String (Arra
 
 /-- Allocate a batch of functions with regalloc2 (one `lean-regalloc` run); every result is
 checked by `checkAlloc`. -/
-def allocateRegalloc2 (bin : String) (vcs : Array VCode) : IO (Array (Except String AFunc)) := do
+def allocateRegalloc2 (bin : String) (env : MachineEnv) (vcs : Array VCode) : IO (Array (Except String AFunc)) := do
   let prepared := vcs.map prepare
   let ok := prepared.filterMap (·.toOption)
-  match ← runLeanRegalloc bin ok with
+  match ← runLeanRegalloc bin env ok with
   | .error e => pure (vcs.map fun _ => .error e)
   | .ok rs =>
     let mut out : Array (Except String AFunc) := #[]

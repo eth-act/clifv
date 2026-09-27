@@ -24,15 +24,16 @@ Contracts: `docs/contracts/backend.md`, `docs/contracts/regalloc.md`,
 
 namespace Backend
 
-/-- The register allocator. `regalloc2 bin`: the `lean-regalloc` executable `bin`. -/
+/-- The register allocator. `regalloc2 bin env`: the `lean-regalloc` executable `bin` with
+machine environment `env` (`aarch64Env`, or `smallEnv` for stress tests). -/
 inductive Allocator where
   | stack
-  | regalloc2 (bin : String)
+  | regalloc2 (bin : String) (env : MachineEnv := aarch64Env)
 
 /-- Allocate a batch of functions (one file). -/
 def Allocator.run : Allocator → Array VCode → IO (Array (Except String AFunc))
   | .stack, vcs => pure (vcs.map allocate)
-  | .regalloc2 bin, vcs => allocateRegalloc2 bin vcs
+  | .regalloc2 bin env, vcs => allocateRegalloc2 bin env vcs
 
 /-- `lean-regalloc`: `$LEAN_REGALLOC`, else `rust/target/release/lean-regalloc` of the
 checkout that holds this executable (`.lake/build/bin/…`). -/
@@ -41,6 +42,15 @@ def defaultRegallocBin : IO String := do
   let app ← IO.appPath
   let root := ((app.parent.bind (·.parent)).bind (·.parent)).bind (·.parent)
   pure ((root.getD ".") / "rust" / "target" / "release" / "lean-regalloc").toString
+
+/-- The allocator named on the command line: `regalloc2` (Cranelift's environment), `stack`,
+or `regalloc2-small` (`smallEnv`, testing only). -/
+def Allocator.ofName? (n : String) : IO (Option Allocator) := do
+  match n with
+  | "stack" => pure (some .stack)
+  | "regalloc2" => pure (some (.regalloc2 (← defaultRegallocBin)))
+  | "regalloc2-small" => pure (some (.regalloc2 (← defaultRegallocBin) smallEnv))
+  | _ => pure none
 
 /-- Compile one function with the stack-slot allocator (`k` = index in the file, for local
 labels); also returns the ISLE rules that fired. -/

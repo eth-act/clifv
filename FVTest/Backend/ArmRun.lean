@@ -4,7 +4,7 @@ import FV.Arm
 /-!
 # Running Lean-backend code on the Lean Arm model (seed of M7's execution relation)
 
-`lake exe lean-backend-armrun [--regalloc regalloc2|stack] [--bins DIR] [FILE.clif...]`
+`lake exe lean-backend-armrun [--regalloc regalloc2|stack|regalloc2-small] [--bins DIR] [FILE.clif...]`
 (default: every `corpus/clif/*.clif`, regalloc2). For every function of the files that makes no
 calls and no memory accesses (other than its own frame) and has `; run:` commands:
 
@@ -171,8 +171,10 @@ def checkFunction (src : Source) (p : Clif.Program) (f : Clif.Function) (t : Tal
 
 def main (args : List String) : IO UInt32 := do
   let rec opts (src : Source) : List String → IO (Source × List String)
-    | "--regalloc" :: "stack" :: rest => opts (.lean .stack) rest
-    | "--regalloc" :: "regalloc2" :: rest => do opts (.lean (.regalloc2 (← defaultRegallocBin))) rest
+    | "--regalloc" :: a :: rest => do
+      match ← Allocator.ofName? a with
+      | some al => opts (.lean al) rest
+      | none => throw (IO.userError s!"unknown allocator {a}")
     | "--bins" :: d :: rest => opts (.bins d) rest
     | rest => pure (src, rest)
   let (src, args) ← opts (.lean (.regalloc2 (← defaultRegallocBin))) args

@@ -98,6 +98,16 @@ def aarch64Env : MachineEnv where
   nonPreferredInt := [19, 20, 22, 23, 24, 25, 26, 27, 28, 21].map .x
   nonPreferredFloat := (List.range 8).map fun i => .v (8 + i)
 
+/-- A stress-test environment (not Cranelift's): x0–x7 (needed by fixed constraints), x19,
+x20, v0–v3 and v8. It forces spills, reloads and callee-saved registers on small functions, to
+exercise that code and the checker; the checker's allocatable set stays `aarch64Env`'s, of
+which this is a subset. -/
+def smallEnv : MachineEnv where
+  preferredInt := (List.range 8).map .x
+  preferredFloat := (List.range 4).map .v
+  nonPreferredInt := [.x 19, .x 20]
+  nonPreferredFloat := [.v 8]
+
 def MachineEnv.allocatable (e : MachineEnv) : List Reg :=
   e.preferredInt ++ e.nonPreferredInt ++ e.preferredFloat ++ e.nonPreferredFloat
 
