@@ -128,6 +128,55 @@ theorem evalInst_icmp_ok {fr : Clif.Frame} {cm cm' : Clif.Mem} {cc : Clif.IntCC}
   | trap c => rw [hx] at h; cases h
   | stuck m => rw [hx] at h; cases h
 
+set_option maxRecDepth 20000 in
+theorem cmp_variantNames_Unary : (variantNames 152)[29]? = some "Unary" := rfl
+set_option maxRecDepth 20000 in
+theorem variantNames_Uextend : (variantNames 151)[141]? = some "Uextend" := rfl
+
+theorem instData_uextend_inv {f : Clif.Function} {cl : Clif.Inst} {w : V}
+    (h : instData f cl = .ok (.data 152 29 [.data 151 141 [], w])) :
+    ∃ ty z, cl = .extend .uextend ty z ∧ eTy ty = true ∧ w = .value z := by
+  obtain ⟨hf, ho⟩ := instData_inv_names h
+  rw [cmp_variantNames_Unary] at hf
+  rw [variantNames_Uextend] at ho
+  cases cl <;> simp [instNames] at hf ho
+  · rename_i op _ _
+    cases op <;> simp [unaryOpcode] at ho
+  · rename_i op ty z
+    cases op <;> simp at ho
+    refine ⟨ty, z, rfl, ?_⟩
+    simp only [instData] at h
+    split at h
+    · rename_i he
+      simp only [pure, Except.pure, Except.ok.injEq] at h
+      obtain ⟨-, -, h3⟩ := mkVariant_eq_data h
+      simp only [List.cons.injEq] at h3
+      exact ⟨he, h3.2.1⟩
+    · cases h
+
+theorem evalInst_uextend_ok {fr : Clif.Frame} {cm cm' : Clif.Mem} {ty : Clif.Ty} {z : Nat}
+    {vals : List Clif.Val} (h : Clif.evalInst fr cm (.extend .uextend ty z) = .ok (vals, cm')) :
+    ∃ v, fr.regs z = some v ∧ vals = [⟨ty, Clif.Sem.uextend ty.width v.bits⟩] ∧ cm' = cm := by
+  simp only [Clif.evalInst] at h
+  cases hz : fr.get z with
+  | ok v =>
+    rw [hz] at h
+    simp only [bind, Clif.Res.bind, Clif.Res.check] at h
+    split at h
+    · simp only [pure] at h
+      cases h
+      refine ⟨v, ?_, rfl, rfl⟩
+      unfold Clif.Frame.get at hz
+      cases hr : fr.regs z <;> simp [hr, Clif.Res.ofOption] at hz
+      rw [hz]
+    all_goals cases h
+  | trap c => rw [hz] at h; cases h
+  | stuck m => rw [hz] at h; cases h
+
+theorem vholds_uextend_bool8 {ty : Clif.Ty} (he : eTy ty = true) (b : Bool) :
+    VHolds ⟨ty, Clif.Sem.uextend ty.width (Clif.Sem.bool8 b)⟩ (ofX (if b then 1#64 else 0#64)) := by
+  cases ty <;> simp [eTy] at he <;> cases b <;> rfl
+
 section Root
 variable {p : Program} (hp : Data p)
 
@@ -161,6 +210,52 @@ theorem icmp_ruleOk (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : 
   obtain ⟨hu, hr⟩ := hsem fr ρ _ hh hdf ⟨ty, a, b, getAs_ok hx, getAs_ok hy, rfl⟩
   exact ⟨rfl, hu, .inl hmono, _, rfl, (hr w).imp fun ρ' _ _ h => by
     rw [h]; exact vholds_bool8 _⟩
+
+set_option maxHeartbeats 8000000 in
+include hp in
+theorem uextend_icmp_ruleOk (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env)
+    (cp : Clif.Program) (hR : Refines F isem) (hMR : MRStable F MR) :
+    LowerRuleOk isem MR env cp p rule_lower_1281 := by
+  intro f ctx hctx ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _ hmatch heval
+  obtain ⟨m', rfl⟩ : ∃ m', m = m' + 10 := ⟨m - 10, by omega⟩
+  obtain ⟨n', rfl⟩ : ∃ n', n = n' + 400 := ⟨n - 400, by omega⟩
+  isel_inv' hp [] at hmatch heval
+  rename_i hins hdd h652 hres
+  rw [hi, Option.some.injEq] at hins
+  subst hins
+  have hdat := hctx.data ii _ inst hi hic
+  rw [← hdd] at hdat
+  obtain ⟨ty, z, rfl, hety, rfl⟩ := instData_uextend_inv hdat
+  isel_inv_simp [] at *
+  isel_destruct
+  subst_vars
+  isel_inv_simp [] at *
+  isel_destruct
+  subst_vars
+  rename_i hj _ hi2 hd2
+  obtain ⟨cl, hcl, hdat2⟩ := ctxInv_clif hctx hj hi2
+  rw [← hd2] at hdat2
+  obtain ⟨cc, ty', x, y, rfl, rfl, rfl⟩ := instData_icmp_inv hdat2
+  isel_inv_simp [] at *
+  isel_destruct
+  subst_vars
+  obtain ⟨h652⟩ : Nonempty (ApplyInternal p (sem ctx) cfg _ 123 652 _ _ _ _) := ⟨‹_›⟩
+  obtain ⟨h715⟩ : Nonempty (ApplyInternal p (sem ctx) cfg _ 27 715 _ _ _ _) := ⟨‹_›⟩
+  have hE := emit_icmp_ok hp hco hR hctx (hn := by omega) hvb h652
+  obtain ⟨m0, cond, hflag, rfl, hst⟩ := lcrb_ok hp hco (hn := by omega) hE.shape h715
+  isel_call hp hco [output_reg_ok]
+  obtain ⟨hmono, ms, hf, hsem⟩ := condCode_lcrb hR hE hflag
+  rw [hst]
+  refine ⟨ms, hf.emitted, _, rfl, lowerInstOk_runs hMR hf.mono hf.defs rfl ?_⟩
+  intro fr cm ρ w vals cm' _ hh hdf ho
+  obtain ⟨v, hzv, rfl, rfl⟩ := evalInst_uextend_ok ho
+  obtain ⟨vals2, hev, hl⟩ := hdf.1 z _ _ _ v hj hi2 hcl rfl hzv
+  obtain ⟨a, b, hx, hy, rfl, -⟩ := evalInst_icmp_ok (hev default)
+  have hv := lookup_zip_single hl
+  subst hv
+  obtain ⟨hu, hr⟩ := hsem fr ρ _ hh hdf ⟨ty', a, b, getAs_ok hx, getAs_ok hy, rfl⟩
+  exact ⟨rfl, hu, .inl hmono, _, rfl, (hr w).imp fun ρ' _ _ h => by
+    rw [h]; exact vholds_uextend_bool8 hety _⟩
 
 end Root
 
