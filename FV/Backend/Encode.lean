@@ -2,7 +2,7 @@ import FV.Backend.Asm
 import FV.Arm.Decode
 
 /-!
-# Machine-code encoder (M5, unproven)
+# Machine-code encoder (M5, proven against the Arm model's decoder)
 
 `Insn.encode env i = armBits <$> Insn.toArmInst env i`:
 
@@ -12,12 +12,15 @@ import FV.Arm.Decode
   chapter C7 "A64 Advanced SIMD and Floating-point Instruction Descriptions") fixes them, with
   aliases translated per their "Alias conditions"/"is equivalent to" rules. Operand
   constraints (register 31 as SP or ZR, immediate ranges, branch ranges) are checked here.
+  (`Insn.armFields` builds the structure literals; `toArmInst` = `ArmInst.norm <$> armFields`.)
 * `armBits` concatenates the fields of an encoding class in the order of the class's
   encoding diagram (Arm ARM C4.1 "A64 instruction set encoding").
 
-The executable check `decode_raw_inst (encode env i) = some (toArmInst env i)` is the M5
-theorem `decode ∘ encode = id` restricted to what the backend emits
-(`FVTest/Backend/Encode/DecodeCheck.lean`); `Insn.decodeOk` states it per instruction.
+M5 theorem (`FV/Backend/Proof/Encode.lean`): `Insn.decode_encode` —
+`i.encode env = .ok w → ∃ a, i.toArmInst env = .ok a ∧ decode_raw_inst w = some a`, for every
+`Insn` and position. Layout correctness and the branch-range policy:
+`FV/Backend/Proof/EncodeLayout.lean`, `EncodeBranch.lean`; the `stepi` link:
+`EncodeStep.lean`. `Insn.decodeOk` is the executable form (`lean-backend-encode-test decode`).
 
 Relocatable operands (`bl`, `adrp`, `:got_lo12:`, `:lo12:`) are encoded with a zero
 immediate; `Insn.reloc?` gives the ELF relocation (`R_AARCH64_*`, RELA addend), which is what
@@ -302,7 +305,7 @@ as a `bits`-bit signed field (C6.2 B: 26 bits, B.cond/CBZ/CBNZ: 19, TBZ/TBNZ: 14
 **Branch-range policy** (PLAN.md §3.4: bounded function sizes, no relaxation): a target
 outside the field's range (±128 MiB, ±1 MiB, ±32 KiB, ±1 MiB) is a compile error naming the
 instruction and the distance; the word is never truncated. `Insn.encode_inRange`
-(`FV/Backend/Proof/EncodeLayout.lean`) proves every encoded label operand is in range. -/
+(`FV/Backend/Proof/EncodeBranch.lean`) proves every encoded label operand is in range. -/
 def Env.pcRel (env : Env) (what : String) (bits scale : Nat) (l : Lbl) :
     Except String (BitVec bits) := do
   let off ← env.rel l
