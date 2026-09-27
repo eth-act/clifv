@@ -1,7 +1,7 @@
 import FV.Backend.RegallocOps
 
 /-!
-# Register-allocation checker (M6, executable; soundness proof to come)
+# Register-allocation checker (M6, executable; proven sound: `Backend.Proof.checkAlloc_sound`)
 
 regalloc2 is an untrusted oracle. This module decides, independently of anything the
 allocator claims, whether an **allocated function** (`RFunc`: every original instruction with
@@ -46,10 +46,11 @@ instructions in order, each exactly once, and ends with its terminator (no move 
 
 The fixpoint is computed by round-robin rounds (fuel-bounded: states only shrink after a block
 is first reached, so the number of rounds is bounded by `blocks × (locations × symbols + 1)`
-plus one); checks run in every round, and the last round (no state changes) runs them on the
-fixpoint states. Running out of fuel is a rejection.
+plus one); running out of fuel is a rejection. The iteration is untrusted: `verify` checks its
+result (entry in-state ⊆ `entryState`; every block reached, its items check from its in-state,
+every successor's in-state ⊆ the edge's state). The soundness proof relies only on `verify`.
 
-## Invariant and intended soundness theorem (see `docs/contracts/regalloc.md`)
+## Invariant and soundness theorem (`FV/Backend/Proof/RegallocSound.lean`, `docs/contracts/regalloc-proof.md`)
 
 Invariant (per program point, for machine state `m`, VCode vreg environment `ρ`, entry
 register file `r₀`): `∀ ℓ s, s ∈ A ℓ → m ℓ = ⟦s⟧` with `⟦vreg v⟧ = ρ v`, `⟦entry r⟧ = r₀ r`.
