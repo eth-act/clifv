@@ -356,6 +356,116 @@ theorem stmt_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
       exact ⟨b, _, ρ₁', w₁, vb, _, _, outs, w₂, hstar, hvb, hi, hops, hsem,
         by rw [trapCode?_mapRegs]; exact htc⟩
 
+theorem args_termArgs {t : Clif.Terminator} {bc : Clif.BlockCall} (h : bc ∈ dests t) :
+    ∀ a ∈ bc.args, a ∈ termArgs t := by
+  intro a ha
+  cases t with
+  | jump bc' => simp [dests] at h; subst h; exact ha
+  | brif c t e =>
+    simp [dests] at h
+    rcases h with rfl | rfl <;> simp [termArgs, ha]
+  | brTable x d tbl =>
+    simp [dests] at h
+    rcases h with rfl | h
+    · simp [termArgs, ha]
+    · simp only [termArgs, List.mem_cons, List.mem_append, List.mem_flatMap]
+      exact .inr ⟨bc, h, ha⟩
+  | _ => simp [dests] at h
+
+theorem edgeEnv_eq {V : Type} {vc : VCode} {b s : Nat} {vb sb : VBlock}
+    (hvb : vc.blocks[b]? = some vb) (hsb : vc.blocks[s]? = some sb) {ps xs : List Nat}
+    (hba : vb.branchArgs = (xs.map fun n => Reg.vreg n .int).toArray)
+    (hpa : sb.params = (ps.map fun n => Reg.vreg n .int).toArray) (hl : ps.length = xs.length)
+    (ρ : Nat → V) : edgeEnv vc b s ρ = some (parCopyEnv ρ ps xs) := by
+  unfold edgeEnv
+  have hv : ∀ ns : List Nat, List.mapM (vregNum ∘ fun n => Reg.vreg n RegClass.int) ns = .ok ns := by
+    intro ns
+    induction ns with
+    | nil => rfl
+    | cons n ns ih => simp [List.mapM_cons, vregNum, ih]; rfl
+  simp [hvb, hsb, hba, hpa, hl, Except.toOption, hv]
+
+/-- **Entering a successor block.** The CLIF frame after `enterBlock` and the VCode file after
+the parallel copy of the (renamed) arguments into the parameters match at the successor. -/
+theorem enter_match (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
+    {s : Clif.State} {b : Nat} {B : Clif.Block} (hB : f.blocks[b]? = some B)
+    (hcall : s.callers = []) (hfunc : s.frame.func = f) (hslots : s.frame.slots = slots)
+    {ρ : Nat → CV} (hheld : Held gn (A b B.body.length) ρ s.frame)
+    (hcons : DFGCons ctx (restrict s.frame (A b B.body.length)))
+    {bc : Clif.BlockCall} (hbc : bc ∈ dests B.term) {tl : Nat} (htl : blockIdx? f bc.block = some tl)
+    {fr2 : Clif.Frame} (hent : Clif.enterBlock s.frame bc = .ok fr2) {ρ₂ : Nat → CV}
+    (hρ₂ : ∀ x ∈ A b B.body.length, ρ₂ (gn x) = ρ (gn x)) {w₂ : Arm.ArmState}
+    (hmr : MR slots s.mem w₂) :
+    ∃ TB, f.blocks[tl]? = some TB ∧ bc.args.length = TB.params.length ∧ tl ≠ 0 ∧
+      Match f ctx R gn bl A MR slots { s with frame := fr2 }
+        ⟨tl, 0, parCopyEnv ρ₂ (TB.params.map (·.1)) (bc.args.map gn), w₂⟩ := by
+  obtain ⟨TB, args, regs, hTBf, hargs, hty, hset, rfl⟩ := enterBlock_spec hent
+  rw [hfunc] at hTBf
+  have hTB := blockIdx_block htl hTBf
+  have hne0 : tl ≠ 0 := fun e => H.cert.noEntry b B hB bc hbc (e ▸ htl)
+  obtain ⟨hl1, hgm⟩ := getMany_spec hargs
+  have hl2 := setMany_length hset
+  have hlen : bc.args.length = TB.params.length := by simp at hl2; omega
+  obtain ⟨-, -, hedge⟩ := H.cert.term b B _ hB (H.blow hB).choose_spec
+  obtain ⟨hnd, hpA, hA0⟩ := hedge bc hbc tl TB htl hTB
+  have hTBmem : TB ∈ f.blocks := List.mem_of_getElem? hTB
+  have hpos : pos f R bl tl 0 = 0 := by
+    simp [pos, pre]
+    cases tl with
+    | zero => exact absurd rfl hne0
+    | succ n => rfl
+  refine ⟨TB, hTB, hlen, hne0, hcall, hfunc, hslots, hmr, TB, 0, hTB, rfl, Nat.zero_le _,
+    by simp, hpos.symm, ?_, ?_⟩
+  · intro x hx
+    rcases hA0 x hx with ⟨hxp, -⟩ | ⟨hxp, hxA, hgx⟩
+    · obtain ⟨m, v, hxm, hvm, hrv⟩ := setMany_mem hset hnd x hxp
+      refine ⟨v, hrv, ?_⟩
+      have hm : m < bc.args.length := by
+        have := (List.getElem?_eq_some_iff.mp hxm).1; simp at this; omega
+      have ha := List.getElem?_eq_getElem hm
+      obtain ⟨v', hv', hvm'⟩ := hgm m _ ha
+      rw [hvm] at hvm'; cases hvm'
+      have haA : bc.args[m] ∈ A b B.body.length :=
+        (H.cert.term b B _ hB (H.blow hB).choose_spec).1 _ (args_termArgs hbc _ (List.getElem_mem hm))
+      obtain ⟨v'', hv'', hh⟩ := hheld _ haA
+      rw [hv'] at hv''; cases hv''
+      have hgp : gn x = x := by
+        obtain ⟨q, hq, rfl⟩ := List.mem_map.mp hxp
+        exact H.shape.params TB hTBmem q hq
+      show VHolds v (parCopyEnv ρ₂ (TB.params.map (·.1)) (bc.args.map gn) (gn x))
+      rw [hgp, parCopyEnv_param hnd (by simp; omega) m (x := gn bc.args[m]) hxm (by simp [ha]),
+        hρ₂ _ haA]
+      exact hh
+    · obtain ⟨v, hv, hh⟩ := hheld x hxA
+      refine ⟨v, by show regs x = some v; rw [setMany_other hset hxp]; exact hv, ?_⟩
+      show VHolds v (parCopyEnv ρ₂ (TB.params.map (·.1)) (bc.args.map gn) (gn x))
+      rw [parCopyEnv_other hgx, hρ₂ x hxA]
+      exact hh
+  · intro x d info cl v hd hinfo hcl hp hv
+    have hx0 : x ∈ A tl 0 := restrict_regs_isSome (by rw [hv]; rfl)
+    have hv' : regs x = some v := by
+      have := restrict_regs_of_mem (fr := { s.frame with regs, body := TB.body, term := TB.term }) hx0
+      rw [this] at hv; exact hv
+    rcases hA0 x hx0 with ⟨-, hdn⟩ | ⟨hxp, hxA, -⟩
+    · rw [hdn] at hd; cases hd
+    · have hvx : (restrict s.frame (A b B.body.length)).regs x = some v := by
+        rw [restrict_regs_of_mem hxA, ← setMany_other hset hxp]; exact hv'
+      obtain ⟨vals0, hev, hlk⟩ := hcons x d info cl v hd hinfo hcl hp hvx
+      refine ⟨vals0, fun cm => ?_, hlk⟩
+      rw [← hev cm]
+      refine evalInst_congr ?_ ?_ cm cl ?_
+      · rfl
+      · rfl
+      intro y hy
+      have hy0 := H.cert.closed tl 0 x d info cl hx0 hd hinfo hcl hp y hy
+      have hyA := H.cert.closed b B.body.length x d info cl hxA hd hinfo hcl hp y hy
+      have hyp : y ∉ TB.params.map (·.1) := by
+        intro e
+        obtain ⟨q, hq, rfl⟩ := List.mem_map.mp e
+        exact hpA q hq hyA
+      rw [restrict_regs_of_mem hy0, restrict_regs_of_mem hyA]
+      exact setMany_other hset hyp
+
 end
 
 end Backend.Proof.Driver

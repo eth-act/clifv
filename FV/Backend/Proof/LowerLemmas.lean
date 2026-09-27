@@ -277,4 +277,133 @@ theorem succOf_eq {vc : VCode} (hlab : ∀ l (vb : VBlock), vc.blocks[l]? = some
             rw [← hlab', this]
           · cases hi
 
+/-! ## CLIF control flow -/
+
+theorem getMany_ne_trap {fr : Clif.Frame} :
+    ∀ {xs : List Clif.ValueId} {c : Clif.TrapCode}, fr.getMany xs ≠ .trap c := by
+  intro xs
+  induction xs with
+  | nil => intro c h; cases h
+  | cons x xs ih =>
+    intro c h
+    simp only [Clif.Frame.getMany, Clif.Frame.get] at h
+    cases hx : fr.regs x with
+    | none => rw [hx] at h; cases h
+    | some v =>
+      rw [hx] at h
+      simp only [Clif.Res.ofOption_some, Clif.Res.ok_bind] at h
+      cases hr : fr.getMany xs with
+      | ok vs => rw [hr] at h; cases h
+      | trap c' => exact ih hr
+      | stuck => rw [hr] at h; cases h
+
+theorem checkTys_cases (what : String) (vs : List Clif.Val) (tys : List Clif.Ty) :
+    Clif.checkTys what vs tys = .ok () ∧ vs.map (·.ty) = tys ∨ ∃ m, Clif.checkTys what vs tys = .stuck m := by
+  unfold Clif.checkTys Clif.Res.check
+  split
+  · rename_i h; exact .inl ⟨rfl, by simpa using h⟩
+  · exact .inr ⟨_, rfl⟩
+
+theorem enterBlock_spec {fr fr2 : Clif.Frame} {bc : Clif.BlockCall}
+    (h : Clif.enterBlock fr bc = .ok fr2) :
+    ∃ TB args regs, fr.func.block? bc.block = some TB ∧ fr.getMany bc.args = .ok args ∧
+      args.map (·.ty) = TB.params.map (·.2) ∧
+      fr.regs.setMany (TB.params.map (·.1)) args = some regs ∧
+      fr2 = { fr with regs, body := TB.body, term := TB.term } := by
+  unfold Clif.enterBlock at h
+  cases hb : fr.func.block? bc.block with
+  | none => rw [hb] at h; cases h
+  | some TB =>
+    rw [hb] at h
+    simp only [Clif.Res.ofOption_some, Clif.Res.ok_bind] at h
+    cases ha : fr.getMany bc.args with
+    | trap => rw [ha] at h; cases h
+    | stuck => rw [ha] at h; cases h
+    | ok args =>
+      rw [ha] at h
+      simp only [Clif.Res.ok_bind] at h
+      rcases checkTys_cases s!"arguments of block{bc.block}" args (TB.params.map (·.2)) with
+        ⟨hc, hty⟩ | ⟨m, hc⟩
+      · rw [hc] at h
+        simp only [Clif.Res.ok_bind] at h
+        cases hs : fr.regs.setMany (TB.params.map (·.1)) args with
+        | none => rw [hs] at h; cases h
+        | some regs =>
+          rw [hs] at h
+          simp only [Clif.Res.ofOption_some, Clif.Res.ok_bind, Clif.Res.pure_eq, Clif.Res.ok.injEq] at h
+          exact ⟨TB, args, regs, rfl, rfl, hty, hs, h.symm⟩
+      · rw [hc] at h; cases h
+
+theorem enterBlock_ne_trap {fr : Clif.Frame} {bc : Clif.BlockCall} {c : Clif.TrapCode} :
+    Clif.enterBlock fr bc ≠ .trap c := by
+  intro h
+  unfold Clif.enterBlock at h
+  cases hb : fr.func.block? bc.block with
+  | none => rw [hb] at h; cases h
+  | some TB =>
+    rw [hb] at h
+    simp only [Clif.Res.ofOption_some, Clif.Res.ok_bind] at h
+    cases ha : fr.getMany bc.args with
+    | trap c' => exact getMany_ne_trap ha
+    | stuck => rw [ha] at h; cases h
+    | ok args =>
+      rw [ha] at h
+      simp only [Clif.Res.ok_bind] at h
+      rcases checkTys_cases s!"arguments of block{bc.block}" args (TB.params.map (·.2)) with
+        ⟨hc, -⟩ | ⟨m, hc⟩
+      · rw [hc] at h
+        simp only [Clif.Res.ok_bind] at h
+        cases hs : fr.regs.setMany (TB.params.map (·.1)) args with
+        | none => rw [hs] at h; cases h
+        | some regs => rw [hs] at h; cases h
+      · rw [hc] at h; cases h
+
+theorem find?_of_findIdx? {α : Type} {P : α → Bool} :
+    ∀ {l : List α} {i : Nat} {a : α}, l.findIdx? P = some i → l.find? P = some a → l[i]? = some a := by
+  intro l
+  induction l with
+  | nil => intro i a h; simp at h
+  | cons x l ih =>
+    intro i a hi ha
+    rw [List.findIdx?_cons] at hi
+    rw [List.find?_cons] at ha
+    cases hp : P x with
+    | true =>
+      simp only [hp, ite_true, Option.some.injEq] at hi ha
+      subst hi ha; rfl
+    | false =>
+      simp only [hp, Bool.false_eq_true, ite_false] at hi ha
+      cases hj : l.findIdx? P with
+      | none => rw [hj] at hi; cases hi
+      | some j =>
+        rw [hj] at hi
+        simp only [Option.map_some, Option.some.injEq] at hi
+        subst hi
+        simpa using ih hj ha
+
+theorem blockIdx_block {f : Clif.Function} {b tl : Nat} {TB : Clif.Block}
+    (h : blockIdx? f b = some tl) (hb : f.block? b = some TB) : f.blocks[tl]? = some TB :=
+  find?_of_findIdx? h hb
+
+theorem seqRun_stop_mem {V W : Type} {sem : ISem V W} :
+    ∀ {ms : List MInst} {ρ : Nat → V} {w : W} {k : Nat} {i : MInst} {ops : Array Operand}
+      {ρ₁ : Nat → V} {w₁ : W} {outs : List V} {w₂ : W} {ctl : Ctl},
+    seqRun sem ms ρ w = some (.stop k i ops ρ₁ w₁ outs w₂ ctl) →
+    ms[k]? = some i ∧ i.operands = .ok ops := by
+  intro ms
+  induction ms with
+  | nil => intro _ _ _ _ _ _ _ _ _ _ h; simp [seqRun] at h
+  | cons i₀ ms ih =>
+    intro ρ w k i ops ρ₁ w₁ outs w₂ ctl h
+    rcases seqRun_cons_stop h with
+      ⟨rfl, rfl, hops, -⟩ | ⟨k', _, _, _, rfl, _, _, _, hrest⟩
+    · exact ⟨rfl, hops⟩
+    · simpa using ih hrest
+
+theorem vregNum_mapM (ns : List Nat) :
+    (ns.map (fun n => Reg.vreg n .int)).mapM vregNum = .ok ns := by
+  induction ns with
+  | nil => rfl
+  | cons n ns ih => simp [List.mapM_cons, vregNum, ih]; rfl
+
 end Backend.Proof.Driver
