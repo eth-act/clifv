@@ -57,23 +57,30 @@ Output is deterministic. Two runs, including one with a different `--gen-dir`, g
 trees. The manifest hashes inputs with `;` comments stripped, because the generated inputs'
 comments contain the absolute path of the meta crate's sources.
 
-`FV/Isle/Generated/` currently holds 17 modules, about 24k lines and 2.6 MB. No module exceeds
-4000 lines or about 250 kB:
+`FV/Isle/Generated/` holds 24 modules (about 42k lines). No module exceeds 5000 lines:
 
 | Module | Contents |
 | --- | --- |
-| `Types00` | one `def ty_<name> : TypeDef` per type (153), `types_0` |
-| `Terms00..01` | `terms_k : Array Term` (2483 terms) |
-| `Rules00..03` | one `def rule_<file>_<line> : Rule` per rule (1165), `rules_k` arrays |
+| `Types00` | one `def ty_<name> : TypeDef` per type (153) |
+| `Ids` | `@[match_pattern]` constants: `TyId.«T»` (type ids), `VIdx.«T».«V»` (enum variant indices), `TId.«t»` (term ids) |
+| `Terms00..02` | one `def T.«name» : Term` per term (2483) |
+| `Rules00..03` | one `def rule_<file>_<line> : Rule` per rule (1165) |
+| `RuleLists00` | one `def R.«term» : List Rule` per term with rules, in matching order (`ruleBefore`) |
+| `TypeArray`, `TermTable`, `RuleArray`, `RuleTable` | flat tables `types`, `terms`, `rules`, `ruleLists` (indexed by id) |
 | `Specs00..06` | `specs_k : Array SpecDef` (1036 spec-language definitions) |
-| `Program` | `files`, `consts`, `converters`, `types`, `terms`, `rules`, `specs`, `program : Program` |
+| `Program` | `files`, `consts`, `converters`, `specs`, and `program : Program`, a structure literal over the flat tables |
 | `Manifest` | `inputHashes`, `astRuleCounts` (per-file `(rule ...)` count on the parser AST), `sizes` |
 | `Closure` | the emitter-subset closure (below) |
+
+The tables are flat single literals (not appends of chunks) and `program` is not computed, so
+the kernel evaluates lookups: `program.term? TId.lower = some T.lower` and
+`program.rulesOf TId.lower = R.lower` are `rfl` (`FVTest/Isle/Data.lean`; the isel proofs'
+`Data p` facts, `docs/contracts/backend-proof.md`).
 
 Everything is in namespace `Isle.Aarch64`, except the closure, which is in
 `Isle.Aarch64.Closure`.
 
-Elaboration: a clean `lake build FV.Isle FVTest.Isle` takes 20 s wall time (105 s CPU,
+Elaboration: a clean `lake build FV.Isle FVTest.Isle` takes about 16 s wall time (99 s CPU,
 parallel). The slowest module is `Specs03` at 14 s. Rule modules take 3–4 s each.
 
 ## Datatypes (`FV/Isle/Syntax.lean`, namespace `Isle`)
@@ -117,7 +124,8 @@ implicit converters (`put_in_reg`, `output_reg`, ...) are explicit terms. Ids ar
   Every `spec` resolves to a term.
 - `Const := ⟨name, ty⟩` (`extern const`) and `Converter := ⟨inner, outer, term⟩`.
 - `Program` has `name`, `files`, `types`, `terms`, `rules`, `consts`, `converters`, `specs`,
-  and `rulesByTerm`, which `Program.build` computes. API: `term?`, `type?`, `rule?`,
+  and `ruleLists` (each term's rules in matching order; `Program.build` computes it with
+  `Program.bucketRules`, the generated program stores it as literals). API: `term?`, `type?`, `rule?`,
   `termName`, `typeName`, `termByName?`, `ruleByName?`, `rulesOf t` (in matching order,
   `ruleBefore`: priority descending, then source order), `specsOf t`, `ruleNames`.
 
@@ -330,7 +338,7 @@ compute by `#eval`/`#guard`.
 - `Data.lean` checks:
   - per-file rule counts equal `astRuleCounts` from the Rust parser AST: prelude 1,
     prelude_lower 77, inst 503, inst_neon 1, lower 561, lower_dynamic_neon 22 (total 1165);
-  - table sizes, arena ids, name uniqueness, and that `rulesByTerm` is a sorted partition;
+  - table sizes, arena ids, name uniqueness, and that `ruleLists` is a sorted partition equal to `Program.bucketRules`; the generated `TId`/`VIdx`/`T`/`R` constants agree with the tables;
   - kernel `rfl`/`decide` facts about rules referenced by name;
   - extern flags and spec links.
 - `Pretty.lean` compares seven rules, printed back to ISLE text and whitespace-normalised,
