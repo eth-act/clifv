@@ -121,6 +121,15 @@ theorem RegsHas.drop {r : Regs} {xs : List ValueId} {vs : List Val} (h : RegsHas
     (n : Nat) : RegsHas r (xs.drop n) (vs.drop n) := by
   unfold RegsHas at *; rw [List.map_drop, h, List.map_drop]
 
+theorem RegsHas.single_inv {r : Regs} {xs : List ValueId} {v : Val} (h : RegsHas r xs [v]) :
+    ∃ x, xs = [x] ∧ r x = some v := by
+  cases xs with
+  | nil => simp [RegsHas] at h
+  | cons x xs =>
+    cases xs with
+    | nil => simp [RegsHas] at h; exact ⟨x, rfl, h⟩
+    | cons y ys => simp [RegsHas] at h
+
 theorem getMany_of_regsHas (fr : Frame) {xs : List ValueId} {vs : List Val}
     (h : RegsHas fr.regs xs vs) : fr.getMany xs = .ok vs := by
   induction xs generalizing vs with

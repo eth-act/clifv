@@ -94,15 +94,6 @@ theorem hdl_nonlinear : ∀ {t : Ty} (vs : List Val), t.linear = false → hdl t
 theorem hdl_int {w : IntW} (vs : List Val) : hdl (.int w) vs = [] := by simp [hdl]
 theorem hdl_bool (vs : List Val) : hdl .bool vs = [] := by simp [hdl]
 
-theorem RegsHas.single_inv {r : Regs} {xs : List ValueId} {v : Val} (h : RegsHas r xs [v]) :
-    ∃ x, xs = [x] ∧ r x = some v := by
-  cases xs with
-  | nil => simp [RegsHas] at h
-  | cons x xs =>
-    cases xs with
-    | nil => simp [RegsHas] at h; exact ⟨x, rfl, h⟩
-    | cons y ys => simp [RegsHas] at h
-
 /-- A single fresh scalar result: the common tail of the arithmetic cases. -/
 theorem XPost.scalar {c : Ctx} {Γ : List Ty} {t : Ty} {vals : List (List Val)}
     {st st' : CheckSt} {x : t.denote} {H H' : Heap} {s₀ s : State} {n : Nat}
