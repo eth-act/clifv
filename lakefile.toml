@@ -19,3 +19,8 @@ root = "FVTest.Arm.Cosim.Main"
 [[lean_exe]]
 name = "clif-filetest"
 root = "FVTest.Clif.Filetest"
+
+[[lean_lib]]
+name = "Corpus"
+srcDir = "corpus/dsl"
+globs = ["Corpus.+"]

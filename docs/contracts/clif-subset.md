@@ -48,6 +48,12 @@ Deliberately excluded from E:
 E, plus: `i128` on all integer ops, `select`, `trapz`, `trapnz`, `uadd_overflow_trap`,
 `uadd_overflow`, `sadd_overflow`, `usub_overflow`, `ssub_overflow`, `umul_overflow`,
 `smul_overflow`, `bitrev`, `bswap`, `cls`, `iabs`, `smin` `smax` `umin` `umax`,
-`uadd_sat` `sadd_sat` `usub_sat` `ssub_sat`, `bmask`, `iconcat` `isplit`, `stack_load`/
-`stack_store` if the reader still accepts them, `nop`. M0 owns this list: extend it and record
-what was added and which filetests it unlocks in `docs/contracts/clif.md`.
+`uadd_sat` `sadd_sat` `usub_sat` `ssub_sat`, `bmask`, `iconcat` `isplit`, `nop`.
+`stack_load`/`stack_store` do not exist in the 0.136.1 reader, so they are not in S.
+M0 owns this list: extend it and record what was added and which filetests it unlocks in
+`docs/contracts/clif.md`.
+
+Added by M0 (see `docs/contracts/clif.md`, "S-list additions"): `select_spectre_guard`,
+`bitselect`, `uadd_overflow_cin`, `sadd_overflow_cin`, `usub_overflow_bin`,
+`ssub_overflow_bin`, `atomic_rmw` (all 11 operations), `atomic_cas`, `atomic_load`,
+`atomic_store`, `fence`, `bitcast` (integer to integer of the same type), `return_call`.
