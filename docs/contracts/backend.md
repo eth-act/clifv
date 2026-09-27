@@ -23,8 +23,11 @@ Complete (2026-09-27); no `sorry`, no `axiom`, no warnings in `FV/Backend`, `FVT
 - [x] `clif-native --functions-obj/--functions-table` (`docs/contracts/drivers.md`)
 - [x] `scripts/lean-backend-filetests.sh` (Lean-written objects; `--asm` for the `llvm-mc`
       path, same results): corpus **114/114** run lines pass and agree with
-      Cranelift-native; `extrt` (Rust runtime) 22/22; runtests **2791 pass, 0 fail,
-      0 disagree** (48 files entirely in E: 1416 runs; 11 more files partly)
+      Cranelift-native; `extrt` (Rust runtime) 22/22; runtests **3085 pass, 0 fail,
+      0 disagree** (53 files entirely in E: 1937 runs; 12 more files partly)
+- [x] clif-subset-v2 (2026-09-27, `docs/contracts/e-ext-v2.md`): `nop`, `symbol_value`
+      (GOT: `adrp :got:` + `ldr :got_lo12:`, + `add` for offsets), `select` (`csel`),
+      `smin/smax/umin/umax`, `bswap` (`rev16`/`rev w`/`rev x`), `bitrev` (`rbit` + `lsr`)
 - [x] M6 (2026-09-27): regalloc2 (untrusted, `lean-regalloc`) is the default allocator; every
       allocation is validated by the Lean checker `checkAlloc`; all results below hold for
       both `--regalloc regalloc2` and `--regalloc stack` (`docs/contracts/regalloc.md`)
@@ -168,7 +171,7 @@ from the current `LState`. Driver rules (`machinst/lower.rs`):
 
 ### Extern helpers (trusted transcriptions)
 
-Every extern term of the closure (119) is implemented by an arm of `Backend.externCtor` /
+Every extern term of the closure (128 since clif-subset-v2, `docs/contracts/isle.md`) is implemented by an arm of `Backend.externCtor` /
 `Backend.externExtract` keyed by the ISLE term name, transcribed from the Rust function in the
 third column (cranelift-codegen 0.136.1; paths under `cranelift/codegen/src/`; numerics from
 the build's generated `isle_numerics.rs`). These are **trusted** until M4 proves them against
@@ -297,11 +300,22 @@ line-by-line port. Identity/plumbing helpers (`value_reg`, `output`, `box_extern
 | `u8_from_u64` | extractor | `u64_from_u8` isle_numerics.rs:4812 (generated) | no |  |
 | `value_array_2` | ctor | `pack_value_array_2` isle_prelude.rs:937 | no |  |
 | `value_array_2` | extractor | `unpack_value_array_2` isle_prelude.rs:931 | no |  |
+| `value_array_3` | ctor | `pack_value_array_3` isle_prelude.rs:948 | no | (`select`, clif-subset-v2) |
+| `value_array_3` | extractor | `unpack_value_array_3` isle_prelude.rs:942 | no |  |
+| `invalid_reg` | ctor | `invalid_reg` machinst/isle.rs:107 | no | `Reg.invalid` = vreg `2^21-1` (`nop`); the driver drops outputs of result-less instructions (`lower.rs:953` zip) |
+| `symbol_value_data` | extractor | `symbol_value_data` machinst/isle.rs:397 (`Lower::symbol_value_data` lower.rs:1510) | no | `.symbol name off colocated` → `(name, Near iff colocated, off)`, else fail |
 | `block_array_2` | ctor | `pack_block_array_2` isle_prelude.rs:959 | no |  |
 | `block_array_2` | extractor | `unpack_block_array_2` isle_prelude.rs:953 | no |  |
+| `ty_scalar_float` | extractor | `ty_scalar_float` isle_prelude.rs:562 | yes | `tyPred`; fails at integer types (v2: `lower_select_cond`) |
+| `ty_vec64` | extractor + ctor | `ty_vec64` isle_prelude.rs:602, `ty_vec64_ctor` :593 | no | `tyPred` (v2: vector min/max arms) |
+| `ty_vec128` | extractor | `ty_vec128` isle_prelude.rs:611 | no | `tyPred` |
+| `multi_lane` | extractor | `multi_lane` isle_prelude.rs:685 | no | `(lane bits, lane count)` iff lane count > 1 |
+| `dynamic_lane` | extractor | `dynamic_lane` isle_prelude.rs:694 | no | always fails (no dynamic vectors) |
+| `not_i64x2` | extractor | `not_i64x2` isle_prelude.rs:744 | no |  |
 
 Extra extern extractors that the interpreter reaches while *trying* root rules outside the
-closure (the type or flag test fails before the rule could match), with the same Rust
+closure (the type or flag test fails before the rule could match; the v2 closure rows above
+are also listed here), with the same Rust
 semantics: the `Type → Option Type` predicates of `tyPred` (`fits_in_*`, `ty_int_ref_*`,
 `ty_8_or_16`, `ty_16_or_32`, `ty_16/32/64/128`, `ty_scalar`, `ty_scalar_float`,
 `ty_float_or_vec`, `ty_vector_float`, `ty_vector_not_float`, `ty_vec64/128(_int)`,
@@ -409,21 +423,23 @@ the default since M5, and with `--asm`):
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `corpus/clif` | 42 (41 with run lines) | **114** | 0 | 0 | 0 | 114 | 0 |
 | `corpus/clif/extrt` + flat-runtime | 8 | **22** | 0 | 0 | 0 | 22 | 0 |
-| runtests (all 395 files) | 48 fully E, 11 partly, 336 none | **2791** | 0 | 0 | 10935 | 2791 | 0 |
+| runtests (all 395 files) | 53 fully E, 12 partly, 330 none | **3085** | 0 | 0 | 10641 | 3085 | 0 |
 
-(`clif-results compare` agrees: corpus 114/114 records agree, runtests 2798 agree — the
-2791 plus 7 identical harness errors — 0 disagree, 0 unmatched.)
+(`clif-results compare` agrees: corpus 114/114 records agree, runtests 3092 agree — the
+3085 plus 7 identical harness errors — 0 disagree, 0 unmatched. Before clif-subset-v2:
+2791 pass, 48 fully / 11 partly, 10935 unsupported.)
 
-Runtest files entirely in E (every run passes): alias, amode-shared-base,
+Runtest files entirely in E (every run passes): alias, amode-shared-base, arithmetic,
 arithmetic-extends, bitops, bnot, br, br_table, brif, clz, const, ctz, div-checks, extend,
 fibonacci, fold-bitops, global_value, icmp-eq-imm, icmp-eq, icmp-ne, icmp-of-icmp, icmp-sge,
 icmp-sgt, icmp-sle, icmp-slt, icmp-uge, icmp-ugt, icmp-ule, icmp-ult, icmp, ineg,
 inline-probestack, ireduce, long-jump, or-and-y-with-not-y, popcnt, s390x-lxa, sdiv,
 shift-right-left, smulhi-aarch64, smulhi, spill-reload, stack-addr-64, stack, udiv, umulhi,
-urem, x64-bmi1, x64-bmi2 (48 files, 1416 runs). Partly (E functions pass, others
-unsupported): arithmetic (391/445), bitselect, call, extend-of-compare, rotl, rotr, shifts,
-simd-umulhi, srem, srem_opts, stack-addr-32. Unsupported reasons in these files are all
-outside E: `smin/umin/smax/umax`, `iconcat`, `select`, `bitselect`, `bmask`,
+urem, x64-bmi1, x64-bmi2, bitrev, integer-minmax, issue-5498, issue5839 (53 files, 1937
+runs). Partly (E functions pass, others
+unsupported): bitselect, bswap (i128), call, extend-of-compare, rotl, rotr, select (i128 /
+float), shifts, simd-umulhi, srem, srem_opts, stack-addr-32. Unsupported reasons in
+these files are all outside E: `iconcat`, i128, floats, `bitselect`, `bmask`,
 `windows_fastcall`, 32-bit addresses (which Cranelift's verifier also rejects).
 
 Trap mapping (`clif-native/tests/traps.clif` through the Lean backend): `sdiv` by zero →
@@ -448,7 +464,7 @@ results/traps compared with `Clif.run`:
 
 1. **Interpreter + `Sem`**: rule semantics are `Isle.Interp` (priority order, if-lets,
    partial terms); the extern table above is the trusted base until each helper has a Lean
-   lemma or VeriISLE spec cross-check (33 of 119 have no spec).
+   lemma or VeriISLE spec cross-check (41 of 128 have no spec).
 2. **Value ↔ vreg map**: value `vN` ↦ vreg `N` ↦ its alias target (the lowering's result
    register); invariant: at every instruction boundary the slot of a vreg holds the CLIF
    value (low `ty.width` bits; upper bits unspecified for narrow types).
