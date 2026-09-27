@@ -281,9 +281,9 @@ theorem vdu_extend (sg : Bool) (a b : Nat) :
 end Facts
 
 set_option hygiene false in
-/-- Discharge a template's `hdefs`/`huses` for a concrete code list. -/
-macro "code_facts" : tactic => `(tactic| (
-  intro _ _ _ _ mi hmi d hd
+/-- Discharge `∀ mi ∈ code, ∀ d ∈ vdefs mi, …` (or `vuseNums`) for a concrete code list. -/
+macro "code_facts0" : tactic => `(tactic| (
+  intro mi hmi d hd
   simp only [List.mem_cons, List.mem_nil_iff, or_false] at hmi
   repeat' (first | (rcases hmi with rfl | hmi) | subst hmi)
   all_goals (
@@ -292,6 +292,9 @@ macro "code_facts" : tactic => `(tactic| (
       vdd_bitRR, vdu_bitRR, vdd_extend, vdu_extend, List.mem_cons, List.mem_nil_iff, or_false]
       at hd
     omega)))
+
+/-- Discharge a template's `hdefs`/`huses` for a concrete code list. -/
+macro "code_facts" : tactic => `(tactic| (intro _ _ _ _; code_facts0))
 
 theorem arr_push1 {α : Type} (a : Array α) (i : α) : a.push i = a ++ [i].toArray := by
   apply Array.ext'; simp
