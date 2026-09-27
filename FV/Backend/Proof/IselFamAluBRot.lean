@@ -654,6 +654,73 @@ theorem rotr_fits_in_16_imm_ok {p : Program} (hp : Data p) (MR : MemRelT) (env :
   simp only [VHolds]
   rw [hrot u (by exact hA)]
 
+set_option maxHeartbeats 1000000 in
+/-- **`rotl_fits_in_16_imm`** (`lower.isle:1778`), i8/i16. -/
+theorem rotl_fits_in_16_imm_ok {p : Program} (hp : Data p) (MR : MemRelT) (env : Clif.Env)
+    (cp : Clif.Program) (hR : Refines F isem) (hMR : MRStable F MR) :
+    LowerRuleOk isem MR env cp p rule_lower_1778 := by
+  refine shift_ruleOk_gen hp (cop := .rotl) rfl rfl hp.t2385 term_2385_kind rfl rfl F isem MR env
+    cp hMR ?_
+  intro f ctx hctx cfg ii info x y w st tr m n env' s1 v s' hco hvb hi hhead hd hws hm he
+  have hp' := hp
+  cases hp
+  fbrot_inv [*, rule_lower_1778] at hm he
+  have hii := Option.some.inj (hi.symm.trans ‹ctx.insts[ii]? = some _›)
+  subst hii
+  have hdat := ‹V.data 152 2 _ = info.data›
+  rw [hd] at hdat
+  fbrot_inv [ext_value_array_2_iff, ctor_put_in_reg_iff, ctor_value_regs_get_iff, ctor_zero_reg']
+    at hdat
+  simp only [hhead, Option.getD_some] at *
+  have h16 : w ≤ 16 := ‹_›
+  have hw : w = 8 ∨ w = 16 := by omega
+  have hW : IW w := by rcases hw with h | h <;> simp [IW, h]
+  have hdata := ‹V.data 152 35 _ = _›
+  have hdj := ‹ctx.defInst? y = some _›
+  have hij := ‹ctx.insts[_]? = some _›
+  obtain ⟨ty', imm, hcl, hfs⟩ := defInst_iconst_clif ctx hctx hdj hij hdata.symm
+  have hety' : eTy ty' = true := by
+    have hdat := hctx.data _ _ _ hij hcl
+    rw [← hdata] at hdat
+    exact (fb_instData_iconst hdat).1
+  simp only [List.cons.injEq, and_true] at hfs
+  subst hfs
+  obtain ⟨-, rfl, rfl⟩ := (ctor_imm_shift_iff ctx _ _ _ _ _).mp
+    ‹externCtor ctx T.imm_shift_from_imm64 _ _ = _›
+  have hL : Nat.land (u64 (imm64OfIconst ty' imm)) (w - 1) = imm.toNat % w := by
+    rw [land_mask_mod hW, u64_imm64OfIconst_fb (eTy_width hety')]
+  have hS := ‹ApplyInternal _ _ _ _ 27 712 _ _ _ _›
+  have hN := ‹externCtor ctx T.negate_imm_shift _ _ = _›
+  rw [hL] at hN
+  obtain ⟨rfl, rfl⟩ := (ctor_negate_imm_shift_iff ctx _ _ _ _ _).mp hN
+  rw [neg_imm hW (Nat.mod_lt _ hW.pos)] at hS
+  have hZ := ‹ApplyInternal _ _ _ _ 27 556 _ _ _ _›
+  have hE := zext32_ok hp' hco (by omega) hZ
+  obtain ⟨k, ms1, rfl, hem, hmono, hdefs, huses, hkx, hklt, hsem1⟩ :=
+    extOut_prun hR hctx hvb (.inl rfl) (by simp) (by simp) hE
+  obtain ⟨ms2, d, rfl, hsh, hsem2⟩ :=
+    small_rotr_imm_ok hp' hco hR (by omega) hw (Nat.mod_lt _ hW.pos) hklt hS
+  have hO := ‹ApplyInternal _ _ _ _ 25 172 _ _ _ _›
+  obtain ⟨rfl, hst⟩ := output_reg_ok hp' hco (by omega) hO
+  refine ⟨ms1 ++ ms2, d, rfl, by
+    rw [hst]
+    exact codeShapeU_compose hem hmono hdefs huses hkx
+      (hsh.weaken (fun u hu => by simp at hu; simp [hu])), ?_⟩
+  intro ty hty hety fr ρ u yv res _ hvals hdfg hx hy hres
+  subst hty
+  have hyv := dfg_iconst_fb hdfg hdj hij hcl hy
+  subst hyv
+  obtain ⟨ρ1, hr1, hfr, hext⟩ := hsem1 fr ρ ⟨_, u⟩ hvals hdfg hx
+  obtain ⟨ρ', hr2, -, hrot⟩ := hsem2 ρ1
+  refine ⟨ρ', prun_append hr1 hr2, ?_⟩
+  simp only [Clif.Sem.shift, Clif.Sem.rotl, Clif.Sem.shiftAmt, Option.some.injEq] at hres
+  subst hres
+  have hA := hext.2 (show ty.width ≤ 32 by omega)
+  simp only [Bool.false_eq_true, ↓reduceIte] at hA
+  simp only [VHolds]
+  rw [hrot u (by exact hA)]
+  exact rotr_neg hW.pos _ _ _ (by simp only [Nat.mod_mod])
+
 end Rules
 
 end Backend.Proof
