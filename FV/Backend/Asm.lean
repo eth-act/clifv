@@ -437,6 +437,11 @@ def VectorSize.lane : VectorSize → String
   | .size8x8 | .size8x16 => "b" | .size16x4 | .size16x8 => "h"
   | .size32x2 | .size32x4 => "s" | .size64x2 => "d"
 
+/-- The destination lane letter of `uaddlv` (twice the source lane width). -/
+def VectorSize.wideLane : VectorSize → String
+  | .size8x8 | .size8x16 => "h" | .size16x4 | .size16x8 => "s"
+  | .size32x2 | .size32x4 | .size64x2 => "d"
+
 def symOff (sym : String) (off : Int) : String :=
   if off == 0 then sym else if off > 0 then s!"{sym}+{off}" else s!"{sym}{off}"
 
@@ -480,7 +485,8 @@ def Insn.asm (k : Nat) : Insn → String
   | .umov s rd rn idx => s!"umov {rd.gpr (s == .size64)}, v{rn.vnum}.{s.fpreg ""}[{idx}]"
   | .cnt s rd rn => s!"cnt v{rd.vnum}.{s.arr}, v{rn.vnum}.{s.arr}"
   | .vecLanes op s rd rn =>
-    s!"{if op == .addv then "addv" else "uaddlv"} {s.lane}{rd.vnum}, v{rn.vnum}.{s.arr}"
+    if op == .addv then s!"addv {s.lane}{rd.vnum}, v{rn.vnum}.{s.arr}"
+    else s!"uaddlv {s.wideLane}{rd.vnum}, v{rn.vnum}.{s.arr}"
   | .addp s rd rn rm => s!"addp v{rd.vnum}.{s.arr}, v{rn.vnum}.{s.arr}, v{rm.vnum}.{s.arr}"
   | .b t => s!"b {t.name k}"
   | .bcond c t => s!"b.{c.asm} {t.name k}"

@@ -10,9 +10,13 @@
 #   - the function symbol (value, size, type, binding),
 # and per file the mapping symbols ($x/$d kind and value) and the set of undefined symbols.
 #
-# usage: scripts/lean-backend-encode-check.sh [-v] [--corpus | --runtests | FILE.clif...]
-#   default: --corpus (corpus/clif/*.clif, corpus/clif/extrt/*.clif) and --runtests
-#   (every file of Cranelift's runtests/; functions outside E are not compiled)
+# usage: scripts/lean-backend-encode-check.sh [-v] [--corpus | --runtests | --random |
+#                                             --n N | --seed S | FILE.clif...]
+#   default: --corpus (corpus/clif/*.clif, corpus/clif/extrt/*.clif), --runtests
+#   (every file of Cranelift's runtests/; functions outside E are not compiled) and --random
+#   (`lean-backend-encode-test random`: every Insn form with N random operand sets
+#   (default 200, seed S default 0x5eed = 24301), one function per form; it also runs the
+#   decode check on them)
 # Output: one line per differing function (every function with -v), then totals.
 # Exit status 0 iff every compiled function is identical and no file fails.
 set -euo pipefail
@@ -25,46 +29,61 @@ LLVM_MC=${LLVM_MC:-/usr/lib/llvm-18/bin/llvm-mc}
 VERBOSE=0
 FILES=()
 SETS=()
+N=200
+SEED=24301
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -v) VERBOSE=1 ;;
     --corpus) SETS+=(corpus) ;;
     --runtests) SETS+=(runtests) ;;
+    --random) SETS+=(random) ;;
+    --n) N=$2; shift ;;
+    --seed) SEED=$2; shift ;;
     -*) echo "unknown option $1" >&2; exit 2 ;;
     *) FILES+=("$1") ;;
   esac
   shift
 done
-if [[ ${#SETS[@]} -eq 0 && ${#FILES[@]} -eq 0 ]]; then SETS=(corpus runtests); fi
+if [[ ${#SETS[@]} -eq 0 && ${#FILES[@]} -eq 0 ]]; then SETS=(corpus runtests random); fi
 for s in "${SETS[@]}"; do
   case "$s" in
     corpus) FILES+=(corpus/clif/*.clif corpus/clif/extrt/*.clif) ;;
     runtests) FILES+=("$RUNTESTS"/*.clif) ;;
+    random) FILES+=(@random) ;;
   esac
 done
 
 echo "== build"
-lake build lean-backend 2>&1 | tail -1
+lake build lean-backend lean-backend-encode-test 2>&1 | tail -1
 
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 
 one() {
   local f=$1 b
+  # fullfp16 only for `fmov h, w` (random forms); it changes no other encoding
+  local MC_FLAGS=(-triple=aarch64-linux-gnu -mattr=+fullfp16 -filetype=obj)
   b=$(printf '%s' "$f" | tr '/' '_')
   b=${b%.clif}
-  .lake/build/bin/lean-backend "$f" "$WORK/$b.s" 2>/dev/null
-  if ! .lake/build/bin/lean-backend "$f" "$WORK/$b.o" 2> "$WORK/$b.err"; then
-    echo "lean-encode-failed" > "$WORK/$b.status"; return 0
+  if [[ $f == @random ]]; then
+    if ! .lake/build/bin/lean-backend-encode-test random "$WORK/$b.s" "$WORK/$b.o" --n "$N" \
+         --seed "$SEED" > "$WORK/$b.log" 2> "$WORK/$b.err"; then
+      cat "$WORK/$b.log" >> "$WORK/$b.err"
+      echo "lean-encode-failed" > "$WORK/$b.status"; return 0
+    fi
+  else
+    .lake/build/bin/lean-backend "$f" "$WORK/$b.s" 2>/dev/null
+    if ! .lake/build/bin/lean-backend "$f" "$WORK/$b.o" 2> "$WORK/$b.err"; then
+      echo "lean-encode-failed" > "$WORK/$b.status"; return 0
+    fi
   fi
-  if ! "$LLVM_MC" -triple=aarch64-linux-gnu -filetype=obj "$WORK/$b.s" -o "$WORK/$b.mc.o" \
-       2> "$WORK/$b.mcerr"; then
+  if ! "$LLVM_MC" "${MC_FLAGS[@]}" "$WORK/$b.s" -o "$WORK/$b.mc.o" 2> "$WORK/$b.mcerr"; then
     echo "llvm-mc-failed" > "$WORK/$b.status"; return 0
   fi
   echo ok > "$WORK/$b.status"
 }
 export -f one
-export WORK LLVM_MC
+export WORK LLVM_MC N SEED
 printf '%s\0' "${FILES[@]}" | xargs -0 -n1 -P "$(nproc)" bash -c 'one "$1"' _
 
 python3 - "$WORK" "$VERBOSE" "${FILES[@]}" <<'EOF'
@@ -110,7 +129,8 @@ def elf(path):
 
 T = dict(files=0, nofuncs=0, fail_files=0, funcs=0, same=0, differ=0, words=0, relocs=0)
 for f in files:
-    b = f.replace("/", "_")[:-5]
+    b = f.replace("/", "_")
+    if b.endswith(".clif"): b = b[:-5]
     st = open(os.path.join(work, b + ".status")).read().strip()
     T["files"] += 1
     if st != "ok":
