@@ -623,4 +623,4 @@ helper terms `aarch64_{u,s}load*` (529–535), `aarch64_store*` (541–544) + `s
 store 22); 815/824 are vacuous (`ctor_is_sinkable_inst`). Byte lemmas for the load value / store
 are in `IselMemArm`.
 
-**Axioms**: `propext`, `Classical.choice`, `Quot.sound` (no `sorry`).
+**Axioms**: `memRelOk_holds`, `readBits_getLsbD_eq`, `backend_correct_of_rules`: `propext`, `Classical.choice`, `Quot.sound`; `amode_add_ok` additionally the `bv_decide` certificates of M4AluB's `movK_ident` (via `imm_ok`). No `sorry`.
