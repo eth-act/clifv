@@ -105,6 +105,59 @@ theorem eval_sextend (fr : Frame) (mem : Mem) {w w' : IntW} {x : ValueId} {a : B
     simp only [intV, Val.ofNat, intTy, Clif.Ty.width, Clif.Sem.sextend, BitVec.ofNat_toNat,
       BitVec.setWidth_eq, IntW.bits] <;> rfl
 
+/-! ## Overflow checks (`compileOp` for `addC`, `subC`, `mulC`) -/
+
+theorem add_ult_eq {w : Nat} (a b : BitVec w) : (a + b).ult a = BitVec.uaddOverflow a b := by
+  simp only [BitVec.ult, BitVec.uaddOverflow, BitVec.toNat_add]
+  have ha := a.isLt; have hb := b.isLt
+  have key : (a.toNat + b.toNat) % 2 ^ w < a.toNat ↔ a.toNat + b.toNat ≥ 2 ^ w := by
+    by_cases h : a.toNat + b.toNat < 2 ^ w
+    · rw [Nat.mod_eq_of_lt h]; omega
+    · rw [Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]; omega
+  exact decide_eq_decide.mpr key
+theorem ult_eq_usub {w : Nat} (a b : BitVec w) : a.ult b = BitVec.usubOverflow a b := by
+  simp [BitVec.ult, BitVec.usubOverflow]
+theorem umulhi_ne {w : Nat} (a b : BitVec w) : (Clif.Sem.umulhi a b != 0) = BitVec.umulOverflow a b := by
+  have ha := a.isLt; have hb := b.isLt
+  have hp : a.toNat * b.toNat < 2 ^ (w + w) := by
+    rw [Nat.pow_add]; exact Nat.mul_lt_mul'' ha hb
+  have e : (Clif.Sem.umulhi a b).toNat = a.toNat * b.toNat / 2 ^ w := by
+    simp only [Clif.Sem.umulhi, BitVec.extractLsb'_toNat, BitVec.toNat_mul, BitVec.toNat_setWidth,
+      Nat.shiftRight_eq_div_pow]
+    have h1 : a.toNat % 2 ^ (w + w) = a.toNat := Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le ha (Nat.pow_le_pow_right (by decide) (by omega)))
+    have h2 : b.toNat % 2 ^ (w + w) = b.toNat := Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le hb (Nat.pow_le_pow_right (by decide) (by omega)))
+    rw [h1, h2, Nat.mod_eq_of_lt hp]
+    apply Nat.mod_eq_of_lt
+    rw [Nat.div_lt_iff_lt_mul (Nat.two_pow_pos _), ← Nat.pow_add]; exact hp
+  have : a.toNat * b.toNat / 2 ^ w = 0 ↔ a.toNat * b.toNat < 2 ^ w := Nat.div_eq_zero_iff_lt (Nat.two_pow_pos _)
+  have key : Clif.Sem.umulhi a b ≠ 0 ↔ a.toNat * b.toNat ≥ 2 ^ w := by
+    have hz : (0 : BitVec w).toNat = 0 := by simp
+    rw [ne_eq, ← BitVec.toNat_inj, e, hz, this]; omega
+  simp only [BitVec.umulOverflow]
+  by_cases h : Clif.Sem.umulhi a b = 0
+  · have : ¬ a.toNat * b.toNat ≥ 2 ^ w := fun hh => key.2 hh h
+    simp [h, this]
+  · have := key.1 h
+    simp only [this, decide_true]; simpa using h
+
+theorem eval_umulhi (fr : Frame) (mem : Mem) (w : IntW) {x y : ValueId}
+    {a b : BitVec w.bits} (hx : fr.regs x = some (intV w a)) (hy : fr.regs y = some (intV w b)) :
+    evalInst fr mem (.binary .umulhi (intTy w) x y) = .ok ([intV w (Clif.Sem.umulhi a b)], mem) := by
+  rw [eval_binary fr mem _ _ hx hy rfl]
+  cases w <;> simp only [intV, Val.ofNat, intTy, Clif.Ty.width, BitVec.ofNat_toNat,
+    BitVec.setWidth_eq] <;> rfl
+
+theorem eval_icmp_uge (fr : Frame) (mem : Mem) (w : IntW) {x y : ValueId}
+    {a b : BitVec w.bits} (hx : fr.regs x = some (intV w a)) (hy : fr.regs y = some (intV w b)) :
+    evalInst fr mem (.icmp .uge (intTy w) x y) = .ok ([Val.ofBool (b.ule a)], mem) := by
+  simp only [evalInst, getAs_of hx, getAs_of hy, Clif.Res.ok_bind, Clif.Res.pure_eq]
+  cases w <;> simp only [intTy, Clif.Ty.width, BitVec.ofNat_toNat, BitVec.setWidth_eq,
+    Clif.Sem.icmp, Clif.Sem.intcc, Clif.Sem.bool8, Val.ofBool] <;> rfl
+
+theorem intV_zero (w : IntW) :
+    (⟨intTy w, BitVec.ofNat (intTy w).width 0⟩ : Val) = intV w 0 := by
+  simp [intV, Val.ofNat]
+
 theorem intW_eq_of_bits {w w' : IntW} (h : w.bits = w'.bits) : w = w' := by
   cases w <;> cases w' <;> first | rfl | (simp only [IntW.bits] at h; omega)
 
