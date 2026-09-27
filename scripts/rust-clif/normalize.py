@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Rewrite cg_clif's CLIF dumps into the text our tools accept, without changing semantics.
 
-usage: normalize.py CLIF_DIR STAGE OUT [--lean-gv-order] [--drop-nop] [--split]
+usage: normalize.py CLIF_DIR STAGE OUT [--drop-nop] [--split]
   CLIF_DIR  a `<crate>.clif/` directory written by cg_clif (scripts/rust-clif/dump.sh)
   STAGE     unopt | opt
 
@@ -17,9 +17,6 @@ Rewrites (each is a pure renaming/inlining, checked by `clif-oracle check` on th
   * `gvK = symbol colocated userextnameJ ; allocX` -> `gvK = symbol colocated %allocX`
     (`%data_J` when the comment is not an alloc name, e.g. `; vtable`).
   * comment-only lines are dropped (cg_clif's `; abi …` comments are several KB each).
-  * `--lean-gv-order`: write `colocated symbol %X` instead of the reader's `symbol colocated %X`,
-    the order `FV/Clif/Parse.lean` expects (a discrepancy with the pinned reader); the result
-    is then for the Lean tools only.
   * `--drop-nop`: drop `nop` (cg_clif emits it only as an anchor for comments).
 """
 
@@ -30,7 +27,6 @@ from pathlib import Path
 
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
-    lean_gv = "--lean-gv-order" in sys.argv
     drop_nop = "--drop-nop" in sys.argv
     split = "--split" in sys.argv
     d, stage, out = Path(args[0]), args[1], Path(args[2])
@@ -86,8 +82,6 @@ def main():
                 pre, j, off, _, c = m.groups()
                 name = c if c and re.fullmatch(r"alloc\d+", c) else f"data_{j}"
                 l = f"{pre}%{name}{off}"
-                if lean_gv:
-                    l = l.replace("symbol colocated ", "colocated symbol ")
             out_lines.append(l)
         bodies.append("\n".join(out_lines))
     if split:

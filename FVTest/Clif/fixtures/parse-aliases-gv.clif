@@ -1,0 +1,42 @@
+; Regression: value aliases used before their alias line (and chained), and the reader's
+; `symbol [colocated] %name[+off]` global value syntax.
+test interpret
+test run
+target aarch64
+
+function %late_alias(i32) -> i32 {
+block0(v0: i32):
+    jump block2
+
+block1:
+    return v5
+
+block2:
+    v6 = iadd.i32 v0, v0
+    v5 -> v6
+    jump block1
+}
+; run: %late_alias(2) == 4
+; run: %late_alias(-3) == -6
+
+function %alias_chain(i64) -> i64 {
+block0(v0: i64):
+    v10 = iadd.i64 v7, v0
+    return v10
+
+block1:
+    v9 -> v0
+    v8 -> v9
+    v7 -> v8
+    return v7
+}
+; run: %alias_chain(5) == 10
+
+function %gv_symbol(i32) -> i32 system_v {
+    gv0 = symbol colocated %data
+    gv1 = symbol %other+8
+    gv2 = symbol colocated %third-4
+block0(v0: i32):
+    return v0
+}
+; run: %gv_symbol(2) == 2

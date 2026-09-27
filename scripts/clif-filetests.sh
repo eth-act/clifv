@@ -18,7 +18,7 @@ if [[ "${1:-}" == "-v" ]]; then VERBOSE=(-v); shift; fi
 if [[ $# -gt 0 ]]; then
   FILES=("$@")
 else
-  FILES=(third_party/wasmtime/cranelift/filetests/filetests/runtests/*.clif)
+  FILES=(third_party/wasmtime/cranelift/filetests/filetests/runtests/*.clif FVTest/Clif/fixtures/*.clif)
 fi
 
 cargo build --quiet --release --manifest-path rust/Cargo.toml -p clif-oracle
