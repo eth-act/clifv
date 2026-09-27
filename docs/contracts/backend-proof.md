@@ -424,6 +424,60 @@ it avoids having to show which rule is selected.
    `seqRun_append_fall_stop`. Needed: `imm` from M4AluB (`IselTermsImm`),
    `trap_if_div_overflow` (`ccmpImm`) and `intmin_check` (`aluRRImmShift`).
 
+### Progress (M4Cmp2, resumed from 8daa6d2)
+
+**Still no root rule of family C proven** (request budget exhausted). Proven term contracts and
+infrastructure (all building, no `sorry`; axioms `propext`, `Classical.choice`, `Quot.sound`
+plus `bv_decide` certificates):
+
+* Tactics (`IselCmpBase`): `isel_inv' hp [lemmas] at h…` unfolds the rule constants found in the
+  hypotheses and passes only their `hp.tN` data facts (no `cases hp`: the ~1400 facts in the
+  context made every inversion round slow); `isel_refute hp at hm` (one simp pass, cheap
+  refutation of rules whose pattern cannot match); `isel_call hp hc [contracts]` (applies callee
+  contracts `c hp hc (hn := _) (h := _)` to every `ApplyInternal` hypothesis, repeatedly).
+  `isel_split'` (`IselCmpTerms`) splits without `cases hp`; `internal_split_first` now returns
+  `n = n' + 20`, so nested calls keep a known fuel (contracts take `B ≤ n` bounds).
+* `IselCmpExt`: `zext32_ok`/`sext32_ok`/`zext64_ok`/`sext64_ok` (syntactic `ExtOut`, the
+  32-bit ones use the failed `$I32` rule), `ExtOut.sem` (the returned vreg holds the value,
+  `ExtHolds`: low bits and the sign/zero extension to 32/64 bits; `Frag`, freshness, `UsesLo`).
+* `IselCmpCond`: `SetsFlags`, `CondShape`, `CondSem`, `CondFlag`; `Runs.flags`,
+  `runs_flags_cset`, `runs_flags_csel`; `with_flags_ok` (rule 818, the other 15 refuted);
+  `lcrb_ok` + `lcrb_run` (`lower_cond_result_bool`: flag instruction + `cset` into a fresh vreg
+  holding the condition as 0/1); `opcode_absurd` + `isel_opcode_absurd hctx` (a `def_inst`
+  pattern naming a non-E opcode never matches, via `CtxInv`, `instData_inv_names`,
+  `eOpNames`).
+* `IselCmpIcmp`: `CondCode` (semantic contract of a condition producer), `CondCode.flag`,
+  `CondCode.notZero`, `CondCode.inv`; `cri_ok` (`cond_result_invert`); `tst_imm_ok`.
+  `is_nonzero_ok` is drafted in a comment at the end of the file (rules 4–10 and I128 already
+  refuted by its first lines; the I8/I64/fits_in_32 cases need small fixes).
+
+**Next steps**: finish `is_nonzero_ok`; `emit_icmp_ok` as a `CondCode` with
+`T fr b := ∃ ty a b', fr.regs x = ⟨ty,a⟩ ∧ fr.regs y = ⟨ty,b'⟩ ∧ b = intcc cc a b'` (rules 7/8
+through `is_nonzero`/`CondCode.inv`; rules 5/6/3 need an `iconst` inversion lemma from
+`CtxInv.data` + `DFGCons` giving `fr.regs y = ⟨ty, imm⟩` with `u64 (imm64OfIconst ty imm) =
+imm.toNat`; rules 0/1 need `lower_extend_op` and `Arm.extend_reg` for UXT/SXT B/H; rule 4 is
+refuted by `value_regs_get … 1` on a one-register value); `is_nonzero_cmp_ok`; then root rule
+2215 = `lcrb_ok`/`lcrb_run` after `emit_icmp_ok` (+ `output_reg`), 1281 likewise, select/min/max
+via `lower_select` (`CondFlag cmpXzr`, `runs_flags_csel`, `lower_select_cond` rule 5364 only for
+integer types). Division needs `imm_ok` from M4AluB (`eac2707`, `IselTermsImm.lean`; merge
+agent/m4-alu-b). M4Ctl consumes `is_nonzero_cmp_ok`/`CondSem` for `brif`.
+
+### Progress (M4Cmp3)
+
+Root rules proven (`LowerRuleOk`): **icmp 2215** (`icmp_ruleOk`), **uextend(icmp) 1281**
+(`uextend_icmp_ruleOk`), both in `IselCmpRoot.lean`. Contracts: `is_nonzero_ok` (IselCmpIcmp),
+`emit_icmp_ok` (all 12 rules, `IcmpT`), `lower_extend_op_ok`, iconst look-through (IselCmpEmit),
+`is_nonzero_cmp_ok`, `output_reg_ok`, `condCode_lcrb`, `lowerInstOk_runs` (IselCmpRoot).
+Main ddf0955 merged. Never use `git stash` (shared across worktrees).
+
+**Next**: `lower_select_cond_ok` (int widths, rule 5364) is proven in the WIP draft
+`/tmp/m4cmp3_IselCmpSelect_WIP.lean`; `lower_select_ok` there has the Zero/NotZero/Cond cases
+and the fallback 5331 refuted by forward `isel_eval` of `hpre` (works); remaining bug: the
+`obtain ⟨he⟩ … := ⟨‹_›⟩` of the state equation escapes `try` in the Cond case (use
+`rename_i`/`first` instead). Then select 2267 / min-max 1222–1228 = `is_nonzero_cmp_ok` or
+`emit_icmp_ok (cc := .ult/.slt/.ugt/.sgt)` + `lower_select_ok` + `runs_flags_csel` + `output`.
+Vector min/max 1233–1251 and div/rem (1116…1211) not started.
+
 ## Family Ctl: terminators, branches, calls (M4Ctl)
 
 Branch `agent/m4-ctl`. Files `FV/Backend/Proof/IselCtl{Base,Term,Unmatch,Branch,Call,}.lean`,

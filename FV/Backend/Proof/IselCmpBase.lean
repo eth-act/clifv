@@ -341,3 +341,99 @@ macro_rules
   | `(tactic| isel_inv at $hs*) => `(tactic| isel_inv [] at $hs*)
   | `(tactic| isel_inv [$ts,*] at $hs*) => `(tactic| (isel_inv_simp [$ts,*] at $hs* <;> isel_destruct <;> subst_vars <;>
       repeat (isel_inv_simp [] at * <;> isel_destruct <;> subst_vars)))
+
+/-- `isel_inv` whose later rounds also use the given lemmas (no `*` allowed). -/
+syntax "isel_inv_all" ("[" (Lean.Parser.Tactic.simpStar <|> Lean.Parser.Tactic.simpErase <|> Lean.Parser.Tactic.simpLemma),* "]")? " at " (ppSpace colGt ident)+ : tactic
+macro_rules
+  | `(tactic| isel_inv_all [$ts,*] at $hs*) => `(tactic| (isel_inv_simp [$ts,*] at $hs* <;> isel_destruct <;> subst_vars <;>
+      repeat (isel_inv_simp [$ts,*] at * <;> isel_destruct <;> subst_vars)))
+
+open Lean Elab Tactic Meta in
+/-- The term ids a rule constant mentions (`.term _ t _` patterns and expressions). -/
+def iselRuleTermIds (rule : Name) : MetaM (Array Nat) := do
+  let some ci := (← getEnv).find? rule | return #[]
+  let some v := ci.value? | return #[]
+  let acc ← IO.mkRef (#[] : Array Nat)
+  v.forEach fun e => do
+    if e.isAppOfArity ``Isle.Pattern.term 3 || e.isAppOfArity ``Isle.Expr.term 3 then
+      match e.getArg! 1 with
+      | .lit (.natVal n) => acc.modify (·.push n)
+      | a => match a.nat? with
+        | some n => acc.modify (·.push n)
+        | none => pure ()
+  return (← acc.get)
+
+open Lean Elab Tactic Meta in
+/-- `isel_inv' hp [lemmas] at h₁ … hₙ`: `isel_inv` with the rule constants (`Isle.Rule`
+definitions) occurring in the hypotheses unfolded and the data facts `hp.tN` of exactly the
+terms those rules mention (instead of `cases hp` and `*`, which puts ~1400 facts in the
+context and makes every inversion round slow). -/
+def iselInvLemmas (hp : Ident) (ls : Array Term) (hs : Array Ident) :
+    TacticM (Array (TSyntax `Lean.Parser.Tactic.simpLemma)) := withMainContext do
+  let mut rules : Array Name := #[]
+  for h in hs do
+    let ty ← instantiateMVars (← inferType (← getLocalDeclFromUserName h.getId).toExpr)
+    for c in ty.getUsedConstants do
+      if let some ci := (← getEnv).find? c then
+        if ci.type.isConstOf ``Isle.Rule && !rules.contains c then rules := rules.push c
+  let mut ids : Array Nat := #[]
+  for r in rules do
+    ids := ids ++ (← iselRuleTermIds r)
+  let ids2 := ids.toList.eraseDups
+  let env ← getEnv
+  let mut lemmas : Array (TSyntax `term) := #[]
+  for t in ids2 do
+    if env.contains (Name.mkStr ``Backend.Proof.Data s!"t{t}") then
+      lemmas := lemmas.push (mkIdent (hp.getId ++ Name.mkSimple s!"t{t}"))
+  for r in rules do lemmas := lemmas.push (mkIdent r)
+  for l in ls do lemmas := lemmas.push l
+  lemmas.mapM fun l => `(Lean.Parser.Tactic.simpLemma| $l:term)
+
+open Lean Elab Tactic Meta in
+@[inherit_doc iselInvLemmas]
+elab "isel_inv' " hp:ident " [" ls:term,* "]" " at " hs:(ppSpace colGt ident)+ : tactic => do
+  let lemmaStx ← iselInvLemmas hp ls.getElems hs
+  evalTactic (← `(tactic| isel_inv_all [$lemmaStx,*] at $hs*))
+
+open Lean Elab Tactic Meta in
+/-- `isel_refute hp at h`: one inversion `simp` pass (data facts as for `isel_inv'`); closes
+the goal when the match/evaluation `h` is impossible (no destructuring, which is what makes
+full inversions slow on rules with many variables). -/
+elab "isel_refute " hp:ident " at " h:ident : tactic => do
+  let lemmaStx ← iselInvLemmas hp #[] #[h]
+  evalTactic (← `(tactic| isel_inv_simp [and_assoc, $lemmaStx,*] at $h:ident))
+
+open Lean Elab Tactic Meta in
+/-- One step of `isel_call`: apply the first contract that fits the first `ApplyInternal`
+hypothesis it fits. -/
+partial def iselCallStep (hp hc : Ident) (ls : Array Ident) : TacticM Bool := do
+  let goal ← getMainGoal
+  for d in (← goal.getDecl).lctx do
+    if d.isImplementationDetail then continue
+    let ty ← instantiateMVars d.type
+    if ty.isAppOf ``Isle.Interp.ApplyInternal then
+      let nm := Name.mkSimple ("hcall" ++ (d.fvarId.name.toString.map fun c => if c.isAlphanum then c else '_'))
+      let g ← (← getMainGoal).rename d.fvarId nm
+      replaceMainGoal [g]
+      for l in ls do
+        let s ← saveState
+        try
+          let hN := mkIdent `h
+          let hnN := mkIdent `hn
+          evalTactic (← `(tactic| have hres := $l $hp $hc ($hN := $(mkIdent nm):ident) ($hnN := (by omega))))
+          evalTactic (← `(tactic| clear $(mkIdent nm):ident))
+          return true
+        catch _ =>
+          s.restore
+  return false
+
+open Lean Elab Tactic Meta in
+/-- `isel_call hp hc [contracts]`: replace every `ApplyInternal` hypothesis a contract
+(`contract hp hc (hn : bound ≤ fuel) h`) applies to by the contract's conclusion, split
+and substitute; repeat. -/
+elab "isel_call " hp:ident hc:ident " [" ls:ident,* "]" : tactic => do
+  let mut progress := true
+  while progress do
+    progress ← iselCallStep hp hc ls.getElems
+    if progress then
+      evalTactic (← `(tactic| (isel_destruct <;> try subst_vars)))
