@@ -578,3 +578,49 @@ different family-A/Cmp lemmas carry the suffix `_fb`: `lowerInstOk_one_fb`, `alu
 `extVal_fb`, `ofV_aluRRImm12_fb`, `ofV_aluRRImmLogic_fb`, `ofV_aluRRImmShift_fb`, `ofV_extend_fb`.
 `ispec`: the M4Cmp/M4Ctl forms precede the family-A generic forms (the Cmp `mSub` case is dropped:
 the generic `mulAddVal` case gives the same value).
+
+## Memory family (loads/stores/stack_addr/symbol_value) — M4Mem
+
+**Status: contract + infrastructure; no memory root rule proven yet** (request budget).
+Branch `agent/m4-mem`.
+
+**Contract change #7** (335353d, on main ddf0955; announced to all): memory rules cannot be
+`LowerRuleOk` for an arbitrary `MR`, so, like calls (#5), they are split out.
+* `IselContract`: `amodeAddr sb am bytes uses w` (effective address of the emitted amode forms,
+  immediates as the ISLE rules check them, as M6's `AMode.addr`), `loadSigned`, `loadVal`,
+  `MemRefines F sb syms isem` (M6 obligation for `csem`: loads/stores through `amodeAddr`
+  avoiding `F`, `loadAddr (slotOffset off) = sp + off + sb`, `loadExtNameGot` of a linked symbol
+  = its address — with `CallsRefine` this pins its `sym` on linked symbols), `MemRelOk F sb syms f MR`
+  (bytes, allocations outside `F` and below 2⁶⁴, `symbols = syms`, slot `id` at
+  `sp + sb + off(id)`, stores on both sides keep the relation), `memRootRule` (815, 824, 1027,
+  1041–1044, 1052–1057, 1064–1070, 1093), `MemRuleOk`, `MemRulesCorrect`; `LowerRulesCorrect`
+  gains `memRootRule r = false →`.
+* Soundness gap closed: `Clif.run` accepts a load/store address of any type, but the lowering uses
+  the whole 64-bit register as base, so the rules are false for `i32` addresses. `buildCtx`
+  already rejects them; `CtxInv.addr64` records it (`ctxOk` decides it, `ctxOk_sound` proves it).
+* `InstCalls f …` is now indexed by the function (the slot relation is per function);
+  `instCalls_of_rules`/`lowerInstOk_of_rules`/`lowerInstOk_runTerm` take `MemRulesCorrect`,
+  `MemRefines`, `MemRelOk`; `E2E.memRelOk_holds` proves `MemRelOk` for `Rel.holds`;
+  `backend_correct(_of_rules)` take `hmemRules : MemRulesCorrect program` and
+  `hmem : ∀ s, MemRefines (F s) slotOff syms (sem s)`.
+
+**Files.** `IselMemArm` (CLIF `readBits`/`writeBits` ↔ Arm `read_mem_bytes`/`write_mem_bytes`:
+`readBits_getLsbD_eq`, `read_mem_write_mem_bytes`, `writeBits_bytes`, `writeBits_setWidth`),
+`IselMemBase` (extern `iff` lemmas of the memory helpers; tactics `mem_inv hp [..] at h…`,
+`mem_refute`, `mem_split hp hc h t` — `isel_inv'`-style, keeps `hp`), `IselMemRun` (`RtOk`,
+`amVregs`/`amUses`, `load_ops`/`store_ops` operand views, `seqRun_isem_one`, `lo64_of_holds`,
+`Runs.of_prun`), `IselMemAmode` (`AddOk`, `amode_add_ok`: all three rules of `amode_add`;
+`add64_inv`, `add_imm64_inv`, `imm64_inv`, `addOk_imm12`, `addOk_add`).
+
+**Remaining (plan).** Contracts `amode_reg_scaled` (576, 3 rules), `amode_no_more_iconst`
+(575, 9 rules), `amode` (574, 4 rules incl. `stack_addr` → `SlotOffset`) with the statement
+`Frag ∧ ∃ am, amv.amode? = some am ∧ AmVregs am ∧ ∀ fr ρ w pv, RtOk … → fr.regs x = some pv →
+pv.ty = .i64 → UsesLo … ∧ Runs … (amodeAddr sb am bytes (amUses am ρ') w' = some (ofInt 64
+(pv.toNat + off)))` (DFG look-through via `binary_value`/`extend_value`/`shift_const_value`);
+helper terms `aarch64_{u,s}load*` (529–535), `aarch64_store*` (541–544) + `side_effect_inst_ok`,
+`compute_stack_addr` (643), `load_ext_name` (570: rules 3991/3996 fail since `is_pic`),
+`load_ext_name_got` (571); root rules by `root_match_data` + `instData` inversion (load format 16,
+store 22); 815/824 are vacuous (`ctor_is_sinkable_inst`). Byte lemmas for the load value / store
+are in `IselMemArm`.
+
+**Axioms**: `propext`, `Classical.choice`, `Quot.sound` (no `sorry`).
