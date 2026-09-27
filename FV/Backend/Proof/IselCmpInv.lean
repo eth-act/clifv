@@ -35,28 +35,27 @@ theorem matchRule_iff {m : Nat} {r : Rule} {vs : List V} {s s1 : σ × Array Rul
     | some env0 =>
       simp only [M.run_liftM_ok, M.except_ok_bind, Except.ok.injEq, Option.some.injEq, exists_eq_left']
 
-theorem matchArgs_nil_iff {st : σ} {env env' : Env V} :
-    matchArgs p sem st [] [] env = .ok (some env') ↔ env' = env := by
-  rw [matchArgs.eq_1]; simp [pure, Except.pure, eq_comm]
+theorem matchArgs_nil_iff {st : σ} {ws : List V} {env env' : Env V} :
+    matchArgs p sem st [] ws env = .ok (some env') ↔ ws = [] ∧ env' = env := by
+  cases ws with
+  | nil => rw [matchArgs.eq_1]; simp [pure, Except.pure, eq_comm]
+  | cons w ws => rw [matchArgs.eq_3] <;> simp [throw, throwThe, MonadExceptOf.throw]
 
-theorem matchArgs_cons_iff {st : σ} {q : Pattern} {qs : List Pattern} {w : V} {ws : List V}
+theorem matchArgs_cons_iff {st : σ} {q : Pattern} {qs : List Pattern} {ws : List V}
     {env env' : Env V} :
-    matchArgs p sem st (q :: qs) (w :: ws) env = .ok (some env') ↔
-      ∃ env1, matchPat p sem st q w env = .ok (some env1) ∧
-        matchArgs p sem st qs ws env1 = .ok (some env') := by
-  constructor
-  · exact matchArgs_cons_inv
-  · rintro ⟨env1, h1, h2⟩
-    rw [matchArgs.eq_2, h1]
-    exact h2
-
-theorem matchArgs_cons_nil_iff {st : σ} {q : Pattern} {qs : List Pattern} {env : Env V}
-    {o : Option (Env V)} : matchArgs p sem st (q :: qs) [] env = .ok o ↔ False := by
-  rw [matchArgs.eq_3] <;> simp [throw, throwThe, MonadExceptOf.throw]
-
-theorem matchArgs_nil_cons_iff {st : σ} {w : V} {ws : List V} {env : Env V}
-    {o : Option (Env V)} : matchArgs p sem st [] (w :: ws) env = .ok o ↔ False := by
-  rw [matchArgs.eq_3] <;> simp [throw, throwThe, MonadExceptOf.throw]
+    matchArgs p sem st (q :: qs) ws env = .ok (some env') ↔
+      ∃ w ws', ws = w :: ws' ∧ ∃ env1, matchPat p sem st q w env = .ok (some env1) ∧
+        matchArgs p sem st qs ws' env1 = .ok (some env') := by
+  cases ws with
+  | nil => rw [matchArgs.eq_3] <;> simp [throw, throwThe, MonadExceptOf.throw]
+  | cons w ws =>
+    constructor
+    · intro h; exact ⟨w, ws, rfl, matchArgs_cons_inv h⟩
+    · rintro ⟨w', ws', he, env1, h1, h2⟩
+      simp only [List.cons.injEq] at he
+      obtain ⟨rfl, rfl⟩ := he
+      rw [matchArgs.eq_2, h1]
+      exact h2
 
 theorem matchPat_bind_iff {st : σ} {ty : TypeId} {x : VarId} {sub : Pattern} {v : V}
     {env env' : Env V} :
