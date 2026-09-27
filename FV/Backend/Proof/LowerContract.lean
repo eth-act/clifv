@@ -26,10 +26,11 @@ namespace Backend.Proof.Driver
 
 open Backend Backend.Proof
 
-/-- Every `lower` call `lowerFunction` makes on a statement (from a state whose fresh vregs are
-above every value's vreg, `ValsBelow`) satisfies M4's `LowerInstOk`. -/
-def InstCalls (sem : Sem) (MR : MemRelT) (env : Clif.Env) (p : Clif.Program) : Prop :=
-  ∀ f ctx ii info inst st rss st' tr, CtxInv f ctx → CallRegArgs f → ctx.insts[ii]? = some info →
+/-- Every `lower` call `lowerFunction` makes on a statement of `f` (from a state whose fresh
+vregs are above every value's vreg, `ValsBelow`) satisfies M4's `LowerInstOk`. -/
+def InstCalls (f : Clif.Function) (sem : Sem) (MR : MemRelT) (env : Clif.Env) (p : Clif.Program) :
+    Prop :=
+  ∀ ctx ii info inst st rss st' tr, CtxInv f ctx → CallRegArgs f → ctx.insts[ii]? = some info →
     info.clif = some inst → st.emitted = #[] → ValsBelow ctx st →
     runTerm ctx "lower" [.inst ii] st = .ok (some (.regsVec rss), st', tr) →
     LowerInstOk sem MR env p ctx inst info.results st rss st' st'.emitted.toList
@@ -45,15 +46,18 @@ def TermCalls (sem : Sem) (MR : MemRelT) : Prop :=
       .ok (some out, st', tr) →
     LowerTermOk sem MR (termCtx ctx ti data) t targets st st' st'.emitted.toList
 
-/-- **From M4's rule theorems to the driver's `lower` calls.** -/
+/-- **From M4's rule theorems to the driver's `lower` calls** (of function `f`, whose memory
+relation satisfies `MemRelOk`). -/
 theorem instCalls_of_rules (hrules : LowerRulesCorrect Isle.Aarch64.program)
     (hex : ExcludedUnmatchable Isle.Aarch64.program)
-    (hcalls : CallRulesCorrect Isle.Aarch64.program) {F : BitVec 64 → Prop} {sem : Sem}
-    {MR : MemRelT} {env : Clif.Env} {p : Clif.Program} (hR : Refines F sem)
-    (hMR : MRStable F MR) (hcr : CallsRefine F env MR sem) : InstCalls sem MR env p := by
-  intro f ctx ii info inst st rss st' tr hctx hra hi hc hemp hvb hrun
-  obtain ⟨ms, rss', hem, hout, hok⟩ := lowerInstOk_runTerm hrules hex hcalls (env := env) (cp := p)
-    hR hMR hcr hctx hra hi hc hvb hrun
+    (hcalls : CallRulesCorrect Isle.Aarch64.program) (hmem : MemRulesCorrect Isle.Aarch64.program)
+    {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat} {sem : Sem}
+    {MR : MemRelT} {env : Clif.Env} {p : Clif.Program} {f : Clif.Function} (hR : Refines F sem)
+    (hMR : MRStable F MR) (hcr : CallsRefine F env MR sem) (hMem : MemRefines F sb syms sem)
+    (hMRo : MemRelOk F sb syms f MR) : InstCalls f sem MR env p := by
+  intro ctx ii info inst st rss st' tr hctx hra hi hc hemp hvb hrun
+  obtain ⟨ms, rss', hem, hout, hok⟩ := lowerInstOk_runTerm hrules hex hcalls hmem (env := env)
+    (cp := p) hR hMR hcr hMem hctx hra hMRo hi hc hvb hrun
   cases hout
   rw [hemp, Array.empty_append] at hem
   rw [hem, List.toList_toArray]
@@ -149,7 +153,7 @@ theorem ctxInv_termCtx {f : Clif.Function} {ctx : Ctx} (h : CtxInv f ctx) {ti : 
     rw [hph] at hi; cases hi; cases hx
   refine ⟨h.func, fun ii info inst hi hc => ?_, fun ii info inst hi hc => ?_, h.valueReg,
     h.typedReg, fun x d hd => ?_, fun x d info hd hi => ?_, h.slotOff, fun ii info hi => ?_,
-    h.valTyE⟩
+    h.valTyE, fun ii info inst x hi hc hx => ?_⟩
   · by_cases e : ii = ti
     · subst e; rw [termCtx_insts_self hph] at hi; cases hi; cases hc
     · rw [termCtx_insts_ne e] at hi; exact h.data ii info inst hi hc
@@ -161,6 +165,9 @@ theorem ctxInv_termCtx {f : Clif.Function} {ctx : Ctx} (h : CtxInv f ctx) {ti : 
   · by_cases e : ii = ti
     · subst e; rw [termCtx_insts_self hph] at hi; cases hi; intro t ht; cases ht
     · rw [termCtx_insts_ne e] at hi; exact h.resTysE ii info hi
+  · by_cases e : ii = ti
+    · subst e; rw [termCtx_insts_self hph] at hi; cases hi; cases hc
+    · rw [termCtx_insts_ne e] at hi; exact h.addr64 ii info inst x hi hc hx
 
 /-- For `return`/`trap`, `LowerTermOk` does not depend on the targets. -/
 theorem lowerTermOk_targets {isem : Sem} {MR : MemRelT} {ctx : Ctx} {t : Clif.Terminator}

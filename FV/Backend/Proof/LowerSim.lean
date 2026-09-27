@@ -147,7 +147,7 @@ structure DriverHyp (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) 
   cert : Cert f ctx st0 gn bl A
   dsem : DriverSem sem
   /-- M4: `lower` on statements (`instCalls_of_rules`) -/
-  insts : InstCalls sem MR env p
+  insts : InstCalls f sem MR env p
   /-- M4 (open): terminator calls -/
   terms : TermCalls sem MR
   ext : ∀ B ∈ f.blocks, ∀ st ∈ B.body, ∀ fn args, st.inst = .call fn args →
@@ -190,7 +190,7 @@ theorem stmt_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     ⟨L.sl[j]'(by omega), List.getElem?_eq_getElem _⟩
   obtain ⟨⟨info, hinfo, hclif, hres⟩, hemp, hst0, ⟨tr, hrun⟩, halias⟩ := hstmts j stm sl hstm hsl
   obtain ⟨ranges, hctx⟩ := H.shape.hctx
-  have hok := H.insts f ctx (L.start + j) info stm.inst sl.st sl.rss sl.st' tr
+  have hok := H.insts ctx (L.start + j) info stm.inst sl.st sl.rss sl.st' tr
     H.shape.ctxInv H.regArgs hinfo hclif hemp
     (fun x r h => Nat.lt_of_lt_of_le (H.shape.valsBelow x r h) hst0) hrun
   rw [hres] at hok

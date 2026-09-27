@@ -324,7 +324,10 @@ def ctxOk (f : Clif.Function) (ctx : Ctx) : Bool :=
     [CTy.int 8, .int 16, .int 32, .int 64].any fun u => decide (t = u)) &&
   (List.range ctx.valTy.size).all (fun x => match ctx.valueType? x with
     | some t => [CTy.int 8, .int 16, .int 32, .int 64].any fun u => decide (t = u)
-    | none => true)
+    | none => true) &&
+  ctx.insts.toList.all (fun info => match info.clif with
+    | some (.load _ _ _ x _) | some (.store _ _ _ _ x _) => decide (ctx.valueType? x = some (.int 64))
+    | _ => true)
 
 /-- The successor facts of `LowerShape` for block `B` (lowering `L`). -/
 def succOk (f : Clif.Function) (vc : VCode) (R : Reg → Reg) (B : Clif.Block) (L : BLow) : Bool :=
