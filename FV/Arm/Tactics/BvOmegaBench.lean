@@ -43,7 +43,10 @@ def bvOmegaSimpCtx : MetaM (Simp.Context × Array Simp.Simprocs) := do
     simprocs := simprocs.push s
 
   let congrTheorems ← Meta.getSimpCongrTheorems
-  let config : Simp.Config := { failIfUnchanged := false }
+  -- As core's `bv_omega` (`simp -implicitDefEqProofs only [bitvec_to_nat]`): with implicit
+  -- definitional-equality proofs the kernel must re-check `BitVec`→`Nat` rewrites by
+  -- unfolding, which hits kernel deep recursion on literals such as `2^64` (Lean v4.34).
+  let config : Simp.Config := { failIfUnchanged := false, implicitDefEqProofs := false }
   let ctx ← Simp.mkContext config simpTheorems congrTheorems
   return (ctx, simprocs)
 

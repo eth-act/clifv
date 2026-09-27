@@ -4,9 +4,13 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Author(s): Yan Peng
 -/
 -- LDUR, STUR (SIMD&FP)
+-- Modified by fv-compiler-rust (2026): ported to Lean v4.34.1, module prefix FV.Arm, wrapped in
+-- namespace Arm; the GPR forms (LDUR/LDURB/LDURH/LDURSB/LDURSH/LDURSW/STUR/STURB/STURH) are
+-- dispatched to `exec_reg_unscaled_imm_gpr` (FV/Arm/Insts/LDST/Reg_imm.lean).
 
 import FV.Arm.Decode
 import FV.Arm.Insts.Common
+import FV.Arm.Insts.LDST.Reg_imm
 
 namespace Arm
 
@@ -50,7 +54,7 @@ def exec_reg_unscaled_imm
   if inst.VR = 0b1#1 then
     exec_ldstur inst s
   else
-    write_err (StateError.Unimplemented s!"Unsupported instruction {inst} encountered!") s
+    exec_reg_unscaled_imm_gpr inst s
 
 end LDST
 

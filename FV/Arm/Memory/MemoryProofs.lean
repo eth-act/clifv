@@ -687,7 +687,7 @@ theorem read_mem_of_write_mem_bytes_subset
           -- simp only [bv_toNat]
           simp only [toNat_cast, extractLsb', toNat_setWidth]
           simp only [toNat_ushiftRight]
-          simp_all only [toNat_ofNat, toNat_ofNatLt]
+          simp_all only [toNat_ofNat, toNat_ofNatLT]
           simp only [BitVec.sub_of_add_is_sub_sub, Nat.succ_sub_succ_eq_sub,
                      Nat.mod_eq_of_lt, Nat.reduceLT, Nat.mod_add_mod,
                      Nat.sub_zero]
@@ -699,14 +699,16 @@ theorem read_mem_of_write_mem_bytes_subset
           have h_a_base := BitVec.to_nat_zero_lt_sub_64 addr2 addr1 h₁
           generalize BitVec.toNat val = v at h_v_size
           generalize BitVec.toNat (addr2 - addr1) = a at h_a_size h_a_base
-          have mod_lt_conc : (2 ^ 64 - 1 % 2 ^ 64) = 2 ^ 64 - 1 := by decide
+          have mod_lt_conc : (2 ^ 64 - 1 % 2 ^ 64) = 2 ^ 64 - 1 := by omega
           -- (FIXME) We won't need
           -- read_mem_of_write_mem_bytes_subset_helper_5 once we can
           -- disable simproc for 2^64.
           simp only [mod_lt_conc,
                      read_mem_of_write_mem_bytes_subset_helper_5]
-          have h_tmp : (2 ^ 64 - 1 + a) = (a + 2 ^ 64 - 1) := by
-            apply Nat.add_comm
+          -- (FV) was `(a + 2 ^ 64 - 1)` by `Nat.add_comm`, which only matched helper_4's
+          -- `a + (2 ^ 64 - 1)` up to kernel unfolding of `Nat.sub` (deep recursion on v4.34).
+          have h_tmp : (2 ^ 64 - 1 + a) = (a + (2 ^ 64 - 1)) := by
+            omega
           simp only [h_tmp]
           apply read_mem_of_write_mem_bytes_subset_helper_4 v a n' h_v_size h_a_base h_a_size
         · omega

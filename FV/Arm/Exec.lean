@@ -23,6 +23,8 @@ def exec_inst (ai : ArmInst) (s : ArmState) : ArmState :=
     DPI.exec_bitfield i s
   | DPI (DataProcImmInst.Move_wide_imm i) =>
     DPI.exec_move_wide_imm i s
+  | DPI (DataProcImmInst.Extract i) =>
+    DPI.exec_extract i s
 
   | BR (BranchInst.Compare_branch i) =>
     BR.exec_compare_branch i s
@@ -34,6 +36,8 @@ def exec_inst (ai : ArmInst) (s : ArmState) : ArmState :=
     BR.exec_cond_branch_imm i s
   | BR (BranchInst.Hints i) =>
     BR.exec_hints i s
+  | BR (BranchInst.Test_branch i) =>
+    BR.exec_test_branch i s
 
   | DPR (DataProcRegInst.Add_sub_carry i) =>
     DPR.exec_add_sub_carry i s
@@ -49,6 +53,12 @@ def exec_inst (ai : ArmInst) (s : ArmState) : ArmState :=
     DPR.exec_logical_shifted_reg i s
   | DPR (DataProcRegInst.Data_processing_three_source i) =>
     DPR.exec_data_processing_three_source i s
+  | DPR (DataProcRegInst.Add_sub_ext_reg i) =>
+    DPR.exec_add_sub_ext_reg i s
+  | DPR (DataProcRegInst.Conditional_compare_imm i) =>
+    DPR.exec_conditional_compare_imm i s
+  | DPR (DataProcRegInst.Conditional_compare_reg i) =>
+    DPR.exec_conditional_compare_reg i s
 
   | DPSFP (DataProcSFPInst.Advanced_simd_copy i) =>
     DPSFP.exec_advanced_simd_copy i s
@@ -58,6 +68,8 @@ def exec_inst (ai : ArmInst) (s : ArmState) : ArmState :=
     DPSFP.exec_advanced_simd_three_same i s
   | DPSFP (DataProcSFPInst.Conversion_between_FP_and_Int i) =>
     DPSFP.exec_conversion_between_FP_and_Int i s
+  | DPSFP (DataProcSFPInst.Advanced_simd_across_lanes i) =>
+    DPSFP.exec_advanced_simd_across_lanes i s
 
   | LDST (LDSTInst.Reg_imm_post_indexed i) =>
     LDST.exec_reg_imm_post_indexed i s
@@ -71,10 +83,13 @@ def exec_inst (ai : ArmInst) (s : ArmState) : ArmState :=
     LDST.exec_reg_pair_post_indexed i s
   | LDST (LDSTInst.Reg_pair_signed_offset i) =>
     LDST.exec_reg_pair_signed_offset i s
+  | LDST (LDSTInst.Reg_imm_pre_indexed i) =>
+    LDST.exec_reg_imm_pre_indexed i s
+  | LDST (LDSTInst.Reg_reg_offset i) =>
+    LDST.exec_reg_reg_offset i s
 
-  -- | _ =>
-  --   write_err
-  --     (StateError.Unimplemented s!"Unsupported ArmInst {ai} encountered in exec_inst!") s
+  | RES i =>
+    Reserved.exec_reserved i s
 
 
 def stepi (s : ArmState) : ArmState :=

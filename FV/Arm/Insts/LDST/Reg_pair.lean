@@ -4,6 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Author(s): Shilpi Goel, Yan Peng
 -/
 -- LDP, STP (pre-index, post-index and signed offset, GPR and SIMD&FP)
+-- Modified by fv-compiler-rust (2026): ported to Lean v4.34.1, module prefix FV.Arm, wrapped in
+-- namespace Arm; GPR transfer register 31 is XZR (ASL `X[t]`), upstream used SP.
 
 import FV.Arm.Decode
 import FV.Arm.Insts.Common
@@ -71,8 +73,9 @@ def reg_pair_operation (inst : Reg_pair_cls) (inst_str : String) (signed : Bool)
         let data1 := extractLsb' 0 datasize full_data
         let data2 := extractLsb' datasize datasize full_data
         if not inst.SIMD? ∧ signed then
-          let s := write_gpr 64 inst.Rt (signExtend 64 data1) s
-          write_gpr 64 inst.Rt2 (signExtend 64 data2) s
+          -- (FV fix) ASL `X[t, 64]`: register 31 is XZR (upstream wrote SP).
+          let s := write_gpr_zr 64 inst.Rt (signExtend 64 data1) s
+          write_gpr_zr 64 inst.Rt2 (signExtend 64 data2) s
         else
           let s:= ldst_write inst.SIMD? datasize inst.Rt data1 s
           ldst_write inst.SIMD? datasize inst.Rt2 data2 s

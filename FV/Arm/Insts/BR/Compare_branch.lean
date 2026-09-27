@@ -5,6 +5,11 @@ Author(s): Shilpi Goel
 -/
 
 -- CBZ, CBNZ -- 32 and 64-bit variants
+-- Modified by fv-compiler-rust (2026): ported to Lean v4.34.1, module prefix FV.Arm, wrapped in
+-- namespace Arm. Fixes against the Arm ARM (DDI 0487) "CBZ"/"CBNZ" ASL:
+--   bits(64) offset = SignExtend(imm19:'00', 64);   -- upstream: SignExtend(imm19 << 2), which
+--                                                   -- dropped imm19<18:17>
+--   bits(datasize) operand1 = X[t, datasize];      -- register 31 is XZR (upstream: SP)
 
 import FV.Arm.Decode
 import FV.Arm.State
@@ -24,14 +29,14 @@ open _root_.BitVec Arm.BitVec
 
 @[state_simp_rules]
 def Compare_branch_inst.branch_taken_pc (inst : Compare_branch_cls) (pc : BitVec 64) : BitVec 64 :=
-  let offset := signExtend 64 (inst.imm19 <<< 2)
+  let offset := signExtend 64 (inst.imm19 ++ 0b00#2)
   let branch_taken_pc := pc + offset
   branch_taken_pc
 
 @[state_simp_rules]
 def Compare_branch_inst.condition_holds (inst : Compare_branch_cls) (s : ArmState) : Bool :=
   let datasize := if inst.sf = 1#1 then 64 else 32
-  let operand1 := read_gpr datasize inst.Rt s
+  let operand1 := read_gpr_zr datasize inst.Rt s
   let operand1_is_zero := operand1 = BitVec.zero datasize
   if inst.op = 0#1 then
     -- CBZ

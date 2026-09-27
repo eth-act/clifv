@@ -4,6 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Author(s): Shilpi Goel, Yan Peng
 -/
 -- ADD, ORR, AND, BIC, ORR, ORN, EOR, BSL, BIT, BIF (vector)
+-- Modified by fv-compiler-rust (2026): ported to Lean v4.34.1, module prefix FV.Arm, wrapped in
+-- namespace Arm; ADDP (vector) added (`exec_addp_vector`).
 
 import FV.Arm.Decode
 import FV.Arm.State
@@ -109,15 +111,60 @@ def exec_logic_vector (inst : Advanced_simd_three_same_cls) (s : ArmState) : Arm
   let s := write_sfp datasize inst.Rd result s
   s
 
+/-- (FV addition) Pairwise add of adjacent elements of `concat`. -/
+def addp_aux (e : Nat) (elements : Nat) (esize : Nat) (concat : BitVec m)
+  (result : BitVec n) : BitVec n :=
+  if elements ≤ e then
+    result
+  else
+    let element1 := elem_get concat (2 * e) esize
+    let element2 := elem_get concat (2 * e + 1) esize
+    let result := elem_set result e esize (element1 + element2)
+    addp_aux (e + 1) elements esize concat result
+  termination_by (elements - e)
+
+/-- (FV addition) ADDP (vector). Arm ARM (DDI 0487) "ADDP (vector)" ASL (Advanced SIMD three
+same, `U = 0`, `opcode = 10111`):
+```
+if size:Q == '110' then UNDEFINED;
+constant integer esize = 8 << UInt(size); constant integer datasize = 64 << UInt(Q);
+constant integer elements = datasize DIV esize;
+bits(datasize) operand1 = V[n, datasize]; bits(datasize) operand2 = V[m, datasize];
+bits(datasize) result;
+bits(2*datasize) concat = operand2:operand1;
+bits(esize) element1; bits(esize) element2;
+for e = 0 to elements-1
+    element1 = Elem[concat, 2*e, esize];
+    element2 = Elem[concat, (2*e)+1, esize];
+    Elem[result, e, esize] = element1 + element2;
+V[d, datasize] = result;
+```
+Cross-checked against VeriISLE `MInst.VecRRR` (`Addp`) in
+cranelift/codegen/src/isa/aarch64/spec/vec_rrr.isle. -/
+@[state_simp_rules]
+def exec_addp_vector (inst : Advanced_simd_three_same_cls) (s : ArmState) : ArmState :=
+  if inst.size = 0b11#2 ∧ inst.Q = 0b0#1 then
+    write_err (StateError.Illegal s!"Illegal {inst} encountered!") s
+  else
+    let datasize := if inst.Q = 1#1 then 128 else 64
+    let esize := 8 <<< (BitVec.toNat inst.size)
+    let operand1 := read_sfp datasize inst.Rn s
+    let operand2 := read_sfp datasize inst.Rm s
+    let concat := operand2 ++ operand1
+    let result := addp_aux 0 (datasize / esize) esize concat (BitVec.zero datasize)
+    let s := write_sfp datasize inst.Rd result s
+    s
+
 @[state_simp_rules]
 def exec_advanced_simd_three_same
   (inst : Advanced_simd_three_same_cls) (s : ArmState) : ArmState :=
   open _root_.BitVec Arm.BitVec in
   let s :=
-    match inst.opcode with
-    | 0b10000#5 => exec_binary_vector inst s
-    | 0b00011#5 => exec_logic_vector inst s
-    | _ =>
+    match inst.U, inst.opcode with
+    | _, 0b10000#5 => exec_binary_vector inst s
+    | _, 0b00011#5 => exec_logic_vector inst s
+    | 0#1, 0b10111#5 => exec_addp_vector inst s
+    | _, _ =>
       write_err (StateError.Unimplemented s!"Unsupported instruction {inst} encountered!") s
   write_pc ((read_pc s) + 4#64) s
 
@@ -131,10 +178,11 @@ theorem pc_of_exec_advanced_simd_three_same
   simp only [exec_advanced_simd_three_same, exec_binary_vector,
              Bool.and_eq_true, beq_iff_eq, binary_vector_op,
              ofNat_eq_ofNat, zero_eq, exec_logic_vector,
-             logic_vector_op]
+             logic_vector_op, exec_addp_vector]
   split
   · split <;> simp only [state_simp_rules, minimal_theory]
   · simp only [state_simp_rules, minimal_theory]
+  · split <;> simp only [state_simp_rules, minimal_theory]
   · simp only [state_simp_rules, minimal_theory]
 
 ----------------------------------------------------------------------

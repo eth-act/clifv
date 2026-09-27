@@ -501,15 +501,20 @@ def Vpart_write (n : BitVec 5) (part width : Nat) (val : BitVec width) (s : ArmS
 
 ----------------------------------------------------------------------
 
+/-- Read the transfer register `Rt` of a load/store: `V[t]` or `X[t]`.
+(FV fix) For GPRs, register 31 is `XZR`/`WZR` here (ASL `X[t, datasize]`); upstream LNSym read
+the stack pointer. -/
 @[state_simp_rules]
 def ldst_read (SIMD? : Bool) (width : Nat) (idx : BitVec 5) (s : ArmState)
   : BitVec width :=
-  if SIMD? then read_sfp width idx s else read_gpr width idx s
+  if SIMD? then read_sfp width idx s else read_gpr_zr width idx s
 
+/-- Write the transfer register `Rt` of a load: `V[t]` or `X[t]` (register 31 = `XZR`, the
+write is discarded; (FV fix) upstream LNSym wrote the stack pointer). -/
 @[state_simp_rules]
 def ldst_write (SIMD? : Bool) (width : Nat) (idx : BitVec 5) (val : BitVec width) (s : ArmState)
   : ArmState :=
-  if SIMD? then write_sfp width idx val s else write_gpr width idx val s
+  if SIMD? then write_sfp width idx val s else write_gpr_zr width idx val s
 
 ----------------------------------------------------------------------
 
@@ -620,6 +625,62 @@ inductive MemOp where
   | MemOp_STORE : MemOp
   | MemOp_PREFETCH : MemOp
 deriving DecidableEq, Repr
+
+----------------------------------------------------------------------
+
+/-- (FV addition) Register extension type.
+Ref.: Arm ARM (DDI 0487) shared pseudocode `ExtendType`. -/
+inductive ExtendType where
+  | UXTB | UXTH | UXTW | UXTX
+  | SXTB | SXTH | SXTW | SXTX
+deriving DecidableEq, Repr
+
+instance : ToString ExtendType where toString a := toString (repr a)
+
+/-- (FV addition) Decode the `option` field of an extended-register operand.
+Ref.: Arm ARM (DDI 0487) `aarch64/instrs/extendreg/DecodeRegExtend`:
+```
+case op of
+  when '000' return ExtendType_UXTB; when '001' return ExtendType_UXTH;
+  when '010' return ExtendType_UXTW; when '011' return ExtendType_UXTX;
+  when '100' return ExtendType_SXTB; when '101' return ExtendType_SXTH;
+  when '110' return ExtendType_SXTW; when '111' return ExtendType_SXTX;
+```
+-/
+@[state_simp_rules]
+def decode_reg_extend (op : BitVec 3) : ExtendType :=
+  match op with
+  | 0b000#3 => .UXTB | 0b001#3 => .UXTH | 0b010#3 => .UXTW | 0b011#3 => .UXTX
+  | 0b100#3 => .SXTB | 0b101#3 => .SXTH | 0b110#3 => .SXTW | 0b111#3 => .SXTX
+
+/-- (FV addition) The signedness and source width selected by an `ExtendType`. -/
+@[state_simp_rules]
+def ExtendType.unsigned_len (e : ExtendType) : Bool × Nat :=
+  match e with
+  | .UXTB => (true, 8)  | .UXTH => (true, 16)  | .UXTW => (true, 32)  | .UXTX => (true, 64)
+  | .SXTB => (false, 8) | .SXTH => (false, 16) | .SXTW => (false, 32) | .SXTX => (false, 64)
+
+/-- (FV addition) Extend (and shift left by `shift`, 0..4) the low bits of `val`.
+Ref.: Arm ARM (DDI 0487) `aarch64/instrs/extendreg/ExtendReg`:
+```
+bits(N) ExtendReg(integer reg, ExtendType exttype, integer shift, integer N)
+  assert shift >= 0 && shift <= 4;
+  bits(N) val = X[reg, N];
+  boolean unsigned; integer len;
+  case exttype of ... (see `ExtendType.unsigned_len`)
+  // Sign or zero extend bottom LEN bits of register and shift left by SHIFT
+  constant integer nbits = Min(len, N - shift);
+  return Extend(val<nbits-1:0>:Zeros(shift), N, unsigned);
+```
+`Extend(x<nbits-1:0>:Zeros(shift), N, unsigned)` equals extending the low `nbits` bits of
+`val` to `N` bits and then shifting left by `shift` (the bits shifted out are beyond `N`). -/
+@[state_simp_rules]
+def extend_reg (val : BitVec n) (exttype : ExtendType) (shift : Nat) : BitVec n :=
+  let (unsigned, len) := exttype.unsigned_len
+  let nbits := min len (n - shift)
+  let part := extractLsb' 0 nbits val
+  let ext := if unsigned then zeroExtend n part else signExtend n part
+  ext <<< shift
 
 ----------------------------------------------------------------------
 

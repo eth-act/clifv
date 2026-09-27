@@ -5,6 +5,9 @@ Author(s): Yan Peng
 -/
 
 -- B.cond
+-- Modified by fv-compiler-rust (2026): ported to Lean v4.34.1, module prefix FV.Arm, wrapped in
+-- namespace Arm. Offset fixed to the Arm ARM (DDI 0487) "B.cond" ASL
+-- `SignExtend(imm19:'00', 64)` (upstream `SignExtend(imm19 << 2)` dropped imm19<18:17>).
 
 import FV.Arm.Decode
 import FV.Arm.State
@@ -21,7 +24,7 @@ open _root_.BitVec Arm.BitVec
 @[state_simp_rules]
 def Cond_branch_imm_inst.branch_taken_pc
   (inst : Cond_branch_imm_cls) (pc : BitVec 64) : BitVec 64 :=
-  let offset := signExtend 64 (inst.imm19 <<< 2)
+  let offset := signExtend 64 (inst.imm19 ++ 0b00#2)
   pc + offset
 
 @[state_simp_rules]

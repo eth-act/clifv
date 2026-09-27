@@ -8,6 +8,7 @@ import FV.Arm.Insts.DPI.PC_rel_addressing
 import FV.Arm.Insts.DPI.Logical_imm
 import FV.Arm.Insts.DPI.Bitfield
 import FV.Arm.Insts.DPI.Move_wide_imm
+import FV.Arm.Insts.DPI.Extract
 
 namespace Arm
 

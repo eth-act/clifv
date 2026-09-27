@@ -4,6 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Author(s): Yan Peng
 -/
 -- REV, REV16, REV32
+-- Modified by fv-compiler-rust (2026): ported to Lean v4.34.1, module prefix FV.Arm, wrapped in
+-- namespace Arm; RBIT, CLZ and CLS added (`exec_data_processing_rbit`, `..._clz_cls`).
 
 import FV.Arm.Decode
 import FV.Arm.Insts.Common
@@ -85,10 +87,67 @@ def exec_data_processing_rev
     let s := write_pc ((read_pc s) + 4#64) s
     s
 
+/-- (FV addition) RBIT (32-, 64-bit). Arm ARM (DDI 0487) "RBIT" ASL:
+```
+bits(datasize) operand = X[n, datasize]; bits(datasize) result;
+for i = 0 to datasize-1
+    result<datasize-1-i> = operand<i>;
+X[d, datasize] = result;
+```
+This is core `BitVec.reverse` (`getLsbD_reverse`), which `bv_decide` supports natively.
+Cross-checked against VeriISLE `MInst.BitRR` (`RBit`) in
+cranelift/codegen/src/isa/aarch64/spec/bit_rr.isle. -/
+@[state_simp_rules]
+def exec_data_processing_rbit
+  (inst : Data_processing_one_source_cls) (s : ArmState) : ArmState :=
+  let datasize := 32 <<< inst.sf.toNat
+  let operand := read_gpr_zr datasize inst.Rn s
+  let result := operand.reverse
+  let s := write_gpr_zr datasize inst.Rd result s
+  let s := write_pc ((read_pc s) + 4#64) s
+  s
+
+/-- (FV addition) CLZ / CLS (32-, 64-bit). Arm ARM (DDI 0487) "CLZ"/"CLS" ASL:
+```
+integer result;
+bits(datasize) operand1 = X[n, datasize];
+if opcode == CountOp_CLZ then result = CountLeadingZeroBits(operand1);
+else                          result = CountLeadingSignBits(operand1);
+X[d, datasize] = result<datasize-1:0>;
+
+integer CountLeadingZeroBits(bits(N) x) return N - (HighestSetBit(x) + 1);
+integer CountLeadingSignBits(bits(N) x)
+    return CountLeadingZeroBits(x<N-1:1> EOR x<N-2:0>);
+```
+`CountLeadingZeroBits` is core `BitVec.clz` (which yields `N` for `x = 0`, as the ASL does
+with `HighestSetBit(0) = -1`). Cross-checked against VeriISLE `MInst.BitRR` (`Clz`, `Cls`) in
+cranelift/codegen/src/isa/aarch64/spec/bit_rr.isle. -/
+@[state_simp_rules]
+def exec_data_processing_clz_cls (cls : Bool)
+  (inst : Data_processing_one_source_cls) (s : ArmState) : ArmState :=
+  let datasize := 32 <<< inst.sf.toNat
+  let operand1 := read_gpr_zr datasize inst.Rn s
+  let result : BitVec datasize :=
+    if cls then
+      zeroExtend datasize
+        (BitVec.clz ((extractLsb' 1 (datasize - 1) operand1) ^^^
+                     (extractLsb' 0 (datasize - 1) operand1)))
+    else
+      BitVec.clz operand1
+  let s := write_gpr_zr datasize inst.Rd result s
+  let s := write_pc ((read_pc s) + 4#64) s
+  s
+
 @[state_simp_rules]
 def exec_data_processing_one_source
   (inst : Data_processing_one_source_cls) (s : ArmState) : ArmState :=
   match inst.sf, inst.S, inst.opcode2, inst.opcode with
+  | _, 0#1, 0b00000#5, 0b000000#6 -- RBIT - 32-, 64-bit
+    => exec_data_processing_rbit inst s
+  | _, 0#1, 0b00000#5, 0b000100#6 -- CLZ - 32-, 64-bit
+    => exec_data_processing_clz_cls false inst s
+  | _, 0#1, 0b00000#5, 0b000101#6 -- CLS - 32-, 64-bit
+    => exec_data_processing_clz_cls true inst s
   | 0#1, 0#1, 0b00000#5, 0b000001#6 -- REV16 - 32-bit
   | 0#1, 0#1, 0b00000#5, 0b000010#6 -- REV - 32-bit
   | 1#1, 0#1, 0b00000#5, 0b000001#6 -- REV16 - 64-bit

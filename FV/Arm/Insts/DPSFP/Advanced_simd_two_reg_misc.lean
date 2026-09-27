@@ -3,7 +3,10 @@ Copyright (c) 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Author(s): Shilpi Goel
 -/
--- REV64/32/16
+-- REV64/32/16, CNT
+-- Modified by fv-compiler-rust (2026): ported to Lean v4.34.1, module prefix FV.Arm, wrapped in
+-- namespace Arm; CNT (vector) added (`exec_cnt`), and the upstream REV body is now
+-- `exec_rev_vector`, dispatched from `exec_advanced_simd_two_reg_misc`.
 
 import FV.Arm.Decode
 import FV.Arm.State
@@ -90,7 +93,7 @@ def vrev128_64_8 (x : BitVec 128) : BitVec 128 :=
     (by decide) (by decide)
 
 @[state_simp_rules]
-def exec_advanced_simd_two_reg_misc
+def exec_rev_vector
   (inst : Advanced_simd_two_reg_misc_cls) (s : ArmState) : ArmState :=
   open _root_.BitVec Arm.BitVec in
   let datasize := if inst.Q = 1#1 then 128 else 64 -- 64 << Uint(inst.Q)
@@ -137,6 +140,51 @@ def exec_advanced_simd_two_reg_misc
       let s := write_sfp datasize inst.Rd res s
       let s := write_pc ((read_pc s) + 4#64) s
       s
+
+/-- (FV addition) Population count of each element: `BitCount` for an 8-bit element. -/
+def cnt_aux (e : Nat) (elements : Nat) (x : BitVec n) (result : BitVec n) : BitVec n :=
+  if elements ≤ e then
+    result
+  else
+    let element := elem_get x e 8
+    let result := elem_set result e 8 (BitVec.cpop element)
+    cnt_aux (e + 1) elements x result
+  termination_by (elements - e)
+
+/-- (FV addition) CNT (vector). Arm ARM (DDI 0487) "CNT" ASL (Advanced SIMD two-register
+miscellaneous, `U = 0`, `opcode = 00101`):
+```
+if size != '00' then UNDEFINED;
+constant integer esize = 8; constant integer datasize = 64 << UInt(Q);
+constant integer elements = datasize DIV 8;
+bits(datasize) operand = V[n, datasize]; bits(datasize) result;
+integer count;
+for e = 0 to elements-1
+    count = BitCount(Elem[operand, e, esize]);
+    Elem[result, e, esize] = count<esize-1:0>;
+V[d, datasize] = result;
+```
+`BitCount` is core `BitVec.cpop`. `V[d, 64] = x` zeroes bits 127:64 (`write_sfp`).
+Cross-checked against VeriISLE `MInst.VecMisc` (`Cnt`) in
+cranelift/codegen/src/isa/aarch64/spec/vec_misc.isle. -/
+@[state_simp_rules]
+def exec_cnt (inst : Advanced_simd_two_reg_misc_cls) (s : ArmState) : ArmState :=
+  if inst.size ≠ 0b00#2 then
+    write_err (StateError.Illegal s!"Illegal {inst} encountered!") s
+  else
+    let datasize := if inst.Q = 1#1 then 128 else 64
+    let operand := read_sfp datasize inst.Rn s
+    let result := cnt_aux 0 (datasize / 8) operand (BitVec.zero datasize)
+    let s := write_sfp datasize inst.Rd result s
+    let s := write_pc ((read_pc s) + 4#64) s
+    s
+
+@[state_simp_rules]
+def exec_advanced_simd_two_reg_misc
+  (inst : Advanced_simd_two_reg_misc_cls) (s : ArmState) : ArmState :=
+  match inst.U, inst.opcode with
+  | 0#1, 0b00101#5 => exec_cnt inst s -- CNT
+  | _, _ => exec_rev_vector inst s    -- REV64/32/16 (and everything else, as upstream)
 
 ----------------------------------------------------------------------
 

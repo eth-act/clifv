@@ -8,6 +8,7 @@ import FV.Arm.Insts.BR.Uncond_branch_imm
 import FV.Arm.Insts.BR.Uncond_branch_reg
 import FV.Arm.Insts.BR.Cond_branch_imm
 import FV.Arm.Insts.BR.Hints
+import FV.Arm.Insts.BR.Test_branch
 
 namespace Arm
 

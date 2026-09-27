@@ -8,6 +8,7 @@ import FV.Arm.Decode.DPR
 import FV.Arm.Decode.BR
 import FV.Arm.Decode.LDST
 import FV.Arm.Decode.DPSFP
+import FV.Arm.Decode.Reserved
 
 namespace Arm
 
@@ -40,6 +41,8 @@ inductive ArmInst where
   | DPR   : DataProcRegInst → ArmInst
   | DPSFP : DataProcSFPInst → ArmInst
   | LDST  : LDSTInst        → ArmInst
+  /-- (FV addition) The A64 "Reserved" group: `UDF`. -/
+  | RES   : ReservedInst    → ArmInst
 deriving DecidableEq, Repr
 
 instance : ToString ArmInst where toString a := toString (repr a)
@@ -58,6 +61,9 @@ def decode_data_proc_imm (i : BitVec 32) : Option ArmInst :=
     DPI (Bitfield {sf, opc, N, immr, imms, Rn, Rd})
   | [sf:1, opc:2, 100101, hw:2, imm16:16, Rd:5] =>
     DPI (Move_wide_imm {sf, opc, hw, imm16, Rd})
+  -- (FV addition) Extract.
+  | [sf:1, op21:2, 100111, N:1, o0:1, Rm:5, imms:6, Rn:5, Rd:5] =>
+    DPI (Extract {sf, op21, N, o0, Rm, imms, Rn, Rd})
   | _ => none
 
 def decode_branch (i : BitVec 32) : Option ArmInst :=
@@ -74,6 +80,9 @@ def decode_branch (i : BitVec 32) : Option ArmInst :=
     BR (Cond_branch_imm {imm19, o0, cond})
   | [11010101000000110010, CRm:4, op2:3, 11111] =>
     BR (Hints {CRm, op2})
+  -- (FV addition) Test and branch (immediate).
+  | [b5:1, 011011, op:1, b40:5, imm14:14, Rt:5] =>
+    BR (Test_branch {b5, op, b40, imm14, Rt})
   | _ => none
 
 def decode_data_proc_reg (i : BitVec 32) : Option ArmInst :=
@@ -84,6 +93,14 @@ def decode_data_proc_reg (i : BitVec 32) : Option ArmInst :=
     DPR (Add_sub_carry {sf, op, S, Rm, Rn, Rd})
   | [sf:1, op:1, S:1, 01011, shift:2, 0, Rm:5, imm6:6 , Rn:5, Rd:5] =>
     DPR (Add_sub_shifted_reg {sf, op, S, shift, Rm, imm6, Rn, Rd})
+  -- (FV addition) Add/subtract (extended register).
+  | [sf:1, op:1, S:1, 01011, opt:2, 1, Rm:5, option:3, imm3:3, Rn:5, Rd:5] =>
+    DPR (Add_sub_ext_reg {sf, op, S, opt, Rm, option, imm3, Rn, Rd})
+  -- (FV addition) Conditional compare (immediate) / (register).
+  | [sf:1, op:1, S:1, 11010010, imm5:5, cond:4, 1, o2:1, Rn:5, o3:1, nzcv:4] =>
+    DPR (Conditional_compare_imm {sf, op, S, imm5, cond, o2, Rn, o3, nzcv})
+  | [sf:1, op:1, S:1, 11010010, Rm:5, cond:4, 0, o2:1, Rn:5, o3:1, nzcv:4] =>
+    DPR (Conditional_compare_reg {sf, op, S, Rm, cond, o2, Rn, o3, nzcv})
   | [sf:1, op:1, S:1, 11010100, Rm:5, cond:4, op2:2, Rn:5, Rd:5] =>
     DPR (Conditional_select {sf, op, S, Rm, cond, op2, Rn, Rd})
   | [sf:1, 1, S:1, 11010110, opcode2:5, opcode:6, Rn:5, Rd:5] =>
@@ -108,6 +125,9 @@ def decode_data_proc_sfp (i : BitVec 32) : Option ArmInst :=
     DPSFP (Advanced_simd_three_same {Q, U, size, Rm, opcode, Rn, Rd})
   | [sf:1, 0, S:1, 11110, ftype:2, 1, rmode:2, opcode:3, 000000, Rn:5, Rd:5] =>
     DPSFP (Conversion_between_FP_and_Int {sf, S, ftype, rmode, opcode, Rn, Rd})
+  -- (FV addition) Advanced SIMD across lanes.
+  | [0, Q:1, U:1, 01110, size:2, 11000, opcode:5, 10, Rn:5, Rd:5] =>
+    DPSFP (Advanced_simd_across_lanes {Q, U, size, opcode, Rn, Rd})
   | _ => none
 
 def decode_ldst_inst (i : BitVec 32) : Option ArmInst :=
@@ -126,6 +146,20 @@ def decode_ldst_inst (i : BitVec 32) : Option ArmInst :=
     LDST (Reg_pair_post_indexed {opc, V, L, imm7, Rt2, Rn, Rt})
   | [opc:2, 101, V:1, 010, L:1, imm7:7, Rt2:5, Rn:5, Rt:5] =>
     LDST (Reg_pair_signed_offset {opc, V, L, imm7, Rt2, Rn, Rt})
+  -- (FV addition) Load/store register (immediate pre-indexed) / (register offset).
+  | [size:2, 111, V:1, 00, opc:2, 0, imm9:9, 11, Rn:5, Rt:5] =>
+    LDST (Reg_imm_pre_indexed {size, V, opc, imm9, Rn, Rt})
+  | [size:2, 111, V:1, 00, opc:2, 1, Rm:5, option:3, S:1, 10, Rn:5, Rt:5] =>
+    LDST (Reg_reg_offset {size, V, opc, Rm, option, S, Rn, Rt})
+  | _ => none
+
+/-- (FV addition) Decode the A64 "Reserved" group (`op0 = 0`, `op1 = 0000`). -/
+def decode_reserved (i : BitVec 32) : Option ArmInst :=
+  open ArmInst in
+  open ReservedInst in
+  match_bv i with
+  | [0000000000000000, imm16:16] =>
+    RES (Udf {imm16})
   | _ => none
 
 -- Decode a 32-bit instruction `i`.
@@ -134,6 +168,7 @@ def decode_raw_inst (i : BitVec 32) : Option ArmInst :=
   match_bv i with
   | [op0:1, _x:2, op1:4, _y:25] =>
     match op0, op1 with
+    | 0#1, 0b0000#4 => decode_reserved i
     | _, 0b1000#4 | _, 0b1001#4 => decode_data_proc_imm i
     | _, 0b1010#4 | _, 0b1011#4 => decode_branch i
     | _, 0b1101#4 | _, 0b0101#4 => decode_data_proc_reg i
@@ -337,8 +372,57 @@ example : decode_raw_inst 0xdac00f20 =
               Rn := 0x19#5,
               Rd := 0x00#5 })) := rfl
 
--- Unimplemented
-example : decode_raw_inst 0x00000000#32 = none := rfl
+-- (FV) `0x00000000` is `udf #0` (upstream decoded it as `none` before UDF was added).
+example : decode_raw_inst 0x00000000#32 = ArmInst.RES (ReservedInst.Udf { imm16 := 0#16 }) :=
+  rfl
+
+-- udf #0xc11f (Cranelift's trap instruction)
+example : decode_raw_inst 0x0000c11f#32 =
+          ArmInst.RES (ReservedInst.Udf { imm16 := 0xc11f#16 }) := rfl
+
+-- Unallocated (op0 = 0, op1 = 0001)
+example : decode_raw_inst 0x02000000#32 = none := rfl
+
+-- ror w0, w0, #29 (= extr w0, w0, w0, #29)
+example : decode_raw_inst 0x13807400#32 =
+          ArmInst.DPI (DataProcImmInst.Extract
+            { sf := 0#1, op21 := 0#2, N := 0#1, o0 := 0#1, Rm := 0#5, imms := 29#6,
+              Rn := 0#5, Rd := 0#5 }) := rfl
+
+-- tbnz x0, #63, #12
+example : decode_raw_inst 0xb7f80060#32 =
+          ArmInst.BR (BranchInst.Test_branch
+            { b5 := 1#1, op := 1#1, b40 := 0x1f#5, imm14 := 3#14, Rt := 0#5 }) := rfl
+
+-- add x0, x0, w1, sxtb
+example : decode_raw_inst 0x8b218000#32 =
+          ArmInst.DPR (DataProcRegInst.Add_sub_ext_reg
+            { sf := 1#1, op := 0#1, S := 0#1, opt := 0#2, Rm := 1#5, option := 0b100#3,
+              imm3 := 0#3, Rn := 0#5, Rd := 0#5 }) := rfl
+
+-- ccmp x0, #1, #0, eq
+example : decode_raw_inst 0xfa410800#32 =
+          ArmInst.DPR (DataProcRegInst.Conditional_compare_imm
+            { sf := 1#1, op := 1#1, S := 1#1, imm5 := 1#5, cond := 0#4, o2 := 0#1,
+              Rn := 0#5, o3 := 0#1, nzcv := 0#4 }) := rfl
+
+-- ldrsw x10, [x9, w10, uxtw #2]
+example : decode_raw_inst 0xb8aa592a#32 =
+          ArmInst.LDST (LDSTInst.Reg_reg_offset
+            { size := 2#2, V := 0#1, opc := 2#2, Rm := 10#5, option := 0b010#3, S := 1#1,
+              Rn := 9#5, Rt := 10#5 }) := rfl
+
+-- str x21, [sp, #-16]!
+example : decode_raw_inst 0xf81f0ff5#32 =
+          ArmInst.LDST (LDSTInst.Reg_imm_pre_indexed
+            { size := 3#2, V := 0#1, opc := 0#2, imm9 := 0x1f0#9, Rn := 31#5, Rt := 21#5 }) :=
+  rfl
+
+-- addv b6, v4.8b
+example : decode_raw_inst 0x0e31b886#32 =
+          ArmInst.DPSFP (DataProcSFPInst.Advanced_simd_across_lanes
+            { Q := 0#1, U := 0#1, size := 0#2, opcode := 0b11011#5, Rn := 4#5, Rd := 6#5 }) :=
+  rfl
 
 end Decode
 

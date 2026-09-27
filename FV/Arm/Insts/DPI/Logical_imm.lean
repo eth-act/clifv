@@ -4,6 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Author(s): Yan Peng
 -/
 -- AND, ORR, EOR, ANDS (immediate): 32- and 64-bit versions
+-- Modified by fv-compiler-rust (2026): ported to Lean v4.34.1, module prefix FV.Arm, wrapped in
+-- namespace Arm; `Rn = 31` is XZR for every opcode (see `exec_logical_imm`).
 
 import FV.Arm.Decode
 import FV.Arm.Insts.Common
@@ -42,49 +44,6 @@ def exec_logical_imm_op (op : LogicalImmType) (op1 : BitVec n) (op2 : BitVec n)
     (op1 &&& op2, some (update_logical_imm_pstate result))
 
 /--
-Return `TRUE` if a bitmask immediate encoding would generate an
-immediate value that could also be represented by a single `MOVZ` or
-`MOVN` instruction.  Used as a condition for the preferred `MOV<-ORR`
-alias.
-
-Source:
-https://developer.arm.com/documentation/ddi0602/2023-03/Shared-Pseudocode/aarch64-functions-movwpreferred?lang=en#impl-aarch64.MoveWidePreferred.4
--/
-@[state_simp_rules]
-def MoveWidePreferred (sf immN : BitVec 1) (imms immr : BitVec 6) : Bool :=
-    -- NOTE: we need s and r to be integers, and not nats, because we
-    -- perform int modulo operations here (see (0 - r % 16)).
-    let s := imms.toInt
-    let r := immr.toInt
-    let width := if sf = 1#1 then 64 else 32
-
-    -- element size must equal total immediate size
-    -- NOTE: the second disjunct below is semantically equivalent to the ASL code
-    -- !((immN:imms) IN {'1xxxxxx'})
-    if sf = 1#1 ∧ immN ≠ 1#1 then
-      false
-    -- NOTE: the second conjunct below is semantically equivalent to the ASL code
-    -- !((immN:imms) IN {'00xxxxx'})
-    else if sf = 0#1 ∧ ¬(immN = 0#1 ∧ imms.extractLsb' 5 1 = 0#1) then
-      false
-
-    -- for MOVZ must contain no more than 16 ones
-    else if s < 16 then
-        -- ones must not span halfword boundary when rotated
-     let r' := (0 - r) % 16
-     let s' := 15 - s
-     r' <= s'
-
-    -- for MOVN must contain no more than 16 zeros
-    else if s >= width - 15 then
-        -- zeros must not span halfword boundary when rotated
-        let r' := r % 16
-        let s' := s - (width - 15)
-        r' <= s'
-    else
-      false
-
-/--
 Instruction semantics for `Logical_imm_cls` instructions
 `AND, ORR, EOR, ANDS (immediate): 32- and 64-bit versions`.
 
@@ -119,17 +78,11 @@ def exec_logical_imm (inst : Logical_imm_cls) (s : ArmState) : ArmState :=
     | none => write_err (StateError.Illegal s!"Illegal {inst} encountered!") s
     | some (imm, _) =>
       let op := decode_op inst.opc
-      let operand1 :=
-        match op with
-        | .ORR =>
-          -- (TODO): a `dsimproc` for MoveWidePreferred?
-          if  ¬ MoveWidePreferred inst.sf inst.N inst.imms inst.immr then
-             -- MOV (bitmask immediate) is an alias of ORR when
-             -- Rd == '11111' and Move Wide is not preferred.
-             read_gpr_zr datasize inst.Rn s
-          else
-            read_gpr datasize inst.Rn s
-        | _ => read_gpr datasize inst.Rn s
+      -- (FV fix) The Arm ARM (DDI 0487) ASL reads `bits(datasize) operand1 = X[n, datasize];`
+      -- for all four opcodes, so `Rn = 31` is always XZR. (Upstream read SP for `Rn = 31`
+      -- unless the instruction was ORR with `MoveWidePreferred` false; `MoveWidePreferred`
+      -- only selects the preferred disassembly and has no semantic effect.)
+      let operand1 := read_gpr_zr datasize inst.Rn s
       let (result, maybe_pstate) := exec_logical_imm_op op operand1 imm
       -- State Updates
       let s'            := write_pc ((read_pc s) + 4#64) s

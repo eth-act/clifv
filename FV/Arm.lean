@@ -2,5 +2,70 @@
 Root of the `FV.Arm` library: the AArch64 model, ported from LNSym
 (github.com/leanprover/LNSym @ 5c05220, Apache-2.0). See `docs/contracts/arm.md`
 and `third_party/NOTICE-lnsym.md`.
+
+This file imports every module under `FV/Arm`, so `lake build FV.Arm` builds the whole model,
+its memory theory and the symbolic-simulation tactics.
 -/
+import FV.Arm.Attr
+import FV.Arm.BitVec
+import FV.Arm.Decode
+import FV.Arm.Decode.BR
+import FV.Arm.Decode.DPI
+import FV.Arm.Decode.DPR
+import FV.Arm.Decode.DPSFP
+import FV.Arm.Decode.LDST
 import FV.Arm.Exec
+import FV.Arm.FromMathlib
+import FV.Arm.Insts
+import FV.Arm.Insts.BR.Compare_branch
+import FV.Arm.Insts.BR.Cond_branch_imm
+import FV.Arm.Insts.BR.Hints
+import FV.Arm.Insts.BR.Insts
+import FV.Arm.Insts.BR.Uncond_branch_imm
+import FV.Arm.Insts.BR.Uncond_branch_reg
+import FV.Arm.Insts.Common
+import FV.Arm.Insts.DPI.Add_sub_imm
+import FV.Arm.Insts.DPI.Bitfield
+import FV.Arm.Insts.DPI.Insts
+import FV.Arm.Insts.DPI.Logical_imm
+import FV.Arm.Insts.DPI.Move_wide_imm
+import FV.Arm.Insts.DPI.PC_rel_addressing
+import FV.Arm.Insts.DPR.Add_sub_carry
+import FV.Arm.Insts.DPR.Add_sub_shifted_reg
+import FV.Arm.Insts.DPR.Conditional_select
+import FV.Arm.Insts.DPR.Data_processing_one_source
+import FV.Arm.Insts.DPR.Data_processing_three_source
+import FV.Arm.Insts.DPR.Data_processing_two_source
+import FV.Arm.Insts.DPR.Insts
+import FV.Arm.Insts.DPR.Logical_shifted_reg
+import FV.Arm.Insts.DPSFP.Advanced_simd_copy
+import FV.Arm.Insts.DPSFP.Advanced_simd_three_same
+import FV.Arm.Insts.DPSFP.Advanced_simd_two_reg_misc
+import FV.Arm.Insts.DPSFP.Conversion_between_FP_and_Int
+import FV.Arm.Insts.DPSFP.Insts
+import FV.Arm.Insts.LDST.Insts
+import FV.Arm.Insts.LDST.Reg_imm
+import FV.Arm.Insts.LDST.Reg_pair
+import FV.Arm.Insts.LDST.Reg_unscaled_imm
+import FV.Arm.Map
+import FV.Arm.Memory.Attr
+import FV.Arm.Memory.MemoryProofs
+import FV.Arm.Memory.Separate
+import FV.Arm.Memory.SeparateProofs
+import FV.Arm.MinTheory
+import FV.Arm.State
+import FV.Arm.Tactics.Attr
+import FV.Arm.Tactics.BvOmegaBench
+import FV.Arm.Tactics.Common
+import FV.Arm.Tactics.FetchAndDecode
+import FV.Arm.Tactics.IntroHyp
+import FV.Arm.Tactics.Simp
+import FV.Arm.Tactics.StepThms
+import FV.Arm.Tactics.Sym
+import FV.Arm.Tactics.Sym.AxEffects
+import FV.Arm.Tactics.Sym.Common
+import FV.Arm.Tactics.Sym.Context
+import FV.Arm.Tactics.Sym.FetchAndDecode
+import FV.Arm.Tactics.Sym.LCtxSearch
+import FV.Arm.Tactics.Sym.MemoryEffects
+import FV.Arm.Tactics.Sym.ProgramInfo
