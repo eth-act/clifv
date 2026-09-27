@@ -120,8 +120,8 @@ theorem backend_correct {p f k vc vcp rf af fa fb}
 
 | Hypothesis | Owner | Status |
 | --- | --- | --- |
-| `LowerRulesCorrect program`, `ExcludedUnmatchable program` (every closure root rule of `lower` other than the call rules 1027/1031 is correct on statements; the others never match) | M4 (`IselContract.lean`) | stated; rules proven family by family (M4AluA/B, M4Cmp, M4Ctl) |
-| `CallRulesCorrect program` (call rules 1027 `bl`, 1031 GOT + `blr`, under `CallsRefine`, for `CallRegArgs f`) | M4 (M4Ctl) | stated (contract change #5) |
+| `LowerRulesCorrect program`, `ExcludedUnmatchable program` (every closure root rule of `lower` other than the call rules 1031/1032 is correct on statements; the others never match) | M4 (`IselContract.lean`) | stated; rules proven family by family (M4AluA/B, M4Cmp, M4Ctl) |
+| `CallRulesCorrect program` (call rules 1031 `bl`, 1032 GOT + `blr`, under `CallsRefine`, for `CallRegArgs f`) | M4 (M4Ctl) | stated (contract change #5) |
 | `CallsRefine (F s) env MR (sem s)` (callee contract at the VCode level: `loadExtNameGot` loads `sym n`; a call of extern `name` with ≤ 8 register arguments returns its results in x0.. and a world related to the extern's memory) | M6 (`csem` from `CalleeSound` + `ExtSem.sym`) | open (M6Rest2) |
 | `TermCalls (sem s) MR` (every terminator call `lowerFunction` makes satisfies `LowerTermOk`) | M4, via `termCalls_of_rules` | **proven** from `LowerTermRulesCorrect` (rules 964 `trap`, 1037 `return` of `lower`: `LowerTermRuleOk`), `TermUnmatchable` (other `lower` rules never match a `return`/`trap`), `BranchRulesCorrect` (`BranchRuleOk`, now with `CtxInv`/`ValsBelow`/first-match premises), `BranchExcludedUnmatchable`; these four are M4's open obligations (`backend_correct_of_rules`) |
 | `RegLevelCorrect sem F astep vcp af fb` (VCode returns/traps from the body-entry world ⇒ Arm returns/traps, forward) | M6 + M5 (`M6Rest2`) | placeholder with the agreed content (`BodyEntry`, per-activation `sem`) |

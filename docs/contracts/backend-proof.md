@@ -318,3 +318,46 @@ it avoids having to show which rule is selected.
 4. Division: the `trapIf`/`udf` halt arms go through `seqRun_one_halt` and
    `seqRun_append_fall_stop`. Needed: `imm` from M4AluB (`IselTermsImm`),
    `trap_if_div_overflow` (`ccmpImm`) and `intmin_check` (`aluRRImmShift`).
+
+## Family Ctl: terminators, branches, calls (M4Ctl)
+
+Branch `agent/m4-ctl`. Files `FV/Backend/Proof/IselCtl{Base,Term,Unmatch,Branch,Call,}.lean`,
+axiom audit `FVTest/Backend/Proof/Ctl/Axioms.lean`.
+
+**Statements proven for `Isle.Aarch64.program`** (axioms `propext`, `Classical.choice`,
+`Quot.sound`):
+
+| Statement | Theorem | Notes |
+| --- | --- | --- |
+| `LowerTermRulesCorrect program` | `lowerTermRulesCorrect` | `trap` 964 (`udf`, `trap_ruleOk`), `return` 1037 (`lower_return` → `rets` of the value vregs pinned to x0.., `ret_ruleOk`) |
+| `TermUnmatchable program` | `termUnmatchable` | root-format check: `ruleFmt` + one `decide +kernel` over the 517 `lower` rules (`lower_fmts`), generic `ruleFmt_match` |
+| `BranchExcludedUnmatchable program` | `branchExcludedUnmatchable` | same, `lower_branch_fmts` (try_call rules 1034/1035/1036) |
+
+**Per-rule status (`lower_branch`, `BranchRulesCorrect` still open):**
+
+| Rule | State |
+| --- | --- |
+| 1139 `jump` | **proven** (`jump_ruleOk`, `jump_termOk`) |
+| 1132 `brif` base (`br_cond_result (is_nonzero_cmp v)`) | open: needs family C's `is_nonzero_cmp`/`emit_icmp` contracts (`CondSem`/`CondCode` on `agent/m4-cmp`@6e60c71, not finished) and a `br_cond_result` contract (4 rules) |
+| 1137 `tbnz`, 1138 `tbz` (look through `band x (iconst 2^k)`, `icmp eq … 0`) | open: `def_inst` look-through + `test_and_compare_bit_const` lemmas |
+| 1140 `br_table` | open (now provable: `BrIdxTyped`, change #6): `emit_island`, `put_in_reg_zext32` (`ExtOut`, family C), `br_table_impl` (2 rules; needs `imm` from family B), `jt_sequence` |
+
+**Calls (`CallRulesCorrect`, open):** rules 1031 (`bl`) and 1032 (GOT + `blr`); `call_indirect`
+(`rule_lower_2529`, 1033) is not in E. The extern/ABI lemmas are proven (`IselCtlCall.lean`:
+`func_ref_data`, `gen_call_output` = `outRegs`/`freshN`, `argLocs_eq` (≤ 8 arguments all in
+x0..), `gen_call_args`/`gen_call_rets`/`gen_call_info`/`gen_call_ind_info`, `is_pic`); the two
+rule theorems (operand view of `call`, `CallsRefine` application, `ResultsHeld` of the fresh
+output vregs) are not written.
+
+**Shared changes (integrator-approved, announced):** #5 `38600e8` (calls: `CallsRefine`,
+`CallRegArgs`, `CallRuleOk`/`CallRulesCorrect`, `LowerRulesCorrect` excludes `callRootRule`,
+ispec control forms `rets`/`jump`/`condBr`/`testBitAndBranch`/`emitIsland`/`jtSequence` as M6's
+`csem` 350a4c7, E2E threading, `InSubset.callRegArgs`, compiler flags >8-parameter externs
+unverified); #6 `e597895` (`BrIdxTyped` premise of `BranchRuleOk`/`TermCalls`, `lowerCheck`'s
+`brIdxOk`). `callRootRule` corrected to rule ids 1031/1032 (first version named 1027, which is
+`symbol_value`; reported by M4Mem). Merged `agent/m4-cmp`@b455355 (family C infrastructure).
+
+**Techniques.** Inverse evaluation (`isel_inv`, `ctl_inv` = `isel_inv` + the family's extern
+lemmas each round); fuel as `n' + 100` so the iff lemmas apply; callee contracts passed in
+before `cases hp` (which clears `hp`); a terminator's format from the matched rule
+(`ruleFmt_term`) instead of evaluating the mismatching cases (which timed out).

@@ -465,11 +465,11 @@ def LowerRuleOk (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
     ∃ ms rss, st'.emitted = st.emitted ++ ms.toArray ∧ out = .regsVec rss ∧
       LowerInstOk isem MR env cp ctx inst info.results st rss st' ms
 
-/-- The root rules of `lower` on `call` that emit a call instruction: `rule_lower_2491`
-(colocated callee, `bl`, rule id 1027) and `rule_lower_2508` (callee through the GOT,
-`loadExtNameGot` + `blr`, rule id 1031). They are proven under the callee contract
-`CallsRefine` (`CallRulesCorrect`), not in `LowerRulesCorrect`. -/
-def callRootRule (r : Rule) : Bool := r.id == 1027 || r.id == 1031
+/-- The root rules of `lower` on `call`: `rule_lower_2508` (colocated callee, `bl`, rule id
+1031) and `rule_lower_2518` (callee through the GOT, `loadExtNameGot` + `blr`, rule id 1032).
+They are proven under the callee contract `CallsRefine` (`CallRulesCorrect`), not in
+`LowerRulesCorrect`. (`call_indirect`, `rule_lower_2529`, is not in E.) -/
+def callRootRule (r : Rule) : Bool := r.id == 1031 || r.id == 1032
 
 /-- **M4's target (`lower`).** For every VCode semantics refining `ispec` and every stable
 memory relation, every root rule of `lower` in the E-closure other than the call rules
