@@ -1,0 +1,215 @@
+# Register allocation: soundness proof of the checker (M6)
+
+Modules (all under `FV/Backend/Proof/`, namespace `Backend.Proof`):
+
+| File | Content |
+| --- | --- |
+| `VCodeSem.lean` | abstract semantics: `ISem`, `Ctl`, VCode (`VStep`), allocated code (`MStep`), `Clobbered`, `Star` |
+| `RegallocState.lean` | lemmas on the checker's abstract state (`AState.get/put/define/meet/parCopy/le`), the invariant `Inv`, its preservation lemmas |
+| `RegallocLemmas.lean` | what an accepting run of each checker function establishes (`stepOp_ok`, `runItems_*`, `edge_ok`, `verify_ok`, `checkAlloc_ok`, `checkStatic_ok`), operand-list correspondence, per-instruction soundness `op_sound` |
+| `RegallocSound.lean` | simulation relation `Match`, `sim_step`, `sim_progress`, **`checkAlloc_sound`** and corollaries |
+| `RegallocOperands.lean` | the operand-view obligation `OperandsSound` against the Arm model, the bridge `operandsSound_step`, proofs for a representative instruction set |
+| `RegallocFrame.lean` | frame/move lowering: `locVal`, `FrameOk`, int register move, int spill, int reload |
+
+The checker itself is `FV/Backend/RegallocCheck.lean` (see `regalloc.md`).
+
+## Status (2026-09-27)
+
+- [x] abstract semantics of VCode and allocated code, parametric in the instruction semantics
+- [x] `checkAlloc_sound`, sorry-free, for **every** instruction semantics `sem` and every
+      callee-preserved-part function `keep` (no hypothesis on `sem` is needed at this level)
+- [x] corollaries: returns, halts (traps), stuck states, divergence
+- [x] `OperandsSound` stated against the Arm model (`Insn.toArmInst` → `Arm.exec_inst`) and
+      proven for `mov` (64), `add` (register, 64), `add` (imm12, 64), `csel`, `cset`,
+      `ldr x`/`str x` (unsigned-offset address), a call (one argument, one result) under the
+      AAPCS64 callee contract; `operandsSound_step` turns `OperandsSound` into `MStep.op`
+- [x] frame/move lowering proven for int register moves, int spills and int reloads
+      (unsigned-offset encoding)
+- [ ] remaining obligations: listed under "Proven vs assumed" below
+- checker behaviour unchanged: `lake exe lean-backend-regalloc-test` accepts 932/932
+  (`aarch64Env` and `--small`), every mutant rejected (swap 2681/2681, drop-reload 10/10,
+  drop-restore 253/253, call-clobber 166/166; `--small`: 2655, 173, 158, 88, all rejected)
+
+## Checker changes made for the proof (behaviour-preserving)
+
+- `runBlock` is a structural recursion (`runItems`) instead of a `for` loop; the checks are
+  `ensure b msg` / `List.forM` (no `do` join points); the transfer of an instruction is the pure
+  `transferOp` (early defs, clobbers, late defs), its return check `retCheck`.
+- **Certificate check.** The fixpoint iteration (`fixpoint`, `round`) is now untrusted: it only
+  proposes in-states. `CheckCtx.verify` checks them — the entry block's in-state is included in
+  `entryState`, and every block (`verifyBlock`) is reached, its items check from its in-state,
+  and each successor's in-state is included (`AState.le`) in the state the edge produces. The
+  proof uses only `verify`. It accepts whenever the old last round (no change) did.
+- `edge` rejects block parameters that are not pairwise distinct (the parallel copy would be
+  ambiguous; VCode from `Isel` never has duplicates).
+- `Loc`, `Sym`, `RItem`, `OpKind`, `OpPos`, `Constraint`, `Operand` use the `BEq` of their
+  `DecidableEq` (lawful) instead of a derived one.
+
+## Abstract semantics (`VCodeSem.lean`)
+
+Parameters: values `V`, world `W`, `sem : ISem V W := MInst → List V → W → Option (List V × W × Ctl)`
+(use values in operand order ↦ def values in operand order, new world, control `next | goto j |
+ret | halt`). Observables — memory effects, calls with their arguments, traps, branch decisions
+— are whatever `sem` records in `W`; both semantics thread `W` through the same `sem`.
+
+- **VCode** `VStep vc sem`: state `⟨b, k, ρ, w⟩` (block, instruction index, vreg file
+  `ρ : Nat → V`, world). Instruction `k` reads `ρ` at its use operands, writes its def
+  operands (early defs, then late defs, operand order); `goto j` is allowed only at the last
+  instruction and performs the block's branch arguments as a parallel copy into the parameters
+  of successor `j` (`edgeEnv`); `ret` only for `Rets` (returns the use values); `halt` anywhere.
+- **Allocated code** `MStep vc sem keep rf`: state `⟨b, items, m, w⟩` with location store
+  `m : Loc → V` (registers, spill slots, callee-save slots). `move src dst` is
+  `m[dst ↦ m src]`; `op k allocs` reads its uses from `allocs`, writes early defs, havocs its
+  clobbers (`Clobbered keep`: any value, a callee-saved register keeps its `keep`-part), writes
+  late defs. No copy on edges (the allocator's moves do it). A return yields the use values and
+  the final store.
+
+## Theorem (`RegallocSound.lean`)
+
+```lean
+structure IsSimulation (R : MConf V W → VConf V W → Prop) : Prop where
+  step : R c v → MStep vc sem keep rf c c' →
+    (R c' v ∧ c'.measure < c.measure) ∨ ∃ v', VStep vc sem v v' ∧ R c' v'
+  progress : R c v → VStep vc sem v v' → ∃ c', MStep vc sem keep rf c c'
+  ret : R (.ret vals m w) v → v = .ret vals w
+  halt : R (.halt w) v → v = .halt w
+  run : R (.run s) v → ∃ s', v = .run s'
+
+theorem checkAlloc_sound (h : checkAlloc vc rf = .ok ()) (m₀ : Loc → V) (ρ₀ : Nat → V) (w₀ : W) :
+    ∃ R, IsSimulation vc rf sem keep R ∧ R (MConf.init rf m₀ w₀) (VConf.init ρ₀ w₀) ∧
+      ∀ {vals m w v}, R (.ret vals m w) v →
+        ∀ r ∈ calleeSaved, keep r (m (.reg r)) = keep r (m₀ (.reg r))
+
+theorem checkAlloc_ret (h) (ρ₀) (hs : Star (MStep vc sem keep rf) (MConf.init rf m₀ w₀) (.ret vals m w)) :
+    Star (VStep vc sem) (VConf.init ρ₀ w₀) (.ret vals w) ∧
+      ∀ r ∈ calleeSaved, keep r (m (.reg r)) = keep r (m₀ (.reg r))
+theorem checkAlloc_halt (h) (ρ₀) (hs : Star MStep init (.halt w)) : Star VStep vinit (.halt w)
+theorem checkAlloc_stuck (h) (ρ₀) (hs : Star MStep init (.run s)) (hstuck : ∀ c', ¬ MStep (.run s) c') :
+    ∃ vs, Star VStep vinit (.run vs) ∧ ∀ v', ¬ VStep (.run vs) v'
+theorem checkAlloc_diverges (h) (ρ₀) (f : Nat → MConf V W) (h0 : f 0 = MConf.init rf m₀ w₀)
+    (hf : ∀ n, MStep (f n) (f (n + 1))) : ∀ N, ∃ v, StepsN (VStep vc sem) N (VConf.init ρ₀ w₀) v
+```
+
+The entry register file is `r₀ r := m₀ (.reg r)`. Refinements of the intended statement in
+`regalloc.md`: (1) the theorem is between two abstract semantics sharing `sem`, so it holds for
+every `sem`; the connection to the Arm model is the separate obligation `OperandsSound`; (2)
+"same observables" is "same world", plus equal returned values; (3) `Args` is an ordinary
+instruction whose defs come from `sem` (the lowering drops it: see below); (4) a branch must be
+the last instruction of its block, a return must be a `Rets` (VCode with a mid-block branch is
+stuck in both semantics); (5) the callee-saved statement is up to `keep` (for Arm: all of
+x19–x28, the low 64 bits of v8–v15).
+
+Proof. `Inv keep a m ρ r₀ := ∀ ℓ s, s ∈ a.get ℓ → Holds s (m ℓ)` with `Holds (vreg v) x :=
+x = ρ v`, `Holds (entry r) x := r ∈ calleeSaved ∧ keep r x = keep r (r₀ r)`. `Match` relates run
+states when the machine's remaining items check (`runItems`) from an abstract state satisfying
+`Inv` and the block's out-state feeds the verified successors (`EdgesOk`). Moves: `Inv_move`.
+Instructions: `op_sound` — early uses by the use check, late uses by the use check after the
+early defs plus "an early def is disjoint from every use" (static check), then
+`Inv_defineAll` / `Inv_clobberAll` / `Inv_defineAll`; the return check gives the callee-saved
+conclusion. Branches: `edge_ok` (`Inv_parCopy`, distinct parameters) and `Inv_mono` against the
+verified in-state. Entry: `Inv_entryState`.
+
+## Operand-view obligation (`RegallocOperands.lean`)
+
+Concrete instance: `V = CV = BitVec 128` (an X register zero-extended, `regVal`), `keep = ckeep`,
+`W = Arm.ArmState` compared by `SameWorld F` (equal outside the allocatable registers, x16/x17,
+the pc and the frame addresses `F`), emitted code run by `execMInst` (`MInst.lines` →
+`Insn.toArmInst` → `Arm.exec_inst`; with M5's `Insn.stepi_eq_sem` this is what `Arm.stepi`
+does on the encoded word).
+
+```lean
+def OperandsSound (F) (exec : MInst → ArmState → Option ArmState) (sem : ISem CV ArmState) (i : MInst) : Prop :=
+  ∀ c wh ops regs i' s w outs w',
+    i.operands = .ok ops → c.checkStatic wh ops (regs.map .reg) i.clobbers = .ok () →
+    i.assign regs = .ok i' → SameWorld F s w →
+    sem i (useVals ops regs s) w = some (outs, w', .next) →
+    ∃ s', exec i' s = some s' ∧ SameWorld F s' w' ∧
+      (∀ p ∈ defRegs ops regs outs, regVal s' p.1.2 = p.2) ∧
+      (∀ r, r.allocatable → (∀ p ∈ (ops.zip regs).toList, p.1.isDef → p.2 ≠ r) → r ∉ i.clobbers →
+        regVal s' r = regVal s r) ∧
+      (∀ r ∈ i.clobbers, r ∈ calleeSaved → ckeep r (regVal s' r) = ckeep r (regVal s r))
+```
+
+`operandsSound_step`: from `OperandsSound`, the static checks and a store `m` agreeing with `s`
+on allocatable registers, the concrete instruction yields `s'` and a havoc `m2` with
+`Clobbered ckeep` such that the store `MStep.op` computes agrees with `s'` on allocatable
+registers (and frame locations are untouched). This is where the static checks enter
+(allocatable registers, fixed constraints, distinct defs, defs disjoint from clobbers).
+
+`csem F` (value-level semantics built from the Arm model's operations) and the proven
+instances:
+
+| Theorem | Instruction (vreg operands of class int) | Side conditions |
+| --- | --- | --- |
+| `operandsSound_mov` | `mov .size64 rd rm` | — |
+| `operandsSound_add` | `aluRRR .add .size64 rd rn rm` | — |
+| `operandsSound_addImm` | `aluRRImm12 .add .size64 rd rn imm` | `imm.bits < 4096` |
+| `operandsSound_csel` | `csel rd rn rm c` | — |
+| `operandsSound_cset` | `cset rd c` | `c ∉ {al, nv}` |
+| `operandsSound_load` | `load .uload64 rd (unsignedOffset rn off)` | `8 ∣ off`, `off/8 < 4096`; access avoids `F` |
+| `operandsSound_store` | `store .store64 rd (unsignedOffset rn off)` | same |
+| `operandsSound_call` | `call ⟨sym, [(v, x0)], [(x0, v')]⟩` | `CalleeSound F callee callSem` |
+
+`CalleeSound` is the AAPCS64 contract of the external callee (results from the argument values
+and the world; allocatable registers outside `DEFAULT_AAPCS_CLOBBERS` preserved; low 64 bits of
+v8–v15 preserved). It is an assumption about code outside the function, not a model gap.
+Memory accesses of the program must avoid the frame addresses `F` (source-level memory
+safety: the program never addresses the allocator's slots); `csem` is undefined otherwise.
+
+**Path to all instructions.** Each proof is the same recipe (operand array by `rfl`, register
+shape from `checkStatic_facts`/`locOk_int`, `MInst.assign` by `rfl`, `Insn.toArmInst` and
+`exec_inst` by `simp`, then `gpr_write_sound` for one-X-register results). Remaining:
+other ALU ops/widths and flag-setting forms (world gains the new NZCV), 32-bit forms (upper
+half zero), float/vector instructions (`SFP`), other addressing modes (`memFinalize` may use
+x16, which is masked), calls of any arity (induction over `info.uses`/`info.defs`) and `blr`,
+branches and traps (`Ctl.goto`/`halt`: `OperandsSound` currently covers `next` only; a branch
+needs the pc/label correspondence of `emitFunc`), `Args` (the lowering drops it: sound when
+its fixed registers still hold the incoming arguments, i.e. no item before it writes an
+argument register), `Rets` (becomes the epilogue).
+
+## Frame and move lowering (`RegallocFrame.lean`)
+
+`locVal fr s` reads registers by `regVal` and frame slots at `sp + RAFrame.offset` (8 bytes
+zero-extended for int spill / x save slots, 16 for float). `FrameOk fr sp0 F`: distinct frame
+locations have separate slots (`Arm.mem_separate'`), all inside `F`.
+
+- `lower_move_reg_int`: `fr.moveInsts (reg xa) (reg xb) = [mov xb, xa]`, and executing it
+  gives `locVal = (locVal s)[reg xb ↦ locVal s (reg xa)]` on every maintained location
+  (`ValidLoc`: allocatable registers and frame slots), same world, same `sp`;
+- `lower_spill_int`: `str xa, [sp, #off]` (unsigned-offset form, `256 ≤ off`, `8 ∣ off`,
+  `off < 32768`, `sp` 16-aligned) gives `locVal[stack k int ↦ locVal (reg xa)]`, same world
+  (the written bytes are in `F`), same `sp`;
+- `lower_reload_int`: `ldr xb, [sp, #off]` likewise;
+- `move_agree`: these are exactly `MStep.move`'s store update.
+
+Remaining (trusted until proven): the `stur`/`ldur` encoding for offsets below 256 and the
+x16 sequence for large offsets, float moves (through `fmoveTmp`, which lies in `F`),
+callee-save slots (same shape as spills), `FrameOk` for `RAFrame.compute` (a layout fact:
+int slots, float slots, save slots and `fmoveTmp` are laid out in disjoint ranges above the
+CLIF slots and the outgoing area), `sp` alignment maintained, prologue/epilogue (save x29/x30,
+restore `sp`).
+
+## How it plugs into M7
+
+1. M4 proves CLIF ≈ VCode semantics `VStep vc (csem F)` (isel) — `csem` is the value-level
+   MInst semantics both sides share.
+2. `checkAlloc_sound` gives VCode ≈ allocated code `MStep vc (csem F) ckeep rf`.
+3. The concrete Arm execution of `lowerRFunc vc rf` refines `MStep` item by item, under the
+   relation "`m` agrees with `locVal fr s` on `ValidLoc`, `SameWorld F s w`, `sp = sp0`, pc at the
+   item's code": `operandsSound_step` for original instructions, `lower_*` + `move_agree` for
+   moves; with M5's `Insn.stepi_eq_sem`/`FnAsm.stepi_eq_sem` each lowered instruction is one
+   `Arm.stepi`. Branch lowering, prologue/epilogue and the remaining `OperandsSound`/frame
+   cases above are the open pieces of this step.
+
+## `#print axioms`
+
+```
+checkAlloc_sound, checkAlloc_ret, checkAlloc_halt, checkAlloc_stuck, checkAlloc_diverges,
+operandsSound_step, operandsSound_{mov,add,addImm,csel,cset,load,store,call},
+lower_move_reg_int, lower_reload_int:
+  [propext, Classical.choice, Quot.sound]
+lower_spill_int:
+  [propext, Classical.choice, Quot.sound, Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9]
+  (the bv_decide axiom of the Arm model's memory library lemma)
+move_agree: [propext, Quot.sound]
+```

@@ -18,7 +18,9 @@ preparation), `FV/Backend/RegallocCheck.lean` (the checker), `FV/Backend/Regallo
 - [x] every allocation is validated by the executable Lean checker `checkAlloc`; a rejection
       (by it, or by regalloc2's checker) is a compile error for that function
 - [x] results (a)–(f) below
-- [ ] soundness proof of `checkAlloc` (theorem stated below; M6 proof work)
+- [x] soundness proof of `checkAlloc` for the abstract semantics (`checkAlloc_sound`,
+      `docs/contracts/regalloc-proof.md`); operand-view and frame-lowering obligations proven for
+      a representative set, the rest listed there
 
 ## Design
 
@@ -162,8 +164,10 @@ instructions in order, each exactly once, terminator last; entry block is no bra
 and has no params; every block is reached; save slots only for callee-saved registers.
 
 Fixpoint: round-robin rounds, fuel `blocks × (locations × symbols + 1) + 1` (states only
-shrink after first reach); checks run in every round including the final stable one; fuel
-exhaustion is a rejection.
+shrink after first reach); fuel exhaustion is a rejection. The iteration is untrusted: its
+result is checked by `CheckCtx.verify` (entry in-state ⊆ `entryState`; every block reached, its
+items check from its in-state, every successor's in-state ⊆ the edge's state), which is all the
+soundness proof uses. Block parameters must be pairwise distinct.
 
 ### Invariant and intended soundness theorem (M6 proof target)
 
@@ -193,7 +197,7 @@ NZCV, x16/x17 are only emitter temporaries.
 
 Untrusted: regalloc2, `lean-regalloc`, the JSON serialisation and parsing (`vcodeJson`,
 `parseRAOut`, `buildRFunc`) — anything they get wrong is either rejected by `checkAlloc` or
-harmless. Trusted (until proven): `checkAlloc` itself (target of the theorem), the operand
+harmless. Trusted (until proven; see `regalloc-proof.md` for what is proven): the operand
 view `MInst.visitOperands`/`clobbers` (must describe what the emitted instruction reads,
 writes and clobbers), `prepare`, `RAFrame.compute`/`lowerRFunc` (move/frame lowering), and
 the rest of the backend as in `docs/contracts/backend.md`. regalloc2's own checker is an
