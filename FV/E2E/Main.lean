@@ -119,3 +119,65 @@ theorem backend_correct {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp
     cfg := cfg_of_prepare hc.prepare }
 
 end E2E
+
+namespace E2E
+
+open Backend Backend.Proof Backend.Proof.Driver
+
+theorem slots_fold_ids (ss : List (Clif.SlotId × Clif.StackSlot)) :
+    ∀ (acc : List (Clif.SlotId × Nat)) (m : Clif.Mem),
+      (ss.foldl (fun (acc : List (Clif.SlotId × Nat) × Clif.Mem) (s : Clif.SlotId × Clif.StackSlot) =>
+        let (base, m) := acc.2.alloc s.2.size (s.2.align.getD 1)
+        (acc.1 ++ [(s.1, base)], m)) (acc, m)).1.map (·.1) = acc.map (·.1) ++ ss.map (·.1) := by
+  induction ss with
+  | nil => intro acc m; simp
+  | cons s ss ih =>
+    intro acc m
+    simp only [List.foldl_cons]
+    rw [ih]
+    simp
+
+/-- `Clif.run`'s own initial state (bump-allocated slots) is a `ClifEntry`: the theorem's CLIF
+entry states differ from `Clif.initState` only in the (unspecified) slot addresses and the
+initial memory. -/
+theorem clifEntry_initState {p : Clif.Program} {f : Clif.Function} {args : List Clif.Val}
+    {mem : Clif.Mem} {s : Clif.State} (hf : p.func? f.name = some f)
+    (h : Clif.initState p f.name args mem = .ok s) : ClifEntry f args s := by
+  simp only [Clif.initState, hf, Clif.Res.ofOption_some, Clif.Res.ok_bind] at h
+  cases he : Clif.enterFunc f args mem with
+  | ok r =>
+    rw [he] at h
+    obtain ⟨fr, mem'⟩ := r
+    simp only [Clif.Res.ok_bind, Clif.Res.pure_eq, Clif.Res.ok.injEq] at h
+    subst h
+    unfold Clif.enterFunc at he
+    rcases checkTys_cases s!"arguments of %{f.name}" args (Clif.AbiParam.tys f.sig.params) with
+      ⟨hc1, hty1⟩ | ⟨m, hc1⟩
+    · rw [hc1] at he
+      simp only [Clif.Res.ok_bind] at he
+      cases hen : f.entry? with
+      | none => rw [hen] at he; cases he
+      | some b =>
+        rw [hen] at he
+        simp only [Clif.Res.ofOption_some, Clif.Res.ok_bind] at he
+        rcases checkTys_cases s!"entry block of %{f.name}" args (b.params.map (·.2)) with
+          ⟨hc2, hty2⟩ | ⟨m, hc2⟩
+        · rw [hc2] at he
+          simp only [Clif.Res.ok_bind] at he
+          cases hs : Clif.Regs.empty.setMany (b.params.map (·.1)) args with
+          | none => rw [hs] at he; cases he
+          | some regs =>
+            rw [hs] at he
+            simp only [Clif.Res.ofOption_some, Clif.Res.ok_bind, Clif.Res.pure_eq,
+              Clif.Res.ok.injEq, Prod.mk.injEq] at he
+            obtain ⟨rfl, rfl⟩ := he
+            refine ⟨rfl, rfl, by simpa [Clif.AbiParam.tys] using hty1,
+              ⟨b, hen, rfl, rfl, hty2.symm, hs⟩, ?_⟩
+            have := slots_fold_ids f.slots [] mem
+            simpa using this
+        · rw [hc2] at he; cases he
+    · rw [hc1] at he; cases he
+  | trap => rw [he] at h; cases h
+  | stuck => rw [he] at h; cases h
+
+end E2E
