@@ -246,3 +246,75 @@ shift amounts by `shift_mask`). With "low bits" the obligation stays local to ea
   inductive predicates) proven equivalent to the fuel-based functions; rule proofs by
   constructor application would avoid fuel arithmetic and the evaluation-order tactic.
 - **Width convention**: document "low bits, upper unspecified" as the contract (PLAN §3.4).
+
+## Family C: flags, select, min/max, div/rem (M4Cmp)
+
+**Status: infrastructure only — no root rule proven yet.** Branch `agent/m4-cmp`.
+
+Root rules in this family (none proven yet): `icmp` 2215, `uextend(icmp)` 1281, `select` 2267,
+`umin/smin/umax/smax` 1222/1224/1226/1228, vector min/max 1233/1239/1245/1251 (their RHS has to
+be shown to fail on scalar types), `udiv` 1116/1119, `sdiv` 1145/1153/1163/1167, `urem`
+1190/1197, `srem` 1204/1211.
+
+Shared changes (all announced and taken byte-identically by the other branches):
+`1a4de60` (`ValsBelow` hypothesis of `LowerRuleOk`; `Refines` quantifies over every control
+through an implicit `{ctl}` binder); `0d56d05` (`ispec` forms added at the top of `ispec`:
+subS/addS imm12, subS against xzr, subS extended register, andS imm (`andsFlags`),
+udiv/sdiv, msub, csel, ccmpImm, trapIf (`condBrHolds`, as M6's `CondBrKind.holds`), udf);
+`4de7914` (`V`'s derived `BEq` was an opaque constant, so no proof could use a
+constInt/constPrim/var pattern; replaced by a structural `V.beq` with a `LawfulBEq`
+instance. Corpus 114/114 and extrt 22/22 agree, `FVTest.Isle` passes). Taken from the
+others: FrameTyped `f55011e`, AluB `1532afa` and `c696bfa`, M7Driver `0770fd7`.
+
+New files, all building with no `sorry`:
+
+* `IselCmpInv.lean`: generic `iff` lemmas that turn a successful match or evaluation (or an
+  `applyTerm` via `ApplySpec`) into the facts it implies, with internal constructor calls
+  kept as `ApplyInternal` hypotheses.
+* `IselCmpBase.lean`:
+  * `iff` lemmas for the extern extractors and constructors used by the family.
+  * `isel_inv [facts, rules] at hm he`: `simp` with these lemmas, then split with
+    `isel_destruct` and `subst_vars`, repeated until nothing changes.
+  * `isel_cases` and `isel_rule_cases hL`: one goal per rule of a concrete rule list.
+* `IselCmpRun.lean`: how straight-line code composes.
+  * `seqRun` over an append: fall through, stop, fall then stop.
+  * One instruction under `Refines` (`seqRun_one_next`/`_halt`).
+  * `seqRun_frame`: a run only changes the vregs its instructions define.
+  * `Frag`: fresh-def fragments, with `append` and `frame`.
+  * `UsesLo`, and Hoare-style `Runs` with `nil`/`append`/`one`/`imp`.
+  * `SameWorldNF` is reflexive and transitive, and holds after a flag write.
+  * `SameWorld` preserves `ConditionHolds`.
+* `IselSemCmp.lean`: flag lemmas.
+  * `ConditionHolds` after `write_pstate` (`condOn`).
+  * `condOn (condOf cc).bits (cmpFlags a b) = intcc cc a b` for all 10 codes, at 32 and 64 bits.
+  * Signed and unsigned narrow-operand extension lemmas (8/16 → 32).
+  * `Cond.invert` negates every condition except `al`/`nv`.
+  * `a ≥ b ↔ a > b-1` (unsigned and signed), for `emit_icmp` rule 5.
+  * `cmp r, #0` then eq/ne; `tst #255` then ne.
+* `IselCmpTerms.lean`:
+  * `internal_split_first`: first-match selection for internal terms.
+  * `isel_split hp hc h t` macro.
+  * Contracts `operand_size_ok` (with the "earlier rule failed" argument), `cmp_ok`,
+    `cmp_imm_ok`, `cmp_extend_ok`, `cset_ok`, `csel_ok` and `extend_ok`.
+
+Axioms: `propext`, `Classical.choice`, `Quot.sound`, plus `*._native.bv_decide.ax_*` from the
+flag lemmas.
+
+**How to continue.** The plan is backward (inverse) evaluation plus semantic term contracts;
+it avoids having to show which rule is selected.
+
+1. Contracts for `put_in_reg_zext32`/`sext32` (`sext64`/`zext64` for division). The
+   statement is drafted in the git history (`zext32_ok`). Rule 3809 needs the pre-failure of
+   the i32 rule (forward `isel_eval` of the failed match, as in `operand_size_ok`) and
+   `FrameTyped`.
+2. `CondSem c lo fr ρ b`: the meaning of a `CondResult`, i.e. Zero/NotZero of a vreg at a
+   size, or Cond(`ProducesFlagsSideEffect i`, cd) whose `ispec` sets flags on which `cd` is
+   `b`. Contracts for `is_nonzero` (rules 4–10 and I128 are impossible: opcode or type
+   mismatch via `CtxInv.defClif`/`instData`), `cond_result_invert` and `emit_icmp` (11 E-rules;
+   the iconst look-through uses `DFGCons` and `imm64OfIconst`).
+3. Consumers: `with_flags` (rule 818 only; the other 15 are enum mismatches),
+   `lower_cond_result_bool`, `lower_select`/`lower_select_cond` (`csel`; the float, vector and
+   i128 rules fail on integer types).
+4. Division: the `trapIf`/`udf` halt arms go through `seqRun_one_halt` and
+   `seqRun_append_fall_stop`. Needed: `imm` from M4AluB (`IselTermsImm`),
+   `trap_if_div_overflow` (`ccmpImm`) and `intmin_check` (`aluRRImmShift`).

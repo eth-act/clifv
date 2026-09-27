@@ -251,3 +251,63 @@ theorem UsesOk.append {st st1 : LState} {fr : Clif.Frame} {ms1 ms2 : List MInst}
     · exact .inr h
 
 end Backend.Proof
+
+namespace Backend.Proof
+
+open Backend Isle Isle.Interp Isle.Aarch64
+
+/-! ## Hoare-style runs -/
+
+/-- The code reads only vregs `≥ lo` or vregs of values defined in `fr`. -/
+def UsesLo (lo : Nat) (fr : Clif.Frame) (ms : List MInst) : Prop :=
+  ∀ m ∈ ms, ∀ u ∈ vuseNums m, lo ≤ u ∨ (fr.regs u).isSome
+
+theorem UsesLo.append {lo : Nat} {fr : Clif.Frame} {ms1 ms2 : List MInst} (h1 : UsesLo lo fr ms1)
+    (h2 : UsesLo lo fr ms2) : UsesLo lo fr (ms1 ++ ms2) := by
+  intro m hm u hu
+  rcases List.mem_append.1 hm with hm | hm
+  · exact h1 m hm u hu
+  · exact h2 m hm u hu
+
+theorem UsesLo.mono {lo lo' : Nat} {fr : Clif.Frame} {ms : List MInst} (hle : lo ≤ lo')
+    (h : UsesLo lo' fr ms) : UsesLo lo fr ms := fun m hm u hu =>
+  (h m hm u hu).imp_left (Nat.le_trans hle)
+
+theorem UsesLo.nil (lo : Nat) (fr : Clif.Frame) : UsesLo lo fr [] := by simp [UsesLo]
+
+/-- The code `ms`, run from `(ρ, w)` under `isem`, falls through to a state satisfying `P`,
+with the same world but for the flags. -/
+def Runs (F : BitVec 64 → Prop) (isem : Sem) (ms : List MInst) (ρ : Nat → CV) (w : Arm.ArmState)
+    (P : (Nat → CV) → Arm.ArmState → Prop) : Prop :=
+  ∃ ρ' w', seqRun isem ms ρ w = some (.fall ρ' w') ∧ SameWorldNF F w' w ∧ P ρ' w'
+
+theorem Runs.nil {F : BitVec 64 → Prop} {isem : Sem} {ρ : Nat → CV} {w : Arm.ArmState}
+    {P : (Nat → CV) → Arm.ArmState → Prop} (h : P ρ w) : Runs F isem [] ρ w P :=
+  ⟨ρ, w, rfl, SameWorldNF.refl F w, h⟩
+
+theorem Runs.append {F : BitVec 64 → Prop} {isem : Sem} {ms1 ms2 : List MInst} {ρ : Nat → CV}
+    {w : Arm.ArmState} {P Q : (Nat → CV) → Arm.ArmState → Prop} (h1 : Runs F isem ms1 ρ w P)
+    (h2 : ∀ ρ1 w1, P ρ1 w1 → Runs F isem ms2 ρ1 w1 Q) : Runs F isem (ms1 ++ ms2) ρ w Q := by
+  obtain ⟨ρ1, w1, hr1, hw1, hp1⟩ := h1
+  obtain ⟨ρ2, w2, hr2, hw2, hp2⟩ := h2 ρ1 w1 hp1
+  exact ⟨ρ2, w2, seqRun_append_fall' isem hr1 hr2, hw2.trans hw1, hp2⟩
+
+theorem Runs.imp {F : BitVec 64 → Prop} {isem : Sem} {ms : List MInst} {ρ : Nat → CV}
+    {w : Arm.ArmState} {P Q : (Nat → CV) → Arm.ArmState → Prop} (h : Runs F isem ms ρ w P)
+    (hPQ : ∀ ρ' w', seqRun isem ms ρ w = some (.fall ρ' w') → P ρ' w' → Q ρ' w') :
+    Runs F isem ms ρ w Q := by
+  obtain ⟨ρ', w', hr, hw, hp⟩ := h
+  exact ⟨ρ', w', hr, hw, hPQ ρ' w' hr hp⟩
+
+/-- One instruction whose `ispec` falls through: the vreg file is updated with its defs, the
+world is `SameWorld`-equal to `ispec`'s (so `P` must hold for every such world). -/
+theorem Runs.one {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem) {i : MInst}
+    {ops : Array Operand} (hops : i.operands = .ok ops) {ρ : Nat → CV} {w w' : Arm.ArmState}
+    {outs : List CV} (hs : ispec i (vuses ops ρ) w = some (outs, w', .next))
+    (hlen : outs.length = (ops.toList.filter Operand.isDef).length) (hw : SameWorldNF F w' w)
+    {P : (Nat → CV) → Arm.ArmState → Prop}
+    (hP : ∀ w'', SameWorld F w'' w' → P (vdefUpd ops outs ρ) w'') : Runs F isem [i] ρ w P := by
+  obtain ⟨w'', hr, hsw⟩ := seqRun_one_next hR hops hs hlen
+  exact ⟨_, w'', hr, SameWorldNF.trans ⟨fun f hf _ => hsw.1 f hf, hsw.2.1, hsw.2.2⟩ hw, hP w'' hsw⟩
+
+end Backend.Proof

@@ -140,4 +140,40 @@ theorem csel_ok {n : Nat} (hn : 30 ≤ n) {c a b : V} {s s' : LState × Array Ru
   isel_split hp hc h 425
   isel_inv [*, rule_inst_3059] at hm he
 
+/-! ## `extend` and `put_in_reg_{s,z}ext32` -/
+
+include hp hc in
+theorem extend_ok {n : Nat} (hn : 30 ≤ n) {rn sg a b : V} {s s' : LState × Array RuleId} {v : V}
+    (h : ApplyInternal p (sem ctx) cfg n 27 417 [rn, sg, a, b] s v s') :
+    v = .reg (s.1.fresh .int).1 ∧ ∃ m, MInst.ofV (.data 58 28 [.reg (s.1.fresh .int).1, rn, sg, a, b]) = some m ∧
+      s'.1 = (s.1.fresh .int).2.emit m := by
+  isel_split hp hc h 417
+  isel_inv [*, rule_inst_2991] at hm he
+  exact ⟨_, ‹_›, rfl⟩
+
+theorem ofV_extend (rd rn : Reg) (sg : Bool) (a b : Nat) :
+    MInst.ofV (.data 58 28 [.reg rd, .reg rn, .bool sg, .int (a : Int), .int (b : Int)]) =
+      some (.extend rd rn sg a b) := rfl
+
+theorem getAs_typed {fr : Clif.Frame} (hd : DFGCons ctx fr) {x : Nat} {t : CTy} {ty : Clif.Ty}
+    {u : BitVec ty.width} (ht : ctx.valueType? x = some t) (hx : fr.getAs x ty = .ok u) :
+    t = CTy.ofClif ty := (hd.2 x t _ ht (getAs_ok hx)).symm
+
+theorem operands_extend (d x : Nat) (sg : Bool) (a b : Nat) :
+    (MInst.extend (.vreg d .int) (.vreg x .int) sg a b).operands =
+      .ok #[⟨d, .int, .def, .late, .reg⟩, ⟨x, .int, .use, .early, .reg⟩] := rfl
+
+theorem ofV_extend_32 (rd rn : Reg) (sg : Bool) (a : Nat) :
+    MInst.ofV (.data 58 28 [.reg rd, .reg rn, .bool sg, .int (a : Int), .int 32]) =
+      some (.extend rd rn sg a 32) := rfl
+
+theorem opnd32_setWidth (a : CV) : opnd .size32 a = a.setWidth 32 := by
+  simp only [opnd, lo64, OperandSize.bits, BitVec.setWidth_setWidth_of_le _ (by decide : 32 ≤ 64)]
+
+theorem ty_width_le_32 {ty : Clif.Ty} (h : ty.width ≤ 32) :
+    ty = .i8 ∨ ty = .i16 ∨ ty = .i32 := by
+  cases ty <;> simp_all [Clif.Ty.width]
+
+variable {F : BitVec 64 → Prop} {isem : Sem}
+
 end Backend.Proof

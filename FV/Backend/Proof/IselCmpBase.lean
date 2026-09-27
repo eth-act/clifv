@@ -188,6 +188,11 @@ theorem ctor_put_in_reg_iff (x : Nat) (v : V) (st' : LState) :
   rw [this]
   cases ctx.valueReg? x <;> simp [eq_comm]
 
+theorem ctor_ty_bits' (t : CTy) (v : V) (st' : LState) :
+    externCtor ctx T.ty_bits [.ty t] st = .ok (v, st') ↔ v = .int t.bits ∧ st' = st := by
+  have : externCtor ctx T.ty_bits [.ty t] st = .ok (.int t.bits, st) := rfl
+  rw [this]; simp [eq_comm]
+
 theorem ctor_emit_iff (i : V) (v : V) (st' : LState) :
     externCtor ctx T.emit [i] st = .ok (v, st') ↔
       ∃ m, MInst.ofV i = some m ∧ v = .op .unit ∧ st' = st.emit m := by
@@ -321,7 +326,7 @@ macro_rules
         Backend.Proof.ext_u64_from_imm64_iff, Backend.Proof.ext_imm12_from_u64_iff,
         Backend.Proof.ext_value_array_2_iff, Backend.Proof.ext_is_second_result_iff,
         Backend.Proof.ext_maybe_uextend_iff, Backend.Proof.ctor_put_in_reg_iff,
-        Backend.Proof.ctor_emit_iff, Backend.Proof.ctor_temp_writable_reg_i64',
+        Backend.Proof.ctor_emit_iff, Backend.Proof.ctor_ty_bits', Backend.Proof.ctor_temp_writable_reg_i64',
         Backend.Proof.ctor_writable_reg_to_reg', Backend.Proof.ctor_value_reg',
         Backend.Proof.ctor_output', Backend.Proof.ctor_value_regs_get_iff,
         Backend.Proof.ctor_zero_reg', Backend.Proof.ctor_writable_zero_reg',
