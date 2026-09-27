@@ -119,7 +119,7 @@ theorem shift_ruleOk {p : Program} (hp : Data p) {r : Rule} {cop : Clif.BinaryOp
   obtain ⟨ms, d, rfl, hsh, hsem⟩ :=
     hrhs f ctx hctx cfg x y ty.width st tr n' out (st', tr') hco hvb hw hP heval
   refine ⟨ms, _, hsh.emitted, rfl, ?_⟩
-  refine lowerInstOk_one hMR hsh.mono hsh.defs rfl ?_
+  refine lowerInstOk_one_fb hMR hsh.mono hsh.defs rfl ?_
   intro fr cm ρ vals cm' hf hvals hdfg ho
   obtain ⟨u, yv, res, hu, hy, hres, rfl, rfl⟩ := evalInst_shift_ok hshift ho
   have hxv := getAs_ok hu

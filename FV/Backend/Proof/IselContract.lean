@@ -262,7 +262,6 @@ def ispec : Sem := fun i uses w =>
     else if ((lo64 a).setWidth 32).toNat < ts.length then
       some ([ofX 0, ofX 0], w, .goto (((lo64 a).setWidth 32).toNat + 1))
     else none
-    else none
   -- multiply-high (64-bit only), multiply-add/sub (`ra = xzr`: no third use), extract, and
   -- the shifted/extended-register forms
   | .aluRRR .sMulH .size64 rd _ _, [a, b] =>

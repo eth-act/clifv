@@ -8,7 +8,7 @@ import FV.Backend.Proof.IselRulesALU
   writes vregs only (`ispec` returns the world unchanged), so a run of the emitted code under
   any `isem` refining `ispec` is described by the final vreg file alone, up to `SameWorld`.
   `prun_cons` composes one instruction; `prun_rr`/`prun_rrr` are its one- and two-use shapes.
-* **`LowerInstOk` for one-result pure instructions** (`lowerInstOk_one`): from the monotone
+* **`LowerInstOk` for one-result pure instructions** (`lowerInstOk_one_fb`): from the monotone
   fresh-vreg facts and a `PRun` whose final file holds the CLIF result.
 * **Which instruction matched** (`unary_front`, `binary_front`, …): the root rule's pattern and
   `CtxInv` fix the CLIF instruction, its type and its data.
@@ -29,11 +29,6 @@ variable {F : BitVec 64 → Prop} {isem : Sem}
 
 theorem SameWorld.rfl' (s : Arm.ArmState) : SameWorld F s s :=
   ⟨fun _ _ => rfl, fun _ _ => rfl, rfl⟩
-
-theorem SameWorld.trans' {a b c : Arm.ArmState} (h1 : SameWorld F a b) (h2 : SameWorld F b c) :
-    SameWorld F a c :=
-  ⟨fun f hf => (h1.1 f hf).trans (h2.1 f hf), fun x hx => (h1.2.1 x hx).trans (h2.2.1 x hx),
-    h1.2.2.trans h2.2.2⟩
 
 /-- `ms` runs to completion from the vreg file `ρ`, ending in `ρ'`, from every world, with a
 world that agrees with the start outside the allocatable registers. -/
@@ -87,7 +82,7 @@ theorem usesOk_of {st : LState} {fr : Clif.Frame} {ms : List MInst} (xs : List N
 every successful CLIF evaluation (a pure instruction: memory unchanged) it reads fresh vregs or
 defined values and runs (`PRun`) to a vreg file holding the single result in `d`, a fresh vreg
 or a defined value's vreg. -/
-theorem lowerInstOk_one {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} {env : Clif.Env}
+theorem lowerInstOk_one_fb {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} {env : Clif.Env}
     {cp : Clif.Program} {ctx : Ctx} {inst : Clif.Inst} {results : List Nat} {st st' : LState}
     {ms : List MInst} {d : Nat} (hMR : MRStable F MR)
     (hmono : st.nextVreg ≤ st'.nextVreg)
@@ -116,10 +111,6 @@ theorem lowerInstOk_one {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} {en
   · trivial
 
 /-! ## CLIF evaluation of the family's instructions -/
-
-theorem getAs_isSome {fr : Clif.Frame} {x : Nat} {ty : Clif.Ty} {u : BitVec ty.width}
-    (h : fr.getAs x ty = .ok u) : (fr.regs x).isSome := by
-  rw [getAs_ok h]; rfl
 
 theorem evalInst_unary_ok {fr : Clif.Frame} {cm cm' : Clif.Mem} {op : Clif.UnaryOp}
     {ty : Clif.Ty} {x : Nat} {vals : List Clif.Val}
@@ -217,9 +208,6 @@ theorem unary_front {p : Program} (hp : Data p) {r : Rule} {cop : Clif.UnaryOp} 
 `wcases ty hety [defs]` proves a `VHolds` goal about a CLIF type `ty` (not `i128`, `hety`) and
 the operand size `szOf ty.width` chosen by `operand_size`: one case per width, the operand size
 made concrete (`generalize` first: it occurs inside types), then `bv_decide`. -/
-
-/-- The operand size `operand_size` picks for an integer type of width `w`. -/
-abbrev szOf (w : Nat) : OperandSize := if w ≤ 32 then .size32 else .size64
 
 syntax "wcases " ident ident (" [" (Lean.Parser.Tactic.simpLemma),* "]")? : tactic
 macro_rules
@@ -398,7 +386,7 @@ theorem unary_ruleOk {p : Program} (hp : Data p) {r : Rule} {cop : Clif.UnaryOp}
   simp only [Except.ok.injEq, Prod.mk.injEq, Option.some.injEq] at heval
   obtain ⟨rfl, rfl, -⟩ := heval
   refine ⟨code ty.width (ctx.valueType? x) st.nextVreg x, _, hem, rfl, ?_⟩
-  refine lowerInstOk_one hMR (by omega) (fun mi hmi d hd => ?_) rfl ?_
+  refine lowerInstOk_one_fb hMR (by omega) (fun mi hmi d hd => ?_) rfl ?_
   · have := hdefs _ _ _ _ mi hmi d hd; omega
   intro fr cm ρ vals cm' _ hvals hdfg ho
   obtain ⟨u, hu, rfl, rfl⟩ := evalInst_unary_ok ho
@@ -493,7 +481,7 @@ theorem unary_ruleOk' {p : Program} (hp : Data p) {r : Rule} {cop : Clif.UnaryOp
   obtain ⟨ms, d, rfl, hsh, hsem⟩ :=
     hrhs ctx cfg x ty.width st tr n' out (st', tr') hco hrx hxlt hw hP heval
   refine ⟨ms, _, hsh.emitted, rfl, ?_⟩
-  refine lowerInstOk_one hMR hsh.mono hsh.defs rfl ?_
+  refine lowerInstOk_one_fb hMR hsh.mono hsh.defs rfl ?_
   intro fr cm ρ vals cm' _ hvals hdfg ho
   obtain ⟨u, hu, rfl, rfl⟩ := evalInst_unary_ok ho
   have hxv := getAs_ok hu

@@ -357,7 +357,7 @@ theorem ireduce_ok (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : C
   simp only [Except.ok.injEq, Prod.mk.injEq, Option.some.injEq] at heval
   obtain ⟨rfl, rfl, -⟩ := heval
   refine ⟨[], _, by simp, rfl, ?_⟩
-  refine lowerInstOk_one (d := x) hMR (Nat.le_refl _) (fun _ h => by cases h) rfl ?_
+  refine lowerInstOk_one_fb (d := x) hMR (Nat.le_refl _) (fun _ h => by cases h) rfl ?_
   intro fr cm ρ vals cm' _ hvals _ ho
   obtain ⟨a, ha, hlt, rfl, rfl⟩ := evalInst_ireduce_ok ho
   refine ⟨rfl, (fun _ h => by cases h), .inr (by simp [ha]), _, ρ, rfl, prun_nil _, ?_⟩

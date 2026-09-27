@@ -153,7 +153,7 @@ theorem iconst_ok (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Cl
   simp only at hs'
   subst hs'
   refine ⟨ms, _, hsh.emitted, rfl, ?_⟩
-  refine lowerInstOk_one hMR hsh.mono hsh.defs rfl ?_
+  refine lowerInstOk_one_fb hMR hsh.mono hsh.defs rfl ?_
   intro fr cm ρ vals cm' _ _ _ ho
   simp only [instOutcome, Clif.evalInst, pure, Except.pure] at ho
   cases ho

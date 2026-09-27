@@ -31,7 +31,7 @@ theorem ofV_bitRR {k ks : Nat} {op : BitOp} {sz : OperandSize} (hk : BitOp.ofIdx
   rw [e1, e2, e3, hk, hs]
   rfl
 
-theorem ofV_aluRRImmShift {k ks : Nat} {op : ALUOp} {sz : OperandSize}
+theorem ofV_aluRRImmShift_fb {k ks : Nat} {op : ALUOp} {sz : OperandSize}
     (hk : ALUOp.ofIdx? k = some op) (hs : OperandSize.ofIdx? ks = some sz) (i : Nat) :
     MInst.ofV (.data 58 6 [.data 59 k [], .data 93 ks [], .reg rd, .reg rn, .op (.immShift i)]) =
       some (.aluRRImmShift op sz rd rn i) := by
@@ -44,7 +44,7 @@ theorem ofV_aluRRImmShift {k ks : Nat} {op : ALUOp} {sz : OperandSize}
   rw [e1, e2, e3, hk, hs]
   rfl
 
-theorem ofV_aluRRImm12 {k ks : Nat} {op : ALUOp} {sz : OperandSize}
+theorem ofV_aluRRImm12_fb {k ks : Nat} {op : ALUOp} {sz : OperandSize}
     (hk : ALUOp.ofIdx? k = some op) (hs : OperandSize.ofIdx? ks = some sz) (i : Imm12) :
     MInst.ofV (.data 58 4 [.data 59 k [], .data 93 ks [], .reg rd, .reg rn, .op (.imm12 i)]) =
       some (.aluRRImm12 op sz rd rn i) := by
@@ -57,7 +57,7 @@ theorem ofV_aluRRImm12 {k ks : Nat} {op : ALUOp} {sz : OperandSize}
   rw [e1, e2, e3, hk, hs]
   rfl
 
-theorem ofV_aluRRImmLogic {k ks : Nat} {op : ALUOp} {sz : OperandSize}
+theorem ofV_aluRRImmLogic_fb {k ks : Nat} {op : ALUOp} {sz : OperandSize}
     (hk : ALUOp.ofIdx? k = some op) (hs : OperandSize.ofIdx? ks = some sz) (i : ImmLogic) :
     MInst.ofV (.data 58 5 [.data 59 k [], .data 93 ks [], .reg rd, .reg rn, .op (.immLogic i)]) =
       some (.aluRRImmLogic op sz rd rn i) := by
@@ -70,7 +70,7 @@ theorem ofV_aluRRImmLogic {k ks : Nat} {op : ALUOp} {sz : OperandSize}
   rw [e1, e2, e3, hk, hs]
   rfl
 
-theorem ofV_extend (sg : Bool) (a b : Nat) :
+theorem ofV_extend_fb (sg : Bool) (a b : Nat) :
     MInst.ofV (.data 58 28 [.reg rd, .reg rn, .bool sg, .int a, .int b]) =
       some (.extend rd rn sg a b) := rfl
 
@@ -106,13 +106,13 @@ theorem alu_rr_imm_shift_run {k ks : Nat} {op : ALUOp} {sz : OperandSize} {w : N
       .ok (some (.reg (st.fresh .int).1),
         ((st.fresh .int).2.emit (.aluRRImmShift op sz (st.fresh .int).1 a i),
           (tr.push rid).push rule_inst_2537.id)) := by
-  have hemit := fun st rd rn => ctor_emit ctx st (ofV_aluRRImmShift rd rn hk hs i)
+  have hemit := fun st rd rn => ctor_emit ctx st (ofV_aluRRImmShift_fb rd rn hk hs i)
   cases hp
   isel_eval [*, rule_inst_2537, ctor_temp_writable_reg_i64, ctor_writable_reg_to_reg]
 
 include hp hc in
 /-- `alu_rr_imm12`. -/
-theorem alu_rr_imm12_run {k ks : Nat} {op : ALUOp} {sz : OperandSize} {w : Nat} {rid : RuleId}
+theorem alu_rr_imm12_run_fb {k ks : Nat} {op : ALUOp} {sz : OperandSize} {w : Nat} {rid : RuleId}
     (hsz : ∀ st tr n, (applyTerm p (sem ctx) cfg (n+8) 93 305 [.ty (.int w)]).run (st, tr) =
       .ok (some (.data 93 ks []), (st, tr.push rid)))
     (hk : ALUOp.ofIdx? k = some op) (hs : OperandSize.ofIdx? ks = some sz) (a : Reg) (i : Imm12) :
@@ -121,13 +121,13 @@ theorem alu_rr_imm12_run {k ks : Nat} {op : ALUOp} {sz : OperandSize} {w : Nat} 
       .ok (some (.reg (st.fresh .int).1),
         ((st.fresh .int).2.emit (.aluRRImm12 op sz (st.fresh .int).1 a i),
           (tr.push rid).push rule_inst_2648.id)) := by
-  have hemit := fun st rd rn => ctor_emit ctx st (ofV_aluRRImm12 rd rn hk hs i)
+  have hemit := fun st rd rn => ctor_emit ctx st (ofV_aluRRImm12_fb rd rn hk hs i)
   cases hp
   isel_eval [*, rule_inst_2648, ctor_temp_writable_reg_i64, ctor_writable_reg_to_reg]
 
 include hp hc in
 /-- `alu_rr_imm_logic`. -/
-theorem alu_rr_imm_logic_run {k ks : Nat} {op : ALUOp} {sz : OperandSize} {w : Nat}
+theorem alu_rr_imm_logic_run_fb {k ks : Nat} {op : ALUOp} {sz : OperandSize} {w : Nat}
     {rid : RuleId}
     (hsz : ∀ st tr n, (applyTerm p (sem ctx) cfg (n+8) 93 305 [.ty (.int w)]).run (st, tr) =
       .ok (some (.data 93 ks []), (st, tr.push rid)))
@@ -138,7 +138,7 @@ theorem alu_rr_imm_logic_run {k ks : Nat} {op : ALUOp} {sz : OperandSize} {w : N
       .ok (some (.reg (st.fresh .int).1),
         ((st.fresh .int).2.emit (.aluRRImmLogic op sz (st.fresh .int).1 a i),
           (tr.push rid).push rule_inst_2529.id)) := by
-  have hemit := fun st rd rn => ctor_emit ctx st (ofV_aluRRImmLogic rd rn hk hs i)
+  have hemit := fun st rd rn => ctor_emit ctx st (ofV_aluRRImmLogic_fb rd rn hk hs i)
   cases hp
   isel_eval [*, rule_inst_2529, ctor_temp_writable_reg_i64, ctor_writable_reg_to_reg]
 
@@ -149,7 +149,7 @@ theorem extend_run (a : Reg) (sg : Bool) (fb tb : Nat) :
       .ok (some (.reg (st.fresh .int).1),
         ((st.fresh .int).2.emit (.extend (st.fresh .int).1 a sg fb tb),
           tr.push rule_inst_2991.id)) := by
-  have hemit := fun st rd rn => ctor_emit ctx st (ofV_extend rd rn sg fb tb)
+  have hemit := fun st rd rn => ctor_emit ctx st (ofV_extend_fb rd rn sg fb tb)
   cases hp
   isel_eval [*, rule_inst_2991, ctor_temp_writable_reg_i64, ctor_writable_reg_to_reg]
 

@@ -248,7 +248,7 @@ theorem rhs_1982 {x : Nat} {rx : Reg} (hx : ctx.valueReg? x = some rx) :
     (fun st tr n => operand_size_32 hp ctx hc st tr n (w := 32) (by decide)) rfl rfl a
   have h4 := fun st tr n a => bit_rr_run hp ctx hc st tr n (k := 0) (op := .rbit) (sz := .size32)
     (fun st tr n => operand_size_32 hp ctx hc st tr n (w := 32) (by decide)) rfl rfl a
-  have h5 := fun st tr n a i => alu_rr_imm_logic_run hp ctx hc st tr n (k := 2) (op := .orr)
+  have h5 := fun st tr n a i => alu_rr_imm_logic_run_fb hp ctx hc st tr n (k := 2) (op := .orr)
     (sz := .size32) (fun st tr n => operand_size_32 hp ctx hc st tr n (w := 32) (by decide))
     rfl rfl a i
   have h6 := ctor_imm_logic_800000 ctx
@@ -273,7 +273,7 @@ theorem rhs_1986 {x : Nat} {rx : Reg} (hx : ctx.valueReg? x = some rx) :
     (fun st tr n => operand_size_32 hp ctx hc st tr n (w := 32) (by decide)) rfl rfl a
   have h4 := fun st tr n a => bit_rr_run hp ctx hc st tr n (k := 0) (op := .rbit) (sz := .size32)
     (fun st tr n => operand_size_32 hp ctx hc st tr n (w := 32) (by decide)) rfl rfl a
-  have h5 := fun st tr n a i => alu_rr_imm_logic_run hp ctx hc st tr n (k := 2) (op := .orr)
+  have h5 := fun st tr n a i => alu_rr_imm_logic_run_fb hp ctx hc st tr n (k := 2) (op := .orr)
     (sz := .size32) (fun st tr n => operand_size_32 hp ctx hc st tr n (w := 32) (by decide))
     rfl rfl a i
   have h6 := ctor_imm_logic_8000 ctx
@@ -297,7 +297,7 @@ theorem rhs_1951_ext {x : Nat} {rx : Reg} {t : CTy} (hx : ctx.valueReg? x = some
   have h2 := fun st tr n => output_reg_run hp ctx hc st tr n
   have h3 := fun st tr n a => bit_rr_run hp ctx hc st tr n (k := 1) (op := .clz) (sz := .size32)
     (fun st tr n => operand_size_32 hp ctx hc st tr n (w := 32) (by decide)) rfl rfl a
-  have h5 := fun st tr n a i => alu_rr_imm12_run hp ctx hc st tr n (k := 1) (op := .sub)
+  have h5 := fun st tr n a i => alu_rr_imm12_run_fb hp ctx hc st tr n (k := 1) (op := .sub)
     (sz := .size32) (fun st tr n => operand_size_32 hp ctx hc st tr n (w := 32) (by decide))
     rfl rfl a i
   have h6 := ctor_u8_into_imm12_24 ctx
@@ -321,7 +321,7 @@ theorem rhs_1951_pass {x w : Nat} {rx : Reg} (hx : ctx.valueReg? x = some rx)
   have h2 := fun st tr n => output_reg_run hp ctx hc st tr n
   have h3 := fun st tr n a => bit_rr_run hp ctx hc st tr n (k := 1) (op := .clz) (sz := .size32)
     (fun st tr n => operand_size_32 hp ctx hc st tr n (w := 32) (by decide)) rfl rfl a
-  have h5 := fun st tr n a i => alu_rr_imm12_run hp ctx hc st tr n (k := 1) (op := .sub)
+  have h5 := fun st tr n a i => alu_rr_imm12_run_fb hp ctx hc st tr n (k := 1) (op := .sub)
     (sz := .size32) (fun st tr n => operand_size_32 hp ctx hc st tr n (w := 32) (by decide))
     rfl rfl a i
   have h6 := ctor_u8_into_imm12_24 ctx
@@ -367,7 +367,7 @@ theorem rhs_1955_ext {x : Nat} {rx : Reg} {t : CTy} (hx : ctx.valueReg? x = some
   have h2 := fun st tr n => output_reg_run hp ctx hc st tr n
   have h3 := fun st tr n a => bit_rr_run hp ctx hc st tr n (k := 1) (op := .clz) (sz := .size32)
     (fun st tr n => operand_size_32 hp ctx hc st tr n (w := 32) (by decide)) rfl rfl a
-  have h5 := fun st tr n a i => alu_rr_imm12_run hp ctx hc st tr n (k := 1) (op := .sub)
+  have h5 := fun st tr n a i => alu_rr_imm12_run_fb hp ctx hc st tr n (k := 1) (op := .sub)
     (sz := .size32) (fun st tr n => operand_size_32 hp ctx hc st tr n (w := 32) (by decide))
     rfl rfl a i
   have h6 := ctor_u8_into_imm12_16 ctx
@@ -391,7 +391,7 @@ theorem rhs_1955_pass {x w : Nat} {rx : Reg} (hx : ctx.valueReg? x = some rx)
   have h2 := fun st tr n => output_reg_run hp ctx hc st tr n
   have h3 := fun st tr n a => bit_rr_run hp ctx hc st tr n (k := 1) (op := .clz) (sz := .size32)
     (fun st tr n => operand_size_32 hp ctx hc st tr n (w := 32) (by decide)) rfl rfl a
-  have h5 := fun st tr n a i => alu_rr_imm12_run hp ctx hc st tr n (k := 1) (op := .sub)
+  have h5 := fun st tr n a i => alu_rr_imm12_run_fb hp ctx hc st tr n (k := 1) (op := .sub)
     (sz := .size32) (fun st tr n => operand_size_32 hp ctx hc st tr n (w := 32) (by decide))
     rfl rfl a i
   have h6 := ctor_u8_into_imm12_16 ctx

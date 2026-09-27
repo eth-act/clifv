@@ -568,3 +568,13 @@ Axioms: `propext`, `Classical.choice`, `Quot.sound`, plus `bv_decide` certificat
   `vecLanes addv`, `movFromVec`) not yet specified.
 - Name collisions for the integrator: `szOf`, `getAs_isSome`, `lowerInstOk_one`,
   `SameWorld.trans'` exist in both this branch and `agent/m4-alu-a`.
+
+### Integration note (Integrate1: m4-ctl + m4-alu-b)
+
+Shared helpers deduplicated: `szOf`, `szOf_bits`, `env4`, `env5` now live in `IselRulesALU.lean`;
+`SameWorld.trans'`, `getAs_isSome` in `IselFamily.lean`. Family-B lemmas whose names clashed with
+different family-A/Cmp lemmas carry the suffix `_fb`: `lowerInstOk_one_fb`, `alu_rr_imm12_run_fb`,
+`alu_rr_imm_logic_run_fb`, `ctor_imm_logic_some_fb`, `ctor_imm_logic_none_fb`, `ctor_zero_reg_fb'`,
+`extVal_fb`, `ofV_aluRRImm12_fb`, `ofV_aluRRImmLogic_fb`, `ofV_aluRRImmShift_fb`, `ofV_extend_fb`.
+`ispec`: the M4Cmp/M4Ctl forms precede the family-A generic forms (the Cmp `mSub` case is dropped:
+the generic `mulAddVal` case gives the same value).

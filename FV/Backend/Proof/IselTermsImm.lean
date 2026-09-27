@@ -109,12 +109,12 @@ theorem ctor_imm_logic_u64_narrow {w : Nat} (hw : w = 8 ∨ w = 16) {i : Int} :
     externCtor ctx T.imm_logic_from_u64 [.ty (.int w), .int i] st = .fail := by
   rcases hw with rfl | rfl <;> rfl
 
-theorem ctor_imm_logic_some {w : Nat} (hw : w = 32 ∨ w = 64) {i : Int} {il : ImmLogic}
+theorem ctor_imm_logic_some_fb {w : Nat} (hw : w = 32 ∨ w = 64) {i : Int} {il : ImmLogic}
     (h : ImmLogic.ofNat? (u64 i) (szOf w) = some il) :
     externCtor ctx T.imm_logic_from_u64 [.ty (.int w), .int i] st = .ok (.op (.immLogic il), st) := by
   rw [ctor_imm_logic_u64 ctx st hw, h]; rfl
 
-theorem ctor_imm_logic_none {w : Nat} (hw : w = 32 ∨ w = 64) {i : Int}
+theorem ctor_imm_logic_none_fb {w : Nat} (hw : w = 32 ∨ w = 64) {i : Int}
     (h : ImmLogic.ofNat? (u64 i) (szOf w) = none) :
     externCtor ctx T.imm_logic_from_u64 [.ty (.int w), .int i] st = .fail := by
   rw [ctor_imm_logic_u64 ctx st hw, h]; rfl
@@ -130,7 +130,7 @@ theorem ext_ty_32_or_64_64 :
 theorem ext_ty_32_or_64_8 : externExtract ctx T.ty_32_or_64 (.ty (.int 8)) st = .fail := rfl
 theorem ext_ty_32_or_64_16 : externExtract ctx T.ty_32_or_64 (.ty (.int 16)) st = .fail := rfl
 
-theorem ctor_zero_reg' : externCtor ctx T.zero_reg [] st = .ok (.reg .xzr, st) := rfl
+theorem ctor_zero_reg_fb' : externCtor ctx T.zero_reg [] st = .ok (.reg .xzr, st) := rfl
 
 theorem ctor_lcf (w e ks : Nat) {sz : OperandSize} (hs : OperandSize.ofIdx? ks = some sz) (i : Int) :
     externCtor ctx T.load_constant_full [.ty (.int w), .data 122 e [], .data 93 ks [], .int i] st =
@@ -150,11 +150,6 @@ theorem ctor_lcf (w e ks : Nat) {sz : OperandSize} (hs : OperandSize.ofIdx? ks =
 end Extern
 
 /-! ## Forward lemmas, one rule at a time -/
-
-/-- A four-variable rule environment as the matcher builds it. -/
-abbrev env4 (a b c d : V) : Interp.Env V :=
-  ((((Array.replicate 4 none).setIfInBounds 0 (some a)).setIfInBounds 1 (some b)).setIfInBounds 2
-    (some c)).setIfInBounds 3 (some d)
 
 /-- The `imm` argument list. -/
 abbrev immArgs (w e : Nat) (i : Int) : List V := [.ty (.int w), .data 122 e [], .int i]
@@ -239,7 +234,7 @@ theorem match_3751 {w : Nat} (hw : w = 32 ∨ w = 64) {i : Int} {il : ImmLogic}
     (matchRule p (sem ctx) cfg (m+10) rule_inst_3751 (immArgs w 1 i)).run (st, tr) =
       .ok (some (env4 (.ty (.int w)) (.int i) (.op (.immLogic il)) (.int w)), (st, tr)) := by
   have h1 := ext_integral_ty ctx st (w := w) (by omega)
-  have h2 := fun st => ctor_imm_logic_some ctx st hw hl
+  have h2 := fun st => ctor_imm_logic_some_fb ctx st hw hl
   have h3 := fun st => ctor_imm_size ctx st hw
   clear hl hw
   cases hp
@@ -257,7 +252,7 @@ theorem match_3751_none {w e : Nat} (hw : w = 8 ∨ w = 16 ∨ w = 32 ∨ w = 64
     clear hw hn
     rcases h01 with rfl | rfl <;> cases hp <;> isel_eval [*, rule_inst_3751]
   · by_cases hn : w = 32 ∨ w = 64
-    · have h2 := fun st => ctor_imm_logic_none ctx st hn hl
+    · have h2 := fun st => ctor_imm_logic_none_fb ctx st hn hl
       clear hw hn hl; cases hp; isel_eval [*, rule_inst_3751]
     · have h2 := fun st => ctor_imm_logic_u64_narrow ctx st (w := w) (by omega) (i := i)
       clear hw hn hl; cases hp; isel_eval [*, rule_inst_3751]
@@ -374,9 +369,9 @@ theorem rhs_3751 {w : Nat} (hw : w = 32 ∨ w = 64) {i : Int} {il : ImmLogic} (x
         (env4 (.ty (.int w)) (.int i) (.op (.immLogic il)) x)).run (st, tr) =
       .ok (some (.reg (st.fresh .int).1),
         ((st.fresh .int).2.emit (.aluRRImmLogic .orr (szOf w) (st.fresh .int).1 .xzr il), tr')) := by
-  have e7 := ctor_zero_reg' ctx
+  have e7 := ctor_zero_reg_fb' ctx
   rcases hw with rfl | rfl
-  · have h3 := fun st tr n a i => alu_rr_imm_logic_run hp ctx hc st tr n (k := 2) (op := .orr)
+  · have h3 := fun st tr n a i => alu_rr_imm_logic_run_fb hp ctx hc st tr n (k := 2) (op := .orr)
       (sz := .size32) (fun st tr n => operand_size_32 hp ctx hc st tr n (w := 32) (by decide))
       rfl rfl a i
     rw [show szOf 32 = .size32 from rfl]
@@ -385,7 +380,7 @@ theorem rhs_3751 {w : Nat} (hw : w = 32 ∨ w = 64) {i : Int} {il : ImmLogic} (x
     case oh1 =>
       isel_eval [*, rule_inst_3751, rule_inst_3416]
       rfl
-  · have h3 := fun st tr n a i => alu_rr_imm_logic_run hp ctx hc st tr n (k := 2) (op := .orr)
+  · have h3 := fun st tr n a i => alu_rr_imm_logic_run_fb hp ctx hc st tr n (k := 2) (op := .orr)
       (sz := .size64) (fun st tr n => operand_size_64 hp ctx hc st tr n (w := 64) (by decide)
         (by decide)) rfl rfl a i
     rw [show szOf 64 = .size64 from rfl]

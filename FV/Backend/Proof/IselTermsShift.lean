@@ -22,11 +22,6 @@ open Backend Isle Isle.Interp Isle.Aarch64
 
 variable {p : Program} (hp : Data p) (ctx : Ctx) {cfg : Config} (hc : cfg.checkOverlap = false)
 
-/-- A five-variable rule environment as the matcher builds it. -/
-abbrev env5 (a b c d e : V) : Interp.Env V :=
-  (((((Array.replicate 5 none).setIfInBounds 0 (some a)).setIfInBounds 1 (some b)).setIfInBounds 2
-    (some c)).setIfInBounds 3 (some d)).setIfInBounds 4 (some e)
-
 /-- The shift a `do_shift` operation computes, at width `n`. -/
 def shiftF (op : ALUOp) {n : Nat} (a : BitVec n) (s : Nat) : BitVec n :=
   match op with

@@ -48,7 +48,7 @@ theorem instData_extend {f : Clif.Function} {op : Clif.ExtendOp} {ty : Clif.Ty} 
   · cases h
 
 /-- The CLIF value of `extend op` to `ty`. -/
-def extVal (op : Clif.ExtendOp) (ty : Clif.Ty) {w : Nat} (b : BitVec w) : BitVec ty.width :=
+def extVal_fb (op : Clif.ExtendOp) (ty : Clif.Ty) {w : Nat} (b : BitVec w) : BitVec ty.width :=
   match op with
   | .uextend => Clif.Sem.uextend ty.width b
   | .sextend => Clif.Sem.sextend ty.width b
@@ -57,7 +57,7 @@ theorem evalInst_extend_ok {fr : Clif.Frame} {cm cm' : Clif.Mem} {op : Clif.Exte
     {ty : Clif.Ty} {x : Nat} {vals : List Clif.Val}
     (h : Clif.evalInst fr cm (.extend op ty x) = .ok (vals, cm')) :
     ∃ a, fr.regs x = some a ∧ a.ty.width < ty.width ∧ cm' = cm ∧
-      vals = [⟨ty, extVal op ty a.bits⟩] := by
+      vals = [⟨ty, extVal_fb op ty a.bits⟩] := by
   simp only [Clif.evalInst, Clif.Frame.get] at h
   cases hx : fr.regs x with
   | none => rw [hx] at h; cases h
@@ -152,13 +152,13 @@ theorem extend_sem {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem) {
     (hlt : aty.width < ty.width) (b x : Nat) (ρ : Nat → CV) (u : BitVec aty.width)
     (hu : VHolds ⟨aty, u⟩ (ρ x)) :
     ∃ ρ', PRun F isem [.extend (.vreg b .int) (.vreg x .int) sg aty.width ty.width] ρ ρ' ∧
-      VHolds ⟨ty, extVal op ty u⟩ (ρ' b) := by
+      VHolds ⟨ty, extVal_fb op ty u⟩ (ρ' b) := by
   have hu' : (ρ x).setWidth aty.width = u := hu
   subst hu'
   rcases hsg with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
   cases aty <;> cases ty <;> simp [eTy, Clif.Ty.width] at hety hlt <;>
     refine ⟨_, prun_rr hR rfl (fun _ => rfl) (prun_nil _), ?_⟩ <;>
-    simp only [VHolds, ofX, lo64, upd, ↓reduceIte, extVal, Clif.Sem.uextend, Clif.Sem.sextend,
+    simp only [VHolds, ofX, lo64, upd, ↓reduceIte, extVal_fb, Clif.Sem.uextend, Clif.Sem.sextend,
       Clif.Ty.width, Bool.false_eq_true] <;> bv_decide
 
 /-! ## The rule theorems -/
@@ -222,7 +222,7 @@ theorem extend_rule_ok {p : Program} (hp : Data p) {r : Rule} {op : Clif.ExtendO
   obtain ⟨rfl, rfl, -⟩ := heval
   refine ⟨[.extend (.vreg st.nextVreg .int) (.vreg x .int) sg t.bits ty.width], _,
     by simp [LState.emit, LState.fresh], rfl, ?_⟩
-  refine lowerInstOk_one hMR (by simp [LState.emit, LState.fresh]) ?_ rfl ?_
+  refine lowerInstOk_one_fb hMR (by simp [LState.emit, LState.fresh]) ?_ rfl ?_
   · intro mi hmi d hd'
     simp only [List.mem_singleton] at hmi; subst hmi
     rw [vdd_extend, List.mem_singleton] at hd'; subst hd'

@@ -17,9 +17,6 @@ variable {p : Program} (hp : Data p) (ctx : Ctx) {cfg : Config} (hc : cfg.checkO
 
 theorem ctor_zero_reg (st : LState) : externCtor ctx T.zero_reg [] st = .ok (.reg .xzr, st) := rfl
 
-theorem szOf_bits {w : Nat} (hw : w ≤ 64) : w ≤ (szOf w).bits := by
-  unfold szOf; split <;> simp [OperandSize.bits] <;> omega
-
 /-! ## `ineg_base_case` (`lower.isle:857`): `(sub ty (zero_reg) x)` -/
 
 include hp in
