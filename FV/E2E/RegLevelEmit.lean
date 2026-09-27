@@ -661,4 +661,59 @@ theorem emit_block {k : Nat} {af : AFunc} {fa : FnAsm} (h : emitFunc k af = .ok 
   · rw [hL', hsplit, hR0]
     simp [List.drop_append]
 
+/-! ## Lines `fallthrough` leaves alone -/
+
+/-- A line `fallthrough` never rewrites when it is followed by code without trap labels: an
+instruction that is not `b`, whose conditional target (if any) is a trap label. -/
+def Line.plain : Line → Bool
+  | .ins (.b _) none => false
+  | .ins c none => match c.condTarget? with
+    | none => true
+    | some (.trap _) => true
+    | some _ => false
+  | .ins _ (some _) => true
+  | _ => false
+
+theorem ftStep_plain {ln : Line} {n1 n2 : Option Line} (hp : ln.plain = true)
+    (h : ∀ c e l, ln = .ins c none → n1 = some (.ins (.b e) none) → n2 = some (.label l) →
+      c.condTarget? ≠ some l) :
+    ftStep ln n1 n2 = ([ln], 1) := by
+  unfold ftStep
+  repeat' split
+  all_goals simp_all [Line.plain]
+
+/-- Plain lines pass through `fallthrough` unchanged (the following code has no trap label in
+second position). -/
+theorem ftList_plain_append :
+    ∀ (P Z : List Line), (∀ ln ∈ P, ln.plain = true) → (∀ n, Z[1]? ≠ some (.label (.trap n))) →
+      ftList (P ++ Z) = P ++ ftList Z
+  | [], Z, _, _ => by simp
+  | ln :: P, Z, hP, hZ => by
+    simp only [List.cons_append]
+    rw [ftList_cons]
+    have hln := hP ln (by simp)
+    rw [ftStep_plain hln]
+    · simp only [List.drop_succ_cons, List.drop_zero, List.singleton_append]
+      rw [ftList_plain_append P Z (fun x hx => hP x (by simp [hx])) hZ]
+    · intro c e l hc h1 h2 htgt
+      subst hc
+      cases P with
+      | nil =>
+        simp only [List.nil_append] at h1 h2
+        have hl : ∃ n, l = .trap n := by
+          simp only [Line.plain] at hln
+          revert hln
+          cases hct : c.condTarget? with
+          | none => simp [hct] at htgt
+          | some t =>
+            rw [hct] at htgt
+            cases htgt
+            cases c <;> simp_all <;> (split <;> simp_all)
+        obtain ⟨n, rfl⟩ := hl
+        exact hZ n h2
+      | cons x P =>
+        simp only [List.cons_append, List.getElem?_cons_zero, Option.some.injEq] at h1
+        subst h1
+        simp [Line.plain] at hP
+
 end Backend
