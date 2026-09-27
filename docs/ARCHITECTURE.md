@@ -59,6 +59,9 @@ first, then update its producer and its consumers together.
   merges it into `main` (`--no-ff`), pushes `main`, then removes the worktree.
 - Scripts must not hardcode an absolute checkout path. Derive the repo root from the script's
   own location.
+- The agent file tools (read/edit/write/grep) resolve relative paths against the integrator's
+  checkout, not the agent's worktree. Every tool path an agent uses must therefore be absolute,
+  under `/home/kev/work/clifv-wt/<name>/`. In bash, `cd` into the worktree in the same command.
 
 ## Contract: CLIF in Lean (`FV/Clif`, producer M0)
 
