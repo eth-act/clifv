@@ -32,6 +32,8 @@ variable {σ α β ε : Type}
 @[isel_monad] theorem except_ok_bind (a : α) (f : α → Except ε β) :
     (Except.ok a >>= f : Except ε β) = f a := rfl
 @[isel_monad] theorem except_pure (a : α) : (pure a : Except ε α) = .ok a := rfl
+@[isel_monad] theorem except_error_bind (e : ε) (f : α → Except ε β) :
+    (Except.error e >>= f : Except ε β) = .error e := rfl
 @[isel_monad] theorem run_liftM (e : Except Err α) (s : σ × Array RuleId) :
     (liftM e : M σ α).run s = (e >>= fun a => Except.ok (a, s)) := by
   cases e <;> rfl
