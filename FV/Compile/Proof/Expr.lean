@@ -1,4 +1,5 @@
 import FV.Compile.Proof.Arith
+import FV.Compile.Proof.RtSpec
 import FV.Compile.Proof.RunEq
 import FV.Compile.Proof.GenBk
 
@@ -176,6 +177,118 @@ theorem moved_join_right {st a b : CheckSt} (hl : a.length = b.length) (i : Nat)
 
 theorem truthy_ofBool (b : Bool) : Clif.Sem.truthy (Val.ofBool b).bits = b := by
   cases b <;> rfl
+
+theorem Ext.set_new {H : Heap} {h : Nat} (p : Nat × List (Word × Word)) (hh : H h = none) :
+    Ext H (H.set h p) := fun x q hx => by
+  rw [Heap.set_other]; exact hx
+  intro he; subst he; rw [hh] at hx; cases hx
+
+/-- An extern call that changed memory and heap. -/
+theorem Prog.call {c : Ctx} {H H' : Heap} {s : State} {m' : Mem} {fr' : Frame} {n : Nat}
+    (hI : c.Inv H s) (hm : MemModels m' H') (hg : Grows H H' s.mem.next)
+    (hk : ∀ al ∈ s.mem.allocs, Keeps s.mem m' al) (hext : Ext H H')
+    (hnext : s.mem.next ≤ m'.next) (hf : fr'.func = s.frame.func)
+    (hs : fr'.slots = s.frame.slots) (ha : Agree s.frame.regs fr'.regs n) (hn : c.n0 ≤ n) :
+    Prog c H s n H' { s with frame := fr', mem := m' } :=
+  ⟨ha, hI.mem_step hm hg (fun al hal _ => hk al hal) hf hs ha hn, hext, hg, hnext⟩
+
+theorem ctx_val {c : Ctx} {r : Regs} (h : c.RegsOK r) (hs : c.fc.ctx.isSome = true) :
+    ∃ v : BitVec 64, r (c.fc.ctx.getD 0) = some ⟨.i64, v⟩ ∧ c.fc.ctx.getD 0 < c.n0 := by
+  cases hc : c.fc.ctx with
+  | none => rw [hc] at hs; cases hs
+  | some x =>
+    obtain ⟨hlt, v, hv⟩ := h.1 x hc
+    exact ⟨v, by simpa using hv, by simpa using hlt⟩
+
+theorem enc_map {H : Heap} {k v : Ty} {m : DSL.Map k.denote v.denote} {R : List Val}
+    (h : Enc H (.map k v) m R) : ∃ hh d, R = [Val.ofNat .i64 hh] ∧ hh < 2 ^ 64 ∧
+      H hh = some (d, encEntries k v m) := h
+
+theorem ofNat_i64_toNat {h : Nat} (hh : h < 2 ^ 64) : (Val.ofNat .i64 h).toNat = h := by
+  simp [Val.ofNat, Val.toNat, Clif.Ty.width, Nat.mod_eq_of_lt hh]
+
+/-- `cloneVals`: a deep copy with fresh map objects. -/
+theorem clone_sim (c : Ctx) (hF : FnOK c) : ∀ (t : Ty) (x : t.denote) (vs : List ValueId)
+    (R : List Val) (cg : CG) (s : State) (H : Heap), vecOk t = true → c.Inv H s →
+    c.n0 ≤ cg.nextVal → Good c.F ((cloneVals c.fc t vs).run cg).2 → At c.F cg s.frame →
+    RegsHas s.frame.regs vs R → Enc H t x R → (∀ y ∈ vs, y < cg.nextVal) →
+    (t.hasMap = true → c.fc.ctx.isSome = true) →
+    Reach mapEnv c.P (fun s' => At c.F ((cloneVals c.fc t vs).run cg).2 s'.frame ∧
+      cg.nextVal ≤ ((cloneVals c.fc t vs).run cg).2.nextVal ∧
+      (∀ y ∈ ((cloneVals c.fc t vs).run cg).1, y < ((cloneVals c.fc t vs).run cg).2.nextVal) ∧
+      ∃ H' R', Prog c H s cg.nextVal H' s' ∧ RegsHas s'.frame.regs ((cloneVals c.fc t vs).run cg).1 R' ∧
+        Enc H' t x R' ∧ (hdl t R').Nodup ∧ ∀ h ∈ hdl t R', H h = none) Exh s
+  | .map k v, x, vs, R, cg, s, H, _, hI, hn0, hG, hAt, hr, hE, hids, hctx => by
+    obtain ⟨hh, d, rfl, hlt, hH⟩ := enc_map hE
+    obtain ⟨y, rfl, hy⟩ := hr.single_inv
+    obtain ⟨cv, hcv, hclt⟩ := ctx_val hI.regs (hctx rfl)
+    obtain ⟨f, hf, hres⟩ := spec_clone hI.mem ⟨.i64, cv⟩ (Val.ofNat .i64 hh) hH (ofNat_i64_toNat hlt)
+    have hargs : RegsHas s.frame.regs [c.fc.ctx.getD 0, [y].headD 0]
+        [⟨.i64, cv⟩, Val.ofNat .i64 hh] := by simp [RegsHas, hcv, hy]
+    rcases hres with ht | ⟨h', m', d', hres, h1, h2, h3, h4, h5, h6, h7⟩
+    · exact reach_callExt_trap hF.ext hG hAt hargs rfl (hF.rt _ (by simp [rtNames, rtClone]))
+        hf ht ⟨_, rfl, .inr rfl⟩
+    · refine reach_callExt hF.ext hG hAt hargs rfl (hF.rt _ (by simp [rtNames, rtClone])) hf hres rfl
+        fun fr' hA hr' ha hf' hs' => .here ⟨hA, ?_, ?_, _, [Val.ofNat .i64 h'],
+          Prog.call hI h6 (Grows.set_new h1 h4) h7 (Ext.set_new _ h3) h5 hf' hs' ha hn0, hr',
+          ⟨h', d', rfl, h2, by simp⟩, by simp [hdl], ?_⟩
+      · simp [callFn_run, cloneVals, callRt, rtClone, rtSig]
+      · simp [callFn_run, cloneVals, callRt, rtClone, rtSig]
+      · simp [hdl, Val.ofNat, Val.toNat, Clif.Ty.width, Nat.mod_eq_of_lt h2, h3]
+  | .prod a b, x, vs, R, cg, s, H, hv, hI, hn0, hG, hAt, hr, hE, hids, hctx => by
+    simp only [vecOk, Bool.and_eq_true] at hv
+    obtain ⟨R₁, R₂, rfl, hE₁, hE₂⟩ := hE
+    have hl := hE₁.length
+    have hr₁ : RegsHas s.frame.regs (vs.take (flat a).length) R₁ := by
+      have := hr.take (flat a).length
+      have e : (R₁ ++ R₂).take (flat a).length = R₁ := by rw [← hl]; simp
+      rwa [e] at this
+    have hr₂ : RegsHas s.frame.regs (vs.drop (flat a).length) R₂ := by
+      have := hr.drop (flat a).length
+      have e : (R₁ ++ R₂).drop (flat a).length = R₂ := by rw [← hl]; simp
+      rwa [e] at this
+    have hG₂ : Good c.F ((cloneVals c.fc b (vs.drop (flat a).length)).run
+        ((cloneVals c.fc a (vs.take (flat a).length)).run cg).2).2 := Bk.pure _ c.F _ hG
+    have hG₁ := Bk.cloneVals c.fc b _ c.F _ hG₂
+    refine (clone_sim c hF a x.1 _ R₁ cg s H hv.1 hI hn0 hG₁ hAt hr₁ hE₁
+      (fun y hy => hids y (List.mem_of_mem_take hy))
+      (fun h => hctx (by simp [DSL.Ty.hasMap, h]))).bind fun s₁ ⟨hA₁, hn₁, hid₁, H₁, R₁', hp₁,
+        hr₁', hE₁', hnd₁, hv₁⟩ => ?_
+    refine (clone_sim c hF b x.2 _ R₂ _ s₁ H₁ hv.2 hp₁.inv (Nat.le_trans hn0 hn₁) hG₂ hA₁
+      (hr₂.agree hp₁.agree (fun y hy => hids y (List.mem_of_mem_drop hy))) (hE₂.ext hp₁.ext)
+      (fun y hy => Nat.lt_of_lt_of_le (hids y (List.mem_of_mem_drop hy)) hn₁)
+      (fun h => hctx (by simp [DSL.Ty.hasMap, h]))).bind fun s₂ ⟨hA₂, hn₂, hid₂, H₂, R₂',
+        hp₂, hr₂', hE₂', hnd₂, hv₂⟩ => ?_
+    refine .here ⟨hA₂, Nat.le_trans hn₁ hn₂, fun y hy => ?_, H₂, R₁' ++ R₂', hp₁.trans hp₂ hn₁,
+      (hr₁'.agree hp₂.agree hid₁).append hr₂', ⟨R₁', R₂', rfl, hE₁'.ext hp₂.ext, hE₂'⟩, ?_, ?_⟩
+    · simp only [cloneVals, bind_run, pure_run, List.mem_append] at hy
+      rcases hy with hy | hy
+      · exact Nat.lt_of_lt_of_le (hid₁ y hy) hn₂
+      · exact hid₂ y hy
+    · rw [Enc.hdl_prod hE₁'.length]
+      refine List.nodup_append.2 ⟨hnd₁, hnd₂, fun h₁ m₁ h₂ m₂ he => ?_⟩
+      subst he
+      exact hE₁'.hdl_dom h₁ m₁ (hv₂ h₁ m₂)
+    · rw [Enc.hdl_prod hE₁'.length]
+      intro h hm
+      rcases List.mem_append.1 hm with hm | hm
+      · exact hv₁ h hm
+      · cases hH : H h with
+        | none => rfl
+        | some p => exact absurd (hv₂ h hm) (by rw [hp₁.ext h p hH]; simp)
+  | .vec n t, x, vs, R, cg, s, H, hv, hI, hn0, hG, hAt, hr, hE, hids, hctx => by
+    simp only [vecOk, Bool.not_eq_true'] at hv
+    have hrun : (cloneVals c.fc (.vec n t) vs).run cg = (vs, cg) := by
+      simp [cloneVals, hv]; rfl
+    rw [hrun] at hG ⊢
+    exact .here ⟨hAt, Nat.le_refl _, hids, H, R, Prog.refl _ hI, hr, hE, by simp [hdl],
+      by simp [hdl]⟩
+  | .int _, x, vs, R, cg, s, H, _, hI, _, hG, hAt, hr, hE, hids, _ =>
+    .here ⟨hAt, Nat.le_refl _, hids, H, R, Prog.refl _ hI, hr, hE, by simp [hdl], by simp [hdl]⟩
+  | .bool, x, vs, R, cg, s, H, _, hI, _, hG, hAt, hr, hE, hids, _ =>
+    .here ⟨hAt, Nat.le_refl _, hids, H, R, Prog.refl _ hI, hr, hE, by simp [hdl], by simp [hdl]⟩
+  | .unit, x, vs, R, cg, s, H, _, hI, _, hG, hAt, hr, hE, hids, _ =>
+    .here ⟨hAt, Nat.le_refl _, hids, H, R, Prog.refl _ hI, hr, hE, by simp [hdl], by simp [hdl]⟩
 
 /-- The simulation statement for one expression. -/
 def SimE {Γ : List Ty} {t : Ty} (e : DSL.Expr Γ t) : Prop :=
@@ -568,6 +681,81 @@ theorem expr_sim {Γ : List Ty} {t : Ty} (e : DSL.Expr Γ t) : SimE e := by
       · intro x hx
         exact (prov_right hsc (hp₁.ext.trans hp₂.ext) hv₃ x hx).imp id fun hm =>
           (selHdl_sublist (moved_join_right hl) Γ vals).subset hm
-  | _ => sorry
+  | @clone τ v =>
+    intro c hF ρ env vals st st' lim H cg s hX hG hAt hchk hctx
+    obtain ⟨ha, hstep, -⟩ := use_ok hchk
+    obtain ⟨hr, henc, hΓ, hv⟩ := hX.er.get v ha
+    rw [run_clone] at hG ⊢
+    refine (clone_sim c hF τ _ _ _ cg s H (vecOk_of_wf (hX.wf τ (Var.mem v))) hX.inv hX.n0 hG hAt
+      hr henc (hX.ids.getD _) (fun h => hctx (by simpa [Expr.usesCtx] using h))).mono
+      (fun s' ⟨hA, hn, hid, H', R', hp, hr', hE', hnd, hfr⟩ =>
+        ⟨hA, hn, hid, H', R', hp, hr', hE', hnd, fun h hh => .inl (hfr h hh)⟩) (fun _ h => h)
+  | @mapEmpty k v =>
+    intro c hF ρ env vals st st' lim H cg s hX hG hAt hchk hctx
+    rw [run_mapEmpty] at hG ⊢
+    obtain ⟨cv, hcv, hclt⟩ := ctx_val hX.inv.regs (hctx rfl)
+    obtain ⟨f, hf, hres⟩ := spec_new hX.inv.mem ⟨.i64, cv⟩
+    have hargs : RegsHas s.frame.regs [c.fc.ctx.getD 0] [⟨.i64, cv⟩] := RegsHas.single hcv
+    rcases hres with ht | ⟨h', m', d', hres, h1, h2, h3, h4, h5, h6, h7⟩
+    · exact reach_callExt_trap hF.ext hG hAt hargs rfl (hF.rt _ (by simp [rtNames, rtNew]))
+        hf ht ⟨_, rfl, .inr rfl⟩
+    · refine reach_callExt hF.ext hG hAt hargs rfl (hF.rt _ (by simp [rtNames, rtNew])) hf hres
+        rfl fun fr' hA hr' ha hf' hs' => .here ⟨hA, ?_, ?_, _, [Val.ofNat .i64 h'],
+          Prog.call hX.inv h6 (Grows.set_new h1 h4) h7 (Ext.set_new _ h3) h5 hf' hs' ha hX.n0, hr',
+          ⟨h', d', rfl, h2, by simp [encEntries, DSL.Expr.denote,
+            DSL.Map.empty]⟩, by simp [hdl], ?_⟩
+      · simp [callFn_run, rtNew, rtSig]
+      · simp [callFn_run, rtNew, rtSig]
+      · simp [hdl, Val.ofNat, Val.toNat, Clif.Ty.width, Nat.mod_eq_of_lt h2, h3]
+  | @mapContains k v m key ih =>
+    intro c hF ρ env vals st st' lim H cg s hX hG hAt hchk hctx
+    simp only [DSL.Expr.chk] at hchk
+    obtain ⟨st₀, hu, hk⟩ := except_bind_ok.1 hchk
+    obtain ⟨ha, hs₀, -⟩ := use_ok hu
+    obtain ⟨hrm, hEm, hΓ, hvm⟩ := hX.er.get m ha
+    have hwf := hX.wf _ (Var.mem m)
+    simp only [DSL.Ty.wf, Bool.and_eq_true] at hwf
+    rw [run_mapContains] at hG ⊢
+    have hG₂ := hG
+    have hG₁ : Good c.F ((toWordV k ((compileExpr c.fc env key).run cg).1).run
+        ((compileExpr c.fc env key).run cg).2).2 := Bk.callFn_gg _ _ _ c.F _ hG
+    have hG₀ := Bk.toWordV k _ c.F _ hG₁
+    obtain ⟨hh, d, hRm, hlt, hH⟩ := enc_map hEm
+    refine (ih c hF ρ env vals st₀ st' lim H cg s (hX.next hs₀ (Prog.refl _ hX.inv)
+      (Nat.le_refl _)) hG₀ hAt hk (fun _ => hctx rfl)).bind fun s₁ h₁ => ?_
+    obtain ⟨hA₁, hn₁, hid₁, H₁, R₁, hp₁, hr₁, hE₁, -, -⟩ := h₁
+    have hK : Enc H₁ k (key.denote ρ) R₁ := hE₁
+    obtain ⟨kv, hR₁⟩ : ∃ kv, R₁ = [kv] := by
+      cases k <;> simp [DSL.Ty.isKey] at hwf <;> simp only [Enc] at hK <;> exact ⟨_, hK⟩
+    subst hR₁
+    refine reach_toWordV hwf.1 hG₁ hA₁ hr₁ hK fun fr₂ hA₂ hw ha₂ hn₂ hn₂' hwid hf₂ hs₂ => ?_
+    obtain ⟨cv, hcv, hclt⟩ := ctx_val hp₁.inv.regs (hctx rfl)
+    have hmid : ∀ y ∈ env.getD m.idx [], y < cg.nextVal := hX.ids.getD _
+    rw [hRm] at hrm
+    obtain ⟨ym, hym, hyv⟩ := hrm.single_inv
+    have hyv₂ : fr₂.regs ((env.getD m.idx []).headD 0) = some (Val.ofNat .i64 hh) := by
+      rw [hym]; simp only [List.headD_cons]
+      have hlt' : ym < cg.nextVal := hmid ym (by rw [hym]; exact List.mem_singleton_self _)
+      rw [ha₂ ym (Nat.lt_of_lt_of_le hlt' hn₁), hp₁.agree ym hlt']; exact hyv
+    have hcv₂ : fr₂.regs (c.fc.ctx.getD 0) = some ⟨.i64, cv⟩ := by
+      rw [ha₂ _ (Nat.lt_of_lt_of_le hclt (Nat.le_trans hX.n0 hn₁))]; exact hcv
+    obtain ⟨f, hf, hres⟩ := spec_contains (hp₁.inv.mem) ⟨.i64, cv⟩ (Val.ofNat .i64 hh)
+      (Val.ofNat .i64 (toWord k (key.denote ρ)).toNat) (hp₁.ext _ _ hH) (ofNat_i64_toNat hlt)
+    have hargs : RegsHas fr₂.regs [c.fc.ctx.getD 0, (env.getD m.idx []).headD 0,
+        ((toWordV k ((compileExpr c.fc env key).run cg).1).run ((compileExpr c.fc env key).run cg).2).1]
+        [⟨.i64, cv⟩, Val.ofNat .i64 hh, Val.ofNat .i64 (toWord k (key.denote ρ)).toNat] := by
+      simp only [RegsHas, List.map_cons, List.map_nil, hcv₂, hyv₂, hw]
+    have hI₂ : c.Inv H₁ { s₁ with frame := fr₂ } := hp₁.inv.frame hf₂ hs₂ ha₂ (Nat.le_trans hX.n0 hn₁)
+    refine reach_callExt (s := { s₁ with frame := fr₂ }) hF.ext hG₂ hA₂ hargs rfl
+      (hF.rt _ (by simp [rtNames, rtContains])) hf hres rfl
+      fun fr' hA hr' ha' hf' hs' => .here ?_
+    have hn : cg.nextVal ≤ ((toWordV k ((compileExpr c.fc env key).run cg).1).run
+        ((compileExpr c.fc env key).run cg).2).2.nextVal := Nat.le_trans hn₁ hn₂'
+    refine XPost.scalar _ hA (by simp [callFn_run, rtContains, rtSig]; omega)
+      (by simp [callFn_run, rtContains, rtSig])
+      ((hp₁.regs hf₂ hs₂ ha₂ hn₁ (Nat.le_trans hX.n0 hn₁)).regs (fr := fr') hf' hs' ha' hn
+        (Nat.le_trans hX.n0 hn)) hr' ?_ (hdl_bool _)
+    simp only [Enc, DSL.Expr.denote, ofNat_toWord, encEntries, lookupL_enc hwf.1,
+      DSL.Map.contains, DSL.Map.get?, Option.isSome_map]
 
 end Compile.Proof
