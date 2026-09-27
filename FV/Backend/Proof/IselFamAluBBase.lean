@@ -212,4 +212,109 @@ theorem unary_front {p : Program} (hp : Data p) {r : Rule} {cop : Clif.UnaryOp} 
   subst htys
   exact ⟨ty, x, rfl, hety, hb, hd, by rw [hres]; simp [ofClif_int_width]⟩
 
+/-! ## Width lemmas by bit-blasting
+
+`wcases ty hety [defs]` proves a `VHolds` goal about a CLIF type `ty` (not `i128`, `hety`) and
+the operand size `szOf ty.width` chosen by `operand_size`: one case per width, the operand size
+made concrete (`generalize` first: it occurs inside types), then `bv_decide`. -/
+
+/-- The operand size `operand_size` picks for an integer type of width `w`. -/
+abbrev szOf (w : Nat) : OperandSize := if w ≤ 32 then .size32 else .size64
+
+syntax "wcases " ident ident (" [" (Lean.Parser.Tactic.simpLemma),* "]")? : tactic
+macro_rules
+  | `(tactic| wcases $ty $hety) => `(tactic| wcases $ty $hety [])
+  | `(tactic| wcases $ty $hety [$ls,*]) => `(tactic| (
+      generalize hs : szOf (Clif.Ty.width $ty) = sz at *
+      cases $ty:ident <;> simp [eTy] at $hety:ident <;> simp [szOf, Clif.Ty.width] at hs <;>
+        subst hs <;>
+        simp only [VHolds, resX, opnd, ofX, lo64, upd, ↓reduceIte, $ls,*] at * <;>
+        dsimp only [Clif.Ty.width, OperandSize.bits] at * <;> bv_decide))
+
+/-! ## Instruction shapes -/
+
+theorem vdefs_rr {i : MInst} {d x : Nat}
+    (h : i.operands = .ok #[⟨d, .int, .def, .late, .reg⟩, ⟨x, .int, .use, .early, .reg⟩]) :
+    vdefs i = [d] ∧ vuseNums i = [x] := by
+  simp only [vdefs, vuseNums, h]; exact ⟨rfl, rfl⟩
+
+theorem vdefs_rrr {i : MInst} {d x y : Nat}
+    (h : i.operands = .ok #[⟨d, .int, .def, .late, .reg⟩, ⟨x, .int, .use, .early, .reg⟩,
+      ⟨y, .int, .use, .early, .reg⟩]) :
+    vdefs i = [d] ∧ vuseNums i = [x, y] := by
+  simp only [vdefs, vuseNums, h]; exact ⟨rfl, rfl⟩
+
+/-! ## Template: a unary root rule emitting straight-line code into fresh vregs -/
+
+/-- **Template: a unary root rule.** Rule `r` with pattern `(inst_data_value tyPat (Unary (O)
+x))` for the opcode of `cop`: when it matches, the type's width satisfies `P` (`hmatch`); its
+right-hand side emits `code w b x` (`b` = the first fresh vreg) allocating `k` fresh vregs and
+returns the fresh vreg `res w b` (`hrhs`), or fails when `x` has no register (`hnone`). The
+code defines only its fresh vregs and reads `x` and fresh vregs; `hsem` is its meaning. -/
+theorem unary_ruleOk {p : Program} (hp : Data p) {r : Rule} {cop : Clif.UnaryOp} {n : String}
+    {opT : TermId} {to : Term} {ko : Nat} {tyPat : Pattern} {rest : List Pattern}
+    (hargs : r.args = [.term 18 209 [tyPat, .term 152 2476 (.term 151 opT [] :: rest)]])
+    (hto : termOf p opT = .ok to) (hko : to.kind = .enumVariant ko)
+    (hname : (variantNames 151)[ko]? = some n) (hcop : unaryOpcode cop = some n)
+    (P : Nat → Prop) (k : Nat) (code : Nat → Nat → Nat → List MInst) (res : Nat → Nat → Nat)
+    (hmatch : ∀ (ctx : Ctx) (cfg : Config) ii (info : IInfo) w x st tr m env' s1,
+      ctx.insts[ii]? = some info → info.resTys.head? = some (.int w) → w ≤ 64 →
+      info.data = .data 152 29 [.data 151 ko [], .value x] →
+      (matchRule p (sem ctx) cfg (m + 2) r [.inst ii]).run (st, tr) = .ok (some env', s1) →
+      env' = env2 (.ty (.int w)) (.value x) ∧ s1 = (st, tr) ∧ P w)
+    (hrhs : ∀ (ctx : Ctx) (cfg : Config) x w (st : LState) tr n,
+      cfg.checkOverlap = false → ctx.valueReg? x = some (.vreg x .int) → w ≤ 64 → P w →
+      ∃ (tr' : Array RuleId) (st'' : LState), (evalExpr p (sem ctx) cfg (n + 40) r.rhs
+          (env2 (.ty (.int w)) (.value x))).run (st, tr) =
+        .ok (some (.regsVec [[.vreg (res w st.nextVreg) .int]]), (st'', tr')) ∧
+        st''.emitted = st.emitted ++ (code w st.nextVreg x).toArray ∧
+        st''.nextVreg = st.nextVreg + k)
+    (hnone : ∀ (ctx : Ctx) (cfg : Config) x w st tr n v s', ctx.valueReg? x = none →
+      (evalExpr p (sem ctx) cfg (n + 40) r.rhs (env2 (.ty (.int w)) (.value x))).run (st, tr) ≠
+        .ok (some v, s'))
+    (hres : ∀ w b, b ≤ res w b)
+    (hdefs : ∀ w b x, ∀ mi ∈ code w b x, ∀ d ∈ vdefs mi, b ≤ d ∧ d < b + k)
+    (huses : ∀ w b x, ∀ mi ∈ code w b x, ∀ u ∈ vuseNums mi, b ≤ u ∨ u = x)
+    (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
+    (hMR : MRStable F MR)
+    (hsem : ∀ (ty : Clif.Ty) (b x : Nat) (ρ : Nat → CV) (u : BitVec ty.width), eTy ty = true →
+      (cop = .bswap → ty ≠ .i8) → P ty.width → x < b → VHolds ⟨ty, u⟩ (ρ x) →
+      ∃ ρ', PRun F isem (code ty.width b x) ρ ρ' ∧
+        VHolds ⟨ty, Clif.Sem.unary cop u⟩ (ρ' (res ty.width b))) :
+    LowerRuleOk isem MR env cp p r := by
+  intro f ctx hctx ii info inst hi hc cfg hco m n st tr env' s1 out st' tr' hm hn hvb hmatch'
+    heval
+  obtain ⟨m', rfl⟩ : ∃ m', m = m' + 2 := ⟨m - 2, by omega⟩
+  obtain ⟨n', rfl⟩ : ∃ n', n = n' + 40 := ⟨n - 40, by omega⟩
+  obtain ⟨ty, x, rfl, hety, hbs, hd, hhead⟩ :=
+    unary_front hp hargs hto hko hname hcop hctx hi hc (m := m' + 1) hmatch'
+  have hw := eTy_width hety
+  obtain ⟨rfl, rfl, hP⟩ := hmatch ctx cfg ii info ty.width x st tr m' env' s1 hi hhead hw hd hmatch'
+  cases hrx : ctx.valueReg? x with
+  | none => exact absurd heval (hnone ctx cfg x ty.width st tr n' out (st', tr') hrx)
+  | some rx =>
+  have ex := hctx.valueReg x rx hrx
+  subst ex
+  have hxlt := hvb x _ hrx
+  obtain ⟨tr'', st'', he, hem, hnx⟩ := hrhs ctx cfg x ty.width st tr n' hco hrx hw hP
+  rw [he] at heval
+  simp only [Except.ok.injEq, Prod.mk.injEq, Option.some.injEq] at heval
+  obtain ⟨rfl, rfl, -⟩ := heval
+  refine ⟨code ty.width st.nextVreg x, _, hem, rfl, ?_⟩
+  refine lowerInstOk_one hMR (by omega) (fun mi hmi d hd => ?_) rfl ?_
+  · have := hdefs _ _ _ mi hmi d hd; omega
+  intro fr cm ρ vals cm' _ hvals _ ho
+  obtain ⟨u, hu, rfl, rfl⟩ := evalInst_unary_ok ho
+  have hxv := getAs_ok hu
+  obtain ⟨ρ', hrun, hheld⟩ := hsem ty st.nextVreg x ρ u hety hbs hP hxlt (hvals x _ hxv)
+  refine ⟨rfl, usesOk_of [x] ?_ ?_, .inl (hres _ _), _, ρ', rfl, hrun, hheld⟩
+  · intro mi hmi u hu
+    rcases huses _ _ _ mi hmi u hu with h | h
+    · exact .inl h
+    · exact .inr (by simp [h])
+  · intro y hy
+    simp only [List.mem_singleton] at hy
+    subst hy
+    simp [hxv]
+
 end Backend.Proof
