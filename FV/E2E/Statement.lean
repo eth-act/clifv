@@ -102,23 +102,26 @@ structure ClifEntry (f : Clif.Function) (args : List Clif.Val) (cs : Clif.State)
     Clif.Regs.empty.setMany (b.params.map (·.1)) args = some cs.frame.regs
   slotIds : cs.frame.slots.map (·.1) = f.slots.map (·.1)
 
-/-- CLIF memory ↔ Arm memory, same addresses: initialised CLIF bytes are the Arm bytes, every
-address of a live CLIF allocation is a 64-bit address outside the frame addresses `F` (the
+/-- CLIF memory ↔ Arm memory, same addresses: initialised bytes of live CLIF allocations are
+the Arm bytes, every address of a live CLIF allocation is a 64-bit address outside the frame addresses `F` (the
 allocator-private part of the frame: spill and save slots, fp/lr), and `symbol_value`
 addresses are the link-time ones `syms`. -/
 structure MemRel (F : BitVec 64 → Prop) (syms : String → Option Nat) (cm : Clif.Mem)
     (s : Arm.ArmState) : Prop where
-  bytes : ∀ a b, cm.bytes a = some b → Arm.read_mem (BitVec.ofNat 64 a) s = b
+  bytes : ∀ a b, cm.valid a 1 = true → cm.bytes a = some b → Arm.read_mem (BitVec.ofNat 64 a) s = b
   valid : ∀ a n, cm.valid a n = true → a + n ≤ 2 ^ 64 ∧ ∀ k < n, ¬ F (BitVec.ofNat 64 (a + k))
   symbols : cm.symbols = syms
 
 /-- The relation parameters of the CLIF ↔ VCode relation: frame addresses `F`, link-time
-symbol addresses `syms`, and `slotReg w`, the address of the explicit stack-slot region as the
-VCode semantics computes it in world `w` (M6: `sp₁ + slotBase`). -/
+symbol addresses `syms`, and `slotOff`: the explicit stack-slot region is at `sp + slotOff` of
+the VCode world (M6: the allocated frame's `slotBase`). -/
 structure Rel where
   F : BitVec 64 → Prop
   syms : String → Option Nat
-  slotReg : Arm.ArmState → Nat
+  slotOff : Nat
+
+/-- Address of the stack-slot region in world `w`. -/
+def Rel.slotReg (Γ : Rel) (w : Arm.ArmState) : Nat := (spv w).toNat + Γ.slotOff
 
 /-- The stack slots of an activation are at the frame's slot region. -/
 def SlotRel (f : Clif.Function) (base : Nat) (slots : List (Clif.SlotId × Nat)) : Prop :=
@@ -234,10 +237,15 @@ def RegLevelCorrect (sem : Sem) (F : Arm.ArmState → BitVec 64 → Prop)
         ∀ a, ¬ F s a → (runX astep n s).mem a = w.mem a) ∧
     (∀ c, VTraps vcp sem ρ₀ s c → ∃ n, TrapAt fb base c (runX astep n s))
 
+/-- **M7's remaining lowering obligations**: the VCode has the structure `lowerFunction`
+builds (`LowerShape`, incl. `CtxInv`), and an SSA availability certificate exists (`Cert`). -/
+def LoweringObligations (f : Clif.Function) (vc : VCode) : Prop :=
+  ∃ ctx st0 R gn bl A, LowerShape f vc ctx st0 R gn bl ∧ Cert f ctx st0 gn bl A
+
 /-! ## The theorem's conclusion -/
 
 /-- What the Arm run does for a CLIF outcome (`stuck`/`outOfFuel`: no claim). -/
-def Refines (fb : FnBin) (base ra : BitVec 64) (astep : Arm.ArmState → Arm.ArmState)
+def ArmRefines (fb : FnBin) (base ra : BitVec 64) (astep : Arm.ArmState → Arm.ArmState)
     (s : Arm.ArmState) : Clif.Outcome → Prop
   | .returned vals cm => ∃ n, ArmRet ra s (runX astep n s) ∧
       (∀ (j : Nat) v, vals[j]? = some v → XHolds v (xreg j (runX astep n s))) ∧

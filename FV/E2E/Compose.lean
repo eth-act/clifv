@@ -5,7 +5,7 @@ import FV.E2E.Statement
 
 `backend_correct_of_layers`: CLIF → VCode (`IselSim`), VCode → prepared VCode
 (`PrepareCorrect`) and prepared VCode → Arm (`RegLevelCorrect`) give the end-to-end refinement
-`Refines` of every CLIF outcome by the Arm run.
+`ArmRefines` of every CLIF outcome by the Arm run.
 -/
 
 namespace E2E
@@ -17,7 +17,7 @@ theorem regVal_x (s : Arm.ArmState) (n : Nat) : regVal s (.x n) = ofX (xreg n s)
 theorem memAgree_of {F : BitVec 64 → Prop} {syms} {cm : Clif.Mem} {w s : Arm.ArmState}
     (hm : MemRel F syms cm w) (he : ∀ a, ¬ F a → s.mem a = w.mem a) : MemAgree cm s := by
   intro a b hv hb
-  have hw := hm.bytes a b hb
+  have hw := hm.bytes a b hv hb
   have hF := (hm.valid a 1 hv).2 0 (by omega)
   simp only [Nat.add_zero] at hF
   rw [← hw]
@@ -27,16 +27,16 @@ theorem memAgree_of {F : BitVec 64 → Prop} {syms} {cm : Clif.Mem} {w s : Arm.A
 /-- **Composition.** -/
 theorem backend_correct_of_layers {p : Clif.Program} {f : Clif.Function} {vc vcp : VCode}
     {af : AFunc} {fb : FnBin} {sem : Sem} {F : Arm.ArmState → BitVec 64 → Prop}
-    {syms : String → Option Nat} {slotReg : Arm.ArmState → Nat}
+    {syms : String → Option Nat} {slotOff : Nat}
     {astep : Arm.ArmState → Arm.ArmState} {env : Clif.Env}
-    (hIsel : ∀ s, IselSim sem ⟨F s, syms, slotReg⟩ env p f vc)
+    (hIsel : ∀ s, IselSim sem ⟨F s, syms, slotOff⟩ env p f vc)
     (hPrep : PrepareCorrect sem vc vcp)
     (hReg : RegLevelCorrect sem F astep vcp af fb)
     {base ra : BitVec 64} {s : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hargs : ArgsIn args s)
-    (hcs : ClifEntry f args cs) (hrel : Rel.holds ⟨F s, syms, slotReg⟩ f cs.frame.slots cs.mem s)
+    (hcs : ClifEntry f args cs) (hrel : Rel.holds ⟨F s, syms, slotOff⟩ f cs.frame.slots cs.mem s)
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
-    Refines fb base ra astep s (Clif.runLoop env p fuel cs) := by
+    ArmRefines fb base ra astep s (Clif.runLoop env p fuel cs) := by
   have hI := hIsel s args cs s (fun _ => 0) hcs hrel hargs htr fuel
   have hR := hReg base ra s hent hres (fun _ => 0)
   cases hrun : Clif.runLoop env p fuel cs with
