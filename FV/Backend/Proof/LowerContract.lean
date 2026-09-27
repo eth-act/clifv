@@ -129,11 +129,19 @@ def branchIdx (fr : Clif.Frame) : Clif.Terminator → Clif.Res Nat
       .ok (if v.toNat < tbl.length then v.toNat + 1 else 0)
   | _ => .stuck "not a branch"
 
-/-- **`lower` on `return`/`trap`, `lower_branch` on a branch** (terminator `t`). -/
+/-- Is the terminator a branch (`lower_branch`)? -/
+def isBranch : Clif.Terminator → Bool
+  | .jump _ | .brif .. | .brTable .. => true
+  | _ => false
+
+/-- **`lower` on `return`/`trap`, `lower_branch` on a branch** (terminator `t`, successor labels
+`targets`). -/
 structure LowerTermOk (sem : Sem) (MR : MemRelT) (ctx : Ctx) (t : Clif.Terminator)
-    (st st' : LState) (ms : List MInst) : Prop where
+    (targets : List Label) (st st' : LState) (ms : List MInst) : Prop where
   mono : st.nextVreg ≤ st'.nextVreg
   defs : ∀ m ∈ ms, ∀ d ∈ vdefs m, st.nextVreg ≤ d ∧ d < st'.nextVreg
+  /-- the emitted branch carries the given successor labels (`VCode.cfg` reads them) -/
+  targets : isBranch t = true → ∀ i, ms.getLast? = some i → i.targets = targets
   run : ∀ (fr : Clif.Frame) (cm : Clif.Mem) (ρ : Nat → CV) (w : Arm.ArmState),
     fr.func = ctx.func → ValsHeld fr ρ → DFGCons ctx fr → MR fr.slots cm w →
     (∀ m ∈ ms, ∀ u ∈ vuseNums m, st.nextVreg ≤ u ∨ (fr.regs u).isSome) ∧
@@ -171,7 +179,7 @@ def LowerRulesCorrect (sem : Sem) (MR : MemRelT) (env : Clif.Env) (p : Clif.Prog
     buildCtx f = .ok (ctx, ranges, st0) → termData t = .ok data → st.emitted = #[] →
     runTerm (termCtx ctx ti data) (termCall t ti targets).1 (termCall t ti targets).2 st =
       .ok (some out, st', tr) →
-    LowerTermOk sem MR (termCtx ctx ti data) t st st' st'.emitted.toList)
+    LowerTermOk sem MR (termCtx ctx ti data) t targets st st' st'.emitted.toList)
 
 /-- Facts about the driver-emitted pseudo-instructions and alias resolution that the VCode
 semantics must satisfy (M6's `csem`: `Args` reads the argument registers of the world, an edge
