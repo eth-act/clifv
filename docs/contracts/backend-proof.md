@@ -636,10 +636,11 @@ wrappers or `use_lse`), a root type test (`$I128`, vector constants, `ty_vec64/1
 `IselExclBase` if it changed) and every `lower` rule `exclOk` rejects (must be none; otherwise
 extend the checker, or the rule is a real obligation and belongs in the closure).
 
-## Memory family (loads/stores/stack_addr/symbol_value) — M4Mem
+## Memory family (loads/stores/stack_addr/symbol_value) — M4Mem, M4Mem2
 
-**Status: contract + infrastructure; no memory root rule proven yet** (request budget).
-Branch `agent/m4-mem`.
+**Status: done.** `memRulesCorrect_program : MemRulesCorrect program` (`IselMemRoots`): all 21
+memory root rules (815, 824, 1027, 1041–1044, 1052–1057, 1064–1070, 1093) are `MemRuleOk`.
+Contract/infrastructure on branch `agent/m4-mem`, the proofs on `agent/m4-mem2`.
 
 **Contract change #7** (335353d, on main ddf0955; announced to all): memory rules cannot be
 `LowerRuleOk` for an arbitrary `MR`, so, like calls (#5), they are split out.
@@ -669,15 +670,35 @@ Branch `agent/m4-mem`.
 `Runs.of_prun`), `IselMemAmode` (`AddOk`, `amode_add_ok`: all three rules of `amode_add`;
 `add64_inv`, `add_imm64_inv`, `imm64_inv`, `addOk_imm12`, `addOk_add`).
 
-**Remaining (plan).** Contracts `amode_reg_scaled` (576, 3 rules), `amode_no_more_iconst`
-(575, 9 rules), `amode` (574, 4 rules incl. `stack_addr` → `SlotOffset`) with the statement
-`Frag ∧ ∃ am, amv.amode? = some am ∧ AmVregs am ∧ ∀ fr ρ w pv, RtOk … → fr.regs x = some pv →
-pv.ty = .i64 → UsesLo … ∧ Runs … (amodeAddr sb am bytes (amUses am ρ') w' = some (ofInt 64
-(pv.toNat + off)))` (DFG look-through via `binary_value`/`extend_value`/`shift_const_value`);
-helper terms `aarch64_{u,s}load*` (529–535), `aarch64_store*` (541–544) + `side_effect_inst_ok`,
-`compute_stack_addr` (643), `load_ext_name` (570: rules 3991/3996 fail since `is_pic`),
-`load_ext_name_got` (571); root rules by `root_match_data` + `instData` inversion (load format 16,
-store 22); 815/824 are vacuous (`ctor_is_sinkable_inst`). Byte lemmas for the load value / store
-are in `IselMemArm`.
+**M4Mem2 files.**
+* `IselMemAddr`: DFG look-through (`def_data`: the data of a value's defining instruction is its
+  `instData`; `inv_iadd`/`inv_ishl`/`inv_iconst`/`inv_uextend`/`inv_sextend`/`inv_stackAddr`);
+  tactics `mem_dfg hctx` (invert every `V.data 152 … = info.data` of a looked-through
+  instruction) and `mem_invd hp hctx at hm he` (`mem_inv`, then `mem_dfg` + the inverse simp set to
+  a fixpoint); `ScaledOk`, `amode_reg_scaled_ok` (576, all 3 rules).
+* `IselMemNoIconst`: `AmOk F isem sb ctx st st' ms am bytes x off` (code `ms` = a `Frag`; `am` over
+  int vregs; under `RtOk` with `x` holding an `i64` `pv`: the code and the mode read fresh or
+  defined vregs and after the code `amodeAddr sb am bytes (amUses am ρ') w' = ofInt 64 (pv + off)`);
+  value lemmas `iadd_val`/`ishl_val`/`ext_val`; `mem_vregs hctx` (substitute
+  `ctx.valueReg? y = some r`); `amode_nmi_ok` (575, all 11 rules, `ty` of 1/2/4/8 bytes; the
+  `ishl` scale check gives `log2 bytes = c % 64`, `log2_scale`).
+* `IselMemAmodeTop`: `amode_ok` (574, all 4 rules: `stack_addr` → `SlotOffset (base + o1 + off)`
+  with the slot at `sp + sb + base` (`RtOk.slots`), `iconst` operands folded into the offset,
+  `amode_no_more_iconst`).
+* `IselMemHelpers`: `{u,s}load*_helper_ok` (529–535), `store*_helper_ok` (541–544),
+  `compute_stack_addr_ok` (643), `load_ext_name_got_ok` (571), `SymOk`/`load_ext_name_ok` (570;
+  the two non-PIC rules are refuted by `is_pic = true`).
+* `IselMemSem`: CLIF inversions (`evalInst_{load,store,stackAddr,symbolValue}_inv`), `rtOk_of`
+  (`RtOk` from the per-instruction premises and `MemRelOk.slots`), and the `LowerInstOk` builders
+  `load_lower_ok` (bytes via `readBits_getLsbD_eq` and `MemRelOk.bytes`, avoidance via
+  `MemRelOk.valid`), `store_lower_ok` (`MemRelOk.store`, `writeBits_setWidth`),
+  `stackAddr_lower_ok`, `symbol_lower_ok` (`MemRelOk.symbols`).
+* `IselMemRoots`: root inversions (`inv_load_root`, `inv_store_root`, `inv_symbolValue_root`,
+  tactic `mem_root hctx hi hic`), `load_root_finish`/`store_root_finish`, the 21 rule theorems,
+  `lower_memRoot_filter` (the memory rules of `lower`, by `rfl` over the rule ids only) and
+  `memRulesCorrect_program`.
 
-**Axioms**: `memRelOk_holds`, `readBits_getLsbD_eq`, `backend_correct_of_rules`: `propext`, `Classical.choice`, `Quot.sound`; `amode_add_ok` additionally the `bv_decide` certificates of M4AluB's `movK_ident` (via `imm_ok`). No `sorry`.
+Remaining: none. `backend_correct(_of_rules)` can now take `memRulesCorrect_program` for
+`hmemRules` (left to the integrator).
+
+**Axioms**: `memRelOk_holds`, `readBits_getLsbD_eq`, `backend_correct_of_rules`: `propext`, `Classical.choice`, `Quot.sound`; `amode_add_ok` and `memRulesCorrect_program` additionally the `bv_decide` certificates of M4AluB's `movK_ident` (via `imm_ok`). No `sorry`.
