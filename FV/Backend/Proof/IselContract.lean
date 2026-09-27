@@ -372,6 +372,11 @@ def SameWorldNF (F : BitVec 64 → Prop) (s t : Arm.ArmState) : Prop :=
 def MRStable (F : BitVec 64 → Prop) (MR : MemRelT) : Prop :=
   ∀ sl cm w w', SameWorldNF F w' w → MR sl cm w → MR sl cm w'
 
+/-- The address operand of a load or store (contract change #7). -/
+def memAddr? : Clif.Inst → Option Nat
+  | .load _ _ _ p _ | .store _ _ _ _ p _ => some p
+  | _ => none
+
 /-! ## The lowering context -/
 
 /-- Facts about the lowering context `buildCtx f` builds (M7 proves `buildCtx f = .ok (ctx, …)
@@ -391,6 +396,10 @@ structure CtxInv (f : Clif.Function) (ctx : Ctx) : Prop where
   defClif : ∀ (x d : Nat) (info : IInfo), ctx.defInst? x = some d → ctx.insts[d]? = some info →
     info.clif.isSome = true
   slotOff : ctx.slotOff = (slotLayout f.slots).1
+  /-- Load/store addresses are `i64` values (`buildCtx` rejects narrower pointers; contract
+  change #7): the lowering uses the whole 64-bit register as the base. -/
+  addr64 : ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst) (x : Nat), ctx.insts[ii]? = some info →
+    info.clif = some inst → memAddr? inst = some x → ctx.valueType? x = some (.int 64)
 
 /-- Instructions the rules may look through (`def_inst`): their value is a function of their
 operands (and the frame's slot bases). -/
@@ -547,15 +556,129 @@ They are proven under the callee contract `CallsRefine` (`CallRulesCorrect`), no
 `LowerRulesCorrect`. (`call_indirect`, `rule_lower_2529`, is not in E.) -/
 def callRootRule (r : Rule) : Bool := r.id == 1031 || r.id == 1032
 
+/-! ### Memory (contract change #7, M4Mem)
+
+The memory rules (`load`/`uload*`/`sload*`, `store`/`istore*`, `stack_addr`, `symbol_value`)
+need more than `Refines`/`MRStable`: what the VCode semantics does on loads, stores, stack-slot
+addresses and GOT loads (`MemRefines`, relative to the slot-region offset `sb` and the link-time
+symbol addresses `syms`), and what the memory relation says about bytes, allocations, slots and
+stores (`MemRelOk`; M7's `Rel.holds` satisfies it, `E2E.memRelOk_holds`). They are proven under
+these (`MemRulesCorrect`), not in `LowerRulesCorrect`. -/
+
+/-- The effective address of an addressing mode for an access of `bytes` bytes, from the use
+values of its register operands (operand order) and the world (`sp`); `sb` is the offset of the
+stack-slot region from `sp` (M6: `FnCtx.slotBase`, M7: `Rel.slotOff`). Only the forms the
+lowering emits (int vreg operands, `simm9` / scaled `uimm12` immediates as the ISLE rules check
+them, 32-bit index extensions); `none` otherwise. As M6's `AMode.addr`. -/
+def amodeAddr (sb : Nat) (am : AMode) (bytes : Nat) (uses : List CV) (w : Arm.ArmState) :
+    Option (BitVec 64) :=
+  match am, uses with
+  | .regReg (.vreg _ .int) (.vreg _ .int), [a, b] => some (lo64 a + lo64 b)
+  | .regScaled (.vreg _ .int) (.vreg _ .int), [a, b] => some (lo64 a + (lo64 b <<< log2 bytes))
+  | .regScaledExtended (.vreg _ .int) (.vreg _ .int) e, [a, b] =>
+    if e = .uxtw ∨ e = .sxtw then some (lo64 a + (extendVal e 64 b <<< log2 bytes)) else none
+  | .regExtended (.vreg _ .int) (.vreg _ .int) e, [a, b] =>
+    if e = .uxtw ∨ e = .sxtw then some (lo64 a + extendVal e 64 b) else none
+  | .unscaled (.vreg _ .int) off, [a] =>
+    if -256 ≤ off ∧ off ≤ 255 then some (lo64 a + BitVec.ofInt 64 off) else none
+  | .unsignedOffset (.vreg _ .int) off, [a] =>
+    if off % bytes = 0 ∧ off ≤ 4095 * bytes then some (lo64 a + BitVec.ofNat 64 off) else none
+  | .slotOffset off, [] => some (spOf w + BitVec.ofInt 64 (off + sb))
+  | _, _ => none
+
+/-- Sign-extending loads (`ldrsb`/`ldrsh`/`ldrsw` into an X register). -/
+def loadSigned : LoadOp → Bool
+  | .sload8 | .sload16 | .sload32 => true
+  | _ => false
+
+/-- The 64-bit register value a load `op` from `a` leaves: the `op.bytes` bytes at `a`
+(little-endian), sign- or zero-extended. -/
+def loadVal (op : LoadOp) (a : BitVec 64) (w : Arm.ArmState) : BitVec 64 :=
+  if loadSigned op then (Arm.read_mem_bytes op.bytes a w).signExtend 64
+  else (Arm.read_mem_bytes op.bytes a w).setWidth 64
+
+/-- **What the memory rules need of the VCode semantics** (M6 discharges it for `csem F ctx X`
+with `ctx.slotBase = sb` and `X.sym n 0` the address `b` of `n` when `syms n = some b`): a
+load or store through an addressing mode whose access avoids the frame addresses `F`
+reads/writes the Arm memory at `amodeAddr`, a `loadAddr` of a slot offset is `sp + off + sb`, a
+GOT load of a linked symbol is its address (with `CallsRefine`: its `sym` at the linked
+symbols); the world otherwise as for the other forms (`SameWorld F`). -/
+def MemRefines (F : BitVec 64 → Prop) (sb : Nat) (syms : String → Option Nat) (isem : Sem) :
+    Prop :=
+  (∀ (op : LoadOp) (d : Nat) (am : AMode) (fl : Clif.MemFlags) (uses : List CV)
+      (w : Arm.ArmState) (a : BitVec 64),
+    op ≠ .fpuLoad128 → amodeAddr sb am op.bytes uses w = some a → Avoids F op.bytes a →
+    ∃ w', isem (.load op (.vreg d .int) am fl) uses w = some ([ofX (loadVal op a w)], w', .next) ∧
+      SameWorld F w' w) ∧
+  (∀ (op : StoreOp) (d : Nat) (am : AMode) (fl : Clif.MemFlags) (v : CV) (uses : List CV)
+      (w : Arm.ArmState) (a : BitVec 64),
+    op ≠ .fpuStore128 → amodeAddr sb am op.bytes uses w = some a → Avoids F op.bytes a →
+    ∃ w', isem (.store op (.vreg d .int) am fl) (v :: uses) w = some ([], w', .next) ∧
+      SameWorld F w' (Arm.write_mem_bytes op.bytes a ((lo64 v).setWidth (op.bytes * 8)) w)) ∧
+  (∀ (d : Nat) (off : Int) (w : Arm.ArmState), ∃ w',
+    isem (.loadAddr (.vreg d .int) (.slotOffset off)) [] w =
+      some ([ofX (spOf w + BitVec.ofInt 64 (off + sb))], w', .next) ∧ SameWorld F w' w) ∧
+  (∀ (d : Nat) (n : String) (b : Nat) (w : Arm.ArmState), syms n = some b → ∃ w',
+    isem (.loadExtNameGot (.vreg d .int) n) [] w = some ([ofX (BitVec.ofNat 64 b)], w', .next) ∧
+      SameWorld F w' w)
+
+/-- **What the memory rules need of the memory relation** of function `f` (M7's `Rel.holds`
+satisfies it): initialised bytes of live allocations are the Arm bytes, live allocations are
+64-bit addresses outside `F`, `symbol_value` addresses are `syms`, slot `id` is at
+`sp + sb + off(id)`, and a store to a live allocation on both sides keeps the relation. -/
+structure MemRelOk (F : BitVec 64 → Prop) (sb : Nat) (syms : String → Option Nat)
+    (f : Clif.Function) (MR : MemRelT) : Prop where
+  bytes : ∀ sl cm w (a : Nat) b, MR sl cm w → cm.valid a 1 = true → cm.bytes a = some b →
+    Arm.read_mem (BitVec.ofNat 64 a) w = b
+  valid : ∀ sl cm w (a n : Nat), MR sl cm w → cm.valid a n = true →
+    a + n ≤ 2 ^ 64 ∧ ∀ k < n, ¬ F (BitVec.ofNat 64 (a + k))
+  symbols : ∀ sl cm w, MR sl cm w → cm.symbols = syms
+  slots : ∀ sl cm w id b, MR sl cm w → sl.lookup id = some b →
+    ∃ off, (slotLayout f.slots).1.lookup id = some off ∧ b = (spOf w).toNat + sb + off
+  store : ∀ sl cm w (a n : Nat) (y : BitVec (n * 8)), MR sl cm w → cm.valid a n = true →
+    MR sl (cm.writeBits false a n y) (Arm.write_mem_bytes n (BitVec.ofNat 64 a) y w)
+
+/-- The memory root rules of `lower`: `symbol_value` (rule id 1027), the loads (1041–1044
+`load`, 1052–1057 `uload*`/`sload*`), the stores (1064–1067 `store`, 1068–1070 `istore*`),
+`stack_addr` (1093), and `uextend`/`sextend` of a load (815, 824: never match, the backend does
+not sink loads). -/
+def memRootRule (r : Rule) : Bool :=
+  r.id == 1027 || r.id == 1093 || r.id == 815 || r.id == 824 || (1041 ≤ r.id && r.id ≤ 1044) ||
+    (1052 ≤ r.id && r.id ≤ 1057) || (1064 ≤ r.id && r.id ≤ 1070)
+
+/-- `LowerRuleOk` for a memory rule: additionally assumes `MemRelOk F sb syms f MR`. -/
+def MemRuleOk (F : BitVec 64 → Prop) (sb : Nat) (syms : String → Option Nat) (isem : Sem)
+    (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program) (p : Program) (r : Rule) : Prop :=
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx → MemRelOk F sb syms f MR →
+  ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info → info.clif = some inst →
+  ∀ (cfg : Config), cfg.checkOverlap = false →
+  ∀ (m n : Nat) (st : LState) (tr : Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId)
+    (out : V) (st' : LState) (tr' : Array RuleId), 1000 ≤ m → 1000 ≤ n → ValsBelow ctx st →
+    (∀ pre post, p.rulesOf TId.lower = pre ++ r :: post → ∀ r' ∈ pre, ∃ m', 1000 ≤ m' ∧
+      ∃ s', (matchRule p (sem ctx) cfg m' r' [.inst ii]).run (st, tr) = .ok (none, s')) →
+    (matchRule p (sem ctx) cfg m r [.inst ii]).run (st, tr) = .ok (some env', s1) →
+    (evalExpr p (sem ctx) cfg n r.rhs env').run s1 = .ok (some out, (st', tr')) →
+    ∃ ms rss, st'.emitted = st.emitted ++ ms.toArray ∧ out = .regsVec rss ∧
+      LowerInstOk isem MR env cp ctx inst info.results st rss st' ms
+
+/-- **M4's target for the memory rules**: under `MemRefines`, every memory root rule is correct
+for every function whose memory relation is `MemRelOk`. -/
+def MemRulesCorrect (p : Program) : Prop :=
+  ∀ (F : BitVec 64 → Prop) (sb : Nat) (syms : String → Option Nat) (isem : Sem) (MR : MemRelT)
+    (env : Clif.Env) (cp : Clif.Program),
+    Refines F isem → MRStable F MR → MemRefines F sb syms isem →
+    ∀ r ∈ p.rulesOf TId.lower, memRootRule r = true → MemRuleOk F sb syms isem MR env cp p r
+
 /-- **M4's target (`lower`).** For every VCode semantics refining `ispec` and every stable
 memory relation, every root rule of `lower` in the E-closure other than the call rules
-(`callRootRule`, see `CallRulesCorrect`) is correct. This is the M4 hypothesis of M7's theorem
-(with `data_program`: `lowerInstOk_runTerm`). -/
+(`callRootRule`, see `CallRulesCorrect`) and the memory rules (`memRootRule`, see
+`MemRulesCorrect`) is correct. This is the M4 hypothesis of M7's theorem (with `data_program`:
+`lowerInstOk_runTerm`). -/
 def LowerRulesCorrect (p : Program) : Prop :=
   ∀ (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program),
     Refines F isem → MRStable F MR →
     ∀ r ∈ p.rulesOf TId.lower, closureRoot r = true → callRootRule r = false →
-      LowerRuleOk isem MR env cp p r
+      memRootRule r = false → LowerRuleOk isem MR env cp p r
 
 /-! ### Calls (contract change #5) -/
 
@@ -658,10 +781,12 @@ theorem lower_rules_nodup {p : Program} (hp : Data p) : (p.rulesOf TId.lower).No
   decide +kernel
 
 theorem lowerInstOk_of_rules {p : Program} (hp : Data p) (hrules : LowerRulesCorrect p)
-    (hex : ExcludedUnmatchable p) (hcalls : CallRulesCorrect p) {F : BitVec 64 → Prop}
+    (hex : ExcludedUnmatchable p) (hcalls : CallRulesCorrect p) (hmem : MemRulesCorrect p)
+    {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
     {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program} (hR : Refines F isem)
-    (hMR : MRStable F MR) (hcr : CallsRefine F env MR isem)
-    {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) (hra : CallRegArgs f) {ii : Nat} {info : IInfo}
+    (hMR : MRStable F MR) (hcr : CallsRefine F env MR isem) (hMem : MemRefines F sb syms isem)
+    {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) (hra : CallRegArgs f)
+    (hMRo : MemRelOk F sb syms f MR) {ii : Nat} {info : IInfo}
     {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
     {cfg : Config} (hco : cfg.checkOverlap = false) {n : Nat}
     (hn : 1002 + (p.rulesOf TId.lower).length ≤ n) {ty : TypeId} {st : LState}
@@ -688,8 +813,11 @@ theorem lowerInstOk_of_rules {p : Program} (hp : Data p) (hrules : LowerRulesCor
   cases hroot : closureRoot r
   · exact absurd hmatch (hex r hr hroot f ctx hctx ii info inst hi hc cfg m (st, tr) env' s1)
   · cases hcall : callRootRule r
-    · exact hrules F isem MR env cp hR hMR r hr hroot hcall f ctx hctx ii info inst hi hc cfg hco m
-        n st tr env' s1 out st' tr2 (by omega) (by omega) hvb hfirst hmatch heval
+    · cases hm : memRootRule r
+      · exact hrules F isem MR env cp hR hMR r hr hroot hcall hm f ctx hctx ii info inst hi hc cfg
+          hco m n st tr env' s1 out st' tr2 (by omega) (by omega) hvb hfirst hmatch heval
+      · exact hmem F sb syms isem MR env cp hR hMR hMem r hr hm f ctx hctx hMRo ii info inst hi hc
+          cfg hco m n st tr env' s1 out st' tr2 (by omega) (by omega) hvb hfirst hmatch heval
     · exact hcalls F isem MR env cp hR hMR hcr r hr hcall f ctx hctx hra ii info inst hi hc cfg hco
         m n st tr env' s1 out st' tr2 (by omega) (by omega) hvb hfirst hmatch heval
 
@@ -698,10 +826,12 @@ set_option maxRecDepth 20000 in
 (`runTerm ctx "lower" [.inst ii]`, as `lowerFunction` makes it). -/
 theorem lowerInstOk_runTerm (hrules : LowerRulesCorrect program)
     (hex : ExcludedUnmatchable program) (hcalls : CallRulesCorrect program)
-    {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT}
+    (hmem : MemRulesCorrect program)
+    {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat} {isem : Sem} {MR : MemRelT}
     {env : Clif.Env} {cp : Clif.Program} (hR : Refines F isem) (hMR : MRStable F MR)
-    (hcr : CallsRefine F env MR isem)
-    {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) (hra : CallRegArgs f) {ii : Nat} {info : IInfo}
+    (hcr : CallsRefine F env MR isem) (hMem : MemRefines F sb syms isem)
+    {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) (hra : CallRegArgs f)
+    (hMRo : MemRelOk F sb syms f MR) {ii : Nat} {info : IInfo}
     {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
     {st : LState} {out : V} {st' : LState} {tr : List RuleId} (hvb : ValsBelow ctx st)
     (h : runTerm ctx "lower" [.inst ii] st = .ok (some out, st', tr)) :
@@ -724,8 +854,8 @@ theorem lowerInstOk_runTerm (hrules : LowerRulesCorrect program)
     subst h2
     have hlen : (program.rulesOf TId.lower).length ≤ 1000 := by
       rw [show TId.lower = 686 from rfl, data_program.r686]; decide
-    obtain ⟨ms, rss, h1, h2, h3⟩ := lowerInstOk_of_rules data_program hrules hex hcalls hR hMR hcr
-      hctx hra hi hc rfl (by omega) hvb ha
+    obtain ⟨ms, rss, h1, h2, h3⟩ := lowerInstOk_of_rules data_program hrules hex hcalls hmem hR
+      hMR hcr hMem hctx hra hMRo hi hc rfl (by omega) hvb ha
     exact ⟨ms, rss, by simpa using h1, h2, h3⟩
 
 /-! ## Terminators (stated by M7; M4's obligations `LowerTermRulesCorrect`, `TermUnmatchable`,

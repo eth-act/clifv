@@ -318,7 +318,10 @@ def ctxOk (f : Clif.Function) (ctx : Ctx) : Bool :=
       | some info => decide (x ∈ info.results) && info.clif.isSome
       | none => false
     | none => true) &&
-  decide (ctx.slotOff = (slotLayout f.slots).1)
+  decide (ctx.slotOff = (slotLayout f.slots).1) &&
+  ctx.insts.toList.all (fun info => match info.clif with
+    | some (.load _ _ _ x _) | some (.store _ _ _ _ x _) => decide (ctx.valueType? x = some (.int 64))
+    | _ => true)
 
 /-- The successor facts of `LowerShape` for block `B` (lowering `L`). -/
 def succOk (f : Clif.Function) (vc : VCode) (R : Reg → Reg) (B : Clif.Block) (L : BLow) : Bool :=
