@@ -3,6 +3,8 @@ import FV.Backend.Proof.RegallocSound
 import FV.Backend.Proof.RegallocOperands
 import FV.Backend.Proof.EncodeStep
 import FV.Backend.Proof.LowerSim
+import FV.Backend.Proof.DriverCheck
+import FV.Backend.Proof.PrepareCheck
 import FV.Compile.Subset
 
 /-!
@@ -10,7 +12,7 @@ import FV.Compile.Subset
 
 For an in-subset CLIF function `f` of a program `p` and the Lean backend's compiled code
 (`Compiled`: `lowerFunction` → `prepare` → `checkAlloc` → `lowerRFunc` → `emitFunc` →
-`FnAsm.layout`), loaded at `base`: an Arm execution from an ABI-conformant entry state refines
+`FnAsm.layout`, and the validators `lowerCheck`/`prepCheck` accepted), loaded at `base`: an Arm execution from an ABI-conformant entry state refines
 the CLIF execution (`Clif.runLoop` from the matching CLIF entry state):
 
 * CLIF returns `vals` with memory `cm` ⇒ the Arm run reaches the return address with `vals` in
@@ -23,17 +25,15 @@ the CLIF execution (`Clif.runLoop` from the matching CLIF entry state):
 The three layers and who proves them:
 
 ```
-Clif.runLoop  ──(IselSim: M7 driver, from M4's LowerRulesCorrect)──▶  VStep vc sem
-VStep vc sem  ──(PrepareCorrect: M7)──────────────────────────────▶  VStep (prepare vc) sem
-VStep vcp sem ──(RegLevelCorrect: M6 + M5)────────────────────────▶  Arm run (astep^n)
+Clif.runLoop  ──(IselSim: M7 driver + lowerCheck, from M4's rules)──▶  VStep vc sem
+VStep vc sem  ──(PrepareCorrect: M7, prepCheck)─────────────────────▶  VStep (prepare vc) sem
+VStep vcp sem ──(RegLevelCorrect: M6 + M5)──────────────────────────▶  Arm run (astep^n)
 ```
 
-`sem : Sem` is the VCode-level per-`MInst` semantics shared by M4 and M6 (M6's `csem`; values
-`CV` = 128-bit registers, world = the Arm state). Everything is stated for an abstract `sem`,
-Arm machine `astep` and frame-address set `F`; they are instantiated by M6's definitions.
-
-Hypothesis placeholders (`LowerRulesCorrect`, `RegLevelCorrect`) are *definitions* with the
-agreed content; they are swapped for the owners' predicates when those land (see e2e.md).
+`sem s : Sem` is the VCode-level per-`MInst` semantics of the activation entered in `s`, shared
+by M4 and M6 (M6's `csem (F s)`; values `CV` = 128-bit registers, world = the Arm state).
+Everything is stated for an abstract `sem`, Arm machine `astep` and frame-address set `F`; they
+are instantiated by M6's definitions.
 -/
 
 namespace E2E
@@ -77,11 +77,15 @@ structure InSubset (p : Clif.Program) (f : Clif.Function) : Prop where
 /-! ## The compiled code -/
 
 /-- The backend's pipeline succeeded on `f` (`Backend.compileFileWith` with the regalloc2
-allocator; `rf` is whatever the untrusted allocator returned and the checker accepted). -/
+allocator; `rf` is whatever the untrusted allocator returned and the checker accepted), and
+M7's validators accepted the lowering (`lowerCheck`: the VCode is the recorded lowering of `f`
+with an SSA availability certificate) and `prepare` (`prepCheck`). -/
 structure Compiled (f : Clif.Function) (k : Nat) (vc vcp : VCode) (rf : RFunc) (af : AFunc)
     (fa : FnAsm) (fb : FnBin) : Prop where
   lower : lowerFunction f = .ok vc
+  lowerOk : lowerCheck f vc = true
   prepare : prepare vc = .ok vcp
+  prepOk : prepCheck vc vcp = true
   check : checkAlloc vcp rf = .ok ()
   alloc : lowerRFunc vcp rf = .ok af
   emit : emitFunc k af = .ok fa
@@ -172,6 +176,20 @@ def ArgsIn (args : List Clif.Val) (s : Arm.ArmState) : Prop :=
 without wrapping. Stack used by callees is part of the callee contract. -/
 def StackAvail (af : AFunc) (s : Arm.ArmState) : Prop := af.frameSize + 16 ≤ (spv s).toNat
 
+/-- The state the function body starts in, relative to the ABI entry state `s`: the prologue
+(when `af.frame`) pushed fp/lr and set up the frame: `sp` lowered by `16 + frameSize`, `x29` the
+frame pointer `sp_entry - 16`; x0–x7 (arguments), memory, the program and every field outside
+the allocatable/temporary registers (x18, x30, flags, …) as at entry. -/
+def frameDrop (af : AFunc) : Nat := if af.frame then af.frameSize + 16 else 0
+
+structure BodyEntry (af : AFunc) (s w₀ : Arm.ArmState) : Prop where
+  sp : spv w₀ = spv s - BitVec.ofNat 64 (frameDrop af)
+  fp : xreg 29 w₀ = if af.frame then spv s - 16#64 else xreg 29 s
+  args : ∀ i < 8, xreg i w₀ = xreg i s
+  other : ∀ f, ¬ Masked f → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → Arm.r f w₀ = Arm.r f s
+  mem : w₀.mem = s.mem
+  program : w₀.program = s.program
+
 /-- Callee-saved X registers (AAPCS64: x19–x28, and the frame pointer x29). -/
 def calleeSavedX : List Nat := (List.range 11).map (19 + ·)
 
@@ -218,27 +236,29 @@ def IselSim (sem : Sem) (Γ : Rel) (env : Clif.Env) (p : Clif.Program) (f : Clif
     (∀ c, Clif.runLoop env p fuel cs = .trapped c → VTraps vc sem ρ₀ w₀ c)
 
 /-- **`prepare` (M7).** Unreachable-block removal, critical-edge splitting and the RPO
-reordering preserve returns and traps. -/
+reordering preserve returns and traps. Discharged by `prepCheck` (`prepareCorrect_of_check`). -/
 def PrepareCorrect (sem : Sem) (vc vcp : VCode) : Prop :=
   ∀ ρ₀ w₀, (∀ us vals w, VReturns vc sem ρ₀ w₀ us vals w → VReturns vcp sem ρ₀ w₀ us vals w) ∧
     (∀ c, VTraps vc sem ρ₀ w₀ c → VTraps vcp sem ρ₀ w₀ c)
 
-/-- **VCode → Arm (M6 + M5, agent M6Rest).** *Placeholder with the agreed content* (to be
-replaced by M6Rest's composed register-level theorem): for the prepared VCode `vcp`, allocated
-and laid out as `af`/`fb`, loaded at `base`, from an ABI entry state `s` with enough stack,
-VCode runs from world `s` are realised by the Arm machine `astep`. `F s` is the frame-address
-set of the activation entered in `s` (allocator-private slots). -/
-def RegLevelCorrect (sem : Sem) (F : Arm.ArmState → BitVec 64 → Prop)
+/-- **VCode → Arm (M6 + M5, agent M6Rest).** For the prepared VCode `vcp`, allocated and laid
+out as `af`/`fb`, loaded at `base`, from an ABI entry state `s` with enough stack: VCode runs of
+the activation's semantics `sem s` from a body-entry world `w₀` (`BodyEntry`: after the
+prologue) are realised by the Arm machine `astep` from `s`. `F s` is the frame-address set of
+the activation entered in `s` (allocator-private slots, fp/lr). -/
+def RegLevelCorrect (sem : Arm.ArmState → Sem) (F : Arm.ArmState → BitVec 64 → Prop)
     (astep : Arm.ArmState → Arm.ArmState) (vcp : VCode) (af : AFunc) (fb : FnBin) : Prop :=
-  ∀ base ra s, AbiEntry fb base ra s → StackAvail af s → ∀ ρ₀ : Nat → CV,
-    (∀ us vals w, VReturns vcp sem ρ₀ s us vals w →
+  ∀ base ra s, AbiEntry fb base ra s → StackAvail af s → ∀ w₀, BodyEntry af s w₀ →
+    ∀ ρ₀ : Nat → CV,
+    (∀ us vals w, VReturns vcp (sem s) ρ₀ w₀ us vals w →
       ∃ n, ArmRet ra s (runX astep n s) ∧
         (∀ (j : Nat) v p x, us[j]? = some (v, p) → vals[j]? = some x → regVal (runX astep n s) p = x) ∧
         ∀ a, ¬ F s a → (runX astep n s).mem a = w.mem a) ∧
-    (∀ c, VTraps vcp sem ρ₀ s c → ∃ n, TrapAt fb base c (runX astep n s))
+    (∀ c, VTraps vcp (sem s) ρ₀ w₀ c → ∃ n, TrapAt fb base c (runX astep n s))
 
-/-- **M7's remaining lowering obligations**: the VCode has the structure `lowerFunction`
-builds (`LowerShape`, incl. `CtxInv`), and an SSA availability certificate exists (`Cert`). -/
+/-- **M7's lowering obligations**: the VCode has the structure `lowerFunction` builds
+(`LowerShape`, incl. `CtxInv`), and an SSA availability certificate exists (`Cert`).
+Discharged by `lowerCheck` (`loweringObligations_of_check`). -/
 def LoweringObligations (f : Clif.Function) (vc : VCode) : Prop :=
   ∃ ctx st0 R gn bl A, LowerShape f vc ctx st0 R gn bl ∧ Cert f ctx st0 gn bl A
 

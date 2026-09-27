@@ -60,6 +60,8 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
       IO.eprintln s!"lean-backend: {input}: rule {n} fired outside the emitter-subset closure"
   for (n, why) in fa.unsupported do
     IO.eprintln s!"lean-backend: {input}: %{n}: unsupported: {why}"
+  for (n, why) in fa.unverified do
+    IO.eprintln s!"lean-backend: {input}: %{n}: compiled, unverified (outside backend_correct): {why}"
   return 0
 
 def main (args : List String) : IO UInt32 := do

@@ -187,7 +187,8 @@ theorem stmt_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
   obtain ⟨⟨info, hinfo, hclif, hres⟩, hemp, hst0, ⟨tr, hrun⟩, halias⟩ := hstmts j stm sl hstm hsl
   obtain ⟨ranges, hctx⟩ := H.shape.hctx
   have hok := H.insts f ctx (L.start + j) info stm.inst sl.st sl.rss sl.st' tr
-    H.shape.ctxInv hinfo hclif hemp hrun
+    H.shape.ctxInv hinfo hclif hemp
+    (fun x r h => Nat.lt_of_lt_of_le (H.shape.valsBelow x r h) hst0) hrun
   rw [hres] at hok
   obtain ⟨hargs, hresults, hnodup, hnext, hnoclob⟩ := H.cert.stmt b B L j stm sl hB hL hstm hsl
   have hBmem : B ∈ f.blocks := List.mem_of_getElem? hB
@@ -297,6 +298,30 @@ theorem stmt_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
               rw [hal, ← hAg' out hcond]
               exact hvo
         · -- DFG consistency
+          refine ⟨?_, ?_⟩
+          rotate_left
+          · -- the frame is typed
+            intro x t v ht hv
+            have hxA' : x ∈ A b (j + 1) := restrict_regs_isSome (by rw [hv]; rfl)
+            have hv' : regs' x = some v := by
+              have := restrict_regs_of_mem
+                (fr := { s.frame with regs := regs', body := rest }) hxA'
+              rw [this] at hv; exact hv
+            by_cases hxr : x ∈ stm.results
+            · obtain ⟨m, v', hxm, hvm, hrv⟩ := setMany_mem hset hnodup x hxr
+              have hvv : v' = v := Option.some.inj (hrv.symm.trans hv')
+              obtain ⟨tys, hrt, hrty, -⟩ := H.shape.ctxInv.resTys _ info stm.inst hinfo hclif
+              have hvt := instOutcome_types hO (by rw [hfunc]; exact hrt)
+              have htm : info.resTys[m]? = some (CTy.ofClif v'.ty) := by
+                rw [hrty, ← hvt]
+                simp [List.getElem?_map, hvm]
+              have := H.cert.resTy _ info hinfo m x _ (by rw [hres]; exact hxm) htm
+              rw [this] at ht
+              rw [← hvv]; exact Option.some.inj ht
+            · have hxA : x ∈ A b j := (hnext x hxA').resolve_right hxr
+              refine hcons.2 x t v ht ?_
+              rw [restrict_regs_of_mem hxA, ← setMany_other hset hxr]
+              exact hv'
           intro x d info' cl v hd hinfo' hcl hp hv
           have hxA' : x ∈ A b (j + 1) := restrict_regs_isSome (by rw [hv]; rfl)
           have hv' : regs' x = some v := by
@@ -308,7 +333,7 @@ theorem stmt_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
           · have hxr : x ∉ stm.results := fun e => (hresults x e).1 hxA
             have hvx : (restrict s.frame (A b j)).regs x = some v := by
               rw [restrict_regs_of_mem hxA, ← setMany_other hset hxr]; exact hv'
-            obtain ⟨vals0, hev, hlk⟩ := hcons x d info' cl v hd hinfo' hcl hp hvx
+            obtain ⟨vals0, hev, hlk⟩ := hcons.1 x d info' cl v hd hinfo' hcl hp hvx
             refine ⟨vals0, fun cm => ?_, hlk⟩
             rw [← hev cm]
             refine evalInst_congr ?_ ?_ cm cl ?_
@@ -446,6 +471,23 @@ theorem enter_match (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
       show VHolds v (parCopyEnv ρ₂ (TB.params.map (·.1)) (bc.args.map gn) (gn x))
       rw [parCopyEnv_other hgx, hρ₂ x hxA]
       exact hh
+  refine ⟨?_, ?_⟩
+  rotate_left
+  · -- the frame is typed
+    intro x t v ht hv
+    have hx0 : x ∈ A tl 0 := restrict_regs_isSome (by rw [hv]; rfl)
+    have hv' : regs x = some v := by
+      have := restrict_regs_of_mem (fr := { s.frame with regs, body := TB.body, term := TB.term }) hx0
+      rw [this] at hv; exact hv
+    by_cases hxp : x ∈ TB.params.map (·.1)
+    · obtain ⟨q, hq, rfl, hqt⟩ := setMany_param_ty hset hnd hty hxp hv'
+      rw [H.cert.paramTy TB hTBmem q hq] at ht
+      rw [hqt]; exact Option.some.inj ht
+    · rcases hA0 x hx0 with ⟨hxp', -⟩ | ⟨-, hxA, -⟩
+      · exact absurd hxp' hxp
+      · refine hcons.2 x t v ht ?_
+        rw [restrict_regs_of_mem hxA, ← setMany_other hset hxp]
+        exact hv'
   · intro x d info cl v hd hinfo hcl hp hv
     have hx0 : x ∈ A tl 0 := restrict_regs_isSome (by rw [hv]; rfl)
     have hv' : regs x = some v := by
@@ -455,7 +497,7 @@ theorem enter_match (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     · rw [hdn] at hd; cases hd
     · have hvx : (restrict s.frame (A b B.body.length)).regs x = some v := by
         rw [restrict_regs_of_mem hxA, ← setMany_other hset hxp]; exact hv'
-      obtain ⟨vals0, hev, hlk⟩ := hcons x d info cl v hd hinfo hcl hp hvx
+      obtain ⟨vals0, hev, hlk⟩ := hcons.1 x d info cl v hd hinfo hcl hp hvx
       refine ⟨vals0, fun cm => ?_, hlk⟩
       rw [← hev cm]
       refine evalInst_congr ?_ ?_ cm cl ?_
@@ -464,10 +506,7 @@ theorem enter_match (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
       intro y hy
       have hy0 := H.cert.closed tl 0 x d info cl hx0 hd hinfo hcl hp y hy
       have hyA := H.cert.closed b B.body.length x d info cl hxA hd hinfo hcl hp y hy
-      have hyp : y ∉ TB.params.map (·.1) := by
-        intro e
-        obtain ⟨q, hq, rfl⟩ := List.mem_map.mp e
-        exact hpA q hq hyA
+      have hyp : y ∉ TB.params.map (·.1) := hpA x hx0 hxp d info cl hd hinfo hcl y hy
       rw [restrict_regs_of_mem hy0, restrict_regs_of_mem hyA]
       exact setMany_other hset hyp
 
@@ -625,8 +664,9 @@ theorem term_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
   obtain ⟨vb, hvb, -, -, hdata, htemp, hst0t, ⟨out, tr, hrunT⟩, hcode, htne, -, hbargs, hsucc⟩ :=
     H.shape.blk b B L hB hL
   obtain ⟨ranges, hctx⟩ := H.shape.hctx
-  have hok := H.terms f ctx ranges st0 (L.start + B.body.length) B.term L.data L.targets out
-    L.tst L.tst' tr hctx hdata htemp hrunT
+  have hok := H.terms f ctx (L.start + B.body.length) B.term L.data L.targets out
+    L.tst L.tst' tr H.shape.ctxInv (H.shape.tslot b B L hB hL)
+    (fun x r h => Nat.lt_of_lt_of_le (H.shape.valsBelow x r h) hst0t) hdata htemp hrunT
   obtain ⟨hargsT, hnoclobT, -⟩ := H.cert.term b B L hB hL
   let fr' := restrict s.frame (A b B.body.length)
   let ρ₀ : Nat → CV := fun n => ρ (gn n)
@@ -902,6 +942,7 @@ theorem entry_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     (hcall : cs.callers = []) (hfunc : cs.frame.func = f) (hslots : cs.frame.slots = slots)
     (hbody : cs.frame.body = B0.body) (hterm : cs.frame.term = B0.term) {args : List Clif.Val}
     (hregs : Clif.Regs.empty.setMany (B0.params.map (·.1)) args = some cs.frame.regs)
+    (hty : args.map (·.ty) = B0.params.map (·.2))
     {ρ₀ : Nat → CV} {w₀ : Arm.ArmState} (hmr : MR slots cs.mem w₀)
     (hargs : ∀ (i : Nat) v, args[i]? = some v → VHolds v (regVal w₀ (.x i))) :
     ∃ ρ₁, VStep vc sem (.run ⟨0, 0, ρ₀, w₀⟩) (.run ⟨0, 1, ρ₁, w₀⟩) ∧
@@ -968,10 +1009,15 @@ theorem entry_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     rw [vdefUpd_argOps (by rw [hns1]; exact hnd) (by simp [argPairs]) m (hnsm m _ hqm)
       (x := regVal w₀ (.x m)) (by simp [argPairs, hnsm m _ hqm])]
     exact hargs m _ (List.getElem?_eq_getElem hma)
-  · intro x d info cl v hd _ _ _ hv
-    have hx0 : x ∈ A 0 0 := restrict_regs_isSome (by rw [hv]; rfl)
-    rw [(hA x hx0).2] at hd
-    cases hd
+  · refine ⟨fun x d info cl v hd _ _ _ hv => ?_, fun x t v ht hv => ?_⟩
+    · have hx0 : x ∈ A 0 0 := restrict_regs_isSome (by rw [hv]; rfl)
+      rw [(hA x hx0).2] at hd
+      cases hd
+    · have hx0 : x ∈ A 0 0 := restrict_regs_isSome (by rw [hv]; rfl)
+      rw [restrict_regs_of_mem hx0] at hv
+      obtain ⟨q, hq, rfl, hqt⟩ := setMany_param_ty hregs hnd hty (hA x hx0).1 hv
+      rw [H.cert.paramTy B0 hB0mem q hq] at ht
+      rw [hqt]; exact Option.some.inj ht
 
 /-! ## Whole runs -/
 
@@ -1078,12 +1124,13 @@ theorem driver_correct (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     (hcall : cs.callers = []) (hfunc : cs.frame.func = f) (hslots : cs.frame.slots = slots)
     (hbody : cs.frame.body = B0.body) (hterm : cs.frame.term = B0.term) {args : List Clif.Val}
     (hregs : Clif.Regs.empty.setMany (B0.params.map (·.1)) args = some cs.frame.regs)
+    (hty : args.map (·.ty) = B0.params.map (·.2))
     {ρ₀ : Nat → CV} {w₀ : Arm.ArmState} (hmr : MR slots cs.mem w₀)
     (hargs : ∀ (i : Nat) v, args[i]? = some v → VHolds v (regVal w₀ (.x i)))
     (htr : ∀ s c st rest, Reach env p cs s → Clif.step env p s = .trapped c →
       s.frame.body = st :: rest → explicitTrapInst st.inst = true) (fuel : Nat) :
     RunOk vc sem MR slots ⟨0, 0, ρ₀, w₀⟩ (Clif.runLoop env p fuel cs) := by
-  obtain ⟨ρ₁, hstep, hm⟩ := entry_step H hB0 hcall hfunc hslots hbody hterm hregs hmr hargs
+  obtain ⟨ρ₁, hstep, hm⟩ := entry_step H hB0 hcall hfunc hslots hbody hterm hregs hty hmr hargs
     (ρ₀ := ρ₀)
   exact RunOk.prefix (Star.single hstep) (sim_run H htr fuel cs _ (.refl _) hm)
 

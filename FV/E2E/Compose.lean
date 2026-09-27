@@ -4,8 +4,8 @@ import FV.E2E.Statement
 # M7: composing the layers
 
 `backend_correct_of_layers`: CLIF → VCode (`IselSim`), VCode → prepared VCode
-(`PrepareCorrect`) and prepared VCode → Arm (`RegLevelCorrect`) give the end-to-end refinement
-`ArmRefines` of every CLIF outcome by the Arm run.
+(`PrepareCorrect`) and prepared VCode → Arm (`RegLevelCorrect`, from the body-entry world `w₀`)
+give the end-to-end refinement `ArmRefines` of every CLIF outcome by the Arm run.
 -/
 
 namespace E2E
@@ -26,23 +26,24 @@ theorem memAgree_of {F : BitVec 64 → Prop} {syms} {cm : Clif.Mem} {w s : Arm.A
 
 /-- **Composition.** -/
 theorem backend_correct_of_layers {p : Clif.Program} {f : Clif.Function} {vc vcp : VCode}
-    {af : AFunc} {fb : FnBin} {sem : Sem} {F : Arm.ArmState → BitVec 64 → Prop}
+    {af : AFunc} {fb : FnBin} {sem : Arm.ArmState → Sem} {F : Arm.ArmState → BitVec 64 → Prop}
     {syms : String → Option Nat} {slotOff : Nat}
     {astep : Arm.ArmState → Arm.ArmState} {env : Clif.Env}
-    (hIsel : ∀ s, IselSim sem ⟨F s, syms, slotOff⟩ env p f vc)
-    (hPrep : PrepareCorrect sem vc vcp)
+    (hIsel : ∀ s, IselSim (sem s) ⟨F s, syms, slotOff⟩ env p f vc)
+    (hPrep : ∀ s, PrepareCorrect (sem s) vc vcp)
     (hReg : RegLevelCorrect sem F astep vcp af fb)
-    {base ra : BitVec 64} {s : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
-    (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hargs : ArgsIn args s)
-    (hcs : ClifEntry f args cs) (hrel : Rel.holds ⟨F s, syms, slotOff⟩ f cs.frame.slots cs.mem s)
+    {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
+    (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hbe : BodyEntry af s w₀)
+    (hargs : ArgsIn args w₀)
+    (hcs : ClifEntry f args cs) (hrel : Rel.holds ⟨F s, syms, slotOff⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ArmRefines fb base ra astep s (Clif.runLoop env p fuel cs) := by
-  have hI := hIsel s args cs s (fun _ => 0) hcs hrel hargs htr fuel
-  have hR := hReg base ra s hent hres (fun _ => 0)
+  have hI := hIsel s args cs w₀ (fun _ => 0) hcs hrel hargs htr fuel
+  have hR := hReg base ra s hent hres w₀ hbe (fun _ => 0)
   cases hrun : Clif.runLoop env p fuel cs with
   | returned vals cm =>
     obtain ⟨us, outs, w, hv, hus, hlen, hhold, hmem⟩ := hI.1 vals cm hrun
-    obtain ⟨n, hret, hregs, hmemF⟩ := hR.1 us outs w ((hPrep _ _).1 _ _ _ hv)
+    obtain ⟨n, hret, hregs, hmemF⟩ := hR.1 us outs w ((hPrep s _ _).1 _ _ _ hv)
     refine ⟨n, hret, ?_, memAgree_of hmem hmemF⟩
     intro j v hj
     have hjv : j < vals.length := (List.getElem?_eq_some_iff.mp hj).1
@@ -60,7 +61,7 @@ theorem backend_correct_of_layers {p : Clif.Program} {f : Clif.Function} {vc vcp
     rw [hr]
     exact hhold.2 j v x hj hx
   | trapped c =>
-    exact hR.2 c ((hPrep _ _).2 c (hI.2 c hrun))
+    exact hR.2 c ((hPrep s _ _).2 c (hI.2 c hrun))
   | stuck _ => trivial
   | outOfFuel => trivial
 

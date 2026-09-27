@@ -73,6 +73,24 @@ theorem setMany_mem {r r' : Clif.Regs} :
   refine ⟨m, vs[m]'(by omega), by simp [hm], by simp, ?_⟩
   exact setMany_nodup h hnd m _ _ (by simp [hm]) (by simp)
 
+/-- Parameters bound by `setMany` to values of their declared types hold values of those
+types. -/
+theorem setMany_param_ty {r r' : Clif.Regs} {ps : List (Clif.ValueId × Clif.Ty)}
+    {vs : List Clif.Val} (hset : r.setMany (ps.map (·.1)) vs = some r')
+    (hnd : (ps.map (·.1)).Nodup) (hty : vs.map (·.ty) = ps.map (·.2)) {x : Clif.ValueId}
+    (hx : x ∈ ps.map (·.1)) {v : Clif.Val} (hv : r' x = some v) :
+    ∃ q ∈ ps, q.1 = x ∧ v.ty = q.2 := by
+  obtain ⟨m, v', hxm, hvm, hrv⟩ := setMany_mem hset hnd x hx
+  rw [hrv] at hv
+  cases hv
+  have hm : m < ps.length := by
+    have := (List.getElem?_eq_some_iff.mp hxm).1
+    simpa using this
+  refine ⟨ps[m], List.getElem_mem hm, ?_, ?_⟩
+  · simpa [List.getElem?_map, List.getElem?_eq_getElem hm] using hxm
+  · have h2 := congrArg (·[m]?) hty
+    simpa [List.getElem?_map, hvm, List.getElem?_eq_getElem hm] using h2
+
 theorem getMany_spec {fr : Clif.Frame} :
     ∀ {xs : List Clif.ValueId} {vals : List Clif.Val}, fr.getMany xs = .ok vals →
       xs.length = vals.length ∧

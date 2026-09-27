@@ -6,33 +6,13 @@ import FV.Backend.Proof.LowerContract
 `restrict fr A`: the frame with only the values of `A` defined — the driver hands M4's contracts
 the values its invariant tracks (`A`: the values available at the point, an SSA certificate), not
 stale ones. `instOutcome_congr`/`evalInst_congr`: an instruction only reads its operands
-(`instArgs`). Pure instructions leave memory alone and do not depend on it.
+(`instArgs`). Pure instructions leave memory alone and do not depend on it. `instOutcome_types`:
+the results have the instruction's result types (`Inst.resultTypes`).
 -/
 
 namespace Backend.Proof.Driver
 
 open Backend Backend.Proof
-
-/-- The value operands of a CLIF instruction. -/
-def instArgs : Clif.Inst → List Clif.ValueId
-  | .iconst .. | .stackAddr .. | .fence | .nop | .symbolValue .. => []
-  | .unary _ _ x | .bmask _ x | .extend _ _ x | .ireduce _ x | .isplit _ x
-  | .load _ _ _ x _ | .atomicLoad _ _ x | .bitcast _ _ x | .trapz x _ | .trapnz x _ => [x]
-  | .binary _ _ x y | .div _ _ x y | .overflow _ _ x y | .icmp _ _ x y
-  | .uaddOverflowTrap _ x y _ | .iconcat _ x y | .store _ _ _ x y _ | .atomicRmw _ _ _ x y
-  | .atomicStore _ _ x y => [x, y]
-  | .carry _ _ x y z | .select _ x y z | .selectSpectreGuard _ x y z | .bitselect _ x y z
-  | .atomicCas _ _ x y z => [x, y, z]
-  | .call _ args => args
-
-/-- The value operands of a terminator. -/
-def termArgs : Clif.Terminator → List Clif.ValueId
-  | .jump bc => bc.args
-  | .brif c t e => c :: t.args ++ e.args
-  | .brTable x d tbl => x :: d.args ++ tbl.flatMap (·.args)
-  | .ret xs => xs
-  | .returnCall _ args => args
-  | .trap _ => []
 
 /-- `fr` with only the values in `A` defined. -/
 def restrict (fr : Clif.Frame) (A : List Clif.ValueId) : Clif.Frame :=
@@ -116,10 +96,13 @@ theorem evalInst_pure {fr : Clif.Frame} {cm cm' : Clif.Mem} {cl : Clif.Inst}
   | trap => rw [hE] at h; cases h
   | stuck => rw [hE] at h; cases h
 
-/-- Filling in a terminator's data keeps DFG consistency (terminators define no values). -/
+/-- Filling in a terminator's data keeps DFG consistency (terminators define no values; the
+value types are unchanged). -/
 theorem dfgCons_termCtx {ctx : Ctx} {fr : Clif.Frame} (h : DFGCons ctx fr) (ti : Nat) (data : V) :
     DFGCons (termCtx ctx ti data) fr := by
+  refine ⟨?_, h.2⟩
   intro x j info cl v hd hj hcl hp hv
+  have h := h.1
   have hd' : ctx.defInst? x = some j := hd
   by_cases e : j = ti
   · subst e
@@ -133,5 +116,58 @@ theorem dfgCons_termCtx {ctx : Ctx} {fr : Clif.Frame} (h : DFGCons ctx fr) (ti :
   · change (ctx.insts.set! ti ⟨data, [], [], none⟩)[j]? = some info at hj
     rw [Array.set!_eq_setIfInBounds, Array.getElem?_setIfInBounds_ne (Ne.symm e)] at hj
     exact h x j info cl v hd' hj hcl hp hv
+
+/-! ## Typing: results have the declared result types -/
+
+theorem res_bind_eq_ok {α β : Type} {x : Clif.Res α} {f : α → Clif.Res β} {b : β} :
+    (x >>= f) = .ok b ↔ ∃ a, x = .ok a ∧ f a = .ok b := by
+  cases x <;> simp [bind, Clif.Res.bind]
+
+theorem res_bind_eq_ok' {α β : Type} {x : Clif.Res α} {f : α → Clif.Res β} {b : β} :
+    Clif.Res.bind x f = .ok b ↔ ∃ a, x = .ok a ∧ f a = .ok b := by
+  cases x <;> simp [Clif.Res.bind]
+
+theorem res_ofOption_eq_ok {α : Type} {m : String} {o : Option α} {a : α} :
+    Clif.Res.ofOption m o = .ok a ↔ o = some a := by
+  cases o <;> simp [Clif.Res.ofOption]
+
+/-- **Typing of `evalInst`**: the results have the instruction's result types. -/
+theorem evalInst_types {fr : Clif.Frame} {cm cm' : Clif.Mem} {i : Clif.Inst}
+    {vals : List Clif.Val} {sigOf : Clif.FnRef → Option Clif.Signature} {tys : List Clif.Ty}
+    (h : Clif.evalInst fr cm i = .ok (vals, cm')) (ht : i.resultTypes sigOf = some tys) :
+    vals.map (·.ty) = tys := by
+  cases i <;> simp only [Clif.evalInst] at h <;>
+    simp only [Clif.Inst.resultTypes, Option.some.injEq] at ht
+  all_goals (repeat' (first
+    | (obtain ⟨_, _, h⟩ : ∃ _, _ ∧ _ := h)
+    | (simp only [res_bind_eq_ok, Clif.Res.pure_eq, Clif.Res.ok.injEq,
+        Prod.mk.injEq, res_ofOption_eq_ok] at h)
+    | (split at h)))
+  all_goals (try (first | (cases h; done) | (obtain ⟨rfl, -⟩ := h; subst ht; rfl) | (obtain ⟨rfl, -⟩ := h; simp_all)))
+
+/-- **Typing of `instOutcome`** (calls: the extern's returns are checked against its
+signature). -/
+theorem instOutcome_types {env : Clif.Env} {p : Clif.Program} {fr : Clif.Frame}
+    {cm cm' : Clif.Mem} {i : Clif.Inst} {vals : List Clif.Val} {tys : List Clif.Ty}
+    (h : instOutcome env p fr cm i = .ok (vals, cm'))
+    (ht : i.resultTypes (fun r => (fr.func.extern? r).map (·.sig)) = some tys) :
+    vals.map (·.ty) = tys := by
+  cases i with
+  | call fn args =>
+    simp only [Clif.Inst.resultTypes, Option.map_map] at ht
+    simp only [instOutcome, res_bind_eq_ok', res_bind_eq_ok, res_ofOption_eq_ok] at h
+    obtain ⟨⟨ext, vs⟩, ⟨e, he, a, -, -, -, hq⟩, h⟩ := h
+    simp only [Clif.Res.pure_eq, Clif.Res.ok.injEq, Prod.mk.injEq] at hq
+    obtain ⟨rfl, rfl⟩ := hq
+    rw [he] at ht
+    simp only [Option.map_some, Function.comp_apply, Option.some.injEq] at ht
+    subst ht
+    simp only at h
+    repeat' (first | (split at h) | (cases h; done))
+    rename_i heq
+    simp only [Clif.Res.ok.injEq, Prod.mk.injEq] at h
+    obtain ⟨rfl, rfl⟩ := h
+    simpa [Clif.AbiParam.tys] using heq
+  | _ => simp only [instOutcome] at h; exact evalInst_types h ht
 
 end Backend.Proof.Driver
