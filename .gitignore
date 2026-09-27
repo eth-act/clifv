@@ -4,3 +4,4 @@
 /build/
 /third_party/lnsym-upstream/
 /rust/target/
+/rust/crates/isle2lean/oracle/target/

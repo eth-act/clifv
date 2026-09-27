@@ -1,0 +1,19 @@
+[package]
+name = "isle2lean"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+publish = false
+description = "Exports Cranelift's aarch64 ISLE lowering rules and VeriISLE specs to Lean data (M4)"
+
+[[bin]]
+name = "isle2lean"
+path = "src/main.rs"
+
+[dependencies]
+cranelift-isle = { workspace = true }
+# The same generator (and `spec` feature) that Cranelift's build.rs and the
+# VeriISLE CLI use to produce `numerics.isle`, `clif_lower.isle`, ... and the
+# aarch64 compilation-unit file list.
+cranelift-codegen-meta = { version = "=0.136.1", features = ["spec"] }
+anyhow = { workspace = true }

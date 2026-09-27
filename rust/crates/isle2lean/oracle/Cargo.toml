@@ -1,0 +1,19 @@
+# Separate workspace on purpose: Cranelift's `trace-log` feature must not be unified into the
+# main `rust/` workspace's cranelift-codegen build. See docs/contracts/isle.md ("Oracle").
+[package]
+name = "isle-trace-oracle"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.96"
+publish = false
+description = "Prints the ISLE rules Cranelift 0.136.1 fires when lowering CLIF for aarch64 (trace-log build)"
+
+[workspace]
+
+[dependencies]
+cranelift-codegen = { version = "=0.136.1", default-features = false, features = ["std", "arm64", "trace-log"] }
+cranelift-reader = "=0.136.1"
+cranelift-control = "=0.136.1"
+target-lexicon = "0.13"
+log = "0.4"
+anyhow = "1"

@@ -1,0 +1,46 @@
+function %iadd_iconst_left
+ISLE lower_return src/prelude_lower.isle line 1492
+ISLE lower src/isa/aarch64/lower.isle line 2573
+ISLE operand_size src/isa/aarch64/inst.isle line 1592
+ISLE alu_rr_imm12 src/isa/aarch64/inst.isle line 2647
+ISLE add_imm src/isa/aarch64/inst.isle line 3121
+ISLE output_reg src/prelude_lower.isle line 104
+ISLE lower src/isa/aarch64/lower.isle line 92
+function %iadd_iconst_right_shifted
+ISLE lower_return src/prelude_lower.isle line 1492
+ISLE lower src/isa/aarch64/lower.isle line 2573
+ISLE operand_size src/isa/aarch64/inst.isle line 1591
+ISLE alu_rr_imm12 src/isa/aarch64/inst.isle line 2647
+ISLE add_imm src/isa/aarch64/inst.isle line 3121
+ISLE output_reg src/prelude_lower.isle line 104
+ISLE lower src/isa/aarch64/lower.isle line 89
+function %iadd_regs_i8
+ISLE lower_return src/prelude_lower.isle line 1492
+ISLE lower src/isa/aarch64/lower.isle line 2573
+ISLE operand_size src/isa/aarch64/inst.isle line 1591
+ISLE alu_rrr src/isa/aarch64/inst.isle line 2544
+ISLE add src/isa/aarch64/inst.isle line 3117
+ISLE output_reg src/prelude_lower.isle line 104
+ISLE lower src/isa/aarch64/lower.isle line 85
+function %icmp_slt_i64
+ISLE lower_return src/prelude_lower.isle line 1492
+ISLE lower src/isa/aarch64/lower.isle line 2573
+ISLE operand_size src/isa/aarch64/inst.isle line 1592
+ISLE cmp src/isa/aarch64/inst.isle line 2766
+ISLE emit_icmp src/isa/aarch64/inst.isle line 5127
+ISLE cset src/isa/aarch64/inst.isle line 3067
+ISLE with_flags src/prelude_lower.isle line 817
+ISLE lower_cond_result_bool src/isa/aarch64/lower.isle line 2225
+ISLE output_reg src/prelude_lower.isle line 104
+ISLE lower src/isa/aarch64/lower.isle line 2214
+function %icmp_ult_imm_i32
+ISLE lower_return src/prelude_lower.isle line 1492
+ISLE lower src/isa/aarch64/lower.isle line 2573
+ISLE operand_size src/isa/aarch64/inst.isle line 1591
+ISLE cmp_imm src/isa/aarch64/inst.isle line 2773
+ISLE emit_icmp src/isa/aarch64/inst.isle line 5164
+ISLE cset src/isa/aarch64/inst.isle line 3067
+ISLE with_flags src/prelude_lower.isle line 817
+ISLE lower_cond_result_bool src/isa/aarch64/lower.isle line 2225
+ISLE output_reg src/prelude_lower.isle line 104
+ISLE lower src/isa/aarch64/lower.isle line 2214
