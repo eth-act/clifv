@@ -98,7 +98,7 @@ theorem backend_correct {p f k vc vcp rf af fa fb}
 * **Resource precondition** `StackAvail af s`: the frame (`af.frameSize` + fp/lr) fits below sp.
   Callee stack use is part of the callee contract (M6's `CalleeSound`).
 * **Body entry** `BodyEntry af s w₀` (M6Rest2's definition): the world the function body starts
-  in after the prologue: sp lowered by `frameDrop af`, x29 the frame pointer, x0–x7, memory,
+  in after the prologue: sp lowered by `frameDrop af`, x29 the frame pointer, x0–x7 and v0–v7, memory,
   program and every unmasked field other than x29/sp as in `s`. The VCode runs (and the CLIF
   slot relation `hrel`) are relative to `w₀`; the arguments transfer (`argsIn_body`).
 * **Per-activation semantics** `sem s` (M6's `csem (F s)`, `F s` the activation's frame
