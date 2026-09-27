@@ -12,7 +12,8 @@ The contracts themselves (`LowerInstOk`, `LowerTermOk`, `seqRun`, …) are M4's
 
 * `InstCalls sem MR env p`: every `lower` call on a statement that `lowerFunction` makes (in a
   context satisfying `CtxInv`) satisfies `LowerInstOk`. **Proven** from M4's
-  `LowerRulesCorrect program` + `ExcludedUnmatchable program` (`instCalls_of_rules`).
+  `LowerRulesCorrect program` + `ExcludedUnmatchable program` + `CallRulesCorrect program`
+  under the callee contract `CallsRefine` (`instCalls_of_rules`).
 * `TermCalls sem MR`: every terminator call (`lower` on `return`/`trap`, `lower_branch` on a
   branch) satisfies `LowerTermOk`. **Proven** from M4's terminator statements
   `LowerTermRulesCorrect`/`TermUnmatchable` (`lower` rules 964/1037) and
@@ -28,7 +29,7 @@ open Backend Backend.Proof
 /-- Every `lower` call `lowerFunction` makes on a statement (from a state whose fresh vregs are
 above every value's vreg, `ValsBelow`) satisfies M4's `LowerInstOk`. -/
 def InstCalls (sem : Sem) (MR : MemRelT) (env : Clif.Env) (p : Clif.Program) : Prop :=
-  ∀ f ctx ii info inst st rss st' tr, CtxInv f ctx → ctx.insts[ii]? = some info →
+  ∀ f ctx ii info inst st rss st' tr, CtxInv f ctx → CallRegArgs f → ctx.insts[ii]? = some info →
     info.clif = some inst → st.emitted = #[] → ValsBelow ctx st →
     runTerm ctx "lower" [.inst ii] st = .ok (some (.regsVec rss), st', tr) →
     LowerInstOk sem MR env p ctx inst info.results st rss st' st'.emitted.toList
@@ -46,12 +47,13 @@ def TermCalls (sem : Sem) (MR : MemRelT) : Prop :=
 
 /-- **From M4's rule theorems to the driver's `lower` calls.** -/
 theorem instCalls_of_rules (hrules : LowerRulesCorrect Isle.Aarch64.program)
-    (hex : ExcludedUnmatchable Isle.Aarch64.program) {F : BitVec 64 → Prop} {sem : Sem}
+    (hex : ExcludedUnmatchable Isle.Aarch64.program)
+    (hcalls : CallRulesCorrect Isle.Aarch64.program) {F : BitVec 64 → Prop} {sem : Sem}
     {MR : MemRelT} {env : Clif.Env} {p : Clif.Program} (hR : Refines F sem)
-    (hMR : MRStable F MR) : InstCalls sem MR env p := by
-  intro f ctx ii info inst st rss st' tr hctx hi hc hemp hvb hrun
-  obtain ⟨ms, rss', hem, hout, hok⟩ := lowerInstOk_runTerm hrules hex (env := env) (cp := p) hR hMR
-    hctx hi hc hvb hrun
+    (hMR : MRStable F MR) (hcr : CallsRefine F env MR sem) : InstCalls sem MR env p := by
+  intro f ctx ii info inst st rss st' tr hctx hra hi hc hemp hvb hrun
+  obtain ⟨ms, rss', hem, hout, hok⟩ := lowerInstOk_runTerm hrules hex hcalls (env := env) (cp := p)
+    hR hMR hcr hctx hra hi hc hvb hrun
   cases hout
   rw [hemp, Array.empty_append] at hem
   rw [hem, List.toList_toArray]

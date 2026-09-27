@@ -216,6 +216,18 @@ def ispec : Sem := fun i uses w =>
     else none
   | .trapIf k _, us => some ([], w, if condBrHolds k us w then .halt else .next)
   | .udf _, [] => some ([], w, .halt)
+  -- control flow (M4Ctl; as M6's `csem`): returns, branches, jump-table dispatch
+  | .rets _, _ => some ([], w, .ret)
+  | .jump _, [] => some ([], w, .goto 0)
+  | .condBr _ _ k, us => some ([], w, .goto (if condBrHolds k us w then 0 else 1))
+  | .testBitAndBranch k _ _ _ bit, [a] =>
+    some ([], w, .goto (if ((lo64 a).getLsbD bit == (k == .nz)) then 0 else 1))
+  | .emitIsland _, [] => some ([], w, .next)
+  | .jtSequence _ ts _ _ _, [a] =>
+    if Arm.ConditionHolds Cond.hs.bits w then some ([ofX 0, ofX 0], w, .goto 0)
+    else if ((lo64 a).setWidth 32).toNat < ts.length then
+      some ([ofX 0, ofX 0], w, .goto (((lo64 a).setWidth 32).toNat + 1))
+    else none
   | .aluRRR .subS sz rd _ _, [a, b] =>
     let r := Arm.AddWithCarry (opnd sz a) (~~~(opnd sz b)) 1#1
     some (defOut rd (resX sz r.1), Arm.write_pstate r.2 w, .next)
@@ -453,13 +465,72 @@ def LowerRuleOk (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
     ∃ ms rss, st'.emitted = st.emitted ++ ms.toArray ∧ out = .regsVec rss ∧
       LowerInstOk isem MR env cp ctx inst info.results st rss st' ms
 
+/-- The root rules of `lower` on `call` that emit a call instruction: `rule_lower_2491`
+(colocated callee, `bl`, rule id 1027) and `rule_lower_2508` (callee through the GOT,
+`loadExtNameGot` + `blr`, rule id 1031). They are proven under the callee contract
+`CallsRefine` (`CallRulesCorrect`), not in `LowerRulesCorrect`. -/
+def callRootRule (r : Rule) : Bool := r.id == 1027 || r.id == 1031
+
 /-- **M4's target (`lower`).** For every VCode semantics refining `ispec` and every stable
-memory relation, every root rule of `lower` in the E-closure is correct. This is the M4
-hypothesis of M7's theorem (with `data_program`: `lowerInstOk_runTerm`). -/
+memory relation, every root rule of `lower` in the E-closure other than the call rules
+(`callRootRule`, see `CallRulesCorrect`) is correct. This is the M4 hypothesis of M7's theorem
+(with `data_program`: `lowerInstOk_runTerm`). -/
 def LowerRulesCorrect (p : Program) : Prop :=
   ∀ (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program),
     Refines F isem → MRStable F MR →
-    ∀ r ∈ p.rulesOf TId.lower, closureRoot r = true → LowerRuleOk isem MR env cp p r
+    ∀ r ∈ p.rulesOf TId.lower, closureRoot r = true → callRootRule r = false →
+      LowerRuleOk isem MR env cp p r
+
+/-! ### Calls (contract change #5) -/
+
+/-- **The callee contract at the VCode level** (M6 discharges it for `csem` from `CalleeSound`
+and `ExtSem.sym`): there is a link-time address `sym n` for every symbol such that
+`loadExtNameGot rd n` loads it (changing nothing else the memory relation sees), and a call of
+the extern `name` (`bl name`, or `blr` of a register holding `sym name`, whose value is then the
+first use) with at most 8 argument values in x0.. (`AllHold`: low bits) returns the extern's
+results in x0.. (the defs, in order) and a world related to the extern's memory. -/
+def CallsRefine (F : BitVec 64 → Prop) (env : Clif.Env) (MR : MemRelT) (isem : Sem) : Prop :=
+  ∃ sym : String → BitVec 64,
+    (∀ (rd : Reg) (n : String) (w : Arm.ArmState), ∃ w',
+      isem (.loadExtNameGot rd n) [] w = some ([ofX (sym n)], w', .next) ∧ SameWorldNF F w' w) ∧
+    ∀ (name : String) g (sl : List (Clif.SlotId × Nat)) (cm : Clif.Mem) (w : Arm.ArmState)
+      (dest : CallDest) (us ds : List (Reg × Reg)) (uses args : List CV)
+      (vals rvals : List Clif.Val) (cm' : Clif.Mem),
+      env.extern name = some g →
+      (dest = .sym name ∧ uses = args ∨ ∃ r, dest = .reg r ∧ uses = ofX (sym name) :: args) →
+      us.map (·.2) = (List.range us.length).map Reg.x →
+      ds.map (·.1) = (List.range ds.length).map Reg.x →
+      vals.length ≤ 8 → AllHold vals args → MR sl cm w →
+      g vals cm = .returned rvals cm' → ds.length = rvals.length →
+      ∃ outs w', isem (.call ⟨dest, us, ds⟩) uses w = some (outs, w', .next) ∧
+        AllHold rvals outs ∧ MR sl cm' w'
+
+/-- Every extern of `f` takes at most 8 parameters (all in registers; `E2E.InSubset.callRegArgs`):
+calls with stack-passed arguments are outside the theorem. -/
+def CallRegArgs (f : Clif.Function) : Prop :=
+  ∀ (fn : Clif.FnRef) (e : Clif.ExtFunc), f.extern? fn = some e → e.sig.params.length ≤ 8
+
+/-- `LowerRuleOk` for a call rule: additionally assumes `CallRegArgs f`. -/
+def CallRuleOk (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
+    (p : Program) (r : Rule) : Prop :=
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx → CallRegArgs f →
+  ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info → info.clif = some inst →
+  ∀ (cfg : Config), cfg.checkOverlap = false →
+  ∀ (m n : Nat) (st : LState) (tr : Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId)
+    (out : V) (st' : LState) (tr' : Array RuleId), 1000 ≤ m → 1000 ≤ n → ValsBelow ctx st →
+    (∀ pre post, p.rulesOf TId.lower = pre ++ r :: post → ∀ r' ∈ pre, ∃ m', 1000 ≤ m' ∧
+      ∃ s', (matchRule p (sem ctx) cfg m' r' [.inst ii]).run (st, tr) = .ok (none, s')) →
+    (matchRule p (sem ctx) cfg m r [.inst ii]).run (st, tr) = .ok (some env', s1) →
+    (evalExpr p (sem ctx) cfg n r.rhs env').run s1 = .ok (some out, (st', tr')) →
+    ∃ ms rss, st'.emitted = st.emitted ++ ms.toArray ∧ out = .regsVec rss ∧
+      LowerInstOk isem MR env cp ctx inst info.results st rss st' ms
+
+/-- **M4's target for the call rules**: under the callee contract, the call root rules are
+correct. -/
+def CallRulesCorrect (p : Program) : Prop :=
+  ∀ (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program),
+    Refines F isem → MRStable F MR → CallsRefine F env MR isem →
+    ∀ r ∈ p.rulesOf TId.lower, callRootRule r = true → CallRuleOk isem MR env cp p r
 
 /-- The root rules of `lower` outside the closure (their patterns name a non-E opcode, a
 non-`i8..i64` type or a vector/float type test) never match an instruction of a context
@@ -505,9 +576,10 @@ theorem lower_rules_nodup {p : Program} (hp : Data p) : (p.rulesOf TId.lower).No
   decide +kernel
 
 theorem lowerInstOk_of_rules {p : Program} (hp : Data p) (hrules : LowerRulesCorrect p)
-    (hex : ExcludedUnmatchable p) {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT}
-    {env : Clif.Env} {cp : Clif.Program} (hR : Refines F isem) (hMR : MRStable F MR)
-    {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) {ii : Nat} {info : IInfo}
+    (hex : ExcludedUnmatchable p) (hcalls : CallRulesCorrect p) {F : BitVec 64 → Prop}
+    {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program} (hR : Refines F isem)
+    (hMR : MRStable F MR) (hcr : CallsRefine F env MR isem)
+    {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) (hra : CallRegArgs f) {ii : Nat} {info : IInfo}
     {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
     {cfg : Config} (hco : cfg.checkOverlap = false) {n : Nat}
     (hn : 1002 + (p.rulesOf TId.lower).length ≤ n) {ty : TypeId} {st : LState}
@@ -533,16 +605,21 @@ theorem lowerInstOk_of_rules {p : Program} (hp : Data p) (hrules : LowerRulesCor
   rw [← hs.1] at heval
   cases hroot : closureRoot r
   · exact absurd hmatch (hex r hr hroot f ctx hctx ii info inst hi hc cfg m (st, tr) env' s1)
-  · exact hrules F isem MR env cp hR hMR r hr hroot f ctx hctx ii info inst hi hc cfg hco m n st tr
-      env' s1 out st' tr2 (by omega) (by omega) hvb hfirst hmatch heval
+  · cases hcall : callRootRule r
+    · exact hrules F isem MR env cp hR hMR r hr hroot hcall f ctx hctx ii info inst hi hc cfg hco m
+        n st tr env' s1 out st' tr2 (by omega) (by omega) hvb hfirst hmatch heval
+    · exact hcalls F isem MR env cp hR hMR hcr r hr hcall f ctx hctx hra ii info inst hi hc cfg hco
+        m n st tr env' s1 out st' tr2 (by omega) (by omega) hvb hfirst hmatch heval
 
 set_option maxRecDepth 20000 in
 /-- `lowerInstOk_of_rules` for the exported program and the backend's own call
 (`runTerm ctx "lower" [.inst ii]`, as `lowerFunction` makes it). -/
 theorem lowerInstOk_runTerm (hrules : LowerRulesCorrect program)
-    (hex : ExcludedUnmatchable program) {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT}
+    (hex : ExcludedUnmatchable program) (hcalls : CallRulesCorrect program)
+    {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT}
     {env : Clif.Env} {cp : Clif.Program} (hR : Refines F isem) (hMR : MRStable F MR)
-    {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) {ii : Nat} {info : IInfo}
+    (hcr : CallsRefine F env MR isem)
+    {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) (hra : CallRegArgs f) {ii : Nat} {info : IInfo}
     {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
     {st : LState} {out : V} {st' : LState} {tr : List RuleId} (hvb : ValsBelow ctx st)
     (h : runTerm ctx "lower" [.inst ii] st = .ok (some out, st', tr)) :
@@ -565,8 +642,8 @@ theorem lowerInstOk_runTerm (hrules : LowerRulesCorrect program)
     subst h2
     have hlen : (program.rulesOf TId.lower).length ≤ 1000 := by
       rw [show TId.lower = 686 from rfl, data_program.r686]; decide
-    obtain ⟨ms, rss, h1, h2, h3⟩ := lowerInstOk_of_rules data_program hrules hex hR hMR hctx hi hc
-      rfl (by omega) hvb ha
+    obtain ⟨ms, rss, h1, h2, h3⟩ := lowerInstOk_of_rules data_program hrules hex hcalls hR hMR hcr
+      hctx hra hi hc rfl (by omega) hvb ha
     exact ⟨ms, rss, by simpa using h1, h2, h3⟩
 
 /-! ## Terminators (stated by M7; M4's obligations `LowerTermRulesCorrect`, `TermUnmatchable`,
