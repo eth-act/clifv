@@ -81,10 +81,10 @@ theorem matchPat_and_inv {st : LState} {ty : TypeId} {qs : List Pattern} {v : V}
   rw [matchPat.eq_7] at h; exact h
 
 include hp in
-theorem fmtD_match (hk : FmtKinds p) {q : Pattern} {fT : Nat} (hq : fmtD q = some fT)
-    (hlo : 2447 ≤ fT) (hhi : fT < 2447 + 36) {st : LState} {ti : Nat} {env env' : Interp.Env V}
-    (h : matchPat p (sem ctx) st q (.inst ti) env = .ok (some env')) :
-    ∃ info fs, ctx.insts[ti]? = some info ∧ info.data = .data 152 (fT - 2447) fs := by
+theorem fmtD_match_k {q : Pattern} {fT : Nat} (hq : fmtD q = some fT) {tf : Term} {k : Nat}
+    (htf : termOf p fT = .ok tf) (hkf : tf.kind = .enumVariant k) {st : LState} {ti : Nat}
+    {env env' : Interp.Env V} (h : matchPat p (sem ctx) st q (.inst ti) env = .ok (some env')) :
+    ∃ info fs, ctx.insts[ti]? = some info ∧ info.data = .data 152 k fs := by
   unfold fmtD at hq
   split at hq
   · cases hq
@@ -93,40 +93,38 @@ theorem fmtD_match (hk : FmtKinds p) {q : Pattern} {fT : Nat} (hq : fmtD q = som
     obtain ⟨info, hi, rfl⟩ := ext_inst_data_value_inv hx
     obtain ⟨e1, -, hm2⟩ := matchArgs_cons_inv hm
     obtain ⟨e2, hp2, -⟩ := matchArgs_cons_inv hm2
-    have hlt : fT - 2447 < 36 := by omega
-    obtain ⟨tf, htf, hkf⟩ := hk (fT - 2447) hlt
-    rw [show 2447 + (fT - 2447) = fT by omega] at htf
     obtain ⟨fs', hu, -⟩ := matchPat_enum_inv htf hkf hp2
     exact ⟨info, fs', hi, sem_unData_inv hu⟩
   · cases hq
 
 include hp in
-theorem rootFmt_match (hk : FmtKinds p) {q : Pattern} {fT : Nat} (hq : rootFmt q = some fT)
-    (hlo : 2447 ≤ fT) (hhi : fT < 2447 + 36) {st : LState} {ti : Nat} {env env' : Interp.Env V}
-    (h : matchPat p (sem ctx) st q (.inst ti) env = .ok (some env')) :
-    ∃ info fs, ctx.insts[ti]? = some info ∧ info.data = .data 152 (fT - 2447) fs := by
+theorem rootFmt_match_k {q : Pattern} {fT : Nat} (hq : rootFmt q = some fT) {tf : Term} {k : Nat}
+    (htf : termOf p fT = .ok tf) (hkf : tf.kind = .enumVariant k) {st : LState} {ti : Nat}
+    {env env' : Interp.Env V} (h : matchPat p (sem ctx) st q (.inst ti) env = .ok (some env')) :
+    ∃ info fs, ctx.insts[ti]? = some info ∧ info.data = .data 152 k fs := by
   unfold rootFmt at hq
   split at hq
-  · exact fmtD_match hp hk hq hlo hhi (matchPat_bind_inv h).2
+  · exact fmtD_match_k hp hq htf hkf (matchPat_bind_inv h).2
   · obtain ⟨e1, h1, -⟩ := matchAll_cons_inv (matchPat_and_inv h)
-    exact fmtD_match hp hk hq hlo hhi h1
+    exact fmtD_match_k hp hq htf hkf h1
   · obtain ⟨e1, -, h2⟩ := matchAll_cons_inv (matchPat_and_inv h)
     obtain ⟨e2, h3, -⟩ := matchAll_cons_inv h2
     obtain ⟨e3, -, h4⟩ := matchAll_cons_inv (matchPat_and_inv h3)
     obtain ⟨e4, h5, -⟩ := matchAll_cons_inv h4
-    exact fmtD_match hp hk hq hlo hhi h5
+    exact fmtD_match_k hp hq htf hkf h5
   · obtain ⟨e1, -, h2⟩ := matchAll_cons_inv (matchPat_and_inv h)
     obtain ⟨e2, h3, -⟩ := matchAll_cons_inv h2
-    exact fmtD_match hp hk hq hlo hhi h3
-  · exact fmtD_match hp hk hq hlo hhi h
+    exact fmtD_match_k hp hq htf hkf h3
+  · exact fmtD_match_k hp hq htf hkf h
 
 include hp in
-/-- **A root rule that matched instruction `ti` fixes the format of its data.** -/
-theorem ruleFmt_match (hk : FmtKinds p) {r : Rule} {fT : Nat} (hq : ruleFmt r = some fT)
-    (hlo : 2447 ≤ fT) (hhi : fT < 2447 + 36) {cfg : Config} {m : Nat} {ti : Nat}
-    {vs : List V} {s s1 : LState × Array RuleId} {env : Interp.Env V}
+/-- **A root rule that matched instruction `ti` fixes the format of its data** (the format term
+`fT` of the rule is the enum variant `k`). -/
+theorem ruleFmt_match_k {r : Rule} {fT : Nat} (hq : ruleFmt r = some fT) {tf : Term} {k : Nat}
+    (htf : termOf p fT = .ok tf) (hkf : tf.kind = .enumVariant k) {cfg : Config} {m : Nat}
+    {ti : Nat} {vs : List V} {s s1 : LState × Array RuleId} {env : Interp.Env V}
     (h : (matchRule p (sem ctx) cfg m r (.inst ti :: vs)).run s = .ok (some env, s1)) :
-    ∃ info fs, ctx.insts[ti]? = some info ∧ info.data = .data 152 (fT - 2447) fs := by
+    ∃ info fs, ctx.insts[ti]? = some info ∧ info.data = .data 152 k fs := by
   cases m with
   | zero => rw [matchRule.eq_1] at h; cases h
   | succ m =>
@@ -136,8 +134,51 @@ theorem ruleFmt_match (hk : FmtKinds p) {r : Rule} {fT : Nat} (hq : ruleFmt r = 
     · rename_i q qs hargs
       rw [hargs] at ha
       obtain ⟨e1, h1, -⟩ := matchArgs_cons_inv ha
-      exact rootFmt_match hp hk hq hlo hhi h1
+      exact rootFmt_match_k hp hq htf hkf h1
     · cases hq
+
+include hp in
+theorem ruleFmt_match (hk : FmtKinds p) {r : Rule} {fT : Nat} (hq : ruleFmt r = some fT)
+    (hlo : 2447 ≤ fT) (hhi : fT < 2447 + 36) {cfg : Config} {m : Nat} {ti : Nat}
+    {vs : List V} {s s1 : LState × Array RuleId} {env : Interp.Env V}
+    (h : (matchRule p (sem ctx) cfg m r (.inst ti :: vs)).run s = .ok (some env, s1)) :
+    ∃ info fs, ctx.insts[ti]? = some info ∧ info.data = .data 152 (fT - 2447) fs := by
+  have hlt : fT - 2447 < 36 := by omega
+  obtain ⟨tf, htf, hkf⟩ := hk (fT - 2447) hlt
+  rw [show 2447 + (fT - 2447) = fT by omega] at htf
+  exact ruleFmt_match_k hp hq htf hkf h
+
+/-- The `InstructionData` variant of each terminator's data (`termData`). -/
+def termFmt : Clif.Terminator → Nat
+  | .jump _ => 15 | .brif .. => 5 | .brTable .. => 4 | .ret _ => 18 | .trap _ => 26
+  | .returnCall .. => 0
+
+/-- A terminator whose data has format `termFmt t`. -/
+theorem termData_fmt {t : Clif.Terminator} {data : V} (hd : termData t = .ok data) :
+    ∃ fs, data = .data 152 (termFmt t) fs := by
+  cases t with
+  | jump d => rw [termData_jump] at hd; cases hd; exact ⟨_, rfl⟩
+  | brif c a b => rw [termData_brif] at hd; cases hd; exact ⟨_, rfl⟩
+  | brTable x d tb => rw [termData_brTable] at hd; cases hd; exact ⟨_, rfl⟩
+  | ret xs => rw [termData_ret] at hd; cases hd; exact ⟨_, rfl⟩
+  | trap c => rw [termData_trap] at hd; cases hd; exact ⟨_, rfl⟩
+  | returnCall fn args => simp [termData, throw, throwThe, MonadExceptOf.throw] at hd
+
+include hp in
+/-- **The terminator a rule matched**: a rule whose root format is the enum variant `k` matched
+the terminator placeholder `ti` of `t` only if `t`'s format is `k`. -/
+theorem ruleFmt_term {r : Rule} {fT : Nat} (hq : ruleFmt r = some fT) {tf : Term} {k : Nat}
+    (htf : termOf p fT = .ok tf) (hkf : tf.kind = .enumVariant k) {t : Clif.Terminator}
+    {data : V} (hd : termData t = .ok data) {ti : Nat} (hi : ctx.insts[ti]? = some ⟨data, [], [], none⟩)
+    {cfg : Config} {m : Nat} {vs : List V} {s s1 : LState × Array RuleId} {env : Interp.Env V}
+    (h : (matchRule p (sem ctx) cfg m r (.inst ti :: vs)).run s = .ok (some env, s1)) :
+    termFmt t = k := by
+  obtain ⟨info, fs, hinfo, hdat⟩ := ruleFmt_match_k hp hq htf hkf h
+  rw [hi] at hinfo
+  cases hinfo
+  obtain ⟨fs', rfl⟩ := termData_fmt hd
+  simp only [V.data.injEq] at hdat
+  exact hdat.2.1
 
 end
 
@@ -169,18 +210,6 @@ theorem lower_branch_fmts : (program.rulesOf TId.lower_branch).all branchFmtOk =
 
 /-! ## The two statements -/
 
-theorem termData_fmt {t : Clif.Terminator} {data : V} (hd : termData t = .ok data) :
-    ∃ fs, data = .data 152 (match t with
-      | .jump _ => 15 | .brif .. => 5 | .brTable .. => 4 | .ret _ => 18 | .trap _ => 26
-      | .returnCall .. => 0) fs := by
-  cases t with
-  | jump d => rw [termData_jump] at hd; cases hd; exact ⟨_, rfl⟩
-  | brif c a b => rw [termData_brif] at hd; cases hd; exact ⟨_, rfl⟩
-  | brTable x d tb => rw [termData_brTable] at hd; cases hd; exact ⟨_, rfl⟩
-  | ret xs => rw [termData_ret] at hd; cases hd; exact ⟨_, rfl⟩
-  | trap c => rw [termData_trap] at hd; cases hd; exact ⟨_, rfl⟩
-  | returnCall fn args => simp [termData, throw, throwThe, MonadExceptOf.throw] at hd
-
 /-- **`TermUnmatchable`**: no rule of `lower` other than 964/1037 matches a `return`/`trap`. -/
 theorem termUnmatchable : TermUnmatchable program := by
   intro r hr hroot f ctx hctx ti t data hrt hd hi cfg m s env' s1 hmatch
@@ -196,7 +225,7 @@ theorem termUnmatchable : TermUnmatchable program := by
     cases hinfo
     obtain ⟨fs', rfl⟩ := termData_fmt hd
     simp only [V.data.injEq] at hdat
-    cases t <;> simp [retOrTrap] at hrt <;> simp at hdat <;>
+    cases t <;> simp [retOrTrap] at hrt <;> simp [termFmt] at hdat <;>
       first | omega | simp [termData, throw, throwThe, MonadExceptOf.throw] at hd
   · cases hok
 
@@ -216,7 +245,7 @@ theorem branchExcludedUnmatchable : BranchExcludedUnmatchable program := by
     cases hinfo
     obtain ⟨fs', rfl⟩ := termData_fmt hd
     simp only [V.data.injEq] at hdat
-    cases t <;> simp [retOrTrap] at hrt <;> simp at hdat <;>
+    cases t <;> simp [retOrTrap] at hrt <;> simp [termFmt] at hdat <;>
       first | omega | simp [termData, throw, throwThe, MonadExceptOf.throw] at hd
   · cases hok
 

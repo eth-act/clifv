@@ -29,6 +29,17 @@ theorem termData_brTable (x : Clif.ValueId) (d : Clif.BlockCall) (tbl : List Cli
     termData (.brTable x d tbl) = .ok (.data 152 4 [.data 151 2 [], .value x, .op (.jumpTable 0)]) :=
   rfl
 
+theorem seqRun_one_stop {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem) {i : MInst}
+    {ops : Array Operand} (hops : i.operands = .ok ops) {ρ : Nat → CV} {w w' : Arm.ArmState}
+    {outs : List CV} {ctl : Ctl} (hctl : ctl ≠ .next) (hs : ispec i (vuses ops ρ) w = some (outs, w', ctl))
+    (hlen : outs.length = (ops.toList.filter Operand.isDef).length) :
+    ∃ w'', seqRun isem [i] ρ w = some (.stop 0 i ops ρ w outs w'' ctl) ∧ SameWorld F w'' w' := by
+  obtain ⟨w'', hi, hw⟩ := hR _ _ _ _ _ hs
+  refine ⟨w'', ?_, hw⟩
+  cases ctl with
+  | next => exact absurd rfl hctl
+  | _ => simp only [seqRun, hops, hi, hlen, ↓reduceIte]
+
 variable {p : Program} (hp : Data p) {ctx : Ctx} {cfg : Config} (hc : cfg.checkOverlap = false)
 
 /-! ## Extern helpers of the family -/

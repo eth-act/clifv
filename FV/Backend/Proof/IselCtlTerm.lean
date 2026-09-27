@@ -119,17 +119,6 @@ theorem getMany_ok {fr : Clif.Frame} :
       | _ => rw [hxs] at h; simp [bind, Clif.Res.bind] at h
     | _ => rw [hx] at h; simp [bind, Clif.Res.bind] at h
 
-theorem seqRun_one_stop {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem) {i : MInst}
-    {ops : Array Operand} (hops : i.operands = .ok ops) {ρ : Nat → CV} {w w' : Arm.ArmState}
-    {outs : List CV} {ctl : Ctl} (hctl : ctl ≠ .next) (hs : ispec i (vuses ops ρ) w = some (outs, w', ctl))
-    (hlen : outs.length = (ops.toList.filter Operand.isDef).length) :
-    ∃ w'', seqRun isem [i] ρ w = some (.stop 0 i ops ρ w outs w'' ctl) ∧ SameWorld F w'' w' := by
-  obtain ⟨w'', hi, hw⟩ := hR _ _ _ _ _ hs
-  refine ⟨w'', ?_, hw⟩
-  cases ctl with
-  | next => exact absurd rfl hctl
-  | _ => simp only [seqRun, hops, hi, hlen, ↓reduceIte]
-
 section
 variable {p : Program} (hp : Data p) {ctx : Ctx} {cfg : Config} (hc : cfg.checkOverlap = false)
 
