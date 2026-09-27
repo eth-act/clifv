@@ -292,6 +292,45 @@ Done (sorry-free, committed on `agent/m6-rest2`):
 4. csem obligations of `backend_correct`: `Refines`, `DriverSem` (incl. `retarget`),
    `CallsRefine` (M4Ctl's contract #5; discharge from an `ExtSem` contract hypothesis).
 
+## Status update (M6Rest3, 2026-09-27)
+
+Done (sorry-free):
+
+- **Frame layout** (`RegallocLayout.lean`): `FrameOk` is now over the live locations `Live rf`
+  (int slots `< spillSlots`, float slots only when the code uses float slots — `RFunc.floatStack`,
+  every save slot) and carries the `fmoveTmp` facts (`T` = `RFunc.floatMove`);
+  `frameOk_compute`: `RAFrame.compute` satisfies it for any non-wrapping `sp0` and `F ⊇ [sp0 +
+  intBase, sp0 + size)`; `live_align` (slots aligned to their size, below `size`).
+  `RAFrame.compute` names its two flags (`RFunc.floatStack`, `RFunc.floatMove`; same values).
+- **Frame-size check** (compiler change, conservative): `lowerRFunc` rejects frames of 32 KiB or
+  more. Reason: the model has no SIMD&FP register-offset load/store, so a float slot beyond the
+  scaled-immediate range could not be proven; below 32 KiB every slot access is `stur`/`ldur`
+  (offset ≤ 255) or the scaled `str`/`ldr`, so the x16 sequence never occurs for slots.
+  `lean-e2e-check` unchanged (913 accepted).
+- **Slot accesses** (`RegallocSlots.lean`): `exec_store_int`, `exec_load_int`,
+  `exec_store_float`, `exec_load_float` for every aligned offset below 32 KiB (both encodings);
+  their effect on `locVal` (`store_effect`, `store_dst8/16`, `loadInt_effect`, `loadFloat_effect`).
+- **Every checked move** (`RegallocMoves.lean`): `lower_move` — for `checkMove`-accepted moves
+  between live locations, `moveInsts` is a list of `MoveInst`s that runs (`ExecAll`, each step
+  keeping the error flag and the program) and gives `MoveOk`: world, `sp`, the store
+  `upd (locVal s) dst (locVal s src)`, memory outside `[sp, sp + size)` unchanged. Covers int
+  register moves, int/float spills, reloads, callee-save saves/restores and float register
+  moves through `fmoveTmp`. The old `lower_spill_int`/`lower_reload_int` are superseded (removed);
+  `move_agree` is over `ValidLoc ∧ L`.
+- **Moves on the machine** (`FV/E2E/RegLevelMove.lean`): `RL.Wf` (pipeline and ABI facts of an
+  activation), `RL.frameOk`, `lines_ps` (non-`trapIf`/`jtSequence` expansions are
+  emitter-state independent), `codeLinesE_noTrap` (body lines are never trap labels),
+  `run_oneLines`, `move_facts`, and **`realizes_move`**: from `Q` at a move item the machine
+  reaches `Q` at the next item with `MStep.move`'s store (the `Realizes` move case).
+  `StRel.store` is now over `ValidLoc ∧ Live`.
+
+Remaining (in the order of the plan above): the `op` case of `Realizes` (straight-line via
+`operandsSound_step` + an `InterOk` fact for multi-line expansions — `execLines` does not
+check the error flag of intermediate states, so each multi-line form, i.e. the x16 address
+sequence, needs it — and the coverage of every `vcp` form), `Args`, calls, control flow,
+prologue/epilogue, traps, final assembly, and the csem obligations `Refines` (per `ispec`
+form), `DriverSem`, `CallsRefine`, and (new, M4Mem's contract #7) `MemRefines`.
+
 ## `#print axioms`
 
 New (2026-09-27): `os_movFromVec`, `os_vecRRR`, `os_aluRRR_rmZ`, `checkAlloc_sound`, `forward`,
