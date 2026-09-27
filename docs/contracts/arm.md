@@ -93,7 +93,7 @@ file): register 31 is XZR, not SP, in CBZ/CBNZ, BR/BLR/RET, MOVZ/MOVN/MOVK, LDP/
 `SignExtend(imm19:'00')` (upstream lost `imm19<18:17>`). The GPR single-register load/store
 decode follows the ASL for every `size`/`opc`.
 
-## Required instructions (Cranelift 0.136.1, `opt_level=none`, `clif-subset-v1` at i8–i64)
+## Required instructions (Cranelift 0.136.1, `opt_level=none`, `clif-subset-v1` at i8–i64, plus the v2 probe)
 
 **`clif-subset-v2` probe** (2026-09-27: `clif2obj` on `FVTest/Clif/fixtures/e-v2-*.clif`,
 `llvm-objdump-18 -dr`). Mnemonics emitted for the nine new opcodes:

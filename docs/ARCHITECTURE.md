@@ -68,7 +68,7 @@ The authoritative API is documented in `docs/contracts/clif.md` (written by M0).
 - `Clif.Val`: a width-indexed `BitVec`, e.g. `⟨ty, BitVec ty.width⟩`.
 - `Clif.Function`, `Clif.Program` (a list of functions and extern declarations), SSA values,
   blocks with parameters, and the opcode subset listed in `docs/contracts/clif-subset.md`
-  (named, versioned; version `clif-subset-v1`).
+  (named, versioned; version `clif-subset-v2`).
 - `Clif.print : Program → String` and `Clif.parse : String → Except String Program`, with
   output accepted by `cranelift-reader` 0.136.1.
 - `Clif.run`: executable and fuel-bounded:

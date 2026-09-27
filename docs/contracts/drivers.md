@@ -44,7 +44,11 @@ Symbols: function `%name` → exported symbol `name` (`Linkage::Export`). A decl
 `fnN = [colocated] %callee(sig)` refers to the file's function `callee` if there is one,
 otherwise to an imported (undefined) symbol `callee`. Non-colocated calls go through the
 GOT (`is_pic`), colocated ones are direct `bl`. Function names must be `%name`
-(`u0:1`-style names are rejected); `gvN = symbol %x` data symbols are rejected.
+(`u0:1`-style names are rejected). A global value `gvN = symbol [colocated] %x` is declared
+as an **imported data symbol** `x` (`declare_data(x, Import, writable=false)`; relocations
+against it are reported with target `x`). With `is_pic`, `symbol_value` always goes through
+the GOT (`Aarch64AdrGotPage21` + `Aarch64Ld64GotLo12Nc`), colocated or not. The data itself
+must come from a linked object (for `clif-native`: the file's `; data:` directives).
 
 ## `clif2obj`
 
@@ -182,6 +186,14 @@ How it runs:
 Tools: `CLIF_NATIVE_CLANG` (default `clang`), `CLIF_NATIVE_LLD` (default the active Rust
 toolchain's `rust-lld`), `CLIF_NATIVE_QEMU` (default `qemu-aarch64-static`). `--keep DIR`
 keeps `clif.o`, `harness.c`, `clifnative_tables.h`, `harness.o`, `test.exe`.
+
+Data objects: the `; data: %name [align=N] [writable] = item…` directives before the first
+function (grammar in `docs/contracts/clif.md`, "Link-time data") are turned into `data.s`
+(`.rodata`, or `.data` if `writable`; each object `.globl`, `.balign max(N,16)` as in
+`Clif.Image`; hex items → `.byte`, `%sym±k` → `.quad sym±k`), assembled with
+`clang --target=aarch64-linux-gnu -c` and linked. A store into a read-only object faults
+(`SIGSEGV … not a trap site`), matching `Clif.run`'s `stuck`. Test:
+`tests/native.rs` `data_objects_from_directives`.
 
 Linking: externs not defined in the file must come from `--link` objects or archives (the
 M1 runtime is linked this way; objects must be freestanding/static aarch64 ELF — e.g.
