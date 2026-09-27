@@ -152,6 +152,10 @@ structure DriverHyp (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) 
   terms : TermCalls sem MR
   ext : ∀ B ∈ f.blocks, ∀ st ∈ B.body, ∀ fn args, st.inst = .call fn args →
     ∀ e, f.extern? fn = some e → p.func? e.name = none
+  /-- every extern takes at most 8 (register) parameters (`E2E.InSubset.callRegArgs`) -/
+  regArgs : CallRegArgs f
+  /-- `br_table` indices have at most 32 bits (`lowerCheck`'s `brIdxOk`) -/
+  brIdx : ∀ B ∈ f.blocks, BrIdxTyped ctx B.term
   /-- no tail calls (`return_call` is outside clif-subset-v2 E) -/
   noTail : ∀ B ∈ f.blocks, ∀ fn args, B.term ≠ .returnCall fn args
   cfg : ∃ ss ps, vc.cfg = .ok (ss, ps)
@@ -187,7 +191,7 @@ theorem stmt_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
   obtain ⟨⟨info, hinfo, hclif, hres⟩, hemp, hst0, ⟨tr, hrun⟩, halias⟩ := hstmts j stm sl hstm hsl
   obtain ⟨ranges, hctx⟩ := H.shape.hctx
   have hok := H.insts f ctx (L.start + j) info stm.inst sl.st sl.rss sl.st' tr
-    H.shape.ctxInv hinfo hclif hemp
+    H.shape.ctxInv H.regArgs hinfo hclif hemp
     (fun x r h => Nat.lt_of_lt_of_le (H.shape.valsBelow x r h) hst0) hrun
   rw [hres] at hok
   obtain ⟨hargs, hresults, hnodup, hnext, hnoclob⟩ := H.cert.stmt b B L j stm sl hB hL hstm hsl
@@ -665,7 +669,7 @@ theorem term_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     H.shape.blk b B L hB hL
   obtain ⟨ranges, hctx⟩ := H.shape.hctx
   have hok := H.terms f ctx (L.start + B.body.length) B.term L.data L.targets out
-    L.tst L.tst' tr H.shape.ctxInv (H.shape.tslot b B L hB hL)
+    L.tst L.tst' tr H.shape.ctxInv (H.brIdx B (List.mem_of_getElem? hB)) (H.shape.tslot b B L hB hL)
     (fun x r h => Nat.lt_of_lt_of_le (H.shape.valsBelow x r h) hst0t) hdata htemp hrunT
   obtain ⟨hargsT, hnoclobT, -⟩ := H.cert.term b B L hB hL
   let fr' := restrict s.frame (A b B.body.length)

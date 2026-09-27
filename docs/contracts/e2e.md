@@ -37,11 +37,14 @@ theorem backend_correct {p f k vc vcp rf af fa fb}
     -- M4
     (hrules : LowerRulesCorrect Isle.Aarch64.program)
     (hex : ExcludedUnmatchable Isle.Aarch64.program)
+    (hcallRules : CallRulesCorrect Isle.Aarch64.program)
     (hterms : ∀ s, TermCalls (sem s) (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w))
     -- M6 + M5
     (hM6 : RegLevelCorrect sem F astep vcp af fb)
     -- the shared VCode semantics of each activation (M6's `csem (F s)`)
     (hRef : ∀ s, Refines (F s) (sem s)) (hds : ∀ s, DriverSem (sem s))
+    -- the callee contract (M6, from `CalleeSound`)
+    (hcalls : ∀ s, CallsRefine (F s) env (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w) (sem s))
     -- the run
     {base ra s w₀ args cs}
     (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hbe : BodyEntry af s w₀)
@@ -69,7 +72,10 @@ theorem backend_correct {p f k vc vcp rf af fa fb}
   widths ≤ 64, `XHolds_iff`).
 * **Subset** `InSubset p f`: `p.func? f.name = some f`, `Compile.functionE f` (clif-subset-v2
   E), at most 8 parameters (all in registers), every `call` targets an extern (not a function
-  of `p`).
+  of `p`), every extern of `f` takes at most 8 parameters (`callRegArgs`: no stack-passed call
+  arguments; the compiler flags such functions unverified, `Backend.regArgCalls`). `br_table`
+  indices of at most 32 bits are enforced by `lowerCheck` (`brIdxOk`, contract change #6):
+  an `i64` index is a compile error, as in Cranelift's verifier.
 * **Compiled code** `Compiled f k vc vcp rf af fa fb`: `lowerFunction f = ok vc`,
   `lowerCheck f vc = true`, `prepare vc = ok vcp`, `prepCheck vc vcp = true`, `checkAlloc vcp rf =
   ok ()`, `lowerRFunc vcp rf = ok af`, `emitFunc k af = ok fa`, `fa.layout = ok fb` (`rf` =
@@ -114,7 +120,9 @@ theorem backend_correct {p f k vc vcp rf af fa fb}
 
 | Hypothesis | Owner | Status |
 | --- | --- | --- |
-| `LowerRulesCorrect program`, `ExcludedUnmatchable program` (every closure root rule of `lower` is correct on statements; the others never match) | M4 (`IselContract.lean`) | stated; rules proven family by family (M4AluA/B, M4Cmp) |
+| `LowerRulesCorrect program`, `ExcludedUnmatchable program` (every closure root rule of `lower` other than the call rules 1031/1032 is correct on statements; the others never match) | M4 (`IselContract.lean`) | stated; rules proven family by family (M4AluA/B, M4Cmp, M4Ctl) |
+| `CallRulesCorrect program` (call rules 1031 `bl`, 1032 GOT + `blr`, under `CallsRefine`, for `CallRegArgs f`) | M4 (M4Ctl) | stated (contract change #5) |
+| `CallsRefine (F s) env MR (sem s)` (callee contract at the VCode level: `loadExtNameGot` loads `sym n`; a call of extern `name` with ≤ 8 register arguments returns its results in x0.. and a world related to the extern's memory) | M6 (`csem` from `CalleeSound` + `ExtSem.sym`) | open (M6Rest2) |
 | `TermCalls (sem s) MR` (every terminator call `lowerFunction` makes satisfies `LowerTermOk`) | M4, via `termCalls_of_rules` | **proven** from `LowerTermRulesCorrect` (rules 964 `trap`, 1037 `return` of `lower`: `LowerTermRuleOk`), `TermUnmatchable` (other `lower` rules never match a `return`/`trap`), `BranchRulesCorrect` (`BranchRuleOk`, now with `CtxInv`/`ValsBelow`/first-match premises), `BranchExcludedUnmatchable`; these four are M4's open obligations (`backend_correct_of_rules`) |
 | `RegLevelCorrect sem F astep vcp af fb` (VCode returns/traps from the body-entry world ⇒ Arm returns/traps, forward) | M6 + M5 (`M6Rest2`) | placeholder with the agreed content (`BodyEntry`, per-activation `sem`) |
 | `Refines (F s) (sem s)` (the VCode semantics refines M4's `ispec`, every control) | M6 (`csem` characterization lemmas) | open (M6) |
@@ -185,8 +193,12 @@ reached directly or through an edge block (`jump`, no parameters/arguments) from
 branch arguments. Soundness: `prep_sound` (simulation; a split edge takes one extra `jump` step).
 
 Results (`lake exe lean-e2e-check`, corpus/clif, corpus/clif/extrt, Cranelift runtests): both
-validators accept 918/918 functions inside the theorem; 14 functions have more than 8 parameters
-(outside `InSubset`). Cost on the corpus (161 functions): `lowerFunction` 175 ms, `lowerCheck`
+validators accept 913/913 functions inside the theorem (with `brIdxOk`: no `br_table` rejected);
+19 functions are outside `InSubset`: 14 with more than 8 parameters, and since contract change
+#5 the 5 corpus functions calling an extern with more than 8 parameters (`Corpus__reverse8_w0/_w1`,
+`Corpus__bumpAll_w0/_w1`, `Corpus__bumpFirst`; still compiled, flagged unverified). Filetests after
+#5/#6 (M4Ctl, `scripts/lean-backend-filetests.sh`): corpus 114/114, extrt 22/22, runtests 3085
+pass / 0 fail, all agreeing with Cranelift-native. Cost on the corpus (161 functions): `lowerFunction` 175 ms, `lowerCheck`
 661 ms, `prepare` 2 ms, `prepCheck` 3 ms (the lowering validator re-runs isel and its checks are
 quadratic in the values of a block; functions outside the theorem are not validated).
 
@@ -201,6 +213,11 @@ prints `compiled, unverified (outside backend_correct): …`).
 control (M4Cmp 1a4de60), M4AluB 1532afa (`CtxInv.defClif`, ispec forms), first-match premise of
 `LowerRuleOk` (M4AluB c696bfa, change #3), hand-written `LawfulBEq V` (M4Cmp 4de7914, change #4).
 M7's own `IselContract` change: 0770fd7 (terminator statements; `BranchRuleOk` premises).
+M4Ctl, integrator-approved: change #5 38600e8 (calls: `CallsRefine`, `CallRuleOk`/
+`CallRulesCorrect`, `LowerRulesCorrect` excludes `callRootRule`, `InSubset.callRegArgs`,
+`DriverHyp.regArgs`, `InstCalls` premise `CallRegArgs f`, ispec control forms); change #6
+(`BrIdxTyped` premise of `BranchRuleOk` and `TermCalls`, decided by `lowerCheck`'s `brIdxOk`,
+`LoweringObligations`/`DriverHyp.brIdx`).
 
 ## Remaining (precise)
 

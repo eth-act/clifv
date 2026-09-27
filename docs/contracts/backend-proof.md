@@ -352,3 +352,117 @@ Peak memory well under the 10 GB cap.
 predecessor's files remain for the integrator: M4AluB's branch also defines `szOf`,
 `getAs_isSome`, `lowerInstOk_one`, `SameWorld.trans'` in `Backend.Proof`.
 **Axioms** of every theorem above: `propext`, `Classical.choice`, `Quot.sound`.
+## Family C: flags, select, min/max, div/rem (M4Cmp)
+
+**Status: infrastructure only — no root rule proven yet.** Branch `agent/m4-cmp`.
+
+Root rules in this family (none proven yet): `icmp` 2215, `uextend(icmp)` 1281, `select` 2267,
+`umin/smin/umax/smax` 1222/1224/1226/1228, vector min/max 1233/1239/1245/1251 (their RHS has to
+be shown to fail on scalar types), `udiv` 1116/1119, `sdiv` 1145/1153/1163/1167, `urem`
+1190/1197, `srem` 1204/1211.
+
+Shared changes (all announced and taken byte-identically by the other branches):
+`1a4de60` (`ValsBelow` hypothesis of `LowerRuleOk`; `Refines` quantifies over every control
+through an implicit `{ctl}` binder); `0d56d05` (`ispec` forms added at the top of `ispec`:
+subS/addS imm12, subS against xzr, subS extended register, andS imm (`andsFlags`),
+udiv/sdiv, msub, csel, ccmpImm, trapIf (`condBrHolds`, as M6's `CondBrKind.holds`), udf);
+`4de7914` (`V`'s derived `BEq` was an opaque constant, so no proof could use a
+constInt/constPrim/var pattern; replaced by a structural `V.beq` with a `LawfulBEq`
+instance. Corpus 114/114 and extrt 22/22 agree, `FVTest.Isle` passes). Taken from the
+others: FrameTyped `f55011e`, AluB `1532afa` and `c696bfa`, M7Driver `0770fd7`.
+
+New files, all building with no `sorry`:
+
+* `IselCmpInv.lean`: generic `iff` lemmas that turn a successful match or evaluation (or an
+  `applyTerm` via `ApplySpec`) into the facts it implies, with internal constructor calls
+  kept as `ApplyInternal` hypotheses.
+* `IselCmpBase.lean`:
+  * `iff` lemmas for the extern extractors and constructors used by the family.
+  * `isel_inv [facts, rules] at hm he`: `simp` with these lemmas, then split with
+    `isel_destruct` and `subst_vars`, repeated until nothing changes.
+  * `isel_cases` and `isel_rule_cases hL`: one goal per rule of a concrete rule list.
+* `IselCmpRun.lean`: how straight-line code composes.
+  * `seqRun` over an append: fall through, stop, fall then stop.
+  * One instruction under `Refines` (`seqRun_one_next`/`_halt`).
+  * `seqRun_frame`: a run only changes the vregs its instructions define.
+  * `Frag`: fresh-def fragments, with `append` and `frame`.
+  * `UsesLo`, and Hoare-style `Runs` with `nil`/`append`/`one`/`imp`.
+  * `SameWorldNF` is reflexive and transitive, and holds after a flag write.
+  * `SameWorld` preserves `ConditionHolds`.
+* `IselSemCmp.lean`: flag lemmas.
+  * `ConditionHolds` after `write_pstate` (`condOn`).
+  * `condOn (condOf cc).bits (cmpFlags a b) = intcc cc a b` for all 10 codes, at 32 and 64 bits.
+  * Signed and unsigned narrow-operand extension lemmas (8/16 → 32).
+  * `Cond.invert` negates every condition except `al`/`nv`.
+  * `a ≥ b ↔ a > b-1` (unsigned and signed), for `emit_icmp` rule 5.
+  * `cmp r, #0` then eq/ne; `tst #255` then ne.
+* `IselCmpTerms.lean`:
+  * `internal_split_first`: first-match selection for internal terms.
+  * `isel_split hp hc h t` macro.
+  * Contracts `operand_size_ok` (with the "earlier rule failed" argument), `cmp_ok`,
+    `cmp_imm_ok`, `cmp_extend_ok`, `cset_ok`, `csel_ok` and `extend_ok`.
+
+Axioms: `propext`, `Classical.choice`, `Quot.sound`, plus `*._native.bv_decide.ax_*` from the
+flag lemmas.
+
+**How to continue.** The plan is backward (inverse) evaluation plus semantic term contracts;
+it avoids having to show which rule is selected.
+
+1. Contracts for `put_in_reg_zext32`/`sext32` (`sext64`/`zext64` for division). The
+   statement is drafted in the git history (`zext32_ok`). Rule 3809 needs the pre-failure of
+   the i32 rule (forward `isel_eval` of the failed match, as in `operand_size_ok`) and
+   `FrameTyped`.
+2. `CondSem c lo fr ρ b`: the meaning of a `CondResult`, i.e. Zero/NotZero of a vreg at a
+   size, or Cond(`ProducesFlagsSideEffect i`, cd) whose `ispec` sets flags on which `cd` is
+   `b`. Contracts for `is_nonzero` (rules 4–10 and I128 are impossible: opcode or type
+   mismatch via `CtxInv.defClif`/`instData`), `cond_result_invert` and `emit_icmp` (11 E-rules;
+   the iconst look-through uses `DFGCons` and `imm64OfIconst`).
+3. Consumers: `with_flags` (rule 818 only; the other 15 are enum mismatches),
+   `lower_cond_result_bool`, `lower_select`/`lower_select_cond` (`csel`; the float, vector and
+   i128 rules fail on integer types).
+4. Division: the `trapIf`/`udf` halt arms go through `seqRun_one_halt` and
+   `seqRun_append_fall_stop`. Needed: `imm` from M4AluB (`IselTermsImm`),
+   `trap_if_div_overflow` (`ccmpImm`) and `intmin_check` (`aluRRImmShift`).
+
+## Family Ctl: terminators, branches, calls (M4Ctl)
+
+Branch `agent/m4-ctl`. Files `FV/Backend/Proof/IselCtl{Base,Term,Unmatch,Branch,Call,}.lean`,
+axiom audit `FVTest/Backend/Proof/Ctl/Axioms.lean`.
+
+**Statements proven for `Isle.Aarch64.program`** (axioms `propext`, `Classical.choice`,
+`Quot.sound`):
+
+| Statement | Theorem | Notes |
+| --- | --- | --- |
+| `LowerTermRulesCorrect program` | `lowerTermRulesCorrect` | `trap` 964 (`udf`, `trap_ruleOk`), `return` 1037 (`lower_return` → `rets` of the value vregs pinned to x0.., `ret_ruleOk`) |
+| `TermUnmatchable program` | `termUnmatchable` | root-format check: `ruleFmt` + one `decide +kernel` over the 517 `lower` rules (`lower_fmts`), generic `ruleFmt_match` |
+| `BranchExcludedUnmatchable program` | `branchExcludedUnmatchable` | same, `lower_branch_fmts` (try_call rules 1034/1035/1036) |
+
+**Per-rule status (`lower_branch`, `BranchRulesCorrect` still open):**
+
+| Rule | State |
+| --- | --- |
+| 1139 `jump` | **proven** (`jump_ruleOk`, `jump_termOk`) |
+| 1132 `brif` base (`br_cond_result (is_nonzero_cmp v)`) | open: needs family C's `is_nonzero_cmp`/`emit_icmp` contracts (`CondSem`/`CondCode` on `agent/m4-cmp`@6e60c71, not finished) and a `br_cond_result` contract (4 rules) |
+| 1137 `tbnz`, 1138 `tbz` (look through `band x (iconst 2^k)`, `icmp eq … 0`) | open: `def_inst` look-through + `test_and_compare_bit_const` lemmas |
+| 1140 `br_table` | open (now provable: `BrIdxTyped`, change #6): `emit_island`, `put_in_reg_zext32` (`ExtOut`, family C), `br_table_impl` (2 rules; needs `imm` from family B), `jt_sequence` |
+
+**Calls (`CallRulesCorrect`, open):** rules 1031 (`bl`) and 1032 (GOT + `blr`); `call_indirect`
+(`rule_lower_2529`, 1033) is not in E. The extern/ABI lemmas are proven (`IselCtlCall.lean`:
+`func_ref_data`, `gen_call_output` = `outRegs`/`freshN`, `argLocs_eq` (≤ 8 arguments all in
+x0..), `gen_call_args`/`gen_call_rets`/`gen_call_info`/`gen_call_ind_info`, `is_pic`); the two
+rule theorems (operand view of `call`, `CallsRefine` application, `ResultsHeld` of the fresh
+output vregs) are not written.
+
+**Shared changes (integrator-approved, announced):** #5 `38600e8` (calls: `CallsRefine`,
+`CallRegArgs`, `CallRuleOk`/`CallRulesCorrect`, `LowerRulesCorrect` excludes `callRootRule`,
+ispec control forms `rets`/`jump`/`condBr`/`testBitAndBranch`/`emitIsland`/`jtSequence` as M6's
+`csem` 350a4c7, E2E threading, `InSubset.callRegArgs`, compiler flags >8-parameter externs
+unverified); #6 `e597895` (`BrIdxTyped` premise of `BranchRuleOk`/`TermCalls`, `lowerCheck`'s
+`brIdxOk`). `callRootRule` corrected to rule ids 1031/1032 (first version named 1027, which is
+`symbol_value`; reported by M4Mem). Merged `agent/m4-cmp`@b455355 (family C infrastructure).
+
+**Techniques.** Inverse evaluation (`isel_inv`, `ctl_inv` = `isel_inv` + the family's extern
+lemmas each round); fuel as `n' + 100` so the iff lemmas apply; callee contracts passed in
+before `cases hp` (which clears `hp`); a terminator's format from the matched rule
+(`ruleFmt_term`) instead of evaluating the mismatching cases (which timed out).
