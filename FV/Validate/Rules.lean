@@ -48,6 +48,15 @@ theorem ResK_mono {α : Type} {A : Act} {r : Clif.Res α} {k k' : α → Prop} {
     (h : ResK A r k a) (hk : ∀ x, k x → k' x) : ResK A r k' a := by
   revert h; cases r <;> simp_all [ResK]
 
+theorem ResK_ite {α : Type} (A : Act) (c : Prop) [Decidable c] (r1 r2 : Clif.Res α)
+    (k : α → Prop) (a : ArmState) :
+    ResK A (if c then r1 else r2) k a = ((c → ResK A r1 k a) ∧ (¬c → ResK A r2 k a)) := by
+  by_cases h : c <;> simp [h]
+
+theorem ofExcept_ite {α : Type} (c : Prop) [Decidable c] (x y : Except Clif.TrapCode α) :
+    Clif.Res.ofExcept (if c then x else y) = if c then Clif.Res.ofExcept x else Clif.Res.ofExcept y := by
+  by_cases h : c <;> simp [h]
+
 theorem ResK_bind {α β : Type} (A : Act) (r : Clif.Res α) (f : α → Clif.Res β) (k : β → Prop)
     (a : ArmState) : ResK A (r >>= f) k a = ResK A r (fun x => ResK A (f x) k a) a := by
   cases r <;> rfl
@@ -135,37 +144,47 @@ theorem GoodF.stmt {A : Act} {p : Clif.Program} {n : Nat} {F : Clif.Function} {r
   | stuck m => intro _; trivial
 
 /-- `jump`: the edge of a cut-point path (consumes one unit of the fuel bound). -/
-theorem GoodF.jump {A : Act} {p : Clif.Program} {n : Nat} {F : Clif.Function} {regs : Clif.Regs}
+theorem GoodF.jump {A : Act} {p : Clif.Program} {n m : Nat} {F : Clif.Function} {regs : Clif.Regs}
     {slots : List (Clif.SlotId × Nat)} {dest : Clif.BlockCall} {mem : Clif.Mem} {a : ArmState}
     (k : ResK A (Clif.enterBlock ⟨F, regs, slots, [], .jump dest⟩ dest)
-      (fun fr => GoodF A p n ⟨fr, [], mem⟩ a) a) :
-    GoodF A p (n + 1) (cst F regs slots [] (.jump dest) mem) a := by
+      (fun fr => GoodF A p n ⟨fr, [], mem⟩ a) a) (hm : m ≤ n + 1 := by omega) :
+    GoodF A p m (cst F regs slots [] (.jump dest) mem) a := by
+  refine GoodF.mono ?_ hm
   apply GoodF.ofStepDec
   rw [Clif.step_term _ _ _ rfl]
   exact StepGood.ofRes k
 
-/-- `brif`. -/
-theorem GoodF.brif {A : Act} {p : Clif.Program} {n : Nat} {F : Clif.Function} {regs : Clif.Regs}
-    {slots : List (Clif.SlotId × Nat)} {c : Clif.ValueId} {t e : Clif.BlockCall} {mem : Clif.Mem}
-    {a : ArmState}
+/-- `brif`: one premise per direction. -/
+theorem GoodF.brif {A : Act} {p : Clif.Program} {n m : Nat} {F : Clif.Function}
+    {regs : Clif.Regs} {slots : List (Clif.SlotId × Nat)} {c : Clif.ValueId}
+    {t e : Clif.BlockCall} {mem : Clif.Mem} {a : ArmState}
     (k : ResK A (Clif.Frame.get ⟨F, regs, slots, [], .brif c t e⟩ c) (fun cv =>
-      ResK A (Clif.enterBlock ⟨F, regs, slots, [], .brif c t e⟩
-          (if Clif.Sem.truthy cv.bits then t else e))
-        (fun fr => GoodF A p n ⟨fr, [], mem⟩ a) a) a) :
-    GoodF A p (n + 1) (cst F regs slots [] (.brif c t e) mem) a := by
+      (Clif.Sem.truthy cv.bits = true →
+        ResK A (Clif.enterBlock ⟨F, regs, slots, [], .brif c t e⟩ t)
+          (fun fr => GoodF A p n ⟨fr, [], mem⟩ a) a) ∧
+      (Clif.Sem.truthy cv.bits = false →
+        ResK A (Clif.enterBlock ⟨F, regs, slots, [], .brif c t e⟩ e)
+          (fun fr => GoodF A p n ⟨fr, [], mem⟩ a) a)) a)
+    (hm : m ≤ n + 1 := by omega) :
+    GoodF A p m (cst F regs slots [] (.brif c t e) mem) a := by
+  refine GoodF.mono ?_ hm
   apply GoodF.ofStepDec
   rw [Clif.step_term _ _ _ rfl]
-  exact StepGood.ofRes (Validate.ResK_mono k fun _ h => StepGood.ofRes h)
+  refine StepGood.ofRes (Validate.ResK_mono k fun cv h => StepGood.ofRes ?_)
+  cases hc : Clif.Sem.truthy cv.bits
+  · simp only [hc, Bool.false_eq_true, ↓reduceIte]; exact h.2 hc
+  · simp only [hc, ↓reduceIte]; exact h.1 hc
 
 /-- `br_table`. -/
-theorem GoodF.brTable {A : Act} {p : Clif.Program} {n : Nat} {F : Clif.Function}
+theorem GoodF.brTable {A : Act} {p : Clif.Program} {n m : Nat} {F : Clif.Function}
     {regs : Clif.Regs} {slots : List (Clif.SlotId × Nat)} {x : Clif.ValueId}
     {dflt : Clif.BlockCall} {table : List Clif.BlockCall} {mem : Clif.Mem} {a : ArmState}
     (k : ResK A (Clif.Frame.get ⟨F, regs, slots, [], .brTable x dflt table⟩ x) (fun xv =>
       ResK A (Clif.enterBlock ⟨F, regs, slots, [], .brTable x dflt table⟩
           (table[xv.toNat]?.getD dflt))
-        (fun fr => GoodF A p n ⟨fr, [], mem⟩ a) a) a) :
-    GoodF A p (n + 1) (cst F regs slots [] (.brTable x dflt table) mem) a := by
+        (fun fr => GoodF A p n ⟨fr, [], mem⟩ a) a) a) (hm : m ≤ n + 1 := by omega) :
+    GoodF A p m (cst F regs slots [] (.brTable x dflt table) mem) a := by
+  refine GoodF.mono ?_ hm
   apply GoodF.ofStepDec
   rw [Clif.step_term _ _ _ rfl]
   exact StepGood.ofRes (Validate.ResK_mono k fun _ h => StepGood.ofRes h)

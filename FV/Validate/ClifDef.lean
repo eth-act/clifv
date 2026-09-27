@@ -9,7 +9,8 @@ time and adds
 
 * `F.b<k> : Clif.Block` for every block `block<k>` (the parsed block, as a literal),
 * `F : Clif.Function` (the parsed function; its block list refers to the constants above),
-* `F.block_<k> : F.block? k = some F.b<k>` (by `rfl`).
+* `F.block_<k> : F.block? k = some F.b<k>` and `F.params_<k> : F.b<k>.params = …` (by `rfl`),
+* `F.param_tys`, `F.ret_tys`: the signature's parameter and result types.
 
 The validator states its theorems about `F`, so the link between the `.clif` text and the
 Lean value is the M0 parser (trusted, PLAN.md §5).
@@ -111,6 +112,7 @@ def parseOne (src : String) : Except String Clif.Function := do
 private def addDef (name : Name) (type value : Expr) : CommandElabM Unit := liftTermElabM do
   addAndCompile <| Declaration.defnDecl
     { name, levelParams := [], type, value, hints := .abbrev, safety := .safe }
+  enableRealizationsForConst name
 
 /-- `#clif_def F "src"` (see the module doc). -/
 elab "#clif_def " id:ident src:str : command => do
@@ -129,6 +131,17 @@ elab "#clif_def " id:ident src:str : command => do
     #[toExpr f.name, toExpr f.sig, toExpr f.slots, toExpr f.globals, toExpr f.externs, blocks,
       mkApp (mkConst ``List.nil [0]) (mkConst ``Clif.RunCommand)]
   addDef F (mkConst ``Clif.Function) value
+  let tysLemma (suffix : String) (proj : Name) (tys : List Clif.Ty) : CommandElabM Unit :=
+    liftTermElabM do
+      let lhs := mkApp (mkConst ``Clif.AbiParam.tys)
+        (mkApp (mkConst proj) (mkApp (mkConst ``Clif.Function.sig) (mkConst F)))
+      let rhs := toExpr tys
+      let type ← mkEq lhs rhs
+      let value ← mkEqRefl rhs
+      addDecl <| Declaration.thmDecl
+        { name := F ++ Name.mkSimple suffix, levelParams := [], type, value }
+  tysLemma "param_tys" ``Clif.Signature.params (Clif.AbiParam.tys f.sig.params)
+  tysLemma "ret_tys" ``Clif.Signature.returns (Clif.AbiParam.tys f.sig.returns)
   for b in f.blocks do
     let n := F ++ Name.mkSimple s!"block_{b.id}"
     let lhs := mkApp2 (mkConst ``Clif.Function.block?) (mkConst F) (toExpr b.id)
@@ -137,5 +150,13 @@ elab "#clif_def " id:ident src:str : command => do
       let type ← mkEq lhs rhs
       let value ← mkEqRefl rhs
       addDecl <| Declaration.thmDecl { name := n, levelParams := [], type, value }
+      let bc := mkConst (F ++ Name.mkSimple s!"b{b.id}")
+      let plhs := mkApp (mkConst ``Clif.Block.params) bc
+      let prhs := toExpr b.params
+      let ptype ← mkEq plhs prhs
+      let pvalue ← mkEqRefl prhs
+      addDecl <| Declaration.thmDecl
+        { name := F ++ Name.mkSimple s!"params_{b.id}", levelParams := [], type := ptype,
+          value := pvalue }
 
 end Validate

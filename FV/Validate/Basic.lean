@@ -98,6 +98,15 @@ def World.WF (W : World) : Prop :=
   ∀ g ∈ W.got, g.1.toNat + 8 ≤ 2 ^ 64 ∧
     (g.1.toNat + 8 ≤ W.lim.toNat ∨ W.top.toNat ≤ g.1.toNat)
 
+/-- The words `words` are the code at `base` in program `P`. -/
+def CodeAt (P : Program) (base : BitVec 64) (words : List (BitVec 32)) : Prop :=
+  ∀ i (h : i < words.length), P.find? (base + BitVec.ofNat 64 (4 * i)) = some words[i]
+
+/-- Trap sites `(offset from base, code)` are in the trap table `T`. -/
+def TrapsAt (T : BitVec 64 → Option Clif.TrapCode) (base : BitVec 64)
+    (sites : List (Nat × Clif.TrapCode)) : Prop :=
+  ∀ i (h : i < sites.length), T (base + BitVec.ofNat 64 sites[i].1) = some sites[i].2
+
 /-! ## An activation -/
 
 /-- One activation of a validated function. -/
@@ -115,9 +124,8 @@ structure Act where
 /-- Entry stack pointer. -/
 abbrev Act.sp0 (A : Act) : BitVec 64 := r (StateField.GPR 31#5) A.a0
 
-/-- Callee-saved general-purpose registers (x19–x29), SP, and the low 64 bits of v8–v15
-(AAPCS64) hold their entry values. -/
-def CSaved (a0 a : ArmState) : Prop :=
+/-- Callee-saved general-purpose registers (x19–x29) and SP hold their entry values. -/
+def CSGpr (a0 a : ArmState) : Prop :=
   r (StateField.GPR 19#5) a = r (StateField.GPR 19#5) a0 ∧
   r (StateField.GPR 20#5) a = r (StateField.GPR 20#5) a0 ∧
   r (StateField.GPR 21#5) a = r (StateField.GPR 21#5) a0 ∧
@@ -129,30 +137,38 @@ def CSaved (a0 a : ArmState) : Prop :=
   r (StateField.GPR 27#5) a = r (StateField.GPR 27#5) a0 ∧
   r (StateField.GPR 28#5) a = r (StateField.GPR 28#5) a0 ∧
   r (StateField.GPR 29#5) a = r (StateField.GPR 29#5) a0 ∧
-  r (StateField.GPR 31#5) a = r (StateField.GPR 31#5) a0 ∧
-  VSaved a0 a
-where
-  /-- Low 64 bits of v8–v15. -/
-  VSaved (a0 a : ArmState) : Prop :=
-    ∀ i : BitVec 5, 8 ≤ i.toNat → i.toNat < 16 →
-      (r (StateField.SFP i) a).setWidth 64 = (r (StateField.SFP i) a0).setWidth 64
+  r (StateField.GPR 31#5) a = r (StateField.GPR 31#5) a0
 
-/-- AAPCS64 location of argument/result `i` (integer types up to 64 bits): `x0`–`x7`, then
-8-byte stack slots at `SP + 8 * (i - 8)`. -/
-def ValAt (a : ArmState) (sp : BitVec 64) (i : Nat) (v : Clif.Val) : Prop :=
-  if i < 8 then (r (StateField.GPR (BitVec.ofNat 5 i)) a).setWidth v.ty.width = v.bits
-  else (read_mem_bytes 8 (sp + BitVec.ofNat 64 (8 * (i - 8))) a).setWidth v.ty.width = v.bits
+/-- The low 64 bits of v8–v15 hold their entry values. -/
+def VSaved (a0 a : ArmState) : Prop :=
+  ∀ i : BitVec 5, 8 ≤ i.toNat → i.toNat < 16 →
+    (r (StateField.SFP i) a).setWidth 64 = (r (StateField.SFP i) a0).setWidth 64
 
-/-- Integer types that fit a general-purpose register. -/
-def ScalarTy (t : Clif.Ty) : Prop := t.width ≤ 64
+/-- AAPCS64 callee-saved state: x19–x29, SP, and the low 64 bits of v8–v15. -/
+def CSaved (a0 a : ArmState) : Prop := CSGpr a0 a ∧ VSaved a0 a
 
-/-- The arguments `vals` are in their AAPCS64 locations. -/
+/-- `vals` are in consecutive general-purpose registers from `x<i>` (low bits; the upper bits
+of a sub-64-bit value are unspecified, as in AAPCS64). -/
+def RegsHold (a : ArmState) : Nat → List Clif.Val → Prop
+  | _, [] => True
+  | i, v :: vs =>
+    (r (StateField.GPR (BitVec.ofNat 5 i)) a).setWidth v.ty.width = v.bits ∧ RegsHold a (i + 1) vs
+
+/-- `vals` are in consecutive 8-byte stack slots from `sp + off`. -/
+def StackHold (a : ArmState) (sp : BitVec 64) : Nat → List Clif.Val → Prop
+  | _, [] => True
+  | off, v :: vs =>
+    (read_mem_bytes 8 (sp + BitVec.ofNat 64 off) a).setWidth v.ty.width = v.bits ∧
+      StackHold a sp (off + 8) vs
+
+/-- The arguments `vals` are in their AAPCS64 locations (integer types up to 64 bits):
+`x0`–`x7`, then 8-byte stack slots from the entry SP. -/
 def ArgsAt (a : ArmState) (vals : List Clif.Val) : Prop :=
-  ∀ i (h : i < vals.length), ValAt a (r (StateField.GPR 31#5) a) i vals[i]
+  RegsHold a 0 (vals.take 8) ∧ StackHold a (r (StateField.GPR 31#5) a) 0 (vals.drop 8)
 
 /-- The results `vals` are in `x0`, `x1`, … (at most eight). -/
 def ResultsAt (a : ArmState) (vals : List Clif.Val) : Prop :=
-  vals.length ≤ 8 ∧ ∀ i (h : i < vals.length), ValAt a 0 i vals[i]
+  vals.length ≤ 8 ∧ RegsHold a 0 vals
 
 /-- Allocation discipline during the activation: every live allocation is bounded and is an
 entry allocation, an own stack slot, or avoids the stack region and the GOT. -/
@@ -168,6 +184,13 @@ unchanged. -/
 def Pres (A : Act) (a : ArmState) : Prop :=
   ∀ x : Nat, A.sp0.toNat ≤ x → x < A.W.top.toNat → ¬ MemHas A.m0 x →
     read_mem (BitVec.ofNat 64 x) a = read_mem (BitVec.ofNat 64 x) A.a0
+
+/-- The parts of the relation every program point shares: the code, no error, an aligned SP,
+the memory relation and allocation discipline, the callers' frames and the GOT unchanged, and
+v8–v15 unchanged. -/
+def Common (A : Act) (mem : Clif.Mem) (a : ArmState) : Prop :=
+  a.program = A.W.prog ∧ r StateField.ERR a = .None ∧ CheckSPAlignment a ∧ MemRel mem a ∧
+  AllocsOK A mem ∧ Pres A a ∧ GotOK A.W a ∧ VSaved A.a0 a
 
 /-- Arm state at the return point, matching CLIF result `vals` with memory `m`. -/
 def RetOK (A : Act) (vals : List Clif.Val) (m : Clif.Mem) (a : ArmState) : Prop :=
@@ -218,6 +241,46 @@ theorem GoodF.reach {A : Act} {p : Clif.Program} {n : Nat} {c : Clif.State} {a :
 theorem GoodF.arm {A : Act} {p : Clif.Program} {n : Nat} {c : Clif.State} {a : ArmState}
     (h : GoodF A p n c (stepi a)) : GoodF A p n c a :=
   GoodF.reach (Reach.step (Reach.here rfl)) fun _ h' => h' ▸ h
+
+/-- One Arm step, given its effect. -/
+theorem GoodF.stepEq {A : Act} {p : Clif.Program} {n : Nat} {c : Clif.State} {a a' : ArmState}
+    (h : stepi a = a') (k : GoodF A p n c a') : GoodF A p n c a :=
+  GoodF.arm (h ▸ k)
+
+theorem Reach.stepEq {Q : ArmState → Prop} {a a' : ArmState} (h : stepi a = a') (k : Reach Q a') :
+    Reach Q a := Reach.step (h ▸ k)
+
+/-- A conditional Arm step whose effect is `if c then s₁ else s₂`. -/
+theorem GoodF.stepIte {A : Act} {p : Clif.Program} {n : Nat} {cl : Clif.State} {a s₁ s₂ : ArmState}
+    {c : Prop} [Decidable c] (h : stepi a = if c then s₁ else s₂)
+    (kt : c → GoodF A p n cl s₁) (kf : ¬c → GoodF A p n cl s₂) : GoodF A p n cl a := by
+  by_cases hc : c
+  · exact GoodF.stepEq (by rw [h, if_pos hc]) (kt hc)
+  · exact GoodF.stepEq (by rw [h, if_neg hc]) (kf hc)
+
+/-- A conditional branch whose effect is `w PC (if c then t else f) s`. -/
+theorem GoodF.stepPc {A : Act} {p : Clif.Program} {n : Nat} {cl : Clif.State} {a s : ArmState}
+    {c : Prop} [Decidable c] {t f : BitVec 64} (h : stepi a = w StateField.PC (if c then t else f) s)
+    (kt : c → GoodF A p n cl (w StateField.PC t s)) (kf : ¬c → GoodF A p n cl (w StateField.PC f s)) :
+    GoodF A p n cl a := by
+  by_cases hc : c
+  · exact GoodF.stepEq (by rw [h, if_pos hc]) (kt hc)
+  · exact GoodF.stepEq (by rw [h, if_neg hc]) (kf hc)
+
+theorem Reach.stepIte {Q : ArmState → Prop} {a s₁ s₂ : ArmState} {c : Prop} [Decidable c]
+    (h : stepi a = if c then s₁ else s₂) (kt : c → Reach Q s₁) (kf : ¬c → Reach Q s₂) :
+    Reach Q a := by
+  by_cases hc : c
+  · exact Reach.stepEq (by rw [h, if_pos hc]) (kt hc)
+  · exact Reach.stepEq (by rw [h, if_neg hc]) (kf hc)
+
+theorem Reach.stepPc {Q : ArmState → Prop} {a s : ArmState} {c : Prop} [Decidable c]
+    {t f : BitVec 64} (h : stepi a = w StateField.PC (if c then t else f) s)
+    (kt : c → Reach Q (w StateField.PC t s)) (kf : ¬c → Reach Q (w StateField.PC f s)) :
+    Reach Q a := by
+  by_cases hc : c
+  · exact Reach.stepEq (by rw [h, if_pos hc]) (kt hc)
+  · exact Reach.stepEq (by rw [h, if_neg hc]) (kf hc)
 
 theorem GoodF.zero (A : Act) (p : Clif.Program) (c : Clif.State) (a : ArmState) :
     GoodF A p 0 c a := by
