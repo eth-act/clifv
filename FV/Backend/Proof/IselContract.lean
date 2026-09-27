@@ -321,13 +321,14 @@ def closureRoot (r : Rule) : Bool := Closure.rules.any fun c => c.isRoot && c.ru
 /-- **Root rule correctness (`lower`).** Whenever rule `r` matches instruction `ii` (from any
 lowering state) and its right-hand side returns `out`, the instructions it appended are a
 correct lowering of the CLIF instruction: `out` lists the result registers and
-`LowerInstOk` holds. -/
+`LowerInstOk` holds. Stated for all fuels `≥ 1000` (the driver runs with fuel 10⁶; a rule
+needs a bounded amount, so the lemmas never need fuel monotonicity). -/
 def LowerRuleOk (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
     (p : Program) (r : Rule) : Prop :=
   ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx → ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info → info.clif = some inst →
   ∀ (cfg : Config), cfg.checkOverlap = false →
   ∀ (m n : Nat) (st : LState) (tr : Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId)
-    (out : V) (st' : LState) (tr' : Array RuleId),
+    (out : V) (st' : LState) (tr' : Array RuleId), 1000 ≤ m → 1000 ≤ n →
     (matchRule p (sem ctx) cfg m r [.inst ii]).run (st, tr) = .ok (some env', s1) →
     (evalExpr p (sem ctx) cfg n r.rhs env').run s1 = .ok (some out, (st', tr')) →
     ∃ ms rss, st'.emitted = st.emitted ++ ms.toArray ∧ out = .regsVec rss ∧
@@ -357,7 +358,7 @@ def BranchRuleOk (isem : Sem) (MR : MemRelT) (p : Program) (r : Rule) : Prop :=
   ctx.insts[ti]? = some ⟨data, [], [], none⟩ →
   ∀ (cfg : Config), cfg.checkOverlap = false →
   ∀ (m n : Nat) (st : LState) (tr : Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId)
-    (out : V) (st' : LState) (tr' : Array RuleId),
+    (out : V) (st' : LState) (tr' : Array RuleId), 1000 ≤ m → 1000 ≤ n →
     (matchRule p (sem ctx) cfg m r [.inst ti, .labels targets]).run (st, tr) =
       .ok (some env', s1) →
     (evalExpr p (sem ctx) cfg n r.rhs env').run s1 = .ok (some out, (st', tr')) →
@@ -376,21 +377,24 @@ theorem lowerInstOk_of_rules {p : Program} (hp : Data p) (hrules : LowerRulesCor
     {env : Clif.Env} {cp : Clif.Program} (hR : Refines F isem) (hMR : MRStable F MR)
     {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) {ii : Nat} {info : IInfo}
     {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
-    {cfg : Config} (hco : cfg.checkOverlap = false) {n : Nat} {ty : TypeId} {st : LState}
+    {cfg : Config} (hco : cfg.checkOverlap = false) {n : Nat}
+    (hn : 1002 + (p.rulesOf TId.lower).length ≤ n) {ty : TypeId} {st : LState}
     {tr : Array RuleId} {out : V} {st' : LState} {tr' : Array RuleId}
     (h : (applyTerm p (sem ctx) cfg (n + 1) ty TId.lower [.inst ii]).run (st, tr) =
       .ok (some out, (st', tr'))) :
     ∃ ms rss, st'.emitted = st.emitted ++ ms.toArray ∧ out = .regsVec rss ∧
       LowerInstOk isem MR env cp ctx inst info.results st rss st' ms := by
-  obtain ⟨r, hr, m, env', s1, st2, tr2, hmatch, heval, hs⟩ :=
+  change 1002 + (p.rulesOf 686).length ≤ n at hn
+  obtain ⟨r, hr, m, env', s1, st2, tr2, hmn, hmatch, heval, hs⟩ :=
     applyTerm_internal_some hco hp.t686 term_686_kind rfl h
   simp only [Prod.mk.injEq] at hs
   rw [← hs.1] at heval
   cases hroot : closureRoot r
   · exact absurd hmatch (hex r hr hroot f ctx hctx ii info inst hi hc cfg m (st, tr) env' s1)
   · exact hrules F isem MR env cp hR hMR r hr hroot f ctx hctx ii info inst hi hc cfg hco m n st tr
-      env' s1 out st' tr2 hmatch heval
+      env' s1 out st' tr2 (by omega) (by omega) hmatch heval
 
+set_option maxRecDepth 20000 in
 /-- `lowerInstOk_of_rules` for the exported program and the backend's own call
 (`runTerm ctx "lower" [.inst ii]`, as `lowerFunction` makes it). -/
 theorem lowerInstOk_runTerm (hrules : LowerRulesCorrect program)
@@ -417,8 +421,10 @@ theorem lowerInstOk_runTerm (hrules : LowerRulesCorrect program)
     subst h1
     injection h2 with h2 _
     subst h2
+    have hlen : (program.rulesOf TId.lower).length ≤ 1000 := by
+      rw [show TId.lower = 686 from rfl, data_program.r686]; decide
     obtain ⟨ms, rss, h1, h2, h3⟩ := lowerInstOk_of_rules data_program hrules hex hR hMR hctx hi hc
-      rfl ha
+      rfl (by omega) ha
     exact ⟨ms, rss, by simpa using h1, h2, h3⟩
 
 end Backend.Proof

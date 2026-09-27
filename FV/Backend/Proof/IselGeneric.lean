@@ -10,13 +10,21 @@ configuration):
 
 * `selectRule_some`: a committed rule is one of the candidate rules, and its match phase,
   run from the state the selection started in, succeeded with the returned environment (a
-  failed attempt restores the state, so every candidate is tried from the same state);
+  failed attempt restores the state, so every candidate is tried from the same state), with
+  a fuel of at least the selection's fuel minus the number of candidates (rule lemmas are
+  stated for all large fuels, so no fuel-monotonicity lemma is needed);
 * `applyTerm_internal_some`: an internal constructor term that returns a value committed to
   some rule of `p.rulesOf t` whose match succeeded and whose right-hand side evaluated to that
   value; the rule is then appended to the trace;
 * `applyTerm_internal_none`: `none` from an internal constructor means that the term is
   `partial` and no rule matched, or that the committed rule's right-hand side returned `none`
   (a partial constructor failed inside it; there is no backtracking into other rules).
+
+**Match inversion.** A successful match phase determines the shape of the matched values:
+`matchRule_some_inv`, `matchArgs_cons_inv`, `matchPat_enum_inv` (an enum-variant pattern
+matched a value `sem.unData` decodes to that variant), `matchPat_extract_inv` (an extern
+extractor pattern matched through the extractor's result). Rule proofs start from "rule `r`
+matched" and use these to recover the CLIF instruction (`IselFamily`).
 
 Nothing here depends on the exported program: the lemmas hold for every `p` and `sem`.
 -/
@@ -87,7 +95,7 @@ theorem selectRule_some (hc : cfg.checkOverlap = false) :
     ∀ {n : Nat} {term : Term} {rs : List Rule} {vs : List V} {s s' : σ × Array RuleId}
       {r : Rule} {env : Env V},
       (selectRule p sem cfg n term rs vs).run s = .ok (some (r, env), s') →
-      r ∈ rs ∧ ∃ m, (matchRule p sem cfg m r vs).run s = .ok (some env, s')
+      r ∈ rs ∧ ∃ m, n ≤ m + 2 + rs.length ∧ (matchRule p sem cfg m r vs).run s = .ok (some env, s')
   | 0, _, _, _, _, _, _, _, h => by rw [selectRule.eq_1] at h; cases h
   | n + 1, _, [], _, _, _, _, _, h => by rw [selectRule.eq_2] at h; cases h
   | n + 1, term, r' :: rs, vs, s, s', r, env, h => by
@@ -107,10 +115,10 @@ theorem selectRule_some (hc : cfg.checkOverlap = false) :
           simp only [hc, Bool.false_eq_true, ↓reduceIte, M.run_pure, Except.ok.injEq,
             Prod.mk.injEq, Option.some.injEq] at h
           obtain ⟨⟨rfl, rfl⟩, rfl⟩ := h
-          exact ⟨List.mem_cons_self .., k, hm⟩
+          exact ⟨List.mem_cons_self .., k, by simp, hm⟩
         · subst hres hs1
-          have := selectRule_some hc h
-          exact ⟨List.mem_cons_of_mem _ this.1, this.2⟩
+          obtain ⟨hr, m, hmn, hm⟩ := selectRule_some hc h
+          exact ⟨List.mem_cons_of_mem _ hr, m, by simp; omega, hm⟩
 
 /-- Rule selection returning `none` never changes the state (every failed attempt restores
 it). -/
@@ -179,7 +187,7 @@ theorem applyTerm_internal_some (hc : cfg.checkOverlap = false) {n : Nat} {ty : 
     (ht : termOf p t = .ok term) (hk : term.kind = .decl flags (some .internal) ex)
     (hm : flags.isMulti = false) {s s' : σ × Array RuleId} {v : V}
     (h : (applyTerm p sem cfg (n + 1) ty t vs).run s = .ok (some v, s')) :
-    ∃ r ∈ p.rulesOf t, ∃ m env s1 st tr,
+    ∃ r ∈ p.rulesOf t, ∃ m env s1 st tr, n ≤ m + 2 + (p.rulesOf t).length ∧
       (matchRule p sem cfg m r vs).run s = .ok (some env, s1) ∧
       (evalExpr p sem cfg n r.rhs env).run s1 = .ok (some v, (st, tr)) ∧
       s' = (st, tr.push r.id) := by
@@ -198,7 +206,7 @@ theorem applyTerm_internal_some (hc : cfg.checkOverlap = false) {n : Nat} {ty : 
       · cases h
     | some re =>
       obtain ⟨r, env⟩ := re
-      obtain ⟨hr, m, hmatch⟩ := selectRule_some hc hs
+      obtain ⟨hr, m, hmn, hmatch⟩ := selectRule_some hc hs
       simp only [M.run_bind] at h
       cases he : (evalExpr p sem cfg n r.rhs env).run s1 with
       | error e => rw [he] at h; cases h
@@ -211,7 +219,7 @@ theorem applyTerm_internal_some (hc : cfg.checkOverlap = false) {n : Nat} {ty : 
         | some w =>
           simp only [M.run_fire_pure, Except.ok.injEq, Prod.mk.injEq, Option.some.injEq] at h
           obtain ⟨rfl, rfl⟩ := h
-          exact ⟨r, hr, m, env, s1, st, tr, hmatch, he, rfl⟩
+          exact ⟨r, hr, m, env, s1, st, tr, hmn, hmatch, he, rfl⟩
 
 /-- **Partial-constructor failure.** If `applyTerm` of the internal constructor `t` returns
 `none`, then either no rule matched (the term is `partial`, and the state is unchanged) or a
@@ -244,7 +252,7 @@ theorem applyTerm_internal_none (hc : cfg.checkOverlap = false) {n : Nat} {ty : 
       · cases h
     | some re =>
       obtain ⟨r, env⟩ := re
-      obtain ⟨hr, m, hmatch⟩ := selectRule_some hc hs
+      obtain ⟨hr, m, -, hmatch⟩ := selectRule_some hc hs
       simp only [M.run_bind] at h
       cases he : (evalExpr p sem cfg n r.rhs env).run s1 with
       | error e => rw [he] at h; cases h
@@ -260,5 +268,87 @@ theorem applyTerm_internal_none (hc : cfg.checkOverlap = false) {n : Nat} {ty : 
         | some w =>
           simp only [M.run_fire_pure, Except.ok.injEq, Prod.mk.injEq, reduceCtorEq,
             false_and] at h
+
+/-! ## Match inversion -/
+
+/-- A successful match phase: the argument patterns matched (from the empty environment), then
+the if-lets. -/
+theorem matchRule_some_inv {m : Nat} {r : Rule} {vs : List V} {s s1 : σ × Array RuleId}
+    {env : Env V} (h : (matchRule p sem cfg (m + 1) r vs).run s = .ok (some env, s1)) :
+    ∃ env0, matchArgs p sem s.1 r.args vs (Array.replicate r.vars.length none) = .ok (some env0) ∧
+      (matchIfLets p sem cfg m r.iflets env0).run s = .ok (some env, s1) := by
+  rw [matchRule.eq_2] at h
+  simp only [M.run_bind, M.run_get, M.except_ok_bind] at h
+  cases ha : matchArgs p sem s.1 r.args vs (Array.replicate r.vars.length none) with
+  | error e =>
+    rw [ha] at h; cases h
+  | ok o =>
+    rw [ha] at h
+    cases o with
+    | none =>
+      simp only [M.run_liftM_ok, M.except_ok_bind, M.run_pure] at h
+      cases h
+    | some env0 =>
+      simp only [M.run_liftM_ok, M.except_ok_bind] at h
+      exact ⟨env0, rfl, h⟩
+
+theorem matchArgs_cons_inv {st : σ} {q : Pattern} {qs : List Pattern} {w : V} {ws : List V}
+    {env env' : Env V} (h : matchArgs p sem st (q :: qs) (w :: ws) env = .ok (some env')) :
+    ∃ env1, matchPat p sem st q w env = .ok (some env1) ∧
+      matchArgs p sem st qs ws env1 = .ok (some env') := by
+  rw [matchArgs.eq_2] at h
+  cases hq : matchPat p sem st q w env with
+  | error e => rw [hq] at h; cases h
+  | ok o =>
+    rw [hq] at h
+    cases o with
+    | none => cases h
+    | some env1 => exact ⟨env1, rfl, h⟩
+
+/-- An enum-variant pattern matched: the value decodes to that variant, and the fields matched. -/
+theorem matchPat_enum_inv {st : σ} {ty : TypeId} {t : TermId} {args : List Pattern} {v : V}
+    {env env' : Env V} {term : Term} {k : Nat} (ht : termOf p t = .ok term)
+    (hk : term.kind = .enumVariant k)
+    (h : matchPat p sem st (.term ty t args) v env = .ok (some env')) :
+    ∃ fs, sem.unData ty v = some (k, fs) ∧ matchArgs p sem st args fs env = .ok (some env') := by
+  rw [matchPat.eq_8, ht] at h
+  simp only [M.except_ok_bind, hk] at h
+  cases hu : sem.unData ty v with
+  | none => rw [hu] at h; cases h
+  | some q =>
+    obtain ⟨k', fs⟩ := q
+    rw [hu] at h
+    simp only at h
+    by_cases hkk : k = k'
+    · subst hkk
+      simp only [beq_self_eq_true, ↓reduceIte] at h
+      exact ⟨fs, rfl, h⟩
+    · simp [hkk] at h
+
+/-- An extern-extractor pattern matched: the extractor succeeded, and its results matched. -/
+theorem matchPat_extract_inv {st : σ} {ty : TypeId} {t : TermId} {args : List Pattern} {v : V}
+    {env env' : Env V} {term : Term} {flags : TermFlags} {c : Option Ctor} {fn : String}
+    {inf : Bool} (ht : termOf p t = .ok term)
+    (hk : term.kind = .decl flags c (some (.external fn inf))) (hm : flags.isMulti = false)
+    (h : matchPat p sem st (.term ty t args) v env = .ok (some env')) :
+    ∃ fs, sem.extract term v st = .ok fs ∧ matchArgs p sem st args fs env = .ok (some env') := by
+  rw [matchPat.eq_8, ht] at h
+  simp only [M.except_ok_bind, hk, hm, Bool.false_eq_true, ↓reduceIte] at h
+  cases he : sem.extract term v st with
+  | ok fs => rw [he] at h; exact ⟨fs, rfl, h⟩
+  | fail =>
+    rw [he] at h
+    simp only at h
+    split at h <;> cases h
+  | unmodeled w => rw [he] at h; cases h
+
+theorem matchPat_bind_inv {st : σ} {ty : TypeId} {x : VarId} {sub : Pattern} {v : V}
+    {env env' : Env V} (h : matchPat p sem st (.bind ty x sub) v env = .ok (some env')) :
+    x < env.size ∧ matchPat p sem st sub v (env.set! x (some v)) = .ok (some env') := by
+  rw [matchPat.eq_1] at h
+  split at h
+  · exact ⟨by assumption, h⟩
+  · cases h
+
 
 end Isle.Interp
