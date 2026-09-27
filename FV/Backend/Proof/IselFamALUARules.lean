@@ -53,7 +53,7 @@ theorem iconst_imm12 {ctx : Ctx} {fr : Clif.Frame} (hdfg : DFGCons ctx fr) {y j 
 theorem iadd_imm12_right_ok {p : Program} (hp : Data p) (F : BitVec 64 → Prop) (isem : Sem)
     (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program) (hR : Refines F isem)
     (hMR : MRStable F MR) : LowerRuleOk isem MR env cp p rule_lower_90 := by
-  intro f ctx hctx ii info inst hi hc cfg hco m n st tr env' s1 out st' tr' hm hn _hvb hmatch heval
+  intro f ctx hctx ii info inst hi hc cfg hco m n st tr env' s1 out st' tr' hm hn _hvb _hfirst hmatch heval
   obtain ⟨m', rfl⟩ : ∃ m', m = m' + 2 := ⟨m - 2, by omega⟩
   obtain ⟨n', rfl⟩ : ∃ n', n = n' + 40 := ⟨n - 40, by omega⟩
   obtain ⟨ty, x, y, e0, e1, rfl, hd, hhead, hw, hrest, -⟩ :=
@@ -90,7 +90,7 @@ theorem iadd_imm12_right_ok {p : Program} (hp : Data p) (F : BitVec 64 → Prop)
 theorem iadd_imm12_left_ok {p : Program} (hp : Data p) (F : BitVec 64 → Prop) (isem : Sem)
     (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program) (hR : Refines F isem)
     (hMR : MRStable F MR) : LowerRuleOk isem MR env cp p rule_lower_93 := by
-  intro f ctx hctx ii info inst hi hc cfg hco m n st tr env' s1 out st' tr' hm hn _hvb hmatch heval
+  intro f ctx hctx ii info inst hi hc cfg hco m n st tr env' s1 out st' tr' hm hn _hvb _hfirst hmatch heval
   obtain ⟨m', rfl⟩ : ∃ m', m = m' + 2 := ⟨m - 2, by omega⟩
   obtain ⟨n', rfl⟩ : ∃ n', n = n' + 40 := ⟨n - 40, by omega⟩
   obtain ⟨ty, x, y, e0, e1, rfl, hd, hhead, hw, hrest, -⟩ :=
@@ -131,7 +131,7 @@ theorem iadd_imm12_left_ok {p : Program} (hp : Data p) (F : BitVec 64 → Prop) 
 theorem isub_imm12_ok {p : Program} (hp : Data p) (F : BitVec 64 → Prop) (isem : Sem)
     (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program) (hR : Refines F isem)
     (hMR : MRStable F MR) : LowerRuleOk isem MR env cp p rule_lower_805 := by
-  intro f ctx hctx ii info inst hi hc cfg hco m n st tr env' s1 out st' tr' hm hn _hvb hmatch heval
+  intro f ctx hctx ii info inst hi hc cfg hco m n st tr env' s1 out st' tr' hm hn _hvb _hfirst hmatch heval
   obtain ⟨m', rfl⟩ : ∃ m', m = m' + 2 := ⟨m - 2, by omega⟩
   obtain ⟨n', rfl⟩ : ∃ n', n = n' + 40 := ⟨n - 40, by omega⟩
   obtain ⟨ty, x, y, e0, e1, rfl, hd, hhead, hw, hrest, -⟩ :=

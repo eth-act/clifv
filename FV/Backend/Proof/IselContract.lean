@@ -445,6 +445,8 @@ def LowerRuleOk (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
   ∀ (cfg : Config), cfg.checkOverlap = false →
   ∀ (m n : Nat) (st : LState) (tr : Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId)
     (out : V) (st' : LState) (tr' : Array RuleId), 1000 ≤ m → 1000 ≤ n → ValsBelow ctx st →
+    (∀ pre post, p.rulesOf TId.lower = pre ++ r :: post → ∀ r' ∈ pre, ∃ m', 1000 ≤ m' ∧
+      ∃ s', (matchRule p (sem ctx) cfg m' r' [.inst ii]).run (st, tr) = .ok (none, s')) →
     (matchRule p (sem ctx) cfg m r [.inst ii]).run (st, tr) = .ok (some env', s1) →
     (evalExpr p (sem ctx) cfg n r.rhs env').run s1 = .ok (some out, (st', tr')) →
     ∃ ms rss, st'.emitted = st.emitted ++ ms.toArray ∧ out = .regsVec rss ∧
@@ -488,6 +490,14 @@ def BranchRulesCorrect (p : Program) : Prop :=
 
 /-! ## From the rules to every `lower` call -/
 
+set_option maxRecDepth 100000 in
+/-- The rules of `lower` are pairwise distinct (so "the rules before `r`" is well defined). -/
+theorem lower_rules_nodup {p : Program} (hp : Data p) : (p.rulesOf TId.lower).Nodup := by
+  rw [show TId.lower = 686 from rfl, hp.r686]
+  refine List.Pairwise.of_map (S := fun a b : Nat => a ≠ b) Rule.id
+    (fun _ _ h e => h (congrArg Rule.id e)) ?_
+  decide +kernel
+
 theorem lowerInstOk_of_rules {p : Program} (hp : Data p) (hrules : LowerRulesCorrect p)
     (hex : ExcludedUnmatchable p) {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT}
     {env : Clif.Env} {cp : Clif.Program} (hR : Refines F isem) (hMR : MRStable F MR)
@@ -501,14 +511,24 @@ theorem lowerInstOk_of_rules {p : Program} (hp : Data p) (hrules : LowerRulesCor
     ∃ ms rss, st'.emitted = st.emitted ++ ms.toArray ∧ out = .regsVec rss ∧
       LowerInstOk isem MR env cp ctx inst info.results st rss st' ms := by
   change 1002 + (p.rulesOf 686).length ≤ n at hn
-  obtain ⟨r, hr, m, env', s1, st2, tr2, hmn, hmatch, heval, hs⟩ :=
-    applyTerm_internal_some hco hp.t686 term_686_kind rfl h
+  obtain ⟨r, pre0, post0, hsplit, hpre0, m, env', s1, st2, tr2, hmn, hmatch, heval, hs⟩ :=
+    applyTerm_internal_some_first hco hp.t686 term_686_kind rfl h
+  have hr : r ∈ p.rulesOf TId.lower := by
+    change r ∈ p.rulesOf 686; rw [hsplit]; simp
+  have hfirst : ∀ pre post, p.rulesOf TId.lower = pre ++ r :: post → ∀ r' ∈ pre, ∃ m', 1000 ≤ m' ∧
+      ∃ s', (matchRule p (sem ctx) cfg m' r' [.inst ii]).run (st, tr) = .ok (none, s') := by
+    intro pre post hsp r' hr'
+    have hnd : (pre0 ++ r :: post0).Nodup := hsplit ▸ lower_rules_nodup hp
+    have hpre := prefix_unique_of_nodup hnd (hsplit.symm.trans hsp)
+    subst hpre
+    obtain ⟨m', hm', s', h'⟩ := hpre0 r' hr'
+    exact ⟨m', by omega, s', h'⟩
   simp only [Prod.mk.injEq] at hs
   rw [← hs.1] at heval
   cases hroot : closureRoot r
   · exact absurd hmatch (hex r hr hroot f ctx hctx ii info inst hi hc cfg m (st, tr) env' s1)
   · exact hrules F isem MR env cp hR hMR r hr hroot f ctx hctx ii info inst hi hc cfg hco m n st tr
-      env' s1 out st' tr2 (by omega) (by omega) hvb hmatch heval
+      env' s1 out st' tr2 (by omega) (by omega) hvb hfirst hmatch heval
 
 set_option maxRecDepth 20000 in
 /-- `lowerInstOk_of_rules` for the exported program and the backend's own call
