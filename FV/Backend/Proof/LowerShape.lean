@@ -92,6 +92,8 @@ structure LowerShape : Prop where
   params : ∀ B ∈ f.blocks, ∀ p ∈ B.params, gn p.1 = p.1
   len : bl.length = f.blocks.length
   size : f.blocks.length ≤ vc.blocks.size
+  /-- every value with a register is below the first temporary (`buildCtx`: `maxV`) -/
+  valsBelow : ∀ x r, ctx.valueReg? x = some r → x < st0.nextVreg
   labels : ∀ l (vb : VBlock), vc.blocks[l]? = some vb → vb.label = l
   /-- per block -/
   blk : ∀ bi B L, f.blocks[bi]? = some B → bl[bi]? = some L →
@@ -157,5 +159,11 @@ structure Cert (A : Nat → Nat → List Clif.ValueId) : Prop where
       (∀ p ∈ TB.params, p.1 ∉ A bi B.body.length) ∧
       ∀ x ∈ A tl 0, (x ∈ TB.params.map (·.1) ∧ ctx.defInst? x = none) ∨
         (x ∉ TB.params.map (·.1) ∧ x ∈ A bi B.body.length ∧ gn x ∉ TB.params.map (·.1))
+  /-- a statement result's context type is its declared type (`buildCtx` writes `valTy` for
+  every definition, the last write wins: needs unique definitions) -/
+  resTy : ∀ (ii : Nat) (info : IInfo), ctx.insts[ii]? = some info → ∀ (m : Nat) r t, info.results[m]? = some r →
+    info.resTys[m]? = some t → ctx.valueType? r = some t
+  /-- a block parameter's context type is its declared type -/
+  paramTy : ∀ B ∈ f.blocks, ∀ q ∈ B.params, ctx.valueType? q.1 = some (CTy.ofClif q.2)
 
 end Backend.Proof.Driver

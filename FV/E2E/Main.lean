@@ -63,10 +63,10 @@ theorem iselSim_of_driver {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LS
     (H : DriverHyp f vc ctx st0 R gn bl A sem (fun sl cm w => Γ.holds f sl cm w) env p) :
     IselSim sem Γ env p f vc := by
   intro args cs w₀ ρ₀ hce hrel hargs htr fuel
-  obtain ⟨B0, hent, hbody, hterm, -, hregs⟩ := hce.entry
+  obtain ⟨B0, hent, hbody, hterm, hty, hregs⟩ := hce.entry
   have hB0 : f.blocks[0]? = some B0 := by
     simpa [Clif.Function.entry?, List.head?_eq_getElem?] using hent
-  have hrun := driver_correct H hB0 hce.callers hce.func rfl hbody hterm hregs (ρ₀ := ρ₀) hrel
+  have hrun := driver_correct H hB0 hce.callers hce.func rfl hbody hterm hregs hty.symm (ρ₀ := ρ₀) hrel
     (fun i v h => hargs i v h) htr fuel
   refine ⟨fun vals cm h => ?_, fun c h => ?_⟩
   · rw [h] at hrun

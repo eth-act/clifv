@@ -34,10 +34,11 @@ def termCall (t : Clif.Terminator) (ti : Nat) (targets : List Label) : String ×
   | .ret _ | .trap _ => ("lower", [.inst ti])
   | _ => ("lower_branch", [.inst ti, .labels targets])
 
-/-- Every `lower` call `lowerFunction` makes on a statement satisfies M4's `LowerInstOk`. -/
+/-- Every `lower` call `lowerFunction` makes on a statement (from a state whose fresh vregs are
+above every value's vreg, `ValsBelow`) satisfies M4's `LowerInstOk`. -/
 def InstCalls (sem : Sem) (MR : MemRelT) (env : Clif.Env) (p : Clif.Program) : Prop :=
   ∀ f ctx ii info inst st rss st' tr, CtxInv f ctx → ctx.insts[ii]? = some info →
-    info.clif = some inst → st.emitted = #[] →
+    info.clif = some inst → st.emitted = #[] → ValsBelow ctx st →
     runTerm ctx "lower" [.inst ii] st = .ok (some (.regsVec rss), st', tr) →
     LowerInstOk sem MR env p ctx inst info.results st rss st' st'.emitted.toList
 
@@ -54,9 +55,9 @@ theorem instCalls_of_rules (hrules : LowerRulesCorrect Isle.Aarch64.program)
     (hex : ExcludedUnmatchable Isle.Aarch64.program) {F : BitVec 64 → Prop} {sem : Sem}
     {MR : MemRelT} {env : Clif.Env} {p : Clif.Program} (hR : Refines F sem)
     (hMR : MRStable F MR) : InstCalls sem MR env p := by
-  intro f ctx ii info inst st rss st' tr hctx hi hc hemp hrun
+  intro f ctx ii info inst st rss st' tr hctx hi hc hemp hvb hrun
   obtain ⟨ms, rss', hem, hout, hok⟩ := lowerInstOk_runTerm hrules hex (env := env) (cp := p) hR hMR
-    hctx hi hc hrun
+    hctx hi hc hvb hrun
   cases hout
   rw [hemp, Array.empty_append] at hem
   rw [hem, List.toList_toArray]
