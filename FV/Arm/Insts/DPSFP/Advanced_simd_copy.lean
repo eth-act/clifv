@@ -4,6 +4,9 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Author(s): Yan Peng
 -/
 -- DUP, INS, SMOV, UMOV
+-- Modified by fv-compiler-rust (2026): DUP (general) and INS (general) read `X[n, esize]` and
+-- SMOV/UMOV write `X[d, datasize]` in the Arm ARM ASL, so register 31 is XZR, not SP (upstream
+-- used the SP-flavoured accessors; found by co-simulation).
 
 import FV.Arm.Decode
 import FV.Arm.Insts.Common
@@ -72,7 +75,7 @@ def exec_dup_general (inst : Advanced_simd_copy_cls) (s : ArmState) : ArmState :
     let esize := 8 <<< size
     let datasize := 64 <<< inst.Q.toNat
     let elements := datasize / esize
-    let element := read_gpr esize inst.Rn s
+    let element := read_gpr_zr esize inst.Rn s
     let result := dup_aux 0 elements esize element (BitVec.zero datasize)
     -- State Updates
     let s := write_pc ((read_pc s) + 4#64) s
@@ -106,7 +109,7 @@ def exec_ins_general (inst : Advanced_simd_copy_cls) (s : ArmState) : ArmState :
   else
     let index := (extractLsb' (size + 1) (4 - size) inst.imm5).toNat
     let esize := 8 <<< size
-    let element := read_gpr esize inst.Rn s
+    let element := read_gpr_zr esize inst.Rn s
     let result := read_sfp 128 inst.Rd s
     let result := elem_set result index esize element
     -- State Updates
@@ -135,7 +138,7 @@ def exec_smov_umov (inst : Advanced_simd_copy_cls) (s : ArmState) (signed : Bool
     let result := if signed then signExtend datasize element else zeroExtend datasize element
     -- State Updates
     let s := write_pc ((read_pc s) + 4#64) s
-    let s := write_gpr datasize inst.Rd result s
+    let s := write_gpr_zr datasize inst.Rd result s
     s
 
 @[state_simp_rules]

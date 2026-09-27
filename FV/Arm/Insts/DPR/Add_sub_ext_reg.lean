@@ -1,6 +1,6 @@
 /-
 Copyright (c) 2026 fv-compiler-rust contributors.
-Released under Apache 2.0 license as described in third_party/lnsym-upstream/LICENSE.
+Released under Apache 2.0 license; see third_party/NOTICE-lnsym.md.
 -/
 -- (FV addition, not in LNSym) ADD, ADDS, SUB, SUBS (extended register), 32- and 64-bit,
 -- including the aliases CMP/CMN (extended register) and `mov`/`add` to and from SP.

@@ -1,6 +1,6 @@
 /-
 Copyright (c) 2026 fv-compiler-rust contributors.
-Released under Apache 2.0 license as described in third_party/lnsym-upstream/LICENSE.
+Released under Apache 2.0 license; see third_party/NOTICE-lnsym.md.
 -/
 -- (FV addition, not in LNSym) ADDV (Advanced SIMD across lanes, `U = 0`, `opcode = 11011`).
 --
@@ -19,6 +19,23 @@ Released under Apache 2.0 license as described in third_party/lnsym-upstream/LIC
 -- the pairwise tree order of the ASL does not matter for modular addition. `V[d, esize] = x`
 -- zeroes bits 127:esize (`write_sfp`). Cross-checked against VeriISLE `MInst.VecLanes`
 -- (`Addv`) in cranelift/codegen/src/isa/aarch64/spec/vec_lanes.isle.
+--
+-- (FV addition) UADDLV (`U = 1`, `opcode = 00011`), Arm ARM "UADDLV" ASL:
+--
+--   if size:Q == '100' then UNDEFINED;
+--   if size == '11' then UNDEFINED;
+--   constant integer esize = 8 << UInt(size);
+--   constant integer datasize = 64 << UInt(Q);
+--   constant integer elements = datasize DIV esize;
+--
+--   bits(datasize) operand = V[n, datasize];
+--   integer sum = 0;
+--   for e = 0 to elements-1
+--       sum = sum + Int(Elem[operand, e, esize], unsigned);
+--   V[d, 2*esize] = sum<2*esize-1:0>;
+--
+-- Cranelift 0.136.1 lowers `popcnt` with `addv`/`addp`, not `uaddlv`; UADDLV is modelled for
+-- completeness of the popcount idioms and co-simulated with the rest.
 
 import FV.Arm.Decode
 import FV.Arm.Insts.Common
@@ -51,11 +68,34 @@ def exec_addv (inst : Advanced_simd_across_lanes_cls) (s : ArmState) : ArmState 
     let s := write_pc ((read_pc s) + 4#64) s
     s
 
+/-- Wrapping sum of the zero-extended elements `e .. elements-1` of `x`, added to `acc`. -/
+def uaddlv_aux (e : Nat) (elements : Nat) (esize : Nat) (x : BitVec n) (acc : BitVec (2 * esize)) :
+    BitVec (2 * esize) :=
+  if elements ≤ e then
+    acc
+  else
+    uaddlv_aux (e + 1) elements esize x (acc + zeroExtend (2 * esize) (elem_get x e esize))
+  termination_by (elements - e)
+
+@[state_simp_rules]
+def exec_uaddlv (inst : Advanced_simd_across_lanes_cls) (s : ArmState) : ArmState :=
+  if (inst.size = 0b10#2 ∧ inst.Q = 0#1) ∨ inst.size = 0b11#2 then
+    write_err (StateError.Illegal s!"Illegal {inst} encountered!") s
+  else
+    let esize := 8 <<< inst.size.toNat
+    let datasize := if inst.Q = 1#1 then 128 else 64
+    let operand := read_sfp datasize inst.Rn s
+    let result := uaddlv_aux 0 (datasize / esize) esize operand (BitVec.zero (2 * esize))
+    let s := write_sfp (2 * esize) inst.Rd result s
+    let s := write_pc ((read_pc s) + 4#64) s
+    s
+
 @[state_simp_rules]
 def exec_advanced_simd_across_lanes
   (inst : Advanced_simd_across_lanes_cls) (s : ArmState) : ArmState :=
   match inst.U, inst.opcode with
   | 0#1, 0b11011#5 => exec_addv inst s -- ADDV
+  | 1#1, 0b00011#5 => exec_uaddlv inst s -- UADDLV
   | _, _ => write_err (StateError.Unimplemented s!"Unsupported {inst} encountered!") s
 
 end DPSFP

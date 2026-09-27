@@ -11,3 +11,11 @@ globs = ["FVTest.+"]
 
 # lean_exe targets: each component appends its own [[lean_exe]] section below.
 # Re-read this file right before editing it; other components edit it concurrently.
+
+[[lean_exe]]
+name = "arm-cosim"
+root = "FVTest.Arm.Cosim.Main"
+
+[[lean_exe]]
+name = "clif-filetest"
+root = "FVTest.Clif.Filetest"

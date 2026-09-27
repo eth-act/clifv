@@ -4,6 +4,9 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Author(s): Yan Peng
 -/
 -- FMOV (general)
+-- Modified by fv-compiler-rust (2026): the general-register operand is `X[n]`/`X[d]` in the
+-- Arm ARM ASL (`intval = X[n, intsize]`, `X[d, intsize] = intval`), so register 31 is XZR, not
+-- SP (upstream used the SP-flavoured accessors; found by co-simulation).
 
 import FV.Arm.Decode
 import FV.Arm.Insts.Common
@@ -28,11 +31,11 @@ def fmov_general_aux (intsize : Nat) (fltsize : Nat) (op : FPConvOp)
     let fltval := Vpart_read inst.Rn part fltsize s
     let intval := zeroExtend intsize fltval
     -- State Update
-    let s := write_gpr intsize inst.Rd intval s
+    let s := write_gpr_zr intsize inst.Rd intval s
     let s := write_pc ((read_pc s) + 4#64) s
     s
   | FPConvOp.FPConvOp_MOV_ItoF =>
-    let intval := read_gpr intsize inst.Rn s
+    let intval := read_gpr_zr intsize inst.Rn s
     let fltval := extractLsb' 0 fltsize intval
     -- State Update
     let s := Vpart_write inst.Rd part fltsize fltval s
