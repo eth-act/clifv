@@ -277,6 +277,17 @@ theorem cond_store {ctx : Ctx} {x w : Nat} {ty : Clif.Ty} {aop : StoreOp}
   simp only [Clif.StoreOp.size]
   omega
 
+theorem width_stackAddr {g : Nat → Option Clif.Signature} {info : IInfo} {tys : List Clif.Ty}
+    {ty : Clif.Ty} {sl : Nat} {o : Int} (hRE : ∀ t ∈ info.resTys, t ∈ eCTys)
+    (h3 : info.resTys = tys.map CTy.ofClif)
+    (h4 : Clif.Inst.resultTypes g (.stackAddr ty sl o) = some tys) : ty.width ≤ 64 := by
+  simp only [Clif.Inst.resultTypes, Option.some.injEq] at h4
+  subst h4
+  have := hRE (CTy.ofClif ty) (by rw [h3]; simp)
+  rw [ofClif_int_width] at this
+  simp only [eCTys, List.mem_cons, CTy.int.injEq, List.not_mem_nil, or_false] at this
+  omega
+
 set_option maxHeartbeats 2000000 in
 include hp in
 theorem load_i8_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
@@ -589,5 +600,63 @@ theorem istore32_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines
   exact store_root_finish hp hR hMR hM hctx hMRo hco (by omega) (by omega) hvb ‹_› ‹_›
     (hA64 _ rfl) ‹_› (t := .int 32) (aop := .store32) rfl (.inr (.inr (.inl rfl))) (by decide) (fun _ _ _ _ => rfl)
     (fun rd amv am h => by rw [ofV_store32', h]; rfl) hA (store32_helper_ok hp ctx hco (by omega) hH) hS
+
+set_option maxHeartbeats 2000000 in
+include hp in
+/-- **`stack_addr`** (`lower.isle:2849`, rule id 1093). -/
+theorem stack_addr_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
+    MemRuleOk F sb syms isem MR env cp p rule_lower_2849 := by
+  intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
+    hmatch heval
+  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
+  obtain ⟨n, rfl⟩ : ∃ n', n = n' + 100 := ⟨n - 100, by omega⟩
+  mem_inv hp [] at hmatch heval
+  mem_root hctx hi hic
+  have hC := ‹ApplyInternal _ _ _ _ 27 643 _ _ _ _›
+  have hO := ‹ApplyInternal _ _ _ _ 25 172 _ _ _ _›
+  obtain ⟨base, hbase, rfl, hs3⟩ := compute_stack_addr_ok hp ctx hco (by omega) hC
+  obtain ⟨rfl, hs'⟩ := output_reg_inv hp ctx hco (by omega) hO
+  simp only at hs'
+  rw [hs3] at hs'
+  subst hs'
+  refine ⟨_, ?_, _, rfl, stackAddr_lower_ok hMR hM hctx hMRo hbase
+    (width_stackAddr hRE (by assumption) (by assumption))⟩
+  rw [fresh_fst]
+  exact (frag_one _ (.loadAddr (.vreg _ .int) (.slotOffset _)) rfl).emitted
+
+set_option maxHeartbeats 2000000 in
+include hp in
+/-- **`symbol_value`** (`lower.isle:2491`, rule id 1027). -/
+theorem symbol_value_ok (hR : Refines F isem) (hMR : MRStable F MR)
+    (hM : MemRefines F sb syms isem) : MemRuleOk F sb syms isem MR env cp p rule_lower_2491 := by
+  intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
+    hmatch heval
+  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
+  obtain ⟨n, rfl⟩ : ∃ n', n = n' + 100 := ⟨n - 100, by omega⟩
+  mem_inv hp [] at hmatch heval
+  mem_root hctx hi hic
+  have hL := ‹ApplyInternal _ _ _ _ 27 570 _ _ _ _›
+  have hO := ‹ApplyInternal _ _ _ _ 25 172 _ _ _ _›
+  obtain ⟨ms, d, rfl, hsym⟩ := load_ext_name_ok hp ctx hco hR hM (by omega) hL
+  obtain ⟨rfl, hs'⟩ := output_reg_inv hp ctx hco (by omega) hO
+  simp only at hs'
+  subst hs'
+  exact ⟨ms, hsym.frag.emitted, _, rfl, symbol_lower_ok hMR hMRo hsym ‹_›⟩
+
+include hp in
+/-- **`uextend_load`** (rule id 815): never matches (`is_sinkable_inst` fails). -/
+theorem uextend_load_ok : MemRuleOk F sb syms isem MR env cp p rule_lower_1300 := by
+  intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
+    hmatch heval
+  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
+  mem_inv hp [ctor_is_sinkable_inst] at hmatch
+
+include hp in
+/-- **`sextend_load`** (rule id 824): never matches (`is_sinkable_inst` fails). -/
+theorem sextend_load_ok : MemRuleOk F sb syms isem MR env cp p rule_lower_1359 := by
+  intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
+    hmatch heval
+  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
+  mem_inv hp [ctor_is_sinkable_inst] at hmatch
 
 end Backend.Proof
