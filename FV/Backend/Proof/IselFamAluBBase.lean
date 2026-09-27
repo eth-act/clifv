@@ -291,6 +291,7 @@ macro "code_facts0" : tactic => `(tactic| (
       vdu_aluRRImm12, vdd_aluRRImmLogic, vdu_aluRRImmLogic, vdd_aluRRImmShift, vdu_aluRRImmShift,
       vdd_bitRR, vdu_bitRR, vdd_extend, vdu_extend, List.mem_cons, List.mem_nil_iff, or_false]
       at hd
+    (try simp only [LState.emit, LState.fresh])
     omega)))
 
 /-- Discharge a template's `hdefs`/`huses` for a concrete code list. -/
@@ -308,8 +309,9 @@ theorem arr_push4 {α : Type} (a : Array α) (i j k l : α) :
   apply Array.ext'; simp
 
 /-- The emitted-code and fresh-counter equations of a forward lemma's final state. -/
-macro "st_facts" : tactic => `(tactic| (simp only [LState.emit, LState.fresh] <;>
-  first | omega | rfl | (apply Array.ext'; simp)))
+macro "st_facts" : tactic => `(tactic| (
+  (try simp only [LState.emit, LState.fresh])
+  all_goals first | omega | rfl | (apply Array.ext'; simp)))
 
 /-- A one-variable rule environment. -/
 abbrev env1 (a : V) : Interp.Env V := (Array.replicate 1 none).setIfInBounds 0 (some a)
@@ -455,11 +457,12 @@ theorem unary_ruleOk' {p : Program} (hp : Data p) {r : Rule} {cop : Clif.UnaryOp
       (matchRule p (sem ctx) cfg (m + 2) r [.inst ii]).run (st, tr) = .ok (some env', s1) →
       env' = E w x ∧ s1 = (st, tr) ∧ P w)
     (hnone : ∀ (ctx : Ctx) (cfg : Config) x w st tr n v s', ctx.valueReg? x = none →
-      (evalExpr p (sem ctx) cfg (n + 40) r.rhs (E w x)).run (st, tr) ≠ .ok (some v, s'))
+      ctx.valueType? x = none →
+      (evalExpr p (sem ctx) cfg (n + 200) r.rhs (E w x)).run (st, tr) ≠ .ok (some v, s'))
     (hrhs : ∀ (ctx : Ctx) (cfg : Config) x w (st : LState) tr n v s',
       cfg.checkOverlap = false → ctx.valueReg? x = some (.vreg x .int) → x < st.nextVreg →
       w ≤ 64 → P w →
-      (evalExpr p (sem ctx) cfg (n + 40) r.rhs (E w x)).run (st, tr) = .ok (some v, s') →
+      (evalExpr p (sem ctx) cfg (n + 200) r.rhs (E w x)).run (st, tr) = .ok (some v, s') →
       ∃ ms d, v = .regsVec [[.vreg d .int]] ∧ CodeShape st s'.1 ms d x ∧
         ∀ (ty : Clif.Ty), ty.width = w → eTy ty = true → (cop = .bswap → ty ≠ .i8) →
         (ctx.valueType? x = none ∨ ctx.valueType? x = some (.int w)) →
@@ -469,14 +472,19 @@ theorem unary_ruleOk' {p : Program} (hp : Data p) {r : Rule} {cop : Clif.UnaryOp
   intro f ctx hctx ii info inst hi hc cfg hco m n st tr env' s1 out st' tr' hm hn hvb hfirst
     hmatch' heval
   obtain ⟨m', rfl⟩ : ∃ m', m = m' + 2 := ⟨m - 2, by omega⟩
-  obtain ⟨n', rfl⟩ : ∃ n', n = n' + 40 := ⟨n - 40, by omega⟩
+  obtain ⟨n', rfl⟩ : ∃ n', n = n' + 200 := ⟨n - 200, by omega⟩
   obtain ⟨ty, x, rfl, hety, hbs, hd, hhead⟩ :=
     unary_front hp hargs hto hko hname hcop hctx hi hc (m := m' + 1) hmatch'
   have hw := eTy_width hety
   obtain ⟨rfl, rfl, hP⟩ :=
     hmatch ctx cfg ii info ty.width x st tr m' env' s1 hi hhead hw hd hfirst hmatch'
   cases hrx : ctx.valueReg? x with
-  | none => exact absurd heval (hnone ctx cfg x ty.width st tr n' out (st', tr') hrx)
+  | none =>
+    have hT : ctx.valueType? x = none := by
+      cases hT : ctx.valueType? x with
+      | none => rfl
+      | some t => rw [hctx.typedReg x t hT] at hrx; cases hrx
+    exact absurd heval (hnone ctx cfg x ty.width st tr n' out (st', tr') hrx hT)
   | some rx =>
   have ex := hctx.valueReg x rx hrx
   subst ex
