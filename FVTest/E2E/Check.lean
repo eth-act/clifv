@@ -100,23 +100,37 @@ def main (args : List String) : IO UInt32 := do
   let mut bad := 0
   let mut skipped := 0
   let mut pok := 0
+  let mut tLower := 0
+  let mut tCheck := 0
+  let mut tPrep := 0
+  let mut tPCheck := 0
   let mut pbad := 0
   for file in files do
     let pf := Clif.parseFile (← IO.FS.readFile file)
     for p in pf.funcs do
       let .ok f := p.func | continue
       let t0 ← IO.monoMsNow
-      let .ok vc := lowerFunction f | continue
+      let .ok vc ← IO.lazyPure (fun _ => lowerFunction f) | continue
       let t1 ← IO.monoMsNow
       if f.sig.params.length > 8 then
         skipped := skipped + 1
         continue
-      let r := lowerCheck f vc
+      let r ← IO.lazyPure (fun _ => lowerCheck f vc)
       let t2 ← IO.monoMsNow
       if t2 - t0 > 2000 then IO.println s!"{file}: %{f.name}: lowerFunction {t1 - t0} ms, lowerCheck {t2 - t1} ms"
-      match prepare vc with
+      tLower := tLower + (t1 - t0)
+      tCheck := tCheck + (t2 - t1)
+      let t3 ← IO.monoMsNow
+      let pr ← IO.lazyPure (fun _ => prepare vc)
+      let t4 ← IO.monoMsNow
+      tPrep := tPrep + (t4 - t3)
+      match pr with
       | .ok vcp =>
-        if prepCheck vc vcp then pok := pok + 1
+        let t5 ← IO.monoMsNow
+        let pc ← IO.lazyPure (fun _ => prepCheck vc vcp)
+        let t6 ← IO.monoMsNow
+        tPCheck := tPCheck + (t6 - t5)
+        if pc then pok := pok + 1
         else
           pbad := pbad + 1
           IO.println s!"{file}: %{f.name}: prepCheck rejects"
@@ -128,4 +142,5 @@ def main (args : List String) : IO UInt32 := do
         IO.println (detail f vc)
   IO.println s!"lowerCheck: {ok} accepted, {bad} rejected, {skipped} out of scope (stack parameters)"
   IO.println s!"prepCheck: {pok} accepted, {pbad} rejected"
+  IO.println s!"time (ms): lowerFunction {tLower}, lowerCheck {tCheck}, prepare {tPrep}, prepCheck {tPCheck}"
   return if bad == 0 && pbad == 0 then 0 else 1

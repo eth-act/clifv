@@ -1,49 +1,59 @@
 # M7: the end-to-end theorem `backend_correct`
 
-Producer: M7 (agent `M7Skeleton`, branch `agent/m7-skeleton`). Consumers: the integrator, M4
-(rule proofs), M6 (register level). Code: `FV/E2E/{Statement,Compose,Main}.lean` (namespace
-`E2E`), the CLIF → VCode driver simulation `FV/Backend/Proof/Lower{Seq,Rename,Contract,Frame,Shape,Lemmas,Sim}.lean`
-(namespace `Backend.Proof.Driver`). Inputs: `backend-proof.md` (M4 contract `IselContract.lean`),
-`regalloc-proof.md` (M6), `encoder.md` (M5), `clif.md` (`Clif.run`).
+Producer: M7 (agents `M7Skeleton`, `M7Driver`; branch `agent/m7-driver`). Consumers: the
+integrator, M4 (rule proofs), M6 (register level). Code: `FV/E2E/{Statement,Compose,Main}.lean`
+(namespace `E2E`), the CLIF → VCode driver simulation
+`FV/Backend/Proof/Lower{Seq,Rename,Contract,Frame,Shape,Lemmas,Sim}.lean`, the validators
+`FV/Backend/Proof/{DriverCheck,PrepareCheck}.lean` (executable) with their soundness proofs
+`FV/Backend/Proof/{DriverCheckSound,PrepareSound}.lean` (namespace `Backend.Proof.Driver`), the
+harness `FVTest/E2E/Check.lean` (`lake exe lean-e2e-check`). Inputs: `backend-proof.md` (M4
+contract `IselContract.lean`), `regalloc-proof.md` (M6), `encoder.md` (M5), `clif.md`
+(`Clif.run`).
 
 ## Status (2026-09-27)
 
 | Piece | State |
 | --- | --- |
-| Statement: subset, compiled code, CLIF entry, memory/slot relation, ABI entry/exit, trap relation, resource precondition, conclusion `ArmRefines` | done (`Statement.lean`) |
+| Statement: subset, compiled code (incl. M7's validators), CLIF entry, memory/slot relation, ABI entry, body entry (`BodyEntry`), exit, trap relation, resource precondition, conclusion `ArmRefines` | done (`Statement.lean`) |
 | Composition CLIF → VCode → prepared VCode → Arm (`backend_correct_of_layers`) | **proven** |
-| CLIF → VCode driver simulation (`driver_correct`: statements, returns, traps, `jump` parallel copies, `brif`/`br_table` with and without edge blocks, entry `Args`, alias resolution, DFG consistency, whole runs) | **proven** from `LowerShape` + `Cert` + M4 contracts + `DriverSem` |
+| CLIF → VCode driver simulation (`driver_correct`: statements, returns, traps, `jump` parallel copies, `brif`/`br_table` with and without edge blocks, entry `Args`, alias resolution, DFG consistency incl. `FrameTyped`, whole runs) | **proven** from `LowerShape` + `Cert` + M4 contracts + `DriverSem` |
+| `Clif.run` typing (`instOutcome_types`/`evalInst_types`: results have `Inst.resultTypes`) | **proven** |
 | `IselSim` from the driver (`iselSim_of_driver`) | **proven** |
-| M4 `lower` calls from M4's rule theorems (`instCalls_of_rules`, via `lowerInstOk_runTerm`) | **proven** |
+| M4 `lower` calls on statements from M4's rule theorems (`instCalls_of_rules`, via `lowerInstOk_runTerm`) | **proven** |
+| M4 terminator calls `TermCalls` from M4's terminator rule statements (`termCalls_of_rules`, via `lowerTermOk_runTerm`/`branchOk_runTerm`) | **proven** |
 | `MRStable` of the CLIF ↔ VCode relation (`mrStable_holds`) | **proven** |
 | `Clif.run`'s initial state is a `ClifEntry` (`clifEntry_initState`) | **proven** |
-| **`backend_correct`** from the hypotheses below | **proven**, sorry-free |
-| M7 obligations `LoweringObligations` (`lowerFunction` ⇒ `LowerShape`, `buildCtx` ⇒ `CtxInv`, SSA certificate) and `PrepareCorrect` | open (hypotheses of `backend_correct`; see "Remaining") |
+| `LoweringObligations f vc` (`LowerShape` incl. `CtxInv`, `ValsBelow`, types; SSA certificate `Cert`) | **discharged**: `lowerCheck f vc = true` ⇒ it (`loweringObligations_of_check`) |
+| `PrepareCorrect sem vc vcp` (unreachable blocks, critical-edge splitting, RPO) | **discharged**: `prepCheck vc vcp = true` ⇒ it (`prepareCorrect_of_check`) |
+| Validators run by the compiler (`FV/Backend.lean` `lowerChecked`, `FV/Backend/Regalloc.lean` `allocateRegalloc2`: a rejection is a compile error) | done |
+| **`backend_correct`**, **`backend_correct_of_rules`** from the hypotheses below | **proven**, sorry-free |
 
 ## The theorem (`FV/E2E/Main.lean`)
 
 ```lean
 theorem backend_correct {p f k vc vcp rf af fa fb}
     (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb)
-    {sem F syms slotOff astep env}
+    {sem : Arm.ArmState → Sem} {F syms slotOff astep env}
     -- M4
     (hrules : LowerRulesCorrect Isle.Aarch64.program)
     (hex : ExcludedUnmatchable Isle.Aarch64.program)
-    (hterms : ∀ s, TermCalls sem (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w))
+    (hterms : ∀ s, TermCalls (sem s) (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w))
     -- M6 + M5
     (hM6 : RegLevelCorrect sem F astep vcp af fb)
-    -- the shared VCode semantics (M6's `csem`)
-    (hRef : ∀ s, Refines (F s) sem) (hds : DriverSem sem)
-    -- M7, remaining
-    (hlow : LoweringObligations f vc) (hprep : PrepareCorrect sem vc vcp)
+    -- the shared VCode semantics of each activation (M6's `csem (F s)`)
+    (hRef : ∀ s, Refines (F s) (sem s)) (hds : ∀ s, DriverSem (sem s))
     -- the run
-    {base ra s args cs}
-    (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hargs : ArgsIn args s)
-    (hcs : ClifEntry f args cs)
-    (hrel : Rel.holds ⟨F s, syms, slotOff⟩ f cs.frame.slots cs.mem s)
+    {base ra s w₀ args cs}
+    (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hbe : BodyEntry af s w₀)
+    (hargs : ArgsIn args s) (hcs : ClifEntry f args cs)
+    (hrel : Rel.holds ⟨F s, syms, slotOff⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ArmRefines fb base ra astep s (Clif.runLoop env p fuel cs)
 ```
+
+`backend_correct_of_rules`: the same with `hterms` replaced by M4's terminator statements
+`LowerTermRulesCorrect`, `TermUnmatchable`, `BranchRulesCorrect`, `BranchExcludedUnmatchable`
+(of `Isle.Aarch64.program`).
 
 `ArmRefines fb base ra astep s o`:
 
@@ -60,9 +70,12 @@ theorem backend_correct {p f k vc vcp rf af fa fb}
 * **Subset** `InSubset p f`: `p.func? f.name = some f`, `Compile.functionE f` (clif-subset-v2
   E), at most 8 parameters (all in registers), every `call` targets an extern (not a function
   of `p`).
-* **Compiled code** `Compiled f k vc vcp rf af fa fb`: `lowerFunction f = ok vc`, `prepare vc =
-  ok vcp`, `checkAlloc vcp rf = ok ()`, `lowerRFunc vcp rf = ok af`, `emitFunc k af = ok fa`,
-  `fa.layout = ok fb` (`rf` = whatever the untrusted regalloc2 returned).
+* **Compiled code** `Compiled f k vc vcp rf af fa fb`: `lowerFunction f = ok vc`,
+  `lowerCheck f vc = true`, `prepare vc = ok vcp`, `prepCheck vc vcp = true`, `checkAlloc vcp rf =
+  ok ()`, `lowerRFunc vcp rf = ok af`, `emitFunc k af = ok fa`, `fa.layout = ok fb` (`rf` =
+  whatever the untrusted regalloc2 returned). The pipeline (`compileFileWith`, the regalloc2
+  allocator) runs both validators on every function inside the theorem and rejects the function
+  when one returns `false`.
 * **CLIF entry** `ClifEntry f args cs`: no callers, frame of `f` at its entry block, parameters
   bound to `args` (types checked), slot ids of `f`. Slot addresses and memory are free: CLIF
   leaves stack-slot addresses unspecified; `Clif.run`'s bump allocator picks one choice
@@ -84,6 +97,12 @@ theorem backend_correct {p f k vc vcp rf af fa fb}
   16-aligned, code fits the address space. `ArgsIn args s`: argument `i` in `x i` (low bits).
 * **Resource precondition** `StackAvail af s`: the frame (`af.frameSize` + fp/lr) fits below sp.
   Callee stack use is part of the callee contract (M6's `CalleeSound`).
+* **Body entry** `BodyEntry af s w₀` (M6Rest2's definition): the world the function body starts
+  in after the prologue: sp lowered by `frameDrop af`, x29 the frame pointer, x0–x7, memory,
+  program and every unmasked field other than x29/sp as in `s`. The VCode runs (and the CLIF
+  slot relation `hrel`) are relative to `w₀`; the arguments transfer (`argsIn_body`).
+* **Per-activation semantics** `sem s` (M6's `csem (F s)`, `F s` the activation's frame
+  addresses): `hRef`, `hds`, `hterms` and `PrepareCorrect` are stated for every `s`.
 * **Exit** `ArmRet ra s s'`: pc = ra, no error, sp, x19–x29 and the low 64 bits of v8–v15 as at
   entry. `MemAgree cm s'`: live CLIF bytes = Arm bytes. **Trap** `TrapAt fb base c s'`: no error,
   pc at a trap site `t ∈ fb.traps` with `t.code = c`.
@@ -95,13 +114,13 @@ theorem backend_correct {p f k vc vcp rf af fa fb}
 
 | Hypothesis | Owner | Status |
 | --- | --- | --- |
-| `LowerRulesCorrect program`, `ExcludedUnmatchable program` (every closure root rule of `lower` is correct; the others never match) | M4 (`IselContract.lean`) | stated; rules proven family by family (M4AluA/B, M4Cmp) |
-| `TermCalls sem MR`: every terminator call `lowerFunction` makes (`lower` on `return`/`trap`, `lower_branch` on branches) satisfies `LowerTermOk` | M4 | open: M4 has `BranchRulesCorrect` per `lower_branch` rule but no `runTerm`-level lemma for branches, and no statement for the `return`/`trap` rules of `lower` (their `info.clif = none`, so `LowerRuleOk` does not cover them) |
-| `RegLevelCorrect sem F astep vcp af fb` (VCode returns/traps ⇒ Arm returns/traps, forward) | M6 + M5 (`M6Rest`) | placeholder with the agreed content (w₀ = entry state, `csem` Args/Rets, `F` = allocator-private frame, ret via the `rets` pairs, traps at `fb.traps`) |
-| `Refines (F s) sem` (the VCode semantics refines M4's `ispec`) | M6 (`csem` characterization lemmas) | open (M6) |
-| `DriverSem sem` (`Args` reads the argument registers of the world, `jump` → `goto 0`, `sem (i.mapRegs g) = sem i` for class-preserving vreg renamings) | M6 (`csem`) | agreed, open (M6) |
-| `LoweringObligations f vc` | M7 | open (below) |
-| `PrepareCorrect sem vc vcp` | M7 | open (below) |
+| `LowerRulesCorrect program`, `ExcludedUnmatchable program` (every closure root rule of `lower` is correct on statements; the others never match) | M4 (`IselContract.lean`) | stated; rules proven family by family (M4AluA/B, M4Cmp) |
+| `TermCalls (sem s) MR` (every terminator call `lowerFunction` makes satisfies `LowerTermOk`) | M4, via `termCalls_of_rules` | **proven** from `LowerTermRulesCorrect` (rules 964 `trap`, 1037 `return` of `lower`: `LowerTermRuleOk`), `TermUnmatchable` (other `lower` rules never match a `return`/`trap`), `BranchRulesCorrect` (`BranchRuleOk`, now with `CtxInv`/`ValsBelow`/first-match premises), `BranchExcludedUnmatchable`; these four are M4's open obligations (`backend_correct_of_rules`) |
+| `RegLevelCorrect sem F astep vcp af fb` (VCode returns/traps from the body-entry world ⇒ Arm returns/traps, forward) | M6 + M5 (`M6Rest2`) | placeholder with the agreed content (`BodyEntry`, per-activation `sem`) |
+| `Refines (F s) (sem s)` (the VCode semantics refines M4's `ispec`, every control) | M6 (`csem` characterization lemmas) | open (M6) |
+| `DriverSem (sem s)` (`Args` reads the argument registers, `jump` → `goto 0`, invariance under class-preserving vreg renamings, **invariance under branch retargeting** `setTargets`) | M6 (`csem`) | agreed (retarget: M6Rest2 2026-09-27), open (M6) |
+| `LoweringObligations f vc` | M7 | **discharged** by `lowerCheck` (`Compiled.lowerOk`) |
+| `PrepareCorrect (sem s) vc vcp` | M7 | **discharged** by `prepCheck` (`Compiled.prepOk`) + `DriverSem` |
 
 M6's own premises (`CalleeSound`, jump tables readable, relocation hooks `ArmStepX ext`) are
 premises of its instantiation of `RegLevelCorrect`, so they become premises of the
@@ -112,7 +131,7 @@ relocated address computations, which run the external hooks).
 
 ```lean
 theorem driver_correct (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hB0 : f.blocks[0]? = some B0)
-    (hcall hfunc hslots hbody hterm hregs) (hmr : MR slots cs.mem w₀)
+    (hcall hfunc hslots hbody hterm hregs hty) (hmr : MR slots cs.mem w₀)
     (hargs : ∀ i v, args[i]? = some v → VHolds v (regVal w₀ (.x i)))
     (htr : TrapsExplicit-condition) (fuel) :
     RunOk vc sem MR slots ⟨0, 0, ρ₀, w₀⟩ (Clif.runLoop env p fuel cs)
@@ -126,7 +145,10 @@ Simulation relation `Match s vs`: the CLIF state is at statement `j` of block `b
 state at that statement's segment (`pos bi j`); every value tracked by the certificate
 (`A bi j`) is held (low bits) by its **resolved** vreg `gn x` (alias resolution
 `MInst.mapRegs (resolve …)`); the frame restricted to the tracked values is DFG-consistent;
-memory related by `MR`. Key steps:
+`FrameTyped`: every tracked value has its context type (results: `instOutcome_types` +
+`Cert.resTy`; block parameters: `enterBlock`'s type check + `Cert.paramTy`; entry: the
+`ClifEntry` argument types); memory related by `MR`. `ValsBelow ctx st` for every `lower`
+call: `LowerShape.valsBelow` + `st0.nextVreg ≤ st.nextVreg`. Key steps:
 
 * `seqRun_rename` + `operands_mapRegs` (all `MInst`s): the renamed segment run simulates M4's
   run of the un-renamed code from `ρ ∘ gn`, because every register the code reads is either
@@ -141,46 +163,57 @@ memory related by `MR`. Key steps:
 * `entry_step`: `Args` defines the parameters from x0.. (`operands_args`).
 * `sim_run`: induction on fuel.
 
+## The validators (M7, translation validation)
+
+**`lowerCheck f vc`** (`DriverCheck.lean`): runs `buildCtx f`, re-runs the ISLE calls the way
+`lowerFunction` makes them (`lowBlocks`: statement calls from the previous state with nothing
+emitted, terminator calls in the terminator context, the same edge-block labels), computes the
+alias resolution `gn` (`gnOf`, identity on temporaries) and its class-preserving renaming
+`renOf gn`, the available values `A` by a must-dataflow (`inFix`/`availOf`), and decides every
+field of `LowerShape` and `Cert` that is not true by construction: `CtxInv` (incl. `defClif`),
+`ValsBelow` (`valReg.size ≤ nextVreg`), the VCode blocks are exactly the renamed recorded code,
+labels, block parameters, branch arguments, edge blocks, the terminator slot placeholder, and
+the certificate (operands available, results fresh and uniquely defined, no available value's
+register written by a statement's lowering, closure under definitions, edges, result and
+parameter types for `FrameTyped`). Soundness: `lowering_of_check` (construction lemmas
+`lowStmts_spec`/`lowBlocks_spec` + one lemma per check).
+
+**`prepCheck vc vcp`** (`PrepareCheck.lean`): every block with a counterpart in `vcp` (same
+label) has the same parameters, branch arguments and instructions except a possibly retargeted
+last instruction; the entry is its own counterpart; successors of kept blocks are kept, and
+reached directly or through an edge block (`jump`, no parameters/arguments) from a block without
+branch arguments. Soundness: `prep_sound` (simulation; a split edge takes one extra `jump` step).
+
+Results (`lake exe lean-e2e-check`, corpus/clif, corpus/clif/extrt, Cranelift runtests): both
+validators accept 918/918 functions inside the theorem; 14 functions have more than 8 parameters
+(outside `InSubset`). Cost on the corpus (161 functions): `lowerFunction` 175 ms, `lowerCheck`
+661 ms, `prepare` 2 ms, `prepCheck` 3 ms (the lowering validator re-runs isel and its checks are
+quadratic in the values of a block; functions outside the theorem are not validated).
+
+**Functions outside the theorem** (`FV/Backend.lean` `unverifiedReason?`: outside
+clif-subset-v2 E, more than 8 parameters, calls of functions of the same file) are still
+compiled, without validation, and reported as unverified (`FileAsm.unverified`; `lean-backend`
+prints `compiled, unverified (outside backend_correct): …`).
+
+## Contract changes taken (byte-identical)
+
+`FrameTyped` conjunct of `DFGCons` (M4AluA f55011e), `ValsBelow` premise + `Refines` over every
+control (M4Cmp 1a4de60), M4AluB 1532afa (`CtxInv.defClif`, ispec forms), first-match premise of
+`LowerRuleOk` (M4AluB c696bfa, change #3), hand-written `LawfulBEq V` (M4Cmp 4de7914, change #4).
+M7's own `IselContract` change: 0770fd7 (terminator statements; `BranchRuleOk` premises).
+
 ## Remaining (precise)
 
-1. **`lowerFunction_shape`** (M7): `lowerFunction f = .ok vc → ∃ ctx st0 R gn bl,
-   LowerShape f vc ctx st0 R gn bl`. Loop invariants over `lowerFunction`'s `for` loops:
-   segment layout, alias map (`gn r = gn out`), `resolve` a class-preserving renaming fixing
-   temporaries and parameters, edge blocks, labels = indices, `tseg ≠ []`. Includes
-   **`buildCtx` ⇒ `CtxInv`** (M4's context facts incl. `instData` data, result types,
-   `valueReg`, `defInst`, the new `defClif`) and `ctx.func = f`.
-2. **SSA certificate** (M7): `Cert f ctx st0 gn bl A` for some `A`. Either an executable
-   certificate checker over the lowering records (computing `A` by an available-values
-   dataflow, checked like `checkAlloc`'s `verify`), or a proof from SSA dominance (the value
-   definitions strictly dominating the point). Holds for Cranelift-verifier-valid CLIF.
-3. **`PrepareCorrect`** (M7): `prepare` (unreachable blocks dropped, critical edges split by
-   `jump` blocks, RPO reordering) preserves VCode returns and traps.
-4. **`TermCalls`** (M4): see the table.
-5. **Contract changes not yet taken into this branch** (they break the driver until adapted;
-   this branch builds against main's `IselContract` 2a3ad9e):
-   * `FrameTyped` conjunct of `DFGCons` (M4AluA f55011e). The driver must maintain it in
-     `Match.cons`: statement results (typing lemma `evalInst`/`instOutcome` results have
-     `resultTypes` — a generic bind/split tactic closes all cases except
-     overflow/carry/iconcat/isplit/stackAddr/symbolValue, which need `Val.ofBool`/`Val.ofInt`
-     type simp lemmas), block parameters (`enterBlock`'s `checkTys`), entry (`ClifEntry.entry`
-     types); plus two `LowerShape` facts from `buildCtx`: `valueType? r = ofClif tys[m]` for
-     results and `valueType? p = ofClif ty` for parameters (last write wins in `buildCtx`, so
-     these need unique definitions — add to `Cert`). `dfgCons_termCtx` needs `.1`/`.2`.
-   * `ValsBelow ctx st` premise of `LowerRuleOk`/`lowerInstOk_runTerm` (M4Cmp 1a4de60): add a
-     `LowerShape` field `∀ x r, ctx.valueReg? x = some r → x < st0.nextVreg` (buildCtx: `maxV`)
-     and derive `ValsBelow ctx sl.st` from `st0.nextVreg ≤ sl.st.nextVreg` (already in
-     `LowerShape`) in `instCalls_of_rules`.
-   * `Refines` generalized to all controls (M4Cmp 1a4de60): no driver change
-     (`hRef` is passed through); M6's `csem` lemmas must provide the stronger form.
-6. **M4 terminator statements** (integrator plan 2026-09-27, M7 to state, not done in this
-   run): `LowerTermRuleOk isem MR p r` (argument `[.inst ti]`, context `termCtx`) for the
-   `lower` root rules on `MultiAry Return` / `Trap` (rule_lower_2574, rule_lower_2237), required
-   by `LowerRulesCorrect`; a `lower_branch` analogue of `lowerInstOk_runTerm` from
-   `BranchRulesCorrect` plus an `ExcludedUnmatchable` analogue for `lower_branch`. Together they
-   discharge `TermCalls` (which stays the named hypothesis of `backend_correct`).
-7. **Scope extensions**: calls between compiled functions (induction on call depth, using
+1. **M4**: `LowerRulesCorrect`/`ExcludedUnmatchable` (in progress) and the terminator
+   statements `LowerTermRulesCorrect`, `TermUnmatchable`, `BranchRulesCorrect`,
+   `BranchExcludedUnmatchable` for `Isle.Aarch64.program`.
+2. **M6/M5**: `RegLevelCorrect` (with `BodyEntry`), `Refines (F s) (sem s)`, `DriverSem (sem s)`
+   for `csem`.
+3. **Scope extensions**: calls between compiled functions (induction on call depth, using
    `backend_correct` of the callee as its callee contract); stack-passed parameters
    (`InSubset.regParams`); memory-access traps (need a fault model).
+4. **Validator cost** on very large functions (quadratic set operations in `lowerCheck`'s
+   certificate checks; hash-set versions with the same soundness statements would remove it).
 
 ## Trusted (not proven)
 
@@ -198,8 +231,9 @@ memory related by `MR`. Key steps:
 ## `#print axioms`
 
 ```
-E2E.backend_correct, E2E.iselSim_of_driver, Backend.Proof.Driver.driver_correct,
-Backend.Proof.Driver.instCalls_of_rules:
+E2E.backend_correct, E2E.backend_correct_of_rules, E2E.loweringObligations_of_check,
+E2E.prepareCorrect_of_check, Backend.Proof.Driver.driver_correct,
+Backend.Proof.Driver.termCalls_of_rules:
   [propext, Classical.choice, Quot.sound]
-E2E.backend_correct_of_layers, E2E.clifEntry_initState: [propext, Quot.sound]
+E2E.clifEntry_initState: [propext, Quot.sound]
 ```
