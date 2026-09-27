@@ -48,7 +48,7 @@ def Reg.encV : Reg → Except String (BitVec 5)
   | .v n => if n ≤ 31 then pure (BitVec.ofNat 5 n) else throw s!"v{n} is not a register"
   | r => throw s!"{repr r} where a SIMD&FP register is required"
 
-/-- `cond` field (the `Cond` constructors are in hardware order; Arm ARM C1.2.4). -/
+/-- `cond` field (the `Cond` constructors are in hardware order; Arm ARM chapter C1, "Condition code" table). -/
 def Cond.bits : Cond → BitVec 4
   | .eq => 0 | .ne => 1 | .hs => 2 | .lo => 3 | .mi => 4 | .pl => 5 | .vs => 6 | .vc => 7
   | .hi => 8 | .ls => 9 | .ge => 10 | .lt => 11 | .gt => 12 | .le => 13 | .al => 14 | .nv => 15
@@ -326,7 +326,7 @@ def Insn.toArmInst (env : Env) (i : Insn) : Except String ArmInst := do
     | .lsr => pure (bf 2 amt (size - 1))
     -- C6.2 ASR (immediate) = SBFM Rd, Rn, #shift, #(size-1)
     | .asr => pure (bf 0 amt (size - 1))
-    -- C6.2 ROR (immediate) = EXTR Rd, Rs, Rs, #shift
+    -- C6.2 ROR (immediate) = EXTR Rd, Rs, Rs, #shift (Cranelift `Inst::AluRRImmShift`, `ALUOp::Extr`)
     | .ror => pure (.DPI (.Extract { sf := b1 w, op21 := 0, N := b1 w, o0 := 0, Rm := Rn,
                                      imms := BitVec.ofNat 6 amt, Rn, Rd }))
   | .aluRRRShift op w rd rn rm sh =>
@@ -346,12 +346,12 @@ def Insn.toArmInst (env : Env) (i : Insn) : Except String ArmInst := do
       pure (.DPR (.Logical_shifted_reg { sf, opc, shift := sh.op.bits, N, Rm, imm6, Rn, Rd }))
     | none, none => throw s!"aluRRRShift {repr op}"
   | .extr w rd rn rm lsb =>
-    -- C6.2 EXTR (Cranelift `enc_extr`… `0x13800000`)
+    -- C6.2 EXTR (Cranelift `Inst::AluRRRShift`, `ALUOp::Extr`)
     if lsb ≥ (if w then 64 else 32) then throw s!"extr lsb {lsb}"
     pure (.DPI (.Extract { sf := b1 w, op21 := 0, N := b1 w, o0 := 0, Rm := ← rm.encZR,
                            imms := BitVec.ofNat 6 lsb, Rn := ← rn.encZR, Rd := ← rd.encZR }))
   | .aluRRRExtend op w rd rn rm e =>
-    -- C6.2 ADD/ADDS/SUB/SUBS (extended register), amount 0 (Cranelift `enc_arith_rr_extend`)
+    -- C6.2 ADD/ADDS/SUB/SUBS (extended register), amount 0 (Cranelift `Inst::AluRRRExtend`)
     let some (o, S) := op.addSub? | throw s!"aluRRRExtend {repr op}"
     let Rd ← if S == 1 then rd.encZR else rd.encSP
     pure (.DPR (.Add_sub_ext_reg { sf := b1 w, op := o, S, opt := 0, Rm := ← rm.encZR,
@@ -434,7 +434,7 @@ def Insn.toArmInst (env : Env) (i : Insn) : Except String ArmInst := do
                                            nzcv := BitVec.ofNat 4 f.bits }))
   | .fmovToFp s rd rn =>
     -- C7.2 FMOV (general): Hd←Wn (sf 0, ftype 11), Sd←Wn (0, 00), Dd←Xn (1, 01); rmode 00,
-    -- opcode 111 (Cranelift `enc_fpurr`… `MovToFpu`)
+    -- opcode 111 (Cranelift `Inst::MovToFpu`)
     let (sf, ftype) : BitVec 1 × BitVec 2 ← match s with
       | .size16 => pure (0, 3) | .size32 => pure (0, 0) | .size64 => pure (1, 1)
       | _ => throw s!"fmov size {repr s}"
@@ -442,7 +442,7 @@ def Insn.toArmInst (env : Env) (i : Insn) : Except String ArmInst := do
                                                    Rn := ← rn.encZR, Rd := ← rd.encV }))
   | .umov s rd rn idx =>
     -- C7.2 UMOV: imm5 = idx:1, idx:10, idx:100, idx:1000 (B/H/S/D), imm4 = 0111, Q = (D)
-    -- (Cranelift `MovFromVec`)
+    -- (Cranelift `Inst::MovFromVec`)
     let (q, imm5) : BitVec 1 × Nat ← match s with
       | .size8 => pure (0, idx * 2 + 1) | .size16 => pure (0, idx * 4 + 2)
       | .size32 => pure (0, idx * 8 + 4) | .size64 => pure (1, idx * 16 + 8)
@@ -450,21 +450,22 @@ def Insn.toArmInst (env : Env) (i : Insn) : Except String ArmInst := do
     pure (.DPSFP (.Advanced_simd_copy { Q := q, op := 0, imm5 := ← uField "umov index" 5 imm5,
                                         imm4 := 7, Rn := ← rn.encV, Rd := ← rd.encZR }))
   | .cnt s rd rn =>
-    -- C7.2 CNT (Advanced SIMD two-register miscellaneous, U 0, size 00, opcode 00101)
+    -- C7.2 CNT (Advanced SIMD two-register miscellaneous, U 0, size 00, opcode 00101;
+    -- Cranelift `Inst::VecMisc`)
     let (Q, size) := s.qsize
     if size != 0 then throw s!"cnt arrangement {repr s}"
     pure (.DPSFP (.Advanced_simd_two_reg_misc { Q, U := 0, size, opcode := 5, Rn := ← rn.encV,
                                                 Rd := ← rd.encV }))
   | .vecLanes op s rd rn =>
     -- C7.2 ADDV (U 0, opcode 11011), UADDLV (U 1, opcode 00011) (Advanced SIMD across lanes);
-    -- arrangements 8B 16B 4H 8H 4S
+    -- arrangements 8B 16B 4H 8H 4S (Cranelift `enc_vec_lanes`)
     let (Q, size) := s.qsize
     if s == .size32x2 || s == .size64x2 then throw s!"addv/uaddlv arrangement {repr s}"
     pure (.DPSFP (.Advanced_simd_across_lanes
       { Q, U := b1 (op == .uaddlv), size, opcode := if op == .addv then 0b11011 else 0b00011,
         Rn := ← rn.encV, Rd := ← rd.encV }))
   | .addp s rd rn rm =>
-    -- C7.2 ADDP (vector) (Advanced SIMD three same, U 0, opcode 10111)
+    -- C7.2 ADDP (vector) (Advanced SIMD three same, U 0, opcode 10111; Cranelift `enc_vec_rrr`)
     let (Q, size) := s.qsize
     pure (.DPSFP (.Advanced_simd_three_same { Q, U := 0, size, Rm := ← rm.encV, opcode := 0b10111,
                                               Rn := ← rn.encV, Rd := ← rd.encV }))
@@ -539,7 +540,7 @@ def Insn.decodeOk (env : Env) (i : Insn) : Bool :=
 
 /-! ## Relocations -/
 
-/-- AArch64 ELF relocation types used (ELF for the Arm 64-bit Architecture, §5.7). -/
+/-- AArch64 ELF relocation types used (AAELF64 "ELF for the Arm 64-bit Architecture", relocation codes table). -/
 inductive RelocType where
   | call26 | adrGotPage | ld64GotLo12Nc | adrPrelPgHi21 | addAbsLo12Nc
   deriving DecidableEq, Repr, Inhabited, BEq
