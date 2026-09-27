@@ -32,3 +32,11 @@ root = "FVTest.Compile.EmitMain"
 [[lean_exe]]
 name = "compile-diff"
 root = "FVTest.Compile.Diff"
+
+[[lean_exe]]
+name = "lean-backend"
+root = "FVTest.Backend.Main"
+
+[[lean_exe]]
+name = "lean-backend-armrun"
+root = "FVTest.Backend.ArmRun"

@@ -139,6 +139,7 @@ the trap is still `udf #49439` (0xc11f). With `--colocated-externs` the call is
 
 ```
 clif-native <file.clif> [--link <obj-or-archive>]... [--keep <dir>] [--timeout <secs>]
+            [--functions-obj <obj> --functions-table <json>]
 ```
 
 Prints one JSON record per `; run`/`; print` comment on stdout, in exactly the clif-oracle
@@ -190,6 +191,27 @@ staticlib for `aarch64-unknown-linux-musl`). An undefined symbol is reported on 
 reaching a function that references it (directly or through file-internal calls) gets
 `{"error": "%f is not available: calls %g: unresolved external symbol `balance_of` (not
 defined in F.clif and not provided by --link)"}`; the other commands still run.
+
+Prebuilt functions (`--functions-obj OBJ --functions-table JSON`, used by the Lean backend,
+`docs/contracts/backend.md`): the file's functions are **not** compiled by Cranelift (and
+not checked with it); their code comes from `OBJ`, which is linked in. Cranelift still
+compiles the trampolines, which call the functions through their symbols (GOT, as for any
+import), so the prebuilt code must follow the functions' calling convention. `JSON` is the
+object's function/trap table:
+
+```json
+{"functions": [{"name": "f", "size": 120, "traps": [{"offset": 116, "code": "int_divz"}]}],
+ "unsupported": [{"name": "g", "reason": "`select.i32 v0, v1, v2` is not in E"}]}
+```
+
+`size` (bytes of the symbol `name`) and `traps` (byte offset from `name`, CLIF trap-code name)
+replace Cranelift's `CompiledFunc` code length and trap table in the harness's fault mapping.
+A file function missing from `functions` is excluded like a function Cranelift rejects:
+`{"error": "not compiled: %g: not in the functions object: <reason>"}` (`reason` from
+`unsupported` if present), and so are its callers. If the link fails on undefined symbols,
+the functions calling them (by their CLIF declarations) are excluded as above and the link is
+retried with `--unresolved-symbols=ignore-all` (the prebuilt object still contains those
+callers, but no run reaches them). Without the two flags, behaviour is unchanged.
 
 Error messages with a fixed prefix (counted by `clif-results`):
 
