@@ -8,7 +8,11 @@ Modules (all under `FV/Backend/Proof/`, namespace `Backend.Proof`):
 | `RegallocState.lean` | lemmas on the checker's abstract state (`AState.get/put/define/meet/parCopy/le`), the invariant `Inv`, its preservation lemmas |
 | `RegallocLemmas.lean` | what an accepting run of each checker function establishes (`stepOp_ok`, `runItems_*`, `edge_ok`, `verify_ok`, `checkAlloc_ok`, `checkStatic_ok`), operand-list correspondence, per-instruction soundness `op_sound` |
 | `RegallocSound.lean` | simulation relation `Match`, `sim_step`, `sim_progress`, **`checkAlloc_sound`** and corollaries |
-| `RegallocOperands.lean` | the operand-view obligation `OperandsSound` against the Arm model, the bridge `operandsSound_step`, proofs for a representative instruction set |
+| `RegallocOperands.lean` | the operand-view obligation `OperandsSound` against the Arm model (incl. `FrameKeep`: `sp` and the frame bytes untouched), the bridge `operandsSound_step` |
+| `RegallocCSem.lean` | the concrete semantics `csem F ctx X` (defined by the Arm model under a canonical allocation), `AllocOk` (what `checkStatic` gives), `Corr` and the reduction `os_of_corr` |
+| `RegallocTac.lean` | `csimp_rules` (unfolding set of emitted-code runs), `sw_tac`, `veq_tac`, `corr_tac` |
+| `RegallocInstsInt.lean`, `RegallocInstsZR.lean` | `Corr` for every integer and zero-register straight-line form |
+| `RegallocOS.lean` | `OperandsSound` for those forms (`os_*`) |
 | `RegallocFrame.lean` | frame/move lowering: `locVal`, `FrameOk`, int register move, int spill, int reload |
 
 The checker itself is `FV/Backend/RegallocCheck.lean` (see `regalloc.md`).
@@ -19,10 +23,27 @@ The checker itself is `FV/Backend/RegallocCheck.lean` (see `regalloc.md`).
 - [x] `checkAlloc_sound`, sorry-free, for **every** instruction semantics `sem` and every
       callee-preserved-part function `keep` (no hypothesis on `sem` is needed at this level)
 - [x] corollaries: returns, halts (traps), stuck states, divergence
-- [x] `OperandsSound` stated against the Arm model (`Insn.toArmInst` → `Arm.exec_inst`) and
-      proven for `mov` (64), `add` (register, 64), `add` (imm12, 64), `csel`, `cset`,
-      `ldr x`/`str x` (unsigned-offset address), a call (one argument, one result) under the
-      AAPCS64 callee contract; `operandsSound_step` turns `OperandsSound` into `MStep.op`
+- [x] `csem` redefined (2026-09-28): a straight-line instruction means the Arm model's run of its
+      `MInst.lines` under the canonical allocation (operand k → `x k`/`v k`, fixed → its
+      register, reuse → the reused operand's), uses placed in the world, defs read back; `none`
+      if a memory access touches `F` (`AccessOk`) or the run sets the model's `ERR`. Branches
+      (`goto j`), traps (`halt`), `Rets`, `Args` (reads the argument registers of the world),
+      calls and symbol addresses (`ExtSem`) have explicit clauses. No per-instruction formula is
+      hand-written.
+- [x] `OperandsSound (execMInst ctx env) (csem F ctx X)` proven, all ops × both widths × all
+      immediates, for: `aluRRR`, `aluRRRR`, `aluRRImm12`, `aluRRImmLogic`, `aluRRImmShift`,
+      `aluRRRShift`, `aluRRRExtend`, `bitRR`, `mov`, `movWide`, `movK` (reuse constraint),
+      `extend`, `bitfieldMove`, `cset`, `csel`, `ccmp`, `ccmpImm`; zero-register forms
+      (`rn = xzr`: neg/mvn; `rd = xzr`: cmp/cmn/tst incl. imm12/logic/shifted/extended;
+      `ra = xzr`: mul). Forms the Arm model does not implement
+      (umaddl/smaddl: `Unimplemented`) have `csem = none`, so they are vacuous.
+- [ ] `OperandsSound` still open: float/vector `movToFpu`, `movFromVec`, `vecMisc cnt`,
+      `vecLanes`, `vecRRR addp` (the `Corr` proofs pass under `lake env lean` but not under
+      `lake build` — `split at hex` renames hypotheses there; not committed), loads/stores (all amodes; the address lemmas relating the
+      model's address arithmetic to `AMode.addr` are the missing piece), `loadAddr`, calls of any
+      arity and `blr` (the one-argument proof was removed with the old `csem`; the general one is
+      an induction over `info.uses`/`info.defs` under `CalleeSound`), `loadExtNameGot/Near`
+      (linker hook), branches/traps/`jtSequence` (control; see "Remaining")
 - [x] frame/move lowering proven for int register moves, int spills and int reloads
       (unsigned-offset encoding)
 - [ ] remaining obligations: listed under "Proven vs assumed" below
@@ -200,6 +221,20 @@ restore `sp`).
    moves; with M5's `Insn.stepi_eq_sem`/`FnAsm.stepi_eq_sem` each lowered instruction is one
    `Arm.stepi`. Branch lowering, prologue/epilogue and the remaining `OperandsSound`/frame
    cases above are the open pieces of this step.
+
+## Remaining (2026-09-28, handed over)
+
+1. Memory forms: `Corr` for `load`/`store` per addressing mode; `corr_tac` computes both runs,
+   the missing lemmas rewrite the model's addresses (`signExtend (ofInt 9 off)`,
+   `zeroExtend imm12 <<< scale`, the x16 `movz/movk` constant) into `AMode.addr` so
+   `read_mem_bytes_sameWorld`/`AccessOk` apply.
+2. `jtSequence`: its early defs are not a function of (uses, world) (default path leaves them
+   unwritten, `adr` is pc-relative). Planned fix: the checker forgets the defs of a branch
+   (`transferOp`), `MStep` havocs them on `goto`; behaviour-preserving (they are dead temps).
+3. Frame lowering (stur/ldur, x16 sequence, float moves via `fmoveTmp`, save slots,
+   `FrameOk` for `RAFrame.compute`, prologue/epilogue), the `Args` check, and the composed
+   `E2E.RegLevelCorrect` (statement agreed with M7Skeleton, `FV/E2E/Statement.lean`) are not
+   proven yet.
 
 ## `#print axioms`
 
