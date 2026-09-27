@@ -246,3 +246,69 @@ shift amounts by `shift_mask`). With "low bits" the obligation stays local to ea
   inductive predicates) proven equivalent to the fuel-based functions; rule proofs by
   constructor application would avoid fuel arithmetic and the evaluation-order tactic.
 - **Width convention**: document "low bits, upper unspecified" as the contract (PLAN §3.4).
+
+## Family B: unary ALU, shifts, rotates (M4AluB, branch `agent/m4-alu-b`)
+
+**Proven `LowerRuleOk` (i8..i64 where the rule's type pattern allows), 16 rules** — rule ids
+(`Rule.id`) / `lower.isle` line / theorem:
+
+| id | line | rule | theorem (file) |
+| --- | --- | --- | --- |
+| 756 | 857 | `ineg_base_case` | `ineg_base_case_ok` (`IselFamAluBUnary`) |
+| 915 | 1931 | `bitrev.i8` | `bitrev_i8_ok` (`IselFamAluBBitrev`) |
+| 916 | 1937 | `bitrev.i16` | `bitrev_i16_ok` |
+| 918 | 1946 | `bitrev` (i32/i64) | `bitrev_ok` (first-match: 1931/1937) |
+| 919 | 1951 | `clz_8` | `clz_i8_ok` (`IselFamAluBClz`) |
+| 920 | 1955 | `clz_16` | `clz_i16_ok` |
+| 922 | 1961 | `clz_32_64` | `clz_ok` (first-match: 1951/1955) |
+| 924 | 1982 | `ctz_8` | `ctz_i8_ok` |
+| 925 | 1986 | `ctz_16` | `ctz_i16_ok` |
+| 927 | 1995 | `ctz_32_64` | `ctz_ok` (first-match: 1982/1986) |
+| 932 | 2035 | `bswap.i16` | `bswap_i16_ok` (`IselFamAluBBswap`) |
+| 933 | 2038 | `bswap.i32` | `bswap_i32_ok` |
+| 934 | 2041 | `bswap.i64` | `bswap_i64_ok` |
+
+(13 theorems; `ineg` and the three `bitrev` rules proved first, then clz/ctz/bswap.)
+Axioms of every theorem: `propext`, `Classical.choice`, `Quot.sound` and the
+`<thm>._native.bv_decide.ax_*` certificates of the width lemmas. No `sorry`.
+
+**Shared changes made (all additive, taken byte-identically by the other families):**
+`1532afa` (ispec: `aluVal` andNot/orrNot/eorNot, `shiftVal`, `rrrVal` for AluRRR shifts mod
+width, `aluRRImm12 .sub`, `aluRRImmShift`, `bitRR` rbit/clz/rev16/rev32/rev64, `extend` 8→16,
+AluRRR with `xzr` first operand; `CtxInv.defClif`), `c696bfa` (contract change #3:
+`LowerRuleOk` assumes the rules before `r` in `lower` failed to match — the generic
+`bitrev`/`clz`/`ctz` rules are *wrong* at i8/i16 and only correct because selection is first
+match; `selectRule_some_first`, `applyTerm_internal_some_first`, `lower_rules_nodup`).
+
+**Infrastructure** (`IselFamAluBBase`, `IselTermsAluB`): `PRun` (world-independent
+straight-line runs, `prun_cons`/`prun_rr`/`prun_rrr`), `lowerInstOk_one`, `unary_front`,
+templates `unary_ruleOk` (code a function of width) and `unary_ruleOk'` (per-evaluation
+`CodeShape` + meaning; for `value_type`-dependent code), tactics `wcases`/`wfix` (width lemmas by
+`bv_decide -enums`; `-enums` is needed so two modules can be imported together), `code_facts`,
+`st_facts`, `earlier_of_idx` (first-match side conditions from rule indices in `lower`).
+Term contracts: `bit_rr_run`, `alu_rr_imm_shift_run`, `alu_rr_imm12_run`, `alu_rr_imm_logic_run`,
+`extend_run`, `put_in_reg_zext32` (`zext32_pass32/pass64/ext/none/big`, all `value_type`
+cases — the code depends on the operand's `valueType?`, which `CtxInv` does not relate to the
+instruction; `FrameTyped` makes the other cases vacuous at run time).
+
+**Cost** (this machine, one module at a time, 10 GB cap): `IselFamAluBBase` 1.5 s,
+`IselTermsAluB` 8 s, `IselFamAluBUnary` 4 s, `IselFamAluBBitrev` 10 s, `IselFamAluBClz` 24 s,
+`IselFamAluBBswap` 7 s; i.e. ~2–4 s per rule. Rule index lemmas (`lower_idx_*`, `rfl` on the
+517-entry list) ~1 s each.
+
+**Remaining (not proven), with the route:**
+- `bnot_base_case` 1377, `ireduce` 2146, `uextend` 1261, `sextend` 1315, `nop` 78: forward
+  lemmas in the existing style; `ireduce`/extends need a front for `.ireduce`/`.extend`
+  instructions (result = operand vreg for `ireduce`; `value_type` of the operand in the extend
+  patterns); ispec forms exist.
+- `iconst` 53: `imm` term contract (movz/movn/movk/orr-imm sequences) and ispec `movWide`/`movK`.
+- `bnot_ishl` 1401, `bnot (bxor)` 1406: `ishl`/`iconst` look-through (`DFGCons`, `defClif`) and
+  M4AluA's `alu_rs_imm_logic` contract.
+- `popcnt` 2074–2092: vector ispec forms (`movToFpu`, `vecMisc cnt`, `vecLanes addv`,
+  `movFromVec`) not yet specified.
+- shifts 1545/1549/1638/1642/1695/1699: `do_shift` contract (4 rules incl. `do_shift_imm`
+  iconst look-through), `put_in_reg_sext32/zext64/sext64` (same shape as the `zext32` contract);
+  ispec forms exist (`rrrVal`, `aluRRImmShift`, `aluRRImmLogic and`).
+- `sbfm`/`ubfm` 1704/1707: two look-throughs, `bfm_immr/imms`, ispec `bitfieldMove`.
+- rotates 1772–1808, 1840–1862: `small_rotr`/`small_rotr_imm`, `rotr_mask`,
+  `rotr_opposite_amount`, iconst look-through; ispec forms exist (`extr`).
