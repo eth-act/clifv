@@ -221,6 +221,62 @@ theorem cond_ext {k : Nat} {cop op : Clif.LoadOp} {ty : Clif.Ty} {aop : LoadOp}
   obtain rfl := loadOpcode_inj h1
   exact ⟨hsz, hsg⟩
 
+include hp in
+theorem store_root_finish (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines F sb syms isem)
+    {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) (hMRo : MemRelOk F sb syms f MR)
+    {cfg : Config} (hc : cfg.checkOverlap = false) {n1 n3 : Nat} (hn1 : 300 ≤ n1) (hn3 : 60 ≤ n3)
+    {st st' : LState} {tr tr' : Array RuleId} (hvb : ValsBelow ctx st)
+    {op : Clif.StoreOp} {ty : Clif.Ty} {fl : Clif.MemFlags} {x y : Nat} {off : Int}
+    {results : List Nat} (hety : eTy ty = true) (hfl : fl.endianness ≠ some .big)
+    (hp64 : ctx.valueType? y = some (.int 64)) (hxr : ctx.valueReg? x = some (.vreg x .int))
+    {t : CTy} {aop : StoreOp} {kidx : Nat}
+    (htb : t.bytes = aop.bytes) (hb : t.bytes = 1 ∨ t.bytes = 2 ∨ t.bytes = 4 ∨ t.bytes = 8)
+    (haop : aop ≠ .fpuStore128)
+    (hsz : ∀ (fr : Clif.Frame) (a : BitVec ty.width), DFGCons ctx fr → fr.getAs x ty = .ok a →
+      aop.bytes = op.size ty)
+    (hofV : ∀ rd amv am, amv.amode? = some am →
+      MInst.ofV (.data 58 kidx [.reg rd, amv, .op (.memFlags fl)]) = some (.store aop rd am fl))
+    {amv sv out : V} {s2 s4 : LState × Array RuleId}
+    (hA : ApplyInternal p (sem ctx) cfg n1 89 574 [.ty t, .value y, .int off] (st, tr) amv s2)
+    (hH : sv = .data 46 0 [.data 58 kidx [.reg (.vreg x .int), amv, .op (.memFlags fl)]] ∧
+      s4.1 = s2.1)
+    (hS : ApplyInternal p (sem ctx) cfg n3 25 243 [sv] s4 out (st', tr')) :
+    ∃ ms, st'.emitted = st.emitted ++ ms.toArray ∧ ∃ rss, out = .regsVec rss ∧
+      LowerInstOk isem MR env cp ctx (.store op ty fl x y off) results st rss st' ms := by
+  obtain ⟨ms, am, ham, hok⟩ := amode_ok hp ctx hc hR hctx hn1 hvb hb hA (sb := sb)
+  obtain ⟨rfl, hs4⟩ := hH
+  obtain ⟨mi, hmi, hs', rfl⟩ := side_effect_inst_ok hp hc (ctx := ctx) hn3 hS
+  rw [hofV _ _ _ ham, Option.some.injEq] at hmi
+  subst hmi
+  simp only at hs'
+  rw [hs4] at hs'
+  subst hs'
+  rw [htb] at hok
+  have hL := store_lower_ok (env := env) (cp := cp) (results := results) hMR hM hctx hMRo hok haop
+    hsz (eTy_width hety) hfl hp64 (hvb x _ hxr)
+  refine ⟨_, ?_, _, rfl, hL⟩
+  exact (hok.frag.append (frag_emit0 s2.1 _ (store_ops aop x hok.vregs fl).defs)).emitted
+
+theorem store_op_of {k : Nat} {cop op : Clif.StoreOp}
+    (hk : (variantNames 151)[k]? = some (storeOpcode cop))
+    (h1 : (variantNames 151)[k]? = some (storeOpcode op)) : op = cop := by
+  rw [hk, Option.some.injEq] at h1
+  exact storeOpcode_inj h1.symm
+
+/-- `store` of a `w`-bit value, lowered by a store of `w / 8` bytes. -/
+theorem cond_store {ctx : Ctx} {x w : Nat} {ty : Clif.Ty} {aop : StoreOp}
+    (hvt : ctx.valueType? x = some (.int w)) (haw : aop.bytes * 8 = w) :
+    ∀ (fr : Clif.Frame) (a : BitVec ty.width), DFGCons ctx fr → fr.getAs x ty = .ok a →
+      aop.bytes = Clif.StoreOp.size ty .store := by
+  intro fr a hd hax
+  have h := hd.2 x _ _ hvt (getAs_ok hax)
+  rw [ofClif_int_width] at h
+  injection h with h
+  dsimp only at h
+  have := ty_bytes8 ty
+  simp only [Clif.StoreOp.size]
+  omega
+
 set_option maxHeartbeats 2000000 in
 include hp in
 theorem load_i8_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
@@ -400,5 +456,138 @@ theorem sload32_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines 
   exact load_root_finish hp hR hMR hM hctx hMRo hco (by omega) (by omega) hvb ‹_› ‹_›
     (hA64 _ rfl) (t := .int 32) (aop := .sload32) rfl (.inr (.inr (.inl rfl))) (by decide) rfl rfl
     (fun rd amv am h => by rw [ofV_sload32', h]; rfl) hA (sload32_helper_ok hp ctx hco (by omega) hH) hO
+
+set_option maxHeartbeats 2000000 in
+include hp in
+theorem store_i8_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
+    MemRuleOk F sb syms isem MR env cp p rule_lower_2705 := by
+  intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
+    hmatch heval
+  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
+  obtain ⟨n, rfl⟩ : ∃ n', n = n' + 100 := ⟨n - 100, by omega⟩
+  mem_inv hp [] at hmatch heval
+  mem_root hctx hi hic
+  mem_vregs hctx
+  obtain rfl := store_op_of (k := 30) (cop := .store) rfl (by assumption)
+  have hA := ‹ApplyInternal _ _ _ _ 89 574 _ _ _ _›
+  have hH := ‹ApplyInternal _ _ _ _ 46 541 _ _ _ _›
+  have hS := ‹ApplyInternal _ _ _ _ 25 243 _ _ _ _›
+  exact store_root_finish hp hR hMR hM hctx hMRo hco (by omega) (by omega) hvb ‹_› ‹_›
+    (hA64 _ rfl) ‹_› (t := .int 8) (aop := .store8) rfl (.inl rfl) (by decide) (cond_store ‹_› rfl)
+    (fun rd amv am h => by rw [ofV_store8', h]; rfl) hA (store8_helper_ok hp ctx hco (by omega) hH) hS
+
+set_option maxHeartbeats 2000000 in
+include hp in
+theorem store_i16_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
+    MemRuleOk F sb syms isem MR env cp p rule_lower_2709 := by
+  intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
+    hmatch heval
+  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
+  obtain ⟨n, rfl⟩ : ∃ n', n = n' + 100 := ⟨n - 100, by omega⟩
+  mem_inv hp [] at hmatch heval
+  mem_root hctx hi hic
+  mem_vregs hctx
+  obtain rfl := store_op_of (k := 30) (cop := .store) rfl (by assumption)
+  have hA := ‹ApplyInternal _ _ _ _ 89 574 _ _ _ _›
+  have hH := ‹ApplyInternal _ _ _ _ 46 542 _ _ _ _›
+  have hS := ‹ApplyInternal _ _ _ _ 25 243 _ _ _ _›
+  exact store_root_finish hp hR hMR hM hctx hMRo hco (by omega) (by omega) hvb ‹_› ‹_›
+    (hA64 _ rfl) ‹_› (t := .int 16) (aop := .store16) rfl (.inr (.inl rfl)) (by decide) (cond_store ‹_› rfl)
+    (fun rd amv am h => by rw [ofV_store16', h]; rfl) hA (store16_helper_ok hp ctx hco (by omega) hH) hS
+
+set_option maxHeartbeats 2000000 in
+include hp in
+theorem store_i32_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
+    MemRuleOk F sb syms isem MR env cp p rule_lower_2713 := by
+  intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
+    hmatch heval
+  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
+  obtain ⟨n, rfl⟩ : ∃ n', n = n' + 100 := ⟨n - 100, by omega⟩
+  mem_inv hp [] at hmatch heval
+  mem_root hctx hi hic
+  mem_vregs hctx
+  obtain rfl := store_op_of (k := 30) (cop := .store) rfl (by assumption)
+  have hA := ‹ApplyInternal _ _ _ _ 89 574 _ _ _ _›
+  have hH := ‹ApplyInternal _ _ _ _ 46 543 _ _ _ _›
+  have hS := ‹ApplyInternal _ _ _ _ 25 243 _ _ _ _›
+  exact store_root_finish hp hR hMR hM hctx hMRo hco (by omega) (by omega) hvb ‹_› ‹_›
+    (hA64 _ rfl) ‹_› (t := .int 32) (aop := .store32) rfl (.inr (.inr (.inl rfl))) (by decide) (cond_store ‹_› rfl)
+    (fun rd amv am h => by rw [ofV_store32', h]; rfl) hA (store32_helper_ok hp ctx hco (by omega) hH) hS
+
+set_option maxHeartbeats 2000000 in
+include hp in
+theorem store_i64_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
+    MemRuleOk F sb syms isem MR env cp p rule_lower_2717 := by
+  intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
+    hmatch heval
+  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
+  obtain ⟨n, rfl⟩ : ∃ n', n = n' + 100 := ⟨n - 100, by omega⟩
+  mem_inv hp [] at hmatch heval
+  mem_root hctx hi hic
+  mem_vregs hctx
+  obtain rfl := store_op_of (k := 30) (cop := .store) rfl (by assumption)
+  have hA := ‹ApplyInternal _ _ _ _ 89 574 _ _ _ _›
+  have hH := ‹ApplyInternal _ _ _ _ 46 544 _ _ _ _›
+  have hS := ‹ApplyInternal _ _ _ _ 25 243 _ _ _ _›
+  exact store_root_finish hp hR hMR hM hctx hMRo hco (by omega) (by omega) hvb ‹_› ‹_›
+    (hA64 _ rfl) ‹_› (t := .int 64) (aop := .store64) rfl (.inr (.inr (.inr rfl))) (by decide) (cond_store ‹_› rfl)
+    (fun rd amv am h => by rw [ofV_store64', h]; rfl) hA (store64_helper_ok hp ctx hco (by omega) hH) hS
+
+set_option maxHeartbeats 2000000 in
+include hp in
+theorem istore8_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
+    MemRuleOk F sb syms isem MR env cp p rule_lower_2722 := by
+  intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
+    hmatch heval
+  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
+  obtain ⟨n, rfl⟩ : ∃ n', n = n' + 100 := ⟨n - 100, by omega⟩
+  mem_inv hp [] at hmatch heval
+  mem_root hctx hi hic
+  mem_vregs hctx
+  obtain rfl := store_op_of (k := 33) (cop := .istore8) rfl (by assumption)
+  have hA := ‹ApplyInternal _ _ _ _ 89 574 _ _ _ _›
+  have hH := ‹ApplyInternal _ _ _ _ 46 541 _ _ _ _›
+  have hS := ‹ApplyInternal _ _ _ _ 25 243 _ _ _ _›
+  exact store_root_finish hp hR hMR hM hctx hMRo hco (by omega) (by omega) hvb ‹_› ‹_›
+    (hA64 _ rfl) ‹_› (t := .int 8) (aop := .store8) rfl (.inl rfl) (by decide) (fun _ _ _ _ => rfl)
+    (fun rd amv am h => by rw [ofV_store8', h]; rfl) hA (store8_helper_ok hp ctx hco (by omega) hH) hS
+
+set_option maxHeartbeats 2000000 in
+include hp in
+theorem istore16_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
+    MemRuleOk F sb syms isem MR env cp p rule_lower_2726 := by
+  intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
+    hmatch heval
+  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
+  obtain ⟨n, rfl⟩ : ∃ n', n = n' + 100 := ⟨n - 100, by omega⟩
+  mem_inv hp [] at hmatch heval
+  mem_root hctx hi hic
+  mem_vregs hctx
+  obtain rfl := store_op_of (k := 36) (cop := .istore16) rfl (by assumption)
+  have hA := ‹ApplyInternal _ _ _ _ 89 574 _ _ _ _›
+  have hH := ‹ApplyInternal _ _ _ _ 46 542 _ _ _ _›
+  have hS := ‹ApplyInternal _ _ _ _ 25 243 _ _ _ _›
+  exact store_root_finish hp hR hMR hM hctx hMRo hco (by omega) (by omega) hvb ‹_› ‹_›
+    (hA64 _ rfl) ‹_› (t := .int 16) (aop := .store16) rfl (.inr (.inl rfl)) (by decide) (fun _ _ _ _ => rfl)
+    (fun rd amv am h => by rw [ofV_store16', h]; rfl) hA (store16_helper_ok hp ctx hco (by omega) hH) hS
+
+set_option maxHeartbeats 2000000 in
+include hp in
+theorem istore32_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
+    MemRuleOk F sb syms isem MR env cp p rule_lower_2730 := by
+  intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
+    hmatch heval
+  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
+  obtain ⟨n, rfl⟩ : ∃ n', n = n' + 100 := ⟨n - 100, by omega⟩
+  mem_inv hp [] at hmatch heval
+  mem_root hctx hi hic
+  mem_vregs hctx
+  obtain rfl := store_op_of (k := 39) (cop := .istore32) rfl (by assumption)
+  have hA := ‹ApplyInternal _ _ _ _ 89 574 _ _ _ _›
+  have hH := ‹ApplyInternal _ _ _ _ 46 543 _ _ _ _›
+  have hS := ‹ApplyInternal _ _ _ _ 25 243 _ _ _ _›
+  exact store_root_finish hp hR hMR hM hctx hMRo hco (by omega) (by omega) hvb ‹_› ‹_›
+    (hA64 _ rfl) ‹_› (t := .int 32) (aop := .store32) rfl (.inr (.inr (.inl rfl))) (by decide) (fun _ _ _ _ => rfl)
+    (fun rd amv am h => by rw [ofV_store32', h]; rfl) hA (store32_helper_ok hp ctx hco (by omega) hH) hS
 
 end Backend.Proof
