@@ -36,8 +36,16 @@ pub const SETTINGS: [(&str, &str); 4] = [
 
 /// Target ISA for `triple` (e.g. `aarch64-unknown-linux-gnu`) with [`SETTINGS`].
 pub fn isa(triple: &str) -> Result<OwnedTargetIsa> {
+    isa_with_opt_level(triple, "none")
+}
+
+/// [`isa`] with `opt_level` overridden (`none`, `speed`, `speed_and_size`). Only for
+/// measuring Cranelift's optimiser (`scripts/lean-backend-metrics.sh`); every checked path
+/// uses [`isa`].
+pub fn isa_with_opt_level(triple: &str, opt_level: &str) -> Result<OwnedTargetIsa> {
     let mut flags = settings::builder();
     for (name, value) in SETTINGS {
+        let value = if name == "opt_level" { opt_level } else { value };
         flags.set(name, value).with_context(|| format!("setting {name}={value}"))?;
     }
     let triple = target_lexicon::Triple::from_str(triple).map_err(|e| anyhow!("triple {triple}: {e}"))?;
