@@ -430,3 +430,43 @@ lemmas), traps (`layout_traps`), and the assembly of `RegLevelCorrect`.
 `#print axioms`: `realizes_args`, `driverSem_csem`, `callsRefine_csem`:
 `[propext, Classical.choice, Quot.sound]`; `realizes_goto`, `realizes_trapIf_next`: those plus
 M5's `decode_armBits_*._native.bv_decide` axioms.
+
+## Status update (M6Ctl2, 2026-09-28)
+
+Done (sorry-free, branch `agent/m6-ctl2`):
+
+- **Calls** (`FV/E2E/RegLevelCall.lean`): `realizes_op_core` (the `op`/`next` case for any
+  execution function the machine realises, `RunsAs`; `realizes_op_next` is now an instance),
+  `callExec`, **`CalleeOk F X H`** (`OperandsSound` of every call against the hooked callee,
+  return to pc+4, `X.call` keeps the program and is error-free), `realizes_call` (one hooked
+  step), `symExec`/`os_symAddr`/`realizes_symAddr` (`loadExtNameGot/Near`, two hooked steps).
+- **Jump tables** (decision of the integrator; `RegLevelJT.lean`): `MStep.op` has a new premise
+  `HavocOuts i outs outs'` (a branch's def values are havocked), the checker's `transferOp`
+  forgets a branch's def vregs (`forgetDefs`); `op_sound`/`sim_step`/`sim_progress` adapted.
+  Regalloc test unchanged: 932/932 accepted, every mutant rejected (both environments).
+  Statement change: `AbiEntry.code` (the code words are readable as data), `CodeAddr`,
+  `frameF` includes the code addresses, `StackAvail` keeps the frame off the code, `StRel.code`
+  (maintained by ops, moves, branches). `ctlCheck` also requires `jtSequence`'s index and
+  temporaries to be int vregs. `jt_machine`, `realizes_jt`.
+- **Traps** (`RegLevelTrap.lean`): `trap_udf`, `trap_trapIf` (`TrapAt` via `layout_traps` and the
+  trap section `trapLines`).
+- **Codegen changes (behaviour-preserving, conservative for the proof)**: the epilogue frees the
+  frame by adjusting `sp` (`epilogueLines size`), not `mov sp, fp` (the per-instruction contract
+  keeps `sp`, not `fp`); every function keeps a frame (`lowerRFunc_frame`): leaf functions then
+  restore lr from the stack, so no per-instruction fact "the body keeps x30" is needed (M6Insts
+  could not add it). Corpus/runtests: encode-check 932 identical, native filetests 3085 pass /
+  0 fail (runtests).
+- `emit_block` gives block 0 at line 0.
+
+Remaining (not done in this run): prologue/epilogue exec lemmas (normal forms established:
+`stp` pre-index = write fp/lr at `sp-16`, `sp -= 16`; `mov x29, sp`; `sub/add sp` imm or via
+x16 `uxtx`; `ldp` post-index; `ret`), `ArmRet` from `checkAlloc_sound`'s keep conclusion,
+`Realizes (Q ∧ AInv)` by cases (all cases now exist: moves, `realizes_op_next` via
+`formOk_sound`, args, calls, symbol addresses, islands, `trapIf` not taken, goto, jump tables;
+halts/rets are trivial for `Realizes` since `Q` is `True` there), and the assembly of
+`RegLevelCorrect` (prologue → `Q` at `MConf.init`, `forward`/`forward_op`, then
+`trap_udf`/`trap_trapIf` or the epilogue). Merging main needs M6Insts' note (driverSem_csem
+`rename` case for the `ispec` branch).
+
+`#print axioms realizes_jt / realizes_call / realizes_symAddr`: `propext, Classical.choice,
+Quot.sound` plus M5's `decode_armBits_*._native.bv_decide` axioms.
