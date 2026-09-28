@@ -2254,4 +2254,119 @@ theorem SRel.term {fr fr' : Frame} {bi k k' : Nat} {m : Mem}
     | brTable _ _ _ => rw [hterm] at hTT; rw [hTT] at hB; simp [isBranch] at hB
 end
 
+/-! ## The simulation -/
+
+/-- A pure statement steps without touching memory. -/
+theorem lstep_pure {fr fr1 : Frame} {m m1 : Mem} {s : Stmt} {ss : List Stmt}
+    (hs : fr.body = s :: ss) (hp : isPure s.inst = true) (h : lstep fr m = .next fr1 m1) :
+    m1 = m ∧ fr1.func = fr.func ∧ fr1.slots = fr.slots ∧ fr1.term = fr.term ∧ fr1.body = ss := by
+  have hnc : ∀ fn args, s.inst ≠ .call fn args := by
+    intro fn args he; rw [he] at hp; cases hp
+  rw [lstep_inst hs hnc] at h
+  cases he : evalInst fr m s.inst with
+  | ok p =>
+    obtain ⟨vals, m'⟩ := p
+    rw [he] at h; simp only [LRes.ofRes] at h
+    split at h
+    · cases h; exact ⟨(evalInst_pure hp he).1, rfl, rfl, rfl, rfl⟩
+    · cases h
+  | trap _ => rw [he] at h; cases h
+  | stuck _ => rw [he] at h; cases h
+
+theorem lstep_pure_ne_trap {fr : Frame} {m : Mem} {s : Stmt} {ss : List Stmt}
+    (hs : fr.body = s :: ss) (hp : isPure s.inst = true) (c : TrapCode) : lstep fr m ≠ .trap c := by
+  have hnc : ∀ fn args, s.inst ≠ .call fn args := by
+    intro fn args he; rw [he] at hp; cases hp
+  intro h
+  rw [lstep_inst hs hnc] at h
+  cases he : evalInst fr m s.inst with
+  | ok p =>
+    obtain ⟨_, _⟩ := p
+    rw [he] at h; simp only [LRes.ofRes] at h; split at h <;> cases h
+  | trap c' => exact (evalInst_removable (by simp [removable, hp])).2 c' he
+  | stuck _ => rw [he] at h; cases h
+
+section
+variable {f g : Function} {fi : Info} {cert : SimpCert} (hS : SOk f g fi cert)
+  (hF : SimpFacts f fi cert) {syms : String → Option Nat}
+include hS hF
+
+/-- `SSR` is a simulation. -/
+theorem SSR.isSim : IsSim syms (SSR f g fi cert syms) where
+  frame := by
+    rintro fr fr' (⟨bi, k, k', h⟩ | ⟨c, hf, hg, hsl, -⟩)
+    · exact ⟨h.slots, by rw [h.invg.func, h.invf.func, hS.sig]⟩
+    · exact ⟨hsl, by rw [hg, hf, hS.sig]⟩
+  next := by
+    rintro fr fr' m fr1 m1 (⟨bi, k, k', h⟩ | ⟨c, hf, hg, hsl, ht, hp, htr⟩) hm hl
+    · cases hs : fr.body with
+      | nil => exact (h.term hS hF hm hs).1 fr1 m1 hl
+      | cons s ss =>
+        obtain ⟨fr1', hst, k1, h1⟩ := (h.stmt hS hF hm hs).1 fr1 m1 hl
+        exact ⟨fr1', hst, .inl ⟨bi, k + 1, k1, h1⟩⟩
+    · cases hs : fr.body with
+      | nil => rw [lstep_term hs, ht] at hl; cases hl
+      | cons s ss =>
+        obtain ⟨rfl, hf1, hs1, ht1, hb1⟩ := lstep_pure hs (hp s (by simp [hs])) hl
+        exact ⟨fr', .refl _ _, .inr ⟨c, by rw [hf1, hf], hg, by rw [hs1, hsl], by rw [ht1, ht],
+          fun s' hs' => hp s' (by rw [hs, ← hb1]; exact List.mem_cons_of_mem _ hs'), htr⟩⟩
+  call := by
+    rintro fr fr' m ext vals rs rest (⟨bi, k, k', h⟩ | ⟨c, hf, hg, hsl, ht, hp, htr⟩) hm hl
+    · obtain ⟨st, fn, args, hb, -, -, -⟩ := lstep_call_inv hl
+      obtain ⟨fr2, rs', rest', hst, hl', hcont⟩ := (h.stmt hS hF hm hb).2.2 ext vals rs rest hl
+      exact ⟨fr2, rs', rest', hst, hl', Cont.mono (fun a b ⟨k1, hab⟩ => .inl ⟨bi, k + 1, k1, hab⟩)
+        hcont⟩
+    · obtain ⟨st, fn, args, hb, hc, -, -⟩ := lstep_call_inv hl
+      have := hp st (by simp [hb])
+      rw [hc] at this; cases this
+  ret := by
+    rintro fr fr' m vals (⟨bi, k, k', h⟩ | ⟨c, hf, hg, hsl, ht, hp, htr⟩) hm hl
+    · exact (h.term hS hF hm (lstep_ret_inv hl)).2.2.1 vals hl
+    · rw [lstep_term (lstep_ret_inv hl), ht] at hl; cases hl
+  tail := by
+    rintro fr fr' m ext vals (⟨bi, k, k', h⟩ | ⟨c, hf, hg, hsl, ht, hp, htr⟩) hm hl
+    · exact (h.term hS hF hm (lstep_tail_inv hl)).2.2.2 ext vals hl
+    · rw [lstep_term (lstep_tail_inv hl), ht] at hl; cases hl
+  trap := by
+    rintro fr fr' m c (⟨bi, k, k', h⟩ | ⟨c0, hf, hg, hsl, ht, hp, htr⟩) hm hl
+    · cases hs : fr.body with
+      | nil => exact (h.term hS hF hm hs).2.1 c hl
+      | cons s ss => exact (h.stmt hS hF hm hs).2.1 c hl
+    · cases hs : fr.body with
+      | nil =>
+        rw [lstep_term hs, ht] at hl; cases hl
+        exact ⟨fr', m, .refl _ _, htr m⟩
+      | cons s ss => exact absurd hl (lstep_pure_ne_trap hs (hp s (by simp [hs])) c)
+
+end
+
+/-- **The simplify validator is sound**: `simpOk f g fi cert` and the facts of the run
+(`SimpFacts`, `FV/Opt/Proof/SimpLoop.lean`) give `FunSim f g`. -/
+theorem simpOk_sim {f g : Function} {fi : Info} {cert : SimpCert} (hf : check f = .ok fi)
+    (h : simpOk f g fi cert = true) (hF : SimpFacts f fi cert) : FunSim f g := by
+  have hS := simpOk_facts hf h
+  refine ⟨hS.name, hS.sig, hS.slots, fun syms => ⟨_, SSR.isSim hS hF, fun b hb => ?_⟩⟩
+  have hb0 : f.blocks[0]? = some b := by
+    simpa [Function.entry?, List.head?_eq_getElem?] using hb
+  obtain ⟨b', lg, hb0', -, -, hpar, -, -, -, -, -, hps, -⟩ := hS.blocks 0 b hb0
+  refine ⟨b', by simpa [Function.entry?, List.head?_eq_getElem?] using hb0', hpar,
+    fun args regs slots hty hr hsl => .inl ⟨0, 0, 0, ⟨⟨Inv.entry hS.wff hb hty hr hsl, ?_, ?_, rfl⟩,
+      fun lg hlg => by simp [outs]⟩⟩⟩
+  · rw [← hpar] at hty hr
+    exact Inv.entry hS.wfg (by simpa [Function.entry?, List.head?_eq_getElem?] using hb0') hty hr
+      (by rw [hsl, hS.slots])
+  · intro v hv
+    have hd := avail_entry hS.wff hv
+    obtain ⟨b1, p, hb1, hp, hpv⟩ := site_param' hS.wff hd
+    rw [hb0] at hb1; cases hb1
+    have hσv : cert.subst.step v = v := by rw [← hpv]; exact step_of_not_contains (hps p hp).2.2
+    have hgs : (wfData g (gInfo fi cert)).dm v = some (0, 0) := by
+      rw [← hpv]; exact site_param hS.wfg hb0' (by rw [hpar]; exact hp)
+    rw [hσv]
+    refine ⟨⟨0, 0, hgs, .inl ⟨rfl, Nat.le_refl _⟩⟩, rfl, ?_⟩
+    intro d t hdt
+    rw [hd] at hdt; simp only [Option.some.injEq, Prod.mk.injEq] at hdt
+    obtain ⟨rfl, -⟩ := hdt
+    exact ⟨0, 0, by rw [hσv]; exact hgs, .refl _⟩
+
 end Opt
