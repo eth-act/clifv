@@ -471,7 +471,7 @@ theorem realizes_goto {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {alloc
   obtain ⟨preds, hcfg⟩ := hc.cfg
   obtain ⟨t0, ts, hback, hss, hlab⟩ := cfg_block hcfg hvb
   cases h with
-  | @op b k allocs its m w vb' i ops outs w' ctl m2 c' hvb' hi' hops' hsz hsem hlen hcl hn =>
+  | @op b k allocs its m w vb' i ops outs outs' w' ctl m2 c' hvb' hi' hops' hsz hsem hlen hho hcl hn =>
   rw [hvb] at hvb'; cases hvb'
   rw [hi] at hi'; cases hi'
   rw [hops2] at hops'; cases hops'
@@ -506,6 +506,7 @@ theorem realizes_goto {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {alloc
         exact ⟨a, rfl, rfl⟩
       · cases hsem
   obtain ⟨rfl, hw', j, rfl, hj0, hjc, hjt⟩ := hsem'
+  obtain rfl : outs' = [] := List.eq_nil_of_length_eq_zero hho.1
   subst w'
   -- the store is unchanged
   have hm2 : m2 = m := by

@@ -19,6 +19,8 @@ the values of the def operands, the new world and a control outcome.
   `op k allocs`, which reads its uses from their allocated locations, writes early defs,
   havocs its clobbers (`Clobbered`: any value, except that a callee-saved register keeps its
   `keep`-part, AAPCS64's "callee preserves the low 64 bits of v8–v15"), then writes late defs.
+  A branch's def values are havocked (`HavocOuts`: `JTSequence`'s temporaries are dead after
+  the branch, and the checker forgets them).
   No parallel copy on edges: the allocator's moves do that.
 
 `Rets` returns the values of its uses; `halt` (a trap) stops with the world. The two
@@ -159,20 +161,26 @@ inductive MNext (b k n : Nat) (i : MInst) (uses : List V) (its : List RItem) (m 
   | ret {us} : i = .rets us → MNext b k n i uses its m w .ret (.ret uses m w)
   | halt : MNext b k n i uses its m w .halt (.halt w)
 
+/-- The def values the allocated code writes: those of `sem`, except that a branch's defs
+(`JTSequence`'s temporaries, dead after the branch; the checker forgets them) are havocked. -/
+def HavocOuts (i : MInst) (outs outs' : List V) : Prop :=
+  outs'.length = outs.length ∧ (i.isBranch = false → outs' = outs)
+
 /-- One step of the allocated code: execute the next item of the current block. -/
 inductive MStep : MConf V W → MConf V W → Prop
   | move {b src dst its m w} :
       MStep (.run ⟨b, .move src dst :: its, m, w⟩) (.run ⟨b, its, upd m dst (m src), w⟩)
-  | op {b k allocs its m w vb i ops outs w' ctl m2 c'} :
+  | op {b k allocs its m w vb i ops outs outs' w' ctl m2 c'} :
       vc.blocks[b]? = some vb → vb.insts[k]? = some i → i.operands = .ok ops →
       allocs.size = ops.size →
       sem i (((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)) w = some (outs, w', ctl) →
       outs.length = ((ops.zip allocs).toList.filter (·.1.isDef)).length →
+      HavocOuts i outs outs' →
       Clobbered keep i.clobbers
-        (writeM m ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs).filter (·.1.1.isEarly)))
+        (writeM m ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs').filter (·.1.1.isEarly)))
         m2 →
       MNext vc rf b k vb.insts.size i (((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)) its
-        (writeM m2 ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs).filter (·.1.1.isLate)))
+        (writeM m2 ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs').filter (·.1.1.isLate)))
         w' ctl c' →
       MStep (.run ⟨b, .op k allocs :: its, m, w⟩) c'
 

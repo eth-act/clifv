@@ -123,7 +123,7 @@ theorem aInv_step {R : RL} (hR : R.Wf) {s : Arm.ArmState} {c c' : MConf CV Arm.A
       intro e; subst e; simp [RItem.regDst] at hrd
     rw [upd_other hne]
     exact hA' r hr
-  | @op b k allocs its m w vb i ops outs w' ctl m2 c' hvb hi hops hsz hsem hlen hcl hn =>
+  | @op b k allocs its m w vb i ops outs outs' w' ctl m2 c' hvb hi hops hsz hsem hlen hho hcl hn =>
     cases hn with
     | next =>
       intro hb hop
@@ -221,10 +221,11 @@ theorem realizes_args {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {alloc
   rw [hvb] at hvb0; cases hvb0
   have hAO := hA rfl ⟨allocs, by simp⟩
   cases h with
-  | @op b k allocs its m w vb' i ops outs w' ctl m2 c' hvb' hi' hops' hsz hsem hlen hcl hn =>
+  | @op b k allocs its m w vb' i ops outs outs' w' ctl m2 c' hvb' hi' hops' hsz hsem hlen hho hcl hn =>
   rw [hvb] at hvb'; cases hvb'
   rw [hi] at hi'; cases hi'
   rw [hops] at hops'; cases hops'
+  obtain rfl := hho.2 rfl
   have hsem' := hsem
   simp only [RL.sem, csem, Option.some.injEq, Prod.mk.injEq] at hsem'
   obtain ⟨rfl, rfl, rfl⟩ := hsem'

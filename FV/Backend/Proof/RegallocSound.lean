@@ -95,7 +95,7 @@ theorem sim_step (hc : Checked vc rf c ins) {ms : MState V W} {vs : VState V W} 
     obtain ⟨_, hrun'⟩ := runItems_move hrun
     left
     exact ⟨_, rfl, ⟨rfl, rfl, vb, _, out, hvb, hrun', Inv_move _ _ hinv, hedges⟩, by simp⟩
-  | @op _ _ allocs its _ _ _ i ops outs w' ctl m2 _ hvb' hi hops hsz hsem hlen hclob hnext =>
+  | @op _ _ allocs its _ _ _ i ops outs outs' w' ctl m2 _ hvb' hi hops hsz hsem hlen hho hclob hnext =>
     right
     rw [hc.vc_eq] at hvb
     rw [hvb] at hvb'
@@ -106,7 +106,7 @@ theorem sim_step (hc : Checked vc rf c ins) {ms : MState V W} {vs : VState V W} 
     cases hi'
     rw [hops] at hops'
     cases hops'
-    obtain ⟨_, huse, hinv', hret⟩ := op_sound hstep hinv hlen hclob
+    obtain ⟨_, huse, hinv', hret⟩ := op_sound hstep hinv hlen hho hclob
     rw [huse] at hsem hnext
     have hlen' : outs.length = (ops.toList.filter Operand.isDef).length := by
       rw [hlen, ← pairs_fst hsz.symm, List.length_map]
@@ -175,16 +175,17 @@ theorem sim_progress (hc : Checked vc rf c ins) {ms : MState V W} {vs : VState V
           (writeM m ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs).filter (·.1.1.isEarly)))
           (writeM m ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs).filter (·.1.1.isEarly))) :=
         ⟨fun _ _ => rfl, fun _ _ _ => rfl⟩
-      obtain ⟨-, huse, -, -⟩ := op_sound hstep hinv hlen' hclob
+      have hho : HavocOuts i outs outs := ⟨rfl, fun _ => rfl⟩
+      obtain ⟨-, huse, -, -⟩ := op_sound hstep hinv hlen' hho hclob
       rw [← huse] at hsem hnext
       cases hnext with
-      | next h => exact ⟨_, MStep.op hvb hi hops hsz.symm hsem hlen' hclob (MNext.next h)⟩
-      | ret h => exact ⟨_, MStep.op hvb hi hops hsz.symm hsem hlen' hclob (MNext.ret h)⟩
-      | halt => exact ⟨_, MStep.op hvb hi hops hsz.symm hsem hlen' hclob MNext.halt⟩
+      | next h => exact ⟨_, MStep.op hvb hi hops hsz.symm hsem hlen' hho hclob (MNext.next h)⟩
+      | ret h => exact ⟨_, MStep.op hvb hi hops hsz.symm hsem hlen' hho hclob (MNext.ret h)⟩
+      | halt => exact ⟨_, MStep.op hvb hi hops hsz.symm hsem hlen' hho hclob MNext.halt⟩
       | goto h hsucc henv =>
         have hs := edgeEnv_lt henv
         rw [← hc.size] at hs
-        exact ⟨_, MStep.op hvb hi hops hsz.symm hsem hlen' hclob
+        exact ⟨_, MStep.op hvb hi hops hsz.symm hsem hlen' hho hclob
           (MNext.goto h hsucc (Array.getElem?_eq_getElem hs))⟩
 
 
