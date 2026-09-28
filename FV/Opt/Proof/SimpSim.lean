@@ -1573,4 +1573,181 @@ theorem SRel.stmt {fr fr' : Frame} {bi k k' : Nat} {m : Mem} {s : Stmt} {ss : Li
 
 end
 
+/-! ## Branches -/
+
+/-- The block call a branch takes. -/
+def pick (fr : Frame) : Terminator → Res BlockCall
+  | .jump d => .ok d
+  | .brif c t e => fr.get c >>= fun cv => .ok (if Sem.truthy cv.bits then t else e)
+  | .brTable x d tbl => fr.get x >>= fun xv => .ok (tbl[xv.toNat]?.getD d)
+  | _ => .stuck "not a branch"
+
+theorem termEval_pick {fr : Frame} {M : Mem} {t : Terminator} (ht : isBranch t = true) :
+    termEval fr M t = (pick fr t >>= fun d => fr.getMany d.args >>= fun vs => pure (d.block, vs, M)) := by
+  cases t <;> simp only [isBranch] at ht <;> (try cases ht) <;> simp only [termEval, pick]
+  · rfl
+  · cases fr.get _ <;> rfl
+  · cases fr.get _ <;> rfl
+
+theorem lstep_pick {fr : Frame} {M : Mem} (hb : fr.body = []) (ht : isBranch fr.term = true) :
+    lstep fr M = LRes.ofRes (pick fr fr.term) fun d =>
+      LRes.ofRes (enterBlock fr d) fun fr' => .next fr' M := by
+  rw [lstep_term hb]
+  cases hT : fr.term <;> rw [hT] at ht <;> simp only [isBranch] at ht <;> (try cases ht) <;>
+    simp only [pick]
+  · rfl
+  · cases fr.get _ <;> rfl
+  · cases fr.get _ <;> rfl
+
+theorem pick_succ {fr : Frame} {t : Terminator} {d : BlockCall} (h : pick fr t = .ok d) :
+    d.block ∈ termSuccs t ∧ ∀ x ∈ d.args, x ∈ termOperands t := by
+  cases t <;> simp only [pick] at h
+  · cases h; simp [termSuccs, termOperands]
+  · rename_i c th el
+    simp only [Res.bind_eq_ok, Res.ok.injEq] at h
+    obtain ⟨cv, -, hd⟩ := h
+    subst hd
+    split
+    · exact ⟨by simp [termSuccs], fun x hx => by simp [termOperands, hx]⟩
+    · exact ⟨by simp [termSuccs], fun x hx => by simp [termOperands, hx]⟩
+  · rename_i x dflt tbl
+    simp only [Res.bind_eq_ok, Res.ok.injEq] at h
+    obtain ⟨xv, -, hd⟩ := h
+    subst hd
+    cases hq : tbl[xv.toNat]? with
+    | none =>
+      simp only [Option.getD_none]
+      exact ⟨by simp [termSuccs], fun y hy => by simp [termOperands, hy]⟩
+    | some q =>
+      simp only [Option.getD_some]
+      have hm := List.mem_of_getElem? hq
+      exact ⟨by simp only [termSuccs, List.mem_cons, List.mem_map]; exact .inr ⟨_, hm, rfl⟩,
+        fun y hy => by simp only [termOperands, List.mem_cons, List.mem_append, List.mem_flatMap]
+                       exact .inr ⟨_, hm, hy⟩⟩
+  all_goals cases h
+
+theorem pick_congr {fr fr' : Frame} {t : Terminator}
+    (hr : ∀ x ∈ termOperands t, fr'.regs x = fr.regs x) : pick fr' t = pick fr t := by
+  cases t <;> simp only [pick]
+  · rename_i c _ _
+    have : fr'.get c = fr.get c := by simp only [Frame.get, hr c (by simp [termOperands])]
+    rw [this]
+  · rename_i x _ _
+    have : fr'.get x = fr.get x := by simp only [Frame.get, hr x (by simp [termOperands])]
+    rw [this]
+
+theorem pick_rename {σ : ValueId → ValueId} {fr fr' : Frame} {t : Terminator} {d : BlockCall}
+    (hr : ∀ x ∈ termOperands t, fr'.regs (σ x) = fr.regs x) (h : pick fr t = .ok d) :
+    pick fr' (mapTerm σ t) = .ok (mapBlockCall σ d) := by
+  cases t <;> simp only [pick, mapTerm] at h ⊢
+  · cases h; rfl
+  · rename_i c th el
+    simp only [Res.bind_eq_ok, Res.ok.injEq] at h
+    obtain ⟨cv, hc, hd⟩ := h
+    subst hd
+    have : fr'.get (σ c) = .ok cv := by
+      simp only [Frame.get, Res.ofOption_eq_ok] at hc ⊢
+      rw [hr c (by simp [termOperands]), hc]
+    rw [this]
+    simp only [Res.ok_bind]
+    split <;> rfl
+  · rename_i x dflt tbl
+    simp only [Res.bind_eq_ok, Res.ok.injEq] at h
+    obtain ⟨xv, hc, hd⟩ := h
+    subst hd
+    have : fr'.get (σ x) = .ok xv := by
+      simp only [Frame.get, Res.ofOption_eq_ok] at hc ⊢
+      rw [hr x (by simp [termOperands]), hc]
+    rw [this]
+    simp only [Res.ok_bind]
+    rw [List.getElem?_map]; cases tbl[xv.toNat]? <;> rfl
+  all_goals cases h
+
+theorem pick_ne_trap (fr : Frame) (t : Terminator) (c : TrapCode) : pick fr t ≠ .trap c := by
+  cases t <;> simp only [pick] <;> (try (intro h; cases h)) <;>
+    (intro h; simp only [Res.bind_eq_trap, Frame.get_ne_trap, false_or] at h;
+     obtain ⟨_, _, h⟩ := h; cases h)
+
+/-- The source leaves its block by a branch. -/
+theorem lstep_branch {fr fr1 : Frame} {M M1 : Mem} (hb : fr.body = []) (ht : isBranch fr.term = true)
+    (h : lstep fr M = .next fr1 M1) :
+    M1 = M ∧ ∃ d, pick fr fr.term = .ok d ∧ enterBlock fr d = .ok fr1 := by
+  rw [lstep_pick hb ht] at h
+  cases hp : pick fr fr.term with
+  | ok d =>
+    rw [hp] at h
+    simp only [LRes.ofRes] at h
+    cases he : enterBlock fr d with
+    | ok fr1' => rw [he] at h; simp only [LRes.ofRes, LRes.next.injEq] at h
+                 obtain ⟨rfl, rfl⟩ := h; exact ⟨rfl, d, rfl, he⟩
+    | trap _ => rw [he] at h; cases h
+    | stuck _ => rw [he] at h; cases h
+  | trap _ => rw [hp] at h; cases h
+  | stuck _ => rw [hp] at h; cases h
+
+/-- `termEval` does not touch memory. -/
+theorem termEval_mem {fr : Frame} {M M' : Mem} {t : Terminator} {bid : BlockId} {vs : List Val}
+    {x : Mem} (h : termEval fr M t = .ok (bid, vs, x)) :
+    x = M ∧ termEval fr M' t = .ok (bid, vs, M') := by
+  cases t <;> simp only [termEval, Res.bind_eq_ok, Res.pure_eq_ok, Prod.mk.injEq] at h
+  · obtain ⟨a, ha, rfl, rfl, rfl⟩ := h
+    refine ⟨rfl, ?_⟩; simp only [termEval, ha]; rfl
+  · obtain ⟨a, ha, b, hb, rfl, rfl, rfl⟩ := h
+    refine ⟨rfl, ?_⟩; simp only [termEval, ha, Res.ok_bind, hb]; rfl
+  · obtain ⟨a, ha, b, hb, rfl, rfl, rfl⟩ := h
+    refine ⟨rfl, ?_⟩; simp only [termEval, ha, Res.ok_bind, hb]; rfl
+  all_goals simp [bind, Res.bind] at h
+
+theorem termEval_trapc {fr : Frame} {M : Mem} {t : Terminator} {c : TrapCode}
+    (h : termEval fr M t = .trap c) : t = .trap c := by
+  cases t <;> simp only [termEval, Res.bind_eq_trap, getMany_not_trap, Frame.get_ne_trap,
+    false_or] at h
+  all_goals first
+    | (obtain ⟨_, _, h⟩ := h; simp [Res.bind_eq_trap, getMany_not_trap, pure] at h)
+    | (cases h; rfl)
+    | (simp [pure, bind, Res.bind] at h)
+  all_goals (obtain ⟨_, _, h⟩ := h; simp only [Res.bind_eq_trap] at h
+             rcases h with h | ⟨_, _, h⟩
+             · exact absurd h (getMany_not_trap _ _ _)
+             · cases h)
+
+/-- The trap blocks of `f`. -/
+theorem trapMap_spec {f : Function} {bid : BlockId} {c : TrapCode}
+    (h : (trapMap f).get? bid = some c) :
+    ∃ blk ∈ f.blocks, blk.id = bid ∧ trapBlock? blk = some c := by
+  have key : ∀ (l : List Block) (m0 : Std.HashMap BlockId TrapCode),
+      (l.foldl (fun m b => match trapBlock? b with
+        | some c => m.insert b.id c | none => m) m0).get? bid = some c →
+      m0.get? bid = some c ∨ ∃ blk ∈ l, blk.id = bid ∧ trapBlock? blk = some c := by
+    intro l
+    induction l with
+    | nil => intro m0 h; exact .inl h
+    | cons b bs ih =>
+      intro m0 h
+      rcases ih _ h with h1 | ⟨blk, hm, h2⟩
+      · cases ht : trapBlock? b with
+        | none => simp only [ht] at h1; exact .inl h1
+        | some c' =>
+          simp only [ht] at h1
+          rw [hm_get?_insert] at h1
+          split at h1
+          · rename_i he; cases h1; exact .inr ⟨b, by simp, he, ht⟩
+          · exact .inl h1
+      · exact .inr ⟨blk, by simp [hm], h2⟩
+  rcases key f.blocks {} h with h1 | h2
+  · simp at h1
+  · exact h2
+
+theorem trapBlock?_spec {blk : Block} {c : TrapCode} (h : trapBlock? blk = some c) :
+    blk.term = .trap c ∧ ∀ s ∈ blk.body, isPure s.inst = true := by
+  simp only [trapBlock?] at h
+  split at h
+  · rename_i c' ht
+    split at h
+    · rename_i hp; cases h
+      simp only [List.all_eq_true] at hp
+      exact ⟨ht, hp⟩
+    · cases h
+  · cases h
+
 end Opt
