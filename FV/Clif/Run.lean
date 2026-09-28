@@ -275,7 +275,13 @@ def evalInst (fr : Frame) (mem : Mem) : Inst → Res (List Val × Mem)
   | .bitcast ty _ x => do
     let a ← fr.getAs x ty
     pure ([⟨ty, a⟩], mem)
-  | .call .. => .stuck "evalInst: call is handled by step"
+  | .call .. | .callIndirect .. => .stuck "evalInst: call is handled by step"
+  | .funcAddr ty fn => do
+    -- the runtime address of the function the declaration `fnN` refers to, via the
+    -- link-time image's function symbols (vtables reference the same names).
+    let ext ← Res.ofOption s!"unknown function reference fn{fn}" (fr.func.extern? fn)
+    let base ← Res.ofOption s!"func_addr: undefined symbol %{ext.name}" (mem.symbols ext.name)
+    pure ([Val.ofInt ty base], mem)
   | .trapz c code => do
     let cv ← fr.get c
     if Sem.truthy cv.bits then pure ([], mem) else .trap code
@@ -359,6 +365,32 @@ def stepCall (env : Env) (p : Program) (s : State) (rest : List Stmt) (results :
       | .outOfFuel => .stuck s!"extern %{ext.name} ran out of fuel"
     | none => .stuck s!"unknown callee %{ext.name}"
 
+/-- Execute a `call_indirect sigN, callee(args)` statement: the callee value is the
+runtime address of a function of the program (what `func_addr` of its declaration
+evaluates to). `stuck` for an address no function of the program has, or a signature
+mismatch. -/
+def stepCallIndirect (env : Env) (p : Program) (s : State) (rest : List Stmt)
+    (results : List ValueId) (sig : Nat) (callee : ValueId) (args : List ValueId) :
+    StepResult :=
+  let fr := s.frame
+  StepResult.ofRes (do
+    let declared ← Res.ofOption s!"unknown signature sig{sig}" (fr.func.sigDecls.lookup sig)
+    let cv ← fr.get callee
+    let cv64 ← Res.ofOption "call_indirect: callee is not i64" (cv.as? .i64)
+    let addr := cv64.toNat
+    let vals ← fr.getMany args
+    let target ← Res.ofOption
+      "call_indirect: no function at the callee address"
+      (p.funcs.find? fun f => (s.mem.symbols f.name) == some addr)
+    Res.check (AbiParam.tys declared.params == AbiParam.tys target.sig.params)
+      s!"call_indirect sig{sig}: parameter types do not match %{target.name}"
+    Res.check (AbiParam.tys declared.returns == AbiParam.tys target.sig.returns)
+      s!"call_indirect sig{sig}: return types do not match %{target.name}"
+    pure (target, vals)) fun (target, vals) =>
+  StepResult.ofRes (enterFunc target vals s.mem) fun (fr', mem') =>
+    .next { frame := fr', callers := ({ fr with body := rest }, results) :: s.callers,
+            mem := mem' }
+
 /-- Return `vals` from the current frame (memory `mem`): free its stack slots, then resume
 the caller (binding the results of its pending call) or finish. -/
 def returnValues (s : State) (vals : List Val) (mem : Mem) : StepResult :=
@@ -421,6 +453,7 @@ def step (env : Env) (p : Program) (s : State) : StepResult :=
   | st :: rest =>
     match st.inst with
     | .call fn args => stepCall env p s rest st.results fn args
+    | .callIndirect sig callee args => stepCallIndirect env p s rest st.results sig callee args
     | inst => StepResult.ofRes (evalInst s.frame s.mem inst) fun (vals, mem) =>
       continueWith s rest st.results vals mem
 
@@ -443,13 +476,15 @@ theorem step_call (env : Env) (p : Program) (s : State) (rest : List Stmt)
 
 /-- A non-`call` statement steps by `evalInst`. -/
 theorem step_inst (env : Env) (p : Program) (s : State) (st : Stmt) (rest : List Stmt)
-    (h : s.frame.body = st :: rest) (hc : ∀ fn args, st.inst ≠ .call fn args) :
+    (h : s.frame.body = st :: rest) (hc : ∀ fn args, st.inst ≠ .call fn args)
+    (hci : ∀ sig callee args, st.inst ≠ .callIndirect sig callee args) :
     step env p s = StepResult.ofRes (evalInst s.frame s.mem st.inst) fun (vals, mem) =>
       continueWith s rest st.results vals mem := by
   unfold step
   rw [h]
   cases hi : st.inst with
   | call fn args => exact absurd hi (hc fn args)
+  | callIndirect sig callee args => exact absurd hi (hci sig callee args)
   | _ => simp only [hi]
 
 /-- Iterate `step` at most `fuel` times. -/

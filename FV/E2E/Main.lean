@@ -200,6 +200,12 @@ theorem backend_correct {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp
       (memRelOk_holds ⟨F s', syms, slotOff⟩ f)
     terms := hterms s'
     ext := fun B hB st hst fn args hi e he => hsub.externCalls B hB st hst fn args hi e he
+    noCI := fun B hB st hst sig callee args hi => by
+      -- a `call_indirect` function is outside the subset (`InSubset.noSpecial`)
+      have h := hsub.noSpecial.2.2 B hB st hst
+      have h2 := (h sig callee args).1
+      rw [hi] at h2
+      exact absurd h2 (by simp)
     regArgs := callRegArgs_of_subset hsub
     brIdx := hbr
     noTail := noTail_of_subset hsub

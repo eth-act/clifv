@@ -169,7 +169,7 @@ theorem drop_eq_cons {l : List Stmt} {k : Nat} {st : Stmt} {rest : List Stmt}
 /-- After a statement (or a call returning): the results are bound. -/
 theorem Inv.results {f : Function} {W : WfData} (hW : Wf f W) {syms fr bi k st rest vals regs}
     (h : Inv f W syms fr bi k) (hb : fr.body = st :: rest)
-    (hty : ∀ ts, st.inst.resultTypes (sigOf f) = some ts → vals.map (·.ty) = ts)
+    (hty : ∀ ts, st.inst.resultTypes (sigOf f) (fun _ => none) = some ts → vals.map (·.ty) = ts)
     (hpure : isPure st.inst = true → ∃ a, vals = [a] ∧ evalNode fr (symMem syms) st.inst = some a)
     (hset : fr.regs.setMany st.results vals = some regs) :
     Inv f W syms { fr with regs, body := rest } bi (k + 1) := by

@@ -52,7 +52,7 @@ theorem evalNode_ty {fr : Frame} {mem : Mem} {n : Inst} {a : Val}
   split at h
   · rename_i r m he
     cases h
-    cases hr : n.resultTypes (fun _ => none) with
+    cases hr : n.resultTypes (fun _ => none) (fun _ => none) with
     | some ts =>
       have := evalInst_types he hr
       simp only [SState.nodeTy, hr, Option.bind_some]

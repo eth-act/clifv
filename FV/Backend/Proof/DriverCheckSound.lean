@@ -149,7 +149,7 @@ theorem ctxOk_sound {f : Clif.Function} {ctx : Ctx} (h : ctxOk f ctx = true) : C
   have hinst : ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info →
       info.clif = some inst →
       (instData f inst = .ok info.data) ∧
-      ∃ tys, inst.resultTypes (fun r => (f.extern? r).map (·.sig)) = some tys ∧
+      ∃ tys, inst.resultTypes (fun r => (f.extern? r).map (·.sig)) (fun _ => none) = some tys ∧
         info.resTys = tys.map CTy.ofClif ∧ info.results.length = tys.length := by
     intro ii info inst hi hc
     have hm : info ∈ ctx.insts.toList := by
@@ -165,7 +165,7 @@ theorem ctxOk_sound {f : Clif.Function} {ctx : Ctx} (h : ctxOk f ctx = true) : C
     · split at h2
       · rename_i tys ht
         simp only [Bool.and_eq_true, decide_eq_true_eq] at h2
-        exact ⟨tys, ht, h2.1, h2.2⟩
+        exact ⟨tys, (ht : _ = _)' , h2.1, h2.2⟩
       · cases h2
   refine ⟨hfunc, fun ii info inst hi hc => (hinst ii info inst hi hc).1,
     fun ii info inst hi hc => (hinst ii info inst hi hc).2, ?_, ?_, ?_, ?_, hslot, ?_, ?_, ?_⟩

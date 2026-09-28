@@ -91,7 +91,8 @@ theorem ofRes_congr {α : Type} (X : Clif.Res α) {k₁ k₂ : α → Clif.StepR
 theorem step_stmt (env : Clif.Env) (p : Clif.Program) (s : Clif.State) (st : Clif.Stmt)
     (rest : List Clif.Stmt) (h : s.frame.body = st :: rest)
     (hext : ∀ fn args, st.inst = .call fn args → ∀ e, s.frame.func.extern? fn = some e →
-      p.func? e.name = none) :
+      p.func? e.name = none)
+    (hci : ∀ sig callee args, st.inst ≠ .callIndirect sig callee args) :
     Clif.step env p s = Clif.StepResult.ofRes (instOutcome env p s.frame s.mem st.inst)
       fun (vals, mem) => Clif.continueWith s rest st.results vals mem := by
   cases hi : st.inst with
@@ -124,8 +125,13 @@ theorem step_stmt (env : Clif.Env) (p : Clif.Program) (s : Clif.State) (st : Cli
         simp only
         split <;> rfl
       | _ => rfl
+  | callIndirect sig callee args =>
+    -- a `call_indirect` function is outside the theorem: `hci` (supplied by the caller,
+    -- from `InSubset.noSpecial`) contradicts `hi`, closing the case.
+    exact absurd hi (hci sig callee args)
   | _ =>
-    rw [Clif.step_inst env p s st rest h (by intro fn args e; rw [hi] at e; cases e)]
+    rw [Clif.step_inst env p s st rest h (by intro fn args e; rw [hi] at e; cases e)
+      (by intro sig callee args e; rw [hi] at e; cases e)]
     simp only [hi, instOutcome]
 
 /-! ## Terminator calls from M4's terminator rule statements -/

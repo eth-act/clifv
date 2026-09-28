@@ -553,14 +553,14 @@ def externCtor (ctx : Ctx) (t : Term) (args : List V) (st : LState) : ExtResult 
     | some ps, some rs => .ok (.op .unit, st.emit (.rets (rs.zip ps)))
     | _, _ => .unmodeled "gen_return: more than 8 return values or multi-register values"
   | TId.gen_call_output, [.op (.sig s)] =>
-    let (rs, st) := (sigRets s).foldl (init := (#[], st)) fun (acc, st) _ =>
+    let (rs, st) := s.returns.foldl (init := (#[], st)) fun (acc, st) _ =>
       let (r, st) := st.fresh .int
       (acc.push [r], st)
     .ok (.regsVec rs.toList, st)
   | TId.gen_call_args, [.op (.sig s), .regsVec rss] =>
-    match sigArgLocs s, rss.mapM (fun | [r] => some r | _ => none) with
-    | .ok (locs, _), some rs =>
-      let bytes := match sigArgs s with | .ok b => b | _ => []
+    match sigParamBytes s, rss.mapM (fun | [r] => some r | _ => none) with
+    | .ok bytes, some rs =>
+      let (locs, _) := argLocs bytes
       let (uses, st) := ((locs.zip rs).zip bytes).foldl (init := (#[], st))
         fun (acc, st) ((loc, r), b) => match loc with
           | .reg p => (acc.push (r, p), st)
@@ -574,14 +574,14 @@ def externCtor (ctx : Ctx) (t : Term) (args : List V) (st : LState) : ExtResult 
     | _, _ => .unmodeled "gen_call_rets: more than 8 return values"
   | TId.try_call_none, [] => ok (.op .tryCallNone)
   | TId.gen_call_info, [.op (.sig s), .op (.extName n), .op (.callArgs us), .op (.callRets ds), _, _] =>
-    match sigArgLocs s with
-    | .ok (_, stack) =>
-      .ok (.op (.callInfo ⟨.sym n, us, ds⟩), { st with outgoing := max st.outgoing stack })
+    match sigParamBytes s with
+    | .ok bytes =>
+      .ok (.op (.callInfo ⟨.sym n, us, ds⟩), { st with outgoing := max st.outgoing (argLocs bytes).2 })
     | .error e => .unmodeled s!"gen_call_info: {e}"
   | TId.gen_call_ind_info, [.op (.sig s), .reg r, .op (.callArgs us), .op (.callRets ds), _] =>
-    match sigArgLocs s with
-    | .ok (_, stack) =>
-      .ok (.op (.callInfo ⟨.reg r, us, ds⟩), { st with outgoing := max st.outgoing stack })
+    match sigParamBytes s with
+    | .ok bytes =>
+      .ok (.op (.callInfo ⟨.reg r, us, ds⟩), { st with outgoing := max st.outgoing (argLocs bytes).2 })
     | .error e => .unmodeled s!"gen_call_ind_info: {e}"
   -- aarch64 inst.isle / lower.isle helpers (aarch64/lower/isle.rs)
   | TId.use_fp16, [] => ok (.bool false)
@@ -775,7 +775,8 @@ def buildCtx (f : Clif.Function) : Except String (Ctx × Array (Nat × Nat) × L
     let start := insts.size
     for s in b.body do
       let data ← instData f s.inst
-      let some tys := s.inst.resultTypes sigOf | throw "ill-typed instruction"
+      let some tys := s.inst.resultTypes sigOf (f.sigDecls.lookup ·) |
+        throw "ill-typed instruction"
       if tys.length != s.results.length then throw "result count mismatch"
       for (r, ty) in s.results.zip tys do
         if ty == .i128 then throw s!"value v{r} is i128"

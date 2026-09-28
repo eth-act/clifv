@@ -89,6 +89,8 @@ def instArgs : Clif.Inst → List Clif.ValueId
   | .carry _ _ x y z | .select _ x y z | .selectSpectreGuard _ x y z | .bitselect _ x y z
   | .atomicCas _ _ x y z => [x, y, z]
   | .call _ args => args
+  | .callIndirect _ callee args => callee :: args
+  | .funcAddr _ _ => []
 
 /-- The value operands of a terminator. -/
 def termArgs : Clif.Terminator → List Clif.ValueId
@@ -302,7 +304,7 @@ def ctxOk (f : Clif.Function) (ctx : Ctx) : Bool :=
       (match instData f i with
         | .ok d => d == info.data
         | .error _ => false) &&
-      (match i.resultTypes (fun r => (f.extern? r).map (·.sig)) with
+      (match i.resultTypes (fun r => (f.extern? r).map (·.sig)) (f.sigDecls.lookup ·) with
         | some tys => decide (info.resTys = tys.map CTy.ofClif) &&
             decide (info.results.length = tys.length)
         | none => false)

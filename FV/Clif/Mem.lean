@@ -209,10 +209,26 @@ def mem (ds : List DataObject) : Res Mem := do
 
 end Image
 
-/-- Initial memory of a program: `Mem.empty` without data objects, else `Image.mem`. -/
+/-- Initial memory of a program: `Mem.empty` without data objects, else `Image.mem`
+extended with one entry-stub address per function (and per extern declaration), so
+`func_addr` and data-object relocations to function symbols resolve to the same
+addresses (`Clif.Rust`). Function symbols are only registered when the program has data
+objects — `run_of_data_nil` keeps `Clif.run` starting from `Mem.empty` otherwise. -/
 def Program.initMem (p : Program) : Res Mem :=
   match p.data with
   | [] => .ok Mem.empty
-  | ds => Image.mem ds
+  | ds => do
+    let m ← Image.mem ds
+    -- one stub slot per function/extern name, 16-aligned after the data objects
+    let names := (p.funcs.map (·.name) ++
+      (p.funcs.flatMap fun f => f.externs.map (·.2.name))).eraseDups
+    let names := names.filter fun n => (m.symbols n).isNone
+    let start := (m.next + 15) / 16 * 16
+    let addrs := names.zip ((List.range names.length).map fun i => start + 16 * i)
+    pure { m with
+      next := start + 16 * names.length
+      symbols := fun n => match addrs.lookup n with
+        | some a => some a
+        | none => m.symbols n }
 
 end Clif

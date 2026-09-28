@@ -152,6 +152,8 @@ structure DriverHyp (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) 
   terms : TermCalls sem MR
   ext : ∀ B ∈ f.blocks, ∀ st ∈ B.body, ∀ fn args, st.inst = .call fn args →
     ∀ e, f.extern? fn = some e → p.func? e.name = none
+  /-- no indirect calls (`E2E.InSubset.noSpecial`, rust-route step 4) -/
+  noCI : ∀ B ∈ f.blocks, ∀ st ∈ B.body, ∀ sig callee args, st.inst ≠ .callIndirect sig callee args
   /-- every extern takes at most 8 (register) parameters (`E2E.InSubset.callRegArgs`) -/
   regArgs : CallRegArgs f
   /-- `br_table` indices have at most 32 bits (`lowerCheck`'s `brIdxOk`) -/
@@ -212,8 +214,9 @@ theorem stmt_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     instOutcome_congr (fr := s.frame) (fr' := fr') rfl rfl env p s.mem stm.inst
       fun x hx => restrict_regs_of_mem (hargs x hx)
   rw [hio] at hrun'
-  have hstep := step_stmt env p s stm rest hbody fun fn args hi e he =>
-    H.ext B hBmem stm hstmmem fn args hi e (by rw [← hfunc]; exact he)
+  have hstep := step_stmt env p s stm rest hbody
+    (fun fn args hi e he => H.ext B hBmem stm hstmmem fn args hi e (by rw [← hfunc]; exact he))
+    (fun sig callee args hi => H.noCI B hBmem stm hstmmem sig callee args hi)
   let D : Nat → Prop := fun n => sl.st.nextVreg ≤ n ∧ n < sl.st'.nextVreg
   have hD : ∀ d, D d → gn d = d := fun d hd => H.shape.temps d (by simp only [D] at hd; omega)
   have hdefs : ∀ m ∈ sl.st'.emitted.toList, ∀ d ∈ vdefs m, D d := hok.defs
@@ -1050,9 +1053,11 @@ theorem Reach.snoc {env : Clif.Env} {p : Clif.Program} {s s' s'' : Clif.State}
 theorem stmt_not_done {env : Clif.Env} {p : Clif.Program} {s : Clif.State} {st : Clif.Stmt}
     {rest : List Clif.Stmt} (h : s.frame.body = st :: rest)
     (hext : ∀ fn args, st.inst = .call fn args → ∀ e, s.frame.func.extern? fn = some e →
-      p.func? e.name = none) {vals : List Clif.Val} {cm : Clif.Mem} :
+      p.func? e.name = none)
+    (hci : ∀ sig callee args, st.inst ≠ .callIndirect sig callee args)
+    {vals : List Clif.Val} {cm : Clif.Mem} :
     Clif.step env p s ≠ .done vals cm := by
-  rw [step_stmt env p s st rest h hext]
+  rw [step_stmt env p s st rest h hext hci]
   cases instOutcome env p s.frame s.mem st.inst with
   | ok r =>
     simp only [Clif.StepResult.ofRes, Clif.continueWith]
@@ -1118,12 +1123,18 @@ theorem sim_run (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) {cs : Clif.S
           exact List.mem_of_mem_drop (hbody ▸ List.mem_cons_self)
         intro fn args hi e he
         exact H.ext B (List.mem_of_getElem? hB) st hst fn args hi e (hfunc ▸ he)
+      have hnoci : ∀ sig callee args, st.inst ≠ .callIndirect sig callee args := by
+        obtain ⟨-, -, -, -, B, j, hB, -, -, hbd, -⟩ := hm
+        have hst : st ∈ B.body := by
+          rw [hbd] at hbody
+          exact List.mem_of_mem_drop (hbody ▸ List.mem_cons_self)
+        exact H.noCI B (List.mem_of_getElem? hB) st hst
       obtain ⟨S1, S2⟩ := stmt_step H hm hbody
       cases hs : Clif.step env p s with
       | next s' =>
         obtain ⟨vs', hstar, hm'⟩ := S1 s' hs
         exact RunOk.prefix hstar (ih s' vs' (hr.snoc hs) hm')
-      | done vals cm => exact absurd hs (stmt_not_done hbody hext)
+      | done vals cm => exact absurd hs (stmt_not_done hbody hext hnoci)
       | trapped c => exact S2 c hs (htr s c st rest hr hs hbody)
       | stuck => trivial
 

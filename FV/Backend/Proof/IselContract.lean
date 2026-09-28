@@ -449,7 +449,7 @@ structure CtxInv (f : Clif.Function) (ctx : Ctx) : Prop where
   data : ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info → info.clif = some inst →
     instData f inst = .ok info.data
   resTys : ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info → info.clif = some inst →
-    ∃ tys, inst.resultTypes (fun r => (f.extern? r).map (·.sig)) = some tys ∧
+    ∃ tys, inst.resultTypes (fun r => (f.extern? r).map (·.sig)) (fun _ => none) = some tys ∧
       info.resTys = tys.map CTy.ofClif ∧ info.results.length = tys.length
   valueReg : ∀ (x : Nat) (r : Reg), ctx.valueReg? x = some r → r = .vreg x .int
   typedReg : ∀ (x : Nat) (t : CTy), ctx.valueType? x = some t → ctx.valueReg? x = some (.vreg x .int)
