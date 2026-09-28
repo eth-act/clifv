@@ -90,9 +90,7 @@ theorem ldst_store (op : StoreOp) (hop : op ≠ .fpuStore128) (Rn Rt : BitVec 5)
       simp (config := {decide := true}) [Arm.LDST.exec_reg_imm_common, Arm.LDST.reg_imm_operation,
         StoreOp.bytes, Arm.LDST.reg_imm_constrain_unpredictable, Arm.ldst_read, Arm.read_gpr_zr,
         Arm.read_gpr, Arm.write_pc, Arm.read_pc, hRt, h31, log2]
-      all_goals first
-        | rfl
-        | trace_state; sorry
+      all_goals rfl
 
 /-- A base register of a final addressing mode. -/
 def BaseOk : Reg → Prop
