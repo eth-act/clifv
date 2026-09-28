@@ -76,4 +76,55 @@ theorem optimizeReport_sim (cfg : Config)
     · intro s hs; exact hs.1
   · exact hU
 
+theorem optimize_sim (cfg : Config) (hS : SimplifyPassSim cfg.rules.fn cfg.rules.skeletonFn)
+    (f : Function) : FunSim f (optimize f cfg) :=
+  optimizeReport_sim cfg hS f
+
+/-- Initial states of related programs are related. -/
+theorem initState_rel {p q : Program} (hP : FunsSim p.funcs q.funcs) {f : String}
+    {args : List Val} {mem : Mem} {s : State} (h : initState p f args mem = .ok s) :
+    ∃ s', initState q f args mem = .ok s' ∧ SR s.mem.symbols s s' := by
+  simp only [initState, Res.bind_eq_ok, Res.ofOption_eq_ok, Res.pure_eq_ok] at h
+  obtain ⟨fn, hfn, ⟨fr, mem'⟩, he, rfl⟩ := h
+  obtain ⟨g, hg, hfg⟩ := (hP.find f).1 fn hfn
+  obtain ⟨fr', he', hgr, -⟩ := funSim_entry (syms := mem'.symbols) hfg he
+  refine ⟨⟨fr', [], mem'⟩, ?_, rfl, rfl, hgr, .nil _⟩
+  simp only [initState, Program.func?] at hg ⊢
+  simp [hg, he']
+
+/-- **Program refinement by the mid-end**: whenever `Clif.run` of a program returns or traps,
+`Clif.run` of the optimised program (every function optimised) does the same. -/
+theorem optimizeProgram_refines (cfg : Config)
+    (hS : SimplifyPassSim cfg.rules.fn cfg.rules.skeletonFn) {env : Env}
+    (hE : EnvKeepsSymbols env) (p : Program) (f : String) (args : List Val) (fuel : Nat) :
+    ∃ fuel', OutcomeRefines (run env p f args fuel) (run env (optimizeProgram p cfg) f args fuel') := by
+  have hP : FunsSim p.funcs (optimizeProgram p cfg).funcs :=
+    FunsSim.map (T := (optimize · cfg)) (optimize_sim cfg hS)
+  have hd : (optimizeProgram p cfg).initMem = p.initMem := rfl
+  simp only [run, hd]
+  cases hm : p.initMem with
+  | trap c => exact ⟨0, ⟨fun _ _ h => h, fun _ h => h⟩⟩
+  | stuck m => exact ⟨0, ⟨fun _ _ h => h, fun _ h => h⟩⟩
+  | ok mem =>
+    simp only [runWith]
+    cases hi : initState p f args mem with
+    | trap c =>
+      have : initState p f args mem ≠ .trap c := by
+        intro h
+        unfold initState at h
+        cases hx : p.func? f with
+        | none => simp [hx, Res.ofOption, bind, Res.bind] at h
+        | some fn =>
+          simp only [hx, Res.ofOption, Res.ok_bind] at h
+          cases he : enterFunc fn args mem with
+          | ok x => simp [he, bind, Res.bind, pure] at h
+          | trap c' => exact enterFunc_not_trap _ _ _ _ he
+          | stuck m => simp [he, bind, Res.bind] at h
+      exact absurd hi this
+    | stuck m => exact ⟨0, ⟨(fun _ _ h => by cases h), (fun _ h => by cases h)⟩⟩
+    | ok s =>
+      obtain ⟨s', hi', hr⟩ := initState_rel hP hi
+      obtain ⟨n', hn'⟩ := runLoop_refines hE hP fuel s s' hr
+      exact ⟨n', by simp only [hi']; exact hn'⟩
+
 end Opt
