@@ -1,4 +1,5 @@
 import FV.E2E.RegLevelTrap
+import FV.Backend.Proof.IselCtlTerm
 
 /-!
 # Prologue and epilogue on the machine (M6)
@@ -503,5 +504,183 @@ theorem q_init {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiEntry R.fb R.bas
       rw [hfield _ (by simp) (by simp) (by simp) (by simp)]
       exact (hbe.argsV n hr).symm
     | _ => simp [Reg.isArgReg] at hr
+
+/-! ## The return on the machine -/
+
+theorem ctlCheck_rets {vc : VCode} {rf : RFunc} (h : ctlCheck vc rf = true) {b k : Nat}
+    {vb : VBlock} {us : List (Reg × Reg)} (hvb : vc.blocks[b]? = some vb)
+    (hi : vb.insts[k]? = some (.rets us)) : ∃ ns, us = retPairs ns := by
+  have h2 := ctlCheck_inst h hvb hi
+  simp only [ctlInstOk, List.all_eq_true] at h2
+  obtain ⟨ns, rfl, -⟩ := argPairs_of (fun p hp => isVregInt_iff (h2 p hp))
+  exact ⟨ns, rfl⟩
+
+theorem assign_rets {us : List (Reg × Reg)} {regs : Array Reg} {i' : MInst}
+    (h : (MInst.rets us).assign regs = .ok i') : ∃ us', i' = .rets us' := by
+  unfold MInst.assign at h
+  simp only [MInst.visitOperands, StateT.run_bind, StateT.run_pure] at h
+  generalize StateT.run _ 0 = X at h
+  cases X with
+  | error e => cases h
+  | ok v =>
+    simp only [bind, Except.bind, pure, Except.pure] at h
+    split at h
+    · cases h
+    · simp only [Except.ok.injEq] at h
+      exact ⟨_, h.symm⟩
+
+/-- The `j`-th use value of a `Rets` is the store's value of its `j`-th fixed register. -/
+theorem rets_uses {ns : List (Nat × Reg)} {allocs : Array Loc} {m : Loc → CV}
+    (hfix : ∀ p ∈ ((retOps ns).toArray.zip allocs).toList, ∀ r, p.1.con = .fixed r → p.2 = .reg r)
+    (_hsz : (retOps ns).toArray.size = allocs.size) :
+    ∀ (j : Nat) (v p : Reg) (x : CV), (retPairs ns)[j]? = some (v, p) →
+      ((((retOps ns).toArray.zip allocs).toList.filter (·.1.isUse)).map (m ·.2))[j]? = some x →
+      x = m (.reg p) ∧ ∃ q ∈ ((retOps ns).toArray.zip allocs).toList, q.2 = .reg p := by
+  intro j v p x hj hx
+  have hu : ((retOps ns).toArray.zip allocs).toList.filter (·.1.isUse) =
+      ((retOps ns).toArray.zip allocs).toList := by
+    rw [List.filter_eq_self]
+    intro q hq
+    have := (List.of_mem_zip (by simpa using hq)).1
+    simp only [retOps, List.mem_map] at this
+    obtain ⟨_, -, e⟩ := this
+    rw [← e]; rfl
+  rw [hu] at hx
+  simp only [List.getElem?_map, Option.map_eq_some_iff] at hx
+  obtain ⟨q, hq, rfl⟩ := hx
+  have hq' := hq
+  simp only [Array.toList_zip, List.getElem?_zip_eq_some] at hq'
+  obtain ⟨h1, -⟩ := hq'
+  simp only [retPairs, retOps, List.getElem?_map, Option.map_eq_some_iff] at hj h1
+  obtain ⟨q1, hq1, e1⟩ := hj
+  obtain ⟨q2, hq2, e2⟩ := h1
+  rw [hq1] at hq2; cases hq2
+  simp only [Prod.mk.injEq] at e1
+  obtain ⟨-, rfl⟩ := e1
+  have e3 := hfix q (List.mem_of_getElem? hq) q1.2 (by rw [← e2])
+  exact ⟨by rw [e3], q, List.mem_of_getElem? hq, e3⟩
+
+theorem iterN_one_succ {S : Type} (f : S → S) (n : Nat) (s : S) :
+    iterN f (n + 1) s = f (iterN f n s) := by
+  rw [iterN_add]; rfl
+
+/-- **The return on the machine**: from `Q` at a `Rets` item, the epilogue and `ret` reach the
+return address with `sp` and x29 as at entry, the allocatable registers and the memory as at
+the item, and the returned values in their fixed registers. -/
+theorem ret_machine {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiEntry R.fb R.base ra R.s0)
+    {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc} {its : List RItem} {m : Loc → CV}
+    {w : Arm.ArmState} (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock}
+    {us : List (Reg × Reg)} (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some (.rets us)) :
+    ∃ n, Arm.r .PC (iterN R.step n s) = ra ∧ Arm.r .ERR (iterN R.step n s) = .None ∧
+      spv (iterN R.step n s) = spv R.s0 ∧ xreg 29 (iterN R.step n s) = xreg 29 R.s0 ∧
+      (∀ r, r.allocatable = true → regVal (iterN R.step n s) r = regVal s r) ∧
+      (iterN R.step n s).mem = s.mem ∧
+      ∀ ops, (MInst.rets us).operands = .ok ops → ∀ (j : Nat) (v p : Reg) (x : CV), us[j]? = some (v, p) →
+        ((((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)))[j]? = some x →
+        regVal (iterN R.step n s) p = x := by
+  have hframe := lowerRFunc_frame hR.alloc
+  have hck := (lowerRFunc_ok hR.alloc).2.2.2
+  have hst0 := hR.stack
+  have hsp0 := (spv R.s0).isLt
+  have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; omega
+  obtain ⟨j0, items, pre, regs, i', c1, c2, ls1, ls2, ps1, psm, ps2, T, cc, wh, ops, rfl, hit, hsplit,
+    hasg, hc1', hops, hstat, hchk', hc2, h1, h2, htr, hdrop, hpc, hst⟩ := q_op hq hvb hi
+  obtain ⟨us', rfl⟩ := assign_rets hasg
+  obtain rfl : c1 = [.epilogueRet] := by
+    rcases hc1' with ⟨-, -, h⟩ | ⟨_, h, -⟩ | ⟨_, -, h⟩
+    · exact absurd rfl (h us')
+    · cases h
+    · exact h
+  simp only [codeLinesE, ainstLines, hframe, ite_true, bind, Except.bind, pure, Except.pure,
+    List.append_nil, Except.ok.injEq, Prod.mk.injEq] at h1
+  obtain ⟨rfl, rfl⟩ := h1
+  rw [epilogueLines_eq] at hdrop
+  have hpl : ∀ ln ∈ spAdjLines false R.af.frameSize ++
+      [Line.ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16)) none, .ins .ret none], ln.plain = true := by
+    intro ln hln
+    rcases List.mem_append.1 hln with hln | hln
+    · obtain ⟨_, _, _, hp⟩ := spAdjLines_ins false _ ln hln; exact hp
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hln
+      rcases hln with rfl | rfl <;> rfl
+  rw [ftList_plain_append _ _ hpl (noTrap_next h2)] at hdrop
+  have hdrop' : R.L.drop j0 = (spAdjLines false R.af.frameSize ++
+      [Line.ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16)) none]) ++
+      (.ins .ret none :: (ftList (ls2 ++ nxtOf R.af b) ++ T)) := by
+    rw [hdrop]; simp
+  -- alignment of `sp + size` (= the fp/lr slot)
+  have hdrop0 : frameDrop R.af = R.af.frameSize + 16 := by simp [frameDrop, hframe]
+  have hslot : spOf s + BitVec.ofNat 64 R.af.frameSize = spv R.s0 - 16#64 := by
+    rw [hst.sp, RL.spB, hdrop0, BitVec.ofNat_add]; bv_omega
+  have hal : (spOf s + BitVec.ofNat 64 R.af.frameSize).toNat % 16 = 0 := by
+    have h16 : 16 ≤ (spv R.s0).toNat := by have := hst0.1; omega
+    rw [hslot, BitVec.toNat_sub_of_le (by rw [BitVec.le_def]; simpa using h16)]
+    have := hent.spAligned
+    simp; omega
+  obtain ⟨s1, hsteps, hsp1, hx29, hx30, ho1, hm1⟩ := epilogue_ok (R.envOf j0) hs s hal
+  obtain ⟨hiter, hpc1⟩ := iterN_steps hR hdrop'
+    (fun ln h => by
+      rcases List.mem_append.1 h with h | h
+      · obtain ⟨x, e, hh, -⟩ := spAdjLines_ins false _ ln h; exact ⟨x, e, hh⟩
+      · simp only [List.mem_singleton] at h; exact ⟨_, h, rfl⟩)
+    hst.prog hpc hst.err hsteps
+  obtain ⟨herr1, hprog1⟩ := hsteps.err
+  -- the `ret`
+  have hj : R.fa.lines.toList[j0 + (spAdjLines false R.af.frameSize ++
+      [Line.ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16)) none]).length]? = some (Line.ins .ret none) := by
+    have := congrArg (·[(spAdjLines false R.af.frameSize ++
+      [Line.ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16)) none]).length]?) hdrop'
+    simpa [List.getElem?_drop, RL.L] using this
+  obtain ⟨a, ha, hstep⟩ := armStepX_ins (X := R.X) (H := R.H) hR.layout hR.lm hR.fit hj rfl
+    (by rw [hprog1, hst.prog]) hpc1 (by rw [herr1, hst.err])
+  obtain ⟨a', ha', he'⟩ := exec_ret ⟨lineOffset R.fa.lines.toList (j0 + (spAdjLines false R.af.frameSize ++
+      [Line.ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16)) none]).length), (R.lm[·]?)⟩ s1
+  rw [ha] at ha'; cases ha'
+  have hfin : iterN R.step ((spAdjLines false R.af.frameSize ++
+      [Line.ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16)) none]).length + 1) s = Arm.w .PC (xreg 30 s1) s1 := by
+    rw [iterN_one_succ, hiter]; exact hstep.trans he'
+  have hfplr := hst.fplr hframe
+  rw [← hslot] at hfplr
+  have hregs : ∀ r, r.allocatable = true → regVal (Arm.w .PC (xreg 30 s1) s1) r = regVal s r := by
+    intro r hr
+    rw [regVal_w (by rcases allocatable_cases hr with ⟨n, rfl, _⟩ | ⟨n, rfl, _⟩ <;> simp [Reg.field])]
+    rcases allocatable_cases hr with ⟨n, rfl, hn⟩ | ⟨n, rfl, hn⟩
+    · have hne : ∀ q, q < 32 → q ≠ n → Arm.StateField.GPR (rnum n) ≠ .GPR (BitVec.ofNat 5 q) :=
+        fun q h1 h2 e => rnum_ne (a := n) (b := q) (by omega) h1 (Ne.symm h2) (Arm.StateField.GPR.inj e)
+      simp only [regVal]
+      rw [ho1 _ (by simp) (hne 29 (by omega) (by omega)) (hne 30 (by omega) (by omega))
+        (hne 31 (by omega) (by omega)) (hne 16 (by omega) (by omega))]
+    · simp only [regVal]
+      rw [ho1 _ (by simp) (by simp) (by simp) (by simp) (by simp)]
+  refine ⟨(spAdjLines false R.af.frameSize ++
+      [Line.ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16)) none]).length + 1,
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> rw [hfin]
+  · rw [Arm.r_of_w_same, hx30, hfplr, BitVec.extractLsb'_append_eq_left, hent.lr]
+  · rw [Arm.r_of_w_different (by simp), herr1, hst.err]
+  · simp only [spv]
+    rw [Arm.r_of_w_different (by simp)]
+    show spOf s1 = spv R.s0
+    rw [hsp1, hslot, BitVec.sub_add_cancel]
+  · simp only [xreg]
+    rw [Arm.r_of_w_different (by simp)]
+    have := hx29
+    simp only [xreg] at this
+    rw [this, hfplr, BitVec.extractLsb'_append_eq_right]
+    rfl
+  · exact hregs
+  · rw [Arm.ArmState.mem_w_eq_mem, hm1]
+  · intro ops' hops' j v p x hj hx
+    obtain ⟨ns, rfl⟩ := ctlCheck_rets hck hvb hi
+    rw [operands_rets] at hops' hops
+    cases hops'
+    cases hops
+    obtain ⟨hsz, hloc, -, -⟩ := checkStatic_facts hstat
+    obtain ⟨rfl, q, hq, hq2⟩ := rets_uses (fun q hq r hr => (hloc q hq).2 r hr) hsz j v p x hj hx
+    have hal : p.allocatable = true := by
+      have := (hloc q hq).1
+      rw [hq2] at this
+      simp only [CheckCtx.locOk, Bool.and_eq_true] at this
+      exact this.2
+    rw [hregs p hal, hst.store (.reg p) (fun r e => by cases e; exact hal) trivial]
+    rfl
 
 end Backend.Proof
