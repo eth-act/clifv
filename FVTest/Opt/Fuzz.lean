@@ -11,7 +11,7 @@ pure arithmetic over the parameters and constants chosen to trigger rewrites (0,
 two, min/max, …), a `brif` diamond joining in a block parameter, a counted loop (3
 iterations) whose body mixes loop-carried values with invariant expressions (LICM), and an
 exit block; occasionally trapping divisions. Opcodes are from the backend subset E; `--ext`
-adds non-E pure ones (saturating arithmetic, `iabs`, `cls`, `bmask`, `bitselect`).
+adds non-E pure ones (`iabs`, `cls`, `bmask`, `bitselect`).
 
 Each function is run with `Clif.run` on 8 argument vectors before and after `Opt.optimize`
 (same refinement check as `opt-difftest`); failures print both functions. With `--out`, the
@@ -78,7 +78,9 @@ def anyVal : GM (ValueId × Ty) := do
 def binOps : Array BinaryOp :=
   #[.iadd, .isub, .imul, .umulhi, .smulhi, .band, .bor, .bxor, .ishl, .ushr, .sshr, .rotl, .rotr,
     .smin, .smax, .umin, .umax]
-def extBinOps : Array BinaryOp := #[.uaddSat, .saddSat, .usubSat, .ssubSat]
+/-- Non-E binary operations accepted by Cranelift's verifier on scalars (the saturating ones
+are vector-only there). -/
+def extBinOps : Array BinaryOp := #[]
 def unOps : Array UnaryOp := #[.ineg, .bnot, .clz, .ctz, .popcnt, .bitrev, .bswap]
 def extUnOps : Array UnaryOp := #[.iabs, .cls]
 

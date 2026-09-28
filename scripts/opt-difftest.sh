@@ -19,9 +19,9 @@
 #    must accept it.
 # 3. corpus and runtests: `clif-filetest` on the optimised files, with the Cranelift
 #    interpreter (`clif-oracle interp`) run on the *optimised* files as oracle, and the same on
-#    the original files: every file's summary (pass/fail against the run lines under Clif.run,
-#    agreement with the interpreter) must be identical, i.e. the optimised code meets the
-#    expectations under both semantics exactly where the original does.
+#    the original files: no file's summary may get worse (same pass/fail counts against the run
+#    lines under Clif.run, no new disagreement with the interpreter), i.e. the optimised code
+#    meets the expectations under both semantics wherever the original does.
 # Exit status 0 iff every step passes.
 set -euo pipefail
 
@@ -106,9 +106,9 @@ run_set() {
       > "$WORK/$set-opt.txt" || true
     .lake/build/bin/clif-filetest --oracle-dir "$WORK/$set-orig-oracle" "$WORK/$set-orig"/*.clif \
       > "$WORK/$set-orig.txt" || true
-    # per-file summary lines must be identical (the originals' failures/disagreements are
-    # known baseline issues of the tests or of the interpreter); `unsupported` counts differ
-    # because clif-opt only prints the functions Clif.parseFile supports
+    # per-file summaries must not get worse (the originals' failures/disagreements are known
+    # baseline issues of the tests or of the interpreter); `unsupported` counts differ because
+    # clif-opt only prints the functions Clif.parseFile supports
     python3 - "$WORK/$set-orig.txt" "$WORK/$set-opt.txt" <<'PY' || status=1
 import re, sys
 def summ(p):
@@ -119,10 +119,21 @@ def summ(p):
         if m: d[m.group(1)] = re.sub(r" unsupported \d+", "", m.group(2))
     return d
 a, b = summ(sys.argv[1]), summ(sys.argv[2])
-diff = [k for k in sorted(a) if a.get(k) != b.get(k)]
+def nums(s):
+    return dict(re.findall(r"([a-z-]+) (\d+)", s or ""))
+def worse(x, y):
+    # same pass/fail counts and no new disagreement with the interpreter (the optimised code can
+    # agree more often: constant folding avoids known interpreter deviations)
+    x, y = nums(x), nums(y)
+    return (x.get("pass") != y.get("pass") or x.get("fail") != y.get("fail")
+            or int(y.get("disagree", 0)) > int(x.get("disagree", 0))
+            or int(y.get("oracle-error", 0)) > int(x.get("oracle-error", 0)))
+diff = [k for k in sorted(a) if worse(a.get(k), b.get(k))]
 for k in diff: print(f"DIFFERENT {k}: original {a.get(k)} | optimised {b.get(k)}")
+for k in sorted(a):
+    if k not in diff and a.get(k) != b.get(k): print(f"improved {k}: original {a.get(k)} | optimised {b.get(k)}")
 tot = [l for l in open(sys.argv[2]) if l.startswith("TOTAL")]
-print(f"files {len(a)}, summaries identical {len(a) - len(diff)}, different {len(diff)}")
+print(f"files {len(a)}, summaries not worse {len(a) - len(diff)}, worse {len(diff)}")
 if tot: print("optimised " + tot[-1].strip())
 sys.exit(1 if diff else 0)
 PY
