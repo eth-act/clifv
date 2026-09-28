@@ -392,3 +392,41 @@ the assembly of `RegLevelCorrect`, and the csem obligations (`Refines`, `DriverS
 `#print axioms` (new): `corr_load_uoff`, `execMInst_load`, `execMInst_store`,
 `steps_loadConst64`, `RL.frameOk`: `[propext, Classical.choice, Quot.sound]`;
 `realizes_op_next`: those plus M5's `decode_armBits_*._native.bv_decide` axioms.
+
+## Status update (M6Ctl, 2026-09-28)
+
+Compiler change (behaviour-preserving; corpus + extrt + runtests compile with no `ctlCheck`
+rejection): `lowerRFunc` runs `ctlCheck` (`Regalloc.lean`, `ctlInstOk`): `Args` only as
+instruction 0 of block 0 with (int vreg, x0–x7/v0–v7) pairs; before it block 0 has only moves
+into memory; no edge enters block 0; `cbz`/`cbnz`/`tbz` tested registers and
+`loadExtNameGot/Near` destinations are int vregs. `lowerRFunc_ok` returns `ctlCheck = true`;
+`RL.Wf` gains `psF` (the emitter's final state).
+
+Done (sorry-free, `FV/E2E/`):
+- `RegLevelArgs`: `AInv` (argument registers while `op 0` of block 0 is pending), `aInv_step`
+  (kept by every `MStep` from `Q`), `realizes_args` (no code, store unchanged).
+- `RegLevelDriverSem`: `driverSem_csem` (args, jump, rename — `visit_mapRegs`,
+  `assign_mapRegs`, `straightSem_mapRegs` —, retarget); `callsRefine_csem` from the external
+  contract `XCallsOk env MR X`.
+- `RegLevelBranch`: `exec_brInsn`, `brCond_{bcond,cbz,tbz}`, `step_branch` (M5 label
+  resolution), `StRel.pc`, `itemsChecked_block`, `q_entry` (machine at a block label ⇒ `Q` at
+  the block's items).
+- `RegLevelGoto`: `cfg_block` (successor labels), `ft_b`/`ft_cb` (fallthrough rewrites),
+  `reach_b`/`reach_cb`, `KindRel`/`kind_alloc`/`kind_brCond(_inv)`, **`realizes_goto`**
+  (jump/condBr/testBitAndBranch incl. fallthrough-rewritten variants).
+- `RegLevelNext`: `q_op`/`q_next`, `realizes_island`, `realizes_trapIf_next`.
+
+Interface with M6Insts (agreed; their commit 18796fb, `RegallocCover.lean`): `MInst.isCtl`,
+`csem_of_not_isCtl`, `FormsCovered`, `formOk_sound` = exactly `realizes_op_next`'s premises.
+
+Remaining (in order): calls (`CalleeOk` hook contract: `OperandsSound` for a `callExec H`, pc+4,
+program, error-free `X.call`; proof mirrors `realizes_op_next` with one hooked step),
+`loadExtNameGot/Near` (two hooked steps; `gpr_write_sound`), `jtSequence` (open issue: `csem`'s
+temporaries `[0, 0]` differ from the machine's, so `Q.store` fails after it — needs a havoc of
+branch defs in `MStep`/checker or a weaker store relation; plus `AbiEntry.code` for the table),
+`Realizes (Q ∧ AInv)` by cases (all pieces above), prologue/epilogue (stp/ldp/mov sp exec
+lemmas), traps (`layout_traps`), and the assembly of `RegLevelCorrect`.
+
+`#print axioms`: `realizes_args`, `driverSem_csem`, `callsRefine_csem`:
+`[propext, Classical.choice, Quot.sound]`; `realizes_goto`, `realizes_trapIf_next`: those plus
+M5's `decode_armBits_*._native.bv_decide` axioms.

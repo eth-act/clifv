@@ -236,6 +236,8 @@ structure RL.Wf (R : RL) : Prop where
   lm : labelOffsets R.fa.lines = .ok R.lm
   fit : 4 * R.fb.words.size ≤ 2 ^ 64
   stack : StackAvail R.af R.s0
+  /-- `psF` is the emitter's final state -/
+  psF : ∃ body, blocksLinesE R.ctx R.af R.af.blocks.toList {} = .ok (body, R.psF)
 
 theorem RL.size_lt {R : RL} (hR : R.Wf) : R.fr.size < 32768 :=
   (lowerRFunc_ok hR.alloc).2.1
@@ -243,7 +245,7 @@ theorem RL.size_lt {R : RL} (hR : R.Wf) : R.fr.size < 32768 :=
 /-- The activation's frame is laid out correctly. -/
 theorem RL.frameOk {R : RL} (hR : R.Wf) :
     FrameOk R.fr (Live R.rf) (R.rf.floatMove = true) R.spB R.F := by
-  obtain ⟨⟨hfs, -⟩, hlt, hfr⟩ := lowerRFunc_ok hR.alloc
+  obtain ⟨⟨hfs, -⟩, hlt, hfr, -⟩ := lowerRFunc_ok hR.alloc
   have hlt' : R.fr.size < 32768 := hlt
   have hle : R.fr.size ≤ R.fr.total := compute_size_le_total R.vc R.rf
   have hst := hR.stack
