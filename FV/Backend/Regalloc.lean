@@ -248,6 +248,41 @@ def RAFrame.moveInsts (fr : RAFrame) (src dst : Loc) : Except String (List AInst
   | m, .reg b => pure [.inst (slotLoad ((b.realClass?).getD .int) b (← fr.offset m))]
   | _, _ => throw "memory-to-memory move"
 
+/-- Registers of incoming arguments (AAPCS64): x0–x7, v0–v7. -/
+def Reg.isArgReg : Reg → Bool
+  | .x n | .v n => n < 8
+  | _ => false
+
+def RItem.isMove : RItem → Bool
+  | .move .. => true
+  | _ => false
+
+/-- A move into a register. -/
+def RItem.regDst : RItem → Bool
+  | .move _ (.reg _) => true
+  | _ => false
+
+def RItem.isOp0 : RItem → Bool
+  | .op 0 _ => true
+  | _ => false
+
+/-- `Args` is sound to drop (it emits no code; proof: `E2E.RegLevelArgs`) when its fixed
+registers still hold the incoming arguments: `Args` occurs only as instruction 0 of block 0, fixed
+to argument registers; before it, block 0 has only moves into memory (the callee-saved saves),
+and no edge enters block 0. Always true for `lowerFunction` + `prepare` output. -/
+def argsCheck (vc : VCode) (rf : RFunc) : Bool :=
+  (vc.blocks.toList.zipIdx.all fun (vb, b) => vb.insts.toList.zipIdx.all fun (i, k) =>
+    match i with
+    | .args ds => b == 0 && k == 0 &&
+      ds.all (fun p => (match p.1 with | .vreg _ .int => true | _ => false) && p.2.isArgReg)
+    | _ => true) &&
+  (let items := (rf.blocks[0]?.getD #[]).toList
+   (items.takeWhile RItem.isMove).all (!·.regDst) &&
+   ((items.dropWhile RItem.isMove).drop 1).all (!·.isOp0)) &&
+  (match vc.cfg with
+   | .ok (ss, _) => ss.all (·.all (· != 0))
+   | .error _ => true)
+
 /-- Lower a checked allocated function to `AFunc`. -/
 def lowerRFunc (vc : VCode) (rf : RFunc) : Except String AFunc := do
   let fr := RAFrame.compute vc rf
@@ -255,6 +290,7 @@ def lowerRFunc (vc : VCode) (rf : RFunc) : Except String AFunc := do
   -- has no SIMD&FP register-offset form, so an allocator area of 32 KiB or more is rejected
   -- (proof: `RegallocSlots`). The CLIF slots above it are addressed by `stack_addr` arithmetic.
   if fr.size ≥ 32768 then throw s!"allocator frame area of {fr.size} bytes is too large"
+  if !argsCheck vc rf then throw "Args is not at the entry (argsCheck)"
   let blocks ← (vc.blocks.zip rf.blocks).mapIdxM fun bi (vb, items) => do
     let mut code : Array AInst := if bi == 0 then #[.prologue] else #[]
     for it in items do

@@ -243,7 +243,7 @@ theorem RL.size_lt {R : RL} (hR : R.Wf) : R.fr.size < 32768 :=
 /-- The activation's frame is laid out correctly. -/
 theorem RL.frameOk {R : RL} (hR : R.Wf) :
     FrameOk R.fr (Live R.rf) (R.rf.floatMove = true) R.spB R.F := by
-  obtain ⟨⟨hfs, -⟩, hlt, hfr⟩ := lowerRFunc_ok hR.alloc
+  obtain ⟨⟨hfs, -⟩, hlt, hfr, -⟩ := lowerRFunc_ok hR.alloc
   have hlt' : R.fr.size < 32768 := hlt
   have hle : R.fr.size ≤ R.fr.total := compute_size_le_total R.vc R.rf
   have hst := hR.stack

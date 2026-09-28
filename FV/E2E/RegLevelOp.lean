@@ -60,7 +60,7 @@ theorem arr_mapM_locReg {allocs : Array Loc} {regs : Array Reg}
 theorem itemCode_op {fr : RAFrame} {vb : VBlock} {k : Nat} {allocs : Array Loc} {c1 : List AInst}
     (h : itemCode fr vb (.op k allocs) = .ok c1) :
     ∃ regs i i', allocs = regs.map Loc.reg ∧ vb.insts[k]? = some i ∧ i.assign regs = .ok i' ∧
-      (c1 = [AInst.inst i'] ∨ (∃ ds, i' = .args ds ∧ c1 = []) ∨
+      ((c1 = [AInst.inst i'] ∧ (∀ ds, i' ≠ .args ds) ∧ (∀ us, i' ≠ .rets us)) ∨ (∃ ds, i' = .args ds ∧ c1 = []) ∨
         (∃ us, i' = .rets us ∧ c1 = [AInst.epilogueRet])) := by
   unfold itemCode itemStep at h
   dsimp only at h
@@ -183,7 +183,7 @@ theorem realizes_op_next {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
   rw [hi] at hi0
   cases hi0
   obtain ⟨⟨ls1, hl1, hins, hpl, hint⟩, hna, hnr⟩ := hL regs i' hasg
-  rcases hc1' with rfl | ⟨ds, rfl, -⟩ | ⟨us, rfl, -⟩
+  rcases hc1' with ⟨rfl, -, -⟩ | ⟨ds, rfl, -⟩ | ⟨us, rfl, -⟩
   rotate_left
   · exact absurd rfl (hna ds)
   · exact absurd rfl (hnr us)
