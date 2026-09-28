@@ -1368,4 +1368,226 @@ theorem stepBlock_spec (hS : SimplifySound rules) (hK : SkeletonSound skel) (hE 
 
 end Block
 
+/-! ## The initial state -/
+
+theorem foldl_insert_contains {α β : Type} (g : α → ValueId) (val : α → β) :
+    ∀ (l : List α) (m0 : Std.HashMap ValueId β) (x : ValueId),
+      (l.foldl (fun m a => m.insert (g a) (val a)) m0).contains x = true →
+      m0.contains x = true ∨ ∃ a ∈ l, g a = x
+  | [], m0, x, h => .inl h
+  | a :: l, m0, x, h => by
+    simp only [List.foldl_cons] at h
+    rcases foldl_insert_contains g val l _ x h with h1 | ⟨b, hb, hbx⟩
+    · rw [hm_contains_insert'] at h1
+      rcases h1 with h1 | h1
+      · exact .inr ⟨a, by simp, h1⟩
+      · exact .inl h1
+    · exact .inr ⟨b, by simp [hb], hbx⟩
+
+/-- The leaves are parameters and results of `f`. -/
+theorem initAvail_mem {f : Function} {x : ValueId} (h : (initAvail f).contains x = true) :
+    ∃ (i : Nat) (b : Block), f.blocks[i]? = some b ∧
+      ((∃ p ∈ b.params, p.1 = x) ∨ ∃ (j : Nat) (s : Stmt), b.body[j]? = some s ∧ x ∈ s.results) := by
+  have key : ∀ (l : List (Block × Nat)) (m0 : Std.HashMap ValueId Nat),
+      (l.foldl (fun av (bb : Block × Nat) =>
+        let av := bb.1.params.foldl (fun av (p : ValueId × Ty) => av.insert p.1 bb.2) av
+        bb.1.body.foldl (fun av s =>
+          if !(isPure s.inst && s.results.length == 1) then
+            s.results.foldl (fun av r => av.insert r bb.2) av
+          else av) av) m0).contains x = true →
+      m0.contains x = true ∨ ∃ bb ∈ l, ((∃ p ∈ bb.1.params, p.1 = x) ∨ ∃ s ∈ bb.1.body, x ∈ s.results) := by
+    intro l
+    induction l with
+    | nil => intro m0 h; exact .inl h
+    | cons bb l ih =>
+      intro m0 h
+      simp only [List.foldl_cons] at h
+      rcases ih _ h with h1 | ⟨bb', hbb', h2⟩
+      · -- inside `bb`
+        have hbody : ∀ (ss : List Stmt) (m1 : Std.HashMap ValueId Nat),
+            (ss.foldl (fun av s =>
+              if !(isPure s.inst && s.results.length == 1) then
+                s.results.foldl (fun av r => av.insert r bb.2) av
+              else av) m1).contains x = true → m1.contains x = true ∨ ∃ s ∈ ss, x ∈ s.results := by
+          intro ss
+          induction ss with
+          | nil => intro m1 h; exact .inl h
+          | cons s ss ihs =>
+            intro m1 h
+            simp only [List.foldl_cons] at h
+            rcases ihs _ h with h3 | ⟨s', hs', h4⟩
+            · split at h3
+              · rcases foldl_insert_contains id (fun _ => bb.2) s.results m1 x h3 with h5 | ⟨r, hr, rfl⟩
+                · exact .inl h5
+                · exact .inr ⟨s, by simp, hr⟩
+              · exact .inl h3
+            · exact .inr ⟨s', by simp [hs'], h4⟩
+        rcases hbody _ _ h1 with h3 | ⟨s, hs, hx⟩
+        · rcases foldl_insert_contains (fun p : ValueId × Ty => p.1) (fun _ => bb.2) bb.1.params m0 x h3
+            with h5 | ⟨p, hp, hpx⟩
+          · exact .inl h5
+          · exact .inr ⟨bb, by simp, .inl ⟨p, hp, hpx⟩⟩
+        · exact .inr ⟨bb, by simp, .inr ⟨s, hs, hx⟩⟩
+      · exact .inr ⟨bb', by simp [hbb'], h2⟩
+  rcases key f.blocks.zipIdx {} h with h1 | ⟨⟨b, i⟩, hbi, h2⟩
+  · simp at h1
+  · rw [List.mem_zipIdx_iff_getElem?] at hbi
+    refine ⟨i, b, hbi, ?_⟩
+    rcases h2 with h2 | ⟨s, hs, hx⟩
+    · exact .inl h2
+    · obtain ⟨j, hj⟩ := List.mem_iff_getElem?.1 hs
+      exact .inr ⟨j, s, hj, hx⟩
+
+theorem foldl_ge {α : Type} {g : Nat → α → Nat} (hinf : ∀ m a, m ≤ g m a) :
+    ∀ (l : List α) (m : Nat), m ≤ l.foldl g m
+  | [], m => Nat.le_refl m
+  | a :: l, m => Nat.le_trans (hinf m a) (foldl_ge hinf l (g m a))
+
+theorem foldl_ge_mem {α : Type} {g : Nat → α → Nat} (hinf : ∀ m a, m ≤ g m a) {B : Nat} {a : α}
+    (ha : ∀ m, B ≤ g m a) : ∀ (l : List α) (m : Nat), a ∈ l → B ≤ l.foldl g m
+  | [], _, h => by cases h
+  | b :: l, m, h => by
+    simp only [List.foldl_cons]
+    rcases List.mem_cons.1 h with rfl | h
+    · exact Nat.le_trans (ha m) (foldl_ge hinf l _)
+    · exact foldl_ge_mem hinf ha l _ h
+
+/-- Every parameter and result of `f` is at most `maxValue f`. -/
+theorem le_maxValue {f : Function} {b : Block} (hb : b ∈ f.blocks) {x : ValueId}
+    (hx : (∃ p ∈ b.params, p.1 = x) ∨ ∃ s ∈ b.body, x ∈ s.results) : x ≤ maxValue f := by
+  have hmaxinf : ∀ (l : List Nat) (m : Nat), m ≤ l.foldl max m :=
+    foldl_ge (fun m a => Nat.le_max_left m a)
+  have hstmt : ∀ m (st : Stmt), m ≤ (st.results ++ operands st.inst).foldl max m :=
+    fun m st => hmaxinf _ m
+  have hbody : ∀ (b : Block) m, m ≤ b.body.foldl (fun m st => (st.results ++ operands st.inst).foldl max m) m :=
+    fun b m => foldl_ge hstmt _ m
+  have hparams : ∀ (b : Block) m, m ≤ b.params.foldl (fun m (p : ValueId × Ty) => max m p.1) m :=
+    fun b m => foldl_ge (fun m (p : ValueId × Ty) => Nat.le_max_left m p.1) _ m
+  have hblk : ∀ m (b : Block), m ≤ (termOperands b.term).foldl max
+      (b.body.foldl (fun m st => (st.results ++ operands st.inst).foldl max m)
+        (b.params.foldl (fun m p => max m p.1) m)) :=
+    fun m b => Nat.le_trans (hparams b m) (Nat.le_trans (hbody b _) (hmaxinf _ _))
+  unfold maxValue
+  refine foldl_ge_mem hblk (fun m => ?_) f.blocks 0 hb
+  rcases hx with ⟨p, hp, rfl⟩ | ⟨s, hs, hr⟩
+  · exact Nat.le_trans (foldl_ge_mem (fun m (p : ValueId × Ty) => Nat.le_max_left m p.1)
+      (fun m => Nat.le_max_right m p.1) _ m hp) (Nat.le_trans (hbody b _) (hmaxinf _ _))
+  · refine Nat.le_trans ?_ (hmaxinf _ _)
+    refine foldl_ge_mem hstmt (fun m => ?_) _ _ hs
+    exact foldl_ge_mem (fun m a => Nat.le_max_left m a) (fun m => Nat.le_max_right m x) _ m
+      (List.mem_append_left _ hr)
+
+section Init
+variable {f : Function} {info : Info} {ρ : Valuation} {fr : Frame} {mem : Mem}
+
+theorem initAvail_typed (hf : check f = .ok info) {x : ValueId} (h : (initAvail f).contains x = true) :
+    (info.types.get? x).isSome := by
+  have hW := wf_of_check hf
+  obtain ⟨i, b, hb, ⟨p, hp, rfl⟩ | ⟨j, s, hs, hx⟩⟩ := initAvail_mem h
+  · have := hW.params i b hb p hp
+    simp only [wfData] at this; rw [this]; rfl
+  · obtain ⟨ts, -, hlen, hts⟩ := hW.results i b hb j s hs
+    obtain ⟨n, hn⟩ := List.mem_iff_getElem?.1 hx
+    have := hts n x hn
+    simp only [wfData] at this
+    rw [this]
+    have hn' : n < ts.length := by rw [hlen]; exact (List.getElem?_eq_some_iff.1 hn).1
+    simp [hn']
+
+theorem initAvail_lt {x : ValueId} (h : (initAvail f).contains x = true) : x < maxValue f + 1 := by
+  obtain ⟨i, b, hb, hx⟩ := initAvail_mem h
+  have hbm : b ∈ f.blocks := List.mem_of_getElem? hb
+  refine Nat.lt_succ_of_le (le_maxValue hbm ?_)
+  rcases hx with hx | ⟨j, s, hs, hx⟩
+  · exact .inl hx
+  · exact .inr ⟨s, List.mem_of_getElem? hs, hx⟩
+
+/-- The initial state satisfies the invariant. -/
+theorem init_ginv (hf : check f = .ok info) (hG : SGood f info ρ fr mem) (remat : Bool) :
+    GInv f ρ fr mem (initSState f info remat) := by
+  have hgr : (initSState f info remat).graph = fun _ => none := by
+    funext x; simp [SState.graph, initSState]
+  have hg : ∀ x, gval ρ fr mem (initSState f info remat) x = ρ x := by
+    intro x; simp only [gval, hgr]; exact den_leaf rfl
+  have hk : ∀ x, (initSState f info remat).known x = (initAvail f).contains x := by
+    intro x; simp [SState.known, initSState]
+  have htot : ∀ x, (initAvail f).contains x = true →
+      ∃ a, ρ x = some a ∧ info.types.get? x = some a.ty := by
+    intro x hx
+    have h1 := hG.dom x; rw [hx] at h1
+    obtain ⟨a, ha⟩ := Option.isSome_iff_exists.1 h1
+    obtain ⟨t, ht⟩ := Option.isSome_iff_exists.1 (initAvail_typed hf hx)
+    exact ⟨a, ha, by rw [ht, hG.ty x a t ha ht]⟩
+  refine ⟨rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · intro x m hx; simp [initSState] at hx
+  · intro x hx; rw [hk] at hx; exact initAvail_lt hx
+  · intro x hx
+    cases hρ : ρ x with
+    | none => rfl
+    | some a =>
+      have h1 := hG.dom x; rw [hρ] at h1
+      have := initAvail_lt h1.symm
+      exact absurd hx (Nat.not_le.2 this)
+  · intro x a hx
+    have h1 := hG.dom x; rw [hx] at h1
+    exact ⟨by simpa [initSState] using h1.symm, by simp [initSState]⟩
+  · intro x hx
+    simp only [initSState] at hx
+    obtain ⟨a, ha, ht⟩ := htot x hx
+    exact ⟨a, by rw [hg]; exact ha, by simpa [initSState] using ht⟩
+  · intro x t a ht hv
+    rw [hg] at hv
+    exact hG.ty x a t hv (by simpa [initSState] using ht)
+  · intro x ms hx; simp [initSState] at hx
+  · intro n w hx; simp [initSState] at hx
+  · intro x hx; simp [initSState] at hx
+  · intro x hx
+    simp only [SState.solid, Bool.and_eq_true] at hx
+    rw [hk] at hx
+    obtain ⟨a, ha, ht⟩ := htot x hx.1
+    exact ⟨a, by rw [hg]; exact ha, by simpa [initSState] using ht⟩
+  · intro k ms hx; simp [initSState] at hx
+
+end Init
+
+/-! ## The pass -/
+
+/-- **Every run of the simplify pass has its facts** (for sound rule sets and a checked input). -/
+theorem simplify_facts {rules : SimplifyFn} {skel : SkeletonFn} (hS : SimplifySound rules)
+    (hK : SkeletonSound skel) {allowed skelOk : Inst → Bool} {remat : Bool} {f : Function}
+    {info : Info} (hf : check f = .ok info) :
+    SimpFacts f info (simplify rules skel allowed skelOk remat f info).2.2 := by
+  refine ⟨fun ρ fr mem hG i lg hlg => ?_⟩
+  have hE := hG.env
+  have key : ∀ (l : List Nat) (acc : SState × Subst × Array Block × Array (Option BlockLog)),
+      PInv f ρ fr mem acc.1 acc.2.2.2 → acc.1.trapBlocks = trapMap f →
+      PInv f ρ fr mem (l.foldl (stepBlock rules skel allowed skelOk info.cfg f.blocks.toArray) acc).1
+        (l.foldl (stepBlock rules skel allowed skelOk info.cfg f.blocks.toArray) acc).2.2.2 ∧
+      (l.foldl (stepBlock rules skel allowed skelOk info.cfg f.blocks.toArray) acc).1.trapBlocks =
+        trapMap f := by
+    intro l
+    induction l with
+    | nil => intro acc h1 h2; exact ⟨h1, h2⟩
+    | cons b l ih =>
+      intro acc h1 h2
+      simp only [List.foldl_cons]
+      obtain ⟨h3, hM⟩ := stepBlock_spec (allowed := allowed) (skelOk := skelOk) (cfg := info.cfg)
+        hS hK hE f.blocks.toArray acc b h1
+      exact ih _ h3 (by rw [hM.trap, h2])
+  simp only [simplify] at hlg ⊢
+  rw [← Array.foldl_toList] at hlg ⊢
+  generalize hr : info.cfg.rpo.toList.foldl (stepBlock rules skel allowed skelOk info.cfg f.blocks.toArray)
+    (initSState f info remat, {}, f.blocks.toArray, Array.replicate f.blocks.toArray.size none) = r at hlg ⊢
+  obtain ⟨st, subst, out, logs⟩ := r
+  have := key info.cfg.rpo.toList
+    (initSState f info remat, {}, f.blocks.toArray, Array.replicate f.blocks.toArray.size none)
+    ⟨init_ginv hf hG remat, fun i lg h => by
+      simp only [Array.getElem?_replicate] at h; split at h <;> simp at h⟩ rfl
+  rw [hr] at this
+  obtain ⟨⟨-, hlogs⟩, htb⟩ := this
+  have hb := (hlogs i lg hlg).1
+  simp only at htb hb
+  rw [htb] at hb
+  exact hb
+
 end Opt
