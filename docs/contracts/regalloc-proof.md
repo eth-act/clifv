@@ -562,3 +562,18 @@ Remaining: `Refines`/`MemRefines` of `csem` (M6Insts), deciding `FormsCovered`
 - **Open**: `ref_extend` (3 cases), the dispatcher `refAt_of_wf` and the final
   `Refines F (csem F ctx X)`; `MemRefines` (needs premises `ctx.slotBase = slotOff` and
   `syms n = some b → X.sym n 0 = ofNat b`, since csem is parametric in both).
+
+## Status update (M6MemRef, 2026-09-28)
+
+- **`MemRefines` proven**: `memRefines_csem (hsb : ctx.slotBase = sb)
+  (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b) : MemRefines F sb syms (csem F ctx X)`
+  (`FV/Backend/Proof/MemRefines.lean`; axioms `propext`, `Classical.choice`, `Quot.sound`).
+  Off error-free aligned worlds (or with an ill-formed use list) `csem` is `mspec`, which is
+  `MemRefines`' result verbatim. Otherwise `straightSem`: `ss_load`/`ss_store` (from
+  `execMInst_load`/`execMInst_store` on the canonical load/store of `x0`, address operands in
+  `x1`/`x2`) per `amodeAddr` arm (`straight_load`/`straight_store`; the extended index modes via
+  `ext_uxtw`/`ext_sxtw`), and `straight_loadAddr` (from `execMInst_loadAddr_slot'`). GOT loads
+  are `X.sym n 0` (premise `hsym`).
+- **`E2E.backend_correct_final`**: `hmem` replaced by `hsym` and `hslot : af.slotBase = slotOff`
+  (neither `Compiled` nor the statement fixes `slotOff`; callers instantiate
+  `slotOff := af.slotBase`).
