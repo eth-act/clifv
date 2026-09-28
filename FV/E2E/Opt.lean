@@ -14,7 +14,9 @@ state (`optEntry`), `Rel.holds` and the slot layout carry over; `InSubset` carri
 output stays in E and calls only what the input calls (`Opt.optimize_facts`). `FormsCovered`
 stays a per-function decided premise (about the optimised code), as do `TrapsExplicit` (about
 the optimised program's run) and `EnvKeepsSymbols` (externs keep the link-time symbols).
-The simplify stage enters through `Opt.SimplifyPassSim`.
+The simplify stage enters through `Opt.SimplifyPassSim` (proven for sound rule sets,
+`Opt.simplifyPassSim`; the instance without the hypothesis for the proven rule sets is
+`E2E.backend_correct_opt_proven`, `FV/E2E/OptProven.lean`).
 -/
 
 namespace E2E

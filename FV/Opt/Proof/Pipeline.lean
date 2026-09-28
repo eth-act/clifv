@@ -10,8 +10,9 @@ then `check`, then each stage followed by `check` and — for GVN, DCE and LICM 
 validator (`Opt.editOk_sim`), keeping the last accepted function. The loop invariant is
 `FunSim f0 g ∧ check g = .ok info`; FunSim composes (`FunSim.trans`).
 
-The simplify stage is covered by the hypothesis `SimplifyPassSim`: the pass (for any rule
-sets satisfying the rule obligations, `FV/Opt/Proof/Simplify*.lean`) refines on checked inputs.
+The simplify stage is covered by the hypothesis `SimplifyPassSim`: the pass refines on checked
+inputs whenever its validator accepts. It is proven for rule sets satisfying the rule
+obligations (`Opt.simplifyPassSim`, `FV/Opt/Proof/SimpPass.lean`).
 -/
 
 namespace Opt

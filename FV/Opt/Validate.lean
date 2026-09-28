@@ -19,11 +19,15 @@ validators state, in a form the proofs (`FV/Opt/Proof/*.lean`) can use directly,
   `symbol_value`: LICM's hoisted nodes); and the definition of `σ v` in `g` is in a dominator
   of the definition of `v` in `f` (same dominator tree).
 * `simpOk f g info cert` (simplify, with the pass's record `Opt.SimpCert`): `g` is well-formed
-  over `f`'s dominator tree, every block of `g` is what the record says the pass emitted for the
-  block of `f` (renamed by the record's substitution, which has no chains), inserted statements
-  are pure nodes of the record's graph, and every replaced value's replacement is available
-  where the value was defined. That the recorded replacements preserve values is not checked
-  here: it is the pass's own theorem (`FV/Opt/Proof/Simp*.lean`).
+  over `f`'s dominator tree (with the record's types, which agree with `info` on the leaves),
+  every block of `g` is what the record says the pass emitted for the block of `f` (renamed by
+  the record's substitution, which has no chains; kept results and replacement instructions
+  are not renamed), inserted statements are pure nodes of the record's graph, the other
+  statements define leaves, every replaced value's replacement is available where the value
+  was defined, skeleton rewrites involve no call and no `symbol_value`, and a rewritten
+  terminator is a branch preceded by inserted nodes and conditional traps. That the recorded
+  replacements preserve values is not checked here: it is the pass's own theorem
+  (`Opt.simplify_facts`; `Opt.simpOk_sim` combines both, `FV/Opt/Proof/Simp*.lean`).
 -/
 
 namespace Opt
