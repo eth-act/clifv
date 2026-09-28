@@ -1,3 +1,4 @@
+import FV.Backend.Proof.IselCmpExt
 import FV.Opt.Proof.InterpEval
 import Std.Tactic.BVDecide
 
