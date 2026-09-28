@@ -523,12 +523,14 @@ noncomputable def csem (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) : ISe
         let i := ((lo64 a).setWidth 32).toNat
         if i < ts.length then some ([ofX 0, ofX 0], w, .goto (i + 1)) else none
     | _ => none
-  | i => if csemWF ctx i uses then straightSem F ctx i uses w else ispec i uses w
+  | i => if csemWF ctx i uses = true ∧ Arm.r .ERR w = .None then straightSem F ctx i uses w
+    else ispec i uses w
 
 theorem csem_of_wf {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MInst} {uses : List CV}
-    (h : i.isCtl = false) (hw : csemWF ctx i uses = true) (w : Arm.ArmState) :
+    (h : i.isCtl = false) (hw : csemWF ctx i uses = true) {w : Arm.ArmState}
+    (he : Arm.r .ERR w = .None) :
     csem F ctx X i uses w = straightSem F ctx i uses w := by
-  cases i <;> first | (simp [csem, hw]; done) | cases h
+  cases i <;> first | (simp [csem, hw, he]; done) | cases h
 
 theorem len_filter_zip : ∀ (L : List Operand) (R : List Reg), L.length = R.length →
     ((L.zip R).filter (fun p => p.1.isUse)).length = (L.filter (·.isUse)).length
@@ -547,9 +549,10 @@ theorem useVals_length (ops : Array Operand) (regs : Array Reg) (h : regs.size =
 
 theorem csem_useVals {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MInst} {ops : Array Operand}
     (hops : i.operands = .ok ops) (hfo : FormOk ctx i = true) (hctl : i.isCtl = false)
-    {regs : Array Reg} (h : regs.size = ops.size) (s w : Arm.ArmState) :
+    {regs : Array Reg} (h : regs.size = ops.size) (s : Arm.ArmState) {w : Arm.ArmState}
+    (he : Arm.r .ERR w = .None) :
     csem F ctx X i (useVals ops regs s) w = straightSem F ctx i (useVals ops regs s) w :=
-  csem_of_wf hctl (by simp [csemWF, hfo, hops, useVals_length ops regs h]) w
+  csem_of_wf hctl (by simp [csemWF, hfo, hops, useVals_length ops regs h]) he
 
 /-! ## Reduction of `OperandsSound` to `Corr` -/
 
@@ -586,13 +589,13 @@ theorem os_of_corr {F : BitVec 64 → Prop} {ctx : FnCtx} {env : Env} {X : ExtSe
     (hfo : FormOk ctx i = true) (hctl : i.isCtl = false) (hcl : i.clobbers = [])
     (hc : Corr F ctx env ops mk) :
     OperandsSound F (execMInst ctx env) (csem F ctx X) i := by
-  intro c wh ops' regs i' s w outs w' hops' hst hasg hw hal hsem
+  intro c wh ops' regs i' s w outs w' hops' hst hasg hw hal herr hsem
   rw [hops] at hops'
   cases hops'
   have ha := allocOk_of_checkStatic hst
   rw [hmk regs ha.size] at hasg
   cases hasg
-  rw [csem_useVals hops hfo hctl ha.size] at hsem
+  rw [csem_useVals hops hfo hctl ha.size s (by rw [← herr]; exact (hw.1 .ERR (by simp [Masked])).symm)] at hsem
   simp only [straightSem, hops, hmk _ (canonRegs_size ops)] at hsem
   split at hsem
   · rename_i hacc
