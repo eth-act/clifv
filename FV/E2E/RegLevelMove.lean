@@ -236,6 +236,8 @@ structure RL.Wf (R : RL) : Prop where
   lm : labelOffsets R.fa.lines = .ok R.lm
   fit : 4 * R.fb.words.size ≤ 2 ^ 64
   stack : StackAvail R.af R.s0
+  /-- `psF` is the emitter's final state -/
+  psF : ∃ body, blocksLinesE R.ctx R.af R.af.blocks.toList {} = .ok (body, R.psF)
 
 theorem RL.size_lt {R : RL} (hR : R.Wf) : R.fr.size < 32768 :=
   (lowerRFunc_ok hR.alloc).2.1
