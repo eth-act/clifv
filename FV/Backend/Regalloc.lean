@@ -266,16 +266,26 @@ def RItem.isOp0 : RItem → Bool
   | .op 0 _ => true
   | _ => false
 
-/-- `Args` is sound to drop (it emits no code; proof: `E2E.RegLevelArgs`) when its fixed
-registers still hold the incoming arguments: `Args` occurs only as instruction 0 of block 0, fixed
-to argument registers; before it, block 0 has only moves into memory (the callee-saved saves),
-and no edge enters block 0. Always true for `lowerFunction` + `prepare` output. -/
-def argsCheck (vc : VCode) (rf : RFunc) : Bool :=
+def Reg.isVregInt : Reg → Bool
+  | .vreg _ .int => true
+  | _ => false
+
+/-- `ctlCheck` on instruction `k` of block `b`. -/
+def ctlInstOk (b k : Nat) : MInst → Bool
+  | .args ds => b == 0 && k == 0 && ds.all (fun p => p.1.isVregInt && p.2.isArgReg)
+  | .condBr _ _ (.zero r _) | .condBr _ _ (.notZero r _) | .trapIf (.zero r _) _
+  | .trapIf (.notZero r _) _ | .testBitAndBranch _ _ _ r _ => r.isVregInt
+  | _ => true
+
+/-- Control forms the register-level proof relies on (always true for `lowerFunction` +
+`prepare` output; proof: `E2E.RegLevelArgs`, `E2E.RegLevelGoto`). `Args` is sound to drop (it
+emits no code) when its fixed registers still hold the incoming arguments: `Args` occurs only as
+instruction 0 of block 0, fixed to argument registers; before it, block 0 has only moves into
+memory (the callee-saved saves), and no edge enters block 0. The register a `cbz`/`cbnz`/`tbz`
+tests is an int vreg (the VCode semantics reads it as the instruction's use). -/
+def ctlCheck (vc : VCode) (rf : RFunc) : Bool :=
   (vc.blocks.toList.zipIdx.all fun (vb, b) => vb.insts.toList.zipIdx.all fun (i, k) =>
-    match i with
-    | .args ds => b == 0 && k == 0 &&
-      ds.all (fun p => (match p.1 with | .vreg _ .int => true | _ => false) && p.2.isArgReg)
-    | _ => true) &&
+    ctlInstOk b k i) &&
   (let items := (rf.blocks[0]?.getD #[]).toList
    (items.takeWhile RItem.isMove).all (!·.regDst) &&
    ((items.dropWhile RItem.isMove).drop 1).all (!·.isOp0)) &&
@@ -290,7 +300,7 @@ def lowerRFunc (vc : VCode) (rf : RFunc) : Except String AFunc := do
   -- has no SIMD&FP register-offset form, so an allocator area of 32 KiB or more is rejected
   -- (proof: `RegallocSlots`). The CLIF slots above it are addressed by `stack_addr` arithmetic.
   if fr.size ≥ 32768 then throw s!"allocator frame area of {fr.size} bytes is too large"
-  if !argsCheck vc rf then throw "Args is not at the entry (argsCheck)"
+  if !ctlCheck vc rf then throw "control-form check (ctlCheck) failed"
   let blocks ← (vc.blocks.zip rf.blocks).mapIdxM fun bi (vb, items) => do
     let mut code : Array AInst := if bi == 0 then #[.prologue] else #[]
     for it in items do

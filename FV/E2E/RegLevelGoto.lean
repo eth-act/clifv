@@ -202,7 +202,8 @@ theorem reach_cb {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {bc : Insn} 
     {Z T : List Line} (hdrop : R.L.drop j0 = ftList (.ins bc none :: .ins (.b e) none :: Z) ++ T)
     (hbc : (∃ c, bc = .bcond c t) ∨ (∃ nz w r, bc = .cbz nz w r t) ∨ (∃ nz r bit, bc = .tbz nz r bit t))
     (cond : Bool) (hc : ∀ env a, bc.toArmInst env = .ok a → brCond a s = cond)
-    (hc' : ∀ env a, (bc.invertTo e).toArmInst env = .ok a → brCond a s = !cond)
+    (hc' : bc.condTarget? = some t → ∀ env a, (bc.invertTo e).toArmInst env = .ok a →
+      brCond a s = !cond)
     (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j0)
     (herr : Arm.r .ERR s = .None) :
     ∃ n jl, iterN R.step n s = Arm.w .PC (R.pcOf jl) s ∧
@@ -226,7 +227,7 @@ theorem reach_cb {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {bc : Insn} 
           · exact .inr (.inl h)
           · exact .inr (.inr (.inl h))
           · exact .inr (.inr (.inr h))) hprog hpc herr
-    rw [hc' _ _ ha] at hstep
+    rw [hc' hct _ _ ha] at hstep
     cases cond
     · exact ⟨1, jl, by simp only [iterN]; rw [hstep]; rfl, hjl⟩
     · exact ⟨1, j0 + 1, by simp only [iterN]; rw [hstep]; rfl, hj1⟩
@@ -246,5 +247,382 @@ theorem reach_cb {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {bc : Insn} 
       simp only [iterN]
       rw [hstep, hn, Arm.w_of_w_shadow]
     · exact ⟨1, jl, by simp only [iterN]; rw [hstep]; rfl, hjl⟩
+
+
+/-! ## Conditions -/
+
+theorem condHolds_congr {s w : Arm.ArmState} (h : ∀ f, Arm.r (.FLAG f) s = Arm.r (.FLAG f) w)
+    (c : BitVec 4) : Arm.ConditionHolds c s = Arm.ConditionHolds c w := by
+  unfold Arm.ConditionHolds Arm.read_flag
+  rw [h, h, h, h]
+
+theorem flags_of_world {F : BitVec 64 → Prop} {s w : Arm.ArmState} (h : SameWorld F s w) :
+    ∀ f, Arm.r (.FLAG f) s = Arm.r (.FLAG f) w := fun f => h.1 _ (by simp [Masked])
+
+theorem lo64_regX (x : BitVec 64) : lo64 (x.setWidth 128) = x := by
+  simp only [lo64]; rw [BitVec.setWidth_setWidth_of_le _ (by omega)]; simp
+
+/-- A condition kind `k` (VCode) and its allocated form `k'` with the use values `us` it reads
+from the store `m`. -/
+def KindRel (m : Loc → CV) : CondBrKind → CondBrKind → List CV → Prop
+  | .cond c, .cond c', us => c' = c ∧ us = []
+  | .zero _ sz, .zero r' sz', us =>
+    sz' = sz ∧ ∃ n, r' = .x n ∧ (Reg.x n).allocatable = true ∧ us = [m (.reg (.x n))]
+  | .notZero _ sz, .notZero r' sz', us =>
+    sz' = sz ∧ ∃ n, r' = .x n ∧ (Reg.x n).allocatable = true ∧ us = [m (.reg (.x n))]
+  | _, _, _ => False
+
+/-- The decoded branch of `k'` tests `k`'s condition on the uses. -/
+theorem kind_brCond {R : RL} {s : Arm.ArmState} {m : Loc → CV} {w : Arm.ArmState}
+    (hst : StRel R s m w) {k k' : CondBrKind} {us : List CV} (hk : KindRel m k k' us) (l : Lbl)
+    {env : Env} {a : Arm.ArmInst} (ha : (k'.insn l).toArmInst env = .ok a) :
+    brCond a s = k.holds us w := by
+  have hm : ∀ n, (Reg.x n).allocatable = true →
+      m (.reg (.x n)) = (Arm.r (.GPR (rnum n)) s).setWidth 128 := by
+    intro n hn
+    rw [hst.store (.reg (.x n)) (fun r e => by cases e; exact hn) trivial]; rfl
+  have h30 : ∀ n, (Reg.x n).allocatable = true → n ≤ 30 := by
+    intro n hn
+    rcases allocatable_cases hn with ⟨n', e, h1, -⟩ | ⟨n', e, -⟩ <;> cases e; omega
+  cases k <;> cases k' <;> simp only [KindRel] at hk
+  · obtain ⟨rfl, n, rfl, hn, rfl⟩ := hk
+    rw [brCond_cbz (h30 n hn) ha, hm n hn]
+    simp only [CondBrKind.holds, lo64_regX]
+    split <;> simp [bne]
+  · obtain ⟨rfl, n, rfl, hn, rfl⟩ := hk
+    rw [brCond_cbz (h30 n hn) ha, hm n hn]
+    simp only [CondBrKind.holds, lo64_regX]
+    split <;> simp [bne]
+  · obtain ⟨rfl, rfl⟩ := hk
+    rw [brCond_bcond ha, condHolds_congr (flags_of_world hst.world)]
+    rfl
+
+theorem kind_brCond_inv {R : RL} {s : Arm.ArmState} {m : Loc → CV} {w : Arm.ArmState}
+    (hst : StRel R s m w) {k k' : CondBrKind} {us : List CV} (hk : KindRel m k k' us) (l e : Lbl)
+    (hct : (k'.insn l).condTarget? = some l)
+    {env : Env} {a : Arm.ArmInst} (ha : ((k'.insn l).invertTo e).toArmInst env = .ok a) :
+    brCond a s = !k.holds us w := by
+  have hm : ∀ n, (Reg.x n).allocatable = true →
+      m (.reg (.x n)) = (Arm.r (.GPR (rnum n)) s).setWidth 128 := by
+    intro n hn
+    rw [hst.store (.reg (.x n)) (fun r e => by cases e; exact hn) trivial]; rfl
+  have h30 : ∀ n, (Reg.x n).allocatable = true → n ≤ 30 := by
+    intro n hn
+    rcases allocatable_cases hn with ⟨n', e, h1, -⟩ | ⟨n', e, -⟩ <;> cases e; omega
+  cases k <;> cases k' <;> simp only [KindRel] at hk
+  · obtain ⟨rfl, n, rfl, hn, rfl⟩ := hk
+    simp only [CondBrKind.insn, Insn.invertTo] at ha
+    rw [brCond_cbz (h30 n hn) ha, hm n hn]
+    simp only [CondBrKind.holds, lo64_regX]
+    split <;> simp [bne]
+  · obtain ⟨rfl, n, rfl, hn, rfl⟩ := hk
+    simp only [CondBrKind.insn, Insn.invertTo] at ha
+    rw [brCond_cbz (h30 n hn) ha, hm n hn]
+    simp only [CondBrKind.holds, lo64_regX]
+    split <;> simp [bne]
+  · obtain ⟨rfl, rfl⟩ := hk
+    rename_i c
+    simp only [CondBrKind.insn, Insn.condTarget?] at hct
+    have hc : c ≠ .al ∧ c ≠ .nv := by
+      constructor <;> intro h <;> subst h <;> simp at hct
+    simp only [CondBrKind.insn, Insn.invertTo] at ha
+    rw [brCond_bcond ha, condHolds_invert c hc.1 hc.2, condHolds_congr (flags_of_world hst.world)]
+    rfl
+
+/-! ## Operands of the conditional forms -/
+
+theorem assign_one {i : MInst} {mk : Reg → MInst} {n : Nat}
+    (hv : ∀ (f : OpSpec → Reg → StateT Nat (Except String) Reg), MInst.visitOperands f i = do
+      let r ← f OpSpec.use (.vreg n .int); pure (mk r))
+    {regs : Array Reg} {i' : MInst} (h : i.assign regs = .ok i') : ∃ r, regs = #[r] ∧ i' = mk r := by
+  unfold MInst.assign at h
+  dsimp only at h
+  rw [hv] at h
+  cases hr : regs[0]? with
+  | none =>
+    simp [hr, StateT.run, bind, StateT.bind, Except.bind, get, getThe, MonadStateOf.get, StateT.get,
+      set, StateT.set, pure, Except.pure, throw, throwThe, MonadExceptOf.throw,
+      StateT.lift, MonadLift.monadLift, Except.tryCatch] at h
+  | some r =>
+    simp [hr, StateT.run, bind, StateT.bind, Except.bind, get, getThe, MonadStateOf.get, StateT.get,
+      set, StateT.set, pure, StateT.pure, Except.pure, throw, throwThe, MonadExceptOf.throw,
+      StateT.lift, MonadLift.monadLift] at h
+    split at h
+    · rename_i hs
+      simp only [Except.ok.injEq] at h
+      refine ⟨r, ?_, h.symm⟩
+      apply Array.ext
+      · simp [← hs]
+      · intro k h1 h2
+        have : k = 0 := by simp at h2; omega
+        subst this
+        simp [Array.getElem?_eq_some_iff] at hr
+        simpa using hr.2
+    · cases h
+
+theorem assign_none {i : MInst}
+    (hv : ∀ (f : OpSpec → Reg → StateT Nat (Except String) Reg), MInst.visitOperands f i = pure i)
+    {regs : Array Reg} {i' : MInst} (h : i.assign regs = .ok i') : regs = #[] ∧ i' = i := by
+  unfold MInst.assign at h
+  dsimp only at h
+  rw [hv] at h
+  simp [StateT.run, pure, StateT.pure, Except.pure, bind, Except.bind] at h
+  split at h
+  · rename_i hs
+    simp only [Except.ok.injEq] at h
+    exact ⟨Array.eq_empty_of_size_eq_zero hs.symm, h.symm⟩
+  · cases h
+
+/-- The allocated form of a condition-kind instruction (`condBr`/`trapIf`, visited as
+`CondBrKind.visit`) and the use values `MStep` passes. -/
+theorem kind_alloc {k : CondBrKind} (hck : ∀ r sz, k = .zero r sz ∨ k = .notZero r sz → r.isVregInt = true)
+    {i : MInst} {mk : CondBrKind → MInst} (hmk : i = mk k)
+    (hv : ∀ (f : OpSpec → Reg → StateT Nat (Except String) Reg), MInst.visitOperands f i = do
+      let k' ← CondBrKind.visit f k; pure (mk k'))
+    (hvo : ∀ (f : OpSpec → Reg → StateT (Array Operand) (Except String) Reg),
+      MInst.visitOperands f i = do let k' ← CondBrKind.visit f k; pure (mk k'))
+    {ops : Array Operand} (hops : i.operands = .ok ops) {c : CheckCtx} {wh : String}
+    {regs : Array Reg} (hst : c.checkStatic wh ops (regs.map Loc.reg) i.clobbers = .ok ())
+    {i' : MInst} (hasg : i.assign regs = .ok i') (m : Loc → CV) :
+    ∃ k', i' = mk k' ∧
+      KindRel m k k' (((ops.zip (regs.map Loc.reg)).toList.filter (·.1.isUse)).map (m ·.2)) := by
+  have hao := allocOk_of_checkStatic hst
+  cases k with
+  | cond cc =>
+    obtain ⟨rfl, rfl⟩ := assign_none (fun f => by rw [hv]; simp [CondBrKind.visit, hmk]) hasg
+    have : ops = #[] := by
+      have e := hops
+      rw [MInst.operands] at e
+      simp only [hvo, CondBrKind.visit] at e
+      simp [StateT.run, pure, StateT.pure, Except.pure, bind, StateT.bind, Except.bind] at e
+      exact e
+    subst this
+    exact ⟨.cond cc, hmk, rfl, by simp⟩
+  | zero r sz =>
+    obtain ⟨n, rfl⟩ := isVregInt_iff (hck r sz (.inl rfl))
+    obtain ⟨r', rfl, rfl⟩ := assign_one (n := n) (mk := fun r => mk (.zero r sz))
+      (fun f => by rw [hv]; simp only [CondBrKind.visit, bind_assoc, pure_bind]) hasg
+    have hops' : ops = #[⟨n, .int, .use, .early, .reg⟩] := by
+      have e := hops
+      rw [MInst.operands] at e
+      simp only [hvo, CondBrKind.visit] at e
+      simp [StateT.run, pure, StateT.pure, Except.pure, bind, StateT.bind, Except.bind, modify,
+        modifyGet, MonadStateOf.modifyGet, StateT.modifyGet] at e
+      exact e.symm
+    subst hops'
+    have hf := hao.fits (⟨n, .int, .use, .early, .reg⟩, r') (by simp)
+    obtain ⟨⟨n', rfl, -⟩, -⟩ := hf
+    have hal := ((checkStatic_facts hst).2.1 (⟨n, .int, .use, .early, .reg⟩, .reg (.x n'))
+      (by simp)).1
+    simp only [CheckCtx.locOk, Bool.and_eq_true] at hal
+    exact ⟨_, rfl, rfl, n', rfl, hal.2, by simp [Operand.isUse]⟩
+  | notZero r sz =>
+    obtain ⟨n, rfl⟩ := isVregInt_iff (hck r sz (.inr rfl))
+    obtain ⟨r', rfl, rfl⟩ := assign_one (n := n) (mk := fun r => mk (.notZero r sz))
+      (fun f => by rw [hv]; simp only [CondBrKind.visit, bind_assoc, pure_bind]) hasg
+    have hops' : ops = #[⟨n, .int, .use, .early, .reg⟩] := by
+      have e := hops
+      rw [MInst.operands] at e
+      simp only [hvo, CondBrKind.visit] at e
+      simp [StateT.run, pure, StateT.pure, Except.pure, bind, StateT.bind, Except.bind, modify,
+        modifyGet, MonadStateOf.modifyGet, StateT.modifyGet] at e
+      exact e.symm
+    subst hops'
+    have hf := hao.fits (⟨n, .int, .use, .early, .reg⟩, r') (by simp)
+    obtain ⟨⟨n', rfl, -⟩, -⟩ := hf
+    have hal := ((checkStatic_facts hst).2.1 (⟨n, .int, .use, .early, .reg⟩, .reg (.x n'))
+      (by simp)).1
+    simp only [CheckCtx.locOk, Bool.and_eq_true] at hal
+    exact ⟨_, rfl, rfl, n', rfl, hal.2, by simp [Operand.isUse]⟩
+
+theorem codeLinesE_single {c : FnCtx} {af : AFunc} {i : MInst} {ps ps' : PState} {ls : List Line}
+    (h : codeLinesE c af [.inst i] ps = .ok (ls, ps')) : i.lines c ps = .ok (ls, ps') := by
+  simp only [codeLinesE, ainstLines, bind, Except.bind] at h
+  split at h
+  · cases h
+  · rename_i r hr
+    simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq, List.append_nil] at h
+    obtain ⟨rfl, rfl⟩ := h
+    exact hr
+
+theorem beq_not_right (a b : Bool) : (a == !b) = !(a == b) := by cases a <;> cases b <;> rfl
+
+/-- **Block-ending branches on the machine**: from `Q` at a `jump`/`condBr`/`testBitAndBranch`
+item, the machine reaches `Q` at the `MStep` successor (the chosen successor's items). -/
+theorem realizes_goto {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc}
+    {its : List RItem} {m : Loc → CV} {w : Arm.ArmState} {c' : MConf CV Arm.ArmState}
+    (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock} {i : MInst}
+    (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some i)
+    (hbr : (∃ l, i = .jump l) ∨ (∃ t e kk, i = .condBr t e kk) ∨
+      (∃ kd t e rn bit, i = .testBitAndBranch kd t e rn bit))
+    (h : MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c') :
+    ∃ n, Q R (iterN R.step n s) c' := by
+  have hck := (lowerRFunc_ok hR.alloc).2.2.2
+  obtain ⟨j0, vb0, items, pre, code, ls, ps1, ps2, T, hvb0, hit, hsplit, hchk, hcode, hls, htr, hdrop,
+    hpc, hst⟩ := hq
+  rw [hvb] at hvb0; cases hvb0
+  obtain ⟨c1, c2, hc1, hc2, rfl⟩ := itemsCode_cons hcode
+  obtain ⟨regs, i0, i', rfl, hi0, hasg, hc1'⟩ := itemCode_op hc1
+  rw [hi] at hi0; cases hi0
+  obtain ⟨cc, wh, i2, ops2, hi2, hops2, hstat, -⟩ := op_checked hchk
+  rw [hi] at hi2; cases hi2
+  obtain ⟨ls1, ls2, psm, h1, h2, rfl⟩ := codeLinesE_append _ _ _ _ _ hls
+  obtain ⟨c, ins, hc⟩ := checked_of_checkAlloc hR.check
+  obtain ⟨preds, hcfg⟩ := hc.cfg
+  obtain ⟨t0, ts, hback, hss, hlab⟩ := cfg_block hcfg hvb
+  cases h with
+  | @op b k allocs its m w vb' i ops outs w' ctl m2 c' hvb' hi' hops' hsz hsem hlen hcl hn =>
+  rw [hvb] at hvb'; cases hvb'
+  rw [hi] at hi'; cases hi'
+  rw [hops2] at hops'; cases hops'
+  -- the semantics: no defs, same world, `goto j`
+  generalize hU : (((ops2.zip (regs.map Loc.reg)).toList.filter (·.1.isUse)).map (m ·.2)) = U at hsem
+  have hsem' : outs = [] ∧ w' = w ∧ ∃ j, ctl = .goto j ∧ (∀ l, i = .jump l → j = 0) ∧
+      (∀ t e kk, i = .condBr t e kk → j = if kk.holds U w then 0 else 1) ∧
+      (∀ kd t e rn bit, i = .testBitAndBranch kd t e rn bit →
+        ∃ a, U = [a] ∧ j = if ((lo64 a).getLsbD bit == (kd == .nz)) then 0 else 1) := by
+    rcases hbr with ⟨l, rfl⟩ | ⟨t, e, kk, rfl⟩ | ⟨kd, t, e, rn, bit, rfl⟩
+    · simp only [RL.sem, csem, Option.some.injEq, Prod.mk.injEq] at hsem
+      obtain ⟨rfl, rfl, rfl⟩ := hsem
+      refine ⟨rfl, rfl, 0, rfl, fun _ _ => rfl, ?_, ?_⟩
+      · intro _ _ _ h; cases h
+      · intro _ _ _ _ _ h; cases h
+    · simp only [RL.sem, csem, Option.some.injEq, Prod.mk.injEq] at hsem
+      obtain ⟨rfl, rfl, rfl⟩ := hsem
+      refine ⟨rfl, rfl, _, rfl, ?_, ?_, ?_⟩
+      · intro _ h; cases h
+      · intro t' e' kk' h; cases h; rfl
+      · intro _ _ _ _ _ h; cases h
+    · simp only [RL.sem, csem] at hsem
+      split at hsem
+      · rename_i a
+        simp only [Option.some.injEq, Prod.mk.injEq] at hsem
+        obtain ⟨rfl, rfl, rfl⟩ := hsem
+        refine ⟨rfl, rfl, _, rfl, ?_, ?_, ?_⟩
+        · intro _ h; cases h
+        · intro _ _ _ h; cases h
+        intro kd' t' e' rn' bit' h
+        cases h
+        exact ⟨a, rfl, rfl⟩
+      · cases hsem
+  obtain ⟨rfl, hw', j, rfl, hj0, hjc, hjt⟩ := hsem'
+  subst w'
+  -- the store is unchanged
+  have hm2 : m2 = m := by
+    funext l
+    refine (hcl.1 l ?_).trans ?_
+    · rcases hbr with ⟨_, rfl⟩ | ⟨_, _, _, rfl⟩ | ⟨_, _, _, _, _, rfl⟩ <;> simp [MInst.clobbers]
+    · simp [writeM]
+  subst m2
+  cases hn with
+  | @goto _ st items' hk1 hsucc hitems =>
+  have hwm : writeM m ((((ops2.zip (regs.map Loc.reg)).toList.filter (·.1.isDef)).zip
+      ([] : List CV)).filter (·.1.1.isLate)) = m := by simp [writeM]
+  rw [hwm]
+  -- the successor's label
+  have hti : t0 = i := by
+    rw [Array.back?_eq_getElem?, show vb.insts.size - 1 = k by omega, hi] at hback
+    cases hback; rfl
+  subst hti
+  have hsucc' := hsucc
+  simp only [succOf, hcfg, hss, Option.bind_some] at hsucc'
+  obtain ⟨vs, hvs, hlj⟩ := hlab j st hsucc'
+  have hst0 : st ≠ 0 := ctlCheck_succ hck hsucc
+  -- the machine reaches the successor's label
+  have hreach : ∃ n jl, iterN R.step n s = Arm.w .PC (R.pcOf jl) s ∧
+      R.L[jl]? = some (.label (.block vs.label)) := by
+    have hZ : ∀ (Z : List Line), R.L.drop j0 = ftList (ls1 ++ (ls2 ++ nxtOf R.af b)) ++ T →
+        R.L.drop j0 = ftList (ls1 ++ (ls2 ++ nxtOf R.af b)) ++ T := fun _ h => h
+    rw [List.append_assoc] at hdrop
+    rcases hbr with ⟨l, rfl⟩ | ⟨t, e, kk, rfl⟩ | ⟨kd, t, e, rn, bit, rfl⟩
+    · obtain ⟨rfl, rfl⟩ := assign_none (fun f => rfl) hasg
+      obtain rfl : c1 = [.inst _] := by
+        rcases hc1' with ⟨h, -, -⟩ | ⟨_, h, -⟩ | ⟨_, h, -⟩
+        · exact h
+        · cases h
+        · cases h
+      have hl1 := codeLinesE_single h1
+      simp only [MInst.lines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hl1
+      obtain ⟨rfl, -⟩ := hl1
+      rw [hj0 l rfl] at hlj
+      simp only [MInst.targets, List.getElem?_cons_zero, Option.some.injEq] at hlj
+      rw [← hlj]
+      exact reach_b hR (by simpa using hdrop) (by rw [hst.prog]) hpc hst.err
+    · have hkk : ∀ r sz, kk = .zero r sz ∨ kk = .notZero r sz → r.isVregInt = true := by
+        intro r sz hr
+        have := ctlCheck_inst hck hvb hi
+        rcases hr with rfl | rfl <;> simpa [ctlInstOk] using this
+      obtain ⟨k', rfl, hkr⟩ := kind_alloc hkk (mk := fun k => MInst.condBr t e k) rfl
+        (fun f => rfl) (fun f => rfl) hops2 hstat hasg m
+      obtain rfl : c1 = [.inst _] := by
+        rcases hc1' with ⟨h, -, -⟩ | ⟨_, h, -⟩ | ⟨_, h, -⟩
+        · exact h
+        · cases h
+        · cases h
+      have hl1 := codeLinesE_single h1
+      simp only [MInst.lines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hl1
+      obtain ⟨rfl, -⟩ := hl1
+      have hbc : (∃ c, k'.insn (.block t) = .bcond c (.block t)) ∨
+          (∃ nz w r, k'.insn (.block t) = .cbz nz w r (.block t)) ∨
+          (∃ nz r bit, k'.insn (.block t) = .tbz nz r bit (.block t)) := by
+        cases k' <;> simp [CondBrKind.insn]
+      obtain ⟨n, jl, hn, hjl⟩ := reach_cb hR (by simpa using hdrop) hbc (kk.holds _ w)
+        (fun env a ha => kind_brCond hst hkr _ ha)
+        (fun hct env a ha => kind_brCond_inv hst hkr _ _ hct ha)
+        (by rw [hst.prog]) hpc hst.err
+      refine ⟨n, jl, hn, ?_⟩
+      rw [hjl, hU]
+      rw [hjc t e kk rfl] at hlj
+      simp only [MInst.targets] at hlj
+      cases hcond : kk.holds U w <;> simp only [hcond] at hlj ⊢ <;> simp at hlj <;> rw [hlj] <;> simp
+    · obtain ⟨nr, rfl⟩ := isVregInt_iff (by simpa [ctlInstOk] using ctlCheck_inst hck hvb hi)
+      obtain ⟨r', rfl, rfl⟩ := assign_one (n := nr) (mk := fun r => MInst.testBitAndBranch kd t e r bit)
+        (fun f => by simp [MInst.visitOperands]) hasg
+      have hops' : ops2 = #[⟨nr, .int, .use, .early, .reg⟩] := by
+        have e : (MInst.testBitAndBranch kd t e (.vreg nr .int) bit).operands =
+            .ok #[⟨nr, .int, .use, .early, .reg⟩] := rfl
+        rw [e] at hops2
+        injection hops2 with h
+        exact h.symm
+      subst hops'
+      obtain ⟨⟨n', rfl, hn', -⟩, -⟩ := (allocOk_of_checkStatic hstat).fits
+        (⟨nr, .int, .use, .early, .reg⟩, r') (by simp)
+      obtain rfl : c1 = [.inst _] := by
+        rcases hc1' with ⟨h, -, -⟩ | ⟨_, h, -⟩ | ⟨_, h, -⟩
+        · exact h
+        · cases h
+        · cases h
+      have hl1 := codeLinesE_single h1
+      simp only [MInst.lines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hl1
+      obtain ⟨rfl, -⟩ := hl1
+      have hal := ((checkStatic_facts hstat).2.1 (⟨nr, .int, .use, .early, .reg⟩, .reg (.x n'))
+        (by simp)).1
+      simp only [CheckCtx.locOk, Bool.and_eq_true] at hal
+      have hm : m (.reg (.x n')) = (Arm.r (.GPR (rnum n')) s).setWidth 128 := by
+        rw [hst.store (.reg (.x n')) (fun r e => by cases e; exact hal.2) trivial]; rfl
+      obtain ⟨n, jl, hn, hjl⟩ := reach_cb hR (by simpa using hdrop)
+        (bc := .tbz (kd == .nz) (.x n') bit (.block t)) (.inr (.inr ⟨_, _, _, rfl⟩))
+        ((Arm.r (.GPR (rnum n')) s).getLsbD bit == (kd == .nz))
+        (fun env a ha => brCond_tbz (by omega) ha s)
+        (fun _ env a ha => by
+          simp only [Insn.invertTo] at ha
+          rw [brCond_tbz (by omega) ha s, beq_not_right])
+        (by rw [hst.prog]) hpc hst.err
+      refine ⟨n, jl, hn, ?_⟩
+      rw [hjl]
+      obtain ⟨a, hUa, hja⟩ := hjt kd t e _ bit rfl
+      have ha : a = m (.reg (.x n')) := by
+        rw [← hU] at hUa
+        simp [Operand.isUse] at hUa
+        exact hUa.symm
+      subst ha
+      rw [hja] at hlj
+      simp only [MInst.targets, hm, lo64_regX] at hlj
+      cases hcond : ((Arm.r (.GPR (rnum n')) s).getLsbD bit == (kd == .nz)) <;>
+        simp only [hcond] at hlj ⊢ <;> simp at hlj <;> rw [hlj] <;> simp
+  obtain ⟨n, jl, hn, hjl⟩ := hreach
+  refine ⟨n, ?_⟩
+  rw [hn]
+  exact q_entry hR hst0 hvs hitems hjl (Arm.r_of_w_same ..) (hst.pc _)
 
 end Backend.Proof

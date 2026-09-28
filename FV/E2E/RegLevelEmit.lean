@@ -462,7 +462,7 @@ theorem lowerRFunc_ok {vc : VCode} {rf : RFunc} {af : AFunc} (h : lowerRFunc vc 
         ∃ code, itemsCode (RAFrame.compute vc rf) vb items.toList = .ok code ∧
           af.blocks[b]? = some (vb.label, ((if b = 0 then [AInst.prologue] else []) ++ code).toArray)) ∧
       (RAFrame.compute vc rf).size < 32768 ∧ ((RAFrame.compute vc rf).total ≠ 0 → af.frame = true) ∧
-      argsCheck vc rf = true := by
+      ctlCheck vc rf = true := by
   unfold lowerRFunc at h
   simp only [bind, Except.bind] at h
   split at h

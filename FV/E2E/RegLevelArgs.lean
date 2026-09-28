@@ -5,7 +5,7 @@ import FV.Backend.Proof.LowerLemmas
 # `Args` on the machine (M6)
 
 `Args` emits no code: its defs are the incoming argument registers. `lowerRFunc` checks
-(`argsCheck`) that `Args` is instruction 0 of block 0 with (int vreg, argument register) pairs,
+(`ctlCheck`) that `Args` is instruction 0 of block 0 with (int vreg, argument register) pairs,
 that before it block 0 only has moves into memory, and that no edge enters block 0. Then, while
 instruction 0 of block 0 is pending, the store holds the world's argument registers (`AInv`), so
 `MStep`'s writes of the `Args` defs change nothing (`realizes_args`).
@@ -15,26 +15,31 @@ namespace Backend.Proof
 
 open Backend E2E Backend.Proof.Driver
 
-/-! ## What `argsCheck` gives -/
+/-! ## What `ctlCheck` gives -/
 
-theorem argsCheck_args {vc : VCode} {rf : RFunc} (h : argsCheck vc rf = true) {b k : Nat}
+theorem ctlCheck_inst {vc : VCode} {rf : RFunc} (h : ctlCheck vc rf = true) {b k : Nat}
+    {vb : VBlock} {i : MInst} (hvb : vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some i) :
+    ctlInstOk b k i = true := by
+  simp only [ctlCheck, Bool.and_eq_true, List.all_eq_true] at h
+  have h1 := h.1.1 (vb, b) (List.mem_zipIdx_iff_getElem?.mpr (by simpa using hvb))
+  exact h1 (i, k) (List.mem_zipIdx_iff_getElem?.mpr (by simpa using hi))
+
+theorem isVregInt_iff {r : Reg} (h : r.isVregInt = true) : ∃ n, r = .vreg n .int := by
+  cases r with
+  | vreg n c => cases c <;> simp_all [Reg.isVregInt]
+  | _ => simp [Reg.isVregInt] at h
+
+theorem ctlCheck_args {vc : VCode} {rf : RFunc} (h : ctlCheck vc rf = true) {b k : Nat}
     {vb : VBlock} {ds : List (Reg × Reg)} (hvb : vc.blocks[b]? = some vb)
     (hi : vb.insts[k]? = some (.args ds)) :
     b = 0 ∧ k = 0 ∧ ∀ p ∈ ds, (∃ n, p.1 = .vreg n .int) ∧ p.2.isArgReg = true := by
-  simp only [argsCheck, Bool.and_eq_true, List.all_eq_true] at h
-  have h1 := h.1.1 (vb, b) (List.mem_zipIdx_iff_getElem?.mpr (by simpa using hvb))
-  have h2 := h1 (.args ds, k) (List.mem_zipIdx_iff_getElem?.mpr (by simpa using hi))
-  simp only [Bool.and_eq_true, beq_iff_eq, List.all_eq_true] at h2
-  refine ⟨h2.1.1, h2.1.2, fun p hp => ⟨?_, (h2.2 p hp).2⟩⟩
-  have := (h2.2 p hp).1
-  obtain ⟨r, q⟩ := p
-  cases r with
-  | vreg n c => cases c <;> simp_all
-  | _ => simp at this
+  have h2 := ctlCheck_inst h hvb hi
+  simp only [ctlInstOk, Bool.and_eq_true, beq_iff_eq, List.all_eq_true] at h2
+  exact ⟨h2.1.1, h2.1.2, fun p hp => ⟨isVregInt_iff (h2.2 p hp).1, (h2.2 p hp).2⟩⟩
 
-theorem argsCheck_succ {vc : VCode} {rf : RFunc} (h : argsCheck vc rf = true) {b j s : Nat}
+theorem ctlCheck_succ {vc : VCode} {rf : RFunc} (h : ctlCheck vc rf = true) {b j s : Nat}
     (hs : succOf vc b j = some s) : s ≠ 0 := by
-  simp only [argsCheck, Bool.and_eq_true] at h
+  simp only [ctlCheck, Bool.and_eq_true] at h
   have h3 := h.2
   unfold succOf at hs
   split at hs
@@ -61,11 +66,11 @@ theorem mem_takeWhile_pred {α : Type} {p : α → Bool} : ∀ {l : List α} {x 
     · simp at h
 
 /-- An item of block 0 followed (later) by `op 0` is a move into memory. -/
-theorem argsCheck_before {vc : VCode} {rf : RFunc} (h : argsCheck vc rf = true)
+theorem ctlCheck_before {vc : VCode} {rf : RFunc} (h : ctlCheck vc rf = true)
     {items : Array RItem} (hit : rf.blocks[0]? = some items) {pre its : List RItem} {it : RItem}
     (hsp : items.toList = pre ++ it :: its) (hop : ∃ a, RItem.op 0 a ∈ its) :
     it.isMove = true ∧ it.regDst = false := by
-  simp only [argsCheck, Bool.and_eq_true, List.all_eq_true, hit, Option.getD_some] at h
+  simp only [ctlCheck, Bool.and_eq_true, List.all_eq_true, hit, Option.getD_some] at h
   obtain ⟨⟨-, hT, hD⟩, -⟩ := h
   have hsplit := List.takeWhile_append_dropWhile (p := RItem.isMove) (l := items.toList)
   have hget : items.toList[pre.length]? = some it := by rw [hsp]; simp
@@ -111,7 +116,7 @@ theorem aInv_step {R : RL} (hR : R.Wf) {s : Arm.ArmState} {c c' : MConf CV Arm.A
     intro hb hop
     subst hb
     obtain ⟨j, vb, items, pre, -, -, -, -, -, -, hit, hsplit, -⟩ := hq
-    obtain ⟨hmv, hrd⟩ := argsCheck_before hck hit hsplit hop
+    obtain ⟨hmv, hrd⟩ := ctlCheck_before hck hit hsplit hop
     have hA' := hA rfl (by obtain ⟨a, ha⟩ := hop; exact ⟨a, List.mem_cons_of_mem _ ha⟩)
     intro r hr
     have hne : Loc.reg r ≠ dst := by
@@ -124,11 +129,11 @@ theorem aInv_step {R : RL} (hR : R.Wf) {s : Arm.ArmState} {c c' : MConf CV Arm.A
       intro hb hop
       subst hb
       obtain ⟨j, vb0, items, pre, -, -, -, -, -, -, hit, hsplit, -⟩ := hq
-      have := (argsCheck_before hck hit hsplit hop).1
+      have := (ctlCheck_before hck hit hsplit hop).1
       simp [RItem.isMove] at this
     | goto _ hs _ =>
       intro hb
-      exact absurd hb (argsCheck_succ hck hs)
+      exact absurd hb (ctlCheck_succ hck hs)
     | ret => trivial
     | halt => trivial
 
@@ -208,7 +213,7 @@ theorem realizes_args {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {alloc
     (h : MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c') :
     Q R s c' := by
   have hck := (lowerRFunc_ok hR.alloc).2.2.2
-  obtain ⟨rfl, rfl, hds⟩ := argsCheck_args hck hvb hi
+  obtain ⟨rfl, rfl, hds⟩ := ctlCheck_args hck hvb hi
   obtain ⟨ns, rfl, hns⟩ := argPairs_of (fun p hp => (hds p hp).1)
   have hops := operands_args ns
   obtain ⟨j, vb0, items, pre, code, ls, ps1, ps2, T, hvb0, hit, hsplit, hchk, hcode, hls, htr, hdrop,
