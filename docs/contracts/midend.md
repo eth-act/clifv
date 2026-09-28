@@ -229,7 +229,7 @@ program was stuck too.
 | corpus (`corpus/clif`, `extrt`) | 174 | 114 / 0 / 22 | 4 668 → 2 287 | 50 files, 0 rejected |
 | Cranelift runtests | 1 258 | 5 706 / 0 / 10 | 3 383 → 3 040 | 146 files, 0 rejected |
 | cg_clif survey smoke (`smoke.clif`) | 24 | 88 / 0 / 0 | 283 → 144 | ok |
-| cg_clif survey, all `*.unopt.reader.clif` (no run lines) | 2 326 | — | 116 713 → 67 268 | 30 files, 0 rejected |
+| cg_clif survey, all `*.unopt.reader.clif` (no run lines) | 2 326 | — | 116 713 → 67 251 | 30 files, 0 rejected |
 | `opt-fuzz` seeds 1–4 (150 E + 100 `--ext` functions each) | 1 000 | 8 000 / 0 / 0 | 128 484 → 57 279 | — |
 | `opt-fuzz` seeds 11, 12, 21, 22 (earlier builds; incl. `--opt-remat-const`) | 1 050 | 8 352 / 0 / 0 | — | seeds 21, 22 files: ok |
 
