@@ -74,7 +74,7 @@ pub const DEFAULT_EXCLUDES: &[&str] = &[
     "slow",
 ];
 
-fn camel(op: &str) -> String {
+pub fn camel(op: &str) -> String {
     op.split('_')
         .map(|w| {
             let mut c = w.chars();
@@ -87,12 +87,12 @@ fn camel(op: &str) -> String {
 }
 
 /// A term or a primitive constant occurring in a pattern.
-enum Atom {
+pub enum Atom {
     Term(TermId),
     Const(sema::TypeId, sema::Sym),
 }
 
-fn pat_terms(p: &sema::Pattern, out: &mut Vec<Atom>) {
+pub fn pat_terms(p: &sema::Pattern, out: &mut Vec<Atom>) {
     use sema::Pattern as P;
     match p {
         P::BindPattern(_, _, s) => pat_terms(s, out),
@@ -112,7 +112,7 @@ fn pat_terms(p: &sema::Pattern, out: &mut Vec<Atom>) {
     }
 }
 
-fn expr_terms(e: &sema::Expr, out: &mut BTreeSet<TermId>) {
+pub fn expr_terms(e: &sema::Expr, out: &mut BTreeSet<TermId>) {
     use sema::Expr as E;
     match e {
         E::Term(_, t, args) => {
@@ -132,7 +132,7 @@ fn expr_terms(e: &sema::Expr, out: &mut BTreeSet<TermId>) {
 }
 
 /// All terms a rule mentions (LHS, if-lets, RHS).
-fn rule_terms(r: &sema::Rule) -> BTreeSet<TermId> {
+pub fn rule_terms(r: &sema::Rule) -> BTreeSet<TermId> {
     let mut v = Vec::new();
     for a in &r.args {
         pat_terms(a, &mut v);
@@ -194,14 +194,14 @@ fn lhs_reasons(u: &Unit, r: &sema::Rule, e_ops: &HashSet<String>) -> Vec<String>
     reasons.into_iter().collect()
 }
 
-struct Attrs {
-    term_tags: HashMap<usize, BTreeSet<String>>,
-    rule_tags: HashMap<usize, BTreeSet<String>>,
-    chain: HashSet<usize>,
-    spec: HashSet<usize>,
+pub struct Attrs {
+    pub term_tags: HashMap<usize, BTreeSet<String>>,
+    pub rule_tags: HashMap<usize, BTreeSet<String>>,
+    pub chain: HashSet<usize>,
+    pub spec: HashSet<usize>,
 }
 
-fn attrs(u: &Unit) -> Attrs {
+pub fn attrs(u: &Unit) -> Attrs {
     let mut a = Attrs {
         term_tags: HashMap::new(),
         rule_tags: HashMap::new(),
@@ -246,14 +246,14 @@ fn attrs(u: &Unit) -> Attrs {
     a
 }
 
-fn lstrs<'a>(it: impl IntoIterator<Item = &'a String>) -> String {
+pub fn lstrs<'a>(it: impl IntoIterator<Item = &'a String>) -> String {
     format!(
         "[{}]",
         it.into_iter().map(|s| lstr(s)).collect::<Vec<_>>().join(", ")
     )
 }
 
-fn lopt(s: Option<&str>) -> String {
+pub fn lopt(s: Option<&str>) -> String {
     match s {
         Some(s) => format!("(some {})", lstr(s)),
         None => "none".into(),
