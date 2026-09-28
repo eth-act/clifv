@@ -19,77 +19,6 @@ namespace Backend.Proof
 
 open Backend E2E
 
-/-- The forms `csem` gives an explicit meaning (control flow, calls, symbols, `Args`/`Rets`);
-every other form is `straightSem`. -/
-def _root_.Backend.MInst.isCtl : MInst → Bool
-  | .call .. | .args .. | .rets .. | .loadExtNameGot .. | .loadExtNameNear .. | .jump ..
-  | .condBr .. | .testBitAndBranch .. | .trapIf .. | .udf .. | .emitIsland .. | .jtSequence .. =>
-    true
-  | _ => false
-
-theorem csem_of_not_isCtl {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MInst}
-    (h : i.isCtl = false) : csem F ctx X i = straightSem F ctx i := by
-  cases i <;> first | rfl | cases h
-
-/-- `aluRRImmLogic` ops the emitter expands. -/
-def logicOpOk : ALUOp → Bool
-  | .orr | .and | .andS | .eor | .orrNot | .andNot | .eorNot => true
-  | _ => false
-
-/-- `aluRRImmShift` ops the emitter expands. -/
-def shiftOpOk : ALUOp → Bool
-  | .lsr | .asr | .lsl | .extr => true
-  | _ => false
-
-/-- The covered addressing modes of a load/store of `bytes` bytes (`amodeAddr`'s forms). -/
-def memOk (bytes : Nat) : AMode → Bool
-  | .slotOffset _ => true
-  | .unscaled (.vreg _ .int) off => decide (-256 ≤ off ∧ off < 256)
-  | .unsignedOffset (.vreg _ .int) off => decide (off % bytes = 0 ∧ off / bytes < 4096)
-  | .regReg (.vreg _ .int) (.vreg _ .int) | .regScaled (.vreg _ .int) (.vreg _ .int) => true
-  | .regScaledExtended (.vreg _ .int) (.vreg _ .int) e | .regExtended (.vreg _ .int) (.vreg _ .int) e =>
-    decide (extOk e)
-  | _ => false
-
-/-- **The covered straight-line forms.** -/
-def FormOk (_ctx : FnCtx) : MInst → Bool
-  | .aluRRR _ _ (.vreg _ .int) (.vreg _ .int) (.vreg _ .int) => true
-  | .aluRRR _ _ (.vreg _ .int) .xzr (.vreg _ .int) => true
-  | .aluRRR _ _ .xzr (.vreg _ .int) (.vreg _ .int) => true
-  | .aluRRR _ _ (.vreg _ .int) (.vreg _ .int) .xzr => true
-  | .aluRRR _ _ .xzr (.vreg _ .int) .xzr => true
-  | .aluRRRR _ _ (.vreg _ .int) (.vreg _ .int) (.vreg _ .int) (.vreg _ .int) => true
-  | .aluRRRR _ _ (.vreg _ .int) (.vreg _ .int) (.vreg _ .int) .xzr => true
-  | .aluRRImm12 _ _ (.vreg _ .int) (.vreg _ .int) _ => true
-  | .aluRRImm12 _ _ .xzr (.vreg _ .int) _ => true
-  | .aluRRImmLogic op _ (.vreg _ .int) (.vreg _ .int) _ => logicOpOk op
-  | .aluRRImmLogic op _ .xzr (.vreg _ .int) _ => logicOpOk op
-  | .aluRRImmShift op _ (.vreg _ .int) (.vreg _ .int) _ => shiftOpOk op
-  | .aluRRRShift _ _ (.vreg _ .int) (.vreg _ .int) (.vreg _ .int) _ => true
-  | .aluRRRShift _ _ .xzr (.vreg _ .int) (.vreg _ .int) _ => true
-  | .aluRRRShift _ _ (.vreg _ .int) .xzr (.vreg _ .int) _ => true
-  | .aluRRRExtend _ _ (.vreg _ .int) (.vreg _ .int) (.vreg _ .int) _ => true
-  | .aluRRRExtend _ _ .xzr (.vreg _ .int) (.vreg _ .int) _ => true
-  | .bitRR _ _ (.vreg _ .int) (.vreg _ .int) => true
-  | .mov _ (.vreg _ .int) (.vreg _ .int) => true
-  | .movWide _ (.vreg _ .int) _ _ => true
-  | .movK (.vreg _ .int) (.vreg _ .int) _ _ => true
-  | .extend (.vreg _ .int) (.vreg _ .int) _ _ _ => true
-  | .bitfieldMove _ _ (.vreg _ .int) (.vreg _ .int) _ _ => true
-  | .cset (.vreg _ .int) _ => true
-  | .csel (.vreg _ .int) (.vreg _ .int) (.vreg _ .int) _ => true
-  | .ccmp _ (.vreg _ .int) (.vreg _ .int) _ _ => true
-  | .ccmpImm _ (.vreg _ .int) _ _ _ => true
-  | .movToFpu (.vreg _ .float) (.vreg _ .int) _ => true
-  | .movFromVec (.vreg _ .int) (.vreg _ .float) _ _ => true
-  | .vecMisc _ (.vreg _ .float) (.vreg _ .float) _ => true
-  | .vecLanes _ (.vreg _ .float) (.vreg _ .float) _ => true
-  | .vecRRR _ (.vreg _ .float) (.vreg _ .float) (.vreg _ .float) _ => true
-  | .load op (.vreg _ .int) m _ => op != .fpuLoad128 && memOk op.bytes m
-  | .store op (.vreg _ .int) m _ => op != .fpuStore128 && memOk op.bytes m
-  | .loadAddr (.vreg _ .int) (.slotOffset _) => true
-  | _ => false
-
 /-- Every instruction of `vc` is a control form or a covered form. -/
 def FormsCovered (ctx : FnCtx) (vc : VCode) : Prop :=
   ∀ (b : Nat) (vb : VBlock) (k : Nat) (i : MInst), vc.blocks[b]? = some vb → vb.insts[k]? = some i →
@@ -345,7 +274,7 @@ theorem formOk_store {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {op : S
 
 set_option maxHeartbeats 4000000 in
 theorem formOk_sound {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MInst}
-    (h : FormOk ctx i = true) (_hstr : csem F ctx X i = straightSem F ctx i) :
+    (h : FormOk ctx i = true) :
     (∀ env, OperandsSound F (execMInst ctx env) (csem F ctx X) i) ∧
     (∀ regs i', i.assign regs = .ok i' →
       LinesOk ctx i' ∧ (∀ ds, i' ≠ .args ds) ∧ (∀ us, i' ≠ .rets us)) := by
@@ -366,7 +295,8 @@ theorem formOk_sound {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MI
         | apply os_aluRRRExtend_rdZ | apply os_bitRR | apply os_mov | apply os_movWide
         | apply os_movK | apply os_extend | apply os_bitfieldMove | apply os_cset | apply os_csel
         | apply os_ccmp | apply os_ccmpImm | apply os_movToFpu | apply os_movFromVec
-        | apply os_vecMisc | apply os_vecLanes | apply os_vecRRR | apply os_loadAddr_slot); done
+        | apply os_vecMisc | apply os_vecLanes | apply os_vecRRR | apply os_loadAddr_slot) <;>
+        assumption
     | (assign_inv hasg
        all_goals refine ⟨?_, fun _ h => MInst.noConfusion h, fun _ h => MInst.noConfusion h⟩
        all_goals first

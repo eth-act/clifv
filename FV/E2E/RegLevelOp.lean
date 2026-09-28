@@ -1,4 +1,5 @@
 import FV.E2E.RegLevelMove
+import FV.Backend.Proof.RegallocCSemWorld
 
 /-!
 # Straight-line instructions on the machine (M6)
@@ -261,22 +262,7 @@ theorem csem_next_world {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i :
     {uses : List CV} {w : Arm.ArmState} {outs : List CV} {w' : Arm.ArmState}
     (h : csem F ctx X i uses w = some (outs, w', .next)) (hnc : ∀ info, i ≠ .call info)
     (herr : Arm.r .ERR w = .None) :
-    Arm.r .ERR w' = .None ∧ w'.program = w.program := by
-  unfold csem at h
-  split at h
-  · exact absurd rfl (hnc _)
-  all_goals first
-    | (simp only [Option.some.injEq, Prod.mk.injEq, reduceCtorEq, and_false] at h; done)
-    | (simp only [Option.some.injEq, Prod.mk.injEq] at h; obtain ⟨-, rfl, -⟩ := h; exact ⟨herr, rfl⟩)
-    | (split at h <;> simp only [Option.some.injEq, Prod.mk.injEq, reduceCtorEq, and_false] at h <;> done)
-    | skip
-  all_goals first
-    | exact (straightSem_some h).2
-    | (split at h
-       · split at h
-         · simp only [Option.some.injEq, Prod.mk.injEq, reduceCtorEq, and_false] at h
-         · simp only at h
-           split at h <;> simp only [Option.some.injEq, Prod.mk.injEq, reduceCtorEq, and_false, reduceCtorEq] at h
-       · cases h)
+    Arm.r .ERR w' = .None ∧ w'.program = w.program :=
+  csem_next_world' h hnc herr
 
 end Backend.Proof

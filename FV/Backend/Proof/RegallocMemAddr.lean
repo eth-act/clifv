@@ -167,6 +167,6 @@ theorem corr_loadAddr_slot (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (d
 theorem os_loadAddr_slot (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (X : ExtSem) (d : Nat)
     (off : Int) :
     OperandsSound F (execMInst ctx env) (csem F ctx X) (.loadAddr (.vreg d .int) (.slotOffset off)) :=
-  os_of_corr rfl _ (by assign_tac) rfl rfl (corr_loadAddr_slot F ctx env d off)
+  os_of_corr rfl _ (by assign_tac) (by fo_tac) rfl rfl (corr_loadAddr_slot F ctx env d off)
 
 end Backend.Proof
