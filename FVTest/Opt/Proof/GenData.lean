@@ -40,6 +40,23 @@ partial def closeTerms (seen : Std.HashSet Nat) (acc : Array Nat) : List Nat →
       closeTerms (seen.insert t) (acc.push t) (ts ++ more)
     | none => closeTerms seen acc ts
 
+partial def patInts : Pattern → List (Nat × Int)
+  | .term _ _ args => args.flatMap patInts
+  | .bind _ _ p => patInts p
+  | .and _ ps => ps.flatMap patInts
+  | .constInt ty i => [(ty, i)]
+  | _ => []
+
+partial def exprInts : Expr → List (Nat × Int)
+  | .term _ _ args => args.flatMap exprInts
+  | .let _ bs body => bs.flatMap (fun (_, _, e) => exprInts e) ++ exprInts body
+  | .constInt ty i => [(ty, i)]
+  | _ => []
+
+def ruleInts (r : Rule) : List (Nat × Int) :=
+  r.args.flatMap patInts ++ r.iflets.flatMap (fun il => patInts il.lhs ++ exprInts il.rhs) ++
+    exprInts r.rhs
+
 def q (s : String) : String := s.quote
 def bstr (b : Bool) : String := if b then "true" else "false"
 def tconst (tm : Term) : String := s!"T.«{tm.name}»"
@@ -127,5 +144,13 @@ set_option maxRecDepth 20000
   IO.println "
 theorem data_program : Data program where"
   for f in proofs do IO.println f
+  IO.println "\n/-! ### Integer literals (`normInt`) -/\n"
+  let allRules := roots ++ internal.toList.flatMap program.rulesOf
+  let mut seenInts : Std.HashSet (Nat × Int) := {}
+  for (ty, i) in allRules.flatMap ruleInts do
+    if seenInts.contains (ty, i) then continue
+    seenInts := seenInts.insert (ty, i)
+    let nm := if i < 0 then s!"neg{-i}" else s!"{i}"
+    IO.println s!"@[opt_data] theorem normInt_{ty}_{nm} : normInt {ty} ({i}) = {normInt ty i} := rfl"
   IO.println ""
   IO.println "end Opt.Proof"

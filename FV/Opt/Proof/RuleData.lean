@@ -1807,4 +1807,33 @@ theorem data_program : Data program where
   t1553 := program_term_1553
   t1554 := program_term_1554
 
+/-! ### Integer literals (`normInt`) -/
+
+@[opt_data] theorem normInt_4_0 : normInt 4 (0) = 0 := rfl
+@[opt_data] theorem normInt_4_1 : normInt 4 (1) = 1 := rfl
+@[opt_data] theorem normInt_10_neg1 : normInt 10 (-1) = -1 := rfl
+@[opt_data] theorem normInt_10_1 : normInt 10 (1) = 1 := rfl
+@[opt_data] theorem normInt_3_1 : normInt 3 (1) = 1 := rfl
+@[opt_data] theorem normInt_4_2 : normInt 4 (2) = 2 := rfl
+@[opt_data] theorem normInt_4_24 : normInt 4 (24) = 24 := rfl
+@[opt_data] theorem normInt_4_65280 : normInt 4 (65280) = 65280 := rfl
+@[opt_data] theorem normInt_4_8 : normInt 4 (8) = 8 := rfl
+@[opt_data] theorem normInt_4_56 : normInt 4 (56) = 56 := rfl
+@[opt_data] theorem normInt_4_40 : normInt 4 (40) = 40 := rfl
+@[opt_data] theorem normInt_4_16711680 : normInt 4 (16711680) = 16711680 := rfl
+@[opt_data] theorem normInt_4_4278190080 : normInt 4 (4278190080) = 4278190080 := rfl
+@[opt_data] theorem normInt_10_0 : normInt 10 (0) = 0 := rfl
+@[opt_data] theorem normInt_4_18446744073709551615 : normInt 4 (18446744073709551615) = 18446744073709551615 := rfl
+@[opt_data] theorem normInt_3_0 : normInt 3 (0) = 0 := rfl
+@[opt_data] theorem normInt_9_0 : normInt 9 (0) = 0 := rfl
+@[opt_data] theorem normInt_10_31 : normInt 10 (31) = 31 := rfl
+@[opt_data] theorem normInt_10_63 : normInt 10 (63) = 63 := rfl
+@[opt_data] theorem normInt_4_3 : normInt 4 (3) = 3 := rfl
+@[opt_data] theorem normInt_4_4 : normInt 4 (4) = 4 := rfl
+@[opt_data] theorem normInt_4_5 : normInt 4 (5) = 5 := rfl
+@[opt_data] theorem normInt_4_6 : normInt 4 (6) = 6 := rfl
+@[opt_data] theorem normInt_4_7 : normInt 4 (7) = 7 := rfl
+@[opt_data] theorem normInt_4_16 : normInt 4 (16) = 16 := rfl
+@[opt_data] theorem normInt_4_32 : normInt 4 (32) = 32 := rfl
+
 end Opt.Proof

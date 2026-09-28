@@ -87,3 +87,45 @@ elab "opt_model " hG:term : tactic => withMainContext do
   unless added do throwError "opt_model: nothing to add"
 
 end Opt.Proof
+
+namespace Opt.Proof
+open Lean Meta Elab Tactic
+
+/-- `opt_rw_lhs`: for a goal `l = r`, rewrite `l` with a hypothesis `h : l = c` (syntactically
+the same left-hand side). -/
+elab "opt_rw_lhs" : tactic => withMainContext do
+  let g ← getMainGoal
+  let t ← instantiateMVars (← g.getType)
+  let some (_, l, _) := t.eq? | throwError "opt_rw_lhs: goal is not an equation"
+  for d in ← getLCtx do
+    if d.isImplementationDetail then continue
+    let dt ← instantiateMVars d.type
+    if let some (_, l', _) := dt.eq? then
+      if l' == l then
+        let r ← g.rewrite t d.toExpr
+        let g' ← g.replaceTargetEq r.eNew r.eqProof
+        replaceMainGoal (g' :: r.mvarIds)
+        return
+  throwError "opt_rw_lhs: no hypothesis for {l}"
+
+end Opt.Proof
+
+namespace Opt.Proof
+open Lean Meta Elab Tactic
+
+/-- `opt_cases_ty`: `cases` every local variable of type `Clif.Ty`. -/
+elab "opt_cases_ty" : tactic => do
+  let rec go (g : MVarId) (fuel : Nat) : MetaM (List MVarId) := g.withContext do
+    if fuel = 0 then return [g]
+    for d in ← getLCtx do
+      if d.isImplementationDetail then continue
+      if (← instantiateMVars d.type).isConstOf `Clif.Ty then
+        let gs ← g.cases d.fvarId
+        return (← gs.toList.mapM fun s => go s.mvarId (fuel - 1)).flatten
+    return [g]
+  let gs ← getGoals
+  let mut out := []
+  for g in gs do out := out ++ (← go g 8)
+  setGoals out
+
+end Opt.Proof

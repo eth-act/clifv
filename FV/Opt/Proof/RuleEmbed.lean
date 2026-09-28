@@ -130,6 +130,21 @@ theorem GraphOk.type_sem {G : EGraph σ} {P : σ → Prop} {den : σ → Valuati
     P st → ∀ c, den st x = some c → c.ty = t :=
   fun hP c hc => hG.model.types st x t c hP ht hc
 
+/-! ### `make` in the model -/
+
+theorem GraphOk.make_P {G : EGraph σ} {P : σ → Prop} {den : σ → Valuation} {fr : Frame}
+    {mem : Mem} (hG : GraphOk G P den fr mem) {st : σ} (hP : P st) (i : Inst) :
+    P (G.make st i).2 := (hG.make st i hP).1
+
+theorem GraphOk.make_le {G : EGraph σ} {P : σ → Prop} {den : σ → Valuation} {fr : Frame}
+    {mem : Mem} (hG : GraphOk G P den fr mem) {st : σ} (hP : P st) (i : Inst) :
+    Valuation.Le (den st) (den (G.make st i).2) := (hG.make st i hP).2.1
+
+theorem GraphOk.make_val {G : EGraph σ} {P : σ → Prop} {den : σ → Valuation} {fr : Frame}
+    {mem : Mem} (hG : GraphOk G P den fr mem) {st : σ} (hP : P st) {i : Inst} {b : Val}
+    (h : evalNode { fr with regs := den st } mem i = some b) :
+    den (G.make st i).2 (G.make st i).1 = some b := (hG.make st i hP).2.2 b h
+
 /-! ### Single extern extractors (each `rfl` to its transcription, then `toExt`) -/
 
 theorem toExt_ok_some {α : Type} (a : α) : toExt (.ok (some a) : R (Option α)) = .ok a := rfl
@@ -308,6 +323,26 @@ macro "ofInst_fwd" : tactic => `(tactic| (
 @[opt_match] theorem V.beq_int (a b : Int) : V.beq (.int a) (.int b) = (a == b) := rfl
 @[opt_match] theorem V.beq_value (a b : Nat) : V.beq (.value a) (.value b) = (a == b) := rfl
 @[opt_match] theorem V.beq_bool (a b : Bool) : V.beq (.bool a) (.bool b) = (a == b) := rfl
+
+/-! ## Types and immediates -/
+
+@[opt_match] theorem CTy.ofClif_inj {a b : Ty} : CTy.ofClif a = CTy.ofClif b ↔ a = b := by
+  cases a <;> cases b <;> simp [CTy.ofClif]
+
+/-- The `u64` of a presented (non-`i128`) `iconst` immediate is its bits. -/
+theorem asU64_imm64OfBits {t : Ty} (ht : t ≠ .i128) (b : BitVec t.width) :
+    Rust.asU64 (imm64OfBits b) = b.toNat := by
+  have hw : t.width ≤ 64 := by cases t <;> simp_all [Ty.width]
+  have hlt : b.toNat < 2 ^ 64 := Nat.lt_of_lt_of_le b.isLt (Nat.pow_le_pow_right (by decide) hw)
+  simp only [Rust.asU64, imm64OfBits, Rust.asI64]
+  rw [BitVec.toNat_ofInt]
+  simp only [BitVec.toInt, BitVec.toNat_ofInt]
+  split <;> simp_all <;> omega
+
+theorem toNat_eq_zero_iff {w : Nat} (b : BitVec w) : b.toNat = 0 ↔ b = 0#w := by
+  constructor
+  · intro h; exact BitVec.eq_of_toNat_eq (by simpa using h)
+  · rintro rfl; simp
 
 /-! ## Opcode indices -/
 

@@ -128,6 +128,32 @@ theorem evalNode_icmp {cc : IntCC} {t : Ty} {x y : ValueId} {a : Val} :
   · rintro ⟨m, b, h, c, h', rfl, -⟩; exact ⟨b, c, h, h', rfl⟩
   · rintro ⟨b, c, h, h', rfl⟩; exact ⟨mem, b, h, c, h', rfl, rfl⟩
 
+
+/-- `evalNode` of a binary node, shifts and non-shifts at once (for `simp`: the `if` on the
+concrete opcode reduces). -/
+theorem evalNode_binary_iff {op : BinaryOp} {t : Ty} {x y : ValueId} {a : Val} :
+    evalNode fr mem (.binary op t x y) = some a ↔
+      if op.isShift then
+        ∃ b : BitVec t.width, fr.regs x = some ⟨t, b⟩ ∧ ∃ c : Val, fr.regs y = some c ∧
+          ∃ r, Sem.shift op b c.bits = some r ∧ a = ⟨t, r⟩
+      else
+        ∃ b c : BitVec t.width, fr.regs x = some ⟨t, b⟩ ∧ fr.regs y = some ⟨t, c⟩ ∧
+          a = ⟨t, Sem.binary op b c⟩ := by
+  cases hs : op.isShift
+  · simp only [Bool.false_eq_true, ite_false]
+    exact evalNode_binary fr mem hs
+  · simp only [ite_true, evalNode_eq_some, evalInst, getAs_bind_ok, hs, get_bind_ok, pure,
+      Res.ofOption]
+    constructor
+    · rintro ⟨m, b, h, c, h', e⟩
+      cases hsh : Sem.shift op b c.bits with
+      | none => simp [hsh] at e
+      | some r =>
+        simp only [hsh, Res.ok_bind, Res.ok.injEq, Prod.mk.injEq, List.cons.injEq, and_true] at e
+        exact ⟨b, h, c, h', r, hsh, e.1.symm⟩
+    · rintro ⟨b, h, c, h', r, hsh, rfl⟩
+      exact ⟨mem, b, h, c, h', by simp [hsh]⟩
+
 end
 
 end Opt.Proof
