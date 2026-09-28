@@ -1,0 +1,100 @@
+; Mid-end oracle cases for `simplify_skeleton` (`isle-trace-oracle --opt`,
+; `FVTest/Isle/Opt.lean`): one call per side-effecting instruction and terminator, in block
+; order. Operands of the tested instructions are block parameters or constants.
+
+function %udiv_7_i32(i32) -> i32 {
+block0(v0: i32):
+    v1 = iconst.i32 7
+    v2 = udiv v0, v1
+    return v2
+}
+
+function %udiv_8_i64(i64) -> i64 {
+block0(v0: i64):
+    v1 = iconst.i64 8
+    v2 = udiv v0, v1
+    return v2
+}
+
+function %sdiv_7_i64(i64) -> i64 {
+block0(v0: i64):
+    v1 = iconst.i64 7
+    v2 = sdiv v0, v1
+    return v2
+}
+
+function %sdiv_m8_i32(i32) -> i32 {
+block0(v0: i32):
+    v1 = iconst.i32 -8
+    v2 = sdiv v0, v1
+    return v2
+}
+
+function %urem_10_i32(i32) -> i32 {
+block0(v0: i32):
+    v1 = iconst.i32 10
+    v2 = urem v0, v1
+    return v2
+}
+
+function %srem_m4_i64(i64) -> i64 {
+block0(v0: i64):
+    v1 = iconst.i64 -4
+    v2 = srem v0, v1
+    return v2
+}
+
+function %urem_1_i16(i16) -> i16 {
+block0(v0: i16):
+    v1 = iconst.i16 1
+    v2 = urem v0, v1
+    return v2
+}
+
+function %trapz_const(i32) -> i32 {
+block0(v0: i32):
+    v1 = iconst.i32 1
+    trapz v1, user1
+    return v0
+}
+
+function %trapnz_uextend(i8) -> i8 {
+block0(v0: i8):
+    v1 = uextend.i32 v0
+    trapnz v1, user1
+    return v0
+}
+
+function %brif_const(i32) -> i32 {
+block0(v0: i32):
+    v1 = iconst.i8 0
+    brif v1, block1, block2
+block1:
+    return v0
+block2:
+    v2 = iconst.i32 3
+    return v2
+}
+
+function %brif_to_trap(i32) -> i32 {
+block0(v0: i32):
+    brif v0, block1, block2(v0)
+block1:
+    trap user7
+block2(v3: i32):
+    return v3
+}
+
+function %br_table_const(i32) -> i32 {
+block0(v0: i32):
+    v1 = iconst.i32 1
+    br_table v1, block3, [block1, block2]
+block1:
+    return v0
+block2:
+    v2 = iconst.i32 2
+    return v2
+block3:
+    v4 = iconst.i32 4
+    return v4
+}

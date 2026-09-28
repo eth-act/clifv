@@ -44,10 +44,17 @@ interpretation aborts with an error rather than guessing.
 namespace Isle.Opt
 open Isle
 
+/-- A side-effecting (skeleton) instruction, as `simplify_skeleton` sees it: an instruction
+(`div`, `trapz`, `trapnz`, ...) or a terminator (`brif`, `br_table`, `jump`). -/
+inductive SkelInst where
+  | inst (i : Clif.Inst)
+  | term (t : Clif.Terminator)
+  deriving DecidableEq, Repr, Inhabited
+
 /-- ISLE values of the mid-end embedding. -/
 inductive V where
   /-- ISLE integers of every width, in the range of their Rust type; `Imm64` (its `i64`),
-  `Offset32`, and the entity indices `StackSlot`, `GlobalValue`. -/
+  `Offset32`, and the entity indices `StackSlot`, `GlobalValue`, `Block`. -/
   | int (i : Int)
   | bool (b : Bool)
   | ty (t : CTy)
@@ -55,12 +62,19 @@ inductive V where
   | value (id : Nat)
   /-- A value built from a node that has no `Clif.Inst` form (not inserted; no nodes). -/
   | poison (t : CTy)
-  /-- `ValueArray2` / `ValueArray3`. -/
+  /-- `ValueArray2` / `ValueArray3` / `BlockArray2`. -/
   | values (vs : List V)
   /-- `TypeAndInstructionData`. -/
   | pair (t : CTy) (d : V)
   /-- Enum variant `k` (or a struct, `k = 0`) of the ISLE type `ty`. -/
   | data (ty : TypeId) (k : Nat) (fields : List V)
+  /-- `Inst`: a skeleton instruction (the one being simplified, or one `make_skeleton_inst`
+  built; `none`: built but without a `SkelInst` form). -/
+  | inst (i : Option SkelInst)
+  | trapCode (c : Clif.TrapCode)
+  | blockCall (b : Clif.BlockCall)
+  /-- `JumpTable`: the default target and the table of a `br_table`. -/
+  | jumpTable (default : Clif.BlockCall) (table : List Clif.BlockCall)
   deriving Repr, Inhabited
 
 mutual
@@ -74,6 +88,10 @@ def V.beq : V → V → Bool
   | .values a, .values b => V.beqList a b
   | .pair t d, .pair t' d' => t == t' && V.beq d d'
   | .data t k fs, .data t' k' fs' => t == t' && k == k' && V.beqList fs fs'
+  | .inst a, .inst b => decide (a = b)
+  | .trapCode a, .trapCode b => decide (a = b)
+  | .blockCall a, .blockCall b => decide (a = b)
+  | .jumpTable d t, .jumpTable d' t' => decide (d = d') && decide (t = t')
   | _, _ => false
 def V.beqList : List V → List V → Bool
   | [], [] => true
@@ -83,11 +101,14 @@ end
 
 instance : BEq V := ⟨V.beq⟩
 
-/-- The caller's e-graph. -/
+/-- The caller's e-graph (and, for `simplify_skeleton`, the function's blocks). -/
 structure EGraph (σ : Type) where
   enodes : σ → Nat → List Clif.Inst
   typeOf : σ → Nat → Option Clif.Ty
   make : σ → Clif.Inst → Nat × σ
+  /-- `just_trap_block` (`BranchToTrap::analyze_block`): the trap code if the block is a
+  "just trap" block (only pure instructions, then `trap`). -/
+  trapBlock : σ → Clif.BlockId → Option Clif.TrapCode := fun _ _ => none
 
 /-- Interpreter state: the caller's state and the values marked by `subsume` / `remat` during
 this call (`OptimizeCtx::subsume_values`, `remat_values`). -/
@@ -247,6 +268,73 @@ def toInst (typeOf : Nat → Option Clif.Ty) (ty : CTy) : V → Option Clif.Inst
     | _, _, _ => none
   | _ => none
 
+/-! ## Skeleton instructions (`simplify_skeleton`) -/
+
+def divIdx : Clif.DivOp → Nat
+  | .udiv => VIdx.«Opcode».«Udiv» | .sdiv => VIdx.«Opcode».«Sdiv»
+  | .urem => VIdx.«Opcode».«Urem» | .srem => VIdx.«Opcode».«Srem»
+
+/-- A skeleton instruction as Cranelift's `InstructionData` (`inst_data_etor`; `none`: no
+form here, no rule matches it). -/
+def ofSkel : SkelInst → Option V
+  | .inst (.div op _ x y) =>
+    some (idata VIdx.«InstructionData».«Binary» [opcode (divIdx op), .values [.value x, .value y]])
+  | .inst (.trapz c code) =>
+    some (idata VIdx.«InstructionData».«CondTrap» [opcode VIdx.«Opcode».«Trapz», .value c, .trapCode code])
+  | .inst (.trapnz c code) =>
+    some (idata VIdx.«InstructionData».«CondTrap» [opcode VIdx.«Opcode».«Trapnz», .value c, .trapCode code])
+  | .term (.brif c t e) =>
+    some (idata VIdx.«InstructionData».«Brif»
+      [opcode VIdx.«Opcode».«Brif», .value c, .values [.blockCall t, .blockCall e]])
+  | .term (.jump d) => some (idata VIdx.«InstructionData».«Jump» [opcode VIdx.«Opcode».«Jump», .blockCall d])
+  | .term (.brTable x d tbl) =>
+    some (idata VIdx.«InstructionData».«BranchTable» [opcode VIdx.«Opcode».«BrTable», .value x, .jumpTable d tbl])
+  | _ => none
+
+/-- `make_skeleton_inst data` as a skeleton instruction (the forms the rules build: `jump`,
+`trapz`, `trapnz`, `brif`). -/
+def toSkel : V → Option SkelInst
+  | .data t k fs =>
+    if t != TyId.«InstructionData» then none else
+    match k, fs with
+    | VIdx.«InstructionData».«Jump», [.data _ VIdx.«Opcode».«Jump» [], .blockCall d] => some (.term (.jump d))
+    | VIdx.«InstructionData».«CondTrap», [.data _ VIdx.«Opcode».«Trapz» [], .value c, .trapCode code] =>
+      some (.inst (.trapz c code))
+    | VIdx.«InstructionData».«CondTrap», [.data _ VIdx.«Opcode».«Trapnz» [], .value c, .trapCode code] =>
+      some (.inst (.trapnz c code))
+    | VIdx.«InstructionData».«Brif», [.data _ VIdx.«Opcode».«Brif» [], .value c, .values [.blockCall a, .blockCall b]] =>
+      some (.term (.brif c a b))
+    | _, _ => none
+  | _ => none
+
+/-- `SkeletonInstSimplification` (`prelude_opt.isle`) with skeleton instructions as
+`SkelInst`. `RemoveDeadStore` is not built by any closure rule. -/
+inductive SkelSimp where
+  | remove
+  | removeWithVal (v : Nat)
+  | replace (i : SkelInst)
+  | replaceWithVal (i : SkelInst) (v : Nat)
+  | replaceBranchCond (c : Nat)
+  | replaceWithTwo (first second : SkelInst)
+  deriving DecidableEq, Repr, Inhabited
+
+/-- A result of `simplify_skeleton` (`none`: it mentions a poison value or an instruction
+without a `SkelInst` form, or is `RemoveDeadStore`; dropped). -/
+def skelSimp? : V → Option SkelSimp
+  | .data t k fs =>
+    if t != TyId.«SkeletonInstSimplification» then none else
+    match k, fs with
+    | VIdx.«SkeletonInstSimplification».«Remove», [] => some .remove
+    | VIdx.«SkeletonInstSimplification».«RemoveWithVal», [.value v] => some (.removeWithVal v)
+    | VIdx.«SkeletonInstSimplification».«Replace», [.inst (some i)] => some (.replace i)
+    | VIdx.«SkeletonInstSimplification».«ReplaceWithVal», [.inst (some i), .value v] =>
+      some (.replaceWithVal i v)
+    | VIdx.«SkeletonInstSimplification».«ReplaceBranchCond», [.value c] => some (.replaceBranchCond c)
+    | VIdx.«SkeletonInstSimplification».«ReplaceWithTwo», [.inst (some a), .inst (some b)] =>
+      some (.replaceWithTwo a b)
+    | _, _ => none
+  | _ => none
+
 /-! ## Extern helpers -/
 
 /-- Errors: unmodeled helpers and Rust panics. -/
@@ -390,6 +478,16 @@ def ctorFn (fn : String) (args : List V) (st : St σ) : R (Option (V × St σ)) 
     opt (← panics (Rust.checkedAddWithType (← t.ty?) (← a.int?) (← b.int?)))
   | "ty_vector_not_float", [t] => pure ((Rust.tyVectorNotFloat (← t.ty?)).map fun t => (.ty t, st))
   | "pack_value_array_2", [a, b] => ok (.values [a, b])
+  | "pack_block_array_2", [a, b] => ok (.values [a, b])
+  -- `src/opts.rs`: skeleton instructions
+  | "make_skeleton_inst_ctor", [d] => ok (.inst (toSkel d))
+  | "resolve_jump_table_entry", [.jumpTable d tbl, i] => do
+    let i ← i.int?
+    ok (.blockCall (if i ≥ 0 then (tbl[i.toNat]?).getD d else d))
+  | "block_call_block", [.blockCall b] => int b.block
+  | "just_trap_block", [b] => do
+    let b ← b.int?
+    pure ((G.trapBlock st.inner b.toNat).map fun c => (.trapCode c, st))
   | "pack_value_array_3", [a, b, c] => ok (.values [a, b, c])
   -- `<OUT_DIR>/isle_numerics.rs`
   | "i32_lt", [a, b] => bool ((← a.int?) < (← b.int?))
@@ -457,6 +555,15 @@ def extractFn (fn : String) (v : V) (st : St σ) : R (Option (List V)) := do
     pure ((Rust.multiLane (← v.ty?)).map fun (b, n) => [.int b, .int n])
   | "u64_from_imm64" => ok [.int (Rust.asU64 (← v.int?))]
   | "imm64_power_of_two" => pure ((Rust.imm64PowerOfTwo (← v.int?)).map fun i => [.int i])
+  | "inst_data_etor" =>
+    match v with
+    | .inst (some i) => pure ((ofSkel i).map ([·]))
+    | .inst none => pure none
+    | _ => throw s!"inst_data_etor: {repr v}"
+  | "unpack_block_array_2" =>
+    match v with
+    | .values [a, b] => ok [a, b]
+    | _ => throw s!"unpack_block_array_2: {repr v}"
   | "unpack_value_array_2" =>
     match v with
     | .values [a, b] => ok [a, b]
@@ -546,7 +653,7 @@ Rust panic, fuel). -/
 def simplify {σ : Type} (enodes : σ → Nat → List Clif.Inst) (typeOf : σ → Nat → Option Clif.Ty)
     (make : σ → Clif.Inst → Nat × σ) (st : σ) (v : Nat) :
     Except String (List (Nat × Bool) × List String × σ) :=
-  let G : EGraph σ := ⟨enodes, typeOf, make⟩
+  let G : EGraph σ := { enodes, typeOf, make }
   match Interp.runMultiTerm program (sem G) cfg T.«simplify» [.value v] { inner := st } with
   | .error e => .error (reprStr e)
   | .ok r =>
@@ -555,5 +662,21 @@ def simplify {σ : Type} (enodes : σ → Nat → List Clif.Inst) (typeOf : σ �
       | .value n => some ((n, r.state.subsumed.contains n), (program.rule? rid).elim s!"<rule {rid}>" (·.name))
       | _ => none
     .ok (cands.map (·.1), cands.map (·.2), r.state.inner)
+
+/-- Run `simplify_skeleton` on the side-effecting instruction `i`: the simplifications in rule
+order, the names of the rules that produced them (same order), and the caller's state after
+the `make` calls. `trapBlock` is `just_trap_block`. -/
+def simplifySkeleton {σ : Type} (enodes : σ → Nat → List Clif.Inst)
+    (typeOf : σ → Nat → Option Clif.Ty) (make : σ → Clif.Inst → Nat × σ)
+    (trapBlock : σ → Clif.BlockId → Option Clif.TrapCode) (st : σ) (i : SkelInst) :
+    Except String (List SkelSimp × List String × σ) :=
+  let G : EGraph σ := ⟨enodes, typeOf, make, trapBlock⟩
+  match Interp.runMultiTerm program (sem G) cfg T.«simplify_skeleton» [.inst (some i)]
+      { inner := st } with
+  | .error e => .error (reprStr e)
+  | .ok r =>
+    let res := r.values.filterMap fun (rid, w) =>
+      (skelSimp? w).map fun s => (s, (program.rule? rid).elim s!"<rule {rid}>" (·.name))
+    .ok (res.map (·.1), res.map (·.2), r.state.inner)
 
 end Isle.Opt
