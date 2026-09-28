@@ -64,14 +64,17 @@ struct FnDump {
     symbol: String,
     /// gv → the declaration's external-name index.
     gv_ext: BTreeMap<u32, u32>,
-    /// fn → the declaration's external-name index.
-    fn_ext: BTreeMap<u32, u32>,
     /// gv → the allocation's comment (from the gv declaration).
     gv_comment: BTreeMap<u32, String>,
     /// Every external-name use, in CLIF layout order.
     uses: Vec<Use>,
-    /// The external name of every GOT load, in code order (from the `.vcode`).
-    vgot: Vec<u32>,
+    /// Every `load_ext_name_got` of the function, in code order (from the `.vcode`;
+    /// the external-name kind — `User(userextnameJ)` or `LibCall(…)` — doesn't matter
+    /// here, the pair's target kind does).
+    vgot: Vec<()>,
+    /// The `User(userextnameJ)` refs of the same loads, in code order (diagnostics).
+    #[allow(dead_code)]
+    vgot_exts: Vec<Option<u32>>,
 }
 
 /// Parse one raw cg_clif dump file (one function).
@@ -81,7 +84,6 @@ fn parse_dump(path: &Path, stage: &str) -> FnDump {
     let mut gv_comment: BTreeMap<u32, String> = BTreeMap::new();
     let mut gv_ext: BTreeMap<u32, u32> = BTreeMap::new();
     let mut fn_colocated: BTreeMap<u32, bool> = BTreeMap::new();
-    let mut fn_ext: BTreeMap<u32, u32> = BTreeMap::new();
     let mut uses: Vec<Use> = Vec::new();
     // The `; extname N u0:M`-style user-name table is not written by cg_clif; instead,
     // every declaration line carries its UserExternalNameRef implicitly: `fnK`'s name
@@ -157,19 +159,27 @@ fn parse_dump(path: &Path, stage: &str) -> FnDump {
     let vcode_path = path.with_file_name(format!("{vname}.vcode"));
     let vt = fs::read_to_string(&vcode_path)
         .unwrap_or_else(|e| die(format!("{}: {e}", vcode_path.display())));
-    let vgot: Vec<u32> = vt.lines().filter_map(|l| {
-        let (_pre, rest) = l.trim_start().split_once("load_ext_name_got ")?;
-        rest.split("User(userextname").nth(1)?.split(')').next()?.parse::<u32>().ok()
-    }).collect();
+    let mut vgot: Vec<()> = Vec::new();
+    let mut vgot_exts: Vec<Option<u32>> = Vec::new();
+    for l in vt.lines() {
+        let Some((_pre, rest)) = l.trim_start().split_once("load_ext_name_got ") else { continue };
+        vgot.push(());
+        let ext = rest
+            .split("User(userextname")
+            .nth(1)
+            .and_then(|e| e.split(')').next())
+            .and_then(parse_u32);
+        vgot_exts.push(ext);
+    }
     let Some(symbol) = symbol else { die(format!("{}: no `; symbol` line", path.display())) };
     FnDump {
         file: path.file_name().and_then(|n| n.to_str()).unwrap_or("?").to_string(),
         symbol,
         gv_ext,
-        fn_ext,
         gv_comment,
         uses,
         vgot,
+        vgot_exts,
     }
 }
 
@@ -215,18 +225,18 @@ struct Sec {
     relocs: Vec<Rel>,
 }
 
-fn load_obj(path: &Path) -> (Vec<Sym>, BTreeMap<usize, Sec>) {
+fn load_obj(path: &Path) -> (BTreeMap<usize, Sym>, BTreeMap<usize, Sec>) {
     let bytes = fs::read(path).unwrap_or_else(|e| die(format!("{}: {e}", path.display())));
     let file = object::read::File::parse(&*bytes)
         .unwrap_or_else(|e| die(format!("{}: {e}", path.display())));
-    let mut syms: Vec<Sym> = Vec::new();
+    let mut syms: BTreeMap<usize, Sym> = BTreeMap::new();
     for s in file.symbols() {
         let Ok(name) = s.name() else { continue };
         let sec = match s.section() {
             SymbolSection::Section(i) => Some(i.0),
             _ => None,
         };
-        syms.push(Sym { name: name.to_string(), kind: s.kind(), sec, value: s.address(), size: s.size() });
+        syms.insert(s.index().0, Sym { name: name.to_string(), kind: s.kind(), sec, value: s.address(), size: s.size() });
     }
     let mut secs: BTreeMap<usize, Sec> = BTreeMap::new();
     for s in file.sections() {
@@ -292,7 +302,10 @@ fn alloc_of(comment: &str) -> Option<u32> {
     parse_u32(comment.strip_prefix("alloc")?)
 }
 
-/// The name of a data object in the emitted directives and gvmap.
+/// The name of a data object in the emitted directives and gvmap: the symbol's own
+/// name, crate-prefixed. cg_clif defines the same allocation (the same `allocN`
+/// comment) once per referencing function, so the comment is not an identity — the
+/// symbol is.
 fn data_name(crate_name: &str, s: &Sym) -> String {
     if let Some(hex) = s.name.strip_prefix(".Ldata") {
         format!("{crate_name}_Ldata{hex}")
@@ -315,18 +328,25 @@ fn recover(crate_name: &str, obj: &Path, dumps: &[FnDump]) -> Recovered {
     let (syms, secs) = load_obj(obj);
     // Symbol index of every function symbol, by name.
     let mut fn_idx: BTreeMap<&str, usize> = BTreeMap::new();
-    for (i, s) in syms.iter().enumerate() {
+    for (i, s) in syms.iter() {
         if s.kind == SymbolKind::Text && !fn_idx.contains_key(s.name.as_str()) {
-            fn_idx.insert(s.name.as_str(), i);
+            fn_idx.insert(s.name.as_str(), *i);
         }
     }
 
     // ---- 1. match the GOT loads against the external names ----
     // Every `load_ext_name_got User(extK)` in a function's `.vcode` lowers to exactly
-    // one GOT pair (`ADR_GOT_PAGE` + `LD64_GOT_LO12`, same symbol, code order), and the
-    // `.vcode` names the ext explicitly — so the ext ↔ symbol mapping is exact, with no
+    // one GOT pair (`R_AARCH64_ADR_GOT_PAGE` 311 + `R_AARCH64_LD64_GOT_LO12_NC` 312,
+    // same symbol), both in code order — so zipping them positionally is exact, with no
     // order assumption between the CLIF and the code (cg_clif may reorder at -O).
-    let mut ext_sym: BTreeMap<(usize, u32), usize> = BTreeMap::new(); // (fn sym idx, ext) → data sym idx
+    // Two wrangles, both verified on the survey objects:
+    // * `userextnameJ` refs are per-function dense indices over *both* namespaces (a
+    //   data declaration and a function declaration can share a ref number), so the
+    //   pair's target kind (Data/Text) says whether the ext names data or a callee;
+    // * the GOT loads of Cranelift libcalls (`memcpy`, `memset`, …) are not
+    //   `load_ext_name_got` instructions, so when the counts disagree we fall back to
+    //   pairing the vcode entries with the Data-target pairs only.
+    let mut ext_data: BTreeMap<(usize, u32), usize> = BTreeMap::new(); // (fn sym idx, ext) → data sym idx
     let mut comment_sym: BTreeMap<String, usize> = BTreeMap::new(); // alloc comment → sym idx
     let mut recovered: BTreeSet<(usize, u32)> = BTreeSet::new(); // (fn sym idx, gv)
     let mut fns_with_data: BTreeSet<usize> = BTreeSet::new(); // fns with >=1 recovered data use
@@ -334,16 +354,14 @@ fn recover(crate_name: &str, obj: &Path, dumps: &[FnDump]) -> Recovered {
         let Some(&fi) = fn_idx.get(d.symbol.as_str()) else {
             die(format!("{}: function symbol `{}` not found in {}", d.file, d.symbol, obj.display()));
         };
-        let Some(si) = syms[fi].sec else {
+        let Some(si) = syms[&fi].sec else {
             die(format!("{}: `{}` has no section", obj.display(), d.symbol));
         };
         let sec = secs.get(&si).unwrap_or_else(|| die(format!("{}: section {si} missing", obj.display())));
         if sec.kind != SectionKind::Text {
             die(format!("{}: `{}` is not in a text section", obj.display(), d.symbol));
         }
-        let (fvalue, fsize) = (syms[fi].value, syms[fi].size);
-        // Only *data*-target pairs are matched against the vcode: the GOT load of a
-        // non-colocated callee (a `CallInd`) is not a `load_ext_name_got` instruction.
+        let (fvalue, fsize) = (syms[&fi].value, syms[&fi].size);
         let mut got: Vec<usize> = Vec::new();
         let mut i = 0;
         while i < sec.relocs.len() {
@@ -358,89 +376,71 @@ fn recover(crate_name: &str, obj: &Path, dumps: &[FnDump]) -> Recovered {
                         obj.display(), d.symbol, r.off, r2.kind, r2.sym, r2.off, r2.addend
                     ));
                 }
-                if syms[r.sym].kind == SymbolKind::Data {
-                    got.push(r.sym);
-                }
+                got.push(r.sym);
                 i += 2;
             } else {
                 i += 1;
             }
         }
+        // The pairing: every GOT load (of a `User` name or a `LibCall`) is one pair, in
+        // code order. Only the *data*-target pairs are recorded (callee symbols need no
+        // data); an ext shared between a gv and a fn declaration is disambiguated by the
+        // target kind.
         if d.vgot.len() != got.len() {
-            let names: Vec<String> = got.iter().map(|&s| syms[s].name.clone()).collect();
             die(format!(
                 "{}: `{}`: {} `load_ext_name_got` in the vcode but {} GOT pairs (targets {})",
-                obj.display(), d.symbol, d.vgot.len(), got.len(), names.join(", ")
+                obj.display(), d.symbol, d.vgot.len(), got.len(),
+                got.iter().map(|&s| syms[&s].name.clone()).collect::<Vec<_>>().join(", ")
             ));
         }
-        for (&ext, &target) in d.vgot.iter().zip(got.iter()) {
-            if syms[target].kind != SymbolKind::Data {
-                die(format!("{}: `{}`: ext{ext} resolves to a non-data symbol", obj.display(), d.symbol));
+        for (&ext, &target) in d.vgot_exts.iter().zip(got.iter()) {
+            let Some(ext) = ext else { continue }; // a LibCall load: never data
+            if syms[&target].kind != SymbolKind::Data {
+                continue;
             }
-            match ext_sym.entry((fi, ext)) {
+            match ext_data.entry((fi, ext)) {
                 std::collections::btree_map::Entry::Vacant(e) => {
                     e.insert(target);
                 }
                 std::collections::btree_map::Entry::Occupied(e) => {
                     if *e.get() != target {
                         die(format!(
-                            "{}: `{}`: ext{ext} resolves to two symbols ({} and {})",
-                            obj.display(), d.symbol, syms[*e.get()].name, syms[target].name
+                            "{}: `{}`: ext{ext} resolves to two data symbols ({} and {})",
+                            obj.display(), d.symbol, syms[&*e.get()].name, syms[&target].name
                         ));
                     }
                 }
             }
         }
-        // Which data gvs are recovered (their ext has a GOT load)?
+        // Which data gvs are recovered (their ext has a data GOT load)?
         for u in &d.uses {
             let Use::Data(gv) = u else { continue };
             let Some(&ext) = d.gv_ext.get(gv) else {
                 die(format!("{}: `{}`: gv{gv} has no declaration", obj.display(), d.symbol));
             };
-            if ext_sym.contains_key(&(fi, ext)) {
+            if ext_data.contains_key(&(fi, ext)) {
                 recovered.insert((fi, *gv));
                 fns_with_data.insert(fi);
             }
         }
     }
-    // The identity of every allocation: its `allocN` comment, over all functions.
-    for d in dumps {
-        let Some(&fi) = fn_idx.get(d.symbol.as_str()) else { continue };
-        for u in &d.uses {
-            let Use::Data(gv) = u else { continue };
-            let Some(&ext) = d.gv_ext.get(gv) else { continue };
-            let Some(&target) = ext_sym.get(&(fi, ext)) else { continue };
-            let c = d.gv_comment.get(gv).map(|s| s.as_str()).unwrap_or("");
-            let Some(n) = alloc_of(c) else { continue };
-            match comment_sym.entry(c.to_string()) {
-                std::collections::btree_map::Entry::Vacant(e) => {
-                    e.insert(target);
-                }
-                std::collections::btree_map::Entry::Occupied(e) => {
-                    if *e.get() != target {
-                        die(format!(
-                            "{}: `{}`: allocation {} resolves to two symbols ({} and {})",
-                            obj.display(), d.file, c, syms[*e.get()].name, syms[target].name
-                        ));
-                    }
-                }
-            }
-        }
-    }
-
     // ---- 2. discover the data objects transitively ----
     let mut reached: BTreeSet<usize> = BTreeSet::new();
-    let mut queue: Vec<usize> = ext_sym.values().copied().collect();
+    let mut queue: Vec<usize> = ext_data.values().copied().collect();
     while let Some(si) = queue.pop() {
         if !reached.insert(si) {
             continue;
         }
-        let s = &syms[si];
+        let s = &syms[&si];
         let Some(seci) = s.sec else {
-            die(format!("{}: data symbol `{}` has no section", obj.display(), s.name));
+            // An imported data object (e.g. a `core` static): its bytes are not in this
+            // object, so it cannot be recovered here.
+            eprintln!("clif-data-export: warning: {}: data symbol `{}` is imported; skipped", obj.display(), s.name);
+            continue;
         };
         let sec = secs.get(&seci).unwrap_or_else(|| die(format!("{}: section {seci} missing", obj.display())));
         let (kind, data, relocs) = (&sec.kind, &sec.data, &sec.relocs);
+        let _ = &data;
         if !matches!(
             kind,
             SectionKind::ReadOnlyData | SectionKind::ReadOnlyDataWithRel | SectionKind::Data | SectionKind::UninitializedData
@@ -451,7 +451,7 @@ fn recover(crate_name: &str, obj: &Path, dumps: &[FnDump]) -> Recovered {
             if r.kind != RKind::Abs64 || r.off < s.value || r.off >= s.value + s.size {
                 continue;
             }
-            let t = &syms[r.sym];
+            let t = &syms[&r.sym];
             if t.kind == SymbolKind::Data && t.name.starts_with(".Ldata") && !reached.contains(&r.sym) {
                 queue.push(r.sym);
             }
@@ -460,8 +460,8 @@ fn recover(crate_name: &str, obj: &Path, dumps: &[FnDump]) -> Recovered {
 
     // ---- 3. name every data object ----
     let mut names: BTreeMap<usize, String> = BTreeMap::new();
-    for target in ext_sym.values() {
-        names.entry(*target).or_insert_with(|| data_name(crate_name, &syms[*target]));
+    for target in ext_data.values() {
+        names.entry(*target).or_insert_with(|| data_name(crate_name, &syms[&*target]));
     }
     // The gv renaming table: (dump file, gv, data name), for every recovered data use.
     let mut gvmap: Vec<(String, u32, String)> = Vec::new();
@@ -470,22 +470,35 @@ fn recover(crate_name: &str, obj: &Path, dumps: &[FnDump]) -> Recovered {
         for u in &d.uses {
             let Use::Data(gv) = u else { continue };
             let Some(&ext) = d.gv_ext.get(gv) else { continue };
-            let Some(&target) = ext_sym.get(&(fi, ext)) else { continue };
-            let name = names.get(&target).cloned().unwrap_or_else(|| data_name(crate_name, &syms[target]));
+            let Some(&target) = ext_data.get(&(fi, ext)) else { continue };
+            let name = names.get(&target).cloned().unwrap_or_else(|| data_name(crate_name, &syms[&target]));
             gvmap.push((d.file.clone(), *gv, name));
         }
     }
 
     // ---- 4. the items of every data object ----
+    // Per section: the data symbols (idx, value, size), for section-symbol references.
+    let mut secs_data: BTreeMap<usize, Vec<(usize, u64, u64)>> = BTreeMap::new();
+    for (i, s) in syms.iter() {
+        if s.kind == SymbolKind::Data {
+            if let Some(seci) = s.sec {
+                secs_data.entry(seci).or_default().push((*i, s.value, s.size));
+            }
+        }
+    }
     let mut objs: Vec<DataObj> = Vec::new();
     let mut bytes_total: u64 = 0;
     for (name, si) in names.iter().map(|(i, n)| (n.clone(), *i)) {
-        let s = &syms[si];
+        let s = &syms[&si];
         let Some(seci) = s.sec else {
-            die(format!("{}: data symbol `{}` has no section", obj.display(), s.name));
+            // An imported data object (e.g. a `core` static): its bytes are not in this
+            // object, so it cannot be recovered here.
+            eprintln!("clif-data-export: warning: {}: data symbol `{}` is imported; skipped", obj.display(), s.name);
+            continue;
         };
         let sec = secs.get(&seci).unwrap_or_else(|| die(format!("{}: section {seci} missing", obj.display())));
         let (kind, data, relocs) = (&sec.kind, &sec.data, &sec.relocs);
+        let _ = &data;
         let writable = matches!(kind, SectionKind::Data | SectionKind::UninitializedData);
         // relocations inside the object, at their byte offset
         let mut at: BTreeMap<u64, Item> = BTreeMap::new();
@@ -493,13 +506,26 @@ fn recover(crate_name: &str, obj: &Path, dumps: &[FnDump]) -> Recovered {
             if r.kind != RKind::Abs64 || r.off < s.value || r.off >= s.value + s.size {
                 continue;
             }
-            let t = &syms[r.sym];
-            let target = match t.kind {
-                SymbolKind::Text => t.name.clone(),
-                SymbolKind::Data => names.get(&r.sym).cloned().unwrap_or_else(|| data_name(crate_name, t)),
-                _ => die(format!("{}: `{}` relocates to symbol `{}` of kind {:?}", obj.display(), name, t.name, t.kind)),
+            // A reference to another data object of the same section may go through the
+            // section symbol (S = the section base, A = the referenced offset).
+            let (target, addend) = if syms[&r.sym].kind == SymbolKind::Section {
+                let addr = r.addend as u64;
+                let Some((tsym, _)) = secs_data.get(&seci).and_then(|ds|
+                    ds.iter().find(|(_, v, sz)| addr >= *v && addr < v + *sz).map(|(i, v, _)| (*i, *v)))
+                else {
+                    die(format!("{}: `{}` relocates through a section symbol to {addr:#x}, which no data object covers", obj.display(), name));
+                };
+                (data_name(crate_name, &syms[&tsym]), (addr - syms[&tsym].value) as i64)
+            } else {
+                let t = &syms[&r.sym];
+                let target = match t.kind {
+                    SymbolKind::Text => t.name.clone(),
+                    SymbolKind::Data => names.get(&r.sym).cloned().unwrap_or_else(|| data_name(crate_name, t)),
+                    _ => die(format!("{}: `{}` relocates to symbol `{}` of kind {:?}", obj.display(), name, t.name, t.kind)),
+                };
+                (target, r.addend)
             };
-            at.insert(r.off - s.value, Item::Reloc { target, addend: r.addend });
+            at.insert(r.off - s.value, Item::Reloc { target, addend });
         }
         // interleave with the byte runs between them
         let mut items: Vec<Item> = Vec::new();
