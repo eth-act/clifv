@@ -357,3 +357,38 @@ lower_spill_int:
   (the bv_decide axiom of the Arm model's memory library lemma)
 move_agree: [propext, Quot.sound]
 ```
+
+## Status update (M6Rest4, 2026-09-28)
+
+- **Regression fix (compiler change)**: the allocator's slots now sit right above the outgoing
+  area and *below* the explicit CLIF slots. `RAFrame.size` = end of the allocator area (bounded
+  `< 32 KiB` by `lowerRFunc`), `RAFrame.total` = whole frame (`AFunc.frameSize`), CLIF slots at
+  `slotBase = size`. 64 KiB CLIF slots compile again (corpus 114/114, extrt 22/22, runtests
+  3085/0/0, encode-check 971 identical, lean-e2e-check 913/0, regalloc-test 932/932 + all
+  mutants rejected). `frameF lo hi` is now `[sp_body+intBase, sp_body+size) ∪ [sp_body+frameSize,
+  sp_entry)` (the CLIF slots belong to the world); `frameOk_compute`, `RL.frameOk`,
+  `fplr_outside`, `fplr_inF`, `lowerRFunc_ok` updated (`compute_size_le_total`).
+- **Interface**: `OperandsSound` and `Corr` assume an aligned `sp` (`Arm.CheckSPAlignment s`;
+  slot accesses through `sp` fault otherwise; `StRel.align` provides it). `corr_tac` updated.
+- **Loads/stores** (`RegallocMem.lean`): `ldst_load`/`ldst_store` (the model's GPR load/store
+  operation), `exec_load_line`/`exec_store_line` for every final addressing mode (`FinalAM`:
+  unsigned/unscaled immediate, register, scaled, (scaled-)extended), `steps_loadConst64` (the
+  `movz`/`movk` constant load), `StepsOk` (error-free straight-line runs: gives `execLines` and
+  the intermediate-state facts `InterOk` needs), `execMInst_load`/`execMInst_store` for every
+  `MemMode` (register forms and stack-slot offsets incl. the x16 sequence), `load_core` (the
+  operand-independent part of `Corr` for a load) and `corr_load_uoff` (first instance).
+
+Remaining, in order: `Corr` instances for the other load forms and all store forms (a
+`store_core` like `load_core`; `SameWorld.write_mem_bytes'`), `loadAddr` (slot offsets incl.
+x16 + `add ..., sxtx`), `LinesOk` for the multi-line forms (from `StepsOk`), a decidable
+form-coverage predicate over `vcp` (proposed as a premise decided by `lean-e2e-check`, not a
+compile-time check: out-of-scope forms such as `fpOffset`/`spOffset` stack-argument accesses
+must keep compiling), then `Args`, calls, control flow, `jtSequence`, prologue/epilogue, traps,
+the assembly of `RegLevelCorrect`, and the csem obligations (`Refines`, `DriverSem`,
+`CallsRefine`, `MemRefines` — `execMInst_load`/`_store` are the canonical-run characterizations
+`MemRefines` needs). M4AluB4 announced new `ispec` arms (9bb4e3a: `aluRRRShift` rn=xzr,
+`bitfieldMove`, popcnt vector forms) that `Refines` will have to cover.
+
+`#print axioms` (new): `corr_load_uoff`, `execMInst_load`, `execMInst_store`,
+`steps_loadConst64`, `RL.frameOk`: `[propext, Classical.choice, Quot.sound]`;
+`realizes_op_next`: those plus M5's `decode_armBits_*._native.bv_decide` axioms.

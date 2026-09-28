@@ -875,4 +875,135 @@ theorem execMInst_store (ctx : FnCtx) (env : Env) (op : StoreOp) (hop : op ≠ .
     simp only [MemMode] at hm <;>
     exact ⟨_, none, by simp [MInst.lines, memFinalize_final ctx _ hm], single _ hm (fun _ => halign) rfl⟩
 
+/-! ## `Corr` for loads -/
+
+theorem ldX_congr {F : BitVec 64 → Prop} {s t : Arm.ArmState} (op : LoadOp) {a : BitVec 64}
+    (h : ∀ x, ¬ F x → s.mem x = t.mem x) (hav : Avoids F op.bytes a) : ldX op a s = ldX op a t := by
+  have hr : ∀ n, n ≤ op.bytes → Arm.read_mem_bytes n a s = Arm.read_mem_bytes n a t := fun n hn =>
+    read_mem_bytes_congr n a (fun k hk => h _ (hav k (by omega)))
+  cases op <;> simp only [ldX] <;> first | rfl | (rw [hr _ (by simp [LoadOp.bytes])])
+
+theorem sameWorld_x16w {F : BitVec 64 → Prop} {s t : Arm.ArmState} (o o' : Option (BitVec 64))
+    (h : SameWorld F s t) : SameWorld F (x16w o s) (x16w o' t) := by
+  have hm : Masked (.GPR 16#5) := by simp [Masked]
+  cases o <;> cases o' <;> simp only [x16w]
+  · exact h
+  · exact SameWorld.w_right hm h
+  · exact SameWorld.w_left hm h
+  · exact SameWorld.w_right hm (SameWorld.w_left hm h)
+
+theorem sw_r_eq {F : BitVec 64 → Prop} {s w : Arm.ArmState} (hw : SameWorld F s w) {f : Arm.StateField}
+    (hf : ¬ Masked f) : Arm.r f w = Arm.r f s := (hw.1 f hf).symm
+
+theorem align_of_spEq {s t : Arm.ArmState} (h : Arm.r (.GPR 31#5) t = Arm.r (.GPR 31#5) s)
+    (hs : Arm.CheckSPAlignment s) : Arm.CheckSPAlignment t := by
+  simpa [Arm.CheckSPAlignment, Arm.read_gpr, h] using hs
+
+theorem rnum_ne_of {a b : Nat} (ha : a < 32) (hb : b < 32) (h : a ≠ b) :
+    (BitVec.ofNat 5 a : BitVec 5) ≠ BitVec.ofNat 5 b := rnum_ne ha hb h
+
+theorem masked_x {k : Nat} (hk : k < 29 ∧ k ≠ 16 ∧ k ≠ 17 ∧ k ≠ 18) : Masked (.GPR (BitVec.ofNat 5 k)) := by
+  simp only [Masked, BitVec.toNat_ofNat]; omega
+
+/-- The post-state of a load into `x a`. -/
+def ldPost (s : Arm.ArmState) (P : BitVec 64) (a : Nat) (V : BitVec 64) (o : Option (BitVec 64)) :
+    Arm.ArmState :=
+  Arm.w .PC P (Arm.w (.GPR (BitVec.ofNat 5 a)) V (x16w o s))
+
+theorem ldPost_sw {F : BitVec 64 → Prop} {s t : Arm.ArmState} (h : SameWorld F s t) {P P' : BitVec 64}
+    {a b : Nat} (ha : a < 29 ∧ a ≠ 18) (hb : b < 29 ∧ b ≠ 18) (V V' : BitVec 64) (o o' : Option (BitVec 64)) :
+    SameWorld F (ldPost s P a V o) (ldPost t P' b V' o') := by
+  have ma : Masked (.GPR (BitVec.ofNat 5 a)) := by simp only [Masked, BitVec.toNat_ofNat]; omega
+  have mb : Masked (.GPR (BitVec.ofNat 5 b)) := by simp only [Masked, BitVec.toNat_ofNat]; omega
+  exact SameWorld.w_right (by simp [Masked]) (SameWorld.w_left (by simp [Masked])
+    (SameWorld.w_right mb (SameWorld.w_left ma (sameWorld_x16w o o' h))))
+
+theorem ldPost_facts (s : Arm.ArmState) (P : BitVec 64) {a : Nat} (ha : a < 29 ∧ a ≠ 16)
+    (V : BitVec 64) (o : Option (BitVec 64)) :
+    spOf (ldPost s P a V o) = spOf s ∧ (ldPost s P a V o).mem = s.mem ∧
+      regVal (ldPost s P a V o) (.x a) = V.setWidth 128 ∧
+      ∀ r, r.allocatable = true → r ≠ .x a → regVal (ldPost s P a V o) r = regVal s r := by
+  have h31 : BitVec.ofNat 5 a ≠ 31#5 := by
+    intro e; have := congrArg BitVec.toNat e; simp at this; omega
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · simp only [ldPost, spOf]
+    rw [Arm.r_of_w_different (by simp), Arm.r_of_w_different (by simp [Ne.symm h31])]
+    exact (x16w_facts o s).2.2.2.2
+  · simp only [ldPost, Arm.ArmState.mem_w_eq_mem]; exact (x16w_facts o s).2.2.2.1
+  · simp [ldPost, regVal, rnum, Arm.r_of_w_different, Arm.r_of_w_same]
+  · intro r hr hne
+    rcases allocatable_cases hr with ⟨k, rfl, hk⟩ | ⟨k, rfl, hk⟩
+    · have hka : k ≠ a := fun e => hne (by rw [e])
+      have e1 : rnum k ≠ BitVec.ofNat 5 a := rnum_ne (by omega) (by omega) hka
+      have e2 : rnum k ≠ 16#5 := rnum_ne (a := k) (b := 16) (by omega) (by omega) (by omega)
+      cases o <;> simp [ldPost, regVal, x16w, Arm.r_of_w_different, e1, e2]
+    · cases o <;> simp [ldPost, regVal, x16w, Arm.r_of_w_different]
+
+/-- The allocated/canonical correspondence of one load (the part of `Corr` independent of the
+operand list). -/
+theorem load_core {F : BitVec 64 → Prop} (ctx : FnCtx) (env : Env) (op : LoadOp) (hop : op ≠ .fpuLoad128)
+    (fl : Clif.MemFlags) {n0 : Nat} (hn0 : n0 < 29 ∧ n0 ≠ 16 ∧ n0 ≠ 17 ∧ n0 ≠ 18) {m mC : AMode}
+    (hm : MemMode op.bytes m) (hmC : MemMode op.bytes mC) {s t t' : Arm.ArmState}
+    (hal : Arm.CheckSPAlignment s) (hwt : SameWorld F s t)
+    (hsp_t : Arm.r (.GPR 31#5) t = Arm.r (.GPR 31#5) s) (hmem : ∀ x, ¬ F x → t.mem x = s.mem x)
+    (hacc : AccessOk F ctx (.load op (.x 0) mC fl) t)
+    (hex : execMInst ctx env0 (.load op (.x 0) mC fl) t = some t')
+    (haddr : mC.addr ctx op.bytes t = m.addr ctx op.bytes s) :
+    ∃ S, execMInst ctx env (.load op (.x n0) m fl) s = some S ∧ SameWorld F S t' ∧ FrameKeep F s S ∧
+      regVal S (.x n0) = regVal t' (.x 0) ∧
+      ∀ r, r.allocatable = true → r ≠ .x n0 → regVal S r = regVal s r := by
+  obtain ⟨ls, o, hl, hS⟩ := execMInst_load ctx env op hop (d := n0) (by omega) m fl hm s hal
+  obtain ⟨lsC, oC, hlC, hT⟩ := execMInst_load ctx env0 op hop (d := 0) (by omega) mC fl hmC t
+    (align_of_spEq hsp_t hal)
+  simp only [execMInst, hlC, hT.exec, Option.some.injEq] at hex
+  subst hex
+  have hav : Avoids F op.bytes (m.addr ctx op.bytes s) := by
+    have := hacc (mC.addr ctx op.bytes t, op.bytes) (by simp [MInst.accesses])
+    rw [← haddr]; exact this
+  have hld : ldX op (mC.addr ctx op.bytes t) t = ldX op (m.addr ctx op.bytes s) s := by
+    rw [haddr]; exact ldX_congr op hmem hav
+  obtain ⟨f1, f2, f3, f4⟩ := ldPost_facts s (Arm.r .PC s + BitVec.ofNat 64 (4 * ls.length)) (a := n0)
+    ⟨hn0.1, hn0.2.1⟩ (ldX op (m.addr ctx op.bytes s) s) o
+  obtain ⟨-, -, g3, -⟩ := ldPost_facts t (Arm.r .PC t + BitVec.ofNat 64 (4 * lsC.length)) (a := 0)
+    (by omega) (ldX op (mC.addr ctx op.bytes t) t) oC
+  refine ⟨ldPost s (Arm.r .PC s + BitVec.ofNat 64 (4 * ls.length)) n0 (ldX op (m.addr ctx op.bytes s) s) o,
+    by simp only [execMInst, hl]; exact hS.exec, ldPost_sw hwt ⟨hn0.1, hn0.2.2.2⟩ (by omega) _ _ _ _,
+    ⟨f1, fun a _ => by rw [f2]⟩, ?_, f4⟩
+  have g3' := g3.trans (congrArg (BitVec.setWidth 128) hld)
+  rw [f3]; exact g3'.symm
+
+set_option maxHeartbeats 4000000 in
+theorem corr_load_uoff (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (op : LoadOp)
+    (hop : op ≠ .fpuLoad128) (d n off : Nat) (fl : Clif.MemFlags)
+    (h1 : off % op.bytes = 0) (h2 : off / op.bytes < 4096) :
+    Corr F ctx env #[⟨d, .int, .def, .late, .reg⟩, ⟨n, .int, .use, .early, .reg⟩]
+      (fun r => .load op (r.getD 0 .xzr) (.unsignedOffset (r.getD 1 .xzr) off) fl) := by
+  intro regs s w t' ha hw hal hacc hex herr
+  have hsz := ha.size
+  simp only [List.size_toArray, List.length_cons, List.length_nil] at hsz
+  have hf := ha.fits
+  obtain ⟨r0, r1, rfl⟩ := regs2 hsz
+  simp [RegFits] at hf
+  rcases hf with ⟨⟨n0, rfl, hn0⟩, ⟨n1, rfl, hn1⟩⟩
+  have ht : placeUses #[⟨d, .int, .def, .late, .reg⟩, ⟨n, .int, .use, .early, .reg⟩]
+      (canonRegs #[⟨d, .int, .def, .late, .reg⟩, ⟨n, .int, .use, .early, .reg⟩])
+      (useVals #[⟨d, .int, .def, .late, .reg⟩, ⟨n, .int, .use, .early, .reg⟩] #[.x n0, .x n1] s) w =
+      Arm.w (.GPR 1#5) (Arm.r (.GPR (rnum n1)) s) w := by
+    simp [placeUses, useVals, canonRegs, canonReg, canonBase, Operand.isUse, List.range_succ, lo64, regVal,
+      rnum]
+  have hcanon : canonRegs #[⟨d, .int, .def, .late, .reg⟩, ⟨n, .int, .use, .early, .reg⟩] = #[.x 0, .x 1] := by
+    simp [canonRegs, canonReg, canonBase, List.range_succ]
+  rw [ht, hcanon] at hex hacc
+  rw [hcanon]
+  have hx1 : Arm.r (.GPR 1#5) (Arm.w (.GPR 1#5) (Arm.r (.GPR (rnum n1)) s) w) = Arm.r (.GPR (rnum n1)) s :=
+    Arm.r_of_w_same
+  obtain ⟨S, h1, h2, h3, h4, h5⟩ := load_core ctx env op hop fl hn0 (m := .unsignedOffset (.x n1) off)
+    (mC := .unsignedOffset (.x 1) off) ⟨by simp [BaseOk]; omega, h1, h2⟩ ⟨by simp [BaseOk], h1, h2⟩ hal
+    (SameWorld.w_right (by simp [Masked]) hw)
+    (by rw [Arm.r_of_w_different (by simp)]; exact sw_r_eq hw (by simp [Masked]))
+    (fun x hx => by rw [Arm.ArmState.mem_w_eq_mem]; exact (hw.2.1 x hx).symm) hacc hex
+    (by simp [AMode.addr, regX, rnum] at hx1 ⊢ <;> simp [hx1])
+  refine ⟨S, h1, h2, h3, by simp [defVals, Operand.isDef, h4], fun r hr hnd => h5 r hr
+    (fun e => hnd ⟨⟨d, .int, .def, .late, .reg⟩, .x n0⟩ (by simp) rfl e.symm)⟩
+
 end Backend.Proof
