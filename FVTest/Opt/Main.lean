@@ -30,7 +30,7 @@ def main (args : List String) : IO UInt32 := do
     | [i] => pure (i, none)
     | [i, o] => pure (i, some o)
     | _ => do
-      IO.eprintln "usage: clif-opt [--opt-rules hand] [--opt-no-simplify|--opt-no-gvn|--opt-no-dce|--opt-no-licm|--opt-no-hoist-const] [--opt-rounds N] [--stats] IN.clif [OUT.clif]"
+      IO.eprintln "usage: clif-opt [--opt-rules hand] [--opt-no-simplify|--opt-no-gvn|--opt-no-dce|--opt-no-licm|--opt-remat-const|--opt-no-hoist-const] [--opt-rounds N] [--stats] IN.clif [OUT.clif]"
       return 2
   let pf := parseFile (← IO.FS.readFile input)
   let mut funcs : Array Function := #[]

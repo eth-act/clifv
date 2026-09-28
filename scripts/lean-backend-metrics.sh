@@ -37,7 +37,7 @@ for f in "${FILES[@]}"; do
   mkdir -p "$WORK/$b/cl" "$WORK/$b/clsp"
   .lake/build/bin/lean-backend "$f" "$WORK/$b/stack.o" --regalloc stack --traps "$WORK/$b/stack.json" 2>/dev/null
   .lake/build/bin/lean-backend "$f" "$WORK/$b/ra.o" --regalloc regalloc2 --traps "$WORK/$b/ra.json" 2>/dev/null
-  .lake/build/bin/lean-backend "$f" "$WORK/$b/raopt.o" --regalloc regalloc2 --opt --traps "$WORK/$b/raopt.json" 2>/dev/null
+  .lake/build/bin/lean-backend "$f" "$WORK/$b/raopt.o" --regalloc regalloc2 --opt ${METRICS_OPT:-} --traps "$WORK/$b/raopt.json" 2>/dev/null
   rust/target/release/clif2obj "$f" aarch64-unknown-linux-gnu "$WORK/$b/cl.o" "$WORK/$b/cl" >/dev/null 2>&1 || true
   rust/target/release/clif2obj --opt-level speed "$f" aarch64-unknown-linux-gnu "$WORK/$b/clsp.o" "$WORK/$b/clsp" >/dev/null 2>&1 || true
 done
@@ -77,7 +77,7 @@ for f in "${FILES[@]}"; do
   b=$(basename "$f" .clif)
   armrun --regalloc stack "$f" >> "$WORK/dyn.stack"
   armrun --regalloc regalloc2 "$f" >> "$WORK/dyn.ra"
-  armrun --regalloc regalloc2 --opt "$f" >> "$WORK/dyn.raopt"
+  armrun --regalloc regalloc2 --opt ${METRICS_OPT:-} "$f" >> "$WORK/dyn.raopt"
   armrun --bins "$WORK/$b/cl" "$f" >> "$WORK/dyn.cl"
   armrun --bins "$WORK/$b/clsp" "$f" >> "$WORK/dyn.clsp"
 done

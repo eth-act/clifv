@@ -37,7 +37,12 @@ structure Config where
   gvn : Bool := true
   dce : Bool := true
   licm : Bool := true
-  /-- Hoist `iconst` out of loops (Cranelift rematerialises constants instead). -/
+  /-- Rematerialise constants like Cranelift (`remat.isle`, elaboration): GVN numbers `iconst`
+  per block only, so a constant is defined in each block using it instead of living across
+  blocks. -/
+  rematConst : Bool := false
+  /-- LICM hoists `iconst` out of loops (measured better for this backend, which lowers every
+  `iconst` even when isel folds it into an immediate). -/
   hoistConst : Bool := true
   /-- Rounds of simplify/gvn/dce before LICM. -/
   rounds : Nat := 2
@@ -88,7 +93,9 @@ def optimizeReport (cfg : Config) (f0 : Function) : Function × Report := Id.run
                       fired := s.fired.fold (fun m k n => m.insert k ((m.get? k).getD 0 + n)) r.fired }
         pure g'
       | "gvn" =>
-        let (g', n) := gvn g info
+        let (g', n) := gvn g info (fun i => cfg.rematConst && match i with
+          | .iconst .. => true
+          | _ => false)
         r := { r with gvnRemoved := r.gvnRemoved + n }
         pure g'
       | "dce" =>

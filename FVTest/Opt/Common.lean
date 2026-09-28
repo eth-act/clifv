@@ -7,7 +7,7 @@ Shared command-line handling of the mid-end drivers (`clif-opt`, `opt-difftest`,
 
 Options (anywhere on the command line, consumed by `Opt.parseOptArgs`):
 `--opt` (enable), `--opt-rules hand|cranelift`, `--opt-no-simplify`, `--opt-no-gvn`,
-`--opt-no-dce`, `--opt-no-licm`, `--opt-no-hoist-const`, `--opt-rounds N`.
+`--opt-no-dce`, `--opt-no-licm`, `--opt-remat-const`, `--opt-no-hoist-const`, `--opt-rounds N`.
 Any `--opt-*` option implies `--opt`.
 -/
 
@@ -34,6 +34,7 @@ def parseOptArgs (args : List String) : Except String (Option Config × List Str
     | "--opt-no-gvn" :: r => cfg := { cfg with gvn := false }; on := true; xs := r
     | "--opt-no-dce" :: r => cfg := { cfg with dce := false }; on := true; xs := r
     | "--opt-no-licm" :: r => cfg := { cfg with licm := false }; on := true; xs := r
+    | "--opt-remat-const" :: r => cfg := { cfg with rematConst := true }; on := true; xs := r
     | "--opt-no-hoist-const" :: r => cfg := { cfg with hoistConst := false }; on := true; xs := r
     | "--opt-rounds" :: n :: r =>
       let some k := n.toNat? | throw s!"--opt-rounds: not a number: {n}"
