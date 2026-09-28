@@ -69,11 +69,13 @@ theorem optimizeReport_sim (cfg : Config)
       repeat' split
       all_goals simp only [pure, ForInStep.value]
       all_goals first
-        | exact ⟨hsim, hchk⟩
+        | with_reducible exact ⟨hsim, hchk⟩
         | (exfalso; rename_i h _; simp at h; done)
         | (exfalso; rename_i h _; exact absurd (beq_iff_eq.1 h) ‹_›)
         | (rename_i hck' _ hv
-           exact ⟨hsim.trans ((hS _ _ _ g info hchk hv).trans (removeUnreachable_sim _)), hck'⟩)
+           have h1 := hS (allowedIn (removeUnreachable f0)) (skelAllowedIn (removeUnreachable f0))
+             cfg.rematConst g info hchk hv
+           exact ⟨hsim.trans (h1.trans (removeUnreachable_sim _)), hck'⟩)
         | (rename_i hck' _ hv
            exact ⟨hsim.trans (editOk_sim hchk hck' hv), hck'⟩)
 
