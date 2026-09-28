@@ -40,6 +40,17 @@ def RuleSetId.skeletonFn : RuleSetId → SkeletonFn
     Isle.Opt.simplifySkeleton enodes typeOf make trapBlock st i
   | .hand => HandRules.simplifySkeleton
 
+/-- A rule set with a rule allow-list (`RuleAllow`; the hand rules ignore it). -/
+def RuleSetId.fnWith (a : RuleAllow) : RuleSetId → SimplifyFn
+  | .cranelift => fun enodes typeOf make st v => Isle.Opt.simplify enodes typeOf make st v a.pred
+  | .hand => HandRules.simplify
+
+/-- The skeleton rules with an allow-list. -/
+def RuleSetId.skeletonFnWith (a : RuleAllow) : RuleSetId → SkeletonFn
+  | .cranelift => fun enodes typeOf make trapBlock st i =>
+    Isle.Opt.simplifySkeleton enodes typeOf make trapBlock st i a.pred
+  | .hand => HandRules.simplifySkeleton
+
 structure Config where
   rules : RuleSetId := .cranelift
   simplify : Bool := true
@@ -56,6 +67,11 @@ structure Config where
   /-- Rounds of simplify/gvn/dce before LICM (a second round removed 3 more of 27 761
   instructions on corpus + runtests + fuzz files, so one is the default). -/
   rounds : Nat := 1
+  /-- Rules allowed to contribute (`--opt-proven-only`: `.proven`). -/
+  ruleAllow : RuleAllow := .all
+
+def Config.simplifyFn (cfg : Config) : SimplifyFn := cfg.rules.fnWith cfg.ruleAllow
+def Config.skeletonFn (cfg : Config) : SkeletonFn := cfg.rules.skeletonFnWith cfg.ruleAllow
 
 structure Report where
   name : String
@@ -106,7 +122,7 @@ def optimizeReport (cfg : Config) (f0 : Function) : Function × Report := Id.run
     let mut sub : ValueId → ValueId := id
     let g' ← match stage with
       | "simplify" =>
-        let (g', s) := simplify cfg.rules.fn cfg.rules.skeletonFn allowed (skelAllowedIn f) cfg.rematConst g info
+        let (g', s) := simplify cfg.simplifyFn cfg.skeletonFn allowed (skelAllowedIn f) cfg.rematConst g info
         let g' := removeUnreachable g'
         r := { r with rewritten := r.rewritten + s.rewritten, ruleErrors := r.ruleErrors + s.errors,
                       skeleton := r.skeleton + s.skeleton,

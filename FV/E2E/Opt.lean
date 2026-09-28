@@ -54,7 +54,7 @@ theorem inSubset_opt (cfg : Opt.Config) {p : Clif.Program} {f : Clif.Function}
   · rw [hF.externs]; exact hsub.callRegArgs
 
 theorem clifEntry_opt (cfg : Opt.Config)
-    (hS : Opt.SimplifyPassSim cfg.rules.fn cfg.rules.skeletonFn) {f : Clif.Function}
+    (hS : Opt.SimplifyPassSim cfg.simplifyFn cfg.skeletonFn) {f : Clif.Function}
     {args : List Clif.Val} {cs : Clif.State} (hcs : ClifEntry f args cs) :
     ClifEntry (Opt.optimize f cfg) args (optEntry cfg f cs) ∧
       Opt.SR cs.mem.symbols cs (optEntry cfg f cs) := by
@@ -90,7 +90,7 @@ function's slots), plus: the simplify stage refines (`hS`), externs keep the lin
 (`hE`), and the optimised program's run from the corresponding entry state traps only explicitly
 (`htr`). -/
 theorem backend_correct_opt (cfg : Opt.Config)
-    (hS : Opt.SimplifyPassSim cfg.rules.fn cfg.rules.skeletonFn)
+    (hS : Opt.SimplifyPassSim cfg.simplifyFn cfg.skeletonFn)
     {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}
     {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubset p f) (hc : Compiled (Opt.optimize f cfg) k vc vcp rf af fa fb)

@@ -61,4 +61,25 @@ def RuleSetId.name : RuleSetId → String
 
 def RuleSetId.all : List RuleSetId := [.cranelift, .hand]
 
+/-- Ids (`Isle.Rule.id`) of the exported `simplify` rules whose correctness is proven
+(`Opt.Proof.simplifyRulesCorrect_proven`, `FV/Opt/Proof/RuleAll.lean`): `arithmetic.isle`
+lines 8, 13, 35, 59. -/
+def provenSimplifyRules : List Nat := [65, 66, 72, 78]
+
+/-- Which exported rules may contribute candidates (`Isle.Opt.simplify`'s allow-list); the other
+rules still run, their candidates are dropped. -/
+inductive RuleAllow where
+  /-- Every rule (default; not yet proven). -/
+  | all
+  /-- Only `provenSimplifyRules` (no skeleton rule is proven yet, so none contributes). -/
+  | proven
+  /-- An explicit list of rule ids. -/
+  | ids (l : List Nat)
+  deriving DecidableEq, Repr, Inhabited
+
+def RuleAllow.pred : RuleAllow → Nat → Bool
+  | .all => fun _ => true
+  | .proven => fun r => provenSimplifyRules.contains r
+  | .ids l => fun r => l.contains r
+
 end Opt

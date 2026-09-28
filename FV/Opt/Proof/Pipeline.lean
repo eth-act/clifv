@@ -46,7 +46,7 @@ def SimplifyPassSim (rules : SimplifyFn) (skel : SkeletonFn) : Prop :=
 /-- **The mid-end pipeline refines**, for every function (ill-formed inputs are returned with
 only unreachable blocks removed, validated). -/
 theorem optimizeReport_sim (cfg : Config)
-    (hS : SimplifyPassSim cfg.rules.fn cfg.rules.skeletonFn) (f0 : Function) :
+    (hS : SimplifyPassSim cfg.simplifyFn cfg.skeletonFn) (f0 : Function) :
     FunSim f0 (optimizeReport cfg f0).1 := by
   have hU := removeUnreachable_sim f0
   unfold optimizeReport
@@ -152,7 +152,7 @@ theorem optimize_facts (cfg : Config) (f : Function) : BackendFacts f (optimize 
   optimizeReport_out cfg f (BackendFacts f) ⟨rfl, rfl, rfl, rfl, rfl, id, fun _ h => h⟩
     (removeUnreachable_facts f) (fun _ h => keepsBackendSubset_facts h)
 
-theorem optimize_sim (cfg : Config) (hS : SimplifyPassSim cfg.rules.fn cfg.rules.skeletonFn)
+theorem optimize_sim (cfg : Config) (hS : SimplifyPassSim cfg.simplifyFn cfg.skeletonFn)
     (f : Function) : FunSim f (optimize f cfg) :=
   optimizeReport_sim cfg hS f
 
@@ -171,7 +171,7 @@ theorem initState_rel {p q : Program} (hP : FunsSim p.funcs q.funcs) {f : String
 /-- **Program refinement by the mid-end**: whenever `Clif.run` of a program returns or traps,
 `Clif.run` of the optimised program (every function optimised) does the same. -/
 theorem optimizeProgram_refines (cfg : Config)
-    (hS : SimplifyPassSim cfg.rules.fn cfg.rules.skeletonFn) {env : Env}
+    (hS : SimplifyPassSim cfg.simplifyFn cfg.skeletonFn) {env : Env}
     (hE : EnvKeepsSymbols env) (p : Program) (f : String) (args : List Val) (fuel : Nat) :
     ∃ fuel', OutcomeRefines (run env p f args fuel) (run env (optimizeProgram p cfg) f args fuel') := by
   have hP : FunsSim p.funcs (optimizeProgram p cfg).funcs :=

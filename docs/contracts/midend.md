@@ -391,3 +391,91 @@ Design decisions (approved by the integrator):
 - Extra E2E premises: `EnvKeepsSymbols env` (externs keep the link-time symbols, so
   `symbol_value` is a constant), `TrapsExplicit` about the optimised program's run
   (`optEntry`), `FormsCovered` of the optimised code (decided, as before).
+
+## Rule proofs (MidRulesFoundation, branch `agent/mid-rules`)
+
+Status: the framework is complete and proven; **4 `simplify` rules proven** (a first batch),
+allow-list embedding done. Files `FV/Opt/Proof/{Sem,InterpMatch,InterpState,InterpEval,RuleBase,
+RuleData,RuleNode,RuleEmbed,RuleTactic,RuleAuto,RuleArith,RuleAll}.lean`; generator
+`FVTest/Opt/Proof/GenData.lean` (`lake env lean --run FVTest/Opt/Proof/GenData.lean >
+FV/Opt/Proof/RuleData.lean`, 33 s build). No `sorry`; axioms of every theorem below:
+`propext`, `Classical.choice`, `Quot.sound`.
+
+**Interface** (`Sem.lean`, owned by MidPassProofs, copied byte-identical): `Opt.evalNode`,
+`Opt.Valuation`, `GraphModel` (A1 nodes, A2 types), `MakeSound` (A3), `SimplifySound`,
+`SkeletonSound`.
+
+**Theorems.**
+- `InterpMatch.matchPatN_sound`: every environment of the multi-matcher satisfies `PatRel`
+  (relational reading of a pattern: one existential per extractor value).
+- `InterpState.pres_single` / `pres_multi`: if every extern constructor keeps an invariant and
+  moves along a preorder, so does every interpreter function (single and multi) at every fuel;
+  `bindAll_run_mem`: a result of `bindAll` comes from one call between reachable states.
+- `RuleBase.RuleOk p r`: the per-rule obligation (for all bindings the LHS relates to
+  `[.value v]`, all if-let environments and every RHS value, from any later state: the made
+  class has `v`'s value); `SimplifyRulesCorrect p allow`.
+- `RuleBase.applyMulti_sound`, `RuleBase.simplifySound` (**interpreter soundness + lifting**):
+  `SimplifyRulesCorrect program allow → SimplifySound (Isle.Opt.simplify · allow)`.
+- `RuleAll.simplifyRulesCorrect_proven`, `RuleAll.simplifySound_proven :
+  SimplifySound (RuleSetId.fnWith .proven .cranelift)` — the obligation `simplify`'s pass proof
+  takes with `Config.ruleAllow := .proven`.
+- Proven rules (`RuleArith.lean`, all types incl. `i128`): `arithmetic.isle` 8 (`x+0`), 13
+  (`x-0`), 35, 59 — ids 65, 66, 72, 78 = `Opt.provenSimplifyRules`.
+
+**Embedding changes** (`FV/Isle/Opt/Simplify.lean`, behaviour-preserving except the first):
+`ofInst` no longer presents `iconst.i128` (its `Imm64` presentation truncated; Cranelift rejects
+`iconst.i128`), so no rule can match it; `ctorFn` split into `ctorPure` (state-preserving
+helpers) + the three state-changing constructors (makes the state lemma a 4-way split);
+`simplify`/`simplifySkeleton` take `allow : RuleId → Bool := fun _ => true` and drop
+candidates of other rules (the rules still run: their `make`s stay, which `MakeSound` covers).
+Driver: `Opt.RuleAllow` (`all` default | `proven` | `ids`), `RuleSetId.fnWith`/`skeletonFnWith`,
+`Config.ruleAllow`, `Config.simplifyFn`/`skeletonFn` (the only change in `optimizeReport` is
+the `simplify` call's arguments), option `--opt-proven-only`. Corpus difftest: default 114/114
+agree, 4321 → 2018 insts; `--opt-proven-only` 114/114, 4321 → 2475 (skeleton rules off).
+
+**Template** (`RuleAuto.lean`): `rule_auto r [helper lemmas]` = `rule_intro` (fuel `k+1000`),
+`rule_no_iflets`, `rule_lhs hG` (fixpoint of `simp_all` over `opt_match`/`opt_data`,
+`opt_destruct` + `subst`, and `opt_model hG`, which adds the model's value/type facts for every
+matched node — values of matched classes become hypotheses `den s0 x = some ⟨t, b⟩`),
+`rule_rhs` (`opt_eval`: stepwise `rw` of one interpreter equation + `simp only` over
+`opt_monad`/`opt_data`, never unfolding under binders), `rule_finish` (a matched class via the
+`Valuation.Le` chain, or a made node via `GraphOk.make_val`/`opt_node`), `rule_bits` (immediates
+to bits, `opt_cases_ty`, `simp`/`bv_decide`). Cost: ~1.6 s per rule (4 rules: 6.4 s, one core
+each), 25-rule batch file ~20 s wall on 16 cores.
+
+**What the first 25-rule arithmetic batch showed** (4/25 fully automatic). Remaining failures,
+in order of frequency, all template gaps rather than design problems:
+1. RHS builds nodes through internal constructors (`ineg`, `isub`, `iconst`…): `opt_node` must
+   also see made operands and `makeInst`/`toInst` must be evaluated (`toInst` on the concrete
+   `InstructionData` — add `toInst_*` simp lemmas like the `ofInst_*` ones; `rule_finish_make`
+   currently fails to unify when the candidate state is `{s with subsumed := …}` around a make).
+2. Extern helpers (`imm64_*`, `u64_*`, `ty_*`) on the RHS/if-lets: need `ctorFn` rfl lemmas
+   (pattern `ctorFn_imm64_clz` in `InterpEval.lean`; generate them from `ctorPure`'s source,
+   string-literal matches only reduce by `rfl`) and specs relating them to `BitVec`:
+   recommended normal form `BitVec.ofInt 64 (helper …)` = a `BitVec 64` expression
+   (`andMask` = truncation, `imm64OfBits b` = `b.zeroExtend 64`), then `bv_decide` per width.
+   `asU64_imm64OfBits` is the first such lemma.
+3. `iconst_s`/`iconst_u` with non-zero literals: `toNat_eq_iff_ofNat` needs the literal in
+   `Nat` form (add an `Int.ofNat`/literal normalisation lemma).
+4. If-lets: only `[]` is handled (`rule_no_iflets`); `opt_eval hil` works but the result
+   needs the helper specs of (2).
+
+**Fan-out plan by opts file** (closure roots of `simplify`; skeleton rules need
+`SkeletonSound` with the same machinery on `simplify_skeleton`, not started):
+
+| File | Roots | Needs beyond the template |
+| --- | ---: | --- |
+| arithmetic | 258 | (1)-(3); `iabs`, `imul` by `-1`/powers of two (`imm64_power_of_two` spec) |
+| bitops | 450 | (1); `band`/`bor`/`bxor`/`bnot` identities are `bv_decide`; `bmask`, `popcnt`/`clz`/`bitrev` evalNode lemmas |
+| cprop | 68 | (2) for all `imm64_*` (Int ↔ BitVec 64 specs), `imm64_icmp`, `u64_bswap*`, `imm64_masked` |
+| icmp | 124 | `evalNode_icmp`, `intcc_*` helper specs, `Sem.intcc` per code |
+| selects | 100 | `evalNode` of `select`/`bitselect`, `truthy` multi-term (internal multi ctor in `applyTermN`) |
+| shifts | 75 | shift evalNode (`evalNode_binary_iff` shift branch), `imm64_shl`… specs, amount masking |
+| extends | 29 | `evalNode` of `extend`/`ireduce`, `iconst_sextend_etor`, `uextend_maybe_etor` multi-extractor lemma |
+| spaceship | 40 | icmp + selects |
+| remat | 12 | candidate `v` itself (`remat v`): trivial by `hv` + Le chain |
+| div_const (skeleton) | — | `SkeletonSound`, `magicU`/`magicS` specs (the hardest; defer) |
+
+One agent per row (bitops split in two), each adding its lemmas to `RuleEmbed`/`RuleNode`
+/`InterpEval` in a per-family file and appending ids to `Opt.provenSimplifyRules` and cases to
+`RuleAll.simplifyRulesCorrect_proven` (`simplify_rules_proven` is recomputed by `rfl`).
