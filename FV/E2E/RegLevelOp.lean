@@ -107,8 +107,7 @@ theorem locVal_frame_keep {fr : RAFrame} {D : Loc → Prop} {T : Prop} {sp0 : Bi
 theorem fplr_inF {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) :
     ∀ k < 16, R.F (spv R.s0 - 16#64 + BitVec.ofNat 64 k) := by
   obtain ⟨⟨hfs, -⟩, hlt, -⟩ := lowerRFunc_ok hR.alloc
-  have hst := hR.stack
-  simp only [StackAvail] at hst
+  have hst := hR.stack.1
   have hd : frameDrop R.af = R.fr.total + 16 := by
     simp only [frameDrop, hframe, ite_true, hfs, RL.fr]
   intro k hk
@@ -129,7 +128,7 @@ theorem fplr_inF {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) :
       omega
     rw [this, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
   rw [e, hfs]
-  exact .inr ⟨by omega, by omega⟩
+  exact .inr (.inl ⟨by omega, by omega⟩)
 
 /-- The checker's facts at an instruction item. -/
 theorem op_checked {R : RL} {vb : VBlock} {k : Nat} {allocs : Array Loc} {its : List RItem}
@@ -236,7 +235,7 @@ theorem realizes_op_core {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
     have herr' : Arm.r .ERR s' = .None := by
       rw [hW.1 .ERR (by simp [Masked]), hW'.1]
     refine ⟨fun l hl hL => ?_, hW, herr', ?_, hsp', align_of_sp (by rw [hsp', hst.sp]) hst.align,
-      fun hframe => ?_⟩
+      fun hframe => ?_, code_keep hR.prog0 hst.code fun a ha => hK.2 a (.inr (.inr ha))⟩
     · cases l with
       | reg r => exact hr2 r (hl r rfl)
       | stack k' c =>

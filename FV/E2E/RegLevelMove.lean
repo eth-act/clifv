@@ -238,6 +238,8 @@ structure RL.Wf (R : RL) : Prop where
   stack : StackAvail R.af R.s0
   /-- `psF` is the emitter's final state -/
   psF : ∃ body, blocksLinesE R.ctx R.af R.af.blocks.toList {} = .ok (body, R.psF)
+  /-- the entry state holds the function's program -/
+  prog0 : R.s0.program = R.fb.program R.base
 
 theorem RL.size_lt {R : RL} (hR : R.Wf) : R.fr.size < 32768 :=
   (lowerRFunc_ok hR.alloc).2.1
@@ -248,8 +250,7 @@ theorem RL.frameOk {R : RL} (hR : R.Wf) :
   obtain ⟨⟨hfs, -⟩, hlt, hfr, -⟩ := lowerRFunc_ok hR.alloc
   have hlt' : R.fr.size < 32768 := hlt
   have hle : R.fr.size ≤ R.fr.total := compute_size_le_total R.vc R.rf
-  have hst := hR.stack
-  simp only [StackAvail] at hst
+  have hst := hR.stack.1
   have hst' : R.fr.total + 16 ≤ (spv R.s0).toNat := by rw [hfs] at hst; exact hst
   by_cases h0 : R.fr.total = 0
   · -- empty frame: no live slot has an offset below `size`
@@ -345,8 +346,7 @@ theorem fplr_outside {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) :
   obtain ⟨⟨hfs, -⟩, hlt, -⟩ := lowerRFunc_ok hR.alloc
   have hlt' : R.fr.size < 32768 := hlt
   have hle : R.fr.size ≤ R.fr.total := compute_size_le_total R.vc R.rf
-  have hst := hR.stack
-  simp only [StackAvail] at hst
+  have hst := hR.stack.1
   have hst' : R.fr.total + 16 ≤ (spv R.s0).toNat := by rw [hfs] at hst; exact hst
   have hd : frameDrop R.af = R.fr.total + 16 := by
     simp only [frameDrop, hframe, ite_true, hfs, RL.fr]
@@ -364,6 +364,35 @@ theorem fplr_outside {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) :
     omega
   · simp only [BitVec.le_def, BitVec.toNat_ofNat, hm]; omega
   · simp only [BitVec.le_def, BitVec.toNat_ofNat]; omega
+
+/-- The code lies outside the frame's slot area. -/
+theorem code_outside {R : RL} (hR : R.Wf) {a : BitVec 64} (ha : CodeAddr R.s0 a) :
+    ∀ o, o < R.fr.size → a ≠ R.spB + BitVec.ofNat 64 o := by
+  obtain ⟨⟨hfs, -⟩, hlt, hfr, -⟩ := lowerRFunc_ok hR.alloc
+  have hlt' : R.fr.size < 32768 := hlt
+  have hle : R.fr.size ≤ R.fr.total := compute_size_le_total R.vc R.rf
+  have hst := hR.stack.1
+  have hap := hR.stack.2 a ha
+  intro o ho e
+  by_cases h0 : R.fr.total = 0
+  · simp only [RL.fr] at h0 hle ho; omega
+  have hframe := hfr h0
+  have hd : frameDrop R.af = R.fr.total + 16 := by
+    simp only [frameDrop, hframe, ite_true, hfs, RL.fr]
+  rw [hfs] at hst hap
+  simp only [RL.spB, hd, RL.fr] at e hap hst
+  rw [e, BitVec.add_comm, BitVec.add_sub_cancel] at hap
+  simp only [BitVec.toNat_ofNat] at hap
+  simp only [RL.fr] at ho hle
+  rw [Nat.mod_eq_of_lt (by omega)] at hap
+  omega
+
+/-- The code is kept by a store to the frame's slot area. -/
+theorem code_frameKeep {R : RL} (hR : R.Wf) {s s' : Arm.ArmState}
+    (hm : ∀ a, (∀ o, o < R.fr.size → a ≠ R.spB + BitVec.ofNat 64 o) → s'.mem a = s.mem a)
+    (hc : ∀ k w, R.fb.words[k]? = some w → Arm.read_mem_bytes 4 (R.base + BitVec.ofNat 64 (4 * k)) s = w) :
+    ∀ k w, R.fb.words[k]? = some w → Arm.read_mem_bytes 4 (R.base + BitVec.ofNat 64 (4 * k)) s' = w :=
+  code_keep hR.prog0 hc fun a ha => hm a (code_outside hR ha)
 
 /-- **A move on the machine**: from `Q` at a move item, the machine runs the move's lines and
 reaches `Q` at the next item with `MStep.move`'s store. -/
@@ -419,7 +448,8 @@ theorem realizes_move {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b : Nat} {src dst
     have hsp' : spOf s' = R.spB := hmo.sp
     have hw' := hmo.world
     refine ⟨move_agree hst.store hvs hLs hmo.store, hw', herr, by rw [hprog, hst.prog], hsp',
-      align_of_sp (by rw [hsp', hst.sp]) hst.align, fun hframe => ?_⟩
+      align_of_sp (by rw [hsp', hst.sp]) hst.align, fun hframe => ?_,
+      code_frameKeep hR hmo.mem hst.code⟩
     rw [← hst.fplr hframe]
     apply read_mem_bytes_congr
     intro k hk

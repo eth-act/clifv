@@ -288,12 +288,12 @@ theorem defs_vcode {V : Type} {ops : Array Operand} {allocs : Array Loc} (hsz : 
 section
 variable {V : Type} {keep : Reg → V → V}
 
-theorem writeV_not_mem {ρ : Nat → V} :
+theorem writeV_notDef {ρ : Nat → V} :
     ∀ (dv : List (Operand × V)) (u : Nat), (∀ p ∈ dv, p.1.vreg ≠ u) → writeV ρ dv u = ρ u
   | [], _, _ => rfl
   | p :: dv, u, h => by
     simp only [writeV, List.foldl_cons] at h ⊢
-    have := writeV_not_mem (ρ := upd ρ p.1.vreg p.2) dv u (fun q hq => h q (by simp [hq]))
+    have := writeV_notDef (ρ := upd ρ p.1.vreg p.2) dv u (fun q hq => h q (by simp [hq]))
     simp only [writeV] at this
     rw [this]
     simp [upd, Ne.symm (h p (by simp))]
@@ -380,8 +380,8 @@ theorem op_sound {w : String} {i : MInst} {ops : Array Operand} {allocs : Array 
         obtain ⟨pp, hpp, e'⟩ := List.mem_map.mp hp1
         have hpp' := List.mem_filter.mp hpp
         exact hu pp hpp'.1 (by simpa [Operand.isDef] using hpp'.2) (by rw [e', e])
-      rw [writeV_not_mem _ _ (hnd outs' _), writeV_not_mem _ _ (hnd outs' _),
-        writeV_not_mem _ _ (hnd outs _), writeV_not_mem _ _ (hnd outs _)]
+      rw [writeV_notDef _ _ (hnd outs' _), writeV_notDef _ _ (hnd outs' _),
+        writeV_notDef _ _ (hnd outs _), writeV_notDef _ _ (hnd outs _)]
   · intro us hi
     subst hi
     simpa [transferOp, MInst.isBranch] using retCheck_ok hret
