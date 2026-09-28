@@ -41,6 +41,8 @@ def Isle.Opt.simplifySkeleton {σ} (enodes …) (typeOf …) (make …)
 - `Isle.Opt.Closure` lists the rules that can fire on E programs at `i8`..`i64` (1357 rules,
   1193 of them roots), the opcodes outside E that rewrites can build (`bmask`, `iabs`,
   `iconcat`, `trapz`, `trapnz`), and the rules that build them.
-- Checked against Cranelift (`FVTest/Isle/Opt.lean`): 20 `simplify` and 12
-  `simplify_skeleton` calls fire the same rules as a `trace-log` build at `opt_level=speed`.
+- Checked against Cranelift (`FVTest/Isle/Opt.lean`, `OptCorpus.lean`): 20 hand-written
+  `simplify` calls, 12 `simplify_skeleton` calls and 930 `simplify` calls over the CLIF corpus
+  fire the same rules as a `trace-log` build at `opt_level=speed` (per call, on e-classes whose
+  operands are single original nodes).
   Nothing about the rules or helpers is proven yet.
