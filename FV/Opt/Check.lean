@@ -59,9 +59,71 @@ def pureTyped (ty : ValueId → Option Ty) (f : Function) : Inst → Bool
     | _ => false
   | _ => true
 
-/-- The well-formedness check (module doc). Expects every block to be reachable
-(`removeUnreachable`); unreachable blocks are rejected. -/
-def check (f : Function) : Except String Info := do
+/-! ## Declarative certificate (`FV/Opt/Proof/Dom*.lean`)
+
+`check` also runs `wfCert`, a restatement of the facts the proofs use in a form they can
+reason about: each value's unique definition site (`defSites`, looked up through a map that
+must agree with every site), availability of every use through the dominator tree `idom`
+(walked by `ancB`), the *edge certificate* (for every edge `u → b`, `idom b` is a tree ancestor
+of `u`, which makes every tree ancestor of a block a dominator of it), strictly decreasing RPO
+numbers along `idom` (so the tree is acyclic), unique block ids, and the typing of
+definitions and pure nodes. -/
+
+/-- Definition sites: `(v, i, 0)` for a parameter of block `i`, `(v, i, j + 1)` for a result
+of statement `j` of block `i`. -/
+def defSites (f : Function) : List (ValueId × Nat × Nat) :=
+  f.blocks.zipIdx.flatMap fun (b, i) =>
+    b.params.map (fun p => (p.1, i, 0)) ++
+      b.body.zipIdx.flatMap fun (st, j) => st.results.map fun r => (r, i, j + 1)
+
+/-- Is `a` an ancestor of `b` (reflexive) in the tree `idom`, within `fuel` steps up? -/
+def ancB (idom : Array (Option Nat)) : Nat → Nat → Nat → Bool
+  | 0, a, b => a == b
+  | fuel + 1, a, b => a == b || match idom[b]?.join with
+    | some c => ancB idom fuel a c
+    | none => false
+
+/-- Is `v` available before statement `k` of block `i` (`k` = body length: at the
+terminator)? -/
+def availB (dm : ValueId → Option (Nat × Nat)) (anc : Nat → Nat → Bool) (i k : Nat)
+    (v : ValueId) : Bool :=
+  match dm v with
+  | some (d, t) => (d == i && t ≤ k) || (d != i && anc d i)
+  | none => false
+
+/-- The declarative well-formedness certificate (module section doc). -/
+def wfCert (f : Function) (cfg : Cfg) (types : Std.HashMap ValueId Ty) : Bool :=
+  let blocks := f.blocks
+  let dmap : Std.HashMap ValueId (Nat × Nat) :=
+    (defSites f).foldl (fun m (v, s) => m.insert v s) {}
+  let dm := fun v => dmap.get? v
+  let anc := ancB cfg.idom cfg.idom.size
+  let rank := fun b => (cfg.rpoNum[b]?.join).getD 0
+  let sigOf := fun r => (f.externs.lookup r).map (·.sig)
+  let tm := fun v => types.get? v
+  (blocks.zipIdx.all fun (b, i) => cfg.index.get? b.id == some i) &&
+  ((defSites f).all fun (v, s) => dm v == some s) &&
+  (cfg.idom[0]?.join).isNone &&
+  ((List.range cfg.idom.size).all fun b => match cfg.idom[b]?.join with
+    | some a => rank a < rank b
+    | none => true) &&
+  (blocks.zipIdx.all fun (b, i) =>
+    b.params.all (fun p => tm p.1 == some p.2) &&
+    (b.body.zipIdx.all fun (st, j) =>
+      (operands st.inst).all (availB dm anc i j) &&
+      (match st.inst.resultTypes sigOf with
+       | some ts => ts.length == st.results.length && (st.results.zip ts).all fun (r, t) => tm r == some t
+       | none => false) &&
+      (!isPure st.inst || pureTyped tm f st.inst)) &&
+    (termOperands b.term).all (availB dm anc i b.body.length) &&
+    (termSuccs b.term).all fun id => match cfg.index.get? id with
+      | some j => (blocks[j]?.map (·.id)) == some id && match cfg.idom[j]?.join with
+        | some c => anc c i
+        | none => true
+      | none => false)
+
+/-- The imperative part of `check`. -/
+def checkCore (f : Function) : Except String Info := do
   let cfg := Cfg.build f
   ensure (cfg.size > 0) "no blocks"
   ensure (cfg.index.size == cfg.size) "duplicate block ids"
@@ -114,5 +176,12 @@ def check (f : Function) : Except String Info := do
     if let .brTable x _ _ := b.term then
       ensure (ty x == some .i32) s!"block{b.id}: br_table index not i32"
   return { cfg, types, defBlock, pureDef }
+
+/-- The well-formedness check (module doc): `checkCore` and the certificate `wfCert`. Expects
+every block to be reachable (`removeUnreachable`); unreachable blocks are rejected. -/
+def check (f : Function) : Except String Info := do
+  let info ← checkCore f
+  ensure (wfCert f info.cfg info.types) "certificate rejected (Opt.wfCert)"
+  return info
 
 end Opt
