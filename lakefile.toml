@@ -60,3 +60,7 @@ root = "FVTest.Opt.Main"
 [[lean_exe]]
 name = "opt-difftest"
 root = "FVTest.Opt.DiffTest"
+
+[[lean_exe]]
+name = "opt-fuzz"
+root = "FVTest.Opt.Fuzz"
