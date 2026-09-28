@@ -72,14 +72,14 @@ theorem exec_add_sp_imm (env : Env) (i : Imm12) (hi : i.bits < 4096) (s : Arm.Ar
   refine ⟨_, by simp [csimp_rules, hi, pure, Except.pure]; rfl, ?_⟩
   simp [csimp_rules, Arm.fst_AddWithCarry_eq_add, imm12_bv hi]
 
-theorem exec_sub_sp_x16 (env : Env) (s : Arm.ArmState) :
+theorem exec_sub_sp_x16uxtx (env : Env) (s : Arm.ArmState) :
     ∃ a, (Insn.aluRRRExtend .sub true .sp .sp (.x 16) .uxtx).toArmInst env = .ok a ∧
       Arm.exec_inst a s = Arm.w (.GPR 31#5) (spOf s - xreg 16 s)
         (Arm.w .PC (Arm.r .PC s + 4#64) s) := by
   refine ⟨_, by simp [csimp_rules, pure, Except.pure]; rfl, ?_⟩
   simp [csimp_rules, Arm.fst_AddWithCarry_eq_sub_neg, extend_uxtx0, xreg]
 
-theorem exec_add_sp_x16 (env : Env) (s : Arm.ArmState) :
+theorem exec_add_sp_x16uxtx (env : Env) (s : Arm.ArmState) :
     ∃ a, (Insn.aluRRRExtend .add true .sp .sp (.x 16) .uxtx).toArmInst env = .ok a ∧
       Arm.exec_inst a s = Arm.w (.GPR 31#5) (spOf s + xreg 16 s)
         (Arm.w .PC (Arm.r .PC s + 4#64) s) := by
@@ -181,7 +181,7 @@ theorem spAdj_ok (env : Env) (sub : Bool) {size : Nat} (hs : size < 2 ^ 64) (s :
     have hm1 : s1.mem = s.mem := by rw [← hs1]; simp [pcx, Arm.ArmState.mem_w_eq_mem]
     have hx16 : xreg 16 s1 = BitVec.ofNat 64 size := hf1.2.2.2
     cases sub
-    · obtain ⟨a, ha, he⟩ := exec_add_sp_x16 { env with pc := env.pc + 4 * (loadConst64 (.x 16) size).length } s1
+    · obtain ⟨a, ha, he⟩ := exec_add_sp_x16uxtx { env with pc := env.pc + 4 * (loadConst64 (.x 16) size).length } s1
       refine ⟨_, StepsOk.append hL (steps_one ha ?_ ?_ ?_), ?_, fun f h1 h2 h3 => ?_, ?_⟩
       · simp [he, Arm.r_of_w_same, Arm.r_of_w_different]
       · simp [he, Arm.r_of_w_different]
@@ -189,7 +189,7 @@ theorem spAdj_ok (env : Env) (sub : Bool) {size : Nat} (hs : size < 2 ^ 64) (s :
       · simp [he, spOf, Arm.r_of_w_same, hx16]; simpa [spOf] using congrArg (· + BitVec.ofNat 64 size) hsp1
       · simp [he, Arm.r_of_w_different, h1, h2, ho1 f h1 h3]
       · simp [he, Arm.ArmState.mem_w_eq_mem, hm1]
-    · obtain ⟨a, ha, he⟩ := exec_sub_sp_x16 { env with pc := env.pc + 4 * (loadConst64 (.x 16) size).length } s1
+    · obtain ⟨a, ha, he⟩ := exec_sub_sp_x16uxtx { env with pc := env.pc + 4 * (loadConst64 (.x 16) size).length } s1
       refine ⟨_, StepsOk.append hL (steps_one ha ?_ ?_ ?_), ?_, fun f h1 h2 h3 => ?_, ?_⟩
       · simp [he, Arm.r_of_w_same, Arm.r_of_w_different]
       · simp [he, Arm.r_of_w_different]
