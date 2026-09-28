@@ -222,7 +222,7 @@ theorem zext32_ext {x : Nat} {rx : Reg} {t : CTy} (hx : ctx.valueReg? x = some r
   cases hp
   isel_eval [*, rule_inst_3809, rule_inst_3813, rule_inst_3814, ctor_put_in_reg ctx _ hx]
 
-theorem except_throw_eq {ε α : Type} (e : ε) : (throw e : Except ε α) = .error e := rfl
+theorem except_throw_eq_aluB {ε α : Type} (e : ε) : (throw e : Except ε α) = .error e := rfl
 
 include hp in
 theorem zext32_none {x : Nat} (hT : ctx.valueType? x = none) :
@@ -230,7 +230,7 @@ theorem zext32_none {x : Nat} (hT : ctx.valueType? x = none) :
       .error (.unmodeled s!"value_type of unknown v{x}") := by
   have h1 := ext_value_type_none ctx st hT
   cases hp
-  isel_eval [*, rule_inst_3809, rule_inst_3813, rule_inst_3814, except_throw_eq]
+  isel_eval [*, rule_inst_3809, rule_inst_3813, rule_inst_3814, except_throw_eq_aluB]
 
 include hp in
 theorem zext32_big {x : Nat} {t : CTy} (hT : ctx.valueType? x = some t) (h32 : t ≠ .int 32)

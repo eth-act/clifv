@@ -15,7 +15,7 @@ open Backend Isle Isle.Interp Isle.Aarch64
 
 set_option maxRecDepth 20000
 
-theorem ofV_loadExtNameGot (r : Reg) (nm : String) :
+theorem ofV_loadExtNameGot_ctl (r : Reg) (nm : String) :
     MInst.ofV (.data 58 129 [.reg r, .op (.extName nm)]) = some (.loadExtNameGot r nm) := rfl
 
 set_option maxRecDepth 20000 in
@@ -432,23 +432,23 @@ theorem call_ind_impl_ok {n : Nat} (hn : 30 ≤ n) {i : V} {s s' : LState × Arr
   isel_inv [*, rule_inst_4786] at hm he
 
 include hp hc in
-theorem load_ext_name_got_ok {n : Nat} (hn : 30 ≤ n) {nm : String} {s s' : LState × Array RuleId}
+theorem load_ext_name_got_ok_ctl {n : Nat} (hn : 30 ≤ n) {nm : String} {s s' : LState × Array RuleId}
     {v : V} (h : ApplyInternal p (sem ctx) cfg n 27 571 [.op (.extName nm)] s v s') :
     v = .reg (s.1.fresh .int).1 ∧
       s'.1 = (s.1.fresh .int).2.emit (.loadExtNameGot (s.1.fresh .int).1 nm) := by
   isel_split hp hc h 571
   isel_inv [*, rule_inst_4002] at hm he
   have hof := ‹MInst.ofV _ = some _›
-  rw [ofV_loadExtNameGot] at hof
+  rw [ofV_loadExtNameGot_ctl] at hof
   cases hof
   rfl
 
 include hp hc in
-theorem load_ext_name_ok {n : Nat} (hn : 40 ≤ n) {nm : String} {d : V} {s s' : LState × Array RuleId}
+theorem load_ext_name_ok_ctl {n : Nat} (hn : 40 ≤ n) {nm : String} {d : V} {s s' : LState × Array RuleId}
     {v : V} (h : ApplyInternal p (sem ctx) cfg n 27 570 [.op (.extName nm), .int 0, d] s v s') :
     v = .reg (s.1.fresh .int).1 ∧
       s'.1 = (s.1.fresh .int).2.emit (.loadExtNameGot (s.1.fresh .int).1 nm) := by
-  have k := fun n (hn : 30 ≤ n) s v s' h => load_ext_name_got_ok hp (ctx := ctx) hc (n := n)
+  have k := fun n (hn : 30 ≤ n) s v s' h => load_ext_name_got_ok_ctl hp (ctx := ctx) hc (n := n)
     (nm := nm) (s := s) (v := v) (s' := s') hn h
   isel_split hp hc h 570
   · isel_inv [*, rule_inst_3986] at hm he
@@ -475,7 +475,7 @@ def tgtOp (t : Nat) : Operand := ⟨t, .int, .use, .early, .reg⟩
 /-- The def operand of `loadExtNameGot`. -/
 def gotOp (t : Nat) : Operand := ⟨t, .int, .def, .late, .reg⟩
 
-theorem operands_loadExtNameGot (t : Nat) (nm : String) :
+theorem operands_loadExtNameGot_ctl (t : Nat) (nm : String) :
     (MInst.loadExtNameGot (.vreg t .int) nm).operands = .ok #[gotOp t] := rfl
 
 open Driver in
@@ -523,7 +523,7 @@ theorem seqRun_got {F : BitVec 64 → Prop} {isem : Sem} {t : Nat} {nm : String}
     {w w' : Arm.ArmState} {x : CV}
     (h : isem (.loadExtNameGot (.vreg t .int) nm) [] w = some ([x], w', .next)) :
     seqRun isem [.loadExtNameGot (.vreg t .int) nm] ρ w = some (.fall (upd ρ t x) w') := by
-  simp only [seqRun, operands_loadExtNameGot]
+  simp only [seqRun, operands_loadExtNameGot_ctl]
   have hv : vuses #[gotOp t] ρ = [] := rfl
   rw [hv, h]
   simp [vdefUpd, gotOp, Operand.isDef, Operand.isEarly, Operand.isLate, writeV, SeqEnd.succ]
@@ -540,9 +540,9 @@ theorem vdefs_call_reg (t : Nat) (L : List (Nat × Reg)) (D : List (Reg × Nat))
   rw [List.filter_cons_of_neg (by simp [tgtOp, Operand.isDef]), defs_call]
   simp [callDefOps]
 
-theorem vdefs_got (t : Nat) (nm : String) : vdefs (.loadExtNameGot (.vreg t .int) nm) = [t] := rfl
+theorem vdefs_got_ctl (t : Nat) (nm : String) : vdefs (.loadExtNameGot (.vreg t .int) nm) = [t] := rfl
 
-theorem vuseNums_got (t : Nat) (nm : String) :
+theorem vuseNums_got_ctl (t : Nat) (nm : String) :
     vuseNums (.loadExtNameGot (.vreg t .int) nm) = [] := rfl
 
 theorem call_got_lowerInstOk {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} {env : Clif.Env}
@@ -561,7 +561,7 @@ theorem call_got_lowerInstOk {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT
   · intro m hm d hd
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hm
     rcases hm with rfl | rfl
-    · rw [vdefs_got] at hd
+    · rw [vdefs_got_ctl] at hd
       simp only [List.mem_singleton] at hd
       omega
     · rw [vdefs_call_reg] at hd
@@ -619,7 +619,7 @@ theorem call_got_lowerInstOk {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT
       · intro mi hmi u hu
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hmi
         rcases hmi with rfl | rfl
-        · simp [vuseNums_got] at hu
+        · simp [vuseNums_got_ctl] at hu
         · rw [vuseNums_call_reg, hfst] at hu
           rcases List.mem_cons.mp hu with rfl | hu
           · exact .inl (by omega)
@@ -718,7 +718,7 @@ theorem call_got_ruleOk {p : Program} (hp : Data p) {F : BitVec 64 → Prop} {is
     (s := s) (v := v) (s' := s') hn h
   have kE := fun n (hn : 30 ≤ n) i s v s' h => emit_side_effect_inst_ok hp (ctx := ctx) hc (n := n)
     (i := i) (s := s) (v := v) (s' := s') hn h
-  have kL := fun n (hn : 40 ≤ n) nm d s v s' h => load_ext_name_ok hp (ctx := ctx) hc (n := n)
+  have kL := fun n (hn : 40 ≤ n) nm d s v s' h => load_ext_name_ok_ctl hp (ctx := ctx) hc (n := n)
     (nm := nm) (d := d) (s := s) (v := v) (s' := s') hn h
   have hd := hctx.data ii info inst hi hcl
   cases hp

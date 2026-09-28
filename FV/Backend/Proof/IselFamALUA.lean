@@ -652,7 +652,7 @@ theorem sextFrom_imm64OfIconst {ty : Clif.Ty} (hw : ty.width ≤ 64) (c : BitVec
     subst hP
     split <;> split <;> omega
 
-theorem ofNat_u64 {w : Nat} (hw : w ≤ 64) (z : Int) : BitVec.ofNat w (u64 z) = BitVec.ofInt w z := by
+theorem ofNat_u64_le {w : Nat} (hw : w ≤ 64) (z : Int) : BitVec.ofNat w (u64 z) = BitVec.ofInt w z := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ofNat, BitVec.toNat_ofInt, u64]
   have e : (2:Int)^64 = ((2^64 : Nat) : Int) := by norm_cast
@@ -682,7 +682,7 @@ theorem negImm12_value {ty : Clif.Ty} (hw : ty.width ≤ 64) (c : BitVec ty.widt
   rw [u64_ofNat (u64_lt _)] at h
   obtain ⟨hv, hb⟩ := imm12_ofNat_value h (u64_lt _)
   refine ⟨hb, fun sz hsz => ?_⟩
-  rw [hv, BitVec.setWidth_ofNat_of_le hsz, ofNat_u64 hw, BitVec.ofInt_neg, BitVec.ofInt_toInt]
+  rw [hv, BitVec.setWidth_ofNat_of_le hsz, ofNat_u64_le hw, BitVec.ofInt_neg, BitVec.ofInt_toInt]
 
 /-- Width lemma, register plus an immediate standing for `k` at the CLIF width. -/
 theorem holds_add_K {ty : Clif.Ty} {sz : OperandSize} (hw : ty.width ≤ sz.bits) {a : CV}

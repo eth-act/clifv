@@ -110,7 +110,7 @@ theorem argLocs_eq {bytes : List Nat} (h : bytes.length ≤ 8) :
   simp [alignTo]
 
 /-- The register of a register location. -/
-def locReg : ArgLoc → Reg
+def argLocReg : ArgLoc → Reg
   | .reg r => r
   | .stack _ => .xzr
 
@@ -123,18 +123,18 @@ def argStep (p : Array (Reg × Reg) × LState) (q : (ArgLoc × Reg) × Nat) :
 
 theorem foldl_argStep : ∀ (L : List ((ArgLoc × Reg) × Nat)), (∀ q ∈ L, ∃ pr, q.1.1 = .reg pr) →
     ∀ (acc : Array (Reg × Reg)) (st : LState),
-    L.foldl argStep (acc, st) = (acc ++ (L.map fun q => (q.1.2, locReg q.1.1)).toArray, st)
+    L.foldl argStep (acc, st) = (acc ++ (L.map fun q => (q.1.2, argLocReg q.1.1)).toArray, st)
   | [], _, acc, st => by simp
   | q :: L, hL, acc, st => by
     obtain ⟨pr, hq⟩ := hL q (by simp)
     rw [List.foldl_cons]
     have : argStep (acc, st) q = (acc.push (q.1.2, pr), st) := by simp [argStep, hq]
     rw [this, foldl_argStep L (fun q' h => hL q' (by simp [h]))]
-    simp [hq, locReg]
+    simp [hq, argLocReg]
 
 theorem zip_argLocs : ∀ (bytes : List Nat) (rs : List Reg) (k : Nat),
     ((((List.range' k bytes.length).map fun i => ArgLoc.reg (.x i)).zip rs).zip bytes).map
-      (fun q => (q.1.2, locReg q.1.1)) = rs.zip ((List.range' k bytes.length).map Reg.x)
+      (fun q => (q.1.2, argLocReg q.1.1)) = rs.zip ((List.range' k bytes.length).map Reg.x)
   | [], rs, k => by simp
   | b :: bytes, [], k => by simp [List.range'_succ]
   | b :: bytes, r :: rs, k => by

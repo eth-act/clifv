@@ -536,7 +536,9 @@ theorem brIdx_of_ok {f : Clif.Function} {ctx : Ctx} (h : brIdxOk f ctx = true) :
   intro B hB x d tbl ht
   have := List.all_eq_true.mp h B hB
   rw [ht] at this
-  simp only at this
+  simp only [Bool.and_eq_true, decide_eq_true_eq] at this
+  obtain ⟨hlen, this⟩ := this
+  refine ⟨?_, hlen⟩
   split at this
   · exact ⟨_, by simpa using this, ‹_›⟩
   · cases this

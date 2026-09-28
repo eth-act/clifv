@@ -19,11 +19,11 @@ namespace Backend.Proof
 open Arm Backend
 
 /-- Environment for straight-line code (no instruction here reads a label or the PC). -/
-def env0 : Env := ⟨0, fun _ => none⟩
+def isemEnv0 : Env := ⟨0, fun _ => none⟩
 
 /-- One line of expanded code (only instructions; labels/data words are not executable). -/
 def lineSem (s : ArmState) : Line → Except String ArmState
-  | .ins i _ => Insn.sem env0 i s
+  | .ins i _ => Insn.sem isemEnv0 i s
   | _ => .error "not an instruction"
 
 /-- Arm meaning of one allocated `MInst`: expansion, `Insn.toArmInst`, `exec_inst`. -/
@@ -135,21 +135,21 @@ theorem sem_cset (c : Cond) (hc : c ≠ .al ∧ c ≠ .nv) : MInst.sem (.cset (.
 theorem bitmaskEnc_7 : bitmaskEnc? false 7 = some (0#1, 0#6, 2#6) := by rfl
 
 include hd ha in
-theorem arm_uxtb32 : Insn.toArmInst env0 (.bfm .uBfm false (.x d) (.x a) 0 7) =
+theorem arm_uxtb32 : Insn.toArmInst isemEnv0 (.bfm .uBfm false (.x d) (.x a) 0 7) =
     .ok (.DPI (.Bitfield { sf := 0, opc := 2, N := 0, immr := 0, imms := 7, Rn := BitVec.ofNat 5 a, Rd := BitVec.ofNat 5 d })) := by
   simp (config := {decide := true}) [Insn.toArmInst, Insn.armFields, Reg.encZR, b1, hd, ha,
     ArmInst.norm]
   rfl
 
 include hd ha in
-theorem arm_and7_32 : Insn.toArmInst env0 (.logicImm .and false (.x d) (.x a) 7) =
+theorem arm_and7_32 : Insn.toArmInst isemEnv0 (.logicImm .and false (.x d) (.x a) 7) =
     .ok (.DPI (.Logical_imm { sf := 0, opc := 0, N := 0, immr := 0, imms := 2, Rn := BitVec.ofNat 5 a, Rd := BitVec.ofNat 5 d })) := by
   simp (config := {decide := true}) [Insn.toArmInst, Insn.armFields, bitmaskEnc_7, Reg.encZR,
     Reg.encSP, ALUOp.logic?, b1, hd, ha, ArmInst.norm]
   rfl
 
 include hd ha in
-theorem insn_uxtb32 : Insn.sem env0 (.bfm .uBfm false (.x d) (.x a) 0 7) s =
+theorem insn_uxtb32 : Insn.sem isemEnv0 (.bfm .uBfm false (.x d) (.x a) 0 7) s =
     .ok (let v := BitVec.ror (read_gpr 32 (BitVec.ofNat 5 a) s) 0 &&& 255#32 &&& 255#32
       write_pc (read_pc (write_gpr 32 (BitVec.ofNat 5 d) v s) + 4#64) (write_gpr 32 (BitVec.ofNat 5 d) v s)) := by
   have hl : BitVec.lsb (7#6) 5 = 0#1 := by decide
@@ -164,12 +164,12 @@ include hd ha in
 theorem sem_uxtb32 : MInst.sem (.extend (.x d) (.x a) false 8 32) s =
     .ok (let v := BitVec.ror (read_gpr 32 (BitVec.ofNat 5 a) s) 0 &&& 255#32 &&& 255#32
       write_pc (read_pc (write_gpr 32 (BitVec.ofNat 5 d) v s) + 4#64) (write_gpr 32 (BitVec.ofNat 5 d) v s)) := by
-  have h : MInst.sem (.extend (.x d) (.x a) false 8 32) s = Insn.sem env0 (.bfm .uBfm false (.x d) (.x a) 0 7) s := by
+  have h : MInst.sem (.extend (.x d) (.x a) false 8 32) s = Insn.sem isemEnv0 (.bfm .uBfm false (.x d) (.x a) 0 7) s := by
     simp [MInst.sem, MInst.lines, lineSem]
   rw [h, insn_uxtb32 hd ha]
 
 include hd ha in
-theorem insn_and7_32 : Insn.sem env0 (.logicImm .and false (.x d) (.x a) 7) s =
+theorem insn_and7_32 : Insn.sem isemEnv0 (.logicImm .and false (.x d) (.x a) 7) s =
     .ok (write_gpr 32 (BitVec.ofNat 5 d) (read_gpr 32 (BitVec.ofNat 5 a) s &&& 7#32)
       (write_pc (read_pc s + 4#64) s)) := by
   have hl : BitVec.lsb (2#6) 5 = 0#1 := by decide
@@ -186,7 +186,7 @@ theorem sem_and7_32 : MInst.sem (.aluRRImmLogic .and .size32 (.x d) (.x a) ⟨7,
     .ok (write_gpr 32 (BitVec.ofNat 5 d) (read_gpr 32 (BitVec.ofNat 5 a) s &&& 7#32)
       (write_pc (read_pc s + 4#64) s)) := by
   have h : MInst.sem (.aluRRImmLogic .and .size32 (.x d) (.x a) ⟨7, .size32⟩) s =
-      Insn.sem env0 (.logicImm .and false (.x d) (.x a) 7) s := by
+      Insn.sem isemEnv0 (.logicImm .and false (.x d) (.x a) 7) s := by
     simp [MInst.sem, MInst.lines, lineSem, mask64, OperandSize.is64]; rfl
   rw [h, insn_and7_32 hd ha]
 

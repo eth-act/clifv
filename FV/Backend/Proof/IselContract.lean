@@ -807,9 +807,11 @@ def ExcludedUnmatchable (p : Program) : Prop :=
 
 /-- The index of a `br_table` has at most 32 bits (contract change #6): the lowering compares and
 dispatches on the low 32 bits, and Cranelift's verifier requires an `i32` index. M7's `lowerCheck`
-decides it for every terminator (`brIdxOk`). -/
+decides it for every terminator (`brIdxOk`). Contract change #9: the table has fewer than `2^32`
+entries (`jump_table_size` is a `u32`; the bounds check compares 32 bits). -/
 def BrIdxTyped (ctx : Ctx) (t : Clif.Terminator) : Prop :=
-  ∀ x d tbl, t = .brTable x d tbl → ∃ w, w ≤ 32 ∧ ctx.valueType? x = some (.int w)
+  ∀ x d tbl, t = .brTable x d tbl →
+    (∃ w, w ≤ 32 ∧ ctx.valueType? x = some (.int w)) ∧ tbl.length < 2 ^ 32
 
 /-- The driver's successor labels of a `br_table` are one per jump-table entry plus the default
 (contract change #8): the lowering dispatches on the length of the label list

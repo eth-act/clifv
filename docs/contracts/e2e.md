@@ -27,6 +27,19 @@ contract `IselContract.lean`), `regalloc-proof.md` (M6), `encoder.md` (M5), `cli
 | `PrepareCorrect sem vc vcp` (unreachable blocks, critical-edge splitting, RPO) | **discharged**: `prepCheck vc vcp = true` ⇒ it (`prepareCorrect_of_check`) |
 | Validators run by the compiler (`FV/Backend.lean` `lowerChecked`, `FV/Backend/Regalloc.lean` `allocateRegalloc2`: a rejection is a compile error) | done |
 | **`backend_correct`**, **`backend_correct_of_rules`** from the hypotheses below | **proven**, sorry-free |
+| **`backend_correct_m4`** (`FV/E2E/Final.lean`): `backend_correct_of_rules` with all eight M4 predicates discharged (`lowerRulesCorrect_program`, `excludedUnmatchable`, `callRulesCorrect`, `memRulesCorrect_program`, `lowerTermRulesCorrect`, `termUnmatchable`, `branchRulesCorrect`, `branchExcludedUnmatchable`) and `sem s := csem (F s) (ctx s) (X s)` (discharges `DriverSem` by `driverSem_csem`, `CallsRefine` by `callsRefine_csem` from `XCallsOk`) | **proven**; axioms: `propext`, `Classical.choice`, `Quot.sound` + 130 `_native.bv_decide` certificates |
+
+Remaining hypotheses of `backend_correct_m4` (2026-09-28):
+
+| Hypothesis | Owner |
+| --- | --- |
+| `RegLevelCorrect (fun s => csem (F s) (ctx s) (X s)) F astep vcp af fb` | M6Ctl2 |
+| `∀ s, Refines (F s) (csem (F s) (ctx s) (X s))` | M6Insts |
+| `∀ s, MemRefines (F s) slotOff syms (csem (F s) (ctx s) (X s))` | M6Insts |
+| `∀ s, XCallsOk env (Rel.holds ⟨F s, syms, slotOff⟩ f) (X s)` (external contract: callees, linker symbols) | environment (M6 `CalleeSound`) |
+| per run: `AbiEntry`, `StackAvail`, `BodyEntry`, `ArgsIn`, `ClifEntry`, `Rel.holds … w₀`, `TrapsExplicit` | caller of the theorem |
+
+`MemRelOk` is internal (`memRelOk_holds`); there is no separate `FormsCovered` hypothesis (M6Insts' form coverage lands inside `Refines`/`MemRefines`).
 
 ## The theorem (`FV/E2E/Main.lean`)
 
@@ -75,7 +88,8 @@ theorem backend_correct {p f k vc vcp rf af fa fb}
   of `p`), every extern of `f` takes at most 8 parameters (`callRegArgs`: no stack-passed call
   arguments; the compiler flags such functions unverified, `Backend.regArgCalls`). `br_table`
   indices of at most 32 bits are enforced by `lowerCheck` (`brIdxOk`, contract change #6):
-  an `i64` index is a compile error, as in Cranelift's verifier.
+  an `i64` index is a compile error, as in Cranelift's verifier; so is a jump table with `2^32`
+  or more entries (contract change #9).
 * **Compiled code** `Compiled f k vc vcp rf af fa fb`: `lowerFunction f = ok vc`,
   `lowerCheck f vc = true`, `prepare vc = ok vcp`, `prepCheck vc vcp = true`, `checkAlloc vcp rf =
   ok ()`, `lowerRFunc vcp rf = ok af`, `emitFunc k af = ok fa`, `fa.layout = ok fb` (`rf` =
