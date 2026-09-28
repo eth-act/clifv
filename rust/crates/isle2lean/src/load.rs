@@ -1,10 +1,11 @@
-//! Loading the aarch64 ISLE compilation unit exactly as Cranelift builds it.
+//! Loading an ISLE compilation unit (`aarch64` lowering or `opt` mid-end) exactly as
+//! Cranelift builds it.
 //!
 //! 1. `cranelift_codegen_meta::generate_isle` writes the generated ISLE inputs
 //!    (`numerics.isle`, `clif_lower.isle`, `clif_opt.isle`, `assembler.isle`)
 //!    into a directory. This is the function the VeriISLE CLI calls; Cranelift's
 //!    `build.rs` calls `meta::generate`, which runs the same ISLE generators.
-//! 2. `cranelift_codegen_meta::isle::get_isle_compilations(..).lookup("aarch64")`
+//! 2. `cranelift_codegen_meta::isle::get_isle_compilations(..).lookup(unit)`
 //!    gives the input list. With the meta crate's `spec` feature (enabled in our
 //!    Cargo.toml) the list includes the VeriISLE spec files, as for VeriISLE.
 //! 3. The files are lexed and parsed with `cranelift_isle`, and analysed with
@@ -44,21 +45,21 @@ impl Unit {
 }
 
 /// Generate the build-time ISLE inputs into `gen_dir` and return the ordered
-/// input paths of the `aarch64` compilation.
+/// input paths of the compilation `unit` (`"aarch64"`, `"opt"`).
 ///
 /// Directory inputs (only `src/isa/aarch64/spec`, present because of the `spec`
 /// feature) are expanded to their `.isle` files in sorted order; upstream uses
 /// `read_dir` order, which is filesystem dependent. Declaration order does not
 /// affect the rules, only the numbering of spec-only definitions.
-pub fn input_paths(codegen_dir: &Path, gen_dir: &Path) -> Result<Vec<PathBuf>> {
+pub fn input_paths(codegen_dir: &Path, gen_dir: &Path, unit: &str) -> Result<Vec<PathBuf>> {
     std::fs::create_dir_all(gen_dir)
         .with_context(|| format!("creating {}", gen_dir.display()))?;
     cranelift_codegen_meta::generate_isle(gen_dir)
         .map_err(|e| anyhow!("cranelift-codegen-meta generate_isle: {e}"))?;
     let comps = cranelift_codegen_meta::isle::get_isle_compilations(codegen_dir, gen_dir);
     let comp = comps
-        .lookup("aarch64")
-        .ok_or_else(|| anyhow!("no aarch64 ISLE compilation"))?;
+        .lookup(unit)
+        .ok_or_else(|| anyhow!("no {unit} ISLE compilation"))?;
     let mut out = Vec::new();
     for input in comp.inputs() {
         if input.is_dir() {
@@ -78,8 +79,8 @@ pub fn input_paths(codegen_dir: &Path, gen_dir: &Path) -> Result<Vec<PathBuf>> {
     Ok(out)
 }
 
-pub fn load(codegen_dir: &Path, gen_dir: &Path) -> Result<Unit> {
-    let paths = input_paths(codegen_dir, gen_dir)?;
+pub fn load(codegen_dir: &Path, gen_dir: &Path, unit: &str) -> Result<Unit> {
+    let paths = input_paths(codegen_dir, gen_dir, unit)?;
     // Display names as in Cranelift's generated code: codegen-crate-relative
     // (`src/isa/aarch64/lower.isle`) and `<OUT_DIR>/clif_lower.isle`.
     let prefixes = [
