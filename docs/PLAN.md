@@ -262,10 +262,19 @@ The compiler enforces the side conditions with proven-sound validators: `lowerCh
 - Cranelift, and the optional M3 validator and M3b check, are kept as cross-checks, not trust anchors.
 
 **Lean mid-end (part of the FV compiler; after the backend proofs are underway):**
-*Status (2026-09-28): implemented and differentially tested, unproven* (`FV/Opt`,
-`docs/contracts/midend.md`): Cranelift's `simplify`/`simplify_skeleton` rules run from the exported
-data by the ISLE interpreter inside a simplify pass (acyclic e-graph, Cranelift's cost model),
-plus GVN, DCE and LICM; `lean-backend --opt`. The proof architecture is in the contract.
+*Status (2026-09-28): **proven for the proven-rules configuration.*** `E2E.backend_correct_opt_proven`
+(FV/E2E/OptProven.lean): for `Opt.optimize` with `ruleAllow := .proven` (`--opt --opt-proven-only`),
+the Arm run of the compiled optimised function refines `Clif.run` of the original program. It uses the
+same axioms as `backend_correct_final`.
+- Proven:
+  - the passes: unreachable-block removal, and GVN/DCE/LICM through the `editOk` validator;
+  - the simplify driver through the `simpOk` certificate validator (`simpOk_sim`, `simplify_facts`);
+  - pipeline refinement;
+  - 224 of Cranelift's `simplify` rules (arithmetic 172/258, cprop 52/68).
+- With the full rule set (`--opt`) the optimiser is differentially tested, not proven.
+- The remaining rules are deferred: see `docs/DEFERRED.md`. Proving more rules and adding them to
+  the allow-list extends the theorem without changing it.
+- Details: `docs/contracts/midend.md`.
 - Export Cranelift's `simplify` rules (`codegen/src/opts/*.isle`) with `isle2lean` and prove each one against `Clif.run` before enabling it.
 - Implement GVN, DCE and LICM as proven Lean passes.
 - The end-to-end theorem then covers the mid-end too:
