@@ -1,5 +1,6 @@
 import FV.E2E.RegLevelOp
 import FV.Backend.Proof.RegallocMemOS
+import FV.Backend.Proof.RegallocMemAddr
 
 /-!
 # Form coverage (M6 interface between the instruction proofs and the control proofs)
@@ -86,6 +87,7 @@ def FormOk (_ctx : FnCtx) : MInst → Bool
   | .vecRRR _ (.vreg _ .float) (.vreg _ .float) (.vreg _ .float) _ => true
   | .load op (.vreg _ .int) m _ => op != .fpuLoad128 && memOk op.bytes m
   | .store op (.vreg _ .int) m _ => op != .fpuStore128 && memOk op.bytes m
+  | .loadAddr (.vreg _ .int) (.slotOffset _) => true
   | _ => false
 
 /-- Every instruction of `vc` is a control form or a covered form. -/
@@ -175,10 +177,11 @@ theorem linesOk_vecRRR (ctx : FnCtx) (op : VecALUOp) (rd rn rm : Reg) (sz : Vect
     LinesOk ctx (.vecRRR op rd rn rm sz) := by
   cases op; one_line
 
-theorem interOk_prefix {env : Env} {pre : List Line} {ln : Line} {s S : Arm.ArmState}
-    (h : StepsOk env pre s S) (he : Arm.r .ERR s = .None) : InterOk env (pre ++ [ln]) s := by
+theorem interOk_prefix {env : Env} {pre tail : List Line} {s S : Arm.ArmState}
+    (h : StepsOk env pre s S) (he : Arm.r .ERR s = .None) (ht : tail.length ≤ 1) :
+    InterOk env (pre ++ tail) s := by
   intro k _ hk s1 hs1
-  simp only [List.length_append, List.length_cons, List.length_nil] at hk
+  simp only [List.length_append] at hk
   rw [List.take_append_of_le_length (by omega)] at hs1
   obtain ⟨s2, h2⟩ := StepsOk.take k h
   rw [h2.exec] at hs1
@@ -227,12 +230,58 @@ theorem linesOk_mem (ctx : FnCtx) (i : MInst) (b : Nat) (m : AMode) (mk : AMode 
       · obtain ⟨x, rfl, -, hp⟩ := mem_loadConst64 h; exact hp
     · simp at h; rw [h]; exact hpl
   · rcases memFinalize_shape hf with rfl | ⟨v, rfl⟩
-    · exact interOk_prefix (S := s) (by simp [StepsOk]) he
-    · exact interOk_prefix (steps_loadConst64 env (by omega) v s) he
+    · exact interOk_prefix (S := s) (by simp [StepsOk]) he (by simp)
+    · exact interOk_prefix (steps_loadConst64 env (by omega) v s) he (by simp)
 
 theorem plain_trap (x : Insn) (hx : x.condTarget? = none) (hb : ∀ l, x ≠ .b l) (t : Option Clif.TrapCode) :
     (Line.ins x t).plain = true := by
   cases t <;> cases x <;> simp_all [Line.plain]
+
+theorem linesOk_gen (ctx : FnCtx) (i : MInst) (pre tail : List Line)
+    (hl : ∀ ps, i.lines ctx ps = .ok (pre ++ tail, ps))
+    (hpre : pre = [] ∨ ∃ v, pre = loadConst64 (.x 16) v) (ht1 : tail.length ≤ 1)
+    (ht : ∀ ln ∈ tail, ∃ x t, ln = .ins x t ∧ x.hooked = false ∧ (Line.ins x t).plain = true) :
+    LinesOk ctx i := by
+  refine ⟨pre ++ tail, hl, fun ln hln => ?_, fun ln hln => ?_, fun env s s' he _ => ?_⟩
+  · rcases List.mem_append.1 hln with h | h
+    · rcases hpre with rfl | ⟨v, rfl⟩
+      · cases h
+      · obtain ⟨x, rfl, hx', -⟩ := mem_loadConst64 h; exact ⟨x, none, rfl, hx'⟩
+    · obtain ⟨x, t, rfl, hx, -⟩ := ht _ h; exact ⟨x, t, rfl, hx⟩
+  · rcases List.mem_append.1 hln with h | h
+    · rcases hpre with rfl | ⟨v, rfl⟩
+      · cases h
+      · obtain ⟨x, rfl, -, hp⟩ := mem_loadConst64 h; exact hp
+    · obtain ⟨x, t, rfl, -, hp⟩ := ht _ h; exact hp
+  · rcases hpre with rfl | ⟨v, rfl⟩
+    · exact interOk_prefix (S := s) (by simp [StepsOk]) he ht1
+    · exact interOk_prefix (steps_loadConst64 env (by omega) v s) he ht1
+
+theorem addOff_ok (rd rn : Reg) (k : Int) : (MInst.lines.addOff rd rn k).length ≤ 1 ∧
+    ∀ ln ∈ MInst.lines.addOff rd rn k, ∃ x t, ln = .ins x t ∧ x.hooked = false ∧
+      (Line.ins x t).plain = true := by
+  unfold MInst.lines.addOff
+  split
+  · split
+    · simp
+    · simp; exact ⟨_, _, ⟨rfl, rfl⟩, rfl, rfl⟩
+  · split <;> (simp; exact ⟨_, _, ⟨rfl, rfl⟩, rfl, rfl⟩)
+
+theorem linesOk_loadAddr_slot (ctx : FnCtx) (rd : Reg) (off : Int) :
+    LinesOk ctx (.loadAddr rd (.slotOffset off)) := by
+  cases h9 : simm9? (off + ctx.slotBase) with
+  | some k =>
+    exact linesOk_gen ctx _ [] _ (fun ps => by simp [MInst.lines, memFinalize, h9]) (Or.inl rfl)
+      (addOff_ok rd .sp k).1 (addOff_ok rd .sp k).2
+  | none =>
+    cases hu : uimm12Scaled? (off + ctx.slotBase) 1 with
+    | some o =>
+      exact linesOk_gen ctx _ [] _ (fun ps => by simp [MInst.lines, memFinalize, h9, hu]) (Or.inl rfl)
+        (addOff_ok rd .sp o).1 (addOff_ok rd .sp o).2
+    | none =>
+      exact linesOk_gen ctx _ _ [.ins (.aluRRRExtend .add true rd .sp (.x 16) .sxtx)]
+        (fun ps => by simp [MInst.lines, memFinalize, h9, hu]; rfl) (Or.inr ⟨_, rfl⟩) (by simp)
+        (by simp; exact ⟨_, _, ⟨rfl, rfl⟩, rfl, rfl⟩)
 
 theorem linesOk_load (ctx : FnCtx) (op : LoadOp) (rd : Reg) (m : AMode) (fl : Clif.MemFlags)
     (hm : ∀ o, m ≠ .incomingArg o) : LinesOk ctx (.load op rd m fl) :=
@@ -317,7 +366,7 @@ theorem formOk_sound {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MI
         | apply os_aluRRRExtend_rdZ | apply os_bitRR | apply os_mov | apply os_movWide
         | apply os_movK | apply os_extend | apply os_bitfieldMove | apply os_cset | apply os_csel
         | apply os_ccmp | apply os_ccmpImm | apply os_movToFpu | apply os_movFromVec
-        | apply os_vecMisc | apply os_vecLanes | apply os_vecRRR); done
+        | apply os_vecMisc | apply os_vecLanes | apply os_vecRRR | apply os_loadAddr_slot); done
     | (assign_inv hasg
        all_goals refine ⟨?_, fun _ h => MInst.noConfusion h, fun _ h => MInst.noConfusion h⟩
        all_goals first
@@ -327,6 +376,7 @@ theorem formOk_sound {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MI
          | exact linesOk_shift _ ‹_› ..
          | exact linesOk_rrrShift ..
          | exact linesOk_vecMisc ..
-         | exact linesOk_vecRRR ..)
+         | exact linesOk_vecRRR ..
+         | exact linesOk_loadAddr_slot ..)
 
 end Backend.Proof
