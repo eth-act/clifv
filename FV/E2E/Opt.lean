@@ -45,7 +45,7 @@ theorem inSubset_opt (cfg : Opt.Config) {p : Clif.Program} {f : Clif.Function}
     simp only [Clif.Program.func?, Opt.optimizeProgram, List.find?_map]
     rw [show ((fun x : Clif.Function => x.name == n) ∘ fun x => Opt.optimize x cfg) =
       (fun x => x.name == n) from by funext g; simp [hname]]
-  refine ⟨?_, hF.subsetE hsub.subsetE, by rw [hF.sig]; exact hsub.regParams, ?_, ?_⟩
+  refine ⟨?_, hF.subsetE hsub.subsetE, by rw [hF.sig]; exact hsub.regParams, ?_, ?_, ?_⟩
   · rw [hfind, hF.name, hsub.func]; rfl
   · intro b hb st hst fn args hc e he
     obtain ⟨b0, hb0, st0, hst0, args0, hc0⟩ :=
@@ -54,6 +54,13 @@ theorem inSubset_opt (cfg : Opt.Config) {p : Clif.Program} {f : Clif.Function}
       simpa [Clif.Function.extern?, hF.externs] using he
     rw [hfind, hsub.externCalls b0 hb0 st0 hst0 fn args0 hc0 e he0]; rfl
   · rw [hF.externs]; exact hsub.callRegArgs
+  · constructor
+    · rw [hF.sig]; exact hsub.noSpecial.1
+    · intro e he
+      have : e ∈ f.externs := by
+        rw [hF.externs]
+        simpa using (List.mem_map_of_mem (f := fun x => Opt.optimize x cfg) he)
+      exact hsub.noSpecial.2 (by simpa [hF.externs] using he)
 
 theorem clifEntry_opt (cfg : Opt.Config)
     (hS : Opt.SimplifyPassSim cfg.simplifyFn cfg.skeletonFn) {f : Clif.Function}

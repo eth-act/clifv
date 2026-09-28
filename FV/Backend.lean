@@ -68,10 +68,17 @@ def lowerChecked (f : Clif.Function) (verify : Bool) : Except String VCode := do
 their arguments in registers). -/
 def regArgCalls (f : Clif.Function) : Bool := f.externs.all fun e => e.2.sig.params.length ≤ 8
 
+/-- No `sret`/special-purpose parameter or return in `f`'s signature or in a callee's
+(`E2E.InSubset.noSpecial`): sret ABI handling (the hidden pointer in x8, returned in x0) is
+outside the end-to-end theorem, so such functions are compiled but flagged unverified. -/
+def noSpecial (f : Clif.Function) : Bool :=
+  let sig (s : Clif.Signature) := (s.params ++ s.returns).all (·.purpose = .normal)
+  sig f.sig && f.externs.all (sig ·.2.sig)
+
 /-- The theorem's conditions that do not need the rest of the file (`E2E.InSubset.subsetE`,
-`E2E.InSubset.regParams`, `E2E.InSubset.callRegArgs`). -/
+`E2E.InSubset.regParams`, `E2E.InSubset.callRegArgs`, `E2E.InSubset.noSpecial`). -/
 def verifiable (f : Clif.Function) : Bool :=
-  Compile.functionE f && f.sig.params.length ≤ 8 && regArgCalls f
+  Compile.functionE f && f.sig.params.length ≤ 8 && regArgCalls f && noSpecial f
 
 /-- Compile one function with the stack-slot allocator (`k` = index in the file, for local
 labels); also returns the ISLE rules that fired. -/
@@ -116,6 +123,7 @@ def unverifiedReason? (pf : Clif.ParsedFile) (f : Clif.Function) : Option String
   if !Compile.functionE f then some "outside clif-subset-v2 E"
   else if f.sig.params.length > 8 then some "stack-passed parameters (more than 8)"
   else if !regArgCalls f then some "stack-passed call arguments (an extern with more than 8 parameters)"
+  else if !noSpecial f then some "sret parameter (outside backend_correct)"
   else
     let own := pf.funcs.map (·.name)
     match (callees f).find? (own.contains ·) with

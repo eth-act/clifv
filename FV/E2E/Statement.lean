@@ -66,8 +66,10 @@ def spv (s : Arm.ArmState) : BitVec 64 := Arm.r (.GPR 31#5) s
 /-- The CLIF functions the theorem covers: clif-subset-v2 E (`Compile.functionE`), plus the
 current restrictions of the proof (e2e.md, "Remaining"): parameters passed in registers,
 calls only to externs (calls between compiled functions compose by induction on the call
-depth, not done yet), and externs with at most 8 (register) parameters (no stack-passed call
-arguments). -/
+depth, not done yet), externs with at most 8 (register) parameters (no stack-passed call
+arguments), and no `sret`/special-purpose parameter or return (the ABI of the hidden
+struct-return pointer — in x8, returned in x0 — is outside the proof; such functions are
+compiled and flagged unverified). -/
 structure InSubset (p : Clif.Program) (f : Clif.Function) : Prop where
   func : p.func? f.name = some f
   subsetE : Compile.functionE f = true
@@ -75,6 +77,8 @@ structure InSubset (p : Clif.Program) (f : Clif.Function) : Prop where
   externCalls : ∀ b ∈ f.blocks, ∀ st ∈ b.body, ∀ fn args, st.inst = .call fn args →
     ∀ e, f.extern? fn = some e → p.func? e.name = none
   callRegArgs : ∀ e ∈ f.externs, e.2.sig.params.length ≤ 8
+  noSpecial : (f.sig.params ++ f.sig.returns).all (·.purpose = .normal) ∧
+    ∀ e ∈ f.externs, (e.2.sig.params ++ e.2.sig.returns).all (·.purpose = .normal)
 
 /-! ## The compiled code -/
 

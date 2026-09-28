@@ -143,7 +143,7 @@ def main (args : List String) : IO UInt32 := do
       let t0 ← IO.monoMsNow
       let .ok vc ← IO.lazyPure (fun _ => lowerFunction f) | continue
       let t1 ← IO.monoMsNow
-      if f.sig.params.length > 8 || !Backend.regArgCalls f then
+      if f.sig.params.length > 8 || !Backend.regArgCalls f || !Backend.noSpecial f then
         skipped := skipped + 1
         continue
       let r ← IO.lazyPure (fun _ => lowerCheck f vc)
@@ -178,7 +178,7 @@ def main (args : List String) : IO UInt32 := do
         bad := bad + 1
         IO.println s!"{file}: %{f.name}: lowerCheck rejects ({diagnose f vc})"
         IO.println (detail f vc)
-  IO.println s!"lowerCheck: {ok} accepted, {bad} rejected, {skipped} out of scope (stack parameters or stack call arguments)"
+  IO.println s!"lowerCheck: {ok} accepted, {bad} rejected, {skipped} out of scope (stack parameters, stack call arguments or sret)"
   IO.println s!"prepCheck: {pok} accepted, {pbad} rejected"
   IO.println s!"formsCoveredB: {cov} covered, {uncov} not covered"
   for (k, n) in forms.toList.mergeSort (fun a b => a.2 ≥ b.2) do

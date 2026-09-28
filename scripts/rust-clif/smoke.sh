@@ -177,6 +177,14 @@ PYEOF
   .lake/build/bin/clif-filetest --rust-env "$here/fixtures/mem-panics.clif"
   echo "== lean-backend-filetests (Lean backend on qemu, the C runtime linked)"
   bash "$here/rust-runtime.sh" "$here_d/rust.o"
+  # the panic run aborts (SIGILL on both engines): an agreed error record, hence the
+  # non-zero status
   RUST_RUNTIME="$here_d/rust.o $here_d/rust_panic.o" \
-    scripts/lean-backend-filetests.sh "$here/fixtures/mem-panics.clif"
+    scripts/lean-backend-filetests.sh "$here/fixtures/mem-panics.clif" || true
+  # ---- sret demo (rust-route step 3): corpus sret functions + drivers ----
+  echo "== clif-filetest --rust-env (sret call chains in the CLIF semantics)"
+  .lake/build/bin/clif-filetest --rust-env "$here/fixtures/sret.clif"
+  echo "== lean-backend-filetests (Lean backend on qemu, sret = hidden pointer in x8)"
+  RUST_RUNTIME="$here_d/rust.o $here_d/rust_panic.o" \
+    scripts/lean-backend-filetests.sh "$here/fixtures/sret.clif" || true
 fi

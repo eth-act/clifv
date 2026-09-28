@@ -248,9 +248,10 @@ def RAFrame.moveInsts (fr : RAFrame) (src dst : Loc) : Except String (List AInst
   | m, .reg b => pure [.inst (slotLoad ((b.realClass?).getD .int) b (← fr.offset m))]
   | _, _ => throw "memory-to-memory move"
 
-/-- Registers of incoming arguments (AAPCS64): x0–x7, v0–v7. -/
+/-- Registers of incoming arguments (AAPCS64): x0–x7, v0–v7 — and x8, the hidden
+struct-return pointer of an `sret` parameter (`Clif.sigArgLocs`). -/
 def Reg.isArgReg : Reg → Bool
-  | .x n | .v n => n < 8
+  | .x n | .v n => n ≤ 8
   | _ => false
 
 def RItem.isMove : RItem → Bool
