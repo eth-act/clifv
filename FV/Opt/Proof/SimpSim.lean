@@ -1289,4 +1289,133 @@ theorem SCore.two {fr fr' : Frame} {bi k k' : Nat} {m : Mem} {s : Stmt} {ss R : 
 
 end
 
+/-! ## Dispatch on the record -/
+
+theorem arr_split1 {out : Array Stmt} {x : Stmt} (h : out[out.size - 1]? = some x) :
+    out.toList = (out.extract 0 (out.size - 1)).toList ++ [x] := by
+  obtain ⟨hlt, -⟩ := Array.getElem?_eq_some_iff.1 h
+  apply List.ext_getElem?
+  intro n
+  rw [List.getElem?_append]
+  simp only [Array.toList_extract, List.extract_eq_take_drop, List.drop_zero, List.length_take,
+    Array.length_toList]
+  split
+  · rename_i hn; rw [List.getElem?_take]; simp; omega
+  · rename_i hn
+    rcases Nat.lt_or_ge n out.size with h1 | h1
+    · have : n = out.size - 1 := by omega
+      subst this; simpa using h
+    · rw [List.getElem?_eq_none (by simp; omega), List.getElem?_eq_none (by simp; omega)]
+
+theorem arr_split2 {out : Array Stmt} {x y : Stmt} (h2 : out.size ≥ 2)
+    (hx : out[out.size - 2]? = some x) (hy : out[out.size - 1]? = some y) :
+    out.toList = (out.extract 0 (out.size - 2)).toList ++ [x, y] := by
+  apply List.ext_getElem?
+  intro n
+  rw [List.getElem?_append]
+  simp only [Array.toList_extract, List.extract_eq_take_drop, List.drop_zero, List.length_take,
+    Array.length_toList]
+  split
+  · rename_i hn; rw [List.getElem?_take]; simp; omega
+  · rename_i hn
+    rcases Nat.lt_or_ge n out.size with h1 | h1
+    · rcases Nat.lt_or_ge n (out.size - 1) with h3 | h3
+      · have : n = out.size - 2 := by omega
+        subst this
+        have e : out.size - 2 - min (out.size - 2 - 0) out.size = 0 := by omega
+        rw [e]; simpa using hx
+      · have : n = out.size - 1 := by omega
+        subst this
+        have e : out.size - 1 - min (out.size - 2 - 0) out.size = 1 := by omega
+        rw [e]; simpa using hy
+    · rw [List.getElem?_eq_none (by simp; omega), List.getElem?_eq_none (by simp; omega)]
+
+theorem arr_all {out : Array Stmt} {p : Stmt → Bool} (h : out.all p = true) :
+    ∀ t ∈ out.toList, p t = true := by
+  intro t ht; rw [← Array.all_toList, List.all_eq_true] at h; exact h t ht
+
+theorem SimpCtx.fixed_step {c : SimpCtx} {xs : List ValueId} (h : c.fixed xs = true) :
+    ∀ x ∈ xs, c.subst.step x = x := by
+  intro x hx
+  simp only [SimpCtx.fixed, List.all_eq_true, Bool.not_eq_eq_eq_not, Bool.not_true] at h
+  exact step_of_not_contains (h x hx)
+
+theorem lstep_not_call {fr : Frame} {m : Mem} {s : Stmt} {ss : List Stmt} (hs : fr.body = s :: ss)
+    (hnc : ∀ fn args, s.inst ≠ .call fn args) :
+    ∀ ext vals rs rest, lstep fr m ≠ .call ext vals rs rest := by
+  intro ext vals rs rest hl
+  obtain ⟨st, fn, args, hb, hc, -, -⟩ := lstep_call_inv hl
+  rw [hs] at hb; cases hb
+  exact hnc fn args hc
+
+theorem notCall_spec {i : Inst} (h : notCall i = true) : ∀ fn args, i ≠ .call fn args := by
+  intro fn args he; rw [he] at h; cases h
+
+section
+variable {f g : Function} {fi : Info} {cert : SimpCert} (hS : SOk f g fi cert)
+  {syms : String → Option Nat}
+include hS
+
+/-- A kept call: same callee and arguments; the continuations are related. -/
+theorem SCore.call {fr fr' : Frame} {bi k k' : Nat} {m : Mem} {s : Stmt} {ss ts : List Stmt}
+    {ext : ExtFunc} {vals : List Val} {rs : List ValueId} {rest : List Stmt}
+    (h : SCore f g fi cert syms fr fr' bi k k') (hs : fr.body = s :: ss)
+    (ht : fr'.body = renStmt cert.subst.step s :: ts)
+    (hσ : ∀ r ∈ s.results, cert.subst.step r = r) (hl : lstep fr m = .call ext vals rs rest) :
+    lstep fr' m = .call ext vals rs ts ∧ rest = ss ∧
+      Cont (fun a b => SCore f g fi cert syms a b bi (k + 1) (k' + 1)) { fr with body := rest } rs
+        { fr' with body := ts } rs (AbiParam.tys ext.sig.returns) := by
+  obtain ⟨b, hb, h1, -, -⟩ := h.invf.block
+  obtain ⟨b', hb', h2, -, -⟩ := h.invg.block
+  have hs0 := hs; have ht0 := ht
+  rw [h1] at hs; rw [h2] at ht
+  obtain ⟨hsk, hss, -⟩ := drop_eq_cons hs
+  obtain ⟨htk, hts, -⟩ := drop_eq_cons ht
+  obtain ⟨st, fn, args, hst, hc, hrs, hca⟩ := lstep_call_inv hl
+  rw [hs0] at hst
+  simp only [List.cons.injEq] at hst
+  obtain ⟨h1s, h2s⟩ := hst
+  subst h1s; subst h2s; subst hrs
+  have hops : ∀ x ∈ operands s.inst, fr'.regs (cert.subst.step x) = fr.regs x :=
+    fun x hx => (h.agree x (hS.wff.uses bi b hb k s hsk x hx)).2.1
+  have hca' := Res.norm_eq_ok (callArgs_rename (σ := cert.subst.step) (fr := fr) (fr' := fr')
+    (fn := fn) (by rw [h.invf.func, h.invg.func, hS.externs])
+    (fun x hx => hops x (by rw [hc]; exact hx))) hca
+  have htc : (renStmt cert.subst.step s).inst = .call fn (args.map cert.subst.step) := by
+    simp [renStmt, hc, mapOperands]
+  refine ⟨by rw [lstep_call ht0 htc, hca']; rfl, rfl, ?_⟩
+  intro vs regs hty hset
+  obtain ⟨regs', hset'⟩ := setMany_len (r := fr'.regs) (xs := s.results) (vs := vs)
+    (setMany_spec hset).1
+  refine ⟨regs', hset', ?_, ?_, ?_, h.slots⟩
+  · have hext : sigOf f fn = some ext.sig := by
+      simp only [callArgs, Res.bind_eq_ok, Res.ofOption_eq_ok] at hca
+      obtain ⟨e, he, _, _, _, _, hpe⟩ := hca
+      simp only [Res.pure_eq_ok, Prod.mk.injEq] at hpe
+      obtain ⟨rfl, -⟩ := hpe
+      rw [h.invf.func] at he
+      simp only [sigOf]
+      rw [show f.externs.lookup fn = f.extern? fn from rfl, he]; rfl
+    refine Inv.results (fr := fr) (st := s) (rest := ss) hS.wff h.invf hs0 (fun ts0 h0 => ?_)
+      (fun hp => by rw [hc] at hp; cases hp) hset
+    rw [hc, Inst.resultTypes, hext] at h0
+    simp only [Option.map_some, Option.some.injEq] at h0
+    rw [← h0, hty]; rfl
+  · have hext : sigOf g fn = some ext.sig := by
+      simp only [callArgs, Res.bind_eq_ok, Res.ofOption_eq_ok] at hca
+      obtain ⟨e, he, _, _, _, _, hpe⟩ := hca
+      simp only [Res.pure_eq_ok, Prod.mk.injEq] at hpe
+      obtain ⟨rfl, -⟩ := hpe
+      rw [h.invf.func] at he
+      simp only [sigOf, hS.externs]
+      rw [show f.externs.lookup fn = f.extern? fn from rfl, he]; rfl
+    refine Inv.results (fr := fr') (st := renStmt cert.subst.step s) (rest := ts) hS.wfg h.invg ht0
+      (fun ts0 h0 => ?_) (fun hp => by rw [htc] at hp; cases hp) hset'
+    rw [htc, Inst.resultTypes, hext] at h0
+    simp only [Option.map_some, Option.some.injEq] at h0
+    rw [← h0, hty]; rfl
+  · exact agree_bind hS h.agree hb hb' hsk (by rw [htk]; rfl) hσ hset hset'
+
+end
+
 end Opt
