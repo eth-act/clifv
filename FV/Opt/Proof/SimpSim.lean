@@ -930,4 +930,96 @@ theorem SCore.lockWith {fr fr' : Frame} {bi k k' : Nat} {m : Mem} {s : Stmt} {ss
 
 end
 
+/-! ## The statement records -/
+
+section
+variable {f g : Function} {fi : Info} {cert : SimpCert} (hS : SOk f g fi cert)
+  (hF : SimpFacts f fi cert) {syms : String → Option Nat}
+include hS hF
+
+/-- The target runs the inserted statements `out` of a record; there the facts hold. -/
+theorem SCore.runIns {fr fr' : Frame} {bi k k' : Nat} {m : Mem} {out : Array Stmt}
+    {R : List Stmt} {lg : BlockLog} (h : SCore f g fi cert syms fr fr' bi k k')
+    (hm : m.symbols = syms) (hbody : fr'.body = out.toList.map (renStmt cert.subst.step) ++ R)
+    (hins : ∀ t ∈ out.toList, insOk t = true) (hlg : cert.logs[bi]? = some (some lg)) :
+    ∃ fr'', LStar fr' m fr'' m ∧ SCore f g fi cert syms fr fr'' bi k (k' + out.size) ∧
+      fr''.body = R ∧ fr''.term = fr'.term ∧
+      BlockFact (fun b => (trapMap f).get? b)
+        (withRegs fr'' (VAt f g fi cert fr'' bi (k' + out.size) m)) (memPlus m)
+        (VAt f g fi cert fr'' bi (k' + out.size) m) lg ∧
+      ∀ x, Avail (wfData g (gInfo fi cert)) bi (k' + out.size) x →
+        VAt f g fi cert fr'' bi (k' + out.size) m x = fr''.regs x := by
+  obtain ⟨fr'', hst, h2, hb2, ht2, -, -⟩ := SCore.insList hS hm _ h hbody
+    (fun t ht => by
+      obtain ⟨t0, ht0, rfl⟩ := List.mem_map.1 ht
+      rw [insOk_renStmt]; exact hins t0 ht0)
+  simp only [List.length_map, Array.length_toList] at h2
+  exact ⟨fr'', hst, h2, hb2, ht2, facts_at hS hF h2.invg hm hlg⟩
+
+/-- A replaced pure statement `v = n` (record `repl`): the target has `w` with `n`'s value. -/
+theorem SCore.repl {fr fr' : Frame} {bi k k' : Nat} {m : Mem} {s : Stmt} {ss R : List Stmt}
+    {b : Block} {lg : BlockLog} {s' : Stmt} {w v : ValueId} {out : Array Stmt}
+    (h : SCore f g fi cert syms fr fr' bi k k') (hm : m.symbols = syms) (hs : fr.body = s :: ss)
+    (hb : f.blocks[bi]? = some b) (hsk : b.body[k]? = some s)
+    (hlg : cert.logs[bi]? = some (some lg)) (hl : StmtLog.repl s' w out ∈ lg.stmts)
+    (hbody : fr'.body = out.toList.map (renStmt cert.subst.step) ++ R)
+    (hs' : s' = renStmt cert.subst.step s) (hp : isPure s.inst = true) (hv : s.results = [v])
+    (hw : cert.subst.get? v = some w) (hins : ∀ t ∈ out.toList, insOk t = true)
+    (hav : Avail (wfData g (gInfo fi cert)) bi (k' + out.size) w) :
+    (∀ fr1 m1, lstep fr m = .next fr1 m1 → ∃ fr1', LStar fr' m fr1' m1 ∧
+      SCore f g fi cert syms fr1 fr1' bi (k + 1) (k' + out.size) ∧ fr1'.body = R ∧
+      fr1'.term = fr'.term ∧ fr1.body = ss) ∧
+    (∀ c, lstep fr m ≠ .trap c) := by
+  have hnc : ∀ fn args, s.inst ≠ .call fn args := by
+    intro fn args he; rw [he] at hp; cases hp
+  obtain ⟨-, hnt⟩ := evalInst_removable (fr := fr) (mem := m) (i := s.inst) (by simp [removable, hp])
+  refine ⟨fun fr1 m1 hl1 => ?_, fun c hl1 => ?_⟩
+  · rw [lstep_inst hs hnc] at hl1
+    cases he : evalInst fr m s.inst with
+    | trap c => rw [he] at hl1; cases hl1
+    | stuck _ => rw [he] at hl1; cases hl1
+    | ok p =>
+      obtain ⟨vals, m1'⟩ := p
+      rw [he] at hl1
+      simp only [LRes.ofRes] at hl1
+      split at hl1
+      · rename_i regs hset
+        cases hl1
+        obtain ⟨hmm, a, rfl, ha⟩ := evalInst_pure hp he
+        rw [hmm] at he
+        obtain ⟨fr'', hst, h2, hb2, ht2, hfa, hV⟩ := h.runIns hS hF hm hbody hins hlg
+        have hev : evalNode (withRegs fr'' (VAt f g fi cert fr'' bi (k' + out.size) m))
+            (memPlus m) s'.inst = some a := by
+          have ha' := evalNode_symsLe hp (memPlus_le m) ha
+          have hr := h2.srcRename hS hb hsk hV (M := memPlus m)
+          simp only [evalNode] at ha' ⊢
+          split at ha'
+          · rename_i r m0 he0
+            cases ha'
+            rw [hs', renStmt, Res.norm_eq_ok hr he0]
+          · cases ha'
+        have hwv := hfa.1 _ hl a hev
+        rw [hV w hav] at hwv
+        have hreg : regs v = some a := by
+          rw [hv] at hset
+          simp only [Regs.setMany_cons, Regs.setMany_nil, Option.some.injEq] at hset
+          subst hset; simp
+        obtain ⟨hl2, h3⟩ := h2.srcOnly hS hm hs hnc he hset (by
+          intro r hr
+          rw [hv, List.mem_singleton] at hr
+          subst hr
+          rw [step_of_get hw]
+          exact ⟨hav, by rw [hwv, hreg]⟩)
+        exact ⟨fr'', by rw [hmm]; exact hst, h3, hb2, ht2, rfl⟩
+      · cases hl1
+  · rw [lstep_inst hs hnc] at hl1
+    cases he : evalInst fr m s.inst with
+    | trap c' => exact hnt c' he
+    | stuck _ => rw [he] at hl1; cases hl1
+    | ok p =>
+      obtain ⟨_, _⟩ := p
+      rw [he] at hl1; simp only [LRes.ofRes] at hl1; split at hl1 <;> cases hl1
+
+end
+
 end Opt
