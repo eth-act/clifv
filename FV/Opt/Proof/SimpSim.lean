@@ -618,4 +618,183 @@ theorem SCore.insList {fr : Frame} {bi k : Nat} {m : Mem} (hm : m.symbols = syms
 
 end
 
+section
+variable {f g : Function} {fi : Info} {cert : SimpCert} (hS : SOk f g fi cert)
+  {syms : String → Option Nat}
+include hS
+
+/-- Where the relation stands before a source statement. -/
+theorem SRel.cur {fr fr' : Frame} {bi k k' : Nat} {s : Stmt} {ss : List Stmt}
+    (h : SRel f g fi cert syms fr fr' bi k k') (hs : fr.body = s :: ss) :
+    ∃ b b' lg l, f.blocks[bi]? = some b ∧ g.blocks[bi]? = some b' ∧
+      cert.logs[bi]? = some (some lg) ∧ b.body[k]? = some s ∧ lg.stmts[k]? = some l ∧
+      (sctx g fi cert bi).stmtOk s k' l = true ∧
+      fr'.body = (l.out.toList ++ outs (lg.stmts.drop (k + 1)) ++ lg.extra.toList).map
+        (renStmt cert.subst.step) ∧
+      (outs (lg.stmts.take (k + 1))).length = k' + l.out.size := by
+  obtain ⟨b, hb, h1, -, -⟩ := h.invf.block
+  obtain ⟨b', hb', h2, -, -⟩ := h.invg.block
+  obtain ⟨b'', lg, hb'', hlg, -, -, hbody, -, -, -, hok, -⟩ := hS.blocks bi b hb
+  rw [hb'] at hb''; cases hb''
+  rw [h1] at hs
+  obtain ⟨hsk, -, hkl⟩ := drop_eq_cons hs
+  obtain ⟨hlen, hspec⟩ := stmtsOk_spec hok
+  have hkl' : k < lg.stmts.length := by rw [← hlen]; exact hkl
+  have hl : lg.stmts[k]? = some lg.stmts[k] := by simp [hkl']
+  have hpos := h.pos lg hlg
+  refine ⟨b, b', lg, lg.stmts[k], hb, hb', hlg, hsk, hl, ?_, ?_, ?_⟩
+  · have := hspec k s _ hsk hl
+    rwa [Nat.zero_add, ← hpos] at this
+  · rw [h2, hbody, ← List.map_drop, outs_take_drop lg.stmts k,
+      List.append_assoc, hpos, List.drop_left, outs_drop_cons hl, List.append_assoc]
+  · rw [outs_take_succ hl, List.length_append, ← hpos, Array.length_toList]
+
+/-- Where the relation stands at the terminator. -/
+theorem SRel.atEnd {fr fr' : Frame} {bi k k' : Nat} (h : SRel f g fi cert syms fr fr' bi k k')
+    (hs : fr.body = []) :
+    ∃ b b' lg, f.blocks[bi]? = some b ∧ g.blocks[bi]? = some b' ∧
+      cert.logs[bi]? = some (some lg) ∧ fr.term = b.term ∧
+      fr'.term = mapTerm cert.subst.step lg.term' ∧ lg.term = mapTerm cert.subst.step b.term ∧
+      (sctx g fi cert bi).termOk lg = true ∧
+      fr'.body = lg.extra.toList.map (renStmt cert.subst.step) ∧ k = b.body.length ∧
+      b'.id = b.id ∧ b'.params = b.params := by
+  obtain ⟨b, hb, h1, ht1, hk⟩ := h.invf.block
+  obtain ⟨b', hb', h2, ht2, -⟩ := h.invg.block
+  obtain ⟨b'', lg, hb'', hlg, hid, hpar, hbody, hterm, hlt, htok, hok, -⟩ := hS.blocks bi b hb
+  rw [hb'] at hb''; cases hb''
+  have hkk : k = b.body.length := by
+    rw [hs] at h1
+    have := List.drop_eq_nil_iff.1 h1.symm; omega
+  obtain ⟨hlen, -⟩ := stmtsOk_spec hok
+  have hpos := h.pos lg hlg
+  rw [hkk, hlen, List.take_length] at hpos
+  refine ⟨b, b', lg, hb, hb', hlg, ht1, by rw [ht2, hterm], hlt, htok, ?_, hkk, hid, hpar⟩
+  rw [h2, hbody, ← List.map_drop, hpos, List.drop_left]
+
+/-- The results of a statement bound in both frames at the same values keep the agreement. -/
+theorem agree_bind {fr fr' : Frame} {bi k k' : Nat} {b : Block} {b' : Block} {s : Stmt}
+    {rs : Inst} {vals : List Val} {regs regs' : Regs}
+    (h : ∀ v, Avail (wfData f fi) bi k v →
+      Avail (wfData g (gInfo fi cert)) bi k' (cert.subst.step v) ∧
+        fr'.regs (cert.subst.step v) = fr.regs v ∧ SiteAnc f g fi cert v)
+    (hb : f.blocks[bi]? = some b) (hb' : g.blocks[bi]? = some b') (hs : b.body[k]? = some s)
+    (ht : b'.body[k']? = some { results := s.results, inst := rs })
+    (hσ : ∀ r ∈ s.results, cert.subst.step r = r)
+    (h1 : fr.regs.setMany s.results vals = some regs)
+    (h2 : fr'.regs.setMany s.results vals = some regs') :
+    ∀ v, Avail (wfData f fi) bi (k + 1) v →
+      Avail (wfData g (gInfo fi cert)) bi (k' + 1) (cert.subst.step v) ∧
+        regs' (cert.subst.step v) = regs v ∧ SiteAnc f g fi cert v := by
+  intro v hv
+  rcases avail_succ hS.wff hb hs hv with hr | hv'
+  · rw [hσ v hr]
+    have hg := site_result hS.wfg hb' ht hr
+    refine ⟨⟨bi, k' + 1, hg, .inl ⟨rfl, Nat.le_refl _⟩⟩, (setMany_same h1 h2 v hr).symm, ?_⟩
+    intro d t hd
+    rw [site_result hS.wff hb hs hr] at hd
+    simp only [Option.some.injEq, Prod.mk.injEq] at hd
+    obtain ⟨rfl, -⟩ := hd
+    exact ⟨bi, k' + 1, by rw [hσ v hr]; exact hg, .refl _⟩
+  · have hnr := avail_not_result hS.wff hb hs hv'
+    obtain ⟨hav, heq, hsa⟩ := h v hv'
+    have hnr' := avail_not_result hS.wfg hb' ht hav
+    refine ⟨hav.mono (by omega), ?_, hsa⟩
+    rw [((setMany_spec h2).2 _).1 hnr', ((setMany_spec h1).2 _).1 hnr, heq]
+
+/-- A kept statement (not a call) steps in lock-step. -/
+theorem SCore.lock {fr fr' : Frame} {bi k k' : Nat} {m : Mem} {s : Stmt} {ss ts : List Stmt}
+    (h : SCore f g fi cert syms fr fr' bi k k') (hm : m.symbols = syms) (hs : fr.body = s :: ss)
+    (ht : fr'.body = renStmt cert.subst.step s :: ts)
+    (hσ : ∀ r ∈ s.results, cert.subst.step r = r) (hnc : ∀ fn args, s.inst ≠ .call fn args) :
+    (∀ fr1 m1, lstep fr m = .next fr1 m1 → ∃ fr1', lstep fr' m = .next fr1' m1 ∧
+      SCore f g fi cert syms fr1 fr1' bi (k + 1) (k' + 1) ∧ fr1'.body = ts ∧ fr1.body = ss) ∧
+    (∀ c, lstep fr m = .trap c → lstep fr' m = .trap c) := by
+  obtain ⟨b, hb, h1, -, -⟩ := h.invf.block
+  obtain ⟨b', hb', h2, -, -⟩ := h.invg.block
+  have hs0 := hs; have ht0 := ht
+  rw [h1] at hs; rw [h2] at ht
+  obtain ⟨hsk, hss, -⟩ := drop_eq_cons hs
+  obtain ⟨htk, hts, -⟩ := drop_eq_cons ht
+  have hops : ∀ x ∈ operands s.inst, fr'.regs (cert.subst.step x) = fr.regs x :=
+    fun x hx => (h.agree x (hS.wff.uses bi b hb k s hsk x hx)).2.1
+  have hglob : fr'.func.globals = fr.func.globals := by
+    rw [h.invf.func, h.invg.func, hS.globals]
+  have hev := evalInst_rename (mem := m) hglob h.slots hops
+  have hnc' := mapOperands_not_call (σ := cert.subst.step) hnc
+  rw [lstep_inst hs0 hnc, lstep_inst ht0 hnc']
+  refine ⟨fun fr1 m1 hl => ?_, fun c hl => ?_⟩
+  · cases he : evalInst fr m s.inst with
+    | trap c => rw [he] at hl; cases hl
+    | stuck msg => rw [he] at hl; cases hl
+    | ok p =>
+      obtain ⟨vals, m1'⟩ := p
+      rw [he] at hl
+      simp only [LRes.ofRes] at hl
+      split at hl
+      · rename_i regs hset
+        cases hl
+        have he' := Res.norm_eq_ok hev he
+        obtain ⟨regs', hset'⟩ := setMany_len (r := fr'.regs) (xs := s.results) (vs := vals)
+          (setMany_spec hset).1
+        simp only [renStmt] at he' ⊢
+        rw [he']
+        simp only [LRes.ofRes, hset']
+        refine ⟨_, rfl, ⟨?_, ?_, ?_, h.slots⟩, by first | rfl | trivial, by first | rfl | trivial⟩
+        · exact Inv.results hS.wff h.invf hs0 (fun ts0 h0 => evalInst_types he h0)
+            (fun hp => by
+              obtain ⟨-, a, rfl, ha⟩ := evalInst_pure hp he
+              exact ⟨a, rfl, by rw [evalNode_mem (m := m) hp (by rw [hm]; rfl)]; exact ha⟩) hset
+        · refine Inv.results hS.wfg h.invg ht0 (fun ts0 h0 => evalInst_types he' h0)
+            (fun hp => ?_) hset'
+          obtain ⟨-, a, rfl, ha⟩ := evalInst_pure hp he'
+          exact ⟨a, rfl, by rw [evalNode_mem (m := m) hp (by rw [hm]; rfl)]; exact ha⟩
+        · exact agree_bind hS h.agree hb hb' hsk (by rw [htk]; rfl) hσ hset hset'
+      · cases hl
+  · cases he : evalInst fr m s.inst with
+    | ok p => rw [he] at hl; obtain ⟨_, _⟩ := p; simp only [LRes.ofRes] at hl; split at hl <;> cases hl
+    | stuck msg => rw [he] at hl; cases hl
+    | trap c' =>
+      rw [he] at hl; cases hl
+      simp only [renStmt]
+      rw [Res.norm_eq_trap hev he]; rfl
+
+/-- A source statement whose results the target already holds: the source steps alone. -/
+theorem SCore.srcOnly {fr fr' : Frame} {bi k k' : Nat} {m : Mem} {s : Stmt} {ss : List Stmt}
+    {vals : List Val} {regs : Regs} (h : SCore f g fi cert syms fr fr' bi k k')
+    (hm : m.symbols = syms) (hs : fr.body = s :: ss) (hnc : ∀ fn args, s.inst ≠ .call fn args)
+    (hev : evalInst fr m s.inst = .ok (vals, m)) (hset : fr.regs.setMany s.results vals = some regs)
+    (hres : ∀ r ∈ s.results, Avail (wfData g (gInfo fi cert)) bi k' (cert.subst.step r) ∧
+      fr'.regs (cert.subst.step r) = regs r) :
+    lstep fr m = .next { fr with regs, body := ss } m ∧
+      SCore f g fi cert syms { fr with regs, body := ss } fr' bi (k + 1) k' := by
+  obtain ⟨b, hb, h1, -, -⟩ := h.invf.block
+  have hs0 := hs
+  rw [h1] at hs
+  obtain ⟨hsk, -, -⟩ := drop_eq_cons hs
+  refine ⟨by rw [lstep_inst hs0 hnc]; simp only [hev, LRes.ofRes, hset], ⟨?_, h.invg, ?_, h.slots⟩⟩
+  · exact Inv.results hS.wff h.invf hs0 (fun ts0 h0 => evalInst_types hev h0)
+      (fun hp => by
+        obtain ⟨-, a, rfl, ha⟩ := evalInst_pure hp hev
+        exact ⟨a, rfl, by rw [evalNode_mem (m := m) hp (by rw [hm]; rfl)]; exact ha⟩) hset
+  · intro v hv
+    rcases avail_succ hS.wff hb hsk hv with hr | hv'
+    · obtain ⟨hav, heq⟩ := hres v hr
+      refine ⟨hav, heq, ?_⟩
+      intro d t hd
+      rw [site_result hS.wff hb hsk hr] at hd
+      simp only [Option.some.injEq, Prod.mk.injEq] at hd
+      obtain ⟨rfl, -⟩ := hd
+      obtain ⟨d', t', hd', hva⟩ := hav
+      refine ⟨d', t', hd', ?_⟩
+      rcases hva with ⟨rfl, -⟩ | ⟨-, ha⟩
+      · exact .refl _
+      · exact ha
+    · have hnr := avail_not_result hS.wff hb hsk hv'
+      obtain ⟨hav, heq, hsa⟩ := h.agree v hv'
+      refine ⟨hav, ?_, hsa⟩
+      simp only
+      rw [((setMany_spec hset).2 _).1 hnr, heq]
+
+end
+
 end Opt
