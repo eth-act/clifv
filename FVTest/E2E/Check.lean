@@ -2,6 +2,7 @@ import FV.Backend
 import FV.Backend.Proof.DriverCheck
 import FV.Backend.Proof.PrepareCheck
 import FV.Backend.Proof.RegallocCover
+import FVTest.Opt.Common
 
 /-!
 # The M7 validators on real code (`lake exe lean-e2e-check [FILE.clif...]`)
@@ -15,6 +16,9 @@ It also decides `formsCoveredB` (the `FormsCovered` premise of `E2E.backend_corr
 every prepared VCode and reports the number of covered functions and, for the others, the
 uncovered instruction forms (constructor and operation) with their counts. An uncovered
 function is not rejected: it is compiled but outside the end-to-end theorem.
+
+With `--opt [--opt-* options]`, the functions are first optimised by the mid-end
+(`Opt.optimize`), i.e. the validators run on the code `lean-backend --opt` compiles.
 -/
 
 open Backend Backend.Proof.Driver
@@ -115,6 +119,9 @@ def detail (f : Clif.Function) (vc : VCode) : String :=
         | _, _, _ => none
 
 def main (args : List String) : IO UInt32 := do
+  let (optCfg, args) ← match Opt.parseOptArgs args with
+    | .ok r => pure r
+    | .error e => throw (IO.userError e)
   let files ← if args.isEmpty then defaultFiles else pure args
   let mut ok := 0
   let mut bad := 0
@@ -130,6 +137,7 @@ def main (args : List String) : IO UInt32 := do
   let mut forms : Std.HashMap String Nat := {}
   for file in files do
     let pf := Clif.parseFile (← IO.FS.readFile file)
+    let pf := match optCfg with | some c => Opt.optimizeParsedFile c pf | none => pf
     for p in pf.funcs do
       let .ok f := p.func | continue
       let t0 ← IO.monoMsNow

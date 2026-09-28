@@ -1,8 +1,9 @@
 import FV.Backend
+import FVTest.Opt.Common
 
 /-!
 `lake exe lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>]
-[--dump <dir>] [--regalloc regalloc2|stack|regalloc2-small]`: compile every function of a `.clif` file with the
+[--dump <dir>] [--regalloc regalloc2|stack|regalloc2-small] [--opt [--opt-* options]]`: compile every function of a `.clif` file with the
 Lean backend (`FV/Backend.lean`). Register allocation: `regalloc2` (default; the
 `lean-regalloc` oracle, `$LEAN_REGALLOC` or `rust/target/release/lean-regalloc`, every
 allocation validated by the Lean checker, `docs/contracts/regalloc.md`), `stack` (the
@@ -16,13 +17,14 @@ into `dir` (`--dump`, the schema of `clif2obj`'s dumps). Functions the backend d
 support are listed on stderr (and in the table), as is every fired rule outside the
 emitter-subset closure (`Isle.Aarch64.Closure.rules`). Exit status 0 unless the arguments are
 wrong, the input cannot be read, or encoding fails (an encoder or backend bug; the message
-names the function and instruction).
+names the function and instruction). With `--opt`, every function is first optimised by the
+Lean mid-end (`Opt.optimize`, `docs/contracts/midend.md`; options in `FVTest/Opt/Common.lean`).
 -/
 
 open Backend
 
 def usage : String :=
-  "usage: lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>] [--dump <dir>] [--regalloc regalloc2|stack|regalloc2-small]"
+  "usage: lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>] [--dump <dir>] [--regalloc regalloc2|stack|regalloc2-small] [--opt]"
 
 def closureIds : Std.HashSet Isle.RuleId :=
   Isle.Aarch64.Closure.rules.foldl (fun s r => s.insert r.rule) {}
@@ -32,12 +34,15 @@ structure Opts where
   rules : Option String := none
   dump : Option String := none
   regalloc : String := "regalloc2"
+  opt : Option Opt.Config := none
 
 def run (input output : String) (o : Opts) : IO UInt32 := do
   let src ← IO.FS.readFile input
   let some alloc ← Allocator.ofName? o.regalloc
     | do IO.eprintln s!"lean-backend: unknown allocator {o.regalloc}"; return 2
-  let fa ← compileFileIO alloc (Clif.parseFile src)
+  let pf := Clif.parseFile src
+  let pf := match o.opt with | some c => Opt.optimizeParsedFile c pf | none => pf
+  let fa ← compileFileIO alloc pf
   if output.endsWith ".o" || o.dump.isSome then
     match fa.layout with
     | .error e =>
@@ -72,9 +77,12 @@ def main (args : List String) : IO UInt32 := do
     | "--dump" :: d :: rest => opts { o with dump := some d } rest
     | "--regalloc" :: a :: rest => opts { o with regalloc := a } rest
     | _ => none
+  let (optCfg, args) ← match Opt.parseOptArgs args with
+    | .ok r => pure r
+    | .error e => do IO.eprintln s!"lean-backend: {e}"; return 2
   match args with
   | i :: out :: rest =>
-    match opts {} rest with
+    match opts { opt := optCfg } rest with
     | some o => run i out o
     | none => do IO.eprintln usage; return 2
   | _ => do IO.eprintln usage; return 2

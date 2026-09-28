@@ -1,17 +1,20 @@
 import FV.Backend
 import FV.Arm
+import FVTest.Opt.Common
 
 /-!
 # Running Lean-backend code on the Lean Arm model (seed of M7's execution relation)
 
-`lake exe lean-backend-armrun [--regalloc regalloc2|stack|regalloc2-small] [--bins DIR] [FILE.clif...]`
+`lake exe lean-backend-armrun [--regalloc regalloc2|stack|regalloc2-small] [--bins DIR] [--opt [--opt-* options]] [FILE.clif...]`
 (default: every `corpus/clif/*.clif`, regalloc2). For every function of the files that makes no
 calls, no memory accesses (other than its own frame) and no `symbol_value`, and has `; run:`
 commands:
 
 1. compile it alone with the Lean backend (`Backend.compileFunctionWith`, the chosen
    allocator); with `--bins DIR`, take Cranelift's code for it instead (`DIR/NAME.bin`, as
-   `clif2obj` dumps it) to measure Cranelift on the same model;
+   `clif2obj` dumps it) to measure Cranelift on the same model; with `--opt`, the Lean backend
+   compiles the function optimised by the mid-end (`Opt.optimize`), still compared with
+   `Clif.run` of the unoptimised function;
 2. encode it with the Lean encoder (`FnAsm.layout`, no assembler; the code has no
    relocations: branches and jump tables are PC-relative within the function);
 3. load the words at `codeBase` into an `Arm.ArmState` (`set_program`), set `pc`, the
@@ -132,9 +135,9 @@ def codeOf (src : Source) (f : Clif.Function) :
       BitVec.ofNat 32 ((List.range 4).foldl (fun acc j => acc + bytes[4 * i + j]!.toNat * 2 ^ (8 * j)) 0)
     pure (.ok (words, none))
 
-def checkFunction (src : Source) (p : Clif.Program) (f : Clif.Function) (t : Tally) :
-    IO Tally := do
-  let (code, traps) ← match ← codeOf src f with
+def checkFunction (src : Source) (opt : Clif.Function → Clif.Function) (p : Clif.Program)
+    (f : Clif.Function) (t : Tally) : IO Tally := do
+  let (code, traps) ← match ← codeOf src (opt f) with
     | .ok r => pure r
     | .error e => do
       IO.println s!"%{f.name}: not compiled ({e})"
@@ -179,6 +182,12 @@ def main (args : List String) : IO UInt32 := do
       | none => throw (IO.userError s!"unknown allocator {a}")
     | "--bins" :: d :: rest => opts (.bins d) rest
     | rest => pure (src, rest)
+  let (optCfg, args) ← match Opt.parseOptArgs args with
+    | .ok r => pure r
+    | .error e => throw (IO.userError e)
+  let opt : Clif.Function → Clif.Function := match optCfg with
+    | some c => (Opt.optimize · c)
+    | none => id
   let (src, args) ← opts (.lean (.regalloc2 (← defaultRegallocBin))) args
   let files ← if args.isEmpty then do
       let entries ← System.FilePath.readDir "corpus/clif"
@@ -192,6 +201,6 @@ def main (args : List String) : IO UInt32 := do
     let p : Clif.Program := { header := pf.header, funcs := fs }
     for f in fs do
       if selfContained f && f.runs.any (·.func == f.name) then
-        t ← checkFunction src p f t
+        t ← checkFunction src opt p f t
   IO.println s!"functions {t.funcs} (not compiled {t.skipped}), runs agree {t.agree}, disagree {t.disagree}, executed {t.steps}"
   return if t.disagree == 0 && t.funcs > 0 then 0 else 1
