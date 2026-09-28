@@ -5,6 +5,7 @@ import FV.Opt.Licm
 import FV.Opt.HandRules
 import FV.Compile.Subset
 import FV.Isle.Opt.Simplify
+import FV.Opt.Validate
 
 /-!
 # `Opt.optimize`: the mid-end pipeline (unproven; `docs/contracts/midend.md`)
@@ -101,6 +102,8 @@ def optimizeReport (cfg : Config) (f0 : Function) : Function × Report := Id.run
     let enabled := match stage with
       | "simplify" => cfg.simplify | "gvn" => cfg.gvn | "dce" => cfg.dce | _ => cfg.licm
     if !enabled then continue
+    -- the renaming `editOk` validates GVN, DCE and LICM with
+    let mut sub : ValueId → ValueId := id
     let g' ← match stage with
       | "simplify" =>
         let (g', s) := simplify cfg.rules.fn cfg.rules.skeletonFn allowed (skelAllowedIn f) cfg.rematConst g info
@@ -110,9 +113,10 @@ def optimizeReport (cfg : Config) (f0 : Function) : Function × Report := Id.run
                       fired := s.fired.fold (fun m k n => m.insert k ((m.get? k).getD 0 + n)) r.fired }
         pure g'
       | "gvn" =>
-        let (g', n) := gvn g info (fun i => cfg.rematConst && match i with
+        let (g', n, s) := gvnFull g info (fun i => cfg.rematConst && match i with
           | .iconst .. => true
           | _ => false)
+        sub := s.find
         r := { r with gvnRemoved := r.gvnRemoved + n }
         pure g'
       | "dce" =>
@@ -124,7 +128,9 @@ def optimizeReport (cfg : Config) (f0 : Function) : Function × Report := Id.run
         r := { r with hoisted := r.hoisted + n }
         pure g'
     match check g' with
-    | .ok i => g := g'; info := i
+    | .ok i =>
+      if stage == "simplify" || editOk sub g g' info i then g := g'; info := i
+      else r := { r with passError := some (stage, "validator rejected the output") }; stop := true
     | .error e => r := { r with passError := some (stage, e) }; stop := true
   return (g, { r with sizeAfter := instCount g })
 

@@ -110,7 +110,7 @@ structure Wf (f : Function) (W : WfData) : Prop where
 def wfData (f : Function) (info : Info) : WfData where
   idom := info.cfg.idom
   rank b := (info.cfg.rpoNum[b]?.join).getD 0
-  dm v := ((defSites f).foldl (fun m (v, s) => m.insert v s) ({} : Std.HashMap ValueId (Nat × Nat))).get? v
+  dm v := (defMap f).get? v
   tm v := info.types.get? v
   index id := info.cfg.index.get? id
 

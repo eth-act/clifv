@@ -76,6 +76,11 @@ def defSites (f : Function) : List (ValueId × Nat × Nat) :=
     b.params.map (fun p => (p.1, i, 0)) ++
       b.body.zipIdx.flatMap fun (st, j) => st.results.map fun r => (r, i, j + 1)
 
+/-- Definition site of every value (the last one in `defSites` order; `wfCert` checks that
+there is only one). -/
+def defMap (f : Function) : Std.HashMap ValueId (Nat × Nat) :=
+  (defSites f).foldl (fun m (v, s) => m.insert v s) {}
+
 /-- Is `a` an ancestor of `b` (reflexive) in the tree `idom`, within `fuel` steps up? -/
 def ancB (idom : Array (Option Nat)) : Nat → Nat → Nat → Bool
   | 0, a, b => a == b
@@ -94,8 +99,7 @@ def availB (dm : ValueId → Option (Nat × Nat)) (anc : Nat → Nat → Bool) (
 /-- The declarative well-formedness certificate (module section doc). -/
 def wfCert (f : Function) (cfg : Cfg) (types : Std.HashMap ValueId Ty) : Bool :=
   let blocks := f.blocks
-  let dmap : Std.HashMap ValueId (Nat × Nat) :=
-    (defSites f).foldl (fun m (v, s) => m.insert v s) {}
+  let dmap := defMap f
   let dm := fun v => dmap.get? v
   let anc := ancB cfg.idom cfg.idom.size
   let rank := fun b => (cfg.rpoNum[b]?.join).getD 0
