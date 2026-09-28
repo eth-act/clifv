@@ -192,6 +192,8 @@ def imm64OfBits {w : Nat} (imm : BitVec w) : Int := Rust.asI64 imm.toNat
 
 /-- A node as Cranelift's `InstructionData` (`none`: no form here; not presented). -/
 def ofInst : Clif.Inst → Option V
+  -- Cranelift has no `iconst.i128` (its `Imm64` cannot hold the value): not presented.
+  | .iconst .i128 _ => none
   | .iconst _ imm =>
     some (idata VIdx.«InstructionData».«UnaryImm» [opcode VIdx.«Opcode».«Iconst», .int (imm64OfBits imm)])
   | .unary op _ x => some (idata VIdx.«InstructionData».«Unary» [opcode (unaryIdx op), .value x])
@@ -395,27 +397,17 @@ def makeInst (st : St σ) (ty : CTy) (d : V) : V × St σ :=
     (.value n, { st with inner := s' })
   | none => (.poison ty, st)
 
-/-- Extern constructors, by Rust function name: `none` is a failing `Option`. -/
-def ctorFn (fn : String) (args : List V) (st : St σ) : R (Option (V × St σ)) := do
-  let ok (v : V) : R (Option (V × St σ)) := pure (some (v, st))
+/-- The extern constructors that keep the state (they may read it), by Rust function name:
+`none` is a failing `Option`. -/
+def ctorPure (fn : String) (args : List V) (st : St σ) : R (Option V) := do
+  let ok (v : V) : R (Option V) := pure (some v)
   let int (i : Int) := ok (.int i)
   let bool (b : Bool) := ok (.bool b)
-  let opt (o : Option Int) : R (Option (V × St σ)) := pure (o.map fun i => (.int i, st))
+  let opt (o : Option Int) : R (Option V) := pure (o.map .int)
   match fn, args with
   -- `src/opts.rs`
-  | "make_inst_ctor", [t, d] => do
-    let (v, st') := makeInst G st (← t.ty?) d
-    pure (some (v, st'))
   | "value_array_2_ctor", [a, b] => ok (.values [a, b])
   | "value_array_3_ctor", [a, b, c] => ok (.values [a, b, c])
-  | "remat", [v] =>
-    match v with
-    | .value n => pure (some (v, { st with remat := n :: st.remat }))
-    | _ => ok v
-  | "subsume", [v] =>
-    match v with
-    | .value n => pure (some (v, { st with subsumed := n :: st.subsumed }))
-    | _ => ok v
   | "u64_bswap16", [n] => int (Rust.bswap 2 (← n.int?))
   | "u64_bswap32", [n] => int (Rust.bswap 4 (← n.int?))
   | "u64_bswap64", [n] => int (Rust.bswap 8 (← n.int?))
@@ -468,15 +460,15 @@ def ctorFn (fn : String) (args : List V) (st : St σ) : R (Option (V × St σ)) 
   | "ty_bits", [t] => int (← panics (Rust.tyBits (← t.ty?)))
   | "ty_bits_u64", [t] => int (← t.ty?).bits
   | "lane_type", [t] => ok (.ty (← t.ty?).laneType)
-  | "ty_half_width", [t] => pure ((← t.ty?).halfWidth?.map fun t => (.ty t, st))
+  | "ty_half_width", [t] => pure ((← t.ty?).halfWidth?.map .ty)
   | "ty_equal", [a, b] => bool ((← a.ty?) == (← b.ty?))
   | "intcc_swap_args", [c] => ok (cc (Rust.intccSwapArgs (← c.cc?)))
   | "intcc_complement", [c] => ok (cc (Rust.intccComplement (← c.cc?)))
-  | "signed_cond_code", [c] => pure ((Rust.signedCondCode (← c.cc?)).map fun c => (cc c, st))
+  | "signed_cond_code", [c] => pure ((Rust.signedCondCode (← c.cc?)).map cc)
   | "u64_uextend_imm64", [t, x] => int (← panics (Rust.u64UextendImm64 (← t.ty?) (← x.int?)))
   | "checked_add_with_type", [t, a, b] =>
     opt (← panics (Rust.checkedAddWithType (← t.ty?) (← a.int?) (← b.int?)))
-  | "ty_vector_not_float", [t] => pure ((Rust.tyVectorNotFloat (← t.ty?)).map fun t => (.ty t, st))
+  | "ty_vector_not_float", [t] => pure ((Rust.tyVectorNotFloat (← t.ty?)).map .ty)
   | "pack_value_array_2", [a, b] => ok (.values [a, b])
   | "pack_block_array_2", [a, b] => ok (.values [a, b])
   -- `src/opts.rs`: skeleton instructions
@@ -487,7 +479,7 @@ def ctorFn (fn : String) (args : List V) (st : St σ) : R (Option (V × St σ)) 
   | "block_call_block", [.blockCall b] => int b.block
   | "just_trap_block", [b] => do
     let b ← b.int?
-    pure ((G.trapBlock st.inner b.toNat).map fun c => (.trapCode c, st))
+    pure ((G.trapBlock st.inner b.toNat).map .trapCode)
   | "pack_value_array_3", [a, b, c] => ok (.values [a, b, c])
   -- `<OUT_DIR>/isle_numerics.rs`
   | "i32_lt", [a, b] => bool ((← a.int?) < (← b.int?))
@@ -537,6 +529,23 @@ def ctorFn (fn : String) (args : List V) (st : St σ) : R (Option (V × St σ)) 
   | "u32_into_i64", [a] => ok a
   | "u32_into_u64", [a] => ok a
   | _, _ => throw s!"unmodeled extern constructor {fn}"
+
+/-- Extern constructors, by Rust function name: `none` is a failing `Option`. Only
+`make_inst` changes the caller's state; `remat`/`subsume` record their value. -/
+def ctorFn (fn : String) (args : List V) (st : St σ) : R (Option (V × St σ)) :=
+  match fn, args with
+  | "make_inst_ctor", [t, d] => do
+    let (v, st') := makeInst G st (← t.ty?) d
+    pure (some (v, st'))
+  | "remat", [v] =>
+    match v with
+    | .value n => pure (some (v, { st with remat := n :: st.remat }))
+    | _ => pure (some (v, st))
+  | "subsume", [v] =>
+    match v with
+    | .value n => pure (some (v, { st with subsumed := n :: st.subsumed }))
+    | _ => pure (some (v, st))
+  | _, _ => do return (← ctorPure G fn args st).map (·, st)
 
 /-- Extern (single) extractors, by Rust function name: `none` is no match. -/
 def extractFn (fn : String) (v : V) (st : St σ) : R (Option (List V)) := do
@@ -649,9 +658,10 @@ def cfg : Config := { fuel := 1000000 }
 /-- Run `simplify` on the e-class `v`: the rewrite candidates (e-class, `subsume`d during this
 call) in rule order, the names of the rules that produced them (same order), and the caller's
 state after the `make` calls. `.error` only for interpreter errors (an unmodeled helper, a
-Rust panic, fuel). -/
+Rust panic, fuel). Candidates of rules outside `allow` (rule ids) are dropped; those rules
+still run (their `make` calls stay in the state). -/
 def simplify {σ : Type} (enodes : σ → Nat → List Clif.Inst) (typeOf : σ → Nat → Option Clif.Ty)
-    (make : σ → Clif.Inst → Nat × σ) (st : σ) (v : Nat) :
+    (make : σ → Clif.Inst → Nat × σ) (st : σ) (v : Nat) (allow : RuleId → Bool := fun _ => true) :
     Except String (List (Nat × Bool) × List String × σ) :=
   let G : EGraph σ := { enodes, typeOf, make }
   match Interp.runMultiTerm program (sem G) cfg T.«simplify» [.value v] { inner := st } with
@@ -659,16 +669,21 @@ def simplify {σ : Type} (enodes : σ → Nat → List Clif.Inst) (typeOf : σ �
   | .ok r =>
     let cands := r.values.filterMap fun (rid, w) =>
       match w with
-      | .value n => some ((n, r.state.subsumed.contains n), (program.rule? rid).elim s!"<rule {rid}>" (·.name))
+      | .value n =>
+        if allow rid then
+          some ((n, r.state.subsumed.contains n), (program.rule? rid).elim s!"<rule {rid}>" (·.name))
+        else none
       | _ => none
     .ok (cands.map (·.1), cands.map (·.2), r.state.inner)
 
 /-- Run `simplify_skeleton` on the side-effecting instruction `i`: the simplifications in rule
 order, the names of the rules that produced them (same order), and the caller's state after
-the `make` calls. `trapBlock` is `just_trap_block`. -/
+the `make` calls. `trapBlock` is `just_trap_block`. Results of rules outside `allow` are
+dropped. -/
 def simplifySkeleton {σ : Type} (enodes : σ → Nat → List Clif.Inst)
     (typeOf : σ → Nat → Option Clif.Ty) (make : σ → Clif.Inst → Nat × σ)
-    (trapBlock : σ → Clif.BlockId → Option Clif.TrapCode) (st : σ) (i : SkelInst) :
+    (trapBlock : σ → Clif.BlockId → Option Clif.TrapCode) (st : σ) (i : SkelInst)
+    (allow : RuleId → Bool := fun _ => true) :
     Except String (List SkelSimp × List String × σ) :=
   let G : EGraph σ := ⟨enodes, typeOf, make, trapBlock⟩
   match Interp.runMultiTerm program (sem G) cfg T.«simplify_skeleton» [.inst (some i)]
@@ -676,7 +691,9 @@ def simplifySkeleton {σ : Type} (enodes : σ → Nat → List Clif.Inst)
   | .error e => .error (reprStr e)
   | .ok r =>
     let res := r.values.filterMap fun (rid, w) =>
-      (skelSimp? w).map fun s => (s, (program.rule? rid).elim s!"<rule {rid}>" (·.name))
+      if allow rid then
+        (skelSimp? w).map fun s => (s, (program.rule? rid).elim s!"<rule {rid}>" (·.name))
+      else none
     .ok (res.map (·.1), res.map (·.2), r.state.inner)
 
 end Isle.Opt
