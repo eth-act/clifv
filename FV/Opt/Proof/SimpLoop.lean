@@ -478,4 +478,140 @@ theorem skelStmt_spec (hS : SimplifySound rules) (hK : SkeletonSound skel) (hE :
 
 end Skel
 
+/-! ## Terminators -/
+
+/-- Statements that are pure nodes. -/
+def PureOut (out : Array Stmt) : Prop := ∀ t ∈ out.toList, isPure t.inst = true
+
+section Mat
+variable {cfg : Cfg} {allowed : Inst → Bool} {bi : Nat}
+
+theorem materialize_pure : ∀ fuel st out x x' st' out', PureOut out →
+    materialize cfg allowed bi fuel (st, out) x = some (x', st', out') → PureOut out' := by
+  intro fuel
+  induction fuel with
+  | zero => intro st out x x' st' out' _ h; simp [materialize] at h
+  | succ fuel ih =>
+    intro st out x x' st' out' hp h
+    have hclone : ∀ st out x x' st' out', PureOut out →
+        materialize.clone cfg allowed bi fuel st out x = some (x', st', out') → PureOut out' := by
+      intro st out x x' st' out' hp hc
+      rw [materialize.clone] at hc
+      split at hc
+      · cases hc
+      rename_i n hx
+      split at hc
+      · cases hc
+      rename_i hchk
+      simp only [Bool.or_eq_true, Bool.not_eq_true', not_or] at hchk
+      have hpn : isPure n = true := by
+        have := hchk.1.2; simp only [SState.typedNode, Bool.and_eq_true] at this
+        cases hh : isPure n <;> simp_all
+      let I : List ValueId → SState × Array Stmt × Array ValueId → Prop := fun _ acc => PureOut acc.2.1
+      split at hc
+      · cases hc
+      · rename_i st2 out2 ops hf
+        have hI := foldlM_option_inv _ I (by
+          intro pre a c c' hc0 hg
+          obtain ⟨st0, out0, ops0⟩ := c
+          simp only at hg
+          split at hg
+          · cases hg
+          · rename_i y' st1 out1 hm
+            cases hg
+            exact ih _ _ _ _ _ _ hc0 hm) _ [] _ _ hp hf
+        simp only at hc
+        split at hc
+        · cases hc
+        split at hc
+        all_goals
+          simp only [Option.some.injEq, Prod.mk.injEq] at hc
+          obtain ⟨-, -, rfl⟩ := hc
+          intro t ht
+          simp only [Array.toList_push, List.mem_append, List.mem_singleton] at ht
+          rcases ht with ht | rfl
+          · exact hI t ht
+          · simp only [renameOps, isPure_mapOperands]; exact hpn
+    rw [materialize] at h
+    split at h
+    · split at h
+      · simp only [Option.some.injEq, Prod.mk.injEq] at h
+        obtain ⟨-, -, rfl⟩ := h; exact hp
+      · exact hclone _ _ _ _ _ _ hp h
+    · exact hclone _ _ _ _ _ _ hp h
+
+theorem materializeAll_pure {st : SState} {xs : List ValueId} {m : List (ValueId × ValueId)}
+    {st' : SState} {out : Array Stmt} (h : materializeAll cfg allowed bi st xs = some (m, st', out)) :
+    PureOut out := by
+  unfold materializeAll at h
+  let I : List ValueId → List (ValueId × ValueId) × SState × Array Stmt → Prop :=
+    fun _ acc => PureOut acc.2.2
+  exact foldlM_option_inv _ I (by
+    intro pre a c c' hc hg
+    obtain ⟨m0, st0, out0⟩ := c
+    simp only [bind, Option.bind] at hg
+    split at hg
+    · cases hg
+    · rename_i r hr
+      obtain ⟨x', st1, out1⟩ := r
+      simp only [pure, Option.some.injEq] at hg
+      subst hg
+      exact materialize_pure _ _ _ _ _ _ _ hc hr) xs [] _ _ (fun t ht => by simp at ht) h
+
+end Mat
+
+theorem effsOf_append (a b : Array Stmt) : effsOf (a ++ b) = effsOf a ++ effsOf b := by
+  simp [effsOf, List.filterMap_append]
+
+theorem effsOf_pure {a : Array Stmt} (h : PureOut a) : effsOf a = [] := by
+  simp only [effsOf, List.filterMap_eq_nil_iff]
+  intro t ht; simp [h t ht]
+
+theorem BrRefines.refl (tb : BlockId → Option TrapCode) (A : Res (BlockId × List Val × Mem)) :
+    BrRefines tb A A := ⟨fun _ _ _ h => .inl h, fun _ h => h⟩
+
+theorem termEval_rename {σ : ValueId → ValueId} {F F' : Frame} {M : Mem} {t : Terminator}
+    (h : ∀ x ∈ termOperands t, F'.regs (σ x) = F.regs x) :
+    (termEval F' M (mapTerm σ t)).norm = (termEval F M t).norm := by
+  have hg : ∀ x ∈ termOperands t, (F'.get (σ x)).norm = (F.get x).norm := by
+    intro x hx; simp only [Frame.get, h x hx, Res.norm_ofOption]
+  cases t with
+  | jump d =>
+    simp only [termEval, mapTerm, mapBlockCall, Res.norm_bind, Res.norm_pure]
+    rw [getMany_rename (fun x hx => h x (by simp [termOperands, hx]))]
+  | brif c th el =>
+    simp only [termEval, mapTerm, Res.norm_bind, Res.norm_pure]
+    rw [hg c (by simp [termOperands])]
+    cases (F.get c).norm with
+    | ok cv =>
+      simp only [Res.ok_bind]
+      have : (if Sem.truthy cv.bits then mapBlockCall σ th else mapBlockCall σ el) =
+          mapBlockCall σ (if Sem.truthy cv.bits then th else el) := by split <;> rfl
+      rw [this]
+      simp only [mapBlockCall]
+      rw [getMany_rename (fun x hx => h x (by
+        simp only [termOperands, List.mem_cons, List.mem_append]
+        split at hx <;> simp [hx]))]
+    | _ => rfl
+  | brTable x d tbl =>
+    simp only [termEval, mapTerm, Res.norm_bind, Res.norm_pure]
+    rw [hg x (by simp [termOperands])]
+    cases (F.get x).norm with
+    | ok xv =>
+      simp only [Res.ok_bind]
+      have hsel : (tbl.map (mapBlockCall σ))[xv.toNat]?.getD (mapBlockCall σ d) =
+          mapBlockCall σ (tbl[xv.toNat]?.getD d) := by
+        rw [List.getElem?_map]; cases tbl[xv.toNat]? <;> rfl
+      rw [hsel]
+      simp only [mapBlockCall]
+      rw [getMany_rename (fun y hy => h y (by
+        simp only [termOperands, List.mem_cons, List.mem_append, List.mem_flatMap]
+        cases hq : tbl[xv.toNat]? with
+        | none => rw [hq] at hy; exact .inl (.inr hy)
+        | some q => rw [hq] at hy; exact .inr ⟨q, List.mem_of_getElem? hq, hy⟩))]
+    | _ => rfl
+  | ret xs => rfl
+  | returnCall fn args => rfl
+  | trap c => rfl
+
 end Opt
