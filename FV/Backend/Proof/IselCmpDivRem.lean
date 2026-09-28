@@ -149,6 +149,133 @@ theorem srem_finish (hR : Refines F isem) (hMR : MRStable F MR) (hw : ty.width �
 
 end Finish
 
+/-! ## `sdiv` by a safe constant -/
+
+theorem ctor_safe_divisor_iff (ctx : Ctx) (st st' : LState) (t : CTy) (i : Int) (v : V) :
+    externCtor ctx T.safe_divisor_from_imm64 [.ty t, .int i] st = .ok (v, st') ↔
+      (u64 i % 2 ^ (t.bytes * 8) ≠ 0 ∧ u64 i % 2 ^ (t.bytes * 8) ≠ 2 ^ (t.bytes * 8) - 1) ∧
+        v = .int ((u64 i % 2 ^ (t.bytes * 8) : Nat) : Int) ∧ st' = st := by
+  have e : externCtor ctx T.safe_divisor_from_imm64 [.ty t, .int i] st =
+    (if (u64 i % 2 ^ (t.bytes * 8) == 0 || u64 i % 2 ^ (t.bytes * 8) == 2 ^ (t.bytes * 8) - 1) then .fail
+     else .ok (.int ((u64 i % 2 ^ (t.bytes * 8) : Nat) : Int), st)) := rfl
+  rw [e]
+  split
+  · rename_i h
+    simp only [Bool.or_eq_true, beq_iff_eq] at h
+    simp only [reduceCtorEq, false_iff, not_and]
+    intro h1; omega
+  · rename_i h
+    simp only [Bool.or_eq_true, beq_iff_eq, not_or] at h
+    simp only [ExtResult.ok.injEq, Prod.mk.injEq]
+    constructor
+    · rintro ⟨rfl, rfl⟩; exact ⟨h, rfl, rfl⟩
+    · rintro ⟨-, rfl, rfl⟩; exact ⟨rfl, rfl⟩
+
+theorem sdiv_trap {n : Nat} {a b : BitVec n} {c : Clif.TrapCode} (h : Clif.Sem.div .sdiv a b = .error c) :
+    (b = 0#n ∧ c = .intDivz) ∨ (b ≠ 0#n ∧ a = BitVec.intMin n ∧ b = BitVec.allOnes n ∧ c = .intOvf) := by
+  simp only [Clif.Sem.div, Clif.Sem.sdiv] at h
+  split at h
+  · cases h; exact .inl ⟨‹_›, rfl⟩
+  · split at h
+    · cases h; rename_i h1 h2; exact .inr ⟨h1, h2.1, h2.2, rfl⟩
+    · cases h
+
+theorem sdiv_ok {n : Nat} {a b q : BitVec n} (h : Clif.Sem.div .sdiv a b = .ok q) :
+    b ≠ 0#n ∧ ¬ (a = BitVec.intMin n ∧ b = BitVec.allOnes n) ∧ q = a.sdiv b := by
+  simp only [Clif.Sem.div, Clif.Sem.sdiv] at h
+  split at h
+  · cases h
+  · split at h
+    · cases h
+    · cases h; exact ⟨‹_›, ‹_›, rfl⟩
+
+/-- **A safe `iconst` divisor** (`safe_divisor_from_imm64` then `imm … Sign`): at run time the
+divisor is neither zero nor all ones, and the `imm` register holds it as a signed operand. -/
+theorem safe_divisor_sem {F : BitVec 64 → Prop} {isem : Sem} {ctx : Ctx} {y w j : Nat}
+    (hw : w = 8 ∨ w = 16 ∨ w = 32 ∨ w = 64) {info : IInfo} {ity : Clif.Ty} {imm : BitVec ity.width}
+    (hj : ctx.defInst? y = some j) (hi : ctx.insts[j]? = some info)
+    (hcl : info.clif = some (.iconst ity imm)) (hety : eTy ity = true) {s s' : LState} {v : V}
+    (hne : u64 (imm64OfIconst ity imm) % 2 ^ ((CTy.int w).bytes * 8) ≠ 0 ∧
+      u64 (imm64OfIconst ity imm) % 2 ^ ((CTy.int w).bytes * 8) ≠ 2 ^ ((CTy.int w).bytes * 8) - 1)
+    (hI : ImmOut F isem w 0
+      (u64 ((u64 (imm64OfIconst ity imm) % 2 ^ ((CTy.int w).bytes * 8) : Nat) : Int)) s s' v) :
+    ∃ k ms, v = .reg (.vreg k .int) ∧ Frag s s' ms ∧ s.nextVreg ≤ k ∧
+      ∀ (fr : Clif.Frame) (ρ : Nat → CV) (ty : Clif.Ty) (b : BitVec ty.width), ty.width = w →
+        DFGCons ctx fr → fr.regs y = some ⟨ty, b⟩ →
+        b ≠ 0#ty.width ∧ b ≠ BitVec.allOnes ty.width ∧ UsesLo s.nextVreg fr ms ∧
+        ∀ wd, k < s'.nextVreg ∧ Runs F isem ms ρ wd (fun ρ' _ => DivOpnd true b (ρ' k)) := by
+  obtain ⟨ms, d, rfl, hsh, hrun⟩ := hI
+  refine ⟨d, ms, rfl, ⟨hsh.emitted, hsh.mono, hsh.defs⟩, hsh.res,
+    fun fr ρ ty b htw hdf hyv => ?_⟩
+  have hv := iconst_val hdf hj hi hcl hyv
+  simp only [Clif.Val.mk.injEq] at hv
+  obtain ⟨rfl, hb⟩ := hv
+  have hb' : b = imm := eq_of_heq hb
+  subst hb'
+  have hw64 := eTy_width hety
+  have h8 : (CTy.int w).bytes * 8 = ty.width := by
+    show w / 8 * 8 = _; rcases hw with rfl | rfl | rfl | rfl <;> omega
+  rw [h8, u64_imm64OfIconst hw64, Nat.mod_eq_of_lt b.isLt] at hne hrun
+  rw [u64_ofNat (Nat.lt_of_lt_of_le b.isLt (pow_le64 hw64))] at hrun
+  refine ⟨fun h0 => hne.1 (by rw [h0]; rfl), fun h1 => hne.2 (by rw [h1, BitVec.toNat_allOnes]),
+    ?_, fun wd => ?_⟩
+  · intro m hm u hu
+    rcases hsh.uses m hm u hu with h | h
+    · exact .inl h
+    · exact .inl (by omega)
+  obtain ⟨d', ms', he', hsh', hlt, -⟩ := immOut_lt (w := w) (by omega) (by omega) wd ⟨ms, d, rfl, hsh, hrun⟩
+  cases he'
+  refine ⟨hlt, ?_⟩
+  obtain ⟨ρ', X, hp, hX, hXc, hXv⟩ := hrun ρ
+  refine prun_runs hp wd fun _ => ?_
+  subst htw
+  exact imm_divOpnd hw (.inl rfl) b hXc hXv hX
+
+section Finish
+variable {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program}
+  {ctx : Ctx} {ty : Clif.Ty} {x y : Nat} {st s1 s2 : LState} {kx ky : Nat} {msX msY : List MInst}
+
+theorem sdiv_safe_finish (hR : Refines F isem) (hMR : MRStable F MR) (hw : ty.width ≤ 32 ∨ ty.width = 64)
+    {results : List Nat} (h : DivOperands F isem ctx ty x y true st s1 s2 kx ky msX msY)
+    (hsafe : ∀ (fr : Clif.Frame) (b : BitVec ty.width), DFGCons ctx fr → fr.regs y = some ⟨ty, b⟩ →
+      b ≠ BitVec.allOnes ty.width) :
+    LowerInstOk isem MR env cp ctx (.div .sdiv ty x y) results st [[.vreg s2.nextVreg .int]]
+      ((s2.fresh .int).2.emit
+        (.aluRRR .sDiv (szOf ty.width) (.vreg s2.nextVreg .int) (.vreg kx .int) (.vreg ky .int)))
+      (msX ++ msY ++ [.aluRRR .sDiv (szOf ty.width) (.vreg s2.nextVreg .int) (.vreg kx .int)
+        (.vreg ky .int)]) ∧
+    ((s2.fresh .int).2.emit
+        (MInst.aluRRR .sDiv (szOf ty.width) (.vreg s2.nextVreg .int) (.vreg kx .int) (.vreg ky .int))).emitted =
+      st.emitted ++ (msX ++ msY ++ [MInst.aluRRR .sDiv (szOf ty.width) (.vreg s2.nextVreg .int)
+        (.vreg kx .int) (.vreg ky .int)]).toArray := by
+  have hf := (h.fX.append h.fY).append (Frag.fresh_emit s2
+    (m := MInst.aluRRR .sDiv (szOf ty.width) (.vreg s2.nextVreg .int) (.vreg kx .int) (.vreg ky .int))
+    (by rw [vdefs_aluRRR']; simp))
+  refine ⟨lowerInstOk_div hMR hf.mono hf.defs (h.fX.append h.fY).mono ?_, hf.emitted⟩
+  intro fr ρ w a b _ hh hdf hxa hyb
+  obtain ⟨hu, hukx, huky⟩ := h.uses hh hdf hxa hyb
+  obtain ⟨hky, htr, hrun⟩ := h.run hh hdf hxa hyb w
+  have hb1 := hsafe fr b hdf hyb
+  refine ⟨hu.append ?_, fun c hc => ?_, fun q hq => ?_⟩
+  · intro m hm u hu'
+    simp only [List.mem_singleton] at hm
+    subst hm
+    rw [vuseNums_aluRRR'] at hu'
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hu'
+    rcases hu' with rfl | rfl
+    · exact hukx
+    · exact huky
+  · rcases sdiv_trap hc with ⟨h0, rfl⟩ | ⟨-, -, h1, -⟩
+    · exact (htr h0).append
+    · exact absurd h1 hb1
+  · obtain ⟨h0, -, rfl⟩ := sdiv_ok hq
+    refine Runs.append (hrun h0) fun ρ1 w1 ⟨h1, h2⟩ => ?_
+    refine (runs_sdiv hR _ _ _ _ ρ1 w1).imp fun ρ' _ _ e => ?_
+    rw [e, upd_same]
+    exact sdiv_core hw h1 h2 (.inr (by rw [BitVec.neg_one_eq_allOnes]; exact hb1))
+
+end Finish
+
 section Root
 variable {p : Program} (hp : Data p)
 
@@ -331,6 +458,142 @@ theorem srem32_ruleOk (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env 
   rw [hs3, hs4, hs2]
   exact ⟨_, hem, _, rfl, hok⟩
 
+set_option maxHeartbeats 8000000 in
+include hp in
+theorem sdiv_safe64_ruleOk (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env)
+    (cp : Clif.Program) (hR : Refines F isem) (hMR : MRStable F MR) :
+    LowerRuleOk isem MR env cp p rule_lower_1163 := by
+  intro f ctx hctx ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _ hmatch heval
+  obtain ⟨m', rfl⟩ : ∃ m', m = m' + 10 := ⟨m - 10, by omega⟩
+  obtain ⟨n', rfl⟩ : ∃ n', n = n' + 400 := ⟨n - 400, by omega⟩
+  isel_inv' hp [] at hmatch heval
+  obtain ⟨h172⟩ : Nonempty (ApplyInternal p (sem ctx) cfg _ 25 172 _ _ _ _) := ⟨‹_›⟩
+  obtain ⟨h493⟩ : Nonempty (ApplyInternal p (sem ctx) cfg _ 27 493 _ _ _ _) := ⟨‹_›⟩
+  obtain ⟨h553⟩ : Nonempty (ApplyInternal p (sem ctx) cfg _ 27 553 _ _ _ _) := ⟨‹_›⟩
+  obtain ⟨h557⟩ : Nonempty (ApplyInternal p (sem ctx) cfg _ 27 557 _ _ _ _) := ⟨‹_›⟩
+  obtain ⟨hva⟩ : Nonempty (externExtract ctx T.value_array_2 _ st = _) := ⟨‹_›⟩
+  obtain ⟨hdi⟩ : Nonempty (externExtract ctx T.def_inst _ st = _) := ⟨‹_›⟩
+  obtain ⟨hidv⟩ : Nonempty (externExtract ctx T.inst_data_value _ st = _) := ⟨‹_›⟩
+  obtain ⟨hsd⟩ : Nonempty (externCtor ctx T.safe_divisor_from_imm64 _ st = _) := ⟨‹_›⟩
+  obtain ⟨hins⟩ : Nonempty (ctx.insts[ii]? = some _) := ⟨‹_›⟩
+  obtain ⟨hdd⟩ : Nonempty (V.data 152 2 _ = _) := ⟨‹_›⟩
+  obtain ⟨hty⟩ : Nonempty (CTy.int 64 = _) := ⟨‹_›⟩
+  rw [hi, Option.some.injEq] at hins
+  subst hins
+  have hdat := hctx.data ii _ inst hi hic
+  rw [← hdd] at hdat
+  obtain ⟨ty, x, y, rfl, hety, rfl⟩ := instData_div_inv (op := .sdiv) rfl hdat
+  rw [ext_value_array_2] at hva
+  cases hva
+  rw [ext_def_inst_iff] at hdi
+  obtain ⟨j, hj, hdi⟩ := hdi
+  simp only [List.cons.injEq, and_true] at hdi
+  subst hdi
+  rw [ext_inst_data_value_iff] at hidv
+  obtain ⟨info', hi', hidv⟩ := hidv
+  simp only [List.cons.injEq, and_true] at hidv
+  obtain ⟨-, hd⟩ := hidv
+  obtain ⟨ity, imm, rfl, hity, hcl⟩ := iconst_data_inv hctx hj hi' hd
+  rw [ctor_safe_divisor_iff] at hsd
+  obtain ⟨hne, rfl, rfl⟩ := hsd
+  obtain ⟨tys, htys, hres, -⟩ := hctx.resTys ii _ _ hi hic
+  simp only [Clif.Inst.resultTypes, Option.some.injEq] at htys
+  subst htys
+  rw [hres] at hty
+  simp only [List.map_cons, List.map_nil, List.head?_cons, Option.getD_some, ofClif_int_width,
+    CTy.int.injEq] at hty
+  have hE := sext64_ok hp hco (hn := by omega) h557
+  obtain ⟨_, -, rx, hrx, -⟩ := id hE
+  have hxlt := hvb x _ hrx
+  obtain ⟨kx, msX, rfl, hfX, hkx, hkxl, hsX⟩ :=
+    ext_divOpnd hR hctx hvb (w := ty.width) (.inr ⟨rfl, rfl, hty.symm⟩) (.inr hty.symm) hE
+  have hI := imm_ok_ai hp hco hR (w := 64) (e := 0) (by decide) (by decide) (by omega) h553
+  obtain ⟨ky, msY, rfl, hfY, hky, hsemY⟩ := safe_divisor_sem (y := y) (w := 64) (by decide) hj hi' hcl hity hne hI
+  obtain ⟨hv2, hs2⟩ := a64_sdiv_ok hp hco (by omega) (by decide) h493
+  subst hv2
+  obtain ⟨hs3, rfl⟩ := output_reg_ok hp hco (by omega) h172
+  have hdo : DivOperands F isem ctx ty x y true _ _ _ kx ky msX msY :=
+    { xlt := hxlt, vb := hvb, fX := hfX, kxlt := hkx, kxl := hkxl,
+      sX := fun fr ρ a hh hdf hxa => hsX fr ρ ty a rfl hh hdf hxa,
+      fY := hfY, kyl := .inl hky,
+      sY := fun fr ρ b _ hdf hyb => by
+        obtain ⟨hb0, -, hu, hr⟩ := hsemY fr ρ ty b hty.symm hdf hyb
+        exact ⟨hu, fun wd => ⟨(hr wd).1, fun h0 => absurd h0 hb0, fun _ => (hr wd).2⟩⟩ }
+  obtain ⟨hok, hem⟩ := sdiv_safe_finish (env := env) (cp := cp) hR hMR (.inr hty.symm)
+    (results := info.results) hdo (fun fr b hdf hyb => (hsemY fr (fun _ => 0) ty b hty.symm hdf hyb).2.1)
+  simp only at hs3
+  rw [hs3, hs2]
+  rw [show szOf 64 = szOf ty.width by rw [hty]]
+  exact ⟨_, hem, _, rfl, hok⟩
+set_option maxHeartbeats 8000000 in
+include hp in
+theorem sdiv_safe32_ruleOk (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env)
+    (cp : Clif.Program) (hR : Refines F isem) (hMR : MRStable F MR) :
+    LowerRuleOk isem MR env cp p rule_lower_1167 := by
+  intro f ctx hctx ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _ hmatch heval
+  obtain ⟨m', rfl⟩ : ∃ m', m = m' + 10 := ⟨m - 10, by omega⟩
+  obtain ⟨n', rfl⟩ : ∃ n', n = n' + 400 := ⟨n - 400, by omega⟩
+  isel_inv' hp [] at hmatch heval
+  obtain ⟨h172⟩ : Nonempty (ApplyInternal p (sem ctx) cfg _ 25 172 _ _ _ _) := ⟨‹_›⟩
+  obtain ⟨h493⟩ : Nonempty (ApplyInternal p (sem ctx) cfg _ 27 493 _ _ _ _) := ⟨‹_›⟩
+  obtain ⟨h553⟩ : Nonempty (ApplyInternal p (sem ctx) cfg _ 27 553 _ _ _ _) := ⟨‹_›⟩
+  obtain ⟨h555⟩ : Nonempty (ApplyInternal p (sem ctx) cfg _ 27 555 _ _ _ _) := ⟨‹_›⟩
+  obtain ⟨hva⟩ : Nonempty (externExtract ctx T.value_array_2 _ st = _) := ⟨‹_›⟩
+  obtain ⟨hdi⟩ : Nonempty (externExtract ctx T.def_inst _ st = _) := ⟨‹_›⟩
+  obtain ⟨hidv⟩ : Nonempty (externExtract ctx T.inst_data_value _ st = _) := ⟨‹_›⟩
+  obtain ⟨hsd⟩ : Nonempty (externCtor ctx T.safe_divisor_from_imm64 _ st = _) := ⟨‹_›⟩
+  obtain ⟨hins⟩ : Nonempty (ctx.insts[ii]? = some _) := ⟨‹_›⟩
+  obtain ⟨hdd⟩ : Nonempty (V.data 152 2 _ = _) := ⟨‹_›⟩
+  have hb32 : (info.resTys.head?.getD CTy.invalid).bits ≤ 32 := by
+    rw [hi, Option.some.injEq] at hins; subst hins; assumption
+  rw [hi, Option.some.injEq] at hins
+  subst hins
+  have hdat := hctx.data ii _ inst hi hic
+  rw [← hdd] at hdat
+  obtain ⟨ty, x, y, rfl, hety, rfl⟩ := instData_div_inv (op := .sdiv) rfl hdat
+  rw [ext_value_array_2] at hva
+  cases hva
+  rw [ext_def_inst_iff] at hdi
+  obtain ⟨j, hj, hdi⟩ := hdi
+  simp only [List.cons.injEq, and_true] at hdi
+  subst hdi
+  rw [ext_inst_data_value_iff] at hidv
+  obtain ⟨info', hi', hidv⟩ := hidv
+  simp only [List.cons.injEq, and_true] at hidv
+  obtain ⟨-, hd⟩ := hidv
+  obtain ⟨ity, imm, rfl, hity, hcl⟩ := iconst_data_inv hctx hj hi' hd
+  rw [ctor_safe_divisor_iff] at hsd
+  obtain ⟨hne, rfl, rfl⟩ := hsd
+  obtain ⟨tys, htys, hres, -⟩ := hctx.resTys ii _ _ hi hic
+  simp only [Clif.Inst.resultTypes, Option.some.injEq] at htys
+  subst htys
+  rw [hres] at hb32 h553 h493 hne
+  simp only [List.map_cons, List.map_nil, List.head?_cons, Option.getD_some, ofClif_int_width]
+    at hb32 h553 h493 hne
+  have hw32 : ty.width ≤ 32 := hb32
+  have hwid := eTy_widths hety
+  have hE := sext32_ok hp hco (hn := by omega) h555
+  obtain ⟨_, -, rx, hrx, -⟩ := id hE
+  have hxlt := hvb x _ hrx
+  obtain ⟨kx, msX, rfl, hfX, hkx, hkxl, hsX⟩ :=
+    ext_divOpnd hR hctx hvb (w := ty.width) (.inl ⟨rfl, rfl⟩) (.inl hw32) hE
+  have hI := imm_ok_ai hp hco hR (w := ty.width) (e := 0) hwid (by decide) (by omega) h553
+  obtain ⟨ky, msY, rfl, hfY, hky, hsemY⟩ := safe_divisor_sem (y := y) (w := ty.width) hwid hj hi' hcl hity hne hI
+  obtain ⟨hv2, hs2⟩ := a64_sdiv_ok hp hco (by omega) (by omega) h493
+  subst hv2
+  obtain ⟨hs3, rfl⟩ := output_reg_ok hp hco (by omega) h172
+  have hdo : DivOperands F isem ctx ty x y true _ _ _ kx ky msX msY :=
+    { xlt := hxlt, vb := hvb, fX := hfX, kxlt := hkx, kxl := hkxl,
+      sX := fun fr ρ a hh hdf hxa => hsX fr ρ ty a rfl hh hdf hxa,
+      fY := hfY, kyl := .inl hky,
+      sY := fun fr ρ b _ hdf hyb => by
+        obtain ⟨hb0, -, hu, hr⟩ := hsemY fr ρ ty b rfl hdf hyb
+        exact ⟨hu, fun wd => ⟨(hr wd).1, fun h0 => absurd h0 hb0, fun _ => (hr wd).2⟩⟩ }
+  obtain ⟨hok, hem⟩ := sdiv_safe_finish (env := env) (cp := cp) hR hMR (.inl hw32)
+    (results := info.results) hdo (fun fr b hdf hyb => (hsemY fr (fun _ => 0) ty b rfl hdf hyb).2.1)
+  simp only at hs3
+  rw [hs3, hs2]
+  exact ⟨_, hem, _, rfl, hok⟩
 end Root
 
 end Backend.Proof
