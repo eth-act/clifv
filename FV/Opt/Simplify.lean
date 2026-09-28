@@ -85,6 +85,9 @@ structure SState where
   avail : Std.HashMap ValueId Nat := {}
   /-- Value → e-class members found for it at its creation (current statement only). -/
   classes : Std.HashMap ValueId (List ValueId) := {}
+  /-- Rematerialise constants: an `iconst` defined in another block is re-emitted in the
+  using block instead of reused (Cranelift's `remat`). -/
+  rematConst : Bool := false
   /-- `just_trap_block`: blocks whose body is pure and whose terminator is `trap`. -/
   trapBlocks : Std.HashMap BlockId TrapCode := {}
   stats : SimplifyStats := {}
@@ -92,6 +95,12 @@ structure SState where
 namespace SState
 
 def costOf (st : SState) (v : ValueId) : Cost := (st.cost.get? v).getD 0
+
+/-- Is `v` a constant to rematerialise per block? -/
+def remat (st : SState) (v : ValueId) : Bool :=
+  st.rematConst && match st.defs.get? v with
+    | some (.iconst ..) => true
+    | _ => false
 
 def enodes (st : SState) (v : ValueId) : List Inst :=
   ((st.defs.get? v).toList) ++ ((st.alts.get? v).getD []).filterMap st.defs.get?
@@ -154,7 +163,9 @@ def materialize (cfg : Cfg) (allowed : Inst → Bool) (bi : Nat) :
   | 0, _, _ => none
   | fuel + 1, (st, out), x =>
     match st.avail.get? x with
-    | some d => if cfg.dominates d bi then some (x, st, out) else clone fuel st out x
+    | some d =>
+      if cfg.dominates d bi && !(d != bi && st.remat x) then some (x, st, out)
+      else clone fuel st out x
     | none => clone fuel st out x
 where
   clone (fuel : Nat) (st : SState) (out : Array Stmt) (x : ValueId) :
@@ -338,12 +349,12 @@ def trapBlock? (b : Block) : Option TrapCode :=
 
 /-- The simplify pass. `allowed` restricts the nodes it may emit. -/
 def simplify (rules : SimplifyFn) (skel : SkeletonFn) (allowed skelOk : Inst → Bool)
-    (f : Function) (info : Info) : Function × SimplifyStats := Id.run do
+    (rematConst : Bool) (f : Function) (info : Info) : Function × SimplifyStats := Id.run do
   let cfg := info.cfg
   let blocks := f.blocks.toArray
   let trapBlocks := f.blocks.foldl (fun m b => match trapBlock? b with
     | some c => m.insert b.id c | none => m) {}
-  let mut st : SState := { next := maxValue f + 1, types := info.types, trapBlocks }
+  let mut st : SState := { next := maxValue f + 1, types := info.types, trapBlocks, rematConst }
   -- parameters and skeleton results are available in their blocks, with cost 0
   for (b, bi) in blocks.zipIdx do
     for (p, _) in b.params do st := { st with avail := st.avail.insert p bi }
@@ -362,7 +373,10 @@ def simplify (rules : SimplifyFn) (skel : SkeletonFn) (allowed skelOk : Inst →
         let c := (operands inst).foldl (fun c x => Cost.add c (st.costOf x)) (Cost.ofInst inst)
         st := { st with defs := st.defs.insert v inst, cost := st.cost.insert v c,
                         made := {}, classes := {} }
-        let (best, st1) := match st.memo.get? inst with
+        let hit := match st.memo.get? inst with
+          | some w => if st.remat w && st.avail.get? w != some bi then none else some w
+          | none => none
+        let (best, st1) := match hit with
           | some w => (w, st)
           | none =>
             let (b, st1) := optimizeAt rules allowed rewriteLimit

@@ -45,9 +45,9 @@ structure Config where
   gvn : Bool := true
   dce : Bool := true
   licm : Bool := true
-  /-- Rematerialise constants like Cranelift (`remat.isle`, elaboration): GVN numbers `iconst`
-  per block only, so a constant is defined in each block using it instead of living across
-  blocks. -/
+  /-- Rematerialise constants like Cranelift (`remat.isle`, elaboration): the simplifier's
+  hash-consing and GVN number `iconst` per block only, so a constant is defined in each block
+  using it instead of living across blocks. -/
   rematConst : Bool := false
   /-- LICM hoists `iconst` out of loops (measured better for this backend, which lowers every
   `iconst` even when isel folds it into an immediate). -/
@@ -102,7 +102,7 @@ def optimizeReport (cfg : Config) (f0 : Function) : Function × Report := Id.run
     if !enabled then continue
     let g' ← match stage with
       | "simplify" =>
-        let (g', s) := simplify cfg.rules.fn cfg.rules.skeletonFn allowed (skelAllowedIn f) g info
+        let (g', s) := simplify cfg.rules.fn cfg.rules.skeletonFn allowed (skelAllowedIn f) cfg.rematConst g info
         let g' := removeUnreachable g'
         r := { r with rewritten := r.rewritten + s.rewritten, ruleErrors := r.ruleErrors + s.errors,
                       skeleton := r.skeleton + s.skeleton,
