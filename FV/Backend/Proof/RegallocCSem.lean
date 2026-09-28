@@ -416,7 +416,9 @@ def memOk (bytes : Nat) : AMode → Bool
     decide (extOk e)
   | _ => false
 
-/-- **The covered straight-line forms.** -/
+/-- **The covered straight-line forms.** A zero-register destination is register 31 in the
+encoding, which the immediate and extended-register `add`/`sub` and the logical-immediate forms
+read as `sp` unless they set the flags: those are covered only as `adds`/`subs`/`ands`. -/
 def FormOk (_ctx : FnCtx) : MInst → Bool
   | .aluRRR _ _ (.vreg _ .int) (.vreg _ .int) (.vreg _ .int) => true
   | .aluRRR _ _ (.vreg _ .int) .xzr (.vreg _ .int) => true
@@ -426,15 +428,15 @@ def FormOk (_ctx : FnCtx) : MInst → Bool
   | .aluRRRR _ _ (.vreg _ .int) (.vreg _ .int) (.vreg _ .int) (.vreg _ .int) => true
   | .aluRRRR _ _ (.vreg _ .int) (.vreg _ .int) (.vreg _ .int) .xzr => true
   | .aluRRImm12 _ _ (.vreg _ .int) (.vreg _ .int) _ => true
-  | .aluRRImm12 _ _ .xzr (.vreg _ .int) _ => true
+  | .aluRRImm12 op _ .xzr (.vreg _ .int) _ => op == .addS || op == .subS
   | .aluRRImmLogic op _ (.vreg _ .int) (.vreg _ .int) _ => logicOpOk op
-  | .aluRRImmLogic op _ .xzr (.vreg _ .int) _ => logicOpOk op
+  | .aluRRImmLogic op _ .xzr (.vreg _ .int) _ => op == .andS
   | .aluRRImmShift op _ (.vreg _ .int) (.vreg _ .int) _ => shiftOpOk op
   | .aluRRRShift _ _ (.vreg _ .int) (.vreg _ .int) (.vreg _ .int) _ => true
   | .aluRRRShift _ _ .xzr (.vreg _ .int) (.vreg _ .int) _ => true
   | .aluRRRShift _ _ (.vreg _ .int) .xzr (.vreg _ .int) _ => true
   | .aluRRRExtend _ _ (.vreg _ .int) (.vreg _ .int) (.vreg _ .int) _ => true
-  | .aluRRRExtend _ _ .xzr (.vreg _ .int) (.vreg _ .int) _ => true
+  | .aluRRRExtend op _ .xzr (.vreg _ .int) (.vreg _ .int) _ => op == .addS || op == .subS
   | .bitRR _ _ (.vreg _ .int) (.vreg _ .int) => true
   | .mov _ (.vreg _ .int) (.vreg _ .int) => true
   | .movWide _ (.vreg _ .int) _ _ => true

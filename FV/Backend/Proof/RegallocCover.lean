@@ -272,6 +272,9 @@ theorem formOk_store {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {op : S
       LinesOk ctx i' ∧ (∀ ds, i' ≠ .args ds) ∧ (∀ us, i' ≠ .rets us)) := by
   mem_os
 
+theorem logicOpOk_of_andS {op : ALUOp} (h : (op == .andS) = true) : logicOpOk op = true := by
+  cases op <;> first | rfl | simp at h
+
 set_option maxHeartbeats 4000000 in
 theorem formOk_sound {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MInst}
     (h : FormOk ctx i = true) :
@@ -303,6 +306,7 @@ theorem formOk_sound {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MI
          | one_line
          | exact linesOk_extend ..
          | exact linesOk_logic _ ‹_› ..
+         | exact linesOk_logic _ (logicOpOk_of_andS ‹_›) ..
          | exact linesOk_shift _ ‹_› ..
          | exact linesOk_rrrShift ..
          | exact linesOk_vecMisc ..

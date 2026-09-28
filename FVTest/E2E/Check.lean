@@ -1,6 +1,7 @@
 import FV.Backend
 import FV.Backend.Proof.DriverCheck
 import FV.Backend.Proof.PrepareCheck
+import FV.Backend.Proof.RegallocCover
 
 /-!
 # The M7 validators on real code (`lake exe lean-e2e-check [FILE.clif...]`)
@@ -9,9 +10,24 @@ Runs the lowering validator `lowerCheck f vc` and the `prepare` validator `prepC
 every function the backend lowers (default:
 `corpus/clif/*.clif`, `corpus/clif/extrt/*.clif`, Cranelift's `runtests/*.clif`) and prints
 every rejection with the failing part. Exit status 0 iff every lowered function is accepted.
+
+It also decides `formsCoveredB` (the `FormsCovered` premise of `E2E.backend_correct_final`) on
+every prepared VCode and reports the number of covered functions and, for the others, the
+uncovered instruction forms (constructor and operation) with their counts. An uncovered
+function is not rejected: it is compiled but outside the end-to-end theorem.
 -/
 
 open Backend Backend.Proof.Driver
+
+/-- The form of an instruction: constructor and first argument of its `repr`. -/
+def formKey (i : MInst) : String :=
+  let ws := ((toString (repr i)).splitOn " ").filter (· ≠ "")
+  String.intercalate " " (ws.take 2)
+
+/-- The straight-line instructions of `vc` that are neither control forms nor `FormOk`. -/
+def uncovered (vc : VCode) : List MInst :=
+  vc.blocks.toList.flatMap fun vb =>
+    vb.insts.toList.filter fun i => !(i.isCtl || Backend.Proof.FormOk default i)
 
 def defaultFiles : IO (List String) := do
   let mut out : Array String := #[]
@@ -105,6 +121,9 @@ def main (args : List String) : IO UInt32 := do
   let mut tPrep := 0
   let mut tPCheck := 0
   let mut pbad := 0
+  let mut cov := 0
+  let mut uncov := 0
+  let mut forms : Std.HashMap String Nat := {}
   for file in files do
     let pf := Clif.parseFile (← IO.FS.readFile file)
     for p in pf.funcs do
@@ -126,6 +145,11 @@ def main (args : List String) : IO UInt32 := do
       tPrep := tPrep + (t4 - t3)
       match pr with
       | .ok vcp =>
+        if Backend.Proof.formsCoveredB default vcp then cov := cov + 1
+        else
+          uncov := uncov + 1
+          for i in uncovered vcp do
+            forms := forms.insert (formKey i) (forms.getD (formKey i) 0 + 1)
         let t5 ← IO.monoMsNow
         let pc ← IO.lazyPure (fun _ => prepCheck vc vcp)
         let t6 ← IO.monoMsNow
@@ -142,5 +166,8 @@ def main (args : List String) : IO UInt32 := do
         IO.println (detail f vc)
   IO.println s!"lowerCheck: {ok} accepted, {bad} rejected, {skipped} out of scope (stack parameters or stack call arguments)"
   IO.println s!"prepCheck: {pok} accepted, {pbad} rejected"
+  IO.println s!"formsCoveredB: {cov} covered, {uncov} not covered"
+  for (k, n) in forms.toList.mergeSort (fun a b => a.2 ≥ b.2) do
+    IO.println s!"  uncovered form {k}: {n} instructions"
   IO.println s!"time (ms): lowerFunction {tLower}, lowerCheck {tCheck}, prepare {tPrep}, prepCheck {tPCheck}"
   return if bad == 0 && pbad == 0 then 0 else 1
