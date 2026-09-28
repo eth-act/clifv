@@ -13,7 +13,7 @@ first, then update its producer and its consumers together.
 | `FV/Compile/` | DSL → CLIF emitter (`compile`) and its proof `compile_correct` | M1, M2 |
 | `FV/Arm/` | AArch64 semantics (ASL-derived), decoder, and later the encoder | M3, M5 |
 | `FV/Validate/` | per-function translation validator: Cranelift AArch64 output against CLIF | M3 |
-| `FV/Isle/` | Lean ISLE syntax, generated rule data, rule interpreter | M4 |
+| `FV/Isle/` | Lean ISLE syntax, generated rule data (aarch64 lowering; mid-end `opt` in `Generated/Opt`, `Isle.Opt`), rule interpreter (incl. multi terms), `Isle.Opt.simplify` | M4, M7 |
 | `FV/Backend/` | isel, stack-slot allocator, regalloc checker, asm/bytes emission | M4–M6 |
 | `FV/E2E/` | `backend_correct` | M7 |
 | `FVTest/` | Lean-side tests and corpora drivers (`lean_exe` targets) | all |
@@ -67,7 +67,7 @@ first, then update its producer and its consumers together.
   `cd <worktree> && scripts/memcap.sh lake build FV.Backend`. A runaway `lean` process then
   dies alone. Without the cap, `lean` processes reaching 37–58 GB triggered global OOM kills
   on this 62 GB machine; those aborted the agent harness and killed every running agent.
-- Never reduce the exported ISLE program (`Isle.Aarch64.program`, the generated rule data)
+- Never reduce the exported ISLE programs (`Isle.Aarch64.program`, `Isle.Opt.program`, the generated rule data)
   wholesale with the kernel or `decide`/`rfl`/`native_decide`. Reason about individual rules
   or per-opcode slices, and keep `maxHeartbeats` and `maxRecDepth` at their defaults, unless
   a local, justified increase is needed.

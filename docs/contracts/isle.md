@@ -13,14 +13,21 @@ data, the closure for the emitter subset, the rule interpreter, and the tests.
 - [x] `FVTest/Isle/*` pass. On five oracle functions the interpreter fires exactly the rules a
   `trace-log` build of Cranelift fires.
 - Not wired to `FV/Clif` or `FV/Arm` yet (M4 work). See "Gaps".
+- [x] The mid-end unit (`opt`: `simplify`, `simplify_skeleton`) is exported too
+  (`FV/Isle/Generated/Opt`, namespace `Isle.Opt`), with its E closure, multi-term semantics in
+  the interpreter (`Interp.runMulti`), Lean transcriptions of its extern helpers, and
+  `Isle.Opt.simplify` / `simplifySkeleton` over CLIF e-graph nodes. 20 `simplify` and 12
+  `simplify_skeleton` calls fire the same rules as Cranelift's. See "Mid-end export".
 
 ## Regeneration
 
 ```sh
 cargo run --manifest-path rust/Cargo.toml -p isle2lean --release
-# options: --codegen-dir DIR (default third_party/wasmtime/cranelift/codegen)
+# options: --unit U         (aarch64 | opt | all; default all)
+#          --codegen-dir DIR (default third_party/wasmtime/cranelift/codegen)
 #          --gen-dir DIR     (default rust/target/isle2lean-gen: generated ISLE inputs)
-#          --out DIR         (default FV/Isle/Generated; every *.lean in it is replaced)
+#          --out DIR         (default FV/Isle/Generated; every *.lean in it is replaced;
+#                             the opt unit goes to DIR/Opt)
 lake build FV.Isle FVTest.Isle
 ```
 
@@ -327,8 +334,9 @@ constants and extern helpers are all parameters. There is no dependency on `FV/C
 - **Unmodeled externs** (`.unmodeled`) abort interpretation. A missing model can therefore
   never be mistaken for "rule does not match".
 - **Fuel.** Each expression node and term application costs 1.
-- **Multi terms** (`decl multi`) give `Err.unsupported`. The aarch64 unit has none: no term
-  has `isMulti`.
+- **Multi terms** (`decl multi`) give `Err.unsupported` in `run`. The aarch64 unit has none:
+  no term has `isMulti`. `runMulti` interprets them ("Mid-end export"); `run`'s definitions
+  are unchanged by it.
 
 The functions are total, defined by structural recursion on fuel and on patterns. They
 compute by `#eval`/`#guard`.
@@ -380,6 +388,130 @@ rust/target/isle-oracle/release/isle-trace-oracle FVTest/Isle/oracle/cases.clif 
   > FVTest/Isle/oracle/cases.trace
 ```
 
+## Mid-end export (`FV/Isle/Generated/Opt`, `FV/Isle/Opt`)
+
+**Loading.** `isle2lean --unit opt` (part of the default `all`) loads the `opt` compilation of
+`get_isle_compilations` exactly as for aarch64 (`load.rs`, same checks), with the meta crate's
+`spec` feature, so the inputs are 21 files: `prelude.isle`, `prelude_opt.isle`,
+`spec/{prelude_spec, inst_specs, inst_tags, fpconst, opt}.isle`, the 12 `opts/*.isle`, then
+`<OUT_DIR>/numerics.isle` and `<OUT_DIR>/clif_opt.isle`. `spec/opt.isle` parses and type-checks
+with the 0.136.1 parser; its specs are exported (556 spec-language definitions in all). The
+unit has 54 types, 1555 terms and **1605 rules**, the number of `// Rule at` sites in
+Cranelift's generated `isle_opt.rs`. Rules per file (Rust AST counts, `astRuleCounts`):
+prelude 1, prelude_opt 64, arithmetic 283, bitops 471, cprop 127, extends 31, icmp 166, remat 14,
+selects 125, shifts 84, skeleton 13, spaceship 40, spectre 3, vector 27, clif_opt 156.
+`simplify` has 1281 rules, `simplify_skeleton` 39.
+
+**Layout.** As for aarch64 (flat tables, `Types00`, `Ids`, `Terms00..01`, `Rules00..05`,
+`RuleLists00`, `TypeArray`, `TermTable`, `RuleArray`, `RuleTable`, `Specs00..01`, `Program`,
+`Manifest`, `Closure`; 20 modules, 41k lines), in `FV/Isle/Generated/Opt/`, modules
+`FV.Isle.Generated.Opt.*`, namespace `Isle.Opt` (`Isle.Opt.program`, `T.simplify`,
+`R.simplify`, `TId.simplify`, `TyId.InstructionData`, `VIdx.Opcode.Iadd`, rule defs such as
+`rule_arithmetic_8`). The aarch64 output is byte-identical to before the change, and both
+units regenerate deterministically (checked with a different `--gen-dir`). Elaboration of the
+opt modules takes a few seconds each (`lake build FV.Isle.Opt`).
+
+**Closure** (`Isle.Opt.Closure`, `rust/crates/isle2lean/src/opt_closure.rs`). Roots `simplify`
+and `simplify_skeleton`. Root selection is the aarch64 syntactic test with the mid-end's
+`ty_vector`/`ty_int_vec128` added to the non-scalar-integer extractors, and the opcode set as a
+parameter. Rewrites insert nodes, and some build opcodes outside E, so the opcode set is closed
+under what closure root rules' right-hand sides can build (a fixed point, two rounds):
+`introducedOpcodes` = `Bmask Iabs Iconcat Trapnz Trapz` (`introducingRules` lists the 21 rules;
+e.g. `sshr (bor x (ineg x)) (bits-1)` → `bmask`, `select`-of-`icmp`-and-`ineg` → `iabs`, and
+the `brif`-to-trap-block rules → `trapz`/`trapnz`). Dependency rules whose LHS names a non-E
+type are skipped when computing what a right-hand side builds (a hint, not a proof).
+
+| | |
+| --- | --- |
+| closure rules | 1357: 1193 root rules (1156 `simplify`, 37 `simplify_skeleton`) and their dependencies |
+| root rules matching with E opcodes only (`eRootRules`) | 1174 |
+| root rules excluded | 127 (float opcodes and constants, vectors (`splat`, `ty_vec128`, `multi_lane`), `bitselect`, `select_spectre_guard`, `I128`, `uadd_overflow_trap`) |
+| root rules with default-excluded tags | 35 |
+| terms mentioned | 293 |
+| extern terms (Rust helpers) | 118: 98 constructors, 23 extractors; 72 have a VeriISLE `spec` |
+
+`rustSources` gives the Rust definition of every extern function: `src/opts.rs`,
+`src/isle_prelude.rs`, or the generated `<OUT_DIR>/isle_numerics.rs`. The 46 extern terms
+without a spec: the e-graph interface (`inst_data_value`, `inst_data_value_tupled`,
+`inst_data`, `make_inst`, `make_skeleton_inst`, `value_array_2/3(_ctor)`, `block_array_2`,
+`iconst_sextend_etor`, `uextend_maybe_etor`, `all_zero_etor`, `zero_constant`, `f16_zero`),
+the skeleton helpers (`resolve_jump_table_entry`, `block_call_block`, `just_trap_block`),
+`div_const_magic_{u32,u64,s32,s64}`, `imm64_{sdiv,udiv,srem,urem}`, `ty_vec128`, `ty_vector`,
+and 18 `numerics.isle` helpers (`i32_lt`, `i32_gt`, `u32_lt`, `u32_sub`, `u32_is_power_of_two`,
+`i64_ne`, `i64_gt`, `i64_shl`, `i64_trailing_zeros`, `u64_ilog2`, `u64_trailing_zeros`,
+`u64_is_power_of_two`, `u32_into_i64`, `i32_from_i64` and the `*_matches_*` extractors).
+
+**Multi-term semantics** (`FV/Isle/Interp.lean`, appended; `run` and everything it uses are
+unchanged). `Interp.runMulti p msem cfg term args st` / `runMultiTerm` evaluate a `decl multi`
+internal constructor: every rule in `ruleBefore` order (multi terms cannot have priorities, so
+source order) contributes every result, returned with the rule that produced it. A
+multi-extractor (`MultiSem.extractMulti`) matches once per value its iterator yields, and
+multi-constructors in expressions (`truthy`) give one alternative per value; combinations are
+taken left to right (arguments, then if-lets, then the right-hand side). Single terms reached
+from a multi rule go through `applyTerm` unchanged. The embedding state is threaded without
+rollback, as in the generated Rust. **Deviation:** Cranelift's generated code visits rules in
+its decision-tree order and stops after `MAX_ISLE_RETURNS = 8` results (`opts.rs`); `runMulti`
+returns all results in rule order, so Cranelift's results are a sub-multiset (the same
+multiset when it has fewer than 8).
+
+**Extern helpers** (`FV/Isle/Opt/Helpers.lean`, namespace `Isle.Opt.Rust`): Lean transcriptions
+of every Rust function the rules reach on integer programs, each citing its source: `Type`
+predicates and masks, `Imm64` arithmetic (`imm64_*`, `i64_sextend_*`, `u64_uextend_imm64`,
+`imm64_masked`, `imm64_power_of_two`), `IntCC` (`complement`, `swap_args`,
+`signed_cond_code`), the `numerics.isle` helpers, `u64_bswap*`, and `div_const_magic_*`
+(`src/opts/div_const.rs`, release-build wrapping arithmetic). Every ISLE integer is an `Int`
+in its Rust type's range; `Imm64` is its `i64`. Rust panics (`assert!`, `unwrap`, `checked_*`
+with `panic!`, debug-build overflow) are errors (`Except.error "panic: ..."`), never a
+non-matching rule. The magic-number functions agree with all 114 test vectors of
+`div_const.rs`.
+
+**`Isle.Opt.simplify`** (`FV/Isle/Opt/Simplify.lean`) runs `simplify` on an e-class of a
+caller-supplied e-graph: `enodes st v` (the pure nodes of `v` as `Clif.Inst`s, operands are
+e-class ids; `inst_data_value`), `typeOf st v`, and `make st inst` (`make_inst`). It returns the
+candidates in rule order, whether `subsume` was applied to each during the call, and the
+producing rules' names. Nodes are presented as Cranelift's `InstructionData` (`iconst` as
+`UnaryImm` with the immediate zero-extended from the type's width, as Cranelift stores it;
+`icmp` as `IntCompare`; ...); a node a rule builds without a `Clif.Inst` form (float or vector
+type, `i128` `iconst`, other opcodes) is a poison value, never passed to `make`, and a poison
+candidate is dropped. `simplifySkeleton` does the same for `simplify_skeleton` on a
+side-effecting instruction or terminator (`SkelInst`), returning `SkelSimp`s (`remove`,
+`removeWithVal`, `replace`, `replaceWithVal`, `replaceBranchCond`, `replaceWithTwo`), with a
+`just_trap_block` callback. Skeleton-, float- and vector-only helpers that integer programs
+never reach (`zero_constant`, `f32_from_uint`, ...) are unmodeled: reaching one is an error.
+
+**Oracle and tests.** `isle-trace-oracle --opt FILE` compiles at `opt_level=speed` and prints
+one line per `simplify` call (value, contributing rules, Cranelift's final result list) and per
+`simplify_skeleton` call. `FVTest/Isle/Opt.lean` (with the toy e-graph `FVTest/Isle/OptToy.lean`)
+checks: per-file rule counts and 1605 in all; ids, rule index and generated constants; the
+multi terms and their priorities; the closure's consistency and closedness; helper spot checks
+and the `div_const.rs` vectors; for the 20 functions of `oracle/opt.clif` and 12 of
+`oracle/opt_skeleton.clif`, that the rules contributing to Cranelift's call on the tested
+instruction equal (as a multiset) the rules of `simplify` / `simplifySkeleton` on the same
+e-graph; and candidates by value for selected cases (`iadd x 0` → `x` subsuming;
+`iadd 5 -7` → `iconst -2`; `udiv x 8` → `ushr x 3`; `udiv.i32 x 7` via `umulhi` by
+`0x24924925`; `brif` to a trap block → `trapnz; jump`; ...). Regenerate the traces with
+
+```sh
+CARGO_TARGET_DIR=rust/target/isle-oracle cargo build --release \
+  --manifest-path rust/crates/isle2lean/oracle/Cargo.toml
+for f in opt opt_skeleton; do
+  rust/target/isle-oracle/release/isle-trace-oracle --opt FVTest/Isle/oracle/$f.clif \
+    > FVTest/Isle/oracle/$f.trace
+done
+```
+
+**Mid-end gaps.**
+- Result order and the `MAX_ISLE_RETURNS` cap are not modelled (above). Matching Cranelift's
+  exact candidate set when a call has more than 8 results would need the decision-tree order
+  of `serialize.rs`.
+- The oracle comparison is per call on single-node operand e-classes; the driver (unions,
+  subsumption, rewrite depth, `MATCHES_LIMIT`, extraction) is the mid-end's
+  (`docs/contracts/midend.md`).
+- Helpers are transcriptions, not proofs; the Rust panics of debug builds are modelled as
+  errors (a release build wraps instead; the rules never reach those cases on masked
+  immediates).
+- The closure's "introduced opcodes" are an over-approximation from the rules' syntax.
+
 ## Gaps
 
 - **Toy embedding.** The interpreter is not yet instantiated with `Clif` values and Arm
@@ -399,7 +531,7 @@ rust/target/isle-oracle/release/isle-trace-oracle FVTest/Isle/oracle/cases.clif 
   may test conjuncts in another order. Results are equal when the externs are pure and
   modelled, but an embedding must model extern extractors on every input reached in this order.
   In the oracle cases this included vector and atomic type predicates tried on scalar types.
-- **Not implemented** (none of them occur in the aarch64 unit): multi terms and internal
-  extractors surviving sema.
+- **Not implemented** (none of them occur in the aarch64 unit): multi terms in `run` (see
+  `runMulti`) and internal extractors surviving sema.
 - **Deviation from upstream.** The spec-directory input is read in sorted order instead of
   `read_dir` order. Only spec numbering can differ.
