@@ -223,7 +223,18 @@ theorem codeLinesE_noTrap {c : FnCtx} {af : AFunc} :
             simp only [ainstLines, pure, Except.pure, Except.ok.injEq] at hr
             subst hr
             intro n e; subst e
-            split at hln <;> simp [epilogueLines] at hln <;> done
+            split at hln
+            · simp only [epilogueLines, List.mem_append] at hln
+              rcases hln with h1 | h1
+              · split at h1
+                · simp at h1
+                · split at h1
+                  · simp at h1
+                  · rcases List.mem_append.1 h1 with h1 | h1
+                    · obtain ⟨_, _, h⟩ := loadConst64_ins _ _ _ h1; cases h
+                    · simp at h1
+              · simp at h1
+            · simp at hln
         · exact codeLinesE_noTrap as _ _ _ hr2 ln hln
 
 
