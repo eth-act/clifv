@@ -223,7 +223,7 @@ pub fn type_def(u: &Unit, t: &sema::Type) -> String {
 /// (`TyId.«T»`), every enum variant index (`VIdx.«T».«V»`) and every term id (`TId.«t»`), so
 /// the backend decodes enum values and dispatches extern helpers on generated numbers (a
 /// `Nat`-literal match) instead of by-name lookups into `program`.
-pub fn ids_module(u: &Unit, header: &str) -> String {
+pub fn ids_module(u: &Unit, header: &str, ns: &str) -> String {
     let mut o = String::from(header);
     o.push_str("/-! ### Type ids -/\n\n");
     for t in &u.tyenv.types {
@@ -256,7 +256,7 @@ pub fn ids_module(u: &Unit, header: &str) -> String {
             t.id.index()
         );
     }
-    o.push_str("\nend Isle.Aarch64\n");
+    let _ = writeln!(o, "\nend {ns}");
     o
 }
 

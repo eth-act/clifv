@@ -4,7 +4,7 @@ version = "0.1.0"
 edition.workspace = true
 rust-version.workspace = true
 publish = false
-description = "Exports Cranelift's aarch64 ISLE lowering rules and VeriISLE specs to Lean data (M4)"
+description = "Exports Cranelift's ISLE units (aarch64 lowering, mid-end opt) and VeriISLE specs to Lean data (M4, M7)"
 
 [[bin]]
 name = "isle2lean"

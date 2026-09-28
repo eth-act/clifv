@@ -1,0 +1,98 @@
+function %udiv_7_i32
+simplify v1: src/opts/remat.isle:26 -> [v1]
+simplify v3: src/opts/remat.isle:26 -> [v3]
+simplify v4:  -> []
+simplify v5:  -> []
+simplify v6: src/opts/remat.isle:26 -> [v6]
+simplify v7:  -> []
+simplify v8:  -> []
+simplify v9: src/opts/remat.isle:26 -> [v9]
+simplify v10:  -> []
+simplify_skeleton: src/opts/arithmetic.isle:114 -> 1
+simplify_skeleton:  -> 0
+function %udiv_8_i64
+simplify v1: src/opts/remat.isle:26 -> [v1]
+simplify v3: src/opts/remat.isle:26 -> [v3]
+simplify v4:  -> []
+simplify_skeleton: src/opts/arithmetic.isle:83 -> 1
+simplify_skeleton:  -> 0
+function %sdiv_7_i64
+simplify v1: src/opts/remat.isle:26 -> [v1]
+simplify v3: src/opts/remat.isle:26 -> [v3]
+simplify v4:  -> []
+simplify v5: src/opts/remat.isle:26 -> [v5]
+simplify v6:  -> []
+simplify v7: src/opts/remat.isle:26 -> [v7]
+simplify v8:  -> []
+simplify v9:  -> []
+simplify_skeleton: src/opts/arithmetic.isle:125 -> 1
+simplify_skeleton:  -> 0
+function %sdiv_m8_i32
+simplify v1: src/opts/remat.isle:26 -> [v1]
+simplify v3: src/opts/remat.isle:26 -> [v3]
+simplify v4:  -> []
+simplify v5: src/opts/remat.isle:26 -> [v5]
+simplify v6:  -> []
+simplify v7:  -> []
+simplify v8: src/opts/remat.isle:26 -> [v8]
+simplify v9:  -> []
+simplify v10:  -> []
+simplify_skeleton: src/opts/arithmetic.isle:102 -> 1
+simplify_skeleton:  -> 0
+function %urem_10_i32
+simplify v1: src/opts/remat.isle:26 -> [v1]
+simplify v3: src/opts/remat.isle:26 -> [v3]
+simplify v4:  -> []
+simplify v5: src/opts/remat.isle:26 -> [v5]
+simplify v6:  -> []
+simplify v7:  -> []
+simplify v8:  -> []
+simplify_skeleton: src/opts/arithmetic.isle:157 -> 1
+simplify_skeleton:  -> 0
+function %srem_m4_i64
+simplify v1: src/opts/remat.isle:26 -> [v1]
+simplify v3: src/opts/remat.isle:26 -> [v3]
+simplify v4:  -> []
+simplify v5: src/opts/remat.isle:26 -> [v5]
+simplify v6:  -> []
+simplify v7:  -> []
+simplify v8: src/opts/remat.isle:14 -> [v8]
+simplify v9:  -> []
+simplify_skeleton: src/opts/arithmetic.isle:142 -> 1
+simplify_skeleton:  -> 0
+function %urem_1_i16
+simplify v1: src/opts/remat.isle:26 -> [v1]
+simplify v3: src/opts/remat.isle:26 -> [v3]
+simplify_skeleton: src/opts/arithmetic.isle:130 -> 1
+simplify_skeleton:  -> 0
+function %trapz_const
+simplify v1: src/opts/remat.isle:26 -> [v1]
+simplify_skeleton: src/opts/skeleton.isle:7 -> 1
+simplify_skeleton:  -> 0
+function %trapnz_uextend
+simplify v1:  -> []
+simplify_skeleton: src/opts/skeleton.isle:56 -> 1
+simplify_skeleton:  -> 0
+simplify_skeleton:  -> 0
+function %brif_const
+simplify v1: src/opts/remat.isle:26 -> [v1]
+simplify_skeleton: src/opts/skeleton.isle:26 -> 1
+simplify_skeleton:  -> 0
+simplify v2: src/opts/remat.isle:26 -> [v2]
+simplify_skeleton:  -> 0
+simplify_skeleton:  -> 0
+function %brif_to_trap
+simplify_skeleton: src/opts/skeleton.isle:33 -> 1
+simplify_skeleton:  -> 0
+simplify_skeleton:  -> 0
+simplify_skeleton:  -> 0
+simplify_skeleton:  -> 0
+function %br_table_const
+simplify v1: src/opts/remat.isle:26 -> [v1]
+simplify_skeleton: src/opts/skeleton.isle:44 -> 1
+simplify_skeleton:  -> 0
+simplify v2: src/opts/remat.isle:26 -> [v2]
+simplify_skeleton:  -> 0
+simplify_skeleton:  -> 0
+simplify v4: src/opts/remat.isle:26 -> [v4]
+simplify_skeleton:  -> 0
