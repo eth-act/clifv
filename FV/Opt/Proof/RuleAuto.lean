@@ -86,14 +86,14 @@ macro "sem_simp" : tactic => `(tactic| simp only [val_some_eq, Sem.binary, Sem.u
 
 /-- The bit-level goal: normalise immediates, split the type, decide. -/
 macro "rule_bits" : tactic => `(tactic| (
-  simp (disch := assumption) only [asU64_imm64OfBits, Int.natCast_eq_zero, Int.natCast_inj,
+  try simp (disch := assumption) only [asU64_imm64OfBits, Int.natCast_eq_zero, Int.natCast_inj,
     toNat_eq_iff_ofNat] at *
   opt_destruct
   all_goals subst_vars
   all_goals first
     | (simp [val_some_eq, Sem.binary, Sem.unary, Sem.iadd, Sem.isub, Sem.imul, Sem.band,
         Sem.bor, Sem.bxor, Sem.bnot, Sem.ineg]; done)
-    | (opt_cases_ty <;> (try simp_all) <;> sem_simp <;> bv_decide)))
+    | (opt_cases_ty <;> (try simp_all) <;> (try sem_simp) <;> bv_decide)))
 
 set_option hygiene false in
 /-- Phase 4 when the candidate is a class matched by the left-hand side. -/
@@ -101,5 +101,52 @@ macro "rule_finish_var" : tactic => `(tactic| (
   apply Valuation.le_trans hle1 hle3
   opt_rw_lhs
   rule_bits))
+
+
+set_option hygiene false in
+/-- `P` of a state reached by `make`s from `s3`. -/
+macro "opt_P" : tactic => `(tactic| repeat (first | assumption | apply GraphOk.make_P hG))
+
+/-- Prove `den X x = some c` (`c` possibly to be determined): an old class through the
+`Valuation.Le` chain and the `make`s, or a made node by `GraphOk.make_val`. -/
+syntax "opt_den" : tactic
+/-- Prove `evalNode {fr with regs := den X} mem n = some c` operand by operand. -/
+syntax "opt_node" : tactic
+
+set_option hygiene false in
+macro_rules
+  | `(tactic| opt_den) => `(tactic| first
+      | (apply Valuation.le_trans hle1 hle3; assumption)
+      | (apply GraphOk.make_val hG (by opt_P); opt_node)
+      | (apply GraphOk.make_le hG (by opt_P); opt_den))
+
+set_option hygiene false in
+macro_rules
+  | `(tactic| opt_node) => `(tactic| (
+      simp only [evalNode_binary_iff, evalNode_unary, evalNode_icmp, evalNode_iconst,
+        BinaryOp.isShift, Bool.false_eq_true, ite_false, ite_true, Frame.regs]
+      repeat (first | (refine ⟨?_, ?_⟩) | opt_den)
+      all_goals (try rfl)))
+
+set_option hygiene false in
+/-- Phase 4 when the candidate is a made node. -/
+macro "rule_finish_make" : tactic => `(tactic| (
+  apply GraphOk.make_val hG (by opt_P)
+  opt_node
+  all_goals rule_bits))
+
+/-- Phase 4. -/
+macro "rule_finish" : tactic => `(tactic| first | rule_finish_var | rule_finish_make)
+
+/-- The whole template for a rule without if-lets. -/
+syntax "rule_auto " ident ("[" (Lean.Parser.Tactic.simpStar <|> Lean.Parser.Tactic.simpErase <|> Lean.Parser.Tactic.simpLemma),* "]")? : tactic
+set_option hygiene false in
+macro_rules
+  | `(tactic| rule_auto $r:ident) => `(tactic| rule_auto $r [])
+  | `(tactic| rule_auto $r:ident [$ts,*]) => `(tactic| (
+      rule_intro $r
+      rule_no_iflets
+      rule_lhs hG
+      all_goals (rule_rhs [$ts,*]; rule_finish)))
 
 end Opt.Proof

@@ -111,7 +111,7 @@ def fuelMin : Nat := 1000
 
 /-- **Obligation of one `simplify` rule** (see the module doc). -/
 def RuleOk (p : Isle.Program) (r : Rule) : Prop :=
-  ∀ {σ : Type} (G : EGraph σ) (P : σ → Prop) (den : σ → Valuation) (fr : Frame) (mem : Mem),
+  ∀ (σ : Type) (G : EGraph σ) (P : σ → Prop) (den : σ → Valuation) (fr : Frame) (mem : Mem),
   GraphOk G P den fr mem →
   ∀ (s0 : St σ) (v : Nat) (a : Val), P s0.inner → den s0.inner v = some a →
   ∀ env1, ArgsRel p (sem G) s0 r.args [.value v] (Array.replicate r.vars.length none) env1 →
@@ -241,7 +241,7 @@ theorem applyMulti_sound (p : Isle.Program) (hG : GraphOk G P den fr mem) (allow
       obtain ⟨env1, henv1, s10, tr10, envs2', s11, tr11, hP10, hR10, hilrun, henv2', hR11⟩ :=
         bindAll_run_mem hR (fun _ => hI _ _) envs1 s tr envs2 s2 tr2 hP hil _ henv2
       have hrel := matchArgsN_sound p (sem G) s _ _ _ _ _ hm henv1
-      have := hrs r hrin hallow G P den fr mem hG s v a hP hv env1 hrel n hfuel s10 tr10 envs2'
+      have := hrs r hrin hallow σ G P den fr mem hG s v a hP hv env1 hrel n hfuel s10 tr10 envs2'
         s11 tr11 hP10 hR10 hilrun env2 henv2' s5 tr5 ws s7 tr7 hP5
         (Valuation.le_trans hR11 hR5) hev m hw
       exact hR4 _ _ (hR6 _ _ (hR9 _ _ (hR8 _ _ this)))
