@@ -351,3 +351,43 @@ Goal: `Opt.optimize` refines `Clif.run`, and `E2E.backend_correct_final` extends
 - `symbol_value` is not hoisted; `select_spectre_guard` is treated as skeleton.
 - `opt-fuzz` generates E arithmetic, `select`, extends, divisions, diamonds and one loop shape;
   no memory, calls or `br_table`.
+
+## Pass proofs (2026-09-28, MidPassProofs)
+
+Proven (no `sorry`, no hand-written axioms; `#print axioms` = `propext`, `Classical.choice`,
+`Quot.sound`, plus for `E2E.backend_correct_opt` the `bv_decide`/`native_decide` trust axioms
+inherited from `backend_correct_final`):
+
+| Theorem | File | Statement |
+| --- | --- | --- |
+| `Opt.runLoop_refines` | `FV/Opt/Proof/SemSim.lean` | pointwise `FunSim` between the functions of two programs ⇒ related states' runs: source returns/traps within `n` ⇒ target the same within some `n'` (calls, returns, tail calls, externs) |
+| `Opt.FunSim.trans` | same | simulations compose |
+| `Opt.wf_of_check` | `FV/Opt/Proof/Dom.lean` | `check` ⇒ the certificate facts `Wf` |
+| `Inv.results/enter/entry` | `FV/Opt/Proof/DomInv.lean` | run-time invariant (dominance lemma (D)): available values hold typed values; pure definitions hold `evalNode` of their node |
+| `evalInst_total` | `FV/Opt/Proof/SemFacts.lean` | lemma (T) |
+| `Opt.removeUnreachable_sim` | `FV/Opt/Proof/Unreachable.lean` | `FunSim f (removeUnreachable f)` for every `f` |
+| `Opt.editOk_sim` | `FV/Opt/Proof/GvnEdit.lean` | `check f`, `check g`, `editOk σ f g` ⇒ `FunSim f g` (GVN, DCE, LICM) |
+| `Opt.optimize_sim`, `Opt.optimizeProgram_refines` | `FV/Opt/Proof/Pipeline.lean` | `FunSim f (optimize f cfg)` for every `f`; `Clif.run p` returns/traps ⇒ `Clif.run (optimizeProgram p)` the same |
+| `E2E.backend_correct_opt` | `FV/E2E/Opt.lean` | Arm run of the compiled `optimize f` refines `Clif.runLoop env p fuel cs` from `f`'s entry state |
+
+All pipeline/E2E theorems are parametric in `Opt.SimplifyPassSim cfg.rules.fn
+cfg.rules.skeletonFn` (the simplify stage refines on checked inputs). **Not done:** proving
+`SimplifyPassSim` from `SimplifySound`/`SkeletonSound` (`FV/Opt/Proof/Sem.lean`, the interface
+MidRulesFoundation discharges for allow-listed rules): the e-graph driver (`optimizeAt`,
+`materialize`, `skelStmt`/`skelTerm`) still needs its invariant proof.
+
+Design decisions (approved by the integrator):
+
+- **Validators instead of proofs of the imperative loops.** `check` also runs the declarative
+  certificate `wfCert` (definition-site map, idom tree with decreasing RPO numbers and the edge
+  certificate "for every edge `u → b`, `idom b` is a tree ancestor of `u`", typing).
+  `removeUnreachable` validates itself (`unreachableOk`, else returns its input).
+  `optimizeReport` accepts GVN/DCE/LICM output only if `editOk` holds (`FV/Opt/Validate.lean`;
+  `gvnFull` returns its substitution), else stops like a `check` failure (`passError`). A final
+  guard `keepsBackendSubset` keeps the input if the output would leave E or call new callees.
+  On every difftest input all validators accept: corpus 4 668 → 2 287, runtests 3 383 → 3 040,
+  survey 116 996 → 67 395, `pass-errors 0`, `ill-formed 0`; `opt-fuzz` seeds 1–2 (E and
+  `--ext`) 3 200/3 200 agree.
+- Extra E2E premises: `EnvKeepsSymbols env` (externs keep the link-time symbols, so
+  `symbol_value` is a constant), `TrapsExplicit` about the optimised program's run
+  (`optEntry`), `FormsCovered` of the optimised code (decided, as before).
