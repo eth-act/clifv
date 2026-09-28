@@ -131,6 +131,12 @@ theorem GraphOk.type_val {G : EGraph σ} {P : σ → Prop} {den : σ → Valuati
     (ht : G.typeOf st x = some t) (hc : den st x = some c) : P st → c.ty = t :=
   fun hP => hG.model.types st x t c hP ht hc
 
+/-- A class type read in a model state is the type of its value there. -/
+theorem GraphOk.typeOf_eq {G : EGraph σ} {P : σ → Prop} {den : σ → Valuation} {fr : Frame}
+    {mem : Mem} (hG : GraphOk G P den fr mem) {st : σ} {x : Nat} {t : Ty} {c : Val}
+    (hP : P st) (ht : G.typeOf st x = some t) (hc : den st x = some c) : t = c.ty :=
+  (hG.model.types st x t c hP ht hc).symm
+
 /-! ### `make` in the model -/
 
 theorem GraphOk.make_P {G : EGraph σ} {P : σ → Prop} {den : σ → Valuation} {fr : Frame}
@@ -318,6 +324,24 @@ macro "ofInst_fwd" : tactic => `(tactic| (
   · ofInst_fwd
   · rintro (⟨_, _, _, _, rfl, rfl⟩ | ⟨_, _, _, rfl, rfl⟩) <;> rfl
 
+@[opt_match] theorem ofInst_intCompare {i : Inst} {fs : List V} :
+    ofInst i = some (.data 53 14 fs) ↔
+      ∃ c t x y, i = .icmp c t x y ∧ fs = [opcode 72, .values [.value x, .value y], cc c] := by
+  constructor
+  · ofInst_fwd
+    all_goals exact ⟨_, _, _, _, ⟨rfl, rfl, rfl, rfl⟩, ⟨rfl, rfl⟩, rfl⟩
+  · rintro ⟨_, _, _, _, rfl, rfl⟩; rfl
+
+@[opt_match] theorem ofInst_ternary {i : Inst} {fs : List V} :
+    ofInst i = some (.data 53 24 fs) ↔
+      (∃ t c x y, i = .select t c x y ∧ fs = [opcode 65, .values [.value c, .value x, .value y]]) ∨
+      (∃ t c x y, i = .selectSpectreGuard t c x y ∧
+        fs = [opcode 66, .values [.value c, .value x, .value y]]) ∨
+      (∃ t c x y, i = .bitselect t c x y ∧ fs = [opcode 67, .values [.value c, .value x, .value y]]) := by
+  constructor
+  · ofInst_fwd
+  · rintro (⟨_, _, _, _, rfl, rfl⟩ | ⟨_, _, _, _, rfl, rfl⟩ | ⟨_, _, _, _, rfl, rfl⟩) <;> rfl
+
 /-! ## `V.beq` on constructors -/
 
 @[opt_match] theorem V.beq_ty (a b : CTy) : V.beq (.ty a) (.ty b) = (a == b) := rfl
@@ -345,6 +369,116 @@ theorem toNat_eq_zero_iff {w : Nat} (b : BitVec w) : b.toNat = 0 ↔ b = 0#w := 
   · intro h; exact BitVec.eq_of_toNat_eq (by simpa using h)
   · rintro rfl; simp
 
+/-! ## Type predicates on presented types (`ofClif t`), for matching and evaluation -/
+
+section
+variable {σ : Type} (G : EGraph σ)
+
+@[opt_match, opt_monad] theorem CTy.ofClif_beq (a b : Ty) :
+    (CTy.ofClif a == CTy.ofClif b) = (a == b) := by
+  cases a <;> cases b <;> rfl
+
+@[opt_match] theorem fitsIn64_ofClif_eq {t : Ty} {w : CTy} :
+    Rust.fitsIn64 (CTy.ofClif t) = some w ↔ t ≠ .i128 ∧ w = CTy.ofClif t := by
+  cases t <;> simp [Rust.fitsIn64, CTy.ofClif, CTy.bits, CTy.laneBits, CTy.laneCount, eq_comm]
+
+@[opt_monad] theorem fitsIn64_ofClif {t : Ty} (ht : t ≠ .i128) :
+    Rust.fitsIn64 (CTy.ofClif t) = some (CTy.ofClif t) := by
+  cases t <;> first | rfl | exact absurd rfl ht
+
+@[opt_match] theorem tyIntRefScalar64_ofClif_eq {t : Ty} {w : CTy} :
+    Rust.tyIntRefScalar64 (CTy.ofClif t) = some w ↔ t ≠ .i128 ∧ w = CTy.ofClif t := by
+  cases t <;> simp [Rust.tyIntRefScalar64, CTy.ofClif, CTy.bits, CTy.laneBits, CTy.laneCount,
+    CTy.isFloat, CTy.isVector, eq_comm]
+
+@[opt_monad] theorem tyIntRefScalar64_ofClif {t : Ty} (ht : t ≠ .i128) :
+    Rust.tyIntRefScalar64 (CTy.ofClif t) = some (CTy.ofClif t) := by
+  cases t <;> first | rfl | exact absurd rfl ht
+
+@[opt_match, opt_monad] theorem tyInt_ofClif (t : Ty) :
+    Rust.tyInt (CTy.ofClif t) = some (CTy.ofClif t) := by cases t <;> rfl
+@[opt_match, opt_monad] theorem tyIntVec128_ofClif (t : Ty) :
+    Rust.tyIntVec128 (CTy.ofClif t) = some (CTy.ofClif t) := by cases t <;> rfl
+@[opt_match, opt_monad] theorem tyVec128_ofClif (t : Ty) :
+    Rust.tyVec128 (CTy.ofClif t) = none := by cases t <;> rfl
+@[opt_match, opt_monad] theorem tyVector_ofClif (t : Ty) :
+    Rust.tyVector (CTy.ofClif t) = none := by cases t <;> rfl
+@[opt_match, opt_monad] theorem tyVec128Int_ofClif (t : Ty) :
+    Rust.tyVec128Int (CTy.ofClif t) = none := by cases t <;> rfl
+@[opt_match, opt_monad] theorem tyVectorNotFloat_ofClif (t : Ty) :
+    Rust.tyVectorNotFloat (CTy.ofClif t) = none := by cases t <;> rfl
+@[opt_match, opt_monad] theorem multiLane_ofClif (t : Ty) :
+    Rust.multiLane (CTy.ofClif t) = none := by cases t <;> rfl
+
+/-- The type constants of the patterns (`$I8` .. `$I128`). -/
+@[opt_match, opt_monad] theorem sem_prim_I8 : (sem G).prim 14 "I8" = some (.ty (CTy.ofClif .i8)) := rfl
+@[opt_match, opt_monad] theorem sem_prim_I16 : (sem G).prim 14 "I16" = some (.ty (CTy.ofClif .i16)) := rfl
+@[opt_match, opt_monad] theorem sem_prim_I32 : (sem G).prim 14 "I32" = some (.ty (CTy.ofClif .i32)) := rfl
+@[opt_match, opt_monad] theorem sem_prim_I64 : (sem G).prim 14 "I64" = some (.ty (CTy.ofClif .i64)) := rfl
+@[opt_match, opt_monad] theorem sem_prim_I128 : (sem G).prim 14 "I128" = some (.ty (CTy.ofClif .i128)) := rfl
+@[opt_monad] theorem sem_toSem_prim (ty : Nat) (n : String) : (sem G).toSem.prim ty n = (sem G).prim ty n := rfl
+@[opt_monad] theorem sem_toSem_eq (a b : V) : (sem G).toSem.eq a b = V.beq a b := rfl
+@[opt_monad] theorem sem_toSem_bool (b : Bool) : (sem G).toSem.bool b = .bool b := rfl
+@[opt_monad] theorem sem_toSem_unData (ty : Nat) (v : V) : (sem G).toSem.unData ty v = (sem G).unData ty v := rfl
+@[opt_monad] theorem sem_unData_data (ty ty' k : Nat) (fs : List V) :
+    (sem G).unData ty (.data ty' k fs) = if ty == ty' then some (k, fs) else none := rfl
+attribute [opt_monad] V.beq_ty V.beq_int V.beq_value V.beq_bool
+
+/-! ## Extern extractors, forward (`opt_eval`: the internal constructors' rule selection) -/
+
+@[opt_monad] theorem sem_extract' (t : Term) (v : V) (s : St σ) :
+    (sem G).extract t v s = match t.externExtractor? with
+      | some fn => toExt (extractFn G fn v s)
+      | none => .unmodeled s!"{t.name} has no extern extractor" := rfl
+@[opt_monad] theorem sem_toSem_extract (t : Term) (v : V) (s : St σ) :
+    (sem G).toSem.extract t v s = (sem G).extract t v s := rfl
+
+@[opt_monad] theorem extractFn_fits_in_64 (t : CTy) (s : St σ) :
+    extractFn G "fits_in_64" (.ty t) s = .ok ((Rust.fitsIn64 t).map fun t => [.ty t]) := rfl
+@[opt_monad] theorem extractFn_ty_int_ref_scalar_64_extract (t : CTy) (s : St σ) :
+    extractFn G "ty_int_ref_scalar_64_extract" (.ty t) s =
+      .ok ((Rust.tyIntRefScalar64 t).map fun t => [.ty t]) := rfl
+@[opt_monad] theorem extractFn_ty_int (t : CTy) (s : St σ) :
+    extractFn G "ty_int" (.ty t) s = .ok ((Rust.tyInt t).map fun t => [.ty t]) := rfl
+@[opt_monad] theorem extractFn_ty_vec128 (t : CTy) (s : St σ) :
+    extractFn G "ty_vec128" (.ty t) s = .ok ((Rust.tyVec128 t).map fun t => [.ty t]) := rfl
+@[opt_monad] theorem extractFn_ty_vector (t : CTy) (s : St σ) :
+    extractFn G "ty_vector" (.ty t) s = .ok ((Rust.tyVector t).map fun t => [.ty t]) := rfl
+@[opt_monad] theorem extractFn_ty_int_vec128 (t : CTy) (s : St σ) :
+    extractFn G "ty_int_vec128" (.ty t) s = .ok ((Rust.tyIntVec128 t).map fun t => [.ty t]) := rfl
+@[opt_monad] theorem extractFn_ty_vec128_int (t : CTy) (s : St σ) :
+    extractFn G "ty_vec128_int" (.ty t) s = .ok ((Rust.tyVec128Int t).map fun t => [.ty t]) := rfl
+@[opt_monad] theorem extractFn_multi_lane (t : CTy) (s : St σ) :
+    extractFn G "multi_lane" (.ty t) s =
+      .ok ((Rust.multiLane t).map fun (b, n) => [.int b, .int n]) := rfl
+@[opt_monad] theorem extractFn_u64_from_imm64 (k : Int) (s : St σ) :
+    extractFn G "u64_from_imm64" (.int k) s = .ok (some [.int (Rust.asU64 k)]) := rfl
+@[opt_monad] theorem extractFn_imm64_power_of_two (k : Int) (s : St σ) :
+    extractFn G "imm64_power_of_two" (.int k) s =
+      .ok ((Rust.imm64PowerOfTwo k).map fun i => [.int i]) := rfl
+@[opt_monad] theorem extractFn_u64_matches_non_zero (k : Int) (s : St σ) :
+    extractFn G "u64_matches_non_zero" (.int k) s = .ok (some [.bool (k != 0)]) := rfl
+@[opt_monad] theorem extractFn_u32_matches_non_zero (k : Int) (s : St σ) :
+    extractFn G "u32_matches_non_zero" (.int k) s = .ok (some [.bool (k != 0)]) := rfl
+@[opt_monad] theorem extractFn_i64_matches_non_zero (k : Int) (s : St σ) :
+    extractFn G "i64_matches_non_zero" (.int k) s = .ok (some [.bool (k != 0)]) := rfl
+@[opt_monad] theorem extractFn_i32_from_i64 (v : V) (s : St σ) :
+    extractFn G "i32_from_i64" v s = .ok (some [v]) := rfl
+@[opt_monad] theorem extractFn_u32_from_u64 (v : V) (s : St σ) :
+    extractFn G "u32_from_u64" v s = .ok (some [v]) := rfl
+@[opt_monad] theorem extractFn_value_type (n : Nat) (s : St σ) :
+    extractFn G "value_type" (.value n) s = (valueType G s (.value n) >>= fun t => .ok (some [.ty t])) := rfl
+@[opt_monad] theorem valueType_value (n : Nat) (s : St σ) :
+    valueType G s (.value n) = match G.typeOf s.inner n with
+      | some t => .ok (CTy.ofClif t)
+      | none => .error s!"value_type: v{n} has no type" := rfl
+@[opt_monad] theorem toExt_ok_map_some {α β : Type} (f : α → β) (a : α) :
+    toExt (.ok ((some a).map f) : R (Option β)) = .ok (f a) := rfl
+@[opt_monad] theorem toExt_ok_map_none {α β : Type} (f : α → β) :
+    toExt (.ok ((none : Option α).map f) : R (Option β)) = .fail := rfl
+
+end
+
 /-! ## Opcode indices -/
 
 theorem unaryIdx_inj {a b : UnaryOp} : unaryIdx a = unaryIdx b ↔ a = b := by
@@ -360,6 +494,14 @@ theorem unaryIdx_eq_iff {op : UnaryOp} {k : Nat} : unaryIdx op = k ↔ unaryOfId
 theorem binaryIdx_eq_iff {op : BinaryOp} {k : Nat} : binaryIdx op = k ↔ binaryOfIdx? k = some op := by
   cases op <;> constructor <;> (try rintro rfl) <;> (try rfl) <;> intro h <;>
     (unfold binaryOfIdx? at h; split at h <;> simp_all [binaryIdx])
+
+theorem ccIdx_eq_iff {c : IntCC} {k : Nat} : ccIdx c = k ↔ ccOfIdx? k = some c := by
+  cases c <;> constructor <;> (try rintro rfl) <;> (try rfl) <;> intro h <;>
+    (unfold ccOfIdx? at h; split at h <;> simp_all [ccIdx])
+
+@[opt_match] theorem cc_eq_data {c : IntCC} {k : Nat} {fs : List V} :
+    cc c = .data 46 k fs ↔ ccIdx c = k ∧ fs = [] := by
+  simp [cc, eq_comm]
 
 @[opt_match] theorem opcode_eq_data {k k' : Nat} {fs : List V} :
     opcode k = .data 52 k' fs ↔ k = k' ∧ fs = [] := by

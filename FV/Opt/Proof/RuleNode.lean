@@ -154,6 +154,69 @@ theorem evalNode_binary_iff {op : BinaryOp} {t : Ty} {x y : ValueId} {a : Val} :
     · rintro ⟨b, h, c, h', r, hsh, rfl⟩
       exact ⟨mem, b, h, c, h', by simp [hsh]⟩
 
+theorem check_bind_ok {β : Type} {b : Bool} {msg : String} {k : Unit → Res β} {r : β} :
+    (Res.check b msg >>= k) = .ok r ↔ b = true ∧ k () = .ok r := by
+  cases b <;> simp [Res.check]
+
+theorem evalNode_select {t : Ty} {c x y : ValueId} {a : Val} :
+    evalNode fr mem (.select t c x y) = some a ↔
+      ∃ cv : Val, fr.regs c = some cv ∧ ∃ b d : BitVec t.width, fr.regs x = some ⟨t, b⟩ ∧
+        fr.regs y = some ⟨t, d⟩ ∧ a = ⟨t, Sem.select cv.bits b d⟩ := by
+  simp only [evalNode_eq_some, evalInst, get_bind_ok, getAs_bind_ok, pure, Res.ok.injEq,
+    Prod.mk.injEq, List.cons.injEq, and_true]
+  constructor
+  · rintro ⟨m, cv, hc, b, h, d, h', rfl, -⟩; exact ⟨cv, hc, b, d, h, h', rfl⟩
+  · rintro ⟨cv, hc, b, d, h, h', rfl⟩; exact ⟨mem, cv, hc, b, h, d, h', rfl, rfl⟩
+
+theorem evalNode_bitselect {t : Ty} {c x y : ValueId} {a : Val} :
+    evalNode fr mem (.bitselect t c x y) = some a ↔
+      ∃ e b d : BitVec t.width, fr.regs c = some ⟨t, e⟩ ∧ fr.regs x = some ⟨t, b⟩ ∧
+        fr.regs y = some ⟨t, d⟩ ∧ a = ⟨t, Sem.bitselect e b d⟩ := by
+  simp only [evalNode_eq_some, evalInst, getAs_bind_ok, pure, Res.ok.injEq,
+    Prod.mk.injEq, List.cons.injEq, and_true]
+  constructor
+  · rintro ⟨m, e, hc, b, h, d, h', rfl, -⟩; exact ⟨e, b, d, hc, h, h', rfl⟩
+  · rintro ⟨e, b, d, hc, h, h', rfl⟩; exact ⟨mem, e, hc, b, h, d, h', rfl, rfl⟩
+
+theorem evalNode_bmask {t : Ty} {x : ValueId} {a : Val} :
+    evalNode fr mem (.bmask t x) = some a ↔
+      ∃ v : Val, fr.regs x = some v ∧ a = ⟨t, Sem.bmask v.bits⟩ := by
+  simp only [evalNode_eq_some, evalInst, get_bind_ok, pure, Res.ok.injEq,
+    Prod.mk.injEq, List.cons.injEq, and_true]
+  constructor
+  · rintro ⟨m, v, h, rfl, -⟩; exact ⟨v, h, rfl⟩
+  · rintro ⟨v, h, rfl⟩; exact ⟨mem, v, h, rfl, rfl⟩
+
+theorem evalNode_uextend {t : Ty} {x : ValueId} {a : Val} :
+    evalNode fr mem (.extend .uextend t x) = some a ↔
+      ∃ v : Val, fr.regs x = some v ∧ v.ty.width < t.width ∧
+        a = ⟨t, Sem.uextend t.width v.bits⟩ := by
+  simp only [evalNode_eq_some, evalInst, get_bind_ok, check_bind_ok, decide_eq_true_eq, pure,
+    Res.ok.injEq, Prod.mk.injEq, List.cons.injEq, and_true]
+  constructor
+  · rintro ⟨m, v, h, hw, rfl, -⟩; exact ⟨v, h, hw, rfl⟩
+  · rintro ⟨v, h, hw, rfl⟩; exact ⟨mem, v, h, hw, rfl, rfl⟩
+
+theorem evalNode_sextend {t : Ty} {x : ValueId} {a : Val} :
+    evalNode fr mem (.extend .sextend t x) = some a ↔
+      ∃ v : Val, fr.regs x = some v ∧ v.ty.width < t.width ∧
+        a = ⟨t, Sem.sextend t.width v.bits⟩ := by
+  simp only [evalNode_eq_some, evalInst, get_bind_ok, check_bind_ok, decide_eq_true_eq, pure,
+    Res.ok.injEq, Prod.mk.injEq, List.cons.injEq, and_true]
+  constructor
+  · rintro ⟨m, v, h, hw, rfl, -⟩; exact ⟨v, h, hw, rfl⟩
+  · rintro ⟨v, h, hw, rfl⟩; exact ⟨mem, v, h, hw, rfl, rfl⟩
+
+theorem evalNode_ireduce {t : Ty} {x : ValueId} {a : Val} :
+    evalNode fr mem (.ireduce t x) = some a ↔
+      ∃ v : Val, fr.regs x = some v ∧ t.width < v.ty.width ∧
+        a = ⟨t, Sem.ireduce t.width v.bits⟩ := by
+  simp only [evalNode_eq_some, evalInst, get_bind_ok, check_bind_ok, decide_eq_true_eq, pure,
+    Res.ok.injEq, Prod.mk.injEq, List.cons.injEq, and_true]
+  constructor
+  · rintro ⟨m, v, h, hw, rfl, -⟩; exact ⟨v, h, hw, rfl⟩
+  · rintro ⟨v, h, hw, rfl⟩; exact ⟨mem, v, h, hw, rfl, rfl⟩
+
 end
 
 end Opt.Proof

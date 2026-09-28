@@ -217,7 +217,7 @@ def Isle.Opt.simplifySkeleton {σ} (enodes …) (typeOf …) (make …)
   `simplify` calls, 12 `simplify_skeleton` calls and 930 `simplify` calls over the CLIF corpus
   fire the same rules as a `trace-log` build at `opt_level=speed` (per call, on e-classes whose
   operands are single original nodes).
-  Nothing about the rules or helpers is proven yet.
+  224 `simplify` rules and their helpers are proven (see "Rule proofs").
 
 ## Results (2026-09-28, default configuration: Cranelift rules, 1 round)
 
@@ -341,6 +341,8 @@ Goal: `Opt.optimize` refines `Clif.run`, and `E2E.backend_correct_final` extends
   rule sets (`E2E.backend_correct_opt_proven`); only 4 `simplify` rules are proven, so the
   default configuration (all rules) still rests on the differential tests for the rule
   obligations (`SimplifySound`/`SkeletonSound` of the full rule set).
+- Proven: the rule interpreter's soundness and 224 `simplify` rules ("Rule proofs"); the passes
+  and the pipeline are not, so the differential tests remain the evidence for them.
 - Missing Cranelift mid-end features: alias analysis (redundant-load elimination,
   store-to-load forwarding), merging of identical trapping instructions, elaboration-based
   sinking and general rematerialisation (only constants, optionally), full e-class visibility
@@ -492,12 +494,15 @@ Design decisions (approved by the integrator):
 
 ## Rule proofs (MidRulesFoundation, branch `agent/mid-rules`)
 
-Status: the framework is complete and proven; **4 `simplify` rules proven** (a first batch),
+Status: the framework is complete and proven; **224 `simplify` rules proven** (see below),
 allow-list embedding done. Files `FV/Opt/Proof/{Sem,InterpMatch,InterpState,InterpEval,RuleBase,
-RuleData,RuleNode,RuleEmbed,RuleTactic,RuleAuto,RuleArith,RuleAll}.lean`; generator
+RuleData,RuleNode,RuleEmbed,RuleTactic,RuleImm,RuleCtor,RuleSkel,RuleAuto,RuleArith,RuleCprop,
+RuleAll}.lean`; generator
 `FVTest/Opt/Proof/GenData.lean` (`lake env lean --run FVTest/Opt/Proof/GenData.lean >
 FV/Opt/Proof/RuleData.lean`, 33 s build). No `sorry`; axioms of every theorem below:
-`propext`, `Classical.choice`, `Quot.sound`.
+`propext`, `Classical.choice`, `Quot.sound`, plus the `*._native.bv_decide.ax_*` certificates of
+the `bv_decide` calls (as in the backend proofs). Full build of `RuleAll` ~16 min wall on 32 cores
+(`RuleArith.lean` dominates).
 
 **Interface** (`Sem.lean`, owned by MidPassProofs, copied byte-identical): `Opt.evalNode`,
 `Opt.Valuation`, `GraphModel` (A1 nodes, A2 types), `MakeSound` (A3), `SimplifySound`,
@@ -517,8 +522,6 @@ FV/Opt/Proof/RuleData.lean`, 33 s build). No `sorry`; axioms of every theorem be
 - `RuleAll.simplifyRulesCorrect_proven`, `RuleAll.simplifySound_proven :
   SimplifySound (RuleSetId.fnWith .proven .cranelift)` — the obligation `simplify`'s pass proof
   takes with `Config.ruleAllow := .proven`.
-- Proven rules (`RuleArith.lean`, all types incl. `i128`): `arithmetic.isle` 8 (`x+0`), 13
-  (`x-0`), 35, 59 — ids 65, 66, 72, 78 = `Opt.provenSimplifyRules`.
 
 **Embedding changes** (`FV/Isle/Opt/Simplify.lean`, behaviour-preserving except the first):
 `ofInst` no longer presents `iconst.i128` (its `Imm64` presentation truncated; Cranelift rejects
@@ -531,49 +534,87 @@ Driver: `Opt.RuleAllow` (`all` default | `proven` | `ids`), `RuleSetId.fnWith`/`
 the `simplify` call's arguments), option `--opt-proven-only`. Corpus difftest: default 114/114
 agree, 4321 → 2018 insts; `--opt-proven-only` 114/114, 4321 → 2475 (skeleton rules off).
 
-**Template** (`RuleAuto.lean`): `rule_auto r [helper lemmas]` = `rule_intro` (fuel `k+1000`),
-`rule_no_iflets`, `rule_lhs hG` (fixpoint of `simp_all` over `opt_match`/`opt_data`,
-`opt_destruct` + `subst`, and `opt_model hG`, which adds the model's value/type facts for every
-matched node — values of matched classes become hypotheses `den s0 x = some ⟨t, b⟩`),
-`rule_rhs` (`opt_eval`: stepwise `rw` of one interpreter equation + `simp only` over
-`opt_monad`/`opt_data`, never unfolding under binders), `rule_finish` (a matched class via the
-`Valuation.Le` chain, or a made node via `GraphOk.make_val`/`opt_node`), `rule_bits` (immediates
-to bits, `opt_cases_ty`, `simp`/`bv_decide`). Cost: ~1.6 s per rule (4 rules: 6.4 s, one core
-each), 25-rule batch file ~20 s wall on 16 cores.
+**Proven rules** (MidRulesInfra2): **224 `simplify` roots** = `Opt.provenSimplifyRules` —
+`arithmetic.isle` 172 of 258 (`RuleArith.lean`), `cprop.isle` 52 of 68 (`RuleCprop.lean`); every
+theorem is the one-line `rule_auto rule_<file>_<line>`. No skeleton rule is proven yet
+(`skeleton_rules_proven` is `[]`; `SkelRuleOk` + `skeletonSound` are ready, `div_const` is not).
+Helper specifications (`RuleImm.lean`, simp set `opt_imm`): `imm64_add/sub/mul/and/or/xor/not/neg/
+umin/umax/smin/smax/icmp/masked/clz/ctz/shl/ushr` at every non-`i128` type, in the normal form
+`Rust.imm64X (ofClif t) (imm64OfBits b) … = .ok (imm64OfBits (<BitVec op> b …))` (proof: `imm_pre`
+unfolds the helper, `imm_cases` splits the widths, `imm_solve` turns `Int` arithmetic into
+`BitVec 64` and runs `bv_decide`; `clz`/`ctz` bridge `Nat.log2`/the Rust loop to `BitVec.clz`/`ctz`).
 
-**What the first 25-rule arithmetic batch showed** (4/25 fully automatic). Remaining failures,
-in order of frequency, all template gaps rather than design problems:
-1. RHS builds nodes through internal constructors (`ineg`, `isub`, `iconst`…): `opt_node` must
-   also see made operands and `makeInst`/`toInst` must be evaluated (`toInst` on the concrete
-   `InstructionData` — add `toInst_*` simp lemmas like the `ofInst_*` ones; `rule_finish_make`
-   currently fails to unify when the candidate state is `{s with subsumed := …}` around a make).
-2. Extern helpers (`imm64_*`, `u64_*`, `ty_*`) on the RHS/if-lets: need `ctorFn` rfl lemmas
-   (pattern `ctorFn_imm64_clz` in `InterpEval.lean`; generate them from `ctorPure`'s source,
-   string-literal matches only reduce by `rfl`) and specs relating them to `BitVec`:
-   recommended normal form `BitVec.ofInt 64 (helper …)` = a `BitVec 64` expression
-   (`andMask` = truncation, `imm64OfBits b` = `b.zeroExtend 64`), then `bv_decide` per width.
-   `asU64_imm64OfBits` is the first such lemma.
-3. `iconst_s`/`iconst_u` with non-zero literals: `toNat_eq_iff_ofNat` needs the literal in
-   `Nat` form (add an `Int.ofNat`/literal normalisation lemma).
-4. If-lets: only `[]` is handled (`rule_no_iflets`); `opt_eval hil` works but the result
-   needs the helper specs of (2).
+**Proven rule lines** (`rule_<file>_<line>`, ISLE source lines):
+- `arithmetic.isle` (172): 8, 13, 18, 24, 26, 28, 31, 35, 59, 233, 239, 240, 243, 244, 247, 295, 296, 297, 298, 301, 302,
+  303, 304, 307, 308, 311, 312, 313, 314, 317, 318, 319, 320, 323, 324, 337, 338, 339, 340, 346,
+  352, 353, 354, 355, 356, 357, 358, 359, 362, 363, 364, 365, 366, 367, 368, 369, 372, 373, 374,
+  375, 378, 379, 380, 381, 384, 385, 388, 389, 390, 391, 424, 451, 452, 453, 454, 457, 458, 459,
+  460, 461, 462, 463, 464, 467, 468, 469, 470, 471, 472, 473, 474, 477, 478, 479, 480, 481, 482,
+  483, 484, 485, 486, 487, 488, 489, 490, 491, 492, 495, 496, 497, 498, 500, 501, 502, 503, 505,
+  506, 507, 508, 510, 511, 512, 513, 515, 516, 517, 518, 520, 521, 522, 523, 525, 526, 527, 528,
+  530, 531, 532, 533, 536, 537, 538, 539, 541, 542, 543, 544, 546, 547, 548, 549, 551, 552, 553,
+  554, 556, 557, 558, 559, 561, 562, 563, 564, 566, 567, 568, 569, 571, 572, 573, 574, 599.
+- `cprop.isle` (52): 3, 9, 14, 20, 26, 56, 62, 68, 74, 104, 109, 114, 119, 147, 152, 155, 159, 162, 165, 169, 170,
+  171, 172, 174, 183, 193, 197, 201, 205, 209, 214, 217, 220, 223, 227, 229, 232, 235, 238, 241,
+  247, 249, 252, 254, 257, 259, 333, 337, 341, 345, 349, 521.
+- Not proven in `cprop.isle`: 79, 84, 89, 94, 99, 125, 130, 132, 135, 269, 320, 322, 324, 375,
+  377, 379; `arithmetic.isle`: the other 86 roots (`Isle.Opt.Closure` roots of term 177 minus
+  the list above).
 
-**Fan-out plan by opts file** (closure roots of `simplify`; skeleton rules need
-`SkeletonSound` with the same machinery on `simplify_skeleton`, not started):
+**Template** (`RuleAuto.lean`): `rule_auto r` = `rule_intro` (fuel `k+1000`), `rule_no_iflets`,
+`rule_lhs hG`, `rule_rhs`, `rule_finish`.
+- `rule_lhs`: fixpoint of `lhs_step` (`simp_all` over `opt_match`/`opt_data`, wrapped in
+  `opt_guard`, which turns the maximum-recursion failure `simp_all` hits on the contradictory
+  hypotheses of dead branches into an ordinary failure), `opt_destruct` + `subst`, `opt_model hG`
+  (model facts for `(node|type, class value)` pairs matched on the syntax of `(state, class)`:
+  4× faster than trying every pair) and the fallback `lhs_step'` (`simp … at *`).
+- `rule_rhs`: `opt_eval hev` (interpreter equations + `opt_monad` + `opt_imm`), then `split` on
+  every stuck `match` (a made `icmp` reads its operand type from the graph: `toInst_icmp`,
+  `none` = poison, no obligation), `opt_types` (the operand type read in a later state is the
+  value's type, `GraphOk.typeOf_eq`).
+- `rule_finish`: a matched class (`Valuation.Le` chain) or a made node (`GraphOk.make_val`,
+  `opt_node` operand by operand, made operands recursively), then `rule_bits`: `val_congr`
+  (not `simp`: `BitVec 8` vs `BitVec Ty.i8.width`), `ac_rfl` for AC identities (64-bit `*`
+  commutation times out in `bv_decide`), else `opt_cases_ty` (types and `IntCC`s),
+  `opt_widths` (locals to literal widths), `sem_simp` (`bif` forms of `select`/`bmask`/`icmp`/
+  min/max — an `if` would carry a stale `Decidable` instance; shifts as `<<< (y &&& (w-1))`,
+  `ishl_mask` etc.), `bv_decide`. The context is never `simp_all`ed in `rule_bits`.
+- Embedding lemmas added: `evalNode` of `select`/`bitselect`/`bmask`/`uextend`/`sextend`/
+  `ireduce`; `ofInst` inversion of `icmp`/ternary; type predicates on `ofClif t` and forward
+  `extractFn` lemmas (internal-constructor rule selection); `CTy.ofName?` matches `I8`..`I128`
+  literally (behaviour-preserving) so `$I64` patterns reduce by `rfl`.
 
-| File | Roots | Needs beyond the template |
-| --- | ---: | --- |
-| arithmetic | 258 | (1)-(3); `iabs`, `imul` by `-1`/powers of two (`imm64_power_of_two` spec) |
-| bitops | 450 | (1); `band`/`bor`/`bxor`/`bnot` identities are `bv_decide`; `bmask`, `popcnt`/`clz`/`bitrev` evalNode lemmas |
-| cprop | 68 | (2) for all `imm64_*` (Int ↔ BitVec 64 specs), `imm64_icmp`, `u64_bswap*`, `imm64_masked` |
-| icmp | 124 | `evalNode_icmp`, `intcc_*` helper specs, `Sem.intcc` per code |
-| selects | 100 | `evalNode` of `select`/`bitselect`, `truthy` multi-term (internal multi ctor in `applyTermN`) |
-| shifts | 75 | shift evalNode (`evalNode_binary_iff` shift branch), `imm64_shl`… specs, amount masking |
-| extends | 29 | `evalNode` of `extend`/`ireduce`, `iconst_sextend_etor`, `uextend_maybe_etor` multi-extractor lemma |
-| spaceship | 40 | icmp + selects |
-| remat | 12 | candidate `v` itself (`remat v`): trivial by `hv` + Le chain |
-| div_const (skeleton) | — | `SkeletonSound`, `magicU`/`magicS` specs (the hardest; defer) |
+**Cost** (32 cores, `lake env lean` on one file): `cprop` 68 roots 3 m 18 s wall / 62 CPU-min;
+`arithmetic` 258 roots 21 m wall. A passing rule costs 5-30 s (LHS unfolding dominates:
+~1 s per `simp_all` pass, 5-10 passes for two-level patterns); failing rules cost most of the CPU
+(`bv_decide` timeouts, heartbeat limit). Use `maxHeartbeats 4000000` per declaration.
 
-One agent per row (bitops split in two), each adding its lemmas to `RuleEmbed`/`RuleNode`
-/`InterpEval` in a per-family file and appending ids to `Opt.provenSimplifyRules` and cases to
-`RuleAll.simplifyRulesCorrect_proven` (`simplify_rules_proven` is recomputed by `rfl`).
+**Fan-out recipe** (one agent per opts file; ids come from `Isle.Opt.Closure.rules`, roots of
+term 177 = `simplify`):
+1. Generate `FV/Opt/Proof/Rule<File>.lean` with one `theorem ok_rule_<file>_<line> {p} (hd :
+   Data p) : RuleOk p rule_<file>_<line> := by rule_auto rule_<file>_<line>` per root (header as
+   `RuleCprop.lean`), run `FV_MEMCAP=16G scripts/memcap.sh lake env lean -DmaxErrors=100000
+   <file>`, keep the theorems without errors.
+2. For the failures, debug one rule with the phases spelled out (`rule_intro r; rule_no_iflets;
+   rule_lhs hG; all_goals rule_rhs; trace_state`): a stuck `hev` names the missing evaluation
+   lemma (helper spec → `RuleImm.lean` in the normal form above; extractor/type predicate →
+   `RuleEmbed.lean`; `evalNode` form → `RuleNode.lean`); a failing `bv_decide` names the
+   missing `sem_simp` normal form.
+3. Append the proven ids: `python3`-style regeneration of `Opt.provenSimplifyRules`
+   (`FV/Opt/Rules.lean`, rule ids from `Closure.rules`) and of the list/cases of
+   `RuleAll.simplify_rules_proven`/`simplifyRulesCorrect_proven` in `R.«simplify»` order (the
+   `rfl` compares the filtered rule list), import the new file in `RuleAll.lean`. Shared files
+   (`RuleAuto`, `RuleEmbed`, `RuleNode`, `RuleImm`) need one owner or serialized merges.
+
+Known gaps, by frequency in the failed roots (arithmetic 86 incl. 7 SAT-timeout-flaky ones, cprop 16):
+1. If-lets (`rule_no_iflets` only handles `[]`; 30+ arithmetic roots): evaluate `hil` like `hev`
+   and split on the `Bool` condition — the right-hand side then runs under that fact.
+2. Internal constructors with if-lets on the right (`iconst_u`/`iconst_s ty k` with `k ≠ 0`,
+   `cmp_true`): same evaluation of the constructor's if-let (`u64_lt_eq c (ty_umax ty)`,
+   `ty_umax` = `tyMask_ofClif`), then the `Int` immediate through `imm_solve`'s lemmas.
+3. Missing helper specs: `imm64_sshr`, `imm64_rotl/rotr` (the `Nat` subtraction `b - s` as a
+   `BitVec` amount), `u64_bswap16/32/64`, `imm64_power_of_two`, `u64_*` arithmetic.
+4. `bv_decide` limits: 64-bit multiplication identities that are not AC (`x*(-1)`, `x*2`),
+   `iabs` (needs `Sem.iabs` in `bif` form).
+5. Skeleton rules: `SkelRuleOk` obligations need the same template on `simplify_skeleton`
+   (`div_const`: `magicU`/`magicS` specs; the simple ones — `x / 1`, `x % 1` — should be first).

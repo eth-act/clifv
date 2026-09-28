@@ -39,10 +39,23 @@ open Isle Isle.Opt Isle.Interp Clif
     (g : β → Except ε γ) : (x >>= f) >>= g = x >>= fun a => f a >>= g := by
   cases x <;> rfl
 
-attribute [opt_monad] Option.map_some Option.map_none toInst makeInst unaryOfIdx? binaryOfIdx?
+attribute [opt_monad] Option.map_some Option.map_none Option.bind_some Option.bind_none toInst makeInst unaryOfIdx? binaryOfIdx?
   ccOfIdx? TyId.«InstructionData»
 
-@[opt_monad] theorem V.cc?_cc (c : IntCC) : (cc c).cc? = .ok c := by cases c <;> rfl
+/-- `toInst` of an `icmp`: the operand type is read off the graph (`typeOf x`, which a proof
+splits on: `none` makes a poison value). Stated for any condition-code index (`cc c` unfolds to
+`.data 46 (ccIdx c) []`, `ccOfIdx?_ccIdx`), before `toInst` is unfolded (`↓`). -/
+@[opt_monad ↓] theorem toInst_icmp (tf : Nat → Option Ty) (t : Ty) (k k' c : Nat) (x y : Nat) :
+    toInst tf (CTy.ofClif t) (.data 53 14 [.data k 72 [], .values [.value x, .value y], .data k' c []]) =
+      (ccOfIdx? c).bind fun cc => (tf x).map fun xt => .icmp cc xt x y := by
+  cases t <;> cases h : tf x <;> cases h' : ccOfIdx? c <;> simp [toInst, h, h', CTy.ofClif, CTy.toClif?]
+
+@[opt_monad] theorem cc_data (c : IntCC) : cc c = .data 46 (ccIdx c) [] := rfl
+
+@[opt_monad ↓] theorem ccOfIdx?_ccIdx (c : IntCC) : ccOfIdx? (ccIdx c) = some c := by cases c <;> rfl
+
+@[opt_monad] theorem V.cc?_data (ty : Nat) (c : IntCC) : (V.data ty (ccIdx c) []).cc? = .ok c := by
+  cases c <;> rfl
 
 @[opt_monad] theorem toClif?_ofClif (t : Ty) : (CTy.ofClif t).toClif? = some t := by
   cases t <;> rfl
@@ -212,7 +225,8 @@ macro "imm_solve" : tactic => `(tactic| (
       toNat_lt_toNat, toInt_le_toInt, toInt_lt_toInt, toInt_beq_toInt, natCast_beq_natCast,
       toNat_beq_toNat, decide_eq_true_eq, natCast_bne_natCast, toInt_bne_toInt,
       ofInt_toInt_signExtend, setWidth_ite, Sem.umin, Sem.umax, Sem.smin, Sem.smax, icmp_eq,
-      icmp_ne, icmp_slt, icmp_sge, icmp_sgt, icmp_sle, icmp_ult, icmp_uge, icmp_ugt, icmp_ule]
+      icmp_ne, icmp_slt, icmp_sge, icmp_sgt, icmp_sle, icmp_ult, icmp_uge, icmp_ugt, icmp_ule,
+      Int.reduceNatCast, BitVec.ofInt_natCast, BitVec.ofNat_toNat]
     all_goals bv_decide))
 
 /-- Split a non-`i128` type into its four widths (reverting the given bit vectors). -/
@@ -369,5 +383,277 @@ theorem imm64Icmp_ule_spec {t : Ty} (ht : t ≠ .i128) (b c : BitVec t.width) :
     Rust.imm64Masked (CTy.ofClif t') (b.toNat : Int) = .ok (imm64OfBits (b.setWidth t'.width)) := by
   imm_pre [Rust.imm64Masked]
   imm_cases t b <;> imm_cases t' <;> imm_solve
+
+end Opt.Proof
+
+namespace Opt.Proof
+attribute [opt_imm] asU64_imm64OfBits
+end Opt.Proof
+
+/-! ## Bit counting: `u64::leading_zeros`/`trailing_zeros` as `BitVec.clz`/`ctz` -/
+
+namespace Opt.Proof
+
+open Isle Isle.Opt Clif
+
+theorem clz64_eq (x : Int) : Rust.clz64 x = (BitVec.ofInt 64 x).clz.toNat := by
+  unfold Rust.clz64 Rust.asU64
+  generalize BitVec.ofInt 64 x = b
+  simp only [Int.toNat_natCast]
+  by_cases h0 : b = 0#64
+  · subst h0; simp
+  · have hn : b.toNat ≠ 0 := by intro h; exact h0 (BitVec.eq_of_toNat_eq (by simpa using h))
+    have hlt := BitVec.clz_lt_iff_ne_zero.2 h0
+    have h1 := BitVec.two_pow_sub_clz_le_toNat_of_ne_zero (by decide) h0
+    have h2 := BitVec.toNat_lt_two_pow_sub_clz (x := b)
+    have hc : b.clz.toNat < 64 := by
+      have := BitVec.lt_def.1 hlt; simpa using this
+    have hl : b.toNat.log2 = 63 - b.clz.toNat := by
+      rw [Nat.log2_eq_iff hn]
+      refine ⟨by simpa using h1, ?_⟩
+      have : 63 - b.clz.toNat + 1 = 64 - b.clz.toNat := by omega
+      rw [this]; exact h2
+    simp only [hn, beq_iff_eq, ite_false, hl]
+    omega
+
+theorem ctz64_go (j : Nat) : ∀ (n k f : Nat), (∀ i < j, n.testBit i = false) → n.testBit j = true →
+    j < f → Rust.ctz64.go n k f = k + j := by
+  induction j with
+  | zero =>
+    intro n k f _ hj hf
+    obtain ⟨f, rfl⟩ : ∃ f', f = f' + 1 := ⟨f - 1, by omega⟩
+    have : n % 2 = 1 := by simpa [Nat.testBit_zero] using hj
+    simp [Rust.ctz64.go, this]
+  | succ j ih =>
+    intro n k f hb hj hf
+    obtain ⟨f, rfl⟩ : ∃ f', f = f' + 1 := ⟨f - 1, by omega⟩
+    have h0 : n % 2 = 0 := by
+      have := hb 0 (by omega); simp [Nat.testBit_zero] at this; omega
+    simp only [Rust.ctz64.go, h0]
+    simp only [Nat.zero_ne_one, beq_iff_eq, ite_false]
+    rw [ih (n / 2) (k + 1) f (fun i hi => by rw [← Nat.testBit_succ]; exact hb _ (by omega))
+      (by rw [← Nat.testBit_succ]; exact hj) (by omega)]
+    omega
+
+theorem ctz64_eq (x : Int) : Rust.ctz64 x = (BitVec.ofInt 64 x).ctz.toNat := by
+  unfold Rust.ctz64 Rust.asU64
+  generalize BitVec.ofInt 64 x = b
+  simp only [Int.toNat_natCast]
+  by_cases h0 : b = 0#64
+  · subst h0
+    have : (0#64).ctz = 64#64 := by
+      rw [BitVec.ctz_eq_reverse_clz]; exact BitVec.clz_eq_iff_eq_zero.2 (by simp)
+    simp [this]
+  · have hn : b.toNat ≠ 0 := by intro h; exact h0 (BitVec.eq_of_toNat_eq (by simpa using h))
+    have hlt : b.ctz.toNat < 64 := by
+      have := BitVec.lt_def.1 (BitVec.ctz_lt_iff_ne_zero.2 h0); simpa using this
+    simp only [hn, beq_iff_eq, ite_false]
+    rw [ctz64_go b.ctz.toNat b.toNat 0 64 ?_ ?_ hlt]
+    · omega
+    · intro i hi
+      have := BitVec.getLsbD_false_of_lt_ctz (x := b) hi
+      simpa [BitVec.getLsbD] using this
+    · have := BitVec.getLsbD_true_ctz_of_ne_zero h0
+      simpa [BitVec.getLsbD] using this
+
+
+theorem clz_aux {w : Nat} (hw : w ≤ 64) (b : BitVec w)
+    (h1 : (b.setWidth 64).clz = b.clz.setWidth 64 + BitVec.ofNat 64 (64 - w)) :
+    (b.setWidth 64).clz.toNat = b.clz.toNat + (64 - w) ∧ b.clz.toNat ≤ w := by
+  have h2 : b.clz.toNat ≤ w := by
+    have := BitVec.le_def.1 (BitVec.clz_le (x := b))
+    have hlt : w < 2 ^ w := Nat.lt_two_pow_self
+    simpa [Nat.mod_eq_of_lt hlt] using this
+  have hc : b.clz.toNat < 2 ^ 64 := by omega
+  refine ⟨?_, h2⟩
+  rw [h1, BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hc,
+    Nat.mod_eq_of_lt (a := 64 - w) (by omega), Nat.mod_eq_of_lt (by omega)]
+
+theorem clz_setWidth_toNat {t : Ty} (ht : t ≠ .i128) (b : BitVec t.width) :
+    (b.setWidth 64).clz.toNat = b.clz.toNat + (64 - t.width) ∧ b.clz.toNat ≤ t.width := by
+  revert b
+  cases t
+  · intro b; exact clz_aux (by decide) b (by opt_widths; simp only [Ty.width, Nat.reduceSub]; bv_decide)
+  · intro b; exact clz_aux (by decide) b (by opt_widths; simp only [Ty.width, Nat.reduceSub]; bv_decide)
+  · intro b; exact clz_aux (by decide) b (by opt_widths; simp only [Ty.width, Nat.reduceSub]; bv_decide)
+  · intro b; exact clz_aux (by decide) b (by opt_widths; simp only [Ty.width, Nat.reduceSub]; bv_decide)
+  · exact absurd rfl ht
+
+theorem imm64OfBits_of_lt {w : Nat} (b : BitVec w) (h : b.toNat < 2 ^ 63) :
+    imm64OfBits b = b.toNat := by
+  simp only [imm64OfBits, Rust.asI64, BitVec.toInt_ofInt]
+  have h' : (b.toNat : Int) < 2 ^ 63 := by exact_mod_cast h
+  simp only [Nat.reducePow, Int.reducePow] at h' ⊢
+  rw [Int.bmod_eq_emod_of_lt] <;> rw [Int.emod_eq_of_lt] <;> omega
+
+@[opt_imm] theorem imm64Clz_spec {t : Ty} (ht : t ≠ .i128) (b : BitVec t.width) :
+    Rust.imm64Clz (CTy.ofClif t) (imm64OfBits b) = .ok (imm64OfBits (Sem.clz b)) := by
+  imm_pre [Rust.imm64Clz]
+  have hw : t.width ≤ 64 := by cases t <;> simp_all [Ty.width]
+  have e : BitVec.ofInt 64 (imm64OfBits b) = b.setWidth 64 := by
+    rw [imm64OfBits_eq hw, BitVec.ofInt_toInt]
+  obtain ⟨h1, h2⟩ := clz_setWidth_toNat ht b
+  rw [clz64_eq, e, h1, if_neg (show ¬ (b.clz.toNat + (64 - t.width) < 64 - t.width) by omega), Sem.clz, imm64OfBits_of_lt _ (by omega)]
+  congr 1
+  omega
+
+theorem ctz_aux {w : Nat} (hw : w ≤ 64) (b : BitVec w)
+    (h1 : b = 0#w ∨ (b.setWidth 64).ctz = b.ctz.setWidth 64) :
+    b ≠ 0#w → (b.setWidth 64).ctz.toNat = b.ctz.toNat := by
+  intro hb
+  rcases h1 with h | h
+  · exact absurd h hb
+  · rw [h, BitVec.toNat_setWidth, Nat.mod_eq_of_lt]
+    exact Nat.lt_of_lt_of_le b.ctz.isLt (Nat.pow_le_pow_right (by decide) hw)
+
+theorem ctz_setWidth_toNat {t : Ty} (ht : t ≠ .i128) (b : BitVec t.width) :
+    b ≠ 0#t.width → (b.setWidth 64).ctz.toNat = b.ctz.toNat := by
+  revert b
+  cases t
+  · intro b; exact ctz_aux (by decide) b (by opt_widths; simp only [Ty.width]; bv_decide)
+  · intro b; exact ctz_aux (by decide) b (by opt_widths; simp only [Ty.width]; bv_decide)
+  · intro b; exact ctz_aux (by decide) b (by opt_widths; simp only [Ty.width]; bv_decide)
+  · intro b; exact ctz_aux (by decide) b (by opt_widths; simp only [Ty.width]; bv_decide)
+  · exact absurd rfl ht
+
+theorem ctz_zero_toNat (w : Nat) : (0#w).ctz.toNat = w := by
+  have : (0#w).ctz = BitVec.ofNat w w := by
+    rw [BitVec.ctz_eq_reverse_clz]; exact BitVec.clz_eq_iff_eq_zero.2 (by simp)
+  rw [this, BitVec.toNat_ofNat, Nat.mod_eq_of_lt Nat.lt_two_pow_self]
+
+@[opt_imm] theorem imm64Ctz_spec {t : Ty} (ht : t ≠ .i128) (b : BitVec t.width) :
+    Rust.imm64Ctz (CTy.ofClif t) (imm64OfBits b) = .ok (imm64OfBits (Sem.ctz b)) := by
+  imm_pre [Rust.imm64Ctz]
+  have hw : t.width ≤ 64 := by cases t <;> simp_all [Ty.width]
+  have e : BitVec.ofInt 64 (imm64OfBits b) = b.setWidth 64 := by
+    rw [imm64OfBits_eq hw, BitVec.ofInt_toInt]
+  rw [asU64_imm64OfBits ht, ctz64_eq, e, Sem.ctz]
+  by_cases hb : b = 0#t.width
+  · subst hb
+    rw [imm64OfBits_of_lt _ (by rw [ctz_zero_toNat]; omega), ctz_zero_toNat]
+    simp
+  · have hn : b.toNat ≠ 0 := fun h => hb (BitVec.eq_of_toNat_eq (by simpa using h))
+    have hl := ctz_setWidth_toNat ht b hb
+    have hlt : b.ctz.toNat < 2 ^ 63 := by
+      have h1 := BitVec.lt_def.1 (BitVec.ctz_lt_iff_ne_zero.2 hb)
+      simp only [BitVec.natCast_eq_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt Nat.lt_two_pow_self] at h1
+      omega
+    rw [imm64OfBits_of_lt _ hlt, hl]
+    simp [hn]
+
+end Opt.Proof
+
+/-! ## Shift amounts as bit-vector masks (`bv_decide` shifts by a `BitVec`, not a `Nat`)
+
+For a power-of-two width `w` (every `Ty.width`), `y.toNat % w` is `(y &&& (w - 1)).toNat`; the
+hypotheses are closed by `decide` once the widths are literals. -/
+
+namespace Opt.Proof
+
+open Isle Isle.Opt Clif
+
+theorem shiftAmt_mask {w v : Nat} (hw : 2 ^ w.log2 = w) (hv : w ≤ 2 ^ v) (y : BitVec v) :
+    Sem.shiftAmt w y = (y &&& BitVec.ofNat v (w - 1)).toNat := by
+  have h1 : (w - 1) % 2 ^ v = w - 1 := Nat.mod_eq_of_lt (by have := Nat.two_pow_pos v; omega)
+  rw [Sem.shiftAmt, BitVec.toNat_and, BitVec.toNat_ofNat, h1]
+  conv => lhs; rw [← hw]
+  rw [← Nat.and_two_pow_sub_one_eq_mod, hw]
+
+theorem ishl_mask {w v : Nat} (hw : 2 ^ w.log2 = w) (hv : w ≤ 2 ^ v) (x : BitVec w) (y : BitVec v) :
+    Sem.ishl x y = x <<< (y &&& BitVec.ofNat v (w - 1)) := by
+  rw [Sem.ishl, shiftAmt_mask hw hv, BitVec.shiftLeft_eq']
+
+theorem ushr_mask {w v : Nat} (hw : 2 ^ w.log2 = w) (hv : w ≤ 2 ^ v) (x : BitVec w) (y : BitVec v) :
+    Sem.ushr x y = x >>> (y &&& BitVec.ofNat v (w - 1)) := by
+  rw [Sem.ushr, shiftAmt_mask hw hv, BitVec.ushiftRight_eq']
+
+theorem sshr_mask {w v : Nat} (hw : 2 ^ w.log2 = w) (hv : w ≤ 2 ^ v) (x : BitVec w) (y : BitVec v) :
+    Sem.sshr x y = x.sshiftRight' (y &&& BitVec.ofNat v (w - 1)) := by
+  rw [Sem.sshr, shiftAmt_mask hw hv, BitVec.sshiftRight_eq']
+
+theorem rotl_mask {w v : Nat} (hw : 2 ^ w.log2 = w) (hv : w < 2 ^ v) (x : BitVec w) (y : BitVec v) :
+    Sem.rotl x y = x <<< (y &&& BitVec.ofNat v (w - 1)) |||
+      x >>> (BitVec.ofNat v w - (y &&& BitVec.ofNat v (w - 1))) := by
+  have hs := shiftAmt_mask hw (Nat.le_of_lt hv) y
+  have hlt : Sem.shiftAmt w y < w ∨ w = 0 := by
+    rcases Nat.eq_zero_or_pos w with h | h
+    · exact Or.inr h
+    · exact Or.inl (Nat.mod_lt _ h)
+  rw [Sem.rotl, BitVec.rotateLeft_def, BitVec.shiftLeft_eq', BitVec.ushiftRight_eq', ← hs]
+  rcases hlt with hlt | h0
+  · rw [Nat.mod_eq_of_lt hlt, BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hv, ← hs]
+    congr 2
+    rw [show 2 ^ v - Sem.shiftAmt w y + w = (w - Sem.shiftAmt w y) + 2 ^ v by omega,
+      Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
+  · subst h0; simp [Sem.shiftAmt]
+
+theorem rotr_mask {w v : Nat} (hw : 2 ^ w.log2 = w) (hv : w < 2 ^ v) (x : BitVec w) (y : BitVec v) :
+    Sem.rotr x y = x >>> (y &&& BitVec.ofNat v (w - 1)) |||
+      x <<< (BitVec.ofNat v w - (y &&& BitVec.ofNat v (w - 1))) := by
+  have hs := shiftAmt_mask hw (Nat.le_of_lt hv) y
+  have hlt : Sem.shiftAmt w y < w ∨ w = 0 := by
+    rcases Nat.eq_zero_or_pos w with h | h
+    · exact Or.inr h
+    · exact Or.inl (Nat.mod_lt _ h)
+  rw [Sem.rotr, BitVec.rotateRight_def, BitVec.shiftLeft_eq', BitVec.ushiftRight_eq', ← hs]
+  rcases hlt with hlt | h0
+  · rw [Nat.mod_eq_of_lt hlt, BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hv, ← hs]
+    congr 2
+    rw [show 2 ^ v - Sem.shiftAmt w y + w = (w - Sem.shiftAmt w y) + 2 ^ v by omega,
+      Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
+  · subst h0; simp [Sem.shiftAmt]
+
+end Opt.Proof
+
+/-! ## `imm64_shl` / `imm64_ushr` (amount of any type; `x * 2^s` as `<<<`, `x / 2^s` as `>>>`) -/
+
+namespace Opt.Proof
+
+open Isle Isle.Opt Clif
+
+set_option linter.unusedSimpArgs false in
+section
+
+theorem ofInt_two_pow (k : Nat) : BitVec.ofInt 64 ((2 : Int) ^ k) = BitVec.twoPow 64 k := by
+  have : ((2 : Int) ^ k) = ((2 ^ k : Nat) : Int) := by push_cast; rfl
+  rw [this, BitVec.ofInt_natCast]
+  apply BitVec.eq_of_toNat_eq
+  simp [BitVec.toNat_twoPow]
+
+theorem ofInt_mul_two_pow (x : Int) (k : Nat) :
+    BitVec.ofInt 64 (x * 2 ^ k) = BitVec.ofInt 64 x <<< k := by
+  rw [BitVec.shiftLeft_eq_mul_twoPow, BitVec.ofInt_mul, ofInt_two_pow]
+
+theorem int_toNat_natCast (n : Nat) : ((n : Int).toNat) = n := Int.toNat_natCast n
+theorem shiftLeft_toNat' {w v : Nat} (x : BitVec w) (y : BitVec v) : x <<< y.toNat = x <<< y := rfl
+
+@[opt_imm] theorem imm64Shl_spec {t t' : Ty} (ht : t ≠ .i128) (ht' : t' ≠ .i128) (b : BitVec t.width)
+    (c : BitVec t'.width) :
+    Rust.imm64Shl (CTy.ofClif t) (imm64OfBits b) (imm64OfBits c) = .ok (imm64OfBits (Sem.ishl b c)) := by
+  imm_pre [Rust.imm64Shl]
+  simp only [Rust.band64, Rust.asU64, int_toNat_natCast, ofInt_mul_two_pow, shiftLeft_toNat']
+  imm_cases t b <;> imm_cases t' c <;> simp (disch := decide) only [ishl_mask, Nat.reduceBEq, Bool.false_eq_true, reduceIte, Int.reduceSub,
+    Int.reducePow, Nat.reduceSub, Int.reduceNatCast] <;> imm_solve
+
+theorem natCast_div_two_pow {w : Nat} (x : BitVec w) (k : Nat) :
+    ((x.toNat : Int) / (2 : Int) ^ k) = ((x >>> k).toNat : Int) := by
+  rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]; push_cast; rfl
+
+theorem toInt_div_two_pow {w : Nat} (x : BitVec w) (k : Nat) :
+    (x.toInt / (2 : Int) ^ k) = (x.sshiftRight k).toInt := by
+  rw [BitVec.toInt_sshiftRight, Int.shiftRight_eq_div_pow]; push_cast; rfl
+
+theorem ushiftRight_toNat' {w v : Nat} (x : BitVec w) (y : BitVec v) : x >>> y.toNat = x >>> y := rfl
+theorem sshiftRight_toNat' {w v : Nat} (x : BitVec w) (y : BitVec v) : x.sshiftRight y.toNat = x.sshiftRight' y := rfl
+
+@[opt_imm] theorem imm64Ushr_spec {t t' : Ty} (ht : t ≠ .i128) (ht' : t' ≠ .i128) (b : BitVec t.width)
+    (c : BitVec t'.width) :
+    Rust.imm64Ushr (CTy.ofClif t) (imm64OfBits b) (imm64OfBits c) = .ok (imm64OfBits (Sem.ushr b c)) := by
+  imm_pre [Rust.imm64Ushr]
+  simp only [Rust.band64, Rust.asU64, int_toNat_natCast, natCast_div_two_pow, ushiftRight_toNat']
+  imm_cases t b <;> imm_cases t' c <;> simp (disch := decide) only [ushr_mask, Nat.reduceBEq, Bool.false_eq_true, reduceIte, Int.reduceSub,
+    Int.reducePow, Nat.reduceSub, Int.reduceNatCast] <;> imm_solve
+
+end
 
 end Opt.Proof
