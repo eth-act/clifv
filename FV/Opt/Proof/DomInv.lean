@@ -407,6 +407,13 @@ theorem avail_succ {bi k : Nat} {b : Block} {st : Stmt} {v : ValueId}
       exact .inl hr
   · exact .inr ⟨d, t, hd, .inr h2⟩
 
+theorem avail_entry {v : ValueId} (hv : Avail W 0 0 v) : W.dm v = some (0, 0) := by
+  obtain ⟨d, t, hd, hva⟩ := hv
+  rcases hva with ⟨rfl, ht⟩ | ⟨hne, ha⟩
+  · rw [hd, show t = 0 by omega]
+  · obtain ⟨c, hc, _⟩ := ha.strict hne
+    rw [hW.root] at hc; cases hc
+
 theorem idx_unique {j j' : Nat} {b b' : Block} (hb : f.blocks[j]? = some b)
     (hb' : f.blocks[j']? = some b') (hid : b.id = b'.id) : j = j' := by
   have h1 := hW.ids j b hb

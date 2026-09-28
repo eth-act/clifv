@@ -132,6 +132,28 @@ theorem lstep_call_inv {fr : Frame} {mem : Mem} {ext : ExtFunc} {vals : List Val
       split at h <;> (try cases h)
       split at h <;> cases h
 
+theorem lstep_ret_inv {fr : Frame} {mem : Mem} {vals : List Val} (h : lstep fr mem = .ret vals) :
+    fr.body = [] := by
+  obtain ⟨func, regs, slots, body, term⟩ := fr
+  cases body with
+  | nil => rfl
+  | cons st rest =>
+    simp only [lstep] at h
+    split at h
+    · simp only [LRes.ofRes] at h; split at h <;> cases h
+    · simp only [LRes.ofRes] at h; split at h <;> (try cases h); split at h <;> cases h
+
+theorem lstep_tail_inv {fr : Frame} {mem : Mem} {ext : ExtFunc} {vals : List Val}
+    (h : lstep fr mem = .tail ext vals) : fr.body = [] := by
+  obtain ⟨func, regs, slots, body, term⟩ := fr
+  cases body with
+  | nil => rfl
+  | cons st rest =>
+    simp only [lstep] at h
+    split at h
+    · simp only [LRes.ofRes] at h; split at h <;> cases h
+    · simp only [LRes.ofRes] at h; split at h <;> (try cases h); split at h <;> cases h
+
 /-- The continuation of `Clif.stepCall` after its prelude. -/
 def callCont (env : Env) (p : Program) (s : State) (rest : List Stmt) (results : List ValueId)
     (ext : ExtFunc) (vals : List Val) : StepResult :=
@@ -849,5 +871,52 @@ theorem runLoop_refines {syms : String → Option Nat} {env : Env} (hE : EnvKeep
         rw [hk, runLoop_succ, ht c hst]
         exact ⟨fun _ _ h => (by cases h), fun _ h => h⟩
       | stuck m => exact ⟨0, fun _ _ h => (by cases h), fun _ h => (by cases h)⟩
+
+theorem getMany_not_trap (fr : Frame) (xs : List ValueId) (c : TrapCode) :
+    fr.getMany xs ≠ .trap c := by
+  induction xs with
+  | nil => simp [Frame.getMany]
+  | cons x xs ih =>
+    intro h
+    simp only [Frame.getMany, Frame.get, Res.bind_eq_trap] at h
+    rcases h with h | ⟨_, _, h⟩
+    · cases hx : fr.regs x <;> simp [hx, Res.ofOption] at h
+    · rcases h with h | ⟨_, _, h⟩
+      · exact ih h
+      · simp [pure] at h
+
+theorem lstep_call_of_call {fr : Frame} {mem : Mem} {st : Stmt} {rest : List Stmt} {fn : FnRef}
+    {args : List ValueId} (hb : fr.body = st :: rest) (hc : st.inst = .call fn args) :
+    (∀ fr1 m1, lstep fr mem ≠ .next fr1 m1) ∧ (∀ c, lstep fr mem ≠ .trap c) := by
+  rw [lstep_call hb hc]
+  have : ∀ c, callArgs fr fn args ≠ .trap c := by
+    intro c h
+    simp only [callArgs, Res.bind_eq_trap] at h
+    rcases h with h | ⟨_, _, h⟩
+    · cases hx : fr.func.extern? fn <;> simp [hx, Res.ofOption] at h
+    · rcases h with h | ⟨_, _, h⟩
+      · exact getMany_not_trap fr args c h
+      · rcases h with h | ⟨_, _, h⟩
+        · simp [checkTys, Res.check] at h; split at h <;> cases h
+        · simp [pure] at h
+  refine ⟨fun fr1 m1 h => ?_, fun c h => ?_⟩ <;>
+    cases hca : callArgs fr fn args <;> rw [hca] at h <;> cases h
+  exact this _ hca
+
+theorem enterBlock_not_trap (fr : Frame) (bc : BlockCall) (c : TrapCode) :
+    enterBlock fr bc ≠ .trap c := by
+  have hof : ∀ {α : Type} (m : String) (o : Option α), Res.ofOption m o ≠ .trap c := by
+    intro α m o; cases o <;> simp [Res.ofOption]
+  intro h
+  simp only [enterBlock, Res.bind_eq_trap, checkTys] at h
+  rcases h with h | ⟨_, _, h⟩
+  · exact hof _ _ h
+  · rcases h with h | ⟨_, _, h⟩
+    · exact getMany_not_trap fr _ c h
+    · rcases h with h | ⟨_, _, h⟩
+      · simp [Res.check] at h; split at h <;> cases h
+      · rcases h with h | ⟨_, _, h⟩
+        · exact hof _ _ h
+        · simp [pure] at h
 
 end Opt
