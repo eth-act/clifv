@@ -171,4 +171,12 @@ PYEOF
   .lake/build/bin/clif-filetest "$here_d/data.clif"
   echo "== lean-backend-filetests (Lean backend on qemu)"
   scripts/lean-backend-filetests.sh "$here_d/data.clif"
+
+  # ---- extern demos (rust-route step 2): memcpy/memset/memcmp + a diverging panic ----
+  echo "== clif-filetest --rust-env (Clif.Rust.env: mem* + panics)"
+  .lake/build/bin/clif-filetest --rust-env "$here/fixtures/mem-panics.clif"
+  echo "== lean-backend-filetests (Lean backend on qemu, the C runtime linked)"
+  bash "$here/rust-runtime.sh" "$here_d/rust.o"
+  RUST_RUNTIME="$here_d/rust.o $here_d/rust_panic.o" \
+    scripts/lean-backend-filetests.sh "$here/fixtures/mem-panics.clif"
 fi

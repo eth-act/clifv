@@ -273,6 +273,17 @@ extrt and runtests (445 files): no function rejected.
   at `base`, relocations resolved to `syms`/callee addresses (M6's hooks), GOT contents.
 * **Runtime/callee contracts**: externs implement `Clif.Env.extern` under AAPCS64
   (`CalleeSound`, stack use); OS behaviour at `udf` (SIGILL reported as the trap-table code).
+* **Rust route (trusted contracts, rust-route)**: the `core` panic entry points the corpus
+  references (`panic*`, `*_fail`, `handle_*`, `fmt` — mangled symbols) and the libcalls
+  `memcpy`/`memset`/`memmove`/`memcmp`. They fit the existing `XCallsOk`/`CalleeOk` contract
+  (diverging = never returns; the mem* calls are byte-level copies/fills/compares). Lean
+  side: `Clif.Rust.env` (`FV/Clif/Rust.lean`, used by `clif-filetest --rust-env`). Native
+  side: `scripts/rust-clif/rust-runtime.{c,s}` (`clif-native --link`), where the panics
+  abort with `udf #251` (SIGILL) and never return — the two representations of "aborted"
+  are agreed at the call site. The cg_clif corpus also references the allocator shims
+  (`__rust_alloc`, …) and the i128 builtins (`__udivti3`, `__rust_u128_mulo`); both are out
+  of scope until `i_alloc`/i128 are taken up (the allocator is the existing flat-runtime
+  path).
 * Frontend (pluggable, PLAN.md §4 M7 restatement).
 
 ## `#print axioms`
