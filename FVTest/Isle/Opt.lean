@@ -157,6 +157,7 @@ def sections (s : String) : List (String × List String) :=
 def oracleCalls (s : String) : List (String × List (Nat × List String)) :=
   (sections s).map fun (fn, ls) =>
     (fn, ls.filterMap fun l =>
+      if !l.startsWith "simplify v" then none else
       match (l.drop 9).toString.splitOn ": " with
       | [v, rest] =>
         match (v.drop 1).toString.toNat?, rest.splitOn " -> " with
@@ -188,6 +189,109 @@ def check : IO Unit := do
       IO.println s!"%{f.name} v{v}: {names}"
 
 #eval check
+
+/-! ## `simplify_skeleton` against Cranelift
+
+For each function of `oracle/opt_skeleton.clif`, the rules of Cranelift's first
+`simplify_skeleton` call (on the first side-effecting instruction of the entry block, or its
+terminator) equal those of `Isle.Opt.simplifySkeleton` on the same instruction. -/
+
+/-- The first skeleton instruction of the entry block. -/
+def firstSkel (f : Clif.Function) : Option SkelInst := do
+  let b ← f.blocks.head?
+  match b.body.find? (fun s => (ofInst s.inst).isNone) with
+  | some s => some (.inst s.inst)
+  | none => some (.term b.term)
+
+/-- `just_trap_block`: pure instructions, then `trap`. -/
+def trapBlockOf (f : Clif.Function) (b : Clif.BlockId) : Option Clif.TrapCode := do
+  let blk ← f.blocks.find? (·.id == b)
+  if blk.body.all (fun s => (ofInst s.inst).isSome) then
+    match blk.term with
+    | .trap c => some c
+    | _ => none
+  else none
+
+def skelCalls (s : String) : List (String × List (List String)) :=
+  (sections s).map fun (fn, ls) =>
+    (fn, ls.filterMap fun l =>
+      if !l.startsWith "simplify_skeleton: " then none else
+      match ((l.drop 19).toString.splitOn " -> ") with
+      | [rules, _] => some ((rules.splitOn " ").filter (· ≠ ""))
+      | _ => none)
+
+def checkSkel : IO Unit := do
+  let prog ← match Clif.parse (← IO.FS.readFile "FVTest/Isle/oracle/opt_skeleton.clif") with
+    | .ok p => pure p
+    | .error e => throw (IO.userError e)
+  let oracle := skelCalls (← IO.FS.readFile "FVTest/Isle/oracle/opt_skeleton.trace")
+  unless oracle.length == prog.funcs.length do
+    throw (IO.userError s!"oracle has {oracle.length} functions, expected {prog.funcs.length}")
+  for f in prog.funcs do
+    let some (expected :: _) := oracle.lookup s!"%{f.name}"
+      | throw (IO.userError s!"%{f.name}: no simplify_skeleton call in oracle output")
+    let some i := firstSkel f | throw (IO.userError s!"%{f.name}: no skeleton instruction")
+    match Toy.runSkel (graphOf f).1 (trapBlockOf f) i with
+    | .error e => throw (IO.userError s!"%{f.name}: {e}")
+    | .ok (_, names, _) =>
+      let got := names.map ruleLoc
+      unless sorted got == sorted expected do
+        throw (IO.userError s!"%{f.name}: rules differ\n got: {got}\n expected: {expected}")
+      IO.println s!"%{f.name}: {names}"
+
+#eval checkSkel
+
+/-- The simplifications of `f`'s first skeleton instruction. -/
+def skel (src : String) : Except String (List SkelSimp × Toy.G) := do
+  let p ← Clif.parse src
+  let some f := p.funcs.head? | throw "no function"
+  let some i := firstSkel f | throw "no skeleton instruction"
+  let (r, _, g) ← Toy.runSkel (graphOf f).1 (trapBlockOf f) i
+  pure (r, g)
+
+-- `udiv.i64 x, 8` → `ushr x, 3` (`arithmetic.isle:83`).
+#guard match skel "function %f(i64) -> i64 {
+block0(v0: i64):
+    v1 = iconst.i64 8
+    v2 = udiv v0, v1
+    return v2
+}" with
+  | .ok ([.removeWithVal v], g) => Toy.enodes g v == [.binary .ushr .i64 0 (v - 1)] &&
+      Toy.enodes g (v - 1) == [.iconst .i64 3]
+  | _ => false
+-- `udiv.i32 x, 7`: `umulhi` by the magic `0x24924925`, then the `do_add` fix-up.
+#guard match skel "function %f(i32) -> i32 {
+block0(v0: i32):
+    v1 = iconst.i32 7
+    v2 = udiv v0, v1
+    return v2
+}" with
+  | .ok ([.removeWithVal _], g) => g.nodes.any (· == [.iconst .i32 0x24924925]) &&
+      g.nodes.any fun ns => ns.any fun | .binary .umulhi .i32 0 _ => true | _ => false
+  | _ => false
+-- `brif (iconst 0) block1, block2` → `jump block2`.
+#guard match skel "function %f(i32) -> i32 {
+block0(v0: i32):
+    v1 = iconst.i8 0
+    brif v1, block1, block2
+block1:
+    return v0
+block2:
+    return v0
+}" with
+  | .ok ([.replace (.term (.jump ⟨2, []⟩))], _) => true
+  | _ => false
+-- `brif v0, block1, block2(v0)` with `block1` just `trap user7` → `trapnz v0, user7; jump block2(v0)`.
+#guard match skel "function %f(i32) -> i32 {
+block0(v0: i32):
+    brif v0, block1, block2(v0)
+block1:
+    trap user7
+block2(v3: i32):
+    return v3
+}" with
+  | .ok ([.replaceWithTwo (.inst (.trapnz 0 (.user 7))) (.term (.jump ⟨2, [0]⟩))], _) => true
+  | _ => false
 
 /-! Candidates by value (expectations derived from the rules). -/
 

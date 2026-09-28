@@ -10,7 +10,9 @@
 //! `simplify vN: <file>:<1-based line> ... -> [results]`, where the rules are the `simplify`
 //! rules that contributed a result to this call (in the generated code's order) and the
 //! results are the call's values after Cranelift's shuffle, `MATCHES_LIMIT` truncation, sort
-//! and dedup (`egraph/mod.rs` `optimize_pure_enode`).
+//! and dedup (`egraph/mod.rs` `optimize_pure_enode`); and one line per call of
+//! `simplify_skeleton` (every side-effecting instruction and terminator, in the order the
+//! e-graph pass visits them): `simplify_skeleton: <file>:<line> ... -> <number of results>`.
 
 use anyhow::{Context as _, Result, anyhow};
 use cranelift_codegen::isa;
@@ -20,10 +22,24 @@ use std::cell::RefCell;
 
 struct Tracer;
 
+/// Open `simplify` calls (value, rules fired so far), and the `simplify_skeleton` rules fired
+/// in the current skeleton call.
+#[derive(Default)]
+struct OptState {
+    stack: Vec<(String, Vec<String>)>,
+    skeleton: Vec<String>,
+}
+
+/// `<file> line <0-based>` as `<file>:<1-based>`.
+fn loc(rest: &str) -> Option<String> {
+    let (file, line) = rest.split_once(" line ")?;
+    let n: usize = line.trim().parse().ok()?;
+    Some(format!("{file}:{}", n + 1))
+}
+
 thread_local! {
-    /// `--opt` mode: open `simplify` calls (value, rules fired so far). Compilation logs from
-    /// the main thread only.
-    static OPT: RefCell<Option<Vec<(String, Vec<String>)>>> = const { RefCell::new(None) };
+    /// `--opt` mode state. Compilation logs from the main thread only.
+    static OPT: RefCell<Option<OptState>> = const { RefCell::new(None) };
 }
 
 impl log::Log for Tracer {
@@ -38,8 +54,8 @@ impl log::Log for Tracer {
 }
 
 impl Tracer {
-    fn record(opt: &mut Option<Vec<(String, Vec<String>)>>, level: log::Level, msg: &str) {
-        let Some(stack) = opt.as_mut() else {
+    fn record(opt: &mut Option<OptState>, level: log::Level, msg: &str) {
+        let Some(OptState { stack, skeleton }) = opt.as_mut() else {
             if level <= log::Level::Debug && msg.starts_with("ISLE ") {
                 println!("{msg}");
             }
@@ -48,11 +64,15 @@ impl Tracer {
         if let Some(v) = msg.strip_prefix("Calling into ISLE with original value ") {
             stack.push((v.to_string(), Vec::new()));
         } else if let Some(rest) = msg.strip_prefix("ISLE simplify ") {
-            // `<file> line <0-based>`
-            if let (Some(top), Some((file, line))) = (stack.last_mut(), rest.split_once(" line ")) {
-                let n: usize = line.trim().parse().unwrap_or(usize::MAX);
-                top.1.push(format!("{file}:{}", n.wrapping_add(1)));
+            if let (Some(top), Some(l)) = (stack.last_mut(), loc(rest)) {
+                top.1.push(l);
             }
+        } else if let Some(rest) = msg.strip_prefix("ISLE simplify_skeleton ") {
+            skeleton.extend(loc(rest));
+        } else if let Some(rest) = msg.strip_prefix(" -> simplify_skeleton: yielded ") {
+            let n = rest.split(' ').next().unwrap_or("?");
+            println!("simplify_skeleton: {} -> {n}", skeleton.join(" "));
+            skeleton.clear();
         } else if let Some(rest) = msg.strip_prefix("  -> returned from ISLE: ") {
             if let Some((v, rules)) = stack.pop() {
                 let results = rest.split_once(" -> ").map(|(_, r)| r).unwrap_or(rest);
@@ -69,7 +89,7 @@ fn main() -> Result<()> {
     let opt = args.first().is_some_and(|a| a == "--opt");
     if opt {
         args.remove(0);
-        OPT.with_borrow_mut(|o| *o = Some(Vec::new()));
+        OPT.with_borrow_mut(|o| *o = Some(OptState::default()));
     }
     let path = args.first().context("usage: isle-trace-oracle [--opt] <file.clif>")?;
     let src = std::fs::read_to_string(path).with_context(|| format!("reading {path}"))?;

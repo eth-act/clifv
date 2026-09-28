@@ -41,4 +41,9 @@ def mk (vs : List (Clif.Ty × List Clif.Inst)) : G :=
 def run (g : G) (v : Nat) : Except String (List (Nat × Bool) × List String × G) :=
   simplify enodes typeOf make g v
 
+/-- `simplify_skeleton` on `i`, with `trapBlock` for `just_trap_block`. -/
+def runSkel (g : G) (trapBlock : Clif.BlockId → Option Clif.TrapCode) (i : SkelInst) :
+    Except String (List SkelSimp × List String × G) :=
+  simplifySkeleton enodes typeOf make (fun _ b => trapBlock b) g i
+
 end Isle.Opt.Toy
