@@ -17,7 +17,7 @@ the same; stuck or out-of-fuel input runs carry no obligation.
   `lean-backend`, `lean-backend-armrun`, `lean-e2e-check`, `scripts/lean-backend-filetests.sh`.
 - [x] Differential tests: `scripts/opt-difftest.sh` (corpus, runtests, cg_clif survey),
   `opt-fuzz` (random functions); backend with `--opt`: corpus 114/114 (+22/22 extrt), runtests
-  3270/0/0, `lean-e2e-check --opt` 914/914 accepted and `formsCoveredB`-covered.
+  3270/0/0, `lean-e2e-check --opt` 934/934 accepted and `formsCoveredB`-covered.
 - [x] Metrics (`scripts/lean-backend-metrics.sh`): Lean no-opt / `--opt` vs Cranelift
   `opt_level=none` / `speed` ("Results").
 - [ ] Proofs: architecture below ("Planned proof architecture").
@@ -230,7 +230,8 @@ program was stuck too.
 | Cranelift runtests | 1 258 | 5 706 / 0 / 10 | 3 383 → 3 040 | 146 files, 0 rejected |
 | cg_clif survey smoke (`smoke.clif`) | 24 | 88 / 0 / 0 | 283 → 144 | ok |
 | cg_clif survey, all `*.unopt.reader.clif` (no run lines) | 2 326 | — | 116 713 → 67 268 | 30 files, 0 rejected |
-| `opt-fuzz`, seeds 1–4, 11, 12, 21, 22 (±`--ext`, `--opt-remat-const`) | 2 850 | 22 800 / 0 / 0 | — | seeds 21, 22 files: ok |
+| `opt-fuzz` seeds 1–4 (150 E + 100 `--ext` functions each) | 1 000 | 8 000 / 0 / 0 | 128 484 → 57 279 | — |
+| `opt-fuzz` seeds 11, 12, 21, 22 (earlier builds; incl. `--opt-remat-const`) | 1 050 | 8 352 / 0 / 0 | — | seeds 21, 22 files: ok |
 
 No function was ill-formed and no pass ever produced an ill-formed function. The optimised
 corpus and runtests files also meet their run lines under the Cranelift interpreter wherever
@@ -241,8 +242,9 @@ avoids a known interpreter deviation).
 Cranelift-native): corpus 114/114, extrt 22/22, runtests **3 270** pass / 0 fail / 0 disagree
 (3 085 without `--opt`: rewrites turn 17 functions with `i128` shift amounts —
 `iconcat`/`ireduce` of the amount — into E functions); `opt-fuzz --seed 21` file: 1 166/1 166.
-`lean-e2e-check --opt`: `lowerCheck` and `prepCheck` accept 914/914, `formsCoveredB` 914
-covered / 0 not covered — the optimised code uses no instruction form outside the proven set.
+`lean-e2e-check --opt`: `lowerCheck` and `prepCheck` accept 934/934, `formsCoveredB` 934
+covered / 0 not covered (913 of each without `--opt`) — the optimised code uses no instruction
+form outside the proven set.
 
 **Metrics** (`scripts/lean-backend-metrics.sh`, corpus: code size of 156 functions; executed
 instructions on the Lean Arm model over the run lines of the 25 self-contained functions):
@@ -325,7 +327,7 @@ Goal: `Opt.optimize` refines `Clif.run`, and `E2E.backend_correct_final` extends
    state: `optimize` keeps the signature, the stack slots and the externs, so `ClifEntry`,
    `Rel.holds` and the slot layout of the source entry state carry over; `InSubset (opt f)`
    follows from `InSubset f` because of the E restriction on emitted nodes; `FormsCovered`
-   stays a per-function decided premise (`formsCoveredB` of the optimised code, 914/914 now).
+   stays a per-function decided premise (`formsCoveredB` of the optimised code, 934/934 now).
    The result: for `check`ed in-subset `f`, whenever `Clif.run p` returns or traps, the Arm run
    of the compiled `opt f` does the same.
 6. **Optional M3b** (PLAN): with the same rules, the Lean- and Cranelift-optimised CLIF can be
