@@ -107,7 +107,7 @@ theorem extOut_prun (hR : Refines F isem) {f : Clif.Function} {ctx : Ctx} (hctx 
       (∀ mi ∈ ms, ∀ e ∈ vdefs mi, s.nextVreg ≤ e ∧ e < s'.nextVreg) ∧
       (∀ mi ∈ ms, ∀ u ∈ vuseNums mi, s.nextVreg ≤ u ∨ u = x) ∧
       (k = x ∨ s.nextVreg ≤ k) ∧ k < s'.nextVreg ∧
-      ∀ (fr : Clif.Frame) (ρ : Nat → CV) (vx : Clif.Val), ValsHeld fr ρ → DFGCons ctx fr →
+      ∀ (fr : Clif.Frame) (ρ : Nat → CV) (vx : Clif.Val), VHolds vx (ρ x) → DFGCons ctx fr →
         fr.regs x = some vx →
         ∃ ρ1, PRun F isem ms ρ ρ1 ∧ (∀ z, z < s.nextVreg → ρ1 z = ρ z) ∧
           ExtHolds sg toB vx (ρ1 k) := by
@@ -118,10 +118,10 @@ theorem extOut_prun (hR : Refines F isem) {f : Clif.Function} {ctx : Ctx} (hctx 
   rcases hcase with ⟨ht, rfl, hs⟩ | ⟨ht, hb, rfl, rfl⟩
   · subst s'
     refine ⟨x, [], rfl, by simp, Nat.le_refl _, by simp, by simp, .inl rfl, hxlt,
-      fun fr ρ vx hheld hdfg hvx => ⟨ρ, prun_nil _, fun _ _ => rfl, hheld x vx hvx, fun hw => ?_⟩⟩
+      fun fr ρ vx hheld hdfg hvx => ⟨ρ, prun_nil _, fun _ _ => rfl, hheld, fun hw => ?_⟩⟩
     have hty := hdfg.2 x t vx hT hvx
     obtain ⟨vty, vb⟩ := vx
-    have hv := hheld x _ hvx
+    have hv := hheld
     simp only [VHolds] at hv
     subst hty
     rcases hpass _ ht with h64 | ⟨h32', rfl⟩
@@ -164,7 +164,7 @@ theorem extOut_prun (hR : Refines F isem) {f : Clif.Function} {ctx : Ctx} (hctx 
         (fun w => ispec_extend hfrom hto hne) (prun_nil _), fun z hz => ?_, ?_⟩
       · simp [upd, show z ≠ s.nextVreg by omega]
       · rw [upd_same]
-        exact extHolds_extend sg vb (by omega) toB hto hne _ (hheld x _ hvx)
+        exact extHolds_extend sg vb (by omega) toB hto hne _ (hheld)
 
 /-- **Operand preparation `ms1` (from `st` to `st1`, reading `x`), then `do_shift`**: the code's
 shape, and its meaning from any run of the preparation that keeps the vregs below `st`. -/
@@ -494,7 +494,7 @@ theorem ushr_fits_in_32_ok {p : Program} (hp : Data p) (MR : MemRelT) (env : Cli
     refine ⟨ms1 ++ ms2, d, rfl, by rw [hst]; exact hsh, ?_⟩
     intro ty hty hety fr ρ u yv res _ hvals hdfg hx hy hres
     subst hty
-    obtain ⟨ρ1, hr1, hfr, hext⟩ := hsem1 fr ρ ⟨_, u⟩ hvals hdfg hx
+    obtain ⟨ρ1, hr1, hfr, hext⟩ := hsem1 fr ρ ⟨_, u⟩ (hvals x _ hx) hdfg hx
     obtain ⟨ρ', hrun, hD⟩ := hsem fr ρ ρ1 yv hr1 hfr hvals hdfg hy
     refine ⟨ρ', hrun, ?_⟩
     simp only [Clif.Sem.shift, Clif.Sem.ushr, Clif.Sem.shiftAmt, Option.some.injEq] at hres
@@ -536,7 +536,7 @@ theorem ushr_64_ok {p : Program} (hp : Data p) (MR : MemRelT) (env : Clif.Env)
     refine ⟨ms1 ++ ms2, d, rfl, by rw [hst]; exact hsh, ?_⟩
     intro ty hty hety fr ρ u yv res _ hvals hdfg hx hy hres
     cases ty <;> simp [Clif.Ty.width] at hty
-    obtain ⟨ρ1, hr1, hfr, hext⟩ := hsem1 fr ρ ⟨_, u⟩ hvals hdfg hx
+    obtain ⟨ρ1, hr1, hfr, hext⟩ := hsem1 fr ρ ⟨_, u⟩ (hvals x _ hx) hdfg hx
     obtain ⟨ρ', hrun, hD⟩ := hsem fr ρ ρ1 yv hr1 hfr hvals hdfg hy
     refine ⟨ρ', hrun, ?_⟩
     simp only [Clif.Sem.shift, Clif.Sem.ushr, Clif.Sem.shiftAmt, Option.some.injEq] at hres
@@ -575,7 +575,7 @@ theorem sshr_fits_in_32_ok {p : Program} (hp : Data p) (MR : MemRelT) (env : Cli
     refine ⟨ms1 ++ ms2, d, rfl, by rw [hst]; exact hsh, ?_⟩
     intro ty hty hety fr ρ u yv res _ hvals hdfg hx hy hres
     subst hty
-    obtain ⟨ρ1, hr1, hfr, hext⟩ := hsem1 fr ρ ⟨_, u⟩ hvals hdfg hx
+    obtain ⟨ρ1, hr1, hfr, hext⟩ := hsem1 fr ρ ⟨_, u⟩ (hvals x _ hx) hdfg hx
     obtain ⟨ρ', hrun, hD⟩ := hsem fr ρ ρ1 yv hr1 hfr hvals hdfg hy
     refine ⟨ρ', hrun, ?_⟩
     simp only [Clif.Sem.shift, Clif.Sem.sshr, Clif.Sem.shiftAmt, Option.some.injEq] at hres
@@ -617,7 +617,7 @@ theorem sshr_64_ok {p : Program} (hp : Data p) (MR : MemRelT) (env : Clif.Env)
     refine ⟨ms1 ++ ms2, d, rfl, by rw [hst]; exact hsh, ?_⟩
     intro ty hty hety fr ρ u yv res _ hvals hdfg hx hy hres
     cases ty <;> simp [Clif.Ty.width] at hty
-    obtain ⟨ρ1, hr1, hfr, hext⟩ := hsem1 fr ρ ⟨_, u⟩ hvals hdfg hx
+    obtain ⟨ρ1, hr1, hfr, hext⟩ := hsem1 fr ρ ⟨_, u⟩ (hvals x _ hx) hdfg hx
     obtain ⟨ρ', hrun, hD⟩ := hsem fr ρ ρ1 yv hr1 hfr hvals hdfg hy
     refine ⟨ρ', hrun, ?_⟩
     simp only [Clif.Sem.shift, Clif.Sem.sshr, Clif.Sem.shiftAmt, Option.some.injEq] at hres
