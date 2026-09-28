@@ -244,17 +244,16 @@ def skelCost : Isle.Opt.SkelInst → Nat
 taken at once, a `Replace*` only if its skeleton cost is below the best so far (initially the
 original's). -/
 def chooseSkel (orig : Isle.Opt.SkelInst) (cands : List Isle.Opt.SkelSimp) :
-    Option Isle.Opt.SkelSimp := Id.run do
-  let mut best : Option Isle.Opt.SkelSimp := none
-  let mut bestCost := skelCost orig
-  for c in (cands.take matchesLimit).reverse do
-    match c with
-    | .remove | .removeWithVal _ | .replaceBranchCond _ | .replaceWithTwo .. => return some c
-    | .replace i | .replaceWithVal i _ =>
-      if skelCost i < bestCost then
-        best := some c
-        bestCost := skelCost i
-  return best
+    Option Isle.Opt.SkelSimp :=
+  go (cands.take matchesLimit).reverse none (skelCost orig)
+where
+  go : List Isle.Opt.SkelSimp → Option Isle.Opt.SkelSimp → Nat → Option Isle.Opt.SkelSimp
+    | [], best, _ => best
+    | c :: cs, best, bestCost =>
+      match c with
+      | .remove | .removeWithVal _ | .replaceBranchCond _ | .replaceWithTwo .. => some c
+      | .replace i | .replaceWithVal i _ =>
+        if skelCost i < bestCost then go cs (some c) (skelCost i) else go cs best bestCost
 
 /-- The skeleton instructions and terminators the rules can simplify. -/
 def skelCandidate : Isle.Opt.SkelInst → Bool
