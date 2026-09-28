@@ -190,6 +190,18 @@ def optimizeAt (rules : SimplifyFn) (allowed : Inst → Bool) : Nat → SState �
       let fired := names.foldl (fun m n => m.insert n ((m.get? n).getD 0 + 1)) st.stats.fired
       chooseBest { st with stats := { st.stats with fired } } v cands
 
+/-- The state after emitting `x' = n'`, a copy of `x`, in block `bi`. -/
+def SState.emit (st : SState) (bi : Nat) (x x' : ValueId) (n' : Inst) : SState :=
+  { st with avail := st.avail.insert x' bi, defs := st.defs.insert x' n',
+            types := match st.types.get? x with
+              | some t => st.types.insert x' t
+              | none => st.types,
+            cost := st.cost.insert x' (st.costOf x) }
+
+/-- `n` with its operands replaced by their materialised versions `ops` (in operand order). -/
+def renameOps (n : Inst) (ops : List ValueId) : Inst :=
+  mapOperands (fun y => ((operands n).zip ops).lookup y |>.getD y) n
+
 /-- Emit `x` at the current position of block `bi` (step 5 of the module doc): available
 values are used as they are, virtual ones are emitted (or cloned) after their operands.
 `none` if some leaf is neither available nor a pure node. -/
@@ -204,22 +216,25 @@ def materialize (cfg : Cfg) (allowed : Inst → Bool) (bi : Nat) :
     | none => clone fuel st out x
 where
   clone (fuel : Nat) (st : SState) (out : Array Stmt) (x : ValueId) :
-      Option (ValueId × SState × Array Stmt) := do
-    let n ← st.defs.get? x
-    if !allowed n || !st.typedNode n then none
-    let (st, out, ops) ← (operands n).foldlM (init := (st, out, #[]))
-      fun (st, out, ops) y => do
-        let (y', st, out) ← materialize cfg allowed bi fuel (st, out) y
-        pure (st, out, ops.push y')
-    let opsL := ops.toList
-    let n' := mapOperands (fun y => ((operands n).zip opsL).lookup y |>.getD y) n
-    let (x', st) := if st.avail.contains x then (st.next, { st with next := st.next + 1 })
-                    else (x, st)
-    let st := { st with avail := st.avail.insert x' bi, defs := st.defs.insert x' n',
-                        types := match st.types.get? x with
-                          | some t => st.types.insert x' t | none => st.types,
-                        cost := st.cost.insert x' (st.costOf x) }
-    pure (x', st, out.push { results := [x'], inst := n' })
+      Option (ValueId × SState × Array Stmt) :=
+    match st.defs.get? x with
+    | none => none
+    | some n =>
+      if !allowed n || !st.typedNode n || (st.types.get? x).isNone then none else
+      let wasAvail := st.avail.contains x
+      match (operands n).foldlM (init := (st, out, #[])) (fun (acc : SState × Array Stmt × Array ValueId) y =>
+          match materialize cfg allowed bi fuel (acc.1, acc.2.1) y with
+          | none => none
+          | some (y', st, out) => some (st, out, acc.2.2.push y')) with
+      | none => none
+      | some (st, out, ops) =>
+        -- (a value emitted while materialising its own operands: a cycle, never on real graphs)
+        if !wasAvail && st.avail.contains x then none else
+        let n' := renameOps n ops.toList
+        if wasAvail then
+          some (st.next, ({ st with next := st.next + 1 } : SState).emit bi x st.next n',
+            out.push { results := [st.next], inst := n' })
+        else some (x, st.emit bi x x n', out.push { results := [x], inst := n' })
 
 /-- Materialise a list of values (`materialize` each, left to right). -/
 def materializeAll (cfg : Cfg) (allowed : Inst → Bool) (bi : Nat) (st : SState)

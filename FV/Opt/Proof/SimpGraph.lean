@@ -301,26 +301,35 @@ theorem solidNode_total {st : SState} (h : GInv f ρ fr mem st) (hE : GoodEnv f 
   have he : evalNode (withRegs fr (gval ρ fr mem st)) mem n = some v := by simp [evalNode, hv]
   exact ⟨v, he, evalNode_ty he⟩
 
-/-- Inserting the node `n` over known values under the fresh value `st.next` (as `insertNode`
-does); the new value is partial unless the node is solid. Stated on the fields of the new state. -/
-theorem insert_spec {st st' : SState} (h : GInv f ρ fr mem st) (hE : GoodEnv f fr mem) {n : Inst}
+/-- Inserting the node `n` over known values under the fresh value `st.next` (the value may
+also become available, and gets a type consistent with its value). Stated on the fields of the
+new state. -/
+theorem fresh_spec {st st' : SState} (h : GInv f ρ fr mem st) {n : Inst}
     (hn : ∀ y ∈ operands n, st.known y = true)
     (hd : st'.defs = st.defs.insert st.next n)
-    (ht : st'.types = match SState.nodeTy n with
-      | some t => st.types.insert st.next t
-      | none => st.types)
-    (hnx : st'.next = st.next + 1) (ha : st'.avail = st.avail) (hal : st'.alts = st.alts)
-    (hm : st'.memo = st.memo) (hf : st'.fn = st.fn) (htr : st'.trapBlocks = st.trapBlocks)
-    (hr : st'.rematConst = st.rematConst) (hc : st'.classes = st.classes)
-    (hps : (st'.partialVals = st.partialVals ∧ st.solidNode n = true) ∨
-      st'.partialVals = st.partialVals.insert st.next) :
-    GInv f ρ fr mem st' ∧ Grow ρ fr mem st st' ∧ st'.known st.next = true ∧
-      gval ρ fr mem st' st.next = evalNode (withRegs fr (gval ρ fr mem st)) mem n ∧
-      (∀ x, st.known x = true → gval ρ fr mem st' x = gval ρ fr mem st x) := by
+    (htx : ∀ x, x ≠ st.next → st'.types.get? x = st.types.get? x)
+    (htw : ∀ t a, st'.types.get? st.next = some t →
+      evalNode (withRegs fr (gval ρ fr mem st)) mem n = some a → a.ty = t)
+    (hnx : st'.next = st.next + 1)
+    (ha : ∀ x, x ≠ st.next → st'.avail.contains x = st.avail.contains x)
+    (hal : st'.alts = st.alts)
+    (hm : st'.memo = st.memo) (hf : st'.fn = st.fn) (hc : st'.classes = st.classes)
+    (hpart : ∀ x, x ≠ st.next → st'.partialVals.contains x = st.partialVals.contains x)
+    (hwtot : st'.avail.contains st.next = true ∨ st'.partialVals.contains st.next = false →
+      ∃ a, evalNode (withRegs fr (gval ρ fr mem st)) mem n = some a ∧
+        st'.types.get? st.next = some a.ty) :
+    GInv f ρ fr mem st' ∧ (∀ x, st.known x = true → gval ρ fr mem st' x = gval ρ fr mem st x) ∧
+      (∀ x, st.known x = true → st'.known x = true) ∧
+      (∀ x, st.solid x = true → st'.solid x = true) ∧ st'.known st.next = true ∧
+      gval ρ fr mem st' st.next = evalNode (withRegs fr (gval ρ fr mem st)) mem n := by
   have hw : st.known st.next = false := by
     cases hk : st.known st.next with
     | false => rfl
     | true => exact absurd (h.fresh _ hk) (Nat.lt_irrefl _)
+  have hwa : st.avail.contains st.next = false := by
+    cases hk : st.avail.contains st.next with
+    | false => rfl
+    | true => rw [known_of_avail hk] at hw; cases hw
   obtain ⟨hfix, hnew⟩ := gval_insert h hw hn hd
   have hdw : st'.defs.get? st.next = some n := by rw [hd, hm_get?_insert]; simp
   have hkw : st'.known st.next = true := known_of_defs hdw
@@ -328,11 +337,17 @@ theorem insert_spec {st st' : SState} (h : GInv f ρ fr mem st) (hE : GoodEnv f 
     intro x hx; rw [hd, hm_get?_insert, if_neg (Ne.symm hx)]
   have hkm : ∀ x, st.known x = true → st'.known x = true := by
     intro x hx
-    apply known_mono_defs _ (by intro y hy; rw [ha]; exact hy) hx
-    intro y hy
-    by_cases hyw : y = st.next
-    · rw [hyw, hdw]; rfl
-    · rw [hdx y hyw]; exact hy
+    by_cases hxw : x = st.next
+    · rw [hxw]; exact hkw
+    apply known_mono_defs _ _ hx
+    · intro y hy
+      by_cases hyw : y = st.next
+      · rw [hyw, hdw]; rfl
+      · rw [hdx y hyw]; exact hy
+    · intro y hy
+      by_cases hyw : y = st.next
+      · rw [hyw] at hy; rw [hy] at hwa; cases hwa
+      · rw [ha y hyw]; exact hy
   have hkb : ∀ x, x ≠ st.next → st'.known x = true → st.known x = true := by
     intro x hxw hx
     cases hk : st.known x with
@@ -345,10 +360,7 @@ theorem insert_spec {st st' : SState} (h : GInv f ρ fr mem st) (hE : GoodEnv f 
         have := hdx x hxw
         simp only [Std.HashMap.get?_eq_getElem?] at this hd0
         rw [this, hd0] at hx; cases hx
-      · rw [ha] at hx; rw [hx] at ha0; cases ha0
-  have hle : Valuation.Le (gval ρ fr mem st) (gval ρ fr mem st') := by
-    intro x a hx
-    rw [hfix x (known_of_gval h hx)]; exact hx
+      · rw [ha x hxw] at hx; rw [hx] at ha0; cases ha0
   have hunk : ∀ x, x ≠ st.next → st.known x = false → gval ρ fr mem st' x = none := by
     intro x hx hk
     have hd' : st'.graph x = none := by
@@ -357,23 +369,12 @@ theorem insert_spec {st st' : SState} (h : GInv f ρ fr mem st) (hE : GoodEnv f 
     cases hρ : ρ x with
     | none => rfl
     | some a => rw [known_of_avail (h.leaf x a hρ).1] at hk; cases hk
-  have htx : ∀ x, x ≠ st.next → st'.types.get? x = st.types.get? x := by
-    intro x hx
-    rw [ht]; split
-    · rw [hm_get?_insert, if_neg (Ne.symm hx)]
-    · rfl
-  have hpart : ∀ x, x ≠ st.next → st'.partialVals.contains x = st.partialVals.contains x := by
-    intro x hx
-    rcases hps with ⟨hp, _⟩ | hp
-    · rw [hp]
-    · rw [hp, hs_contains_insert]; simp [Ne.symm hx]
   have hsm : ∀ x, st.solid x = true → st'.solid x = true := by
     intro x hx
     simp only [SState.solid, Bool.and_eq_true, Bool.not_eq_true'] at hx ⊢
     have hxw : x ≠ st.next := fun he => by rw [he] at hx; rw [hx.1] at hw; cases hw
     exact ⟨hkm x hx.1, by rw [hpart x hxw]; exact hx.2⟩
-  refine ⟨⟨hf.trans h.fn, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩,
-    ⟨hfix, hkm, hsm, ha, hal, hf, htr, hr⟩, hkw, hnew, hfix⟩
+  refine ⟨⟨hf.trans h.fn, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, hfix, hkm, hsm, hkw, hnew⟩
   · -- closed
     intro x m hx y hy
     by_cases hxw : x = st.next
@@ -390,23 +391,23 @@ theorem insert_spec {st st' : SState} (h : GInv f ρ fr mem st) (hE : GoodEnv f 
     obtain ⟨h1', h2'⟩ := h.leaf x a hx
     have hxw : x ≠ st.next := by
       intro he; rw [he, h.freshρ _ (Nat.le_refl _)] at hx; cases hx
-    exact ⟨by rw [ha]; exact h1', by rw [hdx x hxw]; exact h2'⟩
+    exact ⟨by rw [ha x hxw]; exact h1', by rw [hdx x hxw]; exact h2'⟩
   · -- tot
     intro x hx
-    rw [ha] at hx
-    have hk := known_of_avail hx
-    have hxw : x ≠ st.next := fun he => by rw [he] at hk; rw [hk] at hw; cases hw
-    obtain ⟨a, h1', h2'⟩ := h.tot x hx
-    exact ⟨a, by rw [hfix x hk]; exact h1', by rw [htx x hxw]; exact h2'⟩
+    by_cases hxw : x = st.next
+    · subst hxw
+      obtain ⟨a, h1', h2'⟩ := hwtot (.inl hx)
+      exact ⟨a, by rw [hnew]; exact h1', h2'⟩
+    · rw [ha x hxw] at hx
+      have hk := known_of_avail hx
+      obtain ⟨a, h1', h2'⟩ := h.tot x hx
+      exact ⟨a, by rw [hfix x hk]; exact h1', by rw [htx x hxw]; exact h2'⟩
   · -- types
     intro x t a hx hv
     by_cases hxw : x = st.next
     · subst hxw
       rw [hnew] at hv
-      have hty := evalNode_ty hv
-      rw [ht, hty] at hx
-      simp at hx
-      exact hx
+      exact htw t a hx hv
     · rw [htx x hxw] at hx
       cases hk : st.known x with
       | true => rw [hfix x hk] at hv; exact h.types x t a hx hv
@@ -437,11 +438,10 @@ theorem insert_spec {st st' : SState} (h : GInv f ρ fr mem st) (hE : GoodEnv f 
     intro x hx
     by_cases hxw : x = st.next
     · subst hxw
-      rcases hps with ⟨hp, hsn⟩ | hp
-      · obtain ⟨a, ha', hty⟩ := solidNode_total h hE hsn
-        refine ⟨a, by rw [hnew]; exact ha', ?_⟩
-        rw [ht, hty]; simp [hm_get?_insert]
-      · simp [SState.solid, hp, hs_contains_insert] at hx
+      have : st'.partialVals.contains st.next = false := by
+        simp only [SState.solid, Bool.and_eq_true, Bool.not_eq_true'] at hx; exact hx.2
+      obtain ⟨a, h1', h2'⟩ := hwtot (.inr this)
+      exact ⟨a, by rw [hnew]; exact h1', h2'⟩
     · have hxs : st.solid x = true := by
         simp only [SState.solid, Bool.and_eq_true, Bool.not_eq_true'] at hx ⊢
         exact ⟨hkb x hxw hx.1, by rw [← hpart x hxw]; exact hx.2⟩
@@ -461,6 +461,57 @@ theorem insert_spec {st st' : SState} (h : GInv f ρ fr mem st) (hE : GoodEnv f 
     refine ⟨by rw [hfix k (known_of_gval h hk1)]; exact hk1, fun m hm => ?_⟩
     have := hk2 m hm
     rw [hfix m (known_of_gval h this)]; exact this
+
+/-- Inserting the node `n` over known values under the fresh value `st.next` (as `insertNode`
+does); the new value is partial unless the node is solid. Stated on the fields of the new state. -/
+theorem insert_spec {st st' : SState} (h : GInv f ρ fr mem st) (hE : GoodEnv f fr mem) {n : Inst}
+    (hn : ∀ y ∈ operands n, st.known y = true)
+    (hd : st'.defs = st.defs.insert st.next n)
+    (ht : st'.types = match SState.nodeTy n with
+      | some t => st.types.insert st.next t
+      | none => st.types)
+    (hnx : st'.next = st.next + 1) (ha : st'.avail = st.avail) (hal : st'.alts = st.alts)
+    (hm : st'.memo = st.memo) (hf : st'.fn = st.fn) (htr : st'.trapBlocks = st.trapBlocks)
+    (hr : st'.rematConst = st.rematConst) (hc : st'.classes = st.classes)
+    (hps : (st'.partialVals = st.partialVals ∧ st.solidNode n = true) ∨
+      st'.partialVals = st.partialVals.insert st.next) :
+    GInv f ρ fr mem st' ∧ Grow ρ fr mem st st' ∧ st'.known st.next = true ∧
+      gval ρ fr mem st' st.next = evalNode (withRegs fr (gval ρ fr mem st)) mem n ∧
+      (∀ x, st.known x = true → gval ρ fr mem st' x = gval ρ fr mem st x) := by
+  have hw : st.known st.next = false := by
+    cases hk : st.known st.next with
+    | false => rfl
+    | true => exact absurd (h.fresh _ hk) (Nat.lt_irrefl _)
+  have htx : ∀ x, x ≠ st.next → st'.types.get? x = st.types.get? x := by
+    intro x hx
+    rw [ht]; split
+    · rw [hm_get?_insert, if_neg (Ne.symm hx)]
+    · rfl
+  have hpart : ∀ x, x ≠ st.next → st'.partialVals.contains x = st.partialVals.contains x := by
+    intro x hx
+    rcases hps with ⟨hp, _⟩ | hp
+    · rw [hp]
+    · rw [hp, hs_contains_insert]; simp [Ne.symm hx]
+  have htw : ∀ t a, st'.types.get? st.next = some t →
+      evalNode (withRegs fr (gval ρ fr mem st)) mem n = some a → a.ty = t := by
+    intro t a hx hv
+    have hty := evalNode_ty hv
+    rw [ht, hty] at hx
+    simp at hx
+    exact hx
+  have hwtot : st'.avail.contains st.next = true ∨ st'.partialVals.contains st.next = false →
+      ∃ a, evalNode (withRegs fr (gval ρ fr mem st)) mem n = some a ∧
+        st'.types.get? st.next = some a.ty := by
+    intro hx
+    rcases hx with hx | hx
+    · rw [ha] at hx; rw [known_of_avail hx] at hw; cases hw
+    · rcases hps with ⟨_, hsn⟩ | hp
+      · obtain ⟨a, ha', hty⟩ := solidNode_total h hE hsn
+        exact ⟨a, ha', by rw [ht, hty]; simp⟩
+      · rw [hp, hs_contains_insert] at hx; simp at hx
+  obtain ⟨hI, hfix, hkm, hsm, hkw, hnew⟩ := fresh_spec h hn hd htx htw hnx
+    (fun x _ => by rw [ha]) hal hm hf hc hpart hwtot
+  exact ⟨hI, ⟨hfix, hkm, hsm, ha, hal, hf, htr, hr⟩, hkw, hnew, hfix⟩
 
 /-! ## Extraction -/
 
@@ -737,6 +788,166 @@ theorem optimizeAt_spec (hS : SimplifySound rules) (hE : GoodEnv f fr mem) :
       · refine ⟨v, g11.solid v hv, fun a ha => ?_⟩
         have ha' : gval ρ fr mem st v = some a := by rw [← g11.fix _ hkv]; exact ha
         exact ⟨by rw [hkb]; exact hfwd a ha' b hb, fun m hm => hfwd a ha' m (hms m hm)⟩
+
+/-- `make` for the skeleton rules keeps the invariant. -/
+theorem skelMake_sound (hS : SimplifySound rules) (hE : GoodEnv f fr mem) (st0 : SState) :
+    MakeSound (skelMake rules allowed) (fun st' => GInv f ρ fr mem st' ∧ Grow ρ fr mem st0 st')
+      (gval ρ fr mem) fr mem := by
+  intro st1 n hP1
+  obtain ⟨h1, g1⟩ := hP1
+  simp only [skelMake]
+  cases hok : st1.nodeOk n with
+  | false =>
+    simp only [Bool.not_false, ite_true]
+    have hd := h1.of_same (st' := st1.dummy.2) rfl rfl rfl rfl rfl rfl (Nat.le_succ _) rfl rfl
+      rfl rfl
+    refine ⟨⟨hd.1, g1.trans hd.2⟩, fun x a hx => ?_,
+      fun b hb => (gval_unknown_eval h1 hok hb).elim⟩
+    rw [hd.2.fix x (known_of_gval h1 hx)]; exact hx
+  | true =>
+    simp only [Bool.not_true, Bool.false_eq_true, ite_false]
+    have hkn : ∀ y ∈ operands n, st1.known y = true := by
+      simpa [SState.nodeOk] using hok
+    cases hm : st1.memo.get? n with
+    | some w =>
+      exact ⟨⟨h1, g1⟩, fun _ _ h => h, fun b hb => (h1.memo n w hm).2 b hb⟩
+    | none =>
+      obtain ⟨e1, ed, et, enx, ea, eal, em, ef, etr, er⟩ := insertNode_fields allowed st1 n
+      have ec : (st1.insertNode allowed n).2.classes = st1.classes := rfl
+      have ep : (st1.insertNode allowed n).2.partialVals = st1.partialVals := rfl
+      rcases hins : st1.insertNode allowed n with ⟨w, st2⟩
+      rw [hins] at e1 ed et enx ea eal em ef etr er ec ep
+      simp only at e1 ed et enx ea eal em ef etr er ec ep
+      subst e1
+      cases hsol : st1.solidNode n with
+      | false =>
+        simp only [Bool.not_false, ite_true]
+        let st3 : SState := { st2 with partialVals := st2.partialVals.insert st1.next }
+        obtain ⟨i3, g3, k3, v3, f3⟩ := insert_spec (st' := st3) h1 hE hkn ed et enx ea eal em ef
+          etr er ec (.inr (by simp [st3, ep]))
+        have hb : ∀ a, evalNode (withRegs fr (gval ρ fr mem st3)) mem n = some a →
+            gval ρ fr mem st3 st1.next = some a := by
+          intro a ha
+          rw [v3, ← ha]
+          exact (evalNode_congr (fr := withRegs fr (gval ρ fr mem st1))
+            (fr' := withRegs fr (gval ρ fr mem st3)) rfl rfl (fun y hy => f3 y (hkn y hy))).symm
+        let st4 : SState := { st2 with partialVals := st2.partialVals.insert st1.next,
+                                       memo := st2.memo.insert n st1.next }
+        obtain ⟨i4, g4⟩ := memo_insert_spec (st' := st4)
+          i3 (fun y hy => g3.known y (hkn y hy)) hb rfl rfl rfl rfl rfl rfl (Nat.le_refl _) rfl
+          rfl rfl rfl
+        refine ⟨⟨i4, g1.trans (g3.trans g4)⟩, fun x a hx => ?_, fun b hb => ?_⟩
+        · rw [(g3.trans g4).fix x (known_of_gval h1 hx)]; exact hx
+        · have : gval ρ fr mem st3 st1.next = some b := by rw [v3]; exact hb
+          rw [g4.fix _ k3]; exact this
+      | true =>
+        simp only [Bool.not_true, Bool.false_eq_true, ite_false]
+        obtain ⟨i2, g2, k2, v2, f2⟩ := insert_spec (st' := st2) h1 hE hkn ed et enx ea eal em ef
+          etr er ec (.inl ⟨ep, hsol⟩)
+        have hb2 : ∀ a, evalNode (withRegs fr (gval ρ fr mem st2)) mem n = some a →
+            gval ρ fr mem st2 st1.next = some a := by
+          intro a ha
+          rw [v2, ← ha]
+          exact (evalNode_congr (fr := withRegs fr (gval ρ fr mem st1))
+            (fr' := withRegs fr (gval ρ fr mem st2)) rfl rfl (fun y hy => f2 y (hkn y hy))).symm
+        obtain ⟨i2', g2'⟩ := memo_insert_spec (st' := { st2 with memo := st2.memo.insert n st1.next })
+          i2 (fun y hy => g2.known y (hkn y hy)) hb2 rfl rfl rfl rfl rfl rfl (Nat.le_refl _) rfl
+          rfl rfl rfl
+        have hs2 : ({ st2 with memo := st2.memo.insert n st1.next } : SState).solid st1.next = true := by
+          simp only [SState.solid, SState.known] at k2 ⊢
+          simp only [k2, Bool.true_and, Bool.not_eq_true']
+          rw [ep]
+          cases hc : st1.partialVals.contains st1.next with
+          | false => rfl
+          | true =>
+            have := h1.fresh _ (h1.partialKnown _ hc)
+            exact absurd this (Nat.lt_irrefl _)
+        obtain ⟨i3, g3, v3⟩ := optimizeAt_spec (allowed := allowed) hS hE rewriteLimit _ st1.next i2' hs2
+        generalize optimizeAt rules allowed rewriteLimit { st2 with memo := st2.memo.insert n st1.next }
+          st1.next = r at i3 g3 v3 ⊢
+        obtain ⟨b, st3⟩ := r
+        simp only at i3 g3 v3 ⊢
+        have g23 := g2.trans (g2'.trans g3)
+        have hb : ∀ a, evalNode (withRegs fr (gval ρ fr mem st3)) mem n = some a →
+            gval ρ fr mem st3 b = some a := by
+          intro a ha
+          apply v3 a
+          rw [g2'.fix _ k2, v2, ← ha]
+          exact (evalNode_congr (fr := withRegs fr (gval ρ fr mem st1))
+            (fr' := withRegs fr (gval ρ fr mem st3)) rfl rfl
+            (fun y hy => (g23.fix y (hkn y hy)))).symm
+        obtain ⟨i4, g4⟩ := memo_insert_spec (st' := { st3 with memo := st3.memo.insert n b })
+          i3 (fun y hy => g23.known y (hkn y hy)) hb rfl rfl rfl rfl rfl rfl
+          (Nat.le_refl _) rfl rfl rfl rfl
+        refine ⟨⟨i4, g1.trans (g23.trans g4)⟩, fun x a hx => ?_, fun c hc => ?_⟩
+        · rw [(g23.trans g4).fix x (known_of_gval h1 hx)]; exact hx
+        · have h0 : gval ρ fr mem st2 st1.next = some c := by rw [v2]; exact hc
+          have := v3 c (by rw [g2'.fix _ k2]; exact h0)
+          rw [g4.fix _ (known_of_gval i3 this)]; exact this
+
+theorem chooseSkel_go_mem {l : List Isle.Opt.SkelSimp} {best : Option Isle.Opt.SkelSimp}
+    {cost : Nat} {c : Isle.Opt.SkelSimp} (h : chooseSkel.go l best cost = some c) :
+    c ∈ l ∨ best = some c := by
+  induction l generalizing best cost with
+  | nil => exact .inr h
+  | cons d ds ih =>
+    simp only [chooseSkel.go] at h
+    split at h
+    all_goals first
+      | (cases h; exact .inl (by simp))
+      | (split at h
+         · rcases ih h with h' | h'
+           · exact .inl (by simp [h'])
+           · cases h'; exact .inl (by simp)
+         · rcases ih h with h' | h'
+           · exact .inl (by simp [h'])
+           · exact .inr h')
+
+theorem chooseSkel_mem {orig : Isle.Opt.SkelInst} {cands : List Isle.Opt.SkelSimp}
+    {c : Isle.Opt.SkelSimp} (h : chooseSkel orig cands = some c) : c ∈ cands := by
+  rcases chooseSkel_go_mem h with h | h
+  · exact List.mem_of_mem_take (List.mem_reverse.1 h)
+  · cases h
+
+/-- A skeleton simplification chosen by `runSkel` refines the instruction or terminator. -/
+theorem runSkel_spec {skel : SkeletonFn} (hS : SimplifySound rules) (hK : SkeletonSound skel)
+    (hE : GoodEnv f fr mem) {st : SState} (h : GInv f ρ fr mem st) (i : Isle.Opt.SkelInst) :
+    GInv f ρ fr mem (runSkel skel rules allowed st i).2 ∧
+      Grow ρ fr mem st (runSkel skel rules allowed st i).2 ∧
+      ∀ c, (runSkel skel rules allowed st i).1 = some c →
+        SkelRefines (fun b => st.trapBlocks.get? b)
+          (withRegs fr (gval ρ fr mem (runSkel skel rules allowed st i).2)) mem i c := by
+  simp only [runSkel]
+  split
+  · exact ⟨h, Grow.refl st, fun c hc => by cases hc⟩
+  · obtain ⟨h0, g0⟩ := h.of_same (st' := { st with made := {} }) rfl rfl rfl rfl rfl rfl
+      (Nat.le_refl _) rfl rfl rfl rfl
+    split
+    · have hd := h.of_same (st' := { st with stats := { st.stats with errors := st.stats.errors + 1 } })
+        rfl rfl rfl rfl rfl rfl (Nat.le_refl _) rfl rfl rfl rfl
+      exact ⟨hd.1, hd.2, fun c hc => by cases hc⟩
+    · rename_i cands names st1 hr
+      let P : SState → Prop := fun st' => GInv f ρ fr mem st' ∧ Grow ρ fr mem { st with made := {} } st'
+      obtain ⟨⟨h1, g1⟩, -, hc⟩ := hK SState.enodes (fun st x => st.types.get? x)
+        (skelMake rules allowed) (fun st b => st.trapBlocks.get? b) P (gval ρ fr mem) fr mem
+        (fun b => st.trapBlocks.get? b)
+        (graphModel P (fun _ h => h.1)) (skelMake_sound hS hE _)
+        (fun st' hP => by funext b; rw [hP.2.trap]) { st with made := {} } i cands names st1
+        ⟨h0, Grow.refl _⟩ hr
+      generalize names.foldl (fun m n => m.insert n ((m.get? n).getD 0 + 1)) st1.stats.fired = fired
+      have g01 := g0.trans g1
+      split
+      · rename_i c hch
+        let st2 : SState := { st1 with stats := { st1.stats with fired, skeleton := st1.stats.skeleton + 1 } }
+        obtain ⟨h2, g2⟩ := h1.of_same (st' := st2) rfl rfl rfl rfl rfl rfl (Nat.le_refl _) rfl rfl
+          rfl rfl
+        refine ⟨h2, g01.trans g2, fun c' hc' => ?_⟩
+        have hc2 : chooseSkel i cands = some c' := hc'
+        rw [hch] at hc2; cases hc2
+        exact hc c (chooseSkel_mem hch)
+      · obtain ⟨h2, g2⟩ := h1.of_same (st' := { st1 with stats := { st1.stats with fired } })
+          rfl rfl rfl rfl rfl rfl (Nat.le_refl _) rfl rfl rfl rfl
+        exact ⟨h2, g01.trans g2, fun c hc => by cases hc⟩
 
 end Opt
 
