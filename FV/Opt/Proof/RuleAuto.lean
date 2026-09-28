@@ -1,4 +1,4 @@
-import FV.Opt.Proof.InterpEval
+import FV.Opt.Proof.RuleImm
 
 /-!
 # The batching template: `rule_ok`
@@ -30,6 +30,11 @@ theorem val_some_eq {t : Ty} {b c : BitVec t.width} :
     (some (⟨t, b⟩ : Val) = some ⟨t, c⟩) ↔ b = c := by
   simp
 
+/-- `Val` equations at one type (`Val.mk.injEq` would introduce a `HEq`; equations at two
+types are split by `opt_destruct`). -/
+theorem val_mk_same {t : Ty} {b c : BitVec t.width} : ((⟨t, b⟩ : Val) = ⟨t, c⟩) ↔ b = c := by
+  simp
+
 /-- One `simp_all` pass of the left-hand-side unfolding. -/
 macro "lhs_step" : tactic => `(tactic| simp_all only [opt_match, opt_data, Except.ok.injEq,
   exists_eq_left, exists_eq_left', exists_eq_right, exists_eq_right', List.length_cons,
@@ -40,7 +45,7 @@ macro "lhs_step" : tactic => `(tactic| simp_all only [opt_match, opt_data, Excep
   Nat.reduceLT, Nat.zero_lt_succ, Nat.lt_add_one, Term.externExtractor?,
   Array.size_setIfInBounds, Array.getElem?_setIfInBounds, Array.getElem?_replicate, beq_iff_eq,
   Option.some.injEq, evalNode_unary, evalNode_binary_iff, evalNode_icmp, evalNode_iconst,
-  BinaryOp.isShift, CTy.ofClif_inj, Val.mk.injEq, forall_eq', forall_eq, unaryIdx_eq_iff,
+  BinaryOp.isShift, CTy.ofClif_inj, val_mk_same, forall_eq', forall_eq, unaryIdx_eq_iff,
   binaryIdx_eq_iff, unaryOfIdx?, binaryOfIdx?, true_implies, forall_const, heq_eq_eq, and_imp,
   forall_apply_eq_imp_iff, forall_eq_apply_imp_iff, Nat.reduceEqDiff])
 
@@ -79,7 +84,7 @@ macro_rules
       subst hm))
 
 /-- Semantics of the CLIF operations, unfolded for the bit-level goal. -/
-macro "sem_simp" : tactic => `(tactic| simp only [val_some_eq, Sem.binary, Sem.unary, Sem.iadd,
+macro "sem_simp" : tactic => `(tactic| simp only [val_some_eq, val_mk_same, Sem.binary, Sem.unary, Sem.iadd,
   Sem.isub, Sem.imul, Sem.band, Sem.bor, Sem.bxor, Sem.bnot, Sem.ineg, Sem.icmp, Sem.intcc,
   Sem.umin, Sem.umax, Sem.smin, Sem.smax, Sem.ishl, Sem.ushr, Sem.sshr, Sem.shift,
   Sem.shiftAmt, Sem.select, Sem.truthy, Sem.bitselect, Sem.bmask, Sem.bool8, Ty.width] at *)
@@ -87,11 +92,11 @@ macro "sem_simp" : tactic => `(tactic| simp only [val_some_eq, Sem.binary, Sem.u
 /-- The bit-level goal: normalise immediates, split the type, decide. -/
 macro "rule_bits" : tactic => `(tactic| (
   try simp (disch := assumption) only [asU64_imm64OfBits, Int.natCast_eq_zero, Int.natCast_inj,
-    toNat_eq_iff_ofNat] at *
+    toNat_eq_iff_ofNat, ofInt_imm64OfBits] at *
   opt_destruct
   all_goals subst_vars
   all_goals first
-    | (simp [val_some_eq, Sem.binary, Sem.unary, Sem.iadd, Sem.isub, Sem.imul, Sem.band,
+    | (simp [val_some_eq, val_mk_same, Sem.binary, Sem.unary, Sem.iadd, Sem.isub, Sem.imul, Sem.band,
         Sem.bor, Sem.bxor, Sem.bnot, Sem.ineg]; done)
     | (opt_cases_ty <;> (try simp_all) <;> (try sem_simp) <;> bv_decide)))
 
@@ -125,12 +130,13 @@ macro_rules
   | `(tactic| opt_node) => `(tactic| (
       simp only [evalNode_binary_iff, evalNode_unary, evalNode_icmp, evalNode_iconst,
         BinaryOp.isShift, Bool.false_eq_true, ite_false, ite_true, Frame.regs]
-      repeat (first | (refine ⟨?_, ?_⟩) | opt_den)
+      repeat (first | (apply Exists.intro) | (apply And.intro) | opt_den)
       all_goals (try rfl)))
 
 set_option hygiene false in
 /-- Phase 4 when the candidate is a made node. -/
 macro "rule_finish_make" : tactic => `(tactic| (
+  try dsimp only
   apply GraphOk.make_val hG (by opt_P)
   opt_node
   all_goals rule_bits))

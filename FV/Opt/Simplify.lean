@@ -91,6 +91,11 @@ structure SState where
   /-- `just_trap_block`: blocks whose body is pure and whose terminator is `trap`. -/
   trapBlocks : Std.HashMap BlockId TrapCode := {}
   stats : SimplifyStats := {}
+  /-- The function being simplified (typing of made nodes). -/
+  fn : Function
+  /-- Made nodes that are not well-typed nodes over `solid` values (never with the rule sets of
+  `FV/Opt/Optimize.lean`): they are not simplified, so no e-class is recorded for them. -/
+  partialVals : Std.HashSet ValueId := {}
 
 namespace SState
 
@@ -118,13 +123,39 @@ def insertNode (allowed : Inst → Bool) (st : SState) (n : Inst) : ValueId × S
                 types := match ty with | some t => st.types.insert w t | none => st.types,
                 cost := st.cost.insert w c, made := st.made.insert w })
 
+/-- `y` is a pure node of the graph or available in the output (a block parameter, a skeleton
+result, or an emitted value): nodes over known values only are inserted (see `optimizeAt`). -/
+def known (st : SState) (y : ValueId) : Bool := st.defs.contains y || st.avail.contains y
+
+/-- A well-typed pure node (operand types from the graph). -/
+def typedNode (st : SState) (n : Inst) : Bool :=
+  isPure n && pureTyped (fun x => st.types.get? x) st.fn n
+
+/-- A node over known values: only such nodes enter the graph (a sanity check that never fails
+with the rule sets of `FV/Opt/Optimize.lean`; the proof of the pass needs that the value of a
+node never depends on values the graph does not know yet). -/
+def nodeOk (st : SState) (n : Inst) : Bool := (operands n).all st.known
+
+/-- A known value that is not `partial`. -/
+def solid (st : SState) (y : ValueId) : Bool := st.known y && !st.partialVals.contains y
+
+/-- A made node that gets simplified: well-typed, over solid values. -/
+def solidNode (st : SState) (n : Inst) : Bool := (operands n).all st.solid && st.typedNode n
+
+/-- A fresh value with no node: what `make` returns for a node that is not `nodeOk`. -/
+def dummy (st : SState) : ValueId × SState := (st.next, { st with next := st.next + 1 })
+
+/-- The type of the single result of a pure node. -/
+def nodeTy (n : Inst) : Option Ty := (n.resultTypes (fun _ => none)).bind List.head?
+
 end SState
 
 /-- Build the e-class of `v` from the rule candidates and return its best member
 (steps 3–4 of the module doc); records the class of the best member. -/
 def chooseBest (st : SState) (v : ValueId) (cands : List (ValueId × Bool)) : ValueId × SState :=
   let cands := (cands.take matchesLimit).filter (·.1 != v)
-  let sorted := (cands.toArray.qsort (fun a b => a.1 < b.1)).toList
+  -- (the filter keeps every element: it states for the proof that sorting adds none)
+  let sorted := (cands.toArray.qsort (fun a b => a.1 < b.1)).toList.filter cands.contains
   let dedup := sorted.foldl (fun acc c => if acc.any (·.1 == c.1) then acc else acc ++ [c]) []
   let key := fun (x : ValueId) => (st.costOf x, x)
   let better := fun (x y : ValueId) => let (cx, ix) := key x; let (cy, iy) := key y
@@ -142,10 +173,14 @@ def optimizeAt (rules : SimplifyFn) (allowed : Inst → Bool) : Nat → SState �
   | 0, st, v => (v, st)
   | d + 1, st, v =>
     let make := fun (st : SState) (n : Inst) =>
+      if !st.nodeOk n then st.dummy else
       match st.memo.get? n with
       | some w => (w, st)
       | none =>
+        let solidN := st.solidNode n
         let (w, st) := st.insertNode allowed n
+        if !solidN then (w, { st with partialVals := st.partialVals.insert w, memo := st.memo.insert n w })
+        else
         let (b, st) := optimizeAt rules allowed d st w
         (b, { st with memo := st.memo.insert n b })
     match rules SState.enodes (fun st x => st.types.get? x) make st v with
@@ -154,6 +189,18 @@ def optimizeAt (rules : SimplifyFn) (allowed : Inst → Bool) : Nat → SState �
     | .ok (cands, names, st) =>
       let fired := names.foldl (fun m n => m.insert n ((m.get? n).getD 0 + 1)) st.stats.fired
       chooseBest { st with stats := { st.stats with fired } } v cands
+
+/-- The state after emitting `x' = n'`, a copy of `x`, in block `bi`. -/
+def SState.emit (st : SState) (bi : Nat) (x x' : ValueId) (n' : Inst) : SState :=
+  { st with avail := st.avail.insert x' bi, defs := st.defs.insert x' n',
+            types := match st.types.get? x with
+              | some t => st.types.insert x' t
+              | none => st.types,
+            cost := st.cost.insert x' (st.costOf x) }
+
+/-- `n` with its operands replaced by their materialised versions `ops` (in operand order). -/
+def renameOps (n : Inst) (ops : List ValueId) : Inst :=
+  mapOperands (fun y => ((operands n).zip ops).lookup y |>.getD y) n
 
 /-- Emit `x` at the current position of block `bi` (step 5 of the module doc): available
 values are used as they are, virtual ones are emitted (or cloned) after their operands.
@@ -169,22 +216,25 @@ def materialize (cfg : Cfg) (allowed : Inst → Bool) (bi : Nat) :
     | none => clone fuel st out x
 where
   clone (fuel : Nat) (st : SState) (out : Array Stmt) (x : ValueId) :
-      Option (ValueId × SState × Array Stmt) := do
-    let n ← st.defs.get? x
-    if !allowed n then none
-    let (st, out, ops) ← (operands n).foldlM (init := (st, out, #[]))
-      fun (st, out, ops) y => do
-        let (y', st, out) ← materialize cfg allowed bi fuel (st, out) y
-        pure (st, out, ops.push y')
-    let opsL := ops.toList
-    let n' := mapOperands (fun y => ((operands n).zip opsL).lookup y |>.getD y) n
-    let (x', st) := if st.avail.contains x then (st.next, { st with next := st.next + 1 })
-                    else (x, st)
-    let st := { st with avail := st.avail.insert x' bi, defs := st.defs.insert x' n',
-                        types := match st.types.get? x with
-                          | some t => st.types.insert x' t | none => st.types,
-                        cost := st.cost.insert x' (st.costOf x) }
-    pure (x', st, out.push { results := [x'], inst := n' })
+      Option (ValueId × SState × Array Stmt) :=
+    match st.defs.get? x with
+    | none => none
+    | some n =>
+      if !allowed n || !st.typedNode n || (st.types.get? x).isNone then none else
+      let wasAvail := st.avail.contains x
+      match (operands n).foldlM (init := (st, out, #[])) (fun (acc : SState × Array Stmt × Array ValueId) y =>
+          match materialize cfg allowed bi fuel (acc.1, acc.2.1) y with
+          | none => none
+          | some (y', st, out) => some (st, out, acc.2.2.push y')) with
+      | none => none
+      | some (st, out, ops) =>
+        -- (a value emitted while materialising its own operands: a cycle, never on real graphs)
+        if !wasAvail && st.avail.contains x then none else
+        let n' := renameOps n ops.toList
+        if wasAvail then
+          some (st.next, ({ st with next := st.next + 1 } : SState).emit bi x st.next n',
+            out.push { results := [st.next], inst := n' })
+        else some (x, st.emit bi x x n', out.push { results := [x], inst := n' })
 
 /-- Materialise a list of values (`materialize` each, left to right). -/
 def materializeAll (cfg : Cfg) (allowed : Inst → Bool) (bi : Nat) (st : SState)
@@ -209,17 +259,16 @@ def skelCost : Isle.Opt.SkelInst → Nat
 taken at once, a `Replace*` only if its skeleton cost is below the best so far (initially the
 original's). -/
 def chooseSkel (orig : Isle.Opt.SkelInst) (cands : List Isle.Opt.SkelSimp) :
-    Option Isle.Opt.SkelSimp := Id.run do
-  let mut best : Option Isle.Opt.SkelSimp := none
-  let mut bestCost := skelCost orig
-  for c in (cands.take matchesLimit).reverse do
-    match c with
-    | .remove | .removeWithVal _ | .replaceBranchCond _ | .replaceWithTwo .. => return some c
-    | .replace i | .replaceWithVal i _ =>
-      if skelCost i < bestCost then
-        best := some c
-        bestCost := skelCost i
-  return best
+    Option Isle.Opt.SkelSimp :=
+  go (cands.take matchesLimit).reverse none (skelCost orig)
+where
+  go : List Isle.Opt.SkelSimp → Option Isle.Opt.SkelSimp → Nat → Option Isle.Opt.SkelSimp
+    | [], best, _ => best
+    | c :: cs, best, bestCost =>
+      match c with
+      | .remove | .removeWithVal _ | .replaceBranchCond _ | .replaceWithTwo .. => some c
+      | .replace i | .replaceWithVal i _ =>
+        if skelCost i < bestCost then go cs (some c) (skelCost i) else go cs best bestCost
 
 /-- The skeleton instructions and terminators the rules can simplify. -/
 def skelCandidate : Isle.Opt.SkelInst → Bool
@@ -230,10 +279,14 @@ def skelCandidate : Isle.Opt.SkelInst → Bool
 /-- `make` for the skeleton rules: hash-cons, else insert and simplify (full depth). -/
 def skelMake (rules : SimplifyFn) (allowed : Inst → Bool) (st : SState) (n : Inst) :
     ValueId × SState :=
+  if !st.nodeOk n then st.dummy else
   match st.memo.get? n with
   | some w => (w, st)
   | none =>
+    let solidN := st.solidNode n
     let (w, st) := st.insertNode allowed n
+    if !solidN then (w, { st with partialVals := st.partialVals.insert w, memo := st.memo.insert n w })
+    else
     let (b, st) := optimizeAt rules allowed rewriteLimit { st with memo := st.memo.insert n w } w
     (b, { st with memo := st.memo.insert n b })
 
@@ -252,36 +305,56 @@ def runSkel (skel : SkeletonFn) (rules : SimplifyFn) (allowed : Inst → Bool) (
     | some _ => (c, { st1 with stats := { st1.stats with skeleton := st1.stats.skeleton + 1 } })
     | none => (none, st1)
 
+/-- The fate of a skeleton statement (`skelStmt`), for the certificate (`Opt.SimpCert`). -/
+inductive SkelOut where
+  /-- Unchanged. -/
+  | keep
+  /-- Removed (no results). -/
+  | remove
+  /-- Removed; its single result is renamed to `v`. -/
+  | removeWithVal (v : ValueId)
+  /-- Replaced by `i` (same results), after zero or more rewrites. -/
+  | replace (i : Inst)
+  /-- Replaced by two result-free instructions. -/
+  | two (a b : Inst)
+  deriving Inhabited
+
+/-- The outcome of a reprocessed replacement `i`: `keep` there means `replace i`. -/
+def SkelOut.orReplace : SkelOut → Inst → SkelOut
+  | .keep, i => .replace i
+  | o, _ => o
+
 /-- Simplify a skeleton statement (reprocessing its replacement up to `fuel` times): the
-statements replacing it and the renamings of its results. Anything that cannot be applied
-(a node that cannot be materialised, a result arity or type change, an instruction outside
-`skelOk`) keeps the statement. -/
+statements replacing it, the renamings of its results and the outcome. Anything that cannot be
+applied (a node that cannot be materialised, a result arity or type change, an instruction
+outside `skelOk`) keeps the statement. -/
 def skelStmt (skel : SkeletonFn) (rules : SimplifyFn) (allowed skelOk : Inst → Bool) (cfg : Cfg)
-    (bi : Nat) : Nat → SState → Stmt → Array Stmt × List (ValueId × ValueId) × SState
-  | 0, st, s => (#[s], [], st)
+    (bi : Nat) : Nat → SState → Stmt → Array Stmt × List (ValueId × ValueId) × SState × SkelOut
+  | 0, st, s => (#[s], [], st, .keep)
   | fuel + 1, st, s =>
     let (c, st1) := runSkel skel rules allowed st (.inst s.inst)
-    let keep := (#[s], [], st1)
+    let keep := (#[s], [], st1, SkelOut.keep)
     let sameResults := fun (i : Inst) =>
       i.resultTypes (fun _ => none) == s.inst.resultTypes (fun _ => none)
     match c with
     | none => keep
-    | some .remove => if s.results.isEmpty then (#[], [], st1) else keep
+    | some .remove => if s.results.isEmpty then (#[], [], st1, .remove) else keep
     | some (.removeWithVal v) =>
       match s.results with
       | [r] =>
         if st1.types.get? v != st1.types.get? r then keep else
         match materialize cfg allowed bi (st1.defs.size + 1) (st1, #[]) v with
-        | some (v', st2, out) => (out, [(r, v')], st2)
+        | some (v', st2, out) => (out, [(r, v')], st2, .removeWithVal v')
         | none => keep
       | _ => keep
     | some (.replace (.inst i)) =>
       if !skelOk i || !sameResults i then keep else
       match materializeAll cfg allowed bi st1 (operands i) with
       | some (m, st2, out) =>
-        let (more, sub, st3) := skelStmt skel rules allowed skelOk cfg bi fuel st2
-          { s with inst := mapOperands (rename m) i }
-        (out ++ more, sub, st3)
+        let i' := mapOperands (rename m) i
+        let (more, sub, st3, o) := skelStmt skel rules allowed skelOk cfg bi fuel st2
+          { s with inst := i' }
+        (out ++ more, sub, st3, o.orReplace i')
       | none => keep
     | some (.replaceBranchCond c) =>
       let i := match s.inst with
@@ -293,9 +366,10 @@ def skelStmt (skel : SkeletonFn) (rules : SimplifyFn) (allowed skelOk : Inst →
       | some i =>
         match materializeAll cfg allowed bi st1 [c] with
         | some (m, st2, out) =>
-          let (more, sub, st3) := skelStmt skel rules allowed skelOk cfg bi fuel st2
-            { s with inst := mapOperands (rename m) i }
-          (out ++ more, sub, st3)
+          let i' := mapOperands (rename m) i
+          let (more, sub, st3, o) := skelStmt skel rules allowed skelOk cfg bi fuel st2
+            { s with inst := i' }
+          (out ++ more, sub, st3, o.orReplace i')
         | none => keep
     | some (.replaceWithTwo (.inst a) (.inst b)) =>
       if !s.results.isEmpty || !skelOk a || !skelOk b ||
@@ -303,41 +377,47 @@ def skelStmt (skel : SkeletonFn) (rules : SimplifyFn) (allowed skelOk : Inst →
       else
         match materializeAll cfg allowed bi st1 (operands a ++ operands b) with
         | some (m, st2, out) =>
-          (out ++ #[{ inst := mapOperands (rename m) a }, { inst := mapOperands (rename m) b }], [], st2)
+          let a' := mapOperands (rename m) a
+          let b' := mapOperands (rename m) b
+          (out ++ #[{ inst := a' }, { inst := b' }], [], st2, .two a' b')
         | none => keep
     | some _ => keep
 
 /-- Simplify a terminator (reprocessing up to `fuel` times): statements to append to the
-block body and the new terminator. -/
+block body, the new terminator, and whether anything changed. -/
 def skelTerm (skel : SkeletonFn) (rules : SimplifyFn) (allowed skelOk : Inst → Bool) (cfg : Cfg)
-    (bi : Nat) : Nat → SState → Terminator → Array Stmt × Terminator × SState
-  | 0, st, t => (#[], t, st)
+    (bi : Nat) : Nat → SState → Terminator → Array Stmt × Terminator × SState × Bool
+  | 0, st, t => (#[], t, st, false)
   | fuel + 1, st, t =>
     let (c, st1) := runSkel skel rules allowed st (.term t)
-    let keep := (#[], t, st1)
+    let keep := (#[], t, st1, false)
     match c with
     | some (.replace (.term t')) =>
       match materializeAll cfg allowed bi st1 (termOperands t') with
       | some (m, st2, out) =>
-        let (more, t'', st3) := skelTerm skel rules allowed skelOk cfg bi fuel st2 (mapTerm (rename m) t')
-        (out ++ more, t'', st3)
+        let (more, t'', st3, _) := skelTerm skel rules allowed skelOk cfg bi fuel st2 (mapTerm (rename m) t')
+        (out ++ more, t'', st3, true)
       | none => keep
     | some (.replaceBranchCond c) =>
       match t with
       | .brif _ th el =>
         match materializeAll cfg allowed bi st1 [c] with
         | some (m, st2, out) =>
-          let (more, t'', st3) := skelTerm skel rules allowed skelOk cfg bi fuel st2
+          let (more, t'', st3, _) := skelTerm skel rules allowed skelOk cfg bi fuel st2
             (.brif (rename m c) th el)
-          (out ++ more, t'', st3)
+          (out ++ more, t'', st3, true)
         | none => keep
       | _ => keep
     | some (.replaceWithTwo (.inst a) (.term t')) =>
-      if !skelOk a || a.resultTypes (fun _ => none) != some [] then keep else
+      -- (`a` is a conditional trap: it keeps memory)
+      let trapLike := match a with
+        | .trapz .. | .trapnz .. => true
+        | _ => false
+      if !skelOk a || !trapLike then keep else
       match materializeAll cfg allowed bi st1 (operands a ++ termOperands t') with
       | some (m, st2, out) =>
-        let (more, t'', st3) := skelTerm skel rules allowed skelOk cfg bi fuel st2 (mapTerm (rename m) t')
-        (out ++ #[{ inst := mapOperands (rename m) a }] ++ more, t'', st3)
+        let (more, t'', st3, _) := skelTerm skel rules allowed skelOk cfg bi fuel st2 (mapTerm (rename m) t')
+        (out ++ #[{ inst := mapOperands (rename m) a }] ++ more, t'', st3, true)
       | none => keep
     | _ => keep
 
@@ -347,70 +427,138 @@ def trapBlock? (b : Block) : Option TrapCode :=
   | .trap code => if b.body.all (isPure ·.inst) then some code else none
   | _ => none
 
-/-- The simplify pass. `allowed` restricts the nodes it may emit. -/
-def simplify (rules : SimplifyFn) (skel : SkeletonFn) (allowed skelOk : Inst → Bool)
-    (rematConst : Bool) (f : Function) (info : Info) : Function × SimplifyStats := Id.run do
-  let cfg := info.cfg
-  let blocks := f.blocks.toArray
+/-! ## The certificate
+
+The pass records what it did with every statement and terminator (`Opt.SimpCert`); the
+validator `Opt.simpOk` (`FV/Opt/Validate.lean`) checks the output against the input and this
+record, and the proof (`FV/Opt/Proof/Simp*.lean`) shows that the recorded replacements are
+justified by the rule obligations. -/
+
+/-- What the pass did with a statement. `stmt` is the statement with its operands renamed. -/
+inductive StmtLog where
+  /-- Kept. -/
+  | keep (stmt : Stmt)
+  /-- The pure `v = n` replaced by `w`, after emitting `out`. -/
+  | repl (stmt : Stmt) (w : ValueId) (out : Array Stmt)
+  /-- A skeleton statement, replaced by `out` (outcome `o`). -/
+  | skel (stmt : Stmt) (o : SkelOut) (out : Array Stmt)
+  deriving Inhabited
+
+/-- The statements the pass emitted for a statement. -/
+def StmtLog.out : StmtLog → Array Stmt
+  | .keep s => #[s]
+  | .repl _ _ out => out
+  | .skel _ _ out => out
+
+/-- What the pass did with a block: its statements, then its terminator `term` (operands
+renamed) replaced by `extra` statements and `term'` (`changed` = rewritten). -/
+structure BlockLog where
+  stmts : List StmtLog
+  term : Terminator
+  extra : Array Stmt
+  term' : Terminator
+  changed : Bool
+  deriving Inhabited
+
+/-- The record of a run of `simplify`: the final graph (nodes, types), the renaming, and the
+logs of the processed blocks (by layout index). -/
+structure SimpCert where
+  defs : Std.HashMap ValueId Inst
+  types : Std.HashMap ValueId Ty
+  subst : Subst
+  logs : Array (Option BlockLog)
+  deriving Inhabited
+
+/-! ## The pass -/
+
+/-- The initial state: parameters and skeleton results are available in their blocks. -/
+def initSState (f : Function) (info : Info) (rematConst : Bool) : SState :=
   let trapBlocks := f.blocks.foldl (fun m b => match trapBlock? b with
     | some c => m.insert b.id c | none => m) {}
-  let mut st : SState := { next := maxValue f + 1, types := info.types, trapBlocks, rematConst }
-  -- parameters and skeleton results are available in their blocks, with cost 0
-  for (b, bi) in blocks.zipIdx do
-    for (p, _) in b.params do st := { st with avail := st.avail.insert p bi }
-    for s in b.body do
+  let st : SState := { next := maxValue f + 1, types := info.types, trapBlocks, rematConst, fn := f }
+  f.blocks.zipIdx.foldl (fun st (b, bi) =>
+    let st := b.params.foldl (fun st (p, _) => { st with avail := st.avail.insert p bi }) st
+    b.body.foldl (fun st s =>
       if !(isPure s.inst && s.results.length == 1) then
-        for r in s.results do st := { st with avail := st.avail.insert r bi }
-  let mut subst : Subst := {}
-  let mut out := blocks
-  for bi in cfg.rpo do
-    let b := blocks[bi]!
-    let mut body : Array Stmt := #[]
-    for s in b.body do
-      let inst := mapOperands subst.find s.inst
-      match s.results, isPure inst with
-      | [v], true =>
-        let c := (operands inst).foldl (fun c x => Cost.add c (st.costOf x)) (Cost.ofInst inst)
-        st := { st with defs := st.defs.insert v inst, cost := st.cost.insert v c,
+        s.results.foldl (fun st r => { st with avail := st.avail.insert r bi }) st
+      else st) st) st
+
+/-- Process one statement of block `bi` (the module doc's steps 1–5, or the skeleton rules). -/
+def stepStmt (rules : SimplifyFn) (skel : SkeletonFn) (allowed skelOk : Inst → Bool) (cfg : Cfg)
+    (bi : Nat) (acc : SState × Subst) (s : Stmt) : SState × Subst × StmtLog :=
+  let (st, subst) := acc
+  let inst := mapOperands subst.find s.inst
+  match s.results, isPure inst with
+  | [v], true =>
+    -- sanity (never fails on `check`ed input): a new value, a well-typed node over known
+    -- values; otherwise the statement is kept outside the graph (and `simpOk` rejects)
+    if st.known v || st.next ≤ v || !(operands inst).all st.avail.contains || !st.typedNode inst ||
+        st.types.get? v != SState.nodeTy inst then
+      (st, subst, .keep { s with inst })
+    else
+    let c := (operands inst).foldl (fun c x => Cost.add c (st.costOf x)) (Cost.ofInst inst)
+    let st := { st with defs := st.defs.insert v inst, cost := st.cost.insert v c,
                         made := {}, classes := {} }
-        let hit := match st.memo.get? inst with
-          | some w => if st.remat w && st.avail.get? w != some bi then none else some w
-          | none => none
-        let (best, st1) := match hit with
-          | some w => (w, st)
-          | none =>
-            let (b, st1) := optimizeAt rules allowed rewriteLimit
-              { st with memo := st.memo.insert inst v } v
-            (b, { st1 with memo := st1.memo.insert inst b })
-        let keep := fun (st : SState) =>
-          { st with avail := st.avail.insert v bi }
-        if best == v then
-          st := keep st1
-          body := body.push { s with inst }
-        else
-          match materialize cfg allowed bi (st1.defs.size + 1) (st1, #[]) best with
-          | some (w, st2, emitted) =>
-            st := { st2 with stats := { st2.stats with rewritten := st2.stats.rewritten + 1,
-                                                        emitted := st2.stats.emitted + emitted.size } }
-            body := body ++ emitted
-            subst := subst.insert v w
-          | none =>
-            st := keep st1
-            body := body.push { s with inst }
-        -- make the class visible to later matches when its representative is new here
-        let rep := subst.find v
-        if rep == v || st1.made.contains best then
-          let members := (st1.classes.get? best).getD []
-          if !members.isEmpty then st := { st with alts := st.alts.insert rep members }
-      | _, _ =>
-        let (stmts, sub, st1) := skelStmt skel rules allowed skelOk cfg bi rewriteLimit st { s with inst }
-        st := st1
-        body := body ++ stmts
-        for (r, w) in sub do subst := subst.insert r w
-    let (extra, term, st1) := skelTerm skel rules allowed skelOk cfg bi rewriteLimit st (mapTerm subst.find b.term)
-    st := st1
-    body := body ++ extra
-    out := out.set! bi { b with body := body.toList, term }
-  return (subst.apply { f with blocks := out.toList }, st.stats)
+    let hit := match st.memo.get? inst with
+      | some w => if st.remat w && st.avail.get? w != some bi then none else some w
+      | none => none
+    let (best, st1) := match hit with
+      | some w => (w, st)
+      | none =>
+        let (b, st1) := optimizeAt rules allowed rewriteLimit
+          { st with memo := st.memo.insert inst v } v
+        (b, { st1 with memo := st1.memo.insert inst b })
+    let keep := { st1 with avail := st1.avail.insert v bi }
+    let (st, subst', lg) :=
+      if best == v then (keep, subst, StmtLog.keep { s with inst })
+      else
+        match materialize cfg allowed bi (st1.defs.size + 1) (st1, #[]) best with
+        | some (w, st2, emitted) =>
+          ({ st2 with stats := { st2.stats with rewritten := st2.stats.rewritten + 1,
+                                                  emitted := st2.stats.emitted + emitted.size } },
+           subst.insert v w, StmtLog.repl { s with inst } w emitted)
+        | none => (keep, subst, StmtLog.keep { s with inst })
+    -- make the class visible to later matches when its representative is new here (the
+    -- representative is `subst'.find v`; renamings have no chains, which `simpOk` checks)
+    let rep := match lg with
+      | .repl _ w _ => w
+      | _ => v
+    let st := if rep == v || st1.made.contains best then
+        let members := (st1.classes.get? best).getD []
+        if !members.isEmpty then { st with alts := st.alts.insert rep members } else st
+      else st
+    (st, subst', lg)
+  | _, _ =>
+    -- sanity (never fails on `check`ed input): operands known
+    if !(operands inst).all st.known then (st, subst, .skel { s with inst } .keep #[{ s with inst }]) else
+    let (stmts, sub, st1, o) := skelStmt skel rules allowed skelOk cfg bi rewriteLimit st { s with inst }
+    (st1, sub.foldl (fun m (r, w) => m.insert r w) subst, .skel { s with inst } o stmts)
+
+/-- Process block `bi`: its statements in order, then its terminator. -/
+def stepBlock (rules : SimplifyFn) (skel : SkeletonFn) (allowed skelOk : Inst → Bool) (cfg : Cfg)
+    (blocks : Array Block) (acc : SState × Subst × Array Block × Array (Option BlockLog))
+    (bi : Nat) : SState × Subst × Array Block × Array (Option BlockLog) :=
+  let (st, subst, out, logs) := acc
+  let b := blocks[bi]!
+  let (st, subst, lgs) := b.body.foldl (fun (acc : SState × Subst × Array StmtLog) s =>
+    let (st, subst, lg) := stepStmt rules skel allowed skelOk cfg bi (acc.1, acc.2.1) s
+    (st, subst, acc.2.2.push lg)) (st, subst, #[])
+  let t := mapTerm subst.find b.term
+  let (extra, term, st, changed) :=
+    if (termOperands t).all st.known then skelTerm skel rules allowed skelOk cfg bi rewriteLimit st t
+    else (#[], t, st, false)
+  let body := lgs.foldl (fun acc lg => acc ++ lg.out) #[] ++ extra
+  (st, subst, out.set! bi { b with body := body.toList, term },
+   logs.set! bi (some { stmts := lgs.toList, term := t, extra, term' := term, changed }))
+
+/-- The simplify pass, with its certificate. `allowed` restricts the nodes it may emit. -/
+def simplify (rules : SimplifyFn) (skel : SkeletonFn) (allowed skelOk : Inst → Bool)
+    (rematConst : Bool) (f : Function) (info : Info) : Function × SimplifyStats × SimpCert :=
+  let blocks := f.blocks.toArray
+  let (st, subst, out, logs) := info.cfg.rpo.foldl
+    (stepBlock rules skel allowed skelOk info.cfg blocks)
+    (initSState f info rematConst, {}, blocks, Array.replicate blocks.size none)
+  (subst.apply { f with blocks := out.toList }, st.stats,
+   { defs := st.defs, types := st.types, subst, logs })
 
 end Opt

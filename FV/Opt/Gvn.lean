@@ -19,10 +19,10 @@ namespace Opt
 
 open Clif
 
-/-- One GVN pass. `local?` selects nodes numbered per block only (not across blocks), e.g.
-constants when modelling Cranelift's rematerialisation. -/
-def gvn (f : Function) (info : Info) (local? : Inst → Bool := fun _ => false) :
-    Function × Nat := Id.run do
+/-- One GVN pass, also returning its substitution. `local?` selects nodes numbered per block
+only (not across blocks), e.g. constants when modelling Cranelift's rematerialisation. -/
+def gvnFull (f : Function) (info : Info) (local? : Inst → Bool := fun _ => false) :
+    Function × Nat × Subst := Id.run do
   let cfg := info.cfg
   let blocks := f.blocks.toArray
   let ch := cfg.domChildren
@@ -56,6 +56,11 @@ def gvn (f : Function) (info : Info) (local? : Inst → Bool := fun _ => false) 
       out := out.set! bi { b with body := body.toList }
       for c in (ch[bi]!).reverse do
         stack := stack.push (c, tbl)
-  return (subst.apply { f with blocks := out.toList }, removed)
+  return (subst.apply { f with blocks := out.toList }, removed, subst)
+
+/-- One GVN pass (`gvnFull` without the substitution). -/
+def gvn (f : Function) (info : Info) (local? : Inst → Bool := fun _ => false) : Function × Nat :=
+  let (g, n, _) := gvnFull f info local?
+  (g, n)
 
 end Opt

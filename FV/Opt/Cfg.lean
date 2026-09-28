@@ -167,11 +167,30 @@ def loops (c : Cfg) : Array Loop := Id.run do
 
 end Cfg
 
-/-- Delete the blocks that are unreachable from the entry block. They are never executed by
-`Clif.run` (blocks are looked up by id, only when branched to), so this preserves the
-semantics exactly. -/
-def removeUnreachable (f : Function) : Function :=
+/-- The blocks reachable from the entry block. -/
+def removeUnreachableRaw (f : Function) : Function :=
   let c := Cfg.build f
   { f with blocks := (f.blocks.zipIdx.filter fun (_, i) => c.reachable i).map (·.1) }
+
+/-- The header of a function (everything but the blocks and run commands) is unchanged. -/
+def sameHeader (f g : Function) : Bool :=
+  g.name == f.name && g.sig == f.sig && g.slots == f.slots && g.globals == f.globals &&
+    g.externs == f.externs
+
+/-- Validator of `removeUnreachableRaw` (`FV/Opt/Proof/Unreachable.lean`): `g` keeps the header,
+a subset of the blocks and the entry block of `f`, and every branch target of a kept block
+resolves to the same block in `g` as in `f`. -/
+def unreachableOk (f g : Function) : Bool :=
+  sameHeader f g && g.blocks.head? == f.blocks.head? &&
+    g.blocks.all (fun b => f.blocks.contains b &&
+      (termSuccs b.term).all fun id => (g.block? id).isSome && g.block? id == f.block? id)
+
+/-- Delete the blocks that are unreachable from the entry block. They are never executed by
+`Clif.run` (blocks are looked up by id, only when branched to), so this preserves the
+semantics exactly. The result is validated (`unreachableOk`); if validation fails, `f` is
+returned unchanged. -/
+def removeUnreachable (f : Function) : Function :=
+  let g := removeUnreachableRaw f
+  if unreachableOk f g then g else f
 
 end Opt

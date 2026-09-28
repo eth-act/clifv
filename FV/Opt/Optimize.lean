@@ -5,6 +5,7 @@ import FV.Opt.Licm
 import FV.Opt.HandRules
 import FV.Compile.Subset
 import FV.Isle.Opt.Simplify
+import FV.Opt.Validate
 
 /-!
 # `Opt.optimize`: the mid-end pipeline (unproven; `docs/contracts/midend.md`)
@@ -117,18 +118,24 @@ def optimizeReport (cfg : Config) (f0 : Function) : Function × Report := Id.run
     let enabled := match stage with
       | "simplify" => cfg.simplify | "gvn" => cfg.gvn | "dce" => cfg.dce | _ => cfg.licm
     if !enabled then continue
+    -- the renaming `editOk` validates GVN, DCE and LICM with
+    let mut sub : ValueId → ValueId := id
+    -- the simplify validator's verdict
+    let mut simpValid := true
     let g' ← match stage with
       | "simplify" =>
-        let (g', s) := simplify cfg.simplifyFn cfg.skeletonFn allowed (skelAllowedIn f) cfg.rematConst g info
-        let g' := removeUnreachable g'
+        let (g1, s, cert) := simplify cfg.simplifyFn cfg.skeletonFn allowed (skelAllowedIn f) cfg.rematConst g info
+        simpValid := simpOk g g1 info cert
+        let g' := removeUnreachable g1
         r := { r with rewritten := r.rewritten + s.rewritten, ruleErrors := r.ruleErrors + s.errors,
                       skeleton := r.skeleton + s.skeleton,
                       fired := s.fired.fold (fun m k n => m.insert k ((m.get? k).getD 0 + n)) r.fired }
         pure g'
       | "gvn" =>
-        let (g', n) := gvn g info (fun i => cfg.rematConst && match i with
+        let (g', n, s) := gvnFull g info (fun i => cfg.rematConst && match i with
           | .iconst .. => true
           | _ => false)
+        sub := s.find
         r := { r with gvnRemoved := r.gvnRemoved + n }
         pure g'
       | "dce" =>
@@ -140,9 +147,13 @@ def optimizeReport (cfg : Config) (f0 : Function) : Function × Report := Id.run
         r := { r with hoisted := r.hoisted + n }
         pure g'
     match check g' with
-    | .ok i => g := g'; info := i
+    | .ok i =>
+      if (if stage == "simplify" then simpValid else editOk sub g g' info i) then g := g'; info := i
+      else r := { r with passError := some (stage, "validator rejected the output") }; stop := true
     | .error e => r := { r with passError := some (stage, e) }; stop := true
-  return (g, { r with sizeAfter := instCount g })
+  -- a guard (never observed to fire): keep the input if the backend subset would be lost
+  let out := if keepsBackendSubset f0 g then g else f0
+  return (out, { r with sizeAfter := instCount out })
 
 /-- `Opt.optimize`: the optimised function (`Config` defaults). -/
 def optimize (f : Function) (cfg : Config := {}) : Function := (optimizeReport cfg f).1

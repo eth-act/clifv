@@ -352,6 +352,92 @@ Goal: `Opt.optimize` refines `Clif.run`, and `E2E.backend_correct_final` extends
 - `opt-fuzz` generates E arithmetic, `select`, extends, divisions, diamonds and one loop shape;
   no memory, calls or `br_table`.
 
+## Pass proofs (2026-09-28, MidPassProofs)
+
+Proven (no `sorry`, no hand-written axioms; `#print axioms` = `propext`, `Classical.choice`,
+`Quot.sound`, plus for `E2E.backend_correct_opt` the `bv_decide`/`native_decide` trust axioms
+inherited from `backend_correct_final`):
+
+| Theorem | File | Statement |
+| --- | --- | --- |
+| `Opt.runLoop_refines` | `FV/Opt/Proof/SemSim.lean` | pointwise `FunSim` between the functions of two programs ⇒ related states' runs: source returns/traps within `n` ⇒ target the same within some `n'` (calls, returns, tail calls, externs) |
+| `Opt.FunSim.trans` | same | simulations compose |
+| `Opt.wf_of_check` | `FV/Opt/Proof/Dom.lean` | `check` ⇒ the certificate facts `Wf` |
+| `Inv.results/enter/entry` | `FV/Opt/Proof/DomInv.lean` | run-time invariant (dominance lemma (D)): available values hold typed values; pure definitions hold `evalNode` of their node |
+| `evalInst_total` | `FV/Opt/Proof/SemFacts.lean` | lemma (T) |
+| `Opt.removeUnreachable_sim` | `FV/Opt/Proof/Unreachable.lean` | `FunSim f (removeUnreachable f)` for every `f` |
+| `Opt.editOk_sim` | `FV/Opt/Proof/GvnEdit.lean` | `check f`, `check g`, `editOk σ f g` ⇒ `FunSim f g` (GVN, DCE, LICM) |
+| `Opt.optimize_sim`, `Opt.optimizeProgram_refines` | `FV/Opt/Proof/Pipeline.lean` | `FunSim f (optimize f cfg)` for every `f`; `Clif.run p` returns/traps ⇒ `Clif.run (optimizeProgram p)` the same |
+| `E2E.backend_correct_opt` | `FV/E2E/Opt.lean` | Arm run of the compiled `optimize f` refines `Clif.runLoop env p fuel cs` from `f`'s entry state |
+
+All pipeline/E2E theorems are parametric in `Opt.SimplifyPassSim cfg.simplifyFn
+cfg.skeletonFn` (stated on `Config.simplifyFn`/`skeletonFn` since the merge of main; the
+recursion-depth failure of `Pipeline.lean` came from unifying `cfg.rules.fn` with
+`cfg.simplifyFn` and from `exact` unfolding `simplify`: fixed by the restatement, explicit
+arguments and `with_reducible`).
+
+### Simplify pass proof (MidSimplify, in progress)
+
+Design (validator + driver invariant): `Opt.simplify` returns a certificate `Opt.SimpCert`
+(final graph `defs`/`types`, renaming `subst`, per-block `BlockLog`s: every statement's fate
+`StmtLog.keep/repl/skel` with the emitted statements, every terminator's rewrite).
+`optimizeReport` accepts the simplify output only if `Opt.simpOk f g info cert`
+(`FV/Opt/Validate.lean`): `g` is `wfCert`-well-formed over `f`'s dominator tree, every block of
+`g` is the logged output renamed by a chain-free `subst`, inserted statements are pure nodes of
+the certificate graph (`D x = inst` for every pure single-result statement of `g`), leaves are
+not graph nodes, replacements are available where the replaced value was defined.
+`SimplifyPassSim` is now conditional on `simpOk`. On all difftest inputs (481 files: corpus,
+runtests, survey, `opt-fuzz` seeds 1–3 E/`--ext`, default and `--opt-proven-only`) the output
+of `clif-opt` is byte-identical to the pre-change driver and the validator accepts everything
+(`pass-errors 0`; corpus 4 668 → 2 287, runtests 3 383 → 3 040, proven-only corpus → 2 753).
+
+Driver sanity checks added for the proof (never fire on these inputs; outputs identical):
+made nodes only over *known* values (graph nodes or available values; else a fresh dummy
+value), made nodes that are not well-typed over solid values are recorded as `partialVals`
+and not simplified (no e-class recorded), top-level statements enter the graph only if new,
+below `next`, well-typed over available operands (else kept outside the graph, which
+`simpOk` rejects), clones must be well-typed and typed values, no cycle in `materialize`,
+`chooseBest`'s sort result filtered by membership, `chooseSkel` as a recursive scan, the
+alternatives' representative computed from the log, a terminator's `replaceWithTwo` prefix
+must be `trapz`/`trapnz`.
+
+Interface change (agreed with MidRulesInfra, commit 99341ce merged): `SimplifySound`'s `P`/`Le`
+conclusion no longer requires `den st v = some a` (the class value is quantified after it).
+
+Proven (no `sorry`): `FV/Opt/Proof/SimpDen.lean` — the graph valuation `den D ρ fr mem`
+(least model of the node equations; `den_node`, `den_leaf`, `den_le_of`, `den_insert_fresh`,
+`Twin`/`den_overwrite`), `evalInst_ops`/`evalInst_mono`; `SimpGraph.lean` — the invariant
+`GInv` (closed graph over known values, fresh values above `next`, available and solid values
+defined and typed, `alts`/`memo`/`classes` justified forward), `fresh_spec`/`insert_spec`,
+`chooseBest_spec`, `optimizeAt_spec` (via `SimplifySound`), `skelMake_sound`, `runSkel_spec`
+(via `SkeletonSound`); `SimpMat.lean` — `materialize_spec`, `materializeAll_spec`,
+`rename_spec`.
+
+**Not done:** (a) the loop invariant of `stepStmt`/`stepBlock`/`simplify` producing the
+semantic facts of the certificate (repl: `V v = evalNode inst V`, `V v ⇒ V w`; skeleton
+outcomes: `SkelRefines`-style facts composed along `skelStmt`/`skelTerm` chains, transported
+to the final valuation by freezing on known values); (b) the runtime simulation `simpOk ∧
+facts ⇒ FunSim f g` (ERel-like relation with `den`-based agreement, trap blocks, symbol
+completion of the memory for `den`); (c) hence `SimplifyPassSim` from `SimplifySound` /
+`SkeletonSound`, `EnvKeepsSymbols`/`TrapsExplicit` discharge, and
+`E2E.backend_correct_opt_proven` (`skeletonSound_proven` is available from 99341ce).
+
+Design decisions (approved by the integrator):
+
+- **Validators instead of proofs of the imperative loops.** `check` also runs the declarative
+  certificate `wfCert` (definition-site map, idom tree with decreasing RPO numbers and the edge
+  certificate "for every edge `u → b`, `idom b` is a tree ancestor of `u`", typing).
+  `removeUnreachable` validates itself (`unreachableOk`, else returns its input).
+  `optimizeReport` accepts GVN/DCE/LICM output only if `editOk` holds (`FV/Opt/Validate.lean`;
+  `gvnFull` returns its substitution), else stops like a `check` failure (`passError`). A final
+  guard `keepsBackendSubset` keeps the input if the output would leave E or call new callees.
+  On every difftest input all validators accept: corpus 4 668 → 2 287, runtests 3 383 → 3 040,
+  survey 116 996 → 67 395, `pass-errors 0`, `ill-formed 0`; `opt-fuzz` seeds 1–2 (E and
+  `--ext`) 3 200/3 200 agree.
+- Extra E2E premises: `EnvKeepsSymbols env` (externs keep the link-time symbols, so
+  `symbol_value` is a constant), `TrapsExplicit` about the optimised program's run
+  (`optEntry`), `FormsCovered` of the optimised code (decided, as before).
+
 ## Rule proofs (MidRulesFoundation, branch `agent/mid-rules`)
 
 Status: the framework is complete and proven; **4 `simplify` rules proven** (a first batch),

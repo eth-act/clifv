@@ -59,9 +59,10 @@ def SimplifySound (rules : SimplifyFn) : Prop :=
     (make : σ → Inst → ValueId × σ) (P : σ → Prop) (den : σ → Valuation) (fr : Frame)
     (mem : Mem),
     GraphModel enodes typeOf P den fr mem → MakeSound make P den fr mem →
-    ∀ st v a cands names st', P st → den st v = some a →
+    ∀ st v cands names st', P st →
       rules enodes typeOf make st v = .ok (cands, names, st') →
-      P st' ∧ Valuation.Le (den st) (den st') ∧ ∀ c ∈ cands, den st' c.1 = some a
+      P st' ∧ Valuation.Le (den st) (den st') ∧
+        ∀ a, den st v = some a → ∀ c ∈ cands, den st' c.1 = some a
 
 /-! ## Skeleton simplifications -/
 
