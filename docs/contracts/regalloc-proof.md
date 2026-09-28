@@ -430,3 +430,26 @@ lemmas), traps (`layout_traps`), and the assembly of `RegLevelCorrect`.
 `#print axioms`: `realizes_args`, `driverSem_csem`, `callsRefine_csem`:
 `[propext, Classical.choice, Quot.sound]`; `realizes_goto`, `realizes_trapIf_next`: those plus
 M5's `decode_armBits_*._native.bv_decide` axioms.
+
+## Status update (M6Insts, 2026-09-28)
+
+- **Interface with M6Ctl** (`RegallocCover.lean`, `RegallocCSem.lean`): `MInst.isCtl`, `FormOk ctx i`
+  (decidable covered-form test), `FormsCovered ctx vc` (+ `formsCoveredB`, `Decidable`), 
+  `formOk_sound : FormOk ctx i = true → (∀ env, OperandsSound …) ∧ (∀ regs i', assign → LinesOk ∧ ≠args ∧ ≠rets)`.
+  Proposed as a premise decided by `lean-e2e-check`.
+- **Loads/stores**: `store_core`, generic `corr_load{0,1,2}`/`corr_store{0,1,2}`, `os_load_*`/`os_store_*`
+  for every `amodeAddr` mode (slot offsets incl. x16). **loadAddr** of slot offsets:
+  `execMInst_loadAddr_slot` (mov/add/sub/x16+`add sxtx`), `os_loadAddr_slot`, `linesOk_loadAddr_slot`.
+  `LinesOk` for multi-line forms via `linesOk_gen`/`interOk_prefix` (from `StepsOk`).
+- **Design change (decision)**: `Refines F (csem …)` is false with the old csem (ispec ignores operand
+  shape: rn = xzr with one use, allocatable rd, wrong use count, erroneous world). csem's straight-line
+  clause is now `if csemWF ctx i uses ∧ ERR w = None then straightSem else ispec`; `OperandsSound`
+  (and `operandsSound_step`) assume `Arm.r .ERR s = .None` (`realizes_op_next` passes `hst.err`);
+  `csem_next_world` via `ispec_world`.
+- **Refines**: `RefinesInsts.lean`: `RefAt`, `ref_tac`, `ref_aluRRR` (all ops/sizes) proven.
+- **Open**: (1) `RegLevelDriverSem.driverSem_csem.rename` (from main) must handle the new ispec branch:
+  needs `ispec (i.mapRegs g) = ispec i` for `VRenaming g` (and `csemWF` invariance). Experiment: 
+  `unfold ispec; split <;> split <;> simp_all [ren_xzr, defOut_ren]` leaves only a few goals per
+  constructor (~100 s for aluRRR). (2) `ref_*` for the remaining FormOk forms and the final
+  `refines_csem : Refines F (csem F ctx X)`. (3) `MemRefines` (use `execMInst_load/_store`,
+  `execMInst_loadAddr_slot`; GOT clause is ctl, needs `X.sym n 0 = ofNat b`).
