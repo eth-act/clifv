@@ -6,7 +6,7 @@ Shared command-line handling of the mid-end drivers (`clif-opt`, `opt-difftest`,
 `--opt` flag of `lean-backend`, `lean-backend-armrun`, `lean-e2e-check`).
 
 Options (anywhere on the command line, consumed by `Opt.parseOptArgs`):
-`--opt` (enable), `--opt-rules hand|cranelift`, `--opt-no-simplify`, `--opt-no-gvn`,
+`--opt` (enable), `--opt-rules cranelift|hand` (default cranelift), `--opt-no-simplify`, `--opt-no-gvn`,
 `--opt-no-dce`, `--opt-no-licm`, `--opt-remat-const`, `--opt-no-hoist-const`, `--opt-rounds N`.
 Any `--opt-*` option implies `--opt`.
 -/

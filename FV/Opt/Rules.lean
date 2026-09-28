@@ -16,8 +16,8 @@ values equivalent to `v` that the rules produce. The graph is abstract (`σ`):
 Result: candidates `(value, subsume)` in rule order, the names of the rules that produced them,
 and the new graph state. `.error` only for interpreter failures (an unmodelled extern, fuel).
 
-Implementations: `Opt.HandRules.simplify` (a small hand-written stand-in) and the exported
-Cranelift rules (`Opt.CraneliftRules`, via `Isle.Opt.simplify` — `docs/contracts/isle.md`).
+Implementations: the exported Cranelift rules (`Isle.Opt.simplify`, `docs/contracts/isle.md`)
+and `Opt.HandRules.simplify` (a small hand-written stand-in).
 
 **Proof obligation of a rule set** (`docs/contracts/midend.md`): every candidate `w` of `v`
 evaluates, in every register file where the nodes reachable from `v` evaluate, to the same
@@ -34,13 +34,17 @@ abbrev SimplifyFn := {σ : Type} → (σ → ValueId → List Inst) → (σ → 
 
 /-- The available rule sets (`Opt.RuleSetId.fn` in `FV/Opt/Optimize.lean`). -/
 inductive RuleSetId where
+  /-- Cranelift 0.136.1's `simplify` rules, exported (`Isle.Opt.program`) and run by the ISLE
+  multi-term interpreter (`Isle.Opt.simplify`, `docs/contracts/isle.md`). -/
+  | cranelift
   /-- `Opt.HandRules.simplify`. -/
   | hand
   deriving DecidableEq, Repr, Inhabited
 
 def RuleSetId.name : RuleSetId → String
+  | .cranelift => "cranelift"
   | .hand => "hand"
 
-def RuleSetId.all : List RuleSetId := [.hand]
+def RuleSetId.all : List RuleSetId := [.cranelift, .hand]
 
 end Opt

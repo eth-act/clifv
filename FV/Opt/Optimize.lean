@@ -4,6 +4,7 @@ import FV.Opt.Simplify
 import FV.Opt.Licm
 import FV.Opt.HandRules
 import FV.Compile.Subset
+import FV.Isle.Opt.Simplify
 
 /-!
 # `Opt.optimize`: the mid-end pipeline (unproven; `docs/contracts/midend.md`)
@@ -29,10 +30,11 @@ open Clif
 
 /-- The implementation of a rule set. -/
 def RuleSetId.fn : RuleSetId → SimplifyFn
+  | .cranelift => fun enodes typeOf make st v => Isle.Opt.simplify enodes typeOf make st v
   | .hand => HandRules.simplify
 
 structure Config where
-  rules : RuleSetId := .hand
+  rules : RuleSetId := .cranelift
   simplify : Bool := true
   gvn : Bool := true
   dce : Bool := true

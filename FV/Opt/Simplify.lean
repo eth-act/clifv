@@ -11,7 +11,8 @@ substitution built so far) it does what Cranelift's `insert_pure_enode` /
 `optimize_pure_enode` do (`egraph/mod.rs`):
 
 1. insert `n` as the node of `v`;
-2. call the rule set's `simplify` on `v`. Rules see each operand's *e-class* (its node plus
+2. unless an equal node was seen before (then its value is reused: hash-consing, Cranelift's
+   GVN map), call the rule set's `simplify` on `v`. Rules see each operand's *e-class* (its node plus
    the equivalent nodes recorded when it was rewritten) and create nodes with `make`, which
    are themselves simplified recursively (rewrite depth ≤ `rewriteLimit` = 5, Cranelift's
    `REWRITE_LIMIT`); created nodes are *virtual* until needed;
@@ -26,8 +27,9 @@ substitution built so far) it does what Cranelift's `insert_pure_enode` /
    cloned under a fresh number) and rename `v` to it.
 
 Differences from Cranelift, all on the conservative side: nodes are materialised where the
-rewritten statement was (placement/remat/LICM are separate passes); `make` does not
-deduplicate against earlier statements (the next GVN pass does); an e-class is only visible
+rewritten statement was (placement/remat/LICM are separate passes); the node being
+simplified is in the hash-consing table while its rules run (so a rule rebuilding it, e.g. two
+argument swaps, gets `v` back instead of a copy); an e-class is only visible
 to later matches through its representative when that representative was created by this
 statement (so every node of a visible class can be materialised wherever the class is used).
 
@@ -65,7 +67,9 @@ structure SState where
   types : Std.HashMap ValueId Ty := {}
   cost : Std.HashMap ValueId Cost := {}
   next : ValueId
-  /-- `make` memo for the current statement: node ↦ its simplified value. -/
+  /-- Hash-consing of nodes (Cranelift's GVN map): node ↦ the best value of its e-class.
+  Global to the function; a hit whose definition does not dominate the use is cloned by
+  `materialize`. -/
   memo : Std.HashMap Inst ValueId := {}
   /-- Values created while rewriting the current statement. -/
   made : Std.HashSet ValueId := {}
@@ -184,8 +188,13 @@ def simplify (rules : SimplifyFn) (allowed : Inst → Bool) (f : Function) (info
       | [v], true =>
         let c := (operands inst).foldl (fun c x => Cost.add c (st.costOf x)) (Cost.ofInst inst)
         st := { st with defs := st.defs.insert v inst, cost := st.cost.insert v c,
-                        memo := {}, made := {}, classes := {} }
-        let (best, st1) := optimizeAt rules allowed rewriteLimit st v
+                        made := {}, classes := {} }
+        let (best, st1) := match st.memo.get? inst with
+          | some w => (w, st)
+          | none =>
+            let (b, st1) := optimizeAt rules allowed rewriteLimit
+              { st with memo := st.memo.insert inst v } v
+            (b, { st1 with memo := st1.memo.insert inst b })
         let keep := fun (st : SState) =>
           { st with avail := st.avail.insert v bi }
         if best == v then
