@@ -13,14 +13,13 @@ through the 16-byte `fmoveTmp` slot. `MStep.move` models a move as `m[dst ↦ m 
   slots by the bytes at `sp + RAFrame.offset`);
 * `FrameOk fr sp0 F`: the layout facts the lowering needs — distinct frame locations have
   separate slots, all inside the frame addresses `F` (masked out of the world);
-* `lower_move_reg_int`, `lower_spill_int`, `lower_reload_int`: the lowered code of an int
-  register move, an int spill and an int reload (unsigned-offset encoding) changes
-  `locVal` exactly as `MStep.move` changes the store, keeps the world (`SameWorld F`) and `sp`;
+* `lower_move_reg_int`: the lowered code of an int register move changes `locVal` exactly
+  as `MStep.move` changes the store, keeps the world (`SameWorld F`) and `sp` (every other
+  move kind: `RegallocMoves.lower_move`);
   `move_agree` restates that as preservation of "the store agrees with the Arm state".
 
-Not proven here (see `docs/contracts/regalloc-proof.md`): the other two spill encodings
-(`stur` for offsets < 256, the x16 sequence for large offsets), float moves via `fmoveTmp`,
-callee-save slots (same shape as spills), `FrameOk` for `RAFrame.compute`, prologue/epilogue.
+Spills, reloads, save/restore and float moves: `RegallocSlots`/`RegallocMoves`; the layout
+of `RAFrame.compute`: `RegallocLayout.frameOk_compute`.
 -/
 
 namespace Backend.Proof
@@ -42,13 +41,27 @@ def locVal (fr : RAFrame) (s : Arm.ArmState) : Loc → CV
       else Arm.read_mem_bytes 16 (spOf s + BitVec.ofNat 64 off) s
     | .error _ => 0
 
-/-- The frame layout facts the lowering relies on, for stack pointer `sp0` and frame
-addresses `F`: distinct frame locations have separate slots, and every slot lies in `F`. -/
-structure FrameOk (fr : RAFrame) (sp0 : BitVec 64) (F : BitVec 64 → Prop) : Prop where
-  sep : ∀ l l' o o', l ≠ l' → fr.offset l = .ok o → fr.offset l' = .ok o' →
+/-- The frame locations the allocated code can use: int spill slots below `spillSlots`, float
+spill slots below `spillSlots` when the code uses float slots at all (otherwise the float area
+is empty), every save slot (`offset` fails for registers without one). -/
+def Live (rf : RFunc) : Loc → Prop
+  | .stack k .int => k < rf.spillSlots
+  | .stack k .float => k < rf.spillSlots ∧ rf.floatStack = true
+  | _ => True
+
+/-- The frame layout facts the lowering relies on, for the live locations `D`, stack pointer
+`sp0` and frame addresses `F`: distinct live frame locations have separate slots, every slot
+lies in `F`; when `T` (the code has float register moves) the 16-byte `fmoveTmp` slot is in
+`F` and separate from every live slot. -/
+structure FrameOk (fr : RAFrame) (D : Loc → Prop) (T : Prop) (sp0 : BitVec 64)
+    (F : BitVec 64 → Prop) : Prop where
+  sep : ∀ l l' o o', D l → D l' → l ≠ l' → fr.offset l = .ok o → fr.offset l' = .ok o' →
     Arm.mem_separate' (sp0 + BitVec.ofNat 64 o) (slotBytes l) (sp0 + BitVec.ofNat 64 o') (slotBytes l')
-  inF : ∀ l o, fr.offset l = .ok o → ∀ k < slotBytes l,
+  inF : ∀ l o, D l → fr.offset l = .ok o → ∀ k < slotBytes l,
     F (sp0 + BitVec.ofNat 64 o + BitVec.ofNat 64 k)
+  tmpSep : T → ∀ l o, D l → fr.offset l = .ok o →
+    Arm.mem_separate' (sp0 + BitVec.ofNat 64 o) (slotBytes l) (sp0 + BitVec.ofNat 64 fr.fmoveTmp) 16
+  tmpF : T → ∀ k < 16, F (sp0 + BitVec.ofNat 64 fr.fmoveTmp + BitVec.ofNat 64 k)
 
 theorem offset_reg (fr : RAFrame) (r : Reg) : ∃ e, fr.offset (.reg r) = .error e := ⟨_, rfl⟩
 
@@ -189,149 +202,19 @@ theorem locVal_frame_write {fr : RAFrame} {s : Arm.ArmState} {l : Loc} (hl : ∀
         (have := hsep o ho; rw [h] at this; rw [read_after_write_sep this]) <;> simp
     · rfl
 
-/-- **Lowering of an int spill** (`str xa, [sp, #off]`, the unsigned-offset encoding:
-`256 ≤ off`, `off` a multiple of 8 below 32768) implements `MStep.move` for
-`reg (x a) → stack k int`, given the frame layout `FrameOk` and an aligned `sp`. -/
-theorem lower_spill_int (fr : RAFrame) {sp0 : BitVec 64} {F : BitVec 64 → Prop}
-    (hfr : FrameOk fr sp0 F) (ctx : FnCtx) (env : Env) {a k off : Nat}
-    (ha : (Reg.x a).allocatable = true) (hoff : fr.offset (.stack k .int) = .ok off)
-    (h256 : 256 ≤ off) (h8 : off % 8 = 0) (h12 : off / 8 < 4096)
-    {s w : Arm.ArmState} (hw : SameWorld F s w) (hsp : spOf s = sp0)
-    (halign : Arm.CheckSPAlignment s) :
-    fr.moveInsts (.reg (.x a)) (.stack k .int) = .ok [.inst (slotStore .int (.x a) off)] ∧
-    ∃ s', execMInst ctx env (slotStore .int (.x a) off) s = some s' ∧ SameWorld F s' w ∧
-      spOf s' = sp0 ∧
-      ∀ l, ValidLoc l →
-        locVal fr s' l = upd (locVal fr s) (.stack k .int) (locVal fr s (.reg (.x a))) l := by
-  rcases allocatable_cases ha with ⟨a', ea, hha⟩ | ⟨_, ea, _⟩ <;> cases ea
-  refine ⟨by simp [RAFrame.moveInsts, hoff, Reg.realClass?]; rfl, ?_⟩
-  have hl : MInst.lines ctx (slotStore .int (.x a) off) {} =
-      .ok ([.ins (.store .store64 (.x a) (.unsignedOffset .sp off)) trustedFlags.trapCode], {}) := by
-    simp [MInst.lines, slotStore, memFinalize, simm9?, uimm12Scaled?, show ¬ (off : Int) ≤ 255 by omega,
-      show (off : Int) ≤ 4095 * 8 by omega, h8, StoreOp.bytes, show (off : Int) ≤ 32760 by omega]
-    rfl
-  have ha' : Insn.toArmInst env (.store .store64 (.x a) (.unsignedOffset .sp off)) =
-      .ok (.LDST (.Reg_unsigned_imm
-        { size := 3#2, V := 0#1, opc := 0#2, imm12 := BitVec.ofNat 12 (off / 8),
-          Rn := 31#5, Rt := rnum a })) := by
-    simp [Insn.toArmInst, Insn.armFields, Arm.ArmInst.norm, StoreOp.fields, ldstFields,
-      Reg.encZR, Reg.encSP, show a ≤ 30 by omega, rnum, uField, h8, h12, StoreOp.bytes]
-    rfl
-  have halign' : Arm.Aligned (Arm.r (.GPR 31#5) s) 4 := by
-    have := halign
-    simp only [Arm.CheckSPAlignment, Arm.read_gpr, BitVec.setWidth_eq] at this
-    exact this
-  have he : Arm.exec_inst (.LDST (.Reg_unsigned_imm
-        { size := 3#2, V := 0#1, opc := 0#2, imm12 := BitVec.ofNat 12 (off / 8),
-          Rn := 31#5, Rt := rnum a })) s =
-      Arm.w .PC (Arm.r .PC s + 4#64)
-        (Arm.write_mem_bytes 8 (spOf s + BitVec.ofNat 64 off) (Arm.r (.GPR (rnum a)) s) s) := by
-    rw [← ldst_offset off h8 h12]
-    simp [Arm.exec_inst, Arm.LDST.exec_reg_imm_unsigned_offset, Arm.LDST.exec_reg_imm_common,
-      Arm.LDST.reg_imm_operation, Arm.LDST.Reg_offset.value,
-      Arm.LDST.reg_imm_constrain_unpredictable, Arm.ldst_read, Arm.read_gpr_zr, Arm.read_gpr,
-      rnum_ne31 hha.1, Arm.read_pc, Arm.write_pc, Arm.BitVec.lsb, Arm.CheckSPAlignment, halign', spOf]
-    rfl
-  refine ⟨Arm.w .PC (Arm.r .PC s + 4#64)
-      (Arm.write_mem_bytes 8 (spOf s + BitVec.ofNat 64 off) (Arm.r (.GPR (rnum a)) s) s),
-    by simp only [execMInst, hl]
-       rw [execLines_one ha' (by rw [he, Arm.r_of_w_same]), he], ?_, ?_, ?_⟩
-  · exact SameWorld.w_left (by simp [Masked]) (SameWorld.write_mem_bytes_inF hw 8 _ _
-      (fun j hj => by rw [hsp]; exact hfr.inF _ off hoff j hj))
-  · rw [spOf_write, hsp]
-  · intro l hl
-    by_cases e : l = .stack k .int
-    · subst e
-      simp only [upd, if_true, locVal, hoff, slotBytes, spOf_write]
-      rw [Arm.read_mem_bytes_of_w, Arm.read_mem_bytes_of_write_mem_bytes_same (by decide)]
-      rfl
-    · simp only [upd, e, if_false]
-      cases l with
-      | reg r =>
-        simp only [locVal]
-        rw [regVal_w (by cases r <;> simp [Reg.field]), regVal_write_mem_bytes]
-      | stack k' c =>
-        exact locVal_frame_write (fun r h => Loc.noConfusion h) (fun o ho => by
-          rw [hsp]; exact hfr.sep _ _ o off e ho hoff)
-      | save r =>
-        exact locVal_frame_write (fun r h => Loc.noConfusion h) (fun o ho => by
-          rw [hsp]; exact hfr.sep _ _ o off e ho hoff)
-
-
-/-- **Lowering of an int reload** (`ldr xb, [sp, #off]`, unsigned-offset encoding) implements
-`MStep.move` for `stack k int → reg (x b)`. -/
-theorem lower_reload_int (fr : RAFrame) {F : BitVec 64 → Prop} (ctx : FnCtx) (env : Env)
-    {b k off : Nat} (hb : (Reg.x b).allocatable = true) (hoff : fr.offset (.stack k .int) = .ok off)
-    (h256 : 256 ≤ off) (h8 : off % 8 = 0) (h12 : off / 8 < 4096)
-    {s w : Arm.ArmState} (hw : SameWorld F s w) (halign : Arm.CheckSPAlignment s) :
-    fr.moveInsts (.stack k .int) (.reg (.x b)) = .ok [.inst (slotLoad .int (.x b) off)] ∧
-    ∃ s', execMInst ctx env (slotLoad .int (.x b) off) s = some s' ∧ SameWorld F s' w ∧
-      spOf s' = spOf s ∧
-      ∀ l, ValidLoc l →
-        locVal fr s' l = upd (locVal fr s) (.reg (.x b)) (locVal fr s (.stack k .int)) l := by
-  rcases allocatable_cases hb with ⟨b', eb, hhb⟩ | ⟨_, eb, _⟩ <;> cases eb
-  refine ⟨by simp [RAFrame.moveInsts, hoff, Reg.realClass?]; rfl, ?_⟩
-  have hl : MInst.lines ctx (slotLoad .int (.x b) off) {} =
-      .ok ([.ins (.load .uload64 (.x b) (.unsignedOffset .sp off)) trustedFlags.trapCode], {}) := by
-    simp [MInst.lines, slotLoad, memFinalize, simm9?, uimm12Scaled?, show ¬ (off : Int) ≤ 255 by omega,
-      h8, LoadOp.bytes, show (off : Int) ≤ 32760 by omega]
-    rfl
-  have ha' : Insn.toArmInst env (.load .uload64 (.x b) (.unsignedOffset .sp off)) =
-      .ok (.LDST (.Reg_unsigned_imm
-        { size := 3#2, V := 0#1, opc := 1#2, imm12 := BitVec.ofNat 12 (off / 8),
-          Rn := 31#5, Rt := rnum b })) := by
-    simp [Insn.toArmInst, Insn.armFields, Arm.ArmInst.norm, LoadOp.fields, ldstFields,
-      Reg.encZR, Reg.encSP, show b ≤ 30 by omega, rnum, uField, h8, h12, LoadOp.bytes]
-    rfl
-  have halign' : Arm.Aligned (Arm.r (.GPR 31#5) s) 4 := by
-    have := halign
-    simp only [Arm.CheckSPAlignment, Arm.read_gpr, BitVec.setWidth_eq] at this
-    exact this
-  have he : Arm.exec_inst (.LDST (.Reg_unsigned_imm
-        { size := 3#2, V := 0#1, opc := 1#2, imm12 := BitVec.ofNat 12 (off / 8),
-          Rn := 31#5, Rt := rnum b })) s =
-      Arm.w (.GPR (rnum b)) (Arm.read_mem_bytes 8 (spOf s + BitVec.ofNat 64 off) s)
-        (Arm.w .PC (Arm.r .PC s + 4#64) s) := by
-    rw [← ldst_offset off h8 h12, Arm.w_of_w_commute (by simp)]
-    simp [Arm.exec_inst, Arm.LDST.exec_reg_imm_unsigned_offset, Arm.LDST.exec_reg_imm_common,
-      Arm.LDST.reg_imm_operation, Arm.LDST.Reg_offset.value,
-      Arm.LDST.reg_imm_constrain_unpredictable, Arm.write_gpr_zr, Arm.read_gpr, Arm.write_gpr,
-      rnum_ne31 hhb.1, Arm.read_pc, Arm.write_pc, Arm.BitVec.lsb, halign, spOf]
-    rfl
-  obtain ⟨hW, hD, hO⟩ := gpr_write_sound hhb hw
-    (Arm.read_mem_bytes 8 (spOf s + BitVec.ofNat 64 off) s) (Arm.r .PC s + 4#64)
-  have hsp : spOf (Arm.w (.GPR (rnum b)) (Arm.read_mem_bytes 8 (spOf s + BitVec.ofNat 64 off) s)
-      (Arm.w .PC (Arm.r .PC s + 4#64) s)) = spOf s := by
-    simp only [spOf]
-    rw [Arm.r_of_w_different (by simpa using (rnum_ne31 hhb.1).symm),
-      Arm.r_of_w_different (by simp)]
-  refine ⟨_, by
-      simp only [execMInst, hl]
-      rw [execLines_one ha' (by rw [he, Arm.r_of_w_different (by simp), Arm.r_of_w_same]), he],
-    hW, hsp, fun l hl => ?_⟩
-  by_cases e : l = .reg (.x b)
-  · subst e; simp only [upd, if_true, locVal, hD, hoff, slotBytes]
-  · simp only [upd, e, if_false]
-    have hm : (Arm.w (.GPR (rnum b)) (Arm.read_mem_bytes 8 (spOf s + BitVec.ofNat 64 off) s)
-        (Arm.w .PC (Arm.r .PC s + 4#64) s)).mem = s.mem := by
-      rw [Arm.ArmState.mem_w_eq_mem, Arm.ArmState.mem_w_eq_mem]
-    cases l with
-    | reg r => exact hO r (hl r rfl) (fun h => e (by rw [h]))
-    | stack k c => exact locVal_frame_congr (fun r h => Loc.noConfusion h) hsp hm
-    | save r => exact locVal_frame_congr (fun r h => Loc.noConfusion h) hsp hm
-
-
-/-- The lowering lemmas above give exactly `MStep.move`'s store: if the location store `m`
-agrees with the Arm state on the maintained locations before, `m[dst ↦ m src]` agrees after. -/
-theorem move_agree {fr : RAFrame} {s s' : Arm.ArmState} {m : Loc → CV} {src dst : Loc}
-    (hm : ∀ l, ValidLoc l → m l = locVal fr s l) (hsrc : ValidLoc src)
-    (h : ∀ l, ValidLoc l → locVal fr s' l = upd (locVal fr s) dst (locVal fr s src) l) :
-    ∀ l, ValidLoc l → upd m dst (m src) l = locVal fr s' l := by
-  intro l hl
-  rw [h l hl]
+/-- The lowering lemmas give exactly `MStep.move`'s store: if the location store `m` agrees
+with the Arm state on the maintained locations (valid and in `L`) before, `m[dst ↦ m src]`
+agrees after. -/
+theorem move_agree {fr : RAFrame} {L : Loc → Prop} {s s' : Arm.ArmState} {m : Loc → CV}
+    {src dst : Loc} (hm : ∀ l, ValidLoc l → L l → m l = locVal fr s l) (hsrc : ValidLoc src)
+    (hsrcL : L src)
+    (h : ∀ l, ValidLoc l → L l → locVal fr s' l = upd (locVal fr s) dst (locVal fr s src) l) :
+    ∀ l, ValidLoc l → L l → upd m dst (m src) l = locVal fr s' l := by
+  intro l hl hL
+  rw [h l hl hL]
   simp only [upd]
   split
-  · exact hm src hsrc
-  · exact hm l hl
+  · exact hm src hsrc hsrcL
+  · exact hm l hl hL
 
 end Backend.Proof

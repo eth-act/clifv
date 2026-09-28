@@ -1,0 +1,282 @@
+import FV.E2E.RegLevelMove
+
+/-!
+# Straight-line instructions on the machine (M6)
+
+`realizes_op_next`: at an instruction item whose `MStep` continues (`next`), an instruction
+with `OperandsSound` whose expansion is plain straight-line code (`LinesOk`) is realised: the
+machine runs its lines and reaches `Q` at the next item, with the store `MStep.op` builds.
+-/
+
+namespace Backend.Proof
+
+open Backend E2E
+
+/-- The expansion of an allocated instruction: emitter-state independent, unhooked plain
+instruction lines whose intermediate states are error-free. -/
+def LinesOk (ctx : FnCtx) (i : MInst) : Prop :=
+  ∃ ls, (∀ ps, i.lines ctx ps = .ok (ls, ps)) ∧
+    (∀ ln ∈ ls, ∃ x t, ln = .ins x t ∧ x.hooked = false) ∧ (∀ ln ∈ ls, ln.plain = true) ∧
+    ∀ env s s', Arm.r .ERR s = .None → execLines env ls s = some s' → InterOk env ls s
+
+theorem linesOk_of_oneLine {ctx : FnCtx} {i : MInst} (h : OneLine ctx i) : LinesOk ctx i := by
+  obtain ⟨x, t, hl, hx, hp⟩ := h
+  refine ⟨[.ins x t], hl, fun ln hln => ?_, fun ln hln => ?_, fun env s s' _ _ k h0 hk => ?_⟩
+  · simp only [List.mem_singleton] at hln; exact ⟨x, t, hln, hx⟩
+  · simp only [List.mem_singleton] at hln; rw [hln]; exact hp
+  · simp at hk; omega
+
+def locReg : Loc → Except String Reg
+  | Loc.reg r => pure r
+  | l => throw (toString "operand in " ++ toString (repr l))
+
+theorem mapM_locReg : ∀ (L : List Loc) (R : List Reg), L.mapM locReg = .ok R → L = R.map .reg
+  | [], R, h => by
+    simp only [List.mapM_nil, pure, Except.pure, Except.ok.injEq] at h; subst h; rfl
+  | l :: L, R, h => by
+    rw [List.mapM_cons] at h
+    simp only [bind, Except.bind] at h
+    split at h
+    · cases h
+    rename_i r hr
+    split at h
+    · cases h
+    rename_i rs hrs
+    simp only [pure, Except.pure, Except.ok.injEq] at h
+    subst h
+    rw [mapM_locReg L rs hrs]
+    cases l <;> simp [locReg, pure, Except.pure, throw, throwThe, MonadExceptOf.throw] at hr
+    subst hr; rfl
+
+theorem arr_mapM_locReg {allocs : Array Loc} {regs : Array Reg}
+    (h : allocs.mapM locReg = .ok regs) : allocs = regs.map .reg := by
+  have e := Array.toList_mapM (xs := allocs) (f := locReg)
+  rw [h] at e
+  simp only [Functor.map, Except.map] at e
+  apply Array.toList_inj.1
+  rw [Array.toList_map]
+  exact mapM_locReg _ _ e.symm
+
+theorem itemCode_op {fr : RAFrame} {vb : VBlock} {k : Nat} {allocs : Array Loc} {c1 : List AInst}
+    (h : itemCode fr vb (.op k allocs) = .ok c1) :
+    ∃ regs i i', allocs = regs.map Loc.reg ∧ vb.insts[k]? = some i ∧ i.assign regs = .ok i' ∧
+      (c1 = [AInst.inst i'] ∨ (∃ ds, i' = .args ds ∧ c1 = []) ∨
+        (∃ us, i' = .rets us ∧ c1 = [AInst.epilogueRet])) := by
+  unfold itemCode itemStep at h
+  dsimp only at h
+  simp only [bind, Except.bind, Functor.map, Except.map] at h
+  split at h
+  · cases h
+  rename_i arr harr
+  simp only [Except.ok.injEq] at h
+  subst h
+  split at harr
+  · cases harr
+  rename_i regs hregs
+  split at harr
+  · rename_i i hi
+    split at harr
+    · cases harr
+    rename_i i' hi'
+    refine ⟨regs, i, i', arr_mapM_locReg (by exact hregs), hi, hi', ?_⟩
+    cases i' <;> simp only [pure, Except.pure, Except.ok.injEq] at harr <;> subst harr <;> simp
+  · simp [throw, throwThe, MonadExceptOf.throw] at harr
+
+
+/-- A frame location is kept by a step that keeps the frame (`FrameKeep`). -/
+theorem locVal_frame_keep {fr : RAFrame} {D : Loc → Prop} {T : Prop} {sp0 : BitVec 64}
+    {F : BitVec 64 → Prop} (hfr : FrameOk fr D T sp0 F) {s s' : Arm.ArmState}
+    (hsp : spOf s = sp0) (hK : FrameKeep F s s') {l : Loc} (hD : D l) (hl : ∀ r, l ≠ .reg r) :
+    locVal fr s' l = locVal fr s l := by
+  cases ho : fr.offset l with
+  | error e =>
+    cases l with
+    | reg r => exact absurd rfl (hl r)
+    | stack k c => simp only [locVal, ho]
+    | save r => simp only [locVal, ho]
+  | ok o =>
+    rw [locVal_frame_eq ho, locVal_frame_eq ho, hK.1]
+    have hr : ∀ n, n ≤ slotBytes l → Arm.read_mem_bytes n (spOf s + BitVec.ofNat 64 o) s' =
+        Arm.read_mem_bytes n (spOf s + BitVec.ofNat 64 o) s := fun n hn =>
+      read_mem_bytes_congr n _ (fun k hk => hK.2 _ (by rw [hsp]; exact hfr.inF l o hD ho k (by omega)))
+    rcases slotBytes_cases l with h | h
+    · rw [if_pos h, if_pos h, hr 8 (by omega)]
+    · rw [if_neg (by omega), if_neg (by omega), hr 16 (by omega)]
+
+/-- The fp/lr slot lies in the frame addresses. -/
+theorem fplr_inF {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) :
+    ∀ k < 16, R.F (spv R.s0 - 16#64 + BitVec.ofNat 64 k) := by
+  obtain ⟨⟨hfs, -⟩, hlt, -⟩ := lowerRFunc_ok hR.alloc
+  have hst := hR.stack
+  simp only [StackAvail] at hst
+  have hd : frameDrop R.af = R.fr.total + 16 := by
+    simp only [frameDrop, hframe, ite_true, hfs, RL.fr]
+  intro k hk
+  simp only [RL.F, frameF, hd]
+  rw [hfs] at hst
+  simp only [RL.fr] at *
+  have hm : (R.fr.total + 16) % 2 ^ 64 = R.fr.total + 16 := Nat.mod_eq_of_lt (by simp [RL.fr]; omega)
+  have e : (spv R.s0 - 16#64 + BitVec.ofNat 64 k -
+      (spv R.s0 - BitVec.ofNat 64 ((RAFrame.compute R.vc R.rf).total + 16))).toNat =
+      (RAFrame.compute R.vc R.rf).total + k := by
+    have : spv R.s0 - 16#64 + BitVec.ofNat 64 k - (spv R.s0 - BitVec.ofNat 64 ((RAFrame.compute R.vc R.rf).total + 16))
+        = BitVec.ofNat 64 ((RAFrame.compute R.vc R.rf).total + k) := by
+      apply BitVec.eq_of_toNat_eq
+      have := (spv R.s0).isLt
+      simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
+      simp only [RL.fr] at hm
+      rw [hm, Nat.mod_eq_of_lt (a := k) (by omega)]
+      omega
+    rw [this, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  rw [e, hfs]
+  exact .inr ⟨by omega, by omega⟩
+
+/-- The checker's facts at an instruction item. -/
+theorem op_checked {R : RL} {vb : VBlock} {k : Nat} {allocs : Array Loc} {its : List RItem}
+    (h : ItemsChecked R vb (.op k allocs :: its)) :
+    ∃ (c : CheckCtx) (wh : String) (i : MInst) (ops : Array Operand), vb.insts[k]? = some i ∧ i.operands = .ok ops ∧
+      c.checkStatic wh ops allocs i.clobbers = .ok () ∧ ItemsChecked R vb its := by
+  obtain ⟨c, k0, a, out, hcr, hcv, hrun⟩ := h
+  simp only [CheckCtx.runItems, bind, Except.bind] at hrun
+  obtain ⟨-, hrun⟩ := Except.seq_ok hrun
+  obtain ⟨hk, hrun⟩ := Except.seq_ok hrun
+  have hk := ensure_ok hk
+  simp only [beq_iff_eq] at hk
+  subst hk
+  split at hrun
+  · cases hrun
+  rename_i i hi
+  split at hrun
+  · cases hrun
+  rename_i ops hops
+  split at hrun
+  · cases hrun
+  rename_i a' hso
+  exact ⟨c, _, i, ops, hi, hops, (stepOp_ok hso).1, ⟨c, k + 1, a', out, hcr, hcv, hrun⟩⟩
+
+
+/-- **A straight-line instruction on the machine** (`MStep.op` with control `next`): given
+`OperandsSound` for the instruction and `LinesOk` for its allocated form, the machine runs its
+lines and reaches `Q` at the next item. -/
+theorem realizes_op_next {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc}
+    {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
+    (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩))
+    {vb : VBlock} {i : MInst} {ops : Array Operand} {outs : List CV} {w' : Arm.ArmState}
+    (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some i) (hops : i.operands = .ok ops)
+    (hsz : allocs.size = ops.size)
+    (hsem : R.sem i (((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)) w =
+      some (outs, w', .next))
+    (hlen : outs.length = ((ops.zip allocs).toList.filter (·.1.isDef)).length)
+    (hk : k + 1 < vb.insts.size)
+    (hOS : ∀ env, OperandsSound R.F (execMInst R.ctx env) R.sem i)
+    (hL : ∀ regs i', i.assign regs = .ok i' →
+      LinesOk R.ctx i' ∧ (∀ ds, i' ≠ .args ds) ∧ (∀ us, i' ≠ .rets us))
+    (hW' : Arm.r .ERR w' = .None ∧ w'.program = w.program) :
+    ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
+      Q R (iterN R.step n s) c'' := by
+  obtain ⟨j, vb0, items, pre, code, ls, ps1, ps2, T, hvb0, hit, hsplit, hchk, hcode, hls, htr, hdrop,
+    hpc, hst⟩ := hq
+  rw [hvb] at hvb0
+  cases hvb0
+  obtain ⟨c1, c2, hc1, hc2, rfl⟩ := itemsCode_cons hcode
+  obtain ⟨regs, i0, i', rfl, hi0, hasg, hc1'⟩ := itemCode_op hc1
+  rw [hi] at hi0
+  cases hi0
+  obtain ⟨⟨ls1, hl1, hins, hpl, hint⟩, hna, hnr⟩ := hL regs i' hasg
+  rcases hc1' with rfl | ⟨ds, rfl, -⟩ | ⟨us, rfl, -⟩
+  rotate_left
+  · exact absurd rfl (hna ds)
+  · exact absurd rfl (hnr us)
+  obtain ⟨c, wh, i2, ops2, hi2, hops2, hstat, hchk'⟩ := op_checked hchk
+  rw [hi] at hi2
+  cases hi2
+  rw [hops] at hops2
+  cases hops2
+  obtain ⟨ls1', ls2, psm, h1, h2, rfl⟩ := codeLinesE_append _ _ _ _ _ hls
+  have h1' : codeLinesE R.ctx R.af [AInst.inst i'] ps1 = .ok (ls1, ps1) := by
+    simp [codeLinesE, ainstLines, hl1 ps1, bind, Except.bind, pure, Except.pure]
+  rw [h1'] at h1
+  simp only [Except.ok.injEq, Prod.mk.injEq] at h1
+  obtain ⟨rfl, rfl⟩ := h1
+  -- the instruction's effect
+  have hm : ∀ r, r.allocatable = true → m (.reg r) = regVal s r := fun r hr =>
+    hst.store (.reg r) (fun r' e => by cases e; exact hr) trivial
+  obtain ⟨s', m2, hex, hW, hK, hc2', hr2, hl2⟩ := operandsSound_step (hOS (R.envOf j)) hops hstat hasg
+    hm hst.world hst.align hsem hlen
+  refine ⟨ls1.length, _, MStep.op hvb hi hops hsz hsem hlen hc2' (MNext.next hk), ?_⟩
+  -- the lines at `j`
+  have hZ : ∀ n, (ls2 ++ nxtOf R.af b)[1]? ≠ some (.label (.trap n)) := by
+    intro n e
+    have hm := List.mem_of_getElem? e
+    rcases List.mem_append.1 hm with hm | hm
+    · exact codeLinesE_noTrap _ _ _ _ h2 _ hm n rfl
+    · simp only [nxtOf] at hm
+      split at hm <;> simp at hm
+  have hdrop' : R.L.drop j = ls1 ++ (ftList (ls2 ++ nxtOf R.af b) ++ T) := by
+    rw [hdrop, List.append_assoc, ftList_plain_append _ _ hpl hZ, List.append_assoc]
+  have hat : ∀ k ln, ls1[k]? = some ln → R.fa.lines.toList[j + k]? = some ln := by
+    intro k ln hk
+    have := congrArg (·[k]?) hdrop'
+    simp only [List.getElem?_drop, RL.L] at this
+    rw [this, List.getElem?_append_left (List.getElem?_eq_some_iff.1 hk).1]
+    exact hk
+  have hins' : ∀ ln ∈ ls1, ∃ i t, ln = .ins i t := fun ln h => by
+    obtain ⟨i, t, e, -⟩ := hins ln h; exact ⟨i, t, e⟩
+  have hrun : execLines (R.envOf j) ls1 s = some s' := by
+    simp only [execMInst, hl1] at hex; exact hex
+  have hiter : iterN R.step ls1.length s = s' :=
+    iterN_execLines hR.layout hR.lm hR.fit ls1 j s s' hat
+      (fun i t h => by obtain ⟨i', t', e, hh⟩ := hins _ h; cases e; exact hh)
+      (by rw [hst.prog]) (by rw [hpc]; rfl) hst.err (hint _ _ _ hst.err hrun) hrun
+  have hfr := R.frameOk hR
+  refine ⟨j + ls1.length, vb, items, pre ++ [.op k (regs.map Loc.reg)], c2, ls2, ps1, ps2, T, hvb,
+    hit, by rw [hsplit]; simp, hchk', hc2, h2, htr, ?_, ?_, ?_⟩
+  · rw [← List.drop_drop, hdrop', List.drop_left]
+  · rw [hiter, execLines_pc hrun, hpc]
+    simp only [RL.pcOf, RL.L]
+    rw [lineOffset_drop_ins (by simpa [RL.L] using hdrop') hins', BitVec.add_assoc]
+    congr 1
+    apply BitVec.eq_of_toNat_eq
+    simp [BitVec.toNat_add]
+  · rw [hiter]
+    have hsp' : spOf s' = R.spB := hK.1.trans hst.sp
+    have herr' : Arm.r .ERR s' = .None := by
+      rw [hW.1 .ERR (by simp [Masked]), hW'.1]
+    refine ⟨fun l hl hL => ?_, hW, herr', ?_, hsp', align_of_sp (by rw [hsp', hst.sp]) hst.align,
+      fun hframe => ?_⟩
+    · cases l with
+      | reg r => exact hr2 r (hl r rfl)
+      | stack k' c =>
+        rw [hl2 _ (fun r h => by cases h), hst.store _ hl hL,
+          locVal_frame_keep hfr hst.sp hK hL (fun r h => by cases h)]
+      | save r =>
+        rw [hl2 _ (fun r h => by cases h), hst.store _ hl hL,
+          locVal_frame_keep hfr hst.sp hK hL (fun r h => by cases h)]
+    · rw [hW.2.2, hW'.2, ← hst.world.2.2, hst.prog]
+    · rw [← hst.fplr hframe]
+      exact read_mem_bytes_congr _ _ (fun k hk => hK.2 _ (fplr_inF hR hframe k hk))
+
+/-- A `next` step of `csem` other than a call keeps the program and yields an error-free world. -/
+theorem csem_next_world {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MInst}
+    {uses : List CV} {w : Arm.ArmState} {outs : List CV} {w' : Arm.ArmState}
+    (h : csem F ctx X i uses w = some (outs, w', .next)) (hnc : ∀ info, i ≠ .call info)
+    (herr : Arm.r .ERR w = .None) :
+    Arm.r .ERR w' = .None ∧ w'.program = w.program := by
+  unfold csem at h
+  split at h
+  · exact absurd rfl (hnc _)
+  all_goals first
+    | (simp only [Option.some.injEq, Prod.mk.injEq, reduceCtorEq, and_false] at h; done)
+    | (simp only [Option.some.injEq, Prod.mk.injEq] at h; obtain ⟨-, rfl, -⟩ := h; exact ⟨herr, rfl⟩)
+    | (split at h <;> simp only [Option.some.injEq, Prod.mk.injEq, reduceCtorEq, and_false] at h <;> done)
+    | skip
+  all_goals first
+    | exact (straightSem_some h).2
+    | (split at h
+       · split at h
+         · simp only [Option.some.injEq, Prod.mk.injEq, reduceCtorEq, and_false] at h
+         · simp only at h
+           split at h <;> simp only [Option.some.injEq, Prod.mk.injEq, reduceCtorEq, and_false, reduceCtorEq] at h
+       · cases h)
+
+end Backend.Proof
