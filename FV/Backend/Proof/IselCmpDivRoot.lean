@@ -141,7 +141,7 @@ theorem runs_msub {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem) (s
       (fun ρ' _ => ρ' = upd ρ d (resX sz (opnd sz (ρ c) - opnd sz (ρ a) * opnd sz (ρ b)))) :=
   Runs.one hR (div_operands_aluRRRR _ _ _ _ _ _) rfl rfl (SameWorldNF.refl F w) fun _ _ => rfl
 
-theorem opnd_resX (sz : OperandSize) (r : BitVec sz.bits) : opnd sz (resX sz r) = r := by
+theorem cmp_opnd_resX (sz : OperandSize) (r : BitVec sz.bits) : opnd sz (resX sz r) = r := by
   apply BitVec.eq_of_toNat_eq
   have h := r.isLt
   have h2 : 2 ^ sz.bits ≤ 2 ^ 64 := by cases sz <;> decide
@@ -201,7 +201,7 @@ theorem urem_vholds {ty : Clif.Ty} (hw : ty.width ≤ 64) {a b : BitVec ty.width
       opnd (szOf ty.width) (resX (szOf ty.width) (opnd (szOf ty.width) A / opnd (szOf ty.width) B)) *
         opnd (szOf ty.width) B)) := by
   apply vholds_resX_toNat hw
-  rw [opnd_resX, BitVec.toNat_umod, urem_core, divOpnd_toNat hw hA, divOpnd_toNat hw hB]
+  rw [cmp_opnd_resX, BitVec.toNat_umod, urem_core, divOpnd_toNat hw hA, divOpnd_toNat hw hB]
 
 /-! ## The dividend operand -/
 
@@ -546,7 +546,7 @@ theorem udiv64_ruleOk (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env 
   obtain ⟨ky, msY, rfl, hfY, hky, hsemY⟩ := divisor_sem hR hctx (w := 64) (e := 1) (by decide) (by decide) hvb hD
   obtain ⟨hv2, hs2⟩ := a64_udiv_ok hp hco (by omega) (by decide) h492
   subst hv2
-  obtain ⟨hs3, rfl⟩ := output_reg_ok hp hco (by omega) h172
+  obtain ⟨hs3, rfl⟩ := cmp_output_reg_ok hp hco (by omega) h172
   have hrx' := hctx.valueReg x rx hrx
   subst hrx'
   have hxlt := hvb x _ hrx
@@ -593,7 +593,7 @@ theorem udiv32_ruleOk (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env 
   rw [hres] at hb32 h698
   simp only [List.map_cons, List.map_nil, List.head?_cons, Option.getD_some, ofClif_int_width] at hb32 h698
   have hw32 : ty.width ≤ 32 := hb32
-  have hwid := eTy_widths hety
+  have hwid := cmp_eTy_widths hety
   have hE := zext32_ok hp hco (hn := by omega) h556
   obtain ⟨_, -, rx, hrx, -⟩ := id hE
   have hxlt := hvb x _ hrx
@@ -607,7 +607,7 @@ theorem udiv32_ruleOk (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env 
     divisor_sem hR hctx (w := ty.width) (e := 1) hwid (by decide) hvb2 hD
   obtain ⟨hv2, hs2⟩ := a64_udiv_ok hp hco (by omega) (by decide) h492
   subst hv2
-  obtain ⟨hs3, rfl⟩ := output_reg_ok hp hco (by omega) h172
+  obtain ⟨hs3, rfl⟩ := cmp_output_reg_ok hp hco (by omega) h172
   have hdo : DivOperands F isem ctx ty x y false _ _ _ kx ky msX msY :=
     { xlt := hxlt, vb := hvb, fX := hfX, kxlt := hkx, kxl := hkxl,
       sX := fun fr ρ a hh hdf hxa => hsX fr ρ ty a rfl hh hdf hxa,
@@ -650,7 +650,7 @@ theorem urem64_ruleOk (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env 
   rw [hres] at hty
   simp only [List.map_cons, List.map_nil, List.head?_cons, Option.getD_some, ofClif_int_width,
     CTy.int.injEq] at hty
-  have hwid := eTy_widths hety
+  have hwid := cmp_eTy_widths hety
   have hE := zext64_ok hp hco (hn := by omega) h558
   obtain ⟨_, -, rx, hrx, -⟩ := id hE
   have hxlt := hvb x _ hrx
@@ -666,7 +666,7 @@ theorem urem64_ruleOk (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env 
   subst hv2
   obtain ⟨hv4, hs4⟩ := msub_ok hp hco (by omega) (by decide) h444
   subst hv4
-  obtain ⟨hs3, rfl⟩ := output_reg_ok hp hco (by omega) h172
+  obtain ⟨hs3, rfl⟩ := cmp_output_reg_ok hp hco (by omega) h172
   have hdo : DivOperands F isem ctx ty x y false _ _ _ kx ky msX msY :=
     { xlt := hxlt, vb := hvb, fX := hfX, kxlt := hkx, kxl := hkxl,
       sX := fun fr ρ a hh hdf hxa => hsX fr ρ ty a rfl hh hdf hxa,

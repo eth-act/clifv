@@ -117,7 +117,7 @@ theorem cri_ok {n : Nat} (hn : 40 ≤ n) {c : V} {P : Nat → Prop} (hsh : CondS
 
 /-! ## `tst_imm`, `is_nonzero` -/
 
-theorem ctor_put_in_regs_iff (ctx : Ctx) (st : LState) (x : Nat) (v : V) (st' : LState) :
+theorem cmp_ctor_put_in_regs_iff (ctx : Ctx) (st : LState) (x : Nat) (v : V) (st' : LState) :
     externCtor ctx T.put_in_regs [.value x] st = .ok (v, st') ↔
       ∃ r, ctx.valueReg? x = some r ∧ v = .regs [r] ∧ st' = st := by
   have : externCtor ctx T.put_in_regs [.value x] st = match ctx.valueReg? x with
@@ -200,7 +200,7 @@ theorem is_nonzero_ok {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem
     CondCode F isem ctx s.1 s'.1 c (fun fr b => ∃ v, fr.regs x = some v ∧ b = Clif.Sem.truthy v.bits) := by
   isel_split' hp hc h 651
   all_goals (try (isel_refute hp at hm; done))
-  all_goals isel_inv' hp [ctor_u64_into_imm_logic_255, ctor_put_in_regs_iff, Int.toNat_one,
+  all_goals isel_inv' hp [ctor_u64_into_imm_logic_255, cmp_ctor_put_in_regs_iff, Int.toNat_one,
     Int.toNat_zero, List.getElem?_cons_succ, List.getElem?_nil] at hm
   all_goals try (isel_opcode_absurd hctx; done)
   all_goals isel_call hp hc [tst_imm_ok, zext32_ok]

@@ -627,7 +627,7 @@ theorem emit_icmp_ok {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem)
   isel_split' hp hc h 652
   all_goals (try (isel_refute hp at hm; done))
   all_goals isel_inv' hp [ctor_signed_cond_code_iff, ctor_unsigned_cond_code_iff, ctor_u64_is_odd_iff,
-    ctor_u64_wrapping_sub_iff, ctor_put_in_regs_iff, V.intcc?_data, some_bind_ccIdx,
+    ctor_u64_wrapping_sub_iff, cmp_ctor_put_in_regs_iff, V.intcc?_data, some_bind_ccIdx,
     Int.toNat_one, Int.toNat_zero, List.getElem?_cons_succ, List.getElem?_nil] at hm he
   all_goals try (isel_opcode_absurd hctx; done)
   all_goals isel_call hp hc [operand_size_ok, cmp_ok, cmp_imm_ok, cmp_extend_ok, zext32_ok, sext32_ok,

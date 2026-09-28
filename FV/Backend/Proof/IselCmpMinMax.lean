@@ -86,7 +86,7 @@ theorem minmax_tail {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} {env : 
   simp only [List.map_cons, List.map_nil, List.head?_cons, Option.getD_some, ofClif_int_width] at h659
   have hC := emit_icmp_ok hp hco hR hctx (hn := hn1) hvb h652
   obtain ⟨mf, cond, rx, ry, hflag, hrx, hry, rfl, hs⟩ :=
-    lower_select_ok hp hco (hn := hn2) (eTy_widths hety) hC.shape h659
+    lower_select_ok hp hco (hn := hn2) (cmp_eTy_widths hety) hC.shape h659
   rw [ctor_output'] at hout
   obtain ⟨rfl, rfl⟩ := hout
   have hx := hvb x rx hrx

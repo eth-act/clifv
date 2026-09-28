@@ -76,7 +76,7 @@ variable {p : Program} (hp : Data p) {ctx : Ctx} {cfg : Config} (hc : cfg.checkO
 
 set_option maxHeartbeats 2000000 in
 include hp hc in
-theorem output_reg_ok {n : Nat} (hn : 40 ≤ n) {r : Reg} {s s' : LState × Array RuleId} {v : V}
+theorem cmp_output_reg_ok {n : Nat} (hn : 40 ≤ n) {r : Reg} {s s' : LState × Array RuleId} {v : V}
     (h : ApplyInternal p (sem ctx) cfg n 25 172 [.reg r] s v s') :
     s'.1 = s.1 ∧ v = .regsVec [[r]] := by
   isel_split' hp hc h 172
@@ -131,14 +131,14 @@ theorem evalInst_icmp_ok {fr : Clif.Frame} {cm cm' : Clif.Mem} {cc : Clif.IntCC}
 set_option maxRecDepth 20000 in
 theorem cmp_variantNames_Unary : (variantNames 152)[29]? = some "Unary" := rfl
 set_option maxRecDepth 20000 in
-theorem variantNames_Uextend : (variantNames 151)[141]? = some "Uextend" := rfl
+theorem cmp_variantNames_Uextend : (variantNames 151)[141]? = some "Uextend" := rfl
 
 theorem instData_uextend_inv {f : Clif.Function} {cl : Clif.Inst} {w : V}
     (h : instData f cl = .ok (.data 152 29 [.data 151 141 [], w])) :
     ∃ ty z, cl = .extend .uextend ty z ∧ eTy ty = true ∧ w = .value z := by
   obtain ⟨hf, ho⟩ := instData_inv_names h
   rw [cmp_variantNames_Unary] at hf
-  rw [variantNames_Uextend] at ho
+  rw [cmp_variantNames_Uextend] at ho
   cases cl <;> simp [instNames] at hf ho
   · rename_i op _ _
     cases op <;> simp [unaryOpcode] at ho
@@ -211,7 +211,7 @@ theorem icmp_truthy {ctx : Ctx} {fr : Clif.Frame} (hdf : DFGCons ctx fr) {z j : 
   subst this
   exact ⟨rfl, ty, a', b', getAs_ok hx, getAs_ok hy, truthy_bool8 _⟩
 
-theorem defClif_inv {ctx : Ctx} {x : Nat} {cl : Clif.Inst} (h : ctx.defClif? x = some cl) :
+theorem cmp_defClif_inv {ctx : Ctx} {x : Nat} {cl : Clif.Inst} (h : ctx.defClif? x = some cl) :
     ∃ j info, ctx.defInst? x = some j ∧ ctx.insts[j]? = some info ∧ info.clif = some cl := by
   unfold Ctx.defClif? at h
   cases hd : ctx.defInst? x with
@@ -262,7 +262,7 @@ theorem is_nonzero_cmp_ok {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F 
       obtain ⟨h652⟩ : Nonempty (ApplyInternal p (sem ctx) cfg _ 123 652 _ _ _ _) := ⟨‹_›⟩
       refine (emit_icmp_ok hp hc hR hctx (hn := by omega) hvb h652).weaken ?_
       rintro fr ρ bb hh hdf ⟨v, hv, rfl⟩
-    · obtain ⟨jx, infox, hjx, hix, hclx⟩ := defClif_inv hdc
+    · obtain ⟨jx, infox, hjx, hix, hclx⟩ := cmp_defClif_inv hdc
       obtain ⟨vals, hev, hl⟩ := hdf.1 x jx infox _ v hjx hix hclx rfl hv
       obtain ⟨vz, hzv, hlt, rfl, -⟩ := evalInst_uextend_ok (hev default)
       have := lookup_zip_single hl
@@ -308,7 +308,7 @@ theorem icmp_ruleOk (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : 
   obtain ⟨h715⟩ : Nonempty (ApplyInternal p (sem ctx) cfg _ 27 715 _ _ _ _) := ⟨‹_›⟩
   have hE := emit_icmp_ok hp hco hR hctx (hn := by omega) hvb h652
   obtain ⟨m0, cond, hflag, rfl, hst⟩ := lcrb_ok hp hco (hn := by omega) hE.shape h715
-  isel_call hp hco [output_reg_ok]
+  isel_call hp hco [cmp_output_reg_ok]
   obtain ⟨hmono, ms, hf, hsem⟩ := condCode_lcrb hR hE hflag
   rw [hst]
   refine ⟨ms, hf.emitted, _, rfl, lowerInstOk_runs hMR hf.mono hf.defs rfl ?_⟩
@@ -350,7 +350,7 @@ theorem uextend_icmp_ruleOk (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT)
   obtain ⟨h715⟩ : Nonempty (ApplyInternal p (sem ctx) cfg _ 27 715 _ _ _ _) := ⟨‹_›⟩
   have hE := emit_icmp_ok hp hco hR hctx (hn := by omega) hvb h652
   obtain ⟨m0, cond, hflag, rfl, hst⟩ := lcrb_ok hp hco (hn := by omega) hE.shape h715
-  isel_call hp hco [output_reg_ok]
+  isel_call hp hco [cmp_output_reg_ok]
   obtain ⟨hmono, ms, hf, hsem⟩ := condCode_lcrb hR hE hflag
   rw [hst]
   refine ⟨ms, hf.emitted, _, rfl, lowerInstOk_runs hMR hf.mono hf.defs rfl ?_⟩

@@ -51,7 +51,7 @@ theorem srem_core {n : Nat} (hw : n ≤ 32 ∨ n = 64) {a b : BitVec n} {A B : C
     (hA : DivOpnd true a A) (hB : DivOpnd true b B) :
     (resX (szOf n) (opnd (szOf n) A - opnd (szOf n) (resX (szOf n) ((opnd (szOf n) A).sdiv (opnd (szOf n) B))) *
       opnd (szOf n) B)).setWidth n = a.srem b := by
-  rw [opnd_resX, sub_sdiv_mul_eq_srem]
+  rw [cmp_opnd_resX, sub_sdiv_mul_eq_srem]
   unfold DivOpnd at hA hB
   rcases hw with h32 | rfl
   · have e : szOf n = .size32 := ite_eq_left_iff.mpr (fun h => absurd h32 h)
@@ -312,7 +312,7 @@ theorem urem32_ruleOk (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env 
   simp only [List.map_cons, List.map_nil, List.head?_cons, Option.getD_some, ofClif_int_width]
     at hb32 h698 h492 h444
   have hw32 : ty.width ≤ 32 := hb32
-  have hwid := eTy_widths hety
+  have hwid := cmp_eTy_widths hety
   have hE := zext32_ok hp hco (hn := by omega) h556
   obtain ⟨_, -, rx, hrx, -⟩ := id hE
   have hxlt := hvb x _ hrx
@@ -328,7 +328,7 @@ theorem urem32_ruleOk (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env 
   subst hv2
   obtain ⟨hv4, hs4⟩ := msub_ok hp hco (by omega) (by omega) h444
   subst hv4
-  obtain ⟨hs3, rfl⟩ := output_reg_ok hp hco (by omega) h172
+  obtain ⟨hs3, rfl⟩ := cmp_output_reg_ok hp hco (by omega) h172
   have hdo : DivOperands F isem ctx ty x y false _ _ _ kx ky msX msY :=
     { xlt := hxlt, vb := hvb, fX := hfX, kxlt := hkx, kxl := hkxl,
       sX := fun fr ρ a hh hdf hxa => hsX fr ρ ty a rfl hh hdf hxa,
@@ -370,7 +370,7 @@ theorem srem64_ruleOk (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env 
   rw [hres] at hty
   simp only [List.map_cons, List.map_nil, List.head?_cons, Option.getD_some, ofClif_int_width,
     CTy.int.injEq] at hty
-  have hwid := eTy_widths hety
+  have hwid := cmp_eTy_widths hety
   have hE := sext64_ok hp hco (hn := by omega) h557
   obtain ⟨_, -, rx, hrx, -⟩ := id hE
   have hxlt := hvb x _ hrx
@@ -386,7 +386,7 @@ theorem srem64_ruleOk (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env 
   subst hv2
   obtain ⟨hv4, hs4⟩ := msub_ok hp hco (by omega) (by decide) h444
   subst hv4
-  obtain ⟨hs3, rfl⟩ := output_reg_ok hp hco (by omega) h172
+  obtain ⟨hs3, rfl⟩ := cmp_output_reg_ok hp hco (by omega) h172
   have hdo : DivOperands F isem ctx ty x y true _ _ _ kx ky msX msY :=
     { xlt := hxlt, vb := hvb, fX := hfX, kxlt := hkx, kxl := hkxl,
       sX := fun fr ρ a hh hdf hxa => hsX fr ρ ty a rfl hh hdf hxa,
@@ -431,7 +431,7 @@ theorem srem32_ruleOk (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env 
   simp only [List.map_cons, List.map_nil, List.head?_cons, Option.getD_some, ofClif_int_width]
     at hb32 h698 h493 h444
   have hw32 : ty.width ≤ 32 := hb32
-  have hwid := eTy_widths hety
+  have hwid := cmp_eTy_widths hety
   have hE := sext32_ok hp hco (hn := by omega) h555
   obtain ⟨_, -, rx, hrx, -⟩ := id hE
   have hxlt := hvb x _ hrx
@@ -447,7 +447,7 @@ theorem srem32_ruleOk (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env 
   subst hv2
   obtain ⟨hv4, hs4⟩ := msub_ok hp hco (by omega) (by omega) h444
   subst hv4
-  obtain ⟨hs3, rfl⟩ := output_reg_ok hp hco (by omega) h172
+  obtain ⟨hs3, rfl⟩ := cmp_output_reg_ok hp hco (by omega) h172
   have hdo : DivOperands F isem ctx ty x y true _ _ _ kx ky msX msY :=
     { xlt := hxlt, vb := hvb, fX := hfX, kxlt := hkx, kxl := hkxl,
       sX := fun fr ρ a hh hdf hxa => hsX fr ρ ty a rfl hh hdf hxa,
@@ -511,7 +511,7 @@ theorem sdiv_safe64_ruleOk (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) 
   obtain ⟨ky, msY, rfl, hfY, hky, hsemY⟩ := safe_divisor_sem (y := y) (w := 64) (by decide) hj hi' hcl hity hne hI
   obtain ⟨hv2, hs2⟩ := a64_sdiv_ok hp hco (by omega) (by decide) h493
   subst hv2
-  obtain ⟨hs3, rfl⟩ := output_reg_ok hp hco (by omega) h172
+  obtain ⟨hs3, rfl⟩ := cmp_output_reg_ok hp hco (by omega) h172
   have hdo : DivOperands F isem ctx ty x y true _ _ _ kx ky msX msY :=
     { xlt := hxlt, vb := hvb, fX := hfX, kxlt := hkx, kxl := hkxl,
       sX := fun fr ρ a hh hdf hxa => hsX fr ρ ty a rfl hh hdf hxa,
@@ -571,7 +571,7 @@ theorem sdiv_safe32_ruleOk (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) 
   simp only [List.map_cons, List.map_nil, List.head?_cons, Option.getD_some, ofClif_int_width]
     at hb32 h553 h493 hne
   have hw32 : ty.width ≤ 32 := hb32
-  have hwid := eTy_widths hety
+  have hwid := cmp_eTy_widths hety
   have hE := sext32_ok hp hco (hn := by omega) h555
   obtain ⟨_, -, rx, hrx, -⟩ := id hE
   have hxlt := hvb x _ hrx
@@ -581,7 +581,7 @@ theorem sdiv_safe32_ruleOk (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) 
   obtain ⟨ky, msY, rfl, hfY, hky, hsemY⟩ := safe_divisor_sem (y := y) (w := ty.width) hwid hj hi' hcl hity hne hI
   obtain ⟨hv2, hs2⟩ := a64_sdiv_ok hp hco (by omega) (by omega) h493
   subst hv2
-  obtain ⟨hs3, rfl⟩ := output_reg_ok hp hco (by omega) h172
+  obtain ⟨hs3, rfl⟩ := cmp_output_reg_ok hp hco (by omega) h172
   have hdo : DivOperands F isem ctx ty x y true _ _ _ kx ky msX msY :=
     { xlt := hxlt, vb := hvb, fX := hfX, kxlt := hkx, kxl := hkxl,
       sX := fun fr ρ a hh hdf hxa => hsX fr ρ ty a rfl hh hdf hxa,

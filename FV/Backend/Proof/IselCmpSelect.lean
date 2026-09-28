@@ -211,7 +211,7 @@ theorem evalInst_select_ok {fr : Clif.Frame} {cm cm' : Clif.Mem} {ty : Clif.Ty} 
 theorem ext_value_array_3 (ctx : Ctx) (st : LState) (a b c : Nat) :
     externExtract ctx T.value_array_3 (.values [a, b, c]) st = .ok [.value a, .value b, .value c] := rfl
 
-theorem eTy_widths {ty : Clif.Ty} (h : eTy ty = true) :
+theorem cmp_eTy_widths {ty : Clif.Ty} (h : eTy ty = true) :
     ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64 := by
   cases ty <;> simp [eTy, Clif.Ty.width] at h ⊢
 
@@ -254,7 +254,7 @@ theorem select_ruleOk (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env 
   simp only [List.map_cons, List.map_nil, List.head?_cons, Option.getD_some, ofClif_int_width] at h659
   have hC := is_nonzero_cmp_ok hp hco hR hctx (hn := by omega) hvb h650
   obtain ⟨mf, cond, rx, ry, hflag, hrx, hry, rfl, hs⟩ :=
-    lower_select_ok hp hco (hn := by omega) (eTy_widths hety) hC.shape h659
+    lower_select_ok hp hco (hn := by omega) (cmp_eTy_widths hety) hC.shape h659
   rw [ctor_output'] at hout
   obtain ⟨rfl, rfl⟩ := hout
   have hx := hvb x rx hrx

@@ -23,7 +23,7 @@ theorem ctor_trap_ovf_iff (ctx : Ctx) (st st' : LState) (v : V) :
   have e : externCtor ctx T.trap_code_integer_overflow [] st = .ok (.op (.trapCode .intOvf), st) := rfl
   rw [e]; simp [eq_comm]
 
-theorem ctor_cond_br_zero_iff (ctx : Ctx) (st st' : LState) (r s v : V) :
+theorem cmp_ctor_cond_br_zero_iff (ctx : Ctx) (st st' : LState) (r s v : V) :
     externCtor ctx T.cond_br_zero [r, s] st = .ok (v, st') ↔
       v = .data tyCondBrKind VIdx.CondBrKind.Zero [r, s] ∧ st' = st := by
   have e : externCtor ctx T.cond_br_zero [r, s] st =
@@ -62,7 +62,7 @@ theorem trap_if_zero_divisor_ok {n : Nat} (hn : 40 ≤ n) {r : Reg} {i : Nat} {s
     (h : ApplyInternal p (sem ctx) cfg n 27 559 [.reg r, .data 93 i []] s v s') :
     v = .reg r ∧ s'.1 = s.1.emit (.trapIf (.zero r sz) .intDivz) := by
   isel_split' hp hc h 559
-  all_goals isel_inv' hp [ctor_trap_divz_iff, ctor_cond_br_zero_iff] at hm he
+  all_goals isel_inv' hp [ctor_trap_divz_iff, cmp_ctor_cond_br_zero_iff] at hm he
   obtain ⟨h1⟩ : Nonempty (MInst.ofV _ = some _) := ⟨‹_›⟩
   rw [ofV_trapIf_zero r hi] at h1
   cases h1

@@ -352,11 +352,11 @@ theorem intmin_code_sem (hR : Refines F isem) {w : Nat} (hw : w = 8 ∨ w = 16 �
         rcases hw with rfl | rfl | rfl | rfl <;> (try omega)
         · simp only [show (8:Nat) ≤ 32 by decide, ↓reduceIte] at ha
           show (opnd .size32 (resX .size32 (opnd .size32 (ρ kx) <<< 24)) = BitVec.intMin 32) ↔ _
-          rw [opnd_resX, show (opnd .size32 (ρ kx) : BitVec 32) = (lo64 (ρ kx)).setWidth 32 from rfl, ha]
+          rw [cmp_opnd_resX, show (opnd .size32 (ρ kx) : BitVec 32) = (lo64 (ρ kx)).setWidth 32 from rfl, ha]
           exact shl_intMin_8 a
         · simp only [show (16:Nat) ≤ 32 by decide, ↓reduceIte] at ha
           show (opnd .size32 (resX .size32 (opnd .size32 (ρ kx) <<< 16)) = BitVec.intMin 32) ↔ _
-          rw [opnd_resX, show (opnd .size32 (ρ kx) : BitVec 32) = (lo64 (ρ kx)).setWidth 32 from rfl, ha]
+          rw [cmp_opnd_resX, show (opnd .size32 (ρ kx) : BitVec 32) = (lo64 (ρ kx)).setWidth 32 from rfl, ha]
           exact shl_intMin_16 a
   · refine ⟨kx, [], rfl, Frag.nil _, .inl rfl, .inl rfl, by simp, fun a ρ wd ha =>
       Runs.nil ⟨fun _ _ => rfl, divOpnd_intMin (by omega) ha⟩⟩
@@ -523,7 +523,7 @@ theorem sdiv64_ruleOk (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env 
   subst hv5
   obtain ⟨hv2, hs2⟩ := a64_sdiv_ok hp hco (by omega) (by decide) h493
   subst hv2
-  obtain ⟨hs3, rfl⟩ := output_reg_ok hp hco (by omega) h172
+  obtain ⟨hs3, rfl⟩ := cmp_output_reg_ok hp hco (by omega) h172
   obtain ⟨hok, hem⟩ := sdiv_base_finish (env := env) (cp := cp) hR hMR hw4 (results := info.results) hdo
     hfC hkc huC hsC
   simp only at hs3
@@ -565,7 +565,7 @@ theorem sdiv32_ruleOk (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env 
   simp only [List.map_cons, List.map_nil, List.head?_cons, Option.getD_some, ofClif_int_width]
     at hb32 h698 h562 h561 h493
   have hw32 : ty.width ≤ 32 := hb32
-  have hwid := eTy_widths hety
+  have hwid := cmp_eTy_widths hety
   have hE := sext32_ok hp hco (hn := by omega) h555
   obtain ⟨_, -, rx, hrx, -⟩ := id hE
   have hxlt := hvb x _ hrx
@@ -590,7 +590,7 @@ theorem sdiv32_ruleOk (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env 
   subst hv5
   obtain ⟨hv2, hs2⟩ := a64_sdiv_ok hp hco (by omega) (by omega) h493
   subst hv2
-  obtain ⟨hs3, rfl⟩ := output_reg_ok hp hco (by omega) h172
+  obtain ⟨hs3, rfl⟩ := cmp_output_reg_ok hp hco (by omega) h172
   obtain ⟨hok, hem⟩ := sdiv_base_finish (env := env) (cp := cp) hR hMR hw4 (results := info.results) hdo
     hfC hkc huC hsC
   simp only at hs3
