@@ -28,18 +28,27 @@ contract `IselContract.lean`), `regalloc-proof.md` (M6), `encoder.md` (M5), `cli
 | Validators run by the compiler (`FV/Backend.lean` `lowerChecked`, `FV/Backend/Regalloc.lean` `allocateRegalloc2`: a rejection is a compile error) | done |
 | **`backend_correct`**, **`backend_correct_of_rules`** from the hypotheses below | **proven**, sorry-free |
 | **`backend_correct_m4`** (`FV/E2E/Final.lean`): `backend_correct_of_rules` with all eight M4 predicates discharged (`lowerRulesCorrect_program`, `excludedUnmatchable`, `callRulesCorrect`, `memRulesCorrect_program`, `lowerTermRulesCorrect`, `termUnmatchable`, `branchRulesCorrect`, `branchExcludedUnmatchable`) and `sem s := csem (F s) (ctx s) (X s)` (discharges `DriverSem` by `driverSem_csem`, `CallsRefine` by `callsRefine_csem` from `XCallsOk`) | **proven**; axioms: `propext`, `Classical.choice`, `Quot.sound` + 130 `_native.bv_decide` certificates |
+| **`RegLevelCorrect`** for the backend's code (`regLevelCorrect_backend`, `FV/E2E/RegLevelCorrect.lean`, M6Ctl3): frame addresses `frameF`, context `⟨fa.k, af.slotBase⟩`, one external semantics `X`, machine `ArmStepX X H fa`; from `FormsCovered` and `CalleeOk` | **proven** |
+| **`backend_correct_final`** (`FV/E2E/Final.lean`): `backend_correct_m4` with `hM6` discharged by `regLevelCorrect_backend` | **proven**; axioms: `propext`, `Classical.choice`, `Quot.sound` + `_native.bv_decide` certificates (M4's, M5's decoder `decode_armBits_*`/`decode_raw_inst_of_*`, `Arm.Memory.read_write_bytes_different`) |
 
-Remaining hypotheses of `backend_correct_m4` (2026-09-28):
+### Final hypotheses (`E2E.backend_correct_final`, 2026-09-28)
 
-| Hypothesis | Owner |
+Notation: `FF s := frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s`
+(the allocator-private frame addresses of the activation entered in `s`: spill/save slots, the
+fp/lr pair and padding above the CLIF slots, the code words), `cx := ⟨fa.k, af.slotBase⟩`.
+
+| Hypothesis | Kind / owner |
 | --- | --- |
-| `RegLevelCorrect (fun s => csem (F s) (ctx s) (X s)) F astep vcp af fb` | M6Ctl2 |
-| `∀ s, Refines (F s) (csem (F s) (ctx s) (X s))` | M6Insts |
-| `∀ s, MemRefines (F s) slotOff syms (csem (F s) (ctx s) (X s))` | M6Insts |
-| `∀ s, XCallsOk env (Rel.holds ⟨F s, syms, slotOff⟩ f) (X s)` (external contract: callees, linker symbols) | environment (M6 `CalleeSound`) |
-| per run: `AbiEntry`, `StackAvail`, `BodyEntry`, `ArgsIn`, `ClifEntry`, `Rel.holds … w₀`, `TrapsExplicit` | caller of the theorem |
+| `InSubset p f`, `Compiled f k vc vcp rf af fa fb` | the compiler ran (pipeline + validators) |
+| `FormsCovered cx vcp` | per-function decidable premise (`formsCoveredB`, M6Insts' covered straight-line forms; control forms are handled by the proof); to be decided by `lean-e2e-check` |
+| `∀ s, CalleeOk (FF s) X H` | callee contract of the machine's call hook `H` (AAPCS64: `OperandsSound` of every call, return to pc+4, `X.call` error-free and program-preserving) — environment |
+| `∀ s, Refines (FF s) (csem (FF s) cx X)` | M6Insts (in progress) |
+| `∀ s, XCallsOk env (Rel.holds ⟨FF s, syms, slotOff⟩ f) X` | external contract: callees, linker symbols — environment |
+| `∀ s, MemRefines (FF s) slotOff syms (csem (FF s) cx X)` | M6Insts (in progress) |
+| per run: `AbiEntry fb base ra s`, `StackAvail af s`, `BodyEntry af s w₀`, `ArgsIn args s`, `ClifEntry f args cs`, `Rel.holds ⟨FF s, syms, slotOff⟩ f cs.frame.slots cs.mem w₀`, `TrapsExplicit env p cs` | caller of the theorem |
 
-`MemRelOk` is internal (`memRelOk_holds`); there is no separate `FormsCovered` hypothesis (M6Insts' form coverage lands inside `Refines`/`MemRefines`).
+Conclusion: `ArmRefines fb base ra (ArmStepX X H fa) s (Clif.runLoop env p fuel cs)`.
+`MemRelOk` is internal (`memRelOk_holds`).
 
 ## The theorem (`FV/E2E/Main.lean`)
 
@@ -233,14 +242,18 @@ M4Ctl, integrator-approved: change #5 38600e8 (calls: `CallsRefine`, `CallRuleOk
 `DriverHyp.regArgs`, `InstCalls` premise `CallRegArgs f`, ispec control forms); change #6
 (`BrIdxTyped` premise of `BranchRuleOk` and `TermCalls`, decided by `lowerCheck`'s `brIdxOk`,
 `LoweringObligations`/`DriverHyp.brIdx`).
+M6Ctl3 (compiler, behaviour-preserving): `ctlCheck` also requires every value of a `Rets` to be
+an int vreg (so the `j`-th returned pair is the `j`-th fixed use); `lean-backend` on corpus,
+extrt and runtests (445 files): no function rejected.
 
 ## Remaining (precise)
 
 1. **M4**: `LowerRulesCorrect` (in progress; `ExcludedUnmatchable` proven) and the terminator
    statements `LowerTermRulesCorrect`, `TermUnmatchable`, `BranchRulesCorrect`,
    `BranchExcludedUnmatchable` for `Isle.Aarch64.program`.
-2. **M6/M5**: `RegLevelCorrect` (with `BodyEntry`), `Refines (F s) (sem s)`, `DriverSem (sem s)`
-   for `csem`.
+2. **M6**: `RegLevelCorrect` and `DriverSem` are discharged (`regLevelCorrect_backend`,
+   `driverSem_csem`); open: `Refines`/`MemRefines` of `csem` (M6Insts) and the decision of
+   `FormsCovered` by `lean-e2e-check` (`formsCoveredB`).
 3. **Scope extensions**: calls between compiled functions (induction on call depth, using
    `backend_correct` of the callee as its callee contract); stack-passed parameters
    (`InSubset.regParams`); memory-access traps (need a fault model).
@@ -268,4 +281,9 @@ E2E.prepareCorrect_of_check, Backend.Proof.Driver.driver_correct,
 Backend.Proof.Driver.termCalls_of_rules:
   [propext, Classical.choice, Quot.sound]
 E2E.clifEntry_initState: [propext, Quot.sound]
+Backend.Proof.regLevelCorrect_backend:
+  [propext, Classical.choice, Quot.sound] + M5's `decode_armBits_*._native.bv_decide` and
+  `decode_raw_inst_of_{br,dpi,dpr,dpsfp,ldst}._native.bv_decide`,
+  `Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9`
+E2E.backend_correct_final: those of `backend_correct_m4` and `regLevelCorrect_backend`
 ```

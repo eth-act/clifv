@@ -492,3 +492,50 @@ halts/rets are trivial for `Realizes` since `Q` is `True` there), and the assemb
 
 `#print axioms realizes_jt / realizes_call / realizes_symAddr`: `propext, Classical.choice,
 Quot.sound` plus M5's `decode_armBits_*._native.bv_decide` axioms.
+
+## Status update (M6Ctl3, 2026-09-28)
+
+Done (sorry-free, branch `agent/m6-ctl3`, merged with `agent/m6-insts` f216ee3):
+
+- **Prologue/epilogue on the machine** (`FV/E2E/RegLevelFrame.lean`): exec lemmas
+  `exec_stp_fplr`, `exec_mov_fp_sp`, `exec_{sub,add}_sp_imm`, `exec_{sub,add}_sp_x16uxtx`,
+  `exec_ldp_fplr`, `exec_ret`; `spAdj_ok` (the `sp` adjustment, `Imm12` or `x16` + `uxtx`),
+  `prologue_ok`, `epilogue_ok` (as `StepsOk` runs); `iterN_steps` (straight-line lines on the
+  machine); `entry_block` (block 0: label at line 0, prologue, items); **`q_init`**: after the
+  prologue the machine satisfies `Q R s_body (MConf.init rf (locVal fr s_body) w₀)` and `AInv`
+  for every `BodyEntry` world `w₀`, and every field but pc/x16/x29/sp is as at entry;
+  **`ret_machine`**: from `Q` at a `Rets` item, the epilogue and `ret` reach `ra` with `sp` and
+  x29 as at entry, the allocatable registers and memory as at the item, and the `j`-th
+  returned value in the `j`-th fixed register (callee-saved restores are the `restores` moves
+  before the item, realised by `realizes_move`).
+- **`Realizes (Q ∧ AInv)` by cases** (`realizes_all`, `FV/E2E/RegLevelCorrect.lean`): moves,
+  covered straight-line forms via `formOk_sound` under `FormsCovered` (control outcome `next` by
+  `csem_ctl`: `ispec_ctl`, `mspec_ctl`), `Args`, calls, symbol addresses, islands, `trapIf`,
+  branches, jump tables; `Rets`/`udf` end the run.
+- `forward_last` (generic): the machine reaches the allocated configuration whose `MStep`
+  successor is related to the VCode's successor (used for `rets` and halts instead of
+  `forward_op`, so the halting item's condition is read off the allocated step).
+- `csem_halt` (only `udf` and a taken `trapIf` halt), `udf_ops`, `trapIf_nodefs`.
+- **`regLevelCorrect_backend`**: `RegLevelCorrect (fun s => csem (frameF lo hi af s) ⟨fa.k,
+  af.slotBase⟩ X) (frameF lo hi af) (ArmStepX X H fa) vcp af fb` (`lo`/`hi` = `intBase`/`size`
+  of `RAFrame.compute vcp rf`) from `checkAlloc`, `lowerRFunc`, `emitFunc`, `layout`,
+  `FormsCovered ⟨fa.k, af.slotBase⟩ vcp` and `∀ s, CalleeOk (frameF lo hi af s) X H`.
+  `ArmRet`: lr and x29 from the fp/lr slot (`StRel.fplr`), x19–x28 and the low 64 bits of
+  v8–v15 from `checkAlloc_sound`'s `keep` conclusion (`ckeep`) through the store relation,
+  `sp` from `spB + size + 16`; values from the fixed uses; memory from `SameWorld`.
+- **`E2E.backend_correct_final`** (`FV/E2E/Final.lean`): `backend_correct_m4` with `hM6`
+  instantiated; final hypothesis list in `e2e.md` ("Final hypotheses").
+- **Compiler change (behaviour-preserving)**: `ctlCheck` requires the values of a `Rets` to be
+  int vregs (a real register there would shift the returned-values/operands correspondence);
+  `lean-backend` over corpus, extrt and runtests (445 files): no function rejected.
+- Build fixes after the merge: `RegLevelOp.csem_next_world` removed (superseded by
+  `csem_next_world'`, `RegallocCSemWorld`); `os_oneDef` takes the new `ERR` premise of
+  `OperandsSound`; `exec_{add,sub}_sp_x16` renamed `…x16uxtx` (clash with `RegallocMemAddr`).
+
+Remaining: `Refines`/`MemRefines` of `csem` (M6Insts), deciding `FormsCovered`
+(`formsCoveredB`) in `lean-e2e-check`, the callee contract `CalleeOk` and `XCallsOk`
+(environment).
+
+`#print axioms regLevelCorrect_backend`: `propext, Classical.choice, Quot.sound`, M5's
+`decode_armBits_*`/`decode_raw_inst_of_*` `_native.bv_decide` axioms and
+`Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9`.
