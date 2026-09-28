@@ -154,6 +154,28 @@ theorem mapOperands_not_call {σ : ValueId → ValueId} {i : Inst} (h : ∀ fn a
   cases i <;> simp [mapOperands] at he
   exact h _ _ rfl
 
+theorem callArgs_rename {σ : ValueId → ValueId} {fr fr' : Frame} {fn : FnRef} {args : List ValueId}
+    (hext : fr'.func.externs = fr.func.externs) (h : ∀ x ∈ args, fr'.regs (σ x) = fr.regs x) :
+    (callArgs fr' fn (args.map σ)).norm = (callArgs fr fn args).norm := by
+  simp only [callArgs, Function.extern?, hext, Res.norm_bind, Res.norm_ofOption, checkTys,
+    Res.norm_check, Res.norm_pure, getMany_rename h]
+
+theorem tailArgs_rename {σ : ValueId → ValueId} {fr fr' : Frame} {fn : FnRef} {args : List ValueId}
+    (hext : fr'.func.externs = fr.func.externs) (hsig : fr'.func.sig = fr.func.sig)
+    (h : ∀ x ∈ args, fr'.regs (σ x) = fr.regs x) :
+    (tailArgs fr' fn (args.map σ)).norm = (tailArgs fr fn args).norm := by
+  simp only [tailArgs, Function.extern?, hext, hsig, Res.norm_bind, Res.norm_ofOption, checkTys,
+    Res.norm_check, Res.norm_pure, getMany_rename h]
+
+theorem enterBlock_of {fr : Frame} {bc : BlockCall} {b : Block} {args : List Val} {regs : Regs}
+    (hb : fr.func.block? bc.block = some b) (ha : fr.getMany bc.args = .ok args)
+    (ht : args.map (·.ty) = b.params.map (·.2))
+    (hr : fr.regs.setMany (b.params.map (·.1)) args = some regs) :
+    enterBlock fr bc = .ok { fr with regs, body := b.body, term := b.term } := by
+  simp only [enterBlock, hb, ha, checkTys, ht, hr, Res.ofOption_some, Res.ok_bind,
+    beq_self_eq_true, Res.check_true]
+  rfl
+
 theorem avail_isSome {D : WfData} {i k v} (h : Avail D i k v) : (D.dm v).isSome := by
   obtain ⟨d, t, hd, _⟩ := h
   simp [hd]
@@ -458,6 +480,75 @@ theorem ERel.delete {fr fr' bi k k' m s ss} (h : ERel σ f g Df Dg syms fr fr' b
     | ok p => rw [he] at hl; obtain ⟨_, _⟩ := p; simp only [LRes.ofRes] at hl; split at hl <;> cases hl
     | stuck msg => rw [he] at hl; cases hl
     | trap c' => rw [he] at hl; cases hl
+
+/-- The frame relation of the edit simulation. -/
+def ER (σ : ValueId → ValueId) (f g : Function) (Df Dg : WfData) (syms : String → Option Nat)
+    (fr fr' : Frame) : Prop :=
+  ∃ bi k k', ERel σ f g Df Dg syms fr fr' bi k k'
+
+/-- A kept call: same callee and arguments; the continuations are related. -/
+theorem ERel.call {fr fr' bi k k' m s ss t ts ext vals rs rest}
+    (h : ERel σ f g Df Dg syms fr fr' bi k k')
+    (hm : m.symbols = syms) (hs : fr.body = s :: ss) (ht : fr'.body = t :: ts)
+    (hk : (ctxOf σ g Dg bi).keepOk s t = true) (hal : (ctxOf σ g Dg bi).align ss ts (k' + 1) = true)
+    (hl : lstep fr m = .call ext vals rs rest) :
+    lstep fr' m = .call ext vals rs ts ∧ rest = ss ∧
+      Cont (ER σ f g Df Dg syms) { fr with body := rest } rs { fr' with body := ts } rs
+        (AbiParam.tys ext.sig.returns) := by
+  obtain ⟨rfl, hσ⟩ := keepOk_spec hk
+  simp only [ctxOf_σ] at hσ ht ⊢
+  obtain ⟨b, b', hb, hb', h1, h2, -⟩ := h.blocks hE
+  have hs0 := hs; have ht0 := ht
+  rw [h1] at hs; rw [h2] at ht
+  obtain ⟨hsk, hss, -⟩ := drop_eq_cons hs
+  obtain ⟨htk, hts, -⟩ := drop_eq_cons ht
+  obtain ⟨st, fn, args, hst, hc, hrs, hca⟩ := lstep_call_inv hl
+  rw [hs0] at hst
+  simp only [List.cons.injEq] at hst
+  obtain ⟨h1s, h2s⟩ := hst
+  subst h1s; subst h2s; subst hrs
+  have hops := h.ops hE hs0 ht0
+  have hca' := Res.norm_eq_ok (callArgs_rename (σ := σ) (fr := fr) (fr' := fr') (fn := fn)
+    (by rw [h.invf.func, h.invg.func, hE.externs])
+    (fun x hx => hops x (by rw [hc]; exact hx))) hca
+  have htc : (renStmt σ s).inst = .call fn (args.map σ) := by simp [renStmt, hc, mapOperands]
+  refine ⟨by rw [lstep_call ht0 htc, hca']; rfl, rfl, ?_⟩
+  -- continuation
+  intro vs regs hty hset
+  obtain ⟨regs', hset'⟩ := setMany_len (r := fr'.regs) (xs := s.results) (vs := vs)
+    (setMany_spec hset).1
+  refine ⟨regs', hset', bi, k + 1, k' + 1, ?_, ?_, ?_, ?_, h.slots⟩
+  · have hext : sigOf f fn = some ext.sig := by
+      simp only [callArgs, Res.bind_eq_ok, Res.ofOption_eq_ok] at hca
+      obtain ⟨e, he, _, _, _, _, hpe⟩ := hca
+      simp only [Res.pure_eq_ok, Prod.mk.injEq] at hpe
+      obtain ⟨rfl, -⟩ := hpe
+      rw [h.invf.func] at he
+      simp only [sigOf]
+      rw [show f.externs.lookup fn = f.extern? fn from rfl, he]; rfl
+    refine Inv.results (fr := fr) (st := s) (rest := ss) hE.wff h.invf hs0 (fun ts0 h0 => ?_)
+      (fun hp => by rw [hc] at hp; cases hp) hset
+    rw [hc, Inst.resultTypes, hext] at h0
+    simp only [Option.map_some, Option.some.injEq] at h0
+    rw [← h0, hty]; rfl
+  · have hext : sigOf g fn = some ext.sig := by
+      simp only [callArgs, Res.bind_eq_ok, Res.ofOption_eq_ok] at hca
+      obtain ⟨e, he, _, _, _, _, hpe⟩ := hca
+      simp only [Res.pure_eq_ok, Prod.mk.injEq] at hpe
+      obtain ⟨rfl, -⟩ := hpe
+      rw [h.invf.func] at he
+      simp only [sigOf, hE.externs]
+      rw [show f.externs.lookup fn = f.extern? fn from rfl, he]; rfl
+    refine Inv.results (fr := fr') (st := renStmt σ s) (rest := ts) hE.wfg h.invg ht0
+      (fun ts0 h0 => ?_) (fun hp => by rw [htc] at hp; cases hp) hset'
+    rw [htc, Inst.resultTypes, hext] at h0
+    simp only [Option.map_some, Option.some.injEq] at h0
+    rw [← h0, hty]; rfl
+  · exact agree_results hE h.agree hb hb' hsk htk hσ hset hset'
+  · intro b0 b0' hb0 hb0'
+    rw [hb] at hb0; cases hb0
+    rw [hb'] at hb0'; cases hb0'
+    rw [hss, hts]; exact hal
 
 end
 

@@ -109,6 +109,29 @@ theorem lstep_term {fr : Frame} {mem : Mem} (hb : fr.body = []) :
   unfold lstep
   rw [hb]
 
+theorem lstep_call_inv {fr : Frame} {mem : Mem} {ext : ExtFunc} {vals : List Val}
+    {rs : List ValueId} {rest : List Stmt} (h : lstep fr mem = .call ext vals rs rest) :
+    ∃ st fn args, fr.body = st :: rest ∧ st.inst = .call fn args ∧ st.results = rs ∧
+      callArgs fr fn args = .ok (ext, vals) := by
+  obtain ⟨func, regs, slots, body, term⟩ := fr
+  cases body with
+  | nil =>
+    simp only [lstep] at h
+    cases term <;> simp only [LRes.ofRes] at h <;> (repeat' split at h) <;> cases h
+  | cons st rest' =>
+    simp only [lstep] at h
+    split at h
+    · rename_i fn args hi
+      simp only [LRes.ofRes] at h
+      split at h
+      · rename_i p hp
+        cases h
+        exact ⟨st, fn, args, rfl, hi, rfl, hp⟩
+      all_goals cases h
+    · simp only [LRes.ofRes] at h
+      split at h <;> (try cases h)
+      split at h <;> cases h
+
 /-- The continuation of `Clif.stepCall` after its prelude. -/
 def callCont (env : Env) (p : Program) (s : State) (rest : List Stmt) (results : List ValueId)
     (ext : ExtFunc) (vals : List Val) : StepResult :=
