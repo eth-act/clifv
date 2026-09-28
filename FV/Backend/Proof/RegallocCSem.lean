@@ -1,4 +1,5 @@
 import FV.Backend.Proof.RegallocOperands
+import FV.Backend.Proof.IselContract
 
 /-!
 # The concrete instruction semantics `csem` (M6 proof)
@@ -380,6 +381,90 @@ structure ExtSem where
   call : Option String → List CV → Arm.ArmState → Option (List CV × Arm.ArmState)
   sym : String → Int → BitVec 64
 
+/-! ## Covered forms -/
+
+/-- The extend kinds of an encodable extended-register addressing mode. -/
+def extOk (e : ExtendOp) : Prop := e = .uxtw ∨ e = .uxtx ∨ e = .sxtw ∨ e = .sxtx
+
+instance (e : ExtendOp) : Decidable (extOk e) := by unfold extOk; infer_instance
+
+/-- The forms `csem` gives an explicit meaning (control flow, calls, symbols, `Args`/`Rets`);
+every other form is `straightSem`. -/
+def _root_.Backend.MInst.isCtl : MInst → Bool
+  | .call .. | .args .. | .rets .. | .loadExtNameGot .. | .loadExtNameNear .. | .jump ..
+  | .condBr .. | .testBitAndBranch .. | .trapIf .. | .udf .. | .emitIsland .. | .jtSequence .. =>
+    true
+  | _ => false
+
+/-- `aluRRImmLogic` ops the emitter expands. -/
+def logicOpOk : ALUOp → Bool
+  | .orr | .and | .andS | .eor | .orrNot | .andNot | .eorNot => true
+  | _ => false
+
+/-- `aluRRImmShift` ops the emitter expands. -/
+def shiftOpOk : ALUOp → Bool
+  | .lsr | .asr | .lsl | .extr => true
+  | _ => false
+
+/-- The covered addressing modes of a load/store of `bytes` bytes (`amodeAddr`'s forms). -/
+def memOk (bytes : Nat) : AMode → Bool
+  | .slotOffset _ => true
+  | .unscaled (.vreg _ .int) off => decide (-256 ≤ off ∧ off < 256)
+  | .unsignedOffset (.vreg _ .int) off => decide (off % bytes = 0 ∧ off / bytes < 4096)
+  | .regReg (.vreg _ .int) (.vreg _ .int) | .regScaled (.vreg _ .int) (.vreg _ .int) => true
+  | .regScaledExtended (.vreg _ .int) (.vreg _ .int) e | .regExtended (.vreg _ .int) (.vreg _ .int) e =>
+    decide (extOk e)
+  | _ => false
+
+/-- **The covered straight-line forms.** -/
+def FormOk (_ctx : FnCtx) : MInst → Bool
+  | .aluRRR _ _ (.vreg _ .int) (.vreg _ .int) (.vreg _ .int) => true
+  | .aluRRR _ _ (.vreg _ .int) .xzr (.vreg _ .int) => true
+  | .aluRRR _ _ .xzr (.vreg _ .int) (.vreg _ .int) => true
+  | .aluRRR _ _ (.vreg _ .int) (.vreg _ .int) .xzr => true
+  | .aluRRR _ _ .xzr (.vreg _ .int) .xzr => true
+  | .aluRRRR _ _ (.vreg _ .int) (.vreg _ .int) (.vreg _ .int) (.vreg _ .int) => true
+  | .aluRRRR _ _ (.vreg _ .int) (.vreg _ .int) (.vreg _ .int) .xzr => true
+  | .aluRRImm12 _ _ (.vreg _ .int) (.vreg _ .int) _ => true
+  | .aluRRImm12 _ _ .xzr (.vreg _ .int) _ => true
+  | .aluRRImmLogic op _ (.vreg _ .int) (.vreg _ .int) _ => logicOpOk op
+  | .aluRRImmLogic op _ .xzr (.vreg _ .int) _ => logicOpOk op
+  | .aluRRImmShift op _ (.vreg _ .int) (.vreg _ .int) _ => shiftOpOk op
+  | .aluRRRShift _ _ (.vreg _ .int) (.vreg _ .int) (.vreg _ .int) _ => true
+  | .aluRRRShift _ _ .xzr (.vreg _ .int) (.vreg _ .int) _ => true
+  | .aluRRRShift _ _ (.vreg _ .int) .xzr (.vreg _ .int) _ => true
+  | .aluRRRExtend _ _ (.vreg _ .int) (.vreg _ .int) (.vreg _ .int) _ => true
+  | .aluRRRExtend _ _ .xzr (.vreg _ .int) (.vreg _ .int) _ => true
+  | .bitRR _ _ (.vreg _ .int) (.vreg _ .int) => true
+  | .mov _ (.vreg _ .int) (.vreg _ .int) => true
+  | .movWide _ (.vreg _ .int) _ _ => true
+  | .movK (.vreg _ .int) (.vreg _ .int) _ _ => true
+  | .extend (.vreg _ .int) (.vreg _ .int) _ _ _ => true
+  | .bitfieldMove _ _ (.vreg _ .int) (.vreg _ .int) _ _ => true
+  | .cset (.vreg _ .int) _ => true
+  | .csel (.vreg _ .int) (.vreg _ .int) (.vreg _ .int) _ => true
+  | .ccmp _ (.vreg _ .int) (.vreg _ .int) _ _ => true
+  | .ccmpImm _ (.vreg _ .int) _ _ _ => true
+  | .movToFpu (.vreg _ .float) (.vreg _ .int) _ => true
+  | .movFromVec (.vreg _ .int) (.vreg _ .float) _ _ => true
+  | .vecMisc _ (.vreg _ .float) (.vreg _ .float) _ => true
+  | .vecLanes _ (.vreg _ .float) (.vreg _ .float) _ => true
+  | .vecRRR _ (.vreg _ .float) (.vreg _ .float) (.vreg _ .float) _ => true
+  | .load op (.vreg _ .int) m _ => op != .fpuLoad128 && memOk op.bytes m
+  | .store op (.vreg _ .int) m _ => op != .fpuStore128 && memOk op.bytes m
+  | .loadAddr (.vreg _ .int) (.slotOffset _) => true
+  | _ => false
+
+/-- The number of use operands. -/
+def useCount (ops : Array Operand) : Nat := (ops.toList.filter (·.isUse)).length
+
+/-- The instances on which `csem` is the Arm run of the canonical allocation: a covered form
+(`FormOk`) applied to as many values as it has use operands. -/
+def csemWF (ctx : FnCtx) (i : MInst) (uses : List CV) : Bool :=
+  FormOk ctx i && match i.operands with
+    | .ok ops => uses.length == useCount ops
+    | .error _ => false
+
 open Classical in
 /-- A straight-line instruction: the Arm run of its canonical allocation (which must end
 without error, with the program unchanged). -/
@@ -407,6 +492,22 @@ def _root_.Backend.CondBrKind.holds (k : CondBrKind) (uses : List CV) (w : Arm.A
   | .zero _ sz, [a] => if sz.is64 then lo64 a == 0 else (lo64 a).setWidth 32 == 0
   | .notZero _ sz, [a] => if sz.is64 then lo64 a != 0 else (lo64 a).setWidth 32 != 0
   | _, _ => false
+
+/-- The specification fallback of `csem` (worlds with an error or a misaligned `sp`, forms
+not covered by `FormOk`): `ispec`, extended by the memory forms as `MemRefines` states them
+(slot offsets at slot base `sb`). -/
+def mspec (sb : Nat) : Sem := fun i uses w =>
+  match i, uses with
+  | .load op (.vreg _ .int) am _, us =>
+    if op = .fpuLoad128 then none
+    else (amodeAddr sb am op.bytes us w).map fun a => ([ofX (loadVal op a w)], w, .next)
+  | .store op (.vreg _ .int) am _, v :: us =>
+    if op = .fpuStore128 then none
+    else (amodeAddr sb am op.bytes us w).map fun a =>
+      ([], Arm.write_mem_bytes op.bytes a ((lo64 v).setWidth (op.bytes * 8)) w, .next)
+  | .loadAddr (.vreg _ .int) (.slotOffset off), [] =>
+    some ([ofX (spOf w + BitVec.ofInt 64 (off + sb))], w, .next)
+  | i, us => ispec i us w
 
 /-- **The concrete instruction semantics.** -/
 noncomputable def csem (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) : ISem CV Arm.ArmState :=
@@ -438,7 +539,47 @@ noncomputable def csem (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) : ISe
         let i := ((lo64 a).setWidth 32).toNat
         if i < ts.length then some ([ofX 0, ofX 0], w, .goto (i + 1)) else none
     | _ => none
-  | i => straightSem F ctx i uses w
+  | i => if csemWF ctx i uses = true ∧ Arm.r .ERR w = .None ∧ Arm.CheckSPAlignment w then
+      straightSem F ctx i uses w
+    else mspec ctx.slotBase i uses w
+
+theorem csem_of_wf {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MInst} {uses : List CV}
+    (h : i.isCtl = false) (hw : csemWF ctx i uses = true) {w : Arm.ArmState}
+    (he : Arm.r .ERR w = .None) (ha : Arm.CheckSPAlignment w) :
+    csem F ctx X i uses w = straightSem F ctx i uses w := by
+  cases i <;> first | (simp [csem, hw, he, ha]; done) | cases h
+
+/-- `csem` of a straight-line form: the canonical run on a well-formed, error-free, aligned
+world, else the specification fallback. -/
+theorem csem_straight {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MInst}
+    (h : i.isCtl = false) (uses : List CV) (w : Arm.ArmState) :
+    csem F ctx X i uses w =
+      if csemWF ctx i uses = true ∧ Arm.r .ERR w = .None ∧ Arm.CheckSPAlignment w then
+        straightSem F ctx i uses w
+      else mspec ctx.slotBase i uses w := by
+  cases i <;> first | rfl | cases h
+
+theorem len_filter_zip : ∀ (L : List Operand) (R : List Reg), L.length = R.length →
+    ((L.zip R).filter (fun p => p.1.isUse)).length = (L.filter (·.isUse)).length
+  | [], _, _ => rfl
+  | a :: L, [], h => by simp at h
+  | a :: L, r :: R, h => by
+    simp only [List.length_cons, Nat.add_right_cancel_iff] at h
+    have := len_filter_zip L R h
+    simp only [List.zip_cons_cons, List.filter_cons]
+    split <;> simp_all
+
+theorem useVals_length (ops : Array Operand) (regs : Array Reg) (h : regs.size = ops.size)
+    (s : Arm.ArmState) : (useVals ops regs s).length = useCount ops := by
+  simp only [useVals, useCount, List.length_map, Array.toList_zip]
+  exact len_filter_zip _ _ (by simp [h])
+
+theorem csem_useVals {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MInst} {ops : Array Operand}
+    (hops : i.operands = .ok ops) (hfo : FormOk ctx i = true) (hctl : i.isCtl = false)
+    {regs : Array Reg} (h : regs.size = ops.size) (s : Arm.ArmState) {w : Arm.ArmState}
+    (he : Arm.r .ERR w = .None) (hal : Arm.CheckSPAlignment w) :
+    csem F ctx X i (useVals ops regs s) w = straightSem F ctx i (useVals ops regs s) w :=
+  csem_of_wf hctl (by simp [csemWF, hfo, hops, useVals_length ops regs h]) he hal
 
 /-! ## Reduction of `OperandsSound` to `Corr` -/
 
@@ -472,16 +613,18 @@ theorem canonRegs_size (ops : Array Operand) : (canonRegs ops).size = ops.size :
 theorem os_of_corr {F : BitVec 64 → Prop} {ctx : FnCtx} {env : Env} {X : ExtSem} {i : MInst}
     {ops : Array Operand} (hops : i.operands = .ok ops) (mk : Array Reg → MInst)
     (hmk : ∀ regs : Array Reg, regs.size = ops.size → i.assign regs = .ok (mk regs))
-    (hstr : csem F ctx X i = straightSem F ctx i) (hcl : i.clobbers = [])
+    (hfo : FormOk ctx i = true) (hctl : i.isCtl = false) (hcl : i.clobbers = [])
     (hc : Corr F ctx env ops mk) :
     OperandsSound F (execMInst ctx env) (csem F ctx X) i := by
-  intro c wh ops' regs i' s w outs w' hops' hst hasg hw hal hsem
+  intro c wh ops' regs i' s w outs w' hops' hst hasg hw hal herr hsem
   rw [hops] at hops'
   cases hops'
   have ha := allocOk_of_checkStatic hst
   rw [hmk regs ha.size] at hasg
   cases hasg
-  rw [hstr] at hsem
+  rw [csem_useVals hops hfo hctl ha.size s (by rw [← herr]; exact (hw.1 .ERR (by simp [Masked])).symm)
+    (by simpa [Arm.CheckSPAlignment, Arm.read_gpr, (hw.1 (.GPR 31#5) (by simp [Masked])).symm]
+      using hal)] at hsem
   simp only [straightSem, hops, hmk _ (canonRegs_size ops)] at hsem
   split at hsem
   · rename_i hacc
@@ -523,6 +666,15 @@ theorem straightSem_some {F : BitVec 64 → Prop} {ctx : FnCtx} {i : MInst} {use
       · cases h
 
 /-! ## Tactics -/
+
+/-- `FormOk` of a concrete covered form. -/
+syntax "fo_tac" : tactic
+set_option hygiene false in
+macro_rules
+  | `(tactic| fo_tac) => `(tactic| first
+    | rfl
+    | (simp_all [FormOk, memOk, extOk, logicOpOk, shiftOpOk]; done)
+    | (simp_all [FormOk, memOk, extOk, logicOpOk, shiftOpOk]; omega))
 
 theorem regs1 {regs : Array Reg} (h : regs.size = 1) : ∃ a, regs = #[a] := by
   rcases regs with ⟨_ | ⟨a, _ | ⟨_, _⟩⟩⟩ <;> simp at h
