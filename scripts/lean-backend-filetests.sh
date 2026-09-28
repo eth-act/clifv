@@ -20,6 +20,8 @@
 #   --asm: assemble the Lean backend's assembly with llvm-mc instead of using its object
 #   --regalloc: register allocator of the Lean backend (default regalloc2, validated by the
 #               Lean checker; `stack` = the stack-slot baseline), docs/contracts/regalloc.md
+#   --opt [--opt-* ...]: run the Lean mid-end (Opt.optimize) before the Lean backend
+#               (lean-backend --opt, docs/contracts/midend.md); Cranelift-native is unchanged
 #
 # Output per set: one line per file that is not fully passing (or every file with -v):
 #   FILE: lean pass P fail F error E unsupported U | native pass ... | agree A disagree D
@@ -35,6 +37,7 @@ LLVM_MC=${LLVM_MC:-/usr/lib/llvm-18/bin/llvm-mc}
 VERBOSE=0
 ASM=0
 RA=regalloc2
+OPTARGS=()
 SETS=()
 FILES=()
 while [[ $# -gt 0 ]]; do
@@ -42,6 +45,8 @@ while [[ $# -gt 0 ]]; do
     -v) VERBOSE=1 ;;
     --asm) ASM=1 ;;
     --regalloc) RA=$2; shift ;;
+    --opt-rules|--opt-rounds) OPTARGS+=("$1" "$2"); shift ;;
+    --opt|--opt-*) OPTARGS+=("$1") ;;
     --corpus) SETS+=(corpus) ;;
     --runtests) SETS+=(runtests) ;;
     -*) echo "unknown option $1" >&2; exit 2 ;;
@@ -52,7 +57,7 @@ done
 if [[ ${#FILES[@]} -gt 0 ]]; then SETS+=(files); fi
 if [[ ${#SETS[@]} -eq 0 ]]; then SETS=(corpus runtests); fi
 
-echo "== build (objects: $([[ $ASM == 1 ]] && echo "llvm-mc from the Lean assembly" || echo "Lean encoder, no assembler"); allocator: $RA)"
+echo "== build (objects: $([[ $ASM == 1 ]] && echo "llvm-mc from the Lean assembly" || echo "Lean encoder, no assembler"); allocator: $RA${OPTARGS[*]:+; mid-end: ${OPTARGS[*]}})"
 lake build lean-backend 2>&1 | tail -1
 cargo build --quiet --release --manifest-path rust/Cargo.toml -p clif-native -p clif-runlines -p lean-regalloc
 BIN=rust/target/release
@@ -74,7 +79,7 @@ run_one() {
   [[ -n "$link" ]] && links=(--link "$link")
   local ok=1
   if [[ $ASM == 1 ]]; then
-    .lake/build/bin/lean-backend "$f" "$d/obj/$b.s" --regalloc "$RA" --traps "$d/obj/$b.traps.json" \
+    .lake/build/bin/lean-backend "$f" "$d/obj/$b.s" --regalloc "$RA" $OPTS --traps "$d/obj/$b.traps.json" \
       2> "$d/obj/$b.unsupported.txt"
     if ! "$LLVM_MC" -triple=aarch64-linux-gnu -filetype=obj "$d/obj/$b.s" -o "$d/obj/$b.o" \
          2> "$d/obj/$b.mc.txt"; then
@@ -82,7 +87,7 @@ run_one() {
       cat "$d/obj/$b.mc.txt" >&2
       ok=0
     fi
-  elif ! .lake/build/bin/lean-backend "$f" "$d/obj/$b.o" --regalloc "$RA" --traps "$d/obj/$b.traps.json" \
+  elif ! .lake/build/bin/lean-backend "$f" "$d/obj/$b.o" --regalloc "$RA" $OPTS --traps "$d/obj/$b.traps.json" \
          2> "$d/obj/$b.unsupported.txt"; then
     echo "{\"file_error\": \"the Lean encoder failed for $f\"}" > "$d/lean/$b.json"
     grep -v ': unsupported: ' "$d/obj/$b.unsupported.txt" >&2 || true
@@ -95,7 +100,8 @@ run_one() {
   "$BIN/clif-native" "$f" "${links[@]}" > "$d/native/$b.json" || [[ $? -eq 1 ]]
 }
 export -f run_one
-export BIN WORK LLVM_MC ASM RA
+OPTS="${OPTARGS[*]:-}"
+export BIN WORK LLVM_MC ASM RA OPTS
 
 status=0
 # report SET: per-file and total counts from the two record streams.

@@ -15,6 +15,7 @@ first, then update its producer and its consumers together.
 | `FV/Validate/` | per-function translation validator: Cranelift AArch64 output against CLIF | M3 |
 | `FV/Isle/` | Lean ISLE syntax, generated rule data (aarch64 lowering; mid-end `opt` in `Generated/Opt`, `Isle.Opt`), rule interpreter (incl. multi terms), `Isle.Opt.simplify` | M4, M7 |
 | `FV/Backend/` | isel, stack-slot allocator, regalloc checker, asm/bytes emission | M4–M6 |
+| `FV/Opt/` | Lean mid-end: CLIF → CLIF passes (`Opt.optimize`: simplify with Cranelift's rules, GVN, DCE, LICM), `docs/contracts/midend.md` | M7 |
 | `FV/E2E/` | `backend_correct` | M7 |
 | `FVTest/` | Lean-side tests and corpora drivers (`lean_exe` targets) | all |
 | `rust/crates/clif2obj` | Cranelift driver (PLAN.md Appendix A), with relocation dumps | M1, M3 |
@@ -34,7 +35,7 @@ first, then update its producer and its consumers together.
   These replace `Lean.ofReduceBool` from older toolchains, with the same trust base. Prefer
   `omega`/`decide`/`simp` in library lemmas; keep `bv_decide` for real bit-blasting goals.
 - Lean: core and `Std` only, no Mathlib (keeps the toolchain pin to `v4.34.1` alone).
-- Lean namespaces follow the directories: `Clif`, `DSL`, `Compile`, `Arm`, `Validate`, `Isle`, `Backend`, `E2E`.
+- Lean namespaces follow the directories: `Clif`, `DSL`, `Compile`, `Arm`, `Validate`, `Isle`, `Backend`, `Opt`, `E2E`.
 - Anything executable that is meant as a model must be *checkable* against an external
   oracle: Cranelift's interpreter, native execution under `qemu-aarch64-static`, or `llvm-mc`.
 

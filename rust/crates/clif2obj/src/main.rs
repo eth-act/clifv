@@ -2,7 +2,11 @@
 //! verification-friendly settings, and dump per-function machine code, VCode, relocations
 //! and trap tables for the M3 validator. Schemas: `docs/contracts/drivers.md`.
 //!
-//! usage: clif2obj [--colocated-externs] <input.clif> <target-triple> <out.o> <dump-dir>
+//! usage: clif2obj [--colocated-externs] [--opt-level none|speed|speed_and_size] <input.clif>
+//!        <target-triple> <out.o> <dump-dir>
+//!
+//! `--opt-level` (default `none`, the project setting) exists only to measure Cranelift's
+//! mid-end (`scripts/lean-backend-metrics.sh`).
 
 use std::path::Path;
 use std::process::ExitCode;
@@ -10,14 +14,17 @@ use std::process::ExitCode;
 use anyhow::{Context as _, Result, bail};
 use clif2obj::{ObjectCompiler, Options};
 
-const USAGE: &str = "usage: clif2obj [--colocated-externs] <input.clif> <target-triple> <out.o> <dump-dir>";
+const USAGE: &str = "usage: clif2obj [--colocated-externs] [--opt-level none|speed|speed_and_size] <input.clif> <target-triple> <out.o> <dump-dir>";
 
 fn run() -> Result<()> {
     let mut opts = Options::default();
     let mut pos = Vec::new();
-    for a in std::env::args().skip(1) {
+    let mut opt_level = "none".to_string();
+    let mut args = std::env::args().skip(1);
+    while let Some(a) = args.next() {
         match a.as_str() {
             "--colocated-externs" => opts.colocated_externs = true,
+            "--opt-level" => opt_level = args.next().context("--opt-level needs a value")?,
             s if s.starts_with("--") => bail!("unknown option {s}\n{USAGE}"),
             _ => pos.push(a),
         }
@@ -26,7 +33,7 @@ fn run() -> Result<()> {
         bail!("{USAGE}");
     };
 
-    let isa = clif2obj::isa(triple)?;
+    let isa = clif2obj::isa_with_opt_level(triple, &opt_level)?;
     let src = std::fs::read_to_string(input).with_context(|| format!("reading {input}"))?;
     let test = clif2obj::parse_file(&src, &*isa).with_context(|| format!("parsing {input}"))?;
     let funcs: Vec<_> = test.functions.iter().map(|(f, _)| f).collect();

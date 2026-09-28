@@ -21,7 +21,7 @@ Commands:
 
 ```
 cargo build --release --manifest-path rust/Cargo.toml -p clif2obj -p clif-native -p clif-runlines
-rust/target/release/clif2obj [--colocated-externs] IN.clif aarch64-unknown-linux-gnu OUT.o DUMP_DIR
+rust/target/release/clif2obj [--colocated-externs] [--opt-level none|speed|speed_and_size] IN.clif aarch64-unknown-linux-gnu OUT.o DUMP_DIR
 rust/target/release/clif-native FILE.clif [--link OBJ_OR_ARCHIVE]... [--keep DIR] [--timeout SECS]
 rust/target/release/clif-results summary [-v] FILE.json...
 rust/target/release/clif-results compare [-v] DIR_A DIR_B
@@ -33,6 +33,9 @@ cargo test --manifest-path rust/Cargo.toml -p clif-native
 
 Exactly `opt_level=none`, `enable_verifier=true`, `regalloc_checker=true`, `is_pic=true`;
 every other shared and ISA setting is Cranelift's default (no `has_lse`, etc.).
+`clif2obj --opt-level speed` (`clif2obj::isa_with_opt_level`) overrides `opt_level` only to
+measure Cranelift's mid-end (`scripts/lean-backend-metrics.sh`, `docs/contracts/midend.md`); no
+checked path uses it.
 `test`/`target`/`set` header lines of the input are accepted and **ignored** for code
 generation. Signatures without an explicit calling convention get the target's C calling
 convention (`system_v` for `aarch64-unknown-linux-gnu`, PLAN.md §3.2), not the reader's

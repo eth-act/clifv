@@ -1,0 +1,416 @@
+import FV.Opt.Check
+import FV.Opt.Cost
+import FV.Opt.Rules
+
+/-!
+# Simplify: rule-based rewriting of pure nodes (an acyclic e-graph, à la Cranelift)
+
+The pass visits the blocks in reverse postorder (every block after its dominators) and the
+statements of each block in order. For a pure statement `v = n` (operands renamed by the
+substitution built so far) it does what Cranelift's `insert_pure_enode` /
+`optimize_pure_enode` do (`egraph/mod.rs`):
+
+1. insert `n` as the node of `v`;
+2. unless an equal node was seen before (then its value is reused: hash-consing, Cranelift's
+   GVN map), call the rule set's `simplify` on `v`. Rules see each operand's *e-class* (its node plus
+   the equivalent nodes recorded when it was rewritten) and create nodes with `make`, which
+   are themselves simplified recursively (rewrite depth ≤ `rewriteLimit` = 5, Cranelift's
+   `REWRITE_LIMIT`); created nodes are *virtual* until needed;
+3. build the e-class of `v`: at most `matchesLimit` = 5 candidates, sorted by value number
+   and deduplicated; a `subsume` candidate replaces the class; otherwise the class is `v` plus
+   the candidates, up to `eclassLimit` = 5 nodes (`MATCHES_LIMIT`, `ECLASS_ENODE_LIMIT`);
+4. extract the best member by `(cost, value number)` (`Opt.Cost`, Cranelift's
+   `compute_best_values`);
+5. if the best is `v`, keep the statement; otherwise *materialise* the best value in place
+   (emit the virtual nodes its tree needs, in dependency order, right before the position of
+   `v`; a virtual value already emitted in a block that does not dominate the current one is
+   cloned under a fresh number) and rename `v` to it.
+
+Skeleton statements and terminators go through the rule set's `simplify_skeleton`
+(`Opt.SkeletonFn`, chosen as `chooseSkel`; e.g. division by a constant, branches on constants,
+branches to trap blocks). This can remove CFG edges; the dominator tree computed before the pass
+stays valid (removing edges only adds dominance), and `Opt.optimize` removes the blocks that
+became unreachable.
+
+Differences from Cranelift, all on the conservative side: nodes are materialised where the
+rewritten statement was (placement/remat/LICM are separate passes); the node being
+simplified is in the hash-consing table while its rules run (so a rule rebuilding it, e.g. two
+argument swaps, gets `v` back instead of a copy); an e-class is only visible
+to later matches through its representative when that representative was created by this
+statement (so every node of a visible class can be materialised wherever the class is used).
+
+**Invariant (for the proof).** Every emitted statement is a pure node whose operands are
+defined at its position (dominance), and every renaming `v ↦ w` has `w` equal to `v` by the
+rule set's obligation (`Opt.SimplifyFn`) — so each step is a local, value-preserving
+replacement. Nodes outside `allowed` (e.g. outside the backend subset E) get infinite cost
+and are never emitted.
+-/
+
+namespace Opt
+
+open Clif
+
+def rewriteLimit : Nat := 5
+def matchesLimit : Nat := 5
+def eclassLimit : Nat := 5
+
+structure SimplifyStats where
+  /-- Statements replaced by a different value. -/
+  rewritten : Nat := 0
+  /-- Statements materialised (new nodes emitted). -/
+  emitted : Nat := 0
+  /-- Rule-set errors (the statement is kept). -/
+  errors : Nat := 0
+  /-- Skeleton instructions / terminators simplified. -/
+  skeleton : Nat := 0
+  /-- Number of candidates per rule name (fired, whether chosen or not). -/
+  fired : Std.HashMap String Nat := {}
+  deriving Inhabited
+
+structure SState where
+  /-- The pure node of every value that has one (original statements and created nodes). -/
+  defs : Std.HashMap ValueId Inst := {}
+  /-- Other members of the e-class represented by a value (see module doc). -/
+  alts : Std.HashMap ValueId (List ValueId) := {}
+  types : Std.HashMap ValueId Ty := {}
+  cost : Std.HashMap ValueId Cost := {}
+  next : ValueId
+  /-- Hash-consing of nodes (Cranelift's GVN map): node ↦ the best value of its e-class.
+  Global to the function; a hit whose definition does not dominate the use is cloned by
+  `materialize`. -/
+  memo : Std.HashMap Inst ValueId := {}
+  /-- Values created while rewriting the current statement. -/
+  made : Std.HashSet ValueId := {}
+  /-- Output block (layout index) of every value defined in the output so far. -/
+  avail : Std.HashMap ValueId Nat := {}
+  /-- Value → e-class members found for it at its creation (current statement only). -/
+  classes : Std.HashMap ValueId (List ValueId) := {}
+  /-- Rematerialise constants: an `iconst` defined in another block is re-emitted in the
+  using block instead of reused (Cranelift's `remat`). -/
+  rematConst : Bool := false
+  /-- `just_trap_block`: blocks whose body is pure and whose terminator is `trap`. -/
+  trapBlocks : Std.HashMap BlockId TrapCode := {}
+  stats : SimplifyStats := {}
+
+namespace SState
+
+def costOf (st : SState) (v : ValueId) : Cost := (st.cost.get? v).getD 0
+
+/-- Is `v` a constant to rematerialise per block? -/
+def remat (st : SState) (v : ValueId) : Bool :=
+  st.rematConst && match st.defs.get? v with
+    | some (.iconst ..) => true
+    | _ => false
+
+def enodes (st : SState) (v : ValueId) : List Inst :=
+  ((st.defs.get? v).toList) ++ ((st.alts.get? v).getD []).filterMap st.defs.get?
+
+/-- Insert a node under a fresh value (no simplification). -/
+def insertNode (allowed : Inst → Bool) (st : SState) (n : Inst) : ValueId × SState :=
+  let w := st.next
+  let ty : Option Ty := match n with
+    | .icmp .. => some .i8
+    | _ => (n.resultTypes (fun _ => none)).bind List.head?
+  let ok := allowed n && ty.isSome
+  let c := if ok then (operands n).foldl (fun c x => Cost.add c (st.costOf x)) (Cost.ofInst n)
+           else Cost.infinite
+  (w, { st with next := w + 1, defs := st.defs.insert w n,
+                types := match ty with | some t => st.types.insert w t | none => st.types,
+                cost := st.cost.insert w c, made := st.made.insert w })
+
+end SState
+
+/-- Build the e-class of `v` from the rule candidates and return its best member
+(steps 3–4 of the module doc); records the class of the best member. -/
+def chooseBest (st : SState) (v : ValueId) (cands : List (ValueId × Bool)) : ValueId × SState :=
+  let cands := (cands.take matchesLimit).filter (·.1 != v)
+  let sorted := (cands.toArray.qsort (fun a b => a.1 < b.1)).toList
+  let dedup := sorted.foldl (fun acc c => if acc.any (·.1 == c.1) then acc else acc ++ [c]) []
+  let key := fun (x : ValueId) => (st.costOf x, x)
+  let better := fun (x y : ValueId) => let (cx, ix) := key x; let (cy, iy) := key y
+    cx < cy || (cx == cy && ix < iy)
+  match dedup.find? (fun c => c.2 && st.costOf c.1 < Cost.infinite) with
+  | some (s, _) => (s, st)
+  | none =>
+    let members := v :: (dedup.map (·.1)).take (eclassLimit - 1)
+    let best := members.foldl (fun b x => if better x b then x else b) v
+    (best, { st with classes := st.classes.insert best (members.filter (· != best)) })
+
+/-- Simplify the value `v` of a freshly inserted node, with `d` levels of rewrite depth left
+(`make` recurses with one level less). Returns the best value of `v`'s e-class. -/
+def optimizeAt (rules : SimplifyFn) (allowed : Inst → Bool) : Nat → SState → ValueId → ValueId × SState
+  | 0, st, v => (v, st)
+  | d + 1, st, v =>
+    let make := fun (st : SState) (n : Inst) =>
+      match st.memo.get? n with
+      | some w => (w, st)
+      | none =>
+        let (w, st) := st.insertNode allowed n
+        let (b, st) := optimizeAt rules allowed d st w
+        (b, { st with memo := st.memo.insert n b })
+    match rules SState.enodes (fun st x => st.types.get? x) make st v with
+    | .error _ =>
+      (v, { st with stats := { st.stats with errors := st.stats.errors + 1 } })
+    | .ok (cands, names, st) =>
+      let fired := names.foldl (fun m n => m.insert n ((m.get? n).getD 0 + 1)) st.stats.fired
+      chooseBest { st with stats := { st.stats with fired } } v cands
+
+/-- Emit `x` at the current position of block `bi` (step 5 of the module doc): available
+values are used as they are, virtual ones are emitted (or cloned) after their operands.
+`none` if some leaf is neither available nor a pure node. -/
+def materialize (cfg : Cfg) (allowed : Inst → Bool) (bi : Nat) :
+    Nat → SState × Array Stmt → ValueId → Option (ValueId × SState × Array Stmt)
+  | 0, _, _ => none
+  | fuel + 1, (st, out), x =>
+    match st.avail.get? x with
+    | some d =>
+      if cfg.dominates d bi && !(d != bi && st.remat x) then some (x, st, out)
+      else clone fuel st out x
+    | none => clone fuel st out x
+where
+  clone (fuel : Nat) (st : SState) (out : Array Stmt) (x : ValueId) :
+      Option (ValueId × SState × Array Stmt) := do
+    let n ← st.defs.get? x
+    if !allowed n then none
+    let (st, out, ops) ← (operands n).foldlM (init := (st, out, #[]))
+      fun (st, out, ops) y => do
+        let (y', st, out) ← materialize cfg allowed bi fuel (st, out) y
+        pure (st, out, ops.push y')
+    let opsL := ops.toList
+    let n' := mapOperands (fun y => ((operands n).zip opsL).lookup y |>.getD y) n
+    let (x', st) := if st.avail.contains x then (st.next, { st with next := st.next + 1 })
+                    else (x, st)
+    let st := { st with avail := st.avail.insert x' bi, defs := st.defs.insert x' n',
+                        types := match st.types.get? x with
+                          | some t => st.types.insert x' t | none => st.types,
+                        cost := st.cost.insert x' (st.costOf x) }
+    pure (x', st, out.push { results := [x'], inst := n' })
+
+/-- Materialise a list of values (`materialize` each, left to right). -/
+def materializeAll (cfg : Cfg) (allowed : Inst → Bool) (bi : Nat) (st : SState)
+    (xs : List ValueId) : Option (List (ValueId × ValueId) × SState × Array Stmt) :=
+  xs.foldlM (init := ([], st, #[])) fun (m, st, out) x => do
+    let (x', st, out) ← materialize cfg allowed bi (st.defs.size + 1) (st, out) x
+    pure (m ++ [(x, x')], st, out)
+
+def rename (m : List (ValueId × ValueId)) (x : ValueId) : ValueId := (m.lookup x).getD x
+
+/-- Cranelift's `Cost::of_skeleton_op` for the instructions skeleton rules produce: opcode
+cost 4, +10 if it can trap, + number of operands. -/
+def skelCost : Isle.Opt.SkelInst → Nat
+  | .inst i => (match i with
+      | .div .. | .uaddOverflowTrap .. | .trapz .. | .trapnz .. => 14
+      | .load .. => 24
+      | _ => 4) + (operands i).length
+  | .term t => 4 + (match t with | .brif .. | .brTable .. => 1 | _ => 0)
+
+/-- Cranelift's choice among `simplify_skeleton` results (`simplify_skeleton_inst`): at most
+`matchesLimit`, scanned from the last; `Remove*`, `ReplaceBranchCond`, `ReplaceWithTwo` are
+taken at once, a `Replace*` only if its skeleton cost is below the best so far (initially the
+original's). -/
+def chooseSkel (orig : Isle.Opt.SkelInst) (cands : List Isle.Opt.SkelSimp) :
+    Option Isle.Opt.SkelSimp := Id.run do
+  let mut best : Option Isle.Opt.SkelSimp := none
+  let mut bestCost := skelCost orig
+  for c in (cands.take matchesLimit).reverse do
+    match c with
+    | .remove | .removeWithVal _ | .replaceBranchCond _ | .replaceWithTwo .. => return some c
+    | .replace i | .replaceWithVal i _ =>
+      if skelCost i < bestCost then
+        best := some c
+        bestCost := skelCost i
+  return best
+
+/-- The skeleton instructions and terminators the rules can simplify. -/
+def skelCandidate : Isle.Opt.SkelInst → Bool
+  | .inst (.div ..) | .inst (.uaddOverflowTrap ..) | .inst (.trapz ..) | .inst (.trapnz ..) => true
+  | .term (.brif ..) | .term (.brTable ..) => true
+  | _ => false
+
+/-- `make` for the skeleton rules: hash-cons, else insert and simplify (full depth). -/
+def skelMake (rules : SimplifyFn) (allowed : Inst → Bool) (st : SState) (n : Inst) :
+    ValueId × SState :=
+  match st.memo.get? n with
+  | some w => (w, st)
+  | none =>
+    let (w, st) := st.insertNode allowed n
+    let (b, st) := optimizeAt rules allowed rewriteLimit { st with memo := st.memo.insert n w } w
+    (b, { st with memo := st.memo.insert n b })
+
+/-- Run the skeleton rules on `i`; the chosen simplification, if any. -/
+def runSkel (skel : SkeletonFn) (rules : SimplifyFn) (allowed : Inst → Bool) (st : SState)
+    (i : Isle.Opt.SkelInst) : Option Isle.Opt.SkelSimp × SState :=
+  if !skelCandidate i then (none, st) else
+  match skel SState.enodes (fun st x => st.types.get? x) (skelMake rules allowed)
+      (fun st b => st.trapBlocks.get? b) { st with made := {} } i with
+  | .error _ => (none, { st with stats := { st.stats with errors := st.stats.errors + 1 } })
+  | .ok (cands, names, st1) =>
+    let c := chooseSkel i cands
+    let fired := names.foldl (fun m n => m.insert n ((m.get? n).getD 0 + 1)) st1.stats.fired
+    let st1 := { st1 with stats := { st1.stats with fired } }
+    match c with
+    | some _ => (c, { st1 with stats := { st1.stats with skeleton := st1.stats.skeleton + 1 } })
+    | none => (none, st1)
+
+/-- Simplify a skeleton statement (reprocessing its replacement up to `fuel` times): the
+statements replacing it and the renamings of its results. Anything that cannot be applied
+(a node that cannot be materialised, a result arity or type change, an instruction outside
+`skelOk`) keeps the statement. -/
+def skelStmt (skel : SkeletonFn) (rules : SimplifyFn) (allowed skelOk : Inst → Bool) (cfg : Cfg)
+    (bi : Nat) : Nat → SState → Stmt → Array Stmt × List (ValueId × ValueId) × SState
+  | 0, st, s => (#[s], [], st)
+  | fuel + 1, st, s =>
+    let (c, st1) := runSkel skel rules allowed st (.inst s.inst)
+    let keep := (#[s], [], st1)
+    let sameResults := fun (i : Inst) =>
+      i.resultTypes (fun _ => none) == s.inst.resultTypes (fun _ => none)
+    match c with
+    | none => keep
+    | some .remove => if s.results.isEmpty then (#[], [], st1) else keep
+    | some (.removeWithVal v) =>
+      match s.results with
+      | [r] =>
+        if st1.types.get? v != st1.types.get? r then keep else
+        match materialize cfg allowed bi (st1.defs.size + 1) (st1, #[]) v with
+        | some (v', st2, out) => (out, [(r, v')], st2)
+        | none => keep
+      | _ => keep
+    | some (.replace (.inst i)) =>
+      if !skelOk i || !sameResults i then keep else
+      match materializeAll cfg allowed bi st1 (operands i) with
+      | some (m, st2, out) =>
+        let (more, sub, st3) := skelStmt skel rules allowed skelOk cfg bi fuel st2
+          { s with inst := mapOperands (rename m) i }
+        (out ++ more, sub, st3)
+      | none => keep
+    | some (.replaceBranchCond c) =>
+      let i := match s.inst with
+        | .trapz _ code => some (Inst.trapz c code)
+        | .trapnz _ code => some (Inst.trapnz c code)
+        | _ => none
+      match i with
+      | none => keep
+      | some i =>
+        match materializeAll cfg allowed bi st1 [c] with
+        | some (m, st2, out) =>
+          let (more, sub, st3) := skelStmt skel rules allowed skelOk cfg bi fuel st2
+            { s with inst := mapOperands (rename m) i }
+          (out ++ more, sub, st3)
+        | none => keep
+    | some (.replaceWithTwo (.inst a) (.inst b)) =>
+      if !s.results.isEmpty || !skelOk a || !skelOk b ||
+          a.resultTypes (fun _ => none) != some [] || b.resultTypes (fun _ => none) != some [] then keep
+      else
+        match materializeAll cfg allowed bi st1 (operands a ++ operands b) with
+        | some (m, st2, out) =>
+          (out ++ #[{ inst := mapOperands (rename m) a }, { inst := mapOperands (rename m) b }], [], st2)
+        | none => keep
+    | some _ => keep
+
+/-- Simplify a terminator (reprocessing up to `fuel` times): statements to append to the
+block body and the new terminator. -/
+def skelTerm (skel : SkeletonFn) (rules : SimplifyFn) (allowed skelOk : Inst → Bool) (cfg : Cfg)
+    (bi : Nat) : Nat → SState → Terminator → Array Stmt × Terminator × SState
+  | 0, st, t => (#[], t, st)
+  | fuel + 1, st, t =>
+    let (c, st1) := runSkel skel rules allowed st (.term t)
+    let keep := (#[], t, st1)
+    match c with
+    | some (.replace (.term t')) =>
+      match materializeAll cfg allowed bi st1 (termOperands t') with
+      | some (m, st2, out) =>
+        let (more, t'', st3) := skelTerm skel rules allowed skelOk cfg bi fuel st2 (mapTerm (rename m) t')
+        (out ++ more, t'', st3)
+      | none => keep
+    | some (.replaceBranchCond c) =>
+      match t with
+      | .brif _ th el =>
+        match materializeAll cfg allowed bi st1 [c] with
+        | some (m, st2, out) =>
+          let (more, t'', st3) := skelTerm skel rules allowed skelOk cfg bi fuel st2
+            (.brif (rename m c) th el)
+          (out ++ more, t'', st3)
+        | none => keep
+      | _ => keep
+    | some (.replaceWithTwo (.inst a) (.term t')) =>
+      if !skelOk a || a.resultTypes (fun _ => none) != some [] then keep else
+      match materializeAll cfg allowed bi st1 (operands a ++ termOperands t') with
+      | some (m, st2, out) =>
+        let (more, t'', st3) := skelTerm skel rules allowed skelOk cfg bi fuel st2 (mapTerm (rename m) t')
+        (out ++ #[{ inst := mapOperands (rename m) a }] ++ more, t'', st3)
+      | none => keep
+    | _ => keep
+
+/-- Is `b` a `just_trap_block` (pure body, `trap` terminator)? -/
+def trapBlock? (b : Block) : Option TrapCode :=
+  match b.term with
+  | .trap code => if b.body.all (isPure ·.inst) then some code else none
+  | _ => none
+
+/-- The simplify pass. `allowed` restricts the nodes it may emit. -/
+def simplify (rules : SimplifyFn) (skel : SkeletonFn) (allowed skelOk : Inst → Bool)
+    (rematConst : Bool) (f : Function) (info : Info) : Function × SimplifyStats := Id.run do
+  let cfg := info.cfg
+  let blocks := f.blocks.toArray
+  let trapBlocks := f.blocks.foldl (fun m b => match trapBlock? b with
+    | some c => m.insert b.id c | none => m) {}
+  let mut st : SState := { next := maxValue f + 1, types := info.types, trapBlocks, rematConst }
+  -- parameters and skeleton results are available in their blocks, with cost 0
+  for (b, bi) in blocks.zipIdx do
+    for (p, _) in b.params do st := { st with avail := st.avail.insert p bi }
+    for s in b.body do
+      if !(isPure s.inst && s.results.length == 1) then
+        for r in s.results do st := { st with avail := st.avail.insert r bi }
+  let mut subst : Subst := {}
+  let mut out := blocks
+  for bi in cfg.rpo do
+    let b := blocks[bi]!
+    let mut body : Array Stmt := #[]
+    for s in b.body do
+      let inst := mapOperands subst.find s.inst
+      match s.results, isPure inst with
+      | [v], true =>
+        let c := (operands inst).foldl (fun c x => Cost.add c (st.costOf x)) (Cost.ofInst inst)
+        st := { st with defs := st.defs.insert v inst, cost := st.cost.insert v c,
+                        made := {}, classes := {} }
+        let hit := match st.memo.get? inst with
+          | some w => if st.remat w && st.avail.get? w != some bi then none else some w
+          | none => none
+        let (best, st1) := match hit with
+          | some w => (w, st)
+          | none =>
+            let (b, st1) := optimizeAt rules allowed rewriteLimit
+              { st with memo := st.memo.insert inst v } v
+            (b, { st1 with memo := st1.memo.insert inst b })
+        let keep := fun (st : SState) =>
+          { st with avail := st.avail.insert v bi }
+        if best == v then
+          st := keep st1
+          body := body.push { s with inst }
+        else
+          match materialize cfg allowed bi (st1.defs.size + 1) (st1, #[]) best with
+          | some (w, st2, emitted) =>
+            st := { st2 with stats := { st2.stats with rewritten := st2.stats.rewritten + 1,
+                                                        emitted := st2.stats.emitted + emitted.size } }
+            body := body ++ emitted
+            subst := subst.insert v w
+          | none =>
+            st := keep st1
+            body := body.push { s with inst }
+        -- make the class visible to later matches when its representative is new here
+        let rep := subst.find v
+        if rep == v || st1.made.contains best then
+          let members := (st1.classes.get? best).getD []
+          if !members.isEmpty then st := { st with alts := st.alts.insert rep members }
+      | _, _ =>
+        let (stmts, sub, st1) := skelStmt skel rules allowed skelOk cfg bi rewriteLimit st { s with inst }
+        st := st1
+        body := body ++ stmts
+        for (r, w) in sub do subst := subst.insert r w
+    let (extra, term, st1) := skelTerm skel rules allowed skelOk cfg bi rewriteLimit st (mapTerm subst.find b.term)
+    st := st1
+    body := body ++ extra
+    out := out.set! bi { b with body := body.toList, term }
+  return (subst.apply { f with blocks := out.toList }, st.stats)
+
+end Opt

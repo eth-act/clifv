@@ -52,3 +52,15 @@ root = "FVTest.Backend.Regalloc.Test"
 [[lean_exe]]
 name = "lean-e2e-check"
 root = "FVTest.E2E.Check"
+
+[[lean_exe]]
+name = "clif-opt"
+root = "FVTest.Opt.Main"
+
+[[lean_exe]]
+name = "opt-difftest"
+root = "FVTest.Opt.DiffTest"
+
+[[lean_exe]]
+name = "opt-fuzz"
+root = "FVTest.Opt.Fuzz"
