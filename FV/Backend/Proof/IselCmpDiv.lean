@@ -336,4 +336,149 @@ theorem imm_divOpnd {n : Nat} (hn : n = 8 ∨ n = 16 ∨ n = 32 ∨ n = 64) {e :
     rw [Nat.mod_eq_of_lt this] at h1
     omega
 
+theorem prun_runs {F : BitVec 64 → Prop} {isem : Sem} {ms : List MInst} {ρ ρ' : Nat → CV}
+    (h : PRun F isem ms ρ ρ') (w : Arm.ArmState) {P : (Nat → CV) → Arm.ArmState → Prop}
+    (hP : ∀ w', P ρ' w') : Runs F isem ms ρ w P := by
+  obtain ⟨w', hr, hw⟩ := h w
+  exact ⟨ρ', w', hr, ⟨fun f hf _ => hw.1 f hf, hw.2.1, hw.2.2⟩, hP w'⟩
+
+theorem lo64_ofX' (r : BitVec 64) : lo64 (ofX r) = r := by
+  simp only [lo64, ofX, BitVec.setWidth_setWidth_of_le _ (show 64 ≤ 128 by decide), BitVec.setWidth_eq]
+
+/-- The register an `imm` defines is below the state after it (else the run would not change
+it, and it could not hold the constant from every start). -/
+theorem immOut_lt {F : BitVec 64 → Prop} {isem : Sem} {w e c : Nat} (hw : 0 < w) (hw64 : w ≤ 64)
+    (w0 : Arm.ArmState)
+    {st st' : LState} {v : V} (h : ImmOut F isem w e c st st' v) :
+    ∃ d ms, v = .reg (.vreg d .int) ∧ CodeShape st st' ms d st.nextVreg ∧ d < st'.nextVreg ∧
+      ∀ ρ, ∃ ρ' X, PRun F isem ms ρ ρ' ∧ lo64 (ρ' d) = BitVec.ofNat 64 X ∧ X % 2 ^ w = c % 2 ^ w ∧
+        (w ≠ 32 ∨ e = 0 ∨ c < 2 ^ 32 → X = immVal w (e == 0) c) := by
+  obtain ⟨ms, d, rfl, hsh, hrun⟩ := h
+  refine ⟨d, ms, rfl, hsh, ?_, hrun⟩
+  refine Nat.lt_of_not_le fun hle => ?_
+  obtain ⟨ρ', X, hp, hX, hXc, -⟩ := hrun (fun _ => ofX (BitVec.ofNat 64 (c + 1)))
+  obtain ⟨w', hr, -⟩ := hp w0
+  have hfr := seqRun_frame isem hr d fun m hm hd => by have := hsh.defs m hm d hd; omega
+  rw [hfr, lo64_ofX'] at hX
+  have := congrArg BitVec.toNat hX
+  simp only [BitVec.toNat_ofNat] at this
+  have hpw : 2 ^ w ∣ 2 ^ 64 := Nat.pow_dvd_pow 2 hw64
+  have h1 : (c + 1) % 2 ^ w = X % 2 ^ w := by
+    rw [← Nat.mod_mod_of_dvd (c + 1) hpw, ← Nat.mod_mod_of_dvd X hpw, this]
+  rw [hXc] at h1
+  have h2 : 2 ≤ 2 ^ w := by
+    calc 2 = 2 ^ 1 := rfl
+      _ ≤ 2 ^ w := Nat.pow_le_pow_right (by omega) hw
+  have h3 := Nat.sub_mod_eq_zero_of_mod_eq h1
+  rw [show c + 1 - c = 1 by omega, Nat.mod_eq_of_lt (by omega)] at h3
+  cases h3
+
+/-! ## Meaning of `put_nonzero_in_reg` -/
+
+theorem imm64OfIconst_ne_zero {ty : Clif.Ty} {imm : BitVec ty.width} (h : imm64OfIconst ty imm ≠ 0) :
+    imm ≠ 0#ty.width := by
+  rintro rfl
+  apply h
+  unfold imm64OfIconst
+  split <;> simp
+
+/-- **Semantic contract of `put_nonzero_in_reg`**: the returned vreg `k` holds the divisor as a
+division operand, after a check that halts with `int_divz` on a zero divisor. -/
+theorem divisor_sem {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem) {f : Clif.Function}
+    {ctx : Ctx} (hctx : CtxInv f ctx) {y e w : Nat} (hw : w = 8 ∨ w = 16 ∨ w = 32 ∨ w = 64)
+    (he : e = 0 ∨ e = 1) {s s' : LState} {v : V} (hvb : ValsBelow ctx s)
+    (hD : (∃ j info ity imm, ctx.defInst? y = some j ∧ ctx.insts[j]? = some info ∧
+        info.clif = some (.iconst ity imm) ∧ eTy ity = true ∧ imm64OfIconst ity imm ≠ 0 ∧
+        ImmOut F isem w e (u64 (imm64OfIconst ity imm)) s s' v) ∨
+      (w = 64 ∧ ∃ ry, ctx.valueReg? y = some ry ∧ v = .reg ry ∧
+        s' = s.emit (.trapIf (.zero ry .size64) .intDivz)) ∨
+      (w ≤ 32 ∧ ∃ r s2, ExtOut ctx y (e == 0) 32 [.int 32, .int 64] s s2 (.reg r) ∧ v = .reg r ∧
+        s' = s2.emit (.trapIf (.zero r .size32) .intDivz))) :
+    ∃ k ms, v = .reg (.vreg k .int) ∧ Frag s s' ms ∧ (s.nextVreg ≤ k ∨ k = y) ∧
+      ∀ (fr : Clif.Frame) (ρ : Nat → CV) (ty : Clif.Ty) (b : BitVec ty.width), ty.width = w →
+        ValsHeld fr ρ → DFGCons ctx fr → fr.regs y = some ⟨ty, b⟩ →
+        UsesLo s.nextVreg fr ms ∧ ∀ wd, k < s'.nextVreg ∧
+          (b = 0#ty.width → TrapRun isem ms ρ wd .intDivz) ∧
+          (b ≠ 0#ty.width → Runs F isem ms ρ wd (fun ρ' _ => DivOpnd (e == 0) b (ρ' k))) := by
+  rcases hD with ⟨j, info, ity, imm, hj, hi, hcl, hety, hne, hI⟩ | ⟨rfl, ry, hry, rfl, rfl⟩ |
+    ⟨hw32, r, s2, hE, rfl, rfl⟩
+  · -- `iconst`: `imm`, no check
+    obtain ⟨ms, d, rfl, hsh, hrun⟩ := hI
+    refine ⟨d, ms, rfl, ⟨hsh.emitted, hsh.mono, hsh.defs⟩, .inl hsh.res,
+      fun fr ρ ty b htw hh hdf hyv => ⟨?_, fun wd => ?_⟩⟩
+    · intro m hm u hu
+      rcases hsh.uses m hm u hu with h | h
+      · exact .inl h
+      · exact .inl (by omega)
+    have hv := iconst_val hdf hj hi hcl hyv
+    simp only [Clif.Val.mk.injEq] at hv
+    obtain ⟨rfl, hb⟩ := hv
+    have hb' : b = imm := eq_of_heq hb
+    subst hb'
+    have hw64 := eTy_width hety
+    obtain ⟨d', ms', he', hsh', hlt, hrun'⟩ := immOut_lt (by omega) (by omega) wd ⟨ms, d, rfl, hsh, hrun⟩
+    cases he'
+    refine ⟨hlt, fun h0 => absurd h0 (imm64OfIconst_ne_zero hne), fun _ => ?_⟩
+    obtain ⟨ρ', X, hp, hX, hXc, hXv⟩ := hrun ρ
+    refine prun_runs hp wd fun _ => ?_
+    rw [u64_imm64OfIconst hw64] at hXc hXv
+    subst htw
+    exact imm_divOpnd hw he b hXc hXv hX
+  · -- 64-bit register, `trapIf (zero y)`
+    have hry' := hctx.valueReg y ry hry
+    subst hry'
+    have hylt := hvb y _ hry
+    refine ⟨y, _, rfl, Frag.emit_nodef s (vdefs_trapIf_zero _ _ _), .inr rfl,
+      fun fr ρ ty b htw hh hdf hyv => ⟨?_, fun wd => ⟨by simpa [LState.emit] using hylt, ?_⟩⟩⟩
+    · intro m hm u hu
+      simp only [List.mem_singleton] at hm
+      subst hm
+      rw [vuseNums_trapIf_zero, List.mem_singleton] at hu
+      subst hu
+      exact .inr (by simp [hyv])
+    have hd : DivOpnd (e == 0) b (ρ y) := by
+      have hv := hh y _ hyv
+      cases ty <;> simp [Clif.Ty.width] at htw
+      simp only [VHolds, Clif.Ty.width] at hv
+      unfold DivOpnd
+      simp only [Clif.Ty.width, show ¬ (64 : Nat) ≤ 32 by decide, ↓reduceIte, lo64, BitVec.setWidth_eq]
+      exact hv
+    have hz := hd.zero_iff (by omega) wd (.vreg y .int)
+    rw [show szOf ty.width = .size64 by rw [htw]; rfl] at hz
+    refine ⟨fun h0 => trapRun_trapIf_zero hR _ _ _ ρ wd (by rw [hz, h0]; simp), fun h0 => ?_⟩
+    refine (runs_trapIf_zero_fall hR _ _ _ ρ wd (by rw [hz]; simpa using h0)).imp fun ρ' _ _ e => ?_
+    rw [e]; exact hd
+  · -- extended to 32 bits, `trapIf (zero r)`
+    obtain ⟨k, ms, hkr, hf, hklt, hk, hsem⟩ := ExtOut.sem hR hctx hvb (.inl rfl)
+      (by intro t ht; simp at ht; rcases ht with rfl | rfl <;> simp) (fun _ => by simp) hE
+    cases hkr
+    refine ⟨k, ms ++ [.trapIf (.zero (.vreg k .int) .size32) .intDivz], rfl,
+      hf.append (Frag.emit_nodef s2 (vdefs_trapIf_zero _ _ _)), hk,
+      fun fr ρ ty b htw hh hdf hyv => ?_⟩
+    obtain ⟨hu, hrun⟩ := hsem fr ρ _ hh hdf hyv
+    refine ⟨UsesLo.append hu ?_, fun wd => ⟨by simpa [LState.emit] using hklt, ?_⟩⟩
+    · intro m hm u hu'
+      simp only [List.mem_singleton] at hm
+      subst hm
+      rw [vuseNums_trapIf_zero, List.mem_singleton] at hu'
+      subst hu'
+      rcases hk with h | rfl
+      · exact .inl h
+      · exact .inr (by simp [hyv])
+    have hd : ∀ a, ExtHolds (e == 0) 32 ⟨ty, b⟩ a → DivOpnd (e == 0) b a := by
+      intro a ha
+      unfold DivOpnd
+      simp only [show ty.width ≤ 32 by omega, ↓reduceIte]
+      exact ha.2 (by simp; omega)
+    have hsz : szOf ty.width = .size32 := by simp [szOf, show ty.width ≤ 32 by omega]
+    refine ⟨fun h0 => TrapRun.prefix (hrun wd) fun ρ1 w1 h1 => ?_, fun h0 => ?_⟩
+    · have hz := (hd _ h1).zero_iff (by omega) w1 (.vreg k .int)
+      rw [hsz] at hz
+      exact trapRun_trapIf_zero hR _ _ _ ρ1 w1 (by rw [hz, h0]; simp)
+    · refine Runs.append (hrun wd) fun ρ1 w1 h1 => ?_
+      have hz := (hd _ h1).zero_iff (by omega) w1 (.vreg k .int)
+      rw [hsz] at hz
+      refine (runs_trapIf_zero_fall hR _ _ _ ρ1 w1 (by rw [hz]; simpa using h0)).imp fun ρ' _ _ e => ?_
+      rw [e]; exact hd _ h1
+
 end Backend.Proof
