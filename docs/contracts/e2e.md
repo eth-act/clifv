@@ -269,3 +269,9 @@ Backend.Proof.Driver.termCalls_of_rules:
   [propext, Classical.choice, Quot.sound]
 E2E.clifEntry_initState: [propext, Quot.sound]
 ```
+
+**Status (M6Insts2, 2026-09-28)**: `hRef`/`hmem` of `backend_correct_m4` are not yet discharged.
+csem now falls back to `mspec` (ispec + memory forms) off error-free aligned worlds; `FormOk` must be
+narrowed (xzr-destination imm/extended add/sub make `Refines` false as is). See regalloc-proof.md
+"Status update (M6Insts2)"; `MemRefines` for `csem` will need `ctx.slotBase = slotOff` and a
+GOT premise `syms n = some b → X.sym n 0 = ofNat b`.

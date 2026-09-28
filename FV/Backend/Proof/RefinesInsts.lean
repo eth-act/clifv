@@ -104,6 +104,22 @@ theorem rv64 (x : BitVec 64) (h0 h1 h2 h3 h4) : Arm.rev_vector 64 64 8 x h0 h1 h
   simp [Arm.rev_vector, Arm.rev_elems, bswap_64]
   bv_decide
 
+theorem nzcv_n (f : NZCV) : Arm.BitVec.lsb (BitVec.ofNat 4 f.bits) 3 = BitVec.ofBool f.n := by
+  obtain ⟨n, z, c, v⟩ := f; cases n <;> cases z <;> cases c <;> cases v <;> rfl
+theorem nzcv_z (f : NZCV) : Arm.BitVec.lsb (BitVec.ofNat 4 f.bits) 2 = BitVec.ofBool f.z := by
+  obtain ⟨n, z, c, v⟩ := f; cases n <;> cases z <;> cases c <;> cases v <;> rfl
+theorem nzcv_c (f : NZCV) : Arm.BitVec.lsb (BitVec.ofNat 4 f.bits) 1 = BitVec.ofBool f.c := by
+  obtain ⟨n, z, c, v⟩ := f; cases n <;> cases z <;> cases c <;> cases v <;> rfl
+theorem nzcv_v (f : NZCV) : Arm.BitVec.lsb (BitVec.ofNat 4 f.bits) 0 = BitVec.ofBool f.v := by
+  obtain ⟨n, z, c, v⟩ := f; cases n <;> cases z <;> cases c <;> cases v <;> rfl
+
+theorem ofNat_sw16 {n bits : Nat} (hn : 16 < n) (h : bits < 65536) :
+    BitVec.ofNat n bits = (BitVec.ofNat 16 bits).setWidth n := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_ofNat, BitVec.toNat_setWidth]
+  rw [Nat.mod_eq_of_lt (by omega : bits < 2 ^ 16), Nat.mod_eq_of_lt]
+  exact Nat.lt_of_lt_of_le h (by simpa using Nat.pow_le_pow_right (by decide : 0 < 2) (Nat.le_of_lt hn))
+
 theorem ext0 {n : Nat} (k : Nat) (x : BitVec n) : x.extractLsb' 0 k = x.setWidth k := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi; simp [hi]
 
@@ -160,6 +176,7 @@ macro_rules
       | refine ⟨_, ⟨rfl, rfl⟩, ?_⟩
       | refine ⟨_, rfl, ?_⟩
       | refine ⟨_, ⟨?_, rfl, ?_⟩, ?_⟩
+      | skip
     all_goals (first | with_reducible rfl | sw_fin | val_fin)))
 
 
@@ -182,9 +199,10 @@ macro_rules
     all_goals (revert h; try simp only [and_imp])
     all_goals intros
     all_goals subst_vars
+    all_goals (try (exfalso; omega))
     all_goals (simp (config := {decide := true}) [csimp_rules, he, Arm.w_program, imm12_enc,
       sw_ofNat, le_false, ↓dsh_lsl, ↓dsh_lsr, ↓dsh_asr, ↓dsh_ror, lsb5_of_lt, and32_of_lt,
-      mod64_of_lt32, mod_of_lt', *])
+      mod64_of_lt32, mod_of_lt', nzcv_n, nzcv_z, nzcv_c, nzcv_v, Arm.reduceDecodeBitMasks, *])
     all_goals ref_fin))
 
 /-- The per-form proof. -/
@@ -274,5 +292,34 @@ set_option maxHeartbeats 4000000 in
 theorem ref_csel (d n m : Nat) (c : Cond) (a b : CV) :
     RefAt F ctx (.csel (.vreg d .int) (.vreg n .int) (.vreg m .int) c) [a, b] := by
   cases c <;> ref_tac_fl
+
+set_option maxHeartbeats 4000000 in
+theorem ref_movK (d n : Nat) (imm : MoveWideConst) (sz : OperandSize) (a : CV) :
+    RefAt F ctx (.movK (.vreg d .int) (.vreg n .int) imm sz) [a] := by
+  obtain ⟨bits, sh⟩ := imm
+  rcases sh with _ | _ | _ | _ | sh <;> cases sz <;> ref_tac
+
+set_option maxHeartbeats 4000000 in
+theorem ref_ccmpImm (sz : OperandSize) (n : Nat) (imm : Nat) (nzcv : NZCV) (c : Cond) (a : CV) :
+    RefAt F ctx (.ccmpImm sz (.vreg n .int) imm nzcv c) [a] := by
+  cases sz <;> cases c <;> ref_tac_fl
+
+set_option maxHeartbeats 4000000 in
+theorem ref_movWide (d : Nat) (imm : MoveWideConst) (sz : OperandSize) :
+    RefAt F ctx (.movWide .movZ (.vreg d .int) imm sz) [] := by
+  obtain ⟨bits, sh⟩ := imm
+  rcases sh with _ | _ | _ | _ | sh <;> cases sz <;> ref_tac
+
+set_option maxHeartbeats 4000000 in
+theorem ref_aluRRImm12_xd (op : ALUOp) (sz : OperandSize) (n : Nat) (imm : Imm12) (a : CV)
+    (hop : (op == .subS || op == .addS) = true) :
+    RefAt F ctx (.aluRRImm12 op sz .xzr (.vreg n .int) imm) [a] := by
+  cases op <;> simp at hop <;> cases sz <;> ref_tac
+
+set_option maxHeartbeats 4000000 in
+theorem ref_aluRRRExtend_xd (op : ALUOp) (sz : OperandSize) (n m : Nat) (e : ExtendOp) (a b : CV)
+    (hop : (op == .subS || op == .addS) = true) :
+    RefAt F ctx (.aluRRRExtend op sz .xzr (.vreg n .int) (.vreg m .int) e) [a, b] := by
+  cases op <;> simp at hop <;> cases sz <;> cases e <;> ref_tac
 
 end Backend.Proof

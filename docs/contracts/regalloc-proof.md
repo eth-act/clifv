@@ -492,3 +492,26 @@ halts/rets are trivial for `Realizes` since `Q` is `True` there), and the assemb
 
 `#print axioms realizes_jt / realizes_call / realizes_symAddr`: `propext, Classical.choice,
 Quot.sound` plus M5's `decode_armBits_*._native.bv_decide` axioms.
+
+## Status update (M6Insts2, 2026-09-28)
+
+- **Build fix**: `CSemRename.lean` proves `ispec_mapRegs`, `formOk_mapRegs`, `csemWF_mapRegs`,
+  `amodeAddr_mapRegs`, `mspec_mapRegs` for a `VRenaming` (registers split into renamed vreg /
+  concrete real register, uses by length, enumerations; then `rfl`). `driverSem_csem.rename`
+  uses them via `csem_straight`.
+- **csem change (decision)**: the straight-line clause is now
+  `if csemWF ∧ ERR w = None ∧ CheckSPAlignment w then straightSem else mspec ctx.slotBase`.
+  `mspec` = `ispec` extended by the memory forms exactly as `MemRefines` states them, so
+  `MemRefines` holds on error/misaligned worlds, where the canonical run can't be used.
+  `csem_of_wf`/`csem_useVals` take the alignment (from `OperandsSound`'s `SameWorld` + aligned `s`).
+- **FormOk must be narrowed (NOT applied: the edit broke `RegallocOS`'s `fo_tac` proofs)**: `false` for logical immediates, immediate shifts,
+  `bitfieldMove`, FP/vector forms; `movWide` only `movz`; `xzr` destinations of imm/extended
+  `add`/`sub` only for `adds`/`subs` (Arm writes `sp` otherwise — with the current FormOk `Refines`
+  for csem is FALSE on those forms). Re-enabling needs Arm-level lemmas: bitmask round-trip of `bitmaskEnc?`,
+  `DecodeBitMasks` with symbolic immr/imms (or enumeration), `movn` values, `cnt/addp/addv/umov/fmov`.
+- **Refines**: `RefinesInsts.lean`: `ref_tac`/`ref_tac_fl` and `RefAt` lemmas for aluRRR (all 5
+  register shapes), aluRRRR (+xzr), aluRRImm12 (+xzr adds/subs), aluRRRShift, aluRRRExtend
+  (+xzr adds/subs), bitRR, movWide(movz), movK, cset, csel, ccmpImm.
+- **Open**: `ref_extend` (3 cases), the dispatcher `refAt_of_wf` and the final
+  `Refines F (csem F ctx X)`; `MemRefines` (needs premises `ctx.slotBase = slotOff` and
+  `syms n = some b → X.sym n 0 = ofNat b`, since csem is parametric in both).

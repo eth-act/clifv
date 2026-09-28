@@ -192,7 +192,7 @@ theorem os_oneDef {F : BitVec 64 → Prop} {sem : ISem CV Arm.ArmState}
     (hex : ∀ r s, exec (mk r) s =
       some (Arm.w (.GPR (r.encZR.toOption.getD 31#5)) v (Arm.w .PC (Arm.r .PC s + 8) s))) :
     OperandsSound F exec sem i := by
-  intro c wh ops regs i' s w outs w' hops' hst hasg' hw hal hsem'
+  intro c wh ops regs i' s w outs w' hops' hst hasg' hw hal _ hsem'
   rw [hops] at hops'
   cases hops'
   obtain ⟨r, rfl, rfl⟩ := hasg regs i' hasg'
