@@ -118,17 +118,18 @@ theorem extractMulti_idv_sem {P : σ → Prop} {den : σ → Valuation} {fr : Fr
   · rintro ⟨t, ht, -, i, hi, -, d, hd, hq⟩
     exact ⟨t, ht, i, hi, d, hd, hq⟩
 
-/-- The model's fact about a node of a class (added by `opt_model`). -/
-theorem GraphOk.node_sem {G : EGraph σ} {P : σ → Prop} {den : σ → Valuation} {fr : Frame} {mem : Mem}
-    (hG : GraphOk G P den fr mem) {st : σ} {x : Nat} {i : Inst} (hm : i ∈ G.enodes st x) :
-    P st → ∀ c, den st x = some c → evalNode { fr with regs := den st } mem i = some c :=
-  fun hP c hc => hG.model.nodes st x c hP hc i hm
+/-- The model's fact about a node of a class with a known value (added by `opt_model`). -/
+theorem GraphOk.node_val {G : EGraph σ} {P : σ → Prop} {den : σ → Valuation} {fr : Frame} {mem : Mem}
+    (hG : GraphOk G P den fr mem) {st : σ} {x : Nat} {i : Inst} {c : Val}
+    (hm : i ∈ G.enodes st x) (hc : den st x = some c) :
+    P st → evalNode { fr with regs := den st } mem i = some c :=
+  fun hP => hG.model.nodes st x c hP hc i hm
 
-/-- The model's fact about the type of a class (added by `opt_model`). -/
-theorem GraphOk.type_sem {G : EGraph σ} {P : σ → Prop} {den : σ → Valuation} {fr : Frame} {mem : Mem}
-    (hG : GraphOk G P den fr mem) {st : σ} {x : Nat} {t : Ty} (ht : G.typeOf st x = some t) :
-    P st → ∀ c, den st x = some c → c.ty = t :=
-  fun hP c hc => hG.model.types st x t c hP ht hc
+/-- The model's fact about the type of a class with a known value (added by `opt_model`). -/
+theorem GraphOk.type_val {G : EGraph σ} {P : σ → Prop} {den : σ → Valuation} {fr : Frame} {mem : Mem}
+    (hG : GraphOk G P den fr mem) {st : σ} {x : Nat} {t : Ty} {c : Val}
+    (ht : G.typeOf st x = some t) (hc : den st x = some c) : P st → c.ty = t :=
+  fun hP => hG.model.types st x t c hP ht hc
 
 /-! ### `make` in the model -/
 

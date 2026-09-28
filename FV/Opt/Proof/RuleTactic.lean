@@ -14,7 +14,10 @@ namespace Opt.Proof
 
 open Lean Meta Elab Tactic
 
-/-- One `cases` on the first `∃`/`∧`/`∨`/`False` hypothesis, if any. -/
+/-- One `cases` on the first `∃`/`∧`/`∨`/`False` hypothesis, or on an equation between two
+`Clif.Val` constructors (dependent unification: `⟨t, b⟩ = ⟨t', b'⟩` substitutes the type and
+the bits where they are variables; `simp`'s `Val.mk.injEq` would leave a `HEq` that `simp_all`
+loses), if any. -/
 def destructStep (g : MVarId) : MetaM (Option (List MVarId)) := g.withContext do
   for d in (← getLCtx) do
     if d.isImplementationDetail then continue
@@ -23,6 +26,10 @@ def destructStep (g : MVarId) : MetaM (Option (List MVarId)) := g.withContext do
         t.isConstOf ``False then
       let subgoals ← g.cases d.fvarId
       return some (subgoals.toList.map (·.mvarId))
+    if let some (ty, l, r) := t.eq? then
+      if ty.isConstOf `Clif.Val && l.isAppOfArity `Clif.Val.mk 2 && r.isAppOfArity `Clif.Val.mk 2 then
+        if let some subgoals ← observing? (g.cases d.fvarId) then
+          return some (subgoals.toList.map (·.mvarId))
   return none
 
 /-- Destructure until no `∃`/`∧`/`∨` hypothesis is left (at most `fuel` steps per goal). -/
@@ -44,46 +51,53 @@ end Opt.Proof
 namespace Opt.Proof
 open Lean Meta Elab Tactic
 
-/-- Marker: the model facts of a hypothesis whose type has hash `h` were added (`opt_model`;
+/-- Marker: the model facts of a pair of hypotheses with key `h` were added (`opt_model`;
 a number, so that `simp_all` leaves it alone). -/
 def OptSeen (_h : Nat) : Prop := True
 
-/-- For every hypothesis `h` such that `f hG h` typechecks (`f` one of the given lemma names),
-add `f hG h` unless `h`'s type is marked `OptSeen`; then mark it. -/
-def addModelFacts (hG : Expr) (lemmas : List Name) : TacticM Bool := withMainContext do
+/-- For every pair of hypotheses `h₁ h₂` such that `f hG h₁ h₂` typechecks (`f` one of the
+given lemma names), add `f hG h₁ h₂` unless the pair (`h₁`'s type, the left-hand side of
+`h₂`'s equation) is marked `OptSeen`; then mark it. -/
+def addPairFacts (hG : Expr) (lemmas : List Name) : TacticM Bool := withMainContext do
   let mut added := false
   let lctx ← getLCtx
   let mut seen : Array Nat := #[]
+  let mut hyps : Array (LocalDecl × Expr) := #[]
   for d in lctx do
     if d.isImplementationDetail then continue
     let t ← instantiateMVars d.type
     if t.isAppOfArity ``OptSeen 1 then
       if let some k := t.appArg!.rawNatLit? then seen := seen.push k
       else if let some k := (t.appArg!.nat?) then seen := seen.push k
-  for d in lctx do
-    if d.isImplementationDetail then continue
-    let dty ← instantiateMVars d.type
-    let key := dty.hash.toNat
-    if seen.contains key then continue
-    for lem in lemmas do
-      let pf? ← observing? (mkAppM lem #[hG, d.toExpr])
-      if let some pf := pf? then
-        let ty ← instantiateMVars (← inferType pf)
-        seen := seen.push key
-        let g ← getMainGoal
-        let (_, g) ← (← g.assert (← mkFreshUserName `hsem) ty pf).intro1P
-        let mark := mkApp (mkConst ``OptSeen) (mkNatLit key)
-        let (_, g) ← (← g.assert (← mkFreshUserName `hseen) mark (mkConst ``True.intro)).intro1P
-        replaceMainGoal [g]
-        added := true
-        break
+    else if t.isAppOfArity ``Eq 3 || t.isAppOfArity ``Membership.mem 5 then
+      hyps := hyps.push (d, t)
+  for (d1, t1) in hyps do
+    for (d2, t2) in hyps do
+      let some (_, l2, _) := t2.eq? | continue
+      let key := (mixHash t1.hash l2.hash).toNat
+      if seen.contains key then continue
+      for lem in lemmas do
+        let pf? ← observing? (mkAppM lem #[hG, d1.toExpr, d2.toExpr])
+        if let some pf := pf? then
+          let ty ← instantiateMVars (← inferType pf)
+          seen := seen.push key
+          let g ← getMainGoal
+          let (_, g) ← (← g.assert (← mkFreshUserName `hsem) ty pf).intro1P
+          let mark := mkApp (mkConst ``OptSeen) (mkNatLit key)
+          let (_, g) ← (← g.assert (← mkFreshUserName `hseen) mark (mkConst ``True.intro)).intro1P
+          replaceMainGoal [g]
+          added := true
+          break
   return added
 
-/-- `opt_model hG`: add the graph model's facts (`GraphOk.node_sem`, `GraphOk.type_sem`) for
-every node-membership and class-type hypothesis. Fails if nothing new was added. -/
+/-- `opt_model hG`: add the graph model's facts for every node of a class whose value is a
+hypothesis `den s x = some c` (`GraphOk.node_val`: the node evaluates to `c`) and for every
+class type (`GraphOk.type_val`: `c.ty` is the class type). Fails if nothing new was added.
+(Pairs, not `∀ c, den s x = some c → …` facts: `simp_all` loses the latter once the class value
+becomes known.) -/
 elab "opt_model " hG:term : tactic => withMainContext do
   let hGe ← elabTerm hG none
-  let added ← addModelFacts hGe [`Opt.Proof.GraphOk.node_sem, `Opt.Proof.GraphOk.type_sem]
+  let added ← addPairFacts hGe [`Opt.Proof.GraphOk.node_val, `Opt.Proof.GraphOk.type_val]
   unless added do throwError "opt_model: nothing to add"
 
 end Opt.Proof

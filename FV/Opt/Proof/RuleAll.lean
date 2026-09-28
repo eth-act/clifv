@@ -1,4 +1,5 @@
 import FV.Opt.Proof.RuleArith
+import FV.Opt.Proof.RuleSkel
 import FV.Opt.Optimize
 
 /-!
@@ -44,5 +45,27 @@ theorem simplifyRulesCorrect_proven : SimplifyRulesCorrect program RuleAllow.pro
 /-- **The proven rule set is sound.** -/
 theorem simplifySound_proven : SimplifySound (RuleSetId.fnWith .proven .cranelift) :=
   simplifySound _ simplifyRulesCorrect_proven (by rw [simplify_rules_length]; decide)
+
+set_option maxRecDepth 20000 in
+/-- No `simplify_skeleton` rule is in the proven allow-list. -/
+theorem skeleton_rules_proven :
+    (program.rulesOf T.«simplify_skeleton».id).filter (fun r => RuleAllow.proven.pred r.id) = [] := by
+  rfl
+
+set_option maxRecDepth 20000 in
+theorem skeleton_rules_length : (program.rulesOf T.«simplify_skeleton».id).length = 39 := by
+  rfl
+
+theorem skeletonRulesCorrect_proven : SkeletonRulesCorrect program RuleAllow.proven.pred := by
+  intro r hr ha
+  have hm : r ∈ (program.rulesOf T.«simplify_skeleton».id).filter
+      (fun r => RuleAllow.proven.pred r.id) := List.mem_filter.2 ⟨hr, ha⟩
+  rw [skeleton_rules_proven] at hm
+  cases hm
+
+/-- **The proven skeleton rule set is sound** (the obligation `simplify`'s pass proof takes for
+`Opt.Config.skeletonFn` with `ruleAllow := .proven`). -/
+theorem skeletonSound_proven : SkeletonSound (RuleSetId.skeletonFnWith .proven .cranelift) :=
+  skeletonSound _ skeletonRulesCorrect_proven (by rw [skeleton_rules_length]; decide)
 
 end Opt.Proof

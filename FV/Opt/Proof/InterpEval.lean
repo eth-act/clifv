@@ -1,4 +1,5 @@
 import FV.Opt.Proof.RuleEmbed
+import FV.Opt.Proof.RuleCtor
 
 /-!
 # Forward evaluation of rule right-hand sides
@@ -102,37 +103,8 @@ theorem ctorFn_pure {fn : String} (h1 : fn ≠ "make_inst_ctor") (h2 : fn ≠ "r
   · exact absurd rfl h3
   · rfl
 
-@[opt_monad] theorem ctorFn_value_array_2 (a b : V) (s : St σ) :
-    ctorFn G "value_array_2_ctor" [a, b] s = .ok (some (.values [a, b], s)) := rfl
-@[opt_monad] theorem ctorFn_value_array_3 (a b c : V) (s : St σ) :
-    ctorFn G "value_array_3_ctor" [a, b, c] s = .ok (some (.values [a, b, c], s)) := rfl
-@[opt_monad] theorem ctorFn_pack_value_array_2 (a b : V) (s : St σ) :
-    ctorFn G "pack_value_array_2" [a, b] s = .ok (some (.values [a, b], s)) := rfl
-@[opt_monad] theorem ctorFn_pack_value_array_3 (a b c : V) (s : St σ) :
-    ctorFn G "pack_value_array_3" [a, b, c] s = .ok (some (.values [a, b, c], s)) := rfl
-
 end
 
-end Opt.Proof
-
-namespace Opt.Proof
-open Isle Isle.Opt
-
-section
-variable {σ : Type} (G : EGraph σ)
-
-theorem ctorFn_imm64_clz (t : CTy) (x : Int) (s : St σ) :
-    ctorFn G "imm64_clz" [.ty t, .int x] s =
-      (panics (Rust.imm64Clz t x)).bind fun r => .ok (some (.int r, s)) := by
-  have : ctorFn G "imm64_clz" [.ty t, .int x] s =
-      ((ctorPure G "imm64_clz" [.ty t, .int x] s).bind fun o => .ok (o.map (·, s))) := rfl
-  rw [this]
-  have : ctorPure G "imm64_clz" [.ty t, .int x] s =
-      ((panics (Rust.imm64Clz t x)).bind fun r => .ok (some (.int r))) := rfl
-  rw [this]
-  cases panics (Rust.imm64Clz t x) <;> rfl
-
-end
 end Opt.Proof
 
 namespace Opt.Proof

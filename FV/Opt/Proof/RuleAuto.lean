@@ -30,6 +30,11 @@ theorem val_some_eq {t : Ty} {b c : BitVec t.width} :
     (some (⟨t, b⟩ : Val) = some ⟨t, c⟩) ↔ b = c := by
   simp
 
+/-- `Val` equations at one type (`Val.mk.injEq` would introduce a `HEq`; equations at two
+types are split by `opt_destruct`). -/
+theorem val_mk_same {t : Ty} {b c : BitVec t.width} : ((⟨t, b⟩ : Val) = ⟨t, c⟩) ↔ b = c := by
+  simp
+
 /-- One `simp_all` pass of the left-hand-side unfolding. -/
 macro "lhs_step" : tactic => `(tactic| simp_all only [opt_match, opt_data, Except.ok.injEq,
   exists_eq_left, exists_eq_left', exists_eq_right, exists_eq_right', List.length_cons,
@@ -40,7 +45,7 @@ macro "lhs_step" : tactic => `(tactic| simp_all only [opt_match, opt_data, Excep
   Nat.reduceLT, Nat.zero_lt_succ, Nat.lt_add_one, Term.externExtractor?,
   Array.size_setIfInBounds, Array.getElem?_setIfInBounds, Array.getElem?_replicate, beq_iff_eq,
   Option.some.injEq, evalNode_unary, evalNode_binary_iff, evalNode_icmp, evalNode_iconst,
-  BinaryOp.isShift, CTy.ofClif_inj, Val.mk.injEq, forall_eq', forall_eq, unaryIdx_eq_iff,
+  BinaryOp.isShift, CTy.ofClif_inj, val_mk_same, forall_eq', forall_eq, unaryIdx_eq_iff,
   binaryIdx_eq_iff, unaryOfIdx?, binaryOfIdx?, true_implies, forall_const, heq_eq_eq, and_imp,
   forall_apply_eq_imp_iff, forall_eq_apply_imp_iff, Nat.reduceEqDiff])
 
