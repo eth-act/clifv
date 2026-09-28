@@ -83,6 +83,43 @@ theorem pres_bindAll (hR : PreOrd R) {α β : Type} {f : α → M σ (List β)}
     simp only [bindAll]
     exact pres_bind hR (hf a) fun _ => pres_bind hR (pres_bindAll hR hf as) fun _ => pres_pure hR _
 
+/-- Every result of `bindAll f l` comes from one call `f a` (`a ∈ l`), run from a state
+`R`-after the start and ending `R`-before the end. -/
+theorem bindAll_run_mem (hR : PreOrd R) {α β : Type} {f : α → M σ (List β)}
+    (hf : ∀ a, Pres I R (f a)) : ∀ (l : List α) (s : σ) (tr : Array RuleId) (res : List β)
+      (s' : σ) (tr' : Array RuleId), I s →
+      (bindAll f l).run (s, tr) = .ok (res, (s', tr')) → ∀ b ∈ res,
+      ∃ a ∈ l, ∃ (s1 : σ) (tr1 : Array RuleId) (bs : List β) (s2 : σ) (tr2 : Array RuleId),
+        I s1 ∧ R s s1 ∧ (f a).run (s1, tr1) = .ok (bs, (s2, tr2)) ∧
+        b ∈ bs ∧ R s2 s'
+  | [], s, tr, res, s', tr', _, h, b, hb => by
+    simp only [bindAll] at h
+    cases h
+    simp at hb
+  | a :: as, s, tr, res, s', tr', hI, h, b, hb => by
+    simp only [bindAll, bind, StateT.bind, StateT.run, pure, StateT.pure, Except.bind] at h
+    cases hfa : f a (s, tr) with
+    | error e => rw [hfa] at h; cases h
+    | ok r1 =>
+      obtain ⟨bs, s1, tr1⟩ := r1
+      rw [hfa] at h
+      simp only at h
+      cases hr : bindAll f as (s1, tr1) with
+      | error e => rw [hr] at h; cases h
+      | ok r2 =>
+        obtain ⟨cs, s2, tr2⟩ := r2
+        rw [hr] at h
+        simp only [Except.ok.injEq, Prod.mk.injEq] at h
+        obtain ⟨rfl, rfl, rfl⟩ := h
+        obtain ⟨hI1, hR1⟩ := hf a s tr bs s1 tr1 hI hfa
+        rcases List.mem_append.1 hb with hb | hb
+        · exact ⟨a, List.mem_cons_self .., s, tr, bs, s1, tr1, hI, hR.refl _, hfa, hb,
+            (pres_bindAll hR hf as s1 tr1 cs s' tr' hI1 hr).2⟩
+        · obtain ⟨a', ha', s3, tr3, bs', s4, tr4, h1, h2, h3, h4, h5⟩ :=
+            bindAll_run_mem hR hf as s1 tr1 cs s' tr' hI1 hr b hb
+          exact ⟨a', List.mem_cons_of_mem _ ha', s3, tr3, bs', s4, tr4, h1,
+            hR.trans _ _ _ hR1 h2, h3, h4, h5⟩
+
 end
 
 /-! ## All interpreter functions -/
