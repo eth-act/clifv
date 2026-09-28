@@ -472,7 +472,7 @@ theorem emit_narrow_imm (hR : Refines F isem) (hctx : CtxInv f ctx) {st st' : LS
   · rintro fr ρ b hh hdf ⟨ty, a, b', hxv, hyv, rfl⟩
     have hyc := iconst_val hdf hj hi hcl hyv
     cases hyc
-    obtain ⟨hu, hr⟩ := hrun fr ρ _ hh hdf hxv
+    obtain ⟨hu, hr⟩ := hrun fr ρ _ (hh x _ hxv) hdf hxv
     refine ⟨hu, fun u hu' => ?_, fun w => (hr w).imp fun ρ' _ _ he =>
       ⟨_, setsFlags_cmpImm .size32 k hbits ρ', ?_⟩⟩
     · rw [vuseNums_cmpImm, List.mem_singleton] at hu'
@@ -528,7 +528,7 @@ theorem emit_narrow_ext (hR : Refines F isem) (hctx : CtxInv f ctx) {st st' : LS
     · exact hk
     · exact Nat.lt_of_lt_of_le (vreg_lt hvb hy) hf.mono
   · rintro fr ρ b hh hdf ⟨ty, a, b', hxv, hyv, rfl⟩
-    obtain ⟨hu, hr⟩ := hrun fr ρ _ hh hdf hxv
+    obtain ⟨hu, hr⟩ := hrun fr ρ _ (hh x _ hxv) hdf hxv
     refine ⟨hu, fun u hu' => ?_, fun w => (hr w).imp fun ρ' w' hrun' he =>
       ⟨_, setsFlags_cmpExt .size32 k y e ρ', ?_⟩⟩
     · rw [vuseNums_cmpExt] at hu'

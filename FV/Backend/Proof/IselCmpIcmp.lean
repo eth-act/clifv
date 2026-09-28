@@ -238,7 +238,7 @@ theorem is_nonzero_ok {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem
       (by simp) (fun _ => by simp) hz
     refine CondCode.notZero (i := 0) (sz := .size32) rfl hf hk ?_
     rintro fr ρ b hh hdf ⟨v, hv, rfl⟩
-    obtain ⟨hu, hr⟩ := hrun fr ρ v hh hdf hv
+    obtain ⟨hu, hr⟩ := hrun fr ρ v (hh x v hv) hdf hv
     refine ⟨hu, ?_, fun w => (hr w).imp fun ρ' _ _ ⟨h1, h2⟩ => ?_⟩
     · rcases hkx with h | rfl
       · exact .inl h

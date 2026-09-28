@@ -396,7 +396,7 @@ theorem divisor_sem {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem) 
         s' = s2.emit (.trapIf (.zero r .size32) .intDivz))) :
     ∃ k ms, v = .reg (.vreg k .int) ∧ Frag s s' ms ∧ (s.nextVreg ≤ k ∨ k = y) ∧
       ∀ (fr : Clif.Frame) (ρ : Nat → CV) (ty : Clif.Ty) (b : BitVec ty.width), ty.width = w →
-        ValsHeld fr ρ → DFGCons ctx fr → fr.regs y = some ⟨ty, b⟩ →
+        VHolds ⟨ty, b⟩ (ρ y) → DFGCons ctx fr → fr.regs y = some ⟨ty, b⟩ →
         UsesLo s.nextVreg fr ms ∧ ∀ wd, k < s'.nextVreg ∧
           (b = 0#ty.width → TrapRun isem ms ρ wd .intDivz) ∧
           (b ≠ 0#ty.width → Runs F isem ms ρ wd (fun ρ' _ => DivOpnd (e == 0) b (ρ' k))) := by
@@ -437,7 +437,7 @@ theorem divisor_sem {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem) 
       subst hu
       exact .inr (by simp [hyv])
     have hd : DivOpnd (e == 0) b (ρ y) := by
-      have hv := hh y _ hyv
+      have hv := hh
       cases ty <;> simp [Clif.Ty.width] at htw
       simp only [VHolds, Clif.Ty.width] at hv
       unfold DivOpnd

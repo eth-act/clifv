@@ -203,6 +203,43 @@ theorem urem_vholds {ty : Clif.Ty} (hw : ty.width ≤ 64) {a b : BitVec ty.width
   apply vholds_resX_toNat hw
   rw [opnd_resX, BitVec.toNat_umod, urem_core, divOpnd_toNat hw hA, divOpnd_toNat hw hB]
 
+/-! ## The dividend operand -/
+
+theorem divOpnd_of_vholds64 {sg : Bool} {ty : Clif.Ty} (hw : ty.width = 64) {a : BitVec ty.width}
+    {A : CV} (h : VHolds ⟨ty, a⟩ A) : DivOpnd sg a A := by
+  cases ty <;> simp [Clif.Ty.width] at hw
+  simp only [VHolds, Clif.Ty.width] at h
+  unfold DivOpnd
+  simp only [Clif.Ty.width, show ¬ (64 : Nat) ≤ 32 by decide, ↓reduceIte, lo64, BitVec.setWidth_eq]
+  exact h
+
+/-- **The dividend**: a `put_in_reg_*ext*` result (or the value's own register) holding the value
+as a division operand. -/
+theorem ext_divOpnd {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem) {f : Clif.Function}
+    {ctx : Ctx} (hctx : CtxInv f ctx) {x : Nat} {sg : Bool} {toB w : Nat} {pass : List CTy}
+    {s s' : LState} {v : V} (hvb : ValsBelow ctx s)
+    (hcase : (toB = 32 ∧ pass = [.int 32, .int 64]) ∨ (toB = 64 ∧ pass = [.int 64] ∧ w = 64))
+    (hw : w ≤ 32 ∨ w = 64) (h : ExtOut ctx x sg toB pass s s' v) :
+    ∃ k ms, v = .reg (.vreg k .int) ∧ Frag s s' ms ∧ k < s'.nextVreg ∧ (s.nextVreg ≤ k ∨ k = x) ∧
+      ∀ (fr : Clif.Frame) (ρ : Nat → CV) (ty : Clif.Ty) (a : BitVec ty.width), ty.width = w →
+        ValsHeld fr ρ → DFGCons ctx fr → fr.regs x = some ⟨ty, a⟩ →
+        UsesLo s.nextVreg fr ms ∧ ∀ wd, Runs F isem ms ρ wd (fun ρ' _ => DivOpnd sg a (ρ' k)) := by
+  have hto : toB = 32 ∨ toB = 64 := by rcases hcase with ⟨h, -⟩ | ⟨h, -⟩ <;> simp [h]
+  obtain ⟨k, ms, rfl, hf, hk, hkx, hsem⟩ := ExtOut.sem hR hctx hvb hto
+    (by rcases hcase with ⟨rfl, rfl⟩ | ⟨rfl, rfl, -⟩ <;> intro t ht <;> simp at ht <;>
+      rcases ht with rfl | rfl <;> simp)
+    (by rcases hcase with ⟨rfl, rfl⟩ | ⟨rfl, rfl, -⟩ <;> simp) h
+  refine ⟨k, ms, rfl, hf, hk, hkx, fun fr ρ ty a htw hh hdf hxv => ?_⟩
+  obtain ⟨hu, hrun⟩ := hsem fr ρ _ (hh x _ hxv) hdf hxv
+  refine ⟨hu, fun wd => (hrun wd).imp fun ρ' _ _ he => ?_⟩
+  rcases hw with hw | hw
+  · rcases hcase with ⟨rfl, -⟩ | ⟨-, -, rfl⟩
+    · unfold DivOpnd
+      simp only [show ty.width ≤ 32 by omega, ↓reduceIte]
+      exact he.2 (by simp; omega)
+    · omega
+  · exact divOpnd_of_vholds64 (by omega) he.1
+
 section
 variable {p : Program} (hp : Data p) {ctx : Ctx} {cfg : Config} (hc : cfg.checkOverlap = false)
 
@@ -294,6 +331,39 @@ theorem udiv64_ruleOk (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env 
   obtain ⟨m', rfl⟩ : ∃ m', m = m' + 10 := ⟨m - 10, by omega⟩
   obtain ⟨n', rfl⟩ : ∃ n', n = n' + 400 := ⟨n - 400, by omega⟩
   isel_inv' hp [] at hmatch heval
+  obtain ⟨h172⟩ : Nonempty (ApplyInternal p (sem ctx) cfg _ 25 172 _ _ _ _) := ⟨‹_›⟩
+  obtain ⟨h492⟩ : Nonempty (ApplyInternal p (sem ctx) cfg _ 27 492 _ _ _ _) := ⟨‹_›⟩
+  obtain ⟨h698⟩ : Nonempty (ApplyInternal p (sem ctx) cfg _ 27 698 _ _ _ _) := ⟨‹_›⟩
+  obtain ⟨hva⟩ : Nonempty (externExtract ctx T.value_array_2 _ st = _) := ⟨‹_›⟩
+  obtain ⟨hpr⟩ : Nonempty (externCtor ctx T.put_in_reg _ st = _) := ⟨‹_›⟩
+  obtain ⟨hins⟩ : Nonempty (ctx.insts[ii]? = some _) := ⟨‹_›⟩
+  obtain ⟨hdd⟩ : Nonempty (V.data 152 2 _ = _) := ⟨‹_›⟩
+  obtain ⟨hty⟩ : Nonempty (CTy.int 64 = _) := ⟨‹_›⟩
+  rw [hi, Option.some.injEq] at hins
+  subst hins
+  have hdat := hctx.data ii _ inst hi hic
+  rw [← hdd] at hdat
+  obtain ⟨ty, x, y, rfl, hety, rfl⟩ := instData_div_inv (op := .udiv) rfl hdat
+  rw [ext_value_array_2] at hva
+  cases hva
+  rw [ctor_put_in_reg_iff] at hpr
+  obtain ⟨rx, hrx, rfl, rfl⟩ := hpr
+  obtain ⟨tys, htys, hres, -⟩ := hctx.resTys ii _ _ hi hic
+  simp only [Clif.Inst.resultTypes, Option.some.injEq] at htys
+  subst htys
+  rw [hres] at hty
+  simp only [List.map_cons, List.map_nil, List.head?_cons, Option.getD_some, ofClif_int_width,
+    CTy.int.injEq] at hty
+  have hD := put_nonzero_in_reg_ok hp hco hR hctx (hn := by omega) (w := 64) (e := 1) (by decide)
+    (by decide) h698
+  dsimp only at hD
+  obtain ⟨ky, msY, rfl, hfY, hky, hsemY⟩ := divisor_sem hR hctx (w := 64) (e := 1) (by decide) (by decide) hvb hD
+  obtain ⟨hv2, hs2⟩ := a64_udiv_ok hp hco (by omega) (by decide) h492
+  subst hv2
+  obtain ⟨hs3, rfl⟩ := output_reg_ok hp hco (by omega) h172
+  have hrx' := hctx.valueReg x rx hrx
+  subst hrx'
+  have hxlt := hvb x _ hrx
   trace_state
   sorry
 
