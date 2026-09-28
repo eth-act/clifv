@@ -52,8 +52,9 @@ structure Config where
   /-- LICM hoists `iconst` out of loops (measured better for this backend, which lowers every
   `iconst` even when isel folds it into an immediate). -/
   hoistConst : Bool := true
-  /-- Rounds of simplify/gvn/dce before LICM. -/
-  rounds : Nat := 2
+  /-- Rounds of simplify/gvn/dce before LICM (a second round removed 3 more of 27 761
+  instructions on corpus + runtests + fuzz files, so one is the default). -/
+  rounds : Nat := 1
 
 structure Report where
   name : String

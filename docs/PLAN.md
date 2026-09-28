@@ -262,6 +262,10 @@ The compiler enforces the side conditions with proven-sound validators: `lowerCh
 - Cranelift, and the optional M3 validator and M3b check, are kept as cross-checks, not trust anchors.
 
 **Lean mid-end (part of the FV compiler; after the backend proofs are underway):**
+*Status (2026-09-28): implemented and differentially tested, unproven* (`FV/Opt`,
+`docs/contracts/midend.md`): Cranelift's `simplify`/`simplify_skeleton` rules run from the exported
+data by the ISLE interpreter inside a simplify pass (acyclic e-graph, Cranelift's cost model),
+plus GVN, DCE and LICM; `lean-backend --opt`. The proof architecture is in the contract.
 - Export Cranelift's `simplify` rules (`codegen/src/opts/*.isle`) with `isle2lean` and prove each one against `Clif.run` before enabling it.
 - Implement GVN, DCE and LICM as proven Lean passes.
 - The end-to-end theorem then covers the mid-end too:
