@@ -23,15 +23,17 @@ namespace Backend.Proof
 
 open Backend E2E
 
-/-- The allocator-private frame addresses of the activation entered in `s` (`lo`, `hi` = the
-frame's `intBase`, `size`): the spill, save and float-move slots `[sp_body + lo, sp_body + hi)`
-and the padding and fp/lr above the CLIF slots `[sp_body + frameSize, sp_entry)`. The explicit
-CLIF slots in between belong to the world. Empty without a frame. -/
+/-- The frame addresses of the activation entered in `s` (`lo`, `hi` = the frame's `intBase`,
+`size`): the spill, save and float-move slots `[sp_body + lo, sp_body + hi)`, the padding and
+fp/lr above the CLIF slots `[sp_body + frameSize, sp_entry)` (the explicit CLIF slots in between
+belong to the world; empty without a frame), and the code words (read as data by jump tables;
+the program never accesses them). -/
 def frameF (lo hi : Nat) (af : AFunc) (s : Arm.ArmState) (a : BitVec 64) : Prop :=
   (lo ≤ (a - (spv s - BitVec.ofNat 64 (frameDrop af))).toNat ∧
     (a - (spv s - BitVec.ofNat 64 (frameDrop af))).toNat < hi) ∨
   (af.frameSize ≤ (a - (spv s - BitVec.ofNat 64 (frameDrop af))).toNat ∧
-    (a - (spv s - BitVec.ofNat 64 (frameDrop af))).toNat < frameDrop af)
+    (a - (spv s - BitVec.ofNat 64 (frameDrop af))).toNat < frameDrop af) ∨
+  CodeAddr s a
 
 /-- The fixed data of one activation. -/
 structure RL where
@@ -81,6 +83,9 @@ structure StRel (R : RL) (s : Arm.ArmState) (m : Loc → CV) (w : Arm.ArmState) 
   /-- fp/lr as pushed by the prologue -/
   fplr : R.af.frame = true →
     Arm.read_mem_bytes 16 (spv R.s0 - 16#64) s = xreg 30 R.s0 ++ xreg 29 R.s0
+  /-- the code words are readable as data -/
+  code : ∀ k w, R.fb.words[k]? = some w →
+    Arm.read_mem_bytes 4 (R.base + BitVec.ofNat 64 (4 * k)) s = w
 
 /-- The checker accepts the remaining items of block `vb` (from VCode index `k`). -/
 def ItemsChecked (R : RL) (vb : VBlock) (its : List RItem) : Prop :=
@@ -106,6 +111,45 @@ namespace Backend.Proof
 open Backend E2E
 
 /-! ## Code bookkeeping -/
+
+theorem mem_wordsAt {base : BitVec 64} :
+    ∀ (ws : List (BitVec 32)) (k0 k : Nat) (w : BitVec 32), ws[k]? = some w →
+      List.Mem (base + BitVec.ofNat 64 (4 * (k0 + k)), w) (wordsAt base k0 ws)
+  | [], _, _, _, h => by simp at h
+  | w' :: ws, k0, 0, w, h => by
+    simp only [List.getElem?_cons_zero, Option.some.injEq] at h
+    subst h
+    exact List.Mem.head _
+  | w' :: ws, k0, k + 1, w, h => by
+    simp only [List.getElem?_cons_succ] at h
+    have := mem_wordsAt (base := base) ws (k0 + 1) k w h
+    rw [show k0 + 1 + k = k0 + (k + 1) by omega] at this
+    exact List.Mem.tail _ this
+
+/-- The bytes of code word `k` are code addresses of a state holding the function's program. -/
+theorem codeAddr_word {s : Arm.ArmState} {base : BitVec 64} {fb : FnBin}
+    (hp : s.program = fb.program base) {k : Nat} {w : BitVec 32} (hk : fb.words[k]? = some w)
+    {i : Nat} (hi : i < 4) : CodeAddr s (base + BitVec.ofNat 64 (4 * k) + BitVec.ofNat 64 i) := by
+  refine ⟨(base + BitVec.ofNat 64 (4 * k), w), ?_, ?_⟩
+  · rw [hp]
+    have := mem_wordsAt (base := base) fb.words.toList 0 k w (by simpa using hk)
+    rw [Nat.zero_add] at this
+    exact this
+  · simp only
+    rw [show base + BitVec.ofNat 64 (4 * k) + BitVec.ofNat 64 i - (base + BitVec.ofNat 64 (4 * k)) =
+      BitVec.ofNat 64 i by bv_omega]
+    simp only [BitVec.toNat_ofNat]
+    omega
+
+/-- The code words are kept by a step that keeps the memory at code addresses. -/
+theorem code_keep {s0 s s' : Arm.ArmState} {base : BitVec 64} {fb : FnBin}
+    (hp : s0.program = fb.program base)
+    (hc : ∀ k w, fb.words[k]? = some w → Arm.read_mem_bytes 4 (base + BitVec.ofNat 64 (4 * k)) s = w)
+    (hm : ∀ a, CodeAddr s0 a → s'.mem a = s.mem a) :
+    ∀ k w, fb.words[k]? = some w → Arm.read_mem_bytes 4 (base + BitVec.ofNat 64 (4 * k)) s' = w := by
+  intro k w hk
+  rw [← hc k w hk]
+  exact read_mem_bytes_congr _ _ fun i hi => hm _ (codeAddr_word hp hk hi)
 
 theorem codeLinesE_append {c : FnCtx} {af : AFunc} :
     ∀ (A B : List AInst) (ps ps' : PState) (ls : List Line),

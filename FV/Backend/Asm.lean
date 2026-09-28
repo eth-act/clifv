@@ -290,8 +290,15 @@ def prologueLines (size : Nat) : List Line :=
      | some i => [.ins (.aluImm12 .sub true .sp .sp i)]
      | none => loadConst64 (.x 16) size ++ [.ins (.aluRRRExtend .sub true .sp .sp (.x 16) .uxtx)])
 
-def epilogueLines : List Line :=
-  [.ins (.mov true .sp Reg.fp), .ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16)), .ins .ret]
+/-- The epilogue frees the frame by adjusting `sp` (as the prologue allocated it; `x16` holds
+large sizes), then pops fp/lr and returns. It does not read `fp`: the body keeps `sp`
+(`FrameKeep`), which is what the register-level proof tracks. -/
+def epilogueLines (size : Nat) : List Line :=
+  (if size == 0 then []
+   else match Imm12.ofNat? size with
+     | some i => [.ins (.aluImm12 .add true .sp .sp i)]
+     | none => loadConst64 (.x 16) size ++ [.ins (.aluRRRExtend .add true .sp .sp (.x 16) .uxtx)]) ++
+  [.ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16)), .ins .ret]
 
 /-- A trap site: byte offset from the function start and trap code. -/
 structure TrapSite where
@@ -358,7 +365,7 @@ def emitFunc (k : Nat) (af : AFunc) : Except String FnAsm := do
       match i with
       | .prologue => if af.frame then lines := lines ++ (prologueLines af.frameSize).toArray
       | .epilogueRet =>
-        lines := lines ++ (if af.frame then epilogueLines.toArray else #[.ins .ret])
+        lines := lines ++ (if af.frame then (epilogueLines af.frameSize).toArray else #[.ins .ret])
       | .inst m =>
         let (ls, ps') ← m.lines c ps
         ps := ps'
