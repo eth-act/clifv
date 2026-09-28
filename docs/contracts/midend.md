@@ -439,7 +439,9 @@ Behaviour: the driver was only refactored (named `trapMap`, `initAvail`, `memoHi
 `pureInsert`, `pureBest`, `pureEmit`, `pureAlts`, `StmtLog.rep`, `isTrapLike`) and the
 validator strengthened. On all difftest inputs (corpus, extrt, runtests, survey: 474 files, default and
 `--opt-proven-only`) `clif-opt` output and `--stats` are byte-identical to main 1553070 and
-the validator accepts everything (`pass-errors 0`).
+the validator accepts everything (`pass-errors 0`); the same for `opt-fuzz` seeds 1–3 (150 E
+and 150 `--ext` functions each: 7 200/7 200 runs agree); `opt-difftest`: corpus 4 668 → 2 287
+(proven-only 2 753), runtests 3 383 → 3 040, 0 fail.
 
 Driver sanity checks added for the proof (MidSimplify; never fire on these inputs):
 made nodes only over *known* values (graph nodes or available values; else a fresh dummy
