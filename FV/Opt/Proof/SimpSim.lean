@@ -434,4 +434,188 @@ theorem den_agree {syms : String → Option Nat} {fr' : Frame} {bi k' : Nat}
 
 end
 
+/-- The graph valuation of the target frame `fr'` at `(bi, k')` (in memory `memPlus m`). -/
+noncomputable def VAt (f g : Function) (fi : Info) (cert : SimpCert) (fr' : Frame) (bi k' : Nat)
+    (m : Mem) : Valuation :=
+  den cert.graph (rhoAt f g fi cert fr' bi k') fr' (memPlus m)
+
+section
+variable {f g : Function} {fi : Info} {cert : SimpCert} (hS : SOk f g fi cert)
+include hS
+
+theorem rhoAt_good (hF : SimpFacts f fi cert) {syms : String → Option Nat} {fr' : Frame}
+    {bi k' : Nat} (hinv : Inv g (wfData g (gInfo fi cert)) syms fr' bi k') (m : Mem) :
+    SGood f fi (rhoAt f g fi cert fr' bi k') fr' (memPlus m) where
+  env := ⟨by rw [hinv.func, hS.globals], fun s hs => hinv.slots s (by rw [hS.slots]; exact hs),
+    memPlus_all m⟩
+  dom := by
+    intro x
+    simp only [rhoAt]
+    split <;> simp_all
+  ty := by
+    intro x a t hx ht
+    simp only [rhoAt] at hx
+    split at hx
+    · simp only [Option.some.injEq] at hx
+      subst hx
+      split
+      · rename_i hav
+        obtain ⟨b, hb, htb⟩ := hinv.regs x hav
+        rw [hb]
+        have h2 := hF.types x t ht
+        simp only [wfData, gInfo] at htb
+        rw [htb] at h2
+        exact (Option.some.inj h2)
+      · simp only [dflt, ht, Option.getD_none]
+    · cases hx
+
+/-- The facts of the run, read in the target frame. -/
+theorem facts_at (hF : SimpFacts f fi cert) {syms : String → Option Nat} {fr' : Frame}
+    {bi k' : Nat} (hinv : Inv g (wfData g (gInfo fi cert)) syms fr' bi k') {m : Mem}
+    (hm : m.symbols = syms) {i : Nat} {lg : BlockLog} (hlg : cert.logs[i]? = some (some lg)) :
+    BlockFact (fun b => (trapMap f).get? b) (withRegs fr' (VAt f g fi cert fr' bi k' m))
+      (memPlus m) (VAt f g fi cert fr' bi k' m) lg ∧
+    ∀ x, Avail (wfData g (gInfo fi cert)) bi k' x → VAt f g fi cert fr' bi k' m x = fr'.regs x :=
+  ⟨hF.facts _ _ _ (rhoAt_good hS hF hinv m) i lg hlg,
+   den_agree hS hinv (by intro s a h; exact memPlus_le m s a (by rw [hm]; exact h))⟩
+
+end
+
+/-! ## Records -/
+
+theorem stmtsOk_spec {c : SimpCtx} : ∀ {ss : List Stmt} {lgs : List StmtLog} {k0 : Nat},
+    c.stmtsOk ss lgs k0 = true → ss.length = lgs.length ∧
+      ∀ j s l, ss[j]? = some s → lgs[j]? = some l →
+        c.stmtOk s (k0 + (outs (lgs.take j)).length) l = true
+  | [], [], _, _ => ⟨rfl, fun j s l h _ => by simp at h⟩
+  | [], _ :: _, _, h => by simp [SimpCtx.stmtsOk] at h
+  | _ :: _, [], _, h => by simp [SimpCtx.stmtsOk] at h
+  | s :: ss, l :: lgs, k0, h => by
+    simp only [SimpCtx.stmtsOk, Bool.and_eq_true] at h
+    obtain ⟨hl, hj⟩ := stmtsOk_spec h.2
+    refine ⟨by simp [hl], fun j s' l' hs hl' => ?_⟩
+    cases j with
+    | zero =>
+      simp only [List.getElem?_cons_zero, Option.some.injEq] at hs hl'
+      subst hs hl'
+      simpa [outs] using h.1
+    | succ j =>
+      simp only [List.getElem?_cons_succ] at hs hl'
+      have := hj j s' l' hs hl'
+      simp only [List.take_succ_cons, outs, List.flatMap_cons, List.length_append] at this ⊢
+      rw [Array.length_toList, ← Nat.add_assoc]
+      exact this
+
+theorem outs_take_succ {lgs : List StmtLog} {j : Nat} {l : StmtLog} (h : lgs[j]? = some l) :
+    outs (lgs.take (j + 1)) = outs (lgs.take j) ++ l.out.toList := by
+  simp [outs, List.take_add_one, h]
+
+theorem outs_take_drop (lgs : List StmtLog) (j : Nat) :
+    outs lgs = outs (lgs.take j) ++ outs (lgs.drop j) := by
+  simp only [outs, ← List.flatMap_append, List.take_append_drop]
+
+theorem outs_drop_cons {lgs : List StmtLog} {j : Nat} {l : StmtLog} (h : lgs[j]? = some l) :
+    outs (lgs.drop j) = l.out.toList ++ outs (lgs.drop (j + 1)) := by
+  rw [List.drop_eq_getElem_cons (List.getElem?_eq_some_iff.1 h).1]
+  simp [outs, (List.getElem?_eq_some_iff.1 h).2]
+
+theorem insOk_renStmt (σ : ValueId → ValueId) (t : Stmt) : insOk (renStmt σ t) = insOk t := by
+  simp only [insOk, renStmt, isPure_mapOperands]
+  cases t.inst <;> rfl
+
+/-! ## The relation -/
+
+/-- The definition of `σ v` in the target is in a dominator of the definition of `v`. -/
+def SiteAnc (f g : Function) (fi : Info) (cert : SimpCert) (v : ValueId) : Prop :=
+  ∀ d t, (wfData f fi).dm v = some (d, t) → ∃ d' t',
+    (wfData g (gInfo fi cert)).dm (cert.subst.step v) = some (d', t') ∧ Anc fi.cfg.idom d' d
+
+/-- Frames at positions `k` (source) and `k'` (target) of block `bi`, without the position
+constraint. -/
+structure SCore (f g : Function) (fi : Info) (cert : SimpCert) (syms : String → Option Nat)
+    (fr fr' : Frame) (bi k k' : Nat) : Prop where
+  invf : Inv f (wfData f fi) syms fr bi k
+  invg : Inv g (wfData g (gInfo fi cert)) syms fr' bi k'
+  agree : ∀ v, Avail (wfData f fi) bi k v →
+    Avail (wfData g (gInfo fi cert)) bi k' (cert.subst.step v) ∧
+      fr'.regs (cert.subst.step v) = fr.regs v ∧ SiteAnc f g fi cert v
+  slots : fr'.slots = fr.slots
+
+/-- Frames before source statement `k` and at the start of its record in the target. -/
+structure SRel (f g : Function) (fi : Info) (cert : SimpCert) (syms : String → Option Nat)
+    (fr fr' : Frame) (bi k k' : Nat) : Prop extends SCore f g fi cert syms fr fr' bi k k' where
+  pos : ∀ lg, cert.logs[bi]? = some (some lg) → k' = (outs (lg.stmts.take k)).length
+
+section
+variable {f g : Function} {fi : Info} {cert : SimpCert} (hS : SOk f g fi cert)
+  {syms : String → Option Nat}
+include hS
+
+/-- A target-only pure statement that evaluates. -/
+theorem SCore.tpure {fr fr' : Frame} {bi k k' : Nat} {m : Mem} {t : Stmt} {ts : List Stmt}
+    {u : ValueId} {a : Val} (h : SCore f g fi cert syms fr fr' bi k k') (hm : m.symbols = syms)
+    (ht : fr'.body = t :: ts) (hp : isPure t.inst = true) (hu : t.results = [u])
+    (hev : evalNode fr' m t.inst = some a) :
+    lstep fr' m = .next { fr' with regs := fr'.regs.set u a, body := ts } m ∧
+      SCore f g fi cert syms fr { fr' with regs := fr'.regs.set u a, body := ts } bi k (k' + 1) := by
+  obtain ⟨b', hb', h2, -, -⟩ := h.invg.block
+  rw [h2] at ht
+  obtain ⟨htk, -, -⟩ := drop_eq_cons ht
+  rw [← h2] at ht
+  have hnc : ∀ fn args, t.inst ≠ .call fn args := by
+    intro fn args he; rw [he] at hp; cases hp
+  have he : evalInst fr' m t.inst = .ok ([a], m) := by
+    simp only [evalNode] at hev
+    split at hev
+    · rename_i r m' he
+      cases hev
+      rw [he, (evalInst_pure hp he).1]
+    · cases hev
+  have hset : fr'.regs.setMany t.results [a] = some (fr'.regs.set u a) := by
+    rw [hu]; rfl
+  refine ⟨?_, ⟨h.invf, ?_, ?_, h.slots⟩⟩
+  · rw [lstep_inst ht hnc]
+    simp only [he, LRes.ofRes, hset]
+  · refine Inv.results hS.wfg h.invg ht (fun ts0 h0 => evalInst_types he h0)
+      (fun _ => ⟨a, rfl, ?_⟩) hset
+    rw [evalNode_mem (m := m) hp (by rw [hm]; rfl)]; exact hev
+  · intro v hv
+    obtain ⟨hav, heq, hsa⟩ := h.agree v hv
+    have hnr := avail_not_result hS.wfg hb' htk hav
+    rw [hu] at hnr
+    refine ⟨hav.mono (by omega), ?_, hsa⟩
+    simp only [List.mem_singleton] at hnr
+    simp only [Regs.set_other _ _ hnr, heq]
+
+/-- An inserted statement evaluates (lemma (T)). -/
+theorem SCore.insEval {fr fr' : Frame} {bi k k' : Nat} {m : Mem} {t : Stmt} {ts : List Stmt}
+    (h : SCore f g fi cert syms fr fr' bi k k') (ht : fr'.body = t :: ts) (hins : insOk t = true) :
+    isPure t.inst = true ∧ ∃ u a, t.results = [u] ∧ evalNode fr' m t.inst = some a := by
+  obtain ⟨b', hb', h2, -, -⟩ := h.invg.block
+  rw [h2] at ht
+  obtain ⟨htk, -, -⟩ := drop_eq_cons ht
+  obtain ⟨hp, u, hu, hns⟩ := insOk_spec hins
+  obtain ⟨a, ha⟩ := evalInst_total (f := g) (tm := (wfData g (gInfo fi cert)).tm) (fr := fr')
+    (mem := m) hp (hS.wfg.pure bi b' hb' k' t htk hp) (by rw [h.invg.func])
+    (fun x hx => h.invg.regs x (hS.wfg.uses bi b' hb' k' t htk x hx)) h.invg.slots
+    (fun ty gv _ _ _ he => absurd he (hns ty gv))
+  exact ⟨hp, u, a, hu, by simp [evalNode, ha]⟩
+
+/-- The target executes inserted statements. -/
+theorem SCore.insList {fr : Frame} {bi k : Nat} {m : Mem} (hm : m.symbols = syms) :
+    ∀ (L : List Stmt) {fr' : Frame} {k' : Nat} {rest : List Stmt},
+      SCore f g fi cert syms fr fr' bi k k' → fr'.body = L ++ rest → (∀ t ∈ L, insOk t = true) →
+      ∃ fr'', LStar fr' m fr'' m ∧ SCore f g fi cert syms fr fr'' bi k (k' + L.length) ∧
+        fr''.body = rest ∧ fr''.term = fr'.term ∧ fr''.func = fr'.func ∧ fr''.slots = fr'.slots
+  | [], fr', k', rest, h, hb, _ => ⟨fr', .refl _ _, h, by simpa using hb, rfl, rfl, rfl⟩
+  | t :: L, fr', k', rest, h, hb, hins => by
+    have hb' : fr'.body = t :: (L ++ rest) := by rw [hb]; rfl
+    obtain ⟨hp, u, a, hu, hev⟩ := h.insEval hS (m := m) hb' (hins t (by simp))
+    obtain ⟨hl, h1⟩ := h.tpure hS hm hb' hp hu hev
+    obtain ⟨fr'', hst, h2, hb2, ht2, hf2, hs2⟩ := SCore.insList hm L h1 rfl
+      (fun t' ht' => hins t' (by simp [ht']))
+    exact ⟨fr'', .step hl hst, by simpa [Nat.add_assoc, Nat.add_comm 1] using h2, hb2, ht2, hf2, hs2⟩
+
+end
+
 end Opt
