@@ -164,9 +164,6 @@ def TrapRun (isem : Sem) (ms : List MInst) (ρ : Nat → CV) (w : Arm.ArmState) 
   ∃ k i ops ρ₁ w₁ outs w₂, seqRun isem ms ρ w = some (.stop k i ops ρ₁ w₁ outs w₂ .halt) ∧
     trapCode? i = some c
 
-/-- The operation size of a division at width `n`. -/
-def divSz (n : Nat) : OperandSize := if n ≤ 32 then .size32 else .size64
-
 theorem ext32_eq_zero {n : Nat} (hn : n ≤ 32) (sg : Bool) (b : BitVec n) :
     ((if sg then b.signExtend 32 else b.setWidth 32) = 0#32) ↔ b = 0#n := by
   cases sg
@@ -202,9 +199,9 @@ theorem setWidth64_eq_zero {n : Nat} (hn : n ≤ 64) (b : BitVec n) : b.setWidth
 
 theorem DivOpnd.zero_iff {sg : Bool} {n : Nat} (hn : n ≤ 64) {b : BitVec n} {a : CV}
     (h : DivOpnd sg b a) (w : Arm.ArmState) (r : Reg) :
-    condBrHolds (.zero r (divSz n)) [a] w = (b == 0#n) := by
+    condBrHolds (.zero r (szOf n)) [a] w = (b == 0#n) := by
   unfold DivOpnd at h
-  unfold divSz
+  unfold szOf
   have e32 : (OperandSize.size32 == OperandSize.size64) = false := rfl
   have e64 : (OperandSize.size64 == OperandSize.size64) = true := rfl
   by_cases h32 : n ≤ 32
@@ -258,5 +255,85 @@ theorem TrapRun.append {isem : Sem} {ms1 ms2 : List MInst} {ρ : Nat → CV}
     TrapRun isem (ms1 ++ ms2) ρ w c := by
   obtain ⟨k, i, ops, ρ₁, w₁, outs, w₂, hr, hc⟩ := h
   exact ⟨k, i, ops, ρ₁, w₁, outs, w₂, seqRun_append_stop isem hr, hc⟩
+
+/-! ## An `iconst` divisor as an immediate -/
+
+theorem sextFrom_toInt {w : Nat} (hw : 0 < w) (b : BitVec w) : sextFrom w (b.toNat : Int) = b.toInt := by
+  unfold sextFrom
+  have hlt := b.isLt
+  rw [BitVec.toInt_eq_toNat_cond]
+  have h2 : (2:Int) ^ w = ((2 ^ w : Nat) : Int) := by norm_cast
+  have h3 : (2:Int) ^ (w - 1) * 2 = ((2 ^ w : Nat) : Int) := by
+    rw [← h2, ← Int.pow_succ]; congr 1; omega
+  simp only [show w ≠ 0 by omega, ↓reduceIte]
+  rw [h2]
+  have hm : (b.toNat : Int) % ((2 ^ w : Nat) : Int) = b.toNat := by
+    rw [Int.emod_eq_of_lt (by omega) (by omega)]
+  rw [hm]
+  split <;> split <;> omega
+theorem ofNat_u64_mod32 (i : Int) : BitVec.ofNat 32 (u64 i % 2 ^ 32) = BitVec.ofInt 32 i := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_ofNat, BitVec.toNat_ofInt, u64]
+  omega
+
+theorem imm_divOpnd {n : Nat} (hn : n = 8 ∨ n = 16 ∨ n = 32 ∨ n = 64) {e : Nat} (he : e = 0 ∨ e = 1)
+    (b : BitVec n) {X : Nat} (h1 : X % 2 ^ n = b.toNat % 2 ^ n)
+    (h2 : n ≠ 32 ∨ e = 0 ∨ b.toNat < 2 ^ 32 → X = immVal n (e == 0) b.toNat) {a : CV}
+    (ha : lo64 a = BitVec.ofNat 64 X) : DivOpnd (e == 0) b a := by
+  unfold DivOpnd
+  rw [ha]
+  rcases hn with rfl | rfl | rfl | rfl
+  · have hX := h2 (.inl (by decide))
+    simp only [show (8 : Nat) ≤ 32 by decide, ↓reduceIte]
+    rcases he with rfl | rfl
+    · simp only [beq_self_eq_true, ↓reduceIte]
+      rw [hX]
+      simp only [immVal, szOf, show ((0 : Nat) == 0) = true by decide, show ((1 : Nat) == 0) = false by decide, show (8 : Nat) ≤ 32 by decide, ↓reduceIte, lcfValue, mask64,
+        Nat.mod_eq_of_lt (Nat.lt_trans b.isLt (by decide : 2 ^ 8 < 2 ^ 64)), show (8 : Nat) < 32 by decide]
+      rw [BitVec.setWidth_ofNat_of_le (by decide), ofNat_u64_mod32, sextFrom_toInt (by decide)]
+      rfl
+    · simp only [show ((1 : Nat) == 0) = false by decide, Bool.false_eq_true, ↓reduceIte]
+      rw [hX]
+      simp only [immVal, szOf, show ((0 : Nat) == 0) = true by decide, show ((1 : Nat) == 0) = false by decide, show (8 : Nat) ≤ 32 by decide, ↓reduceIte, lcfValue, mask64,
+        Nat.mod_eq_of_lt (Nat.lt_trans b.isLt (by decide : 2 ^ 8 < 2 ^ 64)), show (8 : Nat) < 32 by decide]
+      apply BitVec.eq_of_toNat_eq
+      simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+      have := b.isLt
+      omega
+  · have hX := h2 (.inl (by decide))
+    simp only [show (16 : Nat) ≤ 32 by decide, ↓reduceIte]
+    rcases he with rfl | rfl
+    · simp only [beq_self_eq_true, ↓reduceIte]
+      rw [hX]
+      simp only [immVal, szOf, show ((0 : Nat) == 0) = true by decide, show ((1 : Nat) == 0) = false by decide, show (16 : Nat) ≤ 32 by decide, ↓reduceIte, lcfValue, mask64,
+        Nat.mod_eq_of_lt (Nat.lt_trans b.isLt (by decide : 2 ^ 16 < 2 ^ 64)), show (16 : Nat) < 32 by decide]
+      rw [BitVec.setWidth_ofNat_of_le (by decide), ofNat_u64_mod32, sextFrom_toInt (by decide)]
+      rfl
+    · simp only [show ((1 : Nat) == 0) = false by decide, Bool.false_eq_true, ↓reduceIte]
+      rw [hX]
+      simp only [immVal, szOf, show ((0 : Nat) == 0) = true by decide, show ((1 : Nat) == 0) = false by decide, show (16 : Nat) ≤ 32 by decide, ↓reduceIte, lcfValue, mask64,
+        Nat.mod_eq_of_lt (Nat.lt_trans b.isLt (by decide : 2 ^ 16 < 2 ^ 64)), show (16 : Nat) < 32 by decide]
+      apply BitVec.eq_of_toNat_eq
+      simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+      have := b.isLt
+      omega
+  · simp only [show (32 : Nat) ≤ 32 by decide, ↓reduceIte]
+    have hs : b.signExtend 32 = b := by
+      apply BitVec.eq_of_toInt_eq; rw [BitVec.toInt_signExtend_of_le (by decide)]
+    have hz : b.setWidth 32 = b := BitVec.setWidth_eq b
+    rw [hs, hz]
+    have hb : (if (e == 0) = true then b else b) = b := by split <;> rfl
+    rw [hb]
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+    have := b.isLt
+    rw [Nat.mod_eq_of_lt this] at h1
+    omega
+  · simp only [show ¬ (64 : Nat) ≤ 32 by decide, ↓reduceIte]
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+    have := b.isLt
+    rw [Nat.mod_eq_of_lt this] at h1
+    omega
 
 end Backend.Proof
