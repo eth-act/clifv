@@ -1995,4 +1995,263 @@ theorem SCore.enter {fr fr' fr1 : Frame} {bi k k' : Nat} {d d' : BlockCall} {vs 
 
 end
 
+/-! ## Terminators -/
+
+/-- The source stopped on its way to a trap block: it runs pure statements, then traps with
+`c`; the target is already stopped at a trap with `c`. -/
+def Frozen (f g : Function) (fr fr' : Frame) : Prop :=
+  ∃ c, fr.func = f ∧ fr'.func = g ∧ fr'.slots = fr.slots ∧ fr.term = .trap c ∧
+    (∀ s ∈ fr.body, isPure s.inst = true) ∧ ∀ m, lstep fr' m = .trap c
+
+/-- The relation of the simplify simulation. -/
+def SSR (f g : Function) (fi : Info) (cert : SimpCert) (syms : String → Option Nat)
+    (fr fr' : Frame) : Prop :=
+  (∃ bi k k', SRel f g fi cert syms fr fr' bi k k') ∨ Frozen f g fr fr'
+
+theorem termEval_isBranch {fr : Frame} {M : Mem} {t : Terminator} {r : BlockId × List Val × Mem}
+    (h : termEval fr M t = .ok r) : isBranch t = true := by
+  cases t <;> simp only [isBranch] <;> simp [termEval] at h
+  all_goals (simp [bind, Res.bind] at h)
+
+theorem block_unique {f : Function} {W : WfData} (hW : Wf f W) {blk blk' : Block} {bid : BlockId}
+    (hm : blk ∈ f.blocks) (hid : blk.id = bid) (h : f.block? bid = some blk') : blk = blk' := by
+  obtain ⟨j0, hj0⟩ := List.mem_iff_getElem?.1 hm
+  obtain ⟨j, hj, hid'⟩ := block?_index hW h
+  have := idx_unique hW hj0 hj (by rw [hid, hid'])
+  subst this
+  rw [hj0] at hj; exact Option.some.inj hj
+
+section
+variable {f g : Function} {fi : Info} {cert : SimpCert} (hS : SOk f g fi cert)
+  (hF : SimpFacts f fi cert) {syms : String → Option Nat}
+include hS hF
+
+/-- **The terminator**: the target runs the extra statements and its (rewritten) terminator. -/
+theorem SRel.term {fr fr' : Frame} {bi k k' : Nat} {m : Mem}
+    (h : SRel f g fi cert syms fr fr' bi k k') (hm : m.symbols = syms) (hs : fr.body = []) :
+    (∀ fr1 m1, lstep fr m = .next fr1 m1 → ∃ fr1', LStar fr' m fr1' m1 ∧
+      SSR f g fi cert syms fr1 fr1') ∧
+    (∀ c, lstep fr m = .trap c → ∃ fr2 m2, LStar fr' m fr2 m2 ∧ lstep fr2 m2 = .trap c) ∧
+    (∀ vals, lstep fr m = .ret vals → ∃ fr2, LStar fr' m fr2 m ∧ lstep fr2 m = .ret vals) ∧
+    (∀ ext vals, lstep fr m = .tail ext vals → ∃ fr2, LStar fr' m fr2 m ∧
+      lstep fr2 m = .tail ext vals) := by
+  obtain ⟨b, b', lg, hb, hb', hlg, hterm, ht', hlt, htok, hbody, hkk, hid, hpar⟩ := h.atEnd hS hs
+  have hops : ∀ x ∈ termOperands fr.term, fr'.regs (cert.subst.step x) = fr.regs x := by
+    intro x hx
+    rw [hterm] at hx
+    have := hS.wff.termUses bi b hb x hx
+    rw [← hkk] at this
+    exact (h.agree x this).2.1
+  have hbr : isBranch lg.term = isBranch b.term := by rw [hlt]; cases b.term <;> rfl
+  by_cases hB : isBranch b.term = true
+  · -- a branch
+    have hsrc_nt : ∀ c, lstep fr m ≠ .trap c := by
+      intro c hl
+      rw [lstep_pick hs (by rw [hterm]; exact hB)] at hl
+      cases hp : pick fr fr.term with
+      | ok d =>
+        rw [hp] at hl; simp only [LRes.ofRes] at hl
+        cases he : enterBlock fr d with
+        | ok _ => rw [he] at hl; cases hl
+        | trap c' => exact enterBlock_not_trap _ _ _ he
+        | stuck _ => rw [he] at hl; cases hl
+      | trap c' => exact pick_ne_trap _ _ _ hp
+      | stuck _ => rw [hp] at hl; cases hl
+    refine ⟨fun fr1 m1 hl => ?_, fun c hl => absurd hl (hsrc_nt c), fun vals hl => ?_,
+      fun ext vals hl => ?_⟩
+    rotate_left
+    · rw [lstep_pick hs (by rw [hterm]; exact hB)] at hl
+      cases hp : pick fr fr.term with
+      | ok d =>
+        rw [hp] at hl; simp only [LRes.ofRes] at hl
+        cases he : enterBlock fr d <;> rw [he] at hl <;> cases hl
+      | trap _ => rw [hp] at hl; cases hl
+      | stuck _ => rw [hp] at hl; cases hl
+    · rw [lstep_pick hs (by rw [hterm]; exact hB)] at hl
+      cases hp : pick fr fr.term with
+      | ok d =>
+        rw [hp] at hl; simp only [LRes.ofRes] at hl
+        cases he : enterBlock fr d <;> rw [he] at hl <;> cases hl
+      | trap _ => rw [hp] at hl; cases hl
+      | stuck _ => rw [hp] at hl; cases hl
+    obtain ⟨hmm, d, hpd, he⟩ := lstep_branch hs (by rw [hterm]; exact hB) hl
+    rw [hmm]
+    obtain ⟨blk, vs, regs, hblk, hga, hty, hset, rfl⟩ := enterBlock_ok he
+    obtain ⟨hfa, hV⟩ := facts_at hS hF h.invg hm hlg
+    generalize hVd : VAt f g fi cert fr' bi k' m = V at hfa hV
+    -- the source branch, read in the graph valuation
+    have hrop : ∀ x ∈ termOperands b.term, (withRegs fr' V).regs (cert.subst.step x) = fr.regs x := by
+      intro x hx
+      have hx' : x ∈ termOperands fr.term := by rw [hterm]; exact hx
+      have hav := (h.agree x (by
+        have := hS.wff.termUses bi b hb x hx; rw [← hkk] at this; exact this)).1
+      simp only [withRegs]; rw [hV _ hav]; exact hops x hx'
+    have hpd' := pick_rename hrop (by rw [← hterm]; exact hpd)
+    have hgm : (withRegs fr' V).getMany (d.args.map cert.subst.step) = .ok vs := by
+      have hr := getMany_rename (σ := cert.subst.step) (fr := fr) (fr' := withRegs fr' V)
+        (xs := d.args) (fun x hx => hrop x (by
+          have := (pick_succ hpd).2 x hx; rw [hterm] at this; exact this))
+      exact Res.norm_eq_ok hr hga
+    have hsrcG : termEval (withRegs fr' V) (memPlus m) lg.term = .ok (d.block, vs, memPlus m) := by
+      rw [termEval_pick (by rw [hbr]; exact hB), hlt, hpd']
+      simp only [Res.ok_bind, mapBlockCall, hgm]; rfl
+    -- what the rewritten terminator does
+    have hBR : effTerm (withRegs fr' V) (memPlus m) (effsL lg.extra.toList) lg.term' =
+          .ok (d.block, vs, memPlus m) ∨
+        ∃ c, (trapMap f).get? d.block = some c ∧
+          effTerm (withRegs fr' V) (memPlus m) (effsL lg.extra.toList) lg.term' = .trap c := by
+      cases hch : lg.changed
+      · simp only [SimpCtx.termOk, hch, Bool.false_eq_true, if_false, Bool.and_eq_true,
+          Array.isEmpty_iff, beq_iff_eq] at htok
+        obtain ⟨hex, hte⟩ := htok
+        left
+        rw [hex, hte]
+        simpa [effsL, effTerm] using hsrcG
+      · have := (hfa.2 hch).1 _ _ _ hsrcG
+        rw [← effsOf_eq]
+        rcases this with h1 | ⟨c, hc, h2⟩
+        · exact .inl h1
+        · exact .inr ⟨c, hc, h2⟩
+    -- the extras
+    have hE : ∀ t ∈ lg.extra.toList, insOk t = true ∨
+        (trapOk t = true ∧ ∀ x ∈ operands t.inst, cert.subst.step x = x) := by
+      intro t ht
+      cases hch : lg.changed
+      · simp only [SimpCtx.termOk, hch, Bool.false_eq_true, if_false, Bool.and_eq_true,
+          Array.isEmpty_iff, beq_iff_eq] at htok
+        rw [htok.1] at ht; simp at ht
+      · simp only [SimpCtx.termOk, hch, if_true, Bool.and_eq_true] at htok
+        have := arr_all htok.2 t ht
+        simp only [Bool.or_eq_true, Bool.and_eq_true] at this
+        rcases this with h1 | ⟨h1, h2⟩
+        · exact .inl h1
+        · exact .inr ⟨h1, SimpCtx.fixed_step (c := sctx g fi cert bi) h2⟩
+    have hT : mapTerm cert.subst.step lg.term' = lg.term' := by
+      cases hch : lg.changed
+      · simp only [SimpCtx.termOk, hch, Bool.false_eq_true, if_false, Bool.and_eq_true,
+          Array.isEmpty_iff, beq_iff_eq] at htok
+        rw [htok.2, hlt, mapTerm_step_idem hS.chain]
+      · simp only [SimpCtx.termOk, hch, if_true, Bool.and_eq_true] at htok
+        conv => rhs; rw [← mapTerm_id lg.term']
+        exact mapTerm_congr (SimpCtx.fixed_step (c := sctx g fi cert bi) htok.1.2)
+    rw [← hVd] at hV hBR
+    simp only [VAt] at hV hBR
+    rcases h.toSCore.runExtras hS hm (fr0 := fr') (ρ := rhoAt f g fi cert fr' bi k') lg.term'
+        lg.extra.toList hbody (fun t ht => hE t ht) rfl rfl hV with
+      ⟨fr2, K2, hst, hb2, h3, hf2, hs2, ht2, hV2, he2⟩ | ⟨fr2, c, hst, htr2, he2⟩
+    · have hT2 : fr2.term = lg.term' := by rw [ht2, ht', hT]
+      rw [he2] at hBR
+      rcases hBR with hok | ⟨c, hc, htr⟩
+      · -- the same branch
+        have hB2 : isBranch lg.term' = true := termEval_isBranch hok
+        rw [termEval_pick hB2] at hok
+        simp only [Res.bind_eq_ok, Res.pure_eq_ok, Prod.mk.injEq] at hok
+        obtain ⟨d2, hp2, vs2, hg2, hdb, rfl, -⟩ := hok
+        obtain ⟨b2', hb2', h2b, -, hK2⟩ := h3.invg.block
+        rw [hb'] at hb2'; cases hb2'
+        have hK2' : K2 = b'.body.length := by
+          rw [hb2] at h2b; have := List.drop_eq_nil_iff.1 h2b.symm; omega
+        have hagr : ∀ x ∈ termOperands lg.term', fr2.regs x =
+            (withRegs fr' (den cert.graph (rhoAt f g fi cert fr' bi k') fr' (memPlus m))).regs x := by
+          intro x hx
+          have := hS.wfg.termUses bi b' hb' x (by
+            obtain ⟨b0, hb0, -, ht0, -⟩ := h3.invg.block
+            rw [hb'] at hb0; cases hb0
+            rw [← ht0, hT2]; exact hx)
+          rw [← hK2'] at this
+          exact (hV2 x this).symm
+        have hp2' : pick fr2 fr2.term = .ok d2 := by rw [hT2, pick_congr hagr]; exact hp2
+        have hg2' : fr2.getMany d2.args = .ok vs2 := by
+          rw [getMany_congr (fun x hx => hagr x ((pick_succ hp2).2 x hx))]; exact hg2
+        obtain ⟨fr1', he1', j, hr1⟩ := h3.enter hS hs hb2 (pick_succ hpd).1
+          he (by rw [hT2]; exact (pick_succ hp2).1) hdb hga hg2'
+        refine ⟨fr1', hst.trans (.single ?_), .inl ⟨j, 0, 0, hr1⟩⟩
+        rw [lstep_pick hb2 (by rw [hT2]; exact hB2), hp2']
+        simp only [LRes.ofRes, he1']
+      · -- a trap block
+        have hTt := termEval_trapc htr
+        obtain ⟨blk0, hm0, hid0, htb⟩ := trapMap_spec hc
+        have hbl : blk0 = blk := block_unique hS.wff hm0 hid0 (by rw [← h.invf.func]; exact hblk)
+        subst hbl
+        obtain ⟨hbt, hbp⟩ := trapBlock?_spec htb
+        refine ⟨fr2, hst, .inr ⟨c, h.invf.func, by rw [hf2, h.invg.func], by
+          rw [hs2, h.slots], hbt, hbp, fun m' => ?_⟩⟩
+        rw [lstep_term hb2, hT2, hTt]
+    · rcases hBR with hok | ⟨c', hc, htr⟩
+      · rw [he2] at hok; cases hok
+      · rw [he2] at htr; cases htr
+        obtain ⟨blk0, hm0, hid0, htb⟩ := trapMap_spec hc
+        have hbl : blk0 = blk := block_unique hS.wff hm0 hid0 (by rw [← h.invf.func]; exact hblk)
+        subst hbl
+        obtain ⟨hbt, hbp⟩ := trapBlock?_spec htb
+        have hsl2 : fr2.slots = fr'.slots := (LStar.frame hst).2.1
+        have hf2 : fr2.func = fr'.func := (LStar.frame hst).1
+        exact ⟨fr2, hst, .inr ⟨c, h.invf.func, by rw [hf2, h.invg.func], by
+          rw [hsl2, h.slots], hbt, hbp, htr2⟩⟩
+  · -- not a branch: the terminator is kept
+    have hch : lg.changed = false := by
+      cases hc : lg.changed
+      · rfl
+      · simp only [SimpCtx.termOk, hc, if_true, Bool.and_eq_true] at htok
+        rw [hbr] at htok; exact absurd htok.1.1 hB
+    simp only [SimpCtx.termOk, hch, Bool.false_eq_true, if_false, Bool.and_eq_true,
+      Array.isEmpty_iff, beq_iff_eq] at htok
+    obtain ⟨hex, hte⟩ := htok
+    have ht0 : fr'.body = [] := by rw [hbody, hex]; rfl
+    have hterm' : fr'.term = mapTerm cert.subst.step fr.term := by
+      rw [ht', hte, hlt, mapTerm_step_idem hS.chain, hterm]
+    rw [lstep_term hs]
+    cases hTT : fr.term with
+    | ret xs =>
+      rw [hTT] at hops
+      have hlt' : lstep fr' m = LRes.ofRes (fr'.getMany (xs.map cert.subst.step))
+          fun vals => .ret vals := by
+        rw [lstep_term ht0, hterm', hTT]; rfl
+      have hg := getMany_rename (fr := fr) (fr' := fr') (σ := cert.subst.step) (xs := xs)
+        (fun x hx => hops x hx)
+      simp only
+      refine ⟨fun fr1 m1 hl => ?_, fun c hl => ?_, fun vals hl => ⟨fr', .refl _ _, ?_⟩,
+        fun _ _ hl => ?_⟩
+      all_goals cases hc : fr.getMany xs with
+        | trap c'' => exact absurd hc (getMany_not_trap _ _ _)
+        | stuck _ => rw [hc] at hl; cases hl
+        | ok vs =>
+          rw [hc] at hl; simp only [LRes.ofRes] at hl
+          first
+          | (cases hl; done)
+          | (simp only [LRes.ret.injEq] at hl; subst hl; rw [hlt', Res.norm_eq_ok hg hc]; rfl)
+    | returnCall fn args =>
+      rw [hTT] at hops
+      have hlt' : lstep fr' m = LRes.ofRes (tailArgs fr' fn (args.map cert.subst.step))
+          fun (ext, vals) => .tail ext vals := by
+        rw [lstep_term ht0, hterm', hTT]; rfl
+      have hg := tailArgs_rename (fr := fr) (fr' := fr') (σ := cert.subst.step) (fn := fn)
+        (args := args) (by rw [h.invf.func, h.invg.func, hS.externs])
+        (by rw [h.invf.func, h.invg.func, hS.sig]) (fun x hx => hops x hx)
+      simp only
+      refine ⟨fun fr1 m1 hl => ?_, fun c hl => ?_, fun vals hl => ?_,
+        fun ext vals hl => ⟨fr', .refl _ _, ?_⟩⟩
+      all_goals cases hc : tailArgs fr fn args with
+        | trap c'' =>
+          rw [hc] at hl
+          first
+          | (cases hl; done)
+          | (cases hl; exact ⟨fr', m, .refl _ _, by rw [hlt', Res.norm_eq_trap hg hc]; rfl⟩)
+        | stuck _ => rw [hc] at hl; cases hl
+        | ok p =>
+          obtain ⟨e, vs⟩ := p
+          rw [hc] at hl; simp only [LRes.ofRes] at hl
+          first
+          | (cases hl; done)
+          | (simp only [LRes.tail.injEq] at hl; obtain ⟨rfl, rfl⟩ := hl
+             rw [hlt', Res.norm_eq_ok hg hc]; rfl)
+    | trap c =>
+      have hlt' : lstep fr' m = .trap c := by rw [lstep_term ht0, hterm', hTT]; rfl
+      exact ⟨fun _ _ hl => by simp at hl, fun c' hl => ⟨fr', m, .refl _ _, by rw [hlt']; simpa using hl⟩,
+        fun _ hl => by simp at hl, fun _ _ hl => by simp at hl⟩
+    | jump _ => rw [hterm] at hTT; rw [hTT] at hB; simp [isBranch] at hB
+    | brif _ _ _ => rw [hterm] at hTT; rw [hTT] at hB; simp [isBranch] at hB
+    | brTable _ _ _ => rw [hterm] at hTT; rw [hTT] at hB; simp [isBranch] at hB
+end
+
 end Opt
