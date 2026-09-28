@@ -603,7 +603,7 @@ fn export(args: &Args, tg: &Target) -> Result<()> {
     modules.push(Module {
         name: "Closure".into(),
         body: match tg.unit {
-            "opt" => opt_closure::render(&u, &rule_names, &tg.header(), &args.codegen_dir)?,
+            "opt" => opt_closure::render(&u, &rule_names, &tg.header(), &args.codegen_dir, &args.gen_dir)?,
             _ => closure::render(&u, &rule_names)?,
         },
     });
