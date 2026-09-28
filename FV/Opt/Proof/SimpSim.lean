@@ -1893,4 +1893,106 @@ theorem SCore.runExtras {fr : Frame} {bi k : Nat} {m : Mem} (hm : m.symbols = sy
 
 end
 
+/-! ## Block entry -/
+
+section
+variable {f g : Function} {fi : Info} {cert : SimpCert} (hS : SOk f g fi cert)
+  {syms : String → Option Nat}
+include hS
+
+theorem SOk.block?_corr {id : BlockId} {j : Nat} {b b' : Block} (hf : f.block? id = some b)
+    (hj : f.blocks[j]? = some b) (hj' : g.blocks[j]? = some b') : g.block? id = some b' := by
+  obtain ⟨j0, hj0, hid⟩ := block?_index hS.wff hf
+  have := idx_unique hS.wff hj0 hj rfl
+  subst this
+  rw [Function.block?, List.find?_eq_some_iff_getElem] at hf ⊢
+  obtain ⟨hp, i, hi, hbi, hlt⟩ := hf
+  have hij : i = j0 := idx_unique hS.wff (by simp [hi, hbi]) hj0 rfl
+  subst hij
+  obtain ⟨b'', -, hb'', -, hid', -⟩ := hS.blocks i b hj0
+  rw [hj'] at hb''; cases hb''
+  have hi' : i < g.blocks.length := (List.getElem?_eq_some_iff.1 hj').1
+  refine ⟨by simpa [hid'] using hp, i, hi', by simpa [hi'] using hj', fun j2 hj2 => ?_⟩
+  have hj2f : j2 < f.blocks.length := by omega
+  obtain ⟨b2, -, hb2, -, hid2, -⟩ := hS.blocks j2 f.blocks[j2] (by simp [hj2f])
+  have := hlt j2 hj2
+  simp only [List.getElem?_eq_getElem (show j2 < g.blocks.length by omega), Option.some.injEq]
+    at hb2
+  rw [hb2, hid2]; exact this
+
+/-- Both frames enter corresponding blocks with the same arguments. -/
+theorem SCore.enter {fr fr' fr1 : Frame} {bi k k' : Nat} {d d' : BlockCall} {vs : List Val}
+    (h : SCore f g fi cert syms fr fr' bi k k') (hs : fr.body = []) (ht : fr'.body = [])
+    (hd : d.block ∈ termSuccs fr.term) (he : enterBlock fr d = .ok fr1)
+    (hd' : d'.block ∈ termSuccs fr'.term) (hblk : d'.block = d.block)
+    (hga : fr.getMany d.args = .ok vs) (hga' : fr'.getMany d'.args = .ok vs) :
+    ∃ fr1', enterBlock fr' d' = .ok fr1' ∧ ∃ j, SRel f g fi cert syms fr1 fr1' j 0 0 := by
+  obtain ⟨j, b2, hj, hb2, hinv1⟩ := Inv.enter hS.wff h.invf hs hd he
+  obtain ⟨b2x, args, regs, hb2x, hga0, hty, hset, rfl⟩ := enterBlock_ok he
+  rw [h.invf.func, hb2] at hb2x; cases hb2x
+  rw [hga] at hga0; cases hga0
+  obtain ⟨b2', lg2, hj', hlg2, hid2, hpar2, -, -, -, -, -, hps, -⟩ := hS.blocks j b2 hj
+  have hgb : fr'.func.block? d'.block = some b2' := by
+    rw [h.invg.func, hblk]; exact hS.block?_corr hb2 hj hj'
+  obtain ⟨regs', hset'⟩ := setMany_len (r := fr'.regs) (xs := b2'.params.map (·.1)) (vs := vs)
+    (by rw [hpar2]; exact (setMany_spec hset).1)
+  have he' : enterBlock fr' d' = .ok ⟨fr'.func, regs', fr'.slots, b2'.body, b2'.term⟩ :=
+    enterBlock_of hgb hga' (by rw [hpar2]; exact hty) hset'
+  refine ⟨_, he', j, ⟨?_, fun lg hlg => by simp [outs]⟩⟩
+  obtain ⟨jx, b3, hj3, hb3, hinv2⟩ := Inv.enter hS.wfg h.invg ht hd' he'
+  have : b3 = b2' := by
+    rw [h.invg.func] at hgb; rw [hgb] at hb3; exact (Option.some.inj hb3).symm
+  subst b3
+  have : jx = j := idx_unique hS.wfg hj3 hj' rfl
+  subst jx
+  refine ⟨hinv1, hinv2, ?_, h.slots⟩
+  intro v hv
+  by_cases hdv : (wfData f fi).dm v = some (j, 0)
+  · obtain ⟨b4, p, hb4, hp, hpv⟩ := site_param' hS.wff hdv
+    rw [hj] at hb4; cases hb4
+    have hσv : cert.subst.step v = v := by
+      rw [← hpv]; exact step_of_not_contains (hps p hp).2.2
+    rw [hσv]
+    have hvm : v ∈ b2.params.map (·.1) := List.mem_map.2 ⟨p, hp, hpv⟩
+    have hgs : (wfData g (gInfo fi cert)).dm v = some (j, 0) := by
+      rw [← hpv]; exact site_param hS.wfg hj' (by rw [hpar2]; exact hp)
+    refine ⟨⟨j, 0, hgs, .inl ⟨rfl, Nat.le_refl _⟩⟩, ?_, ?_⟩
+    · rw [hpar2] at hset'
+      exact (setMany_same hset hset' v hvm).symm
+    · intro d0 t0 hd0
+      rw [hdv] at hd0; simp only [Option.some.injEq, Prod.mk.injEq] at hd0
+      obtain ⟨rfl, -⟩ := hd0
+      exact ⟨j, 0, by rw [hσv]; exact hgs, .refl _⟩
+  · have hbid : b2.id = d.block := by obtain ⟨_, _, h0⟩ := block?_index hS.wff hb2; exact h0
+    obtain ⟨b, hb, -, hterm, -⟩ := h.invf.block
+    have hvp := avail_pred hS.wff hb hj (by rw [hbid, ← hterm]; exact hd) hv hdv
+    have hkk : k = b.body.length := by
+      obtain ⟨b0, hb0, h1, -, hk⟩ := h.invf.block
+      rw [hb] at hb0; cases hb0
+      rw [hs] at h1
+      have := List.drop_eq_nil_iff.1 h1.symm; omega
+    rw [← hkk] at hvp
+    obtain ⟨-, heq, hsa⟩ := h.agree v hvp
+    obtain ⟨d, t, hd0, hva⟩ := hv
+    rcases hva with ⟨hdj, ht0⟩ | ⟨hne, ha⟩
+    · exact absurd (by rw [hd0, hdj, show t = 0 by omega]) hdv
+    obtain ⟨d', t', hd', hanc⟩ := hsa d t hd0
+    have hne2 : d' ≠ j := fun he => hne (Anc.antisymm hS.wff.rank ha (he ▸ hanc))
+    refine ⟨⟨d', t', hd', .inr ⟨hne2, hanc.trans ha⟩⟩, ?_, hsa⟩
+    have hn1 : cert.subst.step v ∉ b2'.params.map (·.1) := by
+      intro hm
+      obtain ⟨p, hp, hpv⟩ := List.mem_map.1 hm
+      have := site_param hS.wfg hj' hp
+      rw [hpv, hd'] at this
+      simp only [Option.some.injEq, Prod.mk.injEq] at this
+      exact hne2 this.1
+    have hn2 : v ∉ b2.params.map (·.1) := by
+      intro hm
+      obtain ⟨p, hp, hpv⟩ := List.mem_map.1 hm
+      exact hdv (by rw [← hpv]; exact site_param hS.wff hj hp)
+    simp only
+    rw [((setMany_spec hset').2 _).1 hn1, ((setMany_spec hset).2 _).1 hn2, heq]
+
+end
+
 end Opt
