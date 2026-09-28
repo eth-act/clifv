@@ -467,7 +467,9 @@ agent/m4-alu-b). M4Ctl consumes `is_nonzero_cmp_ok`/`CondSem` for `brif`.
 Root rules proven (`LowerRuleOk`): **icmp 2215** (`icmp_ruleOk`), **uextend(icmp) 1281**
 (`uextend_icmp_ruleOk`), both in `IselCmpRoot.lean`. Contracts: `is_nonzero_ok` (IselCmpIcmp),
 `emit_icmp_ok` (all 12 rules, `IcmpT`), `lower_extend_op_ok`, iconst look-through (IselCmpEmit),
-`is_nonzero_cmp_ok`, `output_reg_ok`, `condCode_lcrb`, `lowerInstOk_runs` (IselCmpRoot).
+`is_nonzero_cmp_ok`, `cmp_output_reg_ok` (renamed from `output_reg_ok`: clashed with family B's
+`IselFamAluBShiftTerms.output_reg_ok` when both are imported), `condCode_lcrb`,
+`lowerInstOk_runs` (IselCmpRoot).
 Main ddf0955 merged. Never use `git stash` (shared across worktrees).
 
 **Next**: `lower_select_cond_ok` (int widths, rule 5364) is proven in the WIP draft
@@ -477,6 +479,71 @@ and the fallback 5331 refuted by forward `isel_eval` of `hpre` (works); remainin
 `rename_i`/`first` instead). Then select 2267 / min-max 1222–1228 = `is_nonzero_cmp_ok` or
 `emit_icmp_ok (cc := .ult/.slt/.ugt/.sgt)` + `lower_select_ok` + `runs_flags_csel` + `output`.
 Vector min/max 1233–1251 and div/rem (1116…1211) not started.
+
+### Progress (M4Cmp4)
+
+Root rules proven (`LowerRuleOk`, axioms as icmp 2215: `propext`, `Classical.choice`,
+`Quot.sound` + the flag lemmas' `bv_decide` certificates):
+
+* **select 2267** (`select_ruleOk`, `IselCmpSelect.lean`): `is_nonzero_cmp_ok` +
+  `lower_select_ok` (Zero/NotZero/Cond; fallback 5331 refuted by forward evaluation of the failed
+  match) + `condCode_csel` (condition code, `cmp`/flag instruction, `csel` into a fresh vreg) +
+  `vholds_select`. `lower_select_cond_ok` (rule 5364, i8..i64).
+* **umin/smin/umax/smax 1222/1224/1226/1228** (`IselCmpMinMax.lean`, shared `minmax_tail`):
+  `emit_icmp_ok` at ult/slt/ugt/sgt, then as select; `minmax_sem` (`if intcc cc a b then a else
+  b` = the CLIF min/max).
+* **vector min/max 1233/1239/1245/1251** vacuous (`IselCmpVec.lean`, axioms `propext`,
+  `Classical.choice`, `Quot.sound`): `vector_size_scalar` (every `vector_size` rule needs
+  `multi_lane`/`dynamic_lane`, which fail on `.int w`), `vector_size_binary_absurd` (result type
+  of a binary E instruction is `.int ty.width`).
+
+* **Division** (`IselCmpDiv.lean`, `IselCmpDivRoot.lean`): **udiv 1116/1119, urem 1190** proven
+  (`udiv64_ruleOk`, `udiv32_ruleOk`, `urem64_ruleOk`). Contracts: `trap_if_zero_divisor_ok`,
+  `put_nonzero_in_reg_ok` (all rules) + `divisor_sem` (zero check halts with `int_divz`,
+  `TrapRun`; iconst divisor via `imm_ok`, `immOut_lt`, `imm_divOpnd`), `DivOpnd`, `ext_divOpnd`,
+  `lowerInstOk_div` (ok/trap arms), `DivOperands` (.run/.uses), `udiv_finish`, `urem_finish`,
+  `a64_udiv_ok`/`a64_sdiv_ok`/`msub_ok`, `runs_sdiv`. `ExtOut.sem`/`divisor_sem` now take
+  `VHolds` of the operand instead of `ValsHeld` (needed to run the second operand code after
+  the first; callers updated).
+* **urem 1197, srem 1204/1211, sdiv 1163/1167** (`IselCmpDivRem.lean`: `urem32_ruleOk`,
+  `srem64_ruleOk`, `srem32_ruleOk`, `sdiv_safe64_ruleOk`, `sdiv_safe32_ruleOk`). Signed
+  arithmetic by `toInt` lemmas, no `bv_decide`: `sub_sdiv_mul_eq_srem` (`x - x.sdiv y * y =
+  x.srem y`), `srem_signExtend`/`sdiv_signExtend` (32-bit ops on sign-extended operands),
+  `srem_core`/`sdiv_core`; `srem_finish`; `safe_divisor_sem` (`safe_divisor_from_imm64`: the
+  `iconst` divisor is neither 0 nor all-ones at run time, `imm … Sign` holds it) +
+  `sdiv_safe_finish` (both trap arms refuted).
+* **sdiv 1145/1153** (`IselCmpSdiv.lean`: `sdiv64_ruleOk`, `sdiv32_ruleOk`). Contracts
+  `intmin_check_ok` (562: `lsl` by `32 - w` at 32 bits for i8/i16, else the dividend;
+  `diff_from_32_ok`, `lsl_imm32_ok`), `size_from_ty_ok` (560), `trap_if_div_overflow_ok` (561:
+  `adds xzr, y, #1; ccmp c, #1, #0000, eq; trapIf vs int_ovf`). Semantics: `ovfCheck_run`
+  (flags by `bv_decide` at 32/64 bits: `adds` sets Z iff `y` is all-ones, the `ccmp` sets V iff
+  also `c` is the minimum), `intmin_code_sem`, `sdiv_base_finish` (`int_divz` from the divisor
+  check, `int_ovf` from `ovfCheck`, else `sdiv_core`).
+
+**Family C complete.** `lowerRulesCorrect_program : LowerRulesCorrect program` is assembled in
+`IselLowerAll.lean` (all families; see "Assembly").
+
+## Assembly: `lowerRulesCorrect_program` (M4Cmp5)
+
+`IselLowerAll.lean` proves `lowerRulesCorrect_program : LowerRulesCorrect program` (axioms
+`propext`, `Classical.choice`, `Quot.sound` and the `bv_decide` certificates of the flag / bit
+lemmas). It imports the family A, B, C root modules and splits on `closureRootIds`
+(`closureRoot_eq`): each of the 127 ids is identified with its rule (`lower_rule_eq`: index in
+`data_program.r686`, ids distinct) and discharged by the family theorem (`apply T <;>
+assumption`); call (1031/1032) and memory ids are refuted by `callRootRule`/`memRootRule`; the
+`lower_branch` roots 1132, 1137–1140 are not rules of `lower` (`lower_ids_not_branch`); the
+terminator rules `trap` 964 / `return` 1037 are vacuous for an E instruction
+(`lowerRuleOk_of_fmt`: their root formats `Trap`/`MultiAry` are not E formats,
+`instData_fmt_ne`; they are proven as `LowerTermRuleOk` in `IselCtl`). The case split was
+generated by an untrusted script (`closureRootIds`, the `r686` indices, the theorem names);
+regenerate it if the rule list or a theorem name changes.
+
+Name clashes fixed so that all families import together: family C's `output_reg_ok`,
+`ctor_put_in_regs_iff`, `defClif_inv`, `eTy_widths`, `opnd_resX`, `variantNames_Uextend`,
+`ctor_cond_br_zero_iff` are now `cmp_*`; family A's `IselFamALUALogicNot.variantNames_Bnot` is
+`variantNames_Bnot_logicNot` (clashed with `IselFamAluBMisc`). Remaining duplicate names
+(not imported together by any module today): `lo64_resX64` (ALUAMulN / MemAmode), `load_ext_name_got_ok` etc. (IselCtlCallRules /
+IselMemHelpers), `ofNat_u64` (IselFamALUA / RegallocMem).
 
 ## Family Ctl: terminators, branches, calls (M4Ctl)
 

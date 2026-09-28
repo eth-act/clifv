@@ -472,7 +472,7 @@ theorem emit_narrow_imm (hR : Refines F isem) (hctx : CtxInv f ctx) {st st' : LS
   · rintro fr ρ b hh hdf ⟨ty, a, b', hxv, hyv, rfl⟩
     have hyc := iconst_val hdf hj hi hcl hyv
     cases hyc
-    obtain ⟨hu, hr⟩ := hrun fr ρ _ hh hdf hxv
+    obtain ⟨hu, hr⟩ := hrun fr ρ _ (hh x _ hxv) hdf hxv
     refine ⟨hu, fun u hu' => ?_, fun w => (hr w).imp fun ρ' _ _ he =>
       ⟨_, setsFlags_cmpImm .size32 k hbits ρ', ?_⟩⟩
     · rw [vuseNums_cmpImm, List.mem_singleton] at hu'
@@ -528,7 +528,7 @@ theorem emit_narrow_ext (hR : Refines F isem) (hctx : CtxInv f ctx) {st st' : LS
     · exact hk
     · exact Nat.lt_of_lt_of_le (vreg_lt hvb hy) hf.mono
   · rintro fr ρ b hh hdf ⟨ty, a, b', hxv, hyv, rfl⟩
-    obtain ⟨hu, hr⟩ := hrun fr ρ _ hh hdf hxv
+    obtain ⟨hu, hr⟩ := hrun fr ρ _ (hh x _ hxv) hdf hxv
     refine ⟨hu, fun u hu' => ?_, fun w => (hr w).imp fun ρ' w' hrun' he =>
       ⟨_, setsFlags_cmpExt .size32 k y e ρ', ?_⟩⟩
     · rw [vuseNums_cmpExt] at hu'
@@ -627,7 +627,7 @@ theorem emit_icmp_ok {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem)
   isel_split' hp hc h 652
   all_goals (try (isel_refute hp at hm; done))
   all_goals isel_inv' hp [ctor_signed_cond_code_iff, ctor_unsigned_cond_code_iff, ctor_u64_is_odd_iff,
-    ctor_u64_wrapping_sub_iff, ctor_put_in_regs_iff, V.intcc?_data, some_bind_ccIdx,
+    ctor_u64_wrapping_sub_iff, cmp_ctor_put_in_regs_iff, V.intcc?_data, some_bind_ccIdx,
     Int.toNat_one, Int.toNat_zero, List.getElem?_cons_succ, List.getElem?_nil] at hm he
   all_goals try (isel_opcode_absurd hctx; done)
   all_goals isel_call hp hc [operand_size_ok, cmp_ok, cmp_imm_ok, cmp_extend_ok, zext32_ok, sext32_ok,

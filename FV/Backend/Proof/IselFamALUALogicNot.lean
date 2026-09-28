@@ -235,7 +235,7 @@ theorem aluRsImmLogic_ok {p : Program} (hp : Data p) {f : Clif.Function} {ctx : 
 set_option maxRecDepth 20000 in
 theorem variantNames_Unary_fa : (variantNames 152)[29]? = some "Unary" := rfl
 set_option maxRecDepth 20000 in
-theorem variantNames_Bnot : (variantNames 151)[100]? = some "Bnot" := rfl
+theorem variantNames_Bnot_logicNot : (variantNames 151)[100]? = some "Bnot" := rfl
 
 theorem instNames_bnot {c : Clif.Inst} (h : instNames c = ("Unary", "Bnot")) :
     ∃ ty x, c = .unary .bnot ty x := by
@@ -252,7 +252,7 @@ theorem instData_bnot_inv {f : Clif.Function} {cl : Clif.Inst} {fs : List V}
     ∃ ty y, cl = .unary .bnot ty y ∧ fs = [.value y] := by
   obtain ⟨hf, ho⟩ := instData_inv_names h
   rw [variantNames_Unary_fa] at hf
-  rw [variantNames_Bnot] at ho
+  rw [variantNames_Bnot_logicNot] at ho
   have : instNames cl = ("Unary", "Bnot") :=
     Prod.ext (Option.some.inj hf).symm (Option.some.inj ho).symm
   obtain ⟨ty, y, rfl⟩ := instNames_bnot this

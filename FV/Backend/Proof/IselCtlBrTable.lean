@@ -419,7 +419,7 @@ theorem brTable_ruleOk {p : Program} (hp : Data p) {F : BitVec 64 → Prop} {ise
     refine ⟨_, ?emit, brTable_termOk_gen hR hMR hFall (by dsimp only [LState.emit] at hm1 ht1 ⊢; omega)
       (by dsimp only [LState.emit] at hm1 ht2 ⊢; omega) hlen fun fr ρ v hvh hdfg hreg => ?_⟩
     case emit => simp [LState.emit, hFall.emitted]
-    obtain ⟨hux, hrx⟩ := hxsem fr ρ v hvh hdfg hreg
+    obtain ⟨hux, hrx⟩ := hxsem fr ρ v (hvh _ _ hreg) hdfg hreg
     have hkok : st.nextVreg ≤ k ∨ (fr.regs k).isSome := by
       rcases hkx with h | rfl
       · exact .inl (by dsimp only [LState.emit] at h ⊢; exact h)

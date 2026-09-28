@@ -201,7 +201,7 @@ theorem ExtOut.sem {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem) {
     (hpass : ∀ t ∈ pass, t = .int 64 ∨ (t = .int 32 ∧ toB = 32)) (h32 : toB = 32 → .int 32 ∈ pass)
     (h : ExtOut ctx x sg toB pass s s' v) :
     ∃ k ms, v = .reg (.vreg k .int) ∧ Frag s s' ms ∧ k < s'.nextVreg ∧ (s.nextVreg ≤ k ∨ k = x) ∧
-      ∀ (fr : Clif.Frame) (ρ : Nat → CV) (vx : Clif.Val), ValsHeld fr ρ → DFGCons ctx fr →
+      ∀ (fr : Clif.Frame) (ρ : Nat → CV) (vx : Clif.Val), VHolds vx (ρ x) → DFGCons ctx fr →
         fr.regs x = some vx →
         UsesLo s.nextVreg fr ms ∧ ∀ w, Runs F isem ms ρ w (fun ρ' _ => ExtHolds sg toB vx (ρ' k)) := by
   obtain ⟨t, hT, rx, hx, hcase⟩ := h
@@ -211,10 +211,10 @@ theorem ExtOut.sem {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem) {
   rcases hcase with ⟨ht, rfl, hs⟩ | ⟨ht, hb, rfl, rfl⟩
   · subst s'
     refine ⟨x, [], rfl, Frag.nil _, hxlt, .inr rfl, fun fr ρ vx hheld hdfg hvx => ⟨UsesLo.nil _ _, fun w => ?_⟩⟩
-    refine Runs.nil ⟨hheld x vx hvx, fun hw => ?_⟩
+    refine Runs.nil ⟨hheld, fun hw => ?_⟩
     have hty := hdfg.2 x t vx hT hvx
     obtain ⟨vty, vb⟩ := vx
-    have hv := hheld x _ hvx
+    have hv := hheld
     simp only [VHolds] at hv
     subst hty
     rcases hpass _ ht with h64 | ⟨h32', rfl⟩
@@ -251,7 +251,7 @@ theorem ExtOut.sem {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem) {
       rw [ofClif_bits]
       refine Runs.one hR (operands_extend' _ _ _ _ _) hs rfl (SameWorldNF.refl F w) ?_
       · intro w'' _
-        have hv := hheld x _ hvx
+        have hv := hheld
         rw [vdefUpd_extend']
         simp only [upd, ite_true]
         exact extHolds_extend sg vb (by omega) toB hto hne _ hv
