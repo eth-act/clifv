@@ -300,4 +300,138 @@ theorem simpOk_facts {f g : Function} {fi : Info} {cert : SimpCert}
       · exact h r hr
   · simp at this
 
+/-! ## Target values are graph values -/
+
+/-- Lexicographic induction on (rank of the block, position). -/
+theorem lexInd {rank : Nat → Nat} {P : Nat → Nat → Prop}
+    (h : ∀ d t, (∀ d' t', rank d' < rank d → P d' t') → (∀ t', t' < t → P d t') → P d t) :
+    ∀ d t, P d t := by
+  intro d
+  induction hr : rank d using Nat.strongRecOn generalizing d with
+  | _ n ih =>
+    intro t
+    induction t using Nat.strongRecOn with
+    | _ t iht => exact h d t (fun d' t' hlt => ih (rank d') (hr ▸ hlt) d' rfl t') iht
+
+/-- A value of the type `check f` gives `x` (the defaults of `rhoAt`). -/
+def dflt (fi : Info) (x : ValueId) : Val :=
+  match fi.types.get? x with
+  | some t => ⟨t, 0⟩
+  | none => ⟨.i8, 0⟩
+
+open Classical in
+/-- The leaf valuation read off the target frame `fr'` at `(bi, k')`: available leaves have their
+register values, the other leaves typed defaults. -/
+noncomputable def rhoAt (f g : Function) (fi : Info) (cert : SimpCert) (fr' : Frame) (bi k' : Nat) :
+    Valuation := fun x =>
+  if (initAvail f).contains x then
+    some ((if Avail (wfData g (gInfo fi cert)) bi k' x then fr'.regs x else none).getD (dflt fi x))
+  else none
+
+/-- The memory with every symbol defined (undefined ones at address 0). -/
+def memPlus (m : Mem) : Mem :=
+  { m with symbols := fun n => match m.symbols n with
+    | some a => some a
+    | none => some 0 }
+
+theorem memPlus_le (m : Mem) : SymsLe m (memPlus m) := by
+  intro s a h; simp [memPlus, h]
+
+theorem memPlus_all (m : Mem) (n : String) : ((memPlus m).symbols n).isSome := by
+  simp only [memPlus]; split <;> simp_all
+
+section
+variable {f g : Function} {fi : Info} {cert : SimpCert} (hS : SOk f g fi cert)
+include hS
+
+/-- The facts of `simpOk` for block `d` of `g`. -/
+theorem SOk.gblock {d : Nat} {b' : Block} (hb' : g.blocks[d]? = some b') :
+    ∃ b lg, f.blocks[d]? = some b ∧ cert.logs[d]? = some (some lg) ∧ b'.id = b.id ∧
+    b'.params = b.params ∧ b'.body = (outs lg.stmts ++ lg.extra.toList).map (renStmt cert.subst.step) ∧
+    b'.term = mapTerm cert.subst.step lg.term' ∧ lg.term = mapTerm cert.subst.step b.term ∧
+    (sctx g fi cert d).termOk lg = true ∧ (sctx g fi cert d).stmtsOk b.body lg.stmts 0 = true ∧
+    (∀ p ∈ b.params, cert.defs.contains p.1 = false ∧ (initAvail f).contains p.1 = true ∧
+      cert.subst.contains p.1 = false) ∧
+    (∀ t ∈ b'.body, ∀ x, t.results = [x] → isPure t.inst = true → cert.defs.get? x = some t.inst) ∧
+    (∀ t ∈ b'.body, skeletonStmt t = true → ∀ r ∈ t.results,
+      cert.defs.contains r = false ∧ (initAvail f).contains r = true) := by
+  have hd : d < f.blocks.length := by rw [← hS.len]; exact (List.getElem?_eq_some_iff.1 hb').1
+  obtain ⟨b'', lg, hb'', h⟩ := hS.blocks d f.blocks[d] (by simp [hd])
+  rw [hb'] at hb''; cases hb''
+  exact ⟨f.blocks[d], lg, by simp [hd], h⟩
+
+/-- A defined value of `g` is a leaf (a parameter or a result of a non-pure-node statement,
+not a graph node) or a pure statement whose node is the graph's. -/
+theorem SOk.site {x : ValueId} {d t : Nat} (hd : (wfData g (gInfo fi cert)).dm x = some (d, t)) :
+    (cert.graph x = none ∧ (initAvail f).contains x = true) ∨
+    (∃ n, cert.graph x = some n ∧ PureDef g (wfData g (gInfo fi cert)) x n) := by
+  cases t with
+  | zero =>
+    obtain ⟨b', p, hb', hp, hpx⟩ := site_param' hS.wfg hd
+    obtain ⟨b, lg, hb, -, -, hpar, -, -, -, -, -, hps, -⟩ := hS.gblock hb'
+    rw [hpar] at hp
+    obtain ⟨h1, h2, -⟩ := hps p hp
+    subst hpx
+    refine .inl ⟨?_, h2⟩
+    simp only [SimpCert.graph]
+    rw [Std.HashMap.get?_eq_getElem?, Std.HashMap.getElem?_eq_none_of_contains_eq_false h1]
+  | succ j =>
+    obtain ⟨b', st, hb', hst, hx⟩ := site_stmt hS.wfg hd
+    obtain ⟨b, lg, hb, -, -, -, -, -, -, -, -, -, hpure, hskel⟩ := hS.gblock hb'
+    have hmem : st ∈ b'.body := List.mem_of_getElem? hst
+    cases hsk : skeletonStmt st with
+    | true =>
+      obtain ⟨h1, h2⟩ := hskel st hmem hsk x hx
+      refine .inl ⟨?_, h2⟩
+      simp only [SimpCert.graph]
+      rw [Std.HashMap.get?_eq_getElem?, Std.HashMap.getElem?_eq_none_of_contains_eq_false h1]
+    | false =>
+      simp only [skeletonStmt, Bool.not_eq_false', Bool.and_eq_true, beq_iff_eq] at hsk
+      obtain ⟨hp, hl⟩ := hsk
+      have hr : st.results = [x] := by
+        match hrs : st.results, hl with
+        | [y], _ => rw [hrs] at hx; simp at hx; rw [hx]
+      exact .inr ⟨st.inst, hpure st hmem x hr hp, d, j, b', st, hd, hb', hst, hr, rfl, hp⟩
+
+/-- **Target values are graph values**: at any point of a run of `g`, every available value is
+the `den` of the certificate graph from the leaves `rhoAt` (in any memory defining the
+symbols). -/
+theorem den_agree {syms : String → Option Nat} {fr' : Frame} {bi k' : Nat}
+    (hinv : Inv g (wfData g (gInfo fi cert)) syms fr' bi k') {mem : Mem}
+    (hmem : SymsLe (symMem syms) mem) :
+    ∀ x, Avail (wfData g (gInfo fi cert)) bi k' x →
+      den cert.graph (rhoAt f g fi cert fr' bi k') fr' mem x = fr'.regs x := by
+  have key : ∀ d t x, (wfData g (gInfo fi cert)).dm x = some (d, t) →
+      Avail (wfData g (gInfo fi cert)) bi k' x →
+      den cert.graph (rhoAt f g fi cert fr' bi k') fr' mem x = fr'.regs x := by
+    refine lexInd (rank := (wfData g (gInfo fi cert)).rank) ?_
+    intro d t ihr iht x hd hx
+    obtain ⟨a, ha, -⟩ := hinv.regs x hx
+    rcases hS.site hd with ⟨hn, hL⟩ | ⟨n, hn, hpd⟩
+    · rw [den_leaf hn, ha]
+      simp [rhoAt, hL, hx, ha]
+    · rw [den_node hn, ha]
+      obtain ⟨d0, j, b', st, hd0, hb', hst, hrx, hsn, hp⟩ := hpd
+      rw [hd] at hd0
+      simp only [Option.some.injEq, Prod.mk.injEq] at hd0
+      obtain ⟨rfl, rfl⟩ := hd0
+      have hev : evalNode fr' (symMem syms) n = some a := (hinv.pure x n hx ⟨d, j, b', st, hd, hb',
+        hst, hrx, hsn, hp⟩).symm.trans ha
+      refine (evalNode_congr (fr := fr')
+        (fr' := withRegs fr' (den cert.graph (rhoAt f g fi cert fr' bi k') fr' mem)) rfl rfl ?_).trans
+        (evalNode_symsLe hp hmem hev)
+      intro y hy
+      rw [← hsn] at hy
+      have hyd := hS.wfg.uses d b' hb' j st hst y hy
+      have hyk := avail_operand hS.wfg hx hd hb' hst hy
+      obtain ⟨d2, t2, hd2, hya⟩ := hyd
+      rcases hya with ⟨rfl, ht2⟩ | ⟨hne, hanc⟩
+      · exact iht t2 (by omega) y hd2 hyk
+      · exact ihr d2 t2 ((hanc.rank_le hS.wfg.rank).2 hne) y hd2 hyk
+  intro x hx
+  obtain ⟨d, t, hd, -⟩ := id hx
+  exact key d t x hd hx
+
+end
+
 end Opt
