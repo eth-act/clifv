@@ -12,6 +12,11 @@ pc advances by 4. Base registers may be `sp` (then `sp` must be aligned).
 `steps_loadConst64`: the `movz`/`movk` sequence of `loadConst64 (x n) v` leaves `v` in `x n`;
 `StepsOk` (every line encodes, advances the pc by 4 and keeps the error flag and the program)
 gives both its `execLines` run and the error-free intermediate states.
+
+`execMInst_load`/`execMInst_store`: an allocated load/store with a `MemMode` addressing mode
+(final register forms, or a stack-slot offset: `ldur`/`stur`, scaled `ldr`/`str`, or the
+`x16` sequence for large offsets) runs as `StepsOk` to the value-level access, with an optional
+scratch value in `x16`.
 -/
 
 namespace Backend.Proof
@@ -640,5 +645,234 @@ theorem steps_loadConst64 (env : Env) {n : Nat} (hn : n ≤ 30) (v : Nat) (s : A
     rw [BitVec.add_assoc]; congr 1; apply BitVec.eq_of_toNat_eq; simp [movkLines_length]; omega
   rw [e] at hk
   exact hk
+
+/-! ## Loads and stores of allocated instructions (`execMInst`) -/
+
+/-- The addressing modes of loads/stores the backend emits before finalisation: register
+forms with a final encoding, and stack-slot offsets (any `Int`). -/
+def MemMode (bytes : Nat) : AMode → Prop
+  | .slotOffset _ => True
+  | m@(.unsignedOffset ..) | m@(.unscaled ..) | m@(.regReg ..) | m@(.regScaled ..)
+  | m@(.regScaledExtended ..) | m@(.regExtended ..) => FinalAM bytes m
+  | _ => False
+
+/-- An optional scratch write of `x16`. -/
+def x16w : Option (BitVec 64) → Arm.ArmState → Arm.ArmState
+  | none, s => s
+  | some c, s => Arm.w (.GPR 16#5) c s
+
+theorem x16w_facts (o : Option (BitVec 64)) (s : Arm.ArmState) :
+    Arm.r .PC (x16w o s) = Arm.r .PC s ∧ Arm.r .ERR (x16w o s) = Arm.r .ERR s ∧
+      (x16w o s).program = s.program ∧ (x16w o s).mem = s.mem ∧ spOf (x16w o s) = spOf s := by
+  cases o <;> simp [x16w, Arm.r_of_w_different, Arm.w_program, Arm.ArmState.mem_w_eq_mem, spOf]
+
+theorem memFinalize_final (ctx : FnCtx) (bytes : Nat) {m : AMode} (hm : FinalAM bytes m) :
+    memFinalize ctx m bytes = .ok ([], m) := by
+  cases m <;> simp_all [FinalAM, memFinalize]
+
+theorem ofNat_u64 (o : Int) : BitVec.ofNat 64 (u64 o) = BitVec.ofInt 64 o := by
+  apply BitVec.eq_of_toNat_eq
+  simp [u64, BitVec.toNat_ofInt]
+  omega
+
+theorem sxtx_id (x : BitVec 64) : Arm.extend_reg x (Arm.decode_reg_extend 7#3) 0 = x := by
+  rw [show Arm.decode_reg_extend 7#3 = .SXTX from rfl]
+  simp only [Arm.extend_reg, Arm.ExtendType.unsigned_len, Nat.sub_zero,
+    BitVec.shiftLeft_zero]
+  simp only [BitVec.extractLsb']
+  show BitVec.signExtend 64 (BitVec.ofNat 64 (x.toNat >>> 0)) = x
+  simp [BitVec.signExtend_eq]
+
+/-- **A load on the Arm model** (`uload*`/`sload*` into `x d`, not x16): its lines run
+without error from an aligned state; `x d` gets the loaded value at `AMode.addr`, the pc advances
+past the lines, `x16` may hold a scratch value (large slot offsets). -/
+theorem execMInst_load (ctx : FnCtx) (env : Env) (op : LoadOp) (hop : op ≠ .fpuLoad128) {d : Nat}
+    (hd : d ≤ 30) (m : AMode) (fl : Clif.MemFlags) (hm : MemMode op.bytes m) (s : Arm.ArmState)
+    (halign : Arm.CheckSPAlignment s) :
+    ∃ ls o, MInst.lines ctx (.load op (.x d) m fl) {} = .ok (ls, {}) ∧
+      StepsOk env ls s (Arm.w .PC (Arm.r .PC s + BitVec.ofNat 64 (4 * ls.length))
+        (Arm.w (.GPR (BitVec.ofNat 5 d)) (ldX op (m.addr ctx op.bytes s) s) (x16w o s))) := by
+  have single : ∀ m' : AMode, FinalAM op.bytes m' → (m'.base = .sp → Arm.CheckSPAlignment s) →
+      m'.addr ctx op.bytes s = m.addr ctx op.bytes s →
+      StepsOk env [.ins (.load op (.x d) m') fl.trapCode] s (Arm.w .PC (Arm.r .PC s + BitVec.ofNat 64 (4 * 1))
+        (Arm.w (.GPR (BitVec.ofNat 5 d)) (ldX op (m.addr ctx op.bytes s) s) (x16w none s))) := by
+    intro m' hf hs ha
+    obtain ⟨ai, hai, he⟩ := exec_load_line env ctx op hop d hd m' hf s hs
+    refine ⟨ai, hai, ?_, ?_, ?_, ?_⟩
+    · rw [he, Arm.r_of_w_same]
+    · rw [he, Arm.r_of_w_different (by simp), Arm.r_of_w_different (by simp)]
+    · rw [he, Arm.w_program, Arm.w_program]
+    · simp only [StepsOk, he, ha, x16w]
+  cases m with
+  | slotOffset off =>
+    have hbp : 0 < op.bytes := by cases op <;> decide
+    cases h9 : simm9? (off + ctx.slotBase) with
+    | some o =>
+      have ho : o = off + ctx.slotBase ∧ -256 ≤ o ∧ o ≤ 255 := by
+        simp only [simm9?] at h9; split at h9 <;> simp_all
+      refine ⟨_, none, by simp [MInst.lines, memFinalize, h9], single (.unscaled .sp o) ⟨trivial, ho.2.1, by omega⟩
+        (fun _ => halign) ?_⟩
+      simp [AMode.addr, regX, ho.1]
+    | none =>
+      cases hu : uimm12Scaled? (off + ctx.slotBase) op.bytes with
+      | some k =>
+        have hk : (k : Int) = off + ctx.slotBase ∧ k % op.bytes = 0 ∧ k ≤ 4095 * op.bytes := by
+          simp only [uimm12Scaled?] at hu
+          split at hu
+          · rename_i hc
+            simp only [Option.some.injEq] at hu
+            subst hu
+            obtain ⟨h0, h1, h2⟩ := hc
+            exact ⟨Int.toNat_of_nonneg h0, by simpa using h2, by omega⟩
+          · cases hu
+        refine ⟨_, none, by simp [MInst.lines, memFinalize, h9, hu], single (.unsignedOffset .sp k) ⟨trivial, hk.2.1,
+          by have := Nat.div_le_div_right (c := op.bytes) hk.2.2; rw [Nat.mul_div_cancel _ hbp] at this; omega⟩
+          (fun _ => halign) ?_⟩
+        simp only [AMode.addr, regX]
+        congr 1
+        rw [← hk.1]; rfl
+      | none =>
+        let o := off + ctx.slotBase
+        have hl : MInst.lines ctx (.load op (.x d) (.slotOffset off) fl) {} =
+            .ok (loadConst64 (.x 16) (u64 o) ++ [.ins (.load op (.x d) (.regExtended .sp (.x 16) .sxtx)) fl.trapCode], {}) := by
+          simp [MInst.lines, memFinalize, h9, hu, o]
+        refine ⟨_, some (BitVec.ofNat 64 (u64 o)), hl, ?_⟩
+        have hA := steps_loadConst64 env (n := 16) (by omega) (u64 o) s
+        let L := (loadConst64 (.x 16) (u64 o)).length
+        let S1 := pcx s 16 (Arm.r .PC s + BitVec.ofNat 64 (4 * L)) (BitVec.ofNat 64 (u64 o))
+        have hS1 : S1.mem = s.mem ∧ spOf S1 = spOf s ∧ Arm.r .PC S1 = Arm.r .PC s + BitVec.ofNat 64 (4 * L) ∧
+            Arm.r (.GPR 16#5) S1 = BitVec.ofNat 64 (u64 o) ∧ Arm.r .ERR S1 = Arm.r .ERR s ∧ S1.program = s.program := by
+          simp [S1, pcx, Arm.ArmState.mem_w_eq_mem, spOf, Arm.r_of_w_different, Arm.r_of_w_same, Arm.w_program]
+        have hal1 : Arm.CheckSPAlignment S1 := by
+          have e : Arm.r (.GPR 31#5) S1 = Arm.r (.GPR 31#5) s := hS1.2.1
+          simpa [Arm.CheckSPAlignment, Arm.read_gpr, e] using halign
+        obtain ⟨ai, hai, he⟩ := exec_load_line { env with pc := env.pc + 4 * L } ctx op hop d hd
+          (.regExtended .sp (.x 16) .sxtx) ⟨trivial, by simp [IdxOk], by simp⟩ S1 (fun _ => hal1)
+        have haddr : AMode.addr ctx (.regExtended .sp (.x 16) .sxtx) op.bytes S1 =
+            AMode.addr ctx (.slotOffset off) op.bytes s := by
+          simp only [AMode.addr, regX]
+          rw [show rnum 16 = 16#5 from rfl, hS1.2.2.2.1, hS1.2.1, show ExtendOp.sxtx.bits = 7#3 from rfl,
+            sxtx_id, ofNat_u64]
+        have hld : ldX op (AMode.addr ctx (.slotOffset off) op.bytes s) S1 =
+            ldX op (AMode.addr ctx (.slotOffset off) op.bytes s) s := by
+          have hr : ∀ n a, Arm.read_mem_bytes n a S1 = Arm.read_mem_bytes n a s := fun n a =>
+            read_mem_bytes_congr n a (fun k _ => by rw [hS1.1])
+          cases op <;> simp [ldX, hr]
+        refine StepsOk.append hA ⟨ai, hai, ?_, ?_, ?_, ?_⟩
+        · rw [he, Arm.r_of_w_same]
+        · rw [he, Arm.r_of_w_different (by simp), Arm.r_of_w_different (by simp)]
+        · rw [he, Arm.w_program, Arm.w_program]
+        · simp only [StepsOk]
+          rw [he, haddr, hld, hS1.2.2.1]
+          simp only [S1, pcx, x16w, List.length_append, List.length_cons, List.length_nil]
+          rw [Arm.w_of_w_commute (fld1 := .GPR _) (fld2 := .PC) (by simp), Arm.w_of_w_shadow,
+            BitVec.add_assoc]
+          congr 2
+          apply BitVec.eq_of_toNat_eq; simp [L]; omega
+  | _ =>
+    simp only [MemMode] at hm <;>
+    exact ⟨_, none, by simp [MInst.lines, memFinalize_final ctx _ hm], single _ hm (fun _ => halign) rfl⟩
+
+theorem write_mem_w (a : BitVec 64) (b : BitVec 8) (f : Arm.StateField) (x : Arm.state_value f)
+    (s : Arm.ArmState) : Arm.write_mem a b (Arm.w f x s) = Arm.w f x (Arm.write_mem a b s) := by
+  cases f <;> simp [Arm.write_mem, Arm.w, Arm.write_base_gpr, Arm.write_base_sfp, Arm.write_base_pc,
+    Arm.write_base_flag, Arm.write_base_error]
+
+theorem write_mem_bytes_w (f : Arm.StateField) (x : Arm.state_value f) :
+    ∀ (n : Nat) (a : BitVec 64) (v : BitVec (n * 8)) (s : Arm.ArmState),
+      Arm.write_mem_bytes n a v (Arm.w f x s) = Arm.w f x (Arm.write_mem_bytes n a v s)
+  | 0, _, _, _ => rfl
+  | n + 1, a, v, s => by
+    simp only [Arm.write_mem_bytes, write_mem_w]
+    exact write_mem_bytes_w f x n _ _ _
+
+/-- **A store on the Arm model** (`store8..64` of `x d`, `d ≠ 16`): the low bytes of `x d` are
+written at `AMode.addr`, the pc advances past the lines, `x16` may hold a scratch value. -/
+theorem execMInst_store (ctx : FnCtx) (env : Env) (op : StoreOp) (hop : op ≠ .fpuStore128) {d : Nat}
+    (hd : d ≤ 30) (hd16 : d ≠ 16) (m : AMode) (fl : Clif.MemFlags) (hm : MemMode op.bytes m) (s : Arm.ArmState)
+    (halign : Arm.CheckSPAlignment s) :
+    ∃ ls o, MInst.lines ctx (.store op (.x d) m fl) {} = .ok (ls, {}) ∧
+      StepsOk env ls s (Arm.w .PC (Arm.r .PC s + BitVec.ofNat 64 (4 * ls.length))
+        (Arm.write_mem_bytes op.bytes (m.addr ctx op.bytes s)
+          ((Arm.r (.GPR (BitVec.ofNat 5 d)) s).setWidth (op.bytes * 8)) (x16w o s))) := by
+  have single : ∀ m' : AMode, FinalAM op.bytes m' → (m'.base = .sp → Arm.CheckSPAlignment s) →
+      m'.addr ctx op.bytes s = m.addr ctx op.bytes s →
+      StepsOk env [.ins (.store op (.x d) m') fl.trapCode] s (Arm.w .PC (Arm.r .PC s + BitVec.ofNat 64 (4 * 1))
+        (Arm.write_mem_bytes op.bytes (m.addr ctx op.bytes s)
+          ((Arm.r (.GPR (BitVec.ofNat 5 d)) s).setWidth (op.bytes * 8)) (x16w none s))) := by
+    intro m' hf hs ha
+    obtain ⟨ai, hai, he⟩ := exec_store_line env ctx op hop d hd m' hf s hs
+    refine ⟨ai, hai, ?_, ?_, ?_, ?_⟩
+    · rw [he, Arm.r_of_w_same]
+    · rw [he, Arm.r_of_w_different (by simp), Arm.r_of_write_mem_bytes]
+    · rw [he, Arm.w_program, Arm.write_mem_bytes_program]
+    · simp only [StepsOk, he, ha, x16w]
+  cases m with
+  | slotOffset off =>
+    have hbp : 0 < op.bytes := by cases op <;> decide
+    cases h9 : simm9? (off + ctx.slotBase) with
+    | some o =>
+      have ho : o = off + ctx.slotBase ∧ -256 ≤ o ∧ o ≤ 255 := by
+        simp only [simm9?] at h9; split at h9 <;> simp_all
+      refine ⟨_, none, by simp [MInst.lines, memFinalize, h9], single (.unscaled .sp o) ⟨trivial, ho.2.1, by omega⟩
+        (fun _ => halign) ?_⟩
+      simp [AMode.addr, regX, ho.1]
+    | none =>
+      cases hu : uimm12Scaled? (off + ctx.slotBase) op.bytes with
+      | some k =>
+        have hk : (k : Int) = off + ctx.slotBase ∧ k % op.bytes = 0 ∧ k ≤ 4095 * op.bytes := by
+          simp only [uimm12Scaled?] at hu
+          split at hu
+          · rename_i hc
+            simp only [Option.some.injEq] at hu
+            subst hu
+            obtain ⟨h0, h1, h2⟩ := hc
+            exact ⟨Int.toNat_of_nonneg h0, by simpa using h2, by omega⟩
+          · cases hu
+        refine ⟨_, none, by simp [MInst.lines, memFinalize, h9, hu], single (.unsignedOffset .sp k) ⟨trivial, hk.2.1,
+          by have := Nat.div_le_div_right (c := op.bytes) hk.2.2; rw [Nat.mul_div_cancel _ hbp] at this; omega⟩
+          (fun _ => halign) ?_⟩
+        simp only [AMode.addr, regX]
+        congr 1
+        rw [← hk.1]; rfl
+      | none =>
+        let o := off + ctx.slotBase
+        have hl : MInst.lines ctx (.store op (.x d) (.slotOffset off) fl) {} =
+            .ok (loadConst64 (.x 16) (u64 o) ++ [.ins (.store op (.x d) (.regExtended .sp (.x 16) .sxtx)) fl.trapCode], {}) := by
+          simp [MInst.lines, memFinalize, h9, hu, o]
+        refine ⟨_, some (BitVec.ofNat 64 (u64 o)), hl, ?_⟩
+        have hA := steps_loadConst64 env (n := 16) (by omega) (u64 o) s
+        let L := (loadConst64 (.x 16) (u64 o)).length
+        let S1 := pcx s 16 (Arm.r .PC s + BitVec.ofNat 64 (4 * L)) (BitVec.ofNat 64 (u64 o))
+        have hS1 : S1.mem = s.mem ∧ spOf S1 = spOf s ∧ Arm.r .PC S1 = Arm.r .PC s + BitVec.ofNat 64 (4 * L) ∧
+            Arm.r (.GPR 16#5) S1 = BitVec.ofNat 64 (u64 o) ∧ Arm.r .ERR S1 = Arm.r .ERR s ∧ S1.program = s.program := by
+          simp [S1, pcx, Arm.ArmState.mem_w_eq_mem, spOf, Arm.r_of_w_different, Arm.r_of_w_same, Arm.w_program]
+        have hal1 : Arm.CheckSPAlignment S1 := by
+          have e : Arm.r (.GPR 31#5) S1 = Arm.r (.GPR 31#5) s := hS1.2.1
+          simpa [Arm.CheckSPAlignment, Arm.read_gpr, e] using halign
+        obtain ⟨ai, hai, he⟩ := exec_store_line { env with pc := env.pc + 4 * L } ctx op hop d hd
+          (.regExtended .sp (.x 16) .sxtx) ⟨trivial, by simp [IdxOk], by simp⟩ S1 (fun _ => hal1)
+        have haddr : AMode.addr ctx (.regExtended .sp (.x 16) .sxtx) op.bytes S1 =
+            AMode.addr ctx (.slotOffset off) op.bytes s := by
+          simp only [AMode.addr, regX]
+          rw [show rnum 16 = 16#5 from rfl, hS1.2.2.2.1, hS1.2.1, show ExtendOp.sxtx.bits = 7#3 from rfl,
+            sxtx_id, ofNat_u64]
+        have hld : Arm.r (.GPR (BitVec.ofNat 5 d)) S1 = Arm.r (.GPR (BitVec.ofNat 5 d)) s := by
+          have : BitVec.ofNat 5 d ≠ BitVec.ofNat 5 16 := by
+            intro e; have := congrArg BitVec.toNat e; simp at this; omega
+          simp [S1, pcx, Arm.r_of_w_different, this]
+        refine StepsOk.append hA ⟨ai, hai, ?_, ?_, ?_, ?_⟩
+        · rw [he, Arm.r_of_w_same]
+        · rw [he, Arm.r_of_w_different (by simp), Arm.r_of_write_mem_bytes]
+        · rw [he, Arm.w_program, Arm.write_mem_bytes_program]
+        · simp only [StepsOk]
+          rw [he, haddr, hld, hS1.2.2.1]
+          simp only [S1, pcx, x16w, List.length_append, List.length_cons, List.length_nil]
+          rw [write_mem_bytes_w (f := .PC), Arm.w_of_w_shadow, BitVec.add_assoc]
+          congr 2
+          apply BitVec.eq_of_toNat_eq; simp [L]; omega
+  | _ =>
+    simp only [MemMode] at hm <;>
+    exact ⟨_, none, by simp [MInst.lines, memFinalize_final ctx _ hm], single _ hm (fun _ => halign) rfl⟩
 
 end Backend.Proof
