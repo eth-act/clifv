@@ -1,4 +1,5 @@
 import FV.Backend.Proof.RegallocTac
+import FV.Backend.Proof.IselFamAluBBswap
 
 /-!
 # `Refines` for the covered forms (M6 proof)
@@ -68,6 +69,53 @@ theorem sw_ofNat {n k : Nat} (x : Nat) (h : k ≤ n) : (BitVec.ofNat n x).setWid
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
   rw [Nat.mod_mod_of_dvd _ (Nat.pow_dvd_pow 2 h)]
 
+theorem le_false {a b : Nat} (h : a < b) : (b ≤ a) = False := by
+  simp only [eq_iff_iff, iff_false, Nat.not_le]; exact h
+
+theorem se_le {n k : Nat} (x : BitVec n) (h : k ≤ n) : x.signExtend k = x.setWidth k := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  have : i < n := by omega
+  rw [BitVec.getLsbD_signExtend, BitVec.getLsbD_setWidth]; simp [hi, this]
+
+theorem dsh_lsl : Arm.decode_shift ShiftOp.lsl.bits = .LSL := rfl
+theorem dsh_lsr : Arm.decode_shift ShiftOp.lsr.bits = .LSR := rfl
+theorem dsh_asr : Arm.decode_shift ShiftOp.asr.bits = .ASR := rfl
+theorem dsh_ror : Arm.decode_shift ShiftOp.ror.bits = .ROR := rfl
+
+theorem lsb5_of_lt {a : Nat} (h : a < 32) : Arm.BitVec.lsb (BitVec.ofNat 6 a) 5 = 0#1 := by
+  apply BitVec.eq_of_toNat_eq
+  simp [Arm.BitVec.lsb, BitVec.extractLsb', Nat.shiftRight_eq_div_pow]
+  omega
+
+theorem and32_of_lt {a : Nat} (h : a < 32) : BitVec.ofNat 6 a &&& 32#6 = 0#6 :=
+  (by decide : ∀ a < 32, BitVec.ofNat 6 a &&& 32#6 = 0#6) a h
+
+theorem mod64_of_lt32 {a : Nat} (h : a < 32) : a % 64 = a := Nat.mod_eq_of_lt (by omega)
+
+theorem mod_of_lt' {a b : Nat} (h : a < b) : a % b = a := Nat.mod_eq_of_lt h
+
+theorem rv16 (x : BitVec 32) (h0 h1 h2 h3 h4) : Arm.rev_vector 32 16 8 x h0 h1 h2 h3 h4 = rev16w x := by
+  simp [Arm.rev_vector, Arm.rev_elems, rev16w]
+  bv_decide
+theorem rv32 (x : BitVec 32) (h0 h1 h2 h3 h4) : Arm.rev_vector 32 32 8 x h0 h1 h2 h3 h4 = Clif.Sem.bswap x := by
+  simp [Arm.rev_vector, Arm.rev_elems, bswap_32]
+  bv_decide
+theorem rv64 (x : BitVec 64) (h0 h1 h2 h3 h4) : Arm.rev_vector 64 64 8 x h0 h1 h2 h3 h4 = Clif.Sem.bswap x := by
+  simp [Arm.rev_vector, Arm.rev_elems, bswap_64]
+  bv_decide
+
+theorem ext0 {n : Nat} (k : Nat) (x : BitVec n) : x.extractLsb' 0 k = x.setWidth k := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi; simp [hi]
+
+theorem dre_uxtb : Arm.decode_reg_extend ExtendOp.uxtb.bits = .UXTB := rfl
+theorem dre_uxth : Arm.decode_reg_extend ExtendOp.uxth.bits = .UXTH := rfl
+theorem dre_uxtw : Arm.decode_reg_extend ExtendOp.uxtw.bits = .UXTW := rfl
+theorem dre_uxtx : Arm.decode_reg_extend ExtendOp.uxtx.bits = .UXTX := rfl
+theorem dre_sxtb : Arm.decode_reg_extend ExtendOp.sxtb.bits = .SXTB := rfl
+theorem dre_sxth : Arm.decode_reg_extend ExtendOp.sxth.bits = .SXTH := rfl
+theorem dre_sxtw : Arm.decode_reg_extend ExtendOp.sxtw.bits = .SXTW := rfl
+theorem dre_sxtx : Arm.decode_reg_extend ExtendOp.sxtx.bits = .SXTX := rfl
+
 /-- Close a `SameWorld F w'' w'` goal: peel the writes of the canonical run. -/
 syntax "sw_fin" : tactic
 set_option hygiene false in
@@ -80,8 +128,10 @@ macro_rules
         | (refine SameWorld.w_both' ?_ ?_
            · first
                | rfl
-               | (simp (disch := decide) [sw_up, sw_down]; done)
-               | (simp (disch := decide) [sw_up, sw_down]; rfl))
+               | (simp (disch := decide) [sw_up, sw_down, Arm.extend_reg, Arm.ExtendType.unsigned_len, dre_uxtb, dre_uxth, dre_uxtw, dre_uxtx, dre_sxtb,
+      dre_sxth, dre_sxtw, dre_sxtx, ext0, Nat.min_def, se_le]; done)
+               | (simp (disch := decide) [sw_up, sw_down, Arm.extend_reg, Arm.ExtendType.unsigned_len, dre_uxtb, dre_uxth, dre_uxtw, dre_uxtx, dre_sxtb,
+      dre_sxth, dre_sxtw, dre_sxtx, ext0, Nat.min_def, se_le]; rfl))
         | (refine SameWorld.w_left ?_ ?_; · simp [Masked]))
     done))
 
@@ -91,9 +141,11 @@ set_option hygiene false in
 macro_rules
   | `(tactic| val_fin) => `(tactic| (
     try simp only [defOut, resX, opnd, lo64, ofX, List.cons.injEq, and_true]
-    try dsimp only [OperandSize.bits]
-    simp (disch := decide) [Arm.fst_AddWithCarry_eq_add, awc_sub, sw_up,
-      sw_down, BitVec.not_not, amt32, amt64, udiv_ite, sdiv_ite, rot_mod32, rot_mod64]
+    all_goals try dsimp only [OperandSize.bits]
+    all_goals simp (disch := decide) [Arm.fst_AddWithCarry_eq_add, awc_sub, sw_up,
+      sw_down, BitVec.not_not, amt32, amt64, udiv_ite, sdiv_ite, rot_mod32, rot_mod64, mod64_of_lt32, mod_of_lt', rv16, rv32, rv64, *,
+      Arm.extend_reg, Arm.ExtendType.unsigned_len, dre_uxtb, dre_uxth, dre_uxtw, dre_uxtx, dre_sxtb,
+      dre_sxth, dre_sxtw, dre_sxtx, ext0, Nat.min_def, se_le]
     all_goals first
       | rfl
       | (apply BitVec.eq_of_getLsbD_eq; intro i hi; simp)))
@@ -108,7 +160,7 @@ macro_rules
       | refine ⟨_, ⟨rfl, rfl⟩, ?_⟩
       | refine ⟨_, rfl, ?_⟩
       | refine ⟨_, ⟨?_, rfl, ?_⟩, ?_⟩
-    all_goals (first | sw_fin | val_fin)))
+    all_goals (first | with_reducible rfl | sw_fin | val_fin)))
 
 
 /-- The statement of a per-form `Refines` lemma. -/
@@ -117,21 +169,43 @@ def RefAt (F : BitVec 64 → Prop) (ctx : FnCtx) (i : MInst) (us : List CV) : Pr
     Arm.r .ERR w = .None → ispec i us w = some (outs, w', ctl) →
     ∃ w'', straightSem F ctx i us w = some (outs, w'', ctl) ∧ SameWorld F w'' w'
 
-/-- The per-form proof: canonical set-up, cases, both sides computed, matched. -/
+/-- The per-form proof after the intros: canonical set-up, both sides computed, matched. -/
+syntax "ref_body" : tactic
+set_option hygiene false in
+macro_rules
+  | `(tactic| ref_body) => `(tactic| (
+    ss_tac
+    all_goals (simp (config := {decide := true}) [ispec, rrrVal, aluVal, shiftVal, mulAddVal,
+      aluShiftable, extendVal, movWideVal, movKVal, *] at h)
+    all_goals (try simp only [awc_sub, Arm.fst_AddWithCarry_eq_add] at h)
+    all_goals (try dsimp only [OperandSize.bits, opnd, lo64] at h)
+    all_goals (revert h; try simp only [and_imp])
+    all_goals intros
+    all_goals subst_vars
+    all_goals (simp (config := {decide := true}) [csimp_rules, he, Arm.w_program, imm12_enc,
+      sw_ofNat, le_false, ↓dsh_lsl, ↓dsh_lsr, ↓dsh_asr, ↓dsh_ror, lsb5_of_lt, and32_of_lt,
+      mod64_of_lt32, mod_of_lt', *])
+    all_goals ref_fin))
+
+/-- The per-form proof. -/
 syntax "ref_tac" : tactic
 set_option hygiene false in
 macro_rules
   | `(tactic| ref_tac) => `(tactic| (
     intro w outs w' ctl he h
-    ss_tac
-    all_goals (simp (config := {decide := true}) [ispec, rrrVal, aluVal, shiftVal, mulAddVal,
-      aluShiftable, extendVal, movWideVal, movKVal] at h)
-    all_goals (try simp only [awc_sub, Arm.fst_AddWithCarry_eq_add] at h)
-    all_goals (try dsimp only [OperandSize.bits, opnd, lo64] at h)
-    all_goals (revert h; (try simp only [and_imp]); intros; subst_vars)
-    all_goals (simp (config := {decide := true}) [csimp_rules, he, Arm.w_program, imm12_enc,
-      sw_ofNat, *])
-    all_goals ref_fin))
+    ref_body))
+
+/-- The per-form proof of a form reading the flags: split the four flags of the world first. -/
+syntax "ref_tac_fl" : tactic
+set_option hygiene false in
+macro_rules
+  | `(tactic| ref_tac_fl) => `(tactic| (
+    intro w outs w' ctl he h
+    rcases bv1_cases (Arm.r (.FLAG .N) w) with hN | hN <;>
+    rcases bv1_cases (Arm.r (.FLAG .Z) w) with hZ | hZ <;>
+    rcases bv1_cases (Arm.r (.FLAG .C) w) with hC | hC <;>
+    rcases bv1_cases (Arm.r (.FLAG .V) w) with hV | hV <;>
+    ref_body))
 
 variable (F : BitVec 64 → Prop) (ctx : FnCtx)
 
@@ -149,5 +223,56 @@ set_option maxHeartbeats 4000000 in
 theorem ref_aluRRImm12 (op : ALUOp) (sz : OperandSize) (d n : Nat) (imm : Imm12) (a : CV) :
     RefAt F ctx (.aluRRImm12 op sz (.vreg d .int) (.vreg n .int) imm) [a] := by
   cases op <;> cases sz <;> ref_tac
+
+set_option maxHeartbeats 4000000 in
+theorem ref_aluRRR_xd (op : ALUOp) (sz : OperandSize) (n m : Nat) (a b : CV) :
+    RefAt F ctx (.aluRRR op sz .xzr (.vreg n .int) (.vreg m .int)) [a, b] := by
+  cases op <;> cases sz <;> ref_tac
+
+set_option maxHeartbeats 4000000 in
+theorem ref_aluRRR_xm (op : ALUOp) (sz : OperandSize) (d n : Nat) (a : CV) :
+    RefAt F ctx (.aluRRR op sz (.vreg d .int) (.vreg n .int) .xzr) [a] := by
+  cases op <;> cases sz <;> ref_tac
+
+set_option maxHeartbeats 4000000 in
+theorem ref_aluRRR_xdm (op : ALUOp) (sz : OperandSize) (n : Nat) (a : CV) :
+    RefAt F ctx (.aluRRR op sz .xzr (.vreg n .int) .xzr) [a] := by
+  cases op <;> cases sz <;> ref_tac
+
+set_option maxHeartbeats 4000000 in
+theorem ref_aluRRRR (op : ALUOp3) (sz : OperandSize) (d n m k : Nat) (a b c : CV) :
+    RefAt F ctx (.aluRRRR op sz (.vreg d .int) (.vreg n .int) (.vreg m .int) (.vreg k .int)) [a, b, c] := by
+  cases op <;> cases sz <;> ref_tac
+
+set_option maxHeartbeats 4000000 in
+theorem ref_aluRRRR_xa (op : ALUOp3) (sz : OperandSize) (d n m : Nat) (a b : CV) :
+    RefAt F ctx (.aluRRRR op sz (.vreg d .int) (.vreg n .int) (.vreg m .int) .xzr) [a, b] := by
+  cases op <;> cases sz <;> ref_tac
+
+set_option maxHeartbeats 4000000 in
+theorem ref_aluRRRShift (op : ALUOp) (sz : OperandSize) (d n m : Nat) (sh : ShiftOpAndAmt) (a b : CV) :
+    RefAt F ctx (.aluRRRShift op sz (.vreg d .int) (.vreg n .int) (.vreg m .int) sh) [a, b] := by
+  obtain ⟨so, amt⟩ := sh
+  cases op <;> cases sz <;> cases so <;> ref_tac
+
+set_option maxHeartbeats 4000000 in
+theorem ref_aluRRRExtend (op : ALUOp) (sz : OperandSize) (d n m : Nat) (e : ExtendOp) (a b : CV) :
+    RefAt F ctx (.aluRRRExtend op sz (.vreg d .int) (.vreg n .int) (.vreg m .int) e) [a, b] := by
+  cases op <;> cases sz <;> cases e <;> ref_tac
+
+set_option maxHeartbeats 4000000 in
+theorem ref_bitRR (op : BitOp) (sz : OperandSize) (d n : Nat) (a : CV) :
+    RefAt F ctx (.bitRR op sz (.vreg d .int) (.vreg n .int)) [a] := by
+  cases op <;> cases sz <;> ref_tac
+
+set_option maxHeartbeats 4000000 in
+theorem ref_cset (d : Nat) (c : Cond) :
+    RefAt F ctx (.cset (.vreg d .int) c) [] := by
+  cases c <;> ref_tac_fl
+
+set_option maxHeartbeats 4000000 in
+theorem ref_csel (d n m : Nat) (c : Cond) (a b : CV) :
+    RefAt F ctx (.csel (.vreg d .int) (.vreg n .int) (.vreg m .int) c) [a, b] := by
+  cases c <;> ref_tac_fl
 
 end Backend.Proof
