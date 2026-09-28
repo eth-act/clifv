@@ -259,4 +259,149 @@ theorem tbnz_ruleOk {p : Program} (hp : Data p) {F : BitVec 64 → Prop} {isem :
     exact ⟨_, by simp [LState.emit], tbnz_termOk hR hMR hj1 hi1 hcl1 hj2 hi2 hcl2 he2 hta htc⟩
   | _ => simp [termFmt] at hf
 
+/-! ## `tbz` (rule 1138): the `icmp eq … (iconst 0)` look-through -/
+
+theorem iconst_zero_of_imm64 {ty : Clif.Ty} (he : eTy ty = true) {imm : BitVec ty.width}
+    (h : (0 : Int) = (u64 (imm64OfIconst ty imm) : Int)) : imm = 0 := by
+  have := u64_iconst he imm
+  rw [← h] at this
+  apply BitVec.eq_of_toNat_eq
+  rw [← this]; rfl
+
+theorem tbz_termOk {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} (hR : Refines F isem)
+    (hMR : MRStable F MR) {ctx : Ctx} {x c z j0 j1 j2 j3 a b bit : Nat}
+    {info0 info1 info2 info3 : IInfo} {tyc ty1 ty2 ty3 : Clif.Ty} {imm : BitVec ty2.width}
+    {imm0 : BitVec ty3.width} {t : CTy}
+    (hj0 : ctx.defInst? x = some j0) (hi0 : ctx.insts[j0]? = some info0)
+    (hcl0 : info0.clif = some (.icmp .eq tyc c z))
+    (hj1 : ctx.defInst? c = some j1) (hi1 : ctx.insts[j1]? = some info1)
+    (hcl1 : info1.clif = some (.binary .band ty1 a b))
+    (hj2 : ctx.defInst? b = some j2) (hi2 : ctx.insts[j2]? = some info2)
+    (hcl2 : info2.clif = some (.iconst ty2 imm)) (he2 : eTy ty2 = true)
+    (hj3 : ctx.defInst? z = some j3) (hi3 : ctx.insts[j3]? = some info3)
+    (hcl3 : info3.clif = some (.iconst ty3 imm0)) (he3 : eTy ty3 = true)
+    (hz0 : (0 : Int) = (u64 (imm64OfIconst ty3 imm0) : Int))
+    (hta : ctx.valueType? a = some t)
+    (htc : tcbc t ((u64 (imm64OfIconst ty2 imm) : Nat) : Int) = some bit)
+    {st : LState} {la lb : Label} {tb eb : Clif.BlockCall} :
+    LowerTermOk isem MR ctx (.brif x tb eb) [la, lb] st
+      (st.emit (.testBitAndBranch .z la lb (.vreg a .int) bit))
+      [.testBitAndBranch .z la lb (.vreg a .int) bit] := by
+  have hd : vdefs (.testBitAndBranch .z la lb (.vreg a .int) bit) = [] := rfl
+  have hf2 := Frag.emit_nodef st hd
+  refine ⟨hf2.mono, hf2.defs, ?_⟩
+  intro fr cm ρ w _ hvh hdfg hmr
+  refine ⟨fun i hi => ?_, fun j hj => ?_⟩
+  · simp at hi; subst hi; rfl
+  simp only [branchIdx] at hj
+  cases hx : fr.get x with
+  | trap c => rw [hx] at hj; simp [Clif.Res.bind] at hj
+  | stuck m => rw [hx] at hj; simp [Clif.Res.bind] at hj
+  | ok vc =>
+    rw [hx] at hj
+    simp only [Clif.Res.bind] at hj
+    cases hj
+    have hreg : fr.regs x = some vc := by
+      simp only [Clif.Frame.get, Clif.Res.ofOption] at hx
+      split at hx <;> simp_all
+    obtain ⟨-, tyk, ac, zc, hc, hz, hT⟩ := icmp_truthy hdfg hj0 hi0 hcl0 hreg
+    obtain ⟨vals, hev, hl⟩ := hdfg.1 c j1 info1 _ _ hj1 hi1 hcl1 rfl hc
+    obtain ⟨u, v2, ha, hb, rfl⟩ := evalInst_binary_inv rfl (hev default)
+    have hvc := lookup_zip_single hl
+    cases hvc
+    have hzv := iconst_val hdfg hj3 hi3 hcl3 hz
+    cases hzv
+    have h0 := iconst_zero_of_imm64 he3 hz0
+    subst h0
+    have hbv := iconst_val hdfg hj2 hi2 hcl2 (getAs_ok hb)
+    cases hbv
+    have hra := getAs_ok ha
+    have htt := hdfg.2 a t _ hta hra
+    subst htt
+    obtain ⟨hpow, hbit⟩ := tcbc_spec htc
+    rw [ofClif_bits_ctl] at hbit
+    rw [u64_iconst he2] at hpow
+    have hw := eTy_width he2
+    have hholds : (ρ a).setWidth ty1.width = u := hvh a _ hra
+    have key : Clif.Sem.truthy vc.bits = !u.getLsbD bit := by
+      rw [hT, ← truthy_and_pow u v2 bit hbit hpow]
+      simp only [Clif.Sem.intcc, Clif.Sem.binary, Clif.Sem.band, Clif.Sem.truthy, bne, Bool.not_not]
+    have hs : ispec (.testBitAndBranch .z la lb (.vreg a .int) bit) [ρ a] w =
+        some ([], w, .goto (if Clif.Sem.truthy vc.bits then 0 else 1)) := by
+      simp only [ispec, key, getLsbD_lo64 (ρ a) hbit hw, hholds]
+      cases u.getLsbD bit <;> rfl
+    obtain ⟨w2, h2, hw2⟩ := seqRun_one_stop hR (operands_tbb .z la lb a bit) (ρ := ρ) (by simp) hs
+      rfl
+    refine ⟨?_, _, _, _, _, _, _, _, h2, rfl, hMR _ _ _ _ (SameWorld.nf hw2) hmr⟩
+    intro m hm u' hu
+    simp only [List.mem_singleton] at hm
+    subst hm
+    have : u' = a := by simpa [vuseNums, operands_tbb, Operand.isUse] using hu
+    subst this
+    exact .inr (by rw [hra]; rfl)
+
+set_option maxHeartbeats 4000000 in
+theorem tbz_ruleOk {p : Program} (hp : Data p) {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT}
+    (hR : Refines F isem) (hMR : MRStable F MR) : BranchRuleOk isem MR p rule_lower_3257 := by
+  intro f ctx hctx ti t data targets hd hi _ _ cfg hc m n st tr env' s1 out st' tr' hm hn hvb _ hmatch
+    heval
+  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
+  obtain ⟨n, rfl⟩ : ∃ n', n = n' + 100 := ⟨n - 100, by omega⟩
+  have kT := fun n (hn : 60 ≤ n) a b r bit s v s' h => tbz_inst_ok hp (ctx := ctx) hc (n := n)
+    (a := a) (b := b) (r := r) (bit := bit) (s := s) (v := v) (s' := s') hn h
+  have kE := fun n (hn : 30 ≤ n) i s v s' h => emit_side_effect_inst_ok hp (ctx := ctx) hc (n := n)
+    (i := i) (s := s) (v := v) (s' := s') hn h
+  have hf := ruleFmt_term hp (r := rule_lower_3257) rfl hp.t2452 term_2452_kind hd hi hmatch
+  cases t with
+  | brif x tb eb =>
+    rw [termData_brif] at hd; cases hd
+    cases hp
+    brif_inv [*, rule_lower_3257, ctor_tcbc_iff, ext_fits_in_64_iff] at hmatch heval
+    simp only [hi, Option.some.injEq] at *
+    isel_destruct; subst_vars
+    have hdat := ‹V.data 152 5 _ = _›
+    simp only [V.data.injEq, List.cons.injEq, and_true, true_and] at hdat
+    obtain ⟨rfl, rfl⟩ := hdat
+    repeat (isel_inv_simp [ctor_tcbc_iff, ext_fits_in_64_iff] at * <;> isel_destruct <;> subst_vars)
+    obtain ⟨hj0⟩ : Nonempty (ctx.defInst? x = some _) := ⟨‹_›⟩
+    obtain ⟨hi0⟩ : Nonempty (ctx.insts[_]? = some _) := ⟨‹ctx.insts[_]? = some _›⟩
+    obtain ⟨cl0, hcl0, hdat0⟩ := ctxInv_clif hctx hj0 hi0
+    obtain ⟨hd0⟩ : Nonempty (V.data 152 14 _ = _) := ⟨‹_›⟩
+    rw [← hd0] at hdat0
+    obtain ⟨cc, tyc, c, z, rfl, rfl, hcc⟩ := instData_icmp_inv hdat0
+    have hcc' : cc = .eq := by cases cc <;> simp_all [ccIdx]
+    subst hcc'
+    repeat (isel_inv_simp [ctor_tcbc_iff, ext_fits_in_64_iff] at * <;> isel_destruct <;> subst_vars)
+    obtain ⟨j1, hj1, info1, hi1, hd1⟩ : ∃ j, ctx.defInst? c = some j ∧ ∃ i, ctx.insts[j]? = some i ∧
+      V.data 152 2 _ = i.data := ⟨_, ‹_›, _, ‹_›, ‹_›⟩
+    obtain ⟨j3, hj3, info3, hi3, hd3⟩ : ∃ j, ctx.defInst? z = some j ∧ ∃ i, ctx.insts[j]? = some i ∧
+      V.data 152 35 _ = i.data := ⟨_, ‹_›, _, ‹_›, ‹_›⟩
+    obtain ⟨ty3, imm0, rfl, he3, hcl3⟩ := iconst_data_inv hctx hj3 hi3 hd3
+    obtain ⟨cl1, hcl1, hdat1⟩ := ctxInv_clif hctx hj1 hi1
+    rw [← hd1] at hdat1
+    obtain ⟨ty1, a, b, rfl, he1, hfs1⟩ := instData_binary_inv (cop := .band) variantNames_Band rfl hdat1
+    simp only [List.cons.injEq, and_true] at hfs1
+    subst hfs1
+    repeat (isel_inv_simp [ctor_tcbc_iff, ext_fits_in_64_iff] at * <;> isel_destruct <;> subst_vars)
+    obtain ⟨hz0⟩ : Nonempty ((0 : Int) = (u64 (imm64OfIconst ty3 imm0) : Int)) := ⟨‹_›⟩
+    obtain ⟨j2, hj2, info2, hi2, hd2⟩ : ∃ j, ctx.defInst? b = some j ∧ ∃ i, ctx.insts[j]? = some i ∧
+      V.data 152 35 _ = i.data := ⟨_, ‹_›, _, ‹_›, ‹_›⟩
+    obtain ⟨ty2, imm, rfl, he2, hcl2⟩ := iconst_data_inv hctx hj2 hi2 hd2
+    repeat (isel_inv_simp [ctor_tcbc_iff, ext_fits_in_64_iff] at * <;> isel_destruct <;> subst_vars)
+    obtain ⟨hta⟩ : Nonempty (ctx.valueType? a = some _) := ⟨‹_›⟩
+    obtain ⟨htc⟩ : Nonempty (tcbc _ _ = some _) := ⟨‹_›⟩
+    have hra := hctx.valueReg a _ ‹ctx.valueReg? a = some _›
+    subst hra
+    have h668 := ‹ApplyInternal _ _ _ _ 46 668 _ _ _ _›
+    obtain ⟨hs1, rfl⟩ := kT _ (by omega) _ _ _ _ _ _ _ h668
+    have h242 := ‹ApplyInternal _ _ _ _ 13 242 _ _ _ _›
+    obtain ⟨mi, hmi, hs2, -⟩ := kE _ (by omega) _ _ _ _ h242
+    rw [ofV_tbb_z] at hmi
+    cases hmi
+    simp only at hs1 hs2
+    rw [hs2, hs1]
+    exact ⟨_, by simp [LState.emit], tbz_termOk hR hMR hj0 hi0 hcl0 hj1 hi1 hcl1 hj2 hi2 hcl2 he2
+      hj3 hi3 hcl3 he3 hz0 hta htc⟩
+  | _ => simp [termFmt] at hf
+
 end Backend.Proof
