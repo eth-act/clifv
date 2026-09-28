@@ -478,6 +478,7 @@ def FormOk (_ctx : FnCtx) : MInst → Bool
   | .load op (.vreg _ .int) m _ => op != .fpuLoad128 && memOk op.bytes m
   | .store op (.vreg _ .int) m _ => op != .fpuStore128 && memOk op.bytes m
   | .loadAddr (.vreg _ .int) (.slotOffset _) => true
+  | .aluRRImmLogic op sz (.vreg _ .int) .xzr imm => logicOpOk op && logicImmOk op sz imm
   | _ => false
 
 /-- The number of use operands. -/

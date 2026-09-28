@@ -298,7 +298,8 @@ theorem formOk_sound {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MI
         | apply os_aluRRR | apply os_aluRRR_rnZ | apply os_aluRRR_rdZ | apply os_aluRRR_rmZ
         | apply os_aluRRR_rdZ_rmZ | apply os_aluRRRR | apply os_aluRRRR_raZ
         | apply os_aluRRImm12 | apply os_aluRRImm12_rdZ | apply os_aluRRImmLogic
-        | apply os_aluRRImmLogic_rdZ | apply os_aluRRImmShift | apply os_aluRRRShift
+        | apply os_aluRRImmLogic_rdZ | apply os_aluRRImmLogic_rnZ | apply os_aluRRImmShift
+        | apply os_aluRRRShift
         | apply os_aluRRRShift_rdZ | apply os_aluRRRShift_rnZ | apply os_aluRRRExtend
         | apply os_aluRRRExtend_rdZ | apply os_bitRR | apply os_mov | apply os_movWide
         | apply os_movK | apply os_extend | apply os_bitfieldMove | apply os_cset | apply os_csel

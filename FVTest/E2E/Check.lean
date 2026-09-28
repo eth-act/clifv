@@ -19,9 +19,13 @@ function is not rejected: it is compiled but outside the end-to-end theorem.
 
 open Backend Backend.Proof.Driver
 
+/-- An instruction's `repr` on one line. -/
+def oneLine (i : MInst) : String :=
+  String.intercalate " " (((toString (repr i)).splitOn "\n").map String.trim)
+
 /-- The form of an instruction: constructor and first argument of its `repr`. -/
 def formKey (i : MInst) : String :=
-  let ws := ((toString (repr i)).splitOn " ").filter (· ≠ "")
+  let ws := ((oneLine i).splitOn " ").filter (· ≠ "")
   String.intercalate " " (ws.take 2)
 
 /-- The straight-line instructions of `vc` that are neither control forms nor `FormOk`. -/
@@ -148,7 +152,9 @@ def main (args : List String) : IO UInt32 := do
         if Backend.Proof.formsCoveredB default vcp then cov := cov + 1
         else
           uncov := uncov + 1
-          for i in uncovered vcp do
+          let us := uncovered vcp
+          IO.println s!"{file}: %{f.name}: not covered: {us.map oneLine}"
+          for i in us do
             forms := forms.insert (formKey i) (forms.getD (formKey i) 0 + 1)
         let t5 ← IO.monoMsNow
         let pc ← IO.lazyPure (fun _ => prepCheck vc vcp)

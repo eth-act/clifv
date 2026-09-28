@@ -483,4 +483,11 @@ theorem ref_aluRRImmLogic_xd (sz : OperandSize) (n : Nat) (imm : ImmLogic)
   cases sz <;> obtain ⟨N, immr, imms, tm, hb, hd, hN⟩ := bitmaskOk_spec hchk <;> clear hchk <;>
     (try (obtain rfl := hN rfl)) <;> clear hN <;> ref_tac
 
+set_option maxHeartbeats 4000000 in
+theorem ref_aluRRImmLogic_xn (op : ALUOp) (hop : logicOpOk op = true) (sz : OperandSize) (d : Nat)
+    (imm : ImmLogic) (hchk : logicImmOk op sz imm = true) :
+    RefAt F ctx (.aluRRImmLogic op sz (.vreg d .int) .xzr imm) [] := by
+  cases op <;> simp [logicOpOk] at hop <;> cases sz <;>
+    obtain ⟨N, immr, imms, tm, hb, hd, hN⟩ := bitmaskOk_spec hchk <;> clear hchk <;>
+    (try (obtain rfl := hN rfl)) <;> clear hN <;> ref_tac
 end Backend.Proof

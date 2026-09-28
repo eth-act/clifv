@@ -54,6 +54,7 @@ theorem refAt_of_wf {i : MInst} {us : List CV} (h : csemWF ctx i us = true) : Re
         | apply ref_aluRRR | apply ref_aluRRR_xn | apply ref_aluRRR_xd | apply ref_aluRRR_xm
         | apply ref_aluRRR_xdm | apply ref_aluRRRR | apply ref_aluRRRR_xa | apply ref_aluRRImm12
         | apply ref_aluRRImm12_xd | apply ref_aluRRImmLogic | apply ref_aluRRImmLogic_xd
+        | apply ref_aluRRImmLogic_xn
         | apply ref_aluRRImmShift | apply ref_aluRRRShift | apply ref_aluRRRShift_xd
         | apply ref_aluRRRShift_xn | apply ref_aluRRRExtend | apply ref_aluRRRExtend_xd
         | apply ref_bitRR | apply ref_movWide' | apply ref_movK | apply ref_extend
