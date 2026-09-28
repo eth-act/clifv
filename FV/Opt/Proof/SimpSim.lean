@@ -256,6 +256,7 @@ structure SOk (f g : Function) (fi : Info) (cert : SimpCert) : Prop where
   externs : g.externs = f.externs
   len : g.blocks.length = f.blocks.length
   chain : cert.subst.chainFree = true
+  leafTypes : ∀ x, (initAvail f).contains x = true → cert.types.get? x = fi.types.get? x
   blocks : ∀ (i : Nat) (b : Block), f.blocks[i]? = some b → ∃ (b' : Block) (lg : BlockLog),
     g.blocks[i]? = some b' ∧ cert.logs[i]? = some (some lg) ∧ b'.id = b.id ∧
     b'.params = b.params ∧ b'.body = (outs lg.stmts ++ lg.extra.toList).map (renStmt cert.subst.step) ∧
@@ -270,9 +271,15 @@ structure SOk (f g : Function) (fi : Info) (cert : SimpCert) : Prop where
 theorem simpOk_facts {f g : Function} {fi : Info} {cert : SimpCert}
     (hf : check f = .ok fi) (h : simpOk f g fi cert = true) : SOk f g fi cert := by
   simp only [simpOk, sameHeader, Bool.and_eq_true, beq_iff_eq, List.all_eq_true] at h
-  obtain ⟨⟨⟨⟨⟨⟨⟨⟨hn, hs⟩, hsl⟩, hgl⟩, hex⟩, hlen⟩, hch⟩, hwf⟩, hbl⟩ := h
+  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨hn, hs⟩, hsl⟩, hgl⟩, hex⟩, hlen⟩, hch⟩, hwf⟩, hlt⟩, hbl⟩ := h
   refine ⟨wf_of_check hf, wfCert_sound (info := gInfo fi cert) hwf, hn, hs, hsl, hgl, hex, hlen,
-    hch, ?_⟩
+    hch, ?_, ?_⟩
+  · intro x hx
+    rw [hm_contains_iff] at hx
+    obtain ⟨v, hv⟩ := Option.isSome_iff_exists.1 hx
+    have := hlt (x, v) (by
+      rw [Std.HashMap.mem_toList_iff_getElem?_eq_some]; simpa [Std.HashMap.get?_eq_getElem?] using hv)
+    simpa using this
   intro i b hb
   have hi : i < g.blocks.length := by rw [hlen]; exact (List.getElem?_eq_some_iff.1 hb).1
   have hz : ((b, g.blocks[i]), i) ∈ (f.blocks.zip g.blocks).zipIdx := by
@@ -456,15 +463,16 @@ theorem rhoAt_good (hF : SimpFacts f fi cert) {syms : String → Option Nat} {fr
     intro x a t hx ht
     simp only [rhoAt] at hx
     split at hx
-    · simp only [Option.some.injEq] at hx
+    · rename_i hL
+      simp only [Option.some.injEq] at hx
       subst hx
       split
       · rename_i hav
         obtain ⟨b, hb, htb⟩ := hinv.regs x hav
         rw [hb]
-        have h2 := hF.types x t ht
+        have h2 := hS.leafTypes x hL
         simp only [wfData, gInfo] at htb
-        rw [htb] at h2
+        rw [htb, ht] at h2
         exact (Option.some.inj h2)
       · simp only [dflt, ht, Option.getD_none]
     · cases hx
@@ -1751,7 +1759,7 @@ theorem trapBlock?_spec {blk : Block} {c : TrapCode} (h : trapBlock? blk = some 
   · cases h
 
 /-- The effect instructions of a list of extra statements. -/
-def effsL (E : List Stmt) : List Inst := E.filterMap fun t => if insOk t then none else some t.inst
+def effsL (E : List Stmt) : List Inst := E.filterMap fun t => if isPure t.inst then none else some t.inst
 
 theorem effsOf_eq (extra : Array Stmt) : effsOf extra = effsL extra.toList := rfl
 
@@ -1764,9 +1772,8 @@ theorem trapOk_spec {t : Stmt} (h : trapOk t = true) :
   · rename_i y code; exact ⟨y, code, .inl rfl⟩
   · rename_i y code; exact ⟨y, code, .inr rfl⟩
 
-theorem insOk_trapOk {t : Stmt} (h : trapOk t = true) : insOk t = false := by
-  obtain ⟨hr, -⟩ := trapOk_spec h
-  simp [insOk, hr]
+theorem pure_trapOk {t : Stmt} (h : trapOk t = true) : isPure t.inst = false := by
+  obtain ⟨-, y, code, hi | hi⟩ := trapOk_spec h <;> rw [hi] <;> rfl
 
 /-- A conditional trap reads one register and keeps memory. -/
 theorem evalInst_trapLike {fr fr' : Frame} {M M' : Mem} {i : Inst} {y : ValueId} {code : TrapCode}
@@ -1820,7 +1827,7 @@ theorem SCore.runExtras {fr : Frame} {bi k : Nat} {m : Mem} (hm : m.symbols = sy
       have hins' : insOk (renStmt cert.subst.step t) = true := by rw [insOk_renStmt]; exact hins
       obtain ⟨hp, u, a, hu, hev⟩ := h.insEval hS (m := m) hb1 hins'
       obtain ⟨hl, h1⟩ := h.tpure hS hm hb1 hp hu hev
-      have heff : effsL (t :: E) = effsL E := by simp [effsL, hins]
+      have heff : effsL (t :: E) = effsL E := by simp [effsL, (insOk_spec hins).1]
       rw [heff]
       obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, hpure, -⟩ := hS.gblock hb'
       have hD := hpure _ hmemt u hu hp
@@ -1855,7 +1862,7 @@ theorem SCore.runExtras {fr : Frame} {bi k : Nat} {m : Mem} (hm : m.symbols = sy
       have hnc : ∀ fn args, (renStmt cert.subst.step t).inst ≠ .call fn args := by
         rw [hti]; rcases hi with hi | hi <;> rw [hi] <;> intro fn args he <;> cases he
       have heff : effsL (t :: E) = t.inst :: effsL E := by
-        simp [effsL, insOk_trapOk htr]
+        simp [effsL, pure_trapOk htr]
       rw [heff]
       obtain ⟨hok, htrp⟩ := evalInst_trapLike (fr := fr') (fr' := withRegs fr0
         (den cert.graph ρ fr0 (memPlus m))) (M := m) (M' := memPlus m) hi (hV y hyav)

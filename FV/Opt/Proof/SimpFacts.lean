@@ -35,9 +35,10 @@ def effTerm (fr : Frame) (mem : Mem) : List Inst → Terminator → Res (BlockId
     | .trap c => .trap c
     | .stuck msg => .stuck msg
 
-/-- The instructions of the statements of `extra` that are not inserted pure nodes. -/
+/-- The instructions of the statements of `extra` that are not pure nodes (the conditional
+traps of terminator rewrites). -/
 def effsOf (extra : Array Stmt) : List Inst :=
-  extra.toList.filterMap fun t => if insOk t then none else some t.inst
+  extra.toList.filterMap fun t => if isPure t.inst then none else some t.inst
 
 /-- The outcome `o` of a skeleton statement `i` refines it (evaluated in `fr`/`mem`; `V` gives
 the value of `removeWithVal`'s replacement). -/
@@ -75,7 +76,6 @@ def SimpCert.graph (cert : SimpCert) : ValueId → Option Inst := fun x => cert.
 
 /-- **The facts of a simplify run** (module doc). -/
 structure SimpFacts (f : Function) (info : Info) (cert : SimpCert) : Prop where
-  types : ∀ x t, info.types.get? x = some t → cert.types.get? x = some t
   facts : ∀ ρ fr mem, SGood f info ρ fr mem → ∀ (i : Nat) lg, cert.logs[i]? = some (some lg) →
     BlockFact (fun b => (trapMap f).get? b) (withRegs fr (den cert.graph ρ fr mem)) mem
       (den cert.graph ρ fr mem) lg

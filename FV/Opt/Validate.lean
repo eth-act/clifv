@@ -198,6 +198,7 @@ def simpOk (f g : Function) (fi : Info) (cert : SimpCert) : Bool :=
   let L := initAvail f
   sameHeader f g && g.blocks.length == f.blocks.length && cert.subst.chainFree &&
     wfCert g fi.cfg cert.types &&
+    (L.toList.all fun (x, _) => cert.types.get? x == fi.types.get? x) &&
     ((f.blocks.zip g.blocks).zipIdx.all fun ((b, b'), i) =>
       match cert.logs[i]? with
       | some (some lg) =>
