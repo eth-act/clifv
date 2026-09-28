@@ -9,7 +9,7 @@ release-oc), dumped by `scripts/rust-clif/dump.sh` into `/tmp/rust-clif-survey/o
 
 | Step | State |
 | --- | --- |
-| 1. Data objects from cg_clif | **done** — `rust/crates/clif-data-export` recovers every data object of the corpus (294/294 data-using functions, 721 objects, 23 049 bytes; 0 mismatches over 933 functions × 3 profiles). Directives + gv table emitted; wired into `normalize.py --gvmap --data-file` and `tools.sh`; smoke runs of constant-table/vtable readers pass under `Clif.run` and the Lean backend natively, agreeing with rustc/LLVM. |
+| 1. Data objects from cg_clif | **done** — `rust/crates/clif-data-export` recovers every data object of the corpus (294/294 data-using functions, 938 objects, 43 560 bytes, transitively closed; 0 mismatches over 933 functions × 3 profiles). Directives + gv table emitted; wired into `normalize.py --gvmap --data-file` and `tools.sh`; smoke runs of constant-table/vtable readers pass under `Clif.run` and the Lean backend natively, agreeing with rustc/LLVM. |
 | 2. Panic and mem* externs | **in progress** — freestanding runtime + `Clif.Env` semantics |
 | 3. `sret` | not started (design: `ensure_struct_return_ptr_is_returned`, param in x8, returned in x0; flagged unverified) |
 | 4. `dyn`/fn pointers (`call_indirect`, `func_addr`) | not started (design: sigN declarations on `Clif.Function`, function symbols in the link-time image, `func_addr` = `mem.symbols` lookup) |
@@ -62,10 +62,14 @@ release-oc), dumped by `scripts/rust-clif/dump.sh` into `/tmp/rust-clif-survey/o
 
 | | fns | with data | data objects | data bytes |
 | --- | --- | --- | --- | --- |
-| debug | 454 | 152 | 365 | 14 843 |
-| release | 239 | 56 | 142 | 3 255 |
-| release-oc | 240 | 86 | 214 | 4 951 |
-| **total** | **933** | **294** | **721** | **23 049** |
+| debug | 454 | 152 | 480 | 26 224 |
+| release | 239 | 56 | 178 | 6 635 |
+| release-oc | 240 | 86 | 280 | 10 701 |
+| **total** | **933** | **294** | **938** | **43 560** |
+
+(The objects include the transitively-reachable ones — a panic `Location`'s message
+string, the 20 `&K[i]` chunks of `sha256_compress` at `-O`, etc.; the earlier count
+721/23 049 missed data-reachable-only objects.)
 
 Per-function results are the union of all 27 crate×profile runs; the tool exits non-zero
 on any mismatch, and there are none.

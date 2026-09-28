@@ -29,6 +29,16 @@ def main():
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     drop_nop = "--drop-nop" in sys.argv
     split = "--split" in sys.argv
+    flags = [a for a in sys.argv[1:] if a.startswith("--")]
+    gvmap = {}
+    for i, a in enumerate(flags):
+        if a == "--gvmap":
+            for line in open(sys.argv[sys.argv.index("--gvmap") + 1]):
+                stem, gv, name = line.rstrip("\n").split("\t")
+                gvmap[(stem, gv)] = name.removeprefix("%")
+    data_file = None
+    if "--data-file" in sys.argv:
+        data_file = Path(sys.argv[sys.argv.index("--data-file") + 1]).read_text()
     d, stage, out = Path(args[0]), args[1], Path(args[2])
     files = sorted(p for p in d.iterdir() if p.name.endswith(f".{stage}.clif"))
     texts = [p.read_text() for p in files]
@@ -43,7 +53,8 @@ def main():
 
     header = []
     bodies = []
-    for t in texts:
+    for f in files:
+        t = texts[files.index(f)]
         lines = t.splitlines()
         start = next(i for i, l in enumerate(lines) if l.startswith("function "))
         if not header:
@@ -77,11 +88,14 @@ def main():
             m = re.match(r"(\s+sig\d+) = ", l)
             if m and m.group(1).strip() not in used_indirect:
                 continue
-            m = re.match(r"(\s+gv\d+ = .*symbol (?:colocated )?)userextname(\d+)(\S*)\s*(;\s*(\S+))?", l)
+            m = re.match(r"(\s+)gv(\d+) = symbol (colocated )?userextname(\d+)(\S*)(\s*;.*)?$", l)
             if m:
-                pre, j, off, _, c = m.groups()
-                name = c if c and re.fullmatch(r"alloc\d+", c) else f"data_{j}"
-                l = f"{pre}%{name}{off}"
+                ind, gv, coloc, j, off, _c = m.groups()
+                name = gvmap.get((f.name, f"gv{gv}"))
+                if name is None:
+                    c = _c.strip("; ").strip() if _c else ""
+                    name = c if re.fullmatch(r"alloc\d+", c) else f"data_{j}"
+                l = f"{ind}gv{gv} = symbol {coloc or ''}%{name}{off}"
             out_lines.append(l)
         bodies.append("\n".join(out_lines))
     if split:
@@ -89,7 +103,8 @@ def main():
         for p, b in zip(files, bodies):
             (out / p.name).write_text("\n".join(header) + "\n\n" + b + "\n")
     else:
-        out.write_text("\n".join(header) + "\n\n" + "\n\n".join(bodies) + "\n")
+        data = (data_file.rstrip("\n") + "\n") if data_file else ""
+        out.write_text("\n".join(header) + "\n" + data + "\n\n".join(bodies) + "\n")
 
 
 if __name__ == "__main__":

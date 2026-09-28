@@ -425,6 +425,15 @@ fn recover(crate_name: &str, obj: &Path, dumps: &[FnDump]) -> Recovered {
         }
     }
     // ---- 2. discover the data objects transitively ----
+    // Per section: the data symbols (idx, value, size), for section-symbol references.
+    let mut secs_data: BTreeMap<usize, Vec<(usize, u64, u64)>> = BTreeMap::new();
+    for (i, s) in syms.iter() {
+        if s.kind == SymbolKind::Data {
+            if let Some(seci) = s.sec {
+                secs_data.entry(seci).or_default().push((*i, s.value, s.size));
+            }
+        }
+    }
     let mut reached: BTreeSet<usize> = BTreeSet::new();
     let mut queue: Vec<usize> = ext_data.values().copied().collect();
     while let Some(si) = queue.pop() {
@@ -445,23 +454,40 @@ fn recover(crate_name: &str, obj: &Path, dumps: &[FnDump]) -> Recovered {
             kind,
             SectionKind::ReadOnlyData | SectionKind::ReadOnlyDataWithRel | SectionKind::Data | SectionKind::UninitializedData
         ) {
-            die(format!("{}: data symbol `{}` is in an unexpected section (kind {kind:?})", obj.display(), s.name));
+            die(format!("{}: data symbol `{}` is in an unexpected section (kind {:?})", obj.display(), s.name, kind));
         }
         for r in relocs {
             if r.kind != RKind::Abs64 || r.off < s.value || r.off >= s.value + s.size {
                 continue;
             }
-            let t = &syms[&r.sym];
-            if t.kind == SymbolKind::Data && t.name.starts_with(".Ldata") && !reached.contains(&r.sym) {
-                queue.push(r.sym);
+            // A reference may target the data object's symbol directly or, for another
+            // object of the same section, the section symbol (S = section base,
+            // A = the referenced offset).
+            let mut targets: Vec<usize> = Vec::new();
+            if syms[&r.sym].kind == SymbolKind::Section {
+                let addr = r.addend as u64;
+                if let Some(ds) = secs_data.get(&seci) {
+                    for (i, v, sz) in ds {
+                        if addr >= *v && addr < v + *sz {
+                            targets.push(*i);
+                        }
+                    }
+                }
+            } else if syms[&r.sym].kind == SymbolKind::Data {
+                targets.push(r.sym);
+            }
+            for ti in targets {
+                if !reached.contains(&ti) {
+                    queue.push(ti);
+                }
             }
         }
     }
 
     // ---- 3. name every data object ----
     let mut names: BTreeMap<usize, String> = BTreeMap::new();
-    for target in ext_data.values() {
-        names.entry(*target).or_insert_with(|| data_name(crate_name, &syms[&*target]));
+    for &si in reached.iter() {
+        names.entry(si).or_insert_with(|| data_name(crate_name, &syms[&si]));
     }
     // The gv renaming table: (dump file, gv, data name), for every recovered data use.
     let mut gvmap: Vec<(String, u32, String)> = Vec::new();
@@ -620,100 +646,25 @@ fn main() {
     );
 }
 
+
+
+
+
+
+
+
 #[cfg(test)]
 mod dbg_tests {
     use super::*;
     #[test]
-    fn dump_relocs() {
-        let (syms, secs) = load_obj(Path::new("/tmp/rust-clif-survey/out/debug/a_arith/a_arith.o"));
+    fn f_crypto_data_relocs() {
+        let (syms, secs) = load_obj(Path::new("/tmp/rust-clif-survey/out/release/f_crypto/f_crypto.o"));
+        let _ = &syms;
         for (i, sec) in secs.iter() {
-            if sec.kind == SectionKind::Text {
+            if matches!(sec.kind, SectionKind::ReadOnlyDataWithRel) {
                 eprintln!("sec {} relocs {}", i, sec.relocs.len());
-            }
-        }
-        for r in secs.values().flat_map(|s| &s.relocs) {
-            if matches!(r.kind, RKind::GotPage) {
-                eprintln!("GOTPAGE at {} sym {}", r.off, r.sym);
-                return;
-            }
-        }
-        eprintln!("no GotPage found");
-    }
-}
-
-#[cfg(test)]
-mod dbg_tests2 {
-    use super::*;
-    #[test]
-    fn dump_relocs18() {
-        let bytes = std::fs::read("/tmp/rust-clif-survey/out/debug/a_arith/a_arith.o").unwrap();
-        let f = object::read::File::parse(&*bytes).unwrap();
-        for s in f.sections() {
-            if s.index().0 != 18 { continue; }
-            for (_off, r) in s.relocations() {
-                eprintln!("kind {:?} flags {:?} target {:?} addend {} size {}", r.kind(), r.flags(), r.target(), r.addend(), r.size());
-            }
-        }
-    }
-}
-
-#[cfg(test)]
-mod dbg_tests3 {
-    use super::*;
-    #[test]
-    fn which_sec() {
-        let bytes = std::fs::read("/tmp/rust-clif-survey/out/debug/a_arith/a_arith.o").unwrap();
-        let f = object::read::File::parse(&*bytes).unwrap();
-        for s in f.symbols() {
-            if let Ok(name) = s.name() {
-                if name == "_RNxC7a_arith12H55vqTMB4RQt" {
-                    eprintln!("sym idx {} sec {:?} value {} size {} kind {:?}", s.index().0, s.section(), s.address(), s.size(), s.kind());
-                }
-            }
-        }
-        for s in f.sections() {
-            if s.index().0 == 26 {
-                for (_off, r) in s.relocations() {
-                    eprintln!("rel: kind {:?} flags {:?} target {:?} addend {}", r.kind(), r.flags(), r.target(), r.addend());
-                }
-            }
-        }
-    }
-}
-
-#[cfg(test)]
-mod dbg_tests4 {
-    use super::*;
-    #[test]
-    fn got_section_iter() {
-        let bytes = std::fs::read("/tmp/rust-clif-survey/out/debug/a_arith/a_arith.o").unwrap();
-        let f = object::read::File::parse(&*bytes).unwrap();
-        for s in f.sections() {
-            if s.index().0 != 26 { continue; }
-            let all: Vec<_> = s.relocations().collect();
-            eprintln!("sec 26 relocation count: {}", all.len());
-            for (off, r) in &all {
-                eprintln!("off {} flags {:?}", off, r.flags());
-            }
-        }
-    }
-}
-
-#[cfg(test)]
-mod dbg_tests5 {
-    use super::*;
-    #[test]
-    fn fn_sec_and_got() {
-        let (syms, secs) = load_obj(Path::new("/tmp/rust-clif-survey/out/debug/a_arith/a_arith.o"));
-        for (i, s) in syms.iter().enumerate() {
-            if s.name == "_RNxC7a_arith12H55vqTMB4RQt" {
-                eprintln!("idx {} value {} size {} sec {:?}", i, s.value, s.size, s.sec);
-                if let Some(si) = s.sec {
-                    let sec = secs.get(&si).unwrap();
-                    eprintln!("sec kind {:?} relocs {}", sec.kind, sec.relocs.len());
-                    for r in &sec.relocs {
-                        eprintln!("  off {} sym {} kind {:?} addend {}", r.off, r.sym, r.kind, r.addend);
-                    }
+                for r in sec.relocs.iter().take(4) {
+                    eprintln!("  off {:#x} sym {} kind {:?} addend {}", r.off, r.sym, r.kind, r.addend);
                 }
             }
         }
