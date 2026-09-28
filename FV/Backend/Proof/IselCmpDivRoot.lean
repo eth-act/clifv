@@ -240,6 +240,192 @@ theorem ext_divOpnd {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem) 
     · omega
   · exact divOpnd_of_vholds64 (by omega) he.1
 
+/-! ## Unsigned division and remainder: the code after the operands -/
+
+theorem div_upd_ne {ρ : Nat → CV} {d k : Nat} {v : CV} (h : k ≠ d) : upd ρ d v k = ρ k := by
+  simp [upd, h]
+
+theorem vdefs_aluRRR' (op : ALUOp) (sz : OperandSize) (d x y : Nat) :
+    vdefs (MInst.aluRRR op sz (.vreg d .int) (.vreg x .int) (.vreg y .int)) = [d] := rfl
+theorem vuseNums_aluRRR' (op : ALUOp) (sz : OperandSize) (d x y : Nat) :
+    vuseNums (MInst.aluRRR op sz (.vreg d .int) (.vreg x .int) (.vreg y .int)) = [x, y] := rfl
+theorem vdefs_aluRRRR' (op : ALUOp3) (sz : OperandSize) (d x y z : Nat) :
+    vdefs (MInst.aluRRRR op sz (.vreg d .int) (.vreg x .int) (.vreg y .int) (.vreg z .int)) = [d] := rfl
+theorem vuseNums_aluRRRR' (op : ALUOp3) (sz : OperandSize) (d x y z : Nat) :
+    vuseNums (MInst.aluRRRR op sz (.vreg d .int) (.vreg x .int) (.vreg y .int) (.vreg z .int)) =
+      [x, y, z] := rfl
+
+theorem udiv_trap {n : Nat} {a b : BitVec n} {c : Clif.TrapCode} (h : Clif.Sem.div .udiv a b = .error c) :
+    b = 0#n ∧ c = .intDivz := by
+  simp only [Clif.Sem.div, Clif.Sem.udiv] at h
+  split at h
+  · cases h; exact ⟨‹_›, rfl⟩
+  · cases h
+
+theorem udiv_ok {n : Nat} {a b q : BitVec n} (h : Clif.Sem.div .udiv a b = .ok q) :
+    b ≠ 0#n ∧ q = a / b := by
+  simp only [Clif.Sem.div, Clif.Sem.udiv] at h
+  split at h
+  · cases h
+  · cases h; exact ⟨‹_›, rfl⟩
+
+theorem urem_trap {n : Nat} {a b : BitVec n} {c : Clif.TrapCode} (h : Clif.Sem.div .urem a b = .error c) :
+    b = 0#n ∧ c = .intDivz := by
+  simp only [Clif.Sem.div, Clif.Sem.urem] at h
+  split at h
+  · cases h; exact ⟨‹_›, rfl⟩
+  · cases h
+
+theorem urem_ok {n : Nat} {a b q : BitVec n} (h : Clif.Sem.div .urem a b = .ok q) :
+    b ≠ 0#n ∧ q = a % b := by
+  simp only [Clif.Sem.div, Clif.Sem.urem] at h
+  split at h
+  · cases h
+  · cases h; exact ⟨‹_›, rfl⟩
+
+section Finish
+variable {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program}
+  {ctx : Ctx} {ty : Clif.Ty} {x y : Nat} {st s1 s2 : LState} {kx ky : Nat} {msX msY : List MInst}
+  {sg : Bool}
+
+/-- The operand codes of a division: the dividend (`msX`, into `kx`) then the divisor with its
+zero check (`msY`, into `ky`). -/
+structure DivOperands (F : BitVec 64 → Prop) (isem : Sem) (ctx : Ctx) (ty : Clif.Ty) (x y : Nat)
+    (sg : Bool) (st s1 s2 : LState) (kx ky : Nat) (msX msY : List MInst) : Prop where
+  xlt : x < st.nextVreg
+  vb : ValsBelow ctx st
+  fX : Frag st s1 msX
+  kxlt : kx < s1.nextVreg
+  kxl : st.nextVreg ≤ kx ∨ kx = x
+  sX : ∀ (fr : Clif.Frame) (ρ : Nat → CV) (a : BitVec ty.width), ValsHeld fr ρ → DFGCons ctx fr →
+    fr.regs x = some ⟨ty, a⟩ →
+    UsesLo st.nextVreg fr msX ∧ ∀ wd, Runs F isem msX ρ wd (fun ρ' _ => DivOpnd sg a (ρ' kx))
+  fY : Frag s1 s2 msY
+  kyl : s1.nextVreg ≤ ky ∨ ky = y
+  sY : ∀ (fr : Clif.Frame) (ρ : Nat → CV) (b : BitVec ty.width),
+    ((∃ r, ctx.valueReg? y = some r) → VHolds ⟨ty, b⟩ (ρ y)) →
+    DFGCons ctx fr → fr.regs y = some ⟨ty, b⟩ →
+    UsesLo s1.nextVreg fr msY ∧ ∀ wd, ky < s2.nextVreg ∧
+      (b = 0#ty.width → TrapRun isem msY ρ wd .intDivz) ∧
+      (b ≠ 0#ty.width → Runs F isem msY ρ wd (fun ρ' _ => DivOpnd sg b (ρ' ky)))
+
+theorem DivOperands.uses (h : DivOperands F isem ctx ty x y sg st s1 s2 kx ky msX msY)
+    {fr : Clif.Frame} {ρ : Nat → CV} {a b : BitVec ty.width} (hh : ValsHeld fr ρ)
+    (hdf : DFGCons ctx fr) (hxa : fr.regs x = some ⟨ty, a⟩) (hyb : fr.regs y = some ⟨ty, b⟩) :
+    UsesLo st.nextVreg fr (msX ++ msY) ∧ (st.nextVreg ≤ kx ∨ (fr.regs kx).isSome) ∧
+      (st.nextVreg ≤ ky ∨ (fr.regs ky).isSome) := by
+  obtain ⟨huX, -⟩ := h.sX fr ρ a hh hdf hxa
+  obtain ⟨huY, -⟩ := h.sY fr ρ b (fun _ => hh y _ hyb) hdf hyb
+  refine ⟨huX.append (huY.mono h.fX.mono), ?_, ?_⟩
+  · rcases h.kxl with h' | rfl
+    · exact .inl h'
+    · exact .inr (by simp [hxa])
+  · rcases h.kyl with h' | rfl
+    · exact .inl (Nat.le_trans h.fX.mono h')
+    · exact .inr (by simp [hyb])
+
+/-- Running both operand codes: `kx` and `ky` hold the operands (or the divisor check halts). -/
+theorem DivOperands.run (h : DivOperands F isem ctx ty x y sg st s1 s2 kx ky msX msY)
+    {fr : Clif.Frame} {ρ : Nat → CV} {a b : BitVec ty.width} (hh : ValsHeld fr ρ)
+    (hdf : DFGCons ctx fr) (hxa : fr.regs x = some ⟨ty, a⟩) (hyb : fr.regs y = some ⟨ty, b⟩)
+    (w : Arm.ArmState) :
+    ky < s2.nextVreg ∧ (b = 0#ty.width → TrapRun isem (msX ++ msY) ρ w .intDivz) ∧
+      (b ≠ 0#ty.width → Runs F isem (msX ++ msY) ρ w
+        (fun ρ' _ => DivOpnd sg a (ρ' kx) ∧ DivOpnd sg b (ρ' ky))) := by
+  obtain ⟨-, hrX⟩ := h.sX fr ρ a hh hdf hxa
+  have hX := (hrX w).imp fun ρ1 w1 hr h1 => And.intro h1
+    (fun (hy : ∃ r, ctx.valueReg? y = some r) => h.fX.frame hr (h.vb y _ hy.choose_spec))
+  refine ⟨(h.sY fr ρ b (fun _ => hh y _ hyb) hdf hyb).2 w |>.1, fun h0 => ?_, fun h0 => ?_⟩
+  · refine TrapRun.prefix hX fun ρ1 w1 ⟨_, hy1⟩ => ?_
+    exact ((h.sY fr ρ1 b (fun hy => by rw [hy1 hy]; exact hh y _ hyb) hdf hyb).2 w1).2.1 h0
+  · refine Runs.append hX fun ρ1 w1 ⟨h1, hy1⟩ => ?_
+    refine (((h.sY fr ρ1 b (fun hy => by rw [hy1 hy]; exact hh y _ hyb) hdf hyb).2 w1).2.2 h0).imp
+      fun ρ2 w2 hr h2 => ⟨?_, h2⟩
+    rw [h.fY.frame hr h.kxlt]
+    exact h1
+
+theorem udiv_finish (hR : Refines F isem) (hMR : MRStable F MR) (hw : ty.width ≤ 64)
+    {results : List Nat} (h : DivOperands F isem ctx ty x y false st s1 s2 kx ky msX msY) :
+    LowerInstOk isem MR env cp ctx (.div .udiv ty x y) results st [[.vreg s2.nextVreg .int]]
+      ((s2.fresh .int).2.emit
+        (.aluRRR .uDiv (szOf ty.width) (.vreg s2.nextVreg .int) (.vreg kx .int) (.vreg ky .int)))
+      (msX ++ msY ++ [.aluRRR .uDiv (szOf ty.width) (.vreg s2.nextVreg .int) (.vreg kx .int)
+        (.vreg ky .int)]) ∧
+    ((s2.fresh .int).2.emit
+        (MInst.aluRRR .uDiv (szOf ty.width) (.vreg s2.nextVreg .int) (.vreg kx .int) (.vreg ky .int))).emitted =
+      st.emitted ++ (msX ++ msY ++ [MInst.aluRRR .uDiv (szOf ty.width) (.vreg s2.nextVreg .int)
+        (.vreg kx .int) (.vreg ky .int)]).toArray := by
+  have hf := (h.fX.append h.fY).append (Frag.fresh_emit s2
+    (m := MInst.aluRRR .uDiv (szOf ty.width) (.vreg s2.nextVreg .int) (.vreg kx .int) (.vreg ky .int))
+    (by rw [vdefs_aluRRR']; simp))
+  refine ⟨lowerInstOk_div hMR hf.mono hf.defs (h.fX.append h.fY).mono ?_, hf.emitted⟩
+  intro fr ρ w a b _ hh hdf hxa hyb
+  obtain ⟨hu, hukx, huky⟩ := h.uses hh hdf hxa hyb
+  obtain ⟨hky, htr, hrun⟩ := h.run hh hdf hxa hyb w
+  refine ⟨hu.append ?_, fun c hc => ?_, fun q hq => ?_⟩
+  · intro m hm u hu'
+    simp only [List.mem_singleton] at hm
+    subst hm
+    rw [vuseNums_aluRRR'] at hu'
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hu'
+    rcases hu' with rfl | rfl
+    · exact hukx
+    · exact huky
+  · obtain ⟨h0, rfl⟩ := udiv_trap hc
+    exact (htr h0).append
+  · obtain ⟨h0, rfl⟩ := udiv_ok hq
+    refine Runs.append (hrun h0) fun ρ1 w1 ⟨h1, h2⟩ => ?_
+    refine (runs_udiv hR _ _ _ _ ρ1 w1).imp fun ρ' _ _ e => ?_
+    rw [e, upd_same]
+    exact udiv_vholds hw h1 h2
+
+theorem urem_finish (hR : Refines F isem) (hMR : MRStable F MR) (hw : ty.width ≤ 64)
+    {results : List Nat} (h : DivOperands F isem ctx ty x y false st s1 s2 kx ky msX msY) :
+    let m1 := MInst.aluRRR .uDiv (szOf ty.width) (.vreg s2.nextVreg .int) (.vreg kx .int) (.vreg ky .int)
+    let s3 := (s2.fresh .int).2.emit m1
+    let m2 := MInst.aluRRRR .mSub (szOf ty.width) (.vreg s3.nextVreg .int) (.vreg s2.nextVreg .int)
+      (.vreg ky .int) (.vreg kx .int)
+    LowerInstOk isem MR env cp ctx (.div .urem ty x y) results st [[.vreg s3.nextVreg .int]]
+      ((s3.fresh .int).2.emit m2) (msX ++ msY ++ ([m1] ++ [m2])) ∧
+    ((s3.fresh .int).2.emit m2).emitted = st.emitted ++ (msX ++ msY ++ ([m1] ++ [m2])).toArray := by
+  intro m1 s3 m2
+  have hf1 : Frag s2 s3 [m1] := Frag.fresh_emit s2 (by simp [m1, vdefs_aluRRR'])
+  have hf2 : Frag s3 ((s3.fresh .int).2.emit m2) [m2] :=
+    Frag.fresh_emit s3 (by simp [m2, vdefs_aluRRRR'])
+  have hf := (h.fX.append h.fY).append (hf1.append hf2)
+  have hs3 : s3.nextVreg = s2.nextVreg + 1 := by simp [s3, LState.emit, LState.fresh]
+  refine ⟨lowerInstOk_div hMR hf.mono hf.defs (by have := (h.fX.append h.fY).mono; omega) ?_,
+    hf.emitted⟩
+  intro fr ρ w a b _ hh hdf hxa hyb
+  obtain ⟨hu, hukx, huky⟩ := h.uses hh hdf hxa hyb
+  obtain ⟨hky, htr, hrun⟩ := h.run hh hdf hxa hyb w
+  have hkx := h.kxlt
+  have hs12 := h.fY.mono
+  refine ⟨hu.append ?_, fun c hc => ?_, fun q hq => ?_⟩
+  · intro m hm u hu'
+    simp only [List.mem_append, List.mem_singleton] at hm
+    rcases hm with rfl | rfl
+    · simp only [m1, vuseNums_aluRRR', List.mem_cons, List.not_mem_nil, or_false] at hu'
+      rcases hu' with rfl | rfl
+      · exact hukx
+      · exact huky
+    · simp only [m2, vuseNums_aluRRRR', List.mem_cons, List.not_mem_nil, or_false] at hu'
+      rcases hu' with rfl | rfl | rfl
+      · exact .inl (by have := (h.fX.append h.fY).mono; omega)
+      · exact huky
+      · exact hukx
+  · obtain ⟨h0, rfl⟩ := urem_trap hc
+    exact (htr h0).append
+  · obtain ⟨h0, rfl⟩ := urem_ok hq
+    refine Runs.append (hrun h0) fun ρ1 w1 ⟨h1, h2⟩ => ?_
+    refine Runs.append (runs_udiv hR _ _ _ _ ρ1 w1) fun ρ2 w2 e2 => ?_
+    refine (runs_msub hR _ _ _ _ _ ρ2 w2).imp fun ρ' _ _ e => ?_
+    rw [e, upd_same, e2, upd_same, div_upd_ne (by omega : kx ≠ s2.nextVreg),
+      div_upd_ne (by omega : ky ≠ s2.nextVreg)]
+    exact urem_vholds hw h1 h2
+
+end Finish
+
 section
 variable {p : Program} (hp : Data p) {ctx : Ctx} {cfg : Config} (hc : cfg.checkOverlap = false)
 
@@ -364,8 +550,17 @@ theorem udiv64_ruleOk (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env 
   have hrx' := hctx.valueReg x rx hrx
   subst hrx'
   have hxlt := hvb x _ hrx
-  trace_state
-  sorry
+  have hdo : DivOperands F isem ctx ty x y false _ _ _ x ky [] msY :=
+    { xlt := hxlt, vb := hvb, fX := Frag.nil _, kxlt := hxlt, kxl := .inr rfl,
+      sX := fun fr ρ a hh hdf hxa =>
+        ⟨UsesLo.nil _ _, fun wd => Runs.nil (divOpnd_of_vholds64 hty.symm (hh x _ hxa))⟩,
+      fY := hfY, kyl := hky,
+      sY := fun fr ρ b hv hdf hyb => hsemY fr ρ ty b hty.symm hv hdf hyb }
+  obtain ⟨hok, hem⟩ := udiv_finish (env := env) (cp := cp) hR hMR (by omega) (results := info.results) hdo
+  simp only at hs3
+  rw [hs3, hs2]
+  rw [show szOf 64 = szOf ty.width by rw [hty]]
+  exact ⟨_, hem, _, rfl, hok⟩
 
 end Root
 

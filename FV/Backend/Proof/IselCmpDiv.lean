@@ -396,7 +396,8 @@ theorem divisor_sem {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem) 
         s' = s2.emit (.trapIf (.zero r .size32) .intDivz))) :
     ∃ k ms, v = .reg (.vreg k .int) ∧ Frag s s' ms ∧ (s.nextVreg ≤ k ∨ k = y) ∧
       ∀ (fr : Clif.Frame) (ρ : Nat → CV) (ty : Clif.Ty) (b : BitVec ty.width), ty.width = w →
-        VHolds ⟨ty, b⟩ (ρ y) → DFGCons ctx fr → fr.regs y = some ⟨ty, b⟩ →
+        ((∃ r, ctx.valueReg? y = some r) → VHolds ⟨ty, b⟩ (ρ y)) → DFGCons ctx fr →
+        fr.regs y = some ⟨ty, b⟩ →
         UsesLo s.nextVreg fr ms ∧ ∀ wd, k < s'.nextVreg ∧
           (b = 0#ty.width → TrapRun isem ms ρ wd .intDivz) ∧
           (b ≠ 0#ty.width → Runs F isem ms ρ wd (fun ρ' _ => DivOpnd (e == 0) b (ρ' k))) := by
@@ -437,7 +438,7 @@ theorem divisor_sem {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem) 
       subst hu
       exact .inr (by simp [hyv])
     have hd : DivOpnd (e == 0) b (ρ y) := by
-      have hv := hh
+      have hv := hh ⟨_, hry⟩
       cases ty <;> simp [Clif.Ty.width] at htw
       simp only [VHolds, Clif.Ty.width] at hv
       unfold DivOpnd
@@ -455,7 +456,7 @@ theorem divisor_sem {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem) 
     refine ⟨k, ms ++ [.trapIf (.zero (.vreg k .int) .size32) .intDivz], rfl,
       hf.append (Frag.emit_nodef s2 (vdefs_trapIf_zero _ _ _)), hk,
       fun fr ρ ty b htw hh hdf hyv => ?_⟩
-    obtain ⟨hu, hrun⟩ := hsem fr ρ _ hh hdf hyv
+    obtain ⟨hu, hrun⟩ := hsem fr ρ _ (hh (by obtain ⟨t, -, rx, hx, -⟩ := hE; exact ⟨rx, hx⟩)) hdf hyv
     refine ⟨UsesLo.append hu ?_, fun wd => ⟨by simpa [LState.emit] using hklt, ?_⟩⟩
     · intro m hm u hu'
       simp only [List.mem_singleton] at hm
