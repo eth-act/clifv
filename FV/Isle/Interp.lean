@@ -27,7 +27,8 @@ execution model of the Rust code `cranelift-isle` generates
 * **Trace.** Each committed rule whose right-hand side succeeds is appended to the trace
   *after* its right-hand side ran (post-order), which is exactly where Cranelift's generated
   code emits its `trace-log` line (`log::debug!("ISLE {term} {file} line {n}")`).
-* **Multi terms** (`decl multi`) are unsupported (`Err.unsupported`); the aarch64 unit has none.
+* **Multi terms** (`decl multi`) are unsupported by `run` (`Err.unsupported`); the aarch64 unit
+  has none. `runMulti` (below) interprets them, for the mid-end unit's `simplify`.
 * **Fuel.** Every expression node and term application costs one unit (`Err.outOfFuel`).
 
 The interpreter is independent of CLIF and Arm: values `V`, the embedding state `σ`, and the
@@ -306,5 +307,244 @@ def Interp.run {V σ : Type} (p : Program) (sem : Sem V σ) (cfg : Config) (term
 /-- Names of traced rules. -/
 def Program.ruleNames (p : Program) (ids : List RuleId) : List String :=
   ids.map fun r => (p.rule? r).elim s!"<rule {r}>" (·.name)
+
+/-!
+## Multi terms
+
+`decl multi` terms (the mid-end's `simplify`, `simplify_skeleton`, `truthy`, and the extern
+multi-extractors `inst_data_value`, ...) return every result of every matching rule. The
+generated Rust (`cranelift-isle` `codegen.rs`, `serialize.rs`, `trie_again.rs`) pushes each
+result into a `returns` vector and consumes a multi-extractor or multi-constructor call by
+looping over the values of its iterator. Multi terms cannot have rule priorities
+(`sema.rs`: "Cannot set rule priorities in multi-terms"), and may only be used by other multi
+terms.
+
+`runMulti` follows that model:
+
+* **Rules.** Every rule of the multi term is tried, in `ruleBefore` order (priority descending,
+  then source order; for multi terms, which have priority 0, this is source order). Every
+  match contributes its results.
+* **Multi-extractors** (`MultiSem.extractMulti`) yield a list of matches, each the list of the
+  term's argument values; a pattern using one matches once per yielded value (a loop). Every
+  combination of choices, left to right through the argument patterns and then the if-lets,
+  gives one match (one environment), in that nested order.
+* **Multi-constructors** used in an expression (`truthy`, internal, or an extern one via
+  `MultiSem.ctorMulti`) give one alternative per value; an expression's alternatives are the
+  combinations of its arguments' alternatives, left to right.
+* **Single terms** reached from a multi rule use `Interp.applyTerm` unchanged. A partial term
+  failing gives no alternative (`none`: in an if-let, the rule does not match). The generated
+  code of a multi term never uses `?`, so a failing partial constructor on a right-hand side
+  does not occur.
+* **State.** The embedding state is threaded through the whole call and not restored after
+  failed matches: the generated Rust does not roll the `Context` back either. (Single terms
+  keep their own restore-on-failed-match behaviour.)
+* **Trace.** One entry per contributed result, after its right-hand side is evaluated.
+
+**Deviation from the generated Rust (result order and count).** The generated code evaluates
+the rules in a decision-tree order (`serialize.rs`) that interleaves rules and loops, and it
+stops a call after `MAX_ISLE_RETURNS = 8` results (`cranelift/codegen/src/opts.rs`). `runMulti`
+returns *all* results in rule order. So the multiset of results is the same when Cranelift
+produces fewer than 8, and in general Cranelift's results are a sub-multiset (same rules, same
+values), in another order. A mid-end that wants Cranelift's budget truncates.
+-/
+
+/-- Semantics of an embedding with multi terms: `Sem` plus the extern multi-extractors and
+multi-constructors. -/
+structure MultiSem (V σ : Type) extends Sem V σ where
+  /-- Extern multi-extractor of `term`: the values its Rust iterator yields for the input, in
+  iteration order, each as the list of the term's argument values. -/
+  extractMulti : Term → V → σ → ExtResult (List (List V))
+  /-- Extern multi-constructor of `term` (the mid-end unit has none). -/
+  ctorMulti : Term → List V → σ → ExtResult (List V × σ) :=
+    fun t _ _ => .unmodeled s!"multi constructor {t.name}"
+
+namespace Interp
+
+/-- `List.flatMap` in a monad, left to right. -/
+def bindAll {m : Type → Type} [Monad m] {α β : Type} (f : α → m (List β)) :
+    List α → m (List β)
+  | [] => pure []
+  | a :: as => do
+    let bs ← f a
+    let cs ← bindAll f as
+    pure (bs ++ cs)
+
+variable {V σ : Type} (p : Program) (msem : MultiSem V σ) (cfg : Config)
+
+mutual
+/-- All matches of `pat` against `v` extending `env`, in loop order (multi-extractors
+yield several). -/
+def matchPatN (st : σ) : Pattern → V → Env V → Except Err (List (Env V))
+  | .bind _ x sub, v, env =>
+    if x < env.size then matchPatN st sub v (env.set! x (some v))
+    else throw (.malformed s!"variable {x} out of range")
+  | .var _ x, v, env =>
+    match env[x]? with
+    | some (some w) => pure (if msem.eq v w then [env] else [])
+    | _ => throw (.malformed s!"unbound variable {x}")
+  | .constBool _ b, v, env => pure (if msem.eq v (msem.bool b) then [env] else [])
+  | .constInt ty i, v, env => pure (if msem.eq v (msem.int ty i) then [env] else [])
+  | .constPrim ty n, v, env =>
+    match msem.prim ty n with
+    | some c => pure (if msem.eq v c then [env] else [])
+    | none => throw (.unmodeled s!"constant ${n}")
+  | .wildcard _, _, env => pure [env]
+  | .and _ ps, v, env => matchAllN st ps v env
+  | .term ty t args, v, env => do
+    let term ← termOf p t
+    match term.kind with
+    | .enumVariant k =>
+      match msem.unData ty v with
+      | some (k', fs) => if k == k' then matchArgsN st args fs env else pure []
+      | none => throw (.malformed s!"value is not of type {p.typeName ty} (term {term.name})")
+    | .struct =>
+      match msem.unData ty v with
+      | some (_, fs) => matchArgsN st args fs env
+      | none => throw (.malformed s!"value is not of type {p.typeName ty} (term {term.name})")
+    | .decl flags _ (some (.external _ infallible)) =>
+      if flags.isMulti then
+        match msem.extractMulti term v st with
+        | .ok fss => bindAll (fun fs => matchArgsN st args fs env) fss
+        | .fail => pure []
+        | .unmodeled w => throw (.unmodeled w)
+      else
+        match msem.extract term v st with
+        | .ok fs => matchArgsN st args fs env
+        | .fail => if infallible then throw (.infallibleFailed term.name) else pure []
+        | .unmodeled w => throw (.unmodeled w)
+    | _ => throw (.malformed s!"term {term.name} has no extern extractor (unexpanded pattern)")
+/-- Every pattern against the same value (`and`), all combinations. -/
+def matchAllN (st : σ) : List Pattern → V → Env V → Except Err (List (Env V))
+  | [], _, env => pure [env]
+  | q :: qs, v, env => do
+    let envs ← matchPatN st q v env
+    bindAll (fun e => matchAllN st qs v e) envs
+/-- Patterns against values pointwise, all combinations. -/
+def matchArgsN (st : σ) : List Pattern → List V → Env V → Except Err (List (Env V))
+  | [], [], env => pure [env]
+  | q :: qs, w :: ws, env => do
+    let envs ← matchPatN st q w env
+    bindAll (fun e => matchArgsN st qs ws e) envs
+  | _, _, _ => throw (.malformed "arity mismatch in pattern")
+end
+
+mutual
+/-- The alternatives of an expression in a multi rule (one per combination of multi-term
+values; none if a partial term fails). -/
+def evalExprN : Nat → Expr → Env V → M σ (List V)
+  | 0, _, _ => throw .outOfFuel
+  | _ + 1, .var _ x, env =>
+    match env[x]? with
+    | some (some v) => pure [v]
+    | _ => throw (.malformed s!"unbound variable {x}")
+  | _ + 1, .constBool _ b, _ => pure [msem.bool b]
+  | _ + 1, .constInt ty i, _ => pure [msem.int ty i]
+  | _ + 1, .constPrim ty n, _ =>
+    match msem.prim ty n with
+    | some c => pure [c]
+    | none => throw (.unmodeled s!"constant ${n}")
+  | n + 1, .let _ binds body, env => do
+    let envs ← evalBindsN n binds env
+    bindAll (fun e => evalExprN n body e) envs
+  | n + 1, .term ty t args, env => do
+    let argss ← evalArgsN n args env
+    bindAll (fun vs => applyTermN n ty t vs) argss
+/-- Alternatives of an argument list: every combination, left to right. -/
+def evalArgsN : Nat → List Expr → Env V → M σ (List (List V))
+  | 0, _, _ => throw .outOfFuel
+  | _ + 1, [], _ => pure [[]]
+  | n + 1, e :: es, env => do
+    let vs ← evalExprN n e env
+    bindAll (fun v => do
+      let rests ← evalArgsN n es env
+      pure (rests.map (v :: ·))) vs
+/-- Alternatives of `let*` bindings. -/
+def evalBindsN : Nat → List (VarId × TypeId × Expr) → Env V → M σ (List (Env V))
+  | 0, _, _ => throw .outOfFuel
+  | _ + 1, [], env => pure [env]
+  | n + 1, (x, _, e) :: bs, env => do
+    let vs ← evalExprN n e env
+    bindAll (fun v =>
+      if x < env.size then evalBindsN n bs (env.set! x (some v))
+      else throw (.malformed s!"variable {x} out of range")) vs
+/-- Apply term `t` in a multi context: multi terms give all their values, single terms at
+most one (`Interp.applyTerm`). -/
+def applyTermN : Nat → TypeId → TermId → List V → M σ (List V)
+  | 0, _, _, _ => throw .outOfFuel
+  | n + 1, ty, t, vs => do
+    let term ← termOf p t
+    match term.kind with
+    | .decl flags (some .internal) _ =>
+      if flags.isMulti then do
+        let rs ← applyMulti n term (p.rulesOf t) vs
+        pure (rs.map (·.2))
+      else do
+        let v ← applyTerm p msem.toSem cfg n ty t vs
+        pure v.toList
+    | .decl flags (some (.external _)) _ =>
+      if flags.isMulti then do
+        let (st, tr) ← get
+        match msem.ctorMulti term vs st with
+        | .ok (ws, st') => do set (st', tr); pure ws
+        | .fail => pure []
+        | .unmodeled w => throw (.unmodeled w)
+      else do
+        let v ← applyTerm p msem.toSem cfg n ty t vs
+        pure v.toList
+    | _ => do
+      let v ← applyTerm p msem.toSem cfg n ty t vs
+      pure v.toList
+/-- Every result of every rule in `rs` (in order) on `vs`, with the rule that produced it. -/
+def applyMulti : Nat → Term → List Rule → List V → M σ (List (RuleId × V))
+  | 0, _, _, _ => throw .outOfFuel
+  | _ + 1, _, [], _ => pure []
+  | n + 1, term, r :: rs, vs => do
+    let (st, _) ← get
+    let envs ← matchArgsN p msem st r.args vs (Array.replicate r.vars.length none)
+    let envs ← bindAll (fun env => matchIfLetsN n r.iflets env) envs
+    let here ← bindAll (fun env => do
+      let ws ← evalExprN n r.rhs env
+      bindAll (fun w => do fire r.id; pure [(r.id, w)]) ws) envs
+    let rest ← applyMulti n term rs vs
+    pure (here ++ rest)
+/-- If-lets of a multi rule: all environments that pass them, in loop order. -/
+def matchIfLetsN : Nat → List IfLet → Env V → M σ (List (Env V))
+  | 0, _, _ => throw .outOfFuel
+  | _ + 1, [], env => pure [env]
+  | n + 1, il :: ils, env => do
+    let vs ← evalExprN n il.rhs env
+    bindAll (fun v => do
+      let (st, _) ← get
+      let envs ← matchPatN p msem st il.lhs v env
+      bindAll (fun e => matchIfLetsN n ils e) envs) vs
+end
+
+end Interp
+
+/-- Result of interpreting a multi term: every result with the rule that produced it (in
+rule order), the final embedding state, and the fired rules (one entry per result, nested
+single-term rules included) in evaluation order. -/
+structure MultiResult (V σ : Type) where
+  values : List (RuleId × V)
+  state : σ
+  trace : List RuleId
+
+/-- Interpret the multi term `t` (an internal multi constructor of `p`) on `args` from state
+`st`. -/
+def Interp.runMultiTerm {V σ : Type} (p : Program) (msem : MultiSem V σ) (cfg : Config)
+    (t : Term) (args : List V) (st : σ) : Except Err (MultiResult V σ) := do
+  match t.kind with
+  | .decl flags (some .internal) _ =>
+    if !flags.isMulti then throw (.malformed s!"{t.name} is not a multi term") else
+    let (vs, st', tr) ← (Interp.applyMulti p msem cfg cfg.fuel t (p.rulesOf t.id) args).run
+      (st, #[])
+    pure ⟨vs, st', tr.toList⟩
+  | _ => throw (.malformed s!"{t.name} has no internal constructor")
+
+/-- Interpret the multi term named `term` on `args` from state `st`. -/
+def Interp.runMulti {V σ : Type} (p : Program) (msem : MultiSem V σ) (cfg : Config)
+    (term : String) (args : List V) (st : σ) : Except Err (MultiResult V σ) := do
+  let some t := p.termByName? term | throw (.malformed s!"unknown term {term}")
+  Interp.runMultiTerm p msem cfg t args st
 
 end Isle

@@ -1,0 +1,85 @@
+function %iadd_zero
+simplify v1: src/opts/remat.isle:26 -> [v1]
+simplify v2: src/opts/arithmetic.isle:8 src/opts/remat.isle:6 -> [v0, v2]
+function %iadd_const_left
+simplify v1: src/opts/remat.isle:26 -> [v1]
+simplify v3: src/opts/remat.isle:6 -> [v3]
+simplify v2: src/opts/cprop.isle:147 src/opts/remat.isle:4 -> [v2, v3]
+function %iadd_consts
+simplify v1: src/opts/remat.isle:26 -> [v1]
+simplify v2: src/opts/remat.isle:26 -> [v2]
+simplify v4: src/opts/remat.isle:26 -> [v4]
+simplify v8: src/opts/cprop.isle:14 src/opts/remat.isle:6 src/opts/cprop.isle:147 src/opts/remat.isle:4 -> [v4, v8, v9]
+simplify v7: src/opts/cprop.isle:14 src/opts/remat.isle:6 src/opts/cprop.isle:147 src/opts/remat.isle:4 -> [v4, v7]
+simplify v6: src/opts/cprop.isle:14 src/opts/remat.isle:6 src/opts/cprop.isle:147 src/opts/remat.isle:4 -> [v4, v6]
+simplify v5: src/opts/cprop.isle:14 src/opts/remat.isle:6 src/opts/cprop.isle:147 src/opts/remat.isle:4 -> [v4, v5]
+simplify v3: src/opts/cprop.isle:14 src/opts/remat.isle:6 src/opts/cprop.isle:147 src/opts/remat.isle:4 -> [v3, v4]
+function %isub_self
+simplify v2: src/opts/remat.isle:26 -> [v2]
+simplify v1: src/opts/arithmetic.isle:50 -> [v2]
+function %imul_two
+simplify v1: src/opts/remat.isle:26 -> [v1]
+simplify v3:  -> []
+simplify v4: src/opts/remat.isle:26 -> [v4]
+simplify v5:  -> []
+simplify v2: src/opts/arithmetic.isle:173 src/opts/arithmetic.isle:181 -> [v3, v5]
+function %imul_pow2
+simplify v1: src/opts/remat.isle:26 -> [v1]
+simplify v3: src/opts/remat.isle:26 -> [v3]
+simplify v4:  -> []
+simplify v2: src/opts/arithmetic.isle:181 -> [v4]
+function %band_self
+simplify v1: src/opts/bitops.isle:40 -> [v0]
+function %bxor_self
+simplify v2: src/opts/remat.isle:26 -> [v2]
+simplify v1: src/opts/bitops.isle:30 -> [v2]
+function %bnot_bnot
+simplify v1: src/opts/remat.isle:24 -> [v1]
+simplify v2: src/opts/bitops.isle:56 src/opts/remat.isle:24 -> [v0, v2]
+function %icmp_eq_self
+simplify v2: src/opts/remat.isle:26 -> [v2]
+simplify v1: src/opts/icmp.isle:5 -> [v2]
+function %icmp_ult_consts
+simplify v1: src/opts/remat.isle:26 -> [v1]
+simplify v2: src/opts/remat.isle:26 -> [v2]
+simplify v5: src/opts/remat.isle:26 -> [v5]
+simplify v8: src/opts/cprop.isle:135 src/opts/cprop.isle:174 -> [v5, v9]
+simplify v7: src/opts/cprop.isle:135 src/opts/cprop.isle:174 -> [v5]
+simplify v6: src/opts/cprop.isle:135 src/opts/cprop.isle:174 -> [v5]
+simplify v4: src/opts/cprop.isle:135 src/opts/cprop.isle:174 -> [v5]
+simplify v13: src/opts/icmp.isle:120 src/opts/cprop.isle:135 src/opts/cprop.isle:174 -> [v5, v14]
+simplify v12: src/opts/cprop.isle:135 src/opts/cprop.isle:174 -> [v5]
+simplify v11: src/opts/icmp.isle:120 src/opts/cprop.isle:135 src/opts/cprop.isle:174 -> [v5]
+simplify v10: src/opts/cprop.isle:135 src/opts/cprop.isle:174 -> [v5]
+simplify v3: src/opts/icmp.isle:120 src/opts/cprop.isle:135 src/opts/cprop.isle:174 -> [v5]
+function %ishl_zero
+simplify v1: src/opts/remat.isle:26 -> [v1]
+simplify v2: src/opts/shifts.isle:4 -> [v0]
+function %sshr_const
+simplify v1: src/opts/remat.isle:26 -> [v1]
+simplify v2: src/opts/remat.isle:26 -> [v2]
+simplify v4: src/opts/remat.isle:26 -> [v4]
+simplify v3: src/opts/cprop.isle:89 -> [v4]
+function %uextend_uextend
+simplify v1:  -> []
+simplify v3:  -> []
+simplify v2: src/opts/extends.isle:2 -> [v3]
+function %select_const
+simplify v2: src/opts/remat.isle:26 -> [v2]
+simplify v3: src/opts/cprop.isle:227 -> [v0]
+function %select_same
+simplify v2: src/opts/selects.isle:4 -> [v1]
+function %umin_self
+simplify v1: src/opts/arithmetic.isle:451 -> [v0]
+function %ineg_const
+simplify v1: src/opts/remat.isle:26 -> [v1]
+simplify v3: src/opts/remat.isle:26 -> [v3]
+simplify v2: src/opts/arithmetic.isle:599 -> [v3]
+function %ireduce_uextend
+simplify v1:  -> []
+simplify v2: src/opts/extends.isle:51 -> [v0]
+function %rotl_consts
+simplify v1: src/opts/remat.isle:26 -> [v1]
+simplify v2: src/opts/remat.isle:26 -> [v2]
+simplify v4: src/opts/remat.isle:26 -> [v4]
+simplify v3: src/opts/cprop.isle:99 -> [v4]
