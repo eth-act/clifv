@@ -406,6 +406,28 @@ def shiftOpOk : ALUOp → Bool
   | .lsr | .asr | .lsl | .extr => true
   | _ => false
 
+/-- The bitmask immediate `v` (at `is64`) has an encoding (`bitmaskEnc?`) that Arm's
+`DecodeBitMasks` at width `M` decodes to `e` (with `N = 0` for a 32-bit instruction). -/
+def bitmaskOk (M : Nat) (is64 : Bool) (v : Nat) (e : BitVec M) : Bool :=
+  match bitmaskEnc? is64 v with
+  | none => false
+  | some (N, immr, imms) =>
+    match Arm.decode_bit_masks N imms immr true M with
+    | none => false
+    | some (wm, _) => (is64 || N == 0#1) && wm == e
+
+/-- The logical immediate of `aluRRImmLogic op sz _ _ imm` as the emitter encodes it (the
+inverted value for `orn`/`bic`/`eon`, the low 32 bits at 32 bits) decodes to the operand
+`ispec` states. A per-instruction check (translation validation of `bitmaskEnc?`). -/
+def logicImmOk (op : ALUOp) (sz : OperandSize) (imm : ImmLogic) : Bool :=
+  match op, sz with
+  | .orrNot, .size32 | .andNot, .size32 | .eorNot, .size32 =>
+    bitmaskOk 32 false (mask64 imm.invert.value % 2 ^ 32) (~~~(BitVec.ofNat 32 imm.value))
+  | .orrNot, .size64 | .andNot, .size64 | .eorNot, .size64 =>
+    bitmaskOk 64 true (mask64 imm.invert.value) (~~~(BitVec.ofNat 64 imm.value))
+  | _, .size32 => bitmaskOk 32 false (mask64 imm.value % 2 ^ 32) (BitVec.ofNat 32 imm.value)
+  | _, .size64 => bitmaskOk 64 true (mask64 imm.value) (BitVec.ofNat 64 imm.value)
+
 /-- The covered addressing modes of a load/store of `bytes` bytes (`amodeAddr`'s forms). -/
 def memOk (bytes : Nat) : AMode → Bool
   | .slotOffset _ => true
@@ -418,7 +440,8 @@ def memOk (bytes : Nat) : AMode → Bool
 
 /-- **The covered straight-line forms.** A zero-register destination is register 31 in the
 encoding, which the immediate and extended-register `add`/`sub` and the logical-immediate forms
-read as `sp` unless they set the flags: those are covered only as `adds`/`subs`/`ands`. -/
+read as `sp` unless they set the flags: those are covered only as `adds`/`subs`/`ands`. A logical
+immediate is covered when its encoding decodes back to it (`logicImmOk`). -/
 def FormOk (_ctx : FnCtx) : MInst → Bool
   | .aluRRR _ _ (.vreg _ .int) (.vreg _ .int) (.vreg _ .int) => true
   | .aluRRR _ _ (.vreg _ .int) .xzr (.vreg _ .int) => true
@@ -429,8 +452,8 @@ def FormOk (_ctx : FnCtx) : MInst → Bool
   | .aluRRRR _ _ (.vreg _ .int) (.vreg _ .int) (.vreg _ .int) .xzr => true
   | .aluRRImm12 _ _ (.vreg _ .int) (.vreg _ .int) _ => true
   | .aluRRImm12 op _ .xzr (.vreg _ .int) _ => op == .addS || op == .subS
-  | .aluRRImmLogic op _ (.vreg _ .int) (.vreg _ .int) _ => logicOpOk op
-  | .aluRRImmLogic op _ .xzr (.vreg _ .int) _ => op == .andS
+  | .aluRRImmLogic op sz (.vreg _ .int) (.vreg _ .int) imm => logicOpOk op && logicImmOk op sz imm
+  | .aluRRImmLogic op sz .xzr (.vreg _ .int) imm => op == .andS && logicImmOk op sz imm
   | .aluRRImmShift op _ (.vreg _ .int) (.vreg _ .int) _ => shiftOpOk op
   | .aluRRRShift _ _ (.vreg _ .int) (.vreg _ .int) (.vreg _ .int) _ => true
   | .aluRRRShift _ _ .xzr (.vreg _ .int) (.vreg _ .int) _ => true

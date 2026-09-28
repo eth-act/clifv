@@ -42,11 +42,11 @@ theorem os_aluRRImm12 (op : ALUOp) (sz : OperandSize) (d n : Nat) (imm : Imm12) 
       (.aluRRImm12 op sz (.vreg d .int) (.vreg n .int) imm) :=
   os_of_corr rfl _ (by assign_tac) (by fo_tac) rfl rfl (corr_aluRRImm12 F ctx env op sz d n imm)
 
-theorem os_aluRRImmLogic (op : ALUOp) (hop : logicOpOk op = true) (sz : OperandSize) (d n : Nat)
-    (imm : ImmLogic) :
+theorem os_aluRRImmLogic (op : ALUOp) (sz : OperandSize) (imm : ImmLogic)
+    (hop : (logicOpOk op && logicImmOk op sz imm) = true) (d n : Nat) :
     OperandsSound F (execMInst ctx env) (csem F ctx X)
       (.aluRRImmLogic op sz (.vreg d .int) (.vreg n .int) imm) :=
-  os_of_corr rfl _ (by assign_tac) (by fo_tac) rfl rfl (corr_aluRRImmLogic F ctx env op sz d n imm)
+  os_of_corr rfl _ (by assign_tac) hop rfl rfl (corr_aluRRImmLogic F ctx env op sz d n imm)
 
 theorem os_aluRRImmShift (op : ALUOp) (hop : shiftOpOk op = true) (sz : OperandSize) (d n amt : Nat) :
     OperandsSound F (execMInst ctx env) (csem F ctx X)
@@ -121,11 +121,10 @@ theorem os_aluRRImm12_rdZ (op : ALUOp) (hop : (op == .addS || op == .subS) = tru
   os_of_corr rfl _ (by assign_tac) (by simp [FormOk, hop]) rfl rfl
     (corr_aluRRImm12_rdZ F ctx env op sz n imm)
 
-theorem os_aluRRImmLogic_rdZ (op : ALUOp) (hop : (op == .andS) = true) (sz : OperandSize) (n : Nat)
-    (imm : ImmLogic) :
+theorem os_aluRRImmLogic_rdZ (op : ALUOp) (sz : OperandSize) (imm : ImmLogic)
+    (hop : ((op == .andS) && logicImmOk op sz imm) = true) (n : Nat) :
     OperandsSound F (execMInst ctx env) (csem F ctx X) (.aluRRImmLogic op sz .xzr (.vreg n .int) imm) :=
-  os_of_corr rfl _ (by assign_tac) (by simp [FormOk, hop]) rfl rfl
-    (corr_aluRRImmLogic_rdZ F ctx env op sz n imm)
+  os_of_corr rfl _ (by assign_tac) hop rfl rfl (corr_aluRRImmLogic_rdZ F ctx env op sz n imm)
 
 theorem os_aluRRRShift_rdZ (op : ALUOp) (sz : OperandSize) (n m : Nat) (sh : ShiftOpAndAmt) :
     OperandsSound F (execMInst ctx env) (csem F ctx X)

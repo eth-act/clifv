@@ -272,8 +272,13 @@ theorem formOk_store {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {op : S
       LinesOk ctx i' ∧ (∀ ds, i' ≠ .args ds) ∧ (∀ us, i' ≠ .rets us)) := by
   mem_os
 
-theorem logicOpOk_of_andS {op : ALUOp} (h : (op == .andS) = true) : logicOpOk op = true := by
-  cases op <;> first | rfl | simp at h
+theorem logicOpOk_of_and {op : ALUOp} {b : Bool} (h : (logicOpOk op && b) = true) :
+    logicOpOk op = true := by
+  simp only [Bool.and_eq_true] at h; exact h.1
+
+theorem logicOpOk_of_andS {op : ALUOp} {b : Bool} (h : ((op == .andS) && b) = true) :
+    logicOpOk op = true := by
+  simp only [Bool.and_eq_true, beq_iff_eq] at h; rw [h.1]; rfl
 
 set_option maxHeartbeats 4000000 in
 theorem formOk_sound {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MInst}
@@ -305,7 +310,7 @@ theorem formOk_sound {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MI
        all_goals first
          | one_line
          | exact linesOk_extend ..
-         | exact linesOk_logic _ ‹_› ..
+         | exact linesOk_logic _ (logicOpOk_of_and ‹_›) ..
          | exact linesOk_logic _ (logicOpOk_of_andS ‹_›) ..
          | exact linesOk_shift _ ‹_› ..
          | exact linesOk_rrrShift ..
