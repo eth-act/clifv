@@ -61,7 +61,10 @@ def q (s : String) : String := s.quote
 def bstr (b : Bool) : String := if b then "true" else "false"
 def tconst (tm : Term) : String := s!"T.«{tm.name}»"
 
-def kindStr : TermKind → String
+/-- The kind of term `tm`; an internal extractor (a macro, kept as its source form) is named
+through `Term.extForm` so that the statement stays small. -/
+def kindStr (tm : Term) : String :=
+  match tm.kind with
   | .enumVariant k => s!"(.enumVariant {k})"
   | .struct => ".struct"
   | .decl f c e =>
@@ -69,7 +72,7 @@ def kindStr : TermKind → String
       | none => "none" | some .internal => "(some .internal)"
       | some (.external n) => s!"(some (.external {q n}))"
     let e := match e with
-      | none => "none" | some (.internal _) => "(some (.internal _))"
+      | none => "none" | some (.internal _) => s!"(some (.internal (Term.extForm {tconst tm})))"
       | some (.external n inf) => s!"(some (.external {q n} {bstr inf}))"
     s!"(.decl ⟨{bstr f.isPure}, {bstr f.isMulti}, {bstr f.isPartial}, {bstr f.isRec}⟩ {c} {e})"
 
@@ -104,6 +107,12 @@ checking them; `data_program : Data program` proves every field by `rfl`.
 namespace Opt.Proof
 
 open Isle Isle.Opt
+
+/-- The source form of a term's internal extractor (names it in the kind lemmas). -/
+def Term.extForm (t : Term) : SExpr :=
+  match t.kind with
+  | .decl _ _ (some (.internal f)) => f
+  | _ => default
 "
   IO.println "/-! ### Term kinds (`rfl`) -/\n"
   let mut fields : Array String := #[]
@@ -111,8 +120,7 @@ open Isle Isle.Opt
   let mut proofs : Array String := #[]
   for t in terms do
     let some tm := program.term? t | continue
-    unless (match tm.kind with | .decl _ _ (some (.internal _)) => true | _ => false) do
-      IO.println s!"@[opt_data] theorem term_{t}_kind : {tconst tm}.kind = {kindStr tm.kind} := rfl"
+    IO.println s!"@[opt_data] theorem term_{t}_kind : {tconst tm}.kind = {kindStr tm} := rfl"
     fields := fields.push s!"  t{t} : Interp.termOf p {t} = .ok {tconst tm}"
     facts := facts.push s!"theorem program_term_{t} : Interp.termOf program {t} = .ok {tconst tm} := rfl"
     proofs := proofs.push s!"  t{t} := program_term_{t}"
@@ -152,5 +160,8 @@ theorem data_program : Data program where"
     seenInts := seenInts.insert (ty, i)
     let nm := if i < 0 then s!"neg{-i}" else s!"{i}"
     IO.println s!"@[opt_data] theorem normInt_{ty}_{nm} : normInt {ty} ({i}) = {normInt ty i} := rfl"
+  IO.println "\n/-! ### Rules of the internal constructors (unfolded when a right-hand side calls one) -/\n"
+  for r in internal.toList.flatMap program.rulesOf do
+    IO.println s!"attribute [opt_data] {r.name}"
   IO.println ""
   IO.println "end Opt.Proof"

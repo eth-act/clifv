@@ -19,6 +19,12 @@ namespace Opt.Proof
 
 open Isle Isle.Opt
 
+/-- The source form of a term's internal extractor (names it in the kind lemmas). -/
+def Term.extForm (t : Term) : SExpr :=
+  match t.kind with
+  | .decl _ _ (some (.internal f)) => f
+  | _ => default
+
 /-! ### Term kinds (`rfl`) -/
 
 @[opt_data] theorem term_2_kind : T.«value_type».kind = (.decl ⟨false, false, false, false⟩ none (some (.external "value_type" true))) := rfl
@@ -79,6 +85,8 @@ open Isle Isle.Opt
 @[opt_data] theorem term_172_kind : T.«resolve_jump_table_entry».kind = (.decl ⟨true, false, false, false⟩ (some (.external "resolve_jump_table_entry")) none) := rfl
 @[opt_data] theorem term_173_kind : T.«block_call_block».kind = (.decl ⟨true, false, false, false⟩ (some (.external "block_call_block")) none) := rfl
 @[opt_data] theorem term_174_kind : T.«just_trap_block».kind = (.decl ⟨true, false, true, false⟩ (some (.external "just_trap_block")) none) := rfl
+@[opt_data] theorem term_175_kind : T.«spaceship_s».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«spaceship_s»)))) := rfl
+@[opt_data] theorem term_176_kind : T.«spaceship_u».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«spaceship_u»)))) := rfl
 @[opt_data] theorem term_178_kind : T.«inst_to_skeleton_inst_simplification».kind = (.decl ⟨true, false, false, false⟩ (some .internal) none) := rfl
 @[opt_data] theorem term_179_kind : T.«value_to_skeleton_inst_simplification».kind = (.decl ⟨true, false, false, false⟩ (some .internal) none) := rfl
 @[opt_data] theorem term_180_kind : T.«remove_inst».kind = (.decl ⟨true, false, false, false⟩ (some .internal) none) := rfl
@@ -87,7 +95,21 @@ open Isle Isle.Opt
 @[opt_data] theorem term_185_kind : T.«remat».kind = (.decl ⟨false, false, false, false⟩ (some (.external "remat")) none) := rfl
 @[opt_data] theorem term_186_kind : T.«subsume».kind = (.decl ⟨false, false, false, false⟩ (some (.external "subsume")) none) := rfl
 @[opt_data] theorem term_187_kind : T.«iconst_sextend_etor».kind = (.decl ⟨false, false, false, false⟩ none (some (.external "iconst_sextend_etor" false))) := rfl
+@[opt_data] theorem term_188_kind : T.«iconst_s».kind = (.decl ⟨false, false, false, true⟩ (some .internal) (some (.internal (Term.extForm T.«iconst_s»)))) := rfl
+@[opt_data] theorem term_189_kind : T.«iconst_u».kind = (.decl ⟨false, false, false, true⟩ (some .internal) (some (.internal (Term.extForm T.«iconst_u»)))) := rfl
 @[opt_data] theorem term_191_kind : T.«uextend_maybe_etor».kind = (.decl ⟨false, true, false, false⟩ none (some (.external "uextend_maybe_etor" true))) := rfl
+@[opt_data] theorem term_192_kind : T.«uextend_maybe».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«uextend_maybe»)))) := rfl
+@[opt_data] theorem term_193_kind : T.«sextend_maybe».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«sextend_maybe»)))) := rfl
+@[opt_data] theorem term_194_kind : T.«eq».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«eq»)))) := rfl
+@[opt_data] theorem term_195_kind : T.«ne».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«ne»)))) := rfl
+@[opt_data] theorem term_196_kind : T.«ult».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«ult»)))) := rfl
+@[opt_data] theorem term_197_kind : T.«ule».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«ule»)))) := rfl
+@[opt_data] theorem term_198_kind : T.«ugt».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«ugt»)))) := rfl
+@[opt_data] theorem term_199_kind : T.«uge».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«uge»)))) := rfl
+@[opt_data] theorem term_200_kind : T.«slt».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«slt»)))) := rfl
+@[opt_data] theorem term_201_kind : T.«sle».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«sle»)))) := rfl
+@[opt_data] theorem term_202_kind : T.«sgt».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«sgt»)))) := rfl
+@[opt_data] theorem term_203_kind : T.«sge».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«sge»)))) := rfl
 @[opt_data] theorem term_204_kind : T.«i64_is_negative_power_of_two».kind = (.decl ⟨true, false, false, false⟩ (some .internal) none) := rfl
 @[opt_data] theorem term_205_kind : T.«i64_is_any_sign_power_of_two».kind = (.decl ⟨true, false, false, false⟩ (some .internal) none) := rfl
 @[opt_data] theorem term_206_kind : T.«div_const_magic_u32».kind = (.decl ⟨false, false, false, false⟩ (some (.external "div_const_magic_u32")) none) := rfl
@@ -118,6 +140,7 @@ open Isle Isle.Opt
 @[opt_data] theorem term_231_kind : T.«all_zero_etor».kind = (.decl ⟨false, false, false, false⟩ none (some (.external "all_zero_etor" false))) := rfl
 @[opt_data] theorem term_232_kind : T.«f16_zero».kind = (.decl ⟨false, false, false, false⟩ (some (.external "f16_zero")) none) := rfl
 @[opt_data] theorem term_233_kind : T.«ty_vector».kind = (.decl ⟨false, false, false, false⟩ none (some (.external "ty_vector" false))) := rfl
+@[opt_data] theorem term_234_kind : T.«all_zero».kind = (.decl ⟨false, false, false, true⟩ (some .internal) (some (.internal (Term.extForm T.«all_zero»)))) := rfl
 @[opt_data] theorem term_235_kind : T.«truthy».kind = (.decl ⟨true, true, false, false⟩ (some .internal) none) := rfl
 @[opt_data] theorem term_241_kind : T.«f32_from_uint».kind = (.decl ⟨false, false, false, false⟩ (some (.external "f32_from_uint")) none) := rfl
 @[opt_data] theorem term_242_kind : T.«f64_from_uint».kind = (.decl ⟨false, false, false, false⟩ (some (.external "f64_from_uint")) none) := rfl
@@ -176,6 +199,45 @@ open Isle Isle.Opt
 @[opt_data] theorem term_1146_kind : T.«value_array_2».kind = (.decl ⟨false, false, false, false⟩ (some (.external "pack_value_array_2")) (some (.external "unpack_value_array_2" true))) := rfl
 @[opt_data] theorem term_1147_kind : T.«value_array_3».kind = (.decl ⟨false, false, false, false⟩ (some (.external "pack_value_array_3")) (some (.external "unpack_value_array_3" true))) := rfl
 @[opt_data] theorem term_1148_kind : T.«block_array_2».kind = (.decl ⟨false, false, false, false⟩ (some (.external "pack_block_array_2")) (some (.external "unpack_block_array_2" true))) := rfl
+@[opt_data] theorem term_1149_kind : T.«jump».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«jump»)))) := rfl
+@[opt_data] theorem term_1154_kind : T.«trapz».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«trapz»)))) := rfl
+@[opt_data] theorem term_1155_kind : T.«trapnz».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«trapnz»)))) := rfl
+@[opt_data] theorem term_1157_kind : T.«splat».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«splat»)))) := rfl
+@[opt_data] theorem term_1162_kind : T.«smin».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«smin»)))) := rfl
+@[opt_data] theorem term_1163_kind : T.«umin».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«umin»)))) := rfl
+@[opt_data] theorem term_1164_kind : T.«smax».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«smax»)))) := rfl
+@[opt_data] theorem term_1165_kind : T.«umax».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«umax»)))) := rfl
+@[opt_data] theorem term_1199_kind : T.«iconst».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«iconst»)))) := rfl
+@[opt_data] theorem term_1200_kind : T.«f16const».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«f16const»)))) := rfl
+@[opt_data] theorem term_1201_kind : T.«f32const».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«f32const»)))) := rfl
+@[opt_data] theorem term_1202_kind : T.«f64const».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«f64const»)))) := rfl
+@[opt_data] theorem term_1203_kind : T.«f128const».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«f128const»)))) := rfl
+@[opt_data] theorem term_1204_kind : T.«vconst».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«vconst»)))) := rfl
+@[opt_data] theorem term_1207_kind : T.«select».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«select»)))) := rfl
+@[opt_data] theorem term_1214_kind : T.«icmp».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«icmp»)))) := rfl
+@[opt_data] theorem term_1215_kind : T.«iadd».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«iadd»)))) := rfl
+@[opt_data] theorem term_1216_kind : T.«isub».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«isub»)))) := rfl
+@[opt_data] theorem term_1217_kind : T.«ineg».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«ineg»)))) := rfl
+@[opt_data] theorem term_1218_kind : T.«iabs».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«iabs»)))) := rfl
+@[opt_data] theorem term_1219_kind : T.«imul».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«imul»)))) := rfl
+@[opt_data] theorem term_1220_kind : T.«umulhi».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«umulhi»)))) := rfl
+@[opt_data] theorem term_1221_kind : T.«smulhi».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«smulhi»)))) := rfl
+@[opt_data] theorem term_1239_kind : T.«band».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«band»)))) := rfl
+@[opt_data] theorem term_1240_kind : T.«bor».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«bor»)))) := rfl
+@[opt_data] theorem term_1241_kind : T.«bxor».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«bxor»)))) := rfl
+@[opt_data] theorem term_1242_kind : T.«bnot».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«bnot»)))) := rfl
+@[opt_data] theorem term_1243_kind : T.«rotl».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«rotl»)))) := rfl
+@[opt_data] theorem term_1244_kind : T.«rotr».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«rotr»)))) := rfl
+@[opt_data] theorem term_1245_kind : T.«ishl».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«ishl»)))) := rfl
+@[opt_data] theorem term_1246_kind : T.«ushr».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«ushr»)))) := rfl
+@[opt_data] theorem term_1247_kind : T.«sshr».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«sshr»)))) := rfl
+@[opt_data] theorem term_1252_kind : T.«bswap».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«bswap»)))) := rfl
+@[opt_data] theorem term_1253_kind : T.«popcnt».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«popcnt»)))) := rfl
+@[opt_data] theorem term_1272_kind : T.«bmask».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«bmask»)))) := rfl
+@[opt_data] theorem term_1273_kind : T.«ireduce».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«ireduce»)))) := rfl
+@[opt_data] theorem term_1283_kind : T.«uextend».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«uextend»)))) := rfl
+@[opt_data] theorem term_1284_kind : T.«sextend».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«sextend»)))) := rfl
+@[opt_data] theorem term_1297_kind : T.«iconcat».kind = (.decl ⟨false, false, false, false⟩ (some .internal) (some (.internal (Term.extForm T.«iconcat»)))) := rfl
 @[opt_data] theorem term_1305_kind : T.«SkeletonInstSimplification.Remove».kind = (.enumVariant 0) := rfl
 @[opt_data] theorem term_1306_kind : T.«SkeletonInstSimplification.RemoveWithVal».kind = (.enumVariant 1) := rfl
 @[opt_data] theorem term_1307_kind : T.«SkeletonInstSimplification.Replace».kind = (.enumVariant 2) := rfl
@@ -1835,5 +1897,172 @@ theorem data_program : Data program where
 @[opt_data] theorem normInt_4_7 : normInt 4 (7) = 7 := rfl
 @[opt_data] theorem normInt_4_16 : normInt 4 (16) = 16 := rfl
 @[opt_data] theorem normInt_4_32 : normInt 4 (32) = 32 := rfl
+
+/-! ### Rules of the internal constructors (unfolded when a right-hand side calls one) -/
+
+attribute [opt_data] rule_prelude_343
+attribute [opt_data] rule_prelude_opt_74
+attribute [opt_data] rule_prelude_opt_77
+attribute [opt_data] rule_prelude_opt_136
+attribute [opt_data] rule_prelude_opt_140
+attribute [opt_data] rule_prelude_opt_144
+attribute [opt_data] rule_prelude_opt_150
+attribute [opt_data] rule_prelude_opt_154
+attribute [opt_data] rule_prelude_opt_208
+attribute [opt_data] rule_prelude_opt_207
+attribute [opt_data] rule_prelude_opt_201
+attribute [opt_data] rule_prelude_opt_225
+attribute [opt_data] rule_prelude_opt_224
+attribute [opt_data] rule_prelude_opt_221
+attribute [opt_data] rule_prelude_opt_246
+attribute [opt_data] rule_prelude_opt_245
+attribute [opt_data] rule_prelude_opt_252
+attribute [opt_data] rule_prelude_opt_251
+attribute [opt_data] rule_prelude_opt_61
+attribute [opt_data] rule_prelude_opt_62
+attribute [opt_data] rule_prelude_opt_63
+attribute [opt_data] rule_prelude_opt_64
+attribute [opt_data] rule_prelude_opt_65
+attribute [opt_data] rule_prelude_opt_66
+attribute [opt_data] rule_prelude_opt_67
+attribute [opt_data] rule_prelude_opt_68
+attribute [opt_data] rule_prelude_opt_69
+attribute [opt_data] rule_prelude_opt_70
+attribute [opt_data] rule_prelude_opt_289
+attribute [opt_data] rule_prelude_opt_293
+attribute [opt_data] rule_prelude_opt_296
+attribute [opt_data] rule_prelude_opt_299
+attribute [opt_data] rule_prelude_opt_328
+attribute [opt_data] rule_prelude_opt_333
+attribute [opt_data] rule_prelude_opt_349
+attribute [opt_data] rule_prelude_opt_358
+attribute [opt_data] rule_prelude_opt_372
+attribute [opt_data] rule_prelude_opt_378
+attribute [opt_data] rule_prelude_opt_398
+attribute [opt_data] rule_prelude_opt_399
+attribute [opt_data] rule_prelude_opt_405
+attribute [opt_data] rule_prelude_opt_410
+attribute [opt_data] rule_prelude_opt_426
+attribute [opt_data] rule_prelude_opt_435
+attribute [opt_data] rule_prelude_opt_449
+attribute [opt_data] rule_prelude_opt_455
+attribute [opt_data] rule_prelude_opt_475
+attribute [opt_data] rule_prelude_opt_476
+attribute [opt_data] rule_prelude_opt_483
+attribute [opt_data] rule_prelude_opt_489
+attribute [opt_data] rule_prelude_opt_505
+attribute [opt_data] rule_prelude_opt_514
+attribute [opt_data] rule_prelude_opt_523
+attribute [opt_data] rule_prelude_opt_534
+attribute [opt_data] rule_prelude_opt_555
+attribute [opt_data] rule_prelude_opt_558
+attribute [opt_data] rule_prelude_opt_564
+attribute [opt_data] rule_prelude_opt_570
+attribute [opt_data] rule_prelude_opt_586
+attribute [opt_data] rule_prelude_opt_595
+attribute [opt_data] rule_prelude_opt_604
+attribute [opt_data] rule_prelude_opt_615
+attribute [opt_data] rule_prelude_opt_636
+attribute [opt_data] rule_prelude_opt_639
+attribute [opt_data] rule_arithmetic_401
+attribute [opt_data] rule_arithmetic_400
+attribute [opt_data] rule_bitops_18
+attribute [opt_data] rule_bitops_17
+attribute [opt_data] rule_bitops_16
+attribute [opt_data] rule_bitops_15
+attribute [opt_data] rule_bitops_14
+attribute [opt_data] rule_bitops_13
+attribute [opt_data] rule_bitops_111
+attribute [opt_data] rule_bitops_112
+attribute [opt_data] rule_bitops_113
+attribute [opt_data] rule_bitops_114
+attribute [opt_data] rule_bitops_115
+attribute [opt_data] rule_bitops_116
+attribute [opt_data] rule_bitops_117
+attribute [opt_data] rule_bitops_118
+attribute [opt_data] rule_bitops_119
+attribute [opt_data] rule_bitops_120
+attribute [opt_data] rule_bitops_122
+attribute [opt_data] rule_icmp_209
+attribute [opt_data] rule_icmp_214
+attribute [opt_data] rule_icmp_215
+attribute [opt_data] rule_icmp_216
+attribute [opt_data] rule_icmp_217
+attribute [opt_data] rule_icmp_218
+attribute [opt_data] rule_icmp_219
+attribute [opt_data] rule_icmp_220
+attribute [opt_data] rule_icmp_221
+attribute [opt_data] rule_icmp_222
+attribute [opt_data] rule_icmp_223
+attribute [opt_data] rule_icmp_226
+attribute [opt_data] rule_icmp_227
+attribute [opt_data] rule_icmp_228
+attribute [opt_data] rule_icmp_229
+attribute [opt_data] rule_icmp_230
+attribute [opt_data] rule_icmp_231
+attribute [opt_data] rule_icmp_232
+attribute [opt_data] rule_icmp_233
+attribute [opt_data] rule_icmp_234
+attribute [opt_data] rule_icmp_235
+attribute [opt_data] rule_icmp_236
+attribute [opt_data] rule_icmp_237
+attribute [opt_data] rule_icmp_240
+attribute [opt_data] rule_icmp_241
+attribute [opt_data] rule_icmp_242
+attribute [opt_data] rule_icmp_243
+attribute [opt_data] rule_icmp_244
+attribute [opt_data] rule_icmp_245
+attribute [opt_data] rule_icmp_246
+attribute [opt_data] rule_icmp_247
+attribute [opt_data] rule_icmp_248
+attribute [opt_data] rule_icmp_249
+attribute [opt_data] rule_shifts_94
+attribute [opt_data] rule_shifts_95
+attribute [opt_data] rule_shifts_96
+attribute [opt_data] rule_shifts_215
+attribute [opt_data] rule_shifts_212
+attribute [opt_data] rule_shifts_210
+attribute [opt_data] rule_shifts_227
+attribute [opt_data] rule_shifts_224
+attribute [opt_data] rule_shifts_222
+attribute [opt_data] rule_clif_opt_342
+attribute [opt_data] rule_clif_opt_387
+attribute [opt_data] rule_clif_opt_396
+attribute [opt_data] rule_clif_opt_414
+attribute [opt_data] rule_clif_opt_459
+attribute [opt_data] rule_clif_opt_468
+attribute [opt_data] rule_clif_opt_477
+attribute [opt_data] rule_clif_opt_486
+attribute [opt_data] rule_clif_opt_792
+attribute [opt_data] rule_clif_opt_801
+attribute [opt_data] rule_clif_opt_810
+attribute [opt_data] rule_clif_opt_819
+attribute [opt_data] rule_clif_opt_828
+attribute [opt_data] rule_clif_opt_837
+attribute [opt_data] rule_clif_opt_864
+attribute [opt_data] rule_clif_opt_927
+attribute [opt_data] rule_clif_opt_936
+attribute [opt_data] rule_clif_opt_945
+attribute [opt_data] rule_clif_opt_954
+attribute [opt_data] rule_clif_opt_963
+attribute [opt_data] rule_clif_opt_972
+attribute [opt_data] rule_clif_opt_981
+attribute [opt_data] rule_clif_opt_990
+attribute [opt_data] rule_clif_opt_1152
+attribute [opt_data] rule_clif_opt_1161
+attribute [opt_data] rule_clif_opt_1170
+attribute [opt_data] rule_clif_opt_1179
+attribute [opt_data] rule_clif_opt_1188
+attribute [opt_data] rule_clif_opt_1197
+attribute [opt_data] rule_clif_opt_1206
+attribute [opt_data] rule_clif_opt_1215
+attribute [opt_data] rule_clif_opt_1224
+attribute [opt_data] rule_clif_opt_1269
+attribute [opt_data] rule_clif_opt_1278
+attribute [opt_data] rule_clif_opt_1449
+attribute [opt_data] rule_clif_opt_1458
+attribute [opt_data] rule_clif_opt_1548
+attribute [opt_data] rule_clif_opt_1557
+attribute [opt_data] rule_clif_opt_1674
 
 end Opt.Proof
