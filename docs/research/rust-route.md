@@ -10,7 +10,7 @@ release-oc), dumped by `scripts/rust-clif/dump.sh` into `/tmp/rust-clif-survey/o
 | Step | State |
 | --- | --- |
 | 1. Data objects from cg_clif | **done** — `rust/crates/clif-data-export` recovers every data object of the corpus (294/294 data-using functions, 938 objects, 43 560 bytes, transitively closed; 0 mismatches over 933 functions × 3 profiles). Directives + gv table emitted; wired into `normalize.py --gvmap --data-file` and `tools.sh`; smoke runs of constant-table/vtable readers pass under `Clif.run` and the Lean backend natively, agreeing with rustc/LLVM. |
-| 2. Panic and mem* externs | **in progress** — freestanding runtime + `Clif.Env` semantics |
+| 2. Panic and mem* externs | **done (Lean side)** — `Clif.Rust.env` (byte-level `memcpy`/`memmove`/`memset`/`memcmp`, panics end the run as `trapped user1`); `clif-filetest --rust-env`; native: `scripts/rust-clif/rust-runtime.{c,s}` (`udf #251`), linked with `clif-native --link` via `lean-backend-filetests.sh`'s `RUST_RUNTIME`. Fixture `scripts/rust-clif/fixtures/mem-panics.clif`: `Clif.run` 4/4, Lean backend + Cranelift-native both 3/3 (the panic command aborts with SIGILL on both, reported as an error on both sides — the documented "aborted" agreement). Documented in e2e.md's trusted list. |
 | 3. `sret` | not started (design: `ensure_struct_return_ptr_is_returned`, param in x8, returned in x0; flagged unverified) |
 | 4. `dyn`/fn pointers (`call_indirect`, `func_addr`) | not started (design: sigN declarations on `Clif.Function`, function symbols in the link-time image, `func_addr` = `mem.symbols` lookup) |
 | 5. Re-count | not started |
