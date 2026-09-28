@@ -1,0 +1,937 @@
+; data: %f_crypto_Ldata0 writable = %f_crypto_Ldata1 8500000000000000da00000001000000
+; data: %f_crypto_Ldata1 = 2f686f6d652f6b65762f2e7275737475702f746f6f6c636861696e732f6e696768746c792d323032362d30392d32362d7838365f36342d756e6b6e6f776e2d6c696e75782d676e752f6c69622f727573746c69622f7372632f727573742f6c6962726172792f636f72652f7372632f696e7472696e736963732f66616c6c6261636b2e727300
+; data: %f_crypto_Ldata2 writable = %f_crypto_Ldata3 8500000000000000da00000001000000
+; data: %f_crypto_Ldata3 = 2f686f6d652f6b65762f2e7275737475702f746f6f6c636861696e732f6e696768746c792d323032362d30392d32362d7838365f36342d756e6b6e6f776e2d6c696e75782d676e752f6c69622f727573746c69622f7372632f727573742f6c6962726172792f636f72652f7372632f696e7472696e736963732f66616c6c6261636b2e727300
+; data: %f_crypto_Ldata4 writable = %f_crypto_Ldata20 4500000000000000060000000c000000
+; data: %f_crypto_Ldata5 writable = %f_crypto_Ldata20 4500000000000000060000001e000000
+; data: %f_crypto_Ldata6 writable = %f_crypto_Ldata20 45000000000000000600000005000000
+; data: %f_crypto_Ldata7 writable = %f_crypto_Ldata20 4500000000000000070000000d000000
+; data: %f_crypto_Ldata8 writable = %f_crypto_Ldata20 45000000000000000700000005000000
+; data: %f_crypto_Ldata9 writable = %f_crypto_Ldata20 4500000000000000080000000c000000
+; data: %f_crypto_Ldataa writable = %f_crypto_Ldata20 4500000000000000090000000c000000
+; data: %f_crypto_Ldatab writable = %f_crypto_Ldata20 4500000000000000090000001e000000
+; data: %f_crypto_Ldatac writable = %f_crypto_Ldata20 45000000000000000900000005000000
+; data: %f_crypto_Ldatad writable = %f_crypto_Ldata20 45000000000000000a0000000d000000
+; data: %f_crypto_Ldatae writable = %f_crypto_Ldata20 45000000000000000a00000005000000
+; data: %f_crypto_Ldataf writable = %f_crypto_Ldata20 45000000000000000b0000000c000000
+; data: %f_crypto_Ldata10 writable = %f_crypto_Ldata20 45000000000000000c0000000c000000
+; data: %f_crypto_Ldata11 writable = %f_crypto_Ldata20 45000000000000000c0000001e000000
+; data: %f_crypto_Ldata12 writable = %f_crypto_Ldata20 45000000000000000c00000005000000
+; data: %f_crypto_Ldata13 writable = %f_crypto_Ldata20 45000000000000000d0000000d000000
+; data: %f_crypto_Ldata14 writable = %f_crypto_Ldata20 45000000000000000d00000005000000
+; data: %f_crypto_Ldata15 writable = %f_crypto_Ldata20 45000000000000000e0000000c000000
+; data: %f_crypto_Ldata16 writable = %f_crypto_Ldata20 45000000000000000f0000000c000000
+; data: %f_crypto_Ldata17 writable = %f_crypto_Ldata20 45000000000000000f0000001e000000
+; data: %f_crypto_Ldata18 writable = %f_crypto_Ldata20 45000000000000000f00000005000000
+; data: %f_crypto_Ldata19 writable = %f_crypto_Ldata20 4500000000000000100000000d000000
+; data: %f_crypto_Ldata1a writable = %f_crypto_Ldata20 45000000000000001000000005000000
+; data: %f_crypto_Ldata1b writable = %f_crypto_Ldata20 4500000000000000110000000c000000
+; data: %f_crypto_Ldata1c writable = %f_crypto_Ldata20 45000000000000000800000005000000
+; data: %f_crypto_Ldata1d writable = %f_crypto_Ldata20 45000000000000000b00000005000000
+; data: %f_crypto_Ldata1e writable = %f_crypto_Ldata20 45000000000000000e00000005000000
+; data: %f_crypto_Ldata1f writable = %f_crypto_Ldata20 45000000000000001100000005000000
+; data: %f_crypto_Ldata20 = 2f686f6d652f6b65762f776f726b2f636c6966762d77742f652d6578742d76322f736372697074732f727573742d636c69662f636f727075732f665f63727970746f2e727300
+; data: %f_crypto_Ldata22 writable = %f_crypto_Ldata23 80000000000000005e0800000e000000
+; data: %f_crypto_Ldata23 = 2f686f6d652f6b65762f2e7275737475702f746f6f6c636861696e732f6e696768746c792d323032362d30392d32362d7838365f36342d756e6b6e6f776e2d6c696e75782d676e752f6c69622f727573746c69622f7372632f727573742f6c6962726172792f636f72652f7372632f696e7472696e736963732f6d6f642e727300
+; data: %f_crypto_Ldata25 writable = %f_crypto_Ldata26 8000000000000000740800000e000000
+; data: %f_crypto_Ldata26 = 2f686f6d652f6b65762f2e7275737475702f746f6f6c636861696e732f6e696768746c792d323032362d30392d32362d7838365f36342d756e6b6e6f776e2d6c696e75782d676e752f6c69622f727573746c69622f7372632f727573742f6c6962726172792f636f72652f7372632f696e7472696e736963732f6d6f642e727300
+; data: %f_crypto_Ldata27 writable = %f_crypto_Ldata2b 45000000000000003100000023000000
+; data: %f_crypto_Ldata28 writable = %f_crypto_Ldata2b 45000000000000003100000011000000
+; data: %f_crypto_Ldata29 writable = %f_crypto_Ldata2b 4500000000000000320000001f000000
+; data: %f_crypto_Ldata2a writable = %f_crypto_Ldata2b 4500000000000000320000000c000000
+; data: %f_crypto_Ldata2b = 2f686f6d652f6b65762f776f726b2f636c6966762d77742f652d6578742d76322f736372697074732f727573742d636c69662f636f727075732f665f63727970746f2e727300
+; data: %f_crypto_Ldata2c writable = %f_crypto_Ldata2e 45000000000000006700000015000000
+; data: %f_crypto_Ldata2d writable = %f_crypto_Ldata2e 4500000000000000670000000e000000
+; data: %f_crypto_Ldata2e = 2f686f6d652f6b65762f776f726b2f636c6966762d77742f652d6578742d76322f736372697074732f727573742d636c69662f636f727075732f665f63727970746f2e727300
+; data: %f_crypto_Ldata2f writable = %f_crypto_Ldata43 45000000000000004500000032000000
+; data: %f_crypto_Ldata30 writable = %f_crypto_Ldata43 45000000000000004500000044000000
+; data: %f_crypto_Ldata31 writable = %f_crypto_Ldata43 45000000000000004500000056000000
+; data: %f_crypto_Ldata32 writable = %f_crypto_Ldata43 45000000000000004900000012000000
+; data: %f_crypto_Ldata33 writable = %f_crypto_Ldata43 45000000000000004a00000010000000
+; data: %f_crypto_Ldata34 writable = %f_crypto_Ldata43 45000000000000004a00000038000000
+; data: %f_crypto_Ldata35 writable = %f_crypto_Ldata43 45000000000000004a00000009000000
+; data: %f_crypto_Ldata36 writable = %f_crypto_Ldata43 45000000000000005000000056000000
+; data: %f_crypto_Ldata37 writable = %f_crypto_Ldata43 45000000000000005f0000002a000000
+; data: %f_crypto_Ldata38 writable = %f_crypto_Ldata43 45000000000000005f00000009000000
+; data: %f_crypto_Ldata39 writable = %f_crypto_Ldata43 45000000000000004500000024000000
+; data: %f_crypto_Ldata3a writable = %f_crypto_Ldata43 45000000000000004500000009000000
+; data: %f_crypto_Ldata3b writable = %f_crypto_Ldata43 45000000000000004800000012000000
+; data: %f_crypto_Ldata3c writable = %f_crypto_Ldata43 4500000000000000480000002e000000
+; data: %f_crypto_Ldata3d writable = %f_crypto_Ldata43 4500000000000000480000004c000000
+; data: %f_crypto_Ldata3e writable = %f_crypto_Ldata43 4500000000000000490000002e000000
+; data: %f_crypto_Ldata3f writable = %f_crypto_Ldata43 4500000000000000490000004b000000
+; data: %f_crypto_Ldata40 = 982f8a4291443771cffbc0b5a5dbb5e95bc25639f111f159a4823f92d55e1cab98aa07d8015b8312be853124c37d0c55745dbe72feb1de80a706dc9b74f19bc1c1699be48647beefc69dc10fcca10c246f2ce92daa84744adca9b05cda88f97652513e986dc631a8c82703b0c77f59bff30be0c64791a7d55163ca0667292914850ab72738211b2efc6d2c4d130d385354730a65bb0a6a762ec9c281852c7292a1e8bfa24b661aa8708b4bc2a3516cc719e892d1240699d685350ef470a06a1016c1a419086c371e4c774827b5bcb034b30c1c394aaad84e4fca9c5bf36f2e68ee828f746f63a5781478c8840802c78cfaffbe90eb6c50a4f7a3f9bef27871c6
+; data: %f_crypto_Ldata41 writable = %f_crypto_Ldata43 45000000000000005000000043000000
+; data: %f_crypto_Ldata42 writable = %f_crypto_Ldata43 45000000000000005f00000014000000
+; data: %f_crypto_Ldata43 = 2f686f6d652f6b65762f776f726b2f636c6966762d77742f652d6578742d76322f736372697074732f727573742d636c69662f636f727075732f665f63727970746f2e727300
+; data: %demo_buf writable = 00000000000000000000000000000000
+
+function %ksum() -> i32 system_v {
+    gv0 = symbol colocated %f_crypto_Ldata40
+
+block0:
+    v1 = iconst.i64 0
+    v2 = iconst.i64 0
+    v19 = iconst.i64 8
+    v20 = iconst.i64 4
+    jump block1(v1, v2)
+
+block1(v3: i64, v4: i64):
+    v5 = icmp ult v4, v19
+    brif v5, block2(v3, v4), block4(v3)
+
+block2(v6: i64, v7: i64):
+    v9 = imul.i64 v7, v20
+    v10 = symbol_value.i64 gv0
+    v11 = iadd.i64 v10, v9
+    v12 = load.i32 notrap aligned v11
+    v13 = uextend.i64 v12
+    v14 = iadd.i64 v6, v13
+    v15 = iconst.i64 1
+    v16 = iadd.i64 v7, v15
+    jump block1(v14, v16)
+
+block4(v17: i64):
+    v18 = ireduce.i32 v17
+    return v18
+}
+
+; run: %ksum() == 601620834
+
+function %memrot(i32) -> i32 system_v {
+    gv0 = symbol colocated %demo_buf
+
+block0(v0: i32):
+    v1 = symbol_value.i64 gv0
+    store.i32 notrap aligned v0, v1
+    v2 = load.i32 notrap aligned v1
+    v4 = iconst.i32 7
+    v3 = rotl.i32 v2, v4
+    return v3
+}
+
+; run: %memrot(305419896) == 439041033
+; run: %memrot(1) == 128
+
+function %sha256_compress(i64, i64) system_v {
+    ss0 = explicit_slot 256, align = 4
+    ss1 = explicit_slot 16, align = 8
+    ss2 = explicit_slot 4
+    ss3 = explicit_slot 16, align = 8
+    ss4 = explicit_slot 16, align = 8
+    ss5 = explicit_slot 256, align = 4
+    ss6 = explicit_slot 32, align = 4
+    ss7 = explicit_slot 16, align = 8
+    gv0 = symbol colocated %f_crypto_Ldata2f
+    gv1 = symbol colocated %f_crypto_Ldata30
+    gv2 = symbol colocated %f_crypto_Ldata31
+    gv3 = symbol colocated %f_crypto_Ldata32
+    gv4 = symbol colocated %f_crypto_Ldata33
+    gv5 = symbol colocated %f_crypto_Ldata34
+    gv6 = symbol colocated %f_crypto_Ldata35
+    gv7 = symbol colocated %f_crypto_Ldata36
+    gv8 = symbol colocated %f_crypto_Ldata37
+    gv9 = symbol colocated %f_crypto_Ldata38
+    gv10 = symbol colocated %f_crypto_Ldata39
+    gv11 = symbol colocated %f_crypto_Ldata3a
+    gv12 = symbol colocated %f_crypto_Ldata3b
+    gv13 = symbol colocated %f_crypto_Ldata3c
+    gv14 = symbol colocated %f_crypto_Ldata3d
+    gv15 = symbol colocated %f_crypto_Ldata3e
+    gv16 = symbol colocated %f_crypto_Ldata3f
+    gv17 = symbol colocated %f_crypto_Ldata40
+    gv18 = symbol colocated %f_crypto_Ldata41
+    gv19 = symbol colocated %f_crypto_Ldata42
+    fn0 = %_RNvNtCsdWkcC71lE0a_4core9panicking18panic_bounds_check(i64, i64, i64) system_v
+    fn1 = %_RNvNtCsdWkcC71lE0a_4core9panicking18panic_bounds_check(i64, i64, i64) system_v
+    fn2 = %_RNvNtCsdWkcC71lE0a_4core9panicking18panic_bounds_check(i64, i64, i64) system_v
+    fn3 = %_RNvNtCsdWkcC71lE0a_4core9panicking18panic_bounds_check(i64, i64, i64) system_v
+    fn4 = %_RNvNtCsdWkcC71lE0a_4core9panicking18panic_bounds_check(i64, i64, i64) system_v
+    fn5 = %_RNvNtCsdWkcC71lE0a_4core9panicking18panic_bounds_check(i64, i64, i64) system_v
+    fn6 = %_RNvNtCsdWkcC71lE0a_4core9panicking18panic_bounds_check(i64, i64, i64) system_v
+    fn7 = %_RNvNtCsdWkcC71lE0a_4core9panicking18panic_bounds_check(i64, i64, i64) system_v
+    fn8 = %_RNvNtCsdWkcC71lE0a_4core9panicking18panic_bounds_check(i64, i64, i64) system_v
+    fn9 = %_RNvNtCsdWkcC71lE0a_4core9panicking18panic_bounds_check(i64, i64, i64) system_v
+    fn10 = %_RNvNtCsdWkcC71lE0a_4core9panicking18panic_bounds_check(i64, i64, i64) system_v
+    fn11 = %_RNvNtCsdWkcC71lE0a_4core9panicking18panic_bounds_check(i64, i64, i64) system_v
+    fn12 = %_RNvNtCsdWkcC71lE0a_4core9panicking18panic_bounds_check(i64, i64, i64) system_v
+    fn13 = %_RNvNtCsdWkcC71lE0a_4core9panicking18panic_bounds_check(i64, i64, i64) system_v
+    fn14 = %_RNvNtCsdWkcC71lE0a_4core9panicking18panic_bounds_check(i64, i64, i64) system_v
+    fn15 = %_RNvNtCsdWkcC71lE0a_4core9panicking18panic_bounds_check(i64, i64, i64) system_v
+    fn16 = %_RNvNtCsdWkcC71lE0a_4core9panicking18panic_bounds_check(i64, i64, i64) system_v
+    fn17 = %memcpy(i64, i64, i64) -> i64 system_v
+    fn18 = %_RNvNtCsdWkcC71lE0a_4core9panicking18panic_bounds_check(i64, i64, i64) system_v
+    fn19 = %_RNvNtCsdWkcC71lE0a_4core9panicking18panic_bounds_check(i64, i64, i64) system_v
+block0(v0: i64, v1: i64):
+    v519 -> v0
+    v531 -> v0
+    v518 -> v519
+    v514 -> v1
+    v530 -> v1
+    nop 
+    jump block1
+block1:
+    nop 
+    v2 = iconst.i32 0
+    v4 = iconst.i64 0
+    jump block44(v4)  ; v4 = 0
+block44(v3: i64):
+    v5 = iconst.i64 64
+    v6 = icmp eq v3, v5  ; v5 = 64
+    brif v6, block46, block45
+block45:
+    v7 = iconst.i64 4
+    v8 = imul.i64 v3, v7  ; v7 = 4
+    v9 = stack_addr.i64 ss0
+    v10 = iadd v9, v8
+    store.i32 notrap v2, v10  ; v2 = 0
+    v11 = iconst.i64 1
+    v12 = iadd.i64 v3, v11  ; v11 = 1
+    jump block44(v12)
+block46:
+    nop 
+    v13 = iconst.i64 0
+    jump block2(v13, v514)  ; v13 = 0
+block2(v14: i64, v513: i64):
+    v262 -> v14
+    v497 -> v513
+    v515 -> v513
+    v17 -> v497
+    v30 -> v497
+    v44 -> v497
+    v58 -> v497
+    nop 
+    v15 = iconst.i64 16
+    v16 = icmp ult v14, v15  ; v15 = 16
+    brif v16, block25, block26
+block3:
+    nop 
+    v19 = iconst.i64 1
+    v20 = imul.i64 v18, v19  ; v19 = 1
+    v21 = iadd.i64 v17, v20
+    v22 = load.i8 notrap v21
+    v64 -> v22
+    v23 = iconst.i64 1
+    v24 = iadd.i64 v18, v23  ; v23 = 1
+    v28 -> v24
+    v31 -> v24
+    v25 = iconst.i64 64
+    v26 = icmp ult v24, v25  ; v25 = 64
+    brif v26, block4, block47
+block47 cold:
+    nop 
+    v27 = iconst.i64 64
+    v29 = symbol_value.i64 gv0
+    nop 
+    call fn0(v28, v27, v29)  ; v27 = 64
+    trap user1
+block4:
+    nop 
+    v32 = iconst.i64 1
+    v33 = imul.i64 v31, v32  ; v32 = 1
+    v34 = iadd.i64 v30, v33
+    v35 = load.i8 notrap v34
+    v70 -> v35
+    v37 = iconst.i64 2
+    v38 = iadd.i64 v36, v37  ; v37 = 2
+    v42 -> v38
+    v45 -> v38
+    v39 = iconst.i64 64
+    v40 = icmp ult v38, v39  ; v39 = 64
+    brif v40, block5, block48
+block48 cold:
+    nop 
+    v41 = iconst.i64 64
+    v43 = symbol_value.i64 gv1
+    nop 
+    call fn1(v42, v41, v43)  ; v41 = 64
+    trap user1
+block5:
+    nop 
+    v46 = iconst.i64 1
+    v47 = imul.i64 v45, v46  ; v46 = 1
+    v48 = iadd.i64 v44, v47
+    v49 = load.i8 notrap v48
+    v76 -> v49
+    v51 = iconst.i64 3
+    v52 = iadd.i64 v50, v51  ; v51 = 3
+    v56 -> v52
+    v59 -> v52
+    v53 = iconst.i64 64
+    v54 = icmp ult v52, v53  ; v53 = 64
+    brif v54, block6, block49
+block49 cold:
+    nop 
+    v55 = iconst.i64 64
+    v57 = symbol_value.i64 gv2
+    nop 
+    call fn2(v56, v55, v57)  ; v55 = 64
+    trap user1
+block6:
+    nop 
+    v60 = iconst.i64 1
+    v61 = imul.i64 v59, v60  ; v60 = 1
+    v62 = iadd.i64 v58, v61
+    v63 = load.i8 notrap v62
+    v65 = iconst.i64 0
+    v66 = iconst.i64 1
+    v67 = imul v65, v66  ; v65 = 0, v66 = 1
+    v68 = stack_addr.i64 ss2
+    v69 = iadd v68, v67
+    store.i8 notrap v64, v69
+    v71 = iconst.i64 1
+    v72 = iconst.i64 1
+    v73 = imul v71, v72  ; v71 = 1, v72 = 1
+    v74 = stack_addr.i64 ss2
+    v75 = iadd v74, v73
+    store.i8 notrap v70, v75
+    v77 = iconst.i64 2
+    v78 = iconst.i64 1
+    v79 = imul v77, v78  ; v77 = 2, v78 = 1
+    v80 = stack_addr.i64 ss2
+    v81 = iadd v80, v79
+    store.i8 notrap v76, v81
+    v82 = iconst.i64 3
+    v83 = iconst.i64 1
+    v84 = imul v82, v83  ; v82 = 3, v83 = 1
+    v85 = stack_addr.i64 ss2
+    v86 = iadd v85, v84
+    store notrap v63, v86
+    v87 = stack_addr.i64 ss2
+    v88 = load.i32 notrap v87
+    v89 = bswap v88
+    v498 -> v89
+    v95 -> v498
+    jump block27
+block7:
+    nop 
+    v91 = iconst.i64 4
+    v92 = imul.i64 v90, v91  ; v91 = 4
+    v93 = stack_addr.i64 ss0
+    v94 = iadd v93, v92
+    store.i32 notrap v95, v94
+    jump block2(v496, v515)
+block8(v96: i64, v516: i64):
+    v284 -> v96
+    v299 -> v516
+    v517 -> v516
+    v529 -> v516
+    nop 
+    v97 = iconst.i64 64
+    v98 = icmp ult v96, v97  ; v97 = 64
+    brif v98, block28, block29
+block9:
+    nop 
+    v100 = iconst.i64 4
+    v101 = imul.i64 v99, v100  ; v100 = 4
+    v102 = stack_addr.i64 ss0
+    v103 = iadd v102, v101
+    v104 = load.i32 notrap v103
+    v105 = iconst.i32 7
+    v106 = rotr v104, v105  ; v105 = 7
+    v345 -> v106
+    jump block30
+block10:
+    nop 
+    v108 = iconst.i64 4
+    v109 = imul.i64 v107, v108  ; v108 = 4
+    v110 = stack_addr.i64 ss0
+    v111 = iadd v110, v109
+    v112 = load.i32 notrap v111
+    v113 = iconst.i32 18
+    v114 = rotr v112, v113  ; v113 = 18
+    v346 -> v114
+    jump block31
+block11:
+    nop 
+    v116 = iconst.i64 4
+    v117 = imul.i64 v115, v116  ; v116 = 4
+    v118 = stack_addr.i64 ss0
+    v119 = iadd v118, v117
+    v120 = load.i32 notrap v119
+    v121 = iconst.i32 3
+    v122 = ushr v120, v121  ; v121 = 3
+    v124 = bxor.i32 v123, v122
+    v507 -> v124
+    v173 -> v507
+    v126 = iconst.i64 2
+    v127 = isub.i64 v125, v126  ; v126 = 2
+    v131 -> v127
+    v133 -> v127
+    v354 -> v127
+    v361 -> v127
+    v504 -> v127
+    v505 -> v127
+    v149 -> v505
+    v141 -> v504
+    v128 = iconst.i64 64
+    v129 = icmp ult v127, v128  ; v128 = 64
+    v352 -> v129
+    v359 -> v129
+    brif v129, block12, block50
+block50 cold:
+    nop 
+    v130 = iconst.i64 64
+    v132 = symbol_value.i64 gv3
+    nop 
+    call fn3(v131, v130, v132)  ; v130 = 64
+    trap user1
+block12:
+    nop 
+    v134 = iconst.i64 4
+    v135 = imul.i64 v133, v134  ; v134 = 4
+    v136 = stack_addr.i64 ss0
+    v137 = iadd v136, v135
+    v138 = load.i32 notrap v137
+    v139 = iconst.i32 17
+    v140 = rotr v138, v139  ; v139 = 17
+    v356 -> v140
+    jump block32
+block13:
+    nop 
+    v142 = iconst.i64 4
+    v143 = imul.i64 v141, v142  ; v142 = 4
+    v144 = stack_addr.i64 ss0
+    v145 = iadd v144, v143
+    v146 = load.i32 notrap v145
+    v147 = iconst.i32 19
+    v148 = rotr v146, v147  ; v147 = 19
+    v357 -> v148
+    jump block33
+block14:
+    nop 
+    v150 = iconst.i64 4
+    v151 = imul.i64 v149, v150  ; v150 = 4
+    v152 = stack_addr.i64 ss0
+    v153 = iadd v152, v151
+    v154 = load.i32 notrap v153
+    v155 = iconst.i32 10
+    v156 = ushr v154, v155  ; v155 = 10
+    v158 = bxor.i32 v157, v156
+    v191 -> v158
+    v160 = iconst.i64 16
+    v161 = isub.i64 v159, v160  ; v160 = 16
+    v165 -> v161
+    v167 -> v161
+    v162 = iconst.i64 64
+    v163 = icmp ult v161, v162  ; v162 = 64
+    brif v163, block15, block51
+block51 cold:
+    nop 
+    v164 = iconst.i64 64
+    v166 = symbol_value.i64 gv4
+    nop 
+    call fn4(v165, v164, v166)  ; v164 = 64
+    trap user1
+block15:
+    nop 
+    v168 = iconst.i64 4
+    v169 = imul.i64 v167, v168  ; v168 = 4
+    v170 = stack_addr.i64 ss0
+    v171 = iadd v170, v169
+    v172 = load.i32 notrap v171
+    v174 = iadd v172, v173
+    v189 -> v174
+    v176 = iconst.i64 7
+    v177 = isub.i64 v175, v176  ; v176 = 7
+    v181 -> v177
+    v183 -> v177
+    v178 = iconst.i64 64
+    v179 = icmp ult v177, v178  ; v178 = 64
+    brif v179, block16, block52
+block52 cold:
+    nop 
+    v180 = iconst.i64 64
+    v182 = symbol_value.i64 gv5
+    nop 
+    call fn5(v181, v180, v182)  ; v180 = 64
+    trap user1
+block16:
+    nop 
+    v184 = iconst.i64 4
+    v185 = imul.i64 v183, v184  ; v184 = 4
+    v186 = stack_addr.i64 ss0
+    v187 = iadd v186, v185
+    v188 = load.i32 notrap v187
+    v190 = iadd.i32 v189, v188
+    v192 = iadd v190, v191
+    v204 -> v192
+    v194 = iconst.i64 64
+    v195 = icmp.i64 ult v193, v194  ; v194 = 64
+    brif v195, block17, block53
+block53 cold:
+    nop 
+    v196 = iconst.i64 64
+    v198 = symbol_value.i64 gv6
+    nop 
+    call fn6(v197, v196, v198)  ; v196 = 64
+    trap user1
+block17:
+    nop 
+    v200 = iconst.i64 4
+    v201 = imul.i64 v199, v200  ; v200 = 4
+    v202 = stack_addr.i64 ss0
+    v203 = iadd v202, v201
+    store.i32 notrap v204, v203
+    jump block8(v500, v517)
+block18(v205: i64, v520: i32, v521: i32, v522: i32, v523: i32, v524: i32, v525: i32, v526: i32, v527: i32):
+    v363 -> v205
+    v371 -> v520
+    v398 -> v520
+    v423 -> v520
+    v429 -> v520
+    v435 -> v520
+    v478 -> v520
+    v374 -> v521
+    v455 -> v521
+    v461 -> v521
+    v467 -> v521
+    v510 -> v521
+    v228 -> v510
+    v380 -> v522
+    v468 -> v522
+    v386 -> v523
+    v470 -> v523
+    v392 -> v524
+    v479 -> v524
+    v404 -> v525
+    v436 -> v525
+    v477 -> v525
+    v410 -> v526
+    v439 -> v526
+    v476 -> v526
+    v416 -> v527
+    v442 -> v527
+    nop 
+    v206 = iconst.i64 64
+    v207 = icmp ult v205, v206  ; v206 = 64
+    brif v207, block34, block35
+block19:
+    nop 
+    v209 = iconst.i64 4
+    v210 = imul.i64 v208, v209  ; v209 = 4
+    v211 = stack_addr.i64 ss5
+    v212 = iadd v211, v210
+    v213 = load.i32 notrap v212
+    v215 = iadd.i32 v214, v213
+    v226 -> v215
+    brif.i8 v216, block20, block54
+block54 cold:
+    nop 
+    v217 = iconst.i64 64
+    v219 = symbol_value.i64 gv7
+    nop 
+    call fn7(v218, v217, v219)  ; v217 = 64
+    trap user1
+block20:
+    nop 
+    v221 = iconst.i64 4
+    v222 = imul.i64 v220, v221  ; v221 = 4
+    v223 = stack_addr.i64 ss0
+    v224 = iadd v223, v222
+    v225 = load.i32 notrap v224
+    v227 = iadd.i32 v226, v225
+    v480 -> v227
+    v229 = iconst.i32 2
+    v230 = rotr.i32 v228, v229  ; v229 = 2
+    v458 -> v230
+    jump block39
+block21(v231: i64, v528: i64):
+    v483 -> v231
+    v512 -> v528
+    v234 -> v512
+    v256 -> v512
+    nop 
+    v232 = iconst.i64 8
+    v233 = icmp ult v231, v232  ; v232 = 8
+    brif v233, block42, block43
+block22:
+    nop 
+    v236 = iconst.i64 4
+    v237 = imul.i64 v235, v236  ; v236 = 4
+    v238 = iadd.i64 v234, v237
+    v239 = load.i32 notrap v238
+    v250 -> v239
+    brif.i8 v240, block23, block55
+block55 cold:
+    nop 
+    v241 = iconst.i64 8
+    v243 = symbol_value.i64 gv8
+    nop 
+    call fn8(v242, v241, v243)  ; v241 = 8
+    trap user1
+block23:
+    nop 
+    v245 = iconst.i64 4
+    v246 = imul.i64 v244, v245  ; v245 = 4
+    v247 = stack_addr.i64 ss6
+    v248 = iadd v247, v246
+    v249 = load.i32 notrap v248
+    v251 = iadd.i32 v250, v249
+    v261 -> v251
+    brif.i8 v252, block24, block56
+block56 cold:
+    nop 
+    v253 = iconst.i64 8
+    v255 = symbol_value.i64 gv9
+    nop 
+    call fn9(v254, v253, v255)  ; v253 = 8
+    trap user1
+block24:
+    nop 
+    v258 = iconst.i64 4
+    v259 = imul.i64 v257, v258  ; v258 = 4
+    v260 = iadd.i64 v256, v259
+    store.i32 notrap v261, v260
+    jump block21(v511, v256)
+block25:
+    nop 
+    v263 = iconst.i64 1
+    v264 = iadd.i64 v262, v263  ; v263 = 1
+    v499 -> v264
+    v496 -> v499
+    v265 = stack_addr.i64 ss1+8
+    store.i64 notrap v262, v265
+    v266 = iconst.i64 1
+    v267 = stack_addr.i64 ss1
+    store notrap v266, v267  ; v266 = 1
+    v268 = stack_addr.i64 ss1+8
+    v269 = load.i64 notrap v268
+    v278 -> v269
+    v282 -> v269
+    v90 -> v278
+    v270 = iconst.i64 4
+    v271 = imul v270, v269  ; v270 = 4
+    v18 -> v271
+    v36 -> v271
+    v50 -> v271
+    v275 -> v271
+    v272 = iconst.i64 64
+    v273 = icmp ult v271, v272  ; v272 = 64
+    brif v273, block3, block57
+block57 cold:
+    nop 
+    v274 = iconst.i64 64
+    v276 = symbol_value.i64 gv10
+    nop 
+    call fn10(v275, v274, v276)  ; v274 = 64
+    trap user1
+block26:
+    nop 
+    v277 = iconst.i64 16
+    jump block8(v277, v519)  ; v277 = 16
+block27:
+    nop 
+    v279 = iconst.i64 64
+    v280 = icmp.i64 ult v278, v279  ; v279 = 64
+    brif v280, block7, block58
+block58 cold:
+    nop 
+    v281 = iconst.i64 64
+    v283 = symbol_value.i64 gv11
+    nop 
+    call fn11(v282, v281, v283)  ; v281 = 64
+    trap user1
+block28:
+    nop 
+    v285 = iconst.i64 1
+    v286 = iadd.i64 v284, v285  ; v285 = 1
+    v508 -> v286
+    v500 -> v508
+    v287 = stack_addr.i64 ss3+8
+    store.i64 notrap v284, v287
+    v288 = iconst.i64 1
+    v289 = stack_addr.i64 ss3
+    store notrap v288, v289  ; v288 = 1
+    v290 = stack_addr.i64 ss3+8
+    v291 = load.i64 notrap v290
+    v197 -> v291
+    v503 -> v291
+    v506 -> v291
+    v159 -> v506
+    v175 -> v506
+    v193 -> v506
+    v199 -> v506
+    v125 -> v503
+    v292 = iconst.i64 15
+    v293 = isub v291, v292  ; v292 = 15
+    v99 -> v293
+    v297 -> v293
+    v343 -> v293
+    v350 -> v293
+    v501 -> v293
+    v502 -> v293
+    v115 -> v502
+    v107 -> v501
+    v294 = iconst.i64 64
+    v295 = icmp ult v293, v294  ; v294 = 64
+    v341 -> v295
+    v348 -> v295
+    brif v295, block9, block59
+block59 cold:
+    nop 
+    v296 = iconst.i64 64
+    v298 = symbol_value.i64 gv12
+    nop 
+    call fn12(v297, v296, v298)  ; v296 = 64
+    trap user1
+block29:
+    nop 
+    v300 = iconst.i64 0
+    v301 = iconst.i64 4
+    v302 = imul v300, v301  ; v300 = 0, v301 = 4
+    v303 = iadd.i64 v299, v302
+    v304 = load.i32 notrap v303
+    v305 = iconst.i64 1
+    v306 = iconst.i64 4
+    v307 = imul v305, v306  ; v305 = 1, v306 = 4
+    v308 = iadd.i64 v299, v307
+    v309 = load.i32 notrap v308
+    v310 = iconst.i64 2
+    v311 = iconst.i64 4
+    v312 = imul v310, v311  ; v310 = 2, v311 = 4
+    v313 = iadd.i64 v299, v312
+    v314 = load.i32 notrap v313
+    v315 = iconst.i64 3
+    v316 = iconst.i64 4
+    v317 = imul v315, v316  ; v315 = 3, v316 = 4
+    v318 = iadd.i64 v299, v317
+    v319 = load.i32 notrap v318
+    v320 = iconst.i64 4
+    v321 = iconst.i64 4
+    v322 = imul v320, v321  ; v320 = 4, v321 = 4
+    v323 = iadd.i64 v299, v322
+    v324 = load.i32 notrap v323
+    v325 = iconst.i64 5
+    v326 = iconst.i64 4
+    v327 = imul v325, v326  ; v325 = 5, v326 = 4
+    v328 = iadd.i64 v299, v327
+    v329 = load.i32 notrap v328
+    v330 = iconst.i64 6
+    v331 = iconst.i64 4
+    v332 = imul v330, v331  ; v330 = 6, v331 = 4
+    v333 = iadd.i64 v299, v332
+    v334 = load.i32 notrap v333
+    v335 = iconst.i64 7
+    v336 = iconst.i64 4
+    v337 = imul v335, v336  ; v335 = 7, v336 = 4
+    v338 = iadd.i64 v299, v337
+    v339 = load.i32 notrap v338
+    v340 = iconst.i64 0
+    jump block18(v340, v324, v304, v309, v314, v319, v329, v334, v339)  ; v340 = 0
+block30:
+    nop 
+    brif.i8 v341, block10, block60
+block60 cold:
+    nop 
+    v342 = iconst.i64 64
+    v344 = symbol_value.i64 gv13
+    nop 
+    call fn13(v343, v342, v344)  ; v342 = 64
+    trap user1
+block31:
+    nop 
+    v347 = bxor.i32 v345, v346
+    v123 -> v347
+    brif.i8 v348, block11, block61
+block61 cold:
+    nop 
+    v349 = iconst.i64 64
+    v351 = symbol_value.i64 gv14
+    nop 
+    call fn14(v350, v349, v351)  ; v349 = 64
+    trap user1
+block32:
+    nop 
+    brif.i8 v352, block13, block62
+block62 cold:
+    nop 
+    v353 = iconst.i64 64
+    v355 = symbol_value.i64 gv15
+    nop 
+    call fn15(v354, v353, v355)  ; v353 = 64
+    trap user1
+block33:
+    nop 
+    v358 = bxor.i32 v356, v357
+    v157 -> v358
+    brif.i8 v359, block14, block63
+block63 cold:
+    nop 
+    v360 = iconst.i64 64
+    v362 = symbol_value.i64 gv16
+    nop 
+    call fn16(v361, v360, v362)  ; v360 = 64
+    trap user1
+block34:
+    nop 
+    v364 = iconst.i64 1
+    v365 = iadd.i64 v363, v364  ; v364 = 1
+    v509 -> v365
+    v366 = stack_addr.i64 ss4+8
+    store.i64 notrap v363, v366
+    v367 = iconst.i64 1
+    v368 = stack_addr.i64 ss4
+    store notrap v367, v368  ; v367 = 1
+    v369 = stack_addr.i64 ss4+8
+    v370 = load.i64 notrap v369
+    v218 -> v370
+    v449 -> v370
+    v453 -> v370
+    v208 -> v449
+    v220 -> v449
+    v372 = iconst.i32 6
+    v373 = rotr.i32 v371, v372  ; v372 = 6
+    v426 -> v373
+    jump block36
+block35:
+    nop 
+    v375 = iconst.i64 0
+    v376 = iconst.i64 4
+    v377 = imul v375, v376  ; v375 = 0, v376 = 4
+    v378 = stack_addr.i64 ss6
+    v379 = iadd v378, v377
+    store.i32 notrap v374, v379
+    v381 = iconst.i64 1
+    v382 = iconst.i64 4
+    v383 = imul v381, v382  ; v381 = 1, v382 = 4
+    v384 = stack_addr.i64 ss6
+    v385 = iadd v384, v383
+    store.i32 notrap v380, v385
+    v387 = iconst.i64 2
+    v388 = iconst.i64 4
+    v389 = imul v387, v388  ; v387 = 2, v388 = 4
+    v390 = stack_addr.i64 ss6
+    v391 = iadd v390, v389
+    store.i32 notrap v386, v391
+    v393 = iconst.i64 3
+    v394 = iconst.i64 4
+    v395 = imul v393, v394  ; v393 = 3, v394 = 4
+    v396 = stack_addr.i64 ss6
+    v397 = iadd v396, v395
+    store.i32 notrap v392, v397
+    v399 = iconst.i64 4
+    v400 = iconst.i64 4
+    v401 = imul v399, v400  ; v399 = 4, v400 = 4
+    v402 = stack_addr.i64 ss6
+    v403 = iadd v402, v401
+    store.i32 notrap v398, v403
+    v405 = iconst.i64 5
+    v406 = iconst.i64 4
+    v407 = imul v405, v406  ; v405 = 5, v406 = 4
+    v408 = stack_addr.i64 ss6
+    v409 = iadd v408, v407
+    store.i32 notrap v404, v409
+    v411 = iconst.i64 6
+    v412 = iconst.i64 4
+    v413 = imul v411, v412  ; v411 = 6, v412 = 4
+    v414 = stack_addr.i64 ss6
+    v415 = iadd v414, v413
+    store.i32 notrap v410, v415
+    v417 = iconst.i64 7
+    v418 = iconst.i64 4
+    v419 = imul v417, v418  ; v417 = 7, v418 = 4
+    v420 = stack_addr.i64 ss6
+    v421 = iadd v420, v419
+    store.i32 notrap v416, v421
+    v422 = iconst.i64 0
+    jump block21(v422, v516)  ; v422 = 0
+block36:
+    nop 
+    v424 = iconst.i32 11
+    v425 = rotr.i32 v423, v424  ; v424 = 11
+    v427 -> v425
+    jump block37
+block37:
+    nop 
+    v428 = bxor.i32 v426, v427
+    v432 -> v428
+    v430 = iconst.i32 25
+    v431 = rotr.i32 v429, v430  ; v430 = 25
+    v433 -> v431
+    jump block38
+block38:
+    nop 
+    v434 = bxor.i32 v432, v433
+    v437 = band.i32 v435, v436
+    v438 = bnot.i32 v435
+    v440 = band v438, v439
+    v441 = bxor v437, v440
+    v443 = iadd.i32 v442, v434
+    v444 = iadd v443, v441
+    v214 -> v444
+    v445 = symbol_value.i64 gv17
+    v446 = stack_addr.i64 ss5
+    v447 = iconst.i64 256
+    v448 = call fn17(v446, v445, v447)  ; v447 = 256
+    v450 = iconst.i64 64
+    v451 = icmp.i64 ult v449, v450  ; v450 = 64
+    v216 -> v451
+    brif v451, block19, block64
+block64 cold:
+    nop 
+    v452 = iconst.i64 64
+    v454 = symbol_value.i64 gv18
+    nop 
+    call fn18(v453, v452, v454)  ; v452 = 64
+    trap user1
+block39:
+    nop 
+    v456 = iconst.i32 13
+    v457 = rotr.i32 v455, v456  ; v456 = 13
+    v459 -> v457
+    jump block40
+block40:
+    nop 
+    v460 = bxor.i32 v458, v459
+    v464 -> v460
+    v462 = iconst.i32 22
+    v463 = rotr.i32 v461, v462  ; v462 = 22
+    v465 -> v463
+    jump block41
+block41:
+    nop 
+    v466 = bxor.i32 v464, v465
+    v469 = band.i32 v467, v468
+    v471 = band.i32 v467, v470
+    v472 = bxor v469, v471
+    v473 = band.i32 v468, v470
+    v474 = bxor v472, v473
+    v475 = iadd v466, v474
+    v481 = iadd.i32 v479, v480
+    v482 = iadd.i32 v480, v475
+    jump block18(v509, v481, v482, v467, v468, v470, v478, v477, v476)
+block42:
+    nop 
+    v484 = iconst.i64 1
+    v485 = iadd.i64 v483, v484  ; v484 = 1
+    v511 -> v485
+    v486 = stack_addr.i64 ss7+8
+    store.i64 notrap v483, v486
+    v487 = iconst.i64 1
+    v488 = stack_addr.i64 ss7
+    store notrap v487, v488  ; v487 = 1
+    v489 = stack_addr.i64 ss7+8
+    v490 = load.i64 notrap v489
+    v235 -> v490
+    v242 -> v490
+    v244 -> v490
+    v254 -> v490
+    v257 -> v490
+    v494 -> v490
+    v491 = iconst.i64 8
+    v492 = icmp ult v490, v491  ; v491 = 8
+    v240 -> v492
+    v252 -> v492
+    brif v492, block22, block65
+block65 cold:
+    nop 
+    v493 = iconst.i64 8
+    v495 = symbol_value.i64 gv19
+    nop 
+    call fn19(v494, v493, v495)  ; v493 = 8
+    trap user1
+block43:
+    nop 
+    return
+}

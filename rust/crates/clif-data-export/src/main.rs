@@ -347,7 +347,6 @@ fn recover(crate_name: &str, obj: &Path, dumps: &[FnDump]) -> Recovered {
     //   `load_ext_name_got` instructions, so when the counts disagree we fall back to
     //   pairing the vcode entries with the Data-target pairs only.
     let mut ext_data: BTreeMap<(usize, u32), usize> = BTreeMap::new(); // (fn sym idx, ext) → data sym idx
-    let mut comment_sym: BTreeMap<String, usize> = BTreeMap::new(); // alloc comment → sym idx
     let mut recovered: BTreeSet<(usize, u32)> = BTreeSet::new(); // (fn sym idx, gv)
     let mut fns_with_data: BTreeSet<usize> = BTreeSet::new(); // fns with >=1 recovered data use
     for d in dumps {
@@ -554,17 +553,20 @@ fn recover(crate_name: &str, obj: &Path, dumps: &[FnDump]) -> Recovered {
             at.insert(r.off - s.value, Item::Reloc { target, addend });
         }
         // interleave with the byte runs between them
+        // `data` is the whole section; the object starts at `s.value`. The reloc map
+        // `at` and `pos` are offsets *inside* the object.
+        let base = s.value as usize;
         let mut items: Vec<Item> = Vec::new();
         let mut pos: u64 = 0;
         for (off, item) in at {
             if off > pos {
-                items.push(Item::Bytes(data[pos as usize..off as usize].to_vec()));
+                items.push(Item::Bytes(data[base + pos as usize..base + off as usize].to_vec()));
             }
             items.push(item);
             pos = off + 8;
         }
         if s.size > pos {
-            items.push(Item::Bytes(data[pos as usize..s.size as usize].to_vec()));
+            items.push(Item::Bytes(data[base + pos as usize..base + s.size as usize].to_vec()));
         }
         bytes_total += s.size;
         objs.push(DataObj { name, writable, items });
@@ -653,20 +655,4 @@ fn main() {
 
 
 
-#[cfg(test)]
-mod dbg_tests {
-    use super::*;
-    #[test]
-    fn f_crypto_data_relocs() {
-        let (syms, secs) = load_obj(Path::new("/tmp/rust-clif-survey/out/release/f_crypto/f_crypto.o"));
-        let _ = &syms;
-        for (i, sec) in secs.iter() {
-            if matches!(sec.kind, SectionKind::ReadOnlyDataWithRel) {
-                eprintln!("sec {} relocs {}", i, sec.relocs.len());
-                for r in sec.relocs.iter().take(4) {
-                    eprintln!("  off {:#x} sym {} kind {:?} addend {}", r.off, r.sym, r.kind, r.addend);
-                }
-            }
-        }
-    }
-}
+
