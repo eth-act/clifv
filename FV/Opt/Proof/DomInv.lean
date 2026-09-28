@@ -57,6 +57,33 @@ theorem setMany_spec {r r' : Regs} {xs : List ValueId} {vs : List Val}
           subst this
           exact ⟨0, rfl, by rw [(hy y).1 hyx]; simp⟩
 
+theorem setMany_same {r1 r2 r1' r2' : Regs} {xs : List ValueId} {vs : List Val}
+    (h1 : r1.setMany xs vs = some r1') (h2 : r2.setMany xs vs = some r2') :
+    ∀ y ∈ xs, r1' y = r2' y := by
+  induction xs generalizing r1 r2 vs with
+  | nil => simp
+  | cons x xs ih =>
+    cases vs with
+    | nil => simp [Regs.setMany] at h1
+    | cons v vs =>
+      simp only [Regs.setMany_cons] at h1 h2
+      intro y hy
+      by_cases hyx : y ∈ xs
+      · exact ih h1 h2 y hyx
+      · have : y = x := by simpa [hyx] using hy
+        subst this
+        rw [(setMany_spec h1).2 y |>.1 hyx, (setMany_spec h2).2 y |>.1 hyx]
+        simp
+
+theorem setMany_len {r : Regs} {xs : List ValueId} {vs : List Val} (h : xs.length = vs.length) :
+    ∃ r', r.setMany xs vs = some r' := by
+  induction xs generalizing r vs with
+  | nil => cases vs <;> simp_all [Regs.setMany]
+  | cons x xs ih =>
+    cases vs with
+    | nil => simp at h
+    | cons v vs => simp only [Regs.setMany_cons]; exact ih (by simpa using h)
+
 theorem lookup_isSome {α : Type} {l : List (Nat × α)} {s : Nat} :
     (l.lookup s).isSome ↔ s ∈ l.map (·.1) := by
   induction l with
@@ -253,7 +280,8 @@ theorem Inv.entry {f : Function} {W : WfData} (hW : Wf f W) {syms} {b : Block} {
 /-- Branching from the end of block `bi` to one of its successors. -/
 theorem Inv.enter {f : Function} {W : WfData} (hW : Wf f W) {syms fr bi k bc fr'}
     (h : Inv f W syms fr bi k) (hb : fr.body = []) (hbc : bc.block ∈ termSuccs fr.term)
-    (he : enterBlock fr bc = .ok fr') : ∃ j, Inv f W syms fr' j 0 := by
+    (he : enterBlock fr bc = .ok fr') :
+    ∃ j b2, f.blocks[j]? = some b2 ∧ f.block? bc.block = some b2 ∧ Inv f W syms fr' j 0 := by
   obtain ⟨hfunc, ⟨b, hbi, hbody, hterm, hk⟩, hslots, hregs, hpd⟩ := h
   have hk' : k = b.body.length := by
     rw [hb] at hbody
@@ -292,7 +320,7 @@ theorem Inv.enter {f : Function} {W : WfData} (hW : Wf f W) {syms fr bi k bc fr'
     rw [site_param hW hj hp] at hv
     simp only [Option.some.injEq, Prod.mk.injEq] at hv
     exact hne hv.1.symm
-  refine ⟨j, hfunc, ⟨b2, hj, by simp, rfl, Nat.zero_le _⟩, hslots, fun v hv => ?_,
+  refine ⟨j, b2, hj, hb2, hfunc, ⟨b2, hj, by simp, rfl, Nat.zero_le _⟩, hslots, fun v hv => ?_,
     fun v n hv hp => ?_⟩
   · obtain ⟨d, t, hdv, hva⟩ := hv
     rcases hva with ⟨hdj, ht⟩ | ⟨hne, ha⟩
@@ -339,5 +367,82 @@ theorem Inv.enter {f : Function} {W : WfData} (hW : Wf f W) {syms fr bi k bc fr'
     rcases hxa' with ⟨h1, _⟩ | ⟨h1, h2⟩
     · exact hne h1.symm
     · exact hne (Anc.antisymm hW.rank ha h2)
+
+/-! ## Availability -/
+
+theorem Avail.mono {W : WfData} {i k k2 : Nat} {v : ValueId} (h : Avail W i k v) (hk : k ≤ k2) :
+    Avail W i k2 v := by
+  obtain ⟨d, t, hv, h1 | h2⟩ := h
+  · exact ⟨d, t, hv, .inl ⟨h1.1, by omega⟩⟩
+  · exact ⟨d, t, hv, .inr h2⟩
+
+section
+variable {f : Function} {W : WfData} (hW : Wf f W)
+include hW
+
+theorem avail_not_result {bi k : Nat} {b : Block} {st : Stmt} {v : ValueId}
+    (hb : f.blocks[bi]? = some b) (hst : b.body[k]? = some st) (hv : Avail W bi k v) :
+    v ∉ st.results := by
+  intro hr
+  obtain ⟨d, t, hd, hva⟩ := hv
+  rw [site_result hW hb hst hr] at hd
+  simp only [Option.some.injEq, Prod.mk.injEq] at hd
+  obtain ⟨rfl, rfl⟩ := hd
+  rcases hva with ⟨_, ht⟩ | ⟨hne, _⟩
+  · omega
+  · exact hne rfl
+
+theorem avail_succ {bi k : Nat} {b : Block} {st : Stmt} {v : ValueId}
+    (hb : f.blocks[bi]? = some b) (hst : b.body[k]? = some st) (hv : Avail W bi (k + 1) v) :
+    v ∈ st.results ∨ Avail W bi k v := by
+  obtain ⟨d, t, hd, hva⟩ := hv
+  rcases hva with ⟨rfl, ht⟩ | h2
+  · rcases Nat.lt_or_ge t (k + 1) with h | h
+    · exact .inr ⟨d, t, hd, .inl ⟨rfl, by omega⟩⟩
+    · have ht' : t = k + 1 := by omega
+      subst ht'
+      obtain ⟨b', st', hb', hst', hr⟩ := site_stmt hW hd
+      rw [hb] at hb'; cases hb'
+      rw [hst] at hst'; cases hst'
+      exact .inl hr
+  · exact .inr ⟨d, t, hd, .inr h2⟩
+
+theorem idx_unique {j j' : Nat} {b b' : Block} (hb : f.blocks[j]? = some b)
+    (hb' : f.blocks[j']? = some b') (hid : b.id = b'.id) : j = j' := by
+  have h1 := hW.ids j b hb
+  have h2 := hW.ids j' b' hb'
+  rw [hid, h2] at h1
+  exact (Option.some.inj h1).symm
+
+/-- The block index of a branch target. -/
+theorem block?_index {id : BlockId} {b : Block} (h : f.block? id = some b) :
+    ∃ j : Nat, f.blocks[j]? = some b ∧ b.id = id := by
+  obtain ⟨j, hj⟩ := List.mem_iff_getElem?.1 (List.mem_of_find?_eq_some h)
+  exact ⟨j, hj, by simpa using List.find?_some h⟩
+
+/-- Values available at the start of a successor `j` of `bi`, other than `j`'s parameters,
+are available at the end of `bi` (the edge certificate). -/
+theorem avail_pred {bi j : Nat} {b b2 : Block} {v : ValueId} (hb : f.blocks[bi]? = some b)
+    (hj : f.blocks[j]? = some b2) (hsucc : b2.id ∈ termSuccs b.term) (hv : Avail W j 0 v)
+    (hnp : W.dm v ≠ some (j, 0)) : Avail W bi b.body.length v := by
+  obtain ⟨j', b', hj', hb', hid', hanc⟩ := hW.edges bi b hb b2.id hsucc
+  have : j' = j := by
+    have := hW.ids j b2 hj
+    rw [hj'] at this; exact Option.some.inj this
+  subst j'
+  obtain ⟨d, t, hd, hva⟩ := hv
+  rcases hva with ⟨rfl, ht⟩ | ⟨hne, ha⟩
+  · exact absurd (by rw [hd, show t = 0 by omega]) hnp
+  obtain ⟨c, hc, hac⟩ := ha.strict hne
+  have hab := hac.trans (hanc c hc)
+  refine ⟨d, t, hd, ?_⟩
+  by_cases hdb : d = bi
+  · subst hdb
+    obtain ⟨b3, hb3, ht⟩ := site_bound hW hd
+    rw [hb] at hb3; cases hb3
+    exact .inl ⟨rfl, ht⟩
+  · exact .inr ⟨hdb, hab⟩
+
+end
 
 end Opt

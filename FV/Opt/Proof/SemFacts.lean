@@ -263,4 +263,92 @@ theorem evalInst_total {f : Function} {tm : ValueId → Option Ty} {fr : Frame} 
       simp [evalInst, hf, hgv, hb]
     · cases ht
 
+/-! ## Renaming -/
+
+theorem operands_mapOperands (σ : ValueId → ValueId) (i : Inst) :
+    operands (mapOperands σ i) = (operands i).map σ := by
+  cases i <;> rfl
+
+theorem isPure_mapOperands (σ : ValueId → ValueId) (i : Inst) :
+    isPure (mapOperands σ i) = isPure i := by
+  cases i <;> rfl
+
+theorem removable_mapOperands (σ : ValueId → ValueId) (i : Inst) :
+    removable (mapOperands σ i) = removable i := by
+  cases i <;> rfl
+
+/-- A result with the `stuck` message erased (renaming changes messages, nothing else). -/
+def _root_.Clif.Res.norm {α : Type} : Res α → Res α
+  | .stuck _ => .stuck ""
+  | r => r
+
+@[simp] theorem Res.norm_bind {α β : Type} (r : Res α) (k : α → Res β) :
+    (r >>= k).norm = r.norm >>= fun a => (k a).norm := by
+  cases r <;> rfl
+
+@[simp] theorem Res.norm_ofOption {α : Type} (m : String) (o : Option α) :
+    (Res.ofOption m o).norm = Res.ofOption "" o := by
+  cases o <;> rfl
+
+@[simp] theorem Res.norm_check (b : Bool) (m : String) : (Res.check b m).norm = Res.check b "" := by
+  cases b <;> rfl
+
+@[simp] theorem Res.norm_pure {α : Type} (a : α) : (pure a : Res α).norm = pure a := rfl
+
+@[simp] theorem Res.norm_ok {α : Type} (a : α) : (Res.ok a).norm = .ok a := rfl
+
+@[simp] theorem Res.norm_trap {α : Type} (c : TrapCode) : (Res.trap c : Res α).norm = .trap c := rfl
+
+@[simp] theorem Res.norm_stuck {α : Type} (m : String) : (Res.stuck m : Res α).norm = .stuck "" := rfl
+
+@[simp] theorem Res.norm_ofExcept {α : Type} (e : Except TrapCode α) :
+    (Res.ofExcept e).norm = Res.ofExcept e := by
+  cases e <;> rfl
+
+theorem Res.norm_ite {α : Type} (c : Prop) [Decidable c] (a b : Res α) :
+    (if c then a else b).norm = if c then a.norm else b.norm := by
+  split <;> rfl
+
+theorem Res.norm_eq_ok {α : Type} {r r' : Res α} (h : r'.norm = r.norm) {a : α} (ha : r = .ok a) :
+    r' = .ok a := by
+  subst ha; cases r' <;> simp_all [Res.norm]
+
+theorem Res.norm_eq_trap {α : Type} {r r' : Res α} (h : r'.norm = r.norm) {c : TrapCode}
+    (ha : r = .trap c) : r' = .trap c := by
+  subst ha; cases r' <;> simp_all [Res.norm]
+
+/-- Evaluating a renamed instruction in a frame that holds, at `σ x`, the value of `x`. -/
+theorem evalInst_rename {σ : ValueId → ValueId} {fr fr' : Frame} {mem : Mem} {i : Inst}
+    (hg : fr'.func.globals = fr.func.globals) (hs : fr'.slots = fr.slots)
+    (hr : ∀ x ∈ operands i, fr'.regs (σ x) = fr.regs x) :
+    (evalInst fr' mem (mapOperands σ i)).norm = (evalInst fr mem i).norm := by
+  cases i <;> simp only [operands, List.mem_cons, or_false, forall_eq_or_imp,
+    forall_eq, List.not_mem_nil, false_imp_iff, imp_true_iff] at hr <;>
+    simp only [evalInst, mapOperands, Frame.getAs, Frame.get, hr, hs, hg, Res.norm_bind,
+      Res.norm_ofOption, Res.norm_check, Res.norm_pure, Res.norm_ofExcept, Res.norm_ite,
+      Res.norm_stuck, Res.norm_trap]
+  all_goals (repeat' split) <;> simp_all
+
+theorem evalNode_rename {σ : ValueId → ValueId} {fr fr' : Frame} {mem : Mem} {i : Inst}
+    (hg : fr'.func.globals = fr.func.globals) (hs : fr'.slots = fr.slots)
+    (hr : ∀ x ∈ operands i, fr'.regs (σ x) = fr.regs x) :
+    evalNode fr' mem (mapOperands σ i) = evalNode fr mem i := by
+  have h := evalInst_rename (mem := mem) hg hs hr
+  simp only [evalNode]
+  cases h1 : evalInst fr mem i with
+  | ok a => rw [Res.norm_eq_ok h h1]
+  | trap c => rw [Res.norm_eq_trap h h1]
+  | stuck m =>
+    rw [h1] at h
+    cases h2 : evalInst fr' mem (mapOperands σ i) <;> simp_all [Res.norm]
+
+theorem getMany_rename {σ : ValueId → ValueId} {fr fr' : Frame} {xs : List ValueId}
+    (h : ∀ x ∈ xs, fr'.regs (σ x) = fr.regs x) :
+    (fr'.getMany (xs.map σ)).norm = (fr.getMany xs).norm := by
+  induction xs with
+  | nil => rfl
+  | cons x xs ih =>
+    simp only [List.map_cons, Frame.getMany, Frame.get, h x (by simp), Res.norm_bind,
+      Res.norm_ofOption, ih (fun y hy => h y (by simp [hy]))]
+
 end Opt
