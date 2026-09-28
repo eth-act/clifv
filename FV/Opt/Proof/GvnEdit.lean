@@ -787,6 +787,105 @@ theorem ERel.term {fr fr' bi k k' m} (h : ERel σ f g Df Dg syms fr fr' bi k k')
     exact ⟨(fun _ _ hl => by cases hl), (fun _ hl => by cases hl), (fun _ _ hl => by cases hl),
       (fun _ hl => hl)⟩
 
+/-- `ER` is a simulation. -/
+theorem ER.isSim : IsSim syms (ER σ f g Df Dg syms) where
+  frame := by
+    rintro fr fr' ⟨bi, k, k', h⟩
+    exact ⟨h.slots, by rw [h.invg.func, h.invf.func, hE.sig]⟩
+  next := by
+    rintro fr fr' m fr1 m1 ⟨bi, k, k', h⟩ hm hl
+    obtain ⟨fr'', k'', hst, h2, hset⟩ := h.catchUp hE hm
+    cases hs : fr.body with
+    | nil =>
+      rcases hset with ⟨-, ht⟩ | ⟨s, _, _, _, hss, _⟩ | ⟨s, _, hss, _⟩
+      · obtain ⟨fr1', hl', hr⟩ := (h2.term hE (m := m) hs ht).1 fr1 m1 hl
+        exact ⟨fr1', hst.trans (.single hl'), hr⟩
+      all_goals rw [hs] at hss; cases hss
+    | cons s ss =>
+      rcases hset with ⟨hss, -⟩ | ⟨s', ss', t, ts, hss, ht, hk, hal⟩ | ⟨s', ss', hss, hd, hal⟩
+      · rw [hs] at hss; cases hss
+      · rw [hs] at hss; cases hss
+        have hnc : ∀ fn args, s.inst ≠ .call fn args := by
+          intro fn args hc
+          exact (lstep_call_of_call hs hc).1 fr1 m1 hl
+        obtain ⟨fr1', hl', hr⟩ := (h2.keep hE hm hs ht hk hal hnc).1 fr1 m1 hl
+        exact ⟨fr1', hst.trans (.single hl'), bi, k + 1, k'' + 1, hr⟩
+      · rw [hs] at hss; cases hss
+        obtain ⟨rfl, hr⟩ := (h2.delete hE hm hs hd hal).1 fr1 m1 hl
+        exact ⟨fr'', hst, bi, k + 1, k'', hr⟩
+  call := by
+    rintro fr fr' m ext vals rs rest ⟨bi, k, k', h⟩ hm hl
+    obtain ⟨st, fn, args, hb, hc, hrs, _⟩ := lstep_call_inv hl
+    obtain ⟨fr'', k'', hst, h2, hset⟩ := h.catchUp hE hm
+    rw [hb] at hset
+    rcases hset with ⟨hss, -⟩ | ⟨s', ss', t, ts, hss, ht, hk, hal⟩ | ⟨s', ss', hss, hd, hal⟩
+    · cases hss
+    · cases hss
+      obtain ⟨hl', -, hk'⟩ := h2.call hE hm hb ht hk hal hl
+      exact ⟨fr'', rs, ts, hst, hl', hk'⟩
+    · cases hss
+      exact absurd hl ((h2.delete hE hm hb hd hal).2.2 _ _ _ _)
+  ret := by
+    rintro fr fr' m vals ⟨bi, k, k', h⟩ hm hl
+    have hs := lstep_ret_inv hl
+    obtain ⟨fr'', k'', hst, h2, hset⟩ := h.catchUp hE hm
+    rw [hs] at hset
+    rcases hset with ⟨-, ht⟩ | ⟨s, _, _, _, hss, _⟩ | ⟨s, _, hss, _⟩
+    · exact ⟨fr'', hst, (h2.term hE (m := m) hs ht).2.1 vals hl⟩
+    all_goals cases hss
+  tail := by
+    rintro fr fr' m ext vals ⟨bi, k, k', h⟩ hm hl
+    have hs := lstep_tail_inv hl
+    obtain ⟨fr'', k'', hst, h2, hset⟩ := h.catchUp hE hm
+    rw [hs] at hset
+    rcases hset with ⟨-, ht⟩ | ⟨s, _, _, _, hss, _⟩ | ⟨s, _, hss, _⟩
+    · exact ⟨fr'', hst, (h2.term hE (m := m) hs ht).2.2.1 ext vals hl⟩
+    all_goals cases hss
+  trap := by
+    rintro fr fr' m c ⟨bi, k, k', h⟩ hm hl
+    obtain ⟨fr'', k'', hst, h2, hset⟩ := h.catchUp hE hm
+    cases hs : fr.body with
+    | nil =>
+      rcases hset with ⟨-, ht⟩ | ⟨s, _, _, _, hss, _⟩ | ⟨s, _, hss, _⟩
+      · exact ⟨fr'', m, hst, (h2.term hE (m := m) hs ht).2.2.2 c hl⟩
+      all_goals rw [hs] at hss; cases hss
+    | cons s ss =>
+      rcases hset with ⟨hss, -⟩ | ⟨s', ss', t, ts, hss, ht, hk, hal⟩ | ⟨s', ss', hss, hd, hal⟩
+      · rw [hs] at hss; cases hss
+      · rw [hs] at hss; cases hss
+        have hnc : ∀ fn args, s.inst ≠ .call fn args := by
+          intro fn args hc
+          exact (lstep_call_of_call hs hc).2 c hl
+        exact ⟨fr'', m, hst, (h2.keep hE hm hs ht hk hal hnc).2 c hl⟩
+      · rw [hs] at hss; cases hss
+        exact absurd hl ((h2.delete hE hm hs hd hal).2.1 c)
+
 end
+
+/-- **The edit validator is sound.** -/
+theorem editOk_sim {σ : ValueId → ValueId} {f g : Function} {fi gi : Info}
+    (hf : check f = .ok fi) (hg : check g = .ok gi) (h : editOk σ f g fi gi = true) :
+    FunSim f g := by
+  have hE := editOk_facts hf hg h
+  refine ⟨hE.name, hE.sig, hE.slots, fun syms => ⟨_, ER.isSim hE, fun b hb => ?_⟩⟩
+  have hb0 : f.blocks[0]? = some b := by
+    simpa [Function.entry?, List.head?_eq_getElem?] using hb
+  obtain ⟨b', hb0', hid, hpar, hσp, -, hal⟩ := hE.blocks 0 b hb0
+  refine ⟨b', by simpa [Function.entry?, List.head?_eq_getElem?] using hb0', hpar,
+    fun args regs slots hty hr hsl => ⟨0, 0, 0, Inv.entry hE.wff hb hty hr hsl, ?_, ?_, ?_, rfl⟩⟩
+  · rw [← hpar] at hty hr
+    exact Inv.entry hE.wfg (by simpa [Function.entry?, List.head?_eq_getElem?] using hb0') hty hr
+      (by rw [hsl, hE.slots])
+  · intro v hv hrep
+    obtain ⟨b1, p, hb1, hp, hpv⟩ := site_param' hE.wff (avail_entry hE.wff hv)
+    rw [hb0] at hb1; cases hb1
+    have hσv : σ v = v := by rw [← hpv]; exact hσp p hp
+    rw [hσv]
+    refine ⟨⟨0, 0, ?_, .inl ⟨rfl, Nat.le_refl _⟩⟩, rfl⟩
+    rw [← hpv]; exact site_param hE.wfg hb0' (by rw [hpar]; exact hp)
+  · intro b0 b0' h0 h0'
+    rw [hb0] at h0; cases h0
+    rw [hb0'] at h0'; cases h0'
+    simpa using hal
 
 end Opt
