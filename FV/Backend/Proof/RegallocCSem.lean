@@ -447,6 +447,7 @@ the canonical one run on the canonical state built from a world `w` of `s`. -/
 def Corr (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (ops : Array Operand)
     (mk : Array Reg → MInst) : Prop :=
   ∀ (regs : Array Reg) (s w t' : Arm.ArmState), AllocOk ops regs → SameWorld F s w →
+    Arm.CheckSPAlignment s →
     AccessOk F ctx (mk (canonRegs ops)) (placeUses ops (canonRegs ops) (useVals ops regs s) w) →
     execMInst ctx env0 (mk (canonRegs ops)) (placeUses ops (canonRegs ops) (useVals ops regs s) w) =
       some t' → Arm.r .ERR t' = .None →
@@ -474,7 +475,7 @@ theorem os_of_corr {F : BitVec 64 → Prop} {ctx : FnCtx} {env : Env} {X : ExtSe
     (hstr : csem F ctx X i = straightSem F ctx i) (hcl : i.clobbers = [])
     (hc : Corr F ctx env ops mk) :
     OperandsSound F (execMInst ctx env) (csem F ctx X) i := by
-  intro c wh ops' regs i' s w outs w' hops' hst hasg hw hsem
+  intro c wh ops' regs i' s w outs w' hops' hst hasg hw hal hsem
   rw [hops] at hops'
   cases hops'
   have ha := allocOk_of_checkStatic hst
@@ -490,7 +491,7 @@ theorem os_of_corr {F : BitVec 64 → Prop} {ctx : FnCtx} {env : Env} {X : ExtSe
       · rename_i herr
         simp only [Option.some.injEq, Prod.mk.injEq] at hsem
         obtain ⟨rfl, rfl, -⟩ := hsem
-        obtain ⟨s', hs', hW, hK, hD, hO⟩ := hc regs s w t' ha hw hacc ht herr.1
+        obtain ⟨s', hs', hW, hK, hD, hO⟩ := hc regs s w t' ha hw hal hacc ht herr.1
         refine ⟨s', hs', hW, hK, ?_, fun r hr hnd _ => hO r hr hnd, fun r hr => by simp [hcl] at hr⟩
         intro p hp
         rw [defRegs, ← hD, defVals] at hp

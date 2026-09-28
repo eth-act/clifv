@@ -71,7 +71,7 @@ syntax "corr_tac" : tactic
 set_option hygiene false in
 macro_rules
   | `(tactic| corr_tac) => `(tactic| (
-    intro regs s w t' ha hw hacc hex herr
+    intro regs s w t' ha hw _hal hacc hex herr
     have hsz := ha.size
     simp only [List.size_toArray, List.length_cons, List.length_nil] at hsz
     have hf := ha.fits
