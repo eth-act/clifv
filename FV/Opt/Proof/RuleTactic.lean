@@ -143,3 +143,28 @@ elab "opt_cases_ty" : tactic => do
   setGoals out
 
 end Opt.Proof
+
+namespace Opt.Proof
+open Lean Meta Elab Tactic
+
+/-- `opt_widths`: give every local `x : BitVec e` whose width `e` reduces to a numeral (after
+`cases` on a `Clif.Ty`, `e` is `Ty.width .i32` etc.) the type `BitVec n`, so that `bv_decide`
+accepts it as an atom. -/
+elab "opt_widths" : tactic => do
+  let gs ← getGoals
+  let mut out := []
+  for g in gs do
+    let mut g := g
+    for d in (← g.getDecl).lctx do
+      if d.isImplementationDetail then continue
+      let ty ← instantiateMVars d.type
+      if ty.isAppOfArity ``BitVec 1 then
+        let e := ty.appArg!
+        if e.nat?.isSome || e.rawNatLit?.isSome then continue
+        let e' ← g.withContext <| whnf e
+        let some k := e'.rawNatLit? <|> e'.nat? | continue
+        g ← g.replaceLocalDeclDefEq d.fvarId (mkApp (mkConst ``BitVec) (mkNatLit k))
+    out := out ++ [g]
+  setGoals out
+
+end Opt.Proof

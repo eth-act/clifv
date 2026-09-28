@@ -89,16 +89,18 @@ macro "sem_simp" : tactic => `(tactic| simp only [val_some_eq, val_mk_same, Sem.
   Sem.umin, Sem.umax, Sem.smin, Sem.smax, Sem.ishl, Sem.ushr, Sem.sshr, Sem.shift,
   Sem.shiftAmt, Sem.select, Sem.truthy, Sem.bitselect, Sem.bmask, Sem.bool8, Ty.width] at *)
 
-/-- The bit-level goal: normalise immediates, split the type, decide. -/
+/-- The bit-level goal: normalise immediates, split the type, decide. Only the goal and the
+bit-vector facts matter; the context is not `simp_all`ed (it holds the whole e-graph model). -/
 macro "rule_bits" : tactic => `(tactic| (
   try simp (disch := assumption) only [asU64_imm64OfBits, Int.natCast_eq_zero, Int.natCast_inj,
     toNat_eq_iff_ofNat, ofInt_imm64OfBits] at *
   opt_destruct
   all_goals subst_vars
   all_goals first
-    | (simp [val_some_eq, val_mk_same, Sem.binary, Sem.unary, Sem.iadd, Sem.isub, Sem.imul, Sem.band,
-        Sem.bor, Sem.bxor, Sem.bnot, Sem.ineg]; done)
-    | (opt_cases_ty <;> (try simp_all) <;> (try sem_simp) <;> bv_decide)))
+    | (simp only [val_some_eq, val_mk_same]; done)
+    | rfl
+    | (try simp only [val_some_eq, val_mk_same]
+       opt_cases_ty <;> opt_widths <;> (try sem_simp) <;> bv_decide)))
 
 set_option hygiene false in
 /-- Phase 4 when the candidate is a class matched by the left-hand side. -/
@@ -129,7 +131,7 @@ set_option hygiene false in
 macro_rules
   | `(tactic| opt_node) => `(tactic| (
       simp only [evalNode_binary_iff, evalNode_unary, evalNode_icmp, evalNode_iconst,
-        BinaryOp.isShift, Bool.false_eq_true, ite_false, ite_true, Frame.regs]
+        Clif.BinaryOp.isShift, Bool.false_eq_true, ite_false, ite_true, Clif.Frame.regs]
       repeat (first | (apply Exists.intro) | (apply And.intro) | opt_den)
       all_goals (try rfl)))
 

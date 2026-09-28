@@ -77,8 +77,8 @@ def halfWidth? : CTy → Option CTy
        (f && (lb == 32 || lb == 64 || lb == 128)) then some (.vec (lb / 2) n f) else none
   | .invalid => none
 
-/-- The `$NAME` type constants of the prelude (`I8`, `F64`, `I32X4`, `INVALID`, ...). -/
-def ofName? (s : String) : Option CTy :=
+/-- The `$NAME` type constants of the prelude (`I8`, `F64`, `I32X4`, `INVALID`, ...), parsed. -/
+def parseName? (s : String) : Option CTy :=
   let scalar (c : Char) (w : String) : Option CTy :=
     match w.toNat? with
     | some b =>
@@ -97,6 +97,14 @@ def ofName? (s : String) : Option CTy :=
       | _, _ => none
     | _ => none
   | [] => none
+
+/-- The `$NAME` type constants of the prelude: the integer scalars by literal match (so that
+`ofName? "I64"` reduces by `rfl` in proofs), the rest parsed (`parseName?`). -/
+def ofName? (s : String) : Option CTy :=
+  match s with
+  | "I8" => some (.int 8) | "I16" => some (.int 16) | "I32" => some (.int 32)
+  | "I64" => some (.int 64) | "I128" => some (.int 128)
+  | _ => parseName? s
 
 def ofClif : Clif.Ty → CTy
   | .i8 => .int 8 | .i16 => .int 16 | .i32 => .int 32 | .i64 => .int 64 | .i128 => .int 128
