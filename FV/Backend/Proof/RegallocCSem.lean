@@ -493,6 +493,22 @@ def _root_.Backend.CondBrKind.holds (k : CondBrKind) (uses : List CV) (w : Arm.A
   | .notZero _ sz, [a] => if sz.is64 then lo64 a != 0 else (lo64 a).setWidth 32 != 0
   | _, _ => false
 
+/-- The specification fallback of `csem` (worlds with an error or a misaligned `sp`, forms
+not covered by `FormOk`): `ispec`, extended by the memory forms as `MemRefines` states them
+(slot offsets at slot base `sb`). -/
+def mspec (sb : Nat) : Sem := fun i uses w =>
+  match i, uses with
+  | .load op (.vreg _ .int) am _, us =>
+    if op = .fpuLoad128 then none
+    else (amodeAddr sb am op.bytes us w).map fun a => ([ofX (loadVal op a w)], w, .next)
+  | .store op (.vreg _ .int) am _, v :: us =>
+    if op = .fpuStore128 then none
+    else (amodeAddr sb am op.bytes us w).map fun a =>
+      ([], Arm.write_mem_bytes op.bytes a ((lo64 v).setWidth (op.bytes * 8)) w, .next)
+  | .loadAddr (.vreg _ .int) (.slotOffset off), [] =>
+    some ([ofX (spOf w + BitVec.ofInt 64 (off + sb))], w, .next)
+  | i, us => ispec i us w
+
 /-- **The concrete instruction semantics.** -/
 noncomputable def csem (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) : ISem CV Arm.ArmState :=
   fun i uses w =>
@@ -523,14 +539,25 @@ noncomputable def csem (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) : ISe
         let i := ((lo64 a).setWidth 32).toNat
         if i < ts.length then some ([ofX 0, ofX 0], w, .goto (i + 1)) else none
     | _ => none
-  | i => if csemWF ctx i uses = true ∧ Arm.r .ERR w = .None then straightSem F ctx i uses w
-    else ispec i uses w
+  | i => if csemWF ctx i uses = true ∧ Arm.r .ERR w = .None ∧ Arm.CheckSPAlignment w then
+      straightSem F ctx i uses w
+    else mspec ctx.slotBase i uses w
 
 theorem csem_of_wf {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MInst} {uses : List CV}
     (h : i.isCtl = false) (hw : csemWF ctx i uses = true) {w : Arm.ArmState}
-    (he : Arm.r .ERR w = .None) :
+    (he : Arm.r .ERR w = .None) (ha : Arm.CheckSPAlignment w) :
     csem F ctx X i uses w = straightSem F ctx i uses w := by
-  cases i <;> first | (simp [csem, hw, he]; done) | cases h
+  cases i <;> first | (simp [csem, hw, he, ha]; done) | cases h
+
+/-- `csem` of a straight-line form: the canonical run on a well-formed, error-free, aligned
+world, else the specification fallback. -/
+theorem csem_straight {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MInst}
+    (h : i.isCtl = false) (uses : List CV) (w : Arm.ArmState) :
+    csem F ctx X i uses w =
+      if csemWF ctx i uses = true ∧ Arm.r .ERR w = .None ∧ Arm.CheckSPAlignment w then
+        straightSem F ctx i uses w
+      else mspec ctx.slotBase i uses w := by
+  cases i <;> first | rfl | cases h
 
 theorem len_filter_zip : ∀ (L : List Operand) (R : List Reg), L.length = R.length →
     ((L.zip R).filter (fun p => p.1.isUse)).length = (L.filter (·.isUse)).length
@@ -550,9 +577,9 @@ theorem useVals_length (ops : Array Operand) (regs : Array Reg) (h : regs.size =
 theorem csem_useVals {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MInst} {ops : Array Operand}
     (hops : i.operands = .ok ops) (hfo : FormOk ctx i = true) (hctl : i.isCtl = false)
     {regs : Array Reg} (h : regs.size = ops.size) (s : Arm.ArmState) {w : Arm.ArmState}
-    (he : Arm.r .ERR w = .None) :
+    (he : Arm.r .ERR w = .None) (hal : Arm.CheckSPAlignment w) :
     csem F ctx X i (useVals ops regs s) w = straightSem F ctx i (useVals ops regs s) w :=
-  csem_of_wf hctl (by simp [csemWF, hfo, hops, useVals_length ops regs h]) he
+  csem_of_wf hctl (by simp [csemWF, hfo, hops, useVals_length ops regs h]) he hal
 
 /-! ## Reduction of `OperandsSound` to `Corr` -/
 
@@ -595,7 +622,9 @@ theorem os_of_corr {F : BitVec 64 → Prop} {ctx : FnCtx} {env : Env} {X : ExtSe
   have ha := allocOk_of_checkStatic hst
   rw [hmk regs ha.size] at hasg
   cases hasg
-  rw [csem_useVals hops hfo hctl ha.size s (by rw [← herr]; exact (hw.1 .ERR (by simp [Masked])).symm)] at hsem
+  rw [csem_useVals hops hfo hctl ha.size s (by rw [← herr]; exact (hw.1 .ERR (by simp [Masked])).symm)
+    (by simpa [Arm.CheckSPAlignment, Arm.read_gpr, (hw.1 (.GPR 31#5) (by simp [Masked])).symm]
+      using hal)] at hsem
   simp only [straightSem, hops, hmk _ (canonRegs_size ops)] at hsem
   split at hsem
   · rename_i hacc

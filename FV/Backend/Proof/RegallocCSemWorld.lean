@@ -33,6 +33,25 @@ theorem ispec_world {i : MInst} {uses : List CV} {w : Arm.ArmState} {outs : List
     | (obtain ⟨-, rfl, -⟩ := h; exact write_pstate_err _ _)
     | (obtain ⟨_, -, -, rfl, -⟩ := h; exact ⟨rfl, rfl⟩)
 
+theorem mspec_world {sb : Nat} {i : MInst} {uses : List CV} {w : Arm.ArmState} {outs : List CV}
+    {w' : Arm.ArmState} {ctl : Ctl} (h : mspec sb i uses w = some (outs, w', ctl)) :
+    Arm.r .ERR w' = Arm.r .ERR w ∧ w'.program = w.program := by
+  revert h
+  unfold mspec
+  split
+  · split
+    · simp
+    · simp only [Option.map_eq_some_iff, Option.some.injEq, Prod.mk.injEq]
+      rintro ⟨_, -, -, rfl, -⟩; exact ⟨rfl, rfl⟩
+  · split
+    · simp
+    · simp only [Option.map_eq_some_iff, Option.some.injEq, Prod.mk.injEq]
+      rintro ⟨_, -, -, rfl, -⟩
+      exact ⟨Arm.r_of_write_mem_bytes, Arm.write_mem_bytes_program _ _⟩
+  · simp only [Option.some.injEq, Prod.mk.injEq]
+    rintro ⟨-, rfl, -⟩; exact ⟨rfl, rfl⟩
+  · exact ispec_world
+
 theorem csem_next_world' {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MInst}
     {uses : List CV} {w : Arm.ArmState} {outs : List CV} {w' : Arm.ArmState}
     (h : csem F ctx X i uses w = some (outs, w', .next)) (hnc : ∀ info, i ≠ .call info)
@@ -49,7 +68,7 @@ theorem csem_next_world' {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i 
   all_goals first
     | (split at h
        · exact (straightSem_some h).2
-       · obtain ⟨e1, e2⟩ := ispec_world h; exact ⟨e1.trans herr, e2⟩)
+       · obtain ⟨e1, e2⟩ := mspec_world h; exact ⟨e1.trans herr, e2⟩)
     | (split at h
        · split at h
          · simp only [Option.some.injEq, Prod.mk.injEq, reduceCtorEq, and_false] at h
