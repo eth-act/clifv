@@ -134,4 +134,7 @@ def simplify : SimplifyFn := fun {σ} enodes typeOf make st0 v => Id.run do
   return .ok (out.toList, names.toList, st)
 
 
+/-- No skeleton rules. -/
+def simplifySkeleton : SkeletonFn := fun _ _ _ _ st _ => .ok ([], [], st)
+
 end Opt.HandRules

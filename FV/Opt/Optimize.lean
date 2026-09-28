@@ -11,7 +11,7 @@ import FV.Isle.Opt.Simplify
 
 ```
 removeUnreachable ; check ;
-(simplify ; check ; gvn ; check ; dce) × rounds ;
+(simplify ; removeUnreachable ; check ; gvn ; check ; dce) × rounds ;
 licm ; check ; gvn ; check ; dce
 ```
 
@@ -32,6 +32,12 @@ open Clif
 def RuleSetId.fn : RuleSetId → SimplifyFn
   | .cranelift => fun enodes typeOf make st v => Isle.Opt.simplify enodes typeOf make st v
   | .hand => HandRules.simplify
+
+/-- The skeleton rules of a rule set. -/
+def RuleSetId.skeletonFn : RuleSetId → SkeletonFn
+  | .cranelift => fun enodes typeOf make trapBlock st i =>
+    Isle.Opt.simplifySkeleton enodes typeOf make trapBlock st i
+  | .hand => HandRules.simplifySkeleton
 
 structure Config where
   rules : RuleSetId := .cranelift
@@ -58,6 +64,8 @@ structure Report where
   sizeBefore : Nat := 0
   sizeAfter : Nat := 0
   rewritten : Nat := 0
+  /-- Skeleton instructions/terminators simplified. -/
+  skeleton : Nat := 0
   gvnRemoved : Nat := 0
   dceRemoved : Nat := 0
   hoisted : Nat := 0
@@ -68,6 +76,10 @@ structure Report where
 /-- Nodes the simplifier may emit into `f`. -/
 def allowedIn (f : Function) : Inst → Bool :=
   if Compile.functionE f then fun n => isPure n && Compile.instE n else isPure
+
+/-- Skeleton instructions the simplifier may emit into `f`. -/
+def skelAllowedIn (f : Function) : Inst → Bool :=
+  if Compile.functionE f then Compile.instE else fun _ => true
 
 /-- Run the pipeline on one function, with a report. -/
 def optimizeReport (cfg : Config) (f0 : Function) : Function × Report := Id.run do
@@ -90,8 +102,10 @@ def optimizeReport (cfg : Config) (f0 : Function) : Function × Report := Id.run
     if !enabled then continue
     let g' ← match stage with
       | "simplify" =>
-        let (g', s) := simplify cfg.rules.fn allowed g info
+        let (g', s) := simplify cfg.rules.fn cfg.rules.skeletonFn allowed (skelAllowedIn f) g info
+        let g' := removeUnreachable g'
         r := { r with rewritten := r.rewritten + s.rewritten, ruleErrors := r.ruleErrors + s.errors,
+                      skeleton := r.skeleton + s.skeleton,
                       fired := s.fired.fold (fun m k n => m.insert k ((m.get? k).getD 0 + n)) r.fired }
         pure g'
       | "gvn" =>

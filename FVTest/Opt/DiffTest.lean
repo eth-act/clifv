@@ -53,6 +53,7 @@ structure Totals where
   sizeBefore : Nat := 0
   sizeAfter : Nat := 0
   rewritten : Nat := 0
+  skeleton : Nat := 0
   gvn : Nat := 0
   dce : Nat := 0
   licm : Nat := 0
@@ -77,7 +78,7 @@ def runFile (verbose : Bool) (cfg : Config) (path : String) (t : Totals) : IO To
     let (g, r) := optimizeReport cfg f
     opt := opt.push g
     t := { t with funcs := t.funcs + 1, sizeBefore := t.sizeBefore + r.sizeBefore,
-                  sizeAfter := t.sizeAfter + r.sizeAfter, rewritten := t.rewritten + r.rewritten,
+                  sizeAfter := t.sizeAfter + r.sizeAfter, rewritten := t.rewritten + r.rewritten, skeleton := t.skeleton + r.skeleton,
                   gvn := t.gvn + r.gvnRemoved, dce := t.dce + r.dceRemoved, licm := t.licm + r.hoisted,
                   ruleErrors := t.ruleErrors + r.ruleErrors,
                   fired := r.fired.fold (fun m k n => m.insert k ((m.get? k).getD 0 + n)) t.fired }
@@ -129,7 +130,7 @@ def main (args : List String) : IO UInt32 := do
   let mut t : Totals := {}
   for f in files do
     t ← runFile verbose cfg f t
-  IO.println s!"TOTAL files {t.files}: runs {t.runs} agree {t.agree} fail {t.fail} noclaim {t.noclaim} (differ {t.noclaimDiffer}) | functions {t.funcs} ill-formed {t.illFormed} pass-errors {t.passErrors} | insts {t.sizeBefore} -> {t.sizeAfter} | rewritten {t.rewritten} gvn {t.gvn} dce {t.dce} licm {t.licm} rule-errors {t.ruleErrors}"
+  IO.println s!"TOTAL files {t.files}: runs {t.runs} agree {t.agree} fail {t.fail} noclaim {t.noclaim} (differ {t.noclaimDiffer}) | functions {t.funcs} ill-formed {t.illFormed} pass-errors {t.passErrors} | insts {t.sizeBefore} -> {t.sizeAfter} | rewritten {t.rewritten} skeleton {t.skeleton} gvn {t.gvn} dce {t.dce} licm {t.licm} rule-errors {t.ruleErrors}"
   if ruleStats then
     let rows := t.fired.toArray.qsort (fun a b => a.2 > b.2 || (a.2 == b.2 && a.1 < b.1))
     for (n, k) in rows do IO.println s!"  rule {n}: {k}"

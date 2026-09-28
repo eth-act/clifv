@@ -17,7 +17,7 @@ def reportLine (r : Report) : String :=
     | some e, _ => s!" NOT OPTIMISED (ill-formed input: {e})"
     | none, some (p, e) => s!" PASS ERROR after {p}: {e}"
     | none, none => ""
-  s!"%{r.name}: {r.sizeBefore} -> {r.sizeAfter} insts, rewritten {r.rewritten}, gvn {r.gvnRemoved}, dce {r.dceRemoved}, licm {r.hoisted}{if r.ruleErrors > 0 then s!", rule errors {r.ruleErrors}" else ""}{why}"
+  s!"%{r.name}: {r.sizeBefore} -> {r.sizeAfter} insts, rewritten {r.rewritten}, skeleton {r.skeleton}, gvn {r.gvnRemoved}, dce {r.dceRemoved}, licm {r.hoisted}{if r.ruleErrors > 0 then s!", rule errors {r.ruleErrors}" else ""}{why}"
 
 def main (args : List String) : IO UInt32 := do
   let ((cfg : Option Config), rest) ← match parseOptArgs args with

@@ -1,4 +1,5 @@
 import FV.Opt.Basic
+import FV.Isle.Opt.Simplify
 
 /-!
 # The rewrite-rule interface
@@ -31,6 +32,19 @@ open Clif
 
 abbrev SimplifyFn := {σ : Type} → (σ → ValueId → List Inst) → (σ → ValueId → Option Ty) →
   (σ → Inst → ValueId × σ) → σ → ValueId → Except String (List (ValueId × Bool) × List String × σ)
+
+/-- Cranelift's `simplify_skeleton`: simplifications of a side-effecting instruction or a
+terminator (`Isle.Opt.SkelInst`), e.g. `udiv x, 8 ⇒ ushr x, 3` (`removeWithVal`),
+`brif 1, b1, b2 ⇒ jump b1` (`replace`), `brif c, trap_block, b ⇒ trapnz c; jump b`
+(`replaceWithTwo`). The extra callback is `just_trap_block`: the trap code of a block whose
+body is pure and whose terminator is `trap`.
+
+**Proof obligation:** each simplification is equivalent to the original instruction (same
+results, same trap behaviour, same successor with the same arguments) in every state where
+the nodes reachable from its operands evaluate. -/
+abbrev SkeletonFn := {σ : Type} → (σ → ValueId → List Inst) → (σ → ValueId → Option Ty) →
+  (σ → Inst → ValueId × σ) → (σ → BlockId → Option TrapCode) → σ → Isle.Opt.SkelInst →
+  Except String (List Isle.Opt.SkelSimp × List String × σ)
 
 /-- The available rule sets (`Opt.RuleSetId.fn` in `FV/Opt/Optimize.lean`). -/
 inductive RuleSetId where
