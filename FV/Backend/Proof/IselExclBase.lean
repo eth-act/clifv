@@ -42,7 +42,7 @@ inductive AV where
 def AV.Holds (f : Clif.Function) (ctx : Ctx) : AV → V → Prop
   | .inst, v => ∃ j info c, v = .inst j ∧ ctx.insts[j]? = some info ∧ info.clif = some c ∧
       instData f c = .ok info.data
-  | .data, v => ∃ c, instData f c = .ok v
+  | .data, v => ∃ c, Compile.instE c = true ∧ instData f c = .ok v
   | .value, v => ∃ x, v = .value x
   | .values n, v => ∃ xs, v = .values xs ∧ xs.length = n
   | .tys ts, v => ∃ t ∈ ts, v = .ty t

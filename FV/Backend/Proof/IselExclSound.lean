@@ -109,8 +109,8 @@ theorem fails_sound : ∀ (q : Pattern) (a : AV) (v : V) (st : LState) (env env'
         obtain ⟨fs, hu, hma⟩ := matchPat_enum_inv ht hk hm
         cases a with
         | data =>
-          obtain ⟨c, hc⟩ := ha
-          obtain ⟨kf, ko, fs0, rfl, hko⟩ := instData_shape hc
+          obtain ⟨c, hEc, hc⟩ := ha
+          obtain ⟨kf, ko, fs0, rfl, hko⟩ := instData_shape hEc hc
           simp only [sem, beq_iff_eq] at hu
           split at hu
           · rename_i hty
@@ -181,7 +181,7 @@ theorem fails_sound : ∀ (q : Pattern) (a : AV) (v : V) (st : LState) (env env'
                   rw [hi] at hi'
                   cases hi'
                   exact failsArgs_sound args _ [.ty (info.resTys.head?.getD .invalid), info.data] st env env' hf
-                    ⟨⟨_, head_resTy_ex hctx hi, rfl⟩, ⟨c, hd⟩, trivial⟩ hma
+                    ⟨⟨_, head_resTy_ex hctx hi, rfl⟩, ⟨c, hctx.instE j info c hi hc, hd⟩, trivial⟩ hma
                 · rw [ext_flagOff hf] at hx; cases hx
               | value =>
                 obtain ⟨x, rfl⟩ := ha

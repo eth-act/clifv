@@ -154,6 +154,10 @@ structure DriverHyp (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) 
     ∀ e, f.extern? fn = some e → p.func? e.name = none
   /-- no indirect calls (`E2E.InSubset.noSpecial`, rust-route step 4) -/
   noCI : ∀ B ∈ f.blocks, ∀ st ∈ B.body, ∀ sig callee args, st.inst ≠ .callIndirect sig callee args
+  /-- `f` is in subset E (`E2E.InSubset.subsetE`; new since `call_indirect`/`func_addr` compile) -/
+  subE : Compile.functionE f = true
+  /-- every extern has only `normal` parameters (`E2E.InSubset.noSpecial`; step 4) -/
+  normExts : ExternsNormal f
   /-- every extern takes at most 8 (register) parameters (`E2E.InSubset.callRegArgs`) -/
   regArgs : CallRegArgs f
   /-- `br_table` indices have at most 32 bits (`lowerCheck`'s `brIdxOk`) -/
@@ -193,7 +197,7 @@ theorem stmt_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
   obtain ⟨⟨info, hinfo, hclif, hres⟩, hemp, hst0, ⟨tr, hrun⟩, halias⟩ := hstmts j stm sl hstm hsl
   obtain ⟨ranges, hctx⟩ := H.shape.hctx
   have hok := H.insts ctx (L.start + j) info stm.inst sl.st sl.rss sl.st' tr
-    H.shape.ctxInv H.regArgs hinfo hclif hemp
+    H.shape.ctxInv H.regArgs H.normExts H.subE hinfo hclif hemp
     (fun x r h => Nat.lt_of_lt_of_le (H.shape.valsBelow x r h) hst0) hrun
   rw [hres] at hok
   obtain ⟨hargs, hresults, hnodup, hnext, hnoclob⟩ := H.cert.stmt b B L j stm sl hB hL hstm hsl

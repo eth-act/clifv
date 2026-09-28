@@ -198,6 +198,15 @@ def instData (f : Clif.Function) : Clif.Inst → Except String V
         pure (instDataV "Call" [opcodeV "Call", .values args, .op (.funcRef fn)])
       else throw s!"call with calling convention {repr ext.sig.callConv}"
     | none => throw s!"unknown fn{fn}"
+  | .callIndirect sig callee args =>
+    match f.sigDecls.lookup sig with
+    | some s =>
+      pure (instDataV "CallIndirect"
+        [opcodeV "CallIndirect", .values (callee :: args), .op (.sig s)])
+    | none => throw s!"call_indirect of undeclared sig{sig}"
+  | .funcAddr ty fn =>
+    if ty != .i64 then throw "func_addr with a non-i64 address type"
+    else pure (instDataV "FuncAddr" [opcodeV "FuncAddr", .op (.funcRef fn)])
   | i => throw s!"`{instText i}` is not in E"
 
 /-! ## ABI (`isa/aarch64/abi.rs` `compute_arg_locs`, AAPCS64 / `system_v`) -/
@@ -405,6 +414,8 @@ def externExtract (ctx : Ctx) (t : Term) (v : V) (_st : LState) : ExtResult (Lis
   | TId.jump_table_targets, .labels (d :: ts) => .ok [.label d, .labels ts]
   | TId.jump_table_targets, .labels [] => .fail
   | TId.value_list_slice, .values vs => .ok [.values vs]
+  | TId.value_slice_unwrap, .values (x :: xs) => .ok [.value x, .values xs]
+  | TId.value_slice_unwrap, .values [] => .fail
   | TId.value_array_2, .values [a, b] => .ok [.value a, .value b]
   -- `unpack_value_array_3` (isle_prelude.rs:942)
   | TId.value_array_3, .values [a, b, c] => .ok [.value a, .value b, .value c]
@@ -553,14 +564,14 @@ def externCtor (ctx : Ctx) (t : Term) (args : List V) (st : LState) : ExtResult 
     | some ps, some rs => .ok (.op .unit, st.emit (.rets (rs.zip ps)))
     | _, _ => .unmodeled "gen_return: more than 8 return values or multi-register values"
   | TId.gen_call_output, [.op (.sig s)] =>
-    let (rs, st) := s.returns.foldl (init := (#[], st)) fun (acc, st) _ =>
+    let (rs, st) := (sigRets s).foldl (init := (#[], st)) fun (acc, st) _ =>
       let (r, st) := st.fresh .int
       (acc.push [r], st)
     .ok (.regsVec rs.toList, st)
   | TId.gen_call_args, [.op (.sig s), .regsVec rss] =>
-    match sigParamBytes s, rss.mapM (fun | [r] => some r | _ => none) with
-    | .ok bytes, some rs =>
-      let (locs, _) := argLocs bytes
+    match sigArgLocs s, rss.mapM (fun | [r] => some r | _ => none) with
+    | .ok (locs, _), some rs =>
+      let bytes := match sigArgs s with | .ok b => b | _ => []
       let (uses, st) := ((locs.zip rs).zip bytes).foldl (init := (#[], st))
         fun (acc, st) ((loc, r), b) => match loc with
           | .reg p => (acc.push (r, p), st)
@@ -574,14 +585,14 @@ def externCtor (ctx : Ctx) (t : Term) (args : List V) (st : LState) : ExtResult 
     | _, _ => .unmodeled "gen_call_rets: more than 8 return values"
   | TId.try_call_none, [] => ok (.op .tryCallNone)
   | TId.gen_call_info, [.op (.sig s), .op (.extName n), .op (.callArgs us), .op (.callRets ds), _, _] =>
-    match sigParamBytes s with
-    | .ok bytes =>
-      .ok (.op (.callInfo ⟨.sym n, us, ds⟩), { st with outgoing := max st.outgoing (argLocs bytes).2 })
+    match sigArgLocs s with
+    | .ok (_, stack) =>
+      .ok (.op (.callInfo ⟨.sym n, us, ds⟩), { st with outgoing := max st.outgoing stack })
     | .error e => .unmodeled s!"gen_call_info: {e}"
   | TId.gen_call_ind_info, [.op (.sig s), .reg r, .op (.callArgs us), .op (.callRets ds), _] =>
-    match sigParamBytes s with
-    | .ok bytes =>
-      .ok (.op (.callInfo ⟨.reg r, us, ds⟩), { st with outgoing := max st.outgoing (argLocs bytes).2 })
+    match sigArgLocs s with
+    | .ok (_, stack) =>
+      .ok (.op (.callInfo ⟨.reg r, us, ds⟩), { st with outgoing := max st.outgoing stack })
     | .error e => .unmodeled s!"gen_call_ind_info: {e}"
   -- aarch64 inst.isle / lower.isle helpers (aarch64/lower/isle.rs)
   | TId.use_fp16, [] => ok (.bool false)

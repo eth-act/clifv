@@ -70,4 +70,10 @@ def functionE (f : Function) : Bool :=
 /-- Every function of `p` uses only subset E. -/
 def onlySubsetE (p : Program) : Bool := p.funcs.all functionE
 
+/-- `instE` of every statement of a subset-E function. -/
+theorem instE_of_functionE {f : Function} (hE : functionE f = true) {b : Block} (hb : b ∈ f.blocks)
+    {st : Stmt} (hst : st ∈ b.body) : instE st.inst = true := by
+  simp only [functionE, Bool.and_eq_true, List.all_eq_true] at hE
+  exact (hE.2 b hb).1.2 st hst
+
 end Compile

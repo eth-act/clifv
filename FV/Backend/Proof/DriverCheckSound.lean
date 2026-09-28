@@ -143,12 +143,13 @@ theorem renOf_vrenaming (gn : Nat → Nat) : VRenaming (renOf gn) gn := by
 
 /-! ## The context -/
 
-theorem ctxOk_sound {f : Clif.Function} {ctx : Ctx} (h : ctxOk f ctx = true) : CtxInv f ctx := by
+theorem ctxOk_sound {f : Clif.Function} {ctx : Ctx} (hsd : f.sigDecls = [])
+    (h : ctxOk f ctx = true) : CtxInv f ctx := by
   simp only [ctxOk, Bool.and_eq_true, decide_eq_true_eq] at h
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨hfunc, hinsts⟩, hreg⟩, hty⟩, hdef⟩, hslot⟩, hres⟩, hvt⟩, haddr⟩ := h
   have hinst : ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info →
       info.clif = some inst →
-      (instData f inst = .ok info.data) ∧
+      Compile.instE inst = true ∧ (instData f inst = .ok info.data) ∧
       ∃ tys, inst.resultTypes (fun r => (f.extern? r).map (·.sig)) (fun _ => none) = some tys ∧
         info.resTys = tys.map CTy.ofClif ∧ info.results.length = tys.length := by
     intro ii info inst hi hc
@@ -157,18 +158,26 @@ theorem ctxOk_sound {f : Clif.Function} {ctx : Ctx} (h : ctxOk f ctx = true) : C
     have := List.all_eq_true.mp hinsts info hm
     rw [hc] at this
     simp only [Bool.and_eq_true] at this
-    obtain ⟨h1, h2⟩ := this
-    refine ⟨?_, ?_⟩
-    · split at h1
-      · rename_i d hd; rw [hd, beq_iff_eq.mp h1]
-      · cases h1
-    · split at h2
-      · rename_i tys ht
-        simp only [Bool.and_eq_true, decide_eq_true_eq] at h2
-        exact ⟨tys, (ht : _ = _)' , h2.1, h2.2⟩
-      · cases h2
-  refine ⟨hfunc, fun ii info inst hi hc => (hinst ii info inst hi hc).1,
-    fun ii info inst hi hc => (hinst ii info inst hi hc).2, ?_, ?_, ?_, ?_, hslot, ?_, ?_, ?_⟩
+    obtain ⟨h0, h1, h2⟩ := this
+    refine ⟨h0, ?_, ?_⟩
+    · cases hd : instData f inst with
+      | ok d => rw [hd] at h1; simpa using h1
+      | error e => rw [hd] at h1; simp at h1
+    · have h2' : ctxResTysOk f info inst = true := h2
+      unfold ctxResTysOk at h2'
+      rw [hsd] at h2'
+      simp only [List.lookup] at h2'
+      cases hty : inst.resultTypes (fun r => (f.extern? r).map (·.sig)) (fun _ => none) with
+      | none => rw [hty] at h2'; simp at h2'
+      | some tys =>
+        have h2'' : (decide (info.resTys = tys.map CTy.ofClif) &&
+            decide (info.results.length = tys.length)) = true := by
+          rw [hty] at h2'; exact h2'
+        simp only [Bool.and_eq_true, decide_eq_true_eq] at h2''
+        exact ⟨tys, rfl, h2''.1, h2''.2⟩
+  refine ⟨hfunc, fun ii info inst hi hc => (hinst ii info inst hi hc).2.1,
+    fun ii info inst hi hc => (hinst ii info inst hi hc).1,
+    fun ii info inst hi hc => (hinst ii info inst hi hc).2.2, ?_, ?_, ?_, ?_, hslot, ?_, ?_, ?_⟩
   · intro x r hx
     have hlt : x < ctx.valReg.size := by
       simp only [Ctx.valueReg?] at hx
@@ -316,7 +325,7 @@ theorem succOk_sound {f : Clif.Function} {vc : VCode} {R : Reg → Reg} {B : Cli
     · exact this
 
 theorem lowerShape_of_ok {f : Clif.Function} {vc : VCode} {ctx : Ctx} {ranges : Array (Nat × Nat)}
-    {st0 : LState} {bl : List BLow} {gn : Nat → Nat}
+    {st0 : LState} {bl : List BLow} {gn : Nat → Nat} (hsd : f.sigDecls = [])
     (hb : buildCtx f = .ok (ctx, ranges, st0))
     (hl : lowBlocks f (stmtCall ctx) (termCallF ctx) 0 f.blocks st0 f.blocks.length = some bl)
     (hgn : ∀ n, st0.nextVreg ≤ n → gn n = n) (hs : shapeOk f vc ctx st0 gn bl = true) :
@@ -329,7 +338,7 @@ theorem lowerShape_of_ok {f : Clif.Function} {vc : VCode} {ctx : Ctx} {ranges : 
     intro bi B L hB hL
     have := all_range hblk (lt_of_getElem? hB)
     simpa [hB, hL] using this
-  refine ⟨⟨ranges, hb⟩, ctxOk_sound hctx, renOf_vrenaming gn, hgn, ?_, hlen, hsize, ?_, ?_, ?_, ?_⟩
+  refine ⟨⟨ranges, hb⟩, ctxOk_sound hsd hctx, renOf_vrenaming gn, hgn, ?_, hlen, hsize, ?_, ?_, ?_, ?_⟩
   · intro B hB p hp
     have := List.all_eq_true.mp (List.all_eq_true.mp hpar B hB) p hp
     simpa using this
@@ -547,6 +556,9 @@ theorem lowering_of_check {f : Clif.Function} {vc : VCode} (h : lowerCheck f vc 
     ∃ ctx st0 R gn bl A, LowerShape f vc ctx st0 R gn bl ∧ Cert f ctx st0 gn bl A ∧
       ∀ B ∈ f.blocks, BrIdxTyped ctx B.term := by
   unfold lowerCheck at h
+  simp only [Bool.and_eq_true] at h
+  obtain ⟨hsd0, h⟩ := h
+  have hsd : f.sigDecls = [] := List.isEmpty_iff.mp hsd0
   split at h
   · cases h
   · rename_i ctx ranges st0 hb
@@ -554,7 +566,7 @@ theorem lowering_of_check {f : Clif.Function} {vc : VCode} (h : lowerCheck f vc 
     · cases h
     · rename_i bl hl
       simp only [Bool.and_eq_true] at h
-      have hS := lowerShape_of_ok (gn := gnOf st0.nextVreg (aliasOf f bl)) hb hl
+      have hS := lowerShape_of_ok (gn := gnOf st0.nextVreg (aliasOf f bl)) hsd hb hl
         (fun n hn => gnOf_temp hn) h.1.1
       exact ⟨ctx, st0, _, _, bl, _, hS, cert_of_ok hS.len h.1.2, brIdx_of_ok h.2⟩
 

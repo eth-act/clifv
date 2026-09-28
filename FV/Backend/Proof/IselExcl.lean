@@ -21,7 +21,7 @@ theorem exclOk_program : (program.rulesOf TId.lower).all (exclOk program) = true
 /-- **`ExcludedUnmatchable`**: the root rules of `lower` outside the closure never match an
 instruction of a `CtxInv` context. -/
 theorem excludedUnmatchable : ExcludedUnmatchable program := by
-  intro r hr hroot f ctx hctx ii info inst hi hc cfg m s env' s1 hmatch
+  intro r hr hroot f ctx hctx hE ii info inst hi hc cfg m s env' s1 hmatch
   have hok := List.all_eq_true.mp exclOk_program r hr
   rw [closureRoot_eq] at hroot
   simp only [exclOk, hroot, Bool.false_or] at hok
@@ -34,7 +34,8 @@ theorem excludedUnmatchable : ExcludedUnmatchable program := by
       rw [hargs] at ha
       obtain ⟨e1, h1, -⟩ := matchArgs_cons_inv ha
       exact fails_sound hctx q .inst _ _ _ _ hok
-        ⟨ii, info, inst, rfl, hi, hc, hctx.data ii info inst hi hc⟩ h1
+        ⟨ii, info, inst, rfl, hi, hc, hctx.instE ii info inst hi hc,
+          hctx.data ii info inst hi hc⟩ h1
     · cases hok
 
 end Backend.Proof
