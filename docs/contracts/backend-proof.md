@@ -653,6 +653,70 @@ a64_rotr/a64_rotr_imm _ok`, `alu_rr_imm12_ok`, extern iffs (`rotr_mask`, `u8_int
 hypotheses for `rotr_32/64_base_case`), composition like `shift_compose`, `rotr_neg` for `rotl`.
 popcnt (vector ispec forms), `bnot_ishl` 1401, `sbfm`/`ubfm` 1704/1707: not started.
 
+**Continuation (M4AluB4, branch `agent/m4-alu-b4`).** 19 more rules proven (45 total); family B's
+assigned root rules are all proven.
+
+| id | line | rule | theorem (file) |
+| --- | --- | --- | --- |
+| 899 | 1772 | `rotl_fits_in_16` | `rotl_fits_in_16_ok` (`IselFamAluBRot`) |
+| 900 | 1778 | `rotl_fits_in_16_imm` | `rotl_fits_in_16_imm_ok` |
+| 901 | 1791 | `rotl_32_base_case` | `rotl_32_base_case_ok` |
+| 902 | 1797 | `rotl_64_base_case` | `rotl_64_base_case_ok` |
+| 903 | 1803 | `rotl_32_imm` | `rotl_32_imm_ok` |
+| 904 | 1808 | `rotl_64_imm` | `rotl_64_imm_ok` |
+| 906 | 1840 | `rotr_fits_in_16` | `rotr_fits_in_16_ok` |
+| 907 | 1844 | `rotr_32_base_case` | `rotr_32_base_case_ok` |
+| 908 | 1848 | `rotr_64_base_case` | `rotr_64_base_case_ok` |
+| 909 | 1852 | `rotr_fits_in_16_imm` | `rotr_fits_in_16_imm_ok` |
+| 910 | 1857 | `rotr_32_imm` | `rotr_32_imm_ok` |
+| 911 | 1862 | `rotr_64_imm` | `rotr_64_imm_ok` |
+| 833 | 1401 | `bnot_ishl` | `bnot_ishl_ok` (`IselFamAluBNotShift`) |
+| 892 | 1704 | `sbfm` | `sbfm_ok` (`IselFamAluBBfm`) |
+| 893 | 1707 | `ubfm` | `ubfm_ok` |
+| 937 | 2074 | `popcnt_8` | `popcnt_8_ok` (`IselFamAluBPopcnt`) |
+| 938 | 2080 | `popcnt_16` | `popcnt_16_ok` |
+| 939 | 2086 | `popcnt_32` | `popcnt_32_ok` |
+| 940 | 2092 | `popcnt_64` | `popcnt_64_ok` |
+
+Axioms: `propext`, `Classical.choice`, `Quot.sound`; the `fits_in_16` rotates add the `bv_decide`
+certificates of `extHolds_extend`/`extOut_prun` (and `small_rot_neg` for the register amount), the
+popcnt rules those of `popcnt{8,16,32,64}_fin`. No `sorry`, no axiom.
+
+* **Route.** All rules invert match and right-hand side together (`fbrot_inv [*, rule] at hm he`,
+  then `subst` the matched instruction's info and a second pass with the extern iffs
+  `ext_value_array_2_iff`, `ctor_put_in_reg_iff`, `ext_def_inst_iff`, `ext_inst_data_value_iff`, …);
+  look-throughs (`ishl`, `iconst`) are then resolved through `CtxInv.defClif`/`data`
+  (`instNames_binary`, `defInst_iconst_clif`) and their values through `DFGCons`
+  (`evalInst_shift_ok`, `dfg_iconst_fb`). When `subst_vars` renames the lowering state, the proofs
+  name it back with `rename LState => st0`.
+* **Templates.** Rotates use `shift_ruleOk_gen`; `sbfm`/`ubfm` use the new `shift_ruleOk_uses`
+  (the code reads the looked-through `ishl` operand, not the root operands, so the right-hand side
+  names its read values and shows them defined); `bnot_ishl` and `popcnt` are proven directly with
+  `unary_front` + `lowerInstOk_one_fb`.
+* **Rotates.** `rot_fin`/`rot_imm_fin` (an `extr` at the operand size), `rotl_fin` (`sub` from `xzr`
+  then `extr`, via `rotr_neg`/`neg_mod`), `neg_imm` (`negate_imm_shift` of an in-range amount),
+  `codeShapeU_compose`/`codeShapeU_cons`/`CodeShapeU.weaken`. `extOut_prun` now takes only
+  `VHolds vx (ρ x)` of the operand (instead of `ValsHeld fr ρ`), so it composes after code that
+  already updated fresh vregs (`rotl_fits_in_16`: `sub` first, then the zero-extension).
+* **`bnot_ishl`.** Contracts `alu_rrr_shift_ok` (term 377), `orr_not_shift_ok`; `ctor_lshl_fb`;
+  width lemma `not_shl_fin`.
+* **`sbfm`/`ubfm`.** `bfm_sshr`/`bfm_ushr`: `bfmVal` with `bfm_immr`/`bfm_imms`'s immediates is
+  `(x <<< a).sshiftRight b` / `(x <<< a) >>> b` for `a, b < w` (bitwise, `getLsbD` case analysis);
+  `bitfield_move_ok`, `ctor_bfm_immr_iff`/`ctor_bfm_imms_iff`, `ctor_temp_writable_reg_int_iff`.
+* **`popcnt`.** Float-class vector temporaries: `EmitOutC` (fresh vreg of a class), contracts
+  `size_for_mov_to_fpu_ok`, `mov_to_fpu_ok`, `mov_from_vec_ok`, `vec_misc_ok`/`vec_lanes_ok`/
+  `vec_rrr_ok` and wrappers `vec_cnt_ok`/`addv_ok`/`addp_ok`; class-generic runs `prun_rr_c`/
+  `prun_rrr_c`; the final equalities (`popcnt*_fin`, byte counts summed = `cpop`) by `bv_decide`.
+* **New `ispec` forms** (additive, before `| _, _ => none`, commit `9bb4e3a`; M6Rest4 told):
+  `aluRRRShift op sz rd .xzr _ sh, [b]` (`orn wd, wzr, wm, lsl #amt`); `bitfieldMove sz op rd _ immr
+  imms, [a]` (`immr, imms < width`) = `bfmVal` (Arm `UBFM`/`SBFM`); `movToFpu` `size32`/`size64`
+  (zero-extend the low 32/64 bits into the 128-bit register), `vecMisc .cnt … .size8x8`
+  (`cntBytes`), `vecRRR .addp … .size8x8` (`addpBytes`), `vecLanes .addv … .size8x8` (`addvBytes`),
+  `movFromVec rd _ idx .size8` (`idx < 16`, byte `idx` zero-extended). A 64-bit vector result
+  zeroes the upper 64 bits.
+* **Cost** (one module at a time, 10 GB cap): `IselFamAluBRot` ~25 s, `IselFamAluBNotShift` ~15 s,
+  `IselFamAluBBfm` ~20 s, `IselFamAluBPopcnt` ~25 s.
+
 ### Integration note (Integrate1: m4-ctl + m4-alu-b)
 
 Shared helpers deduplicated: `szOf`, `szOf_bits`, `env4`, `env5` now live in `IselRulesALU.lean`;
