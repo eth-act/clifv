@@ -1750,4 +1750,147 @@ theorem trapBlock?_spec {blk : Block} {c : TrapCode} (h : trapBlock? blk = some 
     · cases h
   · cases h
 
+/-- The effect instructions of a list of extra statements. -/
+def effsL (E : List Stmt) : List Inst := E.filterMap fun t => if insOk t then none else some t.inst
+
+theorem effsOf_eq (extra : Array Stmt) : effsOf extra = effsL extra.toList := rfl
+
+theorem trapOk_spec {t : Stmt} (h : trapOk t = true) :
+    t.results = [] ∧ ∃ y code, t.inst = .trapz y code ∨ t.inst = .trapnz y code := by
+  simp only [trapOk, Bool.and_eq_true, List.isEmpty_iff] at h
+  refine ⟨h.1, ?_⟩
+  have h2 := h.2
+  cases hti : t.inst <;> rw [hti] at h2 <;> (try cases h2)
+  · rename_i y code; exact ⟨y, code, .inl rfl⟩
+  · rename_i y code; exact ⟨y, code, .inr rfl⟩
+
+theorem insOk_trapOk {t : Stmt} (h : trapOk t = true) : insOk t = false := by
+  obtain ⟨hr, -⟩ := trapOk_spec h
+  simp [insOk, hr]
+
+/-- A conditional trap reads one register and keeps memory. -/
+theorem evalInst_trapLike {fr fr' : Frame} {M M' : Mem} {i : Inst} {y : ValueId} {code : TrapCode}
+    (hi : i = .trapz y code ∨ i = .trapnz y code) (hy : fr'.regs y = fr.regs y) :
+    (∀ vs M1, evalInst fr M i = .ok (vs, M1) → vs = [] ∧ M1 = M ∧ evalInst fr' M' i = .ok ([], M')) ∧
+    (∀ c, evalInst fr M i = .trap c → ∀ M'', evalInst fr' M'' i = .trap c) := by
+  have hg : fr'.get y = fr.get y := by simp only [Frame.get, hy]
+  rcases hi with rfl | rfl
+  all_goals
+    simp only [evalInst, hg]
+    refine ⟨fun vs M1 h => ?_, fun c h M'' => ?_⟩ <;>
+    cases hc : fr.get y <;> rw [hc] at h <;> (try rw [hc]) <;>
+    simp only [Res.ok_bind, Res.trap_bind, Res.stuck_bind, reduceCtorEq] at h ⊢ <;>
+    (try split at h) <;> (try split) <;> simp_all [pure]
+
+section
+variable {f g : Function} {fi : Info} {cert : SimpCert} (hS : SOk f g fi cert)
+  {syms : String → Option Nat}
+include hS
+
+/-- The target runs the extra statements of a terminator record: inserted pure nodes (whose
+values are the graph's) and conditional traps (as in `effTerm`). -/
+theorem SCore.runExtras {fr : Frame} {bi k : Nat} {m : Mem} (hm : m.symbols = syms)
+    {fr0 : Frame} {ρ : Valuation} (T : Terminator) :
+    ∀ (E : List Stmt) {fr' : Frame} {K : Nat}, SCore f g fi cert syms fr fr' bi k K →
+      fr'.body = E.map (renStmt cert.subst.step) →
+      (∀ t ∈ E, insOk t = true ∨
+        (trapOk t = true ∧ ∀ x ∈ operands t.inst, cert.subst.step x = x)) →
+      fr0.func = fr'.func → fr0.slots = fr'.slots →
+      (∀ x, Avail (wfData g (gInfo fi cert)) bi K x →
+        den cert.graph ρ fr0 (memPlus m) x = fr'.regs x) →
+      (∃ fr2 K2, LStar fr' m fr2 m ∧ fr2.body = [] ∧ SCore f g fi cert syms fr fr2 bi k K2 ∧
+        fr2.func = fr'.func ∧ fr2.slots = fr'.slots ∧ fr2.term = fr'.term ∧
+        (∀ x, Avail (wfData g (gInfo fi cert)) bi K2 x →
+          den cert.graph ρ fr0 (memPlus m) x = fr2.regs x) ∧
+        effTerm (withRegs fr0 (den cert.graph ρ fr0 (memPlus m))) (memPlus m) (effsL E) T =
+          termEval (withRegs fr0 (den cert.graph ρ fr0 (memPlus m))) (memPlus m) T) ∨
+      (∃ fr2 c, LStar fr' m fr2 m ∧ (∀ m', lstep fr2 m' = .trap c) ∧
+        effTerm (withRegs fr0 (den cert.graph ρ fr0 (memPlus m))) (memPlus m) (effsL E) T = .trap c)
+  | [], fr', K, h, hb, _, _, _, hV => .inl ⟨fr', K, .refl _ _, by simpa using hb, h, rfl, rfl, rfl,
+      hV, rfl⟩
+  | t :: E, fr', K, h, hb, hE, hf0, hs0, hV => by
+    obtain ⟨b', hb', h2, -, -⟩ := h.invg.block
+    have hb1 : fr'.body = renStmt cert.subst.step t :: E.map (renStmt cert.subst.step) := by
+      rw [hb]; rfl
+    have htk : b'.body[K]? = some (renStmt cert.subst.step t) := by
+      rw [h2] at hb1; exact (drop_eq_cons hb1).1
+    have hmemt : renStmt cert.subst.step t ∈ b'.body := List.mem_of_getElem? htk
+    rcases hE t (by simp) with hins | ⟨htr, hfix⟩
+    · -- an inserted pure node
+      have hins' : insOk (renStmt cert.subst.step t) = true := by rw [insOk_renStmt]; exact hins
+      obtain ⟨hp, u, a, hu, hev⟩ := h.insEval hS (m := m) hb1 hins'
+      obtain ⟨hl, h1⟩ := h.tpure hS hm hb1 hp hu hev
+      have heff : effsL (t :: E) = effsL E := by simp [effsL, hins]
+      rw [heff]
+      obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, hpure, -⟩ := hS.gblock hb'
+      have hD := hpure _ hmemt u hu hp
+      have hV1 : ∀ x, Avail (wfData g (gInfo fi cert)) bi (K + 1) x →
+          den cert.graph ρ fr0 (memPlus m) x = (fr'.regs.set u a) x := by
+        intro x hx
+        rcases avail_succ hS.wfg hb' htk hx with hr | hx'
+        · rw [hu, List.mem_singleton] at hr
+          subst hr
+          simp only [Regs.set_same]
+          rw [den_node (D := cert.graph) hD]
+          have hsy : SymsLe m (memPlus m) := memPlus_le m
+          rw [← evalNode_symsLe hp hsy hev]
+          refine evalNode_congr (by simp only [hf0]) (by simp only [hs0]) ?_
+          intro y hy
+          exact hV y (hS.wfg.uses bi b' hb' K _ htk y hy)
+        · have hnr := avail_not_result hS.wfg hb' htk hx'
+          rw [hu, List.mem_singleton] at hnr
+          rw [Regs.set_other _ _ hnr]; exact hV x hx'
+      rcases SCore.runExtras hm T E h1 rfl (fun t' ht' => hE t' (by simp [ht'])) hf0 hs0 hV1 with
+        ⟨fr2, K2, hst, hb2, h3, hf2, hs2, ht2, hV2, he2⟩ | ⟨fr2, c, hst, htr2, he2⟩
+      · exact .inl ⟨fr2, K2, .step hl hst, hb2, h3, hf2, hs2, ht2, hV2, he2⟩
+      · exact .inr ⟨fr2, c, .step hl hst, htr2, he2⟩
+    · -- a conditional trap
+      obtain ⟨hr, y, code, hi⟩ := trapOk_spec htr
+      have hti : (renStmt cert.subst.step t).inst = t.inst := by
+        simp only [renStmt]
+        conv => rhs; rw [← mapOperands_id t.inst]
+        exact mapOperands_congr hfix
+      have hyops : y ∈ operands t.inst := by rcases hi with hi | hi <;> simp [hi, operands]
+      have hyav := hS.wfg.uses bi b' hb' K _ htk y (by rw [hti]; exact hyops)
+      have hnc : ∀ fn args, (renStmt cert.subst.step t).inst ≠ .call fn args := by
+        rw [hti]; rcases hi with hi | hi <;> rw [hi] <;> intro fn args he <;> cases he
+      have heff : effsL (t :: E) = t.inst :: effsL E := by
+        simp [effsL, insOk_trapOk htr]
+      rw [heff]
+      obtain ⟨hok, htrp⟩ := evalInst_trapLike (fr := fr') (fr' := withRegs fr0
+        (den cert.graph ρ fr0 (memPlus m))) (M := m) (M' := memPlus m) hi (hV y hyav)
+      obtain ⟨a, ha, -⟩ := h.invg.regs y hyav
+      cases he : evalInst fr' m t.inst with
+      | ok p =>
+        obtain ⟨vs, M1⟩ := p
+        obtain ⟨rfl, hM1, hF⟩ := hok vs M1 he
+        rw [hM1] at he
+        rw [hti] at hnc
+        have hr' : (renStmt cert.subst.step t).results = [] := hr
+        obtain ⟨hl, h1⟩ := h.stepEmpty hS hb1 hr' (by rw [hti]; exact hnc) (by rw [hti]; exact he)
+        have hV1 : ∀ x, Avail (wfData g (gInfo fi cert)) bi (K + 1) x →
+            den cert.graph ρ fr0 (memPlus m) x = fr'.regs x := by
+          intro x hx
+          rcases avail_succ hS.wfg hb' htk hx with hr2 | hx'
+          · rw [hr'] at hr2; cases hr2
+          · exact hV x hx'
+        simp only [effTerm, hF]
+        rcases SCore.runExtras hm T E h1 rfl (fun t' ht' => hE t' (by simp [ht'])) hf0 hs0 hV1 with
+          ⟨fr2, K2, hst, hb2, h3, hf2, hs2, ht2, hV2, he2⟩ | ⟨fr2, c, hst, htr2, he2⟩
+        · exact .inl ⟨fr2, K2, .step hl hst, hb2, h3, hf2, hs2, ht2, hV2, he2⟩
+        · exact .inr ⟨fr2, c, .step hl hst, htr2, he2⟩
+      | trap c =>
+        refine .inr ⟨fr', c, .refl _ _, fun m' => ?_, ?_⟩
+        · rw [lstep_inst hb1 hnc, hti]
+          have := (evalInst_trapLike (fr := fr') (fr' := fr') (M := m) (M' := m') hi rfl).2 c he m'
+          rw [this]; rfl
+        · simp only [effTerm, htrp c he]
+      | stuck msg =>
+        exfalso
+        rcases hi with hi | hi <;> rw [hi] at he <;>
+          simp only [evalInst, Frame.get, ha, Res.ofOption_some, Res.ok_bind] at he <;>
+          split at he <;> cases he
+
+end
+
 end Opt
