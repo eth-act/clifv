@@ -256,4 +256,206 @@ theorem realizes_all {R : RL} (hR : R.Wf) (hC : CalleeOk R.F R.X R.H)
         obtain ⟨n, c'', hm, hq'⟩ := realizes_jt hR hq hvb hi hstep
         exact fin n c'' hm hq'
 
+/-! ## The register-level theorem -/
+
+theorem runX_eq (f : Arm.ArmState → Arm.ArmState) :
+    ∀ (n : Nat) (s : Arm.ArmState), E2E.runX f n s = iterN f n s
+  | 0, _ => rfl
+  | n + 1, s => runX_eq f n (f s)
+
+theorem setWidth128_inj {x y : BitVec 64} (h : x.setWidth 128 = y.setWidth 128) : x = y := by
+  apply BitVec.eq_of_toNat_eq
+  have := congrArg BitVec.toNat h
+  have hx := x.isLt
+  have hy := y.isLt
+  simp only [BitVec.toNat_setWidth] at this
+  omega
+
+theorem calleeSaved_x {n : Nat} (h1 : 19 ≤ n) (h2 : n ≤ 28) :
+    Reg.x n ∈ calleeSaved ∧ (Reg.x n).allocatable = true := by
+  refine ⟨?_, ?_⟩
+  · simp only [calleeSaved, List.mem_append, List.mem_map, List.mem_range]
+    exact .inl ⟨n - 19, by omega, by congr 1; omega⟩
+  · have : n = 19 ∨ n = 20 ∨ n = 21 ∨ n = 22 ∨ n = 23 ∨ n = 24 ∨ n = 25 ∨ n = 26 ∨ n = 27 ∨
+        n = 28 := by omega
+    rcases this with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;> rfl
+
+theorem calleeSaved_v {n : Nat} (h1 : 8 ≤ n) (h2 : n < 16) :
+    Reg.v n ∈ calleeSaved ∧ (Reg.v n).allocatable = true := by
+  refine ⟨?_, ?_⟩
+  · simp only [calleeSaved, List.mem_append, List.mem_map, List.mem_range]
+    exact .inr ⟨n - 8, by omega, by congr 1; omega⟩
+  · have : n = 8 ∨ n = 9 ∨ n = 10 ∨ n = 11 ∨ n = 12 ∨ n = 13 ∨ n = 14 ∨ n = 15 := by omega
+    rcases this with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;> rfl
+
+/-- The store after a `Rets` step is the store before it (no defs, no clobbers). -/
+theorem rets_store {us : List (Reg × Reg)} {ops : Array Operand} {allocs : Array Loc}
+    {outs outs' : List CV} {m m2 : Loc → CV}
+    (hlen : outs.length = ((ops.zip allocs).toList.filter (·.1.isDef)).length)
+    (hnil : outs = []) (hho : HavocOuts (MInst.rets us) outs outs')
+    (hcl : Clobbered ckeep (MInst.rets us).clobbers
+      (writeM m ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs').filter (·.1.1.isEarly))) m2) :
+    writeM m2 ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs').filter (·.1.1.isLate)) = m := by
+  have h0 : outs' = [] := by
+    have := hho.1; rw [hnil] at this; exact List.eq_nil_of_length_eq_zero this
+  subst h0
+  simp only [List.zip_nil_right, List.filter_nil] at hcl ⊢
+  funext l
+  exact hcl.1 l (by simp [MInst.clobbers])
+
+/-- **`RegLevelCorrect` for the backend's code** (M6 + M5): for the allocated, lowered, emitted
+and laid-out function, the machine `ArmStepX X H fa` realises every return and every trap of
+the prepared VCode under `csem` (frame addresses `frameF`, function context
+`⟨fa.k, af.slotBase⟩`, external semantics `X`), given the form coverage `FormsCovered`
+(decided by `formsCoveredB`) and the callee contract `CalleeOk` of every activation. -/
+theorem regLevelCorrect_backend {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
+    {fb : FnBin} {k : Nat} (hcheck : checkAlloc vcp rf = .ok ()) (halloc : lowerRFunc vcp rf = .ok af)
+    (hemit : emitFunc k af = .ok fa) (hlayout : fa.layout = .ok fb) {X : ExtSem} {H : ArmHooks}
+    (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
+    (hC : ∀ s, CalleeOk
+      (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H) :
+    RegLevelCorrect
+      (fun s => csem (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s)
+        ⟨fa.k, af.slotBase⟩ X)
+      (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af)
+      (ArmStepX X H fa) vcp af fb := by
+  intro base ra s hent hres w₀ hbe ρ₀
+  obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hlayout
+  obtain ⟨body, psF, hb, -, hk⟩ := emitFunc_ok hemit
+  subst hk
+  let R : RL := ⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF⟩
+  have hR : R.Wf := ⟨hcheck, halloc, hemit, hlayout, hlm, by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres,
+    ⟨body, hb⟩, hent.program⟩
+  have hck := (lowerRFunc_ok hR.alloc).2.2.2
+  obtain ⟨n0, hq0, hA0, hf0⟩ := q_init hR hent hbe
+  obtain ⟨Rl, hSim, hinit, hkeep⟩ :=
+    checkAlloc_sound R.vc R.rf R.sem ckeep hcheck (locVal R.fr (iterN R.step n0 s)) ρ₀ w₀
+  have hRz := realizes_all hR (hC s) hcov
+  refine ⟨fun us vals w hret => ?_, fun c htr => ?_⟩
+  · -- a return
+    obtain ⟨b, k, ρ, w₁, vb, ops, outs, hstar, hvb, hi, hops, hvals, hsem⟩ := hret
+    obtain ⟨n1, c1, ⟨hq1, hA1⟩, hr1⟩ := forward hSim hRz hstar hinit ⟨hq0, hA0⟩
+    obtain ⟨ns, rfl⟩ := ctlCheck_rets hck hvb hi
+    rw [operands_rets] at hops
+    cases hops
+    have hsem' := hsem
+    simp only [csem, Option.some.injEq, Prod.mk.injEq] at hsem'
+    obtain ⟨rfl, rfl, -⟩ := hsem'
+    have h1 : VStep R.vc R.sem (.run ⟨b, k, ρ, w₁⟩) (.ret vals w₁) := by
+      rw [hvals]
+      refine VStep.step hvb hi (operands_rets ns) (by rw [hvals] at hsem; exact hsem) ?_ (VNext.ret rfl)
+      rw [List.toList_toArray, filter_isDef_retOps]; rfl
+    obtain ⟨n2, c', c'', ⟨hq2, -⟩, hr2, hms, hr3⟩ :=
+      forward_last hSim hRz h1 _ c1 _ (Nat.le_refl _) hr1 ⟨hq1, hA1⟩
+    have hfin : ∀ n3, E2E.runX (ArmStepX X H fa) (n0 + n1 + n2 + n3) s =
+        iterN R.step n3 (iterN R.step n2 (iterN R.step n1 (iterN R.step n0 s))) := by
+      intro n3; rw [runX_eq]; simp only [iterN_add]; rfl
+    cases c'' with
+    | run s' => obtain ⟨_, e⟩ := hSim.run hr3; cases e
+    | halt w'' => cases hSim.halt hr3
+    | ret uses m' w'' =>
+      have hks := hkeep hr3
+      cases hms with
+      | op hvb' hi' hops' hsz hsem2 hlen2 hho hcl hn =>
+        obtain ⟨hb', hk', hw'⟩ := hSim.at_op hr2
+        simp only at hb' hk' hw'
+        subst hb' hk' hw'
+        rw [hvb] at hvb'; cases hvb'
+        rw [hi] at hi'; cases hi'
+        rw [operands_rets] at hops'; cases hops'
+        have hsem3 := hsem2
+        simp only [RL.sem, csem, Option.some.injEq, Prod.mk.injEq] at hsem3
+        obtain ⟨rfl, rfl, rfl⟩ := hsem3
+        cases hn with
+        | ret _ =>
+        rw [rets_store hlen2 rfl hho hcl] at hks
+        have hst := q_stRel hq2
+        obtain ⟨n3, hpc, herr, hsp, hx29, hregs, hmem, hvalsM⟩ := ret_machine hR hent hq2 hvb hi
+        have hm0 : ∀ r, locVal R.fr (iterN R.step n0 s) (.reg r) = regVal (iterN R.step n0 s) r :=
+          fun _ => rfl
+        have hms : ∀ r, r.allocatable = true → _ = regVal _ r := fun r hr =>
+          hst.store (.reg r) (fun r' e => by cases e; exact hr) trivial
+        refine ⟨n0 + n1 + n2 + n3, ⟨?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩ <;> rw [hfin]
+        · exact hpc
+        · exact herr
+        · exact hsp
+        · intro n hn
+          simp only [calleeSavedX, List.mem_map, List.mem_range] at hn
+          obtain ⟨a, ha, rfl⟩ := hn
+          by_cases h29 : a = 10
+          · subst h29; exact hx29
+          obtain ⟨hcs, hal⟩ := calleeSaved_x (n := 19 + a) (by omega) (by omega)
+          have k1 := hks _ hcs
+          simp only [ckeep, hm0] at k1
+          rw [hms _ hal] at k1
+          have hne : ∀ q, q < 32 → q ≠ 19 + a →
+              Arm.StateField.GPR (rnum (19 + a)) ≠ .GPR (BitVec.ofNat 5 q) :=
+            fun q h1 h2 e => rnum_ne (a := 19 + a) (b := q) (by omega) h1 (Ne.symm h2)
+              (Arm.StateField.GPR.inj e)
+          have k2 := hregs _ hal
+          simp only [regVal] at k1 k2
+          rw [hf0 _ (by simp) (hne 29 (by omega) (by omega)) (hne 31 (by omega) (by omega))
+            (hne 16 (by omega) (by omega))] at k1
+          exact setWidth128_inj (k2.trans k1)
+        · intro n h8 h16
+          obtain ⟨hcs, hal⟩ := calleeSaved_v h8 h16
+          have k1 := hks _ hcs
+          simp only [ckeep, hm0] at k1
+          rw [hms _ hal] at k1
+          have k2 := hregs _ hal
+          simp only [regVal] at k1 k2
+          rw [hf0 _ (by simp) (by simp) (by simp) (by simp)] at k1
+          show (Arm.r (.SFP (rnum n)) _).setWidth 64 = (Arm.r (.SFP (rnum n)) s).setWidth 64
+          rw [k2]
+          exact setWidth128_inj k1
+        · intro j v p x hj hx
+          have e1 := hSim.ret hr3
+          simp only [VConf.ret.injEq] at e1
+          rw [e1.1] at hx
+          exact hvalsM _ (operands_rets ns) j v p x hj hx
+        · intro a ha
+          rw [hmem]
+          exact hst.world.2.1 a ha
+  · -- a trap
+    obtain ⟨b, k, ρ, w, vb, i, ops, outs, w', hstar, hvb, hi, hops, hsem, htc⟩ := htr
+    obtain ⟨n1, c1, ⟨hq1, hA1⟩, hr1⟩ := forward hSim hRz hstar hinit ⟨hq0, hA0⟩
+    obtain ⟨hnil, hform⟩ := csem_halt hsem
+    subst hnil
+    have hdefs : ops.toList.filter Operand.isDef = [] := by
+      rcases hform with ⟨cd, rfl⟩ | ⟨kk, cd, rfl, -⟩
+      · rw [udf_ops hops]; rfl
+      · exact trapIf_nodefs hops
+    have h1 : VStep R.vc R.sem (.run ⟨b, k, ρ, w⟩) (.halt w') :=
+      VStep.step hvb hi hops hsem (by rw [hdefs]; rfl) VNext.halt
+    obtain ⟨n2, c', c'', ⟨hq2, -⟩, hr2, hms, hr3⟩ :=
+      forward_last hSim hRz h1 _ c1 _ (Nat.le_refl _) hr1 ⟨hq1, hA1⟩
+    have hfin : ∀ n3, E2E.runX (ArmStepX X H fa) (n0 + n1 + n2 + n3) s =
+        iterN R.step n3 (iterN R.step n2 (iterN R.step n1 (iterN R.step n0 s))) := by
+      intro n3; rw [runX_eq]; simp only [iterN_add]; rfl
+    cases c'' with
+    | run s' => obtain ⟨_, e⟩ := hSim.run hr3; cases e
+    | ret vs m' w'' => cases hSim.ret hr3
+    | halt w'' =>
+      cases hms with
+      | op hvb' hi' hops' hsz hsem2 hlen2 hho hcl hn =>
+        obtain ⟨hb', hk', hw'⟩ := hSim.at_op hr2
+        simp only at hb' hk' hw'
+        subst hb' hk' hw'
+        rw [hvb] at hvb'; cases hvb'
+        rw [hi] at hi'; cases hi'
+        rcases hform with ⟨cd, rfl⟩ | ⟨kk, cd, rfl, -⟩
+        · simp only [trapCode?, Option.some.injEq] at htc
+          subst htc
+          exact ⟨n0 + n1 + n2 + 0, by rw [hfin]; exact trap_udf hR hq2 hvb hi⟩
+        · cases hn with
+          | halt =>
+          obtain ⟨-, hform2⟩ := csem_halt hsem2
+          rcases hform2 with ⟨_, e⟩ | ⟨kk', cd', e, hholds⟩
+          · cases e
+          · cases e
+            simp only [trapCode?, Option.some.injEq] at htc
+            subst htc
+            obtain ⟨n3, htrap⟩ := trap_trapIf hR hq2 hvb hi hops' hholds
+            exact ⟨n0 + n1 + n2 + n3, by rw [hfin]; exact htrap⟩
+
 end Backend.Proof
