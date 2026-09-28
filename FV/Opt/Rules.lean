@@ -62,9 +62,22 @@ def RuleSetId.name : RuleSetId → String
 def RuleSetId.all : List RuleSetId := [.cranelift, .hand]
 
 /-- Ids (`Isle.Rule.id`) of the exported `simplify` rules whose correctness is proven
-(`Opt.Proof.simplifyRulesCorrect_proven`, `FV/Opt/Proof/RuleAll.lean`): `arithmetic.isle`
-lines 8, 13, 35, 59. -/
-def provenSimplifyRules : List Nat := [65, 66, 72, 78]
+(`Opt.Proof.simplifyRulesCorrect_proven`, `FV/Opt/Proof/RuleAll.lean`): the rules proven in
+`FV/Opt/Proof/RuleArith.lean` and `RuleCprop.lean`. -/
+def provenSimplifyRules : List Nat :=
+  [65, 66, 67, 68, 69, 70, 71, 72, 78, 111, 113, 114, 115, 116, 117, 126, 127, 128, 129, 130, 131,
+   132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 152, 153, 154, 155,
+   157, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175,
+   176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 203, 222, 223, 224, 225,
+   226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243,
+   244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261,
+   262, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 277, 278, 279,
+   280, 281, 282, 283, 284, 285, 286, 287, 288, 289, 290, 291, 292, 293, 294, 295, 296, 297,
+   298, 299, 300, 301, 302, 303, 304, 305, 306, 307, 308, 309, 310, 311, 312, 313, 314, 315,
+   316, 317, 318, 319, 320, 321, 334, 819, 820, 821, 822, 823, 828, 829, 830, 831, 837, 838,
+   839, 840, 845, 846, 847, 848, 849, 850, 851, 852, 853, 854, 855, 856, 857, 858, 859, 860,
+   861, 862, 863, 864, 865, 866, 867, 868, 869, 870, 871, 872, 873, 874, 875, 876, 877, 895,
+   896, 897, 898, 899, 945]
 
 /-- Which exported rules may contribute candidates (`Isle.Opt.simplify`'s allow-list); the other
 rules still run, their candidates are dropped. -/

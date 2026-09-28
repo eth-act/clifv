@@ -181,3 +181,16 @@ elab "opt_widths" : tactic => do
   setGoals out
 
 end Opt.Proof
+
+namespace Opt.Proof
+open Lean Meta Elab Tactic
+
+/-- `opt_guard tac`: run `tac`, turning a runtime exception (maximum recursion depth,
+heartbeats) into an ordinary tactic failure, so that `first`/`try` can recover. -/
+elab "opt_guard " t:tactic : tactic => do
+  let s ← saveState
+  tryCatchRuntimeEx (evalTactic t) fun e => do
+    s.restore
+    throwError "opt_guard: {e.toMessageData}"
+
+end Opt.Proof

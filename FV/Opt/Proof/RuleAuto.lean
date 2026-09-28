@@ -49,11 +49,30 @@ macro "lhs_step" : tactic => `(tactic| simp_all only [opt_match, opt_data, Excep
   BinaryOp.isShift, CTy.ofClif_inj, val_mk_same, forall_eq', forall_eq, unaryIdx_eq_iff,
   binaryIdx_eq_iff, ccIdx_eq_iff, unaryOfIdx?, binaryOfIdx?, ccOfIdx?, evalNode_select,
   evalNode_bitselect, evalNode_bmask, evalNode_uextend, evalNode_sextend, evalNode_ireduce, true_implies, forall_const, heq_eq_eq, and_imp,
-  forall_apply_eq_imp_iff, forall_eq_apply_imp_iff, Nat.reduceEqDiff])
+  forall_apply_eq_imp_iff, forall_eq_apply_imp_iff, Nat.reduceEqDiff, eq_iff_iff, iff_false,
+  iff_true, true_iff, false_iff, not_true_eq_false, not_false_eq_true])
+
+/-- `lhs_step` without the hypotheses as rewrite rules (a fallback: `simp_all` can loop on the
+contradictory hypotheses of a dead branch). -/
+macro "lhs_step'" : tactic => `(tactic| simp (disch := assumption) only [opt_match, opt_data, Except.ok.injEq,
+  exists_eq_left, exists_eq_left', exists_eq_right, exists_eq_right', List.length_cons,
+  List.length_nil, Nat.reduceAdd, ite_true, ite_false, Bool.false_eq_true, TermFlags.isMulti,
+  reduceIte, V.data.injEq, V.ty.injEq, V.int.injEq, V.value.injEq, V.values.injEq,
+  List.cons.injEq, reduceCtorEq, false_and, and_false, exists_false, or_false, false_or,
+  true_and, and_true, Array.size_replicate, Array.set!_eq_setIfInBounds, Nat.lt_irrefl,
+  Nat.reduceLT, Nat.zero_lt_succ, Nat.lt_add_one, Term.externExtractor?,
+  Array.size_setIfInBounds, Array.getElem?_setIfInBounds, Array.getElem?_replicate, beq_iff_eq,
+  Option.some.injEq, evalNode_unary, evalNode_binary_iff, evalNode_icmp, evalNode_iconst,
+  BinaryOp.isShift, CTy.ofClif_inj, val_mk_same, forall_eq', forall_eq, unaryIdx_eq_iff,
+  binaryIdx_eq_iff, ccIdx_eq_iff, unaryOfIdx?, binaryOfIdx?, ccOfIdx?, evalNode_select,
+  evalNode_bitselect, evalNode_bmask, evalNode_uextend, evalNode_sextend, evalNode_ireduce, true_implies, forall_const, heq_eq_eq, and_imp,
+  forall_apply_eq_imp_iff, forall_eq_apply_imp_iff, Nat.reduceEqDiff, eq_iff_iff, iff_false,
+  iff_true, true_iff, false_iff, not_true_eq_false, not_false_eq_true] at *)
 
 /-- Phase 2: the left-hand side to a fixpoint. -/
 macro "rule_lhs " hG:ident : tactic => `(tactic|
-  repeat (any_goals (first | (lhs_step; opt_destruct; all_goals subst_vars) | opt_model $hG)))
+  repeat (any_goals (first | (opt_guard lhs_step; opt_destruct; all_goals subst_vars) | opt_model $hG |
+    (lhs_step'; opt_destruct; all_goals subst_vars))))
 
 set_option hygiene false in
 /-- Phase 1. -/
@@ -135,10 +154,11 @@ theorem some_val_congr {t : Ty} {b c : BitVec t.width} (h : b = c) :
     some (⟨t, b⟩ : Val) = some ⟨t, c⟩ := h ▸ rfl
 
 /-- Semantics of the CLIF operations, unfolded for the bit-level goal. -/
-macro "sem_simp" : tactic => `(tactic| simp only [val_some_eq, val_mk_same, Sem.binary, Sem.unary, Sem.iadd,
+macro "sem_simp" : tactic => `(tactic| simp (disch := decide) only [ishl_mask, ushr_mask, sshr_mask,
+  rotl_mask, rotr_mask, val_some_eq, val_mk_same, Sem.binary, Sem.unary, Sem.iadd,
   Sem.isub, Sem.imul, Sem.band, Sem.bor, Sem.bxor, Sem.bnot, Sem.ineg, Sem.icmp,
-  umin_bif, umax_bif, smin_bif, smax_bif, Sem.ishl, Sem.ushr, Sem.sshr, Sem.shift,
-  Sem.shiftAmt, select_bif, Sem.truthy, Sem.bitselect, bmask_bif, bool8_bif, Sem.uextend,
+  umin_bif, umax_bif, smin_bif, smax_bif, Sem.shift,
+  select_bif, Sem.truthy, Sem.bitselect, bmask_bif, bool8_bif, Sem.uextend,
   ite_eq_true_bif, intcc_eq', intcc_ne', intcc_slt', intcc_sge', intcc_sgt', intcc_sle', intcc_ult', intcc_uge', intcc_ugt', intcc_ule',
   Sem.sextend, Sem.ireduce, Sem.clz, Sem.ctz, Rust.intccSwapArgs, Rust.intccComplement, Ty.width] at *)
 
@@ -146,7 +166,7 @@ macro "sem_simp" : tactic => `(tactic| simp only [val_some_eq, val_mk_same, Sem.
 bit-vector facts matter; the context is not `simp_all`ed (it holds the whole e-graph model). -/
 macro "rule_bits" : tactic => `(tactic| (
   try simp (disch := assumption) only [asU64_imm64OfBits, Int.natCast_eq_zero, Int.natCast_inj,
-    toNat_eq_iff_ofNat, ofInt_imm64OfBits] at *
+    toNat_eq_iff_ofNat, ofInt_imm64OfBits, bne_iff_ne, ne_eq, toNat_eq_zero_iff] at *
   opt_destruct
   all_goals subst_vars
   all_goals first
@@ -161,6 +181,7 @@ macro "rule_bits" : tactic => `(tactic| (
 set_option hygiene false in
 /-- Phase 4 when the candidate is a class matched by the left-hand side. -/
 macro "rule_finish_var" : tactic => `(tactic| (
+  try dsimp only
   apply Valuation.le_trans hle1 hle3
   opt_rw_lhs
   rule_bits))
