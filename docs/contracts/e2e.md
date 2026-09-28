@@ -287,3 +287,9 @@ Backend.Proof.regLevelCorrect_backend:
   `Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9`
 E2E.backend_correct_final: those of `backend_correct_m4` and `regLevelCorrect_backend`
 ```
+
+**Status (M6Insts2, 2026-09-28)**: `hRef`/`hmem` of `backend_correct_m4` are not yet discharged.
+csem now falls back to `mspec` (ispec + memory forms) off error-free aligned worlds; `FormOk` must be
+narrowed (xzr-destination imm/extended add/sub make `Refines` false as is). See regalloc-proof.md
+"Status update (M6Insts2)"; `MemRefines` for `csem` will need `ctx.slotBase = slotOff` and a
+GOT premise `syms n = some b → X.sym n 0 = ofNat b`.
