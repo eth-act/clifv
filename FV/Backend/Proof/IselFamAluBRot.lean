@@ -82,6 +82,28 @@ theorem CodeShapeU.weaken {st st' : LState} {ms : List MInst} {d : Nat} {xs ys :
     (h : CodeShapeU st st' ms d xs) (hxy : ∀ u ∈ xs, u ∈ ys) : CodeShapeU st st' ms d ys :=
   ⟨h.emitted, h.mono, h.res, h.defs, fun mi hmi u hu => (h.uses mi hmi u hu).imp_right (hxy u)⟩
 
+/-- One instruction defining the first fresh vreg from `y`, then code reading `x` and it. -/
+theorem codeShapeU_cons {st st3 : LState} {m0 : MInst} {rest : List MInst} {d x y : Nat}
+    (hd0 : vdefs m0 = [st.nextVreg]) (hu0 : ∀ u ∈ vuseNums m0, u = y)
+    (h : CodeShapeU ((st.fresh .int).2.emit m0) st3 rest d [x, st.nextVreg]) :
+    CodeShapeU st st3 (m0 :: rest) d [x, y] := by
+  have hn : ((st.fresh .int).2.emit m0).nextVreg = st.nextVreg + 1 := rfl
+  refine ⟨?_, by have := h.mono; omega, by have := h.res; omega, ?_, ?_⟩
+  · rw [h.emitted]; simp [LState.emit, LState.fresh]
+  · intro mi hmi e he
+    rcases List.mem_cons.mp hmi with rfl | hmi
+    · rw [hd0, List.mem_singleton] at he; subst he; have := h.mono; omega
+    · have := h.defs mi hmi e he; omega
+  · intro mi hmi u hu
+    rcases List.mem_cons.mp hmi with rfl | hmi
+    · exact .inr (by simp [hu0 u hu])
+    · rcases h.uses mi hmi u hu with h' | h'
+      · exact .inl (by omega)
+      · simp only [List.mem_cons, List.mem_nil_iff, or_false] at h'
+        rcases h' with rfl | rfl
+        · exact .inr (by simp)
+        · exact .inl (Nat.le_refl _)
+
 section Rules
 variable {F : BitVec 64 → Prop} {isem : Sem}
 
@@ -580,7 +602,7 @@ theorem rotr_fits_in_16_ok {p : Program} (hp : Data p) (MR : MemRelT) (env : Cli
   refine ⟨ms1 ++ ms2, d, rfl, by rw [hst]; exact codeShapeU_compose hem hmono hdefs huses hkx hsh, ?_⟩
   intro ty hty hety fr ρ u yv res _ hvals hdfg hx hy hres
   subst hty
-  obtain ⟨ρ1, hr1, hfr, hext⟩ := hsem1 fr ρ ⟨_, u⟩ hvals hdfg hx
+  obtain ⟨ρ1, hr1, hfr, hext⟩ := hsem1 fr ρ ⟨_, u⟩ (hvals x _ hx) hdfg hx
   obtain ⟨ρ', hr2, -, hrot⟩ := hsem2 ρ1
   refine ⟨ρ', prun_append hr1 hr2, ?_⟩
   simp only [Clif.Sem.shift, Clif.Sem.rotr, Clif.Sem.shiftAmt, Option.some.injEq] at hres
@@ -644,7 +666,7 @@ theorem rotr_fits_in_16_imm_ok {p : Program} (hp : Data p) (MR : MemRelT) (env :
   subst hty
   have hyv := dfg_iconst_fb hdfg hdj hij hcl hy
   subst hyv
-  obtain ⟨ρ1, hr1, hfr, hext⟩ := hsem1 fr ρ ⟨_, u⟩ hvals hdfg hx
+  obtain ⟨ρ1, hr1, hfr, hext⟩ := hsem1 fr ρ ⟨_, u⟩ (hvals x _ hx) hdfg hx
   obtain ⟨ρ', hr2, -, hrot⟩ := hsem2 ρ1
   refine ⟨ρ', prun_append hr1 hr2, ?_⟩
   simp only [Clif.Sem.shift, Clif.Sem.rotr, Clif.Sem.shiftAmt, Option.some.injEq] at hres
@@ -710,7 +732,7 @@ theorem rotl_fits_in_16_imm_ok {p : Program} (hp : Data p) (MR : MemRelT) (env :
   subst hty
   have hyv := dfg_iconst_fb hdfg hdj hij hcl hy
   subst hyv
-  obtain ⟨ρ1, hr1, hfr, hext⟩ := hsem1 fr ρ ⟨_, u⟩ hvals hdfg hx
+  obtain ⟨ρ1, hr1, hfr, hext⟩ := hsem1 fr ρ ⟨_, u⟩ (hvals x _ hx) hdfg hx
   obtain ⟨ρ', hr2, -, hrot⟩ := hsem2 ρ1
   refine ⟨ρ', prun_append hr1 hr2, ?_⟩
   simp only [Clif.Sem.shift, Clif.Sem.rotl, Clif.Sem.shiftAmt, Option.some.injEq] at hres
@@ -719,6 +741,76 @@ theorem rotl_fits_in_16_imm_ok {p : Program} (hp : Data p) (MR : MemRelT) (env :
   simp only [Bool.false_eq_true, ↓reduceIte] at hA
   simp only [VHolds]
   rw [hrot u (by exact hA)]
+  exact rotr_neg hW.pos _ _ _ (by simp only [Nat.mod_mod])
+
+set_option maxHeartbeats 1000000 in
+/-- **`rotl_fits_in_16`** (`lower.isle:1772`), i8/i16. -/
+theorem rotl_fits_in_16_ok {p : Program} (hp : Data p) (MR : MemRelT) (env : Clif.Env)
+    (cp : Clif.Program) (hR : Refines F isem) (hMR : MRStable F MR) :
+    LowerRuleOk isem MR env cp p rule_lower_1772 := by
+  refine shift_ruleOk_gen hp (cop := .rotl) rfl rfl hp.t2385 term_2385_kind rfl rfl F isem MR env
+    cp hMR ?_
+  intro f ctx hctx cfg ii info x y w st tr m n env' s1 v s' hco hvb hi hhead hd hws hm he
+  have hp' := hp
+  cases hp
+  fbrot_inv [*, rule_lower_1772] at hm he
+  have hii := Option.some.inj (hi.symm.trans ‹ctx.insts[ii]? = some _›)
+  subst hii
+  have hdat := ‹V.data 152 2 _ = info.data›
+  rw [hd] at hdat
+  fbrot_inv [ext_value_array_2_iff, ctor_put_in_reg_iff, ctor_value_regs_get_iff, ctor_zero_reg']
+    at hdat
+  simp only [hhead, Option.getD_some] at *
+  have h16 : w ≤ 16 := ‹_›
+  have hw : w = 8 ∨ w = 16 := by omega
+  have hW : IW w := by rcases hw with h | h <;> simp [IW, h]
+  have hry := ‹ctx.valueReg? y = some _›
+  obtain rfl := hctx.valueReg y _ hry
+  have hylt := vreg_lt hvb hry
+  rename LState => st0
+  have hS0 := ‹ApplyInternal _ _ _ _ 27 437 _ _ _ _›
+  obtain ⟨ks0, hks0, rfl, m0, hm0, hs0⟩ := sub_fb_ok hp' hco (by omega) hS0
+  dsimp only at hm0 hs0
+  rw [ofV_aluRRR (rfl : ALUOp.ofIdx? 1 = some .sub) (hks0.ofIdx (by simp [IW] : IW 32))] at hm0
+  cases hm0
+  have hZ := ‹ApplyInternal _ _ _ _ 27 556 _ _ _ _›
+  have hE := zext32_ok hp' hco (by omega) hZ
+  obtain ⟨-, -, rx, hrx, -⟩ := id hE
+  have hxlt := vreg_lt hvb hrx
+  rw [hs0] at hE
+  have hvb1 : ValsBelow ctx ((st0.fresh .int).2.emit (MInst.aluRRR .sub (szOf 32) (st0.fresh .int).1
+      .xzr (.vreg y .int))) := fun z r hz => by
+    have := hvb z r hz; simp only [LState.emit, LState.fresh]; omega
+  obtain ⟨k, ms1, rfl, hem, hmono, hdefs, huses, hkx, hklt, hsem1⟩ :=
+    extOut_prun hR hctx hvb1 (.inl rfl) (by simp) (by simp) hE
+  have hS := ‹ApplyInternal _ _ _ _ 27 710 _ _ _ _›
+  obtain ⟨ms2, d, rfl, hsh, hsem2⟩ := small_rotr_ok hp' hco hR (by omega) hw (a := st0.nextVreg) hklt
+    (by simp only [LState.emit, LState.fresh] at hmono ⊢; omega) hS
+  have hO := ‹ApplyInternal _ _ _ _ 25 172 _ _ _ _›
+  obtain ⟨rfl, hst⟩ := output_reg_ok hp' hco (by omega) hO
+  refine ⟨_ :: (ms1 ++ ms2), d, rfl, by
+    rw [hst]
+    exact codeShapeU_cons rfl (fun u hu => by
+      rw [show vuseNums _ = [y] from rfl] at hu; simpa using hu)
+      (codeShapeU_compose hem hmono hdefs huses hkx hsh), ?_⟩
+  intro ty hty hety fr ρ u yv res _ hvals hdfg hx hy hres
+  subst hty
+  have hx0 : VHolds ⟨ty, u⟩ (upd ρ st0.nextVreg
+      (resX .size32 (0 - opnd .size32 (ρ y))) x) := by
+    rw [upd_ne_fb (by omega)]; exact hvals x _ hx
+  obtain ⟨ρ1, hr1, hfr, hext⟩ := hsem1 fr _ ⟨_, u⟩ hx0 hdfg hx
+  obtain ⟨ρ', hr2, -, hrot⟩ := hsem2 ρ1
+  refine ⟨ρ', prun_rr hR rfl (fun w => ispec_sub_xzr_fb) (prun_append hr1 hr2), ?_⟩
+  simp only [Clif.Sem.shift, Clif.Sem.rotl, Clif.Sem.shiftAmt, Option.some.injEq] at hres
+  subst hres
+  have hA := hext.2 (show ty.width ≤ 32 by omega)
+  simp only [Bool.false_eq_true, ↓reduceIte] at hA
+  simp only [VHolds]
+  rw [hrot u (by exact hA), hfr st0.nextVreg (by simp [LState.emit, LState.fresh]), upd_same,
+    ← opnd_mod hW .size32, opnd_resX,
+    neg_mod (N := OperandSize.size32.bits) (.inl ⟨rfl, by rcases hw with h | h <;> simp [h]⟩),
+    opnd_mod hW,
+    amt_of_holds hW (hvals y yv hy)]
   exact rotr_neg hW.pos _ _ _ (by simp only [Nat.mod_mod])
 
 end Rules
