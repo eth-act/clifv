@@ -1,4 +1,5 @@
 import FV.Opt.Check
+import FV.Compile.Subset
 
 /-!
 # Per-pass validators (translation validation of the passes' output)
@@ -94,5 +95,20 @@ def editOk (σ : ValueId → ValueId) (f g : Function) (fi gi : Info) : Bool :=
     (fdm.toList.all fun (v, d, _) => match gdm (σ v) with
       | some (d', _) => ancB gidom gidom.size d' d
       | none => true)
+
+/-! ## The backend subset -/
+
+/-- The external function references a function calls. -/
+def callees (f : Function) : List FnRef :=
+  f.blocks.flatMap fun b => b.body.filterMap fun st => match st.inst with
+    | .call fn _ => some fn
+    | _ => none
+
+/-- The optimised function `g` keeps what the backend theorem needs of the input `f`
+(`E2E.backend_correct_opt`): the header, membership in the backend subset E (the simplifier only
+emits E nodes into E functions), and the callees. -/
+def keepsBackendSubset (f g : Function) : Bool :=
+  sameHeader f g && (!Compile.functionE f || Compile.functionE g) &&
+    (callees g).all (callees f).contains
 
 end Opt

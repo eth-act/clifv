@@ -73,7 +73,11 @@ theorem optimizeReport_sim (cfg : Config)
            rcases hcond with hcond | hcond
            · first | (simp at hcond; done) | exact absurd hcond ‹_›
            · exact ⟨hsim.trans (editOk_sim hchk hchk' hcond), hchk'⟩)
-    · intro s hs; exact hs.1
+    · intro s hs
+      simp only [Id.run, pure]
+      split
+      · exact hs.1
+      · exact FunSim.refl f0
   · exact hU
 
 theorem optimize_sim (cfg : Config) (hS : SimplifyPassSim cfg.rules.fn cfg.rules.skeletonFn)

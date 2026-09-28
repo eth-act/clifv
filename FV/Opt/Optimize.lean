@@ -132,7 +132,9 @@ def optimizeReport (cfg : Config) (f0 : Function) : Function × Report := Id.run
       if stage == "simplify" || editOk sub g g' info i then g := g'; info := i
       else r := { r with passError := some (stage, "validator rejected the output") }; stop := true
     | .error e => r := { r with passError := some (stage, e) }; stop := true
-  return (g, { r with sizeAfter := instCount g })
+  -- a guard (never observed to fire): keep the input if the backend subset would be lost
+  let out := if keepsBackendSubset f0 g then g else f0
+  return (out, { r with sizeAfter := instCount out })
 
 /-- `Opt.optimize`: the optimised function (`Config` defaults). -/
 def optimize (f : Function) (cfg : Config := {}) : Function := (optimizeReport cfg f).1
