@@ -150,4 +150,113 @@ theorem put_nonzero_in_reg_ok {F : BitVec 64 → Prop} {isem : Sem} (hR : Refine
     exact .inr (.inr ⟨r, _, hE, rfl, hs'⟩)
 end
 
+/-! ## Division operands and the zero check -/
+
+/-- The register value `a` is `b` as a division operand: extended to 32 bits (`sg`: signed) when
+`b` is at most 32 bits wide, the low 64 bits otherwise. -/
+def DivOpnd (sg : Bool) {n : Nat} (b : BitVec n) (a : CV) : Prop :=
+  if n ≤ 32 then (lo64 a).setWidth 32 = (if sg then b.signExtend 32 else b.setWidth 32)
+  else lo64 a = b.setWidth 64
+
+/-- The code halts at a trap instruction with code `c`. -/
+def TrapRun (isem : Sem) (ms : List MInst) (ρ : Nat → CV) (w : Arm.ArmState) (c : Clif.TrapCode) :
+    Prop :=
+  ∃ k i ops ρ₁ w₁ outs w₂, seqRun isem ms ρ w = some (.stop k i ops ρ₁ w₁ outs w₂ .halt) ∧
+    trapCode? i = some c
+
+/-- The operation size of a division at width `n`. -/
+def divSz (n : Nat) : OperandSize := if n ≤ 32 then .size32 else .size64
+
+theorem ext32_eq_zero {n : Nat} (hn : n ≤ 32) (sg : Bool) (b : BitVec n) :
+    ((if sg then b.signExtend 32 else b.setWidth 32) = 0#32) ↔ b = 0#n := by
+  cases sg
+  · simp only [Bool.false_eq_true, ↓reduceIte]
+    constructor
+    · intro h
+      apply BitVec.eq_of_toNat_eq
+      have := congrArg BitVec.toNat h
+      simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.zero_mod] at this
+      rw [Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le b.isLt (Nat.pow_le_pow_right (by omega) hn))] at this
+      simpa using this
+    · rintro rfl; simp
+  · simp only [↓reduceIte]
+    constructor
+    · intro h
+      apply BitVec.eq_of_toInt_eq
+      have := congrArg BitVec.toInt h
+      rw [BitVec.toInt_signExtend_of_le hn] at this
+      simpa using this
+    · rintro rfl
+      apply BitVec.eq_of_toInt_eq
+      rw [BitVec.toInt_signExtend_of_le hn]; simp
+
+theorem setWidth64_eq_zero {n : Nat} (hn : n ≤ 64) (b : BitVec n) : b.setWidth 64 = 0#64 ↔ b = 0#n := by
+  constructor
+  · intro h'
+    apply BitVec.eq_of_toNat_eq
+    have := congrArg BitVec.toNat h'
+    simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.zero_mod] at this
+    rw [Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le b.isLt (Nat.pow_le_pow_right (by omega) hn))] at this
+    simpa using this
+  · rintro rfl; simp
+
+theorem DivOpnd.zero_iff {sg : Bool} {n : Nat} (hn : n ≤ 64) {b : BitVec n} {a : CV}
+    (h : DivOpnd sg b a) (w : Arm.ArmState) (r : Reg) :
+    condBrHolds (.zero r (divSz n)) [a] w = (b == 0#n) := by
+  unfold DivOpnd at h
+  unfold divSz
+  have e32 : (OperandSize.size32 == OperandSize.size64) = false := rfl
+  have e64 : (OperandSize.size64 == OperandSize.size64) = true := rfl
+  by_cases h32 : n ≤ 32
+  · simp only [h32, ↓reduceIte] at h ⊢
+    simp only [condBrHolds, OperandSize.is64, e32, Bool.false_eq_true, ↓reduceIte]
+    rw [Bool.eq_iff_iff, beq_iff_eq, beq_iff_eq, h]
+    exact ext32_eq_zero h32 sg b
+  · simp only [h32, ↓reduceIte] at h ⊢
+    simp only [condBrHolds, OperandSize.is64, e64, ↓reduceIte]
+    rw [Bool.eq_iff_iff, beq_iff_eq, beq_iff_eq, h]
+    exact setWidth64_eq_zero hn b
+
+theorem operands_trapIf_zero (k : Nat) (sz : OperandSize) (c : Clif.TrapCode) :
+    (MInst.trapIf (.zero (.vreg k .int) sz) c).operands = .ok #[⟨k, .int, .use, .early, .reg⟩] := rfl
+
+theorem vdefs_trapIf_zero (k : Nat) (sz : OperandSize) (c : Clif.TrapCode) :
+    vdefs (MInst.trapIf (.zero (.vreg k .int) sz) c) = [] := rfl
+
+theorem vuseNums_trapIf_zero (k : Nat) (sz : OperandSize) (c : Clif.TrapCode) :
+    vuseNums (MInst.trapIf (.zero (.vreg k .int) sz) c) = [k] := rfl
+
+theorem runs_trapIf_zero_fall {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem) (k : Nat)
+    (sz : OperandSize) (c : Clif.TrapCode) (ρ : Nat → CV) (w : Arm.ArmState)
+    (h : condBrHolds (.zero (.vreg k .int) sz) [ρ k] w = false) :
+    Runs F isem [.trapIf (.zero (.vreg k .int) sz) c] ρ w (fun ρ' _ => ρ' = ρ) := by
+  refine Runs.one hR (operands_trapIf_zero k sz c) (outs := []) (w' := w) ?_ rfl (SameWorldNF.refl F w)
+    fun _ _ => vdefUpd_nil _ _
+  show some ([], w, if condBrHolds (.zero (.vreg k .int) sz) [ρ k] w then Ctl.halt else Ctl.next) = _
+  rw [h]; rfl
+
+theorem trapRun_trapIf_zero {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem) (k : Nat)
+    (sz : OperandSize) (c : Clif.TrapCode) (ρ : Nat → CV) (w : Arm.ArmState)
+    (h : condBrHolds (.zero (.vreg k .int) sz) [ρ k] w = true) :
+    TrapRun isem [.trapIf (.zero (.vreg k .int) sz) c] ρ w c := by
+  have hs : ispec (.trapIf (.zero (.vreg k .int) sz) c) [ρ k] w = some ([], w, .halt) := by
+    show some ([], w, if condBrHolds (.zero (.vreg k .int) sz) [ρ k] w then Ctl.halt else Ctl.next) = _
+    rw [h]; rfl
+  obtain ⟨w'', hr⟩ := seqRun_one_halt (F := F) hR (operands_trapIf_zero k sz c) (ρ := ρ) hs rfl
+  exact ⟨_, _, _, _, _, _, _, hr, rfl⟩
+
+theorem TrapRun.prefix {F : BitVec 64 → Prop} {isem : Sem} {ms1 ms2 : List MInst} {ρ : Nat → CV}
+    {w : Arm.ArmState} {c : Clif.TrapCode} {P : (Nat → CV) → Arm.ArmState → Prop}
+    (h1 : Runs F isem ms1 ρ w P) (h2 : ∀ ρ1 w1, P ρ1 w1 → TrapRun isem ms2 ρ1 w1 c) :
+    TrapRun isem (ms1 ++ ms2) ρ w c := by
+  obtain ⟨ρ1, w1, hr1, -, hp1⟩ := h1
+  obtain ⟨k, i, ops, ρ₁, w₁, outs, w₂, hr2, hc⟩ := h2 ρ1 w1 hp1
+  exact ⟨_, i, ops, ρ₁, w₁, outs, w₂, seqRun_append_fall_stop isem hr1 hr2, hc⟩
+
+theorem TrapRun.append {isem : Sem} {ms1 ms2 : List MInst} {ρ : Nat → CV}
+    {w : Arm.ArmState} {c : Clif.TrapCode} (h : TrapRun isem ms1 ρ w c) :
+    TrapRun isem (ms1 ++ ms2) ρ w c := by
+  obtain ⟨k, i, ops, ρ₁, w₁, outs, w₂, hr, hc⟩ := h
+  exact ⟨k, i, ops, ρ₁, w₁, outs, w₂, seqRun_append_stop isem hr, hc⟩
+
 end Backend.Proof
