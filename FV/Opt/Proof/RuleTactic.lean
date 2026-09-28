@@ -55,39 +55,51 @@ open Lean Meta Elab Tactic
 a number, so that `simp_all` leaves it alone). -/
 def OptSeen (_h : Nat) : Prop := True
 
-/-- For every pair of hypotheses `h₁ h₂` such that `f hG h₁ h₂` typechecks (`f` one of the
-given lemma names), add `f hG h₁ h₂` unless the pair (`h₁`'s type, the left-hand side of
-`h₂`'s equation) is marked `OptSeen`; then mark it. -/
-def addPairFacts (hG : Expr) (lemmas : List Name) : TacticM Bool := withMainContext do
+/-- The `(state, class)` of a class-value term `den st x` (a local applied to two arguments). -/
+def denKey? (e : Expr) : Option (Expr × Expr) :=
+  if e.getAppFn.isFVar && e.getAppNumArgs == 2 then some (e.getArg! 0, e.getArg! 1) else none
+
+/-- For every hypothesis `h₂ : den st x = some c` and every hypothesis `h₁` about the same
+`(st, x)` — a node `i ∈ G.enodes st x` (`GraphOk.node_val`) or a type
+`G.typeOf st x = some t` (`GraphOk.type_val`) — add `lemma hG h₁ h₂` unless the pair (`h₁`'s
+type, the left-hand side of `h₂`) is marked `OptSeen`; then mark it. Pairs are matched on the
+syntax of `(st, x)` first, so only well-typed applications are elaborated. -/
+def addPairFacts (hG : Expr) : TacticM Bool := withMainContext do
   let mut added := false
   let lctx ← getLCtx
   let mut seen : Array Nat := #[]
-  let mut hyps : Array (LocalDecl × Expr) := #[]
+  let mut dens : Array (Expr × Expr × LocalDecl × Expr) := #[]
+  let mut facts : Array (Name × Expr × Expr × LocalDecl × Expr) := #[]
   for d in lctx do
     if d.isImplementationDetail then continue
     let t ← instantiateMVars d.type
     if t.isAppOfArity ``OptSeen 1 then
       if let some k := t.appArg!.rawNatLit? then seen := seen.push k
       else if let some k := (t.appArg!.nat?) then seen := seen.push k
-    else if t.isAppOfArity ``Eq 3 || t.isAppOfArity ``Membership.mem 5 then
-      hyps := hyps.push (d, t)
-  for (d1, t1) in hyps do
-    for (d2, t2) in hyps do
-      let some (_, l2, _) := t2.eq? | continue
+    else if let some (_, l, _) := t.eq? then
+      if l.isAppOfArity `Isle.Opt.EGraph.typeOf 4 then
+        facts := facts.push (`Opt.Proof.GraphOk.type_val, l.getArg! 2, l.getArg! 3, d, t)
+      else if let some (st, x) := denKey? l then
+        dens := dens.push (st, x, d, l)
+    else if t.isAppOfArity ``Membership.mem 5 then
+      let c := t.getArg! 3
+      if c.isAppOfArity `Isle.Opt.EGraph.enodes 4 then
+        facts := facts.push (`Opt.Proof.GraphOk.node_val, c.getArg! 2, c.getArg! 3, d, t)
+  for (lem, st, x, d1, t1) in facts do
+    for (st', x', d2, l2) in dens do
+      unless st == st' && x == x' do continue
       let key := (mixHash t1.hash l2.hash).toNat
       if seen.contains key then continue
-      for lem in lemmas do
-        let pf? ← observing? (mkAppM lem #[hG, d1.toExpr, d2.toExpr])
-        if let some pf := pf? then
-          let ty ← instantiateMVars (← inferType pf)
-          seen := seen.push key
-          let g ← getMainGoal
-          let (_, g) ← (← g.assert (← mkFreshUserName `hsem) ty pf).intro1P
-          let mark := mkApp (mkConst ``OptSeen) (mkNatLit key)
-          let (_, g) ← (← g.assert (← mkFreshUserName `hseen) mark (mkConst ``True.intro)).intro1P
-          replaceMainGoal [g]
-          added := true
-          break
+      let pf? ← observing? (mkAppM lem #[hG, d1.toExpr, d2.toExpr])
+      if let some pf := pf? then
+        let ty ← instantiateMVars (← inferType pf)
+        seen := seen.push key
+        let g ← getMainGoal
+        let (_, g) ← (← g.assert (← mkFreshUserName `hsem) ty pf).intro1P
+        let mark := mkApp (mkConst ``OptSeen) (mkNatLit key)
+        let (_, g) ← (← g.assert (← mkFreshUserName `hseen) mark (mkConst ``True.intro)).intro1P
+        replaceMainGoal [g]
+        added := true
   return added
 
 /-- `opt_model hG`: add the graph model's facts for every node of a class whose value is a
@@ -97,7 +109,7 @@ class type (`GraphOk.type_val`: `c.ty` is the class type). Fails if nothing new 
 becomes known.) -/
 elab "opt_model " hG:term : tactic => withMainContext do
   let hGe ← elabTerm hG none
-  let added ← addPairFacts hGe [`Opt.Proof.GraphOk.node_val, `Opt.Proof.GraphOk.type_val]
+  let added ← addPairFacts hGe
   unless added do throwError "opt_model: nothing to add"
 
 end Opt.Proof
@@ -127,19 +139,20 @@ end Opt.Proof
 namespace Opt.Proof
 open Lean Meta Elab Tactic
 
-/-- `opt_cases_ty`: `cases` every local variable of type `Clif.Ty`. -/
+/-- `opt_cases_ty`: `cases` every local variable of type `Clif.Ty` or `Clif.IntCC`. -/
 elab "opt_cases_ty" : tactic => do
   let rec go (g : MVarId) (fuel : Nat) : MetaM (List MVarId) := g.withContext do
     if fuel = 0 then return [g]
     for d in ← getLCtx do
       if d.isImplementationDetail then continue
-      if (← instantiateMVars d.type).isConstOf `Clif.Ty then
+      let ty ← instantiateMVars d.type
+      if ty.isConstOf `Clif.Ty || ty.isConstOf `Clif.IntCC then
         let gs ← g.cases d.fvarId
         return (← gs.toList.mapM fun s => go s.mvarId (fuel - 1)).flatten
     return [g]
   let gs ← getGoals
   let mut out := []
-  for g in gs do out := out ++ (← go g 8)
+  for g in gs do out := out ++ (← go g 10)
   setGoals out
 
 end Opt.Proof

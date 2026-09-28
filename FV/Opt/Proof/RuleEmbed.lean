@@ -131,6 +131,12 @@ theorem GraphOk.type_val {G : EGraph σ} {P : σ → Prop} {den : σ → Valuati
     (ht : G.typeOf st x = some t) (hc : den st x = some c) : P st → c.ty = t :=
   fun hP => hG.model.types st x t c hP ht hc
 
+/-- A class type read in a model state is the type of its value there. -/
+theorem GraphOk.typeOf_eq {G : EGraph σ} {P : σ → Prop} {den : σ → Valuation} {fr : Frame}
+    {mem : Mem} (hG : GraphOk G P den fr mem) {st : σ} {x : Nat} {t : Ty} {c : Val}
+    (hP : P st) (ht : G.typeOf st x = some t) (hc : den st x = some c) : t = c.ty :=
+  (hG.model.types st x t c hP ht hc).symm
+
 /-! ### `make` in the model -/
 
 theorem GraphOk.make_P {G : EGraph σ} {P : σ → Prop} {den : σ → Valuation} {fr : Frame}
@@ -488,6 +494,14 @@ theorem unaryIdx_eq_iff {op : UnaryOp} {k : Nat} : unaryIdx op = k ↔ unaryOfId
 theorem binaryIdx_eq_iff {op : BinaryOp} {k : Nat} : binaryIdx op = k ↔ binaryOfIdx? k = some op := by
   cases op <;> constructor <;> (try rintro rfl) <;> (try rfl) <;> intro h <;>
     (unfold binaryOfIdx? at h; split at h <;> simp_all [binaryIdx])
+
+theorem ccIdx_eq_iff {c : IntCC} {k : Nat} : ccIdx c = k ↔ ccOfIdx? k = some c := by
+  cases c <;> constructor <;> (try rintro rfl) <;> (try rfl) <;> intro h <;>
+    (unfold ccOfIdx? at h; split at h <;> simp_all [ccIdx])
+
+@[opt_match] theorem cc_eq_data {c : IntCC} {k : Nat} {fs : List V} :
+    cc c = .data 46 k fs ↔ ccIdx c = k ∧ fs = [] := by
+  simp [cc, eq_comm]
 
 @[opt_match] theorem opcode_eq_data {k k' : Nat} {fs : List V} :
     opcode k = .data 52 k' fs ↔ k = k' ∧ fs = [] := by
