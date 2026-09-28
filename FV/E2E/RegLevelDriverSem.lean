@@ -1,4 +1,5 @@
 import FV.Backend.Proof.RegallocCSem
+import FV.Backend.Proof.CSemRename
 import FV.Backend.Proof.LowerRename
 import FV.Backend.Proof.IselContract
 import FV.Backend.Proof.LowerContract
@@ -162,7 +163,9 @@ theorem driverSem_csem (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) :
     | loadExtNameGot rd n => rfl
     | loadExtNameNear rd n o => rfl
     | emitIsland n => rfl
-    | _ => exact congrFun (congrFun (straightSem_mapRegs hg _) uses) w
+    | _ =>
+      rw [csem_straight rfl, csem_straight rfl, csemWF_mapRegs hg, mspec_mapRegs hg,
+        straightSem_mapRegs hg]
   retarget := by
     intro i ls i' h
     funext uses w

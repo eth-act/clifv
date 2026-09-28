@@ -201,7 +201,7 @@ theorem realizes_op_core {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
   have hm : ∀ r, r.allocatable = true → m (.reg r) = regVal s r := fun r hr =>
     hst.store (.reg r) (fun r' e => by cases e; exact hr) trivial
   obtain ⟨s', m2, hex, hW, hK, hc2', hr2, hl2⟩ := operandsSound_step (hOS (R.envOf j)) hops hstat hasg
-    hm hst.world hst.align hsem hlen
+    hm hst.world hst.align hst.err hsem hlen
   obtain ⟨ls1, hl1, hpl, hna, hnr, hruns⟩ := hL regs i' hasg ⟨_, _, _, hex⟩
   rcases hc1' with ⟨rfl, -, -⟩ | ⟨ds, rfl, -⟩ | ⟨us, rfl, -⟩
   rotate_left
