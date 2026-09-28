@@ -115,9 +115,19 @@ def magicS64 : List (Int × Int × Int) := [(-9223372036854775808, 9223372036854
 
 /-! ## `simplify` against Cranelift -/
 
-/-- Toy e-graph of a parsed function: block parameters have no nodes; each single-result
-statement with an `InstructionData` form is one node. Returns the graph and the value of the
-last such statement. -/
+/-- Result types of a statement's instruction (`Clif.run`'s typing; calls from the signature
+of the callee). -/
+def resultTys (f : Clif.Function) : Clif.Inst → List Clif.Ty
+  | .load _ t .. | .div _ t .. | .uaddOverflowTrap t .. | .atomicRmw _ t .. | .atomicCas t ..
+  | .atomicLoad t .. | .bitcast t .. => [t]
+  | .overflow _ t .. | .carry _ t .. => [t, .i8]
+  | .isplit t _ => match t.half? with | some h => [h, h] | none => []
+  | .call fn _ => ((f.externs.lookup fn).map fun e => e.sig.returns.map (·.ty)).getD []
+  | i => (Toy.resultTy i).toList
+
+/-- Toy e-graph of a parsed function: block parameters and results of side-effecting
+instructions have no nodes; each single-result statement with an `InstructionData` form is one
+node. Returns the graph and the value of the last such statement. -/
 def graphOf (f : Clif.Function) : Toy.G × Nat := Id.run do
   let mut nodes : Array (List Clif.Inst) := #[]
   let mut types : Array (Option Clif.Ty) := #[]
@@ -129,10 +139,12 @@ def graphOf (f : Clif.Function) : Toy.G × Nat := Id.run do
       nodes := set nodes v []
       types := set types v (some t)
     for s in b.body do
+      for (v, t) in s.results.zip (resultTys f s.inst) do
+        nodes := set nodes v []
+        types := set types v (some t)
       if let [v] := s.results then
         if (ofInst s.inst).isSome then
           nodes := set nodes v [s.inst]
-          types := set types v (Toy.resultTy s.inst)
           last := v
   return (⟨nodes, types⟩, last)
 

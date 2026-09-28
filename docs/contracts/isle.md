@@ -17,7 +17,8 @@ data, the closure for the emitter subset, the rule interpreter, and the tests.
   (`FV/Isle/Generated/Opt`, namespace `Isle.Opt`), with its E closure, multi-term semantics in
   the interpreter (`Interp.runMulti`), Lean transcriptions of its extern helpers, and
   `Isle.Opt.simplify` / `simplifySkeleton` over CLIF e-graph nodes. 20 `simplify` and 12
-  `simplify_skeleton` calls fire the same rules as Cranelift's. See "Mid-end export".
+  `simplify_skeleton` hand-written calls, and 930 `simplify` calls over the CLIF corpus, fire
+  the same rules as Cranelift's. See "Mid-end export".
 
 ## Regeneration
 
@@ -489,7 +490,12 @@ and the `div_const.rs` vectors; for the 20 functions of `oracle/opt.clif` and 12
 instruction equal (as a multiset) the rules of `simplify` / `simplifySkeleton` on the same
 e-graph; and candidates by value for selected cases (`iadd x 0` → `x` subsuming;
 `iadd 5 -7` → `iconst -2`; `udiv x 8` → `ushr x 3`; `udiv.i32 x 7` via `umulhi` by
-`0x24924925`; `brif` to a trap block → `trapnz; jump`; ...). Regenerate the traces with
+`0x24924925`; `brif` to a trap block → `trapnz; jump`; ...). `FVTest/Isle/OptCorpus.lean`
+does the same over the whole CLIF corpus (`oracle/opt_corpus.trace`, 156 functions): every
+Cranelift `simplify` call on an original instruction whose operands are still single original
+nodes (entry-block parameters, side-effecting results, or pure values whose own call returned
+only themselves) is compared, **930 calls, all equal**; 722 calls with rewritten operands
+depend on the driver and are skipped. Regenerate the traces with
 
 ```sh
 CARGO_TARGET_DIR=rust/target/isle-oracle cargo build --release \
@@ -498,6 +504,8 @@ for f in opt opt_skeleton; do
   rust/target/isle-oracle/release/isle-trace-oracle --opt FVTest/Isle/oracle/$f.clif \
     > FVTest/Isle/oracle/$f.trace
 done
+for f in corpus/clif/*.clif; do echo "file $f"
+  rust/target/isle-oracle/release/isle-trace-oracle --opt $f; done > FVTest/Isle/oracle/opt_corpus.trace
 ```
 
 **Mid-end gaps.**
