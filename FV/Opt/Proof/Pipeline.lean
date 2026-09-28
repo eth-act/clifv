@@ -38,9 +38,12 @@ theorem forIn_bind_inv {α σ β : Type} (l : List α) (init : σ) (f : α → �
       simp only [bind_assoc, Id.run_bind, hfa]
       exact ih b this
 
-/-- The simplify stage refines on checked inputs (for the given rule sets). -/
+/-- The simplify stage refines on checked inputs whenever its validator accepts (for the given
+rule sets). -/
 def SimplifyPassSim (rules : SimplifyFn) (skel : SkeletonFn) : Prop :=
   ∀ allowed skelOk remat g info, check g = .ok info →
+    simpOk g (simplify rules skel allowed skelOk remat g info).1 info
+      (simplify rules skel allowed skelOk remat g info).2.2 = true →
     FunSim g (simplify rules skel allowed skelOk remat g info).1
 
 /-- **The mid-end pipeline refines**, for every function (ill-formed inputs are returned with
@@ -67,12 +70,13 @@ theorem optimizeReport_sim (cfg : Config)
       all_goals simp only [pure, ForInStep.value]
       all_goals first
         | exact ⟨hsim, hchk⟩
-        | exact ⟨hsim.trans ((hS _ _ _ _ _ hchk).trans (removeUnreachable_sim _)), ‹_›⟩
-        | (rename_i hchk' hcond
-           simp only [Bool.or_eq_true, beq_iff_eq] at hcond
-           rcases hcond with hcond | hcond
-           · first | (simp at hcond; done) | exact absurd hcond ‹_›
-           · exact ⟨hsim.trans (editOk_sim hchk hchk' hcond), hchk'⟩)
+        | (exfalso; rename_i h _; simp at h; done)
+        | (exfalso; rename_i h _; exact absurd (beq_iff_eq.1 h) ‹_›)
+        | (rename_i hck' _ hv
+           exact ⟨hsim.trans ((hS _ _ _ g info hchk hv).trans (removeUnreachable_sim _)), hck'⟩)
+        | (rename_i hck' _ hv
+           exact ⟨hsim.trans (editOk_sim hchk hck' hv), hck'⟩)
+
     · intro s hs
       simp only [Id.run, pure]
       split

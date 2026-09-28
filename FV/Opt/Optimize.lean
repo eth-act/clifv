@@ -120,10 +120,13 @@ def optimizeReport (cfg : Config) (f0 : Function) : Function × Report := Id.run
     if !enabled then continue
     -- the renaming `editOk` validates GVN, DCE and LICM with
     let mut sub : ValueId → ValueId := id
+    -- the simplify validator's verdict
+    let mut simpValid := true
     let g' ← match stage with
       | "simplify" =>
-        let (g', s) := simplify cfg.simplifyFn cfg.skeletonFn allowed (skelAllowedIn f) cfg.rematConst g info
-        let g' := removeUnreachable g'
+        let (g1, s, cert) := simplify cfg.simplifyFn cfg.skeletonFn allowed (skelAllowedIn f) cfg.rematConst g info
+        simpValid := simpOk g g1 info cert
+        let g' := removeUnreachable g1
         r := { r with rewritten := r.rewritten + s.rewritten, ruleErrors := r.ruleErrors + s.errors,
                       skeleton := r.skeleton + s.skeleton,
                       fired := s.fired.fold (fun m k n => m.insert k ((m.get? k).getD 0 + n)) r.fired }
@@ -145,7 +148,7 @@ def optimizeReport (cfg : Config) (f0 : Function) : Function × Report := Id.run
         pure g'
     match check g' with
     | .ok i =>
-      if stage == "simplify" || editOk sub g g' info i then g := g'; info := i
+      if (if stage == "simplify" then simpValid else editOk sub g g' info i) then g := g'; info := i
       else r := { r with passError := some (stage, "validator rejected the output") }; stop := true
     | .error e => r := { r with passError := some (stage, e) }; stop := true
   -- a guard (never observed to fire): keep the input if the backend subset would be lost
