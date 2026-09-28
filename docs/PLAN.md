@@ -240,6 +240,21 @@ proven equivalent to the input, a successful check shows Cranelift's is too.
 
 ### M7: End-to-end theorem
 
+*Status (2026-09-28): **proven.*** `E2E.backend_correct_final` (FV/E2E/Final.lean) states that for every
+in-subset CLIF function compiled by the Lean backend (isel by the exported ISLE rules, regalloc2 plus the
+proven checker, the Lean encoder and layout), the Arm run from an AAPCS64 entry refines `Clif.run`:
+returns agree, traps agree, and there is no claim on stuck or out-of-fuel runs. `#print axioms`:
+`propext`, `Classical.choice`, `Quot.sound` plus `bv_decide` certificates only; no `sorry` and no
+hand-written axioms.
+
+Remaining hypotheses are assumptions, not open proofs:
+- `FormsCovered`, decided per function by `formsCoveredB` (913/913 in the test suites);
+- the callee contracts `CalleeOk` and `XCallsOk`;
+- link-time facts (`hsym`, `hslot`);
+- per-run entry conditions (`AbiEntry`, `StackAvail`, `BodyEntry`, `ArgsIn`, `ClifEntry`, `Rel.holds`, `TrapsExplicit`).
+
+The compiler enforces the side conditions with proven-sound validators: `lowerCheck`, `prepCheck`, `checkAlloc`, `ctlCheck`, `FormOk` and the branch-range check. The exact list is in `docs/contracts/e2e.md`.
+
 **Deliverables**
 
 - `backend_correct`, composed from the M4, M5 and M6 theorems. It holds under an explicit resource precondition (no stack or memory exhaustion), as CompCert's does.
