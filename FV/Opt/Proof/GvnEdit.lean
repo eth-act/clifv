@@ -550,6 +550,110 @@ theorem ERel.call {fr fr' bi k k' m s ss t ts ext vals rs rest}
     rw [hb'] at hb0'; cases hb0'
     rw [hss, hts]; exact hal
 
+theorem block?_corr {id : BlockId} {j : Nat} {b b' : Block} (hf : f.block? id = some b)
+    (hj : f.blocks[j]? = some b) (hj' : g.blocks[j]? = some b') : g.block? id = some b' := by
+  obtain ⟨j0, hj0, hid⟩ := block?_index hE.wff hf
+  have := idx_unique hE.wff hj0 hj rfl
+  subst this
+  rw [Function.block?, List.find?_eq_some_iff_getElem] at hf ⊢
+  obtain ⟨hp, i, hi, hbi, hlt⟩ := hf
+  have hij : i = j0 := idx_unique hE.wff (by simp [hi, hbi]) hj0 rfl
+  subst hij
+  obtain ⟨b'', hb'', hid', _⟩ := hE.blocks i b hj0
+  rw [hj'] at hb''; cases hb''
+  have hi' : i < g.blocks.length := (List.getElem?_eq_some_iff.1 hj').1
+  refine ⟨by simpa [hid'] using hp, i, hi', by simpa [hi'] using hj', fun j2 hj2 => ?_⟩
+  have hj2f : j2 < f.blocks.length := by omega
+  obtain ⟨b2, hb2, hid2, _⟩ := hE.blocks j2 f.blocks[j2] (by simp [hj2f])
+  have := hlt j2 hj2
+  simp only [List.getElem?_eq_getElem (show j2 < g.blocks.length by omega), Option.some.injEq]
+    at hb2
+  rw [hb2, hid2]; exact this
+
+theorem ERel.atEnd {fr fr' bi k k'} (h : ERel σ f g Df Dg syms fr fr' bi k k')
+    (hs : fr.body = []) (ht : fr'.body = []) :
+    ∃ b b', f.blocks[bi]? = some b ∧ g.blocks[bi]? = some b' ∧ k = b.body.length ∧
+      k' = b'.body.length := by
+  obtain ⟨b, hb, h1, _, hk⟩ := h.invf.block
+  obtain ⟨b', hb', h2, _, hk'⟩ := h.invg.block
+  rw [hs] at h1; rw [ht] at h2
+  have e1 := congrArg List.length h1; have e2 := congrArg List.length h2
+  simp at e1 e2
+  exact ⟨b, b', hb, hb', by omega, by omega⟩
+
+/-- Branching: both frames enter corresponding blocks. -/
+theorem ERel.enter {fr fr' bi k k' bc fr1} (h : ERel σ f g Df Dg syms fr fr' bi k k')
+    (hs : fr.body = []) (ht : fr'.body = []) (hbc : bc.block ∈ termSuccs fr.term)
+    (hargs : ∀ x ∈ bc.args, fr'.regs (σ x) = fr.regs x) (he : enterBlock fr bc = .ok fr1) :
+    ∃ fr1', enterBlock fr' (mapBlockCall σ bc) = .ok fr1' ∧ ER σ f g Df Dg syms fr1 fr1' := by
+  obtain ⟨b, b', hb, hb', hk, hk'⟩ := h.atEnd hE hs ht
+  subst hk hk'
+  obtain ⟨j, b2, hj, hb2, hinv1⟩ := Inv.enter hE.wff h.invf hs hbc he
+  obtain ⟨b2x, args, regs, hb2x, hga, hty, hset, rfl⟩ := enterBlock_ok he
+  rw [h.invf.func, hb2] at hb2x; cases hb2x
+  obtain ⟨b2', hj', hid2, hpar2, hσp, -, hal2⟩ := hE.blocks j b2 hj
+  have hgb : fr'.func.block? bc.block = some b2' := by
+    rw [h.invg.func]; exact block?_corr hE hb2 hj hj'
+  have hga' := Res.norm_eq_ok (getMany_rename hargs) hga
+  obtain ⟨regs', hset'⟩ := setMany_len (r := fr'.regs) (xs := b2'.params.map (·.1)) (vs := args)
+    (by rw [hpar2]; exact (setMany_spec hset).1)
+  have he' : enterBlock fr' (mapBlockCall σ bc) =
+      .ok ⟨fr'.func, regs', fr'.slots, b2'.body, b2'.term⟩ :=
+    enterBlock_of (bc := mapBlockCall σ bc) hgb hga' (by rw [hpar2]; exact hty) hset'
+  refine ⟨_, he', ?_⟩
+  have htsucc : (mapBlockCall σ bc).block ∈ termSuccs fr'.term := by
+    obtain ⟨_, _, _, _, _, _, h3, h4, _, _⟩ := h.blocks hE
+    rw [h4, termSuccs_mapTerm, ← h3]; exact hbc
+  obtain ⟨jx, b3, hj3, hb3, hinv2⟩ := Inv.enter hE.wfg h.invg ht htsucc he'
+  have : b3 = b2' := by
+    rw [h.invg.func] at hgb; simp only [mapBlockCall] at hb3; rw [hgb] at hb3
+    exact (Option.some.inj hb3).symm
+  subst b3
+  have : jx = j := idx_unique hE.wfg hj3 hj' rfl
+  subst jx
+  refine ⟨j, 0, 0, hinv1, hinv2, ?_, ?_, h.slots⟩
+  · intro v hv hrep
+    by_cases hdv : Df.dm v = some (j, 0)
+    · obtain ⟨b4, p, hb4, hp, hpv⟩ := site_param' hE.wff hdv
+      rw [hj] at hb4; cases hb4
+      have hσv : σ v = v := by rw [← hpv]; exact hσp p hp
+      rw [hσv]
+      have hvm : v ∈ b2.params.map (·.1) := List.mem_map.2 ⟨p, hp, hpv⟩
+      refine ⟨⟨j, 0, ?_, .inl ⟨rfl, Nat.le_refl _⟩⟩, ?_⟩
+      · rw [← hpv]; exact site_param hE.wfg hj' (by rw [hpar2]; exact hp)
+      · rw [hpar2] at hset'
+        exact (setMany_same hset hset' v hvm).symm
+    · have hbid : b2.id = bc.block := by obtain ⟨_, _, h0⟩ := block?_index hE.wff hb2; exact h0
+      have hterm : fr.term = b.term := by
+        obtain ⟨b0, _, hb0, _, _, _, h3, _⟩ := h.blocks hE
+        rw [hb] at hb0; cases hb0; exact h3
+      have hvp := avail_pred hE.wff hb hj (by rw [hbid, ← hterm]; exact hbc) hv hdv
+      obtain ⟨hav, heq⟩ := h.agree v hvp hrep
+      obtain ⟨⟨d', t'⟩, hd'⟩ := Option.isSome_iff_exists.1 hrep
+      obtain ⟨d, t, hd, hva⟩ := hv
+      rcases hva with ⟨hdj, ht0⟩ | ⟨hne, ha⟩
+      · exact absurd (by rw [hd, hdj, show t = 0 by omega]) hdv
+      have hanc := hE.subst v d t hd d' t' hd'
+      have hne2 : d' ≠ j := fun he => hne (Anc.antisymm hE.wff.rank ha (he ▸ hanc))
+      refine ⟨⟨d', t', hd', .inr ⟨hne2, by rw [hE.idom]; exact hanc.trans ha⟩⟩, ?_⟩
+      have hn1 : σ v ∉ b2'.params.map (·.1) := by
+        intro hm
+        obtain ⟨p, hp, hpv⟩ := List.mem_map.1 hm
+        have := site_param hE.wfg hj' hp
+        rw [hpv, hd'] at this
+        simp only [Option.some.injEq, Prod.mk.injEq] at this
+        exact hne2 this.1
+      have hn2 : v ∉ b2.params.map (·.1) := by
+        intro hm
+        obtain ⟨p, hp, hpv⟩ := List.mem_map.1 hm
+        exact hdv (by rw [← hpv]; exact site_param hE.wff hj hp)
+      simp only
+      rw [((setMany_spec hset').2 _).1 hn1, ((setMany_spec hset).2 _).1 hn2, heq]
+  · intro b0 b0' hb0 hb0'
+    rw [hj] at hb0; cases hb0
+    rw [hj'] at hb0'; cases hb0'
+    simpa using hal2
+
 end
 
 end Opt
