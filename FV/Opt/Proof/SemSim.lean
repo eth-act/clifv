@@ -76,6 +76,39 @@ def lstep (fr : Frame) (mem : Mem) : LRes :=
       | some regs => .next { fr with regs, body := rest } mem'
       | none => .stuck "result arity mismatch"
 
+theorem lstep_inst {fr : Frame} {mem : Mem} {st : Stmt} {rest : List Stmt}
+    (hb : fr.body = st :: rest) (hc : ∀ fn args, st.inst ≠ .call fn args) :
+    lstep fr mem = LRes.ofRes (evalInst fr mem st.inst) fun (vals, mem') =>
+      match fr.regs.setMany st.results vals with
+      | some regs => .next { fr with regs, body := rest } mem'
+      | none => .stuck "result arity mismatch" := by
+  unfold lstep
+  rw [hb]
+  cases hi : st.inst with
+  | call fn args => exact absurd hi (hc fn args)
+  | _ => simp only [hi]
+
+theorem lstep_call {fr : Frame} {mem : Mem} {st : Stmt} {rest : List Stmt} {fn : FnRef}
+    {args : List ValueId} (hb : fr.body = st :: rest) (hc : st.inst = .call fn args) :
+    lstep fr mem = LRes.ofRes (callArgs fr fn args) fun (ext, vals) =>
+      .call ext vals st.results rest := by
+  unfold lstep
+  rw [hb]
+  simp only [hc]
+
+theorem lstep_term {fr : Frame} {mem : Mem} (hb : fr.body = []) :
+    lstep fr mem = match fr.term with
+    | .jump d => LRes.ofRes (enterBlock fr d) fun fr' => .next fr' mem
+    | .brif c t e => LRes.ofRes (fr.get c) fun cv =>
+      LRes.ofRes (enterBlock fr (if Sem.truthy cv.bits then t else e)) fun fr' => .next fr' mem
+    | .brTable x dflt table => LRes.ofRes (fr.get x) fun xv =>
+      LRes.ofRes (enterBlock fr (table[xv.toNat]?.getD dflt)) fun fr' => .next fr' mem
+    | .ret xs => LRes.ofRes (fr.getMany xs) fun vals => .ret vals
+    | .returnCall fn args => LRes.ofRes (tailArgs fr fn args) fun (ext, vals) => .tail ext vals
+    | .trap c => .trap c := by
+  unfold lstep
+  rw [hb]
+
 /-- The continuation of `Clif.stepCall` after its prelude. -/
 def callCont (env : Env) (p : Program) (s : State) (rest : List Stmt) (results : List ValueId)
     (ext : ExtFunc) (vals : List Val) : StepResult :=
