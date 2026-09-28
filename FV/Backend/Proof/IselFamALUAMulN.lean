@@ -156,7 +156,7 @@ theorem opnd64_lo (a : CV) : opnd .size64 a = lo64 a := by
   show (lo64 a).setWidth 64 = lo64 a
   exact BitVec.setWidth_eq _
 
-theorem lo64_resX64 (r : BitVec 64) : lo64 (resX .size64 r) = r := by
+theorem lo64_resX64_mulN (r : BitVec 64) : lo64 (resX .size64 r) = r := by
   show lo64 (ofX (r.setWidth 64)) = r
   rw [lo64_ofX, BitVec.setWidth_eq]
 
