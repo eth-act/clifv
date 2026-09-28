@@ -320,4 +320,139 @@ theorem br_table_impl_ok {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F i
 
 end
 
+/-! ## Rule 1140 -/
+
+section
+variable {ctx : Ctx}
+
+theorem ext_jump_table_targets_iff (st : LState) (ls : List Label) (fs : List V) :
+    externExtract ctx T.jump_table_targets (.labels ls) st = .ok fs ↔
+      ∃ d ts, ls = d :: ts ∧ fs = [.label d, .labels ts] := by
+  match ls with
+  | [] =>
+    have : externExtract ctx T.jump_table_targets (.labels []) st = .fail := rfl
+    rw [this]; simp
+  | d :: ts =>
+    have : externExtract ctx T.jump_table_targets (.labels (d :: ts)) st =
+      .ok [.label d, .labels ts] := rfl
+    rw [this]
+    simp only [ExtResult.ok.injEq, List.cons.injEq]
+    constructor
+    · rintro rfl; exact ⟨d, ts, ⟨rfl, rfl⟩, rfl⟩
+    · rintro ⟨d', ts', ⟨rfl, rfl⟩, rfl⟩; rfl
+
+theorem ctor_jump_table_size_iff (st : LState) (ls : List Label) (v : V) (st' : LState) :
+    externCtor ctx T.jump_table_size [.labels ls] st = .ok (v, st') ↔
+      v = .int ls.length ∧ st' = st := by
+  have : externCtor ctx T.jump_table_size [.labels ls] st = .ok (.int ls.length, st) := rfl
+  rw [this]; simp [eq_comm]
+
+theorem ctor_targets_jt_space_iff (st : LState) (ls : List Label) (v : V) (st' : LState) :
+    externCtor ctx T.targets_jt_space [.labels ls] st = .ok (v, st') ↔
+      v = .int (4 * (8 + ls.length)) ∧ st' = st := by
+  have : externCtor ctx T.targets_jt_space [.labels ls] st =
+    .ok (.int (4 * (8 + ls.length)), st) := rfl
+  rw [this]; simp [eq_comm]
+
+theorem ofV_emitIsland (k : Nat) : MInst.ofV (.data 58 136 [.int (k : Int)]) = some (.emitIsland k) :=
+  rfl
+
+theorem vuseNums_jtSeq (d : Label) (ts : List Label) (r a b : Nat) :
+    vuseNums (MInst.jtSequence d ts (.vreg r .int) (.vreg a .int) (.vreg b .int)) = [r] := rfl
+
+theorem ctor_u32_into_u64_iff (st : LState) (a : Int) (v : V) (st' : LState) :
+    externCtor ctx T.u32_into_u64 [.int a] st = .ok (v, st') ↔ v = .int a ∧ st' = st := by
+  have : externCtor ctx T.u32_into_u64 [.int a] st = .ok (.int a, st) := rfl
+  rw [this]; simp [eq_comm]
+
+end
+
+set_option maxHeartbeats 8000000 in
+theorem brTable_ruleOk {p : Program} (hp : Data p) {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT}
+    (hR : Refines F isem) (hMR : MRStable F MR) : BranchRuleOk isem MR p rule_lower_3277 := by
+  intro f ctx hctx ti t data targets hd hi hbt htl cfg hc m n st tr env' s1 out st' tr' hm hn hvb _
+    hmatch heval
+  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
+  obtain ⟨n, rfl⟩ : ∃ n', n = n' + 400 := ⟨n - 400, by omega⟩
+  have kS := fun n (hn : 60 ≤ n) i s v s' h => side_effect_inst_ok hp (ctx := ctx) hc (n := n)
+    (i := i) (s := s) (v := v) (s' := s') hn h
+  have kI := fun n (hn : 30 ≤ n) k s v s' h => emit_island_ok hp (ctx := ctx) hc (n := n)
+    (k := k) (s := s) (v := v) (s' := s') hn h
+  have kZ := fun n (hn : 40 ≤ n) x s v s' h => zext32_ok hp (ctx := ctx) hc (n := n)
+    (x := x) (s := s) (v := v) (s' := s') hn h
+  have kB := fun n (hn : 300 ≤ n) k r d ts s v s' hk hr h => br_table_impl_ok hp (ctx := ctx) hc hR
+    (n := n) (k := k) (r := r) (d := d) (ts := ts) (s := s) (v := v) (s' := s') hn hk hr h
+  have hf := ruleFmt_term hp (r := rule_lower_3277) rfl hp.t2451 term_2451_kind hd hi hmatch
+  cases t with
+  | brTable x dc tbl =>
+    rw [termData_brTable] at hd; cases hd
+    cases hp
+    brif_inv [*, rule_lower_3277, ext_jump_table_targets_iff, ctor_jump_table_size_iff,
+      ctor_targets_jt_space_iff, ctor_u32_into_u64_iff] at hmatch heval
+    simp only [hi, Option.some.injEq] at *
+    isel_destruct; subst_vars
+    repeat (isel_inv_simp [ext_jump_table_targets_iff, ctor_jump_table_size_iff,
+      ctor_targets_jt_space_iff, ctor_u32_into_u64_iff] at * <;> isel_destruct <;> subst_vars)
+    rename LState => st
+    obtain ⟨⟨wx, hwx, hTx⟩, htbl⟩ := hbt _ _ _ rfl
+    have hlen := htl _ _ _ rfl
+    simp only [List.length_cons, Nat.add_right_cancel_iff] at hlen
+    have h669 := ‹ApplyInternal _ _ _ _ 46 669 _ _ _ _›
+    obtain ⟨hs1, rfl⟩ := kI _ (by omega) _ _ _ _ h669
+    have h243 := ‹ApplyInternal _ _ _ _ 25 243 _ _ _ _›
+    obtain ⟨mi, hmi, hs2, -⟩ := kS _ (by omega) _ _ _ _ h243
+    rw [show ∀ n : Nat, (4 * (8 + (n : Int))) = ((4 * (8 + n) : Nat) : Int) from
+      fun n => by push_cast; omega, ofV_emitIsland] at hmi
+    cases hmi
+    have h556 := ‹ApplyInternal _ _ _ _ 27 556 _ _ _ _›
+    have hext := kZ _ (by omega) _ _ _ _ h556
+    rw [hs2, hs1] at hext
+    obtain ⟨k, msx, rfl, hFx, hkl, hkx, hxsem⟩ := ExtOut.sem hR hctx (pass := [.int 32, .int 64]) (by exact hvb) (.inl rfl)
+      (by simp) (fun _ => by simp) hext
+    have h670 := ‹ApplyInternal _ _ _ _ 13 670 _ _ _ _›
+    have hJ := kB _ (by omega) _ _ _ _ _ _ _ (by omega) hkl h670
+    simp only at hJ
+    obtain ⟨ms0, st2, t1, t2, hF0, rfl, ht1, ht2, hu0, hr0⟩ := hJ
+    have hFall := ((Frag.emit_nodef _ (m := .emitIsland _) rfl).append hFx).append hF0
+    have hm1 := hFx.mono
+    have hm0 := hF0.mono
+    refine ⟨_, ?emit, brTable_termOk_gen hR hMR hFall (by dsimp only [LState.emit] at hm1 ht1 ⊢; omega)
+      (by dsimp only [LState.emit] at hm1 ht2 ⊢; omega) hlen fun fr ρ v hvh hdfg hreg => ?_⟩
+    case emit => simp [LState.emit, hFall.emitted]
+    obtain ⟨hux, hrx⟩ := hxsem fr ρ v hvh hdfg hreg
+    have hkok : st.nextVreg ≤ k ∨ (fr.regs k).isSome := by
+      rcases hkx with h | rfl
+      · exact .inl (by dsimp only [LState.emit] at h ⊢; exact h)
+      · exact .inr (by simp [hreg])
+    refine ⟨?_, fun w => ?_⟩
+    · intro mm hmm u hu
+      simp only [List.append_assoc, List.mem_append, List.mem_singleton] at hmm
+      rcases hmm with rfl | hmm | hmm | rfl
+      · simp [vuseNums, operands_emitIsland] at hu
+      · exact hux mm hmm u hu
+      · rcases hu0 mm hmm u hu with h | rfl
+        · exact .inl (by dsimp only [LState.emit] at hm1 hm0 h ⊢; omega)
+        · exact hkok
+      · rw [vuseNums_jtSeq, List.mem_singleton] at hu
+        subst hu; exact hkok
+    · have hty := hdfg.2 x _ v hTx hreg
+      have hvw : v.ty.width = wx := by rw [← ofClif_bits, hty]; rfl
+      rw [List.append_assoc]
+      refine Runs.append (P := fun ρ1 _ => ρ1 = ρ)
+        (Runs.one hR (operands_emitIsland _) (by rfl) rfl (SameWorldNF.refl F w)
+          fun _ _ => vdefUpd_nil _ _) ?_
+      rintro ρ1 w1 rfl
+      refine Runs.append (hrx w1) ?_
+      rintro ρ2 w2 ⟨-, hex⟩
+      refine (hr0 ρ2 w2).imp ?_
+      rintro ρ3 w3 - ⟨h3, hhs⟩
+      have hx32 := hex (by omega)
+      simp only [Bool.false_eq_true, ↓reduceIte] at hx32
+      have hv : ((lo64 (ρ2 k)).setWidth 32).toNat = v.toNat := by
+        rw [hx32, BitVec.toNat_setWidth, Nat.mod_eq_of_lt]
+        · rfl
+        · exact Nat.lt_of_lt_of_le v.bits.isLt (Nat.pow_le_pow_right (by omega) (by omega))
+      refine ⟨by rw [hhs, hv, hlen], by rw [h3, hv]⟩
+  | _ => simp [termFmt] at hf
+
 end Backend.Proof
