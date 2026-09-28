@@ -331,9 +331,9 @@ theorem kind_brCond_inv {R : RL} {s : Arm.ArmState} {m : Loc → CV} {w : Arm.Ar
 
 /-! ## Operands of the conditional forms -/
 
-theorem assign_one {i : MInst} {mk : Reg → MInst} {n : Nat}
+theorem assign_one {i : MInst} {mk : Reg → MInst} {n : Nat} {sp : OpSpec}
     (hv : ∀ (f : OpSpec → Reg → StateT Nat (Except String) Reg), MInst.visitOperands f i = do
-      let r ← f OpSpec.use (.vreg n .int); pure (mk r))
+      let r ← f sp (.vreg n .int); pure (mk r))
     {regs : Array Reg} {i' : MInst} (h : i.assign regs = .ok i') : ∃ r, regs = #[r] ∧ i' = mk r := by
   unfold MInst.assign at h
   dsimp only at h
@@ -400,7 +400,7 @@ theorem kind_alloc {k : CondBrKind} (hck : ∀ r sz, k = .zero r sz ∨ k = .not
     exact ⟨.cond cc, hmk, rfl, by simp⟩
   | zero r sz =>
     obtain ⟨n, rfl⟩ := isVregInt_iff (hck r sz (.inl rfl))
-    obtain ⟨r', rfl, rfl⟩ := assign_one (n := n) (mk := fun r => mk (.zero r sz))
+    obtain ⟨r', rfl, rfl⟩ := assign_one (n := n) (sp := OpSpec.use) (mk := fun r => mk (.zero r sz))
       (fun f => by rw [hv]; simp only [CondBrKind.visit, bind_assoc, pure_bind]) hasg
     have hops' : ops = #[⟨n, .int, .use, .early, .reg⟩] := by
       have e := hops
@@ -418,7 +418,7 @@ theorem kind_alloc {k : CondBrKind} (hck : ∀ r sz, k = .zero r sz ∨ k = .not
     exact ⟨_, rfl, rfl, n', rfl, hal.2, by simp [Operand.isUse]⟩
   | notZero r sz =>
     obtain ⟨n, rfl⟩ := isVregInt_iff (hck r sz (.inr rfl))
-    obtain ⟨r', rfl, rfl⟩ := assign_one (n := n) (mk := fun r => mk (.notZero r sz))
+    obtain ⟨r', rfl, rfl⟩ := assign_one (n := n) (sp := OpSpec.use) (mk := fun r => mk (.notZero r sz))
       (fun f => by rw [hv]; simp only [CondBrKind.visit, bind_assoc, pure_bind]) hasg
     have hops' : ops = #[⟨n, .int, .use, .early, .reg⟩] := by
       have e := hops
@@ -576,7 +576,7 @@ theorem realizes_goto {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {alloc
       simp only [MInst.targets] at hlj
       cases hcond : kk.holds U w <;> simp only [hcond] at hlj ⊢ <;> simp at hlj <;> rw [hlj] <;> simp
     · obtain ⟨nr, rfl⟩ := isVregInt_iff (by simpa [ctlInstOk] using ctlCheck_inst hck hvb hi)
-      obtain ⟨r', rfl, rfl⟩ := assign_one (n := nr) (mk := fun r => MInst.testBitAndBranch kd t e r bit)
+      obtain ⟨r', rfl, rfl⟩ := assign_one (n := nr) (sp := OpSpec.use) (mk := fun r => MInst.testBitAndBranch kd t e r bit)
         (fun f => by simp [MInst.visitOperands]) hasg
       have hops' : ops2 = #[⟨nr, .int, .use, .early, .reg⟩] := by
         have e : (MInst.testBitAndBranch kd t e (.vreg nr .int) bit).operands =

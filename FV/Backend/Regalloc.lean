@@ -274,7 +274,8 @@ def Reg.isVregInt : Reg → Bool
 def ctlInstOk (b k : Nat) : MInst → Bool
   | .args ds => b == 0 && k == 0 && ds.all (fun p => p.1.isVregInt && p.2.isArgReg)
   | .condBr _ _ (.zero r _) | .condBr _ _ (.notZero r _) | .trapIf (.zero r _) _
-  | .trapIf (.notZero r _) _ | .testBitAndBranch _ _ _ r _ => r.isVregInt
+  | .trapIf (.notZero r _) _ | .testBitAndBranch _ _ _ r _ | .loadExtNameGot r _
+  | .loadExtNameNear r _ _ => r.isVregInt
   | _ => true
 
 /-- Control forms the register-level proof relies on (always true for `lowerFunction` +
@@ -282,7 +283,8 @@ def ctlInstOk (b k : Nat) : MInst → Bool
 emits no code) when its fixed registers still hold the incoming arguments: `Args` occurs only as
 instruction 0 of block 0, fixed to argument registers; before it, block 0 has only moves into
 memory (the callee-saved saves), and no edge enters block 0. The register a `cbz`/`cbnz`/`tbz`
-tests is an int vreg (the VCode semantics reads it as the instruction's use). -/
+tests is an int vreg (the VCode semantics reads it as the instruction's use), and so is the
+destination of a symbol-address load (its def). -/
 def ctlCheck (vc : VCode) (rf : RFunc) : Bool :=
   (vc.blocks.toList.zipIdx.all fun (vb, b) => vb.insts.toList.zipIdx.all fun (i, k) =>
     ctlInstOk b k i) &&
