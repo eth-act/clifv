@@ -492,6 +492,11 @@ def initSState (f : Function) (info : Info) (rematConst : Bool) : SState :=
   { next := maxValue f + 1, types := info.types, trapBlocks := trapMap f, rematConst, fn := f,
     avail := initAvail f }
 
+/-- Step 1: `inst` becomes the node of `v` (with its cost). -/
+def pureInsert (st : SState) (v : ValueId) (inst : Inst) : SState :=
+  let c := (operands inst).foldl (fun c x => Cost.add c (st.costOf x)) (Cost.ofInst inst)
+  { st with defs := st.defs.insert v inst, cost := st.cost.insert v c, made := {}, classes := {} }
+
 /-- A hash-consing hit for `inst` usable in block `bi` (a rematerialised constant of another block
 is not reused). -/
 def memoHit (st : SState) (bi : Nat) (inst : Inst) : Option ValueId :=
@@ -522,12 +527,16 @@ def pureEmit (cfg : Cfg) (allowed : Inst → Bool) (bi : Nat) (st1 : SState) (su
        subst.insert v w, StmtLog.repl { s with inst } w emitted)
     | none => (keep, subst, StmtLog.keep { s with inst })
 
+/-- The value a statement `v = n` is renamed to by its record (`v` itself if kept). -/
+def StmtLog.rep (lg : StmtLog) (v : ValueId) : ValueId :=
+  match lg with
+  | .repl _ w _ => w
+  | _ => v
+
 /-- Make the class of `best` visible to later matches when its representative is new here (the
 representative is `subst'.find v`; renamings have no chains, which `simpOk` checks). -/
 def pureAlts (st1 st : SState) (v best : ValueId) (lg : StmtLog) : SState :=
-  let rep := match lg with
-    | .repl _ w _ => w
-    | _ => v
+  let rep := lg.rep v
   if rep == v || st1.made.contains best then
     let members := (st1.classes.get? best).getD []
     if !members.isEmpty then { st with alts := st.alts.insert rep members } else st
@@ -546,9 +555,7 @@ def stepStmt (rules : SimplifyFn) (skel : SkeletonFn) (allowed skelOk : Inst →
         st.types.get? v != SState.nodeTy inst then
       (st, subst, .keep { s with inst })
     else
-    let c := (operands inst).foldl (fun c x => Cost.add c (st.costOf x)) (Cost.ofInst inst)
-    let st := { st with defs := st.defs.insert v inst, cost := st.cost.insert v c,
-                        made := {}, classes := {} }
+    let st := pureInsert st v inst
     let (best, st1) := pureBest rules allowed bi st v inst
     let (st', subst', lg) := pureEmit cfg allowed bi st1 subst s inst v best
     (pureAlts st1 st' v best lg, subst', lg)

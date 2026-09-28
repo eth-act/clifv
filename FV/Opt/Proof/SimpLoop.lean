@@ -1096,6 +1096,166 @@ theorem pureBest_spec (hS : SimplifySound rules) (hE : GoodEnv f fr mem) {st st1
     have hb := hfwd a ha'
     rw [hG2.fix b (known_of_gval hI1 hb)]; exact hb
 
+theorem pureEmit_spec (hE : GoodEnv f fr mem) {st1 st' : SState} {subst subst' : Subst} {s : Stmt}
+    {inst : Inst} {v best : ValueId} {lg : StmtLog} (hI1 : GInv f ρ fr mem st1)
+    (hvs : st1.solid v = true) (hops : ∀ y ∈ operands inst, st1.known y = true)
+    (hF : ∀ a, evalNode (withRegs fr (gval ρ fr mem st1)) mem inst = some a →
+      gval ρ fr mem st1 best = some a)
+    (hnode1 : ∀ a, gval ρ fr mem st1 v = some a →
+      evalNode (withRegs fr (gval ρ fr mem st1)) mem inst = some a)
+    (h : pureEmit cfg allowed bi st1 subst s inst v best = (st', subst', lg)) :
+    GInv f ρ fr mem st' ∧ Mono ρ fr mem st1 st' ∧
+      LogFact (withRegs fr (gval ρ fr mem st')) mem (gval ρ fr mem st') lg ∧
+      (∀ x ∈ lg.srcOps, st'.known x = true) ∧ st'.known (lg.rep v) = true ∧
+      ∀ a, gval ρ fr mem st' (lg.rep v) = some a → gval ρ fr mem st1 best = some a := by
+  have hkv : st1.known v = true := by
+    simp only [SState.solid, Bool.and_eq_true] at hvs; exact hvs.1
+  have hkeep : ({ st1 with avail := st1.avail.insert v bi }, subst, StmtLog.keep { s with inst }) =
+      (st', subst', lg) → (∀ a, gval ρ fr mem st1 v = some a → gval ρ fr mem st1 best = some a) →
+      GInv f ρ fr mem st' ∧ Mono ρ fr mem st1 st' ∧
+      LogFact (withRegs fr (gval ρ fr mem st')) mem (gval ρ fr mem st') lg ∧
+      (∀ x ∈ lg.srcOps, st'.known x = true) ∧ st'.known (lg.rep v) = true ∧
+      ∀ a, gval ρ fr mem st' (lg.rep v) = some a → gval ρ fr mem st1 best = some a := by
+    intro he hb
+    simp only [Prod.mk.injEq] at he
+    obtain ⟨rfl, -, rfl⟩ := he
+    obtain ⟨hI', hM'⟩ := availInsert_spec (st' := { st1 with avail := st1.avail.insert v bi }) hI1
+      hkv (hI1.solid v hvs) rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl
+    refine ⟨hI', hM', trivial, fun x hx => by simp [StmtLog.srcOps] at hx, hM'.known v hkv,
+      fun a ha => ?_⟩
+    simp only [StmtLog.rep] at ha ⊢
+    exact hb a (by rw [← hM'.fix v hkv]; exact ha)
+  simp only [pureEmit] at h
+  split at h
+  · rename_i hbv
+    have hbv' : best = v := by simpa using hbv
+    exact hkeep h (fun a ha => by rw [hbv']; exact ha)
+  · split at h
+    · rename_i w st2 emitted hmat
+      simp only [Prod.mk.injEq] at h
+      obtain ⟨hst', -, rfl⟩ := h
+      have hok := materialize_spec (f := f) (cfg := cfg) (allowed := allowed) (bi := bi) hE
+        _ _ _ _ _ _ _ hI1 hmat
+      have hM2 : Mono ρ fr mem st1 st2 := hok.grow.mono
+      obtain ⟨hI3, hG3⟩ := hok.inv.of_same (st' := st') (by rw [← hst']) (by rw [← hst'])
+        (by rw [← hst']) (by rw [← hst']) (by rw [← hst']) (by rw [← hst'])
+        (by rw [← hst']; exact Nat.le_refl _) (by rw [← hst']) (by rw [← hst']) (by rw [← hst'])
+        (by rw [← hst'])
+      have hM3 := hM2.trans hG3.mono
+      have hwv : ∀ a, gval ρ fr mem st1 best = some a → gval ρ fr mem st' w = some a := by
+        intro a ha
+        rw [hG3.fix w (known_of_avail hok.avail), hok.val]; exact ha
+      refine ⟨hI3, hM3, fun a ha => ?_, fun x hx => ?_, ?_, fun a ha => ?_⟩
+      · apply hwv
+        apply hF
+        rw [evalNode_congr (fr := withRegs fr (gval ρ fr mem st1)) (fr' := withRegs fr (gval ρ fr mem st'))
+          rfl rfl (fun y hy => hM3.fix y (hops y hy))] at ha
+        exact ha
+      · simp only [StmtLog.srcOps] at hx; exact hM3.known x (hops x hx)
+      · exact hG3.known w (known_of_avail hok.avail)
+      · simp only [StmtLog.rep] at ha
+        rw [hG3.fix w (known_of_avail hok.avail), hok.val] at ha; exact ha
+    · exact hkeep h (fun a ha => hF a (hnode1 a ha))
+
+theorem pureAlts_spec {st1 st' : SState} {v best : ValueId} {lg : StmtLog}
+    (hI1 : GInv f ρ fr mem st1) (hI' : GInv f ρ fr mem st') (hM : Mono ρ fr mem st1 st')
+    (hrk : st'.known (lg.rep v) = true)
+    (hrep : ∀ a, gval ρ fr mem st' (lg.rep v) = some a → gval ρ fr mem st1 best = some a) :
+    GInv f ρ fr mem (pureAlts st1 st' v best lg) ∧ Mono ρ fr mem st' (pureAlts st1 st' v best lg) := by
+  have key : ∀ ms, st1.classes.get? best = some ms →
+      GInv f ρ fr mem { st' with alts := st'.alts.insert (lg.rep v) ms } ∧
+        Mono ρ fr mem st' { st' with alts := st'.alts.insert (lg.rep v) ms } := by
+    intro ms hc
+    refine altsInsert_spec hI' hrk ?_ rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl
+    intro m hm a ha
+    obtain ⟨o, ho, hjust⟩ := hI1.classes best ms hc
+    obtain ⟨a', ha', -⟩ := hI1.solid o ho
+    obtain ⟨hb', hms⟩ := hjust a' ha'
+    have hb := hrep a ha
+    rw [hb] at hb'; cases hb'
+    have hm1 := hms m hm
+    rw [hM.fix m (known_of_gval hI1 hm1)]; exact hm1
+  simp only [pureAlts]
+  cases hc : st1.classes.get? best with
+  | none => simp only [Option.getD_none, List.isEmpty_nil, Bool.not_true]; split <;> exact ⟨hI', Mono.refl _⟩
+  | some ms =>
+    simp only [Option.getD_some]
+    split
+    · split
+      · exact key ms hc
+      · exact ⟨hI', Mono.refl _⟩
+    · exact ⟨hI', Mono.refl _⟩
+
+theorem stepStmt_spec (hS : SimplifySound rules) (hK : SkeletonSound skel) (hE : GoodEnv f fr mem)
+    {st : SState} {subst : Subst} {s : Stmt} {st' : SState} {subst' : Subst} {lg : StmtLog}
+    (hI : GInv f ρ fr mem st)
+    (h : stepStmt rules skel allowed skelOk cfg bi (st, subst) s = (st', subst', lg)) :
+    GInv f ρ fr mem st' ∧ Mono ρ fr mem st st' ∧
+      LogFact (withRegs fr (gval ρ fr mem st')) mem (gval ρ fr mem st') lg ∧
+      ∀ x ∈ lg.srcOps, st'.known x = true := by
+  simp only [stepStmt] at h
+  generalize mapOperands subst.find s.inst = inst at h
+  split at h
+  · rename_i v hvr hpure
+    split at h
+    · simp only [Prod.mk.injEq] at h
+      obtain ⟨rfl, -, rfl⟩ := h
+      exact ⟨hI, Mono.refl _, trivial, fun x hx => by simp [StmtLog.srcOps] at hx⟩
+    · rename_i hchk
+      simp only [Bool.or_eq_true, Bool.not_eq_true', not_or, decide_eq_true_eq, Nat.not_le,
+        bne_iff_ne, ne_eq, Decidable.not_not, List.all_eq_true] at hchk
+      obtain ⟨⟨⟨⟨hw, hwn⟩, hn⟩, hty⟩, htw⟩ := hchk
+      have hn' : ∀ y ∈ operands inst, st.avail.contains y = true := by
+        simpa using hn
+      obtain ⟨hIA, hMA, hsvA, hgA, -⟩ := insertAt_spec (st' := pureInsert st v inst) hI hE
+        (by simpa using hw) hwn hn' (by simpa using hty) htw rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl
+      have hopsA : ∀ y ∈ operands inst, (pureInsert st v inst).known y = true :=
+        fun y hy => hMA.known y (known_of_avail (hn' y hy))
+      have hnodeA : ∀ a, evalNode (withRegs fr (gval ρ fr mem (pureInsert st v inst))) mem inst = some a →
+          gval ρ fr mem (pureInsert st v inst) v = some a := by
+        intro a ha
+        rw [evalNode_congr (fr := withRegs fr (gval ρ fr mem st))
+          (fr' := withRegs fr (gval ρ fr mem (pureInsert st v inst))) rfl rfl
+          (fun y hy => hMA.fix y (known_of_avail (hn' y hy)))] at ha
+        rw [hgA]; exact ha
+      generalize hB : pureBest rules allowed bi (pureInsert st v inst) v inst = rB at h
+      obtain ⟨best, st1⟩ := rB
+      obtain ⟨hI1, hM1, hsv1, hF1⟩ := pureBest_spec hS hE hIA hopsA hnodeA hsvA hB
+      simp only at h
+      generalize hC : pureEmit cfg allowed bi st1 subst s inst v best = rC at h
+      obtain ⟨st2, subst2, lg2⟩ := rC
+      simp only [Prod.mk.injEq] at h
+      obtain ⟨rfl, rfl, rfl⟩ := h
+      have hkv : (pureInsert st v inst).known v = true := by
+        simp only [SState.solid, Bool.and_eq_true] at hsvA; exact hsvA.1
+      have hops1 : ∀ y ∈ operands inst, st1.known y = true := fun y hy => hM1.known y (hopsA y hy)
+      have hnode1 : ∀ a, gval ρ fr mem st1 v = some a →
+          evalNode (withRegs fr (gval ρ fr mem st1)) mem inst = some a := by
+        intro a ha
+        rw [hM1.fix v hkv, hgA] at ha
+        rw [evalNode_congr (fr := withRegs fr (gval ρ fr mem st))
+          (fr' := withRegs fr (gval ρ fr mem st1)) rfl rfl
+          (fun y hy => (hMA.trans hM1).fix y (known_of_avail (hn' y hy)))]
+        exact ha
+      obtain ⟨hI2, hM2, hL2, hsrc2, hrk, hrep⟩ := pureEmit_spec hE hI1 hsv1 hops1 hF1 hnode1 hC
+      obtain ⟨hI3, hM3⟩ := pureAlts_spec (best := best) hI1 hI2 hM2 hrk hrep
+      refine ⟨hI3, hMA.trans (hM1.trans (hM2.trans hM3)), ?_, fun x hx => hM3.known x (hsrc2 x hx)⟩
+      refine LogFact.grow (gval_le hI2 hM3) (fun x hx => hM3.fix x (hsrc2 x hx)) hL2
+  · -- a skeleton statement
+    split at h
+    · simp only [Prod.mk.injEq] at h
+      obtain ⟨rfl, -, rfl⟩ := h
+      exact ⟨hI, Mono.refl _, trivial, fun x hx => by simp [StmtLog.srcOps] at hx⟩
+    · rename_i hk
+      simp only [Bool.not_eq_true', Bool.not_eq_false, List.all_eq_true] at hk
+      generalize hR : skelStmt skel rules allowed skelOk cfg bi rewriteLimit st { s with inst } = r at h
+      obtain ⟨stmts, sub, st1, o⟩ := r
+      simp only [Prod.mk.injEq] at h
+      obtain ⟨rfl, -, rfl⟩ := h
+      obtain ⟨hI1, hM1, hF1⟩ := skelStmt_spec hS hK hE _ _ _ _ _ _ _ hI hk hR
+      refine ⟨hI1, hM1, hF1, fun x hx => ?_⟩
+      cases o <;> simp [StmtLog.srcOps] at hx <;> exact hM1.known x (hk x hx)
+
 end StepStmt
 
 
