@@ -216,7 +216,7 @@ theorem q_entry {R : RL} (hR : R.Wf) {t : Nat} {vb : VBlock} {items : Array RIte
   rw [hk, hb] at hb'
   simp only [Except.ok.injEq, Prod.mk.injEq] at hb'
   obtain ⟨-, rfl⟩ := hb'
-  obtain ⟨j0, ls, ps1, ps2, T, hj0, hdrop, hls, htr⟩ := hblk t _ _ haf
+  obtain ⟨j0, ls, ps1, ps2, T, hj0, hdrop, hls, htr, -⟩ := hblk t _ _ haf
   simp only [ht, ite_false, List.nil_append, List.toList_toArray] at hls
   refine ⟨j0 + 1, vb, items, [], code, ls, ps1, ps2, T, hvb, hit, rfl,
     itemsChecked_block hR hvb hit, hcode, hls, htr, hdrop, ?_, hst⟩
