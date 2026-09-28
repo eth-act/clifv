@@ -288,26 +288,59 @@ theorem defs_vcode {V : Type} {ops : Array Operand} {allocs : Array Loc} (hsz : 
 section
 variable {V : Type} {keep : Reg → V → V}
 
+theorem writeV_notDef {ρ : Nat → V} :
+    ∀ (dv : List (Operand × V)) (u : Nat), (∀ p ∈ dv, p.1.vreg ≠ u) → writeV ρ dv u = ρ u
+  | [], _, _ => rfl
+  | p :: dv, u, h => by
+    simp only [writeV, List.foldl_cons] at h ⊢
+    have := writeV_notDef (ρ := upd ρ p.1.vreg p.2) dv u (fun q hq => h q (by simp [hq]))
+    simp only [writeV] at this
+    rw [this]
+    simp [upd, Ne.symm (h p (by simp))]
+
+theorem AState.mem_get_forgetDefs {a : AState} {pairs : List (Operand × Loc)} {l : Loc} {s : Sym}
+    (h : s ∈ (forgetDefs a pairs).get l) :
+    s ∈ a.get l ∧ ∀ p ∈ pairs, p.1.kind = .def → s ≠ .vreg p.1.vreg := by
+  have h := AState.mem_get_map h
+  simp only [List.mem_filter, Bool.not_eq_true', List.any_eq_false, Bool.and_eq_true,
+    beq_iff_eq, not_and] at h
+  exact ⟨h.1, fun p hp hk e => h.2 p hp hk e⟩
+
+theorem Inv_forgetDefs {a : AState} {pairs : List (Operand × Loc)} {m : Loc → V} {ρ ρ' : Nat → V}
+    {r₀ : Reg → V} (h : Inv keep a m ρ r₀)
+    (hρ : ∀ u, (∀ p ∈ pairs, p.1.kind = .def → u ≠ p.1.vreg) → ρ u = ρ' u) :
+    Inv keep (forgetDefs a pairs) m ρ' r₀ := by
+  intro l s hs
+  obtain ⟨hs, hn⟩ := AState.mem_get_forgetDefs hs
+  have := h l s hs
+  cases s with
+  | vreg u =>
+    simp only [Holds] at this ⊢
+    rw [this, hρ u (fun p hp hk e => hn p hp hk (by rw [e]))]
+  | entry r => exact this
+
 /-- The checker's step of an original instruction is sound: the allocated code reads the
 values the VCode reads, and the invariant holds after the instruction (early defs, clobbers,
-late defs). -/
+late defs; a branch's havocked defs `outs'` are forgotten). -/
 theorem op_sound {w : String} {i : MInst} {ops : Array Operand} {allocs : Array Loc}
     {a a' : AState} (hstep : c.stepOp w i ops allocs a = .ok a')
     {m : Loc → V} {ρ : Nat → V} {r₀ : Reg → V} (hinv : Inv keep a m ρ r₀)
-    {outs : List V} (hlen : outs.length = ((ops.zip allocs).toList.filter (·.1.isDef)).length)
-    {m2 : Loc → V}
+    {outs outs' : List V} (hlen : outs.length = ((ops.zip allocs).toList.filter (·.1.isDef)).length)
+    (hho : HavocOuts i outs outs') {m2 : Loc → V}
     (hclob : Clobbered keep i.clobbers
-      (writeM m ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs).filter (·.1.1.isEarly))) m2) :
+      (writeM m ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs').filter (·.1.1.isEarly))) m2) :
     ops.size = allocs.size ∧
     ((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2) =
       (ops.toList.filter Operand.isUse).map (ρ ·.vreg) ∧
     Inv keep a'
-      (writeM m2 ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs).filter (·.1.1.isLate)))
+      (writeM m2 ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs').filter (·.1.1.isLate)))
       (writeV (writeV ρ (((ops.toList.filter Operand.isDef).zip outs).filter (·.1.isEarly)))
         (((ops.toList.filter Operand.isDef).zip outs).filter (·.1.isLate))) r₀ ∧
     (∀ us, i = .rets us → ∀ r ∈ calleeSaved, Sym.entry r ∈ a'.get (.reg r)) := by
   obtain ⟨hst, hE, hL, rfl, hret⟩ := stepOp_ok hstep
   obtain ⟨hsz, hdisj⟩ := checkStatic_ok hst
+  have hlen' : outs'.length = ((ops.zip allocs).toList.filter (·.1.isDef)).length := by
+    rw [hho.1, hlen]
   refine ⟨hsz, ?_, ?_, ?_⟩
   · apply uses_eq hsz
     intro p hp hu
@@ -323,16 +356,35 @@ theorem op_sound {w : String} {i : MInst} {ops : Array Operand} {allocs : Array 
       obtain ⟨d, hd, e⟩ := List.mem_map.mp hm
       exact hdisj d hd p hp hk e.symm
   · have h1 := Inv_defineAll
-      ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs).filter (·.1.1.isEarly)) hinv
-    rw [defs_early hlen, ← defs_vcode hsz outs Operand.isEarly] at h1
+      ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs').filter (·.1.1.isEarly)) hinv
+    rw [defs_early hlen', ← defs_vcode hsz outs' Operand.isEarly] at h1
     have h2 := Inv_clobberAll h1 hclob
     have h3 := Inv_defineAll
-      ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs).filter (·.1.1.isLate)) h2
-    rw [defs_late hlen, ← defs_vcode hsz outs Operand.isLate] at h3
-    exact h3
+      ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs').filter (·.1.1.isLate)) h2
+    rw [defs_late hlen', ← defs_vcode hsz outs' Operand.isLate] at h3
+    cases hb : i.isBranch with
+    | false =>
+      have e := hho.2 hb
+      subst e
+      simpa only [transferOp, hb, Bool.false_eq_true, ite_false] using h3
+    | true =>
+      simp only [transferOp, hb, ite_true]
+      refine Inv_forgetDefs h3 fun u hu => ?_
+      -- `u` is not a def vreg: both files keep `ρ u`
+      have hnd : ∀ (o : List V) (q : Operand → Bool),
+          ∀ p ∈ ((ops.toList.filter Operand.isDef).zip o).filter (fun p => q p.1), p.1.vreg ≠ u := by
+        intro o q p hp e
+        have hp1 : p.1 ∈ ops.toList.filter Operand.isDef :=
+          (List.of_mem_zip (List.mem_filter.mp hp).1).1
+        rw [← pairs_fst hsz] at hp1
+        obtain ⟨pp, hpp, e'⟩ := List.mem_map.mp hp1
+        have hpp' := List.mem_filter.mp hpp
+        exact hu pp hpp'.1 (by simpa [Operand.isDef] using hpp'.2) (by rw [e', e])
+      rw [writeV_notDef _ _ (hnd outs' _), writeV_notDef _ _ (hnd outs' _),
+        writeV_notDef _ _ (hnd outs _), writeV_notDef _ _ (hnd outs _)]
   · intro us hi
     subst hi
-    exact retCheck_ok hret
+    simpa [transferOp, MInst.isBranch] using retCheck_ok hret
 
 end
 

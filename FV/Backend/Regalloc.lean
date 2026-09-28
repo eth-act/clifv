@@ -276,6 +276,7 @@ def ctlInstOk (b k : Nat) : MInst → Bool
   | .condBr _ _ (.zero r _) | .condBr _ _ (.notZero r _) | .trapIf (.zero r _) _
   | .trapIf (.notZero r _) _ | .testBitAndBranch _ _ _ r _ | .loadExtNameGot r _
   | .loadExtNameNear r _ _ => r.isVregInt
+  | .jtSequence _ _ ridx t1 t2 => ridx.isVregInt && t1.isVregInt && t2.isVregInt
   | _ => true
 
 /-- Control forms the register-level proof relies on (always true for `lowerFunction` +
@@ -283,8 +284,9 @@ def ctlInstOk (b k : Nat) : MInst → Bool
 emits no code) when its fixed registers still hold the incoming arguments: `Args` occurs only as
 instruction 0 of block 0, fixed to argument registers; before it, block 0 has only moves into
 memory (the callee-saved saves), and no edge enters block 0. The register a `cbz`/`cbnz`/`tbz`
-tests is an int vreg (the VCode semantics reads it as the instruction's use), and so is the
-destination of a symbol-address load (its def). -/
+tests is an int vreg (the VCode semantics reads it as the instruction's use), and so are the
+destination of a symbol-address load (its def) and the index and temporaries of a jump-table
+sequence. -/
 def ctlCheck (vc : VCode) (rf : RFunc) : Bool :=
   (vc.blocks.toList.zipIdx.all fun (vb, b) => vb.insts.toList.zipIdx.all fun (i, k) =>
     ctlInstOk b k i) &&
@@ -316,14 +318,11 @@ def lowerRFunc (vc : VCode) (rf : RFunc) : Except String AFunc := do
         | .rets _ => code := code.push .epilogueRet
         | m => code := code.push (.inst m)
     pure (vb.label, code)
-  -- A leaf function with an empty frame that never addresses `fp` needs no frame (x29/x30
-  -- are neither written nor read).
-  let usesFp := vc.blocks.any fun b => b.insts.any fun
-    | .load _ _ (.fpOffset _) _ | .store _ _ (.fpOffset _) _ | .loadAddr _ (.fpOffset _) => true
-    | _ => false
-  let calls := vc.blocks.any fun b => b.insts.any fun | .call _ => true | _ => false
-  let frame := fr.total != 0 || calls || usesFp
-  pure { name := vc.name, frameSize := fr.total, blocks, slotBase := fr.size, frame }
+  -- Every function keeps a frame (fp/lr pushed by the prologue, popped by the epilogue), also
+  -- leaf functions with an empty frame: the return address is then restored from the stack,
+  -- so the register-level proof needs no per-instruction fact that the body keeps x30
+  -- (`docs/contracts/regalloc-proof.md`, M6Ctl2).
+  pure { name := vc.name, frameSize := fr.total, blocks, slotBase := fr.size, frame := true }
 
 /-! ## The allocator -/
 

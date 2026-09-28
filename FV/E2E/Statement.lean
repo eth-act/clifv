@@ -159,10 +159,16 @@ def runX (astep : Arm.ArmState → Arm.ArmState) : Nat → Arm.ArmState → Arm.
   | 0, s => s
   | n + 1, s => runX astep n (astep s)
 
-/-- ABI (AAPCS64) entry: the function's words are loaded at `base`, pc at the entry, return
-address `ra` in x30 outside the code, sp 16-aligned, no model error. -/
+/-- `a` is a byte of a code word of the program loaded in `s`. -/
+def CodeAddr (s : Arm.ArmState) (a : BitVec 64) : Prop :=
+  ∃ p : BitVec 64 × BitVec 32, List.Mem p s.program ∧ (a - p.1).toNat < 4
+
+/-- ABI (AAPCS64) entry: the function's words are loaded at `base` (as the model's program and
+as data in memory: jump tables are read from the code), pc at the entry, return address `ra` in
+x30 outside the code, sp 16-aligned, no model error. -/
 structure AbiEntry (fb : FnBin) (base ra : BitVec 64) (s : Arm.ArmState) : Prop where
   program : s.program = fb.program base
+  code : ∀ k w, fb.words[k]? = some w → Arm.read_mem_bytes 4 (base + BitVec.ofNat 64 (4 * k)) s = w
   pc : Arm.r .PC s = base
   err : Arm.r .ERR s = .None
   lr : xreg 30 s = ra
@@ -175,8 +181,12 @@ def ArgsIn (args : List Clif.Val) (s : Arm.ArmState) : Prop :=
   ∀ i v, args[i]? = some v → XHolds v (xreg i s)
 
 /-- **Resource precondition**: the frame (fp/lr pair and `frameSize` bytes) fits below sp
-without wrapping. Stack used by callees is part of the callee contract. -/
-def StackAvail (af : AFunc) (s : Arm.ArmState) : Prop := af.frameSize + 16 ≤ (spv s).toNat
+without wrapping, and does not overlap the code. Stack used by callees is part of the callee
+contract. -/
+def StackAvail (af : AFunc) (s : Arm.ArmState) : Prop :=
+  af.frameSize + 16 ≤ (spv s).toNat ∧
+    ∀ a, CodeAddr s a →
+      af.frameSize + 16 ≤ (a - (spv s - BitVec.ofNat 64 (af.frameSize + 16))).toNat
 
 /-- The state the function body starts in, relative to the ABI entry state `s`: the prologue
 (when `af.frame`) pushed fp/lr and set up the frame: `sp` lowered by `16 + frameSize`, `x29` the

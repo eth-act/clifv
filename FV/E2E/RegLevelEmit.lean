@@ -231,7 +231,7 @@ theorem ftList_snoc_label (l : Lbl) : ∀ X : List Line, ∃ Z, ftList (X ++ [.l
 /-- The lines of one `AInst` (`emitFunc`'s inner loop body). -/
 def ainstLines (c : FnCtx) (af : AFunc) : AInst → PState → Except String (List Line × PState)
   | .prologue, ps => pure (if af.frame then prologueLines af.frameSize else [], ps)
-  | .epilogueRet, ps => pure (if af.frame then epilogueLines else [.ins .ret], ps)
+  | .epilogueRet, ps => pure (if af.frame then epilogueLines af.frameSize else [.ins .ret], ps)
   | .inst m, ps => m.lines c ps
 
 /-- The lines of a block's code. -/
@@ -476,7 +476,7 @@ theorem lowerRFunc_ok {vc : VCode} {rf : RFunc} {af : AFunc} (h : lowerRFunc vc 
   · rename_i blocks hb
     simp only [pure, Except.pure, Except.ok.injEq] at h
     subst h
-    refine And.intro ?_ ⟨by omega, fun hne => by simp [hne], by simpa using harg⟩
+    refine And.intro ?_ ⟨by omega, fun _ => rfl, by simpa using harg⟩
     obtain ⟨hsz, hel⟩ := array_mapIdxM_ok hb
     refine ⟨rfl, rfl, hsz, fun b vb items hvb hit => ?_⟩
     have hz : (vc.blocks.zip rf.blocks)[b]? = some (vb, items) := by
@@ -515,6 +515,21 @@ theorem lowerRFunc_ok {vc : VCode} {rf : RFunc} {af : AFunc} (h : lowerRFunc vc 
             cases i.assign regs with
             | error e => rfl
             | ok m => cases m <;> rfl
+
+
+/-- Every lowered function keeps a frame (fp/lr on the stack). -/
+theorem lowerRFunc_frame {vc : VCode} {rf : RFunc} {af : AFunc} (h : lowerRFunc vc rf = .ok af) :
+    af.frame = true := by
+  unfold lowerRFunc at h
+  simp only [bind, Except.bind] at h
+  split at h
+  · simp [throw, throwThe, MonadExceptOf.throw] at h
+  split at h
+  · simp [throw, throwThe, MonadExceptOf.throw] at h
+  split at h
+  · cases h
+  · simp only [pure, Except.pure, Except.ok.injEq] at h
+    subst h; rfl
 
 /-! ## Block decomposition -/
 
@@ -577,7 +592,7 @@ theorem blocksLinesE_block {c : FnCtx} {af : AFunc} :
         codeLinesE c af code.toList ps1 = .ok (ls, ps2) ∧
         ps.traps.toList <+: ps1.traps.toList ∧ ps2.traps.toList <+: psF.traps.toList ∧
         (∀ p, bs[b + 1]? = some p → ∃ post', post = .label (.block p.1) :: post') ∧
-        (bs[b + 1]? = none → post = [])
+        (bs[b + 1]? = none → post = []) ∧ (b = 0 → pre = [])
   | [], _, _, _, _, _, _, _, hb => by simp at hb
   | (l0, code0) :: bs, ps, psF, body, b, l, code, h, hb => by
     simp only [blocksLinesE, bind, Except.bind] at h
@@ -609,7 +624,7 @@ theorem blocksLinesE_block {c : FnCtx} {af : AFunc} :
                 · cases hr2
                 · simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hr2
                   exact ⟨_, by rw [← hr2]; rfl⟩
-          · intro hp
+          · refine ⟨fun hp => ?_, fun _ => rfl⟩
             cases bs with
             | nil =>
               simp only [blocksLinesE, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hr2
@@ -617,9 +632,9 @@ theorem blocksLinesE_block {c : FnCtx} {af : AFunc} :
             | cons _ _ => simp at hp
         | succ b =>
           simp only [List.getElem?_cons_succ] at hb
-          obtain ⟨pre, ls, ps1, ps2, post, hbody, hc, hp1, hp2, hn, hn'⟩ := blocksLinesE_block hr2 hb
+          obtain ⟨pre, ls, ps1, ps2, post, hbody, hc, hp1, hp2, hn, hn', -⟩ := blocksLinesE_block hr2 hb
           refine ⟨.label (.block l0) :: r.1 ++ pre, ls, ps1, ps2, post, ?_, hc,
-            (codeLinesE_traps hr).trans hp1, hp2, ?_, ?_⟩
+            (codeLinesE_traps hr).trans hp1, hp2, ?_, ?_, fun h => by cases h⟩
           · rw [hbody]; simp
           · intro p hp; exact hn p (by simpa using hp)
           · intro hp; exact hn' (by simpa using hp)
@@ -645,12 +660,12 @@ theorem emit_block {k : Nat} {af : AFunc} {fa : FnAsm} (h : emitFunc k af = .ok 
         ∃ j ls ps1 ps2 R, fa.lines.toList[j]? = some (.label (.block l)) ∧
           fa.lines.toList.drop (j + 1) = ftList (ls ++ nxtOf af b) ++ R ∧
           codeLinesE ⟨k, af.slotBase⟩ af code.toList ps1 = .ok (ls, ps2) ∧
-          ps2.traps.toList <+: psF.traps.toList := by
+          ps2.traps.toList <+: psF.traps.toList ∧ (b = 0 → j = 0) := by
   obtain ⟨body, psF, hb, hL, -⟩ := emitFunc_ok h
   have hL' : fa.lines.toList = ftList body ++ trapLines psF.traps.toList := by
     rw [hL]; simp [trapLines]
   refine ⟨body, psF, hb, hL', fun b l code hbc => ?_⟩
-  obtain ⟨pre, ls, ps1, ps2, post, hbody, hc, -, hp2, hn, hn'⟩ :=
+  obtain ⟨pre, ls, ps1, ps2, post, hbody, hc, -, hp2, hn, hn', hpre0⟩ :=
     blocksLinesE_block hb (by simpa using hbc)
   obtain ⟨Z, hZ⟩ := ftList_snoc_label (.block l) pre
   have hsplit := ftList_label_split (.block l) (ls ++ post) pre
@@ -665,10 +680,15 @@ theorem emit_block {k : Nat} {af : AFunc} {fa : FnAsm} (h : emitFunc k af = .ok 
       obtain ⟨post', rfl⟩ := hn p (by simpa using hb1)
       exact ⟨ftList post', ftList_label_split _ post' ls⟩
   obtain ⟨R0, hR0⟩ := hpost
-  refine ⟨Z.length, ls, ps1, ps2, R0 ++ trapLines psF.traps.toList, ?_, ?_, hc, hp2⟩
+  refine ⟨Z.length, ls, ps1, ps2, R0 ++ trapLines psF.traps.toList, ?_, ?_, hc, hp2, fun h0 => ?_⟩
   · rw [hL', hsplit]; simp
   · rw [hL', hsplit, hR0]
     simp [List.drop_append]
+  · subst h0
+    rw [hpre0 rfl, List.nil_append, ftList_cons] at hZ
+    have := congrArg List.length hZ
+    simp [ftStep, ftList] at this
+    simp [this]
 
 /-! ## Lines `fallthrough` leaves alone -/
 
