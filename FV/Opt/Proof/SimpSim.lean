@@ -1418,4 +1418,159 @@ theorem SCore.call {fr fr' : Frame} {bi k k' : Nat} {m : Mem} {s : Stmt} {ss ts 
 
 end
 
+/-- A source step is matched by target steps into `P` (the obligations of `IsSim` for
+statements). -/
+def StepSim (fr fr' : Frame) (m : Mem) (P : Frame → Frame → Prop) : Prop :=
+  (∀ fr1 m1, lstep fr m = .next fr1 m1 → ∃ fr1', LStar fr' m fr1' m1 ∧ P fr1 fr1') ∧
+  (∀ c, lstep fr m = .trap c → ∃ fr2 m2, LStar fr' m fr2 m2 ∧ lstep fr2 m2 = .trap c) ∧
+  (∀ ext vals rs rest, lstep fr m = .call ext vals rs rest → ∃ fr2 rs' rest', LStar fr' m fr2 m ∧
+    lstep fr2 m = .call ext vals rs' rest' ∧
+    Cont P { fr with body := rest } rs { fr2 with body := rest' } rs' (AbiParam.tys ext.sig.returns))
+
+theorem StepSim.noCall {fr fr' : Frame} {m : Mem} {P : Frame → Frame → Prop} {s : Stmt}
+    {ss : List Stmt} (hs : fr.body = s :: ss) (hnc : ∀ fn args, s.inst ≠ .call fn args)
+    (hn : ∀ fr1 m1, lstep fr m = .next fr1 m1 → ∃ fr1', LStar fr' m fr1' m1 ∧ P fr1 fr1')
+    (ht : ∀ c, lstep fr m = .trap c → ∃ fr2 m2, LStar fr' m fr2 m2 ∧ lstep fr2 m2 = .trap c) :
+    StepSim fr fr' m P :=
+  ⟨hn, ht, fun ext vals rs rest hl => absurd hl (lstep_not_call hs hnc _ _ _ _)⟩
+
+section
+variable {f g : Function} {fi : Info} {cert : SimpCert} (hS : SOk f g fi cert)
+  (hF : SimpFacts f fi cert) {syms : String → Option Nat}
+include hS hF
+
+/-- **One source statement**: the target runs its record. -/
+theorem SRel.stmt {fr fr' : Frame} {bi k k' : Nat} {m : Mem} {s : Stmt} {ss : List Stmt}
+    (h : SRel f g fi cert syms fr fr' bi k k') (hm : m.symbols = syms) (hs : fr.body = s :: ss) :
+    StepSim fr fr' m (fun a b => ∃ k1, SRel f g fi cert syms a b bi (k + 1) k1) := by
+  obtain ⟨b, b', lg, l, hb, hb', hlg, hsk, hl, hok, hbody, hlen⟩ := h.cur hS hs
+  have hlm : l ∈ lg.stmts := List.mem_of_getElem? hl
+  have hmk : ∀ fr1 fr1', SCore f g fi cert syms fr1 fr1' bi (k + 1) (k' + l.out.size) →
+      ∃ k1, SRel f g fi cert syms fr1 fr1' bi (k + 1) k1 := fun fr1 fr1' hc =>
+    ⟨_, hc, fun lg' hlg' => by rw [hlg] at hlg'; cases hlg'; exact hlen.symm⟩
+  generalize hR : (outs (lg.stmts.drop (k + 1)) ++ lg.extra.toList).map
+    (renStmt cert.subst.step) = R at hbody
+  have hbody' : fr'.body = l.out.toList.map (renStmt cert.subst.step) ++ R := by
+    rw [hbody, ← hR]; simp [List.append_assoc]
+  -- kept statements (records `keep`, `skel _ keep`)
+  have hkeep : ∀ s1, l.out = #[s1] → s1 = renStmt cert.subst.step s →
+      (∀ r ∈ s.results, cert.subst.step r = r) →
+      StepSim fr fr' m (fun a b => ∃ k1, SRel f g fi cert syms a b bi (k + 1) k1) := by
+    intro s1 hout hs1 hσ
+    have ht : fr'.body = renStmt cert.subst.step s :: R := by
+      rw [hbody', hout, hs1]
+      simp [renStmt, mapOperands_step_idem hS.chain]
+    have hsz : l.out.size = 1 := by rw [hout]; rfl
+    by_cases hc : ∃ fn args, s.inst = .call fn args
+    · obtain ⟨fn, args, hc⟩ := hc
+      obtain ⟨hn, ht'⟩ := lstep_call_of_call (mem := m) hs hc
+      refine ⟨fun fr1 m1 hl1 => absurd hl1 (hn fr1 m1), fun c hl1 => absurd hl1 (ht' c), ?_⟩
+      intro ext vals rs rest hl1
+      obtain ⟨hl', -, hcont⟩ := h.toSCore.call hS hs ht hσ hl1
+      exact ⟨fr', rs, R, .refl _ _, hl',
+        Cont.mono (fun a b' hab => hmk a b' (by rw [hsz]; exact hab)) hcont⟩
+    · have hnc : ∀ fn args, s.inst ≠ .call fn args := fun fn args he => hc ⟨fn, args, he⟩
+      obtain ⟨hn, htr⟩ := h.toSCore.lock hS hm hs ht hσ hnc
+      refine StepSim.noCall hs hnc (fun fr1 m1 hl1 => ?_)
+        (fun c hl1 => ⟨fr', m, .refl _ _, htr c hl1⟩)
+      obtain ⟨fr1', hl', h1, -, -⟩ := hn fr1 m1 hl1
+      exact ⟨fr1', .single hl', hmk fr1 fr1' (by rw [hsz]; exact h1)⟩
+  cases l with
+  | keep s1 =>
+    simp only [SimpCtx.stmtOk, Bool.and_eq_true, beq_iff_eq, SimpCtx.σ, sctx] at hok
+    exact hkeep s1 rfl hok.1 (SimpCtx.fixed_step hok.2)
+  | repl s1 w out =>
+    simp only [SimpCtx.stmtOk, Bool.and_eq_true, beq_iff_eq, SimpCtx.σ, sctx] at hok
+    obtain ⟨⟨⟨⟨hs1, hp⟩, hins⟩, hv⟩, hav⟩ := hok
+    split at hv
+    · rename_i v hvr
+      have hw : cert.subst.get? v = some w := by simpa using hv
+      have hnc : ∀ fn args, s.inst ≠ .call fn args := by
+        intro fn args he; rw [he] at hp; cases hp
+      obtain ⟨hn, hnt⟩ := h.toSCore.repl hS hF hm hs hb hsk hlg hlm hbody' hs1 hp hvr hw
+        (arr_all hins) (availB_sound (W := wfData g (gInfo fi cert)) hav)
+      refine StepSim.noCall hs hnc (fun fr1 m1 hl1 => ?_) (fun c hl1 => absurd hl1 (hnt c))
+      obtain ⟨fr1', hst, h1, -, -, -⟩ := hn fr1 m1 hl1
+      exact ⟨fr1', hst, hmk fr1 fr1' h1⟩
+    · cases hv
+  | skel s1 o out =>
+    cases o with
+    | keep =>
+      simp only [SimpCtx.stmtOk, Bool.and_eq_true, beq_iff_eq, SimpCtx.σ, sctx] at hok
+      obtain ⟨⟨hs1, -⟩, hout, hfix⟩ := hok
+      exact hkeep s1 hout hs1 (SimpCtx.fixed_step hfix)
+    | remove =>
+      simp only [SimpCtx.stmtOk, Bool.and_eq_true, beq_iff_eq, SimpCtx.σ, sctx,
+        List.isEmpty_iff] at hok
+      obtain ⟨⟨hs1, -⟩, ⟨⟨hnc, hns⟩, hres⟩, hins⟩ := hok
+      obtain ⟨hn, hnt⟩ := h.toSCore.remove hS hF hm hs hb hsk hlg hlm hbody' hs1
+        (notCall_spec hnc) hns (arr_all hins) (.inl ⟨rfl, hres⟩)
+      refine StepSim.noCall hs (notCall_spec hnc) (fun fr1 m1 hl1 => ?_)
+        (fun c hl1 => absurd hl1 (hnt c))
+      obtain ⟨fr1', hst, h1, -, -, -⟩ := hn fr1 m1 hl1
+      exact ⟨fr1', hst, hmk fr1 fr1' h1⟩
+    | removeWithVal v' =>
+      simp only [SimpCtx.stmtOk, Bool.and_eq_true, beq_iff_eq, SimpCtx.σ, sctx] at hok
+      obtain ⟨⟨hs1, -⟩, ⟨⟨⟨hnc, hns⟩, hins⟩, hav⟩, hr⟩ := hok
+      split at hr
+      · rename_i r hrr
+        have hsub : cert.subst.get? r = some v' := by simpa using hr
+        obtain ⟨hn, hnt⟩ := h.toSCore.remove hS hF hm hs hb hsk hlg hlm hbody' hs1
+          (notCall_spec hnc) hns (arr_all hins)
+          (.inr ⟨v', r, rfl, hrr, hsub, availB_sound (W := wfData g (gInfo fi cert)) hav⟩)
+        refine StepSim.noCall hs (notCall_spec hnc) (fun fr1 m1 hl1 => ?_)
+          (fun c hl1 => absurd hl1 (hnt c))
+        obtain ⟨fr1', hst, h1, -, -, -⟩ := hn fr1 m1 hl1
+        exact ⟨fr1', hst, hmk fr1 fr1' h1⟩
+      · cases hr
+    | replace i =>
+      simp only [SimpCtx.stmtOk, Bool.and_eq_true, beq_iff_eq, SimpCtx.σ, sctx,
+        decide_eq_true_eq] at hok
+      obtain ⟨⟨hs1, -⟩, ⟨⟨⟨⟨⟨⟨⟨⟨hnc, hns⟩, hfr⟩, hfi⟩, hsz⟩, hpre⟩, hlast⟩, hnci⟩, hnsi⟩⟩ := hok
+      have hsplit := arr_split1 hlast
+      have hti : mapOperands cert.subst.step i = i := by
+        conv => rhs; rw [← mapOperands_id i]
+        exact mapOperands_congr (SimpCtx.fixed_step hfi)
+      have hb2 : fr'.body = (out.extract 0 (out.size - 1)).toList.map (renStmt cert.subst.step) ++
+          { results := s.results, inst := i } :: R := by
+        rw [hbody', show (StmtLog.skel s1 (.replace i) out).out = out from rfl, hsplit]
+        simp [renStmt, hti]
+      obtain ⟨hn, htr⟩ := h.toSCore.replace hS hF hm hs hb hsk hlg hlm hb2 hs1 (notCall_spec hnc)
+        hns (arr_all hpre) (SimpCtx.fixed_step hfr) (notCall_spec hnci) hnsi
+      refine StepSim.noCall hs (notCall_spec hnc) (fun fr1 m1 hl1 => ?_) htr
+      obtain ⟨fr1', hst, h1, -, -⟩ := hn fr1 m1 hl1
+      refine ⟨fr1', hst, hmk fr1 fr1' ?_⟩
+      have : k' + (out.extract 0 (out.size - 1)).size + 1 =
+          k' + (StmtLog.skel s1 (.replace i) out).out.size := by
+        simp only [StmtLog.out, Array.size_extract]; omega
+      rw [← this]; exact h1
+    | two a b2 =>
+      simp only [SimpCtx.stmtOk, Bool.and_eq_true, beq_iff_eq, SimpCtx.σ, sctx,
+        decide_eq_true_eq, List.isEmpty_iff] at hok
+      obtain ⟨⟨hs1, -⟩, ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨hnc, hns⟩, hfab⟩, hres⟩, hsz⟩, hpre⟩, hxa⟩, hxb⟩, hnca⟩, hncb⟩,
+        hnsa⟩, hnsb⟩⟩ := hok
+      have hsplit := arr_split2 hsz hxa hxb
+      have hfa := SimpCtx.fixed_step hfab
+      have hta : mapOperands cert.subst.step a = a := by
+        conv => rhs; rw [← mapOperands_id a]
+        exact mapOperands_congr (fun x hx => hfa x (List.mem_append_left _ hx))
+      have htb : mapOperands cert.subst.step b2 = b2 := by
+        conv => rhs; rw [← mapOperands_id b2]
+        exact mapOperands_congr (fun x hx => hfa x (List.mem_append_right _ hx))
+      have hb2 : fr'.body = (out.extract 0 (out.size - 2)).toList.map (renStmt cert.subst.step) ++
+          { inst := a } :: { inst := b2 } :: R := by
+        rw [hbody', show (StmtLog.skel s1 (.two a b2) out).out = out from rfl, hsplit]
+        simp [renStmt, hta, htb]
+      obtain ⟨hn, htr⟩ := h.toSCore.two hS hF hm hs hb hsk hlg hlm hb2 hs1 (notCall_spec hnc)
+        hns (arr_all hpre) hres (notCall_spec hnca) (notCall_spec hncb) hnsa hnsb
+      refine StepSim.noCall hs (notCall_spec hnc) (fun fr1 m1 hl1 => ?_) htr
+      obtain ⟨fr1', hst, h1, -, -⟩ := hn fr1 m1 hl1
+      refine ⟨fr1', hst, hmk fr1 fr1' ?_⟩
+      have : k' + (out.extract 0 (out.size - 2)).size + 2 =
+          k' + (StmtLog.skel s1 (.two a b2) out).out.size := by
+        simp only [StmtLog.out, Array.size_extract]; omega
+      rw [← this]; exact h1
+
+end
+
 end Opt
