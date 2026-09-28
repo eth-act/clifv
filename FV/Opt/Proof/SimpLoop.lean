@@ -191,6 +191,7 @@ theorem BrRefines.grow {tb : BlockId → Option TrapCode} {A A' B B' : Res (Bloc
 def StmtLog.srcOps : StmtLog → List ValueId
   | .keep _ => []
   | .repl s' _ _ => operands s'.inst
+  | .skel _ .keep _ => []
   | .skel s' _ _ => operands s'.inst
 
 section
@@ -221,7 +222,11 @@ theorem LogFact.grow (hle : Valuation.Le V V') {l : StmtLog}
     intro a ha
     rw [evalNode_congr (fr := withRegs fr V) (fr' := withRegs fr V') rfl rfl hsrc] at ha
     exact hle w a (hf a ha)
-  | skel s' o out => exact SkelFact.grow hle hsrc hf
+  | skel s' o out =>
+    simp only [LogFact] at hf ⊢
+    cases o with
+    | keep => trivial
+    | _ => exact SkelFact.grow hle (by simpa only [StmtLog.srcOps] using hsrc) hf
 
 theorem TermFact.grow (hle : Valuation.Le V V') {tb : BlockId → Option TrapCode} {lg : BlockLog}
     (hsrc : ∀ x ∈ termOperands lg.term, V' x = V x)
@@ -1032,5 +1037,66 @@ theorem altsInsert_spec {st st' : SState} (h : GInv f ρ fr mem st) {x : ValueId
   · exact h.alts y ms' hy
 
 end Stmt
+
+section StepStmt
+variable {f : Function} {ρ : Valuation} {fr : Frame} {mem : Mem}
+  {rules : SimplifyFn} {skel : SkeletonFn} {allowed skelOk : Inst → Bool} {cfg : Cfg} {bi : Nat}
+
+theorem pureBest_spec (hS : SimplifySound rules) (hE : GoodEnv f fr mem) {st st1 : SState}
+    {v best : ValueId} {inst : Inst} (hI : GInv f ρ fr mem st)
+    (hops : ∀ y ∈ operands inst, st.known y = true)
+    (hnode : ∀ a, evalNode (withRegs fr (gval ρ fr mem st)) mem inst = some a →
+      gval ρ fr mem st v = some a)
+    (hsv : st.solid v = true) (h : pureBest rules allowed bi st v inst = (best, st1)) :
+    GInv f ρ fr mem st1 ∧ Mono ρ fr mem st st1 ∧ st1.solid v = true ∧
+      ∀ a, evalNode (withRegs fr (gval ρ fr mem st1)) mem inst = some a →
+        gval ρ fr mem st1 best = some a := by
+  cases hhit : memoHit st bi inst with
+  | some w =>
+    simp only [pureBest, hhit, Prod.mk.injEq] at h
+    obtain ⟨rfl, rfl⟩ := h
+    refine ⟨hI, Mono.refl _, hsv, fun a ha => ?_⟩
+    simp only [memoHit] at hhit
+    split at hhit
+    · rename_i w' hw
+      split at hhit
+      · cases hhit
+      · cases hhit; exact (hI.memo _ _ hw).2 a ha
+    · cases hhit
+  | none =>
+    simp only [pureBest, hhit] at h
+    generalize hopt : optimizeAt rules allowed rewriteLimit { st with memo := st.memo.insert inst v } v = r at h
+    obtain ⟨b, st1'⟩ := r
+    simp only [Prod.mk.injEq] at h
+    obtain ⟨rfl, rfl⟩ := h
+    have hkv : st.known v = true := by
+      simp only [SState.solid, Bool.and_eq_true] at hsv; exact hsv.1
+    obtain ⟨hIB, hGB⟩ := memo_insert_spec (st' := { st with memo := st.memo.insert inst v }) hI hops
+      hnode rfl rfl rfl rfl rfl rfl (Nat.le_refl _) rfl rfl rfl rfl
+    obtain ⟨hI1, hG1, hv1⟩ := optimizeAt_spec (allowed := allowed) hS hE rewriteLimit _ v hIB
+      (hGB.solid v hsv)
+    rw [hopt] at hI1 hG1 hv1
+    simp only at hI1 hG1 hv1
+    have hM : Mono ρ fr mem st st1' := hGB.mono.trans hG1.mono
+    have hfwd : ∀ a, evalNode (withRegs fr (gval ρ fr mem st1')) mem inst = some a →
+        gval ρ fr mem st1' b = some a := by
+      intro a ha
+      rw [evalNode_congr (fr := withRegs fr (gval ρ fr mem st)) (fr' := withRegs fr (gval ρ fr mem st1'))
+        rfl rfl (fun y hy => hM.fix y (hops y hy))] at ha
+      exact hv1 a (by rw [hGB.fix v hkv]; exact hnode a ha)
+    obtain ⟨hI2, hG2⟩ := memo_insert_spec (st' := { st1' with memo := st1'.memo.insert inst b })
+      hI1 (fun y hy => hM.known y (hops y hy)) hfwd rfl rfl rfl rfl rfl rfl (Nat.le_refl _) rfl rfl
+      rfl rfl
+    refine ⟨hI2, hM.trans hG2.mono, hG2.solid v (hG1.solid v (hGB.solid v hsv)), fun a ha => ?_⟩
+    have ha' : evalNode (withRegs fr (gval ρ fr mem st1')) mem inst = some a := by
+      rw [evalNode_congr (fr := withRegs fr (gval ρ fr mem st1'))
+        (fr' := withRegs fr (gval ρ fr mem { st1' with memo := st1'.memo.insert inst b }))
+        rfl rfl (fun y hy => hG2.fix y (hM.known y (hops y hy)))] at ha
+      exact ha
+    have hb := hfwd a ha'
+    rw [hG2.fix b (known_of_gval hI1 hb)]; exact hb
+
+end StepStmt
+
 
 end Opt

@@ -492,6 +492,47 @@ def initSState (f : Function) (info : Info) (rematConst : Bool) : SState :=
   { next := maxValue f + 1, types := info.types, trapBlocks := trapMap f, rematConst, fn := f,
     avail := initAvail f }
 
+/-- A hash-consing hit for `inst` usable in block `bi` (a rematerialised constant of another block
+is not reused). -/
+def memoHit (st : SState) (bi : Nat) (inst : Inst) : Option ValueId :=
+  match st.memo.get? inst with
+  | some w => if st.remat w && st.avail.get? w != some bi then none else some w
+  | none => none
+
+/-- Steps 2–4 for the pure statement `v = inst` (already the node of `v` in `st`): the best
+value of its class, and the state (the hash-consing table records it). -/
+def pureBest (rules : SimplifyFn) (allowed : Inst → Bool) (bi : Nat) (st : SState) (v : ValueId)
+    (inst : Inst) : ValueId × SState :=
+  match memoHit st bi inst with
+  | some w => (w, st)
+  | none =>
+    let (b, st1) := optimizeAt rules allowed rewriteLimit { st with memo := st.memo.insert inst v } v
+    (b, { st1 with memo := st1.memo.insert inst b })
+
+/-- Step 5: keep `v`, or materialise its best value `best` and rename `v` to it. -/
+def pureEmit (cfg : Cfg) (allowed : Inst → Bool) (bi : Nat) (st1 : SState) (subst : Subst)
+    (s : Stmt) (inst : Inst) (v best : ValueId) : SState × Subst × StmtLog :=
+  let keep := { st1 with avail := st1.avail.insert v bi }
+  if best == v then (keep, subst, StmtLog.keep { s with inst })
+  else
+    match materialize cfg allowed bi (st1.defs.size + 1) (st1, #[]) best with
+    | some (w, st2, emitted) =>
+      ({ st2 with stats := { st2.stats with rewritten := st2.stats.rewritten + 1,
+                                              emitted := st2.stats.emitted + emitted.size } },
+       subst.insert v w, StmtLog.repl { s with inst } w emitted)
+    | none => (keep, subst, StmtLog.keep { s with inst })
+
+/-- Make the class of `best` visible to later matches when its representative is new here (the
+representative is `subst'.find v`; renamings have no chains, which `simpOk` checks). -/
+def pureAlts (st1 st : SState) (v best : ValueId) (lg : StmtLog) : SState :=
+  let rep := match lg with
+    | .repl _ w _ => w
+    | _ => v
+  if rep == v || st1.made.contains best then
+    let members := (st1.classes.get? best).getD []
+    if !members.isEmpty then { st with alts := st.alts.insert rep members } else st
+  else st
+
 /-- Process one statement of block `bi` (the module doc's steps 1–5, or the skeleton rules). -/
 def stepStmt (rules : SimplifyFn) (skel : SkeletonFn) (allowed skelOk : Inst → Bool) (cfg : Cfg)
     (bi : Nat) (acc : SState × Subst) (s : Stmt) : SState × Subst × StmtLog :=
@@ -508,35 +549,9 @@ def stepStmt (rules : SimplifyFn) (skel : SkeletonFn) (allowed skelOk : Inst →
     let c := (operands inst).foldl (fun c x => Cost.add c (st.costOf x)) (Cost.ofInst inst)
     let st := { st with defs := st.defs.insert v inst, cost := st.cost.insert v c,
                         made := {}, classes := {} }
-    let hit := match st.memo.get? inst with
-      | some w => if st.remat w && st.avail.get? w != some bi then none else some w
-      | none => none
-    let (best, st1) := match hit with
-      | some w => (w, st)
-      | none =>
-        let (b, st1) := optimizeAt rules allowed rewriteLimit
-          { st with memo := st.memo.insert inst v } v
-        (b, { st1 with memo := st1.memo.insert inst b })
-    let keep := { st1 with avail := st1.avail.insert v bi }
-    let (st, subst', lg) :=
-      if best == v then (keep, subst, StmtLog.keep { s with inst })
-      else
-        match materialize cfg allowed bi (st1.defs.size + 1) (st1, #[]) best with
-        | some (w, st2, emitted) =>
-          ({ st2 with stats := { st2.stats with rewritten := st2.stats.rewritten + 1,
-                                                  emitted := st2.stats.emitted + emitted.size } },
-           subst.insert v w, StmtLog.repl { s with inst } w emitted)
-        | none => (keep, subst, StmtLog.keep { s with inst })
-    -- make the class visible to later matches when its representative is new here (the
-    -- representative is `subst'.find v`; renamings have no chains, which `simpOk` checks)
-    let rep := match lg with
-      | .repl _ w _ => w
-      | _ => v
-    let st := if rep == v || st1.made.contains best then
-        let members := (st1.classes.get? best).getD []
-        if !members.isEmpty then { st with alts := st.alts.insert rep members } else st
-      else st
-    (st, subst', lg)
+    let (best, st1) := pureBest rules allowed bi st v inst
+    let (st', subst', lg) := pureEmit cfg allowed bi st1 subst s inst v best
+    (pureAlts st1 st' v best lg, subst', lg)
   | _, _ =>
     -- sanity (never fails on `check`ed input): operands known
     if !(operands inst).all st.known then (st, subst, .skel { s with inst } .keep #[{ s with inst }]) else
