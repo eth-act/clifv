@@ -306,7 +306,7 @@ with the allow-list is a sound rule set. -/
 theorem simplifySound (allow : RuleId → Bool) (hc : SimplifyRulesCorrect program allow)
     (hlen : fuelMin + (program.rulesOf T.«simplify».id).length ≤ cfg.fuel) :
     SimplifySound (fun enodes typeOf make st v => Isle.Opt.simplify enodes typeOf make st v allow) := by
-  intro σ enodes typeOf make P den fr mem hM hMk st v a cands names st' hP hv h
+  intro σ enodes typeOf make P den fr mem hM hMk st v cands names st' hP h
   let G : EGraph σ := { enodes, typeOf, make }
   have hG : GraphOk G P den fr mem := ⟨hM, hMk⟩
   unfold Isle.Opt.simplify at h
@@ -325,10 +325,14 @@ theorem simplifySound (allow : RuleId → Bool) (hc : SimplifyRulesCorrect progr
       subst hr
       simp only [Except.ok.injEq, Prod.mk.injEq] at h
       obtain ⟨rfl, -, rfl⟩ := h
-      obtain ⟨h1, h2, h3⟩ := applyMulti_sound program hG allow v a T.«simplify» _ hc cfg.fuel hlen
-        { inner := st } #[] vals s1 tr1 hP hv hx
+      obtain ⟨h1, h2, -⟩ := applyMulti_gen program hG allow (.value v) (fun _ => True)
+        (fun _ _ _ => True) (fun _ _ _ _ => trivial) (fun _ _ _ _ _ _ => trivial) T.«simplify» _
+        (fun _ _ _ => by intro _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _; trivial) cfg.fuel hlen
+        { inner := st } #[] vals s1 tr1 hP trivial hx
       refine ⟨h1, h2, ?_⟩
-      intro c hcm
+      intro a hv c hcm
+      obtain ⟨-, -, h3⟩ := applyMulti_sound program hG allow v a T.«simplify» _ hc cfg.fuel hlen
+        { inner := st } #[] vals s1 tr1 hP hv hx
       simp only [List.mem_map, List.mem_filterMap] at hcm
       obtain ⟨⟨c', nm⟩, ⟨⟨rid, w⟩, hmem, hw⟩, rfl⟩ := hcm
       cases w with
