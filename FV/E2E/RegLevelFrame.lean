@@ -1,4 +1,4 @@
-import FV.E2E.RegLevelJT
+import FV.E2E.RegLevelTrap
 
 /-!
 # Prologue and epilogue on the machine (M6)
@@ -266,5 +266,242 @@ theorem epilogue_ok (env : Env) {size : Nat} (hs : size < 2 ^ 64) (s : Arm.ArmSt
   · intro f f1 f2 f3 f4 f5
     rw [he]; simp [Arm.r_of_w_different, f1, f2, f3, f4]; exact ho1 f f1 f4 f5
   · rw [he]; simp [Arm.ArmState.mem_w_eq_mem, hm1]
+
+/-! ## Machine facts about the frame lines -/
+
+theorem stepsOk_interOk {env : Env} {ls : List Line} {s s' : Arm.ArmState} (h : StepsOk env ls s s')
+    (herr : Arm.r .ERR s = .None) : InterOk env ls s := by
+  intro k _ _ s1 h1
+  obtain ⟨s2, h2⟩ := StepsOk.take k h
+  rw [h2.exec] at h1
+  cases h1
+  obtain ⟨e1, e2⟩ := h2.err
+  exact ⟨e1.trans herr, e2⟩
+
+theorem movkLines_mem {n : Nat} : ∀ {ks : List (Nat × Nat)} {ln : Line}, ln ∈ movkLines n ks →
+    ∃ c i, ln = .ins (.movk true (.x n) ⟨c, i⟩) none
+  | [], _, h => by simp [movkLines] at h
+  | (c, i) :: ks, ln, h => by
+    simp only [movkLines, List.mem_cons] at h
+    rcases h with rfl | h
+    · exact ⟨c, i, rfl⟩
+    · exact movkLines_mem h
+
+/-- The frame lines are plain, unhooked instruction lines. -/
+theorem spAdjLines_ins (sub : Bool) (size : Nat) :
+    ∀ ln ∈ spAdjLines sub size, ∃ x, ln = .ins x none ∧ x.hooked = false ∧ ln.plain = true := by
+  intro ln hln
+  unfold spAdjLines at hln
+  split at hln
+  · simp at hln
+  · split at hln
+    · simp only [List.mem_singleton] at hln
+      subst hln; exact ⟨_, rfl, rfl, by cases sub <;> rfl⟩
+    · rw [List.mem_append, loadConst64_eq] at hln
+      rcases hln with hln | hln
+      · simp only [List.mem_cons] at hln
+        rcases hln with rfl | hln
+        · exact ⟨_, rfl, rfl, rfl⟩
+        · obtain ⟨c, i, rfl⟩ := movkLines_mem hln
+          exact ⟨_, rfl, rfl, rfl⟩
+      · simp only [List.mem_singleton] at hln
+        subst hln; exact ⟨_, rfl, rfl, by cases sub <;> rfl⟩
+
+theorem prologueLines_ins (size : Nat) :
+    ∀ ln ∈ prologueLines size, ∃ x, ln = .ins x none ∧ x.hooked = false ∧ ln.plain = true := by
+  intro ln hln
+  rw [prologueLines_eq, List.mem_append] at hln
+  rcases hln with hln | hln
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hln
+    rcases hln with rfl | rfl <;> exact ⟨_, rfl, rfl, rfl⟩
+  · exact spAdjLines_ins true size ln hln
+
+/-- Straight-line lines at line `j` of the final code run as machine steps. -/
+theorem iterN_steps {R : RL} (hR : R.Wf) {ls T : List Line} {j : Nat} {s s' : Arm.ArmState}
+    (hdrop : R.L.drop j = ls ++ T)
+    (hins : ∀ ln ∈ ls, ∃ x, ln = .ins x none ∧ x.hooked = false)
+    (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j)
+    (herr : Arm.r .ERR s = .None) (h : StepsOk (R.envOf j) ls s s') :
+    iterN R.step ls.length s = s' ∧ Arm.r .PC s' = R.pcOf (j + ls.length) := by
+  have hat : ∀ k ln, ls[k]? = some ln → R.fa.lines.toList[j + k]? = some ln := by
+    intro k ln hk
+    have := congrArg (·[k]?) hdrop
+    simp only [List.getElem?_drop, RL.L] at this
+    rw [this, List.getElem?_append_left (List.getElem?_eq_some_iff.1 hk).1]
+    exact hk
+  have hins' : ∀ ln ∈ ls, ∃ i t, ln = .ins i t := fun ln h => by
+    obtain ⟨x, e, -⟩ := hins ln h; exact ⟨x, none, e⟩
+  have hrun := h.exec
+  refine ⟨iterN_execLines hR.layout hR.lm hR.fit ls j s s' hat
+      (fun i t hm => by obtain ⟨x, e, hh⟩ := hins _ hm; cases e; exact hh)
+      hprog (by rw [hpc]; rfl) herr (stepsOk_interOk h herr) hrun, ?_⟩
+  rw [execLines_pc hrun, hpc]
+  simp only [RL.pcOf, RL.L]
+  rw [lineOffset_drop_ins (by simpa [RL.L] using hdrop) hins', BitVec.add_assoc]
+  congr 1
+  apply BitVec.eq_of_toNat_eq
+  simp [BitVec.toNat_add]
+
+/-! ## The prologue on the machine: `Q` at the entry configuration -/
+
+theorem noTrap_next {R : RL} {c2 : List AInst} {psm ps2 : PState} {ls2 : List Line} {b : Nat}
+    (h2 : codeLinesE R.ctx R.af c2 psm = .ok (ls2, ps2)) :
+    ∀ n, (ls2 ++ nxtOf R.af b)[1]? ≠ some (.label (.trap n)) := by
+  intro n e
+  have hm := List.mem_of_getElem? e
+  rcases List.mem_append.1 hm with hm | hm
+  · exact codeLinesE_noTrap _ _ _ _ h2 _ hm n rfl
+  · simp only [nxtOf] at hm
+    split at hm <;> simp at hm
+
+/-- The entry block in the final lines: its label at line 0, then the prologue, then the
+`fallthrough` of its items' lines. -/
+theorem entry_block {R : RL} (hR : R.Wf) :
+    ∃ vb items code ls ps1 ps2 T, R.vc.blocks[0]? = some vb ∧ R.rf.blocks[0]? = some items ∧
+      itemsCode R.fr vb items.toList = .ok code ∧ codeLinesE R.ctx R.af code ps1 = .ok (ls, ps2) ∧
+      ps2.traps.toList <+: R.psF.traps.toList ∧
+      R.L[0]? = some (.label (.block vb.label)) ∧
+      R.L.drop 1 = prologueLines R.af.frameSize ++ (ftList (ls ++ nxtOf R.af 0) ++ T) := by
+  obtain ⟨c, ins, hc⟩ := checked_of_checkAlloc hR.check
+  have h0 : 0 < R.vc.blocks.size := Nat.pos_of_ne_zero hc.nonempty
+  obtain ⟨vb, hvb⟩ : ∃ vb, R.vc.blocks[0]? = some vb := ⟨_, Array.getElem?_eq_getElem h0⟩
+  obtain ⟨items, hit⟩ : ∃ items, R.rf.blocks[0]? = some items :=
+    ⟨_, Array.getElem?_eq_getElem (by rw [hc.size]; exact h0)⟩
+  have hframe := lowerRFunc_frame hR.alloc
+  obtain ⟨⟨-, -, -, hbl⟩, -⟩ := lowerRFunc_ok hR.alloc
+  obtain ⟨code, hcode, haf⟩ := hbl 0 vb items hvb hit
+  obtain ⟨body, psF, hb, -, hblk⟩ := emit_block hR.emit
+  obtain ⟨body', hb'⟩ := hR.psF
+  have hk : R.ctx = ⟨R.fa.k, R.af.slotBase⟩ := rfl
+  rw [hk, hb] at hb'
+  simp only [Except.ok.injEq, Prod.mk.injEq] at hb'
+  obtain ⟨-, rfl⟩ := hb'
+  obtain ⟨j0, lsA, ps1, ps2, T, hj0, hdrop, hls, htr, hj⟩ := hblk 0 _ _ haf
+  obtain rfl := hj rfl
+  simp only [ite_true] at hls
+  obtain ⟨ls1, ls2, psm, h1, h2, rfl⟩ := codeLinesE_append _ _ _ _ _ hls
+  simp only [codeLinesE, ainstLines, hframe, ite_true, bind, Except.bind, pure, Except.pure,
+    List.append_nil, Except.ok.injEq, Prod.mk.injEq] at h1
+  obtain ⟨rfl, rfl⟩ := h1
+  refine ⟨vb, items, code, ls2, ps1, ps2, T, hvb, hit, hcode, h2, htr, hj0, ?_⟩
+  show List.drop (0 + 1) R.fa.lines.toList = _
+  rw [hdrop, List.append_assoc, ftList_plain_append _ _
+    (fun ln h => by obtain ⟨_, _, _, hp⟩ := prologueLines_ins _ ln h; exact hp) (noTrap_next h2), List.append_assoc]
+
+theorem sp_sub16 (x : BitVec 64) (n : Nat) :
+    x - 16#64 - BitVec.ofNat 64 n = x - BitVec.ofNat 64 (n + 16) := by
+  rw [BitVec.ofNat_add]; bv_omega
+
+/-- **After the prologue**: the machine is at the entry configuration of the allocated code
+(store = the machine's locations, world = any body-entry world `w₀`), `AInv` holds, and every
+field but the pc, x16, x29 and `sp` is as at entry. -/
+theorem q_init {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiEntry R.fb R.base ra R.s0)
+    {w₀ : Arm.ArmState} (hbe : BodyEntry R.af R.s0 w₀) :
+    ∃ n, Q R (iterN R.step n R.s0) (MConf.init R.rf (locVal R.fr (iterN R.step n R.s0)) w₀) ∧
+      AInv (MConf.init R.rf (locVal R.fr (iterN R.step n R.s0)) w₀) ∧
+      ∀ f, f ≠ .PC → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 →
+        Arm.r f (iterN R.step n R.s0) = Arm.r f R.s0 := by
+  have hframe := lowerRFunc_frame hR.alloc
+  have hst0 := hR.stack
+  have hsp0 := (spv R.s0).isLt
+  have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; omega
+  have hal0 : Arm.CheckSPAlignment R.s0 := (checkSP_iff _).2 hent.spAligned
+  obtain ⟨vb, items, code, ls, ps1, ps2, T, hvb, hit, hcode, hls, htr, hj0, hdrop⟩ := entry_block hR
+  obtain ⟨s', hsteps, hsp', hfp', ho', hm'⟩ := prologue_ok (R.envOf 1) hs R.s0 hal0
+  have hpc1 : Arm.r .PC R.s0 = R.pcOf 1 := by
+    rw [hent.pc]
+    simp only [RL.pcOf, RL.L] at hj0 ⊢
+    rw [lineOffset_succ _ _ _ hj0]
+    simp [lineOffset, Line.size]
+  obtain ⟨hiter, hpc'⟩ := iterN_steps hR hdrop
+    (fun ln h => by obtain ⟨x, e, hh, -⟩ := prologueLines_ins _ ln h; exact ⟨x, e, hh⟩)
+    hent.program hpc1 hent.err hsteps
+  obtain ⟨herr', hprog'⟩ := hsteps.err
+  refine ⟨(prologueLines R.af.frameSize).length, ?_⟩
+  rw [hiter]
+  have hdrop0 : frameDrop R.af = R.af.frameSize + 16 := by simp [frameDrop, hframe]
+  have hspB : spOf s' = R.spB := by
+    rw [hsp', RL.spB, hdrop0]; exact sp_sub16 _ _
+  -- the fp/lr slot
+  have hslot : ∀ a, (∀ k < 16, a ≠ spv R.s0 - 16#64 + BitVec.ofNat 64 k) → s'.mem a = R.s0.mem a := by
+    intro a ha
+    rw [hm', Arm.Memory.write_mem_bytes_eq_mem_write_bytes]
+    exact write_bytes_outside 16 _ _ _ ha
+  have hmemF : ∀ a, ¬ R.F a → s'.mem a = w₀.mem a := by
+    intro a ha
+    rw [hslot a (fun k hk e => ha (e ▸ fplr_inF hR hframe k hk)), hbe.mem]
+  have hcode' : ∀ a, CodeAddr R.s0 a → s'.mem a = R.s0.mem a := by
+    intro a ha
+    apply hslot
+    intro k hk e
+    have h2 := hst0.2 a ha
+    rw [e] at h2
+    have : spv R.s0 - 16#64 + BitVec.ofNat 64 k - (spv R.s0 - BitVec.ofNat 64 (R.af.frameSize + 16)) =
+        BitVec.ofNat 64 (R.af.frameSize + k) := by
+      apply BitVec.eq_of_toNat_eq
+      have := hst0.1
+      simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
+      rw [Nat.mod_eq_of_lt (a := k) (by omega), Nat.mod_eq_of_lt (a := R.af.frameSize + 16) (by omega),
+        Nat.mod_eq_of_lt (a := R.af.frameSize + k) (by omega)]
+      simp only [spv] at *
+      omega
+    rw [this, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at h2
+    omega
+  have hfield : ∀ f, f ≠ .PC → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 →
+      Arm.r f s' = Arm.r f R.s0 := ho'
+  refine ⟨?_, ?_, hfield⟩
+  · have hitems : R.rf.blocks[0]! = items := by simp [getElem!_def, hit]
+    simp only [MConf.init, hitems]
+    refine ⟨1 + (prologueLines R.af.frameSize).length, vb, items, [], code, ls, ps1, ps2, T, hvb,
+      hit, rfl, itemsChecked_block hR hvb hit, hcode, hls, htr, ?_, hpc', ?_⟩
+    · rw [← List.drop_drop, hdrop, List.drop_left]
+    · refine ⟨fun l _ _ => rfl, ⟨fun f hf => ?_, hmemF, ?_⟩, by rw [herr', hent.err], by rw [hprog', hent.program],
+        hspB, ?_, fun _ => ?_, code_keep hR.prog0 hent.code hcode'⟩
+      · by_cases h29 : f = .GPR 29#5
+        · subst h29
+          have := hbe.fp
+          simp only [hframe, ite_true, xreg] at this hfp'
+          rw [hfp', this]; rfl
+        by_cases h31 : f = .GPR 31#5
+        · subst h31
+          have := hbe.sp
+          simp only [spv] at this
+          rw [this]; exact hspB
+        have h16 : f ≠ .GPR 16#5 := by rintro rfl; exact hf (by simp [Masked])
+        have hpc : f ≠ .PC := by rintro rfl; exact hf trivial
+        rw [hfield f hpc h29 h31 h16, hbe.other f hf h29 h31]
+      · rw [hprog', hbe.program]
+      · rw [checkSP_iff, hspB]
+        simp only [RL.spB, hdrop0]
+        have := hst0.1
+        have ha := hent.spAligned
+        have hm : (R.af.frameSize + 16) % 2 ^ 64 = R.af.frameSize + 16 := Nat.mod_eq_of_lt (by omega)
+        rw [BitVec.toNat_sub_of_le (by simp only [BitVec.le_def, BitVec.toNat_ofNat, hm]; omega),
+          BitVec.toNat_ofNat, hm]
+        have : R.af.frameSize % 16 = 0 := by
+          rw [(lowerRFunc_ok hR.alloc).1.1]; exact alignTo16_mod _
+        omega
+      · rw [← Arm.read_mem_bytes_of_write_mem_bytes_same (n := 16) (addr := spv R.s0 - 16#64)
+          (v := xreg 30 R.s0 ++ xreg 29 R.s0) (s := R.s0) (by decide)]
+        exact read_mem_bytes_congr _ _ (fun k _ => by rw [hm']; rfl)
+  · intro _ _ r hr
+    show regVal s' r = regVal w₀ r
+    cases r with
+    | x n =>
+      simp only [Reg.isArgReg, decide_eq_true_eq] at hr
+      have hne : ∀ m, 8 ≤ m → m < 32 → Arm.StateField.GPR (rnum n) ≠ .GPR (BitVec.ofNat 5 m) :=
+        fun m h1 h2 e => rnum_ne (a := n) (b := m) (by omega) h2 (by omega) (Arm.StateField.GPR.inj e)
+      simp only [regVal]
+      rw [hfield _ (by simp) (hne 29 (by omega) (by omega)) (hne 31 (by omega) (by omega))
+        (hne 16 (by omega) (by omega))]
+      have := hbe.args n hr
+      simp only [xreg] at this
+      simp only [rnum, this]
+    | v n =>
+      simp only [Reg.isArgReg, decide_eq_true_eq] at hr
+      simp only [regVal]
+      rw [hfield _ (by simp) (by simp) (by simp) (by simp)]
+      exact (hbe.argsV n hr).symm
+    | _ => simp [Reg.isArgReg] at hr
 
 end Backend.Proof
