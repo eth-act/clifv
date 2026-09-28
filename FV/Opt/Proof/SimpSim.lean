@@ -930,6 +930,10 @@ theorem SCore.lockWith {fr fr' : Frame} {bi k k' : Nat} {m : Mem} {s : Stmt} {ss
 
 end
 
+theorem mem_restore' {m ma : Mem} (h : ma.symbols = (memPlus m).symbols) :
+    ({ ({ ma with symbols := m.symbols } : Mem) with symbols := (memPlus m).symbols } : Mem) = ma := by
+  cases ma; simp only at h ⊢; rw [h]
+
 /-! ## The statement records -/
 
 section
@@ -1167,6 +1171,121 @@ theorem SCore.replace {fr fr' : Frame} {bi k k' : Nat} {m : Mem} {s : Stmt} {ss 
   refine ⟨fun fr1 m1 hl1 => ?_, fun c hl1 => ⟨fr'', m, hst, htr c hl1⟩⟩
   obtain ⟨fr1', hl', h3, hb3, hs3⟩ := hn fr1 m1 hl1
   exact ⟨fr1', hst.trans (.single hl'), h3, hb3, hs3⟩
+
+end
+
+section
+variable {f g : Function} {fi : Info} {cert : SimpCert} (hS : SOk f g fi cert)
+  (hF : SimpFacts f fi cert) {syms : String → Option Nat}
+include hS hF
+
+/-- A skeleton statement replaced by two result-free instructions (record `skel _ (two a b)`). -/
+theorem SCore.two {fr fr' : Frame} {bi k k' : Nat} {m : Mem} {s : Stmt} {ss R : List Stmt}
+    {b : Block} {lg : BlockLog} {s' : Stmt} {a b2 : Inst} {out pre : Array Stmt}
+    (h : SCore f g fi cert syms fr fr' bi k k') (hm : m.symbols = syms) (hs : fr.body = s :: ss)
+    (hb : f.blocks[bi]? = some b) (hsk : b.body[k]? = some s)
+    (hlg : cert.logs[bi]? = some (some lg)) (hl : StmtLog.skel s' (.two a b2) out ∈ lg.stmts)
+    (hbody : fr'.body = pre.toList.map (renStmt cert.subst.step) ++
+      { inst := a } :: { inst := b2 } :: R)
+    (hs' : s' = renStmt cert.subst.step s) (hnc : ∀ fn args, s.inst ≠ .call fn args)
+    (hns : notSym s.inst = true) (hins : ∀ t ∈ pre.toList, insOk t = true)
+    (hres : s.results = []) (hnca : ∀ fn args, a ≠ .call fn args)
+    (hncb : ∀ fn args, b2 ≠ .call fn args) (hnsa : notSym a = true) (hnsb : notSym b2 = true) :
+    (∀ fr1 m1, lstep fr m = .next fr1 m1 → ∃ fr1', LStar fr' m fr1' m1 ∧
+      SCore f g fi cert syms fr1 fr1' bi (k + 1) (k' + pre.size + 2) ∧ fr1'.body = R ∧
+      fr1.body = ss) ∧
+    (∀ c, lstep fr m = .trap c → ∃ fr2 m2, LStar fr' m fr2 m2 ∧ lstep fr2 m2 = .trap c) := by
+  obtain ⟨fr'', hst, h2, hb2, ht2, hfa, hV⟩ := h.runIns hS hF hm hbody hins hlg
+  have hfact : ResRefines _ _ := hfa.1 _ hl
+  have hr := h2.srcRename hS hb hsk hV (M := memPlus m)
+  have hs'i : s'.inst = mapOperands cert.subst.step s.inst := by rw [hs']; rfl
+  rw [← hs'i] at hr
+  obtain ⟨hgok, hgtr⟩ := src_to_graph hns hr
+  obtain ⟨b', hb', h2b, -, -⟩ := h2.invg.block
+  generalize VAt f g fi cert fr'' bi (k' + pre.size) m = V at hfa hV hfact hr hgok hgtr
+  generalize k' + pre.size = K at h2 hV h2b ⊢
+  have htka : b'.body[K]? = some { inst := a } := by
+    rw [h2b] at hb2; exact (drop_eq_cons hb2).1
+  have htkb : b'.body[K + 1]? = some { inst := b2 } := by
+    rw [h2b] at hb2
+    have := (drop_eq_cons hb2).2.1
+    exact (drop_eq_cons this).1
+  let fr2 : Frame := { fr'' with body := { inst := b2 } :: R }
+  have hV2 : ∀ x, Avail (wfData g (gInfo fi cert)) bi (K + 1) x → V x = fr2.regs x := by
+    intro x hx
+    rcases avail_succ hS.wfg hb' htka hx with hr | hx'
+    · cases hr
+    · exact hV x hx'
+  -- the graph side of `a` and `b`
+  have hra := tgtGraph hS hb' htka hV (M := memPlus m)
+  obtain ⟨haok, hatr⟩ := graph_to_tgt hnsa hra
+  have hrb : ∀ M, evalInst (withRegs fr'' V) M b2 = evalInst fr2 M b2 := fun M =>
+    tgtGraph hS hb' htkb hV2 (M := M)
+  -- runs of `a` from the graph side
+  have hrun_a : ∀ ma', evalInst (withRegs fr'' V) (memPlus m) a = .ok ([], ma') →
+      let ma : Mem := { ma' with symbols := m.symbols }
+      lstep fr'' m = .next fr2 ma ∧ SCore f g fi cert syms fr fr2 bi k (K + 1) ∧
+        ({ ma with symbols := (memPlus m).symbols } : Mem) = ma' := by
+    intro ma' ha
+    have hsy : ma'.symbols = (memPlus m).symbols := evalInst_symbols ha
+    have hres' := mem_restore' (m := m) hsy
+    have hta := haok [] { ma' with symbols := m.symbols } rfl (by rw [hres']; exact ha)
+    obtain ⟨hl, h3⟩ := h2.stepEmpty hS hb2 rfl hnca hta
+    exact ⟨hl, h3, hres'⟩
+  refine ⟨fun fr1 m1 hl1 => ?_, fun c hl1 => ?_⟩
+  · rw [lstep_inst hs hnc] at hl1
+    cases he : evalInst fr m s.inst with
+    | trap c => rw [he] at hl1; cases hl1
+    | stuck _ => rw [he] at hl1; cases hl1
+    | ok p =>
+      obtain ⟨vals, m1'⟩ := p
+      rw [he] at hl1
+      simp only [LRes.ofRes] at hl1
+      split at hl1
+      · rename_i regs hset
+        cases hl1
+        have hseq := hfact.1 _ (hgok _ _ he)
+        simp only [seqEval2] at hseq
+        split at hseq
+        · rename_i ma' ha
+          obtain ⟨hla, h3, hma⟩ := hrun_a ma' ha
+          rw [← hma, hrb, evalInst_withSyms hnsb] at hseq
+          obtain ⟨m0, hb0, hm0⟩ := resSyms_eq_ok hseq
+          have hm0' : m0 = m1 := mem_syms_inj hm0.symm (by
+            rw [evalInst_symbols hb0, evalInst_symbols he])
+          rw [hm0'] at hb0
+          have hvals : vals = [] := by
+            have := (setMany_spec hset).1; rw [hres] at this
+            exact (List.length_eq_zero_iff.1 this.symm)
+          rw [hvals] at hb0 he hset
+          obtain ⟨hlb, h4⟩ := h3.stepEmpty hS rfl rfl hncb hb0
+          obtain ⟨-, h5⟩ := h4.srcOnly hS hm hs hnc he hset (by rw [hres]; simp)
+          exact ⟨_, hst.trans (.step hla (.single hlb)), h5, rfl, rfl⟩
+        all_goals cases hseq
+      · cases hl1
+  · rw [lstep_inst hs hnc] at hl1
+    cases he : evalInst fr m s.inst with
+    | ok p =>
+      obtain ⟨_, _⟩ := p
+      rw [he] at hl1; simp only [LRes.ofRes] at hl1; split at hl1 <;> cases hl1
+    | stuck _ => rw [he] at hl1; cases hl1
+    | trap c' =>
+      rw [he] at hl1; cases hl1
+      have hseq := hfact.2 _ (hgtr _ he)
+      simp only [seqEval2] at hseq
+      split at hseq
+      · rename_i ma' ha
+        obtain ⟨hla, -, hma⟩ := hrun_a ma' ha
+        rw [← hma, hrb, evalInst_withSyms hnsb] at hseq
+        have hbt := resSyms_eq_trap hseq
+        refine ⟨fr2, _, hst.trans (.single hla), ?_⟩
+        rw [lstep_inst (fr := fr2) rfl hncb, hbt]; rfl
+      · cases hseq
+      · rename_i c0 hta
+        cases hseq
+        refine ⟨fr'', m, hst, ?_⟩
+        rw [lstep_inst hb2 hnca, hatr _ hta]; rfl
+      · cases hseq
 
 end
 
