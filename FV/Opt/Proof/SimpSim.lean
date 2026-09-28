@@ -1128,4 +1128,46 @@ theorem SCore.remove {fr fr' : Frame} {bi k k' : Nat} {m : Mem} {s : Stmt} {ss R
 
 end
 
+section
+variable {f g : Function} {fi : Info} {cert : SimpCert} (hS : SOk f g fi cert)
+  (hF : SimpFacts f fi cert) {syms : String → Option Nat}
+include hS hF
+
+/-- A skeleton statement replaced by `i` (record `skel _ (replace i)`): after the inserted
+nodes, `i` steps in lock-step with the source statement. -/
+theorem SCore.replace {fr fr' : Frame} {bi k k' : Nat} {m : Mem} {s : Stmt} {ss R : List Stmt}
+    {b : Block} {lg : BlockLog} {s' : Stmt} {i : Inst} {out pre : Array Stmt}
+    (h : SCore f g fi cert syms fr fr' bi k k') (hm : m.symbols = syms) (hs : fr.body = s :: ss)
+    (hb : f.blocks[bi]? = some b) (hsk : b.body[k]? = some s)
+    (hlg : cert.logs[bi]? = some (some lg)) (hl : StmtLog.skel s' (.replace i) out ∈ lg.stmts)
+    (hbody : fr'.body = pre.toList.map (renStmt cert.subst.step) ++
+      { results := s.results, inst := i } :: R)
+    (hs' : s' = renStmt cert.subst.step s) (hnc : ∀ fn args, s.inst ≠ .call fn args)
+    (hns : notSym s.inst = true) (hins : ∀ t ∈ pre.toList, insOk t = true)
+    (hσ : ∀ r ∈ s.results, cert.subst.step r = r) (hnci : ∀ fn args, i ≠ .call fn args)
+    (hnsi : notSym i = true) :
+    (∀ fr1 m1, lstep fr m = .next fr1 m1 → ∃ fr1', LStar fr' m fr1' m1 ∧
+      SCore f g fi cert syms fr1 fr1' bi (k + 1) (k' + pre.size + 1) ∧ fr1'.body = R ∧
+      fr1.body = ss) ∧
+    (∀ c, lstep fr m = .trap c → ∃ fr2 m2, LStar fr' m fr2 m2 ∧ lstep fr2 m2 = .trap c) := by
+  obtain ⟨fr'', hst, h2, hb2, ht2, hfa, hV⟩ := h.runIns hS hF hm hbody hins hlg
+  have hfact : ResRefines _ _ := hfa.1 _ hl
+  have hr := h2.srcRename hS hb hsk hV (M := memPlus m)
+  have hs'i : s'.inst = mapOperands cert.subst.step s.inst := by rw [hs']; rfl
+  rw [← hs'i] at hr
+  obtain ⟨hgok, hgtr⟩ := src_to_graph hns hr
+  obtain ⟨b', hb', h2b, -, -⟩ := h2.invg.block
+  have htk : b'.body[k' + pre.size]? = some { results := s.results, inst := i } := by
+    rw [h2b] at hb2; exact (drop_eq_cons hb2).1
+  have hrt := tgtGraph hS hb' htk hV (M := memPlus m)
+  obtain ⟨htok, httr⟩ := graph_to_tgt hnsi hrt
+  obtain ⟨hn, htr⟩ := h2.lockWith hS hm hs hb2 hσ hnc hnci
+    (fun vals m1 he => htok vals m1 (evalInst_symbols he) (hfact.1 _ (hgok _ _ he)))
+    (fun c he => httr c (hfact.2 c (hgtr c he)))
+  refine ⟨fun fr1 m1 hl1 => ?_, fun c hl1 => ⟨fr'', m, hst, htr c hl1⟩⟩
+  obtain ⟨fr1', hl', h3, hb3, hs3⟩ := hn fr1 m1 hl1
+  exact ⟨fr1', hst.trans (.single hl'), h3, hb3, hs3⟩
+
+end
+
 end Opt
