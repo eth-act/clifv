@@ -229,12 +229,12 @@ theorem LogFact.grow (hle : Valuation.Le V V') {l : StmtLog}
     | _ => exact SkelFact.grow hle (by simpa only [StmtLog.srcOps] using hsrc) hf
 
 theorem TermFact.grow (hle : Valuation.Le V V') {tb : BlockId → Option TrapCode} {lg : BlockLog}
-    (hsrc : ∀ x ∈ termOperands lg.term, V' x = V x)
+    (hsrc : lg.changed = true → ∀ x ∈ termOperands lg.term, V' x = V x)
     (hf : lg.changed = true →
       BrRefines tb (termEval (withRegs fr V) mem lg.term) (effTerm (withRegs fr V) mem (effsOf lg.extra) lg.term')) :
     lg.changed = true →
       BrRefines tb (termEval (withRegs fr V') mem lg.term) (effTerm (withRegs fr V') mem (effsOf lg.extra) lg.term') :=
-  fun hc => BrRefines.grow (hf hc) (termEval_congr (fr := withRegs fr V) (fr' := withRegs fr V') hsrc)
+  fun hc => BrRefines.grow (hf hc) (termEval_congr (fr := withRegs fr V) (fr' := withRegs fr V') (hsrc hc))
     (fun h => by rw [effTerm_grow hle h])
 
 end
@@ -1258,5 +1258,114 @@ theorem stepStmt_spec (hS : SimplifySound rules) (hK : SkeletonSound skel) (hE :
 
 end StepStmt
 
+
+/-! ## Blocks and the pass -/
+
+section Block
+variable {f : Function} {ρ : Valuation} {fr : Frame} {mem : Mem}
+  {rules : SimplifyFn} {skel : SkeletonFn} {allowed skelOk : Inst → Bool} {cfg : Cfg}
+
+/-- The facts of a block record in the state `st`, with the values their sources read known. -/
+def BlockOk (ρ : Valuation) (fr : Frame) (mem : Mem) (st : SState) (lg : BlockLog) : Prop :=
+  BlockFact (fun b => st.trapBlocks.get? b) (withRegs fr (gval ρ fr mem st)) mem (gval ρ fr mem st) lg ∧
+  (∀ l ∈ lg.stmts, ∀ x ∈ l.srcOps, st.known x = true) ∧
+  (lg.changed = true → ∀ x ∈ termOperands lg.term, st.known x = true)
+
+theorem BlockOk.grow {st st' : SState} {lg : BlockLog} (hI : GInv f ρ fr mem st)
+    (hM : Mono ρ fr mem st st') (h : BlockOk ρ fr mem st lg) : BlockOk ρ fr mem st' lg := by
+  obtain ⟨⟨hs, ht⟩, hks, hkt⟩ := h
+  refine ⟨⟨fun l hl => LogFact.grow (gval_le hI hM) (fun x hx => hM.fix x (hks l hl x hx)) (hs l hl),
+    ?_⟩, fun l hl x hx => hM.known x (hks l hl x hx), fun hc x hx => hM.known x (hkt hc x hx)⟩
+  rw [hM.trap]
+  exact TermFact.grow (gval_le hI hM) (fun hc x hx => hM.fix x (hkt hc x hx)) ht
+
+/-- The invariant of the pass (`simplify`'s fold over the blocks). -/
+def PInv (f : Function) (ρ : Valuation) (fr : Frame) (mem : Mem) (st : SState)
+    (logs : Array (Option BlockLog)) : Prop :=
+  GInv f ρ fr mem st ∧ ∀ (i : Nat) lg, logs[i]? = some (some lg) → BlockOk ρ fr mem st lg
+
+theorem stmts_spec (hS : SimplifySound rules) (hK : SkeletonSound skel) (hE : GoodEnv f fr mem)
+    (bi : Nat) : ∀ (l : List Stmt) (acc : SState × Subst × Array StmtLog) (st0 : SState),
+      GInv f ρ fr mem acc.1 → Mono ρ fr mem st0 acc.1 →
+      (∀ lg ∈ acc.2.2.toList, LogFact (withRegs fr (gval ρ fr mem acc.1)) mem (gval ρ fr mem acc.1) lg ∧
+        ∀ x ∈ lg.srcOps, acc.1.known x = true) →
+      let r := l.foldl (fun (acc : SState × Subst × Array StmtLog) s =>
+        let (st, subst, lg) := stepStmt rules skel allowed skelOk cfg bi (acc.1, acc.2.1) s
+        (st, subst, acc.2.2.push lg)) acc
+      GInv f ρ fr mem r.1 ∧ Mono ρ fr mem st0 r.1 ∧
+      (∀ lg ∈ r.2.2.toList, LogFact (withRegs fr (gval ρ fr mem r.1)) mem (gval ρ fr mem r.1) lg ∧
+        ∀ x ∈ lg.srcOps, r.1.known x = true)
+  | [], acc, st0, hI, hM, hL => ⟨hI, hM, hL⟩
+  | s :: l, acc, st0, hI, hM, hL => by
+    simp only [List.foldl_cons]
+    generalize hst : stepStmt rules skel allowed skelOk cfg bi (acc.1, acc.2.1) s = r
+    obtain ⟨st1, subst1, lg1⟩ := r
+    obtain ⟨hI1, hM1, hF1, hk1⟩ := stepStmt_spec hS hK hE hI hst
+    refine stmts_spec hS hK hE bi l (st1, subst1, acc.2.2.push lg1) st0 hI1 (hM.trans hM1) ?_
+    intro lg hlg
+    simp only [Array.toList_push, List.mem_append, List.mem_singleton] at hlg
+    rcases hlg with hlg | rfl
+    · obtain ⟨hF, hk⟩ := hL lg hlg
+      exact ⟨LogFact.grow (gval_le hI hM1) (fun x hx => hM1.fix x (hk x hx)) hF,
+        fun x hx => hM1.known x (hk x hx)⟩
+    · exact ⟨hF1, hk1⟩
+
+theorem stepBlock_spec (hS : SimplifySound rules) (hK : SkeletonSound skel) (hE : GoodEnv f fr mem)
+    (blocks : Array Block) (acc : SState × Subst × Array Block × Array (Option BlockLog)) (bi : Nat)
+    (h : PInv f ρ fr mem acc.1 acc.2.2.2) :
+    PInv f ρ fr mem (stepBlock rules skel allowed skelOk cfg blocks acc bi).1
+      (stepBlock rules skel allowed skelOk cfg blocks acc bi).2.2.2 ∧
+    Mono ρ fr mem acc.1 (stepBlock rules skel allowed skelOk cfg blocks acc bi).1 := by
+  obtain ⟨st, subst, out, logs⟩ := acc
+  obtain ⟨hI, hlogs⟩ := h
+  simp only [stepBlock]
+  obtain ⟨hI1, hM1, hL1⟩ := stmts_spec (allowed := allowed) (skelOk := skelOk) (cfg := cfg) hS hK hE
+    bi blocks[bi]!.body (st, subst, #[]) st hI (Mono.refl _) (fun lg hlg => by simp at hlg)
+  generalize hfold : blocks[bi]!.body.foldl (fun (acc : SState × Subst × Array StmtLog) s =>
+      let (st, subst, lg) := stepStmt rules skel allowed skelOk cfg bi (acc.1, acc.2.1) s
+      (st, subst, acc.2.2.push lg)) (st, subst, #[]) = r at hI1 hM1 hL1 ⊢
+  obtain ⟨st1, subst1, lgs⟩ := r
+  simp only at hI1 hM1 hL1 ⊢
+  -- the terminator
+  have hterm : ∀ extra term st2 changed,
+      (if (termOperands (mapTerm subst1.find blocks[bi]!.term)).all st1.known then
+        skelTerm skel rules allowed skelOk cfg bi rewriteLimit st1 (mapTerm subst1.find blocks[bi]!.term)
+      else (#[], mapTerm subst1.find blocks[bi]!.term, st1, false)) = (extra, term, st2, changed) →
+      GInv f ρ fr mem st2 ∧ Mono ρ fr mem st1 st2 ∧
+      (changed = true →
+        (∀ x ∈ termOperands (mapTerm subst1.find blocks[bi]!.term), st1.known x = true) ∧
+        BrRefines (fun b => st2.trapBlocks.get? b)
+          (termEval (withRegs fr (gval ρ fr mem st2)) mem (mapTerm subst1.find blocks[bi]!.term))
+          (effTerm (withRegs fr (gval ρ fr mem st2)) mem (effsOf extra) term)) := by
+    intro extra term st2 changed he
+    split at he
+    · rename_i hk
+      simp only [List.all_eq_true] at hk
+      obtain ⟨hI2, hM2, hB⟩ := skelTerm_spec hS hK hE _ _ _ _ _ _ _ hI1 hk he
+      exact ⟨hI2, hM2, fun _ => ⟨hk, by rw [hM2.trap]; exact hB⟩⟩
+    · simp only [Prod.mk.injEq] at he
+      obtain ⟨-, -, rfl, rfl⟩ := he
+      exact ⟨hI1, Mono.refl _, fun hc => by cases hc⟩
+  generalize hT : (if (termOperands (mapTerm subst1.find blocks[bi]!.term)).all st1.known then
+      skelTerm skel rules allowed skelOk cfg bi rewriteLimit st1 (mapTerm subst1.find blocks[bi]!.term)
+    else (#[], mapTerm subst1.find blocks[bi]!.term, st1, false)) = rT at hterm ⊢
+  obtain ⟨extra, term, st2, changed⟩ := rT
+  obtain ⟨hI2, hM2, hB2⟩ := hterm extra term st2 changed rfl
+  simp only
+  have hM := hM1.trans hM2
+  refine ⟨⟨hI2, fun i lg hlg => ?_⟩, hM⟩
+  rw [Array.set!_eq_setIfInBounds, Array.getElem?_setIfInBounds] at hlg
+  split at hlg
+  · split at hlg
+    · cases hlg
+      refine ⟨⟨fun l hl => ?_, fun hc => (hB2 hc).2⟩, fun l hl x hx => ?_,
+        fun hc x hx => hM2.known x ((hB2 hc).1 x hx)⟩
+      · obtain ⟨hF, hk⟩ := hL1 l (by simpa using hl)
+        exact LogFact.grow (gval_le hI1 hM2) (fun x hx => hM2.fix x (hk x hx)) hF
+      · exact hM2.known x ((hL1 l (by simpa using hl)).2 x hx)
+    · cases hlg
+  · exact (hlogs i lg hlg).grow hI hM
+
+end Block
 
 end Opt
