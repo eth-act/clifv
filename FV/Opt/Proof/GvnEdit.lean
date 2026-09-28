@@ -654,6 +654,139 @@ theorem ERel.enter {fr fr' bi k k' bc fr1} (h : ERel σ f g Df Dg syms fr fr' bi
     rw [hj'] at hb0'; cases hb0'
     simpa using hal2
 
+/-- The terminators step in lock-step. -/
+theorem ERel.term {fr fr' bi k k' m} (h : ERel σ f g Df Dg syms fr fr' bi k k')
+    (hs : fr.body = []) (ht : fr'.body = []) :
+    (∀ fr1 m1, lstep fr m = .next fr1 m1 → ∃ fr1', lstep fr' m = .next fr1' m1 ∧
+      ER σ f g Df Dg syms fr1 fr1') ∧
+    (∀ vals, lstep fr m = .ret vals → lstep fr' m = .ret vals) ∧
+    (∀ ext vals, lstep fr m = .tail ext vals → lstep fr' m = .tail ext vals) ∧
+    (∀ c, lstep fr m = .trap c → lstep fr' m = .trap c) := by
+  have hops := h.termOps hE hs ht
+  obtain ⟨_, _, _, _, _, _, h3, h4, _, _⟩ := h.blocks hE
+  have hterm : fr'.term = mapTerm σ fr.term := by rw [h4, h3]
+  have hget : ∀ x ∈ termOperands fr.term, ∀ a, fr.get x = .ok a → fr'.get (σ x) = .ok a := by
+    intro x hx a ha
+    simp only [Frame.get, hops x hx] at ha ⊢
+    simpa [Res.ofOption_eq_ok] using ha
+  rw [lstep_term hs, lstep_term ht, hterm]
+  cases hT : fr.term with
+  | jump d =>
+    rw [hT] at hops hget
+    simp only [mapTerm]
+    refine ⟨fun fr1 m1 hl => ?_, fun _ hl => ?_, fun _ _ hl => ?_, fun c hl => ?_⟩ <;>
+      cases he : enterBlock fr d <;> rw [he] at hl <;> simp only [LRes.ofRes] at hl <;>
+      (try cases hl)
+    · obtain ⟨fr1', he', hr⟩ := h.enter hE hs ht (by rw [hT]; simp [termSuccs])
+        (fun x hx => hops x (by simpa [termOperands] using hx)) he
+      exact ⟨fr1', by rw [he']; rfl, hr⟩
+    · exact absurd he (enterBlock_not_trap _ _ _)
+  | brif c t e =>
+    rw [hT] at hops hget
+    simp only [mapTerm]
+    have hsel : ∀ cv : Val, (if Sem.truthy cv.bits then mapBlockCall σ t else mapBlockCall σ e) =
+        mapBlockCall σ (if Sem.truthy cv.bits then t else e) := by intro cv; split <;> rfl
+    have hgt : ∀ c', fr.get c ≠ .trap c' := fun c' => by simp [Frame.get_ne_trap]
+    refine ⟨fun fr1 m1 hl => ?_, fun _ hl => ?_, fun _ _ hl => ?_, fun c' hl => ?_⟩
+    all_goals cases hc : fr.get c with
+      | trap c'' => exact absurd hc (hgt c'')
+      | stuck _ => rw [hc] at hl; cases hl
+      | ok cv =>
+        rw [hc] at hl; simp only [LRes.ofRes] at hl
+        cases he : enterBlock fr (if Sem.truthy cv.bits then t else e) with
+        | trap c'' => exact absurd he (enterBlock_not_trap _ _ _)
+        | stuck _ => rw [he] at hl; cases hl
+        | ok fr1x =>
+          rw [he] at hl; simp only [LRes.ofRes] at hl
+          first
+          | (cases hl; done)
+          | (simp only [LRes.next.injEq] at hl
+             obtain ⟨rfl, rfl⟩ := hl
+             rw [hget c (by simp [termOperands]) cv hc]; simp only [LRes.ofRes]
+             obtain ⟨fr1', he', hr⟩ := h.enter hE hs ht (by rw [hT]; split <;> simp [termSuccs])
+               (fun x hx => hops x (by
+                 simp only [termOperands, List.mem_cons, List.mem_append]
+                 split at hx <;> simp [hx])) he
+             rw [hsel, he']
+             exact ⟨fr1', rfl, hr⟩)
+  | brTable x d tbl =>
+    rw [hT] at hops hget
+    simp only [mapTerm]
+    have hgt : ∀ c', fr.get x ≠ .trap c' := fun c' => by simp [Frame.get_ne_trap]
+    refine ⟨fun fr1 m1 hl => ?_, fun _ hl => ?_, fun _ _ hl => ?_, fun c' hl => ?_⟩
+    all_goals cases hc : fr.get x with
+      | trap c'' => exact absurd hc (hgt c'')
+      | stuck _ => rw [hc] at hl; cases hl
+      | ok xv =>
+        rw [hc] at hl; simp only [LRes.ofRes] at hl
+        cases he : enterBlock fr (tbl[xv.toNat]?.getD d) with
+        | trap c'' => exact absurd he (enterBlock_not_trap _ _ _)
+        | stuck _ => rw [he] at hl; cases hl
+        | ok fr1x =>
+          rw [he] at hl; simp only [LRes.ofRes] at hl
+          first
+          | (cases hl; done)
+          | (simp only [LRes.next.injEq] at hl
+             obtain ⟨rfl, rfl⟩ := hl
+             rw [hget x (by simp [termOperands]) xv hc]; simp only [LRes.ofRes]
+             have hsel : (tbl.map (mapBlockCall σ))[xv.toNat]?.getD (mapBlockCall σ d) =
+                 mapBlockCall σ (tbl[xv.toNat]?.getD d) := by
+               rw [List.getElem?_map]; cases tbl[xv.toNat]? <;> rfl
+             have hmem : tbl[xv.toNat]?.getD d = d ∨ tbl[xv.toNat]?.getD d ∈ tbl := by
+               cases hq : tbl[xv.toNat]? with
+               | none => exact .inl rfl
+               | some q => exact .inr (List.mem_of_getElem? hq)
+             obtain ⟨fr1', he', hr⟩ := h.enter hE hs ht (by
+                 rw [hT]; simp only [termSuccs, List.mem_cons, List.mem_map]
+                 rcases hmem with hm | hm
+                 · exact .inl (by rw [hm])
+                 · exact .inr ⟨_, hm, rfl⟩)
+               (fun y hy => hops y (by
+                 simp only [termOperands, List.mem_cons, List.mem_append, List.mem_flatMap]
+                 rcases hmem with hm | hm
+                 · rw [hm] at hy; exact .inl (.inr hy)
+                 · exact .inr ⟨_, hm, hy⟩)) he
+             rw [hsel, he']
+             exact ⟨fr1', rfl, hr⟩)
+  | ret xs =>
+    rw [hT] at hops
+    simp only [mapTerm]
+    have hg := getMany_rename (fr := fr) (fr' := fr') (σ := σ) (xs := xs) (fun x hx => hops x hx)
+    refine ⟨fun fr1 m1 hl => ?_, fun vals hl => ?_, fun _ _ hl => ?_, fun c' hl => ?_⟩
+    all_goals cases hc : fr.getMany xs with
+      | trap c'' => exact absurd hc (getMany_not_trap _ _ _)
+      | stuck _ => rw [hc] at hl; cases hl
+      | ok vs =>
+        rw [hc] at hl; simp only [LRes.ofRes] at hl
+        first
+        | (cases hl; done)
+        | (simp only [LRes.ret.injEq] at hl; subst hl; rw [Res.norm_eq_ok hg hc]; rfl)
+  | returnCall fn args =>
+    rw [hT] at hops
+    simp only [mapTerm]
+    have hg := tailArgs_rename (fr := fr) (fr' := fr') (σ := σ) (fn := fn) (args := args)
+      (by rw [h.invf.func, h.invg.func, hE.externs]) (by rw [h.invf.func, h.invg.func, hE.sig])
+      (fun x hx => hops x hx)
+    refine ⟨fun fr1 m1 hl => ?_, fun vals hl => ?_, fun _ _ hl => ?_, fun c' hl => ?_⟩
+    all_goals cases hc : tailArgs fr fn args with
+      | trap c'' =>
+        rw [hc] at hl
+        first
+        | (cases hl; done)
+        | (cases hl; rw [Res.norm_eq_trap hg hc]; rfl)
+      | stuck _ => rw [hc] at hl; cases hl
+      | ok p =>
+        obtain ⟨e, vs⟩ := p
+        rw [hc] at hl; simp only [LRes.ofRes] at hl
+        first
+        | (cases hl; done)
+        | (simp only [LRes.tail.injEq] at hl; obtain ⟨rfl, rfl⟩ := hl
+           rw [Res.norm_eq_ok hg hc]; rfl)
+  | trap c =>
+    simp only [mapTerm]
+    exact ⟨(fun _ _ hl => by cases hl), (fun _ hl => by cases hl), (fun _ _ hl => by cases hl),
+      (fun _ hl => hl)⟩
+
 end
 
 end Opt
