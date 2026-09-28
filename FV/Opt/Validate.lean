@@ -116,8 +116,20 @@ def notCall : Inst → Bool
   | .call .. => false
   | _ => true
 
-/-- A result-free instruction other than a call. -/
-def effOk (t : Stmt) : Bool := t.results.isEmpty && notCall t.inst
+/-- Not a `symbol_value` (the only instruction reading the link-time symbols). -/
+def notSym : Inst → Bool
+  | .symbolValue .. => false
+  | _ => true
+
+/-- A result-free conditional trap (it keeps memory): the prefixes of terminator rewrites. -/
+def trapOk (t : Stmt) : Bool := t.results.isEmpty && match t.inst with
+  | .trapz .. | .trapnz .. => true
+  | _ => false
+
+/-- A branch (the terminators the skeleton rules may rewrite). -/
+def isBranch : Terminator → Bool
+  | .jump .. | .brif .. | .brTable .. => true
+  | _ => false
 
 /-- A statement that is not a single-result pure node (its results are graph leaves). -/
 def skeletonStmt (s : Stmt) : Bool := !(isPure s.inst && s.results.length == 1)
@@ -132,9 +144,12 @@ namespace SimpCtx
 
 def σ (c : SimpCtx) : ValueId → ValueId := c.subst.step
 
+/-- No value of `xs` is renamed. -/
+def fixed (c : SimpCtx) (xs : List ValueId) : Bool := xs.all fun x => !c.subst.contains x
+
 /-- The record of source statement `s`, emitted from output position `k'` on. -/
 def stmtOk (c : SimpCtx) (s : Stmt) (k' : Nat) : StmtLog → Bool
-  | .keep s' => s' == renStmt c.σ s
+  | .keep s' => s' == renStmt c.σ s && c.fixed s.results
   | .repl s' w out =>
     s' == renStmt c.σ s && isPure s.inst && out.all insOk &&
       (match s.results with
@@ -142,25 +157,35 @@ def stmtOk (c : SimpCtx) (s : Stmt) (k' : Nat) : StmtLog → Bool
        | _ => false) && c.avail (k' + out.size) w
   | .skel s' o out =>
     s' == renStmt c.σ s && skeletonStmt s && match o with
-      | .keep => out == #[s']
-      | .remove => s.results.isEmpty && out.all insOk
+      | .keep => out == #[s'] && c.fixed s.results
+      | .remove => notCall s.inst && notSym s.inst && s.results.isEmpty && out.all insOk
       | .removeWithVal v' =>
-        out.all insOk && c.avail (k' + out.size) v' && match s.results with
+        notCall s.inst && notSym s.inst && out.all insOk && c.avail (k' + out.size) v' &&
+          match s.results with
           | [r] => c.subst.get? r == some v'
           | _ => false
       | .replace i =>
-        out.size ≥ 1 && (out.extract 0 (out.size - 1)).all insOk &&
-          out[out.size - 1]? == some { results := s.results, inst := i } && notCall i
+        notCall s.inst && notSym s.inst && c.fixed s.results && c.fixed (operands i) &&
+          out.size ≥ 1 && (out.extract 0 (out.size - 1)).all insOk &&
+          out[out.size - 1]? == some { results := s.results, inst := i } && notCall i && notSym i
       | .two a b =>
-        s.results.isEmpty && out.size ≥ 2 && (out.extract 0 (out.size - 2)).all insOk &&
+        notCall s.inst && notSym s.inst && c.fixed (operands a ++ operands b) &&
+          s.results.isEmpty && out.size ≥ 2 && (out.extract 0 (out.size - 2)).all insOk &&
           out[out.size - 2]? == some { inst := a } && out[out.size - 1]? == some { inst := b } &&
-          notCall a && notCall b
+          notCall a && notCall b && notSym a && notSym b
 
 /-- The records of a block's statements, from output position `k'` on. -/
 def stmtsOk (c : SimpCtx) : List Stmt → List StmtLog → Nat → Bool
   | [], [], _ => true
   | s :: ss, lg :: lgs, k' => c.stmtOk s k' lg && c.stmtsOk ss lgs (k' + lg.out.size)
   | _, _, _ => false
+
+/-- The record of a terminator (`BlockLog.term`, `extra`, `term'`). -/
+def termOk (c : SimpCtx) (lg : BlockLog) : Bool :=
+  if lg.changed then
+    isBranch lg.term && c.fixed (termOperands lg.term') &&
+      lg.extra.all (fun t => insOk t || (trapOk t && c.fixed (operands t.inst)))
+  else lg.extra.isEmpty && lg.term' == lg.term
 
 end SimpCtx
 
@@ -170,23 +195,24 @@ def simpOk (f g : Function) (fi : Info) (cert : SimpCert) : Bool :=
   let gdm := (defMap g).get?
   let gidom := fi.cfg.idom
   let D := cert.defs
+  let L := initAvail f
   sameHeader f g && g.blocks.length == f.blocks.length && cert.subst.chainFree &&
     wfCert g fi.cfg cert.types &&
     ((f.blocks.zip g.blocks).zipIdx.all fun ((b, b'), i) =>
       match cert.logs[i]? with
       | some (some lg) =>
+        let c : SimpCtx := { subst := cert.subst,
+                             avail := fun k w => availB gdm (ancB gidom gidom.size) i k w }
         b'.id == b.id && b'.params == b.params &&
         b'.body == ((lg.stmts.toArray.flatMap (·.out)) ++ lg.extra).toList.map (renStmt σ) &&
         b'.term == mapTerm σ lg.term' && lg.term == mapTerm σ b.term &&
-        (if lg.changed then lg.extra.all (fun t => insOk t || effOk t)
-         else lg.extra.isEmpty && lg.term' == lg.term) &&
-        SimpCtx.stmtsOk { subst := cert.subst, avail := fun k w => availB gdm (ancB gidom gidom.size) i k w }
-          b.body lg.stmts 0 &&
-        b.params.all (fun p => !D.contains p.1) &&
+        c.termOk lg && c.stmtsOk b.body lg.stmts 0 &&
+        b.params.all (fun p => !D.contains p.1 && L.contains p.1 && !cert.subst.contains p.1) &&
         b.body.all (fun s => !skeletonStmt s || s.results.all fun r => !D.contains r) &&
-        b'.body.all fun t => match t.results with
+        (b'.body.all fun t => match t.results with
           | [x] => !isPure t.inst || D.get? x == some t.inst
-          | _ => true
+          | _ => true) &&
+        b'.body.all fun t => !skeletonStmt t || t.results.all fun r => !D.contains r && L.contains r
       | _ => false)
 
 /-! ## The backend subset -/

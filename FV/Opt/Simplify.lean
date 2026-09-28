@@ -471,17 +471,24 @@ structure SimpCert where
 
 /-! ## The pass -/
 
+/-- The `just_trap_block`s of `f`, by block id. -/
+def trapMap (f : Function) : Std.HashMap BlockId TrapCode :=
+  f.blocks.foldl (fun m b => match trapBlock? b with
+    | some c => m.insert b.id c | none => m) {}
+
+/-- The leaves of the graph: block parameters and skeleton results, with their block. -/
+def initAvail (f : Function) : Std.HashMap ValueId Nat :=
+  f.blocks.zipIdx.foldl (fun av (b, bi) =>
+    let av := b.params.foldl (fun av (p, _) => av.insert p bi) av
+    b.body.foldl (fun av s =>
+      if !(isPure s.inst && s.results.length == 1) then
+        s.results.foldl (fun av r => av.insert r bi) av
+      else av) av) {}
+
 /-- The initial state: parameters and skeleton results are available in their blocks. -/
 def initSState (f : Function) (info : Info) (rematConst : Bool) : SState :=
-  let trapBlocks := f.blocks.foldl (fun m b => match trapBlock? b with
-    | some c => m.insert b.id c | none => m) {}
-  let st : SState := { next := maxValue f + 1, types := info.types, trapBlocks, rematConst, fn := f }
-  f.blocks.zipIdx.foldl (fun st (b, bi) =>
-    let st := b.params.foldl (fun st (p, _) => { st with avail := st.avail.insert p bi }) st
-    b.body.foldl (fun st s =>
-      if !(isPure s.inst && s.results.length == 1) then
-        s.results.foldl (fun st r => { st with avail := st.avail.insert r bi }) st
-      else st) st) st
+  { next := maxValue f + 1, types := info.types, trapBlocks := trapMap f, rematConst, fn := f,
+    avail := initAvail f }
 
 /-- Process one statement of block `bi` (the module doc's steps 1–5, or the skeleton rules). -/
 def stepStmt (rules : SimplifyFn) (skel : SkeletonFn) (allowed skelOk : Inst → Bool) (cfg : Cfg)
