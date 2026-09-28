@@ -44,7 +44,8 @@ fp/lr pair and padding above the CLIF slots, the code words), `cx := ⟨fa.k, af
 | `∀ s, CalleeOk (FF s) X H` | callee contract of the machine's call hook `H` (AAPCS64: `OperandsSound` of every call, return to pc+4, `X.call` error-free and program-preserving) — environment |
 | `∀ s, Refines (FF s) (csem (FF s) cx X)` | M6Insts (in progress) |
 | `∀ s, XCallsOk env (Rel.holds ⟨FF s, syms, slotOff⟩ f) X` | external contract: callees, linker symbols — environment |
-| `∀ s, MemRefines (FF s) slotOff syms (csem (FF s) cx X)` | M6Insts (in progress) |
+| `∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b` (`hsym`) | linker: the external semantics' symbol addresses are the linked ones — environment; with `hslot` it discharges the former `MemRefines` hypothesis (`memRefines_csem`, M6MemRef) |
+| `af.slotBase = slotOff` (`hslot`) | the relation's slot-region offset is the frame's slot base — caller (instantiate `slotOff := af.slotBase`) |
 | per run: `AbiEntry fb base ra s`, `StackAvail af s`, `BodyEntry af s w₀`, `ArgsIn args s`, `ClifEntry f args cs`, `Rel.holds ⟨FF s, syms, slotOff⟩ f cs.frame.slots cs.mem w₀`, `TrapsExplicit env p cs` | caller of the theorem |
 
 Conclusion: `ArmRefines fb base ra (ArmStepX X H fa) s (Clif.runLoop env p fuel cs)`.
