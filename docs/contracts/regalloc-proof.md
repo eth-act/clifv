@@ -539,3 +539,73 @@ Remaining: `Refines`/`MemRefines` of `csem` (M6Insts), deciding `FormsCovered`
 `#print axioms regLevelCorrect_backend`: `propext, Classical.choice, Quot.sound`, M5's
 `decode_armBits_*`/`decode_raw_inst_of_*` `_native.bv_decide` axioms and
 `Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9`.
+
+## Status update (M6Insts2, 2026-09-28)
+
+- **Build fix**: `CSemRename.lean` proves `ispec_mapRegs`, `formOk_mapRegs`, `csemWF_mapRegs`,
+  `amodeAddr_mapRegs`, `mspec_mapRegs` for a `VRenaming` (registers split into renamed vreg /
+  concrete real register, uses by length, enumerations; then `rfl`). `driverSem_csem.rename`
+  uses them via `csem_straight`.
+- **csem change (decision)**: the straight-line clause is now
+  `if csemWF ∧ ERR w = None ∧ CheckSPAlignment w then straightSem else mspec ctx.slotBase`.
+  `mspec` = `ispec` extended by the memory forms exactly as `MemRefines` states them, so
+  `MemRefines` holds on error/misaligned worlds, where the canonical run can't be used.
+  `csem_of_wf`/`csem_useVals` take the alignment (from `OperandsSound`'s `SameWorld` + aligned `s`).
+- **FormOk must be narrowed (NOT applied: the edit broke `RegallocOS`'s `fo_tac` proofs)**: `false` for logical immediates, immediate shifts,
+  `bitfieldMove`, FP/vector forms; `movWide` only `movz`; `xzr` destinations of imm/extended
+  `add`/`sub` only for `adds`/`subs` (Arm writes `sp` otherwise — with the current FormOk `Refines`
+  for csem is FALSE on those forms). Re-enabling needs Arm-level lemmas: bitmask round-trip of `bitmaskEnc?`,
+  `DecodeBitMasks` with symbolic immr/imms (or enumeration), `movn` values, `cnt/addp/addv/umov/fmov`.
+- **Refines**: `RefinesInsts.lean`: `ref_tac`/`ref_tac_fl` and `RefAt` lemmas for aluRRR (all 5
+  register shapes), aluRRRR (+xzr), aluRRImm12 (+xzr adds/subs), aluRRRShift, aluRRRExtend
+  (+xzr adds/subs), bitRR, movWide(movz), movK, cset, csel, ccmpImm.
+- **Open**: `ref_extend` (3 cases), the dispatcher `refAt_of_wf` and the final
+  `Refines F (csem F ctx X)`; `MemRefines` (needs premises `ctx.slotBase = slotOff` and
+  `syms n = some b → X.sym n 0 = ofNat b`, since csem is parametric in both).
+
+## Status update (M6MemRef, 2026-09-28)
+
+- **`MemRefines` proven**: `memRefines_csem (hsb : ctx.slotBase = sb)
+  (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b) : MemRefines F sb syms (csem F ctx X)`
+  (`FV/Backend/Proof/MemRefines.lean`; axioms `propext`, `Classical.choice`, `Quot.sound`).
+  Off error-free aligned worlds (or with an ill-formed use list) `csem` is `mspec`, which is
+  `MemRefines`' result verbatim. Otherwise `straightSem`: `ss_load`/`ss_store` (from
+  `execMInst_load`/`execMInst_store` on the canonical load/store of `x0`, address operands in
+  `x1`/`x2`) per `amodeAddr` arm (`straight_load`/`straight_store`; the extended index modes via
+  `ext_uxtw`/`ext_sxtw`), and `straight_loadAddr` (from `execMInst_loadAddr_slot'`). GOT loads
+  are `X.sym n 0` (premise `hsym`).
+- **`E2E.backend_correct_final`**: `hmem` replaced by `hsym` and `hslot : af.slotBase = slotOff`
+  (neither `Compiled` nor the statement fixes `slotOff`; callers instantiate
+  `slotOff := af.slotBase`).
+
+## Status update (M6Refines, 2026-09-28)
+
+- **`Refines` proven**: `refines_csem (F ctx X) : Refines F (csem F ctx X)`
+  (`FV/Backend/Proof/RefinesCSem.lean`); `E2E.refines_final` is `hRef` at the backend's choices
+  and `E2E.backend_correct_final` no longer takes `hRef`. Proof: control forms by `csem`'s own
+  arms (`holds_eq`); off error-free aligned worlds or ill-formed uses `csem` is `mspec`, which is
+  `ispec` wherever `ispec` is defined (`mspec_of_ispec`); otherwise `refAt_of_wf` dispatches on
+  the `FormOk` arm and the use count to the per-form `RefAt` lemmas.
+- **`FormOk` narrowed (soundness)**: register 31 as destination of `add`/`sub` immediate and
+  extended-register, and of the logical-immediate forms, is `sp` unless the instruction sets the
+  flags: those `xzr`-destination arms now require `adds`/`subs` resp. `ands` (`Refines` was false
+  otherwise). The `os_*_rdZ` lemmas take the op premise.
+- **Logical immediates**: `FormOk` also requires `logicImmOk op sz imm` — a per-instruction check
+  that the emitter's `bitmaskEnc?` encoding of the (possibly inverted, 32-bit-truncated)
+  immediate exists and Arm's `DecodeBitMasks` decodes it to the operand `ispec` states (with
+  `N = 0` at 32 bits). Decision: translation validation instead of a general round-trip proof of
+  `bitmaskEnc?`. New covered form: `orr rd, xzr, #imm` (`aluRRImmLogic` with `rn = xzr`, the
+  bitmask `mov`; `corr_aluRRImmLogic_rnZ`, `os_aluRRImmLogic_rnZ`, `ref_aluRRImmLogic_xn`).
+- **`RefinesInsts2.lean`**: bitfield moves with symbolic `immr`/`imms` — `dbm_len` (generic
+  `DecodeBitMasks` equation given `len`), `dbm64`/`dbm32` (non-immediate masks), `bfm_core` (the
+  bitwise identity of Arm's masked result with `bfmVal`), `exec_bfm64`/`exec_bfm32` (used by the
+  canonical runs before `exec_bitfield` unfolds); `bfm_lsl`/`bfm_lsr`/`bfm_asr`/`bfm_sxt`/`bfm_uxt`;
+  `extract_dup_ror` (`ror` immediate); `pi_movw` (`movn`); `cnt_aux_8`/`addv_aux_8`/`addp_aux_8`/
+  `elem_get_sw64` (vector forms). `RefAt` for `bitfieldMove`, `aluRRImmShift`, `extend`, `movn`,
+  `fmov`/`umov`/`cnt`/`addv`/`addp`, shifted-register `xzr` forms, logical immediates.
+- **Coverage**: `lean-e2e-check` now decides `formsCoveredB` on every prepared VCode and prints
+  the uncovered instructions; corpus + extrt + runtests: 913 of 913 checked functions covered
+  (before the `rn = xzr` logical-immediate form: 907, the 6 others used `orr rd, xzr, #imm`).
+- `#print axioms E2E.backend_correct_final`: `propext`, `Classical.choice`, `Quot.sound` and
+  `_native.bv_decide` axioms only (no `sorryAx`).
+

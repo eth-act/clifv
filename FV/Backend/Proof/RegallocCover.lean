@@ -272,6 +272,14 @@ theorem formOk_store {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {op : S
       LinesOk ctx i' ∧ (∀ ds, i' ≠ .args ds) ∧ (∀ us, i' ≠ .rets us)) := by
   mem_os
 
+theorem logicOpOk_of_and {op : ALUOp} {b : Bool} (h : (logicOpOk op && b) = true) :
+    logicOpOk op = true := by
+  simp only [Bool.and_eq_true] at h; exact h.1
+
+theorem logicOpOk_of_andS {op : ALUOp} {b : Bool} (h : ((op == .andS) && b) = true) :
+    logicOpOk op = true := by
+  simp only [Bool.and_eq_true, beq_iff_eq] at h; rw [h.1]; rfl
+
 set_option maxHeartbeats 4000000 in
 theorem formOk_sound {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MInst}
     (h : FormOk ctx i = true) :
@@ -290,7 +298,8 @@ theorem formOk_sound {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MI
         | apply os_aluRRR | apply os_aluRRR_rnZ | apply os_aluRRR_rdZ | apply os_aluRRR_rmZ
         | apply os_aluRRR_rdZ_rmZ | apply os_aluRRRR | apply os_aluRRRR_raZ
         | apply os_aluRRImm12 | apply os_aluRRImm12_rdZ | apply os_aluRRImmLogic
-        | apply os_aluRRImmLogic_rdZ | apply os_aluRRImmShift | apply os_aluRRRShift
+        | apply os_aluRRImmLogic_rdZ | apply os_aluRRImmLogic_rnZ | apply os_aluRRImmShift
+        | apply os_aluRRRShift
         | apply os_aluRRRShift_rdZ | apply os_aluRRRShift_rnZ | apply os_aluRRRExtend
         | apply os_aluRRRExtend_rdZ | apply os_bitRR | apply os_mov | apply os_movWide
         | apply os_movK | apply os_extend | apply os_bitfieldMove | apply os_cset | apply os_csel
@@ -302,7 +311,8 @@ theorem formOk_sound {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MI
        all_goals first
          | one_line
          | exact linesOk_extend ..
-         | exact linesOk_logic _ ‹_› ..
+         | exact linesOk_logic _ (logicOpOk_of_and ‹_›) ..
+         | exact linesOk_logic _ (logicOpOk_of_andS ‹_›) ..
          | exact linesOk_shift _ ‹_› ..
          | exact linesOk_rrrShift ..
          | exact linesOk_vecMisc ..

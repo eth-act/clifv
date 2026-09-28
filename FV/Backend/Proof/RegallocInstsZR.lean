@@ -47,6 +47,19 @@ theorem corr_aluRRImmLogic_rdZ (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env
       cases op <;> corr_tac
 
 set_option maxHeartbeats 4000000 in
+theorem corr_aluRRImmLogic_rnZ (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (op : ALUOp)
+    (sz : OperandSize) (d : Nat) (imm : ImmLogic) :
+    Corr F ctx env #[⟨d, .int, .def, .late, .reg⟩]
+      (fun r => .aluRRImmLogic op sz (r.getD 0 .xzr) .xzr imm) := by
+  cases sz
+  · rcases hb : bitmaskEnc? false (mask64 imm.value % 4294967296) with _ | ⟨N, immr, imms⟩ <;>
+      rcases hb' : bitmaskEnc? false (mask64 imm.invert.value % 4294967296) with _ | ⟨N', immr', imms'⟩ <;>
+      cases op <;> corr_tac
+  · rcases hb : bitmaskEnc? true (mask64 imm.value) with _ | ⟨N, immr, imms⟩ <;>
+      rcases hb' : bitmaskEnc? true (mask64 imm.invert.value) with _ | ⟨N', immr', imms'⟩ <;>
+      cases op <;> corr_tac
+
+set_option maxHeartbeats 4000000 in
 theorem corr_aluRRRShift_rdZ (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (op : ALUOp)
     (sz : OperandSize) (n m : Nat) (sh : ShiftOpAndAmt) :
     Corr F ctx env #[⟨n, .int, .use, .early, .reg⟩, ⟨m, .int, .use, .early, .reg⟩]

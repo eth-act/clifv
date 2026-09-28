@@ -6,6 +6,8 @@ import FV.Backend.Proof.IselExcl
 import FV.Backend.Proof.IselCtl
 import FV.Backend.Proof.IselCtlUnmatch
 import FV.Backend.Proof.IselMemRoots
+import FV.Backend.Proof.MemRefines
+import FV.Backend.Proof.RefinesCSem
 
 /-! # `backend_correct` with every M4 obligation discharged
 
@@ -50,11 +52,18 @@ theorem backend_correct_m4 {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc 
     (fun s' => callsRefine_csem (hX s')) hmem
     hent hres hbe hargs hcs hrel htr fuel
 
+/-- `hRef` of `backend_correct_m4` at the backend's concrete choices (`refines_csem`). -/
+theorem refines_final (vcp : VCode) (rf : RFunc) (af : AFunc) (fa : FnAsm) (X : ExtSem) :
+    ∀ s, Refines (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s)
+      (csem (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s)
+        ⟨fa.k, af.slotBase⟩ X) :=
+  fun _ => refines_csem _ _ X
+
 /-- **The backend's end-to-end theorem** (`docs/contracts/e2e.md`, "Final hypotheses"): the Arm
-run of the compiled function refines the CLIF run. Remaining hypotheses: the form coverage
-`FormsCovered` (decided per function by `formsCoveredB`), the callee contract `CalleeOk` of the
-machine's call hook, the external contract `XCallsOk`, and M6Insts' `csem` obligations
-`Refines`/`MemRefines` (in progress). -/
+run of the compiled function refines the CLIF run. M6's `csem` obligations are discharged
+(`refines_csem`, `memRefines_csem`). Remaining hypotheses: the form coverage `FormsCovered`
+(decided per function by `formsCoveredB`), the callee contract `CalleeOk` of the machine's call
+hook, the external contract `XCallsOk`, and the link-time facts `hsym`/`hslot`. -/
 theorem backend_correct_final {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}
     {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb)
@@ -64,19 +73,14 @@ theorem backend_correct_final {p : Clif.Program} {f : Clif.Function} {k : Nat} {
     -- the callee contract of the machine's call hook (AAPCS64)
     (hC : ∀ s, CalleeOk
       (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
-    -- M6Insts: `csem` refines M4's instruction specification
-    (hRef : ∀ s, Refines (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s)
-      (csem (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s)
-        ⟨fa.k, af.slotBase⟩ X))
     -- the external contract (callees, linker)
     (hX : ∀ s, XCallsOk env (fun sl cm w =>
       Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
         slotOff⟩ f sl cm w) X)
-    -- M6Insts: memory forms
-    (hmem : ∀ s, MemRefines (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s)
-      slotOff syms
-      (csem (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s)
-        ⟨fa.k, af.slotBase⟩ X))
+    -- memory forms (`memRefines_csem`): the external semantics' symbol addresses are the linked
+    -- ones, and the relation's slot-region offset is the frame's slot base
+    (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
+    (hslot : af.slotBase = slotOff)
     -- the run
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hbe : BodyEntry af s w₀)
@@ -86,7 +90,9 @@ theorem backend_correct_final {p : Clif.Program} {f : Clif.Function} {k : Nat} {
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ArmRefines fb base ra (ArmStepX X H fa) s (Clif.runLoop env p fuel cs) :=
   backend_correct_m4 (ctx := fun _ => ⟨fa.k, af.slotBase⟩) (X := fun _ => X) hsub hc
-    (regLevelCorrect_backend hc.check hc.alloc hc.emit hc.layout hcov hC) hRef hX hmem
+    (regLevelCorrect_backend hc.check hc.alloc hc.emit hc.layout hcov hC)
+    (refines_final vcp rf af fa X) hX
+    (fun _ => memRefines_csem _ _ X hslot hsym)
     hent hres hbe hargs hcs hrel htr fuel
 
 end E2E
