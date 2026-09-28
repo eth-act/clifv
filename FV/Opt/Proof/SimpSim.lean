@@ -797,4 +797,137 @@ theorem SCore.srcOnly {fr fr' : Frame} {bi k k' : Nat} {m : Mem} {s : Stmt} {ss 
 
 end
 
+/-! ## Transport between the run and the graph valuation -/
+
+theorem resSyms_eq_ok {S : String → Option Nat} {r : Res (List Val × Mem)} {vs : List Val}
+    {m' : Mem} (h : resSyms S r = .ok (vs, m')) : ∃ m0, r = .ok (vs, m0) ∧ m' = { m0 with symbols := S } := by
+  cases r with
+  | ok p => obtain ⟨vs0, m0⟩ := p; simp only [resSyms, Res.ok.injEq, Prod.mk.injEq] at h
+            obtain ⟨rfl, rfl⟩ := h; exact ⟨m0, rfl, rfl⟩
+  | trap c => cases h
+  | stuck _ => cases h
+
+theorem resSyms_eq_trap {S : String → Option Nat} {r : Res (List Val × Mem)} {c : TrapCode}
+    (h : resSyms S r = .trap c) : r = .trap c := by
+  cases r with
+  | ok p => obtain ⟨_, _⟩ := p; cases h
+  | trap c' => exact h
+  | stuck _ => cases h
+
+theorem mem_syms_inj {a b : Mem} {S : String → Option Nat}
+    (h : ({ a with symbols := S } : Mem) = { b with symbols := S }) (hs : a.symbols = b.symbols) :
+    a = b := by
+  cases a; cases b
+  simp only [Mem.mk.injEq] at h hs ⊢
+  exact ⟨h.1, h.2.1, h.2.2.1, hs⟩
+
+theorem memPlus_eq (m : Mem) : memPlus m = { m with symbols := (memPlus m).symbols } := rfl
+
+/-- A (symbol-free) source instruction evaluated in the run and in the graph valuation. -/
+theorem src_to_graph {fr F : Frame} {m : Mem} {i i' : Inst} (hi : notSym i = true)
+    (hr : (evalInst F (memPlus m) i').norm = (evalInst fr (memPlus m) i).norm) :
+    (∀ vals m1, evalInst fr m i = .ok (vals, m1) →
+      evalInst F (memPlus m) i' = .ok (vals, { m1 with symbols := (memPlus m).symbols })) ∧
+    (∀ c, evalInst fr m i = .trap c → evalInst F (memPlus m) i' = .trap c) := by
+  have he : evalInst fr (memPlus m) i = resSyms (memPlus m).symbols (evalInst fr m i) := by
+    rw [memPlus_eq m]; exact evalInst_withSyms hi _
+  refine ⟨fun vals m1 h => ?_, fun c h => ?_⟩
+  · exact Res.norm_eq_ok hr (by rw [he, h]; rfl)
+  · exact Res.norm_eq_trap hr (by rw [he, h]; rfl)
+
+/-- A (symbol-free) target instruction evaluated in the graph valuation and in the run. -/
+theorem graph_to_tgt {fr' F : Frame} {m : Mem} {i : Inst} (hi : notSym i = true)
+    (hr : evalInst F (memPlus m) i = evalInst fr' (memPlus m) i) :
+    (∀ vals m1, m1.symbols = m.symbols →
+      evalInst F (memPlus m) i = .ok (vals, { m1 with symbols := (memPlus m).symbols }) →
+      evalInst fr' m i = .ok (vals, m1)) ∧
+    (∀ c, evalInst F (memPlus m) i = .trap c → evalInst fr' m i = .trap c) := by
+  have he : evalInst fr' (memPlus m) i = resSyms (memPlus m).symbols (evalInst fr' m i) := by
+    rw [memPlus_eq m]; exact evalInst_withSyms hi _
+  refine ⟨fun vals m1 hs h => ?_, fun c h => ?_⟩
+  · rw [hr, he] at h
+    obtain ⟨m0, h0, h1⟩ := resSyms_eq_ok h
+    rw [h0, mem_syms_inj h1 (by rw [hs, evalInst_symbols h0])]
+  · rw [hr, he] at h
+    exact resSyms_eq_trap h
+
+section
+variable {f g : Function} {fi : Info} {cert : SimpCert} (hS : SOk f g fi cert)
+  {syms : String → Option Nat}
+include hS
+
+/-- The source statement's renamed instruction, in the graph valuation of a later target point
+`k''` whose values agree with the graph. -/
+theorem SCore.srcRename {fr fr'' : Frame} {bi k k'' : Nat} {V : Valuation} {M : Mem} {b : Block}
+    {s : Stmt} (h : SCore f g fi cert syms fr fr'' bi k k'') (hb : f.blocks[bi]? = some b)
+    (hsk : b.body[k]? = some s)
+    (hV : ∀ x, Avail (wfData g (gInfo fi cert)) bi k'' x → V x = fr''.regs x) :
+    (evalInst (withRegs fr'' V) M (mapOperands cert.subst.step s.inst)).norm =
+      (evalInst fr M s.inst).norm := by
+  refine evalInst_rename (by simp only [withRegs]; rw [h.invf.func, h.invg.func, hS.globals])
+    h.slots (fun x hx => ?_)
+  obtain ⟨hav, heq, -⟩ := h.agree x (hS.wff.uses bi b hb k s hsk x hx)
+  simp only [withRegs]
+  rw [hV _ hav, heq]
+
+/-- A target instruction at `k''` reads the same in the graph valuation and in the run. -/
+theorem tgtGraph {fr'' : Frame} {bi k'' : Nat} {V : Valuation} {M : Mem} {b' : Block} {t : Stmt}
+    (hb' : g.blocks[bi]? = some b') (htk : b'.body[k'']? = some t)
+    (hV : ∀ x, Avail (wfData g (gInfo fi cert)) bi k'' x → V x = fr''.regs x) :
+    evalInst (withRegs fr'' V) M t.inst = evalInst fr'' M t.inst :=
+  evalInst_congr rfl rfl (fun x hx => hV x (hS.wfg.uses bi b' hb' k'' t htk x hx))
+
+/-- A statement whose target counterpart `{ results := s.results, inst := i }` refines it. -/
+theorem SCore.lockWith {fr fr' : Frame} {bi k k' : Nat} {m : Mem} {s : Stmt} {ss ts : List Stmt}
+    {i : Inst} (h : SCore f g fi cert syms fr fr' bi k k') (hm : m.symbols = syms)
+    (hs : fr.body = s :: ss) (ht : fr'.body = { results := s.results, inst := i } :: ts)
+    (hσ : ∀ r ∈ s.results, cert.subst.step r = r) (hnc : ∀ fn args, s.inst ≠ .call fn args)
+    (hnc' : ∀ fn args, i ≠ .call fn args)
+    (hok : ∀ vals m1, evalInst fr m s.inst = .ok (vals, m1) → evalInst fr' m i = .ok (vals, m1))
+    (htr : ∀ c, evalInst fr m s.inst = .trap c → evalInst fr' m i = .trap c) :
+    (∀ fr1 m1, lstep fr m = .next fr1 m1 → ∃ fr1', lstep fr' m = .next fr1' m1 ∧
+      SCore f g fi cert syms fr1 fr1' bi (k + 1) (k' + 1) ∧ fr1'.body = ts ∧ fr1.body = ss) ∧
+    (∀ c, lstep fr m = .trap c → lstep fr' m = .trap c) := by
+  obtain ⟨b, hb, h1, -, -⟩ := h.invf.block
+  obtain ⟨b', hb', h2, -, -⟩ := h.invg.block
+  have hs0 := hs; have ht0 := ht
+  rw [h1] at hs; rw [h2] at ht
+  obtain ⟨hsk, hss, -⟩ := drop_eq_cons hs
+  obtain ⟨htk, hts, -⟩ := drop_eq_cons ht
+  rw [lstep_inst hs0 hnc, lstep_inst ht0 hnc']
+  refine ⟨fun fr1 m1 hl => ?_, fun c hl => ?_⟩
+  · cases he : evalInst fr m s.inst with
+    | trap c => rw [he] at hl; cases hl
+    | stuck msg => rw [he] at hl; cases hl
+    | ok p =>
+      obtain ⟨vals, m1'⟩ := p
+      rw [he] at hl
+      simp only [LRes.ofRes] at hl
+      split at hl
+      · rename_i regs hset
+        cases hl
+        have he' := hok _ _ he
+        obtain ⟨regs', hset'⟩ := setMany_len (r := fr'.regs) (xs := s.results) (vs := vals)
+          (setMany_spec hset).1
+        simp only [he', LRes.ofRes, hset']
+        refine ⟨_, rfl, ⟨?_, ?_, ?_, h.slots⟩, by first | rfl | trivial, by first | rfl | trivial⟩
+        · exact Inv.results hS.wff h.invf hs0 (fun ts0 h0 => evalInst_types he h0)
+            (fun hp => by
+              obtain ⟨-, a, rfl, ha⟩ := evalInst_pure hp he
+              exact ⟨a, rfl, by rw [evalNode_mem (m := m) hp (by rw [hm]; rfl)]; exact ha⟩) hset
+        · refine Inv.results hS.wfg h.invg ht0 (fun ts0 h0 => evalInst_types he' h0)
+            (fun hp => ?_) hset'
+          obtain ⟨-, a, rfl, ha⟩ := evalInst_pure hp he'
+          exact ⟨a, rfl, by rw [evalNode_mem (m := m) hp (by rw [hm]; rfl)]; exact ha⟩
+        · exact agree_bind hS h.agree hb hb' hsk htk hσ hset hset'
+      · cases hl
+  · cases he : evalInst fr m s.inst with
+    | ok p => rw [he] at hl; obtain ⟨_, _⟩ := p; simp only [LRes.ofRes] at hl; split at hl <;> cases hl
+    | stuck msg => rw [he] at hl; cases hl
+    | trap c' =>
+      rw [he] at hl; cases hl
+      rw [htr _ he]; rfl
+
+end
+
 end Opt
