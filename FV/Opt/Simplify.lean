@@ -409,7 +409,11 @@ def skelTerm (skel : SkeletonFn) (rules : SimplifyFn) (allowed skelOk : Inst →
         | none => keep
       | _ => keep
     | some (.replaceWithTwo (.inst a) (.term t')) =>
-      if !skelOk a || a.resultTypes (fun _ => none) != some [] then keep else
+      -- (`a` is a conditional trap: it keeps memory)
+      let trapLike := match a with
+        | .trapz .. | .trapnz .. => true
+        | _ => false
+      if !skelOk a || !trapLike then keep else
       match materializeAll cfg allowed bi st1 (operands a ++ termOperands t') with
       | some (m, st2, out) =>
         let (more, t'', st3, _) := skelTerm skel rules allowed skelOk cfg bi fuel st2 (mapTerm (rename m) t')
@@ -514,8 +518,11 @@ def stepStmt (rules : SimplifyFn) (skel : SkeletonFn) (allowed skelOk : Inst →
                                                   emitted := st2.stats.emitted + emitted.size } },
            subst.insert v w, StmtLog.repl { s with inst } w emitted)
         | none => (keep, subst, StmtLog.keep { s with inst })
-    -- make the class visible to later matches when its representative is new here
-    let rep := subst'.find v
+    -- make the class visible to later matches when its representative is new here (the
+    -- representative is `subst'.find v`; renamings have no chains, which `simpOk` checks)
+    let rep := match lg with
+      | .repl _ w _ => w
+      | _ => v
     let st := if rep == v || st1.made.contains best then
         let members := (st1.classes.get? best).getD []
         if !members.isEmpty then { st with alts := st.alts.insert rep members } else st
