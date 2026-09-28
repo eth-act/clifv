@@ -130,7 +130,7 @@ def OperandsSound (F : BitVec 64 → Prop) (exec : MInst → Arm.ArmState → Op
     i.operands = .ok ops →
     c.checkStatic wh ops (regs.map .reg) i.clobbers = .ok () →
     i.assign regs = .ok i' →
-    SameWorld F s w →
+    SameWorld F s w → Arm.CheckSPAlignment s →
     sem i (useVals ops regs s) w = some (outs, w', .next) →
     ∃ s', exec i' s = some s' ∧ SameWorld F s' w' ∧ FrameKeep F s s' ∧
       (∀ p ∈ defRegs ops regs outs, regVal s' p.1.2 = p.2) ∧
@@ -457,7 +457,7 @@ theorem operandsSound_step {F : BitVec 64 → Prop}
     (hst : c.checkStatic wh ops (regs.map Loc.reg) i.clobbers = .ok ())
     (hasg : i.assign regs = .ok i') {m : Loc → CV} {s w : Arm.ArmState}
     (hm : ∀ r, r.allocatable = true → m (.reg r) = regVal s r) (hw : SameWorld F s w)
-    {outs : List CV} {w' : Arm.ArmState}
+    (hal : Arm.CheckSPAlignment s) {outs : List CV} {w' : Arm.ArmState}
     (hsem : sem i (((ops.zip (regs.map Loc.reg)).toList.filter (·.1.isUse)).map (m ·.2)) w =
       some (outs, w', .next))
     (hlen : outs.length = ((ops.zip (regs.map Loc.reg)).toList.filter (·.1.isDef)).length) :
@@ -484,7 +484,7 @@ theorem operandsSound_step {F : BitVec 64 → Prop}
     intro p hp
     exact hm _ (halloc p (List.mem_filter.mp hp).1)
   rw [huse] at hsem
-  obtain ⟨s', hex, hW, hK, hdef, hoth, hcl⟩ := hs c wh ops regs i' s w outs w' hops hst hasg hw hsem
+  obtain ⟨s', hex, hW, hK, hdef, hoth, hcl⟩ := hs c wh ops regs i' s w outs w' hops hst hasg hw hal hsem
   have htrip : ((ops.zip (regs.map Loc.reg)).toList.filter (·.1.isDef)).zip outs =
       (defRegs ops regs outs).map (fun p => ((p.1.1, Loc.reg p.1.2), p.2)) := by
     rw [pairs_regs, List.filter_map, defRegs, List.zip_map_left]

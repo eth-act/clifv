@@ -150,6 +150,40 @@ def extendVal (e : ExtendOp) (n : Nat) (b : CV) : BitVec n :=
   | .sxtw => ((lo64 b).setWidth 32).signExtend n
   | .sxtx => (lo64 b).signExtend n
 
+/-- Byte `i` of a 64-bit value. -/
+def byteOf (x : BitVec 64) (i : Nat) : BitVec 8 := x.extractLsb' (8 * i) 8
+
+/-- `CNT Vd.8B, Vn.8B`: the population count of each byte. -/
+def cntBytes (x : BitVec 64) : BitVec 64 :=
+  (byteOf x 7).cpop ++ (byteOf x 6).cpop ++ (byteOf x 5).cpop ++ (byteOf x 4).cpop ++
+    (byteOf x 3).cpop ++ (byteOf x 2).cpop ++ (byteOf x 1).cpop ++ (byteOf x 0).cpop
+
+/-- `ADDP Vd.8B, Vn.8B, Vm.8B`: sums of adjacent byte pairs of `n` (low half), then of `m`. -/
+def addpBytes (n m : BitVec 64) : BitVec 64 :=
+  (byteOf m 6 + byteOf m 7) ++ (byteOf m 4 + byteOf m 5) ++ (byteOf m 2 + byteOf m 3) ++
+    (byteOf m 0 + byteOf m 1) ++ (byteOf n 6 + byteOf n 7) ++ (byteOf n 4 + byteOf n 5) ++
+    (byteOf n 2 + byteOf n 3) ++ (byteOf n 0 + byteOf n 1)
+
+/-- `ADDV Bd, Vn.8B`: the sum of the eight bytes (modulo 256), zero-extended. -/
+def addvBytes (x : BitVec 64) : BitVec 64 :=
+  (byteOf x 0 + byteOf x 1 + byteOf x 2 + byteOf x 3 + byteOf x 4 + byteOf x 5 + byteOf x 6 +
+    byteOf x 7).setWidth 64
+
+/-- `UBFM`/`SBFM` at width `n` (`immr`, `imms` below `n`): for `immr ≤ imms` the field
+`x[imms:immr]` moved to bit 0, else the field `x[imms:0]` moved to bit `n - immr`; zero-extended
+(`UBFM`) or sign-extended from the field's top bit (`SBFM`), zeros below. -/
+def bfmVal {n : Nat} (op : BfmOp) (x : BitVec n) (immr imms : Nat) : BitVec n :=
+  if immr ≤ imms then
+    let f := (x >>> immr).setWidth (imms - immr + 1)
+    match op with
+    | .uBfm => f.setWidth n
+    | .sBfm => f.signExtend n
+  else
+    let f := x.setWidth (imms + 1)
+    match op with
+    | .uBfm => f.setWidth n <<< (n - immr)
+    | .sBfm => f.signExtend n <<< (n - immr)
+
 /-- The non-flag-setting two-operand ALU operations, at width `n`. -/
 def aluVal {n : Nat} (op : ALUOp) (a b : BitVec n) : Option (BitVec n) :=
   match op with
@@ -349,6 +383,30 @@ def ispec : Sem := fun i uses w =>
     if ImmLogic.ofNat? imm.value sz = some imm ∧ op ≠ .add ∧ op ≠ .sub then
       (aluVal op (0#sz.bits) (BitVec.ofNat _ imm.value)).map fun r =>
         (defOut rd (resX sz r), w, .next)
+    else none
+  -- Family B (M4AluB4): a shifted-register ALU operation with the zero register as first
+  -- operand (`orn wd, wzr, wm, lsl #amt` of `bnot (ishl x k)`)
+  | .aluRRRShift op sz rd .xzr _ sh, [b] =>
+    if aluShiftable op = true ∧ sh.op = .lsl ∧ sh.amt < sz.bits then
+      (aluVal op (0#sz.bits) (opnd sz b <<< sh.amt)).map fun r => (defOut rd (resX sz r), w, .next)
+    else none
+  -- Family B (M4AluB4): `ubfm`/`sbfm` (Arm `UBFM`/`SBFM`, `DecodeBitMasks` with `immr`, `imms`
+  -- below the width)
+  | .bitfieldMove sz op rd _ immr imms, [a] =>
+    if immr < sz.bits ∧ imms < sz.bits then
+      some (defOut rd (resX sz (bfmVal op (opnd sz a) immr imms)), w, .next)
+    else none
+  -- Family B (M4AluB4): the `popcnt` vector forms, on the 8-byte arrangement (`8B`); a 64-bit
+  -- vector result zeroes the upper half of the 128-bit register
+  | .movToFpu rd _ .size32, [a] => some (defOut rd (((lo64 a).setWidth 32).setWidth 128), w, .next)
+  | .movToFpu rd _ .size64, [a] => some (defOut rd ((lo64 a).setWidth 128), w, .next)
+  | .vecMisc .cnt rd _ .size8x8, [a] => some (defOut rd ((cntBytes (lo64 a)).setWidth 128), w, .next)
+  | .vecRRR .addp rd _ _ .size8x8, [a, b] =>
+    some (defOut rd ((addpBytes (lo64 a) (lo64 b)).setWidth 128), w, .next)
+  | .vecLanes .addv rd _ .size8x8, [a] =>
+    some (defOut rd ((addvBytes (lo64 a)).setWidth 128), w, .next)
+  | .movFromVec rd _ idx .size8, [a] =>
+    if idx < 16 then some (defOut rd (ofX ((a.extractLsb' (8 * idx) 8).setWidth 64)), w, .next)
     else none
   | _, _ => none
 
@@ -749,9 +807,17 @@ def ExcludedUnmatchable (p : Program) : Prop :=
 
 /-- The index of a `br_table` has at most 32 bits (contract change #6): the lowering compares and
 dispatches on the low 32 bits, and Cranelift's verifier requires an `i32` index. M7's `lowerCheck`
-decides it for every terminator (`brIdxOk`). -/
+decides it for every terminator (`brIdxOk`). Contract change #9: the table has fewer than `2^32`
+entries (`jump_table_size` is a `u32`; the bounds check compares 32 bits). -/
 def BrIdxTyped (ctx : Ctx) (t : Clif.Terminator) : Prop :=
-  ∀ x d tbl, t = .brTable x d tbl → ∃ w, w ≤ 32 ∧ ctx.valueType? x = some (.int w)
+  ∀ x d tbl, t = .brTable x d tbl →
+    (∃ w, w ≤ 32 ∧ ctx.valueType? x = some (.int w)) ∧ tbl.length < 2 ^ 32
+
+/-- The driver's successor labels of a `br_table` are one per jump-table entry plus the default
+(contract change #8): the lowering dispatches on the length of the label list
+(`jump_table_size`), CLIF on the table's. M7 discharges it from `targetsOf` (`dests`). -/
+def TargetsLen (t : Clif.Terminator) (targets : List Label) : Prop :=
+  ∀ x d tbl, t = .brTable x d tbl → targets.length = tbl.length + 1
 
 /-- **Root rule correctness (`lower_branch`)**, on the terminator `t` lowered in the driver's
 context `ctx` (instruction `ti` holds the terminator's data; `CtxInv`, `ValsBelow` and "the
@@ -759,7 +825,7 @@ rules before `r` failed" as for `LowerRuleOk`), with branch targets `targets`. -
 def BranchRuleOk (isem : Sem) (MR : MemRelT) (p : Program) (r : Rule) : Prop :=
   ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx →
   ∀ (ti : Nat) (t : Clif.Terminator) (data : V) (targets : List Label), termData t = .ok data →
-  ctx.insts[ti]? = some ⟨data, [], [], none⟩ → BrIdxTyped ctx t →
+  ctx.insts[ti]? = some ⟨data, [], [], none⟩ → BrIdxTyped ctx t → TargetsLen t targets →
   ∀ (cfg : Config), cfg.checkOverlap = false →
   ∀ (m n : Nat) (st : LState) (tr : Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId)
     (out : V) (st' : LState) (tr' : Array RuleId), 1000 ≤ m → 1000 ≤ n → ValsBelow ctx st →
@@ -966,7 +1032,7 @@ theorem branchOk_of_rules {p : Program} (hp : Data p) (hrules : BranchRulesCorre
     (hctx : CtxInv f ctx) {ti : Nat} {t : Clif.Terminator} {data : V} {targets : List Label}
     (hrt : retOrTrap t = false) (hd : termData t = .ok data)
     (hi : ctx.insts[ti]? = some ⟨data, [], [], none⟩) (hbt : BrIdxTyped ctx t)
-    {cfg : Config} (hco : cfg.checkOverlap = false) {n : Nat}
+    (htl : TargetsLen t targets) {cfg : Config} (hco : cfg.checkOverlap = false) {n : Nat}
     (hn : 1002 + (p.rulesOf TId.lower_branch).length ≤ n) {ty : TypeId} {st : LState}
     {tr : Array RuleId} {out : V} {st' : LState} {tr' : Array RuleId} (hvb : ValsBelow ctx st)
     (h : (applyTerm p (sem ctx) cfg (n + 1) ty TId.lower_branch [.inst ti, .labels targets]).run
@@ -990,7 +1056,7 @@ theorem branchOk_of_rules {p : Program} (hp : Data p) (hrules : BranchRulesCorre
   rw [← hs.1] at heval
   cases hroot : closureRoot r
   · exact absurd hmatch (hex r hr hroot f ctx hctx ti t data targets hrt hd hi cfg m (st, tr) env' s1)
-  · exact hrules F isem MR hR hMR r hr hroot f ctx hctx ti t data targets hd hi hbt cfg hco m n st
+  · exact hrules F isem MR hR hMR r hr hroot f ctx hctx ti t data targets hd hi hbt htl cfg hco m n st
       tr env' s1 out st' tr2 (by omega) (by omega) hvb hfirst hmatch heval
 
 theorem program_termByName_lower_branch :
@@ -1038,7 +1104,7 @@ theorem branchOk_runTerm (hrules : BranchRulesCorrect program)
     (hctx : CtxInv f ctx) {ti : Nat} {t : Clif.Terminator} {data : V} {targets : List Label}
     (hrt : retOrTrap t = false) (hd : termData t = .ok data)
     (hi : ctx.insts[ti]? = some ⟨data, [], [], none⟩) (hbt : BrIdxTyped ctx t)
-    {st : LState} {out : V} {st' : LState} {tr : List RuleId} (hvb : ValsBelow ctx st)
+    (htl : TargetsLen t targets) {st : LState} {out : V} {st' : LState} {tr : List RuleId} (hvb : ValsBelow ctx st)
     (h : runTerm ctx "lower_branch" [.inst ti, .labels targets] st = .ok (some out, st', tr)) :
     ∃ ms, st'.emitted = st.emitted ++ ms.toArray ∧ LowerTermOk isem MR ctx t targets st st' ms := by
   unfold runTerm Interp.run at h
@@ -1058,7 +1124,7 @@ theorem branchOk_runTerm (hrules : BranchRulesCorrect program)
     subst h2
     have hlen : (program.rulesOf TId.lower_branch).length ≤ 1000 := by
       rw [show TId.lower_branch = 687 from rfl, data_program.r687]; decide
-    obtain ⟨ms, h1, h2⟩ := branchOk_of_rules data_program hrules hex hR hMR hctx hrt hd hi hbt
+    obtain ⟨ms, h1, h2⟩ := branchOk_of_rules data_program hrules hex hR hMR hctx hrt hd hi hbt htl
       rfl (by omega) hvb ha
     exact ⟨ms, by simpa using h1, h2⟩
 

@@ -39,7 +39,7 @@ def InstCalls (f : Clif.Function) (sem : Sem) (MR : MemRelT) (env : Clif.Env) (p
 `ti` is `buildCtx`'s terminator placeholder, from a state above every value's vreg) satisfies
 M4's `LowerTermOk`. From M4's terminator rule statements: `termCalls_of_rules`. -/
 def TermCalls (sem : Sem) (MR : MemRelT) : Prop :=
-  ∀ f ctx ti t data targets out st st' tr, CtxInv f ctx → BrIdxTyped ctx t →
+  ∀ f ctx ti t data targets out st st' tr, CtxInv f ctx → BrIdxTyped ctx t → TargetsLen t targets →
     ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩ → ValsBelow ctx st →
     termData t = .ok data → st.emitted = #[] →
     runTerm (termCtx ctx ti data) (termCall t ti targets).1 (termCall t ti targets).2 st =
@@ -182,7 +182,7 @@ theorem termCalls_of_rules (hlt : LowerTermRulesCorrect Isle.Aarch64.program)
     (hbr : BranchRulesCorrect Isle.Aarch64.program)
     (hbex : BranchExcludedUnmatchable Isle.Aarch64.program) {F : BitVec 64 → Prop} {sem : Sem}
     {MR : MemRelT} (hR : Refines F sem) (hMR : MRStable F MR) : TermCalls sem MR := by
-  intro f ctx ti t data targets out st st' tr hctx hbt hph hvb hd hemp hrun
+  intro f ctx ti t data targets out st st' tr hctx hbt htl hph hvb hd hemp hrun
   have hctx' := ctxInv_termCtx hctx hph data
   have hi := termCtx_insts_self hph data
   have hvb' : ValsBelow (termCtx ctx ti data) st := hvb
@@ -192,7 +192,7 @@ theorem termCalls_of_rules (hlt : LowerTermRulesCorrect Isle.Aarch64.program)
   · have hc : termCall t ti targets = ("lower_branch", [.inst ti, .labels targets]) := by
       cases t <;> simp [retOrTrap] at hrt <;> rfl
     rw [hc] at hrun
-    obtain ⟨ms, hem, hok⟩ := branchOk_runTerm hbr hbex hR hMR hctx' hrt hd hi hbt hvb' hrun
+    obtain ⟨ms, hem, hok⟩ := branchOk_runTerm hbr hbex hR hMR hctx' hrt hd hi hbt htl hvb' hrun
     rw [← key ms hem]; exact hok
   · have hc : termCall t ti targets = ("lower", [.inst ti]) := by
       cases t <;> simp [retOrTrap] at hrt <;> rfl

@@ -23,17 +23,19 @@ Cranelift 0.136.1's options):
    (`MInst.assign`), turn moves into `mov`/`str`/`ldr`, drop `Args`, turn `Rets` into the
    epilogue.
 
-Frame (grows down; `sp` is 16-byte aligned everywhere; all offsets are from `sp`):
+Frame (grows down; `sp` is 16-byte aligned everywhere; all offsets are from `sp`). The
+allocator's slots sit right above the outgoing area, below the explicit CLIF slots, so their
+offsets stay small (`size < 32 KiB`, checked by `lowerRFunc`) however large the CLIF slots are:
 
 ```
 fp + 16 + off     incoming stack arguments
 fp + 8, fp        saved lr, fp                                  <- x29
-                  padding to 16
+                  padding to 16                                 (total = frameSize)
+sp + size         explicit CLIF stack slots (slotBase)
 sp + fmoveTmp     16-byte temporary for float register moves (if any)
 sp + saveBase     callee-save slots: float registers (16 bytes each), then int (8 bytes)
 sp + floatBase    float spill slots, 16 bytes each (if any float value is spilled)
 sp + intBase      int spill slots, 8 bytes each
-sp + outgoing     explicit CLIF stack slots
 sp                outgoing stack arguments                       <- sp
 ```
 -/
@@ -196,16 +198,26 @@ structure RAFrame where
   floatBase : Nat
   saveOff : List (Reg × Nat)
   fmoveTmp : Nat
+  /-- End of the allocator's slots (16-aligned); the explicit CLIF slots start here. -/
   size : Nat
+  /-- The whole frame below fp/lr: allocator slots and CLIF slots (`AFunc.frameSize`). -/
+  total : Nat
   deriving Repr, Inhabited
 
-def RAFrame.compute (vc : VCode) (rf : RFunc) : RAFrame :=
-  let items := rf.blocks.foldl (· ++ ·) #[]
-  let floatStack := items.any fun it => it.locs.any fun | .stack _ .float => true | _ => false
-  let floatMove := items.any fun
+/-- Does the allocated code use a float spill slot? -/
+def RFunc.floatStack (rf : RFunc) : Bool :=
+  (rf.blocks.foldl (· ++ ·) #[]).any fun it => it.locs.any fun | .stack _ .float => true | _ => false
+
+/-- Does the allocated code move between float registers (needs `fmoveTmp`)? -/
+def RFunc.floatMove (rf : RFunc) : Bool :=
+  (rf.blocks.foldl (· ++ ·) #[]).any fun
     | .move (.reg (.v _)) (.reg (.v _)) => true
     | _ => false
-  let intBase := alignTo (vc.outgoing + vc.slotBytes) 16
+
+def RAFrame.compute (vc : VCode) (rf : RFunc) : RAFrame :=
+  let floatStack := rf.floatStack
+  let floatMove := rf.floatMove
+  let intBase := alignTo vc.outgoing 16
   let floatBase := alignTo (intBase + 8 * rf.spillSlots) 16
   let saveBase := floatBase + (if floatStack then 16 * rf.spillSlots else 0)
   let floats := rf.saved.filter (·.realClass? == some .float)
@@ -214,7 +226,9 @@ def RAFrame.compute (vc : VCode) (rf : RFunc) : RAFrame :=
   let (io, e) := ints.foldl (fun (acc, o) r => (acc ++ [(r, o)], o + 8)) ([], e)
   let tmp := alignTo e 16
   let e := if floatMove then tmp + 16 else e
-  { intBase, floatBase, saveOff := fo ++ io, fmoveTmp := tmp, size := alignTo e 16 }
+  let size := alignTo e 16
+  { intBase, floatBase, saveOff := fo ++ io, fmoveTmp := tmp, size,
+    total := alignTo (size + vc.slotBytes) 16 }
 
 def RAFrame.offset (fr : RAFrame) : Loc → Except String Nat
   | .stack s .int => pure (fr.intBase + 8 * s)
@@ -237,6 +251,10 @@ def RAFrame.moveInsts (fr : RAFrame) (src dst : Loc) : Except String (List AInst
 /-- Lower a checked allocated function to `AFunc`. -/
 def lowerRFunc (vc : VCode) (rf : RFunc) : Except String AFunc := do
   let fr := RAFrame.compute vc rf
+  -- Allocator slots are addressed `[sp, #off]` (`ldur`/`stur` or scaled `ldr`/`str`); the model
+  -- has no SIMD&FP register-offset form, so an allocator area of 32 KiB or more is rejected
+  -- (proof: `RegallocSlots`). The CLIF slots above it are addressed by `stack_addr` arithmetic.
+  if fr.size ≥ 32768 then throw s!"allocator frame area of {fr.size} bytes is too large"
   let blocks ← (vc.blocks.zip rf.blocks).mapIdxM fun bi (vb, items) => do
     let mut code : Array AInst := if bi == 0 then #[.prologue] else #[]
     for it in items do
@@ -256,8 +274,8 @@ def lowerRFunc (vc : VCode) (rf : RFunc) : Except String AFunc := do
     | .load _ _ (.fpOffset _) _ | .store _ _ (.fpOffset _) _ | .loadAddr _ (.fpOffset _) => true
     | _ => false
   let calls := vc.blocks.any fun b => b.insts.any fun | .call _ => true | _ => false
-  let frame := fr.size != 0 || calls || usesFp
-  pure { name := vc.name, frameSize := fr.size, blocks, slotBase := vc.outgoing, frame }
+  let frame := fr.total != 0 || calls || usesFp
+  pure { name := vc.name, frameSize := fr.total, blocks, slotBase := fr.size, frame }
 
 /-! ## The allocator -/
 

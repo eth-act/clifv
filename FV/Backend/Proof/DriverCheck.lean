@@ -466,10 +466,11 @@ def certOk (f : Clif.Function) (ctx : Ctx) (st0 : LState) (gn : Nat → Nat) (bl
   f.blocks.all (fun B => B.params.all fun q => decide (ctx.valueType? q.1 = some (CTy.ofClif q.2)))
 
 /-- Every `br_table` index has an integer type of at most 32 bits (`BrIdxTyped`; Cranelift's
-verifier requires `i32`). -/
+verifier requires `i32`), and every jump table has fewer than `2^32` entries (Cranelift's
+jump tables are `u32`-sized; contract change #9). -/
 def brIdxOk (f : Clif.Function) (ctx : Ctx) : Bool :=
   f.blocks.all fun B => match B.term with
-    | .brTable x _ _ => match ctx.valueType? x with
+    | .brTable x _ tbl => decide (tbl.length < 2 ^ 32) && match ctx.valueType? x with
       | some (.int w) => decide (w ≤ 32)
       | _ => false
     | _ => true

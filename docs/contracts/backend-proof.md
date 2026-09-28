@@ -511,7 +511,7 @@ Root rules proven (`LowerRuleOk`, axioms as icmp 2215: `propext`, `Classical.cho
 
 ## Family Ctl: terminators, branches, calls (M4Ctl)
 
-Branch `agent/m4-ctl`. Files `FV/Backend/Proof/IselCtl{Base,Term,Unmatch,Branch,Call,}.lean`,
+Branch `agent/m4-ctl`. Files `FV/Backend/Proof/IselCtl{Base,Term,Unmatch,Branch,Brif,Tbz,BrTable,Call,CallRules,}.lean`,
 axiom audit `FVTest/Backend/Proof/Ctl/Axioms.lean`.
 
 **Statements proven for `Isle.Aarch64.program`** (axioms `propext`, `Classical.choice`,
@@ -523,21 +523,33 @@ axiom audit `FVTest/Backend/Proof/Ctl/Axioms.lean`.
 | `TermUnmatchable program` | `termUnmatchable` | root-format check: `ruleFmt` + one `decide +kernel` over the 517 `lower` rules (`lower_fmts`), generic `ruleFmt_match` |
 | `BranchExcludedUnmatchable program` | `branchExcludedUnmatchable` | same, `lower_branch_fmts` (try_call rules 1034/1035/1036) |
 
-**Per-rule status (`lower_branch`, `BranchRulesCorrect` still open):**
+**`BranchRulesCorrect program` proven** (`branchRulesCorrect`, `IselCtl.lean`; M4Ctl3). Per rule:
 
-| Rule | State |
+| Rule | Theorem |
 | --- | --- |
-| 1139 `jump` | **proven** (`jump_ruleOk`, `jump_termOk`) |
-| 1132 `brif` base (`br_cond_result (is_nonzero_cmp v)`) | open: needs family C's `is_nonzero_cmp`/`emit_icmp` contracts (`CondSem`/`CondCode` on `agent/m4-cmp`@6e60c71, not finished) and a `br_cond_result` contract (4 rules) |
-| 1137 `tbnz`, 1138 `tbz` (look through `band x (iconst 2^k)`, `icmp eq … 0`) | open: `def_inst` look-through + `test_and_compare_bit_const` lemmas |
-| 1140 `br_table` | open (now provable: `BrIdxTyped`, change #6): `emit_island`, `put_in_reg_zext32` (`ExtOut`, family C), `br_table_impl` (2 rules; needs `imm` from family B), `jt_sequence` |
+| 1139 `jump` | `jump_ruleOk` (`IselCtlBranch`) |
+| 1132 `lower_brif` | `brif_ruleOk` (`IselCtlBrif`): `is_nonzero_cmp_ok` (M4Cmp3), `br_cond_result_ok` (4 rules; rule 0 refuted by first-match on the three E shapes), `brif_termOk_gen` |
+| 1137 `tbnz` | `tbnz_ruleOk` (`IselCtlTbz`): band/iconst look-through, `tcbc`/`tcbc_spec` (single set bit), `truthy_and_pow` |
+| 1138 `tbz` | `tbz_ruleOk` (`IselCtlTbz`): the `tbnz` pattern under `icmp eq … (iconst 0)` (`icmp_truthy`); the zero constant from `u64_from_imm64` via `iconst_zero_of_imm64` (`u64_iconst`) |
+| 1140 `br_table` | `brTable_ruleOk` (`IselCtlBrTable`): `emit_island_ok`, `zext32_ok` + `ExtOut.sem` (family C), `br_table_impl_ok` (both rules: `cmp_imm` with `imm12_value`, or `imm` + `cmp`; `JtOut`), `jt_sequence_ok`, `hs_cmp32` (`hs` ⇔ index ≥ `n` on 32 bits), `brTable_termOk_gen` (dispatch against `jtSequence`'s `ispec`) |
 
-**Calls (`CallRulesCorrect`, open):** rules 1031 (`bl`) and 1032 (GOT + `blr`); `call_indirect`
-(`rule_lower_2529`, 1033) is not in E. The extern/ABI lemmas are proven (`IselCtlCall.lean`:
-`func_ref_data`, `gen_call_output` = `outRegs`/`freshN`, `argLocs_eq` (≤ 8 arguments all in
-x0..), `gen_call_args`/`gen_call_rets`/`gen_call_info`/`gen_call_ind_info`, `is_pic`); the two
-rule theorems (operand view of `call`, `CallsRefine` application, `ResultsHeld` of the fresh
-output vregs) are not written.
+The `try_call` rules (1034–1036) are not closure roots (`decide +kernel` on `closureRoot`).
+Axioms: `propext`, `Classical.choice`, `Quot.sound`, plus the `bv_decide` certificates of family
+C/B lemmas (`condOn_cmp_32`, `extHolds_extend`, `ExtOut.sem`, `movK_ident`) for `brif`/`br_table`.
+
+**Contract change #9** (c560b29, integrator-approved): `BrIdxTyped` also gives
+`tbl.length < 2^32`, decided by `brIdxOk` (`lowerCheck`). Without it rule 1140 is false:
+`jump_table_size` is a `u32`, the bounds check is a 32-bit `cmp`, so a table of `≥ 2^32` entries
+compares against `n mod 2^32`. Announced to M6Rest4; `jtSequence`'s `ispec`/`csem` unchanged.
+
+**Calls: `CallRulesCorrect program` proven** (`callRulesCorrect`, `IselCtl.lean`; rule theorems
+`call_bl_ruleOk` 1031, `call_got_ruleOk` 1032 in `IselCtlCallRules.lean`: `call` operand view,
+`CallsRefine` application, `resultsHeld_call` via `writeV_nodup_ctl`). `call_indirect` 1033 is
+covered by `ExcludedUnmatchable` (closureRoot false; M4Excl).
+
+**Contract change #8** (fd746ab, integrator-approved): `TargetsLen t targets` premise of
+`BranchRuleOk`/`TermCalls` (`br_table`: `targets.length = tbl.length + 1`), discharged in
+`LowerSim.term_step` from the block shape.
 
 **Shared changes (integrator-approved, announced):** #5 `38600e8` (calls: `CallsRefine`,
 `CallRegArgs`, `CallRuleOk`/`CallRulesCorrect`, `LowerRulesCorrect` excludes `callRootRule`,
@@ -684,6 +696,70 @@ a64_rotr/a64_rotr_imm _ok`, `alu_rr_imm12_ok`, extern iffs (`rotr_mask`, `u8_int
 hypotheses for `rotr_32/64_base_case`), composition like `shift_compose`, `rotr_neg` for `rotl`.
 popcnt (vector ispec forms), `bnot_ishl` 1401, `sbfm`/`ubfm` 1704/1707: not started.
 
+**Continuation (M4AluB4, branch `agent/m4-alu-b4`).** 19 more rules proven (45 total); family B's
+assigned root rules are all proven.
+
+| id | line | rule | theorem (file) |
+| --- | --- | --- | --- |
+| 899 | 1772 | `rotl_fits_in_16` | `rotl_fits_in_16_ok` (`IselFamAluBRot`) |
+| 900 | 1778 | `rotl_fits_in_16_imm` | `rotl_fits_in_16_imm_ok` |
+| 901 | 1791 | `rotl_32_base_case` | `rotl_32_base_case_ok` |
+| 902 | 1797 | `rotl_64_base_case` | `rotl_64_base_case_ok` |
+| 903 | 1803 | `rotl_32_imm` | `rotl_32_imm_ok` |
+| 904 | 1808 | `rotl_64_imm` | `rotl_64_imm_ok` |
+| 906 | 1840 | `rotr_fits_in_16` | `rotr_fits_in_16_ok` |
+| 907 | 1844 | `rotr_32_base_case` | `rotr_32_base_case_ok` |
+| 908 | 1848 | `rotr_64_base_case` | `rotr_64_base_case_ok` |
+| 909 | 1852 | `rotr_fits_in_16_imm` | `rotr_fits_in_16_imm_ok` |
+| 910 | 1857 | `rotr_32_imm` | `rotr_32_imm_ok` |
+| 911 | 1862 | `rotr_64_imm` | `rotr_64_imm_ok` |
+| 833 | 1401 | `bnot_ishl` | `bnot_ishl_ok` (`IselFamAluBNotShift`) |
+| 892 | 1704 | `sbfm` | `sbfm_ok` (`IselFamAluBBfm`) |
+| 893 | 1707 | `ubfm` | `ubfm_ok` |
+| 937 | 2074 | `popcnt_8` | `popcnt_8_ok` (`IselFamAluBPopcnt`) |
+| 938 | 2080 | `popcnt_16` | `popcnt_16_ok` |
+| 939 | 2086 | `popcnt_32` | `popcnt_32_ok` |
+| 940 | 2092 | `popcnt_64` | `popcnt_64_ok` |
+
+Axioms: `propext`, `Classical.choice`, `Quot.sound`; the `fits_in_16` rotates add the `bv_decide`
+certificates of `extHolds_extend`/`extOut_prun` (and `small_rot_neg` for the register amount), the
+popcnt rules those of `popcnt{8,16,32,64}_fin`. No `sorry`, no axiom.
+
+* **Route.** All rules invert match and right-hand side together (`fbrot_inv [*, rule] at hm he`,
+  then `subst` the matched instruction's info and a second pass with the extern iffs
+  `ext_value_array_2_iff`, `ctor_put_in_reg_iff`, `ext_def_inst_iff`, `ext_inst_data_value_iff`, …);
+  look-throughs (`ishl`, `iconst`) are then resolved through `CtxInv.defClif`/`data`
+  (`instNames_binary`, `defInst_iconst_clif`) and their values through `DFGCons`
+  (`evalInst_shift_ok`, `dfg_iconst_fb`). When `subst_vars` renames the lowering state, the proofs
+  name it back with `rename LState => st0`.
+* **Templates.** Rotates use `shift_ruleOk_gen`; `sbfm`/`ubfm` use the new `shift_ruleOk_uses`
+  (the code reads the looked-through `ishl` operand, not the root operands, so the right-hand side
+  names its read values and shows them defined); `bnot_ishl` and `popcnt` are proven directly with
+  `unary_front` + `lowerInstOk_one_fb`.
+* **Rotates.** `rot_fin`/`rot_imm_fin` (an `extr` at the operand size), `rotl_fin` (`sub` from `xzr`
+  then `extr`, via `rotr_neg`/`neg_mod`), `neg_imm` (`negate_imm_shift` of an in-range amount),
+  `codeShapeU_compose`/`codeShapeU_cons`/`CodeShapeU.weaken`. `extOut_prun` now takes only
+  `VHolds vx (ρ x)` of the operand (instead of `ValsHeld fr ρ`), so it composes after code that
+  already updated fresh vregs (`rotl_fits_in_16`: `sub` first, then the zero-extension).
+* **`bnot_ishl`.** Contracts `alu_rrr_shift_ok` (term 377), `orr_not_shift_ok`; `ctor_lshl_fb`;
+  width lemma `not_shl_fin`.
+* **`sbfm`/`ubfm`.** `bfm_sshr`/`bfm_ushr`: `bfmVal` with `bfm_immr`/`bfm_imms`'s immediates is
+  `(x <<< a).sshiftRight b` / `(x <<< a) >>> b` for `a, b < w` (bitwise, `getLsbD` case analysis);
+  `bitfield_move_ok`, `ctor_bfm_immr_iff`/`ctor_bfm_imms_iff`, `ctor_temp_writable_reg_int_iff`.
+* **`popcnt`.** Float-class vector temporaries: `EmitOutC` (fresh vreg of a class), contracts
+  `size_for_mov_to_fpu_ok`, `mov_to_fpu_ok`, `mov_from_vec_ok`, `vec_misc_ok`/`vec_lanes_ok`/
+  `vec_rrr_ok` and wrappers `vec_cnt_ok`/`addv_ok`/`addp_ok`; class-generic runs `prun_rr_c`/
+  `prun_rrr_c`; the final equalities (`popcnt*_fin`, byte counts summed = `cpop`) by `bv_decide`.
+* **New `ispec` forms** (additive, before `| _, _ => none`, commit `9bb4e3a`; M6Rest4 told):
+  `aluRRRShift op sz rd .xzr _ sh, [b]` (`orn wd, wzr, wm, lsl #amt`); `bitfieldMove sz op rd _ immr
+  imms, [a]` (`immr, imms < width`) = `bfmVal` (Arm `UBFM`/`SBFM`); `movToFpu` `size32`/`size64`
+  (zero-extend the low 32/64 bits into the 128-bit register), `vecMisc .cnt … .size8x8`
+  (`cntBytes`), `vecRRR .addp … .size8x8` (`addpBytes`), `vecLanes .addv … .size8x8` (`addvBytes`),
+  `movFromVec rd _ idx .size8` (`idx < 16`, byte `idx` zero-extended). A 64-bit vector result
+  zeroes the upper 64 bits.
+* **Cost** (one module at a time, 10 GB cap): `IselFamAluBRot` ~25 s, `IselFamAluBNotShift` ~15 s,
+  `IselFamAluBBfm` ~20 s, `IselFamAluBPopcnt` ~25 s.
+
 ### Integration note (Integrate1: m4-ctl + m4-alu-b)
 
 Shared helpers deduplicated: `szOf`, `szOf_bits`, `env4`, `env5` now live in `IselRulesALU.lean`;
@@ -751,10 +827,11 @@ wrappers or `use_lse`), a root type test (`$I128`, vector constants, `ty_vec64/1
 `IselExclBase` if it changed) and every `lower` rule `exclOk` rejects (must be none; otherwise
 extend the checker, or the rule is a real obligation and belongs in the closure).
 
-## Memory family (loads/stores/stack_addr/symbol_value) — M4Mem
+## Memory family (loads/stores/stack_addr/symbol_value) — M4Mem, M4Mem2
 
-**Status: contract + infrastructure; no memory root rule proven yet** (request budget).
-Branch `agent/m4-mem`.
+**Status: done.** `memRulesCorrect_program : MemRulesCorrect program` (`IselMemRoots`): all 21
+memory root rules (815, 824, 1027, 1041–1044, 1052–1057, 1064–1070, 1093) are `MemRuleOk`.
+Contract/infrastructure on branch `agent/m4-mem`, the proofs on `agent/m4-mem2`.
 
 **Contract change #7** (335353d, on main ddf0955; announced to all): memory rules cannot be
 `LowerRuleOk` for an arbitrary `MR`, so, like calls (#5), they are split out.
@@ -784,15 +861,35 @@ Branch `agent/m4-mem`.
 `Runs.of_prun`), `IselMemAmode` (`AddOk`, `amode_add_ok`: all three rules of `amode_add`;
 `add64_inv`, `add_imm64_inv`, `imm64_inv`, `addOk_imm12`, `addOk_add`).
 
-**Remaining (plan).** Contracts `amode_reg_scaled` (576, 3 rules), `amode_no_more_iconst`
-(575, 9 rules), `amode` (574, 4 rules incl. `stack_addr` → `SlotOffset`) with the statement
-`Frag ∧ ∃ am, amv.amode? = some am ∧ AmVregs am ∧ ∀ fr ρ w pv, RtOk … → fr.regs x = some pv →
-pv.ty = .i64 → UsesLo … ∧ Runs … (amodeAddr sb am bytes (amUses am ρ') w' = some (ofInt 64
-(pv.toNat + off)))` (DFG look-through via `binary_value`/`extend_value`/`shift_const_value`);
-helper terms `aarch64_{u,s}load*` (529–535), `aarch64_store*` (541–544) + `side_effect_inst_ok`,
-`compute_stack_addr` (643), `load_ext_name` (570: rules 3991/3996 fail since `is_pic`),
-`load_ext_name_got` (571); root rules by `root_match_data` + `instData` inversion (load format 16,
-store 22); 815/824 are vacuous (`ctor_is_sinkable_inst`). Byte lemmas for the load value / store
-are in `IselMemArm`.
+**M4Mem2 files.**
+* `IselMemAddr`: DFG look-through (`def_data`: the data of a value's defining instruction is its
+  `instData`; `inv_iadd`/`inv_ishl`/`inv_iconst`/`inv_uextend`/`inv_sextend`/`inv_stackAddr`);
+  tactics `mem_dfg hctx` (invert every `V.data 152 … = info.data` of a looked-through
+  instruction) and `mem_invd hp hctx at hm he` (`mem_inv`, then `mem_dfg` + the inverse simp set to
+  a fixpoint); `ScaledOk`, `amode_reg_scaled_ok` (576, all 3 rules).
+* `IselMemNoIconst`: `AmOk F isem sb ctx st st' ms am bytes x off` (code `ms` = a `Frag`; `am` over
+  int vregs; under `RtOk` with `x` holding an `i64` `pv`: the code and the mode read fresh or
+  defined vregs and after the code `amodeAddr sb am bytes (amUses am ρ') w' = ofInt 64 (pv + off)`);
+  value lemmas `iadd_val`/`ishl_val`/`ext_val`; `mem_vregs hctx` (substitute
+  `ctx.valueReg? y = some r`); `amode_nmi_ok` (575, all 11 rules, `ty` of 1/2/4/8 bytes; the
+  `ishl` scale check gives `log2 bytes = c % 64`, `log2_scale`).
+* `IselMemAmodeTop`: `amode_ok` (574, all 4 rules: `stack_addr` → `SlotOffset (base + o1 + off)`
+  with the slot at `sp + sb + base` (`RtOk.slots`), `iconst` operands folded into the offset,
+  `amode_no_more_iconst`).
+* `IselMemHelpers`: `{u,s}load*_helper_ok` (529–535), `store*_helper_ok` (541–544),
+  `compute_stack_addr_ok` (643), `load_ext_name_got_ok` (571), `SymOk`/`load_ext_name_ok` (570;
+  the two non-PIC rules are refuted by `is_pic = true`).
+* `IselMemSem`: CLIF inversions (`evalInst_{load,store,stackAddr,symbolValue}_inv`), `rtOk_of`
+  (`RtOk` from the per-instruction premises and `MemRelOk.slots`), and the `LowerInstOk` builders
+  `load_lower_ok` (bytes via `readBits_getLsbD_eq` and `MemRelOk.bytes`, avoidance via
+  `MemRelOk.valid`), `store_lower_ok` (`MemRelOk.store`, `writeBits_setWidth`),
+  `stackAddr_lower_ok`, `symbol_lower_ok` (`MemRelOk.symbols`).
+* `IselMemRoots`: root inversions (`inv_load_root`, `inv_store_root`, `inv_symbolValue_root`,
+  tactic `mem_root hctx hi hic`), `load_root_finish`/`store_root_finish`, the 21 rule theorems,
+  `lower_memRoot_filter` (the memory rules of `lower`, by `rfl` over the rule ids only) and
+  `memRulesCorrect_program`.
 
-**Axioms**: `memRelOk_holds`, `readBits_getLsbD_eq`, `backend_correct_of_rules`: `propext`, `Classical.choice`, `Quot.sound`; `amode_add_ok` additionally the `bv_decide` certificates of M4AluB's `movK_ident` (via `imm_ok`). No `sorry`.
+Remaining: none. `backend_correct(_of_rules)` can now take `memRulesCorrect_program` for
+`hmemRules` (left to the integrator).
+
+**Axioms**: `memRelOk_holds`, `readBits_getLsbD_eq`, `backend_correct_of_rules`: `propext`, `Classical.choice`, `Quot.sound`; `amode_add_ok` and `memRulesCorrect_program` additionally the `bv_decide` certificates of M4AluB's `movK_ident` (via `imm_ok`). No `sorry`.
