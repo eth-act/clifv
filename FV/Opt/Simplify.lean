@@ -383,6 +383,11 @@ def skelStmt (skel : SkeletonFn) (rules : SimplifyFn) (allowed skelOk : Inst →
         | none => keep
     | some _ => keep
 
+/-- A conditional trap (`trapz`/`trapnz`: result-free, keeps memory). -/
+def isTrapLike : Inst → Bool
+  | .trapz .. | .trapnz .. => true
+  | _ => false
+
 /-- Simplify a terminator (reprocessing up to `fuel` times): statements to append to the
 block body, the new terminator, and whether anything changed. -/
 def skelTerm (skel : SkeletonFn) (rules : SimplifyFn) (allowed skelOk : Inst → Bool) (cfg : Cfg)
@@ -410,10 +415,7 @@ def skelTerm (skel : SkeletonFn) (rules : SimplifyFn) (allowed skelOk : Inst →
       | _ => keep
     | some (.replaceWithTwo (.inst a) (.term t')) =>
       -- (`a` is a conditional trap: it keeps memory)
-      let trapLike := match a with
-        | .trapz .. | .trapnz .. => true
-        | _ => false
-      if !skelOk a || !trapLike then keep else
+      if !skelOk a || !isTrapLike a then keep else
       match materializeAll cfg allowed bi st1 (operands a ++ termOperands t') with
       | some (m, st2, out) =>
         let (more, t'', st3, _) := skelTerm skel rules allowed skelOk cfg bi fuel st2 (mapTerm (rename m) t')

@@ -614,4 +614,219 @@ theorem termEval_rename {σ : ValueId → ValueId} {F F' : Frame} {M : Mem} {t :
   | returnCall fn args => rfl
   | trap c => rfl
 
+theorem termEval_brif_cond {F : Frame} {M : Mem} {c c' : ValueId} {th el : BlockCall}
+    (h : F.regs c' = F.regs c) :
+    (termEval F M (.brif c' th el)).norm = (termEval F M (.brif c th el)).norm := by
+  simp only [termEval, Res.norm_bind, Frame.get, h, Res.norm_ofOption]
+
+theorem effTerm_single (F : Frame) (M : Mem) (a : Inst) (t : Terminator) :
+    effTerm F M [a] t = seqEval F M a t := by
+  simp only [effTerm, seqEval]
+  cases evalInst F M a with
+  | ok p => obtain ⟨vs, m⟩ := p; cases vs <;> rfl
+  | trap _ => rfl
+  | stuck _ => rfl
+
+/-- A conditional trap in front of both sides of a branch refinement. -/
+theorem BrRefines.cons_trap {tb : BlockId → Option TrapCode} {F : Frame} {M : Mem} {a : Inst}
+    {t1 t2 : Terminator} {E : List Inst} (ha : ∃ y code, a = .trapz y code ∨ a = .trapnz y code)
+    (h : BrRefines tb (termEval F M t1) (effTerm F M E t2)) :
+    BrRefines tb (effTerm F M [a] t1) (effTerm F M (a :: E) t2) := by
+  obtain ⟨y, code, hi⟩ := ha
+  have hTL := evalInst_trapLike (fr := F) (fr' := F) (M := M) (M' := M) hi rfl
+  simp only [effTerm]
+  cases he : evalInst F M a with
+  | ok p =>
+    obtain ⟨vs, M1⟩ := p
+    obtain ⟨rfl, rfl, -⟩ := hTL.1 vs M1 he
+    exact h
+  | trap c => exact BrRefines.refl _ _
+  | stuck msg => exact BrRefines.refl _ _
+
+section Skel
+variable {f : Function} {ρ : Valuation} {fr : Frame} {mem : Mem}
+  {rules : SimplifyFn} {skel : SkeletonFn} {allowed skelOk : Inst → Bool} {cfg : Cfg} {bi : Nat}
+
+theorem renamed_term {st1 st2 st3 : SState} {t t1 : Terminator} {M : Mem}
+    (h1 : GInv f ρ fr mem st1) (h2 : GInv f ρ fr mem st2) (hm12 : Mono ρ fr mem st1 st2)
+    (hm23 : Mono ρ fr mem st2 st3)
+    (hr : (termEval (withRegs fr (gval ρ fr mem st2)) M t1).norm =
+      (termEval (withRegs fr (gval ρ fr mem st2)) M t).norm)
+    (hns : NotStuck (termEval (withRegs fr (gval ρ fr mem st1)) M t)) :
+    (termEval (withRegs fr (gval ρ fr mem st3)) M t1).norm =
+      (termEval (withRegs fr (gval ρ fr mem st1)) M t).norm := by
+  have e12 := termEval_grow (gval_le h1 hm12) hns
+  rw [e12] at hr
+  have hns2 : NotStuck (termEval (withRegs fr (gval ρ fr mem st2)) M t1) := by
+    intro msg hmsg
+    rw [hmsg] at hr
+    cases hc : termEval (withRegs fr (gval ρ fr mem st1)) M t with
+    | stuck msg' => exact hns msg' hc
+    | ok _ => rw [hc] at hr; cases hr
+    | trap _ => rw [hc] at hr; cases hr
+  rw [termEval_grow (gval_le h2 hm23) hns2, hr]
+
+theorem skelTerm_spec (hS : SimplifySound rules) (hK : SkeletonSound skel) (hE : GoodEnv f fr mem) :
+    ∀ fuel st t extra t'' st' ch, GInv f ρ fr mem st → (∀ y ∈ termOperands t, st.known y = true) →
+      skelTerm skel rules allowed skelOk cfg bi fuel st t = (extra, t'', st', ch) →
+      GInv f ρ fr mem st' ∧ Mono ρ fr mem st st' ∧
+        BrRefines (fun b => st.trapBlocks.get? b) (termEval (withRegs fr (gval ρ fr mem st')) mem t)
+          (effTerm (withRegs fr (gval ρ fr mem st')) mem (effsOf extra) t'') := by
+  intro fuel
+  induction fuel with
+  | zero =>
+    intro st t extra t'' st' ch hI _ h
+    simp only [skelTerm, Prod.mk.injEq] at h
+    obtain ⟨rfl, rfl, rfl, -⟩ := h
+    exact ⟨hI, Mono.refl _, BrRefines.refl _ _⟩
+  | succ fuel ih =>
+    intro st t extra t'' st' ch hI hk h
+    obtain ⟨hI1, hG1, hC1⟩ := runSkel_spec (allowed := allowed) hS hK hE hI (.term t)
+    rw [skelTerm] at h
+    generalize runSkel skel rules allowed st (.term t) = r at h hI1 hG1 hC1
+    obtain ⟨c, st1⟩ := r
+    simp only at h hI1 hG1 hC1
+    have hM1 : Mono ρ fr mem st st1 := hG1.mono
+    have hkeep : ((#[], t, st1, false) : Array Stmt × Terminator × SState × Bool) =
+        (extra, t'', st', ch) → GInv f ρ fr mem st' ∧ Mono ρ fr mem st st' ∧
+          BrRefines (fun b => st.trapBlocks.get? b) (termEval (withRegs fr (gval ρ fr mem st')) mem t)
+            (effTerm (withRegs fr (gval ρ fr mem st')) mem (effsOf extra) t'') := by
+      intro he
+      simp only [Prod.mk.injEq] at he
+      obtain ⟨rfl, rfl, rfl, -⟩ := he
+      exact ⟨hI1, hM1, BrRefines.refl _ _⟩
+    -- the source terminator, read later
+    have hsrc : ∀ st3 : SState, Mono ρ fr mem st1 st3 →
+        termEval (withRegs fr (gval ρ fr mem st3)) mem t =
+          termEval (withRegs fr (gval ρ fr mem st1)) mem t := fun st3 hm =>
+      termEval_congr (fun x hx => hm.fix x (hM1.known x (hk x hx)))
+    split at h
+    · -- replace
+      rename_i t'
+      have hR : BrRefines _ _ _ := hC1 _ rfl
+      split at h
+      · rename_i m st2 out2 hmat
+        generalize hrec : skelTerm skel rules allowed skelOk cfg bi fuel st2
+          (mapTerm (rename m) t') = rr at h
+        obtain ⟨more, t3, st3, ch3⟩ := rr
+        simp only [Prod.mk.injEq] at h
+        obtain ⟨rfl, rfl, rfl, -⟩ := h
+        obtain ⟨hI2, hG2, hmap, hps⟩ := materializeAll_spec hE hI1 hmat
+        have hren := rename_spec hmap hps
+        have hM2 : Mono ρ fr mem st1 st2 := hG2.mono
+        obtain ⟨hI3, hM3, hB3⟩ := ih st2 _ more t3 st3 ch3 hI2 (by
+          intro y hy
+          rw [termOperands_mapTerm] at hy
+          obtain ⟨y0, hy0, rfl⟩ := List.mem_map.1 hy
+          exact known_of_avail (hren y0 hy0).2) hrec
+        refine ⟨hI3, hM1.trans (hM2.trans hM3), ?_⟩
+        rw [effsOf_append, effsOf_pure (materializeAll_pure hmat), List.nil_append]
+        rw [hM2.trap, hM1.trap] at hB3
+        refine BrRefines.trans (BrRefines.grow hR (hsrc st3 (hM2.trans hM3)) (fun hns => ?_)) hB3
+        exact renamed_term hI1 hI2 hM2 hM3
+          (termEval_rename (fun y hy => (hren y hy).1)) hns
+      · exact hkeep h
+    · -- replaceBranchCond
+      rename_i cv
+      have hR := hC1 _ rfl
+      cases hT : t
+      case brif c0 th el =>
+        rw [← hT]
+        simp only [hT] at h hR
+        split at h
+        · rename_i m st2 out2 hmat
+          generalize hrec : skelTerm skel rules allowed skelOk cfg bi fuel st2
+            (.brif (rename m cv) th el) = rr at h
+          obtain ⟨more, t3, st3, ch3⟩ := rr
+          simp only [Prod.mk.injEq] at h
+          obtain ⟨rfl, rfl, rfl, -⟩ := h
+          obtain ⟨hI2, hG2, hmap, hps⟩ := materializeAll_spec hE hI1 hmat
+          have hren := rename_spec hmap hps
+          have hM2 : Mono ρ fr mem st1 st2 := hG2.mono
+          obtain ⟨hI3, hM3, hB3⟩ := ih st2 _ more t3 st3 ch3 hI2 (by
+            intro y hy
+            simp only [termOperands, List.mem_append, List.mem_cons] at hy
+            rcases hy with (rfl | hy) | hy
+            · exact known_of_avail (hren cv (by simp)).2
+            · exact hM2.known y (hM1.known y (hk y (by rw [hT]; simp [termOperands, hy])))
+            · exact hM2.known y (hM1.known y (hk y (by rw [hT]; simp [termOperands, hy])))) hrec
+          refine ⟨hI3, hM1.trans (hM2.trans hM3), ?_⟩
+          rw [effsOf_append, effsOf_pure (materializeAll_pure hmat), List.nil_append]
+          rw [hM2.trap, hM1.trap] at hB3
+          refine BrRefines.trans (BrRefines.grow (by rw [hT]; exact hR) (hsrc st3 (hM2.trans hM3))
+            (fun hns => ?_)) hB3
+          exact renamed_term hI1 hI2 hM2 hM3 (termEval_brif_cond (hren cv (by simp)).1) hns
+        · exact hkeep (by rw [hT]; exact h)
+      all_goals (rw [← hT]; simp only [hT] at h; exact hkeep (by rw [hT]; exact h))
+    · -- replaceWithTwo
+      rename_i a t'
+      have hR : BrRefines _ _ _ := hC1 _ rfl
+      split at h
+      · exact hkeep h
+      · rename_i htl
+        split at h
+        · rename_i m st2 out2 hmat
+          generalize hrec : skelTerm skel rules allowed skelOk cfg bi fuel st2
+            (mapTerm (rename m) t') = rr at h
+          obtain ⟨more, t3, st3, ch3⟩ := rr
+          simp only [Prod.mk.injEq] at h
+          obtain ⟨rfl, rfl, rfl, -⟩ := h
+          obtain ⟨hI2, hG2, hmap, hps⟩ := materializeAll_spec hE hI1 hmat
+          have hren := rename_spec hmap hps
+          have hM2 : Mono ρ fr mem st1 st2 := hG2.mono
+          obtain ⟨hI3, hM3, hB3⟩ := ih st2 _ more t3 st3 ch3 hI2 (by
+            intro y hy
+            rw [termOperands_mapTerm] at hy
+            obtain ⟨y0, hy0, rfl⟩ := List.mem_map.1 hy
+            exact known_of_avail (hren y0 (List.mem_append_right _ hy0)).2) hrec
+          refine ⟨hI3, hM1.trans (hM2.trans hM3), ?_⟩
+          -- the trap prefix
+          have hTLa : ∃ y code, a = .trapz y code ∨ a = .trapnz y code := by
+            simp only [Bool.or_eq_true, Bool.not_eq_true', not_or] at htl
+            have := htl.2
+            cases a <;> simp [isTrapLike] at this
+            · rename_i y code; exact ⟨y, code, .inl rfl⟩
+            · rename_i y code; exact ⟨y, code, .inr rfl⟩
+          obtain ⟨y, code, hay⟩ := hTLa
+          have hTLa' : ∃ y code, mapOperands (rename m) a = .trapz y code ∨
+              mapOperands (rename m) a = .trapnz y code := by
+            rcases hay with rfl | rfl
+            · exact ⟨_, code, .inl rfl⟩
+            · exact ⟨_, code, .inr rfl⟩
+          have hnp : isPure (mapOperands (rename m) a) = false := by
+            rcases hay with rfl | rfl <;> rfl
+          have heff : effsOf (out2 ++ #[{ inst := mapOperands (rename m) a }] ++ more) =
+              mapOperands (rename m) a :: effsOf more := by
+            rw [effsOf_append, effsOf_append, effsOf_pure (materializeAll_pure hmat)]
+            simp [effsOf, hnp]
+          rw [heff]
+          rw [hM2.trap, hM1.trap] at hB3
+          refine BrRefines.trans (BrRefines.grow hR (hsrc st3 (hM2.trans hM3)) (fun hns => ?_))
+            (BrRefines.cons_trap hTLa' hB3)
+          -- `seqEval a t'` read after the renaming
+          rw [effTerm_single]
+          have hna : NotStuck (evalInst (withRegs fr (gval ρ fr mem st1)) mem a) := by
+            intro msg hmsg; simp only [seqEval, hmsg] at hns; exact hns msg rfl
+          have hra := renamed_eval (st3 := st3) hI1 hI2 hM2 hM3
+            (fun y hy => (hren y (List.mem_append_left _ hy)).1) hna
+          simp only [seqEval]
+          cases he : evalInst (withRegs fr (gval ρ fr mem st1)) mem a with
+          | ok p =>
+            obtain ⟨vs, M1⟩ := p
+            rw [Res.norm_eq_ok hra he]
+            obtain ⟨hvs, hM1, -⟩ := (evalInst_trapLike (fr := withRegs fr (gval ρ fr mem st1))
+              (fr' := withRegs fr (gval ρ fr mem st1)) (M := mem) (M' := mem) hay rfl).1 vs M1 he
+            subst hvs
+            rw [hM1] at he ⊢
+            have hnt : NotStuck (termEval (withRegs fr (gval ρ fr mem st1)) mem t') := by
+              intro msg hmsg; simp only [seqEval, he, hmsg] at hns; exact hns msg rfl
+            exact renamed_term hI1 hI2 hM2 hM3
+              (termEval_rename (fun y hy => (hren y (List.mem_append_right _ hy)).1)) hnt
+          | trap c => rw [Res.norm_eq_trap hra he]
+          | stuck msg => exact absurd he (hna msg)
+        · exact hkeep h
+    · exact hkeep h
+
+end Skel
+
 end Opt
