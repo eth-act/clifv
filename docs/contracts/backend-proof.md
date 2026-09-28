@@ -495,6 +495,20 @@ Root rules proven (`LowerRuleOk`, axioms as icmp 2215: `propext`, `Classical.cho
   `multi_lane`/`dynamic_lane`, which fail on `.int w`), `vector_size_binary_absurd` (result type
   of a binary E instruction is `.int ty.width`).
 
+* **Division** (`IselCmpDiv.lean`, `IselCmpDivRoot.lean`): **udiv 1116/1119, urem 1190** proven
+  (`udiv64_ruleOk`, `udiv32_ruleOk`, `urem64_ruleOk`). Contracts: `trap_if_zero_divisor_ok`,
+  `put_nonzero_in_reg_ok` (all rules) + `divisor_sem` (zero check halts with `int_divz`,
+  `TrapRun`; iconst divisor via `imm_ok`, `immOut_lt`, `imm_divOpnd`), `DivOpnd`, `ext_divOpnd`,
+  `lowerInstOk_div` (ok/trap arms), `DivOperands` (.run/.uses), `udiv_finish`, `urem_finish`,
+  `a64_udiv_ok`/`a64_sdiv_ok`/`msub_ok`, `runs_sdiv`. `ExtOut.sem`/`divisor_sem` now take
+  `VHolds` of the operand instead of `ValsHeld` (needed to run the second operand code after
+  the first; callers updated).
+* **Remaining**: urem 1197 (copy of `urem64_ruleOk` with `zext32_ok`, `hw32` as in
+  `udiv32_ruleOk`); srem 1204/1211 (`srem_finish` = `urem_finish` with `runs_sdiv`, signed
+  arith via `BitVec.toInt_sdiv_of_ne_or_ne`/`toInt_srem`; `bv_decide` times out at 16 bits);
+  sdiv 1163/1167 (safe divisor: `imm` + sdiv, no trap); sdiv 1145/1153 (need contracts for
+  `intmin_check` 562 and `trap_if_div_overflow` 561: adds/ccmp/trapIf vs, `int_ovf` arm).
+
 ## Family Ctl: terminators, branches, calls (M4Ctl)
 
 Branch `agent/m4-ctl`. Files `FV/Backend/Proof/IselCtl{Base,Term,Unmatch,Branch,Call,}.lean`,
