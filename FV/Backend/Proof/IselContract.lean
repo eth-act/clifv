@@ -150,6 +150,40 @@ def extendVal (e : ExtendOp) (n : Nat) (b : CV) : BitVec n :=
   | .sxtw => ((lo64 b).setWidth 32).signExtend n
   | .sxtx => (lo64 b).signExtend n
 
+/-- Byte `i` of a 64-bit value. -/
+def byteOf (x : BitVec 64) (i : Nat) : BitVec 8 := x.extractLsb' (8 * i) 8
+
+/-- `CNT Vd.8B, Vn.8B`: the population count of each byte. -/
+def cntBytes (x : BitVec 64) : BitVec 64 :=
+  (byteOf x 7).cpop ++ (byteOf x 6).cpop ++ (byteOf x 5).cpop ++ (byteOf x 4).cpop ++
+    (byteOf x 3).cpop ++ (byteOf x 2).cpop ++ (byteOf x 1).cpop ++ (byteOf x 0).cpop
+
+/-- `ADDP Vd.8B, Vn.8B, Vm.8B`: sums of adjacent byte pairs of `n` (low half), then of `m`. -/
+def addpBytes (n m : BitVec 64) : BitVec 64 :=
+  (byteOf m 6 + byteOf m 7) ++ (byteOf m 4 + byteOf m 5) ++ (byteOf m 2 + byteOf m 3) ++
+    (byteOf m 0 + byteOf m 1) ++ (byteOf n 6 + byteOf n 7) ++ (byteOf n 4 + byteOf n 5) ++
+    (byteOf n 2 + byteOf n 3) ++ (byteOf n 0 + byteOf n 1)
+
+/-- `ADDV Bd, Vn.8B`: the sum of the eight bytes (modulo 256), zero-extended. -/
+def addvBytes (x : BitVec 64) : BitVec 64 :=
+  (byteOf x 0 + byteOf x 1 + byteOf x 2 + byteOf x 3 + byteOf x 4 + byteOf x 5 + byteOf x 6 +
+    byteOf x 7).setWidth 64
+
+/-- `UBFM`/`SBFM` at width `n` (`immr`, `imms` below `n`): for `immr ≤ imms` the field
+`x[imms:immr]` moved to bit 0, else the field `x[imms:0]` moved to bit `n - immr`; zero-extended
+(`UBFM`) or sign-extended from the field's top bit (`SBFM`), zeros below. -/
+def bfmVal {n : Nat} (op : BfmOp) (x : BitVec n) (immr imms : Nat) : BitVec n :=
+  if immr ≤ imms then
+    let f := (x >>> immr).setWidth (imms - immr + 1)
+    match op with
+    | .uBfm => f.setWidth n
+    | .sBfm => f.signExtend n
+  else
+    let f := x.setWidth (imms + 1)
+    match op with
+    | .uBfm => f.setWidth n <<< (n - immr)
+    | .sBfm => f.signExtend n <<< (n - immr)
+
 /-- The non-flag-setting two-operand ALU operations, at width `n`. -/
 def aluVal {n : Nat} (op : ALUOp) (a b : BitVec n) : Option (BitVec n) :=
   match op with
@@ -349,6 +383,30 @@ def ispec : Sem := fun i uses w =>
     if ImmLogic.ofNat? imm.value sz = some imm ∧ op ≠ .add ∧ op ≠ .sub then
       (aluVal op (0#sz.bits) (BitVec.ofNat _ imm.value)).map fun r =>
         (defOut rd (resX sz r), w, .next)
+    else none
+  -- Family B (M4AluB4): a shifted-register ALU operation with the zero register as first
+  -- operand (`orn wd, wzr, wm, lsl #amt` of `bnot (ishl x k)`)
+  | .aluRRRShift op sz rd .xzr _ sh, [b] =>
+    if aluShiftable op = true ∧ sh.op = .lsl ∧ sh.amt < sz.bits then
+      (aluVal op (0#sz.bits) (opnd sz b <<< sh.amt)).map fun r => (defOut rd (resX sz r), w, .next)
+    else none
+  -- Family B (M4AluB4): `ubfm`/`sbfm` (Arm `UBFM`/`SBFM`, `DecodeBitMasks` with `immr`, `imms`
+  -- below the width)
+  | .bitfieldMove sz op rd _ immr imms, [a] =>
+    if immr < sz.bits ∧ imms < sz.bits then
+      some (defOut rd (resX sz (bfmVal op (opnd sz a) immr imms)), w, .next)
+    else none
+  -- Family B (M4AluB4): the `popcnt` vector forms, on the 8-byte arrangement (`8B`); a 64-bit
+  -- vector result zeroes the upper half of the 128-bit register
+  | .movToFpu rd _ .size32, [a] => some (defOut rd (((lo64 a).setWidth 32).setWidth 128), w, .next)
+  | .movToFpu rd _ .size64, [a] => some (defOut rd ((lo64 a).setWidth 128), w, .next)
+  | .vecMisc .cnt rd _ .size8x8, [a] => some (defOut rd ((cntBytes (lo64 a)).setWidth 128), w, .next)
+  | .vecRRR .addp rd _ _ .size8x8, [a, b] =>
+    some (defOut rd ((addpBytes (lo64 a) (lo64 b)).setWidth 128), w, .next)
+  | .vecLanes .addv rd _ .size8x8, [a] =>
+    some (defOut rd ((addvBytes (lo64 a)).setWidth 128), w, .next)
+  | .movFromVec rd _ idx .size8, [a] =>
+    if idx < 16 then some (defOut rd (ofX ((a.extractLsb' (8 * idx) 8).setWidth 64)), w, .next)
     else none
   | _, _ => none
 
