@@ -480,7 +480,7 @@ Vector min/max 1233–1251 and div/rem (1116…1211) not started.
 
 ## Family Ctl: terminators, branches, calls (M4Ctl)
 
-Branch `agent/m4-ctl`. Files `FV/Backend/Proof/IselCtl{Base,Term,Unmatch,Branch,Call,}.lean`,
+Branch `agent/m4-ctl`. Files `FV/Backend/Proof/IselCtl{Base,Term,Unmatch,Branch,Brif,Tbz,BrTable,Call,CallRules,}.lean`,
 axiom audit `FVTest/Backend/Proof/Ctl/Axioms.lean`.
 
 **Statements proven for `Isle.Aarch64.program`** (axioms `propext`, `Classical.choice`,
@@ -492,15 +492,24 @@ axiom audit `FVTest/Backend/Proof/Ctl/Axioms.lean`.
 | `TermUnmatchable program` | `termUnmatchable` | root-format check: `ruleFmt` + one `decide +kernel` over the 517 `lower` rules (`lower_fmts`), generic `ruleFmt_match` |
 | `BranchExcludedUnmatchable program` | `branchExcludedUnmatchable` | same, `lower_branch_fmts` (try_call rules 1034/1035/1036) |
 
-**Per-rule status (`lower_branch`, `BranchRulesCorrect` still open) — M4Ctl2 update:**
+**`BranchRulesCorrect program` proven** (`branchRulesCorrect`, `IselCtl.lean`; M4Ctl3). Per rule:
 
-| Rule | State |
+| Rule | Theorem |
 | --- | --- |
-| 1139 `jump` | **proven** (`jump_ruleOk`) |
-| 1132 `lower_brif` | **proven** (`brif_ruleOk`, `IselCtlBrif.lean`): `is_nonzero_cmp_ok` (M4Cmp3, applied from agent/m4-cmp 049a3c8), `br_cond_result_ok` (4 rules; rule 0 refuted by first-match on the three E shapes), `brif_termOk_gen` |
-| 1137 `tbnz` | **proven** (`tbnz_ruleOk`, `IselCtlTbz.lean`): band/iconst look-through, `tcbc`/`tcbc_spec` (single set bit), `truthy_and_pow` |
-| 1138 `tbz` | open: same pattern plus the `icmp eq … (iconst 0)` layer (`icmp_truthy`); a draft `tbz_termOk` was nearly done (remaining: `imm0 = 0` from `u64_iconst` needs `imm0.toNat < 2^64`, and the final `Bool` case) — not committed |
-| 1140 `br_table` | open, now provable after contract change #8 (`TargetsLen`): needs `emit_island`, `put_in_reg_zext32` (3 rules), `br_table_impl` (2 rules, `imm12_from_u64` / `imm`), `jt_sequence`, `cmp_imm` flags vs `jtSequence`'s `hs` test |
+| 1139 `jump` | `jump_ruleOk` (`IselCtlBranch`) |
+| 1132 `lower_brif` | `brif_ruleOk` (`IselCtlBrif`): `is_nonzero_cmp_ok` (M4Cmp3), `br_cond_result_ok` (4 rules; rule 0 refuted by first-match on the three E shapes), `brif_termOk_gen` |
+| 1137 `tbnz` | `tbnz_ruleOk` (`IselCtlTbz`): band/iconst look-through, `tcbc`/`tcbc_spec` (single set bit), `truthy_and_pow` |
+| 1138 `tbz` | `tbz_ruleOk` (`IselCtlTbz`): the `tbnz` pattern under `icmp eq … (iconst 0)` (`icmp_truthy`); the zero constant from `u64_from_imm64` via `iconst_zero_of_imm64` (`u64_iconst`) |
+| 1140 `br_table` | `brTable_ruleOk` (`IselCtlBrTable`): `emit_island_ok`, `zext32_ok` + `ExtOut.sem` (family C), `br_table_impl_ok` (both rules: `cmp_imm` with `imm12_value`, or `imm` + `cmp`; `JtOut`), `jt_sequence_ok`, `hs_cmp32` (`hs` ⇔ index ≥ `n` on 32 bits), `brTable_termOk_gen` (dispatch against `jtSequence`'s `ispec`) |
+
+The `try_call` rules (1034–1036) are not closure roots (`decide +kernel` on `closureRoot`).
+Axioms: `propext`, `Classical.choice`, `Quot.sound`, plus the `bv_decide` certificates of family
+C/B lemmas (`condOn_cmp_32`, `extHolds_extend`, `ExtOut.sem`, `movK_ident`) for `brif`/`br_table`.
+
+**Contract change #9** (c560b29, integrator-approved): `BrIdxTyped` also gives
+`tbl.length < 2^32`, decided by `brIdxOk` (`lowerCheck`). Without it rule 1140 is false:
+`jump_table_size` is a `u32`, the bounds check is a 32-bit `cmp`, so a table of `≥ 2^32` entries
+compares against `n mod 2^32`. Announced to M6Rest4; `jtSequence`'s `ispec`/`csem` unchanged.
 
 **Calls: `CallRulesCorrect program` proven** (`callRulesCorrect`, `IselCtl.lean`; rule theorems
 `call_bl_ruleOk` 1031, `call_got_ruleOk` 1032 in `IselCtlCallRules.lean`: `call` operand view,

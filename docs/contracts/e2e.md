@@ -75,7 +75,8 @@ theorem backend_correct {p f k vc vcp rf af fa fb}
   of `p`), every extern of `f` takes at most 8 parameters (`callRegArgs`: no stack-passed call
   arguments; the compiler flags such functions unverified, `Backend.regArgCalls`). `br_table`
   indices of at most 32 bits are enforced by `lowerCheck` (`brIdxOk`, contract change #6):
-  an `i64` index is a compile error, as in Cranelift's verifier.
+  an `i64` index is a compile error, as in Cranelift's verifier; so is a jump table with `2^32`
+  or more entries (contract change #9).
 * **Compiled code** `Compiled f k vc vcp rf af fa fb`: `lowerFunction f = ok vc`,
   `lowerCheck f vc = true`, `prepare vc = ok vcp`, `prepCheck vc vcp = true`, `checkAlloc vcp rf =
   ok ()`, `lowerRFunc vcp rf = ok af`, `emitFunc k af = ok fa`, `fa.layout = ok fb` (`rf` =

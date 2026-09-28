@@ -2,6 +2,8 @@
 
 ## Changelog / Status
 
+- **2026-09-28 (M4Ctl3, contract change #9)**: `br_table` jump tables have fewer than `2^32`
+  entries (`jump_table_size` is `u32`; the bounds check compares 32 bits); `lowerCheck`'s `brIdxOk`.
 - **2026-09-27 (M4Ctl, contract change #6)**: `br_table` index restricted to at most 32 bits
   (see the terminator row below); enforced by the lowering validator, not by `Compile.functionE`.
 - **v2 (2026-09-27)**: E gains `nop`, `symbol_value`, `select`, `smin`, `smax`, `umin`, `umax`,
