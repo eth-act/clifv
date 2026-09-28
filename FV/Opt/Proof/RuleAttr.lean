@@ -9,8 +9,11 @@ import Lean
 * `opt_match`: the relational reading of the matcher (`PatRel`, `ArgsRel`, `AllRel`), the
   embedding's extractors and `ofInst` inversion (`FV/Opt/Proof/RuleEmbed.lean`).
 * `opt_monad`: monad laws for forward evaluation of right-hand sides (`FV/Opt/Proof/InterpEval.lean`).
+* `opt_imm`: helper specifications, `Imm64` arithmetic as `BitVec` operations
+  (`FV/Opt/Proof/RuleImm.lean`).
 -/
 
 register_simp_attr opt_data
 register_simp_attr opt_match
 register_simp_attr opt_monad
+register_simp_attr opt_imm

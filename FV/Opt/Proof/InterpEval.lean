@@ -147,7 +147,7 @@ macro_rules
   | `(tactic| opt_norm $h:ident [$ts,*]) => `(tactic|
       repeat (first
         | simp (disch := assumption) only [opt_data, $ts,*] at $h:ident
-        | simp only [opt_monad, $ts,*] at $h:ident))
+        | simp (disch := assumption) only [opt_monad, opt_imm, $ts,*] at $h:ident))
 
 /-- Evaluate the interpreter call in hypothesis `h`: alternate `opt_unfold` and `opt_norm`. -/
 syntax "opt_eval " ident ("[" (Lean.Parser.Tactic.simpStar <|> Lean.Parser.Tactic.simpErase <|> Lean.Parser.Tactic.simpLemma),* "]")? : tactic
