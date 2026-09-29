@@ -222,9 +222,24 @@ inductive SlotEl where
   | hi
   deriving Repr, Inhabited
 
-/-- The slots of every parameter, in order. -/
+/-- The slots of every parameter, in order; `k` counts the register slots consumed by the
+normal parameters so far. -/
 def expandGroups (ps : List AbiParam) : Except String (List (List SlotEl)) :=
-  pure (ps.map fun p => [.val p])
+  go ps 0
+where
+  go : List AbiParam → Nat → Except String (List (List SlotEl))
+    | [], _ => return []
+    | p :: ps, k =>
+      if p.ty == .i128 then
+        if p.ext != .none then throw "legalize128: i128 argument with an extension"
+        else if p.purpose != .normal then throw "legalize128: special-purpose i128 argument"
+        else if 8 < k + 2 then throw "legalize128: i128 argument would be passed on the stack"
+        else do
+          let rest ← go ps (if k % 2 == 1 then k + 3 else k + 2)
+          return (if k % 2 == 1 then [.pad, .lo, .hi] else [.lo, .hi]) :: rest
+      else do
+        let rest ← go ps (if p.purpose != .sret then k + 1 else k)
+        return [.val p] :: rest
 
 /-- The `AbiParam` of a slot. -/
 def elTy : SlotEl → AbiParam
@@ -1022,12 +1037,22 @@ def rewriteStmt (f : Function) (ty : ValueId → Option Ty) (s : Stmt) : M Unit 
     else emitS s
   | .call fn args => do
     let some ext := f.externs.lookup fn | throw s!"legalize128: unknown fn{fn}"
-    if sig128 ext.sig then throw "legalize128: i128 call"
+    if sig128 ext.sig then do
+      let gs ← liftE (expandGroups ext.sig.params)
+      let rg ← liftE (expandGroups ext.sig.returns)
+      let args' ← argsOf gs args
+      let results ← retsOf rg s.results
+      emitS { s with results, inst := .call fn args' }
     else
       emitS { s with inst := .call fn (← args.mapM u1) }
   | .callIndirect sig callee args => do
     let some dsig := f.sigDecls.lookup sig | throw s!"legalize128: unknown sig{sig}"
-    if sig128 dsig then throw "legalize128: i128 call_indirect"
+    if sig128 dsig then do
+      let gs ← liftE (expandGroups dsig.params)
+      let rg ← liftE (expandGroups dsig.returns)
+      let args' ← argsOf gs args
+      let results ← retsOf rg s.results
+      emitS { s with results, inst := .callIndirect sig (← u1 callee) args' }
     else
       emitS { s with inst := .callIndirect sig (← u1 callee) (← args.mapM u1) }
   | .funcAddr t fn =>
