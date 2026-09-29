@@ -59,10 +59,8 @@ theorem inSubset_opt (cfg : Opt.Config) {p : Clif.Program} {f : Clif.Function}
   · constructor
     · rw [hF.sig]; exact hsub.noSpecial.1
     · intro e he
-      have : e ∈ f.externs := by
-        rw [hF.externs]
-        simpa using (List.mem_map_of_mem (f := fun x => Opt.optimize x cfg) he)
-      exact hsub.noSpecial.2 this
+      have : e ∈ f.externs := by rw [← hF.externs]; exact he
+      exact hsub.noSpecial.2 e this
 
 theorem clifEntry_opt (cfg : Opt.Config)
     (hS : Opt.SimplifyPassSim cfg.simplifyFn cfg.skeletonFn) {f : Clif.Function}
