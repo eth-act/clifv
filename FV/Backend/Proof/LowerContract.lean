@@ -162,7 +162,7 @@ theorem ctxInv_termCtx {f : Clif.Function} {ctx : Ctx} (h : CtxInv f ctx) {ti : 
   refine ⟨h.func, fun ii info inst hi hc => ?_, fun ii info inst hi hc => ?_,
     fun ii info inst hi hc => ?_, h.valueReg,
     h.typedReg, fun x d hd => ?_, fun x d info hd hi => ?_, h.slotOff, fun ii info hi => ?_,
-    h.valTyE, fun ii info inst x hi hc hx => ?_⟩
+    h.valTyE, fun ii info inst x hi hc hx => ?_, fun ii info inst hi hc => ?_⟩
   · by_cases e : ii = ti
     · subst e; rw [termCtx_insts_self hph] at hi; cases hi; cases hc
     · rw [termCtx_insts_ne e] at hi; exact h.data ii info inst hi hc
@@ -180,6 +180,9 @@ theorem ctxInv_termCtx {f : Clif.Function} {ctx : Ctx} (h : CtxInv f ctx) {ti : 
   · by_cases e : ii = ti
     · subst e; rw [termCtx_insts_self hph] at hi; cases hi; cases hc
     · rw [termCtx_insts_ne e] at hi; exact h.addr64 ii info inst x hi hc hx
+  · by_cases e : ii = ti
+    · subst e; rw [termCtx_insts_self hph] at hi; cases hi; cases hc
+    · rw [termCtx_insts_ne e] at hi; exact h.noFA ii info inst hi hc
 
 /-- For `return`/`trap`, `LowerTermOk` does not depend on the targets. -/
 theorem lowerTermOk_targets {isem : Sem} {MR : MemRelT} {ctx : Ctx} {t : Clif.Terminator}
