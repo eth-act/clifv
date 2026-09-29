@@ -197,15 +197,29 @@ def writeItems (syms : List (String × Nat)) (m : Mem) (addr : Nat) :
 
 /-- The initial memory of a program with data objects `ds`: the objects allocated and
 initialised, and `symbols` mapping each object name to its address. Names must be distinct;
-relocations may only name objects of `ds`. -/
-def mem (ds : List DataObject) : Res Mem := do
+relocations may name objects of `ds` (vtables reference function symbols — resolved by
+`Program.initMem`, which registers the function stubs before writing the objects). -/
+def memWith (funcs : List String) (ds : List DataObject) : Res Mem := do
   let names := ds.map (·.name)
   Res.check (names.eraseDups.length == names.length) "duplicate data object name"
-  let (syms, m) := place Mem.empty ds
+  let (syms0, m) := place Mem.empty ds
+  -- entry stubs for the functions/externs the objects reference (same layout as
+  -- `Program.initMem`: 16-aligned after the objects, one 16-byte slot per name)
+  let stubNames := funcs.filter fun n => (syms0.lookup n).isNone
+  let start := (m.next + 15) / 16 * 16
+  let stubs := stubNames.zip ((List.range stubNames.length).map fun i => start + 16 * i)
+  let symsList := (ds.map fun o => (o.name, (syms0.lookup o.name).getD 0)) ++ stubs
+  let syms : String → Option Nat := fun n =>
+    match syms0.lookup n with
+    | some a => some a
+    | none => stubs.lookup n
+  let m := { m with next := start + 16 * stubNames.length }
   let m ← ds.foldlM (init := m) fun m o => do
-    let base ← Res.ofOption "data object not placed" (syms.lookup o.name)
-    writeItems syms m base o.items
-  pure { m with symbols := fun n => syms.lookup n }
+    let base ← Res.ofOption "data object not placed" (syms o.name)
+    writeItems symsList m base o.items
+  pure { m with symbols := syms }
+
+def mem (ds : List DataObject) : Res Mem := memWith [] ds
 
 end Image
 
@@ -218,17 +232,8 @@ def Program.initMem (p : Program) : Res Mem :=
   match p.data with
   | [] => .ok Mem.empty
   | ds => do
-    let m ← Image.mem ds
-    -- one stub slot per function/extern name, 16-aligned after the data objects
     let names := (p.funcs.map (·.name) ++
       (p.funcs.flatMap fun f => f.externs.map (·.2.name))).eraseDups
-    let names := names.filter fun n => (m.symbols n).isNone
-    let start := (m.next + 15) / 16 * 16
-    let addrs := names.zip ((List.range names.length).map fun i => start + 16 * i)
-    pure { m with
-      next := start + 16 * names.length
-      symbols := fun n => match addrs.lookup n with
-        | some a => some a
-        | none => m.symbols n }
+    Image.memWith names ds
 
 end Clif
