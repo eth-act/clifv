@@ -196,7 +196,7 @@ theorem cond_load {g : Nat → Option Clif.Signature} {op : Clif.LoadOp} {ty : C
     {fl : Clif.MemFlags} {x : Nat} {off : Int} {info : IInfo} {tys : List Clif.Ty} {w : Nat}
     {aop : LoadOp} (h1 : (variantNames 151)[29]? = some (loadOpcode op))
     (h2 : CTy.int w = info.resTys.head?.getD .invalid) (h3 : info.resTys = tys.map CTy.ofClif)
-    (h4 : Clif.Inst.resultTypes g (Clif.Inst.load op ty fl x off) (fun _ => none) = some tys) (haw : aop.bytes * 8 = w)
+    (h4 : Clif.Inst.resultTypes g (fun _ => none) (Clif.Inst.load op ty fl x off) = some tys) (haw : aop.bytes * 8 = w)
     (hsg : loadSigned aop = false) : aop.bytes = op.size ty ∧ loadSigned aop = op.signed := by
   have h29 : (variantNames 151)[29]? = some (loadOpcode .load) := rfl
   rw [h29, Option.some.injEq] at h1
@@ -280,7 +280,7 @@ theorem cond_store {ctx : Ctx} {x w : Nat} {ty : Clif.Ty} {aop : StoreOp}
 theorem width_stackAddr {g : Nat → Option Clif.Signature} {info : IInfo} {tys : List Clif.Ty}
     {ty : Clif.Ty} {sl : Nat} {o : Int} (hRE : ∀ t ∈ info.resTys, t ∈ eCTys)
     (h3 : info.resTys = tys.map CTy.ofClif)
-    (h4 : Clif.Inst.resultTypes g (Clif.Inst.stackAddr ty sl o) (fun _ => none) = some tys) : ty.width ≤ 64 := by
+    (h4 : Clif.Inst.resultTypes g (fun _ => none) (Clif.Inst.stackAddr ty sl o) = some tys) : ty.width ≤ 64 := by
   simp only [Clif.Inst.resultTypes, Option.some.injEq] at h4
   subst h4
   have := hRE (CTy.ofClif ty) (by rw [h3]; simp)

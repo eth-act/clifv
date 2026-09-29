@@ -469,6 +469,10 @@ structure CtxInv (f : Clif.Function) (ctx : Ctx) : Prop where
   change #7): the lowering uses the whole 64-bit register as the base. -/
   addr64 : ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst) (x : Nat), ctx.insts[ii]? = some info →
     info.clif = some inst → memAddr? inst = some x → ctx.valueType? x = some (.int 64)
+  /-- No `func_addr` (outside the theorem, rust-route step 4: `lowerCheck` rejects it, the
+  compiler flags such functions unverified; `E2E.InSubset.noFA`). -/
+  noFA : ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info →
+    info.clif = some inst → ∀ ty fn, inst ≠ .funcAddr ty fn
 
 /-- Instructions the rules may look through (`def_inst`): their value is a function of their
 operands (and the frame's slot bases). -/

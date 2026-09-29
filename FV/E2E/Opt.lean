@@ -11,8 +11,8 @@ compiled optimised function refines the CLIF run of the *source* program:
 
 The optimised function keeps the name, signature, stack slots, globals and externs, so the entry
 state (`optEntry`), `Rel.holds` and the slot layout carry over; `InSubset` carries over because the
-output stays in E, calls only what the input calls and has no `call_indirect` if the input has
-none (`Opt.optimize_facts`). `FormsCovered`
+output stays in E, calls only what the input calls and has no `call_indirect`/`func_addr` if
+the input has none (`Opt.optimize_facts`). `FormsCovered`
 stays a per-function decided premise (about the optimised code), as do `TrapsExplicit` (about
 the optimised program's run) and `EnvKeepsSymbols` (externs keep the link-time symbols).
 The simplify stage enters through `Opt.SimplifyPassSim` (proven for sound rule sets,
@@ -47,7 +47,7 @@ theorem inSubset_opt (cfg : Opt.Config) {p : Clif.Program} {f : Clif.Function}
     rw [show ((fun x : Clif.Function => x.name == n) ∘ fun x => Opt.optimize x cfg) =
       (fun x => x.name == n) from by funext g; simp [hname]]
   refine ⟨?_, hF.subsetE hsub.subsetE, by rw [hF.sig]; exact hsub.regParams, ?_, ?_, ?_,
-    hF.noCI hsub.noCI⟩
+    hF.noCI hsub.noCI, hF.noFA hsub.noFA⟩
   · rw [hfind, hF.name, hsub.func]; rfl
   · intro b hb st hst fn args hc e he
     obtain ⟨b0, hb0, st0, hst0, args0, hc0⟩ :=

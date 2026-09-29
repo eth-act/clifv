@@ -66,6 +66,37 @@ theorem instData_fmt_ne {f : Clif.Function} {c : Clif.Inst} {kf : Nat} {fs : Lis
     exact hm
   · cases hd
 
+theorem instData_fmt_name {f : Clif.Function} {c : Clif.Inst} {kf : Nat} {fs : List V}
+    (h : instData f c = .ok (.data 152 kf fs)) : (variantNames 152)[kf]? = some (instNames c).1 := by
+  obtain ⟨rest, hd⟩ := instData_names h
+  exact (mkVariant_eq_data hd.symm).1
+
+/-- A rule of `lower` whose root format is `CallIndirect` (7) or `FuncAddr` (12) never matches an
+instruction of a `CtxInv` context: `call_indirect` has no result types without signature
+declarations (`CtxInv.resTys`; `lowerCheck` requires none), `func_addr` is excluded
+(`CtxInv.noFA`). Both are outside the theorem (rust-route step 4). -/
+theorem lowerRuleOk_of_fmt_excl {isem : Sem} {MR : MemRelT} {env : Clif.Env}
+    {cp : Clif.Program} {r : Rule} {fT : Nat} (hq : ruleFmt r = some fT)
+    (hf : fT = 2447 + 7 ∨ fT = 2447 + 12) : LowerRuleOk isem MR env cp program r := by
+  intro f ctx hctx ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _ hmatch _
+  exfalso
+  obtain ⟨info', fs, hinfo, hdat⟩ :=
+    ruleFmt_match (vs := []) data_program fmtKinds_program hq (by omega) (by omega) hmatch
+  rw [hi] at hinfo
+  cases hinfo
+  have hd := hctx.data ii _ inst hi hic
+  rw [hdat] at hd
+  have hnm := instData_fmt_name hd
+  obtain ⟨tys, hrt, -⟩ := hctx.resTys ii _ inst hi hic
+  have hfa := hctx.noFA ii _ inst hi hic
+  rcases hf with rfl | rfl
+  · rw [show (variantNames 152)[2447 + 7 - 2447]? = some "CallIndirect" from rfl] at hnm
+    cases inst <;> simp [instNames] at hnm
+    simp [Clif.Inst.resultTypes] at hrt
+  · rw [show (variantNames 152)[2447 + 12 - 2447]? = some "FuncAddr" from rfl] at hnm
+    cases inst <;> simp [instNames] at hnm
+    exact hfa _ _ rfl
+
 /-- A rule of `lower` whose root format is `Trap`/`MultiAry` never matches an E instruction. -/
 theorem lowerRuleOk_of_fmt {isem : Sem} {MR : MemRelT} {env : Clif.Env}
     {cp : Clif.Program} {r : Rule} {fT : Nat} (hq : ruleFmt r = some fT)
@@ -116,7 +147,7 @@ theorem lowerRulesCorrect_program : LowerRulesCorrect program := by
   simp only [closureRootIds, List.contains_cons, List.contains_nil, Bool.or_false,
     Bool.or_eq_true, beq_iff_eq] at hroot
 
-  rcases hroot with h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h
+  rcases hroot with h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h
   · rw [lower_rule_eq hr (k := 172) (r0 := rule_lower_53) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
     apply iconst_ok <;> assumption
   · rw [lower_rule_eq hr (k := 177) (r0 := rule_lower_78) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
@@ -319,9 +350,13 @@ theorem lowerRulesCorrect_program : LowerRulesCorrect program := by
     exact lowerRuleOk_of_fmt rfl (.inl rfl)
   · rw [lower_rule_eq hr (k := 308) (r0 := rule_lower_2267) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
     apply select_ruleOk <;> assumption
+  · rw [lower_rule_eq hr (k := 339) (r0 := rule_lower_2486) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact lowerRuleOk_of_fmt_excl rfl (.inr rfl)
   · exfalso; simp [memRootRule, h] at hmem
   · exfalso; simp [callRootRule, h] at hcall
   · exfalso; simp [callRootRule, h] at hcall
+  · rw [lower_rule_eq hr (k := 345) (r0 := rule_lower_2529) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact lowerRuleOk_of_fmt_excl rfl (.inl rfl)
   · rw [lower_rule_eq hr (k := 346) (r0 := rule_lower_2574) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
     exact lowerRuleOk_of_fmt rfl (.inr rfl)
   · exfalso; simp [memRootRule, h] at hmem

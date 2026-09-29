@@ -304,12 +304,17 @@ def ctxResTysOk (f : Clif.Function) (info : IInfo) (i : Clif.Inst) : Bool :=
       decide (info.results.length = tys.length)
   | none => false
 
+/-- Not a `func_addr` (outside the theorem, rust-route step 4: `CtxInv.noFA`). -/
+def notFuncAddr : Clif.Inst → Bool
+  | .funcAddr .. => false
+  | _ => true
+
 /-- `CtxInv f ctx` (M4's context facts), decided. -/
 def ctxOk (f : Clif.Function) (ctx : Ctx) : Bool :=
   decide (ctx.func = f) &&
   ctx.insts.toList.all (fun info => match info.clif with
     | some i =>
-      Compile.instE i &&
+      Compile.instE i && notFuncAddr i &&
         ((match instData f i with
             | .ok d => d == info.data
             | .error _ => false) &&

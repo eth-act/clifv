@@ -64,8 +64,7 @@ theorem binaryOpcode_mem {op : Clif.BinaryOp} {n : String} (h : binaryOpcode op 
     simp [eNamePairs]
 
 /-- The names of an E instruction's data are among `eNamePairs`. -/
-theorem instNames_mem {f : Clif.Function} {c : Clif.Inst} {d : V} (hE : Compile.instE c = true)
-    (h : instData f c = .ok d) :
+theorem instNames_mem {f : Clif.Function} {c : Clif.Inst} {d : V} (h : instData f c = .ok d) :
     instNames c ∈ eNamePairs := by
   cases c
   all_goals first
@@ -89,7 +88,7 @@ theorem instNames_mem {f : Clif.Function} {c : Clif.Inst} {d : V} (hE : Compile.
     | i64 =>
       simp only [instNames]
       exact by simp [eNamePairs]
-    | _ => simp [Compile.instE] at hE
+    | _ => simp [instData, throw, throwThe, MonadExceptOf.throw] at h
   case div op _ _ _ => cases op <;> simp [instNames, divOpcode, eNamePairs]
   case load op _ _ _ _ => cases op <;> simp [instNames, loadOpcode, eNamePairs]
   case store op _ _ _ _ _ => cases op <;> simp [instNames, storeOpcode, eNamePairs]
@@ -109,7 +108,7 @@ theorem instData_shape {f : Clif.Function} {c : Clif.Inst} {d : V} (hE : Compile
     (h : instData f c = .ok d) :
     ∃ kf ko fs, d = .data 152 kf (.data 151 ko [] :: fs) ∧ ko ∈ eOps := by
   obtain ⟨rest, hd⟩ := instData_names h
-  have hm := List.all_eq_true.mp eNamePairs_idx _ (instNames_mem hE h)
+  have hm := List.all_eq_true.mp eNamePairs_idx _ (instNames_mem h)
   generalize instNames c = pr at hm hd
   obtain ⟨n1, n2⟩ := pr
   unfold instDataV opcodeV mkVariant at hd

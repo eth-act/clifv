@@ -83,6 +83,9 @@ structure InSubset (p : Clif.Program) (f : Clif.Function) : Prop where
   they compile and run but are flagged unverified, so subset E admits them while `InSubset`
   does not) -/
   noCI : ∀ B ∈ f.blocks, ∀ st ∈ B.body, ∀ sig callee args, st.inst ≠ .callIndirect sig callee args
+  /-- no `func_addr` statements (rust-route step 4: compiled and flagged unverified like
+  `call_indirect`; `lowerCheck` rejects them, `CtxInv.noFA`) -/
+  noFA : ∀ B ∈ f.blocks, ∀ st ∈ B.body, ∀ ty fn, st.inst ≠ .funcAddr ty fn
 
 /-! ## The compiled code -/
 

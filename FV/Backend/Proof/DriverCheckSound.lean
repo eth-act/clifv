@@ -149,7 +149,7 @@ theorem ctxOk_sound {f : Clif.Function} {ctx : Ctx} (hsd : f.sigDecls = [])
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨hfunc, hinsts⟩, hreg⟩, hty⟩, hdef⟩, hslot⟩, hres⟩, hvt⟩, haddr⟩ := h
   have hinst : ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info →
       info.clif = some inst →
-      Compile.instE inst = true ∧ (instData f inst = .ok info.data) ∧
+      Compile.instE inst = true ∧ notFuncAddr inst = true ∧ (instData f inst = .ok info.data) ∧
       ∃ tys, inst.resultTypes (fun r => (f.extern? r).map (·.sig)) (fun _ => none) = some tys ∧
         info.resTys = tys.map CTy.ofClif ∧ info.results.length = tys.length := by
     intro ii info inst hi hc
@@ -158,8 +158,8 @@ theorem ctxOk_sound {f : Clif.Function} {ctx : Ctx} (hsd : f.sigDecls = [])
     have := List.all_eq_true.mp hinsts info hm
     rw [hc] at this
     simp only [Bool.and_eq_true] at this
-    obtain ⟨h0, h1, h2⟩ := this
-    refine ⟨h0, ?_, ?_⟩
+    obtain ⟨⟨h0, hfa⟩, h1, h2⟩ := this
+    refine ⟨h0, hfa, ?_, ?_⟩
     · cases hd : instData f inst with
       | ok d => rw [hd] at h1; simpa using h1
       | error e => rw [hd] at h1; simp at h1
@@ -175,9 +175,13 @@ theorem ctxOk_sound {f : Clif.Function} {ctx : Ctx} (hsd : f.sigDecls = [])
           rw [hty] at h2'; exact h2'
         simp only [Bool.and_eq_true, decide_eq_true_eq] at h2''
         exact ⟨tys, rfl, h2''.1, h2''.2⟩
-  refine ⟨hfunc, fun ii info inst hi hc => (hinst ii info inst hi hc).2.1,
+  refine ⟨hfunc, fun ii info inst hi hc => (hinst ii info inst hi hc).2.2.1,
     fun ii info inst hi hc => (hinst ii info inst hi hc).1,
-    fun ii info inst hi hc => (hinst ii info inst hi hc).2.2, ?_, ?_, ?_, ?_, hslot, ?_, ?_, ?_⟩
+    fun ii info inst hi hc => (hinst ii info inst hi hc).2.2.2, ?_, ?_, ?_, ?_, hslot, ?_, ?_, ?_,
+    fun ii info inst hi hc ty fn he => by
+      have := (hinst ii info inst hi hc).2.1
+      rw [he] at this
+      simp [notFuncAddr] at this⟩
   · intro x r hx
     have hlt : x < ctx.valReg.size := by
       simp only [Ctx.valueReg?] at hx

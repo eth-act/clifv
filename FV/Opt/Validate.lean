@@ -234,12 +234,19 @@ def hasCallIndirect (f : Function) : Bool :=
     | .callIndirect .. => true
     | _ => false
 
+/-- `f` has a `func_addr` statement. -/
+def hasFuncAddr (f : Function) : Bool :=
+  f.blocks.any fun b => b.body.any fun st => match st.inst with
+    | .funcAddr .. => true
+    | _ => false
+
 /-- The optimised function `g` keeps what the backend theorem needs of the input `f`
 (`E2E.backend_correct_opt`): the header, membership in the backend subset E (the simplifier only
-emits E nodes into E functions), the callees, and the absence of `call_indirect` (the passes never
-introduce one). -/
+emits E nodes into E functions), the callees, and the absence of `call_indirect` and `func_addr`
+(the passes never introduce them). -/
 def keepsBackendSubset (f g : Function) : Bool :=
   sameHeader f g && (!Compile.functionE f || Compile.functionE g) &&
-    (callees g).all (callees f).contains && (!hasCallIndirect g || hasCallIndirect f)
+    (callees g).all (callees f).contains && (!hasCallIndirect g || hasCallIndirect f) &&
+    (!hasFuncAddr g || hasFuncAddr f)
 
 end Opt
