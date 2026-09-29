@@ -1302,3 +1302,40 @@ takes about 20 s.
 ##### Stack slots
 
 1861 slots in 285 of 338 functions; kinds {'explicit_slot': 1861}; aligns {0: 82, 2: 24, 4: 116, 8: 1639}; largest 48 bytes; sizes {1: 61, 2: 22, 3: 3, 4: 70, 8: 668, 12: 6, 16: 800, 24: 181, 32: 34, 40: 11, 48: 5}
+
+## Post-rust-route (branch `agent/rust-route`, after the `agent/optproven-fix` merge)
+
+Final state of the rust route (`docs/research/rust-route.md` has the full log):
+
+| profile | functions | compiled by the Lean backend | unsupported |
+| --- | --- | --- | --- |
+| debug | 454 | 437 | 17 |
+| release | 239 | 227 | 12 |
+| release-oc | 240 | 228 | 12 |
+| **total** | **933** | **892 (95.6%)** | **41** |
+
+Unsupported reasons (all one cause: **i128**):
+
+| reason | count |
+| --- | --- |
+| i128 parameter | 31 |
+| extend to i128 | 6 |
+| i128 return value | 4 |
+
+Everything else the corpus needs — data objects (938 recovered), mem*/panic externs,
+sret, `call_indirect`/`func_addr` (dyn dispatch over recovered vtables) — compiles, runs
+under `Clif.run`, and agrees natively with Cranelift and rustc/LLVM where the backend
+runs it (all flagged unverified in the theorem's scope: outside `E2E.InSubset`).
+
+**i128 semantics are done; i128 code generation is not.** `Clif.run` executes the i128
+functions correctly (`iadd.i128`, `load.i128`, `iconcat`, …; `iconst.i128` is rejected by
+both readers, so constants come via `iconcat`). The backend rejects them at three gates:
+`sigArgs` throws on an i128 parameter, `lowerFunction` on an i128 return value, and
+`instData`/`instE` on every i128 opcode. Enabling them needs Cranelift's two-register
+`ValueRegs` value model (one i128 value = two vregs, AAPCS64 even/odd register pairs,
+pair results from the exported i128-tagged ISLE rules — currently `defaultExcludes`
+"i128", and `lowerFunction` throws "multi-register result"), which cuts through the
+verified lowering simulation (every value is one vreg today). `smoke.sh` now runs the
+`g_u128` corpus functions with rustc/LLVM as the oracle: **103 run lines — Clif.run 101
+pass / 0 fail / 2 unsupported (pre-existing missing panic extern), Cranelift-native
+agrees 101, Lean backend 88 pass / 13 not-compiled (the u128 functions)**.

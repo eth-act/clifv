@@ -7,6 +7,7 @@ use a_arith as a;
 use c_structs_enums as c;
 use d_loops_iters as d;
 use h_dyn_generic as h;
+use g_u128 as g;
 
 macro_rules! run {
     ($f:ident ( $($x:expr),* ) => $r:expr) => {{
@@ -82,4 +83,21 @@ fn main() {
     // the interpreter fixture `scripts/rust-clif/fixtures/dyn-vtable.clif` instead.
     run!(fn_ptr_table(0, 7) => h::fn_ptr_table(0, 7));
     run!(fn_ptr_table(1, 7) => h::fn_ptr_table(1, 7));
+
+    // rust-route step 5: i128/u128 functions (rustc/LLVM oracle; these run under
+    // `Clif.run`, which supports the i128 ops the dumps use, and — once the backend
+    // lowers them — natively; until then the native side reports them not-compiled).
+    for (x, y) in [(3u128, 4u128), (u128::MAX, 1), (1 << 100, 7), (0xdead_beef_cafe_f000_1234_5678, 0x1111)] {
+        run!(add_u128(x, y) => g::add_u128(x, y));
+    }
+    for x in [7u128, 1 << 70, u128::MAX] {
+        run!(shl_u128(x, 3) => g::shl_u128(x, 3));
+    }
+    for (x, y) in [(i128::MIN, 3), (123456789i128, -98765)] {
+        run!(cmp_i128(x, y) => b(g::cmp_i128(x, y)));
+        run!(cmp_i128(y, x) => b(g::cmp_i128(y, x)));
+    }
+    for x in [(1u128 << 80), u128::MAX] {
+        run!(clz_u128(x) => g::clz_u128(x));
+    }
 }

@@ -18,7 +18,7 @@ rm -rf "$work"
 mkdir -p "$work"
 
 externs=()
-for c in a_arith c_structs_enums d_loops_iters h_dyn_generic; do
+for c in a_arith c_structs_enums d_loops_iters h_dyn_generic g_u128; do
   rustc +"$TOOLCHAIN" --edition 2021 --crate-type rlib --crate-name "$c" -Copt-level=3 \
     -Coverflow-checks=off -Cdebug-assertions=off --out-dir "$work" "$here/corpus/$c.rs"
   externs+=(--extern "$c=$work/lib$c.rlib")
@@ -31,7 +31,7 @@ import re, sys
 from pathlib import Path
 tools, runs, out = Path(sys.argv[1]), sys.argv[2], sys.argv[3]
 funcs, header = {}, None
-for crate in ("a_arith", "c_structs_enums", "d_loops_iters", "h_dyn_generic"):
+for crate in ("a_arith", "c_structs_enums", "d_loops_iters", "h_dyn_generic", "g_u128"):
     text = (tools / f"release-{crate}.unopt.reader.clif").read_text()
     head, _, rest = text.partition("\nfunction ")
     header = header or head
