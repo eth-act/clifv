@@ -58,11 +58,18 @@ print(f"smoke.clif: {len(order)} functions, {sum(map(len, lines.values()))} run 
 EOF
 
 cd "$root"
-echo "== clif-filetest (Lean Clif.run vs Cranelift interpreter)"
+echo "== clif-filetest (Lean Clif.run vs Cranelift interpreter, the legalised form alongside)"
 rust/target/release/clif-oracle interp "$work/smoke.clif" >"$work/oracle.jsonl" || true
-.lake/build/bin/clif-filetest --oracle "$work/oracle.jsonl" "$work/smoke.clif" || true
+.lake/build/bin/clif-filetest --oracle "$work/oracle.jsonl" --legalize128 "$work/smoke.clif" || true
 echo "== lean-backend-filetests (Lean backend on qemu vs Cranelift aarch64 on qemu)"
-scripts/lean-backend-filetests.sh -v "$work/smoke.clif"
+# the `__*ti3` 128-bit division helpers the legalised objects call (and the mem*/panic
+# externs of the corpus)
+bash "$here/rust-runtime.sh" "$work/rust.o" 2>/dev/null || true
+if [[ -f "$work/rust.o" ]]; then
+  RUST_RUNTIME="$work/rust.o $work/rust_panic.o" scripts/lean-backend-filetests.sh -v "$work/smoke.clif"
+else
+  scripts/lean-backend-filetests.sh -v "$work/smoke.clif"
+fi
 
 # ---- data-image demos (rust-route step 1): functions whose only inputs are the
 # recovered `; data:` objects ----

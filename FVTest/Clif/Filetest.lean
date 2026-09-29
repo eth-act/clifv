@@ -1,4 +1,5 @@
 import FV.Clif
+import FV.Opt.Legalize128
 import Lean.Data.Json
 
 /-!
@@ -150,6 +151,14 @@ structure Counts where
   /-- Disagreements in files the upstream suite interprets (`test interpret` header). -/
   disagreeInterp : Nat := 0
   oracleError : Nat := 0
+  /-- `--legalize128`: the legalised function passes the original run line. -/
+  legalPass : Nat := 0
+  /-- `--legalize128`: the legalised function does not pass the original run line. -/
+  legalFail : Nat := 0
+  /-- `--legalize128`: original and legalised outcomes agree. -/
+  legalAgree : Nat := 0
+  /-- `--legalize128`: they disagree. -/
+  legalDisagree : Nat := 0
 
 def Counts.add (a b : Counts) : Counts :=
   { pass := a.pass + b.pass, fail := a.fail + b.fail,
@@ -157,16 +166,20 @@ def Counts.add (a b : Counts) : Counts :=
     roundtripFail := a.roundtripFail + b.roundtripFail,
     agree := a.agree + b.agree, disagree := a.disagree + b.disagree,
     disagreeInterp := a.disagreeInterp + b.disagreeInterp,
-    oracleError := a.oracleError + b.oracleError }
+    oracleError := a.oracleError + b.oracleError,
+    legalPass := a.legalPass + b.legalPass, legalFail := a.legalFail + b.legalFail,
+    legalAgree := a.legalAgree + b.legalAgree,
+    legalDisagree := a.legalDisagree + b.legalDisagree }
 
 /-- Names of program functions a function calls. -/
 def callees (f : Function) : List String := f.externs.map (·.2.name)
 
 /-- Does the filetest treat the extern `name` as available? `rustEnv`: the trusted Rust
-contracts (`Clif.Rust.env`) provide the mem* functions and every diverging panic entry. -/
+contracts (`Clif.Rust.env`) provide the mem* functions, the `__*ti3` 128-bit division
+helpers, and every diverging panic entry. -/
 def extAvailable (rustEnv : Bool) (name : String) : Bool :=
-  rustEnv && (Clif.Rust.isPanic name || name == "memcpy" || name == "memset" ||
-    name == "memmove" || name == "memcmp")
+  (rustEnv && (Clif.Rust.isPanic name || name == "memcpy" || name == "memset" ||
+    name == "memmove" || name == "memcmp" || Clif.Rust.isDivHelper name))
 
 /-- Supported functions whose transitive in-file callees are all supported; the others get
 a reason. -/
@@ -198,18 +211,31 @@ def closure (rustEnv : Bool) (pf : ParsedFile) : List (String × Except String F
     | some e, _ => (n, .error e)
     | none, r => (n, r)
 
+/-- Do two outcomes agree (both `stuck` for whatever reason counts as agreement)? -/
+def sameOutcome : Outcome → Outcome → Bool
+  | .returned vs _, .returned ws _ => vs == ws
+  | .trapped c, .trapped d => c == d
+  | .stuck _, .stuck _ => true
+  | .outOfFuel, .outOfFuel => true
+  | _, _ => false
+
 def runFile (verbose : Bool) (path : String) (oracle : Option (List OracleRecord))
-    (printDir : Option String) (rustEnv : Bool) : IO Counts := do
+    (printDir : Option String) (rustEnv : Bool) (legal : Bool) : IO Counts := do
   let src ← IO.FS.readFile path
   let pf := parseFile src
   let mut c : Counts := {}
   let mut notes : Array String := #[]
-  let cl := closure rustEnv pf
+  let cl := closure (rustEnv || legal) pf
   -- Program of all parsed functions (callers of unsupported ones are excluded from runs).
   let supported := pf.funcs.filterMap fun f => f.func.toOption
   let data := match pf.data with | .ok ds => ds | .error _ => []
   if let .error e := pf.data then notes := notes.push s!"  data directives: {e}"
   let prog : Program := { header := pf.header, data, funcs := supported }
+  -- The legalised program (`--legalize128`): every legalisable function rewritten to
+  -- plain i8..i64 CLIF (`Opt.Legalize128`), the others unchanged.
+  let legalProg : Program :=
+    { prog with funcs := prog.funcs.map fun f =>
+      match Opt.Legalize128.function128 f with | .ok f' => f' | .error _ => f }
   -- Printed program, for checking with `clif-oracle check`.
   if let some d := printDir then
     if !prog.funcs.isEmpty then
@@ -254,6 +280,30 @@ def runFile (verbose : Bool) (path : String) (oracle : Option (List OracleRecord
           | none =>
             c := { c with disagree := c.disagree + 1 }
             notes := notes.push s!"  DISAGREE {showRun r}: no oracle record"
+        -- `--legalize128`: run the legalised function on the same line — with the trusted
+        -- Rust env, which provides the `__*ti3` helpers — and require it to pass the
+        -- original expectation and to agree with the original function's outcome.
+        if legal && Opt.Legalize128.mentions128 fn then
+          match Opt.Legalize128.function128 fn with
+          | .ok f' =>
+            if f' != fn then
+              match Opt.Legalize128.expandRunArgs fn.sig r.args with
+              | .ok args' =>
+                let oL := run Clif.Rust.env legalProg r.func args' fuel
+                let mapped := Opt.Legalize128.joinRunOutcome fn.sig oL
+                if check r mapped then c := { c with legalPass := c.legalPass + 1 }
+                else
+                  c := { c with legalFail := c.legalFail + 1 }
+                  notes := notes.push s!"  LEGAL-FAIL {showRun r}: {showOutcome mapped}"
+                let oO := run Clif.Rust.env prog r.func r.args fuel
+                if sameOutcome oO mapped then c := { c with legalAgree := c.legalAgree + 1 }
+                else
+                  c := { c with legalDisagree := c.legalDisagree + 1 }
+                  notes := notes.push s!"  LEGAL-DISAGREE {showRun r}: original {showOutcome oO}, legalised {showOutcome mapped}"
+              | .error e =>
+                c := { c with legalFail := c.legalFail + 1 }
+                notes := notes.push s!"  LEGAL-ARG {showRun r}: {e}"
+          | .error _ => pure ()  -- the function is not legalisable: outside the claim
         i := i + 1
     | some (.error e) =>
       c := { c with unsupported := c.unsupported + pfn.runLines }
@@ -263,12 +313,15 @@ def runFile (verbose : Bool) (path : String) (oracle : Option (List OracleRecord
   if pf.header.contains "test interpret" then c := { c with disagreeInterp := c.disagree }
   let oracleText := if oracle.isSome then
       s!" agree {c.agree} disagree {c.disagree} oracle-error {c.oracleError}" else ""
-  IO.println s!"{path}: pass {c.pass} fail {c.fail} unsupported {c.unsupported}{oracleText}{if c.roundtripFail > 0 then " ROUNDTRIP-FAIL" else ""}"
+  let legalText := if legal then
+      s!" | legal pass {c.legalPass} fail {c.legalFail} agree {c.legalAgree} disagree {c.legalDisagree}"
+      else ""
+  IO.println s!"{path}: pass {c.pass} fail {c.fail} unsupported {c.unsupported}{oracleText}{legalText}{if c.roundtripFail > 0 then " ROUNDTRIP-FAIL" else ""}"
   for n in notes do IO.println n
   return c
 
 def usage : String :=
-  "usage: clif-filetest [-v] [--oracle-dir DIR | --oracle FILE.json] [--print-dir DIR] FILE.clif..."
+  "usage: clif-filetest [-v] [--oracle-dir DIR | --oracle FILE.json] [--print-dir DIR] [--rust-env] [--legalize128] FILE.clif..."
 
 end ClifFiletest
 
@@ -279,6 +332,7 @@ def main (args : List String) : IO UInt32 := do
   let mut oracleFile : Option String := none
   let mut printDir : Option String := none
   let mut rustEnv := false
+  let mut legal := false
   let mut files := #[]
   let mut rest := args
   while !rest.isEmpty do
@@ -288,6 +342,7 @@ def main (args : List String) : IO UInt32 := do
     | "--oracle" :: f :: r => oracleFile := some f; rest := r
     | "--print-dir" :: d :: r => printDir := some d; rest := r
     | "--rust-env" :: r => rustEnv := true; rest := r
+    | "--legalize128" :: r => legal := true; rest := r
     | f :: r => files := files.push f; rest := r
     | [] => pure ()
   if files.isEmpty then
@@ -317,8 +372,10 @@ def main (args : List String) : IO UInt32 := do
           IO.println s!"{f}: oracle file {p} missing"
           badOracle := badOracle + 1
           pure none
-    let c ← runFile verbose f oracle printDir rustEnv
+    let c ← runFile verbose f oracle printDir rustEnv legal
     if c.unsupported > 0 then filesWithUnsupported := filesWithUnsupported + 1
     total := total.add c
-  IO.println s!"TOTAL files {files.size}: pass {total.pass} fail {total.fail} unsupported {total.unsupported} (in {filesWithUnsupported} files) roundtrip-fail {total.roundtripFail} agree {total.agree} disagree {total.disagree} (in `test interpret` files: {total.disagreeInterp}) oracle-error {total.oracleError} oracle-unavailable {badOracle}"
-  return if total.fail + total.disagree + total.roundtripFail > 0 then 1 else 0
+  let legalTotal := if legal then
+      s!" legal pass {total.legalPass} fail {total.legalFail} agree {total.legalAgree} disagree {total.legalDisagree}" else ""
+  IO.println s!"TOTAL files {files.size}: pass {total.pass} fail {total.fail} unsupported {total.unsupported} (in {filesWithUnsupported} files) roundtrip-fail {total.roundtripFail} agree {total.agree} disagree {total.disagree} (in `test interpret` files: {total.disagreeInterp}) oracle-error {total.oracleError} oracle-unavailable {badOracle}{legalTotal}"
+  return if total.fail + total.disagree + total.roundtripFail + total.legalFail + total.legalDisagree > 0 then 1 else 0
