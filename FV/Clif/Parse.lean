@@ -389,7 +389,10 @@ def decl : P Decl := do
     let id ← entity "sig"
     expectPunct '='
     let s ← signature
-    modify fun st => { st with sigDecls := (id, s) :: st.sigDecls }
+    -- cg_clif re-declares the same `sigN` per call_indirect site; keep the first (the
+    -- printer would emit a duplicate entity, which the pinned reader rejects). step 5.
+    if !((← get).sigDecls.any fun d => d.1 == id) then
+      modify fun st => { st with sigDecls := (id, s) :: st.sigDecls }
     return .sigDecl id s
   else if isEntity "fn" t then
     let id ← entity "fn"
