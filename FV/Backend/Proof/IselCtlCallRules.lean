@@ -74,16 +74,23 @@ theorem ctor_gen_call_args_bytes {ctx : Ctx} {st : LState} {s : Clif.Signature}
     (h : externCtor ctx T.gen_call_args [.op (.sig s), .regsVec rss] st = .ok (v, st')) :
     ∃ bytes, sigParamBytes s = .ok bytes := by
   have : externCtor ctx T.gen_call_args [.op (.sig s), .regsVec rss] st =
-      match sigParamBytes s, rss.mapM single? with
-      | .ok bytes, some rs =>
-        let r := ((((argLocs bytes).1.zip rs).zip bytes).foldl argStep (#[], st))
+      match sigArgLocs s, rss.mapM single? with
+      | .ok (locs, _), some rs =>
+        let bytes := match sigParamBytes s with | .ok b => b | _ => []
+        let r := (((locs.zip rs).zip bytes).foldl argStep (#[], st))
         .ok (.op (.callArgs r.1.toList), r.2)
       | .error e, _ => .unmodeled s!"gen_call_args: {e}"
       | _, none => .unmodeled "gen_call_args: multi-register value" := rfl
   rw [this] at h
   cases hb : sigParamBytes s with
-  | error e => rw [hb] at h; simp at h
   | ok b => exact ⟨b, rfl⟩
+  | error e =>
+    have hl : sigArgLocs s = .error e := by
+      have hb' : sigArgs s = .error e := hb
+      simp only [sigArgLocs, hb']
+      rfl
+    rw [hl] at h
+    cases rss.mapM single? <;> simp at h
 
 theorem outRegs_single (st : LState) (n : Nat) :
     (outRegs st n).mapM single? =
@@ -653,13 +660,13 @@ theorem call_bl_ruleOk {p : Program} (hp : Data p) {F : BitVec 64 → Prop} {ise
   simp only [List.cons.injEq, and_true] at hfs
   obtain ⟨rfl, rfl⟩ := hfs
   have hfn : ctx.func.extern? fn = some ext := by rw [hctx.func]; exact hext
+  have hnex := hnorm fn ext hext
   simp only [ext_value_list_slice_iff, ext_func_ref_data_iff, hfn] at *
   isel_destruct; subst_vars
   simp only [List.cons.injEq, Option.some.injEq, and_true] at *
   isel_destruct; subst_vars
   isel_inv_simp [*, rule_lower_2508] at heval
   isel_destruct; subst_vars
-  have hnex := hnorm fn ext hfn
   simp only [ctor_abi_sig_iff, ctor_gen_call_output_iff _ _ _ _ hnex, ctor_put_in_regs_vec_iff,
     ctor_gen_call_rets_iff, ctor_try_call_none_iff, ctor_output_vec_iff,
     Array.getElem?_setIfInBounds, Array.size_setIfInBounds, Array.size_replicate] at *
@@ -733,13 +740,13 @@ theorem call_got_ruleOk {p : Program} (hp : Data p) {F : BitVec 64 → Prop} {is
   simp only [List.cons.injEq, and_true] at hfs
   obtain ⟨rfl, rfl⟩ := hfs
   have hfn : ctx.func.extern? fn = some ext := by rw [hctx.func]; exact hext
+  have hnex := hnorm fn ext hext
   simp only [ext_value_list_slice_iff, ext_func_ref_data_iff, hfn] at *
   isel_destruct; subst_vars
   simp only [List.cons.injEq, Option.some.injEq, and_true] at *
   isel_destruct; subst_vars
   isel_inv_simp [*, rule_lower_2518] at heval
   isel_destruct; subst_vars
-  have hnex := hnorm fn ext hfn
   simp only [ctor_abi_sig_iff, ctor_gen_call_output_iff _ _ _ _ hnex, ctor_put_in_regs_vec_iff,
     ctor_gen_call_rets_iff, ctor_try_call_none_iff, ctor_output_vec_iff, ctor_box_external_name_iff,
     Array.getElem?_setIfInBounds, Array.size_setIfInBounds, Array.size_replicate] at *

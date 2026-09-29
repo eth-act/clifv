@@ -11,7 +11,8 @@ compiled optimised function refines the CLIF run of the *source* program:
 
 The optimised function keeps the name, signature, stack slots, globals and externs, so the entry
 state (`optEntry`), `Rel.holds` and the slot layout carry over; `InSubset` carries over because the
-output stays in E and calls only what the input calls (`Opt.optimize_facts`). `FormsCovered`
+output stays in E, calls only what the input calls and has no `call_indirect` if the input has
+none (`Opt.optimize_facts`). `FormsCovered`
 stays a per-function decided premise (about the optimised code), as do `TrapsExplicit` (about
 the optimised program's run) and `EnvKeepsSymbols` (externs keep the link-time symbols).
 The simplify stage enters through `Opt.SimplifyPassSim` (proven for sound rule sets,
@@ -45,7 +46,8 @@ theorem inSubset_opt (cfg : Opt.Config) {p : Clif.Program} {f : Clif.Function}
     simp only [Clif.Program.func?, Opt.optimizeProgram, List.find?_map]
     rw [show ((fun x : Clif.Function => x.name == n) ∘ fun x => Opt.optimize x cfg) =
       (fun x => x.name == n) from by funext g; simp [hname]]
-  refine ⟨?_, hF.subsetE hsub.subsetE, by rw [hF.sig]; exact hsub.regParams, ?_, ?_, ?_⟩
+  refine ⟨?_, hF.subsetE hsub.subsetE, by rw [hF.sig]; exact hsub.regParams, ?_, ?_, ?_,
+    hF.noCI hsub.noCI⟩
   · rw [hfind, hF.name, hsub.func]; rfl
   · intro b hb st hst fn args hc e he
     obtain ⟨b0, hb0, st0, hst0, args0, hc0⟩ :=
@@ -89,15 +91,13 @@ theorem clifEntry_opt (cfg : Opt.Config)
     exact hrel args cs.frame.regs cs.frame.slots (hty.symm) hregs hcs.slotIds
   · rw [hcs.callers]; exact .nil _
 
-/-- An in-subset function has no `call_indirect` (not in E), no tail call (not in E), and calls
-only externs that are not functions of `p`: the source run from `f` stays in `f`. -/
+/-- An in-subset function has no `call_indirect` (`InSubset.noCI`), no tail call (not in E), and
+calls only externs that are not functions of `p`: the source run from `f` stays in `f`. -/
 theorem ciFree_of_subset {p : Clif.Program} {f : Clif.Function} (hsub : InSubset p f) :
     Opt.CIFree p (· = f) where
   noCI := by
-    rintro g rfl b hb st hst sig callee args hi
-    have h := Compile.instE_of_functionE hsub.subsetE hb hst
-    rw [hi] at h
-    simp [Compile.instE] at h
+    rintro g rfl
+    exact hsub.noCI
   call := by
     rintro g rfl b hb st hst fn args hi e he h hh
     rw [hsub.externCalls b hb st hst fn args hi e he] at hh

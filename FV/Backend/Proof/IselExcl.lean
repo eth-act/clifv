@@ -34,7 +34,7 @@ theorem excludedUnmatchable : ExcludedUnmatchable program := by
       rw [hargs] at ha
       obtain ⟨e1, h1, -⟩ := matchArgs_cons_inv ha
       exact fails_sound hctx q .inst _ _ _ _ hok
-        ⟨ii, info, inst, rfl, hi, hc, hctx.instE ii info inst hi hc,
+        ⟨ii, info, inst, rfl, hi, hc,
           hctx.data ii info inst hi hc⟩ h1
     · cases hok
 

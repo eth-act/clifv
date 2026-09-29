@@ -118,6 +118,17 @@ theorem mem_callees {f : Function} {fn : FnRef} :
   · rintro ⟨b, hb, st, hst, args, h⟩
     exact ⟨b, hb, st, hst, by simp [h]⟩
 
+theorem hasCallIndirect_eq_false {f : Function} : hasCallIndirect f = false ↔ NoCallIndirect f := by
+  simp only [hasCallIndirect, List.any_eq_false, NoCallIndirect]
+  constructor
+  · intro h b hb st hst sig callee args hi
+    exact h b hb (List.any_eq_true.2 ⟨st, hst, by simp [hi]⟩)
+  · intro h b hb hany
+    obtain ⟨st, hst, hc⟩ := List.any_eq_true.1 hany
+    split at hc
+    · exact h b hb st hst _ _ _ ‹_›
+    · cases hc
+
 /-- The facts of the output the backend theorem uses (`E2E.backend_correct_opt`). -/
 structure BackendFacts (f g : Function) : Prop where
   name : g.name = f.name
@@ -127,6 +138,7 @@ structure BackendFacts (f g : Function) : Prop where
   externs : g.externs = f.externs
   subsetE : Compile.functionE f = true → Compile.functionE g = true
   callees : ∀ fn ∈ callees g, fn ∈ callees f
+  noCI : NoCallIndirect f → NoCallIndirect g
 
 theorem removeUnreachable_facts (f : Function) : BackendFacts f (removeUnreachable f) := by
   unfold removeUnreachable
@@ -137,26 +149,29 @@ theorem removeUnreachable_facts (f : Function) : BackendFacts f (removeUnreachab
     have hbl : ∀ b ∈ (removeUnreachableRaw f).blocks, b ∈ f.blocks := by
       simp only [unreachableOk, Bool.and_eq_true, List.all_eq_true, List.contains_iff_mem] at hok
       exact fun b hb => (hok.2 b hb).1
-    refine ⟨hn, hs, hsl, hgl, hex, fun hE => ?_, fun fn hfn => ?_⟩
+    refine ⟨hn, hs, hsl, hgl, hex, fun hE => ?_, fun fn hfn => ?_, fun h b hb => h b (hbl b hb)⟩
     · simp only [Compile.functionE, Bool.and_eq_true, List.all_eq_true] at hE ⊢
       rw [hs, hgl, hex]
       exact ⟨⟨⟨hE.1.1.1, hE.1.1.2⟩, hE.1.2⟩, fun b hb => hE.2 b (hbl b hb)⟩
     · obtain ⟨b, hb, st, hst, args, h⟩ := mem_callees.1 hfn
       exact mem_callees.2 ⟨b, hbl b hb, st, hst, args, h⟩
-  · exact ⟨rfl, rfl, rfl, rfl, rfl, id, fun _ h => h⟩
+  · exact ⟨rfl, rfl, rfl, rfl, rfl, id, fun _ h => h, id⟩
 
 theorem keepsBackendSubset_facts {f g : Function} (h : keepsBackendSubset f g = true) :
     BackendFacts f g := by
   simp only [keepsBackendSubset, sameHeader, Bool.and_eq_true, beq_iff_eq, List.all_eq_true,
     List.contains_iff_mem, Bool.or_eq_true, Bool.not_eq_true'] at h
-  obtain ⟨⟨⟨⟨⟨⟨hn, hs⟩, hsl⟩, hgl⟩, hex⟩, hE⟩, hc⟩ := h
-  refine ⟨hn, hs, hsl, hgl, hex, fun h1 => ?_, hc⟩
-  rcases hE with h2 | h2
-  · rw [h1] at h2; cases h2
-  · exact h2
+  obtain ⟨⟨⟨⟨⟨⟨⟨hn, hs⟩, hsl⟩, hgl⟩, hex⟩, hE⟩, hc⟩, hci⟩ := h
+  refine ⟨hn, hs, hsl, hgl, hex, fun h1 => ?_, hc, fun h1 => ?_⟩
+  · rcases hE with h2 | h2
+    · rw [h1] at h2; cases h2
+    · exact h2
+  · rcases hci with h2 | h2
+    · exact hasCallIndirect_eq_false.1 h2
+    · rw [hasCallIndirect_eq_false.2 h1] at h2; cases h2
 
 theorem optimize_facts (cfg : Config) (f : Function) : BackendFacts f (optimize f cfg) :=
-  optimizeReport_out cfg f (BackendFacts f) ⟨rfl, rfl, rfl, rfl, rfl, id, fun _ h => h⟩
+  optimizeReport_out cfg f (BackendFacts f) ⟨rfl, rfl, rfl, rfl, rfl, id, fun _ h => h, id⟩
     (removeUnreachable_facts f) (fun _ h => keepsBackendSubset_facts h)
 
 theorem optimize_sim (cfg : Config) (hS : SimplifyPassSim cfg.simplifyFn cfg.skeletonFn)

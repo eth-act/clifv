@@ -228,11 +228,18 @@ def callees (f : Function) : List FnRef :=
     | .call fn _ => some fn
     | _ => none
 
+/-- `f` has a `call_indirect` statement. -/
+def hasCallIndirect (f : Function) : Bool :=
+  f.blocks.any fun b => b.body.any fun st => match st.inst with
+    | .callIndirect .. => true
+    | _ => false
+
 /-- The optimised function `g` keeps what the backend theorem needs of the input `f`
 (`E2E.backend_correct_opt`): the header, membership in the backend subset E (the simplifier only
-emits E nodes into E functions), and the callees. -/
+emits E nodes into E functions), the callees, and the absence of `call_indirect` (the passes never
+introduce one). -/
 def keepsBackendSubset (f g : Function) : Bool :=
   sameHeader f g && (!Compile.functionE f || Compile.functionE g) &&
-    (callees g).all (callees f).contains
+    (callees g).all (callees f).contains && (!hasCallIndirect g || hasCallIndirect f)
 
 end Opt
