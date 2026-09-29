@@ -80,12 +80,22 @@ corpus is recovered, including the 4 debug vtables and the writable `i_alloc` ob
 Outputs per crate×profile: `<crate>.data.clif` (`; data:` directives, bytes as hex,
 pointers as `%sym±addend`) and `<crate>.gvmap.tsv` (`dump-file \t gvN \t %name`).
 
-### Regression gates after step 1 (Lean untouched, but recorded)
+### Regression gates after the merge of `agent/optproven-fix` (post-step-5 sigN fixes)
 
+`lake build FV.E2E FV.E2E.OptProven`: green (the proof files need `FV_MEMCAP=32G`; 12G
+gets the scope OOM-killed mid-`RegallocInsts*`). `#print axioms E2E.backend_correct_final`
+and `E2E.backend_correct_opt_proven`: only propext, Classical.choice, Quot.sound plus
+`_native` bv_decide certificates (2203 axiom names, all of the allowed kinds).
 `scripts/lean-backend-filetests.sh`: corpus **114/114**, extrt **22/22**, runtests **3085
 pass / 0 fail / 0 disagree**. `scripts/lean-backend-encode-check.sh`: **971 identical,
-0 differ**. `lake exe lean-e2e-check`: **lowerCheck 913 accepted / 0 rejected, prepCheck
-913 accepted, formsCoveredB 913 covered / 0 not covered**. All green.
+0 differ**. `lean-e2e-check`: **lowerCheck 910 accepted / 0 rejected** (22 out of scope),
+**prepCheck 910 accepted / 0 rejected**, **formsCoveredB 910 covered / 0 not covered**.
+`scripts/opt-difftest.sh`: **0 fail / 0 differ**, survey set **30 checked / 0 rejected**
+(after two printer/parser fixes: `Print.Function` emits explicit `sigN` declarations
+before the `fnN` decls — a `fn` decl with an inline signature implicitly imports a
+signature at the next free index, so a later explicit decl collided as "duplicate entity:
+sigN" in the pinned reader; `Parse` keeps only the first declaration of each `sigN` —
+cg_clif re-declares the same `sigN` per call_indirect site).
 
 Found (pre-existing on main, recorded): the survey's *stored* `smoke.clif` now has 10 of
 its 88 run lines unsupported — `%apply` (4) and `%cmp_bool` (6) are rejected by M7's
