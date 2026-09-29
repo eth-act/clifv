@@ -998,13 +998,21 @@ def rewriteStmt (f : Function) (ty : ValueId → Option Ty) (s : Stmt) : M Unit 
     if t == .i128 then pure ()  -- the results alias the pair of x: dropped
     else throw "legalize128: isplit at a non-i128 type"
   | .load op t flags p off =>
-    if t == .i128 then throw "legalize128: i128 load"
+    if t == .i128 then do
+      let (rl, rh) ← pairOf s.results.head!
+      let p' ← u1 p
+      emit1 rl (.load .load .i64 flags p' off)
+      emit1 rh (.load .load .i64 flags p' (off + 8))
     else if ty p == some .i128 then
       throw "legalize128: i128 address"
     else
       emitS { s with inst := .load op t flags (← u1 p) off }
   | .store op t flags x p off =>
-    if t == .i128 then throw "legalize128: i128 store"
+    if t == .i128 then do
+      let (xl, xh) ← pairOf x
+      let p' ← u1 p
+      emitS { results := [], inst := .store .store .i64 flags xl p' off }
+      emitS { results := [], inst := .store .store .i64 flags xh p' (off + 8) }
     else if ty x == some .i128 || ty p == some .i128 then
       throw "legalize128: i128 operand of a non-i128 store"
     else
