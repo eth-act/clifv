@@ -625,6 +625,219 @@ def bin128 : BinaryOp → ValueId → ValueId → ValueId → ValueId → ValueI
   | .umax, rl, rh, xl, xh, yl, yh => minmax128 .umax rl rh xl xh yl yh
   | op, _, _, _, _, _, _ => throw "legalize128: saturating arithmetic at i128"
 
+/-! ## Shifts and rotates
+
+The amount is taken mod 128; the two 64-bit halves shift by `s = amount mod 64`, and when
+the amount is ≥ 64 the halves cross. The cross-half contribution `b >>> (64 - s)` is
+computed with the raw amount `64 - s ∈ [1, 64]` (an `i64` shift masks 64 to 0, which gives
+the wrong value for `s = 0`) and zeroed by a `select` on `s != 0`; for constant amounts the
+`s = 0` case emits no contribution at all. `rotr` by `a` is `rotl` by `128 - a`. -/
+
+/-- The shift amount: a constant in `[0, 128)`, or an `i64` value. For `rotr` the `rotl`
+amount is produced (`128 - a`, 0 stays 0). -/
+def amt128 (op0 : BinaryOp) (ty : ValueId → Option Ty) (y : ValueId) :
+    M (Nat ⊕ ValueId) := do
+  let raw : Nat ⊕ ValueId ←
+    if ty y == some .i128 then
+      let (lo, _) ← pairOf y
+      match ← constOfDef lo with
+      -- (lo + hi·2^64) mod 128 = lo mod 128 (2^64 ≡ 0 mod 128)
+      | some a => pure (Sum.inl (a.toNat % 128))
+      | none => do
+        let m ← kI64 127
+        let amt ← fresh
+        emit1 amt (.binary .band .i64 lo m)
+        pure (Sum.inr amt)
+    else
+      match ← constOfDef y with
+      | some a => pure (Sum.inl (a.toNat % 128))
+      | none => do
+        let w := (ty y).getD .i64
+        let y64 ← if w == .i64 then pure (← u1 y) else do
+          let r ← fresh
+          emit1 r (.extend .uextend .i64 (← u1 y))
+          pure r
+        let m ← kI64 127
+        let amt ← fresh
+        emit1 amt (.binary .band .i64 y64 m)
+        pure (Sum.inr amt)
+  match raw with
+  | Sum.inl n => return Sum.inl (if op0 == .rotr then (128 - n) % 128 else n)
+  | Sum.inr a =>
+    if op0 == .rotr then do
+      let isz ← fresh
+      emit1 isz (.icmp .eq .i64 a (← kI64 0))
+      let t ← fresh
+      emit1 t (.binary .isub .i64 (← kI64 128) a)
+      let r ← fresh
+      emit1 r (.select .i64 isz a t)
+      return Sum.inr r
+    else
+      return Sum.inr a
+
+/-- The shared variables of a variable-amount shift: `s` (the amount mod 64), `big`
+(amount ≥ 64), and `nz` (the amount's low half is non-zero). -/
+def shiftVars (amt : ValueId) : M (ValueId × ValueId × ValueId) := do
+  let m63 ← kI64 63
+  let s ← fresh
+  emit1 s (.binary .band .i64 amt m63)
+  let b64 ← kI64 64
+  let big ← fresh
+  emit1 big (.icmp .uge .i64 amt b64)
+  let nz ← fresh
+  emit1 nz (.icmp .ne .i64 s (← kI64 0))
+  return (s, big, nz)
+
+/-- The cross-half contribution of the shift `sh` by `64 - s` (`ushr` for a left shift,
+`ishl` for a right shift/rotate), zeroed when `s = 0`. -/
+def crossVar (sh : BinaryOp) (nz b s : ValueId) : M ValueId := do
+  let d ← fresh
+  emit1 d (.binary .isub .i64 (← kI64 64) s)
+  let c ← fresh
+  emit1 c (.binary sh .i64 b d)
+  let z ← fresh
+  emit1 z (.select .i64 nz c (← kI64 0))
+  return z
+
+/-- A constant amount (in `[0, 128)`); `op` is the (already normalised) operation. Each
+result half is defined by a single instruction (a shift by 0 copies the input). -/
+def constShift (op : BinaryOp) (rl rh xl xh : ValueId) (n : Nat) : M Unit := do
+  match op with
+  | .ishl =>
+    if n < 64 then do
+      emit1 rl (.binary .ishl .i64 xl (← kI64 n))
+      if n == 0 then
+        emit1 rh (.binary .ishl .i64 xh (← kI64 n))
+      else do
+        let h ← fresh
+        emit1 h (.binary .ishl .i64 xh (← kI64 n))
+        let c ← fresh
+        emit1 c (.binary .ushr .i64 xl (← kI64 (64 - n)))
+        emit1 rh (.binary .bor .i64 h c)
+    else do
+      emit1 rl (.iconst .i64 (BitVec.ofInt 64 0))
+      emit1 rh (.binary .ishl .i64 xl (← kI64 (n - 64)))
+  | .ushr =>
+    if n < 64 then do
+      emit1 rh (.binary .ushr .i64 xh (← kI64 n))
+      if n == 0 then emit1 rl (.binary .ushr .i64 xl (← kI64 n)) else do
+        let l ← fresh
+        emit1 l (.binary .ushr .i64 xl (← kI64 n))
+        let c ← fresh
+        emit1 c (.binary .ishl .i64 xh (← kI64 (64 - n)))
+        emit1 rl (.binary .bor .i64 l c)
+    else do
+      emit1 rh (.iconst .i64 (BitVec.ofInt 64 0))
+      emit1 rl (.binary .ushr .i64 xh (← kI64 (n - 64)))
+  | .sshr =>
+    if n < 64 then do
+      emit1 rh (.binary .sshr .i64 xh (← kI64 n))
+      if n == 0 then emit1 rl (.binary .ushr .i64 xl (← kI64 n)) else do
+        let l ← fresh
+        emit1 l (.binary .ushr .i64 xl (← kI64 n))
+        let c ← fresh
+        emit1 c (.binary .ishl .i64 xh (← kI64 (64 - n)))
+        emit1 rl (.binary .bor .i64 l c)
+    else do
+      emit1 rh (.binary .sshr .i64 xh (← kI64 63))
+      emit1 rl (.binary .sshr .i64 xh (← kI64 (n - 64)))
+  | _ => do
+    -- rotl (the normalised form of rotl/rotr)
+    if n < 64 then do
+      if n == 0 then do
+        emit1 rl (.binary .ishl .i64 xl (← kI64 n))
+        emit1 rh (.binary .ishl .i64 xh (← kI64 n))
+      else do
+        let a ← fresh
+        emit1 a (.binary .ishl .i64 xl (← kI64 n))
+        let b ← fresh
+        emit1 b (.binary .ishl .i64 xh (← kI64 n))
+        let c ← fresh
+        emit1 c (.binary .ushr .i64 xh (← kI64 (64 - n)))
+        let d ← fresh
+        emit1 d (.binary .ushr .i64 xl (← kI64 (64 - n)))
+        emit1 rl (.binary .bor .i64 a c)
+        emit1 rh (.binary .bor .i64 b d)
+    else do
+      let m := n - 64
+      if m == 0 then do
+        emit1 rl (.binary .ishl .i64 xh (← kI64 m))
+        emit1 rh (.binary .ishl .i64 xl (← kI64 m))
+      else do
+        let a ← fresh
+        emit1 a (.binary .ishl .i64 xh (← kI64 m))
+        let b ← fresh
+        emit1 b (.binary .ishl .i64 xl (← kI64 m))
+        let c ← fresh
+        emit1 c (.binary .ushr .i64 xl (← kI64 (64 - m)))
+        let d ← fresh
+        emit1 d (.binary .ushr .i64 xh (← kI64 (64 - m)))
+        emit1 rl (.binary .bor .i64 a c)
+        emit1 rh (.binary .bor .i64 b d)
+
+/-- A variable-amount shift (`op` normalised; `s` in `[0, 64)`, `big`/`nz` as in
+`shiftVars`). -/
+def varShift (op : BinaryOp) (rl rh xl xh s big nz : ValueId) : M Unit := do
+  match op with
+  | .ishl =>
+    let shl ← fresh
+    emit1 shl (.binary .ishl .i64 xl s)
+    let shh ← fresh
+    emit1 shh (.binary .ishl .i64 xh s)
+    let cr ← crossVar .ushr nz xl s
+    let hs ← fresh
+    emit1 hs (.binary .bor .i64 shh cr)
+    let zero ← kI64 0
+    emit1 rl (.select .i64 big zero shl)
+    emit1 rh (.select .i64 big shl hs)
+  | .ushr =>
+    let shh ← fresh
+    emit1 shh (.binary .ushr .i64 xh s)
+    let shl ← fresh
+    emit1 shl (.binary .ushr .i64 xl s)
+    let cr ← crossVar .ishl nz xh s
+    let ls ← fresh
+    emit1 ls (.binary .bor .i64 shl cr)
+    let zero ← kI64 0
+    emit1 rl (.select .i64 big shh ls)
+    emit1 rh (.select .i64 big zero shh)
+  | .sshr =>
+    let shh ← fresh
+    emit1 shh (.binary .sshr .i64 xh s)
+    let shl ← fresh
+    emit1 shl (.binary .ushr .i64 xl s)
+    let cr ← crossVar .ishl nz xh s
+    let ls ← fresh
+    emit1 ls (.binary .bor .i64 shl cr)
+    let hb ← fresh
+    emit1 hb (.binary .sshr .i64 xh (← kI64 63))
+    emit1 rl (.select .i64 big shh ls)
+    emit1 rh (.select .i64 big hb shh)
+  | _ =>
+    -- rotl (the normalised form of rotl/rotr): the big case swaps the halves
+    let a ← fresh
+    emit1 a (.binary .ishl .i64 xl s)
+    let b ← fresh
+    emit1 b (.binary .ishl .i64 xh s)
+    let c ← crossVar .ushr nz xh s
+    let d ← crossVar .ushr nz xl s
+    let la ← fresh
+    emit1 la (.binary .bor .i64 a c)
+    let lb ← fresh
+    emit1 lb (.binary .bor .i64 b d)
+    emit1 rl (.select .i64 big lb la)
+    emit1 rh (.select .i64 big la lb)
+
+/-- A shift/rotate at `i128`. -/
+def shift128 (op0 : BinaryOp) (ty : ValueId → Option Ty) (rl rh : ValueId)
+    (xl xh y : ValueId) : M Unit := do
+  let op : BinaryOp := if op0 == .rotr then .rotl else op0
+  match ← amt128 op0 ty y with
+  | Sum.inl n => constShift op rl rh xl xh n
+  | Sum.inr a =>
+    let (s, big, nz) ← shiftVars a
+    varShift op rl rh xl xh s big nz
+
 /-! ## The statement rewriter -/
 
 /-- The arguments of a branch to `bc`: `i128` arguments split into their pair. -/
@@ -660,7 +873,7 @@ def rewriteStmt (f : Function) (ty : ValueId → Option Ty) (s : Stmt) : M Unit 
     if t == .i128 then do
       let (rl, rh) ← pairOf s.results.head!
       let (xl, xh) ← pairOf x
-      if op.isShift then throw "legalize128: shift/rotate at i128"
+      if op.isShift then shift128 op ty rl rh xl xh y
       else do
         let (yl, yh) ← pairOf y
         bin128 op rl rh xl xh yl yh
