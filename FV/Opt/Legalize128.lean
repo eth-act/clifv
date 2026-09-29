@@ -853,6 +853,30 @@ def shift128 (op0 : BinaryOp) (ty : ValueId → Option Ty) (rl rh : ValueId)
     let (s, big, nz) ← shiftVars a
     varShift op rl rh xl xh s big nz
 
+/-! ## Division and remainder via the runtime helpers -/
+
+/-- The helper of a `div` at `i128`. -/
+def divHelper : DivOp → String
+  | .udiv => "__udivti3" | .sdiv => "__divti3" | .urem => "__umodti3" | .srem => "__modti3"
+
+/-- The declared signature of a `__*ti3` helper: two 128-bit arguments as `i64` pairs,
+returning one 128-bit value as an `i64` pair. -/
+def helperSig : Signature where
+  params := [{ ty := .i64 }, { ty := .i64 }, { ty := .i64 }, { ty := .i64 }]
+  returns := [{ ty := .i64 }, { ty := .i64 }]
+  callConv := none
+
+/-- The function reference of the `__*ti3` helper, declaring it if needed. -/
+def helperFn (name : String) : M FnRef := do
+  let st ← get
+  match st.helper[name]? with
+  | some fn => return fn
+  | none =>
+    let fn := st.nextFn
+    let ext : ExtFunc := { name, sig := helperSig }
+    modify fun s => { s with nextFn := s.nextFn + 1, helper := s.helper.insert name fn, extraExts := s.extraExts ++ [(fn, ext)] }
+    return fn
+
 /-! ## The statement rewriter -/
 
 /-- The arguments of a branch to `bc`: `i128` arguments split into their pair. -/
@@ -905,7 +929,12 @@ def rewriteStmt (f : Function) (ty : ValueId → Option Ty) (s : Stmt) : M Unit 
     else
       emitS { s with inst := .binary op t (← u1 x) (← u1 y) }
   | .div op t x y =>
-    if t == .i128 then throw "legalize128: division at i128"
+    if t == .i128 then do
+      let fn ← helperFn (divHelper op)
+      let (xl, xh) ← pairOf x
+      let (yl, yh) ← pairOf y
+      let (rl, rh) ← pairOf s.results.head!
+      emitS { results := [rl, rh], inst := .call fn [xl, xh, yl, yh] }
     else if ty x == some .i128 || ty y == some .i128 then
       throw "legalize128: i128 operand of a non-i128 division"
     else
