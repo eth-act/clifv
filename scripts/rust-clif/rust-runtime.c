@@ -43,5 +43,62 @@ int memcmp(const void *a, const void *b, unsigned long n) {
     return 0;
 }
 
+// The `__*ti3` helpers of 128-bit division/remainder (rust-route step 5). cg_clif lowers
+// `udiv`/`sdiv`/`urem`/`srem` at `i128` to calls to them, and `Opt.Legalize128` keeps
+// exactly those calls (two `i64` pairs in x0:x1/x2:x3, two `i64` returns in x0:x1), so the
+// Lean-backend objects resolve them against this runtime. The long division is written with
+// shifts only (`/` on `unsigned __int128` would call `__udivti3` itself). Division by zero
+// aborts, like libgcc's.
+
+static void rustroute_udivmod128(unsigned __int128 n, unsigned __int128 d,
+                                 unsigned __int128 *qp, unsigned __int128 *rp) {
+    unsigned __int128 q = 0, r = 0;
+    for (int i = 127; i >= 0; i--) {
+        r = (r << 1) | (unsigned __int128)((n >> i) & 1);
+        if (r >= d) {
+            r -= d;
+            q |= (unsigned __int128)1 << i;
+        }
+    }
+    if (qp) *qp = q;
+    if (rp) *rp = r;
+}
+
+unsigned __int128 __udivti3(unsigned __int128 n, unsigned __int128 d) {
+    if (d == 0) rustroute_abort();
+    unsigned __int128 q, r;
+    rustroute_udivmod128(n, d, &q, &r);
+    return q;
+}
+
+unsigned __int128 __umodti3(unsigned __int128 n, unsigned __int128 d) {
+    if (d == 0) rustroute_abort();
+    unsigned __int128 q, r;
+    rustroute_udivmod128(n, d, &q, &r);
+    return r;
+}
+
+unsigned __int128 __divti3(unsigned __int128 un, unsigned __int128 uv) {
+    if (uv == 0) rustroute_abort();
+    unsigned __int128 n = ((un >> 127) & 1) ? -un : un;
+    unsigned __int128 v = ((uv >> 127) & 1) ? -uv : uv;
+    unsigned __int128 q, r;
+    rustroute_udivmod128(n, v, &q, &r);
+    // truncated division: the quotient is negative iff the signs differ
+    if (((un >> 127) & 1) != ((uv >> 127) & 1)) q = -q;
+    return q;
+}
+
+unsigned __int128 __modti3(unsigned __int128 un, unsigned __int128 uv) {
+    if (uv == 0) rustroute_abort();
+    unsigned __int128 n = ((un >> 127) & 1) ? -un : un;
+    unsigned __int128 v = ((uv >> 127) & 1) ? -uv : uv;
+    unsigned __int128 q, r;
+    rustroute_udivmod128(n, v, &q, &r);
+    // the remainder has the sign of the dividend
+    if ((un >> 127) & 1) r = -r;
+    return r;
+}
+
 // The abort itself is the generated stub assembly (rust_panic.s): every diverging
 // entry point is a label that jumps to `rustroute_abort` there (`udf #251` = SIGILL).

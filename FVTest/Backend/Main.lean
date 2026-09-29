@@ -1,4 +1,5 @@
 import FV.Backend
+import FV.Opt.Legalize128
 import FVTest.Opt.Common
 
 /-!
@@ -19,6 +20,10 @@ emitter-subset closure (`Isle.Aarch64.Closure.rules`). Exit status 0 unless the 
 wrong, the input cannot be read, or encoding fails (an encoder or backend bug; the message
 names the function and instruction). With `--opt`, every function is first optimised by the
 Lean mid-end (`Opt.optimize`, `docs/contracts/midend.md`; options in `FVTest/Opt/Common.lean`).
+
+Every function that mentions `i128` is first legalised by `Opt.Legalize128` (rewritten to
+plain `i8..i64` CLIF before the mid-end and the backend); legalised functions are reported
+unverified ("i128 legalized (outside backend_correct)").
 -/
 
 open Backend
@@ -41,8 +46,9 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
   let some alloc ← Allocator.ofName? o.regalloc
     | do IO.eprintln s!"lean-backend: unknown allocator {o.regalloc}"; return 2
   let pf := Clif.parseFile src
+  let (pf, unv128) := Opt.Legalize128.parsedFile128 pf
   let pf := match o.opt with | some c => Opt.optimizeParsedFile c pf | none => pf
-  let fa ← compileFileIO alloc pf
+  let fa ← compileFileIO alloc pf unv128
   if output.endsWith ".o" || o.dump.isSome then
     match fa.layout with
     | .error e =>

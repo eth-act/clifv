@@ -1303,39 +1303,54 @@ takes about 20 s.
 
 1861 slots in 285 of 338 functions; kinds {'explicit_slot': 1861}; aligns {0: 82, 2: 24, 4: 116, 8: 1639}; largest 48 bytes; sizes {1: 61, 2: 22, 3: 3, 4: 70, 8: 668, 12: 6, 16: 800, 24: 181, 32: 34, 40: 11, 48: 5}
 
-## Post-rust-route (branch `agent/rust-route`, after the `agent/optproven-fix` merge)
+## Post-rust-route (branch `agent/rust-route`, after the `agent/optproven-fix` merge; final: `agent/rust-i128`)
 
 Final state of the rust route (`docs/research/rust-route.md` has the full log):
 
 | profile | functions | compiled by the Lean backend | unsupported |
 | --- | --- | --- | --- |
-| debug | 454 | 437 | 17 |
-| release | 239 | 227 | 12 |
-| release-oc | 240 | 228 | 12 |
-| **total** | **933** | **892 (95.6%)** | **41** |
+| debug | 454 | 454 | 0 |
+| release | 239 | 239 | 0 |
+| release-oc | 240 | 240 | 0 |
+| **total** | **933** | **933 (100%)** | **0** |
 
-Unsupported reasons (all one cause: **i128**):
+The last 41 functions (all `i128`) are compiled by **`Opt.Legalize128`**
+(`FV/Opt/Legalize128.lean`, branch `agent/rust-i128`): a CLIF→CLIF pass that rewrites `i128`
+away before the backend, the way Cranelift's legalizer does — every `i128` value becomes a
+pair of `i64` values, every `i128` instruction the equivalent `i64` code (carry/borrow
+`iadd`/`isub`, cross-product `imul`, lexicographic `icmp`, halves for the count/bit ops,
+`select`s for the shifts), loads/stores as two `i64` accesses at `+0`/`+8`, and signatures
+as even/odd `i64` register pairs with an unused pad parameter/return reproducing the AAPCS64
+skipped register (Cranelift aarch64 `compute_arg_locs`). `udiv`/`sdiv`/`urem`/`srem` at
+`i128` call the `__udivti3`/`__divti3`/`__umodti3`/`__modti3` helpers (byte-exact semantics
+in `Clif.Rust.env`, freestanding C long division in `scripts/rust-clif/rust-runtime.c`).
+`lean-backend` runs the pass automatically on every function mentioning `i128`; legalised
+functions are flagged unverified (`i128 legalized (outside backend_correct)`); the backend,
+the value model and all proof files are unchanged.
 
-| reason | count |
-| --- | --- |
-| i128 parameter | 31 |
-| extend to i128 | 6 |
-| i128 return value | 4 |
+Verification (`clif-filetest --legalize128` is the differential: every run line through
+both the original program and the legalised one):
 
-Everything else the corpus needs — data objects (938 recovered), mem*/panic externs,
-sret, `call_indirect`/`func_addr` (dyn dispatch over recovered vtables) — compiles, runs
-under `Clif.run`, and agrees natively with Cranelift and rustc/LLVM where the backend
-runs it (all flagged unverified in the theorem's scope: outside `E2E.InSubset`).
+* the 31 i128 Cranelift runtests files: 750 pass / 0 fail under `Clif.run`, legalised
+  742 pass / 0 fail / **0 disagree** (the 8 not-legalisable lines are the `fcvt_*`/float
+  functions, outside subset S for `Clif.run` too);
+* natively (`lean-backend` → `clif-native --functions-obj`, qemu): 735 pass / 0 fail / **0
+  disagree** against Cranelift's own aarch64 code (the `__*ti3` helpers linked from
+  `rust-runtime.c`);
+* the survey smoke (`g_u128` functions, expectations from rustc/LLVM): **101 run lines, all
+  pass natively** (was 88 pass / 13 not-compiled) and under `Clif.run` with 0 disagreements
+  between the original and the legalised form; the 2 remaining unsupported lines are the
+  pre-existing `%fn_ptr_table` panic-extern limitation.
 
-**i128 semantics are done; i128 code generation is not.** `Clif.run` executes the i128
-functions correctly (`iadd.i128`, `load.i128`, `iconcat`, …; `iconst.i128` is rejected by
-both readers, so constants come via `iconcat`). The backend rejects them at three gates:
-`sigArgs` throws on an i128 parameter, `lowerFunction` on an i128 return value, and
-`instData`/`instE` on every i128 opcode. Enabling them needs Cranelift's two-register
-`ValueRegs` value model (one i128 value = two vregs, AAPCS64 even/odd register pairs,
-pair results from the exported i128-tagged ISLE rules — currently `defaultExcludes`
-"i128", and `lowerFunction` throws "multi-register result"), which cuts through the
-verified lowering simulation (every value is one vreg today). `smoke.sh` now runs the
-`g_u128` corpus functions with rustc/LLVM as the oracle: **103 run lines — Clif.run 101
-pass / 0 fail / 2 unsupported (pre-existing missing panic extern), Cranelift-native
-agrees 101, Lean backend 88 pass / 13 not-compiled (the u128 functions)**.
+`scripts/rust-clif/tools.sh`: **933/933 compiled** (0 unsupported, both with `nop` kept and
+dropped). Gates after the change: `scripts/lean-backend-filetests.sh` corpus **114/114**,
+runtests **4067 pass / 0 fail / 0 disagree** (was 3085 — the i128 files now compile and
+pass); `scripts/lean-backend-encode-check.sh` **1132 identical, 0 differ**;
+`lake exe lean-e2e-check` **910 accepted / 0 rejected** (22 out of scope),
+formsCoveredB **910 / 0 not covered**; `lake build FV.E2E` green.
+
+Pre-existing (recorded for the integrator): `clif-native`'s prebuilt blame cannot attribute
+an undefined *data*-symbol reference (`%fn_ptr_table`'s `symbol_value %alloc33`) to its
+function — `--functions-obj` runs of files with undefined data symbols bail with "undefined
+symbols … not referenced by any CLIF function" (the stand-alone mode blames them via the
+function's relocations and excludes the caller instead). Independent of i128.

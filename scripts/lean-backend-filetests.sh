@@ -62,6 +62,14 @@ lake build lean-backend 2>&1 | tail -1
 cargo build --quiet --release --manifest-path rust/Cargo.toml -p clif-native -p clif-runlines -p lean-regalloc
 BIN=rust/target/release
 RTLIB=rust/target/aarch64-unknown-linux-musl/release/libflat_runtime.a
+# the `__*ti3` helpers of 128-bit division/remainder (rust-route step 5): the legalised
+# i128 objects call them, and Cranelift's own i128 lowering uses the same libcalls
+TI3="$ROOT/rust/target/aarch64-ti3/ti3.o"
+if [[ ! -f "$TI3" || "$ROOT/scripts/rust-clif/rust-runtime.c" -nt "$TI3" ]]; then
+  mkdir -p "$(dirname "$TI3")"
+  clang --target=aarch64-linux-gnu -ffreestanding -fno-builtin -nostdlib -O1 \
+    -c "$ROOT/scripts/rust-clif/rust-runtime.c" -o "$TI3"
+fi
 if [[ " ${SETS[*]} " == *" corpus "* ]]; then
   cargo rustc --quiet --release --manifest-path rust/Cargo.toml -p flat-runtime \
     --target aarch64-unknown-linux-musl --crate-type staticlib -- -C panic=abort
@@ -101,7 +109,7 @@ run_one() {
 }
 export -f run_one
 OPTS="${OPTARGS[*]:-}"
-export BIN WORK LLVM_MC ASM RA OPTS
+export BIN WORK LLVM_MC ASM RA OPTS TI3
 
 status=0
 # report SET: per-file and total counts from the two record streams.
@@ -204,12 +212,12 @@ for set in "${SETS[@]}"; do
       report extrt
       ;;
     runtests)
-      printf '%s\0' "$RUNTESTS"/*.clif | xargs -0 -n1 -P "$(nproc)" bash -c 'set -e; run_one runtests "$1"' _
+      printf '%s\0' "$RUNTESTS"/*.clif | xargs -0 -n1 -P "$(nproc)" bash -c 'set -e; run_one runtests "$1" "$TI3"' _
       echo "== Cranelift runtests"
       report runtests
       ;;
     files)
-      printf '%s\0' "${FILES[@]}" | xargs -0 -n1 -P "$(nproc)" bash -c 'set -e; run_one files "$1" "$RUST_RUNTIME"' _
+      printf '%s\0' "${FILES[@]}" | xargs -0 -n1 -P "$(nproc)" bash -c 'set -e; run_one files "$1" "${RUST_RUNTIME:-$TI3}"' _
       echo "== files"
       report files
       ;;

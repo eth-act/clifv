@@ -137,14 +137,20 @@ def unverifiedReason? (pf : Clif.ParsedFile) (f : Clif.Function) : Option String
 
 /-- Compile every function of a parsed `.clif` file: lower each function, allocate all of
 them with `alloc` (one batch), emit. A function that calls a function of the file that is not
-compiled is not compiled either (its object code would reference an undefined symbol). -/
+compiled is not compiled either (its object code would reference an undefined symbol).
+`preUnverified` marks functions already known to be outside the theorem before this check
+(`Opt.Legalize128.parsedFile128`: "i128 legalized (outside backend_correct)"); they are not
+lowering-validated. -/
 def compileFileWith {m : Type → Type} [Monad m]
-    (alloc : Array VCode → m (Array (Except String AFunc))) (pf : Clif.ParsedFile) : m FileAsm := do
+    (alloc : Array VCode → m (Array (Except String AFunc))) (pf : Clif.ParsedFile)
+    (preUnverified : List (String × String) := []) : m FileAsm := do
   -- lowering (per function, in file order)
   let lowered : Array (String × Except String (Clif.Function × VCode)) :=
     pf.funcs.toArray.map fun p => (p.name, match p.func with
       | .error e => .error e.toString
-      | .ok f => (lowerChecked f (unverifiedReason? pf f).isNone).map (f, ·))
+      | .ok f => (lowerChecked f
+          ((unverifiedReason? pf f).isSome || (preUnverified.lookup p.name).isSome).not
+          ).map (f, ·))
   let vcs := lowered.filterMap fun (_, r) => r.toOption.map (·.2)
   let afs ← alloc vcs
   let mut done : Array (FnAsm × List String) := #[]
@@ -173,7 +179,9 @@ def compileFileWith {m : Type → Type} [Monad m]
   let funcs := done.toList.map (·.1)
   let text := "  .text\n" ++ String.join (funcs.map (·.text ++ "\n"))
   let unverified := lowered.toList.filterMap fun (name, r) => match r with
-    | .ok (f, _) => if funcs.any (·.name == name) then (unverifiedReason? pf f).map (name, ·) else none
+    | .ok (f, _) => if funcs.any (·.name == name) then
+        ((preUnverified.lookup name).orElse (fun _ => unverifiedReason? pf f)).map (name, ·)
+      else none
     | .error _ => none
   pure { text, funcs, unsupported := bad.toList, unverified,
          rules := rules.toArray.qsort (· < ·) |>.toList }
@@ -183,8 +191,9 @@ def compileFile (pf : Clif.ParsedFile) : FileAsm :=
   Id.run (compileFileWith (fun vcs => pure (vcs.map allocate)) pf)
 
 /-- `compileFileWith` the given allocator. -/
-def compileFileIO (a : Allocator) (pf : Clif.ParsedFile) : IO FileAsm :=
-  compileFileWith a.run pf
+def compileFileIO (a : Allocator) (pf : Clif.ParsedFile)
+    (preUnverified : List (String × String) := []) : IO FileAsm :=
+  compileFileWith a.run pf preUnverified
 
 def jsonString (s : String) : String :=
   "\"" ++ String.join (s.toList.map fun c =>
