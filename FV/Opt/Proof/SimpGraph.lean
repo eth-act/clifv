@@ -187,7 +187,7 @@ theorem gval_insert {st st' : SState} (h : GInv f ρ fr mem st) {w : ValueId} {n
   refine ⟨hfix, ?_⟩
   have hn' : st'.graph w = some n := by simp [hg, graphInsert]
   rw [gval, den_node hn']
-  exact evalNode_congr rfl rfl (fun y hy => hfix y (hn y hy))
+  exact evalNode_congr rfl rfl rfl (fun y hy => hfix y (hn y hy))
 
 theorem known_mono_defs {st st' : SState} (hd : ∀ x, (st.defs.get? x).isSome → (st'.defs.get? x).isSome)
     (ha : ∀ x, st.avail.contains x = true → st'.avail.contains x = true) {x : ValueId}
@@ -426,7 +426,7 @@ theorem fresh_spec {st st' : SState} (h : GInv f ρ fr mem st) {n : Inst}
     obtain ⟨hk, hw'⟩ := h.memo n' w hx
     refine ⟨fun y hy => hkm y (hk y hy), fun a hv => ?_⟩
     rw [evalNode_congr (fr := withRegs fr (gval ρ fr mem st)) (fr' := withRegs fr (gval ρ fr mem st'))
-      rfl rfl (fun y hy => hfix y (hk y hy))] at hv
+      rfl rfl rfl (fun y hy => hfix y (hk y hy))] at hv
     have := hw' a hv
     rw [hfix w (known_of_gval h this)]; exact this
   · -- partialKnown
@@ -701,7 +701,7 @@ theorem optimizeAt_spec (hS : SimplifySound rules) (hE : GoodEnv f fr mem) :
               intro a ha
               rw [v3, ← ha]
               exact (evalNode_congr (fr := withRegs fr (gval ρ fr mem st1))
-                (fr' := withRegs fr (gval ρ fr mem st3)) rfl rfl (fun y hy => f3 y (hkn y hy))).symm
+                (fr' := withRegs fr (gval ρ fr mem st3)) rfl rfl rfl (fun y hy => f3 y (hkn y hy))).symm
             let st4 : SState := { st2 with partialVals := st2.partialVals.insert st1.next,
                                            memo := st2.memo.insert n st1.next }
             obtain ⟨i4, g4⟩ := memo_insert_spec (st' := st4)
@@ -734,7 +734,7 @@ theorem optimizeAt_spec (hS : SimplifySound rules) (hE : GoodEnv f fr mem) :
               apply v3 a
               rw [v2, ← ha]
               exact (evalNode_congr (fr := withRegs fr (gval ρ fr mem st1))
-                (fr' := withRegs fr (gval ρ fr mem st3)) rfl rfl
+                (fr' := withRegs fr (gval ρ fr mem st3)) rfl rfl rfl
                 (fun y hy => ((g2.trans g3).fix y (hkn y hy)))).symm
             obtain ⟨i4, g4⟩ := memo_insert_spec (st' := { st3 with memo := st3.memo.insert n b })
               i3 (fun y hy => (g2.trans g3).known y (hkn y hy)) hb rfl rfl rfl rfl rfl rfl
@@ -830,7 +830,7 @@ theorem skelMake_sound (hS : SimplifySound rules) (hE : GoodEnv f fr mem) (st0 :
           intro a ha
           rw [v3, ← ha]
           exact (evalNode_congr (fr := withRegs fr (gval ρ fr mem st1))
-            (fr' := withRegs fr (gval ρ fr mem st3)) rfl rfl (fun y hy => f3 y (hkn y hy))).symm
+            (fr' := withRegs fr (gval ρ fr mem st3)) rfl rfl rfl (fun y hy => f3 y (hkn y hy))).symm
         let st4 : SState := { st2 with partialVals := st2.partialVals.insert st1.next,
                                        memo := st2.memo.insert n st1.next }
         obtain ⟨i4, g4⟩ := memo_insert_spec (st' := st4)
@@ -849,7 +849,7 @@ theorem skelMake_sound (hS : SimplifySound rules) (hE : GoodEnv f fr mem) (st0 :
           intro a ha
           rw [v2, ← ha]
           exact (evalNode_congr (fr := withRegs fr (gval ρ fr mem st1))
-            (fr' := withRegs fr (gval ρ fr mem st2)) rfl rfl (fun y hy => f2 y (hkn y hy))).symm
+            (fr' := withRegs fr (gval ρ fr mem st2)) rfl rfl rfl (fun y hy => f2 y (hkn y hy))).symm
         obtain ⟨i2', g2'⟩ := memo_insert_spec (st' := { st2 with memo := st2.memo.insert n st1.next })
           i2 (fun y hy => g2.known y (hkn y hy)) hb2 rfl rfl rfl rfl rfl rfl (Nat.le_refl _) rfl
           rfl rfl rfl
@@ -874,7 +874,7 @@ theorem skelMake_sound (hS : SimplifySound rules) (hE : GoodEnv f fr mem) (st0 :
           apply v3 a
           rw [g2'.fix _ k2, v2, ← ha]
           exact (evalNode_congr (fr := withRegs fr (gval ρ fr mem st1))
-            (fr' := withRegs fr (gval ρ fr mem st3)) rfl rfl
+            (fr' := withRegs fr (gval ρ fr mem st3)) rfl rfl rfl
             (fun y hy => (g23.fix y (hkn y hy)))).symm
         obtain ⟨i4, g4⟩ := memo_insert_spec (st' := { st3 with memo := st3.memo.insert n b })
           i3 (fun y hy => g23.known y (hkn y hy)) hb rfl rfl rfl rfl rfl rfl

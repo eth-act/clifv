@@ -66,7 +66,7 @@ end
 
 theorem evalInst_V_eq {fr : Frame} {M : Mem} {V V' : Valuation} {i : Inst}
     (h : ∀ x ∈ operands i, V' x = V x) : evalInst (withRegs fr V') M i = evalInst (withRegs fr V) M i :=
-  evalInst_congr rfl rfl h
+  evalInst_congr rfl rfl rfl h
 
 
 /-- A result that is not `stuck` (an evaluation that read all it needed). -/
@@ -78,7 +78,7 @@ include hle
 
 theorem evalInst_grow {M : Mem} {i : Inst} (h : NotStuck (evalInst (withRegs fr V) M i)) :
     evalInst (withRegs fr V') M i = evalInst (withRegs fr V) M i :=
-  evalInst_mono (fr := withRegs fr V) (fr' := withRegs fr V') rfl rfl hle h
+  evalInst_mono (fr := withRegs fr V) (fr' := withRegs fr V') rfl rfl rfl hle h
 
 theorem get_grow {x : ValueId} (h : NotStuck ((withRegs fr V).get x)) :
     (withRegs fr V').get x = (withRegs fr V).get x := by
@@ -220,7 +220,7 @@ theorem LogFact.grow (hle : Valuation.Le V V') {l : StmtLog}
   | keep => trivial
   | repl s' w out =>
     intro a ha
-    rw [evalNode_congr (fr := withRegs fr V) (fr' := withRegs fr V') rfl rfl hsrc] at ha
+    rw [evalNode_congr (fr := withRegs fr V) (fr' := withRegs fr V') rfl rfl rfl hsrc] at ha
     exact hle w a (hf a ha)
   | skel s' o out =>
     simp only [LogFact] at hf ⊢
@@ -281,17 +281,18 @@ theorem SkelFact.pre {fr : Frame} {mem : Mem} {V : Valuation} {i i' : Inst} {o :
 /-! ## Renaming by materialised values -/
 
 theorem seqEval2_rename {σ : ValueId → ValueId} {F F' : Frame} {M : Mem} {a b : Inst}
-    (hg : F'.func.globals = F.func.globals) (hs : F'.slots = F.slots)
+    (hg : F'.func.globals = F.func.globals) (hx : F'.func.externs = F.func.externs)
+    (hs : F'.slots = F.slots)
     (h : ∀ x ∈ operands a ++ operands b, F'.regs (σ x) = F.regs x) :
     (seqEval2 F' M (mapOperands σ a) (mapOperands σ b)).norm = (seqEval2 F M a b).norm := by
-  have ha := evalInst_rename (mem := M) hg hs (fun x hx => h x (List.mem_append_left _ hx))
+  have ha := evalInst_rename (mem := M) hg hx hs (fun x hx => h x (List.mem_append_left _ hx))
   simp only [seqEval2]
   cases he : evalInst F M a with
   | ok p =>
     obtain ⟨vs, m⟩ := p
     rw [Res.norm_eq_ok ha he]
     cases vs with
-    | nil => exact evalInst_rename hg hs (fun x hx => h x (List.mem_append_right _ hx))
+    | nil => exact evalInst_rename hg hx hs (fun x hx => h x (List.mem_append_right _ hx))
     | cons _ _ => rfl
   | trap c => rw [Res.norm_eq_trap ha he]
   | stuck msg =>
@@ -318,7 +319,7 @@ theorem renamed_eval {st1 st2 st3 : SState} {m : List (ValueId × ValueId)} {i :
       (evalInst (withRegs fr (gval ρ fr mem st1)) M i).norm := by
   have e12 := evalInst_grow (gval_le h1 hm12) hns
   have hr := evalInst_rename (σ := rename m) (fr := withRegs fr (gval ρ fr mem st2))
-    (fr' := withRegs fr (gval ρ fr mem st2)) (mem := M) rfl rfl hren
+    (fr' := withRegs fr (gval ρ fr mem st2)) (mem := M) rfl rfl rfl hren
   have hns2 : NotStuck (evalInst (withRegs fr (gval ρ fr mem st2)) M (mapOperands (rename m) i)) := by
     intro msg hmsg
     rw [hmsg, e12] at hr
@@ -477,7 +478,7 @@ theorem skelStmt_spec (hS : SimplifySound rules) (hK : SkeletonSound skel) (hE :
           refine ⟨hI2, hM1.trans hM2, ResRefines.grow hR
             (evalInst_V_eq (fun x hx => hM2.fix x (hM1.known x (hk x hx)))) (fun hns => ?_)⟩
           rw [← seqEval2_grow (gval_le hI1 hM2) hns]
-          exact seqEval2_rename rfl rfl (fun x hx => (hren x hx).1)
+          exact seqEval2_rename rfl rfl rfl (fun x hx => (hren x hx).1)
         · exact hkeep h
     · exact hkeep h
 
@@ -941,7 +942,7 @@ theorem insertAt_spec {st st' : SState} (h : GInv f ρ fr mem st) (hE : GoodEnv 
     obtain ⟨hk, hw'⟩ := h.memo n' w' hx
     refine ⟨fun y hy => hkm y (hk y hy), fun a' hv => ?_⟩
     rw [evalNode_congr (fr := withRegs fr (gval ρ fr mem st)) (fr' := withRegs fr (gval ρ fr mem st'))
-      rfl rfl (fun y hy => hfix y (hk y hy))] at hv
+      rfl rfl rfl (fun y hy => hfix y (hk y hy))] at hv
     have := hw' a' hv
     rw [hfix w' (known_of_gval h this)]; exact this
   · intro x hx
@@ -1082,7 +1083,7 @@ theorem pureBest_spec (hS : SimplifySound rules) (hE : GoodEnv f fr mem) {st st1
         gval ρ fr mem st1' b = some a := by
       intro a ha
       rw [evalNode_congr (fr := withRegs fr (gval ρ fr mem st)) (fr' := withRegs fr (gval ρ fr mem st1'))
-        rfl rfl (fun y hy => hM.fix y (hops y hy))] at ha
+        rfl rfl rfl (fun y hy => hM.fix y (hops y hy))] at ha
       exact hv1 a (by rw [hGB.fix v hkv]; exact hnode a ha)
     obtain ⟨hI2, hG2⟩ := memo_insert_spec (st' := { st1' with memo := st1'.memo.insert inst b })
       hI1 (fun y hy => hM.known y (hops y hy)) hfwd rfl rfl rfl rfl rfl rfl (Nat.le_refl _) rfl rfl
@@ -1091,7 +1092,7 @@ theorem pureBest_spec (hS : SimplifySound rules) (hE : GoodEnv f fr mem) {st st1
     have ha' : evalNode (withRegs fr (gval ρ fr mem st1')) mem inst = some a := by
       rw [evalNode_congr (fr := withRegs fr (gval ρ fr mem st1'))
         (fr' := withRegs fr (gval ρ fr mem { st1' with memo := st1'.memo.insert inst b }))
-        rfl rfl (fun y hy => hG2.fix y (hM.known y (hops y hy)))] at ha
+        rfl rfl rfl (fun y hy => hG2.fix y (hM.known y (hops y hy)))] at ha
       exact ha
     have hb := hfwd a ha'
     rw [hG2.fix b (known_of_gval hI1 hb)]; exact hb
@@ -1149,7 +1150,7 @@ theorem pureEmit_spec (hE : GoodEnv f fr mem) {st1 st' : SState} {subst subst' :
       · apply hwv
         apply hF
         rw [evalNode_congr (fr := withRegs fr (gval ρ fr mem st1)) (fr' := withRegs fr (gval ρ fr mem st'))
-          rfl rfl (fun y hy => hM3.fix y (hops y hy))] at ha
+          rfl rfl rfl (fun y hy => hM3.fix y (hops y hy))] at ha
         exact ha
       · simp only [StmtLog.srcOps] at hx; exact hM3.known x (hops x hx)
       · exact hG3.known w (known_of_avail hok.avail)
@@ -1215,7 +1216,7 @@ theorem stepStmt_spec (hS : SimplifySound rules) (hK : SkeletonSound skel) (hE :
           gval ρ fr mem (pureInsert st v inst) v = some a := by
         intro a ha
         rw [evalNode_congr (fr := withRegs fr (gval ρ fr mem st))
-          (fr' := withRegs fr (gval ρ fr mem (pureInsert st v inst))) rfl rfl
+          (fr' := withRegs fr (gval ρ fr mem (pureInsert st v inst))) rfl rfl rfl
           (fun y hy => hMA.fix y (known_of_avail (hn' y hy)))] at ha
         rw [hgA]; exact ha
       generalize hB : pureBest rules allowed bi (pureInsert st v inst) v inst = rB at h
@@ -1234,7 +1235,7 @@ theorem stepStmt_spec (hS : SimplifySound rules) (hK : SkeletonSound skel) (hE :
         intro a ha
         rw [hM1.fix v hkv, hgA] at ha
         rw [evalNode_congr (fr := withRegs fr (gval ρ fr mem st))
-          (fr' := withRegs fr (gval ρ fr mem st1)) rfl rfl
+          (fr' := withRegs fr (gval ρ fr mem st1)) rfl rfl rfl
           (fun y hy => (hMA.trans hM1).fix y (known_of_avail (hn' y hy)))]
         exact ha
       obtain ⟨hI2, hM2, hL2, hsrc2, hrk, hrep⟩ := pureEmit_spec hE hI1 hsv1 hops1 hF1 hnode1 hC

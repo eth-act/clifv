@@ -175,15 +175,29 @@ theorem initState_rel {p q : Program} (hP : FunsSim p.funcs q.funcs) {f : String
   simp only [initState, Program.func?] at hg ⊢
   simp [hg, he']
 
-/-- **Program refinement by the mid-end**: whenever `Clif.run` of a program returns or traps,
-`Clif.run` of the optimised program (every function optimised) does the same. -/
+/-- An initial state runs a function of the program, at its entry. -/
+theorem initState_inv {p : Program} {f : String} {args : List Val} {mem : Mem} {s : State}
+    (h : initState p f args mem = .ok s) : RunInv (· ∈ p.funcs) s := by
+  simp only [initState, Res.bind_eq_ok, Res.ofOption_eq_ok, Res.pure_eq_ok] at h
+  obtain ⟨fn, hfn, ⟨fr, mem'⟩, he, rfl⟩ := h
+  exact ⟨FrameInv.enterFunc (List.mem_of_find?_eq_some hfn) he, fun _ h => by cases h⟩
+
+/-- **Program refinement by the mid-end**: whenever `Clif.run` of a program without
+`call_indirect` returns or traps, `Clif.run` of the optimised program (every function optimised)
+does the same. -/
 theorem optimizeProgram_refines (cfg : Config)
     (hS : SimplifyPassSim cfg.simplifyFn cfg.skeletonFn) {env : Env}
-    (hE : EnvKeepsSymbols env) (p : Program) (f : String) (args : List Val) (fuel : Nat) :
+    (hE : EnvKeepsSymbols env) (p : Program) (hp : ∀ g ∈ p.funcs, NoCallIndirect g) (f : String)
+    (args : List Val) (fuel : Nat) :
     ∃ fuel', OutcomeRefines (run env p f args fuel) (run env (optimizeProgram p cfg) f args fuel') := by
   have hP : FunsSim p.funcs (optimizeProgram p cfg).funcs :=
     FunsSim.map (T := (optimize · cfg)) (optimize_sim cfg hS)
-  have hd : (optimizeProgram p cfg).initMem = p.initMem := rfl
+  have hd : (optimizeProgram p cfg).initMem = p.initMem := by
+    have hn : ∀ g : Function, (optimize g cfg).name = g.name := fun g => (optimize_facts cfg g).name
+    have hx : ∀ g : Function, (optimize g cfg).externs = g.externs :=
+      fun g => (optimize_facts cfg g).externs
+    simp only [Program.initMem, optimizeProgram, List.map_map, List.flatMap_map, Function.comp_def,
+      hn, hx]
   simp only [run, hd]
   cases hm : p.initMem with
   | trap c => exact ⟨0, ⟨fun _ _ h => h, fun _ h => h⟩⟩
@@ -207,7 +221,7 @@ theorem optimizeProgram_refines (cfg : Config)
     | stuck m => exact ⟨0, ⟨(fun _ _ h => by cases h), (fun _ h => by cases h)⟩⟩
     | ok s =>
       obtain ⟨s', hi', hr⟩ := initState_rel hP hi
-      obtain ⟨n', hn'⟩ := runLoop_refines hE hP fuel s s' hr
+      obtain ⟨n', hn'⟩ := runLoop_refines hE hP (CIFree.ofProgram hp) fuel s s' hr (initState_inv hi)
       exact ⟨n', by simp only [hi']; exact hn'⟩
 
 end Opt

@@ -100,7 +100,7 @@ theorem lstep_withFunc {fr : Frame} {g : Function} {m : Mem}
       simp only [this, hwr]
       cases callArgs _ fn args <;> rfl
     · rw [evalInst_congr (fr := ⟨func, regs, slots, st :: rest, term⟩)
-        (fr' := ⟨g, regs, slots, st :: rest, term⟩) hglob rfl (fun _ _ => rfl), hwr]
+        (fr' := ⟨g, regs, slots, st :: rest, term⟩) hglob hext rfl (fun _ _ => rfl), hwr]
       cases evalInst _ m _ with
       | ok p => obtain ⟨vals, m'⟩ := p; simp only [LRes.ofRes]; split <;> rfl
       | trap c => rfl

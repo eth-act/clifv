@@ -120,9 +120,9 @@ def notCall : Inst → Bool
   | .call .. => false
   | _ => true
 
-/-- Not a `symbol_value` (the only instruction reading the link-time symbols). -/
+/-- Not a `symbol_value` or `func_addr` (the instructions reading the link-time symbols). -/
 def notSym : Inst → Bool
-  | .symbolValue .. => false
+  | .symbolValue .. | .funcAddr .. => false
   | _ => true
 
 /-- A result-free conditional trap (it keeps memory): the prefixes of terminator rewrites. -/
