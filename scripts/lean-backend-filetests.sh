@@ -217,7 +217,7 @@ for set in "${SETS[@]}"; do
       report runtests
       ;;
     files)
-      printf '%s\0' "${FILES[@]}" | xargs -0 -n1 -P "$(nproc)" bash -c 'set -e; run_one files "$1" "$TI3 $RUST_RUNTIME"' _
+      printf '%s\0' "${FILES[@]}" | xargs -0 -n1 -P "$(nproc)" bash -c 'set -e; run_one files "$1" "${RUST_RUNTIME:-$TI3}"' _
       echo "== files"
       report files
       ;;

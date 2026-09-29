@@ -225,7 +225,7 @@ def runFile (verbose : Bool) (path : String) (oracle : Option (List OracleRecord
   let pf := parseFile src
   let mut c : Counts := {}
   let mut notes : Array String := #[]
-  let cl := closure (rustEnv || legal) pf
+  let cl := closure rustEnv pf
   -- Program of all parsed functions (callers of unsupported ones are excluded from runs).
   let supported := pf.funcs.filterMap fun f => f.func.toOption
   let data := match pf.data with | .ok ds => ds | .error _ => []
