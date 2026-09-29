@@ -215,14 +215,7 @@ theorem backend_correct {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp
     ext := fun B hB st hst fn args hi e he => hsub.externCalls B hB st hst fn args hi e he
     subE := hsub.subsetE
     normExts := externsNormal_of_subset hsub
-    noCI := fun B hB st hst sig callee args hi => by
-      -- a `call_indirect` function is outside subset E (`Compile.instE`)
-      have hE := hsub.subsetE
-      simp only [Compile.functionE, Bool.and_eq_true, List.all_eq_true] at hE
-      have hI : Compile.instE st.inst = true :=
-        ((hE.2 B hB).1.2 st hst)
-      rw [hi] at hI
-      exact absurd hI (by simp [Compile.instE])
+    noCI := fun B hB st hst sig callee args hi => hsub.noCI B hB st hst sig callee args hi
     regArgs := callRegArgs_of_subset hsub
     brIdx := hbr
     noTail := noTail_of_subset hsub

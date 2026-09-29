@@ -35,6 +35,10 @@ pub const E_OPCODES: &[&str] = &[
     "brif", "br_table", "return", "call", "trap",
     // clif-subset-v2 (docs/research/rust-clif-survey.md):
     "nop", "symbol_value", "select", "smin", "smax", "umin", "umax", "bswap", "bitrev",
+    // rust-route step 4: indirect calls and function addresses compile but are flagged
+    // unverified (outside ); their lowering rules must not be flagged outside
+    // the closure (the survey's  functions use them).
+    "call_indirect", "func_addr",
 ];
 
 pub const ROOTS: &[&str] = &["lower", "lower_branch"];

@@ -79,6 +79,10 @@ structure InSubset (p : Clif.Program) (f : Clif.Function) : Prop where
   callRegArgs : ∀ e ∈ f.externs, e.2.sig.params.length ≤ 8
   noSpecial : (f.sig.params ++ f.sig.returns).all (·.purpose = .normal) ∧
     ∀ e ∈ f.externs, (e.2.sig.params ++ e.2.sig.returns).all (·.purpose = .normal)
+  /-- no `call_indirect` statements (`clif-subset.md`: outside the theorem; rust-route step 4:
+  they compile and run but are flagged unverified, so subset E admits them while `InSubset`
+  does not) -/
+  noCI : ∀ B ∈ f.blocks, ∀ st ∈ B.body, ∀ sig callee args, st.inst ≠ .callIndirect sig callee args
 
 /-! ## The compiled code -/
 
