@@ -66,8 +66,10 @@ def spv (s : Arm.ArmState) : BitVec 64 := Arm.r (.GPR 31#5) s
 /-- The CLIF functions the theorem covers: clif-subset-v2 E (`Compile.functionE`), plus the
 current restrictions of the proof (e2e.md, "Remaining"): parameters passed in registers,
 calls only to externs (calls between compiled functions compose by induction on the call
-depth, not done yet), and externs with at most 8 (register) parameters (no stack-passed call
-arguments). -/
+depth, not done yet), externs with at most 8 (register) parameters (no stack-passed call
+arguments), and no `sret`/special-purpose parameter or return (the ABI of the hidden
+struct-return pointer — in x8, returned in x0 — is outside the proof; such functions are
+compiled and flagged unverified). -/
 structure InSubset (p : Clif.Program) (f : Clif.Function) : Prop where
   func : p.func? f.name = some f
   subsetE : Compile.functionE f = true
@@ -75,6 +77,15 @@ structure InSubset (p : Clif.Program) (f : Clif.Function) : Prop where
   externCalls : ∀ b ∈ f.blocks, ∀ st ∈ b.body, ∀ fn args, st.inst = .call fn args →
     ∀ e, f.extern? fn = some e → p.func? e.name = none
   callRegArgs : ∀ e ∈ f.externs, e.2.sig.params.length ≤ 8
+  noSpecial : (f.sig.params ++ f.sig.returns).all (·.purpose = .normal) ∧
+    ∀ e ∈ f.externs, (e.2.sig.params ++ e.2.sig.returns).all (·.purpose = .normal)
+  /-- no `call_indirect` statements (`clif-subset.md`: outside the theorem; rust-route step 4:
+  they compile and run but are flagged unverified, so subset E admits them while `InSubset`
+  does not) -/
+  noCI : ∀ B ∈ f.blocks, ∀ st ∈ B.body, ∀ sig callee args, st.inst ≠ .callIndirect sig callee args
+  /-- no `func_addr` statements (rust-route step 4: compiled and flagged unverified like
+  `call_indirect`; `lowerCheck` rejects them, `CtxInv.noFA`) -/
+  noFA : ∀ B ∈ f.blocks, ∀ st ∈ B.body, ∀ ty fn, st.inst ≠ .funcAddr ty fn
 
 /-! ## The compiled code -/
 
@@ -190,14 +201,15 @@ def StackAvail (af : AFunc) (s : Arm.ArmState) : Prop :=
 
 /-- The state the function body starts in, relative to the ABI entry state `s`: the prologue
 (when `af.frame`) pushed fp/lr and set up the frame: `sp` lowered by `16 + frameSize`, `x29` the
-frame pointer `sp_entry - 16`; x0–x7 and v0–v7 (arguments), memory, the program and every field outside
+frame pointer `sp_entry - 16`; x0–x8 and v0–v7 (arguments; x8 is preserved by the
+prologue — for `sret` functions it carries the hidden struct-return pointer), memory, the program and every field outside
 the allocatable/temporary registers (x18, x30, flags, …) as at entry. -/
 def frameDrop (af : AFunc) : Nat := if af.frame then af.frameSize + 16 else 0
 
 structure BodyEntry (af : AFunc) (s w₀ : Arm.ArmState) : Prop where
   sp : spv w₀ = spv s - BitVec.ofNat 64 (frameDrop af)
   fp : xreg 29 w₀ = if af.frame then spv s - 16#64 else xreg 29 s
-  args : ∀ i < 8, xreg i w₀ = xreg i s
+  args : ∀ i < 9, xreg i w₀ = xreg i s
   argsV : ∀ i < 8, Arm.r (.SFP (BitVec.ofNat 5 i)) w₀ = Arm.r (.SFP (BitVec.ofNat 5 i)) s
   other : ∀ f, ¬ Masked f → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → Arm.r f w₀ = Arm.r f s
   mem : w₀.mem = s.mem

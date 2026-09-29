@@ -98,7 +98,7 @@ structure Wf (f : Function) (W : WfData) : Prop where
   uses : ∀ (i : Nat) (b : Block), f.blocks[i]? = some b → ∀ (j : Nat) (st : Stmt), b.body[j]? = some st →
     ∀ v ∈ operands st.inst, Avail W i j v
   results : ∀ (i : Nat) (b : Block), f.blocks[i]? = some b → ∀ (j : Nat) (st : Stmt), b.body[j]? = some st →
-    ∃ ts, st.inst.resultTypes (sigOf f) = some ts ∧ ts.length = st.results.length ∧
+    ∃ ts, st.inst.resultTypes (sigOf f) (fun _ => none) = some ts ∧ ts.length = st.results.length ∧
       ∀ (n : Nat) r, st.results[n]? = some r → W.tm r = ts[n]?
   pure : ∀ (i : Nat) (b : Block), f.blocks[i]? = some b → ∀ (j : Nat) (st : Stmt), b.body[j]? = some st →
     isPure st.inst = true → pureTyped W.tm f st.inst = true

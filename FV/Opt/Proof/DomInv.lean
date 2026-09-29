@@ -169,7 +169,7 @@ theorem drop_eq_cons {l : List Stmt} {k : Nat} {st : Stmt} {rest : List Stmt}
 /-- After a statement (or a call returning): the results are bound. -/
 theorem Inv.results {f : Function} {W : WfData} (hW : Wf f W) {syms fr bi k st rest vals regs}
     (h : Inv f W syms fr bi k) (hb : fr.body = st :: rest)
-    (hty : ∀ ts, st.inst.resultTypes (sigOf f) = some ts → vals.map (·.ty) = ts)
+    (hty : ∀ ts, st.inst.resultTypes (sigOf f) (fun _ => none) = some ts → vals.map (·.ty) = ts)
     (hpure : isPure st.inst = true → ∃ a, vals = [a] ∧ evalNode fr (symMem syms) st.inst = some a)
     (hset : fr.regs.setMany st.results vals = some regs) :
     Inv f W syms { fr with regs, body := rest } bi (k + 1) := by
@@ -199,7 +199,7 @@ theorem Inv.results {f : Function} {W : WfData} (hW : Wf f W) {syms fr bi k st r
   have hsame : ∀ n, (∀ x ∈ operands n, Avail W bi k x) →
       evalNode { fr with regs, body := rest } (symMem syms) n = evalNode fr (symMem syms) n := by
     intro n hops
-    exact evalNode_congr rfl rfl fun x hx => (hsm x).1 (hnot x (hops x hx))
+    exact evalNode_congr rfl rfl rfl fun x hx => (hsm x).1 (hnot x (hops x hx))
   obtain ⟨ts, hts, htl, htm⟩ := hW.results bi b hbi k st hst
   have hvty := hty ts hts
   refine ⟨hfunc, ⟨b, hbi, by rw [hrest], hterm, hklt⟩, hslots, fun v hv => ?_, fun v n hv hp => ?_⟩
@@ -355,7 +355,7 @@ theorem Inv.enter {f : Function} {W : WfData} (hW : Wf f W) {syms fr bi k bc fr'
     simp only
     rw [(hsm v).1 (hnotp v d _ hd hne), hpd v n hvb ⟨d, jj, b3, st, hd, hb3, hst, hr3, hn, hpn⟩]
     refine (evalNode_congr (fr := fr) (fr' := { fr with regs, body := b2.body, term := b2.term })
-      rfl rfl fun x hx => ?_).symm
+      rfl rfl rfl fun x hx => ?_).symm
     -- operands are not parameters of `j`
     obtain ⟨d', t', hx', hxa⟩ := avail_operand hW hv0 hd hb3 hst (hn ▸ hx)
     refine (hsm x).1 (hnotp x d' t' hx' ?_)

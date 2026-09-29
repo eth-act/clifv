@@ -120,6 +120,7 @@ structure PState where
   types : List (ValueId × Ty) := []
   aliases : List (ValueId × ValueId) := []
   externs : List (FnRef × ExtFunc) := []
+  sigDecls : List (Nat × Signature) := []
 
 abbrev P := ReaderT (Array Tok) (StateT PState (Except ParseError))
 
@@ -343,6 +344,7 @@ inductive Decl where
   | slot (id : SlotId) (s : StackSlot)
   | global (id : Nat) (g : GlobalValue)
   | extern (id : FnRef) (e : ExtFunc)
+  | sigDecl (id : Nat) (s : Signature)
 
 def decl : P Decl := do
   let t ← peek
@@ -383,6 +385,15 @@ def decl : P Decl := do
       let off ← optOffset
       return .global id (.symbol n off colocated)
     | w => unsupported s!"global value kind {w}"
+  else if isEntity "sig" t then
+    let id ← entity "sig"
+    expectPunct '='
+    let s ← signature
+    -- cg_clif re-declares the same `sigN` per call_indirect site; keep the first (the
+    -- printer would emit a duplicate entity, which the pinned reader rejects). step 5.
+    if !((← get).sigDecls.any fun d => d.1 == id) then
+      modify fun st => { st with sigDecls := (id, s) :: st.sigDecls }
+    return .sigDecl id s
   else if isEntity "fn" t then
     let id ← entity "fn"
     expectPunct '='
@@ -538,6 +549,18 @@ def item (op : String) (sfx : Option Ty) : P Item := do
     let args ← commaSep value ')'
     expectPunct ')'
     return .inst (.call f args)
+  | "call_indirect" =>
+    let t := sfx.getD .i64
+    let sig ← entity "sig"
+    expectPunct ','
+    let callee ← value
+    expectPunct '('
+    let args ← commaSep value ')'
+    expectPunct ')'
+    return .inst (.callIndirect sig callee args)
+  | "func_addr" =>
+    let t ← needTy op sfx
+    return .inst (.funcAddr t (← entity "fn"))
   | "atomic_rmw" =>
     let t ← needTy op sfx
     let flags ← memFlags
@@ -596,7 +619,8 @@ def item (op : String) (sfx : Option Ty) : P Item := do
 /-- Result types of an instruction in the current parser state. -/
 def resultTypes (i : Inst) : P (List Ty) := do
   let ext := (← get).externs
-  match i.resultTypes (fun r => (ext.lookup r).map (·.sig)) with
+  let sigs := (← get).sigDecls
+  match i.resultTypes (fun r => (ext.lookup r).map (·.sig)) (fun s => (sigs.lookup s)) with
   | some ts => return ts
   | none => malformed "cannot determine the result types of an instruction"
 
@@ -662,18 +686,20 @@ def function : P Function := do
   let mut slots := #[]
   let mut globals := #[]
   let mut externs := #[]
+  let mut sigDecls := #[]
   while !(isEntity "block" (← peek)) && !(← isPunct '}') do
     match ← decl with
     | .slot i s => slots := slots.push (i, s)
     | .global i g => globals := globals.push (i, g)
     | .extern i e => externs := externs.push (i, e)
+    | .sigDecl i s => sigDecls := sigDecls.push (i, s)
   let mut blocks := #[]
   while !(← isPunct '}') do
     blocks := blocks.push (← block)
   expectPunct '}'
   if !(← atEnd) then malformed s!"unexpected {← describe} after function body"
   return { name, sig, slots := slots.toList, globals := globals.toList,
-           externs := externs.toList, blocks := blocks.toList }
+           externs := externs.toList, sigDecls := sigDecls.toList, blocks := blocks.toList }
 
 /-! ## Run commands -/
 

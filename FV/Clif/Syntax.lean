@@ -254,6 +254,12 @@ inductive Inst where
   /-- `ty` (i32 or i64) is the address type. -/
   | stackAddr (ty : Ty) (slot : SlotId) (offset : Int)
   | call (fn : FnRef) (args : List ValueId)
+  /-- `call_indirect sigN, callee(args)`: an indirect call through the callee address
+  `callee` with the declared signature `sigN` (clif-subset S addition, rust-route step 4). -/
+  | callIndirect (sig : Nat) (callee : ValueId) (args : List ValueId)
+  /-- `func_addr.ty fnN`: the runtime address of the function `fnN` refers to (a program
+  function or an extern), resolved through the link-time image's function symbols. -/
+  | funcAddr (ty : Ty) (fn : FnRef)
   /-- `v = atomic_rmw.ty flags op p, x`: returns the old value. -/
   | atomicRmw (op : AtomicRmwOp) (ty : Ty) (flags : MemFlags) (p x : ValueId)
   /-- `v = atomic_cas.ty flags p, expected, x`: returns the old value. -/
@@ -395,6 +401,9 @@ structure Function where
   slots : List (SlotId × StackSlot) := []
   globals : List (Nat × GlobalValue) := []
   externs : List (FnRef × ExtFunc) := []
+  /-- Signature declarations `sigN = (…)` referenced by `call_indirect` (rust-route
+  step 4). -/
+  sigDecls : List (Nat × Signature) := []
   blocks : List Block
   /-- Run commands (filetest comments following the function); empty for emitted code. -/
   runs : List RunCommand := []
@@ -445,7 +454,8 @@ def Program.func? (p : Program) (name : String) : Option Function :=
 
 /-- Result types of an instruction, given the function's extern declarations (for `call`).
 `none` if the instruction is ill-formed (e.g. `iconcat.i128`). -/
-def Inst.resultTypes (sigOf : FnRef → Option Signature) : Inst → Option (List Ty)
+def Inst.resultTypes (sigOf : FnRef → Option Signature)
+    (sigDeclOf : Nat → Option Signature) : Inst → Option (List Ty)
   | .iconst ty _ | .unary _ ty _ | .binary _ ty _ _ | .div _ ty _ _
   | .uaddOverflowTrap ty _ _ _ | .select ty _ _ _ | .selectSpectreGuard ty _ _ _
   | .bitselect ty _ _ _ | .bmask ty _ | .extend _ ty _ | .ireduce ty _
@@ -457,5 +467,7 @@ def Inst.resultTypes (sigOf : FnRef → Option Signature) : Inst → Option (Lis
   | .isplit ty _ => ty.half?.map fun t => [t, t]
   | .store .. | .trapz .. | .trapnz .. | .nop | .atomicStore .. | .fence => some []
   | .call r _ => (sigOf r).map fun s => s.returns.map (·.ty)
+  | .callIndirect sig _ _ => (sigDeclOf sig).map fun s => s.returns.map (·.ty)
+  | .funcAddr ty _ => some [ty]
 
 end Clif

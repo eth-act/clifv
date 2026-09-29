@@ -11,7 +11,8 @@ compiled optimised function refines the CLIF run of the *source* program:
 
 The optimised function keeps the name, signature, stack slots, globals and externs, so the entry
 state (`optEntry`), `Rel.holds` and the slot layout carry over; `InSubset` carries over because the
-output stays in E and calls only what the input calls (`Opt.optimize_facts`). `FormsCovered`
+output stays in E, calls only what the input calls and has no `call_indirect`/`func_addr` if
+the input has none (`Opt.optimize_facts`). `FormsCovered`
 stays a per-function decided premise (about the optimised code), as do `TrapsExplicit` (about
 the optimised program's run) and `EnvKeepsSymbols` (externs keep the link-time symbols).
 The simplify stage enters through `Opt.SimplifyPassSim` (proven for sound rule sets,
@@ -45,7 +46,8 @@ theorem inSubset_opt (cfg : Opt.Config) {p : Clif.Program} {f : Clif.Function}
     simp only [Clif.Program.func?, Opt.optimizeProgram, List.find?_map]
     rw [show ((fun x : Clif.Function => x.name == n) ∘ fun x => Opt.optimize x cfg) =
       (fun x => x.name == n) from by funext g; simp [hname]]
-  refine ⟨?_, hF.subsetE hsub.subsetE, by rw [hF.sig]; exact hsub.regParams, ?_, ?_⟩
+  refine ⟨?_, hF.subsetE hsub.subsetE, by rw [hF.sig]; exact hsub.regParams, ?_, ?_, ?_,
+    hF.noCI hsub.noCI, hF.noFA hsub.noFA⟩
   · rw [hfind, hF.name, hsub.func]; rfl
   · intro b hb st hst fn args hc e he
     obtain ⟨b0, hb0, st0, hst0, args0, hc0⟩ :=
@@ -54,6 +56,11 @@ theorem inSubset_opt (cfg : Opt.Config) {p : Clif.Program} {f : Clif.Function}
       simpa [Clif.Function.extern?, hF.externs] using he
     rw [hfind, hsub.externCalls b0 hb0 st0 hst0 fn args0 hc0 e he0]; rfl
   · rw [hF.externs]; exact hsub.callRegArgs
+  · constructor
+    · rw [hF.sig]; exact hsub.noSpecial.1
+    · intro e he
+      have : e ∈ f.externs := by rw [← hF.externs]; exact he
+      exact hsub.noSpecial.2 e this
 
 theorem clifEntry_opt (cfg : Opt.Config)
     (hS : Opt.SimplifyPassSim cfg.simplifyFn cfg.skeletonFn) {f : Clif.Function}
@@ -81,6 +88,32 @@ theorem clifEntry_opt (cfg : Opt.Config)
     rw [hfr]
     exact hrel args cs.frame.regs cs.frame.slots (hty.symm) hregs hcs.slotIds
   · rw [hcs.callers]; exact .nil _
+
+/-- An in-subset function has no `call_indirect` (`InSubset.noCI`), no tail call (not in E), and
+calls only externs that are not functions of `p`: the source run from `f` stays in `f`. -/
+theorem ciFree_of_subset {p : Clif.Program} {f : Clif.Function} (hsub : InSubset p f) :
+    Opt.CIFree p (· = f) where
+  noCI := by
+    rintro g rfl
+    exact hsub.noCI
+  call := by
+    rintro g rfl b hb st hst fn args hi e he h hh
+    rw [hsub.externCalls b hb st hst fn args hi e he] at hh
+    cases hh
+  tail := by
+    rintro g rfl b hb fn args ht e he h hh
+    have hE := hsub.subsetE
+    simp only [Compile.functionE, Bool.and_eq_true, List.all_eq_true] at hE
+    have h := (hE.2 b hb).2
+    rw [ht] at h
+    simp [Compile.termE] at h
+
+theorem inv_of_entry {f : Clif.Function} {args : List Clif.Val} {cs : Clif.State}
+    (hcs : ClifEntry f args cs) : Opt.RunInv (· = f) cs := by
+  obtain ⟨b, hb, hbody, hterm, -⟩ := hcs.entry
+  refine ⟨⟨hcs.func, b, ?_, by rw [hbody]; exact List.suffix_refl _, by rw [hterm]⟩, ?_⟩
+  · rw [hcs.func]; exact List.mem_of_mem_head? hb
+  · rw [hcs.callers]; intro _ h; cases h
 
 /-- **End-to-end theorem over the mid-end.** For an in-subset function `f` of `p`, the Arm run
 of the compiled *optimised* function (`Opt.optimize f cfg`, compiled by the backend: `hc`)
@@ -117,7 +150,8 @@ theorem backend_correct_opt (cfg : Opt.Config)
   obtain ⟨hcs', hSR⟩ := clifEntry_opt cfg hS hcs
   have hP : Opt.FunsSim p.funcs (Opt.optimizeProgram p cfg).funcs :=
     Opt.FunsSim.map (T := (Opt.optimize · cfg)) (Opt.optimize_sim cfg hS)
-  obtain ⟨n', hn⟩ := Opt.runLoop_refines hE hP fuel cs (optEntry cfg f cs) hSR
+  obtain ⟨n', hn⟩ := Opt.runLoop_refines hE hP (ciFree_of_subset hsub) fuel cs (optEntry cfg f cs)
+    hSR (inv_of_entry hcs)
   have hslots : (optEntry cfg f cs).frame.slots = cs.frame.slots ∧
       (optEntry cfg f cs).mem = cs.mem := by
     obtain ⟨b, hb, -⟩ := hcs.entry

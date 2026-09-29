@@ -143,7 +143,7 @@ theorem emit_fresh_spec {st : SState} (h : GInv f ρ fr mem st) {bi : Nat} {x : 
   have hxw : x ≠ st.next := fun he => by rw [he] at hxa; rw [known_of_avail hxa] at hw; cases hw
   have hval : evalNode (withRegs fr (gval ρ fr mem st)) mem (mapOperands τ n) = gval ρ fr mem st x := by
     rw [gval, den_node (D := st.graph) (by simpa [SState.graph] using hx)]
-    exact evalNode_rename rfl rfl (fun u hu => gval_twin (hτ u hu).2)
+    exact evalNode_rename rfl rfl rfl (fun u hu => gval_twin (hτ u hu).2)
   obtain ⟨t, a, htx, hxv, hta⟩ : ∃ t a, st.types.get? x = some t ∧ gval ρ fr mem st x = some a ∧
       a.ty = t := by
     obtain ⟨a, h1, h2⟩ := h.tot x hxa

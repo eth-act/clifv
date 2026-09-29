@@ -67,8 +67,8 @@ if [[ " ${SETS[*]} " == *" corpus "* ]]; then
     --target aarch64-unknown-linux-musl --crate-type staticlib -- -C panic=abort
 fi
 
-WORK=$(mktemp -d)
-trap 'rm -rf "$WORK"' EXIT
+WORK=${WORK:-$(mktemp -d)}
+if [[ -n "${WORK_KEEP:-}" ]]; then WORK="$WORK_KEEP"; else trap 'rm -rf "$WORK"' EXIT; fi
 
 # run_one SET FILE [LINK]: Lean backend + native runs of one file into $WORK/SET/{lean,native}.
 run_one() {
@@ -76,7 +76,7 @@ run_one() {
   b=$(basename "$f" .clif)
   d="$WORK/$set"
   local links=()
-  [[ -n "$link" ]] && links=(--link "$link")
+  for l in $link; do links+=(--link "$l"); done
   local ok=1
   if [[ $ASM == 1 ]]; then
     .lake/build/bin/lean-backend "$f" "$d/obj/$b.s" --regalloc "$RA" $OPTS --traps "$d/obj/$b.traps.json" \
@@ -209,7 +209,7 @@ for set in "${SETS[@]}"; do
       report runtests
       ;;
     files)
-      printf '%s\0' "${FILES[@]}" | xargs -0 -n1 -P "$(nproc)" bash -c 'set -e; run_one files "$1"' _
+      printf '%s\0' "${FILES[@]}" | xargs -0 -n1 -P "$(nproc)" bash -c 'set -e; run_one files "$1" "$RUST_RUNTIME"' _
       echo "== files"
       report files
       ;;

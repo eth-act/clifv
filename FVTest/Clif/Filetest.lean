@@ -51,17 +51,26 @@ def showRun (r : RunCommand) : String :=
   | .nonzero => s!"{inv} != 0"
   | .print => s!"print {inv}"
 
-/-- Does the outcome satisfy the run command's expectation? -/
-def check (r : RunCommand) : Outcome → Bool
-  | .returned vs _ =>
-    match r.expect with
-    | .eq e => vs == e
-    | .ne e => vs != e
-    | .nonzero => match vs with
+/-- Does the outcome satisfy the run command's expectation? A `print` command has no
+expectation (any outcome, including an aborting call, is a pass). -/
+def check (r : RunCommand) (o : Outcome) : Bool :=
+  match r.expect with
+  | .print => true
+  | .eq e =>
+    match o with
+    | .returned vs _ => vs == e
+    | _ => false
+  | .ne e =>
+    match o with
+    | .returned vs _ => vs != e
+    | _ => false
+  | .nonzero =>
+    match o with
+    | .returned vs _ =>
+      match vs with
       | [v] => v.toNat != 0
       | _ => false
-    | .print => true
-  | _ => false
+    | _ => false
 
 /-! ## Oracle records -/
 
@@ -153,9 +162,15 @@ def Counts.add (a b : Counts) : Counts :=
 /-- Names of program functions a function calls. -/
 def callees (f : Function) : List String := f.externs.map (·.2.name)
 
+/-- Does the filetest treat the extern `name` as available? `rustEnv`: the trusted Rust
+contracts (`Clif.Rust.env`) provide the mem* functions and every diverging panic entry. -/
+def extAvailable (rustEnv : Bool) (name : String) : Bool :=
+  rustEnv && (Clif.Rust.isPanic name || name == "memcpy" || name == "memset" ||
+    name == "memmove" || name == "memcmp")
+
 /-- Supported functions whose transitive in-file callees are all supported; the others get
 a reason. -/
-def closure (pf : ParsedFile) : List (String × Except String Function) :=
+def closure (rustEnv : Bool) (pf : ParsedFile) : List (String × Except String Function) :=
   let direct : List (String × Except String Function) := pf.funcs.map fun f =>
     (f.name, match f.func with
       | .ok fn => .ok fn
@@ -173,7 +188,7 @@ def closure (pf : ParsedFile) : List (String × Except String Function) :=
         match (callees fn).find? (fun c => (bad.lookup c).isSome) with
         | some c => some (n, s!"calls %{c}, which is unsupported")
         | none =>
-          match (callees fn).find? (fun c => !names.contains c) with
+          match (callees fn).find? (fun c => !names.contains c && !extAvailable rustEnv c) with
           | some c => some (n, s!"calls extern %{c} (not in this file)")
           | none => none
       | .error _ => none
@@ -184,12 +199,12 @@ def closure (pf : ParsedFile) : List (String × Except String Function) :=
     | none, r => (n, r)
 
 def runFile (verbose : Bool) (path : String) (oracle : Option (List OracleRecord))
-    (printDir : Option String) : IO Counts := do
+    (printDir : Option String) (rustEnv : Bool) : IO Counts := do
   let src ← IO.FS.readFile path
   let pf := parseFile src
   let mut c : Counts := {}
   let mut notes : Array String := #[]
-  let cl := closure pf
+  let cl := closure rustEnv pf
   -- Program of all parsed functions (callers of unsupported ones are excluded from runs).
   let supported := pf.funcs.filterMap fun f => f.func.toOption
   let data := match pf.data with | .ok ds => ds | .error _ => []
@@ -217,7 +232,7 @@ def runFile (verbose : Bool) (path : String) (oracle : Option (List OracleRecord
     | some (.ok fn) =>
       let mut i := 0
       for r in fn.runs do
-        let o := run {} prog r.func r.args fuel
+        let o := run (if rustEnv then Clif.Rust.env else {}) prog r.func r.args fuel
         let ok := check r o
         if ok then c := { c with pass := c.pass + 1 }
         else
@@ -263,6 +278,7 @@ def main (args : List String) : IO UInt32 := do
   let mut oracleDir : Option String := none
   let mut oracleFile : Option String := none
   let mut printDir : Option String := none
+  let mut rustEnv := false
   let mut files := #[]
   let mut rest := args
   while !rest.isEmpty do
@@ -271,6 +287,7 @@ def main (args : List String) : IO UInt32 := do
     | "--oracle-dir" :: d :: r => oracleDir := some d; rest := r
     | "--oracle" :: f :: r => oracleFile := some f; rest := r
     | "--print-dir" :: d :: r => printDir := some d; rest := r
+    | "--rust-env" :: r => rustEnv := true; rest := r
     | f :: r => files := files.push f; rest := r
     | [] => pure ()
   if files.isEmpty then
@@ -300,7 +317,7 @@ def main (args : List String) : IO UInt32 := do
           IO.println s!"{f}: oracle file {p} missing"
           badOracle := badOracle + 1
           pure none
-    let c ← runFile verbose f oracle printDir
+    let c ← runFile verbose f oracle printDir rustEnv
     if c.unsupported > 0 then filesWithUnsupported := filesWithUnsupported + 1
     total := total.add c
   IO.println s!"TOTAL files {files.size}: pass {total.pass} fail {total.fail} unsupported {total.unsupported} (in {filesWithUnsupported} files) roundtrip-fail {total.roundtripFail} agree {total.agree} disagree {total.disagree} (in `test interpret` files: {total.disagreeInterp}) oracle-error {total.oracleError} oracle-unavailable {badOracle}"

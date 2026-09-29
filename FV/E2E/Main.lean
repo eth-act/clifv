@@ -139,6 +139,18 @@ theorem prepareCorrect_of_check {sem : Sem} {vc vcp : VCode} (hds : DriverSem se
     (h : prepCheck vc vcp = true) : PrepareCorrect sem vc vcp :=
   fun ρ₀ w₀ => prep_sound hds h ρ₀ w₀
 
+/-- `InSubset.noSpecial` gives `ExternsNormal`. -/
+theorem externsNormal_of_subset {p : Clif.Program} {f : Clif.Function} (hsub : InSubset p f) :
+    ExternsNormal f := by
+  intro fn e he
+  have hmem : (fn, e) ∈ f.externs := by
+    obtain ⟨l₁, l₂, he2, -⟩ := List.lookup_eq_some_iff.mp he
+    rw [he2]
+    simp
+  have h := hsub.noSpecial.2 (fn, e) hmem
+  rw [List.all_append, Bool.and_eq_true] at h
+  exact h.1
+
 /-- The arguments are in x0–x7 of the body-entry world too. -/
 theorem argsIn_body {p : Clif.Program} {f : Clif.Function} {args : List Clif.Val} {cs : Clif.State}
     {af : AFunc} {s w₀ : Arm.ArmState} (hsub : InSubset p f) (hcs : ClifEntry f args cs)
@@ -148,7 +160,8 @@ theorem argsIn_body {p : Clif.Program} {f : Clif.Function} {args : List Clif.Val
     have := congrArg List.length hcs.sig; simpa using this
   have hi8 : i < 8 := by
     have := (List.getElem?_eq_some_iff.mp hi).1; have := hsub.regParams; omega
-  rw [XHolds, show xreg i w₀ = xreg i s from hbe.args i hi8]
+  have hi9 : i < 9 := by omega
+  rw [XHolds, show xreg i w₀ = xreg i s from hbe.args i hi9]
   exact h i v hi
 
 /-- **`backend_correct` (M7).** For an in-subset CLIF function `f` of `p`, compiled by the
@@ -200,6 +213,9 @@ theorem backend_correct {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp
       (memRelOk_holds ⟨F s', syms, slotOff⟩ f)
     terms := hterms s'
     ext := fun B hB st hst fn args hi e he => hsub.externCalls B hB st hst fn args hi e he
+    subE := hsub.subsetE
+    normExts := externsNormal_of_subset hsub
+    noCI := fun B hB st hst sig callee args hi => hsub.noCI B hB st hst sig callee args hi
     regArgs := callRegArgs_of_subset hsub
     brIdx := hbr
     noTail := noTail_of_subset hsub

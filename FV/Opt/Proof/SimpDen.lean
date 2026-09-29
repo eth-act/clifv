@@ -46,10 +46,11 @@ theorem evalInst_ops {fr : Frame} {mem : Mem} {i : Inst}
     all_goals grind
 
 theorem evalInst_mono {fr fr' : Frame} {mem : Mem} {i : Inst}
-    (hg : fr'.func.globals = fr.func.globals) (hs : fr'.slots = fr.slots)
+    (hg : fr'.func.globals = fr.func.globals) (hx : fr'.func.externs = fr.func.externs)
+    (hs : fr'.slots = fr.slots)
     (hle : Valuation.Le fr.regs fr'.regs) (h : ∀ m, evalInst fr mem i ≠ .stuck m) :
     evalInst fr' mem i = evalInst fr mem i := by
-  apply evalInst_congr hg hs
+  apply evalInst_congr hg hx hs
   intro x hx
   obtain ⟨a, ha⟩ := evalInst_ops h x hx
   rw [ha, hle x a ha]
@@ -59,10 +60,11 @@ theorem evalNode_ok {fr : Frame} {mem : Mem} {n : Inst} {a : Val}
   intro m hm; simp [evalNode, hm] at h
 
 theorem evalNode_mono {fr fr' : Frame} {mem : Mem} {n : Inst} {a : Val}
-    (hg : fr'.func.globals = fr.func.globals) (hs : fr'.slots = fr.slots)
+    (hg : fr'.func.globals = fr.func.globals) (hx : fr'.func.externs = fr.func.externs)
+    (hs : fr'.slots = fr.slots)
     (hle : Valuation.Le fr.regs fr'.regs) (h : evalNode fr mem n = some a) :
     evalNode fr' mem n = some a := by
-  simpa [evalNode, evalInst_mono hg hs hle (evalNode_ok h)] using h
+  simpa [evalNode, evalInst_mono hg hx hs hle (evalNode_ok h)] using h
 
 /-- Registers `R` in the frame `fr`. -/
 abbrev withRegs (fr : Frame) (R : Valuation) : Frame := { fr with regs := R }
@@ -70,7 +72,7 @@ abbrev withRegs (fr : Frame) (R : Valuation) : Frame := { fr with regs := R }
 theorem evalNode_withRegs_mono {fr : Frame} {mem : Mem} {n : Inst} {R R' : Valuation} {a : Val}
     (hle : Valuation.Le R R') (h : evalNode (withRegs fr R) mem n = some a) :
     evalNode (withRegs fr R') mem n = some a :=
-  evalNode_mono (fr := withRegs fr R) (fr' := withRegs fr R') rfl rfl hle h
+  evalNode_mono (fr := withRegs fr R) (fr' := withRegs fr R') rfl rfl rfl hle h
 
 /-- Registers that agree with `R` on the operands of `n` can be found at a finite level of an
 increasing chain whose limit is `R`. -/
@@ -186,7 +188,7 @@ theorem den_node {x : ValueId} {n : Inst} (hx : D x = some n) :
         (fun y b hy => level_of_den hy) (operands n) hops
       have h1 : evalNode (withRegs fr (evalTree D ρ fr mem K)) mem n = some a := by
         rw [evalNode_congr (fr := withRegs fr (den D ρ fr mem))
-          (fr' := withRegs fr (evalTree D ρ fr mem K)) rfl rfl (fun y hy => hK y hy)]; exact he
+          (fr' := withRegs fr (evalTree D ρ fr mem K)) rfl rfl rfl (fun y hy => hK y hy)]; exact he
       have h2 : evalTree D ρ fr mem (K + 1) x = some a := by simp [evalTree, hx, h1]
       rw [den_of_level h2] at hd; cases hd
 
@@ -234,7 +236,7 @@ theorem den_insert_fresh {D : ValueId → Option Inst} {ρ : Valuation} {fr : Fr
       split
       · rfl
       · rename_i m hm
-        exact evalNode_congr rfl rfl (fun z hz => ih z (hK y m hy hm z hz))
+        exact evalNode_congr rfl rfl rfl (fun z hz => ih z (hK y m hy hm z hz))
   cases h : den D ρ fr mem x with
   | some a =>
     obtain ⟨k, hk⟩ := level_of_den h
@@ -270,7 +272,7 @@ theorem den_twin {D : ValueId → Option Inst} {S : ValueId → Prop} {ρ : Valu
   | refl => rfl
   | clone τ _ _ hm hm' _ ih =>
     rw [den_node hm', den_node hm]
-    exact evalNode_rename rfl rfl (fun u hu => ih u hu)
+    exact evalNode_rename rfl rfl rfl (fun u hu => ih u hu)
 
 /-- Replacing the node `m` of `x` by a copy over twin operands keeps `den`. -/
 theorem den_overwrite {D : ValueId → Option Inst} {S : ValueId → Prop} {ρ : Valuation}
@@ -292,7 +294,7 @@ theorem den_overwrite {D : ValueId → Option Inst} {S : ValueId → Prop} {ρ :
         simp only [D', graphInsert, ite_true, Option.some.injEq] at hz
         subst hz
         rw [den_node hx, ← he]
-        exact (evalNode_rename rfl rfl (fun u hu => den_twin (ht u hu))).symm
+        exact (evalNode_rename rfl rfl rfl (fun u hu => den_twin (ht u hu))).symm
       · have : D z = some n := by simpa [D', graphInsert, hzx] using hz
         rw [den_node this]; exact he
     · intro z a hz hρ
@@ -309,7 +311,7 @@ theorem den_overwrite {D : ValueId → Option Inst} {S : ValueId → Prop} {ρ :
         rw [hx] at hz; cases hz
         have hD' : D' z = some (mapOperands τ m) := by simp [D', graphInsert]
         rw [den_node hD', ← he]
-        exact evalNode_rename rfl rfl (fun u hu => den_twin (ht' u hu))
+        exact evalNode_rename rfl rfl rfl (fun u hu => den_twin (ht' u hu))
       · have : D' z = some n := by simpa [D', graphInsert, hzx] using hz
         rw [den_node this]; exact he
     · intro z a hz hρ

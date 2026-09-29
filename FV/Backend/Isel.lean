@@ -198,6 +198,15 @@ def instData (f : Clif.Function) : Clif.Inst → Except String V
         pure (instDataV "Call" [opcodeV "Call", .values args, .op (.funcRef fn)])
       else throw s!"call with calling convention {repr ext.sig.callConv}"
     | none => throw s!"unknown fn{fn}"
+  | .callIndirect sig callee args =>
+    match f.sigDecls.lookup sig with
+    | some s =>
+      pure (instDataV "CallIndirect"
+        [opcodeV "CallIndirect", .values (callee :: args), .op (.sig s)])
+    | none => throw s!"call_indirect of undeclared sig{sig}"
+  | .funcAddr ty fn =>
+    if ty != .i64 then throw "func_addr with a non-i64 address type"
+    else pure (instDataV "FuncAddr" [opcodeV "FuncAddr", .op (.funcRef fn)])
   | i => throw s!"`{instText i}` is not in E"
 
 /-! ## ABI (`isa/aarch64/abi.rs` `compute_arg_locs`, AAPCS64 / `system_v`) -/
@@ -225,13 +234,42 @@ def argLocs (bytes : List Nat) : List ArgLoc × Nat :=
 def retRegs (n : Nat) : Option (List Reg) :=
   if n ≤ 8 then some ((List.range n).map .x) else none
 
-/-- Parameter types of a signature (only integer `normal`/`vmctx` parameters up to 64 bits). -/
-def sigParamBytes (s : Clif.Signature) : Except String (List Nat) :=
+/-- The parameters a call or entry passes in registers/stack slots (`compute_arg_locs`,
+AAPCS64): a `normal`/`vmctx` parameter takes the next of x0..x7, then 8-byte-minimum
+naturally aligned stack slots; a **`sret`** parameter is the hidden struct-return pointer,
+in **x8** (Cranelift's aarch64 `compute_arg_locs`: the sret slot does not consume the
+x0..x7 sequence and must be pointer-sized). -/
+def sigArgs (s : Clif.Signature) : Except String (List Nat) :=
   s.params.mapM fun p =>
     if p.ty == .i128 then throw "i128 parameter"
     else match p.purpose with
       | .normal | .vmctx => pure p.ty.bytes
-      | _ => throw "special-purpose parameter"
+      | .sret => if p.ty == .i64 then pure 8 else throw "sret parameter must be i64"
+      | _ => throw "special-purpose parameter (sarg)"
+
+/-- The argument locations of a signature: `argLocs` over the normal parameters, with every
+`sret` parameter in x8 (in parameter order). -/
+def sigArgLocs (s : Clif.Signature) : Except String (List ArgLoc × Nat) := do
+  let bytes ← sigArgs s
+  let (locs, stack) := argLocs bytes
+  if s.params.any (·.purpose == .sret) then
+    if s.params.length != locs.length then throw "sigArgLocs: length"
+    let locs := s.params.zip locs |>.map fun (p, loc) =>
+      if p.purpose == .sret then .reg (.x 8) else loc
+    pure (locs, stack)
+  else pure (locs, stack)
+
+/-- The returns of a signature as the ABI sees them (`from_func_sig` /
+`ensure_struct_return_ptr_is_returned`, which is `keep in sync` in Cranelift's abi.rs): a
+signature with an `sret` parameter and no returns returns the struct pointer in x0, i.e.
+its only ABI return is the sret parameter itself. -/
+def sigRets (s : Clif.Signature) : List Clif.AbiParam :=
+  match s.params.find? (·.purpose == .sret) with
+  | some p => if s.returns.isEmpty then [p] else s.returns
+  | none => s.returns
+
+/-- Parameter types of a signature (only integer `normal`/`vmctx` parameters up to 64 bits). -/
+def sigParamBytes (s : Clif.Signature) : Except String (List Nat) := sigArgs s
 
 def storeOpOfBytes : Nat → StoreOp
   | 1 => .store8 | 2 => .store16 | 4 => .store32 | _ => .store64
@@ -376,6 +414,8 @@ def externExtract (ctx : Ctx) (t : Term) (v : V) (_st : LState) : ExtResult (Lis
   | TId.jump_table_targets, .labels (d :: ts) => .ok [.label d, .labels ts]
   | TId.jump_table_targets, .labels [] => .fail
   | TId.value_list_slice, .values vs => .ok [.values vs]
+  | TId.value_slice_unwrap, .values (x :: xs) => .ok [.value x, .values xs]
+  | TId.value_slice_unwrap, .values [] => .fail
   | TId.value_array_2, .values [a, b] => .ok [.value a, .value b]
   -- `unpack_value_array_3` (isle_prelude.rs:942)
   | TId.value_array_3, .values [a, b, c] => .ok [.value a, .value b, .value c]
@@ -524,14 +564,14 @@ def externCtor (ctx : Ctx) (t : Term) (args : List V) (st : LState) : ExtResult 
     | some ps, some rs => .ok (.op .unit, st.emit (.rets (rs.zip ps)))
     | _, _ => .unmodeled "gen_return: more than 8 return values or multi-register values"
   | TId.gen_call_output, [.op (.sig s)] =>
-    let (rs, st) := s.returns.foldl (init := (#[], st)) fun (acc, st) _ =>
+    let (rs, st) := (sigRets s).foldl (init := (#[], st)) fun (acc, st) _ =>
       let (r, st) := st.fresh .int
       (acc.push [r], st)
     .ok (.regsVec rs.toList, st)
   | TId.gen_call_args, [.op (.sig s), .regsVec rss] =>
-    match sigParamBytes s, rss.mapM (fun | [r] => some r | _ => none) with
-    | .ok bytes, some rs =>
-      let (locs, _) := argLocs bytes
+    match sigArgLocs s, rss.mapM (fun | [r] => some r | _ => none) with
+    | .ok (locs, _), some rs =>
+      let bytes := match sigArgs s with | .ok b => b | _ => []
       let (uses, st) := ((locs.zip rs).zip bytes).foldl (init := (#[], st))
         fun (acc, st) ((loc, r), b) => match loc with
           | .reg p => (acc.push (r, p), st)
@@ -545,14 +585,14 @@ def externCtor (ctx : Ctx) (t : Term) (args : List V) (st : LState) : ExtResult 
     | _, _ => .unmodeled "gen_call_rets: more than 8 return values"
   | TId.try_call_none, [] => ok (.op .tryCallNone)
   | TId.gen_call_info, [.op (.sig s), .op (.extName n), .op (.callArgs us), .op (.callRets ds), _, _] =>
-    match sigParamBytes s with
-    | .ok bytes =>
-      .ok (.op (.callInfo ⟨.sym n, us, ds⟩), { st with outgoing := max st.outgoing (argLocs bytes).2 })
+    match sigArgLocs s with
+    | .ok (_, stack) =>
+      .ok (.op (.callInfo ⟨.sym n, us, ds⟩), { st with outgoing := max st.outgoing stack })
     | .error e => .unmodeled s!"gen_call_info: {e}"
   | TId.gen_call_ind_info, [.op (.sig s), .reg r, .op (.callArgs us), .op (.callRets ds), _] =>
-    match sigParamBytes s with
-    | .ok bytes =>
-      .ok (.op (.callInfo ⟨.reg r, us, ds⟩), { st with outgoing := max st.outgoing (argLocs bytes).2 })
+    match sigArgLocs s with
+    | .ok (_, stack) =>
+      .ok (.op (.callInfo ⟨.reg r, us, ds⟩), { st with outgoing := max st.outgoing stack })
     | .error e => .unmodeled s!"gen_call_ind_info: {e}"
   -- aarch64 inst.isle / lower.isle helpers (aarch64/lower/isle.rs)
   | TId.use_fp16, [] => ok (.bool false)
@@ -746,7 +786,8 @@ def buildCtx (f : Clif.Function) : Except String (Ctx × Array (Nat × Nat) × L
     let start := insts.size
     for s in b.body do
       let data ← instData f s.inst
-      let some tys := s.inst.resultTypes sigOf | throw "ill-typed instruction"
+      let some tys := s.inst.resultTypes sigOf (f.sigDecls.lookup ·) |
+        throw "ill-typed instruction"
       if tys.length != s.results.length then throw "result count mismatch"
       for (r, ty) in s.results.zip tys do
         if ty == .i128 then throw s!"value v{r} is i128"
@@ -815,7 +856,9 @@ def lowerFunction (f : Clif.Function) : Except String VCode := do
     throw s!"calling convention {repr f.sig.callConv}"
   let paramBytes ← sigParamBytes f.sig
   if f.sig.returns.any (·.ty == .i128) then throw "i128 return value"
-  if (retRegs f.sig.returns.length).isNone then throw "more than 8 return values"
+  if f.sig.params.any (·.purpose == .sret) && !f.sig.returns.isEmpty then
+    throw "sret parameter together with return values (Cranelift rejects this)"
+  if (retRegs (sigRets f.sig).length).isNone then throw "more than 8 return values"
   let (ctx, ranges, st0) ← buildCtx f
   let blockIdx (b : Nat) : Except String Nat :=
     match f.blocks.findIdx? (·.id == b) with
@@ -827,7 +870,7 @@ def lowerFunction (f : Clif.Function) : Except String VCode := do
     let mut code : Array MInst := #[]
     -- gen_arg_setup
     if bi == 0 then
-      let (locs, _) := argLocs paramBytes
+      let (locs, _) ← sigArgLocs f.sig
       let mut pairs : Array (Reg × Reg) := #[]
       for (((v, _), loc), bytes) in (b.params.zip locs).zip paramBytes do
         let some r := ctx.valueReg? v | throw s!"unknown value v{v}"
@@ -861,8 +904,20 @@ def lowerFunction (f : Clif.Function) : Except String VCode := do
       code := code ++ st.emitted ++ extra
       st := { st with emitted := #[] }
       d := { d with st, rules := d.rules ++ n.toArray }
-    -- terminator
-    let data ← termData b.term
+    -- terminator. An sret signature's only ABI return is the struct pointer in x0
+    -- (`sigRets`); the CLIF `return` carries no values, so the legalized return value is
+    -- the sret parameter, exactly what Cranelift's legalizer rewrites the terminator to.
+    let sretParam : List Clif.ValueId :=
+      if sigRets f.sig != f.sig.returns then
+        match f.blocks.head?, f.sig.params.findIdx? (·.purpose == .sret) with
+        | some b0, some i => (b0.params[i]?.map (·.1)).toList
+        | _, _ => []
+      else []
+    let data ← match b.term with
+      | .ret vs => termData (.ret (vs ++ sretParam))
+      | _ => termData b.term
+    if b.term matches .ret .. && sretParam.isEmpty && (sigRets f.sig != f.sig.returns) then
+      throw "sret parameter is not an entry-block parameter"
     let ti := stop - 1
     let ctx' : Ctx := { ctx with insts := ctx.insts.set! ti ⟨data, [], [], none⟩ }
     let mut targets : Array Label := #[]

@@ -30,7 +30,7 @@ def binaryE : BinaryOp → Bool
   | _ => false
 
 def flagsE (f : MemFlags) : Bool :=
-  f.endianness.isNone && !f.readonly && !f.canMove &&
+  f.endianness.isNone && !f.canMove &&
     (f.trapCode.isNone || f.trapCode == some .heapOob)
 
 def instE : Inst → Bool
@@ -48,6 +48,10 @@ def instE : Inst → Bool
   | .symbolValue ty _ => ty == .i64
   | .nop => true
   | .call _ _ => true
+  -- rust-route step 4: indirect calls and function addresses compile and run; they are
+  -- outside the end-to-end theorem (`E2E.InSubset`), which `unverifiedReason?` reports.
+  | .callIndirect _ _ _ => true
+  | .funcAddr ty _ => ty == .i64
   | _ => false
 
 /-- Global values: only `symbol %name[+offset]` (the target of `symbol_value`). -/
@@ -69,5 +73,11 @@ def functionE (f : Function) : Bool :=
 
 /-- Every function of `p` uses only subset E. -/
 def onlySubsetE (p : Program) : Bool := p.funcs.all functionE
+
+/-- `instE` of every statement of a subset-E function. -/
+theorem instE_of_functionE {f : Function} (hE : functionE f = true) {b : Block} (hb : b ∈ f.blocks)
+    {st : Stmt} (hst : st ∈ b.body) : instE st.inst = true := by
+  simp only [functionE, Bool.and_eq_true, List.all_eq_true] at hE
+  exact (hE.2 b hb).1.2 st hst
 
 end Compile

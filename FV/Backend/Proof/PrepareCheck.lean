@@ -8,15 +8,18 @@ simulates `vc` (`PrepareSound.lean`: VCode returns and traps of `vc` are returns
 `vcp`). It checks the relation `prepare` establishes, block by block, instead of `prepare`'s
 loops (reachability worklist, critical-edge splitting, the fuel-bounded reverse postorder):
 
-* every block `b` of `vc` that has a counterpart `σ b` in `vcp` (the block with the same label)
-  has the same parameters, branch arguments and instructions, except that the last
-  instruction may be retargeted (`MInst.setTargets`);
+* the live blocks of `vc` (`liveOf`: those `reachable` from the entry, which `prepare` keeps;
+  untrusted, the check only needs the entry to be live and live blocks' successors to be live
+  blocks of `vc`) have a counterpart `σ b` in `vcp` (the block with the same label) with the
+  same parameters, branch arguments and instructions, except that the last instruction may be
+  retargeted (`MInst.setTargets`);
 * the entry block is its own counterpart (`σ 0 = 0`);
-* every successor `s` of a block with a counterpart has a counterpart, and successor `j` of `σ b`
+* every successor `s` of a live block has a counterpart, and successor `j` of `σ b`
   is `σ s` or an edge block (`jump`, no parameters, no branch arguments) whose successor is
   `σ s`; the latter only for a block without branch arguments.
 
-Blocks of `vc` without a counterpart (the unreachable ones `prepare` drops) are never reached.
+Blocks of `vc` that are not live (the unreachable ones `prepare` drops) are never reached, and
+are not checked: their labels may be reused by `prepare`'s edge blocks.
 -/
 
 namespace Backend.Proof.Driver
@@ -65,14 +68,18 @@ def keptOk (vc vcp : VCode) (ss ss' : Array (Array Nat)) (b b' : Nat) : Bool :=
       | _, _ => false)
   | _, _ => false
 
+/-- Block `b` is reachable from the entry (`reachable`, as in `prepare`). -/
+def liveOf (ss : Array (Array Nat)) (b : Nat) : Bool := (reachable ss)[b]?.getD false
+
 /-- **The `prepare` validator.** -/
 def prepCheck (vc vcp : VCode) : Bool :=
   match vc.cfg, vcp.cfg with
   | .ok (ss, _), .ok (ss', _) =>
-    decide (sigmaOf vc vcp 0 = some 0) &&
-    (List.range vc.blocks.size).all fun b => match sigmaOf vc vcp b with
-      | none => true
-      | some b' => keptOk vc vcp ss ss' b b'
+    decide (sigmaOf vc vcp 0 = some 0) && liveOf ss 0 &&
+    (List.range vc.blocks.size).all fun b => !liveOf ss b || match sigmaOf vc vcp b with
+      | none => false
+      | some b' => keptOk vc vcp ss ss' b b' &&
+          (ss[b]?.getD #[]).all fun s => decide (s < vc.blocks.size) && liveOf ss s
   | _, _ => false
 
 end Backend.Proof.Driver

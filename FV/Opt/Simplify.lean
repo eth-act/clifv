@@ -115,7 +115,7 @@ def insertNode (allowed : Inst → Bool) (st : SState) (n : Inst) : ValueId × S
   let w := st.next
   let ty : Option Ty := match n with
     | .icmp .. => some .i8
-    | _ => (n.resultTypes (fun _ => none)).bind List.head?
+    | _ => (n.resultTypes (fun _ => none) (fun _ => none)).bind List.head?
   let ok := allowed n && ty.isSome
   let c := if ok then (operands n).foldl (fun c x => Cost.add c (st.costOf x)) (Cost.ofInst n)
            else Cost.infinite
@@ -146,7 +146,7 @@ def solidNode (st : SState) (n : Inst) : Bool := (operands n).all st.solid && st
 def dummy (st : SState) : ValueId × SState := (st.next, { st with next := st.next + 1 })
 
 /-- The type of the single result of a pure node. -/
-def nodeTy (n : Inst) : Option Ty := (n.resultTypes (fun _ => none)).bind List.head?
+def nodeTy (n : Inst) : Option Ty := (n.resultTypes (fun _ => none) (fun _ => none)).bind List.head?
 
 end SState
 
@@ -335,7 +335,7 @@ def skelStmt (skel : SkeletonFn) (rules : SimplifyFn) (allowed skelOk : Inst →
     let (c, st1) := runSkel skel rules allowed st (.inst s.inst)
     let keep := (#[s], [], st1, SkelOut.keep)
     let sameResults := fun (i : Inst) =>
-      i.resultTypes (fun _ => none) == s.inst.resultTypes (fun _ => none)
+      i.resultTypes (fun _ => none) (fun _ => none) == s.inst.resultTypes (fun _ => none) (fun _ => none)
     match c with
     | none => keep
     | some .remove => if s.results.isEmpty then (#[], [], st1, .remove) else keep
@@ -373,7 +373,8 @@ def skelStmt (skel : SkeletonFn) (rules : SimplifyFn) (allowed skelOk : Inst →
         | none => keep
     | some (.replaceWithTwo (.inst a) (.inst b)) =>
       if !s.results.isEmpty || !skelOk a || !skelOk b ||
-          a.resultTypes (fun _ => none) != some [] || b.resultTypes (fun _ => none) != some [] then keep
+          a.resultTypes (fun _ => none) (fun _ => none) != some [] ||
+            b.resultTypes (fun _ => none) (fun _ => none) != some [] then keep
       else
         match materializeAll cfg allowed bi st1 (operands a ++ operands b) with
         | some (m, st2, out) =>

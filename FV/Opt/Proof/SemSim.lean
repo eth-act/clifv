@@ -214,8 +214,30 @@ theorem lift_ofRes {α : Type} (env : Env) (p : Program) (s : State) (r : Res α
     (LRes.ofRes r k).lift env p s = StepResult.ofRes r (fun a => (k a).lift env p s) := by
   cases r <;> rfl
 
-/-- `Clif.step` is the lifted `lstep`. -/
-theorem step_eq_lift (env : Env) (p : Program) (s : State) :
+/-! `lstep` does not model `call_indirect` (its `evalInst` is stuck, while `Clif.step` calls the
+addressed function), so `Clif.step` is the lifted `lstep` only when the next statement is not a
+`call_indirect` (`HeadNoCI`). Source runs stay in functions without `call_indirect` (`RunInv`, below);
+target steps are lifted only where `lstep` is not stuck (`headNoCI_of_lstep`). -/
+
+/-- The next statement of `fr` (if any) is not a `call_indirect`. -/
+def HeadNoCI (fr : Frame) : Prop :=
+  ∀ st rest, fr.body = st :: rest → ∀ sig callee args, st.inst ≠ .callIndirect sig callee args
+
+theorem lstep_callIndirect {fr : Frame} {mem : Mem} {st : Stmt} {rest : List Stmt} {sig : Nat}
+    {callee : ValueId} {args : List ValueId} (hb : fr.body = st :: rest)
+    (hi : st.inst = .callIndirect sig callee args) :
+    lstep fr mem = .stuck "evalInst: call is handled by step" := by
+  unfold lstep
+  rw [hb]
+  simp only [hi]
+  rfl
+
+theorem headNoCI_of_lstep {fr : Frame} {mem : Mem} (h : ∀ msg, lstep fr mem ≠ .stuck msg) :
+    HeadNoCI fr :=
+  fun _ _ hb _ _ _ hi => h _ (lstep_callIndirect hb hi)
+
+/-- `Clif.step` is the lifted `lstep` (unless the next statement is a `call_indirect`). -/
+theorem step_eq_lift (env : Env) (p : Program) (s : State) (hci : HeadNoCI s.frame) :
     step env p s = (lstep s.frame s.mem).lift env p s := by
   obtain ⟨⟨func, regs, slots, body, term⟩, callers, mem⟩ := s
   cases body with
@@ -223,9 +245,16 @@ theorem step_eq_lift (env : Env) (p : Program) (s : State) :
     cases term <;> simp only [lstep, step, stepTerm, lift_ofRes] <;> try rfl
   | cons st rest =>
     simp only [lstep, step]
-    cases st.inst <;> simp only [lift_ofRes, stepCall] <;> first
-      | rfl
-      | (congr 1; funext x; obtain ⟨vals, m'⟩ := x; simp only [continueWith]; split <;> rename_i h <;> simp only [h] <;> rfl)
+    cases hi : st.inst <;> first
+      | exact absurd hi (hci st rest rfl _ _ _)
+      | (simp only [lift_ofRes, stepCall] <;> first
+        | rfl
+        | (congr 1; funext x; obtain ⟨vals, m'⟩ := x; simp only [continueWith]; split <;> rename_i h <;> simp only [h] <;> rfl))
+
+theorem step_eq_lift_of {env : Env} {p : Program} {s : State} {r : LRes}
+    (h : lstep s.frame s.mem = r) (hr : ∀ msg, r ≠ .stuck msg) :
+    step env p s = r.lift env p s := by
+  rw [step_eq_lift env p s (headNoCI_of_lstep (by rw [h]; exact hr)), h]
 
 /-! ## Stuttering steps of the target -/
 
@@ -251,8 +280,9 @@ theorem LStar.runLoop {env : Env} {p : Program} {fr m fr' m'} (h : LStar fr m fr
   | step hs _ ih =>
     obtain ⟨k, hk⟩ := ih
     refine ⟨k + 1, fun n cs => ?_⟩
-    rw [show n + (k + 1) = (n + k) + 1 by omega, runLoop_succ, step_eq_lift]
-    simp only [hs, LRes.lift]
+    rw [show n + (k + 1) = (n + k) + 1 by omega, runLoop_succ,
+      step_eq_lift_of (s := ⟨_, cs, _⟩) hs (fun _ h => by cases h)]
+    simp only [LRes.lift]
     exact hk n cs
 
 /-! ## `Res` inversion -/
@@ -772,10 +802,199 @@ theorem tailCont_rel {syms : String → Option Nat} {env : Env} (hE : EnvKeepsSy
       | returned rvals mem' =>
         exact returnValues_rel hsig hsl hc ((hE _ _ hx _ _ _ _ hr).trans hsym)
 
-/-- One source step: either a local `next` step (matched by target stuttering steps), or a step
-matched by target stuttering steps followed by one related step. -/
+/-! ## Source runs without `call_indirect`
+
+`step_eq_lift` needs the next source statement not to be a `call_indirect`. The source run stays
+in a set `S` of functions without `call_indirect` that is closed under the direct calls and tail
+calls of its members (`CIFree`): every frame, running or suspended, is at a program point of a
+block of a function of `S` (`RunInv`), which each step keeps (`RunInv.step`). -/
+
+/-- `g` has no `call_indirect` statement. -/
+def NoCallIndirect (g : Function) : Prop :=
+  ∀ b ∈ g.blocks, ∀ st ∈ b.body, ∀ sig callee args, st.inst ≠ .callIndirect sig callee args
+
+/-- A set `S` of functions without `call_indirect`, closed under the calls and tail calls of its
+members to functions of `p`. -/
+structure CIFree (p : Program) (S : Function → Prop) : Prop where
+  noCI : ∀ g, S g → NoCallIndirect g
+  call : ∀ g, S g → ∀ b ∈ g.blocks, ∀ st ∈ b.body, ∀ fn args, st.inst = .call fn args →
+    ∀ e, g.extern? fn = some e → ∀ h, p.func? e.name = some h → S h
+  tail : ∀ g, S g → ∀ b ∈ g.blocks, ∀ fn args, b.term = .returnCall fn args →
+    ∀ e, g.extern? fn = some e → ∀ h, p.func? e.name = some h → S h
+
+/-- The functions of a program without `call_indirect`. -/
+theorem CIFree.ofProgram {p : Program} (hp : ∀ g ∈ p.funcs, NoCallIndirect g) :
+    CIFree p (· ∈ p.funcs) where
+  noCI := hp
+  call := fun _ _ _ _ _ _ _ _ _ _ _ _ hh => List.mem_of_find?_eq_some hh
+  tail := fun _ _ _ _ _ _ _ _ _ _ hh => List.mem_of_find?_eq_some hh
+
+/-- `fr` runs a function of `S`, at a program point of one of its blocks. -/
+def FrameInv (S : Function → Prop) (fr : Frame) : Prop :=
+  S fr.func ∧ ∃ b ∈ fr.func.blocks, fr.body <:+ b.body ∧ fr.term = b.term
+
+/-- Every frame of `s`, running or suspended, satisfies `FrameInv S`. -/
+def RunInv (S : Function → Prop) (s : State) : Prop :=
+  FrameInv S s.frame ∧ ∀ c ∈ s.callers, FrameInv S c.1
+
+theorem FrameInv.headNoCI {p : Program} {S : Function → Prop} {fr : Frame} (hS : CIFree p S)
+    (h : FrameInv S fr) : HeadNoCI fr := by
+  obtain ⟨hs, b, hb, hsuf, -⟩ := h
+  intro st rest hbd
+  exact hS.noCI _ hs b hb st (hsuf.subset (by rw [hbd]; simp))
+
+theorem FrameInv.rest {S : Function → Prop} {fr : Frame} {st : Stmt} {rest : List Stmt}
+    (h : FrameInv S fr) (hb : fr.body = st :: rest) (regs : Regs) :
+    FrameInv S { fr with regs, body := rest } := by
+  obtain ⟨hs, b, hbm, hsuf, ht⟩ := h
+  exact ⟨hs, b, hbm, (List.suffix_cons st rest).trans (hb ▸ hsuf), ht⟩
+
+theorem FrameInv.enterFunc {S : Function → Prop} {f : Function} {vals : List Val} {mem : Mem}
+    {fr : Frame} {mem' : Mem} (hf : S f) (h : enterFunc f vals mem = .ok (fr, mem')) :
+    FrameInv S fr := by
+  obtain ⟨b, regs, hb, -, -, -, -, he⟩ := enterFunc_ok h
+  rw [he]
+  exact ⟨hf, b, List.mem_of_mem_head? hb, List.suffix_refl _, rfl⟩
+
+theorem lstep_next_inv {S : Function → Prop} {fr m fr' m'} (hI : FrameInv S fr)
+    (h : lstep fr m = .next fr' m') : FrameInv S fr' := by
+  obtain ⟨func, regs, slots, body, term⟩ := fr
+  cases body with
+  | nil =>
+    simp only [lstep] at h
+    cases term <;> simp only [LRes.ofRes] at h <;> (repeat' split at h) <;> (try contradiction) <;>
+      (cases h; obtain ⟨b, _, _, hbk, _, _, _, rfl⟩ := enterBlock_ok ‹_›
+       exact ⟨hI.1, b, List.mem_of_find?_eq_some hbk, List.suffix_refl _, rfl⟩)
+  | cons st rest =>
+    simp only [lstep] at h
+    split at h
+    · simp only [LRes.ofRes] at h; split at h <;> contradiction
+    · simp only [LRes.ofRes] at h
+      split at h <;> try contradiction
+      split at h <;> try contradiction
+      cases h
+      exact hI.rest rfl _
+
+theorem lstep_tail_term {fr : Frame} {m : Mem} {ext : ExtFunc} {vals : List Val}
+    (h : lstep fr m = .tail ext vals) :
+    ∃ fn args, fr.term = .returnCall fn args ∧ fr.func.extern? fn = some ext := by
+  rw [lstep_term (lstep_tail_inv h)] at h
+  cases ht : fr.term <;> rw [ht] at h <;> simp only [LRes.ofRes] at h <;> (repeat' split at h) <;>
+    (try cases h)
+  rename_i fn args _ _ heq
+  simp only [tailArgs, checkTys, Res.bind_eq_ok, Res.ofOption_eq_ok, Res.check_eq_ok,
+    beq_iff_eq, Res.pure_eq_ok] at heq
+  obtain ⟨e, he, _, _, _, _, _, _, h2⟩ := heq
+  cases h2
+  exact ⟨fn, args, rfl, he⟩
+
+theorem callArgs_extern {fr : Frame} {fn : FnRef} {args : List ValueId} {ext : ExtFunc}
+    {vals : List Val} (h : callArgs fr fn args = .ok (ext, vals)) : fr.func.extern? fn = some ext := by
+  simp only [callArgs, checkTys, Res.bind_eq_ok, Res.ofOption_eq_ok, Res.check_eq_ok,
+    beq_iff_eq, Res.pure_eq_ok] at h
+  obtain ⟨e, he, _, _, _, _, h2⟩ := h
+  cases h2
+  exact he
+
+theorem StepResult.ofRes_eq_next {α : Type} {r : Res α} {k : α → StepResult} {s1 : State}
+    (h : StepResult.ofRes r k = .next s1) : ∃ a, r = .ok a ∧ k a = .next s1 := by
+  cases r with
+  | ok a => exact ⟨a, rfl, h⟩
+  | trap c => cases h
+  | stuck m => cases h
+
+theorem returnValues_inv {S : Function → Prop} {s : State} {vals : List Val} {mem : Mem}
+    {s1 : State} (hc : ∀ c ∈ s.callers, FrameInv S c.1) (h : returnValues s vals mem = .next s1) :
+    RunInv S s1 := by
+  obtain ⟨_, h⟩ := StepResult.ofRes_eq_next h
+  obtain ⟨frame, callers, m⟩ := s
+  cases callers with
+  | nil => cases h.2
+  | cons c cs =>
+    obtain ⟨caller, results⟩ := c
+    simp only at h
+    split at h
+    · cases h.2
+      exact ⟨hc (caller, results) (by simp), fun c hc' => hc c (by simp [hc'])⟩
+    · cases h.2
+
+/-- Source steps keep `RunInv`. -/
+theorem RunInv.step {p : Program} {S : Function → Prop} (hS : CIFree p S) {env : Env} {s s1 : State}
+    (hI : RunInv S s) (h : step env p s = .next s1) : RunInv S s1 := by
+  obtain ⟨hf, hc⟩ := hI
+  rw [step_eq_lift env p s (hf.headNoCI hS)] at h
+  have ⟨hs, b, hbm, hsuf, ht⟩ := hf
+  cases hl : lstep s.frame s.mem with
+  | next fr1 m1 =>
+    rw [hl] at h; cases h; exact ⟨lstep_next_inv hf hl, hc⟩
+  | call ext vals rs rest =>
+    rw [hl] at h
+    obtain ⟨st, fn, args, hb, hi, rfl, hca⟩ := lstep_call_inv hl
+    have hst : st ∈ b.body := hsuf.subset (by rw [hb]; simp)
+    simp only [LRes.lift, callCont] at h
+    cases hpf : p.func? ext.name with
+    | some callee =>
+      simp only [hpf] at h
+      split at h
+      · obtain ⟨⟨fr', mem'⟩, he, h⟩ := StepResult.ofRes_eq_next h
+        cases h
+        refine ⟨FrameInv.enterFunc (hS.call _ hs b hbm st hst fn args hi ext (callArgs_extern hca)
+          callee hpf) he, ?_⟩
+        simp only [List.forall_mem_cons]
+        exact ⟨hf.rest hb s.frame.regs, hc⟩
+      · cases h
+    | none =>
+      simp only [hpf] at h
+      cases hx : env.extern ext.name with
+      | none => simp only [hx] at h; cases h
+      | some fx =>
+        simp only [hx] at h
+        cases hr : fx vals s.mem with
+        | returned rvals mem' =>
+          simp only [hr] at h
+          split at h
+          · simp only [continueWith] at h
+            split at h
+            · cases h
+              exact ⟨hf.rest hb _, hc⟩
+            · cases h
+          · cases h
+        | _ => simp only [hr] at h; cases h
+  | ret vals =>
+    rw [hl] at h
+    exact returnValues_inv hc h
+  | tail ext vals =>
+    rw [hl] at h
+    obtain ⟨fn, args, hterm, hext⟩ := lstep_tail_term hl
+    simp only [LRes.lift, tailCont] at h
+    cases hpf : p.func? ext.name with
+    | some callee =>
+      simp only [hpf] at h
+      split at h
+      · obtain ⟨⟨fr', mem'⟩, he, h⟩ := StepResult.ofRes_eq_next h
+        cases h
+        exact ⟨FrameInv.enterFunc (hS.tail _ hs b hbm fn args (ht ▸ hterm) ext hext callee hpf) he,
+          hc⟩
+      · cases h
+    | none =>
+      simp only [hpf] at h
+      cases hx : env.extern ext.name with
+      | none => simp only [hx] at h; cases h
+      | some fx =>
+        simp only [hx] at h
+        cases hr : fx vals s.mem with
+        | returned rvals mem' =>
+          simp only [hr] at h
+          exact returnValues_inv hc h
+        | _ => simp only [hr] at h; cases h
+  | trap c => rw [hl] at h; cases h
+  | stuck m => rw [hl] at h; cases h
+
+/-- One source step (not a `call_indirect`): either a local `next` step (matched by target
+stuttering steps), or a step matched by target stuttering steps followed by one related step. -/
 theorem sim_step {syms : String → Option Nat} {env : Env} (hE : EnvKeepsSymbols env)
-    {p q : Program} (hP : FunsSim p.funcs q.funcs) {s s' : State} (h : SR syms s s') :
+    {p q : Program} (hP : FunsSim p.funcs q.funcs) {s s' : State} (h : SR syms s s')
+    (hci : HeadNoCI s.frame) :
     (∃ fr1 m1, lstep s.frame s.mem = .next fr1 m1 ∧ ∃ s1' k,
       (∀ n, runLoop env q (n + k) s' = runLoop env q n s1') ∧
       SR syms { s with frame := fr1, mem := m1 } s1') ∨
@@ -786,7 +1005,7 @@ theorem sim_step {syms : String → Option Nat} {env : Env} (hE : EnvKeepsSymbol
   obtain ⟨fr', cs', m'⟩ := s'
   simp only at hm hg hc
   subst hm
-  rw [step_eq_lift]
+  rw [step_eq_lift env p s hci]
   cases hl : lstep s.frame s.mem with
   | next fr1 m1 =>
     left
@@ -800,16 +1019,16 @@ theorem sim_step {syms : String → Option Nat} {env : Env} (hE : EnvKeepsSymbol
     obtain ⟨fr2, rs', rest', hst, hl2, hk⟩ := hGR.call hg hsym hl
     obtain ⟨k, hkr⟩ := LStar.runLoop (env := env) (p := q) hst
     refine ⟨⟨fr2, cs', s.mem⟩, k, fun n => hkr n cs', ?_⟩
-    rw [step_eq_lift]
-    simp only [hl2, LRes.lift]
+    rw [step_eq_lift_of (s := ⟨fr2, cs', s.mem⟩) hl2 (fun _ h => by cases h)]
+    simp only [LRes.lift]
     exact callCont_rel hE hP hsym hc hk
   | ret vals =>
     right
     obtain ⟨fr2, hst, hl2⟩ := hGR.ret hg hsym hl
     obtain ⟨k, hkr⟩ := LStar.runLoop (env := env) (p := q) hst
     refine ⟨⟨fr2, cs', s.mem⟩, k, fun n => hkr n cs', ?_⟩
-    rw [step_eq_lift]
-    simp only [hl2, LRes.lift]
+    rw [step_eq_lift_of (s := ⟨fr2, cs', s.mem⟩) hl2 (fun _ h => by cases h)]
+    simp only [LRes.lift]
     have hf := LStar.frame hst
     have hs := hGR.frame hg
     exact returnValues_rel (by rw [hf.1]; exact hs.2) (by rw [hf.2.1]; exact hs.1) hc hsym
@@ -818,8 +1037,8 @@ theorem sim_step {syms : String → Option Nat} {env : Env} (hE : EnvKeepsSymbol
     obtain ⟨fr2, hst, hl2⟩ := hGR.tail hg hsym hl
     obtain ⟨k, hkr⟩ := LStar.runLoop (env := env) (p := q) hst
     refine ⟨⟨fr2, cs', s.mem⟩, k, fun n => hkr n cs', ?_⟩
-    rw [step_eq_lift]
-    simp only [hl2, LRes.lift]
+    rw [step_eq_lift_of (s := ⟨fr2, cs', s.mem⟩) hl2 (fun _ h => by cases h)]
+    simp only [LRes.lift]
     have hf := LStar.frame hst
     have hs := hGR.frame hg
     exact tailCont_rel hE hP hsym hc (by rw [hf.1]; exact hs.2) (by rw [hf.2.1]; exact hs.1)
@@ -829,36 +1048,37 @@ theorem sim_step {syms : String → Option Nat} {env : Env} (hE : EnvKeepsSymbol
     obtain ⟨fr2, m2, hst, hl2⟩ := hGR.trap hg hsym hl
     obtain ⟨k, hkr⟩ := LStar.runLoop (env := env) (p := q) hst
     refine ⟨⟨fr2, cs', m2⟩, k, fun n => hkr n cs', ?_⟩
-    rw [step_eq_lift]
-    simp only [hl2, LRes.lift]
+    rw [step_eq_lift_of (s := ⟨fr2, cs', m2⟩) hl2 (fun _ h => by cases h)]
+    simp only [LRes.lift]
     exact StepRel.trapped rfl
   | stuck m =>
     right
     exact ⟨_, 0, fun n => rfl, StepRel.stuck⟩
 
 /-- **Program refinement.** If every function of `p` is simulated by the corresponding function
-of `q`, related states have related runs: a source run that returns or traps within `n` steps is
-matched by a target run of some length. -/
+of `q`, related states have related runs: a source run (in functions of a `call_indirect`-free
+set `S`, `CIFree`/`RunInv`) that returns or traps within `n` steps is matched by a target run of some
+length. -/
 theorem runLoop_refines {syms : String → Option Nat} {env : Env} (hE : EnvKeepsSymbols env)
-    {p q : Program} (hP : FunsSim p.funcs q.funcs) :
-    ∀ n (s s' : State), SR syms s s' →
+    {p q : Program} (hP : FunsSim p.funcs q.funcs) {S : Function → Prop} (hS : CIFree p S) :
+    ∀ n (s s' : State), SR syms s s' → RunInv S s →
       ∃ n', OutcomeRefines (runLoop env p n s) (runLoop env q n' s') := by
   intro n
   induction n with
-  | zero => intro s s' _; exact ⟨0, fun _ _ h => (by cases h), fun _ h => (by cases h)⟩
+  | zero => intro s s' _ _; exact ⟨0, fun _ _ h => (by cases h), fun _ h => (by cases h)⟩
   | succ n ih =>
-    intro s s' h
-    rcases sim_step hE hP h with ⟨fr1, m1, hl, s1', k, hk, hr⟩ | ⟨s2, k, hk, hr⟩
-    · obtain ⟨n1, hn1⟩ := ih _ _ hr
+    intro s s' h hI
+    rcases sim_step hE hP h (hI.1.headNoCI hS) with ⟨fr1, m1, hl, s1', k, hk, hr⟩ | ⟨s2, k, hk, hr⟩
+    · obtain ⟨n1, hn1⟩ := ih _ _ hr ⟨lstep_next_inv hI.1 hl, hI.2⟩
       refine ⟨n1 + k, ?_⟩
-      rw [hk, runLoop_succ, step_eq_lift, hl]
+      rw [hk, runLoop_succ, step_eq_lift env p s (hI.1.headNoCI hS), hl]
       exact hn1
     · rw [runLoop_succ]
       obtain ⟨hn, hd, ht⟩ := hr
       cases hst : step env p s with
       | next s1 =>
         obtain ⟨s1', hs', hr'⟩ := hn s1 hst
-        obtain ⟨n1, hn1⟩ := ih _ _ hr'
+        obtain ⟨n1, hn1⟩ := ih _ _ hr' (hI.step hS hst)
         refine ⟨n1 + 1 + k, ?_⟩
         rw [hk, runLoop_succ, hs']
         exact hn1

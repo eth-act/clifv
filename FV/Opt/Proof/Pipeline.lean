@@ -118,6 +118,32 @@ theorem mem_callees {f : Function} {fn : FnRef} :
   · rintro ⟨b, hb, st, hst, args, h⟩
     exact ⟨b, hb, st, hst, by simp [h]⟩
 
+theorem hasCallIndirect_eq_false {f : Function} : hasCallIndirect f = false ↔ NoCallIndirect f := by
+  simp only [hasCallIndirect, List.any_eq_false, NoCallIndirect]
+  constructor
+  · intro h b hb st hst sig callee args hi
+    exact h b hb (List.any_eq_true.2 ⟨st, hst, by simp [hi]⟩)
+  · intro h b hb hany
+    obtain ⟨st, hst, hc⟩ := List.any_eq_true.1 hany
+    split at hc
+    · exact h b hb st hst _ _ _ ‹_›
+    · cases hc
+
+/-- `g` has no `func_addr` statement. -/
+def NoFuncAddr (g : Function) : Prop :=
+  ∀ b ∈ g.blocks, ∀ st ∈ b.body, ∀ ty fn, st.inst ≠ .funcAddr ty fn
+
+theorem hasFuncAddr_eq_false {f : Function} : hasFuncAddr f = false ↔ NoFuncAddr f := by
+  simp only [hasFuncAddr, List.any_eq_false, NoFuncAddr]
+  constructor
+  · intro h b hb st hst ty fn hi
+    exact h b hb (List.any_eq_true.2 ⟨st, hst, by simp [hi]⟩)
+  · intro h b hb hany
+    obtain ⟨st, hst, hc⟩ := List.any_eq_true.1 hany
+    split at hc
+    · exact h b hb st hst _ _ ‹_›
+    · cases hc
+
 /-- The facts of the output the backend theorem uses (`E2E.backend_correct_opt`). -/
 structure BackendFacts (f g : Function) : Prop where
   name : g.name = f.name
@@ -127,6 +153,8 @@ structure BackendFacts (f g : Function) : Prop where
   externs : g.externs = f.externs
   subsetE : Compile.functionE f = true → Compile.functionE g = true
   callees : ∀ fn ∈ callees g, fn ∈ callees f
+  noCI : NoCallIndirect f → NoCallIndirect g
+  noFA : NoFuncAddr f → NoFuncAddr g
 
 theorem removeUnreachable_facts (f : Function) : BackendFacts f (removeUnreachable f) := by
   unfold removeUnreachable
@@ -137,26 +165,33 @@ theorem removeUnreachable_facts (f : Function) : BackendFacts f (removeUnreachab
     have hbl : ∀ b ∈ (removeUnreachableRaw f).blocks, b ∈ f.blocks := by
       simp only [unreachableOk, Bool.and_eq_true, List.all_eq_true, List.contains_iff_mem] at hok
       exact fun b hb => (hok.2 b hb).1
-    refine ⟨hn, hs, hsl, hgl, hex, fun hE => ?_, fun fn hfn => ?_⟩
+    refine ⟨hn, hs, hsl, hgl, hex, fun hE => ?_, fun fn hfn => ?_, fun h b hb => h b (hbl b hb),
+      fun h b hb => h b (hbl b hb)⟩
     · simp only [Compile.functionE, Bool.and_eq_true, List.all_eq_true] at hE ⊢
       rw [hs, hgl, hex]
       exact ⟨⟨⟨hE.1.1.1, hE.1.1.2⟩, hE.1.2⟩, fun b hb => hE.2 b (hbl b hb)⟩
     · obtain ⟨b, hb, st, hst, args, h⟩ := mem_callees.1 hfn
       exact mem_callees.2 ⟨b, hbl b hb, st, hst, args, h⟩
-  · exact ⟨rfl, rfl, rfl, rfl, rfl, id, fun _ h => h⟩
+  · exact ⟨rfl, rfl, rfl, rfl, rfl, id, fun _ h => h, id, id⟩
 
 theorem keepsBackendSubset_facts {f g : Function} (h : keepsBackendSubset f g = true) :
     BackendFacts f g := by
   simp only [keepsBackendSubset, sameHeader, Bool.and_eq_true, beq_iff_eq, List.all_eq_true,
     List.contains_iff_mem, Bool.or_eq_true, Bool.not_eq_true'] at h
-  obtain ⟨⟨⟨⟨⟨⟨hn, hs⟩, hsl⟩, hgl⟩, hex⟩, hE⟩, hc⟩ := h
-  refine ⟨hn, hs, hsl, hgl, hex, fun h1 => ?_, hc⟩
-  rcases hE with h2 | h2
-  · rw [h1] at h2; cases h2
-  · exact h2
+  obtain ⟨⟨⟨⟨⟨⟨⟨⟨hn, hs⟩, hsl⟩, hgl⟩, hex⟩, hE⟩, hc⟩, hci⟩, hfa⟩ := h
+  refine ⟨hn, hs, hsl, hgl, hex, fun h1 => ?_, hc, fun h1 => ?_, fun h1 => ?_⟩
+  · rcases hE with h2 | h2
+    · rw [h1] at h2; cases h2
+    · exact h2
+  · rcases hci with h2 | h2
+    · exact hasCallIndirect_eq_false.1 h2
+    · rw [hasCallIndirect_eq_false.2 h1] at h2; cases h2
+  · rcases hfa with h2 | h2
+    · exact hasFuncAddr_eq_false.1 h2
+    · rw [hasFuncAddr_eq_false.2 h1] at h2; cases h2
 
 theorem optimize_facts (cfg : Config) (f : Function) : BackendFacts f (optimize f cfg) :=
-  optimizeReport_out cfg f (BackendFacts f) ⟨rfl, rfl, rfl, rfl, rfl, id, fun _ h => h⟩
+  optimizeReport_out cfg f (BackendFacts f) ⟨rfl, rfl, rfl, rfl, rfl, id, fun _ h => h, id, id⟩
     (removeUnreachable_facts f) (fun _ h => keepsBackendSubset_facts h)
 
 theorem optimize_sim (cfg : Config) (hS : SimplifyPassSim cfg.simplifyFn cfg.skeletonFn)
@@ -175,15 +210,29 @@ theorem initState_rel {p q : Program} (hP : FunsSim p.funcs q.funcs) {f : String
   simp only [initState, Program.func?] at hg ⊢
   simp [hg, he']
 
-/-- **Program refinement by the mid-end**: whenever `Clif.run` of a program returns or traps,
-`Clif.run` of the optimised program (every function optimised) does the same. -/
+/-- An initial state runs a function of the program, at its entry. -/
+theorem initState_inv {p : Program} {f : String} {args : List Val} {mem : Mem} {s : State}
+    (h : initState p f args mem = .ok s) : RunInv (· ∈ p.funcs) s := by
+  simp only [initState, Res.bind_eq_ok, Res.ofOption_eq_ok, Res.pure_eq_ok] at h
+  obtain ⟨fn, hfn, ⟨fr, mem'⟩, he, rfl⟩ := h
+  exact ⟨FrameInv.enterFunc (List.mem_of_find?_eq_some hfn) he, fun _ h => by cases h⟩
+
+/-- **Program refinement by the mid-end**: whenever `Clif.run` of a program without
+`call_indirect` returns or traps, `Clif.run` of the optimised program (every function optimised)
+does the same. -/
 theorem optimizeProgram_refines (cfg : Config)
     (hS : SimplifyPassSim cfg.simplifyFn cfg.skeletonFn) {env : Env}
-    (hE : EnvKeepsSymbols env) (p : Program) (f : String) (args : List Val) (fuel : Nat) :
+    (hE : EnvKeepsSymbols env) (p : Program) (hp : ∀ g ∈ p.funcs, NoCallIndirect g) (f : String)
+    (args : List Val) (fuel : Nat) :
     ∃ fuel', OutcomeRefines (run env p f args fuel) (run env (optimizeProgram p cfg) f args fuel') := by
   have hP : FunsSim p.funcs (optimizeProgram p cfg).funcs :=
     FunsSim.map (T := (optimize · cfg)) (optimize_sim cfg hS)
-  have hd : (optimizeProgram p cfg).initMem = p.initMem := rfl
+  have hd : (optimizeProgram p cfg).initMem = p.initMem := by
+    have hn : ∀ g : Function, (optimize g cfg).name = g.name := fun g => (optimize_facts cfg g).name
+    have hx : ∀ g : Function, (optimize g cfg).externs = g.externs :=
+      fun g => (optimize_facts cfg g).externs
+    simp only [Program.initMem, optimizeProgram, List.map_map, List.flatMap_map, Function.comp_def,
+      hn, hx]
   simp only [run, hd]
   cases hm : p.initMem with
   | trap c => exact ⟨0, ⟨fun _ _ h => h, fun _ h => h⟩⟩
@@ -207,7 +256,7 @@ theorem optimizeProgram_refines (cfg : Config)
     | stuck m => exact ⟨0, ⟨(fun _ _ h => by cases h), (fun _ h => by cases h)⟩⟩
     | ok s =>
       obtain ⟨s', hi', hr⟩ := initState_rel hP hi
-      obtain ⟨n', hn'⟩ := runLoop_refines hE hP fuel s s' hr
+      obtain ⟨n', hn'⟩ := runLoop_refines hE hP (CIFree.ofProgram hp) fuel s s' hr (initState_inv hi)
       exact ⟨n', by simp only [hi']; exact hn'⟩
 
 end Opt

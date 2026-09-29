@@ -74,16 +74,23 @@ theorem ctor_gen_call_args_bytes {ctx : Ctx} {st : LState} {s : Clif.Signature}
     (h : externCtor ctx T.gen_call_args [.op (.sig s), .regsVec rss] st = .ok (v, st')) :
     ∃ bytes, sigParamBytes s = .ok bytes := by
   have : externCtor ctx T.gen_call_args [.op (.sig s), .regsVec rss] st =
-      match sigParamBytes s, rss.mapM single? with
-      | .ok bytes, some rs =>
-        let r := ((((argLocs bytes).1.zip rs).zip bytes).foldl argStep (#[], st))
+      match sigArgLocs s, rss.mapM single? with
+      | .ok (locs, _), some rs =>
+        let bytes := match sigParamBytes s with | .ok b => b | _ => []
+        let r := (((locs.zip rs).zip bytes).foldl argStep (#[], st))
         .ok (.op (.callArgs r.1.toList), r.2)
       | .error e, _ => .unmodeled s!"gen_call_args: {e}"
       | _, none => .unmodeled "gen_call_args: multi-register value" := rfl
   rw [this] at h
   cases hb : sigParamBytes s with
-  | error e => rw [hb] at h; simp at h
   | ok b => exact ⟨b, rfl⟩
+  | error e =>
+    have hl : sigArgLocs s = .error e := by
+      have hb' : sigArgs s = .error e := hb
+      simp only [sigArgLocs, hb']
+      rfl
+    rw [hl] at h
+    cases rss.mapM single? <;> simp at h
 
 theorem outRegs_single (st : LState) (n : Nat) :
     (outRegs st n).mapM single? =
@@ -634,7 +641,7 @@ theorem call_bl_ruleOk {p : Program} (hp : Data p) {F : BitVec 64 → Prop} {ise
     {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program} (hR : Refines F isem)
     (hMR : MRStable F MR) (hCR : CallsRefine F env MR isem) :
     CallRuleOk isem MR env cp p rule_lower_2508 := by
-  intro f ctx hctx hreg ii info inst hi hcl cfg hc m n st tr env' s1 out st' tr' hm hn hvb _ hmatch
+  intro f ctx hctx hreg hnorm ii info inst hi hcl cfg hc m n st tr env' s1 out st' tr' hm hn hvb _ hmatch
     heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
   obtain ⟨n, rfl⟩ : ∃ n', n = n' + 100 := ⟨n - 100, by omega⟩
@@ -653,13 +660,14 @@ theorem call_bl_ruleOk {p : Program} (hp : Data p) {F : BitVec 64 → Prop} {ise
   simp only [List.cons.injEq, and_true] at hfs
   obtain ⟨rfl, rfl⟩ := hfs
   have hfn : ctx.func.extern? fn = some ext := by rw [hctx.func]; exact hext
+  have hnex := hnorm fn ext hext
   simp only [ext_value_list_slice_iff, ext_func_ref_data_iff, hfn] at *
   isel_destruct; subst_vars
   simp only [List.cons.injEq, Option.some.injEq, and_true] at *
   isel_destruct; subst_vars
   isel_inv_simp [*, rule_lower_2508] at heval
   isel_destruct; subst_vars
-  simp only [ctor_abi_sig_iff, ctor_gen_call_output_iff, ctor_put_in_regs_vec_iff,
+  simp only [ctor_abi_sig_iff, ctor_gen_call_output_iff _ _ _ _ hnex, ctor_put_in_regs_vec_iff,
     ctor_gen_call_rets_iff, ctor_try_call_none_iff, ctor_output_vec_iff,
     Array.getElem?_setIfInBounds, Array.size_setIfInBounds, Array.size_replicate] at *
   isel_destruct; subst_vars
@@ -672,11 +680,12 @@ theorem call_bl_ruleOk {p : Program} (hp : Data p) {F : BitVec 64 → Prop} {ise
   have h8 : bytes.length ≤ 8 := sigParamBytes_length hb ▸ hreg fn _ hext
   have hrs := mapM_valueReg hctx ‹List.mapM ctx.valueReg? args = some _›
   subst hrs
-  simp only [ctor_gen_call_args_iff _ _ _ hb h8, ctor_gen_call_info_iff _ _ _ _ _ _ _ hb,
+  simp only [ctor_gen_call_args_iff _ _ _ hb hnex h8,
+    ctor_gen_call_info_iff _ _ _ _ _ _ _ hb hnex,
     mapM_single_map, Option.some.injEq, exists_eq_left'] at *
   isel_destruct; subst_vars
-  simp only [ctor_gen_call_info_iff _ _ _ _ _ _ _ hb, Nat.reduceEqDiff, Nat.reduceLT, ite_true,
-    ite_false, Option.some.injEq] at *
+  simp only [ctor_gen_call_info_iff _ _ _ _ _ _ _ hb hnex, Nat.reduceEqDiff, Nat.reduceLT,
+    ite_true, ite_false, Option.some.injEq] at *
   isel_destruct; subst_vars
   obtain ⟨hr8, rfl⟩ := retRegs_eq ‹retRegs _ = some _›
   simp only [ctor_output_vec_iff] at *
@@ -710,7 +719,7 @@ theorem call_got_ruleOk {p : Program} (hp : Data p) {F : BitVec 64 → Prop} {is
     {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program} (hR : Refines F isem)
     (hMR : MRStable F MR) (hCR : CallsRefine F env MR isem) :
     CallRuleOk isem MR env cp p rule_lower_2518 := by
-  intro f ctx hctx hreg ii info inst hi hcl cfg hc m n st tr env' s1 out st' tr' hm hn hvb _ hmatch
+  intro f ctx hctx hreg hnorm ii info inst hi hcl cfg hc m n st tr env' s1 out st' tr' hm hn hvb _ hmatch
     heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
   obtain ⟨n, rfl⟩ : ∃ n', n = n' + 100 := ⟨n - 100, by omega⟩
@@ -731,13 +740,14 @@ theorem call_got_ruleOk {p : Program} (hp : Data p) {F : BitVec 64 → Prop} {is
   simp only [List.cons.injEq, and_true] at hfs
   obtain ⟨rfl, rfl⟩ := hfs
   have hfn : ctx.func.extern? fn = some ext := by rw [hctx.func]; exact hext
+  have hnex := hnorm fn ext hext
   simp only [ext_value_list_slice_iff, ext_func_ref_data_iff, hfn] at *
   isel_destruct; subst_vars
   simp only [List.cons.injEq, Option.some.injEq, and_true] at *
   isel_destruct; subst_vars
   isel_inv_simp [*, rule_lower_2518] at heval
   isel_destruct; subst_vars
-  simp only [ctor_abi_sig_iff, ctor_gen_call_output_iff, ctor_put_in_regs_vec_iff,
+  simp only [ctor_abi_sig_iff, ctor_gen_call_output_iff _ _ _ _ hnex, ctor_put_in_regs_vec_iff,
     ctor_gen_call_rets_iff, ctor_try_call_none_iff, ctor_output_vec_iff, ctor_box_external_name_iff,
     Array.getElem?_setIfInBounds, Array.size_setIfInBounds, Array.size_replicate] at *
   isel_destruct; subst_vars
@@ -751,12 +761,13 @@ theorem call_got_ruleOk {p : Program} (hp : Data p) {F : BitVec 64 → Prop} {is
   have hbelow := mapM_valueReg_below hvb ‹List.mapM ctx.valueReg? args = some _›
   have hrs := mapM_valueReg hctx ‹List.mapM ctx.valueReg? args = some _›
   subst hrs
-  simp only [ctor_gen_call_args_iff _ _ _ hb h8, mapM_single_map, Option.some.injEq,
+  simp only [ctor_gen_call_args_iff _ _ _ hb hnex h8, mapM_single_map, Option.some.injEq,
     exists_eq_left'] at *
   isel_destruct; subst_vars
   have h570 := ‹ApplyInternal _ _ _ _ 27 570 _ _ _ _›
   obtain ⟨rfl, hs0⟩ := kL _ (by omega) _ _ _ _ _ h570
-  simp only [ctor_gen_call_ind_info_iff _ _ _ _ _ _ hb, Nat.reduceEqDiff, Nat.reduceLT, ite_true,
+  simp only [ctor_gen_call_ind_info_iff _ _ _ _ _ _ hb hnex, Nat.reduceEqDiff, Nat.reduceLT,
+    ite_true,
     ite_false, Option.some.injEq] at *
   isel_destruct; subst_vars
   obtain ⟨hr8, rfl⟩ := retRegs_eq ‹retRegs _ = some _›

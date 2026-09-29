@@ -490,12 +490,13 @@ theorem q_init {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiEntry R.fb R.bas
     cases r with
     | x n =>
       simp only [Reg.isArgReg, decide_eq_true_eq] at hr
-      have hne : ∀ m, 8 ≤ m → m < 32 → Arm.StateField.GPR (rnum n) ≠ .GPR (BitVec.ofNat 5 m) :=
+      have hne : ∀ m, 8 < m → m < 32 → Arm.StateField.GPR (rnum n) ≠ .GPR (BitVec.ofNat 5 m) :=
         fun m h1 h2 e => rnum_ne (a := n) (b := m) (by omega) h2 (by omega) (Arm.StateField.GPR.inj e)
       simp only [regVal]
       rw [hfield _ (by simp) (hne 29 (by omega) (by omega)) (hne 31 (by omega) (by omega))
         (hne 16 (by omega) (by omega))]
-      have := hbe.args n hr
+      have h9 : n < 9 := by omega
+      have := hbe.args n h9
       simp only [xreg] at this
       simp only [rnum, this]
     | v n =>

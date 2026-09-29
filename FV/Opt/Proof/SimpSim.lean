@@ -63,7 +63,7 @@ theorem Mem.store_syms {w : Nat} (m : Mem) (S : String → Option Nat) (fl : Mem
   simp only [Res.ok_bind]
   cases Res.check (!m.readonlyAt a n) _ <;> rfl
 
-/-- Only `symbol_value` reads the symbols; nothing changes them. -/
+/-- Only `symbol_value` and `func_addr` read the symbols; nothing changes them. -/
 theorem evalInst_withSyms {fr : Frame} {m : Mem} {i : Inst} (hi : notSym i = true)
     (S : String → Option Nat) :
     evalInst fr { m with symbols := S } i = resSyms S (evalInst fr m i) := by
@@ -92,7 +92,7 @@ theorem evalNode_symsLe {fr : Frame} {m m' : Mem} {n : Inst} (hp : isPure n = tr
     | trap c => simp [resSyms, val1]
     | stuck _ => simp [resSyms, val1]
   | false =>
-    cases n <;> simp only [notSym] at hs <;> (try cases hs)
+    cases n <;> simp only [notSym] at hs <;> (try cases hs) <;> (try (simp [isPure] at hp; done))
     rename_i ty gv
     simp only [evalNode, evalInst, Res.bind_eq_ok] at h ⊢
     revert h
@@ -144,9 +144,10 @@ theorem mapOperands_congr {σ τ : ValueId → ValueId} {i : Inst}
     (h : ∀ x ∈ operands i, σ x = τ x) : mapOperands σ i = mapOperands τ i := by
   cases i <;> simp only [operands, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq, false_imp_iff, imp_true_iff] at h <;> simp only [mapOperands, h]
-  rename_i args
-  simp only [Inst.call.injEq, true_and]
-  exact List.map_congr_left h
+  · simp only [Inst.call.injEq, true_and]
+    exact List.map_congr_left h
+  · simp only [Inst.callIndirect.injEq, true_and]
+    exact List.map_congr_left h.2
 
 theorem mapOperands_id (i : Inst) : mapOperands id i = i := by
   cases i <;> simp [mapOperands]
@@ -425,7 +426,7 @@ theorem den_agree {syms : String → Option Nat} {fr' : Frame} {bi k' : Nat}
       have hev : evalNode fr' (symMem syms) n = some a := (hinv.pure x n hx ⟨d, j, b', st, hd, hb',
         hst, hrx, hsn, hp⟩).symm.trans ha
       refine (evalNode_congr (fr := fr')
-        (fr' := withRegs fr' (den cert.graph (rhoAt f g fi cert fr' bi k') fr' mem)) rfl rfl ?_).trans
+        (fr' := withRegs fr' (den cert.graph (rhoAt f g fi cert fr' bi k') fr' mem)) rfl rfl rfl ?_).trans
         (evalNode_symsLe hp hmem hev)
       intro y hy
       rw [← hsn] at hy
@@ -727,7 +728,9 @@ theorem SCore.lock {fr fr' : Frame} {bi k k' : Nat} {m : Mem} {s : Stmt} {ss ts 
     fun x hx => (h.agree x (hS.wff.uses bi b hb k s hsk x hx)).2.1
   have hglob : fr'.func.globals = fr.func.globals := by
     rw [h.invf.func, h.invg.func, hS.globals]
-  have hev := evalInst_rename (mem := m) hglob h.slots hops
+  have hext : fr'.func.externs = fr.func.externs := by
+    rw [h.invf.func, h.invg.func, hS.externs]
+  have hev := evalInst_rename (mem := m) hglob hext h.slots hops
   have hnc' := mapOperands_not_call (σ := cert.subst.step) hnc
   rw [lstep_inst hs0 hnc, lstep_inst ht0 hnc']
   refine ⟨fun fr1 m1 hl => ?_, fun c hl => ?_⟩
@@ -873,6 +876,7 @@ theorem SCore.srcRename {fr fr'' : Frame} {bi k k'' : Nat} {V : Valuation} {M : 
     (evalInst (withRegs fr'' V) M (mapOperands cert.subst.step s.inst)).norm =
       (evalInst fr M s.inst).norm := by
   refine evalInst_rename (by simp only [withRegs]; rw [h.invf.func, h.invg.func, hS.globals])
+    (by simp only [withRegs]; rw [h.invf.func, h.invg.func, hS.externs])
     h.slots (fun x hx => ?_)
   obtain ⟨hav, heq, -⟩ := h.agree x (hS.wff.uses bi b hb k s hsk x hx)
   simp only [withRegs]
@@ -883,7 +887,7 @@ theorem tgtGraph {fr'' : Frame} {bi k'' : Nat} {V : Valuation} {M : Mem} {b' : B
     (hb' : g.blocks[bi]? = some b') (htk : b'.body[k'']? = some t)
     (hV : ∀ x, Avail (wfData g (gInfo fi cert)) bi k'' x → V x = fr''.regs x) :
     evalInst (withRegs fr'' V) M t.inst = evalInst fr'' M t.inst :=
-  evalInst_congr rfl rfl (fun x hx => hV x (hS.wfg.uses bi b' hb' k'' t htk x hx))
+  evalInst_congr rfl rfl rfl (fun x hx => hV x (hS.wfg.uses bi b' hb' k'' t htk x hx))
 
 /-- A statement whose target counterpart `{ results := s.results, inst := i }` refines it. -/
 theorem SCore.lockWith {fr fr' : Frame} {bi k k' : Nat} {m : Mem} {s : Stmt} {ss ts : List Stmt}
@@ -1841,7 +1845,7 @@ theorem SCore.runExtras {fr : Frame} {bi k : Nat} {m : Mem} (hm : m.symbols = sy
           rw [den_node (D := cert.graph) hD]
           have hsy : SymsLe m (memPlus m) := memPlus_le m
           rw [← evalNode_symsLe hp hsy hev]
-          refine evalNode_congr (by simp only [hf0]) (by simp only [hs0]) ?_
+          refine evalNode_congr (by simp only [hf0]) (by simp only [hf0]) (by simp only [hs0]) ?_
           intro y hy
           exact hV y (hS.wfg.uses bi b' hb' K _ htk y hy)
         · have hnr := avail_not_result hS.wfg hb' htk hx'

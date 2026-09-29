@@ -1,0 +1,10 @@
+[package]
+name = "clif-data-export"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+publish = false
+description = "Recovers the data objects (panic locations, constant tables, vtables) that cg_clif hides behind symbol_value: reads cg_clif's object file for a dumped crate and emits `; data:` directives plus a gv renaming table"
+
+[dependencies]
+object = { version = "0.40", default-features = false, features = ["read_core", "elf", "std"] }

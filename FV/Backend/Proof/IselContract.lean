@@ -448,8 +448,12 @@ structure CtxInv (f : Clif.Function) (ctx : Ctx) : Prop where
   func : ctx.func = f
   data : ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info → info.clif = some inst →
     instData f inst = .ok info.data
+  /-- Every instruction is in subset E (`Compile.instE`; new since `call_indirect` and
+  `func_addr` compile but are outside the end-to-end theorem). -/
+  instE : ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info →
+    info.clif = some inst → Compile.instE inst = true
   resTys : ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info → info.clif = some inst →
-    ∃ tys, inst.resultTypes (fun r => (f.extern? r).map (·.sig)) = some tys ∧
+    ∃ tys, inst.resultTypes (fun r => (f.extern? r).map (·.sig)) (fun _ => none) = some tys ∧
       info.resTys = tys.map CTy.ofClif ∧ info.results.length = tys.length
   valueReg : ∀ (x : Nat) (r : Reg), ctx.valueReg? x = some r → r = .vreg x .int
   typedReg : ∀ (x : Nat) (t : CTy), ctx.valueType? x = some t → ctx.valueReg? x = some (.vreg x .int)
@@ -465,6 +469,10 @@ structure CtxInv (f : Clif.Function) (ctx : Ctx) : Prop where
   change #7): the lowering uses the whole 64-bit register as the base. -/
   addr64 : ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst) (x : Nat), ctx.insts[ii]? = some info →
     info.clif = some inst → memAddr? inst = some x → ctx.valueType? x = some (.int 64)
+  /-- No `func_addr` (outside the theorem, rust-route step 4: `lowerCheck` rejects it, the
+  compiler flags such functions unverified; `E2E.InSubset.noFA`). -/
+  noFA : ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info →
+    info.clif = some inst → ∀ ty fn, inst ≠ .funcAddr ty fn
 
 /-- Instructions the rules may look through (`def_inst`): their value is a function of their
 operands (and the frame's slot bases). -/
@@ -774,10 +782,17 @@ calls with stack-passed arguments are outside the theorem. -/
 def CallRegArgs (f : Clif.Function) : Prop :=
   ∀ (fn : Clif.FnRef) (e : Clif.ExtFunc), f.extern? fn = some e → e.sig.params.length ≤ 8
 
-/-- `LowerRuleOk` for a call rule: additionally assumes `CallRegArgs f`. -/
+/-- Every extern of `f` has only `normal` parameters (no `sret`; `E2E.InSubset.noSpecial`):
+call sites place arguments in x0.. only for such signatures. New since `call_indirect`/
+`func_addr` compile (rust-route step 4); sret signatures are outside the theorem. -/
+def ExternsNormal (f : Clif.Function) : Prop :=
+  ∀ (fn : Clif.FnRef) (e : Clif.ExtFunc), f.extern? fn = some e →
+    e.sig.params.all (·.purpose = .normal)
+
+/-- `LowerRuleOk` for a call rule: additionally assumes `CallRegArgs f` and `ExternsNormal f`. -/
 def CallRuleOk (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
     (p : Program) (r : Rule) : Prop :=
-  ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx → CallRegArgs f →
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx → CallRegArgs f → ExternsNormal f →
   ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info → info.clif = some inst →
   ∀ (cfg : Config), cfg.checkOverlap = false →
   ∀ (m n : Nat) (st : LState) (tr : Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId)
@@ -801,7 +816,8 @@ non-`i8..i64` type or a vector/float type test) never match an instruction of a 
 `buildCtx` builds. -/
 def ExcludedUnmatchable (p : Program) : Prop :=
   ∀ r ∈ p.rulesOf TId.lower, closureRoot r = false →
-  ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx → ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info → info.clif = some inst →
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx → Compile.functionE f = true →
+  ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info → info.clif = some inst →
   ∀ (cfg : Config) (m : Nat) (s : LState × Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId),
     (matchRule p (sem ctx) cfg m r [.inst ii]).run s ≠ .ok (some env', s1)
 
@@ -859,6 +875,7 @@ theorem lowerInstOk_of_rules {p : Program} (hp : Data p) (hrules : LowerRulesCor
     {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program} (hR : Refines F isem)
     (hMR : MRStable F MR) (hcr : CallsRefine F env MR isem) (hMem : MemRefines F sb syms isem)
     {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) (hra : CallRegArgs f)
+    (hnorm : ExternsNormal f) (hE : Compile.functionE f = true)
     (hMRo : MemRelOk F sb syms f MR) {ii : Nat} {info : IInfo}
     {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
     {cfg : Config} (hco : cfg.checkOverlap = false) {n : Nat}
@@ -884,15 +901,15 @@ theorem lowerInstOk_of_rules {p : Program} (hp : Data p) (hrules : LowerRulesCor
   simp only [Prod.mk.injEq] at hs
   rw [← hs.1] at heval
   cases hroot : closureRoot r
-  · exact absurd hmatch (hex r hr hroot f ctx hctx ii info inst hi hc cfg m (st, tr) env' s1)
+  · exact absurd hmatch (hex r hr hroot f ctx hctx hE ii info inst hi hc cfg m (st, tr) env' s1)
   · cases hcall : callRootRule r
     · cases hm : memRootRule r
       · exact hrules F isem MR env cp hR hMR r hr hroot hcall hm f ctx hctx ii info inst hi hc cfg
           hco m n st tr env' s1 out st' tr2 (by omega) (by omega) hvb hfirst hmatch heval
       · exact hmem F sb syms isem MR env cp hR hMR hMem r hr hm f ctx hctx hMRo ii info inst hi hc
           cfg hco m n st tr env' s1 out st' tr2 (by omega) (by omega) hvb hfirst hmatch heval
-    · exact hcalls F isem MR env cp hR hMR hcr r hr hcall f ctx hctx hra ii info inst hi hc cfg hco
-        m n st tr env' s1 out st' tr2 (by omega) (by omega) hvb hfirst hmatch heval
+    · exact hcalls F isem MR env cp hR hMR hcr r hr hcall f ctx hctx hra hnorm ii info inst hi hc
+        cfg hco m n st tr env' s1 out st' tr2 (by omega) (by omega) hvb hfirst hmatch heval
 
 set_option maxRecDepth 20000 in
 /-- `lowerInstOk_of_rules` for the exported program and the backend's own call
@@ -904,6 +921,7 @@ theorem lowerInstOk_runTerm (hrules : LowerRulesCorrect program)
     {env : Clif.Env} {cp : Clif.Program} (hR : Refines F isem) (hMR : MRStable F MR)
     (hcr : CallsRefine F env MR isem) (hMem : MemRefines F sb syms isem)
     {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) (hra : CallRegArgs f)
+    (hnorm : ExternsNormal f) (hE : Compile.functionE f = true)
     (hMRo : MemRelOk F sb syms f MR) {ii : Nat} {info : IInfo}
     {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
     {st : LState} {out : V} {st' : LState} {tr : List RuleId} (hvb : ValsBelow ctx st)
@@ -928,7 +946,7 @@ theorem lowerInstOk_runTerm (hrules : LowerRulesCorrect program)
     have hlen : (program.rulesOf TId.lower).length ≤ 1000 := by
       rw [show TId.lower = 686 from rfl, data_program.r686]; decide
     obtain ⟨ms, rss, h1, h2, h3⟩ := lowerInstOk_of_rules data_program hrules hex hcalls hmem hR
-      hMR hcr hMem hctx hra hMRo hi hc rfl (by omega) hvb ha
+      hMR hcr hMem hctx hra hnorm hE hMRo hi hc rfl (by omega) hvb ha
     exact ⟨ms, rss, by simpa using h1, h2, h3⟩
 
 /-! ## Terminators (stated by M7; M4's obligations `LowerTermRulesCorrect`, `TermUnmatchable`,

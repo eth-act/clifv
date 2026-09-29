@@ -325,6 +325,10 @@ theorem ERel.globals {fr fr' bi k k'} (h : ERel σ f g Df Dg syms fr fr' bi k k'
     fr'.func.globals = fr.func.globals := by
   rw [h.invf.func, h.invg.func, hE.globals]
 
+theorem ERel.externs {fr fr' bi k k'} (h : ERel σ f g Df Dg syms fr fr' bi k k') :
+    fr'.func.externs = fr.func.externs := by
+  rw [h.invf.func, h.invg.func, hE.externs]
+
 /-- The results of a statement bound in both frames keep the agreement. -/
 theorem agree_results {fr fr' bi k k' b b' s rs vals regs regs'}
     (h : EAgree σ Df Dg fr fr' bi k k') (hb : f.blocks[bi]? = some b)
@@ -357,7 +361,7 @@ theorem ERel.keep {fr fr' bi k k' m s ss t ts} (h : ERel σ f g Df Dg syms fr fr
   obtain ⟨rfl, hσ⟩ := keepOk_spec hk
   simp only [ctxOf_σ] at hσ ht ⊢
   have hops := h.ops hE hs ht
-  have hev := evalInst_rename (mem := m) (h.globals hE) h.slots hops
+  have hev := evalInst_rename (mem := m) (h.globals hE) (h.externs hE) h.slots hops
   obtain ⟨b, b', hb, hb', h1, h2, -⟩ := h.blocks hE
   have hs0 := hs; have ht0 := ht
   rw [h1] at hs; rw [h2] at ht
@@ -454,7 +458,7 @@ theorem ERel.delete {fr fr' bi k k' m s ss} (h : ERel σ f g Df Dg syms fr fr' b
                 simp only [Regs.setMany_cons, Regs.setMany_nil, Option.some.injEq] at hset
                 subst hset; simp
               simp only
-              rw [hrv, h.invg.pure _ _ hav' hpd, evalNode_rename (h.globals hE) h.slots ?_,
+              rw [hrv, h.invg.pure _ _ hav' hpd, evalNode_rename (h.globals hE) (h.externs hE) h.slots ?_,
                 evalNode_mem (m := m) hp (by rw [hm]; rfl), ha]
               intro x hx
               have hxf := hE.wff.uses bi b hb k s hsk x hx

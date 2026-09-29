@@ -105,6 +105,8 @@ def instNames : Clif.Inst → String × String
   | .symbolValue .. => ("UnaryGlobalValue", "SymbolValue")
   | .stackAddr .. => ("StackAddr", "StackAddr")
   | .call .. => ("Call", "Call")
+  | .callIndirect .. => ("CallIndirect", "CallIndirect")
+  | .funcAddr .. => ("FuncAddr", "FuncAddr")
   | _ => ("", "")
 
 set_option maxRecDepth 20000 in

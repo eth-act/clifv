@@ -30,7 +30,9 @@ open Backend Backend.Proof
 vregs are above every value's vreg, `ValsBelow`) satisfies M4's `LowerInstOk`. -/
 def InstCalls (f : Clif.Function) (sem : Sem) (MR : MemRelT) (env : Clif.Env) (p : Clif.Program) :
     Prop :=
-  ∀ ctx ii info inst st rss st' tr, CtxInv f ctx → CallRegArgs f → ctx.insts[ii]? = some info →
+  ∀ ctx ii info inst st rss st' tr, CtxInv f ctx → CallRegArgs f → ExternsNormal f →
+    Compile.functionE f = true →
+    ctx.insts[ii]? = some info →
     info.clif = some inst → st.emitted = #[] → ValsBelow ctx st →
     runTerm ctx "lower" [.inst ii] st = .ok (some (.regsVec rss), st', tr) →
     LowerInstOk sem MR env p ctx inst info.results st rss st' st'.emitted.toList
@@ -55,9 +57,9 @@ theorem instCalls_of_rules (hrules : LowerRulesCorrect Isle.Aarch64.program)
     {MR : MemRelT} {env : Clif.Env} {p : Clif.Program} {f : Clif.Function} (hR : Refines F sem)
     (hMR : MRStable F MR) (hcr : CallsRefine F env MR sem) (hMem : MemRefines F sb syms sem)
     (hMRo : MemRelOk F sb syms f MR) : InstCalls f sem MR env p := by
-  intro ctx ii info inst st rss st' tr hctx hra hi hc hemp hvb hrun
+  intro ctx ii info inst st rss st' tr hctx hra hnorm hE hi hc hemp hvb hrun
   obtain ⟨ms, rss', hem, hout, hok⟩ := lowerInstOk_runTerm hrules hex hcalls hmem (env := env)
-    (cp := p) hR hMR hcr hMem hctx hra hMRo hi hc hvb hrun
+    (cp := p) hR hMR hcr hMem hctx hra hnorm hE hMRo hi hc hvb hrun
   cases hout
   rw [hemp, Array.empty_append] at hem
   rw [hem, List.toList_toArray]
@@ -91,7 +93,8 @@ theorem ofRes_congr {α : Type} (X : Clif.Res α) {k₁ k₂ : α → Clif.StepR
 theorem step_stmt (env : Clif.Env) (p : Clif.Program) (s : Clif.State) (st : Clif.Stmt)
     (rest : List Clif.Stmt) (h : s.frame.body = st :: rest)
     (hext : ∀ fn args, st.inst = .call fn args → ∀ e, s.frame.func.extern? fn = some e →
-      p.func? e.name = none) :
+      p.func? e.name = none)
+    (hci : ∀ sig callee args, st.inst ≠ .callIndirect sig callee args) :
     Clif.step env p s = Clif.StepResult.ofRes (instOutcome env p s.frame s.mem st.inst)
       fun (vals, mem) => Clif.continueWith s rest st.results vals mem := by
   cases hi : st.inst with
@@ -124,8 +127,13 @@ theorem step_stmt (env : Clif.Env) (p : Clif.Program) (s : Clif.State) (st : Cli
         simp only
         split <;> rfl
       | _ => rfl
+  | callIndirect sig callee args =>
+    -- a `call_indirect` function is outside the theorem: `hci` (supplied by the caller,
+    -- from `InSubset.noSpecial`) contradicts `hi`, closing the case.
+    exact absurd hi (hci sig callee args)
   | _ =>
-    rw [Clif.step_inst env p s st rest h (by intro fn args e; rw [hi] at e; cases e)]
+    rw [Clif.step_inst env p s st rest h (by intro fn args e; rw [hi] at e; cases e)
+      (by intro sig callee args e; rw [hi] at e; cases e)]
     simp only [hi, instOutcome]
 
 /-! ## Terminator calls from M4's terminator rule statements -/
@@ -151,12 +159,16 @@ theorem ctxInv_termCtx {f : Clif.Function} {ctx : Ctx} (h : CtxInv f ctx) {ti : 
     subst e
     obtain ⟨info, hi, hx⟩ := h.defInst x d hd
     rw [hph] at hi; cases hi; cases hx
-  refine ⟨h.func, fun ii info inst hi hc => ?_, fun ii info inst hi hc => ?_, h.valueReg,
+  refine ⟨h.func, fun ii info inst hi hc => ?_, fun ii info inst hi hc => ?_,
+    fun ii info inst hi hc => ?_, h.valueReg,
     h.typedReg, fun x d hd => ?_, fun x d info hd hi => ?_, h.slotOff, fun ii info hi => ?_,
-    h.valTyE, fun ii info inst x hi hc hx => ?_⟩
+    h.valTyE, fun ii info inst x hi hc hx => ?_, fun ii info inst hi hc => ?_⟩
   · by_cases e : ii = ti
     · subst e; rw [termCtx_insts_self hph] at hi; cases hi; cases hc
     · rw [termCtx_insts_ne e] at hi; exact h.data ii info inst hi hc
+  · by_cases e : ii = ti
+    · subst e; rw [termCtx_insts_self hph] at hi; cases hi; cases hc
+    · rw [termCtx_insts_ne e] at hi; exact h.instE ii info inst hi hc
   · by_cases e : ii = ti
     · subst e; rw [termCtx_insts_self hph] at hi; cases hi; cases hc
     · rw [termCtx_insts_ne e] at hi; exact h.resTys ii info inst hi hc
@@ -168,6 +180,9 @@ theorem ctxInv_termCtx {f : Clif.Function} {ctx : Ctx} (h : CtxInv f ctx) {ti : 
   · by_cases e : ii = ti
     · subst e; rw [termCtx_insts_self hph] at hi; cases hi; cases hc
     · rw [termCtx_insts_ne e] at hi; exact h.addr64 ii info inst x hi hc hx
+  · by_cases e : ii = ti
+    · subst e; rw [termCtx_insts_self hph] at hi; cases hi; cases hc
+    · rw [termCtx_insts_ne e] at hi; exact h.noFA ii info inst hi hc
 
 /-- For `return`/`trap`, `LowerTermOk` does not depend on the targets. -/
 theorem lowerTermOk_targets {isem : Sem} {MR : MemRelT} {ctx : Ctx} {t : Clif.Terminator}

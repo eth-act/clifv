@@ -1,4 +1,5 @@
 import FV.Backend.Isel
+import FV.Compile.Subset
 
 /-!
 # The lowering validator (M7): `lowerCheck f vc`
@@ -89,6 +90,8 @@ def instArgs : Clif.Inst → List Clif.ValueId
   | .carry _ _ x y z | .select _ x y z | .selectSpectreGuard _ x y z | .bitselect _ x y z
   | .atomicCas _ _ x y z => [x, y, z]
   | .call _ args => args
+  | .callIndirect _ callee args => callee :: args
+  | .funcAddr _ _ => []
 
 /-- The value operands of a terminator. -/
 def termArgs : Clif.Terminator → List Clif.ValueId
@@ -294,18 +297,28 @@ def inFix (f : Clif.Function) (gn : Nat → Nat) : List (List Clif.ValueId) :=
 
 /-! ## The checks -/
 
+/-- The result-type check of one instruction (`ctxOk`). -/
+def ctxResTysOk (f : Clif.Function) (info : IInfo) (i : Clif.Inst) : Bool :=
+  match i.resultTypes (fun r => (f.extern? r).map (·.sig)) (f.sigDecls.lookup ·) with
+  | some tys => decide (info.resTys = tys.map CTy.ofClif) &&
+      decide (info.results.length = tys.length)
+  | none => false
+
+/-- Not a `func_addr` (outside the theorem, rust-route step 4: `CtxInv.noFA`). -/
+def notFuncAddr : Clif.Inst → Bool
+  | .funcAddr .. => false
+  | _ => true
+
 /-- `CtxInv f ctx` (M4's context facts), decided. -/
 def ctxOk (f : Clif.Function) (ctx : Ctx) : Bool :=
   decide (ctx.func = f) &&
   ctx.insts.toList.all (fun info => match info.clif with
     | some i =>
-      (match instData f i with
-        | .ok d => d == info.data
-        | .error _ => false) &&
-      (match i.resultTypes (fun r => (f.extern? r).map (·.sig)) with
-        | some tys => decide (info.resTys = tys.map CTy.ofClif) &&
-            decide (info.results.length = tys.length)
-        | none => false)
+      Compile.instE i && notFuncAddr i &&
+        ((match instData f i with
+            | .ok d => d == info.data
+            | .error _ => false) &&
+          ctxResTysOk f info i)
     | none => true) &&
   (List.range ctx.valReg.size).all (fun x => match ctx.valueReg? x with
     | some r => decide (r = .vreg x .int)
@@ -476,8 +489,12 @@ def brIdxOk (f : Clif.Function) (ctx : Ctx) : Bool :=
     | _ => true
 
 /-- **The lowering validator.** Accepts `vc` iff it is the lowering of `f` in the structure
-the driver proof needs, with an SSA availability certificate, and every `br_table` index has at most 32 bits. -/
+the driver proof needs, with an SSA availability certificate, and every `br_table` index has at most 32 bits.
+`f.sigDecls` must be empty: `sigN` declarations exist only for `call_indirect`, which is
+outside the end-to-end theorem (`E2E.InSubset` via `Compile.functionE`), and the context
+invariant `CtxInv` (M4) is stated with no signature declarations. -/
 def lowerCheck (f : Clif.Function) (vc : VCode) : Bool :=
+  f.sigDecls.isEmpty &&
   match buildCtx f with
   | .error _ => false
   | .ok (ctx, _, st0) =>

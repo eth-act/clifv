@@ -134,7 +134,8 @@ theorem res_ofOption_eq_ok {α : Type} {m : String} {o : Option α} {a : α} :
 /-- **Typing of `evalInst`**: the results have the instruction's result types. -/
 theorem evalInst_types {fr : Clif.Frame} {cm cm' : Clif.Mem} {i : Clif.Inst}
     {vals : List Clif.Val} {sigOf : Clif.FnRef → Option Clif.Signature} {tys : List Clif.Ty}
-    (h : Clif.evalInst fr cm i = .ok (vals, cm')) (ht : i.resultTypes sigOf = some tys) :
+    (h : Clif.evalInst fr cm i = .ok (vals, cm'))
+    (ht : i.resultTypes sigOf (fun _ => none) = some tys) :
     vals.map (·.ty) = tys := by
   cases i <;> simp only [Clif.evalInst] at h <;>
     simp only [Clif.Inst.resultTypes, Option.some.injEq] at ht
@@ -150,7 +151,7 @@ signature). -/
 theorem instOutcome_types {env : Clif.Env} {p : Clif.Program} {fr : Clif.Frame}
     {cm cm' : Clif.Mem} {i : Clif.Inst} {vals : List Clif.Val} {tys : List Clif.Ty}
     (h : instOutcome env p fr cm i = .ok (vals, cm'))
-    (ht : i.resultTypes (fun r => (fr.func.extern? r).map (·.sig)) = some tys) :
+    (ht : i.resultTypes (fun r => (fr.func.extern? r).map (·.sig)) (fun _ => none) = some tys) :
     vals.map (·.ty) = tys := by
   cases i with
   | call fn args =>

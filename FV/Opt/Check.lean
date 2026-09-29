@@ -115,7 +115,7 @@ def wfCert (f : Function) (cfg : Cfg) (types : Std.HashMap ValueId Ty) : Bool :=
     b.params.all (fun p => tm p.1 == some p.2) &&
     (b.body.zipIdx.all fun (st, j) =>
       (operands st.inst).all (availB dm anc i j) &&
-      (match st.inst.resultTypes sigOf with
+      (match st.inst.resultTypes sigOf (fun _ => none) with
        | some ts => ts.length == st.results.length && (st.results.zip ts).all fun (r, t) => tm r == some t
        | none => false) &&
       (!isPure st.inst || pureTyped tm f st.inst)) &&
@@ -145,7 +145,7 @@ def checkCore (f : Function) : Except String Info := do
       types := types.insert v t
       defBlock := defBlock.insert v i
     for st in b.body do
-      let some ts := st.inst.resultTypes sigOf | throw s!"ill-formed instruction defining {st.results}"
+      let some ts := st.inst.resultTypes sigOf (fun _ => none) | throw s!"ill-formed instruction defining {st.results}"
       ensure (ts.length == st.results.length) s!"result arity of {st.results}"
       for (v, t) in st.results.zip ts do
         ensure (!types.contains v) s!"v{v} defined twice"

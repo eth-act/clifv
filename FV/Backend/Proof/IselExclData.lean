@@ -50,7 +50,8 @@ def eNamePairs : List (String × String) :=
    ("Load", "Sload16"), ("Load", "Uload32"), ("Load", "Sload32"),
    ("Store", "Store"), ("Store", "Istore8"), ("Store", "Istore16"), ("Store", "Istore32"),
    ("Ternary", "Select"), ("NullAry", "Nop"), ("UnaryGlobalValue", "SymbolValue"),
-   ("StackAddr", "StackAddr"), ("Call", "Call")]
+   ("StackAddr", "StackAddr"), ("Call", "Call"),
+   ("CallIndirect", "CallIndirect"), ("FuncAddr", "FuncAddr")]
 
 theorem unaryOpcode_mem {op : Clif.UnaryOp} {n : String} (h : unaryOpcode op = some n) :
     ("Unary", n) ∈ eNamePairs := by
@@ -79,6 +80,15 @@ theorem instNames_mem {f : Clif.Function} {c : Clif.Inst} {d : V} (h : instData 
     cases hn : binaryOpcode op with
     | none => simp only [instData, hn, throw, throwThe, MonadExceptOf.throw, reduceCtorEq] at h
     | some n => exact binaryOpcode_mem hn
+  case callIndirect sig callee args =>
+    simp only [instNames]
+    exact by simp [eNamePairs]
+  case funcAddr ty fn =>
+    cases ty with
+    | i64 =>
+      simp only [instNames]
+      exact by simp [eNamePairs]
+    | _ => simp [instData, throw, throwThe, MonadExceptOf.throw] at h
   case div op _ _ _ => cases op <;> simp [instNames, divOpcode, eNamePairs]
   case load op _ _ _ _ => cases op <;> simp [instNames, loadOpcode, eNamePairs]
   case store op _ _ _ _ _ => cases op <;> simp [instNames, storeOpcode, eNamePairs]
@@ -94,7 +104,8 @@ theorem eNamePairs_idx : eNamePairs.all (fun pr =>
   decide +kernel
 
 /-- **The data of an E instruction**: format `kf`, E opcode `ko`, fields `fs`. -/
-theorem instData_shape {f : Clif.Function} {c : Clif.Inst} {d : V} (h : instData f c = .ok d) :
+theorem instData_shape {f : Clif.Function} {c : Clif.Inst} {d : V} (hE : Compile.instE c = true)
+    (h : instData f c = .ok d) :
     ∃ kf ko fs, d = .data 152 kf (.data 151 ko [] :: fs) ∧ ko ∈ eOps := by
   obtain ⟨rest, hd⟩ := instData_names h
   have hm := List.all_eq_true.mp eNamePairs_idx _ (instNames_mem h)

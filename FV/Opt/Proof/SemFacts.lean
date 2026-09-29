@@ -18,16 +18,18 @@ namespace Opt
 open Clif
 
 theorem evalInst_congr {fr fr' : Frame} {mem : Mem} {i : Inst}
-    (hg : fr'.func.globals = fr.func.globals) (hs : fr'.slots = fr.slots)
+    (hg : fr'.func.globals = fr.func.globals) (hx : fr'.func.externs = fr.func.externs)
+    (hs : fr'.slots = fr.slots)
     (hr : ∀ x ∈ operands i, fr'.regs x = fr.regs x) : evalInst fr' mem i = evalInst fr mem i := by
   cases i <;> simp only [operands, List.mem_cons, or_false, forall_eq_or_imp,
     forall_eq, List.not_mem_nil, false_imp_iff, imp_true_iff] at hr <;>
-    simp only [evalInst, Frame.getAs, Frame.get, hr, hs, hg]
+    simp only [evalInst, Frame.getAs, Frame.get, Function.extern?, hr, hs, hg, hx]
 
 theorem evalNode_congr {fr fr' : Frame} {mem : Mem} {i : Inst}
-    (hg : fr'.func.globals = fr.func.globals) (hs : fr'.slots = fr.slots)
+    (hg : fr'.func.globals = fr.func.globals) (hx : fr'.func.externs = fr.func.externs)
+    (hs : fr'.slots = fr.slots)
     (hr : ∀ x ∈ operands i, fr'.regs x = fr.regs x) : evalNode fr' mem i = evalNode fr mem i := by
-  simp only [evalNode, evalInst_congr hg hs hr]
+  simp only [evalNode, evalInst_congr hg hx hs hr]
 
 theorem getMany_congr {fr fr' : Frame} {xs : List ValueId}
     (h : ∀ x ∈ xs, fr'.regs x = fr.regs x) : fr'.getMany xs = fr.getMany xs := by
@@ -65,8 +67,8 @@ theorem getMany_of {fr : Frame} {xs : List ValueId} {vs : List Val} (hl : vs.len
 
 /-- The results of `evalInst` have the instruction's result types. -/
 theorem evalInst_types {fr : Frame} {mem : Mem} {i : Inst} {vals : List Val} {mem' : Mem}
-    {sigOf : FnRef → Option Signature} {ts : List Ty}
-    (h : evalInst fr mem i = .ok (vals, mem')) (ht : i.resultTypes sigOf = some ts) :
+    {sigOf : FnRef → Option Signature} {sigDeclOf : Nat → Option Signature} {ts : List Ty}
+    (h : evalInst fr mem i = .ok (vals, mem')) (ht : i.resultTypes sigOf sigDeclOf = some ts) :
     vals.map (·.ty) = ts := by
   cases i <;> simp only [Inst.resultTypes, Option.some.injEq, Option.map_eq_some_iff] at ht <;>
     simp only [evalInst, Frame.getAs, Res.bind_eq_ok, Res.pure_eq_ok, Prod.mk.injEq] at h
@@ -124,7 +126,7 @@ theorem evalInst_pure {fr : Frame} {mem : Mem} {i : Inst} (hp : isPure i = true)
     (h : evalInst fr mem i = .ok (vals, mem')) :
     mem' = mem ∧ ∃ v, vals = [v] ∧ evalNode fr mem i = some v := by
   refine ⟨(evalInst_removable (by simp [removable, hp])).1 _ _ h, ?_⟩
-  have ht : ∃ t, i.resultTypes (fun _ => none) = some [t] := by
+  have ht : ∃ t, i.resultTypes (fun _ => none) (fun _ => none) = some [t] := by
     cases i <;> simp only [isPure] at hp <;> (try cases hp) <;> simp only [Inst.resultTypes]
     all_goals try exact ⟨_, rfl⟩
     rename_i ty lo hi
@@ -319,21 +321,24 @@ theorem Res.norm_eq_trap {α : Type} {r r' : Res α} (h : r'.norm = r.norm) {c :
 
 /-- Evaluating a renamed instruction in a frame that holds, at `σ x`, the value of `x`. -/
 theorem evalInst_rename {σ : ValueId → ValueId} {fr fr' : Frame} {mem : Mem} {i : Inst}
-    (hg : fr'.func.globals = fr.func.globals) (hs : fr'.slots = fr.slots)
+    (hg : fr'.func.globals = fr.func.globals) (hx : fr'.func.externs = fr.func.externs)
+    (hs : fr'.slots = fr.slots)
     (hr : ∀ x ∈ operands i, fr'.regs (σ x) = fr.regs x) :
     (evalInst fr' mem (mapOperands σ i)).norm = (evalInst fr mem i).norm := by
   cases i <;> simp only [operands, List.mem_cons, or_false, forall_eq_or_imp,
     forall_eq, List.not_mem_nil, false_imp_iff, imp_true_iff] at hr <;>
-    simp only [evalInst, mapOperands, Frame.getAs, Frame.get, hr, hs, hg, Res.norm_bind,
+    simp only [evalInst, mapOperands, Frame.getAs, Frame.get, Function.extern?, hr, hs, hg, hx,
+      Res.norm_bind,
       Res.norm_ofOption, Res.norm_check, Res.norm_pure, Res.norm_ofExcept, Res.norm_ite,
       Res.norm_stuck, Res.norm_trap]
   all_goals (repeat' split) <;> simp_all
 
 theorem evalNode_rename {σ : ValueId → ValueId} {fr fr' : Frame} {mem : Mem} {i : Inst}
-    (hg : fr'.func.globals = fr.func.globals) (hs : fr'.slots = fr.slots)
+    (hg : fr'.func.globals = fr.func.globals) (hx : fr'.func.externs = fr.func.externs)
+    (hs : fr'.slots = fr.slots)
     (hr : ∀ x ∈ operands i, fr'.regs (σ x) = fr.regs x) :
     evalNode fr' mem (mapOperands σ i) = evalNode fr mem i := by
-  have h := evalInst_rename (mem := mem) hg hs hr
+  have h := evalInst_rename (mem := mem) hg hx hs hr
   simp only [evalNode]
   cases h1 : evalInst fr mem i with
   | ok a => rw [Res.norm_eq_ok h h1]

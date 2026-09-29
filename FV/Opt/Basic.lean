@@ -37,6 +37,8 @@ def operands : Inst → List ValueId
   | .select _ c x y | .selectSpectreGuard _ c x y | .bitselect _ c x y => [c, x, y]
   | .atomicCas _ _ p e x => [p, e, x]
   | .call _ args => args
+  | .callIndirect _ callee args => callee :: args
+  | .funcAddr _ _ => []
 
 /-- Rename the operands of an instruction (results are not part of `Inst`). -/
 def mapOperands (f : ValueId → ValueId) : Inst → Inst
@@ -60,6 +62,8 @@ def mapOperands (f : ValueId → ValueId) : Inst → Inst
   | .store op ty fl x p off => .store op ty fl (f x) (f p) off
   | .stackAddr ty s off => .stackAddr ty s off
   | .call fn args => .call fn (args.map f)
+  | .callIndirect sig callee args => .callIndirect sig (f callee) (args.map f)
+  | .funcAddr ty fn => .funcAddr ty fn
   | .atomicRmw op ty fl p x => .atomicRmw op ty fl (f p) (f x)
   | .atomicCas ty fl p e x => .atomicCas ty fl (f p) (f e) (f x)
   | .atomicLoad ty fl p => .atomicLoad ty fl (f p)

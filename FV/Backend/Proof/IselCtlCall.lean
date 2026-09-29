@@ -154,30 +154,62 @@ theorem zip_argLocs_all : ∀ (bytes : List Nat) (rs : List Reg) (k : Nat),
 section
 variable {ctx : Ctx}
 
-theorem ctor_gen_call_output_iff (st : LState) (s : Clif.Signature) (v : V) (st' : LState) :
+/-- A signature with no special-purpose parameters has no `sret` parameter, so `sigRets` is
+the declared returns (`sigRets`). -/
+theorem sigRets_of_normal {s : Clif.Signature} (hns : s.params.all (·.purpose = .normal)) :
+    sigRets s = s.returns := by
+  have hnone : s.params.find? (·.purpose == .sret) = none := by
+    rw [List.find?_eq_none]
+    intro a ha h2
+    have hpa : a.purpose = .normal := decide_eq_true_eq.mp (List.all_eq_true.mp hns a ha)
+    rw [hpa] at h2
+    simp at h2
+  unfold sigRets
+  rw [hnone]
+
+/-- `sigArgLocs` of a signature without special-purpose parameters is `argLocs` of the
+parameter byte sizes. -/
+theorem sigArgLocs_of_normal {s : Clif.Signature} {bytes : List Nat}
+    (hb : sigParamBytes s = .ok bytes) (hns : s.params.all (·.purpose = .normal)) :
+    sigArgLocs s = .ok (argLocs bytes) := by
+  have hany : s.params.any (·.purpose == .sret) = false := by
+    rw [List.any_eq_false]
+    intro p hp h2
+    have hpa : p.purpose = .normal := decide_eq_true_eq.mp (List.all_eq_true.mp hns p hp)
+    rw [hpa] at h2
+    simp at h2
+  have hb' : sigArgs s = .ok bytes := hb
+  simp only [sigArgLocs, hb']
+  simp [hany]
+
+theorem ctor_gen_call_output_iff (st : LState) (s : Clif.Signature) (v : V) (st' : LState)
+    (hns : s.params.all (·.purpose = .normal)) :
     externCtor ctx T.gen_call_output [.op (.sig s)] st = .ok (v, st') ↔
       v = .regsVec (outRegs st s.returns.length) ∧ st' = freshN st s.returns.length := by
   have : externCtor ctx T.gen_call_output [.op (.sig s)] st =
-      (let r := s.returns.foldl (fun (p : Array (List Reg) × LState) (_ : Clif.AbiParam) =>
+      (let r := (sigRets s).foldl (fun (p : Array (List Reg) × LState) (_ : Clif.AbiParam) =>
           (p.1.push [(p.2.fresh .int).1], (p.2.fresh .int).2)) (#[], st)
        .ok (.regsVec r.1.toList, r.2)) := rfl
-  rw [this, foldl_fresh]
+  rw [this, foldl_fresh, sigRets_of_normal hns]
   simp [eq_comm]
 
 theorem ctor_gen_call_args_iff (st : LState) (s : Clif.Signature) (rss : List (List Reg))
-    {bytes : List Nat} (hb : sigParamBytes s = .ok bytes) (h8 : bytes.length ≤ 8) (v : V)
-    (st' : LState) :
+    {bytes : List Nat} (hb : sigParamBytes s = .ok bytes) (hns : s.params.all (·.purpose = .normal))
+    (h8 : bytes.length ≤ 8) (v : V) (st' : LState) :
     externCtor ctx T.gen_call_args [.op (.sig s), .regsVec rss] st = .ok (v, st') ↔
       ∃ rs, rss.mapM single? = some rs ∧
         v = .op (.callArgs (rs.zip ((List.range bytes.length).map Reg.x))) ∧ st' = st := by
+  have hloc : sigArgLocs s = .ok (argLocs bytes) :=
+    sigArgLocs_of_normal hb hns
   have : externCtor ctx T.gen_call_args [.op (.sig s), .regsVec rss] st =
-      match sigParamBytes s, rss.mapM single? with
-      | .ok bytes, some rs =>
-        let r := ((((argLocs bytes).1.zip rs).zip bytes).foldl argStep (#[], st))
+      match sigArgLocs s, rss.mapM single? with
+      | .ok (locs, _), some rs =>
+        let bytes := match sigParamBytes s with | .ok b => b | _ => []
+        let r := (((locs.zip rs).zip bytes).foldl argStep (#[], st))
         .ok (.op (.callArgs r.1.toList), r.2)
       | .error e, _ => .unmodeled s!"gen_call_args: {e}"
       | _, none => .unmodeled "gen_call_args: multi-register value" := rfl
-  rw [this, hb]
+  rw [this, hloc, hb]
   cases hrs : rss.mapM single? with
   | none => simp
   | some rs =>
@@ -215,31 +247,35 @@ theorem ctor_box_external_name_iff (st : LState) (n : V) (v : V) (st' : LState) 
 
 theorem ctor_gen_call_info_iff (st : LState) (s : Clif.Signature) (n : String)
     (us ds : List (Reg × Reg)) (a b : V) {bytes : List Nat} (hb : sigParamBytes s = .ok bytes)
-    (v : V) (st' : LState) :
+    (hns : s.params.all (·.purpose = .normal)) (v : V) (st' : LState) :
     externCtor ctx T.gen_call_info [.op (.sig s), .op (.extName n), .op (.callArgs us),
       .op (.callRets ds), a, b] st = .ok (v, st') ↔
       v = .op (.callInfo ⟨.sym n, us, ds⟩) ∧
         st' = { st with outgoing := max st.outgoing (argLocs bytes).2 } := by
+  have hloc : sigArgLocs s = .ok (argLocs bytes) :=
+    sigArgLocs_of_normal hb hns
   have : externCtor ctx T.gen_call_info [.op (.sig s), .op (.extName n), .op (.callArgs us),
-      .op (.callRets ds), a, b] st = match sigParamBytes s with
-      | .ok bytes => .ok (.op (.callInfo ⟨.sym n, us, ds⟩),
-          { st with outgoing := max st.outgoing (argLocs bytes).2 })
+      .op (.callRets ds), a, b] st = match sigArgLocs s with
+      | .ok (_, stack) => .ok (.op (.callInfo ⟨.sym n, us, ds⟩),
+          { st with outgoing := max st.outgoing stack })
       | .error e => .unmodeled s!"gen_call_info: {e}" := rfl
-  rw [this, hb]; simp [eq_comm]
+  rw [this, hloc]; simp [eq_comm]
 
 theorem ctor_gen_call_ind_info_iff (st : LState) (s : Clif.Signature) (r : Reg)
     (us ds : List (Reg × Reg)) (a : V) {bytes : List Nat} (hb : sigParamBytes s = .ok bytes)
-    (v : V) (st' : LState) :
+    (hns : s.params.all (·.purpose = .normal)) (v : V) (st' : LState) :
     externCtor ctx T.gen_call_ind_info [.op (.sig s), .reg r, .op (.callArgs us),
       .op (.callRets ds), a] st = .ok (v, st') ↔
       v = .op (.callInfo ⟨.reg r, us, ds⟩) ∧
         st' = { st with outgoing := max st.outgoing (argLocs bytes).2 } := by
+  have hloc : sigArgLocs s = .ok (argLocs bytes) :=
+    sigArgLocs_of_normal hb hns
   have : externCtor ctx T.gen_call_ind_info [.op (.sig s), .reg r, .op (.callArgs us),
-      .op (.callRets ds), a] st = match sigParamBytes s with
-      | .ok bytes => .ok (.op (.callInfo ⟨.reg r, us, ds⟩),
-          { st with outgoing := max st.outgoing (argLocs bytes).2 })
+      .op (.callRets ds), a] st = match sigArgLocs s with
+      | .ok (_, stack) => .ok (.op (.callInfo ⟨.reg r, us, ds⟩),
+          { st with outgoing := max st.outgoing stack })
       | .error e => .unmodeled s!"gen_call_ind_info: {e}" := rfl
-  rw [this, hb]; simp [eq_comm]
+  rw [this, hloc]; simp [eq_comm]
 
 theorem ctor_is_pic_iff (st : LState) (v : V) (st' : LState) :
     externCtor ctx T.is_pic [] st = .ok (v, st') ↔ v = .bool true ∧ st' = st := by

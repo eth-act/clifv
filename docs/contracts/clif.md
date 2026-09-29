@@ -215,6 +215,25 @@ Machine structure and invariants:
   accepted by `cranelift-reader` + the Cranelift verifier (`clif-oracle check`: 146 files,
   0 rejected).
 
+## Rust externs: `Clif.Rust.env` and `clif-filetest --rust-env` (rust-route)
+
+`FV/Clif/Rust.lean` defines `Clif.Rust.env : Clif.Env`: the trusted contracts for the
+externs `rustc_codegen_cranelift` output calls (see `docs/contracts/e2e.md`, "Rust route").
+`clif-filetest --rust-env` runs with that env instead of `Env.empty` (the default is
+unchanged, so the runtests gate is unaffected):
+
+* `memcpy(dst, src, n)` / `memmove(dst, src, n) -> i64` and `memset(dst, c, n) -> i64`:
+  byte-level `Mem` semantics (each destination byte becomes initialised; both ranges in
+  one allocation, no read-only destination; otherwise `stuck`), returning `dst`;
+* `memcmp(a, b, n) -> i32`: bytewise unsigned (`0`/`-1`/`1`), `stuck` on uninitialised
+  bytes;
+* every diverging entry point (`Clif.Rust.isPanic`: mangled names containing
+  `panic`/`fail`/`handle_`, `Formatter`, `…3fmt`) ends the run with
+  `trapped (user 1)` — no value is returned. Natively they are `udf #251` (SIGILL).
+
+A `; print:` run command passes for any outcome (a `print` has no expectation, so an
+aborting call is recorded, not failed).
+
 ## `clif-oracle` and its JSON schema (shared with `clif-native`)
 
 `clif-oracle interp FILE.clif` prints JSON lines, one record per `; run`/`; print` comment,
