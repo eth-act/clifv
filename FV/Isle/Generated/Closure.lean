@@ -9,7 +9,7 @@ open Isle
 (`clif-subset-v2`) at `i8`..`i64`; see `docs/contracts/isle.md` ("Closure") for the
 selection method and what `lhsReasons` / `defaultExcludedBy` mean. -/
 
-def opcodes : List String := ["band", "bitrev", "bnot", "bor", "br_table", "brif", "bswap", "bxor", "call", "clz", "ctz", "iadd", "icmp", "iconst", "imul", "ineg", "ireduce", "ishl", "istore16", "istore32", "istore8", "isub", "jump", "load", "nop", "popcnt", "return", "rotl", "rotr", "sdiv", "select", "sextend", "sload16", "sload32", "sload8", "smax", "smin", "smulhi", "srem", "sshr", "stack_addr", "store", "symbol_value", "trap", "udiv", "uextend", "uload16", "uload32", "uload8", "umax", "umin", "umulhi", "urem", "ushr"]
+def opcodes : List String := ["band", "bitrev", "bnot", "bor", "br_table", "brif", "bswap", "bxor", "call", "call_indirect", "clz", "ctz", "func_addr", "iadd", "icmp", "iconst", "imul", "ineg", "ireduce", "ishl", "istore16", "istore32", "istore8", "isub", "jump", "load", "nop", "popcnt", "return", "rotl", "rotr", "sdiv", "select", "sextend", "sload16", "sload32", "sload8", "smax", "smin", "smulhi", "srem", "sshr", "stack_addr", "store", "symbol_value", "trap", "udiv", "uextend", "uload16", "uload32", "uload8", "umax", "umin", "umulhi", "urem", "ushr"]
 
 def roots : List String := ["lower", "lower_branch"]
 
@@ -430,9 +430,11 @@ def rules : Array ClosureRule := #[
   ⟨963, "rule_lower_2231", 715, false, ["TODO"], [], []⟩,
   ⟨964, "rule_lower_2237", 686, true, [], [], []⟩,
   ⟨971, "rule_lower_2267", 686, true, [], [], []⟩,
+  ⟨1026, "rule_lower_2486", 686, true, ["TODO"], [], []⟩,
   ⟨1027, "rule_lower_2491", 686, true, ["TODO"], [], []⟩,
   ⟨1031, "rule_lower_2508", 686, true, [], [], []⟩,
   ⟨1032, "rule_lower_2518", 686, true, ["TODO"], [], []⟩,
+  ⟨1033, "rule_lower_2529", 686, true, [], [], []⟩,
   ⟨1037, "rule_lower_2574", 686, true, [], [], []⟩,
   ⟨1041, "rule_lower_2604", 686, true, [], [], []⟩,
   ⟨1042, "rule_lower_2607", 686, true, [], [], []⟩,
@@ -757,11 +759,9 @@ def excludedRootRules : Array (String × List String) := #[
   ("rule_lower_2469", ["Opcode.UwidenHigh"]),
   ("rule_lower_2476", ["Opcode.Fence"]),
   ("rule_lower_2481", ["Opcode.Debugtrap"]),
-  ("rule_lower_2486", ["Opcode.FuncAddr"]),
   ("rule_lower_2496", ["Opcode.GetFramePointer"]),
   ("rule_lower_2499", ["Opcode.GetStackPointer"]),
   ("rule_lower_2502", ["Opcode.GetReturnAddress"]),
-  ("rule_lower_2529", ["Opcode.CallIndirect"]),
   ("rule_lower_2580", ["Opcode.ReturnCall"]),
   ("rule_lower_2587", ["Opcode.ReturnCall"]),
   ("rule_lower_2595", ["Opcode.ReturnCallIndirect"]),
@@ -909,6 +909,7 @@ def terms : Array ClosureTerm := #[
   ⟨192, "jump_table_targets", .decl, none, (some "jump_table_targets"), false, false, []⟩,
   ⟨193, "jump_table_size", .decl, (some "jump_table_size"), none, false, false, []⟩,
   ⟨194, "value_list_slice", .decl, none, (some "value_list_slice"), false, false, []⟩,
+  ⟨196, "value_slice_unwrap", .decl, none, (some "value_slice_unwrap"), false, false, []⟩,
   ⟨201, "writable_reg_to_reg", .decl, (some "writable_reg_to_reg"), none, true, false, []⟩,
   ⟨205, "first_result", .decl, none, (some "first_result"), false, false, []⟩,
   ⟨207, "is_second_result", .decl, none, (some "is_second_result"), true, false, []⟩,
@@ -1331,6 +1332,8 @@ def terms : Array ClosureTerm := #[
   ⟨2288, "Opcode.Trap", .enumVariant, none, none, false, false, []⟩,
   ⟨2291, "Opcode.Return", .enumVariant, none, none, false, false, []⟩,
   ⟨2292, "Opcode.Call", .enumVariant, none, none, false, false, []⟩,
+  ⟨2293, "Opcode.CallIndirect", .enumVariant, none, none, false, false, []⟩,
+  ⟨2296, "Opcode.FuncAddr", .enumVariant, none, none, false, false, []⟩,
   ⟨2304, "Opcode.Smin", .enumVariant, none, none, false, false, []⟩,
   ⟨2305, "Opcode.Umin", .enumVariant, none, none, false, false, []⟩,
   ⟨2306, "Opcode.Smax", .enumVariant, none, none, false, false, []⟩,
@@ -1387,7 +1390,9 @@ def terms : Array ClosureTerm := #[
   ⟨2451, "InstructionData.BranchTable", .enumVariant, none, none, false, false, []⟩,
   ⟨2452, "InstructionData.Brif", .enumVariant, none, none, false, false, []⟩,
   ⟨2453, "InstructionData.Call", .enumVariant, none, none, false, false, []⟩,
+  ⟨2454, "InstructionData.CallIndirect", .enumVariant, none, none, false, false, []⟩,
   ⟨2458, "InstructionData.FloatCompare", .enumVariant, none, none, false, false, []⟩,
+  ⟨2459, "InstructionData.FuncAddr", .enumVariant, none, none, false, false, []⟩,
   ⟨2461, "InstructionData.IntCompare", .enumVariant, none, none, false, false, []⟩,
   ⟨2462, "InstructionData.Jump", .enumVariant, none, none, false, false, []⟩,
   ⟨2463, "InstructionData.Load", .enumVariant, none, none, false, false, []⟩,
@@ -1403,9 +1408,9 @@ def terms : Array ClosureTerm := #[
 
 /-- Summary counts (also in `docs/contracts/isle.md`). -/
 def summary : List (String × Nat) := [
-  ("rules", 442), ("rootRules", 129), ("excludedRootRules", 396),
+  ("rules", 444), ("rootRules", 131), ("excludedRootRules", 394),
   ("rulesExcludedByDefaultTags", 47), ("rulesWithLhsReasons", 36),
-  ("terms", 536), ("externTerms", 128), ("externConstructors", 96),
-  ("externExtractors", 36), ("externTermsWithSpec", 87)]
+  ("terms", 541), ("externTerms", 129), ("externConstructors", 96),
+  ("externExtractors", 37), ("externTermsWithSpec", 87)]
 
 end Isle.Aarch64.Closure

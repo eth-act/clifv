@@ -124,6 +124,9 @@ def unverifiedReason? (pf : Clif.ParsedFile) (f : Clif.Function) : Option String
   else if f.sig.params.length > 8 then some "stack-passed parameters (more than 8)"
   else if !regArgCalls f then some "stack-passed call arguments (an extern with more than 8 parameters)"
   else if !noSpecial f then some "sret parameter (outside backend_correct)"
+  else if f.blocks.any (fun b => b.body.any (fun st => match st.inst with
+    | .callIndirect .. | .funcAddr .. => true | _ => false)) then
+    some "indirect call / func_addr (outside backend_correct)"
   else
     let own := pf.funcs.map (·.name)
     match (callees f).find? (own.contains ·) with
