@@ -46,10 +46,10 @@ for l in open(runs):
 order, todo = [], list(lines)
 while todo:
     f = todo.pop()
-    if f in order:
+    if f in order or f not in funcs:
         continue
     order.append(f)
-    todo += re.findall(r"fn\d+ = (?:colocated )?%(\S+?)\(", funcs[f])
+    todo += [c for c in re.findall(r"fn\d+ = (?:colocated )?%(\S+?)\(", funcs[f]) if c in funcs]
 parts = [header.rstrip()]
 for f in sorted(order):
     parts.append(funcs[f] + "".join("\n" + r for r in lines.get(f, [])))

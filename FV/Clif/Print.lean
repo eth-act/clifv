@@ -188,9 +188,12 @@ def Function.print (f : Function) : String :=
       s!"    ss{i} = explicit_slot {s.size}" ++
         (match s.align with | some a => s!", align = {a}" | none => "")) ++
     f.globals.map (fun (i, g) => s!"    gv{i} = {Print.globalValue g}") ++
+    -- Explicit `sigN` declarations before the `fnN` decls: a `fn` decl with an inline
+    -- signature implicitly imports a signature at the next free index, so an explicit
+    -- decl printed after it collides ("duplicate entity: sigN" in the pinned reader).
+    f.sigDecls.map (fun (i, s) => s!"    sig{i} = {Print.signature s}") ++
     f.externs.map (fun (i, e) =>
-      s!"    fn{i} = {if e.colocated then "colocated " else ""}%{e.name}{Print.signature e.sig}") ++
-    f.sigDecls.map (fun (i, s) => s!"    sig{i} = {Print.signature s}")
+      s!"    fn{i} = {if e.colocated then "colocated " else ""}%{e.name}{Print.signature e.sig}")
   let declText := if decls.isEmpty then "" else String.join (decls.map (· ++ "\n")) ++ "\n"
   let body := "\n".intercalate (f.blocks.map (Print.block tys))
   let runs := String.join (f.runs.map fun r => Print.runCommand f.sig r ++ "\n")

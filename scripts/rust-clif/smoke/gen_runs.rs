@@ -76,4 +76,10 @@ fn main() {
     for (k, x) in [(3u64, 5u64), (u64::MAX, 2)] {
         run!(closure_generic(k, x) => h::closure_generic(k, x));
     }
+
+    // rust-route step 4/5: fn pointers / closures with scalar args (rustc oracle); the
+    // dyn/`&mut dyn` functions take object pointers (data/vtable addresses) — they run in
+    // the interpreter fixture `scripts/rust-clif/fixtures/dyn-vtable.clif` instead.
+    run!(fn_ptr_table(0, 7) => h::fn_ptr_table(0, 7));
+    run!(fn_ptr_table(1, 7) => h::fn_ptr_table(1, 7));
 }

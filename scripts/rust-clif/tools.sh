@@ -20,8 +20,7 @@ oracle="$root/rust/target/release/clif-oracle"
 clif2obj="$root/rust/target/release/clif2obj"
 backend="$root/.lake/build/bin/lean-backend"
 norm() { python3 "$here/normalize.py" "$@"; }
-reasons() { sed -E 's/%[A-Za-z0-9_]+/%X/g; s/\bv[0-9]+/vN/g; s/\bfn[0-9]+/fnN/g; s/\bgv[0-9]+/gvN/g;
-  s/\bsig[0-9]+/sigN/g; s/\bblock[0-9]+/blockN/g' | sort | uniq -c | sort -rn; }
+reasons() { sed -E 's/%[A-Za-z0-9_]+/%X/g; s/\bv[0-9]+/vN/g; s/\bfn[0-9]+/fnN/g; s/\bgv[0-9]+/gvN/g; s/\bsig[0-9]+/sigN/g; s/\bblock[0-9]+/blockN/g' | sort | uniq -c | sort -rn; }
 bystage() { # parse TSV -> "profile stage status count"
   awk -F'\t' '{ n = split($1, p, "/"); f = p[n]; split(f, q, "."); sub(/-[a-i]_[a-z0-9_]*$/, "", q[1]);
     c[q[1] " " q[2] "\t" $3]++ } END { for (k in c) print k "\t" c[k] }' "$1" | sort; }

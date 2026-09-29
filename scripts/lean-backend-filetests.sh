@@ -67,8 +67,8 @@ if [[ " ${SETS[*]} " == *" corpus "* ]]; then
     --target aarch64-unknown-linux-musl --crate-type staticlib -- -C panic=abort
 fi
 
-WORK=$(mktemp -d)
-trap 'rm -rf "$WORK"' EXIT
+WORK=${WORK:-$(mktemp -d)}
+if [[ -n "${WORK_KEEP:-}" ]]; then WORK="$WORK_KEEP"; else trap 'rm -rf "$WORK"' EXIT; fi
 
 # run_one SET FILE [LINK]: Lean backend + native runs of one file into $WORK/SET/{lean,native}.
 run_one() {

@@ -78,7 +78,9 @@ def noSpecial (f : Clif.Function) : Bool :=
 /-- The theorem's conditions that do not need the rest of the file (`E2E.InSubset.subsetE`,
 `E2E.InSubset.regParams`, `E2E.InSubset.callRegArgs`, `E2E.InSubset.noSpecial`). -/
 def verifiable (f : Clif.Function) : Bool :=
-  Compile.functionE f && f.sig.params.length ≤ 8 && regArgCalls f && noSpecial f
+  Compile.functionE f && f.sig.params.length ≤ 8 && regArgCalls f && noSpecial f &&
+    f.blocks.all (fun B => B.body.all (fun st => match st.inst with
+      | .callIndirect .. | .funcAddr .. => false | _ => true))
 
 /-- Compile one function with the stack-slot allocator (`k` = index in the file, for local
 labels); also returns the ISLE rules that fired. -/
