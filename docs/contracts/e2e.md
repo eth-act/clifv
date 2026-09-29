@@ -212,11 +212,14 @@ register written by a statement's lowering, closure under definitions, edges, re
 parameter types for `FrameTyped`). Soundness: `lowering_of_check` (construction lemmas
 `lowStmts_spec`/`lowBlocks_spec` + one lemma per check).
 
-**`prepCheck vc vcp`** (`PrepareCheck.lean`): every block with a counterpart in `vcp` (same
-label) has the same parameters, branch arguments and instructions except a possibly retargeted
-last instruction; the entry is its own counterpart; successors of kept blocks are kept, and
-reached directly or through an edge block (`jump`, no parameters/arguments) from a block without
-branch arguments. Soundness: `prep_sound` (simulation; a split edge takes one extra `jump` step).
+**`prepCheck vc vcp`** (`PrepareCheck.lean`): every live block of `vc` (`liveOf`: reachable
+from the entry, as `prepare` computes; untrusted, the check requires the entry to be live and
+live blocks' successors to be live) has a counterpart in `vcp` (same label) with the same
+parameters, branch arguments and instructions except a possibly retargeted last instruction;
+the entry is its own counterpart; successors are reached directly or through an edge block
+(`jump`, no parameters/arguments) from a block without branch arguments. Dead blocks are not
+checked (`prepare` drops them, and its edge blocks may reuse their labels). Soundness:
+`prep_sound` (simulation over live blocks; a split edge takes one extra `jump` step).
 
 Results (`lake exe lean-e2e-check`, corpus/clif, corpus/clif/extrt, Cranelift runtests): both
 validators accept 913/913 functions inside the theorem (with `brIdxOk`: no `br_table` rejected);
@@ -229,7 +232,9 @@ pass / 0 fail, all agreeing with Cranelift-native. Cost on the corpus (161 funct
 quadratic in the values of a block; functions outside the theorem are not validated).
 
 **Functions outside the theorem** (`FV/Backend.lean` `unverifiedReason?`: outside
-clif-subset-v2 E, more than 8 parameters, calls of functions of the same file) are still
+clif-subset-v2 E, more than 8 parameters, calls of functions of the same file, `sret`,
+`call_indirect`/`func_addr` — `InSubset.noCI`/`noFA`; `lowerCheck` rejects `func_addr`,
+`CtxInv.noFA`, and `call_indirect` has no result types without `sigN` declarations) are still
 compiled, without validation, and reported as unverified (`FileAsm.unverified`; `lean-backend`
 prints `compiled, unverified (outside backend_correct): …`).
 
