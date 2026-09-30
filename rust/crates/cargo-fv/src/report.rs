@@ -104,6 +104,9 @@ pub struct Report {
     pub mode: String,
     /// The theorem "verified" refers to (none with `--opt`).
     pub theorem: Option<String>,
+    /// Panic strategy and codegen backend, e.g. `unwind (cg_clif with unwinding: …)`.
+    #[serde(default)]
+    pub panic: String,
     pub totals: Counts,
     pub units: Vec<UnitEntry>,
 }
@@ -116,7 +119,7 @@ pub struct UnitEntry {
 }
 
 impl Report {
-    pub fn new(profile: &str, mode: &str, theorem: Option<String>, units: Vec<UnitReport>) -> Report {
+    pub fn new(profile: &str, mode: &str, theorem: Option<String>, panic: &str, units: Vec<UnitReport>) -> Report {
         let mut totals = Counts::default();
         let units: Vec<UnitEntry> = units
             .into_iter()
@@ -132,6 +135,7 @@ impl Report {
             profile: profile.into(),
             mode: mode.into(),
             theorem,
+            panic: panic.into(),
             totals,
             units,
         }
@@ -157,6 +161,9 @@ impl Report {
         let mut s = String::new();
         let th = self.theorem.as_deref().unwrap_or("none: --opt runs unproven mid-end rules");
         let _ = writeln!(s, "cargo fv report — {} {} profile, mode {}", self.target, self.profile, self.mode);
+        if !self.panic.is_empty() {
+            let _ = writeln!(s, "  panic={}", self.panic);
+        }
         let _ = writeln!(s, "  verified = compiled by the Lean backend and inside {th}");
         let _ = writeln!(
             s,
