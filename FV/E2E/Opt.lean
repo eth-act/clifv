@@ -47,7 +47,7 @@ theorem inSubset_opt (cfg : Opt.Config) {p : Clif.Program} {f : Clif.Function}
     rw [show ((fun x : Clif.Function => x.name == n) ∘ fun x => Opt.optimize x cfg) =
       (fun x => x.name == n) from by funext g; simp [hname]]
   refine ⟨?_, hF.subsetE hsub.subsetE, by rw [hF.sig]; exact hsub.regParams, ?_, ?_, ?_,
-    hF.noCI hsub.noCI, hF.noFA hsub.noFA⟩
+    (hF.noCI ⟨hsub.noCI, Compile.noTry_of_functionE hsub.subsetE⟩).1, hF.noFA hsub.noFA⟩
   · rw [hfind, hF.name, hsub.func]; rfl
   · intro b hb st hst fn args hc e he
     obtain ⟨b0, hb0, st0, hst0, args0, hc0⟩ :=
@@ -89,13 +89,14 @@ theorem clifEntry_opt (cfg : Opt.Config)
     exact hrel args cs.frame.regs cs.frame.slots (hty.symm) hregs hcs.slotIds
   · rw [hcs.callers]; exact .nil _
 
-/-- An in-subset function has no `call_indirect` (`InSubset.noCI`), no tail call (not in E), and
+/-- An in-subset function has no `call_indirect` (`InSubset.noCI`), no tail call and no `try_call`
+(not in E), and
 calls only externs that are not functions of `p`: the source run from `f` stays in `f`. -/
 theorem ciFree_of_subset {p : Clif.Program} {f : Clif.Function} (hsub : InSubset p f) :
     Opt.CIFree p (· = f) where
   noCI := by
     rintro g rfl
-    exact hsub.noCI
+    exact ⟨hsub.noCI, Compile.noTry_of_functionE hsub.subsetE⟩
   call := by
     rintro g rfl b hb st hst fn args hi e he h hh
     rw [hsub.externCalls b hb st hst fn args hi e he] at hh

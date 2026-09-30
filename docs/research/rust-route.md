@@ -176,6 +176,36 @@ encode-check 1132 identical / 0 differ (`.text` unchanged; the objects only gain
 `.rela.eh_frame` and the `.text` section symbol); `lean-e2e-check` 910 accepted / 0 rejected,
 formsCoveredB 910 / 0 not covered; `lake build FV.E2E` and `FV.E2E.OptProven` green.
 
+## agent/fv-trycall: `try_call` lowering, landing pads and LSDA (in progress)
+
+Implemented (commits on `agent/fv-trycall`): `Clif.Terminator.tryCall`/`tryCallIndirect` with
+exception tables (parser/printer in Cranelift 0.136.1 syntax: `sigN, block(ret0), [ tagN: block(exn0),
+default: …, context vN ]`); `Clif.run` models only the normal return (call, results bound to
+fresh values, `jump normal(retN…)`; no unwinding in `Clif.run`); `termE` excludes them
+(unverified: "try_call / landing pads (outside backend_correct)"). Backend: the terminator data
+goes through Cranelift's ISLE `lower_branch` try_call rules (`exception_sig`, `try_call_info`,
+`gen_try_call_rets` with the x0/x1 payload vregs, a payload in a return register sharing its
+vreg); the emitted call becomes the `MInst.tryCall` terminator (regalloc2 `branch` with fixed
+defs, SystemV clobbers; every successor is an edge block, so each has one predecessor; the
+Lean checker keeps the defs — `isBranch` stays false — and rejects any edit after the call).
+Emission `bl/blr; b continuation`; `callSites` + `lsdaBytes` write cg_clif's LSDA
+byte-for-byte (checked on `core::intrinsics::disjoint_bitor`: identical call-site table
+`[0xb,0xc)→0x14 cleanup, [0x1f,0x20)→0`), a `zLPR` CIE with `DW.ref.rust_eh_personality`
+(`lean-backend --personality`, passed by `cargo fv`). `Legalize128` handles i128 try_call
+arguments/returns. `cargo fv` no longer falls back on landing pads; `normalize.py` keeps the
+`sigN` of try_calls.
+
+Results: `examples/compare.sh` SAME vs LLVM — fv-demo 18/18, survey 53/53, vendor 189/189,
+debug and `--release`. fv-demo debug `cargo fv build`: fallbacks 81 → 4 (3 skip + 1 i128, the
+latter fixed since: `cargo fv test` units 6 = skip only); the unwinding tests' landing-pad
+owners (`unwind::guarded`, `catch_churn`, `rethrow`, `catch_unwind`, `do_catch`, the test
+closures) are Lean-compiled. DECISIONS: tail/preserve_all callees and exception-table `context`
+items are rejected (compile error → fallback; cg_clif emits neither), so the runtest
+`try_call.clif` (tail callee) stays unsupported; tags other than cg_clif's 0/1 have no LSDA.
+Proof repairs: `HeadNoCI`/`NoCallIndirect` (Opt simulation) now also exclude try terminators
+(conservative: every program of the pre-try_call syntax still satisfies them), `lstep` is stuck
+on them; remaining modules to repair: see the final report.
+
 <!-- STATUS-MARKER -->
 
 ## agent/fv-fallback: baseline `cargo fv` fallback measurements (worktree `../clifv-wt/fv-fallback`)

@@ -82,4 +82,12 @@ theorem instE_of_functionE {f : Function} (hE : functionE f = true) {b : Block} 
   simp only [functionE, Bool.and_eq_true, List.all_eq_true] at hE
   exact (hE.2 b hb).1.2 st hst
 
+/-- A subset-E function has no `try_call`/`try_call_indirect` terminator. -/
+theorem noTry_of_functionE {f : Function} (hE : functionE f = true) :
+    ∀ b ∈ f.blocks, b.term.isTry = false := by
+  intro b hb
+  simp only [functionE, Bool.and_eq_true, List.all_eq_true] at hE
+  have h := (hE.2 b hb).2
+  cases ht : b.term <;> rw [ht] at h <;> simp [termE, Terminator.isTry] at h ⊢
+
 end Compile

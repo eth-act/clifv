@@ -127,7 +127,7 @@ def callees (f : Clif.Function) : List String :=
 
 /-- Does `f` have a `try_call`/`try_call_indirect` (landing pads)? -/
 def hasTryCall (f : Clif.Function) : Bool :=
-  f.blocks.any fun b => b.term matches .tryCall .. | .tryCallIndirect ..
+  f.blocks.any (·.term.isTry)
 
 /-- `bmask`, `atomic_*` and `fence` in `f` (their lowering is Cranelift's, but the ISLE
 rules are outside the proven emitter-subset closure used by `E2E.backend_correct`). -/

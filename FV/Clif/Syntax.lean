@@ -358,6 +358,11 @@ inductive Terminator where
   | tryCallIndirect (callee : ValueId) (args : List ValueId) (et : ExnTable)
   deriving DecidableEq, Repr, Inhabited
 
+/-- A `try_call`/`try_call_indirect` terminator. -/
+def Terminator.isTry : Terminator → Bool
+  | .tryCall .. | .tryCallIndirect .. => true
+  | _ => false
+
 /-- One instruction with its result values, e.g. `v3, v4 = uadd_overflow v1, v2`. -/
 structure Stmt where
   results : List ValueId := []

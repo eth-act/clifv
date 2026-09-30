@@ -119,14 +119,16 @@ theorem mem_callees {f : Function} {fn : FnRef} :
     exact ⟨b, hb, st, hst, by simp [h]⟩
 
 theorem hasCallIndirect_eq_false {f : Function} : hasCallIndirect f = false ↔ NoCallIndirect f := by
-  simp only [hasCallIndirect, List.any_eq_false, NoCallIndirect]
+  simp only [hasCallIndirect, List.any_eq_false, NoCallIndirect, Bool.or_eq_true, not_or]
   constructor
-  · intro h b hb st hst sig callee args hi
-    exact h b hb (List.any_eq_true.2 ⟨st, hst, by simp [hi]⟩)
-  · intro h b hb hany
+  · intro h
+    refine ⟨fun b hb st hst sig callee args hi =>
+      (h b hb).1 (List.any_eq_true.2 ⟨st, hst, by simp [hi]⟩), fun b hb => by simpa using (h b hb).2⟩
+  · intro ⟨h1, h2⟩ b hb
+    refine ⟨fun hany => ?_, by simp [h2 b hb]⟩
     obtain ⟨st, hst, hc⟩ := List.any_eq_true.1 hany
     split at hc
-    · exact h b hb st hst _ _ _ ‹_›
+    · exact h1 b hb st hst _ _ _ ‹_›
     · cases hc
 
 /-- `g` has no `func_addr` statement. -/
@@ -165,7 +167,8 @@ theorem removeUnreachable_facts (f : Function) : BackendFacts f (removeUnreachab
     have hbl : ∀ b ∈ (removeUnreachableRaw f).blocks, b ∈ f.blocks := by
       simp only [unreachableOk, Bool.and_eq_true, List.all_eq_true, List.contains_iff_mem] at hok
       exact fun b hb => (hok.2 b hb).1
-    refine ⟨hn, hs, hsl, hgl, hex, fun hE => ?_, fun fn hfn => ?_, fun h b hb => h b (hbl b hb),
+    refine ⟨hn, hs, hsl, hgl, hex, fun hE => ?_, fun fn hfn => ?_,
+      fun h => ⟨fun b hb => h.1 b (hbl b hb), fun b hb => h.2 b (hbl b hb)⟩,
       fun h b hb => h b (hbl b hb)⟩
     · simp only [Compile.functionE, Bool.and_eq_true, List.all_eq_true] at hE ⊢
       rw [hs, hgl, hex]

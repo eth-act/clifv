@@ -228,11 +228,11 @@ def callees (f : Function) : List FnRef :=
     | .call fn _ => some fn
     | _ => none
 
-/-- `f` has a `call_indirect` statement. -/
+/-- `f` has a `call_indirect` statement or a `try_call`/`try_call_indirect` terminator. -/
 def hasCallIndirect (f : Function) : Bool :=
-  f.blocks.any fun b => b.body.any fun st => match st.inst with
+  f.blocks.any fun b => b.body.any (fun st => match st.inst with
     | .callIndirect .. => true
-    | _ => false
+    | _ => false) || b.term.isTry
 
 /-- `f` has a `func_addr` statement. -/
 def hasFuncAddr (f : Function) : Bool :=
