@@ -1081,7 +1081,7 @@ def rewriteTryDest (f : Function) (rg : List (List SlotEl)) (d : TryDest) : M Tr
         if t == .i128 then do
           let (x, y) ← pairOf v
           return .val x :: .val y :: more
-        else return .val (← u1 v) :: more
+        else return .val v :: more
       | .ret i =>
         match rg[i]?, starts[i]? with
         | some [.val _], some s => return .ret s :: more
@@ -1119,10 +1119,10 @@ def rewriteTerm (f : Function) (ty : ValueId → Option Ty) (rg : List (List Slo
     let items ← et.items.mapM fun
       | .tag n d => do return ExnItem.tag n (← dest d)
       | .default d => do return ExnItem.default (← dest d)
-      | .context v => do return ExnItem.context (← u1 v)
+      | .context v => do return ExnItem.context v
     let et' := { et with normal := ← dest et.normal, items }
     match t with
-    | .tryCallIndirect c .. => return .tryCallIndirect (← u1 c) args' et'
+    | .tryCallIndirect c .. => return .tryCallIndirect c args' et'
     | .tryCall fn .. => return .tryCall fn args' et'
     | _ => return t
 

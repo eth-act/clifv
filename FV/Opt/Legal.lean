@@ -101,6 +101,8 @@ def termOps : Terminator → List ValueId
   | .ret xs => xs
   | .returnCall _ args => args
   | .trap _ => []
+  | .tryCall _ args et => args ++ et.vals
+  | .tryCallIndirect c args et => c :: args ++ et.vals
 
 /-- The branch targets of a terminator. -/
 def termDests : Terminator → List BlockCall
