@@ -454,6 +454,44 @@ pub mod unwind {
     }
 }
 
+/// Thread-local storage: the `thread_local!` accessors compile `tls_value` (cg_clif's
+/// `tls_model=elf_gd`: the TLSDESC call sequence, which the static link relaxes). Each thread
+/// has its own instance, with a const initializer (`COUNTER`) or a lazy one with a destructor
+/// (`LOG`).
+pub mod tls {
+    use std::cell::{Cell, RefCell};
+
+    thread_local! {
+        static COUNTER: Cell<u64> = const { Cell::new(0) };
+        static LOG: RefCell<Vec<u64>> = RefCell::new(Vec::new());
+    }
+
+    /// Adds `x` to this thread's counter and returns the new value.
+    #[inline(never)]
+    pub fn bump(x: u64) -> u64 {
+        COUNTER.with(|c| {
+            let v = c.get().wrapping_add(x);
+            c.set(v);
+            v
+        })
+    }
+
+    /// The address of this thread's counter.
+    #[inline(never)]
+    pub fn counter_addr() -> usize {
+        COUNTER.with(|c| c as *const Cell<u64> as usize)
+    }
+
+    /// Appends `x` to this thread's log and returns the log's sum.
+    #[inline(never)]
+    pub fn log(x: u64) -> u64 {
+        LOG.with(|l| {
+            l.borrow_mut().push(x);
+            l.borrow().iter().sum()
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -627,6 +665,24 @@ mod tests {
         let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| unwind::lean_rethrow(&log, bb(3))));
         assert!(message(&*r.unwrap_err()).starts_with("deep panic, acc "));
         assert_eq!(log.get(), 213);
+    }
+
+    #[test]
+    fn thread_locals() {
+        assert_eq!(tls::bump(bb(5)), 5);
+        assert_eq!(tls::bump(bb(7)), 12);
+        assert_eq!(tls::log(bb(3)), 3);
+        let here = tls::counter_addr();
+        let there = std::thread::spawn(|| {
+            (tls::bump(bb(100)), tls::bump(bb(1)), tls::log(bb(40)), tls::counter_addr())
+        })
+        .join()
+        .unwrap();
+        assert_eq!((there.0, there.1, there.2), (100, 101, 40));
+        assert_ne!(there.3, here);
+        assert_eq!(tls::counter_addr(), here);
+        assert_eq!(tls::bump(bb(0)), 12);
+        assert_eq!(tls::log(bb(4)), 7);
     }
 
     #[test]
