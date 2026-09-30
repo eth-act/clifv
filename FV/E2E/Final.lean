@@ -126,4 +126,35 @@ theorem backend_correct_final {p : Clif.Program} {f : Clif.Function} {k : Nat} {
     (fun _ => memRefines_csem _ _ X hslot hsym)
     hent hres hbe hargs hcs hrel htr fuel
 
+/-- **Specialisation to functions without indirect calls**: `backend_correct_final` with the
+former premises (no indirect-call contract `hXI`), for a function with no `call_indirect`
+statement and no `try_call_indirect` terminator (`indSigs f = []`, `xCallsIndOk_nil`). With
+`InSubset.of_indirectFree` and `TrapsExplicit.of_indirectFree` it is the former theorem. -/
+theorem backend_correct_final_indirectFree {p : Clif.Program} {f : Clif.Function} {k : Nat}
+    {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
+    (hci : ∀ B ∈ f.blocks, ∀ st ∈ B.body, ∀ sig callee args, st.inst ≠ .callIndirect sig callee args)
+    (htci : ∀ B ∈ f.blocks, ∀ callee args et, B.term ≠ .tryCallIndirect callee args et)
+    (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb)
+    {X : ExtSem} {H : ArmHooks} {syms : String → Option Nat} {slotOff : Nat} {env : Clif.Env}
+    (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
+    (hC : ∀ s, CalleeOk
+      (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
+    (hCT : (∃ B ∈ f.blocks, B.term.isTry = true) → ∀ s, CalleeTryOk
+      (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
+    (hX : ∀ s, XCallsOk env (f.externs.map (·.2)) (fun sl cm w =>
+      Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+        slotOff⟩ f sl cm w) X)
+    (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
+    (hslot : af.slotBase = slotOff)
+    {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
+    (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hbe : BodyEntry af s w₀)
+    (hargs : ArgsIn f.sig args s) (hcs : ClifEntry f args cs)
+    (hrel : Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s,
+      syms, slotOff⟩ f cs.frame.slots cs.mem w₀)
+    (htr : TrapsExplicit env p cs) (fuel : Nat) :
+    ArmRefines fb base ra (ArmStepX X H fa) s (Clif.runLoop env p fuel cs) :=
+  backend_correct_final hsub hc hcov hC hCT hX
+    (fun _ => by rw [indSigs_eq_nil hci htci]; exact xCallsIndOk_nil _ _ _) hsym hslot hent hres
+    hbe hargs hcs hrel htr fuel
+
 end E2E

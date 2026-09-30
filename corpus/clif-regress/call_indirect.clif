@@ -1,0 +1,139 @@
+; End-to-end theorem regression (`call_indirect`, `func_addr`, `try_call_indirect`): functions
+; with indirect calls and function addresses are inside `E2E.backend_correct_final`. An indirect
+; call of an extern (the extern of the program at the callee address, `Clif.callExternAt`) is
+; covered under the contract `XCallsIndOk`; an indirect call of a function of the program is
+; excluded by the run premise `TrapsExplicit.indirect` (as a direct call of one is excluded by
+; `InSubset.externCalls`). `func_addr` is the GOT load of the declaration's link-time address.
+; `try_call_indirect` is covered for its normal return (landing pads and the LSDA are trusted,
+; as for `try_call`). The callees here are functions of the file, so the runs below enter them;
+; the lowering is the one for an extern. Accepted by `lean-e2e-check`'s validators (in scope,
+; 0 rejected), and the runs agree with Cranelift-native
+; (`scripts/lean-backend-filetests.sh corpus/clif-regress/call_indirect.clif`).
+test interpret
+test run
+target aarch64
+
+function %double(i64) -> i64 system_v {
+block0(v0: i64):
+    v1 = iadd v0, v0
+    return v1
+}
+
+function %add3(i64) -> i64 system_v {
+block0(v0: i64):
+    v1 = iconst.i64 3
+    v2 = iadd v0, v1
+    return v2
+}
+
+function %sum2(i64, i64) -> i64 system_v {
+block0(v0: i64, v1: i64):
+    v2 = iadd v0, v1
+    return v2
+}
+
+; dyn dispatch: `v0` points to a vtable (drop, size, align, method0, method1 — Rust's layout),
+; `v2` selects the method; the method is called with the receiver `v1`
+function %dyn_call(i64, i64, i8) -> i64 system_v {
+    sig0 = (i64) -> i64 system_v
+block0(v0: i64, v1: i64, v2: i8):
+    brif v2, block2, block1
+block1:
+    v3 = load.i64 notrap aligned v0+24
+    v4 = call_indirect sig0, v3(v1)
+    return v4
+block2:
+    v5 = load.i64 notrap aligned v0+32
+    v6 = call_indirect sig0, v5(v1)
+    return v6
+}
+
+; builds a vtable in a stack slot with `func_addr` and dispatches through it
+function %vt_dispatch(i64, i8) -> i64 system_v {
+    ss0 = explicit_slot 40
+    sig0 = (i64, i64, i8) -> i64 system_v
+    fn0 = %double(i64) -> i64 system_v
+    fn1 = %add3(i64) -> i64 system_v
+    fn2 = %dyn_call(i64, i64, i8) -> i64 system_v
+block0(v0: i64, v1: i8):
+    v2 = stack_addr.i64 ss0
+    v3 = iconst.i64 0
+    store notrap aligned v3, v2
+    v4 = iconst.i64 8
+    store notrap aligned v4, v2+8
+    store notrap aligned v4, v2+16
+    v5 = func_addr.i64 fn0
+    store notrap aligned v5, v2+24
+    v6 = func_addr.i64 fn1
+    store notrap aligned v6, v2+32
+    v7 = func_addr.i64 fn2
+    v8 = call_indirect sig0, v7(v2, v0, v1)
+    return v8
+}
+; run: %vt_dispatch(5, 0) == 10
+; run: %vt_dispatch(5, 1) == 8
+; run: %vt_dispatch(-4, 1) == -1
+
+; a function address returned as a value, then called by the caller
+function %pick(i8) -> i64 system_v {
+    fn0 = %double(i64) -> i64 system_v
+    fn1 = %add3(i64) -> i64 system_v
+block0(v0: i8):
+    v1 = func_addr.i64 fn0
+    v2 = func_addr.i64 fn1
+    v3 = select v0, v2, v1
+    return v3
+}
+
+function %call_picked(i8, i64) -> i64 system_v {
+    sig0 = (i8) -> i64 system_v
+    sig1 = (i64) -> i64 system_v
+    fn0 = %pick(i8) -> i64 system_v
+block0(v0: i8, v1: i64):
+    v2 = func_addr.i64 fn0
+    v3 = call_indirect sig0, v2(v0)
+    v4 = call_indirect sig1, v3(v1)
+    return v4
+}
+; run: %call_picked(0, 21) == 42
+; run: %call_picked(1, 21) == 24
+
+; `try_call_indirect`: one return value via `ret0`, a handler with the payload `exn0`
+function %tci_ret(i64) -> i64 system_v {
+    sig0 = (i64) -> i64 system_v
+    fn0 = %add3(i64) -> i64 system_v
+block0(v0: i64):
+    v1 = func_addr.i64 fn0
+    try_call_indirect v1(v0), sig0, block1(ret0), [ tag0: block2(exn0) ]
+block1(v2: i64):
+    v3 = iadd v2, v0
+    return v3
+block2(v4: i64):
+    v5 = iconst.i64 -1
+    return v5
+}
+; run: %tci_ret(5) == 13
+; run: %tci_ret(-3) == -3
+
+; `try_call_indirect` with two arguments, a value argument on the normal edge, then a second
+; indirect call in the successor
+function %tci_chain(i64, i64) -> i64 system_v {
+    sig0 = (i64, i64) -> i64 system_v
+    sig1 = (i64) -> i64 system_v
+    fn0 = %sum2(i64, i64) -> i64 system_v
+    fn1 = %double(i64) -> i64 system_v
+block0(v0: i64, v1: i64):
+    v2 = func_addr.i64 fn0
+    v3 = iconst.i64 7
+    try_call_indirect v2(v0, v1), sig0, block1(v3, ret0), [ tag1: block2 ]
+block1(v4: i64, v5: i64):
+    v6 = func_addr.i64 fn1
+    v7 = call_indirect sig1, v6(v5)
+    v8 = iadd v7, v4
+    return v8
+block2:
+    v9 = iconst.i64 0
+    return v9
+}
+; run: %tci_chain(10, 4) == 35
+; run: %tci_chain(0, 0) == 7

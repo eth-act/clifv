@@ -11,8 +11,12 @@ compiled optimised function refines the CLIF run of the *source* program:
 
 The optimised function keeps the name, signature, stack slots, globals and externs, so the entry
 state (`optEntry`), `Rel.holds` and the slot layout carry over; `InSubset` carries over because the
-output stays in E, calls only what the input calls and has no `call_indirect`/`func_addr` if
-the input has none (`Opt.optimize_facts`). `FormsCovered`
+output stays in E, calls only what the input calls and has no `call_indirect`/`try_call` if
+the input has none (`Opt.optimize_facts`). The mid-end's simulation (`lstep`) does not model
+`call_indirect`, so this variant keeps the premise that `f` has none (`hci`, with `hnt` for
+`try_call`/`try_call_indirect`); then the optimised function has no indirect-call signatures and
+the indirect-call contract of `backend_correct_final` is vacuous (`xCallsIndOk_nil`).
+`FormsCovered`
 stays a per-function decided premise (about the optimised code), as do `TrapsExplicit` (about
 the optimised program's run) and `EnvKeepsSymbols` (externs keep the link-time symbols).
 The simplify stage enters through `Opt.SimplifyPassSim` (proven for sound rule sets,
@@ -36,8 +40,21 @@ theorem rel_holds_slots {Γ : Rel} {f g : Clif.Function} (h : g.slots = f.slots)
   funext sl cm w
   simp only [Rel.holds, SlotRel, h]
 
+/-- The mid-end's premise on `f` (`Opt.NoCallIndirect`): no `call_indirect` statement (`hci`)
+and no `try_call`/`try_call_indirect` terminator (`hnt`); `lstep` does not model them. -/
+theorem noCI_of (f : Clif.Function)
+    (hci : ∀ B ∈ f.blocks, ∀ st ∈ B.body, ∀ sig callee args, st.inst ≠ .callIndirect sig callee args)
+    (hnt : ∀ B ∈ f.blocks, B.term.isTry = false) : Opt.NoCallIndirect f := ⟨hci, hnt⟩
+
+/-- A function without indirect calls (`Opt.NoCallIndirect`) has no indirect-call signatures. -/
+theorem indSigs_nil_of_noCI {g : Clif.Function} (h : Opt.NoCallIndirect g) : indSigs g = [] :=
+  indSigs_eq_nil h.1 fun B hB callee args et e => by
+    have := h.2 B hB; rw [e] at this; cases this
+
 theorem inSubset_opt (cfg : Opt.Config) {p : Clif.Program} {f : Clif.Function}
-    (hsub : InSubset p f) (hnt : ∀ B ∈ f.blocks, B.term.isTry = false) :
+    (hsub : InSubset p f)
+    (hci : ∀ B ∈ f.blocks, ∀ st ∈ B.body, ∀ sig callee args, st.inst ≠ .callIndirect sig callee args)
+    (hnt : ∀ B ∈ f.blocks, B.term.isTry = false) :
     InSubset (Opt.optimizeProgram p cfg) (Opt.optimize f cfg) := by
   have hF := Opt.optimize_facts cfg f
   have hname : ∀ g : Clif.Function, (Opt.optimize g cfg).name = g.name :=
@@ -47,8 +64,9 @@ theorem inSubset_opt (cfg : Opt.Config) {p : Clif.Program} {f : Clif.Function}
     simp only [Clif.Program.func?, Opt.optimizeProgram, List.find?_map]
     rw [show ((fun x : Clif.Function => x.name == n) ∘ fun x => Opt.optimize x cfg) =
       (fun x => x.name == n) from by funext g; simp [hname]]
+  have hnci := hF.noCI (noCI_of f hci hnt)
   refine ⟨?_, hF.subsetE hsub.subsetE, by rw [hF.sig]; exact hsub.regParams, ?_, ?_, ?_, ?_,
-    (hF.noCI ⟨hsub.noCI, hnt⟩).1, hF.noFA hsub.noFA⟩
+    by rw [indSigs_nil_of_noCI hnci]; simp⟩
   · rw [hfind, hF.name, hsub.func]; rfl
   · intro b hb st hst fn args hc e he
     obtain ⟨b0, hb0, st0, hst0, args0, hc0⟩ :=
@@ -57,7 +75,7 @@ theorem inSubset_opt (cfg : Opt.Config) {p : Clif.Program} {f : Clif.Function}
       simpa [Clif.Function.extern?, hF.externs] using he
     rw [hfind, hsub.externCalls b0 hb0 st0 hst0 fn args0 hc0 e he0]; rfl
   · intro b hb fn args et ht
-    have := (hF.noCI ⟨hsub.noCI, hnt⟩).2 b hb
+    have := hnci.2 b hb
     rw [ht] at this; cases this
   · rw [hF.externs]; exact hsub.callRegArgs
   · constructor
@@ -93,14 +111,15 @@ theorem clifEntry_opt (cfg : Opt.Config)
     exact hrel args cs.frame.regs cs.frame.slots (hty.symm) hregs hcs.slotIds
   · rw [hcs.callers]; exact .nil _
 
-/-- An in-subset function without `try_call` has no `call_indirect` (`InSubset.noCI`) and no tail
+/-- An in-subset function without `call_indirect` and `try_call`/`try_call_indirect` has no tail
 call (not in E), and calls only externs that are not functions of `p`: the source run from `f`
 stays in `f`. -/
 theorem ciFree_of_subset {p : Clif.Program} {f : Clif.Function} (hsub : InSubset p f)
+    (hci : ∀ B ∈ f.blocks, ∀ st ∈ B.body, ∀ sig callee args, st.inst ≠ .callIndirect sig callee args)
     (hnt : ∀ B ∈ f.blocks, B.term.isTry = false) : Opt.CIFree p (· = f) where
   noCI := by
     rintro g rfl
-    exact ⟨hsub.noCI, hnt⟩
+    exact noCI_of g hci hnt
   call := by
     rintro g rfl b hb st hst fn args hi e he h hh
     rw [hsub.externCalls b hb st hst fn args hi e he] at hh
@@ -126,15 +145,17 @@ refines the CLIF run of the *source* program `p` from `f`'s entry state: wheneve
 `Clif.runLoop env p fuel cs` returns or traps, the Arm code returns the same values (and memory)
 or stops at a trap site with the same code. Premises as `backend_correct_final` (about the
 compiled optimised code; `Rel.holds`/`XCallsOk` stated for `f`, which has the optimised
-function's slots), plus: `f` has no `try_call` (`hnt`: the mid-end simulation covers
-`try_call`-free functions), the simplify stage refines (`hS`), externs keep the link-time symbols
-(`hE`), and the optimised program's run from the corresponding entry state traps only explicitly
+function's slots; the indirect-call contract is vacuous), plus: `f` has no `call_indirect` (`hci`)
+and no `try_call`/`try_call_indirect` (`hnt`: the mid-end simulation covers such functions),
+the simplify stage refines (`hS`), externs keep the link-time symbols (`hE`), and the optimised program's run from the corresponding entry state traps only explicitly
 (`htr`). -/
 theorem backend_correct_opt (cfg : Opt.Config)
     (hS : Opt.SimplifyPassSim cfg.simplifyFn cfg.skeletonFn)
     {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}
     {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
-    (hsub : InSubset p f) (hnt : ∀ B ∈ f.blocks, B.term.isTry = false)
+    (hsub : InSubset p f)
+    (hci : ∀ B ∈ f.blocks, ∀ st ∈ B.body, ∀ sig callee args, st.inst ≠ .callIndirect sig callee args)
+    (hnt : ∀ B ∈ f.blocks, B.term.isTry = false)
     (hc : Compiled (Opt.optimize f cfg) k vc vcp rf af fa fb)
     {X : ExtSem} {H : ArmHooks} {syms : String → Option Nat} {slotOff : Nat} {env : Clif.Env}
     (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
@@ -157,7 +178,7 @@ theorem backend_correct_opt (cfg : Opt.Config)
   obtain ⟨hcs', hSR⟩ := clifEntry_opt cfg hS hcs
   have hP : Opt.FunsSim p.funcs (Opt.optimizeProgram p cfg).funcs :=
     Opt.FunsSim.map (T := (Opt.optimize · cfg)) (Opt.optimize_sim cfg hS)
-  obtain ⟨n', hn⟩ := Opt.runLoop_refines hE hP (ciFree_of_subset hsub hnt) fuel cs (optEntry cfg f cs)
+  obtain ⟨n', hn⟩ := Opt.runLoop_refines hE hP (ciFree_of_subset hsub hci hnt) fuel cs (optEntry cfg f cs)
     hSR (inv_of_entry hcs)
   have hslots : (optEntry cfg f cs).frame.slots = cs.frame.slots ∧
       (optEntry cfg f cs).mem = cs.mem := by
@@ -165,9 +186,11 @@ theorem backend_correct_opt (cfg : Opt.Config)
     obtain ⟨R, -, hent'⟩ := (Opt.optimize_sim cfg hS f).sim cs.mem.symbols
     obtain ⟨b', hb', -⟩ := hent' b hb
     simp [optEntry, hb']
-  have hA := backend_correct_final (inSubset_opt cfg hsub hnt) hc hcov hC
-    (fun ⟨B, hB, h⟩ => by rw [(hF.noCI ⟨hsub.noCI, hnt⟩).2 B hB] at h; cases h)
-    (fun s' => by rw [rel_holds_slots hF.slots, hF.externs]; exact hX s') hsym hslot hent hres hbe
+  have hnci := hF.noCI (noCI_of f hci hnt)
+  have hA := backend_correct_final (inSubset_opt cfg hsub hci hnt) hc hcov hC
+    (fun ⟨B, hB, h⟩ => by rw [hnci.2 B hB] at h; cases h)
+    (fun s' => by rw [rel_holds_slots hF.slots, hF.externs]; exact hX s')
+    (fun _ => by rw [indSigs_nil_of_noCI hnci]; exact xCallsIndOk_nil _ _ _) hsym hslot hent hres hbe
     (by rw [hF.sig]; exact hargs) hcs'
     (by rw [rel_holds_slots hF.slots, hslots.1, hslots.2]; exact hrel) htr n'
   obtain ⟨hret, htrap⟩ := hn

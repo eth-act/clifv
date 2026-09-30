@@ -25,7 +25,9 @@ theorem backend_correct_opt_proven (cfg : Opt.Config) (hr : cfg.rules = .craneli
     (ha : cfg.ruleAllow = .proven)
     {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}
     {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
-    (hsub : InSubset p f) (hnt : ∀ B ∈ f.blocks, B.term.isTry = false)
+    (hsub : InSubset p f)
+    (hci : ∀ B ∈ f.blocks, ∀ st ∈ B.body, ∀ sig callee args, st.inst ≠ .callIndirect sig callee args)
+    (hnt : ∀ B ∈ f.blocks, B.term.isTry = false)
     (hc : Compiled (Opt.optimize f cfg) k vc vcp rf af fa fb)
     {X : ExtSem} {H : ArmHooks} {syms : String → Option Nat} {slotOff : Nat} {env : Clif.Env}
     (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
@@ -44,7 +46,7 @@ theorem backend_correct_opt_proven (cfg : Opt.Config) (hr : cfg.rules = .craneli
       syms, slotOff⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicit env (Opt.optimizeProgram p cfg) (optEntry cfg f cs)) (fuel : Nat) :
     ArmRefines fb base ra (ArmStepX X H fa) s (Clif.runLoop env p fuel cs) :=
-  backend_correct_opt cfg (Opt.simplifyPassSim_proven hr ha) hsub hnt hc hcov hC hX hsym hslot hE
+  backend_correct_opt cfg (Opt.simplifyPassSim_proven hr ha) hsub hci hnt hc hcov hC hX hsym hslot hE
     hent hres hbe hargs hcs hrel htr fuel
 
 end E2E

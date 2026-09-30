@@ -27,11 +27,12 @@ contract `IselContract.lean`), `regalloc-proof.md` (M6), `encoder.md` (M5), `cli
 | `PrepareCorrect sem vc vcp` (unreachable blocks, critical-edge splitting, RPO) | **discharged**: `prepCheck vc vcp = true` ⇒ it (`prepareCorrect_of_check`) |
 | Validators run by the compiler (`FV/Backend.lean` `lowerChecked`, `FV/Backend/Regalloc.lean` `allocateRegalloc2`: a rejection is a compile error) | done |
 | **`backend_correct`**, **`backend_correct_of_rules`** from the hypotheses below | **proven**, sorry-free |
-| **`backend_correct_m4`** (`FV/E2E/Final.lean`): `backend_correct_of_rules` with all eight M4 predicates discharged (`lowerRulesCorrect_program`, `excludedUnmatchable`, `callRulesCorrect`, `memRulesCorrect_program`, `lowerTermRulesCorrect`, `termUnmatchable`, `branchRulesCorrect`, `branchExcludedUnmatchable`) and `sem s := csem (F s) (ctx s) (X s)` (discharges `DriverSem` by `driverSem_csem`, `CallsRefine` by `callsRefine_csem` from `XCallsOk`) | **proven**; axioms: `propext`, `Classical.choice`, `Quot.sound` + 130 `_native.bv_decide` certificates |
+| **`backend_correct_m4`** (`FV/E2E/Final.lean`): `backend_correct_of_rules` with all M4 predicates discharged (`lowerRulesCorrect_program`, `excludedUnmatchable`, `callRulesCorrect`, `indRulesCorrect`, `memRulesCorrect_program`, `lowerTermRulesCorrect`, `termUnmatchable`, `branchRulesCorrect`, `branchExcludedUnmatchable`, `tryRulesCorrect`, `tryUnmatchable`, `tryIndRulesCorrect`, `tryIndUnmatchable`) and `sem s := csem (F s) (ctx s) (X s)` (discharges `DriverSem` by `driverSem_csem`, `CallsRefine` by `callsRefine_csem` from `XCallsOk`, `IndCallsRefine` by `indCallsRefine_csem` from `XCallsIndOk`) | **proven**; axioms: `propext`, `Classical.choice`, `Quot.sound` + 130 `_native.bv_decide` certificates |
 | **`RegLevelCorrect`** for the backend's code (`regLevelCorrect_backend`, `FV/E2E/RegLevelCorrect.lean`, M6Ctl3): frame addresses `frameF`, context `⟨fa.k, af.slotBase⟩`, one external semantics `X`, machine `ArmStepX X H fa`; from `FormsCovered` and `CalleeOk` | **proven** |
 | **`backend_correct_final`** (`FV/E2E/Final.lean`): `backend_correct_m4` with `hM6` discharged by `regLevelCorrect_backend` | **proven**; axioms: `propext`, `Classical.choice`, `Quot.sound` + `_native.bv_decide` certificates (M4's, M5's decoder `decode_armBits_*`/`decode_raw_inst_of_*`, `Arm.Memory.read_write_bytes_different`) |
 | **`sret`** (2026-09-30, `agent/sret-proof`): functions with a struct-return pointer parameter and calls of `sret` callees are inside `backend_correct_final` (`InSubset.abiSigs`; see "`sret`" below) | **proven**; `lean-e2e-check`: all `sret` functions in scope accepted and covered |
-| **`try_call`** (2026-09-30, `agent/trycall-proof`): functions with `try_call` of an extern are inside `backend_correct_final` **for their normal returns** (see "`try_call`" below); nothing is claimed about unwinding, landing pads or the LSDA | **proven** (`term_step_try`, `tryRulesCorrect`, `tryUnmatchable`, `realizes_tryCall`); `try_call_indirect` stays outside |
+| **`try_call`** (2026-09-30, `agent/trycall-proof`): functions with `try_call` of an extern are inside `backend_correct_final` **for their normal returns** (see "`try_call`" below); nothing is claimed about unwinding, landing pads or the LSDA | **proven** (`term_step_try`, `tryRulesCorrect`, `tryUnmatchable`, `realizes_tryCall`) |
+| **Indirect calls** (2026-10-01, `agent/indirect-proof`): `call_indirect`, `func_addr` and `try_call_indirect` (normal return) are inside `backend_correct_final`: an indirect call of an extern under the contract `XCallsIndOk` (hypothesis `hXI`), an indirect call of a function of the program excluded by the run premise `TrapsExplicit.indirect`/`tryIndirect` (see "Indirect calls" below). Trusted-semantics growth: `Clif.stepCallIndirect` calls the extern at the callee address (`Clif.callExternAt`) where it was stuck | **proven** (`call_ind_ruleOk` 1033, `func_addr_ok` 1026, `try_ind_ruleOk` 1036, `stepCallIndirect_eq`, `term_step_try` over `IsTryWith`); `lean-e2e-check`: 0 rejected |
 
 ### Final hypotheses (`E2E.backend_correct_final`, 2026-09-28)
 
@@ -46,9 +47,10 @@ fp/lr pair and padding above the CLIF slots, the code words), `cx := ⟨fa.k, af
 | `∀ s, CalleeOk (FF s) X H` | callee contract of the machine's call hook `H` (AAPCS64: `OperandsSound` of every call, return to pc+4, `X.call` error-free and program-preserving) — environment |
 | `(∃ B ∈ f.blocks, B.term.isTry = true) → ∀ s, CalleeTryOk (FF s) X H` (`hCT`) | only for a function with a `try_call`: the def registers of a `try_call`'s call hold what `csem` gives them — the results, then the exception payload registers x0/x1 that are not return registers, as the callee's world `X.call` has them (see "`try_call`") — environment; vacuous for a function without `try_call` |
 | `∀ s, XCallsOk env (f.externs.map (·.2)) (Rel.holds ⟨FF s, syms, slotOff⟩ f) X` | external contract for the externs `f` declares: callees, linker symbols — environment. A call returns one value per ABI return of the declaration (`sigRets`), the first ones the extern's results (`PrefixHold`); for declarations without `sret` this is implied by the former extern-independent contract (`xCallsOk_of_results`) |
+| `∀ s, XCallsIndOk env (indSigs f) (Rel.holds ⟨FF s, syms, slotOff⟩ f) X` (`hXI`) | external contract for the indirect calls of `f` (`call_indirect`, `try_call_indirect`), per call-site signature (`Backend.indSigs f`): a `blr` whose target holds `X.sym n 0` of an extern `n` of `env` behaves as `env.extern n` does under that signature (the same clause as `XCallsOk`'s GOT call) — environment; vacuous for a function without indirect calls (`xCallsIndOk_nil`, `backend_correct_final_indirectFree`) |
 | `∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b` (`hsym`) | linker: the external semantics' symbol addresses are the linked ones — environment; with `hslot` it discharges the former `MemRefines` hypothesis (`memRefines_csem`, M6MemRef) |
 | `af.slotBase = slotOff` (`hslot`) | the relation's slot-region offset is the frame's slot base — caller (instantiate `slotOff := af.slotBase`) |
-| per run: `AbiEntry fb base ra s`, `StackAvail af s`, `BodyEntry af s w₀`, `ArgsIn f.sig args s`, `ClifEntry f args cs`, `Rel.holds ⟨FF s, syms, slotOff⟩ f cs.frame.slots cs.mem w₀`, `TrapsExplicit env p cs` (with the `try_call` clause, vacuous for a function without `try_call`: `TrapsExplicit.of_tryFree`) | caller of the theorem |
+| per run: `AbiEntry fb base ra s`, `StackAvail af s`, `BodyEntry af s w₀`, `ArgsIn f.sig args s`, `ClifEntry f args cs`, `Rel.holds ⟨FF s, syms, slotOff⟩ f cs.frame.slots cs.mem w₀`, `TrapsExplicit env p cs` (with the `try_call`/`try_call_indirect` trap clauses, and the indirect-call clauses `indirect`/`tryIndirect`: an indirect call of the entered function reaches no function of `p`; all vacuous for a function without them: `TrapsExplicit.of_tryFree`, `TrapsExplicit.of_indirectFree`) | caller of the theorem |
 
 Conclusion: `ArmRefines fb base ra (ArmStepX X H fa) s (Clif.runLoop env p fuel cs)`.
 `Refines` of `csem` is discharged (`refines_final`/`refines_csem`, M6Refines), as is `MemRefines`
@@ -98,9 +100,8 @@ handlers' are the landing pads, the last one the normal return, `jump` to the su
 the `retN`/value arguments).
 
 * **Scope** `InSubset.tryExterns`: a `try_call` calls an extern that is not a function of `p`
-  (like `externCalls`); `Compile.termE` admits `try_call` and still rejects
-  `try_call_indirect` (`noTryCI_of_functionE`), which is flagged unverified
-  (`try_call_indirect (outside backend_correct)`).
+  (like `externCalls`); `Compile.termE` admits `try_call` and `try_call_indirect` (see
+  "Indirect calls").
 * **Claim**: exactly the normal return. `ArmRefines` is unchanged: when `Clif.runLoop`
   returns or traps, so does the Arm code. A run that passes through a `try_call` is related
   only along the path where the callee returns normally.
@@ -138,6 +139,59 @@ the `retN`/value arguments).
   `lean-backend` flags such functions unverified under `--opt`/`--opt-proven-only` and after
   `i128` legalisation.
 
+### Indirect calls and function addresses
+
+**Semantics (trusted-semantics growth).** `Clif.stepCallIndirect` (`FV/Clif/Run.lean`) takes the
+callee value as a code address. A function of the program at that address is entered, as
+before. Otherwise it now calls the extern of the program at that address
+(`Clif.callExternAt`): the first name of `Program.externNames` (the externs the functions of
+`p` declare, which `Program.initMem` gives link-time `symbols`) whose address is the callee
+value, run as `env.extern` with the argument and result types checked against the call site's
+`sigN`, like `Clif.stepCall`. Before this change such calls were stuck.
+`Clif.stepTryCallIndirect` inherits it. `docs/contracts/clif-subset.md` records the change;
+`scripts/clif-filetests.sh` and the differential tools are unchanged by it (see there).
+
+* **Scope** `InSubset.indSigs`: the call-site signatures of the indirect calls (`Backend.indSigs
+  f`: the `sigN` of each `call_indirect` and each `try_call_indirect`'s exception table) have
+  at most 8 parameters and pass `sigAbiOk` (`Backend.indSigsOk`, part of `Backend.verifiable`).
+  `InSubset.noCI`/`noFA` and `CtxInv.noFA` are gone; `CtxInv.resTys` takes a `call_indirect`'s
+  result types from its `sigN` declaration. `Compile.termE` admits `try_call_indirect`.
+* **Run premises** `TrapsExplicit.indirect`/`tryIndirect`: at a `call_indirect` statement /
+  `try_call_indirect` terminator of the entered function, no function of `p` is at the callee
+  address (such a call enters that function: calls between the program's functions are
+  outside the theorem, as `InSubset.externCalls` excludes direct ones);
+  `TrapsExplicit.tryCallInd`: a `try_call_indirect` does not trap (the callee returns normally).
+* **Contract** `XCallsIndOk env (indSigs f) MR X` (`FV/E2E/RegLevelDriverSem.lean`): for each
+  call-site signature, a `blr` (`X.call none (u :: args)`) whose target's low 64 bits are
+  `X.sym n 0` of an extern `n` of `env` returns what `env.extern n` returns (one output per
+  `sigRets`, the results first, the memory relation kept) — the clause `XCallsOk` states for a
+  GOT call of a declared extern, for every extern of `env`. With `hsym` (the external
+  semantics' symbol addresses are the linked ones) and `MemRel.symbols` it gives the M4
+  contract `IndCallsRefine` for `csem` (`indCallsRefine_csem`).
+* **Rules** (M4): `rule_lower_2529` (`call_indirect`, id 1033: `blr` of the callee value's vreg
+  under the call site's ABI, `call_ind_ruleOk`, `IndRulesCorrect`), `rule_lower_2486`
+  (`func_addr`, id 1026: `load_ext_name` of the declaration at offset 0, as `symbol_value`;
+  `func_addr_ok`, in `MemRulesCorrect`), `rule_lower_2561` (`try_call_indirect`, id 1036 of
+  `lower_branch`, `try_ind_ruleOk`, `TryIndRulesCorrect`/`TryIndUnmatchable`). `LowerTryOk` is
+  stated for the call instruction of the terminator (`.call fn args` resp.
+  `.callIndirect et.sig callee args`), and `term_step_try` covers both (`IsTryWith`).
+* **Driver**: `step_stmt`/`stepCallIndirect_eq` relate a `call_indirect` step to `instOutcome`
+  (the extern at the address) under the run premise; `lowerCheck` re-runs the lowering of both
+  terminators (`lowTerm`, `succOk`, `edgeIds`) and checks `sigDecls`-based result types
+  (`ctxResTysOk`).
+* **Specialisation**: for a function without `call_indirect`/`try_call_indirect`,
+  `indSigs f = []` (`indSigs_eq_nil`), so `InSubset.indSigs` and `hXI` are vacuous
+  (`InSubset.of_indirectFree`, `xCallsIndOk_nil`, `backend_correct_final_indirectFree`) and so
+  are the new `TrapsExplicit` clauses (`TrapsExplicit.of_indirectFree`): the statement is the
+  former one.
+* **Mid-end and `i128`**: `lstep` does not model `call_indirect`, so `backend_correct_opt`/
+  `_opt_proven` and `backend_correct_legal` keep the premise that the (source resp. legalised)
+  function has none (`hci`, next to `hnt`); the indirect-call contract is then vacuous.
+  `lean-backend` flags `call_indirect` functions unverified under `--opt` and after `i128`
+  legalisation (`Opt.Legal.check` rejects indirect calls anyway).
+* **Regression file**: `corpus/clif-regress/call_indirect.clif` (a vtable built with
+  `func_addr` and dispatched through, a function address returned as a value, `try_call_indirect`).
+
 ## The theorem (`FV/E2E/Main.lean`)
 
 ```lean
@@ -148,9 +202,13 @@ theorem backend_correct {p f k vc vcp rf af fa fb}
     (hrules : LowerRulesCorrect Isle.Aarch64.program)
     (hex : ExcludedUnmatchable Isle.Aarch64.program)
     (hcallRules : CallRulesCorrect Isle.Aarch64.program)
+    (hindRules : IndRulesCorrect Isle.Aarch64.program)
+    (hmemRules : MemRulesCorrect Isle.Aarch64.program)
     (hterms : ∀ s, TermCalls (sem s) (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w))
     (htries : ∀ s, TryCalls f (sem s) (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w)
       env p)
+    (htryInds : ∀ s, TryIndCalls (sem s) (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w)
+      env p (indSigs f))
     -- M6 + M5
     (hM6 : RegLevelCorrect sem F astep vcp af fb)
     -- the shared VCode semantics of each activation (M6's `csem (F s)`)
@@ -158,6 +216,10 @@ theorem backend_correct {p f k vc vcp rf af fa fb}
     -- the callee contract (M6, from `CalleeSound`)
     (hcalls : ∀ s, CallsRefine (F s) env (f.externs.map (·.2))
       (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w) (sem s))
+    -- the indirect-call contract (M6, from `XCallsIndOk`)
+    (hicalls : ∀ s, IndCallsRefine env (indSigs f)
+      (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w) (sem s))
+    (hmem : ∀ s, MemRefines (F s) slotOff syms (sem s))
     -- the run
     {base ra s w₀ args cs}
     (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hbe : BodyEntry af s w₀)
@@ -169,9 +231,11 @@ theorem backend_correct {p f k vc vcp rf af fa fb}
 
 `backend_correct_of_rules`: the same with `hterms` replaced by M4's terminator statements
 `LowerTermRulesCorrect`, `TermUnmatchable`, `BranchRulesCorrect`, `BranchExcludedUnmatchable`,
-and `htries` by the `try_call` statements `TryRulesCorrect`, `TryUnmatchable` (of
-`Isle.Aarch64.program`; `backend_correct_m4` discharges them by `tryRulesCorrect` and
-`tryUnmatchable`, `FV/Backend/Proof/IselCtlTry.lean`).
+`htries` by the `try_call` statements `TryRulesCorrect`, `TryUnmatchable`, and `htryInds` by
+the `try_call_indirect` statements `TryIndRulesCorrect`, `TryIndUnmatchable` (of
+`Isle.Aarch64.program`; `backend_correct_m4` discharges them by `tryRulesCorrect`,
+`tryUnmatchable`, `FV/Backend/Proof/IselCtlTry.lean`, and `tryIndRulesCorrect`,
+`tryIndUnmatchable`, `FV/Backend/Proof/IselCtlTryInd.lean`; `hindRules` by `indRulesCorrect`).
 
 `ArmRefines fb base ra astep s o`:
 
@@ -190,7 +254,9 @@ and `htries` by the `try_call` statements `TryRulesCorrect`, `TryUnmatchable` (o
   of `p`), every extern of `f` takes at most 8 parameters (`callRegArgs`: no stack-passed call
   arguments; the compiler flags such functions unverified, `Backend.regArgCalls`), and the
   signatures of `f` and its externs pass `sigAbiOk` (`abiSigs`: `normal` plus at most one
-  `sret`; `Backend.abiSigs`), and every `try_call` calls an extern (`tryExterns`). `br_table`
+  `sret`; `Backend.abiSigs`), every `try_call` calls an extern (`tryExterns`), and the
+  indirect calls' signatures take at most 8 parameters and pass `sigAbiOk` (`indSigs`,
+  `Backend.indSigsOk`). `br_table`
   indices of at most 32 bits are enforced by `lowerCheck` (`brIdxOk`, contract change #6):
   an `i64` index is a compile error, as in Cranelift's verifier; so is a jump table with `2^32`
   or more entries (contract change #9).
@@ -358,11 +424,10 @@ functions over the validation budget (`Backend.validationBudget`: instructions �
 25000000, 7.6 times the largest function of `examples/`), which it compiles and reports as
 `compiled, unverified (validation budget)`.
 
-**Functions outside the theorem** (`FV/Backend.lean` `unverifiedReason?`: `try_call_indirect`,
-outside clif-subset-v2 E, more than 8 parameters, calls (also `try_call`s) of functions of the
-same file, special-purpose parameters other than one `sret` pointer (`abiSigs`),
-`call_indirect`/`func_addr` — `InSubset.noCI`/`noFA`; `lowerCheck` rejects `func_addr`,
-`CtxInv.noFA`, and `call_indirect` has no result types without `sigN` declarations) are still
+**Functions outside the theorem** (`FV/Backend.lean` `unverifiedReason?`: outside
+clif-subset-v2 E, more than 8 parameters, calls (also `try_call`s) of functions of the same
+file, special-purpose parameters other than one `sret` pointer (`abiSigs`), indirect calls
+with more than 8 parameters or special-purpose parameters (`indSigsOk`)) are still
 compiled, without validation, and reported as unverified (`FileAsm.unverified`; `lean-backend`
 prints `compiled, unverified (outside backend_correct): …`).
 
