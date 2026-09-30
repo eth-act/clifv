@@ -655,7 +655,7 @@ def pureOk (C : Ctx) (pat : List Stmt) (ins outs : List ValueId) (seg : List Stm
   let w := written pat
   let used := List.range ins.length ++ w
   seg == pat.map (renameStmt σ) &&
-  pat.all (fun st => pureInst st.inst) &&
+  pat.all (fun st => pureInst st.inst && st.results.length == 1) &&
   w.all (fun c => decide (ins.length ≤ c)) &&
   w.all (fun c => used.all fun d => c == d || σ c != σ d) &&
   w.all (fun c => decide (c < n) || C.fresh (σ c))
