@@ -111,6 +111,8 @@ structure FileAsm where
   unverified : List (String × String) := []
   /-- Distinct ISLE rules fired while compiling the file (ascending ids). -/
   rules : List Isle.RuleId
+  /-- Unwind rows of each compiled function (`unwindRows`, unverified; for `.eh_frame`). -/
+  unwind : List (String × List (Nat × Cfi)) := []
 
 /-- Names of the functions `f` calls. -/
 def callees (f : Clif.Function) : List String :=
@@ -155,6 +157,7 @@ def compileFileWith {m : Type → Type} [Monad m]
   let afs ← alloc vcs
   let mut done : Array (FnAsm × List String) := #[]
   let mut bad : Array (String × String) := #[]
+  let mut unwind : Array (String × List (Nat × Cfi)) := #[]
   let mut rules : Std.HashSet Isle.RuleId := {}
   let mut j := 0
   for ((name, r), k) in lowered.zipIdx do
@@ -163,9 +166,10 @@ def compileFileWith {m : Type → Type} [Monad m]
     | .ok (f, vc) =>
       let af := afs[j]?.getD (.error "allocator returned too few results")
       j := j + 1
-      match af.bind (emitFunc k) with
-      | .ok a =>
+      match af.bind fun af => do let a ← emitFunc k af; pure (a, ← unwindRows af a) with
+      | .ok (a, rows) =>
         done := done.push (a, callees f)
+        unwind := unwind.push (a.name, rows)
         rules := vc.rulesFired.foldl (·.insert ·) rules
       | .error e => bad := bad.push (name, e)
   -- propagate to callers (fixpoint; at most one round per function)
@@ -184,7 +188,8 @@ def compileFileWith {m : Type → Type} [Monad m]
       else none
     | .error _ => none
   pure { text, funcs, unsupported := bad.toList, unverified,
-         rules := rules.toArray.qsort (· < ·) |>.toList }
+         rules := rules.toArray.qsort (· < ·) |>.toList,
+         unwind := unwind.toList.filter fun (n, _) => funcs.any (·.name == n) }
 
 /-- `compileFileWith` the stack-slot allocator (pure). -/
 def compileFile (pf : Clif.ParsedFile) : FileAsm :=
@@ -216,9 +221,9 @@ def FileAsm.tableJson (fa : FileAsm) : String :=
 def FileAsm.layout (fa : FileAsm) : Except String (List (FnAsm × FnBin)) :=
   fa.funcs.mapM fun f => do pure (f, ← f.layout)
 
-/-- The ELF relocatable object of the compiled functions (no assembler). -/
+/-- The ELF relocatable object of the compiled functions (no assembler), with `.eh_frame`. -/
 def FileAsm.object (fa : FileAsm) : Except String ByteArray :=
-  elfObject <$> fa.layout
+  (elfObject · fa.unwind) <$> fa.layout
 
 /-- `name.relocs.json` of a laid-out function (the `clif2obj` schema,
 `docs/contracts/drivers.md`). -/

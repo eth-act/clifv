@@ -1,4 +1,5 @@
 import FV.Backend.Encode
+import FV.Backend.Unwind
 
 /-!
 # ELF64 relocatable object writer (AArch64, little-endian)
@@ -14,12 +15,18 @@ relocatable object with the sections
 | 3 | `.symtab` | `SHT_SYMTAB`, link 4 | null; mapping symbols `$x`/`$d` (local); functions (`STT_FUNC`, global, with sizes); undefined referenced symbols (global) |
 | 4 | `.strtab` | `SHT_STRTAB` | symbol names |
 | 5 | `.shstrtab` | `SHT_STRTAB` | section names |
+| 6 | `.eh_frame` | `SHT_PROGBITS`, `A`, align 8 | CIE + one FDE per function (if unwind rows are given) |
+| 7 | `.rela.eh_frame` | `SHT_RELA`, `I`, link 3, info 6 | `R_AARCH64_PREL32` of each FDE's `pc_begin` |
 
 following the System V gABI (ELF-64 object file format) and "ELF for the Arm 64-bit
 Architecture (AAELF64)" (`EM_AARCH64` = 183; relocation codes in `RelocType.elf`; mapping
 symbols `$x` at the start of A64 code and `$d` at the start of data, i.e. jump tables).
 Relocations refer to the target's symbol, also for functions defined in the object (as
 `llvm-mc` does for global symbols).
+
+With unwind rows (`FV/Backend/Unwind.lean`, unverified), the symbol table also has the
+`.text` section symbol (local, right after the null symbol), which the `pc_begin`
+relocations refer to (`.text` + the function's offset), as Cranelift's objects do.
 -/
 
 namespace Backend
@@ -87,9 +94,33 @@ def mappingSyms (placed : List (Nat × FnAsm)) : List ElfSym := Id.run do
       off := off + ln.size
   return out.toList
 
+/-- `.eh_frame` for functions `(offset in .text, size, rows)`: one CIE and one FDE per
+function, and the offsets of the FDEs' `pc_begin` fields with the function's offset (the
+addend of their `R_AARCH64_PREL32` relocation against `.text`). The CIE is Cranelift's aarch64
+`create_cie` with cg_clif's pointer encoding for objects: version 1, augmentation `zR`, code
+alignment 4, data alignment -8, return address x30, FDE addresses `DW_EH_PE_pcrel |
+DW_EH_PE_sdata4` (0x1b), initial rule CFA = sp+0. Entries are padded with `DW_CFA_nop` to 8
+bytes; there is no terminator (the linker adds it), as in Cranelift's objects. -/
+def ehFrame (fdes : List (Nat × Nat × List (Nat × Cfi))) : ByteArray × List (Nat × Nat) := Id.run do
+  let entry (body : ByteArray) : ByteArray :=
+    let body := body ++ padTo 8 (4 + body.size)
+    le32 body.size ++ body
+  let cie := entry (le32 0 ++ ⟨#[1]⟩ ++ "zR".toUTF8 ++ ⟨#[0]⟩ ++ uleb 4 ++ sleb (-8) ++
+    ⟨#[30, 1, 0x1b, 0x0c, 31, 0]⟩)
+  let mut out := cie
+  let mut relocs : Array (Nat × Nat) := #[]
+  for (start, size, rows) in fdes do
+    let at_ := out.size
+    -- CIE pointer: the distance from this field back to the CIE (at 0)
+    out := out ++ entry (le32 (at_ + 4) ++ le32 0 ++ le32 size ++ uleb 0 ++ cfiProgram rows)
+    relocs := relocs.push (at_ + 8, start)
+  return (out, relocs.toList)
+
 /-- The relocatable object of laid-out functions (`funcs` pairs each function's final line
-list with its layout). -/
-def elfObject (funcs : List (FnAsm × FnBin)) : ByteArray := Id.run do
+list with its layout). With `unwind` (rows per function name), `.eh_frame` gets an FDE for
+every function; without, the object has no `.eh_frame`. -/
+def elfObject (funcs : List (FnAsm × FnBin)) (unwind : List (String × List (Nat × Cfi)) := []) :
+    ByteArray := Id.run do
   -- .text and function placement
   let mut text : ByteArray := .empty
   let mut placed : Array (Nat × FnAsm × FnBin) := #[]
@@ -97,7 +128,10 @@ def elfObject (funcs : List (FnAsm × FnBin)) : ByteArray := Id.run do
     placed := placed.push (text.size, fa, fb)
     text := text ++ wordsBytes fb.words
   -- symbols: locals (null, mapping), then defined functions, then undefined targets
-  let locals : List ElfSym := mappingSyms (placed.toList.map fun (b, fa, _) => (b, fa))
+  let eh := !unwind.isEmpty && !placed.isEmpty
+  let secSym : List ElfSym :=
+    if eh then [{ name := "", bind := 0, type := 3, shndx := 1, value := 0, size := 0 }] else []
+  let locals : List ElfSym := secSym ++ mappingSyms (placed.toList.map fun (b, fa, _) => (b, fa))
   let defined : List ElfSym := placed.toList.map fun (b, _, fb) =>
     { name := fb.name, bind := 1, type := 2, shndx := 1, value := b, size := fb.size }
   let targets : List String := (placed.toList.flatMap fun (_, _, fb) => fb.relocs.map (·.sym)).eraseDups
@@ -117,8 +151,14 @@ def elfObject (funcs : List (FnAsm × FnBin)) : ByteArray := Id.run do
     for r in fb.relocs do
       rela := rela ++ le64 (b + r.offset) ++ le64 (symIdx r.sym * 2 ^ 32 + r.type.elf) ++
         le64 (r.addend % (2 ^ 64 : Int)).toNat
+  -- unwind info
+  let (ehBytes, ehRel) := if eh then
+      ehFrame (placed.toList.map fun (b, _, fb) => (b, fb.size, (unwind.lookup fb.name).getD []))
+    else (.empty, [])
+  let ehRela : ByteArray := ehRel.foldl (fun acc (o, a) => acc ++ le64 o ++ le64 (1 * 2 ^ 32 + 261) ++ le64 a) .empty
   -- section names
-  let (shstrtab, shOffs) := strTable [".text", ".rela.text", ".symtab", ".strtab", ".shstrtab"]
+  let (shstrtab, shOffs) := strTable
+    ([".text", ".rela.text", ".symtab", ".strtab", ".shstrtab"] ++ if eh then [".eh_frame", ".rela.eh_frame"] else [])
   let sh (i : Nat) : Nat := shOffs.getD i 0
   -- file layout
   let textOff := 64
@@ -126,19 +166,27 @@ def elfObject (funcs : List (FnAsm × FnBin)) : ByteArray := Id.run do
   let symOff := relaOff + rela.size
   let strOff := symOff + symtab.size
   let shstrOff := strOff + strtab.size
-  let shOff := shstrOff + shstrtab.size + (padTo 8 (shstrOff + shstrtab.size)).size
+  let ehOff := shstrOff + shstrtab.size + (padTo 8 (shstrOff + shstrtab.size)).size
+  let ehRelaOff := ehOff + ehBytes.size + (padTo 8 (ehOff + ehBytes.size)).size
+  let shOff := if eh then ehRelaOff + ehRela.size else ehOff
   let header : ByteArray :=
     ⟨#[0x7f, 0x45, 0x4c, 0x46, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]⟩ ++
     le16 1 ++ le16 183 ++ le32 1 ++ le64 0 ++ le64 0 ++ le64 shOff ++ le32 0 ++ le16 64 ++
-    le16 0 ++ le16 0 ++ le16 64 ++ le16 6 ++ le16 5
+    le16 0 ++ le16 0 ++ le16 64 ++ le16 (if eh then 8 else 6) ++ le16 5
   let shdrs : ByteArray :=
     shdr 0 0 0 0 0 0 0 0 0 ++
     shdr (sh 0) 1 0x6 textOff text.size 0 0 4 0 ++
     shdr (sh 1) 4 0x40 relaOff rela.size 3 1 8 24 ++
     shdr (sh 2) 2 0 symOff symtab.size 4 (1 + locals.length) 8 24 ++
     shdr (sh 3) 3 0 strOff strtab.size 0 0 1 0 ++
-    shdr (sh 4) 3 0 shstrOff shstrtab.size 0 0 1 0
+    shdr (sh 4) 3 0 shstrOff shstrtab.size 0 0 1 0 ++
+    (if eh then
+      shdr (sh 5) 1 0x2 ehOff ehBytes.size 0 0 8 0 ++
+      shdr (sh 6) 4 0x40 ehRelaOff ehRela.size 3 6 8 24
+     else .empty)
+  let ehPart : ByteArray :=
+    if eh then ehBytes ++ padTo 8 (ehOff + ehBytes.size) ++ ehRela else .empty
   return header ++ text ++ padTo 8 (textOff + text.size) ++ rela ++ symtab ++ strtab ++
-    shstrtab ++ padTo 8 (shstrOff + shstrtab.size) ++ shdrs
+    shstrtab ++ padTo 8 (shstrOff + shstrtab.size) ++ ehPart ++ shdrs
 
 end Backend
