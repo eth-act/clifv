@@ -34,7 +34,7 @@ theorem backend_correct_of_layers {p : Clif.Program} {f : Clif.Function} {vc vcp
     (hReg : RegLevelCorrect sem F astep vcp af fb)
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hbe : BodyEntry af s w₀)
-    (hargs : ArgsIn args w₀)
+    (hargs : ArgsIn f.sig args w₀)
     (hcs : ClifEntry f args cs) (hrel : Rel.holds ⟨F s, syms, slotOff⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ArmRefines fb base ra astep s (Clif.runLoop env p fuel cs) := by

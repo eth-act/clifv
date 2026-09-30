@@ -460,3 +460,63 @@ theorem operands_args (ns : List (Nat × Reg)) :
   simp [bind, Except.bind, StateT.run, pure, StateT.pure, Except.pure]
 
 end Backend.Proof.Driver
+
+namespace Backend.Proof
+
+open Backend
+
+/-! ## Argument registers (`abiArgIdx`: x0.. in order, an `sret` parameter in x8) -/
+
+theorem abiArgIdx_length : ∀ (ps : List Clif.AbiParam) (k : Nat), (abiArgIdx ps k).length = ps.length
+  | [], _ => rfl
+  | p :: ps, k => by
+    unfold abiArgIdx
+    split <;> simp [abiArgIdx_length ps]
+
+/-- Every argument register is x8 or below `x (k + n)` for `n` parameters. -/
+theorem abiArgIdx_le : ∀ (ps : List Clif.AbiParam) (k : Nat), ∀ n ∈ abiArgIdx ps k,
+    n = 8 ∨ n < k + ps.length
+  | [], _ => by simp [abiArgIdx]
+  | p :: ps, k => by
+    intro n hn
+    unfold abiArgIdx at hn
+    split at hn
+    · rcases List.mem_cons.mp hn with rfl | hn
+      · exact .inl rfl
+      · rcases abiArgIdx_le ps k n hn with h | h
+        · exact .inl h
+        · right; simp only [List.length_cons]; omega
+    · rcases List.mem_cons.mp hn with rfl | hn
+      · right; simp only [List.length_cons]; omega
+      · rcases abiArgIdx_le ps (k + 1) n hn with h | h
+        · exact .inl h
+        · right; simp only [List.length_cons]; omega
+
+/-- With at most 8 parameters, every parameter is in one of x0–x8. -/
+theorem argIdx_lt {s : Clif.Signature} {i : Nat} (h8 : s.params.length ≤ 8)
+    (hi : i < s.params.length) : argIdx s i < 9 := by
+  have hl := abiArgIdx_length s.params 0
+  have hi' : i < (abiArgIdx s.params 0).length := by omega
+  unfold argIdx
+  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hi', Option.getD_some]
+  rcases abiArgIdx_le s.params 0 _ (List.getElem_mem hi') with h | h <;> omega
+
+/-- Without `sret` parameters the numbering is `k, k+1, …`. -/
+theorem abiArgIdx_of_noSret : ∀ (ps : List Clif.AbiParam) (k : Nat),
+    ps.any (·.purpose == .sret) = false → abiArgIdx ps k = List.range' k ps.length
+  | [], _, _ => rfl
+  | p :: ps, k, h => by
+    simp only [List.any_cons, Bool.or_eq_false_iff] at h
+    simp only [abiArgIdx, h.1, Bool.false_eq_true, ↓reduceIte, abiArgIdx_of_noSret ps (k + 1) h.2,
+      List.length_cons, List.range'_succ]
+
+/-- Without an `sret` parameter, parameter `i` is in `x i`. -/
+theorem argIdx_of_noSret {s : Clif.Signature} (h : s.params.any (·.purpose == .sret) = false)
+    (i : Nat) : argIdx s i = i := by
+  unfold argIdx
+  rw [abiArgIdx_of_noSret _ 0 h, List.getD_eq_getElem?_getD]
+  by_cases hi : i < s.params.length
+  · simp [List.getElem?_range', hi]
+  · rw [List.getElem?_eq_none (by simp; omega)]; rfl
+
+end Backend.Proof

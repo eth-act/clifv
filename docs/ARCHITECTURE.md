@@ -16,7 +16,7 @@ first, then update its producer and its consumers together.
 | `FV/Isle/` | Lean ISLE syntax, generated rule data (aarch64 lowering; mid-end `opt` in `Generated/Opt`, `Isle.Opt`), rule interpreter (incl. multi terms), `Isle.Opt.simplify` | M4, M7 |
 | `FV/Backend/` | isel, stack-slot allocator, regalloc checker, asm/bytes emission | M4–M6 |
 | `FV/Opt/` | Lean mid-end: CLIF → CLIF passes (`Opt.optimize`: simplify with Cranelift's rules, GVN, DCE, LICM), `docs/contracts/midend.md` | M7 |
-| `FV/E2E/` | the end-to-end theorems: `backend_correct_final`, `backend_correct_opt_proven` (mid-end), `backend_correct_legal` (`i128` via `Opt.Legalize128`) | M7 |
+| `FV/E2E/` | the end-to-end theorems: `backend_correct_final`, `backend_correct_opt_proven` (mid-end), `backend_correct_legal` (`i128` via `Opt.Legalize128`). Their ABI (argument registers `ArgsIn`: x0.. and an `sret` pointer in x8; returns in x0..; callee contract `XCallsOk`/`CalleeOk` per declared extern, one def per `sigRets` return) is a trusted statement of AAPCS64 as Cranelift implements it (`docs/contracts/e2e.md`) | M7 |
 | `FVTest/` | Lean-side tests and corpora drivers (`lean_exe` targets) | all |
 | `rust/crates/clif2obj` | Cranelift driver (PLAN.md Appendix A), with relocation dumps | M1, M3 |
 | `rust/crates/clif-oracle` | `clif-oracle interp <file.clif>`: runs the Cranelift interpreter on `; run:` lines, output JSON | M0 |

@@ -67,9 +67,9 @@ def spv (s : Arm.ArmState) : BitVec 64 := Arm.r (.GPR 31#5) s
 current restrictions of the proof (e2e.md, "Remaining"): parameters passed in registers,
 calls only to externs (calls between compiled functions compose by induction on the call
 depth, not done yet), externs with at most 8 (register) parameters (no stack-passed call
-arguments), and no `sret`/special-purpose parameter or return (the ABI of the hidden
-struct-return pointer — in x8, returned in x0 — is outside the proof; such functions are
-compiled and flagged unverified). -/
+arguments), and signatures (the function's and its externs') with `normal` parameters and
+returns plus at most one `sret` struct-return pointer (`sigAbiOk`: in x8, returned in x0, no
+other returns); other special-purpose parameters are compiled and flagged unverified. -/
 structure InSubset (p : Clif.Program) (f : Clif.Function) : Prop where
   func : p.func? f.name = some f
   subsetE : Compile.functionE f = true
@@ -77,8 +77,7 @@ structure InSubset (p : Clif.Program) (f : Clif.Function) : Prop where
   externCalls : ∀ b ∈ f.blocks, ∀ st ∈ b.body, ∀ fn args, st.inst = .call fn args →
     ∀ e, f.extern? fn = some e → p.func? e.name = none
   callRegArgs : ∀ e ∈ f.externs, e.2.sig.params.length ≤ 8
-  noSpecial : (f.sig.params ++ f.sig.returns).all (·.purpose = .normal) ∧
-    ∀ e ∈ f.externs, (e.2.sig.params ++ e.2.sig.returns).all (·.purpose = .normal)
+  abiSigs : sigAbiOk f.sig = true ∧ ∀ e ∈ f.externs, sigAbiOk e.2.sig = true
   /-- no `call_indirect` statements (`clif-subset.md`: outside the theorem; rust-route step 4:
   they compile and run but are flagged unverified, so subset E admits them while `InSubset`
   does not) -/
@@ -187,9 +186,17 @@ structure AbiEntry (fb : FnBin) (base ra : BitVec 64) (s : Arm.ArmState) : Prop 
   spAligned : (spv s).toNat % 16 = 0
   fits : base.toNat + 4 * fb.words.size ≤ 2 ^ 64
 
-/-- The arguments in x0.. (register parameters only, `InSubset.regParams`). -/
-def ArgsIn (args : List Clif.Val) (s : Arm.ArmState) : Prop :=
-  ∀ i v, args[i]? = some v → XHolds v (xreg i s)
+/-- The arguments in their AAPCS64 registers (register parameters only, `InSubset.regParams`):
+parameter `i` of signature `sig` in `x (argIdx sig i)` — x0.. in order, an `sret` struct-return
+pointer in x8 (`sigArgLocs`). Without an `sret` parameter, argument `i` is in `x i`. -/
+def ArgsIn (sig : Clif.Signature) (args : List Clif.Val) (s : Arm.ArmState) : Prop :=
+  ∀ i v, args[i]? = some v → XHolds v (xreg (argIdx sig i) s)
+
+/-- For a signature without `sret` parameter, `ArgsIn` is "argument `i` in `x i`". -/
+theorem argsIn_iff_of_noSret {sig : Clif.Signature} {args : List Clif.Val} {s : Arm.ArmState}
+    (h : sig.params.any (·.purpose == .sret) = false) :
+    ArgsIn sig args s ↔ ∀ i v, args[i]? = some v → XHolds v (xreg i s) := by
+  simp only [ArgsIn, argIdx_of_noSret h]
 
 /-- **Resource precondition**: the frame (fp/lr pair and `frameSize` bytes) fits below sp
 without wrapping, and does not overlap the code. Stack used by callees is part of the callee
@@ -253,11 +260,11 @@ at an entry state whose slots/memory are related to the VCode entry world `w₀`
 def IselSim (sem : Sem) (Γ : Rel) (env : Clif.Env) (p : Clif.Program) (f : Clif.Function)
     (vc : VCode) : Prop :=
   ∀ args cs w₀ (ρ₀ : Nat → CV), ClifEntry f args cs → Γ.holds f cs.frame.slots cs.mem w₀ →
-    ArgsIn args w₀ → TrapsExplicit env p cs → ∀ fuel,
+    ArgsIn f.sig args w₀ → TrapsExplicit env p cs → ∀ fuel,
     (∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
       ∃ us outs w, VReturns vc sem ρ₀ w₀ us outs w ∧
         us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
-        AllHold vals outs ∧ MemRel Γ.F Γ.syms cm w) ∧
+        PrefixHold vals outs ∧ MemRel Γ.F Γ.syms cm w) ∧
     (∀ c, Clif.runLoop env p fuel cs = .trapped c → VTraps vc sem ρ₀ w₀ c)
 
 /-- **`prepare` (M7).** Unreachable-block removal, critical-edge splitting and the RPO

@@ -6,7 +6,10 @@ import FV.Backend.Proof.IselCtlTerm
 `CallRuleOk` for `rule_lower_2508` (colocated callee: `bl name`, rule id 1031) and
 `rule_lower_2518` (callee through the GOT: `loadExtNameGot t name; blr t`, rule id 1032), under
 the callee contract `CallsRefine` and `CallRegArgs f` (at most 8 register arguments).
-Status: extern/ABI lemmas proven (this file); the two rule theorems are not written yet.
+This file: the extern/ABI lemmas. With at most 8 parameters every argument is in a register:
+`x (abiArgIdx …)` (x0.. in order, an `sret` parameter in x8, `sigArgLocs_regs`); the call
+defines one register per ABI return (`sigRets`: an `sret` signature without returns returns its
+struct pointer, `sigRets_cases`).
 -/
 
 namespace Backend.Proof
@@ -132,75 +135,138 @@ theorem foldl_argStep : ∀ (L : List ((ArgLoc × Reg) × Nat)), (∀ q ∈ L, �
     rw [this, foldl_argStep L (fun q' h => hL q' (by simp [h]))]
     simp [hq, argLocReg]
 
-theorem zip_argLocs : ∀ (bytes : List Nat) (rs : List Reg) (k : Nat),
-    ((((List.range' k bytes.length).map fun i => ArgLoc.reg (.x i)).zip rs).zip bytes).map
-      (fun q => (q.1.2, argLocReg q.1.1)) = rs.zip ((List.range' k bytes.length).map Reg.x)
-  | [], rs, k => by simp
-  | b :: bytes, [], k => by simp [List.range'_succ]
-  | b :: bytes, r :: rs, k => by
-    simp only [List.length_cons, List.range'_succ, List.map_cons, List.zip_cons_cons]
-    rw [zip_argLocs bytes rs (k + 1)]
+theorem mapM_except_length {α β ε : Type} (g : α → Except ε β) :
+    ∀ {l : List α} {r : List β}, l.mapM g = .ok r → r.length = l.length
+  | [], r, h => by simp [List.mapM_nil, pure, Except.pure] at h; subst h; rfl
+  | a :: l, r, h => by
+    rw [List.mapM_cons] at h
+    cases ha : g a with
+    | error e => rw [ha] at h; cases h
+    | ok b =>
+      rw [ha] at h
+      cases hl : l.mapM g with
+      | error e => rw [hl] at h; cases h
+      | ok bs =>
+        rw [hl] at h
+        simp [bind, Except.bind, pure, Except.pure] at h
+        subst h
+        simp [mapM_except_length g hl]
+
+theorem sigParamBytes_length {s : Clif.Signature} {bytes : List Nat}
+    (h : sigParamBytes s = .ok bytes) : bytes.length = s.params.length :=
+  mapM_except_length _ h
+
+/-- The non-`sret` byte sizes (`sigArgLocs`' `normal`) are as many as the non-`sret` parameters. -/
+theorem normal_length : ∀ (ps : List Clif.AbiParam) (bs : List Nat), bs.length = ps.length →
+    (((ps.zip bs).filter (fun q => !(q.1.purpose == .sret))).map (·.2)).length =
+      (ps.filter (fun p => !(p.purpose == .sret))).length
+  | [], _, _ => by simp
+  | _ :: _, [], h => by simp at h
+  | p :: ps, b :: bs, h => by
+    simp only [List.length_cons, Nat.add_right_cancel_iff] at h
+    have ih := normal_length ps bs h
+    simp only [List.length_map] at ih
+    simp only [List.zip_cons_cons, List.filter_cons, List.length_map]
+    split <;> simp [ih]
+
+/-- `sigArgLocs`' placement of an `sret` signature's parameters, from the register locations of
+the non-`sret` ones: `x (abiArgIdx …)`. -/
+theorem foldl_sretLocStep : ∀ (ps : List Clif.AbiParam) (acc : Array ArgLoc) (k : Nat),
+    ps.foldl sretLocStep (acc, (List.range' k (ps.filter (fun p => !(p.purpose == .sret))).length).map
+        fun i => ArgLoc.reg (.x i)) =
+      (acc ++ ((abiArgIdx ps k).map fun n => ArgLoc.reg (.x n)).toArray, [])
+  | [], acc, k => by simp [abiArgIdx]
+  | p :: ps, acc, k => by
+    by_cases hp : (p.purpose == .sret) = true
+    · have h1 : sretLocStep (acc, (List.range' k ((p :: ps).filter
+          (fun p => !(p.purpose == .sret))).length).map fun i => ArgLoc.reg (.x i)) p =
+          (acc.push (.reg (.x 8)), (List.range' k (ps.filter
+            (fun p => !(p.purpose == .sret))).length).map fun i => ArgLoc.reg (.x i)) := by
+        simp [sretLocStep, hp]
+      rw [List.foldl_cons, h1, foldl_sretLocStep ps _ k]
+      simp [abiArgIdx, hp]
+    · have hp' : (p.purpose == .sret) = false := by simpa using hp
+      have h1 : sretLocStep (acc, (List.range' k ((p :: ps).filter
+          (fun p => !(p.purpose == .sret))).length).map fun i => ArgLoc.reg (.x i)) p =
+          (acc.push (.reg (.x k)), (List.range' (k + 1) (ps.filter
+            (fun p => !(p.purpose == .sret))).length).map fun i => ArgLoc.reg (.x i)) := by
+        simp [sretLocStep, hp', List.range'_succ]
+      rw [List.foldl_cons, h1, foldl_sretLocStep ps _ (k + 1)]
+      simp [abiArgIdx, hp']
+
+/-- **Argument locations** of a signature with at most 8 parameters: all in registers, parameter
+`i` in `x (abiArgIdx s.params 0)[i]` (x0.. in order, an `sret` parameter in x8), no stack. -/
+theorem sigArgLocs_regs {s : Clif.Signature} {bytes : List Nat}
+    (hb : sigParamBytes s = .ok bytes) (h8 : bytes.length ≤ 8) :
+    sigArgLocs s = .ok ((abiArgIdx s.params 0).map fun n => ArgLoc.reg (.x n), 0) := by
+  have hb' : sigArgs s = .ok bytes := hb
+  have hl := sigParamBytes_length hb
+  simp only [sigArgLocs, hb', bind, Except.bind]
+  cases hany : s.params.any (·.purpose == .sret) with
+  | false =>
+    simp only [Bool.false_eq_true, ↓reduceIte, argLocs_eq h8, abiArgIdx_of_noSret _ 0 hany, hl,
+      List.range_eq_range']
+    simp [pure, Except.pure]
+  | true =>
+    have hnl := normal_length s.params bytes hl
+    have hn8 : (((s.params.zip bytes).filter (fun q => !(q.1.purpose == .sret))).map (·.2)).length ≤ 8 := by
+      rw [hnl]; exact Nat.le_trans (List.length_filter_le _ _) (hl ▸ h8)
+    simp only [↓reduceIte, argLocs_eq hn8, hnl, List.range_eq_range']
+    rw [foldl_sretLocStep s.params #[] 0]
+    simp [abiArgIdx_length, pure, Except.pure]
+
+section
+variable {ctx : Ctx}
+
+/-- `sigRets` is the declared returns, or (an `sret` signature without returns) one value. -/
+theorem sigRets_cases (s : Clif.Signature) :
+    sigRets s = s.returns ∨ (s.returns = [] ∧ (sigRets s).length = 1) := by
+  unfold sigRets
+  cases s.params.find? (·.purpose == .sret) with
+  | none => exact .inl rfl
+  | some p =>
+    cases hr : s.returns with
+    | nil => exact .inr ⟨rfl, rfl⟩
+    | cons a l => exact .inl rfl
+
+theorem ctor_gen_call_output_iff (st : LState) (s : Clif.Signature) (v : V) (st' : LState) :
+    externCtor ctx T.gen_call_output [.op (.sig s)] st = .ok (v, st') ↔
+      v = .regsVec (outRegs st (sigRets s).length) ∧ st' = freshN st (sigRets s).length := by
+  have : externCtor ctx T.gen_call_output [.op (.sig s)] st =
+      (let r := (sigRets s).foldl (fun (p : Array (List Reg) × LState) (_ : Clif.AbiParam) =>
+          (p.1.push [(p.2.fresh .int).1], (p.2.fresh .int).2)) (#[], st)
+       .ok (.regsVec r.1.toList, r.2)) := rfl
+  rw [this, foldl_fresh]
+  simp [eq_comm]
+
+/-- The register pairs of `gen_call_args` for register locations `L`. -/
+theorem zip_regLocs : ∀ (L : List Nat) (rs : List Reg) (bytes : List Nat), bytes.length = L.length →
+    (((L.map fun n => ArgLoc.reg (.x n)).zip rs).zip bytes).map
+      (fun q => (q.1.2, argLocReg q.1.1)) = rs.zip (L.map Reg.x)
+  | [], rs, bytes, _ => by simp
+  | _ :: _, [], bytes, _ => by simp
+  | _ :: _, _ :: _, [], h => by simp at h
+  | n :: L, r :: rs, b :: bytes, h => by
+    simp only [List.length_cons, Nat.add_right_cancel_iff] at h
+    simp only [List.map_cons, List.zip_cons_cons]
+    rw [zip_regLocs L rs bytes h]
     rfl
 
-theorem zip_argLocs_all : ∀ (bytes : List Nat) (rs : List Reg) (k : Nat),
-    ∀ q ∈ (((List.range' k bytes.length).map fun i => ArgLoc.reg (.x i)).zip rs).zip bytes,
-      ∃ pr, q.1.1 = .reg pr := by
-  intro bytes rs k q hq
+theorem zip_regLocs_all (L : List Nat) (rs : List Reg) (bytes : List Nat) :
+    ∀ q ∈ ((L.map fun n => ArgLoc.reg (.x n)).zip rs).zip bytes, ∃ pr, q.1.1 = .reg pr := by
+  intro q hq
   have := List.of_mem_zip hq
   have := List.of_mem_zip this.1
   obtain ⟨i, -, h⟩ := List.mem_map.mp this.1
   exact ⟨_, h.symm⟩
 
-section
-variable {ctx : Ctx}
-
-/-- A signature with no special-purpose parameters has no `sret` parameter, so `sigRets` is
-the declared returns (`sigRets`). -/
-theorem sigRets_of_normal {s : Clif.Signature} (hns : s.params.all (·.purpose = .normal)) :
-    sigRets s = s.returns := by
-  have hnone : s.params.find? (·.purpose == .sret) = none := by
-    rw [List.find?_eq_none]
-    intro a ha h2
-    have hpa : a.purpose = .normal := decide_eq_true_eq.mp (List.all_eq_true.mp hns a ha)
-    rw [hpa] at h2
-    simp at h2
-  unfold sigRets
-  rw [hnone]
-
-/-- `sigArgLocs` of a signature without special-purpose parameters is `argLocs` of the
-parameter byte sizes. -/
-theorem sigArgLocs_of_normal {s : Clif.Signature} {bytes : List Nat}
-    (hb : sigParamBytes s = .ok bytes) (hns : s.params.all (·.purpose = .normal)) :
-    sigArgLocs s = .ok (argLocs bytes) := by
-  have hany : s.params.any (·.purpose == .sret) = false := by
-    rw [List.any_eq_false]
-    intro p hp h2
-    have hpa : p.purpose = .normal := decide_eq_true_eq.mp (List.all_eq_true.mp hns p hp)
-    rw [hpa] at h2
-    simp at h2
-  have hb' : sigArgs s = .ok bytes := hb
-  simp only [sigArgLocs, hb']
-  simp [hany]
-
-theorem ctor_gen_call_output_iff (st : LState) (s : Clif.Signature) (v : V) (st' : LState)
-    (hns : s.params.all (·.purpose = .normal)) :
-    externCtor ctx T.gen_call_output [.op (.sig s)] st = .ok (v, st') ↔
-      v = .regsVec (outRegs st s.returns.length) ∧ st' = freshN st s.returns.length := by
-  have : externCtor ctx T.gen_call_output [.op (.sig s)] st =
-      (let r := (sigRets s).foldl (fun (p : Array (List Reg) × LState) (_ : Clif.AbiParam) =>
-          (p.1.push [(p.2.fresh .int).1], (p.2.fresh .int).2)) (#[], st)
-       .ok (.regsVec r.1.toList, r.2)) := rfl
-  rw [this, foldl_fresh, sigRets_of_normal hns]
-  simp [eq_comm]
-
 theorem ctor_gen_call_args_iff (st : LState) (s : Clif.Signature) (rss : List (List Reg))
-    {bytes : List Nat} (hb : sigParamBytes s = .ok bytes) (hns : s.params.all (·.purpose = .normal))
+    {bytes : List Nat} (hb : sigParamBytes s = .ok bytes)
     (h8 : bytes.length ≤ 8) (v : V) (st' : LState) :
     externCtor ctx T.gen_call_args [.op (.sig s), .regsVec rss] st = .ok (v, st') ↔
       ∃ rs, rss.mapM single? = some rs ∧
-        v = .op (.callArgs (rs.zip ((List.range bytes.length).map Reg.x))) ∧ st' = st := by
-  have hloc : sigArgLocs s = .ok (argLocs bytes) :=
-    sigArgLocs_of_normal hb hns
+        v = .op (.callArgs (rs.zip ((abiArgIdx s.params 0).map Reg.x))) ∧ st' = st := by
+  have hloc := sigArgLocs_regs hb h8
   have : externCtor ctx T.gen_call_args [.op (.sig s), .regsVec rss] st =
       match sigArgLocs s, rss.mapM single? with
       | .ok (locs, _), some rs =>
@@ -213,8 +279,10 @@ theorem ctor_gen_call_args_iff (st : LState) (s : Clif.Signature) (rss : List (L
   cases hrs : rss.mapM single? with
   | none => simp
   | some rs =>
-    simp only [argLocs_eq h8, List.range_eq_range']
-    rw [foldl_argStep _ (zip_argLocs_all bytes rs 0), zip_argLocs]
+    have hlen : bytes.length = (abiArgIdx s.params 0).length := by
+      rw [abiArgIdx_length, sigParamBytes_length hb]
+    simp only []
+    rw [foldl_argStep _ (zip_regLocs_all _ rs bytes), zip_regLocs _ rs bytes hlen]
     simp [eq_comm]
 
 theorem ctor_gen_call_rets_iff (st : LState) (s : Clif.Signature) (rss : List (List Reg)) (v : V)
@@ -247,13 +315,11 @@ theorem ctor_box_external_name_iff (st : LState) (n : V) (v : V) (st' : LState) 
 
 theorem ctor_gen_call_info_iff (st : LState) (s : Clif.Signature) (n : String)
     (us ds : List (Reg × Reg)) (a b : V) {bytes : List Nat} (hb : sigParamBytes s = .ok bytes)
-    (hns : s.params.all (·.purpose = .normal)) (v : V) (st' : LState) :
+    (h8 : bytes.length ≤ 8) (v : V) (st' : LState) :
     externCtor ctx T.gen_call_info [.op (.sig s), .op (.extName n), .op (.callArgs us),
       .op (.callRets ds), a, b] st = .ok (v, st') ↔
-      v = .op (.callInfo ⟨.sym n, us, ds⟩) ∧
-        st' = { st with outgoing := max st.outgoing (argLocs bytes).2 } := by
-  have hloc : sigArgLocs s = .ok (argLocs bytes) :=
-    sigArgLocs_of_normal hb hns
+      v = .op (.callInfo ⟨.sym n, us, ds⟩) ∧ st' = { st with outgoing := max st.outgoing 0 } := by
+  have hloc := sigArgLocs_regs hb h8
   have : externCtor ctx T.gen_call_info [.op (.sig s), .op (.extName n), .op (.callArgs us),
       .op (.callRets ds), a, b] st = match sigArgLocs s with
       | .ok (_, stack) => .ok (.op (.callInfo ⟨.sym n, us, ds⟩),
@@ -263,13 +329,11 @@ theorem ctor_gen_call_info_iff (st : LState) (s : Clif.Signature) (n : String)
 
 theorem ctor_gen_call_ind_info_iff (st : LState) (s : Clif.Signature) (r : Reg)
     (us ds : List (Reg × Reg)) (a : V) {bytes : List Nat} (hb : sigParamBytes s = .ok bytes)
-    (hns : s.params.all (·.purpose = .normal)) (v : V) (st' : LState) :
+    (h8 : bytes.length ≤ 8) (v : V) (st' : LState) :
     externCtor ctx T.gen_call_ind_info [.op (.sig s), .reg r, .op (.callArgs us),
       .op (.callRets ds), a] st = .ok (v, st') ↔
-      v = .op (.callInfo ⟨.reg r, us, ds⟩) ∧
-        st' = { st with outgoing := max st.outgoing (argLocs bytes).2 } := by
-  have hloc : sigArgLocs s = .ok (argLocs bytes) :=
-    sigArgLocs_of_normal hb hns
+      v = .op (.callInfo ⟨.reg r, us, ds⟩) ∧ st' = { st with outgoing := max st.outgoing 0 } := by
+  have hloc := sigArgLocs_regs hb h8
   have : externCtor ctx T.gen_call_ind_info [.op (.sig s), .reg r, .op (.callArgs us),
       .op (.callRets ds), a] st = match sigArgLocs s with
       | .ok (_, stack) => .ok (.op (.callInfo ⟨.reg r, us, ds⟩),

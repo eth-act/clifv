@@ -30,6 +30,7 @@ contract `IselContract.lean`), `regalloc-proof.md` (M6), `encoder.md` (M5), `cli
 | **`backend_correct_m4`** (`FV/E2E/Final.lean`): `backend_correct_of_rules` with all eight M4 predicates discharged (`lowerRulesCorrect_program`, `excludedUnmatchable`, `callRulesCorrect`, `memRulesCorrect_program`, `lowerTermRulesCorrect`, `termUnmatchable`, `branchRulesCorrect`, `branchExcludedUnmatchable`) and `sem s := csem (F s) (ctx s) (X s)` (discharges `DriverSem` by `driverSem_csem`, `CallsRefine` by `callsRefine_csem` from `XCallsOk`) | **proven**; axioms: `propext`, `Classical.choice`, `Quot.sound` + 130 `_native.bv_decide` certificates |
 | **`RegLevelCorrect`** for the backend's code (`regLevelCorrect_backend`, `FV/E2E/RegLevelCorrect.lean`, M6Ctl3): frame addresses `frameF`, context `⟨fa.k, af.slotBase⟩`, one external semantics `X`, machine `ArmStepX X H fa`; from `FormsCovered` and `CalleeOk` | **proven** |
 | **`backend_correct_final`** (`FV/E2E/Final.lean`): `backend_correct_m4` with `hM6` discharged by `regLevelCorrect_backend` | **proven**; axioms: `propext`, `Classical.choice`, `Quot.sound` + `_native.bv_decide` certificates (M4's, M5's decoder `decode_armBits_*`/`decode_raw_inst_of_*`, `Arm.Memory.read_write_bytes_different`) |
+| **`sret`** (2026-09-30, `agent/sret-proof`): functions with a struct-return pointer parameter and calls of `sret` callees are inside `backend_correct_final` (`InSubset.abiSigs`; see "`sret`" below) | **proven**; `lean-e2e-check`: all `sret` functions in scope accepted and covered |
 
 ### Final hypotheses (`E2E.backend_correct_final`, 2026-09-28)
 
@@ -42,15 +43,45 @@ fp/lr pair and padding above the CLIF slots, the code words), `cx := ⟨fa.k, af
 | `InSubset p f`, `Compiled f k vc vcp rf af fa fb` | the compiler ran (pipeline + validators) |
 | `FormsCovered cx vcp` | per-function decidable premise (`formsCoveredB`, the covered straight-line forms `FormOk`, including the per-instruction bitmask check `logicImmOk`; control forms are handled by the proof); decided by `lean-e2e-check` (corpus + extrt + runtests: 913 of 913 checked functions covered, M6Refines) |
 | `∀ s, CalleeOk (FF s) X H` | callee contract of the machine's call hook `H` (AAPCS64: `OperandsSound` of every call, return to pc+4, `X.call` error-free and program-preserving) — environment |
-| `∀ s, XCallsOk env (Rel.holds ⟨FF s, syms, slotOff⟩ f) X` | external contract: callees, linker symbols — environment |
+| `∀ s, XCallsOk env (f.externs.map (·.2)) (Rel.holds ⟨FF s, syms, slotOff⟩ f) X` | external contract for the externs `f` declares: callees, linker symbols — environment. A call returns one value per ABI return of the declaration (`sigRets`), the first ones the extern's results (`PrefixHold`); for declarations without `sret` this is implied by the former extern-independent contract (`xCallsOk_of_results`) |
 | `∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b` (`hsym`) | linker: the external semantics' symbol addresses are the linked ones — environment; with `hslot` it discharges the former `MemRefines` hypothesis (`memRefines_csem`, M6MemRef) |
 | `af.slotBase = slotOff` (`hslot`) | the relation's slot-region offset is the frame's slot base — caller (instantiate `slotOff := af.slotBase`) |
-| per run: `AbiEntry fb base ra s`, `StackAvail af s`, `BodyEntry af s w₀`, `ArgsIn args s`, `ClifEntry f args cs`, `Rel.holds ⟨FF s, syms, slotOff⟩ f cs.frame.slots cs.mem w₀`, `TrapsExplicit env p cs` | caller of the theorem |
+| per run: `AbiEntry fb base ra s`, `StackAvail af s`, `BodyEntry af s w₀`, `ArgsIn f.sig args s`, `ClifEntry f args cs`, `Rel.holds ⟨FF s, syms, slotOff⟩ f cs.frame.slots cs.mem w₀`, `TrapsExplicit env p cs` | caller of the theorem |
 
 Conclusion: `ArmRefines fb base ra (ArmStepX X H fa) s (Clif.runLoop env p fuel cs)`.
 `Refines` of `csem` is discharged (`refines_final`/`refines_csem`, M6Refines), as is `MemRefines`
 (`memRefines_csem`, M6MemRef).
 `MemRelOk` is internal (`memRelOk_holds`).
+
+### `sret` (struct-return pointer)
+
+The ABI facts are the compiler's (`FV/Backend/Isel.lean`, differentially tested against
+Cranelift): an `sret` parameter is passed in x8 and does not take a slot of x0..x7
+(`sigArgLocs`); a signature with an `sret` parameter and no returns returns the pointer in x0
+(`sigRets`); `lowerFunction` appends the entry block's `sret` parameter to every `return`
+(`sretRet`, `abiTerm`); a call of an `sret` callee places the pointer in x8 and defines x0.
+The proof covers them as follows.
+
+* **Scope** `InSubset.abiSigs`: `sigAbiOk` of `f`'s signature and of every extern's — `normal`
+  parameters and returns plus at most one `sret` `i64` parameter, and then no returns
+  (`Backend.abiSigs`; other special purposes such as `vmctx`/`sarg` stay unverified).
+* **Entry** `ArgsIn sig args s`: argument `i` in `x (argIdx sig i)` (`abiArgIdx`: x0.. in
+  order, the `sret` parameter in x8). Without `sret` it is the former "argument `i` in `x i`"
+  (`argsIn_iff_of_noSret`). `lowerCheck`'s entry `Args` (`pre`) uses the same registers;
+  `BodyEntry` keeps x0–x8 (`argsIn_body`, `argIdx_lt`).
+* **Return**: `LowerShape`/`lowerCheck` lower `abiTerm f B.term`; the certificate makes the
+  appended `sret` value available at every `return` (`Cert.term`), so the `rets` returns the
+  CLIF values followed by the pointer. The driver's and the layer statements' return clause is
+  `PrefixHold vals outs` (the CLIF values are the first ABI returns); the conclusion
+  `ArmRefines` is unchanged (CLIF return values in x0.., memory), so for an `sret` function it
+  claims the memory the function wrote through the pointer, not the value of x0.
+* **Calls**: `gen_call_args` with at most 8 parameters puts argument `i` in
+  `x (abiArgIdx …)[i]` (`sigArgLocs_regs`); `gen_call_output` allocates one def per
+  `sigRets` entry. `CallsRefine`/`XCallsOk` are stated for the declared externs (`exts :=
+  f.externs.map (·.2)`) with `ds.length = (sigRets ext.sig).length` defs, `outs.length =
+  ds.length` and `PrefixHold rvals outs`; an `sret` call has no CLIF result (`CtxInv.resTys`),
+  so its extra def is not related to anything (`results_call`). `ExternsNormal` is gone
+  (`CallRuleOk` assumes `ExternsIn f exts`).
 
 ## The theorem (`FV/E2E/Main.lean`)
 
@@ -68,11 +99,12 @@ theorem backend_correct {p f k vc vcp rf af fa fb}
     -- the shared VCode semantics of each activation (M6's `csem (F s)`)
     (hRef : ∀ s, Refines (F s) (sem s)) (hds : ∀ s, DriverSem (sem s))
     -- the callee contract (M6, from `CalleeSound`)
-    (hcalls : ∀ s, CallsRefine (F s) env (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w) (sem s))
+    (hcalls : ∀ s, CallsRefine (F s) env (f.externs.map (·.2))
+      (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w) (sem s))
     -- the run
     {base ra s w₀ args cs}
     (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hbe : BodyEntry af s w₀)
-    (hargs : ArgsIn args s) (hcs : ClifEntry f args cs)
+    (hargs : ArgsIn f.sig args s) (hcs : ClifEntry f args cs)
     (hrel : Rel.holds ⟨F s, syms, slotOff⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ArmRefines fb base ra astep s (Clif.runLoop env p fuel cs)
@@ -97,7 +129,9 @@ theorem backend_correct {p f k vc vcp rf af fa fb}
 * **Subset** `InSubset p f`: `p.func? f.name = some f`, `Compile.functionE f` (clif-subset-v2
   E), at most 8 parameters (all in registers), every `call` targets an extern (not a function
   of `p`), every extern of `f` takes at most 8 parameters (`callRegArgs`: no stack-passed call
-  arguments; the compiler flags such functions unverified, `Backend.regArgCalls`). `br_table`
+  arguments; the compiler flags such functions unverified, `Backend.regArgCalls`), and the
+  signatures of `f` and its externs pass `sigAbiOk` (`abiSigs`: `normal` plus at most one
+  `sret`; `Backend.abiSigs`). `br_table`
   indices of at most 32 bits are enforced by `lowerCheck` (`brIdxOk`, contract change #6):
   an `i64` index is a compile error, as in Cranelift's verifier; so is a jump table with `2^32`
   or more entries (contract change #9).
@@ -125,7 +159,8 @@ theorem backend_correct {p f k vc vcp rf af fa fb}
   theorem (for DSL output traps are unreachable, PLAN.md §3.2).
 * **ABI entry** `AbiEntry fb base ra s`: code words of `fb` loaded at `base`
   (`s.program = fb.program base`), pc = base, no model error, x30 = ra outside the code, sp
-  16-aligned, code fits the address space. `ArgsIn args s`: argument `i` in `x i` (low bits).
+  16-aligned, code fits the address space. `ArgsIn f.sig args s`: argument `i` in
+  `x (argIdx f.sig i)` (low bits): x0.. in order, an `sret` parameter in x8.
 * **Resource precondition** `StackAvail af s`: the frame (`af.frameSize` + fp/lr) fits below sp.
   Callee stack use is part of the callee contract (M6's `CalleeSound`).
 * **Body entry** `BodyEntry af s w₀` (M6Rest2's definition): the world the function body starts
@@ -147,7 +182,7 @@ theorem backend_correct {p f k vc vcp rf af fa fb}
 | --- | --- | --- |
 | `LowerRulesCorrect program`, `ExcludedUnmatchable program` (every closure root rule of `lower` other than the call rules 1031/1032 is correct on statements; the others never match) | M4 (`IselContract.lean`) | `LowerRulesCorrect`: stated, rules proven family by family (M4AluA/B, M4Cmp, M4Ctl); `ExcludedUnmatchable program`: **proven** (`excludedUnmatchable`, M4Excl, `backend-proof.md` "Excluded root rules") |
 | `CallRulesCorrect program` (call rules 1031 `bl`, 1032 GOT + `blr`, under `CallsRefine`, for `CallRegArgs f`) | M4 (M4Ctl) | stated (contract change #5) |
-| `CallsRefine (F s) env MR (sem s)` (callee contract at the VCode level: `loadExtNameGot` loads `sym n`; a call of extern `name` with ≤ 8 register arguments returns its results in x0.. and a world related to the extern's memory) | M6 (`csem` from `CalleeSound` + `ExtSem.sym`) | open (M6Rest2) |
+| `CallsRefine (F s) env exts MR (sem s)` (callee contract at the VCode level: `loadExtNameGot` loads `sym n`; a call of a declared extern `ext ∈ exts` with ≤ 8 arguments and one def per `sigRets ext.sig` returns one value per def, the first ones its results, and a world related to the extern's memory) | M6 (`csem` from `CalleeSound` + `ExtSem.sym`) | **proven** for `csem` from `XCallsOk` (`callsRefine_csem`) |
 | `TermCalls (sem s) MR` (every terminator call `lowerFunction` makes satisfies `LowerTermOk`) | M4, via `termCalls_of_rules` | **proven** from `LowerTermRulesCorrect` (rules 964 `trap`, 1037 `return` of `lower`: `LowerTermRuleOk`), `TermUnmatchable` (other `lower` rules never match a `return`/`trap`), `BranchRulesCorrect` (`BranchRuleOk`, now with `CtxInv`/`ValsBelow`/first-match premises), `BranchExcludedUnmatchable`; these four are M4's open obligations (`backend_correct_of_rules`) |
 | `RegLevelCorrect sem F astep vcp af fb` (VCode returns/traps from the body-entry world ⇒ Arm returns/traps, forward) | M6 + M5 (`M6Rest2`) | placeholder with the agreed content (`BodyEntry`, per-activation `sem`) |
 | `Refines (F s) (sem s)` (the VCode semantics refines M4's `ispec`, every control) | M6 (`csem` characterization lemmas) | **proven** for `csem` (`refines_csem`, M6Refines) |
@@ -224,6 +259,16 @@ the entry is its own counterpart; successors are reached directly or through an 
 checked (`prepare` drops them, and its edge blocks may reuse their labels). Soundness:
 `prep_sound` (simulation over live blocks; a split edge takes one extra `jump` step).
 
+Results with `sret` (2026-09-30, after merging main with the `i128` legalisation): `lean-e2e-check`
+1076 accepted / 0 rejected / 149 out of scope, `prepCheck` 1076 / 0, `formsCoveredB` 1076 / 0
+not covered (main: 1070; the 6 new are `corpus/clif-regress/sret.clif`: `sret` functions with
+the pointer first, after a normal parameter, and returned from several blocks, and callers of
+`sret` externs — the default corpora contain no other `sret` function). On the Rust fixtures
+(`scripts/rust-clif/fixtures/sret.clif`, `smoke-data/f_crypto.norm.clif`): 20 accepted / 0
+rejected / 0 not covered. Filetests: corpus 114/114, extrt 22/22, runtests 4672 pass / 0 fail /
+0 disagree, `sret.clif` 5/5 agreeing with Cranelift-native; encode-check 1271 identical / 0
+differ.
+
 Results (`lake exe lean-e2e-check`, corpus/clif, corpus/clif/extrt, Cranelift runtests): both
 validators accept 913/913 functions inside the theorem (with `brIdxOk`: no `br_table` rejected);
 19 functions are outside `InSubset`: 14 with more than 8 parameters, and since contract change
@@ -235,7 +280,8 @@ pass / 0 fail, all agreeing with Cranelift-native. Cost on the corpus (161 funct
 quadratic in the values of a block; functions outside the theorem are not validated).
 
 **Functions outside the theorem** (`FV/Backend.lean` `unverifiedReason?`: outside
-clif-subset-v2 E, more than 8 parameters, calls of functions of the same file, `sret`,
+clif-subset-v2 E, more than 8 parameters, calls of functions of the same file, special-purpose
+parameters other than one `sret` pointer (`abiSigs`),
 `call_indirect`/`func_addr` — `InSubset.noCI`/`noFA`; `lowerCheck` rejects `func_addr`,
 `CtxInv.noFA`, and `call_indirect` has no result types without `sigN` declarations) are still
 compiled, without validation, and reported as unverified (`FileAsm.unverified`; `lean-backend`

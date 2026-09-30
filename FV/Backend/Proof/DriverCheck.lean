@@ -117,10 +117,11 @@ def seg (bi j : Nat) : List MInst :=
     | _, _ => []
   | _, _ => []
 
-/-- The entry block's `Args`. -/
+/-- The entry block's `Args`: parameter `k` from `x (argIdx f.sig k)` (x0.. in order, an `sret`
+parameter from x8; `sigArgLocs`). -/
 def pre (bi : Nat) : List MInst :=
   match bi, f.blocks[bi]? with
-  | 0, some B => [.args ((B.params.zipIdx).map fun ((v, _), k) => (R (.vreg v .int), .x k))]
+  | 0, some B => [.args ((B.params.zipIdx).map fun ((v, _), k) => (R (.vreg v .int), .x (argIdx f.sig k)))]
   | _, _ => []
 
 /-- The terminator's segment. -/
@@ -197,7 +198,7 @@ def lowBlocks (f : Clif.Function) (call : StmtCall) (tcall : TermCallF) :
     match lowStmts call start B.body st with
     | none => none
     | some (sls, stE) =>
-      match termData B.term with
+      match termData (abiTerm f B.term) with
       | .error _ => none
       | .ok data =>
         match targetsOf f B.term nl with
@@ -474,7 +475,7 @@ def certBlockOk (f : Clif.Function) (ctx : Ctx) (st0 : LState) (gn : Nat → Nat
       (A (j + 1)).all (fun x => decide (x ∈ A j) || decide (x ∈ stm.results)) &&
       (A j).all (fun x => !(decide (sl.st.nextVreg ≤ gn x) && decide (gn x < sl.st'.nextVreg)))
     | _, _ => false) &&
-  (termArgs B.term).all (fun y => decide (y ∈ A B.body.length)) &&
+  (termArgs (abiTerm f B.term)).all (fun y => decide (y ∈ A B.body.length)) &&
   (A B.body.length).all (fun x => !(decide (L.tst.nextVreg ≤ gn x) && decide (gn x < L.tst'.nextVreg))) &&
   (dests B.term).all (fun bc => decide (blockIdx? f bc.block ≠ some 0) &&
     edgeOk f ctx gn In (A B.body.length) bc)

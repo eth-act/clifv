@@ -68,17 +68,17 @@ def lowerChecked (f : Clif.Function) (verify : Bool) : Except String VCode := do
 their arguments in registers). -/
 def regArgCalls (f : Clif.Function) : Bool := f.externs.all fun e => e.2.sig.params.length ≤ 8
 
-/-- No `sret`/special-purpose parameter or return in `f`'s signature or in a callee's
-(`E2E.InSubset.noSpecial`): sret ABI handling (the hidden pointer in x8, returned in x0) is
-outside the end-to-end theorem, so such functions are compiled but flagged unverified. -/
-def noSpecial (f : Clif.Function) : Bool :=
-  let sig (s : Clif.Signature) := (s.params ++ s.returns).all (·.purpose = .normal)
-  sig f.sig && f.externs.all (sig ·.2.sig)
+/-- The signatures of `f` and of every callee are ones the end-to-end theorem covers
+(`sigAbiOk`, `E2E.InSubset.abiSigs`): `normal` parameters plus at most one `sret` pointer (in
+x8, returned in x0), `normal` returns. Other special-purpose parameters (`vmctx`, `sarg`) are
+compiled but flagged unverified. -/
+def abiSigs (f : Clif.Function) : Bool :=
+  sigAbiOk f.sig && f.externs.all (sigAbiOk ·.2.sig)
 
 /-- The theorem's conditions that do not need the rest of the file (`E2E.InSubset.subsetE`,
-`E2E.InSubset.regParams`, `E2E.InSubset.callRegArgs`, `E2E.InSubset.noSpecial`). -/
+`E2E.InSubset.regParams`, `E2E.InSubset.callRegArgs`, `E2E.InSubset.abiSigs`). -/
 def verifiable (f : Clif.Function) : Bool :=
-  Compile.functionE f && f.sig.params.length ≤ 8 && regArgCalls f && noSpecial f &&
+  Compile.functionE f && f.sig.params.length ≤ 8 && regArgCalls f && abiSigs f &&
     f.blocks.all (fun B => B.body.all (fun st => match st.inst with
       | .callIndirect .. | .funcAddr .. => false | _ => true))
 
@@ -154,7 +154,7 @@ def unverifiedReason? (pf : Clif.ParsedFile) (f : Clif.Function) : Option String
   else if !Compile.functionE f then some "outside clif-subset-v2 E"
   else if f.sig.params.length > 8 then some "stack-passed parameters (more than 8)"
   else if !regArgCalls f then some "stack-passed call arguments (an extern with more than 8 parameters)"
-  else if !noSpecial f then some "sret parameter (outside backend_correct)"
+  else if !abiSigs f then some "special-purpose parameter other than one sret pointer (outside backend_correct)"
   else if f.blocks.any (fun b => b.body.any (fun st => match st.inst with
     | .callIndirect .. | .funcAddr .. => true | _ => false)) then
     some "indirect call / func_addr (outside backend_correct)"

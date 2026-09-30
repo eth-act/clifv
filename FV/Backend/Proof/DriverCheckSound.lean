@@ -77,7 +77,7 @@ theorem lowBlocks_spec {f : Clif.Function} {call : StmtCall} {tcall : TermCallF}
         L.sl.length = B.body.length ∧
         (∀ (j : Nat) (sl : SLow), L.sl[j]? = some sl →
           ∃ tr, call (L.start + j) sl.st = .ok (some (.regsVec sl.rss), sl.st', tr)) ∧
-        termData B.term = .ok L.data ∧
+        termData (abiTerm f B.term) = .ok L.data ∧
         ∃ out tr, tcall (L.start + B.body.length) L.data B.term L.targets L.tst =
           .ok (some out, L.tst', tr) := by
   intro Bs
@@ -95,7 +95,7 @@ theorem lowBlocks_spec {f : Clif.Function} {call : StmtCall} {tcall : TermCallF}
     | some q =>
       obtain ⟨sls, stE⟩ := q
       rw [hstm] at h
-      cases hdata : termData B.term with
+      cases hdata : termData (abiTerm f B.term) with
       | error e => simp only [hdata] at h; cases h
       | ok data =>
         cases htg : targetsOf f B.term nl with

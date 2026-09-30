@@ -292,6 +292,15 @@ def sigArgs (s : Clif.Signature) : Except String (List Nat) :=
       | .sret => if p.ty == .i64 then pure 8 else throw "sret parameter must be i64"
       | _ => throw "special-purpose parameter (sarg)"
 
+/-- One step of `sigArgLocs`' placement of the parameters of an `sret` signature: the `sret`
+parameter in x8, every other parameter at the next location of `rest` (`argLocs` of the
+non-`sret` parameters). -/
+def sretLocStep (q : Array ArgLoc × List ArgLoc) (p : Clif.AbiParam) : Array ArgLoc × List ArgLoc :=
+  if p.purpose == .sret then (q.1.push (.reg (.x 8)), q.2)
+  else match q.2 with
+    | l :: r => (q.1.push l, r)
+    | [] => (q.1, [])
+
 /-- The argument locations of a signature: `argLocs` over the non-`sret` parameters, with every
 `sret` parameter in x8 (in parameter order). The `sret` parameter does not take a slot of the
 x0..x7 sequence: the next normal parameter still goes in x0 (Cranelift's aarch64
@@ -299,16 +308,10 @@ x0..x7 sequence: the next normal parameter still goes in x0 (Cranelift's aarch64
 def sigArgLocs (s : Clif.Signature) : Except String (List ArgLoc × Nat) := do
   let bytes ← sigArgs s
   if s.params.any (·.purpose == .sret) then
-    let normal := (s.params.zip bytes).filterMap fun (p, b) =>
-      if p.purpose == .sret then none else some b
-    let (nlocs, stack) := argLocs normal
-    let (locs, _) := s.params.foldl (init := ((#[] : Array ArgLoc), nlocs)) fun (acc, rest) p =>
-      if p.purpose == .sret then (acc.push (.reg (.x 8)), rest)
-      else match rest with
-        | l :: r => (acc.push l, r)
-        | [] => (acc, [])
+    let normal := ((s.params.zip bytes).filter (!·.1.purpose == .sret)).map (·.2)
+    let locs := (s.params.foldl sretLocStep (#[], (argLocs normal).1)).1
     if locs.size != s.params.length then throw "sigArgLocs: length"
-    pure (locs.toList, stack)
+    pure (locs.toList, (argLocs normal).2)
   else pure (argLocs bytes)
 
 /-- The returns of a signature as the ABI sees them (`from_func_sig` /
@@ -319,6 +322,43 @@ def sigRets (s : Clif.Signature) : List Clif.AbiParam :=
   match s.params.find? (·.purpose == .sret) with
   | some p => if s.returns.isEmpty then [p] else s.returns
   | none => s.returns
+
+/-- The signatures the end-to-end theorem covers (`E2E.InSubset.abiSigs`): `normal`
+parameters and returns, plus at most one `sret` parameter (an `i64`, in x8), and then no
+return values (Cranelift rejects `sret` with returns; the only ABI return is the struct
+pointer in x0, `sigRets`). -/
+def sigAbiOk (s : Clif.Signature) : Bool :=
+  s.params.all (fun p => p.purpose == .normal || (p.purpose == .sret && p.ty == .i64)) &&
+    s.returns.all (·.purpose == .normal) &&
+    (s.params.filter (·.purpose == .sret)).length ≤ 1 &&
+    (!s.params.any (·.purpose == .sret) || s.returns.isEmpty)
+
+/-- The X-register number of each parameter of a signature whose parameters are all passed in
+registers (`sigArgLocs` with at most 8 non-`sret` parameters): an `sret` parameter in x8, the
+others in x0, x1, … in order (the `sret` parameter does not take a slot of that sequence).
+`abiArgIdx ps k`: the numbering of `ps` when the next non-`sret` parameter goes in `x k`. -/
+def abiArgIdx : List Clif.AbiParam → Nat → List Nat
+  | [], _ => []
+  | p :: ps, k => if p.purpose == .sret then 8 :: abiArgIdx ps k else k :: abiArgIdx ps (k + 1)
+
+/-- The X register of parameter `i` of `s` (`abiArgIdx`; `i` itself past the end, so for a
+signature without `sret` parameter it is `i`). -/
+def argIdx (s : Clif.Signature) (i : Nat) : Nat := (abiArgIdx s.params 0).getD i i
+
+/-- The value `lowerFunction` appends to every `return` of `f` (Cranelift's legalizer): for an
+`sret` signature without return values (`sigRets`: its only ABI return is the struct pointer),
+the entry block's `sret` parameter; empty for every other function. -/
+def sretRet (f : Clif.Function) : List Clif.ValueId :=
+  if sigRets f.sig != f.sig.returns then
+    match f.blocks.head?, f.sig.params.findIdx? (·.purpose == .sret) with
+    | some b0, some i => (b0.params[i]?.map (·.1)).toList
+    | _, _ => []
+  else []
+
+/-- The terminator `lowerFunction` lowers for `t`: a `return` also returns `sretRet f`. -/
+def abiTerm (f : Clif.Function) : Clif.Terminator → Clif.Terminator
+  | .ret vs => .ret (vs ++ sretRet f)
+  | t => t
 
 /-- Parameter types of a signature (only integer `normal`/`vmctx` parameters up to 64 bits). -/
 def sigParamBytes (s : Clif.Signature) : Except String (List Nat) := sigArgs s
@@ -1034,17 +1074,12 @@ def lowerFunction (f : Clif.Function) : Except String VCode := do
       d := { d with st, rules := d.rules ++ n.toArray }
     -- terminator. An sret signature's only ABI return is the struct pointer in x0
     -- (`sigRets`); the CLIF `return` carries no values, so the legalized return value is
-    -- the sret parameter, exactly what Cranelift's legalizer rewrites the terminator to.
-    let sretParam : List Clif.ValueId :=
-      if sigRets f.sig != f.sig.returns then
-        match f.blocks.head?, f.sig.params.findIdx? (·.purpose == .sret) with
-        | some b0, some i => (b0.params[i]?.map (·.1)).toList
-        | _, _ => []
-      else []
+    -- the sret parameter (`sretRet`, `abiTerm`), exactly what Cranelift's legalizer rewrites
+    -- the terminator to.
+    let sretParam := sretRet f
     let data ← match b.term with
-      | .ret vs => termData (.ret (vs ++ sretParam))
       | .tryCall .. | .tryCallIndirect .. => tryCallData f b.term
-      | _ => termData b.term
+      | _ => termData (abiTerm f b.term)
     if b.term matches .ret .. && sretParam.isEmpty && (sigRets f.sig != f.sig.returns) then
       throw "sret parameter is not an entry-block parameter"
     let ti := stop - 1

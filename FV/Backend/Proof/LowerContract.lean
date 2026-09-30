@@ -30,7 +30,7 @@ open Backend Backend.Proof
 vregs are above every value's vreg, `ValsBelow`) satisfies M4's `LowerInstOk`. -/
 def InstCalls (f : Clif.Function) (sem : Sem) (MR : MemRelT) (env : Clif.Env) (p : Clif.Program) :
     Prop :=
-  ∀ ctx ii info inst st rss st' tr, CtxInv f ctx → CallRegArgs f → ExternsNormal f →
+  ∀ ctx ii info inst st rss st' tr, CtxInv f ctx → CallRegArgs f →
     Compile.functionE f = true →
     ctx.insts[ii]? = some info →
     info.clif = some inst → st.emitted = #[] → ValsBelow ctx st →
@@ -48,18 +48,27 @@ def TermCalls (sem : Sem) (MR : MemRelT) : Prop :=
       .ok (some out, st', tr) →
     LowerTermOk sem MR (termCtx ctx ti data) t targets st st' st'.emitted.toList
 
+/-- `f`'s externs are the ones it declares. -/
+theorem externsIn_self (f : Clif.Function) : ExternsIn f (f.externs.map (·.2)) := by
+  intro fn e he
+  unfold Clif.Function.extern? at he
+  obtain ⟨l₁, l₂, he2, -⟩ := List.lookup_eq_some_iff.mp he
+  rw [he2]
+  simp
+
 /-- **From M4's rule theorems to the driver's `lower` calls** (of function `f`, whose memory
-relation satisfies `MemRelOk`). -/
+relation satisfies `MemRelOk`, under the callee contract for `f`'s externs). -/
 theorem instCalls_of_rules (hrules : LowerRulesCorrect Isle.Aarch64.program)
     (hex : ExcludedUnmatchable Isle.Aarch64.program)
     (hcalls : CallRulesCorrect Isle.Aarch64.program) (hmem : MemRulesCorrect Isle.Aarch64.program)
     {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat} {sem : Sem}
     {MR : MemRelT} {env : Clif.Env} {p : Clif.Program} {f : Clif.Function} (hR : Refines F sem)
-    (hMR : MRStable F MR) (hcr : CallsRefine F env MR sem) (hMem : MemRefines F sb syms sem)
+    (hMR : MRStable F MR) (hcr : CallsRefine F env (f.externs.map (·.2)) MR sem)
+    (hMem : MemRefines F sb syms sem)
     (hMRo : MemRelOk F sb syms f MR) : InstCalls f sem MR env p := by
-  intro ctx ii info inst st rss st' tr hctx hra hnorm hE hi hc hemp hvb hrun
+  intro ctx ii info inst st rss st' tr hctx hra hE hi hc hemp hvb hrun
   obtain ⟨ms, rss', hem, hout, hok⟩ := lowerInstOk_runTerm hrules hex hcalls hmem (env := env)
-    (cp := p) hR hMR hcr hMem hctx hra hnorm hE hMRo hi hc hvb hrun
+    (cp := p) hR hMR hcr hMem hctx hra (externsIn_self f) hE hMRo hi hc hvb hrun
   cases hout
   rw [hemp, Array.empty_append] at hem
   rw [hem, List.toList_toArray]
@@ -129,7 +138,7 @@ theorem step_stmt (env : Clif.Env) (p : Clif.Program) (s : Clif.State) (st : Cli
       | _ => rfl
   | callIndirect sig callee args =>
     -- a `call_indirect` function is outside the theorem: `hci` (supplied by the caller,
-    -- from `InSubset.noSpecial`) contradicts `hi`, closing the case.
+    -- from `InSubset.noCI`) contradicts `hi`, closing the case.
     exact absurd hi (hci sig callee args)
   | _ =>
     rw [Clif.step_inst env p s st rest h (by intro fn args e; rw [hi] at e; cases e)

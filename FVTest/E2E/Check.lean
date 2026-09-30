@@ -118,7 +118,7 @@ def detail (f : Clif.Function) (vc : VCode) : String :=
                 (A (j + 1)).all (fun x => decide (x ∈ A j) || decide (x ∈ stm.results)) &&
                 (A j).all (fun x => !(decide (sl.st.nextVreg ≤ gn x) && decide (gn x < sl.st'.nextVreg)))
               | _, _ => false)),
-            ("targs", (termArgs B.term).all (fun y => decide (y ∈ A B.body.length))),
+            ("targs", (termArgs (abiTerm f B.term)).all (fun y => decide (y ∈ A B.body.length))),
             ("tclob", (A B.body.length).all (fun x => !(decide (L.tst.nextVreg ≤ gn x) && decide (gn x < L.tst'.nextVreg)))),
             ("edges", (dests B.term).all (fun bc => decide (blockIdx? f bc.block ≠ some 0) &&
               edgeOk f ctx gn In (A B.body.length) bc))]
@@ -166,7 +166,7 @@ def main (args : List String) : IO UInt32 := do
       if !Compile.functionE f then
         skipped := skipped + 1
         continue
-      if f.sig.params.length > 8 || !Backend.regArgCalls f || !Backend.noSpecial f then
+      if f.sig.params.length > 8 || !Backend.regArgCalls f || !Backend.abiSigs f then
         skipped := skipped + 1
         continue
       if lg.accepted.contains p.name then legal := legal + 1
@@ -202,7 +202,7 @@ def main (args : List String) : IO UInt32 := do
         bad := bad + 1
         IO.println s!"{file}: %{f.name}: lowerCheck rejects ({diagnose f vc})"
         IO.println (detail f vc)
-  IO.println s!"lowerCheck: {ok} accepted, {bad} rejected, {skipped} out of scope (stack parameters, stack call arguments, sret, or outside clif-subset-v2 E)"
+  IO.println s!"lowerCheck: {ok} accepted, {bad} rejected, {skipped} out of scope (stack parameters, stack call arguments, special-purpose parameters other than one sret, or outside clif-subset-v2 E)"
   IO.println s!"legalised i128 functions: {legal} in scope (Opt.Legal.check accepts; counted above), {legalOut} out of scope (validator rejects, extern named like a function of the file, or --opt)"
   IO.println s!"prepCheck: {pok} accepted, {pbad} rejected"
   IO.println s!"formsCoveredB: {cov} covered, {uncov} not covered"
