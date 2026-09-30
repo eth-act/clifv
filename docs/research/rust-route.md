@@ -176,7 +176,7 @@ encode-check 1132 identical / 0 differ (`.text` unchanged; the objects only gain
 `.rela.eh_frame` and the `.text` section symbol); `lean-e2e-check` 910 accepted / 0 rejected,
 formsCoveredB 910 / 0 not covered; `lake build FV.E2E` and `FV.E2E.OptProven` green.
 
-## agent/fv-trycall: `try_call` lowering, landing pads and LSDA (in progress)
+## agent/fv-trycall: `try_call` lowering, landing pads and LSDA
 
 Implemented (commits on `agent/fv-trycall`): `Clif.Terminator.tryCall`/`tryCallIndirect` with
 exception tables (parser/printer in Cranelift 0.136.1 syntax: `sigN, block(ret0), [ tagN: block(exn0),
@@ -204,7 +204,25 @@ items are rejected (compile error → fallback; cg_clif emits neither), so the r
 `try_call.clif` (tail callee) stays unsupported; tags other than cg_clif's 0/1 have no LSDA.
 Proof repairs: `HeadNoCI`/`NoCallIndirect` (Opt simulation) now also exclude try terminators
 (conservative: every program of the pre-try_call syntax still satisfies them), `lstep` is stuck
-on them; remaining modules to repair: see the final report.
+on them. The other repairs are new constructor arms: `termEval`/`lstep` are stuck on try
+terminators (vacuous arms in `Unreachable`, `GvnEdit`, `SimpSim`, `SimpLoop`), `ExnTable.mapVals`
+congruence/identity/composition lemmas (`mapTerm_*`), `MInst.tryCall` operand arms
+(`LowerRename`, `RegLevelDriverSem.visit_mapRegs`), `setTargets` of a `tryCall` (keeps its
+operands; `csem` of it ignores the labels: `setTargets_cases` gains that case), and
+`LowerSim.Hyps.noTry` (from `Compile.noTry_of_functionE`, like `noTail`).
+
+Gates (final): `lake build FV FVTest FV.E2E FV.E2E.OptProven` green; `#print axioms` of
+`E2E.backend_correct_final`/`backend_correct_opt_proven`: propext, Classical.choice, Quot.sound
++ `_native` only; filetests corpus 114/114 (extrt 22/22), runtests 4672 pass / 0 fail / 0
+disagree; encode-check 1260 identical / 0 differ; `lean-e2e-check` 910 accepted / 0 rejected /
+0 not covered; `compare.sh` SAME: fv-demo 18/18, survey 53/53, vendor 189/189, debug and
+`--release`. Fallbacks (`cargo fv test`, panic=unwind): fv-demo 6/6 (skip), survey 0/0,
+vendor debug 15 (12 lowerCheck: once_cell `initialize` test closures, `certOk` fails on their
+unreachable cleanup blocks — no `try_call`, same lowering as before this branch; 3 TLS),
+vendor release 3 (TLS); no landing-pad fallbacks. Negative control: with the LSDA emission
+disabled in `Obj.lean`, fv-demo's `catch_unwind_through_lean_frames`,
+`drop_runs_during_unwinding`, `nested_catch_and_resume` and `callee_saved_survive_unwinding`
+fail (14/18 pass).
 
 <!-- STATUS-MARKER -->
 
