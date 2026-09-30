@@ -729,4 +729,97 @@ theorem sim_pure {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} {fr fr' : 
   | trap c => exact absurd hr (pure_notrap hpl fr m c)
   | stuck msg => trivial
 
+/-- A statement of `g` that evaluates and binds its results: one local step. -/
+theorem lstep_eval {fr : Frame} {m m1 : Mem} {st : Stmt} {rest : List Stmt} {vals : List Val}
+    {regs : Regs} (hb : fr.body = st :: rest) (hc : ∀ fn args, st.inst ≠ .call fn args)
+    (hev : evalInst fr m st.inst = .ok (vals, m1)) (hs : fr.regs.setMany st.results vals = some regs) :
+    lstep fr m = .next { fr with regs, body := rest } m1 := by
+  rw [lstep_inst hb hc, hev]
+  simp only [LRes.ofRes_ok, hs]
+
+theorem setWidth_self {w : Nat} (x : BitVec w) : x.setWidth w = x := by simp
+
+theorem eval_load64 {fr : Frame} {m : Mem} {fl : MemFlags} {q : ValueId} {off : Int} {pv : Val}
+    {lo : BitVec 64} (hq : fr.regs q = some pv) (hl : m.load fl (effAddr pv off) 8 (8 * 8) = .ok lo) :
+    evalInst fr m (.load .load .i64 fl q off) = .ok ([⟨.i64, lo⟩], m) := by
+  simp only [evalInst, Frame.get, hq, Res.ofOption, LoadOp.size, Ty.bytes, LoadOp.signed,
+    Bool.false_eq_true, ite_false, bind, Res.bind, Res.check, width_i64, Nat.reduceDiv,
+    Nat.le_refl, decide_true, ite_true]
+  erw [hl]
+  simp [pure]
+
+theorem mem_load_valid {m : Mem} {fl : MemFlags} {a n w : Nat} {x : BitVec w}
+    (h : m.load fl a n w = .ok x) : m.valid a n = true := by
+  simp only [Mem.load, Mem.checkAccess, Opt.Res.bind_eq_ok] at h
+  obtain ⟨u, hc, -⟩ := h
+  split at hc
+  · assumption
+  · split at hc <;> cases hc
+
+/-- **Split load**: two 8-byte loads of the halves. -/
+theorem sim_load {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} {fr fr' : Frame}
+    {m : Mem} (hR : FRel C fr fr') (hM : MemBounded m) {st : Stmt} {rest : List Stmt}
+    (hb : fr.body = st :: rest) {rl rh q : ValueId} {fl : MemFlags} {off : Int}
+    (hpl : planOf C st = some (.load rl rh q fl off)) {ts2 : List Stmt}
+    (hb' : fr'.body = [S rl (.load .load .i64 fl q off), S rh (.load .load .i64 fl q (off + 8))] ++ ts2)
+    (hrl : rl ≠ rh) (hrq : rl ≠ q)
+    (hcode : codeOk C rest fr.term ts2 fr'.term = true)
+    (hT : ∀ c, step env p ⟨fr, [], m⟩ ≠ .trapped c) :
+    SimOut C env p' fr' m (step env p ⟨fr, [], m⟩) := by
+  obtain ⟨hi, ⟨r, hrs, hr⟩, hpq, hbig⟩ := planOf_load hpl
+  obtain ⟨B, hB, hst⟩ := frel_stmt hR hb
+  have hq : q < C.T0 := ops_lt hG hB hst (by rw [hi]; simp [instOps])
+  have hnc : ∀ fn args, st.inst ≠ .call fn args := fun _ _ h => by rw [hi] at h; cases h
+  have hnci : ∀ sig c args, st.inst ≠ .callIndirect sig c args := fun _ _ _ h => by
+    rw [hi] at h; cases h
+  have hstep := step_inst env p ⟨fr, [], m⟩ st rest hb hnc hnci
+  rw [hstep] at hT ⊢
+  cases hev : evalInst fr m st.inst with
+  | stuck msg => trivial
+  | trap c => rw [hev] at hT; exact absurd rfl (hT c)
+  | ok vm =>
+    obtain ⟨vals, mem⟩ := vm
+    have hev' := hev
+    rw [hi] at hev'
+    simp only [evalInst, Opt.Res.bind_eq_ok, LoadOp.size, Ty.bytes, LoadOp.signed,
+      Bool.false_eq_true, ite_false, Opt.Res.pure_eq_ok, Prod.mk.injEq] at hev'
+    obtain ⟨pv, hpv, u, -, raw, hraw, rfl, rfl⟩ := hev'
+    have hraw' : m.load fl (effAddr pv off) 16 (8 * 16) = .ok raw := hraw
+    have hA := hM _ _ (mem_load_valid hraw')
+    obtain ⟨hlo, hhi⟩ := load_split hbig hraw'
+    rw [← effAddr_add8 pv off hA] at hhi
+    have hpv' : fr'.regs q = some pv := by
+      rw [hR.peq q hq (plain_iff.1 hpq)]; exact get_ok hpv
+    simp only [StepResult.ofRes_ok, continueWith, hrs, Regs.setMany_cons, Regs.setMany_nil]
+    -- the target: two loads
+    have h1 := lstep_eval (fr := fr') (m := m) (st := S rl (.load .load .i64 fl q off))
+      (rest := S rh (.load .load .i64 fl q (off + 8)) :: ts2) (by rw [hb']; rfl)
+      (fun _ _ h => by cases h) (eval_load64 hpv' hlo) (by simp [S]; rfl)
+    have h2 := lstep_eval (fr := ⟨fr'.func, fr'.regs.set rl ⟨.i64, raw.extractLsb' 0 64⟩,
+        fr'.slots, S rh (.load .load .i64 fl q (off + 8)) :: ts2, fr'.term⟩) (m := m)
+      (st := S rh (.load .load .i64 fl q (off + 8))) (rest := ts2) rfl (fun _ _ h => by cases h)
+      (eval_load64 (by simp only; rw [Regs.set_other _ _ (Ne.symm hrq)]; exact hpv') hhi)
+      (by simp [S]; rfl)
+    refine ⟨rfl, hM, _, ?_, TStep.of_lstar (.step h1 (.step h2 (.refl _ _)))⟩
+    have hset : fr.regs.setMany st.results [⟨.i128, BitVec.zeroExtend Ty.i128.width raw⟩] =
+        some (fr.regs.set r ⟨.i128, BitVec.zeroExtend Ty.i128.width raw⟩) := by rw [hrs]; rfl
+    refine frel_after hG hR hb hcode hset ?_ ?_ (srcInv_stmt hG.defs hB hst hR.src hev hset)
+    · intro v hv _ x hx
+      rw [hrs, List.mem_singleton] at hv
+      subst hv
+      simp only [Regs.set_same, Option.some.injEq] at hx
+      subst hx
+      rw [RelV.pair hr]
+      refine ⟨raw.extractLsb' 0 64, raw.extractLsb' 64 64, ?_, ?_, ?_⟩
+      · have e : BitVec.zeroExtend Ty.i128.width raw = raw := BitVec.setWidth_eq raw
+        rw [e]
+        exact congrArg _ (split128 raw).symm
+      · rw [Regs.set_other _ _ hrl, Regs.set_same]; rfl
+      · simp
+    · intro w _ hni
+      rw [hrs] at hni
+      have := hni r (List.mem_singleton_self _) (res_lt hG hB hst (by rw [hrs]; simp))
+      simp only [img, hr, List.mem_cons, List.mem_nil_iff, or_false, not_or] at this
+      rw [Regs.set_other _ _ this.2, Regs.set_other _ _ this.1]
+
 end Opt.Legal
