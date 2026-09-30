@@ -77,42 +77,4 @@ theorem shiftV_eq {op : BinaryOp} {v : Nat} (A : BitVec v) (hv : v ≤ 128) (X :
     shiftV op X (A.toNat % 128) = shiftVbv op X (A.setWidth 128 &&& 127#128) := by
   rw [shiftV_bv A hv]; cases op <;> rfl
 
-/-- The variable-shift patterns with a 64-bit amount `a` (`amt128` from the low half of an
-`i128` amount or from an `i64` amount). -/
-theorem pat_varShift64 (op0 : BinaryOp)
-    (hop : op0 = .ishl ∨ op0 = .ushr ∨ op0 = .sshr ∨ op0 = .rotl ∨ op0 = .rotr)
-    (xl xh a : BitVec 64) :
-    ∃ ρ, runPat (canon [V64 xl, V64 xh, V64 a]) (Pat.varShiftFull op0 .wide) = some ρ ∧
-      Out128 ρ 3 4 (shiftV op0 (xh ++ xl) (a.toNat % 128)) := by
-  rw [shiftV_eq a (by omega)]
-  generalize hX : shiftVbv op0 (xh ++ xl) (a.setWidth 128 &&& 127#128) = X
-  rcases hop with rfl | rfl | rfl | rfl | rfl <;> simp only [shiftVbv] at hX <;> vs_fin a
-
-theorem pat_varShift8 (op0 : BinaryOp)
-    (hop : op0 = .ishl ∨ op0 = .ushr ∨ op0 = .sshr ∨ op0 = .rotl ∨ op0 = .rotr)
-    (xl xh : BitVec 64) (a : BitVec 8) :
-    ∃ ρ, runPat (canon [V64 xl, V64 xh, ⟨.i8, a⟩]) (Pat.varShiftFull op0 .narrow) = some ρ ∧
-      Out128 ρ 3 4 (shiftV op0 (xh ++ xl) (a.toNat % 128)) := by
-  rw [shiftV_eq a (by omega)]
-  generalize hX : shiftVbv op0 (xh ++ xl) (a.setWidth 128 &&& 127#128) = X
-  rcases hop with rfl | rfl | rfl | rfl | rfl <;> simp only [shiftVbv] at hX <;> vs_fin a
-
-theorem pat_varShift16 (op0 : BinaryOp)
-    (hop : op0 = .ishl ∨ op0 = .ushr ∨ op0 = .sshr ∨ op0 = .rotl ∨ op0 = .rotr)
-    (xl xh : BitVec 64) (a : BitVec 16) :
-    ∃ ρ, runPat (canon [V64 xl, V64 xh, ⟨.i16, a⟩]) (Pat.varShiftFull op0 .narrow) = some ρ ∧
-      Out128 ρ 3 4 (shiftV op0 (xh ++ xl) (a.toNat % 128)) := by
-  rw [shiftV_eq a (by omega)]
-  generalize hX : shiftVbv op0 (xh ++ xl) (a.setWidth 128 &&& 127#128) = X
-  rcases hop with rfl | rfl | rfl | rfl | rfl <;> simp only [shiftVbv] at hX <;> vs_fin a
-
-theorem pat_varShift32 (op0 : BinaryOp)
-    (hop : op0 = .ishl ∨ op0 = .ushr ∨ op0 = .sshr ∨ op0 = .rotl ∨ op0 = .rotr)
-    (xl xh : BitVec 64) (a : BitVec 32) :
-    ∃ ρ, runPat (canon [V64 xl, V64 xh, ⟨.i32, a⟩]) (Pat.varShiftFull op0 .narrow) = some ρ ∧
-      Out128 ρ 3 4 (shiftV op0 (xh ++ xl) (a.toNat % 128)) := by
-  rw [shiftV_eq a (by omega)]
-  generalize hX : shiftVbv op0 (xh ++ xl) (a.setWidth 128 &&& 127#128) = X
-  rcases hop with rfl | rfl | rfl | rfl | rfl <;> simp only [shiftVbv] at hX <;> vs_fin a
-
 end Opt.Legal
