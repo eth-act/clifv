@@ -141,6 +141,8 @@ def armBits : ArmInst → BitVec 32
     x.sf ++ x.op ++ x.S ++ 0b11010010#8 ++ x.imm5 ++ x.cond ++ 1#1 ++ x.o2 ++ x.Rn ++ x.o3 ++ x.nzcv
   | .DPR (.Conditional_compare_reg x) =>
     x.sf ++ x.op ++ x.S ++ 0b11010010#8 ++ x.Rm ++ x.cond ++ 0#1 ++ x.o2 ++ x.Rn ++ x.o3 ++ x.nzcv
+  | .DPR (.Barrier x) =>
+    0b1101010100000011#16 ++ 0b00#2 ++ x.op1 ++ x.CRm ++ x.op2 ++ 0b11111#5
   -- C4.1 Data Processing -- Scalar Floating-Point and Advanced SIMD
   | .DPSFP (.Advanced_simd_two_reg_misc x) =>
     0#1 ++ x.Q ++ x.U ++ 0b01110#5 ++ x.size ++ 0b10000#5 ++ x.opcode ++ 0b10#2 ++ x.Rn ++ x.Rd
@@ -171,6 +173,8 @@ def armBits : ArmInst → BitVec 32
   | .LDST (.Reg_reg_offset x) =>
     x.size ++ 0b111#3 ++ x.V ++ 0b00#2 ++ x.opc ++ 1#1 ++ x.Rm ++ x.option ++ x.S ++ 0b10#2 ++
       x.Rn ++ x.Rt
+  | .LDST (.Reg_exclusive x) =>
+    x.size ++ 0b001000#6 ++ x.ord ++ x.L ++ 0#1 ++ x.Rs ++ x.o0 ++ 0b11111#5 ++ x.Rn ++ x.Rt
   -- C4.1 Reserved: UDF
   | .RES (.Udf x) => 0#16 ++ x.imm16
 
@@ -221,6 +225,8 @@ def _root_.Arm.ArmInst.norm : ArmInst → ArmInst
     .DPR (.Conditional_compare_reg { sf := x.sf, op := x.op, S := x.S, Rm := x.Rm,
                                      cond := x.cond, o2 := x.o2, Rn := x.Rn, o3 := x.o3,
                                      nzcv := x.nzcv })
+  | .DPR (.Barrier x) =>
+    .DPR (.Barrier { op1 := x.op1, CRm := x.CRm, op2 := x.op2 })
   | .DPR (.Conditional_select x) =>
     .DPR (.Conditional_select { sf := x.sf, op := x.op, S := x.S, Rm := x.Rm, cond := x.cond,
                                 op2 := x.op2, Rn := x.Rn, Rd := x.Rd })
@@ -277,6 +283,9 @@ def _root_.Arm.ArmInst.norm : ArmInst → ArmInst
   | .LDST (.Reg_reg_offset x) =>
     .LDST (.Reg_reg_offset { size := x.size, V := x.V, opc := x.opc, Rm := x.Rm,
                              option := x.option, S := x.S, Rn := x.Rn, Rt := x.Rt })
+  | .LDST (.Reg_exclusive x) =>
+    .LDST (.Reg_exclusive { size := x.size, ord := x.ord, L := x.L, Rs := x.Rs, o0 := x.o0,
+                            Rn := x.Rn, Rt := x.Rt })
   | .RES (.Udf x) => .RES (.Udf { imm16 := x.imm16 })
 
 /-! ## Instruction → fields (Arm ARM C6/C7 instruction pages) -/
@@ -646,7 +655,29 @@ def Insn.armFields (env : Env) (i : Insn) : Except String ArmInst := do
     -- C6.2 ADD (immediate, 64-bit), imm12 from R_AARCH64_ADD_ABS_LO12_NC
     pure (.DPI (.Add_sub_imm { sf := 1, op := 0, S := 0, sh := 0, imm12 := 0, Rn := ← rn.encSP,
                                Rd := ← rd.encSP }))
+  | .ldar bits rt rn => exclFields bits 1 1 31 rt rn
+  | .stlr bits rt rn => exclFields bits 1 0 31 rt rn
+  | .ldaxr bits rt rn => exclFields bits 0 1 31 rt rn
+  | .stlxr bits rs rt rn => exclFields bits 0 0 (← rs.encZR) rt rn
+  | .dmbish =>
+    -- C6.2 DMB (option ISH: op1 = 11, CRm = 1011, op2 = 101; Cranelift `enc_dmb_ish`)
+    pure (.DPR (.Barrier { op1 := 0b11#2, CRm := 0b1011#4, op2 := 0b101#3 }))
+  | .csetm rd c =>
+    -- C6.2 CSETM = CSINV Rd, ZR, ZR, invert(cond) (Cranelift `enc_csel` op2 00)
+    if c == .al || c == .nv then throw "csetm al/nv"
+    pure (.DPR (.Conditional_select { sf := 1, op := 1, S := 0, Rm := 31,
+                                      cond := c.invert.bits, op2 := 0, Rn := 31,
+                                      Rd := ← rd.encZR }))
 where
+  /-- `Reg_exclusive` fields of `ldar`/`stlr`/`ldaxr`/`stlxr` (`bits` = the access size;
+  `ord`/`L`/`Rs`/`o0` per C6.2 "Load/store exclusive / … acquire-release"). -/
+  exclFields (bits o2 L : Nat) (Rs : BitVec 5) (rt rn : Reg) : Except String ArmInst := do
+    let size : BitVec 2 ←
+      match bits with
+      | 8 => pure 0b00#2 | 16 => pure 0b01#2 | 32 => pure 0b10#2 | 64 => pure 0b11#2
+      | _ => throw s!"unsupported atomic access size {bits}"
+    pure (.LDST (.Reg_exclusive { size, ord := BitVec.ofNat 1 o2, L := BitVec.ofNat 1 L,
+                                  Rs, o0 := 1#1, Rn := ← rn.encSP, Rt := ← rt.encZR }))
   /-- Data-processing (2 source) with `S = 0`. -/
   dp2 (sf : BitVec 1) (opcode : BitVec 6) (Rm Rn Rd : BitVec 5) : ArmInst :=
     .DPR (.Data_processing_two_source { sf, S := 0, Rm, opcode, Rn, Rd })

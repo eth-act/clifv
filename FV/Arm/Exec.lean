@@ -59,6 +59,8 @@ def exec_inst (ai : ArmInst) (s : ArmState) : ArmState :=
     DPR.exec_conditional_compare_imm i s
   | DPR (DataProcRegInst.Conditional_compare_reg i) =>
     DPR.exec_conditional_compare_reg i s
+  | DPR (DataProcRegInst.Barrier i) =>
+    DPR.exec_barrier i s
 
   | DPSFP (DataProcSFPInst.Advanced_simd_copy i) =>
     DPSFP.exec_advanced_simd_copy i s
@@ -87,6 +89,8 @@ def exec_inst (ai : ArmInst) (s : ArmState) : ArmState :=
     LDST.exec_reg_imm_pre_indexed i s
   | LDST (LDSTInst.Reg_reg_offset i) =>
     LDST.exec_reg_reg_offset i s
+  | LDST (LDSTInst.Reg_exclusive i) =>
+    LDST.exec_reg_exclusive i s
 
   | RES i =>
     Reserved.exec_reserved i s

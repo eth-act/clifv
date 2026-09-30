@@ -111,6 +111,9 @@ def decode_data_proc_reg (i : BitVec 32) : Option ArmInst :=
     DPR (Logical_shifted_reg {sf, opc, shift, N, Rm, imm6, Rn, Rd})
   | [sf:1, op54:2, 11011, op31:3, Rm:5, o0:1, Ra:5, Rn:5, Rd:5] =>
     DPR (Data_processing_three_source {sf, op54, op31, Rm, o0, Ra, Rn, Rd})
+  -- (FV addition) Barriers: DMB/DSB/ISB (the backend emits only `dmb ish`).
+  | [1101, 0101, 0000, 0011, 00, op1:2, CRm:4, op2:3, 11111] =>
+    DPR (Barrier {op1, CRm, op2})
   | _ => none
 
 def decode_data_proc_sfp (i : BitVec 32) : Option ArmInst :=
@@ -151,6 +154,9 @@ def decode_ldst_inst (i : BitVec 32) : Option ArmInst :=
     LDST (Reg_imm_pre_indexed {size, V, opc, imm9, Rn, Rt})
   | [size:2, 111, V:1, 00, opc:2, 1, Rm:5, option:3, S:1, 10, Rn:5, Rt:5] =>
     LDST (Reg_reg_offset {size, V, opc, Rm, option, S, Rn, Rt})
+  -- (FV addition) Load/store exclusive / acquire-release: LDXR/LDAXR/STXR/STLXR/LDAR/STLR.
+  | [size:2, 001000, o2:1, L:1, 0, Rs:5, o0:1, 11111, Rn:5, Rt:5] =>
+    LDST (Reg_exclusive {size, ord := o2, L, Rs, o0, Rn, Rt})
   | _ => none
 
 /-- (FV addition) Decode the A64 "Reserved" group (`op0 = 0`, `op1 = 0000`). -/

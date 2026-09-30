@@ -34,6 +34,10 @@ theorem decode_armBits_Conditional_select (x : Conditional_select_cls) :
     decode_raw_inst (armBits (.DPR (.Conditional_select x))) = some (ArmInst.DPR (.Conditional_select x)).norm := by
   decode_class decode_raw_inst_of_dpr decode_data_proc_reg
 
+theorem decode_armBits_Barrier (x : Barrier_cls) :
+    decode_raw_inst (armBits (.DPR (.Barrier x))) = some (ArmInst.DPR (.Barrier x)).norm := by
+  decode_class decode_raw_inst_of_dpr decode_data_proc_reg
+
 theorem decode_armBits_Data_processing_one_source (x : Data_processing_one_source_cls) :
     decode_raw_inst (armBits (.DPR (.Data_processing_one_source x))) = some (ArmInst.DPR (.Data_processing_one_source x)).norm := by
   decode_class decode_raw_inst_of_dpr decode_data_proc_reg

@@ -12,6 +12,7 @@ import FV.Arm.Insts.DPR.Logical_shifted_reg
 import FV.Arm.Insts.DPR.Data_processing_three_source
 import FV.Arm.Insts.DPR.Add_sub_ext_reg
 import FV.Arm.Insts.DPR.Conditional_compare
+import FV.Arm.Insts.DPR.Barrier
 
 namespace Arm
 

@@ -220,6 +220,29 @@ def MInst.visitOperands : MInst → m MInst
   | .loadAddr rd mem => do
     let rd ← f .def_ rd; let mem ← AMode.visit f mem; pure (.loadAddr rd mem)
   | .emitIsland n => pure (.emitIsland n)
+  -- `mod.rs:536`: `reg_use(rn); reg_def(rt)` / `reg_use(rn); reg_use(rt)`
+  | .loadAcquire ty rt rn fl => do
+    let rn ← f .use rn; let rt ← f .def_ rt; pure (.loadAcquire ty rt rn fl)
+  | .storeRelease ty rt rn fl => do
+    let rn ← f .use rn; let rt ← f .use rt; pure (.storeRelease ty rt rn fl)
+  -- `mod.rs:473`: fixed uses x25/x26, fixed defs x27/x24 (x28 unless `xchg`)
+  | .atomicRmwLoop ty op fl addr operand oldval s1 s2 => do
+    let addr ← f (.fixedUse (.x 25)) addr
+    let operand ← f (.fixedUse (.x 26)) operand
+    let oldval ← f (.fixedDef (.x 27)) oldval
+    let s1 ← f (.fixedDef (.x 24)) s1
+    let s2 ← if op == .xchg then pure s2 else f (.fixedDef (.x 28)) s2
+    pure (.atomicRmwLoop ty op fl addr operand oldval s1 s2)
+  -- `mod.rs:522`: fixed uses x25/x26/x28, fixed defs x27/x24
+  | .atomicCasLoop ty fl addr expect replace oldval scratch => do
+    let addr ← f (.fixedUse (.x 25)) addr
+    let expect ← f (.fixedUse (.x 26)) expect
+    let replace ← f (.fixedUse (.x 28)) replace
+    let oldval ← f (.fixedDef (.x 27)) oldval
+    let scratch ← f (.fixedDef (.x 24)) scratch
+    pure (.atomicCasLoop ty fl addr expect replace oldval scratch)
+  | .csetm rd c => do pure (.csetm (← f .def_ rd) c)
+  | .fence => pure (.fence)
 
 end
 

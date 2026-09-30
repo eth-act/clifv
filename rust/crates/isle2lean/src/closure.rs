@@ -39,6 +39,11 @@ pub const E_OPCODES: &[&str] = &[
     // unverified (outside ); their lowering rules must not be flagged outside
     // the closure (the survey's  functions use them).
     "call_indirect", "func_addr",
+    // agent/fv-fallback: `bmask` and the atomic opcodes compile but are flagged unverified
+    // (outside `E2E.InSubset`); lowering = Cranelift's non-LSE rules (cg_clif's `has_lse=0`):
+    // `load_acquire`/`store_release` (ldar/stlr) and the `atomic_rmw_loop`/`atomic_cas_loop`
+    // LL/SC pseudo-instructions.
+    "bmask", "atomic_load", "atomic_store", "atomic_rmw", "atomic_cas", "fence",
 ];
 
 pub const ROOTS: &[&str] = &["lower", "lower_branch"];
