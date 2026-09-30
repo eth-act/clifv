@@ -195,17 +195,6 @@ instance : ToString Conditional_compare_reg_cls where toString a := toString (re
 def Conditional_compare_reg_cls.toBitVec32 (x : Conditional_compare_reg_cls) : BitVec 32 :=
   x.sf ++ x.op ++ x.S ++ x._fixed1 ++ x.Rm ++ x.cond ++ x._fixed2 ++ x.o2 ++ x.Rn ++ x.o3 ++ x.nzcv
 
-/-- (FV addition) Barriers: `DMB`/`DSB`/`ISB` (the backend emits only `dmb ish`). -/
-structure Barrier_cls where
-  op1    : BitVec 2            -- [13:12]
-  CRm    : BitVec 4            -- [11:8]
-  op2    : BitVec 3            -- [7:5]
-  deriving DecidableEq, Repr
-
-instance : ToString Barrier_cls where toString a := toString (repr a)
-
-def Barrier_cls.toBitVec32 (x : Barrier_cls) : BitVec 32 :=
-  0b1101010100000011#16 ++ 0b00#2 ++ x.op1 ++ x.CRm ++ x.op2 ++ 0b11111#5
 
 inductive DataProcRegInst where
   | Add_sub_carry :
@@ -228,8 +217,6 @@ inductive DataProcRegInst where
     Conditional_compare_imm_cls → DataProcRegInst
   | Conditional_compare_reg :
     Conditional_compare_reg_cls → DataProcRegInst
-  | Barrier :
-    Barrier_cls → DataProcRegInst
 deriving DecidableEq, Repr
 
 instance : ToString DataProcRegInst where toString a := toString (repr a)

@@ -36,6 +36,8 @@ def exec_inst (ai : ArmInst) (s : ArmState) : ArmState :=
     BR.exec_cond_branch_imm i s
   | BR (BranchInst.Hints i) =>
     BR.exec_hints i s
+  | BR (BranchInst.Barrier i) =>
+    BR.exec_barrier i s
   | BR (BranchInst.Test_branch i) =>
     BR.exec_test_branch i s
 
@@ -59,8 +61,6 @@ def exec_inst (ai : ArmInst) (s : ArmState) : ArmState :=
     DPR.exec_conditional_compare_imm i s
   | DPR (DataProcRegInst.Conditional_compare_reg i) =>
     DPR.exec_conditional_compare_reg i s
-  | DPR (DataProcRegInst.Barrier i) =>
-    DPR.exec_barrier i s
 
   | DPSFP (DataProcSFPInst.Advanced_simd_copy i) =>
     DPSFP.exec_advanced_simd_copy i s

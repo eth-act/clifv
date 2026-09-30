@@ -119,6 +119,7 @@ def armBits : ArmInst → BitVec 32
   | .BR (.Uncond_branch_reg x) => 0b1101011#7 ++ x.opc ++ x.op2 ++ x.op3 ++ x.Rn ++ x.op4
   | .BR (.Cond_branch_imm x) => 0b01010100#8 ++ x.imm19 ++ x.o0 ++ x.cond
   | .BR (.Hints x) => 0b11010101000000110010#20 ++ x.CRm ++ x.op2 ++ 0b11111#5
+  | .BR (.Barrier x) => 0b11010101000000110011#20 ++ x.CRm ++ x.op2 ++ 0b11111#5
   | .BR (.Test_branch x) => x.b5 ++ 0b011011#6 ++ x.op ++ x.b40 ++ x.imm14 ++ x.Rt
   -- C4.1 Data Processing -- Register
   | .DPR (.Add_sub_carry x) =>
@@ -141,8 +142,6 @@ def armBits : ArmInst → BitVec 32
     x.sf ++ x.op ++ x.S ++ 0b11010010#8 ++ x.imm5 ++ x.cond ++ 1#1 ++ x.o2 ++ x.Rn ++ x.o3 ++ x.nzcv
   | .DPR (.Conditional_compare_reg x) =>
     x.sf ++ x.op ++ x.S ++ 0b11010010#8 ++ x.Rm ++ x.cond ++ 0#1 ++ x.o2 ++ x.Rn ++ x.o3 ++ x.nzcv
-  | .DPR (.Barrier x) =>
-    0b1101010100000011#16 ++ 0b00#2 ++ x.op1 ++ x.CRm ++ x.op2 ++ 0b11111#5
   -- C4.1 Data Processing -- Scalar Floating-Point and Advanced SIMD
   | .DPSFP (.Advanced_simd_two_reg_misc x) =>
     0#1 ++ x.Q ++ x.U ++ 0b01110#5 ++ x.size ++ 0b10000#5 ++ x.opcode ++ 0b10#2 ++ x.Rn ++ x.Rd
@@ -207,6 +206,7 @@ def _root_.Arm.ArmInst.norm : ArmInst → ArmInst
   | .BR (.Cond_branch_imm x) =>
     .BR (.Cond_branch_imm { imm19 := x.imm19, o0 := x.o0, cond := x.cond })
   | .BR (.Hints x) => .BR (.Hints { CRm := x.CRm, op2 := x.op2 })
+  | .BR (.Barrier x) => .BR (.Barrier { CRm := x.CRm, op2 := x.op2 })
   | .BR (.Test_branch x) =>
     .BR (.Test_branch { b5 := x.b5, op := x.op, b40 := x.b40, imm14 := x.imm14, Rt := x.Rt })
   | .DPR (.Add_sub_carry x) =>
@@ -225,8 +225,6 @@ def _root_.Arm.ArmInst.norm : ArmInst → ArmInst
     .DPR (.Conditional_compare_reg { sf := x.sf, op := x.op, S := x.S, Rm := x.Rm,
                                      cond := x.cond, o2 := x.o2, Rn := x.Rn, o3 := x.o3,
                                      nzcv := x.nzcv })
-  | .DPR (.Barrier x) =>
-    .DPR (.Barrier { op1 := x.op1, CRm := x.CRm, op2 := x.op2 })
   | .DPR (.Conditional_select x) =>
     .DPR (.Conditional_select { sf := x.sf, op := x.op, S := x.S, Rm := x.Rm, cond := x.cond,
                                 op2 := x.op2, Rn := x.Rn, Rd := x.Rd })
@@ -661,7 +659,7 @@ def Insn.armFields (env : Env) (i : Insn) : Except String ArmInst := do
   | .stlxr bits rs rt rn => exclFields bits 0 0 (← rs.encZR) rt rn
   | .dmbish =>
     -- C6.2 DMB (option ISH: op1 = 11, CRm = 1011, op2 = 101; Cranelift `enc_dmb_ish`)
-    pure (.DPR (.Barrier { op1 := 0b11#2, CRm := 0b1011#4, op2 := 0b101#3 }))
+    pure (.BR (.Barrier { CRm := 0b1011#4, op2 := 0b101#3 }))
   | .csetm rd c =>
     -- C6.2 CSETM = CSINV Rd, ZR, ZR, invert(cond) (Cranelift `enc_csel` op2 00)
     if c == .al || c == .nv then throw "csetm al/nv"

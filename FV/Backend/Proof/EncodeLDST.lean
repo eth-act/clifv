@@ -57,5 +57,6 @@ theorem decode_armBits_LDST (x : LDSTInst) :
   | Reg_pair_signed_offset x => exact decode_armBits_Reg_pair_signed_offset x
   | Reg_imm_pre_indexed x => exact decode_armBits_Reg_imm_pre_indexed x
   | Reg_reg_offset x => exact decode_armBits_Reg_reg_offset x
+  | Reg_exclusive x => exact decode_armBits_Reg_exclusive x
 
 end Backend

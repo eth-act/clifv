@@ -80,6 +80,9 @@ def decode_branch (i : BitVec 32) : Option ArmInst :=
     BR (Cond_branch_imm {imm19, o0, cond})
   | [11010101000000110010, CRm:4, op2:3, 11111] =>
     BR (Hints {CRm, op2})
+  -- (FV addition) Barriers: DMB (the backend emits only `dmb ish`).
+  | [1101010100000011, 00, 11, CRm:4, op2:3, 11111] =>
+    BR (Barrier {CRm, op2})
   -- (FV addition) Test and branch (immediate).
   | [b5:1, 011011, op:1, b40:5, imm14:14, Rt:5] =>
     BR (Test_branch {b5, op, b40, imm14, Rt})
@@ -111,9 +114,6 @@ def decode_data_proc_reg (i : BitVec 32) : Option ArmInst :=
     DPR (Logical_shifted_reg {sf, opc, shift, N, Rm, imm6, Rn, Rd})
   | [sf:1, op54:2, 11011, op31:3, Rm:5, o0:1, Ra:5, Rn:5, Rd:5] =>
     DPR (Data_processing_three_source {sf, op54, op31, Rm, o0, Ra, Rn, Rd})
-  -- (FV addition) Barriers: DMB/DSB/ISB (the backend emits only `dmb ish`).
-  | [1101, 0101, 0000, 0011, 00, op1:2, CRm:4, op2:3, 11111] =>
-    DPR (Barrier {op1, CRm, op2})
   | _ => none
 
 def decode_data_proc_sfp (i : BitVec 32) : Option ArmInst :=

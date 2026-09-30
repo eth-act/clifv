@@ -270,7 +270,8 @@ def exec_reg_exclusive (inst : Reg_exclusive_cls) (s : ArmState) : ArmState :=
   else
     let address := read_gpr 64 inst.Rn s
     have H : datasize / 8 * 8 = datasize := by
-      simp_all! only [Nat.shiftLeft_eq, Nat.dvd_mul_right, datasize]
+      have h8 : 8 ∣ datasize := by simp only [datasize, Nat.shiftLeft_eq]; omega
+      exact Nat.div_mul_cancel h8
     let s :=
       if inst.L = 1#1 then
         let regsize := if inst.size = 0b11#2 then 64 else 32

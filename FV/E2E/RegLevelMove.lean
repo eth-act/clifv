@@ -119,15 +119,19 @@ theorem run_oneLines (ctx : FnCtx) (af : AFunc) :
         obtain ⟨e1, e2⟩ := hint _ k' (by omega) (by omega) s1 hs1
         exact ⟨e1, e2.trans htp⟩
 
-/-- The expansion of an instruction other than `trapIf`/`jtSequence` does not depend on the
-emitter state. -/
+/-- The expansion of an instruction other than `trapIf`/`jtSequence`/the atomic LL/SC loops
+does not depend on the emitter state (the loops increment the emit-time label counter). -/
 theorem lines_ps (c : FnCtx) (m : MInst) (ps : PState)
-    (h1 : ∀ k code, m ≠ .trapIf k code) (h2 : ∀ a b d e f, m ≠ .jtSequence a b d e f) :
+    (h1 : ∀ k code, m ≠ .trapIf k code) (h2 : ∀ a b d e f, m ≠ .jtSequence a b d e f)
+    (h3 : ∀ ty op fl a o ov s1 s2, m ≠ .atomicRmwLoop ty op fl a o ov s1 s2)
+    (h4 : ∀ ty fl a e r ov s, m ≠ .atomicCasLoop ty fl a e r ov s) :
     m.lines c ps = (fun p => (p.1, ps)) <$> m.lines c {} := by
   cases m
   all_goals first
     | (exfalso; exact h1 _ _ rfl)
     | (exfalso; exact h2 _ _ _ _ _ rfl)
+    | (exfalso; exact h3 _ _ _ _ _ _ _ _ rfl)
+    | (exfalso; exact h4 _ _ _ _ _ _ _ rfl)
     | skip
   all_goals simp only [MInst.lines]
   all_goals (repeat' split) <;> simp [bind, Except.bind, pure, Except.pure, Functor.map, Except.map, throw, throwThe, MonadExceptOf.throw]

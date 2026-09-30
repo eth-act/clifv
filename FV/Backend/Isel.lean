@@ -540,6 +540,8 @@ def externCtor (ctx : Ctx) (t : Term) (args : List V) (st : LState) : ExtResult 
   | TId.i64_sextend_imm64, [.ty ty, .int x] => ok (.int (sextFrom ty.bits x))
   | TId.ty_bits, [.ty ty] => ok (.int ty.bits)
   | TId.ty_bytes, [.ty ty] => ok (.int ty.bytes)
+  -- `ty_mask` (isle_prelude.rs:366): `2^bits - 1`
+  | TId.ty_mask, [.ty ty] => ok (.int (2 ^ ty.bits - 1))
   | TId.offset32_to_i32, [.int i] => ok (.int i)
   | TId.i32_to_offset32, [.int i] => ok (.int i)
   | TId.signed_cond_code, [cc] => match cc.intcc? with
