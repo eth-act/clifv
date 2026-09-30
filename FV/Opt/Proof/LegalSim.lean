@@ -1540,4 +1540,199 @@ theorem sim_term {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} {fr fr' : 
           beq_self_eq_true, Res.check, ite_true, hR.slots]
     · cases hcode
 
+/-! ## Segments -/
+
+theorem segOk_same {C : Ctx} {st : Stmt} {seg : List Stmt} (h : segOk C st .same seg = true) :
+    seg = [st] := by
+  simpa [segOk] using h
+
+theorem segOk_load {C : Ctx} {st : Stmt} {rl rh q : ValueId} {fl : MemFlags} {off : Int}
+    {seg : List Stmt} (h : segOk C st (.load rl rh q fl off) seg = true) :
+    seg = [S rl (.load .load .i64 fl q off), S rh (.load .load .i64 fl q (off + 8))] ∧
+      rl ≠ rh ∧ rl ≠ q := by
+  simp only [segOk, Bool.and_eq_true, beq_iff_eq, bne_iff_ne, ne_eq] at h
+  exact ⟨h.1.1, h.1.2, h.2⟩
+
+theorem segOk_store {C : Ctx} {st : Stmt} {xl xh q : ValueId} {fl : MemFlags} {off : Int}
+    {seg : List Stmt} (h : segOk C st (.store xl xh q fl off) seg = true) :
+    seg = [{ results := [], inst := .store .store .i64 fl xl q off },
+      { results := [], inst := .store .store .i64 fl xh q (off + 8) }] := by
+  simpa [segOk] using h
+
+theorem segOk_div {C : Ctx} {st : Stmt} {op : DivOp} {xl xh yl yh rl rh : ValueId}
+    {seg : List Stmt} (h : segOk C st (.div op xl xh yl yh rl rh) seg = true) :
+    ∃ fn, seg = [{ results := [rl, rh], inst := .call fn [xl, xh, yl, yh] }] ∧ rl ≠ rh ∧
+      C.g.extern? fn = some (helperExt op) := by
+  match seg, h with
+  | [st'], h =>
+    simp only [segOk] at h
+    split at h
+    · rename_i fn args hi
+      simp only [Bool.and_eq_true, beq_iff_eq, bne_iff_ne, ne_eq] at h
+      obtain ⟨⟨⟨rfl, hr⟩, hne⟩, hfn⟩ := h
+      refine ⟨fn, ?_, hne, hfn⟩
+      rw [← hr, ← hi]
+    · cases h
+  | [], h => simp [segOk] at h
+  | _ :: _ :: _, h => simp [segOk] at h
+
+theorem segOk_call {C : Ctx} {st : Stmt} {fn : FnRef} {e : ExtFunc} {args : List ValueId}
+    {rg : List (List SlotEl)} {rs : List ValueId} {seg : List Stmt}
+    (h : segOk C st (.call fn e args rg rs) seg = true) :
+    ∃ rs', seg = [{ results := rs', inst := .call fn args }] ∧ retsOk C rg rs rs' = true ∧
+      rs'.Nodup ∧ ∃ s', sigExp e.sig = some s' ∧ C.g.extern? fn = some { e with sig := s' } := by
+  match seg, h with
+  | [st'], h =>
+    simp only [segOk, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
+    obtain ⟨⟨⟨hi, hr⟩, hnd⟩, hs⟩ := h
+    split at hs
+    · rename_i s' hs'
+      simp only [beq_iff_eq] at hs
+      exact ⟨st'.results, by rw [← hi], hr, hnd, s', hs', hs⟩
+    · cases hs
+  | [], h => simp [segOk] at h
+  | _ :: _ :: _, h => simp [segOk] at h
+
+theorem segOk_trap {C : Ctx} {st : Stmt} {lo hi : ValueId} {nz : Bool} {code : TrapCode}
+    {seg : List Stmt} (h : segOk C st (.trap lo hi nz code) seg = true) :
+    ∃ segA c, seg = segA ++
+      [{ results := [], inst := if nz then .trapnz c code else .trapz c code }] ∧
+      C.fresh c = true ∧ pureOk C Pat.cond [lo, hi] [c] segA = true := by
+  simp only [segOk] at h
+  split at h
+  · rename_i c code' hl
+    simp only [Bool.and_eq_true, Bool.not_eq_true', beq_iff_eq] at h
+    obtain ⟨⟨⟨rfl, rfl⟩, hf⟩, hp⟩ := h
+    refine ⟨seg.dropLast, c, ?_, hf, hp⟩
+    obtain ⟨ys, hys⟩ := List.getLast?_eq_some_iff.1 hl
+    rw [hys]
+    simp
+  · rename_i c code' hl
+    simp only [Bool.and_eq_true, beq_iff_eq] at h
+    obtain ⟨⟨⟨rfl, rfl⟩, hf⟩, hp⟩ := h
+    refine ⟨seg.dropLast, c, ?_, hf, hp⟩
+    obtain ⟨ys, hys⟩ := List.getLast?_eq_some_iff.1 hl
+    rw [hys]
+    simp
+  · cases h
+
+/-! ## One source step -/
+
+/-- Reachability by continuing steps. -/
+inductive SReach (env : Env) (p : Program) : State → State → Prop
+  | refl (s : State) : SReach env p s s
+  | step {s s' s'' : State} : step env p s = .next s' → SReach env p s' s'' → SReach env p s s''
+
+/-- The step of `s` does not trap at a load or store. -/
+def MemTrapFree (env : Env) (p : Program) (s : State) : Prop :=
+  ∀ c st rest, step env p s = .trapped c → s.frame.body = st :: rest →
+    (∀ op t fl a o, st.inst ≠ .load op t fl a o) ∧ (∀ op t fl x a o, st.inst ≠ .store op t fl x a o)
+
+/-- No state reachable from `s` traps at a load or store. -/
+def NoMemTrap (env : Env) (p : Program) (s : State) : Prop :=
+  ∀ s', SReach env p s s' → MemTrapFree env p s'
+
+/-- The environment's side of the refinement. -/
+structure EnvOk (env : Env) (C : Ctx) (p p' : Program) : Prop where
+  src : ∀ fn e, C.f.extern? fn = some e → p.func? e.name = none
+  tgt : ∀ fn e, C.g.extern? fn = some e → p'.func? e.name = none
+  helper : HelperOk env
+  ext : ExtLegal env
+  keep : EnvKeepsAllocs env
+
+theorem take_drop_eq {α : Type} {l seg : List α} {n : Nat} (h : l.take n = seg) :
+    l = seg ++ l.drop n := by
+  rw [← h, List.take_append_drop]
+
+/-- **One source step**, matched by the target. -/
+theorem step_sim {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} (hE : EnvOk env C p p')
+    {fr fr' : Frame} {m : Mem} (hR : FRel C fr fr') (hM : MemBounded m)
+    (hT : MemTrapFree env p ⟨fr, [], m⟩) :
+    SimOut C env p' fr' m (step env p ⟨fr, [], m⟩) := by
+  cases hb : fr.body with
+  | nil => exact sim_term hG hR hM hb
+  | cons st rest =>
+    have hcode0 := hR.code
+    rw [hb] at hcode0
+    obtain ⟨pl, hpl, hseg, hcode⟩ := code_cons hcode0
+    have hbody := take_drop_eq (l := fr'.body) (n := pl.len) rfl
+    have hT' : ∀ c, step env p ⟨fr, [], m⟩ = .trapped c →
+        (∀ op t fl a o, st.inst ≠ .load op t fl a o) ∧
+          (∀ op t fl x a o, st.inst ≠ .store op t fl x a o) := fun c h => hT c st rest h hb
+    cases pl with
+    | same =>
+      rw [segOk_same hseg] at hbody
+      exact sim_same hG hR hM hb hpl hbody hcode
+    | pure pat ins outs =>
+      exact sim_pure hG hR hM hb hpl hseg hbody hcode
+    | load rl rh q fl off =>
+      obtain ⟨hs, hrl, hrq⟩ := segOk_load hseg
+      rw [hs] at hbody
+      exact sim_load hG hR hM hb hpl hbody hrl hrq hcode fun c h => by
+        obtain ⟨hi, -, -, -⟩ := planOf_load hpl
+        exact (hT' c h).1 _ _ _ _ _ hi
+    | store xl xh q fl off =>
+      rw [segOk_store hseg] at hbody
+      exact sim_store hG hR hM hb hpl hbody hcode fun c h => by
+        obtain ⟨⟨x, hi, -⟩, -, -, -⟩ := planOf_store hpl
+        exact (hT' c h).2 _ _ _ _ _ _ hi
+    | div op xl xh yl yh rl rh =>
+      obtain ⟨fn, hs, hrl, hfn⟩ := segOk_div hseg
+      rw [hs] at hbody
+      exact sim_div hG hE.helper hE.tgt hR hM hb hpl hbody hrl hfn hcode
+    | call fn e args rg rs =>
+      obtain ⟨rs', hs, hrets, hnd', s', hs', hfn⟩ := segOk_call hseg
+      rw [hs] at hbody
+      exact sim_call hG hE.ext hE.keep hE.src hE.tgt hR hM hb hpl hbody hrets hnd' hs' hfn hcode
+    | trap lo hi nz code =>
+      obtain ⟨segA, c, hs, hc, hpo⟩ := segOk_trap hseg
+      rw [hs, List.append_assoc] at hbody
+      exact sim_trap hG hR hM hb hpl hpo hc hbody hcode
+
+/-! ## The fuel induction -/
+
+/-- **Runs.** From related frames, a return of the source within `n` steps is a return of the
+target with the values expanded, a trap the same trap. -/
+theorem sim_run {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} (hE : EnvOk env C p p') :
+    ∀ (n : Nat) (fr fr' : Frame) (m : Mem), FRel C fr fr' → MemBounded m →
+      NoMemTrap env p ⟨fr, [], m⟩ →
+      (∀ vals m1, runLoop env p n ⟨fr, [], m⟩ = .returned vals m1 →
+        ∃ vals', ExpRel C.rg vals vals' ∧ ∃ k, runLoop env p' k ⟨fr', [], m⟩ = .returned vals' m1) ∧
+      (∀ c, runLoop env p n ⟨fr, [], m⟩ = .trapped c →
+        ∃ k, runLoop env p' k ⟨fr', [], m⟩ = .trapped c) := by
+  intro n
+  induction n with
+  | zero => intro fr fr' m _ _ _; exact ⟨fun _ _ h => (by cases h), fun _ h => (by cases h)⟩
+  | succ n ih =>
+    intro fr fr' m hR hM hT
+    have hS := step_sim hG hE hR hM (hT _ (.refl _))
+    rw [runLoop_succ]
+    cases hst : step env p ⟨fr, [], m⟩ with
+    | next s1 =>
+      rw [hst] at hS
+      obtain ⟨hcl, hM1, fr1', hR1, k, hk⟩ := hS
+      obtain ⟨sf, scl, sm⟩ := s1
+      simp only at hcl hM1 hR1 hk
+      subst hcl
+      have hT1 : NoMemTrap env p ⟨sf, [], sm⟩ := fun s' hs' => hT s' (.step hst hs')
+      obtain ⟨h1, h2⟩ := ih sf fr1' sm hR1 hM1 hT1
+      refine ⟨fun vals m1 h => ?_, fun c h => ?_⟩
+      · obtain ⟨vals', hv, k', hk'⟩ := h1 vals m1 h
+        exact ⟨vals', hv, k' + k, by rw [hk, hk']⟩
+      · obtain ⟨k', hk'⟩ := h2 c h
+        exact ⟨k' + k, by rw [hk, hk']⟩
+    | done vals m1 =>
+      rw [hst] at hS
+      refine ⟨fun vals2 m2 h => ?_, fun c h => (by cases h)⟩
+      simp only [Outcome.returned.injEq] at h
+      obtain ⟨rfl, rfl⟩ := h
+      exact hS
+    | trapped c =>
+      rw [hst] at hS
+      refine ⟨fun _ _ h => (by cases h), fun c2 h => ?_⟩
+      simp only [Outcome.trapped.injEq] at h
+      subst h
+      exact hS
+    | stuck msg => exact ⟨fun _ _ h => (by cases h), fun _ h => (by cases h)⟩
+
 end Opt.Legal
