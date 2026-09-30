@@ -32,6 +32,10 @@ plain `i8..i64` CLIF before the mid-end and the backend). A legalised function t
 function (`InSubset` and `lowerCheck` decided on the legalised form); a rejected one is
 reported unverified ("i128 legalized (outside backend_correct: …)"), as is every legalised
 function under `--opt` (no theorem composes the legalisation with the mid-end).
+
+A function inside the theorem's scope whose size is over the validation budget
+(`Backend.validationBudget`, blocks × values) is compiled without running the lowering
+validator and listed as `compiled, unverified (validation budget)`.
 -/
 
 open Backend
@@ -100,9 +104,12 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
     IO.eprintln s!"lean-backend: {input}: %{n}: unsupported: {why}"
   for (n, why) in fa.unverified do
     IO.eprintln s!"lean-backend: {input}: %{n}: compiled, unverified (outside backend_correct): {why}"
+  for (n, why) in fa.unvalidated do
+    IO.eprintln s!"lean-backend: {input}: %{n}: compiled, unverified (validation budget): {why}"
   for p in pf.funcs do
     if let .ok f := p.func then
-      if hasTryCall f && fa.funcs.any (·.name == p.name) && !fa.unverified.any (·.1 == p.name) then
+      if hasTryCall f && fa.funcs.any (·.name == p.name) && !fa.unverified.any (·.1 == p.name) &&
+          !fa.unvalidated.any (·.1 == p.name) then
         IO.eprintln s!"lean-backend: {input}: %{p.name}: compiled, verified for normal returns (try_call: unwinding, landing pads and the LSDA trusted)"
   return 0
 

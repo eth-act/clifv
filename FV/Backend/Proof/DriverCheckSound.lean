@@ -1,12 +1,17 @@
 import FV.Backend.Proof.LowerShape
+import Std.Data.HashSet.Lemmas
 
 /-!
 # Soundness of the lowering validator (M7)
 
-`lowerShape_of_check`, `cert_of_check`: `lowerCheck f vc = true` gives `LowerShape` and `Cert`
-for the recorded lowering (`lowBlocks`), the alias resolution `gnOf` and the dataflow `inFix`.
-Construction facts (`lowStmts_spec`, `lowBlocks_spec`: the recorded states are those of the
-ISLE calls) plus one lemma per decided check.
+`lowerShape_of_ok`, `cert_of_ok`: `lowerCheck f vc = true` gives `LowerShape` and `Cert`
+for the recorded lowering (`lowBlocks`), the alias resolution `gnTable` (only its being the
+identity on temporaries is used, `gnAt_temp`) and the dataflow `inFix` (not used at all: the
+certificate holds for whatever entry values `certOk` accepts). Construction facts
+(`lowStmts_spec`, `lowBlocks_spec`: the recorded states are those of the ISLE calls) plus one
+lemma per decided check; the certificate's membership tests are decided by `Avail.mem`
+(`mem_avail`: exact once `certBlockOk` has checked that the statements' results are defined by
+their instructions, `DefsAt`).
 -/
 
 namespace Backend.Proof.Driver
@@ -169,8 +174,10 @@ theorem lowBlocks_spec {f : Clif.Function} {call : StmtCall} {tcall : TermCallF}
 
 /-! ## Alias resolution -/
 
-theorem gnOf_temp {lo : Nat} {al : List (Nat × Nat)} {n : Nat} (h : lo ≤ n) : gnOf lo al n = n := by
-  simp [gnOf, Nat.not_lt.mpr h]
+theorem gnAt_temp {lo : Nat} {al : List (Nat × Nat)} {n : Nat} (h : lo ≤ n) :
+    gnAt (gnTable lo al) n = n := by
+  have : ¬ n < (gnTable lo al).size := by simp only [gnTable, Array.size_ofFn]; omega
+  simp only [gnAt, this, dite_false]
 
 theorem renOf_vrenaming (gn : Nat → Nat) : VRenaming (renOf gn) gn := by
   refine ⟨fun n c => rfl, fun r hr => ?_⟩
@@ -457,8 +464,71 @@ theorem lowerShape_of_ok {f : Clif.Function} {vc : VCode} {ctx : Ctx} {ranges : 
 
 /-! ## `Cert` -/
 
-theorem mem_availOf {f : Clif.Function} {In : List (List Clif.ValueId)} {bi j : Nat}
-    {x : Clif.ValueId} :
+theorem mem_flatMap_take {α β : Type} {l : List α} {g : α → List β} {j : Nat} {x : β} :
+    x ∈ (l.take j).flatMap g ↔ ∃ k s, k < j ∧ l[k]? = some s ∧ x ∈ g s := by
+  constructor
+  · rintro h
+    obtain ⟨s, hs, hx⟩ := List.mem_flatMap.mp h
+    obtain ⟨k, hk⟩ := List.mem_iff_getElem?.mp hs
+    rw [List.getElem?_take] at hk
+    split at hk
+    · exact ⟨k, s, ‹_›, hk, hx⟩
+    · cases hk
+  · rintro ⟨k, s, hk, hs, hx⟩
+    exact List.mem_flatMap.mpr ⟨s, List.mem_iff_getElem?.mpr ⟨k, by rw [List.getElem?_take, if_pos hk]; exact hs⟩, hx⟩
+
+theorem mem_flatMap_drop {α β : Type} {l : List α} {g : α → List β} {j : Nat} {x : β} :
+    x ∈ (l.drop j).flatMap g ↔ ∃ k s, j ≤ k ∧ l[k]? = some s ∧ x ∈ g s := by
+  constructor
+  · rintro h
+    obtain ⟨s, hs, hx⟩ := List.mem_flatMap.mp h
+    obtain ⟨i, hi⟩ := List.mem_iff_getElem?.mp hs
+    rw [List.getElem?_drop] at hi
+    exact ⟨j + i, s, by omega, hi, hx⟩
+  · rintro ⟨k, s, hk, hs, hx⟩
+    refine List.mem_flatMap.mpr ⟨s, List.mem_iff_getElem?.mpr ⟨k - j, ?_⟩, hx⟩
+    rw [List.getElem?_drop, Nat.add_sub_cancel' hk]; exact hs
+
+/-- Statement `k`'s results are defined by instruction `start + k` (checked by `certBlockOk`). -/
+def DefsAt (ctx : Ctx) (B : Clif.Block) (start : Nat) : Prop :=
+  ∀ k stm, B.body[k]? = some stm → ∀ r ∈ stm.results, ctx.defInst? r = some (start + k)
+
+section
+variable {ctx : Ctx} {B : Clif.Block} {L : BLow} {In : Array (List Clif.ValueId)} {bi : Nat}
+
+theorem Avail.of_body : (Avail.of B L In bi).body = B.body.toArray := rfl
+theorem Avail.of_start : (Avail.of B L In bi).start = L.start := rfl
+theorem Avail.of_ent : (Avail.of B L In bi).ent = B.params.map (·.1) ++ In.getD bi [] := rfl
+
+theorem dpos_iff (hD : DefsAt ctx B L.start) {x k : Nat} :
+    (Avail.of B L In bi).dpos ctx x = some k ↔ ∃ stm, B.body[k]? = some stm ∧ x ∈ stm.results := by
+  constructor
+  · intro h
+    simp only [Avail.dpos, Avail.of, List.getElem?_toArray] at h
+    split at h
+    · split at h
+      · split at h
+        · rename_i stm hs
+          split at h
+          · cases h; exact ⟨stm, hs, ‹_›⟩
+          · cases h
+        · cases h
+      · cases h
+    · cases h
+  · rintro ⟨stm, hs, hx⟩
+    simp only [Avail.dpos, Avail.of, List.getElem?_toArray, hD k stm hs x hx, Nat.le_add_right,
+      if_true, Nat.add_sub_cancel_left, hs, hx]
+
+theorem dpos_lt (hD : DefsAt ctx B L.start) {x k : Nat}
+    (h : (Avail.of B L In bi).dpos ctx x = some k) : k < B.body.length := by
+  obtain ⟨_, hs, -⟩ := (dpos_iff hD).mp h
+  exact lt_of_getElem? hs
+
+theorem mem_ent {x : Nat} :
+    (Avail.of B L In bi).entS.contains x = true ↔ x ∈ B.params.map (·.1) ++ In.getD bi [] := by
+  simp only [Avail.of, Std.HashSet.contains_ofList, List.contains_iff_mem]
+
+theorem mem_availOf {f : Clif.Function} {j x : Nat} :
     x ∈ availOf f In bi j ↔ ∃ B, f.blocks[bi]? = some B ∧
       x ∈ B.params.map (·.1) ++ In.getD bi [] ++ defsBefore B j ∧ x ∉ defsFrom B j := by
   unfold availOf
@@ -468,134 +538,308 @@ theorem mem_availOf {f : Clif.Function} {In : List (List Clif.ValueId)} {bi j : 
     simp only [List.mem_filter, decide_eq_true_eq]
     exact ⟨fun h => ⟨B, rfl, h⟩, fun ⟨B', hB', h⟩ => by cases hB'; exact h⟩
 
-theorem availOf_ge {f : Clif.Function} {In : List (List Clif.ValueId)} {bi j : Nat} {B : Clif.Block}
-    (hB : f.blocks[bi]? = some B) (hj : B.body.length ≤ j) :
-    availOf f In bi j = availOf f In bi B.body.length := by
-  simp only [availOf, hB, defsBefore, defsFrom, List.take_of_length_le hj, List.take_length,
-    List.drop_of_length_le hj, List.drop_length]
+/-- Membership in the available values, decided by `Avail.mem`. -/
+theorem mem_avail {f : Clif.Function} (hB : f.blocks[bi]? = some B) (hD : DefsAt ctx B L.start)
+    {j x : Nat} : x ∈ availOf f In bi j ↔ (Avail.of B L In bi).mem ctx j x = true := by
+  have e : x ∈ availOf f In bi j ↔
+      x ∈ B.params.map (·.1) ++ In.getD bi [] ++ defsBefore B j ∧ x ∉ defsFrom B j := by
+    rw [mem_availOf]
+    exact ⟨fun ⟨B', hB', h⟩ => by rw [hB] at hB'; cases hB'; exact h, fun h => ⟨B, hB, h⟩⟩
+  rw [e]
+  simp only [List.mem_append, defsBefore, defsFrom, mem_flatMap_take, mem_flatMap_drop, Avail.mem]
+  cases hp : (Avail.of B L In bi).dpos ctx x with
+  | some k =>
+    obtain ⟨stm, hs, hx⟩ := (dpos_iff hD).mp hp
+    have uniq : ∀ (k' : Nat) (s' : Clif.Stmt), B.body[k']? = some s' → x ∈ s'.results → k' = k :=
+      fun k' s' h1 h2 => by
+        have := (dpos_iff (In := In) (bi := bi) hD).mpr ⟨s', h1, h2⟩
+        rw [hp] at this; cases this; rfl
+    simp only [decide_eq_true_eq]
+    constructor
+    · rintro ⟨-, hnot⟩
+      apply Classical.byContradiction
+      intro hkj
+      exact hnot ⟨k, stm, by omega, hs, hx⟩
+    · intro hkj
+      refine ⟨Or.inr ⟨k, stm, hkj, hs, hx⟩, ?_⟩
+      rintro ⟨k', s', hk', hs', hx'⟩
+      have := uniq k' s' hs' hx'
+      omega
+  | none =>
+    have hn : ∀ (k' : Nat) (s' : Clif.Stmt), B.body[k']? = some s' → x ∉ s'.results :=
+      fun k' s' h1 h2 => by
+        have := (dpos_iff (In := In) (bi := bi) hD).mpr ⟨s', h1, h2⟩
+        rw [hp] at this; cases this
+    rw [mem_ent]
+    simp only [List.mem_append]
+    constructor
+    · rintro ⟨h | ⟨k', s', -, hs', hx'⟩, -⟩
+      · exact h
+      · exact absurd hx' (hn k' s' hs')
+    · intro h
+      exact ⟨Or.inl h, fun ⟨k', s', _, hs', hx'⟩ => hn k' s' hs' hx'⟩
 
-theorem availOf_sub {f : Clif.Function} {In : List (List Clif.ValueId)} {bi j : Nat}
-    {B : Clif.Block} (hB : f.blocks[bi]? = some B) {x : Clif.ValueId}
-    (hx : x ∈ availOf f In bi j) : x ∈ availOf f In bi B.body.length := by
-  obtain ⟨B', hB', hm, -⟩ := mem_availOf.mp hx
-  rw [hB] at hB'; cases hB'
-  rw [mem_availOf]
-  refine ⟨B, hB, ?_, by simp [defsFrom]⟩
-  simp only [List.mem_append] at hm ⊢
-  rcases hm with (h | h) | h
+theorem mem_iff_first (hD : DefsAt ctx B L.start) {j x : Nat} :
+    (Avail.of B L In bi).mem ctx j x = true ↔
+      (Avail.of B L In bi).mem ctx B.body.length x = true ∧ (Avail.of B L In bi).first ctx x ≤ j := by
+  simp only [Avail.mem, Avail.first]
+  cases hp : (Avail.of B L In bi).dpos ctx x with
+  | some k =>
+    have := dpos_lt hD hp
+    simp only [decide_eq_true_eq]; omega
+  | none => simp
+
+/-- A value available somewhere in block `bi` is a parameter, an entry value or a result. -/
+theorem mem_cand {f : Clif.Function} (hB : f.blocks[bi]? = some B) {j x : Nat}
+    (hx : x ∈ availOf f In bi j) :
+    x ∈ (Avail.of B L In bi).ent ++ B.body.flatMap (·.results) := by
+  simp only [availOf, hB, List.mem_filter, List.mem_append, defsBefore, mem_flatMap_take] at hx
+  simp only [Avail.of, List.mem_append]
+  rcases hx.1 with (h | h) | ⟨k, s, -, hs, hk⟩
   · exact .inl (.inl h)
   · exact .inl (.inr h)
-  · right
-    simp only [defsBefore, List.mem_flatMap] at h ⊢
-    obtain ⟨stm, hs, hx⟩ := h
-    exact ⟨stm, by rw [List.take_length]; exact List.mem_of_mem_take hs, hx⟩
+  · exact .inr (List.mem_flatMap.mpr ⟨s, List.mem_of_getElem? hs, hk⟩)
 
-theorem closedOk_sound {ctx : Ctx} {A : List Clif.ValueId} (h : closedOk ctx A = true)
-    {x : Clif.ValueId} (hx : x ∈ A) {d : Nat} {info : IInfo} {cl : Clif.Inst}
+end
+
+theorem chain_mono {α : Type} {l : List α} {lo hi : α → Nat}
+    (h : ∀ k a, l[k]? = some a → lo a ≤ hi a ∧ ∀ b, l[k + 1]? = some b → hi a ≤ lo b) :
+    ∀ (d s : Nat) (a b : α), l[s]? = some a → l[s + d]? = some b → lo a ≤ lo b ∧ hi a ≤ hi b := by
+  intro d
+  induction d with
+  | zero =>
+    intro s a b ha hb
+    rw [Nat.add_zero, ha] at hb; cases hb; exact ⟨Nat.le_refl _, Nat.le_refl _⟩
+  | succ d ih =>
+    intro s a b ha hb
+    have hlt : s + d < l.length := by have := lt_of_getElem? hb; omega
+    obtain ⟨c, hc⟩ : ∃ c, l[s + d]? = some c := ⟨_, List.getElem?_eq_getElem hlt⟩
+    obtain ⟨h1, h2⟩ := ih s a c ha hc
+    obtain ⟨h3, h4⟩ := h (s + d) c hc
+    have h5 := h4 b (by rw [← hb, Nat.add_assoc])
+    have h6 := (h (s + (d + 1)) b hb).1
+    omega
+
+/-- What `certBlockOk` checks, as propositions. -/
+theorem certBlockOk_spec {f : Clif.Function} {ctx : Ctx} {st0 : LState} {gn : Nat → Nat}
+    {fb : Array Clif.Block} {bla : Array BLow} {In : Array (List Clif.ValueId)} {bi : Nat}
+    {B : Clif.Block} {L : BLow} (h : certBlockOk f ctx st0 gn fb bla In bi B L = true) :
+    L.sl.length = B.body.length ∧ DefsAt ctx B L.start ∧
+    (∀ k stm, B.body[k]? = some stm → stm.results.Nodup ∧
+      ∀ y ∈ instArgs stm.inst, (Avail.of B L In bi).mem ctx k y = true) ∧
+    (∀ k sl, L.sl[k]? = some sl → sl.st.nextVreg ≤ sl.st'.nextVreg ∧
+      ∀ sl', L.sl[k + 1]? = some sl' → sl.st'.nextVreg ≤ sl'.st.nextVreg) ∧
+    (∀ x ∈ (Avail.of B L In bi).ent ++ B.body.flatMap (·.results), x < st0.nextVreg ∧
+      (∀ y ∈ defArgs ctx x, (Avail.of B L In bi).mem ctx B.body.length y = true ∧
+        (Avail.of B L In bi).first ctx y ≤ (Avail.of B L In bi).first ctx x) ∧
+      (∀ sl last, L.sl[(Avail.of B L In bi).first ctx x]? = some sl →
+        L.sl[B.body.length - 1]? = some last →
+        gn x < sl.st.nextVreg ∨ last.st'.nextVreg ≤ gn x) ∧
+      ¬ (L.tst.nextVreg ≤ gn x ∧ gn x < L.tst'.nextVreg)) ∧
+    (∀ y ∈ termArgs (abiTerm f B.term), (Avail.of B L In bi).mem ctx B.body.length y = true) ∧
+    (∀ b ∈ edgeIds B.term, blockIdx? f b ≠ some 0 ∧
+      edgeOk f ctx gn fb bla In (Avail.of B L In bi) B.body.length b = true) := by
+  simp only [certBlockOk, Bool.and_eq_true, decide_eq_true_eq] at h
+  obtain ⟨⟨⟨⟨hlen, hst⟩, hcand⟩, hterm⟩, hedge⟩ := h
+  have hk : ∀ k stm, B.body[k]? = some stm → ∃ sl, L.sl[k]? = some sl ∧
+      (stm.results.all (fun r => decide (ctx.defInst? r = some (L.start + k))) &&
+        decide stm.results.Nodup && (instArgs stm.inst).all ((Avail.of B L In bi).mem ctx k) &&
+        decide (sl.st.nextVreg ≤ sl.st'.nextVreg) &&
+        (match L.sl[k + 1]? with
+          | some sl' => decide (sl.st'.nextVreg ≤ sl'.st.nextVreg)
+          | none => true)) = true := by
+    intro k stm hs
+    have hkl := lt_of_getElem? hs
+    obtain ⟨sl, hsl⟩ : ∃ sl, L.sl[k]? = some sl := ⟨_, List.getElem?_eq_getElem (by omega)⟩
+    have := all_range hst hkl
+    simp only [Avail.of_body, List.getElem?_toArray, hs, hsl] at this
+    exact ⟨sl, hsl, this⟩
+  refine ⟨hlen, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · intro k stm hs r hr
+    obtain ⟨sl, -, h⟩ := hk k stm hs
+    simp only [Bool.and_eq_true, List.all_eq_true, decide_eq_true_eq] at h
+    exact h.1.1.1.1 r hr
+  · intro k stm hs
+    obtain ⟨sl, -, h⟩ := hk k stm hs
+    simp only [Bool.and_eq_true, List.all_eq_true, decide_eq_true_eq] at h
+    exact ⟨h.1.1.1.2, h.1.1.2⟩
+  · intro k sl hsl
+    have hkl := lt_of_getElem? hsl
+    obtain ⟨stm, hs⟩ : ∃ stm, B.body[k]? = some stm := ⟨_, List.getElem?_eq_getElem (by omega)⟩
+    obtain ⟨sl', hsl', h⟩ := hk k stm hs
+    have : sl' = sl := by rw [hsl] at hsl'; exact (Option.some.inj hsl').symm
+    subst this
+    simp only [Bool.and_eq_true, decide_eq_true_eq] at h
+    refine ⟨h.1.2, fun sl' h' => ?_⟩
+    have := h.2
+    simp only [h', decide_eq_true_eq] at this
+    exact this
+  · intro x hx
+    have := List.all_eq_true.mp hcand x hx
+    simp only [Bool.and_eq_true, decide_eq_true_eq, List.all_eq_true, Bool.not_eq_true',
+      Bool.and_eq_false_iff, decide_eq_false_iff_not] at this
+    obtain ⟨⟨⟨h1, h2⟩, h3⟩, h4⟩ := this
+    refine ⟨h1, h2, fun sl last hsl hlast => ?_, fun hc => ?_⟩
+    · simp only [List.getElem?_toArray, hsl, hlast, Bool.or_eq_true, decide_eq_true_eq] at h3
+      exact h3
+    · rcases h4 with h | h
+      · exact h hc.1
+      · exact h hc.2
+  · intro y hy
+    exact List.all_eq_true.mp hterm y hy
+  · intro b hb
+    have := List.all_eq_true.mp hedge b hb
+    simp only [Bool.and_eq_true, decide_eq_true_eq] at this
+    exact this
+
+theorem contains_false {l : List Nat} {x : Nat} : l.contains x = false ↔ x ∉ l := by
+  rw [Bool.eq_false_iff, ne_eq, List.contains_iff_mem]
+
+theorem defArgs_eq {ctx : Ctx} {x d : Nat} {info : IInfo} {cl : Clif.Inst}
     (hd : ctx.defInst? x = some d) (hi : ctx.insts[d]? = some info) (hc : info.clif = some cl) :
-    ∀ y ∈ instArgs cl, y ∈ A := by
-  have := List.all_eq_true.mp h x hx
-  simp only [hd, hi, hc, List.all_eq_true, decide_eq_true_eq] at this
-  exact this
+    defArgs ctx x = instArgs cl := by
+  simp only [defArgs, hd, hi, hc]
 
-theorem edgeOk_sound {f : Clif.Function} {ctx : Ctx} {gn : Nat → Nat}
-    {In : List (List Clif.ValueId)} {Aend : List Clif.ValueId} {b : Clif.BlockId}
-    (h : edgeOk f ctx gn In Aend b = true) :
+theorem mem_ent_zero {f : Clif.Function} {In : Array (List Clif.ValueId)} {bi : Nat}
+    {B : Clif.Block} {L : BLow} (hB : f.blocks[bi]? = some B) {x : Nat}
+    (hx : x ∈ availOf f In bi 0) : x ∈ (Avail.of B L In bi).ent := by
+  obtain ⟨B', hB', hm, -⟩ := mem_availOf.mp hx
+  rw [hB] at hB'; cases hB'
+  simpa [defsBefore, Avail.of_ent] using hm
+
+theorem edgeOk_sound {f : Clif.Function} {ctx : Ctx} {gn : Nat → Nat} {bl : List BLow}
+    {In : Array (List Clif.ValueId)} {a : Avail} {n : Nat} {b : Clif.BlockId}
+    (hlen : bl.length = f.blocks.length)
+    (hD : ∀ (tl : Nat) (TB : Clif.Block) (TL : BLow), f.blocks[tl]? = some TB → bl[tl]? = some TL →
+      DefsAt ctx TB TL.start)
+    (h : edgeOk f ctx gn f.blocks.toArray bl.toArray In a n b = true) :
     ∀ tl TB, blockIdx? f b = some tl → f.blocks[tl]? = some TB →
       (TB.params.map (·.1)).Nodup ∧
       (∀ x ∈ availOf f In tl 0, x ∉ TB.params.map (·.1) → ∀ d info cl, ctx.defInst? x = some d →
         ctx.insts[d]? = some info → info.clif = some cl → ∀ y ∈ instArgs cl,
           y ∉ TB.params.map (·.1)) ∧
       ∀ x ∈ availOf f In tl 0, (x ∈ TB.params.map (·.1) ∧ ctx.defInst? x = none) ∨
-        (x ∉ TB.params.map (·.1) ∧ x ∈ Aend ∧ gn x ∉ TB.params.map (·.1)) := by
+        (x ∉ TB.params.map (·.1) ∧ a.mem ctx n x = true ∧ gn x ∉ TB.params.map (·.1)) := by
   intro tl TB htl hTB
-  simp only [edgeOk, htl, hTB, Bool.and_eq_true, decide_eq_true_eq, List.all_eq_true,
-    Bool.or_eq_true] at h
-  obtain ⟨⟨hnd, hp⟩, hx⟩ := h
+  obtain ⟨TL, hTL⟩ : ∃ TL, bl[tl]? = some TL :=
+    ⟨_, List.getElem?_eq_getElem (by have := lt_of_getElem? hTB; omega)⟩
+  have hDt := hD tl TB TL hTB hTL
+  simp only [edgeOk, htl, List.getElem?_toArray, hTB, hTL, Bool.and_eq_true, decide_eq_true_eq,
+    List.all_eq_true, Bool.or_eq_true, Bool.not_eq_true', Std.HashSet.contains_ofList,
+    List.contains_iff_mem, contains_false] at h
+  obtain ⟨hnd, hx⟩ := h
+  have hA : ∀ x ∈ availOf f In tl 0, _ := fun x hxA =>
+    (hx x (mem_ent_zero hTB hxA)).resolve_left (by rw [(mem_avail hTB hDt).mp hxA]; simp)
   refine ⟨hnd, fun x hxA hxp d info cl hd hi hc y hy => ?_, fun x hxA => ?_⟩
-  · have := hp x hxA
-    simp only [hxp, hd, hi, hc, List.all_eq_true, decide_eq_true_eq] at this
-    exact (this.resolve_left id) y hy
-  rcases hx x hxA with h | h
-  · exact .inl h
-  · exact .inr ⟨h.1.1, h.1.2, h.2⟩
+  · rcases (hA x hxA).1 with h | h
+    · exact absurd h hxp
+    · exact h y (by rw [defArgs_eq hd hi hc]; exact hy)
+  · rcases (hA x hxA).2 with h | ⟨⟨h1, h2⟩, h3⟩
+    · exact .inl h
+    · exact .inr ⟨h1, h2, h3⟩
 
 theorem cert_of_ok {f : Clif.Function} {ctx : Ctx} {st0 : LState} {gn : Nat → Nat}
-    {bl : List BLow} {In : List (List Clif.ValueId)} (hlen : bl.length = f.blocks.length)
+    {bl : List BLow} {In : Array (List Clif.ValueId)} (hlen : bl.length = f.blocks.length)
     (h : certOk f ctx st0 gn bl In = true) : Cert f ctx st0 gn bl (availOf f In) := by
   simp only [certOk, Bool.and_eq_true] at h
   obtain ⟨⟨⟨hentry, hblocks⟩, hres⟩, hpar⟩ := h
   have hL : ∀ (bi : Nat) (B : Clif.Block), f.blocks[bi]? = some B → ∃ L, bl[bi]? = some L := by
     intro bi B hB
-    have := lt_of_getElem? hB
-    exact ⟨bl[bi]'(by omega), List.getElem?_eq_getElem _⟩
-  have hblk : ∀ (bi : Nat) (B : Clif.Block) (L : BLow), f.blocks[bi]? = some B → bl[bi]? = some L →
-      certBlockOk f ctx st0 gn In bi B L = true := by
+    exact ⟨_, List.getElem?_eq_getElem (by have := lt_of_getElem? hB; omega)⟩
+  have hblk : ∀ (bi : Nat) (B : Clif.Block) (L : BLow), f.blocks[bi]? = some B →
+      bl[bi]? = some L → certBlockOk f ctx st0 gn f.blocks.toArray bl.toArray In bi B L = true := by
     intro bi B L hB hL
-    have := all_range hblocks (lt_of_getElem? hB)
-    simpa [hB, hL] using this
-  have hparts : ∀ (bi : Nat) (B : Clif.Block) (L : BLow), f.blocks[bi]? = some B →
-      bl[bi]? = some L → _ := fun bi B L hB hL => by
-    have h := hblk bi B L hB hL
-    unfold certBlockOk at h
-    simp only [Bool.and_eq_true] at h
-    exact h
+    have := all_range hblocks (by simpa using lt_of_getElem? hB)
+    simpa [List.getElem?_toArray, hB, hL] using this
+  have hS := fun bi B L hB hL => certBlockOk_spec (hblk bi B L hB hL)
+  have hD : ∀ (tl : Nat) (TB : Clif.Block) (TL : BLow), f.blocks[tl]? = some TB →
+      bl[tl]? = some TL → DefsAt ctx TB TL.start := fun tl TB TL h1 h2 => (hS tl TB TL h1 h2).2.1
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · -- small
     intro bi j x hx
-    cases hB : f.blocks[bi]? with
-    | none => simp [availOf, hB] at hx
-    | some B =>
-      obtain ⟨L, hL⟩ := hL bi B hB
-      obtain ⟨⟨⟨⟨⟨hs, -⟩, -⟩, -⟩, -⟩, -⟩ := hparts bi B L hB hL
-      have := List.all_eq_true.mp hs x (availOf_sub hB hx)
-      simpa using this
+    obtain ⟨B, hB, -⟩ := mem_availOf.mp hx
+    obtain ⟨L, hL⟩ := hL bi B hB
+    exact ((hS bi B L hB hL).2.2.2.2.1 x (mem_cand hB hx)).1
   · -- entry
     intro B hB
-    simp only [hB, Bool.and_eq_true, decide_eq_true_eq, List.all_eq_true] at hentry
-    exact ⟨hentry.1, fun x hx => hentry.2 x hx⟩
+    obtain ⟨L, hL⟩ := hL 0 B hB
+    simp only [List.getElem?_toArray, hB, hL, Bool.and_eq_true, decide_eq_true_eq,
+      List.all_eq_true, Bool.or_eq_true, Bool.not_eq_true'] at hentry
+    refine ⟨hentry.1, fun x hx => ?_⟩
+    rcases hentry.2 x (mem_ent_zero hB hx) with h | h
+    · rw [(mem_avail hB (hD 0 B L hB hL)).mp hx] at h; cases h
+    · exact h
   · -- closed
     intro bi j x d info cl hx hd hi hc _ y hy
-    cases hB : f.blocks[bi]? with
-    | none => simp [availOf, hB] at hx
-    | some B =>
-      obtain ⟨L, hL⟩ := hL bi B hB
-      obtain ⟨⟨⟨⟨⟨-, hcl⟩, -⟩, -⟩, -⟩, -⟩ := hparts bi B L hB hL
-      by_cases hj : j ≤ B.body.length
-      · exact closedOk_sound (all_range hcl (by omega)) hx hd hi hc y hy
-      · rw [availOf_ge hB (by omega)] at hx ⊢
-        exact closedOk_sound (all_range hcl (by omega)) hx hd hi hc y hy
+    obtain ⟨B, hB, -⟩ := mem_availOf.mp hx
+    obtain ⟨L, hL⟩ := hL bi B hB
+    have hDb := hD bi B L hB hL
+    have hm := (mem_avail hB hDb).mp hx
+    have := ((hS bi B L hB hL).2.2.2.2.1 x (mem_cand hB hx)).2.1 y
+      (by rw [defArgs_eq hd hi hc]; exact hy)
+    have h1 := (mem_iff_first hDb).mp hm
+    exact (mem_avail hB hDb).mpr ((mem_iff_first hDb).mpr ⟨this.1, by omega⟩)
   · -- statements
     intro bi B L j stm sl hB hL hs hsl
-    obtain ⟨⟨⟨⟨⟨-, -⟩, hst⟩, -⟩, -⟩, -⟩ := hparts bi B L hB hL
-    have := all_range hst (lt_of_getElem? hs)
-    simp only [hs, hsl, Bool.and_eq_true, List.all_eq_true, decide_eq_true_eq, Bool.or_eq_true,
-      Bool.not_eq_true', Bool.and_eq_false_iff, decide_eq_false_iff_not] at this
-    obtain ⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩ := this
-    refine ⟨h1, fun r hr => h2 r hr, h3, fun x hx => h4 x hx, fun x hx hc => ?_⟩
-    rcases h5 x hx with h | h
-    · exact h hc.1
-    · exact h hc.2
+    have hDb := hD bi B L hB hL
+    obtain ⟨hsl_len, -, hst, hch, hcand, -, -⟩ := hS bi B L hB hL
+    obtain ⟨hnd, hargs⟩ := hst j stm hs
+    have hj := lt_of_getElem? hs
+    refine ⟨fun y hy => (mem_avail hB hDb).mpr (hargs y hy),
+      fun r hr => ⟨?_, hDb j stm hs r hr⟩, hnd, fun x hx => ?_, fun x hx hc => ?_⟩
+    · intro hrA
+      have := (mem_avail hB hDb).mp hrA
+      simp only [Avail.mem, (dpos_iff hDb).mpr ⟨stm, hs, hr⟩, decide_eq_true_eq] at this
+      omega
+    · have := (mem_avail hB hDb).mp hx
+      simp only [Avail.mem] at this
+      cases hp : (Avail.of B L In bi).dpos ctx x with
+      | some k =>
+        rw [hp] at this
+        simp only [decide_eq_true_eq] at this
+        by_cases hk : k < j
+        · left
+          exact (mem_avail hB hDb).mpr (by simp only [Avail.mem, hp, decide_eq_true_eq]; exact hk)
+        · right
+          obtain ⟨stm', hs', hx'⟩ := (dpos_iff hDb).mp hp
+          have : k = j := by omega
+          subst this
+          rw [hs] at hs'; cases hs'; exact hx'
+      | none =>
+        rw [hp] at this
+        left
+        exact (mem_avail hB hDb).mpr (by simp only [Avail.mem, hp]; exact this)
+    · -- clobber: the statements' fresh ranges increase
+      have hm := (mem_avail hB hDb).mp hx
+      have hfirst := ((mem_iff_first hDb).mp hm).2
+      obtain ⟨-, -, hclob, -⟩ := hcand x (mem_cand hB hx)
+      obtain ⟨sls, hsls⟩ : ∃ a, L.sl[(Avail.of B L In bi).first ctx x]? = some a :=
+        ⟨_, List.getElem?_eq_getElem (by omega)⟩
+      obtain ⟨last, hlast⟩ : ∃ a, L.sl[B.body.length - 1]? = some a :=
+        ⟨_, List.getElem?_eq_getElem (by omega)⟩
+      have hm1 := chain_mono (lo := fun a : SLow => a.st.nextVreg)
+        (hi := fun a : SLow => a.st'.nextVreg) hch (j - (Avail.of B L In bi).first ctx x) _ sls sl
+        hsls (by rw [Nat.add_sub_cancel' hfirst]; exact hsl)
+      have hm2 := chain_mono (lo := fun a : SLow => a.st.nextVreg)
+        (hi := fun a : SLow => a.st'.nextVreg) hch (B.body.length - 1 - j) j sl last hsl
+        (by rw [Nat.add_sub_cancel' (by omega)]; exact hlast)
+      rcases hclob sls last hsls hlast with h | h <;> omega
   · -- no branch to the entry
-    intro bi B hB bc hbc
+    intro bi B hB b hb
     obtain ⟨L, hL⟩ := hL bi B hB
-    obtain ⟨-, hd⟩ := hparts bi B L hB hL
-    have := List.all_eq_true.mp hd bc hbc
-    simp only [Bool.and_eq_true, decide_eq_true_eq] at this
-    exact this.1
+    exact ((hS bi B L hB hL).2.2.2.2.2.2 b hb).1
   · -- terminators and edges
     intro bi B L hB hL
-    obtain ⟨⟨⟨-, ht⟩, hnc⟩, hd⟩ := hparts bi B L hB hL
-    refine ⟨fun y hy => by simpa using List.all_eq_true.mp ht y hy, fun x hx hc => ?_,
-      fun bc hbc => ?_⟩
-    · have := List.all_eq_true.mp hnc x hx
-      simp only [Bool.not_eq_true', Bool.and_eq_false_iff, decide_eq_false_iff_not] at this
-      rcases this with h | h
-      · exact h hc.1
-      · exact h hc.2
-    · have := List.all_eq_true.mp hd bc hbc
-      simp only [Bool.and_eq_true] at this
-      exact edgeOk_sound this.2
+    have hDb := hD bi B L hB hL
+    obtain ⟨-, -, -, -, hcand, hterm, hedge⟩ := hS bi B L hB hL
+    refine ⟨fun y hy => (mem_avail hB hDb).mpr (hterm y hy), fun x hx => ?_, fun b hb => ?_⟩
+    · exact (hcand x (mem_cand hB hx)).2.2.2
+    · intro tl TB htl hTB
+      obtain ⟨h1, h2, h3⟩ := edgeOk_sound hlen hD (hedge b hb).2 tl TB htl hTB
+      refine ⟨h1, h2, fun x hx => ?_⟩
+      rcases h3 x hx with h | ⟨h1, h2, h3⟩
+      · exact .inl h
+      · exact .inr ⟨h1, (mem_avail hB hDb).mpr h2, h3⟩
   · -- result types
     intro ii info hi m r t hr ht
     have := all_range hres (Array.getElem?_eq_some_iff.mp hi).1
@@ -634,8 +878,8 @@ theorem lowering_of_check {f : Clif.Function} {vc : VCode} (h : lowerCheck f vc 
     · cases h
     · rename_i bl hl
       simp only [Bool.and_eq_true] at h
-      have hS := lowerShape_of_ok (gn := gnOf st0.nextVreg (aliasOf f bl)) hb hl
-        (fun n hn => gnOf_temp hn) h.1.1.1
+      have hS := lowerShape_of_ok (gn := gnAt (gnTable st0.nextVreg (aliasOf f bl))) hb hl
+        (fun n hn => gnAt_temp hn) h.1.1.1
       exact ⟨ctx, st0, _, _, bl, _, hS, cert_of_ok hS.len h.1.1.2, brIdx_of_ok h.1.2⟩
 
 /-- A function without `try_call` lowers to VCode without `tryCall` (`lowerCheck`'s last

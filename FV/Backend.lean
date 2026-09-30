@@ -82,6 +82,27 @@ def verifiable (f : Clif.Function) : Bool :=
     f.blocks.all (fun B => B.body.all (fun st => match st.inst with
       | .callIndirect .. | .funcAddr .. => false | _ => true))
 
+/-- The lowering validator's size measure: blocks × values. `lowerCheck`'s dataflow keeps a
+table of that size, and its certificate check visits the entry values of every block once and
+those of the target block at every edge; the rest of it is (near-)linear in the function. -/
+def validationCost (f : Clif.Function) : Nat := f.blocks.length * f.freshValue
+
+/-- The validation budget (`docs/USAGE.md`): a function inside the theorem's scope whose
+`validationCost` exceeds it is compiled but not validated (`lowerCheck` does not run), and
+reported unverified ("validation budget"). It bounds the validator's time and memory on
+pathological inputs (at the budget: about 20 MB for the dataflow table and a few seconds);
+it is far above every function of `examples/` (the largest, a survey test function with 325
+blocks and 1057 values, costs 343525 and validates in about 0.2 s). -/
+def validationBudget : Nat := 20000000
+
+/-- The reason `f` is not validated although inside the theorem's scope: over the validation
+budget. -/
+def overBudget? (f : Clif.Function) : Option String :=
+  let c := validationCost f
+  if c > validationBudget then
+    some s!"{f.blocks.length} blocks × {f.freshValue} values = {c} > {validationBudget}, lowerCheck not run"
+  else none
+
 /-- Compile one function with the stack-slot allocator (`k` = index in the file, for local
 labels); also returns the ISLE rules that fired. -/
 def compileFunction (k : Nat) (f : Clif.Function) : Except String (FnAsm × Array Isle.RuleId) := do
@@ -109,6 +130,9 @@ structure FileAsm where
   unsupported : List (String × String)
   /-- Compiled functions outside the end-to-end theorem (`unverifiedReason?`), with the reason. -/
   unverified : List (String × String) := []
+  /-- Compiled functions inside the theorem's scope that were not validated because they are
+  over the validation budget (`overBudget?`), with the reason. -/
+  unvalidated : List (String × String) := []
   /-- Distinct ISLE rules fired while compiling the file (ascending ids). -/
   rules : List Isle.RuleId
   /-- Unwind rows of each compiled function (`unwindRows`, unverified; for `.eh_frame`). -/
@@ -183,7 +207,8 @@ def compileFileWith {m : Type → Type} [Monad m]
     pf.funcs.toArray.map fun p => (p.name, match p.func with
       | .error e => .error e.toString
       | .ok f => (lowerChecked f
-          ((unverifiedReason? pf f).isSome || (preUnverified.lookup p.name).isSome).not
+          ((unverifiedReason? pf f).isSome || (preUnverified.lookup p.name).isSome ||
+            (overBudget? f).isSome).not
           ).map (f, ·))
   let vcs := lowered.filterMap fun (_, r) => r.toOption.map (·.2)
   let afs ← alloc vcs
@@ -223,7 +248,13 @@ def compileFileWith {m : Type → Type} [Monad m]
         ((preUnverified.lookup name).orElse (fun _ => unverifiedReason? pf f)).map (name, ·)
       else none
     | .error _ => none
-  pure { text, funcs, unsupported := bad.toList, unverified,
+  let unvalidated := lowered.toList.filterMap fun (name, r) => match r with
+    | .ok (f, _) =>
+      if funcs.any (·.name == name) && !unverified.any (·.1 == name) then
+        (overBudget? f).map (name, ·)
+      else none
+    | .error _ => none
+  pure { text, funcs, unsupported := bad.toList, unverified, unvalidated,
          rules := rules.toArray.qsort (· < ·) |>.toList,
          unwind := unwind.toList.filter fun (n, _) => funcs.any (·.name == n),
          lsda := lsda.toList.filter fun (n, _) => funcs.any (·.name == n) }

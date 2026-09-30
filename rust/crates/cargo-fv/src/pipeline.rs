@@ -509,6 +509,8 @@ fn classify(cfg: &Config, stderr: &str, ok: bool, out: &Path, symbol: &str) -> C
         }
         if let Some((_, why)) = l.split_once(": compiled, unverified (outside backend_correct): ") {
             unverified.get_or_insert(why.to_string());
+        } else if let Some((_, why)) = l.split_once(": compiled, unverified (validation budget): ") {
+            unverified.get_or_insert(format!("validation budget: {why}"));
         } else if l.contains("fired outside the emitter-subset closure") {
             let r = strip(l);
             outside_closure.get_or_insert(format!("ISLE {r}"));

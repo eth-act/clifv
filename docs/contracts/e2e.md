@@ -298,19 +298,27 @@ call: `LowerShape.valsBelow` + `st0.nextVreg ≤ st.nextVreg`. Key steps:
 **`lowerCheck f vc`** (`DriverCheck.lean`): runs `buildCtx f`, re-runs the ISLE calls the way
 `lowerFunction` makes them (`lowBlocks`: statement calls from the previous state with nothing
 emitted, terminator calls in the terminator context, the same edge-block labels), computes the
-alias resolution `gn` (`gnOf`, identity on temporaries) and its class-preserving renaming
-`renOf gn`, the available values `A` by a must-dataflow (`inFix`/`availOf`; a value stays
-available at a block entry only if the operands of its definition are available there too, so
-a block without a path from the entry, e.g. cg_clif's dead cleanup blocks, does not claim
-values computed from its own results — untrusted, the certificate is checked), and decides every
+alias resolution `gn` (`gnTable`/`gnAt`, identity on temporaries) and its class-preserving
+renaming `renOf gn`, the available values `A` by a must-dataflow (`inFix`/`availOf`; a value
+stays available at a block entry only if the operands of its definition are available there
+too, so a block without a path from the entry, e.g. cg_clif's dead cleanup blocks, does not
+claim values computed from its own results — an untrusted worklist over (block, value) pairs,
+the certificate is checked), and decides every
 field of `LowerShape` and `Cert` that is not true by construction: `CtxInv` (incl. `defClif`,
 and `resTysE`/`valTyE`: result and value types `i8..i64`, M4Excl),
 `ValsBelow` (`valReg.size ≤ nextVreg`), the VCode blocks are exactly the renamed recorded code,
 labels, block parameters, branch arguments, edge blocks, the terminator slot placeholder, and
 the certificate (operands available, results fresh and uniquely defined, no available value's
 register written by a statement's lowering, closure under definitions, edges, result and
-parameter types for `FrameTyped`). Soundness: `lowering_of_check` (construction lemmas
-`lowStmts_spec`/`lowBlocks_spec` + one lemma per check).
+parameter types for `FrameTyped`). The certificate check is near-linear: membership in
+`availOf f In bi j` is decided in constant time (`Avail.mem`: a hash set of the block's entry
+values, a value's defining statement from `ctx.defInst?`, exact once the check has seen that
+every statement's results are defined by its instruction, `DefsAt`/`mem_avail`), and the
+conditions on the values available before the statements of a block are checked once per
+value, at the first statement it is available before (the clobber condition through the
+increasing fresh-vreg ranges of the statements, `chain_mono`). Soundness: `lowering_of_check`
+(construction lemmas `lowStmts_spec`/`lowBlocks_spec` + one lemma per check; `cert_of_ok`
+holds for any entry values `In`, so the dataflow is not part of it).
 
 **`prepCheck vc vcp`** (`PrepareCheck.lean`): every live block of `vc` (`liveOf`: reachable
 from the entry, as `prepare` computes; untrusted, the check requires the entry to be live and
@@ -338,8 +346,17 @@ validators accept 913/913 functions inside the theorem (with `brIdxOk`: no `br_t
 `Corpus__bumpAll_w0/_w1`, `Corpus__bumpFirst`; still compiled, flagged unverified). Filetests after
 #5/#6 (M4Ctl, `scripts/lean-backend-filetests.sh`): corpus 114/114, extrt 22/22, runtests 3085
 pass / 0 fail, all agreeing with Cranelift-native. Cost on the corpus (161 functions): `lowerFunction` 175 ms, `lowerCheck`
-661 ms, `prepare` 2 ms, `prepCheck` 3 ms (the lowering validator re-runs isel and its checks are
-quadratic in the values of a block; functions outside the theorem are not validated).
+661 ms, `prepare` 2 ms, `prepCheck` 3 ms (the lowering validator re-runs isel; functions outside
+the theorem are not validated). Since the near-linear certificate check (agent/trycall-proof;
+it replaced list-based checks and a round-based dataflow that recomputed predecessor lists per
+value, 23 s per round on a 283-block function): a survey test function with 325 blocks, 1354
+statements and 1057 values, over an hour before, validates in 0.17 s (dataflow 18 ms,
+certificate 16 ms, the rest re-running isel and the shape check); on the corpus and the
+runtests (1105 functions) the new validator computes the same alias resolution and entry
+values and accepts exactly the same functions as the old one. `lean-backend` does not run it on
+functions over the validation budget (`Backend.validationBudget`: blocks × values above
+20000000, 58 times the largest function of `examples/`), which it compiles and reports as
+`compiled, unverified (validation budget)`.
 
 **Functions outside the theorem** (`FV/Backend.lean` `unverifiedReason?`: `try_call_indirect`,
 outside clif-subset-v2 E, more than 8 parameters, calls (also `try_call`s) of functions of the
@@ -375,8 +392,6 @@ extrt and runtests (445 files): no function rejected.
 3. **Scope extensions**: calls between compiled functions (induction on call depth, using
    `backend_correct` of the callee as its callee contract); stack-passed parameters
    (`InSubset.regParams`); memory-access traps (need a fault model).
-4. **Validator cost** on very large functions (quadratic set operations in `lowerCheck`'s
-   certificate checks; hash-set versions with the same soundness statements would remove it).
 
 ## Trusted (not proven)
 
