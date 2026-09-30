@@ -164,6 +164,16 @@ x19–x28 saved by Lean frames between panic and catch). compare.sh SAME vs LLVM
 18/18 debug and release, survey 53/53 debug and release (50 + 3 ignored). With the shipped
 cg_clif: fv-demo 14/18 = plain cg_clif's outcomes (SAME with `BASELINE=cg_clif`), survey
 53/53 = LLVM. Negative control: with the save rows removed, the fv-demo test binary crashes
-(SIGSEGV) during unwinding.
+(SIGSEGV) during unwinding. Cross-check against Cranelift: for `unwind::churn` (fv-demo,
+debug), cg_clif's FDE and the Lean FDE (`llvm-dwarfdump --eh-frame` of the two test
+binaries) give the same rules at the calls: CFA = x29+16, x29/x30 at CFA-16/-8, x19…x28 at
+CFA-96…-24; only the row positions differ (Cranelift saves with `stp` pairs in the prologue,
+the Lean frame with one `stur` per register after `sub sp`). `clif2obj` emits no `.eh_frame`,
+so the comparison uses cg_clif's objects.
+
+**Gates.** filetests corpus 114/114 (extrt 22/22), runtests 4067 pass / 0 fail / 0 disagree;
+encode-check 1132 identical / 0 differ (`.text` unchanged; the objects only gain `.eh_frame`,
+`.rela.eh_frame` and the `.text` section symbol); `lean-e2e-check` 910 accepted / 0 rejected,
+formsCoveredB 910 / 0 not covered; `lake build FV.E2E` and `FV.E2E.OptProven` green.
 
 <!-- STATUS-MARKER -->
