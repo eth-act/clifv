@@ -39,8 +39,12 @@ open Backend
 def usage : String :=
   "usage: lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>] [--dump <dir>] [--regalloc regalloc2|stack|regalloc2-small] [--personality <sym>] [--opt]"
 
+/-- The rules the end-to-end theorem covers: the emitter-subset closure, and the `try_call`
+rules of `lower_branch` (ids 1034 `bl`, 1035 GOT + `blr`: `Backend.Proof.tryRootRule`, proven by
+`tryRulesCorrect`), which are outside the generated closure (its opcodes have no `try_call`). -/
 def closureIds : Std.HashSet Isle.RuleId :=
-  Isle.Aarch64.Closure.rules.foldl (fun s r => s.insert r.rule) {}
+  Isle.Aarch64.Closure.rules.foldl (fun s r => s.insert r.rule) ({} : Std.HashSet Isle.RuleId)
+    |>.insert 1034 |>.insert 1035
 
 structure Opts where
   traps : Option String := none
