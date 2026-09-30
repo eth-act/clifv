@@ -315,8 +315,10 @@ harness appears twice. The landing-pad fallbacks are the price of panic=unwind w
 pads (functions with a `Drop` value live across a call, closures run by `catch_unwind`, …);
 `--panic-abort` avoids them. In the survey, with `--panic-abort` or the shipped cg_clif,
 every function of the nine survey libraries runs Lean code (`cargo fv build --workspace --lib
---no-fallback --panic-abort` passes). Unverified: mostly sret functions (the theorem does not
-cover sret yet), i128 legalisation, and indirect calls. Before panic=unwind (panic=abort,
+--no-fallback --panic-abort` passes). Unverified: landing pads, indirect calls and
+atomics (`sret` functions are verified since agent/sret-proof: survey debug, panic=unwind,
+`cargo fv test --no-run`: 1965 → 2537 verified of 3179, the 652 "sret parameter" functions
+now verified or, 80 of them, reported for their indirect calls; 53/53 tests pass). Before panic=unwind (panic=abort,
 13 fv-demo tests), `--opt-proven-only` (survey 53/53), `--opt` (fv-demo 13/13) and
 `--trap-replaced` (fv-demo 13/13) gave the same test outcomes.
 

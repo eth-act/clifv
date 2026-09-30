@@ -259,6 +259,16 @@ the entry is its own counterpart; successors are reached directly or through an 
 checked (`prepare` drops them, and its edge blocks may reuse their labels). Soundness:
 `prep_sound` (simulation over live blocks; a split edge takes one extra `jump` step).
 
+Results with `sret` (2026-09-30, after merging main with the `i128` legalisation): `lean-e2e-check`
+1076 accepted / 0 rejected / 149 out of scope, `prepCheck` 1076 / 0, `formsCoveredB` 1076 / 0
+not covered (main: 1070; the 6 new are `corpus/clif-regress/sret.clif`: `sret` functions with
+the pointer first, after a normal parameter, and returned from several blocks, and callers of
+`sret` externs — the default corpora contain no other `sret` function). On the Rust fixtures
+(`scripts/rust-clif/fixtures/sret.clif`, `smoke-data/f_crypto.norm.clif`): 20 accepted / 0
+rejected / 0 not covered. Filetests: corpus 114/114, extrt 22/22, runtests 4672 pass / 0 fail /
+0 disagree, `sret.clif` 5/5 agreeing with Cranelift-native; encode-check 1271 identical / 0
+differ.
+
 Results (`lake exe lean-e2e-check`, corpus/clif, corpus/clif/extrt, Cranelift runtests): both
 validators accept 913/913 functions inside the theorem (with `brIdxOk`: no `br_table` rejected);
 19 functions are outside `InSubset`: 14 with more than 8 parameters, and since contract change
