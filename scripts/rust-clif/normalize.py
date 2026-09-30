@@ -13,7 +13,7 @@ Rewrites (each is a pure renaming/inlining, checked by `clif-oracle check` on th
     SYM: the symbol of the corpus function numbered u0:N, else the quoted symbol in the
     comment, else `u0_N`; Cranelift libcalls `%Memcpy sigM` -> `%memcpy(<sigM>)` (the symbol the
     libcall relocates against; the reader would otherwise parse `%Memcpy` as `LibCall`).
-  * `sigM = …` lines are dropped once no `call_indirect sigM` refers to them.
+  * `sigM = …` lines are dropped once no `call_indirect sigM`/`try_call… sigM` refers to them.
   * `gvK = symbol colocated userextnameJ ; allocX` -> `gvK = symbol colocated %allocX`
     (`%data_J` when the comment is not an alloc name, e.g. `; vtable`).
   * comment-only lines are dropped (cg_clif's `; abi …` comments are several KB each).
@@ -86,8 +86,8 @@ def main():
         # the same name per call_indirect site); the readers scope it per FILE, so the
         # merged file has duplicate entities. Per function chunk: dedup the declarations
         # (first wins) and renumber to fresh file-global indices, updating the
-        # `call_indirect sigK` references to match; a declaration no `call_indirect` uses
-        # is dropped.
+        # `call_indirect sigK`/`try_call…, sigK` references to match; a declaration neither
+        # uses is dropped.
         chunks = []
         cur = []
         for l in body:
@@ -111,7 +111,7 @@ def main():
                     gcount += 1
             used_here = set()
             for l in ch:
-                if "call_indirect" in l:
+                if "call_indirect" in l or "try_call" in l:
                     for nm2 in re.findall(r"\b(sig\d+)\b", l):
                         used_here.add(local_g.get(nm2, nm2))
             decl_seen = set()

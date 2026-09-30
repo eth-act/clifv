@@ -279,6 +279,65 @@ inductive Inst where
   | symbolValue (ty : Ty) (gv : Nat)
   deriving DecidableEq, Repr, Inhabited
 
+/-- An argument of a `try_call` successor block call: a value, the `i`-th return value of the
+call (`retN`, normal-return successor only) or the `i`-th exception payload (`exnN`, handler
+successors only; `x0`/`x1` on aarch64). -/
+inductive TryArg where
+  | val (v : ValueId)
+  | ret (i : Nat)
+  | exn (i : Nat)
+  deriving DecidableEq, Repr, Inhabited
+
+/-- A successor of a `try_call`: a block with `TryArg` arguments. -/
+structure TryDest where
+  block : BlockId
+  args : List TryArg := []
+  deriving DecidableEq, Repr, Inhabited
+
+/-- An item of an exception table (Cranelift 0.136.1 `ExceptionTableItem`): `tagN: dest`,
+`default: dest`, or `context vN` (a dynamic context value for the unwinder). -/
+inductive ExnItem where
+  | tag (n : Nat) (dest : TryDest)
+  | default (dest : TryDest)
+  | context (v : ValueId)
+  deriving DecidableEq, Repr, Inhabited
+
+/-- The exception table of a `try_call`/`try_call_indirect`: the callee signature `sigN`,
+the normal-return successor, and the handler items (`sigN, block1(ret0), [ tag0: block2(exn0) ]`). -/
+structure ExnTable where
+  sig : Nat
+  normal : TryDest
+  items : List ExnItem := []
+  deriving DecidableEq, Repr, Inhabited
+
+/-- The handler successors of an exception table, in item order (Cranelift's successor order:
+handlers first, then the normal return, `ExceptionTableData::all_branches`). -/
+def ExnTable.handlers (et : ExnTable) : List TryDest :=
+  et.items.filterMap fun
+    | .tag _ d | .default d => some d
+    | .context _ => none
+
+/-- All successors in Cranelift's order: the handlers, then the normal return. -/
+def ExnTable.dests (et : ExnTable) : List TryDest := et.handlers ++ [et.normal]
+
+def TryDest.vals (d : TryDest) : List ValueId :=
+  d.args.filterMap fun | .val v => some v | _ => none
+
+def TryDest.mapVals (g : ValueId → ValueId) (d : TryDest) : TryDest :=
+  { d with args := d.args.map fun | .val v => .val (g v) | a => a }
+
+/-- The values an exception table reads: successor arguments and context values. -/
+def ExnTable.vals (et : ExnTable) : List ValueId :=
+  et.normal.vals ++ et.items.flatMap fun
+    | .tag _ d | .default d => d.vals
+    | .context v => [v]
+
+def ExnTable.mapVals (g : ValueId → ValueId) (et : ExnTable) : ExnTable :=
+  { et with normal := et.normal.mapVals g, items := et.items.map fun
+    | .tag n d => .tag n (d.mapVals g)
+    | .default d => .default (d.mapVals g)
+    | .context v => .context (g v) }
+
 /-- Block terminators. -/
 inductive Terminator where
   | jump (dest : BlockCall)
@@ -289,7 +348,20 @@ inductive Terminator where
   /-- `return_call fnN(args)`: tail call; the callee's results are this function's. -/
   | returnCall (fn : FnRef) (args : List ValueId)
   | trap (code : TrapCode)
+  /-- `try_call fnN(args), exception-table`: a call that ends the block. A normal return
+  continues at the table's normal-return successor with the call's results as `retN`
+  arguments; an unwinding callee resumes at a handler successor with the exception payload
+  as `exnN` arguments (not observable in `Clif.run`, which has no unwinding). Outside
+  subset E (unverified, rust-route "agent/fv-trycall"). -/
+  | tryCall (fn : FnRef) (args : List ValueId) (et : ExnTable)
+  /-- `try_call_indirect callee(args), exception-table` (the signature is the table's). -/
+  | tryCallIndirect (callee : ValueId) (args : List ValueId) (et : ExnTable)
   deriving DecidableEq, Repr, Inhabited
+
+/-- A `try_call`/`try_call_indirect` terminator. -/
+def Terminator.isTry : Terminator → Bool
+  | .tryCall .. | .tryCallIndirect .. => true
+  | _ => false
 
 /-- One instruction with its result values, e.g. `v3, v4 = uadd_overflow v1, v2`. -/
 structure Stmt where

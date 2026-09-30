@@ -1111,6 +1111,32 @@ def rewriteStmt (f : Function) (ty : ValueId → Option Ty) (s : Stmt) : M Unit 
     if t == .i128 then throw "legalize128: i128 symbol_value"
     else emitS s
 
+/-- The arguments of a `try_call` successor `d`, with the call's return groups `rg`: an `i128`
+value is split into its pair; `retN` of an `i128` return becomes the two return slots of its
+pair (after a pad); payloads (`exnN`, pointer-sized) are unchanged. -/
+def rewriteTryDest (f : Function) (rg : List (List SlotEl)) (d : TryDest) : M TryDest := do
+  let some tb := f.block? d.block | throw s!"legalize128: unknown block{d.block}"
+  let starts := (rg.foldl (fun (acc, n) g => (acc.push n, n + g.length)) (#[], 0)).1
+  let rec go : List TryArg → List (ValueId × Ty) → M (List TryArg)
+    | [], [] => return []
+    | a :: as, (_, t) :: ps => do
+      let more ← go as ps
+      match a with
+      | .val v =>
+        if t == .i128 then do
+          let (x, y) ← pairOf v
+          return .val x :: .val y :: more
+        else return .val (← u1 v) :: more
+      | .ret i =>
+        match rg[i]?, starts[i]? with
+        | some [.val _], some s => return .ret s :: more
+        | some [.lo, .hi], some s => return .ret s :: .ret (s + 1) :: more
+        | some [.pad, .lo, .hi], some s => return .ret (s + 1) :: .ret (s + 2) :: more
+        | _, _ => throw s!"legalize128: try_call ret{i}"
+      | .exn i => return .exn i :: more
+    | _, _ => throw s!"legalize128: arity of block{d.block}"
+  return { d with args := ← go d.args tb.params }
+
 /-! ## The terminator and the function -/
 
 /-- The rewrite of a terminator (its condition statements are emitted into `out`). -/
@@ -1127,6 +1153,23 @@ def rewriteTerm (f : Function) (ty : ValueId → Option Ty) (rg : List (List Slo
   | .ret vs => return .ret (← argsOf rg vs)
   | .trap _ => return t
   | .returnCall .. => throw "legalize128: return_call is not supported"
+  | .tryCall _ args et | .tryCallIndirect _ args et => do
+    -- as `call`: i128 arguments and returns in register pairs (`expandGroups`), successor
+    -- arguments split like `rewriteBC`
+    let some sig := f.sigDecls.lookup et.sig | throw s!"legalize128: unknown sig{et.sig}"
+    let gs ← liftE (expandGroups sig.params)
+    let rgs ← liftE (expandGroups sig.returns)
+    let args' ← argsOf gs args
+    let dest (d : TryDest) : M TryDest := rewriteTryDest f rgs d
+    let items ← et.items.mapM fun
+      | .tag n d => do return ExnItem.tag n (← dest d)
+      | .default d => do return ExnItem.default (← dest d)
+      | .context v => do return ExnItem.context (← u1 v)
+    let et' := { et with normal := ← dest et.normal, items }
+    match t with
+    | .tryCallIndirect c .. => return .tryCallIndirect (← u1 c) args' et'
+    | .tryCall fn .. => return .tryCall fn args' et'
+    | _ => return t
 
 /-- The biggest value id in `f` (fresh ids continue after it). -/
 def maxValueId (f : Function) : ValueId :=

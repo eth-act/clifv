@@ -142,6 +142,34 @@ theorem Sim.visit (hg : VRenaming g gn) (i : MInst) :
       exact Sim.bind (Sim.pure (f := fun d => match d with | .reg r => CallDest.reg (g r) | d => d)
           (CallDest.sym n) _ rfl) fun _ =>
         Sim.bind hu fun _ => Sim.bind hd fun _ => Sim.pure _ _ rfl
+  | tryCall info ti =>
+    obtain ⟨dest, uses, defs⟩ := info
+    have hu : Sim gn (List.map fun (x : Reg × Reg) => (g x.1, x.2))
+        (uses.mapM fun x => do let r ← collectOp (OpSpec.fixedUse x.snd) x.fst; Pure.pure (r, x.snd))
+        ((uses.map fun (x : Reg × Reg) => (g x.1, x.2)).mapM
+          fun x => do let r ← collectOp (OpSpec.fixedUse x.snd) x.fst; Pure.pure (r, x.snd)) := by
+      refine Sim.mapM ?_ uses
+      intro a; obtain ⟨v, p⟩ := a
+      exact Sim.bind (Sim.collect hg _ v) fun b => Sim.pure _ _ rfl
+    have hd : Sim gn (List.map fun (x : Reg × Reg) => (x.1, g x.2))
+        (defs.mapM fun x => do let r ← collectOp (OpSpec.fixedDef x.fst) x.snd; Pure.pure (x.fst, r))
+        ((defs.map fun (x : Reg × Reg) => (x.1, g x.2)).mapM
+          fun x => do let r ← collectOp (OpSpec.fixedDef x.fst) x.snd; Pure.pure (x.fst, r)) := by
+      refine Sim.mapM ?_ defs
+      intro a; obtain ⟨p, v⟩ := a
+      exact Sim.bind (Sim.collect hg _ v) fun b => Sim.pure _ _ rfl
+    cases dest with
+    | reg r =>
+      simp only [MInst.visitOperands, MInst.mapRegs]
+      exact Sim.bind (Sim.collect hg _ r) fun a =>
+        Sim.bind (Sim.pure (f := fun d => match d with | .reg r => CallDest.reg (g r) | d => d)
+          (CallDest.reg a) _ rfl) fun _ =>
+        Sim.bind hu fun _ => Sim.bind hd fun _ => Sim.pure _ _ rfl
+    | sym n =>
+      simp only [MInst.visitOperands, MInst.mapRegs]
+      exact Sim.bind (Sim.pure (f := fun d => match d with | .reg r => CallDest.reg (g r) | d => d)
+          (CallDest.sym n) _ rfl) fun _ =>
+        Sim.bind hu fun _ => Sim.bind hd fun _ => Sim.pure _ _ rfl
   | args ds =>
     simp only [MInst.visitOperands, MInst.mapRegs]
     refine Sim.bind (Sim.mapM (φ := fun (x : Reg × Reg) => (g x.1, x.2))

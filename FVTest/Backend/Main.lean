@@ -4,7 +4,8 @@ import FVTest.Opt.Common
 
 /-!
 `lake exe lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>]
-[--dump <dir>] [--regalloc regalloc2|stack|regalloc2-small] [--opt [--opt-* options]]`: compile every function of a `.clif` file with the
+[--dump <dir>] [--regalloc regalloc2|stack|regalloc2-small] [--personality <sym>]
+[--opt [--opt-* options]]`: compile every function of a `.clif` file with the
 Lean backend (`FV/Backend.lean`). Register allocation: `regalloc2` (default; the
 `lean-regalloc` oracle, `$LEAN_REGALLOC` or `rust/target/release/lean-regalloc`, every
 allocation validated by the Lean checker, `docs/contracts/regalloc.md`), `stack` (the
@@ -20,6 +21,10 @@ emitter-subset closure (`Isle.Aarch64.Closure.rules`). Exit status 0 unless the 
 wrong, the input cannot be read, or encoding fails (an encoder or backend bug; the message
 names the function and instruction). With `--opt`, every function is first optimised by the
 Lean mid-end (`Opt.optimize`, `docs/contracts/midend.md`; options in `FVTest/Opt/Common.lean`).
+With `--personality <sym>` (`cargo fv`: `rust_eh_personality`), functions with landing pads
+(`try_call`) get cg_clif's LSDA and a `zLPR` CIE with that personality routine
+(`FV/Backend/Obj.lean`); without it their landing pads have no LSDA (as Cranelift's own
+objects, which leave the LSDA to the embedder).
 
 Every function that mentions `i128` is first legalised by `Opt.Legalize128` (rewritten to
 plain `i8..i64` CLIF before the mid-end and the backend); legalised functions are reported
@@ -29,7 +34,7 @@ unverified ("i128 legalized (outside backend_correct)").
 open Backend
 
 def usage : String :=
-  "usage: lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>] [--dump <dir>] [--regalloc regalloc2|stack|regalloc2-small] [--opt]"
+  "usage: lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>] [--dump <dir>] [--regalloc regalloc2|stack|regalloc2-small] [--personality <sym>] [--opt]"
 
 def closureIds : Std.HashSet Isle.RuleId :=
   Isle.Aarch64.Closure.rules.foldl (fun s r => s.insert r.rule) {}
@@ -40,6 +45,7 @@ structure Opts where
   dump : Option String := none
   regalloc : String := "regalloc2"
   opt : Option Opt.Config := none
+  personality : Option String := none
 
 def run (input output : String) (o : Opts) : IO UInt32 := do
   let src ← IO.FS.readFile input
@@ -55,7 +61,7 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
       IO.eprintln s!"lean-backend: {input}: encoding failed: {e}"
       return 1
     | .ok fbs =>
-      if output.endsWith ".o" then IO.FS.writeBinFile output (elfObject fbs fa.unwind)
+      if output.endsWith ".o" then IO.FS.writeBinFile output (elfObject fbs fa.unwind fa.lsda o.personality)
       if let some d := o.dump then
         IO.FS.createDirAll d
         for (_, fb) in fbs do
@@ -82,6 +88,7 @@ def main (args : List String) : IO UInt32 := do
     | "--rules" :: r :: rest => opts { o with rules := some r } rest
     | "--dump" :: d :: rest => opts { o with dump := some d } rest
     | "--regalloc" :: a :: rest => opts { o with regalloc := a } rest
+    | "--personality" :: p :: rest => opts { o with personality := some p } rest
     | _ => none
   let (optCfg, args) ← match Opt.parseOptArgs args with
     | .ok r => pure r

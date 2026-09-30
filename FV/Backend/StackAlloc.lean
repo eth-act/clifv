@@ -140,6 +140,9 @@ def Frame.allocInst (m : MInst) : Except String (List AInst) := do
   -- allocator has no fixed-register support (`Constraint.fixed`), so a function using
   -- them keeps cg_clif's code (regalloc2, the default, handles them)
   | .atomicRmwLoop .. | .atomicCasLoop .. => throw s!"atomic loop with the stack-slot allocator"
+  -- the stores of the call's results would come after the terminator (and the landing pads
+  -- need the payload registers); only regalloc2 handles `try_call`
+  | .tryCall .. => throw "try_call with the stack-slot allocator"
   | .args ds =>
     fr.stores (virt ds)
   | .rets us =>

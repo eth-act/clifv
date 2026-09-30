@@ -120,6 +120,8 @@ theorem seqEval2_grow {M : Mem} {a b : Inst} (h : NotStuck (seqEval2 (withRegs f
 theorem termEval_grow {M : Mem} {t : Terminator} (h : NotStuck (termEval (withRegs fr V) M t)) :
     termEval (withRegs fr V') M t = termEval (withRegs fr V) M t := by
   cases t with
+  | tryCall _ _ _ => rfl
+  | tryCallIndirect _ _ _ => rfl
   | jump d =>
     simp only [termEval] at h ⊢
     have hg : NotStuck ((withRegs fr V).getMany d.args) := by
@@ -582,6 +584,8 @@ theorem termEval_rename {σ : ValueId → ValueId} {F F' : Frame} {M : Mem} {t :
   have hg : ∀ x ∈ termOperands t, (F'.get (σ x)).norm = (F.get x).norm := by
     intro x hx; simp only [Frame.get, h x hx, Res.norm_ofOption]
   cases t with
+  | tryCall _ _ _ => rfl
+  | tryCallIndirect _ _ _ => rfl
   | jump d =>
     simp only [termEval, mapTerm, mapBlockCall, Res.norm_bind, Res.norm_pure]
     rw [getMany_rename (fun x hx => h x (by simp [termOperands, hx]))]

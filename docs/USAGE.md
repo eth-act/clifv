@@ -228,14 +228,12 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   `rustc-dev` component): it emits `try_call` with landing pads and LSDAs
   (`.gcc_except_table`), and `catch_unwind`/`Drop` behave as with LLVM. `cargo fv` uses it
   when it exists (`FV_CG_CLIF` overrides).
-* **Decision:** functions whose CLIF has a `try_call`/`try_call_indirect` fall back (reason
-  "landing pad"): cg_clif's code for them has the landing pads and the LSDA. The Lean backend
-  does not lower `try_call` and emits no `.gcc_except_table`; that is the next step to
-  recover these functions (roughly 17–23% of the functions in the examples, see the table
-  below). Frames without landing pads are Lean code, and panics unwind through them: through
-  chains of Lean frames, Lean → cg_clif → Lean, and with callee-saved registers restored from
-  the Lean frames' rows (fv-demo's `unwind` tests; with the rows removed, the test binary
-  crashes).
+* **Landing pads are Lean code** (agent/fv-trycall): functions with `try_call`/
+  `try_call_indirect` are compiled (unverified, "try_call / landing pads"): the call is a block
+  terminator, the handler successors are the landing pads (payload in x0), and the object gets
+  cg_clif's LSDA in `.gcc_except_table` and a `zLPR` CIE with `rust_eh_personality`
+  (`lean-backend --personality`). Callees with the `tail`/`preserve_all` convention and
+  exception-table `context` items are rejected (fallback); cg_clif emits neither.
 * With the shipped cg_clif (no unwinding build, or `FV_CG_CLIF=cranelift`), no function has a
   landing pad, `cargo fv` prints a note, and the program behaves as under plain cg_clif: the
   reference for comparisons is then plain cg_clif, not LLVM (`BASELINE=cg_clif

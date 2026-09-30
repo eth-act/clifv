@@ -90,6 +90,8 @@ theorem lstep_withFunc {fr : Frame} {g : Function} {m : Mem}
       simp only [lstep, this, hwr]
       cases tailArgs _ fn args <;> rfl
     | trap c => rfl
+    | tryCall _ _ _ => rfl
+    | tryCallIndirect _ _ _ => rfl
   | cons st rest =>
     simp only [lstep]
     split
@@ -183,6 +185,8 @@ theorem removeUnreachable_sim (f : Function) : FunSim f (removeUnreachable f) :=
       | ret xs => simp only [LRes.ofRes] at hl; split at hl <;> cases hl
       | returnCall fn args => simp only [LRes.ofRes] at hl; split at hl <;> cases hl
       | trap c => cases hl
+      | tryCall _ _ _ => cases hl
+      | tryCallIndirect _ _ _ => cases hl
   · rintro fr _ m ext vals rs rest hr hm hl
     obtain ⟨hf, rfl, b, hb, ht⟩ := hr
     refine ⟨{ fr with func := g }, rs, rest, .refl _ _,
