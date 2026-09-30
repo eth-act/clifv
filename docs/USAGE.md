@@ -38,9 +38,9 @@ and they run under `qemu-aarch64-static`.
    rustup toolchain install nightly-2026-09-26 \
        --component rustc-codegen-cranelift-preview --target aarch64-unknown-linux-musl
    ```
-2. `qemu-aarch64-static` on `PATH`. `cargo test` of a `should_panic` test needs the binfmt_misc
-   registration too: with `panic=abort`, the test harness runs the test in a child process
-   (`/proc/sys/fs/binfmt_misc/qemu-aarch64`, from the `qemu-user-static` package).
+2. `qemu-aarch64-static` on `PATH`. With `--panic-abort`, `cargo test` of a `should_panic`
+   test needs the binfmt_misc registration too: the test harness then runs the test in a child
+   process (`/proc/sys/fs/binfmt_misc/qemu-aarch64`, from the `qemu-user-static` package).
 3. LLVM 18 binutils (`/usr/lib/llvm-18/bin/llvm-objcopy`, `llvm-ar`) and `python3`.
 4. The repository's tools, built once from the repository root:
    ```
@@ -53,6 +53,14 @@ and they run under `qemu-aarch64-static`.
    `scripts/rust-clif/normalize.py` through the checkout it was built from (`FV_ROOT`
    overrides this). `cargo install --path rust/crates/cargo-fv` also works: it installs both
    binaries, and they still use that checkout.
+5. Recommended for panic=unwind (the default): cg_clif with landing pads, built once from the
+   nightly's own sources (network access, the `rustc-dev` component, about 40 s):
+   ```
+   FV_MEMCAP=16G scripts/memcap.sh scripts/build-cg-clif-unwind.sh
+   ```
+   It writes `target/cg_clif-unwind/librustc_codegen_cranelift.so` in the checkout, which
+   `cargo fv` then uses (see *Panics and unwinding*). Without it, `cargo fv` uses the shipped
+   cg_clif, which has no landing pads, and prints a note.
 
 ## Usage
 
@@ -72,6 +80,7 @@ Options of `cargo fv` (all other options go to cargo unchanged):
 | `--no-fallback` | fail (exit 1, before running anything) unless every function of every workspace member runs Lean code |
 | `--trap-replaced` | overwrite cg_clif's code of every Lean-compiled function with `udf` traps (see *Checking that the Lean code runs*) |
 | `--keep-temps` | keep the per-codegen-unit work directories (`target/fv/<mode>/tmp/`) |
+| `--panic-abort` | build with `-Cpanic=abort -Zpanic-abort-tests` (the pre-unwinding behaviour; the shipped cg_clif; own target directory) |
 
 `cargo fv report` prints the summary of the last build again. `--functions` lists every
 function with its status and reason, and `--json` prints `target/fv-report.json`.
@@ -83,6 +92,7 @@ Environment variables:
 | `FV_JOBS` | parallel `lean-backend` processes per codegen unit (default: number of CPUs) |
 | `FV_SKIP=pat,…` / `FV_ONLY=pat,…` | debugging: functions whose symbol or Rust path contains a pattern fall back / only those are compiled |
 | `FV_TOOLCHAIN` | the nightly (default `nightly-2026-09-26`) |
+| `FV_CG_CLIF` | the codegen backend: a cg_clif `.so`, or `cranelift` for the shipped one (default: `target/cg_clif-unwind/librustc_codegen_cranelift.so` of the checkout if it exists and panic=unwind, else `cranelift`) |
 | `FV_ROOT` | the repository checkout with the tools |
 | `FV_OBJCOPY`, `FV_AR`, `FV_RUST_LLD`, `FV_PYTHON` | tool paths |
 | `CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_RUNNER` | the runner (default `qemu-aarch64-static`) |
@@ -95,10 +105,10 @@ skip = ["interop::cg_clif_"]   # substrings of the symbol or the Rust path
 ```
 
 Artifacts are in `target/fv/<mode>/aarch64-unknown-linux-musl/<profile>/…`, where `<mode>` is
-`plain`, `opt`, `opt-proven-only`, or one of those with `-trap`. Each configuration has its
+`plain`, `opt`, `opt-proven-only`, or one of those with `-trap` and/or `-abort`. Each configuration has its
 own target directory because cargo does not see the Lean-side settings. For the same reason,
 `cargo fv` keeps a stamp per profile (`target/fv/<mode>/fv-stamp.<profile>`) of the Lean tools
-(`lean-backend`, `clif-data-export`, `lean-regalloc`, `normalize.py`, `fv-rustc`), `FV_SKIP`,
+(`lean-backend`, `clif-data-export`, `lean-regalloc`, `normalize.py`, `fv-rustc`, the codegen backend `.so`), `FV_SKIP`,
 `FV_ONLY` and `package.metadata.fv`. When the stamp changes, it runs `cargo clean -p` on the
 workspace members, so they are compiled again with the new tools or settings. Dependencies
 are not cleaned.
@@ -111,12 +121,13 @@ has `symbol`, `instance` (the Rust item, from cg_clif's dump), `status` (`verifi
 `unverified` or `fallback`) and `reason`. Linked executables also have `binary`: how many
 function symbols in the executable resolve to Lean-compiled code, plus any check failures.
 The file covers the units of the last `cargo fv` command, fresh or rebuilt. The top-level
-`mode`, `profile` and `theorem` say what "verified" refers to.
+`mode`, `profile` and `theorem` say what "verified" refers to, and `panic` the panic strategy
+and the codegen backend (also the second line of the summary).
 
 ## How it works
 
-`cargo fv` runs cargo on the pinned nightly with
-`RUSTFLAGS=-Zcodegen-backend=cranelift -Cpanic=abort -Zpanic-abort-tests`,
+`cargo fv` runs cargo on the pinned nightly with `RUSTFLAGS=-Zcodegen-backend=<cg_clif>`
+(see *Panics and unwinding*; `--panic-abort` adds `-Cpanic=abort -Zpanic-abort-tests`),
 `--target aarch64-unknown-linux-musl`, `RUSTC_WRAPPER=fv-rustc`, `CARGO_INCREMENTAL=0`, the
 linker `rust-lld` and the runner `qemu-aarch64-static`. First it runs a build (`cargo build`,
 or `cargo test --no-run`) whose JSON artifact messages identify the units, then the report,
@@ -152,7 +163,8 @@ or an executable's `*.rcgu.o` files at link time) then goes through this pipelin
 3. **Compile**: `lean-backend f.clif f.o` per function (`FV_JOBS` in parallel). One function
    per file means every call is a call of an extern. The theorem covers extern calls through
    its callee contract, and a function the backend rejects does not make its callers fall
-   back: their calls reach cg_clif's code for it.
+   back: their calls reach cg_clif's code for it. Functions with a landing pad (`try_call`)
+   are not compiled and fall back (*Panics and unwinding*).
 4. **Safety net**: every symbol a Lean object references must be defined or referenced by
    cg_clif's object (or be a runtime helper: `mem*`, `__{u,}{div,mod}ti3`, all in every Rust
    executable); otherwise the function falls back. A calling-convention guard (`abi_guard`)
@@ -175,6 +187,10 @@ or an executable's `*.rcgu.o` files at link time) then goes through this pipelin
      final link are unaffected;
    * check: each Lean-compiled symbol of the merged object has its marker's address. If not,
      the CGU is left as cg_clif wrote it and all its functions fall back.
+   * unwind tables: each Lean object has its own `.eh_frame` (FDEs relocated against its
+     `.text`), so the merged object has FDEs for the Lean code and cg_clif's FDEs for its own
+     sections (which reference cg_clif's section symbols, never the Lean code). The linker
+     drops the FDEs of the sections `--gc-sections` removes, and builds `.eh_frame_hdr`.
 
 **Data identity.** Lean code uses cg_clif's own data symbols (the renamed `.LdataN` and named
 statics) and never copies data. Every static, vtable, panic `Location` and string constant
@@ -187,9 +203,47 @@ interior mutability all behave as under plain cg_clif. The alternative, `clif-da
 128-bit division helpers from compiler-builtins, and the panic entry points from core/std. The
 freestanding `scripts/rust-clif/rust-runtime.c` of the corpus tests is not linked.
 
-**Panics.** The Lean backend emits no unwind tables, so everything is built with
-`panic=abort`. The test harness runs each test in a child process (`-Zpanic-abort-tests`),
-and `#[should_panic]` works as usual.
+### Panics and unwinding
+
+The default is Rust's: `panic=unwind`. A panic unwinds with the DWARF unwinder of std's
+`panic_unwind` (libunwind), which needs call frame information for every frame it passes
+and, for frames that must run code during unwinding, a landing pad and an LSDA.
+
+* **Lean frames** carry `.eh_frame` rows (`FV/Backend/Unwind.lean`, unverified and outside
+  every theorem; the code never reads them). They mirror Cranelift's aarch64 unwind info for
+  the backend's own frame: CIE as Cranelift's (`zR`, code alignment 4, data alignment -8,
+  return address x30, CFA = sp+0, FDE pointers pc-relative `sdata4`); after
+  `stp x29, x30, [sp, #-16]!` CFA = sp+16 with x29 at CFA-16 and x30 at CFA-8, after
+  `mov x29, sp` CFA = x29+16, and after each callee-save store `str xN/qN, [sp, #o]` (block 0,
+  before any call) the register at CFA + o - 16 - frameSize. `pc_begin` is an
+  `R_AARCH64_PREL32` against `.text`. No epilogue rows, as in Cranelift: unwinding starts only
+  at call sites. The `.text` bytes are unchanged (`scripts/lean-backend-encode-check.sh`).
+* **Landing pads.** The shipped `rustc-codegen-cranelift-preview` of this nightly is built
+  *without* cg_clif's `unwinding` feature: it drops cleanup blocks and compiles the
+  `catch_unwind` intrinsic as a plain call. Plain `cargo test -Zcodegen-backend=cranelift`
+  therefore runs no `Drop` during unwinding and a `catch_unwind` in cg_clif-compiled code
+  does not catch (the panic reaches the test harness, which is LLVM code in the prebuilt
+  libtest, so `#[should_panic]` works). `scripts/build-cg-clif-unwind.sh` builds cg_clif with
+  the feature (the nightly's own cg_clif sources, commit from `rustc -vV`, against the
+  `rustc-dev` component): it emits `try_call` with landing pads and LSDAs
+  (`.gcc_except_table`), and `catch_unwind`/`Drop` behave as with LLVM. `cargo fv` uses it
+  when it exists (`FV_CG_CLIF` overrides).
+* **Decision:** functions whose CLIF has a `try_call`/`try_call_indirect` fall back (reason
+  "landing pad"): cg_clif's code for them has the landing pads and the LSDA. The Lean backend
+  does not lower `try_call` and emits no `.gcc_except_table`; that is the next step to
+  recover these functions (roughly 17–23% of the functions in the examples, see the table
+  below). Frames without landing pads are Lean code, and panics unwind through them: through
+  chains of Lean frames, Lean → cg_clif → Lean, and with callee-saved registers restored from
+  the Lean frames' rows (fv-demo's `unwind` tests; with the rows removed, the test binary
+  crashes).
+* With the shipped cg_clif (no unwinding build, or `FV_CG_CLIF=cranelift`), no function has a
+  landing pad, `cargo fv` prints a note, and the program behaves as under plain cg_clif: the
+  reference for comparisons is then plain cg_clif, not LLVM (`BASELINE=cg_clif
+  examples/compare.sh`).
+* `--panic-abort` restores the previous behaviour (`-Cpanic=abort -Zpanic-abort-tests`, each
+  test in a child process). It always uses the shipped cg_clif: under panic=abort the unwinding
+  build turns every call that may unwind into a `try_call` with a terminate edge (rustc's
+  `abort_unwinding_calls`), which would fall back.
 
 ## Checking that the Lean code runs
 
@@ -202,7 +256,9 @@ and `#[should_panic]` works as usual.
   `--gc-sections` drops those bodies from the executables anyway.
 * `--no-fallback`: every function of the workspace members must be Lean-compiled.
 * `examples/compare.sh DIR`: `cargo test` with LLVM (under qemu) against `cargo fv test`,
-  test by test.
+  test by test. `BASELINE=cg_clif` compares against plain cg_clif instead (the same backend
+  and panic strategy `cargo fv` uses; the right reference with the shipped cg_clif, which has
+  no landing pads).
 
 ## What is verified, and what is not
 
@@ -218,38 +274,59 @@ and `#[should_panic]` works as usual.
 
 ## Examples and results
 
-* `examples/fv-demo`: a library with 13 unit tests: integer arithmetic, slices, enums,
+* `examples/fv-demo`: a library with 18 unit tests: integer arithmetic, slices, enums,
   Option/Result, iterators, u128/i128, `dyn` traits and closures, four `should_panic` tests,
-  and `sret_interop`. `sret_interop` calls between Lean and cg_clif code through the
-  struct-return convention, in both directions; the cg_clif side is kept by
-  `package.metadata.fv.skip`. There is also a binary: `cargo fv run -- 97 84 36`.
+  `sret_interop`, and six unwinding tests. `sret_interop` calls between Lean and cg_clif code
+  through the struct-return convention, in both directions; the cg_clif side is kept by
+  `package.metadata.fv.skip`. The unwinding tests (module `unwind`) panic through Lean frames
+  without landing pads: `catch_unwind` with the payload checked, `Drop` during unwinding with
+  an observable log (two guards in a cg_clif frame with a landing pad, dropped in order), a
+  nested catch + `resume_unwind` through further Lean frames, a `should_panic` through
+  Lean → cg_clif → Lean, and callee-saved registers (x19–x28 saved by the Lean frames between
+  the panic and the catch) that must hold their values after the catch. There is also a
+  binary: `cargo fv run -- 97 84 36`.
 * `examples/survey`: the nine crates of the Rust CLIF survey (`scripts/rust-clif/corpus/*.rs`,
   used in place) as a workspace. Each crate's `tests/values.rs` checks the values in
   `tests/expected.txt`, which `gen-expected.sh` computes with rustc's LLVM backend for the
   same target (under qemu). There are 53 tests, including 9 `should_panic` ones.
 
 Results (2026-09-30; `examples/compare.sh`, which requires every test outcome to match the
-`cargo test` LLVM run):
+`cargo test` LLVM run; panic=unwind with the unwinding cg_clif, the default):
 
-| | profile | tests | functions | verified | unverified | fallback | Lean in exe |
+| | profile | tests | functions | verified | unverified | fallback | of which landing pad | Lean in exe |
+|---|---|---|---|---|---|---|---|---|
+| fv-demo | debug | 18/18 | 1111 | 693 | 219 | 199 | 190 | 606 |
+| fv-demo | release | 18/18 | 746 | 423 | 133 | 190 | 171 | 395 |
+| survey | debug | 53/53 | 3179 | 1932 | 722 | 525 | 498 | 2654 |
+| survey | release | 50/50 + 3 ignored (overflow checks off) | 2208 | 1349 | 353 | 506 | 475 | 1702 |
+
+With the shipped cg_clif (`FV_CG_CLIF=cranelift`, no landing pads) or `--panic-abort`
+there are no landing-pad fallbacks:
+
+| | configuration | tests | functions | verified | unverified | fallback | Lean in exe |
 |---|---|---|---|---|---|---|---|
-| fv-demo | debug | 13/13 | 975 | 717 | 251 | 7 | 641 |
-| fv-demo | release | 13/13 | 645 | 441 | 177 | 27 | 437 |
-| survey | debug | 53/53 | 3089 | 2135 | 927 | 27 | 3062 |
-| survey | release | 50/50 + 3 ignored (overflow checks off) | 2136 | 1514 | 566 | 56 | 2080 |
+| fv-demo | debug, shipped cg_clif, unwind | 14/18, the same 4 fail under plain cg_clif | 1111 | 804 | 298 | 9 | 733 |
+| fv-demo | release, shipped cg_clif, unwind | 14/18, likewise | 746 | 509 | 204 | 33 | 503 |
+| fv-demo | debug, `--panic-abort` | 14/18, likewise (the 4 need unwinding) | 1104 | 799 | 296 | 9 | 731 |
+| survey | debug, shipped cg_clif, unwind | 53/53 (= LLVM) | 3179 | 2224 | 928 | 27 | 3152 |
 
 The table counts each unit separately: a library compiled as an rlib and as its unit-test
-harness appears twice. In the survey, every function of the nine survey libraries runs Lean
-code (`cargo fv build --workspace --lib --no-fallback` passes). The fallbacks are in the test
-harnesses: `Arc` drop (`atomic_rmw`) and `fence`, which are outside the backend's subset. In
-release there are also a few functions whose unoptimised CLIF references a data object that
-Cranelift's optimiser removed from cg_clif's object, and fv-demo's four `cg_clif_*` functions
-are kept on purpose. Unverified: mostly sret functions (the theorem does not cover sret yet),
-i128 legalisation, and indirect calls. `--opt-proven-only` (survey 53/53), `--opt`
-(fv-demo 13/13) and `--trap-replaced` (fv-demo 13/13) give the same test outcomes.
+harness appears twice. The landing-pad fallbacks are the price of panic=unwind with landing
+pads (functions with a `Drop` value live across a call, closures run by `catch_unwind`, …);
+`--panic-abort` avoids them. In the survey, with `--panic-abort` or the shipped cg_clif,
+every function of the nine survey libraries runs Lean code (`cargo fv build --workspace --lib
+--no-fallback --panic-abort` passes). The other fallbacks are in the test harnesses: `Arc`
+drop (`atomic_rmw`) and `fence`, which are outside the backend's subset. In release there are
+also a few functions whose unoptimised CLIF references a data object that Cranelift's
+optimiser removed from cg_clif's object, and fv-demo's `cg_clif_*` functions are kept on
+purpose. Unverified: mostly sret functions (the theorem does not cover sret yet), i128
+legalisation, and indirect calls. Before panic=unwind (panic=abort, 13 fv-demo tests),
+`--opt-proven-only` (survey 53/53), `--opt` (fv-demo 13/13) and `--trap-replaced` (fv-demo
+13/13) gave the same test outcomes.
 
 A crate with crates.io dependencies (`itoa`, `smallvec`, `crc32fast`; the dependencies are
-compiled by cg_clif) also passes (unit tests and a doctest, same outcomes as `cargo test`).
+compiled by cg_clif) also passed (unit tests and a doctest, same outcomes as `cargo test`;
+checked with panic=abort).
 
 ## Limitations
 
@@ -257,14 +334,17 @@ compiled by cg_clif) also passes (unit tests and a doctest, same outcomes as `ca
   qemu. Linking always uses `rust-lld`.
 * Only workspace members are compiled by the Lean backend. Dependencies use cg_clif and std
   is the prebuilt LLVM one; which crates get the Lean backend may become configurable later.
-* `panic=abort` (no unwind tables in Lean code). `catch_unwind` cannot catch panics.
+* panic=unwind: functions with landing pads (`try_call`) keep cg_clif's code, and full
+  unwinding semantics (`Drop` during unwinding, `catch_unwind` in the crate) need the
+  unwinding cg_clif (Install, 5); the shipped one has no landing pads at all. Lean frames have
+  `.eh_frame` but no LSDA, so no Lean-compiled function runs code during unwinding.
 * Library crate types `lib`/`rlib`, binaries and test harnesses. `dylib`, `cdylib`,
   `staticlib` and proc macros build with plain cg_clif.
 * `RUSTFLAGS` from the environment are kept (with ours appended). `build.rustflags` from
   `.cargo/config.toml` is overridden, as with any `RUSTFLAGS`.
 * Debug info describes cg_clif's code, not the Lean code.
-* Doctests are compiled by rustdoc with LLVM (`-Cpanic=abort`) and linked against the member
-  crate's Lean-compiled rlib.
+* Doctests are compiled by rustdoc with LLVM (with `-Cpanic=abort` under `--panic-abort`) and
+  linked against the member crate's Lean-compiled rlib.
 * The calling conventions of the two backends must agree. cargo fv found one mismatch:
   lean-backend passed the arguments after an sret pointer from x1 instead of x0. That is
   fixed in the backend (f52e514), and fv-demo's `sret_interop` is the regression test.
@@ -279,7 +359,10 @@ compiled by cg_clif) also passes (unit tests and a doctest, same outcomes as `ca
 * `no such command: fv`: put `rust/target/release` on `PATH`.
 * `… missing (FV_ROOT=…)`: build the named tool (see Install).
 * `toolchain … not found`: install the nightly with the component and target (Install, 1).
-* A `should_panic` test fails with an exec error: register qemu with binfmt_misc (Install, 2).
+* `--panic-abort`: a `should_panic` test fails with an exec error: register qemu with
+  binfmt_misc (Install, 2).
+* `catch_unwind` does not catch or `Drop` does not run during unwinding: the build uses the
+  shipped cg_clif (the summary's `panic=` line says which); build the unwinding one (Install, 5).
 * A function falls back and you want to know why: `cargo fv report --functions`, or
   `target/fv-report.json`. `--keep-temps` keeps the normalised CLIF (`split/`), the
   per-function objects (`o/`) and the merge inputs in `target/fv/<mode>/tmp/<tag>/`.
