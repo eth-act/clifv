@@ -149,9 +149,14 @@ theorem toInt_neg_iff' {w : Nat} (x : BitVec w) : (x.toInt < 0) ↔ x.msb = true
   · intro h; have : ¬ 0 ≤ x.toInt := by rw [toInt_nonneg_iff']; simp [h]
     omega
 
+/-- The immediate `1` of `iconst_s ty 1`. -/
+theorem toInt_eq_one {t : Ty} (x : BitVec t.width) : x.toInt = 1 ↔ x = 1#t.width := by
+  have h : (1#t.width).toInt = 1 := by cases t <;> rfl
+  rw [← BitVec.toInt_inj, h]
+
 /-- The signed-immediate facts as `BitVec` facts. -/
 macro "sint_simp" : tactic => `(tactic| (try simp only [BitVec.toInt_inj, ge_iff_le, gt_iff_lt,
-  toInt_nonneg_iff', toInt_neg_iff', decide_eq_true_eq, beq_true, beq_iff_eq] at *))
+  toInt_nonneg_iff', toInt_neg_iff', toInt_eq_one, decide_eq_true_eq, beq_true, beq_iff_eq] at *))
 
 /-- `rule_bits_c` with `sint_simp` before `bv_decide`. -/
 macro "rule_bits_e" : tactic => `(tactic| (
@@ -303,5 +308,16 @@ macro_rules
       all_goals rule_iflets_c [$ts,*]
       all_goals opt_split_i128
       all_goals (rule_rhs_c [$ts,*]; opt_some_subst; rule_finish_e)))
+
+/-- `rule_auto_g` with every type split on `i128` before the right-hand side. -/
+syntax "rule_auto_gz " ident : tactic
+set_option hygiene false in
+macro_rules
+  | `(tactic| rule_auto_gz $r:ident) => `(tactic| (
+      rule_intro $r
+      rule_no_iflets
+      rule_lhs_g hG
+      all_goals opt_split_i128
+      all_goals (rule_rhs_c []; opt_some_subst; rule_finish_e)))
 
 end Opt.Proof
