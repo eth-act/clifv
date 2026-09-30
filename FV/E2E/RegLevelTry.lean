@@ -1,4 +1,5 @@
 import FV.E2E.RegLevelGoto
+import FV.E2E.RegLevelCall
 
 /-!
 # The call of a `try_call` on the machine (M6)
@@ -72,7 +73,7 @@ theorem os_tryCall {F : BitVec 64 → Prop} {X : ExtSem} {H : ArmHooks} (hC : Ca
     rw [← hex, ← hex']
   subst hss
   exact ⟨s'', hex', hW, hK, hdef, fun r ha hnd hnc => hoth r ha hnd (by rw [← clobbers_tryCall hcl]; exact hnc),
-    fun r hr hcs => hkeep r (by rw [← clobbers_tryCall hcl] at hr; exact hr) hcs⟩
+    fun r hr hcs => hkeep r (by rw [clobbers_tryCall hcl] at hr; exact hr) hcs⟩
 
 /-- **The call of a `try_call` on the machine**: from `Q` at a `tryCall` item, the machine runs
 the hooked callee and the branch to the normal-return successor, reaching `Q` at that
@@ -112,7 +113,7 @@ theorem realizes_tryCall {R : RL} (hR : R.Wf) (hC : CalleeOk R.F R.X R.H)
   obtain rfl : j = ti.handlers.length := by cases hctl; rfl
   have herr : Arm.r .ERR w = .None := by
     rw [← hst.world.1 .ERR (by simp [Masked]), hst.err]
-  have hW' : Arm.r .ERR w' = .None ∧ w'.program = w.program := hC.ext _ _ _ _ _ hx herr
+  have hW' : Arm.r .ERR w2 = .None ∧ w2.program = w.program := hC.ext _ _ _ _ _ hx herr
   -- the instruction's effect
   have hcl : ti.clobberAll = false := by
     have := ctlCheck_inst hck hvb hi
@@ -201,7 +202,7 @@ theorem realizes_tryCall {R : RL} (hR : R.Wf) (hC : CalleeOk R.F R.X R.H)
   have hfr := R.frameOk hR
   have hsp' : spOf s' = R.spB := hK.1.trans hst.sp
   have hstr : StRel R s' (writeM m2 ((((ops.zip (regs.map Loc.reg)).toList.filter (·.1.isDef)).zip
-      outs).filter (·.1.1.isLate))) w' := by
+      outs).filter (·.1.1.isLate))) w2 := by
     refine ⟨fun l hl hL => ?_, hW, herr', hprog', hsp', align_of_sp (by rw [hsp', hst.sp]) hst.align,
       fun hframe => ?_, code_keep hR.prog0 hst.code fun a ha => hK.2 a (.inr (.inr ha))⟩
     · cases l with

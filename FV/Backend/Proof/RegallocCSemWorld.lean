@@ -62,6 +62,8 @@ theorem csem_next_world' {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i 
   · exact absurd rfl (hnc _)
   all_goals first
     | (simp only [Option.some.injEq, Prod.mk.injEq, reduceCtorEq, and_false] at h; done)
+    | (simp only [Option.map_eq_some_iff, Prod.mk.injEq, reduceCtorEq, and_false, false_and,
+        exists_false] at h; done)
     | (simp only [Option.some.injEq, Prod.mk.injEq] at h; obtain ⟨-, rfl, -⟩ := h; exact ⟨herr, rfl⟩)
     | (split at h <;> simp only [Option.some.injEq, Prod.mk.injEq, reduceCtorEq, and_false] at h <;> done)
     | skip
