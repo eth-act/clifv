@@ -30,7 +30,7 @@ theorem backend_correct_opt_proven (cfg : Opt.Config) (hr : cfg.rules = .craneli
     (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
     (hC : ∀ s, CalleeOk
       (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
-    (hX : ∀ s, XCallsOk env (fun sl cm w =>
+    (hX : ∀ s, XCallsOk env (f.externs.map (·.2)) (fun sl cm w =>
       Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
         slotOff⟩ f sl cm w) X)
     (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
@@ -38,7 +38,7 @@ theorem backend_correct_opt_proven (cfg : Opt.Config) (hr : cfg.rules = .craneli
     (hE : Opt.EnvKeepsSymbols env)
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hbe : BodyEntry af s w₀)
-    (hargs : ArgsIn args s) (hcs : ClifEntry f args cs)
+    (hargs : ArgsIn f.sig args s) (hcs : ClifEntry f args cs)
     (hrel : Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s,
       syms, slotOff⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicit env (Opt.optimizeProgram p cfg) (optEntry cfg f cs)) (fuel : Nat) :

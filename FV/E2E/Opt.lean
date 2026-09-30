@@ -57,10 +57,10 @@ theorem inSubset_opt (cfg : Opt.Config) {p : Clif.Program} {f : Clif.Function}
     rw [hfind, hsub.externCalls b0 hb0 st0 hst0 fn args0 hc0 e he0]; rfl
   · rw [hF.externs]; exact hsub.callRegArgs
   · constructor
-    · rw [hF.sig]; exact hsub.noSpecial.1
+    · rw [hF.sig]; exact hsub.abiSigs.1
     · intro e he
       have : e ∈ f.externs := by rw [← hF.externs]; exact he
-      exact hsub.noSpecial.2 e this
+      exact hsub.abiSigs.2 e this
 
 theorem clifEntry_opt (cfg : Opt.Config)
     (hS : Opt.SimplifyPassSim cfg.simplifyFn cfg.skeletonFn) {f : Clif.Function}
@@ -134,7 +134,7 @@ theorem backend_correct_opt (cfg : Opt.Config)
     (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
     (hC : ∀ s, CalleeOk
       (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
-    (hX : ∀ s, XCallsOk env (fun sl cm w =>
+    (hX : ∀ s, XCallsOk env (f.externs.map (·.2)) (fun sl cm w =>
       Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
         slotOff⟩ f sl cm w) X)
     (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
@@ -142,7 +142,7 @@ theorem backend_correct_opt (cfg : Opt.Config)
     (hE : Opt.EnvKeepsSymbols env)
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hbe : BodyEntry af s w₀)
-    (hargs : ArgsIn args s) (hcs : ClifEntry f args cs)
+    (hargs : ArgsIn f.sig args s) (hcs : ClifEntry f args cs)
     (hrel : Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s,
       syms, slotOff⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicit env (Opt.optimizeProgram p cfg) (optEntry cfg f cs)) (fuel : Nat) :
@@ -160,7 +160,8 @@ theorem backend_correct_opt (cfg : Opt.Config)
     obtain ⟨b', hb', -⟩ := hent' b hb
     simp [optEntry, hb']
   have hA := backend_correct_final (inSubset_opt cfg hsub) hc hcov hC
-    (fun s' => by rw [rel_holds_slots hF.slots]; exact hX s') hsym hslot hent hres hbe hargs hcs'
+    (fun s' => by rw [rel_holds_slots hF.slots, hF.externs]; exact hX s') hsym hslot hent hres hbe
+    (by rw [hF.sig]; exact hargs) hcs'
     (by rw [rel_holds_slots hF.slots, hslots.1, hslots.2]; exact hrel) htr n'
   obtain ⟨hret, htrap⟩ := hn
   cases hr : Clif.runLoop env p fuel cs with

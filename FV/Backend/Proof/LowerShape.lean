@@ -52,8 +52,8 @@ structure LowerShape : Prop where
       (∃ tr, runTerm ctx "lower" [.inst (L.start + j)] sl.st = .ok (some (.regsVec sl.rss), sl.st', tr)) ∧
       (∀ (k : Nat) r out cls, stm.results[k]? = some r → sl.rss[k]? = some [.vreg out cls] →
         gn r = gn out)) ∧
-    -- terminator
-    termData B.term = .ok L.data ∧ L.tst.emitted = #[] ∧ st0.nextVreg ≤ L.tst.nextVreg ∧
+    -- terminator (a `return` of an `sret` function also returns the struct pointer, `abiTerm`)
+    termData (abiTerm f B.term) = .ok L.data ∧ L.tst.emitted = #[] ∧ st0.nextVreg ≤ L.tst.nextVreg ∧
     (∃ out tr, runTerm (termCtx ctx (L.start + B.body.length) L.data)
         (termCall B.term (L.start + B.body.length) L.targets).1
         (termCall B.term (L.start + B.body.length) L.targets).2 L.tst = .ok (some out, L.tst', tr)) ∧
@@ -97,7 +97,7 @@ structure Cert (A : Nat → Nat → List Clif.ValueId) : Prop where
   noEntry : ∀ (bi : Nat) (B : Clif.Block), f.blocks[bi]? = some B → ∀ bc ∈ dests B.term, blockIdx? f bc.block ≠ some 0
   /-- terminators and edges -/
   term : ∀ bi B L, f.blocks[bi]? = some B → bl[bi]? = some L →
-    (∀ y ∈ termArgs B.term, y ∈ A bi B.body.length) ∧
+    (∀ y ∈ termArgs (abiTerm f B.term), y ∈ A bi B.body.length) ∧
     (∀ x ∈ A bi B.body.length, ¬ (L.tst.nextVreg ≤ gn x ∧ gn x < L.tst'.nextVreg)) ∧
     ∀ bc ∈ dests B.term, ∀ tl TB, blockIdx? f bc.block = some tl → f.blocks[tl]? = some TB →
       (TB.params.map (·.1)).Nodup ∧

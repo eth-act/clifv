@@ -1,0 +1,75 @@
+; End-to-end theorem regression (`sret`): functions with a struct-return pointer parameter (in
+; x8 at entry, returned in x0 — `sigArgLocs`/`sigRets`; every `return` returns it, `abiTerm`)
+; and calls of `sret` callees (the pointer in x8, x0 defined by the call) are inside
+; `E2E.backend_correct_final`: in scope and accepted by `lean-e2e-check`, and the runs agree
+; with Cranelift-native (`scripts/lean-backend-filetests.sh corpus/clif-regress/sret.clif`).
+test interpret
+test run
+target aarch64
+
+function %pair(i64 sret, i64, i32) system_v {
+block0(v0: i64, v1: i64, v2: i32):
+    store.i64 notrap v1, v0
+    store.i32 notrap v2, v0+8
+    return
+}
+
+; `sret` after a normal parameter: the normal parameters still take x0, x1
+function %mid(i32, i64 sret, i32) system_v {
+block0(v0: i32, v1: i64, v2: i32):
+    v3 = iadd v0, v2
+    store.i32 notrap v3, v1
+    return
+}
+
+; several returns, each returning the struct pointer
+function %pick(i64 sret, i8, i64) system_v {
+block0(v0: i64, v1: i8, v2: i64):
+    brif v1, block1, block2
+block1:
+    store.i64 notrap v2, v0
+    return
+block2:
+    v3 = iconst.i64 -1
+    store.i64 notrap v3, v0
+    return
+}
+
+function %call_pair(i64) -> i64 system_v {
+    ss0 = explicit_slot 16, align = 8
+    fn0 = %pair(i64 sret, i64, i32) system_v
+block0(v0: i64):
+    v1 = stack_addr.i64 ss0
+    v2 = iconst.i32 7
+    call fn0(v1, v0, v2)
+    v3 = load.i64 notrap v1
+    v4 = load.i32 notrap v1+8
+    v5 = uextend.i64 v4
+    v6 = iadd v3, v5
+    return v6
+}
+; run: %call_pair(5) == 12
+; run: %call_pair(-7) == 0
+
+function %call_mid(i32, i32) -> i32 system_v {
+    ss0 = explicit_slot 4, align = 4
+    fn0 = colocated %mid(i32, i64 sret, i32) system_v
+block0(v0: i32, v1: i32):
+    v2 = stack_addr.i64 ss0
+    call fn0(v0, v2, v1)
+    v3 = load.i32 notrap v2
+    return v3
+}
+; run: %call_mid(3, 4) == 7
+
+function %call_pick(i8, i64) -> i64 system_v {
+    ss0 = explicit_slot 8, align = 8
+    fn0 = %pick(i64 sret, i8, i64) system_v
+block0(v0: i8, v1: i64):
+    v2 = stack_addr.i64 ss0
+    call fn0(v2, v0, v1)
+    v3 = load.i64 notrap v2
+    return v3
+}
+; run: %call_pick(1, 42) == 42
+; run: %call_pick(0, 42) == -1

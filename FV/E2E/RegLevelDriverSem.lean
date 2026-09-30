@@ -186,30 +186,66 @@ theorem driverSem_csem (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) :
 /-! ## Calls -/
 
 /-- **The contract of the external semantics** (the callees and the linker, outside the
-function): a call of the extern `name` — `bl name` (`some name`, uses = the arguments) or `blr`
-of its address (`none`, first use = `X.sym name 0`) — with at most 8 arguments related to CLIF
-values `vals`, from a world related (`MR`) to CLIF memory `cm`, where the CLIF extern returns
-`rvals` with memory `cm'`, returns values related to `rvals` and a world related to `cm'`. -/
-def XCallsOk (env : Clif.Env) (MR : MemRelT) (X : ExtSem) : Prop :=
-  ∀ (name : String) g (sl : List (Clif.SlotId × Nat)) (cm : Clif.Mem) (w : Arm.ArmState)
-    (d : Option String) (uses args : List CV) (vals rvals : List Clif.Val) (cm' : Clif.Mem) (nd : Nat),
-    env.extern name = some g →
-    (d = some name ∧ uses = args ∨ d = none ∧ uses = ofX (X.sym name 0) :: args) →
+function), for the externs `exts` a function declares: a call of the extern `ext ∈ exts` —
+`bl name` (`some name`, uses = the arguments) or `blr` of its address (`none`, first use =
+`X.sym name 0`) — with at most 8 arguments related to CLIF values `vals`, from a world related
+(`MR`) to CLIF memory `cm`, where the CLIF extern returns `rvals` with memory `cm'`, returns one
+value per ABI return of the declaration (`sigRets`: the declared returns, or for an `sret`
+signature without returns the struct pointer, whose value is not constrained), the first ones
+related to `rvals`, and a world related to `cm'`. For declarations without an `sret` parameter
+this is the former contract (one value per result, related to the results). -/
+def XCallsOk (env : Clif.Env) (exts : List Clif.ExtFunc) (MR : MemRelT) (X : ExtSem) : Prop :=
+  ∀ ext ∈ exts, ∀ g (sl : List (Clif.SlotId × Nat)) (cm : Clif.Mem) (w : Arm.ArmState)
+    (d : Option String) (uses args : List CV) (vals rvals : List Clif.Val) (cm' : Clif.Mem),
+    env.extern ext.name = some g →
+    (d = some ext.name ∧ uses = args ∨ d = none ∧ uses = ofX (X.sym ext.name 0) :: args) →
     vals.length ≤ 8 → AllHold vals args → MR sl cm w →
-    g vals cm = .returned rvals cm' → nd = rvals.length →
-    ∃ outs w', X.call d uses w = some (outs, w') ∧ AllHold rvals outs ∧ MR sl cm' w'
+    g vals cm = .returned rvals cm' → rvals.length = ext.sig.returns.length →
+    ∃ outs w', X.call d uses w = some (outs, w') ∧ outs.length = (sigRets ext.sig).length ∧
+      PrefixHold rvals outs ∧ MR sl cm' w'
+
+/-- `sigRets` of a signature without `sret` parameter is its declared returns. -/
+theorem sigRets_of_noSret {s : Clif.Signature} (h : s.params.any (·.purpose == .sret) = false) :
+    sigRets s = s.returns := by
+  have hn : s.params.find? (·.purpose == .sret) = none := by
+    rw [List.find?_eq_none]
+    intro p hp hs
+    have := List.any_eq_false.mp h p hp
+    exact this hs
+  unfold sigRets
+  rw [hn]
+
+/-- The former contract (every extern, one value per result, all related) implies `XCallsOk`
+for declarations without `sret` parameter: for a function without `sret` callees the new
+hypothesis is no stronger than the former one. -/
+theorem xCallsOk_of_results {env : Clif.Env} {exts : List Clif.ExtFunc} {MR : MemRelT}
+    {X : ExtSem} (hns : ∀ e ∈ exts, e.sig.params.any (·.purpose == .sret) = false)
+    (h : ∀ (name : String) g (sl : List (Clif.SlotId × Nat)) (cm : Clif.Mem) (w : Arm.ArmState)
+      (d : Option String) (uses args : List CV) (vals rvals : List Clif.Val) (cm' : Clif.Mem)
+      (nd : Nat),
+      env.extern name = some g →
+      (d = some name ∧ uses = args ∨ d = none ∧ uses = ofX (X.sym name 0) :: args) →
+      vals.length ≤ 8 → AllHold vals args → MR sl cm w →
+      g vals cm = .returned rvals cm' → nd = rvals.length →
+      ∃ outs w', X.call d uses w = some (outs, w') ∧ AllHold rvals outs ∧ MR sl cm' w') :
+    XCallsOk env exts MR X := by
+  intro ext hin g sl cm w d uses args vals rvals cm' hg hd hlen hall hmr hret hrl
+  obtain ⟨outs, w', hc, ho, hm⟩ :=
+    h ext.name g sl cm w d uses args vals rvals cm' rvals.length hg hd hlen hall hmr hret rfl
+  exact ⟨outs, w', hc, by rw [sigRets_of_noSret (hns ext hin), ← hrl, ho.1], ho.prefixHold, hm⟩
 
 /-- **`CallsRefine` for `csem`**, from the external contract. -/
 theorem callsRefine_csem {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {env : Clif.Env}
-    {MR : MemRelT} (hX : XCallsOk env MR X) : CallsRefine F env MR (csem F ctx X) := by
+    {exts : List Clif.ExtFunc} {MR : MemRelT} (hX : XCallsOk env exts MR X) :
+    CallsRefine F env exts MR (csem F ctx X) := by
   refine ⟨fun n => X.sym n 0, fun rd n w => ⟨w, rfl, fun _ _ _ => rfl, fun _ _ => rfl, rfl⟩, ?_⟩
-  intro name g sl cm w dest us ds uses args vals rvals cm' hg hd _ _ hlen hall hmr hret hds
+  intro ext hin g sl cm w dest us ds uses args vals rvals cm' hg hd hds hlen hall hmr hret hrl
   rcases hd with ⟨rfl, rfl⟩ | ⟨r, rfl, rfl⟩
-  · obtain ⟨outs, w', hc, ho, hm⟩ := hX name g sl cm w (some name) uses uses vals rvals cm' ds.length
-      hg (.inl ⟨rfl, rfl⟩) hlen hall hmr hret hds
-    exact ⟨outs, w', by simp [csem, hc], ho, hm⟩
-  · obtain ⟨outs, w', hc, ho, hm⟩ := hX name g sl cm w none _ args vals rvals cm' ds.length
-      hg (.inr ⟨rfl, rfl⟩) hlen hall hmr hret hds
-    exact ⟨outs, w', by simp [csem, hc], ho, hm⟩
+  · obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX ext hin g sl cm w (some ext.name) uses uses vals rvals
+      cm' hg (.inl ⟨rfl, rfl⟩) hlen hall hmr hret hrl
+    exact ⟨outs, w', by simp [csem, hc], by rw [hol, hds], ho, hm⟩
+  · obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX ext hin g sl cm w none _ args vals rvals cm'
+      hg (.inr ⟨rfl, rfl⟩) hlen hall hmr hret hrl
+    exact ⟨outs, w', by simp [csem, hc], by rw [hol, hds], ho, hm⟩
 
 end Backend.Proof

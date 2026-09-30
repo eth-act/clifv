@@ -35,13 +35,14 @@ theorem backend_correct_m4 {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc 
     -- M6 + M5
     (hM6 : RegLevelCorrect (fun s => csem (F s) (ctx s) (X s)) F astep vcp af fb)
     (hRef : ∀ s, Refines (F s) (csem (F s) (ctx s) (X s)))
-    -- the external contract (callees, linker)
-    (hX : ∀ s, XCallsOk env (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w) (X s))
+    -- the external contract (callees of `f`, linker)
+    (hX : ∀ s, XCallsOk env (f.externs.map (·.2))
+      (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w) (X s))
     (hmem : ∀ s, MemRefines (F s) slotOff syms (csem (F s) (ctx s) (X s)))
     -- the run
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hbe : BodyEntry af s w₀)
-    (hargs : ArgsIn args s) (hcs : ClifEntry f args cs)
+    (hargs : ArgsIn f.sig args s) (hcs : ClifEntry f args cs)
     (hrel : Rel.holds ⟨F s, syms, slotOff⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ArmRefines fb base ra astep s (Clif.runLoop env p fuel cs) :=
@@ -73,8 +74,8 @@ theorem backend_correct_final {p : Clif.Program} {f : Clif.Function} {k : Nat} {
     -- the callee contract of the machine's call hook (AAPCS64)
     (hC : ∀ s, CalleeOk
       (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
-    -- the external contract (callees, linker)
-    (hX : ∀ s, XCallsOk env (fun sl cm w =>
+    -- the external contract (callees of `f`, linker)
+    (hX : ∀ s, XCallsOk env (f.externs.map (·.2)) (fun sl cm w =>
       Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
         slotOff⟩ f sl cm w) X)
     -- memory forms (`memRefines_csem`): the external semantics' symbol addresses are the linked
@@ -84,7 +85,7 @@ theorem backend_correct_final {p : Clif.Program} {f : Clif.Function} {k : Nat} {
     -- the run
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hbe : BodyEntry af s w₀)
-    (hargs : ArgsIn args s) (hcs : ClifEntry f args cs)
+    (hargs : ArgsIn f.sig args s) (hcs : ClifEntry f args cs)
     (hrel : Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s,
       syms, slotOff⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicit env p cs) (fuel : Nat) :

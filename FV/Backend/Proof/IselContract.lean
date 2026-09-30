@@ -48,6 +48,24 @@ def VHolds (v : Clif.Val) (x : CV) : Prop := x.setWidth v.ty.width = v.bits
 def AllHold (vals : List Clif.Val) (xs : List CV) : Prop :=
   vals.length = xs.length ∧ ∀ (j : Nat) v x, vals[j]? = some v → xs[j]? = some x → VHolds v x
 
+/-- `vals` are held by the first `vals.length` values of `xs` (`xs` may be longer: an `sret`
+signature's ABI returns end with the struct pointer, `sigRets`). -/
+def PrefixHold (vals : List Clif.Val) (xs : List CV) : Prop :=
+  vals.length ≤ xs.length ∧ ∀ (j : Nat) v x, vals[j]? = some v → xs[j]? = some x → VHolds v x
+
+theorem AllHold.prefixHold {vals : List Clif.Val} {xs : List CV} (h : AllHold vals xs) :
+    PrefixHold vals xs := ⟨Nat.le_of_eq h.1, h.2⟩
+
+theorem PrefixHold.allHold {vals : List Clif.Val} {xs : List CV} (h : PrefixHold vals xs)
+    (hl : vals.length = xs.length) : AllHold vals xs := ⟨hl, h.2⟩
+
+/-- The values of `a ++ b` held by `xs` include those of `a`. -/
+theorem AllHold.prefix_append {a b : List Clif.Val} {xs : List CV} (h : AllHold (a ++ b) xs) :
+    PrefixHold a xs := by
+  refine ⟨by have := h.1; simp at this; omega, fun j v x hj hx => h.2 j v x ?_ hx⟩
+  rw [List.getElem?_append_left (List.getElem?_eq_some_iff.mp hj).1]
+  exact hj
+
 /-- Relation between the CLIF memory (with the activation's slot bases) and the VCode world. -/
 abbrev MemRelT := List (Clif.SlotId × Nat) → Clif.Mem → Arm.ArmState → Prop
 
@@ -756,43 +774,43 @@ def LowerRulesCorrect (p : Program) : Prop :=
 /-! ### Calls (contract change #5) -/
 
 /-- **The callee contract at the VCode level** (M6 discharges it for `csem` from `CalleeSound`
-and `ExtSem.sym`): there is a link-time address `sym n` for every symbol such that
-`loadExtNameGot rd n` loads it (changing nothing else the memory relation sees), and a call of
-the extern `name` (`bl name`, or `blr` of a register holding `sym name`, whose value is then the
-first use) with at most 8 argument values in x0.. (`AllHold`: low bits) returns the extern's
-results in x0.. (the defs, in order) and a world related to the extern's memory. -/
-def CallsRefine (F : BitVec 64 → Prop) (env : Clif.Env) (MR : MemRelT) (isem : Sem) : Prop :=
+and `ExtSem.sym`), for the externs `exts` (the call sites' declarations): there is a link-time
+address `sym n` for every symbol such that `loadExtNameGot rd n` loads it (changing nothing else
+the memory relation sees), and a call of the extern `ext ∈ exts` (`bl name`, or `blr` of a
+register holding `sym name`, whose value is then the first use) with at most 8 argument values
+(`AllHold`: low bits) and one def per ABI return (`sigRets`: an `sret` signature without
+returns also returns its struct pointer) returns one value per def, the first ones the extern's
+results (`PrefixHold`), and a world related to the extern's memory. -/
+def CallsRefine (F : BitVec 64 → Prop) (env : Clif.Env) (exts : List Clif.ExtFunc) (MR : MemRelT)
+    (isem : Sem) : Prop :=
   ∃ sym : String → BitVec 64,
     (∀ (rd : Reg) (n : String) (w : Arm.ArmState), ∃ w',
       isem (.loadExtNameGot rd n) [] w = some ([ofX (sym n)], w', .next) ∧ SameWorldNF F w' w) ∧
-    ∀ (name : String) g (sl : List (Clif.SlotId × Nat)) (cm : Clif.Mem) (w : Arm.ArmState)
+    ∀ ext ∈ exts, ∀ g (sl : List (Clif.SlotId × Nat)) (cm : Clif.Mem) (w : Arm.ArmState)
       (dest : CallDest) (us ds : List (Reg × Reg)) (uses args : List CV)
       (vals rvals : List Clif.Val) (cm' : Clif.Mem),
-      env.extern name = some g →
-      (dest = .sym name ∧ uses = args ∨ ∃ r, dest = .reg r ∧ uses = ofX (sym name) :: args) →
-      us.map (·.2) = (List.range us.length).map Reg.x →
-      ds.map (·.1) = (List.range ds.length).map Reg.x →
+      env.extern ext.name = some g →
+      (dest = .sym ext.name ∧ uses = args ∨ ∃ r, dest = .reg r ∧ uses = ofX (sym ext.name) :: args) →
+      ds.length = (sigRets ext.sig).length →
       vals.length ≤ 8 → AllHold vals args → MR sl cm w →
-      g vals cm = .returned rvals cm' → ds.length = rvals.length →
+      g vals cm = .returned rvals cm' → rvals.length = ext.sig.returns.length →
       ∃ outs w', isem (.call ⟨dest, us, ds⟩) uses w = some (outs, w', .next) ∧
-        AllHold rvals outs ∧ MR sl cm' w'
+        outs.length = ds.length ∧ PrefixHold rvals outs ∧ MR sl cm' w'
 
 /-- Every extern of `f` takes at most 8 parameters (all in registers; `E2E.InSubset.callRegArgs`):
 calls with stack-passed arguments are outside the theorem. -/
 def CallRegArgs (f : Clif.Function) : Prop :=
   ∀ (fn : Clif.FnRef) (e : Clif.ExtFunc), f.extern? fn = some e → e.sig.params.length ≤ 8
 
-/-- Every extern of `f` has only `normal` parameters (no `sret`; `E2E.InSubset.noSpecial`):
-call sites place arguments in x0.. only for such signatures. New since `call_indirect`/
-`func_addr` compile (rust-route step 4); sret signatures are outside the theorem. -/
-def ExternsNormal (f : Clif.Function) : Prop :=
-  ∀ (fn : Clif.FnRef) (e : Clif.ExtFunc), f.extern? fn = some e →
-    e.sig.params.all (·.purpose = .normal)
+/-- Every extern `f` declares is in `exts` (the externs `CallsRefine` covers). -/
+def ExternsIn (f : Clif.Function) (exts : List Clif.ExtFunc) : Prop :=
+  ∀ (fn : Clif.FnRef) (e : Clif.ExtFunc), f.extern? fn = some e → e ∈ exts
 
-/-- `LowerRuleOk` for a call rule: additionally assumes `CallRegArgs f` and `ExternsNormal f`. -/
+/-- `LowerRuleOk` for a call rule: additionally assumes `CallRegArgs f` and that the callee
+contract covers `f`'s externs (`ExternsIn f exts`). -/
 def CallRuleOk (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
-    (p : Program) (r : Rule) : Prop :=
-  ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx → CallRegArgs f → ExternsNormal f →
+    (exts : List Clif.ExtFunc) (p : Program) (r : Rule) : Prop :=
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx → CallRegArgs f → ExternsIn f exts →
   ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info → info.clif = some inst →
   ∀ (cfg : Config), cfg.checkOverlap = false →
   ∀ (m n : Nat) (st : LState) (tr : Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId)
@@ -807,9 +825,10 @@ def CallRuleOk (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
 /-- **M4's target for the call rules**: under the callee contract, the call root rules are
 correct. -/
 def CallRulesCorrect (p : Program) : Prop :=
-  ∀ (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program),
-    Refines F isem → MRStable F MR → CallsRefine F env MR isem →
-    ∀ r ∈ p.rulesOf TId.lower, callRootRule r = true → CallRuleOk isem MR env cp p r
+  ∀ (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
+    (exts : List Clif.ExtFunc),
+    Refines F isem → MRStable F MR → CallsRefine F env exts MR isem →
+    ∀ r ∈ p.rulesOf TId.lower, callRootRule r = true → CallRuleOk isem MR env cp exts p r
 
 /-- The root rules of `lower` outside the closure (their patterns name a non-E opcode, a
 non-`i8..i64` type or a vector/float type test) never match an instruction of a context
@@ -873,9 +892,10 @@ theorem lowerInstOk_of_rules {p : Program} (hp : Data p) (hrules : LowerRulesCor
     (hex : ExcludedUnmatchable p) (hcalls : CallRulesCorrect p) (hmem : MemRulesCorrect p)
     {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
     {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program} (hR : Refines F isem)
-    (hMR : MRStable F MR) (hcr : CallsRefine F env MR isem) (hMem : MemRefines F sb syms isem)
+    (hMR : MRStable F MR) {exts : List Clif.ExtFunc} (hcr : CallsRefine F env exts MR isem)
+    (hMem : MemRefines F sb syms isem)
     {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) (hra : CallRegArgs f)
-    (hnorm : ExternsNormal f) (hE : Compile.functionE f = true)
+    (hnorm : ExternsIn f exts) (hE : Compile.functionE f = true)
     (hMRo : MemRelOk F sb syms f MR) {ii : Nat} {info : IInfo}
     {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
     {cfg : Config} (hco : cfg.checkOverlap = false) {n : Nat}
@@ -908,7 +928,7 @@ theorem lowerInstOk_of_rules {p : Program} (hp : Data p) (hrules : LowerRulesCor
           hco m n st tr env' s1 out st' tr2 (by omega) (by omega) hvb hfirst hmatch heval
       · exact hmem F sb syms isem MR env cp hR hMR hMem r hr hm f ctx hctx hMRo ii info inst hi hc
           cfg hco m n st tr env' s1 out st' tr2 (by omega) (by omega) hvb hfirst hmatch heval
-    · exact hcalls F isem MR env cp hR hMR hcr r hr hcall f ctx hctx hra hnorm ii info inst hi hc
+    · exact hcalls F isem MR env cp exts hR hMR hcr r hr hcall f ctx hctx hra hnorm ii info inst hi hc
         cfg hco m n st tr env' s1 out st' tr2 (by omega) (by omega) hvb hfirst hmatch heval
 
 set_option maxRecDepth 20000 in
@@ -919,9 +939,9 @@ theorem lowerInstOk_runTerm (hrules : LowerRulesCorrect program)
     (hmem : MemRulesCorrect program)
     {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat} {isem : Sem} {MR : MemRelT}
     {env : Clif.Env} {cp : Clif.Program} (hR : Refines F isem) (hMR : MRStable F MR)
-    (hcr : CallsRefine F env MR isem) (hMem : MemRefines F sb syms isem)
+    {exts : List Clif.ExtFunc} (hcr : CallsRefine F env exts MR isem) (hMem : MemRefines F sb syms isem)
     {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) (hra : CallRegArgs f)
-    (hnorm : ExternsNormal f) (hE : Compile.functionE f = true)
+    (hnorm : ExternsIn f exts) (hE : Compile.functionE f = true)
     (hMRo : MemRelOk F sb syms f MR) {ii : Nat} {info : IInfo}
     {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
     {st : LState} {out : V} {st' : LState} {tr : List RuleId} (hvb : ValsBelow ctx st)
