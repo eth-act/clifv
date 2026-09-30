@@ -60,10 +60,20 @@ Deferred:
 - a correct `umulhi`/`smulhi` expansion at `i128` (now unsupported), `try_call` with `i128`
   in the validator, `i128` overflow ops and atomics, stack-passed `i128` arguments.
 
+## `sret`: what `E2E.backend_correct_final` does not cover (2026-09-30)
+
+Functions with a struct-return pointer and calls of `sret` callees are inside the end-to-end
+theorem (`docs/contracts/e2e.md`, "`sret`"). Deferred:
+- the conclusion claims the CLIF return values (none for an `sret` function) and the memory the
+  function wrote through the pointer, not that x0 holds the pointer on return (the ABI's
+  `sigRets`); callers compiled by cg_clif and the Lean backend do not read it;
+- `sret` with 8 further parameters (9 parameters: `InSubset.regParams` counts the pointer),
+  `vmctx`/`sarg` parameters (flagged unverified).
+
 ## Other deferred items
 
 - **M3 validator** (Cranelift's own machine code vs CLIF, per function): paused on branch `agent/validator`. Only needed to ship Cranelift's bytes with assurance.
 - **M3b** (Lean-optimised vs Cranelift-optimised CLIF comparison): optional, not started.
 - **DSL `compile_correct` (M2):** paused on branch `agent/m2proof`.
-- **Rust route extras:** data objects via a cg_clif fork, `sret`, panic/`mem*` contracts, `dyn`. See `docs/research/rust-clif-survey.md`.
+- **Rust route extras:** data objects via a cg_clif fork, panic/`mem*` contracts, `dyn`. See `docs/research/rust-clif-survey.md`.
 - **After M7 (PLAN.md):** SIMD, RISC-V, a verified frontend.
