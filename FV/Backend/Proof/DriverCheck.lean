@@ -81,7 +81,7 @@ def termCall (t : Clif.Terminator) (ti : Nat) (targets : List Label) : String ×
 
 /-- The value operands of a CLIF instruction. -/
 def instArgs : Clif.Inst → List Clif.ValueId
-  | .iconst .. | .stackAddr .. | .fence | .nop | .symbolValue .. => []
+  | .iconst .. | .stackAddr .. | .fence | .nop | .symbolValue .. | .tlsValue .. => []
   | .unary _ _ x | .bmask _ x | .extend _ _ x | .ireduce _ x | .isplit _ x
   | .load _ _ _ x _ | .atomicLoad _ _ x | .bitcast _ _ x | .trapz x _ | .trapnz x _ => [x]
   | .binary _ _ x y | .div _ _ x y | .overflow _ _ x y | .icmp _ _ x y

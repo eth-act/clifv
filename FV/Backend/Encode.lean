@@ -121,6 +121,7 @@ def armBits : ArmInst → BitVec 32
   | .BR (.Hints x) => 0b11010101000000110010#20 ++ x.CRm ++ x.op2 ++ 0b11111#5
   | .BR (.Barrier x) => 0b11010101000000110011#20 ++ x.CRm ++ x.op2 ++ 0b11111#5
   | .BR (.Test_branch x) => x.b5 ++ 0b011011#6 ++ x.op ++ x.b40 ++ x.imm14 ++ x.Rt
+  | .BR (.Mrs x) => 0b110101010011#12 ++ x.o0 ++ x.op1 ++ x.CRn ++ x.CRm ++ x.op2 ++ x.Rt
   -- C4.1 Data Processing -- Register
   | .DPR (.Add_sub_carry x) =>
     x.sf ++ x.op ++ x.S ++ 0b11010000#8 ++ x.Rm ++ 0b000000#6 ++ x.Rn ++ x.Rd
@@ -209,6 +210,8 @@ def _root_.Arm.ArmInst.norm : ArmInst → ArmInst
   | .BR (.Barrier x) => .BR (.Barrier { CRm := x.CRm, op2 := x.op2 })
   | .BR (.Test_branch x) =>
     .BR (.Test_branch { b5 := x.b5, op := x.op, b40 := x.b40, imm14 := x.imm14, Rt := x.Rt })
+  | .BR (.Mrs x) =>
+    .BR (.Mrs { o0 := x.o0, op1 := x.op1, CRn := x.CRn, CRm := x.CRm, op2 := x.op2, Rt := x.Rt })
   | .DPR (.Add_sub_carry x) =>
     .DPR (.Add_sub_carry { sf := x.sf, op := x.op, S := x.S, Rm := x.Rm, Rn := x.Rn, Rd := x.Rd })
   | .DPR (.Add_sub_shifted_reg x) =>
@@ -666,6 +669,23 @@ def Insn.armFields (env : Env) (i : Insn) : Except String ArmInst := do
     pure (.DPR (.Conditional_select { sf := 1, op := 1, S := 0, Rm := 31,
                                       cond := c.invert.bits, op2 := 0, Rn := 31,
                                       Rd := ← rd.encZR }))
+  -- the TLSDESC sequence (`emit.rs` `ElfTlsGetAddr`); the immediates come from the
+  -- `R_AARCH64_TLSDESC_*` relocations, as for the GOT forms above
+  | .adrpTlsDesc rd _ =>
+    pure (.DPI (.PC_rel_addressing { op := 1, immlo := 0, immhi := 0, Rd := ← rd.encZR }))
+  | .ldrTlsDescLo12 rt rn _ =>
+    pure (.LDST (.Reg_unsigned_imm { size := 3, V := 0, opc := 1, imm12 := 0, Rn := ← rn.encSP,
+                                     Rt := ← rt.encZR }))
+  | .addTlsDescLo12 rd rn _ =>
+    pure (.DPI (.Add_sub_imm { sf := 1, op := 0, S := 0, sh := 0, imm12 := 0, Rn := ← rn.encSP,
+                               Rd := ← rd.encSP }))
+  | .blrTlsDesc rn _ =>
+    pure (.BR (.Uncond_branch_reg { opc := 1, op2 := 31, op3 := 0, Rn := ← rn.encZR, op4 := 0 }))
+  | .mrsTpidrEl0 rt =>
+    -- C6.2 MRS, TPIDR_EL0 = (op0 3, op1 011, CRn 1101, CRm 0000, op2 010) (Cranelift
+    -- `0xd53bd040 | rt`)
+    pure (.BR (.Mrs { o0 := 1, op1 := 0b011#3, CRn := 0b1101#4, CRm := 0, op2 := 0b010#3,
+                      Rt := ← rt.encZR }))
 where
   /-- `Reg_exclusive` fields of `ldar`/`stlr`/`ldaxr`/`stlxr` (`bits` = the access size;
   `ord`/`L`/`Rs`/`o0` per C6.2 "Load/store exclusive / … acquire-release"). -/
@@ -702,24 +722,37 @@ def Insn.decodeOk (env : Env) (i : Insn) : Bool :=
 /-- AArch64 ELF relocation types used (AAELF64 "ELF for the Arm 64-bit Architecture", relocation codes table). -/
 inductive RelocType where
   | call26 | adrGotPage | ld64GotLo12Nc | adrPrelPgHi21 | addAbsLo12Nc
+  | tlsDescAdrPage21 | tlsDescLd64Lo12 | tlsDescAddLo12 | tlsDescCall
   deriving DecidableEq, Repr, Inhabited, BEq
 
 /-- ELF `R_AARCH64_*` number. -/
 def RelocType.elf : RelocType → Nat
   | .call26 => 283 | .adrGotPage => 311 | .ld64GotLo12Nc => 312 | .adrPrelPgHi21 => 275
   | .addAbsLo12Nc => 277
+  | .tlsDescAdrPage21 => 562 | .tlsDescLd64Lo12 => 563 | .tlsDescAddLo12 => 564
+  | .tlsDescCall => 569
 
 /-- ELF name (as `llvm-readelf` prints it). -/
 def RelocType.elfName : RelocType → String
   | .call26 => "R_AARCH64_CALL26" | .adrGotPage => "R_AARCH64_ADR_GOT_PAGE"
   | .ld64GotLo12Nc => "R_AARCH64_LD64_GOT_LO12_NC" | .adrPrelPgHi21 => "R_AARCH64_ADR_PREL_PG_HI21"
   | .addAbsLo12Nc => "R_AARCH64_ADD_ABS_LO12_NC"
+  | .tlsDescAdrPage21 => "R_AARCH64_TLSDESC_ADR_PAGE21"
+  | .tlsDescLd64Lo12 => "R_AARCH64_TLSDESC_LD64_LO12"
+  | .tlsDescAddLo12 => "R_AARCH64_TLSDESC_ADD_LO12" | .tlsDescCall => "R_AARCH64_TLSDESC_CALL"
 
 /-- Cranelift's `binemit::Reloc` name (the `relocs.json` schema of `docs/contracts/drivers.md`). -/
 def RelocType.craneliftName : RelocType → String
   | .call26 => "Arm64Call" | .adrGotPage => "Aarch64AdrGotPage21"
   | .ld64GotLo12Nc => "Aarch64Ld64GotLo12Nc" | .adrPrelPgHi21 => "Aarch64AdrPrelPgHi21"
   | .addAbsLo12Nc => "Aarch64AddAbsLo12Nc"
+  | .tlsDescAdrPage21 => "Aarch64TlsDescAdrPage21" | .tlsDescLd64Lo12 => "Aarch64TlsDescLd64Lo12"
+  | .tlsDescAddLo12 => "Aarch64TlsDescAddLo12" | .tlsDescCall => "Aarch64TlsDescCall"
+
+/-- A TLS relocation: its symbol is a thread-local variable (`STT_TLS`). -/
+def RelocType.isTls : RelocType → Bool
+  | .tlsDescAdrPage21 | .tlsDescLd64Lo12 | .tlsDescAddLo12 | .tlsDescCall => true
+  | _ => false
 
 /-- A relocation: byte offset of the instruction, type, target symbol, RELA addend. -/
 structure Reloc where
@@ -736,6 +769,10 @@ def Insn.reloc? : Insn → Option (RelocType × String × Int)
   | .ldrGotLo12 _ _ s => some (.ld64GotLo12Nc, s, 0)
   | .adrp _ s a => some (.adrPrelPgHi21, s, a)
   | .addLo12 _ _ s a => some (.addAbsLo12Nc, s, a)
+  | .adrpTlsDesc _ s => some (.tlsDescAdrPage21, s, 0)
+  | .ldrTlsDescLo12 _ _ s => some (.tlsDescLd64Lo12, s, 0)
+  | .addTlsDescLo12 _ _ s => some (.tlsDescAddLo12, s, 0)
+  | .blrTlsDesc _ s => some (.tlsDescCall, s, 0)
   | _ => none
 
 /-! ## Layout -/

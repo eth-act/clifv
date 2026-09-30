@@ -101,7 +101,7 @@ def inst128 (ty : ValueId → Option Ty) : Inst → Bool
   | .bitcast t _ x => t == .i128 || ty x == some .i128
   | .trapz c _ | .trapnz c _ => ty c == some .i128
   | .nop => false
-  | .symbolValue t _ => t == .i128
+  | .symbolValue t _ | .tlsValue t _ => t == .i128
 
 /-- Does `f` mention `i128` anywhere (its signature, an extern's, a `sigN` declaration, a
 block parameter, or an instruction operand/result)? -/
@@ -1109,6 +1109,9 @@ def rewriteStmt (f : Function) (ty : ValueId → Option Ty) (s : Stmt) : M Unit 
   | .nop => emitS s
   | .symbolValue t gv =>
     if t == .i128 then throw "legalize128: i128 symbol_value"
+    else emitS s
+  | .tlsValue t _ =>
+    if t == .i128 then throw "legalize128: i128 tls_value"
     else emitS s
 
 /-- The arguments of a `try_call` successor `d`, with the call's return groups `rg`: an `i128`

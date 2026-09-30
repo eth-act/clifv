@@ -12,7 +12,7 @@ relocatable object with the sections
 | 0 | — | `SHT_NULL` | |
 | 1 | `.text` | `SHT_PROGBITS`, `AX`, align 4 | the functions' words, in order |
 | 2 | `.rela.text` | `SHT_RELA`, `I`, link 3, info 1 | `R_AARCH64_*` relocations with addends |
-| 3 | `.symtab` | `SHT_SYMTAB`, link 4 | null; mapping symbols `$x`/`$d` (local); functions (`STT_FUNC`, global, with sizes); undefined referenced symbols (global) |
+| 3 | `.symtab` | `SHT_SYMTAB`, link 4 | null; mapping symbols `$x`/`$d` (local); functions (`STT_FUNC`, global, with sizes); undefined referenced symbols (global; `STT_TLS` for the targets of TLS relocations) |
 | 4 | `.strtab` | `SHT_STRTAB` | symbol names |
 | 5 | `.shstrtab` | `SHT_STRTAB` | section names |
 | 6 | `.eh_frame` | `SHT_PROGBITS`, `A`, align 8 | CIE(s) + one FDE per function (if unwind rows are given) |
@@ -71,7 +71,7 @@ structure ElfSym where
   name : String
   /-- `STB_LOCAL` 0, `STB_GLOBAL` 1. -/
   bind : Nat
-  /-- `STT_NOTYPE` 0, `STT_FUNC` 2. -/
+  /-- `STT_NOTYPE` 0, `STT_FUNC` 2, `STT_TLS` 6. -/
   type : Nat
   /-- Section index (0 = undefined). -/
   shndx : Nat
@@ -207,8 +207,12 @@ def elfObject (funcs : List (FnAsm × FnBin)) (unwind : List (String × List (Na
   let targets : List String :=
     ((placed.toList.flatMap fun (_, _, fb) => fb.relocs.map (·.sym)) ++
       (if exc then [persName] else [])).eraseDups
+  -- a thread-local variable (the target of a TLS relocation) is `STT_TLS` 6, as the assembler
+  -- marks it
+  let tls (t : String) : Bool :=
+    placed.toList.any fun (_, _, fb) => fb.relocs.any fun r => r.sym == t && r.type.isTls
   let undef : List ElfSym := (targets.filter fun t => !defined.any (·.name == t)).map fun t =>
-    { name := t, bind := 1, type := 0, shndx := 0, value := 0, size := 0 }
+    { name := t, bind := 1, type := if tls t then 6 else 0, shndx := 0, value := 0, size := 0 }
   let syms := locals ++ defined ++ undef
   let (strtab, nameOffs) := strTable (syms.map (·.name))
   let symtab : ByteArray := syms.zip nameOffs |>.foldl (fun acc (s, o) => acc ++ s.bytes o)

@@ -86,6 +86,9 @@ def decode_branch (i : BitVec 32) : Option ArmInst :=
   -- (FV addition) Test and branch (immediate).
   | [b5:1, 011011, op:1, b40:5, imm14:14, Rt:5] =>
     BR (Test_branch {b5, op, b40, imm14, Rt})
+  -- (FV addition) MRS (the backend emits only `mrs xt, tpidr_el0`).
+  | [110101010011, o0:1, op1:3, CRn:4, CRm:4, op2:3, Rt:5] =>
+    BR (Mrs {o0, op1, CRn, CRm, op2, Rt})
   | _ => none
 
 def decode_data_proc_reg (i : BitVec 32) : Option ArmInst :=

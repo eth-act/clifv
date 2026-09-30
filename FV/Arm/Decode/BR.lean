@@ -83,6 +83,23 @@ instance : ToString Barrier_cls where toString a := toString (repr a)
 def Barrier_cls.toBitVec32 (x : Barrier_cls) : BitVec 32 :=
   x._fixed1 ++ x.CRm ++ x.op2 ++ x._fixed2
 
+/-- (FV addition) Move from system register: `MRS Xt, (op0 = 2 + o0, op1, CRn, CRm, op2)`
+(the backend emits only `mrs xt, tpidr_el0`: o0 1, op1 011, CRn 1101, CRm 0000, op2 010). -/
+structure Mrs_cls where
+  _fixed1 : BitVec 12 := 0b110101010011#12 -- [31:20]
+  o0      : BitVec 1                       -- [19:19]
+  op1     : BitVec 3                       -- [18:16]
+  CRn     : BitVec 4                       -- [15:12]
+  CRm     : BitVec 4                       -- [11:8]
+  op2     : BitVec 3                       -- [7:5]
+  Rt      : BitVec 5                       -- [4:0]
+deriving DecidableEq, Repr
+
+instance : ToString Mrs_cls where toString a := toString (repr a)
+
+def Mrs_cls.toBitVec32 (x : Mrs_cls) : BitVec 32 :=
+  x._fixed1 ++ x.o0 ++ x.op1 ++ x.CRn ++ x.CRm ++ x.op2 ++ x.Rt
+
 /-- (FV addition) Test and branch (immediate): `TBZ`, `TBNZ`. -/
 structure Test_branch_cls where
   b5     : BitVec 1               -- [31:31]
@@ -113,6 +130,8 @@ inductive BranchInst where
     Barrier_cls → BranchInst
   | Test_branch :
     Test_branch_cls → BranchInst
+  | Mrs :
+    Mrs_cls → BranchInst
 deriving DecidableEq, Repr
 
 instance : ToString BranchInst where toString a := toString (repr a)

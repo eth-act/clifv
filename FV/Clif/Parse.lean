@@ -13,7 +13,7 @@ Accepted input (Cranelift 0.136.1 reader syntax):
   and `; data:` directives there (link-time data objects, see `dataDirective`);
 * `function %name(params) [-> returns] [callconv] { preamble blocks }`;
 * preamble: `ssN = explicit_slot N[, align = K]`, `gvN = vmctx | load.ty flags gvM[+off] |
-  iadd_imm.ty gvM, off | symbol [colocated] %name[+off]`, `fnN = [colocated] %name(sig)`;
+  iadd_imm.ty gvM, off | symbol [colocated] [tls] %name[+off]`, `fnN = [colocated] %name(sig)`;
 * blocks `blockN[(vA: ty, ...)] [cold]:`, value aliases `vA -> vB` (resolved away), and the
   instructions of S with optional `.ty` suffixes (inferred from the typevar operand when
   omitted);
@@ -380,10 +380,10 @@ def decl : P Decl := do
       return .global id (.iaddImm t base off)
     | "symbol" =>
       let colocated ← optWord "colocated"
-      if ← optWord "tls" then unsupported "tls symbol global value"
+      let tls ← optWord "tls"
       let n ← anyName
       let off ← optOffset
-      return .global id (.symbol n off colocated)
+      return .global id (if tls then .tlsSymbol n off colocated else .symbol n off colocated)
     | w => unsupported s!"global value kind {w}"
   else if isEntity "sig" t then
     let id ← entity "sig"
@@ -586,6 +586,9 @@ def item (op : String) (sfx : Option Ty) : P Item := do
   | "symbol_value" =>
     let t ← needTy op sfx
     return .inst (.symbolValue t (← entity "gv"))
+  | "tls_value" =>
+    let t ← needTy op sfx
+    return .inst (.tlsValue t (← entity "gv"))
   | "call" =>
     let f ← entity "fn"
     expectPunct '('

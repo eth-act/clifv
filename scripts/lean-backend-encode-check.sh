@@ -13,7 +13,7 @@
 # usage: scripts/lean-backend-encode-check.sh [-v] [--regalloc regalloc2|stack]
 #                                             [--corpus | --runtests | --random |
 #                                             --n N | --seed S | FILE.clif...]
-#   default: --corpus (corpus/clif/*.clif, corpus/clif/extrt/*.clif), --runtests
+#   default: --corpus (corpus/clif/*.clif, corpus/clif/extrt/*.clif, corpus/clif-regress/*.clif), --runtests
 #   (every file of Cranelift's runtests/; functions outside E are not compiled) and --random
 #   (`lean-backend-encode-test random`: every Insn form with N random operand sets
 #   (default 200, seed S default 0x5eed = 24301), one function per form; it also runs the
@@ -50,7 +50,7 @@ done
 if [[ ${#SETS[@]} -eq 0 && ${#FILES[@]} -eq 0 ]]; then SETS=(corpus runtests random); fi
 for s in "${SETS[@]}"; do
   case "$s" in
-    corpus) FILES+=(corpus/clif/*.clif corpus/clif/extrt/*.clif) ;;
+    corpus) FILES+=(corpus/clif/*.clif corpus/clif/extrt/*.clif corpus/clif-regress/*.clif) ;;
     runtests) FILES+=("$RUNTESTS"/*.clif) ;;
     random) FILES+=(@random) ;;
   esac

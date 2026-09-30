@@ -242,6 +242,16 @@ def instData (f : Clif.Function) : Clif.Inst → Except String V
     else pure (instDataV "AtomicCas"
       [opcodeV "AtomicCas", .values [p, e, x], .op (.memFlags flags)])
   | .fence => pure (instDataV "NullAry" [opcodeV "Fence"])
+  -- `tls_value` (outside `E2E.backend_correct`, `unverifiedReason?`): lowered by Cranelift's
+  -- `tls_model=elf_gd` rule. Cranelift's rule drops the symbol's offset, so one is rejected.
+  | .tlsValue ty gv =>
+    if ty != .i64 then throw "tls_value with a non-i64 address type"
+    else match f.globals.lookup gv with
+      | some (.tlsSymbol _ 0 _) =>
+        pure (instDataV "UnaryGlobalValue" [opcodeV "TlsValue", .op (.tlsGlobalValue gv)])
+      | some (.tlsSymbol ..) => throw s!"tls_value of gv{gv}, a tls symbol with an offset"
+      | some _ => throw s!"tls_value of gv{gv}, which is not a `symbol tls`"
+      | none => throw s!"unknown gv{gv}"
   | i => throw s!"`{instText i}` is not in E"
 
 /-! ## ABI (`isa/aarch64/abi.rs` `compute_arg_locs`, AAPCS64 / `system_v`) -/
@@ -516,6 +526,12 @@ def externExtract (ctx : Ctx) (t : Term) (v : V) (_st : LState) : ExtResult (Lis
            .data tyRelocDistance (if colocated then VIdx.RelocDistance.Near else VIdx.RelocDistance.Far) [],
            .int off]
     | _ => .fail
+  | TId.symbol_value_data, .op (.tlsGlobalValue gv) => match ctx.func.globals.lookup gv with
+    | some (.tlsSymbol name off colocated) =>
+      .ok [.op (.extName name),
+           .data tyRelocDistance (if colocated then VIdx.RelocDistance.Near else VIdx.RelocDistance.Far) [],
+           .int off]
+    | _ => .fail
   | TId.block_array_2, .blockCalls [a, b] => .ok [.blockCalls [a], .blockCalls [b]]
   | TId.func_ref_data, .op (.funcRef fn) => match ctx.func.extern? fn with
     | some ext =>
@@ -531,8 +547,9 @@ def externExtract (ctx : Ctx) (t : Term) (v : V) (_st : LState) : ExtResult (Lis
   -- aarch64 ISA flags: every extension is off by default (`has_lse`, `has_dotprod`, ...).
   | TId.use_lse, .inst _ | TId.use_dotprod, .inst _ | TId.use_i8mm, .inst _ => .fail
   | TId.sign_return_address_disabled, _ => .ok []
-  -- shared flag `tls_model`, default `none`
-  | TId.tls_model, .ty _ => .ok [.data tyTlsModel VIdx.TlsModel.None []]
+  -- shared flag `tls_model`: cg_clif sets `elf_gd` for ELF targets (`rustc_codegen_cranelift`
+  -- `lib.rs`), as the backend fixes cg_clif's other flags (`is_pic`, `has_lse`, ...)
+  | TId.tls_model, .ty _ => .ok [.data tyTlsModel VIdx.TlsModel.ElfGd []]
   -- `exception_sig` (machinst/isle.rs:387): the exception table's signature
   | TId.exception_sig, .op (.exnTable s _) => .ok [.op (.sig s)]
   | _, v => .unmodeled s!"extractor {t.name} on {(repr v).pretty.take 60}"

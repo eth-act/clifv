@@ -259,6 +259,12 @@ def MInst.visitOperands : MInst → m MInst
     let uses ← info.uses.mapM fun (v, p) => do pure ((← f (.fixedUse p) v), p)
     let defs ← info.defs.mapM fun (p, v) => do pure (p, (← f (.fixedDef p) v))
     pure (.tryCall ⟨dest, uses, defs⟩ ti)
+  -- `mod.rs:941`: `reg_fixed_def(rd, x0); reg_early_def(tmp)` (the TLSDESC resolver
+  -- preserves every other register; x30 is not allocatable)
+  | .elfTlsGetAddr s rd tmp => do
+    let rd ← f (.fixedDef (.x 0)) rd
+    let tmp ← f .earlyDef tmp
+    pure (.elfTlsGetAddr s rd tmp)
 
 end
 
