@@ -247,17 +247,24 @@ def sigArgs (s : Clif.Signature) : Except String (List Nat) :=
       | .sret => if p.ty == .i64 then pure 8 else throw "sret parameter must be i64"
       | _ => throw "special-purpose parameter (sarg)"
 
-/-- The argument locations of a signature: `argLocs` over the normal parameters, with every
-`sret` parameter in x8 (in parameter order). -/
+/-- The argument locations of a signature: `argLocs` over the non-`sret` parameters, with every
+`sret` parameter in x8 (in parameter order). The `sret` parameter does not take a slot of the
+x0..x7 sequence: the next normal parameter still goes in x0 (Cranelift's aarch64
+`compute_arg_locs`). -/
 def sigArgLocs (s : Clif.Signature) : Except String (List ArgLoc × Nat) := do
   let bytes ← sigArgs s
-  let (locs, stack) := argLocs bytes
   if s.params.any (·.purpose == .sret) then
-    if s.params.length != locs.length then throw "sigArgLocs: length"
-    let locs := s.params.zip locs |>.map fun (p, loc) =>
-      if p.purpose == .sret then .reg (.x 8) else loc
-    pure (locs, stack)
-  else pure (locs, stack)
+    let normal := (s.params.zip bytes).filterMap fun (p, b) =>
+      if p.purpose == .sret then none else some b
+    let (nlocs, stack) := argLocs normal
+    let (locs, _) := s.params.foldl (init := ((#[] : Array ArgLoc), nlocs)) fun (acc, rest) p =>
+      if p.purpose == .sret then (acc.push (.reg (.x 8)), rest)
+      else match rest with
+        | l :: r => (acc.push l, r)
+        | [] => (acc, [])
+    if locs.size != s.params.length then throw "sigArgLocs: length"
+    pure (locs.toList, stack)
+  else pure (argLocs bytes)
 
 /-- The returns of a signature as the ABI sees them (`from_func_sig` /
 `ensure_struct_return_ptr_is_returned`, which is `keep in sync` in Cranelift's abi.rs): a
