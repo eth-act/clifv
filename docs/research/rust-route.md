@@ -178,6 +178,10 @@ formsCoveredB 910 / 0 not covered; `lake build FV.E2E` and `FV.E2E.OptProven` gr
 
 ## agent/fv-trycall: `try_call` lowering, landing pads and LSDA
 
+(Superseded in part by agent/trycall-proof: `try_call` of an extern is inside
+`E2E.backend_correct_final` for its normal return, reported "verified (normal returns; unwinding
+trusted)"; `try_call_indirect` stays unverified. See `docs/contracts/e2e.md`, "`try_call`".)
+
 Implemented (commits on `agent/fv-trycall`): `Clif.Terminator.tryCall`/`tryCallIndirect` with
 exception tables (parser/printer in Cranelift 0.136.1 syntax: `sigN, block(ret0), [ tagN: block(exn0),
 default: …, context vN ]`); `Clif.run` models only the normal return (call, results bound to

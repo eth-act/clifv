@@ -126,7 +126,8 @@ refines the CLIF run of the *source* program `p` from `f`'s entry state: wheneve
 `Clif.runLoop env p fuel cs` returns or traps, the Arm code returns the same values (and memory)
 or stops at a trap site with the same code. Premises as `backend_correct_final` (about the
 compiled optimised code; `Rel.holds`/`XCallsOk` stated for `f`, which has the optimised
-function's slots), plus: the simplify stage refines (`hS`), externs keep the link-time symbols
+function's slots), plus: `f` has no `try_call` (`hnt`: the mid-end simulation covers
+`try_call`-free functions), the simplify stage refines (`hS`), externs keep the link-time symbols
 (`hE`), and the optimised program's run from the corresponding entry state traps only explicitly
 (`htr`). -/
 theorem backend_correct_opt (cfg : Opt.Config)

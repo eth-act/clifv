@@ -13,8 +13,11 @@ tracked values is DFG-consistent; memory and world are related by `MR`.
   for an explicit trap, reaches the halting instruction);
 * `term_step`: returns, traps, and branches (jump arguments as the VCode parallel copy, edge
   blocks for `brif`/`br_table` arguments);
+* `term_step_try`: a `try_call` (its normal return: the call and the pending jump, two CLIF
+  steps) is matched by the terminator's code up to the `tryCall`, the normal-return edge block
+  and its `jump`;
 * `entry_step`: the entry `Args`;
-* `sim_run`: whole runs (`Clif.runLoop`).
+* `sim_run`: whole runs (`Clif.runLoop`), by strong induction on the fuel.
 -/
 
 namespace Backend.Proof.Driver
