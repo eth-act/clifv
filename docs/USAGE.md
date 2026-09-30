@@ -315,18 +315,66 @@ harness appears twice. The landing-pad fallbacks are the price of panic=unwind w
 pads (functions with a `Drop` value live across a call, closures run by `catch_unwind`, …);
 `--panic-abort` avoids them. In the survey, with `--panic-abort` or the shipped cg_clif,
 every function of the nine survey libraries runs Lean code (`cargo fv build --workspace --lib
---no-fallback --panic-abort` passes). The other fallbacks are in the test harnesses: `Arc`
-drop (`atomic_rmw`) and `fence`, which are outside the backend's subset. In release there are
-also a few functions whose unoptimised CLIF references a data object that Cranelift's
-optimiser removed from cg_clif's object, and fv-demo's `cg_clif_*` functions are kept on
-purpose. Unverified: mostly sret functions (the theorem does not cover sret yet), i128
-legalisation, and indirect calls. Before panic=unwind (panic=abort, 13 fv-demo tests),
-`--opt-proven-only` (survey 53/53), `--opt` (fv-demo 13/13) and `--trap-replaced` (fv-demo
-13/13) gave the same test outcomes.
+--no-fallback --panic-abort` passes). Unverified: mostly sret functions (the theorem does not
+cover sret yet), i128 legalisation, and indirect calls. Before panic=unwind (panic=abort,
+13 fv-demo tests), `--opt-proven-only` (survey 53/53), `--opt` (fv-demo 13/13) and
+`--trap-replaced` (fv-demo 13/13) gave the same test outcomes.
 
 A crate with crates.io dependencies (`itoa`, `smallvec`, `crc32fast`; the dependencies are
 compiled by cg_clif) also passed (unit tests and a doctest, same outcomes as `cargo test`;
 checked with panic=abort).
+
+### Atomics, `bmask`, `fence`, and the vendored real-world crates (agent/fv-fallback)
+
+`atomic_load`/`atomic_store`/`atomic_rmw`/`atomic_cas`/`fence` and `bmask` compile since
+agent/fv-fallback: the Cranelift non-LSE lowering (cg_clif's aarch64 flags have `has_lse=0`),
+i.e. `ldar`/`stlr` and the `atomic_rmw_loop`/`atomic_cas_loop` LL/SC pseudo-instructions
+(`ldaxr`/`stlxr` loops over the fixed registers x24–x28), `csetm` for `bmask`, `dmb ish` for
+`fence` — all encode-checked byte-for-byte against llvm-mc and differentially executed
+against Cranelift-native on the atomic/bmask/fence runtests. They are flagged unverified
+(`bmask / atomic instructions / fence (outside backend_correct)`; `E2E.InSubset` is
+unchanged), and the stack-slot allocator rejects the loop pseudo-instructions (regalloc2, the
+default, handles their fixed registers).
+
+`examples/vendor` vendors dep-free crates.io crates (`crc32fast`, `itoa`, `memchr`, `hex`,
+`bitflags`, `cfg-if`, `once_cell`) plus a `harness` crate with reference-value tests, to
+measure and drive out fallbacks on real code. Vendor patches: dev-dependencies pruned,
+`quickcheck!` blocks replaced by deterministic LCG `#[test]`s, itoa's optional `no-panic`
+dependency removed, the aarch64-specialized crc32fast tests dropped (their
+`stable_arm_crc32_intrinsics` cfg is not set by cg_clif, which made the test set differ
+between `cargo test` and `cargo fv test`). The `once_cell` `race` module is what exercises
+the atomics. Release-mode functions whose unoptimised CLIF references a data object that
+Cranelift's optimiser removed from cg_clif's object (a dead panic path's `Location`, …) are
+retried with the `.opt.clif` dump (`docs/research/rust-route.md`, "agent/fv-fallback"), which
+matches the code cg_clif actually emitted.
+
+Results (`cargo fv build` then `cargo fv report`; "unwind" = the default panic=unwind with the
+landing-pad cg_clif, whose landing-pad fallbacks are the unwinding design, see above;
+"abort" = `--panic-abort`, the configuration of the "before" measurements):
+
+| workspace | profile | panic | functions | verified | unverified | fallback | of which landing pad | of which skip |
+|---|---|---|---|---|---|---|---|---|
+| fv-demo | debug | unwind | 478 | 300 | 97 | 81 | 78 | 3 (`metadata.fv.skip`) |
+| fv-demo | release | unwind | 325 | 185 | 63 | 77 | 74 | 3 |
+| survey | debug | unwind | 460 | 350 | 55 | 55 | 55 | — |
+| survey | release | unwind | 245 | 159 | 39 | 47 | 47 | — |
+| vendor | debug | unwind | 625 | 458 | 126 | 41 | 41 | — |
+| vendor | release | unwind | 256 | 147 | 78 | 31 | 31 | — |
+| fv-demo | debug | abort | 479 | 351 | 125 | 3 | — | 3 |
+| fv-demo | release | abort | 320 | 227 | 90 | 3 | — | 3 |
+| survey | debug | abort | 454 | 394 | 60 | 0 | — | — |
+| survey | release | abort | 239 | 195 | 44 | 0 | — | — |
+| vendor | debug | abort | 625 | 491 | 134 | 0 | — | — |
+| vendor | release | abort | 250 | 162 | 88 | 0 | — | — |
+
+Before agent/fv-fallback (the same builds, panic=abort): fv-demo debug 2 fallbacks (skip),
+fv-demo release 7 (5 missing `allocNNN`, 2 skip), survey release 13 (all missing `allocNNN`),
+vendor debug 10 (9× atomics/bmask/fence unsupported), vendor release 16 (8 missing
+`allocNNN`, 8 atomics/bmask/fence). The missing-`allocNNN` fallbacks are gone (`.opt.clif`
+retry), and every atomic/bmask/fence function compiles (flagged unverified: vendor 9 debug,
+7–8 release). The only fallbacks left are `metadata.fv.skip` and, under panic=unwind,
+landing pads. `examples/compare.sh examples/{fv-demo,survey,vendor}` (debug and `--release`)
+report the same test outcomes as `cargo test` (fv-demo 18/18, survey 53/53, vendor 189/189).
 
 ## Limitations
 

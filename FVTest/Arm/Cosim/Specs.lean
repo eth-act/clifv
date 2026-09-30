@@ -263,6 +263,21 @@ def ldstPair (opc L : Nat) (mnem : String) (mode : Nat) : Spec :=
     let delta := signed64 (((e : Int) - off) % (2 ^ 64 : Int)).toNat
     return tc.setReg rn (bufPlus i delta)⟩
 
+/-- `ldar`/`stlr`/`ldaxr` (`(o2, L)`; C4.1 "Load/store exclusive"/"Load-acquire/store-release",
+Rs = Rt2 = 11111, o0 = 1): no offset, and the address `bytes`-aligned, which these require.
+`stlxr` is not co-simulated: single-instruction cases cannot hold qemu's exclusive monitor
+(qemu fails a lone `stlxr`), while the model's exclusive store always succeeds. -/
+def ldstExcl (o2 L : Nat) (mnem : String) : Spec := ⟨mnem, "ldst-excl", fun i => do
+  let size ← bits 2
+  let bytes := 2 ^ size
+  let rn ← reg
+  let rt ← reg
+  let inst := enc [(size, 2), (0b001000, 6), (o2, 1), (L, 1), (0, 1), (31, 5), (1, 1), (31, 5),
+    (rn, 5), (rt, 5)]
+  let e ← chooseE bytes 0 (rn == 31)
+  let tc ← randomCase mnem inst
+  return tc.setReg rn (bufPlus i (e - e % bytes : Nat))⟩
+
 /-! ## SIMD&FP (popcnt sequence) -/
 
 def vreg : GenM Nat := below 31
@@ -327,7 +342,8 @@ def allSpecs : List Spec :=
     bcond, cbranch 0 "cbz", cbranch 1 "cbnz", tbranch 0 "tbz", tbranch 1 "tbnz",
     uncondImm 0 "b", uncondImm 1 "bl", uncondReg 0 "br", uncondReg 1 "blr",
     uncondReg 2 "ret" (some 30), uncondReg 2 "ret xn",
-    hint 0xd503201f "nop", hint 0xd503229f "csdb", udf,
+    hint 0xd503201f "nop", hint 0xd503229f "csdb", hint 0xd5033bbf "dmb ish", udf,
+    ldstExcl 1 1 "ldar", ldstExcl 1 0 "stlr", ldstExcl 0 1 "ldaxr",
     fmovGen 0 0 0b111 "fmov (s, w)" true, fmovGen 1 1 0b111 "fmov (d, x)" true,
     fmovGen 0 0 0b110 "fmov (w, s)" false, fmovGen 1 1 0b110 "fmov (x, d)" false,
     cnt, acrossLanes 0 0b11011 "addv", acrossLanes 1 0b00011 "uaddlv", addp, umov ] ++

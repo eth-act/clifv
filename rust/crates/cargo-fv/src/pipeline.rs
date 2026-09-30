@@ -146,19 +146,19 @@ pub fn tag_of(s: &str) -> String {
 }
 
 /// Symbols of an ELF object.
-struct ObjSyms {
+pub(crate) struct ObjSyms {
     /// Defined text symbols → global (or weak)?
-    text: HashMap<String, bool>,
+    pub(crate) text: HashMap<String, bool>,
     /// Every defined symbol name (functions, data).
-    defined: BTreeSet<String>,
+    pub(crate) defined: BTreeSet<String>,
     /// Local definitions per name (a name defined locally twice is ambiguous).
-    local_count: HashMap<String, usize>,
-    undefined: BTreeSet<String>,
+    pub(crate) local_count: HashMap<String, usize>,
+    pub(crate) undefined: BTreeSet<String>,
     /// name → (section index, value) of defined symbols (first definition).
-    at: HashMap<String, (usize, u64)>,
+    pub(crate) at: HashMap<String, (usize, u64)>,
 }
 
-fn read_syms(path: &Path) -> Result<ObjSyms, String> {
+pub(crate) fn read_syms(path: &Path) -> Result<ObjSyms, String> {
     let data = fs::read(path).map_err(|e| format!("{}: {e}", path.display()))?;
     let file = object::File::parse(&*data).map_err(|e| format!("{}: {e}", path.display()))?;
     let mut s = ObjSyms {
@@ -281,6 +281,94 @@ pub fn process_object(cfg: &Config, index: &DumpIndex, obj: &Path, id: &str) -> 
 
 fn filter_env(k: &str) -> Vec<String> {
     std::env::var(k).map(|v| v.split(',').filter(|p| !p.is_empty()).map(String::from).collect()).unwrap_or_default()
+}
+
+/// Why the compiled object's undefined references cannot bind in cg_clif's object (`None`:
+/// they all resolve to cg_clif's definitions, cg_clif's own imports, or the runtime helpers),
+/// plus the local symbols it references (for the symbol surgery).
+fn ref_problem(o: &Path, syms: &ObjSyms) -> Result<(Option<String>, Vec<String>), String> {
+    let f = read_syms(o)?;
+    let mut bad: Option<String> = None;
+    let mut locals = Vec::new();
+    for u in &f.undefined {
+        let n = obj_name_of(u);
+        if syms.local_count.get(&n).copied().unwrap_or(0) > 1 {
+            bad = Some(format!("references `{n}`, defined locally more than once in cg_clif's object"));
+        } else if syms.local_count.contains_key(&n) {
+            locals.push(n);
+        } else if !(syms.defined.contains(&n) || syms.undefined.contains(&n) || RUNTIME_HELPERS.contains(&n.as_str())) {
+            bad = Some(if u.starts_with("alloc") || u.starts_with("data_") || u.starts_with("u0_") {
+                // normalize.py's name for a gv/callee no relocation of cg_clif's
+                // object names, e.g. data only a path Cranelift's optimiser removed uses
+                format!("references `{u}`, which cg_clif's object does not contain (removed by Cranelift's optimiser, or unmapped)")
+            } else {
+                format!("references `{u}`, unknown to cg_clif's object")
+            });
+        }
+        if bad.is_some() {
+            break;
+        }
+    }
+    Ok((bad, locals))
+}
+
+/// Why the compiled object's undefined references cannot bind in cg_clif's object (`None`:
+/// they all resolve to cg_clif's definitions, cg_clif's own imports, or the runtime helpers).
+fn missing_ref(o: &Path, syms: &ObjSyms) -> Option<String> {
+    ref_problem(o, syms).ok().and_then(|(bad, _)| bad)
+}
+
+/// Compile one function from its normalised `.unopt.clif` dump into `o/f{i}.o`.
+///
+/// Retry: the unoptimised CLIF may reference data objects that cg_clif's optimiser removed
+/// from its object — the unoptimised dump still holds the (dead) panic paths of e.g.
+/// `rotate_left`, whose `Location` objects cg_clif's object does not contain when the
+/// optimised code dropped them. The optimised dump (`{stem}.opt.clif`, normalised with the
+/// same gvmap) matches the code cg_clif actually emitted, so compiling it references only
+/// data that exists. Only the "removed by Cranelift's optimiser, or unmapped" references
+/// trigger the retry; a failing retry keeps the unopt result (whose reference check then
+/// reports the fallback reason).
+fn compile_one(
+    cfg: &Config,
+    syms: &ObjSyms,
+    split: &Path,
+    outdir: &Path,
+    i: usize,
+    d: &Dump,
+    sym: &str,
+) -> Compiled {
+    let run_backend = |input: &Path, out: &Path| -> Compiled {
+        if let Some(why) = abi_guard(input).or_else(|| landing_pad(input)) {
+            return Compiled::Fallback(why);
+        }
+        match Command::new(cfg.lean_backend())
+            .arg(input)
+            .arg(out)
+            .args(cfg.mode.backend_args())
+            .env("LEAN_REGALLOC", cfg.lean_regalloc())
+            .output()
+        {
+            Ok(o) => classify(cfg, &String::from_utf8_lossy(&o.stderr), o.status.success(), out, sym),
+            Err(e) => Compiled::Fallback(format!("cannot run lean-backend: {e}")),
+        }
+    };
+    let out = outdir.join(format!("f{i}.o"));
+    let c = run_backend(&split.join(format!("{}.unopt.clif", d.stem)), &out);
+    if let Compiled::Ok { .. } = &c {
+        if let Some(why) = missing_ref(&out, syms) {
+            let opt = split.join(format!("{}.opt.clif", d.stem));
+            if why.contains("does not contain") && opt.exists() {
+                let out_opt = outdir.join(format!("f{i}.opt.o"));
+                let c2 = run_backend(&opt, &out_opt);
+                if let Compiled::Ok { obj, unverified } = c2 {
+                    if missing_ref(&obj, syms).is_none() {
+                        return Compiled::Ok { obj, unverified };
+                    }
+                }
+            }
+        }
+    }
+    c
 }
 
 /// `all`: every function of the CGU (the normalisation input: data-export and the FuncId
@@ -409,7 +497,11 @@ fn classify(cfg: &Config, stderr: &str, ok: bool, out: &Path, symbol: &str) -> C
         let first = stderr.lines().find(|l| !l.trim().is_empty()).map(strip).unwrap_or_default();
         return Compiled::Fallback(format!("lean-backend failed: {first}"));
     }
+    // lean-backend prints the closure warnings before the per-function reasons; its own
+    // reason (e.g. "bmask / atomic instructions / fence", whose rules are outside the
+    // emitter-subset closure by design) is the more precise one, so it wins.
     let mut unverified: Option<String> = None;
+    let mut outside_closure: Option<String> = None;
     for l in stderr.lines() {
         if let Some((_, why)) = l.split_once(": unsupported: ") {
             return Compiled::Fallback(format!("unsupported: {why}"));
@@ -418,11 +510,12 @@ fn classify(cfg: &Config, stderr: &str, ok: bool, out: &Path, symbol: &str) -> C
             unverified.get_or_insert(why.to_string());
         } else if l.contains("fired outside the emitter-subset closure") {
             let r = strip(l);
-            unverified.get_or_insert(format!("ISLE {r}"));
+            outside_closure.get_or_insert(format!("ISLE {r}"));
         } else if l.contains(": encoding failed: ") {
             return Compiled::Fallback(strip(l));
         }
     }
+    let mut unverified = unverified.or(outside_closure);
     match read_syms(out) {
         Ok(s) if s.text.get(symbol) == Some(&true) => {}
         Ok(_) => return Compiled::Fallback("lean-backend emitted no code for the function".into()),
@@ -468,19 +561,58 @@ fn process_in(
             }
         }
     }
-    // 2. data references → cg_clif's own data symbols
+    // 2. data references → cg_clif's own data symbols. Run for both stages: the optimised
+    // dump is the retry input when the unoptimised one references data cg_clif's optimiser
+    // removed (see `compile_one`), and its gvs need the same gvmap (the keys are normalized
+    // to the dump stem by normalize.py, so one merged table serves both stages).
     let gvmap = work.join("gvmap.tsv");
     let fnmap = work.join("fnmap.tsv");
-    run(Command::new(cfg.data_export())
-        .arg(&clif)
-        .arg(obj)
-        .arg("--out")
-        .arg(work.join("data.clif"))
-        .arg("--gvmap")
-        .arg(&gvmap)
-        .arg("--fnmap")
-        .arg(&fnmap)
-        .arg("--imported"))?;
+    for stage in ["unopt", "opt"] {
+        let gvm = work.join(format!("gvmap.{stage}.tsv"));
+        if stage == "unopt" {
+            run(Command::new(cfg.data_export())
+                .arg(&clif)
+                .arg(obj)
+                .arg("--stage")
+                .arg(stage)
+                .arg("--out")
+                .arg(work.join(format!("data-{stage}.clif")))
+                .arg("--gvmap")
+                .arg(&gvm)
+                .arg("--fnmap")
+                .arg(&fnmap)
+                .arg("--imported"))?;
+            fs::copy(&gvm, &gvmap).map_err(|e| format!("{}: {e}", gvm.display()))?;
+        } else {
+            // Best effort: a failure only disables the missing-data retry (normalize.py
+            // keeps only the gvmap entries of its own stage; the unopt run's fnmap stays).
+            match run(Command::new(cfg.data_export())
+                .arg(&clif)
+                .arg(obj)
+                .arg("--stage")
+                .arg(stage)
+                .arg("--out")
+                .arg(work.join(format!("data-{stage}.clif")))
+                .arg("--gvmap")
+                .arg(&gvm)
+                .arg("--fnmap")
+                .arg(&fnmap)
+                .arg("--imported"))
+            {
+                Ok(_) => {
+                    let extra =
+                        fs::read_to_string(&gvm).map_err(|e| format!("{}: {e}", gvm.display()))?;
+                    let mut f = fs::OpenOptions::new()
+                        .append(true)
+                        .open(&gvmap)
+                        .map_err(|e| format!("{}: {e}", gvmap.display()))?;
+                    use std::io::Write;
+                    f.write_all(extra.as_bytes()).map_err(|e| format!("{}: {e}", gvmap.display()))?;
+                }
+                Err(e) => eprintln!("cargo fv: warning: {tag}: no gvmap for .opt.clif ({e})"),
+            }
+        }
+    }
     let split = work.join("split");
     run(Command::new(&cfg.python)
         .arg(cfg.normalize())
@@ -493,6 +625,29 @@ fn process_in(
         .arg(&gvmap)
         .arg("--fnmap")
         .arg(&fnmap))?;
+    // The optimised split files: best effort — a failure only disables the
+    // missing-data retry (the unopt compilation and its fallback reason are unaffected).
+    let split_opt = work.join("split-opt");
+    match run(Command::new(&cfg.python)
+        .arg(cfg.normalize())
+        .arg(&clif)
+        .arg("opt")
+        .arg(&split_opt)
+        .arg("--split")
+        .arg("--strip-srcloc")
+        .arg("--gvmap")
+        .arg(&gvmap)
+        .arg("--fnmap")
+        .arg(&fnmap))
+    {
+        Ok(_) => {
+            for e in fs::read_dir(&split_opt).map_err(|e| format!("{}: {e}", split_opt.display()))?.flatten() {
+                let to = split.join(e.file_name());
+                fs::rename(e.path(), &to).map_err(|err| format!("{}: {err}", to.display()))?;
+            }
+        }
+        Err(e) => eprintln!("cargo fv: warning: {tag}: no .opt.clif split ({e})"),
+    }
 
     // 3. one lean-backend run per function, `cfg.jobs` at a time
     let outdir = work.join("o");
@@ -510,23 +665,7 @@ fn process_in(
                             break done;
                         }
                         let (sym, d) = &funcs[i];
-                        let input = split.join(format!("{}.unopt.clif", d.stem));
-                        let out = outdir.join(format!("f{i}.o"));
-                        if let Some(why) = abi_guard(&input).or_else(|| landing_pad(&input)) {
-                            done.push((i, Compiled::Fallback(why)));
-                            continue;
-                        }
-                        let c = match Command::new(cfg.lean_backend())
-                            .arg(&input)
-                            .arg(&out)
-                            .args(cfg.mode.backend_args())
-                            .env("LEAN_REGALLOC", cfg.lean_regalloc())
-                            .output()
-                        {
-                            Ok(o) => classify(cfg, &String::from_utf8_lossy(&o.stderr), o.status.success(), &out, sym),
-                            Err(e) => Compiled::Fallback(format!("cannot run lean-backend: {e}")),
-                        };
-                        done.push((i, c));
+                        done.push((i, compile_one(cfg, syms, &split, &outdir, i, d, sym)));
                     }
                 })
             })
@@ -551,27 +690,7 @@ fn process_in(
             Compiled::Fallback(why) => report(Status::Fallback, Some(why)),
             Compiled::Ok { obj: o, unverified } => {
                 let f = read_syms(&o)?;
-                let mut bad: Option<String> = None;
-                let mut locals = Vec::new();
-                for u in &f.undefined {
-                    let n = obj_name_of(u);
-                    if syms.local_count.get(&n).copied().unwrap_or(0) > 1 {
-                        bad = Some(format!("references `{n}`, defined locally more than once in cg_clif's object"));
-                    } else if syms.local_count.contains_key(&n) {
-                        locals.push(n);
-                    } else if !(syms.defined.contains(&n) || syms.undefined.contains(&n) || RUNTIME_HELPERS.contains(&n.as_str())) {
-                        bad = Some(if u.starts_with("alloc") || u.starts_with("data_") || u.starts_with("u0_") {
-                            // normalize.py's name for a gv/callee no relocation of cg_clif's
-                            // object names, e.g. data only a path Cranelift's optimiser removed uses
-                            format!("references `{u}`, which cg_clif's object does not contain (removed by Cranelift's optimiser, or unmapped)")
-                        } else {
-                            format!("references `{u}`, unknown to cg_clif's object")
-                        });
-                    }
-                    if bad.is_some() {
-                        break;
-                    }
-                }
+                let (mut bad, locals) = ref_problem(&o, syms)?;
                 let extra: Vec<&String> = f.text.iter().filter(|(n, g)| **g && *n != sym).map(|(n, _)| n).collect();
                 if bad.is_none() && !extra.is_empty() {
                     bad = Some(format!("our object defines other symbols too ({})", extra[0]));

@@ -34,6 +34,7 @@ def main():
     drop_nop = "--drop-nop" in sys.argv
     split = "--split" in sys.argv
     strip_srcloc = "--strip-srcloc" in sys.argv
+    d, stage, out = Path(args[0]), args[1], Path(args[2])
     flags = [a for a in sys.argv[1:] if a.startswith("--")]
     gvmap = {}
     for i, a in enumerate(flags):
@@ -42,6 +43,9 @@ def main():
                 if not line.strip():  # an empty map is a single blank line
                     continue
                 stem, gv, name = line.rstrip("\n").split("\t")
+                # a merged table may carry entries of both stages; keep this stage's
+                if not stem.endswith(f".{stage}.clif"):
+                    continue
                 gvmap[(stem, gv)] = name.removeprefix("%")
     fnmap = {}
     if "--fnmap" in sys.argv:
@@ -52,7 +56,6 @@ def main():
     data_file = None
     if "--data-file" in sys.argv:
         data_file = Path(sys.argv[sys.argv.index("--data-file") + 1]).read_text()
-    d, stage, out = Path(args[0]), args[1], Path(args[2])
     files = sorted(p for p in d.iterdir() if p.name.endswith(f".{stage}.clif"))
     texts = [p.read_text() for p in files]
 

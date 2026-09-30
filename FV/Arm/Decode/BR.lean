@@ -69,6 +69,20 @@ instance : ToString Hints_cls where toString a := toString (repr a)
 def Hints_cls.toBitVec32 (x : Hints_cls) : BitVec 32 :=
   x._fixed1 ++ x.CRm ++ x.op2 ++ x._fixed2
 
+/-- (FV addition) Barriers: `DMB` (the backend emits only `dmb ish`; the `11` at bits 13:12
+selects DMB over DSB/ISB, so the class is fixed to DMB). -/
+structure Barrier_cls where
+  _fixed1 : BitVec 20 := 0b11010101000000110011#20 -- [31:12]
+  CRm     : BitVec 4                               -- [11:8]
+  op2     : BitVec 3                               -- [7:5]
+  _fixed2 : BitVec 5 := 0b11111#5                  -- [4:0]
+deriving DecidableEq, Repr
+
+instance : ToString Barrier_cls where toString a := toString (repr a)
+
+def Barrier_cls.toBitVec32 (x : Barrier_cls) : BitVec 32 :=
+  x._fixed1 ++ x.CRm ++ x.op2 ++ x._fixed2
+
 /-- (FV addition) Test and branch (immediate): `TBZ`, `TBNZ`. -/
 structure Test_branch_cls where
   b5     : BitVec 1               -- [31:31]
@@ -95,6 +109,8 @@ inductive BranchInst where
     Cond_branch_imm_cls → BranchInst
   | Hints :
     Hints_cls → BranchInst
+  | Barrier :
+    Barrier_cls → BranchInst
   | Test_branch :
     Test_branch_cls → BranchInst
 deriving DecidableEq, Repr

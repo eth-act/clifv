@@ -108,6 +108,12 @@ def unaryOpcode : Clif.UnaryOp → Option String
   | .bswap => "Bswap" | .bitrev => "Bitrev"
   | _ => none
 
+/-- The `AtomicRmwOp` variant name of a CLIF `atomic_rmw` operation. -/
+def rmwOpName : Clif.AtomicRmwOp → Option String
+  | .add => some "Add" | .sub => some "Sub" | .and => some "And" | .nand => some "Nand"
+  | .or => some "Or" | .xor => some "Xor" | .xchg => some "Xchg"
+  | .umin => some "Umin" | .umax => some "Umax" | .smin => some "Smin" | .smax => some "Smax"
+
 def divOpcode : Clif.DivOp → String
   | .udiv => "Udiv" | .sdiv => "Sdiv" | .urem => "Urem" | .srem => "Srem"
 
@@ -207,6 +213,32 @@ def instData (f : Clif.Function) : Clif.Inst → Except String V
   | .funcAddr ty fn =>
     if ty != .i64 then throw "func_addr with a non-i64 address type"
     else pure (instDataV "FuncAddr" [opcodeV "FuncAddr", .op (.funcRef fn)])
+  -- agent/fv-fallback: `bmask` and the atomic opcodes lower via Cranelift's non-LSE rules
+  -- (cg_clif's `has_lse = 0`) but are outside `E2E.backend_correct` (unverifiedReason?).
+  | .bmask ty x =>
+    if eTy ty then pure (instDataV "Unary" [opcodeV "Bmask", .value x]) else throw "bmask.i128"
+  | .atomicLoad ty flags p =>
+    if !eTy ty then throw "atomic_load.i128"
+    else if flags.endianness == some .big then throw "big-endian atomic_load"
+    else pure (instDataV "LoadNoOffset" [opcodeV "AtomicLoad", .value p, .op (.memFlags flags)])
+  | .atomicStore ty flags x p =>
+    if !eTy ty then throw "atomic_store.i128"
+    else if flags.endianness == some .big then throw "big-endian atomic_store"
+    else pure (instDataV "StoreNoOffset"
+      [opcodeV "AtomicStore", .values [x, p], .op (.memFlags flags)])
+  | .atomicRmw op ty flags p x =>
+    if !eTy ty then throw "atomic_rmw.i128"
+    else if flags.endianness == some .big then throw "big-endian atomic_rmw"
+    else match rmwOpName op with
+      | some n => pure (instDataV "AtomicRmw"
+        [opcodeV "AtomicRmw", .values [p, x], .op (.memFlags flags), mkVariant tyAtomicRmwOp n])
+      | none => throw "unsupported atomic_rmw operation"
+  | .atomicCas ty flags p e x =>
+    if !eTy ty then throw "atomic_cas.i128"
+    else if flags.endianness == some .big then throw "big-endian atomic_cas"
+    else pure (instDataV "AtomicCas"
+      [opcodeV "AtomicCas", .values [p, e, x], .op (.memFlags flags)])
+  | .fence => pure (instDataV "NullAry" [opcodeV "Fence"])
   | i => throw s!"`{instText i}` is not in E"
 
 /-! ## ABI (`isa/aarch64/abi.rs` `compute_arg_locs`, AAPCS64 / `system_v`) -/
@@ -508,6 +540,8 @@ def externCtor (ctx : Ctx) (t : Term) (args : List V) (st : LState) : ExtResult 
   | TId.i64_sextend_imm64, [.ty ty, .int x] => ok (.int (sextFrom ty.bits x))
   | TId.ty_bits, [.ty ty] => ok (.int ty.bits)
   | TId.ty_bytes, [.ty ty] => ok (.int ty.bytes)
+  -- `ty_mask` (isle_prelude.rs:366): `2^bits - 1`
+  | TId.ty_mask, [.ty ty] => ok (.int (2 ^ ty.bits - 1))
   | TId.offset32_to_i32, [.int i] => ok (.int i)
   | TId.i32_to_offset32, [.int i] => ok (.int i)
   | TId.signed_cond_code, [cc] => match cc.intcc? with

@@ -1,0 +1,14 @@
+[package]
+name = "vendor-harness"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+crc32fast = { path = "../crc32fast" }
+hex = { path = "../hex" }
+itoa = { path = "../itoa" }
+memchr = { path = "../memchr" }
+once_cell = { path = "../once_cell" }
+bitflags = { path = "../bitflags" }
+cfg-if = { path = "../cfg-if" }

@@ -14,8 +14,8 @@
 //! a file cg_clif never writes; that copy error (and only it) makes fv-rustc create the empty
 //! file and run rustc again.
 use crate::config::Config;
-use crate::pipeline::{self, DumpIndex, MARKER};
-use crate::report::{BinaryCheck, UnitReport};
+use crate::pipeline::{self, read_syms, DumpIndex, MARKER};
+use crate::report::{BinaryCheck, FnReport, Status, UnitReport};
 use object::read::{Object, ObjectSymbol};
 use std::collections::{HashMap, HashSet};
 use std::ffi::OsString;
@@ -216,6 +216,28 @@ fn new_report(cfg: &Config, m: &UnitMeta, artifact: &Path) -> UnitReport {
 
 /// Process CGU objects in place, appending to the report.
 fn process_objects(cfg: &Config, m: &UnitMeta, objs: &[PathBuf], r: &mut UnitReport) -> Vec<bool> {
+    let mut changed = Vec::new();
+    // cg_clif writes no CLIF dump dir when the unit has no functions (e.g. a macro-only
+    // crate like cfg-if): no dumps to process, every text symbol keeps cg_clif's code.
+    if !m.clif_dir.exists() {
+        for o in objs {
+            match read_syms(o) {
+                Ok(syms) => {
+                    for s in syms.text.keys() {
+                        r.functions.push(FnReport {
+                            symbol: s.clone(),
+                            instance: s.clone(),
+                            status: Status::Fallback,
+                            reason: Some("no CLIF dump (cg_clif emitted none for this unit)".into()),
+                        });
+                    }
+                }
+                Err(e) => r.cgu_errors.push(format!("{}: {e}", o.display())),
+            }
+            changed.push(false);
+        }
+        return changed;
+    }
     let index = match DumpIndex::load(&m.clif_dir) {
         Ok(i) => i,
         Err(e) => {
@@ -223,7 +245,6 @@ fn process_objects(cfg: &Config, m: &UnitMeta, objs: &[PathBuf], r: &mut UnitRep
             return vec![false; objs.len()];
         }
     };
-    let mut changed = Vec::new();
     for o in objs {
         let name = o.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
         let res = pipeline::process_object(cfg, &index, o, &format!("{}/{name}", m.unit));

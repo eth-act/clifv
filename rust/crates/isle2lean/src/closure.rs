@@ -39,6 +39,12 @@ pub const E_OPCODES: &[&str] = &[
     // unverified (outside ); their lowering rules must not be flagged outside
     // the closure (the survey's  functions use them).
     "call_indirect", "func_addr",
+    // agent/fv-fallback: `bmask` and the atomic opcodes compile (via the full ISLE program,
+    // Cranelift's non-LSE rules: `load_acquire`/`store_release` = ldar/stlr and the
+    // `atomic_rmw_loop`/`atomic_cas_loop` LL/SC pseudo-instructions) but are NOT emitter-
+    // closure roots: their root rules are outside the proven families, and they cannot fire
+    // on `E2E.InSubset` data (`Compile.instE` is false for them). They are flagged
+    // unverified (`Backend.hasUnproven`).
 ];
 
 pub const ROOTS: &[&str] = &["lower", "lower_branch"];

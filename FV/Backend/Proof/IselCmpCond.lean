@@ -272,7 +272,9 @@ def eOpNames : List String :=
    "Umulhi", "Smulhi", "Band", "Bor", "Bxor", "Ishl", "Ushr", "Sshr", "Rotl", "Rotr", "Smin", "Smax",
    "Umin", "Umax", "Udiv", "Sdiv", "Urem", "Srem", "Icmp", "Uextend", "Sextend", "Ireduce", "Load",
    "Uload8", "Sload8", "Uload16", "Sload16", "Uload32", "Sload32", "Store", "Istore8", "Istore16",
-   "Istore32", "Select", "Nop", "SymbolValue", "StackAddr", "Call", "CallIndirect", "FuncAddr"]
+   "Istore32", "Select", "Nop", "SymbolValue", "StackAddr", "Call", "CallIndirect", "FuncAddr",
+   -- agent/fv-fallback: `bmask` and the atomic opcodes (unverified, outside `E2E.InSubset`)
+   "Bmask", "AtomicLoad", "AtomicStore", "AtomicRmw", "AtomicCas", "Fence"]
 
 theorem instNames_snd_mem (cl : Clif.Inst) : (instNames cl).2 ∈ eOpNames := by
   cases cl <;> simp only [instNames] <;> try decide

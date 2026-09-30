@@ -195,6 +195,7 @@ instance : ToString Conditional_compare_reg_cls where toString a := toString (re
 def Conditional_compare_reg_cls.toBitVec32 (x : Conditional_compare_reg_cls) : BitVec 32 :=
   x.sf ++ x.op ++ x.S ++ x._fixed1 ++ x.Rm ++ x.cond ++ x._fixed2 ++ x.o2 ++ x.Rn ++ x.o3 ++ x.nzcv
 
+
 inductive DataProcRegInst where
   | Add_sub_carry :
     Add_sub_carry_cls → DataProcRegInst

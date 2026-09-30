@@ -136,6 +136,10 @@ def Frame.stores (pairs : List (Reg × Reg)) : Except String (List AInst) :=
 def Frame.allocInst (m : MInst) : Except String (List AInst) := do
   let virt (ps : List (Reg × Reg)) := ps.filter (·.1.isVirtual)
   match m with
+  -- the LL/SC pseudo-instructions write fixed registers (x24–x28); the stack-slot
+  -- allocator has no fixed-register support (`Constraint.fixed`), so a function using
+  -- them keeps cg_clif's code (regalloc2, the default, handles them)
+  | .atomicRmwLoop .. | .atomicCasLoop .. => throw s!"atomic loop with the stack-slot allocator"
   | .args ds =>
     fr.stores (virt ds)
   | .rets us =>

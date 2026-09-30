@@ -1,0 +1,15 @@
+[workspace]
+members = [
+    "bitflags",
+    "cfg-if",
+    "crc32fast",
+    "hex",
+    "itoa",
+    "memchr",
+    "once_cell",
+    "harness",
+]
+resolver = "2"
+
+[patch.crates-io]
+cfg-if = { path = "cfg-if" }

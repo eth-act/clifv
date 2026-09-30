@@ -80,6 +80,9 @@ def decode_branch (i : BitVec 32) : Option ArmInst :=
     BR (Cond_branch_imm {imm19, o0, cond})
   | [11010101000000110010, CRm:4, op2:3, 11111] =>
     BR (Hints {CRm, op2})
+  -- (FV addition) Barriers: DMB (the backend emits only `dmb ish`).
+  | [1101010100000011, 00, 11, CRm:4, op2:3, 11111] =>
+    BR (Barrier {CRm, op2})
   -- (FV addition) Test and branch (immediate).
   | [b5:1, 011011, op:1, b40:5, imm14:14, Rt:5] =>
     BR (Test_branch {b5, op, b40, imm14, Rt})
@@ -151,6 +154,9 @@ def decode_ldst_inst (i : BitVec 32) : Option ArmInst :=
     LDST (Reg_imm_pre_indexed {size, V, opc, imm9, Rn, Rt})
   | [size:2, 111, V:1, 00, opc:2, 1, Rm:5, option:3, S:1, 10, Rn:5, Rt:5] =>
     LDST (Reg_reg_offset {size, V, opc, Rm, option, S, Rn, Rt})
+  -- (FV addition) Load/store exclusive / acquire-release: LDXR/LDAXR/STXR/STLXR/LDAR/STLR.
+  | [size:2, 001000, o2:1, L:1, 0, Rs:5, o0:1, 11111, Rn:5, Rt:5] =>
+    LDST (Reg_exclusive {size, ord := o2, L, Rs, o0, Rn, Rt})
   | _ => none
 
 /-- (FV addition) Decode the A64 "Reserved" group (`op0 = 0`, `op1 = 0000`). -/

@@ -107,6 +107,13 @@ def instNames : Clif.Inst → String × String
   | .call .. => ("Call", "Call")
   | .callIndirect .. => ("CallIndirect", "CallIndirect")
   | .funcAddr .. => ("FuncAddr", "FuncAddr")
+  -- agent/fv-fallback: `bmask` and the atomic opcodes (unverified, outside `E2E.InSubset`)
+  | .bmask .. => ("Unary", "Bmask")
+  | .atomicLoad .. => ("LoadNoOffset", "AtomicLoad")
+  | .atomicStore .. => ("StoreNoOffset", "AtomicStore")
+  | .atomicRmw .. => ("AtomicRmw", "AtomicRmw")
+  | .atomicCas .. => ("AtomicCas", "AtomicCas")
+  | .fence => ("NullAry", "Fence")
   | _ => ("", "")
 
 set_option maxRecDepth 20000 in
