@@ -921,6 +921,9 @@ theorem step_extcall {env : Env} {p : Program} {s : State} {rest : List Stmt}
 theorem truthy_bool8 (b : Bool) : Sem.truthy (Sem.bool8 b) = b := by
   cases b <;> rfl
 
+theorem truthy_bool8' (b : Bool) : @Sem.truthy Ty.i8.width (Sem.bool8 b) = b := by
+  cases b <;> rfl
+
 /-- **`div` at `i128`**: a call of the `__*ti3` helper. -/
 theorem sim_div {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} (hH : HelperOk env)
     (hext' : ∀ fn e, C.g.extern? fn = some e → p'.func? e.name = none)
@@ -1016,5 +1019,109 @@ theorem sim_div {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} (hH : Helpe
       rfl (hext' fn _ hfn) hhf
     simp only [hsem'] at hstep'
     exact ⟨1, by rw [runLoop_succ, hstep']⟩
+
+/-- The condition pattern on an `i128` condition: the target computes its truth value at the
+fresh `c`, keeping every non-fresh value. -/
+theorem cond_run {C : Ctx} {fr' : Frame} {m : Mem} {lo hi c : ValueId} {segA rest : List Stmt}
+    (hseg : pureOk C Pat.cond [lo, hi] [c] segA = true) {l h : BitVec 64}
+    (hl : fr'.regs lo = some ⟨.i64, l⟩) (hh : fr'.regs hi = some ⟨.i64, h⟩) :
+    ∃ regs', LStar { fr' with body := segA ++ rest } m { fr' with regs := regs', body := rest } m ∧
+      regs' c = some ⟨.i8, Sem.bool8 (Sem.truthy (h ++ l))⟩ ∧
+      ∀ w, C.fresh w = false → w ≠ c → regs' w = fr'.regs w := by
+  obtain ⟨ρ0, hrun, h2⟩ := pat_cond l h
+  obtain ⟨regs', hl', hout, hkeep⟩ := pureOk_run hseg (inVals := [V64 l, V64 h]) rfl hrun
+    (fr := fr') (Holds.get (show Holds fr'.regs [lo, hi] [V64 l, V64 h] from ⟨hl, hh, trivial⟩))
+    m rest
+  exact ⟨regs', hl', hout 0 (by simp) _ h2, fun w hw hwc => hkeep w hw (by simpa using hwc)⟩
+
+theorem fresh_ne {C : Ctx} {c w : ValueId} (hc : C.fresh c = true) (hw : C.fresh w = false) :
+    w ≠ c := by
+  rintro rfl; rw [hc] at hw; cases hw
+
+/-- **`trapz`/`trapnz` on an `i128` condition**: the condition pattern, then the trap. -/
+theorem sim_trap {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} {fr fr' : Frame}
+    {m : Mem} (hR : FRel C fr fr') (hM : MemBounded m) {st : Stmt} {rest : List Stmt}
+    (hb : fr.body = st :: rest) {lo hi : ValueId} {nz : Bool} {code : TrapCode}
+    (hpl : planOf C st = some (.trap lo hi nz code)) {segA ts2 : List Stmt} {c : ValueId}
+    (hseg : pureOk C Pat.cond [lo, hi] [c] segA = true) (hc : C.fresh c = true)
+    (hb' : fr'.body = segA ++
+      { results := [], inst := if nz then .trapnz c code else .trapz c code } :: ts2)
+    (hcode : codeOk C rest fr.term ts2 fr'.term = true) :
+    SimOut C env p' fr' m (step env p ⟨fr, [], m⟩) := by
+  obtain ⟨c0, hi, hrs, hc0⟩ := planOf_trap hpl
+  obtain ⟨B, hB, hst⟩ := frel_stmt hR hb
+  have hc00 : c0 < C.T0 := ops_lt hG hB hst (by rcases hi with ⟨h1, -⟩ | ⟨h1, -⟩ <;> rw [h1] <;> simp [instOps])
+  have hnc : ∀ fn args, st.inst ≠ .call fn args := fun _ _ h => by
+    rcases hi with ⟨h1, -⟩ | ⟨h1, -⟩ <;> rw [h1] at h <;> cases h
+  have hnci : ∀ sig c args, st.inst ≠ .callIndirect sig c args := fun _ _ _ h => by
+    rcases hi with ⟨h1, -⟩ | ⟨h1, -⟩ <;> rw [h1] at h <;> cases h
+  rw [step_inst env p ⟨fr, [], m⟩ st rest hb hnc hnci]
+  cases hcv : fr.regs c0 with
+  | none =>
+    have : evalInst fr m st.inst = .stuck s!"use of undefined value v{c0}" := by
+      rcases hi with ⟨h1, -⟩ | ⟨h1, -⟩ <;> rw [h1] <;> simp [evalInst, Frame.get, hcv, Res.ofOption, bind, Res.bind]
+    rw [this]; trivial
+  | some cv =>
+    obtain ⟨l, h, rfl, hl, hh⟩ := pairVal hR.vrel hc00 hc0 hcv
+    obtain ⟨regs', hls, hcr, hkeep⟩ := cond_run (fr' := fr') (m := m)
+      (rest := { results := [], inst := if nz then .trapnz c code else .trapz c code } :: ts2) hseg hl hh
+    have hfr : { fr' with body := segA ++
+        { results := [], inst := if nz then .trapnz c code else .trapz c code } :: ts2 } = fr' := by
+      rw [← hb']
+    rw [hfr] at hls
+    have hT := TStep.of_lstar (env := env) (p' := p') hls
+    refine SimOut.pre hT (.inl rfl) ?_
+    have hset : fr.regs.setMany st.results [] = some fr.regs := by rw [hrs]; rfl
+    rcases hi with ⟨h1, rfl⟩ | ⟨h1, rfl⟩
+    · -- trapz: continue when the condition holds
+      simp only [Bool.false_eq_true, ite_false]
+      have hcv' : ({ fr' with regs := regs', body := { results := [], inst := .trapz c code } :: ts2 } :
+          Frame).regs c = some ⟨.i8, Sem.bool8 (Sem.truthy (h ++ l))⟩ := hcr
+      have hev : evalInst fr m st.inst =
+          if Sem.truthy (h ++ l) then .ok ([], m) else .trap code := by
+        rw [h1]; simp only [evalInst, Frame.get, hcv, Res.ofOption, bind, Res.bind]; rfl
+      have hev' : evalInst { fr' with regs := regs', body := { results := [], inst := .trapz c code } :: ts2 } m (.trapz c code) =
+          if Sem.truthy (h ++ l) then .ok ([], m) else .trap code := by
+        simp only [evalInst, Frame.get, hcr, Res.ofOption, bind, Res.bind, truthy_bool8']; rfl
+      rw [hev]
+      by_cases hbt : Sem.truthy (h ++ l) = true
+      · rw [if_pos hbt] at hev hev' ⊢
+        simp only [StepResult.ofRes_ok, continueWith, hset]
+        have h1s := lstep_eval (fr := { fr' with regs := regs', body := { results := [], inst := .trapz c code } :: ts2 }) (m := m) (st := { results := [], inst := .trapz c code })
+          (rest := ts2) rfl (fun _ _ h => by cases h) hev' rfl
+        refine ⟨rfl, hM, _, ?_, TStep.of_lstar (.single h1s)⟩
+        exact frel_after hG hR hb hcode hset (by rw [hrs]; simp)
+          (fun w hw _ => hkeep w hw (fresh_ne hc hw)) (srcInv_stmt hG.defs hB hst hR.src hev hset)
+      · rw [if_neg hbt] at hev hev' ⊢
+        refine ⟨1, ?_⟩
+        rw [runLoop_succ, step_inst env p' ⟨{ fr' with regs := regs', body := { results := [], inst := .trapz c code } :: ts2 }, [], m⟩ { results := [], inst := .trapz c code }
+          ts2 rfl (fun _ _ h => by cases h) (fun _ _ _ h => by cases h)]
+        simp only [hev']
+        rfl
+    · -- trapnz: continue when the condition fails
+      simp only [ite_true]
+      have hcv' : ({ fr' with regs := regs', body := { results := [], inst := .trapnz c code } :: ts2 } :
+          Frame).regs c = some ⟨.i8, Sem.bool8 (Sem.truthy (h ++ l))⟩ := hcr
+      have hev : evalInst fr m st.inst =
+          if Sem.truthy (h ++ l) then .trap code else .ok ([], m) := by
+        rw [h1]; simp only [evalInst, Frame.get, hcv, Res.ofOption, bind, Res.bind]; rfl
+      have hev' : evalInst { fr' with regs := regs', body := { results := [], inst := .trapnz c code } :: ts2 } m (.trapnz c code) =
+          if Sem.truthy (h ++ l) then .trap code else .ok ([], m) := by
+        simp only [evalInst, Frame.get, hcr, Res.ofOption, bind, Res.bind, truthy_bool8']; rfl
+      rw [hev]
+      by_cases hbt : Sem.truthy (h ++ l) = true
+      · rw [if_pos hbt] at hev hev' ⊢
+        refine ⟨1, ?_⟩
+        rw [runLoop_succ, step_inst env p' ⟨{ fr' with regs := regs', body := { results := [], inst := .trapnz c code } :: ts2 }, [], m⟩ { results := [], inst := .trapnz c code }
+          ts2 rfl (fun _ _ h => by cases h) (fun _ _ _ h => by cases h)]
+        simp only [hev']
+        rfl
+      · rw [if_neg hbt] at hev hev' ⊢
+        simp only [StepResult.ofRes_ok, continueWith, hset]
+        have h1s := lstep_eval (fr := { fr' with regs := regs', body := { results := [], inst := .trapnz c code } :: ts2 }) (m := m) (st := { results := [], inst := .trapnz c code })
+          (rest := ts2) rfl (fun _ _ h => by cases h) hev' rfl
+        refine ⟨rfl, hM, _, ?_, TStep.of_lstar (.single h1s)⟩
+        exact frel_after hG hR hb hcode hset (by rw [hrs]; simp)
+          (fun w hw _ => hkeep w hw (fresh_ne hc hw)) (srcInv_stmt hG.defs hB hst hR.src hev hset)
 
 end Opt.Legal
