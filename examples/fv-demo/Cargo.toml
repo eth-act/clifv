@@ -7,5 +7,10 @@ description = "cargo fv example: integer arithmetic, slices, enums, Option/Resul
 
 [dependencies]
 
+# `cargo fv`: functions whose symbol or Rust path contains one of these keep cg_clif's code
+# (the sret interop test needs both sides).
+[package.metadata.fv]
+skip = ["interop::cg_clif_"]
+
 # Not part of any enclosing workspace.
 [workspace]

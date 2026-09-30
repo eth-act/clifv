@@ -305,6 +305,37 @@ pub mod panics {
     }
 }
 
+/// Calls between Lean-compiled code and cg_clif-compiled code through the struct-return
+/// (`sret`) convention, in both directions. The `cg_clif_*` functions are kept on cg_clif
+/// by `[package.metadata.fv] skip` in Cargo.toml; the others are compiled by the Lean
+/// backend. A tuple of three u64 is returned through a hidden pointer (x8), and the arguments
+/// after it must start at x0 on both sides (a regression test for the Lean backend's sret ABI).
+pub mod interop {
+    #[inline(never)]
+    pub fn cg_clif_triple(a: u64, b: u64) -> (u64, u64, u64) {
+        (a.wrapping_add(b), a.wrapping_sub(b), a ^ b.rotate_left(13))
+    }
+
+    #[inline(never)]
+    pub fn lean_triple(a: u64, b: u64) -> (u64, u64, u64) {
+        (a.wrapping_mul(3), b.wrapping_mul(5), a.wrapping_sub(b.wrapping_mul(7)))
+    }
+
+    /// Lean code calling a cg_clif sret function.
+    #[inline(never)]
+    pub fn lean_calls_cg_clif(a: u64, b: u64) -> u64 {
+        let (x, y, z) = cg_clif_triple(a, b);
+        x.wrapping_mul(31) ^ y.wrapping_mul(17) ^ z
+    }
+
+    /// cg_clif code calling a Lean sret function.
+    #[inline(never)]
+    pub fn cg_clif_calls_lean(a: u64, b: u64) -> u64 {
+        let (x, y, z) = lean_triple(a, b);
+        x.wrapping_mul(31) ^ y.wrapping_mul(17) ^ z
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -428,5 +459,15 @@ mod tests {
         assert_eq!(panics::must_be_positive(bb(9)), 9);
         assert_eq!(panics::divide(bb(9), bb(2)), 4);
         assert_eq!(panics::unwrap_none(bb(Some(3))), 3);
+    }
+
+    #[test]
+    fn sret_interop() {
+        use interop::*;
+        assert_eq!(cg_clif_triple(bb(1000), bb(7)), (1007, 993, 1000 ^ (7 << 13)));
+        assert_eq!(lean_triple(bb(1000), bb(7)), (3000, 35, 951));
+        assert_eq!(lean_calls_cg_clif(bb(1000), bb(7)), (1007 * 31) ^ (993 * 17) ^ (1000 ^ (7 << 13)));
+        assert_eq!(cg_clif_calls_lean(bb(1000), bb(7)), (3000 * 31) ^ (35 * 17) ^ 951);
+        assert_eq!(lean_calls_cg_clif(bb(u64::MAX), bb(2)), 0x402d);
     }
 }
