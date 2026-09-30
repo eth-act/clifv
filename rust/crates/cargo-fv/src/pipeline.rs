@@ -310,33 +310,36 @@ fn process_selected(
     }
 }
 
-/// Calling-convention differences between the Lean backend and Cranelift (cg_clif's code, the
-/// other side of every call between a Lean-compiled and a fallback function).
+/// Known calling-convention differences between the Lean backend and Cranelift (cg_clif's code,
+/// the other side of every call between a Lean-compiled and a fallback function): (text of a
+/// parameter in a signature, reason). A function whose own signature or any callee declaration
+/// (`fnN = …`, `sigN = …`) contains the text falls back. Empty today.
 ///
-/// `sret`: Cranelift (AAPCS64) passes the struct-return pointer in x8 *without* using a GPR
-/// argument slot (the next argument is in x0); lean-backend (2026-09-29) also moves the
-/// following arguments up by one (x1, …), in definitions and at call sites. So a function
-/// whose signature, or whose callee's signature, has an `sret` parameter is not
-/// interoperable and falls back. `FV_ALLOW_SRET=1` disables the guard (for a fixed backend).
+/// History: `("i64 sret", …)` until f52e514: lean-backend passed the arguments after an sret
+/// pointer from x1, Cranelift from x0 (sret in x8 takes no argument register);
+/// examples/fv-demo's `sret_interop` test is the regression test.
+const ABI_MISMATCHES: &[(&str, &str)] = &[];
+
 fn abi_guard(input: &Path) -> Option<String> {
-    if std::env::var_os("FV_ALLOW_SRET").is_some_and(|v| v == "1") {
+    if ABI_MISMATCHES.is_empty() {
         return None;
     }
     let text = fs::read_to_string(input).ok()?;
     let body = text.split_once("\nfunction ").map(|(_, b)| b).unwrap_or(&text);
     let sig = body.lines().next().unwrap_or("");
-    if sig.contains("i64 sret") {
-        return Some("sret ABI mismatch: lean-backend passes the arguments after an sret pointer from x1, Cranelift from x0".into());
-    }
-    if body.lines().any(|l| l.trim_start().starts_with("fn") || l.trim_start().starts_with("sig")) && body
-        .lines()
-        .filter(|l| {
+    let decls = || {
+        body.lines().filter(|l| {
             let t = l.trim_start();
             (t.starts_with("fn") || t.starts_with("sig")) && t.contains(" = ")
         })
-        .any(|l| l.contains("i64 sret"))
-    {
-        return Some("sret ABI mismatch: calls a function with an sret parameter (lean-backend passes the arguments after it from x1, Cranelift from x0)".into());
+    };
+    for (pat, why) in ABI_MISMATCHES {
+        if sig.contains(pat) {
+            return Some(format!("ABI mismatch with Cranelift: {why}"));
+        }
+        if decls().any(|l| l.contains(pat)) {
+            return Some(format!("ABI mismatch with Cranelift (a callee's signature): {why}"));
+        }
     }
     None
 }
@@ -543,7 +546,13 @@ fn process_in(
                     } else if syms.local_count.contains_key(&n) {
                         locals.push(n);
                     } else if !(syms.defined.contains(&n) || syms.undefined.contains(&n) || RUNTIME_HELPERS.contains(&n.as_str())) {
-                        bad = Some(format!("references `{u}`, unknown to cg_clif's object"));
+                        bad = Some(if u.starts_with("alloc") || u.starts_with("data_") || u.starts_with("u0_") {
+                            // normalize.py's name for a gv/callee no relocation of cg_clif's
+                            // object names, e.g. data only a path Cranelift's optimiser removed uses
+                            format!("references `{u}`, which cg_clif's object does not contain (removed by Cranelift's optimiser, or unmapped)")
+                        } else {
+                            format!("references `{u}`, unknown to cg_clif's object")
+                        });
                     }
                     if bad.is_some() {
                         break;

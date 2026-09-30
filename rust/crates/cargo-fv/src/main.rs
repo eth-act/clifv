@@ -151,7 +151,7 @@ fn stamp_of(cfg: &Config, wrapper: &Path) -> String {
             m.and_then(|m| m.modified().ok())
         ));
     }
-    for k in ["FV_SKIP", "FV_ONLY", "FV_ALLOW_SRET"] {
+    for k in ["FV_SKIP", "FV_ONLY"] {
         s.push_str(&format!("{k}={}\n", std::env::var(k).unwrap_or_default()));
     }
     for (d, p) in &cfg.pkg_skip {
@@ -296,14 +296,15 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
 
     // cargo does not see the Lean tools or the FV settings: when they change, rebuild the
     // members (dependencies are plain cg_clif and stay)
-    let stamp_path = fv_dir.join("fv-stamp");
+    let stamp_path = fv_dir.join(format!("fv-stamp.{profile}"));
     let stamp = stamp_of(&cfg, &wrapper);
     if std::fs::read_to_string(&stamp_path).ok().as_deref() != Some(stamp.as_str()) {
         if fv_dir.exists() {
             eprintln!("cargo fv: the Lean tools or the FV settings changed: rebuilding the workspace members");
             for n in &names {
                 let mut c = Command::new(&cargo);
-                c.args(["clean", "-q", "-p", n, "--target", TARGET]);
+                let cargo_profile = if profile == "debug" { "dev" } else { profile.as_str() };
+                c.args(["clean", "-q", "-p", n, "--target", TARGET, "--profile", cargo_profile]);
                 if let Some(m) = value_of(&cargo_args, "--manifest-path") {
                     c.args(["--manifest-path", &m]);
                 }
@@ -319,7 +320,8 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
     let build_sub = if sub == "test" { "test" } else { "build" };
     let mut b = Command::new(&cargo);
     b.arg(build_sub);
-    if sub == "test" {
+    let no_run = cargo_args.iter().any(|a| a == "--no-run");
+    if sub == "test" && !no_run {
         b.arg("--no-run");
     }
     b.args(&cargo_args).args(["--target", TARGET, "--message-format=json-render-diagnostics"]);
@@ -394,7 +396,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
             return 1;
         }
     }
-    if sub == "build" {
+    if sub == "build" || no_run {
         return 0;
     }
 
