@@ -933,7 +933,9 @@ theorem term_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
         (VNext.goto hK (by rw [hsucc_eq, htgs]; rfl) henv))), hM⟩
     · rename_i fn0 args0 et0 hT
       rw [hT] at hBnt; cases hBnt
-    · rename_i hnj _
+    · rename_i callee0 args0 et0 hT
+      rw [hT] at hBnt; cases hBnt
+    · rename_i hnj _ _
       have hbargs' : vb.branchArgs = #[] := by
         rw [hbargs]; split
         · rename_i bc0 hT; exact absurd hT (hnj bc0)
@@ -1339,9 +1341,10 @@ theorem term_step_try (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
       rw [hBT]
       refine ⟨.callIndirect et.sig callee args,
         fun y hy => by
-          simp only [instArgs, List.mem_cons] at hy
-          simp only [termArgs, List.mem_cons, List.mem_append]
-          tauto, hnd, fun s' hs => ?_,
+          simp only [instArgs] at hy
+          simp only [termArgs, List.cons_append]
+          exact List.mem_cons.mpr ((List.mem_cons.mp hy).imp id fun h => List.mem_append_left _ h),
+        hnd, fun s' hs => ?_,
         H.tryInd f ctx (L.start + B.body.length) callee args et L.data T.sig T.items L.targets
           T.info T.regs L.tst T.st1 out L.tst' tr H.shape.ctxInv hdata' hexn hsin h8
           (H.shape.tslot b B L hB hL) hinfo hregs hvbL hrun⟩
