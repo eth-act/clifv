@@ -164,6 +164,8 @@ structure DriverHyp (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) 
   brIdx : ∀ B ∈ f.blocks, BrIdxTyped ctx B.term
   /-- no tail calls (`return_call` is outside clif-subset-v2 E) -/
   noTail : ∀ B ∈ f.blocks, ∀ fn args, B.term ≠ .returnCall fn args
+  /-- no `try_call`/`try_call_indirect` (outside clif-subset-v2 E) -/
+  noTry : ∀ B ∈ f.blocks, B.term.isTry = false
   cfg : ∃ ss ps, vc.cfg = .ok (ss, ps)
 
 section
@@ -887,6 +889,8 @@ theorem term_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     exact ⟨b, _, ρ₁', w₁, vb, _, _, outs, w₂, hstar, hvb, hi, hops, hsem,
       by rw [trapCode?_mapRegs]; exact htc⟩
   | returnCall fn args => exact absurd hT (H.noTail B hBmem fn args)
+  | tryCall _ _ _ => have := H.noTry B hBmem; rw [hT] at this; cases this
+  | tryCallIndirect _ _ _ => have := H.noTry B hBmem; rw [hT] at this; cases this
   | jump bc =>
     have hne : dests B.term ≠ [] := by rw [hT]; simp [dests]
     refine ⟨hnext_br hne, fun vals cm hs => ?_, fun c hs => ?_⟩
