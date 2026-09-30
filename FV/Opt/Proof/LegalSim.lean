@@ -1124,4 +1124,124 @@ theorem sim_trap {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} {fr fr' : 
         exact frel_after hG hR hb hcode hset (by rw [hrs]; simp)
           (fun w hw _ => hkeep w hw (fresh_ne hc hw)) (srcInv_stmt hG.defs hB hst hR.src hev hset)
 
+/-! ## Calls with expanded arguments -/
+
+/-- The source invariant after a statement whose results have the static types (not an
+`iconst`/`iconcat`). -/
+theorem srcInv_results {f : Function} (hnd : ((defsOf f).map (·.1)).Nodup) {B : Block}
+    (hB : B ∈ f.blocks) {s : Stmt} (hs : s ∈ B.body) {ρ ρ1 : Regs} (hinv : SrcInv f ρ)
+    {vals : List Val} (hty : s.inst.resultTypes (sigOfF f) (declOfF f) = some (vals.map (·.ty)))
+    (hk : ∀ t k, s.inst ≠ .iconst t k) (hc : ∀ t lo hi, s.inst ≠ .iconcat t lo hi)
+    (hset : ρ.setMany s.results vals = some ρ1) : SrcInv f ρ1 := by
+  intro v x hx
+  by_cases hv : v ∈ s.results
+  · obtain ⟨i, hi, hvi⟩ := setMany_mem hset (results_nodup hnd hB hs) hv
+    rw [hx] at hvi
+    have hl := lookup_of_mem hnd (mem_defsOf_stmt hB hs hi)
+    refine ⟨?_, ?_, ?_⟩
+    · simp only [tyOf, hl, hty, Option.bind_some, List.getElem?_map, ← hvi, Option.map_some]
+    · intro c hc'
+      simp only [constOf, defInst, hl, Option.bind_some] at hc'
+      split at hc'
+      · rename_i t k hk'; exact absurd (Option.some.inj hk') (hk t k)
+      · cases hc'
+    · intro c hc'
+      simp only [concatConst, defInst, hl, Option.bind_some] at hc'
+      split at hc'
+      · rename_i lo hi' hk'; exact absurd (Option.some.inj hk') (hc _ _ _)
+      · cases hc'
+  · rw [setMany_other hset hv] at hx; exact hinv v x hx
+
+/-- The results of an expanded call: the source results represented, the target results images
+or fresh pads. -/
+theorem retsOk_bind {C : Ctx} {rg : List (List SlotEl)} {rs rs' : List ValueId}
+    (h : retsOk C rg rs rs' = true) : ∀ {rv rv' : List Val}, ExpRel rg rv rv' →
+    (∀ {ρ1 ρ1' : Regs}, Holds ρ1 rs rv → Holds ρ1' rs' rv' → rs.Nodup →
+      ∀ v ∈ rs, ∀ x, ρ1 v = some x → RelV C ρ1' v x) ∧
+    (∀ w ∈ rs', C.fresh w = true ∨ ∃ v ∈ rs, w ∈ img C v) ∧ rs'.length = rv'.length := by
+  fun_induction retsOk C rg rs rs'
+  case case1 =>
+    intro rv rv' he
+    cases rv with
+    | cons => exact he.elim
+    | nil =>
+      cases rv' with
+      | cons => exact he.elim
+      | nil => exact ⟨fun _ _ _ v hv => by simp at hv, fun w hw => by simp at hw, rfl⟩
+  case case2 p gs r rs r' rs' ih =>
+    simp only [Bool.and_eq_true, beq_iff_eq] at h
+    obtain ⟨⟨hp, rfl⟩, h⟩ := h
+    intro rv rv' he
+    rcases rv with _ | ⟨x, xs⟩
+    · exact he.elim
+    rcases rv' with _ | ⟨v', vs'⟩
+    · exact he.elim
+    obtain ⟨rfl, he⟩ := he
+    obtain ⟨ih1, ih2, ih3⟩ := ih h he
+    refine ⟨fun h1 h1' hnd u hu y hy => ?_, fun w hw => ?_, by simp [ih3]⟩
+    · obtain ⟨h1a, h1b⟩ := h1
+      obtain ⟨h1'a, h1'b⟩ := h1'
+      simp only [List.nodup_cons] at hnd
+      rcases List.mem_cons.1 hu with rfl | hu
+      · rw [h1a] at hy; cases hy; rw [RelV.plain (plain_iff.1 hp)]; exact h1'a
+      · exact ih1 h1b h1'b hnd.2 u hu y hy
+    · rcases List.mem_cons.1 hw with rfl | hw
+      · exact .inr ⟨w, by simp, by simp [img, plain_iff.1 hp]⟩
+      · rcases ih2 w hw with h | ⟨u, hu, hwu⟩
+        · exact .inl h
+        · exact .inr ⟨u, List.mem_cons_of_mem _ hu, hwu⟩
+  case case3 gs r rs a b rs' ih =>
+    simp only [Bool.and_eq_true, beq_iff_eq] at h
+    obtain ⟨hp, h⟩ := h
+    intro rv rv' he
+    rcases rv with _ | ⟨x, xs⟩
+    · exact he.elim
+    rcases rv' with _ | ⟨va, _ | ⟨vb, vs'⟩⟩
+    · exact he.elim
+    · exact he.elim
+    obtain ⟨⟨l, hh, rfl, rfl, rfl⟩, he⟩ := he
+    obtain ⟨ih1, ih2, ih3⟩ := ih h he
+    refine ⟨fun h1 h1' hnd u hu y hy => ?_, fun w hw => ?_, by simp [ih3]⟩
+    · obtain ⟨h1a, h1b⟩ := h1
+      obtain ⟨h1'a, h1'b, h1'c⟩ := h1'
+      simp only [List.nodup_cons] at hnd
+      rcases List.mem_cons.1 hu with rfl | hu
+      · rw [h1a] at hy; cases hy; rw [RelV.pair hp]; exact ⟨l, hh, rfl, h1'a, h1'b⟩
+      · exact ih1 h1b h1'c hnd.2 u hu y hy
+    · simp only [List.mem_cons] at hw
+      rcases hw with rfl | rfl | hw
+      · exact .inr ⟨r, by simp, by simp [img, hp]⟩
+      · exact .inr ⟨r, by simp, by simp [img, hp]⟩
+      · rcases ih2 w hw with h | ⟨u, hu, hwu⟩
+        · exact .inl h
+        · exact .inr ⟨u, List.mem_cons_of_mem _ hu, hwu⟩
+  case case4 gs r rs w0 a b rs' ih =>
+    simp only [Bool.and_eq_true, beq_iff_eq] at h
+    obtain ⟨⟨hf, hp⟩, h⟩ := h
+    intro rv rv' he
+    rcases rv with _ | ⟨x, xs⟩
+    · exact he.elim
+    rcases rv' with _ | ⟨vw, _ | ⟨va, _ | ⟨vb, vs'⟩⟩⟩
+    · exact he.elim
+    · exact he.elim
+    · exact he.elim
+    obtain ⟨-, ⟨l, hh, rfl, rfl, rfl⟩, he⟩ := he
+    obtain ⟨ih1, ih2, ih3⟩ := ih h he
+    refine ⟨fun h1 h1' hnd u hu y hy => ?_, fun w hw => ?_, by simp [ih3]⟩
+    · obtain ⟨h1a, h1b⟩ := h1
+      obtain ⟨-, h1'a, h1'b, h1'c⟩ := h1'
+      simp only [List.nodup_cons] at hnd
+      rcases List.mem_cons.1 hu with rfl | hu
+      · rw [h1a] at hy; cases hy; rw [RelV.pair hp]; exact ⟨l, hh, rfl, h1'a, h1'b⟩
+      · exact ih1 h1b h1'c hnd.2 u hu y hy
+    · simp only [List.mem_cons] at hw
+      rcases hw with rfl | rfl | rfl | hw
+      · exact .inl hf
+      · exact .inr ⟨r, by simp, by simp [img, hp]⟩
+      · exact .inr ⟨r, by simp, by simp [img, hp]⟩
+      · rcases ih2 w hw with h | ⟨u, hu, hwu⟩
+        · exact .inl h
+        · exact .inr ⟨u, List.mem_cons_of_mem _ hu, hwu⟩
+  case case5 => cases h
+
 end Opt.Legal
