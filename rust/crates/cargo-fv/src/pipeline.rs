@@ -497,7 +497,11 @@ fn classify(cfg: &Config, stderr: &str, ok: bool, out: &Path, symbol: &str) -> C
         let first = stderr.lines().find(|l| !l.trim().is_empty()).map(strip).unwrap_or_default();
         return Compiled::Fallback(format!("lean-backend failed: {first}"));
     }
+    // lean-backend prints the closure warnings before the per-function reasons; its own
+    // reason (e.g. "bmask / atomic instructions / fence", whose rules are outside the
+    // emitter-subset closure by design) is the more precise one, so it wins.
     let mut unverified: Option<String> = None;
+    let mut outside_closure: Option<String> = None;
     for l in stderr.lines() {
         if let Some((_, why)) = l.split_once(": unsupported: ") {
             return Compiled::Fallback(format!("unsupported: {why}"));
@@ -506,11 +510,12 @@ fn classify(cfg: &Config, stderr: &str, ok: bool, out: &Path, symbol: &str) -> C
             unverified.get_or_insert(why.to_string());
         } else if l.contains("fired outside the emitter-subset closure") {
             let r = strip(l);
-            unverified.get_or_insert(format!("ISLE {r}"));
+            outside_closure.get_or_insert(format!("ISLE {r}"));
         } else if l.contains(": encoding failed: ") {
             return Compiled::Fallback(strip(l));
         }
     }
+    let mut unverified = unverified.or(outside_closure);
     match read_syms(out) {
         Ok(s) if s.text.get(symbol) == Some(&true) => {}
         Ok(_) => return Compiled::Fallback("lean-backend emitted no code for the function".into()),

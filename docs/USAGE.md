@@ -348,25 +348,33 @@ Cranelift's optimiser removed from cg_clif's object (a dead panic path's `Locati
 retried with the `.opt.clif` dump (`docs/research/rust-route.md`, "agent/fv-fallback"), which
 matches the code cg_clif actually emitted.
 
-Results (`cargo fv build`, the default panic=unwind configuration; the landing-pad fallbacks
-are the unwinding design, see above):
+Results (`cargo fv build` then `cargo fv report`; "unwind" = the default panic=unwind with the
+landing-pad cg_clif, whose landing-pad fallbacks are the unwinding design, see above;
+"abort" = `--panic-abort`, the configuration of the "before" measurements):
 
-| workspace | profile | functions | verified | unverified | fallback | of which landing pad | of which skip |
-|---|---|---|---|---|---|---|---|
-| fv-demo | debug | 478 | 350 | 125 | 3 | 0 | 3 (`metadata.fv.skip`) |
-| fv-demo | release | 325 | 230 | 92 | 3 | 0 | 3 (`metadata.fv.skip`) |
-| survey | debug | 460 | 399 | 61 | 0 | — | — |
-| survey | release | 245 | 200 | 45 | 0 | — | — |
-| vendor | debug | 625 | 491 | 134 | 0 | — | — |
-| vendor | release | 256 | 168 | 88 | 0 | — | — |
+| workspace | profile | panic | functions | verified | unverified | fallback | of which landing pad | of which skip |
+|---|---|---|---|---|---|---|---|---|
+| fv-demo | debug | unwind | 478 | 300 | 97 | 81 | 78 | 3 (`metadata.fv.skip`) |
+| fv-demo | release | unwind | 325 | 185 | 63 | 77 | 74 | 3 |
+| survey | debug | unwind | 460 | 350 | 55 | 55 | 55 | — |
+| survey | release | unwind | 245 | 159 | 39 | 47 | 47 | — |
+| vendor | debug | unwind | 625 | 458 | 126 | 41 | 41 | — |
+| vendor | release | unwind | 256 | 147 | 78 | 31 | 31 | — |
+| fv-demo | debug | abort | 479 | 351 | 125 | 3 | — | 3 |
+| fv-demo | release | abort | 320 | 227 | 90 | 3 | — | 3 |
+| survey | debug | abort | 454 | 394 | 60 | 0 | — | — |
+| survey | release | abort | 239 | 195 | 44 | 0 | — | — |
+| vendor | debug | abort | 625 | 491 | 134 | 0 | — | — |
+| vendor | release | abort | 250 | 162 | 88 | 0 | — | — |
 
-Before agent/fv-fallback (the same six builds): fv-demo release 7 fallbacks (5 missing
-`allocNNN`), survey release 13 (all missing `allocNNN`), vendor debug 10 (9× atomics/bmask/
-fence unsupported), vendor release 16 (8 missing `allocNNN`, 8 atomics/bmask/fence). The
-missing-`allocNNN` fallbacks are gone (`.opt.clif` retry), and every atomic/bmask/fence
-function compiles (flagged unverified). `examples/compare.sh examples/{fv-demo,survey,vendor}`
-(debug and `--release`) report the same test outcomes as `cargo test` (fv-demo 18/18, survey
-53/53, vendor 189/189).
+Before agent/fv-fallback (the same builds, panic=abort): fv-demo debug 2 fallbacks (skip),
+fv-demo release 7 (5 missing `allocNNN`, 2 skip), survey release 13 (all missing `allocNNN`),
+vendor debug 10 (9× atomics/bmask/fence unsupported), vendor release 16 (8 missing
+`allocNNN`, 8 atomics/bmask/fence). The missing-`allocNNN` fallbacks are gone (`.opt.clif`
+retry), and every atomic/bmask/fence function compiles (flagged unverified: vendor 9 debug,
+7–8 release). The only fallbacks left are `metadata.fv.skip` and, under panic=unwind,
+landing pads. `examples/compare.sh examples/{fv-demo,survey,vendor}` (debug and `--release`)
+report the same test outcomes as `cargo test` (fv-demo 18/18, survey 53/53, vendor 189/189).
 
 ## Limitations
 

@@ -223,23 +223,33 @@ All four steps landed (commit series on `agent/fv-fallback`):
    the bytes are not recoverable from cg_clif's object at all. Macro-only CGUs (cfg-if): cg_clif
    writes no dump dir; `cargo fv` now reports each text symbol as a fallback row instead of a
    unit-level error.
-2. **bmask + 3. atomics** — `isle2lean` `E_OPCODES` += `bmask, atomic_load, atomic_store,
-   atomic_rmw, atomic_cas, fence`; `Closure.lean` regenerated (486 rules; the non-LSE rules are
-   pulled in transitively: `load_acquire`/`store_release`, `atomic_rmw_loop`/`atomic_cas_loop`,
-   `lower_bmask`; `use_lse` fails → cg_clif's `has_lse=0` path). `instData` arms build the
+2. **bmask + 3. atomics** — lowered by the full exported ISLE program (not the emitter
+   closure): the non-LSE rules `load_acquire`/`store_release`, `atomic_rmw_loop`/
+   `atomic_cas_loop`, `lower_bmask` (`use_lse` fails → cg_clif's `has_lse=0` path).
+   DECISION: the opcodes are NOT added to `isle2lean`'s `E_OPCODES` (an intermediate commit did,
+   regenerating `Closure.lean` to 486 rules; reverted): closure roots must lie in the proven
+   families, and the excluded-root refutations need the atomic opcodes outside `eOps`. The
+   proofs instead learn that an E instruction (`Compile.instE`) never has an atomic opcode name
+   (`IselExclData.instE_atomic_ne`; `instNames`/`eNamePairs` gained the new arms).
+   `instData` arms build the
    `InstructionData` (`LoadNoOffset`/`StoreNoOffset`/`AtomicRmw`/`AtomicCas`/`NullAry`/`Unary(Bmask)`);
    new MInst: `loadAcquire`/`storeRelease` (ldar/stlr), `atomicRmwLoop`/`atomicCasLoop` (emit-time
    LL/SC loop expansion transcribed from Cranelift's `inst/emit.rs`: ldaxr/extend/op/stlxr/cbnz
    over fixed x24–x28, with emit-time labels `Lbl.loop`), `csetm` (csinv), `fence` (dmb ish).
-   regalloc operands: `Constraint.fixed` exactly as `aarch64_get_operands` (x25/x26 in, x27/x24
-   out, x28 unless xchg); the stack-slot allocator rejects the loop pseudo-insts. Arm model: new
+   regalloc operands: `Constraint.fixed` as `aarch64_get_operands` (x25/x26 in, x27/x24/x28
+   out) with one conservative deviation: the x28 def is registered for `xchg` too (Cranelift
+   omits it; x28 is dead across the instruction either way), which keeps `visitOperands`
+   uniform in the op for the rename-commutation proof (`LowerRename.Sim.visit`). The
+   stack-slot allocator rejects the loop pseudo-insts. Arm model: new
    decode classes `LDST.Reg_exclusive` (LDXR/LDAXR/STXR/STLXR/LDAR/STLR) and `BR.Barrier` (dmb;
    in the BR group because the DPR `decode_class` proofs require every fixed-bit dispatch to be
    decidable without the opaque sf/op/S bits) with exec (exclusive store writes the success flag
-   0 to Rs) and `decode_armBits_*` theorems; encoders checked against llvm-mc
-   (`lean-backend-encode-check.sh`: 1247 functions / 33450 words / 1085 relocations, 0 differ,
-   including the random Insn-form sweep with the decode check). Differential execution:
-   the atomic/bmask/fence runtests agree with Cranelift-native (518/518 after fixing the i32/i64
+   0 to Rs) and `decode_armBits_*` theorems; `arm-cosim.sh` co-simulates `dmb ish`, `ldar`,
+   `stlr`, `ldaxr` against qemu (a lone `stlxr` cannot be: qemu fails it without a monitor,
+   the model's exclusive store always succeeds). Encoders checked against llvm-mc
+   (`lean-backend-encode-check.sh`, the compiled runtests plus random-sweep forms `csetm`,
+   `ldar_stlr_ldaxr`, `stlxr`, `dmb` with the decode check). Differential execution:
+   the atomic/bmask/fence runtests agree with Cranelift-native (621/621 after fixing the i32/i64
    min-max comparison width and the i64 smin/smax operand extend — both transcriptions now match
    `emit.rs` exactly). `FVTest/E2E/Check.lean` skips functions outside `Compile.functionE` (they
    are outside the theorem); `Backend.unverifiedReason?` reports "bmask / atomic instructions /
@@ -248,34 +258,37 @@ All four steps landed (commit series on `agent/fv-fallback`):
    the survey dumps declare `set tls_model=elf_gd` but contain no `tls_value`), so no code
    change; the parser still rejects TLS globals (`FV/Clif/Parse.lean:383`).
 
-Before/after (the same six `cargo fv build`s; after = default panic=unwind, so the vendor
-row's 41→0 landing-pad fallbacks belong to the fv-unwind design, not this branch):
+Before/after (`cargo fv build` + `cargo fv report`; "before" was measured with panic=abort,
+before fv-unwind was merged, so the comparable "after" is `--panic-abort`; under the default
+panic=unwind the landing-pad fallbacks of the fv-unwind design come on top):
 
-| workspace | profile | fb before | fb after | of which skip |
-|---|---|---|---|---|
-| fv-demo | debug | 2 | 3 | 3 (`metadata.fv.skip`) |
-| fv-demo | release | 7 | 3 | 3 |
-| survey | debug | 0 | 0 | — |
-| survey | release | 13 | 0 | — |
-| vendor | debug | 10 | 0 | — |
-| vendor | release | 16 | 0 | — |
+| workspace | profile | fb before (abort) | fb after (abort) | fb after (unwind) | of which landing pad | of which skip |
+|---|---|---|---|---|---|---|
+| fv-demo | debug | 2 | 3 | 81 | 78 | 3 (`metadata.fv.skip`; 2 before) |
+| fv-demo | release | 7 | 3 | 77 | 74 | 3 |
+| survey | debug | 0 | 0 | 55 | 55 | — |
+| survey | release | 13 | 0 | 47 | 47 | — |
+| vendor | debug | 10 | 0 | 41 | 41 | — |
+| vendor | release | 16 | 0 | 31 | 31 | — |
 
-Gates: `lean-backend-filetests.sh` corpus 22/22 + runtests (395 files: 4655 lean passes, 0 fail,
-0 disagree vs Cranelift-native); `lean-backend-encode-check.sh` 1247 functions identical, 0
-differ; `lean-e2e-check` lowerCheck 910 accepted / 0 rejected / 146 out of scope, prepCheck
-910/0, formsCoveredB 910 covered / 0 not covered; `FV.E2E` and `FV.E2E.OptProven` green;
-`examples/compare.sh` fv-demo 18/18, survey 53/53, vendor 189/189 (debug + release, SAME).
+Remaining fallback reasons: `package.metadata.fv.skip` (fv-demo, deliberate) and, with
+panic=unwind, landing pads (try_call; the Lean backend emits no exception tables). The
+atomic/bmask/fence functions (vendor: 9 debug, 7–8 release) report "bmask / atomic
+instructions / fence (outside backend_correct)": `cargo fv` prefers lean-backend's own
+unverified reason over its "rule fired outside the emitter-subset closure" warning, which
+the (non-closure) atomic rules trigger by design.
 
-Implementation plan (all flagged unverified via `unverifiedReason?`, theorems untouched):
-atomics → add `atomic_load/atomic_store/atomic_rmw/atomic_cas/fence` + `bmask` to
-`isle2lean`'s `E_OPCODES`, regenerate `Closure.lean`; `instData` arms (InstructionData
-`LoadNoOffset/StoreNoOffset/AtomicRmw/AtomicCas/NullAry/Unary(Bmask)`); MInst variants
-`LoadAcquire/StoreRelease` (ldar/stlr), `AtomicRMWLoop/AtomicCASLoop` pseudo-insts expanded at
-emit into the ldaxr/stlxr loops with fixed regs x24–x28 exactly as Cranelift's
-`inst/emit.rs` does (has_lse=0, cg_clif's flags), `CSetm` (csinv), `Fence` (dmb ish);
-regalloc fixed uses/defs (x25/x26 in, x27+scratch out) and clobbers; encoders checked against
-llvm-mc; `Clif.run` semantics already exist. TLS `tls_value` (elf_gd) — parser rejects TLS
-globals (Parse.lean:383); rules `elf_tls_get_addr` exist; probed only if a real fallback appears.
+Gates: `lake build FV FV.E2E FV.E2E.OptProven FVTest` green, `#print axioms` of
+`E2E.backend_correct_final`/`backend_correct_opt_proven`: standard + `_native` only;
+`lean-backend-filetests.sh` corpus 114/114 (+ extrt 22/22), runtests 395 files: 4672 lean
+passes, 0 fail, 0 disagree vs Cranelift-native (atomic/bmask/fence files: 621 passes, the
+big-endian and 128-bit atomic files are not compiled by Cranelift-native either);
+`lean-backend-encode-check.sh` 1260 functions identical, 0 differ (34368 words, 1085
+relocations); `arm-cosim.sh` 169 forms / 33800 vectors, 0 failures; `lean-e2e-check` lowerCheck
+910 accepted / 0 rejected / 146 out of scope (22 before; +124: the atomic/bmask/fence runtest
+functions now lower but are outside `Compile.functionE`), prepCheck 910/0, formsCoveredB 910
+covered / 0 not covered; `examples/compare.sh` fv-demo 18/18, survey 53/53, vendor 189/189
+(debug + release, SAME).
 
 ## Native coverage (branch `agent/native-cov`)
 
