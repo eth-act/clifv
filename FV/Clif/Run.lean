@@ -433,6 +433,54 @@ def stepReturnCall (env : Env) (p : Program) (s : State) (fn : FnRef) (args : Li
       | .outOfFuel => .stuck s!"extern %{ext.name} ran out of fuel"
     | none => .stuck s!"unknown callee %{ext.name}"
 
+/-- A value id above every value `f` defines (block parameters and results): `try_call` binds
+the call's results there before its normal-return successor reads them as `retN`. -/
+def Function.freshValue (f : Function) : ValueId :=
+  f.blocks.foldl (init := 0) fun m b =>
+    let m := b.params.foldl (fun m p => max m (p.1 + 1)) m
+    b.body.foldl (fun m st => st.results.foldl (fun m r => max m (r + 1)) m) m
+
+/-- The normal-return successor of a `try_call` as a plain block call, the `i`-th result being
+value `base + i`. -/
+def tryNormal (et : ExnTable) (base : ValueId) : Res BlockCall := do
+  let args ← et.normal.args.mapM fun
+    | .val v => pure v
+    | .ret i => pure (base + i)
+    | .exn _ => .stuck "try_call: exception payload on the normal-return edge"
+  pure { block := et.normal.block, args }
+
+/-- Execute `try_call fnN(args), et` as the call `results = call fnN(args)` followed by
+`jump normal(…)`, with the results bound to fresh values (`Function.freshValue`). Only the
+normal return is modelled: `Clif.run` has no unwinding, so a callee never resumes at a
+handler successor (the exceptional edges exist for the backend, which emits landing pads
+and the LSDA for them). -/
+def stepTryCall (env : Env) (p : Program) (s : State) (fn : FnRef) (args : List ValueId)
+    (et : ExnTable) : StepResult :=
+  let fr := s.frame
+  StepResult.ofRes (do
+    let ext ← Res.ofOption s!"unknown function reference fn{fn}" (fr.func.extern? fn)
+    let sig ← Res.ofOption s!"unknown signature sig{et.sig}" (fr.func.sigDecls.lookup et.sig)
+    Res.check (AbiParam.tys sig.params == AbiParam.tys ext.sig.params &&
+        AbiParam.tys sig.returns == AbiParam.tys ext.sig.returns)
+      s!"try_call: sig{et.sig} is not the signature of fn{fn}"
+    let base := fr.func.freshValue
+    let bc ← tryNormal et base
+    pure (ext.sig.returns.length, base, bc)) fun (n, base, bc) =>
+  stepCall env p { s with frame := { fr with body := [], term := .jump bc } } []
+    ((List.range n).map (base + ·)) fn args
+
+/-- Execute `try_call_indirect callee(args), et` (see `stepTryCall`). -/
+def stepTryCallIndirect (env : Env) (p : Program) (s : State) (callee : ValueId)
+    (args : List ValueId) (et : ExnTable) : StepResult :=
+  let fr := s.frame
+  StepResult.ofRes (do
+    let sig ← Res.ofOption s!"unknown signature sig{et.sig}" (fr.func.sigDecls.lookup et.sig)
+    let base := fr.func.freshValue
+    let bc ← tryNormal et base
+    pure (sig.returns.length, base, bc)) fun (n, base, bc) =>
+  stepCallIndirect env p { s with frame := { fr with body := [], term := .jump bc } } []
+    ((List.range n).map (base + ·)) et.sig callee args
+
 /-- Execute the terminator of the current block. -/
 def stepTerm (env : Env) (p : Program) (s : State) : Terminator → StepResult
   | .jump dest => StepResult.ofRes (enterBlock s.frame dest) fun fr => .next { s with frame := fr }
@@ -445,6 +493,8 @@ def stepTerm (env : Env) (p : Program) (s : State) : Terminator → StepResult
   | .ret xs => StepResult.ofRes (s.frame.getMany xs) fun vals => returnValues s vals s.mem
   | .returnCall fn args => stepReturnCall env p s fn args
   | .trap code => .trapped code
+  | .tryCall fn args et => stepTryCall env p s fn args et
+  | .tryCallIndirect callee args et => stepTryCallIndirect env p s callee args et
 
 /-- One small step. -/
 def step (env : Env) (p : Program) (s : State) : StepResult :=

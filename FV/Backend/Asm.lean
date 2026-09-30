@@ -264,6 +264,14 @@ def MInst.lines (c : FnCtx) (m : MInst) (ps : PState) : Except String (List Line
     | .sym n => one (.bl n)
     | .reg r => one (.blr r)
   | .args _ | .rets _ => throw "args/rets after allocation"
+  -- `emit.rs` `Inst::Call`/`CallInd` with `try_call_info`: the call, then `b continuation`
+  -- (dropped by `fallthrough` when the continuation is the next block); the landing pads
+  -- are recorded in the LSDA (`Backend.Unwind`, `callSites`)
+  | .tryCall info ti =>
+    let call : Insn := match info.dest with
+      | .sym n => .bl n
+      | .reg r => .blr r
+    pure ([.ins call, .ins (.b (.block ti.continuation))], ps)
   | .jump l => one (.b (.block l))
   | .condBr t e k => pure ([.ins (k.insn (.block t)), .ins (.b (.block e))], ps)
   | .testBitAndBranch k t e rn bit =>

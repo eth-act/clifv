@@ -62,6 +62,8 @@ def globalE : GlobalValue → Bool
 def termE : Terminator → Bool
   | .jump _ | .brif _ _ _ | .brTable _ _ _ | .ret _ | .trap _ => true
   | .returnCall _ _ => false
+  -- agent/fv-trycall: compiled (landing pads, LSDA) but outside the end-to-end theorem
+  | .tryCall .. | .tryCallIndirect .. => false
 
 def sigE (s : Signature) : Bool :=
   s.params.all (tyE ·.ty) && s.returns.all (tyE ·.ty)

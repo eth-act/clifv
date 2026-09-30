@@ -263,6 +263,26 @@ structure CallInfo where
   defs : List (Reg × Reg)
   deriving DecidableEq, Repr, Inhabited, BEq
 
+/-- A handler of a `try_call` (`TryCallHandler` without `Context`): an exception tag or the
+default, with its landing pad (the label of the handler successor). -/
+inductive TryHandler where
+  | tag (n : Nat) (l : Label)
+  | default (l : Label)
+  deriving DecidableEq, Repr, Inhabited, BEq
+
+def TryHandler.label : TryHandler → Label
+  | .tag _ l | .default l => l
+
+/-- `TryCallInfo`: the normal-return continuation and the handlers (exception-table order).
+`clobberAll`: the callee's exceptional ABI restores no register (`tail`/`preserve_all`
+callees, `get_regs_clobbered_by_call(_, true) = ALL_CLOBBERS`); for `system_v` the unwinder
+restores the callee-saved registers, so the clobbers are the normal call's. -/
+structure TryInfo where
+  continuation : Label
+  handlers : List TryHandler
+  clobberAll : Bool := false
+  deriving DecidableEq, Repr, Inhabited, BEq
+
 inductive LoadOp where
   | uload8 | sload8 | uload16 | sload16 | uload32 | sload32 | uload64 | fpuLoad128
   deriving DecidableEq, Repr, Inhabited, BEq
@@ -355,6 +375,11 @@ inductive MInst where
   | csetm (rd : Reg) (c : Cond)
   /-- `dmb ish` (`MInst.Fence`). -/
   | fence
+  /-- `Call`/`CallInd` with a `try_call_info` (`try_call`/`try_call_indirect`): a block
+  terminator (`MachTerminator::Branch`) whose successors are the handlers' landing pads and
+  the continuation; emitted as `bl`/`blr` then `b continuation`. Its defs (return values and
+  exception payloads, fixed registers) are live into every successor. Unverified. -/
+  | tryCall (info : CallInfo) (ti : TryInfo)
   deriving DecidableEq, Repr, Inhabited, BEq
 
 /-! ### Operands -/
@@ -422,6 +447,9 @@ def MInst.uses : MInst → List Reg
   | .atomicRmwLoop _ _ _ addr operand _ _ _ => [addr, operand]
   | .atomicCasLoop _ _ addr expect replace _ _ => [addr, expect, replace]
   | .csetm .. | .fence => []
+  | .tryCall info _ => match info.dest with
+    | .reg r => [r]
+    | .sym _ => []
 
 /-- Registers written by an instruction (excluding `call`/`args` fixed pairs). -/
 def MInst.defs : MInst → List Reg
@@ -493,10 +521,17 @@ def MInst.mapRegs (f : Reg → Reg) : MInst → MInst
     .atomicCasLoop ty fl (f a) (f e) (f r) (f o) (f s)
   | .csetm rd c => .csetm (f rd) c
   | .fence => .fence
+  | .tryCall info ti =>
+    .tryCall { info with
+      dest := match info.dest with
+        | .reg r => .reg (f r)
+        | d => d
+      uses := info.uses.map fun (v, p) => (f v, p)
+      defs := info.defs.map fun (p, v) => (p, f v) } ti
 
 /-- Is this a block terminator (`is_term`)? -/
 def MInst.isTerm : MInst → Bool
-  | .rets _ | .jump _ | .condBr .. | .testBitAndBranch .. | .jtSequence .. => true
+  | .rets _ | .jump _ | .condBr .. | .testBitAndBranch .. | .jtSequence .. | .tryCall .. => true
   | _ => false
 
 /-! ## Immediates (transcriptions of `imms.rs` / `args.rs`) -/
@@ -596,6 +631,11 @@ inductive Opnd where
   /-- `JumpTable`: indices of the `br_table` targets. -/
   | jumpTable (n : Nat)
   | tryCallNone
+  /-- `ExceptionTable`: the table's signature and item kinds (tag number, or `none` for
+  `default`), in item order (`context` items are rejected when the data is built). -/
+  | exnTable (sig : Clif.Signature) (items : List (Option Nat))
+  /-- `OptionTryCallInfo` = `Some(TryCallInfo)` (`try_call_info`). -/
+  | tryCallInfo (ti : TryInfo)
   | unit
   deriving DecidableEq, Repr, Inhabited, BEq
 

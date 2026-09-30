@@ -113,12 +113,21 @@ structure FileAsm where
   rules : List Isle.RuleId
   /-- Unwind rows of each compiled function (`unwindRows`, unverified; for `.eh_frame`). -/
   unwind : List (String × List (Nat × Cfi)) := []
+  /-- Call-site tables of the compiled functions with landing pads (`callSites`, unverified;
+  for the LSDA). -/
+  lsda : List (String × List CallSite) := []
 
-/-- Names of the functions `f` calls. -/
+/-- Names of the functions `f` calls (`call`, `try_call`). -/
 def callees (f : Clif.Function) : List String :=
-  (f.blocks.flatMap fun b => b.body.filterMap fun s => match s.inst with
+  (f.blocks.flatMap fun b => (b.body.filterMap fun s => match s.inst with
     | .call fn _ => (f.extern? fn).map (·.name)
-    | _ => none).eraseDups
+    | _ => none) ++ match b.term with
+    | .tryCall fn _ _ => ((f.extern? fn).map (·.name)).toList
+    | _ => []).eraseDups
+
+/-- Does `f` have a `try_call`/`try_call_indirect` (landing pads)? -/
+def hasTryCall (f : Clif.Function) : Bool :=
+  f.blocks.any fun b => b.term matches .tryCall .. | .tryCallIndirect ..
 
 /-- `bmask`, `atomic_*` and `fence` in `f` (their lowering is Cranelift's, but the ISLE
 rules are outside the proven emitter-subset closure used by `E2E.backend_correct`). -/
@@ -133,7 +142,8 @@ def hasUnproven (f : Clif.Function) : Bool :=
 stack-passed call arguments (an extern with more than 8 parameters), or a call of a function
 of the file. -/
 def unverifiedReason? (pf : Clif.ParsedFile) (f : Clif.Function) : Option String :=
-  if hasUnproven f then some "bmask / atomic instructions / fence (outside backend_correct)"
+  if hasTryCall f then some "try_call / landing pads (outside backend_correct)"
+  else if hasUnproven f then some "bmask / atomic instructions / fence (outside backend_correct)"
   else if !Compile.functionE f then some "outside clif-subset-v2 E"
   else if f.sig.params.length > 8 then some "stack-passed parameters (more than 8)"
   else if !regArgCalls f then some "stack-passed call arguments (an extern with more than 8 parameters)"
@@ -168,6 +178,7 @@ def compileFileWith {m : Type → Type} [Monad m]
   let mut done : Array (FnAsm × List String) := #[]
   let mut bad : Array (String × String) := #[]
   let mut unwind : Array (String × List (Nat × Cfi)) := #[]
+  let mut lsda : Array (String × List CallSite) := #[]
   let mut rules : Std.HashSet Isle.RuleId := {}
   let mut j := 0
   for ((name, r), k) in lowered.zipIdx do
@@ -176,10 +187,13 @@ def compileFileWith {m : Type → Type} [Monad m]
     | .ok (f, vc) =>
       let af := afs[j]?.getD (.error "allocator returned too few results")
       j := j + 1
-      match af.bind fun af => do let a ← emitFunc k af; pure (a, ← unwindRows af a) with
-      | .ok (a, rows) =>
+      match af.bind fun af => do
+          let a ← emitFunc k af
+          pure (a, ← unwindRows af a, ← callSites af a) with
+      | .ok (a, rows, sites) =>
         done := done.push (a, callees f)
         unwind := unwind.push (a.name, rows)
+        if let some s := sites then lsda := lsda.push (a.name, s)
         rules := vc.rulesFired.foldl (·.insert ·) rules
       | .error e => bad := bad.push (name, e)
   -- propagate to callers (fixpoint; at most one round per function)
@@ -199,7 +213,8 @@ def compileFileWith {m : Type → Type} [Monad m]
     | .error _ => none
   pure { text, funcs, unsupported := bad.toList, unverified,
          rules := rules.toArray.qsort (· < ·) |>.toList,
-         unwind := unwind.toList.filter fun (n, _) => funcs.any (·.name == n) }
+         unwind := unwind.toList.filter fun (n, _) => funcs.any (·.name == n),
+         lsda := lsda.toList.filter fun (n, _) => funcs.any (·.name == n) }
 
 /-- `compileFileWith` the stack-slot allocator (pure). -/
 def compileFile (pf : Clif.ParsedFile) : FileAsm :=
@@ -231,9 +246,11 @@ def FileAsm.tableJson (fa : FileAsm) : String :=
 def FileAsm.layout (fa : FileAsm) : Except String (List (FnAsm × FnBin)) :=
   fa.funcs.mapM fun f => do pure (f, ← f.layout)
 
-/-- The ELF relocatable object of the compiled functions (no assembler), with `.eh_frame`. -/
-def FileAsm.object (fa : FileAsm) : Except String ByteArray :=
-  (elfObject · fa.unwind) <$> fa.layout
+/-- The ELF relocatable object of the compiled functions (no assembler), with `.eh_frame`,
+and with a `personality` the LSDAs of the functions with landing pads. -/
+def FileAsm.object (fa : FileAsm) (personality : Option String := none) :
+    Except String ByteArray :=
+  (elfObject · fa.unwind fa.lsda personality) <$> fa.layout
 
 /-- `name.relocs.json` of a laid-out function (the `clif2obj` schema,
 `docs/contracts/drivers.md`). -/

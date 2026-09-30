@@ -90,10 +90,12 @@ def vcodeJson (vc : VCode) : Except String String := do
     for (i, k) in b.insts.zipIdx do
       let ops ← i.operands
       let last := k + 1 == b.insts.size
-      let kind := if i.isRet then "ret" else if i.isBranch then "branch" else "other"
-      if last != (i.isRet || i.isBranch) then
+      -- a `tryCall` is a regalloc2 branch (`MachTerminator::Branch`) with operands
+      let branch := i.isTerminator && !i.isRet
+      let kind := if i.isRet then "ret" else if branch then "branch" else "other"
+      if last != i.isTerminator then
         throw s!"block {b.label}: terminator not at the end of the block"
-      let args ← if i.isBranch then do
+      let args ← if branch then do
           let xs ← b.branchArgs.toList.mapM vregNum
           let per := succs[bi]!.toList.map fun _ => jlist (xs.map toString)
           pure s!",\"args\":{jlist per}"
@@ -180,7 +182,13 @@ def buildRFunc (vc : VCode) (o : RAOut) : Except String RFunc := do
       g := g + 1
     blocks := blocks.push items
   let used := blocks.foldl (fun acc items => items.foldl (fun acc it => acc ++ it.locs) acc) []
-  let saved := calleeSaved.filter fun r => used.contains (.reg r)
+  -- Cranelift's `is_included_in_clobbers`: a call whose callee clobbers more than the caller's
+  -- ABI (a `try_call` to a `tail` callee: `ALL_CLOBBERS`) adds its clobbers to the registers
+  -- the prologue saves
+  let clobAll := vc.blocks.any fun b => b.insts.any fun
+    | .tryCall _ ti => ti.clobberAll
+    | _ => false
+  let saved := calleeSaved.filter fun r => clobAll || used.contains (.reg r)
   let saves : Array RItem := saved.toArray.map fun r => .move (.reg r) (.save r)
   let restores : Array RItem := saved.toArray.map fun r => .move (.save r) (.reg r)
   let blocks' := blocks.mapIdx fun bi items =>

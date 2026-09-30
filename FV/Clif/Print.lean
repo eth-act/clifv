@@ -72,6 +72,24 @@ def memFlags (f : MemFlags) : String := Id.run do
 def blockCall (b : BlockCall) : String :=
   if b.args.isEmpty then s!"block{b.block}" else s!"block{b.block}({vs b.args})"
 
+def tryArg : TryArg → String
+  | .val x => v x
+  | .ret i => s!"ret{i}"
+  | .exn i => s!"exn{i}"
+
+def tryDest (d : TryDest) : String :=
+  if d.args.isEmpty then s!"block{d.block}"
+  else s!"block{d.block}({", ".intercalate (d.args.map tryArg)})"
+
+/-- `sigN, normal, [ items ]` (Cranelift's `DisplayExceptionTable`). -/
+def exnTable (et : ExnTable) : String :=
+  let items := et.items.map fun
+    | .tag n d => s!"tag{n}: {tryDest d}"
+    | .default d => s!"default: {tryDest d}"
+    | .context x => s!"context {v x}"
+  let body := if items.isEmpty then "[]" else s!"[ {", ".intercalate items} ]"
+  s!"sig{et.sig}, {tryDest et.normal}, {body}"
+
 def abiParam (p : AbiParam) : String :=
   let ext := match p.ext with
     | .none => "" | .uext => " uext" | .sext => " sext"
@@ -140,6 +158,8 @@ def term (tys : ValueId → Option Ty) : Terminator → String
   | .ret xs => s!"return {vs xs}"
   | .returnCall f args => s!"return_call fn{f}({vs args})"
   | .trap c => s!"trap {c.name}"
+  | .tryCall f args et => s!"try_call fn{f}({vs args}), {exnTable et}"
+  | .tryCallIndirect c args et => s!"try_call_indirect {v c}({vs args}), {exnTable et}"
 
 def stmt (tys : ValueId → Option Ty) (s : Stmt) : String :=
   if s.results.isEmpty then inst tys s.inst else s!"{vs s.results} = {inst tys s.inst}"

@@ -1,5 +1,6 @@
 import FV.Backend.Asm
 import FV.Backend.RegallocOps
+import Std.Data.HashMap
 
 /-!
 # Unwind information (DWARF call frame information for `.eh_frame`)
@@ -134,5 +135,60 @@ def cfiProgram (rows : List (Nat × Cfi)) : ByteArray := Id.run do
     at_ := o
     b := b ++ i.bytes
   return b
+
+/-! ## Call sites and landing pads (the LSDA, `.gcc_except_table`)
+
+Cranelift records every call's return address and, for a `try_call`, its handlers with the
+landing pads' code offsets (`MachBuffer::call_sites`, `FinalizedMachExceptionHandler`); the
+embedder writes the LSDA. `callSites` recovers the same data from the final code, and
+`Backend.lsdaBytes` (`FV/Backend/Obj.lean`) writes cg_clif's LSDA
+(`rustc_codegen_cranelift/src/debuginfo/unwind.rs` `add_function`): one call-site entry per
+call (`[ret - 1, ret)`), landing pad 0 and no action for a call without handlers, for a
+handler with tag 0 (`EXCEPTION_HANDLER_CLEANUP`) its landing pad and no action, for tag 1
+(`EXCEPTION_HANDLER_CATCH`) its landing pad and the catch-all action (type 0). -/
+
+/-- One entry of the LSDA's call-site table (offsets from the function start); `action` is
+the action-table offset + 1 (0 = no action: cleanup, or no landing pad). -/
+structure CallSite where
+  start : Nat
+  len : Nat
+  pad : Nat
+  action : Nat
+  deriving Repr, BEq, Inhabited
+
+/-- The call-site table of an allocated function `af` whose final code is `fa` (every `bl`/
+`blr` is a call, in code order, and `af`'s calls are in the same order), or `none` if the
+function has no `try_call` (it needs no LSDA). -/
+def callSites (af : AFunc) (fa : FnAsm) : Except String (Option (List CallSite)) := do
+  let calls : List (Option TryInfo) := af.blocks.toList.flatMap fun (_, code) =>
+    code.toList.filterMap fun
+      | .inst (.call _) => some none
+      | .inst (.tryCall _ ti) => some (some ti)
+      | _ => none
+  if !calls.any (·.isSome) then return none
+  let mut off := 0
+  let mut labels : Std.HashMap Label Nat := {}
+  let mut rets : Array Nat := #[]
+  for ln in fa.lines do
+    match ln with
+    | .label (.block l) => labels := labels.insert l off
+    | .ins (.bl _) _ | .ins (.blr _) _ => rets := rets.push (off + 4)
+    | _ => pure ()
+    off := off + ln.size
+  if rets.size != calls.length then throw "LSDA: the code's calls differ from the function's"
+  let mut sites : Array CallSite := #[]
+  for (c, ret) in calls.zip rets.toList do
+    let handlers := match c with
+      | some ti => ti.handlers
+      | none => []
+    if handlers.isEmpty then sites := sites.push ⟨ret - 1, 1, 0, 0⟩
+    for h in handlers do
+      let some pad := labels[h.label]? | throw s!"LSDA: no landing pad label {h.label}"
+      match h with
+      | .tag 0 _ => sites := sites.push ⟨ret - 1, 1, pad, 0⟩
+      | .tag 1 _ => sites := sites.push ⟨ret - 1, 1, pad, 1⟩
+      | .tag n _ => throw s!"LSDA: exception tag {n} (cg_clif uses 0 = cleanup, 1 = catch)"
+      | .default _ => throw "LSDA: a `default` handler (cg_clif uses tags 0 and 1)"
+  return some sites.toList
 
 end Backend

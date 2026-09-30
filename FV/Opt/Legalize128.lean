@@ -1127,6 +1127,24 @@ def rewriteTerm (f : Function) (ty : ValueId → Option Ty) (rg : List (List Slo
   | .ret vs => return .ret (← argsOf rg vs)
   | .trap _ => return t
   | .returnCall .. => throw "legalize128: return_call is not supported"
+  | .tryCall _ args et | .tryCallIndirect _ args et => do
+    -- values of other types pass through (renamed); i128 call arguments, results, payloads
+    -- or successor parameters are not legalised
+    let sig128 := match f.sigDecls.lookup et.sig with
+      | some s => (s.params ++ s.returns).any (·.ty == .i128)
+      | none => true
+    let dest128 := et.dests.any fun d => match f.block? d.block with
+      | some b => b.params.any (·.2 == .i128)
+      | none => true
+    let vals := (match t with | .tryCallIndirect c .. => [c] | _ => []) ++ args ++ et.vals
+    if sig128 || dest128 || vals.any (ty · == some .i128) then
+      throw "legalize128: try_call with i128 values is not supported"
+    let st ← get
+    let g := resolveAlias st (st.alias.size + 1)
+    return match t with
+      | .tryCallIndirect c .. => .tryCallIndirect (g c) (args.map g) (et.mapVals g)
+      | .tryCall fn .. => .tryCall fn (args.map g) (et.mapVals g)
+      | _ => t
 
 /-- The biggest value id in `f` (fresh ids continue after it). -/
 def maxValueId (f : Function) : ValueId :=
