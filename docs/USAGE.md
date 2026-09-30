@@ -272,9 +272,10 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
 
 ## Examples and results
 
-* `examples/fv-demo`: a library with 18 unit tests: integer arithmetic, slices, enums,
+* `examples/fv-demo`: a library with 19 unit tests: integer arithmetic, slices, enums,
   Option/Result, iterators, u128/i128, `dyn` traits and closures, four `should_panic` tests,
-  `sret_interop`, and six unwinding tests. `sret_interop` calls between Lean and cg_clif code
+  `sret_interop`, six unwinding tests and `thread_locals` (`thread_local!` with a const and a
+  lazy initializer, one instance per thread, checked across a spawned thread). `sret_interop` calls between Lean and cg_clif code
   through the struct-return convention, in both directions; the cg_clif side is kept by
   `package.metadata.fv.skip`. The unwinding tests (module `unwind`) panic through Lean frames
   without landing pads: `catch_unwind` with the payload checked, `Drop` during unwinding with
@@ -373,6 +374,44 @@ retry), and every atomic/bmask/fence function compiles (flagged unverified: vend
 7–8 release). The only fallbacks left are `metadata.fv.skip` and, under panic=unwind,
 landing pads. `examples/compare.sh examples/{fv-demo,survey,vendor}` (debug and `--release`)
 report the same test outcomes as `cargo test` (fv-demo 18/18, survey 53/53, vendor 189/189).
+
+### Thread-local storage and dead blocks (agent/fv-lcheck-tls)
+
+* **`tls_value`** (the `thread_local!` accessors: `symbol tls` global values) compiles, flagged
+  unverified ("tls_value (outside backend_correct)"). The lowering is Cranelift's for cg_clif's
+  `tls_model=elf_gd`: `ElfTlsGetAddr`, the TLSDESC sequence `adrp x0, :tlsdesc:v` /
+  `ldr xT, [x0, :tlsdesc_lo12:v]` / `add x0, x0, :tlsdesc_lo12:v` / `blr xT` (relocations
+  `R_AARCH64_TLSDESC_ADR_PAGE21`/`LD64_LO12`/`ADD_LO12`/`CALL`, the variable an `STT_TLS`
+  symbol), then `mrs xT, tpidr_el0` and `add x0, x0, xT`; x0 is a fixed def and xT an early
+  def (the resolver preserves every other register). The code and relocations are identical
+  to cg_clif's and to `llvm-mc`'s (`lean-backend-encode-check.sh`, `corpus/clif-regress/tls_elf_gd.clif`
+  and random forms), and `rust-lld` relaxes the sequence in the static executable
+  (`movz`/`movk`/`nop`/`nop`). `clif-data-export` names the variable of each `tls_value`
+  from the function's TLSDESC relocations (paired with the `.vcode`'s `elf_tls_get_addr`
+  lines, in code order).
+* **Dead blocks.** The lowering validator (`lowerCheck`) rejected functions with blocks that
+  have no path from the entry (cg_clif's dead cleanup blocks, e.g. the test instances of
+  `once_cell::imp::…::initialize::{closure#0}`): its availability dataflow gave such a block
+  every value of the function at its entry, including values computed from the block's own
+  results, which fails the certificate's closure condition. The dataflow now keeps a value at
+  a block entry only if its definition's operands are available there too. The lowering was
+  correct; the certificate and its soundness proof (`lowering_of_check`, generic in the
+  entry-value lists) are unchanged. Regression file: `corpus/clif-regress/dead_cleanup.clif`
+  (in `lean-e2e-check`'s default corpus).
+
+`cargo fv test --no-run` then `cargo fv report` (panic=unwind), before → after:
+
+| workspace | profile | functions | verified | fallback before | fallback after | tls_value (unverified) |
+|---|---|---|---|---|---|---|
+| fv-demo | debug | 1346 | 823 | 6 (skip) | 6 (skip) | 4 |
+| fv-demo | release | 953 | 544 | 6 (skip) | 6 (skip) | 4 |
+| survey | debug | 3179 | 1932 | 0 | 0 | 0 |
+| survey | release | 2208 | 1361 | 0 | 0 | 0 |
+| vendor | debug | 4399 | 2545 (2533 before) | 15 (12 lowerCheck, 3 TLS) | 0 | 3 |
+| vendor | release | 3082 | 1569 | 3 (TLS) | 0 | 3 |
+
+(fv-demo's counts include the new `tls` module.) `examples/compare.sh` reports SAME for
+fv-demo 19/19, survey 53/53 and vendor 189/189, debug and `--release`.
 
 ## Limitations
 

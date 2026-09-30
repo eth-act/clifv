@@ -203,7 +203,8 @@ Machine structure and invariants:
   outside S are `unsupported` with the reason: non-integer type, opcode, declaration).
 - Accepted: `test`/`target`/`set` headers (kept verbatim), `function %name(sig) [-> …] [cc]`,
   `ssN = explicit_slot N[, align = K]`, `gvN = vmctx | load… | iadd_imm… | symbol
-  [colocated] %name[+off]` (the reader's order; `tls` is unsupported), `fnN = [colocated] %name(sig)`, blocks with parameters and `cold`, value aliases
+  [colocated] [tls] %name[+off]` (the reader's order; a `tls` symbol is a thread-local
+  variable, the operand of `tls_value`), `fnN = [colocated] %name(sig)`, blocks with parameters and `cold`, value aliases
   `vA -> vB` (collected for the whole function before the body is read, so a use may precede
   its alias line, as in cranelift-reader; chains followed, duplicates and cycles `malformed`), optional `.ty` suffixes (inferred from the typevar operand as
   the reader does), memflags, trap codes, `; run: %f(args) == v` / `!= v` / `== [v, …]`,
@@ -277,7 +278,10 @@ passes the verifier (default flags).
   pointers, a writable object) pass in `Clif.run` and agree with native Cranelift code
   (`clif-native`, 28/28). The Cranelift interpreter does not implement data symbols
   (`GlobalValueData::Symbol => unimplemented!()`), so those 28 runs are `oracle-error`.
-- Not modelled: function symbols in data (vtables of `fn` pointers), `tls`, data symbols of
+- `tls_value.ty gvN` (a `symbol tls` gv): `Clif.run` has one thread, whose instance of the
+  variable is the image's symbol (`mem.symbols name + offset`, as `symbol_value`). Outside
+  subset E (compiled, unverified).
+- Not modelled: function symbols in data (vtables of `fn` pointers), threads, data symbols of
   other functions' `gv` offsets beyond the object (out-of-bounds reads trap/stuck as usual).
 
 ## S-list additions (M0)

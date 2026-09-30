@@ -27,7 +27,7 @@ deriving instance Hashable for Clif.Ty, Clif.UnaryOp, Clif.BinaryOp, Clif.DivOp,
 
 /-- The values an instruction reads, in operand order. -/
 def operands : Inst → List ValueId
-  | .iconst .. | .stackAddr .. | .fence | .nop | .symbolValue .. => []
+  | .iconst .. | .stackAddr .. | .fence | .nop | .symbolValue .. | .tlsValue .. => []
   | .unary _ _ x | .bmask _ x | .extend _ _ x | .ireduce _ x | .isplit _ x
   | .load _ _ _ x _ | .atomicLoad _ _ x | .bitcast _ _ x | .trapz x _ | .trapnz x _ => [x]
   | .binary _ _ x y | .div _ _ x y | .overflow _ _ x y | .uaddOverflowTrap _ x y _
@@ -74,6 +74,7 @@ def mapOperands (f : ValueId → ValueId) : Inst → Inst
   | .trapnz c code => .trapnz (f c) code
   | .nop => .nop
   | .symbolValue ty gv => .symbolValue ty gv
+  | .tlsValue ty gv => .tlsValue ty gv
 
 /-- Pure nodes (see the module doc). `select_spectre_guard` is kept in the skeleton, as a
 barrier Cranelift also never rewrites away. -/

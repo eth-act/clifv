@@ -296,6 +296,14 @@ def evalInst (fr : Frame) (mem : Mem) : Inst → Res (List Val × Mem)
       let base ← Res.ofOption s!"symbol_value: undefined symbol %{name}" (mem.symbols name)
       pure ([Val.ofInt ty (base + offset)], mem)
     | _ => .stuck s!"symbol_value: gv{gv} is not a symbol"
+  | .tlsValue ty gv => do
+    -- one thread: its instance of the thread-local variable is the image's symbol
+    let g ← Res.ofOption s!"unknown global value gv{gv}" (fr.func.globals.lookup gv)
+    match g with
+    | .tlsSymbol name offset _ =>
+      let base ← Res.ofOption s!"tls_value: undefined symbol %{name}" (mem.symbols name)
+      pure ([Val.ofInt ty (base + offset)], mem)
+    | _ => .stuck s!"tls_value: gv{gv} is not a tls symbol"
 
 /-! ## Control flow -/
 

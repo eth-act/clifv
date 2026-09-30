@@ -114,6 +114,8 @@ def instNames : Clif.Inst → String × String
   | .atomicRmw .. => ("AtomicRmw", "AtomicRmw")
   | .atomicCas .. => ("AtomicCas", "AtomicCas")
   | .fence => ("NullAry", "Fence")
+  -- agent/fv-lcheck-tls: `tls_value` (unverified, outside `E2E.InSubset`)
+  | .tlsValue .. => ("UnaryGlobalValue", "TlsValue")
   | _ => ("", "")
 
 set_option maxRecDepth 20000 in

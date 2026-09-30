@@ -277,6 +277,10 @@ inductive Inst where
   `symbol %name[+offset]` declaration; resolved through the link-time image
   (`Clif.Image`, `Mem.symbols`). `ty` is the address type (`i64`, or `i32`). -/
   | symbolValue (ty : Ty) (gv : Nat)
+  /-- `tls_value.ty gvN`: the address of the calling thread's instance of the thread-local
+  variable `gvN`, which must be a `symbol tls %name` declaration. `Clif.run` has one thread,
+  whose instance is the symbol of the link-time image. -/
+  | tlsValue (ty : Ty) (gv : Nat)
   deriving DecidableEq, Repr, Inhabited
 
 /-- An argument of a `try_call` successor block call: a value, the `i`-th return value of the
@@ -437,6 +441,9 @@ inductive GlobalValue where
   | iaddImm (ty : Ty) (base : Nat) (offset : Int)
   /-- `gvN = [colocated] symbol %name[+offset]` -/
   | symbol (name : String) (offset : Int) (colocated : Bool)
+  /-- `gvN = [colocated] symbol tls %name[+offset]`: a thread-local variable (only
+  `tls_value` takes it). -/
+  | tlsSymbol (name : String) (offset : Int) (colocated : Bool)
   deriving DecidableEq, Repr, Inhabited
 
 /-- `fnN = [colocated] %name(sig)`: an external function reference. `name` is resolved at run
@@ -532,7 +539,7 @@ def Inst.resultTypes (sigOf : FnRef → Option Signature)
   | .uaddOverflowTrap ty _ _ _ | .select ty _ _ _ | .selectSpectreGuard ty _ _ _
   | .bitselect ty _ _ _ | .bmask ty _ | .extend _ ty _ | .ireduce ty _
   | .load _ ty _ _ _ | .stackAddr ty _ _ | .atomicRmw _ ty _ _ _ | .atomicCas ty _ _ _ _
-  | .atomicLoad ty _ _ | .bitcast ty _ _ | .symbolValue ty _ => some [ty]
+  | .atomicLoad ty _ _ | .bitcast ty _ _ | .symbolValue ty _ | .tlsValue ty _ => some [ty]
   | .overflow _ ty _ _ | .carry _ ty _ _ _ => some [ty, .i8]
   | .icmp .. => some [.i8]
   | .iconcat ty _ _ => ty.double?.map fun t => [t]

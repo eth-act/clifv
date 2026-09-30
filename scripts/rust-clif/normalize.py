@@ -15,7 +15,8 @@ Rewrites (each is a pure renaming/inlining, checked by `clif-oracle check` on th
     libcall relocates against; the reader would otherwise parse `%Memcpy` as `LibCall`).
   * `sigM = …` lines are dropped once no `call_indirect sigM`/`try_call… sigM` refers to them.
   * `gvK = symbol colocated userextnameJ ; allocX` -> `gvK = symbol colocated %allocX`
-    (`%data_J` when the comment is not an alloc name, e.g. `; vtable`).
+    (`%data_J` when the comment is not an alloc name, e.g. `; vtable`); likewise
+    `gvK = symbol [colocated] tls userextnameJ` (a thread-local variable, `tls_value`).
   * comment-only lines are dropped (cg_clif's `; abi …` comments are several KB each).
   * `--drop-nop`: drop `nop` (cg_clif emits it only as an anchor for comments).
   * `--fnmap F` (`u0:N<TAB>symbol` lines, `clif-data-export --fnmap`): names the `u0:N` callees
@@ -140,14 +141,14 @@ def main():
                 if m:
                     if m.group(1).strip() not in used_here:
                         continue
-                m = re.match(r"(\s+)gv(\d+) = symbol (colocated )?userextname(\d+)(\S*)(\s*;.*)?$", l)
+                m = re.match(r"(\s+)gv(\d+) = symbol (colocated )?(tls )?userextname(\d+)(\S*)(\s*;.*)?$", l)
                 if m:
-                    ind, gv, coloc, j, off, _c = m.groups()
+                    ind, gv, coloc, tls, j, off, _c = m.groups()
                     name = gvmap.get((f.name, f"gv{gv}"))
                     if name is None:
                         c = _c.strip("; ").strip() if _c else ""
                         name = c if re.fullmatch(r"alloc\d+", c) else f"data_{j}"
-                    l = f"{ind}gv{gv} = symbol {coloc or ''}%{name}{off}"
+                    l = f"{ind}gv{gv} = symbol {coloc or ''}{tls or ''}%{name}{off}"
                 out_lines.append(l)
         bodies.append("\n".join(out_lines))
     if split:

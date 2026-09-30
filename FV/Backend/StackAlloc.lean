@@ -143,6 +143,8 @@ def Frame.allocInst (m : MInst) : Except String (List AInst) := do
   -- the stores of the call's results would come after the terminator (and the landing pads
   -- need the payload registers); only regalloc2 handles `try_call`
   | .tryCall .. => throw "try_call with the stack-slot allocator"
+  -- the address is a fixed def of x0 (as for the LL/SC loops, regalloc2 only)
+  | .elfTlsGetAddr .. => throw "tls_value with the stack-slot allocator"
   | .args ds =>
     fr.stores (virt ds)
   | .rets us =>

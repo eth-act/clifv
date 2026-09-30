@@ -135,6 +135,7 @@ def inst (tys : ValueId → Option Ty) : Inst → String
     s!"{StoreOp.name op}.{ty.name}{memFlags f} {v x}, {v p}{offset off}"
   | .stackAddr ty s off => s!"stack_addr.{ty.name} ss{s}{offset off}"
   | .symbolValue ty gv => s!"symbol_value.{ty.name} gv{gv}"
+  | .tlsValue ty gv => s!"tls_value.{ty.name} gv{gv}"
   | .funcAddr ty f => s!"func_addr.{ty.name} fn{f}"
   | .call f args => s!"call fn{f}({vs args})"
   | .callIndirect sig callee args =>
@@ -176,6 +177,7 @@ def globalValue : GlobalValue → String
   | .load ty f base off => s!"load.{ty.name}{memFlags f} gv{base}{offset off}"
   | .iaddImm ty base off => s!"iadd_imm.{ty.name} gv{base}, {off}"
   | .symbol n off col => s!"symbol {if col then "colocated " else ""}%{n}{offset off}"
+  | .tlsSymbol n off col => s!"symbol {if col then "colocated " else ""}tls %{n}{offset off}"
 
 def dataValue (x : Val) : String := toString x.toInt
 

@@ -380,6 +380,12 @@ inductive MInst where
   the continuation; emitted as `bl`/`blr` then `b continuation`. Its defs (return values and
   exception payloads, fixed registers) are live into every successor. Unverified. -/
   | tryCall (info : CallInfo) (ti : TryInfo)
+  /-- `tls_value` with `tls_model=elf_gd` (cg_clif's ELF setting): Cranelift's
+  `MInst.ElfTlsGetAddr`, the TLSDESC call sequence (`adrp`/`ldr`/`add`/`blr` with
+  `R_AARCH64_TLSDESC_*` relocations against `symbol`, then `mrs tmp, tpidr_el0`,
+  `add x0, x0, tmp`). The TLSDESC resolver preserves every register but x0 and x30, so the
+  only operands are the fixed def x0 (`rd`, the address) and the early def `tmp`. Unverified. -/
+  | elfTlsGetAddr (symbol : String) (rd tmp : Reg)
   deriving DecidableEq, Repr, Inhabited, BEq
 
 /-! ### Operands -/
@@ -446,7 +452,7 @@ def MInst.uses : MInst → List Reg
   | .storeRelease _ rt rn _ => [rt, rn]
   | .atomicRmwLoop _ _ _ addr operand _ _ _ => [addr, operand]
   | .atomicCasLoop _ _ addr expect replace _ _ => [addr, expect, replace]
-  | .csetm .. | .fence => []
+  | .csetm .. | .fence | .elfTlsGetAddr .. => []
   | .tryCall info _ => match info.dest with
     | .reg r => [r]
     | .sym _ => []
@@ -465,6 +471,7 @@ def MInst.defs : MInst → List Reg
   | .atomicRmwLoop _ _ _ _ _ oldval _ _ => [oldval]
   | .atomicCasLoop _ _ _ _ _ oldval _ => [oldval]
   | .csetm rd _ => [rd]
+  | .elfTlsGetAddr _ rd tmp => [rd, tmp]
   | _ => []
 
 /-- Apply `f` to every register occurrence (uses and defs, not the real registers of the
@@ -528,6 +535,7 @@ def MInst.mapRegs (f : Reg → Reg) : MInst → MInst
         | d => d
       uses := info.uses.map fun (v, p) => (f v, p)
       defs := info.defs.map fun (p, v) => (p, f v) } ti
+  | .elfTlsGetAddr s rd tmp => .elfTlsGetAddr s (f rd) (f tmp)
 
 /-- Is this a block terminator (`is_term`)? -/
 def MInst.isTerm : MInst → Bool
@@ -620,6 +628,10 @@ inductive Opnd where
   | funcRef (n : Nat)
   /-- `GlobalValue` (`gvN`). -/
   | globalValue (n : Nat)
+  /-- The `GlobalValue` of a `tls_value` (a `symbol tls` declaration). Its own constructor:
+  `symbol_value_data` gives the symbol of either, and `symbol_value`'s operands stay
+  `globalValue`. -/
+  | tlsGlobalValue (n : Nat)
   /-- `SigRef`/`Sig`: the callee signature itself. -/
   | sig (s : Clif.Signature)
   | extName (name : String)
@@ -1063,6 +1075,8 @@ def MInst.ofV (v : V) : Option MInst := do
       (← replace.reg?) (← oldval.reg?) (← scratch.reg?)
   | VIdx.MInst.CSetm, [rd, c] => return .csetm (← rd.reg?) (← c.cond?)
   | VIdx.MInst.Fence, [] => return .fence
+  | VIdx.MInst.ElfTlsGetAddr, [s, rd, tmp] =>
+    return .elfTlsGetAddr (← s.extName?) (← rd.reg?) (← tmp.reg?)
   | k, [rd, m, fl] =>
     match loadOpOfIdx? k, storeOpOfIdx? k with
     | some op, _ => return .load op (← rd.reg?) (← m.amode?) (← fl.memFlags?)

@@ -40,6 +40,8 @@ def exec_inst (ai : ArmInst) (s : ArmState) : ArmState :=
     BR.exec_barrier i s
   | BR (BranchInst.Test_branch i) =>
     BR.exec_test_branch i s
+  | BR (BranchInst.Mrs i) =>
+    BR.exec_mrs i s
 
   | DPR (DataProcRegInst.Add_sub_carry i) =>
     DPR.exec_add_sub_carry i s

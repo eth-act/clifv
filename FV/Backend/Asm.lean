@@ -139,6 +139,16 @@ inductive Insn where
   | dmbish
   /-- `csetm xd, cond` = `csinv xd, xzr, xzr, invert(cond)`. -/
   | csetm (rd : Reg) (c : Cond)
+  /-- `adrp xd, :tlsdesc:sym` (`R_AARCH64_TLSDESC_ADR_PAGE21`). -/
+  | adrpTlsDesc (rd : Reg) (sym : String)
+  /-- `ldr xt, [xn, :tlsdesc_lo12:sym]` (`R_AARCH64_TLSDESC_LD64_LO12`). -/
+  | ldrTlsDescLo12 (rt rn : Reg) (sym : String)
+  /-- `add xd, xn, :tlsdesc_lo12:sym` (`R_AARCH64_TLSDESC_ADD_LO12`). -/
+  | addTlsDescLo12 (rd rn : Reg) (sym : String)
+  /-- `blr xn` marked `.tlsdesccall sym` (`R_AARCH64_TLSDESC_CALL`, for linker relaxation). -/
+  | blrTlsDesc (rn : Reg) (sym : String)
+  /-- `mrs xt, tpidr_el0` (the thread pointer). -/
+  | mrsTpidrEl0 (rt : Reg)
   deriving DecidableEq, Repr, Inhabited, BEq
 
 /-- One element of a function's code: an instruction (4 bytes, optionally a trap site), a
@@ -360,6 +370,15 @@ def MInst.lines (c : FnCtx) (m : MInst) (ps : PState) : Except String (List Line
              .ins (.bcond .ne out),
              .ins (.stlxr ty.bits (.x 24) (.x 28) (.x 25)) fl.trapCode,
              .ins (.cbz true true (.x 24) again), .label out], ps)
+  -- `emit.rs` `ElfTlsGetAddr`: the TLSDESC sequence (the resolver returns the variable's
+  -- offset from the thread pointer in x0), then the thread pointer is added
+  | .elfTlsGetAddr sym rd tmp =>
+    if rd != .x 0 || tmp == .x 0 then
+      throw s!"elf_tls_get_addr with unexpected registers {repr rd} {repr tmp}"
+    else
+      pure ([.ins (.adrpTlsDesc (.x 0) sym), .ins (.ldrTlsDescLo12 tmp (.x 0) sym),
+             .ins (.addTlsDescLo12 (.x 0) (.x 0) sym), .ins (.blrTlsDesc tmp sym),
+             .ins (.mrsTpidrEl0 tmp), .ins (.aluRRR .add true (.x 0) (.x 0) tmp)], ps)
 where
   /-- The min/max comparison of the LL/SC loop (`emit.rs`): an extended `subs xzr, x27, x26`
 at the subword sizes (the operand register may hold garbage in its high bits), the plain
@@ -657,6 +676,11 @@ def Insn.asm (k : Nat) : Insn → String
     s!"stlxr{sizeSfx bits} {rs.gpr false}, {rt.gpr (bits == 64)}, [{rn.gpr}]"
   | .dmbish => "dmb ish"
   | .csetm rd c => s!"csetm {rd.gpr}, {c.asm}"
+  | .adrpTlsDesc rd sym => s!"adrp {rd.gpr}, :tlsdesc:{sym}"
+  | .ldrTlsDescLo12 rt rn sym => s!"ldr {rt.gpr}, [{rn.gpr}, :tlsdesc_lo12:{sym}]"
+  | .addTlsDescLo12 rd rn sym => s!"add {rd.gpr}, {rn.gpr}, :tlsdesc_lo12:{sym}"
+  | .blrTlsDesc rn sym => s!".tlsdesccall {sym}\n  blr {rn.gpr}"
+  | .mrsTpidrEl0 rt => s!"mrs {rt.gpr}, tpidr_el0"
 where
   /-- The `b`/`h`/`` size suffix of the exclusive and acquire-release loads/stores. -/
   sizeSfx : Nat → String

@@ -137,13 +137,20 @@ def hasUnproven (f : Clif.Function) : Bool :=
       true
     | _ => false
 
+/-- `tls_value` in `f` (Cranelift's `elf_gd` TLSDESC sequence; outside clif-subset-v2 E). -/
+def hasTls (f : Clif.Function) : Bool :=
+  f.blocks.any fun b => b.body.any fun st => match st.inst with
+    | .tlsValue .. => true
+    | _ => false
+
 /-- Why a compiled function of `pf` is outside `E2E.backend_correct` (`E2E.InSubset`), if it is:
-`bmask`/atomic/fence instructions, outside clif-subset-v2 E, stack-passed parameters,
+`bmask`/atomic/fence instructions, `tls_value`, outside clif-subset-v2 E, stack-passed parameters,
 stack-passed call arguments (an extern with more than 8 parameters), or a call of a function
 of the file. -/
 def unverifiedReason? (pf : Clif.ParsedFile) (f : Clif.Function) : Option String :=
   if hasTryCall f then some "try_call / landing pads (outside backend_correct)"
   else if hasUnproven f then some "bmask / atomic instructions / fence (outside backend_correct)"
+  else if hasTls f then some "tls_value (outside backend_correct)"
   else if !Compile.functionE f then some "outside clif-subset-v2 E"
   else if f.sig.params.length > 8 then some "stack-passed parameters (more than 8)"
   else if !regArgCalls f then some "stack-passed call arguments (an extern with more than 8 parameters)"

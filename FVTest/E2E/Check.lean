@@ -9,7 +9,8 @@ import FVTest.Opt.Common
 
 Runs the lowering validator `lowerCheck f vc` and the `prepare` validator `prepCheck vc vcp` on
 every function the backend lowers (default:
-`corpus/clif/*.clif`, `corpus/clif/extrt/*.clif`, Cranelift's `runtests/*.clif`) and prints
+`corpus/clif/*.clif`, `corpus/clif/extrt/*.clif`, the hand-written regression files
+`corpus/clif-regress/*.clif`, Cranelift's `runtests/*.clif`) and prints
 every rejection with the failing part. Exit status 0 iff every lowered function is accepted.
 
 It also decides `formsCoveredB` (the `FormsCovered` premise of `E2E.backend_correct_final`) on
@@ -39,7 +40,7 @@ def uncovered (vc : VCode) : List MInst :=
 
 def defaultFiles : IO (List String) := do
   let mut out : Array String := #[]
-  for dir in ["corpus/clif", "corpus/clif/extrt",
+  for dir in ["corpus/clif", "corpus/clif/extrt", "corpus/clif-regress",
               "third_party/wasmtime/cranelift/filetests/filetests/runtests"] do
     let entries ← System.FilePath.readDir dir
     out := out ++ ((entries.filter (·.path.extension == some "clif")).map (·.path.toString)
@@ -55,7 +56,7 @@ def diagnose (f : Clif.Function) (vc : VCode) : String :=
     | none => "lowBlocks"
     | some bl =>
       let gn := gnOf st0.nextVreg (aliasOf f bl)
-      let In := inFix f gn
+      let In := inFix f ctx gn
       let parts : List (String × Bool) := [
         ("ctxOk", ctxOk f ctx),
         ("valsBelow", decide (ctx.valReg.size ≤ st0.nextVreg)),
@@ -86,7 +87,7 @@ def detail (f : Clif.Function) (vc : VCode) : String :=
     | some bl =>
       let gn := gnOf st0.nextVreg (aliasOf f bl)
       let R := renOf gn
-      let In := inFix f gn
+      let In := inFix f ctx gn
       String.intercalate "\n" <| (List.range f.blocks.length).filterMap fun bi =>
         match f.blocks[bi]?, bl[bi]?, vc.blocks[bi]? with
         | some B, some L, some vb =>

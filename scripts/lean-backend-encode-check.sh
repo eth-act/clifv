@@ -8,12 +8,13 @@
 #   - the .text bytes of the function symbol's range,
 #   - the relocations in that range (offset, type, symbol name, addend),
 #   - the function symbol (value, size, type, binding),
-# and per file the mapping symbols ($x/$d kind and value) and the set of undefined symbols.
+# and per file the mapping symbols ($x/$d kind and value) and the set of undefined symbols
+# (name and type).
 #
 # usage: scripts/lean-backend-encode-check.sh [-v] [--regalloc regalloc2|stack]
 #                                             [--corpus | --runtests | --random |
 #                                             --n N | --seed S | FILE.clif...]
-#   default: --corpus (corpus/clif/*.clif, corpus/clif/extrt/*.clif), --runtests
+#   default: --corpus (corpus/clif/*.clif, corpus/clif/extrt/*.clif, corpus/clif-regress/*.clif), --runtests
 #   (every file of Cranelift's runtests/; functions outside E are not compiled) and --random
 #   (`lean-backend-encode-test random`: every Insn form with N random operand sets
 #   (default 200, seed S default 0x5eed = 24301), one function per form; it also runs the
@@ -50,7 +51,7 @@ done
 if [[ ${#SETS[@]} -eq 0 && ${#FILES[@]} -eq 0 ]]; then SETS=(corpus runtests random); fi
 for s in "${SETS[@]}"; do
   case "$s" in
-    corpus) FILES+=(corpus/clif/*.clif corpus/clif/extrt/*.clif) ;;
+    corpus) FILES+=(corpus/clif/*.clif corpus/clif/extrt/*.clif corpus/clif-regress/*.clif) ;;
     runtests) FILES+=("$RUNTESTS"/*.clif) ;;
     random) FILES+=(@random) ;;
   esac
@@ -94,7 +95,8 @@ python3 - "$WORK" "$VERBOSE" "${FILES[@]}" <<'EOF'
 import os, struct, sys
 work, verbose, files = sys.argv[1], sys.argv[2] == "1", sys.argv[3:]
 RT = {283: "CALL26", 311: "ADR_GOT_PAGE", 312: "LD64_GOT_LO12_NC", 275: "ADR_PREL_PG_HI21",
-      277: "ADD_ABS_LO12_NC"}
+      277: "ADD_ABS_LO12_NC", 562: "TLSDESC_ADR_PAGE21", 563: "TLSDESC_LD64_LO12",
+      564: "TLSDESC_ADD_LO12", 569: "TLSDESC_CALL"}
 
 def elf(path):
     d = open(path, "rb").read()
@@ -128,7 +130,8 @@ def elf(path):
                                syms[info >> 32]["name"], add))
     funcs = {s["name"]: s for s in syms if s["type"] == 2}
     maps = sorted((s["value"], s["name"][:2]) for s in syms if s["name"][:2] in ("$x", "$d"))
-    undef = sorted(s["name"] for s in syms if s["shndx"] == 0 and s["name"])
+    # (name, type): the targets of TLS relocations are STT_TLS (6)
+    undef = sorted((s["name"], s["type"]) for s in syms if s["shndx"] == 0 and s["name"])
     return text, funcs, sorted(relocs), maps, undef
 
 T = dict(files=0, nofuncs=0, fail_files=0, funcs=0, same=0, differ=0, words=0, relocs=0)

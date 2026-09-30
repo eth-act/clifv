@@ -123,6 +123,8 @@ def randBitmask (w : Bool) : G Nat := do
   pure ((List.range (size / e)).foldl (fun acc i => acc + elem * 2 ^ (e * i)) 0)
 
 def sym : G String := pick ["ext_a", "ext_b", "form_b"]
+/-- Thread-local variables (the targets of the TLSDESC relocations, `STT_TLS`). -/
+def tlsSym : G String := pick ["tls_a", "tls_b"]
 
 /-- Load/store final addressing modes for an access of `bytes` bytes. -/
 def amode (bytes : Nat) : G AMode := do
@@ -262,7 +264,14 @@ def forms : List (String × G Insn) := [
     if ← coin then pure (.adrpGot (← gprZR) (← sym)) else pure (.ldrGotLo12 (← gprZR) (← gprSP) (← sym))),
   ("near", do
     let a ← randInt (-4096) 4096
-    if ← coin then pure (.adrp (← gprZR) (← sym) a) else pure (.addLo12 (← gprSP) (← gprSP) (← sym) a))
+    if ← coin then pure (.adrp (← gprZR) (← sym) a) else pure (.addLo12 (← gprSP) (← gprSP) (← sym) a)),
+  ("tlsdesc", do
+    match ← rand 4 with
+    | 0 => pure (.adrpTlsDesc (← gprZR) (← tlsSym))
+    | 1 => pure (.ldrTlsDescLo12 (← gprZR) (← gprSP) (← tlsSym))
+    | 2 => pure (.addTlsDescLo12 (← gprSP) (← gprSP) (← tlsSym))
+    | _ => pure (.blrTlsDesc (← gprZR) (← tlsSym))),
+  ("mrs_tpidr", do pure (.mrsTpidrEl0 (← gprZR)))
 ]
 
 /-- The function of one form: `n` random instances, labels `.block 0..7` at random

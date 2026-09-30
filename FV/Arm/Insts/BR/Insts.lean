@@ -10,6 +10,7 @@ import FV.Arm.Insts.BR.Cond_branch_imm
 import FV.Arm.Insts.BR.Hints
 import FV.Arm.Insts.BR.Barrier
 import FV.Arm.Insts.BR.Test_branch
+import FV.Arm.Insts.BR.Mrs
 
 namespace Arm
 

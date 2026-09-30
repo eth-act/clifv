@@ -24,6 +24,12 @@
 //!
 //! Data objects reachable only from other data objects (the message of a panic
 //! `Location`, a vtable's function targets) are recovered transitively.
+//!
+//! Thread-local variables (`gvK = symbol tls userextnameJ`, used by `tls_value`) have no
+//! GOT load: each `tls_value` lowers to one TLSDESC sequence (`elf_tls_get_addr` in the
+//! `.vcode`, one `R_AARCH64_TLSDESC_ADR_PAGE21` in the object, both in code order). They are
+//! paired the same way (checked: counts, `STT_TLS` targets, one symbol per ref) and the gv
+//! is mapped to the variable's symbol; they have no bytes to recover.
 use object::read::{Object, ObjectSection, ObjectSymbol, SymbolSection};
 use object::{SectionKind, SymbolKind};
 use std::collections::{BTreeMap, BTreeSet};
@@ -59,6 +65,8 @@ enum Use {
     /// A function reference (a `func_addr` of a non-colocated declaration, or a call of
     /// one): the declaration's external-name index.
     Func(u32),
+    /// `vN = tls_value.ty gvK`: a thread-local variable.
+    Tls(u32),
 }
 
 /// A parsed dump file (one function).
@@ -79,6 +87,9 @@ struct FnDump {
     /// The `User(userextnameJ)` refs of the same loads, in code order (diagnostics).
     #[allow(dead_code)]
     vgot_exts: Vec<Option<u32>>,
+    /// The `userextnameJ` ref of every `elf_tls_get_addr` of the function, in code order
+    /// (from the `.vcode`).
+    vtls_exts: Vec<Option<u32>>,
     /// The function's own FuncId (`function u0:N(`).
     own: Option<u32>,
     /// The user-named function declarations `fnK = [colocated] u0:N sigM`, in K order, the
@@ -166,6 +177,10 @@ fn parse_dump(path: &Path, stage: &str) -> FnDump {
                 if let Some(gv) = parse_u32(toks[3].strip_prefix("gv").unwrap_or("")) {
                     uses.push(Use::Data(gv));
                 }
+            } else if toks[2].starts_with("tls_value.") {
+                if let Some(gv) = parse_u32(toks[3].strip_prefix("gv").unwrap_or("")) {
+                    uses.push(Use::Tls(gv));
+                }
             } else if toks[2].starts_with("func_addr.") {
                 if let Some(callee) = parse_u32(toks[3].strip_prefix("fn").unwrap_or("")) {
                     if !fn_colocated.get(&callee).copied().unwrap_or(true) {
@@ -185,7 +200,13 @@ fn parse_dump(path: &Path, stage: &str) -> FnDump {
         .unwrap_or_else(|e| die(format!("{}: {e}", vcode_path.display())));
     let mut vgot: Vec<()> = Vec::new();
     let mut vgot_exts: Vec<Option<u32>> = Vec::new();
+    let mut vtls_exts: Vec<Option<u32>> = Vec::new();
     for l in vt.lines() {
+        // `elf_tls_get_addr x0, xT, userextnameJ`
+        if let Some(rest) = l.trim_start().strip_prefix("elf_tls_get_addr ") {
+            vtls_exts.push(rest.rsplit(", ").next().and_then(|n| n.trim().strip_prefix("userextname")).and_then(parse_u32));
+            continue;
+        }
         let Some((_pre, rest)) = l.trim_start().split_once("load_ext_name_got ") else { continue };
         vgot.push(());
         let ext = rest
@@ -204,6 +225,7 @@ fn parse_dump(path: &Path, stage: &str) -> FnDump {
         uses,
         vgot,
         vgot_exts,
+        vtls_exts,
         own,
         fn_decls: {
             // K order; a FuncId declared again (a new FuncRef for the same name) reuses the
@@ -232,6 +254,7 @@ struct Sym {
 const R_ABS64: object::elf::RelocationType = object::elf::RelocationType(257);
 const R_ADR_GOT_PAGE: object::elf::RelocationType = object::elf::RelocationType(311);
 const R_LD64_GOT_LO12_NC: object::elf::RelocationType = object::elf::RelocationType(312);
+const R_TLSDESC_ADR_PAGE21: object::elf::RelocationType = object::elf::RelocationType(562);
 
 /// The raw ELF relocation type (object's abstract `RelocationKind` maps only a few
 /// aarch64 types, so we read `RelocationFlags::Elf { r_type }`).
@@ -240,6 +263,8 @@ enum RKind {
     Abs64,
     GotPage,
     GotLo12,
+    /// `R_AARCH64_TLSDESC_ADR_PAGE21`: the first relocation of a TLSDESC sequence.
+    TlsDescPage,
     Other(object::elf::RelocationType),
 }
 
@@ -281,6 +306,7 @@ fn load_obj(path: &Path) -> (BTreeMap<usize, Sym>, BTreeMap<usize, Sec>) {
                     R_ABS64 => RKind::Abs64,
                     R_ADR_GOT_PAGE => RKind::GotPage,
                     R_LD64_GOT_LO12_NC => RKind::GotLo12,
+                    R_TLSDESC_ADR_PAGE21 => RKind::TlsDescPage,
                     other => RKind::Other(other),
                 },
                 _ => RKind::Other(object::elf::RelocationType(u32::MAX)),
@@ -382,6 +408,7 @@ fn recover(crate_name: &str, obj: &Path, dumps: &[FnDump], imported: bool) -> Re
     //   `load_ext_name_got` instructions, so when the counts disagree we fall back to
     //   pairing the vcode entries with the Data-target pairs only.
     let mut ext_data: BTreeMap<(usize, u32), usize> = BTreeMap::new(); // (fn sym idx, ext) → data sym idx
+    let mut ext_tls: BTreeMap<(usize, u32), usize> = BTreeMap::new(); // (fn sym idx, ext) → TLS sym idx
     let mut recovered: BTreeSet<(usize, u32)> = BTreeSet::new(); // (fn sym idx, gv)
     let mut fns_with_data: BTreeSet<usize> = BTreeSet::new(); // fns with >=1 recovered data use
     let mut got_of: Vec<Vec<usize>> = Vec::new(); // per dump: GOT pair targets, code order
@@ -449,6 +476,41 @@ fn recover(crate_name: &str, obj: &Path, dumps: &[FnDump], imported: bool) -> Re
                         ));
                     }
                 }
+            }
+        }
+        // The TLSDESC sequences: the k-th `elf_tls_get_addr` of the vcode is the k-th
+        // `R_AARCH64_TLSDESC_ADR_PAGE21` of the function; its target must be `STT_TLS`. A
+        // function failing a check gets no mapping (its tls gvs stay unnamed, and the
+        // function falls back to cg_clif's code).
+        let tls: Vec<usize> = sec
+            .relocs
+            .iter()
+            .filter(|r| r.kind == RKind::TlsDescPage && r.off >= fvalue && r.off < fvalue + fsize)
+            .map(|r| r.sym)
+            .collect();
+        let tls_ok = d.vtls_exts.len() == tls.len()
+            && d.vtls_exts.iter().zip(tls.iter()).all(|(e, &t)| e.is_some() && syms[&t].kind == SymbolKind::Tls);
+        if !tls_ok {
+            eprintln!(
+                "clif-data-export: warning: {}: `{}`: {} `elf_tls_get_addr` in the vcode, TLSDESC targets {}; tls gvs not mapped",
+                obj.display(), d.symbol, d.vtls_exts.len(),
+                tls.iter().map(|&s| format!("{} ({:?})", syms[&s].name, syms[&s].kind)).collect::<Vec<_>>().join(", ")
+            );
+        } else {
+            let mut pairs: BTreeMap<u32, usize> = BTreeMap::new();
+            let mut consistent = true;
+            for (ext, &target) in d.vtls_exts.iter().zip(tls.iter()) {
+                let ext = ext.expect("checked");
+                if *pairs.entry(ext).or_insert(target) != target {
+                    consistent = false;
+                }
+            }
+            if consistent {
+                for (ext, target) in pairs {
+                    ext_tls.insert((fi, ext), target);
+                }
+            } else {
+                eprintln!("clif-data-export: warning: {}: `{}`: a tls ref pairs with two symbols; tls gvs not mapped", obj.display(), d.symbol);
             }
         }
         // Which data gvs are recovered (their ext has a data GOT load)?
@@ -533,11 +595,21 @@ fn recover(crate_name: &str, obj: &Path, dumps: &[FnDump], imported: bool) -> Re
     for d in dumps {
         let Some(&fi) = fn_idx.get(d.symbol.as_str()) else { continue };
         for u in &d.uses {
-            let Use::Data(gv) = u else { continue };
-            let Some(&ext) = d.gv_ext.get(gv) else { continue };
-            let Some(&target) = ext_data.get(&(fi, ext)) else { continue };
-            let name = names.get(&target).cloned().unwrap_or_else(|| data_name(crate_name, &syms[&target]));
-            gvmap.push((d.file.clone(), *gv, name));
+            match u {
+                Use::Data(gv) => {
+                    let Some(&ext) = d.gv_ext.get(gv) else { continue };
+                    let Some(&target) = ext_data.get(&(fi, ext)) else { continue };
+                    let name = names.get(&target).cloned().unwrap_or_else(|| data_name(crate_name, &syms[&target]));
+                    gvmap.push((d.file.clone(), *gv, name));
+                }
+                // a thread-local variable: its own symbol (defined here or in another crate)
+                Use::Tls(gv) => {
+                    let Some(&ext) = d.gv_ext.get(gv) else { continue };
+                    let Some(&target) = ext_tls.get(&(fi, ext)) else { continue };
+                    gvmap.push((d.file.clone(), *gv, syms[&target].name.clone()));
+                }
+                Use::Func(_) => {}
+            }
         }
     }
 

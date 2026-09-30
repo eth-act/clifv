@@ -202,7 +202,10 @@ call: `LowerShape.valsBelow` + `st0.nextVreg ≤ st.nextVreg`. Key steps:
 `lowerFunction` makes them (`lowBlocks`: statement calls from the previous state with nothing
 emitted, terminator calls in the terminator context, the same edge-block labels), computes the
 alias resolution `gn` (`gnOf`, identity on temporaries) and its class-preserving renaming
-`renOf gn`, the available values `A` by a must-dataflow (`inFix`/`availOf`), and decides every
+`renOf gn`, the available values `A` by a must-dataflow (`inFix`/`availOf`; a value stays
+available at a block entry only if the operands of its definition are available there too, so
+a block without a path from the entry, e.g. cg_clif's dead cleanup blocks, does not claim
+values computed from its own results — untrusted, the certificate is checked), and decides every
 field of `LowerShape` and `Cert` that is not true by construction: `CtxInv` (incl. `defClif`,
 and `resTysE`/`valTyE`: result and value types `i8..i64`, M4Excl),
 `ValsBelow` (`valReg.size ≤ nextVreg`), the VCode blocks are exactly the renamed recorded code,

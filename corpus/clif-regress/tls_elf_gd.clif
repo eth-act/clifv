@@ -1,0 +1,28 @@
+; tls_value with cg_clif's tls_model=elf_gd: Cranelift's ElfTlsGetAddr, the TLSDESC sequence
+; (adrp/ldr/add/blr with R_AARCH64_TLSDESC_* relocations against the variable, then
+; mrs tpidr_el0 and add). Cranelift's filetest isa/aarch64/tls-elf-gd.clif with %names, plus a
+; non-colocated variable and a value live across the sequence (the resolver preserves every
+; register but x0 and x30). Compiled and encode-checked; outside the end-to-end theorem.
+test compile
+set tls_model=elf_gd
+target aarch64
+
+function %tls_elf_gd(i32) -> i32, i64 {
+    gv0 = symbol colocated tls %tlsv
+
+block0(v0: i32):
+    v1 = tls_value.i64 gv0
+    return v0, v1
+}
+
+function %tls_two(i64) -> i64 {
+    gv0 = symbol tls %tls_a
+    gv1 = symbol colocated tls %tls_b
+
+block0(v0: i64):
+    v1 = tls_value.i64 gv0
+    v2 = tls_value.i64 gv1
+    v3 = iadd v1, v2
+    v4 = iadd v3, v0
+    return v4
+}

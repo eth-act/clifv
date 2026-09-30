@@ -330,7 +330,9 @@ semantics: the `Type → Option Type` predicates of `tyPred` (`fits_in_*`, `ty_i
 `ty_dyn*` (always none: no dynamic vectors), `lane_fits_in_32`, `int_fits_in_32`,
 `integral_ty`, `valid_atomic_transaction`), `multi_lane`, `dynamic_lane`, `not_i64x2`,
 `use_lse`/`use_dotprod`/`use_i8mm` (ISA flags off by default), `sign_return_address_disabled`
-and `tls_model` (default `none`).
+and `tls_model` (`elf_gd`, cg_clif's setting for ELF targets, like `is_pic`; it selects
+Cranelift's `ElfTlsGetAddr` lowering of `tls_value`, the TLSDESC call sequence with
+`R_AARCH64_TLSDESC_*` relocations, unverified).
 
 ## ABI (Cranelift aarch64 `system_v`, `isa/aarch64/abi.rs`)
 

@@ -38,6 +38,10 @@ theorem decode_armBits_Test_branch (x : Test_branch_cls) :
     decode_raw_inst (armBits (.BR (.Test_branch x))) = some (ArmInst.BR (.Test_branch x)).norm := by
   decode_class decode_raw_inst_of_br decode_branch
 
+theorem decode_armBits_Mrs (x : Mrs_cls) :
+    decode_raw_inst (armBits (.BR (.Mrs x))) = some (ArmInst.BR (.Mrs x)).norm := by
+  decode_class decode_raw_inst_of_br decode_branch
+
 theorem decode_armBits_BR (x : BranchInst) :
     decode_raw_inst (armBits (.BR x)) = some (ArmInst.BR x).norm := by
   cases x with
@@ -48,5 +52,6 @@ theorem decode_armBits_BR (x : BranchInst) :
   | Hints x => exact decode_armBits_Hints x
   | Barrier x => exact decode_armBits_Barrier x
   | Test_branch x => exact decode_armBits_Test_branch x
+  | Mrs x => exact decode_armBits_Mrs x
 
 end Backend
