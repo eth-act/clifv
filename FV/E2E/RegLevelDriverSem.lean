@@ -38,6 +38,9 @@ theorem visit_mapRegs {m : Type → Type} [Monad m] [LawfulMonad m] (f : OpSpec 
   | call info =>
     obtain ⟨dest, uses, defs⟩ := info
     cases dest <;> simp [MInst.visitOperands, MInst.mapRegs, List.mapM_map, Function.comp_def]
+  | tryCall info ti =>
+    obtain ⟨dest, uses, defs⟩ := info
+    cases dest <;> simp [MInst.visitOperands, MInst.mapRegs, List.mapM_map, Function.comp_def]
   | args ds => simp [MInst.visitOperands, MInst.mapRegs, List.mapM_map, Function.comp_def]
   | rets us => simp [MInst.visitOperands, MInst.mapRegs, List.mapM_map, Function.comp_def]
   | _ =>
@@ -127,18 +130,20 @@ theorem setTargets_cases {i : MInst} {ls : List Label} {i' : MInst}
     (∃ kd t e t' e' rn bit, i = .testBitAndBranch kd t e rn bit ∧
       i' = .testBitAndBranch kd t' e' rn bit) ∨
     (∃ d ts d' ts' r t1 t2, i = .jtSequence d ts r t1 t2 ∧ i' = .jtSequence d' ts' r t1 t2 ∧
-      ts'.length = ts.length) := by
+      ts'.length = ts.length) ∨
+    (∃ info ti ti', i = .tryCall info ti ∧ i' = .tryCall info ti') := by
   unfold MInst.setTargets at h
   split at h
-  · cases h; exact .inl ⟨_, _, rfl, rfl⟩
-  · cases h; exact .inr (.inl ⟨_, _, _, _, _, rfl, rfl⟩)
-  · cases h; exact .inr (.inr (.inl ⟨_, _, _, _, _, _, _, rfl, rfl⟩))
-  · split at h
-    · rename_i hl
-      cases h
-      exact .inr (.inr (.inr ⟨_, _, _, _, _, _, _, rfl, rfl, by simpa using hl⟩))
-    · cases h
-  · cases h
+  all_goals (try split at h)
+  all_goals first
+    | (cases h; done)
+    | (cases h; exact .inl ⟨_, _, rfl, rfl⟩)
+    | (cases h; exact .inr (.inl ⟨_, _, _, _, _, rfl, rfl⟩))
+    | (cases h; exact .inr (.inr (.inl ⟨_, _, _, _, _, _, _, rfl, rfl⟩)))
+    | (rename_i hl
+       cases h
+       exact .inr (.inr (.inr (.inl ⟨_, _, _, _, _, _, _, rfl, rfl, by simpa using hl⟩))))
+    | (cases h; exact .inr (.inr (.inr (.inr ⟨_, _, _, rfl, rfl⟩))))
 
 /-- **`DriverSem` for `csem`.** -/
 theorem driverSem_csem (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) :
@@ -170,11 +175,13 @@ theorem driverSem_csem (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) :
     intro i ls i' h
     funext uses w
     rcases setTargets_cases h with ⟨l, l', rfl, rfl⟩ | ⟨t, e, t', e', k, rfl, rfl⟩ |
-      ⟨kd, t, e, t', e', rn, bit, rfl, rfl⟩ | ⟨d, ts, d', ts', r, t1, t2, rfl, rfl, hlen⟩
+      ⟨kd, t, e, t', e', rn, bit, rfl, rfl⟩ | ⟨d, ts, d', ts', r, t1, t2, rfl, rfl, hlen⟩ |
+      ⟨info, ti, ti', rfl, rfl⟩
     · rfl
     · rfl
     · rfl
     · simp only [csem, hlen]
+    · simp [csem, csemWF, FormOk, mspec, ispec]
 
 /-! ## Calls -/
 
