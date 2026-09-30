@@ -339,6 +339,40 @@ fn abi_guard(input: &Path) -> Option<String> {
     None
 }
 
+/// `--trap-replaced`: overwrite cg_clif's (now dead) code of the given functions with `udf`
+/// words, so executing it would crash: the tests then show that every call reaches the Lean
+/// code. (A relocation inside the range still patches bits 25:0 of its word; the result stays
+/// in the reserved/unallocated encoding space, op0 = 000x.)
+fn trap_bodies(obj: &Path, names: &[String]) -> Result<(), String> {
+    let mut data = fs::read(obj).map_err(|e| format!("{}: {e}", obj.display()))?;
+    let mut patches: Vec<(usize, usize)> = Vec::new();
+    {
+        let file = object::File::parse(&*data).map_err(|e| format!("{}: {e}", obj.display()))?;
+        let want: BTreeSet<&str> = names.iter().map(String::as_str).collect();
+        for sym in file.symbols() {
+            let Ok(n) = sym.name() else { continue };
+            if !want.contains(n) || sym.is_undefined() {
+                continue;
+            }
+            let Some(si) = sym.section_index() else { continue };
+            let sec = file.section_by_index(si).map_err(|e| e.to_string())?;
+            let Some((off, size)) = object::read::ObjectSection::file_range(&sec) else { continue };
+            let (start, len) = (sym.address(), sym.size());
+            if start + len > size {
+                return Err(format!("`{n}` extends past its section"));
+            }
+            patches.push(((off + start) as usize, len as usize));
+        }
+    }
+    for (at, len) in patches {
+        for w in data[at..at + len].chunks_mut(4) {
+            let udf = 0x0000_00f0u32.to_le_bytes(); // udf #0xf0
+            w.copy_from_slice(&udf[..w.len()]);
+        }
+    }
+    fs::write(obj, data).map_err(|e| format!("{}: {e}", obj.display()))
+}
+
 /// How lean-backend classified one function.
 enum Compiled {
     Ok { obj: PathBuf, unverified: Option<String> },
@@ -569,6 +603,10 @@ fn process_in(
         &[format!("--globalize-symbols={}", glob.display()), format!("--weaken-symbols={}", weak.display())],
         &cg,
     )?;
+
+    if cfg.trap_replaced {
+        trap_bodies(&cg, &ours.iter().map(|(s, _)| final_name(s)).collect::<Vec<_>>())?;
+    }
 
     // our functions: one relocatable object, same renaming (data names too), markers
     let lean = work.join("lean.o");

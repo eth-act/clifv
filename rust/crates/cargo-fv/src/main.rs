@@ -8,7 +8,8 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
 const USAGE: &str = "\
-usage: cargo fv <build|run|test> [--opt | --opt-proven-only] [--no-fallback] [--keep-temps] [cargo options] [-- args]
+usage: cargo fv <build|run|test> [--opt | --opt-proven-only] [--no-fallback] [--trap-replaced] [--keep-temps]
+                                [cargo options] [-- args]
        cargo fv report [--functions] [--json] [--manifest-path PATH]
 
 Builds for aarch64-unknown-linux-musl with rustc_codegen_cranelift; every function of the
@@ -19,6 +20,8 @@ target/fv-report.json (`cargo fv report` prints it).
   --opt               run the Lean mid-end (all rules; nothing is reported verified)
   --opt-proven-only   run the Lean mid-end with the proven rules (E2E.backend_correct_opt_proven)
   --no-fallback       fail unless every function of every workspace member runs Lean code
+  --trap-replaced     overwrite cg_clif's code of every Lean-compiled function with traps (proof
+                      that the tests run the Lean code; separate target dir)
   --keep-temps        keep the per-codegen-unit work directories (target/fv/<mode>/tmp)
   --functions         (report) list every function with its status and reason
   --json              (report) print target/fv-report.json";
@@ -164,6 +167,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
     let mut mode = Mode::Plain;
     let mut no_fallback = false;
     let mut keep_temps = false;
+    let mut trap_replaced = false;
     let mut cargo_args = Vec::new();
     for a in before {
         match a.as_str() {
@@ -171,6 +175,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
             "--opt-proven-only" => mode = Mode::OptProven,
             "--no-fallback" => no_fallback = true,
             "--keep-temps" => keep_temps = true,
+            "--trap-replaced" => trap_replaced = true,
             _ => cargo_args.push(a),
         }
     }
@@ -197,7 +202,8 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
         .find_map(|l| l.strip_prefix("host: ").map(String::from))
         .unwrap_or_else(|| die("rustc -vV: no host"));
     let bin = sysroot.join("lib/rustlib").join(&host).join("bin");
-    let fv_dir = target.join("fv").join(mode.name());
+    // one target dir per configuration that changes the objects (cargo does not see FV_*)
+    let fv_dir = target.join("fv").join(if trap_replaced { format!("{}-trap", mode.name()) } else { mode.name().into() });
     let cfg = Config {
         root,
         mode,
@@ -213,6 +219,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
             .and_then(|j| j.parse().ok())
             .unwrap_or_else(|| std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4)),
         keep_temps,
+        trap_replaced,
     };
     let wrapper = std::env::current_exe()
         .ok()

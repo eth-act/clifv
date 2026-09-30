@@ -69,6 +69,8 @@ pub struct Config {
     /// Parallel `lean-backend` processes per codegen unit.
     pub jobs: usize,
     pub keep_temps: bool,
+    /// Overwrite cg_clif's replaced function bodies with traps (`--trap-replaced`).
+    pub trap_replaced: bool,
 }
 
 fn var(k: &str) -> Result<String, String> {
@@ -104,6 +106,7 @@ impl Config {
             ("FV_PYTHON".into(), self.python.clone()),
             ("FV_JOBS".into(), self.jobs.to_string()),
             ("FV_KEEP_TEMPS".into(), if self.keep_temps { "1" } else { "0" }.into()),
+            ("FV_TRAP_REPLACED".into(), if self.trap_replaced { "1" } else { "0" }.into()),
         ]
     }
 
@@ -124,6 +127,7 @@ impl Config {
                 python: var("FV_PYTHON")?,
                 jobs: var("FV_JOBS")?.parse().map_err(|_| "FV_JOBS: not a number".to_string())?,
                 keep_temps: var("FV_KEEP_TEMPS")? == "1",
+                trap_replaced: var("FV_TRAP_REPLACED")? == "1",
             })
         })())
     }
