@@ -338,7 +338,7 @@ fn compile_one(
     sym: &str,
 ) -> Compiled {
     let run_backend = |input: &Path, out: &Path| -> Compiled {
-        if let Some(why) = abi_guard(input) {
+        if let Some(why) = abi_guard(input).or_else(|| landing_pad(input)) {
             return Compiled::Fallback(why);
         }
         match Command::new(cfg.lean_backend())
@@ -430,6 +430,20 @@ fn abi_guard(input: &Path) -> Option<String> {
         }
     }
     None
+}
+
+/// Functions with landing pads fall back: `try_call`/`try_call_indirect` (cg_clif built with its
+/// `unwinding` feature emits them for calls with a cleanup (Drop during unwinding), a catch
+/// (`catch_unwind`) or a terminate edge (`extern "C"`, drop in cleanup)). The Lean backend does
+/// not lower them and emits no LSDA (`.gcc_except_table`); cg_clif's code has both. Frames
+/// without landing pads are Lean code with `.eh_frame` rows, and a panic unwinds through them.
+fn landing_pad(input: &Path) -> Option<String> {
+    let text = fs::read_to_string(input).ok()?;
+    let uses = text.lines().any(|l| {
+        let t = l.trim_start();
+        !t.starts_with(';') && t.split_whitespace().any(|w| w == "try_call" || w == "try_call_indirect")
+    });
+    uses.then(|| "landing pad (try_call: cleanup or catch during unwinding; the Lean backend emits no exception tables)".to_string())
 }
 
 /// `--trap-replaced`: overwrite cg_clif's (now dead) code of the given functions with `udf`

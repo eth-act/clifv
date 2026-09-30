@@ -3,7 +3,7 @@ name = "fv-demo"
 version = "0.1.0"
 edition = "2021"
 publish = false
-description = "cargo fv example: integer arithmetic, slices, enums, Option/Result, iterators, u128, dyn traits and panics, as unit tests and a small binary"
+description = "cargo fv example: integer arithmetic, slices, enums, Option/Result, iterators, u128, dyn traits, panics and unwinding through Lean-compiled frames, as unit tests and a small binary"
 
 [dependencies]
 
