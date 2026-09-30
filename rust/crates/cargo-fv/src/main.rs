@@ -281,7 +281,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
             }
         }
     }
-    units.sort_by(|a, b| (&a.crate_name, &a.kind, &a.unit).cmp(&(&b.crate_name, &b.kind, &b.unit)));
+    units.sort_by(|a, b| (&a.crate_name, &a.kind, &a.src, &a.unit).cmp(&(&b.crate_name, &b.kind, &b.src, &b.unit)));
     let report = Report::new(&profile, mode.name(), mode.theorem().map(String::from), units);
     let rp = report_path(&target);
     let _ = std::fs::write(&rp, serde_json::to_string_pretty(&report).expect("report serialises"));
@@ -289,7 +289,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
         return out.status.code().unwrap_or(1);
     }
     eprint!("{}", report.summary(false));
-    let linked: usize = report.units.iter().filter_map(|u| u.unit.binary.as_ref()).map(|b| b.lean_functions_linked).max().unwrap_or(0);
+    let exes: Vec<usize> = report.units.iter().filter_map(|u| u.unit.binary.as_ref()).map(|b| b.lean_functions_linked).collect();
     eprintln!(
         "cargo fv: {} of {} functions compiled by the Lean backend ({} verified); report: {}",
         report.totals.verified + report.totals.unverified,
@@ -297,8 +297,12 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
         report.totals.verified,
         rp.display()
     );
-    if linked > 0 {
-        eprintln!("cargo fv: checked in the linked executables: up to {linked} functions per binary resolve to Lean-compiled code");
+    if !exes.is_empty() {
+        eprintln!(
+            "cargo fv: checked {} linked executable(s): {} function symbols in total resolve to Lean-compiled code (\"Lean in exe\")",
+            exes.len(),
+            exes.iter().sum::<usize>()
+        );
     }
     let mism = report.binary_mismatches();
     if !mism.is_empty() {

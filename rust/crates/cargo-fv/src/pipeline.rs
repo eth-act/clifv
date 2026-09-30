@@ -114,7 +114,10 @@ fn pretty_instance(s: &str) -> String {
             _ => {}
         }
     }
-    let args = s.rsplit_once("args: [").map(|(_, r)| r.trim_end_matches(" }").trim_end_matches(']')).unwrap_or("");
+    let args = s
+        .split_once("), args: [")
+        .map(|(_, r)| r.strip_suffix(" }").unwrap_or(r).strip_suffix(']').unwrap_or(r))
+        .unwrap_or("");
     let mut out = if kind == "Item" || kind.is_empty() { p } else { format!("{kind} {p}") };
     if !args.is_empty() {
         out.push_str("::<");
@@ -253,13 +256,49 @@ pub fn process_object(cfg: &Config, index: &DumpIndex, obj: &Path, id: &str) -> 
         .map(|(s, d)| (s.clone(), d.clone()))
         .collect();
     funcs.sort_by(|a, b| a.0.cmp(&b.0));
+    // debugging aids (docs/USAGE.md, troubleshooting): force functions to fall back
+    let (skip, only) = (filter_env("FV_SKIP"), filter_env("FV_ONLY"));
+    let mut forced: Vec<FnReport> = Vec::new();
+    let all: Vec<Dump> = funcs.iter().map(|(_, d)| d.clone()).collect();
+    funcs.retain(|(s, d)| {
+        let hit = |pats: &Vec<String>| pats.iter().any(|p| s.contains(p.as_str()) || d.instance.contains(p.as_str()));
+        let why = if !skip.is_empty() && hit(&skip) {
+            "skipped (FV_SKIP)"
+        } else if !only.is_empty() && !hit(&only) {
+            "not selected (FV_ONLY)"
+        } else {
+            return true;
+        };
+        forced.push(FnReport { symbol: s.clone(), instance: d.instance.clone(), status: Status::Fallback, reason: Some(why.into()) });
+        false
+    });
+    let mut res = process_selected(cfg, index, obj, id, &syms, &all, funcs);
+    res.functions.extend(forced);
+    res
+}
+
+fn filter_env(k: &str) -> Vec<String> {
+    std::env::var(k).map(|v| v.split(',').filter(|p| !p.is_empty()).map(String::from).collect()).unwrap_or_default()
+}
+
+/// `all`: every function of the CGU (the normalisation input: data-export and the FuncId
+/// naming need the whole CGU); `funcs`: the ones to compile.
+fn process_selected(
+    cfg: &Config,
+    index: &DumpIndex,
+    obj: &Path,
+    id: &str,
+    syms: &ObjSyms,
+    all: &[Dump],
+    funcs: Vec<(String, Dump)>,
+) -> CguResult {
     if funcs.is_empty() {
         return CguResult { functions: vec![], changed: false, error: None };
     }
     let tag = tag_of(id);
     let work = cfg.tmp_dir.join(&tag);
     let _ = fs::remove_dir_all(&work);
-    let r = process_in(cfg, index, obj, &syms, &funcs, &tag, &work);
+    let r = process_in(cfg, index, obj, syms, all, &funcs, &tag, &work);
     if !cfg.keep_temps {
         let _ = fs::remove_dir_all(&work);
     }
@@ -267,6 +306,37 @@ pub fn process_object(cfg: &Config, index: &DumpIndex, obj: &Path, id: &str) -> 
         Ok((functions, changed)) => CguResult { functions, changed, error: None },
         Err(e) => CguResult { functions: fallback_all(&funcs, &e), changed: false, error: Some(e) },
     }
+}
+
+/// Calling-convention differences between the Lean backend and Cranelift (cg_clif's code, the
+/// other side of every call between a Lean-compiled and a fallback function).
+///
+/// `sret`: Cranelift (AAPCS64) passes the struct-return pointer in x8 *without* using a GPR
+/// argument slot (the next argument is in x0); lean-backend (2026-09-29) also moves the
+/// following arguments up by one (x1, …), in definitions and at call sites. So a function
+/// whose signature, or whose callee's signature, has an `sret` parameter is not
+/// interoperable and falls back. `FV_ALLOW_SRET=1` disables the guard (for a fixed backend).
+fn abi_guard(input: &Path) -> Option<String> {
+    if std::env::var_os("FV_ALLOW_SRET").is_some_and(|v| v == "1") {
+        return None;
+    }
+    let text = fs::read_to_string(input).ok()?;
+    let body = text.split_once("\nfunction ").map(|(_, b)| b).unwrap_or(&text);
+    let sig = body.lines().next().unwrap_or("");
+    if sig.contains("i64 sret") {
+        return Some("sret ABI mismatch: lean-backend passes the arguments after an sret pointer from x1, Cranelift from x0".into());
+    }
+    if body.lines().any(|l| l.trim_start().starts_with("fn") || l.trim_start().starts_with("sig")) && body
+        .lines()
+        .filter(|l| {
+            let t = l.trim_start();
+            (t.starts_with("fn") || t.starts_with("sig")) && t.contains(" = ")
+        })
+        .any(|l| l.contains("i64 sret"))
+    {
+        return Some("sret ABI mismatch: calls a function with an sret parameter (lean-backend passes the arguments after it from x1, Cranelift from x0)".into());
+    }
+    None
 }
 
 /// How lean-backend classified one function.
@@ -329,13 +399,14 @@ fn process_in(
     index: &DumpIndex,
     obj: &Path,
     syms: &ObjSyms,
+    all: &[Dump],
     funcs: &[(String, Dump)],
     tag: &str,
     work: &Path,
 ) -> Result<(Vec<FnReport>, bool), String> {
     let clif = work.join("c.clif");
     fs::create_dir_all(&clif).map_err(|e| format!("{}: {e}", clif.display()))?;
-    for (_, d) in funcs {
+    for d in all {
         for ext in ["unopt.clif", "opt.clif", "vcode"] {
             let src = index.dir.join(format!("{}.{ext}", d.stem));
             if src.exists() {
@@ -387,6 +458,10 @@ fn process_in(
                         let (sym, d) = &funcs[i];
                         let input = split.join(format!("{}.unopt.clif", d.stem));
                         let out = outdir.join(format!("f{i}.o"));
+                        if let Some(why) = abi_guard(&input) {
+                            done.push((i, Compiled::Fallback(why)));
+                            continue;
+                        }
                         let c = match Command::new(cfg.lean_backend())
                             .arg(&input)
                             .arg(&out)

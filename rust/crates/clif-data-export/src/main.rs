@@ -578,6 +578,8 @@ fn recover(crate_name: &str, obj: &Path, dumps: &[FnDump]) -> Recovered {
                 let target = match t.kind {
                     SymbolKind::Text => t.name.clone(),
                     SymbolKind::Data => names.get(&r.sym).cloned().unwrap_or_else(|| data_name(crate_name, t)),
+                    // an imported symbol (e.g. a vtable's method of another crate): by name
+                    _ if t.sec.is_none() => t.name.clone(),
                     _ => die(format!("{}: `{}` relocates to symbol `{}` of kind {:?}", obj.display(), name, t.name, t.kind)),
                 };
                 (target, r.addend)

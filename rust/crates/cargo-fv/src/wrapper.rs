@@ -32,6 +32,7 @@ struct UnitMeta {
     crate_name: String,
     package: String,
     kind: String,
+    src: String,
     clif_dir: PathBuf,
 }
 
@@ -103,6 +104,7 @@ fn strip_linker(args: &[String]) -> Vec<String> {
 /// Parsed facts about a rustc invocation that codegens a member crate.
 struct Invocation {
     unit: String,
+    src: String,
     crate_name: String,
     out_dir: PathBuf,
     kind: String,
@@ -140,7 +142,8 @@ fn member_invocation(cfg: &Config, args: &[String]) -> Option<Invocation> {
     };
     let extra = codegen_opt(args, "extra-filename").unwrap_or_default();
     let out_dir = PathBuf::from(opt_values(args, "--out-dir").pop()?);
-    Some(Invocation { unit: format!("{crate_name}{extra}"), crate_name, out_dir, kind, links })
+    let src = args.iter().find(|a| a.ends_with(".rs") && !a.starts_with('-')).cloned().unwrap_or_default();
+    Some(Invocation { unit: format!("{crate_name}{extra}"), src, crate_name, out_dir, kind, links })
 }
 
 /// The `could not copy "SRC" to "DST"` sources of rustc's `.ll` copy errors, if those are the
@@ -201,6 +204,7 @@ fn new_report(cfg: &Config, m: &UnitMeta, artifact: &Path) -> UnitReport {
         crate_name: m.crate_name.clone(),
         package: m.package.clone(),
         kind: m.kind.clone(),
+        src: m.src.clone(),
         artifact: artifact.display().to_string(),
         mode: cfg.mode.name().into(),
         theorem: cfg.mode.theorem().map(String::from),
@@ -309,6 +313,7 @@ pub fn wrapper_main(argv: Vec<OsString>) -> i32 {
         crate_name: inv.crate_name.clone(),
         package: std::env::var("CARGO_PKG_NAME").unwrap_or_default(),
         kind: inv.kind.clone(),
+        src: inv.src.clone(),
         clif_dir: clif_dir.clone(),
     };
     let mut rargs = if inv.links { strip_linker(&args) } else { args.clone() };

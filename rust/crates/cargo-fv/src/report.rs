@@ -49,6 +49,9 @@ pub struct UnitReport {
     pub package: String,
     /// `lib`, `bin`, `test`, …
     pub kind: String,
+    /// The crate root rustc compiled (as cargo passed it, e.g. `src/lib.rs`, `tests/t.rs`).
+    #[serde(default)]
+    pub src: String,
     /// The output rustc wrote (rlib or executable), for matching cargo's artifact messages.
     pub artifact: String,
     pub mode: String,
@@ -157,23 +160,23 @@ impl Report {
         let _ = writeln!(s, "  verified = compiled by the Lean backend and inside {th}");
         let _ = writeln!(
             s,
-            "  {:<24} {:<6} {:>9} {:>9} {:>11} {:>9} {:>14}",
-            "crate", "kind", "functions", "verified", "unverified", "fallback", "linked (Lean)"
+            "  {:<20} {:<5} {:<22} {:>9} {:>9} {:>10} {:>9} {:>13}",
+            "crate", "kind", "root", "functions", "verified", "unverified", "fallback", "Lean in exe"
         );
         for u in &self.units {
             let c = &u.counts;
             let linked = u.unit.binary.as_ref().map(|b| b.lean_functions_linked.to_string()).unwrap_or_default();
             let _ = writeln!(
                 s,
-                "  {:<24} {:<6} {:>9} {:>9} {:>11} {:>9} {:>14}",
-                u.unit.crate_name, u.unit.kind, c.functions, c.verified, c.unverified, c.fallback, linked
+                "  {:<20} {:<5} {:<22} {:>9} {:>9} {:>10} {:>9} {:>13}",
+                u.unit.crate_name, u.unit.kind, u.unit.src, c.functions, c.verified, c.unverified, c.fallback, linked
             );
         }
         let t = &self.totals;
         let _ = writeln!(
             s,
-            "  {:<24} {:<6} {:>9} {:>9} {:>11} {:>9}",
-            "total", "", t.functions, t.verified, t.unverified, t.fallback
+            "  {:<20} {:<5} {:<22} {:>9} {:>9} {:>10} {:>9}",
+            "total", "", "", t.functions, t.verified, t.unverified, t.fallback
         );
         for (label, st) in [("unverified", Status::Unverified), ("fallback", Status::Fallback)] {
             let mut reasons: BTreeMap<String, usize> = BTreeMap::new();
@@ -210,7 +213,7 @@ impl Report {
         }
         if functions {
             for u in &self.units {
-                let _ = writeln!(s, "\n  {} ({}):", u.unit.crate_name, u.unit.kind);
+                let _ = writeln!(s, "\n  {} ({} {}):", u.unit.crate_name, u.unit.kind, u.unit.src);
                 for f in &u.unit.functions {
                     let st = match f.status {
                         Status::Verified => "verified",
