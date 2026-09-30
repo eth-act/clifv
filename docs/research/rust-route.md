@@ -207,6 +207,65 @@ Fallback reasons collected (top, vendor debug+release combined):
 3. `references allocNNN, which cg_clif's object does not contain` — release-only: the Lean backend compiles the unoptimised CLIF, which still contains (dead) panic paths whose `Location` data objects cg_clif's optimiser removed from its object; fix options: retry with the `.opt.clif` dump (preferred), or emit a private copy of the missing read-only data.
 4. `cfg-if (lib): codegen unit fell back entirely: CLIF dumps … missing` — cfg-if defines no functions, cg_clif writes no dump dir; cargo-fv reports a unit-level error (noise, no code lost).
 
+### agent/fv-fallback: implemented (final)
+
+All four steps landed (commit series on `agent/fv-fallback`):
+
+1. **Release missing-`allocNNN`** — `cargo fv` (`pipeline.rs`) runs `clif-data-export` and
+   `normalize.py` for both stages (gvmap entries are stage-filtered in normalize.py) and, when
+   the unopt compile's object references an `alloc*`/`data_*`/`u0_*` name absent from cg_clif's
+   object ("removed by Cranelift's optimiser, or unmapped"), retries with the normalised
+   `.opt.clif` dump (separate output object; a failing retry keeps the unopt result and its
+   reference check reports the original reason). The optimised dump matches the code cg_clif
+   actually emitted, so it references only data that exists (verified on
+   `core::intrinsics::rotate_left`: the release unopt dump references `alloc294` only through
+   its dead panic block, gone from cg_clif's object). DECISION: private data copies rejected —
+   the bytes are not recoverable from cg_clif's object at all. Macro-only CGUs (cfg-if): cg_clif
+   writes no dump dir; `cargo fv` now reports each text symbol as a fallback row instead of a
+   unit-level error.
+2. **bmask + 3. atomics** — `isle2lean` `E_OPCODES` += `bmask, atomic_load, atomic_store,
+   atomic_rmw, atomic_cas, fence`; `Closure.lean` regenerated (486 rules; the non-LSE rules are
+   pulled in transitively: `load_acquire`/`store_release`, `atomic_rmw_loop`/`atomic_cas_loop`,
+   `lower_bmask`; `use_lse` fails → cg_clif's `has_lse=0` path). `instData` arms build the
+   `InstructionData` (`LoadNoOffset`/`StoreNoOffset`/`AtomicRmw`/`AtomicCas`/`NullAry`/`Unary(Bmask)`);
+   new MInst: `loadAcquire`/`storeRelease` (ldar/stlr), `atomicRmwLoop`/`atomicCasLoop` (emit-time
+   LL/SC loop expansion transcribed from Cranelift's `inst/emit.rs`: ldaxr/extend/op/stlxr/cbnz
+   over fixed x24–x28, with emit-time labels `Lbl.loop`), `csetm` (csinv), `fence` (dmb ish).
+   regalloc operands: `Constraint.fixed` exactly as `aarch64_get_operands` (x25/x26 in, x27/x24
+   out, x28 unless xchg); the stack-slot allocator rejects the loop pseudo-insts. Arm model: new
+   decode classes `LDST.Reg_exclusive` (LDXR/LDAXR/STXR/STLXR/LDAR/STLR) and `BR.Barrier` (dmb;
+   in the BR group because the DPR `decode_class` proofs require every fixed-bit dispatch to be
+   decidable without the opaque sf/op/S bits) with exec (exclusive store writes the success flag
+   0 to Rs) and `decode_armBits_*` theorems; encoders checked against llvm-mc
+   (`lean-backend-encode-check.sh`: 1247 functions / 33450 words / 1085 relocations, 0 differ,
+   including the random Insn-form sweep with the decode check). Differential execution:
+   the atomic/bmask/fence runtests agree with Cranelift-native (518/518 after fixing the i32/i64
+   min-max comparison width and the i64 smin/smax operand extend — both transcriptions now match
+   `emit.rs` exactly). `FVTest/E2E/Check.lean` skips functions outside `Compile.functionE` (they
+   are outside the theorem); `Backend.unverifiedReason?` reports "bmask / atomic instructions /
+   fence (outside backend_correct)". `E2E.InSubset`/the theorems are untouched.
+4. **TLS** — never showed up as a fallback (no vendored crate or example uses `#[thread_local]`;
+   the survey dumps declare `set tls_model=elf_gd` but contain no `tls_value`), so no code
+   change; the parser still rejects TLS globals (`FV/Clif/Parse.lean:383`).
+
+Before/after (the same six `cargo fv build`s; after = default panic=unwind, so the vendor
+row's 41→0 landing-pad fallbacks belong to the fv-unwind design, not this branch):
+
+| workspace | profile | fb before | fb after | of which skip |
+|---|---|---|---|---|
+| fv-demo | debug | 2 | 3 | 3 (`metadata.fv.skip`) |
+| fv-demo | release | 7 | 3 | 3 |
+| survey | debug | 0 | 0 | — |
+| survey | release | 13 | 0 | — |
+| vendor | debug | 10 | 0 | — |
+| vendor | release | 16 | 0 | — |
+
+Gates: `lean-backend-filetests.sh` corpus 22/22 + runtests (395 files: 4655 lean passes, 0 fail,
+0 disagree vs Cranelift-native); `lean-backend-encode-check.sh` 1247 functions identical, 0
+differ; `lean-e2e-check` lowerCheck 910 accepted / 0 rejected / 146 out of scope, prepCheck
+910/0, formsCoveredB 910 covered / 0 not covered; `FV.E2E` and `FV.E2E.OptProven` green;
+`examples/compare.sh` fv-demo 18/18, survey 53/53, vendor 189/189 (debug + release, SAME).
+
 Implementation plan (all flagged unverified via `unverifiedReason?`, theorems untouched):
 atomics → add `atomic_load/atomic_store/atomic_rmw/atomic_cas/fence` + `bmask` to
 `isle2lean`'s `E_OPCODES`, regenerate `Closure.lean`; `instData` arms (InstructionData
