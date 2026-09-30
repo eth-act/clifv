@@ -56,6 +56,10 @@ const RO_ADDR: u64 = 0x2000_0000;
 const RW_ADDR: u64 = 0x2800_0000;
 /// The per-function thunks (diffharness.c `clifdiff_thunks`).
 const THUNK_ADDR: u64 = 0x2c00_0000;
+/// The thunks' target table.
+const FNPTR_ADDR: u64 = 0x2e00_0000;
+/// The stubs of undefined functions.
+const STUB_ADDR: u64 = 0x2d00_0000;
 /// Unmapped page range for dead data-symbol references.
 const DEAD_DATA_ADDR: u64 = 0x3000_0000;
 /// Harness regions (diffharness.c).
@@ -149,18 +153,26 @@ fn parse_diff_args(args: &[String]) -> Result<DiffConfig> {
     Ok(cfg)
 }
 
-/// Parameter kinds of the harness (`pdesc`): 0 integer, 1 pointer, 2 `sret` pointer.
-fn param_kinds(funcs: &[&Function], index: &HashMap<String, usize>) -> Vec<Vec<u8>> {
+/// Parameter kinds of the harness (`pdesc`): 0 integer, 1 pointer, 2 `sret` pointer, 3 code
+/// pointer (called with `call_indirect`), 4 pointer to a table of code pointers (a vtable).
+/// Returns, per function and parameter, the kind and (kind 3) the signature it is called with.
+fn param_kinds(funcs: &[&Function], index: &HashMap<String, usize>) -> Vec<Vec<(u8, Option<String>)>> {
     let resolve = |f: &Function, v: Value| f.dfg.resolve_aliases(v);
     // Per function: flow edges (from, to) and address sinks; calls: (arg, callee, param).
     struct Flow {
         edges: Vec<(Value, Value)>,
         sinks: Vec<Value>,
+        /// `call_indirect` callees
+        code: Vec<Value>,
+        /// their signatures (as text)
+        code_sigs: HashMap<Value, String>,
+        /// loads: (address, result)
+        loads: Vec<(Value, Value)>,
         calls: Vec<(Value, usize, usize)>,
     }
     let mut flows = Vec::new();
     for f in funcs {
-        let mut fl = Flow { edges: Vec::new(), sinks: Vec::new(), calls: Vec::new() };
+        let mut fl = Flow { edges: Vec::new(), sinks: Vec::new(), code: Vec::new(), code_sigs: HashMap::new(), loads: Vec::new(), calls: Vec::new() };
         let dfg = &f.dfg;
         // stack_addr results, by value: (slot, offset)
         let mut slot_addr: HashMap<Value, (u32, i64)> = HashMap::new();
@@ -177,6 +189,7 @@ fn param_kinds(funcs: &[&Function], index: &HashMap<String, usize>) -> Vec<Vec<u
                     }
                     InstructionData::Load { offset, .. } => {
                         fl.sinks.push(args[0]);
+                        fl.loads.push((args[0], results[0]));
                         if let Some(&(s, o)) = slot_addr.get(&args[0]) {
                             slot_loads.entry((s, o + i64::from(offset))).or_default().extend(&results);
                         }
@@ -201,6 +214,14 @@ fn param_kinds(funcs: &[&Function], index: &HashMap<String, usize>) -> Vec<Vec<u
                     }
                     InstructionData::Unary { opcode: Opcode::Bitcast, .. } => fl.edges.push((args[0], results[0])),
                     _ => {}
+                }
+                if let InstructionData::CallIndirect { sig_ref, .. } = data {
+                    fl.code.push(args[0]);
+                    fl.code_sigs.insert(args[0], dfg.signatures[*sig_ref].to_string());
+                    // the first argument of an indirect call is usually `self` of a dyn method
+                    if args.len() > 1 && dfg.value_type(args[1]).bits() == 64 {
+                        fl.sinks.push(args[1]);
+                    }
                 }
                 if let CallInfo::Direct(fref, cargs) = data.analyze_call(&dfg.value_lists, &dfg.exception_tables) {
                     let name = match &dfg.ext_funcs[fref].name {
@@ -244,7 +265,10 @@ fn param_kinds(funcs: &[&Function], index: &HashMap<String, usize>) -> Vec<Vec<u
         }
         flows.push(fl);
     }
-    let mut ptr: Vec<HashSet<Value>> = flows.iter().map(|fl| fl.sinks.iter().copied().collect()).collect();
+    // Three backward properties: used as an address (`ptr`), called (`code`), and the address
+    // of a loaded callee (`table`: a vtable / function-pointer table).
+    let seed = |f: &dyn Fn(&Flow) -> Vec<Value>| -> Vec<HashSet<Value>> { flows.iter().map(|fl| f(fl).into_iter().collect()).collect() };
+    let mut sets: [Vec<HashSet<Value>>; 3] = [seed(&|fl| fl.sinks.clone()), seed(&|fl| fl.code.clone()), seed(&|_| Vec::new())];
     let entry_params = |g: usize| -> Vec<Value> {
         let f = funcs[g];
         f.layout.entry_block().map(|b| f.dfg.block_params(b).to_vec()).unwrap_or_default()
@@ -253,15 +277,22 @@ fn param_kinds(funcs: &[&Function], index: &HashMap<String, usize>) -> Vec<Vec<u
     loop {
         let mut changed = false;
         for i in 0..funcs.len() {
-            for &(from, to) in &flows[i].edges {
-                if ptr[i].contains(&to) && ptr[i].insert(from) {
+            for &(addr, result) in &flows[i].loads {
+                if sets[1][i].contains(&result) && sets[2][i].insert(addr) {
                     changed = true;
                 }
             }
-            for &(a, g, j) in &flows[i].calls {
-                let callee_ptr = params[g].get(j).is_some_and(|p| ptr[g].contains(p));
-                if callee_ptr && ptr[i].insert(a) {
-                    changed = true;
+            for set in sets.iter_mut() {
+                for &(from, to) in &flows[i].edges {
+                    if set[i].contains(&to) && set[i].insert(from) {
+                        changed = true;
+                    }
+                }
+                for &(a, g, j) in &flows[i].calls {
+                    let callee = params[g].get(j).is_some_and(|p| set[g].contains(p));
+                    if callee && set[i].insert(a) {
+                        changed = true;
+                    }
                 }
             }
         }
@@ -269,6 +300,30 @@ fn param_kinds(funcs: &[&Function], index: &HashMap<String, usize>) -> Vec<Vec<u
             break;
         }
     }
+    let [ptr, code, table] = sets;
+    // The signature a code-pointer parameter is called with: forward along the flow edges and
+    // calls to the first `call_indirect` it reaches.
+    let called_sig = |i: usize, v: Value| -> Option<String> {
+        let mut seen: HashSet<(usize, Value)> = HashSet::new();
+        let mut todo = vec![(i, v)];
+        while let Some((g, x)) = todo.pop() {
+            if !seen.insert((g, x)) {
+                continue;
+            }
+            if let Some(sg) = flows[g].code_sigs.get(&x) {
+                return Some(sg.clone());
+            }
+            todo.extend(flows[g].edges.iter().filter(|e| e.0 == x).map(|e| (g, e.1)));
+            for &(a, h, j) in &flows[g].calls {
+                if a == x {
+                    if let Some(&p) = params[h].get(j) {
+                        todo.push((h, p));
+                    }
+                }
+            }
+        }
+        None
+    };
     funcs
         .iter()
         .enumerate()
@@ -278,12 +333,19 @@ fn param_kinds(funcs: &[&Function], index: &HashMap<String, usize>) -> Vec<Vec<u
                 .iter()
                 .enumerate()
                 .map(|(j, p)| {
+                    let has = |set: &Vec<HashSet<Value>>| params[i].get(j).is_some_and(|v| set[i].contains(v));
                     if p.purpose == ArgumentPurpose::StructReturn {
-                        2
-                    } else if p.value_type.bits() == 64 && params[i].get(j).is_some_and(|v| ptr[i].contains(v)) {
-                        1
+                        (2, None)
+                    } else if p.value_type.bits() != 64 {
+                        (0, None)
+                    } else if has(&code) {
+                        (3, called_sig(i, params[i][j]))
+                    } else if has(&table) {
+                        (4, None)
+                    } else if has(&ptr) {
+                        (1, None)
                     } else {
-                        0
+                        (0, None)
                     }
                 })
                 .collect()
@@ -730,8 +792,8 @@ fn diff_in(cfg: &DiffConfig, dir: &Path) -> Result<bool> {
     let funcs: Vec<&Function> = test.functions.iter().map(|(f, _)| f).collect();
     let names: Vec<String> = funcs.iter().map(|f| clif2obj::symbol_name(&f.name)).collect::<Result<_>>()?;
     let index: HashMap<String, usize> = names.iter().enumerate().map(|(i, n)| (n.clone(), i)).collect();
-    if funcs.is_empty() {
-        bail!("{}: no functions", cfg.file);
+    if funcs.is_empty() || funcs.len() > 4095 {
+        bail!("{}: {} functions (the harness takes 1..4095)", cfg.file, funcs.len());
     }
     for (f, n) in funcs.iter().zip(&names) {
         let sig = &f.signature;
@@ -814,9 +876,22 @@ fn diff_in(cfg: &DiffConfig, dir: &Path) -> Result<bool> {
         }
     }
 
-    // The data objects at fixed addresses.
+    // The data objects at fixed addresses; their pointers to the file's functions point at
+    // the functions' thunks instead (vtables etc. then hold the same values in both
+    // executables).
     let data_o = match &data {
         Some(asm) => {
+            let asm: String = asm
+                .lines()
+                .map(|l| {
+                    let Some(item) = l.strip_prefix(".quad ") else { return format!("{l}\n") };
+                    let at = item.rfind(['+', '-']).unwrap_or(item.len());
+                    match index.get(&item[..at]) {
+                        Some(k) => format!(".quad clifdiff_thunk_{k}{}\n", &item[at..]),
+                        None => format!("{l}\n"),
+                    }
+                })
+                .collect();
             let s = dir.join("data.s");
             std::fs::write(&s, asm)?;
             let o = dir.join("data.o");
@@ -836,6 +911,7 @@ fn diff_in(cfg: &DiffConfig, dir: &Path) -> Result<bool> {
     writeln!(h, "#define CLIFDIFF_NDATA {}", data_names.len()).unwrap();
     writeln!(h, "#define CLIFDIFF_SEED {}UL", cfg.seed).unwrap();
     writeln!(h, "#define CLIFDIFF_TIMEOUT_US {}UL", cfg.call_timeout_us).unwrap();
+    let mut cands: Vec<Vec<usize>> = Vec::new();
     for (k, t) in tramp_names.iter().enumerate() {
         writeln!(h, "extern void clifdiff_tramp_{k}(void *) __asm__(\"{}\");", c_string(t)).unwrap();
         writeln!(h, "extern const u8 clifdiff_code_{k}[] __asm__(\"{}\");", c_string(&names[k])).unwrap();
@@ -844,7 +920,19 @@ fn diff_in(cfg: &DiffConfig, dir: &Path) -> Result<bool> {
             .params
             .iter()
             .zip(&kinds[k])
-            .flat_map(|(p, kd)| [p.value_type.bytes().to_string(), kd.to_string()])
+            .flat_map(|(p, (kd, sg))| {
+                // kind 3: the candidate list of the functions with the called signature
+                let cand = match sg {
+                    Some(sg) => {
+                        let fs: Vec<usize> = (0..funcs.len()).filter(|&g| &funcs[g].signature.to_string() == sg).collect();
+                        let at = cands.len();
+                        cands.push(fs);
+                        at + 1
+                    }
+                    None => 0,
+                };
+                [p.value_type.bytes().to_string(), kd.to_string(), (cand & 0xff).to_string(), (cand >> 8).to_string()]
+            })
             .collect();
         writeln!(h, "static const u8 clifdiff_pdesc_{k}[] = {{{}}};", if pd.is_empty() { "0".into() } else { pd.join(",") })
             .unwrap();
@@ -863,8 +951,24 @@ fn diff_in(cfg: &DiffConfig, dir: &Path) -> Result<bool> {
         .unwrap();
     }
     writeln!(h, "}};").unwrap();
+    for (k, c) in cands.iter().enumerate() {
+        let items: Vec<String> = std::iter::once(c.len()).chain(c.iter().copied()).map(|x| x.to_string()).collect();
+        writeln!(h, "static const unsigned short clifdiff_cand_{k}[] = {{{}}};", items.join(",")).unwrap();
+    }
+    let cl: Vec<String> = std::iter::once("0".to_string()).chain((0..cands.len()).map(|k| format!("clifdiff_cand_{k}"))).collect();
+    writeln!(h, "static const unsigned short *const clifdiff_cands[] = {{{}}};", cl.join(",")).unwrap();
     let dl: Vec<String> = (0..data_names.len()).map(|k| format!("clifdiff_datum_{k}")).collect();
     writeln!(h, "static const u8 *const clifdiff_data[] = {{{}}};", if dl.is_empty() { "0".into() } else { dl.join(",") })
+        .unwrap();
+    // The data objects that point at functions of the file (vtables): kind-4 parameters.
+    let vt: Vec<String> = data_names
+        .iter()
+        .enumerate()
+        .filter(|(_, d)| data_refs[d.as_str()].iter().any(|r| index.contains_key(r)))
+        .map(|(k, _)| format!("clifdiff_datum_{k}"))
+        .collect();
+    writeln!(h, "#define CLIFDIFF_NVTABLES {}", vt.len()).unwrap();
+    writeln!(h, "static const u8 *const clifdiff_vtables[] = {{{}}};", if vt.is_empty() { "0".into() } else { vt.join(",") })
         .unwrap();
     std::fs::write(dir.join("clifdiff_tables.h"), h)?;
     std::fs::write(dir.join("diffharness.c"), DIFF_HARNESS_C)?;
@@ -886,10 +990,12 @@ fn diff_in(cfg: &DiffConfig, dir: &Path) -> Result<bool> {
     }
     defined.extend(names.iter().cloned());
     defined.insert("clifdiff_thunks".to_string());
+    defined.extend((0..names.len()).map(|k| format!("clifdiff_thunk_{k}")));
     let mut undef: Vec<String> = undefined.into_iter().filter(|s| !defined.contains(s)).collect();
     undef.sort();
     let called: HashSet<String> = funcs.iter().flat_map(|f| clif2obj::callees(f).unwrap_or_default()).collect();
-    let mut stubs = String::from(".text\n");
+    // In their own section at a fixed address: stub addresses do not depend on the engine.
+    let mut stubs = String::from(".section clifd_stubs,\"ax\",@progbits\n");
     let mut dead = 0u64;
     let mut stub_report = Vec::new();
     let mut trap_stubs: HashSet<String> = HashSet::new();
@@ -898,7 +1004,7 @@ fn diff_in(cfg: &DiffConfig, dir: &Path) -> Result<bool> {
             ALLOCATOR.iter().find(|(suffix, _)| s == suffix || s.ends_with(&format!("_{suffix}"))).map(|(_, t)| t.to_string())
         });
         if let Some(t) = alias {
-            writeln!(stubs, ".globl {s}\n.p2align 2\n{s}:\n  b {t}").unwrap();
+            writeln!(stubs, ".globl {s}\n.p2align 2\n{s}:\n  adrp x16, {t}\n  add x16, x16, :lo12:{t}\n  br x16").unwrap();
             stub_report.push(json!({"symbol": s, "alias": t}));
         } else if !called.contains(s) {
             writeln!(stubs, ".globl {s}\n.set {s}, {:#x}", DEAD_DATA_ADDR + 64 * dead).unwrap();
@@ -911,8 +1017,20 @@ fn diff_in(cfg: &DiffConfig, dir: &Path) -> Result<bool> {
         }
     }
     let mut thunks = String::from(".section clifd_thunks,\"ax\",@progbits\n.globl clifdiff_thunks\nclifdiff_thunks:\n");
+    // A thunk loads its target from `clifdiff_fnptrs` (another fixed-address section), so the
+    // thunks' own bytes, which a call may read through a pointer, are engine-independent.
+    for k in 0..names.len() {
+        writeln!(
+            thunks,
+            ".p2align 4\n.globl clifdiff_thunk_{k}\nclifdiff_thunk_{k}:\n  adrp x16, clifdiff_fnptrs\n  \
+             add x16, x16, :lo12:clifdiff_fnptrs\n  ldr x16, [x16, #{}]\n  br x16",
+            8 * k
+        )
+        .unwrap();
+    }
+    thunks.push_str(".section clifd_fnptrs,\"a\",@progbits\n.p2align 3\nclifdiff_fnptrs:\n");
     for n in &names {
-        writeln!(thunks, ".p2align 4\n  adrp x16, {n}\n  add x16, x16, :lo12:{n}\n  br x16").unwrap();
+        writeln!(thunks, "  .quad {n}").unwrap();
     }
     let thunks_s = dir.join("thunks.s");
     std::fs::write(&thunks_s, thunks)?;
@@ -934,7 +1052,9 @@ fn diff_in(cfg: &DiffConfig, dir: &Path) -> Result<bool> {
              .got : {{ *(.got .got.*) }}\n  .bss : {{ *(.bss .bss.* COMMON) }}\n  \
              . = {RO_ADDR:#x};\n  clifd_ro : {{ *(clifd_ro) }}\n  \
              . = {RW_ADDR:#x};\n  clifd_rw : {{ *(clifd_rw) }}\n  \
-             . = {THUNK_ADDR:#x};\n  clifd_thunks : {{ *(clifd_thunks) }}\n}}\n"
+             . = {THUNK_ADDR:#x};\n  clifd_thunks : {{ *(clifd_thunks) }}\n  \
+             . = {STUB_ADDR:#x};\n  clifd_stubs : {{ *(clifd_stubs) }}\n  \
+             . = {FNPTR_ADDR:#x};\n  clifd_fnptrs : {{ *(clifd_fnptrs) }}\n}}\n"
         ),
     )?;
     let link = |engine_objs: &[PathBuf], out: &Path| -> Result<()> {
@@ -1068,7 +1188,7 @@ fn diff_in(cfg: &DiffConfig, dir: &Path) -> Result<bool> {
         let fi = &info[f as usize];
         let rec = json!({
             "func": fi.name,
-            "params": kinds[f as usize],
+            "params": kinds[f as usize].iter().map(|k| k.0).collect::<Vec<_>>(),
             "vectors": r.vectors,
             "agree": r.agree,
             "agree_masked": r.masked,

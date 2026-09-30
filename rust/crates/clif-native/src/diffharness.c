@@ -1,12 +1,14 @@
 /* Freestanding aarch64 Linux harness of `clif-native --diff` (differential testing of two
- * compilations of the same CLIF file, docs/contracts/drivers.md).
+ * compilations of the same CLIF file; docs/research/rust-route.md "Native coverage").
  *
  * The same harness object is linked with each engine's object (the Lean backend's, and
  * Cranelift's), so both executables generate the same inputs and report the same record
  * format. clif-native generates `clifdiff_tables.h`, which defines
- *   CLIFDIFF_NFNS, CLIFDIFF_NDATA, CLIFDIFF_SEED, CLIFDIFF_TIMEOUT_US,
+ *   CLIFDIFF_NFNS, CLIFDIFF_NDATA, CLIFDIFF_NVTABLES, CLIFDIFF_SEED, CLIFDIFF_TIMEOUT_US,
  *   static const struct clifdiff_fn clifdiff_fns[];     (every function of the file)
  *   static const u8 *const clifdiff_data[];             (every `; data:` object)
+ *   static const u8 *const clifdiff_vtables[];          (those that point at functions)
+ *   static const unsigned short *const clifdiff_cands[]; ({n, fn...}: same-signature lists)
  *
  * Usage: `exe F0 F1 V0 V1 VSTART`: for functions F0..F1-1 (the first one from vector VSTART,
  * after a restart), vectors V0..V1-1 and stack configurations 0 and 1, generate the
@@ -25,7 +27,7 @@
  *
  * Inputs, from a PRNG seeded with (seed, fn, vector): the 64 KiB arena at a fixed address
  * is filled with a mix of pointers into itself, small integers, zeros, random words and
- * pointers to data objects / to fixed-address thunks of the file's functions; each
+ * pointers to data objects (vtables more often) / to fixed-address thunks of the file's functions; each
  * parameter gets a value by its kind (pointer parameters, as inferred by clif-native, mostly
  * point into the arena; `sret` points at a reserved arena tail). Both configurations use the
  * same inputs; they differ in the stack base and in the fill pattern of the stack and of
@@ -43,7 +45,9 @@ struct clifdiff_fn {
   const u8 *code;        /* the function itself (for code-address canonicalisation) */
   u32 nparams;
   u32 nret;
-  const u8 *pdesc;       /* per parameter: {size in bytes, kind: 0 int, 1 pointer, 2 sret} */
+  const u8 *pdesc;       /* per parameter: {size in bytes, kind: 0 int, 1 pointer, 2 sret,
+                            3 code pointer, 4 pointer to a code-pointer table; u16 index into
+                            clifdiff_cands (kind 3: the functions of the called signature)} */
 };
 
 #include "clifdiff_tables.h"
@@ -229,10 +233,12 @@ static void fill_arena(void) {
   for (u64 k = 0; k < ARENA_SIZE / 8; k++) {
     u64 r = next() & 15;
     if (r < 4) w[k] = arena_ptr();
-    else if (r < 8) w[k] = next() % 17;
-    else if (r < 10) w[k] = 0;
-    else if (r < 14) w[k] = next();
-    else if (r == 14 && CLIFDIFF_NDATA > 0) w[k] = (u64)clifdiff_data[next() % (CLIFDIFF_NDATA ? CLIFDIFF_NDATA : 1)];
+    else if (r < 7) w[k] = next() % 17;
+    else if (r < 9) w[k] = 0;
+    else if (r < 12) w[k] = next();
+    else if (r == 12 && CLIFDIFF_NDATA > 0) w[k] = (u64)clifdiff_data[next() % (CLIFDIFF_NDATA ? CLIFDIFF_NDATA : 1)];
+    else if (r < 15 && CLIFDIFF_NVTABLES > 0)
+      w[k] = (u64)clifdiff_vtables[next() % (CLIFDIFF_NVTABLES ? CLIFDIFF_NVTABLES : 1)];
     else w[k] = (u64)clifdiff_thunks + 16 * (next() % CLIFDIFF_NFNS);
   }
   for (u64 k = 0; k < ARENA_SIZE / 8; k++) ((u64 *)ARENA_INIT)[k] = w[k];
@@ -243,10 +249,24 @@ static u8 buf[256] __attribute__((aligned(16)));
 static void gen_args(const struct clifdiff_fn *fd) {
   for (u32 k = 0; k < sizeof buf; k++) buf[k] = 0;
   for (u32 i = 0; i < fd->nparams; i++) {
-    u32 size = fd->pdesc[2 * i], kind = fd->pdesc[2 * i + 1];
+    const u8 *pd = fd->pdesc + 4 * i;
+    u32 size = pd[0], kind = pd[1], cand = pd[2] | (u32)pd[3] << 8;
     u64 lo, hi = 0;
     if (kind == 2) lo = (u64)ARENA + SRET_OFF;
     else if (kind == 1) lo = gen_ptr();
+    else if (kind == 3) {
+      /* a function of the called signature if there is one, else any function */
+      u64 r = next() % 100;
+      const unsigned short *c = cand ? clifdiff_cands[cand] : 0;
+      u64 k = c && c[0] ? c[1 + next() % c[0]] : next() % CLIFDIFF_NFNS;
+      lo = r < 85 ? (u64)clifdiff_thunks + 16 * k : gen_int(size);
+    }
+    else if (kind == 4) {
+      u64 r = next() % 100;
+      lo = r < 70 && CLIFDIFF_NVTABLES > 0 ? (u64)clifdiff_vtables[next() % (CLIFDIFF_NVTABLES ? CLIFDIFF_NVTABLES : 1)]
+           : r < 80 && CLIFDIFF_NDATA > 0 ? (u64)clifdiff_data[next() % (CLIFDIFF_NDATA ? CLIFDIFF_NDATA : 1)]
+           : r < 92 ? arena_ptr() : gen_int(size);
+    }
     else lo = gen_int(size);
     if (size == 16) {
       u64 r = next() & 3;

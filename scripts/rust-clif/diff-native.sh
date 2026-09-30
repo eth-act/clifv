@@ -2,7 +2,7 @@
 # Native differential test of the Lean backend over the whole Rust survey corpus: every
 # function of every dumped crate (debug / release / release-oc), Lean-backend object vs
 # Cranelift's own aarch64 code for the same CLIF, called with generated inputs under
-# qemu-aarch64-static (`clif-native --diff`, docs/contracts/drivers.md).
+# qemu-aarch64-static (`clif-native --diff`, docs/research/rust-route.md "Native coverage").
 #
 # Per crate: normalise the unopt dump with its recovered data image (clif-data-export),
 # compile it with `lean-backend`, then `clif-native --diff` links both engines' objects with
