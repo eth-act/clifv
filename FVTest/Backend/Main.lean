@@ -61,7 +61,17 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
     | some _ => lg.unverified ++ lg.accepted.map
         (·, "i128 legalized and optimised (outside backend_correct_legal: --opt)")
     | none => lg.unverified
-  let fa ← compileFileIO alloc pf unv128
+  -- the mid-end and `i128` theorems cover functions without `try_call` only
+  let unvTry := pf.funcs.filterMap fun p => match p.func with
+    | .ok f =>
+      if !hasTryCall f then none
+      else if o.opt.isSome then
+        some (p.name, "try_call (outside backend_correct_opt_proven: try_call-free functions only)")
+      else if lg.accepted.contains p.name then
+        some (p.name, "try_call in an i128-legalized function (outside backend_correct_legal)")
+      else none
+    | .error _ => none
+  let fa ← compileFileIO alloc pf (unv128 ++ unvTry)
   if output.endsWith ".o" || o.dump.isSome then
     match fa.layout with
     | .error e =>
@@ -86,6 +96,10 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
     IO.eprintln s!"lean-backend: {input}: %{n}: unsupported: {why}"
   for (n, why) in fa.unverified do
     IO.eprintln s!"lean-backend: {input}: %{n}: compiled, unverified (outside backend_correct): {why}"
+  for p in pf.funcs do
+    if let .ok f := p.func then
+      if hasTryCall f && fa.funcs.any (·.name == p.name) && !fa.unverified.any (·.1 == p.name) then
+        IO.eprintln s!"lean-backend: {input}: %{p.name}: compiled, verified for normal returns (try_call: unwinding, landing pads and the LSDA trusted)"
   return 0
 
 def main (args : List String) : IO UInt32 := do

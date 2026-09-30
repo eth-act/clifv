@@ -37,7 +37,8 @@ theorem rel_holds_slots {Γ : Rel} {f g : Clif.Function} (h : g.slots = f.slots)
   simp only [Rel.holds, SlotRel, h]
 
 theorem inSubset_opt (cfg : Opt.Config) {p : Clif.Program} {f : Clif.Function}
-    (hsub : InSubset p f) : InSubset (Opt.optimizeProgram p cfg) (Opt.optimize f cfg) := by
+    (hsub : InSubset p f) (hnt : ∀ B ∈ f.blocks, B.term.isTry = false) :
+    InSubset (Opt.optimizeProgram p cfg) (Opt.optimize f cfg) := by
   have hF := Opt.optimize_facts cfg f
   have hname : ∀ g : Clif.Function, (Opt.optimize g cfg).name = g.name :=
     fun g => (Opt.optimize_facts cfg g).name
@@ -46,8 +47,8 @@ theorem inSubset_opt (cfg : Opt.Config) {p : Clif.Program} {f : Clif.Function}
     simp only [Clif.Program.func?, Opt.optimizeProgram, List.find?_map]
     rw [show ((fun x : Clif.Function => x.name == n) ∘ fun x => Opt.optimize x cfg) =
       (fun x => x.name == n) from by funext g; simp [hname]]
-  refine ⟨?_, hF.subsetE hsub.subsetE, by rw [hF.sig]; exact hsub.regParams, ?_, ?_, ?_,
-    (hF.noCI ⟨hsub.noCI, Compile.noTry_of_functionE hsub.subsetE⟩).1, hF.noFA hsub.noFA⟩
+  refine ⟨?_, hF.subsetE hsub.subsetE, by rw [hF.sig]; exact hsub.regParams, ?_, ?_, ?_, ?_,
+    (hF.noCI ⟨hsub.noCI, hnt⟩).1, hF.noFA hsub.noFA⟩
   · rw [hfind, hF.name, hsub.func]; rfl
   · intro b hb st hst fn args hc e he
     obtain ⟨b0, hb0, st0, hst0, args0, hc0⟩ :=
@@ -55,6 +56,9 @@ theorem inSubset_opt (cfg : Opt.Config) {p : Clif.Program} {f : Clif.Function}
     have he0 : f.extern? fn = some e := by
       simpa [Clif.Function.extern?, hF.externs] using he
     rw [hfind, hsub.externCalls b0 hb0 st0 hst0 fn args0 hc0 e he0]; rfl
+  · intro b hb fn args et ht
+    have := (hF.noCI ⟨hsub.noCI, hnt⟩).2 b hb
+    rw [ht] at this; cases this
   · rw [hF.externs]; exact hsub.callRegArgs
   · constructor
     · rw [hF.sig]; exact hsub.abiSigs.1
@@ -89,14 +93,14 @@ theorem clifEntry_opt (cfg : Opt.Config)
     exact hrel args cs.frame.regs cs.frame.slots (hty.symm) hregs hcs.slotIds
   · rw [hcs.callers]; exact .nil _
 
-/-- An in-subset function has no `call_indirect` (`InSubset.noCI`), no tail call and no `try_call`
-(not in E), and
-calls only externs that are not functions of `p`: the source run from `f` stays in `f`. -/
-theorem ciFree_of_subset {p : Clif.Program} {f : Clif.Function} (hsub : InSubset p f) :
-    Opt.CIFree p (· = f) where
+/-- An in-subset function without `try_call` has no `call_indirect` (`InSubset.noCI`) and no tail
+call (not in E), and calls only externs that are not functions of `p`: the source run from `f`
+stays in `f`. -/
+theorem ciFree_of_subset {p : Clif.Program} {f : Clif.Function} (hsub : InSubset p f)
+    (hnt : ∀ B ∈ f.blocks, B.term.isTry = false) : Opt.CIFree p (· = f) where
   noCI := by
     rintro g rfl
-    exact ⟨hsub.noCI, Compile.noTry_of_functionE hsub.subsetE⟩
+    exact ⟨hsub.noCI, hnt⟩
   call := by
     rintro g rfl b hb st hst fn args hi e he h hh
     rw [hsub.externCalls b hb st hst fn args hi e he] at hh
@@ -129,7 +133,8 @@ theorem backend_correct_opt (cfg : Opt.Config)
     (hS : Opt.SimplifyPassSim cfg.simplifyFn cfg.skeletonFn)
     {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}
     {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
-    (hsub : InSubset p f) (hc : Compiled (Opt.optimize f cfg) k vc vcp rf af fa fb)
+    (hsub : InSubset p f) (hnt : ∀ B ∈ f.blocks, B.term.isTry = false)
+    (hc : Compiled (Opt.optimize f cfg) k vc vcp rf af fa fb)
     {X : ExtSem} {H : ArmHooks} {syms : String → Option Nat} {slotOff : Nat} {env : Clif.Env}
     (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
     (hC : ∀ s, CalleeOk
@@ -151,7 +156,7 @@ theorem backend_correct_opt (cfg : Opt.Config)
   obtain ⟨hcs', hSR⟩ := clifEntry_opt cfg hS hcs
   have hP : Opt.FunsSim p.funcs (Opt.optimizeProgram p cfg).funcs :=
     Opt.FunsSim.map (T := (Opt.optimize · cfg)) (Opt.optimize_sim cfg hS)
-  obtain ⟨n', hn⟩ := Opt.runLoop_refines hE hP (ciFree_of_subset hsub) fuel cs (optEntry cfg f cs)
+  obtain ⟨n', hn⟩ := Opt.runLoop_refines hE hP (ciFree_of_subset hsub hnt) fuel cs (optEntry cfg f cs)
     hSR (inv_of_entry hcs)
   have hslots : (optEntry cfg f cs).frame.slots = cs.frame.slots ∧
       (optEntry cfg f cs).mem = cs.mem := by
@@ -159,7 +164,8 @@ theorem backend_correct_opt (cfg : Opt.Config)
     obtain ⟨R, -, hent'⟩ := (Opt.optimize_sim cfg hS f).sim cs.mem.symbols
     obtain ⟨b', hb', -⟩ := hent' b hb
     simp [optEntry, hb']
-  have hA := backend_correct_final (inSubset_opt cfg hsub) hc hcov hC
+  have hA := backend_correct_final (inSubset_opt cfg hsub hnt) hc hcov hC
+    (fun ⟨B, hB, h⟩ => by rw [(hF.noCI ⟨hsub.noCI, hnt⟩).2 B hB] at h; cases h)
     (fun s' => by rw [rel_holds_slots hF.slots, hF.externs]; exact hX s') hsym hslot hent hres hbe
     (by rw [hF.sig]; exact hargs) hcs'
     (by rw [rel_holds_slots hF.slots, hslots.1, hslots.2]; exact hrel) htr n'

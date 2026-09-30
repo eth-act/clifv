@@ -121,7 +121,9 @@ theorem iselSim_of_driver {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LS
   have hB0 : f.blocks[0]? = some B0 := by
     simpa [Clif.Function.entry?, List.head?_eq_getElem?] using hent
   have hrun := driver_correct H hB0 hce.callers hce.func rfl hbody hterm hregs hty.symm (ρ₀ := ρ₀) hrel
-    (fun i v h => hargs i v h) htr fuel
+    (fun i v h => hargs i v h) htr.stmt
+    (fun s c fn args et hr hs hb hT B hB => htr.tryCall s c fn args et hr hs hb hT B (hce.func ▸ hB))
+    fuel
   refine ⟨fun vals cm h => ?_, fun c h => ?_⟩
   · rw [h] at hrun
     obtain ⟨us, outs, w, cm0, hret, h1, h2, h3, h4, h5⟩ := hrun
@@ -156,8 +158,9 @@ Lean backend (`Compiled`, including M7's validators) and loaded at `base`, an Ar
 from an ABI entry state `s` with enough stack, whose CLIF counterpart `cs` has its stack slots at
 the body frame's slot region (relative to the body-entry world `w₀`) and its memory related to the
 Arm memory, refines the CLIF run: returns with the same values (low bits) and memory, traps at a
-trap site with the same code (explicit traps). Hypotheses: M4 (`hrules`, `hex`, `hterms`),
-M6+M5 (`hM6`), the shared VCode semantics of each activation (`hRef`, `hds`). -/
+trap site with the same code (explicit traps; a `try_call`: its normal return). Hypotheses: M4
+(`hrules`, `hex`, `hterms`, `htries`), M6+M5 (`hM6`), the shared VCode semantics of each
+activation (`hRef`, `hds`). -/
 theorem backend_correct {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}
     {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb)
@@ -170,6 +173,8 @@ theorem backend_correct {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp
     (hcallRules : CallRulesCorrect Isle.Aarch64.program)
     (hmemRules : MemRulesCorrect Isle.Aarch64.program)
     (hterms : ∀ s, TermCalls (sem s) (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w))
+    (htries : ∀ s, TryCalls f (sem s) (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w)
+      env p)
     -- M6 + M5
     (hM6 : RegLevelCorrect sem F astep vcp af fb)
     -- the shared VCode semantics (M6's `csem`)
@@ -205,11 +210,14 @@ theorem backend_correct {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp
     regArgs := callRegArgs_of_subset hsub
     brIdx := hbr
     noTail := noTail_of_subset hsub
-    noTry := Compile.noTry_of_functionE hsub.subsetE
+    noTryCI := Compile.noTryCI_of_functionE hsub.subsetE
+    tries := htries s'
+    tryExt := hsub.tryExterns
     cfg := cfg_of_prepare hc.prepare }
 
 /-- **`backend_correct` from M4's rule statements only**: the terminator calls (`TermCalls`)
-from M4's terminator rules (`termCalls_of_rules`). -/
+from M4's terminator rules (`termCalls_of_rules`), the `try_call` calls (`TryCalls`) from M4's
+`try_call` rules (`tryCalls_of_rules`). -/
 theorem backend_correct_of_rules {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}
     {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb)
@@ -225,6 +233,8 @@ theorem backend_correct_of_rules {p : Clif.Program} {f : Clif.Function} {k : Nat
     (htermUn : TermUnmatchable Isle.Aarch64.program)
     (hbranch : BranchRulesCorrect Isle.Aarch64.program)
     (hbranchEx : BranchExcludedUnmatchable Isle.Aarch64.program)
+    (htryRules : TryRulesCorrect Isle.Aarch64.program)
+    (htryUn : TryUnmatchable Isle.Aarch64.program)
     -- M6 + M5
     (hM6 : RegLevelCorrect sem F astep vcp af fb)
     -- the shared VCode semantics (M6's `csem`)
@@ -245,6 +255,8 @@ theorem backend_correct_of_rules {p : Clif.Program} {f : Clif.Function} {k : Nat
   backend_correct hsub hc hrules hex hcallRules hmemRules
     (fun s' => termCalls_of_rules htermRules htermUn hbranch hbranchEx (hRef s')
       (mrStable_holds ⟨F s', syms, slotOff⟩ f))
+    (fun s' => tryCalls_of_rules htryRules htryUn (hRef s')
+      (mrStable_holds ⟨F s', syms, slotOff⟩ f) (hcalls s'))
     hM6 hRef hds hcalls hmem hent hres hbe hargs hcs hrel htr fuel
 
 end E2E

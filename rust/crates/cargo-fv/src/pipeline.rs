@@ -239,6 +239,7 @@ fn fallback_all(funcs: &[(String, Dump)], why: &str) -> Vec<FnReport> {
             instance: d.instance.clone(),
             status: Status::Fallback,
             reason: Some(why.to_string()),
+            normal_returns: false,
         })
         .collect()
 }
@@ -271,7 +272,13 @@ pub fn process_object(cfg: &Config, index: &DumpIndex, obj: &Path, id: &str) -> 
         } else {
             return true;
         };
-        forced.push(FnReport { symbol: s.clone(), instance: d.instance.clone(), status: Status::Fallback, reason: Some(why.into()) });
+        forced.push(FnReport {
+            symbol: s.clone(),
+            instance: d.instance.clone(),
+            status: Status::Fallback,
+            reason: Some(why.into()),
+            normal_returns: false,
+        });
         false
     });
     let mut res = process_selected(cfg, index, obj, id, &syms, &all, funcs);
@@ -363,9 +370,9 @@ fn compile_one(
             if why.contains("does not contain") && opt.exists() {
                 let out_opt = outdir.join(format!("f{i}.opt.o"));
                 let c2 = run_backend(&opt, &out_opt);
-                if let Compiled::Ok { obj, unverified } = c2 {
+                if let Compiled::Ok { obj, unverified, normal_returns } = c2 {
                     if missing_ref(&obj, syms).is_none() {
-                        return Compiled::Ok { obj, unverified };
+                        return Compiled::Ok { obj, unverified, normal_returns };
                     }
                 }
             }
@@ -469,9 +476,10 @@ fn trap_bodies(obj: &Path, names: &[String]) -> Result<(), String> {
     fs::write(obj, data).map_err(|e| format!("{}: {e}", obj.display()))
 }
 
-/// How lean-backend classified one function.
+/// How lean-backend classified one function (`normal_returns`: a `try_call` function the
+/// theorem covers for its normal returns only).
 enum Compiled {
-    Ok { obj: PathBuf, unverified: Option<String> },
+    Ok { obj: PathBuf, unverified: Option<String>, normal_returns: bool },
     Fallback(String),
 }
 
@@ -491,7 +499,11 @@ fn classify(cfg: &Config, stderr: &str, ok: bool, out: &Path, symbol: &str) -> C
     // emitter-subset closure by design) is the more precise one, so it wins.
     let mut unverified: Option<String> = None;
     let mut outside_closure: Option<String> = None;
+    let mut normal_returns = false;
     for l in stderr.lines() {
+        if l.contains(": compiled, verified for normal returns") {
+            normal_returns = true;
+        }
         if let Some((_, why)) = l.split_once(": unsupported: ") {
             return Compiled::Fallback(format!("unsupported: {why}"));
         }
@@ -517,7 +529,7 @@ fn classify(cfg: &Config, stderr: &str, ok: bool, out: &Path, symbol: &str) -> C
             None => why.into(),
         });
     }
-    Compiled::Ok { obj: out.to_path_buf(), unverified }
+    Compiled::Ok { obj: out.to_path_buf(), unverified, normal_returns }
 }
 
 fn write_list(path: &Path, items: impl IntoIterator<Item = String>) -> Result<(), String> {
@@ -672,12 +684,18 @@ fn process_in(
     let mut ours: Vec<(String, PathBuf)> = Vec::new();
     let mut referenced_locals: BTreeSet<String> = BTreeSet::new();
     for ((sym, d), c) in funcs.iter().zip(results) {
-        let mut report = |status, reason: Option<String>| {
-            reports.push(FnReport { symbol: sym.clone(), instance: d.instance.clone(), status, reason })
+        let mut report = |status, reason: Option<String>, normal_returns: bool| {
+            reports.push(FnReport {
+                symbol: sym.clone(),
+                instance: d.instance.clone(),
+                status,
+                reason,
+                normal_returns,
+            })
         };
         match c {
-            Compiled::Fallback(why) => report(Status::Fallback, Some(why)),
-            Compiled::Ok { obj: o, unverified } => {
+            Compiled::Fallback(why) => report(Status::Fallback, Some(why), false),
+            Compiled::Ok { obj: o, unverified, normal_returns } => {
                 let f = read_syms(&o)?;
                 let (mut bad, locals) = ref_problem(&o, syms)?;
                 let extra: Vec<&String> = f.text.iter().filter(|(n, g)| **g && *n != sym).map(|(n, _)| n).collect();
@@ -688,13 +706,13 @@ fn process_in(
                     bad = Some("the function's name is defined locally more than once in cg_clif's object".into());
                 }
                 match bad {
-                    Some(b) => report(Status::Fallback, Some(b)),
+                    Some(b) => report(Status::Fallback, Some(b), false),
                     None => {
                         referenced_locals.extend(locals);
                         ours.push((sym.clone(), o));
                         match unverified {
-                            Some(u) => report(Status::Unverified, Some(u)),
-                            None => report(Status::Verified, None),
+                            Some(u) => report(Status::Unverified, Some(u), false),
+                            None => report(Status::Verified, None, normal_returns),
                         }
                     }
                 }

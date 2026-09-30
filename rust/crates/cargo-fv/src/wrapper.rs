@@ -229,6 +229,7 @@ fn process_objects(cfg: &Config, m: &UnitMeta, objs: &[PathBuf], r: &mut UnitRep
                             instance: s.clone(),
                             status: Status::Fallback,
                             reason: Some("no CLIF dump (cg_clif emitted none for this unit)".into()),
+                            normal_returns: false,
                         });
                     }
                 }

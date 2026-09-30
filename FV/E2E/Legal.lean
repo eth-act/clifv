@@ -19,7 +19,8 @@ Discharged premises: the environment contracts of `check_refines` for `Clif.Rust
 backend relation), and `NoMemTrap` of the source run (from the source's `TrapsExplicit`: a
 source run whose traps are all explicit has no load/store trap).
 
-Remaining premises, beyond `backend_correct_final`'s about `g`: calls of `f`/`g` go to the
+Remaining premises, beyond `backend_correct_final`'s about `g` (without its `try_call` premise:
+`g` has no `try_call`, `hnt`): calls of `f`/`g` go to the
 environment (`hext`/`hext'`: no function of the program has the name of a declared extern;
 `lean-backend` checks both), and `TrapsExplicit` of the source run. The backend's
 `TrapsExplicit` premise stays on the run of `g` (as for `backend_correct_opt_proven`, it is not
@@ -54,7 +55,7 @@ theorem noMemTrap_of_trapsExplicit {env : Clif.Env} {p : Clif.Program} {cs : Cli
   have hcs : (⟨cs.frame, [], cs.mem⟩ : Clif.State) = cs := by rw [← hcl]
   rw [hcs]
   intro s' hr c st rest hst hb
-  have he := h s' c st rest (reach_of_sreach hr) hst hb
+  have he := h.stmt s' c st rest (reach_of_sreach hr) hst hb
   refine ⟨fun op t fl a o hi => ?_, fun op t fl x a o hi => ?_⟩ <;>
     (rw [hi] at he; cases he)
 
@@ -69,7 +70,8 @@ theorem backend_correct_legal_env {f g : Clif.Function} {cert : Opt.Legalize128.
     (hchk : Opt.Legal.check f g cert = true)
     {p p' : Clif.Program} {k : Nat} {vc vcp : VCode}
     {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
-    (hsub : InSubset p' g) (hc : Compiled g k vc vcp rf af fa fb)
+    (hsub : InSubset p' g) (hnt : ∀ B ∈ g.blocks, B.term.isTry = false)
+    (hc : Compiled g k vc vcp rf af fa fb)
     {X : ExtSem} {H : ArmHooks} {syms : String → Option Nat} {slotOff : Nat} {env : Clif.Env}
     -- the environment's contracts (`FV/Opt/Proof/LegalExt.lean`)
     (hH : Opt.Legal.HelperOk env) (hXL : Opt.Legal.ExtLegal env)
@@ -110,7 +112,8 @@ theorem backend_correct_legal_env {f g : Clif.Function} {cert : Opt.Legalize128.
   have hst' : (⟨cs'.frame, [], cs.mem⟩ : Clif.State) = cs' := by rw [← hcs'.callers, ← hmem]
   rw [hst] at hr1 hr2
   rw [hst'] at hr1 hr2
-  have hB := fun k => backend_correct_final hsub hc hcov hC hX hsym hslot hent hres hbe hargs hcs'
+  have hB := fun k => backend_correct_final hsub hc hcov hC
+    (fun ⟨B, hB, h⟩ => by rw [hnt B hB] at h; cases h) hX hsym hslot hent hres hbe hargs hcs'
     hrel htr k
   cases hrun : Clif.runLoop env p fuel cs with
   | returned vals m1 =>
@@ -136,7 +139,8 @@ theorem backend_correct_legal {f g : Clif.Function} {cert : Opt.Legalize128.Cert
     (hchk : Opt.Legal.check f g cert = true)
     {p p' : Clif.Program} {k : Nat} {vc vcp : VCode}
     {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
-    (hsub : InSubset p' g) (hc : Compiled g k vc vcp rf af fa fb)
+    (hsub : InSubset p' g) (hnt : ∀ B ∈ g.blocks, B.term.isTry = false)
+    (hc : Compiled g k vc vcp rf af fa fb)
     {X : ExtSem} {H : ArmHooks} {syms : String → Option Nat} {slotOff : Nat}
     (hext : ∀ fn e, f.extern? fn = some e → p.func? e.name = none)
     (hext' : ∀ fn e, g.extern? fn = some e → p'.func? e.name = none)
@@ -160,7 +164,7 @@ theorem backend_correct_legal {f g : Clif.Function} {cert : Opt.Legalize128.Cert
     (fuel : Nat) :
     ArmRefinesLegal ((Opt.Legal.groups f.sig.returns).getD []) fb base ra (ArmStepX X H fa) s
       (Clif.runLoop Clif.Rust.env p fuel cs) :=
-  backend_correct_legal_env hchk hsub hc Clif.Rust.helperOk_env Clif.Rust.extLegal_env
+  backend_correct_legal_env hchk hsub hnt hc Clif.Rust.helperOk_env Clif.Rust.extLegal_env
     Clif.Rust.envKeepsAllocs_env hext hext' hcov hC hX hsym hslot hent hres hbe hexp hargs hcs
     hcs' hsl hmem hrel htrS htr fuel
 

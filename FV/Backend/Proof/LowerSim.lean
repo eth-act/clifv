@@ -1161,59 +1161,6 @@ theorem stepTry_spec {env : Clif.Env} {p : Clif.Program} {s : Clif.State} {fn : 
     · cases e
     · cases e; exact ⟨ext, bc, rvals, cm', regs', h1, h2, h3, h4, rfl⟩
 
-theorem tryInfoOf_spec {sig : Clif.Signature} {items : List (Option Nat)} {ls : List Label}
-    {info : TryInfo} (h : tryInfoOf sig items ls = some info) :
-    info.continuation = ls.getLastD 0 ∧ info.handlers.length + 1 = ls.length := by
-  unfold tryInfoOf at h
-  split at h
-  · cases h
-  · rename_i hl
-    simp only [bne_iff_ne, ne_eq, Decidable.not_not] at hl
-    cases h
-    refine ⟨rfl, ?_⟩
-    simp only [List.length_map, List.length_zip]
-    omega
-
-theorem exnTableOpnd_cc {f : Clif.Function} {et : Clif.ExnTable} {sig : Clif.Signature}
-    {items : List (Option Nat)} (h : exnTableOpnd f et = .ok (sig, items)) :
-    payloadRegs sig.callConv = [.x 0, .x 1] := by
-  unfold exnTableOpnd at h
-  cases hs : f.sigDecls.lookup et.sig with
-  | none => simp [hs] at h
-  | some sig' =>
-    simp only [hs] at h
-    split at h
-    · simp [bind, Except.bind, throw, throwThe, MonadExceptOf.throw] at h
-    · rename_i hcc
-      simp only [bind, Except.bind, pure, Except.pure] at h
-      split at h
-      · cases h
-      · simp only [Except.ok.injEq, Prod.mk.injEq] at h
-        obtain ⟨rfl, -⟩ := h
-        simp only [Bool.not_eq_true, Bool.not_eq_false', Bool.or_eq_true, Option.isNone_iff_eq_none,
-          beq_iff_eq] at hcc
-        rcases hcc with h | h <;> simp [payloadRegs, h]
-
-theorem tryCallData_spec {f : Clif.Function} {fn : Clif.FnRef} {args : List Clif.ValueId}
-    {et : Clif.ExnTable} {data : V} (h : tryCallData f (.tryCall fn args et) = .ok data) :
-    ∃ sig items ext, exnTableOpnd f et = .ok (sig, items) ∧ f.extern? fn = some ext ∧
-      ext.sig = sig := by
-  simp only [tryCallData] at h
-  cases he : exnTableOpnd f et with
-  | error e => simp [he, bind, Except.bind] at h
-  | ok q =>
-    obtain ⟨sig, items⟩ := q
-    cases hx : f.extern? fn with
-    | none => simp [he, hx, bind, Except.bind] at h
-    | some ext =>
-      by_cases hs : ext.sig = sig
-      · exact ⟨sig, items, ext, rfl, rfl, hs⟩
-      · simp [he, hx, hs, bind, Except.bind] at h
-
-theorem tryFix_append (info : TryInfo) (pre : List MInst) (c : CallInfo) :
-    tryFix info (pre ++ [.call c]) = pre ++ [.tryCall c info] := by
-  simp [tryFix]
-
 theorem vdefs_tryCall (c : CallInfo) (info : TryInfo) :
     vdefs (.tryCall c info) = vdefs (.call c) := by
   simp only [vdefs, operands_tryCall_call]
@@ -1221,14 +1168,6 @@ theorem vdefs_tryCall (c : CallInfo) (info : TryInfo) :
 theorem vuseNums_tryCall (c : CallInfo) (info : TryInfo) :
     vuseNums (.tryCall c info) = vuseNums (.call c) := by
   simp only [vuseNums, operands_tryCall_call]
-
-theorem returns_le_sigRets (sig : Clif.Signature) : sig.returns.length ≤ (sigRets sig).length := by
-  unfold sigRets
-  split
-  · split
-    · rename_i h; simp [List.isEmpty_iff.mp h]
-    · exact Nat.le_refl _
-  · exact Nat.le_refl _
 
 /-- The vreg number of a normal-return argument on the edge block (`normArgReg`; `bb`: the first
 return vreg). -/
@@ -1722,13 +1661,14 @@ theorem RunOk.prefix {vs vs' : VState CV Arm.ArmState} {o : Clif.Outcome}
   | _ => trivial
 
 /-- **Whole runs**: from matching states, every CLIF outcome is realised by the VCode run
-(`htr`: statements trap only explicitly; `htt`: a `try_call` terminator's step does not trap —
-the callee returns normally). -/
+(`htr`: statements trap only explicitly; `htt`: the step of one of `f`'s `try_call` terminators
+does not trap — the callee returns normally). -/
 theorem sim_run (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) {cs : Clif.State}
     (htr : ∀ s c st rest, Reach env p cs s → Clif.step env p s = .trapped c →
       s.frame.body = st :: rest → explicitTrapInst st.inst = true)
-    (htt : ∀ s c, Reach env p cs s → Clif.step env p s = .trapped c → s.frame.body = [] →
-      s.frame.term.isTry = false) :
+    (htt : ∀ s c fn args et, Reach env p cs s → Clif.step env p s = .trapped c →
+      s.frame.body = [] → s.frame.term = .tryCall fn args et → ∀ B ∈ f.blocks,
+        B.term ≠ .tryCall fn args et) :
     ∀ fuel s (vs : VState CV Arm.ArmState), Reach env p cs s →
       Match f ctx R gn bl A MR slots s vs → RunOk vc sem MR slots vs (Clif.runLoop env p fuel s) := by
   intro fuel
@@ -1781,9 +1721,7 @@ theorem sim_run (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) {cs : Clif.S
             | trapped c => exact absurd hs' (N1 c)
             | stuck => trivial
         | done vals cm => exact absurd hs (Tnd vals cm)
-        | trapped c =>
-          have := htt s c hr hs hbody
-          rw [hty] at this; cases this
+        | trapped c => exact absurd (hterm.symm.trans hT) (htt s c fn args et hr hs hbody hT B hBmem)
         | stuck => trivial
     | cons st rest =>
       have hext : ∀ fn args, st.inst = .call fn args → ∀ e, s.frame.func.extern? fn = some e →
@@ -1823,8 +1761,9 @@ theorem driver_correct (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     (hargs : ∀ (i : Nat) v, args[i]? = some v → VHolds v (regVal w₀ (.x (argIdx f.sig i))))
     (htr : ∀ s c st rest, Reach env p cs s → Clif.step env p s = .trapped c →
       s.frame.body = st :: rest → explicitTrapInst st.inst = true)
-    (htt : ∀ s c, Reach env p cs s → Clif.step env p s = .trapped c → s.frame.body = [] →
-      s.frame.term.isTry = false) (fuel : Nat) :
+    (htt : ∀ s c fn args et, Reach env p cs s → Clif.step env p s = .trapped c →
+      s.frame.body = [] → s.frame.term = .tryCall fn args et → ∀ B ∈ f.blocks,
+        B.term ≠ .tryCall fn args et) (fuel : Nat) :
     RunOk vc sem MR slots ⟨0, 0, ρ₀, w₀⟩ (Clif.runLoop env p fuel cs) := by
   obtain ⟨ρ₁, hstep, hm⟩ := entry_step H hB0 hcall hfunc hslots hbody hterm hregs hty hmr hargs
     (ρ₀ := ρ₀)

@@ -129,6 +129,10 @@ def callees (f : Clif.Function) : List String :=
 def hasTryCall (f : Clif.Function) : Bool :=
   f.blocks.any (·.term.isTry)
 
+/-- Does `f` have a `try_call_indirect`? -/
+def hasTryCallIndirect (f : Clif.Function) : Bool :=
+  f.blocks.any fun b => b.term matches .tryCallIndirect ..
+
 /-- `bmask`, `atomic_*` and `fence` in `f` (their lowering is Cranelift's, but the ISLE
 rules are outside the proven emitter-subset closure used by `E2E.backend_correct`). -/
 def hasUnproven (f : Clif.Function) : Bool :=
@@ -144,11 +148,12 @@ def hasTls (f : Clif.Function) : Bool :=
     | _ => false
 
 /-- Why a compiled function of `pf` is outside `E2E.backend_correct` (`E2E.InSubset`), if it is:
-`bmask`/atomic/fence instructions, `tls_value`, outside clif-subset-v2 E, stack-passed parameters,
-stack-passed call arguments (an extern with more than 8 parameters), or a call of a function
-of the file. -/
+`try_call_indirect`, `bmask`/atomic/fence instructions, `tls_value`, outside clif-subset-v2 E,
+stack-passed parameters, stack-passed call arguments (an extern with more than 8 parameters), or
+a call (also a `try_call`) of a function of the file. A `try_call` of an extern is inside the
+theorem for its normal return (`hasTryCall`: the landing pads and the LSDA are trusted). -/
 def unverifiedReason? (pf : Clif.ParsedFile) (f : Clif.Function) : Option String :=
-  if hasTryCall f then some "try_call / landing pads (outside backend_correct)"
+  if hasTryCallIndirect f then some "try_call_indirect (outside backend_correct)"
   else if hasUnproven f then some "bmask / atomic instructions / fence (outside backend_correct)"
   else if hasTls f then some "tls_value (outside backend_correct)"
   else if !Compile.functionE f then some "outside clif-subset-v2 E"
