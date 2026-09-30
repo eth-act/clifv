@@ -222,4 +222,118 @@ theorem pat_copy2 (a b : BitVec 64) :
       ρ 2 = some (V64 a) ∧ ρ 3 = some (V64 b) := by
   pat_eval; sem_bv; constructor <;> bv_decide
 
+/-! ## Constant shifts -/
+
+theorem ishl64 (x b : BitVec 64) : Sem.ishl x b = x <<< (b % 64#64) := by
+  simp only [Sem.ishl, Sem.shiftAmt, BitVec.shiftLeft_eq', BitVec.toNat_umod]; rfl
+theorem ushr64 (x b : BitVec 64) : Sem.ushr x b = x >>> (b % 64#64) := by
+  simp only [Sem.ushr, Sem.shiftAmt, BitVec.ushiftRight_eq', BitVec.toNat_umod]; rfl
+theorem sshr64 (x b : BitVec 64) : Sem.sshr x b = x.sshiftRight' (b % 64#64) := by
+  simp only [Sem.sshr, Sem.shiftAmt, BitVec.sshiftRight', BitVec.toNat_umod]; rfl
+
+theorem kn_toNat {n : Nat} (h : n < 128) : (BitVec.ofNat 128 n).toNat = n := by
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+theorem ofNat_n {n : Nat} (h : n < 128) :
+    BitVec.ofNat 64 n = (BitVec.ofNat 128 n).setWidth 64 := by
+  apply BitVec.eq_of_toNat_eq; simp <;> omega
+theorem ofNat_64sub {n : Nat} (h : n ≤ 64) :
+    BitVec.ofNat 64 (64 - n) = 64#64 - (BitVec.ofNat 128 n).setWidth 64 := by
+  apply BitVec.eq_of_toNat_eq; simp <;> omega
+theorem ofNat_sub64 {n : Nat} (h1 : 64 ≤ n) (h2 : n < 128) :
+    BitVec.ofNat 64 (n - 64) = (BitVec.ofNat 128 n).setWidth 64 - 64#64 := by
+  apply BitVec.eq_of_toNat_eq; simp <;> omega
+theorem ofNat_64subsub {n : Nat} (h1 : 64 ≤ n) (h2 : n < 128) :
+    BitVec.ofNat 64 (64 - (n - 64)) = 128#64 - (BitVec.ofNat 128 n).setWidth 64 := by
+  apply BitVec.eq_of_toNat_eq; simp <;> omega
+theorem kn_lt {n c : Nat} (h : n < c) (hc : c < 128) : BitVec.ofNat 128 n < BitVec.ofNat 128 c := by
+  rw [BitVec.lt_def, kn_toNat (by omega), kn_toNat hc]; exact h
+theorem kn_le {n c : Nat} (h : c ≤ n) (hn : n < 128) : BitVec.ofNat 128 c ≤ BitVec.ofNat 128 n := by
+  rw [BitVec.le_def, kn_toNat (by omega), kn_toNat hn]; exact h
+
+/-- The source shifts, by a constant amount. -/
+def shiftC (op : BinaryOp) (X : BitVec 128) (n : Nat) : BitVec 128 :=
+  match op with
+  | .ishl => X <<< n
+  | .ushr => X >>> n
+  | .sshr => X.sshiftRight n
+  | _ => X.rotateLeft n
+
+/-- Rewrite the source shift by the amount `n < 128` as a shift by the bit vector `k`. -/
+theorem shiftC_bv {op : BinaryOp} {n : Nat} (hn : n < 128) (X : BitVec 128) :
+    shiftC op X n = match op with
+      | .ishl => X <<< BitVec.ofNat 128 n
+      | .ushr => X >>> BitVec.ofNat 128 n
+      | .sshr => X.sshiftRight' (BitVec.ofNat 128 n)
+      | _ => X <<< BitVec.ofNat 128 n ||| X >>> (128#128 - BitVec.ofNat 128 n) := by
+  cases op <;> simp only [shiftC, BitVec.shiftLeft_eq', BitVec.ushiftRight_eq',
+    BitVec.sshiftRight', kn_toNat hn] <;>
+    first
+    | rfl
+    | (rw [BitVec.rotateLeft_def, Nat.mod_eq_of_lt hn]
+       have : (128#128 - BitVec.ofNat 128 n).toNat = 128 - n := by
+         rw [BitVec.toNat_sub, kn_toNat hn]; simp; omega
+       rw [this])
+
+/-- The end of a constant-shift branch: the amount generalised to `k`, the source value `X`
+opaque during the run, then the identities by `bv_decide`. -/
+macro "cs_fin" : tactic => `(tactic| (
+  generalize BitVec.ofNat 128 _ = k at *
+  pat_eval
+  simp only [ishl64, ushr64, sshr64, Sem.binary, Sem.bor]
+  subst_vars
+  try (generalize hk2 : 128#128 - k = k2 at *)
+  constructor <;> bv_decide))
+
+/-- The four branches of `constShift` (amount `0`, `(0, 64)`, `64`, `(64, 128)`), for one
+normalised operation `op` whose source value, by the bit-vector amount `k`, is `src k`. -/
+theorem cs_branches (op : BinaryOp) (hop : op = .ishl ∨ op = .ushr ∨ op = .sshr ∨ op = .rotl)
+    (n : Nat) (hn : n < 128) (xl xh : BitVec 64) (X : BitVec 128)
+    (hX : X = match op with
+      | .ishl => (xh ++ xl) <<< BitVec.ofNat 128 n
+      | .ushr => (xh ++ xl) >>> BitVec.ofNat 128 n
+      | .sshr => (xh ++ xl).sshiftRight' (BitVec.ofNat 128 n)
+      | _ => (xh ++ xl) <<< BitVec.ofNat 128 n ||| (xh ++ xl) >>> (128#128 - BitVec.ofNat 128 n)) :
+    ∃ ρ, runPat (canon [V64 xl, V64 xh]) (Pat.constShift op n) = some ρ ∧ Out128 ρ 2 3 X := by
+  have hk : BitVec.ofNat 128 n < 128#128 := by rw [BitVec.lt_def, kn_toNat hn]; simp; omega
+  by_cases h64 : n < 64
+  · have e1 := ofNat_n hn
+    by_cases h0 : n = 0
+    · have hz : BitVec.ofNat 128 n = 0#128 := by subst h0; rfl
+      have h0' : (n == 0) = true := by simp [h0]
+      rcases hop with rfl | rfl | rfl | rfl <;> simp only at hX <;>
+        simp only [Pat.constShift, h64, ite_true, h0', K, BitVec.ofInt_natCast, e1] <;> cs_fin
+    · have hk1 := kn_lt h64 (by omega)
+      have hk0 := kn_lt (show 0 < n by omega) hn
+      have e2 := ofNat_64sub (show n ≤ 64 by omega)
+      rcases hop with rfl | rfl | rfl | rfl <;> simp only at hX <;>
+        simp only [Pat.constShift, h64, ite_true, beq_iff_eq, h0, ite_false, K,
+          BitVec.ofInt_natCast, e1, e2] <;> cs_fin
+  · have hk1 := kn_le (show 64 ≤ n by omega) hn
+    have e3 := ofNat_sub64 (show 64 ≤ n by omega) hn
+    by_cases h0 : n = 64
+    · have hz : BitVec.ofNat 128 n = 64#128 := by subst h0; rfl
+      have hm : (n - 64 == 0) = true := by simp; omega
+      rcases hop with rfl | rfl | rfl | rfl <;> simp only at hX <;>
+        simp only [Pat.constShift, h64, ite_false, hm, ite_true, K, BitVec.ofInt_natCast,
+          e3] <;> cs_fin
+    · have hk0 := kn_lt (show 64 < n by omega) hn
+      have e4 := ofNat_64subsub (show 64 ≤ n by omega) hn
+      have hm : ¬ (n - 64 = 0) := by omega
+      rcases hop with rfl | rfl | rfl | rfl <;> simp only at hX <;>
+        simp only [Pat.constShift, h64, ite_false, beq_iff_eq, hm, K, BitVec.ofInt_natCast,
+          e3, e4] <;> cs_fin
+
+/-- The constant-shift patterns (`op` normalised: every operation other than `ishl`, `ushr`,
+`sshr` is a left rotation). -/
+theorem pat_constShift (op : BinaryOp) (n : Nat) (hn : n < 128) (xl xh : BitVec 64) :
+    ∃ ρ, runPat (canon [V64 xl, V64 xh]) (Pat.constShift op n) = some ρ ∧
+      Out128 ρ 2 3 (shiftC op (xh ++ xl) n) := by
+  rw [shiftC_bv hn]
+  have h := fun op' hop => cs_branches op' hop n hn xl xh _ rfl
+  cases op
+  case ishl => exact h .ishl (.inl rfl)
+  case ushr => exact h .ushr (.inr (.inl rfl))
+  case sshr => exact h .sshr (.inr (.inr (.inl rfl)))
+  all_goals exact h .rotl (.inr (.inr (.inr rfl)))
+
 end Opt.Legal
