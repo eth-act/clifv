@@ -98,12 +98,14 @@ def parseName? (s : String) : Option CTy :=
     | _ => none
   | [] => none
 
-/-- The `$NAME` type constants of the prelude: the integer scalars by literal match (so that
-`ofName? "I64"` reduces by `rfl` in proofs), the rest parsed (`parseName?`). -/
+/-- The `$NAME` type constants of the prelude: the integer and float scalars by literal match (so
+that `ofName? "I64"` reduces by `rfl` in proofs), the rest parsed (`parseName?`). -/
 def ofName? (s : String) : Option CTy :=
   match s with
   | "I8" => some (.int 8) | "I16" => some (.int 16) | "I32" => some (.int 32)
   | "I64" => some (.int 64) | "I128" => some (.int 128)
+  | "F16" => some (.float 16) | "F32" => some (.float 32) | "F64" => some (.float 64)
+  | "F128" => some (.float 128)
   | _ => parseName? s
 
 def ofClif : Clif.Ty → CTy
