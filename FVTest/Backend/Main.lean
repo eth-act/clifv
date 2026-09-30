@@ -27,8 +27,11 @@ With `--personality <sym>` (`cargo fv`: `rust_eh_personality`), functions with l
 objects, which leave the LSDA to the embedder).
 
 Every function that mentions `i128` is first legalised by `Opt.Legalize128` (rewritten to
-plain `i8..i64` CLIF before the mid-end and the backend); legalised functions are reported
-unverified ("i128 legalized (outside backend_correct)").
+plain `i8..i64` CLIF before the mid-end and the backend). A legalised function the validator
+`Opt.Legal.check` accepts is covered by `E2E.backend_correct_legal` and treated like any other
+function (`InSubset` and `lowerCheck` decided on the legalised form); a rejected one is
+reported unverified ("i128 legalized (outside backend_correct: …)"), as is every legalised
+function under `--opt` (no theorem composes the legalisation with the mid-end).
 -/
 
 open Backend
@@ -52,8 +55,12 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
   let some alloc ← Allocator.ofName? o.regalloc
     | do IO.eprintln s!"lean-backend: unknown allocator {o.regalloc}"; return 2
   let pf := Clif.parseFile src
-  let (pf, unv128) := Opt.Legalize128.parsedFile128 pf
-  let pf := match o.opt with | some c => Opt.optimizeParsedFile c pf | none => pf
+  let lg := Opt.Legalize128.parsedFile128 pf
+  let pf := match o.opt with | some c => Opt.optimizeParsedFile c lg.file | none => lg.file
+  let unv128 := match o.opt with
+    | some _ => lg.unverified ++ lg.accepted.map
+        (·, "i128 legalized and optimised (outside backend_correct_legal: --opt)")
+    | none => lg.unverified
   let fa ← compileFileIO alloc pf unv128
   if output.endsWith ".o" || o.dump.isSome then
     match fa.layout with
