@@ -160,6 +160,62 @@ theorem mapBlockCall_congr {σ τ : ValueId → ValueId} {bc : BlockCall}
     (h : ∀ x ∈ bc.args, σ x = τ x) : mapBlockCall σ bc = mapBlockCall τ bc := by
   simp only [mapBlockCall, List.map_congr_left h]
 
+theorem TryDest.mapVals_congr {σ τ : ValueId → ValueId} {d : TryDest}
+    (h : ∀ x ∈ d.vals, σ x = τ x) : d.mapVals σ = d.mapVals τ := by
+  obtain ⟨b, args⟩ := d
+  simp only [TryDest.mapVals, TryDest.vals, TryDest.mk.injEq, true_and] at h ⊢
+  induction args with
+  | nil => rfl
+  | cons a as ih => cases a <;> simp_all
+
+theorem ExnTable.mapVals_congr {σ τ : ValueId → ValueId} {et : ExnTable}
+    (h : ∀ x ∈ et.vals, σ x = τ x) : et.mapVals σ = et.mapVals τ := by
+  obtain ⟨sg, n, items⟩ := et
+  simp only [ExnTable.vals, List.mem_append] at h
+  simp only [ExnTable.mapVals, ExnTable.mk.injEq, true_and]
+  refine ⟨TryDest.mapVals_congr fun x hx => h x (.inl hx), ?_⟩
+  replace h := fun x hx => h x (.inr hx)
+  induction items with
+  | nil => rfl
+  | cons it is ih =>
+    simp only [List.flatMap_cons, List.mem_append] at h
+    simp only [List.map_cons, List.cons.injEq]
+    refine ⟨?_, ih fun x hx => h x (.inr hx)⟩
+    cases it with
+    | tag k d => simp only [ExnItem.tag.injEq, true_and]; exact TryDest.mapVals_congr fun x hx => h x (.inl hx)
+    | default d => simp only [ExnItem.default.injEq]; exact TryDest.mapVals_congr fun x hx => h x (.inl hx)
+    | context v => simp only [ExnItem.context.injEq]; exact h v (.inl (by simp))
+
+theorem TryDest.mapVals_id (d : TryDest) : d.mapVals id = d := by
+  obtain ⟨b, args⟩ := d
+  simp only [TryDest.mapVals, TryDest.mk.injEq, true_and]
+  induction args with
+  | nil => rfl
+  | cons a as ih => cases a <;> simp_all
+
+theorem ExnTable.mapVals_id (et : ExnTable) : et.mapVals id = et := by
+  obtain ⟨sg, n, items⟩ := et
+  simp only [ExnTable.mapVals, TryDest.mapVals_id, ExnTable.mk.injEq, true_and]
+  induction items with
+  | nil => rfl
+  | cons it is ih => cases it <;> simp_all [TryDest.mapVals_id]
+
+theorem TryDest.mapVals_comp (σ τ : ValueId → ValueId) (d : TryDest) :
+    (d.mapVals τ).mapVals σ = d.mapVals (fun x => σ (τ x)) := by
+  obtain ⟨b, args⟩ := d
+  simp only [TryDest.mapVals, TryDest.mk.injEq, true_and, List.map_map]
+  induction args with
+  | nil => rfl
+  | cons a as ih => cases a <;> simp_all
+
+theorem ExnTable.mapVals_comp (σ τ : ValueId → ValueId) (et : ExnTable) :
+    (et.mapVals τ).mapVals σ = et.mapVals (fun x => σ (τ x)) := by
+  obtain ⟨sg, n, items⟩ := et
+  simp only [ExnTable.mapVals, TryDest.mapVals_comp, ExnTable.mk.injEq, true_and, List.map_map]
+  induction items with
+  | nil => rfl
+  | cons it is ih => cases it <;> simp_all [TryDest.mapVals_comp]
+
 theorem mapTerm_congr {σ τ : ValueId → ValueId} {t : Terminator}
     (h : ∀ x ∈ termOperands t, σ x = τ x) : mapTerm σ t = mapTerm τ t := by
   cases t <;> simp only [termOperands, List.mem_cons, List.mem_append, List.mem_flatMap] at h <;>
@@ -173,14 +229,18 @@ theorem mapTerm_congr {σ τ : ValueId → ValueId} {t : Terminator}
       List.map_congr_left (fun bc hbc => mapBlockCall_congr (fun y hy => h y (.inr ⟨bc, hbc, hy⟩)))]
   · rw [List.map_congr_left h]
   · rw [List.map_congr_left h]
+  · rw [List.map_congr_left fun x hx => h x (.inl hx),
+      ExnTable.mapVals_congr fun x hx => h x (.inr hx)]
+  · rw [h _ (.inl (.inl rfl)), List.map_congr_left fun x hx => h x (.inl (.inr hx)),
+      ExnTable.mapVals_congr fun x hx => h x (.inr hx)]
 
 theorem mapTerm_id (t : Terminator) : mapTerm id t = t := by
   have : mapBlockCall id = id := by funext bc; simp [mapBlockCall]
-  cases t <;> simp [mapTerm, this]
+  cases t <;> simp [mapTerm, this, ExnTable.mapVals_id]
 
 theorem mapTerm_comp (σ τ : ValueId → ValueId) (t : Terminator) :
     mapTerm σ (mapTerm τ t) = mapTerm (σ ∘ τ) t := by
-  cases t <;> simp [mapTerm, mapBlockCall, Function.comp_def]
+  cases t <;> simp [mapTerm, mapBlockCall, Function.comp_def, ExnTable.mapVals_comp]
 
 section Subst
 
@@ -2256,6 +2316,12 @@ theorem SRel.term {fr fr' : Frame} {bi k k' : Nat} {m : Mem}
           | (cases hl; done)
           | (simp only [LRes.tail.injEq] at hl; obtain ⟨rfl, rfl⟩ := hl
              rw [hlt', Res.norm_eq_ok hg hc]; rfl)
+    | tryCall _ _ _ =>
+      simp only
+      refine ⟨fun _ _ hl => ?_, fun _ hl => ?_, fun _ hl => ?_, fun _ _ hl => ?_⟩ <;> cases hl
+    | tryCallIndirect _ _ _ =>
+      simp only
+      refine ⟨fun _ _ hl => ?_, fun _ hl => ?_, fun _ hl => ?_, fun _ _ hl => ?_⟩ <;> cases hl
     | trap c =>
       have hlt' : lstep fr' m = .trap c := by rw [lstep_term ht0, hterm', hTT]; rfl
       exact ⟨fun _ _ hl => by simp at hl, fun c' hl => ⟨fr', m, .refl _ _, by rw [hlt']; simpa using hl⟩,

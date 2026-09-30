@@ -101,6 +101,8 @@ def termArgs : Clif.Terminator → List Clif.ValueId
   | .ret xs => xs
   | .returnCall _ args => args
   | .trap _ => []
+  | .tryCall _ args et => args ++ et.vals
+  | .tryCallIndirect callee args et => callee :: args ++ et.vals
 
 section
 variable (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) (R : Reg → Reg)

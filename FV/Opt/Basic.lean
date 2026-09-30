@@ -99,6 +99,8 @@ def termOperands : Terminator → List ValueId
   | .ret vs => vs
   | .returnCall _ args => args
   | .trap _ => []
+  | .tryCall _ args et => args ++ et.vals
+  | .tryCallIndirect c args et => c :: args ++ et.vals
 
 def mapTerm (f : ValueId → ValueId) : Terminator → Terminator
   | .jump d => .jump (mapBlockCall f d)
@@ -107,6 +109,8 @@ def mapTerm (f : ValueId → ValueId) : Terminator → Terminator
   | .ret vs => .ret (vs.map f)
   | .returnCall fn args => .returnCall fn (args.map f)
   | .trap c => .trap c
+  | .tryCall fn args et => .tryCall fn (args.map f) (et.mapVals f)
+  | .tryCallIndirect c args et => .tryCallIndirect (f c) (args.map f) (et.mapVals f)
 
 /-- Successor blocks of a terminator (with repetitions, in order). -/
 def termSuccs : Terminator → List BlockId
@@ -114,6 +118,7 @@ def termSuccs : Terminator → List BlockId
   | .brif _ t e => [t.block, e.block]
   | .brTable _ d t => d.block :: t.map (·.block)
   | .ret _ | .returnCall .. | .trap _ => []
+  | .tryCall _ _ et | .tryCallIndirect _ _ et => et.dests.map (·.block)
 
 /-- A value renaming. Chains `v ↦ w ↦ u` are followed (`Subst.find`); the passes only ever
 map a value to one defined strictly before it in dominance order, so chains are finite. -/

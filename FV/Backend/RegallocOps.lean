@@ -127,6 +127,10 @@ def calleeSaved : List Reg := (List.range 10).map (fun i => .x (19 + i)) ++ (Lis
 /-- `DEFAULT_AAPCS_CLOBBERS`: x0–x17, v0–v31. -/
 def defaultAapcsClobbers : List Reg := (List.range 18).map .x ++ (List.range 32).map .v
 
+/-- `ALL_CLOBBERS`: x0–x28, v0–v31 (the exceptional edge of a `try_call` to a `tail` or
+`preserve_all` callee). -/
+def allClobbers : List Reg := (List.range 29).map .x ++ (List.range 32).map .v
+
 /-! ## Operands -/
 
 section
@@ -220,6 +224,41 @@ def MInst.visitOperands : MInst → m MInst
   | .loadAddr rd mem => do
     let rd ← f .def_ rd; let mem ← AMode.visit f mem; pure (.loadAddr rd mem)
   | .emitIsland n => pure (.emitIsland n)
+  -- `mod.rs:536`: `reg_use(rn); reg_def(rt)` / `reg_use(rn); reg_use(rt)`
+  | .loadAcquire ty rt rn fl => do
+    let rn ← f .use rn; let rt ← f .def_ rt; pure (.loadAcquire ty rt rn fl)
+  | .storeRelease ty rt rn fl => do
+    let rn ← f .use rn; let rt ← f .use rt; pure (.storeRelease ty rt rn fl)
+  -- `mod.rs:473`: fixed uses x25/x26, fixed defs x27/x24/x28. Deviation from Cranelift:
+  -- for `xchg` the scratch2 (x28) def is registered even though the loop does not write it
+  -- (conservative: x28 is dead across the instruction; keeps `visitOperands` total in `op`,
+  -- which the rename-commutation proofs need). Cranelift omits it for `xchg`.
+  | .atomicRmwLoop ty op fl addr operand oldval s1 s2 => do
+    let addr ← f (.fixedUse (.x 25)) addr
+    let operand ← f (.fixedUse (.x 26)) operand
+    let oldval ← f (.fixedDef (.x 27)) oldval
+    let s1 ← f (.fixedDef (.x 24)) s1
+    let s2 ← f (.fixedDef (.x 28)) s2
+    pure (.atomicRmwLoop ty op fl addr operand oldval s1 s2)
+  -- `mod.rs:522`: fixed uses x25/x26/x28, fixed defs x27/x24
+  | .atomicCasLoop ty fl addr expect replace oldval scratch => do
+    let addr ← f (.fixedUse (.x 25)) addr
+    let expect ← f (.fixedUse (.x 26)) expect
+    let replace ← f (.fixedUse (.x 28)) replace
+    let oldval ← f (.fixedDef (.x 27)) oldval
+    let scratch ← f (.fixedDef (.x 24)) scratch
+    pure (.atomicCasLoop ty fl addr expect replace oldval scratch)
+  | .csetm rd c => do pure (.csetm (← f .def_ rd) c)
+  | .fence => pure (.fence)
+  -- `mod.rs:860`: as `Call`/`CallInd`; `try_call_info.collect_operands` adds nothing (no
+  -- `context` items)
+  | .tryCall info ti => do
+    let dest ← match info.dest with
+      | .reg r => do pure (CallDest.reg (← f .use r))
+      | d => pure d
+    let uses ← info.uses.mapM fun (v, p) => do pure ((← f (.fixedUse p) v), p)
+    let defs ← info.defs.mapM fun (p, v) => do pure (p, (← f (.fixedDef p) v))
+    pure (.tryCall ⟨dest, uses, defs⟩ ti)
 
 end
 
@@ -254,6 +293,9 @@ def MInst.assign (i : MInst) (regs : Array Reg) : Except String MInst := do
 /-- Registers clobbered by the instruction (`inst_clobbers`). -/
 def MInst.clobbers : MInst → List Reg
   | .call info => defaultAapcsClobbers.filter fun r => !(info.defs.any (·.1 == r))
+  | .tryCall info ti =>
+    (if ti.clobberAll then allClobbers else defaultAapcsClobbers).filter fun r =>
+      !(info.defs.any (·.1 == r))
   | _ => []
 
 /-- `VCode::is_ret`: `Rets`, or a block-ending trap. -/
@@ -261,16 +303,24 @@ def MInst.isRet : MInst → Bool
   | .rets _ | .udf _ => true
   | _ => false
 
-/-- `VCode::is_branch` (`MachTerminator::Branch`). -/
+/-- `VCode::is_branch` (`MachTerminator::Branch`) of the branches whose defs are dead after
+the branch (`JTSequence`'s temporaries): the checker forgets them. A `tryCall` is a
+`MachTerminator::Branch` too, but its defs are live into its successors, so it is not
+`isBranch` (`MInst.isTerminator` includes it). -/
 def MInst.isBranch : MInst → Bool
   | .jump _ | .condBr .. | .testBitAndBranch .. | .jtSequence .. => true
   | _ => false
+
+/-- Does the instruction end a block (`is_term` is not `None`)? -/
+def MInst.isTerminator (i : MInst) : Bool :=
+  i.isBranch || i.isRet || i matches .tryCall ..
 
 /-- Successor labels of a branch, in successor order (`JTSequence`: default, then table). -/
 def MInst.targets : MInst → List Label
   | .jump l => [l]
   | .condBr t e _ | .testBitAndBranch _ t e _ _ => [t, e]
   | .jtSequence d ts _ _ _ => d :: ts
+  | .tryCall _ ti => ti.handlers.map (·.label) ++ [ti.continuation]
   | _ => []
 
 /-- Replace the successor labels (same count as `targets`). -/
@@ -281,6 +331,13 @@ def MInst.setTargets (i : MInst) (ls : List Label) : Option MInst :=
   | .testBitAndBranch k _ _ rn bit, [t, e] => some (.testBitAndBranch k t e rn bit)
   | .jtSequence _ ts ridx t1 t2, d :: ts' =>
     if ts'.length == ts.length then some (.jtSequence d ts' ridx t1 t2) else none
+  | .tryCall info ti, ls =>
+    if ls.length == ti.handlers.length + 1 then
+      let hs := (ti.handlers.zip ls).map fun (h, l) => match h with
+        | .tag n _ => TryHandler.tag n l
+        | .default _ => .default l
+      some (.tryCall info { ti with handlers := hs, continuation := ls.getLastD ti.continuation })
+    else none
   | _, _ => none
 
 /-! ## CFG -/
@@ -294,7 +351,7 @@ def VCode.cfg (vc : VCode) : Except String (Array (Array Nat) × Array (Array Na
     | none => throw s!"branch to unknown block {l}"
   let succs ← vc.blocks.mapM fun b => do
     let some t := b.insts.back? | throw s!"block {b.label} is empty"
-    if !(t.isBranch || t.isRet) then throw s!"block {b.label} does not end in a terminator"
+    if !t.isTerminator then throw s!"block {b.label} does not end in a terminator"
     t.targets.toArray.mapM idxOf
   let mut preds : Array (Array Nat) := Array.replicate vc.blocks.size #[]
   for (ss, i) in succs.zipIdx do

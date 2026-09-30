@@ -60,6 +60,9 @@ structure Ctx where
   valReg : Array (Option Reg)
   /-- Offset of each explicit stack slot in the slot region (`sized_stackslot_offset`). -/
   slotOff : List (Nat × Nat)
+  /-- While lowering a `try_call`: the vregs of its return values and of its exception
+  payloads (`Lower::try_call_rets` / `try_call_payloads`), for `gen_try_call_rets`. -/
+  tryRegs : List Reg × List Reg := ([], [])
 
 /-- The mutable lowering state threaded through extern constructors. -/
 structure LState where
@@ -107,6 +110,12 @@ def unaryOpcode : Clif.UnaryOp → Option String
   | .ineg => "Ineg" | .bnot => "Bnot" | .clz => "Clz" | .ctz => "Ctz" | .popcnt => "Popcnt"
   | .bswap => "Bswap" | .bitrev => "Bitrev"
   | _ => none
+
+/-- The `AtomicRmwOp` variant name of a CLIF `atomic_rmw` operation. -/
+def rmwOpName : Clif.AtomicRmwOp → Option String
+  | .add => some "Add" | .sub => some "Sub" | .and => some "And" | .nand => some "Nand"
+  | .or => some "Or" | .xor => some "Xor" | .xchg => some "Xchg"
+  | .umin => some "Umin" | .umax => some "Umax" | .smin => some "Smin" | .smax => some "Smax"
 
 def divOpcode : Clif.DivOp → String
   | .udiv => "Udiv" | .sdiv => "Sdiv" | .urem => "Urem" | .srem => "Srem"
@@ -207,6 +216,32 @@ def instData (f : Clif.Function) : Clif.Inst → Except String V
   | .funcAddr ty fn =>
     if ty != .i64 then throw "func_addr with a non-i64 address type"
     else pure (instDataV "FuncAddr" [opcodeV "FuncAddr", .op (.funcRef fn)])
+  -- agent/fv-fallback: `bmask` and the atomic opcodes lower via Cranelift's non-LSE rules
+  -- (cg_clif's `has_lse = 0`) but are outside `E2E.backend_correct` (unverifiedReason?).
+  | .bmask ty x =>
+    if eTy ty then pure (instDataV "Unary" [opcodeV "Bmask", .value x]) else throw "bmask.i128"
+  | .atomicLoad ty flags p =>
+    if !eTy ty then throw "atomic_load.i128"
+    else if flags.endianness == some .big then throw "big-endian atomic_load"
+    else pure (instDataV "LoadNoOffset" [opcodeV "AtomicLoad", .value p, .op (.memFlags flags)])
+  | .atomicStore ty flags x p =>
+    if !eTy ty then throw "atomic_store.i128"
+    else if flags.endianness == some .big then throw "big-endian atomic_store"
+    else pure (instDataV "StoreNoOffset"
+      [opcodeV "AtomicStore", .values [x, p], .op (.memFlags flags)])
+  | .atomicRmw op ty flags p x =>
+    if !eTy ty then throw "atomic_rmw.i128"
+    else if flags.endianness == some .big then throw "big-endian atomic_rmw"
+    else match rmwOpName op with
+      | some n => pure (instDataV "AtomicRmw"
+        [opcodeV "AtomicRmw", .values [p, x], .op (.memFlags flags), mkVariant tyAtomicRmwOp n])
+      | none => throw "unsupported atomic_rmw operation"
+  | .atomicCas ty flags p e x =>
+    if !eTy ty then throw "atomic_cas.i128"
+    else if flags.endianness == some .big then throw "big-endian atomic_cas"
+    else pure (instDataV "AtomicCas"
+      [opcodeV "AtomicCas", .values [p, e, x], .op (.memFlags flags)])
+  | .fence => pure (instDataV "NullAry" [opcodeV "Fence"])
   | i => throw s!"`{instText i}` is not in E"
 
 /-! ## ABI (`isa/aarch64/abi.rs` `compute_arg_locs`, AAPCS64 / `system_v`) -/
@@ -277,6 +312,53 @@ def sigRets (s : Clif.Signature) : List Clif.AbiParam :=
 
 /-- Parameter types of a signature (only integer `normal`/`vmctx` parameters up to 64 bits). -/
 def sigParamBytes (s : Clif.Signature) : Except String (List Nat) := sigArgs s
+
+/-- `exception_payload_regs` (`isa/aarch64/abi.rs`): x0 and x1 for `system_v` (the default),
+`tail`, `preserve_all` and `apple_aarch64` callees, none for the others. -/
+def payloadRegs (c : Option Clif.CallConv) : List Reg :=
+  match c with
+  | none | some .systemV | some .tail | some .preserveAll | some .appleAarch64 => [.x 0, .x 1]
+  | _ => []
+
+/-- `try_call_info` (`machinst/isle.rs`): one landing-pad label per `tag`/`default` item (in
+item order), then the continuation (the last label). `clobberAll` is
+`get_regs_clobbered_by_call(callee, true) = ALL_CLOBBERS` (`tail`/`preserve_all` callees). -/
+def tryInfoOf (sig : Clif.Signature) (items : List (Option Nat)) (ls : List Label) :
+    Option TryInfo :=
+  if ls.length != items.length + 1 then none
+  else some {
+    continuation := ls.getLastD 0
+    handlers := (items.zip ls).map fun | (some n, l) => .tag n l | (none, l) => .default l
+    clobberAll := sig.callConv == some .tail || sig.callConv == some .preserveAll }
+
+/-- The `ExceptionTable` operand of a `try_call`: its signature and item kinds. Callee
+conventions other than `system_v` are rejected (Cranelift 0.136.1 panics on a `fast` one;
+`tail`/`preserve_all` callees are not lowered by this backend), and so are `context` items
+(Wasmtime's dynamic contexts; cg_clif never emits them). -/
+def exnTableOpnd (f : Clif.Function) (et : Clif.ExnTable) :
+    Except String (Clif.Signature × List (Option Nat)) := do
+  let some sig := f.sigDecls.lookup et.sig | throw s!"try_call of undeclared sig{et.sig}"
+  if !(sig.callConv.isNone || sig.callConv == some .systemV) then
+    throw s!"try_call with calling convention {repr sig.callConv}"
+  let items ← et.items.mapM fun
+    | .tag n _ => pure (some n)
+    | .default _ => pure none
+    | .context _ => throw "exception table context items are not supported"
+  pure (sig, items)
+
+/-- The `InstructionData` of a `try_call`/`try_call_indirect` terminator. -/
+def tryCallData (f : Clif.Function) : Clif.Terminator → Except String V
+  | .tryCall fn args et => do
+    let (sig, items) ← exnTableOpnd f et
+    let some ext := f.extern? fn | throw s!"unknown fn{fn}"
+    if ext.sig != sig then throw s!"try_call: sig{et.sig} is not the signature of fn{fn}"
+    pure (instDataV "TryCall"
+      [opcodeV "TryCall", .values args, .op (.funcRef fn), .op (.exnTable sig items)])
+  | .tryCallIndirect callee args et => do
+    let (sig, items) ← exnTableOpnd f et
+    pure (instDataV "TryCallIndirect"
+      [opcodeV "TryCallIndirect", .values (callee :: args), .op (.exnTable sig items)])
+  | _ => throw "not a try_call"
 
 def storeOpOfBytes : Nat → StoreOp
   | 1 => .store8 | 2 => .store16 | 4 => .store32 | _ => .store64
@@ -451,6 +533,8 @@ def externExtract (ctx : Ctx) (t : Term) (v : V) (_st : LState) : ExtResult (Lis
   | TId.sign_return_address_disabled, _ => .ok []
   -- shared flag `tls_model`, default `none`
   | TId.tls_model, .ty _ => .ok [.data tyTlsModel VIdx.TlsModel.None []]
+  -- `exception_sig` (machinst/isle.rs:387): the exception table's signature
+  | TId.exception_sig, .op (.exnTable s _) => .ok [.op (.sig s)]
   | _, v => .unmodeled s!"extractor {t.name} on {(repr v).pretty.take 60}"
 
 /-- `load_constant_full` (`aarch64/lower/isle.rs`): a `movz`/`movn` and `movk`s. -/
@@ -508,6 +592,8 @@ def externCtor (ctx : Ctx) (t : Term) (args : List V) (st : LState) : ExtResult 
   | TId.i64_sextend_imm64, [.ty ty, .int x] => ok (.int (sextFrom ty.bits x))
   | TId.ty_bits, [.ty ty] => ok (.int ty.bits)
   | TId.ty_bytes, [.ty ty] => ok (.int ty.bytes)
+  -- `ty_mask` (isle_prelude.rs:366): `2^bits - 1`
+  | TId.ty_mask, [.ty ty] => ok (.int (2 ^ ty.bits - 1))
   | TId.offset32_to_i32, [.int i] => ok (.int i)
   | TId.i32_to_offset32, [.int i] => ok (.int i)
   | TId.signed_cond_code, [cc] => match cc.intcc? with
@@ -591,6 +677,23 @@ def externCtor (ctx : Ctx) (t : Term) (args : List V) (st : LState) : ExtResult 
     | some ps, some rs => ok (.op (.callRets (ps.zip rs)))
     | _, _ => .unmodeled "gen_call_rets: more than 8 return values"
   | TId.try_call_none, [] => ok (.op .tryCallNone)
+  | TId.try_call_info, [.op (.exnTable s items), .labels ls] =>
+    match tryInfoOf s items ls with
+    | some ti => ok (.op (.tryCallInfo ti))
+    | none => .unmodeled "try_call_info: label count"
+  -- `gen_try_call_rets` (`Lower::gen_try_call_rets` → `gen_call_rets` with payloads): the
+  -- return vregs in the return registers, then each payload register that is not also a
+  -- return register (a payload in a return register shares the return's vreg, as
+  -- `set_vreg_alias` makes it there)
+  | TId.gen_try_call_rets, [.op (.sig s)] =>
+    let (rets, pays) := ctx.tryRegs
+    match retRegs (sigRets s).length with
+    | some ps =>
+      if ps.length != rets.length then .unmodeled "gen_try_call_rets: return count"
+      else
+        let extra := ((payloadRegs s.callConv).zip pays).filter fun (p, _) => !ps.contains p
+        ok (.op (.callRets (ps.zip rets ++ extra)))
+    | none => .unmodeled "gen_try_call_rets: more than 8 return values"
   | TId.gen_call_info, [.op (.sig s), .op (.extName n), .op (.callArgs us), .op (.callRets ds), _, _] =>
     match sigArgLocs s with
     | .ok (_, stack) =>
@@ -836,6 +939,7 @@ def termData (t : Clif.Terminator) : Except String V :=
   | .ret vs => pure (instDataV "MultiAry" [opcodeV "Return", .values vs])
   | .trap c => pure (instDataV "Trap" [opcodeV "Trap", .op (.trapCode c)])
   | .returnCall .. => throw "return_call is not in E"
+  | .tryCall .. | .tryCallIndirect .. => throw "try_call is not in E (lowered with tryCallData)"
 
 /-- Lowering state of the driver. -/
 structure DState where
@@ -922,11 +1026,12 @@ def lowerFunction (f : Clif.Function) : Except String VCode := do
       else []
     let data ← match b.term with
       | .ret vs => termData (.ret (vs ++ sretParam))
+      | .tryCall .. | .tryCallIndirect .. => tryCallData f b.term
       | _ => termData b.term
     if b.term matches .ret .. && sretParam.isEmpty && (sigRets f.sig != f.sig.returns) then
       throw "sret parameter is not an entry-block parameter"
     let ti := stop - 1
-    let ctx' : Ctx := { ctx with insts := ctx.insts.set! ti ⟨data, [], [], none⟩ }
+    let mut ctx' : Ctx := { ctx with insts := ctx.insts.set! ti ⟨data, [], [], none⟩ }
     let mut targets : Array Label := #[]
     let dests : List Clif.BlockCall := match b.term with
       | .jump bc => [bc]
@@ -934,10 +1039,61 @@ def lowerFunction (f : Clif.Function) : Except String VCode := do
       | .brTable _ dflt tbl => dflt :: tbl
       | _ => []
     let mut jumpArgs : Array Reg := #[]
+    let mut tryInfo : Option TryInfo := none
     match b.term with
     | .jump bc =>
       jumpArgs ← blockArgRegs ctx f bc
       targets := targets.push (← blockIdx bc.block)
+    | .tryCall _ _ et | .tryCallIndirect _ _ et =>
+      -- `try_call` (lower.rs): vregs for the call's return values and exception payloads
+      -- (`try_call_rets`/`try_call_payloads`; a payload in a return register shares the
+      -- return's vreg, `set_vreg_alias`), then one edge block per successor (handlers, then
+      -- the normal return) holding the `jump` with the successor's arguments: every
+      -- successor of the call has a single predecessor, as regalloc2 requires of a branch
+      -- with operands, and the handler edge blocks are the landing pads
+      let (sig, items) ← exnTableOpnd f et
+      let some ps := retRegs (sigRets sig).length | throw "try_call: more than 8 return values"
+      if sig.returns.any (·.ty == .i128) then throw "try_call returning i128"
+      let mut st := d.st
+      let mut rets : Array Reg := #[]
+      for _ in ps do
+        let (r, st') := st.fresh .int
+        rets := rets.push r
+        st := st'
+      let mut pays : Array Reg := #[]
+      for p in payloadRegs sig.callConv do
+        match ps.idxOf? p with
+        | some i => pays := pays.push rets[i]!
+        | none =>
+          let (r, st') := st.fresh .int
+          pays := pays.push r
+          st := st'
+      d := { d with st }
+      let nh := et.handlers.length
+      for (td, k) in et.dests.zipIdx do
+        let tl ← blockIdx td.block
+        let some tb := f.block? td.block | throw s!"unknown block{td.block}"
+        if tb.params.length != td.args.length then throw s!"block{td.block}: argument count"
+        let args ← td.args.toArray.mapM fun
+          | .val v => match ctx.valueReg? v with
+            | some r => pure r
+            | none => throw s!"unknown value v{v}"
+          | .ret i => if k < nh then throw s!"try_call: ret{i} on an exception edge"
+            else match rets[i]? with
+              | some r => pure r
+              | none => throw s!"try_call: ret{i} out of range"
+          | .exn i => if k == nh then throw s!"try_call: exn{i} on the normal-return edge"
+            else match pays[i]? with
+              | some r => pure r
+              | none => throw s!"try_call: exn{i} out of range"
+        let l := d.nextLabel
+        d := { d with nextLabel := l + 1,
+                      edges := d.edges.push { label := l, insts := #[MInst.jump tl], branchArgs := args } }
+        targets := targets.push l
+      ctx' := { ctx' with tryRegs := (rets.toList, pays.toList) }
+      tryInfo ← match tryInfoOf sig items targets.toList with
+        | some t => pure (some t)
+        | none => throw "try_call: successor count"
     | _ =>
       for bc in dests do
         let tl ← blockIdx bc.block
@@ -953,7 +1109,14 @@ def lowerFunction (f : Clif.Function) : Except String VCode := do
       | _ => ("lower_branch", [.inst ti, .labels targets.toList])
     let (out, st, n) ← runTerm ctx' term args { d.st with emitted := #[] }
     if out.isNone then throw s!"no lowering rule for terminator {(repr b.term).pretty.take 80}"
-    code := code ++ st.emitted
+    -- the call a `try_call` rule emits last becomes the `tryCall` terminator (its
+    -- `CallInfo` with `try_call_info`: `gen_call_info` ignores the `OptionTryCallInfo`)
+    let emitted ← match tryInfo with
+      | none => pure st.emitted
+      | some t => match st.emitted.back? with
+        | some (.call c) => pure (st.emitted.pop.push (.tryCall c t))
+        | _ => throw "try_call: the lowering does not end in a call"
+    code := code ++ emitted
     let params ← if bi == 0 then pure #[] else
       b.params.toArray.mapM fun (v, _) => match ctx.valueReg? v with
         | some r => pure r

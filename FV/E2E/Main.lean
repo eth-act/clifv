@@ -219,6 +219,7 @@ theorem backend_correct {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp
     regArgs := callRegArgs_of_subset hsub
     brIdx := hbr
     noTail := noTail_of_subset hsub
+    noTry := Compile.noTry_of_functionE hsub.subsetE
     cfg := cfg_of_prepare hc.prepare }
 
 /-- **`backend_correct` from M4's rule statements only**: the terminator calls (`TermCalls`)

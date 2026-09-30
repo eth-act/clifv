@@ -263,6 +263,26 @@ structure CallInfo where
   defs : List (Reg × Reg)
   deriving DecidableEq, Repr, Inhabited, BEq
 
+/-- A handler of a `try_call` (`TryCallHandler` without `Context`): an exception tag or the
+default, with its landing pad (the label of the handler successor). -/
+inductive TryHandler where
+  | tag (n : Nat) (l : Label)
+  | default (l : Label)
+  deriving DecidableEq, Repr, Inhabited, BEq
+
+def TryHandler.label : TryHandler → Label
+  | .tag _ l | .default l => l
+
+/-- `TryCallInfo`: the normal-return continuation and the handlers (exception-table order).
+`clobberAll`: the callee's exceptional ABI restores no register (`tail`/`preserve_all`
+callees, `get_regs_clobbered_by_call(_, true) = ALL_CLOBBERS`); for `system_v` the unwinder
+restores the callee-saved registers, so the clobbers are the normal call's. -/
+structure TryInfo where
+  continuation : Label
+  handlers : List TryHandler
+  clobberAll : Bool := false
+  deriving DecidableEq, Repr, Inhabited, BEq
+
 inductive LoadOp where
   | uload8 | sload8 | uload16 | sload16 | uload32 | sload32 | uload64 | fpuLoad128
   deriving DecidableEq, Repr, Inhabited, BEq
@@ -279,6 +299,21 @@ def StoreOp.bytes : StoreOp → Nat
   | .store8 => 1 | .store16 => 2 | .store32 => 4 | .store64 => 8 | .fpuStore128 => 16
 
 /-! ## Machine instructions -/
+
+/-- The `op` of an `atomicRmwLoop` (`AtomicRMWLoopOp`; the constructor order is the generated
+ISLE type's, so `VIdx.AtomicRMWLoopOp.*` indices are `all`'s indices). -/
+inductive AtomicRmwLoopOp where
+  | add | sub | and | nand | xor | or | smax | smin | umax | umin | xchg
+  deriving DecidableEq, Repr, Inhabited
+
+def AtomicRmwLoopOp.all : List AtomicRmwLoopOp :=
+  [.add, .sub, .and, .nand, .xor, .or, .smax, .smin, .umax, .umin, .xchg]
+
+/-- The variant name of an `AtomicRMWLoopOp` in the generated ISLE types. -/
+def AtomicRmwLoopOp.name : AtomicRmwLoopOp → String
+  | .add => "Add" | .sub => "Sub" | .and => "And" | .nand => "Nand" | .xor => "Eor"
+  | .or => "Orr" | .smax => "Smax" | .smin => "Smin" | .umax => "Umax" | .umin => "Umin"
+  | .xchg => "Xchg"
 
 /-- The aarch64 `MInst` subset. Field order follows `inst.isle`. `args`/`rets` are Cranelift's
 `Args`/`Rets` pseudo-instructions: `(vreg, real register)` pairs defined at entry / used at
@@ -322,6 +357,29 @@ inductive MInst where
   | loadExtNameNear (rd : Reg) (name : String) (offset : Int)
   | loadAddr (rd : Reg) (mem : AMode)
   | emitIsland (needed : Nat)
+  /-- `ldar{b,h,}`: acquire load (`MInst.LoadAcquire`; the address is a register, as
+  Cranelift's `load_acquire` helper passes it). -/
+  | loadAcquire (ty : CTy) (rt : Reg) (rn : Reg) (flags : Clif.MemFlags)
+  /-- `stlr{b,h,}`: release store (`MInst.StoreRelease`). -/
+  | storeRelease (ty : CTy) (rt rn : Reg) (flags : Clif.MemFlags)
+  /-- `atomic_rmw` as Cranelift's LL/SC pseudo-instruction `MInst.AtomicRMWLoop` (cg_clif's
+  flags have `has_lse = 0`), expanded at emit time into the `ldaxr`/`stlxr` loop: fixed uses
+  x25 (addr) and x26 (operand), fixed defs x27 (old value) and x24 (and x28 unless
+  `xchg`), as `aarch64_get_operands` collects them. -/
+  | atomicRmwLoop (ty : CTy) (op : AtomicRmwLoopOp) (flags : Clif.MemFlags)
+      (addr operand oldval scratch1 scratch2 : Reg)
+  /-- `atomic_cas` as Cranelift's LL/SC pseudo-instruction `MInst.AtomicCASLoop`: fixed uses
+  x25 (addr), x26 (expected), x28 (replacement); fixed defs x27 (old value), x24. -/
+  | atomicCasLoop (ty : CTy) (flags : Clif.MemFlags) (addr expect replace oldval scratch : Reg)
+  /-- `csetm xd, cond` = `csinv xd, xzr, xzr, invert(cond)`. -/
+  | csetm (rd : Reg) (c : Cond)
+  /-- `dmb ish` (`MInst.Fence`). -/
+  | fence
+  /-- `Call`/`CallInd` with a `try_call_info` (`try_call`/`try_call_indirect`): a block
+  terminator (`MachTerminator::Branch`) whose successors are the handlers' landing pads and
+  the continuation; emitted as `bl`/`blr` then `b continuation`. Its defs (return values and
+  exception payloads, fixed registers) are live into every successor. Unverified. -/
+  | tryCall (info : CallInfo) (ti : TryInfo)
   deriving DecidableEq, Repr, Inhabited, BEq
 
 /-! ### Operands -/
@@ -384,6 +442,14 @@ def MInst.uses : MInst → List Reg
   | .loadExtNameGot .. | .loadExtNameNear .. => []
   | .loadAddr _ mem => mem.regs
   | .emitIsland _ => []
+  | .loadAcquire _ _ rn _ => [rn]
+  | .storeRelease _ rt rn _ => [rt, rn]
+  | .atomicRmwLoop _ _ _ addr operand _ _ _ => [addr, operand]
+  | .atomicCasLoop _ _ addr expect replace _ _ => [addr, expect, replace]
+  | .csetm .. | .fence => []
+  | .tryCall info _ => match info.dest with
+    | .reg r => [r]
+    | .sym _ => []
 
 /-- Registers written by an instruction (excluding `call`/`args` fixed pairs). -/
 def MInst.defs : MInst → List Reg
@@ -395,6 +461,10 @@ def MInst.defs : MInst → List Reg
   | .vecLanes _ rd _ _ | .vecRRR _ rd _ _ _ | .loadExtNameGot rd _ | .loadExtNameNear rd _ _
   | .loadAddr rd _ => [rd]
   | .jtSequence _ _ _ t1 t2 => [t1, t2]
+  | .loadAcquire _ rt _ _ => [rt]
+  | .atomicRmwLoop _ _ _ _ _ oldval _ _ => [oldval]
+  | .atomicCasLoop _ _ _ _ _ oldval _ => [oldval]
+  | .csetm rd _ => [rd]
   | _ => []
 
 /-- Apply `f` to every register occurrence (uses and defs, not the real registers of the
@@ -443,10 +513,25 @@ def MInst.mapRegs (f : Reg → Reg) : MInst → MInst
   | .loadExtNameNear rd n o => .loadExtNameNear (f rd) n o
   | .loadAddr rd mem => .loadAddr (f rd) (mem.mapRegs f)
   | .emitIsland n => .emitIsland n
+  | .loadAcquire ty rt rn fl => .loadAcquire ty (f rt) (f rn) fl
+  | .storeRelease ty rt rn fl => .storeRelease ty (f rt) (f rn) fl
+  | .atomicRmwLoop ty op fl a o1 o2 s1 s2 =>
+    .atomicRmwLoop ty op fl (f a) (f o1) (f o2) (f s1) (f s2)
+  | .atomicCasLoop ty fl a e r o s =>
+    .atomicCasLoop ty fl (f a) (f e) (f r) (f o) (f s)
+  | .csetm rd c => .csetm (f rd) c
+  | .fence => .fence
+  | .tryCall info ti =>
+    .tryCall { info with
+      dest := match info.dest with
+        | .reg r => .reg (f r)
+        | d => d
+      uses := info.uses.map fun (v, p) => (f v, p)
+      defs := info.defs.map fun (p, v) => (p, f v) } ti
 
 /-- Is this a block terminator (`is_term`)? -/
 def MInst.isTerm : MInst → Bool
-  | .rets _ | .jump _ | .condBr .. | .testBitAndBranch .. | .jtSequence .. => true
+  | .rets _ | .jump _ | .condBr .. | .testBitAndBranch .. | .jtSequence .. | .tryCall .. => true
   | _ => false
 
 /-! ## Immediates (transcriptions of `imms.rs` / `args.rs`) -/
@@ -546,6 +631,11 @@ inductive Opnd where
   /-- `JumpTable`: indices of the `br_table` targets. -/
   | jumpTable (n : Nat)
   | tryCallNone
+  /-- `ExceptionTable`: the table's signature and item kinds (tag number, or `none` for
+  `default`), in item order (`context` items are rejected when the data is built). -/
+  | exnTable (sig : Clif.Signature) (items : List (Option Nat))
+  /-- `OptionTryCallInfo` = `Some(TryCallInfo)` (`try_call_info`). -/
+  | tryCallInfo (ti : TryInfo)
   | unit
   deriving DecidableEq, Repr, Inhabited, BEq
 
@@ -647,12 +737,14 @@ def mkVariant (ty : TypeId) (name : String) (fs : List V := []) : V :=
 open Isle.Aarch64
 
 abbrev tyMInst : TypeId := TyId.MInst
+abbrev tyAtomicRmwOp : TypeId := TyId.AtomicRmwOp
 abbrev tyALUOp : TypeId := TyId.ALUOp
 abbrev tyALUOp3 : TypeId := TyId.ALUOp3
 abbrev tyOperandSize : TypeId := TyId.OperandSize
 abbrev tyCond : TypeId := TyId.Cond
 abbrev tyExtendOp : TypeId := TyId.ExtendOp
 abbrev tyAMode : TypeId := TyId.AMode
+abbrev tyAtomicRmwLoopOp : TypeId := TyId.AtomicRMWLoopOp
 abbrev tyCondBrKind : TypeId := TyId.CondBrKind
 abbrev tyMoveWideOp : TypeId := TyId.MoveWideOp
 abbrev tyBfmOp : TypeId := TyId.BfmOp
@@ -851,6 +943,12 @@ def V.extName? : V → Option String
 def V.int? : V → Option Int
   | .int i => some i
   | _ => none
+def V.ty? : V → Option CTy
+  | .ty t => some t
+  | _ => none
+/-- `AtomicRmwLoopOp` from its ISLE value (index into `all`). -/
+def V.atomicRmwLoopOp? : V → Option AtomicRmwLoopOp
+  | v => (v.enumOf? tyAtomicRmwLoopOp).bind fun (k, _) => AtomicRmwLoopOp.all[k]?
 
 /-- `AMode` from its ISLE value. -/
 def V.amode? (v : V) : Option AMode := do
@@ -953,6 +1051,18 @@ def MInst.ofV (v : V) : Option MInst := do
     return .loadExtNameNear (← rd.reg?) (← nm.extName?) (← o.int?)
   | VIdx.MInst.LoadAddr, [rd, m] => return .loadAddr (← rd.reg?) (← m.amode?)
   | VIdx.MInst.EmitIsland, [n] => return .emitIsland (← n.nat?)
+  | VIdx.MInst.LoadAcquire, [ty, rt, rn, fl] =>
+    return .loadAcquire (← ty.ty?) (← rt.reg?) (← rn.reg?) (← fl.memFlags?)
+  | VIdx.MInst.StoreRelease, [ty, rt, rn, fl] =>
+    return .storeRelease (← ty.ty?) (← rt.reg?) (← rn.reg?) (← fl.memFlags?)
+  | VIdx.MInst.AtomicRMWLoop, [ty, op, fl, addr, operand, oldval, s1, s2] =>
+    return .atomicRmwLoop (← ty.ty?) (← op.atomicRmwLoopOp?) (← fl.memFlags?)
+      (← addr.reg?) (← operand.reg?) (← oldval.reg?) (← s1.reg?) (← s2.reg?)
+  | VIdx.MInst.AtomicCASLoop, [ty, fl, addr, expect, replace, oldval, scratch] =>
+    return .atomicCasLoop (← ty.ty?) (← fl.memFlags?) (← addr.reg?) (← expect.reg?)
+      (← replace.reg?) (← oldval.reg?) (← scratch.reg?)
+  | VIdx.MInst.CSetm, [rd, c] => return .csetm (← rd.reg?) (← c.cond?)
+  | VIdx.MInst.Fence, [] => return .fence
   | k, [rd, m, fl] =>
     match loadOpOfIdx? k, storeOpOfIdx? k with
     | some op, _ => return .load op (← rd.reg?) (← m.amode?) (← fl.memFlags?)

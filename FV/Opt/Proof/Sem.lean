@@ -82,7 +82,7 @@ def termEval (fr : Frame) (mem : Mem) : Terminator → Res (BlockId × List Val 
     let vs ← fr.getMany d.args
     pure (d.block, vs, mem)
   | .trap code => .trap code
-  | .ret _ | .returnCall .. => .stuck "not a branch"
+  | .ret _ | .returnCall .. | .tryCall .. | .tryCallIndirect .. => .stuck "not a branch"
 
 /-- A result-free instruction, then a terminator. -/
 def seqEval (fr : Frame) (mem : Mem) (a : Inst) (t : Terminator) :

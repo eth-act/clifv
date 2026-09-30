@@ -14,6 +14,7 @@ release-oc), dumped by `scripts/rust-clif/dump.sh` into `/tmp/rust-clif-survey/o
 | 3. `sret` | **done (unverified by design)** — `sigArgLocs` places the hidden pointer in x8 (`compute_arg_locs`), `sigRets` legalizes the return (`ensure_struct_return_ptr_is_returned`: x0 = the sret param, also for *call sites*), `isArgReg` admits x8, sret sigs are compiled and flagged unverified (`unverifiedReason?` = "sret parameter (outside backend_correct)"), `InSubset.noSpecial` keeps them outside the theorem (e2e-check: 910 in scope / 22 out). Demo `sret.clif` (corpus `big_make`/`make_shape` + drivers passing a data object as the sret pointer): `Clif.run` 2/2, Lean backend native 2/2 = Cranelift-native = rustc/LLVM byte-for-byte. |
 | 4. `dyn`/fn pointers (`call_indirect`, `func_addr`) | **done (native runs verified, flagged unverified)** — `Clif.run` supports both (`stepCallIndirect`, `func_addr` via `mem.symbols`); parser/printer handle `sigN`; the Lean backend lowers both via the exported ISLE rules (`rule_lower_2529`, `func_addr` → `load_ext_name`, `gen_call_ind_info`, `value_slice_unwrap`, `InstructionData.CallIndirect/FuncAddr` term data). Step 4 closes with three commits: (1) both opcodes admitted to the emitter-subset closure (`E_OPCODES` + regenerated `Closure.lean`, 444 rules / 131 roots; `closureRootIds` gains the FuncAddr/CallIndirect root rules 1026/1033) with `instE` admitting them (flagged unverified: `InSubset.noCI`, `unverifiedReason?` "indirect call / func_addr (outside backend_correct)"); (2) **`Clif.Mem.Image.memWith`** — data-object relocations resolve function/extern symbols (stubs registered before `writeItems`; `Program.initMem` routes through it) — without it `Clif.run` of vtable-bearing files was `stuck`; (3) fixture `scripts/rust-clif/fixtures/dyn-vtable.clif`: self-contained `dyn_pick`/`dyn_hash` runs over the recovered Fnv/Xor vtables — 3 `; run:` lines pass in `Clif.run` (3-element FNV hash 2121893058 and XOR 33 agree with rustc/LLVM; addresses are the interpreter's link-time layout — native `%name` run args are future work). DriverHyp/noCI etc. as before; OptProven's `step_eq_lift` callIndirect case owned by the OptProvenFix agent (WIP diff in `/tmp/rustroute3_semsim.patch`).| 5. Re-count | **in progress (this run)** — recount with `scripts/rust-clif/tools.sh`: **863/933 compile** with `lean-backend` (debug 423/454, release 220/239, release-oc 220/240; clif2obj 933/933). Causes by count: `i128 parameter` 31, `prepCheck` 24, `extend to i128` 6, `calls %X, which is not compiled` 5 (transitive), `i128 return value` 4 — i.e. **i128/u128 ≈ 41** and **prepCheck ≈ 24**. `call_indirect`/`func_addr` functions all compile now (the closure work). prepCheck root cause found (OptProvenFix's area): `prepare` drops unreachable vc blocks; `prepCheck.keptOk` walks every vc block and fails on the dropped ones (repro: `/tmp/rust-clif-survey/tools/debug-a_arith.unopt.reader.clif` `%cmp_bool`, vc block 5 unreachable-and-aliased, insts.size 2 vs 1) — `prepCheck` must skip vc blocks absent from vcp. i128 backend scope (unstarted): `sigArgs`/`sigL` must pass an i128 as **two x-registers** (Cranelift's aarch64 ABI; the `add_u128` vcode shows `adds x8, x0, x2` / `adc x1, x13, x3` + the overflow check via `subs`/`sbcs` + `__multi3`-style helper `blr` for `imul`), `buildCtx` must give i128 values `.int 128` types (the ISLE rules match `$I128`), and the exclusion checker's `eCTys`/`AV.tys` must cover it; new MInst encode/sem forms for `adds`/`adc`/`sbcs` (+ proofs = flagged unverified). Clif.run needs nothing: a census confirms every i128 opcode the corpus uses (iadd/isub/imul/band/bor/bxor/ishl/ushr/sshr/icmp/uextend/sextend/ireduce/load/store/udiv/sdiv/urem/srem) already runs.
 | 5. Survey to 933/933 (**done**, `agent/rust-i128`) | **933/933 compiled** (debug 454/454, release 239/239, release-oc 240/240). The 41 i128 functions are legalised before the backend by **`Opt.Legalize128`** (`FV/Opt/Legalize128.lean`) — the DECIDED design: no backend/proof change, a CLIF→CLIF pass that rewrites `i128` away the way Cranelift's legalizer does. Every `i128` value becomes an `(lo, hi)` pair of `i64` values: `iadd`/`isub` via the carry/borrow chain, `imul`/`umulhi`/`smulhi` via cross products, `band`/`bor`/`bxor`/`bnot` pairwise, `icmp` lexicographic, `uextend`/`sextend` (`hi = 0` / `sshr lo, 63`), `ireduce` = `lo`, `iconcat`/`isplit`/`bitcast` are the pair, `select`/`bmask`/`bitselect` pairwise, `iabs`/`clz`/`ctz`/`cls`/`popcnt`/`bitrev`/`bswap` from the halves; shifts/rotates by the amount mod 128 with a half-crossing `select` (constant amounts folded); loads/stores as two `i64` accesses at `+0`/`+8`; block params/branch args split; signatures become even/odd `i64` register pairs with an unused `i64` pad reproducing the AAPCS64 skipped register (Cranelift aarch64 `compute_arg_locs`, for returns too), at call sites and in the `fnN`/`sigN` declarations; `udiv`/`sdiv`/`urem`/`srem` at `i128` call `__udivti3`/`__divti3`/`__umodti3`/`__modti3` (freestanding C long division in `rust-runtime.c`; byte-exact `Clif.Rust.env` semantics with the `int_divz`/`int_ovf` traps of the opcodes they replace, so `Clif.run` original and legalised agree). `lean-backend` legalises automatically when a function mentions `i128` (before the mid-end) and flags legalised functions unverified (`i128 legalized (outside backend_correct)`, via `compileFileWith`'s `preUnverified`); the backend's value model and all proof files are untouched. Differential `clif-filetest --legalize128` (every run line through the original and the legalised program): the 31 i128 runtests files 742 pass / 0 fail / **0 disagree** (the 8 `fcvt_*`/float lines are outside `Clif.run` too), survey smoke **0 disagreements**; native (`--functions-obj`, qemu): i128 runtests 735 pass / 0 fail / **0 disagree** vs Cranelift's own aarch64 code, smoke **101/101 pass vs rustc/LLVM** (was 88 pass / 13 not-compiled). `tools.sh`: **933/933** compiled, 0 unsupported. Gates: filetests corpus **114/114**, runtests **4067 pass / 0 fail / 0 disagree** (was 3085); encode-check **1132 identical / 0 differ**; `lean-e2e-check` **910 accepted / 0 rejected** (22 out of scope), formsCoveredB 910 / 0 not covered; `lake build FV.E2E` green. Not legalised (stay unsupported, as `Clif.run` does not run them either): the `fcvt_*`/float i128 runtest functions. Pre-existing (recorded for the integrator): `clif-native`'s prebuilt blame cannot attribute an undefined *data*-symbol reference (`%fn_ptr_table`'s `symbol_value %alloc33`) → "undefined symbols … not referenced by any CLIF function" for `--functions-obj` runs of files with undefined data symbols; independent of i128. |
+| 6. `panic=unwind` in `cargo fv` (**done**, `agent/fv-unwind`) | Lean objects carry `.eh_frame` (unverified, `FV/Backend/Unwind.lean`); cg_clif with its `unwinding` feature (`scripts/build-cg-clif-unwind.sh`) supplies landing pads; functions with `try_call` fall back ("landing pad"). See §"Step 6". |
 
 ## Step 1: data objects from cg_clif (`clif-data-export`)
 
@@ -112,7 +113,230 @@ integrator.
   intra-object offsets are preserved, so placement is value-correct); `tls` and
   imported statics are out of scope (none in the corpus).
 
+## Step 6: `panic=unwind` (`cargo fv`, branch `agent/fv-unwind`)
+
+**Findings.**
+
+- The shipped `rustc-codegen-cranelift-preview` of nightly-2026-09-26 (rustc 5ceaf6608) is
+  built without cg_clif's `unwinding` cargo feature (`Cargo.toml`: "Not yet included in
+  unstable-features for performance reasons"). With it off, `codegen_fn` skips every MIR
+  cleanup block, `codegen_call_with_unwind_action` turns every unwind action into
+  `Unreachable` (plain `call`, no `try_call`), the `catch_unwind` intrinsic is a plain
+  `call_indirect` returning 0, and the CIE has no personality/LSDA. Checked: with
+  `-Cpanic=unwind`, a function with a `Drop` local has no `try_call`; plain `cargo test
+  -Zcodegen-backend=cranelift` fails a `catch_unwind` test and a Drop-during-unwinding test
+  that LLVM passes, while `#[should_panic]` passes (libtest's catch is LLVM code).
+- cg_clif puts each function in its own `.text.subsection` and relocates its FDEs against those
+  section symbols, so its FDEs never describe Lean code after the merge (the weakened cg_clif
+  copy keeps its FDE and loses it with `--gc-sections`).
+- Built from the same commit's sources with `--features unwinding` (rustc-dev component,
+  `-L native=<sysroot>/lib` for libLLVM), cg_clif emits `try_call fnN(args), sigN,
+  blockK(ret0), [ tag0: blockL(exn0) ]`, cleanup blocks ending in `_Unwind_Resume`, and an
+  LSDA per function; `catch_unwind` and Drop-during-unwinding then match LLVM.
+  `normalize.py` and `clif-data-export` handle these CGUs unchanged. Under `-Cpanic=abort`
+  the same build adds terminate `try_call`s (rustc's `abort_unwinding_calls`: calls into
+  unwinding std from a nounwind body), so `--panic-abort` keeps the shipped cg_clif.
+
+**Decisions.**
+
+1. The Lean backend emits `.eh_frame`: CIE as Cranelift's aarch64 `create_cie` with cg_clif's
+   `pcrel|sdata4` FDE encoding; per function `PushFrameRegs` (after `stp x29, x30`),
+   `DefineNewFrame` (after `mov x29, sp`) and one `SaveReg` row after each callee-save store of
+   block 0 (CFA offset = slot − 16 − frameSize); `pc_begin` `R_AARCH64_PREL32` against the
+   `.text` section symbol. Unverified, outside `InSubset`/`backend_correct_final`; the proofs
+   are untouched (only `FileAsm` gained a defaulted field and `elfObject` an optional
+   argument). `unwindRows` rejects (compile error → fallback) a function whose code does not
+   start with exactly the prologue and the save stores; none does in the gates. `.text` is
+   byte-identical (encode-check 1132/1132).
+2. Landing pads: **fallback**, not an unverified `try_call` lowering. A function whose CLIF
+   has `try_call`/`try_call_indirect` keeps cg_clif's code (reason "landing pad"), which has
+   the landing pads and LSDA. Lowering `try_call` (exception edges and payload registers in
+   the VCode, regalloc across exceptional edges, LSDA/`.gcc_except_table` and the personality
+   in the CIE) is the next step; it would recover 17–23% of the functions in the examples.
+3. `cargo fv` defaults to panic=unwind with the unwinding cg_clif when
+   `target/cg_clif-unwind/librustc_codegen_cranelift.so` exists (else the shipped one, with a
+   note; then the reference is plain cg_clif, `BASELINE=cg_clif examples/compare.sh`);
+   `--panic-abort` restores `-Cpanic=abort -Zpanic-abort-tests` with the shipped cg_clif.
+
+**Evidence.** fv-demo gained six unwinding tests (catch with payload, Drop order during
+unwinding, nested catch + `resume_unwind`, `should_panic` through Lean → cg_clif → Lean, and
+x19–x28 saved by Lean frames between panic and catch). compare.sh SAME vs LLVM: fv-demo
+18/18 debug and release, survey 53/53 debug and release (50 + 3 ignored). With the shipped
+cg_clif: fv-demo 14/18 = plain cg_clif's outcomes (SAME with `BASELINE=cg_clif`), survey
+53/53 = LLVM. Negative control: with the save rows removed, the fv-demo test binary crashes
+(SIGSEGV) during unwinding. Cross-check against Cranelift: for `unwind::churn` (fv-demo,
+debug), cg_clif's FDE and the Lean FDE (`llvm-dwarfdump --eh-frame` of the two test
+binaries) give the same rules at the calls: CFA = x29+16, x29/x30 at CFA-16/-8, x19…x28 at
+CFA-96…-24; only the row positions differ (Cranelift saves with `stp` pairs in the prologue,
+the Lean frame with one `stur` per register after `sub sp`). `clif2obj` emits no `.eh_frame`,
+so the comparison uses cg_clif's objects.
+
+**Gates.** filetests corpus 114/114 (extrt 22/22), runtests 4067 pass / 0 fail / 0 disagree;
+encode-check 1132 identical / 0 differ (`.text` unchanged; the objects only gain `.eh_frame`,
+`.rela.eh_frame` and the `.text` section symbol); `lean-e2e-check` 910 accepted / 0 rejected,
+formsCoveredB 910 / 0 not covered; `lake build FV.E2E` and `FV.E2E.OptProven` green.
+
+## agent/fv-trycall: `try_call` lowering, landing pads and LSDA
+
+Implemented (commits on `agent/fv-trycall`): `Clif.Terminator.tryCall`/`tryCallIndirect` with
+exception tables (parser/printer in Cranelift 0.136.1 syntax: `sigN, block(ret0), [ tagN: block(exn0),
+default: …, context vN ]`); `Clif.run` models only the normal return (call, results bound to
+fresh values, `jump normal(retN…)`; no unwinding in `Clif.run`); `termE` excludes them
+(unverified: "try_call / landing pads (outside backend_correct)"). Backend: the terminator data
+goes through Cranelift's ISLE `lower_branch` try_call rules (`exception_sig`, `try_call_info`,
+`gen_try_call_rets` with the x0/x1 payload vregs, a payload in a return register sharing its
+vreg); the emitted call becomes the `MInst.tryCall` terminator (regalloc2 `branch` with fixed
+defs, SystemV clobbers; every successor is an edge block, so each has one predecessor; the
+Lean checker keeps the defs — `isBranch` stays false — and rejects any edit after the call).
+Emission `bl/blr; b continuation`; `callSites` + `lsdaBytes` write cg_clif's LSDA
+byte-for-byte (checked on `core::intrinsics::disjoint_bitor`: identical call-site table
+`[0xb,0xc)→0x14 cleanup, [0x1f,0x20)→0`), a `zLPR` CIE with `DW.ref.rust_eh_personality`
+(`lean-backend --personality`, passed by `cargo fv`). `Legalize128` handles i128 try_call
+arguments/returns. `cargo fv` no longer falls back on landing pads; `normalize.py` keeps the
+`sigN` of try_calls.
+
+Results: `examples/compare.sh` SAME vs LLVM — fv-demo 18/18, survey 53/53, vendor 189/189,
+debug and `--release`. fv-demo debug `cargo fv build`: fallbacks 81 → 4 (3 skip + 1 i128, the
+latter fixed since: `cargo fv test` units 6 = skip only); the unwinding tests' landing-pad
+owners (`unwind::guarded`, `catch_churn`, `rethrow`, `catch_unwind`, `do_catch`, the test
+closures) are Lean-compiled. DECISIONS: tail/preserve_all callees and exception-table `context`
+items are rejected (compile error → fallback; cg_clif emits neither), so the runtest
+`try_call.clif` (tail callee) stays unsupported; tags other than cg_clif's 0/1 have no LSDA.
+Proof repairs: `HeadNoCI`/`NoCallIndirect` (Opt simulation) now also exclude try terminators
+(conservative: every program of the pre-try_call syntax still satisfies them), `lstep` is stuck
+on them. The other repairs are new constructor arms: `termEval`/`lstep` are stuck on try
+terminators (vacuous arms in `Unreachable`, `GvnEdit`, `SimpSim`, `SimpLoop`), `ExnTable.mapVals`
+congruence/identity/composition lemmas (`mapTerm_*`), `MInst.tryCall` operand arms
+(`LowerRename`, `RegLevelDriverSem.visit_mapRegs`), `setTargets` of a `tryCall` (keeps its
+operands; `csem` of it ignores the labels: `setTargets_cases` gains that case), and
+`LowerSim.Hyps.noTry` (from `Compile.noTry_of_functionE`, like `noTail`).
+
+Gates (final): `lake build FV FVTest FV.E2E FV.E2E.OptProven` green; `#print axioms` of
+`E2E.backend_correct_final`/`backend_correct_opt_proven`: propext, Classical.choice, Quot.sound
++ `_native` only; filetests corpus 114/114 (extrt 22/22), runtests 4672 pass / 0 fail / 0
+disagree; encode-check 1260 identical / 0 differ; `lean-e2e-check` 910 accepted / 0 rejected /
+0 not covered; `compare.sh` SAME: fv-demo 18/18, survey 53/53, vendor 189/189, debug and
+`--release`. Fallbacks (`cargo fv test`, panic=unwind): fv-demo 6/6 (skip), survey 0/0,
+vendor debug 15 (12 lowerCheck: once_cell `initialize` test closures, `certOk` fails on their
+unreachable cleanup blocks — no `try_call`, same lowering as before this branch; 3 TLS),
+vendor release 3 (TLS); no landing-pad fallbacks. Negative control: with the LSDA emission
+disabled in `Obj.lean`, fv-demo's `catch_unwind_through_lean_frames`,
+`drop_runs_during_unwinding`, `nested_catch_and_resume` and `callee_saved_survive_unwinding`
+fail (14/18 pass).
+
 <!-- STATUS-MARKER -->
+
+## agent/fv-fallback: baseline `cargo fv` fallback measurements (worktree `../clifv-wt/fv-fallback`)
+
+Goal: reduce `cargo fv` fallbacks to ~0 on real code. Measured before any change
+(`cargo fv build`, mode plain; "fb" = fallback):
+
+| workspace | profile | functions | verified | unverified | fb |
+| --- | --- | --- | --- | --- | --- |
+| examples/fv-demo | debug | 442 | 322 | 118 | 2 (`metadata.fv.skip`) |
+| examples/fv-demo | release | 293 | 202 | 84 | 7 (5× missing `allocNNN`, 2 skip) |
+| examples/survey | debug | 454 | 394 | 60 | 0 |
+| examples/survey | release | 239 | 184 | 42 | 13 (all missing `allocNNN`) |
+| examples/vendor (new) | debug | 690 | 515 | 165 | 10 (9 atomics/fence/bmask) |
+| examples/vendor (new) | release | 318 | 187 | 115 | 16 (8× missing `allocNNN`, 8 atomics/fence/bmask) |
+
+New `examples/vendor` workspace (commit 83c0e87): vendored dep-free crates.io crates from
+`~/.cargo/registry/cache` — crc32fast 1.5.2, itoa 1.0.18, memchr 2.8.3, hex 0.4.3, bitflags
+2.13.2, cfg-if 1.0.1, once_cell 1.21.4 (+ `harness` crate with reference-value tests).
+Vendoring patches: dev-dependencies pruned ([[bench]]/[[test]]/[[example]] sections removed,
+tests/ and benches/ deleted); `quickcheck!` blocks in crc32fast/memchr replaced by
+deterministic LCG-driven `#[test]`s; `pretty_assertions::assert_eq` imports in hex dropped;
+itoa's optional `no-panic` dependency removed. Purpose: real-world code to measure and drive
+out the remaining fallback reasons.
+
+Fallback reasons collected (top, vendor debug+release combined):
+1. `unsupported: atomic_load/atomic_store/atomic_rmw (xchg, sub)/atomic_cas/fence ... is not in E` — once_cell's `race` module (AtomicUsize/AtomicPtr/AtomicBool).
+2. `unsupported: bmask.i8 ... is not in E` — harness/bitflags code.
+3. `references allocNNN, which cg_clif's object does not contain` — release-only: the Lean backend compiles the unoptimised CLIF, which still contains (dead) panic paths whose `Location` data objects cg_clif's optimiser removed from its object; fix options: retry with the `.opt.clif` dump (preferred), or emit a private copy of the missing read-only data.
+4. `cfg-if (lib): codegen unit fell back entirely: CLIF dumps … missing` — cfg-if defines no functions, cg_clif writes no dump dir; cargo-fv reports a unit-level error (noise, no code lost).
+
+### agent/fv-fallback: implemented (final)
+
+All four steps landed (commit series on `agent/fv-fallback`):
+
+1. **Release missing-`allocNNN`** — `cargo fv` (`pipeline.rs`) runs `clif-data-export` and
+   `normalize.py` for both stages (gvmap entries are stage-filtered in normalize.py) and, when
+   the unopt compile's object references an `alloc*`/`data_*`/`u0_*` name absent from cg_clif's
+   object ("removed by Cranelift's optimiser, or unmapped"), retries with the normalised
+   `.opt.clif` dump (separate output object; a failing retry keeps the unopt result and its
+   reference check reports the original reason). The optimised dump matches the code cg_clif
+   actually emitted, so it references only data that exists (verified on
+   `core::intrinsics::rotate_left`: the release unopt dump references `alloc294` only through
+   its dead panic block, gone from cg_clif's object). DECISION: private data copies rejected —
+   the bytes are not recoverable from cg_clif's object at all. Macro-only CGUs (cfg-if): cg_clif
+   writes no dump dir; `cargo fv` now reports each text symbol as a fallback row instead of a
+   unit-level error.
+2. **bmask + 3. atomics** — lowered by the full exported ISLE program (not the emitter
+   closure): the non-LSE rules `load_acquire`/`store_release`, `atomic_rmw_loop`/
+   `atomic_cas_loop`, `lower_bmask` (`use_lse` fails → cg_clif's `has_lse=0` path).
+   DECISION: the opcodes are NOT added to `isle2lean`'s `E_OPCODES` (an intermediate commit did,
+   regenerating `Closure.lean` to 486 rules; reverted): closure roots must lie in the proven
+   families, and the excluded-root refutations need the atomic opcodes outside `eOps`. The
+   proofs instead learn that an E instruction (`Compile.instE`) never has an atomic opcode name
+   (`IselExclData.instE_atomic_ne`; `instNames`/`eNamePairs` gained the new arms).
+   `instData` arms build the
+   `InstructionData` (`LoadNoOffset`/`StoreNoOffset`/`AtomicRmw`/`AtomicCas`/`NullAry`/`Unary(Bmask)`);
+   new MInst: `loadAcquire`/`storeRelease` (ldar/stlr), `atomicRmwLoop`/`atomicCasLoop` (emit-time
+   LL/SC loop expansion transcribed from Cranelift's `inst/emit.rs`: ldaxr/extend/op/stlxr/cbnz
+   over fixed x24–x28, with emit-time labels `Lbl.loop`), `csetm` (csinv), `fence` (dmb ish).
+   regalloc operands: `Constraint.fixed` as `aarch64_get_operands` (x25/x26 in, x27/x24/x28
+   out) with one conservative deviation: the x28 def is registered for `xchg` too (Cranelift
+   omits it; x28 is dead across the instruction either way), which keeps `visitOperands`
+   uniform in the op for the rename-commutation proof (`LowerRename.Sim.visit`). The
+   stack-slot allocator rejects the loop pseudo-insts. Arm model: new
+   decode classes `LDST.Reg_exclusive` (LDXR/LDAXR/STXR/STLXR/LDAR/STLR) and `BR.Barrier` (dmb;
+   in the BR group because the DPR `decode_class` proofs require every fixed-bit dispatch to be
+   decidable without the opaque sf/op/S bits) with exec (exclusive store writes the success flag
+   0 to Rs) and `decode_armBits_*` theorems; `arm-cosim.sh` co-simulates `dmb ish`, `ldar`,
+   `stlr`, `ldaxr` against qemu (a lone `stlxr` cannot be: qemu fails it without a monitor,
+   the model's exclusive store always succeeds). Encoders checked against llvm-mc
+   (`lean-backend-encode-check.sh`, the compiled runtests plus random-sweep forms `csetm`,
+   `ldar_stlr_ldaxr`, `stlxr`, `dmb` with the decode check). Differential execution:
+   the atomic/bmask/fence runtests agree with Cranelift-native (621/621 after fixing the i32/i64
+   min-max comparison width and the i64 smin/smax operand extend — both transcriptions now match
+   `emit.rs` exactly). `FVTest/E2E/Check.lean` skips functions outside `Compile.functionE` (they
+   are outside the theorem); `Backend.unverifiedReason?` reports "bmask / atomic instructions /
+   fence (outside backend_correct)". `E2E.InSubset`/the theorems are untouched.
+4. **TLS** — never showed up as a fallback (no vendored crate or example uses `#[thread_local]`;
+   the survey dumps declare `set tls_model=elf_gd` but contain no `tls_value`), so no code
+   change; the parser still rejects TLS globals (`FV/Clif/Parse.lean:383`).
+
+Before/after (`cargo fv build` + `cargo fv report`; "before" was measured with panic=abort,
+before fv-unwind was merged, so the comparable "after" is `--panic-abort`; under the default
+panic=unwind the landing-pad fallbacks of the fv-unwind design come on top):
+
+| workspace | profile | fb before (abort) | fb after (abort) | fb after (unwind) | of which landing pad | of which skip |
+|---|---|---|---|---|---|---|
+| fv-demo | debug | 2 | 3 | 81 | 78 | 3 (`metadata.fv.skip`; 2 before) |
+| fv-demo | release | 7 | 3 | 77 | 74 | 3 |
+| survey | debug | 0 | 0 | 55 | 55 | — |
+| survey | release | 13 | 0 | 47 | 47 | — |
+| vendor | debug | 10 | 0 | 41 | 41 | — |
+| vendor | release | 16 | 0 | 31 | 31 | — |
+
+Remaining fallback reasons: `package.metadata.fv.skip` (fv-demo, deliberate) and, with
+panic=unwind, landing pads (try_call; the Lean backend emits no exception tables). The
+atomic/bmask/fence functions (vendor: 9 debug, 7–8 release) report "bmask / atomic
+instructions / fence (outside backend_correct)": `cargo fv` prefers lean-backend's own
+unverified reason over its "rule fired outside the emitter-subset closure" warning, which
+the (non-closure) atomic rules trigger by design.
+
+Gates: `lake build FV FV.E2E FV.E2E.OptProven FVTest` green, `#print axioms` of
+`E2E.backend_correct_final`/`backend_correct_opt_proven`: standard + `_native` only;
+`lean-backend-filetests.sh` corpus 114/114 (+ extrt 22/22), runtests 395 files: 4672 lean
+passes, 0 fail, 0 disagree vs Cranelift-native (atomic/bmask/fence files: 621 passes, the
+big-endian and 128-bit atomic files are not compiled by Cranelift-native either);
+`lean-backend-encode-check.sh` 1260 functions identical, 0 differ (34368 words, 1085
+relocations); `arm-cosim.sh` 169 forms / 33800 vectors, 0 failures; `lean-e2e-check` lowerCheck
+910 accepted / 0 rejected / 146 out of scope (22 before; +124: the atomic/bmask/fence runtest
+functions now lower but are outside `Compile.functionE`), prepCheck 910/0, formsCoveredB 910
+covered / 0 not covered; `examples/compare.sh` fv-demo 18/18, survey 53/53, vendor 189/189
+(debug + release, SAME).
 
 ## Native coverage (branch `agent/native-cov`)
 

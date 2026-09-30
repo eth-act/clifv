@@ -33,6 +33,8 @@ inductive Lbl where
   | block (l : Label)
   | trap (n : Nat)
   | jt (n : Nat)
+  /-- An emit-time label of an atomic LL/SC loop expansion (not a block label). -/
+  | loop (n : Nat)
   -- `BEq` is the lawful one from `DecidableEq` (the layout proof uses `Std.HashMap` lemmas)
   deriving DecidableEq, Repr, Inhabited, Hashable
 
@@ -41,6 +43,7 @@ def Lbl.name (k : Nat) : Lbl → String
   | .block l => s!".L{k}_b{l}"
   | .trap n => s!".L{k}_t{n}"
   | .jt n => s!".L{k}_jt{n}"
+  | .loop n => s!".L{k}_a{n}"
 
 /-- One AArch64 instruction over real registers: one line of assembly, one 4-byte word.
 Constructors follow the assembly the backend prints (including the aliases `mov`, `cset`,
@@ -124,6 +127,18 @@ inductive Insn where
   | adrp (rd : Reg) (sym : String) (addend : Int)
   /-- `add xd, xn, :lo12:sym+addend` (`R_AARCH64_ADD_ABS_LO12_NC`). -/
   | addLo12 (rd rn : Reg) (sym : String) (addend : Int)
+  /-- `ldar{b,h,}` (`bits` ∈ {8, 16, 32, 64}; `ldar w..`/`ldar x..` at 32/64). -/
+  | ldar (bits : Nat) (rt rn : Reg)
+  /-- `stlr{b,h,}`. -/
+  | stlr (bits : Nat) (rt rn : Reg)
+  /-- `ldaxr{b,h,}` (acquire exclusive load). -/
+  | ldaxr (bits : Nat) (rt rn : Reg)
+  /-- `stlxr{b,h,} w/rs, x/wt, [xn]` (`rs` is the success-flag register, always `w`). -/
+  | stlxr (bits : Nat) (rs rt rn : Reg)
+  /-- `dmb ish` (`MInst.Fence`). -/
+  | dmbish
+  /-- `csetm xd, cond` = `csinv xd, xzr, xzr, invert(cond)`. -/
+  | csetm (rd : Reg) (c : Cond)
   deriving DecidableEq, Repr, Inhabited, BEq
 
 /-- One element of a function's code: an instruction (4 bytes, optionally a trap site), a
@@ -181,6 +196,8 @@ def memFinalize (c : FnCtx) (m : AMode) (accessBytes : Nat) : Except String (Lis
 /-- State while expanding a function: counters for local labels and the deferred traps. -/
 structure PState where
   jt : Nat := 0
+  /-- Emit-time labels of the atomic LL/SC loop expansions. -/
+  aloop : Nat := 0
   traps : Array (Lbl × Clif.TrapCode) := #[]
 
 /-- The branch of a `CondBrKind` to `target`. -/
@@ -247,6 +264,14 @@ def MInst.lines (c : FnCtx) (m : MInst) (ps : PState) : Except String (List Line
     | .sym n => one (.bl n)
     | .reg r => one (.blr r)
   | .args _ | .rets _ => throw "args/rets after allocation"
+  -- `emit.rs` `Inst::Call`/`CallInd` with `try_call_info`: the call, then `b continuation`
+  -- (dropped by `fallthrough` when the continuation is the next block); the landing pads
+  -- are recorded in the LSDA (`Backend.Unwind`, `callSites`)
+  | .tryCall info ti =>
+    let call : Insn := match info.dest with
+      | .sym n => .bl n
+      | .reg r => .blr r
+    pure ([.ins call, .ins (.b (.block ti.continuation))], ps)
   | .jump l => one (.b (.block l))
   | .condBr t e k => pure ([.ins (k.insn (.block t)), .ins (.b (.block e))], ps)
   | .testBitAndBranch k t e rn bit =>
@@ -274,7 +299,79 @@ def MInst.lines (c : FnCtx) (m : MInst) (ps : PState) : Except String (List Line
       | _ => throw "LoadAddr amode"
     pure (pre ++ tail, ps)
   | .emitIsland _ => pure ([], ps)
+  | .loadAcquire ty rt rn fl => pure ([.ins (.ldar ty.bits rt rn) fl.trapCode], ps)
+  | .storeRelease ty rt rn fl => pure ([.ins (.stlr ty.bits rt rn) fl.trapCode], ps)
+  | .csetm rd c => one (.csetm rd c)
+  | .fence => one .dmbish
+  -- The LL/SC loop expansions, transcribed from Cranelift's `inst/emit.rs`
+  -- (`AtomicRMWLoop`, `AtomicCASLoop`; the fixed registers are `aarch64_get_operands`'
+  -- fixed operands, which regalloc2 assigned).
+  | .atomicRmwLoop ty op fl addr operand oldval s1 s2 =>
+    if addr != .x 25 || operand != .x 26 || oldval != .x 27 || s1 != .x 24
+        || (op != .xchg && s2 != .x 28) then
+      throw s!"atomic_rmw_loop with unexpected fixed registers {repr addr} {repr operand} \
+        {repr oldval} {repr s1} {repr s2}"
+    else
+      let l := Lbl.loop ps.aloop
+      let ps := { ps with aloop := ps.aloop + 1 }
+      let ext : List Insn :=
+        match op, ty.bits with
+        | .smin, 8 | .smax, 8 => [.bfm .sBfm false (.x 27) (.x 27) 0 7]
+        | .smin, 16 | .smax, 16 => [.bfm .sBfm false (.x 27) (.x 27) 0 15]
+        | .umin, 8 | .umax, 8 => [.bfm .uBfm false (.x 27) (.x 27) 0 7]
+        | .umin, 16 | .umax, 16 => [.bfm .uBfm false (.x 27) (.x 27) 0 15]
+        | _, _ => []
+      let mid : List Insn :=
+        match op with
+        | .xchg => []
+        | .nand => [.aluRRR .and true (.x 28) (.x 27) (.x 26),
+                    .aluRRR .orrNot true (.x 28) .xzr (.x 28)]
+        | .smin => [cmpOpOf op ty.bits, .csel (.x 28) (.x 27) (.x 26) .lt]
+        | .smax => [cmpOpOf op ty.bits, .csel (.x 28) (.x 27) (.x 26) .gt]
+        | .umin => [cmpOpOf op ty.bits, .csel (.x 28) (.x 27) (.x 26) .lo]
+        | .umax => [cmpOpOf op ty.bits, .csel (.x 28) (.x 27) (.x 26) .hi]
+        | .add => [.aluRRR .add true (.x 28) (.x 27) (.x 26)]
+        | .sub => [.aluRRR .sub true (.x 28) (.x 27) (.x 26)]
+        | .and => [.aluRRR .and true (.x 28) (.x 27) (.x 26)]
+        | .or => [.aluRRR .orr true (.x 28) (.x 27) (.x 26)]
+        | .xor => [.aluRRR .eor true (.x 28) (.x 27) (.x 26)]
+      let stored : Reg := if op == .xchg then .x 26 else .x 28
+      pure ([.label l, .ins (.ldaxr ty.bits (.x 27) (.x 25)) fl.trapCode] ++
+        ext.map (fun i => .ins i) ++ mid.map (fun i => .ins i) ++
+        [.ins (.stlxr ty.bits (.x 24) stored (.x 25)) fl.trapCode,
+         .ins (.cbz true true (.x 24) l)], ps)
+  | .atomicCasLoop ty fl addr expect replace oldval scratch =>
+    if addr != .x 25 || expect != .x 26 || replace != .x 28 || oldval != .x 27
+        || scratch != .x 24 then
+      throw s!"atomic_cas_loop with unexpected fixed registers {repr addr} {repr expect} \
+        {repr replace} {repr oldval} {repr scratch}"
+    else
+      let again := Lbl.loop ps.aloop
+      let out := Lbl.loop (ps.aloop + 1)
+      let ps := { ps with aloop := ps.aloop + 2 }
+      -- the ldaxr zero-extends (64-bit form reads the x-register); the comparison extends
+      -- the replacement operand for the subword sizes (emit.rs `AtomicCASLoop`)
+      let cmp : Insn :=
+        match ty.bits with
+        | 8 => .aluRRRExtend .subS true .xzr (.x 27) (.x 26) .uxtb
+        | 16 => .aluRRRExtend .subS true .xzr (.x 27) (.x 26) .uxth
+        | _ => .aluRRR .subS true .xzr (.x 27) (.x 26)
+      pure ([.label again, .ins (.ldaxr ty.bits (.x 27) (.x 25)) fl.trapCode, .ins cmp,
+             .ins (.bcond .ne out),
+             .ins (.stlxr ty.bits (.x 24) (.x 28) (.x 25)) fl.trapCode,
+             .ins (.cbz true true (.x 24) again), .label out], ps)
 where
+  /-- The min/max comparison of the LL/SC loop (`emit.rs`): an extended `subs xzr, x27, x26`
+at the subword sizes (the operand register may hold garbage in its high bits), the plain
+64-bit `subs` otherwise. -/
+  cmpOpOf (op : AtomicRmwLoopOp) (bits : Nat) : Insn :=
+    match op, bits with
+    | .smin, 8 | .smax, 8 => .aluRRRExtend .subS true .xzr (.x 27) (.x 26) .sxtb
+    | .smin, 16 | .smax, 16 => .aluRRRExtend .subS true .xzr (.x 27) (.x 26) .sxth
+    | .umin, 8 | .umax, 8 => .aluRRRExtend .subS true .xzr (.x 27) (.x 26) .uxtb
+    | .umin, 16 | .umax, 16 => .aluRRRExtend .subS true .xzr (.x 27) (.x 26) .uxth
+    -- 32/64-bit: the plain `subs` at the operand size (emit.rs `OperandSize::from_ty(ty)`)
+    | _, b => .aluRRR .subS (b == 64) .xzr (.x 27) (.x 26)
   /-- `LoadAddr` with an immediate offset (`emit.rs`). -/
   addOff (rd rn : Reg) (off : Int) : List Line :=
     if off == 0 then
@@ -553,6 +650,17 @@ def Insn.asm (k : Nat) : Insn → String
   | .ldrGotLo12 rd rn sym => s!"ldr {rd.gpr}, [{rn.gpr}, :got_lo12:{sym}]"
   | .adrp rd sym off => s!"adrp {rd.gpr}, {symOff sym off}"
   | .addLo12 rd rn sym off => s!"add {rd.gpr}, {rn.gpr}, :lo12:{symOff sym off}"
+  | .ldar bits rt rn => s!"ldar{sizeSfx bits} {rt.gpr (bits == 64)}, [{rn.gpr}]"
+  | .stlr bits rt rn => s!"stlr{sizeSfx bits} {rt.gpr (bits == 64)}, [{rn.gpr}]"
+  | .ldaxr bits rt rn => s!"ldaxr{sizeSfx bits} {rt.gpr (bits == 64)}, [{rn.gpr}]"
+  | .stlxr bits rs rt rn =>
+    s!"stlxr{sizeSfx bits} {rs.gpr false}, {rt.gpr (bits == 64)}, [{rn.gpr}]"
+  | .dmbish => "dmb ish"
+  | .csetm rd c => s!"csetm {rd.gpr}, {c.asm}"
+where
+  /-- The `b`/`h`/`` size suffix of the exclusive and acquire-release loads/stores. -/
+  sizeSfx : Nat → String
+    | 8 => "b" | 16 => "h" | _ => ""
 
 /-- Assembly text of a function. Every line is 4 bytes, so offsets are computed here;
 `.ifne . - f - N / .error` guards make `llvm-mc` reject the file if a trap offset or the

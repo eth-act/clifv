@@ -119,6 +119,7 @@ def armBits : ArmInst → BitVec 32
   | .BR (.Uncond_branch_reg x) => 0b1101011#7 ++ x.opc ++ x.op2 ++ x.op3 ++ x.Rn ++ x.op4
   | .BR (.Cond_branch_imm x) => 0b01010100#8 ++ x.imm19 ++ x.o0 ++ x.cond
   | .BR (.Hints x) => 0b11010101000000110010#20 ++ x.CRm ++ x.op2 ++ 0b11111#5
+  | .BR (.Barrier x) => 0b11010101000000110011#20 ++ x.CRm ++ x.op2 ++ 0b11111#5
   | .BR (.Test_branch x) => x.b5 ++ 0b011011#6 ++ x.op ++ x.b40 ++ x.imm14 ++ x.Rt
   -- C4.1 Data Processing -- Register
   | .DPR (.Add_sub_carry x) =>
@@ -171,6 +172,8 @@ def armBits : ArmInst → BitVec 32
   | .LDST (.Reg_reg_offset x) =>
     x.size ++ 0b111#3 ++ x.V ++ 0b00#2 ++ x.opc ++ 1#1 ++ x.Rm ++ x.option ++ x.S ++ 0b10#2 ++
       x.Rn ++ x.Rt
+  | .LDST (.Reg_exclusive x) =>
+    x.size ++ 0b001000#6 ++ x.ord ++ x.L ++ 0#1 ++ x.Rs ++ x.o0 ++ 0b11111#5 ++ x.Rn ++ x.Rt
   -- C4.1 Reserved: UDF
   | .RES (.Udf x) => 0#16 ++ x.imm16
 
@@ -203,6 +206,7 @@ def _root_.Arm.ArmInst.norm : ArmInst → ArmInst
   | .BR (.Cond_branch_imm x) =>
     .BR (.Cond_branch_imm { imm19 := x.imm19, o0 := x.o0, cond := x.cond })
   | .BR (.Hints x) => .BR (.Hints { CRm := x.CRm, op2 := x.op2 })
+  | .BR (.Barrier x) => .BR (.Barrier { CRm := x.CRm, op2 := x.op2 })
   | .BR (.Test_branch x) =>
     .BR (.Test_branch { b5 := x.b5, op := x.op, b40 := x.b40, imm14 := x.imm14, Rt := x.Rt })
   | .DPR (.Add_sub_carry x) =>
@@ -277,6 +281,9 @@ def _root_.Arm.ArmInst.norm : ArmInst → ArmInst
   | .LDST (.Reg_reg_offset x) =>
     .LDST (.Reg_reg_offset { size := x.size, V := x.V, opc := x.opc, Rm := x.Rm,
                              option := x.option, S := x.S, Rn := x.Rn, Rt := x.Rt })
+  | .LDST (.Reg_exclusive x) =>
+    .LDST (.Reg_exclusive { size := x.size, ord := x.ord, L := x.L, Rs := x.Rs, o0 := x.o0,
+                            Rn := x.Rn, Rt := x.Rt })
   | .RES (.Udf x) => .RES (.Udf { imm16 := x.imm16 })
 
 /-! ## Instruction → fields (Arm ARM C6/C7 instruction pages) -/
@@ -646,7 +653,29 @@ def Insn.armFields (env : Env) (i : Insn) : Except String ArmInst := do
     -- C6.2 ADD (immediate, 64-bit), imm12 from R_AARCH64_ADD_ABS_LO12_NC
     pure (.DPI (.Add_sub_imm { sf := 1, op := 0, S := 0, sh := 0, imm12 := 0, Rn := ← rn.encSP,
                                Rd := ← rd.encSP }))
+  | .ldar bits rt rn => exclFields bits 1 1 31 rt rn
+  | .stlr bits rt rn => exclFields bits 1 0 31 rt rn
+  | .ldaxr bits rt rn => exclFields bits 0 1 31 rt rn
+  | .stlxr bits rs rt rn => exclFields bits 0 0 (← rs.encZR) rt rn
+  | .dmbish =>
+    -- C6.2 DMB (option ISH: op1 = 11, CRm = 1011, op2 = 101; Cranelift `enc_dmb_ish`)
+    pure (.BR (.Barrier { CRm := 0b1011#4, op2 := 0b101#3 }))
+  | .csetm rd c =>
+    -- C6.2 CSETM = CSINV Rd, ZR, ZR, invert(cond) (Cranelift `enc_csel` op2 00)
+    if c == .al || c == .nv then throw "csetm al/nv"
+    pure (.DPR (.Conditional_select { sf := 1, op := 1, S := 0, Rm := 31,
+                                      cond := c.invert.bits, op2 := 0, Rn := 31,
+                                      Rd := ← rd.encZR }))
 where
+  /-- `Reg_exclusive` fields of `ldar`/`stlr`/`ldaxr`/`stlxr` (`bits` = the access size;
+  `ord`/`L`/`Rs`/`o0` per C6.2 "Load/store exclusive / … acquire-release"). -/
+  exclFields (bits o2 L : Nat) (Rs : BitVec 5) (rt rn : Reg) : Except String ArmInst := do
+    let size : BitVec 2 ←
+      match bits with
+      | 8 => pure 0b00#2 | 16 => pure 0b01#2 | 32 => pure 0b10#2 | 64 => pure 0b11#2
+      | _ => throw s!"unsupported atomic access size {bits}"
+    pure (.LDST (.Reg_exclusive { size, ord := BitVec.ofNat 1 o2, L := BitVec.ofNat 1 L,
+                                  Rs, o0 := 1#1, Rn := ← rn.encSP, Rt := ← rt.encZR }))
   /-- Data-processing (2 source) with `S = 0`. -/
   dp2 (sf : BitVec 1) (opcode : BitVec 6) (Rm Rn Rd : BitVec 5) : ArmInst :=
     .DPR (.Data_processing_two_source { sf, S := 0, Rm, opcode, Rn, Rd })

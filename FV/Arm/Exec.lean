@@ -36,6 +36,8 @@ def exec_inst (ai : ArmInst) (s : ArmState) : ArmState :=
     BR.exec_cond_branch_imm i s
   | BR (BranchInst.Hints i) =>
     BR.exec_hints i s
+  | BR (BranchInst.Barrier i) =>
+    BR.exec_barrier i s
   | BR (BranchInst.Test_branch i) =>
     BR.exec_test_branch i s
 
@@ -87,6 +89,8 @@ def exec_inst (ai : ArmInst) (s : ArmState) : ArmState :=
     LDST.exec_reg_imm_pre_indexed i s
   | LDST (LDSTInst.Reg_reg_offset i) =>
     LDST.exec_reg_reg_offset i s
+  | LDST (LDSTInst.Reg_exclusive i) =>
+    LDST.exec_reg_exclusive i s
 
   | RES i =>
     Reserved.exec_reserved i s

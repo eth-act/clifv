@@ -62,6 +62,8 @@ def globalE : GlobalValue → Bool
 def termE : Terminator → Bool
   | .jump _ | .brif _ _ _ | .brTable _ _ _ | .ret _ | .trap _ => true
   | .returnCall _ _ => false
+  -- agent/fv-trycall: compiled (landing pads, LSDA) but outside the end-to-end theorem
+  | .tryCall .. | .tryCallIndirect .. => false
 
 def sigE (s : Signature) : Bool :=
   s.params.all (tyE ·.ty) && s.returns.all (tyE ·.ty)
@@ -79,5 +81,13 @@ theorem instE_of_functionE {f : Function} (hE : functionE f = true) {b : Block} 
     {st : Stmt} (hst : st ∈ b.body) : instE st.inst = true := by
   simp only [functionE, Bool.and_eq_true, List.all_eq_true] at hE
   exact (hE.2 b hb).1.2 st hst
+
+/-- A subset-E function has no `try_call`/`try_call_indirect` terminator. -/
+theorem noTry_of_functionE {f : Function} (hE : functionE f = true) :
+    ∀ b ∈ f.blocks, b.term.isTry = false := by
+  intro b hb
+  simp only [functionE, Bool.and_eq_true, List.all_eq_true] at hE
+  have h := (hE.2 b hb).2
+  cases ht : b.term <;> rw [ht] at h <;> simp [termE, Terminator.isTry] at h ⊢
 
 end Compile

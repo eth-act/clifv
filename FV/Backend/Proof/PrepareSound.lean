@@ -19,6 +19,11 @@ open Backend Backend.Proof
 /-- `i'` is `i`, possibly retargeted. -/
 def SameInst (i i' : MInst) : Prop := i' = i ∨ i.setTargets i'.targets = some i'
 
+theorem operands_tryCall (info : CallInfo) (ti ti' : TryInfo) :
+    (MInst.tryCall info ti').operands = (MInst.tryCall info ti).operands := by
+  obtain ⟨dest, uses, defs⟩ := info
+  cases dest <;> simp [MInst.operands, MInst.visitOperands, bind_assoc]
+
 theorem setTargets_facts {i i' : MInst} {ls : List Label} (h : i.setTargets ls = some i') :
     i'.operands = i.operands ∧ trapCode? i' = trapCode? i ∧ (∀ us, i ≠ .rets us) ∧
       ∀ us, i' ≠ .rets us := by
@@ -27,6 +32,8 @@ theorem setTargets_facts {i i' : MInst} {ls : List Label} (h : i.setTargets ls =
   all_goals (try split at h)
   all_goals first
     | (cases h; done)
+    | (cases h
+       exact ⟨operands_tryCall _ _ _, rfl, (fun us e => nomatch e), (fun us e => nomatch e)⟩)
     | (cases h
        exact ⟨by simp [MInst.operands, MInst.visitOperands], rfl, (fun us e => nomatch e),
          (fun us e => nomatch e)⟩)

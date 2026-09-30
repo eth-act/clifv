@@ -143,6 +143,13 @@ def main (args : List String) : IO UInt32 := do
       let t0 ← IO.monoMsNow
       let .ok vc ← IO.lazyPure (fun _ => lowerFunction f) | continue
       let t1 ← IO.monoMsNow
+      -- the end-to-end theorem covers `E2E.InSubset` functions only; functions outside
+      -- clif-subset-v2 E (i128, floats, vectors — which `lowerFunction` rejects anyway —
+      -- and, since the atomics/bmask support, the atomic/bmask/fence forms, which compile
+      -- but are flagged unverified) are out of scope like the ABI-skipped ones
+      if !Compile.functionE f then
+        skipped := skipped + 1
+        continue
       if f.sig.params.length > 8 || !Backend.regArgCalls f || !Backend.noSpecial f then
         skipped := skipped + 1
         continue
@@ -178,7 +185,7 @@ def main (args : List String) : IO UInt32 := do
         bad := bad + 1
         IO.println s!"{file}: %{f.name}: lowerCheck rejects ({diagnose f vc})"
         IO.println (detail f vc)
-  IO.println s!"lowerCheck: {ok} accepted, {bad} rejected, {skipped} out of scope (stack parameters, stack call arguments or sret)"
+  IO.println s!"lowerCheck: {ok} accepted, {bad} rejected, {skipped} out of scope (stack parameters, stack call arguments, sret, or outside clif-subset-v2 E)"
   IO.println s!"prepCheck: {pok} accepted, {pbad} rejected"
   IO.println s!"formsCoveredB: {cov} covered, {uncov} not covered"
   for (k, n) in forms.toList.mergeSort (fun a b => a.2 ≥ b.2) do

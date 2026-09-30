@@ -254,6 +254,36 @@ def exec_reg_reg_offset
         imm       := .reg inst.Rm inst.option inst.S }
     exec_reg_imm_common extracted_inst s!"{inst}" s
 
+/-- (FV addition) Load/store exclusive / acquire-release, GPR only:
+`LDXR/LDAXR/STXR/STLXR/LDAR/STLR Rt, [Xn]`.
+Single-threaded ASL: an exclusive load is the plain load (zero-extended, `regsize` 64 at
+`size = 11`, else 32); an exclusive store writes memory and the *success flag* `0` to `Rs`
+(`STXR`/`STLXR` always succeed). No exclusive-monitor state: `Clif.run`'s single-thread
+semantics of the CLIF atomics match (`FV/Clif/Run.lean`), and Cranelift's LL/SC loops
+retry on failure only, which cannot happen here. -/
+@[state_simp_rules]
+def exec_reg_exclusive (inst : Reg_exclusive_cls) (s : ArmState) : ArmState :=
+  let scale := inst.size.toNat
+  let datasize := 8 <<< scale
+  if inst.Rn = 31#5 ∧ ¬(CheckSPAlignment s) then
+    write_err (StateError.Fault s!"[Inst: {inst}] SP is not aligned!") s
+  else
+    let address := read_gpr 64 inst.Rn s
+    have H : datasize / 8 * 8 = datasize := by
+      have h8 : 8 ∣ datasize := by simp only [datasize, Nat.shiftLeft_eq]; omega
+      exact Nat.div_mul_cancel h8
+    let s :=
+      if inst.L = 1#1 then
+        let regsize := if inst.size = 0b11#2 then 64 else 32
+        let data := BitVec.cast H (read_mem_bytes (datasize / 8) address s)
+        write_gpr_zr regsize inst.Rt (zeroExtend regsize data) s
+      else
+        let data := ldst_read false datasize inst.Rt s
+        let s := write_mem_bytes (datasize / 8) address (BitVec.cast H.symm data) s
+        -- the exclusive store succeeds: `Rs` gets 0 (the W-register write zero-extends)
+        write_gpr_zr 32 inst.Rs (0x0 : BitVec 32) s
+    write_pc ((read_pc s) + 4#64) s
+
 end LDST
 
 end Arm

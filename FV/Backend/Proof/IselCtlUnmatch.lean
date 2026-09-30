@@ -151,7 +151,7 @@ theorem ruleFmt_match (hk : FmtKinds p) {r : Rule} {fT : Nat} (hq : ruleFmt r = 
 /-- The `InstructionData` variant of each terminator's data (`termData`). -/
 def termFmt : Clif.Terminator → Nat
   | .jump _ => 15 | .brif .. => 5 | .brTable .. => 4 | .ret _ => 18 | .trap _ => 26
-  | .returnCall .. => 0
+  | .returnCall .. | .tryCall .. | .tryCallIndirect .. => 0
 
 /-- A terminator whose data has format `termFmt t`. -/
 theorem termData_fmt {t : Clif.Terminator} {data : V} (hd : termData t = .ok data) :
@@ -163,6 +163,8 @@ theorem termData_fmt {t : Clif.Terminator} {data : V} (hd : termData t = .ok dat
   | ret xs => rw [termData_ret] at hd; cases hd; exact ⟨_, rfl⟩
   | trap c => rw [termData_trap] at hd; cases hd; exact ⟨_, rfl⟩
   | returnCall fn args => simp [termData, throw, throwThe, MonadExceptOf.throw] at hd
+  | tryCall _ _ _ => simp [termData, throw, throwThe, MonadExceptOf.throw] at hd
+  | tryCallIndirect _ _ _ => simp [termData, throw, throwThe, MonadExceptOf.throw] at hd
 
 include hp in
 /-- **The terminator a rule matched**: a rule whose root format is the enum variant `k` matched

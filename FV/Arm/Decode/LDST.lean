@@ -117,6 +117,27 @@ deriving DecidableEq, Repr
 
 instance : ToString Reg_imm_pre_indexed_cls where toString a := toString (repr a)
 
+/-- (FV addition) Load/store register (exclusive / acquire-release):
+LDXR/LDAXR/STXR/STLXR (`ord = 0`) and LDAR/STLR (`ord = 1`, `Rs = 11111`),
+single-register (`o0` distinguishes plain exclusive from acquire-release). -/
+structure Reg_exclusive_cls where
+  size    : BitVec 2            -- [31:30]
+  _fixed1 : BitVec 6 := 0b001000#6 -- [29:24]
+  ord     : BitVec 1            -- [23:23]
+  L       : BitVec 1            -- [22:22]
+  _fixed2 : BitVec 1 := 0b0#1   -- [21:21]
+  Rs      : BitVec 5            -- [20:16]
+  o0      : BitVec 1            -- [15:15]
+  _fixed3 : BitVec 5 := 0b11111#5 -- [14:10]
+  Rn      : BitVec 5            --   [9:5]
+  Rt      : BitVec 5            --   [4:0]
+deriving DecidableEq, Repr
+
+instance : ToString Reg_exclusive_cls where toString a := toString (repr a)
+
+def Reg_exclusive_cls.toBitVec32 (x : Reg_exclusive_cls) : BitVec 32 :=
+  x.size ++ x._fixed1 ++ x.ord ++ x.L ++ x._fixed2 ++ x.Rs ++ x.o0 ++ x._fixed3 ++ x.Rn ++ x.Rt
+
 /-- (FV addition) Load/store register (register offset). -/
 structure Reg_reg_offset_cls where
   size    : BitVec 2            -- [31:30]
@@ -152,6 +173,8 @@ inductive LDSTInst where
     Reg_imm_pre_indexed_cls → LDSTInst
   | Reg_reg_offset :
     Reg_reg_offset_cls → LDSTInst
+  | Reg_exclusive :
+    Reg_exclusive_cls → LDSTInst
 deriving DecidableEq, Repr
 
 instance : ToString LDSTInst where toString a := toString (repr a)

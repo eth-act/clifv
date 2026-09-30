@@ -68,6 +68,7 @@ def lstep (fr : Frame) (mem : Mem) : LRes :=
     | .ret xs => LRes.ofRes (fr.getMany xs) fun vals => .ret vals
     | .returnCall fn args => LRes.ofRes (tailArgs fr fn args) fun (ext, vals) => .tail ext vals
     | .trap c => .trap c
+    | .tryCall .. | .tryCallIndirect .. => .stuck "try_call is handled by step"
   | st :: rest =>
     match st.inst with
     | .call fn args => LRes.ofRes (callArgs fr fn args) fun (ext, vals) => .call ext vals st.results rest
@@ -105,7 +106,8 @@ theorem lstep_term {fr : Frame} {mem : Mem} (hb : fr.body = []) :
       LRes.ofRes (enterBlock fr (table[xv.toNat]?.getD dflt)) fun fr' => .next fr' mem
     | .ret xs => LRes.ofRes (fr.getMany xs) fun vals => .ret vals
     | .returnCall fn args => LRes.ofRes (tailArgs fr fn args) fun (ext, vals) => .tail ext vals
-    | .trap c => .trap c := by
+    | .trap c => .trap c
+    | .tryCall .. | .tryCallIndirect .. => .stuck "try_call is handled by step" := by
   unfold lstep
   rw [hb]
 
@@ -215,13 +217,16 @@ theorem lift_ofRes {α : Type} (env : Env) (p : Program) (s : State) (r : Res α
   cases r <;> rfl
 
 /-! `lstep` does not model `call_indirect` (its `evalInst` is stuck, while `Clif.step` calls the
-addressed function), so `Clif.step` is the lifted `lstep` only when the next statement is not a
-`call_indirect` (`HeadNoCI`). Source runs stay in functions without `call_indirect` (`RunInv`, below);
-target steps are lifted only where `lstep` is not stuck (`headNoCI_of_lstep`). -/
+addressed function) nor `try_call`/`try_call_indirect` terminators (stuck, while `Clif.step`
+calls), so `Clif.step` is the lifted `lstep` only when the next step is neither (`HeadNoCI`).
+Source runs stay in functions without them (`RunInv`, below); target steps are lifted only
+where `lstep` is not stuck (`headNoCI_of_lstep`). -/
 
-/-- The next statement of `fr` (if any) is not a `call_indirect`. -/
+/-- The next statement of `fr` (if any) is not a `call_indirect`, and at the end of the block
+the terminator is not a `try_call`. -/
 def HeadNoCI (fr : Frame) : Prop :=
-  ∀ st rest, fr.body = st :: rest → ∀ sig callee args, st.inst ≠ .callIndirect sig callee args
+  (∀ st rest, fr.body = st :: rest → ∀ sig callee args, st.inst ≠ .callIndirect sig callee args) ∧
+    (fr.body = [] → fr.term.isTry = false)
 
 theorem lstep_callIndirect {fr : Frame} {mem : Mem} {st : Stmt} {rest : List Stmt} {sig : Nat}
     {callee : ValueId} {args : List ValueId} (hb : fr.body = st :: rest)
@@ -233,8 +238,14 @@ theorem lstep_callIndirect {fr : Frame} {mem : Mem} {st : Stmt} {rest : List Stm
   rfl
 
 theorem headNoCI_of_lstep {fr : Frame} {mem : Mem} (h : ∀ msg, lstep fr mem ≠ .stuck msg) :
-    HeadNoCI fr :=
-  fun _ _ hb _ _ _ hi => h _ (lstep_callIndirect hb hi)
+    HeadNoCI fr := by
+  refine ⟨fun _ _ hb _ _ _ hi => h _ (lstep_callIndirect hb hi), fun hb => ?_⟩
+  cases ht : fr.term with
+  | tryCall fn args et =>
+    exact (h "try_call is handled by step" (by rw [lstep_term hb, ht])).elim
+  | tryCallIndirect c args et =>
+    exact (h "try_call is handled by step" (by rw [lstep_term hb, ht])).elim
+  | _ => rfl
 
 /-- `Clif.step` is the lifted `lstep` (unless the next statement is a `call_indirect`). -/
 theorem step_eq_lift (env : Env) (p : Program) (s : State) (hci : HeadNoCI s.frame) :
@@ -242,11 +253,13 @@ theorem step_eq_lift (env : Env) (p : Program) (s : State) (hci : HeadNoCI s.fra
   obtain ⟨⟨func, regs, slots, body, term⟩, callers, mem⟩ := s
   cases body with
   | nil =>
-    cases term <;> simp only [lstep, step, stepTerm, lift_ofRes] <;> try rfl
+    have ht := hci.2 rfl
+    cases term <;> (try simp [Terminator.isTry] at ht) <;>
+      simp only [lstep, step, stepTerm, lift_ofRes] <;> try rfl
   | cons st rest =>
     simp only [lstep, step]
     cases hi : st.inst <;> first
-      | exact absurd hi (hci st rest rfl _ _ _)
+      | exact absurd hi (hci.1 st rest rfl _ _ _)
       | (simp only [lift_ofRes, stepCall] <;> first
         | rfl
         | (congr 1; funext x; obtain ⟨vals, m'⟩ := x; simp only [continueWith]; split <;> rename_i h <;> simp only [h] <;> rfl))
@@ -804,14 +817,17 @@ theorem tailCont_rel {syms : String → Option Nat} {env : Env} (hE : EnvKeepsSy
 
 /-! ## Source runs without `call_indirect`
 
-`step_eq_lift` needs the next source statement not to be a `call_indirect`. The source run stays
+`step_eq_lift` needs the next source statement not to be a `call_indirect` (nor a `try_call`
+terminator). The source run stays
 in a set `S` of functions without `call_indirect` that is closed under the direct calls and tail
 calls of its members (`CIFree`): every frame, running or suspended, is at a program point of a
 block of a function of `S` (`RunInv`), which each step keeps (`RunInv.step`). -/
 
-/-- `g` has no `call_indirect` statement. -/
+/-- `g` has no `call_indirect` statement and no `try_call`/`try_call_indirect` terminator
+(neither is modelled by `lstep`). -/
 def NoCallIndirect (g : Function) : Prop :=
-  ∀ b ∈ g.blocks, ∀ st ∈ b.body, ∀ sig callee args, st.inst ≠ .callIndirect sig callee args
+  (∀ b ∈ g.blocks, ∀ st ∈ b.body, ∀ sig callee args, st.inst ≠ .callIndirect sig callee args) ∧
+    ∀ b ∈ g.blocks, b.term.isTry = false
 
 /-- A set `S` of functions without `call_indirect`, closed under the calls and tail calls of its
 members to functions of `p`. -/
@@ -839,9 +855,10 @@ def RunInv (S : Function → Prop) (s : State) : Prop :=
 
 theorem FrameInv.headNoCI {p : Program} {S : Function → Prop} {fr : Frame} (hS : CIFree p S)
     (h : FrameInv S fr) : HeadNoCI fr := by
-  obtain ⟨hs, b, hb, hsuf, -⟩ := h
-  intro st rest hbd
-  exact hS.noCI _ hs b hb st (hsuf.subset (by rw [hbd]; simp))
+  obtain ⟨hs, b, hb, hsuf, ht⟩ := h
+  refine ⟨fun st rest hbd => ?_, fun _ => ?_⟩
+  · exact (hS.noCI _ hs).1 b hb st (hsuf.subset (by rw [hbd]; simp))
+  · rw [ht]; exact (hS.noCI _ hs).2 b hb
 
 theorem FrameInv.rest {S : Function → Prop} {fr : Frame} {st : Stmt} {rest : List Stmt}
     (h : FrameInv S fr) (hb : fr.body = st :: rest) (regs : Regs) :

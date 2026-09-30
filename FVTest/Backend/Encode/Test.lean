@@ -219,6 +219,21 @@ def forms : List (String × G Insn) := [
   ("csel", do pure (.csel (← gprZR) (← gprZR) (← gprZR) (← randCond))),
   ("ccmp", do pure (.ccmp (← coin) (← gprZR) (← gprZR) (← nzcv) (← randCond))),
   ("ccmp_imm", do pure (.ccmpImm (← coin) (← gprZR) (← rand 32) (← nzcv) (← randCond))),
+  ("csetm", do pure (.csetm (← gprZR) (← pick (Cond.all.filter fun c => c != .al && c != .nv)))),
+  ("ldar_stlr_ldaxr", do
+    let bits ← pick [8, 16, 32, 64]
+    match ← rand 3 with
+    | 0 => pure (.ldar bits (← gprZR) (← gprSP))
+    | 1 => pure (.stlr bits (← gprZR) (← gprSP))
+    | _ => pure (.ldaxr bits (← gprZR) (← gprSP))),
+  ("stlxr", do
+    -- the status register must differ from Rt and Rn (CONSTRAINED UNPREDICTABLE otherwise;
+    -- llvm-mc rejects it)
+    let rt ← gprZR
+    let rn ← gprSP
+    let rs ← pick (((List.range 31).map Reg.x ++ [Reg.xzr]).filter fun r => r != rt && r != rn)
+    pure (.stlxr (← pick [8, 16, 32, 64]) rs rt rn)),
+  ("dmb", do pure .dmbish),
   ("fmov_to_fp", do pure (.fmovToFp (← pick [.size16, .size32, .size64]) (← vr) (← gprZR))),
   ("umov", do
     let s ← pick [ScalarSize.size8, .size16, .size32, .size64]

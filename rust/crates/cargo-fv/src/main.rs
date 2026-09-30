@@ -9,7 +9,7 @@ use std::process::{Command, Stdio};
 
 const USAGE: &str = "\
 usage: cargo fv <build|run|test> [--opt | --opt-proven-only] [--no-fallback] [--trap-replaced] [--keep-temps]
-                                [cargo options] [-- args]
+                                [--panic-abort] [cargo options] [-- args]
        cargo fv report [--functions] [--json] [--manifest-path PATH]
 
 Builds for aarch64-unknown-linux-musl with rustc_codegen_cranelift; every function of the
@@ -23,6 +23,8 @@ target/fv-report.json (`cargo fv report` prints it).
   --trap-replaced     overwrite cg_clif's code of every Lean-compiled function with traps (proof
                       that the tests run the Lean code; separate target dir)
   --keep-temps        keep the per-codegen-unit work directories (target/fv/<mode>/tmp)
+  --panic-abort       build with -Cpanic=abort -Zpanic-abort-tests (default: panic=unwind, as cargo;
+                      separate target dir)
   --functions         (report) list every function with its status and reason
   --json              (report) print target/fv-report.json";
 
@@ -140,7 +142,7 @@ fn value_of(args: &[String], opt: &str) -> Option<String> {
 }
 
 /// Everything that changes the Lean side of a build but not cargo's fingerprints.
-fn stamp_of(cfg: &Config, wrapper: &Path) -> String {
+fn stamp_of(cfg: &Config, wrapper: &Path, backend: &str) -> String {
     let mut s = String::new();
     for p in [cfg.lean_backend(), cfg.data_export(), cfg.lean_regalloc(), cfg.normalize(), wrapper.to_path_buf()] {
         let m = std::fs::metadata(&p).ok();
@@ -151,6 +153,9 @@ fn stamp_of(cfg: &Config, wrapper: &Path) -> String {
             m.and_then(|m| m.modified().ok())
         ));
     }
+    // the codegen backend (a rebuilt unwinding cg_clif at the same path must rebuild the members)
+    let m = std::fs::metadata(backend).ok();
+    s.push_str(&format!("backend {backend} {} {:?}\n", m.as_ref().map(|m| m.len()).unwrap_or(0), m.and_then(|m| m.modified().ok())));
     for k in ["FV_SKIP", "FV_ONLY"] {
         s.push_str(&format!("{k}={}\n", std::env::var(k).unwrap_or_default()));
     }
@@ -207,6 +212,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
     let mut no_fallback = false;
     let mut keep_temps = false;
     let mut trap_replaced = false;
+    let mut panic_abort = false;
     let mut cargo_args = Vec::new();
     for a in before {
         match a.as_str() {
@@ -215,6 +221,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
             "--no-fallback" => no_fallback = true,
             "--keep-temps" => keep_temps = true,
             "--trap-replaced" => trap_replaced = true,
+            "--panic-abort" => panic_abort = true,
             _ => cargo_args.push(a),
         }
     }
@@ -242,8 +249,34 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
         .find_map(|l| l.strip_prefix("host: ").map(String::from))
         .unwrap_or_else(|| die("rustc -vV: no host"));
     let bin = sysroot.join("lib/rustlib").join(&host).join("bin");
+    // Codegen backend: with panic=unwind, cg_clif built with its `unwinding` feature (landing
+    // pads: Drop during unwinding, catch_unwind) if available, else the shipped one (no landing
+    // pads). With panic=abort the shipped one: the unwinding one would turn every call that may
+    // unwind into a `try_call` with a terminate edge (rustc's abort_unwinding_calls), and those
+    // functions would fall back.
+    let unwinding_cg_clif = root.join("target/cg_clif-unwind/librustc_codegen_cranelift.so");
+    let backend: String = match std::env::var("FV_CG_CLIF") {
+        Ok(v) if v == "cranelift" => v,
+        Ok(v) if Path::new(&v).exists() => v,
+        Ok(v) => die(&format!("FV_CG_CLIF={v}: no such file (a cg_clif .so, or `cranelift` for the shipped one)")),
+        Err(_) if !panic_abort && unwinding_cg_clif.exists() => unwinding_cg_clif.display().to_string(),
+        Err(_) => "cranelift".into(),
+    };
+    let panic_desc = match (panic_abort, backend.as_str()) {
+        (true, b) => format!("abort (cg_clif: {b})"),
+        (false, "cranelift") => "unwind (shipped cg_clif: no landing pads, so no Drop during unwinding and catch_unwind in the crate does not catch)".to_string(),
+        (false, b) => format!("unwind (cg_clif with unwinding: {b})"),
+    };
+    if !panic_abort && backend == "cranelift" {
+        eprintln!("cargo fv: note: the shipped cg_clif has no landing pads (Drop during unwinding, catch_unwind in the crate); build the unwinding one with scripts/build-cg-clif-unwind.sh (docs/USAGE.md)");
+    }
     // one target dir per configuration that changes the objects (cargo does not see FV_*)
-    let fv_dir = target.join("fv").join(if trap_replaced { format!("{}-trap", mode.name()) } else { mode.name().into() });
+    let fv_dir = target.join("fv").join(format!(
+        "{}{}{}",
+        mode.name(),
+        if trap_replaced { "-trap" } else { "" },
+        if panic_abort { "-abort" } else { "" }
+    ));
     let cfg = Config {
         root,
         mode,
@@ -273,9 +306,12 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
         Ok(f) if !f.is_empty() => f.split('\x1f').map(String::from).collect(),
         _ => std::env::var("RUSTFLAGS").unwrap_or_default().split_whitespace().map(String::from).collect(),
     };
-    flags.extend(["-Zcodegen-backend=cranelift", "-Cpanic=abort", "-Zpanic-abort-tests"].map(String::from));
+    flags.push(format!("-Zcodegen-backend={backend}"));
     let mut docflags: Vec<String> = std::env::var("RUSTDOCFLAGS").unwrap_or_default().split_whitespace().map(String::from).collect();
-    docflags.extend(["-Cpanic=abort", "-Zpanic-abort-tests"].map(String::from));
+    if panic_abort {
+        flags.extend(["-Cpanic=abort", "-Zpanic-abort-tests"].map(String::from));
+        docflags.extend(["-Cpanic=abort", "-Zpanic-abort-tests"].map(String::from));
+    }
     let runner_var = "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_RUNNER";
     let setup = |c: &mut Command| {
         c.env("RUSTUP_TOOLCHAIN", &toolchain)
@@ -297,7 +333,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
     // cargo does not see the Lean tools or the FV settings: when they change, rebuild the
     // members (dependencies are plain cg_clif and stay)
     let stamp_path = fv_dir.join(format!("fv-stamp.{profile}"));
-    let stamp = stamp_of(&cfg, &wrapper);
+    let stamp = stamp_of(&cfg, &wrapper, &backend);
     if std::fs::read_to_string(&stamp_path).ok().as_deref() != Some(stamp.as_str()) {
         if fv_dir.exists() {
             eprintln!("cargo fv: the Lean tools or the FV settings changed: rebuilding the workspace members");
@@ -353,7 +389,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
         }
     }
     units.sort_by(|a, b| (&a.crate_name, &a.kind, &a.src, &a.unit).cmp(&(&b.crate_name, &b.kind, &b.src, &b.unit)));
-    let report = Report::new(&profile, mode.name(), mode.theorem().map(String::from), units);
+    let report = Report::new(&profile, mode.name(), mode.theorem().map(String::from), &panic_desc, units);
     let rp = report_path(&target);
     let _ = std::fs::write(&rp, serde_json::to_string_pretty(&report).expect("report serialises"));
     if !out.status.success() {

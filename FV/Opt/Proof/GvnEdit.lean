@@ -120,13 +120,40 @@ theorem insOk_spec {t : Stmt} (h : insOk t = true) :
     refine ⟨u, rfl, fun ty gv he => ?_⟩
     rw [he] at h3; cases h3
 
+theorem TryDest.vals_mapVals (σ : ValueId → ValueId) (d : TryDest) :
+    (d.mapVals σ).vals = d.vals.map σ := by
+  obtain ⟨b, args⟩ := d
+  simp only [TryDest.mapVals, TryDest.vals]
+  induction args with
+  | nil => rfl
+  | cons a as ih => cases a <;> simp [ih]
+
+theorem ExnTable.vals_mapVals (σ : ValueId → ValueId) (et : ExnTable) :
+    (et.mapVals σ).vals = et.vals.map σ := by
+  obtain ⟨s, n, items⟩ := et
+  simp only [ExnTable.mapVals, ExnTable.vals, TryDest.vals_mapVals, List.map_append]
+  congr 1
+  induction items with
+  | nil => rfl
+  | cons it is ih => cases it <;> simp_all [TryDest.vals_mapVals]
+
+theorem ExnTable.dests_blocks_mapVals (σ : ValueId → ValueId) (et : ExnTable) :
+    (et.mapVals σ).dests.map (·.block) = et.dests.map (·.block) := by
+  obtain ⟨s, n, items⟩ := et
+  simp only [ExnTable.mapVals, ExnTable.dests, ExnTable.handlers, List.map_append]
+  congr 1
+  induction items with
+  | nil => rfl
+  | cons it is ih => cases it <;> simp_all [TryDest.mapVals]
+
 theorem termOperands_mapTerm (σ : ValueId → ValueId) (t : Terminator) :
     termOperands (mapTerm σ t) = (termOperands t).map σ := by
-  cases t <;> simp [termOperands, mapTerm, mapBlockCall, List.map_flatMap, List.flatMap_map]
+  cases t <;> simp [termOperands, mapTerm, mapBlockCall, List.map_flatMap, List.flatMap_map,
+    ExnTable.vals_mapVals]
 
 theorem termSuccs_mapTerm (σ : ValueId → ValueId) (t : Terminator) :
     termSuccs (mapTerm σ t) = termSuccs t := by
-  cases t <;> simp [termSuccs, mapTerm, mapBlockCall]
+  cases t <;> simp [termSuccs, mapTerm, mapBlockCall, ExnTable.dests_blocks_mapVals]
 
 /-! ## The relation -/
 
@@ -786,6 +813,10 @@ theorem ERel.term {fr fr' bi k k' m} (h : ERel σ f g Df Dg syms fr fr' bi k k')
         | (cases hl; done)
         | (simp only [LRes.tail.injEq] at hl; obtain ⟨rfl, rfl⟩ := hl
            rw [Res.norm_eq_ok hg hc]; rfl)
+  | tryCall _ _ _ =>
+    refine ⟨fun _ _ hl => ?_, fun _ hl => ?_, fun _ _ hl => ?_, fun _ hl => ?_⟩ <;> cases hl
+  | tryCallIndirect _ _ _ =>
+    refine ⟨fun _ _ hl => ?_, fun _ hl => ?_, fun _ _ hl => ?_, fun _ hl => ?_⟩ <;> cases hl
   | trap c =>
     simp only [mapTerm]
     exact ⟨(fun _ _ hl => by cases hl), (fun _ hl => by cases hl), (fun _ _ hl => by cases hl),

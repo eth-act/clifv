@@ -420,6 +420,49 @@ def blockCall : P BlockCall := do
     return { block := b, args }
   return { block := b }
 
+/-- A `try_call` successor argument: `retN`, `exnN` or a value. -/
+def tryArg : P TryArg := do
+  match ← peek with
+  | some (.word w) =>
+    match numSuffix? "ret" w, numSuffix? "exn" w with
+    | some i, _ => advance; return .ret i
+    | _, some i => advance; return .exn i
+    | _, _ => return .val (← value)
+  | _ => return .val (← value)
+
+def tryDest : P TryDest := do
+  let b ← entity "block"
+  if ← optPunct '(' then
+    let args ← commaSep tryArg ')'
+    expectPunct ')'
+    return { block := b, args }
+  return { block := b }
+
+/-- `tagN: dest`, `default: dest` or `context vN`. -/
+def exnItem : P ExnItem := do
+  let w ← anyWord
+  if w == "default" then
+    expectPunct ':'
+    return .default (← tryDest)
+  else if w == "context" then
+    return .context (← value)
+  else match numSuffix? "tag" w with
+    | some n =>
+      expectPunct ':'
+      return .tag n (← tryDest)
+    | none => malformed s!"expected an exception table item, got '{w}'"
+
+/-- `sigN, normal-return, [ items ]` (cranelift-reader `parse_exception_table`). -/
+def exnTable : P ExnTable := do
+  let sig ← entity "sig"
+  expectPunct ','
+  let normal ← tryDest
+  expectPunct ','
+  expectPunct '['
+  let items ← commaSep exnItem ']'
+  expectPunct ']'
+  return { sig, normal, items }
+
 def unaryOp? : String → Option UnaryOp
   | "ineg" => some .ineg | "bnot" => some .bnot | "iabs" => some .iabs | "clz" => some .clz
   | "ctz" => some .ctz | "cls" => some .cls | "popcnt" => some .popcnt
@@ -593,6 +636,20 @@ def item (op : String) (sfx : Option Ty) : P Item := do
     let args ← commaSep value ')'
     expectPunct ')'
     return .term (.returnCall f args)
+  | "try_call" =>
+    let f ← entity "fn"
+    expectPunct '('
+    let args ← commaSep value ')'
+    expectPunct ')'
+    expectPunct ','
+    return .term (.tryCall f args (← exnTable))
+  | "try_call_indirect" =>
+    let callee ← value
+    expectPunct '('
+    let args ← commaSep value ')'
+    expectPunct ')'
+    expectPunct ','
+    return .term (.tryCallIndirect callee args (← exnTable))
   | "trapz" => let c ← value; expectPunct ','; return .inst (.trapz c (← trapCode))
   | "trapnz" => let c ← value; expectPunct ','; return .inst (.trapnz c (← trapCode))
   | "nop" => return .inst .nop
