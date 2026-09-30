@@ -196,8 +196,10 @@ the same files 0 disagreements.
 - **Lean backend, `sret` ABI** (fixed on main in `f52e514`, found independently by
   `cargo fv`): `sigArgLocs` let the sret parameter consume `x0`, shifting every later
   parameter by one register at entries and call sites (Cranelift: sret in x8, the others
-  from x0). Before the fix: 3 151 disagreeing vectors, all in sret functions and their
-  callers (e.g. `vec_squares(i64 sret, i32)` read its bound from x1).
+  from x0). Before the fix: 3 151 disagreeing vectors — 3 134 in sret functions and their
+  callers (e.g. `vec_squares(i64 sret, i32)` read its bound from x1), the other 17 the
+  code-address artefact below; bisected with `clif-native --diff --lean-only SYMBOL` (Lean
+  code for the named functions only, Cranelift for the rest).
 - **Harness artefacts removed on the way** (not compiler bugs): partial reads of code
   addresses stored in memory (→ thunks with engine-independent bytes), random-vs-random
   masking of uninitialised bits (→ complementary patterns).
