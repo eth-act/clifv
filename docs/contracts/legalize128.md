@@ -1,7 +1,8 @@
 # `Opt.Legalize128` and its validator (`Opt.Legal.check`)
 
-Status: **validator landed and exercised; refinement proof in progress — legalised functions
-are still flagged unverified** (`i128 legalized (outside backend_correct)`).
+Status: **proven end to end.** `E2E.backend_correct_legal` (`FV/E2E/Legal.lean`) covers every
+function whose legalisation the validator accepts and whose legalised form is inside the
+backend theorem (`InSubset`, `lowerCheck`); `lean-backend` reports those verified.
 
 ## Design (validator with fallback)
 
@@ -14,16 +15,36 @@ two `i64` loads/stores, a `__*ti3` helper call, an ABI-expanded call, a conditio
 `trapz`/`trapnz`), and checks the terminators, block parameters (AAPCS64 pads), signature,
 value-id layout (values of `f` `< T0 = maxValueId f`; pair components and zero distinct and
 `≥ T0`; temporaries/pads fresh) and unique definitions.
-`lean-backend` (`Opt.Legalize128.parsedFile128`) runs the check on every legalised function;
-until the refinement theorem is complete, *accepted and rejected* functions are both flagged
-unverified (accepted: `i128 legalized (outside backend_correct)`; rejected: `…: Opt.Legal.check
-rejects`). Flipping the accepted case to "verified" is one line in `parsedFile128`, to be done
-together with `E2E.backend_correct_legal`.
+`lean-backend` (`Opt.Legalize128.parsedFile128`) runs the check on every legalised function:
+a rejected function is flagged unverified (`i128 legalized (outside backend_correct:
+Opt.Legal.check rejects)`); an accepted one is compiled like any other function — the backend
+decides `InSubset` (`unverifiedReason?`) and `lowerCheck` on the legalised form, and a function
+passing both is reported verified (`E2E.backend_correct_legal`). Two extra conditions of the
+theorem are decided in `parsedFile128`: no extern of `f` or `g` is named like a function of the
+file (`hext`/`hext'`; otherwise `…outside backend_correct_legal: an extern is named like a
+function of the file`), and no `--opt` (no theorem composes the legalisation with the
+mid-end; under `--opt` every legalised function is flagged). `lean-e2e-check` legalises too
+and checks the accepted functions like any other.
 
-Measured: the check accepts all **203** legalised functions of the survey `g_u128` crates
-(debug/release/release-oc) and the i128 Cranelift runtests, including all **189** functions
-that would otherwise be inside `InSubset`/`lowerCheck` (31 survey + 158 runtest); it rejects
-all **1197** single-statement mutants of those outputs (`/tmp` harness, not committed).
+Measured: the check accepts all legalised functions of the survey `g_u128` crates
+(debug/release/release-oc: 41) and the i128 Cranelift runtests (163), and rejects all 1197
+single-statement mutants of those outputs (`/tmp` harness, not committed).
+
+**Verified (flip):** survey (933 functions) **31** of the 41 legalised functions (debug 11,
+release 10, release-oc 10; the other 10: `sret` 5, calls of a function of the file 5 — these
+also declare that function as an extern); runtests **159** of 163 (outside `E` 2, stack
+parameters 1, a call of a function of the file 1); `lean-e2e-check`: the 159 are in scope and
+accepted by `lowerCheck`/`prepCheck`/`formsCoveredB` (1069 accepted / 0 rejected / 0 not
+covered, was 910). `cargo fv test` (debug; report entries of functions whose CLIF mentions
+`i128`, previously all `i128 legalized`): fv-demo **19** verified of 27 (6 `sret`, 2
+`downcast_ref` instances the validator rejects: they contain a `call_indirect`), survey
+example **34** of 46 (12 `sret`), vendor **2** of 10 (8 `sret`). The compiled code is
+unchanged (only the labels: an accepted function is now lowering-validated).
+
+Gates (2026-09-30, after merging main): `lake build FV FVTest FV.E2E FV.E2E.OptProven
+FV.E2E.Legal` green; `lean-backend-filetests.sh` corpus 114/114 (extrt 22/22), runtests 4672
+pass / 0 fail / 0 disagree; `lean-backend-encode-check.sh` 1260 identical / 0 differ;
+`lean-e2e-check` 1069 / 0 rejected / 147 out of scope, `formsCoveredB` 0 not covered.
 
 ## Legaliser changes (required for provability / correctness)
 
@@ -38,43 +59,117 @@ all **1197** single-statement mutants of those outputs (`/tmp` harness, not comm
   unsupported.
 * `Clif.Rust.env`: `__*ti3` return with the caller's memory (was `Mem.empty`), and the
   `sdiv(i128::MIN, -1)` overflow test examines the dividend (it tested the divisor twice and never
-  fired).
+  fired). The helper names are matched before `isPanic` (same semantics — the four names are not
+  panic names — but the lookup is provable without evaluating `String.splitOn`).
 Differential after the changes: `clif-filetest --legalize128` over the 64 i128 runtest files:
 legal pass 973 / fail 7 / agree 980 / **disagree 0** (the 7 fails are original-program failures
 in `i128-load-store.clif`, agreed by the legalised form).
 
-## Proven (no `sorry`; axioms: propext, Classical.choice, Quot.sound, `_native` bv_decide certificates)
+## The end-to-end theorem
+
+Axioms of every theorem below: `propext`, `Classical.choice`, `Quot.sound` and `_native`
+`bv_decide` certificates only.
+
+```lean
+theorem E2E.backend_correct_legal {f g : Clif.Function} {cert : Opt.Legalize128.Cert}
+    (hchk : Opt.Legal.check f g cert = true)
+    {p p' : Clif.Program} {k : Nat} {vc vcp : VCode}
+    {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
+    (hsub : InSubset p' g) (hc : Compiled g k vc vcp rf af fa fb)
+    {X : ExtSem} {H : ArmHooks} {syms : String → Option Nat} {slotOff : Nat}
+    (hext : ∀ fn e, f.extern? fn = some e → p.func? e.name = none)
+    (hext' : ∀ fn e, g.extern? fn = some e → p'.func? e.name = none)
+    (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
+    (hC : ∀ s, CalleeOk
+      (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
+    (hX : ∀ s, XCallsOk Clif.Rust.env (fun sl cm w =>
+      Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+        slotOff⟩ g sl cm w) X)
+    (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
+    (hslot : af.slotBase = slotOff)
+    {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args args' : List Clif.Val}
+    {cs cs' : Clif.State}
+    (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hbe : BodyEntry af s w₀)
+    (hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args')
+    (hargs : ArgsIn args' s) (hcs : ClifEntry f args cs) (hcs' : ClifEntry g args' cs')
+    (hsl : cs'.frame.slots = cs.frame.slots) (hmem : cs'.mem = cs.mem)
+    (hrel : Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s,
+      syms, slotOff⟩ g cs'.frame.slots cs'.mem w₀)
+    (htrS : TrapsExplicit Clif.Rust.env p cs) (htr : TrapsExplicit Clif.Rust.env p' cs')
+    (fuel : Nat) :
+    ArmRefinesLegal ((Opt.Legal.groups f.sig.returns).getD []) fb base ra (ArmStepX X H fa) s
+      (Clif.runLoop Clif.Rust.env p fuel cs)
+```
+
+`ArmRefinesLegal rg … (.returned vals cm)` is `∃ vals', ExpRel rg vals vals' ∧ ArmRefines …
+(.returned vals' cm)` (an Arm return, callee-saved registers restored, `vals'` in x0.., the
+live CLIF memory `cm` in the Arm memory); for traps (and `stuck`/`outOfFuel`) it is
+`ArmRefines`. `ExpRel gs vs vs'`: the ABI split of `vs` by the slot groups of the signature —
+a plain value as itself, an `i128` value as its low/high `i64` halves, after a pad register
+(any `i64`) where AAPCS64 aligns the pair. So: running the Arm code of `g` with the ABI-split
+arguments `args'` refines the original `i128` function's `Clif.run` on `args` — split
+results, same memory, same trap codes.
+
+Premises, beyond `backend_correct_final`'s about `g` (`InSubset p' g`, `Compiled`,
+`FormsCovered`, `CalleeOk`, `XCallsOk`, `hsym`/`hslot`, the Arm entry `AbiEntry`/`StackAvail`/
+`BodyEntry`/`ArgsIn`, `ClifEntry g`, `Rel.holds`, `TrapsExplicit` of the run of `g`):
+* `hchk`: the validator accepted `g` (with the certificate `cert`);
+* `hext`/`hext'`: calls of `f` (in the original program `p`) and of `g` (in the legalised
+  program `p'`) go to the environment: no function of the program has a declared extern's name
+  (`lean-backend` checks both, `parsedFile128`);
+* `hexp`, `hcs`, `hsl`, `hmem`: the source run is `f`'s on `args`, from the same slots and
+  memory, `args'` its ABI split;
+* `htrS`: every trap of the source run is explicit (`TrapsExplicit`, as in the backend
+  theorem). It gives `NoMemTrap` (`noMemTrap_of_trapsExplicit`): the split 8-byte accesses and
+  the 16-byte source access agree whenever the source access does not trap.
+* `htr` stays on the run of `g` (as in `backend_correct_opt_proven`: not derived from the
+  source's). An `i128` division by zero or `sdiv MIN, -1` traps in `f` at the `div` (explicit)
+  but in `g` inside the `__*ti3` call — an extern trap, outside the backend theorem like every
+  extern trap (natively the helper aborts), so such runs are not covered.
+
+Discharged: the environment contracts for `Clif.Rust.env` (below), `MemBounded` of the entry
+memory (`memBounded_of_holds`: `MemRel.valid` of the backend relation), `NoMemTrap`.
+`backend_correct_legal_env` is the same theorem for any environment with `HelperOk`,
+`ExtLegal` and `EnvKeepsAllocs`.
+
+## Layers (all proven)
 
 **`Opt.Legal.check_refines`** (`FV/Opt/Proof/LegalSim.lean`): for `check C.f C.g C.cert = true`,
 from entry states of `f` on `args` and of `g` on `args'` (`ExpRel (groups f.sig.params) args
-args'`: `i128` arguments as `(lo, hi)` `i64` pairs, pads any `i64`; same slots and memory), if
-`Clif.runLoop env p fuel` of `f` returns `vals` with memory `m1`, then `runLoop env p' k` of `g`
-returns `vals'` with `ExpRel (groups f.sig.returns) vals vals'` and the same `m1` for some `k`;
-if it traps with `c`, `g` traps with `c`. Premises:
-* `EnvOk env C p p'`: externs called by `f`/`g` are not functions of `p`/`p'`; `HelperOk env`
-  (the `__*ti3` helpers compute `Sem.div` at `i128` on the halves, trapping where it traps);
-  `ExtLegal env` (an extern called with arguments expanded by its signature's groups returns the
-  expanded results, traps where the original traps); `EnvKeepsAllocs env`;
-* `MemBounded m` (valid ranges below `2^64`; the backend's `MemRel.valid` gives it);
-* `NoMemTrap env p` of the source run: no reachable source step traps at a load/store. Chosen
-  over an alignment/in-slot check: a 16-byte access whose two 8-byte halves are valid in two
-  adjacent allocations traps while the split access does not; excluding memory traps of the
-  source is exactly what `E2E.TrapsExplicit` (already a premise of `backend_correct_final`)
-  states, so it costs nothing at the E2E level.
+args'`; same slots and memory), if `Clif.runLoop env p fuel` of `f` returns `vals` with memory
+`m1`, then `runLoop env p' k` of `g` returns `vals'` with `ExpRel (groups f.sig.returns) vals
+vals'` and the same `m1` for some `k`; if it traps with `c`, `g` traps with `c`. Premises:
+`EnvOk env C p p'` (externs of `f`/`g` are not functions of `p`/`p'`; `HelperOk`, `ExtLegal`,
+`EnvKeepsAllocs`), `MemBounded m` (valid ranges below `2^64`), `NoMemTrap env p` of the source
+run (no reachable source step traps at a load/store — chosen over an alignment/in-slot check: a
+16-byte access whose two 8-byte halves are valid in two adjacent allocations traps while the
+split access does not).
 
-Layers: `LegalShift*` (variable shifts/rotates: 7-bit amounts for shifts, bit-level halves
-lemmas `rotl_lo/hi` and an opaque-amount rotate core; each module < 20 s, < 2 GB — the old
-128-bit-amount `bv_decide` goals ran out of 20 GB), `LegalMem` (split load/store), `LegalExt`
-(ABI expansion `ExpRel`, contracts), `LegalPlan` (`pure_step`: every pure plan), `LegalSim`
-(block entry `enter_sim`, statements `sim_same/pure/load/store/div/call/trap`, terminators
-`sim_term`, `step_sim`, fuel induction `sim_run`, entry `check_refines`).
+**The environment contracts for `Clif.Rust.env`** (`FV/Opt/Proof/LegalRust.lean`):
+* `helperOk_env`: the `__*ti3` helper of each `DivOp`, on the `i64` halves of two 128-bit
+  operands, returns the halves of `Clif.Sem.div` at `i128` and traps exactly where it traps
+  (`int_divz` on a zero divisor, `int_ovf` on `sdiv MIN, -1`). `core_op`: the helper's pair
+  arithmetic (`lo + hi·2^64` with the signed reading for `hi ≥ 2^63`; truncated division on
+  magnitudes) is `BitVec.udiv/umod` by `toNat`, `BitVec.sdiv/srem` by `toInt_sdiv`/
+  `toInt_srem` (`Int.tdiv`/`Int.tmod` on the magnitudes).
+* `extLegal_env` (for every extern, so `ExtLegal` is not a premise): the helpers accept both the
+  `i128` form and the pair form (`div128_wide`/`div128_pair` reduce both to `core`); `mem*`
+  reads only its first three (`i64`) arguments, which the expansion leaves in place, and returns
+  non-`i128` values; panics trap unconditionally.
+* `envKeepsAllocs_env`: `mem*` writes bytes only; the helpers return the caller's memory.
 
-## Remaining
+Modules: `LegalShift*` (variable shifts/rotates: 7-bit amounts; each module < 20 s, < 2 GB),
+`LegalMem` (split load/store), `LegalExt` (ABI expansion `ExpRel`, contracts), `LegalPlan`
+(`pure_step`), `LegalSim` (`enter_sim`, statements, terminators, `step_sim`, `sim_run`,
+`check_refines`), `LegalRust` (the contracts for `Clif.Rust.env`), `FV/E2E/Legal.lean`.
+`LegalArith`/`LegalShift` call `bv_decide -enums`: the enum pass realizes
+`Clif.Ty.enumToBitVec` in the calling module, as `FV.Backend.Proof.IselCmpExt` does, and two
+modules realizing the same constant cannot be imported together.
 
-* `HelperOk`, `ExtLegal`, `EnvKeepsAllocs` proven for `Clif.Rust.env` (stated in `LegalExt`;
-  the `div128` pair arithmetic vs `BitVec.sdiv/srem` via `toInt_sdiv`/`toInt_srem` is the
-  main work).
-* `E2E.backend_correct_legal` (FV/E2E/Legal.lean): compose `check_refines` with
-  `backend_correct_final` at `g` (`MemBounded` from `Rel.holds`, `NoMemTrap` from the source's
-  `TrapsExplicit`, `EnvOk.src/tgt` from `InSubset` of `g` in the legalised program).
-* Until then legalised functions stay flagged unverified in `parsedFile128`.
+## Not covered
+
+* Legalised functions under `--opt` (no composition of `backend_correct_legal` with the mid-end
+  theorems).
+* Runs of `g` that trap inside a `__*ti3` helper (see `htr` above).
+* `umulhi`/`smulhi`, atomics, overflow ops at `i128`, stack-passed `i128` arguments,
+  `try_call` with `i128` (the validator rejects try terminators): not legalised or rejected.

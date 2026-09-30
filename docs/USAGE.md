@@ -9,9 +9,10 @@ code (**fallback**), so the build never fails because of the Lean backend. After
 `target/fv-report.json` and a summary on stderr list every function as one of:
 
 * **verified**: compiled by the Lean backend and inside the end-to-end theorem
-  (`E2E.backend_correct_final`, or `E2E.backend_correct_opt_proven` with `--opt-proven-only`);
+  (`E2E.backend_correct_final`, or `E2E.backend_correct_opt_proven` with `--opt-proven-only`;
+  for `i128` functions `E2E.backend_correct_legal`, without `--opt`);
 * **compiled, unverified**: compiled by the Lean backend but outside the theorem (the reason
-  is given, e.g. i128 legalisation or an indirect call);
+  is given, e.g. an indirect call, or an `i128` function under `--opt`);
 * **fallback**: cg_clif's code (the reason is given).
 
 ```

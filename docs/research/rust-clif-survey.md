@@ -1327,6 +1327,9 @@ in `Clif.Rust.env`, freestanding C long division in `scripts/rust-clif/rust-runt
 `lean-backend` runs the pass automatically on every function mentioning `i128`; legalised
 functions are flagged unverified (`i128 legalized (outside backend_correct)`); the backend,
 the value model and all proof files are unchanged.
+(Later, branch `agent/leg128-proof`: the validator `Opt.Legal.check` and
+`E2E.backend_correct_legal` put 31 of the 41 legalised survey functions inside the end-to-end
+theorem; `docs/contracts/legalize128.md`.)
 
 Verification (`clif-filetest --legalize128` is the differential: every run line through
 both the original program and the legalised one):
