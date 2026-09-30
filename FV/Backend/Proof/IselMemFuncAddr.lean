@@ -17,6 +17,19 @@ open Backend Isle Isle.Interp Isle.Aarch64
 
 set_option maxRecDepth 20000
 
+@[isel_data] theorem term_2296_kind : T.«Opcode.FuncAddr».kind = (.enumVariant 12) := rfl
+@[isel_data] theorem term_2296_name : T.«Opcode.FuncAddr».name = "Opcode.FuncAddr" := rfl
+@[isel_data] theorem term_2459_kind : T.«InstructionData.FuncAddr».kind = (.enumVariant 12) := rfl
+@[isel_data] theorem term_2459_name :
+    T.«InstructionData.FuncAddr».name = "InstructionData.FuncAddr" := rfl
+
+/-- The term facts of the `func_addr` rule beyond `Data`. -/
+structure FAData (p : Program) : Prop where
+  t2296 : Interp.termOf p 2296 = pure T.«Opcode.FuncAddr»
+  t2459 : Interp.termOf p 2459 = pure T.«InstructionData.FuncAddr»
+
+theorem faData_program : FAData program := ⟨rfl, rfl⟩
+
 theorem mem_variantNames_FuncAddr : (variantNames 152)[12]? = some "FuncAddr" := rfl
 theorem mem_variantNames_FuncAddrOp : (variantNames 151)[12]? = some "FuncAddr" := rfl
 
@@ -94,19 +107,21 @@ variable {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat} {ise
 
 set_option maxHeartbeats 2000000 in
 /-- **`func_addr`** (`lower.isle:2486`, rule id 1026). -/
-theorem func_addr_ok {p : Program} (hp : Data p) (hR : Refines F isem) (hMR : MRStable F MR)
+theorem func_addr_ok {p : Program} (hp : Data p) (hpF : FAData p) (hR : Refines F isem) (hMR : MRStable F MR)
     (hM : MemRefines F sb syms isem) : MemRuleOk F sb syms isem MR env cp p rule_lower_2486 := by
   intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
     hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
   obtain ⟨n, rfl⟩ : ∃ n', n = n' + 100 := ⟨n - 100, by omega⟩
-  mem_inv hp [ext_func_ref_data_iff] at hmatch heval
+  mem_inv hp [ext_func_ref_data_iff, hpF.t2296, hpF.t2459] at hmatch heval
   have hdat0 := CtxInv.data hctx _ _ _ hi hic
   simp only [hi, Option.some.injEq] at *
   isel_destruct; subst_vars
   have hdat := data_trans hdat0 ‹_›
   obtain ⟨fn, rfl, rfl⟩ := inv_funcAddr_root hdat
   simp only [ext_func_ref_data_iff] at *
+  isel_destruct; subst_vars
+  simp only [List.cons.injEq, and_true] at *
   isel_destruct; subst_vars
   have hL := ‹ApplyInternal _ _ _ _ 27 570 _ _ _ _›
   have hO := ‹ApplyInternal _ _ _ _ 25 172 _ _ _ _›
@@ -134,7 +149,7 @@ theorem memRulesCorrect_program : MemRulesCorrect program := by
   rcases hsub with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact uextend_load_ok data_program
   · exact sextend_load_ok data_program
-  · exact func_addr_ok data_program hR hMR hM
+  · exact func_addr_ok data_program faData_program hR hMR hM
   · exact symbol_value_ok data_program hR hMR hM
   · exact load_i8_ok data_program hR hMR hM
   · exact load_i16_ok data_program hR hMR hM

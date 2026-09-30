@@ -42,7 +42,10 @@ theorem ext_exception_sig_iff {ctx : Ctx} (st : LState) (s : Clif.Signature)
     (items : List (Option Nat)) (fs : List V) :
     externExtract ctx T.exception_sig (.op (.exnTable s items)) st = .ok fs ↔ fs = [.op (.sig s)] := by
   have : externExtract ctx T.exception_sig (.op (.exnTable s items)) st = .ok [.op (.sig s)] := rfl
-  rw [this]; simp [eq_comm]
+  rw [this]
+  constructor
+  · intro h; cases h; rfl
+  · rintro rfl; rfl
 
 /-! ## The call of a `try_call_indirect` -/
 
@@ -81,7 +84,7 @@ theorem try_ind_lowerTryOk {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Cl
         simp [callDefs, outDefs]
       have hlo : lo64 (ρ callee) = BitVec.ofNat 64 x.toNat := by
         rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
-        exact lo64_of_vholds (hvh callee _ (get_regs hcv))
+        exact lo64_of_vholds (hvh callee _ (frame_get_regs hcv))
       obtain ⟨-, htry⟩ := hCR
       obtain ⟨outs, w', hi, hol, hro, hmr'⟩ := htry sig hin name g fr.slots cm w x.toNat
         (.vreg callee .int) (retPairs (args.zip ((abiArgIdx sig.params 0).map Reg.x)))
@@ -100,7 +103,7 @@ theorem try_ind_lowerTryOk {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Cl
         subst hmi
         rw [vuseNums_call_reg, hfst] at hu
         rcases List.mem_cons.mp hu with rfl | hu
-        · exact .inr (by rw [get_regs hcv]; rfl)
+        · exact .inr (by rw [frame_get_regs hcv]; rfl)
         · exact .inr (usesOk_args hvals u hu)
       · obtain ⟨-, rfl⟩ := tryRets_get htr hr
         refine ⟨b + j, rfl, ?_⟩

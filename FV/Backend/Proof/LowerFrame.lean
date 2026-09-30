@@ -142,7 +142,8 @@ theorem instOutcome_callIndirect_ok {env : Clif.Env} {cp : Clif.Program} {fr : C
     {cm : Clif.Mem} {sig callee : Nat} {args : List Clif.ValueId} {rvals : List Clif.Val}
     {cm' : Clif.Mem}
     (h : instOutcome env cp fr cm (.callIndirect sig callee args) = .ok (rvals, cm')) :
-    ∃ declared (x : BitVec 64) vals name g, fr.func.sigDecls.lookup sig = some declared ∧
+    ∃ (declared : Clif.Signature) (x : BitVec 64) (vals : List Clif.Val) (name : String)
+      (g : List Clif.Val → Clif.Mem → Clif.Outcome), fr.func.sigDecls.lookup sig = some declared ∧
       fr.get callee = .ok ⟨.i64, x⟩ ∧ fr.getMany args = .ok vals ∧
       cm.symbols name = some x.toNat ∧ env.extern name = some g ∧
       vals.map (·.ty) = Clif.AbiParam.tys declared.params ∧ g vals cm = .returned rvals cm' ∧
@@ -168,7 +169,7 @@ theorem instOutcome_callIndirect_ok {env : Clif.Env} {cp : Clif.Program} {fr : C
     rw [res_ofOption_eq_ok] at hname hg
     have hsym := List.find?_some hname
     simp only [beq_iff_eq] at hsym
-    have hty : vals.map (·.ty) = Clif.AbiParam.tys declared.params := by
+    have hty : vs.map (·.ty) = Clif.AbiParam.tys d'.params := by
       unfold Clif.checkTys Clif.Res.check at hck
       split at hck
       · rename_i hc; simpa using hc
@@ -179,7 +180,7 @@ theorem instOutcome_callIndirect_ok {env : Clif.Env} {cp : Clif.Program} {fr : C
       · rename_i hrt
         simp only [Clif.Res.pure_eq, Clif.Res.ok.injEq, Prod.mk.injEq] at h2
         obtain ⟨rfl, rfl⟩ := h2
-        exact ⟨declared, cv64, vals, name, g, hd, hcv, hvs, hsym, hg, hty, hgo, by simpa using hrt⟩
+        exact ⟨d', cv64, vs, name, g, hd, hcv, hvs, hsym, hg, hty, hgo, by simpa using hrt⟩
       · cases h2
     all_goals cases h2
 

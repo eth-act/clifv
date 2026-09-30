@@ -138,6 +138,7 @@ theorem stepCall_eq (env : Clif.Env) (p : Clif.Program) (s : Clif.State) (rest :
     | returned rv m =>
       simp only
       split <;> rfl
+    | _ => rfl
 
 theorem resBind_ok {α β : Type} {x : Clif.Res α} {f : α → Clif.Res β} {b : β}
     (h : (x >>= f) = .ok b) : ∃ a, x = .ok a ∧ f a = .ok b := by
@@ -153,10 +154,8 @@ theorem val_as_i64 {v : Clif.Val} {x : BitVec Clif.Ty.i64.width} (h : v.as? .i64
   simp only [Clif.Val.as?] at h
   split at h
   · rename_i hty
-    simp only at hty
     subst hty
-    simp only [Option.some.injEq] at h
-    subst h
+    cases h
     rfl
   · cases h
 
@@ -175,18 +174,16 @@ theorem stepCallIndirect_eq (env : Clif.Env) (p : Clif.Program) (s : Clif.State)
   intro ⟨declared, addr, vals⟩ hX
   obtain ⟨d, -, hX⟩ := resBind_ok hX
   obtain ⟨cv, hcv, hX⟩ := resBind_ok hX
-  obtain ⟨cv64, hcv64, hX⟩ := resBind_ok hX
-  obtain ⟨vs, -, hX⟩ := resBind_ok hX
-  have hc64 : cv.as? .i64 = some cv64 := by
-    cases h : cv.as? .i64 with
-    | none => rw [h] at hcv64; cases hcv64
-    | some y => rw [h] at hcv64; cases hcv64; rfl
   have haddr : addr = cv.toNat := by
-    have := val_as_i64 hc64
-    subst this
-    simp only [Clif.Res.pure_eq, Clif.Res.ok.injEq, Prod.mk.injEq] at hX
-    rw [← hX.2.1]
-    rfl
+    cases hc : cv.as? .i64 with
+    | none => simp [hc] at hX
+    | some y =>
+      have := val_as_i64 hc
+      subst this
+      simp only [Clif.Val.as?_mk, Clif.Res.ofOption_some, Clif.Res.ok_bind] at hX
+      obtain ⟨vs, -, hX⟩ := resBind_ok hX
+      cases hX
+      rfl
   have hfind : p.funcs.find? (fun g => s.mem.symbols g.name == some addr) = none := by
     rw [List.find?_eq_none]
     intro g hg heq

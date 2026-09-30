@@ -178,10 +178,10 @@ theorem loadOpcode_inj {a b : Clif.LoadOp} (h : loadOpcode a = loadOpcode b) : a
 theorem storeOpcode_inj {a b : Clif.StoreOp} (h : storeOpcode a = storeOpcode b) : a = b := by
   cases a <;> cases b <;> simp_all [storeOpcode]
 
-theorem width_of_resTy {g : Nat → Option Clif.Signature} {inst : Clif.Inst} {ty : Clif.Ty}
-    (hr : inst.resultTypes g (fun _ => none) = some [ty]) {info : IInfo} {tys : List Clif.Ty} {w : Nat}
+theorem width_of_resTy {g sd : Nat → Option Clif.Signature} {inst : Clif.Inst} {ty : Clif.Ty}
+    (hr : inst.resultTypes g sd = some [ty]) {info : IInfo} {tys : List Clif.Ty} {w : Nat}
     (h2 : CTy.int w = info.resTys.head?.getD .invalid) (h3 : info.resTys = tys.map CTy.ofClif)
-    (h4 : inst.resultTypes g (fun _ => none) = some tys) : ty.width = w := by
+    (h4 : inst.resultTypes g sd = some tys) : ty.width = w := by
   rw [hr, Option.some.injEq] at h4
   subst h4
   rw [h3] at h2
@@ -192,11 +192,11 @@ theorem width_of_resTy {g : Nat → Option Clif.Signature} {inst : Clif.Inst} {t
 theorem ty_bytes8 (ty : Clif.Ty) : ty.bytes * 8 = ty.width := by cases ty <;> rfl
 
 /-- `load.ty` with `ty` of `w` bits, lowered by an unsigned load of `w / 8` bytes. -/
-theorem cond_load {g : Nat → Option Clif.Signature} {op : Clif.LoadOp} {ty : Clif.Ty}
+theorem cond_load {g sd : Nat → Option Clif.Signature} {op : Clif.LoadOp} {ty : Clif.Ty}
     {fl : Clif.MemFlags} {x : Nat} {off : Int} {info : IInfo} {tys : List Clif.Ty} {w : Nat}
     {aop : LoadOp} (h1 : (variantNames 151)[29]? = some (loadOpcode op))
     (h2 : CTy.int w = info.resTys.head?.getD .invalid) (h3 : info.resTys = tys.map CTy.ofClif)
-    (h4 : Clif.Inst.resultTypes g (fun _ => none) (Clif.Inst.load op ty fl x off) = some tys) (haw : aop.bytes * 8 = w)
+    (h4 : Clif.Inst.resultTypes g sd (Clif.Inst.load op ty fl x off) = some tys) (haw : aop.bytes * 8 = w)
     (hsg : loadSigned aop = false) : aop.bytes = op.size ty ∧ loadSigned aop = op.signed := by
   have h29 : (variantNames 151)[29]? = some (loadOpcode .load) := rfl
   rw [h29, Option.some.injEq] at h1
@@ -277,10 +277,10 @@ theorem cond_store {ctx : Ctx} {x w : Nat} {ty : Clif.Ty} {aop : StoreOp}
   simp only [Clif.StoreOp.size]
   omega
 
-theorem width_stackAddr {g : Nat → Option Clif.Signature} {info : IInfo} {tys : List Clif.Ty}
+theorem width_stackAddr {g sd : Nat → Option Clif.Signature} {info : IInfo} {tys : List Clif.Ty}
     {ty : Clif.Ty} {sl : Nat} {o : Int} (hRE : ∀ t ∈ info.resTys, t ∈ eCTys)
     (h3 : info.resTys = tys.map CTy.ofClif)
-    (h4 : Clif.Inst.resultTypes g (fun _ => none) (Clif.Inst.stackAddr ty sl o) = some tys) : ty.width ≤ 64 := by
+    (h4 : Clif.Inst.resultTypes g sd (Clif.Inst.stackAddr ty sl o) = some tys) : ty.width ≤ 64 := by
   simp only [Clif.Inst.resultTypes, Option.some.injEq] at h4
   subst h4
   have := hRE (CTy.ofClif ty) (by rw [h3]; simp)

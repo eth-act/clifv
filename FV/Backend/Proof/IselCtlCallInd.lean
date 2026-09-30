@@ -63,19 +63,18 @@ theorem instData_callIndirect_inv {f : Clif.Function} {cl : Clif.Inst} {fs : Lis
     simp only [pure, Except.pure, Except.ok.injEq] at h
     obtain ⟨-, -, h3⟩ := mkVariant_eq_data h
     injection h3 with _ h4
-    exact ⟨sig, callee, args, s, rfl, rfl, h4⟩
+    exact ⟨sig, callee, args, s, rfl, hs, h4⟩
 
-theorem ext_value_slice_unwrap_iff {ctx : Ctx} (st : LState) (vs : List Nat) (fs : List V) :
-    externExtract ctx T.value_slice_unwrap (.values vs) st = .ok fs ↔
-      ∃ x xs, vs = x :: xs ∧ fs = [.value x, .values xs] := by
-  cases vs with
-  | nil =>
-    have : externExtract ctx T.value_slice_unwrap (.values []) st = .fail := rfl
-    rw [this]; simp
-  | cons x xs =>
-    have : externExtract ctx T.value_slice_unwrap (.values (x :: xs)) st =
-        .ok [.value x, .values xs] := rfl
-    rw [this]; simp [eq_comm]
+theorem ext_value_slice_unwrap_iff {ctx : Ctx} (st : LState) (x : Nat) (xs : List Nat)
+    (fs : List V) :
+    externExtract ctx T.value_slice_unwrap (.values (x :: xs)) st = .ok fs ↔
+      fs = [.value x, .values xs] := by
+  have : externExtract ctx T.value_slice_unwrap (.values (x :: xs)) st =
+      .ok [.value x, .values xs] := rfl
+  rw [this]
+  constructor
+  · intro h; cases h; rfl
+  · rintro rfl; rfl
 
 /-- The number of CLIF results of a `call_indirect` is its signature's number of returns
 (`CtxInv.resTys`). -/
@@ -88,6 +87,13 @@ theorem callIndirect_results_length {f : Clif.Function} {ctx : Ctx} (hctx : CtxI
   rw [hl, ← htys, List.length_map]
 
 /-- The low 64 bits of the register holding an `i64` CLIF value are its bits. -/
+theorem frame_get_regs {fr : Clif.Frame} {x : Nat} {v : Clif.Val} (h : fr.get x = .ok v) :
+    fr.regs x = some v := by
+  unfold Clif.Frame.get at h
+  cases hx : fr.regs x with
+  | none => rw [hx] at h; cases h
+  | some v' => rw [hx] at h; cases h; rfl
+
 theorem lo64_of_vholds {x : BitVec 64} {c : CV} (h : VHolds ⟨.i64, x⟩ c) : lo64 c = x := h
 
 theorem call_ind_lowerInstOk {isem : Sem} {MR : MemRelT} {env : Clif.Env}
@@ -130,7 +136,7 @@ theorem call_ind_lowerInstOk {isem : Sem} {MR : MemRelT} {env : Clif.Env}
         simp [callDefs, outDefs]
       have hlo : lo64 (ρ callee) = BitVec.ofNat 64 x.toNat := by
         rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
-        exact lo64_of_vholds (hvh callee _ (get_regs hcv))
+        exact lo64_of_vholds (hvh callee _ (frame_get_regs hcv))
       obtain ⟨hcall, -⟩ := hCR
       obtain ⟨outs, w', hi, hol, hro, hmr'⟩ := hcall s hin name g fr.slots cm w x.toNat
         (.vreg callee .int) (retPairs (args.zip ((abiArgIdx s.params 0).map Reg.x)))
@@ -146,7 +152,7 @@ theorem call_ind_lowerInstOk {isem : Sem} {MR : MemRelT} {env : Clif.Env}
       subst hmi
       rw [vuseNums_call_reg, hfst] at hu
       rcases List.mem_cons.mp hu with rfl | hu
-      · exact .inr (by rw [get_regs hcv]; rfl)
+      · exact .inr (by rw [frame_get_regs hcv]; rfl)
       · exact .inr (usesOk_args hvals u hu)
     · intro h; simp [explicitTrapInst] at h
     · trivial
@@ -182,6 +188,8 @@ theorem call_ind_ruleOk {p : Program} (hp : Data p) (hpI : IndData p) {F : BitVe
   simp only [List.cons.injEq, Option.some.injEq, and_true] at *
   isel_destruct; subst_vars
   isel_inv_simp [*, rule_lower_2529] at heval
+  isel_destruct; subst_vars
+  simp only [ext_value_slice_unwrap_iff, List.cons.injEq, and_true] at *
   isel_destruct; subst_vars
   simp only [ctor_abi_sig_iff, ctor_gen_call_output_iff, ctor_put_in_regs_vec_iff,
     ctor_gen_call_rets_iff, ctor_try_call_none_iff, ctor_output_vec_iff, ctor_put_in_reg_iff,
