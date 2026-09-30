@@ -67,6 +67,13 @@ theorem evalInst_types {fr : Frame} {m : Mem} {i : Inst} {vals : List Val} {m' :
     · simp only [Res.bind_eq_ok, Res.ofOption_eq_ok, Res.pure_eq_ok, Prod.mk.injEq] at h
       obtain ⟨_, _, h, -⟩ := h; subst h; rfl
     · cases h
+  case tlsValue =>
+    simp only [Option.some.injEq] at ht; subst ht
+    obtain ⟨g, _, h⟩ := h
+    split at h
+    · simp only [Res.bind_eq_ok, Res.ofOption_eq_ok, Res.pure_eq_ok, Prod.mk.injEq] at h
+      obtain ⟨_, _, h, -⟩ := h; subst h; rfl
+    · cases h
   all_goals
     simp only [Option.some.injEq] at ht; subst ht
     (repeat' split at h) <;>

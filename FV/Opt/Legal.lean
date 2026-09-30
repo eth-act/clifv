@@ -37,7 +37,8 @@ open Clif Opt.Legalize128
 
 /-- The value operands of an instruction. -/
 def instOps : Inst → List ValueId
-  | .iconst .. | .stackAddr .. | .fence | .nop | .symbolValue .. | .funcAddr .. => []
+  | .iconst .. | .stackAddr .. | .fence | .nop | .symbolValue .. | .funcAddr ..
+  | .tlsValue .. => []
   | .unary _ _ x | .bmask _ x | .extend _ _ x | .ireduce _ x | .isplit _ x
   | .load _ _ _ x _ | .atomicLoad _ _ x | .bitcast _ _ x | .trapz x _ | .trapnz x _ => [x]
   | .binary _ _ x y | .div _ _ x y | .overflow _ _ x y | .uaddOverflowTrap _ x y _
@@ -73,6 +74,7 @@ def renameInst (σ : ValueId → ValueId) : Inst → Inst
   | .call fn args => .call fn (args.map σ)
   | .callIndirect s c args => .callIndirect s (σ c) (args.map σ)
   | .funcAddr t fn => .funcAddr t fn
+  | .tlsValue t gv => .tlsValue t gv
   | .atomicRmw op t fl p x => .atomicRmw op t fl (σ p) (σ x)
   | .atomicCas t fl p e x => .atomicCas t fl (σ p) (σ e) (σ x)
   | .atomicLoad t fl p => .atomicLoad t fl (σ p)
