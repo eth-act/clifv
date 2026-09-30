@@ -190,16 +190,18 @@ def divOutcome (name : String) (vals : List Val) (m : Mem) : Outcome :=
   | some (_, some c) => .trapped c
   | some (vs, none) => .returned vs m
 
-/-- The trusted Rust contracts as a `Clif.Env`: the mem* byte-level semantics, the `__*ti3`
-division helpers, and every diverging entry point ends the run. -/
+/-- The trusted Rust contracts as a `Clif.Env`: the `__*ti3` division helpers, the mem*
+byte-level semantics, and every diverging entry point ends the run. (The helpers are matched
+first: their four fixed names are not panic names, and the order makes the helper lookup
+provable without evaluating `isPanic`, `FV/Opt/Proof/LegalRust.lean`.) -/
 def env : Env where
   extern name :=
-    if isPanic name then
+    if isDivHelper name then
+      some fun vals m => divOutcome name vals m
+    else if isPanic name then
       some fun _ _ => .trapped (.user 1)
     else if name == "memcpy" || name == "memmove" || name == "memset" || name == "memcmp" then
       some (memOutcome name)
-    else if isDivHelper name then
-      some fun vals m => divOutcome name vals m
     else none
 
 end Clif.Rust
