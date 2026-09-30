@@ -154,7 +154,7 @@ def div128 (signed : Bool) (isRem : Bool) (vals : List Val) : Option (List Val �
       if vals.length == 2 then [⟨.i128, BitVec.ofNat 128 v⟩]
       else [⟨.i64, BitVec.ofNat 64 lo⟩, ⟨.i64, BitVec.ofNat 64 hi⟩]
     if du = 0 then some ([], some .intDivz)
-    else if signed ∧ !isRem ∧ ds = -(2 ^ 127 : Int) ∧ du = 2 ^ 128 - 1 then
+    else if signed ∧ !isRem ∧ ns = -(2 ^ 127 : Int) ∧ du = 2 ^ 128 - 1 then
       some ([], some .intOvf)
     else if signed then
       -- truncated division/remainder (C semantics: the quotient rounds toward zero, the
@@ -180,25 +180,28 @@ def div128 (signed : Bool) (isRem : Bool) (vals : List Val) : Option (List Val �
 def isDivHelper (name : String) : Bool :=
   name == "__udivti3" || name == "__divti3" || name == "__umodti3" || name == "__modti3"
 
-/-- The outcome of a `__*ti3` call on `(args, mem)`. -/
-def divOutcome (name : String) (vals : List Val) : Outcome :=
+/-- The outcome of a `__*ti3` call on `(args, mem)`: the helpers do not touch memory, so a
+return keeps `mem`. -/
+def divOutcome (name : String) (vals : List Val) (m : Mem) : Outcome :=
   let signed := name == "__divti3" || name == "__modti3"
   let isRem := name == "__umodti3" || name == "__modti3"
   match div128 signed isRem vals with
   | none => .stuck s!"%{name}: argument types"
   | some (_, some c) => .trapped c
-  | some (vs, none) => .returned vs Mem.empty
+  | some (vs, none) => .returned vs m
 
-/-- The trusted Rust contracts as a `Clif.Env`: the mem* byte-level semantics, the `__*ti3`
-division helpers, and every diverging entry point ends the run. -/
+/-- The trusted Rust contracts as a `Clif.Env`: the `__*ti3` division helpers, the mem*
+byte-level semantics, and every diverging entry point ends the run. (The helpers are matched
+first: their four fixed names are not panic names, and the order makes the helper lookup
+provable without evaluating `isPanic`, `FV/Opt/Proof/LegalRust.lean`.) -/
 def env : Env where
   extern name :=
-    if isPanic name then
+    if isDivHelper name then
+      some fun vals m => divOutcome name vals m
+    else if isPanic name then
       some fun _ _ => .trapped (.user 1)
     else if name == "memcpy" || name == "memmove" || name == "memset" || name == "memcmp" then
       some (memOutcome name)
-    else if isDivHelper name then
-      some fun vals _ => divOutcome name vals
     else none
 
 end Clif.Rust

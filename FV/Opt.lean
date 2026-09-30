@@ -9,3 +9,4 @@ import FV.Opt.Gvn
 import FV.Opt.Dce
 import FV.Opt.Licm
 import FV.Opt.Optimize
+import FV.Opt.Legal

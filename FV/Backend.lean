@@ -168,8 +168,8 @@ def unverifiedReason? (pf : Clif.ParsedFile) (f : Clif.Function) : Option String
 them with `alloc` (one batch), emit. A function that calls a function of the file that is not
 compiled is not compiled either (its object code would reference an undefined symbol).
 `preUnverified` marks functions already known to be outside the theorem before this check
-(`Opt.Legalize128.parsedFile128`: "i128 legalized (outside backend_correct)"); they are not
-lowering-validated. -/
+(`Opt.Legalize128.parsedFile128`: legalised `i128` functions the validator `Opt.Legal.check`
+rejects, "i128 legalized (outside backend_correct: …)"); they are not lowering-validated. -/
 def compileFileWith {m : Type → Type} [Monad m]
     (alloc : Array VCode → m (Array (Except String AFunc))) (pf : Clif.ParsedFile)
     (preUnverified : List (String × String) := []) : m FileAsm := do

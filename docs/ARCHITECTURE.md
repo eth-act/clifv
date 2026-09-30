@@ -16,7 +16,7 @@ first, then update its producer and its consumers together.
 | `FV/Isle/` | Lean ISLE syntax, generated rule data (aarch64 lowering; mid-end `opt` in `Generated/Opt`, `Isle.Opt`), rule interpreter (incl. multi terms), `Isle.Opt.simplify` | M4, M7 |
 | `FV/Backend/` | isel, stack-slot allocator, regalloc checker, asm/bytes emission | M4–M6 |
 | `FV/Opt/` | Lean mid-end: CLIF → CLIF passes (`Opt.optimize`: simplify with Cranelift's rules, GVN, DCE, LICM), `docs/contracts/midend.md` | M7 |
-| `FV/E2E/` | `backend_correct` | M7 |
+| `FV/E2E/` | the end-to-end theorems: `backend_correct_final`, `backend_correct_opt_proven` (mid-end), `backend_correct_legal` (`i128` via `Opt.Legalize128`) | M7 |
 | `FVTest/` | Lean-side tests and corpora drivers (`lean_exe` targets) | all |
 | `rust/crates/clif2obj` | Cranelift driver (PLAN.md Appendix A), with relocation dumps | M1, M3 |
 | `rust/crates/clif-oracle` | `clif-oracle interp <file.clif>`: runs the Cranelift interpreter on `; run:` lines, output JSON | M0 |
@@ -38,6 +38,28 @@ first, then update its producer and its consumers together.
 - Lean namespaces follow the directories: `Clif`, `DSL`, `Compile`, `Arm`, `Validate`, `Isle`, `Backend`, `Opt`, `E2E`.
 - Anything executable that is meant as a model must be *checkable* against an external
   oracle: Cranelift's interpreter, native execution under `qemu-aarch64-static`, or `llvm-mc`.
+
+## The end-to-end theorems and their trust base
+
+`lean-backend` reports a compiled function *verified* when one of these theorems covers it:
+
+- `E2E.backend_correct_final` (`FV/E2E/Final.lean`, `docs/contracts/e2e.md`): the Arm code of
+  an `InSubset` function refines its `Clif.run`;
+- `E2E.backend_correct_opt_proven` (`FV/E2E/OptProven.lean`): the same over the mid-end with the
+  proven rule sets (`--opt-proven-only`);
+- `E2E.backend_correct_legal` (`FV/E2E/Legal.lean`, `docs/contracts/legalize128.md`): a
+  function mentioning `i128` is compiled as its legalisation `g` (`Opt.Legalize128`,
+  untrusted); when the validator `Opt.Legal.check f g cert` accepts and `g` is `InSubset`, the
+  Arm code of `g` on the ABI-split arguments refines the original function's `Clif.run`.
+
+Trusted: the CLIF semantics (`FV/Clif`, incl. the extern contracts `Clif.Rust.env` — for the
+`__*ti3` helpers the semantics `Opt.Legal.HelperOk` is proven against `Clif.Sem.div`, so what is
+trusted is that the native helpers implement it), the Arm model, the theorems' premises
+(`XCallsOk`, `CalleeOk`, `TrapsExplicit`, …), and the unverified driver code that decides which
+premises hold per function: `Backend.unverifiedReason?`, `lowerChecked`, `formsCoveredB` and,
+for `i128` functions, the `Opt.Legalize128.parsedFile128` path (it runs `Opt.Legal.check` — the
+validator itself is inside the proof — and the extern-name condition; it keeps legalised
+functions unverified under `--opt`).
 
 ## Building
 
