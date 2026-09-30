@@ -247,7 +247,7 @@ theorem prep_sound {vc vcp : VCode} {sem : Sem} (hds : DriverSem sem) (h : prepC
   split at h
   · rename_i ss ps ss' ps' hcfg hcfg'
     simp only [Bool.and_eq_true, decide_eq_true_eq] at h
-    obtain ⟨⟨h0, hl0⟩, hall⟩ := h
+    obtain ⟨⟨⟨h0, hl0⟩, hall⟩, -⟩ := h
     let L : Nat → Prop := fun b => b < vc.blocks.size ∧ liveOf ss b = true
     have hchk : ∀ b, L b → ∃ b', sigmaOf vc vcp b = some b' ∧ keptOk vc vcp ss ss' b b' = true ∧
         (ss[b]?.getD #[]).all (fun s => decide (s < vc.blocks.size) && liveOf ss s) = true := by
@@ -300,6 +300,15 @@ theorem prep_sound {vc vcp : VCode} {sem : Sem} (hds : DriverSem sem) (h : prepC
       obtain ⟨hops', htc', hsem', -⟩ := sameInst_facts hds hsame
       exact ⟨b', k, ρ, w, vb', i', ops, outs, w', hstar', hvb', hi', by rw [hops', hops],
         by rw [hsem']; exact hsem, by rw [htc']; exact htc⟩
+  · cases h
+
+/-- `prepare` introduces no `tryCall` (`prepCheck`'s last conjunct). -/
+theorem noTryCall_of_prepCheck {vc vcp : VCode} (h : prepCheck vc vcp = true)
+    (hvc : vc.hasTryCall = false) : vcp.hasTryCall = false := by
+  unfold prepCheck at h
+  split at h
+  · simp only [Bool.and_eq_true] at h
+    simpa [hvc] using h.2
   · cases h
 
 end Backend.Proof.Driver

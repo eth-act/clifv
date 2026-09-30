@@ -122,21 +122,28 @@ def spOf (s : Arm.ArmState) : BitVec 64 := Arm.r (.GPR 31#5) s
 def FrameKeep (F : BitVec 64 → Prop) (s s' : Arm.ArmState) : Prop :=
   spOf s' = spOf s ∧ ∀ a, F a → s'.mem a = s.mem a
 
-/-- **The operand-view obligation** for instruction `i` (straight-line outcome `next`). -/
-def OperandsSound (F : BitVec 64 → Prop) (exec : MInst → Arm.ArmState → Option Arm.ArmState)
-    (sem : ISem CV Arm.ArmState) (i : MInst) : Prop :=
+/-- **The operand-view obligation** for instruction `i` with control outcome `ctl` (the def
+values, world and preserved registers of the executed instruction; a `try_call`'s call has
+outcome `goto`). -/
+def OperandsSoundCtl (F : BitVec 64 → Prop) (exec : MInst → Arm.ArmState → Option Arm.ArmState)
+    (sem : ISem CV Arm.ArmState) (i : MInst) (ctl : Ctl) : Prop :=
   ∀ (c : CheckCtx) (wh : String) (ops : Array Operand) (regs : Array Reg) (i' : MInst)
     (s w : Arm.ArmState) (outs : List CV) (w' : Arm.ArmState),
     i.operands = .ok ops →
     c.checkStatic wh ops (regs.map .reg) i.clobbers = .ok () →
     i.assign regs = .ok i' →
     SameWorld F s w → Arm.CheckSPAlignment s → Arm.r .ERR s = .None →
-    sem i (useVals ops regs s) w = some (outs, w', .next) →
+    sem i (useVals ops regs s) w = some (outs, w', ctl) →
     ∃ s', exec i' s = some s' ∧ SameWorld F s' w' ∧ FrameKeep F s s' ∧
       (∀ p ∈ defRegs ops regs outs, regVal s' p.1.2 = p.2) ∧
       (∀ r, r.allocatable = true → (∀ p ∈ (ops.zip regs).toList, p.1.isDef = true → p.2 ≠ r) →
         r ∉ i.clobbers → regVal s' r = regVal s r) ∧
       (∀ r ∈ i.clobbers, r ∈ calleeSaved → ckeep r (regVal s' r) = ckeep r (regVal s r))
+
+/-- **The operand-view obligation** for instruction `i` (straight-line outcome `next`). -/
+abbrev OperandsSound (F : BitVec 64 → Prop) (exec : MInst → Arm.ArmState → Option Arm.ArmState)
+    (sem : ISem CV Arm.ArmState) (i : MInst) : Prop :=
+  OperandsSoundCtl F exec sem i .next
 
 deriving instance ReflBEq, LawfulBEq for RegClass
 deriving instance ReflBEq, LawfulBEq for Reg
@@ -451,7 +458,7 @@ emitted instruction gives a state `s'` with the world `sem` computes, and a clob
 with `s'` on allocatable registers; frame locations are untouched. -/
 theorem operandsSound_step {F : BitVec 64 → Prop}
     {exec : MInst → Arm.ArmState → Option Arm.ArmState}
-    {sem : ISem CV Arm.ArmState} {i : MInst} (hs : OperandsSound F exec sem i)
+    {sem : ISem CV Arm.ArmState} {i : MInst} {ctl : Ctl} (hs : OperandsSoundCtl F exec sem i ctl)
     {c : CheckCtx} {wh : String} {ops : Array Operand} {regs : Array Reg} {i' : MInst}
     (hops : i.operands = .ok ops)
     (hst : c.checkStatic wh ops (regs.map Loc.reg) i.clobbers = .ok ())
@@ -459,7 +466,7 @@ theorem operandsSound_step {F : BitVec 64 → Prop}
     (hm : ∀ r, r.allocatable = true → m (.reg r) = regVal s r) (hw : SameWorld F s w)
     (hal : Arm.CheckSPAlignment s) (herr : Arm.r .ERR s = .None) {outs : List CV} {w' : Arm.ArmState}
     (hsem : sem i (((ops.zip (regs.map Loc.reg)).toList.filter (·.1.isUse)).map (m ·.2)) w =
-      some (outs, w', .next))
+      some (outs, w', ctl))
     (hlen : outs.length = ((ops.zip (regs.map Loc.reg)).toList.filter (·.1.isDef)).length) :
     ∃ s' m2, exec i' s = some s' ∧ SameWorld F s' w' ∧ FrameKeep F s s' ∧
       Clobbered ckeep i.clobbers
@@ -521,5 +528,76 @@ theorem operandsSound_step {F : BitVec 64 → Prop}
       exact hnD p hp (by rw [e', e]))
     hcl
   exact ⟨s', m2, hex, hW, hK, hc2, hr2, hl2⟩
+
+/-! ## Calls and the calls of `try_call`s -/
+
+/-- The operand visit of a call's `CallInfo` (as `MInst.visitOperands` does it). -/
+def callVisit {m : Type → Type} [Monad m] (f : OpSpec → Reg → m Reg) (info : CallInfo) :
+    m CallInfo := do
+  let dest ← match info.dest with
+    | .reg r => do pure (CallDest.reg (← f .use r))
+    | d => pure d
+  let uses ← info.uses.mapM fun (v, p) => do pure ((← f (.fixedUse p) v), p)
+  let defs ← info.defs.mapM fun (p, v) => do pure (p, (← f (.fixedDef p) v))
+  pure ⟨dest, uses, defs⟩
+
+theorem visit_call_eq {m : Type → Type} [Monad m] [LawfulMonad m] (f : OpSpec → Reg → m Reg)
+    (info : CallInfo) : MInst.visitOperands f (.call info) = MInst.call <$> callVisit f info := by
+  obtain ⟨dest, uses, defs⟩ := info
+  cases dest <;> simp [MInst.visitOperands, callVisit, map_bind]
+
+/-- The call of a `try_call` visits its operands as the plain call does. -/
+theorem visit_tryCall_eq {m : Type → Type} [Monad m] [LawfulMonad m] (f : OpSpec → Reg → m Reg)
+    (info : CallInfo) (ti : TryInfo) :
+    MInst.visitOperands f (.tryCall info ti) = (fun c => MInst.tryCall c ti) <$> callVisit f info := by
+  obtain ⟨dest, uses, defs⟩ := info
+  cases dest <;> simp [MInst.visitOperands, callVisit, map_bind]
+
+/-- The call of a `try_call` has the operands of the plain call. -/
+theorem operands_tryCall_call (info : CallInfo) (ti : TryInfo) :
+    (MInst.tryCall info ti).operands = (MInst.call info).operands := by
+  unfold MInst.operands
+  dsimp only
+  rw [visit_tryCall_eq, visit_call_eq, StateT.run_map, StateT.run_map]
+  simp only [bind_map_left]
+
+/-- The allocated form of a call is a call; that of the call of a `try_call` is the call of a
+`try_call`, with the allocated form of the plain call. -/
+theorem assign_call_tryCall (info : CallInfo) (regs : Array Reg) :
+    (∀ i', (MInst.call info).assign regs = .ok i' → ∃ ic, i' = .call ic) ∧
+    ∀ ti i', (MInst.tryCall info ti).assign regs = .ok i' →
+      ∃ ic, i' = .tryCall ic ti ∧ (MInst.call info).assign regs = .ok (.call ic) := by
+  have hb : ∀ {α β : Type} {x : Except String α} {g : α → Except String β} {b : β},
+      x >>= g = .ok b → ∃ a, x = .ok a ∧ g a = .ok b := by
+    intro α β x g b h
+    cases x with
+    | error e => cases h
+    | ok a => exact ⟨a, rfl, h⟩
+  unfold MInst.assign
+  dsimp only
+  rw [visit_call_eq, StateT.run_map]
+  refine ⟨fun i' h => ?_, fun ti i' h => ?_⟩
+  · simp only [bind_map_left] at h
+    obtain ⟨q, -, h⟩ := hb h
+    split at h
+    · cases h
+    · simp only [pure, Except.pure, Except.ok.injEq] at h
+      exact ⟨q.1, h.symm⟩
+  · rw [visit_tryCall_eq, StateT.run_map] at h
+    simp only [bind_map_left] at h ⊢
+    obtain ⟨q, hq, h⟩ := hb h
+    split at h
+    · cases h
+    · rename_i hk
+      simp only [pure, Except.pure, Except.ok.injEq] at h
+      refine ⟨q.1, h.symm, ?_⟩
+      rw [hq]
+      have hk' : q.2 = regs.size := by simpa using hk
+      simp [bind, Except.bind, hk', pure, Except.pure]
+
+/-- The allocated form of a call is a call. -/
+theorem assign_call_form {info : CallInfo} {regs : Array Reg} {i' : MInst}
+    (h : (MInst.call info).assign regs = .ok i') : ∃ ic, i' = .call ic :=
+  (assign_call_tryCall info regs).1 i' h
 
 end Backend.Proof

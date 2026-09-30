@@ -381,7 +381,7 @@ theorem call_sym_lowerInstOk {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT
       obtain ⟨vals, g, hvals, hvl, hal, hg, hgo, hrN⟩ := call_ok_facts hctx hext hfr hO
       have hfst : (args.zip ((abiArgIdx ext.sig.params 0).map Reg.x)).map (·.1) = args :=
         List.map_fst_zip (by simp [abiArgIdx_length]; omega)
-      obtain ⟨sym, -, hcall⟩ := hCR
+      obtain ⟨sym, -, hcall, -⟩ := hCR
       have huses : (args.zip ((abiArgIdx ext.sig.params 0).map Reg.x)).map (ρ ·.1) = args.map ρ := by
         rw [show (fun x : Nat × Reg => ρ x.1) = ρ ∘ (·.1) from rfl, ← List.map_map, hfst]
       have hdl : (callDefs (outDefs st.nextVreg (sigRets ext.sig).length)).length =
@@ -575,7 +575,7 @@ theorem call_got_lowerInstOk {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT
       obtain ⟨vals, g, hvals, hvl, hal, hg, hgo, hrN⟩ := call_ok_facts hctx hext hfr hO
       have hfst : (args.zip ((abiArgIdx ext.sig.params 0).map Reg.x)).map (·.1) = args :=
         List.map_fst_zip (by simp [abiArgIdx_length]; omega)
-      obtain ⟨sym, hgot, hcall⟩ := hCR
+      obtain ⟨sym, hgot, hcall, -⟩ := hCR
       obtain ⟨w1, hw1, hsw⟩ := hgot (.vreg (st.nextVreg + (sigRets ext.sig).length) .int) ext.name w
       have hmr1 := hMR _ _ _ _ hsw hmr
       have hrun1 := seqRun_got (F := F) (ρ := ρ) hw1

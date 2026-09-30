@@ -66,6 +66,13 @@ theorem AllHold.prefix_append {a b : List Clif.Val} {xs : List CV} (h : AllHold 
   rw [List.getElem?_append_left (List.getElem?_eq_some_iff.mp hj).1]
   exact hj
 
+/-- Values held by a prefix of `xs` are held by a prefix of `xs ++ ys`. -/
+theorem PrefixHold.append {vals : List Clif.Val} {xs : List CV} (h : PrefixHold vals xs)
+    (ys : List CV) : PrefixHold vals (xs ++ ys) := by
+  refine ⟨by have := h.1; simp only [List.length_append]; omega, fun j v x hj hx => h.2 j v x hj ?_⟩
+  have hlt : j < xs.length := Nat.lt_of_lt_of_le (List.getElem?_eq_some_iff.mp hj).1 h.1
+  rwa [List.getElem?_append_left hlt] at hx
+
 /-- Relation between the CLIF memory (with the activation's slot bases) and the VCode world. -/
 abbrev MemRelT := List (Clif.SlotId × Nat) → Clif.Mem → Arm.ArmState → Prop
 
@@ -780,13 +787,16 @@ the memory relation sees), and a call of the extern `ext ∈ exts` (`bl name`, o
 register holding `sym name`, whose value is then the first use) with at most 8 argument values
 (`AllHold`: low bits) and one def per ABI return (`sigRets`: an `sret` signature without
 returns also returns its struct pointer) returns one value per def, the first ones the extern's
-results (`PrefixHold`), and a world related to the extern's memory. -/
+results (`PrefixHold`), and a world related to the extern's memory. The same holds of a
+`tryCall` (the call of a `try_call`, with the exception payload registers among its defs after
+the returns), which then continues at its normal-return successor (successor number
+`ti.handlers.length`, the last). -/
 def CallsRefine (F : BitVec 64 → Prop) (env : Clif.Env) (exts : List Clif.ExtFunc) (MR : MemRelT)
     (isem : Sem) : Prop :=
   ∃ sym : String → BitVec 64,
     (∀ (rd : Reg) (n : String) (w : Arm.ArmState), ∃ w',
       isem (.loadExtNameGot rd n) [] w = some ([ofX (sym n)], w', .next) ∧ SameWorldNF F w' w) ∧
-    ∀ ext ∈ exts, ∀ g (sl : List (Clif.SlotId × Nat)) (cm : Clif.Mem) (w : Arm.ArmState)
+    (∀ ext ∈ exts, ∀ g (sl : List (Clif.SlotId × Nat)) (cm : Clif.Mem) (w : Arm.ArmState)
       (dest : CallDest) (us ds : List (Reg × Reg)) (uses args : List CV)
       (vals rvals : List Clif.Val) (cm' : Clif.Mem),
       env.extern ext.name = some g →
@@ -795,6 +805,16 @@ def CallsRefine (F : BitVec 64 → Prop) (env : Clif.Env) (exts : List Clif.ExtF
       vals.length ≤ 8 → AllHold vals args → MR sl cm w →
       g vals cm = .returned rvals cm' → rvals.length = ext.sig.returns.length →
       ∃ outs w', isem (.call ⟨dest, us, ds⟩) uses w = some (outs, w', .next) ∧
+        outs.length = ds.length ∧ PrefixHold rvals outs ∧ MR sl cm' w') ∧
+    ∀ ext ∈ exts, ∀ g (sl : List (Clif.SlotId × Nat)) (cm : Clif.Mem) (w : Arm.ArmState)
+      (dest : CallDest) (us ds : List (Reg × Reg)) (ti : TryInfo) (uses args : List CV)
+      (vals rvals : List Clif.Val) (cm' : Clif.Mem),
+      env.extern ext.name = some g →
+      (dest = .sym ext.name ∧ uses = args ∨ ∃ r, dest = .reg r ∧ uses = ofX (sym ext.name) :: args) →
+      (sigRets ext.sig).length ≤ ds.length →
+      vals.length ≤ 8 → AllHold vals args → MR sl cm w →
+      g vals cm = .returned rvals cm' → rvals.length = ext.sig.returns.length →
+      ∃ outs w', isem (.tryCall ⟨dest, us, ds⟩ ti) uses w = some (outs, w', .goto ti.handlers.length) ∧
         outs.length = ds.length ∧ PrefixHold rvals outs ∧ MR sl cm' w'
 
 /-- Every extern of `f` takes at most 8 parameters (all in registers; `E2E.InSubset.callRegArgs`):
@@ -1164,6 +1184,171 @@ theorem branchOk_runTerm (hrules : BranchRulesCorrect program)
       rw [show TId.lower_branch = 687 from rfl, data_program.r687]; decide
     obtain ⟨ms, h1, h2⟩ := branchOk_of_rules data_program hrules hex hR hMR hctx hrt hd hi hbt htl
       rfl (by omega) hvb ha
+    exact ⟨ms, by simpa using h1, h2⟩
+
+/-! ## `try_call` (the normal return)
+
+`lowerFunction` lowers `try_call fn(args), et` with `lower_branch` in a context whose
+`tryRegs` are the vregs of the call's return values and exception payloads (`tryRegsOf`,
+allocated before the call), and replaces the `call` the rule emits last by the `tryCall`
+terminator (`tryFix`). `Clif.run` models the normal return only: the call of `fn`, its results
+bound, the jump to the normal-return successor (`Clif.stepTryCall`); its outcome is the
+outcome of the call `instOutcome … (.call fn args)`. -/
+
+/-- The operand-view registers a `tryCall`'s defs may name: its return and payload vregs. -/
+def tryDefRegs (ctx : Ctx) : List Reg := ctx.tryRegs.1 ++ ctx.tryRegs.2
+
+/-- **`lower_branch` on a `try_call`** (lowering state `st` → `st'`, emitted code `ms`, the
+driver's `try_call_info` `info`): the code ends in a call whose defs are among the return and
+payload vregs, the instructions before it define fresh vregs; with the last call replaced by
+the `tryCall`, a normal return of the callee runs to the `tryCall` with outcome
+`goto info.handlers.length` (the normal-return successor), the return vregs holding the
+results. -/
+structure LowerTryOk (isem : Sem) (MR : MemRelT) (env : Clif.Env) (p : Clif.Program) (ctx : Ctx)
+    (fn : Clif.FnRef) (args : List Nat) (info : TryInfo) (st st' : LState) (ms : List MInst) :
+    Prop where
+  mono : st.nextVreg ≤ st'.nextVreg
+  shape : ∃ pre ci, ms = pre ++ [.call ci] ∧
+    (∀ m ∈ pre, ∀ d ∈ vdefs m, st.nextVreg ≤ d ∧ d < st'.nextVreg) ∧
+    ∀ d ∈ vdefs (.call ci), Reg.vreg d .int ∈ tryDefRegs ctx
+  run : ∀ (fr : Clif.Frame) (cm : Clif.Mem) (ρ : Nat → CV) (w : Arm.ArmState),
+    fr.func = ctx.func → ValsHeld fr ρ → DFGCons ctx fr → MR fr.slots cm w →
+    match instOutcome env p fr cm (.call fn args) with
+    | .ok (rvals, cm') => UsesOk st fr ms ∧ ∃ k i ops ρ₁ w₁ outs w₂,
+        seqRun isem (tryFix info ms) ρ w =
+          some (.stop k i ops ρ₁ w₁ outs w₂ (.goto info.handlers.length)) ∧
+        k + 1 = ms.length ∧
+        (∀ (j : Nat) r v, ctx.tryRegs.1[j]? = some r → rvals[j]? = some v →
+          ∃ n, r = .vreg n .int ∧ VHolds v (vdefUpd ops outs ρ₁ n)) ∧
+        MR fr.slots cm' w₂
+    | _ => True
+
+/-- The root rules of `lower_branch` on `try_call`: `rule_lower_2542` (colocated callee, `bl`,
+rule id 1034) and `rule_lower_2551` (callee through the GOT, `loadExtNameGot` + `blr`, 1035).
+(`try_call_indirect`, `rule_lower_2561`, is outside the theorem.) -/
+def tryRootRule (r : Rule) : Bool := r.id == 1034 || r.id == 1035
+
+/-- **Root rule correctness (`lower_branch` on `try_call`)**: whenever rule `r` matches the
+`try_call` at `ti` (data `tryCallData`, in a context whose `tryRegs` are `tryRegsOf`'s vregs,
+allocated from a state `lo` above every value's vreg and below the rule's start state `st`),
+the instructions it appended satisfy `LowerTryOk` for the `try_call_info` of the targets. -/
+def TryRuleOk (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
+    (exts : List Clif.ExtFunc) (p : Program) (r : Rule) : Prop :=
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx → CallRegArgs f → ExternsIn f exts →
+  ∀ (ti : Nat) (fn : Clif.FnRef) (args : List Nat) (et : Clif.ExnTable) (data : V)
+    (sig : Clif.Signature) (items : List (Option Nat)) (targets : List Label) (info : TryInfo)
+    (lo st1 : LState),
+  tryCallData f (.tryCall fn args et) = .ok data → exnTableOpnd f et = .ok (sig, items) →
+  ctx.insts[ti]? = some ⟨data, [], [], none⟩ → tryInfoOf sig items targets = some info →
+  tryRegsOf sig lo = some (ctx.tryRegs, st1) → ValsBelow ctx lo →
+  ∀ (cfg : Config), cfg.checkOverlap = false →
+  ∀ (m n : Nat) (st : LState) (tr : Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId)
+    (out : V) (st' : LState) (tr' : Array RuleId), 1000 ≤ m → 1000 ≤ n →
+    st1.nextVreg ≤ st.nextVreg →
+    (∀ pre post, p.rulesOf TId.lower_branch = pre ++ r :: post → ∀ r' ∈ pre, ∃ m', 1000 ≤ m' ∧
+      ∃ s', (matchRule p (sem ctx) cfg m' r' [.inst ti, .labels targets]).run (st, tr) =
+        .ok (none, s')) →
+    (matchRule p (sem ctx) cfg m r [.inst ti, .labels targets]).run (st, tr) =
+      .ok (some env', s1) →
+    (evalExpr p (sem ctx) cfg n r.rhs env').run s1 = .ok (some out, (st', tr')) →
+    ∃ ms, st'.emitted = st.emitted ++ ms.toArray ∧
+      LowerTryOk isem MR env cp ctx fn args info st st' ms
+
+/-- **M4's target for `try_call`**: under the callee contract, the two `try_call` root rules
+of `lower_branch` are correct. -/
+def TryRulesCorrect (p : Program) : Prop :=
+  ∀ (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
+    (exts : List Clif.ExtFunc),
+    Refines F isem → MRStable F MR → CallsRefine F env exts MR isem →
+    ∀ r ∈ p.rulesOf TId.lower_branch, tryRootRule r = true → TryRuleOk isem MR env cp exts p r
+
+/-- The other rules of `lower_branch` never match a `try_call`. -/
+def TryUnmatchable (p : Program) : Prop :=
+  ∀ r ∈ p.rulesOf TId.lower_branch, tryRootRule r = false →
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx →
+  ∀ (ti : Nat) (fn : Clif.FnRef) (args : List Nat) (et : Clif.ExnTable) (data : V)
+    (targets : List Label),
+  tryCallData f (.tryCall fn args et) = .ok data → ctx.insts[ti]? = some ⟨data, [], [], none⟩ →
+  ∀ (cfg : Config) (m : Nat) (s : LState × Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId),
+    (matchRule p (sem ctx) cfg m r [.inst ti, .labels targets]).run s ≠ .ok (some env', s1)
+
+theorem tryOk_of_rules {p : Program} (hp : Data p) (hrules : TryRulesCorrect p)
+    (hun : TryUnmatchable p) {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} {env : Clif.Env}
+    {cp : Clif.Program} {exts : List Clif.ExtFunc}
+    (hR : Refines F isem) (hMR : MRStable F MR) (hcr : CallsRefine F env exts MR isem)
+    {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) (hra : CallRegArgs f)
+    (hext : ExternsIn f exts) {ti : Nat} {fn : Clif.FnRef} {args : List Nat} {et : Clif.ExnTable}
+    {data : V} {sig : Clif.Signature} {items : List (Option Nat)} {targets : List Label}
+    {info : TryInfo} {lo st1 : LState}
+    (hd : tryCallData f (.tryCall fn args et) = .ok data) (he : exnTableOpnd f et = .ok (sig, items))
+    (hi : ctx.insts[ti]? = some ⟨data, [], [], none⟩) (hinfo : tryInfoOf sig items targets = some info)
+    (htr : tryRegsOf sig lo = some (ctx.tryRegs, st1)) (hvb : ValsBelow ctx lo)
+    {cfg : Config} (hco : cfg.checkOverlap = false) {n : Nat}
+    (hn : 1002 + (p.rulesOf TId.lower_branch).length ≤ n) {ty : TypeId} {st : LState}
+    {tr : Array RuleId} {out : V} {st' : LState} {tr' : Array RuleId}
+    (hst : st1.nextVreg ≤ st.nextVreg)
+    (h : (applyTerm p (sem ctx) cfg (n + 1) ty TId.lower_branch [.inst ti, .labels targets]).run
+      (st, tr) = .ok (some out, (st', tr'))) :
+    ∃ ms, st'.emitted = st.emitted ++ ms.toArray ∧
+      LowerTryOk isem MR env cp ctx fn args info st st' ms := by
+  change 1002 + (p.rulesOf 687).length ≤ n at hn
+  obtain ⟨r, pre0, post0, hsplit, hpre0, m, env', s1, st2, tr2, hmn, hmatch, heval, hs⟩ :=
+    applyTerm_internal_some_first hco hp.t687 term_687_kind rfl h
+  have hr : r ∈ p.rulesOf TId.lower_branch := by
+    change r ∈ p.rulesOf 687; rw [hsplit]; simp
+  have hfirst : ∀ pre post, p.rulesOf TId.lower_branch = pre ++ r :: post → ∀ r' ∈ pre,
+      ∃ m', 1000 ≤ m' ∧ ∃ s', (matchRule p (sem ctx) cfg m' r' [.inst ti, .labels targets]).run
+        (st, tr) = .ok (none, s') := by
+    intro pre post hsp r' hr'
+    have hnd : (pre0 ++ r :: post0).Nodup := hsplit ▸ lower_branch_rules_nodup hp
+    have hpre := prefix_unique_of_nodup hnd (hsplit.symm.trans hsp)
+    subst hpre
+    obtain ⟨m', hm', s', h'⟩ := hpre0 r' hr'
+    exact ⟨m', by omega, s', h'⟩
+  simp only [Prod.mk.injEq] at hs
+  rw [← hs.1] at heval
+  cases hroot : tryRootRule r
+  · exact absurd hmatch (hun r hr hroot f ctx hctx ti fn args et data targets hd hi cfg m (st, tr) env' s1)
+  · exact hrules F isem MR env cp exts hR hMR hcr r hr hroot f ctx hctx hra hext ti fn args et data
+      sig items targets info lo st1 hd he hi hinfo htr hvb cfg hco m n st tr env' s1 out st' tr2
+      (by omega) (by omega) hst hfirst hmatch heval
+
+set_option maxRecDepth 20000 in
+/-- `tryOk_of_rules` for the exported program and the backend's call
+(`runTerm ctx "lower_branch" [.inst ti, .labels targets]` on a `try_call`). -/
+theorem tryOk_runTerm (hrules : TryRulesCorrect program) (hun : TryUnmatchable program)
+    {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program}
+    {exts : List Clif.ExtFunc} (hR : Refines F isem) (hMR : MRStable F MR)
+    (hcr : CallsRefine F env exts MR isem) {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx)
+    (hra : CallRegArgs f) (hext : ExternsIn f exts) {ti : Nat} {fn : Clif.FnRef}
+    {args : List Nat} {et : Clif.ExnTable} {data : V} {sig : Clif.Signature}
+    {items : List (Option Nat)} {targets : List Label} {info : TryInfo} {lo st1 : LState}
+    (hd : tryCallData f (.tryCall fn args et) = .ok data) (he : exnTableOpnd f et = .ok (sig, items))
+    (hi : ctx.insts[ti]? = some ⟨data, [], [], none⟩) (hinfo : tryInfoOf sig items targets = some info)
+    (htr : tryRegsOf sig lo = some (ctx.tryRegs, st1)) (hvb : ValsBelow ctx lo)
+    {st : LState} {out : V} {st' : LState} {tr : List RuleId} (hst : st1.nextVreg ≤ st.nextVreg)
+    (h : runTerm ctx "lower_branch" [.inst ti, .labels targets] st = .ok (some out, st', tr)) :
+    ∃ ms, st'.emitted = st.emitted ++ ms.toArray ∧
+      LowerTryOk isem MR env cp ctx fn args info st st' ms := by
+  unfold runTerm Interp.run at h
+  rw [program_termByName_lower_branch] at h
+  dsimp only at h
+  cases ha : (applyTerm program (sem ctx) {} 1000000 T.lower_branch.ret T.lower_branch.id
+      [.inst ti, .labels targets]).run (st, #[]) with
+  | error e => rw [ha] at h; cases h
+  | ok q =>
+    obtain ⟨v, st2, tr2⟩ := q
+    rw [ha] at h
+    simp only [bind, Except.bind, pure, Except.pure] at h
+    injection h with h
+    injection h with h1 h2
+    subst h1
+    injection h2 with h2 _
+    subst h2
+    have hlen : (program.rulesOf TId.lower_branch).length ≤ 1000 := by
+      rw [show TId.lower_branch = 687 from rfl, data_program.r687]; decide
+    obtain ⟨ms, h1, h2⟩ := tryOk_of_rules data_program hrules hun hR hMR hcr hctx hra hext hd he hi
+      hinfo htr hvb rfl (by omega) hst ha
     exact ⟨ms, by simpa using h1, h2⟩
 
 end Backend.Proof

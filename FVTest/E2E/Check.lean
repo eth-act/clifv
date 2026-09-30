@@ -60,7 +60,7 @@ def diagnose (f : Clif.Function) (vc : VCode) : String :=
   match buildCtx f with
   | .error e => s!"buildCtx: {e}"
   | .ok (ctx, _, st0) =>
-    match lowBlocks f (stmtCall ctx) (termCallF ctx) 0 f.blocks st0 f.blocks.length with
+    match lowBlocks f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0 f.blocks.length with
     | none => "lowBlocks"
     | some bl =>
       let gn := gnOf st0.nextVreg (aliasOf f bl)
@@ -90,7 +90,7 @@ def detail (f : Clif.Function) (vc : VCode) : String :=
   match buildCtx f with
   | .error _ => ""
   | .ok (ctx, _, st0) =>
-    match lowBlocks f (stmtCall ctx) (termCallF ctx) 0 f.blocks st0 f.blocks.length with
+    match lowBlocks f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0 f.blocks.length with
     | none => ""
     | some bl =>
       let gn := gnOf st0.nextVreg (aliasOf f bl)
@@ -120,8 +120,8 @@ def detail (f : Clif.Function) (vc : VCode) : String :=
               | _, _ => false)),
             ("targs", (termArgs (abiTerm f B.term)).all (fun y => decide (y ∈ A B.body.length))),
             ("tclob", (A B.body.length).all (fun x => !(decide (L.tst.nextVreg ≤ gn x) && decide (gn x < L.tst'.nextVreg)))),
-            ("edges", (dests B.term).all (fun bc => decide (blockIdx? f bc.block ≠ some 0) &&
-              edgeOk f ctx gn In (A B.body.length) bc))]
+            ("edges", (edgeIds B.term).all (fun b => decide (blockIdx? f b ≠ some 0) &&
+              edgeOk f ctx gn In (A B.body.length) b))]
           let bad := (sh.filter (!·.2)).map (·.1)
           if bad.isEmpty then none else
           some s!"  block {bi}: {bad}; A0={A 0} Aend={A B.body.length} params={B.params.map (·.1)} term={repr B.term}; In={In.getD bi []}"

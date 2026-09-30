@@ -62,8 +62,11 @@ def globalE : GlobalValue → Bool
 def termE : Terminator → Bool
   | .jump _ | .brif _ _ _ | .brTable _ _ _ | .ret _ | .trap _ => true
   | .returnCall _ _ => false
-  -- agent/fv-trycall: compiled (landing pads, LSDA) but outside the end-to-end theorem
-  | .tryCall .. | .tryCallIndirect .. => false
+  -- `try_call` of an extern: inside the end-to-end theorem for its normal return (the
+  -- landing pads and the LSDA are trusted, `docs/contracts/e2e.md`); `try_call_indirect`
+  -- is outside it, like `call_indirect`
+  | .tryCall .. => true
+  | .tryCallIndirect .. => false
 
 def sigE (s : Signature) : Bool :=
   s.params.all (tyE ·.ty) && s.returns.all (tyE ·.ty)
@@ -82,12 +85,13 @@ theorem instE_of_functionE {f : Function} (hE : functionE f = true) {b : Block} 
   simp only [functionE, Bool.and_eq_true, List.all_eq_true] at hE
   exact (hE.2 b hb).1.2 st hst
 
-/-- A subset-E function has no `try_call`/`try_call_indirect` terminator. -/
-theorem noTry_of_functionE {f : Function} (hE : functionE f = true) :
-    ∀ b ∈ f.blocks, b.term.isTry = false := by
-  intro b hb
+/-- A subset-E function has no `try_call_indirect` terminator. -/
+theorem noTryCI_of_functionE {f : Function} (hE : functionE f = true) :
+    ∀ b ∈ f.blocks, ∀ c args et, b.term ≠ .tryCallIndirect c args et := by
+  intro b hb c args et ht
   simp only [functionE, Bool.and_eq_true, List.all_eq_true] at hE
   have h := (hE.2 b hb).2
-  cases ht : b.term <;> rw [ht] at h <;> simp [termE, Terminator.isTry] at h ⊢
+  rw [ht] at h
+  simp [termE] at h
 
 end Compile

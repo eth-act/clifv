@@ -1,0 +1,108 @@
+; End-to-end theorem regression (`try_call`): functions whose blocks end in `try_call` are
+; inside `E2E.backend_correct_final` for their normal returns (the call, its results bound to
+; `retN`, the jump to the normal-return successor); the landing pads (the handler edges, with
+; the exception payloads `exnN` in x0/x1) and the LSDA are trusted. In scope and accepted by
+; `lean-e2e-check`, and the runs agree with Cranelift-native
+; (`scripts/lean-backend-filetests.sh corpus/clif-regress/try_call.clif`).
+test interpret
+test run
+target aarch64
+
+function %add1(i64) -> i64 system_v {
+block0(v0: i64):
+    v1 = iconst.i64 1
+    v2 = iadd v0, v1
+    return v2
+}
+
+function %pair(i32, i32) -> i32, i32 system_v {
+block0(v0: i32, v1: i32):
+    v2 = iadd v0, v1
+    v3 = isub v0, v1
+    return v2, v3
+}
+
+function %sink(i64) system_v {
+block0(v0: i64):
+    return
+}
+
+; one return value via `ret0`, a handler with the payload `exn0`
+function %tc_ret(i64) -> i64 system_v {
+    sig0 = (i64) -> i64 system_v
+    sig1 = (i64) system_v
+    fn0 = %add1(i64) -> i64 system_v
+    fn1 = %sink(i64) system_v
+block0(v0: i64):
+    try_call fn0(v0), sig0, block1(ret0), [ tag0: block2(exn0) ]
+block1(v1: i64):
+    v2 = iadd v1, v0
+    return v2
+block2(v3: i64):
+    call fn1(v3)
+    v4 = iconst.i64 -1
+    return v4
+}
+; run: %tc_ret(5) == 11
+; run: %tc_ret(-1) == -1
+
+; two return values (`ret0`, `ret1`: both payload registers are return registers), a value
+; argument on the normal edge, a default handler without arguments
+function %tc_pair(i32, i32) -> i32 system_v {
+    sig0 = (i32, i32) -> i32, i32 system_v
+    fn0 = %pair(i32, i32) -> i32, i32 system_v
+block0(v0: i32, v1: i32):
+    v2 = iconst.i32 3
+    try_call fn0(v0, v1), sig0, block1(ret1, v2, ret0), [ default: block2 ]
+block1(v3: i32, v4: i32, v5: i32):
+    v6 = imul v3, v4
+    v7 = iadd v6, v5
+    return v7
+block2:
+    v8 = iconst.i32 0
+    return v8
+}
+; run: %tc_pair(10, 4) == 32
+; run: %tc_pair(1, 2) == 0
+
+; no return value, the normal edge without arguments, then a second `try_call`
+function %tc_chain(i64) -> i64 system_v {
+    sig0 = (i64) system_v
+    sig1 = (i64) -> i64 system_v
+    fn0 = %sink(i64) system_v
+    fn1 = %add1(i64) -> i64 system_v
+block0(v0: i64):
+    try_call fn0(v0), sig0, block1, [ tag0: block3(exn0, exn1) ]
+block1:
+    v1 = iconst.i64 2
+    v2 = imul v0, v1
+    try_call fn1(v2), sig1, block2(ret0), [ tag0: block3(exn0, exn1) ]
+block2(v3: i64):
+    return v3
+block3(v4: i64, v5: i64):
+    v6 = iadd v4, v5
+    return v6
+}
+; run: %tc_chain(20) == 41
+; run: %tc_chain(0) == 1
+
+; a `try_call` in a loop, the normal return's successor is the loop header
+function %tc_loop(i64) -> i64 system_v {
+    sig0 = (i64) -> i64 system_v
+    fn0 = %add1(i64) -> i64 system_v
+block0(v0: i64):
+    v1 = iconst.i64 0
+    jump block1(v1)
+block1(v2: i64):
+    v3 = icmp ult v2, v0
+    brif v3, block2, block3
+block2:
+    try_call fn0(v2), sig0, block1(ret0), [ default: block4 ]
+block3:
+    return v2
+block4:
+    v4 = iconst.i64 -1
+    return v4
+}
+; run: %tc_loop(5) == 5
+; run: %tc_loop(0) == 0

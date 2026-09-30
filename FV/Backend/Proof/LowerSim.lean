@@ -73,7 +73,7 @@ theorem seg_eq {bi j : Nat} {B : Clif.Block} {L : BLow} {stm : Clif.Stmt} {sl : 
   simp [seg, hB, hL, hs, hsl]
 
 theorem tseg_eq {bi : Nat} {L : BLow} (hL : bl[bi]? = some L) :
-    tseg R bl bi = L.tst'.emitted.toList.map (·.mapRegs R) := by
+    tseg R bl bi = (fixTry L.tl L.tst'.emitted.toList).map (·.mapRegs R) := by
   simp [tseg, hL]
 
 theorem pos_succ (bi j : Nat) : pos f R bl bi (j + 1) = pos f R bl bi j + (seg f R bl bi j).length := by
@@ -162,8 +162,13 @@ structure DriverHyp (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) 
   brIdx : ∀ B ∈ f.blocks, BrIdxTyped ctx B.term
   /-- no tail calls (`return_call` is outside clif-subset-v2 E) -/
   noTail : ∀ B ∈ f.blocks, ∀ fn args, B.term ≠ .returnCall fn args
-  /-- no `try_call`/`try_call_indirect` (outside clif-subset-v2 E) -/
-  noTry : ∀ B ∈ f.blocks, B.term.isTry = false
+  /-- no `try_call_indirect` (outside clif-subset-v2 E, like `call_indirect`) -/
+  noTryCI : ∀ B ∈ f.blocks, ∀ c args et, B.term ≠ .tryCallIndirect c args et
+  /-- M4: `lower_branch` on `try_call`s (`tryCalls_of_rules`) -/
+  tries : TryCalls f sem MR env p
+  /-- a `try_call` calls an extern (`E2E.InSubset.tryExterns`) -/
+  tryExt : ∀ B ∈ f.blocks, ∀ fn args et, B.term = .tryCall fn args et →
+    ∀ e, f.extern? fn = some e → p.func? e.name = none
   cfg : ∃ ss ps, vc.cfg = .ok (ss, ps)
 
 section
@@ -461,22 +466,26 @@ theorem enter_match (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     (hcall : s.callers = []) (hfunc : s.frame.func = f) (hslots : s.frame.slots = slots)
     {ρ : Nat → CV} (hheld : Held gn (A b B.body.length) ρ s.frame)
     (hcons : DFGCons ctx (restrict s.frame (A b B.body.length)))
-    {bc : Clif.BlockCall} (hbc : bc ∈ dests B.term) {tl : Nat} (htl : blockIdx? f bc.block = some tl)
+    {bc : Clif.BlockCall} (hbc : bc.block ∈ edgeIds B.term) {tl : Nat}
+    (htl : blockIdx? f bc.block = some tl)
     {fr2 : Clif.Frame} (hent : Clif.enterBlock s.frame bc = .ok fr2) {ρ₂ : Nat → CV}
-    (hρ₂ : ∀ x ∈ A b B.body.length, ρ₂ (gn x) = ρ (gn x)) {w₂ : Arm.ArmState}
-    (hmr : MR slots s.mem w₂) :
+    (hρ₂ : ∀ x ∈ A b B.body.length, ρ₂ (gn x) = ρ (gn x)) {xs : List Nat}
+    (hxl : xs.length = bc.args.length)
+    (hxv : ∀ (m : Nat) a v x, bc.args[m]? = some a → s.frame.regs a = some v → xs[m]? = some x →
+      VHolds v (ρ₂ x))
+    {w₂ : Arm.ArmState} (hmr : MR slots s.mem w₂) :
     ∃ TB, f.blocks[tl]? = some TB ∧ bc.args.length = TB.params.length ∧ tl ≠ 0 ∧
       Match f ctx R gn bl A MR slots { s with frame := fr2 }
-        ⟨tl, 0, parCopyEnv ρ₂ (TB.params.map (·.1)) (bc.args.map gn), w₂⟩ := by
+        ⟨tl, 0, parCopyEnv ρ₂ (TB.params.map (·.1)) xs, w₂⟩ := by
   obtain ⟨TB, args, regs, hTBf, hargs, hty, hset, rfl⟩ := enterBlock_spec hent
   rw [hfunc] at hTBf
   have hTB := blockIdx_block htl hTBf
-  have hne0 : tl ≠ 0 := fun e => H.cert.noEntry b B hB bc hbc (e ▸ htl)
+  have hne0 : tl ≠ 0 := fun e => H.cert.noEntry b B hB bc.block hbc (e ▸ htl)
   obtain ⟨hl1, hgm⟩ := getMany_spec hargs
   have hl2 := setMany_length hset
   have hlen : bc.args.length = TB.params.length := by simp at hl2; omega
   obtain ⟨-, -, hedge⟩ := H.cert.term b B _ hB (H.blow hB).choose_spec
-  obtain ⟨hnd, hpA, hA0⟩ := hedge bc hbc tl TB htl hTB
+  obtain ⟨hnd, hpA, hA0⟩ := hedge bc.block hbc tl TB htl hTB
   have hTBmem : TB ∈ f.blocks := List.mem_of_getElem? hTB
   have hpos : pos f R bl tl 0 = 0 := by
     simp [pos, pre]
@@ -494,21 +503,16 @@ theorem enter_match (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
       have ha := List.getElem?_eq_getElem hm
       obtain ⟨v', hv', hvm'⟩ := hgm m _ ha
       rw [hvm] at hvm'; cases hvm'
-      have haA : bc.args[m] ∈ A b B.body.length :=
-        (H.cert.term b B _ hB (H.blow hB).choose_spec).1 _
-          (termArgs_abiTerm (args_termArgs hbc _ (List.getElem_mem hm)))
-      obtain ⟨v'', hv'', hh⟩ := hheld _ haA
-      rw [hv'] at hv''; cases hv''
       have hgp : gn x = x := by
         obtain ⟨q, hq, rfl⟩ := List.mem_map.mp hxp
         exact H.shape.params TB hTBmem q hq
-      show VHolds v (parCopyEnv ρ₂ (TB.params.map (·.1)) (bc.args.map gn) (gn x))
-      rw [hgp, parCopyEnv_param hnd (by simp; omega) m (x := gn bc.args[m]) hxm (by simp [ha]),
-        hρ₂ _ haA]
-      exact hh
+      have hxm' : xs[m]? = some xs[m] := List.getElem?_eq_getElem (by omega)
+      show VHolds v (parCopyEnv ρ₂ (TB.params.map (·.1)) xs (gn x))
+      rw [hgp, parCopyEnv_param hnd (by simp; omega) m hxm hxm']
+      exact hxv m _ v _ ha hv' hxm'
     · obtain ⟨v, hv, hh⟩ := hheld x hxA
       refine ⟨v, by show regs x = some v; rw [setMany_other hset hxp]; exact hv, ?_⟩
-      show VHolds v (parCopyEnv ρ₂ (TB.params.map (·.1)) (bc.args.map gn) (gn x))
+      show VHolds v (parCopyEnv ρ₂ (TB.params.map (·.1)) xs (gn x))
       rw [parCopyEnv_other hgx, hρ₂ x hxA]
       exact hh
   refine ⟨?_, ?_⟩
@@ -549,6 +553,42 @@ theorem enter_match (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
       have hyp : y ∉ TB.params.map (·.1) := hpA x hx0 hxp d info cl hd hinfo hcl y hy
       rw [restrict_regs_of_mem hy0, restrict_regs_of_mem hyA]
       exact setMany_other hset hyp
+
+theorem mem_edgeIds_of_dests {t : Clif.Terminator} {bc : Clif.BlockCall} (h : bc ∈ dests t) :
+    bc.block ∈ edgeIds t := by
+  cases t <;> first | (simp [dests] at h; done) | exact List.mem_map_of_mem h
+
+/-- **Entering a branch's successor** (`enter_match` with the branch arguments' vregs). -/
+theorem enter_match_br (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
+    {s : Clif.State} {b : Nat} {B : Clif.Block} (hB : f.blocks[b]? = some B)
+    (hcall : s.callers = []) (hfunc : s.frame.func = f) (hslots : s.frame.slots = slots)
+    {ρ : Nat → CV} (hheld : Held gn (A b B.body.length) ρ s.frame)
+    (hcons : DFGCons ctx (restrict s.frame (A b B.body.length)))
+    {bc : Clif.BlockCall} (hbc : bc ∈ dests B.term) {tl : Nat} (htl : blockIdx? f bc.block = some tl)
+    {fr2 : Clif.Frame} (hent : Clif.enterBlock s.frame bc = .ok fr2) {ρ₂ : Nat → CV}
+    (hρ₂ : ∀ x ∈ A b B.body.length, ρ₂ (gn x) = ρ (gn x)) {w₂ : Arm.ArmState}
+    (hmr : MR slots s.mem w₂) :
+    ∃ TB, f.blocks[tl]? = some TB ∧ bc.args.length = TB.params.length ∧ tl ≠ 0 ∧
+      Match f ctx R gn bl A MR slots { s with frame := fr2 }
+        ⟨tl, 0, parCopyEnv ρ₂ (TB.params.map (·.1)) (bc.args.map gn), w₂⟩ := by
+  refine enter_match H hB hcall hfunc hslots hheld hcons (mem_edgeIds_of_dests hbc) htl hent hρ₂
+    (by simp) (fun m a v x ha hv hx => ?_) hmr
+  have haA : a ∈ A b B.body.length :=
+    (H.cert.term b B _ hB (H.blow hB).choose_spec).1 _
+      (termArgs_abiTerm (args_termArgs hbc _ (List.mem_of_getElem? ha)))
+  obtain ⟨v', hv', hh⟩ := hheld a haA
+  rw [hv] at hv'; cases hv'
+  simp only [List.getElem?_map, ha, Option.map_some, Option.some.injEq] at hx
+  subst hx
+  rw [hρ₂ a haA]; exact hh
+
+/-- DFG consistency only depends on the frame's function, slots and registers. -/
+theorem dfgCons_congr {fr fr' : Clif.Frame} (hf : fr'.func = fr.func) (hs : fr'.slots = fr.slots)
+    (hr : fr'.regs = fr.regs) (h : DFGCons ctx fr) : DFGCons ctx fr' := by
+  refine ⟨fun x j info cl v hd hi hc hp hv => ?_, fun x t v ht hv => h.2 x t v ht (hr ▸ hv)⟩
+  obtain ⟨vals, hev, hlk⟩ := h.1 x j info cl v hd hi hc hp (hr ▸ hv)
+  exact ⟨vals, fun cm => by rw [evalInst_congr hf hs cm cl (fun y _ => by rw [hr])]; exact hev cm,
+    hlk⟩
 
 /-! ## CLIF terminator steps -/
 

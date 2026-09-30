@@ -99,6 +99,42 @@ theorem ofRes_congr {α : Type} (X : Clif.Res α) {k₁ k₂ : α → Clif.StepR
   | ok a => exact h a rfl
   | _ => rfl
 
+/-- A call of an extern that is not a function of `p` steps as `instOutcome`, the results bound
+by `continueWith`. -/
+theorem stepCall_eq (env : Clif.Env) (p : Clif.Program) (s : Clif.State) (rest : List Clif.Stmt)
+    (results : List Clif.ValueId) (fn : Clif.FnRef) (args : List Clif.ValueId)
+    (hext : ∀ e, s.frame.func.extern? fn = some e → p.func? e.name = none) :
+    Clif.stepCall env p s rest results fn args =
+      Clif.StepResult.ofRes (instOutcome env p s.frame s.mem (.call fn args))
+        fun (vals, mem) => Clif.continueWith s rest results vals mem := by
+  simp only [Clif.stepCall, instOutcome]
+  rw [ofRes_bind]
+  apply ofRes_congr
+  intro ⟨ext, vals⟩ hX
+  have he : s.frame.func.extern? fn = some ext := by
+    cases hx : s.frame.func.extern? fn with
+    | none => rw [hx] at hX; cases hX
+    | some e =>
+      rw [hx] at hX
+      simp only [Clif.Res.ofOption_some, bind, Clif.Res.bind] at hX
+      cases hv : s.frame.getMany args <;> rw [hv] at hX <;> try simp only at hX
+      · rename_i vs
+        cases hc : Clif.checkTys s!"arguments of call to %{e.name}" vs
+            (Clif.AbiParam.tys e.sig.params) <;> rw [hc] at hX <;> try simp only at hX
+        all_goals cases hX
+        rfl
+      all_goals cases hX
+  simp only [hext ext he]
+  cases env.extern ext.name with
+  | none => rfl
+  | some g =>
+    simp only
+    cases g vals s.mem with
+    | returned rv m =>
+      simp only
+      split <;> rfl
+    | _ => rfl
+
 theorem step_stmt (env : Clif.Env) (p : Clif.Program) (s : Clif.State) (st : Clif.Stmt)
     (rest : List Clif.Stmt) (h : s.frame.body = st :: rest)
     (hext : ∀ fn args, st.inst = .call fn args → ∀ e, s.frame.func.extern? fn = some e →
@@ -109,33 +145,7 @@ theorem step_stmt (env : Clif.Env) (p : Clif.Program) (s : Clif.State) (st : Cli
   cases hi : st.inst with
   | call fn args =>
     rw [Clif.step_call env p s rest st.results fn args (by rw [h, ← hi])]
-    simp only [Clif.stepCall, instOutcome]
-    rw [ofRes_bind]
-    apply ofRes_congr
-    intro ⟨ext, vals⟩ hX
-    have he : s.frame.func.extern? fn = some ext := by
-      cases hx : s.frame.func.extern? fn with
-      | none => rw [hx] at hX; cases hX
-      | some e =>
-        rw [hx] at hX
-        simp only [Clif.Res.ofOption_some, bind, Clif.Res.bind] at hX
-        cases hv : s.frame.getMany args <;> rw [hv] at hX <;> try simp only at hX
-        · rename_i vs
-          cases hc : Clif.checkTys s!"arguments of call to %{e.name}" vs
-              (Clif.AbiParam.tys e.sig.params) <;> rw [hc] at hX <;> try simp only at hX
-          all_goals cases hX
-          rfl
-        all_goals cases hX
-    simp only [hext fn args hi ext he]
-    cases env.extern ext.name with
-    | none => rfl
-    | some g =>
-      simp only
-      cases g vals s.mem with
-      | returned rv m =>
-        simp only
-        split <;> rfl
-      | _ => rfl
+    exact stepCall_eq env p s rest st.results fn args (hext fn args hi)
   | callIndirect sig callee args =>
     -- a `call_indirect` function is outside the theorem: `hci` (supplied by the caller,
     -- from `InSubset.noCI`) contradicts `hi`, closing the case.
@@ -223,5 +233,46 @@ theorem termCalls_of_rules (hlt : LowerTermRulesCorrect Isle.Aarch64.program)
     rw [hc] at hrun
     obtain ⟨ms, hem, hok⟩ := lowerTermOk_runTerm hlt hun hR hMR hctx' hrt hd hi hvb' hrun
     rw [← key ms hem]; exact lowerTermOk_targets hrt hok targets
+
+/-! ## `try_call` calls from M4's `try_call` rule statements -/
+
+/-- Every `lower_branch` call `lowerFunction` makes on a `try_call` of `f` (in its `try_call`
+context `tryCtx`, whose return/payload vregs `tryRegsOf` allocated from a state `lo` above every
+value's vreg) satisfies `LowerTryOk`. From M4's rule statements: `tryCalls_of_rules`. -/
+def TryCalls (f : Clif.Function) (sem : Sem) (MR : MemRelT) (env : Clif.Env) (p : Clif.Program) :
+    Prop :=
+  ∀ ctx ti fn args et data sig items targets info trs lo st1 out st' tr, CtxInv f ctx →
+    CallRegArgs f → tryCallData f (.tryCall fn args et) = .ok data →
+    exnTableOpnd f et = .ok (sig, items) → ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩ →
+    tryInfoOf sig items targets = some info → tryRegsOf sig lo = some (trs, st1) →
+    ValsBelow ctx lo →
+    runTerm (tryCtx ctx ti data trs) "lower_branch" [.inst ti, .labels targets]
+      { st1 with emitted := #[] } = .ok (some out, st', tr) →
+    LowerTryOk sem MR env p (tryCtx ctx ti data trs) fn args info { st1 with emitted := #[] } st'
+      st'.emitted.toList
+
+/-- `CtxInv` does not depend on the `try_call` vregs. -/
+theorem ctxInv_tryRegs {f : Clif.Function} {ctx : Ctx} (h : CtxInv f ctx)
+    (trs : List Reg × List Reg) : CtxInv f { ctx with tryRegs := trs } :=
+  ⟨h.func, h.data, h.instE, h.resTys, h.valueReg, h.typedReg, h.defInst, h.defClif, h.slotOff,
+    h.resTysE, h.valTyE, h.addr64, h.noFA⟩
+
+/-- **From M4's `try_call` rule statements to the driver's `try_call` calls** (of `f`, under the
+callee contract for `f`'s externs). -/
+theorem tryCalls_of_rules (htr : TryRulesCorrect Isle.Aarch64.program)
+    (hun : TryUnmatchable Isle.Aarch64.program) {F : BitVec 64 → Prop} {sem : Sem}
+    {MR : MemRelT} {env : Clif.Env} {p : Clif.Program} {f : Clif.Function} (hR : Refines F sem)
+    (hMR : MRStable F MR) (hcr : CallsRefine F env (f.externs.map (·.2)) MR sem) :
+    TryCalls f sem MR env p := by
+  intro ctx ti fn args et data sig items targets info trs lo st1 out st' tr hctx hra hd he hph
+    hinfo hregs hvb hrun
+  have hctx' := ctxInv_tryRegs (ctxInv_termCtx hctx hph data) trs
+  have hi : (tryCtx ctx ti data trs).insts[ti]? = some ⟨data, [], [], none⟩ :=
+    termCtx_insts_self hph data
+  obtain ⟨ms, hem, hok⟩ := tryOk_runTerm htr hun hR hMR hcr hctx' hra (externsIn_self f) hd he hi
+    hinfo (ctx := tryCtx ctx ti data trs) hregs hvb (Nat.le_refl _) hrun
+  have : ms = st'.emitted.toList := by
+    simp only [Array.empty_append] at hem; rw [hem, List.toList_toArray]
+  rw [← this]; exact hok
 
 end Backend.Proof.Driver

@@ -69,17 +69,63 @@ theorem lowStmts_spec {call : StmtCall} :
             obtain ⟨tr, h⟩ := hj j sl hsl
             exact ⟨tr, by rw [show ii + (j + 1) = ii + 1 + j by omega]; exact h⟩
 
-theorem lowBlocks_spec {f : Clif.Function} {call : StmtCall} {tcall : TermCallF} :
+theorem lowTerm_spec {f : Clif.Function} {tcall : TermCallF} {ycall : TryCallF} {ti : Nat}
+    {t : Clif.Terminator} {tst : LState} {nl : Nat} {data : V} {targets : List Label}
+    {tl : Option TryLow} {tst' : LState} {nl' : Nat}
+    (h : lowTerm f tcall ycall ti t tst nl = some (data, targets, tl, tst', nl')) :
+    (t.isTry = false → tl = none ∧ termData (abiTerm f t) = .ok data ∧
+      ∃ out tr, tcall ti data t targets tst = .ok (some out, tst', tr)) ∧
+    (∀ fn args et, t = .tryCall fn args et → ∃ T, tl = some T ∧ tryCallData f t = .ok data ∧
+      exnTableOpnd f et = .ok (T.sig, T.items) ∧ tryTargets f et.dests nl = some (targets, nl') ∧
+      tryRegsOf T.sig tst = some (T.regs, T.st1) ∧ tryInfoOf T.sig T.items targets = some T.info ∧
+      ∃ out tr, ycall ti data T.regs targets { T.st1 with emitted := #[] } =
+        .ok (some out, tst', tr)) := by
+  cases t with
+  | tryCall fn0 args0 et0 =>
+    refine ⟨fun h' => by simp [Clif.Terminator.isTry] at h', fun fn args et ht => ?_⟩
+    cases ht
+    simp only [lowTerm] at h
+    split at h
+    · rename_i data0 sig items targets0 nl0 hd he htt
+      split at h
+      · rename_i trs st1 hr
+        split at h
+        · rename_i info hi
+          split at h
+          · rename_i o tst0 tr0 hy
+            simp only [Option.some.injEq, Prod.mk.injEq] at h
+            obtain ⟨rfl, rfl, rfl, rfl, rfl⟩ := h
+            exact ⟨⟨info, sig, items, trs, st1⟩, rfl, hd, he, htt, hr, hi, o, tr0, hy⟩
+          · cases h
+        · cases h
+      · cases h
+    · cases h
+  | tryCallIndirect c args0 et0 =>
+    refine ⟨fun h' => by simp [Clif.Terminator.isTry] at h', fun fn args et ht => by cases ht⟩
+  | _ =>
+    refine ⟨fun _ => ?_, fun fn args et ht => by cases ht⟩
+    simp only [lowTerm] at h
+    split at h
+    · rename_i data0 targets0 nl0 hd htg
+      split at h
+      · rename_i o tst0 tr0 hy
+        simp only [Option.some.injEq, Prod.mk.injEq] at h
+        obtain ⟨rfl, rfl, rfl, rfl, rfl⟩ := h
+        exact ⟨rfl, hd, o, tr0, hy⟩
+      · cases h
+    · cases h
+
+theorem lowBlocks_spec {f : Clif.Function} {call : StmtCall} {tcall : TermCallF} {ycall : TryCallF} :
     ∀ {Bs : List Clif.Block} {start : Nat} {st : LState} {nl : Nat} {bl : List BLow},
-      lowBlocks f call tcall start Bs st nl = some bl →
+      lowBlocks f call tcall ycall start Bs st nl = some bl →
       bl.length = Bs.length ∧
       ∀ (bi : Nat) (B : Clif.Block) (L : BLow), Bs[bi]? = some B → bl[bi]? = some L →
         L.sl.length = B.body.length ∧
         (∀ (j : Nat) (sl : SLow), L.sl[j]? = some sl →
           ∃ tr, call (L.start + j) sl.st = .ok (some (.regsVec sl.rss), sl.st', tr)) ∧
-        termData (abiTerm f B.term) = .ok L.data ∧
-        ∃ out tr, tcall (L.start + B.body.length) L.data B.term L.targets L.tst =
-          .ok (some out, L.tst', tr) := by
+        L.tst.emitted = #[] ∧
+        ∃ nl0 nl', lowTerm f tcall ycall (L.start + B.body.length) B.term L.tst nl0 =
+          some (L.data, L.targets, L.tl, L.tst', nl') := by
   intro Bs
   induction Bs with
   | nil =>
@@ -95,40 +141,31 @@ theorem lowBlocks_spec {f : Clif.Function} {call : StmtCall} {tcall : TermCallF}
     | some q =>
       obtain ⟨sls, stE⟩ := q
       rw [hstm] at h
-      cases hdata : termData (abiTerm f B.term) with
-      | error e => simp only [hdata] at h; cases h
-      | ok data =>
-        cases htg : targetsOf f B.term nl with
-        | none => simp only [hdata, htg] at h; cases h
-        | some q =>
-          obtain ⟨targets, nl'⟩ := q
-          cases hterm : tcall (start + B.body.length) data B.term targets
-              { stE with emitted := #[] } with
-          | error e => simp only [hdata, htg, hterm] at h; cases h
-          | ok q =>
-            obtain ⟨out, tst', tr'⟩ := q
-            cases out with
-            | none => simp only [hdata, htg, hterm, Option.isSome_none] at h; cases h
-            | some o =>
-              cases hrec : lowBlocks f call tcall (start + B.body.length + 1) Bs
-                  { tst' with emitted := #[] } nl' with
-              | none => simp only [hdata, htg, hterm, hrec, Option.isSome_some, ite_true,
-                  Option.map_none] at h; cases h
-              | some bl' =>
-                simp only [hdata, htg, hterm, hrec, Option.isSome_some, ite_true, Option.map_some,
-                  Option.some.injEq] at h
-                subst h
-                obtain ⟨hlen, hbl⟩ := ih hrec
-                obtain ⟨hsl, hsj⟩ := lowStmts_spec hstm
-                refine ⟨by simp [hlen], fun bi B' L hB hL => ?_⟩
-                cases bi with
-                | zero =>
-                  simp only [List.getElem?_cons_zero, Option.some.injEq] at hB hL
-                  subst hB hL
-                  exact ⟨hsl, hsj, hdata, o, tr', hterm⟩
-                | succ bi =>
-                  simp only [List.getElem?_cons_succ] at hB hL
-                  exact hbl bi B' L hB hL
+      simp only at h
+      cases hterm : lowTerm f tcall ycall (start + B.body.length) B.term { stE with emitted := #[] } nl with
+      | none => rw [hterm] at h; cases h
+      | some q =>
+        obtain ⟨data, targets, tl, tst', nl'⟩ := q
+        rw [hterm] at h
+        simp only at h
+        cases hrec : lowBlocks f call tcall ycall (start + B.body.length + 1) Bs
+            { tst' with emitted := #[] } nl' with
+        | none => rw [hrec] at h; cases h
+        | some bl' =>
+          rw [hrec] at h
+          simp only [Option.map_some, Option.some.injEq] at h
+          subst h
+          obtain ⟨hlen, hbl⟩ := ih hrec
+          obtain ⟨hsl, hsj⟩ := lowStmts_spec hstm
+          refine ⟨by simp [hlen], fun bi B' L hB hL => ?_⟩
+          cases bi with
+          | zero =>
+            simp only [List.getElem?_cons_zero, Option.some.injEq] at hB hL
+            subst hB hL
+            exact ⟨hsl, hsj, rfl, nl, nl', hterm⟩
+          | succ bi =>
+            simp only [List.getElem?_cons_succ] at hB hL
+            exact hbl bi B' L hB hL
 
 /-! ## Alias resolution -/
 
@@ -143,7 +180,7 @@ theorem renOf_vrenaming (gn : Nat → Nat) : VRenaming (renOf gn) gn := by
 
 /-! ## The context -/
 
-theorem ctxOk_sound {f : Clif.Function} {ctx : Ctx} (hsd : f.sigDecls = [])
+theorem ctxOk_sound {f : Clif.Function} {ctx : Ctx}
     (h : ctxOk f ctx = true) : CtxInv f ctx := by
   simp only [ctxOk, Bool.and_eq_true, decide_eq_true_eq] at h
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨hfunc, hinsts⟩, hreg⟩, hty⟩, hdef⟩, hslot⟩, hres⟩, hvt⟩, haddr⟩ := h
@@ -165,8 +202,6 @@ theorem ctxOk_sound {f : Clif.Function} {ctx : Ctx} (hsd : f.sigDecls = [])
       | error e => rw [hd] at h1; simp at h1
     · have h2' : ctxResTysOk f info inst = true := h2
       unfold ctxResTysOk at h2'
-      rw [hsd] at h2'
-      simp only [List.lookup] at h2'
       cases hty : inst.resultTypes (fun r => (f.extern? r).map (·.sig)) (fun _ => none) with
       | none => rw [hty] at h2'; simp at h2'
       | some tys =>
@@ -275,6 +310,14 @@ theorem succOk_sound {f : Clif.Function} {vc : VCode} {R : Reg → Reg} {B : Cli
     (h : succOk f vc R B L = true) :
     match B.term with
     | .jump bc => ∃ tl, blockIdx? f bc.block = some tl ∧ L.targets = [tl]
+    | .tryCall _ _ et => L.targets.length = et.dests.length ∧
+      ∃ tl tlab T eb, blockIdx? f et.normal.block = some tl ∧ L.targets.getLast? = some tlab ∧
+        L.tl = some T ∧ vc.blocks[tlab]? = some eb ∧ eb.insts = #[.jump tl] ∧ eb.params = #[] ∧
+        eb.branchArgs = (et.normal.args.map (normArgReg R T.regs.1)).toArray ∧
+        ∀ a ∈ et.normal.args, match a with
+          | .val _ => True
+          | .ret i => i < T.sig.returns.length
+          | .exn _ => False
     | _ => L.targets.length = (dests B.term).length ∧
       ∀ (k : Nat) bc tlab, (dests B.term)[k]? = some bc → L.targets[k]? = some tlab →
         ∃ tl, blockIdx? f bc.block = some tl ∧
@@ -322,16 +365,33 @@ theorem succOk_sound {f : Clif.Function} {vc : VCode} {R : Reg → Reg} {B : Cli
     · rename_i tl htl
       exact ⟨tl, htl, by simpa using h⟩
     · cases h
-  · rename_i hnj
+  · rename_i fn args et hj
+    rw [hj]
+    simp only [Bool.and_eq_true, decide_eq_true_eq] at h
+    obtain ⟨hlen, h⟩ := h
+    refine ⟨hlen, ?_⟩
+    split at h
+    · rename_i tl tlab T htl htlab hT
+      split at h
+      · rename_i eb heb
+        simp only [Bool.and_eq_true, decide_eq_true_eq] at h
+        refine ⟨tl, tlab, T, eb, htl, htlab, hT, heb, h.1.1.1, h.1.1.2, h.1.2, fun a ha => ?_⟩
+        have := List.all_eq_true.mp h.2 a ha
+        cases a <;> simp_all
+      · cases h
+    · cases h
+  · rename_i hnj hnt
     have := gen B.term h
     split
     · rename_i bc hj; exact absurd hj (hnj bc)
+    · rename_i fn args et hj; exact absurd hj (hnt fn args et)
     · exact this
 
 theorem lowerShape_of_ok {f : Clif.Function} {vc : VCode} {ctx : Ctx} {ranges : Array (Nat × Nat)}
-    {st0 : LState} {bl : List BLow} {gn : Nat → Nat} (hsd : f.sigDecls = [])
+    {st0 : LState} {bl : List BLow} {gn : Nat → Nat}
     (hb : buildCtx f = .ok (ctx, ranges, st0))
-    (hl : lowBlocks f (stmtCall ctx) (termCallF ctx) 0 f.blocks st0 f.blocks.length = some bl)
+    (hl : lowBlocks f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
+      f.blocks.length = some bl)
     (hgn : ∀ n, st0.nextVreg ≤ n → gn n = n) (hs : shapeOk f vc ctx st0 gn bl = true) :
     LowerShape f vc ctx st0 (renOf gn) gn bl := by
   obtain ⟨-, hlb⟩ := lowBlocks_spec hl
@@ -342,7 +402,7 @@ theorem lowerShape_of_ok {f : Clif.Function} {vc : VCode} {ctx : Ctx} {ranges : 
     intro bi B L hB hL
     have := all_range hblk (lt_of_getElem? hB)
     simpa [hB, hL] using this
-  refine ⟨⟨ranges, hb⟩, ctxOk_sound hsd hctx, renOf_vrenaming gn, hgn, ?_, hlen, hsize, ?_, ?_, ?_, ?_⟩
+  refine ⟨⟨ranges, hb⟩, ctxOk_sound hctx, renOf_vrenaming gn, hgn, ?_, hlen, hsize, ?_, ?_, ?_, ?_⟩
   · intro B hB p hp
     have := List.all_eq_true.mp (List.all_eq_true.mp hpar B hB) p hp
     simpa using this
@@ -372,7 +432,8 @@ theorem lowerShape_of_ok {f : Clif.Function} {vc : VCode} {ctx : Ctx} {ranges : 
         simp_all
       · cases h'
   · intro bi B L hB hL
-    obtain ⟨hsl, hsj, hdata, out, tr, hterm⟩ := hlb bi B L hB hL
+    obtain ⟨hsl, hsj, htemp0, nl0, nl', hterm⟩ := hlb bi B L hB hL
+    obtain ⟨hnt, hty⟩ := lowTerm_spec hterm
     have h := hblk' bi B L hB hL
     unfold blockOk at h
     split at h
@@ -380,8 +441,13 @@ theorem lowerShape_of_ok {f : Clif.Function} {vc : VCode} {ctx : Ctx} {ranges : 
     · rename_i vb hvb
       simp only [Bool.and_eq_true, decide_eq_true_eq] at h
       obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨-, hst⟩, htemp⟩, hle⟩, hcode⟩, htne⟩, hpars⟩, hbargs⟩, hsucc⟩, -⟩ := h
-      refine ⟨vb, hvb, hsl, ?_, hdata, by simpa using htemp, hle, ⟨out, tr, hterm⟩, hcode,
-        by simpa using htne, hpars, hbargs, succOk_sound hsucc⟩
+      refine ⟨vb, hvb, hsl, ?_, by simpa using htemp, hle, fun hnt' => ?_, fun fn args et ht => ?_,
+        hcode, by simpa using htne, hpars, hbargs, succOk_sound hsucc⟩
+      rotate_left
+      · obtain ⟨h1, h2, out, tr, h3⟩ := hnt hnt'
+        exact ⟨h1, h2, out, tr, h3⟩
+      · obtain ⟨T, h1, h2, h3, -, h5, h6, out, tr, h7⟩ := hty fn args et ht
+        exact ⟨T, h1, h2, h3, h5, h6, out, tr, h7⟩
       intro j stm sl hj hslj
       have := all_range hst (lt_of_getElem? hj)
       rw [hj, hslj] at this
@@ -432,9 +498,9 @@ theorem closedOk_sound {ctx : Ctx} {A : List Clif.ValueId} (h : closedOk ctx A =
   exact this
 
 theorem edgeOk_sound {f : Clif.Function} {ctx : Ctx} {gn : Nat → Nat}
-    {In : List (List Clif.ValueId)} {Aend : List Clif.ValueId} {bc : Clif.BlockCall}
-    (h : edgeOk f ctx gn In Aend bc = true) :
-    ∀ tl TB, blockIdx? f bc.block = some tl → f.blocks[tl]? = some TB →
+    {In : List (List Clif.ValueId)} {Aend : List Clif.ValueId} {b : Clif.BlockId}
+    (h : edgeOk f ctx gn In Aend b = true) :
+    ∀ tl TB, blockIdx? f b = some tl → f.blocks[tl]? = some TB →
       (TB.params.map (·.1)).Nodup ∧
       (∀ x ∈ availOf f In tl 0, x ∉ TB.params.map (·.1) → ∀ d info cl, ctx.defInst? x = some d →
         ctx.insts[d]? = some info → info.clif = some cl → ∀ y ∈ instArgs cl,
@@ -560,9 +626,6 @@ theorem lowering_of_check {f : Clif.Function} {vc : VCode} (h : lowerCheck f vc 
     ∃ ctx st0 R gn bl A, LowerShape f vc ctx st0 R gn bl ∧ Cert f ctx st0 gn bl A ∧
       ∀ B ∈ f.blocks, BrIdxTyped ctx B.term := by
   unfold lowerCheck at h
-  simp only [Bool.and_eq_true] at h
-  obtain ⟨hsd0, h⟩ := h
-  have hsd : f.sigDecls = [] := List.isEmpty_iff.mp hsd0
   split at h
   · cases h
   · rename_i ctx ranges st0 hb
@@ -570,8 +633,23 @@ theorem lowering_of_check {f : Clif.Function} {vc : VCode} (h : lowerCheck f vc 
     · cases h
     · rename_i bl hl
       simp only [Bool.and_eq_true] at h
-      have hS := lowerShape_of_ok (gn := gnOf st0.nextVreg (aliasOf f bl)) hsd hb hl
-        (fun n hn => gnOf_temp hn) h.1.1
-      exact ⟨ctx, st0, _, _, bl, _, hS, cert_of_ok hS.len h.1.2, brIdx_of_ok h.2⟩
+      have hS := lowerShape_of_ok (gn := gnOf st0.nextVreg (aliasOf f bl)) hb hl
+        (fun n hn => gnOf_temp hn) h.1.1.1
+      exact ⟨ctx, st0, _, _, bl, _, hS, cert_of_ok hS.len h.1.1.2, brIdx_of_ok h.1.2⟩
+
+/-- A function without `try_call` lowers to VCode without `tryCall` (`lowerCheck`'s last
+conjunct). -/
+theorem noTryCall_of_check {f : Clif.Function} {vc : VCode} (h : lowerCheck f vc = true)
+    (hf : ∀ B ∈ f.blocks, B.term.isTry = false) : vc.hasTryCall = false := by
+  unfold lowerCheck at h
+  split at h
+  · cases h
+  · split at h
+    · cases h
+    · simp only [Bool.and_eq_true, Bool.or_eq_true, Bool.not_eq_true'] at h
+      rcases h.2 with h2 | h2
+      · obtain ⟨B, hB, hB'⟩ := List.any_eq_true.mp h2
+        rw [hf B hB] at hB'; cases hB'
+      · exact h2
 
 end Backend.Proof.Driver
