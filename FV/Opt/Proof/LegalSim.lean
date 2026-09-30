@@ -822,4 +822,77 @@ theorem sim_load {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} {fr fr' : 
       simp only [img, hr, List.mem_cons, List.mem_nil_iff, or_false, not_or] at this
       rw [Regs.set_other _ _ this.2, Regs.set_other _ _ this.1]
 
+theorem eval_store64 {fr : Frame} {m m1 : Mem} {fl : MemFlags} {x q : ValueId} {off : Int}
+    {pv : Val} {lo : BitVec 64} (hx : fr.regs x = some ⟨.i64, lo⟩) (hq : fr.regs q = some pv)
+    (hs : m.store fl (effAddr pv off) 8 lo = .ok m1) :
+    evalInst fr m (.store .store .i64 fl x q off) = .ok ([], m1) := by
+  simp only [evalInst, Frame.getAs, Frame.get, hx, hq, Res.ofOption, as?_i64, StoreOp.size,
+    Ty.bytes, bind, Res.bind, Res.check, width_i64, Nat.reduceDiv, Nat.le_refl, decide_true,
+    ite_true]
+  erw [hs]
+  rfl
+
+theorem mem_store_valid {w : Nat} {m : Mem} {fl : MemFlags} {a n : Nat} {x : BitVec w} {m' : Mem}
+    (h : m.store fl a n x = .ok m') : m.valid a n = true := by
+  obtain ⟨hc, -, -⟩ := store_inv h
+  simp only [Mem.checkAccess] at hc
+  split at hc
+  · assumption
+  · split at hc <;> cases hc
+
+theorem memBounded_store {w : Nat} {m : Mem} {fl : MemFlags} {a n : Nat} {x : BitVec w}
+    {m' : Mem} (h : m.store fl a n x = .ok m') (hM : MemBounded m) : MemBounded m' :=
+  memBounded_of_allocs (Mem.store_allocs h) hM
+
+/-- **Split store**: two 8-byte stores of the halves. -/
+theorem sim_store {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} {fr fr' : Frame}
+    {m : Mem} (hR : FRel C fr fr') (hM : MemBounded m) {st : Stmt} {rest : List Stmt}
+    (hb : fr.body = st :: rest) {xl xh q : ValueId} {fl : MemFlags} {off : Int}
+    (hpl : planOf C st = some (.store xl xh q fl off)) {ts2 : List Stmt}
+    (hb' : fr'.body = [{ results := [], inst := .store .store .i64 fl xl q off },
+      { results := [], inst := .store .store .i64 fl xh q (off + 8) }] ++ ts2)
+    (hcode : codeOk C rest fr.term ts2 fr'.term = true)
+    (hT : ∀ c, step env p ⟨fr, [], m⟩ ≠ .trapped c) :
+    SimOut C env p' fr' m (step env p ⟨fr, [], m⟩) := by
+  obtain ⟨⟨x, hi, hx⟩, hrs, hpq, hbig⟩ := planOf_store hpl
+  obtain ⟨B, hB, hst⟩ := frel_stmt hR hb
+  have hx0 : x < C.T0 := ops_lt hG hB hst (by rw [hi]; simp [instOps])
+  have hq : q < C.T0 := ops_lt hG hB hst (by rw [hi]; simp [instOps])
+  have hnc : ∀ fn args, st.inst ≠ .call fn args := fun _ _ h => by rw [hi] at h; cases h
+  have hnci : ∀ sig c args, st.inst ≠ .callIndirect sig c args := fun _ _ _ h => by
+    rw [hi] at h; cases h
+  have hstep := step_inst env p ⟨fr, [], m⟩ st rest hb hnc hnci
+  rw [hstep] at hT ⊢
+  cases hev : evalInst fr m st.inst with
+  | stuck msg => trivial
+  | trap c => rw [hev] at hT; exact absurd rfl (hT c)
+  | ok vm =>
+    obtain ⟨vals, mem⟩ := vm
+    have hev' := hev
+    rw [hi] at hev'
+    simp only [evalInst, Opt.Res.bind_eq_ok, StoreOp.size, Ty.bytes, Opt.Res.pure_eq_ok,
+      Prod.mk.injEq] at hev'
+    obtain ⟨a, ha, pv, hpv, u, -, mem', hst', rfl, rfl⟩ := hev'
+    obtain ⟨l, h, he, hl, hh⟩ := pairVal hR.vrel hx0 hx (getAs_ok ha)
+    cases val_i128 he
+    have hst16 : m.store fl (effAddr pv off) 16 (h ++ l) = .ok mem' := hst'
+    have hA := hM _ _ (mem_store_valid hst16)
+    obtain ⟨m1, hs1, hs2⟩ := store_split hbig hst16
+    rw [append_lo, append_hi, ← effAddr_add8 pv off hA] at *
+    have hpv' : fr'.regs q = some pv := by
+      rw [hR.peq q hq (plain_iff.1 hpq)]; exact get_ok hpv
+    simp only [StepResult.ofRes_ok, continueWith, hrs, Regs.setMany_nil]
+    have h1 := lstep_eval (fr := fr') (m := m) (st := { results := [], inst := .store .store .i64 fl xl q off })
+      (rest := { results := [], inst := .store .store .i64 fl xh q (off + 8) } :: ts2)
+      (by rw [hb']; rfl) (fun _ _ h => by cases h) (eval_store64 hl hpv' hs1) rfl
+    have h2 := lstep_eval (fr := ⟨fr'.func, fr'.regs, fr'.slots,
+        { results := [], inst := .store .store .i64 fl xh q (off + 8) } :: ts2, fr'.term⟩) (m := m1)
+      (st := { results := [], inst := .store .store .i64 fl xh q (off + 8) }) (rest := ts2) rfl
+      (fun _ _ h => by cases h) (eval_store64 hh hpv' hs2) rfl
+    refine ⟨rfl, memBounded_store hs2 (memBounded_store hs1 hM), _, ?_,
+      TStep.of_lstar (.step h1 (.step h2 (.refl _ _)))⟩
+    have hset : fr.regs.setMany st.results [] = some fr.regs := by rw [hrs]; rfl
+    exact frel_after hG hR hb hcode hset (by rw [hrs]; simp) (fun _ _ _ => rfl)
+      (srcInv_stmt hG.defs hB hst hR.src hev hset)
+
 end Opt.Legal
