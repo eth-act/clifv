@@ -895,4 +895,126 @@ theorem sim_store {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} {fr fr' :
     exact frel_after hG hR hb hcode hset (by rw [hrs]; simp) (fun _ _ _ => rfl)
       (srcInv_stmt hG.defs hB hst hR.src hev hset)
 
+/-! ## Calls of externs -/
+
+/-- A call of an extern the environment implements. -/
+theorem step_extcall {env : Env} {p : Program} {s : State} {rest : List Stmt}
+    {results : List ValueId} {fn : FnRef} {args : List ValueId} {ext : ExtFunc} {vals : List Val}
+    {h : List Val → Mem → Outcome}
+    (hb : s.frame.body = { results, inst := .call fn args } :: rest)
+    (hext : s.frame.func.extern? fn = some ext) (hargs : s.frame.getMany args = .ok vals)
+    (hty : vals.map (·.ty) = AbiParam.tys ext.sig.params) (hp : p.func? ext.name = none)
+    (henv : env.extern ext.name = some h) :
+    step env p s = match h vals s.mem with
+      | .returned rvals mem' =>
+        if rvals.map (·.ty) == AbiParam.tys ext.sig.returns then
+          continueWith s rest results rvals mem'
+        else .stuck s!"extern %{ext.name} returned values of the wrong types"
+      | .trapped c => .trapped c
+      | .stuck m => .stuck m
+      | .outOfFuel => .stuck s!"extern %{ext.name} ran out of fuel" := by
+  rw [step_call env p s rest results fn args hb]
+  simp only [stepCall, hext, hargs, checkTys, hty, beq_self_eq_true, Res.ofOption, bind, Res.bind,
+    Res.check, ite_true, pure, StepResult.ofRes_ok, hp, henv]
+  rfl
+
+theorem truthy_bool8 (b : Bool) : Sem.truthy (Sem.bool8 b) = b := by
+  cases b <;> rfl
+
+/-- **`div` at `i128`**: a call of the `__*ti3` helper. -/
+theorem sim_div {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} (hH : HelperOk env)
+    (hext' : ∀ fn e, C.g.extern? fn = some e → p'.func? e.name = none)
+    {fr fr' : Frame} {m : Mem} (hR : FRel C fr fr') (hM : MemBounded m) {st : Stmt}
+    {rest : List Stmt} (hb : fr.body = st :: rest) {op : DivOp} {xl xh yl yh rl rh : ValueId}
+    (hpl : planOf C st = some (.div op xl xh yl yh rl rh)) {fn : FnRef} {ts2 : List Stmt}
+    (hb' : fr'.body = { results := [rl, rh], inst := .call fn [xl, xh, yl, yh] } :: ts2)
+    (hrl : rl ≠ rh) (hfn : C.g.extern? fn = some (helperExt op))
+    (hcode : codeOk C rest fr.term ts2 fr'.term = true) :
+    SimOut C env p' fr' m (step env p ⟨fr, [], m⟩) := by
+  obtain ⟨x, y, r, hi, hrs, hx, hy, hr⟩ := planOf_div hpl
+  obtain ⟨B, hB, hst⟩ := frel_stmt hR hb
+  have hx0 : x < C.T0 := ops_lt hG hB hst (by rw [hi]; simp [instOps])
+  have hy0 : y < C.T0 := ops_lt hG hB hst (by rw [hi]; simp [instOps])
+  have hnc : ∀ fn args, st.inst ≠ .call fn args := fun _ _ h => by rw [hi] at h; cases h
+  have hnci : ∀ sig c args, st.inst ≠ .callIndirect sig c args := fun _ _ _ h => by
+    rw [hi] at h; cases h
+  rw [step_inst env p ⟨fr, [], m⟩ st rest hb hnc hnci]
+  obtain ⟨hf, hhf, hsem⟩ := hH op
+  cases hev : evalInst fr m st.inst with
+  | stuck msg => trivial
+  | ok vm =>
+    obtain ⟨vals, mem⟩ := vm
+    have hev' := hev
+    rw [hi] at hev'
+    simp only [evalInst, Opt.Res.bind_eq_ok, Opt.Res.pure_eq_ok, Prod.mk.injEq] at hev'
+    obtain ⟨a, ha, b, hb2, res, hres, rfl, rfl⟩ := hev'
+    obtain ⟨l, h, he, hl, hh⟩ := pairVal hR.vrel hx0 hx (getAs_ok ha)
+    cases val_i128 he
+    obtain ⟨bl, bh, he2, hbl, hbh⟩ := pairVal hR.vrel hy0 hy (getAs_ok hb2)
+    cases val_i128 he2
+    have hsem' := hsem l h bl bh m
+    have e : @Sem.div (64 + 64) op (h ++ l) (bh ++ bl) =
+        @Sem.div Ty.i128.width op (h ++ l) (bh ++ bl) := rfl
+    rw [e] at hsem'
+    have hdiv : @Sem.div Ty.i128.width op (h ++ l) (bh ++ bl) = .ok res := by
+      revert hres
+      cases Sem.div (w := Ty.i128.width) op (h ++ l) (bh ++ bl) with
+      | ok v => intro hres; cases hres; rfl
+      | error c => intro hres; cases hres
+    rw [hdiv] at hsem'
+    simp only [StepResult.ofRes_ok, continueWith, hrs, Regs.setMany_cons, Regs.setMany_nil]
+    have hstep' := step_extcall (env := env) (p := p') (s := ⟨fr', [], m⟩) hb'
+      (by rw [hR.func']; exact hfn)
+      (holds_getMany (show Holds fr'.regs [xl, xh, yl, yh]
+        [⟨.i64, l⟩, ⟨.i64, h⟩, ⟨.i64, bl⟩, ⟨.i64, bh⟩] from ⟨hl, hh, hbl, hbh, trivial⟩))
+      rfl (hext' fn _ hfn) hhf
+    simp only [hsem', helperExt, helperSig] at hstep'
+    simp only [List.map_cons, List.map_nil, AbiParam.tys, beq_self_eq_true, ite_true,
+      continueWith, Regs.setMany_cons, Regs.setMany_nil] at hstep'
+    refine ⟨rfl, hM, _, ?_, TStep.of_step hstep'⟩
+    have hset : fr.regs.setMany st.results [⟨.i128, res⟩] =
+        some (fr.regs.set r ⟨.i128, res⟩) := by rw [hrs]; rfl
+    refine frel_after hG hR hb hcode hset ?_ ?_ (srcInv_stmt hG.defs hB hst hR.src hev hset)
+    · intro v hv _ z hz
+      rw [hrs, List.mem_singleton] at hv
+      subst hv
+      simp only [Regs.set_same, Option.some.injEq] at hz
+      subst hz
+      rw [RelV.pair hr]
+      refine ⟨res.extractLsb' 0 64, res.extractLsb' 64 64, ?_, ?_, ?_⟩
+      · exact congrArg _ (split128 res).symm
+      · rw [Regs.set_other _ _ hrl, Regs.set_same]; rfl
+      · simp
+    · intro w _ hni
+      rw [hrs] at hni
+      have := hni r (List.mem_singleton_self _) (res_lt hG hB hst (by rw [hrs]; simp))
+      simp only [img, hr, List.mem_cons, List.mem_nil_iff, or_false, not_or] at this
+      rw [Regs.set_other _ _ this.2, Regs.set_other _ _ this.1]
+  | trap c =>
+    have hev' := hev
+    rw [hi] at hev'
+    simp only [evalInst, Opt.Res.bind_eq_trap, getAs_ne_trap, false_or] at hev'
+    obtain ⟨a, ha, b, hb2, hres⟩ := hev'
+    obtain ⟨l, h, he, hl, hh⟩ := pairVal hR.vrel hx0 hx (getAs_ok ha)
+    cases val_i128 he
+    obtain ⟨bl, bh, he2, hbl, hbh⟩ := pairVal hR.vrel hy0 hy (getAs_ok hb2)
+    cases val_i128 he2
+    have hsem' := hsem l h bl bh m
+    have e : @Sem.div (64 + 64) op (h ++ l) (bh ++ bl) =
+        @Sem.div Ty.i128.width op (h ++ l) (bh ++ bl) := rfl
+    rw [e] at hsem'
+    have hdiv : @Sem.div Ty.i128.width op (h ++ l) (bh ++ bl) = .error c := by
+      revert hres
+      cases Sem.div (w := Ty.i128.width) op (h ++ l) (bh ++ bl) with
+      | ok v => intro hres; simp [Res.ofExcept] at hres
+      | error c' => intro hres; simp [Opt.Res.bind_eq_trap, Res.ofExcept] at hres; rw [hres]
+    rw [hdiv] at hsem'
+    have hstep' := step_extcall (env := env) (p := p') (s := ⟨fr', [], m⟩) hb'
+      (by rw [hR.func']; exact hfn)
+      (holds_getMany (show Holds fr'.regs [xl, xh, yl, yh]
+        [⟨.i64, l⟩, ⟨.i64, h⟩, ⟨.i64, bl⟩, ⟨.i64, bh⟩] from ⟨hl, hh, hbl, hbh, trivial⟩))
+      rfl (hext' fn _ hfn) hhf
+    simp only [hsem'] at hstep'
+    exact ⟨1, by rw [runLoop_succ, hstep']⟩
+
 end Opt.Legal
