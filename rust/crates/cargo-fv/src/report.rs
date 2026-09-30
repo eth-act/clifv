@@ -24,7 +24,14 @@ pub struct FnReport {
     pub status: Status,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
+    /// A verified function with a `try_call`: the theorem covers its normal returns; the
+    /// unwinding path (landing pads, LSDA) is trusted.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub normal_returns: bool,
 }
+
+/// The label of a verified function with a `try_call`.
+pub const NORMAL_RETURNS: &str = "verified (normal returns; unwinding trusted)";
 
 /// Result of checking a linked executable: every function whose Lean code we merged into an
 /// object carries a local marker symbol `__fvlean$<symbol>` at the start of our code; in the
@@ -70,20 +77,28 @@ pub struct Counts {
     pub verified: usize,
     pub unverified: usize,
     pub fallback: usize,
+    /// Of `verified`: functions with a `try_call` (`NORMAL_RETURNS`).
+    #[serde(default)]
+    pub verified_normal_returns: usize,
 }
 
 impl Counts {
     pub fn of(fs: &[FnReport]) -> Counts {
         let mut c = Counts::default();
         for f in fs {
-            c.add(f.status);
+            c.add(f);
         }
         c
     }
-    fn add(&mut self, s: Status) {
+    fn add(&mut self, f: &FnReport) {
         self.functions += 1;
-        match s {
-            Status::Verified => self.verified += 1,
+        match f.status {
+            Status::Verified => {
+                self.verified += 1;
+                if f.normal_returns {
+                    self.verified_normal_returns += 1;
+                }
+            }
             Status::Unverified => self.unverified += 1,
             Status::Fallback => self.fallback += 1,
         }
@@ -93,6 +108,7 @@ impl Counts {
         self.verified += o.verified;
         self.unverified += o.unverified;
         self.fallback += o.fallback;
+        self.verified_normal_returns += o.verified_normal_returns;
     }
 }
 
@@ -185,6 +201,14 @@ impl Report {
             "  {:<20} {:<5} {:<22} {:>9} {:>9} {:>10} {:>9}",
             "total", "", "", t.functions, t.verified, t.unverified, t.fallback
         );
+        if t.verified_normal_returns > 0 {
+            let _ = writeln!(
+                s,
+                "  of the verified: {} {NORMAL_RETURNS}: functions with a try_call, the theorem \
+                 covers their normal returns; landing pads and the LSDA are trusted",
+                t.verified_normal_returns
+            );
+        }
         for (label, st) in [("unverified", Status::Unverified), ("fallback", Status::Fallback)] {
             let mut reasons: BTreeMap<String, usize> = BTreeMap::new();
             for u in &self.units {
@@ -223,6 +247,7 @@ impl Report {
                 let _ = writeln!(s, "\n  {} ({} {}):", u.unit.crate_name, u.unit.kind, u.unit.src);
                 for f in &u.unit.functions {
                     let st = match f.status {
+                        Status::Verified if f.normal_returns => NORMAL_RETURNS,
                         Status::Verified => "verified",
                         Status::Unverified => "unverified",
                         Status::Fallback => "fallback",

@@ -131,7 +131,8 @@ theorem setTargets_cases {i : MInst} {ls : List Label} {i' : MInst}
       i' = .testBitAndBranch kd t' e' rn bit) ∨
     (∃ d ts d' ts' r t1 t2, i = .jtSequence d ts r t1 t2 ∧ i' = .jtSequence d' ts' r t1 t2 ∧
       ts'.length = ts.length) ∨
-    (∃ info ti ti', i = .tryCall info ti ∧ i' = .tryCall info ti') := by
+    (∃ info ti ti', i = .tryCall info ti ∧ i' = .tryCall info ti' ∧
+      ti'.handlers.length = ti.handlers.length) := by
   unfold MInst.setTargets at h
   split at h
   all_goals (try split at h)
@@ -143,7 +144,11 @@ theorem setTargets_cases {i : MInst} {ls : List Label} {i' : MInst}
     | (rename_i hl
        cases h
        exact .inr (.inr (.inr (.inl ⟨_, _, _, _, _, _, _, rfl, rfl, by simpa using hl⟩))))
-    | (cases h; exact .inr (.inr (.inr (.inr ⟨_, _, _, rfl, rfl⟩))))
+    | (rename_i hl
+       cases h
+       refine .inr (.inr (.inr (.inr ⟨_, _, _, rfl, rfl, ?_⟩)))
+       simp only [beq_iff_eq] at hl
+       simp [hl])
 
 /-- **`DriverSem` for `csem`.** -/
 theorem driverSem_csem (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) :
@@ -157,6 +162,9 @@ theorem driverSem_csem (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) :
     | call info =>
       obtain ⟨dest, us, ds⟩ := info
       cases dest <;> rfl
+    | tryCall info ti =>
+      obtain ⟨dest, us, ds⟩ := info
+      cases dest <;> simp [csem, MInst.mapRegs, List.map_drop, List.map_map, Function.comp_def]
     | args ds => simp [csem, MInst.mapRegs, List.map_map, Function.comp_def]
     | rets us => rfl
     | jump l => rfl
@@ -176,12 +184,12 @@ theorem driverSem_csem (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) :
     funext uses w
     rcases setTargets_cases h with ⟨l, l', rfl, rfl⟩ | ⟨t, e, t', e', k, rfl, rfl⟩ |
       ⟨kd, t, e, t', e', rn, bit, rfl, rfl⟩ | ⟨d, ts, d', ts', r, t1, t2, rfl, rfl, hlen⟩ |
-      ⟨info, ti, ti', rfl, rfl⟩
+      ⟨info, ti, ti', rfl, rfl, hlen⟩
     · rfl
     · rfl
     · rfl
     · simp only [csem, hlen]
-    · simp [csem, csemWF, FormOk, mspec, ispec]
+    · simp only [csem, hlen]
 
 /-! ## Calls -/
 
@@ -238,14 +246,26 @@ theorem xCallsOk_of_results {env : Clif.Env} {exts : List Clif.ExtFunc} {MR : Me
 theorem callsRefine_csem {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {env : Clif.Env}
     {exts : List Clif.ExtFunc} {MR : MemRelT} (hX : XCallsOk env exts MR X) :
     CallsRefine F env exts MR (csem F ctx X) := by
-  refine ⟨fun n => X.sym n 0, fun rd n w => ⟨w, rfl, fun _ _ _ => rfl, fun _ _ => rfl, rfl⟩, ?_⟩
-  intro ext hin g sl cm w dest us ds uses args vals rvals cm' hg hd hds hlen hall hmr hret hrl
-  rcases hd with ⟨rfl, rfl⟩ | ⟨r, rfl, rfl⟩
-  · obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX ext hin g sl cm w (some ext.name) uses uses vals rvals
-      cm' hg (.inl ⟨rfl, rfl⟩) hlen hall hmr hret hrl
-    exact ⟨outs, w', by simp [csem, hc], by rw [hol, hds], ho, hm⟩
-  · obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX ext hin g sl cm w none _ args vals rvals cm'
-      hg (.inr ⟨rfl, rfl⟩) hlen hall hmr hret hrl
-    exact ⟨outs, w', by simp [csem, hc], by rw [hol, hds], ho, hm⟩
+  refine ⟨fun n => X.sym n 0, fun rd n w => ⟨w, rfl, fun _ _ _ => rfl, fun _ _ => rfl, rfl⟩, ?_, ?_⟩
+  · intro ext hin g sl cm w dest us ds uses args vals rvals cm' hg hd hds hlen hall hmr hret hrl
+    rcases hd with ⟨rfl, rfl⟩ | ⟨r, rfl, rfl⟩
+    · obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX ext hin g sl cm w (some ext.name) uses uses vals rvals
+        cm' hg (.inl ⟨rfl, rfl⟩) hlen hall hmr hret hrl
+      exact ⟨outs, w', by simp [csem, hc], by rw [hol, hds], ho, hm⟩
+    · obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX ext hin g sl cm w none _ args vals rvals cm'
+        hg (.inr ⟨rfl, rfl⟩) hlen hall hmr hret hrl
+      exact ⟨outs, w', by simp [csem, hc], by rw [hol, hds], ho, hm⟩
+  · intro ext hin g sl cm w dest us ds ti uses args vals rvals cm' hg hd hds hlen hall hmr hret hrl
+    rcases hd with ⟨rfl, rfl⟩ | ⟨r, rfl, rfl⟩
+    · obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX ext hin g sl cm w (some ext.name) uses uses vals
+        rvals cm' hg (.inl ⟨rfl, rfl⟩) hlen hall hmr hret hrl
+      refine ⟨_, w', by simp only [csem, hc, Option.map_some]; rfl, ?_, ho.append _, hm⟩
+      simp only [List.length_append, List.length_map, List.length_drop]
+      omega
+    · obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX ext hin g sl cm w none _ args vals rvals cm' hg
+        (.inr ⟨rfl, rfl⟩) hlen hall hmr hret hrl
+      refine ⟨_, w', by simp only [csem, hc, Option.map_some]; rfl, ?_, ho.append _, hm⟩
+      simp only [List.length_append, List.length_map, List.length_drop]
+      omega
 
 end Backend.Proof

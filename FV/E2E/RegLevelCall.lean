@@ -94,9 +94,10 @@ theorem drop_get1 {L ls T : List Line} {j : Nat} {a b : Line} (hd : L.drop j = a
 
 /-! ## Calls -/
 
-/-- The callee as the machine runs it (`bl name` / `blr`). -/
+/-- The callee as the machine runs it (`bl name` / `blr`; also the call of a `try_call`). -/
 def callExec (H : ArmHooks) : MInst → Arm.ArmState → Option Arm.ArmState
   | .call info, s => some (H.call (match info.dest with | .sym n => some n | .reg _ => none) s)
+  | .tryCall info _, s => some (H.call (match info.dest with | .sym n => some n | .reg _ => none) s)
   | _, _ => none
 
 /-- **The callee contract** of an activation with frame addresses `F` (AAPCS64, stated for
@@ -137,10 +138,8 @@ theorem realizes_call {R : RL} (hR : R.Wf) (hC : CalleeOk R.F R.X R.H) {s : Arm.
     obtain ⟨rfl, rfl, -⟩ := he
     exact hC.ext _ _ _ _ _ hx herr
   refine realizes_op_core hR hq hvb hi hops hsz hsem hlen hk (exec := fun _ => callExec R.H)
-    (fun _ => hC.os R.ctx info) (fun regs i' _ hex => ?_) hW'
-  obtain ⟨_, s0, _, hex⟩ := hex
-  obtain ⟨info', rfl⟩ : ∃ info', i' = .call info' := by
-    cases i' <;> simp [callExec] at hex; exact ⟨_, rfl⟩
+    (fun _ => hC.os R.ctx info) (fun regs i' hasg _ => ?_) hW'
+  obtain ⟨info', rfl⟩ := assign_call_form hasg
   have hgen : ∀ x, (∀ ps, (MInst.call info').lines R.ctx ps = .ok ([.ins x], ps)) →
       (Line.ins x).plain = true →
       (∀ s j, R.L[j]? = some (.ins x) → s.program = R.fb.program R.base →

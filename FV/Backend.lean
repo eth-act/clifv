@@ -82,6 +82,30 @@ def verifiable (f : Clif.Function) : Bool :=
     f.blocks.all (fun B => B.body.all (fun st => match st.inst with
       | .callIndirect .. | .funcAddr .. => false | _ => true))
 
+/-- The lowering validator's size measure: instructions (statements and terminators) × values.
+`lowerCheck` re-runs the lowering recording every statement's states (their vreg class arrays
+grow with the function), its dataflow keeps a blocks × values table, and its certificate check
+visits every block's entry values once and the target block's at every edge; the rest of it is
+(near-)linear in the function. -/
+def validationCost (f : Clif.Function) : Nat :=
+  (f.blocks.length + (f.blocks.map (·.body.length)).sum) * f.freshValue
+
+/-- The validation budget (`docs/USAGE.md`): a function inside the theorem's scope whose
+`validationCost` exceeds it is compiled but not validated (`lowerCheck` does not run), and
+reported unverified ("validation budget"). It bounds the validator's time and memory on
+pathological inputs (at the budget: about 1.5 s and under 1 GB); it is far above every function
+of `examples/` (the largest costs 3276540: a survey test function with 188 blocks, 1992
+statements and 1503 values; the validator takes about 0.2 s on functions of that size). -/
+def validationBudget : Nat := 25000000
+
+/-- The reason `f` is not validated although inside the theorem's scope: over the validation
+budget. -/
+def overBudget? (f : Clif.Function) : Option String :=
+  let c := validationCost f
+  if c > validationBudget then
+    some s!"{c} instructions × values > {validationBudget}, lowerCheck not run"
+  else none
+
 /-- Compile one function with the stack-slot allocator (`k` = index in the file, for local
 labels); also returns the ISLE rules that fired. -/
 def compileFunction (k : Nat) (f : Clif.Function) : Except String (FnAsm × Array Isle.RuleId) := do
@@ -109,6 +133,9 @@ structure FileAsm where
   unsupported : List (String × String)
   /-- Compiled functions outside the end-to-end theorem (`unverifiedReason?`), with the reason. -/
   unverified : List (String × String) := []
+  /-- Compiled functions inside the theorem's scope that were not validated because they are
+  over the validation budget (`overBudget?`), with the reason. -/
+  unvalidated : List (String × String) := []
   /-- Distinct ISLE rules fired while compiling the file (ascending ids). -/
   rules : List Isle.RuleId
   /-- Unwind rows of each compiled function (`unwindRows`, unverified; for `.eh_frame`). -/
@@ -129,6 +156,10 @@ def callees (f : Clif.Function) : List String :=
 def hasTryCall (f : Clif.Function) : Bool :=
   f.blocks.any (·.term.isTry)
 
+/-- Does `f` have a `try_call_indirect`? -/
+def hasTryCallIndirect (f : Clif.Function) : Bool :=
+  f.blocks.any fun b => b.term matches .tryCallIndirect ..
+
 /-- `bmask`, `atomic_*` and `fence` in `f` (their lowering is Cranelift's, but the ISLE
 rules are outside the proven emitter-subset closure used by `E2E.backend_correct`). -/
 def hasUnproven (f : Clif.Function) : Bool :=
@@ -144,11 +175,12 @@ def hasTls (f : Clif.Function) : Bool :=
     | _ => false
 
 /-- Why a compiled function of `pf` is outside `E2E.backend_correct` (`E2E.InSubset`), if it is:
-`bmask`/atomic/fence instructions, `tls_value`, outside clif-subset-v2 E, stack-passed parameters,
-stack-passed call arguments (an extern with more than 8 parameters), or a call of a function
-of the file. -/
+`try_call_indirect`, `bmask`/atomic/fence instructions, `tls_value`, outside clif-subset-v2 E,
+stack-passed parameters, stack-passed call arguments (an extern with more than 8 parameters), or
+a call (also a `try_call`) of a function of the file. A `try_call` of an extern is inside the
+theorem for its normal return (`hasTryCall`: the landing pads and the LSDA are trusted). -/
 def unverifiedReason? (pf : Clif.ParsedFile) (f : Clif.Function) : Option String :=
-  if hasTryCall f then some "try_call / landing pads (outside backend_correct)"
+  if hasTryCallIndirect f then some "try_call_indirect (outside backend_correct)"
   else if hasUnproven f then some "bmask / atomic instructions / fence (outside backend_correct)"
   else if hasTls f then some "tls_value (outside backend_correct)"
   else if !Compile.functionE f then some "outside clif-subset-v2 E"
@@ -178,7 +210,8 @@ def compileFileWith {m : Type → Type} [Monad m]
     pf.funcs.toArray.map fun p => (p.name, match p.func with
       | .error e => .error e.toString
       | .ok f => (lowerChecked f
-          ((unverifiedReason? pf f).isSome || (preUnverified.lookup p.name).isSome).not
+          ((unverifiedReason? pf f).isSome || (preUnverified.lookup p.name).isSome ||
+            (overBudget? f).isSome).not
           ).map (f, ·))
   let vcs := lowered.filterMap fun (_, r) => r.toOption.map (·.2)
   let afs ← alloc vcs
@@ -218,7 +251,13 @@ def compileFileWith {m : Type → Type} [Monad m]
         ((preUnverified.lookup name).orElse (fun _ => unverifiedReason? pf f)).map (name, ·)
       else none
     | .error _ => none
-  pure { text, funcs, unsupported := bad.toList, unverified,
+  let unvalidated := lowered.toList.filterMap fun (name, r) => match r with
+    | .ok (f, _) =>
+      if funcs.any (·.name == name) && !unverified.any (·.1 == name) then
+        (overBudget? f).map (name, ·)
+      else none
+    | .error _ => none
+  pure { text, funcs, unsupported := bad.toList, unverified, unvalidated,
          rules := rules.toArray.qsort (· < ·) |>.toList,
          unwind := unwind.toList.filter fun (n, _) => funcs.any (·.name == n),
          lsda := lsda.toList.filter fun (n, _) => funcs.any (·.name == n) }

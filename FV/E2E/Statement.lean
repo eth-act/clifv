@@ -76,6 +76,10 @@ structure InSubset (p : Clif.Program) (f : Clif.Function) : Prop where
   regParams : f.sig.params.length ≤ 8
   externCalls : ∀ b ∈ f.blocks, ∀ st ∈ b.body, ∀ fn args, st.inst = .call fn args →
     ∀ e, f.extern? fn = some e → p.func? e.name = none
+  /-- a `try_call` calls an extern, like `externCalls` (subset E admits `try_call`, not
+  `try_call_indirect`) -/
+  tryExterns : ∀ b ∈ f.blocks, ∀ fn args et, b.term = .tryCall fn args et →
+    ∀ e, f.extern? fn = some e → p.func? e.name = none
   callRegArgs : ∀ e ∈ f.externs, e.2.sig.params.length ≤ 8
   abiSigs : sigAbiOk f.sig = true ∧ ∀ e ∈ f.externs, sigAbiOk e.2.sig = true
   /-- no `call_indirect` statements (`clif-subset.md`: outside the theorem; rust-route step 4:
@@ -157,9 +161,24 @@ def MemAgree (cm : Clif.Mem) (s : Arm.ArmState) : Prop :=
 checks and traps). Memory-access traps (`heap_oob`) and traps inside externs are excluded: the
 Arm model has no memory faults and callees are outside the theorem. For DSL output this holds
 trivially (traps are unreachable, PLAN.md §3.2). -/
-def TrapsExplicit (env : Clif.Env) (p : Clif.Program) (cs : Clif.State) : Prop :=
-  ∀ s c st rest, Reach env p cs s → Clif.step env p s = .trapped c →
+structure TrapsExplicit (env : Clif.Env) (p : Clif.Program) (cs : Clif.State) : Prop where
+  /-- a statement traps only if it is an explicitly trapping instruction -/
+  stmt : ∀ s c st rest, Reach env p cs s → Clif.step env p s = .trapped c →
     s.frame.body = st :: rest → explicitTrapInst st.inst = true
+  /-- the callee of a `try_call` terminator of the entered function does not trap (its step
+  continues at the normal return; `Clif.run` has no unwinding) -/
+  tryCall : ∀ s c fn args et, Reach env p cs s → Clif.step env p s = .trapped c →
+    s.frame.body = [] → s.frame.term = .tryCall fn args et →
+    ∀ B ∈ cs.frame.func.blocks, B.term ≠ .tryCall fn args et
+
+/-- For an entered function without `try_call` terminators, `TrapsExplicit` is its statement
+clause. -/
+theorem TrapsExplicit.of_tryFree {env : Clif.Env} {p : Clif.Program} {cs : Clif.State}
+    (hf : ∀ B ∈ cs.frame.func.blocks, B.term.isTry = false)
+    (h : ∀ s c st rest, Reach env p cs s → Clif.step env p s = .trapped c →
+      s.frame.body = st :: rest → explicitTrapInst st.inst = true) :
+    TrapsExplicit env p cs :=
+  ⟨h, fun _ _ fn args et _ _ _ _ B hB e => by have := hf B hB; rw [e] at this; cases this⟩
 
 /-! ## Arm side: entry, return, trap -/
 

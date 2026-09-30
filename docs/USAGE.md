@@ -12,7 +12,8 @@ code (**fallback**), so the build never fails because of the Lean backend. After
   (`E2E.backend_correct_final`, or `E2E.backend_correct_opt_proven` with `--opt-proven-only`;
   for `i128` functions `E2E.backend_correct_legal`, without `--opt`);
 * **compiled, unverified**: compiled by the Lean backend but outside the theorem (the reason
-  is given, e.g. an indirect call, or an `i128` function under `--opt`);
+  is given, e.g. an indirect call, or an `i128` function under `--opt`), or over the
+  validation budget (see *What is verified, and what is not*);
 * **fallback**: cg_clif's code (the reason is given).
 
 ```
@@ -165,7 +166,7 @@ or an executable's `*.rcgu.o` files at link time) then goes through this pipelin
    per file means every call is a call of an extern. The theorem covers extern calls through
    its callee contract, and a function the backend rejects does not make its callers fall
    back: their calls reach cg_clif's code for it. Functions with a landing pad (`try_call`)
-   are not compiled and fall back (*Panics and unwinding*).
+   are compiled too (*Panics and unwinding*).
 4. **Safety net**: every symbol a Lean object references must be defined or referenced by
    cg_clif's object (or be a runtime helper: `mem*`, `__{u,}{div,mod}ti3`, all in every Rust
    executable); otherwise the function falls back. A calling-convention guard (`abi_guard`)
@@ -230,11 +231,20 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   (`.gcc_except_table`), and `catch_unwind`/`Drop` behave as with LLVM. `cargo fv` uses it
   when it exists (`FV_CG_CLIF` overrides).
 * **Landing pads are Lean code** (agent/fv-trycall): functions with `try_call`/
-  `try_call_indirect` are compiled (unverified, "try_call / landing pads"): the call is a block
-  terminator, the handler successors are the landing pads (payload in x0), and the object gets
-  cg_clif's LSDA in `.gcc_except_table` and a `zLPR` CIE with `rust_eh_personality`
-  (`lean-backend --personality`). Callees with the `tail`/`preserve_all` convention and
-  exception-table `context` items are rejected (fallback); cg_clif emits neither.
+  `try_call_indirect` are compiled: the call is a block terminator, the handler successors are
+  the landing pads (payload in x0), and the object gets cg_clif's LSDA in `.gcc_except_table`
+  and a `zLPR` CIE with `rust_eh_personality` (`lean-backend --personality`). Callees with the
+  `tail`/`preserve_all` convention and exception-table `context` items are rejected
+  (fallback); cg_clif emits neither.
+* **`try_call` is verified for normal returns** (agent/trycall-proof): a function whose
+  `try_call`s call externs is inside `E2E.backend_correct_final` for the path where every
+  callee returns normally (the call, its results, the jump to the normal-return successor).
+  The report labels it **`verified (normal returns; unwinding trusted)`** and counts it among
+  the verified functions, with a footnote giving how many there are. Nothing is claimed about
+  unwinding: the landing pads, the payload on the handler edges, the LSDA and the `.eh_frame`
+  rows are trusted. `try_call_indirect` stays unverified ("try_call_indirect (outside
+  backend_correct)"), and so does every `try_call` function under `--opt-proven-only` and
+  after `i128` legalisation (those theorems cover `try_call`-free functions only).
 * With the shipped cg_clif (no unwinding build, or `FV_CG_CLIF=cranelift`), no function has a
   landing pad, `cargo fv` prints a note, and the program behaves as under plain cg_clif: the
   reference for comparisons is then plain cg_clif, not LLVM (`BASELINE=cg_clif
@@ -266,6 +276,22 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   (hypotheses: `docs/contracts/e2e.md`). Calls to other functions are extern calls in that
   theorem: the proof assumes the callee behaves as its CLIF (the callee contract), whether the
   callee is Lean-compiled, cg_clif-compiled or in std.
+* **verified (normal returns; unwinding trusted)** = verified as above for a function with
+  `try_call`s: the theorem covers the runs in which every callee of a `try_call` returns
+  normally (with the callee contract `CalleeTryOk` for the exception payload registers); the
+  unwinding path (landing pads, LSDA, unwind tables) is trusted.
+* **Validation budget.** "verified" needs the lowering validator (`lowerCheck`, whose
+  acceptance the theorem assumes) to accept the function. Its cost is near-linear in practice
+  but grows, in the worst case, with the number of instructions times the number of values
+  (it records the lowering's state after every statement, and its dataflow keeps a
+  blocks × values table): the largest functions of `examples/` (about 2000 instructions and
+  1500 values) take about 0.2 s. As a guard against pathological inputs, `lean-backend` does
+  not run it on a function with more than 25000000 instructions × values
+  (`Backend.validationBudget`; at the budget the validator takes about 1.5 s and under 1 GB,
+  the largest function of `examples/` costs 3276540): such a function is compiled and
+  reported **compiled, unverified** with the reason `validation budget: N instructions × values
+  > 25000000, lowerCheck not run` (`lean-backend` prints `compiled, unverified (validation
+  budget): …`). No function of `examples/` reaches it.
 * Not verified: rustc and cg_clif (Rust → CLIF), `normalize.py`, `clif-data-export`, the
   object surgery above, the linker, std and dependencies (cg_clif or LLVM code), and
   everything the report lists as unverified or fallback. `--opt` runs unproven rules.
@@ -290,15 +316,28 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   `tests/expected.txt`, which `gen-expected.sh` computes with rustc's LLVM backend for the
   same target (under qemu). There are 53 tests, including 9 `should_panic` ones.
 
-Results (2026-09-30; `examples/compare.sh`, which requires every test outcome to match the
+Results (2026-09-30, agent/trycall-proof: `try_call` verified for normal returns, near-linear
+lowering validator; `examples/compare.sh`, which requires every test outcome to match the
 `cargo test` LLVM run; panic=unwind with the unwinding cg_clif, the default):
 
 | | profile | tests | functions | verified | unverified | fallback | of which landing pad | Lean in exe |
 |---|---|---|---|---|---|---|---|---|
-| fv-demo | debug | 18/18 | 1111 | 693 | 219 | 199 | 190 | 606 |
-| fv-demo | release | 18/18 | 746 | 423 | 133 | 190 | 171 | 395 |
-| survey | debug | 53/53 | 3179 | 1932 | 722 | 525 | 498 | 2654 |
-| survey | release | 50/50 + 3 ignored (overflow checks off) | 2208 | 1349 | 353 | 506 | 475 | 1702 |
+| fv-demo | debug | 19/19 | 1346 | 1272 | 68 | 6 (skip) | 0 | 890 |
+| fv-demo | release | 19/19 | 953 | 882 | 65 | 6 (skip) | 0 | 662 |
+| survey | debug | 53/53 | 3179 | 3029 | 150 | 0 | 0 | 3179 |
+| survey | release | 50/50 + 3 ignored (overflow checks off) | 2208 | 2091 | 117 | 0 | 0 | 2208 |
+| vendor | debug | 187/187 + 2 ignored | 4399 | 4191 | 208 | 0 | 0 | 4273 |
+| vendor | release | 187/187 + 2 ignored | 3082 | 2847 | 235 | 0 | 0 | 2872 |
+
+Of the verified, `verified (normal returns; unwinding trusted)`: fv-demo 231 / 204, survey
+492 / 419, vendor 820 / 727 (debug / release). Before (main fbbd5d9, `try_call` functions
+compiled but unverified) survey debug had 2537 verified of 3179. No function is over the
+validation budget. `cargo fv test` wall time (a full rebuild of the workspace members, then
+the tests under qemu): fv-demo 4 s / 3 s, survey 9 s / 7 s, vendor 16–20 s / 12–14 s (two
+runs); plain cg_clif
+`cargo test` in a fresh target directory: 0.3 s / 0.3 s, 0.9 s / 1.1 s, 3.6 s / 2.5 s. (Before
+the near-linear validator, `lean-backend` ran for over an hour on each of the survey's largest
+`try_call` test functions, and the survey build did not finish.)
 
 With the shipped cg_clif (`FV_CG_CLIF=cranelift`, no landing pads) or `--panic-abort`
 there are no landing-pad fallbacks:
@@ -310,10 +349,11 @@ there are no landing-pad fallbacks:
 | fv-demo | debug, `--panic-abort` | 14/18, likewise (the 4 need unwinding) | 1104 | 799 | 296 | 9 | 731 |
 | survey | debug, shipped cg_clif, unwind | 53/53 (= LLVM) | 3179 | 2224 | 928 | 27 | 3152 |
 
-The table counts each unit separately: a library compiled as an rlib and as its unit-test
-harness appears twice. The landing-pad fallbacks are the price of panic=unwind with landing
-pads (functions with a `Drop` value live across a call, closures run by `catch_unwind`, …);
-`--panic-abort` avoids them. In the survey, with `--panic-abort` or the shipped cg_clif,
+The tables count each unit separately: a library compiled as an rlib and as its unit-test
+harness appears twice. Since landing pads are Lean code (agent/fv-trycall) there are no
+landing-pad fallbacks; before, they were the price of panic=unwind with landing pads
+(functions with a `Drop` value live across a call, closures run by `catch_unwind`, …), and
+`--panic-abort` avoided them. In the survey, with `--panic-abort` or the shipped cg_clif,
 every function of the nine survey libraries runs Lean code (`cargo fv build --workspace --lib
 --no-fallback --panic-abort` passes). Unverified: landing pads, indirect calls and
 atomics (`sret` functions are verified since agent/sret-proof: survey debug, panic=unwind,
@@ -422,10 +462,10 @@ fv-demo 19/19, survey 53/53 and vendor 189/189, debug and `--release`.
   qemu. Linking always uses `rust-lld`.
 * Only workspace members are compiled by the Lean backend. Dependencies use cg_clif and std
   is the prebuilt LLVM one; which crates get the Lean backend may become configurable later.
-* panic=unwind: functions with landing pads (`try_call`) keep cg_clif's code, and full
-  unwinding semantics (`Drop` during unwinding, `catch_unwind` in the crate) need the
-  unwinding cg_clif (Install, 5); the shipped one has no landing pads at all. Lean frames have
-  `.eh_frame` but no LSDA, so no Lean-compiled function runs code during unwinding.
+* panic=unwind: full unwinding semantics (`Drop` during unwinding, `catch_unwind` in the crate)
+  need the unwinding cg_clif (Install, 5); the shipped one has no landing pads at all. The
+  landing pads of Lean-compiled functions and their LSDA are compiled but not verified: the
+  theorem covers `try_call`s up to the normal return only.
 * Library crate types `lib`/`rlib`, binaries and test harnesses. `dylib`, `cdylib`,
   `staticlib` and proc macros build with plain cg_clif.
 * `RUSTFLAGS` from the environment are kept (with ours appended). `build.rustflags` from

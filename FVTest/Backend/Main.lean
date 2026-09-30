@@ -32,6 +32,10 @@ plain `i8..i64` CLIF before the mid-end and the backend). A legalised function t
 function (`InSubset` and `lowerCheck` decided on the legalised form); a rejected one is
 reported unverified ("i128 legalized (outside backend_correct: …)"), as is every legalised
 function under `--opt` (no theorem composes the legalisation with the mid-end).
+
+A function inside the theorem's scope whose size is over the validation budget
+(`Backend.validationBudget`, blocks × values) is compiled without running the lowering
+validator and listed as `compiled, unverified (validation budget)`.
 -/
 
 open Backend
@@ -39,8 +43,12 @@ open Backend
 def usage : String :=
   "usage: lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>] [--dump <dir>] [--regalloc regalloc2|stack|regalloc2-small] [--personality <sym>] [--opt]"
 
+/-- The rules the end-to-end theorem covers: the emitter-subset closure, and the `try_call`
+rules of `lower_branch` (ids 1034 `bl`, 1035 GOT + `blr`: `Backend.Proof.tryRootRule`, proven by
+`tryRulesCorrect`), which are outside the generated closure (its opcodes have no `try_call`). -/
 def closureIds : Std.HashSet Isle.RuleId :=
-  Isle.Aarch64.Closure.rules.foldl (fun s r => s.insert r.rule) {}
+  Isle.Aarch64.Closure.rules.foldl (fun s r => s.insert r.rule) ({} : Std.HashSet Isle.RuleId)
+    |>.insert 1034 |>.insert 1035
 
 structure Opts where
   traps : Option String := none
@@ -61,7 +69,17 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
     | some _ => lg.unverified ++ lg.accepted.map
         (·, "i128 legalized and optimised (outside backend_correct_legal: --opt)")
     | none => lg.unverified
-  let fa ← compileFileIO alloc pf unv128
+  -- the mid-end and `i128` theorems cover functions without `try_call` only
+  let unvTry := pf.funcs.filterMap fun p => match p.func with
+    | .ok f =>
+      if !hasTryCall f then none
+      else if o.opt.isSome then
+        some (p.name, "try_call (outside backend_correct_opt_proven: try_call-free functions only)")
+      else if lg.accepted.contains p.name then
+        some (p.name, "try_call in an i128-legalized function (outside backend_correct_legal)")
+      else none
+    | .error _ => none
+  let fa ← compileFileIO alloc pf (unv128 ++ unvTry)
   if output.endsWith ".o" || o.dump.isSome then
     match fa.layout with
     | .error e =>
@@ -86,6 +104,13 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
     IO.eprintln s!"lean-backend: {input}: %{n}: unsupported: {why}"
   for (n, why) in fa.unverified do
     IO.eprintln s!"lean-backend: {input}: %{n}: compiled, unverified (outside backend_correct): {why}"
+  for (n, why) in fa.unvalidated do
+    IO.eprintln s!"lean-backend: {input}: %{n}: compiled, unverified (validation budget): {why}"
+  for p in pf.funcs do
+    if let .ok f := p.func then
+      if hasTryCall f && fa.funcs.any (·.name == p.name) && !fa.unverified.any (·.1 == p.name) &&
+          !fa.unvalidated.any (·.1 == p.name) then
+        IO.eprintln s!"lean-backend: {input}: %{p.name}: compiled, verified for normal returns (try_call: unwinding, landing pads and the LSDA trusted)"
   return 0
 
 def main (args : List String) : IO UInt32 := do

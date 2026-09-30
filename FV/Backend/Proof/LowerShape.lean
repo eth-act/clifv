@@ -37,6 +37,9 @@ structure LowerShape : Prop where
   /-- every value with a register is below the first temporary (`buildCtx`: `maxV`) -/
   valsBelow : ∀ x r, ctx.valueReg? x = some r → x < st0.nextVreg
   labels : ∀ l (vb : VBlock), vc.blocks[l]? = some vb → vb.label = l
+  /-- the temporaries start at or below `Clif.run`'s fresh values (`buildCtx`'s `maxV` is
+  `Function.freshValue`): a `try_call`'s results never overwrite a value of `f` -/
+  fresh : st0.nextVreg ≤ f.freshValue
   /-- the terminator's slot in `ctx.insts` is `buildCtx`'s placeholder -/
   tslot : ∀ (bi : Nat) (B : Clif.Block) (L : BLow), f.blocks[bi]? = some B → bl[bi]? = some L →
     ctx.insts[L.start + B.body.length]? = some (⟨.op .unit, [], [], none⟩ : IInfo)
@@ -53,10 +56,19 @@ structure LowerShape : Prop where
       (∀ (k : Nat) r out cls, stm.results[k]? = some r → sl.rss[k]? = some [.vreg out cls] →
         gn r = gn out)) ∧
     -- terminator (a `return` of an `sret` function also returns the struct pointer, `abiTerm`)
-    termData (abiTerm f B.term) = .ok L.data ∧ L.tst.emitted = #[] ∧ st0.nextVreg ≤ L.tst.nextVreg ∧
-    (∃ out tr, runTerm (termCtx ctx (L.start + B.body.length) L.data)
+    L.tst.emitted = #[] ∧ st0.nextVreg ≤ L.tst.nextVreg ∧
+    (B.term.isTry = false → L.tl = none ∧ termData (abiTerm f B.term) = .ok L.data ∧
+      ∃ out tr, runTerm (termCtx ctx (L.start + B.body.length) L.data)
         (termCall B.term (L.start + B.body.length) L.targets).1
         (termCall B.term (L.start + B.body.length) L.targets).2 L.tst = .ok (some out, L.tst', tr)) ∧
+    -- a `try_call`: its data, exception table, return/payload vregs (allocated from `L.tst`),
+    -- `try_call_info`, and the `lower_branch` call from the state after the allocation
+    (∀ fn args et, B.term = .tryCall fn args et → ∃ T, L.tl = some T ∧
+      tryCallData f B.term = .ok L.data ∧ exnTableOpnd f et = .ok (T.sig, T.items) ∧
+      tryRegsOf T.sig L.tst = some (T.regs, T.st1) ∧ tryInfoOf T.sig T.items L.targets = some T.info ∧
+      ∃ out tr, runTerm (tryCtx ctx (L.start + B.body.length) L.data T.regs) "lower_branch"
+        [.inst (L.start + B.body.length), .labels L.targets] { T.st1 with emitted := #[] } =
+        .ok (some out, L.tst', tr)) ∧
     -- code
     vb.insts.toList = pre f R bi ++ ((List.range B.body.length).map (seg f R bl bi)).flatten ++
       tseg R bl bi ∧
@@ -68,6 +80,14 @@ structure LowerShape : Prop where
     -- successors
     (match B.term with
       | .jump bc => ∃ tl, blockIdx? f bc.block = some tl ∧ L.targets = [tl]
+      | .tryCall _ _ et => L.targets.length = et.dests.length ∧
+        ∃ tl tlab T eb, blockIdx? f et.normal.block = some tl ∧ L.targets.getLast? = some tlab ∧
+          L.tl = some T ∧ vc.blocks[tlab]? = some eb ∧ eb.insts = #[.jump tl] ∧ eb.params = #[] ∧
+          eb.branchArgs = (et.normal.args.map (normArgReg R T.regs.1)).toArray ∧
+          ∀ a ∈ et.normal.args, match a with
+            | .val _ => True
+            | .ret i => i < T.sig.returns.length
+            | .exn _ => False
       | _ => L.targets.length = (dests B.term).length ∧
         ∀ (k : Nat) bc tlab, (dests B.term)[k]? = some bc → L.targets[k]? = some tlab →
           ∃ tl, blockIdx? f bc.block = some tl ∧
@@ -93,13 +113,13 @@ structure Cert (A : Nat → Nat → List Clif.ValueId) : Prop where
     (∀ r ∈ stm.results, r ∉ A bi j ∧ ctx.defInst? r = some (L.start + j)) ∧ stm.results.Nodup ∧
     (∀ x ∈ A bi (j + 1), x ∈ A bi j ∨ x ∈ stm.results) ∧
     (∀ x ∈ A bi j, ¬ (sl.st.nextVreg ≤ gn x ∧ gn x < sl.st'.nextVreg))
-  /-- no branch targets the entry block (CLIF verifier rule) -/
-  noEntry : ∀ (bi : Nat) (B : Clif.Block), f.blocks[bi]? = some B → ∀ bc ∈ dests B.term, blockIdx? f bc.block ≠ some 0
-  /-- terminators and edges -/
+  /-- no edge targets the entry block (CLIF verifier rule) -/
+  noEntry : ∀ (bi : Nat) (B : Clif.Block), f.blocks[bi]? = some B → ∀ b ∈ edgeIds B.term, blockIdx? f b ≠ some 0
+  /-- terminators and edges (a `try_call`'s: to its normal return) -/
   term : ∀ bi B L, f.blocks[bi]? = some B → bl[bi]? = some L →
     (∀ y ∈ termArgs (abiTerm f B.term), y ∈ A bi B.body.length) ∧
     (∀ x ∈ A bi B.body.length, ¬ (L.tst.nextVreg ≤ gn x ∧ gn x < L.tst'.nextVreg)) ∧
-    ∀ bc ∈ dests B.term, ∀ tl TB, blockIdx? f bc.block = some tl → f.blocks[tl]? = some TB →
+    ∀ b ∈ edgeIds B.term, ∀ tl TB, blockIdx? f b = some tl → f.blocks[tl]? = some TB →
       (TB.params.map (·.1)).Nodup ∧
       (∀ x ∈ A tl 0, x ∉ TB.params.map (·.1) → ∀ d info cl, ctx.defInst? x = some d →
         ctx.insts[d]? = some info → info.clif = some cl → ∀ y ∈ instArgs cl,

@@ -410,6 +410,39 @@ def tryCallData (f : Clif.Function) : Clif.Terminator → Except String V
       [opcodeV "TryCallIndirect", .values (callee :: args), .op (.exnTable sig items)])
   | _ => throw "not a try_call"
 
+/-- The vregs of a `try_call`'s return values and exception payloads (`lower.rs`
+`try_call_rets`/`try_call_payloads`), allocated from `st`: one fresh vreg per ABI return (the
+return registers `retRegs`), then per payload register (`payloadRegs`) the vreg of the return in
+that register (`set_vreg_alias`), else a fresh one. `none`: more than 8 return values. -/
+def tryRegsOf (sig : Clif.Signature) (st : LState) : Option ((List Reg × List Reg) × LState) := do
+  let ps ← retRegs (sigRets sig).length
+  let (rets, st) := ps.foldl (init := ((#[] : Array Reg), st)) fun (acc, st) _ =>
+    let (r, st') := st.fresh .int
+    (acc.push r, st')
+  let (pays, st) := (payloadRegs sig.callConv).foldl (init := ((#[] : Array Reg), st))
+    fun (acc, st) p => match ps.idxOf? p with
+      | some i => (acc.push rets[i]!, st)
+      | none =>
+        let (r, st') := st.fresh .int
+        (acc.push r, st')
+  pure ((rets.toList, pays.toList), st)
+
+/-- The branch argument of the edge block of a `try_call`'s normal return (`rets`: the return
+value vregs): a value's register, or a return value's vreg; renamed by `R` (the alias
+resolution). An exception payload never occurs on the normal edge (`lowerFunction` rejects
+it). -/
+def normArgReg (R : Reg → Reg) (rets : List Reg) : Clif.TryArg → Reg
+  | .val v => R (.vreg v .int)
+  | .ret i => R (rets.getD i .xzr)
+  | .exn _ => .xzr
+
+/-- `lowerFunction`'s replacement of the call a `try_call` rule emits last by the `tryCall`
+terminator with `try_call_info` `info`. -/
+def tryFix (info : TryInfo) (ms : List MInst) : List MInst :=
+  match ms.getLast? with
+  | some (.call c) => ms.dropLast ++ [.tryCall c info]
+  | _ => ms
+
 def storeOpOfBytes : Nat → StoreOp
   | 1 => .store8 | 2 => .store16 | 4 => .store32 | _ => .store64
 
@@ -921,6 +954,10 @@ structure VCode where
   rulesFired : Array RuleId
   deriving Inhabited
 
+/-- Does the VCode contain a `tryCall` (the call of a `try_call`)? -/
+def VCode.hasTryCall (vc : VCode) : Bool :=
+  vc.blocks.any fun vb => vb.insts.any fun i => i matches .tryCall ..
+
 /-- Stack-slot layout (`Callee::new`): slots in id order, each aligned to
 `max(8, align)`. -/
 def slotLayout (slots : List (Nat × Clif.StackSlot)) : List (Nat × Nat) × Nat :=
@@ -1104,22 +1141,11 @@ def lowerFunction (f : Clif.Function) : Except String VCode := do
       -- successor of the call has a single predecessor, as regalloc2 requires of a branch
       -- with operands, and the handler edge blocks are the landing pads
       let (sig, items) ← exnTableOpnd f et
-      let some ps := retRegs (sigRets sig).length | throw "try_call: more than 8 return values"
+      let some ((retsL, paysL), st) := tryRegsOf sig d.st
+        | throw "try_call: more than 8 return values"
       if sig.returns.any (·.ty == .i128) then throw "try_call returning i128"
-      let mut st := d.st
-      let mut rets : Array Reg := #[]
-      for _ in ps do
-        let (r, st') := st.fresh .int
-        rets := rets.push r
-        st := st'
-      let mut pays : Array Reg := #[]
-      for p in payloadRegs sig.callConv do
-        match ps.idxOf? p with
-        | some i => pays := pays.push rets[i]!
-        | none =>
-          let (r, st') := st.fresh .int
-          pays := pays.push r
-          st := st'
+      let rets := retsL.toArray
+      let pays := paysL.toArray
       d := { d with st }
       let nh := et.handlers.length
       for (td, k) in et.dests.zipIdx do

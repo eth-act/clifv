@@ -5,6 +5,7 @@ import FV.Backend.Proof.IselLowerAll
 import FV.Backend.Proof.IselExcl
 import FV.Backend.Proof.IselCtl
 import FV.Backend.Proof.IselCtlUnmatch
+import FV.Backend.Proof.IselCtlTry
 import FV.Backend.Proof.IselMemRoots
 import FV.Backend.Proof.MemRefines
 import FV.Backend.Proof.RefinesCSem
@@ -49,7 +50,7 @@ theorem backend_correct_m4 {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc 
   backend_correct_of_rules hsub hc
     lowerRulesCorrect_program excludedUnmatchable callRulesCorrect memRulesCorrect_program
     lowerTermRulesCorrect termUnmatchable branchRulesCorrect branchExcludedUnmatchable
-    hM6 hRef (fun s' => driverSem_csem (F s') (ctx s') (X s'))
+    tryRulesCorrect tryUnmatchable hM6 hRef (fun s' => driverSem_csem (F s') (ctx s') (X s'))
     (fun s' => callsRefine_csem (hX s')) hmem
     hent hres hbe hargs hcs hrel htr fuel
 
@@ -60,11 +61,23 @@ theorem refines_final (vcp : VCode) (rf : RFunc) (af : AFunc) (fa : FnAsm) (X : 
         ⟨fa.k, af.slotBase⟩ X) :=
   fun _ => refines_csem _ _ X
 
+/-- The prepared VCode has a `tryCall` only if the function has a `try_call` (the validators
+`lowerCheck`/`prepCheck`). -/
+theorem hasTry_of_hasTryCall {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc}
+    {af : AFunc} {fa : FnAsm} {fb : FnBin} (hc : Compiled f k vc vcp rf af fa fb)
+    (h : vcp.hasTryCall = true) : ∃ B ∈ f.blocks, B.term.isTry = true :=
+  Classical.byContradiction fun hn => by
+    have hf : ∀ B ∈ f.blocks, B.term.isTry = false := fun B hB =>
+      Bool.eq_false_iff.mpr fun ht => hn ⟨B, hB, ht⟩
+    rw [noTryCall_of_prepCheck hc.prepOk (noTryCall_of_check hc.lowerOk hf)] at h
+    cases h
+
 /-- **The backend's end-to-end theorem** (`docs/contracts/e2e.md`, "Final hypotheses"): the Arm
-run of the compiled function refines the CLIF run. M6's `csem` obligations are discharged
-(`refines_csem`, `memRefines_csem`). Remaining hypotheses: the form coverage `FormsCovered`
-(decided per function by `formsCoveredB`), the callee contract `CalleeOk` of the machine's call
-hook, the external contract `XCallsOk`, and the link-time facts `hsym`/`hslot`. -/
+run of the compiled function refines the CLIF run (a `try_call`: its normal return). M6's `csem`
+obligations are discharged (`refines_csem`, `memRefines_csem`). Remaining hypotheses: the form
+coverage `FormsCovered` (decided per function by `formsCoveredB`), the callee contract `CalleeOk`
+of the machine's call hook (and, for a function with a `try_call`, `CalleeTryOk`: the exception
+payload registers), the external contract `XCallsOk`, and the link-time facts `hsym`/`hslot`. -/
 theorem backend_correct_final {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}
     {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb)
@@ -73,6 +86,9 @@ theorem backend_correct_final {p : Clif.Program} {f : Clif.Function} {k : Nat} {
     (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
     -- the callee contract of the machine's call hook (AAPCS64)
     (hC : ∀ s, CalleeOk
+      (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
+    -- the callee contract of the call of a `try_call` (only for a function with one)
+    (hCT : (∃ B ∈ f.blocks, B.term.isTry = true) → ∀ s, CalleeTryOk
       (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
     -- the external contract (callees of `f`, linker)
     (hX : ∀ s, XCallsOk env (f.externs.map (·.2)) (fun sl cm w =>
@@ -91,7 +107,8 @@ theorem backend_correct_final {p : Clif.Program} {f : Clif.Function} {k : Nat} {
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ArmRefines fb base ra (ArmStepX X H fa) s (Clif.runLoop env p fuel cs) :=
   backend_correct_m4 (ctx := fun _ => ⟨fa.k, af.slotBase⟩) (X := fun _ => X) hsub hc
-    (regLevelCorrect_backend hc.check hc.alloc hc.emit hc.layout hcov hC)
+    (regLevelCorrect_backend hc.check hc.alloc hc.emit hc.layout hcov hC
+      fun h => hCT (hasTry_of_hasTryCall hc h))
     (refines_final vcp rf af fa X) hX
     (fun _ => memRefines_csem _ _ X hslot hsym)
     hent hres hbe hargs hcs hrel htr fuel

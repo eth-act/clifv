@@ -60,10 +60,10 @@ def diagnose (f : Clif.Function) (vc : VCode) : String :=
   match buildCtx f with
   | .error e => s!"buildCtx: {e}"
   | .ok (ctx, _, st0) =>
-    match lowBlocks f (stmtCall ctx) (termCallF ctx) 0 f.blocks st0 f.blocks.length with
+    match lowBlocks f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0 f.blocks.length with
     | none => "lowBlocks"
     | some bl =>
-      let gn := gnOf st0.nextVreg (aliasOf f bl)
+      let gn := gnAt (gnTable st0.nextVreg (aliasOf f bl))
       let In := inFix f ctx gn
       let parts : List (String × Bool) := [
         ("ctxOk", ctxOk f ctx),
@@ -77,10 +77,9 @@ def diagnose (f : Clif.Function) (vc : VCode) : String :=
           match f.blocks[bi]?, bl[bi]? with
           | some B, some L => blockOk f vc ctx st0 (renOf gn) gn bl bi B L
           | _, _ => false)) ++
-        [("cert.entry", certOk f ctx st0 gn [] In || true)] ++
         ((List.range f.blocks.length).map fun bi => (s!"cert block {bi}",
           match f.blocks[bi]?, bl[bi]? with
-          | some B, some L => certBlockOk f ctx st0 gn In bi B L
+          | some B, some L => certBlockOk f ctx st0 gn f.blocks.toArray bl.toArray In bi B L
           | _, _ => true)) ++
         [("cert", certOk f ctx st0 gn bl In)]
       String.intercalate ", " ((parts.filter (!·.2)).map (·.1))
@@ -90,16 +89,18 @@ def detail (f : Clif.Function) (vc : VCode) : String :=
   match buildCtx f with
   | .error _ => ""
   | .ok (ctx, _, st0) =>
-    match lowBlocks f (stmtCall ctx) (termCallF ctx) 0 f.blocks st0 f.blocks.length with
+    match lowBlocks f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0 f.blocks.length with
     | none => ""
     | some bl =>
-      let gn := gnOf st0.nextVreg (aliasOf f bl)
+      let gn := gnAt (gnTable st0.nextVreg (aliasOf f bl))
       let R := renOf gn
       let In := inFix f ctx gn
       String.intercalate "\n" <| (List.range f.blocks.length).filterMap fun bi =>
         match f.blocks[bi]?, bl[bi]?, vc.blocks[bi]? with
         | some B, some L, some vb =>
-          let A := availOf f In bi
+          let a := Avail.of B L In bi
+          let n := B.body.length
+          let A (j : Nat) : List Clif.ValueId := (a.ent ++ B.body.flatMap (·.results)).filter (a.mem ctx j)
           let sh : List (String × Bool) := [
             ("stmts", (List.range B.body.length).all (fun j => match B.body[j]?, L.sl[j]? with
               | some stm, some sl => stmtOk ctx st0 gn (L.start + j) stm sl | _, _ => false)),
@@ -108,23 +109,24 @@ def detail (f : Clif.Function) (vc : VCode) : String :=
             ("bargs", decide (vb.branchArgs = (match B.term with
               | .jump bc => (bc.args.map fun a => R (.vreg a .int)).toArray | _ => #[]))),
             ("succ", succOk f vc R B L),
-            ("csmall", (A B.body.length).all (fun x => decide (x < st0.nextVreg))),
-            ("cclosed", (List.range (B.body.length + 1)).all (fun j => closedOk ctx (A j))),
-            ("cstmts", (List.range B.body.length).all (fun j => match B.body[j]?, L.sl[j]? with
-              | some stm, some sl =>
-                (instArgs stm.inst).all (fun y => decide (y ∈ A j)) &&
-                stm.results.all (fun r => decide (r ∉ A j) && decide (ctx.defInst? r = some (L.start + j))) &&
-                decide stm.results.Nodup &&
-                (A (j + 1)).all (fun x => decide (x ∈ A j) || decide (x ∈ stm.results)) &&
-                (A j).all (fun x => !(decide (sl.st.nextVreg ≤ gn x) && decide (gn x < sl.st'.nextVreg)))
-              | _, _ => false)),
-            ("targs", (termArgs (abiTerm f B.term)).all (fun y => decide (y ∈ A B.body.length))),
-            ("tclob", (A B.body.length).all (fun x => !(decide (L.tst.nextVreg ≤ gn x) && decide (gn x < L.tst'.nextVreg)))),
-            ("edges", (dests B.term).all (fun bc => decide (blockIdx? f bc.block ≠ some 0) &&
-              edgeOk f ctx gn In (A B.body.length) bc))]
+            ("cdefs", (List.range n).all fun k => match B.body[k]? with
+              | some stm => stm.results.all fun r => decide (ctx.defInst? r = some (L.start + k))
+              | none => true),
+            ("csmall", (A n).all (fun x => decide (x < st0.nextVreg))),
+            ("cclosed", (A n).all (fun x => (defArgs ctx x).all fun y =>
+              a.mem ctx n y && decide (a.first ctx y ≤ a.first ctx x))),
+            ("cargs", (List.range n).all (fun j => match B.body[j]? with
+              | some stm => (instArgs stm.inst).all (a.mem ctx j) | none => true)),
+            ("cclob", (List.range n).all (fun j => match L.sl[j]? with
+              | some sl => (A j).all fun x => !(decide (sl.st.nextVreg ≤ gn x) && decide (gn x < sl.st'.nextVreg))
+              | none => true)),
+            ("targs", (termArgs (abiTerm f B.term)).all (a.mem ctx n)),
+            ("tclob", (A n).all (fun x => !(decide (L.tst.nextVreg ≤ gn x) && decide (gn x < L.tst'.nextVreg)))),
+            ("edges", (edgeIds B.term).all (fun b => decide (blockIdx? f b ≠ some 0) &&
+              edgeOk f ctx gn f.blocks.toArray bl.toArray In a n b))]
           let bad := (sh.filter (!·.2)).map (·.1)
           if bad.isEmpty then none else
-          some s!"  block {bi}: {bad}; A0={A 0} Aend={A B.body.length} params={B.params.map (·.1)} term={repr B.term}; In={In.getD bi []}"
+          some s!"  block {bi}: {bad}; A0={A 0} Aend={A n} params={B.params.map (·.1)} term={repr B.term}; In={In.getD bi []}"
         | _, _, _ => none
 
 def main (args : List String) : IO UInt32 := do
@@ -153,8 +155,13 @@ def main (args : List String) : IO UInt32 := do
       let .ok f := p.func | continue
       -- legalised functions outside `E2E.backend_correct_legal`
       if (lg.unverified.lookup p.name).isSome ||
-          (optCfg.isSome && lg.accepted.contains p.name) then
+          (optCfg.isSome && lg.accepted.contains p.name) ||
+          (lg.accepted.contains p.name && Backend.hasTryCall f) then
         legalOut := legalOut + 1
+        continue
+      -- `backend_correct_opt_proven` covers functions without `try_call` only
+      if optCfg.isSome && Backend.hasTryCall f then
+        skipped := skipped + 1
         continue
       let t0 ← IO.monoMsNow
       let .ok vc ← IO.lazyPure (fun _ => lowerFunction f) | continue
@@ -202,8 +209,8 @@ def main (args : List String) : IO UInt32 := do
         bad := bad + 1
         IO.println s!"{file}: %{f.name}: lowerCheck rejects ({diagnose f vc})"
         IO.println (detail f vc)
-  IO.println s!"lowerCheck: {ok} accepted, {bad} rejected, {skipped} out of scope (stack parameters, stack call arguments, special-purpose parameters other than one sret, or outside clif-subset-v2 E)"
-  IO.println s!"legalised i128 functions: {legal} in scope (Opt.Legal.check accepts; counted above), {legalOut} out of scope (validator rejects, extern named like a function of the file, or --opt)"
+  IO.println s!"lowerCheck: {ok} accepted, {bad} rejected, {skipped} out of scope (stack parameters, stack call arguments, special-purpose parameters other than one sret, outside clif-subset-v2 E, or a try_call under --opt)"
+  IO.println s!"legalised i128 functions: {legal} in scope (Opt.Legal.check accepts; counted above), {legalOut} out of scope (validator rejects, extern named like a function of the file, a try_call, or --opt)"
   IO.println s!"prepCheck: {pok} accepted, {pbad} rejected"
   IO.println s!"formsCoveredB: {cov} covered, {uncov} not covered"
   for (k, n) in forms.toList.mergeSort (fun a b => a.2 ≥ b.2) do

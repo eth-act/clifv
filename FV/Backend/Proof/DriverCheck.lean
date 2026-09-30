@@ -1,5 +1,7 @@
 import FV.Backend.Isel
 import FV.Compile.Subset
+import Std.Data.HashMap.Basic
+import Std.Data.HashSet.Basic
 
 /-!
 # The lowering validator (M7): `lowerCheck f vc`
@@ -15,16 +17,22 @@ The validator does not trust `lowerFunction`'s loops. It
    (`lowBlocks`: per block, `lower` on every statement from the previous state with nothing
    emitted, then `lower`/`lower_branch` on the terminator in the terminator context, with the
    same edge-block labels), recording every call's states and results;
-2. computes the alias resolution `gn` from the recorded result registers (`gnOf`) and the
-   class-preserving renaming `R = renOf gn`;
+2. computes the alias resolution `gn` from the recorded result registers (`gnTable`, a table
+   of the CLIF values' resolved vregs) and the class-preserving renaming `R = renOf gn`;
 3. computes the available values `A` by a must-dataflow (`inFix`, `availOf`: a value is
-   available at a block entry if it is available at the end of every predecessor);
+   available at a block entry if it is available at the end of every predecessor; an untrusted
+   worklist computation, whose result the certificate check validates);
 4. checks, with `decide`/`all` over finite data, every field of `LowerShape` and `Cert` that is
    not true by construction: the context invariants (`CtxInv`), the VCode blocks are exactly
    the renamed recorded code (`vb.insts = pre ++ segments ++ terminator segment`), labels,
    parameters, branch arguments, edge blocks, and the local certificate conditions (operands
    available, results fresh and uniquely defined, no available value's register written by a
    statement's lowering, closure under definitions, edges, types).
+
+The certificate check is near-linear: membership in `availOf f In bi j` is decided in constant
+time (`Avail.mem`: hash sets of the entry values, a value's defining statement from
+`ctx.defInst?`), and a condition on every value available before some statement of a block is
+checked once per value, at the first such statement (`certBlockOk`).
 
 This file is executable only (imports `FV.Backend.Isel`), so the compiler can run it.
 -/
@@ -44,6 +52,16 @@ structure SLow where
   rss : List (List Reg)
   st' : LState
 
+/-- What a `try_call` terminator's lowering records: its `try_call_info`, the exception table's
+signature and item kinds (`exnTableOpnd`), the return/payload vregs (`tryRegsOf`, allocated
+from the terminator's state) and the state after allocating them (the rule's start state). -/
+structure TryLow where
+  info : TryInfo
+  sig : Clif.Signature
+  items : List (Option Nat)
+  regs : List Reg × List Reg
+  st1 : LState
+
 /-- One block's lowering. -/
 structure BLow where
   /-- index of the block's first statement in `ctx.insts` -/
@@ -54,6 +72,8 @@ structure BLow where
   targets : List Label
   tst : LState
   tst' : LState
+  /-- a `try_call` terminator's recorded lowering (`none` for the others) -/
+  tl : Option TryLow
 
 /-- `lowerFunction`'s `mov` for a result the rules returned in a real register. -/
 def extraOf (results : List Nat) (rss : List (List Reg)) : List MInst :=
@@ -68,6 +88,18 @@ def dests : Clif.Terminator → List Clif.BlockCall
   | .brif _ t e => [t, e]
   | .brTable _ d tbl => d :: tbl
   | _ => []
+
+/-- The successor block ids of a terminator (a `try_call`'s: the handlers, then the normal
+return). -/
+def succIds : Clif.Terminator → List Clif.BlockId
+  | .tryCall _ _ et | .tryCallIndirect _ _ et => et.dests.map (·.block)
+  | t => (dests t).map (·.block)
+
+/-- `lowerFunction`'s replacement of the call a `try_call` rule emits last by the `tryCall`
+terminator (`tryFix`). -/
+def fixTry : Option TryLow → List MInst → List MInst
+  | some T, ms => tryFix T.info ms
+  | none, ms => ms
 
 /-- The context `lowerFunction` lowers a terminator in (its data filled in). -/
 def termCtx (ctx : Ctx) (ti : Nat) (data : V) : Ctx :=
@@ -127,7 +159,7 @@ def pre (bi : Nat) : List MInst :=
 /-- The terminator's segment. -/
 def tseg (bi : Nat) : List MInst :=
   match bl[bi]? with
-  | some L => L.tst'.emitted.toList.map (·.mapRegs R)
+  | some L => (fixTry L.tl L.tst'.emitted.toList).map (·.mapRegs R)
   | none => []
 
 /-- Index in block `bi` where statement `j`'s segment starts. -/
@@ -156,6 +188,20 @@ def stmtCall (ctx : Ctx) : StmtCall := fun ii s => runTerm ctx "lower" [.inst ii
 /-- The driver's terminator call in context `ctx`. -/
 def termCallF (ctx : Ctx) : TermCallF := fun ti data t targets s =>
   runTerm (termCtx ctx ti data) (termCall t ti targets).1 (termCall t ti targets).2 s
+
+/-- An ISLE call of the driver on a `try_call` terminator (slot `ti`, data, return/payload
+vregs, targets). -/
+abbrev TryCallF := Nat → V → List Reg × List Reg → List Label → LState →
+  Except String (Option V × LState × List Isle.RuleId)
+
+/-- The context `lowerFunction` lowers a `try_call` in: its data filled in, its return and
+payload vregs (`gen_try_call_rets`). -/
+def tryCtx (ctx : Ctx) (ti : Nat) (data : V) (trs : List Reg × List Reg) : Ctx :=
+  { termCtx ctx ti data with tryRegs := trs }
+
+/-- The driver's `try_call` call in context `ctx`. -/
+def tryCallF (ctx : Ctx) : TryCallF := fun ti data trs targets s =>
+  runTerm (tryCtx ctx ti data trs) "lower_branch" [.inst ti, .labels targets] s
 
 /-- `lower` on the statements `ss` (instructions `ii, ii+1, …`), each from the previous state
 with nothing emitted (`lowerFunction`'s body loop). -/
@@ -189,30 +235,57 @@ def targetsOf (f : Clif.Function) (t : Clif.Terminator) (nl : Nat) : Option (Lis
   | .jump bc => (blockIdx? f bc.block).map fun tl => ([tl], nl)
   | t => edgeTargets f (dests t) nl
 
+/-- `lowerFunction`'s successor labels of a `try_call`: an edge block for every successor
+(labels from `nl`, in order). -/
+def tryTargets (f : Clif.Function) (ds : List Clif.TryDest) (nl : Nat) : Option (List Label × Nat) :=
+  if ds.all (fun d => (blockIdx? f d.block).isSome) then
+    some ((List.range ds.length).map (nl + ·), nl + ds.length)
+  else none
+
+/-- The lowering of a terminator `t` at slot `ti` from state `tst` (next edge label `nl`), as
+`lowerFunction` makes it: its data, successor labels, `try_call` record, final state and next
+edge label. -/
+def lowTerm (f : Clif.Function) (tcall : TermCallF) (ycall : TryCallF) (ti : Nat)
+    (t : Clif.Terminator) (tst : LState) (nl : Nat) :
+    Option (V × List Label × Option TryLow × LState × Nat) :=
+  match t with
+  | .tryCall _ _ et =>
+    match tryCallData f t, exnTableOpnd f et, tryTargets f et.dests nl with
+    | .ok data, .ok (sig, items), some (targets, nl') =>
+      match tryRegsOf sig tst with
+      | some (trs, st1) =>
+        match tryInfoOf sig items targets with
+        | some info =>
+          match ycall ti data trs targets { st1 with emitted := #[] } with
+          | .ok (some _, tst', _) => some (data, targets, some ⟨info, sig, items, trs, st1⟩, tst', nl')
+          | _ => none
+        | none => none
+      | none => none
+    | _, _, _ => none
+  | t =>
+    match termData (abiTerm f t), targetsOf f t nl with
+    | .ok data, some (targets, nl') =>
+      match tcall ti data t targets tst with
+      | .ok (some _, tst', _) => some (data, targets, none, tst', nl')
+      | _ => none
+    | _, _ => none
+
 /-- The lowering of the blocks `Bs` (first instruction index `start`, state `st`, next edge
 label `nl`), as `lowerFunction` makes it. -/
-def lowBlocks (f : Clif.Function) (call : StmtCall) (tcall : TermCallF) :
+def lowBlocks (f : Clif.Function) (call : StmtCall) (tcall : TermCallF) (ycall : TryCallF) :
     Nat → List Clif.Block → LState → Nat → Option (List BLow)
   | _, [], _, _ => some []
   | start, B :: Bs, st, nl =>
     match lowStmts call start B.body st with
     | none => none
     | some (sls, stE) =>
-      match termData (abiTerm f B.term) with
-      | .error _ => none
-      | .ok data =>
-        match targetsOf f B.term nl with
-        | none => none
-        | some (targets, nl') =>
-          let ti := start + B.body.length
-          let tst : LState := { stE with emitted := #[] }
-          match tcall ti data B.term targets tst with
-          | .ok (out, tst', _) =>
-            if out.isSome then
-              (lowBlocks f call tcall (ti + 1) Bs { tst' with emitted := #[] } nl').map
-                (⟨start, sls, data, targets, tst, tst'⟩ :: ·)
-            else none
-          | .error _ => none
+      let ti := start + B.body.length
+      let tst : LState := { stE with emitted := #[] }
+      match lowTerm f tcall ycall ti B.term tst nl with
+      | some (data, targets, tl, tst', nl') =>
+        (lowBlocks f call tcall ycall (ti + 1) Bs { tst' with emitted := #[] } nl').map
+          (⟨start, sls, data, targets, tst, tst', tl⟩ :: ·)
+      | none => none
 
 /-! ## Alias resolution -/
 
@@ -223,16 +296,26 @@ def aliasOf (f : Clif.Function) (bl : List BLow) : List (Nat × Nat) :=
       | [.vreg out _] => some (r, out)
       | _ => none
 
+/-- The aliases as a hash map (the first entry of a key wins, as `List.lookup`). -/
+def aliasMap (al : List (Nat × Nat)) : Std.HashMap Nat Nat :=
+  al.foldr (fun (r, o) m => m.insert r o) {}
+
 /-- Follow the alias chain of `n` (at most `k` steps). -/
-def chase (al : List (Nat × Nat)) : Nat → Nat → Nat
+def chase (m : Std.HashMap Nat Nat) : Nat → Nat → Nat
   | 0, n => n
-  | k + 1, n => match al.lookup n with
-    | some m => chase al k m
+  | k + 1, n => match m[n]? with
+    | some o => chase m k o
     | none => n
 
-/-- The resolved vreg number of `n`: temporaries (`≥ lo`) are never aliased. -/
-def gnOf (lo : Nat) (al : List (Nat × Nat)) (n : Nat) : Nat :=
-  if n < lo then chase al (al.length + 1) n else n
+/-- The resolved vreg numbers of the CLIF values `0, …, lo - 1` (each alias chain followed at
+most `al.length + 1` steps). -/
+def gnTable (lo : Nat) (al : List (Nat × Nat)) : Array Nat :=
+  let m := aliasMap al
+  Array.ofFn (n := lo) fun i => chase m (al.length + 1) i
+
+/-- The resolved vreg number of `n` (from `gnTable`): temporaries (beyond the table) are never
+aliased. -/
+def gnAt (t : Array Nat) (n : Nat) : Nat := if h : n < t.size then t[n] else n
 
 /-- The class-preserving renaming of `gn`. -/
 def renOf (gn : Nat → Nat) : Reg → Reg
@@ -250,32 +333,14 @@ def defsFrom (B : Clif.Block) (j : Nat) : List Clif.ValueId := (B.body.drop j).f
 /-- The values available before statement `j` of block `bi`, given the values `In` available
 at block entries: parameters, entry values and earlier results, minus the block's own later
 results. -/
-def availOf (f : Clif.Function) (In : List (List Clif.ValueId)) (bi j : Nat) : List Clif.ValueId :=
+def availOf (f : Clif.Function) (In : Array (List Clif.ValueId)) (bi j : Nat) : List Clif.ValueId :=
   match f.blocks[bi]? with
   | some B => (B.params.map (·.1) ++ In.getD bi [] ++ defsBefore B j).filter
       fun x => decide (x ∉ defsFrom B j)
   | none => []
 
-/-- All values of `f` (parameters and results). -/
-def allVals (f : Clif.Function) : List Clif.ValueId :=
-  f.blocks.flatMap fun B => B.params.map (·.1) ++ B.body.flatMap (·.results)
-
-/-- The blocks with an edge to block `tl`. -/
-def predsOf (f : Clif.Function) (tl : Nat) : List Nat :=
-  (List.range f.blocks.length).filter fun bi => match f.blocks[bi]? with
-    | some B => (dests B.term).any fun bc => blockIdx? f bc.block == some tl
-    | none => false
-
-/-- The candidates for block `tl`'s entry values (not a parameter, not renamed onto one). -/
-def entryCand (f : Clif.Function) (gn : Nat → Nat) (tl : Nat) : List Clif.ValueId :=
-  if tl = 0 then [] else
-  match f.blocks[tl]? with
-  | some TB => (allVals f).filter fun x =>
-      decide (x ∉ TB.params.map (·.1)) && decide (gn x ∉ TB.params.map (·.1))
-  | none => []
-
 /-- The operands of the instruction defining `x` (`[]` for a value without one, such as a block
-parameter): what `closedOk` requires to be available along with `x`. -/
+parameter): what the closure condition of `Cert` requires to be available along with `x`. -/
 def defArgs (ctx : Ctx) (x : Clif.ValueId) : List Clif.ValueId :=
   match ctx.defInst? x with
   | some d => match ctx.insts[d]? with
@@ -285,42 +350,76 @@ def defArgs (ctx : Ctx) (x : Clif.ValueId) : List Clif.ValueId :=
     | none => []
   | none => []
 
-/-- One round of the must-dataflow (the values available at every block end computed once).
-A value stays available at a block entry only if the operands of its definition are available
-there too (the closure condition of `Cert`, `closedOk`). On blocks reachable from the entry
-this never removes anything the certificate could use; it matters for unreachable blocks,
-whose entry would otherwise keep every value (no predecessor constrains them), including
-values computed from the block's own results (e.g. cg_clif's dead cleanup blocks). -/
-def inStep (f : Clif.Function) (ctx : Ctx) (gn : Nat → Nat) (In : List (List Clif.ValueId)) :
-    List (List Clif.ValueId) :=
-  let outs : Array (List Clif.ValueId) := ((List.range f.blocks.length).map fun bi =>
-    match f.blocks[bi]? with
-    | some B => availOf f In bi B.body.length
-    | none => []).toArray
-  (List.range f.blocks.length).map fun tl =>
-    let A0 := availOf f In tl 0
-    (entryCand f gn tl).filter fun x => (predsOf f tl).all (fun bi =>
-      decide (x ∈ outs.getD bi [])) && (defArgs ctx x).all fun y => decide (y ∈ A0)
-
-/-- Iterate to a fixpoint (at most `fuel` rounds). -/
-def inIter (f : Clif.Function) (ctx : Ctx) (gn : Nat → Nat) : Nat → List (List Clif.ValueId) →
-    List (List Clif.ValueId)
-  | 0, In => In
-  | k + 1, In =>
-    let In' := inStep f ctx gn In
-    if In' == In then In else inIter f ctx gn k In'
-
-/-- The values available at the block entries (from "everything", descending: every round
-removes values, so the rounds are bounded by the number of (block, value) pairs). -/
-def inFix (f : Clif.Function) (ctx : Ctx) (gn : Nat → Nat) : List (List Clif.ValueId) :=
-  inIter f ctx gn (f.blocks.length * ((allVals f).length + 1) + 2)
-    ((List.range f.blocks.length).map (entryCand f gn))
+/-- The values available at the block entries: the greatest solution, below the candidates
+(the values of `f` that are not a parameter of the block and not renamed onto one; nothing at
+the entry block), of the must-dataflow — a value is available at a block entry if it is available at the end of every
+predecessor (a `try_call`'s edges to its handlers included) and so are the operands of its
+definition (the closure condition of `Cert`; on unreachable blocks, whose entry no predecessor
+constrains, it removes the values computed from the block's own results, e.g. cg_clif's dead
+cleanup blocks). Computed by a worklist over (block, value) pairs, each removed at most once.
+Untrusted: `certOk` checks the certificate it induces. -/
+def inFix (f : Clif.Function) (ctx : Ctx) (gn : Nat → Nat) : Array (List Clif.ValueId) := Id.run do
+  let fb := f.blocks.toArray
+  let nb := fb.size
+  let nv := ctx.valDef.size
+  -- block index of a block id (the first block with that id, as `blockIdx?`)
+  let bim : Std.HashMap Clif.BlockId Nat :=
+    fb.zipIdx.foldl (fun m (B, i) => m.insertIfNew B.id i) {}
+  let succs : Array (List Nat) := fb.map fun B => (succIds B.term).filterMap (bim[·]?)
+  let preds : Array (List Nat) := succs.zipIdx.foldl
+    (fun ps (ss, bi) => ss.foldl (fun ps s => ps.modify s (bi :: ·)) ps) (Array.replicate nb [])
+  let pars : Array (Std.HashSet Nat) := fb.map fun B => Std.HashSet.ofList (B.params.map (·.1))
+  let defs : Array (Std.HashSet Nat) :=
+    fb.map fun B => Std.HashSet.ofList (B.body.flatMap (·.results))
+  -- the values of `f` (parameters and results)
+  let isVal : Array Bool := fb.foldl (fun a B =>
+    let a := B.params.foldl (fun a p => a.setIfInBounds p.1 true) a
+    B.body.foldl (fun a s => s.results.foldl (fun a r => a.setIfInBounds r true) a) a)
+    (Array.replicate nv false)
+  -- users[y]: the values whose definition reads `y`
+  let users : Array (List Nat) := (List.range nv).foldl (fun us z =>
+    (defArgs ctx z).foldl (fun us y => us.modify y (z :: ·)) us) (Array.replicate nv [])
+  -- `inB[tl * nv + x]`: `x` is (still) available at the entry of block `tl`
+  let mut inB : ByteArray := ByteArray.mk (Array.replicate (nb * nv) 0)
+  for tl in [1:nb] do
+    let P := pars[tl]!
+    for x in [0:nv] do
+      if isVal[x]! && !P.contains x && !P.contains (gn x) then
+        inB := inB.set! (tl * nv + x) 1
+  let has (inB : ByteArray) (tl x : Nat) : Bool := x < nv && inB.get! (tl * nv + x) != 0
+  -- the pairs violating a constraint in the start state
+  let mut work : List (Nat × Nat) := []
+  for tl in [1:nb] do
+    for x in [0:nv] do
+      if has inB tl x then
+        let outOk := preds[tl]!.all fun p =>
+          pars[p]!.contains x || defs[p]!.contains x || has inB p x
+        let a0Ok := (defArgs ctx x).all fun y =>
+          (pars[tl]!.contains y || has inB tl y) && !defs[tl]!.contains y
+        if !(outOk && a0Ok) then work := (tl, x) :: work
+  -- remove them; a removed value that is neither a parameter nor a result of block `tl` leaves
+  -- the end of `tl` (so the entries of its successors) and `tl`'s entry (so its users there)
+  while true do
+    match work with
+    | [] => break
+    | (tl, x) :: rest =>
+      work := rest
+      if has inB tl x then
+        inB := inB.set! (tl * nv + x) 0
+        if !pars[tl]!.contains x && !defs[tl]!.contains x then
+          for s in succs[tl]! do
+            if has inB s x then work := (s, x) :: work
+          for z in users[x]! do
+            if has inB tl z then work := (tl, z) :: work
+  return (Array.range nb).map fun tl => (List.range nv).filter (has inB tl)
 
 /-! ## The checks -/
 
-/-- The result-type check of one instruction (`ctxOk`). -/
+/-- The result-type check of one instruction (`ctxOk`). Signature declarations are not
+consulted (`CtxInv.resTys`): only `call_indirect` needs them, which `InSubset` excludes; they
+exist in verified functions for `try_call`'s exception tables. -/
 def ctxResTysOk (f : Clif.Function) (info : IInfo) (i : Clif.Inst) : Bool :=
-  match i.resultTypes (fun r => (f.extern? r).map (·.sig)) (f.sigDecls.lookup ·) with
+  match i.resultTypes (fun r => (f.extern? r).map (·.sig)) (fun _ => none) with
   | some tys => decide (info.resTys = tys.map CTy.ofClif) &&
       decide (info.results.length = tys.length)
   | none => false
@@ -363,12 +462,27 @@ def ctxOk (f : Clif.Function) (ctx : Ctx) : Bool :=
     | some (.load _ _ _ x _) | some (.store _ _ _ _ x _) => decide (ctx.valueType? x = some (.int 64))
     | _ => true)
 
-/-- The successor facts of `LowerShape` for block `B` (lowering `L`). -/
+/-- The successor facts of `LowerShape` for block `B` (lowering `L`). For a `try_call`: an edge
+block per successor, and the normal return's (the last) holds the `jump` with the return's
+arguments (`normArgReg`; the landing pads are not checked: the theorem covers the normal
+return only). -/
 def succOk (f : Clif.Function) (vc : VCode) (R : Reg → Reg) (B : Clif.Block) (L : BLow) : Bool :=
   match B.term with
   | .jump bc => match blockIdx? f bc.block with
     | some tl => decide (L.targets = [tl])
     | none => false
+  | .tryCall _ _ et => decide (L.targets.length = et.dests.length) &&
+    match blockIdx? f et.normal.block, L.targets.getLast?, L.tl with
+    | some tl, some tlab, some T => match vc.blocks[tlab]? with
+      | some eb => decide (eb.insts = #[.jump tl]) && decide (eb.params = #[]) &&
+          decide (eb.branchArgs = (et.normal.args.map (normArgReg R T.regs.1)).toArray) &&
+          -- the normal return passes values and results only
+          et.normal.args.all fun
+            | .val _ => true
+            | .ret i => decide (i < T.sig.returns.length)
+            | .exn _ => false
+      | none => false
+    | _, _, _ => false
   | t => decide (L.targets.length = (dests t).length) &&
     ((dests t).zip L.targets).all fun (bc, tlab) => match blockIdx? f bc.block with
       | none => false
@@ -423,73 +537,125 @@ def shapeOk (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) (gn : Na
   (List.range vc.blocks.size).all (fun l => match vc.blocks[l]? with
     | some vb => decide (vb.label = l)
     | none => true) &&
-  (List.range f.blocks.length).all fun bi => match f.blocks[bi]?, bl[bi]? with
+  ((List.range f.blocks.length).all fun bi => match f.blocks[bi]?, bl[bi]? with
     | some B, some L => blockOk f vc ctx st0 (renOf gn) gn bl bi B L
-    | _, _ => false
-
-/-- The closure condition: a tracked value's definition has tracked operands (for every
-definition, which implies `Cert.closed` for the pure ones). -/
-def closedOk (ctx : Ctx) (A : List Clif.ValueId) : Bool :=
-  A.all fun x => match ctx.defInst? x with
-    | some d => match ctx.insts[d]? with
-      | some info => match info.clif with
-        | some cl => (instArgs cl).all fun y => decide (y ∈ A)
-        | none => true
-      | none => true
-    | none => true
-
-/-- The edge condition of `Cert.term` for an edge from block `bi` (values `Aend` at its end) to
-the target of `bc`. -/
-def edgeOk (f : Clif.Function) (ctx : Ctx) (gn : Nat → Nat) (In : List (List Clif.ValueId))
-    (Aend : List Clif.ValueId) (bc : Clif.BlockCall) : Bool :=
-  match blockIdx? f bc.block with
-  | none => true
-  | some tl => match f.blocks[tl]? with
-    | none => true
-    | some TB =>
-      decide ((TB.params.map (·.1)).Nodup) &&
-      (availOf f In tl 0).all (fun x => decide (x ∈ TB.params.map (·.1)) ||
-        match ctx.defInst? x with
-        | some d => match ctx.insts[d]? with
-          | some info => match info.clif with
-            | some cl => (instArgs cl).all fun y => decide (y ∉ TB.params.map (·.1))
-            | none => true
-          | none => true
-        | none => true) &&
-      (availOf f In tl 0).all fun x =>
-        (decide (x ∈ TB.params.map (·.1)) && decide (ctx.defInst? x = none)) ||
-        (decide (x ∉ TB.params.map (·.1)) && decide (x ∈ Aend) &&
-          decide (gn x ∉ TB.params.map (·.1)))
-
-/-- The per-block conditions of `Cert` (statements, terminator, edges, closure). -/
-def certBlockOk (f : Clif.Function) (ctx : Ctx) (st0 : LState) (gn : Nat → Nat)
-    (In : List (List Clif.ValueId)) (bi : Nat) (B : Clif.Block) (L : BLow) : Bool :=
-  let A := availOf f In bi
-  (A B.body.length).all (fun x => decide (x < st0.nextVreg)) &&
-  (List.range (B.body.length + 1)).all (fun j => closedOk ctx (A j)) &&
-  (List.range B.body.length).all (fun j => match B.body[j]?, L.sl[j]? with
-    | some stm, some sl =>
-      (instArgs stm.inst).all (fun y => decide (y ∈ A j)) &&
-      stm.results.all (fun r => decide (r ∉ A j) && decide (ctx.defInst? r = some (L.start + j))) &&
-      decide stm.results.Nodup &&
-      (A (j + 1)).all (fun x => decide (x ∈ A j) || decide (x ∈ stm.results)) &&
-      (A j).all (fun x => !(decide (sl.st.nextVreg ≤ gn x) && decide (gn x < sl.st'.nextVreg)))
     | _, _ => false) &&
-  (termArgs (abiTerm f B.term)).all (fun y => decide (y ∈ A B.body.length)) &&
-  (A B.body.length).all (fun x => !(decide (L.tst.nextVreg ≤ gn x) && decide (gn x < L.tst'.nextVreg))) &&
-  (dests B.term).all (fun bc => decide (blockIdx? f bc.block ≠ some 0) &&
-    edgeOk f ctx gn In (A B.body.length) bc)
+  decide (st0.nextVreg ≤ f.freshValue)
+
+/-- The successors the driver simulation enters: a branch's, and a `try_call`'s normal return
+(`Clif.run` never takes an exception edge). -/
+def edgeIds : Clif.Terminator → List Clif.BlockId
+  | .tryCall _ _ et => [et.normal.block]
+  | t => (dests t).map (·.block)
+
+/-- Membership in the values available in a block (`availOf f In bi`, `mem_avail`): the block's
+first instruction index, its statements, and its parameters and entry values. -/
+structure Avail where
+  start : Nat
+  body : Array Clif.Stmt
+  ent : List Clif.ValueId
+  entS : Std.HashSet Clif.ValueId
+
+/-- The `Avail` of block `bi` (`B`, lowered as `L`). -/
+def Avail.of (B : Clif.Block) (L : BLow) (In : Array (List Clif.ValueId)) (bi : Nat) : Avail :=
+  let ent := B.params.map (·.1) ++ In.getD bi []
+  { start := L.start, body := B.body.toArray, ent, entS := Std.HashSet.ofList ent }
+
+/-- The statement of the block defining `x` (found from `ctx.defInst? x`; exact when every
+statement's results are defined by its instruction, `DefsAt`). -/
+def Avail.dpos (ctx : Ctx) (a : Avail) (x : Clif.ValueId) : Option Nat :=
+  match ctx.defInst? x with
+  | some d =>
+    if a.start ≤ d then
+      match a.body[d - a.start]? with
+      | some stm => if x ∈ stm.results then some (d - a.start) else none
+      | none => none
+    else none
+  | none => none
+
+/-- `x` is available before statement `j`. -/
+def Avail.mem (ctx : Ctx) (a : Avail) (j : Nat) (x : Clif.ValueId) : Bool :=
+  match a.dpos ctx x with
+  | some k => decide (k < j)
+  | none => a.entS.contains x
+
+/-- The first statement before which `x` is available (`0`: from the entry). -/
+def Avail.first (ctx : Ctx) (a : Avail) (x : Clif.ValueId) : Nat :=
+  match a.dpos ctx x with
+  | some k => k + 1
+  | none => 0
+
+/-- The edge condition of `Cert.term` for an edge from a block (values `a`, `n` statements) to
+block `b`. -/
+def edgeOk (f : Clif.Function) (ctx : Ctx) (gn : Nat → Nat) (fb : Array Clif.Block)
+    (bla : Array BLow) (In : Array (List Clif.ValueId)) (a : Avail) (n : Nat) (b : Clif.BlockId) :
+    Bool :=
+  match blockIdx? f b with
+  | none => true
+  | some tl => match fb[tl]?, bla[tl]? with
+    | none, _ => true
+    | some _, none => false
+    | some TB, some TL =>
+      let t := Avail.of TB TL In tl
+      let ps : List Clif.ValueId := TB.params.map (·.1)
+      let P := Std.HashSet.ofList ps
+      decide ps.Nodup &&
+      t.ent.all fun x => !(t.mem ctx 0 x) ||
+        ((P.contains x || (defArgs ctx x).all fun y => !P.contains y) &&
+          ((P.contains x && decide (ctx.defInst? x = none)) ||
+            (!P.contains x && a.mem ctx n x && !P.contains (gn x))))
+
+/-- The per-block conditions of `Cert` (statements, terminator, edges, closure), with the
+available values as `Avail.mem`: the statements' results are defined by their instructions
+(`DefsAt`), so a value is available from the statement after its definition in the block, or
+from the entry; the conditions on every value available before some statement are checked once
+per value, at the first such statement (for the clobber condition: the statements' fresh vreg
+ranges are increasing, so a value's resolved vreg is outside the ranges of the statements from
+that one on if it is below that statement's range or above the range of the block's last
+statement). -/
+def certBlockOk (f : Clif.Function) (ctx : Ctx) (st0 : LState) (gn : Nat → Nat)
+    (fb : Array Clif.Block) (bla : Array BLow) (In : Array (List Clif.ValueId)) (bi : Nat)
+    (B : Clif.Block) (L : BLow) : Bool :=
+  let a := Avail.of B L In bi
+  let n := B.body.length
+  let sls := L.sl.toArray
+  decide (L.sl.length = n) &&
+  (List.range n).all (fun k => match a.body[k]?, sls[k]? with
+    | some stm, some sl =>
+      stm.results.all (fun r => decide (ctx.defInst? r = some (L.start + k))) &&
+      decide stm.results.Nodup &&
+      (instArgs stm.inst).all (a.mem ctx k) &&
+      decide (sl.st.nextVreg ≤ sl.st'.nextVreg) &&
+      (match sls[k + 1]? with
+        | some sl' => decide (sl.st'.nextVreg ≤ sl'.st.nextVreg)
+        | none => true)
+    | _, _ => false) &&
+  (a.ent ++ B.body.flatMap (·.results)).all (fun x =>
+    decide (x < st0.nextVreg) &&
+    (defArgs ctx x).all (fun y => a.mem ctx n y && decide (a.first ctx y ≤ a.first ctx x)) &&
+    (match sls[a.first ctx x]?, sls[n - 1]? with
+      | some sl, some last => decide (gn x < sl.st.nextVreg) || decide (last.st'.nextVreg ≤ gn x)
+      | _, _ => true) &&
+    !(decide (L.tst.nextVreg ≤ gn x) && decide (gn x < L.tst'.nextVreg))) &&
+  (termArgs (abiTerm f B.term)).all (a.mem ctx n) &&
+  (edgeIds B.term).all (fun b => decide (blockIdx? f b ≠ some 0) &&
+    edgeOk f ctx gn fb bla In a n b)
 
 /-- `Cert f ctx st0 gn bl (availOf f In)`, decided. -/
 def certOk (f : Clif.Function) (ctx : Ctx) (st0 : LState) (gn : Nat → Nat) (bl : List BLow)
-    (In : List (List Clif.ValueId)) : Bool :=
-  (match f.blocks[0]? with
-    | some B => decide ((B.params.map (·.1)).Nodup) &&
-        (availOf f In 0 0).all fun x => decide (x ∈ B.params.map (·.1)) &&
-          decide (ctx.defInst? x = none)
-    | none => true) &&
-  (List.range f.blocks.length).all (fun bi => match f.blocks[bi]?, bl[bi]? with
-    | some B, some L => certBlockOk f ctx st0 gn In bi B L
+    (In : Array (List Clif.ValueId)) : Bool :=
+  let fb := f.blocks.toArray
+  let bla := bl.toArray
+  (match fb[0]?, bla[0]? with
+    | some B, some L =>
+      let a := Avail.of B L In 0
+      decide ((B.params.map (·.1)).Nodup) &&
+        a.ent.all fun x => !(a.mem ctx 0 x) ||
+          (decide (x ∈ B.params.map (·.1)) && decide (ctx.defInst? x = none))
+    | some _, none => false
+    | none, _ => true) &&
+  (List.range fb.size).all (fun bi => match fb[bi]?, bla[bi]? with
+    | some B, some L => certBlockOk f ctx st0 gn fb bla In bi B L
     | _, _ => true) &&
   (List.range ctx.insts.size).all (fun ii => match ctx.insts[ii]? with
     | some info => (List.range info.results.length).all fun m =>
@@ -511,18 +677,20 @@ def brIdxOk (f : Clif.Function) (ctx : Ctx) : Bool :=
 
 /-- **The lowering validator.** Accepts `vc` iff it is the lowering of `f` in the structure
 the driver proof needs, with an SSA availability certificate, and every `br_table` index has at most 32 bits.
-`f.sigDecls` must be empty: `sigN` declarations exist only for `call_indirect`, which is
-outside the end-to-end theorem (`E2E.InSubset` via `Compile.functionE`), and the context
-invariant `CtxInv` (M4) is stated with no signature declarations. -/
+Signature declarations (`sigN`, for `try_call` exception tables and `call_indirect`) are not
+consulted by the context invariant `CtxInv` (M4): `call_indirect` is outside the end-to-end
+theorem (`E2E.InSubset.noCI`). -/
 def lowerCheck (f : Clif.Function) (vc : VCode) : Bool :=
-  f.sigDecls.isEmpty &&
   match buildCtx f with
   | .error _ => false
   | .ok (ctx, _, st0) =>
-    match lowBlocks f (stmtCall ctx) (termCallF ctx) 0 f.blocks st0 f.blocks.length with
+    match lowBlocks f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
+        f.blocks.length with
     | none => false
     | some bl =>
-      let gn := gnOf st0.nextVreg (aliasOf f bl)
-      shapeOk f vc ctx st0 gn bl && certOk f ctx st0 gn bl (inFix f ctx gn) && brIdxOk f ctx
+      let gn := gnAt (gnTable st0.nextVreg (aliasOf f bl))
+      shapeOk f vc ctx st0 gn bl && certOk f ctx st0 gn bl (inFix f ctx gn) && brIdxOk f ctx &&
+        -- a `tryCall` in the VCode only for a function with a `try_call`
+        (f.blocks.any (·.term.isTry) || !vc.hasTryCall)
 
 end Backend.Proof.Driver

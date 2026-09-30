@@ -288,6 +288,7 @@ def ctlInstOk (b k : Nat) : MInst → Bool
   | .loadExtNameNear r _ _ => r.isVregInt
   | .jtSequence _ _ ridx t1 t2 => ridx.isVregInt && t1.isVregInt && t2.isVregInt
   | .rets us => us.all (·.1.isVregInt)
+  | .tryCall _ ti => !ti.clobberAll
   | _ => true
 
 /-- Control forms the register-level proof relies on (always true for `lowerFunction` +

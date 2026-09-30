@@ -1,4 +1,5 @@
 import FV.E2E.RegLevelFrame
+import FV.E2E.RegLevelTry
 import FV.Backend.Proof.RegallocCover
 import FV.Backend.Proof.RegallocCSemWorld
 
@@ -166,6 +167,7 @@ end
 
 /-- **The machine realises the allocated code** under `Q ∧ AInv`: every item case. -/
 theorem realizes_all {R : RL} (hR : R.Wf) (hC : CalleeOk R.F R.X R.H)
+    (hT : R.vc.hasTryCall = true → CalleeTryOk R.F R.X R.H)
     (hcov : FormsCovered R.ctx R.vc) :
     Realizes R.vc R.rf R.sem ckeep R.step (fun s c => Q R s c ∧ AInv c) := by
   intro s c c' ⟨hq, hA⟩ h
@@ -255,6 +257,16 @@ theorem realizes_all {R : RL} (hR : R.Wf) (hC : CalleeOk R.F R.X R.H)
       case jtSequence d ts ridx t1 t2 =>
         obtain ⟨n, c'', hm, hq'⟩ := realizes_jt hR hq hvb hi hstep
         exact fin n c'' hm hq'
+      case tryCall info ti =>
+        have hc : ctl = .goto ti.handlers.length := by
+          simp only [RL.sem, csem, Option.map_eq_some_iff, Prod.mk.injEq] at hsem
+          obtain ⟨_, -, -, -, h⟩ := hsem; exact h.symm
+        subst hc
+        cases hn with
+        | goto hk1 hsucc hitems =>
+          obtain ⟨n, c'', hm, hq'⟩ := realizes_tryCall hR hC (hT (hasTryCall_of_mem hvb hi)) hq hvb
+            hi hops hsz hsem hlen hk1 hsucc hitems rfl
+          exact fin n c'' hm hq'
 
 /-! ## The register-level theorem -/
 
@@ -313,6 +325,8 @@ theorem regLevelCorrect_backend {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : Fn
     (hemit : emitFunc k af = .ok fa) (hlayout : fa.layout = .ok fb) {X : ExtSem} {H : ArmHooks}
     (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
     (hC : ∀ s, CalleeOk
+      (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
+    (hCT : vcp.hasTryCall = true → ∀ s, CalleeTryOk
       (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H) :
     RegLevelCorrect
       (fun s => csem (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s)
@@ -330,7 +344,7 @@ theorem regLevelCorrect_backend {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : Fn
   obtain ⟨n0, hq0, hA0, hf0⟩ := q_init hR hent hbe
   obtain ⟨Rl, hSim, hinit, hkeep⟩ :=
     checkAlloc_sound R.vc R.rf R.sem ckeep hcheck (locVal R.fr (iterN R.step n0 s)) ρ₀ w₀
-  have hRz := realizes_all hR (hC s) hcov
+  have hRz := realizes_all hR (hC s) (fun h => hCT h s) hcov
   refine ⟨fun us vals w hret => ?_, fun c htr => ?_⟩
   · -- a return
     obtain ⟨b, k, ρ, w₁, vb, ops, outs, hstar, hvb, hi, hops, hvals, hsem⟩ := hret

@@ -76,10 +76,12 @@ def prepCheck (vc vcp : VCode) : Bool :=
   match vc.cfg, vcp.cfg with
   | .ok (ss, _), .ok (ss', _) =>
     decide (sigmaOf vc vcp 0 = some 0) && liveOf ss 0 &&
-    (List.range vc.blocks.size).all fun b => !liveOf ss b || match sigmaOf vc vcp b with
+    ((List.range vc.blocks.size).all fun b => !liveOf ss b || match sigmaOf vc vcp b with
       | none => false
       | some b' => keptOk vc vcp ss ss' b b' &&
-          (ss[b]?.getD #[]).all fun s => decide (s < vc.blocks.size) && liveOf ss s
+          (ss[b]?.getD #[]).all fun s => decide (s < vc.blocks.size) && liveOf ss s) &&
+    -- no `tryCall` appears (`prepare` keeps and retargets the instructions)
+    (vc.hasTryCall || !vcp.hasTryCall)
   | _, _ => false
 
 end Backend.Proof.Driver

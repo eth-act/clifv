@@ -31,6 +31,7 @@ contract `IselContract.lean`), `regalloc-proof.md` (M6), `encoder.md` (M5), `cli
 | **`RegLevelCorrect`** for the backend's code (`regLevelCorrect_backend`, `FV/E2E/RegLevelCorrect.lean`, M6Ctl3): frame addresses `frameF`, context `⟨fa.k, af.slotBase⟩`, one external semantics `X`, machine `ArmStepX X H fa`; from `FormsCovered` and `CalleeOk` | **proven** |
 | **`backend_correct_final`** (`FV/E2E/Final.lean`): `backend_correct_m4` with `hM6` discharged by `regLevelCorrect_backend` | **proven**; axioms: `propext`, `Classical.choice`, `Quot.sound` + `_native.bv_decide` certificates (M4's, M5's decoder `decode_armBits_*`/`decode_raw_inst_of_*`, `Arm.Memory.read_write_bytes_different`) |
 | **`sret`** (2026-09-30, `agent/sret-proof`): functions with a struct-return pointer parameter and calls of `sret` callees are inside `backend_correct_final` (`InSubset.abiSigs`; see "`sret`" below) | **proven**; `lean-e2e-check`: all `sret` functions in scope accepted and covered |
+| **`try_call`** (2026-09-30, `agent/trycall-proof`): functions with `try_call` of an extern are inside `backend_correct_final` **for their normal returns** (see "`try_call`" below); nothing is claimed about unwinding, landing pads or the LSDA | **proven** (`term_step_try`, `tryRulesCorrect`, `tryUnmatchable`, `realizes_tryCall`); `try_call_indirect` stays outside |
 
 ### Final hypotheses (`E2E.backend_correct_final`, 2026-09-28)
 
@@ -43,10 +44,11 @@ fp/lr pair and padding above the CLIF slots, the code words), `cx := ⟨fa.k, af
 | `InSubset p f`, `Compiled f k vc vcp rf af fa fb` | the compiler ran (pipeline + validators) |
 | `FormsCovered cx vcp` | per-function decidable premise (`formsCoveredB`, the covered straight-line forms `FormOk`, including the per-instruction bitmask check `logicImmOk`; control forms are handled by the proof); decided by `lean-e2e-check` (corpus + extrt + runtests: 913 of 913 checked functions covered, M6Refines) |
 | `∀ s, CalleeOk (FF s) X H` | callee contract of the machine's call hook `H` (AAPCS64: `OperandsSound` of every call, return to pc+4, `X.call` error-free and program-preserving) — environment |
+| `(∃ B ∈ f.blocks, B.term.isTry = true) → ∀ s, CalleeTryOk (FF s) X H` (`hCT`) | only for a function with a `try_call`: the def registers of a `try_call`'s call hold what `csem` gives them — the results, then the exception payload registers x0/x1 that are not return registers, as the callee's world `X.call` has them (see "`try_call`") — environment; vacuous for a function without `try_call` |
 | `∀ s, XCallsOk env (f.externs.map (·.2)) (Rel.holds ⟨FF s, syms, slotOff⟩ f) X` | external contract for the externs `f` declares: callees, linker symbols — environment. A call returns one value per ABI return of the declaration (`sigRets`), the first ones the extern's results (`PrefixHold`); for declarations without `sret` this is implied by the former extern-independent contract (`xCallsOk_of_results`) |
 | `∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b` (`hsym`) | linker: the external semantics' symbol addresses are the linked ones — environment; with `hslot` it discharges the former `MemRefines` hypothesis (`memRefines_csem`, M6MemRef) |
 | `af.slotBase = slotOff` (`hslot`) | the relation's slot-region offset is the frame's slot base — caller (instantiate `slotOff := af.slotBase`) |
-| per run: `AbiEntry fb base ra s`, `StackAvail af s`, `BodyEntry af s w₀`, `ArgsIn f.sig args s`, `ClifEntry f args cs`, `Rel.holds ⟨FF s, syms, slotOff⟩ f cs.frame.slots cs.mem w₀`, `TrapsExplicit env p cs` | caller of the theorem |
+| per run: `AbiEntry fb base ra s`, `StackAvail af s`, `BodyEntry af s w₀`, `ArgsIn f.sig args s`, `ClifEntry f args cs`, `Rel.holds ⟨FF s, syms, slotOff⟩ f cs.frame.slots cs.mem w₀`, `TrapsExplicit env p cs` (with the `try_call` clause, vacuous for a function without `try_call`: `TrapsExplicit.of_tryFree`) | caller of the theorem |
 
 Conclusion: `ArmRefines fb base ra (ArmStepX X H fa) s (Clif.runLoop env p fuel cs)`.
 `Refines` of `csem` is discharged (`refines_final`/`refines_csem`, M6Refines), as is `MemRefines`
@@ -83,6 +85,59 @@ The proof covers them as follows.
   so its extra def is not related to anything (`results_call`). `ExternsNormal` is gone
   (`CallRuleOk` assumes `ExternsIn f exts`).
 
+### `try_call` (the normal return)
+
+`Clif.run` models a `try_call fnN(args), sigM, block(ret…)[, handlers]` as the call of `fnN`
+with its results bound to fresh values (`Function.freshValue`), then the jump to the
+normal-return successor with the `retN` arguments (`Clif.stepTryCall`, two steps). It has no
+unwinding: a callee never resumes at a handler. The backend lowers the terminator with
+`lower_branch` rules 1034 (`bl`) / 1035 (GOT + `blr`) in a context whose `tryRegs` are the
+return and payload vregs allocated before the call (`tryRegsOf`), replaces the call the rule
+emits by the `tryCall` terminator (`tryFix`), and gives every successor an edge block (the
+handlers' are the landing pads, the last one the normal return, `jump` to the successor with
+the `retN`/value arguments).
+
+* **Scope** `InSubset.tryExterns`: a `try_call` calls an extern that is not a function of `p`
+  (like `externCalls`); `Compile.termE` admits `try_call` and still rejects
+  `try_call_indirect` (`noTryCI_of_functionE`), which is flagged unverified
+  (`try_call_indirect (outside backend_correct)`).
+* **Claim**: exactly the normal return. `ArmRefines` is unchanged: when `Clif.runLoop`
+  returns or traps, so does the Arm code. A run that passes through a `try_call` is related
+  only along the path where the callee returns normally.
+* **Traps** `TrapsExplicit.tryCall`: the step of a `try_call` terminator of the entered function
+  does not trap (the callee returns normally), as calls in statements are excluded by
+  `TrapsExplicit.stmt` (a call is not an explicit trap).
+* **Callee contract** `CalleeTryOk F X H` (`FV/E2E/RegLevelTry.lean`, hypothesis `hCT`, only for
+  functions with a `try_call`): the call of a `try_call` defines, beyond the results, the
+  exception payload registers x0/x1 that are not return registers (`gen_try_call_rets`); on a
+  normal return their values are unconstrained by the ABI, so the clause states that the
+  hooked callee leaves in every def register the value `csem`'s `tryCall` clause gives it
+  (the results as `CalleeOk` says; the payload registers as the callee's world `X.call` says).
+  `CallsRefine` has a third clause for the `tryCall` (proven for `csem` from `XCallsOk`,
+  `callsRefine_csem`), which continues at successor `ti.handlers.length` (the normal return).
+* **Not claimed**: nothing about unwinding. The landing pads (the handler edge blocks and their
+  code), the exception payload on the handler edges, the call-site table and the LSDA
+  (`callSites`, `.gcc_except_table`), the `.eh_frame` rows and the personality routine are
+  trusted and outside every theorem.
+* **Validators**: `lowerCheck` re-runs the `try_call` lowering (`lowTerm`, `TryLow`), checks the
+  normal-return edge block (`succOk`: its `jump`, no parameters, the branch arguments
+  `normArgReg`, `retN` indices below the callee's return count), and checks that a `tryCall`
+  appears in the VCode only when the function has a `try_call` (`noTryCall_of_check`);
+  `prepCheck` keeps that (`noTryCall_of_prepCheck`) and `ctlCheck` rejects a `clobberAll` try
+  call; `shapeOk` checks `st0.nextVreg ≤ f.freshValue` (the call's result values never
+  overwrite a value of `f`, `LowerShape.fresh`).
+* **Proof**: `term_step_try` (`LowerSim.lean`) matches the two CLIF steps with the
+  terminator's code up to the `tryCall` (M4: `LowerTryOk`, from `TryRulesCorrect`/
+  `TryUnmatchable`, `tryCalls_of_rules`), the goto to the normal-return edge block and its
+  `jump`; `sim_run` is by strong induction on the fuel. Register level: `realizes_tryCall`
+  (`bl`/`blr`, then `b continuation`).
+* **Try-free functions**: every new premise is vacuous (`hCT`, `TrapsExplicit.tryCall`,
+  `InSubset.tryExterns`), so the statement specialises to the former one. The mid-end and
+  `i128` theorems (`backend_correct_opt`/`_opt_proven`, `backend_correct_legal`) keep
+  `try_call` out with an explicit premise (`hnt : ∀ B ∈ f.blocks, B.term.isTry = false`);
+  `lean-backend` flags such functions unverified under `--opt`/`--opt-proven-only` and after
+  `i128` legalisation.
+
 ## The theorem (`FV/E2E/Main.lean`)
 
 ```lean
@@ -94,6 +149,8 @@ theorem backend_correct {p f k vc vcp rf af fa fb}
     (hex : ExcludedUnmatchable Isle.Aarch64.program)
     (hcallRules : CallRulesCorrect Isle.Aarch64.program)
     (hterms : ∀ s, TermCalls (sem s) (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w))
+    (htries : ∀ s, TryCalls f (sem s) (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w)
+      env p)
     -- M6 + M5
     (hM6 : RegLevelCorrect sem F astep vcp af fb)
     -- the shared VCode semantics of each activation (M6's `csem (F s)`)
@@ -111,8 +168,10 @@ theorem backend_correct {p f k vc vcp rf af fa fb}
 ```
 
 `backend_correct_of_rules`: the same with `hterms` replaced by M4's terminator statements
-`LowerTermRulesCorrect`, `TermUnmatchable`, `BranchRulesCorrect`, `BranchExcludedUnmatchable`
-(of `Isle.Aarch64.program`).
+`LowerTermRulesCorrect`, `TermUnmatchable`, `BranchRulesCorrect`, `BranchExcludedUnmatchable`,
+and `htries` by the `try_call` statements `TryRulesCorrect`, `TryUnmatchable` (of
+`Isle.Aarch64.program`; `backend_correct_m4` discharges them by `tryRulesCorrect` and
+`tryUnmatchable`, `FV/Backend/Proof/IselCtlTry.lean`).
 
 `ArmRefines fb base ra astep s o`:
 
@@ -131,7 +190,7 @@ theorem backend_correct {p f k vc vcp rf af fa fb}
   of `p`), every extern of `f` takes at most 8 parameters (`callRegArgs`: no stack-passed call
   arguments; the compiler flags such functions unverified, `Backend.regArgCalls`), and the
   signatures of `f` and its externs pass `sigAbiOk` (`abiSigs`: `normal` plus at most one
-  `sret`; `Backend.abiSigs`). `br_table`
+  `sret`; `Backend.abiSigs`), and every `try_call` calls an extern (`tryExterns`). `br_table`
   indices of at most 32 bits are enforced by `lowerCheck` (`brIdxOk`, contract change #6):
   an `i64` index is a compile error, as in Cranelift's verifier; so is a jump table with `2^32`
   or more entries (contract change #9).
@@ -154,9 +213,10 @@ theorem backend_correct {p f k vc vcp rf af fa fb}
   slots`, `Γ.slotReg w = sp(w) + Γ.slotOff`, `SlotRel`: slot `id` is at `base + off(id)` with
   `off` from `slotLayout f.slots`. This is M4's `MR` (`MRStable`, `mrStable_holds`).
 * **Traps** `TrapsExplicit env p cs`: every trap of the CLIF run from `cs` comes from a `trap`
-  terminator or a `div` (explicit check + `udf`/`trapIf` in the code). Memory-access traps and
-  traps inside externs are excluded: the Arm model has no memory faults, callees are outside the
-  theorem (for DSL output traps are unreachable, PLAN.md §3.2).
+  terminator or a `div` (explicit check + `udf`/`trapIf` in the code; `stmt`), and the step of a
+  `try_call` terminator of the entered function does not trap (`tryCall`). Memory-access traps
+  and traps inside externs are excluded: the Arm model has no memory faults, callees are outside
+  the theorem (for DSL output traps are unreachable, PLAN.md §3.2).
 * **ABI entry** `AbiEntry fb base ra s`: code words of `fb` loaded at `base`
   (`s.program = fb.program base`), pc = base, no model error, x30 = ra outside the code, sp
   16-aligned, code fits the address space. `ArgsIn f.sig args s`: argument `i` in
@@ -229,26 +289,36 @@ call: `LowerShape.valsBelow` + `st0.nextVreg ≤ st.nextVreg`. Key steps:
   `DriverSem`, parallel copy), using `succOf_eq` (successors from the last instruction's targets
   with labels = indices).
 * `entry_step`: `Args` defines the parameters from x0.. (`operands_args`).
-* `sim_run`: induction on fuel.
+* `term_step_try`: a `try_call` (the call and the pending jump, two CLIF steps) ↦ the
+  terminator's code up to the `tryCall`, the normal-return edge block and its `jump`.
+* `sim_run`: strong induction on fuel.
 
 ## The validators (M7, translation validation)
 
 **`lowerCheck f vc`** (`DriverCheck.lean`): runs `buildCtx f`, re-runs the ISLE calls the way
 `lowerFunction` makes them (`lowBlocks`: statement calls from the previous state with nothing
 emitted, terminator calls in the terminator context, the same edge-block labels), computes the
-alias resolution `gn` (`gnOf`, identity on temporaries) and its class-preserving renaming
-`renOf gn`, the available values `A` by a must-dataflow (`inFix`/`availOf`; a value stays
-available at a block entry only if the operands of its definition are available there too, so
-a block without a path from the entry, e.g. cg_clif's dead cleanup blocks, does not claim
-values computed from its own results — untrusted, the certificate is checked), and decides every
+alias resolution `gn` (`gnTable`/`gnAt`, identity on temporaries) and its class-preserving
+renaming `renOf gn`, the available values `A` by a must-dataflow (`inFix`/`availOf`; a value
+stays available at a block entry only if the operands of its definition are available there
+too, so a block without a path from the entry, e.g. cg_clif's dead cleanup blocks, does not
+claim values computed from its own results — an untrusted worklist over (block, value) pairs,
+the certificate is checked), and decides every
 field of `LowerShape` and `Cert` that is not true by construction: `CtxInv` (incl. `defClif`,
 and `resTysE`/`valTyE`: result and value types `i8..i64`, M4Excl),
 `ValsBelow` (`valReg.size ≤ nextVreg`), the VCode blocks are exactly the renamed recorded code,
 labels, block parameters, branch arguments, edge blocks, the terminator slot placeholder, and
 the certificate (operands available, results fresh and uniquely defined, no available value's
 register written by a statement's lowering, closure under definitions, edges, result and
-parameter types for `FrameTyped`). Soundness: `lowering_of_check` (construction lemmas
-`lowStmts_spec`/`lowBlocks_spec` + one lemma per check).
+parameter types for `FrameTyped`). The certificate check is near-linear: membership in
+`availOf f In bi j` is decided in constant time (`Avail.mem`: a hash set of the block's entry
+values, a value's defining statement from `ctx.defInst?`, exact once the check has seen that
+every statement's results are defined by its instruction, `DefsAt`/`mem_avail`), and the
+conditions on the values available before the statements of a block are checked once per
+value, at the first statement it is available before (the clobber condition through the
+increasing fresh-vreg ranges of the statements, `chain_mono`). Soundness: `lowering_of_check`
+(construction lemmas `lowStmts_spec`/`lowBlocks_spec` + one lemma per check; `cert_of_ok`
+holds for any entry values `In`, so the dataflow is not part of it).
 
 **`prepCheck vc vcp`** (`PrepareCheck.lean`): every live block of `vc` (`liveOf`: reachable
 from the entry, as `prepare` computes; untrusted, the check requires the entry to be live and
@@ -276,12 +346,21 @@ validators accept 913/913 functions inside the theorem (with `brIdxOk`: no `br_t
 `Corpus__bumpAll_w0/_w1`, `Corpus__bumpFirst`; still compiled, flagged unverified). Filetests after
 #5/#6 (M4Ctl, `scripts/lean-backend-filetests.sh`): corpus 114/114, extrt 22/22, runtests 3085
 pass / 0 fail, all agreeing with Cranelift-native. Cost on the corpus (161 functions): `lowerFunction` 175 ms, `lowerCheck`
-661 ms, `prepare` 2 ms, `prepCheck` 3 ms (the lowering validator re-runs isel and its checks are
-quadratic in the values of a block; functions outside the theorem are not validated).
+661 ms, `prepare` 2 ms, `prepCheck` 3 ms (the lowering validator re-runs isel; functions outside
+the theorem are not validated). Since the near-linear certificate check (agent/trycall-proof;
+it replaced list-based checks and a round-based dataflow that recomputed predecessor lists per
+value, 23 s per round on a 283-block function): a survey test function with 325 blocks, 1354
+statements and 1057 values, over an hour before, validates in 0.17 s (dataflow 18 ms,
+certificate 16 ms, the rest re-running isel and the shape check); on the corpus and the
+runtests (1105 functions) the new validator computes the same alias resolution and entry
+values and accepts exactly the same functions as the old one. `lean-backend` does not run it on
+functions over the validation budget (`Backend.validationBudget`: instructions × values above
+25000000, 7.6 times the largest function of `examples/`), which it compiles and reports as
+`compiled, unverified (validation budget)`.
 
-**Functions outside the theorem** (`FV/Backend.lean` `unverifiedReason?`: outside
-clif-subset-v2 E, more than 8 parameters, calls of functions of the same file, special-purpose
-parameters other than one `sret` pointer (`abiSigs`),
+**Functions outside the theorem** (`FV/Backend.lean` `unverifiedReason?`: `try_call_indirect`,
+outside clif-subset-v2 E, more than 8 parameters, calls (also `try_call`s) of functions of the
+same file, special-purpose parameters other than one `sret` pointer (`abiSigs`),
 `call_indirect`/`func_addr` — `InSubset.noCI`/`noFA`; `lowerCheck` rejects `func_addr`,
 `CtxInv.noFA`, and `call_indirect` has no result types without `sigN` declarations) are still
 compiled, without validation, and reported as unverified (`FileAsm.unverified`; `lean-backend`
@@ -313,8 +392,6 @@ extrt and runtests (445 files): no function rejected.
 3. **Scope extensions**: calls between compiled functions (induction on call depth, using
    `backend_correct` of the callee as its callee contract); stack-passed parameters
    (`InSubset.regParams`); memory-access traps (need a fault model).
-4. **Validator cost** on very large functions (quadratic set operations in `lowerCheck`'s
-   certificate checks; hash-set versions with the same soundness statements would remove it).
 
 ## Trusted (not proven)
 
