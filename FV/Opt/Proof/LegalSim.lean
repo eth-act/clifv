@@ -623,4 +623,110 @@ theorem planOf_trap {C : Ctx} {s : Stmt} {lo hi : ValueId} {nz : Bool} {code : T
   · obtain ⟨rfl, rfl, rfl, rfl⟩ := hp
     exact ⟨_, .inr ⟨rfl, rfl⟩, rfl, by assumption⟩
 
+theorem planOf_pure_inst {C : Ctx} {s : Stmt} {pat : List Stmt} {ins outs : List ValueId}
+    (hp : planOf C s = some (.pure pat ins outs)) :
+    (∀ fn args, s.inst ≠ .call fn args) ∧ (∀ sig c args, s.inst ≠ .callIndirect sig c args) := by
+  plan_inv s hp
+  all_goals exact ⟨fun _ _ h => Inst.noConfusion h, fun _ _ _ h => Inst.noConfusion h⟩
+
+/-! ## Statements -/
+
+/-- The relation's view of the next statement: its plan and segment. -/
+theorem code_cons {C : Ctx} {st : Stmt} {rest : List Stmt} {t : Terminator} {ts : List Stmt}
+    {t' : Terminator} (h : codeOk C (st :: rest) t ts t' = true) :
+    ∃ pl, planOf C st = some pl ∧ segOk C st pl (ts.take pl.len) = true ∧
+      codeOk C rest t (ts.drop pl.len) t' = true := by
+  simp only [codeOk] at h
+  split at h
+  · rename_i pl hpl
+    simp only [Bool.and_eq_true] at h
+    exact ⟨pl, hpl, h.1, h.2⟩
+  · cases h
+
+theorem frel_stmt {C : Ctx} {fr fr' : Frame} (hR : FRel C fr fr') {st : Stmt} {rest : List Stmt}
+    (hb : fr.body = st :: rest) : ∃ B ∈ C.f.blocks, st ∈ B.body := by
+  obtain ⟨B, hB, hsuf, -⟩ := hR.blk
+  exact ⟨B, hB, hsuf.subset (by rw [hb]; exact List.mem_cons_self ..)⟩
+
+theorem memBounded_eval {fr : Frame} {m m' : Mem} {i : Inst} {vals : List Val}
+    (h : evalInst fr m i = .ok (vals, m')) (hM : MemBounded m) : MemBounded m' :=
+  memBounded_of_allocs (evalInst_allocs h) hM
+
+/-- **`same`**: the statement itself. -/
+theorem sim_same {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} {fr fr' : Frame}
+    {m : Mem} (hR : FRel C fr fr') (hM : MemBounded m) {st : Stmt} {rest : List Stmt}
+    (hb : fr.body = st :: rest) (hpl : planOf C st = some .same) {ts2 : List Stmt}
+    (hb' : fr'.body = st :: ts2) (hcode : codeOk C rest fr.term ts2 fr'.term = true) :
+    SimOut C env p' fr' m (step env p ⟨fr, [], m⟩) := by
+  obtain ⟨hplain, hnc, hnci, hnfa⟩ := planOf_same hpl
+  obtain ⟨B, hB, hst⟩ := frel_stmt hR hb
+  have hnd := results_nodup hG.defs hB hst
+  have hops : ∀ x ∈ instOps st.inst, fr'.regs x = fr.regs x := fun x hx =>
+    hR.peq x (ops_lt hG hB hst hx) (plain_iff.1 (hplain x (List.mem_append_left _ hx)))
+  have hev : evalInst fr' m st.inst = evalInst fr m st.inst :=
+    evalInst_same hops hR.slots (by rw [hR.func', hR.func]; exact hG.globals) hnfa
+  rw [step_inst env p ⟨fr, [], m⟩ st rest hb hnc hnci]
+  have hstep' := step_inst env p' ⟨fr', [], m⟩ st ts2 hb' hnc hnci
+  rw [hev] at hstep'
+  cases hr : evalInst fr m st.inst with
+  | ok vm =>
+    obtain ⟨vals, mem⟩ := vm
+    rw [hr] at hstep'
+    simp only [StepResult.ofRes_ok, continueWith] at hstep' ⊢
+    cases hs : fr.regs.setMany st.results vals with
+    | none => trivial
+    | some ρ1 =>
+      obtain ⟨ρ1', hs'⟩ := setMany_of_len fr'.regs (setMany_len hs)
+      simp only [hs'] at hstep'
+      refine ⟨rfl, memBounded_eval hr hM, { fr' with regs := ρ1', body := ts2 }, ?_,
+        TStep.of_step hstep'⟩
+      refine frel_after hG hR hb hcode hs ?_ ?_ (srcInv_stmt hG.defs hB hst hR.src hr hs)
+      · intro v hv _ x hx
+        have hpv := plain_iff.1 (hplain v (List.mem_append_right _ hv))
+        obtain ⟨i, hi, hvi⟩ := setMany_mem hs hnd hv
+        rw [RelV.plain hpv, setMany_get hs' hnd hi, ← hvi, hx]
+      · intro w _ hni
+        refine setMany_other hs' fun hw => ?_
+        have hpw := plain_iff.1 (hplain w (List.mem_append_right _ hw))
+        exact hni w hw (res_lt hG hB hst hw) (by simp [img, hpw])
+  | trap c =>
+    rw [hr] at hstep'
+    exact ⟨1, by rw [runLoop_succ, hstep']; rfl⟩
+  | stuck msg => trivial
+
+/-- **Pure plans**: the segment runs the pattern. -/
+theorem sim_pure {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} {fr fr' : Frame}
+    {m : Mem} (hR : FRel C fr fr') (hM : MemBounded m) {st : Stmt} {rest : List Stmt}
+    (hb : fr.body = st :: rest) {pat : List Stmt} {ins outs : List ValueId}
+    (hpl : planOf C st = some (.pure pat ins outs)) {seg ts2 : List Stmt}
+    (hseg : pureOk C pat ins outs seg = true) (hb' : fr'.body = seg ++ ts2)
+    (hcode : codeOk C rest fr.term ts2 fr'.term = true) :
+    SimOut C env p' fr' m (step env p ⟨fr, [], m⟩) := by
+  obtain ⟨B, hB, hst⟩ := frel_stmt hR hb
+  have hnd := results_nodup hG.defs hB hst
+  obtain ⟨hnc, hnci⟩ := planOf_pure_inst hpl
+  rw [step_inst env p ⟨fr, [], m⟩ st rest hb hnc hnci]
+  cases hr : evalInst fr m st.inst with
+  | ok vm =>
+    obtain ⟨vals, mem⟩ := vm
+    obtain ⟨rfl, hcov, inVals, ρ0, hH, hrun, hO⟩ := pure_step hG hB hst hpl hR.vrel hR.src hr
+    simp only [StepResult.ofRes_ok, continueWith]
+    cases hs : fr.regs.setMany st.results vals with
+    | none => trivial
+    | some ρ1 =>
+      obtain ⟨regs', hl, hout, hkeep⟩ := pureOk_run hseg hH.len hrun (fr := fr') hH.get _ ts2
+      have hfr' : { fr' with body := seg ++ ts2 } = fr' := by rw [← hb']
+      rw [hfr'] at hl
+      refine ⟨rfl, hM, { fr' with regs := regs', body := ts2 }, ?_, TStep.of_lstar hl⟩
+      refine frel_after hG hR hb hcode hs ?_ ?_ (srcInv_stmt hG.defs hB hst hR.src hr hs)
+      · intro v hv _ x hx
+        obtain ⟨i, hi, hvi⟩ := setMany_mem hs hnd hv
+        exact hO regs' hout i v x hi (by rw [← hvi, hx])
+      · intro w hw hni
+        refine hkeep w hw fun hwo => ?_
+        obtain ⟨r, hr, hwr⟩ := hcov w hwo
+        exact hni r hr (res_lt hG hB hst hr) hwr
+  | trap c => exact absurd hr (pure_notrap hpl fr m c)
+  | stuck msg => trivial
+
 end Opt.Legal
