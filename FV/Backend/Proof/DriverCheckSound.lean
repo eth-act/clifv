@@ -396,13 +396,14 @@ theorem lowerShape_of_ok {f : Clif.Function} {vc : VCode} {ctx : Ctx} {ranges : 
     LowerShape f vc ctx st0 (renOf gn) gn bl := by
   obtain ⟨-, hlb⟩ := lowBlocks_spec hl
   simp only [shapeOk, Bool.and_eq_true, decide_eq_true_eq] at hs
-  obtain ⟨⟨⟨⟨⟨⟨hctx, hvb⟩, hpar⟩, hlen⟩, hsize⟩, hlab⟩, hblk⟩ := hs
+  obtain ⟨⟨⟨⟨⟨⟨⟨hctx, hvb⟩, hpar⟩, hlen⟩, hsize⟩, hlab⟩, hblk⟩, hfresh⟩ := hs
   have hblk' : ∀ bi B L, f.blocks[bi]? = some B → bl[bi]? = some L →
       blockOk f vc ctx st0 (renOf gn) gn bl bi B L = true := by
     intro bi B L hB hL
     have := all_range hblk (lt_of_getElem? hB)
     simpa [hB, hL] using this
-  refine ⟨⟨ranges, hb⟩, ctxOk_sound hctx, renOf_vrenaming gn, hgn, ?_, hlen, hsize, ?_, ?_, ?_, ?_⟩
+  refine ⟨⟨ranges, hb⟩, ctxOk_sound hctx, renOf_vrenaming gn, hgn, ?_, hlen, hsize, ?_, ?_, hfresh,
+    ?_, ?_⟩
   · intro B hB p hp
     have := List.all_eq_true.mp (List.all_eq_true.mp hpar B hB) p hp
     simpa using this

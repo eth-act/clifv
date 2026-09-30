@@ -256,18 +256,16 @@ theorem callsRefine_csem {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {en
         hg (.inr ⟨rfl, rfl⟩) hlen hall hmr hret hrl
       exact ⟨outs, w', by simp [csem, hc], by rw [hol, hds], ho, hm⟩
   · intro ext hin g sl cm w dest us ds ti uses args vals rvals cm' hg hd hds hlen hall hmr hret hrl
-    obtain ⟨d, hdd, outs, w', hc, hol, ho, hm⟩ : ∃ d : Option String,
-        d = (match dest with | .sym n => some n | .reg _ => none) ∧
-        ∃ outs w', X.call d uses w = some (outs, w') ∧ outs.length = (sigRets ext.sig).length ∧
-          PrefixHold rvals outs ∧ MR sl cm' w' := by
-      rcases hd with ⟨rfl, rfl⟩ | ⟨r, rfl, rfl⟩
-      · exact ⟨_, rfl, hX ext hin g sl cm w (some ext.name) uses uses vals rvals cm' hg
-          (.inl ⟨rfl, rfl⟩) hlen hall hmr hret hrl⟩
-      · exact ⟨_, rfl, hX ext hin g sl cm w none _ args vals rvals cm' hg (.inr ⟨rfl, rfl⟩) hlen
-          hall hmr hret hrl⟩
-    subst hdd
-    refine ⟨_, w', by simp only [csem, hc, Option.map_some], ?_, ho.append _, hm⟩
-    simp only [List.length_append, List.length_map, List.length_drop]
-    omega
+    rcases hd with ⟨rfl, rfl⟩ | ⟨r, rfl, rfl⟩
+    · obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX ext hin g sl cm w (some ext.name) uses uses vals
+        rvals cm' hg (.inl ⟨rfl, rfl⟩) hlen hall hmr hret hrl
+      refine ⟨_, w', by simp only [csem, hc, Option.map_some]; rfl, ?_, ho.append _, hm⟩
+      simp only [List.length_append, List.length_map, List.length_drop]
+      omega
+    · obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX ext hin g sl cm w none _ args vals rvals cm' hg
+        (.inr ⟨rfl, rfl⟩) hlen hall hmr hret hrl
+      refine ⟨_, w', by simp only [csem, hc, Option.map_some]; rfl, ?_, ho.append _, hm⟩
+      simp only [List.length_append, List.length_map, List.length_drop]
+      omega
 
 end Backend.Proof

@@ -269,8 +269,10 @@ theorem tryCalls_of_rules (htr : TryRulesCorrect Isle.Aarch64.program)
   have hctx' := ctxInv_tryRegs (ctxInv_termCtx hctx hph data) trs
   have hi : (tryCtx ctx ti data trs).insts[ti]? = some ⟨data, [], [], none⟩ :=
     termCtx_insts_self hph data
+  have hregs' : tryRegsOf sig lo = some ((tryCtx ctx ti data trs).tryRegs, st1) := hregs
+  have hvb' : ValsBelow (tryCtx ctx ti data trs) lo := hvb
   obtain ⟨ms, hem, hok⟩ := tryOk_runTerm htr hun hR hMR hcr hctx' hra (externsIn_self f) hd he hi
-    hinfo (ctx := tryCtx ctx ti data trs) hregs hvb (Nat.le_refl _) hrun
+    hinfo hregs' hvb' (st := { st1 with emitted := #[] }) (Nat.le_refl _) hrun
   have : ms = st'.emitted.toList := by
     simp only [Array.empty_append] at hem; rw [hem, List.toList_toArray]
   rw [← this]; exact hok

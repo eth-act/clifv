@@ -506,9 +506,10 @@ def shapeOk (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) (gn : Na
   (List.range vc.blocks.size).all (fun l => match vc.blocks[l]? with
     | some vb => decide (vb.label = l)
     | none => true) &&
-  (List.range f.blocks.length).all fun bi => match f.blocks[bi]?, bl[bi]? with
+  ((List.range f.blocks.length).all fun bi => match f.blocks[bi]?, bl[bi]? with
     | some B, some L => blockOk f vc ctx st0 (renOf gn) gn bl bi B L
-    | _, _ => false
+    | _, _ => false) &&
+  decide (st0.nextVreg ≤ f.freshValue)
 
 /-- The closure condition: a tracked value's definition has tracked operands (for every
 definition, which implies `Cert.closed` for the pure ones). -/

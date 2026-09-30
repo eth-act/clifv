@@ -37,6 +37,9 @@ structure LowerShape : Prop where
   /-- every value with a register is below the first temporary (`buildCtx`: `maxV`) -/
   valsBelow : ∀ x r, ctx.valueReg? x = some r → x < st0.nextVreg
   labels : ∀ l (vb : VBlock), vc.blocks[l]? = some vb → vb.label = l
+  /-- the temporaries start at or below `Clif.run`'s fresh values (`buildCtx`'s `maxV` is
+  `Function.freshValue`): a `try_call`'s results never overwrite a value of `f` -/
+  fresh : st0.nextVreg ≤ f.freshValue
   /-- the terminator's slot in `ctx.insts` is `buildCtx`'s placeholder -/
   tslot : ∀ (bi : Nat) (B : Clif.Block) (L : BLow), f.blocks[bi]? = some B → bl[bi]? = some L →
     ctx.insts[L.start + B.body.length]? = some (⟨.op .unit, [], [], none⟩ : IInfo)
