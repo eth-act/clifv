@@ -113,3 +113,43 @@ integrator.
   imported statics are out of scope (none in the corpus).
 
 <!-- STATUS-MARKER -->
+
+## agent/fv-fallback: baseline `cargo fv` fallback measurements (worktree `../clifv-wt/fv-fallback`)
+
+Goal: reduce `cargo fv` fallbacks to ~0 on real code. Measured before any change
+(`cargo fv build`, mode plain; "fb" = fallback):
+
+| workspace | profile | functions | verified | unverified | fb |
+| --- | --- | --- | --- | --- | --- |
+| examples/fv-demo | debug | 442 | 322 | 118 | 2 (`metadata.fv.skip`) |
+| examples/fv-demo | release | 293 | 202 | 84 | 7 (5× missing `allocNNN`, 2 skip) |
+| examples/survey | debug | 454 | 394 | 60 | 0 |
+| examples/survey | release | 239 | 184 | 42 | 13 (all missing `allocNNN`) |
+| examples/vendor (new) | debug | 690 | 515 | 165 | 10 (9 atomics/fence/bmask) |
+| examples/vendor (new) | release | 318 | 187 | 115 | 16 (8× missing `allocNNN`, 8 atomics/fence/bmask) |
+
+New `examples/vendor` workspace (commit 83c0e87): vendored dep-free crates.io crates from
+`~/.cargo/registry/cache` — crc32fast 1.5.2, itoa 1.0.18, memchr 2.8.3, hex 0.4.3, bitflags
+2.13.2, cfg-if 1.0.1, once_cell 1.21.4 (+ `harness` crate with reference-value tests).
+Vendoring patches: dev-dependencies pruned ([[bench]]/[[test]]/[[example]] sections removed,
+tests/ and benches/ deleted); `quickcheck!` blocks in crc32fast/memchr replaced by
+deterministic LCG-driven `#[test]`s; `pretty_assertions::assert_eq` imports in hex dropped;
+itoa's optional `no-panic` dependency removed. Purpose: real-world code to measure and drive
+out the remaining fallback reasons.
+
+Fallback reasons collected (top, vendor debug+release combined):
+1. `unsupported: atomic_load/atomic_store/atomic_rmw (xchg, sub)/atomic_cas/fence ... is not in E` — once_cell's `race` module (AtomicUsize/AtomicPtr/AtomicBool).
+2. `unsupported: bmask.i8 ... is not in E` — harness/bitflags code.
+3. `references allocNNN, which cg_clif's object does not contain` — release-only: the Lean backend compiles the unoptimised CLIF, which still contains (dead) panic paths whose `Location` data objects cg_clif's optimiser removed from its object; fix options: retry with the `.opt.clif` dump (preferred), or emit a private copy of the missing read-only data.
+4. `cfg-if (lib): codegen unit fell back entirely: CLIF dumps … missing` — cfg-if defines no functions, cg_clif writes no dump dir; cargo-fv reports a unit-level error (noise, no code lost).
+
+Implementation plan (all flagged unverified via `unverifiedReason?`, theorems untouched):
+atomics → add `atomic_load/atomic_store/atomic_rmw/atomic_cas/fence` + `bmask` to
+`isle2lean`'s `E_OPCODES`, regenerate `Closure.lean`; `instData` arms (InstructionData
+`LoadNoOffset/StoreNoOffset/AtomicRmw/AtomicCas/NullAry/Unary(Bmask)`); MInst variants
+`LoadAcquire/StoreRelease` (ldar/stlr), `AtomicRMWLoop/AtomicCASLoop` pseudo-insts expanded at
+emit into the ldaxr/stlxr loops with fixed regs x24–x28 exactly as Cranelift's
+`inst/emit.rs` does (has_lse=0, cg_clif's flags), `CSetm` (csinv), `Fence` (dmb ish);
+regalloc fixed uses/defs (x25/x26 in, x27+scratch out) and clobbers; encoders checked against
+llvm-mc; `Clif.run` semantics already exist. TLS `tls_value` (elf_gd) — parser rejects TLS
+globals (Parse.lean:383); rules `elf_tls_get_addr` exist; probed only if a real fallback appears.
