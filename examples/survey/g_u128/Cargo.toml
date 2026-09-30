@@ -1,0 +1,8 @@
+[package]
+name = "g_u128"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+path = "../../../scripts/rust-clif/corpus/g_u128.rs"

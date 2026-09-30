@@ -1,0 +1,8 @@
+[package]
+name = "h_dyn_generic"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+path = "../../../scripts/rust-clif/corpus/h_dyn_generic.rs"

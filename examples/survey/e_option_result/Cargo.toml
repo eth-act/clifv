@@ -1,0 +1,8 @@
+[package]
+name = "e_option_result"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+path = "../../../scripts/rust-clif/corpus/e_option_result.rs"
