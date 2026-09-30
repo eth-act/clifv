@@ -28,8 +28,8 @@ use clif2obj::{CompiledFunc, ObjectCompiler, Options};
 use clif_runlines::{RunLine, run_lines, values_json};
 use cranelift_codegen::data_value::DataValue;
 use cranelift_codegen::ir::{
-    AbiParam, ArgumentPurpose, ExtFuncData, ExternalName, Function, InstBuilder, MemFlagsData, Signature, Type,
-    UserFuncName, types,
+    AbiParam, ArgumentPurpose, ExtFuncData, ExternalName, Function, GlobalValueData, InstBuilder, MemFlagsData,
+    Signature, Type, UserFuncName, types,
 };
 use cranelift_codegen::isa::{OwnedTargetIsa, TargetFrontendConfig};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
@@ -166,6 +166,10 @@ struct Funcs<'a> {
     names: Vec<String>,
     index: HashMap<String, usize>,
     callees: Vec<Vec<String>>,
+    /// Symbols each function references through `symbol` global values, closed over the
+    /// items of the file's `; data:` objects (a data object can point at other data objects
+    /// and at functions).
+    data_refs: Vec<Vec<String>>,
     /// Functions excluded from the executable, with the reason.
     bad: HashMap<usize, Excluded>,
 }
@@ -640,10 +644,11 @@ fn execute(cfg: &Config, exe: &Exe) -> Result<Vec<Value>> {
 /// Assembly for the file's `; data: %name [align=N] [writable] = items` directives (before the
 /// first function; grammar in `docs/contracts/clif.md`): each object is a global symbol in
 /// `.rodata` (or `.data` if `writable`); `%sym[+N|-N]` items are `.quad sym+N`. `None` if
-/// there are no directives.
-fn data_asm(text: &str) -> Result<Option<String>> {
+/// there are no directives. Also returns the symbols each data object points at.
+fn data_asm(text: &str) -> Result<(Option<String>, HashMap<String, Vec<String>>)> {
     use std::fmt::Write as _;
     let mut out = String::new();
+    let mut refs: HashMap<String, Vec<String>> = HashMap::new();
     for line in text.lines() {
         let t = line.trim_start();
         if t.starts_with("function") {
@@ -675,6 +680,7 @@ fn data_asm(text: &str) -> Result<Option<String>> {
         }
         let section = if writable { ".data" } else { ".section .rodata" };
         writeln!(out, "{section}\n.balign {}\n.globl {name}\n{name}:", align.max(16)).unwrap();
+        let obj_refs = refs.entry(name.to_string()).or_default();
         for w in ws {
             if let Some(sym) = w.strip_prefix('%') {
                 let (s, off) = match sym.find(['+', '-']) {
@@ -682,6 +688,7 @@ fn data_asm(text: &str) -> Result<Option<String>> {
                     None => (sym, 0),
                 };
                 writeln!(out, ".quad {s}{off:+}").unwrap();
+                obj_refs.push(s.to_string());
             } else {
                 if w.len() % 2 != 0 || !w.chars().all(|c| c.is_ascii_hexdigit()) {
                     bail!("data directive: bad item {w}");
@@ -692,13 +699,39 @@ fn data_asm(text: &str) -> Result<Option<String>> {
         }
         writeln!(out, ".size {name}, .-{name}").unwrap();
     }
-    Ok(if out.is_empty() { None } else { Some(out) })
+    Ok((if out.is_empty() { None } else { Some(out) }, refs))
+}
+
+/// Symbols `func` references through `symbol` global values, closed over `data_refs` (the
+/// items of the `; data:` objects).
+fn symbol_refs(func: &Function, data_refs: &HashMap<String, Vec<String>>) -> Vec<String> {
+    let mut seen: Vec<String> = Vec::new();
+    let mut todo: Vec<String> = func
+        .global_values
+        .values()
+        .filter_map(|gv| match gv {
+            GlobalValueData::Symbol { name: ExternalName::TestCase(t), .. } => {
+                Some(t.to_string().trim_start_matches('%').to_string())
+            }
+            _ => None,
+        })
+        .collect();
+    while let Some(s) = todo.pop() {
+        if seen.contains(&s) {
+            continue;
+        }
+        if let Some(items) = data_refs.get(&s) {
+            todo.extend(items.iter().cloned());
+        }
+        seen.push(s);
+    }
+    seen
 }
 
 fn native(cfg: &Config, dir: &Path) -> Result<bool> {
     let text = std::fs::read_to_string(&cfg.file).with_context(|| format!("reading {}", cfg.file))?;
     let isa = clif2obj::isa(TRIPLE)?;
-    let data = data_asm(&text).with_context(|| format!("{}: data directives", cfg.file))?;
+    let (data, data_refs) = data_asm(&text).with_context(|| format!("{}: data directives", cfg.file))?;
     let test = match clif2obj::parse_file(&text, &*isa) {
         Ok(t) => t,
         Err(e) => {
@@ -712,6 +745,7 @@ fn native(cfg: &Config, dir: &Path) -> Result<bool> {
         names: Vec::new(),
         index: HashMap::new(),
         callees: Vec::new(),
+        data_refs: Vec::new(),
         bad: HashMap::new(),
         funcs: funcs_v,
     };
@@ -727,6 +761,7 @@ fn native(cfg: &Config, dir: &Path) -> Result<bool> {
             bail!("function %{name} is defined twice");
         }
         funcs.names.push(name);
+        funcs.data_refs.push(symbol_refs(f, &data_refs));
         match clif2obj::callees(f) {
             Ok(c) => funcs.callees.push(c),
             Err(e) => {
@@ -806,13 +841,20 @@ fn native(cfg: &Config, dir: &Path) -> Result<bool> {
                         // Prebuilt code has no relocation records here: blame the callers.
                         culprits.extend((0..funcs.funcs.len()).filter(|&i| funcs.callees[i].contains(sym)));
                     }
+                    // `symbol_value` references, direct or through the items of `; data:`
+                    // objects (whose relocations are in the data object, not the function).
+                    culprits.extend((0..funcs.funcs.len()).filter(|&i| funcs.data_refs[i].contains(sym)));
                     for i in culprits {
-                        funcs.bad.entry(i).or_insert_with(|| {
+                        if funcs.bad.contains_key(&i) {
+                            continue;
+                        }
+                        funcs.bad.insert(
+                            i,
                             Excluded::other(format!(
                                 "unresolved external symbol `{sym}` (not defined in {} and not provided by --link)",
                                 cfg.file
-                            ))
-                        });
+                            )),
+                        );
                         blamed = true;
                     }
                 }
@@ -822,8 +864,9 @@ fn native(cfg: &Config, dir: &Path) -> Result<bool> {
                 for sym in &syms {
                     eprintln!("clif-native: {}: unresolved external symbol `{sym}`", cfg.file);
                 }
-                // The prebuilt object still contains the excluded callers; no run reaches them.
-                allow_undefined = table.is_some();
+                // The prebuilt object still contains the excluded callers, and the data object
+                // still contains the objects pointing at the symbol; no run reaches them.
+                allow_undefined = table.is_some() || syms.iter().any(|s| data_refs.values().any(|v| v.contains(s)));
             }
         }
         funcs.propagate();
