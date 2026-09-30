@@ -2,6 +2,7 @@ import FV.Backend
 import FV.Backend.Proof.DriverCheck
 import FV.Backend.Proof.PrepareCheck
 import FV.Backend.Proof.RegallocCover
+import FV.Opt.Legal
 import FVTest.Opt.Common
 
 /-!
@@ -18,8 +19,15 @@ every prepared VCode and reports the number of covered functions and, for the ot
 uncovered instruction forms (constructor and operation) with their counts. An uncovered
 function is not rejected: it is compiled but outside the end-to-end theorem.
 
+Every file is first legalised (`Opt.Legalize128.parsedFile128`, as `lean-backend` does): a
+legalised `i128` function the validator `Opt.Legal.check` accepts is in scope (covered by
+`E2E.backend_correct_legal`) and checked like any other; the rejected ones are out of scope
+and counted separately.
+
 With `--opt [--opt-* options]`, the functions are first optimised by the mid-end
-(`Opt.optimize`), i.e. the validators run on the code `lean-backend --opt` compiles.
+(`Opt.optimize`), i.e. the validators run on the code `lean-backend --opt` compiles; the
+legalised functions are then out of scope (no theorem composes the legalisation with the
+mid-end).
 -/
 
 open Backend Backend.Proof.Driver
@@ -136,11 +144,18 @@ def main (args : List String) : IO UInt32 := do
   let mut cov := 0
   let mut uncov := 0
   let mut forms : Std.HashMap String Nat := {}
+  let mut legal := 0
+  let mut legalOut := 0
   for file in files do
-    let pf := Clif.parseFile (← IO.FS.readFile file)
-    let pf := match optCfg with | some c => Opt.optimizeParsedFile c pf | none => pf
+    let lg := Opt.Legalize128.parsedFile128 (Clif.parseFile (← IO.FS.readFile file))
+    let pf := match optCfg with | some c => Opt.optimizeParsedFile c lg.file | none => lg.file
     for p in pf.funcs do
       let .ok f := p.func | continue
+      -- legalised functions outside `E2E.backend_correct_legal`
+      if (lg.unverified.lookup p.name).isSome ||
+          (optCfg.isSome && lg.accepted.contains p.name) then
+        legalOut := legalOut + 1
+        continue
       let t0 ← IO.monoMsNow
       let .ok vc ← IO.lazyPure (fun _ => lowerFunction f) | continue
       let t1 ← IO.monoMsNow
@@ -154,6 +169,7 @@ def main (args : List String) : IO UInt32 := do
       if f.sig.params.length > 8 || !Backend.regArgCalls f || !Backend.noSpecial f then
         skipped := skipped + 1
         continue
+      if lg.accepted.contains p.name then legal := legal + 1
       let r ← IO.lazyPure (fun _ => lowerCheck f vc)
       let t2 ← IO.monoMsNow
       if t2 - t0 > 2000 then IO.println s!"{file}: %{f.name}: lowerFunction {t1 - t0} ms, lowerCheck {t2 - t1} ms"
@@ -187,6 +203,7 @@ def main (args : List String) : IO UInt32 := do
         IO.println s!"{file}: %{f.name}: lowerCheck rejects ({diagnose f vc})"
         IO.println (detail f vc)
   IO.println s!"lowerCheck: {ok} accepted, {bad} rejected, {skipped} out of scope (stack parameters, stack call arguments, sret, or outside clif-subset-v2 E)"
+  IO.println s!"legalised i128 functions: {legal} in scope (Opt.Legal.check accepts; counted above), {legalOut} out of scope (validator rejects, extern named like a function of the file, or --opt)"
   IO.println s!"prepCheck: {pok} accepted, {pbad} rejected"
   IO.println s!"formsCoveredB: {cov} covered, {uncov} not covered"
   for (k, n) in forms.toList.mergeSort (fun a b => a.2 ≥ b.2) do
