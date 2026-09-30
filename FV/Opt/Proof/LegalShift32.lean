@@ -13,8 +13,15 @@ theorem pat_varShift32 (op0 : BinaryOp)
     (xl xh : BitVec 64) (a : BitVec 32) :
     ∃ ρ, runPat (canon [V64 xl, V64 xh, ⟨.i32, a⟩]) (Pat.varShiftFull op0 .narrow) = some ρ ∧
       Out128 ρ 3 4 (shiftV op0 (xh ++ xl) (a.toNat % 128)) := by
-  rw [shiftV_eq a (by omega)]
-  generalize hX : shiftVbv op0 (xh ++ xl) (a.setWidth 128 &&& 127#128) = X
-  rcases hop with rfl | rfl | rfl | rfl | rfl <;> simp only [shiftVbv] at hX <;> vs_fin a
+  rcases hop with rfl | rfl | rfl | rfl | rfl
+  · vs_shift a
+  · vs_shift a
+  · vs_shift a
+  · rw [shiftV_rotl (by omega) a]
+    exact rot_glue (pre := (Pat.amt .narrow false 5).1) rotCore_7_8 (amtK_lt (by omega) a)
+      (by vs_pre)
+  · rw [shiftV_rotr (by omega) a]
+    exact rot_glue (pre := (Pat.amt .narrow true 5).1) rotCore_12_13 (rotrAmt_lt (by omega) a)
+      (by vs_pre)
 
 end Opt.Legal
