@@ -9,6 +9,7 @@ include!("../../harness.rs");
 include!("../cases.rs");
 
 #[test]
+#[cfg_attr(not(debug_assertions), ignore = "overflow checks are off")]
 #[should_panic(expected = "attempt to add with overflow")]
 fn add_overflow_panics() {
     add_u32(bb(u32::MAX), bb(1));
@@ -21,6 +22,7 @@ fn div_by_zero_panics() {
 }
 
 #[test]
+#[cfg_attr(not(debug_assertions), ignore = "overflow checks are off")]
 #[should_panic(expected = "attempt to shift left with overflow")]
 fn shift_overflow_panics() {
     shl_u32(bb(1), bb(32));
