@@ -47,6 +47,18 @@ Families are independent and can run in parallel, one agent per opts file.
 - elaboration-based sinking and general rematerialisation;
 - full e-class visibility for later matches.
 
+## i128 legalisation inside the end-to-end theorem (agent/leg128-proof, 2026-09-30)
+
+Validator `Opt.Legal.check` landed (accepts all 203 legalised survey/runtest functions,
+rejects all 1197 single-statement mutants), with the pattern semantics and the relation
+infrastructure proven (`docs/contracts/legalize128.md`). Still to do before legalised functions
+can be reported verified: the per-plan step simulation (pure segments via `pureOk_run` +
+`pat_*`; split `i128` load/store memory lemmas; `HelperOk`/`ExtLegal` env contracts and their
+proofs for `Clif.Rust.env`), block entry/terminators, the `Clif.runLoop` refinement theorem, and
+`E2E.backend_correct_legal`; then flip the accepted case in `Opt.Legalize128.parsedFile128` and
+legalise in `lean-e2e-check`. Also `umulhi`/`smulhi` at `i128` need a correct expansion (now
+unsupported).
+
 ## Other deferred items
 
 - **M3 validator** (Cranelift's own machine code vs CLIF, per function): paused on branch `agent/validator`. Only needed to ship Cranelift's bytes with assurance.
