@@ -1,0 +1,58 @@
+add	3
+add	4294967295
+add	-2
+add	-9223372036854775808
+mul	-12
+mul	2147395600
+mul	1152921504606846976
+mul	15
+neg	-5
+neg	32767
+neg	0
+wrapping	3668340011
+wrapping	3758096385
+wrapping	4026531840
+checked	None
+checked	Some(15)
+checked	None
+checked	Some(-3298534883328)
+overflowing	(254, true)
+overflowing	(100, false)
+saturating	(0, 2147483647)
+saturating	(7, -2147483648)
+saturating	(7, -2)
+division	14
+division	1431655765
+division	-2
+division	2
+division	-14
+division	-1317624576693539401
+division	0
+checked_div	None
+checked_div	None
+checked_div	Some(-3)
+shifts	2147483648
+shifts	3940282096
+shifts	-16
+shifts	-1
+shifts	3
+shifts	320232761589760
+bitops	64
+bitops	32
+bitops	32
+bitops	1715214426
+bitops	2164260864
+abs_casts	5
+abs_casts	2147483647
+abs_casts	4294967806
+abs_casts	365
+abs_casts	18446744073709551488
+compare	9
+compare	-1
+compare	true
+compare	false
+compare	false
+compare	true
+pow	1594323
+pow	2147483648
+pow	1

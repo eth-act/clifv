@@ -53,8 +53,17 @@ fn capture(cmd: &mut Command) -> String {
     String::from_utf8_lossy(&out.stdout).into_owned()
 }
 
-/// `cargo metadata --no-deps`: (member manifest dirs, member package ids, target directory).
-fn metadata(cargo: &Path, toolchain: &str, manifest: Option<&str>) -> (Vec<PathBuf>, HashSet<String>, PathBuf) {
+struct Meta {
+    /// Manifest directories of the workspace members.
+    members: Vec<PathBuf>,
+    ids: HashSet<String>,
+    target: PathBuf,
+    /// `[package.metadata.fv] skip = [...]`: (manifest dir, pattern).
+    skip: Vec<(PathBuf, String)>,
+}
+
+/// `cargo metadata --no-deps`.
+fn metadata(cargo: &Path, toolchain: &str, manifest: Option<&str>) -> Meta {
     let mut cmd = Command::new(cargo);
     cmd.env("RUSTUP_TOOLCHAIN", toolchain).args(["metadata", "--format-version", "1", "--no-deps"]);
     if let Some(m) = manifest {
@@ -66,17 +75,22 @@ fn metadata(cargo: &Path, toolchain: &str, manifest: Option<&str>) -> (Vec<PathB
         .as_array()
         .map(|a| a.iter().filter_map(|x| x.as_str().map(String::from)).collect())
         .unwrap_or_default();
-    let mut dirs = Vec::new();
+    let mut members = Vec::new();
+    let mut skip = Vec::new();
     for p in v["packages"].as_array().into_iter().flatten() {
         if ids.contains(p["id"].as_str().unwrap_or("")) {
             if let Some(m) = p["manifest_path"].as_str() {
                 let d = Path::new(m).parent().unwrap_or(Path::new("/")).to_path_buf();
-                dirs.push(d.canonicalize().unwrap_or(d));
+                let d = d.canonicalize().unwrap_or(d);
+                for pat in p["metadata"]["fv"]["skip"].as_array().into_iter().flatten().filter_map(|x| x.as_str()) {
+                    skip.push((d.clone(), pat.to_string()));
+                }
+                members.push(d);
             }
         }
     }
     let target = PathBuf::from(v["target_directory"].as_str().unwrap_or_else(|| die("cargo metadata: no target_directory")));
-    (dirs, ids, target)
+    Meta { members, ids, target, skip }
 }
 
 fn find_tool(env: &str, candidates: &[PathBuf]) -> PathBuf {
@@ -128,7 +142,7 @@ fn report_path(target: &Path) -> PathBuf {
 fn cmd_report(args: &[String]) -> i32 {
     let toolchain = std::env::var("FV_TOOLCHAIN").unwrap_or(TOOLCHAIN.into());
     let cargo = which_tool(&toolchain, "cargo");
-    let (_, _, target) = metadata(&cargo, &toolchain, value_of(args, "--manifest-path").as_deref());
+    let target = metadata(&cargo, &toolchain, value_of(args, "--manifest-path").as_deref()).target;
     let p = report_path(&target);
     let text = std::fs::read_to_string(&p).unwrap_or_else(|e| die(&format!("{}: {e} (run `cargo fv build` first)", p.display())));
     if args.iter().any(|a| a == "--json") {
@@ -195,7 +209,8 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
     let rustc = which_tool(&toolchain, "rustc");
     let rustdoc = which_tool(&toolchain, "rustdoc");
     let root = repo_root();
-    let (members, member_ids, target) = metadata(&cargo, &toolchain, value_of(&cargo_args, "--manifest-path").as_deref());
+    let Meta { members, ids: member_ids, target, skip: pkg_skip } =
+        metadata(&cargo, &toolchain, value_of(&cargo_args, "--manifest-path").as_deref());
     let sysroot = PathBuf::from(capture(Command::new(&rustc).arg("--print").arg("sysroot")).trim());
     let host = capture(Command::new(&rustc).arg("-vV"))
         .lines()
@@ -220,6 +235,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
             .unwrap_or_else(|| std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4)),
         keep_temps,
         trap_replaced,
+        pkg_skip,
     };
     let wrapper = std::env::current_exe()
         .ok()

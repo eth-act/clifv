@@ -161,7 +161,7 @@ impl Report {
         let _ = writeln!(
             s,
             "  {:<20} {:<5} {:<22} {:>9} {:>9} {:>10} {:>9} {:>13}",
-            "crate", "kind", "root", "functions", "verified", "unverified", "fallback", "Lean in exe"
+            "package", "kind", "crate root", "functions", "verified", "unverified", "fallback", "Lean in exe"
         );
         for u in &self.units {
             let c = &u.counts;
@@ -169,7 +169,7 @@ impl Report {
             let _ = writeln!(
                 s,
                 "  {:<20} {:<5} {:<22} {:>9} {:>9} {:>10} {:>9} {:>13}",
-                u.unit.crate_name, u.unit.kind, u.unit.src, c.functions, c.verified, c.unverified, c.fallback, linked
+                u.unit.package, u.unit.kind, short_root(&u.unit.src), c.functions, c.verified, c.unverified, c.fallback, linked
             );
         }
         let t = &self.totals;
@@ -227,6 +227,11 @@ impl Report {
         }
         s
     }
+}
+
+/// A crate root outside the package (`../../x.rs`): just the file name.
+fn short_root(src: &str) -> &str {
+    if src.contains("../") { src.rsplit('/').next().unwrap_or(src) } else { src }
 }
 
 /// Group reasons: function and value names vary, the reason does not.

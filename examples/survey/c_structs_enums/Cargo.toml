@@ -1,0 +1,8 @@
+[package]
+name = "c_structs_enums"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+path = "../../../scripts/rust-clif/corpus/c_structs_enums.rs"

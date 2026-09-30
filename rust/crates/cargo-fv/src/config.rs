@@ -71,6 +71,9 @@ pub struct Config {
     pub keep_temps: bool,
     /// Overwrite cg_clif's replaced function bodies with traps (`--trap-replaced`).
     pub trap_replaced: bool,
+    /// `[package.metadata.fv] skip = [...]` of the members: (manifest dir, pattern); matching
+    /// functions keep cg_clif's code.
+    pub pkg_skip: Vec<(PathBuf, String)>,
 }
 
 fn var(k: &str) -> Result<String, String> {
@@ -107,6 +110,10 @@ impl Config {
             ("FV_JOBS".into(), self.jobs.to_string()),
             ("FV_KEEP_TEMPS".into(), if self.keep_temps { "1" } else { "0" }.into()),
             ("FV_TRAP_REPLACED".into(), if self.trap_replaced { "1" } else { "0" }.into()),
+            (
+                "FV_PKG_SKIP".into(),
+                self.pkg_skip.iter().map(|(d, p)| format!("{}\t{p}", d.display())).collect::<Vec<_>>().join("\n"),
+            ),
         ]
     }
 
@@ -128,8 +135,19 @@ impl Config {
                 jobs: var("FV_JOBS")?.parse().map_err(|_| "FV_JOBS: not a number".to_string())?,
                 keep_temps: var("FV_KEEP_TEMPS")? == "1",
                 trap_replaced: var("FV_TRAP_REPLACED")? == "1",
+                pkg_skip: var("FV_PKG_SKIP")?
+                    .lines()
+                    .filter_map(|l| l.split_once('\t').map(|(d, p)| (PathBuf::from(d), p.to_string())))
+                    .collect(),
             })
         })())
+    }
+
+    /// The `package.metadata.fv.skip` patterns of the package being compiled.
+    pub fn skip_patterns(&self) -> Vec<String> {
+        let Some(dir) = std::env::var_os("CARGO_MANIFEST_DIR") else { return vec![] };
+        let dir = Path::new(&dir).canonicalize().unwrap_or(PathBuf::from(&dir));
+        self.pkg_skip.iter().filter(|(d, _)| *d == dir).map(|(_, p)| p.clone()).collect()
     }
 
     pub fn is_member(&self, manifest_dir: &Path) -> bool {

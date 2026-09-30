@@ -1,0 +1,21 @@
+sums	5
+sums	0
+sums	-3
+sums	2
+indexing	7
+indexing	0
+indexing	111
+indexing	20
+indexing	0
+arrays	(9, 0, 0, 9, 18)
+mutation	[97, 98, 99, 0, 0, 0]
+mutation	[43981, 43981, 43981, 43981, 43981]
+mutation	[4, 2, 3, 1]
+mutation	[]
+mutation	[-2147483648, -1, 0, 3, 3, 5, 99]
+bytes	305419896
+bytes	72623859790382856
+bytes	true
+bytes	false
+bytes	false
+buffer	((true, true, false), 32, 7, 8)

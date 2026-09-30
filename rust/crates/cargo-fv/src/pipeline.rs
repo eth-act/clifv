@@ -257,12 +257,14 @@ pub fn process_object(cfg: &Config, index: &DumpIndex, obj: &Path, id: &str) -> 
         .collect();
     funcs.sort_by(|a, b| a.0.cmp(&b.0));
     // debugging aids (docs/USAGE.md, troubleshooting): force functions to fall back
-    let (skip, only) = (filter_env("FV_SKIP"), filter_env("FV_ONLY"));
+    let (skip, only, pkg_skip) = (filter_env("FV_SKIP"), filter_env("FV_ONLY"), cfg.skip_patterns());
     let mut forced: Vec<FnReport> = Vec::new();
     let all: Vec<Dump> = funcs.iter().map(|(_, d)| d.clone()).collect();
     funcs.retain(|(s, d)| {
         let hit = |pats: &Vec<String>| pats.iter().any(|p| s.contains(p.as_str()) || d.instance.contains(p.as_str()));
-        let why = if !skip.is_empty() && hit(&skip) {
+        let why = if hit(&pkg_skip) {
+            "skipped (package.metadata.fv.skip)"
+        } else if hit(&skip) {
             "skipped (FV_SKIP)"
         } else if !only.is_empty() && !hit(&only) {
             "not selected (FV_ONLY)"
