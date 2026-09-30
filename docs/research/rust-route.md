@@ -124,16 +124,15 @@ compared. Command: `scripts/rust-clif/diff-native.sh` (driver `clif-native --dif
 
 ### How a function is exercised
 
-- **Per crate/profile** the unopt dump is normalised with its recovered data image
-  (`clif-data-export`), compiled once by `lean-backend` (all functions) and once by
+- **Per crate/profile** the unopt dump is normalised with its recovered data image and
+  callee names (`clif-data-export --fnmap`, `normalize.py --fnmap`), compiled once by `lean-backend` (all functions) and once by
   Cranelift (inside the driver). Both executables link the *same* freestanding harness,
   Cranelift-compiled trampolines (`load args → call → store results`, so the ABI boundary is
   identical), the `; data:` objects, `rust-runtime.c` (`mem*`, `__*ti3`) and generated stubs;
   only the object with the file's functions differs. Calls between corpus functions go to the
   engine's own code (the whole crate is linked).
-- **Externs**: the Rust allocator entry points (mangled `___rust_alloc` & co., and cg_clif's
-  unnamed `u0:N` externs recognised by their `Instance` comment) go to a deterministic bump
-  heap in the harness; `__rust_u128_mulo` is implemented in the harness; every other extern
+- **Externs**: the Rust allocator entry points (`__rust_alloc` & co., mangled or not; `--alias
+  SYM=TARGET` for others) go to a deterministic bump heap in the harness; `__rust_u128_mulo` is implemented in the harness; every other extern
   (the `core` panic entry points, `fmt`) is a stub that traps — the outcome `extern <symbol>`
   (exact for the never-returning panics); symbols referenced only as data that cg_clif's
   optimiser dropped (dead `allocN` references) are unmapped absolute addresses.
@@ -167,9 +166,12 @@ compared. Command: `scripts/rust-clif/diff-native.sh` (driver `clif-native --dif
 | profile | functions | vectors | agree | of which masked | disagree | skipped |
 | --- | --- | --- | --- | --- | --- | --- |
 | debug | 454 | 29 568 | 29 040 | 1 213 | **0** | 527 timeout, 1 nondet. memory |
-| release | 239 | 15 680 | 15 275 | 608 | **0** | 405 timeout |
-| release-oc | 240 | 15 744 | 15 336 | 599 | **0** | 408 timeout |
-| **total** | **933** | 60 992 | **59 651** | 2 420 | **0** | 1 341 |
+| release | 239 | 15 744 | 15 300 | 608 | **0** | 444 timeout |
+| release-oc | 240 | 15 744 | 15 338 | 599 | **0** | 406 timeout |
+| **total** | **933** | 61 056 | **59 678** | 2 420 | **0** | 1 378 |
+
+A second seed (`SEED=7`) gives the same picture: 933 functions, 59 664 agreeing vectors
+(2 359 masked), **0 disagreements**, 0 functions below the minimum.
 
 Every function has ≥ 50 compared vectors (minimum 50: `sum_range`, `rev_step`,
 `nested_loops`, whose large random bounds time out; 0 functions below the minimum). Per crate
@@ -177,7 +179,7 @@ the table is in `DIFF_WORK/summary.md` (27 crate/profile rows, all 0 disagreemen
 the 933 are inside `E2E.backend_correct_final`, the other 521 are compiled-but-unverified
 (calls, sret, i128 legalised, indirect calls) — the differential covers both.
 
-Agreed outcomes: 42 047 returned, 9 050 SIGSEGV (wild pointers, both engines at the same
+Agreed outcomes: 42 072 returned, 9 052 SIGSEGV (wild pointers, both engines at the same
 fault address), 5 982 `extern` (panics / fmt stubs), 2 572 `trap user1`. 895 of the 933
 functions return normally on at least one vector; the other 38 are functions whose every
 generated input panics or faults: 19 always reach an extern (`fmt`-based `Debug` impls, error

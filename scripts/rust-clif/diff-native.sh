@@ -4,18 +4,19 @@
 # Cranelift's own aarch64 code for the same CLIF, called with generated inputs under
 # qemu-aarch64-static (`clif-native --diff`, docs/research/rust-route.md "Native coverage").
 #
-# Per crate: normalise the unopt dump with its recovered data image (clif-data-export),
-# compile it with `lean-backend`, then `clif-native --diff` links both engines' objects with
-# the same harness, trampolines, data objects (fixed addresses) and runtime
-# (scripts/rust-clif/rust-runtime.c: mem*, __*ti3; the harness: __rust_u128_mulo and a bump
-# allocator behind __rust_alloc & co.; every other extern -- the core panic entry points,
-# fmt -- is a trapping stub). Compared per call: return values, a hash of all memory the
-# call can write (argument arena incl. pointed-to buffers, heap, writable data objects),
-# and the trap/signal class. Skipped (and counted): timeouts, stack overflows, and runs
-# whose outcome depends on uninitialised stack/heap bytes or stack addresses
-# (nondeterministic in CLIF).
+# Per crate: normalise the unopt dump with its recovered data image and callee names
+# (clif-data-export --fnmap), compile it with `lean-backend`, then `clif-native --diff` links
+# both engines' objects with the same harness, trampolines, data objects (fixed addresses)
+# and runtime (scripts/rust-clif/rust-runtime.c: mem*, __*ti3; the harness: __rust_u128_mulo
+# and a bump allocator behind __rust_alloc & co.; every other extern -- the core panic entry
+# points, fmt -- is a trapping stub). Compared per call: the outcome class (return / trap
+# code / extern / signal), return values, and every memory word the call wrote (argument
+# arena incl. pointed-to buffers, heap, writable data objects); bits that depend on
+# uninitialised stack/heap bytes (unspecified in CLIF) are not compared. Skipped (and
+# counted): timeouts, stack overflows, harness crashes.
 #
-# Needs dump.sh output and built tools (clif-native, clif-data-export, lean-backend).
+# Needs dump.sh output (with the crates' objects) and built tools (clif-native,
+# clif-data-export, lean-backend).
 # usage: scripts/rust-clif/diff-native.sh [OUT_DIR]
 #   env: DIFF_WORK (default OUT_DIR/../diff-native), VECTORS (64 per round), MIN_VECTORS (50),
 #        MAX_VECTORS (512), PAR (crates in parallel, 6), SEED, CALL_TIMEOUT_MS (500),
@@ -39,8 +40,7 @@ backend="$root/.lake/build/bin/lean-backend"
 mkdir -p "$work"
 ulimit -c 0 # qemu would dump core for every harness crash
 
-"$here/data-export.sh" "$out" >/dev/null
-datadir="$out/../data"
+exporter="$root/rust/target/release/clif-data-export"
 clang --target=aarch64-linux-gnu -ffreestanding -fno-builtin -nostdlib -O1 \
   -c "$here/rust-runtime.c" -o "$work/rust-runtime.o"
 
@@ -52,23 +52,15 @@ one() { # PROFILE-CRATE
   case $pc in release-oc-*) p=release-oc ;; release-*) p=release ;; debug-*) p=debug ;; esac
   c=${pc#"$p"-}
   local b="$work/$pc" raw="$out/$p/$c/$c.clif"
+  # data image, gv names and the names of the `u0:N` callees (allocator, panics, fmt)
+  "$exporter" "$raw" "$out/$p/$c/$c.o" --out "$b.data.clif" --gvmap "$b.gvmap.tsv" \
+    --fnmap "$b.fnmap.tsv" >"$b.export.log"
   python3 "$here/normalize.py" "$raw" unopt "$b.clif" \
-    --gvmap "$datadir/$pc.gvmap.tsv" --data-file "$datadir/$pc.data.clif"
+    --gvmap "$b.gvmap.tsv" --fnmap "$b.fnmap.tsv" --data-file "$b.data.clif"
   "$backend" "$b.clif" "$b.o" --traps "$b.traps.json" >"$b.backend.log" 2>&1
-  # cg_clif's unnamed externs (`u0:N`, named `%u0_N` by normalize.py) that are allocator
-  # entry points, recognised by the Instance comment of their declaration
-  local aliases=()
-  mapfile -t aliases < <(grep -h -E '^ *fn[0-9]+ = (colocated )?u0:[0-9]+ sig[0-9]+ ; .*__rust_' "$raw"/*.unopt.clif |
-    sed -E 's/^ *fn[0-9]+ = (colocated )?u0:([0-9]+) .*::(__rust_[a-z0-9_]+)\)\).*/\2 \3/' | sort -u |
-    awk '{ t = ""; if ($2 == "__rust_alloc") t = "clifdiff_rust_alloc";
-           else if ($2 == "__rust_alloc_zeroed") t = "clifdiff_rust_alloc_zeroed";
-           else if ($2 == "__rust_dealloc") t = "clifdiff_rust_dealloc";
-           else if ($2 == "__rust_realloc") t = "clifdiff_rust_realloc";
-           else if ($2 == "__rust_no_alloc_shim_is_unstable_v2") t = "clifdiff_rust_noop";
-           if (t != "") { print "--alias"; print "u0_" $1 "=" t } }')
   local rc=0
   "$native" --diff "$b.clif" --lean-obj "$b.o" --lean-table "$b.traps.json" \
-    --link "$work/rust-runtime.o" "${aliases[@]}" --vectors "$VECTORS" --min-vectors "$MIN_VECTORS" \
+    --link "$work/rust-runtime.o" --vectors "$VECTORS" --min-vectors "$MIN_VECTORS" \
     --max-vectors "$MAX_VECTORS" --seed "$SEED" --call-timeout-ms "$CALL_TIMEOUT_MS" --jobs 2 \
     >"$b.jsonl" 2>"$b.err" || rc=$?
   echo "$pc: exit $rc $(tail -1 "$b.jsonl" | python3 -c '
@@ -80,7 +72,7 @@ except Exception as e:
     print("no summary", e)')"
 }
 export -f one
-export work out here datadir native backend VECTORS MIN_VECTORS MAX_VECTORS SEED CALL_TIMEOUT_MS
+export work out here exporter native backend VECTORS MIN_VECTORS MAX_VECTORS SEED CALL_TIMEOUT_MS
 
 echo "== clif-native --diff per crate ($PAR in parallel)"
 printf '%s\n' $crates | xargs -P "$PAR" -I{} bash -c 'one {}'
