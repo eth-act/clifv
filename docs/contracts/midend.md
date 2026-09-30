@@ -217,7 +217,7 @@ def Isle.Opt.simplifySkeleton {σ} (enodes …) (typeOf …) (make …)
   `simplify` calls, 12 `simplify_skeleton` calls and 930 `simplify` calls over the CLIF corpus
   fire the same rules as a `trace-log` build at `opt_level=speed` (per call, on e-classes whose
   operands are single original nodes).
-  224 `simplify` rules and their helpers are proven (see "Rule proofs").
+  668 `simplify` rules and their helpers are proven (see "Rule proofs").
 
 ## Results (2026-09-28, default configuration: Cranelift rules, 1 round)
 
@@ -341,7 +341,7 @@ Goal: `Opt.optimize` refines `Clif.run`, and `E2E.backend_correct_final` extends
   rule sets (`E2E.backend_correct_opt_proven`); only 4 `simplify` rules are proven, so the
   default configuration (all rules) still rests on the differential tests for the rule
   obligations (`SimplifySound`/`SkeletonSound` of the full rule set).
-- Proven: the rule interpreter's soundness and 224 `simplify` rules ("Rule proofs"); the passes
+- Proven: the rule interpreter's soundness and 668 `simplify` rules ("Rule proofs"); the passes
   and the pipeline are not, so the differential tests remain the evidence for them.
 - Missing Cranelift mid-end features: alias analysis (redundant-load elimination,
   store-to-load forwarding), merging of identical trapping instructions, elaboration-based
@@ -494,7 +494,7 @@ Design decisions (approved by the integrator):
 
 ## Rule proofs (MidRulesFoundation, branch `agent/mid-rules`)
 
-Status: the framework is complete and proven; **224 `simplify` rules proven** (see below),
+Status: the framework is complete and proven; **668 `simplify` rules proven** (see below),
 allow-list embedding done. Files `FV/Opt/Proof/{Sem,InterpMatch,InterpState,InterpEval,RuleBase,
 RuleData,RuleNode,RuleEmbed,RuleTactic,RuleImm,RuleCtor,RuleSkel,RuleAuto,RuleArith,RuleCprop,
 RuleAll}.lean`; generator
@@ -534,10 +534,16 @@ Driver: `Opt.RuleAllow` (`all` default | `proven` | `ids`), `RuleSetId.fnWith`/`
 the `simplify` call's arguments), option `--opt-proven-only`. Corpus difftest: default 114/114
 agree, 4321 → 2018 insts; `--opt-proven-only` 114/114, 4321 → 2475 (skeleton rules off).
 
-**Proven rules** (MidRulesInfra2): **224 `simplify` roots** = `Opt.provenSimplifyRules` —
-`arithmetic.isle` 172 of 258 (`RuleArith.lean`), `cprop.isle` 52 of 68 (`RuleCprop.lean`); every
-theorem is the one-line `rule_auto rule_<file>_<line>`. No skeleton rule is proven yet
+**Proven rules** (MidRulesInfra2, RulesBitops): **668 `simplify` roots** = `Opt.provenSimplifyRules` —
+`arithmetic.isle` 172 of 258 (`RuleArith.lean`), `cprop.isle` 52 of 68 (`RuleCprop.lean`),
+`bitops.isle` 444 of 450 (`RuleBitops1..7.lean`, tactics/lemmas in `RuleBitopsEmbed.lean`:
+`rule_auto` 393, `rule_auto_b` 18, `rule_auto_i` 2, `rule_auto_z` 31). No skeleton rule is proven yet
 (`skeleton_rules_proven` is `[]`; `SkelRuleOk` + `skeletonSound` are ready, `div_const` is not).
+Not proven in `bitops.isle` (proof-tooling limits; none is false under the CLIF semantics): rule 79
+(`or(and(x, k), z)` mask condition: needs 64-bit and/not immediate specs), 157 and 170 (32/64-bit
+byte-swap patterns: time out at 12–20M heartbeats), 126/127/129 (go through the multi-result
+constructor `truthy` in an if-let: needs a spec for its rules). Build note: `RuleAll` takes ~35 min;
+build the bitops modules with `LEAN_NUM_THREADS=2` under a 28G cap (parallel builds OOM at 24G).
 Helper specifications (`RuleImm.lean`, simp set `opt_imm`): `imm64_add/sub/mul/and/or/xor/not/neg/
 umin/umax/smin/smax/icmp/masked/clz/ctz/shl/ushr` at every non-`i128` type, in the normal form
 `Rust.imm64X (ofClif t) (imm64OfBits b) … = .ok (imm64OfBits (<BitVec op> b …))` (proof: `imm_pre`

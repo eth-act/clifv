@@ -17,7 +17,7 @@ available by proving them and adding them to the allow-list; the theorems don't 
 - Template tactics and the generated constructor lemmas.
 - The exact proven set and the per-family recipe are in `docs/contracts/midend.md`, section "Rule proofs".
 
-**Status (2026-09-28):** 224 `simplify` roots are proven and allow-listed: arithmetic 172 of 258 and cprop 52 of 68. The skeleton allow-list is empty. `E2E.backend_correct_opt_proven` covers exactly this set. With only these rules enabled, corpus instructions fall from 4668 to 2630 (all rules: 2287), and runtests from 3383 to 3257 (all rules: 3040).
+**Status (2026-09-30):** 668 `simplify` roots are proven and allow-listed: arithmetic 172 of 258, cprop 52 of 68 and bitops 444 of 450. The skeleton allow-list is empty. `E2E.backend_correct_opt_proven` covers exactly this set. With only these rules enabled, corpus instructions fall from 4668 to 2628 (all rules: 2287), and runtests from 3389 to 3128 (all rules: 3040). Bitops rules rarely fire in these corpora, so this batch changed the corpus count by only 2 instructions.
 
 **Remaining:** prove the rest of the E-closure roots, one opts file per family. The remaining counts are arithmetic 86, cprop 16 (shift/rotate folds, if-let right-hand sides, bswap folds; midend.md lists them), and all roots of the families below:
 
