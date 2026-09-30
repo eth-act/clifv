@@ -333,7 +333,8 @@ Of the verified, `verified (normal returns; unwinding trusted)`: fv-demo 231 / 2
 492 / 419, vendor 820 / 727 (debug / release). Before (main fbbd5d9, `try_call` functions
 compiled but unverified) survey debug had 2537 verified of 3179. No function is over the
 validation budget. `cargo fv test` wall time (a full rebuild of the workspace members, then
-the tests under qemu): fv-demo 4 s / 3 s, survey 9 s / 7 s, vendor 16 s / 12 s; plain cg_clif
+the tests under qemu): fv-demo 4 s / 3 s, survey 9 s / 7 s, vendor 16–20 s / 12–14 s (two
+runs); plain cg_clif
 `cargo test` in a fresh target directory: 0.3 s / 0.3 s, 0.9 s / 1.1 s, 3.6 s / 2.5 s. (Before
 the near-linear validator, `lean-backend` ran for over an hour on each of the survey's largest
 `try_call` test functions, and the survey build did not finish.)
