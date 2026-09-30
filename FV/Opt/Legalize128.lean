@@ -14,16 +14,18 @@ alignment whenever a pair would start at an odd register. Division/remainder bec
 the `__udivti3`/`__divti3`/`__umodti3`/`__modti3` runtime helpers (implemented in
 `scripts/rust-clif/rust-runtime.c` and given a byte-exact semantics in `Clif.Rust.env`).
 
-The output is plain `i8..i64` CLIF, so the existing backend compiles it unchanged; the
-theorems and proof files are untouched, and functions that needed legalisation are flagged
-unverified (`i128 legalized (outside backend_correct)`).
+The output is plain `i8..i64` CLIF, so the existing backend compiles it unchanged. The pass
+is untrusted: `Opt.Legal.check` (`FV/Opt/Legal.lean`) validates each legalised function
+against the original with the certificate `function128Cert` returns, and the refinement
+theorem (`FV/Opt/Proof/Legal*.lean`, `E2E.backend_correct_legal`) covers the functions it
+accepts; the others are flagged unverified (`i128 legalized (outside backend_correct)`).
 
 Semantics (all against `Clif.Sem`, which is what `Clif.run` executes — the differential
 `clif-filetest --legalize128` mode runs every run line through both):
 
 * `iadd`/`isub` via the carry/borrow chain (`icmp ult` of the wrapped low sum/difference);
-  `imul` via the cross products (`imul` + `umulhi`); `umulhi` via the cross products plus
-  the two carries, and `smulhi` minus the sign corrections `s_x·y`, `s_y·x`;
+  `imul` via the cross products (`imul` + `umulhi`); `umulhi`/`smulhi` at `i128` are not
+  legalised (the function stays unsupported);
 * `band`/`bor`/`bxor`/`bnot` pairwise; `ineg` = `(~x + 1) mod 2^128`; `iabs` by `select`;
   `clz`/`ctz`/`popcnt`/`cls`/`bitrev`/`bswap` from the halves;
 * shifts/rotates by the amount mod 128 (`(lo + hi·2^64) mod w = lo mod w` for the
@@ -33,7 +35,7 @@ Semantics (all against `Clif.Sem`, which is what `Clif.run` executes — the dif
 * `icmp` lexicographically (the high halves with the same condition code, the low halves
   unsigned when the high halves are equal);
 * `uextend`/`sextend` (`hi = 0` or `sshr lo, 63`), `ireduce` takes `lo`, `iconcat`/`isplit`
-  are the pair itself, `bitcast.i128` is the identity, `select`/`bmask`/`bitselect`
+  copy the halves (`bor x, x`), `bitcast.i128` copies the pair, `select`/`bmask`/`bitselect`
   decompose pairwise, and an `i128` `brif`/`trapz`/`trapnz` condition is
   `(lo != 0) | (hi != 0)`;
 * loads/stores of `i128` become two `i64` accesses at `+0`/`+8` (little-endian);
@@ -118,10 +120,11 @@ def mentions128 (f : Function) : Bool :=
 structure St where
   /-- The pair `(lo, hi)` of an `i128` value. -/
   pair : Std.HashMap ValueId (ValueId × ValueId) := {}
-  /-- `isplit.i128` results become aliases of the source's pair halves. -/
-  alias : Std.HashMap ValueId ValueId := {}
   /-- Defining instruction of a value (`iconst` only; shift-amount constant folding). -/
   defOf : Std.HashMap ValueId Inst := {}
+  /-- The `lo` operand of the `iconcat` defining an `i128` value (shift-amount constant
+  folding through `iconcat`). -/
+  concatLo : Std.HashMap ValueId ValueId := {}
   next : ValueId := 0
   nextFn : FnRef := 0
   /-- `__*ti3` helper declarations added for `div`/`rem` (by name). -/
@@ -145,27 +148,15 @@ def allocPair : M (ValueId × ValueId) := do
   let b ← fresh
   return (a, b)
 
-/-- Follow `alias` chains (acyclic: an alias target is a component of the pair of the
-`isplit` source, whose definition dominates the `isplit`). -/
-def resolveAlias (st : St) : Nat → ValueId → ValueId
-  | 0, v => v
-  | fuel + 1, v => match st.alias[v]? with
-    | some w => resolveAlias st fuel w
-    | none => v
-
-/-- A use of a value that is not an `i128` value: through the alias map. -/
-def u1 (v : ValueId) : M ValueId := do
-  let st ← get
-  return resolveAlias st (st.alias.size + 1) v
-
-/-- The `(lo, hi)` pair of an `i128` value. -/
+/-- The `(lo, hi)` pair of an `i128` value. Every `i128` value has its own pair of fresh
+values (copies where the source reuses halves: `iconcat`, `isplit`, `ireduce.i64`,
+`bitcast.i128`), so distinct values never share a register — the injectivity the
+validator `Opt.Legal.check` relies on. -/
 def pairOf (v : ValueId) : M (ValueId × ValueId) := do
   let st ← get
   match st.pair[v]? with
   | none => throw s!"legalize128: v{v} is not an i128 value"
-  | some (a, b) =>
-    let fuel := st.alias.size + 1
-    return (resolveAlias st fuel a, resolveAlias st fuel b)
+  | some p => return p
 
 def emit1 (r : ValueId) (i : Inst) : M Unit :=
   modify fun s => { s with out := s.out ++ [{ results := [r], inst := i }] }
@@ -193,11 +184,12 @@ def kI64 (n : Int) : M ValueId := do
 
 def s1 (r : ValueId) (i : Inst) : Stmt := { results := [r], inst := i }
 
-/-- The `iconst` that defines `v`, if any (shift-amount constant folding). -/
-def constOfDef (v : ValueId) : M (Option Int) := do
+/-- The unsigned value of the `iconst` that defines `v`, if any (shift-amount constant
+folding: the amount is taken mod 128 of its unsigned value, `Sem.shiftAmt`). -/
+def constOfDef (v : ValueId) : M (Option Nat) := do
   let st ← get
   match st.defOf[v]? with
-  | some (.iconst _ imm) => pure (some imm.toInt)
+  | some (.iconst _ imm) => pure (some imm.toNat)
   | _ => pure none
 
 def liftE {α : Type} (r : Except String α) : M α :=
@@ -278,7 +270,7 @@ def paramsOf : List (List SlotEl) → List (ValueId × Ty) → M (List (ValueId 
 /-- The values passed for the slots of one argument: itself, zero for a pad, the pair for
 an `i128`. -/
 def groupArg : List SlotEl → ValueId → M (List ValueId)
-  | [.val _], v => return [← u1 v]
+  | [.val _], v => return [v]
   | [.pad], _ => do
     let st ← get
     return [st.zero]
@@ -353,7 +345,7 @@ def condOf (ty : ValueId → Option Ty) (c : ValueId) : M (List Stmt × ValueId)
     return ([s1 a (.icmp .ne .i64 lo z), s1 b (.icmp .ne .i64 hi z),
              s1 r (.binary .bor .i8 a b)], r)
   else
-    return ([], ← u1 c)
+    return ([], c)
 
 /-- `icmp.cc` at `i128`: lexicographic. `eq`/`ne` compare both halves directly; the other
 conditions compare the high halves with the strict code (the `*gt`/`*ge` codes with the
@@ -422,59 +414,6 @@ def cmpPair (cc : IntCC) (xl xh yl yh : ValueId) : M ValueId := do
   let r ← fresh
   emit1 r (.binary .bor .i8 hlt hl)
   return r
-
-/-- High half of the unsigned 128-bit product `(xl, xh) × (yl, yh)`: `rl` becomes 0 and
-`rh` the high half. -/
-def umulhiPair (rl rh xl xh yl yh : ValueId) : M Unit := do
-  let a ← fresh
-  emit1 a (.binary .umulhi .i64 xl yl)
-  let m1 ← fresh
-  emit1 m1 (.binary .imul .i64 xh yl)
-  let m2 ← fresh
-  emit1 m2 (.binary .imul .i64 xl yh)
-  let m ← fresh
-  emit1 m (.binary .iadd .i64 m1 m2)
-  let c1 ← fresh
-  emit1 c1 (.icmp .ult .i64 m m1)
-  let s ← fresh
-  emit1 s (.binary .iadd .i64 m a)
-  let c2 ← fresh
-  emit1 c2 (.icmp .ult .i64 s m)
-  let c1v ← fresh
-  emit1 c1v (.extend .uextend .i64 c1)
-  let c2v ← fresh
-  emit1 c2v (.extend .uextend .i64 c2)
-  let t ← fresh
-  emit1 t (.binary .iadd .i64 s c1v)
-  let t2 ← fresh
-  emit1 t2 (.binary .iadd .i64 t c2v)
-  let h ← fresh
-  emit1 h (.binary .imul .i64 xh yh)
-  emit1 rl (.iconst .i64 (BitVec.ofInt 64 0))
-  emit1 rh (.binary .iadd .i64 t2 h)
-
-/-- The high half of the product of the pairs `(xl, xh) × (yl, yh)`: for `smulhi`, the
-unsigned high half minus `s_x·y` and `s_y·x` (`s` = the sign of the operand; the
-subtrahends are the full 128-bit values, at the position of the high half). -/
-def mulhi128 (signed : Bool) (rl rh : ValueId) (xl xh yl yh : ValueId) : M Unit := do
-  if !signed then
-    umulhiPair rl rh xl xh yl yh
-  else do
-    let (blo, bhi) ← allocPair
-    umulhiPair blo bhi xl xh yl yh
-    let z ← kI64 0
-    let sx ← fresh
-    emit1 sx (.icmp .slt .i64 xh z)
-    let sy ← fresh
-    emit1 sy (.icmp .slt .i64 yh z)
-    -- t = b - y; t' = sx ? t : b; u = t' - x; result = sy ? u : t'
-    let (tlo, thi) ← allocPair
-    isubPair tlo thi blo bhi yl yh
-    let (t'lo, t'hi) ← allocPair
-    selectPair sx t'lo t'hi tlo thi blo bhi
-    let (ulo, uhi) ← allocPair
-    isubPair ulo uhi t'lo t'hi xl xh
-    selectPair sy rl rh ulo uhi t'lo t'hi
 
 /-- `smin`/`smax`/`umin`/`umax` at 128 bits (the condition is the strict 128-bit compare
 of `x` against `y`, signed for the `s*` operations). -/
@@ -632,13 +571,12 @@ def bin128 : BinaryOp → ValueId → ValueId → ValueId → ValueId → ValueI
     let a ← fresh
     emit1 a (.binary .umulhi .i64 xl yl)
     emit1 rh (.binary .iadd .i64 m a)
-  | .umulhi, rl, rh, xl, xh, yl, yh => umulhiPair rl rh xl xh yl yh
-  | .smulhi, rl, rh, xl, xh, yl, yh => mulhi128 true rl rh xl xh yl yh
   | .smin, rl, rh, xl, xh, yl, yh => minmax128 .smin rl rh xl xh yl yh
   | .smax, rl, rh, xl, xh, yl, yh => minmax128 .smax rl rh xl xh yl yh
   | .umin, rl, rh, xl, xh, yl, yh => minmax128 .umin rl rh xl xh yl yh
   | .umax, rl, rh, xl, xh, yl, yh => minmax128 .umax rl rh xl xh yl yh
-  | op, _, _, _, _, _, _ => throw "legalize128: saturating arithmetic at i128"
+  | _, _, _, _, _, _, _ =>
+    throw "legalize128: saturating arithmetic / umulhi / smulhi at i128"
 
 /-! ## Shifts and rotates
 
@@ -655,9 +593,13 @@ def amt128 (op0 : BinaryOp) (ty : ValueId → Option Ty) (y : ValueId) :
   let raw : Nat ⊕ ValueId ←
     if ty y == some .i128 then
       let (lo, _) ← pairOf y
-      match ← constOfDef lo with
+      -- the `lo` operand of the `iconcat` defining `y`, if a constant
+      let k ← match (← get).concatLo[y]? with
+        | some l => constOfDef l
+        | none => pure none
+      match k with
       -- (lo + hi·2^64) mod 128 = lo mod 128 (2^64 ≡ 0 mod 128)
-      | some a => pure (Sum.inl (a.toNat % 128))
+      | some a => pure (Sum.inl (a % 128))
       | none => do
         let m ← kI64 127
         let amt ← fresh
@@ -665,12 +607,12 @@ def amt128 (op0 : BinaryOp) (ty : ValueId → Option Ty) (y : ValueId) :
         pure (Sum.inr amt)
     else
       match ← constOfDef y with
-      | some a => pure (Sum.inl (a.toNat % 128))
+      | some a => pure (Sum.inl (a % 128))
       | none => do
         let w := (ty y).getD .i64
-        let y64 ← if w == .i64 then pure (← u1 y) else do
+        let y64 ← if w == .i64 then pure y else do
           let r ← fresh
-          emit1 r (.extend .uextend .i64 (← u1 y))
+          emit1 r (.extend .uextend .i64 y)
           pure r
         let m ← kI64 127
         let amt ← fresh
@@ -891,7 +833,7 @@ def rewriteBC (f : Function) (bc : BlockCall) : M BlockCall := do
         return a :: b :: more
       else do
         let more ← go vs ps
-        return (← u1 v) :: more
+        return v :: more
     | _, _ => throw s!"legalize128: arity of block{bc.block}"
   let args ← go bc.args tb.params
   return { bc with args }
@@ -907,7 +849,7 @@ def rewriteStmt (f : Function) (ty : ValueId → Option Ty) (s : Stmt) : M Unit 
       let (xl, xh) ← pairOf x
       un128 op rl rh xl xh
     else
-      emitS { s with inst := .unary op t (← u1 x) }
+      emitS { s with inst := .unary op t x }
   | .binary op t x y =>
     if t == .i128 then do
       let (rl, rh) ← pairOf s.results.head!
@@ -923,11 +865,11 @@ def rewriteStmt (f : Function) (ty : ValueId → Option Ty) (s : Stmt) : M Unit 
       emit1 m (.iconst .i64 (BitVec.ofNat 64 (t.width - 1)))
       let y' ← fresh
       emit1 y' (.binary .band .i64 yl m)
-      emitS { s with inst := .binary op t (← u1 x) y' }
+      emitS { s with inst := .binary op t x y' }
     else if ty x == some .i128 || ty y == some .i128 then
       throw "legalize128: i128 operand of a non-i128 binary instruction"
     else
-      emitS { s with inst := .binary op t (← u1 x) (← u1 y) }
+      emitS { s with inst := .binary op t x y }
   | .div op t x y =>
     if t == .i128 then do
       let fn ← helperFn (divHelper op)
@@ -938,7 +880,7 @@ def rewriteStmt (f : Function) (ty : ValueId → Option Ty) (s : Stmt) : M Unit 
     else if ty x == some .i128 || ty y == some .i128 then
       throw "legalize128: i128 operand of a non-i128 division"
     else
-      emitS { s with inst := .div op t (← u1 x) (← u1 y) }
+      emitS { s with inst := .div op t x y }
   | .overflow .. | .carry .. | .uaddOverflowTrap .. => throw "legalize128: not in E"
   | .icmp cc t x y =>
     if t == .i128 then do
@@ -946,7 +888,7 @@ def rewriteStmt (f : Function) (ty : ValueId → Option Ty) (s : Stmt) : M Unit 
       let (yl, yh) ← pairOf y
       icmp128 cc s.results.head! xl xh yl yh
     else
-      emitS { s with inst := .icmp cc t (← u1 x) (← u1 y) }
+      emitS { s with inst := .icmp cc t x y }
   | .select t c x y | .selectSpectreGuard t c x y =>
     if t == .i128 then do
       let (rl, rh) ← pairOf s.results.head!
@@ -960,7 +902,7 @@ def rewriteStmt (f : Function) (ty : ValueId → Option Ty) (s : Stmt) : M Unit 
     else do
       let (cs, c') ← condOf ty c
       emitN cs
-      emitS { s with inst := .select t c' (← u1 x) (← u1 y) }
+      emitS { s with inst := .select t c' x y }
   | .bitselect t c x y =>
     if t == .i128 then do
       let (rl, rh) ← pairOf s.results.head!
@@ -971,7 +913,7 @@ def rewriteStmt (f : Function) (ty : ValueId → Option Ty) (s : Stmt) : M Unit 
     else if ty c == some .i128 || ty x == some .i128 || ty y == some .i128 then
       throw "legalize128: i128 operand of a non-i128 bitselect"
     else
-      emitS { s with inst := .bitselect t (← u1 c) (← u1 x) (← u1 y) }
+      emitS { s with inst := .bitselect t c x y }
   | .bmask t x =>
     -- the truthiness of an `i128` operand is `(lo != 0) | (hi != 0)`; `bmask` itself is
     -- not in the emitter subset, so the result is a select of the condition
@@ -987,7 +929,7 @@ def rewriteStmt (f : Function) (ty : ValueId → Option Ty) (s : Stmt) : M Unit 
         let c ← fresh
         emit1 c (.binary .bor .i8 a b)
         pure c
-      else pure (← u1 x)
+      else pure x
       bmaskEmit rl .i64 c
       bmaskEmit rh .i64 c
     else if ty x == some .i128 then do
@@ -1001,20 +943,20 @@ def rewriteStmt (f : Function) (ty : ValueId → Option Ty) (s : Stmt) : M Unit 
       emit1 c (.binary .bor .i8 a b)
       bmaskEmit s.results.head! t c
     else
-      emitS { s with inst := .bmask t (← u1 x) }
+      emitS { s with inst := .bmask t x }
   | .extend op t x =>
     if t == .i128 then do
       let some w := ty x | throw "legalize128: extend with an untyped operand"
       let (rl, rh) ← pairOf s.results.head!
       if op == .uextend then do
-        let x' ← u1 x
+        let x' := x
         if w == .i64 then
           emit1 rl (.binary .bor .i64 x' x')  -- a copy of x'
         else
           emit1 rl (.extend .uextend .i64 x')
         emit1 rh (.iconst .i64 (BitVec.ofInt 64 0))
       else do
-        let x' ← u1 x
+        let x' := x
         if w == .i64 then
           emit1 rl (.binary .bor .i64 x' x')
         else
@@ -1023,44 +965,55 @@ def rewriteStmt (f : Function) (ty : ValueId → Option Ty) (s : Stmt) : M Unit 
     else if ty x == some .i128 then
       throw "legalize128: i128 operand of a non-i128 extend"
     else
-      emitS { s with inst := .extend op t (← u1 x) }
+      emitS { s with inst := .extend op t x }
   | .ireduce t x =>
     if ty x == some .i128 then do
       let (lo, _) ← pairOf x
       if t == .i64 then
-        -- `ireduce.i64` of an `i128` value is the pair's low half itself: an alias
-        modify fun st => { st with alias := st.alias.insert s.results.head! lo }
+        -- `ireduce.i64` of an `i128` value is a copy of the pair's low half
+        emit1 s.results.head! (.binary .bor .i64 lo lo)
       else
         emitS { s with inst := .ireduce t lo }
     else
-      emitS { s with inst := .ireduce t (← u1 x) }
+      emitS { s with inst := .ireduce t x }
   | .iconcat t lo hi =>
-    -- the controlling type is the operand type; the result has twice the width
-    if t == .i64 then pure ()  -- the pair of the result is (lo, hi): dropped
+    -- the controlling type is the operand type; the result has twice the width. Its pair
+    -- is a copy of the operands (a pair is never shared with other values)
+    if t == .i64 then do
+      let (rl, rh) ← pairOf s.results.head!
+      emit1 rl (.binary .bor .i64 lo lo)
+      emit1 rh (.binary .bor .i64 hi hi)
     else throw "legalize128: iconcat with a non-i128 result"
   | .isplit t x =>
-    if t == .i128 then pure ()  -- the results alias the pair of x: dropped
+    -- the results are copies of the pair halves of `x`
+    if t == .i128 then do
+      let (xl, xh) ← pairOf x
+      match s.results with
+      | [r0, r1] =>
+        emit1 r0 (.binary .bor .i64 xl xl)
+        emit1 r1 (.binary .bor .i64 xh xh)
+      | _ => throw "legalize128: isplit.i128 result arity"
     else throw "legalize128: isplit at a non-i128 type"
   | .load op t flags p off =>
     if t == .i128 then do
       let (rl, rh) ← pairOf s.results.head!
-      let p' ← u1 p
+      let p' := p
       emit1 rl (.load .load .i64 flags p' off)
       emit1 rh (.load .load .i64 flags p' (off + 8))
     else if ty p == some .i128 then
       throw "legalize128: i128 address"
     else
-      emitS { s with inst := .load op t flags (← u1 p) off }
+      emitS { s with inst := .load op t flags p off }
   | .store op t flags x p off =>
     if t == .i128 then do
       let (xl, xh) ← pairOf x
-      let p' ← u1 p
+      let p' := p
       emitS { results := [], inst := .store .store .i64 flags xl p' off }
       emitS { results := [], inst := .store .store .i64 flags xh p' (off + 8) }
     else if ty x == some .i128 || ty p == some .i128 then
       throw "legalize128: i128 operand of a non-i128 store"
     else
-      emitS { s with inst := .store op t flags (← u1 x) (← u1 p) off }
+      emitS { s with inst := .store op t flags x p off }
   | .stackAddr t slot off =>
     if t == .i128 then throw "legalize128: i128 stack_addr"
     else emitS s
@@ -1073,7 +1026,7 @@ def rewriteStmt (f : Function) (ty : ValueId → Option Ty) (s : Stmt) : M Unit 
       let results ← retsOf rg s.results
       emitS { s with results, inst := .call fn args' }
     else
-      emitS { s with inst := .call fn (← args.mapM u1) }
+      emitS { s with inst := .call fn args }
   | .callIndirect sig callee args => do
     let some dsig := f.sigDecls.lookup sig | throw s!"legalize128: unknown sig{sig}"
     if sig128 dsig then do
@@ -1081,9 +1034,9 @@ def rewriteStmt (f : Function) (ty : ValueId → Option Ty) (s : Stmt) : M Unit 
       let rg ← liftE (expandGroups dsig.returns)
       let args' ← argsOf gs args
       let results ← retsOf rg s.results
-      emitS { s with results, inst := .callIndirect sig (← u1 callee) args' }
+      emitS { s with results, inst := .callIndirect sig callee args' }
     else
-      emitS { s with inst := .callIndirect sig (← u1 callee) (← args.mapM u1) }
+      emitS { s with inst := .callIndirect sig callee args }
   | .funcAddr t fn =>
     if t == .i128 then throw "legalize128: i128 func_addr"
     else emitS s
@@ -1092,9 +1045,11 @@ def rewriteStmt (f : Function) (ty : ValueId → Option Ty) (s : Stmt) : M Unit 
   | .fence => emitS s
   | .bitcast t flags x =>
     if t == .i128 && ty x == some .i128 then do
-      -- the identity: the result's pair is the source's pair
-      let p ← pairOf x
-      modify fun st => { st with pair := st.pair.insert s.results.head! p }
+      -- the identity: the result's pair is a copy of the source's pair
+      let (rl, rh) ← pairOf s.results.head!
+      let (xl, xh) ← pairOf x
+      emit1 rl (.binary .bor .i64 xl xl)
+      emit1 rh (.binary .bor .i64 xh xh)
     else if t == .i128 || ty x == some .i128 then
       throw "legalize128: i128 bitcast"
     else emitS s
@@ -1123,7 +1078,7 @@ def rewriteTerm (f : Function) (ty : ValueId → Option Ty) (rg : List (List Slo
     emitN cs
     return .brif c' (← rewriteBC f t2) (← rewriteBC f e)
   | .brTable x d tbl =>
-    return .brTable (← u1 x) (← rewriteBC f d) (← tbl.mapM (rewriteBC f))
+    return .brTable x (← rewriteBC f d) (← tbl.mapM (rewriteBC f))
   | .ret vs => return .ret (← argsOf rg vs)
   | .trap _ => return t
   | .returnCall .. => throw "legalize128: return_call is not supported"
@@ -1138,8 +1093,9 @@ def maxValueId (f : Function) : ValueId :=
 def maxFnRef (f : Function) : FnRef :=
   f.externs.foldl (fun a e => max a e.1) 0 + 1
 
-/-- Phase A1: the pair of every `i128` value (the results of `iconcat` are their operands;
-the results of a `call`/`call_indirect` are assigned when the call is rewritten). -/
+/-- Phase A1: a fresh pair for every `i128` value (the results of a `call`/`call_indirect`
+are assigned when the call is rewritten); the `iconst` definitions and the `lo` operands of
+`iconcat`s (shift-amount constant folding). -/
 def phaseA1 (f : Function) : M Unit := do
   let sigOf := fun r => (f.externs.lookup r).map (·.sig)
   let declOf := fun s => f.sigDecls.lookup s
@@ -1152,12 +1108,10 @@ def phaseA1 (f : Function) : M Unit := do
       if let .iconst .. := s.inst then
         for r in s.results do
           modify fun st => { st with defOf := st.defOf.insert r s.inst }
-      match s.inst with
-      | .iconcat .i64 lo hi =>
+      if let .iconcat .i64 lo _ := s.inst then
         for r in s.results do
-          modify fun st => { st with pair := st.pair.insert r (lo, hi) }
-      | .isplit .i128 _ => pure ()
-      | .bitcast .i128 _ _ => pure ()  -- the pair of the source, bound in phase B
+          modify fun st => { st with concatLo := st.concatLo.insert r lo }
+      match s.inst with
       | .call .. | .callIndirect .. => pure ()
       | _ =>
         if let some ts := s.inst.resultTypes sigOf declOf then
@@ -1165,18 +1119,6 @@ def phaseA1 (f : Function) : M Unit := do
             if t == .i128 then
               let p ← allocPair
               modify fun st => { st with pair := st.pair.insert r p }
-
-/-- Phase A2: the results of an `isplit.i128` alias the pair halves of its source. -/
-def phaseA2 (f : Function) : M Unit := do
-  for b in f.blocks do
-    for s in b.body do
-      if let .isplit .i128 x := s.inst then
-        let (a, b) ← pairOf x
-        match s.results with
-        | [r0, r1] =>
-          modify fun st =>
-            { st with alias := st.alias.insert r0 a |>.insert r1 b }
-        | _ => throw "legalize128: isplit.i128 result arity"
 
 /-- Phase B: rewrite the signature, the declarations, the blocks and the terminators. -/
 def rewriteM (f : Function) : M Function := do
@@ -1211,30 +1153,24 @@ def rewriteM (f : Function) : M Function := do
   return { f with sig := newSig, externs := newExterns ++ st.extraExts,
                   sigDecls := newSigDecls, blocks := newBlocks }
 
-/-- The legalised function (an error makes the caller keep the original, which the backend
-then reports unsupported as before). -/
-def function128 (f : Function) : Except String Function := do
-  if !(mentions128 f) then return f
-  let (_, st) ← (phaseA1 f).run { next := maxValueId f + 1, nextFn := maxFnRef f + 1 }
-  let (_, st) ← (phaseA2 f).run st
-  let (f', _) ← (rewriteM f).run st
-  return f'
+/-- What the validator `Opt.Legal.check` needs besides the two functions: the pair of every
+`i128` value and the shared zero of the pad values. -/
+structure Cert where
+  pairs : List (ValueId × ValueId × ValueId) := []
+  zero : ValueId := 0
+  deriving Repr, Inhabited
 
-/-- Legalise every parsed function of a file; returns the file and, for every function that
-was legalised, the unverified reason. -/
-def parsedFile128 (pf : Clif.ParsedFile) : Clif.ParsedFile × List (String × String) :=
-  pf.funcs.foldl (fun (acc : Clif.ParsedFile × List (String × String)) p =>
-    let push (f : Clif.ParsedFunction) : Clif.ParsedFile :=
-      { acc.1 with funcs := acc.1.funcs ++ [f] }
-    match p.func with
-    | .ok f =>
-      match function128 f with
-      | .ok f' =>
-        if f' == f then (push p, acc.2)
-        else (push { p with func := .ok f' },
-                acc.2 ++ [(p.name, "i128 legalized (outside backend_correct)")])
-      | .error _ => (push p, acc.2)
-    | .error _ => (push p, acc.2)) ({ pf with funcs := [] }, [])
+/-- The legalised function and its certificate (an error makes the caller keep the
+original, which the backend then reports unsupported as before). -/
+def function128Cert (f : Function) : Except String (Function × Cert) := do
+  if !(mentions128 f) then return (f, {})
+  let (_, st) ← (phaseA1 f).run { next := maxValueId f + 1, nextFn := maxFnRef f + 1 }
+  let (f', st) ← (rewriteM f).run st
+  return (f', { pairs := st.pair.toList.map fun (v, a, b) => (v, a, b), zero := st.zero })
+
+/-- The legalised function. -/
+def function128 (f : Function) : Except String Function :=
+  (·.1) <$> function128Cert f
 
 /-! ## Run commands: the original's arguments and the legalised outcome -/
 
