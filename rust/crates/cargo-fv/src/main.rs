@@ -60,6 +60,8 @@ struct Meta {
     target: PathBuf,
     /// `[package.metadata.fv] skip = [...]`: (manifest dir, pattern).
     skip: Vec<(PathBuf, String)>,
+    /// Package names of the members.
+    names: Vec<String>,
 }
 
 /// `cargo metadata --no-deps`.
@@ -77,6 +79,7 @@ fn metadata(cargo: &Path, toolchain: &str, manifest: Option<&str>) -> Meta {
         .unwrap_or_default();
     let mut members = Vec::new();
     let mut skip = Vec::new();
+    let mut names = Vec::new();
     for p in v["packages"].as_array().into_iter().flatten() {
         if ids.contains(p["id"].as_str().unwrap_or("")) {
             if let Some(m) = p["manifest_path"].as_str() {
@@ -86,11 +89,12 @@ fn metadata(cargo: &Path, toolchain: &str, manifest: Option<&str>) -> Meta {
                     skip.push((d.clone(), pat.to_string()));
                 }
                 members.push(d);
+                names.extend(p["name"].as_str().map(String::from));
             }
         }
     }
     let target = PathBuf::from(v["target_directory"].as_str().unwrap_or_else(|| die("cargo metadata: no target_directory")));
-    Meta { members, ids, target, skip }
+    Meta { members, ids, target, skip, names }
 }
 
 fn find_tool(env: &str, candidates: &[PathBuf]) -> PathBuf {
@@ -133,6 +137,27 @@ fn value_of(args: &[String], opt: &str) -> Option<String> {
         }
     }
     None
+}
+
+/// Everything that changes the Lean side of a build but not cargo's fingerprints.
+fn stamp_of(cfg: &Config, wrapper: &Path) -> String {
+    let mut s = String::new();
+    for p in [cfg.lean_backend(), cfg.data_export(), cfg.lean_regalloc(), cfg.normalize(), wrapper.to_path_buf()] {
+        let m = std::fs::metadata(&p).ok();
+        s.push_str(&format!(
+            "{} {} {:?}\n",
+            p.display(),
+            m.as_ref().map(|m| m.len()).unwrap_or(0),
+            m.and_then(|m| m.modified().ok())
+        ));
+    }
+    for k in ["FV_SKIP", "FV_ONLY", "FV_ALLOW_SRET"] {
+        s.push_str(&format!("{k}={}\n", std::env::var(k).unwrap_or_default()));
+    }
+    for (d, p) in &cfg.pkg_skip {
+        s.push_str(&format!("skip {} {p}\n", d.display()));
+    }
+    s
 }
 
 fn report_path(target: &Path) -> PathBuf {
@@ -209,7 +234,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
     let rustc = which_tool(&toolchain, "rustc");
     let rustdoc = which_tool(&toolchain, "rustdoc");
     let root = repo_root();
-    let Meta { members, ids: member_ids, target, skip: pkg_skip } =
+    let Meta { members, ids: member_ids, target, skip: pkg_skip, names } =
         metadata(&cargo, &toolchain, value_of(&cargo_args, "--manifest-path").as_deref());
     let sysroot = PathBuf::from(capture(Command::new(&rustc).arg("--print").arg("sysroot")).trim());
     let host = capture(Command::new(&rustc).arg("-vV"))
@@ -268,6 +293,27 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
             c.env(runner_var, "qemu-aarch64-static");
         }
     };
+
+    // cargo does not see the Lean tools or the FV settings: when they change, rebuild the
+    // members (dependencies are plain cg_clif and stay)
+    let stamp_path = fv_dir.join("fv-stamp");
+    let stamp = stamp_of(&cfg, &wrapper);
+    if std::fs::read_to_string(&stamp_path).ok().as_deref() != Some(stamp.as_str()) {
+        if fv_dir.exists() {
+            eprintln!("cargo fv: the Lean tools or the FV settings changed: rebuilding the workspace members");
+            for n in &names {
+                let mut c = Command::new(&cargo);
+                c.args(["clean", "-q", "-p", n, "--target", TARGET]);
+                if let Some(m) = value_of(&cargo_args, "--manifest-path") {
+                    c.args(["--manifest-path", &m]);
+                }
+                setup(&mut c);
+                let _ = c.status();
+            }
+        }
+        let _ = std::fs::create_dir_all(&fv_dir);
+        let _ = std::fs::write(&stamp_path, &stamp);
+    }
 
     // phase 1: build (artifact list from cargo's JSON messages)
     let build_sub = if sub == "test" { "test" } else { "build" };
