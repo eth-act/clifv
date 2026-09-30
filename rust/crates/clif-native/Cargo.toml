@@ -18,3 +18,5 @@ cranelift-reader = { workspace = true }
 cranelift-frontend = { workspace = true }
 anyhow = { workspace = true }
 serde_json = { workspace = true }
+object = { version = "0.40", default-features = false, features = ["read_core", "elf", "archive", "std"] }
+parking_lot = "0.12"

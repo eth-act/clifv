@@ -5,17 +5,29 @@
 #   - clif-filetest (Lean `Clif.run`, compared with Cranelift's interpreter), and
 #   - scripts/lean-backend-filetests.sh (Lean backend -> llvm-mc -> qemu, compared with
 #     Cranelift's own aarch64 code).
-# Needs dump.sh and tools.sh output. usage: scripts/rust-clif/smoke.sh [OUT_DIR]
+# The functions come with the `; data:` objects they reference (clif-data-export, transitively
+# through data items, plus every function a data object points at), so `symbol_value`
+# functions (e.g. `%fn_ptr_table`'s panic location) link natively.
+# Needs dump.sh output and the clif-data-export tool.
+# usage: scripts/rust-clif/smoke.sh [OUT_DIR]   (SMOKE_WORK overrides the work directory)
 set -euo pipefail
 
 TOOLCHAIN=${TOOLCHAIN:-nightly-2026-09-26}
 root=$(cd "$(dirname "$0")/../.." && pwd)
 here="$root/scripts/rust-clif"
 out=${1:-/tmp/rust-clif-survey/out}
-tools="$out/../tools"
-work="$out/../smoke"
+[[ "$out" == --no-data ]] && out=/tmp/rust-clif-survey/out
+work=${SMOKE_WORK:-$out/../smoke}
 rm -rf "$work"
 mkdir -p "$work"
+
+# the recovered data images (OUT/../data)
+"$here/data-export.sh" "$out" >/dev/null
+datadir="$out/../data"
+for c in a_arith c_structs_enums d_loops_iters h_dyn_generic g_u128; do
+  python3 "$here/normalize.py" "$out/release/$c/$c.clif" unopt "$work/release-$c.norm.clif" \
+    --gvmap "$datadir/release-$c.gvmap.tsv" --data-file "$datadir/release-$c.data.clif"
+done
 
 externs=()
 for c in a_arith c_structs_enums d_loops_iters h_dyn_generic g_u128; do
@@ -26,15 +38,19 @@ done
 rustc +"$TOOLCHAIN" --edition 2021 -Copt-level=1 "${externs[@]}" -o "$work/gen_runs" "$here/smoke/gen_runs.rs"
 "$work/gen_runs" >"$work/runs.tsv"
 
-python3 - "$tools" "$work/runs.tsv" "$work/smoke.clif" <<'EOF'
+python3 - "$work" "$work/runs.tsv" "$work/smoke.clif" <<'EOF'
 import re, sys
 from pathlib import Path
-tools, runs, out = Path(sys.argv[1]), sys.argv[2], sys.argv[3]
-funcs, header = {}, None
+norm, runs, out = Path(sys.argv[1]), sys.argv[2], sys.argv[3]
+funcs, data, header = {}, {}, None
 for crate in ("a_arith", "c_structs_enums", "d_loops_iters", "h_dyn_generic", "g_u128"):
-    text = (tools / f"release-{crate}.unopt.reader.clif").read_text()
+    text = (norm / f"release-{crate}.norm.clif").read_text()
     head, _, rest = text.partition("\nfunction ")
-    header = header or head
+    header = header or "\n".join(l for l in head.splitlines() if not l.startswith("; data:"))
+    for l in head.splitlines():
+        m = re.match(r"; data: %(\S+)", l)
+        if m:
+            data[m.group(1)] = l
     for body in ("function " + rest).split("\n\nfunction "):
         body = body if body.startswith("function ") else "function " + body
         name = re.match(r"function %(\S+?)\(", body).group(1)
@@ -43,24 +59,30 @@ lines = {}
 for l in open(runs):
     f, r = l.rstrip("\n").split("\t")
     lines.setdefault(f, []).append(r)
-order, todo = [], list(lines)
+# the functions with run lines, their callees, the data objects they reference and every
+# function/data object those point at
+order, objs, todo = [], [], list(lines)
 while todo:
-    f = todo.pop()
-    if f in order or f not in funcs:
-        continue
-    order.append(f)
-    todo += [c for c in re.findall(r"fn\d+ = (?:colocated )?%(\S+?)\(", funcs[f]) if c in funcs]
-parts = [header.rstrip()]
+    s = todo.pop()
+    if s in funcs and s not in order:
+        order.append(s)
+        todo += re.findall(r"fn\d+ = (?:colocated )?%(\S+?)\(", funcs[s])
+        todo += re.findall(r"gv\d+ = symbol (?:colocated )?%([A-Za-z0-9_]+)", funcs[s])
+    elif s in data and s not in objs:
+        objs.append(s)
+        todo += re.findall(r"%([A-Za-z0-9_]+)", data[s].split("=", 1)[1])
+parts = [header.rstrip() + "".join("\n" + data[o] for o in sorted(objs))]
 for f in sorted(order):
     parts.append(funcs[f] + "".join("\n" + r for r in lines.get(f, [])))
 Path(out).write_text("\n\n".join(parts) + "\n")
-print(f"smoke.clif: {len(order)} functions, {sum(map(len, lines.values()))} run lines")
+print(f"smoke.clif: {len(order)} functions, {len(objs)} data objects, "
+      f"{sum(map(len, lines.values()))} run lines")
 EOF
 
 cd "$root"
-echo "== clif-filetest (Lean Clif.run vs Cranelift interpreter, the legalised form alongside)"
+echo "== clif-filetest --rust-env (Lean Clif.run vs Cranelift interpreter, the legalised form alongside)"
 rust/target/release/clif-oracle interp "$work/smoke.clif" >"$work/oracle.jsonl" || true
-.lake/build/bin/clif-filetest --oracle "$work/oracle.jsonl" --legalize128 "$work/smoke.clif" || true
+.lake/build/bin/clif-filetest --rust-env --oracle "$work/oracle.jsonl" --legalize128 "$work/smoke.clif" || true
 echo "== lean-backend-filetests (Lean backend on qemu vs Cranelift aarch64 on qemu)"
 # the `__*ti3` 128-bit division helpers the legalised objects call (and the mem*/panic
 # externs of the corpus)

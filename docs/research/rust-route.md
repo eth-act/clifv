@@ -113,3 +113,113 @@ integrator.
   imported statics are out of scope (none in the corpus).
 
 <!-- STATUS-MARKER -->
+
+## Native coverage (branch `agent/native-cov`)
+
+Every one of the 933 survey functions runs natively, Lean-backend code against Cranelift's
+own aarch64 code for the same CLIF, on generated inputs, with all observable outputs
+compared. Command: `scripts/rust-clif/diff-native.sh` (driver `clif-native --diff`,
+`rust/crates/clif-native/src/diff.rs` + `diffharness.c`); negative control
+`scripts/rust-clif/diff-native-selftest.sh`.
+
+### How a function is exercised
+
+- **Per crate/profile** the unopt dump is normalised with its recovered data image and
+  callee names (`clif-data-export --fnmap`, `normalize.py --fnmap`), compiled once by `lean-backend` (all functions) and once by
+  Cranelift (inside the driver). Both executables link the *same* freestanding harness,
+  Cranelift-compiled trampolines (`load args → call → store results`, so the ABI boundary is
+  identical), the `; data:` objects, `rust-runtime.c` (`mem*`, `__*ti3`) and generated stubs;
+  only the object with the file's functions differs. Calls between corpus functions go to the
+  engine's own code (the whole crate is linked).
+- **Externs**: the Rust allocator entry points (`__rust_alloc` & co., mangled or not; `--alias
+  SYM=TARGET` for others) go to a deterministic bump heap in the harness; `__rust_u128_mulo` is implemented in the harness; every other extern
+  (the `core` panic entry points, `fmt`) is a stub that traps — the outcome `extern <symbol>`
+  (exact for the never-returning panics); symbols referenced only as data that cg_clif's
+  optimiser dropped (dead `allocN` references) are unmapped absolute addresses.
+- **Inputs** (PRNG per (seed, function, vector), identical in both executables): a 64 KiB
+  arena at a fixed address filled with pointers into itself, small integers, zeros, random
+  words, pointers to data objects (vtables preferred) and to fixed-address per-function
+  thunks. Parameter kinds come from a CLIF dataflow analysis (`param_kinds`): *pointer* (flows
+  through `iadd`/`isub`/`select`/block args/stack slots/calls into a load/store address, a
+  `mem*` pointer, or `self` of an indirect call) → mostly arena pointers; *sret* → a reserved
+  arena tail; *code pointer* (reaches a `call_indirect` callee) → a thunk of a function with
+  the called signature; *vtable* (the address a callee is loaded from) → a data object that
+  points at functions; integers → a mix of small values, boundaries (0, ±1, `MIN`/`MAX` per
+  width, 2^32, …), random words.
+- **Compared per call**: the outcome class (returned / `trap <code>` via each engine's trap
+  table / `extern <symbol>` / signal + faulting symbol + fault address), return values, and
+  every memory word the call can write (arena incl. everything reachable through the pointer
+  arguments, the heap, the writable data objects) as an exact word-level diff. Code addresses
+  are canonicalised (a word equal to a function address becomes a token; data objects and
+  arena words point at fixed-address thunks instead of the functions, so their bytes are
+  engine-independent), stack addresses become one token (frame layouts differ).
+- **Nondeterminism**: each vector runs under two configurations per engine — different stack
+  base, and complementary fill patterns for the fresh stack and heap. A bit that differs
+  between one engine's two runs depends on uninitialised bytes (unspecified in CLIF: e.g.
+  `Option<u32>` padding copied out of a stack slot) and is not compared (`agree_masked`
+  counts the vectors where that happened); everything else must match exactly. Timeouts
+  (500 ms virtual CPU per call), stack overflows and harness crashes are skipped and counted.
+  A function with fewer than 50 compared vectors gets more (rounds of 64, up to 512).
+
+### Results (seed 24301, 64 vectors per round)
+
+| profile | functions | vectors | agree | of which masked | disagree | skipped |
+| --- | --- | --- | --- | --- | --- | --- |
+| debug | 454 | 29 568 | 29 040 | 1 213 | **0** | 527 timeout, 1 nondet. memory |
+| release | 239 | 15 744 | 15 300 | 608 | **0** | 444 timeout |
+| release-oc | 240 | 15 744 | 15 338 | 599 | **0** | 406 timeout |
+| **total** | **933** | 61 056 | **59 678** | 2 420 | **0** | 1 378 |
+
+A second seed (`SEED=7`) gives the same picture: 933 functions, 59 664 agreeing vectors
+(2 359 masked), **0 disagreements**, 0 functions below the minimum.
+
+Every function has ≥ 50 compared vectors (minimum 50: `sum_range`, `rev_step`,
+`nested_loops`, whose large random bounds time out; 0 functions below the minimum). Per crate
+the table is in `DIFF_WORK/summary.md` (27 crate/profile rows, all 0 disagreements); 412 of
+the 933 are inside `E2E.backend_correct_final`, the other 521 are compiled-but-unverified
+(calls, sret, i128 legalised, indirect calls) — the differential covers both.
+
+Agreed outcomes: 42 072 returned, 9 052 SIGSEGV (wild pointers, both engines at the same
+fault address), 5 982 `extern` (panics / fmt stubs), 2 572 `trap user1`. 895 of the 933
+functions return normally on at least one vector; the other 38 are functions whose every
+generated input panics or faults: 19 always reach an extern (`fmt`-based `Debug` impls, error
+paths such as `unwrap_failed`), 8 always hit `trap user1` (e.g. `opt_u64_zip`), 11 always
+fault (dyn-dispatch helpers whose `self`/vtable layout random memory rarely satisfies).
+Externs: 163 trap stubs, 15 allocator aliases, 32 dead data references over the 27 files.
+
+Negative control (`diff-native-selftest.sh`, one-instruction mutations compiled by the Lean
+backend and diffed against Cranelift on the original): `add_u32` `iadd`→`isub` (return
+value) 30/32 vectors disagree; `make_array` store offset 63→62 (memory through `sret`) 32/32;
+`swap_ends` index 1→2 (memory through pointer args / panic path) 19/32; unmutated controls in
+the same files 0 disagreements.
+
+### Bugs found
+
+- **Lean backend, `sret` ABI** (fixed on main in `f52e514`, found independently by
+  `cargo fv`): `sigArgLocs` let the sret parameter consume `x0`, shifting every later
+  parameter by one register at entries and call sites (Cranelift: sret in x8, the others
+  from x0). Before the fix: 3 151 disagreeing vectors — 3 134 in sret functions and their
+  callers (e.g. `vec_squares(i64 sret, i32)` read its bound from x1), the other 17 the
+  code-address artefact below; bisected with `clif-native --diff --lean-only SYMBOL` (Lean
+  code for the named functions only, Cranelift for the rest).
+- **Harness artefacts removed on the way** (not compiler bugs): partial reads of code
+  addresses stored in memory (→ thunks with engine-independent bytes), random-vs-random
+  masking of uninitialised bits (→ complementary patterns).
+- **clif-native (step 1 follow-up)**: `--functions-obj` runs bailed on undefined data
+  symbols (`%fn_ptr_table`'s `symbol_value %alloc33`); the blame now covers `symbol_value`
+  references (also through `; data:` items) in both modes. `smoke.sh` builds `smoke.clif`
+  with the recovered data image (+ every function/data object it points at) and runs
+  `Clif.run` with `--rust-env`: **103/103 run lines pass natively and under `Clif.run`**
+  (was 101/103).
+
+### Limits
+
+- Inputs are random, not coverage-guided: deep invariants (a valid `&dyn Trait` behind two
+  pointers, a well-formed `Vec` of `Vec`s) are hit only occasionally; see the 38 functions
+  above. Loops over random bounds time out (skipped, counted).
+- Masked bits: a miscompilation that only changes bits derived from uninitialised memory is
+  invisible (CLIF leaves those bits unspecified anyway).
+- The comparison is Lean backend vs Cranelift on the same (normalised) CLIF, not vs cg_clif's
+  own object (whose code for the same functions is Cranelift output too, so this is the same
+  oracle without cg_clif's data/symbol layout); calls into `core`/`alloc` beyond the
+  allocator are stubs.
