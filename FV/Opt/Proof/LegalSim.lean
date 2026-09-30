@@ -353,12 +353,32 @@ theorem srcInv_enter {f : Function} (hnd : ((defsOf f).map (·.1)).Nodup) {B : B
 
 /-! ## The frame relation -/
 
+/-- Plain values of `f` are the same values in the target (defined or not). -/
+def PlainEq (C : Ctx) (ρ ρ' : Regs) : Prop := ∀ v, v < C.T0 → C.pair v = none → ρ' v = ρ v
+
+theorem PlainEq.update {C : Ctx} (hG : Good C) {ρ ρ' ρ1 ρ1' : Regs} (h : PlainEq C ρ ρ')
+    {rs : List ValueId} (hsrc : ∀ v, v ∉ rs → ρ1 v = ρ v)
+    (hnew : ∀ v ∈ rs, v < C.T0 → ∀ x, ρ1 v = some x → RelV C ρ1' v x)
+    (htgt : ∀ w, C.fresh w = false → (∀ v ∈ rs, v < C.T0 → w ∉ img C v) → ρ1' w = ρ' w)
+    (hdef : ∀ v ∈ rs, ∃ x, ρ1 v = some x) : PlainEq C ρ1 ρ1' := by
+  intro v hv hp
+  by_cases hvr : v ∈ rs
+  · obtain ⟨x, hx⟩ := hdef v hvr
+    have := hnew v hvr hv x hx
+    rw [RelV.plain hp] at this
+    rw [this, hx]
+  · have hw : v ∈ img C v := by simp [img, hp]
+    rw [hsrc v hvr, htgt v (img_nonfresh hG hv hw) fun u hu hut =>
+      img_disj hG hut hv (fun h => hvr (h ▸ hu)) hw]
+    exact h v hv hp
+
 /-- The register-level part of the frame relation. -/
 structure CRel (C : Ctx) (fr fr' : Frame) : Prop where
   func : fr.func = C.f
   func' : fr'.func = C.g
   slots : fr'.slots = fr.slots
   vrel : VRel C fr.regs fr'.regs
+  peq : PlainEq C fr.regs fr'.regs
   src : SrcInv C.f fr.regs
   zero : fr'.regs C.zero = some zeroVal
 
@@ -430,13 +450,177 @@ theorem enter_sim {C : Ctx} (hG : Good C) {fr fr' : Frame} (hR : CRel C fr fr')
   have hzero : C.zero ∉ B'.params.map (·.1) := fun hz => by
     obtain ⟨u, hu, hzu⟩ := hcov _ hz
     exact zero_not_img hG (param_lt hG hBmem hu) hzu
-  refine ⟨⟨hR.func, hR.func', hR.slots, ?_, srcInv_enter hG.defs hBmem hR.src hty hset,
+  have hsrc : ∀ v, v ∉ B.params.map (·.1) → regs1 v = fr.regs v :=
+    fun v hv => setMany_other hset hv
+  have hnew : ∀ v ∈ B.params.map (·.1), v < C.T0 → ∀ x, regs1 v = some x → RelV C regs1' v x :=
+    fun v hv _ x hx => hbind (holds_setMany hnd hset) (holds_setMany hnd' hset') hnd v hv x hx
+  have htgt : ∀ w, C.fresh w = false → (∀ v ∈ B.params.map (·.1), v < C.T0 → w ∉ img C v) →
+      regs1' w = fr'.regs w := fun w _ hni => setMany_other hset' fun hw => by
+    obtain ⟨u, hu, hwu⟩ := hcov w hw
+    exact hni u hu (param_lt hG hBmem hu) hwu
+  have hdef : ∀ v ∈ B.params.map (·.1), ∃ x, regs1 v = some x :=
+    holds_mem (holds_setMany hnd hset)
+  exact ⟨⟨hR.func, hR.func', hR.slots, VRel.update hG hR.vrel hsrc hnew htgt,
+    PlainEq.update hG hR.peq hsrc hnew htgt hdef, srcInv_enter hG.defs hBmem hR.src hty hset,
     by simp only; rw [setMany_other hset' hzero]; exact hR.zero⟩,
     ⟨B, hBmem, List.suffix_refl _, rfl⟩, hcode⟩
-  exact VRel.update hG hR.vrel (rs := B.params.map (·.1)) (fun v hv => setMany_other hset hv)
-    (fun v hv _ x hx => hbind (holds_setMany hnd hset) (holds_setMany hnd' hset') hnd v hv x hx)
-    (fun w _ hni => setMany_other hset' fun hw => by
-      obtain ⟨u, hu, hwu⟩ := hcov w hw
-      exact hni u hu (param_lt hG hBmem hu) hwu)
+
+/-! ## Target runs -/
+
+/-- The target run from `⟨fr', [], m⟩` reaches `⟨fr1', [], m1⟩`. -/
+def TStep (env : Env) (p' : Program) (fr' : Frame) (m : Mem) (fr1' : Frame) (m1 : Mem) : Prop :=
+  ∃ k, ∀ n, runLoop env p' (n + k) ⟨fr', [], m⟩ = runLoop env p' n ⟨fr1', [], m1⟩
+
+theorem TStep.trans {env : Env} {p' : Program} {a b c : Frame} {ma mb mc : Mem}
+    (h1 : TStep env p' a ma b mb) (h2 : TStep env p' b mb c mc) : TStep env p' a ma c mc := by
+  obtain ⟨k1, h1⟩ := h1
+  obtain ⟨k2, h2⟩ := h2
+  exact ⟨k2 + k1, fun n => by rw [← Nat.add_assoc, h1, h2]⟩
+
+theorem TStep.of_lstar {env : Env} {p' : Program} {fr' fr1' : Frame} {m m1 : Mem}
+    (h : LStar fr' m fr1' m1) : TStep env p' fr' m fr1' m1 := by
+  obtain ⟨k, hk⟩ := h.runLoop (env := env) (p := p')
+  exact ⟨k, fun n => hk n []⟩
+
+theorem TStep.of_step {env : Env} {p' : Program} {fr' fr1' : Frame} {m m1 : Mem}
+    (h : step env p' ⟨fr', [], m⟩ = .next ⟨fr1', [], m1⟩) : TStep env p' fr' m fr1' m1 :=
+  ⟨1, fun n => by rw [runLoop_succ, h]⟩
+
+/-- The return groups of `f`. -/
+def Ctx.rg (C : Ctx) : List (List SlotEl) := (groups C.f.sig.returns).getD []
+
+/-- What the target does for a source step. -/
+def SimOut (C : Ctx) (env : Env) (p' : Program) (fr' : Frame) (m : Mem) : StepResult → Prop
+  | .next s1 => s1.callers = [] ∧ MemBounded s1.mem ∧
+      ∃ fr1', FRel C s1.frame fr1' ∧ TStep env p' fr' m fr1' s1.mem
+  | .done vals m1 => ∃ vals', ExpRel C.rg vals vals' ∧ ∃ k, runLoop env p' k ⟨fr', [], m⟩ = .returned vals' m1
+  | .trapped c => ∃ k, runLoop env p' k ⟨fr', [], m⟩ = .trapped c
+  | .stuck _ => True
+
+theorem SimOut.pre {C : Ctx} {env : Env} {p' : Program} {fr' fr1' : Frame} {m m1 : Mem}
+    {r : StepResult} (ht : TStep env p' fr' m fr1' m1) (hm : m1 = m ∨ ∀ s1, r ≠ .next s1)
+    (h : SimOut C env p' fr1' m1 r) : SimOut C env p' fr' m r := by
+  obtain ⟨k0, hk0⟩ := ht
+  cases r with
+  | next s1 =>
+    rcases hm with rfl | hm
+    · obtain ⟨h1, h2, fr2, h3, h4⟩ := h
+      exact ⟨h1, h2, fr2, h3, TStep.trans ⟨k0, hk0⟩ h4⟩
+    · exact absurd rfl (hm s1)
+  | done vals m2 =>
+    obtain ⟨vals', h1, k, hk⟩ := h
+    exact ⟨vals', h1, k + k0, by rw [hk0, hk]⟩
+  | trapped c =>
+    obtain ⟨k, hk⟩ := h
+    exact ⟨k + k0, by rw [hk0, hk]⟩
+  | stuck _ => trivial
+
+/-! ## After a statement -/
+
+theorem frame_eta (fr : Frame) : fr = { fr with body := fr.body } := rfl
+
+/-- The frame relation after a statement of `f` and its segment. -/
+theorem frel_after {C : Ctx} (hG : Good C) {fr fr' : Frame} (hR : FRel C fr fr') {st : Stmt}
+    {rest : List Stmt} (hb : fr.body = st :: rest) {ts2 : List Stmt}
+    (hcode : codeOk C rest fr.term ts2 fr'.term = true) {vals : List Val} {ρ1 ρ1' : Regs}
+    (hset : fr.regs.setMany st.results vals = some ρ1)
+    (hnew : ∀ v ∈ st.results, v < C.T0 → ∀ x, ρ1 v = some x → RelV C ρ1' v x)
+    (htgt : ∀ w, C.fresh w = false → (∀ v ∈ st.results, v < C.T0 → w ∉ img C v) →
+      ρ1' w = fr'.regs w)
+    (hsrc : SrcInv C.f ρ1) :
+    FRel C { fr with regs := ρ1, body := rest } { fr' with regs := ρ1', body := ts2 } := by
+  obtain ⟨B, hB, hsuf, hterm⟩ := hR.blk
+  have hst : st ∈ B.body := hsuf.subset (by rw [hb]; exact List.mem_cons_self ..)
+  have hnd := results_nodup hG.defs hB hst
+  have hs : ∀ v, v ∉ st.results → ρ1 v = fr.regs v := fun v hv => setMany_other hset hv
+  have hdef : ∀ v ∈ st.results, ∃ x, ρ1 v = some x := holds_mem (holds_setMany hnd hset)
+  refine ⟨⟨hR.func, hR.func', hR.slots, VRel.update hG hR.vrel hs hnew htgt,
+    PlainEq.update hG hR.peq hs hnew htgt hdef, hsrc, ?_⟩,
+    ⟨B, hB, ?_, hterm⟩, hcode⟩
+  · simp only
+    rw [htgt C.zero (by simp [Ctx.fresh]) fun v _ hv => zero_not_img hG hv]
+    exact hR.zero
+  · rw [hb] at hsuf
+    exact (List.suffix_cons st rest).trans hsuf
+
+/-! ## Inverting `planOf` -/
+
+theorem planOf_same {C : Ctx} {s : Stmt} (hp : planOf C s = some .same) :
+    (∀ x ∈ instOps s.inst ++ s.results, C.plain x = true) ∧
+    (∀ fn args, s.inst ≠ .call fn args) ∧ (∀ sig c args, s.inst ≠ .callIndirect sig c args) ∧
+    (∀ t fn, s.inst ≠ .funcAddr t fn) := by
+  obtain ⟨rs, inst⟩ := s
+  unfold planOf at hp
+  dsimp only at hp
+  split at hp
+  all_goals (repeat' (first | (simp [bind, Option.bind_eq_some_iff] at hp; done) | split at hp))
+  all_goals refine ⟨?_, ?_, ?_, ?_⟩
+  all_goals first
+    | (simp only [List.all_eq_true] at *; assumption)
+    | (intro a b h; cases h; done)
+    | (intro a b c h; cases h; done)
+    | (intro a b h; simp_all; done)
+    | (intro a b c h; simp_all; done)
+
+macro "plan_inv " s:ident hp:ident : tactic => `(tactic| (
+  obtain ⟨rs, inst⟩ := $s
+  unfold planOf at $hp:ident
+  dsimp only at $hp:ident
+  split at $hp:ident
+  all_goals (repeat' (first | (simp [bind, Option.bind_eq_some_iff] at $hp:ident; done) |
+    split at $hp:ident))))
+
+theorem planOf_load {C : Ctx} {s : Stmt} {rl rh p : ValueId} {fl : MemFlags} {off : Int}
+    (hp : planOf C s = some (.load rl rh p fl off)) :
+    s.inst = .load .load .i128 fl p off ∧ (∃ r, s.results = [r] ∧ C.pair r = some (rl, rh)) ∧
+      C.plain p = true ∧ (fl.endianness == some .big) = false := by
+  plan_inv s hp
+  all_goals rename_i hc
+  simp only [bind, Option.bind_eq_some_iff, Option.some.injEq, Plan.load.injEq] at hp
+  obtain ⟨⟨a, b⟩, hr, rfl, rfl, rfl, rfl, rfl⟩ := hp
+  simp only [Bool.and_eq_true, bne_iff_ne, ne_eq] at hc
+  exact ⟨rfl, ⟨_, rfl, hr⟩, hc.1, by simpa using hc.2⟩
+
+theorem planOf_store {C : Ctx} {s : Stmt} {xl xh p : ValueId} {fl : MemFlags} {off : Int}
+    (hp : planOf C s = some (.store xl xh p fl off)) :
+    (∃ x, s.inst = .store .store .i128 fl x p off ∧ C.pair x = some (xl, xh)) ∧ s.results = [] ∧
+      C.plain p = true ∧ (fl.endianness == some .big) = false := by
+  plan_inv s hp
+  all_goals rename_i hc
+  simp only [bind, Option.bind_eq_some_iff, Option.some.injEq, Plan.store.injEq] at hp
+  obtain ⟨⟨a, b⟩, hx, rfl, rfl, rfl, rfl, rfl⟩ := hp
+  simp only [Bool.and_eq_true, bne_iff_ne, ne_eq] at hc
+  exact ⟨⟨_, rfl, hx⟩, rfl, hc.1, by simpa using hc.2⟩
+
+theorem planOf_div {C : Ctx} {s : Stmt} {op : DivOp} {xl xh yl yh rl rh : ValueId}
+    (hp : planOf C s = some (.div op xl xh yl yh rl rh)) :
+    ∃ x y r, s.inst = .div op .i128 x y ∧ s.results = [r] ∧ C.pair x = some (xl, xh) ∧
+      C.pair y = some (yl, yh) ∧ C.pair r = some (rl, rh) := by
+  plan_inv s hp
+  simp only [bind, Option.bind_eq_some_iff, Option.some.injEq, Plan.div.injEq] at hp
+  obtain ⟨⟨a, b⟩, hx, ⟨c, d⟩, hy, ⟨e, f⟩, hr, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩ := hp
+  exact ⟨_, _, _, rfl, rfl, hx, hy, hr⟩
+
+theorem planOf_call {C : Ctx} {s : Stmt} {fn : FnRef} {e : ExtFunc} {args' : List ValueId}
+    {rg : List (List Opt.Legalize128.SlotEl)} {rs : List ValueId}
+    (hp : planOf C s = some (.call fn e args' rg rs)) :
+    ∃ args gs, s.inst = .call fn args ∧ s.results = rs ∧ C.f.extern? fn = some e ∧
+      groups e.sig.params = some gs ∧ groups e.sig.returns = some rg ∧
+      expandArgs C gs args = some args' := by
+  plan_inv s hp
+  simp only [bind, Option.bind_eq_some_iff, Option.some.injEq, Plan.call.injEq] at hp
+  obtain ⟨e', he, gs, hg, rg', hrg, a', ha, rfl, rfl, rfl, rfl, rfl⟩ := hp
+  exact ⟨_, gs, rfl, rfl, he, hg, hrg, ha⟩
+
+theorem planOf_trap {C : Ctx} {s : Stmt} {lo hi : ValueId} {nz : Bool} {code : TrapCode}
+    (hp : planOf C s = some (.trap lo hi nz code)) :
+    ∃ c, (s.inst = .trapz c code ∧ nz = false ∨ s.inst = .trapnz c code ∧ nz = true) ∧
+      s.results = [] ∧ C.pair c = some (lo, hi) := by
+  plan_inv s hp
+  all_goals simp only [Option.some.injEq, Plan.trap.injEq] at hp
+  · obtain ⟨rfl, rfl, rfl, rfl⟩ := hp
+    exact ⟨_, .inl ⟨rfl, rfl⟩, rfl, by assumption⟩
+  · obtain ⟨rfl, rfl, rfl, rfl⟩ := hp
+    exact ⟨_, .inr ⟨rfl, rfl⟩, rfl, by assumption⟩
 
 end Opt.Legal
