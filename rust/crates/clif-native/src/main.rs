@@ -15,6 +15,8 @@
 //! (`docs/contracts/clif.md`); traps map the faulting PC through Cranelift's trap table to
 //! `{"trapped": "<code>"}`. Details and limitations: `docs/contracts/drivers.md`.
 
+mod diff;
+
 use std::collections::HashMap;
 use std::io::Read;
 use std::panic::{AssertUnwindSafe, catch_unwind};
@@ -644,8 +646,10 @@ fn execute(cfg: &Config, exe: &Exe) -> Result<Vec<Value>> {
 /// Assembly for the file's `; data: %name [align=N] [writable] = items` directives (before the
 /// first function; grammar in `docs/contracts/clif.md`): each object is a global symbol in
 /// `.rodata` (or `.data` if `writable`); `%sym[+N|-N]` items are `.quad sym+N`. `None` if
-/// there are no directives. Also returns the symbols each data object points at.
-fn data_asm(text: &str) -> Result<(Option<String>, HashMap<String, Vec<String>>)> {
+/// there are no directives. Also returns the symbols each data object points at. With
+/// `own_sections` the objects go to the sections `clifd_ro` / `clifd_rw` instead (placed at
+/// fixed addresses by `--diff`, which also snapshots and hashes `clifd_rw`).
+fn data_asm(text: &str, own_sections: bool) -> Result<(Option<String>, HashMap<String, Vec<String>>)> {
     use std::fmt::Write as _;
     let mut out = String::new();
     let mut refs: HashMap<String, Vec<String>> = HashMap::new();
@@ -678,7 +682,12 @@ fn data_asm(text: &str) -> Result<(Option<String>, HashMap<String, Vec<String>>)
         if !align.is_power_of_two() {
             bail!("data directive: align={align} is not a power of two");
         }
-        let section = if writable { ".data" } else { ".section .rodata" };
+        let section = match (writable, own_sections) {
+            (true, false) => ".data",
+            (false, false) => ".section .rodata",
+            (true, true) => ".section clifd_rw,\"aw\",@progbits",
+            (false, true) => ".section clifd_ro,\"a\",@progbits",
+        };
         writeln!(out, "{section}\n.balign {}\n.globl {name}\n{name}:", align.max(16)).unwrap();
         let obj_refs = refs.entry(name.to_string()).or_default();
         for w in ws {
@@ -731,7 +740,7 @@ fn symbol_refs(func: &Function, data_refs: &HashMap<String, Vec<String>>) -> Vec
 fn native(cfg: &Config, dir: &Path) -> Result<bool> {
     let text = std::fs::read_to_string(&cfg.file).with_context(|| format!("reading {}", cfg.file))?;
     let isa = clif2obj::isa(TRIPLE)?;
-    let (data, data_refs) = data_asm(&text).with_context(|| format!("{}: data directives", cfg.file))?;
+    let (data, data_refs) = data_asm(&text, false).with_context(|| format!("{}: data directives", cfg.file))?;
     let test = match clif2obj::parse_file(&text, &*isa) {
         Ok(t) => t,
         Err(e) => {
@@ -884,6 +893,10 @@ fn native(cfg: &Config, dir: &Path) -> Result<bool> {
 }
 
 fn run() -> Result<bool> {
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    if args.first().is_some_and(|a| a == "--diff") {
+        return diff::diff_main(&args[1..]);
+    }
     let cfg = parse_args()?;
     match &cfg.keep {
         Some(dir) => {
