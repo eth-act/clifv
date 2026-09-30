@@ -1,6 +1,10 @@
 //! Recover the data objects cg_clif hides behind `symbol_value` (rust-route step 1).
 //!
-//! usage: clif-data-export <clif-dir> <obj> --out F.clif --gvmap F.tsv [--stage unopt]
+//! usage: clif-data-export <clif-dir> <obj> --out F.clif --gvmap F.tsv [--fnmap F.tsv] [--imported] [--stage unopt]
+//!
+//! `--fnmap`: also name the callees declared only by FuncId (`u0:N<TAB>symbol` lines, see
+//! `name_callees`), for `normalize.py --fnmap`. `--imported`: also map the gvs of statics
+//! defined in other crates (undefined in the object) to their symbols.
 //!
 //! cg_clif puts the bytes of every static data object (panic `Location`s and messages,
 //! constant tables, constant enum values, vtables) only into its object file, as local
@@ -75,6 +79,11 @@ struct FnDump {
     /// The `User(userextnameJ)` refs of the same loads, in code order (diagnostics).
     #[allow(dead_code)]
     vgot_exts: Vec<Option<u32>>,
+    /// The function's own FuncId (`function u0:N(`).
+    own: Option<u32>,
+    /// The user-named function declarations `fnK = [colocated] u0:N sigM`, in K order, the
+    /// first per FuncId: (K, N). Libcall declarations (`fnK = %Memcpy sigM`) carry no user name.
+    fn_decls: Vec<(u32, u32)>,
 }
 
 /// Parse one raw cg_clif dump file (one function).
@@ -85,6 +94,8 @@ fn parse_dump(path: &Path, stage: &str) -> FnDump {
     let mut gv_ext: BTreeMap<u32, u32> = BTreeMap::new();
     let mut fn_colocated: BTreeMap<u32, bool> = BTreeMap::new();
     let mut uses: Vec<Use> = Vec::new();
+    let mut own: Option<u32> = None;
+    let mut fn_decls: Vec<(u32, u32)> = Vec::new();
     // The `; extname N u0:M`-style user-name table is not written by cg_clif; instead,
     // every declaration line carries its UserExternalNameRef implicitly: `fnK`'s name
     // reference number is *not* recoverable from the text. So function uses are
@@ -92,11 +103,21 @@ fn parse_dump(path: &Path, stage: &str) -> FnDump {
     // deduplicates by FuncId), and data uses per `userextnameJ` (dedup by DataId).
     for line in text.lines() {
         let t = line.trim_start();
+        // with debuginfo on, cg_clif prefixes each instruction with its source location `@XXXX`
+        let t = match t.strip_prefix('@') {
+            Some(r) if r.starts_with(|c: char| c.is_ascii_hexdigit()) => {
+                r.trim_start_matches(|c: char| c.is_ascii_hexdigit()).trim_start()
+            }
+            _ => t,
+        };
         if let Some(s) = t.strip_prefix("; symbol ") {
             symbol = Some(s.trim().to_string());
             continue;
         }
         let (code, comment) = split_code_comment(t);
+        if let Some(r) = code.strip_prefix("function u0:") {
+            own = parse_u32(r.split('(').next().unwrap_or(""));
+        }
         let toks: Vec<&str> = code.split_whitespace().collect();
         if toks.len() < 3 || toks[1] != "=" {
             // `call fnK(...)` / `return_call fnK(...)` may carry results
@@ -134,6 +155,9 @@ fn parse_dump(path: &Path, stage: &str) -> FnDump {
         // `fnK = [colocated] NAME sigM`
         if let Some(k) = parse_u32(toks[0].strip_prefix("fn").unwrap_or("")) {
             fn_colocated.insert(k, toks.contains(&"colocated"));
+            if let Some(n) = toks[2..].iter().find_map(|w| w.strip_prefix("u0:").and_then(parse_u32)) {
+                fn_decls.push((k, n));
+            }
             continue;
         }
         // `vN = symbol_value.ty gvK` / `vN = func_addr.ty fnK`
@@ -180,6 +204,15 @@ fn parse_dump(path: &Path, stage: &str) -> FnDump {
         uses,
         vgot,
         vgot_exts,
+        own,
+        fn_decls: {
+            // K order; a FuncId declared again (a new FuncRef for the same name) reuses the
+            // name's ref, so only its first declaration counts
+            fn_decls.sort();
+            let mut seen = BTreeSet::new();
+            fn_decls.retain(|&(_, n)| seen.insert(n));
+            fn_decls
+        },
     }
 }
 
@@ -322,9 +355,11 @@ struct Recovered {
     fns: usize,
     fns_with_data: usize,
     bytes_total: u64,
+    /// FuncId → symbol of the callees (`--fnmap`), see `name_callees`.
+    fnmap: BTreeMap<u32, String>,
 }
 
-fn recover(crate_name: &str, obj: &Path, dumps: &[FnDump]) -> Recovered {
+fn recover(crate_name: &str, obj: &Path, dumps: &[FnDump], imported: bool) -> Recovered {
     let (syms, secs) = load_obj(obj);
     // Symbol index of every function symbol, by name.
     let mut fn_idx: BTreeMap<&str, usize> = BTreeMap::new();
@@ -349,6 +384,7 @@ fn recover(crate_name: &str, obj: &Path, dumps: &[FnDump]) -> Recovered {
     let mut ext_data: BTreeMap<(usize, u32), usize> = BTreeMap::new(); // (fn sym idx, ext) → data sym idx
     let mut recovered: BTreeSet<(usize, u32)> = BTreeSet::new(); // (fn sym idx, gv)
     let mut fns_with_data: BTreeSet<usize> = BTreeSet::new(); // fns with >=1 recovered data use
+    let mut got_of: Vec<Vec<usize>> = Vec::new(); // per dump: GOT pair targets, code order
     for d in dumps {
         let Some(&fi) = fn_idx.get(d.symbol.as_str()) else {
             die(format!("{}: function symbol `{}` not found in {}", d.file, d.symbol, obj.display()));
@@ -392,9 +428,13 @@ fn recover(crate_name: &str, obj: &Path, dumps: &[FnDump]) -> Recovered {
                 got.iter().map(|&s| syms[&s].name.clone()).collect::<Vec<_>>().join(", ")
             ));
         }
+        got_of.push(got.clone());
         for (&ext, &target) in d.vgot_exts.iter().zip(got.iter()) {
             let Some(ext) = ext else { continue }; // a LibCall load: never data
-            if syms[&target].kind != SymbolKind::Data {
+            // `--imported`: a gv's GOT load of an undefined symbol is a static of another
+            // crate; it gets its own name in the gvmap (and no data object)
+            let imported_gv = imported && syms[&target].sec.is_none() && d.gv_ext.values().any(|&e| e == ext);
+            if syms[&target].kind != SymbolKind::Data && !imported_gv {
                 continue;
             }
             match ext_data.entry((fi, ext)) {
@@ -546,6 +586,8 @@ fn recover(crate_name: &str, obj: &Path, dumps: &[FnDump]) -> Recovered {
                 let target = match t.kind {
                     SymbolKind::Text => t.name.clone(),
                     SymbolKind::Data => names.get(&r.sym).cloned().unwrap_or_else(|| data_name(crate_name, t)),
+                    // an imported symbol (e.g. a vtable's method of another crate): by name
+                    _ if t.sec.is_none() => t.name.clone(),
                     _ => die(format!("{}: `{}` relocates to symbol `{}` of kind {:?}", obj.display(), name, t.name, t.kind)),
                 };
                 (target, r.addend)
@@ -571,7 +613,67 @@ fn recover(crate_name: &str, obj: &Path, dumps: &[FnDump]) -> Recovered {
         bytes_total += s.size;
         objs.push(DataObj { name, writable, items });
     }
-    Recovered { objs, gvmap, fns: dumps.len(), fns_with_data: fns_with_data.len(), bytes_total }
+    let fnmap = name_callees(&syms, &got_of, dumps);
+    Recovered { objs, gvmap, fns: dumps.len(), fns_with_data: fns_with_data.len(), bytes_total, fnmap }
+}
+
+/// Name the callees cg_clif declares only by FuncId (`fnK = u0:N sigM ; Instance {…}`, a
+/// function of another crate or codegen unit): FuncId N → linker symbol, for `normalize.py
+/// --fnmap`.
+///
+/// A function's `userextnameJ` refs are allocated in declaration order, one per new name
+/// (a FuncId declared twice gets two FuncRefs but one ref),
+/// data (`gvK = symbol userextnameJ`, explicit in the text) and functions (`fnK = u0:N`,
+/// implicit) interleaved; FuncRefs are numbered in the same order. So the refs no gv uses
+/// are the function declarations', in K order. Each such ref's GOT load (vcode, code order)
+/// pairs with a GOT relocation (object, code order), whose target is the callee's symbol.
+/// Checked, never guessed: the refs must be dense; a function ref's target must not be data;
+/// a ref must be either a gv's or a function's; the FuncIds of this codegen unit's own
+/// functions must pair with their own symbols; one FuncId must name one symbol in every
+/// function (FuncIds are per CGU module). A function failing a check contributes nothing; a
+/// FuncId with two different symbols is dropped.
+fn name_callees(syms: &BTreeMap<usize, Sym>, got_of: &[Vec<usize>], dumps: &[FnDump]) -> BTreeMap<u32, String> {
+    let known: BTreeMap<u32, &str> = dumps.iter().filter_map(|d| d.own.map(|n| (n, d.symbol.as_str()))).collect();
+    let mut map: BTreeMap<u32, String> = BTreeMap::new();
+    let mut conflict: BTreeSet<u32> = BTreeSet::new();
+    for (d, got) in dumps.iter().zip(got_of) {
+        let gv_exts: BTreeSet<u32> = d.gv_ext.values().copied().collect();
+        let total = (gv_exts.len() + d.fn_decls.len()) as u32;
+        if gv_exts.iter().any(|&j| j >= total) {
+            continue;
+        }
+        let ext_fn: BTreeMap<u32, u32> =
+            (0..total).filter(|j| !gv_exts.contains(j)).zip(d.fn_decls.iter().map(|&(_, n)| n)).collect();
+        let mut cand: Vec<(u32, String)> = Vec::new();
+        let mut ok = true;
+        for (&ext, &target) in d.vgot_exts.iter().zip(got.iter()) {
+            let Some(ext) = ext else { continue };
+            if gv_exts.contains(&ext) {
+                continue;
+            }
+            match ext_fn.get(&ext) {
+                Some(&n) if syms[&target].kind != SymbolKind::Data => cand.push((n, syms[&target].name.clone())),
+                _ => ok = false,
+            }
+        }
+        if !ok || cand.iter().any(|(n, s)| known.get(n).is_some_and(|k| k != s)) {
+            continue;
+        }
+        for (n, s) in cand {
+            match map.get(&n) {
+                Some(prev) if *prev != s => {
+                    conflict.insert(n);
+                }
+                _ => {
+                    map.insert(n, s);
+                }
+            }
+        }
+    }
+    for n in conflict {
+        map.remove(&n);
+    }
+    map
 }
 
 fn data_directive(o: &DataObj) -> String {
@@ -590,7 +692,7 @@ fn data_directive(o: &DataObj) -> String {
 }
 
 fn usage() -> ! {
-    eprintln!("usage: clif-data-export <clif-dir> <obj> --out F.clif --gvmap F.tsv [--stage unopt]");
+    eprintln!("usage: clif-data-export <clif-dir> <obj> --out F.clif --gvmap F.tsv [--fnmap F.tsv] [--imported] [--stage unopt]");
     std::process::exit(2)
 }
 
@@ -598,6 +700,8 @@ fn main() {
     let mut stage = "unopt".to_string();
     let mut out: Option<PathBuf> = None;
     let mut gvmap_path: Option<PathBuf> = None;
+    let mut fnmap_path: Option<PathBuf> = None;
+    let mut imported = false;
     let mut pos: Vec<PathBuf> = Vec::new();
     let mut args = std::env::args().skip(1);
     while let Some(a) = args.next() {
@@ -605,6 +709,8 @@ fn main() {
             "--stage" => stage = args.next().unwrap_or_else(|| usage()),
             "--out" => out = Some(PathBuf::from(args.next().unwrap_or_else(|| usage()))),
             "--gvmap" => gvmap_path = Some(PathBuf::from(args.next().unwrap_or_else(|| usage()))),
+            "--fnmap" => fnmap_path = Some(PathBuf::from(args.next().unwrap_or_else(|| usage()))),
+            "--imported" => imported = true,
             _ => pos.push(PathBuf::from(a)),
         }
     }
@@ -630,7 +736,7 @@ fn main() {
         .unwrap_or("crate")
         .to_string();
 
-    let r = recover(&crate_name, &obj, &dumps);
+    let r = recover(&crate_name, &obj, &dumps, imported);
     fs::write(&out, r.objs.iter().map(data_directive).collect::<Vec<_>>().join("\n") + "\n")
         .unwrap_or_else(|e| die(format!("{}: {e}", out.display())));
     fs::write(
@@ -638,6 +744,10 @@ fn main() {
         r.gvmap.iter().map(|(f, gv, n)| format!("{f}\tgv{gv}\t%{n}")).collect::<Vec<_>>().join("\n") + "\n",
     )
     .unwrap_or_else(|e| die(format!("{}: {e}", gvmap_path.display())));
+    if let Some(p) = fnmap_path {
+        let text: String = r.fnmap.iter().map(|(n, s)| format!("u0:{n}\t{s}\n")).collect();
+        fs::write(&p, text).unwrap_or_else(|e| die(format!("{}: {e}", p.display())));
+    }
     println!(
         "{{\"crate\": \"{crate}\", \"fns\": {f}, \"fns_with_data\": {a}, \"data_objects\": {m}, \"data_bytes\": {b}}}",
         crate = crate_name,

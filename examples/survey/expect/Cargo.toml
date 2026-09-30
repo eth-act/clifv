@@ -1,0 +1,20 @@
+# Generator of the survey crates' tests/expected.txt (../gen-expected.sh): the same cases, computed
+# by rustc's LLVM backend.
+[package]
+name = "survey-expect"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+a_arith = { path = "../a_arith" }
+b_slices = { path = "../b_slices" }
+c_structs_enums = { path = "../c_structs_enums" }
+d_loops_iters = { path = "../d_loops_iters" }
+e_option_result = { path = "../e_option_result" }
+f_crypto = { path = "../f_crypto" }
+g_u128 = { path = "../g_u128" }
+h_dyn_generic = { path = "../h_dyn_generic" }
+i_alloc = { path = "../i_alloc" }
+
+[workspace]

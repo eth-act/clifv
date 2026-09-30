@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Rewrite cg_clif's CLIF dumps into the text our tools accept, without changing semantics.
 
-usage: normalize.py CLIF_DIR STAGE OUT [--drop-nop] [--split]
+usage: normalize.py CLIF_DIR STAGE OUT [--drop-nop] [--split] [--strip-srcloc] [--gvmap F] [--fnmap F]
   CLIF_DIR  a `<crate>.clif/` directory written by cg_clif (scripts/rust-clif/dump.sh)
   STAGE     unopt | opt
 
@@ -18,6 +18,10 @@ Rewrites (each is a pure renaming/inlining, checked by `clif-oracle check` on th
     (`%data_J` when the comment is not an alloc name, e.g. `; vtable`).
   * comment-only lines are dropped (cg_clif's `; abi …` comments are several KB each).
   * `--drop-nop`: drop `nop` (cg_clif emits it only as an anchor for comments).
+  * `--fnmap F` (`u0:N<TAB>symbol` lines, `clif-data-export --fnmap`): names the `u0:N` callees
+    of other crates/codegen units (their comment is an `Instance`, not a symbol) instead of `u0_N`.
+  * `--strip-srcloc`: drop the `@XXXX` source-location prefix of instructions (cg_clif writes
+    one per instruction with debuginfo on, e.g. under cargo's dev profile; `cargo fv`).
 """
 
 import re
@@ -29,13 +33,22 @@ def main():
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     drop_nop = "--drop-nop" in sys.argv
     split = "--split" in sys.argv
+    strip_srcloc = "--strip-srcloc" in sys.argv
     flags = [a for a in sys.argv[1:] if a.startswith("--")]
     gvmap = {}
     for i, a in enumerate(flags):
         if a == "--gvmap":
             for line in open(sys.argv[sys.argv.index("--gvmap") + 1]):
+                if not line.strip():  # an empty map is a single blank line
+                    continue
                 stem, gv, name = line.rstrip("\n").split("\t")
                 gvmap[(stem, gv)] = name.removeprefix("%")
+    fnmap = {}
+    if "--fnmap" in sys.argv:
+        for line in open(sys.argv[sys.argv.index("--fnmap") + 1]):
+            if line.strip():
+                n, name = line.rstrip("\n").split("\t")
+                fnmap[n.removeprefix("u0:")] = name
     data_file = None
     if "--data-file" in sys.argv:
         data_file = Path(sys.argv[sys.argv.index("--data-file") + 1]).read_text()
@@ -100,6 +113,8 @@ def main():
                         used_here.add(local_g.get(nm2, nm2))
             decl_seen = set()
             for l0 in ch:
+                if strip_srcloc:
+                    l0 = re.sub(r"^@[0-9a-f]+(?=\s)", "", l0)
                 s = l0.strip()
                 if s.startswith(";") or not s or (drop_nop and s == "nop"):
                     continue
@@ -116,7 +131,7 @@ def main():
                         name = sym[num]
                     else:
                         q = re.match(r'"([^"]+)"', comment or "")
-                        name = q.group(1) if q else f"u0_{num}"
+                        name = q.group(1) if q else fnmap.get(num, f"u0_{num}")
                     l = f"{pre}{coloc or ''}%{name}{sigs[sig]}"
                 m = re.match(r"(\s+sig\d+) = ", l)
                 if m:

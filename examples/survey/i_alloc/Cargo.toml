@@ -1,0 +1,8 @@
+[package]
+name = "i_alloc"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+path = "../../../scripts/rust-clif/corpus/i_alloc.rs"
