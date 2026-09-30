@@ -1,0 +1,24 @@
+[package]
+name = "cargo-fv"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+publish = false
+description = "`cargo fv build|run|test`: build a Rust crate for aarch64-unknown-linux-musl with rustc_codegen_cranelift, recompiling every function the Lean backend supports with the Lean backend (verified where the end-to-end theorem applies), cg_clif's code as the fallback"
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "cargo-fv"
+path = "src/main.rs"
+
+# RUSTC_WRAPPER (and, for executables, the linker rustc runs)
+[[bin]]
+name = "fv-rustc"
+path = "src/bin/fv-rustc.rs"
+
+[dependencies]
+object = { version = "0.40", default-features = false, features = ["read_core", "elf", "std"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
