@@ -1,0 +1,30 @@
+; lowerCheck regression: blocks without a path from the entry (cg_clif's dead cleanup
+; blocks, e.g. once_cell::imp::initialize::{closure#0} in examples/vendor). The must-dataflow
+; of the lowering validator gives such a block every value at its entry, including values
+; computed from the block's own results (v4, v5 below), which broke the certificate's closure
+; condition. block3 is reachable but also has a dead predecessor (block2).
+test interpret
+test run
+target aarch64
+
+function %dead_cleanup(i64) -> i64 {
+block0(v0: i64):
+    v1 = iconst.i64 1
+    v2 = iadd v0, v1
+    jump block3
+
+block1:
+    v3 = iconst.i64 7
+    jump block2
+
+block2:
+    v4 = iadd v3, v3
+    v5 = iadd v4, v0
+    jump block3
+
+block3:
+    v6 = iadd v2, v2
+    return v6
+}
+; run: %dead_cleanup(5) == 12
+; run: %dead_cleanup(-1) == 0

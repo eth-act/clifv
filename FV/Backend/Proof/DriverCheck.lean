@@ -273,28 +273,46 @@ def entryCand (f : Clif.Function) (gn : Nat → Nat) (tl : Nat) : List Clif.Valu
       decide (x ∉ TB.params.map (·.1)) && decide (gn x ∉ TB.params.map (·.1))
   | none => []
 
-/-- One round of the must-dataflow (the values available at every block end computed once). -/
-def inStep (f : Clif.Function) (gn : Nat → Nat) (In : List (List Clif.ValueId)) :
+/-- The operands of the instruction defining `x` (`[]` for a value without one, such as a block
+parameter): what `closedOk` requires to be available along with `x`. -/
+def defArgs (ctx : Ctx) (x : Clif.ValueId) : List Clif.ValueId :=
+  match ctx.defInst? x with
+  | some d => match ctx.insts[d]? with
+    | some info => match info.clif with
+      | some cl => instArgs cl
+      | none => []
+    | none => []
+  | none => []
+
+/-- One round of the must-dataflow (the values available at every block end computed once).
+A value stays available at a block entry only if the operands of its definition are available
+there too (the closure condition of `Cert`, `closedOk`). On blocks reachable from the entry
+this never removes anything the certificate could use; it matters for unreachable blocks,
+whose entry would otherwise keep every value (no predecessor constrains them), including
+values computed from the block's own results (e.g. cg_clif's dead cleanup blocks). -/
+def inStep (f : Clif.Function) (ctx : Ctx) (gn : Nat → Nat) (In : List (List Clif.ValueId)) :
     List (List Clif.ValueId) :=
   let outs : Array (List Clif.ValueId) := ((List.range f.blocks.length).map fun bi =>
     match f.blocks[bi]? with
     | some B => availOf f In bi B.body.length
     | none => []).toArray
   (List.range f.blocks.length).map fun tl =>
-    (entryCand f gn tl).filter fun x => (predsOf f tl).all fun bi =>
-      decide (x ∈ outs.getD bi [])
+    let A0 := availOf f In tl 0
+    (entryCand f gn tl).filter fun x => (predsOf f tl).all (fun bi =>
+      decide (x ∈ outs.getD bi [])) && (defArgs ctx x).all fun y => decide (y ∈ A0)
 
 /-- Iterate to a fixpoint (at most `fuel` rounds). -/
-def inIter (f : Clif.Function) (gn : Nat → Nat) : Nat → List (List Clif.ValueId) →
+def inIter (f : Clif.Function) (ctx : Ctx) (gn : Nat → Nat) : Nat → List (List Clif.ValueId) →
     List (List Clif.ValueId)
   | 0, In => In
   | k + 1, In =>
-    let In' := inStep f gn In
-    if In' == In then In else inIter f gn k In'
+    let In' := inStep f ctx gn In
+    if In' == In then In else inIter f ctx gn k In'
 
-/-- The values available at the block entries (from "everything", descending). -/
-def inFix (f : Clif.Function) (gn : Nat → Nat) : List (List Clif.ValueId) :=
-  inIter f gn (f.blocks.length * ((allVals f).length + 1) + 2)
+/-- The values available at the block entries (from "everything", descending: every round
+removes values, so the rounds are bounded by the number of (block, value) pairs). -/
+def inFix (f : Clif.Function) (ctx : Ctx) (gn : Nat → Nat) : List (List Clif.ValueId) :=
+  inIter f ctx gn (f.blocks.length * ((allVals f).length + 1) + 2)
     ((List.range f.blocks.length).map (entryCand f gn))
 
 /-! ## The checks -/
@@ -504,6 +522,6 @@ def lowerCheck (f : Clif.Function) (vc : VCode) : Bool :=
     | none => false
     | some bl =>
       let gn := gnOf st0.nextVreg (aliasOf f bl)
-      shapeOk f vc ctx st0 gn bl && certOk f ctx st0 gn bl (inFix f gn) && brIdxOk f ctx
+      shapeOk f vc ctx st0 gn bl && certOk f ctx st0 gn bl (inFix f ctx gn) && brIdxOk f ctx
 
 end Backend.Proof.Driver
