@@ -249,18 +249,21 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
         .find_map(|l| l.strip_prefix("host: ").map(String::from))
         .unwrap_or_else(|| die("rustc -vV: no host"));
     let bin = sysroot.join("lib/rustlib").join(&host).join("bin");
-    // Codegen backend: cg_clif built with its `unwinding` feature (landing pads: Drop during
-    // unwinding, catch_unwind) if available, else the shipped one (no landing pads).
+    // Codegen backend: with panic=unwind, cg_clif built with its `unwinding` feature (landing
+    // pads: Drop during unwinding, catch_unwind) if available, else the shipped one (no landing
+    // pads). With panic=abort the shipped one: the unwinding one would turn every call that may
+    // unwind into a `try_call` with a terminate edge (rustc's abort_unwinding_calls), and those
+    // functions would fall back.
     let unwinding_cg_clif = root.join("target/cg_clif-unwind/librustc_codegen_cranelift.so");
     let backend: String = match std::env::var("FV_CG_CLIF") {
         Ok(v) if v == "cranelift" => v,
         Ok(v) if Path::new(&v).exists() => v,
         Ok(v) => die(&format!("FV_CG_CLIF={v}: no such file (a cg_clif .so, or `cranelift` for the shipped one)")),
-        Err(_) if unwinding_cg_clif.exists() => unwinding_cg_clif.display().to_string(),
+        Err(_) if !panic_abort && unwinding_cg_clif.exists() => unwinding_cg_clif.display().to_string(),
         Err(_) => "cranelift".into(),
     };
     let panic_desc = match (panic_abort, backend.as_str()) {
-        (true, _) => "abort".to_string(),
+        (true, b) => format!("abort (cg_clif: {b})"),
         (false, "cranelift") => "unwind (shipped cg_clif: no landing pads, so no Drop during unwinding and catch_unwind in the crate does not catch)".to_string(),
         (false, b) => format!("unwind (cg_clif with unwinding: {b})"),
     };
