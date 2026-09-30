@@ -439,4 +439,85 @@ theorem pat_varShift32 (op0 : BinaryOp)
   generalize hX : shiftVbv op0 (xh ++ xl) (a.setWidth 128 &&& 127#128) = X
   rcases hop with rfl | rfl | rfl | rfl | rfl <;> simp only [shiftVbv] at hX <;> vs_fin a
 
+/-! ## Multiplication (by the `toNat` arithmetic: products are out of `bv_decide`'s reach) -/
+
+theorem append_toNat (a b : BitVec 64) : (a ++ b).toNat = a.toNat * 2^64 + b.toNat := by
+  rw [BitVec.toNat_append, Nat.shiftLeft_eq, Nat.mul_comm, Nat.two_pow_add_eq_or_of_lt b.isLt]
+
+/-- The 128-bit product by the cross products. -/
+theorem mul128 (xl xh yl yh : BitVec 64) :
+    (xh ++ xl) * (yh ++ yl) = (xl * yh + xh * yl + Sem.umulhi xl yl) ++ (xl * yl) := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_mul, append_toNat, BitVec.toNat_add, Sem.umulhi,
+    BitVec.extractLsb'_toNat, BitVec.toNat_setWidth, Nat.shiftRight_eq_div_pow,
+    show (64 : Nat) + 64 = 128 from rfl]
+  have ha := xh.isLt; have hb := xl.isLt; have hc := yh.isLt; have hd := yl.isLt
+  generalize xh.toNat = a at *; generalize xl.toNat = b at *
+  generalize yh.toNat = c at *; generalize yl.toNat = d at *
+  have hbd : b * d < 2^128 := by
+    have := Nat.mul_lt_mul_of_lt_of_lt hb hd; rwa [← Nat.pow_add] at this
+  rw [Nat.mod_eq_of_lt (a := b) (by omega), Nat.mod_eq_of_lt (a := d) (by omega),
+    Nat.mod_eq_of_lt (a := b * d) hbd]
+  have e : (a * 2^64 + b) * (c * 2^64 + d) = a * c * 2^128 + (b * c + a * d) * 2^64 + b * d := by
+    simp only [Nat.add_mul, Nat.mul_add]
+    rw [show 2^128 = 2^64 * 2^64 by rw [← Nat.pow_add]]
+    simp only [Nat.mul_assoc, Nat.mul_comm, Nat.mul_left_comm, Nat.add_assoc, Nat.add_comm,
+      Nat.add_left_comm]
+  rw [e]
+  generalize a * c = p0; generalize b * c = p1; generalize a * d = p2
+  generalize b * d = P at *
+  omega
+
+theorem pat_imul (xl xh yl yh : BitVec 64) :
+    ∃ ρ, runPat (canon [V64 xl, V64 xh, V64 yl, V64 yh]) ((Pat.binary .imul).getD []) = some ρ ∧
+      Out128 ρ 4 5 (Sem.binary .imul (xh ++ xl) (yh ++ yl)) := by
+  generalize hX : Sem.binary .imul (xh ++ xl) (yh ++ yl) = X
+  pat_eval
+  simp only [Sem.binary, Sem.imul, Sem.iadd] at hX ⊢
+  rw [← hX, mul128]
+  constructor <;> bv_decide
+
+/-! ## A narrow shift by an `i128` amount -/
+
+/-- A shift depends on the amount only modulo the width. -/
+theorem shift_congr {op : BinaryOp} {w v v' : Nat} (x : BitVec w) (b : BitVec v) (b' : BitVec v')
+    (h : b.toNat % w = b'.toNat % w) : Sem.shift op x b = Sem.shift op x b' := by
+  cases op <;> simp only [Sem.shift, Sem.ishl, Sem.ushr, Sem.sshr, Sem.rotl, Sem.rotr,
+    Sem.shiftAmt, h]
+
+theorem amt_narrow {w : Nat} (hw : w = 8 ∨ w = 16 ∨ w = 32 ∨ w = 64) (yl yh : BitVec 64) :
+    (yl &&& BitVec.ofNat 64 (w - 1)).toNat % w = (yh ++ yl).toNat % w := by
+  rw [append_toNat, BitVec.toNat_and, BitVec.toNat_ofNat]
+  rcases hw with rfl | rfl | rfl | rfl
+  · have h := Nat.and_two_pow_sub_one_eq_mod yl.toNat 3
+    simp only [show 2 ^ 3 - 1 = 7 from rfl] at h
+    simp only [show 8 - 1 = 7 from rfl, show 7 % 2 ^ 64 = 7 from rfl, h]; omega
+  · have h := Nat.and_two_pow_sub_one_eq_mod yl.toNat 4
+    simp only [show 2 ^ 4 - 1 = 15 from rfl] at h
+    simp only [show 16 - 1 = 15 from rfl, show 15 % 2 ^ 64 = 15 from rfl, h]; omega
+  · have h := Nat.and_two_pow_sub_one_eq_mod yl.toNat 5
+    simp only [show 2 ^ 5 - 1 = 31 from rfl] at h
+    simp only [show 32 - 1 = 31 from rfl, show 31 % 2 ^ 64 = 31 from rfl, h]; omega
+  · have h := Nat.and_two_pow_sub_one_eq_mod yl.toNat 6
+    simp only [show 2 ^ 6 - 1 = 63 from rfl] at h
+    simp only [show 64 - 1 = 63 from rfl, show 63 % 2 ^ 64 = 63 from rfl, h]; omega
+
+theorem pat_shiftNarrow (op : BinaryOp) (hop : op.isShift = true) (t : Ty)
+    (ht : t = .i8 ∨ t = .i16 ∨ t = .i32 ∨ t = .i64) (x : BitVec t.width) (yl yh : BitVec 64) :
+    ∃ ρ, runPat (canon [⟨t, x⟩, V64 yl]) (Pat.shiftNarrow op t) = some ρ ∧
+      ∀ r, Sem.shift op x (yh ++ yl) = some r → ρ 2 = some ⟨t, r⟩ := by
+  obtain ⟨r, hr⟩ : ∃ r, Sem.shift op x (yh ++ yl) = some r := by
+    cases op <;> simp_all [BinaryOp.isShift, Sem.shift]
+  have hw : t.width = 8 ∨ t.width = 16 ∨ t.width = 32 ∨ t.width = 64 := by
+    rcases ht with rfl | rfl | rfl | rfl <;> simp
+  have hc := shift_congr (op := op) x (yl &&& BitVec.ofNat 64 (t.width - 1)) (yh ++ yl)
+    (amt_narrow hw yl yh)
+  rw [hr] at hc
+  rcases ht with rfl | rfl | rfl | rfl <;>
+    (simp only [Pat.shiftNarrow, S, bin, runPat, evalInst, dframe, canon, Frame.getAs,
+      Frame.get, Res.ofOption, hop, ite_true, bind, Res.bind, Val.as?_mk, as?_i64,
+      Regs.setMany_cons, Regs.setMany_nil, List.getElem?_cons_zero, List.getElem?_cons_succ,
+      Regs.set, Sem.binary, Sem.band, width_i8, width_i16, width_i32, width_i64] at hc ⊢
+     simp [hc, hr])
+
 end Opt.Legal
