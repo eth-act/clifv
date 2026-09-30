@@ -1735,4 +1735,197 @@ theorem sim_run {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} (hE : EnvOk
       exact hS
     | stuck msg => exact ⟨fun _ _ h => (by cases h), fun _ h => (by cases h)⟩
 
+/-! ## Function entry -/
+
+/-- The entry parameters: the target parameters represent the source parameters (pads are
+fresh). -/
+theorem entry_bind {C : Ctx} {gs : List (List SlotEl)} {ps ps' : List (ValueId × Ty)}
+    (h : entryParamsOk C gs ps ps' = true) : ∀ {vals vals' : List Val}, ExpRel gs vals vals' →
+    vals.map (·.ty) = ps.map (·.2) →
+    vals'.map (·.ty) = ps'.map (·.2) ∧
+    (∀ {ρ1 ρ1' : Regs}, Holds ρ1 (ps.map (·.1)) vals → Holds ρ1' (ps'.map (·.1)) vals' →
+      (ps.map (·.1)).Nodup → ∀ v ∈ ps.map (·.1), ∀ x, ρ1 v = some x → RelV C ρ1' v x) ∧
+    (∀ w ∈ ps'.map (·.1), C.fresh w = true ∨ ∃ v ∈ ps.map (·.1), w ∈ img C v) := by
+  fun_induction entryParamsOk C gs ps ps'
+  case case1 =>
+    intro vals vals' he _
+    cases vals with
+    | cons => exact he.elim
+    | nil =>
+      cases vals' with
+      | cons => exact he.elim
+      | nil => exact ⟨rfl, fun _ _ _ v hv => by simp at hv, fun w hw => by simp at hw⟩
+  case case2 q gs v t ps v' t' ps' ih =>
+    simp only [Bool.and_eq_true, beq_iff_eq] at h
+    obtain ⟨⟨⟨⟨rfl, rfl⟩, htq⟩, hp⟩, h⟩ := h
+    intro vals vals' he hty
+    rcases vals with _ | ⟨x, xs⟩
+    · exact he.elim
+    rcases vals' with _ | ⟨x', xs'⟩
+    · exact he.elim
+    obtain ⟨rfl, he⟩ := he
+    simp only [List.map_cons, List.cons.injEq] at hty
+    obtain ⟨ih1, ih2, ih3⟩ := ih h he hty.2
+    refine ⟨by simp [ih1, hty.1], fun h1 h1' hnd u hu y hy => ?_, fun w hw => ?_⟩
+    · obtain ⟨h1a, h1b⟩ := h1
+      obtain ⟨h1'a, h1'b⟩ := h1'
+      simp only [List.map_cons, List.nodup_cons] at hnd
+      rcases List.mem_cons.1 hu with rfl | hu
+      · rw [h1a] at hy; cases hy; rw [RelV.plain (plain_iff.1 hp)]; exact h1'a
+      · exact ih2 h1b h1'b hnd.2 u hu y hy
+    · simp only [List.map_cons, List.mem_cons] at hw
+      rcases hw with rfl | hw
+      · exact .inr ⟨w, by simp, by simp [img, plain_iff.1 hp]⟩
+      · rcases ih3 w hw with h | ⟨u, hu, hwu⟩
+        · exact .inl h
+        · exact .inr ⟨u, List.mem_cons_of_mem _ hu, hwu⟩
+  case case3 gs v t ps a ta b tb ps' ih =>
+    simp only [Bool.and_eq_true, beq_iff_eq] at h
+    obtain ⟨⟨⟨⟨rfl, hp⟩, rfl⟩, rfl⟩, h⟩ := h
+    intro vals vals' he hty
+    rcases vals with _ | ⟨x, xs⟩
+    · exact he.elim
+    rcases vals' with _ | ⟨va, _ | ⟨vb, vs'⟩⟩
+    · exact he.elim
+    · exact he.elim
+    obtain ⟨⟨l, hh, rfl, rfl, rfl⟩, he⟩ := he
+    simp only [List.map_cons, List.cons.injEq] at hty
+    obtain ⟨ih1, ih2, ih3⟩ := ih h he hty.2
+    refine ⟨by simp [ih1], fun h1 h1' hnd u hu y hy => ?_, fun w hw => ?_⟩
+    · obtain ⟨h1a, h1b⟩ := h1
+      obtain ⟨h1'a, h1'b, h1'c⟩ := h1'
+      simp only [List.map_cons, List.nodup_cons] at hnd
+      rcases List.mem_cons.1 hu with rfl | hu
+      · rw [h1a] at hy; cases hy; rw [RelV.pair hp]; exact ⟨l, hh, rfl, h1'a, h1'b⟩
+      · exact ih2 h1b h1'c hnd.2 u hu y hy
+    · simp only [List.map_cons, List.mem_cons] at hw
+      rcases hw with rfl | rfl | hw
+      · exact .inr ⟨v, by simp, by simp [img, hp]⟩
+      · exact .inr ⟨v, by simp, by simp [img, hp]⟩
+      · rcases ih3 w hw with h | ⟨u, hu, hwu⟩
+        · exact .inl h
+        · exact .inr ⟨u, List.mem_cons_of_mem _ hu, hwu⟩
+  case case4 gs v t ps w0 tw a ta b tb ps' ih =>
+    simp only [Bool.and_eq_true, beq_iff_eq] at h
+    obtain ⟨⟨⟨⟨⟨⟨rfl, hf⟩, rfl⟩, hp⟩, rfl⟩, rfl⟩, h⟩ := h
+    intro vals vals' he hty
+    rcases vals with _ | ⟨x, xs⟩
+    · exact he.elim
+    rcases vals' with _ | ⟨vw, _ | ⟨va, _ | ⟨vb, vs'⟩⟩⟩
+    · exact he.elim
+    · exact he.elim
+    · exact he.elim
+    obtain ⟨hw, ⟨l, hh, rfl, rfl, rfl⟩, he⟩ := he
+    simp only [List.map_cons, List.cons.injEq] at hty
+    obtain ⟨ih1, ih2, ih3⟩ := ih h he hty.2
+    refine ⟨by simp [ih1, hw], fun h1 h1' hnd u hu y hy => ?_, fun w hw => ?_⟩
+    · obtain ⟨h1a, h1b⟩ := h1
+      obtain ⟨-, h1'a, h1'b, h1'c⟩ := h1'
+      simp only [List.map_cons, List.nodup_cons] at hnd
+      rcases List.mem_cons.1 hu with rfl | hu
+      · rw [h1a] at hy; cases hy; rw [RelV.pair hp]; exact ⟨l, hh, rfl, h1'a, h1'b⟩
+      · exact ih2 h1b h1'c hnd.2 u hu y hy
+    · simp only [List.map_cons, List.mem_cons] at hw
+      rcases hw with rfl | rfl | rfl | hw
+      · exact .inl hf
+      · exact .inr ⟨v, by simp, by simp [img, hp]⟩
+      · exact .inr ⟨v, by simp, by simp [img, hp]⟩
+      · rcases ih3 w hw with h | ⟨u, hu, hwu⟩
+        · exact .inl h
+        · exact .inr ⟨u, List.mem_cons_of_mem _ hu, hwu⟩
+  case case5 => cases h
+
+/-- **The refinement theorem of `Opt.Legal.check`.** For an accepted legalisation `g` of `f`:
+from entry states of `f` on `args` and of `g` on `args'` (the arguments expanded by the ABI
+groups of `f`'s parameters, pads arbitrary; same slots and memory), whenever the run of `f`
+returns within `fuel` steps, the run of `g` returns the values expanded by the ABI groups of
+`f`'s returns, with the same memory; whenever it traps, the run of `g` traps with the same
+code. Premises: `EnvOk` (calls go to the environment; its contracts), valid ranges below
+`2^64`, no load/store trap in the source run. -/
+theorem check_refines {C : Ctx} (hc : check C.f C.g C.cert = true)
+    {env : Env} {p p' : Program} (hE : EnvOk env C p p') {b b' : Block}
+    (hb : C.f.entry? = some b) (hb' : C.g.entry? = some b') {args args' : List Val}
+    {fr0 fr0' : Frame} {m : Mem}
+    (h1 : fr0.func = C.f) (h2 : fr0.body = b.body) (h3 : fr0.term = b.term)
+    (h4 : b.params.map (·.2) = args.map (·.ty))
+    (h5 : Regs.empty.setMany (b.params.map (·.1)) args = some fr0.regs)
+    (h1' : fr0'.func = C.g) (h2' : fr0'.body = b'.body) (h3' : fr0'.term = b'.term)
+    (h5' : Regs.empty.setMany (b'.params.map (·.1)) args' = some fr0'.regs)
+    (hsl : fr0'.slots = fr0.slots)
+    (hexp : ExpRel ((groups C.f.sig.params).getD []) args args')
+    (hM : MemBounded m) (hT : NoMemTrap env p ⟨fr0, [], m⟩) (fuel : Nat) :
+    (∀ vals m1, runLoop env p fuel ⟨fr0, [], m⟩ = .returned vals m1 →
+      ∃ vals', ExpRel ((groups C.f.sig.returns).getD []) vals vals' ∧
+        ∃ k, runLoop env p' k ⟨fr0', [], m⟩ = .returned vals' m1) ∧
+    (∀ c, runLoop env p fuel ⟨fr0, [], m⟩ = .trapped c →
+      ∃ k, runLoop env p' k ⟨fr0', [], m⟩ = .trapped c) := by
+  have hG : Good C := check_good hc
+  obtain ⟨b0, bs, b0', bs', hf, hg, -, hok, -⟩ := hG.blocks
+  simp only [Function.entry?, hf, List.head?_cons, Option.some.injEq] at hb
+  simp only [Function.entry?, hg, List.head?_cons, Option.some.injEq] at hb'
+  subst hb hb'
+  have hBmem : b0 ∈ C.f.blocks := by rw [hf]; exact List.mem_cons_self ..
+  simp only [blockOk, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq, ite_true] at hok
+  obtain ⟨⟨-, hnd'⟩, hok⟩ := hok
+  split at hok
+  · rename_i gs z rest hgs hbody'
+    simp only [Bool.and_eq_true, beq_iff_eq] at hok
+    obtain ⟨⟨hep, rfl⟩, hcode⟩ := hok
+    simp only [hgs, Option.getD_some] at hexp
+    obtain ⟨hty', hbind, hcov⟩ := entry_bind hep hexp h4.symm
+    have hnd := params_nodup hG.defs hBmem
+    have H0 := holds_setMany hnd h5
+    have H0' := holds_setMany hnd' h5'
+    -- the target's first step: the pad zero
+    have hz : lstep fr0' m = .next { fr0' with regs := fr0'.regs.set C.zero zeroVal, body := rest } m := by
+      have hb0 : fr0'.body = C.zeroStmt :: rest := by rw [h2', hbody']
+      rw [lstep_eval (m1 := m) (vals := [zeroVal]) hb0 (fun _ _ h => by cases h) rfl rfl]
+    have hzT : TStep env p' fr0' m { fr0' with regs := fr0'.regs.set C.zero zeroVal, body := rest } m :=
+      TStep.of_lstar (.single hz)
+    -- parameters of the target that are values of `f` are the source parameters
+    have hpar : ∀ v, v < C.T0 → v ∉ b0.params.map (·.1) → v ∉ b0'.params.map (·.1) := by
+      intro v hv hvn hv'
+      rcases hcov v hv' with hf' | ⟨u, hu, hvu⟩
+      · have := (fresh_spec hf').1; vomega
+      · cases hpu : C.pair u with
+        | none =>
+          simp only [img, hpu, List.mem_singleton] at hvu
+          exact hvn (hvu ▸ hu)
+        | some ab =>
+          obtain ⟨a, b⟩ := ab
+          obtain ⟨ha, hb, -⟩ := hG.pair_facts hpu
+          simp only [img, hpu, List.mem_cons, List.mem_nil_iff, or_false] at hvu
+          rcases hvu with rfl | rfl <;> vomega
+    have hR : FRel C fr0 { fr0' with regs := fr0'.regs.set C.zero zeroVal, body := rest } := by
+      refine ⟨⟨h1, h1', hsl, ?_, ?_, ?_, by simp⟩, ⟨b0, hBmem, by rw [h2]; exact List.suffix_refl _, h3⟩, ?_⟩
+      · intro v x hv hx
+        have hvp : v ∈ b0.params.map (·.1) := by
+          refine Classical.byContradiction fun hn => ?_
+          rw [setMany_other h5 hn] at hx; cases hx
+        refine (hbind H0 H0' hnd v hvp x hx).congr fun w hw => ?_
+        simp only
+        rw [Regs.set_other _ _ fun h => zero_not_img hG hv (by rw [← h]; exact hw)]
+      · intro v hv hp
+        simp only
+        have hvz : v ≠ C.zero := fun h => by have := hG.zero_ge; vomega
+        rw [Regs.set_other _ _ hvz]
+        by_cases hvp : v ∈ b0.params.map (·.1)
+        · obtain ⟨x, hx⟩ := holds_mem H0 v hvp
+          have := hbind H0 H0' hnd v hvp x hx
+          rw [RelV.plain hp] at this
+          rw [this, hx]
+        · rw [setMany_other h5 hvp, setMany_other h5' (hpar v hv hvp)]
+      · exact srcInv_enter hG.defs hBmem (fun _ _ h => by cases h) h4.symm h5
+      · simp only
+        rw [h2, h3, h3']
+        exact hcode
+    obtain ⟨hr1, hr2⟩ := sim_run hG hE fuel fr0 _ m hR hM hT
+    obtain ⟨k0, hk0⟩ := hzT
+    refine ⟨fun vals m1 h => ?_, fun c h => ?_⟩
+    · obtain ⟨vals', hv, k, hk⟩ := hr1 vals m1 h
+      exact ⟨vals', hv, k + k0, by rw [hk0, hk]⟩
+    · obtain ⟨k, hk⟩ := hr2 c h
+      exact ⟨k + k0, by rw [hk0, hk]⟩
+  · cases hok
+
 end Opt.Legal
