@@ -154,14 +154,6 @@ theorem Sim.visit (hg : VRenaming g gn) (i : MInst) :
       (ψ := fun (x : Reg × Reg) => (g x.1, x.2)) ?_ us) fun us => Sim.pure _ _ rfl
     intro a; obtain ⟨v, p⟩ := a
     exact Sim.bind (Sim.collect hg _ v) fun b => Sim.pure _ _ rfl
-  | atomicRmwLoop ty op fl a o1 o2 s1 s2 =>
-    -- the visit has a fixed-def conditional on `op == .xchg`
-    simp only [MInst.visitOperands, MInst.mapRegs]
-    split <;> rename_i s2 <;>
-      repeat
-        first
-        | exact Sim.pure _ _ rfl
-        | refine Sim.bind (Sim.collect hg _ _) fun _ => ?_
   | _ =>
     simp only [MInst.visitOperands, MInst.mapRegs]
     repeat

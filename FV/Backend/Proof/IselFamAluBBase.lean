@@ -151,6 +151,9 @@ theorem instNames_unary {c : Clif.Inst} {cop : Clif.UnaryOp} {n : String}
     exfalso; cases op <;> cases cop <;> simp [unaryOpcode] at h hcop <;> subst hcop <;> simp at h
   case ireduce ty x =>
     exfalso; cases cop <;> simp [unaryOpcode] at hcop <;> subst hcop <;> simp at h
+  -- `bmask` shares the `Unary` format but its opcode name is outside `unaryOpcode`'s range
+  case bmask ty x =>
+    exfalso; cases cop <;> simp [unaryOpcode] at hcop <;> subst hcop <;> simp at h
 
 /-- The instruction data and result type of a unary instruction `cop` (from `instData`). -/
 theorem instData_unary_data {f : Clif.Function} {cop : Clif.UnaryOp} {n : String}

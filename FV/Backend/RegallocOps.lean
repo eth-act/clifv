@@ -225,13 +225,16 @@ def MInst.visitOperands : MInst → m MInst
     let rn ← f .use rn; let rt ← f .def_ rt; pure (.loadAcquire ty rt rn fl)
   | .storeRelease ty rt rn fl => do
     let rn ← f .use rn; let rt ← f .use rt; pure (.storeRelease ty rt rn fl)
-  -- `mod.rs:473`: fixed uses x25/x26, fixed defs x27/x24 (x28 unless `xchg`)
+  -- `mod.rs:473`: fixed uses x25/x26, fixed defs x27/x24/x28. Deviation from Cranelift:
+  -- for `xchg` the scratch2 (x28) def is registered even though the loop does not write it
+  -- (conservative: x28 is dead across the instruction; keeps `visitOperands` total in `op`,
+  -- which the rename-commutation proofs need). Cranelift omits it for `xchg`.
   | .atomicRmwLoop ty op fl addr operand oldval s1 s2 => do
     let addr ← f (.fixedUse (.x 25)) addr
     let operand ← f (.fixedUse (.x 26)) operand
     let oldval ← f (.fixedDef (.x 27)) oldval
     let s1 ← f (.fixedDef (.x 24)) s1
-    let s2 ← if op == .xchg then pure s2 else f (.fixedDef (.x 28)) s2
+    let s2 ← f (.fixedDef (.x 28)) s2
     pure (.atomicRmwLoop ty op fl addr operand oldval s1 s2)
   -- `mod.rs:522`: fixed uses x25/x26/x28, fixed defs x27/x24
   | .atomicCasLoop ty fl addr expect replace oldval scratch => do
