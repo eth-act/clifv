@@ -373,10 +373,34 @@ def stepCall (env : Env) (p : Program) (s : State) (rest : List Stmt) (results :
       | .outOfFuel => .stuck s!"extern %{ext.name} ran out of fuel"
     | none => .stuck s!"unknown callee %{ext.name}"
 
-/-- Execute a `call_indirect sigN, callee(args)` statement: the callee value is the
-runtime address of a function of the program (what `func_addr` of its declaration
-evaluates to). `stuck` for an address no function of the program has, or a signature
-mismatch. -/
+/-- The names of the externs the functions of `p` declare: with the functions of `p`, the
+function symbols of the program's image (`Program.initMem` gives each an entry stub). -/
+def Program.externNames (p : Program) : List String :=
+  p.funcs.flatMap fun f => f.externs.map (·.2.name)
+
+/-- An indirect call of an extern: the first extern of `p` (`Program.externNames`) whose
+link-time address (`mem.symbols`) is the callee address `addr`, called as `env.extern` on
+`vals` with the call site's signature `declared` (argument and result types checked against
+it, as `stepCall` checks the declaration's). -/
+def callExternAt (env : Env) (p : Program) (mem : Mem) (declared : Signature) (addr : Nat)
+    (vals : List Val) : Res (List Val × Mem) := do
+  let name ← Res.ofOption "call_indirect: no function at the callee address"
+    (p.externNames.find? fun n => mem.symbols n == some addr)
+  let g ← Res.ofOption s!"unknown callee %{name}" (env.extern name)
+  checkTys s!"arguments of call_indirect to %{name}" vals (AbiParam.tys declared.params)
+  match g vals mem with
+  | .returned rvals mem' =>
+    if rvals.map (·.ty) == AbiParam.tys declared.returns then pure (rvals, mem')
+    else .stuck s!"extern %{name} returned values of the wrong types"
+  | .trapped c => .trap c
+  | .stuck m => .stuck m
+  | .outOfFuel => .stuck s!"extern %{name} ran out of fuel"
+
+/-- Execute a `call_indirect sigN, callee(args)` statement: the callee value is a code
+address. A function of the program at that address (what `func_addr` of its declaration
+evaluates to) is entered (`stuck` on a signature mismatch); otherwise the extern of the
+program at that address is called like a `call` (`callExternAt`); `stuck` for an address
+with no function. -/
 def stepCallIndirect (env : Env) (p : Program) (s : State) (rest : List Stmt)
     (results : List ValueId) (sig : Nat) (callee : ValueId) (args : List ValueId) :
     StepResult :=
@@ -385,19 +409,19 @@ def stepCallIndirect (env : Env) (p : Program) (s : State) (rest : List Stmt)
     let declared ← Res.ofOption s!"unknown signature sig{sig}" (fr.func.sigDecls.lookup sig)
     let cv ← fr.get callee
     let cv64 ← Res.ofOption "call_indirect: callee is not i64" (cv.as? .i64)
-    let addr := cv64.toNat
     let vals ← fr.getMany args
-    let target ← Res.ofOption
-      "call_indirect: no function at the callee address"
-      (p.funcs.find? fun f => (s.mem.symbols f.name) == some addr)
-    Res.check (AbiParam.tys declared.params == AbiParam.tys target.sig.params)
-      s!"call_indirect sig{sig}: parameter types do not match %{target.name}"
-    Res.check (AbiParam.tys declared.returns == AbiParam.tys target.sig.returns)
-      s!"call_indirect sig{sig}: return types do not match %{target.name}"
-    pure (target, vals)) fun (target, vals) =>
-  StepResult.ofRes (enterFunc target vals s.mem) fun (fr', mem') =>
-    .next { frame := fr', callers := ({ fr with body := rest }, results) :: s.callers,
-            mem := mem' }
+    pure (declared, cv64.toNat, vals)) fun (declared, addr, vals) =>
+  match p.funcs.find? fun f => (s.mem.symbols f.name) == some addr with
+  | some target =>
+    if AbiParam.tys declared.params == AbiParam.tys target.sig.params &&
+        AbiParam.tys declared.returns == AbiParam.tys target.sig.returns then
+      StepResult.ofRes (enterFunc target vals s.mem) fun (fr', mem') =>
+        .next { frame := fr', callers := ({ fr with body := rest }, results) :: s.callers,
+                mem := mem' }
+    else .stuck s!"call_indirect sig{sig}: signature does not match %{target.name}"
+  | none =>
+    StepResult.ofRes (callExternAt env p s.mem declared addr vals) fun (rvals, mem') =>
+      continueWith s rest results rvals mem'
 
 /-- Return `vals` from the current frame (memory `mem`): free its stack slots, then resume
 the caller (binding the results of its pending call) or finish. -/

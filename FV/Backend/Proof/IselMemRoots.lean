@@ -659,42 +659,4 @@ theorem sextend_load_ok : MemRuleOk F sb syms isem MR env cp p rule_lower_1359 :
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
   mem_inv hp [ctor_is_sinkable_inst] at hmatch
 
-/-! ## `MemRulesCorrect` -/
-
-/-- The memory root rules of `lower`, in order. -/
-theorem lower_memRoot_filter : (program.rulesOf TId.lower).filter memRootRule =
-    [rule_lower_1300, rule_lower_1359, rule_lower_2491, rule_lower_2604, rule_lower_2607, rule_lower_2610, rule_lower_2613, rule_lower_2647, rule_lower_2650, rule_lower_2653, rule_lower_2656, rule_lower_2659, rule_lower_2662, rule_lower_2705, rule_lower_2709, rule_lower_2713, rule_lower_2717, rule_lower_2722, rule_lower_2726, rule_lower_2730, rule_lower_2849] := by
-  rw [program_rulesOf_686]
-  rfl
-
-/-- **The memory family (M4)**: every memory root rule of `lower` is correct under
-`MemRefines`, for every function whose memory relation is `MemRelOk`. -/
-theorem memRulesCorrect_program : MemRulesCorrect program := by
-  intro F sb syms isem MR env cp hR hMR hM r hr hmem
-  have hsub : r ∈ (program.rulesOf TId.lower).filter memRootRule := List.mem_filter.2 ⟨hr, hmem⟩
-  rw [lower_memRoot_filter] at hsub
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hsub
-  rcases hsub with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact uextend_load_ok data_program
-  · exact sextend_load_ok data_program
-  · exact symbol_value_ok data_program hR hMR hM
-  · exact load_i8_ok data_program hR hMR hM
-  · exact load_i16_ok data_program hR hMR hM
-  · exact load_i32_ok data_program hR hMR hM
-  · exact load_i64_ok data_program hR hMR hM
-  · exact uload8_ok data_program hR hMR hM
-  · exact sload8_ok data_program hR hMR hM
-  · exact uload16_ok data_program hR hMR hM
-  · exact sload16_ok data_program hR hMR hM
-  · exact uload32_ok data_program hR hMR hM
-  · exact sload32_ok data_program hR hMR hM
-  · exact store_i8_ok data_program hR hMR hM
-  · exact store_i16_ok data_program hR hMR hM
-  · exact store_i32_ok data_program hR hMR hM
-  · exact store_i64_ok data_program hR hMR hM
-  · exact istore8_ok data_program hR hMR hM
-  · exact istore16_ok data_program hR hMR hM
-  · exact istore32_ok data_program hR hMR hM
-  · exact stack_addr_ok data_program hMR hM
-
 end Backend.Proof

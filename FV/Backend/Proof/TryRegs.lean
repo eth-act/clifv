@@ -198,4 +198,39 @@ theorem tryCallData_eq {f : Clif.Function} {fn : Clif.FnRef} {args : List Clif.V
     ite_false, pure, Except.pure]
   rfl
 
+theorem tryCallIndData_spec {f : Clif.Function} {callee : Clif.ValueId}
+    {args : List Clif.ValueId} {et : Clif.ExnTable} {data : V}
+    (h : tryCallData f (.tryCallIndirect callee args et) = .ok data) :
+    ∃ sig items, exnTableOpnd f et = .ok (sig, items) := by
+  simp only [tryCallData] at h
+  cases he : exnTableOpnd f et with
+  | error e => simp [he, bind, Except.bind] at h
+  | ok q => exact ⟨q.1, q.2, rfl⟩
+
+set_option maxRecDepth 20000 in
+theorem tryCallIndData_eq {f : Clif.Function} {callee : Clif.ValueId} {args : List Clif.ValueId}
+    {et : Clif.ExnTable} {sig : Clif.Signature} {items : List (Option Nat)}
+    (he : exnTableOpnd f et = .ok (sig, items)) :
+    tryCallData f (.tryCallIndirect callee args et) = .ok (.data 152 28 [.data 151 14 [],
+      .values (callee :: args), .op (.exnTable sig items)]) := by
+  simp only [tryCallData, he, bind, Except.bind, pure, Except.pure]
+  rfl
+
+/-- The signature of an exception table is its `sigN` declaration. -/
+theorem exnTableOpnd_sig {f : Clif.Function} {et : Clif.ExnTable} {sig : Clif.Signature}
+    {items : List (Option Nat)} (h : exnTableOpnd f et = .ok (sig, items)) :
+    f.sigDecls.lookup et.sig = some sig := by
+  unfold exnTableOpnd at h
+  cases hs : f.sigDecls.lookup et.sig with
+  | none => simp [hs] at h
+  | some sig' =>
+    simp only [hs] at h
+    split at h
+    · simp [bind, Except.bind, throw, throwThe, MonadExceptOf.throw] at h
+    · simp only [bind, Except.bind, pure, Except.pure] at h
+      split at h
+      · cases h
+      · simp only [Except.ok.injEq, Prod.mk.injEq] at h
+        rw [h.1]
+
 end Backend

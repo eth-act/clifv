@@ -193,7 +193,7 @@ theorem try_sym_lowerTryOk {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} 
     (htr : ctx.tryRegs = ((List.range (sigRets ext.sig).length).map fun j => Reg.vreg (b + j) .int,
       [.vreg b .int, .vreg (b + 1) .int]))
     {st st' : LState} (hst' : st'.nextVreg = st.nextVreg) :
-    LowerTryOk isem MR env cp ctx fn args info st st'
+    LowerTryOk isem MR env cp ctx (.call fn args) info st st'
       [.call ⟨.sym ext.name, retPairs (args.zip ((abiArgIdx ext.sig.params 0).map Reg.x)),
         callDefs (outDefs b (max (sigRets ext.sig).length 2))⟩] := by
   refine ⟨by omega, ⟨[], _, rfl, by simp, fun d hd => ?_⟩, ?_⟩
@@ -307,7 +307,7 @@ theorem try_got_lowerTryOk {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} 
       [.vreg b .int, .vreg (b + 1) .int]))
     {st st' : LState} (hargs : ∀ x ∈ args, x < st.nextVreg)
     (hst' : st'.nextVreg = st.nextVreg + 1) :
-    LowerTryOk isem MR env cp ctx fn args info st st'
+    LowerTryOk isem MR env cp ctx (.call fn args) info st st'
       [.loadExtNameGot (.vreg st.nextVreg .int) ext.name,
        .call ⟨.reg (.vreg st.nextVreg .int),
         retPairs (args.zip ((abiArgIdx ext.sig.params 0).map Reg.x)),

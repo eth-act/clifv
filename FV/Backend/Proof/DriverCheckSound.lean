@@ -80,15 +80,16 @@ theorem lowTerm_spec {f : Clif.Function} {tcall : TermCallF} {ycall : TryCallF} 
     (h : lowTerm f tcall ycall ti t tst nl = some (data, targets, tl, tst', nl')) :
     (t.isTry = false → tl = none ∧ termData (abiTerm f t) = .ok data ∧
       ∃ out tr, tcall ti data t targets tst = .ok (some out, tst', tr)) ∧
-    (∀ fn args et, t = .tryCall fn args et → ∃ T, tl = some T ∧ tryCallData f t = .ok data ∧
+    (∀ et, IsTryWith t et → ∃ T, tl = some T ∧ tryCallData f t = .ok data ∧
       exnTableOpnd f et = .ok (T.sig, T.items) ∧ tryTargets f et.dests nl = some (targets, nl') ∧
       tryRegsOf T.sig tst = some (T.regs, T.st1) ∧ tryInfoOf T.sig T.items targets = some T.info ∧
       ∃ out tr, ycall ti data T.regs targets { T.st1 with emitted := #[] } =
         .ok (some out, tst', tr)) := by
   cases t with
   | tryCall fn0 args0 et0 =>
-    refine ⟨fun h' => by simp [Clif.Terminator.isTry] at h', fun fn args et ht => ?_⟩
-    cases ht
+    refine ⟨fun h' => by simp [Clif.Terminator.isTry] at h', fun et ht => ?_⟩
+    obtain rfl : et = et0 := by
+      rcases ht with ⟨_, _, h'⟩ | ⟨_, _, h'⟩ <;> cases h'; rfl
     simp only [lowTerm] at h
     split at h
     · rename_i data0 sig items targets0 nl0 hd he htt
@@ -106,9 +107,27 @@ theorem lowTerm_spec {f : Clif.Function} {tcall : TermCallF} {ycall : TryCallF} 
       · cases h
     · cases h
   | tryCallIndirect c args0 et0 =>
-    refine ⟨fun h' => by simp [Clif.Terminator.isTry] at h', fun fn args et ht => by cases ht⟩
+    refine ⟨fun h' => by simp [Clif.Terminator.isTry] at h', fun et ht => ?_⟩
+    obtain rfl : et = et0 := by
+      rcases ht with ⟨_, _, h'⟩ | ⟨_, _, h'⟩ <;> cases h'; rfl
+    simp only [lowTerm] at h
+    split at h
+    · rename_i data0 sig items targets0 nl0 hd he htt
+      split at h
+      · rename_i trs st1 hr
+        split at h
+        · rename_i info hi
+          split at h
+          · rename_i o tst0 tr0 hy
+            simp only [Option.some.injEq, Prod.mk.injEq] at h
+            obtain ⟨rfl, rfl, rfl, rfl, rfl⟩ := h
+            exact ⟨⟨info, sig, items, trs, st1⟩, rfl, hd, he, htt, hr, hi, o, tr0, hy⟩
+          · cases h
+        · cases h
+      · cases h
+    · cases h
   | _ =>
-    refine ⟨fun _ => ?_, fun fn args et ht => by cases ht⟩
+    refine ⟨fun _ => ?_, fun et ht => by rcases ht with ⟨_, _, h'⟩ | ⟨_, _, h'⟩ <;> cases h'⟩
     simp only [lowTerm] at h
     split at h
     · rename_i data0 targets0 nl0 hd htg
@@ -193,8 +212,9 @@ theorem ctxOk_sound {f : Clif.Function} {ctx : Ctx}
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨hfunc, hinsts⟩, hreg⟩, hty⟩, hdef⟩, hslot⟩, hres⟩, hvt⟩, haddr⟩ := h
   have hinst : ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info →
       info.clif = some inst →
-      Compile.instE inst = true ∧ notFuncAddr inst = true ∧ (instData f inst = .ok info.data) ∧
-      ∃ tys, inst.resultTypes (fun r => (f.extern? r).map (·.sig)) (fun _ => none) = some tys ∧
+      Compile.instE inst = true ∧ (instData f inst = .ok info.data) ∧
+      ∃ tys, inst.resultTypes (fun r => (f.extern? r).map (·.sig)) (f.sigDecls.lookup ·) =
+          some tys ∧
         info.resTys = tys.map CTy.ofClif ∧ info.results.length = tys.length := by
     intro ii info inst hi hc
     have hm : info ∈ ctx.insts.toList := by
@@ -202,14 +222,14 @@ theorem ctxOk_sound {f : Clif.Function} {ctx : Ctx}
     have := List.all_eq_true.mp hinsts info hm
     rw [hc] at this
     simp only [Bool.and_eq_true] at this
-    obtain ⟨⟨h0, hfa⟩, h1, h2⟩ := this
-    refine ⟨h0, hfa, ?_, ?_⟩
+    obtain ⟨h0, h1, h2⟩ := this
+    refine ⟨h0, ?_, ?_⟩
     · cases hd : instData f inst with
       | ok d => rw [hd] at h1; simpa using h1
       | error e => rw [hd] at h1; simp at h1
     · have h2' : ctxResTysOk f info inst = true := h2
       unfold ctxResTysOk at h2'
-      cases hty : inst.resultTypes (fun r => (f.extern? r).map (·.sig)) (fun _ => none) with
+      cases hty : inst.resultTypes (fun r => (f.extern? r).map (·.sig)) (f.sigDecls.lookup ·) with
       | none => rw [hty] at h2'; simp at h2'
       | some tys =>
         have h2'' : (decide (info.resTys = tys.map CTy.ofClif) &&
@@ -217,13 +237,9 @@ theorem ctxOk_sound {f : Clif.Function} {ctx : Ctx}
           rw [hty] at h2'; exact h2'
         simp only [Bool.and_eq_true, decide_eq_true_eq] at h2''
         exact ⟨tys, rfl, h2''.1, h2''.2⟩
-  refine ⟨hfunc, fun ii info inst hi hc => (hinst ii info inst hi hc).2.2.1,
+  refine ⟨hfunc, fun ii info inst hi hc => (hinst ii info inst hi hc).2.1,
     fun ii info inst hi hc => (hinst ii info inst hi hc).1,
-    fun ii info inst hi hc => (hinst ii info inst hi hc).2.2.2, ?_, ?_, ?_, ?_, hslot, ?_, ?_, ?_,
-    fun ii info inst hi hc ty fn he => by
-      have := (hinst ii info inst hi hc).2.1
-      rw [he] at this
-      simp [notFuncAddr] at this⟩
+    fun ii info inst hi hc => (hinst ii info inst hi hc).2.2, ?_, ?_, ?_, ?_, hslot, ?_, ?_, ?_⟩
   · intro x r hx
     have hlt : x < ctx.valReg.size := by
       simp only [Ctx.valueReg?] at hx
@@ -317,7 +333,7 @@ theorem succOk_sound {f : Clif.Function} {vc : VCode} {R : Reg → Reg} {B : Cli
     (h : succOk f vc R B L = true) :
     match B.term with
     | .jump bc => ∃ tl, blockIdx? f bc.block = some tl ∧ L.targets = [tl]
-    | .tryCall _ _ et => L.targets.length = et.dests.length ∧
+    | .tryCall _ _ et | .tryCallIndirect _ _ et => L.targets.length = et.dests.length ∧
       ∃ tl tlab T eb, blockIdx? f et.normal.block = some tl ∧ L.targets.getLast? = some tlab ∧
         L.tl = some T ∧ vc.blocks[tlab]? = some eb ∧ eb.insts = #[.jump tl] ∧ eb.params = #[] ∧
         eb.branchArgs = (et.normal.args.map (normArgReg R T.regs.1)).toArray ∧
@@ -364,16 +380,26 @@ theorem succOk_sound {f : Clif.Function} {vc : VCode} {R : Reg → Reg} {B : Cli
           simp only [Bool.and_eq_true, decide_eq_true_eq] at this
           exact ⟨eb, heb, this.1.1, this.1.2, this.2⟩
         · cases this
-  unfold succOk at h
-  split at h
-  · rename_i bc hj
-    rw [hj]
-    split at h
-    · rename_i tl htl
-      exact ⟨tl, htl, by simpa using h⟩
-    · cases h
-  · rename_i fn args et hj
-    rw [hj]
+  have htry : ∀ et : Clif.ExnTable, (decide (L.targets.length = et.dests.length) &&
+      match blockIdx? f et.normal.block, L.targets.getLast?, L.tl with
+      | some tl, some tlab, some T => match vc.blocks[tlab]? with
+        | some eb => decide (eb.insts = #[.jump tl]) && decide (eb.params = #[]) &&
+            decide (eb.branchArgs = (et.normal.args.map (normArgReg R T.regs.1)).toArray) &&
+            et.normal.args.all fun
+              | .val _ => true
+              | .ret i => decide (i < T.sig.returns.length)
+              | .exn _ => false
+        | none => false
+      | _, _, _ => false) = true →
+      L.targets.length = et.dests.length ∧
+      ∃ tl tlab T eb, blockIdx? f et.normal.block = some tl ∧ L.targets.getLast? = some tlab ∧
+        L.tl = some T ∧ vc.blocks[tlab]? = some eb ∧ eb.insts = #[.jump tl] ∧ eb.params = #[] ∧
+        eb.branchArgs = (et.normal.args.map (normArgReg R T.regs.1)).toArray ∧
+        ∀ a ∈ et.normal.args, match a with
+          | .val _ => True
+          | .ret i => i < T.sig.returns.length
+          | .exn _ => False := by
+    intro et h
     simp only [Bool.and_eq_true, decide_eq_true_eq] at h
     obtain ⟨hlen, h⟩ := h
     refine ⟨hlen, ?_⟩
@@ -387,11 +413,26 @@ theorem succOk_sound {f : Clif.Function} {vc : VCode} {R : Reg → Reg} {B : Cli
         cases a <;> simp_all
       · cases h
     · cases h
-  · rename_i hnj hnt
+  unfold succOk at h
+  split at h
+  · rename_i bc hj
+    rw [hj]
+    split at h
+    · rename_i tl htl
+      exact ⟨tl, htl, by simpa using h⟩
+    · cases h
+  · rename_i fn args et hj
+    rw [hj]
+    exact htry et h
+  · rename_i c args et hj
+    rw [hj]
+    exact htry et h
+  · rename_i hnj hnt hnti
     have := gen B.term h
     split
     · rename_i bc hj; exact absurd hj (hnj bc)
     · rename_i fn args et hj; exact absurd hj (hnt fn args et)
+    · rename_i c args et hj; exact absurd hj (hnti c args et)
     · exact this
 
 theorem lowerShape_of_ok {f : Clif.Function} {vc : VCode} {ctx : Ctx} {ranges : Array (Nat × Nat)}
@@ -449,12 +490,12 @@ theorem lowerShape_of_ok {f : Clif.Function} {vc : VCode} {ctx : Ctx} {ranges : 
     · rename_i vb hvb
       simp only [Bool.and_eq_true, decide_eq_true_eq] at h
       obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨-, hst⟩, htemp⟩, hle⟩, hcode⟩, htne⟩, hpars⟩, hbargs⟩, hsucc⟩, -⟩ := h
-      refine ⟨vb, hvb, hsl, ?_, by simpa using htemp, hle, fun hnt' => ?_, fun fn args et ht => ?_,
+      refine ⟨vb, hvb, hsl, ?_, by simpa using htemp, hle, fun hnt' => ?_, fun et ht => ?_,
         hcode, by simpa using htne, hpars, hbargs, succOk_sound hsucc⟩
       rotate_left
       · obtain ⟨h1, h2, out, tr, h3⟩ := hnt hnt'
         exact ⟨h1, h2, out, tr, h3⟩
-      · obtain ⟨T, h1, h2, h3, -, h5, h6, out, tr, h7⟩ := hty fn args et ht
+      · obtain ⟨T, h1, h2, h3, -, h5, h6, out, tr, h7⟩ := hty et ht
         exact ⟨T, h1, h2, h3, h5, h6, out, tr, h7⟩
       intro j stm sl hj hslj
       have := all_range hst (lt_of_getElem? hj)

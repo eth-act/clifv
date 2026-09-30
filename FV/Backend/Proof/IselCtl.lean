@@ -1,6 +1,6 @@
 import FV.Backend.Proof.IselCtlTerm
 import FV.Backend.Proof.IselCtlUnmatch
-import FV.Backend.Proof.IselCtlCallRules
+import FV.Backend.Proof.IselCtlCallInd
 import FV.Backend.Proof.IselCtlBranch
 import FV.Backend.Proof.IselCtlBrif
 import FV.Backend.Proof.IselCtlTbz
@@ -74,6 +74,17 @@ theorem callRulesCorrect : CallRulesCorrect program := by
     exact call_bl_ruleOk data_program hR hMR hCR
   · rw [eq_of_mem_of_id lower_ids_nodup hr mem_lower_2518 (by rw [h]; rfl)]
     exact call_got_ruleOk data_program hR hMR hCR
+
+theorem mem_lower_2529 : rule_lower_2529 ∈ program.rulesOf TId.lower :=
+  List.mem_iff_getElem?.mpr ⟨345, by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl⟩
+
+/-- **`IndRulesCorrect`**: under the indirect-call contract, the `call_indirect` rule of `lower`
+(`blr` of the callee value, rule id 1033) is correct. -/
+theorem indRulesCorrect : IndRulesCorrect program := by
+  intro F isem MR env cp sigs hR hMR hCR r hr hroot
+  simp only [indRootRule, beq_iff_eq] at hroot
+  rw [eq_of_mem_of_id lower_ids_nodup hr mem_lower_2529 (by rw [hroot]; rfl)]
+  exact call_ind_ruleOk data_program indData_program hR hMR hCR
 
 /-- **`BranchRulesCorrect`**: the closure root rules of `lower_branch` — `brif` (1132), `tbnz`
 (1137), `tbz` (1138), `jump` (1139), `br_table` (1140) — are correct; the `try_call` rules are

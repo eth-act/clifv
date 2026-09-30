@@ -110,6 +110,28 @@ theorem cfg_of_prepare {vc vcp : VCode} (h : prepare vc = .ok vcp) :
   | ok r => exact ⟨r.1, r.2, rfl⟩
   | error e => rw [hc] at h; cases h
 
+/-- The call-site signature of an indirect call of an in-subset function is one of its
+indirect-call signatures, with register arguments. -/
+theorem indSig_of_subset {p : Clif.Program} {f : Clif.Function} (h : InSubset p f) :
+    ∀ B ∈ f.blocks, ∀ st ∈ B.body, IndSigOk f (indSigs f) st.inst := by
+  intro B hB st hst sig callee args s hi hs
+  have hmem : s ∈ indSigs f := by
+    unfold indSigs
+    refine List.mem_flatMap.mpr ⟨B, hB, List.mem_append_left _ (List.mem_filterMap.mpr ⟨st, hst, ?_⟩)⟩
+    rw [hi]; exact hs
+  exact ⟨hmem, (h.indSigs s hmem).1⟩
+
+/-- The same for a `try_call_indirect` (its exception table's signature). -/
+theorem tryIndSig_of_subset {p : Clif.Program} {f : Clif.Function} (h : InSubset p f) :
+    ∀ B ∈ f.blocks, ∀ c args et s, B.term = .tryCallIndirect c args et →
+      f.sigDecls.lookup et.sig = some s → s ∈ indSigs f ∧ s.params.length ≤ 8 := by
+  intro B hB c args et s ht hs
+  have hmem : s ∈ indSigs f := by
+    unfold indSigs
+    refine List.mem_flatMap.mpr ⟨B, hB, List.mem_append_right _ ?_⟩
+    rw [ht]; simp [hs]
+  exact ⟨hmem, (h.indSigs s hmem).1⟩
+
 /-- **CLIF → VCode** from the driver simulation. -/
 theorem iselSim_of_driver {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState}
     {R : Reg → Reg} {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId}
@@ -120,10 +142,18 @@ theorem iselSim_of_driver {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LS
   obtain ⟨B0, hent, hbody, hterm, hty, hregs⟩ := hce.entry
   have hB0 : f.blocks[0]? = some B0 := by
     simpa [Clif.Function.entry?, List.head?_eq_getElem?] using hent
+  have hP : RunPrem env p f cs := by
+    have hf := hce.func
+    exact ⟨htr.stmt, fun s c fn args et hr hs hb hT B hB => htr.tryCall s c fn args et hr hs hb hT B
+        (hf ▸ hB),
+      fun s c callee args et hr hs hb hT B hB =>
+        htr.tryCallInd s c callee args et hr hs hb hT B (hf ▸ hB),
+      fun s st rest sig callee args hr hb hi ⟨B, hB, hst⟩ =>
+        htr.indirect s st rest sig callee args hr hb hi ⟨B, hf ▸ hB, hst⟩,
+      fun s callee args et hr hb hT ⟨B, hB, e⟩ =>
+        htr.tryIndirect s callee args et hr hb hT ⟨B, hf ▸ hB, e⟩⟩
   have hrun := driver_correct H hB0 hce.callers hce.func rfl hbody hterm hregs hty.symm (ρ₀ := ρ₀) hrel
-    (fun i v h => hargs i v h) htr.stmt
-    (fun s c fn args et hr hs hb hT B hB => htr.tryCall s c fn args et hr hs hb hT B (hce.func ▸ hB))
-    fuel
+    (fun i v h => hargs i v h) hP fuel
   refine ⟨fun vals cm h => ?_, fun c h => ?_⟩
   · rw [h] at hrun
     obtain ⟨us, outs, w, cm0, hret, h1, h2, h3, h4, h5⟩ := hrun
@@ -171,16 +201,22 @@ theorem backend_correct {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp
     (hrules : LowerRulesCorrect Isle.Aarch64.program)
     (hex : ExcludedUnmatchable Isle.Aarch64.program)
     (hcallRules : CallRulesCorrect Isle.Aarch64.program)
+    (hindRules : IndRulesCorrect Isle.Aarch64.program)
     (hmemRules : MemRulesCorrect Isle.Aarch64.program)
     (hterms : ∀ s, TermCalls (sem s) (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w))
     (htries : ∀ s, TryCalls f (sem s) (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w)
       env p)
+    (htryInds : ∀ s, TryIndCalls (sem s) (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w)
+      env p (indSigs f))
     -- M6 + M5
     (hM6 : RegLevelCorrect sem F astep vcp af fb)
     -- the shared VCode semantics (M6's `csem`)
     (hRef : ∀ s, Refines (F s) (sem s)) (hds : ∀ s, DriverSem (sem s))
     -- the callee contract (M6, from `CalleeSound`)
     (hcalls : ∀ s, CallsRefine (F s) env (f.externs.map (·.2))
+      (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w) (sem s))
+    -- the indirect-call contract (M6, from `XCallsIndOk`)
+    (hicalls : ∀ s, IndCallsRefine env (indSigs f)
       (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w) (sem s))
     -- the memory forms (M6: loads/stores/`loadAddr`/GOT loads of `csem` with slot base `slotOff`
     -- and the link-time symbol addresses `syms`)
@@ -200,19 +236,20 @@ theorem backend_correct {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp
     shape := hshape
     cert := hcert
     dsem := hds s'
-    insts := instCalls_of_rules hrules hex hcallRules hmemRules (hRef s')
-      (mrStable_holds ⟨F s', syms, slotOff⟩ f) (hcalls s') (hmem s')
+    insts := instCalls_of_rules hrules hex hcallRules hindRules hmemRules (hRef s')
+      (mrStable_holds ⟨F s', syms, slotOff⟩ f) (hcalls s') (hicalls s') (hmem s')
       (memRelOk_holds ⟨F s', syms, slotOff⟩ f)
     terms := hterms s'
     ext := fun B hB st hst fn args hi e he => hsub.externCalls B hB st hst fn args hi e he
+    indSig := indSig_of_subset hsub
     subE := hsub.subsetE
-    noCI := fun B hB st hst sig callee args hi => hsub.noCI B hB st hst sig callee args hi
     regArgs := callRegArgs_of_subset hsub
     brIdx := hbr
     noTail := noTail_of_subset hsub
-    noTryCI := Compile.noTryCI_of_functionE hsub.subsetE
     tries := htries s'
     tryExt := hsub.tryExterns
+    tryInd := htryInds s'
+    tryIndSig := tryIndSig_of_subset hsub
     cfg := cfg_of_prepare hc.prepare }
 
 /-- **`backend_correct` from M4's rule statements only**: the terminator calls (`TermCalls`)
@@ -228,6 +265,7 @@ theorem backend_correct_of_rules {p : Clif.Program} {f : Clif.Function} {k : Nat
     (hrules : LowerRulesCorrect Isle.Aarch64.program)
     (hex : ExcludedUnmatchable Isle.Aarch64.program)
     (hcallRules : CallRulesCorrect Isle.Aarch64.program)
+    (hindRules : IndRulesCorrect Isle.Aarch64.program)
     (hmemRules : MemRulesCorrect Isle.Aarch64.program)
     (htermRules : LowerTermRulesCorrect Isle.Aarch64.program)
     (htermUn : TermUnmatchable Isle.Aarch64.program)
@@ -235,12 +273,17 @@ theorem backend_correct_of_rules {p : Clif.Program} {f : Clif.Function} {k : Nat
     (hbranchEx : BranchExcludedUnmatchable Isle.Aarch64.program)
     (htryRules : TryRulesCorrect Isle.Aarch64.program)
     (htryUn : TryUnmatchable Isle.Aarch64.program)
+    (htryIndRules : TryIndRulesCorrect Isle.Aarch64.program)
+    (htryIndUn : TryIndUnmatchable Isle.Aarch64.program)
     -- M6 + M5
     (hM6 : RegLevelCorrect sem F astep vcp af fb)
     -- the shared VCode semantics (M6's `csem`)
     (hRef : ∀ s, Refines (F s) (sem s)) (hds : ∀ s, DriverSem (sem s))
     -- the callee contract (M6, from `CalleeSound`)
     (hcalls : ∀ s, CallsRefine (F s) env (f.externs.map (·.2))
+      (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w) (sem s))
+    -- the indirect-call contract (M6, from `XCallsIndOk`)
+    (hicalls : ∀ s, IndCallsRefine env (indSigs f)
       (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w) (sem s))
     -- the memory forms (M6: loads/stores/`loadAddr`/GOT loads of `csem` with slot base `slotOff`
     -- and the link-time symbol addresses `syms`)
@@ -252,12 +295,14 @@ theorem backend_correct_of_rules {p : Clif.Program} {f : Clif.Function} {k : Nat
     (hrel : Rel.holds ⟨F s, syms, slotOff⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ArmRefines fb base ra astep s (Clif.runLoop env p fuel cs) :=
-  backend_correct hsub hc hrules hex hcallRules hmemRules
+  backend_correct hsub hc hrules hex hcallRules hindRules hmemRules
     (fun s' => termCalls_of_rules htermRules htermUn hbranch hbranchEx (hRef s')
       (mrStable_holds ⟨F s', syms, slotOff⟩ f))
     (fun s' => tryCalls_of_rules htryRules htryUn (hRef s')
       (mrStable_holds ⟨F s', syms, slotOff⟩ f) (hcalls s'))
-    hM6 hRef hds hcalls hmem hent hres hbe hargs hcs hrel htr fuel
+    (fun s' => tryIndCalls_of_rules htryIndRules htryIndUn (hRef s')
+      (mrStable_holds ⟨F s', syms, slotOff⟩ f) (hicalls s'))
+    hM6 hRef hds hcalls hicalls hmem hent hres hbe hargs hcs hrel htr fuel
 
 end E2E
 

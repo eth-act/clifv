@@ -48,8 +48,8 @@ def instE : Inst → Bool
   | .symbolValue ty _ => ty == .i64
   | .nop => true
   | .call _ _ => true
-  -- rust-route step 4: indirect calls and function addresses compile and run; they are
-  -- outside the end-to-end theorem (`E2E.InSubset`), which `unverifiedReason?` reports.
+  -- rust-route step 4: indirect calls (of externs: `E2E.InSubset`, `TrapsExplicit.indirect`)
+  -- and function addresses
   | .callIndirect _ _ _ => true
   | .funcAddr ty _ => ty == .i64
   | _ => false
@@ -62,11 +62,10 @@ def globalE : GlobalValue → Bool
 def termE : Terminator → Bool
   | .jump _ | .brif _ _ _ | .brTable _ _ _ | .ret _ | .trap _ => true
   | .returnCall _ _ => false
-  -- `try_call` of an extern: inside the end-to-end theorem for its normal return (the
-  -- landing pads and the LSDA are trusted, `docs/contracts/e2e.md`); `try_call_indirect`
-  -- is outside it, like `call_indirect`
+  -- `try_call`/`try_call_indirect` of an extern: inside the end-to-end theorem for its normal
+  -- return (the landing pads and the LSDA are trusted, `docs/contracts/e2e.md`)
   | .tryCall .. => true
-  | .tryCallIndirect .. => false
+  | .tryCallIndirect .. => true
 
 def sigE (s : Signature) : Bool :=
   s.params.all (tyE ·.ty) && s.returns.all (tyE ·.ty)
@@ -84,14 +83,5 @@ theorem instE_of_functionE {f : Function} (hE : functionE f = true) {b : Block} 
     {st : Stmt} (hst : st ∈ b.body) : instE st.inst = true := by
   simp only [functionE, Bool.and_eq_true, List.all_eq_true] at hE
   exact (hE.2 b hb).1.2 st hst
-
-/-- A subset-E function has no `try_call_indirect` terminator. -/
-theorem noTryCI_of_functionE {f : Function} (hE : functionE f = true) :
-    ∀ b ∈ f.blocks, ∀ c args et, b.term ≠ .tryCallIndirect c args et := by
-  intro b hb c args et ht
-  simp only [functionE, Bool.and_eq_true, List.all_eq_true] at hE
-  have h := (hE.2 b hb).2
-  rw [ht] at h
-  simp [termE] at h
 
 end Compile

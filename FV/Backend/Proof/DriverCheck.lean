@@ -249,7 +249,7 @@ def lowTerm (f : Clif.Function) (tcall : TermCallF) (ycall : TryCallF) (ti : Nat
     (t : Clif.Terminator) (tst : LState) (nl : Nat) :
     Option (V × List Label × Option TryLow × LState × Nat) :=
   match t with
-  | .tryCall _ _ et =>
+  | .tryCall _ _ et | .tryCallIndirect _ _ et =>
     match tryCallData f t, exnTableOpnd f et, tryTargets f et.dests nl with
     | .ok data, .ok (sig, items), some (targets, nl') =>
       match tryRegsOf sig tst with
@@ -415,26 +415,20 @@ def inFix (f : Clif.Function) (ctx : Ctx) (gn : Nat → Nat) : Array (List Clif.
 
 /-! ## The checks -/
 
-/-- The result-type check of one instruction (`ctxOk`). Signature declarations are not
-consulted (`CtxInv.resTys`): only `call_indirect` needs them, which `InSubset` excludes; they
-exist in verified functions for `try_call`'s exception tables. -/
+/-- The result-type check of one instruction (`ctxOk`): a call's from its callee's declaration,
+a `call_indirect`'s from its signature declaration (`CtxInv.resTys`). -/
 def ctxResTysOk (f : Clif.Function) (info : IInfo) (i : Clif.Inst) : Bool :=
-  match i.resultTypes (fun r => (f.extern? r).map (·.sig)) (fun _ => none) with
+  match i.resultTypes (fun r => (f.extern? r).map (·.sig)) (f.sigDecls.lookup ·) with
   | some tys => decide (info.resTys = tys.map CTy.ofClif) &&
       decide (info.results.length = tys.length)
   | none => false
-
-/-- Not a `func_addr` (outside the theorem, rust-route step 4: `CtxInv.noFA`). -/
-def notFuncAddr : Clif.Inst → Bool
-  | .funcAddr .. => false
-  | _ => true
 
 /-- `CtxInv f ctx` (M4's context facts), decided. -/
 def ctxOk (f : Clif.Function) (ctx : Ctx) : Bool :=
   decide (ctx.func = f) &&
   ctx.insts.toList.all (fun info => match info.clif with
     | some i =>
-      Compile.instE i && notFuncAddr i &&
+      Compile.instE i &&
         ((match instData f i with
             | .ok d => d == info.data
             | .error _ => false) &&
@@ -471,7 +465,7 @@ def succOk (f : Clif.Function) (vc : VCode) (R : Reg → Reg) (B : Clif.Block) (
   | .jump bc => match blockIdx? f bc.block with
     | some tl => decide (L.targets = [tl])
     | none => false
-  | .tryCall _ _ et => decide (L.targets.length = et.dests.length) &&
+  | .tryCall _ _ et | .tryCallIndirect _ _ et => decide (L.targets.length = et.dests.length) &&
     match blockIdx? f et.normal.block, L.targets.getLast?, L.tl with
     | some tl, some tlab, some T => match vc.blocks[tlab]? with
       | some eb => decide (eb.insts = #[.jump tl]) && decide (eb.params = #[]) &&
@@ -542,10 +536,10 @@ def shapeOk (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) (gn : Na
     | _, _ => false) &&
   decide (st0.nextVreg ≤ f.freshValue)
 
-/-- The successors the driver simulation enters: a branch's, and a `try_call`'s normal return
-(`Clif.run` never takes an exception edge). -/
+/-- The successors the driver simulation enters: a branch's, and a `try_call`'s or
+`try_call_indirect`'s normal return (`Clif.run` never takes an exception edge). -/
 def edgeIds : Clif.Terminator → List Clif.BlockId
-  | .tryCall _ _ et => [et.normal.block]
+  | .tryCall _ _ et | .tryCallIndirect _ _ et => [et.normal.block]
   | t => (dests t).map (·.block)
 
 /-- Membership in the values available in a block (`availOf f In bi`, `mem_avail`): the block's
@@ -676,10 +670,7 @@ def brIdxOk (f : Clif.Function) (ctx : Ctx) : Bool :=
     | _ => true
 
 /-- **The lowering validator.** Accepts `vc` iff it is the lowering of `f` in the structure
-the driver proof needs, with an SSA availability certificate, and every `br_table` index has at most 32 bits.
-Signature declarations (`sigN`, for `try_call` exception tables and `call_indirect`) are not
-consulted by the context invariant `CtxInv` (M4): `call_indirect` is outside the end-to-end
-theorem (`E2E.InSubset.noCI`). -/
+the driver proof needs, with an SSA availability certificate, and every `br_table` index has at most 32 bits. -/
 def lowerCheck (f : Clif.Function) (vc : VCode) : Bool :=
   match buildCtx f with
   | .error _ => false

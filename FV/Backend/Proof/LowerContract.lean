@@ -27,13 +27,14 @@ namespace Backend.Proof.Driver
 open Backend Backend.Proof
 
 /-- Every `lower` call `lowerFunction` makes on a statement of `f` (from a state whose fresh
-vregs are above every value's vreg, `ValsBelow`) satisfies M4's `LowerInstOk`. -/
+vregs are above every value's vreg, `ValsBelow`; an indirect call's signature among `f`'s
+indirect-call signatures with register arguments, `IndSigOk`) satisfies M4's `LowerInstOk`. -/
 def InstCalls (f : Clif.Function) (sem : Sem) (MR : MemRelT) (env : Clif.Env) (p : Clif.Program) :
     Prop :=
   ∀ ctx ii info inst st rss st' tr, CtxInv f ctx → CallRegArgs f →
     Compile.functionE f = true →
     ctx.insts[ii]? = some info →
-    info.clif = some inst → st.emitted = #[] → ValsBelow ctx st →
+    info.clif = some inst → IndSigOk f (indSigs f) inst → st.emitted = #[] → ValsBelow ctx st →
     runTerm ctx "lower" [.inst ii] st = .ok (some (.regsVec rss), st', tr) →
     LowerInstOk sem MR env p ctx inst info.results st rss st' st'.emitted.toList
 
@@ -57,18 +58,22 @@ theorem externsIn_self (f : Clif.Function) : ExternsIn f (f.externs.map (·.2)) 
   simp
 
 /-- **From M4's rule theorems to the driver's `lower` calls** (of function `f`, whose memory
-relation satisfies `MemRelOk`, under the callee contract for `f`'s externs). -/
+relation satisfies `MemRelOk`, under the callee contract for `f`'s externs and the indirect-call
+contract for `f`'s indirect-call signatures). -/
 theorem instCalls_of_rules (hrules : LowerRulesCorrect Isle.Aarch64.program)
     (hex : ExcludedUnmatchable Isle.Aarch64.program)
-    (hcalls : CallRulesCorrect Isle.Aarch64.program) (hmem : MemRulesCorrect Isle.Aarch64.program)
+    (hcalls : CallRulesCorrect Isle.Aarch64.program) (hind : IndRulesCorrect Isle.Aarch64.program)
+    (hmem : MemRulesCorrect Isle.Aarch64.program)
     {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat} {sem : Sem}
     {MR : MemRelT} {env : Clif.Env} {p : Clif.Program} {f : Clif.Function} (hR : Refines F sem)
     (hMR : MRStable F MR) (hcr : CallsRefine F env (f.externs.map (·.2)) MR sem)
+    (hicr : IndCallsRefine env (indSigs f) MR sem)
     (hMem : MemRefines F sb syms sem)
     (hMRo : MemRelOk F sb syms f MR) : InstCalls f sem MR env p := by
-  intro ctx ii info inst st rss st' tr hctx hra hE hi hc hemp hvb hrun
-  obtain ⟨ms, rss', hem, hout, hok⟩ := lowerInstOk_runTerm hrules hex hcalls hmem (env := env)
-    (cp := p) hR hMR hcr hMem hctx hra (externsIn_self f) hE hMRo hi hc hvb hrun
+  intro ctx ii info inst st rss st' tr hctx hra hE hi hc hsig hemp hvb hrun
+  obtain ⟨ms, rss', hem, hout, hok⟩ := lowerInstOk_runTerm hrules hex hcalls hind hmem
+    (env := env) (cp := p) hR hMR hcr hicr hMem hctx hra (externsIn_self f) hE hMRo hi hc hsig
+    hvb hrun
   cases hout
   rw [hemp, Array.empty_append] at hem
   rw [hem, List.toList_toArray]
@@ -133,13 +138,67 @@ theorem stepCall_eq (env : Clif.Env) (p : Clif.Program) (s : Clif.State) (rest :
     | returned rv m =>
       simp only
       split <;> rfl
-    | _ => rfl
+
+theorem resBind_ok {α β : Type} {x : Clif.Res α} {f : α → Clif.Res β} {b : β}
+    (h : (x >>= f) = .ok b) : ∃ a, x = .ok a ∧ f a = .ok b := by
+  cases x with
+  | ok a => exact ⟨a, rfl, h⟩
+  | trap c => cases h
+  | stuck m => cases h
+
+/-- A CLIF value read `as? .i64` is an `i64` value. -/
+theorem val_as_i64 {v : Clif.Val} {x : BitVec Clif.Ty.i64.width} (h : v.as? .i64 = some x) :
+    v = ⟨.i64, x⟩ := by
+  obtain ⟨ty, bits⟩ := v
+  simp only [Clif.Val.as?] at h
+  split at h
+  · rename_i hty
+    simp only at hty
+    subst hty
+    simp only [Option.some.injEq] at h
+    subst h
+    rfl
+  · cases h
+
+/-- An indirect call whose callee address is no function of `p` steps as `instOutcome` (the
+extern at that address, `Clif.callExternAt`), the results bound by `continueWith`. -/
+theorem stepCallIndirect_eq (env : Clif.Env) (p : Clif.Program) (s : Clif.State)
+    (rest : List Clif.Stmt) (results : List Clif.ValueId) (sig callee : Nat)
+    (args : List Clif.ValueId)
+    (hnp : ∀ cv, s.frame.get callee = .ok cv → ∀ g ∈ p.funcs, s.mem.symbols g.name ≠ some cv.toNat) :
+    Clif.stepCallIndirect env p s rest results sig callee args =
+      Clif.StepResult.ofRes (instOutcome env p s.frame s.mem (.callIndirect sig callee args))
+        fun (vals, mem) => Clif.continueWith s rest results vals mem := by
+  simp only [Clif.stepCallIndirect, instOutcome]
+  rw [ofRes_bind]
+  apply ofRes_congr
+  intro ⟨declared, addr, vals⟩ hX
+  obtain ⟨d, -, hX⟩ := resBind_ok hX
+  obtain ⟨cv, hcv, hX⟩ := resBind_ok hX
+  obtain ⟨cv64, hcv64, hX⟩ := resBind_ok hX
+  obtain ⟨vs, -, hX⟩ := resBind_ok hX
+  have hc64 : cv.as? .i64 = some cv64 := by
+    cases h : cv.as? .i64 with
+    | none => rw [h] at hcv64; cases hcv64
+    | some y => rw [h] at hcv64; cases hcv64; rfl
+  have haddr : addr = cv.toNat := by
+    have := val_as_i64 hc64
+    subst this
+    simp only [Clif.Res.pure_eq, Clif.Res.ok.injEq, Prod.mk.injEq] at hX
+    rw [← hX.2.1]
+    rfl
+  have hfind : p.funcs.find? (fun g => s.mem.symbols g.name == some addr) = none := by
+    rw [List.find?_eq_none]
+    intro g hg heq
+    exact hnp cv hcv g hg (by rw [← haddr]; simpa using heq)
+  simp only [hfind]
 
 theorem step_stmt (env : Clif.Env) (p : Clif.Program) (s : Clif.State) (st : Clif.Stmt)
     (rest : List Clif.Stmt) (h : s.frame.body = st :: rest)
     (hext : ∀ fn args, st.inst = .call fn args → ∀ e, s.frame.func.extern? fn = some e →
       p.func? e.name = none)
-    (hci : ∀ sig callee args, st.inst ≠ .callIndirect sig callee args) :
+    (hind : ∀ sig callee args, st.inst = .callIndirect sig callee args → ∀ cv,
+      s.frame.get callee = .ok cv → ∀ g ∈ p.funcs, s.mem.symbols g.name ≠ some cv.toNat) :
     Clif.step env p s = Clif.StepResult.ofRes (instOutcome env p s.frame s.mem st.inst)
       fun (vals, mem) => Clif.continueWith s rest st.results vals mem := by
   cases hi : st.inst with
@@ -147,9 +206,10 @@ theorem step_stmt (env : Clif.Env) (p : Clif.Program) (s : Clif.State) (st : Cli
     rw [Clif.step_call env p s rest st.results fn args (by rw [h, ← hi])]
     exact stepCall_eq env p s rest st.results fn args (hext fn args hi)
   | callIndirect sig callee args =>
-    -- a `call_indirect` function is outside the theorem: `hci` (supplied by the caller,
-    -- from `InSubset.noCI`) contradicts `hi`, closing the case.
-    exact absurd hi (hci sig callee args)
+    have hs : Clif.step env p s = Clif.stepCallIndirect env p s rest st.results sig callee args := by
+      simp [Clif.step, h, hi]
+    rw [hs]
+    exact stepCallIndirect_eq env p s rest st.results sig callee args (hind sig callee args hi)
   | _ =>
     rw [Clif.step_inst env p s st rest h (by intro fn args e; rw [hi] at e; cases e)
       (by intro sig callee args e; rw [hi] at e; cases e)]
@@ -181,7 +241,7 @@ theorem ctxInv_termCtx {f : Clif.Function} {ctx : Ctx} (h : CtxInv f ctx) {ti : 
   refine ⟨h.func, fun ii info inst hi hc => ?_, fun ii info inst hi hc => ?_,
     fun ii info inst hi hc => ?_, h.valueReg,
     h.typedReg, fun x d hd => ?_, fun x d info hd hi => ?_, h.slotOff, fun ii info hi => ?_,
-    h.valTyE, fun ii info inst x hi hc hx => ?_, fun ii info inst hi hc => ?_⟩
+    h.valTyE, fun ii info inst x hi hc hx => ?_⟩
   · by_cases e : ii = ti
     · subst e; rw [termCtx_insts_self hph] at hi; cases hi; cases hc
     · rw [termCtx_insts_ne e] at hi; exact h.data ii info inst hi hc
@@ -199,9 +259,6 @@ theorem ctxInv_termCtx {f : Clif.Function} {ctx : Ctx} (h : CtxInv f ctx) {ti : 
   · by_cases e : ii = ti
     · subst e; rw [termCtx_insts_self hph] at hi; cases hi; cases hc
     · rw [termCtx_insts_ne e] at hi; exact h.addr64 ii info inst x hi hc hx
-  · by_cases e : ii = ti
-    · subst e; rw [termCtx_insts_self hph] at hi; cases hi; cases hc
-    · rw [termCtx_insts_ne e] at hi; exact h.noFA ii info inst hi hc
 
 /-- For `return`/`trap`, `LowerTermOk` does not depend on the targets. -/
 theorem lowerTermOk_targets {isem : Sem} {MR : MemRelT} {ctx : Ctx} {t : Clif.Terminator}
@@ -248,14 +305,14 @@ def TryCalls (f : Clif.Function) (sem : Sem) (MR : MemRelT) (env : Clif.Env) (p 
     ValsBelow ctx lo →
     runTerm (tryCtx ctx ti data trs) "lower_branch" [.inst ti, .labels targets]
       { st1 with emitted := #[] } = .ok (some out, st', tr) →
-    LowerTryOk sem MR env p (tryCtx ctx ti data trs) fn args info { st1 with emitted := #[] } st'
-      st'.emitted.toList
+    LowerTryOk sem MR env p (tryCtx ctx ti data trs) (.call fn args) info
+      { st1 with emitted := #[] } st' st'.emitted.toList
 
 /-- `CtxInv` does not depend on the `try_call` vregs. -/
 theorem ctxInv_tryRegs {f : Clif.Function} {ctx : Ctx} (h : CtxInv f ctx)
     (trs : List Reg × List Reg) : CtxInv f { ctx with tryRegs := trs } :=
   ⟨h.func, h.data, h.instE, h.resTys, h.valueReg, h.typedReg, h.defInst, h.defClif, h.slotOff,
-    h.resTysE, h.valTyE, h.addr64, h.noFA⟩
+    h.resTysE, h.valTyE, h.addr64⟩
 
 /-- **From M4's `try_call` rule statements to the driver's `try_call` calls** (of `f`, under the
 callee contract for `f`'s externs). -/
@@ -272,6 +329,43 @@ theorem tryCalls_of_rules (htr : TryRulesCorrect Isle.Aarch64.program)
   have hregs' : tryRegsOf sig lo = some ((tryCtx ctx ti data trs).tryRegs, st1) := hregs
   have hvb' : ValsBelow (tryCtx ctx ti data trs) lo := hvb
   obtain ⟨ms, hem, hok⟩ := tryOk_runTerm htr hun hR hMR hcr hctx' hra (externsIn_self f) hd he hi
+    hinfo hregs' hvb' (st := { st1 with emitted := #[] }) (Nat.le_refl _) hrun
+  have : ms = st'.emitted.toList := by
+    simp only [Array.empty_append] at hem; rw [hem, List.toList_toArray]
+  rw [← this]; exact hok
+
+/-- Every `lower_branch` call `lowerFunction` makes on a `try_call_indirect` of `f` whose
+call-site signature is in `sigs` with at most 8 parameters (in its `try_call` context, as
+`TryCalls`) satisfies `LowerTryOk` for the indirect call. From M4's rule statements:
+`tryIndCalls_of_rules`. -/
+def TryIndCalls (sem : Sem) (MR : MemRelT) (env : Clif.Env) (p : Clif.Program)
+    (sigs : List Clif.Signature) : Prop :=
+  ∀ f ctx ti callee args et data sig items targets info trs lo st1 out st' tr, CtxInv f ctx →
+    tryCallData f (.tryCallIndirect callee args et) = .ok data →
+    exnTableOpnd f et = .ok (sig, items) → sig ∈ sigs → sig.params.length ≤ 8 →
+    ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩ →
+    tryInfoOf sig items targets = some info → tryRegsOf sig lo = some (trs, st1) →
+    ValsBelow ctx lo →
+    runTerm (tryCtx ctx ti data trs) "lower_branch" [.inst ti, .labels targets]
+      { st1 with emitted := #[] } = .ok (some out, st', tr) →
+    LowerTryOk sem MR env p (tryCtx ctx ti data trs) (.callIndirect et.sig callee args) info
+      { st1 with emitted := #[] } st' st'.emitted.toList
+
+/-- **From M4's `try_call_indirect` rule statements to the driver's `try_call_indirect` calls**
+(under the indirect-call contract for the signatures `sigs`). -/
+theorem tryIndCalls_of_rules (htr : TryIndRulesCorrect Isle.Aarch64.program)
+    (hun : TryIndUnmatchable Isle.Aarch64.program) {F : BitVec 64 → Prop} {sem : Sem}
+    {MR : MemRelT} {env : Clif.Env} {p : Clif.Program} {sigs : List Clif.Signature}
+    (hR : Refines F sem) (hMR : MRStable F MR) (hcr : IndCallsRefine env sigs MR sem) :
+    TryIndCalls sem MR env p sigs := by
+  intro f ctx ti callee args et data sig items targets info trs lo st1 out st' tr hctx hd he hsig
+    h8 hph hinfo hregs hvb hrun
+  have hctx' := ctxInv_tryRegs (ctxInv_termCtx hctx hph data) trs
+  have hi : (tryCtx ctx ti data trs).insts[ti]? = some ⟨data, [], [], none⟩ :=
+    termCtx_insts_self hph data
+  have hregs' : tryRegsOf sig lo = some ((tryCtx ctx ti data trs).tryRegs, st1) := hregs
+  have hvb' : ValsBelow (tryCtx ctx ti data trs) lo := hvb
+  obtain ⟨ms, hem, hok⟩ := tryIndOk_runTerm htr hun hR hMR hcr hctx' hd he hsig h8 hi
     hinfo hregs' hvb' (st := { st1 with emitted := #[] }) (Nat.le_refl _) hrun
   have : ms = st'.emitted.toList := by
     simp only [Array.empty_append] at hem; rw [hem, List.toList_toArray]
