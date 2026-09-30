@@ -354,8 +354,8 @@ statements and 1057 values, over an hour before, validates in 0.17 s (dataflow 1
 certificate 16 ms, the rest re-running isel and the shape check); on the corpus and the
 runtests (1105 functions) the new validator computes the same alias resolution and entry
 values and accepts exactly the same functions as the old one. `lean-backend` does not run it on
-functions over the validation budget (`Backend.validationBudget`: blocks × values above
-20000000, 58 times the largest function of `examples/`), which it compiles and reports as
+functions over the validation budget (`Backend.validationBudget`: instructions × values above
+25000000, 7.6 times the largest function of `examples/`), which it compiles and reports as
 `compiled, unverified (validation budget)`.
 
 **Functions outside the theorem** (`FV/Backend.lean` `unverifiedReason?`: `try_call_indirect`,

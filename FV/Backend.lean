@@ -82,25 +82,28 @@ def verifiable (f : Clif.Function) : Bool :=
     f.blocks.all (fun B => B.body.all (fun st => match st.inst with
       | .callIndirect .. | .funcAddr .. => false | _ => true))
 
-/-- The lowering validator's size measure: blocks × values. `lowerCheck`'s dataflow keeps a
-table of that size, and its certificate check visits the entry values of every block once and
-those of the target block at every edge; the rest of it is (near-)linear in the function. -/
-def validationCost (f : Clif.Function) : Nat := f.blocks.length * f.freshValue
+/-- The lowering validator's size measure: instructions (statements and terminators) × values.
+`lowerCheck` re-runs the lowering recording every statement's states (their vreg class arrays
+grow with the function), its dataflow keeps a blocks × values table, and its certificate check
+visits every block's entry values once and the target block's at every edge; the rest of it is
+(near-)linear in the function. -/
+def validationCost (f : Clif.Function) : Nat :=
+  (f.blocks.length + (f.blocks.map (·.body.length)).sum) * f.freshValue
 
 /-- The validation budget (`docs/USAGE.md`): a function inside the theorem's scope whose
 `validationCost` exceeds it is compiled but not validated (`lowerCheck` does not run), and
 reported unverified ("validation budget"). It bounds the validator's time and memory on
-pathological inputs (at the budget: about 20 MB for the dataflow table and a few seconds);
-it is far above every function of `examples/` (the largest, a survey test function with 325
-blocks and 1057 values, costs 343525 and validates in about 0.2 s). -/
-def validationBudget : Nat := 20000000
+pathological inputs (at the budget: about 1.5 s and under 1 GB); it is far above every function
+of `examples/` (the largest costs 3276540: a survey test function with 188 blocks, 1992
+statements and 1503 values; the validator takes about 0.2 s on functions of that size). -/
+def validationBudget : Nat := 25000000
 
 /-- The reason `f` is not validated although inside the theorem's scope: over the validation
 budget. -/
 def overBudget? (f : Clif.Function) : Option String :=
   let c := validationCost f
   if c > validationBudget then
-    some s!"{f.blocks.length} blocks × {f.freshValue} values = {c} > {validationBudget}, lowerCheck not run"
+    some s!"{c} instructions × values > {validationBudget}, lowerCheck not run"
   else none
 
 /-- Compile one function with the stack-slot allocator (`k` = index in the file, for local
