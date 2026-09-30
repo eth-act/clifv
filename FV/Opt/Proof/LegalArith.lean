@@ -7,7 +7,10 @@ import Std.Tactic.BVDecide
 Each theorem runs one canonical pattern (`Opt.Legal.Pat.*`) on symbolic `i64` halves and states
 that its outputs are the halves of the `Clif.Sem` result at `i128` (`Out128`). The runs are
 computed by `simp` (`pat_eval`); the remaining bit-vector identities are closed by
-`bv_decide`, per operation (the multiplication by the toNat arithmetic of `BitVec`).
+`bv_decide`, per operation (the multiplication by the toNat arithmetic of `BitVec`), without
+its enum pass (`-enums`): the pass realizes `Clif.Ty.enumToBitVec` in the calling module, and
+`FV.Backend.Proof.IselCmpExt` realizes it too — two modules realizing it cannot be imported
+together (`FV.E2E.Legal`).
 -/
 
 namespace Opt.Legal
@@ -71,7 +74,7 @@ theorem umin_bif {w : Nat} (x y : BitVec w) : Sem.umin x y = bif x.ule y then x 
 theorem umax_bif {w : Nat} (x y : BitVec w) : Sem.umax x y = bif y.ule x then x else y := by
   unfold Sem.umax; cases y.ule x <;> rfl
 
-/-- The `Clif.Sem` definitions in `bv_decide`'s fragment. -/
+/-- The `Clif.Sem` definitions in `bv_decide -enums`'s fragment. -/
 macro "sem_bv" : tactic => `(tactic| simp only [Sem.unary, Sem.binary, Sem.shift, Sem.iadd,
   Sem.isub, Sem.imul, Sem.ineg, Sem.band, Sem.bor, Sem.bxor, Sem.bnot, Sem.bitselect,
   Sem.clz, Sem.ctz, Sem.popcnt, Sem.bitrev, Sem.ishl, Sem.ushr, Sem.sshr, Sem.rotl, Sem.rotr,
@@ -95,14 +98,14 @@ theorem pat_bnot (xl xh : BitVec 64) : ∃ ρ, runPat (canon [V64 xl, V64 xh]) (
     some ρ ∧ Out128 ρ 2 3 (Sem.unary .bnot (xh ++ xl)) := by
   pat_eval
   simp only [Sem.unary, Sem.bnot]
-  constructor <;> bv_decide
+  constructor <;> bv_decide -enums
 
 theorem pat_ineg (xl xh : BitVec 64) : ∃ ρ, runPat (canon [V64 xl, V64 xh]) (Pat.unary .ineg) =
     some ρ ∧ Out128 ρ 2 3 (Sem.unary .ineg (xh ++ xl)) := by
   pat_eval
   simp only [Sem.unary, Sem.ineg, Sem.binary, Sem.bxor, Sem.iadd, Sem.uextend, Sem.icmp,
     bool8_eq, Sem.intcc]
-  constructor <;> bv_decide
+  constructor <;> bv_decide -enums
 
 theorem pat_unary (op : UnaryOp) (xl xh : BitVec 64) :
     ∃ ρ, runPat (canon [V64 xl, V64 xh]) (Pat.unary op) = some ρ ∧
@@ -111,8 +114,8 @@ theorem pat_unary (op : UnaryOp) (xl xh : BitVec 64) :
   case bswap =>
     pat_eval
     simp only [Sem.unary, Sem.bswap, List.range, List.range.loop, List.foldl]
-    constructor <;> bv_decide
-  all_goals (pat_eval; sem_bv; constructor <;> bv_decide)
+    constructor <;> bv_decide -enums
+  all_goals (pat_eval; sem_bv; constructor <;> bv_decide -enums)
 
 /-! ## Binary -/
 
@@ -121,30 +124,30 @@ theorem pat_binary {op : BinaryOp} {pat : List Stmt} (h : Pat.binary op = some p
     ∃ ρ, runPat (canon [V64 xl, V64 xh, V64 yl, V64 yh]) pat = some ρ ∧
       Out128 ρ 4 5 (Sem.binary op (xh ++ xl) (yh ++ yl)) := by
   cases op <;> simp only [Pat.binary, Option.some.injEq, reduceCtorEq] at h <;> subst h <;>
-    (try exact absurd rfl hm) <;> (pat_eval; sem_bv; constructor <;> bv_decide)
+    (try exact absurd rfl hm) <;> (pat_eval; sem_bv; constructor <;> bv_decide -enums)
 
 theorem pat_icmp (cc : IntCC) (xl xh yl yh : BitVec 64) :
     ∃ ρ, runPat (canon [V64 xl, V64 xh, V64 yl, V64 yh]) (Pat.icmp cc) = some ρ ∧
       ρ 4 = some ⟨.i8, Sem.icmp cc (xh ++ xl) (yh ++ yl)⟩ := by
-  cases cc <;> (pat_eval; sem_bv; bv_decide)
+  cases cc <;> (pat_eval; sem_bv; bv_decide -enums)
 
 /-! ## Selects, `bmask`, conditions -/
 
 theorem pat_cond (lo hi : BitVec 64) :
     ∃ ρ, runPat (canon [V64 lo, V64 hi]) Pat.cond = some ρ ∧
       ρ 2 = some ⟨.i8, Sem.bool8 (Sem.truthy (hi ++ lo))⟩ := by
-  pat_eval; sem_bv; simp only [Sem.truthy]; bv_decide
+  pat_eval; sem_bv; simp only [Sem.truthy]; bv_decide -enums
 
 theorem pat_select128c (cl ch xl xh yl yh : BitVec 64) :
     ∃ ρ, runPat (canon [V64 cl, V64 ch, V64 xl, V64 xh, V64 yl, V64 yh]) Pat.select128c =
       some ρ ∧ Out128 ρ 6 7 (Sem.select (ch ++ cl) (xh ++ xl) (yh ++ yl)) := by
-  pat_eval; sem_bv; constructor <;> bv_decide
+  pat_eval; sem_bv; constructor <;> bv_decide -enums
 
 theorem pat_select128 (c : Val) (xl xh yl yh : BitVec 64) :
     ∃ ρ, runPat (canon [c, V64 xl, V64 xh, V64 yl, V64 yh]) Pat.select128 = some ρ ∧
       Out128 ρ 5 6 (Sem.select c.bits (xh ++ xl) (yh ++ yl)) := by
   pat_eval; sem_bv
-  cases (c.bits != 0) <;> simp <;> constructor <;> bv_decide
+  cases (c.bits != 0) <;> simp <;> constructor <;> bv_decide -enums
 
 theorem pat_selectc (t : Ty) (cl ch : BitVec 64) (x y : BitVec t.width) :
     ∃ ρ, runPat (canon [V64 cl, V64 ch, ⟨t, x⟩, ⟨t, y⟩]) (Pat.selectc t) = some ρ ∧
@@ -152,29 +155,29 @@ theorem pat_selectc (t : Ty) (cl ch : BitVec 64) (x y : BitVec t.width) :
   pat_eval
   simp only [Sem.binary, Sem.bor, Sem.icmp, Sem.intcc, bool8_eq]
   have : ((bif cl != 0#64 then 1#8 else 0#8) ||| (bif ch != 0#64 then 1#8 else 0#8) !=
-      (0 : BitVec 8)) = (ch ++ cl != (0 : BitVec 128)) := by bv_decide
+      (0 : BitVec 8)) = (ch ++ cl != (0 : BitVec 128)) := by bv_decide -enums
   unfold Sem.select Sem.truthy
   rw [this]
 
 theorem pat_bitselect (cl ch xl xh yl yh : BitVec 64) :
     ∃ ρ, runPat (canon [V64 cl, V64 ch, V64 xl, V64 xh, V64 yl, V64 yh]) Pat.bitselect =
       some ρ ∧ Out128 ρ 6 7 (Sem.bitselect (ch ++ cl) (xh ++ xl) (yh ++ yl)) := by
-  pat_eval; sem_bv; constructor <;> bv_decide
+  pat_eval; sem_bv; constructor <;> bv_decide -enums
 
 theorem pat_bmask128c (xl xh : BitVec 64) :
     ∃ ρ, runPat (canon [V64 xl, V64 xh]) Pat.bmask128c = some ρ ∧
       Out128 ρ 2 3 (Sem.bmask (xh ++ xl)) := by
-  pat_eval; sem_bv; constructor <;> bv_decide
+  pat_eval; sem_bv; constructor <;> bv_decide -enums
 
 theorem pat_bmask128 (x : Val) :
     ∃ ρ, runPat (canon [x]) Pat.bmask128 = some ρ ∧ Out128 ρ 1 2 (Sem.bmask x.bits) := by
   pat_eval; sem_bv
-  cases (x.bits != 0) <;> simp <;> constructor <;> bv_decide
+  cases (x.bits != 0) <;> simp <;> constructor <;> bv_decide -enums
 
 theorem pat_bmaskc (t : Ty) (xl xh : BitVec 64) :
     ∃ ρ, runPat (canon [V64 xl, V64 xh]) (Pat.bmaskc t) = some ρ ∧
       ρ 2 = some ⟨t, Sem.bmask (xh ++ xl)⟩ := by
-  cases t <;> (pat_eval; sem_bv; bv_decide)
+  cases t <;> (pat_eval; sem_bv; bv_decide -enums)
 
 /-! ## Width changes and copies -/
 
@@ -182,25 +185,25 @@ theorem pat_extend64 (op : ExtendOp) (x : BitVec 64) :
     ∃ ρ, runPat (canon [V64 x]) (Pat.extend op true) = some ρ ∧
       Out128 ρ 1 2 (match op with
         | .uextend => Sem.uextend 128 x | .sextend => Sem.sextend 128 x) := by
-  cases op <;> (pat_eval; sem_bv; constructor <;> bv_decide)
+  cases op <;> (pat_eval; sem_bv; constructor <;> bv_decide -enums)
 
 theorem pat_extend8 (op : ExtendOp) (x : BitVec 8) :
     ∃ ρ, runPat (canon [⟨.i8, x⟩]) (Pat.extend op false) = some ρ ∧
       Out128 ρ 1 2 (match op with
         | .uextend => Sem.uextend 128 x | .sextend => Sem.sextend 128 x) := by
-  cases op <;> (pat_eval; sem_bv; constructor <;> bv_decide)
+  cases op <;> (pat_eval; sem_bv; constructor <;> bv_decide -enums)
 
 theorem pat_extend16 (op : ExtendOp) (x : BitVec 16) :
     ∃ ρ, runPat (canon [⟨.i16, x⟩]) (Pat.extend op false) = some ρ ∧
       Out128 ρ 1 2 (match op with
         | .uextend => Sem.uextend 128 x | .sextend => Sem.sextend 128 x) := by
-  cases op <;> (pat_eval; sem_bv; constructor <;> bv_decide)
+  cases op <;> (pat_eval; sem_bv; constructor <;> bv_decide -enums)
 
 theorem pat_extend32 (op : ExtendOp) (x : BitVec 32) :
     ∃ ρ, runPat (canon [⟨.i32, x⟩]) (Pat.extend op false) = some ρ ∧
       Out128 ρ 1 2 (match op with
         | .uextend => Sem.uextend 128 x | .sextend => Sem.sextend 128 x) := by
-  cases op <;> (pat_eval; sem_bv; constructor <;> bv_decide)
+  cases op <;> (pat_eval; sem_bv; constructor <;> bv_decide -enums)
 
 theorem pat_extendN (op : ExtendOp) (t : Ty) (ht : t.width < 64) (x : BitVec t.width) :
     ∃ ρ, runPat (canon [⟨t, x⟩]) (Pat.extend op false) = some ρ ∧
@@ -215,12 +218,12 @@ theorem pat_extendN (op : ExtendOp) (t : Ty) (ht : t.width < 64) (x : BitVec t.w
 theorem pat_ireduce (t : Ty) (ht : t.width < 128) (xl xh : BitVec 64) :
     ∃ ρ, runPat (canon [V64 xl]) (Pat.ireduce t) = some ρ ∧
       ρ 1 = some ⟨t, Sem.ireduce t.width (xh ++ xl)⟩ := by
-  cases t <;> simp only [Ty.width] at ht <;> (try omega) <;> (pat_eval; sem_bv; bv_decide)
+  cases t <;> simp only [Ty.width] at ht <;> (try omega) <;> (pat_eval; sem_bv; bv_decide -enums)
 
 theorem pat_copy2 (a b : BitVec 64) :
     ∃ ρ, runPat (canon [V64 a, V64 b]) Pat.copy2 = some ρ ∧
       ρ 2 = some (V64 a) ∧ ρ 3 = some (V64 b) := by
-  pat_eval; sem_bv; constructor <;> bv_decide
+  pat_eval; sem_bv; constructor <;> bv_decide -enums
 
 /-! ## Constant shifts -/
 
@@ -275,14 +278,14 @@ theorem shiftC_bv {op : BinaryOp} {n : Nat} (hn : n < 128) (X : BitVec 128) :
        rw [this])
 
 /-- The end of a constant-shift branch: the amount generalised to `k`, the source value `X`
-opaque during the run, then the identities by `bv_decide`. -/
+opaque during the run, then the identities by `bv_decide -enums`. -/
 macro "cs_fin" : tactic => `(tactic| (
   generalize BitVec.ofNat 128 _ = k at *
   pat_eval
   simp only [ishl64, ushr64, sshr64, Sem.binary, Sem.bor]
   subst_vars
   try (generalize hk2 : 128#128 - k = k2 at *)
-  constructor <;> bv_decide))
+  constructor <;> bv_decide -enums))
 
 /-- The four branches of `constShift` (amount `0`, `(0, 64)`, `64`, `(64, 128)`), for one
 normalised operation `op` whose source value, by the bit-vector amount `k`, is `src k`. -/
@@ -336,7 +339,7 @@ theorem pat_constShift (op : BinaryOp) (n : Nat) (hn : n < 128) (xl xh : BitVec 
   case sshr => exact h .sshr (.inr (.inr (.inl rfl)))
   all_goals exact h .rotl (.inr (.inr (.inr rfl)))
 
-/-! ## Multiplication (by the `toNat` arithmetic: products are out of `bv_decide`'s reach) -/
+/-! ## Multiplication (by the `toNat` arithmetic: products are out of `bv_decide -enums`'s reach) -/
 
 theorem append_toNat (a b : BitVec 64) : (a ++ b).toNat = a.toNat * 2^64 + b.toNat := by
   rw [BitVec.toNat_append, Nat.shiftLeft_eq, Nat.mul_comm, Nat.two_pow_add_eq_or_of_lt b.isLt]
@@ -372,7 +375,7 @@ theorem pat_imul (xl xh yl yh : BitVec 64) :
   pat_eval
   simp only [Sem.binary, Sem.imul, Sem.iadd] at hX ⊢
   rw [← hX, mul128]
-  constructor <;> bv_decide
+  constructor <;> bv_decide -enums
 
 /-! ## A narrow shift by an `i128` amount -/
 

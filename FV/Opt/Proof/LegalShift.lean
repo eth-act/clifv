@@ -208,7 +208,7 @@ macro "vs_shift " a:term : tactic => `(tactic| (
   pat_eval
   vs_sem
   subst_vars
-  constructor <;> bv_decide))
+  constructor <;> bv_decide -enums))
 
 /-! ### Rotations: the rotate core on an opaque amount
 
@@ -234,7 +234,7 @@ macro "rot_core" : tactic => `(tactic| (
     Regs.setMany_cons, Regs.setMany_nil, h0, h1, ha]
   vs_sem
   subst hLo hHi
-  constructor <;> bv_decide))
+  constructor <;> bv_decide -enums))
 
 theorem rotCore_6_7 : RotCore 6 7 := by rot_core
 theorem rotCore_7_8 : RotCore 7 8 := by rot_core
@@ -277,6 +277,6 @@ macro "vs_pre" : tactic => `(tactic| (
   pat_eval
   simp only [amtK, rotrAmt, Sem.binary, Sem.band, Sem.isub, select_bif, Sem.icmp, Sem.intcc,
     bool8_eq, Sem.uextend]
-  try bv_decide))
+  try bv_decide -enums))
 
 end Opt.Legal
