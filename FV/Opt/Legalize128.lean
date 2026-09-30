@@ -18,7 +18,8 @@ The output is plain `i8..i64` CLIF, so the existing backend compiles it unchange
 is untrusted: `Opt.Legal.check` (`FV/Opt/Legal.lean`) validates each legalised function
 against the original with the certificate `function128Cert` returns, and the refinement
 theorem (`FV/Opt/Proof/Legal*.lean`, `E2E.backend_correct_legal`) covers the functions it
-accepts; the others are flagged unverified (`i128 legalized (outside backend_correct)`).
+accepts (reported verified when the legalised form is inside the backend theorem); the others
+are flagged unverified (`i128 legalized (outside backend_correct: Opt.Legal.check rejects)`).
 
 Semantics (all against `Clif.Sem`, which is what `Clif.run` executes — the differential
 `clif-filetest --legalize128` mode runs every run line through both):
