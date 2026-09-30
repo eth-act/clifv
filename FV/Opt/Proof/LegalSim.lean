@@ -1359,4 +1359,185 @@ theorem sim_call {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} (hEx : Ext
             · rw [hf] at hw; cases hw
             · exact hni u hu (res_lt hG hB hst (by rw [hst_eq]; exact hu)) hwu
 
+/-! ## Terminators -/
+
+/-- Target-only writes of fresh values keep the register relation. -/
+theorem CRel.fresh {C : Ctx} (hG : Good C) {fr fr' : Frame} (hR : CRel C fr fr') {regs' : Regs}
+    (h : ∀ w, C.fresh w = false → regs' w = fr'.regs w) (body : List Stmt) (term : Terminator) :
+    CRel C fr { fr' with regs := regs', body, term } := by
+  refine ⟨hR.func, hR.func', hR.slots, VRel.fresh_writes hG hR.vrel h, ?_, hR.src, ?_⟩
+  · intro v hv hp
+    show regs' v = fr.regs v
+    rw [h v (img_nonfresh hG hv (by simp [img, hp]))]
+    exact hR.peq v hv hp
+  · simp only
+    rw [h C.zero (by simp [Ctx.fresh])]
+    exact hR.zero
+
+/-- A branch of the source and its rewrite. -/
+theorem sim_enter {C : Ctx} (hG : Good C) {env : Env} {p' : Program} {fr fr' : Frame} {m : Mem}
+    (hR : CRel C fr fr') (hM : MemBounded m) {bc bc' : BlockCall} (hbc : bcOk C bc bc' = true)
+    (hlt : ∀ x ∈ bc.args, x < C.T0) {k : Frame → StepResult}
+    (hk : ∀ fr1, k fr1 = .next ⟨fr1, [], m⟩)
+    (htgt : ∀ fr1', enterBlock fr' bc' = .ok fr1' → TStep env p' fr' m fr1' m) :
+    SimOut C env p' fr' m (StepResult.ofRes (enterBlock fr bc) k) := by
+  cases he : enterBlock fr bc with
+  | ok fr1 =>
+    obtain ⟨fr1', he', hR1⟩ := enter_sim hG hR hbc hlt he
+    simp only [StepResult.ofRes_ok, hk]
+    exact ⟨rfl, hM, fr1', hR1, htgt fr1' he'⟩
+  | trap c => exact absurd he (enterBlock_not_trap _ _ _)
+  | stuck msg => trivial
+
+theorem bcOk_table {C : Ctx} {tbl tbl' : List BlockCall} {d d' : BlockCall}
+    (hd : bcOk C d d' = true) (hl : tbl.length = tbl'.length)
+    (hz : ∀ a b, (a, b) ∈ tbl.zip tbl' → bcOk C a b = true) (i : Nat) :
+    bcOk C (tbl[i]?.getD d) (tbl'[i]?.getD d') = true := by
+  by_cases hi : i < tbl.length
+  · rw [List.getElem?_eq_getElem hi, List.getElem?_eq_getElem (by omega)]
+    exact hz _ _ (by
+      rw [List.mem_iff_getElem]
+      exact ⟨i, by simp; omega, by simp⟩)
+  · rw [List.getElem?_eq_none (by omega), List.getElem?_eq_none (by omega)]
+    exact hd
+
+/-- **Terminators.** -/
+theorem sim_term {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} {fr fr' : Frame}
+    {m : Mem} (hR : FRel C fr fr') (hM : MemBounded m) (hb : fr.body = []) :
+    SimOut C env p' fr' m (step env p ⟨fr, [], m⟩) := by
+  obtain ⟨B, hB, -, hterm⟩ := hR.blk
+  have hcode := hR.code
+  rw [hb] at hcode
+  simp only [codeOk] at hcode
+  have hlt : ∀ x ∈ termOps fr.term, x < C.T0 := fun x hx => term_ops_lt hG hB (hterm ▸ hx)
+  rw [step_term env p _ hb]
+  have hstep' : ∀ fr1' m1, fr'.body = [] → stepTerm env p' ⟨fr', [], m⟩ fr'.term = .next ⟨fr1', [], m1⟩ →
+      TStep env p' fr' m fr1' m1 := fun fr1' m1 hb' h =>
+    TStep.of_step (by rw [step_term env p' _ hb']; exact h)
+  cases ht : fr.term <;> cases ht' : fr'.term <;> rw [ht, ht'] at hcode <;>
+    simp only [termOk, Bool.false_eq_true] at hcode
+  case jump.jump bc bc' =>
+    simp only [Bool.and_eq_true, List.isEmpty_iff] at hcode
+    obtain ⟨hts, hbc⟩ := hcode
+    simp only [stepTerm]
+    refine sim_enter hG hR.toCRel hM hbc (fun x hx => hlt x (by rw [ht]; exact hx))
+      (fun _ => rfl) fun fr1' he' => hstep' fr1' m hts (by simp [stepTerm, ht', he'])
+  case trap.trap c c' =>
+    simp only [Bool.and_eq_true, List.isEmpty_iff, beq_iff_eq] at hcode
+    obtain ⟨hts, rfl⟩ := hcode
+    exact ⟨1, by rw [runLoop_succ, step_term env p' _ hts, ht']; rfl⟩
+  case brif.brif c t e c' t' e' =>
+    simp only [Bool.and_eq_true] at hcode
+    obtain ⟨⟨hbt, hbe⟩, hcc⟩ := hcode
+    have hltt : ∀ x ∈ t.args, x < C.T0 := fun x hx => hlt x (by rw [ht]; simp [termOps, hx])
+    have hlte : ∀ x ∈ e.args, x < C.T0 := fun x hx => hlt x (by rw [ht]; simp [termOps, hx])
+    have hc0 : c < C.T0 := hlt c (by rw [ht]; simp [termOps])
+    simp only [stepTerm]
+    cases hcv : fr.regs c with
+    | none => simp only [Frame.get, hcv, Res.ofOption, StepResult.ofRes_stuck]; trivial
+    | some cv =>
+      have hget : fr.get c = .ok cv := by simp [Frame.get, hcv, Res.ofOption]
+      rw [hget, StepResult.ofRes_ok]
+      split at hcc
+      · rename_i lo hi hp
+        simp only [Bool.and_eq_true] at hcc
+        obtain ⟨hf, hseg⟩ := hcc
+        obtain ⟨l, h, rfl, hl, hh⟩ := pairVal hR.vrel hc0 hp hcv
+        obtain ⟨regs', hls, hcr, hkeep⟩ := cond_run (fr' := fr') (m := m) (rest := []) hseg hl hh
+        have hfr : { fr' with body := fr'.body ++ [] } = fr' := by simp
+        rw [hfr] at hls
+        refine SimOut.pre (TStep.of_lstar (env := env) (p' := p') hls) (.inl rfl) ?_
+        have hR' := CRel.fresh hG hR.toCRel (fun w hw => hkeep w hw (fresh_ne hf hw)) [] fr'.term
+        have hget' : ({ fr' with regs := regs', body := [] } : Frame).get c' =
+            .ok ⟨.i8, Sem.bool8 (Sem.truthy (h ++ l))⟩ := by simp [Frame.get, hcr, Res.ofOption]
+        by_cases hbt' : @Sem.truthy Ty.i128.width (h ++ l) = true
+        · have hbt'' : @Sem.truthy (64 + 64) (h ++ l) = true := hbt'
+          rw [if_pos hbt']
+          refine sim_enter hG hR' hM hbt hltt (fun _ => rfl) fun fr1' he' => TStep.of_step ?_
+          rw [step_term env p' _ rfl]
+          simp only [ht'] at hget' he' ⊢
+          simp only [stepTerm, hget', StepResult.ofRes_ok, truthy_bool8', hbt'', ite_true, he']
+        · have hbt'' : ¬ @Sem.truthy (64 + 64) (h ++ l) = true := hbt'
+          rw [if_neg hbt']
+          refine sim_enter hG hR' hM hbe hlte (fun _ => rfl) fun fr1' he' => TStep.of_step ?_
+          rw [step_term env p' _ rfl]
+          simp only [ht'] at hget' he' ⊢
+          simp only [stepTerm, hget', StepResult.ofRes_ok, truthy_bool8', hbt'', ite_false,
+            Bool.false_eq_true, he']
+      · rename_i hp
+        simp only [Bool.and_eq_true, List.isEmpty_iff, beq_iff_eq] at hcc
+        obtain ⟨⟨hts, rfl⟩, hpc⟩ := hcc
+        have hget' : fr'.get c' = .ok cv := by
+          simp [Frame.get, hR.peq c' hc0 hp, hcv, Res.ofOption]
+        by_cases hbt' : Sem.truthy cv.bits = true
+        · simp only [hbt', ite_true]
+          refine sim_enter hG hR.toCRel hM hbt hltt (fun _ => rfl) fun fr1' he' =>
+            hstep' fr1' m hts ?_
+          simp only [ht', stepTerm, hget', StepResult.ofRes_ok, hbt', ite_true, he']
+        · simp only [hbt', ite_false, Bool.false_eq_true]
+          refine sim_enter hG hR.toCRel hM hbe hlte (fun _ => rfl) fun fr1' he' =>
+            hstep' fr1' m hts ?_
+          simp only [ht', stepTerm, hget', StepResult.ofRes_ok, hbt', ite_false, Bool.false_eq_true,
+            he']
+  case brTable.brTable x d tbl x' d' tbl' =>
+    simp only [Bool.and_eq_true, List.isEmpty_iff, beq_iff_eq, List.all_eq_true] at hcode
+    obtain ⟨⟨⟨⟨⟨hts, hxx⟩, hpx⟩, hbd⟩, hlen⟩, hz⟩ := hcode
+    have hx0 : x < C.T0 := hlt x (by rw [ht]; simp [termOps])
+    have hltb : ∀ i : Nat, ∀ y ∈ (tbl[i]?.getD d).args, y < C.T0 := by
+      intro i y hy
+      refine hlt y ?_
+      rw [ht]
+      simp only [termOps, List.mem_cons, List.mem_append, List.mem_flatMap]
+      by_cases hi : i < tbl.length
+      · rw [List.getElem?_eq_getElem hi] at hy
+        first
+          | exact .inr ⟨_, List.getElem_mem hi, hy⟩
+          | exact .inr (.inr ⟨_, List.getElem_mem hi, hy⟩)
+      · rw [List.getElem?_eq_none (by omega)] at hy
+        first
+          | exact .inl (.inr hy)
+          | exact .inr (.inl hy)
+    simp only [stepTerm]
+    cases hxv : fr.regs x with
+    | none => simp only [Frame.get, hxv, Res.ofOption, StepResult.ofRes_stuck]; trivial
+    | some xv =>
+      have hget : fr.get x = .ok xv := by simp [Frame.get, hxv, Res.ofOption]
+      have hget' : fr'.get x' = .ok xv := by
+        rw [hxx]; simp [Frame.get, hR.peq x hx0 (plain_iff.1 hpx), hxv, Res.ofOption]
+      rw [hget, StepResult.ofRes_ok]
+      refine sim_enter hG hR.toCRel hM (bcOk_table hbd hlen (fun a b hab => hz (a, b) hab) _)
+        (hltb _) (fun _ => rfl) fun fr1' he' => hstep' fr1' m hts ?_
+      simp only [ht', stepTerm, hget', StepResult.ofRes_ok, he']
+  case ret.ret vs vs' =>
+    simp only [Bool.and_eq_true, List.isEmpty_iff] at hcode
+    obtain ⟨hts, hcode⟩ := hcode
+    split at hcode
+    · rename_i rg hrg
+      simp only [beq_iff_eq] at hcode
+      have hltv : ∀ x ∈ vs, x < C.T0 := fun x hx => hlt x (by rw [ht]; simp [termOps, hx])
+      simp only [stepTerm]
+      cases hga : fr.getMany vs with
+      | stuck msg => trivial
+      | trap c => exact absurd hga (getMany_ne_trap fr vs c)
+      | ok vals =>
+        rw [StepResult.ofRes_ok]
+        obtain ⟨vals', hv', hexp⟩ := expandArgs_holds hR.vrel hR.zero hcode hltv (getMany_holds hga)
+        simp only [returnValues, checkTys]
+        by_cases hty : vals.map (·.ty) ≠ AbiParam.tys fr.func.sig.returns
+        · have : (vals.map (·.ty) == AbiParam.tys fr.func.sig.returns) = false := by simpa using hty
+          simp only [this, Res.check, Bool.false_eq_true, ite_false, StepResult.ofRes_stuck]
+          trivial
+        have hty : vals.map (·.ty) = AbiParam.tys fr.func.sig.returns := by simpa using hty
+        simp only [hty, beq_self_eq_true, Res.check, ite_true, StepResult.ofRes_ok]
+        obtain ⟨gs0, rg0, -, hrg0, -, hret'⟩ := sigExp_spec hG.sig
+        rw [hrg] at hrg0; cases hrg0
+        have hty' : vals'.map (·.ty) = AbiParam.tys fr'.func.sig.returns := by
+          rw [hR.func', hret', AbiParam.tys,
+            ← expRel_tys (groups_spec hrg) hexp (by rw [← hR.func]; exact hty)]
+        refine ⟨vals', by simp [Ctx.rg, hrg, hexp], 1, ?_⟩
+        rw [runLoop_succ, step_term env p' _ hts, ht']
+        simp only [stepTerm, holds_getMany hv', StepResult.ofRes_ok, returnValues, checkTys, hty',
+          beq_self_eq_true, Res.check, ite_true, hR.slots]
+    · cases hcode
+
 end Opt.Legal
