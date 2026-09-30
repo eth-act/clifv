@@ -22,7 +22,7 @@ cargo fv report — aarch64-unknown-linux-musl debug profile, mode plain
   package              kind  crate root             functions  verified unverified  fallback   Lean in exe
   fv-demo              lib   src/lib.rs                   …
   …
-cargo fv: 713 of 942 functions compiled by the Lean backend (691 verified); report: …/target/fv-report.json
+cargo fv: 968 of 975 functions compiled by the Lean backend (717 verified); report: …/target/fv-report.json
      Running unittests src/lib.rs (…)
 test tests::arithmetic ... ok
 …
@@ -81,7 +81,7 @@ Environment variables:
 | variable | effect |
 |---|---|
 | `FV_JOBS` | parallel `lean-backend` processes per codegen unit (default: number of CPUs) |
-| `FV_SKIP=pat,…` / `FV_ONLY=pat,…` | debugging: functions whose symbol or Rust path contains a pattern fall back / only those are compiled. Needs a rebuild (`touch` a source file); cargo does not track these variables. |
+| `FV_SKIP=pat,…` / `FV_ONLY=pat,…` | debugging: functions whose symbol or Rust path contains a pattern fall back / only those are compiled |
 | `FV_TOOLCHAIN` | the nightly (default `nightly-2026-09-26`) |
 | `FV_ROOT` | the repository checkout with the tools |
 | `FV_OBJCOPY`, `FV_AR`, `FV_RUST_LLD`, `FV_PYTHON` | tool paths |
@@ -96,7 +96,12 @@ skip = ["interop::cg_clif_"]   # substrings of the symbol or the Rust path
 
 Artifacts are in `target/fv/<mode>/aarch64-unknown-linux-musl/<profile>/…`, where `<mode>` is
 `plain`, `opt`, `opt-proven-only`, or one of those with `-trap`. Each configuration has its
-own target directory because cargo does not see the Lean-side settings.
+own target directory because cargo does not see the Lean-side settings. For the same reason,
+`cargo fv` keeps a stamp per profile (`target/fv/<mode>/fv-stamp.<profile>`) of the Lean tools
+(`lean-backend`, `clif-data-export`, `lean-regalloc`, `normalize.py`, `fv-rustc`), `FV_SKIP`,
+`FV_ONLY` and `package.metadata.fv`. When the stamp changes, it runs `cargo clean -p` on the
+workspace members, so they are compiled again with the new tools or settings. Dependencies
+are not cleaned.
 
 ### Report format
 
@@ -138,7 +143,8 @@ or an executable's `*.rcgu.o` files at link time) then goes through this pipelin
    (FuncIds `u0:N` are numbered per CGU, so a CGU is the unit of normalisation).
 2. **Data and callees**: `clif-data-export` pairs every external-name use of the CLIF with
    cg_clif's relocations in the object. This gives the object symbol of every `symbol_value`
-   (`--gvmap`: `.LdataN` or a named static) and of every callee declared only by FuncId
+   (`--gvmap`: `.LdataN`, a named static, or with `--imported` a static of another crate)
+   and of every callee declared only by FuncId
    (`--fnmap`: a function of another crate or CGU). The FuncId mapping is checked, never
    guessed: dense ref numbering, target kinds, the CGU's own functions map to their own
    symbols, one symbol per FuncId across all functions. Then `normalize.py --split --gvmap
@@ -150,8 +156,9 @@ or an executable's `*.rcgu.o` files at link time) then goes through this pipelin
 4. **Safety net**: every symbol a Lean object references must be defined or referenced by
    cg_clif's object (or be a runtime helper: `mem*`, `__{u,}{div,mod}ti3`, all in every Rust
    executable); otherwise the function falls back. A calling-convention guard (`abi_guard`)
-   sends functions whose signature or callees' signatures differ between the two backends
-   to the fallback.
+   would send functions whose signature or callees' signatures are passed differently by
+   the two backends to the fallback. Its list is empty now: the one mismatch found (sret)
+   was fixed in the backend, see *Limitations*.
 5. **Merge** (`llvm-objcopy`, `rust-lld -r`):
    * local symbols of cg_clif's object that Lean code defines or references are renamed to a
      unique name (`__fv_<tag>_<name>`) and made global, so the references bind across objects;
@@ -213,22 +220,36 @@ and `#[should_panic]` works as usual.
 
 * `examples/fv-demo`: a library with 13 unit tests: integer arithmetic, slices, enums,
   Option/Result, iterators, u128/i128, `dyn` traits and closures, four `should_panic` tests,
-  and Lean ↔ cg_clif calls through the struct-return convention. There is also a binary:
-  `cargo fv run -- 97 84 36`.
+  and `sret_interop`. `sret_interop` calls between Lean and cg_clif code through the
+  struct-return convention, in both directions; the cg_clif side is kept by
+  `package.metadata.fv.skip`. There is also a binary: `cargo fv run -- 97 84 36`.
 * `examples/survey`: the nine crates of the Rust CLIF survey (`scripts/rust-clif/corpus/*.rs`,
   used in place) as a workspace. Each crate's `tests/values.rs` checks the values in
   `tests/expected.txt`, which `gen-expected.sh` computes with rustc's LLVM backend for the
   same target (under qemu). There are 53 tests, including 9 `should_panic` ones.
 
-Results (2026-09-30, this worktree), debug profile:
+Results (2026-09-30; `examples/compare.sh`, which requires every test outcome to match the
+`cargo test` LLVM run):
 
-| | tests (`cargo fv test`, same as `cargo test` with LLVM) | functions | verified | unverified | fallback | Lean in exe |
-|---|---|---|---|---|---|---|
-| fv-demo | 13/13 | 942 | 691 | 22 | 229 | 475 |
-| survey | 53/53 | 3089 | 2115 | 59 | 915 | 2174 |
+| | profile | tests | functions | verified | unverified | fallback | Lean in exe |
+|---|---|---|---|---|---|---|---|
+| fv-demo | debug | 13/13 | 975 | 717 | 251 | 7 | 641 |
+| fv-demo | release | 13/13 | 645 | 441 | 177 | 27 | 437 |
+| survey | debug | 53/53 | 3089 | 2135 | 927 | 27 | 3062 |
+| survey | release | 50/50 + 3 ignored (overflow checks off) | 2136 | 1514 | 566 | 56 | 2080 |
 
-Most fallbacks are sret functions (see *Limitations*). The rest are atomics (`atomic_rmw`,
-`fence`) and other operations outside the backend's subset.
+The table counts each unit separately: a library compiled as an rlib and as its unit-test
+harness appears twice. In the survey, every function of the nine survey libraries runs Lean
+code (`cargo fv build --workspace --lib --no-fallback` passes). The fallbacks are in the test
+harnesses: `Arc` drop (`atomic_rmw`) and `fence`, which are outside the backend's subset. In
+release there are also a few functions whose unoptimised CLIF references a data object that
+Cranelift's optimiser removed from cg_clif's object, and fv-demo's four `cg_clif_*` functions
+are kept on purpose. Unverified: mostly sret functions (the theorem does not cover sret yet),
+i128 legalisation, and indirect calls. `--opt-proven-only` (survey 53/53), `--opt`
+(fv-demo 13/13) and `--trap-replaced` (fv-demo 13/13) give the same test outcomes.
+
+A crate with crates.io dependencies (`itoa`, `smallvec`, `crc32fast`; the dependencies are
+compiled by cg_clif) also passes (unit tests and a doctest, same outcomes as `cargo test`).
 
 ## Limitations
 
@@ -242,11 +263,16 @@ Most fallbacks are sret functions (see *Limitations*). The rest are atomics (`at
 * `RUSTFLAGS` from the environment are kept (with ours appended). `build.rustflags` from
   `.cargo/config.toml` is overridden, as with any `RUSTFLAGS`.
 * Debug info describes cg_clif's code, not the Lean code.
-* sret: the Lean backend passed the arguments that follow an sret pointer from x1 instead of
-  x0. That is fixed on main; until the fix is merged, `abi_guard` sends every function with an
-  sret parameter or an sret callee to the fallback.
-* Changing `FV_*` variables or `package.metadata.fv` does not make cargo rebuild. Touch a
-  source file, or run `cargo clean`.
+* Doctests are compiled by rustdoc with LLVM (`-Cpanic=abort`) and linked against the member
+  crate's Lean-compiled rlib.
+* The calling conventions of the two backends must agree. cargo fv found one mismatch:
+  lean-backend passed the arguments after an sret pointer from x1 instead of x0. That is
+  fixed in the backend (f52e514), and fv-demo's `sret_interop` is the regression test.
+  i128 register pairs, more than 8 (stack-passed) arguments and `uext`/`sext` narrow
+  arguments were spot-checked against Cranelift and agree.
+* In release builds, a function whose unoptimised CLIF references data that Cranelift's
+  optimiser removed falls back. We compile the unoptimised CLIF, and the object has no symbol
+  for that data.
 
 ## Troubleshooting
 
@@ -258,5 +284,6 @@ Most fallbacks are sret functions (see *Limitations*). The rest are atomics (`at
   `target/fv-report.json`. `--keep-temps` keeps the normalised CLIF (`split/`), the
   per-function objects (`o/`) and the merge inputs in `target/fv/<mode>/tmp/<tag>/`.
 * A test fails under `cargo fv test` but passes under `cargo test`: bisect with
-  `FV_SKIP=<path substring>` / `FV_ONLY=…` (touch a source file between runs). Then look at
-  the function's CLIF and `llvm-objdump -d` of its object in `--keep-temps`.
+  `FV_SKIP=<path substring>` / `FV_ONLY=…`; changing them rebuilds the members. Then look at
+  the function's CLIF and `llvm-objdump -d` of its object in `--keep-temps`. That is how the
+  sret mismatch was found.
