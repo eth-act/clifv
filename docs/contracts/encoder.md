@@ -105,6 +105,14 @@ RELA addend and a zero immediate field.
 | `R_AARCH64_LD64_GOT_LO12_NC` | 312 | `ldr xd, [xn, :got_lo12:sym]` | `Aarch64Ld64GotLo12Nc` |
 | `R_AARCH64_ADR_PREL_PG_HI21` | 275 | `adrp xd, sym+a` | `Aarch64AdrPrelPgHi21` |
 | `R_AARCH64_ADD_ABS_LO12_NC` | 277 | `add xd, xn, :lo12:sym+a` | `Aarch64AddAbsLo12Nc` |
+| `R_AARCH64_TLSDESC_ADR_PAGE21` | 562 | `adrp xd, :tlsdesc:sym` | `Aarch64TlsDescAdrPage21` |
+| `R_AARCH64_TLSDESC_LD64_LO12` | 563 | `ldr xt, [xn, :tlsdesc_lo12:sym]` | `Aarch64TlsDescLd64Lo12` |
+| `R_AARCH64_TLSDESC_ADD_LO12` | 564 | `add xd, xn, :tlsdesc_lo12:sym` | `Aarch64TlsDescAddLo12` |
+| `R_AARCH64_TLSDESC_CALL` | 569 | `.tlsdesccall sym` + `blr xn` | `Aarch64TlsDescCall` |
+
+The targets of the TLSDESC relocations (thread-local variables, `tls_value`) are undefined
+`STT_TLS` symbols, as `llvm-mc` marks them; the static link relaxes the sequence (to
+`movz`/`movk`/`nop`/`nop` for a local-exec variable).
 
 Local branches, `adr` and jump-table words are resolved in Lean (no relocation), as
 `llvm-mc` resolves them. Trap sites: `FnBin.traps` (offsets of `udf #0xc11f` and of
@@ -160,6 +168,8 @@ encoded by `armBits`); "Page" is the instruction description in C6.2 (base) or C
 | `adrpGot`, `adrp` | `DPI.PC_rel_addressing` (op 1, imm 0) | ADRP (+ relocation; `R_AARCH64_ADR_GOT_PAGE` against function or, for `symbol_value`, undefined `STT_NOTYPE` data symbols) | `Inst::LoadExtNameGot/Near` |
 | `ldrGotLo12` | `LDST.Reg_unsigned_imm` (imm12 0) | LDR (immediate, 64-bit) (+ relocation) | `Inst::LoadExtNameGot` |
 | `addLo12` | `DPI.Add_sub_imm` (imm12 0) | ADD (immediate) (+ relocation) | `Inst::LoadExtNameNear` |
+| `adrpTlsDesc`, `ldrTlsDescLo12`, `addTlsDescLo12`, `blrTlsDesc` | as `adrp`, `ldrGotLo12`, `addLo12`, `blr` | ADRP, LDR, ADD, BLR (+ `R_AARCH64_TLSDESC_*`) | `Inst::ElfTlsGetAddr` |
+| `mrsTpidrEl0` | `BR.Mrs` (FV addition; the model has no system registers, `exec_mrs` stops with an error) | MRS xt, TPIDR_EL0 | `Inst::ElfTlsGetAddr` (`0xd53bd040 \| rt`) |
 
 ## Tests and results (2026-09-27)
 

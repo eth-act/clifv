@@ -224,6 +224,61 @@ disabled in `Obj.lean`, fv-demo's `catch_unwind_through_lean_frames`,
 `drop_runs_during_unwinding`, `nested_catch_and_resume` and `callee_saved_survive_unwinding`
 fail (14/18 pass).
 
+## agent/fv-lcheck-tls: the last fallbacks (dead blocks in `lowerCheck`, `tls_value`)
+
+**lowerCheck on dead blocks.** The 12 vendor debug rejections were the test instances of
+`once_cell::imp::{impl#4}::initialize::{closure#0}` (4 CLIF shapes). `lean-e2e-check` on the
+`--keep-temps` split CLIF: `cert block 11` fails `cclosed`. Block 11 (`block9`) has no
+predecessor: cg_clif's cleanup blocks are dead without landing pads, and
+`block9 → block14 → block17/block20/… → block13` are reachable only from it. `inFix` starts from
+"every value" and intersects over predecessors, so a block without one keeps every value at its
+entry, including `v59 = icmp eq v54, v58` (block14) whose operand `v54 = v37` is defined in
+block9 itself; `closedOk` (every available value's definition operands available) then fails.
+The lowering is right (not a backend bug); the certificate is incomplete only in the untrusted
+dataflow. Fix: `inStep` keeps a value at a block entry only if its definition's operands are
+available there too (`defArgs`); the rounds still descend. On blocks reachable from the entry
+the greatest fixpoint was already closed (every value available on all paths from the entry has
+its operands available too), so previously accepted functions keep the same certificate. The
+soundness proof (`lowering_of_check`, `cert_of_check`) takes `inFix`'s result as an arbitrary
+list, so no proof changed. Repro: `corpus/clif-regress/dead_cleanup.clif` (a dead block whose
+successor uses its result; a reachable join with a dead predecessor), rejected by the old
+checker, accepted now, in `lean-e2e-check`'s default corpus; runs agree with Cranelift-native.
+
+**TLS.** cg_clif sets `tls_model=elf_gd` for ELF (`lib.rs`); thread locals are
+`gvN = symbol [colocated] tls userextnameJ` and `vK = tls_value.i64 gvN`. Cranelift lowers
+`tls_value` with `elf_tls_get_addr` → `MInst.ElfTlsGetAddr` (fixed def x0, early def tmp,
+no clobbers: the TLSDESC resolver preserves everything but x0/x30), emitted as
+`adrp x0 (TLSDESC_ADR_PAGE21) / ldr tmp, [x0] (TLSDESC_LD64_LO12) / add x0, x0, #0
+(TLSDESC_ADD_LO12) / blr tmp (TLSDESC_CALL) / mrs tmp, tpidr_el0 / add x0, x0, tmp`. The Lean
+backend now does the same: `Clif.GlobalValue.tlsSymbol` + `Clif.Inst.tlsValue` (parser, printer,
+`Clif.run` with one thread: the image's symbol), instruction data `UnaryGlobalValue`/`TlsValue`
+with its own operand (`Opnd.tlsGlobalValue`, so `symbol_value_data` of `symbol_value` operands is
+unchanged), the `tls_model` extractor returns `ElfGd` (cg_clif's flag, as `is_pic`), the
+ISLE rules `lower 3217` / `inst 4918` fire (outside the emitter-subset closure, like the
+atomics), `MInst.elfTlsGetAddr`, `Insn`s for the four TLSDESC forms and `mrs`, the Arm model
+gains `BR.Mrs` (decode + `decode_armBits_Mrs`; `exec_mrs` stops: no system registers), and
+the object marks the variables `STT_TLS`. Outside `Compile.functionE`, reported "tls_value
+(outside backend_correct)"; the stack-slot allocator rejects it. Checks: Cranelift's
+`isa/aarch64/tls-elf-gd.clif` precise output is reproduced register for register
+(`corpus/clif-regress/tls_elf_gd.clif`), the objects match `llvm-mc` (encode-check, now also
+comparing undefined-symbol types) and cg_clif's code for the vendor accessors, and
+`rust-lld` relaxes the sequence to local-exec in the static test executables. fv-demo gained
+`tls` + `thread_locals` (const and lazy thread locals, a second thread), which passes under
+`cargo fv test` and `--trap-replaced`.
+
+Fallbacks (`cargo fv test --no-run`, panic=unwind): vendor debug 15 → 0 (verified 2533 → 2545,
+tls_value 3), vendor release 3 → 0 (tls_value 3), fv-demo 6/6 (skip, tls_value 4), survey 0/0.
+
+Gates: `lake build FV FVTest FV.E2E FV.E2E.OptProven` green; `#print axioms` of
+`E2E.backend_correct_final`/`backend_correct_opt_proven`: propext, Classical.choice, Quot.sound
++ `_native` only (`lowering_of_check`: the three standard ones); filetests corpus 114/114
+(extrt 22/22), runtests 4672 pass / 0 fail / 0 disagree; encode-check 1265 identical / 0 differ
+(34827 words, 1297 relocations; random sweep incl. `tlsdesc`/`mrs_tpidr`, decode ok);
+`lean-e2e-check` lowerCheck 911 accepted / 0 rejected / 148 out of scope (+1 accepted:
+`dead_cleanup`; +2 out of scope: the TLS regression functions), prepCheck 911/0, formsCoveredB
+911 covered / 0 not covered; `compare.sh` SAME: fv-demo 19/19, survey 53/53, vendor 189/189,
+debug and `--release`.
+
 <!-- STATUS-MARKER -->
 
 ## agent/fv-fallback: baseline `cargo fv` fallback measurements (worktree `../clifv-wt/fv-fallback`)
