@@ -165,7 +165,7 @@ or an executable's `*.rcgu.o` files at link time) then goes through this pipelin
    per file means every call is a call of an extern. The theorem covers extern calls through
    its callee contract, and a function the backend rejects does not make its callers fall
    back: their calls reach cg_clif's code for it. Functions with a landing pad (`try_call`)
-   are not compiled and fall back (*Panics and unwinding*).
+   are compiled too (*Panics and unwinding*).
 4. **Safety net**: every symbol a Lean object references must be defined or referenced by
    cg_clif's object (or be a runtime helper: `mem*`, `__{u,}{div,mod}ti3`, all in every Rust
    executable); otherwise the function falls back. A calling-convention guard (`abi_guard`)
@@ -230,11 +230,20 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   (`.gcc_except_table`), and `catch_unwind`/`Drop` behave as with LLVM. `cargo fv` uses it
   when it exists (`FV_CG_CLIF` overrides).
 * **Landing pads are Lean code** (agent/fv-trycall): functions with `try_call`/
-  `try_call_indirect` are compiled (unverified, "try_call / landing pads"): the call is a block
-  terminator, the handler successors are the landing pads (payload in x0), and the object gets
-  cg_clif's LSDA in `.gcc_except_table` and a `zLPR` CIE with `rust_eh_personality`
-  (`lean-backend --personality`). Callees with the `tail`/`preserve_all` convention and
-  exception-table `context` items are rejected (fallback); cg_clif emits neither.
+  `try_call_indirect` are compiled: the call is a block terminator, the handler successors are
+  the landing pads (payload in x0), and the object gets cg_clif's LSDA in `.gcc_except_table`
+  and a `zLPR` CIE with `rust_eh_personality` (`lean-backend --personality`). Callees with the
+  `tail`/`preserve_all` convention and exception-table `context` items are rejected
+  (fallback); cg_clif emits neither.
+* **`try_call` is verified for normal returns** (agent/trycall-proof): a function whose
+  `try_call`s call externs is inside `E2E.backend_correct_final` for the path where every
+  callee returns normally (the call, its results, the jump to the normal-return successor).
+  The report labels it **`verified (normal returns; unwinding trusted)`** and counts it among
+  the verified functions, with a footnote giving how many there are. Nothing is claimed about
+  unwinding: the landing pads, the payload on the handler edges, the LSDA and the `.eh_frame`
+  rows are trusted. `try_call_indirect` stays unverified ("try_call_indirect (outside
+  backend_correct)"), and so does every `try_call` function under `--opt-proven-only` and
+  after `i128` legalisation (those theorems cover `try_call`-free functions only).
 * With the shipped cg_clif (no unwinding build, or `FV_CG_CLIF=cranelift`), no function has a
   landing pad, `cargo fv` prints a note, and the program behaves as under plain cg_clif: the
   reference for comparisons is then plain cg_clif, not LLVM (`BASELINE=cg_clif
@@ -266,6 +275,10 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   (hypotheses: `docs/contracts/e2e.md`). Calls to other functions are extern calls in that
   theorem: the proof assumes the callee behaves as its CLIF (the callee contract), whether the
   callee is Lean-compiled, cg_clif-compiled or in std.
+* **verified (normal returns; unwinding trusted)** = verified as above for a function with
+  `try_call`s: the theorem covers the runs in which every callee of a `try_call` returns
+  normally (with the callee contract `CalleeTryOk` for the exception payload registers); the
+  unwinding path (landing pads, LSDA, unwind tables) is trusted.
 * Not verified: rustc and cg_clif (Rust → CLIF), `normalize.py`, `clif-data-export`, the
   object surgery above, the linker, std and dependencies (cg_clif or LLVM code), and
   everything the report lists as unverified or fallback. `--opt` runs unproven rules.
@@ -422,10 +435,10 @@ fv-demo 19/19, survey 53/53 and vendor 189/189, debug and `--release`.
   qemu. Linking always uses `rust-lld`.
 * Only workspace members are compiled by the Lean backend. Dependencies use cg_clif and std
   is the prebuilt LLVM one; which crates get the Lean backend may become configurable later.
-* panic=unwind: functions with landing pads (`try_call`) keep cg_clif's code, and full
-  unwinding semantics (`Drop` during unwinding, `catch_unwind` in the crate) need the
-  unwinding cg_clif (Install, 5); the shipped one has no landing pads at all. Lean frames have
-  `.eh_frame` but no LSDA, so no Lean-compiled function runs code during unwinding.
+* panic=unwind: full unwinding semantics (`Drop` during unwinding, `catch_unwind` in the crate)
+  need the unwinding cg_clif (Install, 5); the shipped one has no landing pads at all. The
+  landing pads of Lean-compiled functions and their LSDA are compiled but not verified: the
+  theorem covers `try_call`s up to the normal return only.
 * Library crate types `lib`/`rlib`, binaries and test harnesses. `dylib`, `cdylib`,
   `staticlib` and proc macros build with plain cg_clif.
 * `RUSTFLAGS` from the environment are kept (with ours appended). `build.rustflags` from

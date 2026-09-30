@@ -456,7 +456,7 @@ theorem try_got_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) {F : BitVec
 /-! ## Assembly -/
 
 /-- In a list whose rule ids are distinct, a rule is determined by its id. -/
-theorem eq_of_mem_of_id' {r r0 : Rule} :
+theorem eq_of_mem_of_rid {r r0 : Rule} :
     ∀ {L : List Rule}, (L.map Rule.id).Nodup → r ∈ L → r0 ∈ L → r.id = r0.id → r = r0
   | [], _, hr, _, _ => by cases hr
   | a :: L, hnd, hr, hr0, h => by
@@ -465,7 +465,7 @@ theorem eq_of_mem_of_id' {r r0 : Rule} :
     · rw [h1, h2]
     · subst h1; exact absurd h.symm (fun e => hnd.1 r0 h2 e)
     · subst h2; exact absurd h (fun e => hnd.1 r h1 e)
-    · exact eq_of_mem_of_id' hnd.2 h1 h2 h
+    · exact eq_of_mem_of_rid hnd.2 h1 h2 h
 
 theorem mem_lower_branch_2542 : rule_lower_2542 ∈ program.rulesOf TId.lower_branch := by
   rw [show TId.lower_branch = 687 from rfl, data_program.r687]
@@ -484,9 +484,9 @@ theorem tryRulesCorrect : TryRulesCorrect program := by
     rw [show TId.lower_branch = 687 from rfl, data_program.r687]
     decide +kernel
   rcases hroot with h | h
-  · rw [eq_of_mem_of_id' hnd hr mem_lower_branch_2542 (by rw [h]; rfl)]
+  · rw [eq_of_mem_of_rid hnd hr mem_lower_branch_2542 (by rw [h]; rfl)]
     exact try_bl_ruleOk data_program tryData_program hR hMR hCR
-  · rw [eq_of_mem_of_id' hnd hr mem_lower_branch_2551 (by rw [h]; rfl)]
+  · rw [eq_of_mem_of_rid hnd hr mem_lower_branch_2551 (by rw [h]; rfl)]
     exact try_got_ruleOk data_program tryData_program hR hMR hCR
 
 /-- The root format of the rules of `lower_branch` other than the `try_call` rules is not
