@@ -55,7 +55,7 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
       IO.eprintln s!"lean-backend: {input}: encoding failed: {e}"
       return 1
     | .ok fbs =>
-      if output.endsWith ".o" then IO.FS.writeBinFile output (elfObject fbs)
+      if output.endsWith ".o" then IO.FS.writeBinFile output (elfObject fbs fa.unwind)
       if let some d := o.dump then
         IO.FS.createDirAll d
         for (_, fb) in fbs do

@@ -334,6 +334,124 @@ pub mod interop {
         let (x, y, z) = lean_triple(a, b);
         x.wrapping_mul(31) ^ y.wrapping_mul(17) ^ z
     }
+
+    /// A cg_clif frame (no landing pad) between two Lean frames on the unwinding path:
+    /// `unwind::lean_via_cg_clif` → this → `unwind::deep`.
+    #[inline(never)]
+    pub fn cg_clif_relay(n: u64) -> u64 {
+        crate::unwind::deep(n, 5) ^ 0x55
+    }
+}
+
+/// Panics unwinding through Lean-compiled frames (`cargo fv`'s default is panic=unwind).
+/// Frames without a landing pad (`deep`, `churn`, `relay`, `lean_*`) are Lean code and unwind
+/// with the backend's `.eh_frame` rows. Functions with a landing pad (a `Drop` value live across
+/// a call, `catch_unwind`) keep cg_clif's code (fallback "landing pad"), which runs the cleanup
+/// or catches.
+pub mod unwind {
+    use std::cell::Cell;
+    use std::panic::{catch_unwind, resume_unwind, AssertUnwindSafe};
+
+    /// Recursion through `n` frames, each keeping values live across the call; panics at the
+    /// bottom.
+    #[inline(never)]
+    pub fn deep(n: u64, acc: u64) -> u64 {
+        if n == 0 {
+            panic!("deep panic, acc {acc}");
+        }
+        let a = acc.wrapping_mul(31).wrapping_add(n);
+        let b = a ^ (n << 7);
+        let c = b.rotate_left(9);
+        let r = deep(n - 1, a ^ c);
+        r.wrapping_add(a).wrapping_add(b).wrapping_add(c)
+    }
+
+    /// Ten values live across a call that may panic: the frame saves callee-saved registers,
+    /// and the unwinder must restore them from its `.eh_frame` rows.
+    #[inline(never)]
+    pub fn churn(x: u64, depth: u64) -> u64 {
+        let v0 = x.wrapping_mul(3);
+        let v1 = v0 ^ 0x1234;
+        let v2 = v1.rotate_left(5);
+        let v3 = v2.wrapping_add(x);
+        let v4 = v3 ^ (v0 >> 3);
+        let v5 = v4.wrapping_mul(7);
+        let v6 = v5 ^ v1;
+        let v7 = v6.rotate_right(11);
+        let v8 = v7.wrapping_sub(v2);
+        let v9 = v8 ^ v3;
+        let r = deep(depth, x);
+        v0 ^ v1.wrapping_add(v2) ^ v3.wrapping_mul(v4) ^ v5 ^ v6 ^ v7.wrapping_add(v8) ^ v9 ^ r
+    }
+
+    /// Catches a panic of `churn` (landing pad: cg_clif code).
+    #[inline(never)]
+    pub fn catch_churn(x: u64, depth: u64) -> bool {
+        catch_unwind(|| churn(x, depth)).is_err()
+    }
+
+    /// Lean code whose values (in callee-saved registers) must survive a panic caught below it.
+    #[inline(never)]
+    pub fn lean_keeps(x: u64) -> u64 {
+        let k0 = x ^ 0xdead;
+        let k1 = k0.wrapping_mul(13);
+        let k2 = k1.rotate_left(17);
+        let k3 = k2 ^ k0;
+        let k4 = k3.wrapping_add(k1);
+        let k5 = k4 ^ (k2 >> 9);
+        let caught = catch_churn(x, 4);
+        (k0 ^ k1 ^ k2.wrapping_add(k3) ^ k4 ^ k5).wrapping_mul(if caught { 3 } else { 5 })
+    }
+
+    /// Logs its id when dropped, also while unwinding.
+    pub struct Guard<'a> {
+        pub log: &'a Cell<u64>,
+        pub id: u64,
+    }
+
+    impl Drop for Guard<'_> {
+        fn drop(&mut self) {
+            self.log.set(self.log.get() * 10 + self.id);
+        }
+    }
+
+    /// A Lean frame between a frame with cleanups and the panic.
+    #[inline(never)]
+    pub fn relay(n: u64) -> u64 {
+        deep(n, 7).wrapping_mul(3)
+    }
+
+    /// Two guards live across a call that panics through Lean frames (landing pad: cg_clif).
+    #[inline(never)]
+    pub fn guarded(log: &Cell<u64>, n: u64) -> u64 {
+        let _g1 = Guard { log, id: 1 };
+        let _g2 = Guard { log, id: 2 };
+        relay(n)
+    }
+
+    /// Lean → cg_clif → Lean on the unwinding path.
+    #[inline(never)]
+    pub fn lean_via_cg_clif(n: u64) -> u64 {
+        crate::interop::cg_clif_relay(n).wrapping_add(1)
+    }
+
+    /// Catches the panic of `guarded`, logs 3, and panics again with the same payload.
+    #[inline(never)]
+    pub fn rethrow(log: &Cell<u64>, n: u64) -> u64 {
+        match catch_unwind(AssertUnwindSafe(|| guarded(log, n))) {
+            Ok(v) => v,
+            Err(p) => {
+                log.set(log.get() * 10 + 3);
+                resume_unwind(p)
+            }
+        }
+    }
+
+    /// A Lean frame the resumed panic passes through.
+    #[inline(never)]
+    pub fn lean_rethrow(log: &Cell<u64>, n: u64) -> u64 {
+        rethrow(log, n).wrapping_add(1)
+    }
 }
 
 #[cfg(test)]
@@ -469,5 +587,51 @@ mod tests {
         assert_eq!(lean_calls_cg_clif(bb(1000), bb(7)), (1007 * 31) ^ (993 * 17) ^ (1000 ^ (7 << 13)));
         assert_eq!(cg_clif_calls_lean(bb(1000), bb(7)), (3000 * 31) ^ (35 * 17) ^ 951);
         assert_eq!(lean_calls_cg_clif(bb(u64::MAX), bb(2)), 0x402d);
+    }
+
+    fn message(p: &(dyn std::any::Any + Send)) -> String {
+        p.downcast_ref::<String>().cloned().or_else(|| p.downcast_ref::<&str>().map(|s| s.to_string())).unwrap_or_default()
+    }
+
+    #[test]
+    fn catch_unwind_through_lean_frames() {
+        let r = std::panic::catch_unwind(|| unwind::relay(bb(6)));
+        assert!(message(&*r.unwrap_err()).starts_with("deep panic, acc "));
+        let r = std::panic::catch_unwind(|| unwind::lean_via_cg_clif(bb(3)));
+        assert!(message(&*r.unwrap_err()).starts_with("deep panic, acc "));
+        assert_eq!(unwind::catch_churn(bb(99), bb(5)), true);
+    }
+
+    #[test]
+    fn callee_saved_survive_unwinding() {
+        let x = 0x0123_4567_89ab_cdef;
+        let (k0, k1): (u64, u64) = (x ^ 0xdead, (x ^ 0xdead).wrapping_mul(13));
+        let k2 = k1.rotate_left(17);
+        let k3 = k2 ^ k0;
+        let k4 = k3.wrapping_add(k1);
+        let k5 = k4 ^ (k2 >> 9);
+        assert_eq!(unwind::lean_keeps(bb(x)), (k0 ^ k1 ^ k2.wrapping_add(k3) ^ k4 ^ k5).wrapping_mul(3));
+    }
+
+    #[test]
+    fn drop_runs_during_unwinding() {
+        let log = std::cell::Cell::new(0);
+        let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| unwind::guarded(&log, bb(4))));
+        assert!(r.is_err());
+        assert_eq!(log.get(), 21);
+    }
+
+    #[test]
+    fn nested_catch_and_resume() {
+        let log = std::cell::Cell::new(0);
+        let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| unwind::lean_rethrow(&log, bb(3))));
+        assert!(message(&*r.unwrap_err()).starts_with("deep panic, acc "));
+        assert_eq!(log.get(), 213);
+    }
+
+    #[test]
+    #[should_panic(expected = "deep panic, acc ")]
+    fn should_panic_through_lean_frames() {
+        unwind::lean_via_cg_clif(bb(8));
     }
 }
