@@ -1,9 +1,10 @@
 //! Recover the data objects cg_clif hides behind `symbol_value` (rust-route step 1).
 //!
-//! usage: clif-data-export <clif-dir> <obj> --out F.clif --gvmap F.tsv [--fnmap F.tsv] [--stage unopt]
+//! usage: clif-data-export <clif-dir> <obj> --out F.clif --gvmap F.tsv [--fnmap F.tsv] [--imported] [--stage unopt]
 //!
 //! `--fnmap`: also name the callees declared only by FuncId (`u0:N<TAB>symbol` lines, see
-//! `name_callees`), for `normalize.py --fnmap`.
+//! `name_callees`), for `normalize.py --fnmap`. `--imported`: also map the gvs of statics
+//! defined in other crates (undefined in the object) to their symbols.
 //!
 //! cg_clif puts the bytes of every static data object (panic `Location`s and messages,
 //! constant tables, constant enum values, vtables) only into its object file, as local
@@ -80,8 +81,8 @@ struct FnDump {
     vgot_exts: Vec<Option<u32>>,
     /// The function's own FuncId (`function u0:N(`).
     own: Option<u32>,
-    /// The user-named function declarations `fnK = [colocated] u0:N sigM`, in K order:
-    /// (K, N). Libcall declarations (`fnK = %Memcpy sigM`) carry no user name.
+    /// The user-named function declarations `fnK = [colocated] u0:N sigM`, in K order, the
+    /// first per FuncId: (K, N). Libcall declarations (`fnK = %Memcpy sigM`) carry no user name.
     fn_decls: Vec<(u32, u32)>,
 }
 
@@ -205,7 +206,11 @@ fn parse_dump(path: &Path, stage: &str) -> FnDump {
         vgot_exts,
         own,
         fn_decls: {
+            // K order; a FuncId declared again (a new FuncRef for the same name) reuses the
+            // name's ref, so only its first declaration counts
             fn_decls.sort();
+            let mut seen = BTreeSet::new();
+            fn_decls.retain(|&(_, n)| seen.insert(n));
             fn_decls
         },
     }
@@ -354,7 +359,7 @@ struct Recovered {
     fnmap: BTreeMap<u32, String>,
 }
 
-fn recover(crate_name: &str, obj: &Path, dumps: &[FnDump]) -> Recovered {
+fn recover(crate_name: &str, obj: &Path, dumps: &[FnDump], imported: bool) -> Recovered {
     let (syms, secs) = load_obj(obj);
     // Symbol index of every function symbol, by name.
     let mut fn_idx: BTreeMap<&str, usize> = BTreeMap::new();
@@ -426,7 +431,10 @@ fn recover(crate_name: &str, obj: &Path, dumps: &[FnDump]) -> Recovered {
         got_of.push(got.clone());
         for (&ext, &target) in d.vgot_exts.iter().zip(got.iter()) {
             let Some(ext) = ext else { continue }; // a LibCall load: never data
-            if syms[&target].kind != SymbolKind::Data {
+            // `--imported`: a gv's GOT load of an undefined symbol is a static of another
+            // crate; it gets its own name in the gvmap (and no data object)
+            let imported_gv = imported && syms[&target].sec.is_none() && d.gv_ext.values().any(|&e| e == ext);
+            if syms[&target].kind != SymbolKind::Data && !imported_gv {
                 continue;
             }
             match ext_data.entry((fi, ext)) {
@@ -613,7 +621,8 @@ fn recover(crate_name: &str, obj: &Path, dumps: &[FnDump]) -> Recovered {
 /// function of another crate or codegen unit): FuncId N → linker symbol, for `normalize.py
 /// --fnmap`.
 ///
-/// A function's `userextnameJ` refs are allocated in declaration order, one per new name,
+/// A function's `userextnameJ` refs are allocated in declaration order, one per new name
+/// (a FuncId declared twice gets two FuncRefs but one ref),
 /// data (`gvK = symbol userextnameJ`, explicit in the text) and functions (`fnK = u0:N`,
 /// implicit) interleaved; FuncRefs are numbered in the same order. So the refs no gv uses
 /// are the function declarations', in K order. Each such ref's GOT load (vcode, code order)
@@ -683,7 +692,7 @@ fn data_directive(o: &DataObj) -> String {
 }
 
 fn usage() -> ! {
-    eprintln!("usage: clif-data-export <clif-dir> <obj> --out F.clif --gvmap F.tsv [--fnmap F.tsv] [--stage unopt]");
+    eprintln!("usage: clif-data-export <clif-dir> <obj> --out F.clif --gvmap F.tsv [--fnmap F.tsv] [--imported] [--stage unopt]");
     std::process::exit(2)
 }
 
@@ -692,6 +701,7 @@ fn main() {
     let mut out: Option<PathBuf> = None;
     let mut gvmap_path: Option<PathBuf> = None;
     let mut fnmap_path: Option<PathBuf> = None;
+    let mut imported = false;
     let mut pos: Vec<PathBuf> = Vec::new();
     let mut args = std::env::args().skip(1);
     while let Some(a) = args.next() {
@@ -700,6 +710,7 @@ fn main() {
             "--out" => out = Some(PathBuf::from(args.next().unwrap_or_else(|| usage()))),
             "--gvmap" => gvmap_path = Some(PathBuf::from(args.next().unwrap_or_else(|| usage()))),
             "--fnmap" => fnmap_path = Some(PathBuf::from(args.next().unwrap_or_else(|| usage()))),
+            "--imported" => imported = true,
             _ => pos.push(PathBuf::from(a)),
         }
     }
@@ -725,7 +736,7 @@ fn main() {
         .unwrap_or("crate")
         .to_string();
 
-    let r = recover(&crate_name, &obj, &dumps);
+    let r = recover(&crate_name, &obj, &dumps, imported);
     fs::write(&out, r.objs.iter().map(data_directive).collect::<Vec<_>>().join("\n") + "\n")
         .unwrap_or_else(|e| die(format!("{}: {e}", out.display())));
     fs::write(

@@ -462,7 +462,8 @@ fn process_in(
         .arg("--gvmap")
         .arg(&gvmap)
         .arg("--fnmap")
-        .arg(&fnmap))?;
+        .arg(&fnmap)
+        .arg("--imported"))?;
     let split = work.join("split");
     run(Command::new(&cfg.python)
         .arg(cfg.normalize())
