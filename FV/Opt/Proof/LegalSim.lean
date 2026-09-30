@@ -1244,4 +1244,119 @@ theorem retsOk_bind {C : Ctx} {rg : List (List SlotEl)} {rs rs' : List ValueId}
         · exact .inr ⟨u, List.mem_cons_of_mem _ hu, hwu⟩
   case case5 => cases h
 
+theorem sigExp_spec {s s' : Signature} (h : sigExp s = some s') :
+    ∃ gs rg, groups s.params = some gs ∧ groups s.returns = some rg ∧
+      s'.params = gs.flatMap (·.map elTy) ∧ s'.returns = rg.flatMap (·.map elTy) := by
+  simp only [sigExp, expandSig] at h
+  cases h1 : expandGroups s.params with
+  | error e => simp [h1, bind, Except.bind, Except.toOption] at h
+  | ok gs =>
+    cases h2 : expandGroups s.returns with
+    | error e => simp [h1, h2, bind, Except.bind, Except.toOption] at h
+    | ok rg =>
+      simp [h1, h2, bind, Except.bind, Except.toOption, pure, Except.pure] at h
+      subst h
+      exact ⟨gs, rg, by simp [groups, h1, Except.toOption], by simp [groups, h2, Except.toOption],
+        rfl, rfl⟩
+
+theorem getMany_ne_trap (fr : Frame) : ∀ (xs : List ValueId) (c : TrapCode), fr.getMany xs ≠ .trap c
+  | [], c => by simp [Frame.getMany]
+  | x :: xs, c => by
+    intro h
+    simp only [Frame.getMany, Opt.Res.bind_eq_trap] at h
+    rcases h with h | ⟨v, _, h⟩
+    · exact get_ne_trap fr x c h
+    · rcases h with h | ⟨vs, _, h⟩
+      · exact getMany_ne_trap fr xs c h
+      · simp [pure] at h
+
+/-- **A call with expanded arguments and results.** -/
+theorem sim_call {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} (hEx : ExtLegal env)
+    (hKeep : EnvKeepsAllocs env)
+    (hsrc : ∀ fn e, C.f.extern? fn = some e → p.func? e.name = none)
+    (htgt : ∀ fn e, C.g.extern? fn = some e → p'.func? e.name = none)
+    {fr fr' : Frame} {m : Mem} (hR : FRel C fr fr') (hM : MemBounded m) {st : Stmt}
+    {rest : List Stmt} (hb : fr.body = st :: rest) {fn : FnRef} {e : ExtFunc}
+    {args' : List ValueId} {rg : List (List SlotEl)} {rs : List ValueId}
+    (hpl : planOf C st = some (.call fn e args' rg rs)) {rs' : List ValueId} {ts2 : List Stmt}
+    (hb' : fr'.body = { results := rs', inst := .call fn args' } :: ts2)
+    (hrets : retsOk C rg rs rs' = true) (hnd' : rs'.Nodup) {s' : Signature}
+    (hs' : sigExp e.sig = some s') (hfn : C.g.extern? fn = some { e with sig := s' })
+    (hcode : codeOk C rest fr.term ts2 fr'.term = true) :
+    SimOut C env p' fr' m (step env p ⟨fr, [], m⟩) := by
+  obtain ⟨args, gs, hi, hrs, hfe, hgs, hrg, hexp⟩ := planOf_call hpl
+  obtain ⟨B, hB, hst⟩ := frel_stmt hR hb
+  have hnd := results_nodup hG.defs hB hst
+  have hlt : ∀ x ∈ args, x < C.T0 := fun x hx => ops_lt hG hB hst (by rw [hi]; exact hx)
+  have hst_eq : st = { results := rs, inst := .call fn args } := by rw [← hi, ← hrs]
+  rw [hst_eq] at hb
+  rw [hrs] at hnd
+  obtain ⟨gs0, rg0, hgs0, hrg0, hpar', hret'⟩ := sigExp_spec hs'
+  rw [hgs] at hgs0; cases hgs0
+  rw [hrg] at hrg0; cases hrg0
+  have hfe' : fr.func.extern? fn = some e := by rw [hR.func]; exact hfe
+  rw [step_call env p _ rest rs fn args hb]
+  cases hga : fr.getMany args with
+  | stuck msg => simp only [stepCall, hfe', hga, Res.ofOption, bind, Res.bind, StepResult.ofRes]; trivial
+  | trap c => exact absurd hga (getMany_ne_trap fr args c)
+  | ok vals =>
+    obtain ⟨vals', hv', hexp'⟩ := expandArgs_holds hR.vrel hR.zero hexp hlt (getMany_holds hga)
+    by_cases hty : vals.map (·.ty) ≠ AbiParam.tys e.sig.params
+    · have : (vals.map (·.ty) == AbiParam.tys e.sig.params) = false := by simpa using hty
+      simp only [stepCall, hfe', hga, Res.ofOption, bind, Res.bind, checkTys, this, Res.check,
+        StepResult.ofRes]
+      trivial
+    have hty : vals.map (·.ty) = AbiParam.tys e.sig.params := by simpa using hty
+    have hty' : vals'.map (·.ty) = AbiParam.tys s'.params := by
+      rw [hpar', AbiParam.tys, ← expRel_tys (groups_spec hgs) hexp' hty]
+    cases henv : env.extern e.name with
+    | none =>
+      simp only [stepCall, hfe', hga, Res.ofOption, bind, Res.bind, checkTys, hty,
+        beq_self_eq_true, Res.check, ite_true, pure, StepResult.ofRes, hsrc fn e hfe, henv]
+      trivial
+    | some h =>
+      rw [← step_call env p _ rest rs fn args hb]
+      rw [step_extcall hb hfe' hga hty (hsrc fn e hfe) henv]
+      have hstep' := step_extcall (env := env) (p := p') (s := ⟨fr', [], m⟩) hb'
+        (by rw [hR.func']; exact hfn) (holds_getMany hv') hty' (htgt fn _ hfn) henv
+      obtain ⟨hret, htrap⟩ := hEx e.name h henv e.sig gs rg hgs hrg vals vals' m hty hexp'
+      cases hout : h vals m with
+      | stuck msg => trivial
+      | outOfFuel => trivial
+      | trapped c =>
+        simp only [htrap c hout] at hstep'
+        exact ⟨1, by rw [runLoop_succ, hstep']⟩
+      | returned rv m' =>
+        by_cases hrt : rv.map (·.ty) ≠ AbiParam.tys e.sig.returns
+        · have : (rv.map (·.ty) == AbiParam.tys e.sig.returns) = false := by simpa using hrt
+          simp only [this]
+          trivial
+        have hrt : rv.map (·.ty) = AbiParam.tys e.sig.returns := by simpa using hrt
+        obtain ⟨rv', hout', hexr⟩ := hret rv m' hout hrt
+        have hrt' : rv'.map (·.ty) = AbiParam.tys s'.returns := by
+          rw [hret', AbiParam.tys, ← expRel_tys (groups_spec hrg) hexr hrt]
+        simp only [hout', hrt', beq_self_eq_true, ite_true] at hstep'
+        simp only [hrt, beq_self_eq_true, ite_true, continueWith]
+        cases hs : fr.regs.setMany rs rv with
+        | none => trivial
+        | some ρ1 =>
+          obtain ⟨hbind, hcov, hlen⟩ := retsOk_bind hrets hexr
+          obtain ⟨ρ1', hs1'⟩ := setMany_of_len fr'.regs hlen
+          simp only [continueWith, hs1'] at hstep'
+          refine ⟨rfl, memBounded_of_allocs (hKeep e.name h henv vals m rv m' hout) hM, _, ?_,
+            TStep.of_step hstep'⟩
+          have hsrcI : SrcInv C.f ρ1 := by
+            refine srcInv_results hG.defs hB hst hR.src (vals := rv) ?_ (fun _ _ h => by
+              rw [hst_eq] at h; cases h) (fun _ _ _ h => by rw [hst_eq] at h; cases h)
+              (by rw [hst_eq]; exact hs)
+            rw [hst_eq]
+            simp only [Inst.resultTypes, sigOfF, hfe, Option.map_some, hrt, AbiParam.tys]
+          refine frel_after hG hR (st := { results := rs, inst := .call fn args }) hb hcode hs ?_ ?_ hsrcI
+          · exact fun v hv _ x hx => hbind (holds_setMany hnd hs) (holds_setMany hnd' hs1') hnd v hv x hx
+          · intro w hw hni
+            refine setMany_other hs1' fun hwr => ?_
+            rcases hcov w hwr with hf | ⟨u, hu, hwu⟩
+            · rw [hf] at hw; cases hw
+            · exact hni u hu (res_lt hG hB hst (by rw [hst_eq]; exact hu)) hwu
+
 end Opt.Legal
