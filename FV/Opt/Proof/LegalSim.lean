@@ -328,7 +328,7 @@ theorem defOk_param {f : Function} (hnd : ((defsOf f).map (·.1)).Nodup) {B : Bl
     (hx : x.ty = t) : DefOk f v x := by
   have hl := lookup_of_mem hnd (mem_defsOf_param hB hp)
   refine ⟨?_, ?_, ?_⟩
-  · simp [tyOf, hl, hx]
+  · exact .inr (by simp [tyOf, hl, hx])
   · intro c hc; simp [constOf, defInst, hl] at hc
   · intro c hc; simp [concatConst, defInst, hl] at hc
 
@@ -423,23 +423,23 @@ theorem enterBlock_mk {fr : Frame} {bc : BlockCall} {b : Block} {args : List Val
     ite_true]
   rfl
 
-/-- **Entering a block.** A branch of `f` and its rewrite (`bcOk`) enter corresponding blocks
-with related frames. -/
-theorem enter_sim {C : Ctx} (hG : Good C) {fr fr' : Frame} (hR : CRel C fr fr')
-    {bc bc' : BlockCall} (hbc : bcOk C bc bc' = true) (hlt : ∀ x ∈ bc.args, x < C.T0)
+/-- **Entering a block** with argument values split by its parameters (`BExp`): a branch of
+`f` to a non-entry block and a branch of `g` to the same block enter corresponding blocks with
+related frames. -/
+theorem enter_sim_vals {C : Ctx} (hG : Good C) {fr fr' : Frame} (hR : CRel C fr fr')
+    {bc bc' : BlockCall} (hblk : bc'.block = bc.block) (hne : C.entryId? ≠ some bc.block)
+    (hv : ∀ B vals, C.f.block? bc.block = some B → Holds fr.regs bc.args vals →
+      ∃ vals', Holds fr'.regs bc'.args vals' ∧ BExp B.params vals vals')
     {fr1 : Frame} (h : enterBlock fr bc = .ok fr1) :
     ∃ fr1', enterBlock fr' bc' = .ok fr1' ∧ FRel C fr1 fr1' := by
   obtain ⟨B, args, regs1, hB, hargs, hty, hset, rfl⟩ := enterBlock_ok h
   rw [hR.func] at hB
-  simp only [bcOk, Bool.and_eq_true, beq_iff_eq, bne_iff_ne, ne_eq, hB] at hbc
-  obtain ⟨⟨hblk, hne⟩, hexp⟩ := hbc
   obtain ⟨B', hB', hok⟩ := block_find hG hB hne
   simp only [blockOk, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq, Bool.false_eq_true,
     ite_false] at hok
   obtain ⟨⟨-, hnd'⟩, hpo, hcode⟩ := hok
   have hBmem : B ∈ C.f.blocks := List.mem_of_find?_eq_some hB
-  obtain ⟨vals', hv', hbe⟩ := expandBC_holds hR.vrel hexp hlt
-    (getMany_holds hargs)
+  obtain ⟨vals', hv', hbe⟩ := hv B args hB (getMany_holds hargs)
   obtain ⟨hty', hbind, hcov⟩ := paramsOk_bind hG hpo hbe hty
   have hlen : (B'.params.map (·.1)).length = vals'.length := by
     have := congrArg List.length hty'; simp only [List.length_map] at this ⊢; omega
@@ -464,6 +464,19 @@ theorem enter_sim {C : Ctx} (hG : Good C) {fr fr' : Frame} (hR : CRel C fr fr')
     PlainEq.update hG hR.peq hsrc hnew htgt hdef, srcInv_enter hG.defs hBmem hR.src hty hset,
     by simp only; rw [setMany_other hset' hzero]; exact hR.zero⟩,
     ⟨B, hBmem, List.suffix_refl _, rfl⟩, hcode⟩
+
+/-- **Entering a block.** A branch of `f` and its rewrite (`bcOk`) enter corresponding blocks
+with related frames. -/
+theorem enter_sim {C : Ctx} (hG : Good C) {fr fr' : Frame} (hR : CRel C fr fr')
+    {bc bc' : BlockCall} (hbc : bcOk C bc bc' = true) (hlt : ∀ x ∈ bc.args, x < C.T0)
+    {fr1 : Frame} (h : enterBlock fr bc = .ok fr1) :
+    ∃ fr1', enterBlock fr' bc' = .ok fr1' ∧ FRel C fr1 fr1' := by
+  simp only [bcOk, Bool.and_eq_true, beq_iff_eq, bne_iff_ne, ne_eq] at hbc
+  obtain ⟨⟨hblk, hne⟩, hexp⟩ := hbc
+  refine enter_sim_vals hG hR hblk hne (fun B vals hB hv => ?_) h
+  rw [hB] at hexp
+  simp only [beq_iff_eq] at hexp
+  exact expandBC_holds hR.vrel hexp hlt hv
 
 /-! ## Target runs -/
 
@@ -897,6 +910,25 @@ theorem sim_store {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} {fr fr' :
 
 /-! ## Calls of externs -/
 
+/-- A call of an extern the environment implements (`stepCall`). -/
+theorem stepCall_ext {env : Env} {p : Program} {s : State} {rest : List Stmt}
+    {results : List ValueId} {fn : FnRef} {args : List ValueId} {ext : ExtFunc} {vals : List Val}
+    {h : List Val → Mem → Outcome}
+    (hext : s.frame.func.extern? fn = some ext) (hargs : s.frame.getMany args = .ok vals)
+    (hty : vals.map (·.ty) = AbiParam.tys ext.sig.params) (hp : p.func? ext.name = none)
+    (henv : env.extern ext.name = some h) :
+    stepCall env p s rest results fn args = match h vals s.mem with
+      | .returned rvals mem' =>
+        if rvals.map (·.ty) == AbiParam.tys ext.sig.returns then
+          continueWith s rest results rvals mem'
+        else .stuck s!"extern %{ext.name} returned values of the wrong types"
+      | .trapped c => .trapped c
+      | .stuck m => .stuck m
+      | .outOfFuel => .stuck s!"extern %{ext.name} ran out of fuel" := by
+  simp only [stepCall, hext, hargs, checkTys, hty, beq_self_eq_true, Res.ofOption, bind, Res.bind,
+    Res.check, ite_true, pure, StepResult.ofRes_ok, hp, henv]
+  rfl
+
 /-- A call of an extern the environment implements. -/
 theorem step_extcall {env : Env} {p : Program} {s : State} {rest : List Stmt}
     {results : List ValueId} {fn : FnRef} {args : List ValueId} {ext : ExtFunc} {vals : List Val}
@@ -914,9 +946,7 @@ theorem step_extcall {env : Env} {p : Program} {s : State} {rest : List Stmt}
       | .stuck m => .stuck m
       | .outOfFuel => .stuck s!"extern %{ext.name} ran out of fuel" := by
   rw [step_call env p s rest results fn args hb]
-  simp only [stepCall, hext, hargs, checkTys, hty, beq_self_eq_true, Res.ofOption, bind, Res.bind,
-    Res.check, ite_true, pure, StepResult.ofRes_ok, hp, henv]
-  rfl
+  exact stepCall_ext hext hargs hty hp henv
 
 theorem truthy_bool8 (b : Bool) : Sem.truthy (Sem.bool8 b) = b := by
   cases b <;> rfl
@@ -1139,7 +1169,8 @@ theorem srcInv_results {f : Function} (hnd : ((defsOf f).map (·.1)).Nodup) {B :
     rw [hx] at hvi
     have hl := lookup_of_mem hnd (mem_defsOf_stmt hB hs hi)
     refine ⟨?_, ?_, ?_⟩
-    · simp only [tyOf, hl, hty, Option.bind_some, List.getElem?_map, ← hvi, Option.map_some]
+    · refine .inr ?_
+      simp only [tyOf, hl, hty, Option.bind_some, List.getElem?_map, ← hvi, Option.map_some]
     · intro c hc'
       simp only [constOf, defInst, hl, Option.bind_some] at hc'
       split at hc'
@@ -1403,7 +1434,8 @@ theorem bcOk_table {C : Ctx} {tbl tbl' : List BlockCall} {d d' : BlockCall}
 
 /-- **Terminators.** -/
 theorem sim_term {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} {fr fr' : Frame}
-    {m : Mem} (hR : FRel C fr fr') (hM : MemBounded m) (hb : fr.body = []) :
+    {m : Mem} (hR : FRel C fr fr') (hM : MemBounded m) (hb : fr.body = [])
+    (hnt : ∀ fn args et, fr.term ≠ .tryCall fn args et) :
     SimOut C env p' fr' m (step env p ⟨fr, [], m⟩) := by
   obtain ⟨B, hB, -, hterm⟩ := hR.blk
   have hcode := hR.code
@@ -1416,6 +1448,7 @@ theorem sim_term {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} {fr fr' : 
     TStep.of_step (by rw [step_term env p' _ hb']; exact h)
   cases ht : fr.term <;> cases ht' : fr'.term <;> rw [ht, ht'] at hcode <;>
     simp only [termOk, Bool.false_eq_true] at hcode
+  case tryCall.tryCall fn args et _ _ _ => exact absurd ht (hnt fn args et)
   case jump.jump bc bc' =>
     simp only [Bool.and_eq_true, List.isEmpty_iff] at hcode
     obtain ⟨hts, hbc⟩ := hcode
@@ -1632,6 +1665,17 @@ def MemTrapFree (env : Env) (p : Program) (s : State) : Prop :=
 def NoMemTrap (env : Env) (p : Program) (s : State) : Prop :=
   ∀ s', SReach env p s s' → MemTrapFree env p s'
 
+/-- At a `call_indirect` of `f` (the next statement of `s`), no function of `p` is at the callee
+address: the run premise `E2E.TrapsExplicit.indirect` (such a call would enter that function). -/
+def IndExt (env : Env) (p : Program) (f : Function) (s : State) : Prop :=
+  ∀ st rest sig callee args cv, s.frame.body = st :: rest →
+    st.inst = .callIndirect sig callee args → (∃ B ∈ f.blocks, st ∈ B.body) →
+    s.frame.get callee = .ok cv → ∀ g ∈ p.funcs, s.mem.symbols g.name ≠ some cv.toNat
+
+/-- No state reachable from `s` calls a function of `p` indirectly from `f`. -/
+def NoIndInternal (env : Env) (p : Program) (f : Function) (s : State) : Prop :=
+  ∀ s', SReach env p s s' → IndExt env p f s'
+
 /-- The environment's side of the refinement. -/
 structure EnvOk (env : Env) (C : Ctx) (p p' : Program) : Prop where
   src : ∀ fn e, C.f.extern? fn = some e → p.func? e.name = none
@@ -1639,19 +1683,852 @@ structure EnvOk (env : Env) (C : Ctx) (p p' : Program) : Prop where
   helper : HelperOk env
   ext : ExtLegal env
   keep : EnvKeepsAllocs env
+  /-- for a function with a `call_indirect`: the programs have the same functions (by name;
+  `g`'s program holds the legalisations), and the externs of `p` are a prefix of those of `p'`
+  (`g` declares `f`'s externs, then the `__*ti3` helpers): an indirect call resolves to the
+  same extern in both -/
+  ind : (∃ B ∈ C.f.blocks, ∃ st ∈ B.body, ∃ sig callee args, st.inst = .callIndirect sig callee args) →
+    p'.funcs.map (·.name) = p.funcs.map (·.name) ∧ p.externNames <+: p'.externNames
 
 theorem take_drop_eq {α : Type} {l seg : List α} {n : Nat} (h : l.take n = seg) :
     l = seg ++ l.drop n := by
   rw [← h, List.take_append_drop]
 
+/-! ## Indirect calls of externs -/
+
+theorem planOf_callInd {C : Ctx} {s : Stmt} (hp : planOf C s = some .callInd) :
+    ∃ sig callee args, s.inst = .callIndirect sig callee args ∧
+      ∀ x ∈ callee :: args ++ s.results, C.plain x = true := by
+  plan_inv s hp
+  all_goals rename_i hc
+  simp only [List.all_eq_true] at hc
+  exact ⟨_, _, _, rfl, hc⟩
+
+theorem segOk_callInd {C : Ctx} {st : Stmt} {seg : List Stmt} (h : segOk C st .callInd seg = true) :
+    seg = [st] ∧ ∀ sig callee args, st.inst = .callIndirect sig callee args →
+      C.g.sigDecls.lookup sig = C.f.sigDecls.lookup sig := by
+  simp only [segOk, Bool.and_eq_true, beq_iff_eq] at h
+  refine ⟨h.1, fun sig callee args hi => ?_⟩
+  have h2 := h.2
+  rw [hi] at h2
+  simpa using h2
+
+/-- The address `Clif.stepCallIndirect` calls for an `i64` callee value. -/
+theorem as_i64_toNat {cv : Val} {b : BitVec 64} (h : cv.as? .i64 = some b) : b.toNat = cv.toNat := by
+  obtain ⟨t, x⟩ := cv
+  unfold Val.as? at h
+  by_cases ht : t = .i64
+  · subst ht; simp at h; cases h; rfl
+  · simp [ht] at h
+
+/-- A program without a function at the address. -/
+theorem find_none_of {p : Program} {mem : Mem} {a : Nat}
+    (h : ∀ g ∈ p.funcs, mem.symbols g.name ≠ some a) :
+    p.funcs.find? (fun f => mem.symbols f.name == some a) = none := by
+  rw [List.find?_eq_none]
+  intro g hg
+  simpa using h g hg
+
+/-- The externs of `p` are a prefix of those of `p'`: an indirect call of an extern that `p`
+resolves is resolved to the same extern in `p'`. -/
+theorem callExternAt_prefix {env : Env} {p p' : Program} (hpre : p.externNames <+: p'.externNames)
+    {mem : Mem} {d : Signature} {a : Nat} {vals : List Val}
+    (h : (p.externNames.find? fun n => mem.symbols n == some a).isSome) :
+    callExternAt env p' mem d a vals = callExternAt env p mem d a vals := by
+  obtain ⟨t, ht⟩ := hpre
+  obtain ⟨n, hn⟩ := Option.isSome_iff_exists.mp h
+  simp only [callExternAt, ← ht, List.find?_append, hn, Option.some_or]
+
+theorem callExternAt_none {env : Env} {p : Program} {mem : Mem} {d : Signature} {a : Nat}
+    {vals : List Val} (h : (p.externNames.find? fun n => mem.symbols n == some a) = none) :
+    ∃ msg, callExternAt env p mem d a vals = .stuck msg := by
+  simp only [callExternAt, h, Res.ofOption]
+  exact ⟨_, rfl⟩
+
+theorem callExternAt_ok {env : Env} {p : Program} {mem : Mem} {d : Signature} {a : Nat}
+    {vals rv : List Val} {mem' : Mem} (h : callExternAt env p mem d a vals = .ok (rv, mem')) :
+    ∃ name g, env.extern name = some g ∧ g vals mem = .returned rv mem' ∧
+      rv.map (·.ty) = AbiParam.tys d.returns := by
+  unfold callExternAt at h
+  cases hf : p.externNames.find? fun n => mem.symbols n == some a with
+  | none => simp [hf, Res.ofOption, bind, Res.bind] at h
+  | some n =>
+    cases hg : env.extern n with
+    | none => simp [hf, hg, Res.ofOption, bind, Res.bind] at h
+    | some g =>
+      simp only [hf, hg, Res.ofOption, bind, Res.bind] at h
+      generalize checkTys _ vals (AbiParam.tys d.params) = c at h
+      cases c with
+      | trap c => cases h
+      | stuck m => cases h
+      | ok u =>
+        simp only at h
+        cases hout : g vals mem with
+        | returned rv0 m0 =>
+          by_cases hty : (rv0.map (·.ty) == AbiParam.tys d.returns) = true
+          · simp only [hout, hty, ite_true, pure, Res.ok.injEq, Prod.mk.injEq] at h
+            obtain ⟨rfl, rfl⟩ := h
+            exact ⟨n, g, hg, hout, by simpa using hty⟩
+          · simp [hout, hty] at h
+        | trapped c => simp [hout] at h
+        | stuck m => simp [hout] at h
+        | outOfFuel => simp [hout] at h
+
+theorem getMany_congr {fr fr' : Frame} : ∀ {xs : List ValueId}, (∀ x ∈ xs, fr'.regs x = fr.regs x) →
+    fr'.getMany xs = fr.getMany xs
+  | [], _ => rfl
+  | x :: xs, h => by
+    simp only [Frame.getMany, Frame.get, h x (List.mem_cons_self ..),
+      getMany_congr (fun y hy => h y (List.mem_cons_of_mem _ hy))]
+
+/-- **An indirect call of an extern** (`callInd`): source and target run the same statement on
+the same values (every operand and result is plain), with the same call-site signature; the
+callee address holds no function of either program (the source by `IndExt`, the target by
+`EnvOk.ind`), so both call the extern of `p` at that address (`callExternAt_prefix`). -/
+theorem sim_callInd {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} (hE : EnvOk env C p p')
+    {fr fr' : Frame} {m : Mem} (hR : FRel C fr fr') (hM : MemBounded m) {st : Stmt}
+    {rest : List Stmt} (hb : fr.body = st :: rest) (hpl : planOf C st = some .callInd)
+    {ts2 : List Stmt} (hb' : fr'.body = st :: ts2)
+    (hdecl : ∀ sig callee args, st.inst = .callIndirect sig callee args →
+      C.g.sigDecls.lookup sig = C.f.sigDecls.lookup sig)
+    (hcode : codeOk C rest fr.term ts2 fr'.term = true) (hI : IndExt env p C.f ⟨fr, [], m⟩) :
+    SimOut C env p' fr' m (step env p ⟨fr, [], m⟩) := by
+  obtain ⟨sig, callee, args, hi, hplain⟩ := planOf_callInd hpl
+  have hdecl := hdecl sig callee args hi
+  obtain ⟨B, hB, hst⟩ := frel_stmt hR hb
+  have hnd := results_nodup hG.defs hB hst
+  have hlt : ∀ x ∈ callee :: args ++ st.results, x < C.T0 := by
+    intro x hx
+    rcases List.mem_append.mp hx with hx | hx
+    · exact ops_lt hG hB hst (by rw [hi]; exact hx)
+    · exact res_lt hG hB hst hx
+  have hpeq : ∀ x ∈ callee :: args ++ st.results, fr'.regs x = fr.regs x := fun x hx =>
+    hR.peq x (hlt x hx) (plain_iff.1 (hplain x hx))
+  have hstep : step env p ⟨fr, [], m⟩ =
+      stepCallIndirect env p ⟨fr, [], m⟩ rest st.results sig callee args := by
+    simp [step, hb, hi]
+  have hstep' : step env p' ⟨fr', [], m⟩ =
+      stepCallIndirect env p' ⟨fr', [], m⟩ ts2 st.results sig callee args := by
+    simp [step, hb', hi]
+  rw [hstep]
+  have hfd : fr'.func.sigDecls.lookup sig = fr.func.sigDecls.lookup sig := by
+    rw [hR.func, hR.func']; exact hdecl
+  have hget : fr'.get callee = fr.get callee := by
+    simp only [Frame.get, hpeq callee (List.mem_cons_self ..)]
+  have hgm : fr'.getMany args = fr.getMany args :=
+    getMany_congr fun x hx => hpeq x (List.mem_cons_of_mem _ (List.mem_append_left _ hx))
+  cases hd : fr.func.sigDecls.lookup sig with
+  | none => simp [stepCallIndirect, hd, Res.ofOption, bind, Res.bind, StepResult.ofRes, SimOut]
+  | some d =>
+  cases hc : fr.get callee with
+  | trap c => exact absurd hc (get_ne_trap fr callee c)
+  | stuck msg => simp [stepCallIndirect, hd, hc, Res.ofOption, bind, Res.bind, StepResult.ofRes, SimOut]
+  | ok cv =>
+  cases hcv : cv.as? .i64 with
+  | none => simp [stepCallIndirect, hd, hc, hcv, Res.ofOption, bind, Res.bind, StepResult.ofRes, SimOut]
+  | some b =>
+  cases hv : fr.getMany args with
+  | trap c => exact absurd hv (getMany_ne_trap fr args c)
+  | stuck msg =>
+    simp [stepCallIndirect, hd, hc, hcv, hv, Res.ofOption, bind, Res.bind, StepResult.ofRes, SimOut]
+  | ok vals =>
+  have hnf := hI st rest sig callee args cv hb hi ⟨B, hB, hst⟩ hc
+  rw [← as_i64_toNat hcv] at hnf
+  have hsrc : stepCallIndirect env p ⟨fr, [], m⟩ rest st.results sig callee args =
+      StepResult.ofRes (callExternAt env p m d b.toNat vals) fun (rv, mem') =>
+        continueWith ⟨fr, [], m⟩ rest st.results rv mem' := by
+    simp [stepCallIndirect, hd, hc, hcv, hv, Res.ofOption, bind, Res.bind, StepResult.ofRes,
+      find_none_of hnf]
+  rw [hsrc]
+  have hname : ∃ B ∈ C.f.blocks, ∃ st ∈ B.body, ∃ sig callee args,
+      st.inst = .callIndirect sig callee args := ⟨B, hB, st, hst, sig, callee, args, hi⟩
+  obtain ⟨hfn, hpre⟩ := hE.ind hname
+  have hnf' : ∀ g ∈ p'.funcs, m.symbols g.name ≠ some b.toNat := by
+    intro g hg
+    have : g.name ∈ p'.funcs.map (·.name) := List.mem_map_of_mem hg
+    rw [hfn] at this
+    obtain ⟨g0, hg0, he⟩ := List.mem_map.mp this
+    rw [← he]
+    exact hnf g0 hg0
+  have htgt : stepCallIndirect env p' ⟨fr', [], m⟩ ts2 st.results sig callee args =
+      StepResult.ofRes (callExternAt env p' m d b.toNat vals) fun (rv, mem') =>
+        continueWith ⟨fr', [], m⟩ ts2 st.results rv mem' := by
+    simp [stepCallIndirect, hfd, hd, hget, hc, hcv, hgm, hv, Res.ofOption, bind, Res.bind,
+      StepResult.ofRes]
+    rw [List.find?_eq_none.mpr ?_]
+    intro g hg
+    simpa using hnf' g hg
+
+  cases hfx : (p.externNames.find? fun n => m.symbols n == some b.toNat) with
+  | none =>
+    obtain ⟨msg, hs⟩ := callExternAt_none (env := env) (d := d) (vals := vals) hfx
+    rw [hs]; trivial
+  | some n =>
+  have heq := callExternAt_prefix (env := env) (d := d) (vals := vals) hpre (by rw [hfx]; rfl)
+  cases hx : callExternAt env p m d b.toNat vals with
+  | stuck msg => trivial
+  | trap c =>
+    refine ⟨1, ?_⟩
+    rw [runLoop_succ, hstep', htgt, heq, hx]
+    rfl
+  | ok r =>
+  obtain ⟨rv, mem'⟩ := r
+  obtain ⟨name, g, hg, hout, hrt⟩ := callExternAt_ok hx
+  simp only [StepResult.ofRes_ok, continueWith]
+  cases hs : fr.regs.setMany st.results rv with
+  | none => trivial
+  | some ρ1 =>
+    obtain ⟨ρ1', hs'⟩ := setMany_of_len fr'.regs (setMany_len hs)
+    have hstep2 : step env p' ⟨fr', [], m⟩ = .next ⟨{ fr' with regs := ρ1', body := ts2 }, [], mem'⟩ := by
+      rw [hstep', htgt, heq, hx]
+      simp only [StepResult.ofRes_ok, continueWith, hs']
+    refine ⟨rfl, memBounded_of_allocs (hE.keep name g hg vals m rv mem' hout) hM,
+      { fr' with regs := ρ1', body := ts2 }, ?_, TStep.of_step hstep2⟩
+    have hsrcI : SrcInv C.f ρ1 := by
+      refine srcInv_results hG.defs hB hst hR.src (vals := rv) ?_ (fun _ _ h => by
+        rw [hi] at h; cases h) (fun _ _ _ h => by rw [hi] at h; cases h) hs
+      rw [hi]
+      simp only [Inst.resultTypes, declOfF, ← hR.func, hd, Option.map_some, hrt, AbiParam.tys]
+    refine frel_after hG hR hb hcode hs ?_ ?_ hsrcI
+    · intro v hv _ x hx
+      have hpv := plain_iff.1 (hplain v (List.mem_append_right _ hv))
+      obtain ⟨i, hi', hvi⟩ := setMany_mem hs hnd hv
+      rw [RelV.plain hpv, setMany_get hs' hnd hi', ← hvi, hx]
+    · intro w _ hni
+      refine setMany_other hs' fun hw => ?_
+      have hpw := plain_iff.1 (hplain w (List.mem_append_right _ hw))
+      exact hni w hw (res_lt hG hB hst hw) (by simp [img, hpw])
+
+/-! ## `try_call` (the normal return) -/
+
+/-- The value id `Clif.tryNormal` passes for a normal-return argument (`base`: the first of the
+fresh values the call's results are bound to). -/
+def argId (base : ValueId) : TryArg → ValueId
+  | .val v => v
+  | .ret i => base + i
+  | .exn _ => 0
+
+theorem tryNormal_cases (base : ValueId) (sig : Nat) (items : List ExnItem) (blk : BlockId) :
+    ∀ l : List TryArg,
+    ((∀ i, TryArg.exn i ∉ l) ∧ tryNormal ⟨sig, ⟨blk, l⟩, items⟩ base =
+      .ok { block := blk, args := l.map (argId base) }) ∨
+    ((∃ i, TryArg.exn i ∈ l) ∧ ∃ msg, tryNormal ⟨sig, ⟨blk, l⟩, items⟩ base = .stuck msg)
+  | [] => .inl ⟨fun _ h => (by cases h), rfl⟩
+  | a :: l => by
+    have ih := tryNormal_cases base sig items blk l
+    unfold tryNormal at ih ⊢
+    simp only [List.mapM_cons] at ih ⊢
+    generalize hm : (List.mapM (m := Res) (α := TryArg) (β := ValueId) _ l) = r at ih ⊢
+    cases r with
+    | ok xs =>
+      rcases ih with ⟨hn, h⟩ | ⟨hx, msg, h⟩
+      · simp only [Res.ok_bind, Res.pure_eq, Res.ok.injEq, BlockCall.mk.injEq, true_and] at h
+        subst h
+        cases a with
+        | val v => exact .inl ⟨fun i hi => by simp at hi; exact hn i hi, rfl⟩
+        | ret j => exact .inl ⟨fun i hi => by simp at hi; exact hn i hi, rfl⟩
+        | exn j => exact .inr ⟨⟨j, List.mem_cons_self ..⟩, _, rfl⟩
+      · simp [Res.ok_bind, Res.pure_eq] at h
+    | trap c =>
+      rcases ih with ⟨hn, h⟩ | ⟨hx, msg, h⟩ <;> simp [Res.trap_bind] at h
+    | stuck m =>
+      rcases ih with ⟨hn, h⟩ | ⟨hx, msg, h⟩
+      · simp [Res.stuck_bind] at h
+      · obtain ⟨i, hi⟩ := hx
+        cases a <;> exact .inr ⟨⟨i, List.mem_cons_of_mem _ hi⟩, _, rfl⟩
+
+theorem tryNormal_eq {et : ExnTable} {base : ValueId} {bc : BlockCall}
+    (h : tryNormal et base = .ok bc) :
+    bc = { block := et.normal.block, args := et.normal.args.map (argId base) } := by
+  obtain ⟨sig, ⟨blk, l⟩, items⟩ := et
+  rcases tryNormal_cases base sig items blk l with ⟨-, h'⟩ | ⟨-, msg, h'⟩
+  · rw [h'] at h; cases h; rfl
+  · rw [h'] at h; cases h
+
+theorem tryNormal_ne_trap (et : ExnTable) (base : ValueId) (c : TrapCode) :
+    tryNormal et base ≠ .trap c := by
+  obtain ⟨sig, ⟨blk, l⟩, items⟩ := et
+  rcases tryNormal_cases base sig items blk l with ⟨-, h'⟩ | ⟨-, msg, h'⟩ <;> rw [h'] <;>
+    exact fun h => by cases h
+
+/-- Without exception payloads, `tryNormal` passes the argument ids. -/
+theorem tryNormal_of_noExn {et : ExnTable} {base : ValueId}
+    (h : ∀ i, TryArg.exn i ∉ et.normal.args) :
+    tryNormal et base = .ok { block := et.normal.block, args := et.normal.args.map (argId base) } := by
+  obtain ⟨sig, ⟨blk, l⟩, items⟩ := et
+  rcases tryNormal_cases base sig items blk l with ⟨-, h'⟩ | ⟨⟨i, hi⟩, -⟩
+  · exact h'
+  · exact absurd hi (h i)
+
+/-- The expanded arguments of `expandTry` have no exception payloads. -/
+theorem expandTry_noExn {C : Ctx} {rg : List (List SlotEl)} :
+    ∀ {as : List TryArg} {ps : List (ValueId × Ty)} {as' : List TryArg},
+    expandTry C rg as ps = some as' → ∀ i, TryArg.exn i ∉ as'
+  | [], [], as', h, i, hi => by
+    simp only [expandTry, Option.some.injEq] at h; subst h; cases hi
+  | .val v :: as, (_, t) :: ps, as', h, i, hi => by
+    simp only [expandTry] at h
+    split at h
+    · split at h
+      · obtain ⟨r, hr, rfl⟩ := Option.map_eq_some_iff.1 h
+        simp only [List.cons_append, List.nil_append, List.mem_cons, reduceCtorEq, false_or] at hi
+        exact expandTry_noExn hr i hi
+      · cases h
+    · split at h
+      · obtain ⟨r, hr, rfl⟩ := Option.map_eq_some_iff.1 h
+        simp only [List.mem_cons, reduceCtorEq, false_or] at hi
+        exact expandTry_noExn hr i hi
+      · cases h
+  | .ret j :: as, (_, t) :: ps, as', h, i, hi => by
+    simp only [expandTry] at h
+    split at h <;> (try split at h) <;> (try cases h) <;>
+      (obtain ⟨r, hr, rfl⟩ := Option.map_eq_some_iff.1 h
+       simp only [List.cons_append, List.nil_append, List.mem_cons, reduceCtorEq, false_or] at hi
+       exact expandTry_noExn hr i hi)
+  | .exn _ :: _, _ :: _, as', h, _, _ => by simp [expandTry] at h
+  | [], _ :: _, _, h, _, _ => by simp [expandTry] at h
+  | _ :: _, [], _, h, _, _ => by simp [expandTry] at h
+
+/-- The expanded results of a return group: the source result `x` of group `i` is, in the
+target results `rv'`, at the group's slots (`groupStart`). -/
+theorem expRel_get : ∀ {rg : List (List SlotEl)} {rv rv' : List Val}, ExpRel rg rv rv' →
+    ∀ {i : Nat} {g : List SlotEl} {x : Val}, rg[i]? = some g → rv[i]? = some x →
+    match g with
+    | [.val _] => rv'[groupStart rg i]? = some x
+    | [.lo, .hi] => ∃ a b, rv'[groupStart rg i]? = some a ∧ rv'[groupStart rg i + 1]? = some b ∧
+        Halves x a b
+    | [.pad, .lo, .hi] => ∃ a b, rv'[groupStart rg i + 1]? = some a ∧
+        rv'[groupStart rg i + 2]? = some b ∧ Halves x a b
+    | _ => True
+  | [], _, _, _, i, g, x, hg, _ => by simp at hg
+  | g0 :: rg, v :: vs, rv', he, i, g, x, hg, hx => by
+    match g0, rv', he with
+    | [.val _], v' :: vs', hE =>
+      obtain ⟨rfl, hE2⟩ := hE
+      cases i with
+      | zero =>
+        simp only [List.getElem?_cons_zero, Option.some.injEq] at hg hx
+        subst hg hx
+        simp [groupStart]
+      | succ i =>
+        simp only [List.getElem?_cons_succ] at hg hx
+        have ih := expRel_get hE2 hg hx
+        have hgs : ∀ q, groupStart ([SlotEl.val q] :: rg) (i + 1) = groupStart rg i + 1 := by
+          intro q; simp [groupStart, List.take_succ_cons]; omega
+        rw [hgs]
+        split at ih <;> simp_all [List.getElem?_cons_succ, Nat.add_right_comm]
+    | [.lo, .hi], a :: b :: vs', hE =>
+      obtain ⟨hh, hE2⟩ := hE
+      cases i with
+      | zero =>
+        simp only [List.getElem?_cons_zero, Option.some.injEq] at hg hx
+        subst hg hx
+        exact ⟨a, b, by simp [groupStart], by simp [groupStart], hh⟩
+      | succ i =>
+        simp only [List.getElem?_cons_succ] at hg hx
+        have ih := expRel_get hE2 hg hx
+        have hgs : groupStart ([SlotEl.lo, .hi] :: rg) (i + 1) = groupStart rg i + 2 := by
+          simp [groupStart, List.take_succ_cons]; omega
+        rw [hgs]
+        split at ih <;> simp_all [List.getElem?_cons_succ, Nat.add_right_comm]
+    | [.pad, .lo, .hi], w :: a :: b :: vs', hE =>
+      obtain ⟨-, hh, hE2⟩ := hE
+      cases i with
+      | zero =>
+        simp only [List.getElem?_cons_zero, Option.some.injEq] at hg hx
+        subst hg hx
+        exact ⟨a, b, by simp [groupStart], by simp [groupStart], hh⟩
+      | succ i =>
+        simp only [List.getElem?_cons_succ] at hg hx
+        have ih := expRel_get hE2 hg hx
+        have hgs : groupStart ([SlotEl.pad, .lo, .hi] :: rg) (i + 1) = groupStart rg i + 3 := by
+          simp [groupStart, List.take_succ_cons]; omega
+        rw [hgs]
+        split at ih <;> simp_all [List.getElem?_cons_succ, Nat.add_right_comm]
+    | [], _, hE => simp [ExpRel] at hE
+    | [.pad], _, hE => simp [ExpRel] at hE
+    | [.lo], _, hE => simp [ExpRel] at hE
+    | [.hi], _, hE => simp [ExpRel] at hE
+    | .val _ :: _ :: _, _, hE => simp [ExpRel] at hE
+    | .lo :: .lo :: _, _, hE => simp [ExpRel] at hE
+    | .lo :: .pad :: _, _, hE => simp [ExpRel] at hE
+    | .lo :: .val _ :: _, _, hE => simp [ExpRel] at hE
+    | .lo :: .hi :: _ :: _, _, hE => simp [ExpRel] at hE
+    | .hi :: _ :: _, _, hE => simp [ExpRel] at hE
+    | .pad :: .pad :: _, _, hE => simp [ExpRel] at hE
+    | .pad :: .hi :: _, _, hE => simp [ExpRel] at hE
+    | .pad :: .val _ :: _, _, hE => simp [ExpRel] at hE
+    | [.pad, .lo], _, hE => simp [ExpRel] at hE
+    | .pad :: .lo :: .lo :: _, _, hE => simp [ExpRel] at hE
+    | .pad :: .lo :: .pad :: _, _, hE => simp [ExpRel] at hE
+    | .pad :: .lo :: .val _ :: _, _, hE => simp [ExpRel] at hE
+    | .pad :: .lo :: .hi :: _ :: _, _, hE => simp [ExpRel] at hE
+    | [.val _], [], hE => simp [ExpRel] at hE
+    | [.lo, .hi], [], hE => simp [ExpRel] at hE
+    | [.lo, .hi], [_], hE => simp [ExpRel] at hE
+    | [.pad, .lo, .hi], [], hE => simp [ExpRel] at hE
+    | [.pad, .lo, .hi], [_], hE => simp [ExpRel] at hE
+    | [.pad, .lo, .hi], [_, _], hE => simp [ExpRel] at hE
+  | _ :: _, [], _, he, _, _, _, _, _ => by
+    rename_i g0 _ _
+    rcases g0 with _ | ⟨e, _ | ⟨e2, _ | ⟨e3, _ | _⟩⟩⟩ <;> (try cases e) <;> (try cases e2) <;>
+      (try cases e3) <;> simp [ExpRel] at he
+
+theorem expRel_length : ∀ {rg : List (List SlotEl)} {rv rv' : List Val}, ExpRel rg rv rv' →
+    rv.length = rg.length
+  | [], [], _, _ => rfl
+  | g :: rg, v :: vs, rv', he => by
+    match g, rv', he with
+    | [.val _], _ :: vs', he => simp [expRel_length he.2]
+    | [.lo, .hi], _ :: _ :: vs', he => simp [expRel_length he.2]
+    | [.pad, .lo, .hi], _ :: _ :: _ :: vs', he => simp [expRel_length he.2.2]
+  | [], _ :: _, _, he => by simp [ExpRel] at he
+  | _ :: _, [], _, he => by
+    rename_i g0 _
+    rcases g0 with _ | ⟨e, _ | ⟨e2, _ | ⟨e3, _ | _⟩⟩⟩ <;> (try cases e) <;> (try cases e2) <;>
+      (try cases e3) <;> simp [ExpRel] at he
+
+/-- **The normal-return arguments.** In the source registers `ρ1` (the values of `f` as in `ρ`,
+the results `rv` at `base + i`) and the target registers `ρ1'` (the values below `base'` as in
+`ρ'`, the expanded results `rv'` at `base' + j`), the arguments `expandTry` expands are the
+source arguments split by the parameters (`BExp`). -/
+theorem expandTry_holds {C : Ctx} {ρ ρ' ρ1 ρ1' : Regs} (hV : VRel C ρ ρ')
+    {rg : List (List SlotEl)} {rv rv' : List Val} (hE : ExpRel rg rv rv') {base base' : ValueId}
+    (h1 : ∀ v, v < C.T0 → ρ1 v = ρ v) (h1r : ∀ i, i < rv.length → ρ1 (base + i) = rv[i]?)
+    (h1' : ∀ a, a < base' → ρ1' a = ρ' a) (h1r' : ∀ j, j < rv'.length → ρ1' (base' + j) = rv'[j]?)
+    (hcomp : ∀ v a b, C.pair v = some (a, b) → a < base' ∧ b < base') (hT : C.T0 ≤ base') :
+    ∀ {as as' : List TryArg} {ps : List (ValueId × Ty)} {vals : List Val},
+    expandTry C rg as ps = some as' → (∀ v, TryArg.val v ∈ as → v < C.T0) →
+    Holds ρ1 (as.map (argId base)) vals →
+    ∃ vals', Holds ρ1' (as'.map (argId base')) vals' ∧ BExp ps vals vals'
+  | [], as', [], vals, h, _, hv => by
+    simp only [expandTry, Option.some.injEq] at h
+    subst h
+    cases vals with
+    | nil => exact ⟨[], trivial, trivial⟩
+    | cons => exact hv.elim
+  | .val v :: as, as', (q, t) :: ps, vals, h, hlt, hv => by
+    cases vals with
+    | nil => exact hv.elim
+    | cons x xs =>
+      obtain ⟨hx, hxs⟩ := hv
+      have hv0 : v < C.T0 := hlt v (List.mem_cons_self ..)
+      have hlt' : ∀ w, TryArg.val w ∈ as → w < C.T0 := fun w hw => hlt w (List.mem_cons_of_mem _ hw)
+      simp only [argId] at hx
+      rw [h1 v hv0] at hx
+      simp only [expandTry] at h
+      by_cases ht : t = .i128
+      · rw [if_pos (by simp [ht])] at h
+        split at h
+        · rename_i a b hp
+          obtain ⟨rest, hr, rfl⟩ := Option.map_eq_some_iff.1 h
+          obtain ⟨vals', h2, h3⟩ := expandTry_holds hV hE h1 h1r h1' h1r' hcomp hT hr hlt' hxs
+          obtain ⟨l, hh, rfl, ha, hb⟩ := hV.get_pair hv0 hp hx
+          obtain ⟨hab, hbb⟩ := hcomp v a b hp
+          refine ⟨⟨.i64, l⟩ :: ⟨.i64, hh⟩ :: vals', ⟨?_, ?_, h2⟩, ?_⟩
+          · simp only [argId]; rw [h1' a hab, ha]
+          · simp only [argId]; rw [h1' b hbb, hb]
+          · simp only [BExp, ht, ite_true]
+            exact ⟨_, _, _, rfl, ⟨l, hh, rfl, rfl, rfl⟩, h3⟩
+        · cases h
+      · rw [if_neg (by simp [ht])] at h
+        split at h
+        · rename_i hp
+          obtain ⟨rest, hr, rfl⟩ := Option.map_eq_some_iff.1 h
+          obtain ⟨vals', h2, h3⟩ := expandTry_holds hV hE h1 h1r h1' h1r' hcomp hT hr hlt' hxs
+          refine ⟨x :: vals', ⟨?_, h2⟩, ?_⟩
+          · simp only [argId]; rw [h1' v (Nat.lt_of_lt_of_le hv0 hT), hV.get_plain hv0 hp hx]
+          · simp only [BExp, ht, ite_false]
+            exact ⟨_, rfl, h3⟩
+        · cases h
+  | .ret i :: as, as', (q, t) :: ps, vals, h, hlt, hv => by
+    cases vals with
+    | nil => exact hv.elim
+    | cons x xs =>
+      obtain ⟨hx, hxs⟩ := hv
+      have hlt' : ∀ w, TryArg.val w ∈ as → w < C.T0 := fun w hw => hlt w (List.mem_cons_of_mem _ hw)
+      simp only [argId] at hx
+      simp only [expandTry] at h
+      cases hg : rg[i]? with
+      | none => rw [hg] at h; cases h
+      | some g =>
+      have hi : i < rv.length := by
+        rw [expRel_length hE]; exact (List.getElem?_eq_some_iff.mp hg).1
+      rw [h1r i hi] at hx
+      have hlen' : ∀ j x, rv'[j]? = some x → ρ1' (base' + j) = some x := fun j x hj => by
+        rw [h1r' j (List.getElem?_eq_some_iff.mp hj).1, hj]
+      have hG := expRel_get hE hg hx
+      rw [hg] at h
+      match g, h, hG with
+      | [.val _], h, hG =>
+        dsimp only at h
+        split at h
+        · rename_i ht
+          obtain ⟨rest, hr, rfl⟩ := Option.map_eq_some_iff.1 h
+          obtain ⟨vals', h2, h3⟩ := expandTry_holds hV hE h1 h1r h1' h1r' hcomp hT hr hlt' hxs
+          refine ⟨x :: vals', ⟨by simp only [argId]; exact hlen' _ _ hG, h2⟩, ?_⟩
+          have ht' : t ≠ .i128 := by simpa using ht
+          simp only [BExp, ht', ite_false]
+          exact ⟨_, rfl, h3⟩
+        · cases h
+      | [.lo, .hi], h, hG =>
+        dsimp only at h
+        split at h
+        · rename_i ht
+          obtain ⟨rest, hr, rfl⟩ := Option.map_eq_some_iff.1 h
+          obtain ⟨vals', h2, h3⟩ := expandTry_holds hV hE h1 h1r h1' h1r' hcomp hT hr hlt' hxs
+          obtain ⟨a, b, ha, hb, hh⟩ := hG
+          refine ⟨a :: b :: vals', ⟨by simp only [argId]; exact hlen' _ _ ha,
+            by simp only [argId]; rw [← Nat.add_assoc]; exact hlen' _ _ hb, h2⟩, ?_⟩
+          have ht' : t = .i128 := by simpa using ht
+          simp only [BExp, ht', ite_true]
+          exact ⟨_, _, _, rfl, hh, h3⟩
+        · cases h
+      | [.pad, .lo, .hi], h, hG =>
+        dsimp only at h
+        split at h
+        · rename_i ht
+          obtain ⟨rest, hr, rfl⟩ := Option.map_eq_some_iff.1 h
+          obtain ⟨vals', h2, h3⟩ := expandTry_holds hV hE h1 h1r h1' h1r' hcomp hT hr hlt' hxs
+          obtain ⟨a, b, ha, hb, hh⟩ := hG
+          refine ⟨a :: b :: vals', ⟨by simp only [argId]; rw [← Nat.add_assoc]; exact hlen' _ _ ha,
+            by simp only [argId]; rw [← Nat.add_assoc]; exact hlen' _ _ hb, h2⟩, ?_⟩
+          have ht' : t = .i128 := by simpa using ht
+          simp only [BExp, ht', ite_true]
+          exact ⟨_, _, _, rfl, hh, h3⟩
+        · cases h
+      | [], h, _ => simp at h
+      | [.pad], h, _ => simp at h
+      | [.lo], h, _ => simp at h
+      | [.hi], h, _ => simp at h
+      | .val _ :: _ :: _, h, _ => simp at h
+      | .lo :: .lo :: _, h, _ => simp at h
+      | .lo :: .pad :: _, h, _ => simp at h
+      | .lo :: .val _ :: _, h, _ => simp at h
+      | .lo :: .hi :: _ :: _, h, _ => simp at h
+      | .hi :: _ :: _, h, _ => simp at h
+      | .pad :: .pad :: _, h, _ => simp at h
+      | .pad :: .hi :: _, h, _ => simp at h
+      | .pad :: .val _ :: _, h, _ => simp at h
+      | [.pad, .lo], h, _ => simp at h
+      | .pad :: .lo :: .lo :: _, h, _ => simp at h
+      | .pad :: .lo :: .pad :: _, h, _ => simp at h
+      | .pad :: .lo :: .val _ :: _, h, _ => simp at h
+      | .pad :: .lo :: .hi :: _ :: _, h, _ => simp at h
+  | .exn _ :: _, _, _ :: _, _, h, _, _ => by simp [expandTry] at h
+  | [], _, _ :: _, _, h, _, _ => by simp [expandTry] at h
+  | _ :: _, _, [], _, h, _, _ => by simp [expandTry] at h
+
+
+/-- What the target does for a source step, possibly after one more source step: the call of a
+`try_call` leaves the source at its jump to the normal-return successor, where the frames are
+not related (`FRel` is about positions in blocks of `f`); its next step (the jump) is. -/
+def SimStep (C : Ctx) (env : Env) (p p' : Program) (fr' : Frame) (m : Mem) (r : StepResult) :
+    Prop :=
+  SimOut C env p' fr' m r ∨
+    ∃ s1, r = .next s1 ∧ s1.callers = [] ∧ MemBounded s1.mem ∧
+      ∃ fr1', TStep env p' fr' m fr1' s1.mem ∧ SimOut C env p' fr1' s1.mem (step env p s1)
+
+/-- A `try_call` whose declaration, call-site signature and normal-return arguments are fine is
+the call with its results at fresh values, then the jump (`Clif.stepTryCall`). -/
+theorem stepTryCall_eq {env : Env} {p : Program} {s : State} {fn : FnRef} {args : List ValueId}
+    {et : ExnTable} {ext : ExtFunc} {d : Signature} {bc : BlockCall}
+    (hx : s.frame.func.extern? fn = some ext) (hd : s.frame.func.sigDecls.lookup et.sig = some d)
+    (hck : (AbiParam.tys d.params == AbiParam.tys ext.sig.params &&
+      AbiParam.tys d.returns == AbiParam.tys ext.sig.returns) = true)
+    (hbc : tryNormal et s.frame.func.freshValue = .ok bc) :
+    stepTryCall env p s fn args et =
+      stepCall env p { s with frame := { s.frame with body := [], term := .jump bc } } []
+        ((List.range ext.sig.returns.length).map (s.frame.func.freshValue + ·)) fn args := by
+  simp only [stepTryCall, hx, hd, hbc, Res.ofOption, bind, Res.bind, Res.check, hck, ite_true,
+    pure, StepResult.ofRes_ok]
+
+theorem termOk_tryCall {C : Ctx} {fn : FnRef} {args : List ValueId} {et : ExnTable}
+    {ts : List Stmt} {fn' : FnRef} {args' : List ValueId} {et' : ExnTable}
+    (h : termOk C (.tryCall fn args et) ts (.tryCall fn' args' et') = true) :
+    ts = [] ∧ fn' = fn ∧ et'.sig = et.sig ∧ et'.normal.block = et.normal.block ∧
+    C.entryId? ≠ some et.normal.block ∧ C.T0 ≤ C.f.freshValue ∧ C.T0 ≤ C.g.freshValue ∧
+    C.zero < C.g.freshValue ∧ (∀ a ∈ C.comps, a < C.g.freshValue) ∧
+    ∃ e d' B s' gs rg, C.f.extern? fn = some e ∧ C.g.sigDecls.lookup et.sig = some d' ∧
+      C.f.block? et.normal.block = some B ∧ sigExp e.sig = some s' ∧
+      groups e.sig.params = some gs ∧ groups e.sig.returns = some rg ∧
+      C.g.extern? fn = some { e with sig := s' } ∧
+      AbiParam.tys d'.params = AbiParam.tys s'.params ∧
+      AbiParam.tys d'.returns = AbiParam.tys s'.returns ∧
+      expandArgs C gs args = some args' ∧ expandTry C rg et.normal.args B.params = some et'.normal.args := by
+  simp only [termOk, Bool.and_eq_true, List.isEmpty_iff, beq_iff_eq, bne_iff_ne, ne_eq,
+    decide_eq_true_eq, List.all_eq_true] at h
+  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩, h7⟩, h8⟩, h9⟩, h10⟩ := h
+  refine ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, ?_⟩
+  split at h10
+  · rename_i e d' B he hd hB
+    split at h10
+    · rename_i s' gs rg hs hg hr
+      simp only [Bool.and_eq_true, beq_iff_eq] at h10
+      obtain ⟨⟨⟨⟨h11, h12⟩, h13⟩, h14⟩, h15⟩ := h10
+      exact ⟨e, d', B, s', gs, rg, he, hd, hB, hs, hg, hr, h11, h12, h13, h14, h15⟩
+    · cases h10
+  · cases h10
+
+theorem ids_of_defs {f : Function} {v : ValueId} {d : Option Ty × Option Inst}
+    (h : (v, d) ∈ defsOf f) : v ∈ idsOf f := by
+  simp only [defsOf, blockDefs, stmtDefs, List.mem_flatMap, List.mem_append, List.mem_map] at h
+  obtain ⟨B, hB, h⟩ := h
+  simp only [idsOf, List.mem_flatMap, List.mem_append]
+  refine ⟨B, hB, ?_⟩
+  rcases h with ⟨q, hq, he⟩ | ⟨st, hst, q, hq, he⟩
+  · simp only [Prod.mk.injEq] at he
+    exact .inl (.inl (List.mem_map.mpr ⟨q, hq, he.1⟩))
+  · simp only [Prod.mk.injEq] at he
+    refine .inl (.inr ⟨st, hst, .inl ?_⟩)
+    rw [← he.1]
+    rw [(List.mem_zipIdx hq).2.2]
+    exact List.getElem_mem _
+
+theorem defsOf_lookup_none {C : Ctx} (hG : Good C) {v : ValueId} (hv : C.T0 ≤ v) :
+    (defsOf C.f).lookup v = none := by
+  cases h : (defsOf C.f).lookup v with
+  | none => rfl
+  | some d =>
+    exact absurd (hG.ids v (ids_of_defs (lookup_mem h))) (Nat.not_lt.mpr hv)
+
+theorem fresh_of_ge {C : Ctx} {t base' : ValueId} (hT : C.T0 ≤ base') (hz : C.zero < base')
+    (hc : ∀ a ∈ C.comps, a < base') (ht : base' ≤ t) : C.fresh t = true := by
+  simp only [Ctx.fresh, Bool.and_eq_true, decide_eq_true_eq, bne_iff_ne, ne_eq, Bool.not_eq_true',
+    List.contains_eq_mem, decide_eq_false_iff_not]
+  refine ⟨⟨Nat.le_trans hT ht, fun h => ?_⟩, fun h => ?_⟩
+  · subst h; exact absurd (Nat.lt_of_lt_of_le hz ht) (Nat.lt_irrefl _)
+  · exact absurd (Nat.lt_of_lt_of_le (hc t h) ht) (Nat.lt_irrefl _)
+
+/-- The register relation after the call of a `try_call`: the source binds values above every
+value of `f`, the target fresh values. -/
+theorem crel_bind {C : Ctx} (hG : Good C) {fr fr' : Frame} (hR : CRel C fr fr')
+    {rs rs' : List ValueId} {vs vs' : List Val} {ρ1 ρ1' : Regs}
+    (hs : fr.regs.setMany rs vs = some ρ1) (hs' : fr'.regs.setMany rs' vs' = some ρ1')
+    (hrs : ∀ v ∈ rs, C.T0 ≤ v) (hrs' : ∀ w ∈ rs', C.fresh w = true)
+    (body : List Stmt) (term : Terminator) (body' : List Stmt) (term' : Terminator) :
+    CRel C { fr with regs := ρ1, body, term } { fr' with regs := ρ1', body := body', term := term' } := by
+  have htgt : ∀ w, C.fresh w = false → ρ1' w = fr'.regs w := fun w hw =>
+    setMany_other hs' fun hm => by rw [hrs' w hm] at hw; cases hw
+  have hsrc : ∀ v, v < C.T0 → ρ1 v = fr.regs v := fun v hv =>
+    setMany_other hs fun hm => by have := hrs v hm; omega
+  refine ⟨hR.func, hR.func', hR.slots, ?_, ?_, ?_, ?_⟩
+  · intro v x hv hx
+    simp only at hx ⊢
+    rw [hsrc v hv] at hx
+    exact (hR.vrel v x hv hx).congr fun w hw => htgt w (img_nonfresh hG hv hw)
+  · intro v hv hp
+    simp only
+    rw [hsrc v hv, htgt v (img_nonfresh hG hv (by simp [img, hp]))]
+    exact hR.peq v hv hp
+  · intro v x hx
+    simp only at hx
+    by_cases hv : v < C.T0
+    · rw [hsrc v hv] at hx; exact hR.src v x hx
+    · have hn := defsOf_lookup_none hG (Nat.le_of_not_lt hv)
+      exact ⟨.inl (by simp [tyOf, hn]), fun c h => by simp [constOf, defInst, hn] at h,
+        fun c h => by simp [concatConst, defInst, hn] at h⟩
+  · simp only
+    rw [htgt C.zero (by simp [Ctx.fresh])]
+    exact hR.zero
+
+theorem range_map_nodup (b n : Nat) : ((List.range n).map (b + ·)).Nodup :=
+  List.Pairwise.map _ (fun x y h e => h (by omega)) List.nodup_range
+
+theorem mem_range_map {b n v : Nat} (h : v ∈ (List.range n).map (b + ·)) : b ≤ v ∧ v < b + n := by
+  obtain ⟨i, hi, rfl⟩ := List.mem_map.mp h
+  simp only [List.mem_range] at hi
+  omega
+
+theorem getElem?_range_map {b n i : Nat} (h : i < n) :
+    ((List.range n).map (b + ·))[i]? = some (b + i) := by
+  simp [List.getElem?_map, List.getElem?_range h]
+
+theorem val_mem_vals {d : TryDest} {v : ValueId} (h : TryArg.val v ∈ d.args) : v ∈ d.vals :=
+  List.mem_filterMap.mpr ⟨_, h, rfl⟩
+
+/-- **A `try_call`** (two source steps: the call, then the jump to the normal-return successor):
+the target's `try_call` calls the extern with the expanded arguments (`ExtLegal`), its results
+at fresh values; after the jumps, the frames are related again. -/
+theorem sim_try {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} (hE : EnvOk env C p p')
+    {fr fr' : Frame} {m : Mem} (hR : FRel C fr fr') (hM : MemBounded m) (hb : fr.body = [])
+    {fn : FnRef} {args : List ValueId} {et : ExnTable} (ht : fr.term = .tryCall fn args et) :
+    SimStep C env p p' fr' m (step env p ⟨fr, [], m⟩) := by
+  obtain ⟨B0, hB0, -, hterm⟩ := hR.blk
+  have hlt : ∀ x ∈ args ++ et.vals, x < C.T0 := fun x hx =>
+    term_ops_lt hG hB0 (by rw [← hterm, ht]; exact hx)
+  have hcode := hR.code
+  rw [hb, ht] at hcode
+  simp only [codeOk] at hcode
+  cases ht' : fr'.term
+  all_goals first | (rw [ht'] at hcode; simp [termOk] at hcode; done) | skip
+  rename_i fn' args' et'
+  rw [ht'] at hcode
+  obtain ⟨hts, hfnn, hsig, hblk, hne, hT0f, hT0g, hzg, hcg, e, d', B, s', gs, rg, he, hd', hB,
+    hs', hgs, hrg, hfn', htyp, htyr, hexp, hexpT⟩ := termOk_tryCall hcode
+  rw [hfnn] at ht'
+  obtain ⟨gs0, rg0, hgs0, hrg0, hpar', hret'⟩ := sigExp_spec hs'
+  rw [hgs] at hgs0; cases hgs0
+  rw [hrg] at hrg0; cases hrg0
+  have hfe : fr.func.extern? fn = some e := by rw [hR.func]; exact he
+  rw [step_term env p _ hb, ht]
+  simp only [stepTerm]
+  cases hd : fr.func.sigDecls.lookup et.sig with
+  | none => exact .inl (by simp [SimOut, stepTryCall, hfe, hd, Res.ofOption, bind, Res.bind])
+  | some d =>
+  cases hck : (AbiParam.tys d.params == AbiParam.tys e.sig.params &&
+      AbiParam.tys d.returns == AbiParam.tys e.sig.returns) with
+  | false =>
+    have hckP : ¬(AbiParam.tys d.params = AbiParam.tys e.sig.params ∧
+        AbiParam.tys d.returns = AbiParam.tys e.sig.returns) := by simpa using hck
+    exact .inl (by simp [SimOut, stepTryCall, hfe, hd, Res.ofOption, bind, Res.bind, Res.check, hckP])
+  | true =>
+  have hckP : AbiParam.tys d.params = AbiParam.tys e.sig.params ∧
+      AbiParam.tys d.returns = AbiParam.tys e.sig.returns := by simpa using hck
+  cases hbc : tryNormal et fr.func.freshValue with
+  | trap c => exact absurd hbc (tryNormal_ne_trap _ _ c)
+  | stuck msg =>
+    exact .inl (by simp [SimOut, stepTryCall, hfe, hd, Res.ofOption, bind, Res.bind, Res.check, hckP, hbc])
+  | ok bc =>
+  rw [stepTryCall_eq hfe hd hck hbc]
+  have hbcE := tryNormal_eq hbc
+  -- the source call
+  have hfeJ : ({ fr with body := [], term := .jump bc } : Frame).func.extern? fn = some e := hfe
+  cases hga : fr.getMany args with
+  | trap c => exact absurd hga (getMany_ne_trap fr args c)
+  | stuck msg =>
+    have hgaJ : ({ fr with body := [], term := .jump bc } : Frame).getMany args = .stuck msg :=
+      (getMany_congr (fr := fr) (fr' := { fr with body := [], term := .jump bc }) fun _ _ => rfl).trans hga
+    exact .inl (by simp [SimOut, stepCall, hfeJ, hgaJ, Res.ofOption, bind, Res.bind])
+  | ok vals =>
+  have hgaJ : ({ fr with body := [], term := .jump bc } : Frame).getMany args = .ok vals :=
+    (getMany_congr (fr := fr) (fr' := { fr with body := [], term := .jump bc }) fun _ _ => rfl).trans hga
+  obtain ⟨vals', hv', hexp'⟩ := expandArgs_holds hR.vrel hR.zero hexp
+    (fun x hx => hlt x (List.mem_append_left _ hx)) (getMany_holds hga)
+  by_cases hty : vals.map (·.ty) ≠ AbiParam.tys e.sig.params
+  · exact .inl (by simp [SimOut, stepCall, hfeJ, hgaJ, Res.ofOption, bind, Res.bind, checkTys, hty,
+      Res.check])
+  have hty : vals.map (·.ty) = AbiParam.tys e.sig.params := by simpa using hty
+  have hty' : vals'.map (·.ty) = AbiParam.tys s'.params := by
+    rw [hpar', AbiParam.tys, ← expRel_tys (groups_spec hgs) hexp' hty]
+  cases henv : env.extern e.name with
+  | none =>
+    exact .inl (by simp [SimOut, stepCall, hfeJ, hgaJ, Res.ofOption, bind, Res.bind, checkTys, hty,
+      Res.check, hE.src fn e he, henv])
+  | some h =>
+  rw [stepCall_ext (s := ⟨{ fr with body := [], term := .jump bc }, [], m⟩) hfeJ hgaJ hty
+    (hE.src fn e he) henv]
+  -- the target's `try_call`
+  have hfe2 : fr'.func.extern? fn = some { e with sig := s' } := by rw [hR.func']; exact hfn'
+  have hd2 : fr'.func.sigDecls.lookup et'.sig = some d' := by rw [hR.func', hsig]; exact hd'
+  have hck2 : (AbiParam.tys d'.params == AbiParam.tys ({ e with sig := s' } : ExtFunc).sig.params &&
+      AbiParam.tys d'.returns == AbiParam.tys ({ e with sig := s' } : ExtFunc).sig.returns) = true := by
+    simp [htyp, htyr]
+  have hnoexn := expandTry_noExn hexpT
+  have hbc2 := tryNormal_of_noExn (base := fr'.func.freshValue) hnoexn
+  generalize hbc'e : (⟨et'.normal.block, et'.normal.args.map (argId fr'.func.freshValue)⟩ :
+    BlockCall) = bc' at hbc2
+  have htstep := stepTryCall_eq (env := env) (p := p') (s := ⟨fr', [], m⟩) (args := args')
+    hfe2 hd2 hck2 hbc2
+  have hgaJ2 : ({ fr' with body := [], term := .jump bc' } : Frame).getMany args' = .ok vals' :=
+    (getMany_congr (fr := fr') (fr' := { fr' with body := [], term := .jump bc' }) fun _ _ => rfl).trans
+      (holds_getMany hv')
+  have hstep2 := stepCall_ext (env := env) (p := p')
+    (s := ⟨{ fr' with body := [], term := .jump bc' }, [], m⟩)
+    (results := (List.range s'.returns.length).map (fr'.func.freshValue + ·)) (rest := [])
+    (args := args') (fn := fn) hfe2 hgaJ2 hty' (hE.tgt fn _ hfn') henv
+  obtain ⟨hret, htrap⟩ := hE.ext e.name h henv e.sig gs rg hgs hrg vals vals' m hty hexp'
+  have hT1 : ∀ r, step env p' ⟨fr', [], m⟩ = r ↔ stepCall env p'
+      ⟨{ fr' with body := [], term := .jump bc' }, [], m⟩ []
+      ((List.range s'.returns.length).map (fr'.func.freshValue + ·)) fn args' = r := by
+    intro r
+    rw [step_term env p' _ hts, ht']
+    simp only [stepTerm]
+    rw [htstep]
+  cases hout : h vals m with
+  | stuck msg => exact .inl trivial
+  | outOfFuel => exact .inl trivial
+  | trapped c =>
+    refine .inl ⟨1, ?_⟩
+    rw [runLoop_succ, (hT1 (.trapped c)).2 (by rw [hstep2]; simp only [htrap c hout])]
+  | returned rv m' =>
+  by_cases hrt : rv.map (·.ty) ≠ AbiParam.tys e.sig.returns
+  · have : (rv.map (·.ty) == AbiParam.tys e.sig.returns) = false := by simpa using hrt
+    exact .inl (by simp only [this]; trivial)
+  have hrt : rv.map (·.ty) = AbiParam.tys e.sig.returns := by simpa using hrt
+  obtain ⟨rv', hout', hexr⟩ := hret rv m' hout hrt
+  have hrt' : rv'.map (·.ty) = AbiParam.tys s'.returns := by
+    rw [hret', AbiParam.tys, ← expRel_tys (groups_spec hrg) hexr hrt]
+  simp only [hrt, beq_self_eq_true, ite_true, continueWith]
+  have hnrv : rv.length = e.sig.returns.length := by
+    have := congrArg List.length hrt; simpa [AbiParam.tys] using this
+  have hnrv' : rv'.length = s'.returns.length := by
+    have := congrArg List.length hrt'; simpa [AbiParam.tys] using this
+  cases hs : fr.regs.setMany ((List.range e.sig.returns.length).map (fr.func.freshValue + ·)) rv with
+  | none => exact .inl trivial
+  | some ρ1 =>
+  obtain ⟨ρ1', hs1'⟩ := setMany_of_len fr'.regs
+    (rs := (List.range s'.returns.length).map (fr'.func.freshValue + ·)) (vs := rv')
+    (by simp [hnrv'])
+  have hfv : fr.func.freshValue = C.f.freshValue := by rw [hR.func]
+  have hfv' : fr'.func.freshValue = C.g.freshValue := by rw [hR.func']
+  have hstepT : step env p' ⟨fr', [], m⟩ =
+      .next ⟨{ fr' with regs := ρ1', body := [], term := .jump bc' }, [], m'⟩ := by
+    refine (hT1 _).2 ?_
+    rw [hstep2]
+    simp only [hout', hrt', beq_self_eq_true, ite_true, continueWith, hs1']
+  have hM1 : MemBounded m' := memBounded_of_allocs (hE.keep e.name h henv vals m rv m' hout) hM
+  refine .inr ⟨_, rfl, rfl, hM1, _, TStep.of_step hstepT, ?_⟩
+  -- the jumps
+  have hCR := crel_bind hG hR.toCRel hs hs1'
+    (fun v hv => by have := (mem_range_map hv).1; rw [hfv] at this; omega)
+    (fun w hw => fresh_of_ge (base' := C.g.freshValue) hT0g hzg hcg
+      (by have := (mem_range_map hw).1; rw [hfv'] at this; exact this))
+    [] (.jump bc) [] (.jump bc')
+  simp only
+  rw [step_term env p _ rfl]
+  simp only [stepTerm]
+  cases hen : enterBlock { fr with regs := ρ1, body := [], term := .jump bc } bc with
+  | trap c => exact absurd hen (enterBlock_not_trap _ _ c)
+  | stuck msg => trivial
+  | ok fr2 =>
+  simp only [StepResult.ofRes_ok]
+  obtain ⟨fr2', hen', hR2⟩ := enter_sim_vals hG hCR (bc' := bc') (by rw [← hbc'e, hbcE]; exact hblk)
+    (by rw [hbcE]; exact hne) (fun B1 vals1 hB1 hv1 => by
+      rw [← hbc'e]
+      rw [hbcE] at hB1 hv1
+      rw [hB] at hB1
+      cases hB1
+      refine expandTry_holds hR.vrel hexr (base := fr.func.freshValue)
+        (base' := fr'.func.freshValue)
+        (fun v hv => setMany_other hs fun hm => by
+          have := (mem_range_map hm).1; rw [hfv] at this
+          exact absurd hv (Nat.not_lt.mpr (Nat.le_trans hT0f this)))
+        (fun i hi => setMany_get hs (range_map_nodup _ _) (getElem?_range_map (hnrv ▸ hi)))
+        (fun a ha => setMany_other hs1' fun hm => absurd ha (Nat.not_lt.mpr (mem_range_map hm).1))
+        (fun j hj => setMany_get hs1' (range_map_nodup _ _) (getElem?_range_map (hnrv' ▸ hj)))
+        (fun v a b hp => by
+          obtain ⟨ha, hb⟩ := mem_comps hp
+          rw [hfv']; exact ⟨hcg a ha, hcg b hb⟩)
+        (by rw [hfv']; exact hT0g) hexpT
+        (fun v hv => hlt v (List.mem_append_right _ (List.mem_append_left _ (val_mem_vals hv)))) hv1) hen
+  refine ⟨rfl, hM1, fr2', hR2, TStep.of_step ?_⟩
+  rw [step_term env p' _ rfl]
+  simp only [stepTerm, hen', StepResult.ofRes_ok]
+
 /-- **One source step**, matched by the target. -/
 theorem step_sim {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} (hE : EnvOk env C p p')
     {fr fr' : Frame} {m : Mem} (hR : FRel C fr fr') (hM : MemBounded m)
-    (hT : MemTrapFree env p ⟨fr, [], m⟩) :
-    SimOut C env p' fr' m (step env p ⟨fr, [], m⟩) := by
+    (hT : MemTrapFree env p ⟨fr, [], m⟩) (hI : IndExt env p C.f ⟨fr, [], m⟩) :
+    SimStep C env p p' fr' m (step env p ⟨fr, [], m⟩) := by
   cases hb : fr.body with
-  | nil => exact sim_term hG hR hM hb
+  | nil =>
+    by_cases htc : ∃ fn args et, fr.term = .tryCall fn args et
+    · obtain ⟨fn, args, et, ht⟩ := htc
+      exact sim_try hG hE hR hM hb ht
+    · exact .inl (sim_term hG hR hM hb fun fn args et h => htc ⟨fn, args, et, h⟩)
   | cons st rest =>
+    refine .inl ?_
     have hcode0 := hR.code
     rw [hb] at hcode0
     obtain ⟨pl, hpl, hseg, hcode⟩ := code_cons hcode0
@@ -1688,6 +2565,10 @@ theorem step_sim {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} (hE : EnvO
       obtain ⟨segA, c, hs, hc, hpo⟩ := segOk_trap hseg
       rw [hs, List.append_assoc] at hbody
       exact sim_trap hG hR hM hb hpl hpo hc hbody hcode
+    | callInd =>
+      obtain ⟨hs, hdecl⟩ := segOk_callInd hseg
+      rw [hs] at hbody
+      exact sim_callInd hG hE hR hM hb hpl hbody hdecl hcode hI
 
 /-! ## The fuel induction -/
 
@@ -1695,45 +2576,95 @@ theorem step_sim {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} (hE : EnvO
 target with the values expanded, a trap the same trap. -/
 theorem sim_run {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} (hE : EnvOk env C p p') :
     ∀ (n : Nat) (fr fr' : Frame) (m : Mem), FRel C fr fr' → MemBounded m →
-      NoMemTrap env p ⟨fr, [], m⟩ →
+      NoMemTrap env p ⟨fr, [], m⟩ → NoIndInternal env p C.f ⟨fr, [], m⟩ →
       (∀ vals m1, runLoop env p n ⟨fr, [], m⟩ = .returned vals m1 →
         ∃ vals', ExpRel C.rg vals vals' ∧ ∃ k, runLoop env p' k ⟨fr', [], m⟩ = .returned vals' m1) ∧
       (∀ c, runLoop env p n ⟨fr, [], m⟩ = .trapped c →
         ∃ k, runLoop env p' k ⟨fr', [], m⟩ = .trapped c) := by
   intro n
-  induction n with
-  | zero => intro fr fr' m _ _ _; exact ⟨fun _ _ h => (by cases h), fun _ h => (by cases h)⟩
-  | succ n ih =>
-    intro fr fr' m hR hM hT
-    have hS := step_sim hG hE hR hM (hT _ (.refl _))
-    rw [runLoop_succ]
-    cases hst : step env p ⟨fr, [], m⟩ with
-    | next s1 =>
-      rw [hst] at hS
-      obtain ⟨hcl, hM1, fr1', hR1, k, hk⟩ := hS
-      obtain ⟨sf, scl, sm⟩ := s1
-      simp only at hcl hM1 hR1 hk
+  induction n using Nat.strongRecOn with
+  | ind n ih =>
+  intro fr fr' m hR hM hT hI
+  cases n with
+  | zero => exact ⟨fun _ _ h => (by cases h), fun _ h => (by cases h)⟩
+  | succ n =>
+  -- a run from related frames after `k` target steps
+  have hcont : ∀ (j : Nat), j ≤ n → ∀ (sf fr1' : Frame) (sm : Mem) (k : Nat),
+      (∀ q, runLoop env p' (q + k) ⟨fr', [], m⟩ = runLoop env p' q ⟨fr1', [], sm⟩) →
+      FRel C sf fr1' → MemBounded sm → NoMemTrap env p ⟨sf, [], sm⟩ →
+      NoIndInternal env p C.f ⟨sf, [], sm⟩ →
+      (∀ vals m1, runLoop env p j ⟨sf, [], sm⟩ = .returned vals m1 →
+        ∃ vals', ExpRel C.rg vals vals' ∧ ∃ k, runLoop env p' k ⟨fr', [], m⟩ = .returned vals' m1) ∧
+      (∀ c, runLoop env p j ⟨sf, [], sm⟩ = .trapped c →
+        ∃ k, runLoop env p' k ⟨fr', [], m⟩ = .trapped c) := by
+    intro j hj sf fr1' sm k hk hR1 hM1 hT1 hI1
+    obtain ⟨h1, h2⟩ := ih j (by omega) sf fr1' sm hR1 hM1 hT1 hI1
+    refine ⟨fun vals m1 h => ?_, fun c h => ?_⟩
+    · obtain ⟨vals', hv, k', hk'⟩ := h1 vals m1 h
+      exact ⟨vals', hv, k' + k, by rw [hk, hk']⟩
+    · obtain ⟨k', hk'⟩ := h2 c h
+      exact ⟨k' + k, by rw [hk, hk']⟩
+  have hS := step_sim hG hE hR hM (hT _ (.refl _)) (hI _ (.refl _))
+  rw [runLoop_succ]
+  cases hst : step env p ⟨fr, [], m⟩ with
+  | next s1 =>
+    rw [hst] at hS
+    obtain ⟨sf, scl, sm⟩ := s1
+    rcases hS with ⟨hcl, hM1, fr1', hR1, k, hk⟩ | ⟨s1', hs1, hcl, hM1, fr1', ⟨k, hk⟩, hS2⟩
+    · simp only at hcl hM1 hR1 hk
       subst hcl
-      have hT1 : NoMemTrap env p ⟨sf, [], sm⟩ := fun s' hs' => hT s' (.step hst hs')
-      obtain ⟨h1, h2⟩ := ih sf fr1' sm hR1 hM1 hT1
-      refine ⟨fun vals m1 h => ?_, fun c h => ?_⟩
-      · obtain ⟨vals', hv, k', hk'⟩ := h1 vals m1 h
-        exact ⟨vals', hv, k' + k, by rw [hk, hk']⟩
-      · obtain ⟨k', hk'⟩ := h2 c h
-        exact ⟨k' + k, by rw [hk, hk']⟩
-    | done vals m1 =>
-      rw [hst] at hS
-      refine ⟨fun vals2 m2 h => ?_, fun c h => (by cases h)⟩
+      exact hcont n (Nat.le_refl _) sf fr1' sm k hk hR1 hM1
+        (fun s' hs' => hT s' (.step hst hs')) (fun s' hs' => hI s' (.step hst hs'))
+    · cases hs1
+      simp only at hcl hM1 hk hS2
+      subst hcl
+      cases n with
+      | zero => exact ⟨fun _ _ h => (by cases h), fun _ h => (by cases h)⟩
+      | succ n =>
+      dsimp only
+      rw [runLoop_succ]
+      cases hst2 : step env p ⟨sf, [], sm⟩ with
+      | next s2 =>
+        rw [hst2] at hS2
+        obtain ⟨sf2, scl2, sm2⟩ := s2
+        obtain ⟨hcl2, hM2, fr2', hR2, k2, hk2⟩ := hS2
+        simp only at hcl2 hM2 hR2 hk2
+        subst hcl2
+        exact hcont n (by omega) sf2 fr2' sm2 (k2 + k) (fun q => by rw [← Nat.add_assoc, hk, hk2])
+          hR2 hM2 (fun s' hs' => hT s' (.step hst (.step hst2 hs')))
+          (fun s' hs' => hI s' (.step hst (.step hst2 hs')))
+      | done vals m1 =>
+        rw [hst2] at hS2
+        refine ⟨fun vals2 m2 h => ?_, fun c h => (by cases h)⟩
+        simp only [Outcome.returned.injEq] at h
+        obtain ⟨rfl, rfl⟩ := h
+        obtain ⟨vals', hv, k2, hk2⟩ := hS2
+        exact ⟨vals', hv, k2 + k, by rw [hk, hk2]⟩
+      | trapped c =>
+        rw [hst2] at hS2
+        refine ⟨fun _ _ h => (by cases h), fun c2 h => ?_⟩
+        simp only [Outcome.trapped.injEq] at h
+        subst h
+        obtain ⟨k2, hk2⟩ := hS2
+        exact ⟨k2 + k, by rw [hk, hk2]⟩
+      | stuck msg => exact ⟨fun _ _ h => (by cases h), fun _ h => (by cases h)⟩
+  | done vals m1 =>
+    rw [hst] at hS
+    rcases hS with hS | ⟨s1, h, -⟩
+    · refine ⟨fun vals2 m2 h => ?_, fun c h => (by cases h)⟩
       simp only [Outcome.returned.injEq] at h
       obtain ⟨rfl, rfl⟩ := h
       exact hS
-    | trapped c =>
-      rw [hst] at hS
-      refine ⟨fun _ _ h => (by cases h), fun c2 h => ?_⟩
+    · cases h
+  | trapped c =>
+    rw [hst] at hS
+    rcases hS with hS | ⟨s1, h, -⟩
+    · refine ⟨fun _ _ h => (by cases h), fun c2 h => ?_⟩
       simp only [Outcome.trapped.injEq] at h
       subst h
       exact hS
-    | stuck msg => exact ⟨fun _ _ h => (by cases h), fun _ h => (by cases h)⟩
+    · cases h
+  | stuck msg => exact ⟨fun _ _ h => (by cases h), fun _ h => (by cases h)⟩
 
 /-! ## Function entry -/
 
@@ -1853,7 +2784,8 @@ theorem check_refines {C : Ctx} (hc : check C.f C.g C.cert = true)
     (h5' : Regs.empty.setMany (b'.params.map (·.1)) args' = some fr0'.regs)
     (hsl : fr0'.slots = fr0.slots)
     (hexp : ExpRel ((groups C.f.sig.params).getD []) args args')
-    (hM : MemBounded m) (hT : NoMemTrap env p ⟨fr0, [], m⟩) (fuel : Nat) :
+    (hM : MemBounded m) (hT : NoMemTrap env p ⟨fr0, [], m⟩)
+    (hI : NoIndInternal env p C.f ⟨fr0, [], m⟩) (fuel : Nat) :
     (∀ vals m1, runLoop env p fuel ⟨fr0, [], m⟩ = .returned vals m1 →
       ∃ vals', ExpRel ((groups C.f.sig.returns).getD []) vals vals' ∧
         ∃ k, runLoop env p' k ⟨fr0', [], m⟩ = .returned vals' m1) ∧
@@ -1919,7 +2851,7 @@ theorem check_refines {C : Ctx} (hc : check C.f C.g C.cert = true)
       · simp only
         rw [h2, h3, h3']
         exact hcode
-    obtain ⟨hr1, hr2⟩ := sim_run hG hE fuel fr0 _ m hR hM hT
+    obtain ⟨hr1, hr2⟩ := sim_run hG hE fuel fr0 _ m hR hM hT hI
     obtain ⟨k0, hk0⟩ := hzT
     refine ⟨fun vals m1 h => ?_, fun c h => ?_⟩
     · obtain ⟨vals', hv, k, hk⟩ := hr1 vals m1 h
@@ -1927,5 +2859,70 @@ theorem check_refines {C : Ctx} (hc : check C.f C.g C.cert = true)
     · obtain ⟨k, hk⟩ := hr2 c h
       exact ⟨k + k0, by rw [hk0, hk]⟩
   · cases hok
+
+/-! ## Indirect calls of an accepted legalisation -/
+
+theorem planOf_callIndirect_eq {C : Ctx} {s : Stmt} {pl : Plan} (hp : planOf C s = some pl)
+    {sig : Nat} {callee : ValueId} {args : List ValueId}
+    (hi : s.inst = .callIndirect sig callee args) : pl = .callInd := by
+  obtain ⟨rs, inst⟩ := s
+  simp only at hi
+  subst hi
+  unfold planOf at hp
+  simp only at hp
+  split at hp
+  · cases hp; rfl
+  · cases hp
+
+/-- Every `call_indirect` of a code sequence is in its rewrite. -/
+theorem codeOk_callInd {C : Ctx} : ∀ {ss : List Stmt} {t : Terminator} {ts : List Stmt}
+    {t' : Terminator}, codeOk C ss t ts t' = true → ∀ st ∈ ss, ∀ sig callee args,
+    st.inst = .callIndirect sig callee args → st ∈ ts
+  | [], _, _, _, _, st, hst, _, _, _, _ => by cases hst
+  | s :: ss, t, ts, t', h, st, hst, sig, callee, args, hi => by
+    obtain ⟨pl, hpl, hseg, hcode⟩ := code_cons h
+    rcases List.mem_cons.1 hst with rfl | hst
+    · have hpl' := planOf_callIndirect_eq hpl hi
+      subst hpl'
+      have h1 := (segOk_callInd hseg).1
+      exact List.mem_of_mem_take (by rw [h1]; exact List.mem_singleton_self _)
+    · exact List.mem_of_mem_drop (codeOk_callInd hcode st hst sig callee args hi)
+
+theorem mem_zip_of_mem {α β : Type} {l₁ : List α} {l₂ : List β} (hl : l₁.length = l₂.length)
+    {a : α} (ha : a ∈ l₁) : ∃ b ∈ l₂, (a, b) ∈ l₁.zip l₂ := by
+  obtain ⟨i, hi, rfl⟩ := List.getElem_of_mem ha
+  refine ⟨l₂[i]'(by omega), List.getElem_mem _, ?_⟩
+  have : (l₁.zip l₂)[i]'(by simp; omega) = (l₁[i], l₂[i]'(by omega)) := by simp
+  rw [← this]
+  exact List.getElem_mem _
+
+/-- **An accepted legalisation keeps every `call_indirect`** (its plan is the statement itself):
+a function `f` with a `call_indirect` has a legalisation `g` with one. -/
+theorem check_callInd {f g : Function} {cert : Cert} (hc : check f g cert = true)
+    (h : ∃ B ∈ f.blocks, ∃ st ∈ B.body, ∃ sig callee args, st.inst = .callIndirect sig callee args) :
+    ∃ B ∈ g.blocks, ∃ st ∈ B.body, ∃ sig callee args, st.inst = .callIndirect sig callee args := by
+  have hG : Good ⟨f, g, cert⟩ := check_good hc
+  obtain ⟨b, bs, b', bs', hf, hg, hl, hb, hz⟩ := hG.blocks
+  obtain ⟨B, hB, st, hst, sig, callee, args, hi⟩ := h
+  simp only at hf hg
+  rw [hf] at hB
+  rcases List.mem_cons.1 hB with rfl | hB
+  · simp only [blockOk, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq, ite_true] at hb
+    obtain ⟨-, hok⟩ := hb
+    split at hok
+    · rename_i gs z rest hgs hbody'
+      simp only [Bool.and_eq_true] at hok
+      have hm := codeOk_callInd hok.2 st hst sig callee args hi
+      refine ⟨b', ?_, st, ?_, sig, callee, args, hi⟩
+      · rw [hg]; exact List.mem_cons_self ..
+      · rw [hbody']; exact List.mem_cons_of_mem _ hm
+    · cases hok
+  · obtain ⟨B', hB', hz'⟩ := mem_zip_of_mem hl hB
+    have hok := hz B B' hz'
+    simp only [blockOk, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq, Bool.false_eq_true,
+      ite_false] at hok
+    obtain ⟨-, -, hcode⟩ := hok
+    refine ⟨B', ?_, st, codeOk_callInd hcode st hst sig callee args hi, sig, callee, args, hi⟩
+    rw [hg]; exact List.mem_cons_of_mem _ hB'
 
 end Opt.Legal

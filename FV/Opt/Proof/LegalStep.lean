@@ -118,7 +118,8 @@ theorem srcInv_stmt {f : Function} (hnd : ((defsOf f).map (·.1)).Nodup) {B : Bl
     have hxt : tys[i]? = some x.ty := by
       rw [← hty, List.getElem?_map, ← hvi]; rfl
     refine ⟨?_, ?_, ?_⟩
-    · simp only [tyOf, hl, htys, Option.bind_some]; exact hxt
+    · refine .inr ?_
+      simp only [tyOf, hl, htys, Option.bind_some]; exact hxt
     · intro c hc
       simp only [constOf, defInst, hl, Option.bind_some] at hc
       split at hc

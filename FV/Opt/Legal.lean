@@ -456,6 +456,9 @@ inductive Plan where
       (results : List ValueId)
   /-- A pure condition pattern, then `trapz`/`trapnz` (`nz`) on its result. -/
   | trap (lo hi : ValueId) (nz : Bool) (code : TrapCode)
+  /-- A `call_indirect` without `i128` operands or results: the statement itself, with the same
+  call-site signature in `g`. -/
+  | callInd
 
 namespace Plan
 
@@ -468,6 +471,7 @@ def len : Plan → Nat
   | .div .. => 1
   | .call .. => 1
   | .trap .. => Pat.cond.length + 1
+  | .callInd => 1
 
 end Plan
 
@@ -627,7 +631,9 @@ def planOf (C : Ctx) (s : Stmt) : Option Plan :=
     match P c with
     | some (lo, hi) => some (.trap lo hi true code)
     | none => same
-  | .callIndirect .., _ | .funcAddr .., _ | .unary _ .i128 _, _ | .binary _ .i128 _ _, _
+  | .callIndirect _ callee args, rs =>
+    if (callee :: args ++ rs).all C.plain then some .callInd else none
+  | .funcAddr .., _ | .unary _ .i128 _, _ | .binary _ .i128 _ _, _
   | .div _ .i128 _ _, _ | .icmp _ .i128 _ _, _ | .bitselect .i128 _ _ _, _
   | .select .i128 _ _ _, _ | .selectSpectreGuard .i128 _ _ _, _ | .bmask .i128 _, _
   | .extend _ .i128 _, _ | .iconcat .., _ | .isplit .., _ | .bitcast .i128 _ _, _
@@ -688,6 +694,10 @@ def segOk (C : Ctx) (s : Stmt) : Plan → List Stmt → Bool
       (match sigExp e.sig with
        | some s' => C.g.extern? fn == some { e with sig := s' }
        | none => false)
+  | .callInd, seg =>
+    seg == [s] && match s.inst with
+      | .callIndirect sig _ _ => C.g.sigDecls.lookup sig == C.f.sigDecls.lookup sig
+      | _ => false
   | .trap lo hi nz code, seg =>
     match seg.getLast? with
     | some { results := [], inst := .trapz c code' } =>
@@ -709,6 +719,37 @@ def expandBC (C : Ctx) : List ValueId → List (ValueId × Ty) → Option (List 
       | some (a, b) => ([a, b] ++ ·) <$> expandBC C vs ps
       | none => none
     else if C.plain v then (v :: ·) <$> expandBC C vs ps else none
+  | _, _ => none
+
+/-- The first expanded slot of return group `i` (`Legalize128.rewriteTryDest`'s `starts`). -/
+def groupStart (rg : List (List SlotEl)) (i : Nat) : Nat := ((rg.take i).map (·.length)).sum
+
+/-- The arguments of a `try_call`'s normal-return successor with parameters `ps`, the call's
+return groups `rg` (`Legalize128.rewriteTryDest`): an `i128` value as its pair, the `i128`
+return `retN` as the two slots of its pair (after a pad), other returns at their slot; no
+exception payloads (`Clif.tryNormal` is stuck on them). -/
+def expandTry (C : Ctx) (rg : List (List SlotEl)) :
+    List TryArg → List (ValueId × Ty) → Option (List TryArg)
+  | [], [] => some []
+  | .val v :: as, (_, t) :: ps =>
+    if t == .i128 then
+      match C.pair v with
+      | some (a, b) => ([.val a, .val b] ++ ·) <$> expandTry C rg as ps
+      | none => none
+    else if C.plain v then (.val v :: ·) <$> expandTry C rg as ps else none
+  | .ret i :: as, (_, t) :: ps =>
+    match rg[i]? with
+    | some [.val _] =>
+      if t != .i128 then (.ret (groupStart rg i) :: ·) <$> expandTry C rg as ps else none
+    | some [.lo, .hi] =>
+      if t == .i128 then
+        ([.ret (groupStart rg i), .ret (groupStart rg i + 1)] ++ ·) <$> expandTry C rg as ps
+      else none
+    | some [.pad, .lo, .hi] =>
+      if t == .i128 then
+        ([.ret (groupStart rg i + 1), .ret (groupStart rg i + 2)] ++ ·) <$> expandTry C rg as ps
+      else none
+    | _ => none
   | _, _ => none
 
 /-- A branch of `f` and its rewrite: same target (never the entry block), arguments split. -/
@@ -735,6 +776,26 @@ def termOk (C : Ctx) : Terminator → List Stmt → Terminator → Bool
       | some rg => expandArgs C rg vs == some vs'
       | none => false
   | .trap c, ts, .trap c' => ts.isEmpty && c' == c
+  | .tryCall fn args et, ts, .tryCall fn' args' et' =>
+    -- as `call`: arguments and returns expanded by the callee's groups; the normal-return
+    -- successor's arguments by `expandTry`; the results' fresh values (`Clif.tryNormal`, at
+    -- `freshValue`) are above every value of `f` and, in `g`, above every value `g` defines,
+    -- the pad zero and the pairs (so the call's results never overwrite a related value)
+    ts.isEmpty && fn' == fn && et'.sig == et.sig && et'.normal.block == et.normal.block &&
+      C.entryId? != some et.normal.block &&
+      decide (C.T0 ≤ C.f.freshValue) && decide (C.T0 ≤ C.g.freshValue) &&
+      decide (C.zero < C.g.freshValue) && C.comps.all (fun a => decide (a < C.g.freshValue)) &&
+      match C.f.extern? fn, C.g.sigDecls.lookup et.sig, C.f.block? et.normal.block with
+      | some e, some d', some B =>
+        match sigExp e.sig, groups e.sig.params, groups e.sig.returns with
+        | some s', some gs, some rg =>
+          C.g.extern? fn == some { e with sig := s' } &&
+            AbiParam.tys d'.params == AbiParam.tys s'.params &&
+            AbiParam.tys d'.returns == AbiParam.tys s'.returns &&
+            expandArgs C gs args == some args' &&
+            expandTry C rg et.normal.args B.params == some et'.normal.args
+        | _, _, _ => false
+      | _, _, _ => false
   | _, _, _ => false
 
 /-- Statements `ss` and terminator `t` of `f` against statements `ts` and terminator `t'` of
@@ -823,6 +884,23 @@ environment). -/
 def externClashReason : String :=
   "i128 legalized (outside backend_correct_legal: an extern is named like a function of the file)"
 
+/-- The unverified reason of an accepted legalised function with a `call_indirect` when the
+legalised file's externs do not extend the original file's (`E2E.backend_correct_legal`'s
+`hind`: an indirect call resolves to the same extern in both programs). -/
+def indExternsReason : String :=
+  "i128 legalized (outside backend_correct_legal: call_indirect, and the legalised file's externs do not extend the original's)"
+
+/-- Does `f` have a `call_indirect`? -/
+def hasCallInd (f : Clif.Function) : Bool :=
+  f.blocks.any fun b => b.body.any fun st => match st.inst with
+    | .callIndirect .. => true
+    | _ => false
+
+/-- The names of the externs the parsed functions of a file declare (`Clif.Program.externNames`
+of the file's program). -/
+def externNamesOf (pf : Clif.ParsedFile) : List String :=
+  (pf.funcs.filterMap (·.func.toOption)).flatMap fun f => f.externs.map (·.2.name)
+
 /-- The result of `parsedFile128`. -/
 structure Legalized where
   /-- The file with every legalisable function replaced by its legalisation. -/
@@ -841,6 +919,19 @@ legalised function like on any other); the others are flagged unverified. -/
 def parsedFile128 (pf : Clif.ParsedFile) : Legalized :=
   let own := pf.funcs.map (·.name)
   let clash (f : Clif.Function) : Bool := f.externs.any fun e => own.contains e.2.name
+  let lg := parsedFile128Fold pf own clash
+  -- `hind`: with an indirect call, the legalised file's externs must extend the original's
+  if (externNamesOf pf).isPrefixOf (externNamesOf lg.file) then lg
+  else
+    let ind := lg.accepted.filter fun n =>
+      pf.funcs.any fun p => p.name == n && match p.func with
+        | .ok f => hasCallInd f
+        | .error _ => false
+    { lg with accepted := lg.accepted.filter (!ind.contains ·),
+              unverified := lg.unverified ++ ind.map (·, indExternsReason) }
+where
+  parsedFile128Fold (pf : Clif.ParsedFile) (own : List String) (clash : Clif.Function → Bool) :
+      Legalized :=
   pf.funcs.foldl (fun (acc : Legalized) p =>
     let push (f : Clif.ParsedFunction) : Clif.ParsedFile :=
       { acc.file with funcs := acc.file.funcs ++ [f] }

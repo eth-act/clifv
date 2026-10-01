@@ -244,9 +244,10 @@ theorem VRel.get_pair {C : Ctx} {ρ ρ' : Regs} (h : VRel C ρ ρ') {v a b : Val
 
 /-! ## The source invariant -/
 
-/-- The value `x` of `v` agrees with the unique definition of `v` in `f`. -/
+/-- The value `x` of `v` agrees with the unique definition of `v` in `f` (if `v` is a value of
+`f`: a `try_call` binds its results to values above every value of `f`, `Clif.tryNormal`). -/
 def DefOk (f : Function) (v : ValueId) (x : Val) : Prop :=
-  tyOf f v = some x.ty ∧ (∀ c, constOf f v = some c → x.bits.toNat = c) ∧
+  (tyOf f v = none ∨ tyOf f v = some x.ty) ∧ (∀ c, constOf f v = some c → x.bits.toNat = c) ∧
     (∀ c, concatConst f v = some c → x.bits.toNat % 2 ^ 64 = c)
 
 def SrcInv (f : Function) (ρ : Regs) : Prop := ∀ v x, ρ v = some x → DefOk f v x

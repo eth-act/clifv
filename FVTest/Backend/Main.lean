@@ -71,22 +71,16 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
     | some _ => lg.unverified ++ lg.accepted.map
         (·, "i128 legalized and optimised (outside backend_correct_legal: --opt)")
     | none => lg.unverified
-  -- the mid-end and `i128` theorems cover functions without `try_call`/`try_call_indirect` and
-  -- `call_indirect` only
+  -- the mid-end theorems cover functions without `try_call`/`try_call_indirect` and
+  -- `call_indirect` only (`E2E.backend_correct_legal` covers both; `Opt.Legal.check` rejects
+  -- `try_call_indirect`)
   let unvTry := pf.funcs.filterMap fun p => match p.func with
     | .ok f =>
-      if hasTryCall f then
-        if o.opt.isSome then
-          some (p.name, "try_call (outside backend_correct_opt_proven: try_call-free functions only)")
-        else if lg.accepted.contains p.name then
-          some (p.name, "try_call in an i128-legalized function (outside backend_correct_legal)")
-        else none
+      if o.opt.isNone then none
+      else if hasTryCall f then
+        some (p.name, "try_call (outside backend_correct_opt_proven: try_call-free functions only)")
       else if Opt.hasCallIndirect f then
-        if o.opt.isSome then
-          some (p.name, "call_indirect (outside backend_correct_opt_proven: functions without indirect calls only)")
-        else if lg.accepted.contains p.name then
-          some (p.name, "call_indirect in an i128-legalized function (outside backend_correct_legal)")
-        else none
+        some (p.name, "call_indirect (outside backend_correct_opt_proven: functions without indirect calls only)")
       else none
     | .error _ => none
   let fa ← compileFileIO alloc pf (unv128 ++ unvTry)

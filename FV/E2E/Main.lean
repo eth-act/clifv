@@ -240,6 +240,10 @@ theorem callsStack_mono {f : Clif.Function} {a b : Nat} (h : CallsStack f a) (ha
     CallsStack f b := fun B hB st hst fn args e hi he =>
   ⟨Nat.le_trans (h B hB st hst fn args e hi he).1 hab, (h B hB st hst fn args e hi he).2⟩
 
+theorem tryStack_mono {f : Clif.Function} {a b : Nat} (h : TryStack f a) (hab : a ≤ b) :
+    TryStack f b := fun B hB fn args et hi e he =>
+  ⟨Nat.le_trans (h B hB fn args et hi e he).1 hab, (h B hB fn args et hi e he).2⟩
+
 /-- **`backend_correct` (M7).** For an in-subset CLIF function `f` of `p`, compiled by the
 Lean backend (`Compiled`, including M7's validators) and loaded at `base`, an Arm execution
 from an ABI entry state `s` with enough stack, whose CLIF counterpart `cs` has its stack slots at
@@ -262,7 +266,7 @@ theorem backend_correct {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp
     (hmemRules : MemRulesCorrect Isle.Aarch64.program)
     (hterms : ∀ s, TermCalls (sem s) (fun sl cm w => Rel.holds ⟨F s, syms, slotOff, out⟩ f sl cm w))
     (htries : ∀ s, TryCalls f (sem s) (fun sl cm w => Rel.holds ⟨F s, syms, slotOff, out⟩ f sl cm w)
-      env p)
+      env p out)
     (htryInds : ∀ s, TryIndCalls (sem s) (fun sl cm w => Rel.holds ⟨F s, syms, slotOff, out⟩ f sl cm w)
       env p (indSigs f))
     -- M6 + M5
@@ -307,11 +311,10 @@ theorem backend_correct {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp
     ext := fun B hB st hst fn args hi e he => hsub.externCalls B hB st hst fn args hi e he
     indSig := indSig_of_subset hsub
     subE := hsub.subsetE
-    tryRegArgs := hsub.tryRegArgs
     entryLocs := entryOk_of_check hc.lowerOk
     brIdx := hbr
     noTail := noTail_of_subset hsub
-    tries := htries s'
+    tries := ⟨out, htries s', tryStack_mono (tryStack_of_check hc.lowerOk) houtB⟩
     tryExt := hsub.tryExterns
     tryInd := htryInds s'
     tryIndSig := tryIndSig_of_subset hsub
@@ -367,7 +370,8 @@ theorem backend_correct_of_rules {p : Clif.Program} {f : Clif.Function} {k : Nat
     (fun s' => termCalls_of_rules htermRules htermUn hbranch hbranchEx (hRef s')
       (mrStable_holds ⟨F s', syms, slotOff, out⟩ f))
     (fun s' => tryCalls_of_rules htryRules htryUn (hRef s')
-      (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hcalls s'))
+      (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hmem s')
+      (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f) (hcalls s'))
     (fun s' => tryIndCalls_of_rules htryIndRules htryIndUn (hRef s')
       (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hicalls s'))
     hM6 hRef hds hcalls hicalls hmem houtB hent hres hbe hargs hargF hcs hrel htr fuel

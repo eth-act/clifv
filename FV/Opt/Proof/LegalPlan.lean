@@ -232,7 +232,8 @@ theorem constAmt_val {C : Ctx} {ρ : Regs} (hS : SrcInv C.f ρ) {y : ValueId} {b
 theorem val_ty {C : Ctx} {ρ : Regs} (hS : SrcInv C.f ρ) {y : ValueId} {b : Val}
     (hy : ρ y = some b) {t : Ty} (ht : tyOf C.f y = some t) : ∃ bb, b = ⟨t, bb⟩ := by
   have h1 := (hS y b hy).1
-  rw [ht, Option.some.injEq] at h1
+  rw [ht] at h1
+  simp only [reduceCtorEq, Option.some.injEq, false_or] at h1
   obtain ⟨bt, bb⟩ := b
   simp only at h1
   subst h1
