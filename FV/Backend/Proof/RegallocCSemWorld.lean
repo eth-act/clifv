@@ -104,6 +104,23 @@ theorem csem_loop_world {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i :
       · cases h
     · cases h
 
+/-- The LL/SC loops fall through. -/
+theorem csem_loop_ctl {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MInst}
+    {uses : List CV} {w : Arm.ArmState} {outs : List CV} {w' : Arm.ArmState} {c : Ctl}
+    (hl : (∃ ty op fl a o d s1 s2, i = .atomicRmwLoop ty op fl a o d s1 s2) ∨
+      (∃ ty fl a e r d s1, i = .atomicCasLoop ty fl a e r d s1))
+    (h : csem F ctx X i uses w = some (outs, w', c)) : c = .next := by
+  by_cases herr : Arm.r .ERR w = .None
+  · exact (csem_loop_world hl h herr).2.2
+  · rcases hl with ⟨ty, op, fl, a, o, d, s1, s2, rfl⟩ | ⟨ty, fl, a, e, r, d, s1, rfl⟩
+    all_goals
+      simp only [csem, herr, ite_false] at h
+      split at h
+      · split at h
+        · simp only [Option.some.injEq, Prod.mk.injEq] at h; exact h.2.2.symm
+        · cases h
+      · cases h
+
 theorem csem_next_world' {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MInst}
     {uses : List CV} {w : Arm.ArmState} {outs : List CV} {w' : Arm.ArmState}
     (h : csem F ctx X i uses w = some (outs, w', .next)) (hnc : ∀ info, i ≠ .call info)

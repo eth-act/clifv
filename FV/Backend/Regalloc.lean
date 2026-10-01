@@ -287,6 +287,10 @@ def ctlInstOk (b k : Nat) : MInst → Bool
   | .trapIf (.notZero r _) _ | .testBitAndBranch _ _ _ r _ | .loadExtNameGot r _
   | .loadExtNameNear r _ _ => r.isVregInt
   | .jtSequence _ _ ridx t1 t2 => ridx.isVregInt && t1.isVregInt && t2.isVregInt
+  | .atomicRmwLoop _ _ _ a o d s1 s2 =>
+    a.isVregInt && o.isVregInt && d.isVregInt && s1.isVregInt && s2.isVregInt
+  | .atomicCasLoop _ _ a e r d s1 =>
+    a.isVregInt && e.isVregInt && r.isVregInt && d.isVregInt && s1.isVregInt
   | .rets us => us.all (·.1.isVregInt)
   | .tryCall _ ti => !ti.clobberAll
   | _ => true
@@ -298,8 +302,9 @@ instruction 0 of block 0, fixed to argument registers; before it, block 0 has on
 memory (the callee-saved saves), and no edge enters block 0. The register a `cbz`/`cbnz`/`tbz`
 tests is an int vreg (the VCode semantics reads it as the instruction's use), and so are the
 destination of a symbol-address load (its def), the index and temporaries of a jump-table
-sequence, and every value of a `Rets` (so its `j`-th pair is its `j`-th operand: the returned
-values are the fixed uses in order, `E2E.RegLevelFrame`). -/
+sequence, the operands of the LL/SC loops (fixed to x24–x28, `E2E.RegLevelAtomic`), and every
+value of a `Rets` (so its `j`-th pair is its `j`-th operand: the returned values are the fixed
+uses in order, `E2E.RegLevelFrame`). -/
 def ctlCheck (vc : VCode) (rf : RFunc) : Bool :=
   (vc.blocks.toList.zipIdx.all fun (vb, b) => vb.insts.toList.zipIdx.all fun (i, k) =>
     ctlInstOk b k i) &&

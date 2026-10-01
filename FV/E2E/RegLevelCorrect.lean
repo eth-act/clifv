@@ -91,6 +91,10 @@ theorem csem_halt {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MInst
   cases hc : i.isCtl
   · exact absurd (csem_ctl hc h) (by simp)
   cases i <;> simp only [MInst.isCtl, reduceCtorEq] at hc
+  case atomicRmwLoop =>
+    exact absurd (csem_loop_ctl (.inl ⟨_, _, _, _, _, _, _, _, rfl⟩) h) (by simp)
+  case atomicCasLoop =>
+    exact absurd (csem_loop_ctl (.inr ⟨_, _, _, _, _, _, _, rfl⟩) h) (by simp)
   all_goals simp only [csem, Option.map_eq_some_iff, Option.some.injEq, Prod.mk.injEq,
     reduceCtorEq, and_false, false_and, exists_false] at h
   all_goals first
