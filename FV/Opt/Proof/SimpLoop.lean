@@ -372,7 +372,7 @@ theorem skelStmt_spec (hS : SimplifySound rules) (hK : SkeletonSound skel) (hE :
     exact ⟨hI, Mono.refl _, trivial⟩
   | succ fuel ih =>
     intro st s out sub st' o hI hk h
-    obtain ⟨hI1, hG1, hC1⟩ := runSkel_spec (allowed := allowed) hS hK hE hI (.inst s.inst)
+    obtain ⟨hI1, hG1, hC1⟩ := runSkel_spec (allowed := allowed) hS hK hE hI (.inst s.inst) hk
     rw [skelStmt] at h
     generalize runSkel skel rules allowed st (.inst s.inst) = r at h hI1 hG1 hC1
     obtain ⟨c, st1⟩ := r
@@ -692,6 +692,7 @@ theorem skelTerm_spec (hS : SimplifySound rules) (hK : SkeletonSound skel) (hE :
   | succ fuel ih =>
     intro st t extra t'' st' ch hI hk h
     obtain ⟨hI1, hG1, hC1⟩ := runSkel_spec (allowed := allowed) hS hK hE hI (.term t)
+      (fun y hy => hk y (by cases t <;> simp_all [skelReads, termOperands]))
     rw [skelTerm] at h
     generalize runSkel skel rules allowed st (.term t) = r at h hI1 hG1 hC1
     obtain ⟨c, st1⟩ := r

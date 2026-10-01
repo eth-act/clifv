@@ -12,8 +12,9 @@ The interface between the rule proofs and the pass proofs of the mid-end
   valuation `den st` of the driver's e-graph that is a *model* of it (every node of a defined
   class evaluates to the class's value, types agree) and a `make` that extends the model, every
   candidate of a defined class `v` has `v`'s value.
-* `Opt.SkeletonSound skel`: the same for `simplify_skeleton` (`Opt.SkeletonFn`); each chosen
-  simplification refines the original instruction or terminator (`Opt.SkelRefines`).
+* `Opt.SkeletonSound skel`: the same for `simplify_skeleton` (`Opt.SkeletonFn`); if the values
+  the original instruction or terminator reads (`Opt.skelReads`) are defined, each chosen
+  simplification refines it (`Opt.SkelRefines`).
 
 Only the forward direction is required: an undefined class (`den st x = none`) constrains
 nothing. The graph state type `σ` is abstract, so a rule set can only change the state through
@@ -138,9 +139,27 @@ def SkelRefines (tb : BlockId → Option TrapCode) (fr : Frame) (mem : Mem) :
     BrRefines tb (termEval fr mem t) (seqEval fr mem a t')
   | _, _ => True
 
+/-- The values a skeleton instruction or terminator reads before it can do anything else: every
+operand of an instruction (`evalInst` is stuck on an undefined one, `Opt.evalInst_ops`), the
+condition of `brif` and the index of `br_table` (branch arguments are read only on the taken
+edge). -/
+def skelReads : Isle.Opt.SkelInst → List ValueId
+  | .inst i => operands i
+  | .term (.brif c _ _) => [c]
+  | .term (.brTable x _ _) => [x]
+  | .term _ => []
+
 /-- **Obligation of a `simplify_skeleton` rule set**: under the same model assumptions as
-`SimplifySound` (and a `trapBlock` that is `tb` in every state), every candidate refines the
-original in the final valuation. -/
+`SimplifySound` (and a `trapBlock` that is `tb` in every state), if the values `i` reads
+(`skelReads`) are defined when the rules run, every candidate refines the original in the
+final valuation.
+
+The definedness premise is what makes the left-hand side's node facts usable: they hold in
+the state where the rule matched, and a defined class keeps its value in every later state,
+whereas a class undefined at the start may become defined later with a value unrelated to the
+nodes the rule saw (`GraphModel` does not keep a class's nodes across states). The driver
+discharges the undefined case itself: its reads are graph-known values, whose valuation never
+changes, so an undefined read stays undefined and the original is stuck. -/
 def SkeletonSound (skel : SkeletonFn) : Prop :=
   ∀ {σ : Type} (enodes : σ → ValueId → List Inst) (typeOf : σ → ValueId → Option Ty)
     (make : σ → Inst → ValueId × σ) (trapBlock : σ → BlockId → Option TrapCode)
@@ -151,6 +170,7 @@ def SkeletonSound (skel : SkeletonFn) : Prop :=
     ∀ st i cands names st', P st →
       skel enodes typeOf make trapBlock st i = .ok (cands, names, st') →
       P st' ∧ Valuation.Le (den st) (den st') ∧
-        ∀ c ∈ cands, SkelRefines tb { fr with regs := den st' } mem i c
+        ((∀ y ∈ skelReads i, ∃ a, den st y = some a) →
+          ∀ c ∈ cands, SkelRefines tb { fr with regs := den st' } mem i c)
 
 end Opt

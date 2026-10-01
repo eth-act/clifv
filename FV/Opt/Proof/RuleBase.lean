@@ -127,22 +127,29 @@ def RuleOk (p : Isle.Program) (r : Rule) : Prop :=
 def SimplifyRulesCorrect (p : Isle.Program) (allow : RuleId → Bool) : Prop :=
   ∀ r ∈ p.rulesOf T.«simplify».id, allow r.id = true → RuleOk p r
 
-/-- **The generic obligation of one rule of a multi-term** run on the argument `arg`: from a
-start state satisfying `I`, every environment the argument patterns relate to `[arg]`, every
-environment of the if-lets and every result `w` of the right-hand side (from later states):
-`Q r.id w` holds in the end state. `RuleOk` (`simplify`) and `SkelRuleOk`
-(`simplify_skeleton`) are instances. -/
-def RuleSpec {σ : Type} (p : Isle.Program) (G : EGraph σ) (P : σ → Prop) (den : σ → Valuation)
-    (arg : V) (I : St σ → Prop) (Q : RuleId → V → St σ → Prop) (r : Rule) : Prop :=
+/-- **The generic obligation of one rule of a multi-term** run on the argument `arg` with fuel at
+least `fm`: from a start state satisfying `I`, every environment the argument patterns relate to
+`[arg]`, every environment of the if-lets and every result `w` of the right-hand side (from later
+states): `Q r.id w` holds in the end state. `RuleOk` (`simplify`) and `SkelRuleOk`
+(`simplify_skeleton`) are instances (`RuleSpec`, fuel `fuelMin`); a multi term called from a rule
+(an if-let on `truthy`) runs with less fuel. -/
+def RuleSpecAt {σ : Type} (fm : Nat) (p : Isle.Program) (G : EGraph σ) (P : σ → Prop)
+    (den : σ → Valuation) (arg : V) (I : St σ → Prop) (Q : RuleId → V → St σ → Prop) (r : Rule) :
+    Prop :=
   ∀ (s0 : St σ), P s0.inner → I s0 →
   ∀ env1, ArgsRel p (sem G) s0 r.args [arg] (Array.replicate r.vars.length none) env1 →
-  ∀ n, fuelMin ≤ n →
+  ∀ n, fm ≤ n →
   ∀ s1 tr1 envs2 s2 tr2, P s1.inner → Valuation.Le (den s0.inner) (den s1.inner) →
     (matchIfLetsN p (sem G) cfg n r.iflets env1).run (s1, tr1) = .ok (envs2, (s2, tr2)) →
   ∀ env2 ∈ envs2,
   ∀ s3 tr3 ws s4 tr4, P s3.inner → Valuation.Le (den s2.inner) (den s3.inner) →
     (evalExprN p (sem G) cfg n r.rhs env2).run (s3, tr3) = .ok (ws, (s4, tr4)) →
   ∀ w ∈ ws, Q r.id w s4
+
+/-- `RuleSpecAt` at the fuel of a top-level rule (`fuelMin`). -/
+abbrev RuleSpec {σ : Type} (p : Isle.Program) (G : EGraph σ) (P : σ → Prop) (den : σ → Valuation)
+    (arg : V) (I : St σ → Prop) (Q : RuleId → V → St σ → Prop) (r : Rule) : Prop :=
+  RuleSpecAt fuelMin p G P den arg I Q r
 
 section
 variable {σ : Type} {G : EGraph σ} {P : σ → Prop} {den : σ → Valuation} {fr : Frame} {mem : Mem}
@@ -152,16 +159,17 @@ theorem run_liftM' {α : Type} (x : Except Err α) (s : St σ × Array RuleId) :
   cases x <;> rfl
 
 /-- **Interpreter soundness of a multi-term's rule list** (generic): if every rule accepted by
-`allow` meets `RuleSpec` for an invariant `I` and a result property `Q`, both kept when the
-valuation grows, then `applyMulti` keeps the model, only extends the valuation, and every
-result of an accepted rule satisfies `Q` in the end state. -/
-theorem applyMulti_gen (p : Isle.Program) (hG : GraphOk G P den fr mem) (allow : RuleId → Bool)
+`allow` meets `RuleSpecAt fm` for an invariant `I` and a result property `Q`, both kept when the
+valuation grows, then `applyMulti` (with fuel at least `fm` plus the number of rules) keeps the
+model, only extends the valuation, and every result of an accepted rule satisfies `Q` in the end
+state. -/
+theorem applyMulti_genAt (p : Isle.Program) (hG : GraphOk G P den fr mem) (allow : RuleId → Bool)
     (arg : V) (I : St σ → Prop) (Q : RuleId → V → St σ → Prop)
     (hI : ∀ s s', I s → Valuation.Le (den s.inner) (den s'.inner) → I s')
     (hQ : ∀ rid w s s', Q rid w s → Valuation.Le (den s.inner) (den s'.inner) → Q rid w s')
-    (term : Term) :
-    ∀ (rs : List Rule), (∀ r ∈ rs, allow r.id = true → RuleSpec p G P den arg I Q r) →
-    ∀ n, fuelMin + rs.length ≤ n →
+    (term : Term) (fm : Nat) (hfm : 0 < fm) :
+    ∀ (rs : List Rule), (∀ r ∈ rs, allow r.id = true → RuleSpecAt fm p G P den arg I Q r) →
+    ∀ n, fm + rs.length ≤ n →
     ∀ (s : St σ) tr res (s' : St σ) tr', P s.inner → I s →
       (applyMulti p (sem G) cfg n term rs [arg]).run (s, tr) = .ok (res, (s', tr')) →
       P s'.inner ∧ Valuation.Le (den s.inner) (den s'.inner) ∧
@@ -172,15 +180,15 @@ theorem applyMulti_gen (p : Isle.Program) (hG : GraphOk G P den fr mem) (allow :
   induction rs with
   | nil =>
     intro _ n _ s tr res s' tr' hP _ h
-    obtain ⟨n, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by simp [fuelMin] at *; omega⟩
+    obtain ⟨n, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by simp at *; omega⟩
     simp only [applyMulti] at h
     cases h
     exact ⟨hP, Valuation.le_refl _, fun _ _ h => by simp at h⟩
   | cons r rs ih =>
     intro hrs n hn s tr res s' tr' hP hv h
     obtain ⟨n, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by simp at hn; omega⟩
-    have hn' : fuelMin + rs.length ≤ n := by simp at hn; omega
-    have hfuel : fuelMin ≤ n := by omega
+    have hn' : fm + rs.length ≤ n := by simp at hn; omega
+    have hfuel : fm ≤ n := by omega
     obtain ⟨hE, -, -, -, hM, hI'⟩ := hmulti n
     simp only [applyMulti, bind, StateT.bind, StateT.run, get, getThe, MonadStateOf.get,
       StateT.get, pure, Except.pure, StateT.pure, Except.bind] at h
@@ -270,6 +278,19 @@ theorem applyMulti_gen (p : Isle.Program) (hG : GraphOk G P den fr mem) (allow :
       exact hQ _ _ _ _ this (Valuation.le_trans hR8 (Valuation.le_trans hR9
         (Valuation.le_trans hR6 hR4)))
     · exact hrestok rid m hmem hallow
+
+/-- `applyMulti_genAt` for top-level rules (`RuleSpec`, fuel `fuelMin`). -/
+theorem applyMulti_gen (p : Isle.Program) (hG : GraphOk G P den fr mem) (allow : RuleId → Bool)
+    (arg : V) (I : St σ → Prop) (Q : RuleId → V → St σ → Prop)
+    (hI : ∀ s s', I s → Valuation.Le (den s.inner) (den s'.inner) → I s')
+    (hQ : ∀ rid w s s', Q rid w s → Valuation.Le (den s.inner) (den s'.inner) → Q rid w s')
+    (term : Term) (rs : List Rule) (hrs : ∀ r ∈ rs, allow r.id = true → RuleSpec p G P den arg I Q r)
+    (n : Nat) (hn : fuelMin + rs.length ≤ n) (s : St σ) (tr : Array RuleId) (res : List (RuleId × V))
+    (s' : St σ) (tr' : Array RuleId) (hP : P s.inner) (hv : I s)
+    (h : (applyMulti p (sem G) cfg n term rs [arg]).run (s, tr) = .ok (res, (s', tr'))) :
+    P s'.inner ∧ Valuation.Le (den s.inner) (den s'.inner) ∧
+      ∀ rid w, (rid, w) ∈ res → allow rid = true → Q rid w s' :=
+  applyMulti_genAt p hG allow arg I Q hI hQ term fuelMin (by decide) rs hrs n hn s tr res s' tr' hP hv h
 
 /-- A `RuleOk` rule meets the generic obligation for `simplify` on `.value v` (invariant: `v`
 has value `a`; result property: a value result has value `a`). -/

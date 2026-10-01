@@ -18,6 +18,7 @@ open Isle Isle.Opt
 set_option maxHeartbeats 16000000 in
 /-- `shifts.isle:152`. -/
 theorem ok_rule_shifts_152 {p : Isle.Program} (hd : Data p) : RuleOk p rule_shifts_152 := by
-  first | rule_auto_xr rule_shifts_152 | rule_auto_xz rule_shifts_152 | rule_auto_v rule_shifts_152
+  first | opt_guard rule_auto_xr rule_shifts_152 | opt_guard rule_auto_xz rule_shifts_152 |
+    rule_auto_v rule_shifts_152
 
 end Opt.Proof

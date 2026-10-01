@@ -4,17 +4,17 @@ import FV.Opt.Proof.RuleBase
 # Rule obligations for `simplify_skeleton`, and their lifting to `Isle.Opt.simplifySkeleton`
 
 `SkelRuleOk p r`: whenever the `simplify_skeleton` rule `r` of the program `p` fires on a
-skeleton instruction `i` (in a model `den` of the e-graph with a sound `make`, and a
-`trapBlock` that is `tb`), every result of its right-hand side that the driver reads
-(`skelSimp? w = some c`) refines `i` (`Opt.SkelRefines tb`) in *every* later model state:
-the driver evaluates the refinement in the final valuation, which only grows after the rule
-ran, and `SkelRefines` is not monotone in the valuation (an undefined operand of `i` may become
-defined), so the obligation quantifies over later states.
+skeleton instruction `i` whose read values (`Opt.skelReads i`) are defined (in a model `den` of
+the e-graph with a sound `make`, and a `trapBlock` that is `tb`), every result of its right-hand
+side that the driver reads (`skelSimp? w = some c`) refines `i` (`Opt.SkelRefines tb`) in
+*every* later model state: the driver evaluates the refinement in the final valuation, which
+only grows after the rule ran. The reads being defined when the rule starts, they keep the
+values the left-hand side's node facts give them in every later state.
 
 `skeletonSound`: if every rule of `p.rulesOf simplify_skeleton` accepted by `allow` is
 `SkelRuleOk`, `Isle.Opt.simplifySkeleton` with the allow-list is `Opt.SkeletonSound`. The proof
-is `applyMulti_gen` (`FV/Opt/Proof/RuleBase.lean`) with no invariant and the result property
-"refines `i` from here on".
+is `applyMulti_gen` (`FV/Opt/Proof/RuleBase.lean`) with the invariant "the reads of `i` are
+defined" and the result property "refines `i` from here on".
 -/
 
 namespace Opt.Proof
@@ -28,12 +28,16 @@ def SkelGood {σ : Type} (P : σ → Prop) (den : σ → Valuation) (fr : Frame)
   ∀ c, skelSimp? w = some c → ∀ st, P st → Valuation.Le (den s.inner) (den st) →
     SkelRefines tb { fr with regs := den st } mem i c
 
+/-- The invariant of a `simplify_skeleton` run on `i`: the values `i` reads are defined. -/
+def SkelReadsDef {σ : Type} (den : σ → Valuation) (i : SkelInst) (s : St σ) : Prop :=
+  ∀ y ∈ Opt.skelReads i, ∃ a, den s.inner y = some a
+
 /-- **Obligation of one `simplify_skeleton` rule.** -/
 def SkelRuleOk (p : Isle.Program) (r : Rule) : Prop :=
   ∀ (σ : Type) (G : EGraph σ) (P : σ → Prop) (den : σ → Valuation) (fr : Frame) (mem : Mem)
     (tb : BlockId → Option TrapCode),
   GraphOk G P den fr mem → (∀ st, P st → G.trapBlock st = tb) →
-  ∀ i, RuleSpec p G P den (.inst (some i)) (fun _ => True)
+  ∀ i, RuleSpec p G P den (.inst (some i)) (SkelReadsDef den i)
     (fun _ w s => SkelGood P den fr mem tb i w s) r
 
 /-- The `simplify_skeleton` rules accepted by `allow` are all `SkelRuleOk`. -/
@@ -68,12 +72,18 @@ theorem skeletonSound (allow : RuleId → Bool) (hc : SkeletonRulesCorrect progr
       subst hr
       simp only [Except.ok.injEq, Prod.mk.injEq] at h
       obtain ⟨rfl, -, rfl⟩ := h
-      obtain ⟨h1, h2, h3⟩ := applyMulti_gen program hG allow (.inst (some i)) (fun _ => True)
-        (fun _ w s => SkelGood P den fr mem tb i w s) (fun _ _ _ _ => trivial)
+      -- the model facts, whatever the reads
+      obtain ⟨h1, h2, -⟩ := applyMulti_gen program hG allow (.inst (some i)) (fun _ => True)
+        (fun _ _ _ => True) (fun _ _ _ _ => trivial) (fun _ _ _ _ _ _ => trivial)
+        T.«simplify_skeleton» _ (fun _ _ _ => by unfold RuleSpec RuleSpecAt; intros; exact True.intro)
+        cfg.fuel hlen { inner := st } #[] vals s1 tr1 hP trivial hx
+      refine ⟨h1, h2, fun hd => ?_⟩
+      obtain ⟨-, -, h3⟩ := applyMulti_gen program hG allow (.inst (some i)) (SkelReadsDef den i)
+        (fun _ w s => SkelGood P den fr mem tb i w s)
+        (fun _ _ h hle y hy => let ⟨a, ha⟩ := h y hy; ⟨a, hle _ _ ha⟩)
         (fun _ _ _ _ h hle c hc st hst hle' => h c hc st hst (Valuation.le_trans hle hle'))
         T.«simplify_skeleton» _ (fun r hr ha => hc r hr ha σ G P den fr mem tb hG htb i)
-        cfg.fuel hlen { inner := st } #[] vals s1 tr1 hP trivial hx
-      refine ⟨h1, h2, ?_⟩
+        cfg.fuel hlen { inner := st } #[] vals s1 tr1 hP hd hx
       intro c hcm
       simp only [List.mem_map, List.mem_filterMap] at hcm
       obtain ⟨⟨c', nm⟩, ⟨⟨rid, w⟩, hmem, hw⟩, rfl⟩ := hcm
