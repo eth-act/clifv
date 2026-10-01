@@ -179,7 +179,7 @@ theorem lines_noTrap {c : FnCtx} {m : MInst} {ps ps' : PState} {ls : List Line}
   all_goals (repeat' (first | (split at h) | (simp only [Except.ok.injEq, Prod.mk.injEq] at h; obtain ⟨rfl, -⟩ := h)))
   all_goals first | cases h | (simp [throw, throwThe, MonadExceptOf.throw] at h) | skip
   all_goals intro ln hln n e; subst e
-  all_goals simp [MInst.lines.addOff] at hln
+  all_goals simp [MInst.lines.addOff, rmwLoopLines, rmwLoopBody, casLoopLines, casLoopHead] at hln
   all_goals first
     | exact hmf' _ _ _ ‹memFinalize _ _ _ = _› _ hln _ rfl
     | (rcases hln with hln | hln

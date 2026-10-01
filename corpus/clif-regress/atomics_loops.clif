@@ -1,0 +1,64 @@
+test run
+target aarch64
+
+; Regression runs for the LL/SC loops of `atomic_rmw` / `atomic_cas` (FV/Backend/Asm.lean
+; `rmwLoopLines`, `casLoopLines`). Run: scripts/lean-backend-filetests.sh -v <this file>.
+;
+; * smin/smax/umin/umax at i8/i16 with negative (or high-bit-set) old values: the Lean backend
+;   used to compare at 64 bits after its own extension, which picked the wrong value.
+; * %cas32 with nonzero upper register bits in the expected value (from `ireduce`): Cranelift
+;   0.136.1 compares all 64 bits (`cmp x27, x26`) and fails the exchange although the low 32
+;   bits match, so Cranelift-native DISAGREES on the first %cas32 run (an upstream bug; the
+;   expected values below are the CLIF semantics). The Lean backend compares `w26, uxtw`.
+
+function %cas32(i64, i32, i32) -> i32, i32 {
+    ss0 = explicit_slot 8
+block0(v0: i64, v1: i32, v2: i32):
+    v3 = stack_addr.i64 ss0
+    store.i32 v1, v3
+    v4 = ireduce.i32 v0
+    v5 = atomic_cas.i32 v3, v4, v2
+    v6 = load.i32 v3
+    return v5, v6
+}
+; run: %cas32(0x100000005, 5, 7) == [5, 7]
+; run: %cas32(5, 5, 7) == [5, 7]
+; run: %cas32(6, 5, 7) == [5, 5]
+
+function %smin8(i8, i8) -> i8, i8 {
+    ss0 = explicit_slot 8
+block0(v0: i8, v1: i8):
+    v3 = stack_addr.i64 ss0
+    store.i8 v0, v3
+    v5 = atomic_rmw.i8 smin v3, v1
+    v6 = load.i8 v3
+    return v5, v6
+}
+; run: %smin8(0x80, 5) == [0x80, 0x80]
+; run: %smin8(0xff, 5) == [0xff, 0xff]
+; run: %smin8(5, 0xff) == [5, 0xff]
+
+function %smax16(i16, i16) -> i16, i16 {
+    ss0 = explicit_slot 8
+block0(v0: i16, v1: i16):
+    v3 = stack_addr.i64 ss0
+    store.i16 v0, v3
+    v5 = atomic_rmw.i16 smax v3, v1
+    v6 = load.i16 v3
+    return v5, v6
+}
+; run: %smax16(0x8000, 5) == [0x8000, 5]
+; run: %smax16(5, 0xffff) == [5, 5]
+; run: %smax16(0xfffe, 0xffff) == [0xfffe, 0xffff]
+
+function %umin8(i8, i8) -> i8, i8 {
+    ss0 = explicit_slot 8
+block0(v0: i8, v1: i8):
+    v3 = stack_addr.i64 ss0
+    store.i8 v0, v3
+    v5 = atomic_rmw.i8 umin v3, v1
+    v6 = load.i8 v3
+    return v5, v6
+}
+; run: %umin8(0x80, 5) == [0x80, 5]
+; run: %umin8(5, 0xff) == [5, 5]
