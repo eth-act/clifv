@@ -8,9 +8,17 @@ set -euo pipefail
 name=$1; base=${2:-main}
 root=$(cd "$(dirname "$0")/.." && pwd)
 wt=$(dirname "$root")/clifv-wt/$name
-git -C "$root" worktree add -q -b "agent/$name" "$wt" "$base"
-ln -s "$root/third_party/wasmtime" "$wt/third_party/wasmtime"
-ln -s "$root/third_party/lnsym-upstream" "$wt/third_party/lnsym-upstream"
-[ -d "$root/.lake" ] && cp -a "$root/.lake" "$wt/.lake"
-[ -d "$root/rust/target" ] && cp -a "$root/rust/target" "$wt/rust/target"
+# Idempotent: an existing branch agent/<name> is reused, an existing worktree is completed
+# (missing third_party links and caches are added), so a half-created worktree never remains.
+if [ ! -d "$wt" ]; then
+  if git -C "$root" show-ref --verify --quiet "refs/heads/agent/$name"; then
+    git -C "$root" worktree add -q "$wt" "agent/$name"
+  else
+    git -C "$root" worktree add -q -b "agent/$name" "$wt" "$base"
+  fi
+fi
+[ -e "$wt/third_party/wasmtime" ] || ln -s "$root/third_party/wasmtime" "$wt/third_party/wasmtime"
+[ -e "$wt/third_party/lnsym-upstream" ] || ln -s "$root/third_party/lnsym-upstream" "$wt/third_party/lnsym-upstream"
+if [ -d "$root/.lake" ] && [ ! -d "$wt/.lake" ]; then cp -a "$root/.lake" "$wt/.lake"; fi
+if [ -d "$root/rust/target" ] && [ ! -d "$wt/rust/target" ]; then cp -a "$root/rust/target" "$wt/rust/target"; fi
 echo "$wt"
