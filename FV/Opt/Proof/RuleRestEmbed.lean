@@ -206,7 +206,7 @@ macro "rule_bits_w" : tactic => `(tactic| (
             opt_widths <;> sem_simp_b <;> (try int_bv) <;>
             (try simp only [bif_none_right_eq_some, Option.ite_none_right_eq_some] at *) <;>
             (try opt_destruct) <;>
-            (try simp only [Val.mk.injEq, true_and, Ty.width, Nat.reduceAdd, heq_eq_eq]) <;>
+            (try apply val_congr) <;>
             first | ac_rfl | bv_decide))))
 
 set_option hygiene false in
