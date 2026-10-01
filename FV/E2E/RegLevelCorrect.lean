@@ -2,6 +2,7 @@ import FV.E2E.RegLevelFrame
 import FV.E2E.RegLevelTry
 import FV.Backend.Proof.RegallocCover
 import FV.Backend.Proof.RegallocCSemWorld
+import FV.E2E.RegLevelAtomic
 
 /-!
 # The register-level theorem (M6): `RegLevelCorrect` for the backend's code
@@ -9,7 +10,7 @@ import FV.Backend.Proof.RegallocCSemWorld
 * `realizes_all`: the machine `ArmStepX X H fa` realises the allocated code under `Q ∧ AInv`,
   by cases on the item (moves, `realizes_op_next` via `formOk_sound` for the covered
   straight-line forms, `Args`, calls, symbol addresses, islands, `trapIf` not taken, branches,
-  jump tables; returns and traps end the run, their `Q` is `True`);
+  jump tables, the LL/SC loops; returns and traps end the run, their `Q` is `True`);
 * `forward_last`: along a VCode step from a related configuration the machine reaches the
   allocated-code configuration whose next `MStep` is related to the VCode's successor;
 * `regLevelCorrect_backend`: the prologue (`q_init`) puts the machine at the entry
@@ -91,6 +92,10 @@ theorem csem_halt {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MInst
   cases hc : i.isCtl
   · exact absurd (csem_ctl hc h) (by simp)
   cases i <;> simp only [MInst.isCtl, reduceCtorEq] at hc
+  case atomicRmwLoop =>
+    exact absurd (csem_loop_ctl (.inl ⟨_, _, _, _, _, _, _, _, rfl⟩) h) (by simp)
+  case atomicCasLoop =>
+    exact absurd (csem_loop_ctl (.inr ⟨_, _, _, _, _, _, _, rfl⟩) h) (by simp)
   all_goals simp only [csem, Option.map_eq_some_iff, Option.some.injEq, Prod.mk.injEq,
     reduceCtorEq, and_false, false_and, exists_false] at h
   all_goals first
@@ -264,6 +269,12 @@ theorem realizes_all {R : RL} (hR : R.Wf) (hC : CalleeOk R.F R.X R.H)
       case emitIsland nb => exact fin 0 c' hstep (realizes_island hq hvb hi hstep)
       case jtSequence d ts ridx t1 t2 =>
         obtain ⟨n, c'', hm, hq'⟩ := realizes_jt hR hq hvb hi hstep
+        exact fin n c'' hm hq'
+      case atomicRmwLoop ty op fl ra ro rd r1 r2 =>
+        obtain ⟨n, c'', hm, hq'⟩ := realizes_rmwLoop hR hq hvb hi hstep
+        exact fin n c'' hm hq'
+      case atomicCasLoop ty fl ra re rx rd r1 =>
+        obtain ⟨n, c'', hm, hq'⟩ := realizes_casLoop hR hq hvb hi hstep
         exact fin n c'' hm hq'
       case tryCall info ti =>
         have hc : ctl = .goto ti.handlers.length := by

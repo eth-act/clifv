@@ -176,6 +176,8 @@ theorem driverSem_csem (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) :
     | loadExtNameGot rd n => rfl
     | loadExtNameNear rd n o => rfl
     | emitIsland n => rfl
+    | atomicRmwLoop ty op fl a o d s1 s2 => rfl
+    | atomicCasLoop ty fl a e r d s1 => rfl
     | _ =>
       rw [csem_straight rfl, csem_straight rfl, csemWF_mapRegs hg, mspec_mapRegs hg,
         straightSem_mapRegs hg]

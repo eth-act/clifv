@@ -2,6 +2,12 @@
 
 ## Changelog / Status
 
+- **2026-10-02 (agent/atomics-proof stage B), E grows by `atomic_rmw` (all 11 operations) and
+  `atomic_cas`**, i8–i64 little-endian (`Compile.instE`). Their root rules (2357–2377, 2390)
+  are proven (`IselAtomic.lean`); the LL/SC loops are covered by one symbolic run of the loop
+  body (`LoopRun.lean`, `RegLevelAtomic.lean`) on the single-threaded Arm model
+  (`docs/decisions/arm-model.md`, "Atomics": `stlxr` succeeds and writes status 0).
+
 - **2026-10-01 (agent/atomics-proof), E grows by `bmask`, `atomic_load`, `atomic_store` and
   `fence`** (`Compile.instE`; rows in the E table). `E2E.backend_correct_final` now covers
   functions with them: their root rules are proven (`FV/Backend/Proof/IselAtomic.lean`), and
