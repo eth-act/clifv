@@ -389,12 +389,12 @@ def extOk (e : ExtendOp) : Prop := e = .uxtw ∨ e = .uxtx ∨ e = .sxtw ∨ e =
 
 instance (e : ExtendOp) : Decidable (extOk e) := by unfold extOk; infer_instance
 
-/-- The forms `csem` gives an explicit meaning (control flow, calls, symbols, `Args`/`Rets`);
-every other form is `straightSem`. -/
+/-- The forms `csem` gives an explicit meaning (control flow, calls, symbols, `Args`/`Rets`, the
+LL/SC loops); every other form is `straightSem`. -/
 def _root_.Backend.MInst.isCtl : MInst → Bool
   | .call .. | .args .. | .rets .. | .loadExtNameGot .. | .loadExtNameNear .. | .jump ..
   | .condBr .. | .testBitAndBranch .. | .trapIf .. | .udf .. | .emitIsland .. | .jtSequence ..
-  | .tryCall .. => true
+  | .tryCall .. | .atomicRmwLoop .. | .atomicCasLoop .. => true
   | _ => false
 
 /-- `aluRRImmLogic` ops the emitter expands. -/
@@ -550,6 +550,25 @@ def mspec (sb : Nat) : Sem := fun i uses w =>
     else none
   | i, us => ispec i us w
 
+open Classical in
+/-- The meaning of an LL/SC loop: its body (`ldaxr` … `stlxr`, without the loop label and the
+back edge) run once on the world with the use values in the fixed use registers (`regs`), when
+the access avoids the frame addresses `F` and the run ends without error, with the program
+unchanged: in the single-threaded Arm model the exclusive store succeeds (`stlxr`'s status
+register is 0, so the `cbnz` back edge is not taken; `docs/decisions/arm-model.md`). The defs
+are read back from their fixed registers (x27, then the scratch registers, whose values the
+allocated-code semantics havocs, `MInst.keptDefs`). -/
+noncomputable def loopSem (F : BitVec 64 → Prop) (ty : CTy) (a : CV) (body : List Line)
+    (regs : List Reg) (uses : List CV) (defs : List Reg) (w : Arm.ArmState) :
+    Option (List CV × Arm.ArmState × Ctl) :=
+  if AtomTy ty ∧ Avoids F ty.bytes (lo64 a) ∧ Arm.r .ERR w = .None then
+    match execLines env0 body ((regs.zip uses).foldl (fun s p => setReg s p.1 p.2) w) with
+    | some t' =>
+      if Arm.r .ERR t' = .None ∧ t'.program = w.program then some (defs.map (regVal t'), t', .next)
+      else none
+    | none => none
+  else none
+
 /-- **The concrete instruction semantics.** -/
 noncomputable def csem (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) : ISem CV Arm.ArmState :=
   fun i uses w =>
@@ -588,6 +607,23 @@ noncomputable def csem (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) : ISe
       else
         let i := ((lo64 a).setWidth 32).toNat
         if i < ts.length then some ([ofX 0, ofX 0], w, .goto (i + 1)) else none
+    | _ => none
+  -- the LL/SC loops, once through their body: `atomic_rmw`'s `ldaxr; op; stlxr`;
+  -- `atomic_cas`'s `ldaxr; cmp`, then (equal values: `b.ne` not taken) the `stlxr`
+  | .atomicRmwLoop ty op fl _ _ _ _ _ =>
+    match uses with
+    | [u, x] => loopSem F ty u (rmwLoopBody ty.bits op fl) [.x 25, .x 26] [u, x] [.x 27, .x 24, .x 28] w
+    | _ => none
+  | .atomicCasLoop ty fl _ _ _ _ _ =>
+    match uses with
+    | [u, e, x] =>
+      match loopSem F ty u (casLoopHead ty.bits fl) [.x 25, .x 26, .x 28] [u, e, x]
+          [.x 27, .x 24] w with
+      | some (outs, t1, _) =>
+        if Arm.ConditionHolds Cond.ne.bits t1 then some (outs, t1, .next)
+        else loopSem F ty u [.ins (.stlxr ty.bits (.x 24) (.x 28) (.x 25)) fl.trapCode] [] []
+          [.x 27, .x 24] t1
+      | none => none
     | _ => none
   | i => if csemWF ctx i uses = true ∧ Arm.r .ERR w = .None ∧ Arm.CheckSPAlignment w then
       straightSem F ctx i uses w

@@ -217,7 +217,7 @@ def instData (f : Clif.Function) : Clif.Inst → Except String V
     if ty != .i64 then throw "func_addr with a non-i64 address type"
     else pure (instDataV "FuncAddr" [opcodeV "FuncAddr", .op (.funcRef fn)])
   -- `bmask`, `fence` and the atomic opcodes lower via Cranelift's non-LSE rules (cg_clif's
-  -- `has_lse = 0`). `atomic_rmw`/`atomic_cas` (LL/SC loops) are outside E (`Compile.instE`).
+  -- `has_lse = 0`; `atomic_rmw`/`atomic_cas` as LL/SC loops).
   | .bmask ty x =>
     if eTy ty then pure (instDataV "Unary" [opcodeV "Bmask", .value x]) else throw "bmask.i128"
   | .atomicLoad ty flags p =>

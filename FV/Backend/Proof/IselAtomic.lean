@@ -9,12 +9,12 @@ import FV.Backend.Proof.IselCmpRoot
 
 The root rules of `lower` for `bmask` (rule id 936, `lower_bmask`: `cmp #0` + `csetm ne`, an
 8/16-bit value masked first), `fence` (1024, `dmb ish`), `atomic_load` (983, `ldar`),
-`atomic_store` (984, `stlr`), and the `uextend` of an `atomic_load` (810, never matches:
-`is_sinkable_inst` fails). `bmask` and `fence` are `LowerRuleOk`; the atomics are memory rules
-(`MemRuleOk`, under `MemRefines`' `ldar`/`stlr` clauses). The CLIF semantics is single-threaded
-(`Clif.evalInst`: a load or a store). `atomic_rmw` (994–1004) and `atomic_cas` (1007) lower to
-the LL/SC loops; their instructions are outside E (`Compile.instE`), so their root rules never
-match an instruction of `CtxInv` (`atomic_loop_ok`).
+`atomic_store` (984, `stlr`), `atomic_rmw` (994–1004, one per operation: the LL/SC
+pseudo-instruction `AtomicRMWLoop`), `atomic_cas` (1007, `AtomicCASLoop`), and the `uextend` of
+an `atomic_load` (810, never matches: `is_sinkable_inst` fails). `bmask` and `fence` are
+`LowerRuleOk`; the atomics are memory rules (`MemRuleOk`, under `MemRefines`' atomic clauses).
+The CLIF semantics is single-threaded (`Clif.evalInst`: a load, a store, or a load then a
+store).
 
 `memRulesCorrect_program` collects every memory root rule.
 -/
@@ -58,6 +58,36 @@ theorem fence_helper_ok {n : Nat} (hn : 40 ≤ n) {s s' : LState × Array RuleId
   obtain ⟨st, tr⟩ := s
   mem_split hp hc h 466
   mem_inv hp [] at hm he
+
+set_option maxHeartbeats 2000000 in
+include hp hc in
+/-- **`atomic_rmw_loop`**: three fresh registers (old value, two scratch) and `AtomicRMWLoop`. -/
+theorem atomic_rmw_loop_ok {n : Nat} (hn : 40 ≤ n) {o a x t flv : V}
+    {s s' : LState × Array RuleId} {v : V}
+    (h : ApplyInternal p (sem ctx) cfg n 27 612 [o, a, x, t, flv] s v s') :
+    ∃ m, MInst.ofV (.data 58 37 [t, o, flv, a, x, .reg (s.1.fresh .int).1,
+        .reg ((s.1.fresh .int).2.fresh .int).1,
+        .reg (((s.1.fresh .int).2.fresh .int).2.fresh .int).1]) = some m ∧
+      v = .reg (s.1.fresh .int).1 ∧
+      s'.1 = (((s.1.fresh .int).2.fresh .int).2.fresh .int).2.emit m := by
+  obtain ⟨st, tr⟩ := s
+  mem_split hp hc h 612
+  mem_inv hp [] at hm he
+  first | exact ⟨_, ‹_›, rfl, rfl⟩ | exact ⟨_, ‹_›, rfl⟩ | exact ⟨_, ‹_›⟩
+
+set_option maxHeartbeats 2000000 in
+include hp hc in
+/-- **`atomic_cas_loop`**: two fresh registers (old value, scratch) and `AtomicCASLoop`. -/
+theorem atomic_cas_loop_ok {n : Nat} (hn : 40 ≤ n) {a e x t flv : V}
+    {s s' : LState × Array RuleId} {v : V}
+    (h : ApplyInternal p (sem ctx) cfg n 27 613 [a, e, x, t, flv] s v s') :
+    ∃ m, MInst.ofV (.data 58 38 [t, flv, a, e, x, .reg (s.1.fresh .int).1,
+        .reg ((s.1.fresh .int).2.fresh .int).1]) = some m ∧
+      v = .reg (s.1.fresh .int).1 ∧ s'.1 = ((s.1.fresh .int).2.fresh .int).2.emit m := by
+  obtain ⟨st, tr⟩ := s
+  mem_split hp hc h 613
+  mem_inv hp [] at hm he
+  first | exact ⟨_, ‹_›, rfl, rfl⟩ | exact ⟨_, ‹_›, rfl⟩ | exact ⟨_, ‹_›⟩
 
 include hp hc in
 /-- **`csetm`**: a fresh destination and `CSetm` (a consumer returning the register). -/
@@ -223,6 +253,67 @@ theorem evalInst_atomicStore_inv {fr : Clif.Frame} {cm cm' : Clif.Mem} {ty : Cli
   simp only [Clif.Res.pure_eq, Clif.Res.ok.injEq] at hs
   exact ⟨a, pv, ha, get_regs hpv, checkAccess_ok hca, h.1.symm, h.2.symm.trans hs.symm⟩
 
+theorem evalInst_atomicRmw_inv {fr : Clif.Frame} {cm cm' : Clif.Mem} {op : Clif.AtomicRmwOp}
+    {ty : Clif.Ty} {fl : Clif.MemFlags} {p x : Nat} {vals : List Clif.Val}
+    (hfl : fl.endianness ≠ some .big)
+    (h : Clif.evalInst fr cm (.atomicRmw op ty fl p x) = .ok (vals, cm')) :
+    ∃ pv a old, fr.regs p = some pv ∧ fr.getAs x ty = .ok a ∧
+      cm.valid (Clif.effAddr pv 0) ty.bytes = true ∧
+      cm.readBits false (Clif.effAddr pv 0) ty.bytes ty.width = some old ∧ vals = [⟨ty, old⟩] ∧
+      cm' = cm.writeBits false (Clif.effAddr pv 0) ty.bytes (Clif.Sem.atomicRmw op old a) := by
+  simp only [Clif.evalInst] at h
+  obtain ⟨pv, hpv, h⟩ := res_bind_eq_ok h
+  obtain ⟨a, ha, h⟩ := res_bind_eq_ok h
+  obtain ⟨_, -, h⟩ := res_bind_eq_ok h
+  obtain ⟨old, hl, h⟩ := res_bind_eq_ok h
+  obtain ⟨m', hs, h⟩ := res_bind_eq_ok h
+  simp only [Clif.Res.pure_eq, Clif.Res.ok.injEq, Prod.mk.injEq] at h
+  unfold Clif.Mem.load at hl
+  obtain ⟨_, hca, hl⟩ := res_bind_eq_ok hl
+  rw [big_false hfl] at hl
+  unfold Clif.Mem.store at hs
+  obtain ⟨_, -, hs⟩ := res_bind_eq_ok hs
+  obtain ⟨_, -, hs⟩ := res_bind_eq_ok hs
+  rw [big_false hfl] at hs
+  simp only [Clif.Res.pure_eq, Clif.Res.ok.injEq] at hs
+  exact ⟨pv, a, old, get_regs hpv, ha, checkAccess_ok hca, res_ofOption_ok hl, h.1.symm,
+    h.2.symm.trans hs.symm⟩
+
+theorem evalInst_atomicCas_inv {fr : Clif.Frame} {cm cm' : Clif.Mem} {ty : Clif.Ty}
+    {fl : Clif.MemFlags} {p e x : Nat} {vals : List Clif.Val} (hfl : fl.endianness ≠ some .big)
+    (h : Clif.evalInst fr cm (.atomicCas ty fl p e x) = .ok (vals, cm')) :
+    ∃ pv ev a old, fr.regs p = some pv ∧ fr.getAs e ty = .ok ev ∧ fr.getAs x ty = .ok a ∧
+      cm.valid (Clif.effAddr pv 0) ty.bytes = true ∧
+      cm.readBits false (Clif.effAddr pv 0) ty.bytes ty.width = some old ∧ vals = [⟨ty, old⟩] ∧
+      cm' = if old = ev then cm.writeBits false (Clif.effAddr pv 0) ty.bytes a else cm := by
+  simp only [Clif.evalInst] at h
+  obtain ⟨pv, hpv, h⟩ := res_bind_eq_ok h
+  obtain ⟨ev, he, h⟩ := res_bind_eq_ok h
+  obtain ⟨a, ha, h⟩ := res_bind_eq_ok h
+  obtain ⟨_, -, h⟩ := res_bind_eq_ok h
+  obtain ⟨old, hl, h⟩ := res_bind_eq_ok h
+  unfold Clif.Mem.load at hl
+  obtain ⟨_, hca, hl⟩ := res_bind_eq_ok hl
+  rw [big_false hfl] at hl
+  refine ⟨pv, ev, a, old, get_regs hpv, he, ha, checkAccess_ok hca, res_ofOption_ok hl, ?_⟩
+  by_cases heq : old = ev
+  · have hb : (old == ev) = true := by simpa using heq
+    rw [if_pos hb] at h
+    obtain ⟨m', hs, h⟩ := res_bind_eq_ok h
+    simp only [Clif.Res.pure_eq, Clif.Res.ok.injEq, Prod.mk.injEq] at h
+    unfold Clif.Mem.store at hs
+    obtain ⟨_, -, hs⟩ := res_bind_eq_ok hs
+    obtain ⟨_, -, hs⟩ := res_bind_eq_ok hs
+    rw [big_false hfl] at hs
+    simp only [Clif.Res.pure_eq, Clif.Res.ok.injEq] at hs
+    refine ⟨h.1.symm, ?_⟩
+    rw [if_pos heq, ← h.2, ← hs]
+  · have hb : (old == ev) = false := by simpa using heq
+    rw [if_neg (by simp [hb])] at h
+    simp only [pure, bind, Clif.Res.bind, Clif.Res.ok.injEq, Prod.mk.injEq] at h
+    refine ⟨h.1.symm, ?_⟩
+    rw [if_neg heq, ← h.2]
+
 /-! ## The Arm side: loaded bytes -/
 
 theorem eTy_cases {ty : Clif.Ty} (h : eTy ty = true) :
@@ -384,7 +475,7 @@ theorem atomicStore_lower_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms is
   dsimp only
   obtain ⟨ha, hA64, havoid⟩ := atom_addr hMRo hdfg hv hp64 hpv hmr hvalid
   rw [← ofClif_bytes hety] at havoid
-  obtain ⟨w2, hs, hsw⟩ := hM.2.2.2.2.2 (CTy.ofClif ty) x p fl (ρ p) (ρ x) w
+  obtain ⟨w2, hs, hsw⟩ := hM.2.2.2.2.2.1 (CTy.ofClif ty) x p fl (ρ p) (ρ x) w
     (atomTy_ofClif hety) havoid
   have hr := seqRun_isem_one (operands_storeRelease _ _ _ _) (ρ := ρ) hs rfl
   have hxv := getAs_ok hax
@@ -398,6 +489,242 @@ theorem atomicStore_lower_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms is
   · refine hMR _ _ _ _ hsw.toNF ?_
     rw [atom_store_eq hety (hv x _ hxv), ha]
     exact hMRo.store _ _ _ _ _ _ hmr (by rw [ofClif_bytes hety]; exact hvalid)
+
+theorem operands_rmwLoop (t : CTy) (op : AtomicRmwLoopOp) (fl : Clif.MemFlags) (p x d d1 d2 : Nat) :
+    (MInst.atomicRmwLoop t op fl (.vreg p .int) (.vreg x .int) (.vreg d .int) (.vreg d1 .int)
+      (.vreg d2 .int)).operands =
+      .ok #[⟨p, .int, .use, .early, .fixed (.x 25)⟩, ⟨x, .int, .use, .early, .fixed (.x 26)⟩,
+        ⟨d, .int, .def, .late, .fixed (.x 27)⟩, ⟨d1, .int, .def, .late, .fixed (.x 24)⟩,
+        ⟨d2, .int, .def, .late, .fixed (.x 28)⟩] := rfl
+
+theorem operands_casLoop (t : CTy) (fl : Clif.MemFlags) (p e x d d1 : Nat) :
+    (MInst.atomicCasLoop t fl (.vreg p .int) (.vreg e .int) (.vreg x .int) (.vreg d .int)
+      (.vreg d1 .int)).operands =
+      .ok #[⟨p, .int, .use, .early, .fixed (.x 25)⟩, ⟨e, .int, .use, .early, .fixed (.x 26)⟩,
+        ⟨x, .int, .use, .early, .fixed (.x 28)⟩, ⟨d, .int, .def, .late, .fixed (.x 27)⟩,
+        ⟨d1, .int, .def, .late, .fixed (.x 24)⟩] := rfl
+
+theorem frag_fresh3 (st : LState) (m : MInst)
+    (hd : vdefs m = [st.nextVreg, st.nextVreg + 1, st.nextVreg + 2]) :
+    Frag st ((((st.fresh .int).2.fresh .int).2.fresh .int).2.emit m) [m] := by
+  refine ⟨by show st.emitted.push m = _; rw [Array.push_eq_append],
+    by show st.nextVreg ≤ st.nextVreg + 1 + 1 + 1; omega, ?_⟩
+  intro m' hm d hd'
+  simp only [List.mem_singleton] at hm; subst hm
+  rw [hd] at hd'
+  show st.nextVreg ≤ d ∧ d < st.nextVreg + 1 + 1 + 1
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hd'
+  omega
+
+theorem frag_fresh2 (st : LState) (m : MInst) (hd : vdefs m = [st.nextVreg, st.nextVreg + 1]) :
+    Frag st (((st.fresh .int).2.fresh .int).2.emit m) [m] := by
+  refine ⟨by show st.emitted.push m = _; rw [Array.push_eq_append],
+    by show st.nextVreg ≤ st.nextVreg + 1 + 1; omega, ?_⟩
+  intro m' hm d hd'
+  simp only [List.mem_singleton] at hm; subst hm
+  rw [hd] at hd'
+  show st.nextVreg ≤ d ∧ d < st.nextVreg + 1 + 1
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hd'
+  omega
+
+theorem writeBits_bits_congr {cm : Clif.Mem} {A n : Nat} {w1 w2 : Nat} (x : BitVec w1)
+    (y : BitVec w2) (h : ∀ j < n * 8, x.getLsbD j = y.getLsbD j) :
+    cm.writeBits false A n x = cm.writeBits false A n y := by
+  simp only [Clif.Mem.writeBits]
+  congr 1
+  funext a
+  split
+  · rename_i ha
+    congr 1
+    apply BitVec.eq_of_getLsbD_eq
+    intro i hi
+    simp only [BitVec.getLsbD_extractLsb', hi, decide_true, Bool.true_and]
+    apply h
+    simp only [Clif.Mem.byteIndex, Bool.false_eq_true, ite_false] at *
+    omega
+  · rfl
+
+theorem bits_congr_atomicRmw {w1 w2 : Nat} (h : w1 = w2) (op : Clif.AtomicRmwOp)
+    {a b : BitVec w1} {c d : BitVec w2} (hac : ∀ j, a.getLsbD j = c.getLsbD j)
+    (hbd : ∀ j, b.getLsbD j = d.getLsbD j) :
+    ∀ j, (Clif.Sem.atomicRmw op a b).getLsbD j = (Clif.Sem.atomicRmw op c d).getLsbD j := by
+  subst h
+  have e1 : a = c := BitVec.eq_of_getLsbD_eq fun j _ => hac j
+  have e2 : b = d := BitVec.eq_of_getLsbD_eq fun j _ => hbd j
+  subst e1 e2
+  intro j; rfl
+
+/-- The bits of a CLIF value held by a register, as its low bits at the access size. -/
+theorem bits_setWidth_holds {ty : Clif.Ty} (hety : eTy ty = true) {a : BitVec ty.width} {u : CV}
+    (hh : VHolds ⟨ty, a⟩ u) :
+    ∀ j, a.getLsbD j = ((lo64 u).setWidth ((CTy.ofClif ty).bytes * 8)).getLsbD j := by
+  intro j
+  have hw := eTy_width hety
+  have hb := ofClif_bytes_width hety
+  simp only [VHolds] at hh
+  rw [← hh]
+  simp only [lo64, BitVec.getLsbD_setWidth, hb]
+  by_cases hj : j < ty.width
+  · simp [hj, show j < 64 by omega]
+  · simp [hj]
+
+/-- **`atomic_rmw`** with operation `cop` (`AtomicRMWLoop` with `op.clif = cop`): the old value
+in the first fresh register, the new value in memory. -/
+theorem atomicRmw_lower_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem)
+    (hMRo : MemRelOk F sb syms f MR) {st : LState} {ty : Clif.Ty} {fl : Clif.MemFlags}
+    {cop : Clif.AtomicRmwOp} {op : AtomicRmwLoopOp} (hop : op.clif = cop)
+    {p x : Nat} {results : List Nat} (hety : eTy ty = true) (hfl : fl.endianness ≠ some .big)
+    (hp64 : ctx.valueType? p = some (.int 64)) :
+    LowerInstOk isem MR env cp ctx (.atomicRmw cop ty fl p x) results st [[(st.fresh .int).1]]
+      ((((st.fresh .int).2.fresh .int).2.fresh .int).2.emit (.atomicRmwLoop (CTy.ofClif ty) op fl
+        (.vreg p .int) (.vreg x .int) (st.fresh .int).1 ((st.fresh .int).2.fresh .int).1
+        (((st.fresh .int).2.fresh .int).2.fresh .int).1))
+      [.atomicRmwLoop (CTy.ofClif ty) op fl (.vreg p .int) (.vreg x .int) (st.fresh .int).1
+        ((st.fresh .int).2.fresh .int).1 (((st.fresh .int).2.fresh .int).2.fresh .int).1] := by
+  simp only [LState.fresh]
+  have hfr := frag_fresh3 st (.atomicRmwLoop (CTy.ofClif ty) op fl (.vreg p .int) (.vreg x .int)
+    (.vreg st.nextVreg .int) (.vreg (st.nextVreg + 1) .int) (.vreg (st.nextVreg + 2) .int))
+    (by simp [vdefs, operands_rmwLoop, Operand.isDef])
+  simp only [LState.fresh] at hfr
+  refine ⟨hfr.mono, hfr.defs, ?_⟩
+  intro fr cm ρ w hf hv hdfg hmr
+  show match Clif.evalInst fr cm (.atomicRmw cop ty fl p x) with
+    | .ok (vals, cm') => _ | .trap c => _ | .stuck _ => _
+  cases he : Clif.evalInst fr cm (.atomicRmw cop ty fl p x) with
+  | trap c => intro h; simp [explicitTrapInst] at h
+  | stuck _ => trivial
+  | ok r =>
+  obtain ⟨vals, cm'⟩ := r
+  obtain ⟨pv, a, old, hpv, hax, hvalid, hread, rfl, rfl⟩ := evalInst_atomicRmw_inv hfl he
+  dsimp only
+  obtain ⟨ha, hA64, havoid⟩ := atom_addr hMRo hdfg hv hp64 hpv hmr hvalid
+  rw [← ofClif_bytes hety] at havoid
+  obtain ⟨w2, o1, o2, hs, hsw⟩ := hM.2.2.2.2.2.2.1 (CTy.ofClif ty) op fl p x st.nextVreg
+    (st.nextVreg + 1) (st.nextVreg + 2) (ρ p) (ρ x) w (atomTy_ofClif hety) havoid
+  have hr := seqRun_isem_one (operands_rmwLoop _ _ _ _ _ _ _ _) (ρ := ρ) hs rfl
+  have hxv := getAs_ok hax
+  have hbits := atom_read_eq hety hread hA64
+    (fun i hi b hb => hMRo.bytes _ _ _ _ b hmr (valid_sub hvalid hi) hb)
+  rw [← ha] at hbits
+  refine ⟨?_, _, w2, hr, .inr ⟨rfl, ?_⟩, ?_⟩
+  · intro m hm u hu
+    simp only [List.mem_singleton] at hm; subst hm
+    have hu' : u = p ∨ u = x := by simpa [vuseNums, operands_rmwLoop, Operand.isUse] using hu
+    rcases hu' with rfl | rfl
+    · exact .inr (by rw [hpv]; rfl)
+    · exact .inr (by rw [hxv]; rfl)
+  · intro j rs v hrs hv'
+    cases j with
+    | succ j => simp at hrs
+    | zero =>
+    simp only [List.getElem?_cons_zero, Option.some.injEq] at hrs hv'
+    subst hrs hv'
+    refine ⟨st.nextVreg, .int, rfl, .inl (Nat.le_refl _), ?_⟩
+    have e : vdefUpd #[(⟨p, .int, .use, .early, .fixed (.x 25)⟩ : Operand),
+        ⟨x, .int, .use, .early, .fixed (.x 26)⟩, ⟨st.nextVreg, .int, .def, .late, .fixed (.x 27)⟩,
+        ⟨st.nextVreg + 1, .int, .def, .late, .fixed (.x 24)⟩,
+        ⟨st.nextVreg + 2, .int, .def, .late, .fixed (.x 28)⟩]
+        [ofX ((Arm.read_mem_bytes (CTy.ofClif ty).bytes (lo64 (ρ p)) w).setWidth 64), o1, o2] ρ
+        st.nextVreg = ofX ((Arm.read_mem_bytes (CTy.ofClif ty).bytes (lo64 (ρ p)) w).setWidth 64) := by
+      simp [vdefUpd, writeV, Operand.isDef, Operand.isEarly, Operand.isLate, upd]
+    rw [e]
+    exact atom_holds hety (ofClif_bytes_width hety) hbits
+  · have hX := hv x _ hxv
+    subst hop
+    have hcm : cm.writeBits false (Clif.effAddr pv 0) ty.bytes (Clif.Sem.atomicRmw op.clif old a) =
+        cm.writeBits false (Clif.effAddr pv 0) (CTy.ofClif ty).bytes
+          (Clif.Sem.atomicRmw op.clif (Arm.read_mem_bytes (CTy.ofClif ty).bytes (lo64 (ρ p)) w)
+            ((lo64 (ρ x)).setWidth ((CTy.ofClif ty).bytes * 8))) := by
+      rw [← ofClif_bytes hety]
+      exact writeBits_bits_congr _ _ fun j _ =>
+        bits_congr_atomicRmw (ofClif_bytes_width hety).symm op.clif hbits
+          (bits_setWidth_holds hety hX) j
+    rw [hcm]
+    refine hMR _ _ _ _ hsw ?_
+    rw [ha]
+    exact hMRo.store _ _ _ _ _ _ hmr (by rw [ofClif_bytes hety]; exact hvalid)
+
+
+/-- Equal values from equal bits (at equal widths). -/
+theorem bits_eq_iff {w1 w2 : Nat} (h : w1 = w2) {a b : BitVec w1} {c d : BitVec w2}
+    (hac : ∀ j, a.getLsbD j = c.getLsbD j) (hbd : ∀ j, b.getLsbD j = d.getLsbD j) :
+    a = b ↔ c = d := by
+  subst h
+  have e1 : a = c := BitVec.eq_of_getLsbD_eq fun j _ => hac j
+  have e2 : b = d := BitVec.eq_of_getLsbD_eq fun j _ => hbd j
+  rw [e1, e2]
+
+/-- **`atomic_cas`**: the old value in the first fresh register; the replacement value in
+memory if the old value is the expected one. -/
+theorem atomicCas_lower_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem)
+    (hMRo : MemRelOk F sb syms f MR) {st : LState} {ty : Clif.Ty} {fl : Clif.MemFlags}
+    {p e x : Nat} {results : List Nat} (hety : eTy ty = true) (hfl : fl.endianness ≠ some .big)
+    (hp64 : ctx.valueType? p = some (.int 64)) :
+    LowerInstOk isem MR env cp ctx (.atomicCas ty fl p e x) results st [[(st.fresh .int).1]]
+      (((st.fresh .int).2.fresh .int).2.emit (.atomicCasLoop (CTy.ofClif ty) fl
+        (.vreg p .int) (.vreg e .int) (.vreg x .int) (st.fresh .int).1
+        ((st.fresh .int).2.fresh .int).1))
+      [.atomicCasLoop (CTy.ofClif ty) fl (.vreg p .int) (.vreg e .int) (.vreg x .int)
+        (st.fresh .int).1 ((st.fresh .int).2.fresh .int).1] := by
+  simp only [LState.fresh]
+  have hfr := frag_fresh2 st (.atomicCasLoop (CTy.ofClif ty) fl (.vreg p .int) (.vreg e .int)
+    (.vreg x .int) (.vreg st.nextVreg .int) (.vreg (st.nextVreg + 1) .int))
+    (by simp [vdefs, operands_casLoop, Operand.isDef])
+  simp only [LState.fresh] at hfr
+  refine ⟨hfr.mono, hfr.defs, ?_⟩
+  intro fr cm ρ w hf hv hdfg hmr
+  show match Clif.evalInst fr cm (.atomicCas ty fl p e x) with
+    | .ok (vals, cm') => _ | .trap c => _ | .stuck _ => _
+  cases he : Clif.evalInst fr cm (.atomicCas ty fl p e x) with
+  | trap c => intro h; simp [explicitTrapInst] at h
+  | stuck _ => trivial
+  | ok r =>
+  obtain ⟨vals, cm'⟩ := r
+  obtain ⟨pv, ev, a, old, hpv, hev, hax, hvalid, hread, rfl, rfl⟩ := evalInst_atomicCas_inv hfl he
+  dsimp only
+  obtain ⟨ha, hA64, havoid⟩ := atom_addr hMRo hdfg hv hp64 hpv hmr hvalid
+  rw [← ofClif_bytes hety] at havoid
+  obtain ⟨w2, o1, hs, hsw⟩ := hM.2.2.2.2.2.2.2 (CTy.ofClif ty) fl p e x st.nextVreg
+    (st.nextVreg + 1) (ρ p) (ρ e) (ρ x) w (atomTy_ofClif hety) havoid
+  have hr := seqRun_isem_one (operands_casLoop _ _ _ _ _ _ _) (ρ := ρ) hs rfl
+  have hev' := getAs_ok hev
+  have hxv := getAs_ok hax
+  have hbits := atom_read_eq hety hread hA64
+    (fun i hi b hb => hMRo.bytes _ _ _ _ b hmr (valid_sub hvalid hi) hb)
+  rw [← ha] at hbits
+  refine ⟨?_, _, w2, hr, .inr ⟨rfl, ?_⟩, ?_⟩
+  · intro m hm u hu
+    simp only [List.mem_singleton] at hm; subst hm
+    have hu' : u = p ∨ u = e ∨ u = x := by
+      simpa [vuseNums, operands_casLoop, Operand.isUse] using hu
+    rcases hu' with rfl | rfl | rfl
+    · exact .inr (by rw [hpv]; rfl)
+    · exact .inr (by rw [hev']; rfl)
+    · exact .inr (by rw [hxv]; rfl)
+  · intro j rs v hrs hv'
+    cases j with
+    | succ j => simp at hrs
+    | zero =>
+    simp only [List.getElem?_cons_zero, Option.some.injEq] at hrs hv'
+    subst hrs hv'
+    refine ⟨st.nextVreg, .int, rfl, .inl (Nat.le_refl _), ?_⟩
+    have e : vdefUpd #[(⟨p, .int, .use, .early, .fixed (.x 25)⟩ : Operand),
+        ⟨e, .int, .use, .early, .fixed (.x 26)⟩, ⟨x, .int, .use, .early, .fixed (.x 28)⟩,
+        ⟨st.nextVreg, .int, .def, .late, .fixed (.x 27)⟩,
+        ⟨st.nextVreg + 1, .int, .def, .late, .fixed (.x 24)⟩]
+        [ofX ((Arm.read_mem_bytes (CTy.ofClif ty).bytes (lo64 (ρ p)) w).setWidth 64), o1] ρ
+        st.nextVreg = ofX ((Arm.read_mem_bytes (CTy.ofClif ty).bytes (lo64 (ρ p)) w).setWidth 64) := by
+      simp [vdefUpd, writeV, Operand.isDef, Operand.isEarly, Operand.isLate, upd]
+    rw [e]
+    exact atom_holds hety (ofClif_bytes_width hety) hbits
+  · have hE := bits_setWidth_holds hety (hv e _ hev')
+    have hiff := bits_eq_iff (ofClif_bytes_width hety).symm hbits hE
+    refine hMR _ _ _ _ hsw ?_
+    by_cases hc : old = ev
+    · rw [if_pos hc, if_pos (hiff.1 hc), atom_store_eq hety (hv x _ hxv), ha]
+      exact hMRo.store _ _ _ _ _ _ hmr (by rw [ofClif_bytes hety]; exact hvalid)
+    · rw [if_neg hc, if_neg (fun h => hc (hiff.2 h))]
+      exact hmr
 
 end Builders
 
@@ -844,6 +1171,57 @@ theorem inv_atomicLoad_root {f : Clif.Function} {cl : Clif.Inst} {w1 w2 : V}
       obtain ⟨-, rfl, rfl⟩ := h3
       exact ⟨ty, fl, p, rfl, rfl, rfl, by simpa using he, by simpa using hb⟩
 
+theorem inv_atomicRmw_root {f : Clif.Function} {cl : Clif.Inst} {w1 w2 : V} {k : Nat}
+    (h : instData f cl = .ok (.data 152 1 [.data 151 156 [], w1, w2, .data 143 k []])) :
+    ∃ op ty fl p x nm, cl = .atomicRmw op ty fl p x ∧ w1 = .values [p, x] ∧
+      w2 = .op (.memFlags fl) ∧ rmwOpName op = some nm ∧ (variantNames 143)[k]? = some nm ∧
+      eTy ty = true ∧ fl.endianness ≠ some .big := by
+  have hn := instData_names_eq h atom_vn_AtomicRmwF atom_vn_AtomicRmw
+  cases cl <;> simp only [instNames, Prod.mk.injEq] at hn
+  all_goals try (simp at hn; done)
+  all_goals try (rename_i op _ _; cases op <;> simp at hn; done)
+  all_goals try (rename_i op _ _ _; cases op <;> simp at hn; done)
+  rename_i op ty fl p x
+  simp only [instData] at h
+  split at h
+  · cases h
+  · rename_i he
+    split at h
+    · cases h
+    · rename_i hb
+      split at h
+      · rename_i nm hnm
+        simp only [pure, Except.pure, Except.ok.injEq] at h
+        obtain ⟨-, -, h3⟩ := mkVariant_eq_data h
+        simp only [List.cons.injEq, and_true] at h3
+        obtain ⟨-, rfl, rfl, h4⟩ := h3
+        obtain ⟨hk, -, -⟩ := mkVariant_eq_data h4.symm
+        exact ⟨op, ty, fl, p, x, nm, rfl, rfl, rfl, hnm, hk, by simpa using he, by simpa using hb⟩
+      · cases h
+
+theorem inv_atomicCas_root {f : Clif.Function} {cl : Clif.Inst} {w1 w2 : V}
+    (h : instData f cl = .ok (.data 152 0 [.data 151 157 [], w1, w2])) :
+    ∃ ty fl p e x, cl = .atomicCas ty fl p e x ∧ w1 = .values [p, e, x] ∧
+      w2 = .op (.memFlags fl) ∧ eTy ty = true ∧ fl.endianness ≠ some .big := by
+  have hn := instData_names_eq h atom_vn_AtomicCasF atom_vn_AtomicCas
+  cases cl <;> simp only [instNames, Prod.mk.injEq] at hn
+  all_goals try (simp at hn; done)
+  all_goals try (rename_i op _ _; cases op <;> simp at hn; done)
+  all_goals try (rename_i op _ _ _; cases op <;> simp at hn; done)
+  rename_i ty fl p e x
+  simp only [instData] at h
+  split at h
+  · cases h
+  · rename_i he
+    split at h
+    · cases h
+    · rename_i hb
+      simp only [pure, Except.pure, Except.ok.injEq] at h
+      obtain ⟨-, -, h3⟩ := mkVariant_eq_data h
+      simp only [List.cons.injEq, and_true] at h3
+      obtain ⟨-, rfl, rfl⟩ := h3
+      exact ⟨ty, fl, p, e, x, rfl, rfl, rfl, by simpa using he, by simpa using hb⟩
+
 section Roots
 variable {p : Program} (hp : Data p) {F : BitVec 64 → Prop} {sb : Nat}
   {syms : String → Option Nat} {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program}
@@ -927,40 +1305,187 @@ theorem uextend_atomic_load_ok : MemRuleOk F sb syms isem MR env cp p rule_lower
 
 end Roots
 
-/-- The data of an instruction of format `AtomicCas` (0) or `AtomicRmw` (1) is an
-`atomic_cas`'s or an `atomic_rmw`'s: outside E. -/
-theorem instData_loop_notE {f : Clif.Function} {c : Clif.Inst} {k : Nat} {fs : List V}
-    (h : instData f c = .ok (.data 152 k fs)) (hk : k = 0 ∨ k = 1) : Compile.instE c = false := by
-  obtain ⟨rest, hd⟩ := instData_names h
-  obtain ⟨h1, -, -⟩ := mkVariant_eq_data hd.symm
-  have hn : (instNames c).1 = "AtomicCas" ∨ (instNames c).1 = "AtomicRmw" := by
-    rcases hk with rfl | rfl
-    · rw [atom_vn_AtomicCasF] at h1; exact .inl (Option.some.inj h1).symm
-    · rw [atom_vn_AtomicRmwF] at h1; exact .inr (Option.some.inj h1).symm
-  cases c <;> simp only [instNames] at hn
-  all_goals first
-    | rfl
-    | (simp at hn; done)
-    | (rename_i op _ _; cases op <;> simp at hn; done)
-    | (rename_i op _ _ _; cases op <;> simp at hn; done)
+/-- A single-pattern `and` matches as its pattern (`atomic_cas`'s root, `(and (atomic_cas …))`). -/
+theorem matchPat_and_single {p : Program} {ctx : Ctx} {st : LState} {ty : TypeId} {q : Pattern}
+    {v : V} {env : Interp.Env V} :
+    matchPat p (sem ctx) st (.and ty [q]) v env = matchPat p (sem ctx) st q v env := by
+  rw [matchPat.eq_7, matchAll.eq_2]
+  cases matchPat p (sem ctx) st q v env with
+  | error e => rfl
+  | ok o => cases o <;> rfl
 
-/-- **`atomic_rmw`** (rule ids 994–1004) and **`atomic_cas`** (1007), root format
-`AtomicRmw`/`AtomicCas`: never match an instruction of `CtxInv` (outside E). -/
-theorem atomic_loop_ok {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat} {isem : Sem}
-    {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program} {r : Rule} {fT : Nat}
-    (hq : ruleFmt r = some fT) (hf : fT = 2447 ∨ fT = 2448) :
-    MemRuleOk F sb syms isem MR env cp program r := by
-  intro f ctx hctx _ ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _ hmatch _
-  exfalso
-  obtain ⟨info', fs, hinfo, hdat⟩ :=
-    ruleFmt_match (vs := []) data_program fmtKinds_program hq (by omega) (by omega) hmatch
-  rw [hi] at hinfo
-  cases hinfo
-  have hd := hctx.data ii _ inst hi hic
-  rw [hdat] at hd
-  have := instData_loop_notE hd (by omega)
-  rw [hctx.instE ii _ inst hi hic] at this
-  cases this
+theorem ext_value_array_3_iff (ctx : Ctx) (st : LState) (a b c : Nat) (fs : List V) :
+    externExtract ctx T.value_array_3 (.values [a, b, c]) st = .ok fs ↔
+      fs = [.value a, .value b, .value c] := by
+  have : externExtract ctx T.value_array_3 (.values [a, b, c]) st =
+    .ok [.value a, .value b, .value c] := rfl
+  rw [this]; simp [eq_comm]
+
+theorem ofV_casLoop (t : CTy) (fl : Clif.MemFlags) (a e x d d1 : Reg) :
+    MInst.ofV (.data 58 38 [.ty t, .op (.memFlags fl), .reg a, .reg e, .reg x, .reg d, .reg d1]) =
+      some (.atomicCasLoop t fl a e x d d1) := rfl
+
+/-- The proof of an `atomic_rmw` root rule (`lower.isle:2357`–`2377`): the instruction is an
+`atomic_rmw` of the rule's operation, lowered to `AtomicRMWLoop` (`atomicRmw_lower_ok`). -/
+syntax "rmw_root" : tactic
+set_option hygiene false in
+macro_rules
+  | `(tactic| rmw_root) => `(tactic| (
+    intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
+      hmatch heval
+    obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
+    obtain ⟨n, rfl⟩ : ∃ n', n = n' + 100 := ⟨n - 100, by omega⟩
+    mem_inv hp [ext_valid_atomic_transaction_iff] at hmatch heval
+    have hdat0 := hctx.data _ _ _ hi hic
+    have hA64 := fun x => hctx.addr64 _ _ _ x hi hic
+    have hRT := hctx.resTys _ _ _ hi hic
+    simp only [hi, Option.some.injEq] at *
+    isel_destruct; subst_vars
+    have hdat := data_trans hdat0 ‹_›
+    obtain ⟨cop, ty, fl, a, x, nm, rfl, hvs, rfl, hnm, hk, hety, hfl⟩ := inv_atomicRmw_root hdat
+    cases cop <;> simp only [rmwOpName, Option.some.injEq] at hnm <;> subst hnm <;>
+      (try (exact absurd hk (by decide)))
+    repeat (mem_inv_simp [ext_value_array_2_iff] at * <;> isel_destruct <;> subst_vars)
+    simp only [Clif.Inst.resultTypes, Option.some.injEq] at *
+    isel_destruct; subst_vars
+    have hL := ‹ApplyInternal _ _ _ _ 27 612 _ _ _ _›
+    have hO := ‹ApplyInternal _ _ _ _ 25 172 _ _ _ _›
+    obtain ⟨mi, hmi, rfl, hs3⟩ := atomic_rmw_loop_ok hp hco (by omega) hL
+    obtain ⟨rfl, hs'⟩ := output_reg_inv hp ctx hco (by omega) hO
+    have := hctx.valueReg a _ ‹ctx.valueReg? a = some _›; subst this
+    have := hctx.valueReg x _ ‹ctx.valueReg? x = some _›; subst this
+    simp only [‹_ = List.map CTy.ofClif [ty]›, List.map_cons, List.map_nil, List.head?_cons,
+      Option.getD_some] at hmi
+    obtain rfl := Option.some.inj (hmi.symm.trans rfl)
+    simp only at hs' hs3 ⊢
+    rw [hs3] at hs'
+    subst hs'
+    refine ⟨_, ?_, _, rfl, atomicRmw_lower_ok hMR hM hMRo (by rfl) hety hfl (hA64 _ rfl)⟩
+    simp only [LState.fresh]
+    exact (frag_fresh3 _ (.atomicRmwLoop _ _ _ (.vreg _ .int) (.vreg _ .int) (.vreg _ .int)
+      (.vreg _ .int) (.vreg _ .int)) (by simp [vdefs, operands_rmwLoop, Operand.isDef])).emitted))
+
+section LoopRoots
+variable {p : Program} (hp : Data p) {F : BitVec 64 → Prop} {sb : Nat}
+  {syms : String → Option Nat} {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program}
+
+set_option maxHeartbeats 4000000 in
+include hp in
+/-- **`atomic_rmw` `add`** (`lower.isle:2357`). -/
+theorem atomic_rmw_add_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
+    MemRuleOk F sb syms isem MR env cp p rule_lower_2357 := by
+  rmw_root
+
+set_option maxHeartbeats 4000000 in
+include hp in
+/-- **`atomic_rmw` `sub`** (`lower.isle:2359`). -/
+theorem atomic_rmw_sub_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
+    MemRuleOk F sb syms isem MR env cp p rule_lower_2359 := by
+  rmw_root
+
+set_option maxHeartbeats 4000000 in
+include hp in
+/-- **`atomic_rmw` `and`** (`lower.isle:2361`). -/
+theorem atomic_rmw_and_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
+    MemRuleOk F sb syms isem MR env cp p rule_lower_2361 := by
+  rmw_root
+
+set_option maxHeartbeats 4000000 in
+include hp in
+/-- **`atomic_rmw` `nand`** (`lower.isle:2363`). -/
+theorem atomic_rmw_nand_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
+    MemRuleOk F sb syms isem MR env cp p rule_lower_2363 := by
+  rmw_root
+
+set_option maxHeartbeats 4000000 in
+include hp in
+/-- **`atomic_rmw` `or`** (`lower.isle:2365`). -/
+theorem atomic_rmw_or_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
+    MemRuleOk F sb syms isem MR env cp p rule_lower_2365 := by
+  rmw_root
+
+set_option maxHeartbeats 4000000 in
+include hp in
+/-- **`atomic_rmw` `xor`** (`lower.isle:2367`). -/
+theorem atomic_rmw_xor_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
+    MemRuleOk F sb syms isem MR env cp p rule_lower_2367 := by
+  rmw_root
+
+set_option maxHeartbeats 4000000 in
+include hp in
+/-- **`atomic_rmw` `smin`** (`lower.isle:2369`). -/
+theorem atomic_rmw_smin_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
+    MemRuleOk F sb syms isem MR env cp p rule_lower_2369 := by
+  rmw_root
+
+set_option maxHeartbeats 4000000 in
+include hp in
+/-- **`atomic_rmw` `smax`** (`lower.isle:2371`). -/
+theorem atomic_rmw_smax_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
+    MemRuleOk F sb syms isem MR env cp p rule_lower_2371 := by
+  rmw_root
+
+set_option maxHeartbeats 4000000 in
+include hp in
+/-- **`atomic_rmw` `umin`** (`lower.isle:2373`). -/
+theorem atomic_rmw_umin_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
+    MemRuleOk F sb syms isem MR env cp p rule_lower_2373 := by
+  rmw_root
+
+set_option maxHeartbeats 4000000 in
+include hp in
+/-- **`atomic_rmw` `umax`** (`lower.isle:2375`). -/
+theorem atomic_rmw_umax_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
+    MemRuleOk F sb syms isem MR env cp p rule_lower_2375 := by
+  rmw_root
+
+set_option maxHeartbeats 4000000 in
+include hp in
+/-- **`atomic_rmw` `xchg`** (`lower.isle:2377`). -/
+theorem atomic_rmw_xchg_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
+    MemRuleOk F sb syms isem MR env cp p rule_lower_2377 := by
+  rmw_root
+
+set_option maxHeartbeats 4000000 in
+include hp in
+/-- **`atomic_cas`** (`lower.isle:2390`, rule id 1007): `AtomicCASLoop`. -/
+theorem atomic_cas_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
+    MemRuleOk F sb syms isem MR env cp p rule_lower_2390 := by
+  intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
+    hmatch heval
+  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
+  obtain ⟨n, rfl⟩ : ∃ n', n = n' + 100 := ⟨n - 100, by omega⟩
+  mem_inv hp [ext_valid_atomic_transaction_iff, matchPat_and_single] at hmatch heval
+  have hdat0 := hctx.data _ _ _ hi hic
+  have hA64 := fun x => hctx.addr64 _ _ _ x hi hic
+  have hRT := hctx.resTys _ _ _ hi hic
+  simp only [hi, Option.some.injEq] at *
+  isel_destruct; subst_vars
+  have hdat := data_trans hdat0 ‹_›
+  obtain ⟨ty, fl, a, e, x, rfl, hvs, rfl, hety, hfl⟩ := inv_atomicCas_root hdat
+  repeat (mem_inv_simp [ext_value_array_3_iff] at * <;> isel_destruct <;> subst_vars)
+  simp only [Clif.Inst.resultTypes, Option.some.injEq] at *
+  isel_destruct; subst_vars
+  have hL := ‹ApplyInternal _ _ _ _ 27 613 _ _ _ _›
+  have hO := ‹ApplyInternal _ _ _ _ 25 172 _ _ _ _›
+  obtain ⟨mi, hmi, rfl, hs3⟩ := atomic_cas_loop_ok hp hco (by omega) hL
+  obtain ⟨rfl, hs'⟩ := output_reg_inv hp ctx hco (by omega) hO
+  have := hctx.valueReg a _ ‹ctx.valueReg? a = some _›; subst this
+  have := hctx.valueReg e _ ‹ctx.valueReg? e = some _›; subst this
+  have := hctx.valueReg x _ ‹ctx.valueReg? x = some _›; subst this
+  simp only [‹_ = List.map CTy.ofClif [ty]›, List.map_cons, List.map_nil, List.head?_cons,
+    Option.getD_some] at hmi
+  rw [ofV_casLoop, Option.some.injEq] at hmi
+  subst hmi
+  simp only at hs' hs3 ⊢
+  rw [hs3] at hs'
+  subst hs'
+  refine ⟨_, ?_, _, rfl, atomicCas_lower_ok hMR hM hMRo hety hfl (hA64 _ rfl)⟩
+  simp only [LState.fresh]
+  exact (frag_fresh2 _ (.atomicCasLoop _ _ (.vreg _ .int) (.vreg _ .int) (.vreg _ .int)
+    (.vreg _ .int) (.vreg _ .int)) (by simp [vdefs, operands_casLoop, Operand.isDef])).emitted
+
+end LoopRoots
 
 /-! ## `MemRulesCorrect` -/
 
@@ -983,18 +1508,18 @@ theorem memRulesCorrect_program : MemRulesCorrect program := by
   · exact sextend_load_ok data_program
   · exact atomic_load_ok data_program hMR hM
   · exact atomic_store_ok data_program hMR hM
-  · exact atomic_loop_ok rfl (.inr rfl)
-  · exact atomic_loop_ok rfl (.inr rfl)
-  · exact atomic_loop_ok rfl (.inr rfl)
-  · exact atomic_loop_ok rfl (.inr rfl)
-  · exact atomic_loop_ok rfl (.inr rfl)
-  · exact atomic_loop_ok rfl (.inr rfl)
-  · exact atomic_loop_ok rfl (.inr rfl)
-  · exact atomic_loop_ok rfl (.inr rfl)
-  · exact atomic_loop_ok rfl (.inr rfl)
-  · exact atomic_loop_ok rfl (.inr rfl)
-  · exact atomic_loop_ok rfl (.inr rfl)
-  · exact atomic_loop_ok rfl (.inl rfl)
+  · exact atomic_rmw_add_ok data_program hMR hM
+  · exact atomic_rmw_sub_ok data_program hMR hM
+  · exact atomic_rmw_and_ok data_program hMR hM
+  · exact atomic_rmw_nand_ok data_program hMR hM
+  · exact atomic_rmw_or_ok data_program hMR hM
+  · exact atomic_rmw_xor_ok data_program hMR hM
+  · exact atomic_rmw_smin_ok data_program hMR hM
+  · exact atomic_rmw_smax_ok data_program hMR hM
+  · exact atomic_rmw_umin_ok data_program hMR hM
+  · exact atomic_rmw_umax_ok data_program hMR hM
+  · exact atomic_rmw_xchg_ok data_program hMR hM
+  · exact atomic_cas_ok data_program hMR hM
   · exact func_addr_ok data_program faData_program hR hMR hM
   · exact symbol_value_ok data_program hR hMR hM
   · exact load_i8_ok data_program hR hMR hM
