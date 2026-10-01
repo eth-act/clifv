@@ -325,6 +325,50 @@ fn missing_ref(o: &Path, syms: &ObjSyms) -> Option<String> {
     ref_problem(o, syms).ok().and_then(|(bad, _)| bad)
 }
 
+/// Suffix of the alias under which a function calls itself (`self_call_alias`).
+const SELF_ALIAS: &str = "__fvself";
+
+/// A recursive function: `lean-backend` compiles each function in its own file, where a call of
+/// the function itself is a call of a function of the file. `Clif.run` enters the callee for
+/// such a call, and the end-to-end theorem covers calls of externs only
+/// (`E2E.InSubset.externCalls`), so the function would be unverified. Every other call of a
+/// crate function is already a call of an extern here (the callee is in another file), under the
+/// theorem's callee contract (`XCallsOk`/`CalleeOk`: the environment's semantics of the symbol).
+/// The self-call is put under the same contract: its declarations `fnK = [colocated] %sym(…)`
+/// are renamed to `%sym__fvself(…)`, an extern of the file (written to `{out}.self.clif`), and
+/// after compiling, the alias's relocations are redirected to `sym` itself
+/// (`--redefine-sym`), so the object is the one of the original file (the linker resolves
+/// both names to the function's address). The theorem then covers the function's code with the
+/// recursive call through the callee contract, like any other call. `None`: no self-call.
+fn self_call_alias(input: &Path, sym: &str, alias: &str, out: &Path) -> Result<Option<PathBuf>, String> {
+    let text = fs::read_to_string(input).map_err(|e| format!("{}: {e}", input.display()))?;
+    let decl = |t: &str| {
+        let t = t.trim_start();
+        let Some((lhs, rhs)) = t.split_once(" = ") else { return false };
+        lhs.starts_with("fn")
+            && lhs[2..].chars().all(|c| c.is_ascii_digit())
+            && rhs.trim_start_matches("colocated ").starts_with(&format!("%{sym}("))
+    };
+    if !text.lines().any(decl) {
+        return Ok(None);
+    }
+    if text.contains(&format!("%{alias}(")) {
+        return Err(format!("self-call alias: `{alias}` is already declared"));
+    }
+    let mut s = String::with_capacity(text.len() + 64);
+    for l in text.lines() {
+        if decl(l) {
+            s.push_str(&l.replacen(&format!("%{sym}("), &format!("%{alias}("), 1));
+        } else {
+            s.push_str(l);
+        }
+        s.push('\n');
+    }
+    let p = out.with_extension("self.clif");
+    fs::write(&p, s).map_err(|e| format!("{}: {e}", p.display()))?;
+    Ok(Some(p))
+}
+
 /// Compile one function from its normalised `.unopt.clif` dump into `o/f{i}.o`.
 ///
 /// Retry: the unoptimised CLIF may reference data objects that cg_clif's optimiser removed
@@ -348,10 +392,15 @@ fn compile_one(
         if let Some(why) = abi_guard(input) {
             return Compiled::Fallback(why);
         }
+        let alias = format!("{sym}{SELF_ALIAS}");
+        let aliased = match self_call_alias(input, sym, &alias, out) {
+            Ok(a) => a,
+            Err(e) => return Compiled::Fallback(e),
+        };
         // `--personality`: functions with landing pads (`try_call`) get cg_clif's LSDA and
         // personality (`rust_eh_personality`, which cg_clif hard-codes too)
-        match Command::new(cfg.lean_backend())
-            .arg(input)
+        let c = match Command::new(cfg.lean_backend())
+            .arg(aliased.as_deref().unwrap_or(input))
             .arg(out)
             .args(cfg.mode.backend_args())
             .args(["--personality", "rust_eh_personality"])
@@ -360,7 +409,19 @@ fn compile_one(
         {
             Ok(o) => classify(cfg, &String::from_utf8_lossy(&o.stderr), o.status.success(), out, sym),
             Err(e) => Compiled::Fallback(format!("cannot run lean-backend: {e}")),
+        };
+        // the alias's relocations go to the function itself
+        if aliased.is_some() {
+            if let Compiled::Ok { .. } = &c {
+                if let Err(e) = run(Command::new(&cfg.objcopy)
+                    .arg(format!("--redefine-sym={alias}={sym}"))
+                    .arg(out))
+                {
+                    return Compiled::Fallback(format!("self-call alias: {e}"));
+                }
+            }
         }
+        c
     };
     let out = outdir.join(format!("f{i}.o"));
     let c = run_backend(&split.join(format!("{}.unopt.clif", d.stem)), &out);

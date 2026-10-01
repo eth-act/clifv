@@ -12,7 +12,11 @@ the shared zero of the pad values). `Opt.Legal.check f g cert : Bool` (`FV/Opt/L
 re-derives, statement by statement, the segment of `g` each statement of `f` must be
 rewritten to (`planOf` → `Plan`: `same`, a renamed instance of a canonical *pure pattern*,
 two `i64` loads/stores, a `__*ti3` helper call, an ABI-expanded call, a condition pattern +
-`trapz`/`trapnz`), and checks the terminators, block parameters (AAPCS64 pads), signature,
+`trapz`/`trapnz`, a `call_indirect` without `i128` operands with the same call-site
+signature in `g` (`callInd`)), and checks the terminators (including `try_call`: arguments and
+returns expanded like a `call`'s, the normal-return successor's arguments by `expandTry` —
+an `i128` value or `retN` as its pair —, the call's fresh result values above every value of
+`f` resp. of `g`, the pairs and the pad zero), block parameters (AAPCS64 pads), signature,
 value-id layout (values of `f` `< T0 = maxValueId f`; pair components and zero distinct and
 `≥ T0`; temporaries/pads fresh) and unique definitions.
 `lean-backend` (`Opt.Legalize128.parsedFile128`) runs the check on every legalised function:
@@ -166,10 +170,29 @@ Modules: `LegalShift*` (variable shifts/rotates: 7-bit amounts; each module < 20
 `Clif.Ty.enumToBitVec` in the calling module, as `FV.Backend.Proof.IselCmpExt` does, and two
 modules realizing the same constant cannot be imported together.
 
+## `try_call` and `call_indirect` (agent/last-unverified, 2026-10-01)
+
+Survey `g_u128` test functions (`try_call`s of `i128` functions) and `downcast_ref` instances
+(a `call_indirect` next to an `i128` `TypeId` compare) were the last legalised functions the
+validator rejected. The simulation (`LegalSim`): `sim_try` matches the source's two steps (the
+call, results bound at `f.freshValue + i`; the jump) with the target's (`SimStep`: the
+intermediate state is related only through its next step; `sim_run` is by strong induction);
+`crel_bind` keeps the relation (the source's result ids are not values of `f`, `DefOk` holds
+for undefined ids; the target's are fresh); `expandTry_holds` relates the successor
+arguments. `sim_callInd`: same values, same signature; the callee address holds no function
+of `p` (`NoIndInternal`, from the source's `TrapsExplicit.indirect`) nor of `p'`, and resolves
+to the same extern (`EnvOk.ind`: same function names, `p.externNames <+: p'.externNames`;
+premise `hind` of `backend_correct_legal`, decided by `parsedFile128` — the legalised file's
+externs extend the original's, true for every file whose legalisation only appends `__*ti3`
+helpers). New premises of `backend_correct_legal`: `hCT` (`try_call` callee contract), `hXI`
+(indirect-call contract), `hind`; all vacuous for functions without such calls
+(`backend_correct_legal_callFree` is the former statement).
+
 ## Not covered
 
 * Legalised functions under `--opt` (no composition of `backend_correct_legal` with the mid-end
   theorems).
 * Runs of `g` that trap inside a `__*ti3` helper (see `htr` above).
 * `umulhi`/`smulhi`, atomics, overflow ops at `i128`, stack-passed `i128` arguments,
-  `try_call` with `i128` (the validator rejects try terminators): not legalised or rejected.
+  `try_call_indirect`, `func_addr`, `call_indirect` with `i128` operands: not legalised or
+  rejected.

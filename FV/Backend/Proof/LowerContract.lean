@@ -294,11 +294,12 @@ theorem termCalls_of_rules (hlt : LowerTermRulesCorrect Isle.Aarch64.program)
 
 /-- Every `lower_branch` call `lowerFunction` makes on a `try_call` of `f` (in its `try_call`
 context `tryCtx`, whose return/payload vregs `tryRegsOf` allocated from a state `lo` above every
-value's vreg) satisfies `LowerTryOk`. From M4's rule statements: `tryCalls_of_rules`. -/
-def TryCalls (f : Clif.Function) (sem : Sem) (MR : MemRelT) (env : Clif.Env) (p : Clif.Program) :
-    Prop :=
+value's vreg) whose callee's stack arguments fit the outgoing area `outB` satisfies
+`LowerTryOk`. From M4's rule statements: `tryCalls_of_rules`. -/
+def TryCalls (f : Clif.Function) (sem : Sem) (MR : MemRelT) (env : Clif.Env) (p : Clif.Program)
+    (outB : Nat) : Prop :=
   ∀ ctx ti fn args et data sig items targets info trs lo st1 out st' tr, CtxInv f ctx →
-    (∀ e, f.extern? fn = some e → e.sig.params.length ≤ 8) →
+    (∀ e, f.extern? fn = some e → SigStackOk e.sig outB) →
     tryCallData f (.tryCall fn args et) = .ok data →
     exnTableOpnd f et = .ok (sig, items) → ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩ →
     tryInfoOf sig items targets = some info → tryRegsOf sig lo = some (trs, st1) →
@@ -315,12 +316,13 @@ theorem ctxInv_tryRegs {f : Clif.Function} {ctx : Ctx} (h : CtxInv f ctx)
     h.resTysE, h.valTyE, h.addr64⟩
 
 /-- **From M4's `try_call` rule statements to the driver's `try_call` calls** (of `f`, under the
-callee contract for `f`'s externs). -/
+callee contract for `f`'s externs, the memory forms and the outgoing area `outB`). -/
 theorem tryCalls_of_rules (htr : TryRulesCorrect Isle.Aarch64.program)
     (hun : TryUnmatchable Isle.Aarch64.program) {F : BitVec 64 → Prop} {sem : Sem}
     {MR : MemRelT} {env : Clif.Env} {p : Clif.Program} {f : Clif.Function} (hR : Refines F sem)
-    (hMR : MRStable F MR) (hcr : CallsRefine F env (f.externs.map (·.2)) MR sem) :
-    TryCalls f sem MR env p := by
+    (hMR : MRStable F MR) {sb : Nat} {syms : String → Option Nat} (hMem : MemRefines F sb syms sem)
+    {outB : Nat} (hout : OutArgsOk F outB MR) (hcr : CallsRefine F env (f.externs.map (·.2)) MR sem) :
+    TryCalls f sem MR env p outB := by
   intro ctx ti fn args et data sig items targets info trs lo st1 out st' tr hctx hra hd he hph
     hinfo hregs hvb hrun
   have hctx' := ctxInv_tryRegs (ctxInv_termCtx hctx hph data) trs
@@ -328,7 +330,8 @@ theorem tryCalls_of_rules (htr : TryRulesCorrect Isle.Aarch64.program)
     termCtx_insts_self hph data
   have hregs' : tryRegsOf sig lo = some ((tryCtx ctx ti data trs).tryRegs, st1) := hregs
   have hvb' : ValsBelow (tryCtx ctx ti data trs) lo := hvb
-  obtain ⟨ms, hem, hok⟩ := tryOk_runTerm htr hun hR hMR hcr hctx' (externsIn_self f) hra hd he hi
+  obtain ⟨ms, hem, hok⟩ := tryOk_runTerm htr hun hR hMR hMem hout hcr hctx' (externsIn_self f) hra
+    hd he hi
     hinfo hregs' hvb' (st := { st1 with emitted := #[] }) (Nat.le_refl _) hrun
   have : ms = st'.emitted.toList := by
     simp only [Array.empty_append] at hem; rw [hem, List.toList_toArray]

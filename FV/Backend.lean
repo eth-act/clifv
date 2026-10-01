@@ -64,16 +64,6 @@ def lowerChecked (f : Clif.Function) (verify : Bool) : Except String VCode := do
     throw "lowering rejected by the M7 lowering validator (lowerCheck)"
   pure vc
 
-/-- Every `try_call` of `f` calls an extern with at most 8 parameters (`E2E.InSubset.tryRegArgs`:
-the call of a `try_call` passes its arguments in registers; a `call` may pass arguments on the
-stack). -/
-def regArgCalls (f : Clif.Function) : Bool :=
-  f.blocks.all fun b => match b.term with
-    | .tryCall fn _ _ => match f.extern? fn with
-      | some e => decide (e.sig.params.length ≤ 8)
-      | none => true
-    | _ => true
-
 /-- The signatures of `f` and of every callee are ones the end-to-end theorem covers
 (`sigAbiOk`, `E2E.InSubset.abiSigs`): `normal` parameters plus at most one `sret` pointer (in
 x8, returned in x0), `normal` returns. Other special-purpose parameters (`vmctx`, `sarg`) are
@@ -82,9 +72,9 @@ def abiSigs (f : Clif.Function) : Bool :=
   sigAbiOk f.sig && f.externs.all (sigAbiOk ·.2.sig)
 
 /-- The theorem's conditions that do not need the rest of the file (`E2E.InSubset.subsetE`,
-`E2E.InSubset.tryRegArgs`, `E2E.InSubset.abiSigs`, `E2E.InSubset.indSigs`). -/
+`E2E.InSubset.abiSigs`, `E2E.InSubset.indSigs`). -/
 def verifiable (f : Clif.Function) : Bool :=
-  Compile.functionE f && regArgCalls f && abiSigs f && indSigsOk f
+  Compile.functionE f && abiSigs f && indSigsOk f
 
 /-- The lowering validator's size measure: instructions (statements and terminators) × values.
 `lowerCheck` re-runs the lowering recording every statement's states (their vreg class arrays
@@ -161,10 +151,10 @@ def hasTryCall (f : Clif.Function) : Bool :=
   f.blocks.any (·.term.isTry)
 
 /-- Why a compiled function of `pf` is outside `E2E.backend_correct` (`E2E.InSubset`), if it is:
-outside clif-subset-v2 E, stack-passed arguments of a `try_call` or an indirect
-call (more than 8 parameters), special-purpose parameters, or a call (also a `try_call`) of a
-function of the file. Stack-passed parameters and stack-passed arguments of a `call` are inside
-the theorem (agent/stack-tls-proof). A `try_call`/`try_call_indirect` of an
+outside clif-subset-v2 E, stack-passed arguments of an indirect call (more than 8 parameters),
+special-purpose parameters, or a call (also a `try_call`) of a function of the file.
+Stack-passed parameters and stack-passed arguments of a `call` (agent/stack-tls-proof) and of a
+`try_call` (agent/last-unverified) are inside the theorem. A `try_call`/`try_call_indirect` of an
 extern is inside the theorem for its normal return (`hasTryCall`: the landing pads and the LSDA
 are trusted); `call_indirect`, `try_call_indirect` and `func_addr` are inside it (an indirect
 call of a function of the file is excluded by the theorem's run premise
@@ -174,8 +164,6 @@ the Arm model's exclusive store always succeeds, `docs/decisions/arm-model.md`),
 agent/stack-tls-proof). -/
 def unverifiedReason? (pf : Clif.ParsedFile) (f : Clif.Function) : Option String :=
   if !Compile.functionE f then some "outside clif-subset-v2 E"
-  else if !regArgCalls f then
-    some "stack-passed arguments of a try_call (an extern with more than 8 parameters)"
   else if !abiSigs f then some "special-purpose parameter other than one sret pointer (outside backend_correct)"
   else if !indSigsOk f then
     some "indirect call with stack-passed arguments or a special-purpose parameter (outside backend_correct)"

@@ -1027,6 +1027,12 @@ def CallsStack (f : Clif.Function) (out : Nat) : Prop :=
   ∀ B ∈ f.blocks, ∀ st ∈ B.body, ∀ fn args e, st.inst = .call fn args → f.extern? fn = some e →
     SigStackOk e.sig out
 
+/-- The callees of the `try_call`s of `f` fit the outgoing area `out` (decided by `lowerCheck`
+with `callsStackOkB`). -/
+def TryStack (f : Clif.Function) (out : Nat) : Prop :=
+  ∀ B ∈ f.blocks, ∀ fn args et, B.term = .tryCall fn args et → ∀ e, f.extern? fn = some e →
+    SigStackOk e.sig out
+
 /-- Every extern `f` declares is in `exts` (the externs `CallsRefine` covers). -/
 def ExternsIn (f : Clif.Function) (exts : List Clif.ExtFunc) : Prop :=
   ∀ (fn : Clif.FnRef) (e : Clif.ExtFunc), f.extern? fn = some e → e ∈ exts
@@ -1519,15 +1525,15 @@ def tryRootRule (r : Rule) : Bool := r.id == 1034 || r.id == 1035
 /-- **Root rule correctness (`lower_branch` on `try_call`)**: whenever rule `r` matches the
 `try_call` at `ti` (data `tryCallData`, in a context whose `tryRegs` are `tryRegsOf`'s vregs,
 allocated from a state `lo` above every value's vreg and below the rule's start state `st`) of
-an extern with at most 8 (register) parameters, the instructions it appended satisfy
-`LowerTryOk` for the `try_call_info` of the targets. -/
+an extern whose stack arguments fit the outgoing area `outB` (`SigStackOk`, as for `call`), the
+instructions it appended satisfy `LowerTryOk` for the `try_call_info` of the targets. -/
 def TryRuleOk (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
-    (exts : List Clif.ExtFunc) (p : Program) (r : Rule) : Prop :=
+    (exts : List Clif.ExtFunc) (outB : Nat) (p : Program) (r : Rule) : Prop :=
   ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx → ExternsIn f exts →
   ∀ (ti : Nat) (fn : Clif.FnRef) (args : List Nat) (et : Clif.ExnTable) (data : V)
     (sig : Clif.Signature) (items : List (Option Nat)) (targets : List Label) (info : TryInfo)
     (lo st1 : LState),
-  (∀ e, f.extern? fn = some e → e.sig.params.length ≤ 8) →
+  (∀ e, f.extern? fn = some e → SigStackOk e.sig outB) →
   tryCallData f (.tryCall fn args et) = .ok data → exnTableOpnd f et = .ok (sig, items) →
   ctx.insts[ti]? = some ⟨data, [], [], none⟩ → tryInfoOf sig items targets = some info →
   tryRegsOf sig lo = some (ctx.tryRegs, st1) → ValsBelow ctx lo →
@@ -1544,13 +1550,15 @@ def TryRuleOk (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
     ∃ ms, st'.emitted = st.emitted ++ ms.toArray ∧
       LowerTryOk isem MR env cp ctx (.call fn args) info st st' ms
 
-/-- **M4's target for `try_call`**: under the callee contract, the two `try_call` root rules
-of `lower_branch` are correct. -/
+/-- **M4's target for `try_call`**: under the callee contract, the memory forms (the outgoing
+stack arguments are `spOffset` stores) and the outgoing area, the two `try_call` root rules of
+`lower_branch` are correct. -/
 def TryRulesCorrect (p : Program) : Prop :=
   ∀ (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
-    (exts : List Clif.ExtFunc),
-    Refines F isem → MRStable F MR → CallsRefine F env exts MR isem →
-    ∀ r ∈ p.rulesOf TId.lower_branch, tryRootRule r = true → TryRuleOk isem MR env cp exts p r
+    (exts : List Clif.ExtFunc) (sb : Nat) (syms : String → Option Nat) (outB : Nat),
+    Refines F isem → MRStable F MR → MemRefines F sb syms isem → OutArgsOk F outB MR →
+    CallsRefine F env exts MR isem →
+    ∀ r ∈ p.rulesOf TId.lower_branch, tryRootRule r = true → TryRuleOk isem MR env cp exts outB p r
 
 /-- The other rules of `lower_branch` never match a `try_call`. -/
 def TryUnmatchable (p : Program) : Prop :=
@@ -1614,11 +1622,13 @@ def TryIndUnmatchable (p : Program) : Prop :=
 theorem tryOk_of_rules {p : Program} (hp : Data p) (hrules : TryRulesCorrect p)
     (hun : TryUnmatchable p) {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} {env : Clif.Env}
     {cp : Clif.Program} {exts : List Clif.ExtFunc}
-    (hR : Refines F isem) (hMR : MRStable F MR) (hcr : CallsRefine F env exts MR isem)
+    (hR : Refines F isem) (hMR : MRStable F MR) {sb : Nat} {syms : String → Option Nat}
+    (hMem : MemRefines F sb syms isem) {outB : Nat} (hout : OutArgsOk F outB MR)
+    (hcr : CallsRefine F env exts MR isem)
     {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx)
     (hext : ExternsIn f exts) {ti : Nat} {fn : Clif.FnRef} {args : List Nat} {et : Clif.ExnTable}
     {data : V} {sig : Clif.Signature} {items : List (Option Nat)} {targets : List Label}
-    {info : TryInfo} {lo st1 : LState} (hra : ∀ e, f.extern? fn = some e → e.sig.params.length ≤ 8)
+    {info : TryInfo} {lo st1 : LState} (hra : ∀ e, f.extern? fn = some e → SigStackOk e.sig outB)
     (hd : tryCallData f (.tryCall fn args et) = .ok data) (he : exnTableOpnd f et = .ok (sig, items))
     (hi : ctx.insts[ti]? = some ⟨data, [], [], none⟩) (hinfo : tryInfoOf sig items targets = some info)
     (htr : tryRegsOf sig lo = some (ctx.tryRegs, st1)) (hvb : ValsBelow ctx lo)
@@ -1648,7 +1658,7 @@ theorem tryOk_of_rules {p : Program} (hp : Data p) (hrules : TryRulesCorrect p)
   rw [← hs.1] at heval
   cases hroot : tryRootRule r
   · exact absurd hmatch (hun r hr hroot f ctx hctx ti fn args et data targets hd hi cfg m (st, tr) env' s1)
-  · exact hrules F isem MR env cp exts hR hMR hcr r hr hroot f ctx hctx hext ti fn args et data
+  · exact hrules F isem MR env cp exts sb syms outB hR hMR hMem hout hcr r hr hroot f ctx hctx hext ti fn args et data
       sig items targets info lo st1 hra hd he hi hinfo htr hvb cfg hco m n st tr env' s1 out st' tr2
       (by omega) (by omega) hst hfirst hmatch heval
 
@@ -1657,12 +1667,14 @@ set_option maxRecDepth 20000 in
 (`runTerm ctx "lower_branch" [.inst ti, .labels targets]` on a `try_call`). -/
 theorem tryOk_runTerm (hrules : TryRulesCorrect program) (hun : TryUnmatchable program)
     {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program}
-    {exts : List Clif.ExtFunc} (hR : Refines F isem) (hMR : MRStable F MR)
+    {exts : List Clif.ExtFunc} (hR : Refines F isem) (hMR : MRStable F MR) {sb : Nat}
+    {syms : String → Option Nat} (hMem : MemRefines F sb syms isem) {outB : Nat}
+    (hout : OutArgsOk F outB MR)
     (hcr : CallsRefine F env exts MR isem) {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx)
     (hext : ExternsIn f exts) {ti : Nat} {fn : Clif.FnRef}
     {args : List Nat} {et : Clif.ExnTable} {data : V} {sig : Clif.Signature}
     {items : List (Option Nat)} {targets : List Label} {info : TryInfo} {lo st1 : LState}
-    (hra : ∀ e, f.extern? fn = some e → e.sig.params.length ≤ 8)
+    (hra : ∀ e, f.extern? fn = some e → SigStackOk e.sig outB)
     (hd : tryCallData f (.tryCall fn args et) = .ok data) (he : exnTableOpnd f et = .ok (sig, items))
     (hi : ctx.insts[ti]? = some ⟨data, [], [], none⟩) (hinfo : tryInfoOf sig items targets = some info)
     (htr : tryRegsOf sig lo = some (ctx.tryRegs, st1)) (hvb : ValsBelow ctx lo)
@@ -1687,7 +1699,7 @@ theorem tryOk_runTerm (hrules : TryRulesCorrect program) (hun : TryUnmatchable p
     subst h2
     have hlen : (program.rulesOf TId.lower_branch).length ≤ 1000 := by
       rw [show TId.lower_branch = 687 from rfl, data_program.r687]; decide
-    obtain ⟨ms, h1, h2⟩ := tryOk_of_rules data_program hrules hun hR hMR hcr hctx hext hra hd he hi
+    obtain ⟨ms, h1, h2⟩ := tryOk_of_rules data_program hrules hun hR hMR hMem hout hcr hctx hext hra hd he hi
       hinfo htr hvb rfl (by omega) hst ha
     exact ⟨ms, by simpa using h1, h2⟩
 

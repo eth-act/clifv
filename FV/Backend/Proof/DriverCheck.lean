@@ -696,11 +696,17 @@ def brIdxOk (f : Clif.Function) (ctx : Ctx) : Bool :=
       | _ => false
     | _ => true
 
-/-- The calls (`call`) of `f`'s statements pass at most `out` bytes on the stack, with a
-well-formed stack-argument layout (`CallsStack`). -/
+/-- The calls (`call`) of `f`'s statements and the callees of its `try_call`s pass at most
+`out` bytes on the stack, with a well-formed stack-argument layout (`CallsStack`,
+`TryStack`). -/
 def callsStackOkB (f : Clif.Function) (out : Nat) : Bool :=
-  f.blocks.all fun B => B.body.all fun st => match st.inst with
+  (f.blocks.all fun B => B.body.all fun st => match st.inst with
     | .call fn _ => match f.extern? fn with
+      | some e => decide (stackBytes e.sig ≤ out) && stackLayoutOk e.sig
+      | none => true
+    | _ => true) &&
+  f.blocks.all fun B => match B.term with
+    | .tryCall fn _ _ => match f.extern? fn with
       | some e => decide (stackBytes e.sig ≤ out) && stackLayoutOk e.sig
       | none => true
     | _ => true

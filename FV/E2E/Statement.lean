@@ -66,13 +66,13 @@ def spv (s : Arm.ArmState) : BitVec 64 := Arm.r (.GPR 31#5) s
 /-- The CLIF functions the theorem covers: clif-subset-v2 E (`Compile.functionE`), plus the
 current restrictions of the proof (e2e.md, "Remaining"): calls only to externs (calls between
 compiled functions compose by induction on the call depth, not done yet; for indirect calls
-this is the run premise `TrapsExplicit.indirect`), `try_call`s and indirect calls with at most
-8 (register) parameters (stack-passed arguments only for `call`), and signatures (the
+this is the run premise `TrapsExplicit.indirect`), indirect calls with at most 8 (register)
+parameters, and signatures (the
 function's, its externs' and its indirect calls') with `normal` parameters and returns plus at
 most one `sret` struct-return pointer (`sigAbiOk`: in x8, returned in x0, no other returns);
 other special-purpose parameters are compiled and flagged unverified. Parameters beyond x0..x7
-(the function's own, and a `call`'s arguments) are passed on the stack (agent/stack-tls-proof:
-`ArgsIn`, `Backend.Proof.ArgsAt`). -/
+(the function's own, and the arguments of a `call` or a `try_call`) are passed on the stack
+(agent/stack-tls-proof, agent/last-unverified: `ArgsIn`, `Backend.Proof.ArgsAt`). -/
 structure InSubset (p : Clif.Program) (f : Clif.Function) : Prop where
   func : p.func? f.name = some f
   subsetE : Compile.functionE f = true
@@ -81,10 +81,6 @@ structure InSubset (p : Clif.Program) (f : Clif.Function) : Prop where
   /-- a `try_call` calls an extern, like `externCalls` -/
   tryExterns : ∀ b ∈ f.blocks, ∀ fn args et, b.term = .tryCall fn args et →
     ∀ e, f.extern? fn = some e → p.func? e.name = none
-  /-- a `try_call` passes its arguments in registers (its callee takes at most 8 parameters;
-  `Backend.regArgCalls`) -/
-  tryRegArgs : ∀ b ∈ f.blocks, ∀ fn args et, b.term = .tryCall fn args et →
-    ∀ e, f.extern? fn = some e → e.sig.params.length ≤ 8
   abiSigs : sigAbiOk f.sig = true ∧ ∀ e ∈ f.externs, sigAbiOk e.2.sig = true
   /-- the signatures of the indirect calls (`call_indirect`, `try_call_indirect`) take at most
   8 (register) parameters and pass `sigAbiOk` (`Backend.indSigsOk`) -/
@@ -109,8 +105,7 @@ theorem indSigs_eq_nil {f : Clif.Function}
 
 /-- **Specialisation**: the former subset (with at most 8 parameters for `f` and every
 extern, `regParams`/`callRegArgs`, and the indirect-call signature condition) is inside the
-new one: `tryRegArgs` follows from `callRegArgs`; for a function without indirect calls
-`indSigs` is vacuous (`indSigs_eq_nil`). -/
+new one; for a function without indirect calls `indSigs` is vacuous (`indSigs_eq_nil`). -/
 theorem InSubset.of_regArgs {p : Clif.Program} {f : Clif.Function}
     (hfunc : p.func? f.name = some f) (hE : Compile.functionE f = true)
     (_hreg : f.sig.params.length ≤ 8)
@@ -118,14 +113,11 @@ theorem InSubset.of_regArgs {p : Clif.Program} {f : Clif.Function}
       ∀ e, f.extern? fn = some e → p.func? e.name = none)
     (htry : ∀ b ∈ f.blocks, ∀ fn args et, b.term = .tryCall fn args et →
       ∀ e, f.extern? fn = some e → p.func? e.name = none)
-    (hcra : ∀ e ∈ f.externs, e.2.sig.params.length ≤ 8)
+    (_hcra : ∀ e ∈ f.externs, e.2.sig.params.length ≤ 8)
     (habi : sigAbiOk f.sig = true ∧ ∀ e ∈ f.externs, sigAbiOk e.2.sig = true)
     (hind : ∀ s ∈ _root_.Backend.indSigs f, s.params.length ≤ 8 ∧ sigAbiOk s = true) :
     InSubset p f :=
-  ⟨hfunc, hE, hext, htry, fun _ _ fn _ _ _ e he => by
-    unfold Clif.Function.extern? at he
-    obtain ⟨l₁, l₂, he2, -⟩ := List.lookup_eq_some_iff.mp he
-    exact hcra (fn, e) (by rw [he2]; simp), habi, hind⟩
+  ⟨hfunc, hE, hext, htry, habi, hind⟩
 
 /-- **Specialisation**: for a function without indirect calls, the former subset (without
 `indSigs`, which is vacuous: `indSigs_eq_nil`). -/

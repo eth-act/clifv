@@ -155,8 +155,7 @@ def main (args : List String) : IO UInt32 := do
       let .ok f := p.func | continue
       -- legalised functions outside `E2E.backend_correct_legal`
       if (lg.unverified.lookup p.name).isSome ||
-          (optCfg.isSome && lg.accepted.contains p.name) ||
-          (lg.accepted.contains p.name && Opt.hasCallIndirect f) then
+          (optCfg.isSome && lg.accepted.contains p.name) then
         legalOut := legalOut + 1
         continue
       -- `backend_correct_opt_proven` covers functions without `try_call`/`try_call_indirect`
@@ -174,7 +173,7 @@ def main (args : List String) : IO UInt32 := do
       if !Compile.functionE f then
         skipped := skipped + 1
         continue
-      if !Backend.regArgCalls f || !Backend.abiSigs f || !Backend.indSigsOk f then
+      if !Backend.abiSigs f || !Backend.indSigsOk f then
         skipped := skipped + 1
         continue
       if lg.accepted.contains p.name then legal := legal + 1
@@ -210,8 +209,8 @@ def main (args : List String) : IO UInt32 := do
         bad := bad + 1
         IO.println s!"{file}: %{f.name}: lowerCheck rejects ({diagnose f vc})"
         IO.println (detail f vc)
-  IO.println s!"lowerCheck: {ok} accepted, {bad} rejected, {skipped} out of scope (stack-passed arguments of a try_call or an indirect call, special-purpose parameters other than one sret, outside clif-subset-v2 E, or a try_call/call_indirect under --opt)"
-  IO.println s!"legalised i128 functions: {legal} in scope (Opt.Legal.check accepts; counted above), {legalOut} out of scope (validator rejects, extern named like a function of the file, a try_call/call_indirect, or --opt)"
+  IO.println s!"lowerCheck: {ok} accepted, {bad} rejected, {skipped} out of scope (stack-passed arguments of an indirect call, special-purpose parameters other than one sret, outside clif-subset-v2 E, or a try_call/call_indirect under --opt)"
+  IO.println s!"legalised i128 functions: {legal} in scope (Opt.Legal.check accepts; counted above), {legalOut} out of scope (validator rejects, extern named like a function of the file, a call_indirect whose file's externs do not extend, or --opt)"
   IO.println s!"prepCheck: {pok} accepted, {pbad} rejected"
   IO.println s!"formsCoveredB: {cov} covered, {uncov} not covered"
   for (k, n) in forms.toList.mergeSort (fun a b => a.2 ≥ b.2) do

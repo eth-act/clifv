@@ -186,49 +186,64 @@ theorem tryRets_get {ctx : Ctx} {N b : Nat}
   rw [← heq]; simp
 
 theorem try_sym_lowerTryOk {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} {env : Clif.Env}
-    {cp : Clif.Program} {exts : List Clif.ExtFunc} (hCR : CallsRefine F env exts MR isem)
+    {cp : Clif.Program} {sb : Nat} {syms : String → Option Nat} (hMR : MRStable F MR)
+    (hMem : MemRefines F sb syms isem) {outB : Nat} (hout : OutArgsOk F outB MR)
+    {exts : List Clif.ExtFunc} (hCR : CallsRefine F env exts MR isem)
     {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) {fn : Clif.FnRef} {args : List Nat}
-    {ext : Clif.ExtFunc} (hext : f.extern? fn = some ext) (hin : ext ∈ exts) {bytes : List Nat}
-    (hb : sigParamBytes ext.sig = .ok bytes) (h8 : ext.sig.params.length ≤ 8) {info : TryInfo} {b : Nat}
+    {ext : Clif.ExtFunc} (hext : f.extern? fn = some ext) (hin : ext ∈ exts)
+    (hso : SigStackOk ext.sig outB) {bytes : List Nat} (hb : sigParamBytes ext.sig = .ok bytes)
+    {locs : List ArgLoc} {S : Nat} (hl : sigArgLocs ext.sig = .ok (locs, S)) {info : TryInfo}
+    {b : Nat}
     (htr : ctx.tryRegs = ((List.range (sigRets ext.sig).length).map fun j => Reg.vreg (b + j) .int,
       [.vreg b .int, .vreg (b + 1) .int]))
     {st st' : LState} (hst' : st'.nextVreg = st.nextVreg) :
     LowerTryOk isem MR env cp ctx (.call fn args) info st st'
-      [.call ⟨.sym ext.name, retPairs (args.zip ((abiArgIdx ext.sig.params 0).map Reg.x)),
-        callDefs (outDefs b (max (sigRets ext.sig).length 2))⟩] := by
-  refine ⟨by omega, ⟨[], _, rfl, by simp, fun d hd => ?_⟩, ?_⟩
+      ((stackEnts ((locs.zip args).zip bytes)).map argStore ++
+        [.call ⟨.sym ext.name, retPairs (regPairsOf ((locs.zip args).zip bytes)),
+          callDefs (outDefs b (max (sigRets ext.sig).length 2))⟩]) := by
+  refine ⟨by omega, ⟨(stackEnts ((locs.zip args).zip bytes)).map argStore, _, rfl, ?_,
+    fun d hd => ?_⟩, ?_⟩
+  · intro m hm d hd
+    obtain ⟨e, -, rfl⟩ := List.mem_map.mp hm
+    simp [vdefs_argStore] at hd
   · rw [vdefs_call_sym] at hd
     exact tryDefs_mem htr d hd
   · intro fr cm ρ w hfr hvh _ hmr
     split
     · rename_i rvals cm' hO
-      obtain ⟨vals, g, hvals, hvl, hal, hg, hgo, hrN⟩ := call_ok_facts hctx hext hfr hO
-      have hfst : (args.zip ((abiArgIdx ext.sig.params 0).map Reg.x)).map (·.1) = args :=
-        List.map_fst_zip (by simp [abiArgIdx_length]; omega)
+      obtain ⟨ext', vals, g, hx, hvals, hty, hg, hgo, hrty⟩ := instOutcome_call_ok hO
+      rw [hfr, hctx.func, hext] at hx
+      cases hx
+      have hrN : rvals.length = ext.sig.returns.length := by
+        have := congrArg List.length hrty; simpa [Clif.AbiParam.tys] using this
+      obtain ⟨hlen, hvx⟩ := getMany_ok hvals
+      obtain ⟨w1, hrun1, hmr1, hargsAt⟩ := argsAt_after_stores hMR hMem hout hso hb hl hty
+        hlen.symm (fun j v x hv hx => hvh x v (hvx j x v hx hv)) hmr
       obtain ⟨sym, -, -, htry⟩ := hCR
-      have huses : (args.zip ((abiArgIdx ext.sig.params 0).map Reg.x)).map (ρ ·.1) = args.map ρ := by
-        rw [show (fun x : Nat × Reg => ρ x.1) = ρ ∘ (·.1) from rfl, ← List.map_map, hfst]
       have hdl : (callDefs (outDefs b (max (sigRets ext.sig).length 2))).length =
           max (sigRets ext.sig).length 2 := by
         simp [callDefs, outDefs]
-      obtain ⟨outs, w', hi, hol, hro, hmr'⟩ := htry ext hin g fr.slots cm w (.sym ext.name)
-        (retPairs (args.zip ((abiArgIdx ext.sig.params 0).map Reg.x)))
+      obtain ⟨outs, w', hi, hol, hro, hmr'⟩ := htry ext hin g fr.slots cm w1 (.sym ext.name)
+        (retPairs (regPairsOf ((locs.zip args).zip bytes)))
         (callDefs (outDefs b (max (sigRets ext.sig).length 2))) info
-        ((args.zip ((abiArgIdx ext.sig.params 0).map Reg.x)).map (ρ ·.1)) (args.map ρ) vals rvals
-        cm' hg (.inl ⟨rfl, huses⟩) (by rw [hdl]; exact Nat.le_max_left _ _) 
-        ((argsAt_iff_of_regs hb (by rw [sigParamBytes_length hb]; exact h8) hvl).mpr
-          (allHold_args hvh hvals)) hmr hgo hrN
+        _ _ vals rvals cm' hg (.inl ⟨rfl, rfl⟩) (by rw [hdl]; exact Nat.le_max_left _ _)
+        (hargsAt w1 (SameWorldNF.refl F w1)) hmr1 hgo hrN
       have hol' : outs.length = (outDefs b (max (sigRets ext.sig).length 2)).length := by
         rw [hol, hdl]; simp [outDefs]
-      rw [show ∀ c : CallInfo, tryFix info [MInst.call c] = [MInst.tryCall c info] from
-        fun c => tryFix_append info [] c]
-      refine ⟨?_, 0, _, _, ρ, w, outs, w', seqRun_tryCall_sym hi hol', rfl,
+      rw [tryFix_append]
+      refine ⟨?_, _, _, _, _, _, outs, w',
+        seqRun_append_fall_stop isem hrun1 (seqRun_tryCall_sym hi hol'), by simp,
         fun j r v hr hv => ?_, hmr'⟩
       · intro mi hmi u hu
-        simp only [List.mem_singleton] at hmi
-        subst hmi
-        rw [vuseNums_call_sym, hfst] at hu
-        exact .inr (usesOk_args hvals u hu)
+        rcases List.mem_append.mp hmi with hmi | hmi
+        · obtain ⟨e, he, rfl⟩ := List.mem_map.mp hmi
+          rw [vuseNums_argStore, List.mem_singleton] at hu
+          subst hu
+          exact .inr (usesOk_args hvals _ (map_zip_args (mem_args_of_stackEnts he)))
+        · simp only [List.mem_singleton] at hmi
+          subst hmi
+          rw [vuseNums_call_sym] at hu
+          exact .inr (usesOk_args hvals u (map_zip_args (mem_args_of_regPairs hu)))
       · obtain ⟨-, rfl⟩ := tryRets_get htr hr
         refine ⟨b + j, rfl, ?_⟩
         rw [vdefUpd_call]
@@ -238,8 +253,10 @@ theorem try_sym_lowerTryOk {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} 
 set_option maxHeartbeats 5000000 in
 theorem try_bl_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) {F : BitVec 64 → Prop} {isem : Sem}
     {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program} (hR : Refines F isem)
-    (hMR : MRStable F MR) {exts : List Clif.ExtFunc} (hCR : CallsRefine F env exts MR isem) :
-    TryRuleOk isem MR env cp exts p rule_lower_2542 := by
+    (hMR : MRStable F MR) {sb : Nat} {syms : String → Option Nat} (hMem : MemRefines F sb syms isem)
+    {outB : Nat} (hout : OutArgsOk F outB MR) {exts : List Clif.ExtFunc}
+    (hCR : CallsRefine F env exts MR isem) :
+    TryRuleOk isem MR env cp exts outB p rule_lower_2542 := by
   intro f ctx hctx hexts ti fn args et data sig items targets info lo st1 hreg hd he hi hinfo htr
     hvb cfg hc m n st tr env' s1 out st' tr' hm hn hst _ hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
@@ -271,13 +288,14 @@ theorem try_bl_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) {F : BitVec 
   rw [hinfo] at hti'
   cases hti'
   obtain ⟨bytes, hb⟩ := ctor_gen_call_args_bytes ‹externCtor ctx T.gen_call_args _ _ = _›
-  have h8 : bytes.length ≤ 8 := sigParamBytes_length hb ▸ hreg _ hext
+  obtain ⟨locs, S, hl⟩ := ctor_gen_call_args_locs ‹externCtor ctx T.gen_call_args _ _ = _›
   have hrs := mapM_valueReg hctx ‹List.mapM ctx.valueReg? args = some _›
   subst hrs
-  simp only [ctor_gen_call_args_iff _ _ _ hb h8, mapM_single_map, Option.some.injEq,
+  simp only [ctor_gen_call_args_gen _ _ _ hb hl, mapM_single_map, Option.some.injEq,
     exists_eq_left'] at *
   isel_destruct; subst_vars
-  simp only [ctor_gen_call_info_iff _ _ _ _ _ _ _ hb h8, Option.some.injEq] at *
+  simp only [ctor_gen_call_info_gen _ _ _ _ _ _ _ hl, Nat.reduceEqDiff, Nat.reduceLT,
+    ite_true, ite_false, Option.some.injEq] at *
   isel_destruct; subst_vars
   obtain ⟨hr8, rfl⟩ := retRegs_eq ‹retRegs _ = some _›
   have h638 := ‹ApplyInternal _ _ _ _ 46 638 _ _ _ _›
@@ -288,93 +306,111 @@ theorem try_bl_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) {F : BitVec 
   cases hmi
   obtain ⟨-, htrs, hst1, -⟩ := tryRegsOf_spec (exnTableOpnd_cc he) htr
   rw [htrs, exnTableOpnd_cc he, tryDefs_eq _ _ hr8] at hs2
-  rw [uses_retPairs] at hs2
   have hcd : ((List.range (max (sigRets ext.sig).length 2)).map fun j =>
       (Reg.x j, Reg.vreg (lo.nextVreg + j) .int)) =
       callDefs (outDefs lo.nextVreg (max (sigRets ext.sig).length 2)) := by
     simp [callDefs, outDefs, List.map_map, Function.comp_def]
   rw [hcd] at hs2
   simp only at hs1 hs2
-  refine ⟨_, ?_, try_sym_lowerTryOk hCR hctx hext (hexts fn _ hext) hb (hreg _ hext) htrs
-    (by rw [hs2, hs1]; simp [LState.emit])⟩
-  rw [hs2, hs1]; simp [LState.emit]
+  refine ⟨_, ?_, try_sym_lowerTryOk hMR hMem hout hCR hctx hext (hexts fn _ hext) (hreg _ hext)
+    hb hl htrs (by rw [hs2, hs1]; simp [LState.emit, freshN_nextVreg])⟩
+  rw [hs2, hs1]; simp [LState.emit, freshN_emitted]
 
 theorem try_got_lowerTryOk {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} {env : Clif.Env}
-    {cp : Clif.Program} (hMR : MRStable F MR) {exts : List Clif.ExtFunc}
-    (hCR : CallsRefine F env exts MR isem) {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx)
-    {fn : Clif.FnRef} {args : List Nat} {ext : Clif.ExtFunc} (hext : f.extern? fn = some ext)
-    (hin : ext ∈ exts) {bytes : List Nat} (hb : sigParamBytes ext.sig = .ok bytes)
-    (h8 : ext.sig.params.length ≤ 8) {info : TryInfo} {b : Nat}
+    {cp : Clif.Program} {sb : Nat} {syms : String → Option Nat} (hMR : MRStable F MR)
+    (hMem : MemRefines F sb syms isem) {outB : Nat} (hout : OutArgsOk F outB MR)
+    {exts : List Clif.ExtFunc} (hCR : CallsRefine F env exts MR isem) {f : Clif.Function}
+    {ctx : Ctx} (hctx : CtxInv f ctx) {fn : Clif.FnRef} {args : List Nat} {ext : Clif.ExtFunc}
+    (hext : f.extern? fn = some ext) (hin : ext ∈ exts) (hso : SigStackOk ext.sig outB)
+    {bytes : List Nat} (hb : sigParamBytes ext.sig = .ok bytes) {locs : List ArgLoc} {S : Nat}
+    (hl : sigArgLocs ext.sig = .ok (locs, S)) {info : TryInfo} {b : Nat}
     (htr : ctx.tryRegs = ((List.range (sigRets ext.sig).length).map fun j => Reg.vreg (b + j) .int,
       [.vreg b .int, .vreg (b + 1) .int]))
     {st st' : LState} (hargs : ∀ x ∈ args, x < st.nextVreg)
     (hst' : st'.nextVreg = st.nextVreg + 1) :
     LowerTryOk isem MR env cp ctx (.call fn args) info st st'
-      [.loadExtNameGot (.vreg st.nextVreg .int) ext.name,
+      ((stackEnts ((locs.zip args).zip bytes)).map argStore ++
+       [.loadExtNameGot (.vreg st.nextVreg .int) ext.name,
        .call ⟨.reg (.vreg st.nextVreg .int),
-        retPairs (args.zip ((abiArgIdx ext.sig.params 0).map Reg.x)),
-        callDefs (outDefs b (max (sigRets ext.sig).length 2))⟩] := by
-  refine ⟨by omega, ⟨[.loadExtNameGot (.vreg st.nextVreg .int) ext.name], _, rfl, ?_, ?_⟩, ?_⟩
+        retPairs (regPairsOf ((locs.zip args).zip bytes)),
+        callDefs (outDefs b (max (sigRets ext.sig).length 2))⟩]) := by
+  refine ⟨by omega, ⟨(stackEnts ((locs.zip args).zip bytes)).map argStore ++
+    [.loadExtNameGot (.vreg st.nextVreg .int) ext.name], _, by rw [List.append_assoc]; rfl, ?_,
+    ?_⟩, ?_⟩
   · intro m hm d hd
-    simp only [List.mem_singleton] at hm
-    subst hm
-    rw [vdefs_got_ctl] at hd
-    simp only [List.mem_singleton] at hd
-    omega
+    rcases List.mem_append.mp hm with hm | hm
+    · obtain ⟨e, -, rfl⟩ := List.mem_map.mp hm
+      simp [vdefs_argStore] at hd
+    · simp only [List.mem_singleton] at hm
+      subst hm
+      rw [vdefs_got_ctl] at hd
+      simp only [List.mem_singleton] at hd
+      omega
   · intro d hd
     rw [vdefs_call_reg] at hd
     exact tryDefs_mem htr d hd
   · intro fr cm ρ w hfr hvh _ hmr
     split
     · rename_i rvals cm' hO
-      obtain ⟨vals, g, hvals, hvl, hal, hg, hgo, hrN⟩ := call_ok_facts hctx hext hfr hO
-      have hfst : (args.zip ((abiArgIdx ext.sig.params 0).map Reg.x)).map (·.1) = args :=
-        List.map_fst_zip (by simp [abiArgIdx_length]; omega)
+      obtain ⟨ext', vals, g, hx, hvals, hty, hg, hgo, hrty⟩ := instOutcome_call_ok hO
+      rw [hfr, hctx.func, hext] at hx
+      cases hx
+      have hrN : rvals.length = ext.sig.returns.length := by
+        have := congrArg List.length hrty; simpa [Clif.AbiParam.tys] using this
+      obtain ⟨hlen, hvx⟩ := getMany_ok hvals
+      obtain ⟨w1, hrun1, hmr1, hargsAt⟩ := argsAt_after_stores hMR hMem hout hso hb hl hty
+        hlen.symm (fun j v x hv hx => hvh x v (hvx j x v hx hv)) hmr
       obtain ⟨sym, hgot, -, htry⟩ := hCR
-      obtain ⟨w1, hw1, hsw⟩ := hgot (.vreg st.nextVreg .int) ext.name w
-      have hmr1 := hMR _ _ _ _ hsw hmr
-      have hrun1 := seqRun_got (F := F) (ρ := ρ) hw1
-      generalize ht : st.nextVreg = t at hrun1 hw1 hargs ⊢
+      obtain ⟨w2, hw2, hsw⟩ := hgot (.vreg st.nextVreg .int) ext.name w1
+      have hmr2 := hMR _ _ _ _ hsw hmr1
+      have hrun2 := seqRun_got (F := F) (ρ := ρ) hw2
+      generalize ht : st.nextVreg = t at hrun2 hw2 hsw hargs ⊢
       have hρ1 : ∀ x ∈ args, upd ρ t (ofX (sym ext.name)) x = ρ x := by
         intro x hx
         have := hargs x hx
         simp only [upd]
         rw [if_neg (by omega)]
-      have huses : (args.zip ((abiArgIdx ext.sig.params 0).map Reg.x)).map
-          (upd ρ t (ofX (sym ext.name)) ·.1) = args.map ρ := by
-        rw [show (fun x : Nat × Reg => upd ρ t (ofX (sym ext.name)) x.1) =
-          upd ρ t (ofX (sym ext.name)) ∘ (·.1) from rfl, ← List.map_map, hfst]
-        exact List.map_congr_left hρ1
+      have huses : (regPairsOf ((locs.zip args).zip bytes)).map (upd ρ t (ofX (sym ext.name)) ·.1) =
+          (regPairsOf ((locs.zip args).zip bytes)).map (ρ ·.1) := by
+        apply List.map_congr_left
+        intro q hq
+        exact hρ1 _ (map_zip_args (mem_args_of_regPairs (List.mem_map_of_mem hq)))
       have hdl : (callDefs (outDefs b (max (sigRets ext.sig).length 2))).length =
           max (sigRets ext.sig).length 2 := by
         simp [callDefs, outDefs]
       have ht1 : upd ρ t (ofX (sym ext.name)) t = ofX (sym ext.name) := by simp [upd]
-      obtain ⟨outs, w', hi, hol, hro, hmr'⟩ := htry ext hin g fr.slots cm w1
-        (.reg (.vreg t .int))
-        (retPairs (args.zip ((abiArgIdx ext.sig.params 0).map Reg.x)))
+      obtain ⟨outs, w', hi, hol, hro, hmr'⟩ := htry ext hin g fr.slots cm w2
+        (.reg (.vreg t .int)) (retPairs (regPairsOf ((locs.zip args).zip bytes)))
         (callDefs (outDefs b (max (sigRets ext.sig).length 2))) info
         (upd ρ t (ofX (sym ext.name)) t ::
-          (args.zip ((abiArgIdx ext.sig.params 0).map Reg.x)).map (upd ρ t (ofX (sym ext.name)) ·.1))
-        (args.map ρ) vals rvals cm' hg
-        (.inr ⟨_, rfl, by rw [ht1, huses]⟩) (by rw [hdl]; exact Nat.le_max_left _ _) 
-        ((argsAt_iff_of_regs hb (by rw [sigParamBytes_length hb]; exact h8) hvl).mpr
-          (allHold_args hvh hvals)) hmr1 hgo hrN
+          (regPairsOf ((locs.zip args).zip bytes)).map (upd ρ t (ofX (sym ext.name)) ·.1))
+        ((regPairsOf ((locs.zip args).zip bytes)).map (ρ ·.1)) vals rvals cm' hg
+        (.inr ⟨_, rfl, by rw [ht1, huses]⟩) (by rw [hdl]; exact Nat.le_max_left _ _)
+        (hargsAt w2 hsw) hmr2 hgo hrN
       have hol' : outs.length = (outDefs b (max (sigRets ext.sig).length 2)).length := by
         rw [hol, hdl]; simp [outDefs]
-      have hrun2 := seqRun_tryCall_reg (info := info) hi hol'
-      rw [show ∀ c : CallInfo, tryFix info [MInst.loadExtNameGot (.vreg t .int) ext.name,
-          MInst.call c] = [MInst.loadExtNameGot (.vreg t .int) ext.name] ++ [MInst.tryCall c info]
-        from fun c => tryFix_append info [_] c]
+      have hrun3 := seqRun_tryCall_reg (info := info) hi hol'
+      rw [show ∀ c : CallInfo, tryFix info ((stackEnts ((locs.zip args).zip bytes)).map argStore ++
+          [MInst.loadExtNameGot (.vreg t .int) ext.name, MInst.call c]) =
+          ((stackEnts ((locs.zip args).zip bytes)).map argStore ++
+            [MInst.loadExtNameGot (.vreg t .int) ext.name]) ++ [MInst.tryCall c info]
+        from fun c => by rw [← tryFix_append info _ c]; simp]
       refine ⟨?_, _, _, _, _, _, outs, w',
-        seqRun_append_fall_stop isem (ms1 := [_]) hrun1 hrun2, rfl, fun j r v hr hv => ?_, hmr'⟩
+        seqRun_append_fall_stop isem (seqRun_append_fall' isem hrun1 hrun2) hrun3, by simp,
+        fun j r v hr hv => ?_, hmr'⟩
       · intro mi hmi u hu
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hmi
-        rcases hmi with rfl | rfl
-        · simp [vuseNums_got_ctl] at hu
-        · rw [vuseNums_call_reg, hfst] at hu
-          rcases List.mem_cons.mp hu with rfl | hu
-          · exact .inl (by omega)
-          · exact .inr (usesOk_args hvals u hu)
+        rcases List.mem_append.mp hmi with hmi | hmi
+        · obtain ⟨e, he, rfl⟩ := List.mem_map.mp hmi
+          rw [vuseNums_argStore, List.mem_singleton] at hu
+          subst hu
+          exact .inr (usesOk_args hvals _ (map_zip_args (mem_args_of_stackEnts he)))
+        · simp only [List.mem_cons, List.not_mem_nil, or_false] at hmi
+          rcases hmi with rfl | rfl
+          · simp [vuseNums_got_ctl] at hu
+          · rw [vuseNums_call_reg] at hu
+            rcases List.mem_cons.mp hu with rfl | hu
+            · exact .inl (by omega)
+            · exact .inr (usesOk_args hvals u (map_zip_args (mem_args_of_regPairs hu)))
       · obtain ⟨-, rfl⟩ := tryRets_get htr hr
         refine ⟨b + j, rfl, ?_⟩
         rw [vdefUpd_call_reg]
@@ -384,8 +420,10 @@ theorem try_got_lowerTryOk {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} 
 set_option maxHeartbeats 20000000 in
 theorem try_got_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) {F : BitVec 64 → Prop}
     {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program} (hR : Refines F isem)
-    (hMR : MRStable F MR) {exts : List Clif.ExtFunc} (hCR : CallsRefine F env exts MR isem) :
-    TryRuleOk isem MR env cp exts p rule_lower_2551 := by
+    (hMR : MRStable F MR) {sb : Nat} {syms : String → Option Nat} (hMem : MemRefines F sb syms isem)
+    {outB : Nat} (hout : OutArgsOk F outB MR) {exts : List Clif.ExtFunc}
+    (hCR : CallsRefine F env exts MR isem) :
+    TryRuleOk isem MR env cp exts outB p rule_lower_2551 := by
   intro f ctx hctx hexts ti fn args et data sig items targets info lo st1 hreg hd he hi hinfo htr
     hvb cfg hc m n st tr env' s1 out st' tr' hm hn hst _ hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
@@ -419,16 +457,17 @@ theorem try_got_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) {F : BitVec
   rw [hinfo] at hti'
   cases hti'
   obtain ⟨bytes, hb⟩ := ctor_gen_call_args_bytes ‹externCtor ctx T.gen_call_args _ _ = _›
-  have h8 : bytes.length ≤ 8 := sigParamBytes_length hb ▸ hreg _ hext
+  obtain ⟨locs, S, hl⟩ := ctor_gen_call_args_locs ‹externCtor ctx T.gen_call_args _ _ = _›
   have hbelow := mapM_valueReg_below hvb ‹List.mapM ctx.valueReg? args = some _›
   have hrs := mapM_valueReg hctx ‹List.mapM ctx.valueReg? args = some _›
   subst hrs
-  simp only [ctor_gen_call_args_iff _ _ _ hb h8, mapM_single_map, Option.some.injEq,
+  simp only [ctor_gen_call_args_gen _ _ _ hb hl, mapM_single_map, Option.some.injEq,
     exists_eq_left'] at *
   isel_destruct; subst_vars
   have h570 := ‹ApplyInternal _ _ _ _ 27 570 _ _ _ _›
   obtain ⟨rfl, hs0⟩ := kL _ (by omega) _ _ _ _ _ h570
-  simp only [ctor_gen_call_ind_info_iff _ _ _ _ _ _ hb h8, Option.some.injEq] at *
+  simp only [ctor_gen_call_ind_info_gen _ _ _ _ _ _ hl, Nat.reduceEqDiff, Nat.reduceLT,
+    ite_true, ite_false, Option.some.injEq] at *
   isel_destruct; subst_vars
   obtain ⟨hr8, rfl⟩ := retRegs_eq ‹retRegs _ = some _›
   have h639 := ‹ApplyInternal _ _ _ _ 46 639 _ _ _ _›
@@ -439,17 +478,15 @@ theorem try_got_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) {F : BitVec
   cases hmi
   obtain ⟨-, htrs, hst1, -⟩ := tryRegsOf_spec (exnTableOpnd_cc he) htr
   rw [htrs, exnTableOpnd_cc he, tryDefs_eq _ _ hr8] at hs2
-  rw [uses_retPairs] at hs2
+  rw [show ∀ s : LState, (s.fresh .int).1 = .vreg s.nextVreg .int from fun s => rfl] at hs2 hs0
   have hcd : ((List.range (max (sigRets ext.sig).length 2)).map fun j =>
       (Reg.x j, Reg.vreg (lo.nextVreg + j) .int)) =
       callDefs (outDefs lo.nextVreg (max (sigRets ext.sig).length 2)) := by
     simp [callDefs, outDefs, List.map_map, Function.comp_def]
   rw [hcd] at hs2
   simp only at hs0 hs1 hs2
-  have hfr : ∀ s : LState, (s.fresh .int).1 = .vreg s.nextVreg .int := fun s => rfl
-  rw [hfr] at hs2 hs0
-  refine ⟨_, ?_, try_got_lowerTryOk hMR hCR hctx hext (hexts fn _ hext) hb (hreg _ hext) htrs
-    (fun x hx => by have := hbelow x hx; omega)
+  refine ⟨_, ?_, try_got_lowerTryOk hMR hMem hout hCR hctx hext (hexts fn _ hext) (hreg _ hext)
+    hb hl htrs (fun x hx => by have := hbelow x hx; omega)
     (by rw [hs2, hs1, hs0]; simp [LState.emit, LState.fresh])⟩
   rw [hs2, hs1, hs0]
   simp only [LState.emit, LState.fresh]
@@ -481,16 +518,16 @@ theorem mem_lower_branch_2551 : rule_lower_2551 ∈ program.rulesOf TId.lower_br
 /-- **`TryRulesCorrect`**: under the callee contract, the `try_call` rules of `lower_branch`
 (`bl`, rule id 1034; GOT + `blr`, rule id 1035) are correct. -/
 theorem tryRulesCorrect : TryRulesCorrect program := by
-  intro F isem MR env cp exts hR hMR hCR r hr hroot
+  intro F isem MR env cp exts sb syms outB hR hMR hMem hout hCR r hr hroot
   simp only [tryRootRule, Bool.or_eq_true, beq_iff_eq] at hroot
   have hnd : ((program.rulesOf TId.lower_branch).map Rule.id).Nodup := by
     rw [show TId.lower_branch = 687 from rfl, data_program.r687]
     decide +kernel
   rcases hroot with h | h
   · rw [eq_of_mem_of_rid hnd hr mem_lower_branch_2542 (by rw [h]; rfl)]
-    exact try_bl_ruleOk data_program tryData_program hR hMR hCR
+    exact try_bl_ruleOk data_program tryData_program hR hMR hMem hout hCR
   · rw [eq_of_mem_of_rid hnd hr mem_lower_branch_2551 (by rw [h]; rfl)]
-    exact try_got_ruleOk data_program tryData_program hR hMR hCR
+    exact try_got_ruleOk data_program tryData_program hR hMR hMem hout hCR
 
 /-- The root format of the rules of `lower_branch` other than the `try_call` rules is not
 `TryCall` (2474). -/

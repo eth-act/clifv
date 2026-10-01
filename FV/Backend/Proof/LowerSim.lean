@@ -165,16 +165,13 @@ structure DriverHyp (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) 
   indSig : ∀ B ∈ f.blocks, ∀ st ∈ B.body, IndSigOk f (indSigs f) st.inst
   /-- `f` is in subset E (`E2E.InSubset.subsetE`; new since `call_indirect`/`func_addr` compile) -/
   subE : Compile.functionE f = true
-  /-- a `try_call` calls an extern with at most 8 (register) parameters
-  (`E2E.InSubset.tryRegArgs`) -/
-  tryRegArgs : ∀ B ∈ f.blocks, ∀ fn args et, B.term = .tryCall fn args et →
-    ∀ e, f.extern? fn = some e → e.sig.params.length ≤ 8
   /-- `br_table` indices have at most 32 bits (`lowerCheck`'s `brIdxOk`) -/
   brIdx : ∀ B ∈ f.blocks, BrIdxTyped ctx B.term
   /-- no tail calls (`return_call` is outside clif-subset-v2 E) -/
   noTail : ∀ B ∈ f.blocks, ∀ fn args, B.term ≠ .returnCall fn args
-  /-- M4: `lower_branch` on `try_call`s (`tryCalls_of_rules`) -/
-  tries : TryCalls f sem MR env p
+  /-- M4: `lower_branch` on `try_call`s (`tryCalls_of_rules`), for an outgoing area that holds
+  every `try_call`'s stack arguments (`lowerCheck`'s `callsStackOkB`) -/
+  tries : ∃ out, TryCalls f sem MR env p out ∧ TryStack f out
   /-- a `try_call` calls an extern (`E2E.InSubset.tryExterns`) -/
   tryExt : ∀ B ∈ f.blocks, ∀ fn args et, B.term = .tryCall fn args et →
     ∀ e, f.extern? fn = some e → p.func? e.name = none
@@ -1331,9 +1328,9 @@ theorem term_step_try (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
       rw [hBT]
       refine ⟨.call fn args, fun y hy => by
           simp only [instArgs] at hy; simp [termArgs, hy], hnd,
-        fun s' hs => ?_, H.tries ctx (L.start + B.body.length) fn args et L.data T.sig T.items
-          L.targets T.info T.regs L.tst T.st1 out L.tst' tr H.shape.ctxInv
-          (H.tryRegArgs B hBmem fn args et hBT) hdata' hexn
+        fun s' hs => ?_, H.tries.choose_spec.1 ctx (L.start + B.body.length) fn args et L.data
+          T.sig T.items L.targets T.info T.regs L.tst T.st1 out L.tst' tr H.shape.ctxInv
+          (H.tries.choose_spec.2 B hBmem fn args et hBT) hdata' hexn
           (H.shape.tslot b B L hB hL) hinfo hregs hvbL hrun⟩
       obtain ⟨ext, bc, rvals, cm', regs', hx, htn, hO, hset, rfl⟩ := hnx s' hs
       rw [hfunc, hx0] at hx
