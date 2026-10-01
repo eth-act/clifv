@@ -50,6 +50,15 @@ theorem mspec_world {sb : Nat} {i : MInst} {uses : List CV} {w : Arm.ArmState} {
       exact ⟨Arm.r_of_write_mem_bytes, Arm.write_mem_bytes_program _ _⟩
   · simp only [Option.some.injEq, Prod.mk.injEq]
     rintro ⟨-, rfl, -⟩; exact ⟨rfl, rfl⟩
+  · split
+    · simp only [Option.some.injEq, Prod.mk.injEq]
+      rintro ⟨-, rfl, -⟩; exact ⟨rfl, rfl⟩
+    · simp
+  · split
+    · simp only [Option.some.injEq, Prod.mk.injEq]
+      rintro ⟨-, rfl, -⟩
+      exact ⟨Arm.r_of_write_mem_bytes, Arm.write_mem_bytes_program _ _⟩
+    · simp
   · exact ispec_world
 
 theorem csem_next_world' {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MInst}

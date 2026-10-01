@@ -465,6 +465,11 @@ extrt and runtests (445 files): no function rejected.
 * **Arm model fidelity** (`FV/Arm`, ASL-derived, co-simulated against qemu) and **`Clif.run`
   fidelity** (checked against Cranelift's interpreter and native runs), including the choice
   that CLIF slot addresses are unspecified (`ClifEntry`).
+* **Single-threaded atomics** (agent/atomics-proof): `bmask`, `atomic_load`, `atomic_store`
+  and `fence` are inside `backend_correct_final`. This rests on the Arm model being single-core:
+  `ldar`/`stlr` are plain accesses, an exclusive store always succeeds, there is no monitor, and
+  `dmb` is a no-op (`docs/decisions/arm-model.md`, "Atomics"). `atomic_rmw`/`atomic_cas` stay
+  outside E: their root rules are proven vacuous from `CtxInv.instE`.
 * **Object writing, linking and loading** (`elfObject`, rust-lld, the loader): the words of `fb`
   at `base`, relocations resolved to `syms`/callee addresses (M6's hooks), GOT contents.
 * **Runtime/callee contracts**: externs implement `Clif.Env.extern` under AAPCS64

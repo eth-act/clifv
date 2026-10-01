@@ -20,16 +20,6 @@ set_option maxRecDepth 20000
 
 The terms the `call_indirect`/`try_call_indirect` rules reach beyond `Data`. -/
 
-@[isel_data] theorem term_196_kind : T.«value_slice_unwrap».kind =
-    (.decl ⟨false, false, false, false⟩ none (some (.external "value_slice_unwrap" false))) := rfl
-@[isel_data] theorem term_196_name : T.«value_slice_unwrap».name = "value_slice_unwrap" := rfl
-@[isel_data] theorem term_2293_kind : T.«Opcode.CallIndirect».kind = (.enumVariant 9) := rfl
-@[isel_data] theorem term_2293_name : T.«Opcode.CallIndirect».name = "Opcode.CallIndirect" := rfl
-@[isel_data] theorem term_2454_kind : T.«InstructionData.CallIndirect».kind = (.enumVariant 7) :=
-  rfl
-@[isel_data] theorem term_2454_name :
-    T.«InstructionData.CallIndirect».name = "InstructionData.CallIndirect" := rfl
-
 /-- The term facts of the indirect-call rules beyond `Data`. -/
 structure IndData (p : Program) : Prop where
   t196 : Interp.termOf p 196 = pure T.«value_slice_unwrap»

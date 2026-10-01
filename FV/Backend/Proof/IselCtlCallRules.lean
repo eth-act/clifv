@@ -150,9 +150,6 @@ theorem instOutcome_call_ok {env : Clif.Env} {cp : Clif.Program} {fr : Clif.Fram
     | trap c => simp [he, hv, Clif.Res.ofOption, bind, Clif.Res.bind] at h
     | stuck m => simp [he, hv, Clif.Res.ofOption, bind, Clif.Res.bind] at h
 
-theorem writeV_cons {V : Type} (ρ : Nat → V) (a : Operand × V) (dv : List (Operand × V)) :
-    writeV ρ (a :: dv) = writeV (upd ρ a.1.vreg a.2) dv := rfl
-
 theorem writeV_notMem_ctl {V : Type} : ∀ (dv : List (Operand × V)) (ρ : Nat → V) (y : Nat),
     y ∉ dv.map (·.1.vreg) → writeV ρ dv y = ρ y
   | [], ρ, y, _ => rfl

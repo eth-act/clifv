@@ -495,8 +495,7 @@ fn classify(cfg: &Config, stderr: &str, ok: bool, out: &Path, symbol: &str) -> C
         return Compiled::Fallback(format!("lean-backend failed: {first}"));
     }
     // lean-backend prints the closure warnings before the per-function reasons; its own
-    // reason (e.g. "bmask / atomic instructions / fence", whose rules are outside the
-    // emitter-subset closure by design) is the more precise one, so it wins.
+    // reason (e.g. "tls_value (outside backend_correct)") is the more precise one, so it wins.
     let mut unverified: Option<String> = None;
     let mut outside_closure: Option<String> = None;
     let mut normal_returns = false;
