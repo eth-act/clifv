@@ -733,7 +733,8 @@ GOT load of a linked symbol is its address (with `CallsRefine`: its `sym` at the
 symbols); the world otherwise as for the other forms (`SameWorld F`). The atomic forms
 (agent/atomics-proof), at an address register whose access avoids `F`: `ldar` and `stlr` as a
 load and a store; the LL/SC loops (single-threaded: the exclusive store succeeds, so the body
-runs once) read the old value into their first def and write the new one — the operation of
+runs once) read the old value into their first def (`atomic_rmw`: its low bits; the `smin`/`smax`
+loops of `i8`/`i16` sign-extend it in place) and write the new one — the operation of
 `atomic_rmw` on the old value and the operand's low bits, the replacement value of
 `atomic_cas` if the old value equals the expected value's low bits — with a world that agrees
 up to the flags (`SameWorldNF`; the scratch defs' values are unspecified). -/
@@ -766,10 +767,10 @@ def MemRefines (F : BitVec 64 → Prop) (sb : Nat) (syms : String → Option Nat
       SameWorld F w' (Arm.write_mem_bytes ty.bytes (lo64 u) ((lo64 v).setWidth (ty.bytes * 8)) w)) ∧
   (∀ (ty : CTy) (op : AtomicRmwLoopOp) (fl : Clif.MemFlags) (ra ro rd r1 r2 : Nat) (u x : CV)
       (w : Arm.ArmState),
-    AtomTy ty → Avoids F ty.bytes (lo64 u) → ∃ w' o1 o2,
+    AtomTy ty → Avoids F ty.bytes (lo64 u) → ∃ w' o0 o1 o2,
     isem (.atomicRmwLoop ty op fl (.vreg ra .int) (.vreg ro .int) (.vreg rd .int) (.vreg r1 .int)
-        (.vreg r2 .int)) [u, x] w =
-      some ([ofX ((Arm.read_mem_bytes ty.bytes (lo64 u) w).setWidth 64), o1, o2], w', .next) ∧
+        (.vreg r2 .int)) [u, x] w = some ([o0, o1, o2], w', .next) ∧
+      o0.setWidth (ty.bytes * 8) = Arm.read_mem_bytes ty.bytes (lo64 u) w ∧
       SameWorldNF F w' (Arm.write_mem_bytes ty.bytes (lo64 u)
         (Clif.Sem.atomicRmw op.clif (Arm.read_mem_bytes ty.bytes (lo64 u) w)
           ((lo64 x).setWidth (ty.bytes * 8))) w)) ∧

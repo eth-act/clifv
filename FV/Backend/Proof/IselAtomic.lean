@@ -568,6 +568,18 @@ theorem bits_setWidth_holds {ty : Clif.Ty} (hety : eTy ty = true) {a : BitVec ty
   · simp [hj, show j < 64 by omega]
   · simp [hj]
 
+/-- A value whose low bits at the access size are the loaded bytes holds the loaded CLIF value. -/
+theorem holds_of_setWidth {ty : Clif.Ty} (hety : eTy ty = true) {raw : BitVec ty.width} {o : CV}
+    {R : BitVec ((CTy.ofClif ty).bytes * 8)} (ho : o.setWidth ((CTy.ofClif ty).bytes * 8) = R)
+    (hbits : ∀ j, raw.getLsbD j = R.getLsbD j) : VHolds ⟨ty, raw⟩ o := by
+  simp only [VHolds]
+  have hw := ofClif_bytes_width hety
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  rw [hbits, ← ho]
+  simp only [BitVec.getLsbD_setWidth]
+  simp [hi, show i < (CTy.ofClif ty).bytes * 8 by omega]
+
 /-- **`atomic_rmw`** with operation `cop` (`AtomicRMWLoop` with `op.clif = cop`): the old value
 in the first fresh register, the new value in memory. -/
 theorem atomicRmw_lower_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem)
@@ -599,7 +611,7 @@ theorem atomicRmw_lower_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem
   dsimp only
   obtain ⟨ha, hA64, havoid⟩ := atom_addr hMRo hdfg hv hp64 hpv hmr hvalid
   rw [← ofClif_bytes hety] at havoid
-  obtain ⟨w2, o1, o2, hs, hsw⟩ := hM.2.2.2.2.2.2.1 (CTy.ofClif ty) op fl p x st.nextVreg
+  obtain ⟨w2, o0, o1, o2, hs, ho0, hsw⟩ := hM.2.2.2.2.2.2.1 (CTy.ofClif ty) op fl p x st.nextVreg
     (st.nextVreg + 1) (st.nextVreg + 2) (ρ p) (ρ x) w (atomTy_ofClif hety) havoid
   have hr := seqRun_isem_one (operands_rmwLoop _ _ _ _ _ _ _ _) (ρ := ρ) hs rfl
   have hxv := getAs_ok hax
@@ -624,11 +636,10 @@ theorem atomicRmw_lower_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem
         ⟨x, .int, .use, .early, .fixed (.x 26)⟩, ⟨st.nextVreg, .int, .def, .late, .fixed (.x 27)⟩,
         ⟨st.nextVreg + 1, .int, .def, .late, .fixed (.x 24)⟩,
         ⟨st.nextVreg + 2, .int, .def, .late, .fixed (.x 28)⟩]
-        [ofX ((Arm.read_mem_bytes (CTy.ofClif ty).bytes (lo64 (ρ p)) w).setWidth 64), o1, o2] ρ
-        st.nextVreg = ofX ((Arm.read_mem_bytes (CTy.ofClif ty).bytes (lo64 (ρ p)) w).setWidth 64) := by
+        [o0, o1, o2] ρ st.nextVreg = o0 := by
       simp [vdefUpd, writeV, Operand.isDef, Operand.isEarly, Operand.isLate, upd]
     rw [e]
-    exact atom_holds hety (ofClif_bytes_width hety) hbits
+    exact holds_of_setWidth hety ho0 hbits
   · have hX := hv x _ hxv
     subst hop
     have hcm : cm.writeBits false (Clif.effAddr pv 0) ty.bytes (Clif.Sem.atomicRmw op.clif old a) =
