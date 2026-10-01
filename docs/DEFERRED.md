@@ -17,9 +17,11 @@ available by proving them and adding them to the allow-list; the theorems don't 
 - Template tactics and the generated constructor lemmas.
 - The exact proven set and the per-family recipe are in `docs/contracts/midend.md`, section "Rule proofs".
 
-**Status (2026-10-01):** 936 `simplify` roots are proven and allow-listed: arithmetic 172 of 258, cprop 52 of 68, bitops 444 of 450, icmp 92 of 124, selects 82 of 100, extends 26 of 29, shifts 48 of 75 and spaceship 20 of 40 (corpus 4668 → 2605, runtests 3389 → 2993 with only these rules). The skeleton allow-list is empty. `E2E.backend_correct_opt_proven` covers exactly this set. With only these rules enabled, corpus instructions fall from 4668 to 2606 (all rules: 2287), and runtests from 3389 to 3052 (all rules: 3040). 30 icmp/selects proofs were removed because their modules never built (out of memory or failing proofs; midend.md lists them); `RuleAll` now checks the allow-list in 16 s / 3.6G, so it no longer limits how many rules can be added.
+**Status (2026-10-01, RulesRest):** 1012 `simplify` roots are proven and allow-listed: arithmetic 216 of 258, cprop 61 of 68, bitops 444 of 450, icmp 95 of 124, selects 82 of 100, extends 26 of 29, shifts 56 of 75, spaceship 20 of 40 and remat 12 of 12. The skeleton allow-list is empty. `E2E.backend_correct_opt_proven` covers exactly this set. With only these rules enabled, corpus instructions fall from 4668 to 2322 (was 2605 at 936 roots), and runtests from 3389 to 2976 (was 2993).
 
-**Remaining:** prove the rest of the E-closure roots, one opts file per family. The remaining counts are arithmetic 86, cprop 16, bitops 6, icmp 32 and selects 18 (midend.md lists them); shifts, spaceship, extends, remat and skeleton have no proofs yet. Roots per family:
+**Findings:** `shifts.isle` 84 and 88 are false under the CLIF semantics (shift constants above the type width make `shift_amt_to_type` pick a type wider than `ty`, so the rule builds an ill-typed `ireduce`/`sextend`; midend.md has the example). No skeleton rule can be proven against the current `SkelRuleOk`: the matched operand nodes are facts about the start state, while the refinement is checked in later valuations, and `GraphModel` does not keep a class's nodes across states. Proving skeleton rules (including `div_const`) needs node persistence in `GraphModel` (or a defined-operands premise in `SkelRuleOk`), which changes the pass proofs' obligations.
+
+**Remaining:** arithmetic 42, cprop 7, bitops 6, icmp 29, selects 18, extends 3, shifts 19 (2 of them false), spaceship 20, skeleton 37 (blocked, see above). midend.md lists them with reasons. Roots per family:
 
 | Family | Roots |
 | --- | --- |
@@ -31,7 +33,7 @@ available by proving them and adding them to the allow-list; the theorems don't 
 | cprop | 68 |
 | spaceship | 40 |
 | extends | 29 |
-| remat | 12 |
+| remat | 12 (all proven) |
 | skeleton (incl. div_const) | 37 |
 
 **How to add a family:** follow the recipe in midend.md "Rule proofs":
