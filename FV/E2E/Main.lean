@@ -97,7 +97,7 @@ theorem outArgsOk_holds (Γ : Rel) (f : Clif.Function) :
     intro a ⟨n', hv, hn'⟩ j hj e
     rw [BitVec.add_assoc, show BitVec.ofNat 64 k + BitVec.ofNat 64 j = BitVec.ofNat 64 (k + j) by
       apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_add]] at e
-    exact ho.2.2 a n' hv 0 hn' (k + j) (by omega) (by simpa using e)
+    exact ho.2.2 a n' hv 0 hn' (k + j) (by omega) (by simpa using (show BitVec.ofNat 64 a = spv w + BitVec.ofNat 64 (k + j) from e))
   refine ⟨⟨fun a b ha hb => ?_, hm.valid, hm.symbols⟩, ?_, ?_⟩
   · rw [← hm.bytes a b ha hb]
     simp only [Arm.read_mem, Arm.read_store]

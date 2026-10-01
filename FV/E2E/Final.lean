@@ -119,7 +119,7 @@ theorem stackArgsAvoid_frameF {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf
   have hfit := h.fits
   have hx : (spv s + BitVec.ofNat 64 off + BitVec.ofNat 64 j -
       (spv s - BitVec.ofNat 64 (frameDrop af))).toNat = off + j + frameDrop af := by
-    rw [hD] at hsp ⊢
+    rw [hD]
     bv_omega
   rcases hF with ⟨-, h2⟩ | ⟨-, h2⟩ | hcode
   · rw [hx] at h2; omega
@@ -176,6 +176,39 @@ theorem backend_correct_final {p : Clif.Program} {f : Clif.Function} {k : Nat} {
     (refines_final vcp rf af fa X) hX hXI (fun _ => hsym)
     (fun _ => memRefines_csem _ _ X hslot hsym) (outgoing_le_intBase hc)
     hent hres hbe hargs (stackArgsAvoid_frameF hc hres hent hargs) hcs hrel htr fuel
+
+/-- **Specialisation**: for a signature with at most 8 parameters (all passed in registers),
+`ArgsIn` is the former premise "argument `i` in `x (argIdx sig i)`" (low bits). -/
+theorem argsIn_iff_of_regs {sig : Clif.Signature} {bytes : List Nat}
+    (hb : sigParamBytes sig = .ok bytes) (h8 : bytes.length ≤ 8) {args : List Clif.Val}
+    {s : Arm.ArmState} (hl : args.length = sig.params.length) :
+    ArgsIn sig args s ↔ ∀ i v, args[i]? = some v → XHolds v (xreg (argIdx sig i) s) := by
+  rw [ArgsIn, locsOf_of_regs hb h8]
+  have hlen : (abiArgIdx sig.params 0).length = args.length := by rw [abiArgIdx_length, hl]
+  constructor
+  · intro h i v hv
+    have hi : i < (abiArgIdx sig.params 0).length := by
+      rw [hlen]; exact (List.getElem?_eq_some_iff.mp hv).1
+    have hm : (ArgLoc.reg (.x (argIdx sig i)), v) ∈
+        ((abiArgIdx sig.params 0).map fun n => ArgLoc.reg (.x n)).zip args := by
+      apply List.mem_iff_getElem?.mpr
+      refine ⟨i, ?_⟩
+      simp [List.getElem?_zip_eq_some, hv, argIdx, List.getD_eq_getElem?_getD,
+        List.getElem?_eq_getElem hi]
+    exact h _ _ hm
+  · intro h loc v hm
+    obtain ⟨i, hi⟩ := List.mem_iff_getElem?.mp hm
+    rw [List.getElem?_zip_eq_some, List.getElem?_map] at hi
+    obtain ⟨h1, h2⟩ := hi
+    cases hn : (abiArgIdx sig.params 0)[i]? with
+    | none => simp [hn] at h1
+    | some n =>
+      simp only [hn, Option.map_some, Option.some.injEq] at h1
+      subst h1
+      have hai : argIdx sig i = n := by simp [argIdx, List.getD_eq_getElem?_getD, hn]
+      have := h i v h2
+      rw [hai] at this
+      exact this
 
 /-- **Specialisation to functions without indirect calls**: `backend_correct_final` with the
 former premises (no indirect-call contract `hXI`), for a function with no `call_indirect`

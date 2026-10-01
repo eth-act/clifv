@@ -965,8 +965,8 @@ theorem entryOk_of_check {f : Clif.Function} {vc : VCode} (h : lowerCheck f vc =
     · simp only [Bool.and_eq_true] at h
       have h2 := h.2.2
       simp only [entryOkB, Bool.and_eq_true, beq_iff_eq] at h2
-      refine ⟨h2.1, ?_⟩
-      have h3 := h2.2.2
+      refine ⟨h2.1.1, ?_⟩
+      have h3 := h2.2
       split at h3
       · exact ⟨_, ‹_›⟩
       · cases h3
@@ -983,7 +983,7 @@ theorem entryRegs_of_check {f : Clif.Function} {vc : VCode} (h : lowerCheck f vc
       have h2 := h.2.2
       simp only [entryOkB, Bool.and_eq_true, beq_iff_eq] at h2
       intro l hl r hr
-      have := List.all_eq_true.mp h2.2.1 l hl
+      have := List.all_eq_true.mp h2.1.2 l hl
       subst hr
       cases r with
       | x n => exact ⟨n, rfl, by simpa using this⟩

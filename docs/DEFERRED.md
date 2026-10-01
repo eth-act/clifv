@@ -67,8 +67,18 @@ theorem (`docs/contracts/e2e.md`, "`sret`"). Deferred:
 - the conclusion claims the CLIF return values (none for an `sret` function) and the memory the
   function wrote through the pointer, not that x0 holds the pointer on return (the ABI's
   `sigRets`); callers compiled by cg_clif and the Lean backend do not read it;
-- `sret` with 8 further parameters (9 parameters: `InSubset.regParams` counts the pointer),
-  `vmctx`/`sarg` parameters (flagged unverified).
+- `vmctx`/`sarg` parameters (flagged unverified). (`sret` with 8 further parameters is
+  covered since agent/stack-tls-proof: `InSubset.regParams` is gone.)
+
+## Stack-passed arguments: what `E2E.backend_correct_final` does not cover (2026-10-01)
+
+Stack-passed parameters and stack-passed arguments of `call` are inside the end-to-end theorem
+(`docs/contracts/e2e.md`, "Stack-passed parameters and `call` arguments"). Deferred:
+- stack-passed arguments of a `try_call` (`InSubset.tryRegArgs`, flagged unverified) and of
+  `call_indirect`/`try_call_indirect` (`InSubset.indSigs`, at most 8 register parameters);
+- the callee contract `XCallsOk` relates the world the callee returns by `Rel.holds`, including
+  `OutRel` of the caller's outgoing area; that the callee does not touch live CLIF memory in it
+  is part of the environment contract, not derived from AAPCS64.
 
 ## Other deferred items
 

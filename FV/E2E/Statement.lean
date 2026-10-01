@@ -120,7 +120,7 @@ theorem InSubset.of_regArgs {p : Clif.Program} {f : Clif.Function}
       ∀ e, f.extern? fn = some e → p.func? e.name = none)
     (hcra : ∀ e ∈ f.externs, e.2.sig.params.length ≤ 8)
     (habi : sigAbiOk f.sig = true ∧ ∀ e ∈ f.externs, sigAbiOk e.2.sig = true)
-    (hind : ∀ s ∈ indSigs f, s.params.length ≤ 8 ∧ sigAbiOk s = true) :
+    (hind : ∀ s ∈ _root_.Backend.indSigs f, s.params.length ≤ 8 ∧ sigAbiOk s = true) :
     InSubset p f :=
   ⟨hfunc, hE, hext, htry, fun _ _ fn _ _ _ e he => by
     unfold Clif.Function.extern? at he

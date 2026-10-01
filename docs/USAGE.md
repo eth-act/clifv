@@ -357,6 +357,11 @@ After agent/atomics-proof stage B (2026-10-02: `atomic_rmw`/`atomic_cas` verifie
 (8 unverified, 6 fallback), survey 3174 of 3179 (5 unverified), vendor 4381 of 4399
 (18 unverified).
 
+After agent/stack-tls-proof stack arguments (2026-10-01: stack-passed parameters and stack-passed
+arguments of `call` verified; debug, `examples/compare.sh` SAME for all three): fv-demo 1332
+verified of 1346 (8 unverified, 6 fallback), survey 3174 of 3179 (5 unverified), vendor 4395 of
+4399 (4 unverified: 3 `tls_value`, 1 stack-passed arguments of a `try_call`).
+
 Of the verified, `verified (normal returns; unwinding trusted)`: fv-demo 231 / 204, survey
 492 / 419, vendor 820 / 727 (debug / release). Before (main fbbd5d9, `try_call` functions
 compiled but unverified) survey debug had 2537 verified of 3179. No function is over the
