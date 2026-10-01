@@ -6,7 +6,7 @@ import FV.Backend.Proof.IselExcl
 import FV.Backend.Proof.IselCtl
 import FV.Backend.Proof.IselCtlUnmatch
 import FV.Backend.Proof.IselCtlTryInd
-import FV.Backend.Proof.IselMemFuncAddr
+import FV.Backend.Proof.IselAtomic
 import FV.Backend.Proof.MemRefines
 import FV.Backend.Proof.RefinesCSem
 

@@ -234,6 +234,7 @@ theorem rhs_1995 {x w : Nat} {rx : Reg} (hx : ctx.valueReg? x = some rx) (hw : w
       isel_eval [*, rule_lower_1995, rule_inst_3517, rule_inst_3512, ctor_put_in_reg ctx _ hx]
       rfl
 
+set_option maxHeartbeats 1000000 in
 include hp hc in
 theorem rhs_1982 {x : Nat} {rx : Reg} (hx : ctx.valueReg? x = some rx) :
     ∃ tr', (evalExpr p (sem ctx) cfg (n+40) rule_lower_1982.rhs (env1 (.value x))).run (st, tr) =
@@ -259,6 +260,7 @@ theorem rhs_1982 {x : Nat} {rx : Reg} (hx : ctx.valueReg? x = some rx) :
       ctor_put_in_reg ctx _ hx]
     rfl
 
+set_option maxHeartbeats 1000000 in
 include hp hc in
 theorem rhs_1986 {x : Nat} {rx : Reg} (hx : ctx.valueReg? x = some rx) :
     ∃ tr', (evalExpr p (sem ctx) cfg (n+40) rule_lower_1986.rhs (env1 (.value x))).run (st, tr) =
