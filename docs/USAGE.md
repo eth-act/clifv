@@ -339,6 +339,15 @@ lowering validator; `examples/compare.sh`, which requires every test outcome to 
 | vendor | debug | 187/187 + 2 ignored | 4399 | 4191 | 208 | 0 | 0 | 4273 |
 | vendor | release | 187/187 + 2 ignored | 3082 | 2847 | 235 | 0 | 0 | 2872 |
 
+After agent/indirect-proof (2026-10-01: `call_indirect`, `func_addr`, `try_call_indirect`
+verified; debug, `examples/compare.sh` SAME for all three: fv-demo 19, survey 53, vendor 189
+test outcomes): fv-demo 1320 verified of 1346 (20 unverified, 6 fallback), survey 3147 of 3179
+(32 unverified), vendor 4302 of 4399 (97 unverified); of them `verified (normal returns;
+unwinding trusted)`: 252, 493, 837. No function is unverified for an indirect call any more
+(the remaining reasons: atomics/`bmask`/`fence`, `tls_value`, stack-passed parameters or call
+arguments, calls of functions of the same file, rejected `i128` legalisations). Release
+builds were not re-measured.
+
 Of the verified, `verified (normal returns; unwinding trusted)`: fv-demo 231 / 204, survey
 492 / 419, vendor 820 / 727 (debug / release). Before (main fbbd5d9, `try_call` functions
 compiled but unverified) survey debug had 2537 verified of 3179. No function is over the
