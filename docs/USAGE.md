@@ -242,9 +242,19 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   The report labels it **`verified (normal returns; unwinding trusted)`** and counts it among
   the verified functions, with a footnote giving how many there are. Nothing is claimed about
   unwinding: the landing pads, the payload on the handler edges, the LSDA and the `.eh_frame`
-  rows are trusted. `try_call_indirect` stays unverified ("try_call_indirect (outside
-  backend_correct)"), and so does every `try_call` function under `--opt-proven-only` and
-  after `i128` legalisation (those theorems cover `try_call`-free functions only).
+  rows are trusted. `try_call_indirect` is verified the same way (agent/indirect-proof). Every
+  `try_call` function stays unverified under `--opt-proven-only` and after `i128`
+  legalisation (those theorems cover `try_call`-free functions only).
+* **Indirect calls are verified** (agent/indirect-proof): functions with `call_indirect`,
+  `func_addr` (vtables, `fn` pointers, `dyn` dispatch) and `try_call_indirect` are inside
+  `E2E.backend_correct_final` when the indirect calls have at most 8 register parameters and
+  plain/`sret` signatures (otherwise "indirect call with stack-passed arguments or a
+  special-purpose parameter"). An indirect call is covered when it reaches an extern (a
+  function not compiled in the same file, e.g. a `dyn` method from another codegen unit or
+  the standard library) under the contract `XCallsIndOk`; one that reaches a function of the
+  same file is excluded by the run premise `TrapsExplicit.indirect`, as direct calls of
+  functions of the file are. Under `--opt-proven-only` and after `i128` legalisation,
+  `call_indirect` functions stay unverified (the mid-end simulation does not model them).
 * With the shipped cg_clif (no unwinding build, or `FV_CG_CLIF=cranelift`), no function has a
   landing pad, `cargo fv` prints a note, and the program behaves as under plain cg_clif: the
   reference for comparisons is then plain cg_clif, not LLVM (`BASELINE=cg_clif
