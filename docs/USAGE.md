@@ -386,8 +386,9 @@ fv-demo `downcast_ref` instances (`call_indirect`), rejected by `Opt.Legal.check
 fv-demo's recursive `unwind::deep` (2 instances: a call of a function of the file).
 `examples/compare.sh` SAME for all three, debug (fv-demo 19, survey 53, vendor 189 test
 outcomes; `cargo fv test`: fv-demo 1340/1346, survey 3179/3179, vendor 4399/4399) and
-`--release` (fv-demo 947/953, 6 fallback; survey 2203/2208, 5 unverified: `i128` legalisations
-the validator still rejects — not investigated; vendor 3082/3082).
+`--release` (fv-demo 947/953, 6 fallback; survey 2208/2208 — the last 5, release `g_u128`
+test functions passing function pointers (`func_addr`) to the harness, are verified since
+`Opt.Legal.check` plans `func_addr`; vendor 3082/3082).
 
 Of the verified, `verified (normal returns; unwinding trusted)`: fv-demo 231 / 204, survey
 492 / 419, vendor 820 / 727 (debug / release). Before (main fbbd5d9, `try_call` functions

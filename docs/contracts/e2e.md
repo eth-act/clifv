@@ -230,8 +230,8 @@ value, run as `env.extern` with the argument and result types checked against th
   `_opt_proven` keep the premise that the function has none (`hci`, next to `hnt`); the
   indirect-call contract is then vacuous. `lean-backend` flags `call_indirect` functions
   unverified under `--opt`. **`i128`** (agent/last-unverified): `backend_correct_legal` covers a
-  `call_indirect` without `i128` operands (premises `hXI` and `hind`; `Opt.Legal.check` rejects
-  `try_call_indirect` and `func_addr`).
+  `call_indirect` without `i128` operands (premises `hXI` and `hind`) and `func_addr`
+  (`Opt.Legal.check` rejects `try_call_indirect`).
 
 ### Calls of the function itself (recursion, `cargo fv`)
 

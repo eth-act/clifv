@@ -561,7 +561,8 @@ theorem frel_after {C : Ctx} (hG : Good C) {fr fr' : Frame} (hR : FRel C fr fr')
 theorem planOf_same {C : Ctx} {s : Stmt} (hp : planOf C s = some .same) :
     (∀ x ∈ instOps s.inst ++ s.results, C.plain x = true) ∧
     (∀ fn args, s.inst ≠ .call fn args) ∧ (∀ sig c args, s.inst ≠ .callIndirect sig c args) ∧
-    (∀ t fn, s.inst ≠ .funcAddr t fn) := by
+    (∀ t fn, s.inst = .funcAddr t fn →
+      (C.g.extern? fn).map (·.name) = (C.f.extern? fn).map (·.name)) := by
   obtain ⟨rs, inst⟩ := s
   unfold planOf at hp
   dsimp only at hp
@@ -677,7 +678,8 @@ theorem sim_same {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} {fr fr' : 
   have hops : ∀ x ∈ instOps st.inst, fr'.regs x = fr.regs x := fun x hx =>
     hR.peq x (ops_lt hG hB hst hx) (plain_iff.1 (hplain x (List.mem_append_left _ hx)))
   have hev : evalInst fr' m st.inst = evalInst fr m st.inst :=
-    evalInst_same hops hR.slots (by rw [hR.func', hR.func]; exact hG.globals) hnfa
+    evalInst_same hops hR.slots (by rw [hR.func', hR.func]; exact hG.globals)
+      (fun t fn h => by rw [hR.func', hR.func]; exact hnfa t fn h)
   rw [step_inst env p ⟨fr, [], m⟩ st rest hb hnc hnci]
   have hstep' := step_inst env p' ⟨fr', [], m⟩ st ts2 hb' hnc hnci
   rw [hev] at hstep'

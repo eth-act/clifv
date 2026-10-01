@@ -633,7 +633,10 @@ def planOf (C : Ctx) (s : Stmt) : Option Plan :=
     | none => same
   | .callIndirect _ callee args, rs =>
     if (callee :: args ++ rs).all C.plain then some .callInd else none
-  | .funcAddr .., _ | .unary _ .i128 _, _ | .binary _ .i128 _ _, _
+  | .funcAddr _ fn, _ =>
+    -- the address of the declaration's symbol: the same name in `g` (`sigExp` keeps names)
+    if (C.g.extern? fn).map (·.name) == (C.f.extern? fn).map (·.name) then same else none
+  | .unary _ .i128 _, _ | .binary _ .i128 _ _, _
   | .div _ .i128 _ _, _ | .icmp _ .i128 _ _, _ | .bitselect .i128 _ _ _, _
   | .select .i128 _ _ _, _ | .selectSpectreGuard .i128 _ _ _, _ | .bmask .i128 _, _
   | .extend _ .i128 _, _ | .iconcat .., _ | .isplit .., _ | .bitcast .i128 _ _, _

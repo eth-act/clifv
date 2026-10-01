@@ -15,12 +15,17 @@ open Clif
 
 theorem evalInst_same {fr fr' : Frame} {m : Mem} {i : Inst}
     (hops : ∀ x ∈ instOps i, fr'.regs x = fr.regs x) (hsl : fr'.slots = fr.slots)
-    (hgl : fr'.func.globals = fr.func.globals) (hfa : ∀ t fn, i ≠ .funcAddr t fn) :
+    (hgl : fr'.func.globals = fr.func.globals)
+    (hfa : ∀ t fn, i = .funcAddr t fn →
+      (fr'.func.extern? fn).map (·.name) = (fr.func.extern? fn).map (·.name)) :
     evalInst fr' m i = evalInst fr m i := by
   cases i <;> simp only [instOps, List.mem_cons, List.mem_nil_iff, or_false, forall_eq_or_imp,
     forall_eq, List.mem_singleton] at hops <;>
     simp [evalInst, Frame.getAs, Frame.get, Frame.getMany, hops, hsl, hgl]
-  exact absurd rfl (hfa _ _)
+  rename_i t fn
+  have h := hfa t fn rfl
+  cases h1 : fr'.func.extern? fn <;> cases h2 : fr.func.extern? fn <;> rw [h1, h2] at h <;>
+    simp_all [Res.ofOption, bind, Res.bind]
 
 theorem Mem.store_allocs {w : Nat} {m : Mem} {fl a n} {x : BitVec w} {m'}
     (h : m.store fl a n x = .ok m') : m'.allocs = m.allocs := by
