@@ -155,14 +155,6 @@ def callees (f : Clif.Function) : List String :=
 def hasTryCall (f : Clif.Function) : Bool :=
   f.blocks.any (·.term.isTry)
 
-/-- `bmask`, `atomic_*` and `fence` in `f` (their lowering is Cranelift's, but the ISLE
-rules are outside the proven emitter-subset closure used by `E2E.backend_correct`). -/
-def hasUnproven (f : Clif.Function) : Bool :=
-  f.blocks.any fun b => b.body.any fun st => match st.inst with
-    | .bmask .. | .atomicRmw .. | .atomicCas .. | .atomicLoad .. | .atomicStore .. | .fence =>
-      true
-    | _ => false
-
 /-- `tls_value` in `f` (Cranelift's `elf_gd` TLSDESC sequence; outside clif-subset-v2 E). -/
 def hasTls (f : Clif.Function) : Bool :=
   f.blocks.any fun b => b.body.any fun st => match st.inst with
@@ -170,16 +162,16 @@ def hasTls (f : Clif.Function) : Bool :=
     | _ => false
 
 /-- Why a compiled function of `pf` is outside `E2E.backend_correct` (`E2E.InSubset`), if it is:
-`bmask`/atomic/fence instructions, `tls_value`, outside clif-subset-v2 E, stack-passed
-parameters, stack-passed call arguments (an extern or an indirect call with more than 8
-parameters), special-purpose parameters, or a call (also a `try_call`) of a function of the
-file. A `try_call`/`try_call_indirect` of an extern is inside the theorem for its normal return
-(`hasTryCall`: the landing pads and the LSDA are trusted); `call_indirect`, `try_call_indirect`
-and `func_addr` are inside it (an indirect call of a function of the file is excluded by the
-theorem's run premise `TrapsExplicit.indirect`). -/
+`tls_value`, outside clif-subset-v2 E, stack-passed parameters, stack-passed call arguments
+(an extern or an indirect call with more than 8 parameters), special-purpose parameters, or a
+call (also a `try_call`) of a function of the file. A `try_call`/`try_call_indirect` of an
+extern is inside the theorem for its normal return (`hasTryCall`: the landing pads and the LSDA
+are trusted); `call_indirect`, `try_call_indirect` and `func_addr` are inside it (an indirect
+call of a function of the file is excluded by the theorem's run premise
+`TrapsExplicit.indirect`); so are `bmask`, the atomics and `fence` (single-threaded semantics;
+the Arm model's exclusive store always succeeds, `docs/decisions/arm-model.md`). -/
 def unverifiedReason? (pf : Clif.ParsedFile) (f : Clif.Function) : Option String :=
-  if hasUnproven f then some "bmask / atomic instructions / fence (outside backend_correct)"
-  else if hasTls f then some "tls_value (outside backend_correct)"
+  if hasTls f then some "tls_value (outside backend_correct)"
   else if !Compile.functionE f then some "outside clif-subset-v2 E"
   else if f.sig.params.length > 8 then some "stack-passed parameters (more than 8)"
   else if !regArgCalls f then some "stack-passed call arguments (an extern with more than 8 parameters)"

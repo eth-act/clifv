@@ -217,6 +217,83 @@ def CondBrKind.insn (k : CondBrKind) (target : Lbl) : Insn :=
   | .notZero r s => .cbz true s.is64 r target
   | .cond c => .bcond c target
 
+/-! ### The LL/SC loops (`emit.rs` `AtomicRMWLoop`, `AtomicCASLoop`) -/
+
+/-- The min/max comparison of the `atomic_rmw` loop: `subs xzr, x27, x26` at the operation size
+(`OperandSize::from_ty`: 32-bit below `i64`), with the operand register extended to the access
+size for `i8`/`i16` (`sxt{b,h}` for `smin`/`smax`, whose loaded value is sign-extended first,
+`uxt{b,h}` for `umin`/`umax`). -/
+def rmwLoopCmp (op : AtomicRmwLoopOp) (bits : Nat) : Insn :=
+  match op, bits with
+  | .smin, 8 | .smax, 8 => .aluRRRExtend .subS false .xzr (.x 27) (.x 26) .sxtb
+  | .smin, 16 | .smax, 16 => .aluRRRExtend .subS false .xzr (.x 27) (.x 26) .sxth
+  | .umin, 8 | .umax, 8 => .aluRRRExtend .subS false .xzr (.x 27) (.x 26) .uxtb
+  | .umin, 16 | .umax, 16 => .aluRRRExtend .subS false .xzr (.x 27) (.x 26) .uxth
+  | _, b => .aluRRR .subS (b == 64) .xzr (.x 27) (.x 26)
+
+/-- `sxt{b,h} w27, w27` before the `smin`/`smax` comparison of a subword (`Inst::Extend` to 32
+bits). -/
+def rmwLoopSext (bits : Nat) : List Insn :=
+  match bits with
+  | 8 => [.bfm .sBfm false (.x 27) (.x 27) 0 7]
+  | 16 => [.bfm .sBfm false (.x 27) (.x 27) 0 15]
+  | _ => []
+
+/-- The instructions of the `atomic_rmw` loop between `ldaxr x27, [x25]` and `stlxr`: the new
+value in x28 from the old value x27 and the operand x26, at the operation size (`xchg`: none,
+it stores x26). -/
+def rmwLoopMid (op : AtomicRmwLoopOp) (bits : Nat) : List Insn :=
+  let w := bits == 64
+  match op with
+  | .xchg => []
+  | .nand => [.aluRRR .and w (.x 28) (.x 27) (.x 26), .aluRRR .orrNot w (.x 28) .xzr (.x 28)]
+  | .add => [.aluRRR .add w (.x 28) (.x 27) (.x 26)]
+  | .sub => [.aluRRR .sub w (.x 28) (.x 27) (.x 26)]
+  | .and => [.aluRRR .and w (.x 28) (.x 27) (.x 26)]
+  | .or => [.aluRRR .orr w (.x 28) (.x 27) (.x 26)]
+  | .xor => [.aluRRR .eor w (.x 28) (.x 27) (.x 26)]
+  | .smin => rmwLoopSext bits ++ [rmwLoopCmp .smin bits, .csel (.x 28) (.x 27) (.x 26) .lt]
+  | .smax => rmwLoopSext bits ++ [rmwLoopCmp .smax bits, .csel (.x 28) (.x 27) (.x 26) .gt]
+  | .umin => [rmwLoopCmp .umin bits, .csel (.x 28) (.x 27) (.x 26) .lo]
+  | .umax => [rmwLoopCmp .umax bits, .csel (.x 28) (.x 27) (.x 26) .hi]
+
+/-- The register `stlxr` stores: the new value x28, or the operand x26 for `xchg`. -/
+def rmwLoopStored (op : AtomicRmwLoopOp) : Reg := if op == .xchg then .x 26 else .x 28
+
+/-- The body of the `atomic_rmw` loop: `ldaxr x27, [x25]; …; stlxr w24, x28, [x25]`. -/
+def rmwLoopBody (bits : Nat) (op : AtomicRmwLoopOp) (fl : Clif.MemFlags) : List Line :=
+  [.ins (.ldaxr bits (.x 27) (.x 25)) fl.trapCode] ++
+    (rmwLoopMid op bits).map (fun i => .ins i) ++
+    [.ins (.stlxr bits (.x 24) (rmwLoopStored op) (.x 25)) fl.trapCode]
+
+/-- The lines of the `atomic_rmw` loop at label `l`: `l: <body>; cbnz x24, l`. -/
+def rmwLoopLines (bits : Nat) (op : AtomicRmwLoopOp) (fl : Clif.MemFlags) (l : Lbl) : List Line :=
+  .label l :: rmwLoopBody bits op fl ++ [.ins (.cbz true true (.x 24) l)]
+
+/-- The comparison of the `atomic_cas` loop: the zero-extended loaded value x27 against the
+expected value x26 extended to the access size. Deviation from Cranelift 0.136.1 at `i32`:
+Cranelift compares all 64 bits of x26 (`cmp x27, x26`), whose upper half is unspecified for an
+`i32` value (e.g. an `ireduce`), so a CAS whose expected value has nonzero upper register bits
+fails although the low 32 bits match (observed with `clif-native`); the backend compares
+`x27` with `w26, uxtw`. -/
+def casLoopCmp (bits : Nat) : Insn :=
+  match bits with
+  | 8 => .aluRRRExtend .subS true .xzr (.x 27) (.x 26) .uxtb
+  | 16 => .aluRRRExtend .subS true .xzr (.x 27) (.x 26) .uxth
+  | 32 => .aluRRRExtend .subS true .xzr (.x 27) (.x 26) .uxtw
+  | _ => .aluRRR .subS true .xzr (.x 27) (.x 26)
+
+/-- The head of the `atomic_cas` loop: `ldaxr x27, [x25]; cmp …`. -/
+def casLoopHead (bits : Nat) (fl : Clif.MemFlags) : List Line :=
+  [.ins (.ldaxr bits (.x 27) (.x 25)) fl.trapCode, .ins (casLoopCmp bits)]
+
+/-- The lines of the `atomic_cas` loop at labels `again`, `out`:
+`again: ldaxr x27, [x25]; cmp …; b.ne out; stlxr w24, x28, [x25]; cbnz x24, again; out:`. -/
+def casLoopLines (bits : Nat) (fl : Clif.MemFlags) (again out : Lbl) : List Line :=
+  .label again :: casLoopHead bits fl ++
+    [.ins (.bcond .ne out), .ins (.stlxr bits (.x 24) (.x 28) (.x 25)) fl.trapCode,
+     .ins (.cbz true true (.x 24) again), .label out]
+
 /-- Expand one allocated instruction (real registers only). -/
 def MInst.lines (c : FnCtx) (m : MInst) (ps : PState) : Except String (List Line × PState) := do
   let one (i : Insn) : Except String (List Line × PState) := pure ([.ins i], ps)
@@ -323,53 +400,15 @@ def MInst.lines (c : FnCtx) (m : MInst) (ps : PState) : Except String (List Line
         {repr oldval} {repr s1} {repr s2}"
     else
       let l := Lbl.loop ps.aloop
-      let ps := { ps with aloop := ps.aloop + 1 }
-      let ext : List Insn :=
-        match op, ty.bits with
-        | .smin, 8 | .smax, 8 => [.bfm .sBfm false (.x 27) (.x 27) 0 7]
-        | .smin, 16 | .smax, 16 => [.bfm .sBfm false (.x 27) (.x 27) 0 15]
-        | .umin, 8 | .umax, 8 => [.bfm .uBfm false (.x 27) (.x 27) 0 7]
-        | .umin, 16 | .umax, 16 => [.bfm .uBfm false (.x 27) (.x 27) 0 15]
-        | _, _ => []
-      let mid : List Insn :=
-        match op with
-        | .xchg => []
-        | .nand => [.aluRRR .and true (.x 28) (.x 27) (.x 26),
-                    .aluRRR .orrNot true (.x 28) .xzr (.x 28)]
-        | .smin => [cmpOpOf op ty.bits, .csel (.x 28) (.x 27) (.x 26) .lt]
-        | .smax => [cmpOpOf op ty.bits, .csel (.x 28) (.x 27) (.x 26) .gt]
-        | .umin => [cmpOpOf op ty.bits, .csel (.x 28) (.x 27) (.x 26) .lo]
-        | .umax => [cmpOpOf op ty.bits, .csel (.x 28) (.x 27) (.x 26) .hi]
-        | .add => [.aluRRR .add true (.x 28) (.x 27) (.x 26)]
-        | .sub => [.aluRRR .sub true (.x 28) (.x 27) (.x 26)]
-        | .and => [.aluRRR .and true (.x 28) (.x 27) (.x 26)]
-        | .or => [.aluRRR .orr true (.x 28) (.x 27) (.x 26)]
-        | .xor => [.aluRRR .eor true (.x 28) (.x 27) (.x 26)]
-      let stored : Reg := if op == .xchg then .x 26 else .x 28
-      pure ([.label l, .ins (.ldaxr ty.bits (.x 27) (.x 25)) fl.trapCode] ++
-        ext.map (fun i => .ins i) ++ mid.map (fun i => .ins i) ++
-        [.ins (.stlxr ty.bits (.x 24) stored (.x 25)) fl.trapCode,
-         .ins (.cbz true true (.x 24) l)], ps)
+      pure (rmwLoopLines ty.bits op fl l, { ps with aloop := ps.aloop + 1 })
   | .atomicCasLoop ty fl addr expect replace oldval scratch =>
     if addr != .x 25 || expect != .x 26 || replace != .x 28 || oldval != .x 27
         || scratch != .x 24 then
       throw s!"atomic_cas_loop with unexpected fixed registers {repr addr} {repr expect} \
         {repr replace} {repr oldval} {repr scratch}"
     else
-      let again := Lbl.loop ps.aloop
-      let out := Lbl.loop (ps.aloop + 1)
-      let ps := { ps with aloop := ps.aloop + 2 }
-      -- the ldaxr zero-extends (64-bit form reads the x-register); the comparison extends
-      -- the replacement operand for the subword sizes (emit.rs `AtomicCASLoop`)
-      let cmp : Insn :=
-        match ty.bits with
-        | 8 => .aluRRRExtend .subS true .xzr (.x 27) (.x 26) .uxtb
-        | 16 => .aluRRRExtend .subS true .xzr (.x 27) (.x 26) .uxth
-        | _ => .aluRRR .subS true .xzr (.x 27) (.x 26)
-      pure ([.label again, .ins (.ldaxr ty.bits (.x 27) (.x 25)) fl.trapCode, .ins cmp,
-             .ins (.bcond .ne out),
-             .ins (.stlxr ty.bits (.x 24) (.x 28) (.x 25)) fl.trapCode,
-             .ins (.cbz true true (.x 24) again), .label out], ps)
+      pure (casLoopLines ty.bits fl (.loop ps.aloop) (.loop (ps.aloop + 1)),
+        { ps with aloop := ps.aloop + 2 })
   -- `emit.rs` `ElfTlsGetAddr`: the TLSDESC sequence (the resolver returns the variable's
   -- offset from the thread pointer in x0), then the thread pointer is added
   | .elfTlsGetAddr sym rd tmp =>
@@ -380,17 +419,6 @@ def MInst.lines (c : FnCtx) (m : MInst) (ps : PState) : Except String (List Line
              .ins (.addTlsDescLo12 (.x 0) (.x 0) sym), .ins (.blrTlsDesc tmp sym),
              .ins (.mrsTpidrEl0 tmp), .ins (.aluRRR .add true (.x 0) (.x 0) tmp)], ps)
 where
-  /-- The min/max comparison of the LL/SC loop (`emit.rs`): an extended `subs xzr, x27, x26`
-at the subword sizes (the operand register may hold garbage in its high bits), the plain
-64-bit `subs` otherwise. -/
-  cmpOpOf (op : AtomicRmwLoopOp) (bits : Nat) : Insn :=
-    match op, bits with
-    | .smin, 8 | .smax, 8 => .aluRRRExtend .subS true .xzr (.x 27) (.x 26) .sxtb
-    | .smin, 16 | .smax, 16 => .aluRRRExtend .subS true .xzr (.x 27) (.x 26) .sxth
-    | .umin, 8 | .umax, 8 => .aluRRRExtend .subS true .xzr (.x 27) (.x 26) .uxtb
-    | .umin, 16 | .umax, 16 => .aluRRRExtend .subS true .xzr (.x 27) (.x 26) .uxth
-    -- 32/64-bit: the plain `subs` at the operand size (emit.rs `OperandSize::from_ty(ty)`)
-    | _, b => .aluRRR .subS (b == 64) .xzr (.x 27) (.x 26)
   /-- `LoadAddr` with an immediate offset (`emit.rs`). -/
   addOff (rd rn : Reg) (off : Int) : List Line :=
     if off == 0 then

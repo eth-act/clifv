@@ -29,8 +29,8 @@ Transfer functions:
      value of a callee-saved register survives a call, since the callee preserves it —
      `DEFAULT_AAPCS_CLOBBERS` lists v8–v15 only because regalloc2 cannot express "low half");
   5. every late def as in 2;
-  6. at a branch (`MInst.isBranch`): every def vreg leaves every set (`JTSequence`'s
-     temporaries are dead after the branch);
+  6. the defs past the first `MInst.keptDefs` (every def of a branch, `JTSequence`'s
+     temporaries, dead after the branch; the scratch defs of the LL/SC loops) leave every set;
   7. at a `Rets`: every callee-saved register `r` needs `entry r ∈ A r`;
 * edge `b → s` with branch arguments `a⃗` for parameters `p⃗` (the VCode's parallel copy):
   `A' ℓ = (A ℓ \ {vreg p⃗}) ∪ {vreg pᵢ | vreg aᵢ ∈ A ℓ}`.
@@ -239,17 +239,20 @@ the callee preserves d8–d15, which Cranelift's clobber set over-approximates a
 def clobberAll (a : AState) (clob : List Reg) : AState :=
   clob.foldl (fun a r => a.put (.reg r) ((a.get (.reg r)).filter (· == .entry r))) a
 
-/-- The def vregs of `pairs` leave every location (a branch's defs, `JTSequence`'s
-temporaries, are dead after the branch; the proof's allocated-code semantics havocs them). -/
+/-- The def vregs of `pairs` leave every location (dead scratch defs, `MInst.keptDefs`: a
+branch's defs, `JTSequence`'s temporaries, are dead after the branch; the LL/SC loops' scratch
+registers; the proof's allocated-code semantics havocs them). -/
 def forgetDefs (a : AState) (pairs : List (Operand × Loc)) : AState :=
   a.map (·.filter fun s => !(pairs.any fun p => p.1.kind == .def && s == .vreg p.1.vreg))
 
 /-- The transfer of an original instruction with operand–location pairs `pairs`, in execution
-order: early defs, clobbers, late defs; a branch's defs are then forgotten. -/
+order: early defs, clobbers, late defs; the defs past the first `keptDefs` are then forgotten. -/
 def transferOp (i : MInst) (pairs : List (Operand × Loc)) (a : AState) : AState :=
   let a' :=
     defineAll (clobberAll (defineAll a (atPos pairs .def .early)) i.clobbers) (atPos pairs .def .late)
-  if i.isBranch then forgetDefs a' pairs else a'
+  match i.keptDefs with
+  | none => a'
+  | some n => forgetDefs a' ((pairs.filter (·.1.kind == .def)).drop n)
 
 /-- At a `Rets`: every callee-saved register holds its entry value. -/
 def retCheck (where_ : String) (i : MInst) (a : AState) : Except String Unit :=

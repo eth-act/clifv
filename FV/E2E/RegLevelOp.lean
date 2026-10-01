@@ -213,7 +213,7 @@ theorem realizes_op_core {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
   rw [h1'] at h1
   simp only [Except.ok.injEq, Prod.mk.injEq] at h1
   obtain ⟨rfl, rfl⟩ := h1
-  refine ⟨ls1.length, _, MStep.op hvb hi hops hsz hsem hlen ⟨rfl, fun _ => rfl⟩ hc2' (MNext.next hk), ?_⟩
+  refine ⟨ls1.length, _, MStep.op hvb hi hops hsz hsem hlen (HavocOuts.refl _ _) hc2' (MNext.next hk), ?_⟩
   -- the lines at `j`
   have hZ : ∀ n, (ls2 ++ nxtOf R.af b)[1]? ≠ some (.label (.trap n)) := by
     intro n e

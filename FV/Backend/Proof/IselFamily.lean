@@ -107,7 +107,7 @@ def instNames : Clif.Inst → String × String
   | .call .. => ("Call", "Call")
   | .callIndirect .. => ("CallIndirect", "CallIndirect")
   | .funcAddr .. => ("FuncAddr", "FuncAddr")
-  -- agent/fv-fallback: `bmask` and the atomic opcodes (unverified, outside `E2E.InSubset`)
+  -- `bmask`, the atomics and `fence` (agent/atomics-proof)
   | .bmask .. => ("Unary", "Bmask")
   | .atomicLoad .. => ("LoadNoOffset", "AtomicLoad")
   | .atomicStore .. => ("StoreNoOffset", "AtomicStore")

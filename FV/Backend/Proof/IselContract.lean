@@ -433,6 +433,13 @@ def ispec : Sem := fun i uses w =>
   | .movFromVec rd _ idx .size8, [a] =>
     if idx < 16 then some (defOut rd (ofX ((a.extractLsb' (8 * idx) 8).setWidth 64)), w, .next)
     else none
+  -- agent/atomics-proof: `csetm` (`bmask`: all ones if the condition holds) and `dmb ish`
+  -- (`fence`: no effect in the single-threaded model)
+  | .csetm rd c, [] =>
+    if c = .al ∨ c = .nv then none
+    else some (defOut rd (ofX (if Arm.ConditionHolds c.invert.bits w then 0#64
+      else BitVec.allOnes 64)), w, .next)
+  | .fence, [] => some ([], w, .next)
   | _, _ => none
 
 /-- **The semantic hypothesis of the rule statements**: on every form `ispec` specifies, the
@@ -458,9 +465,10 @@ def MRStable (F : BitVec 64 → Prop) (MR : MemRelT) : Prop :=
 /-- The types of the E integer types `i8..i64` (`buildCtx` rejects `i128` values). -/
 def eCTys : List CTy := [.int 8, .int 16, .int 32, .int 64]
 
-/-- The address operand of a load or store (contract change #7). -/
+/-- The address operand of a load or store (contract change #7), also of an atomic access. -/
 def memAddr? : Clif.Inst → Option Nat
-  | .load _ _ _ p _ | .store _ _ _ _ p _ => some p
+  | .load _ _ _ p _ | .store _ _ _ _ p _ | .atomicLoad _ _ p | .atomicStore _ _ _ p
+  | .atomicRmw _ _ _ p _ | .atomicCas _ _ p _ _ => some p
   | _ => none
 
 /-! ## The lowering context -/
@@ -709,12 +717,26 @@ def loadVal (op : LoadOp) (a : BitVec 64) (w : Arm.ArmState) : BitVec 64 :=
   if loadSigned op then (Arm.read_mem_bytes op.bytes a w).signExtend 64
   else (Arm.read_mem_bytes op.bytes a w).setWidth 64
 
+/-- The access types of the atomic instructions (`valid_atomic_transaction`: `i8`..`i64`). -/
+def AtomTy (ty : CTy) : Prop := ty = .int 8 ∨ ty = .int 16 ∨ ty = .int 32 ∨ ty = .int 64
+
+/-- The CLIF operation of an `atomic_rmw` loop operation (the root rules' mapping). -/
+def _root_.Backend.AtomicRmwLoopOp.clif : AtomicRmwLoopOp → Clif.AtomicRmwOp
+  | .add => .add | .sub => .sub | .and => .and | .nand => .nand | .xor => .xor | .or => .or
+  | .smax => .smax | .smin => .smin | .umax => .umax | .umin => .umin | .xchg => .xchg
+
 /-- **What the memory rules need of the VCode semantics** (M6 discharges it for `csem F ctx X`
 with `ctx.slotBase = sb` and `X.sym n 0` the address `b` of `n` when `syms n = some b`): a
 load or store through an addressing mode whose access avoids the frame addresses `F`
 reads/writes the Arm memory at `amodeAddr`, a `loadAddr` of a slot offset is `sp + off + sb`, a
 GOT load of a linked symbol is its address (with `CallsRefine`: its `sym` at the linked
-symbols); the world otherwise as for the other forms (`SameWorld F`). -/
+symbols); the world otherwise as for the other forms (`SameWorld F`). The atomic forms
+(agent/atomics-proof), at an address register whose access avoids `F`: `ldar` and `stlr` as a
+load and a store; the LL/SC loops (single-threaded: the exclusive store succeeds, so the body
+runs once) read the old value into their first def and write the new one — the operation of
+`atomic_rmw` on the old value and the operand's low bits, the replacement value of
+`atomic_cas` if the old value equals the expected value's low bits — with a world that agrees
+up to the flags (`SameWorldNF`; the scratch defs' values are unspecified). -/
 def MemRefines (F : BitVec 64 → Prop) (sb : Nat) (syms : String → Option Nat) (isem : Sem) :
     Prop :=
   (∀ (op : LoadOp) (d : Nat) (am : AMode) (fl : Clif.MemFlags) (uses : List CV)
@@ -732,7 +754,34 @@ def MemRefines (F : BitVec 64 → Prop) (sb : Nat) (syms : String → Option Nat
       some ([ofX (spOf w + BitVec.ofInt 64 (off + sb))], w', .next) ∧ SameWorld F w' w) ∧
   (∀ (d : Nat) (n : String) (b : Nat) (w : Arm.ArmState), syms n = some b → ∃ w',
     isem (.loadExtNameGot (.vreg d .int) n) [] w = some ([ofX (BitVec.ofNat 64 b)], w', .next) ∧
-      SameWorld F w' w)
+      SameWorld F w' w) ∧
+  (∀ (ty : CTy) (d r : Nat) (fl : Clif.MemFlags) (u : CV) (w : Arm.ArmState),
+    AtomTy ty → Avoids F ty.bytes (lo64 u) → ∃ w',
+    isem (.loadAcquire ty (.vreg d .int) (.vreg r .int) fl) [u] w =
+      some ([ofX ((Arm.read_mem_bytes ty.bytes (lo64 u) w).setWidth 64)], w', .next) ∧
+      SameWorld F w' w) ∧
+  (∀ (ty : CTy) (d r : Nat) (fl : Clif.MemFlags) (u v : CV) (w : Arm.ArmState),
+    AtomTy ty → Avoids F ty.bytes (lo64 u) → ∃ w',
+    isem (.storeRelease ty (.vreg d .int) (.vreg r .int) fl) [u, v] w = some ([], w', .next) ∧
+      SameWorld F w' (Arm.write_mem_bytes ty.bytes (lo64 u) ((lo64 v).setWidth (ty.bytes * 8)) w)) ∧
+  (∀ (ty : CTy) (op : AtomicRmwLoopOp) (fl : Clif.MemFlags) (ra ro rd r1 r2 : Nat) (u x : CV)
+      (w : Arm.ArmState),
+    AtomTy ty → Avoids F ty.bytes (lo64 u) → ∃ w' o1 o2,
+    isem (.atomicRmwLoop ty op fl (.vreg ra .int) (.vreg ro .int) (.vreg rd .int) (.vreg r1 .int)
+        (.vreg r2 .int)) [u, x] w =
+      some ([ofX ((Arm.read_mem_bytes ty.bytes (lo64 u) w).setWidth 64), o1, o2], w', .next) ∧
+      SameWorldNF F w' (Arm.write_mem_bytes ty.bytes (lo64 u)
+        (Clif.Sem.atomicRmw op.clif (Arm.read_mem_bytes ty.bytes (lo64 u) w)
+          ((lo64 x).setWidth (ty.bytes * 8))) w)) ∧
+  (∀ (ty : CTy) (fl : Clif.MemFlags) (ra re rx rd r1 : Nat) (u e x : CV) (w : Arm.ArmState),
+    AtomTy ty → Avoids F ty.bytes (lo64 u) → ∃ w' o1,
+    isem (.atomicCasLoop ty fl (.vreg ra .int) (.vreg re .int) (.vreg rx .int) (.vreg rd .int)
+        (.vreg r1 .int)) [u, e, x] w =
+      some ([ofX ((Arm.read_mem_bytes ty.bytes (lo64 u) w).setWidth 64), o1], w', .next) ∧
+      SameWorldNF F w'
+        (if Arm.read_mem_bytes ty.bytes (lo64 u) w = (lo64 e).setWidth (ty.bytes * 8) then
+          Arm.write_mem_bytes ty.bytes (lo64 u) ((lo64 x).setWidth (ty.bytes * 8)) w
+        else w))
 
 /-- **What the memory rules need of the memory relation** of function `f` (M7's `Rel.holds`
 satisfies it): initialised bytes of live allocations are the Arm bytes, live allocations are
@@ -753,10 +802,14 @@ structure MemRelOk (F : BitVec 64 → Prop) (sb : Nat) (syms : String → Option
 /-- The memory root rules of `lower`: `symbol_value` (rule id 1027), `func_addr` (1026, the
 same `load_ext_name` at offset 0), the loads (1041–1044 `load`, 1052–1057 `uload*`/`sload*`),
 the stores (1064–1067 `store`, 1068–1070 `istore*`), `stack_addr` (1093), and
-`uextend`/`sextend` of a load (815, 824: never match, the backend does not sink loads). -/
+`uextend`/`sextend` of a load (815, 824: never match, the backend does not sink loads); the
+atomics (agent/atomics-proof): `atomic_load` (983), `atomic_store` (984), `atomic_rmw`
+(994–1004, one per operation), `atomic_cas` (1007), and `uextend` of an `atomic_load` (810:
+never matches). -/
 def memRootRule (r : Rule) : Bool :=
   r.id == 1027 || r.id == 1026 || r.id == 1093 || r.id == 815 || r.id == 824 ||
-    (1041 ≤ r.id && r.id ≤ 1044) || (1052 ≤ r.id && r.id ≤ 1057) || (1064 ≤ r.id && r.id ≤ 1070)
+    (1041 ≤ r.id && r.id ≤ 1044) || (1052 ≤ r.id && r.id ≤ 1057) || (1064 ≤ r.id && r.id ≤ 1070) ||
+    r.id == 810 || r.id == 983 || r.id == 984 || (994 ≤ r.id && r.id ≤ 1004) || r.id == 1007
 
 /-- `LowerRuleOk` for a memory rule: additionally assumes `MemRelOk F sb syms f MR`. -/
 def MemRuleOk (F : BitVec 64 → Prop) (sb : Nat) (syms : String → Option Nat) (isem : Sem)

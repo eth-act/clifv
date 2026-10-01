@@ -175,7 +175,7 @@ theorem sim_progress (hc : Checked vc rf c ins) {ms : MState V W} {vs : VState V
           (writeM m ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs).filter (·.1.1.isEarly)))
           (writeM m ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs).filter (·.1.1.isEarly))) :=
         ⟨fun _ _ => rfl, fun _ _ _ => rfl⟩
-      have hho : HavocOuts i outs outs := ⟨rfl, fun _ => rfl⟩
+      have hho : HavocOuts i outs outs := HavocOuts.refl _ _
       obtain ⟨-, huse, -, -⟩ := op_sound hstep hinv hlen' hho hclob
       rw [← huse] at hsem hnext
       cases hnext with

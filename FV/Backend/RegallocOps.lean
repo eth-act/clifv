@@ -317,6 +317,17 @@ def MInst.isBranch : MInst → Bool
   | .jump _ | .condBr .. | .testBitAndBranch .. | .jtSequence .. => true
   | _ => false
 
+/-- How many leading defs (in operand order) keep the value the instruction gives them;
+`none`: all of them. The others are dead scratch registers whose value the emitted code may or
+may not write, and the checker forgets them: a branch's defs (`JTSequence`'s temporaries, dead
+after the branch), and the scratch defs of the LL/SC loops (x24, x28 of `AtomicRMWLoop`, x24
+of `AtomicCASLoop`: `stlxr`'s status register is not written when the `atomic_cas` comparison
+fails, x28 is not written by an `xchg`). -/
+def MInst.keptDefs (i : MInst) : Option Nat :=
+  match i with
+  | .atomicRmwLoop .. | .atomicCasLoop .. => some 1
+  | i => if i.isBranch then some 0 else none
+
 /-- Does the instruction end a block (`is_term` is not `None`)? -/
 def MInst.isTerminator (i : MInst) : Bool :=
   i.isBranch || i.isRet || i matches .tryCall ..

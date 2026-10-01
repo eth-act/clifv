@@ -52,6 +52,14 @@ def instE : Inst → Bool
   -- and function addresses
   | .callIndirect _ _ _ => true
   | .funcAddr ty _ => ty == .i64
+  -- agent/atomics-proof: `bmask`, the atomics (single-threaded sequentially consistent loads,
+  -- stores and read-modify-writes; Cranelift's non-LSE lowering) and `fence`
+  | .bmask ty _ => tyE ty
+  | .atomicLoad ty f _ => tyE ty && flagsE f
+  | .atomicStore ty f _ _ => tyE ty && flagsE f
+  | .atomicRmw _ ty f _ _ => tyE ty && flagsE f
+  | .atomicCas ty f _ _ _ => tyE ty && flagsE f
+  | .fence => true
   | _ => false
 
 /-- Global values: only `symbol %name[+offset]` (the target of `symbol_value`). -/

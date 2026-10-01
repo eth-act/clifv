@@ -52,7 +52,7 @@ def eNamePairs : List (String × String) :=
    ("Ternary", "Select"), ("NullAry", "Nop"), ("UnaryGlobalValue", "SymbolValue"),
    ("StackAddr", "StackAddr"), ("Call", "Call"),
    ("CallIndirect", "CallIndirect"), ("FuncAddr", "FuncAddr"),
-   -- agent/fv-fallback: `bmask` and the atomic opcodes (unverified, outside `E2E.InSubset`)
+   -- `bmask`, the atomics and `fence` (agent/atomics-proof: E instructions)
    ("Unary", "Bmask"), ("LoadNoOffset", "AtomicLoad"), ("StoreNoOffset", "AtomicStore"),
    ("AtomicRmw", "AtomicRmw"), ("AtomicCas", "AtomicCas"), ("NullAry", "Fence"),
    -- agent/fv-lcheck-tls: `tls_value` (unverified, outside `E2E.InSubset`)
@@ -101,20 +101,19 @@ theorem instNames_mem {f : Clif.Function} {c : Clif.Inst} {d : V} (h : instData 
   all_goals simp [instNames, eNamePairs]
 
 /-- The opcode names only unverified instructions (`Compile.instE` false) produce. -/
-def unverifiedNames : List String :=
-  ["Bmask", "AtomicLoad", "AtomicStore", "AtomicRmw", "AtomicCas", "Fence", "TlsValue"]
+def unverifiedNames : List String := ["TlsValue"]
 
 set_option maxRecDepth 20000 in
 /-- Every name pair of `eNamePairs` is a format and an opcode of `eOps`, or an `unverifiedNames`
-opcode (the `bmask`/atomic/fence/`tls_value` instructions lower but are outside `E2E.InSubset`, so their
-opcodes stay out of `eOps` — the excluded-root refutations need that). -/
+opcode (the `tls_value` instruction lowers but is outside `E2E.InSubset`, so its opcode stays out
+of `eOps` — the excluded-root refutations need that). -/
 theorem eNamePairs_idx : eNamePairs.all (fun pr =>
     match variantIdx 152 pr.1, variantIdx 151 pr.2 with
     | some _, some ko => eOps.contains ko || unverifiedNames.contains pr.2
     | _, _ => false) = true := by
   decide +kernel
 
-/-- An E instruction is not one of the atomic/`bmask`/`fence`/`tls_value` instructions. -/
+/-- An E instruction is not a `tls_value`. -/
 theorem instE_atomic_ne {c : Clif.Inst} (hE : Compile.instE c = true) :
     (instNames c).2 ∉ unverifiedNames := by
   cases c

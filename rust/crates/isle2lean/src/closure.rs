@@ -39,13 +39,18 @@ pub const E_OPCODES: &[&str] = &[
     // unverified (outside ); their lowering rules must not be flagged outside
     // the closure (the survey's  functions use them).
     "call_indirect", "func_addr",
-    // agent/fv-fallback: `bmask` and the atomic opcodes compile (via the full ISLE program,
-    // Cranelift's non-LSE rules: `load_acquire`/`store_release` = ldar/stlr and the
-    // `atomic_rmw_loop`/`atomic_cas_loop` LL/SC pseudo-instructions) but are NOT emitter-
-    // closure roots: their root rules are outside the proven families, and they cannot fire
-    // on `E2E.InSubset` data (`Compile.instE` is false for them). They are flagged
-    // unverified (`Backend.hasUnproven`).
 ];
+
+/// Opcodes of the backend closure only (not of the mid-end closure, `opt_closure`, whose
+/// subset stays `E_OPCODES`): `bmask`, the atomics and `fence` (agent/atomics-proof: inside
+/// `E2E.backend_correct_final`; Cranelift's non-LSE rules, `load_acquire`/`store_release` =
+/// ldar/stlr and the `atomic_rmw_loop`/`atomic_cas_loop` LL/SC pseudo-instructions).
+pub const BACKEND_EXTRA_OPCODES: &[&str] =
+    &["bmask", "atomic_load", "atomic_store", "atomic_rmw", "atomic_cas", "fence"];
+
+/// Extern extractors on ISA flags the backend disables (`isa_flags`: no LSE), which fail on
+/// every instruction (the Lean checker's `flagOff`).
+pub const FLAG_OFF: &[&str] = &["use_lse"];
 
 pub const ROOTS: &[&str] = &["lower", "lower_branch"];
 
@@ -194,7 +199,9 @@ fn lhs_reasons(u: &Unit, r: &sema::Rule, e_ops: &HashSet<String>) -> Vec<String>
                 }
             }
             TermKind::Decl { .. } => {
-                if term.has_external_extractor() && NON_SCALAR_INT.contains(&name) {
+                if term.has_external_extractor()
+                    && (NON_SCALAR_INT.contains(&name) || FLAG_OFF.contains(&name))
+                {
                     reasons.insert(name.to_string());
                 }
             }
@@ -271,7 +278,8 @@ pub fn lopt(s: Option<&str>) -> String {
 }
 
 pub fn render(u: &Unit, rule_names: &[String]) -> Result<String> {
-    let e_ops: HashSet<String> = E_OPCODES.iter().map(|o| camel(o)).collect();
+    let e_ops: HashSet<String> =
+        E_OPCODES.iter().chain(BACKEND_EXTRA_OPCODES).map(|o| camel(o)).collect();
     // Every E opcode must exist as an `Opcode` variant.
     for op in &e_ops {
         let id = ast::Ident(format!("Opcode.{op}"), Default::default());
@@ -339,7 +347,8 @@ pub fn render(u: &Unit, rule_names: &[String]) -> Result<String> {
          (`clif-subset-v2`) at `i8`..`i64`; see `docs/contracts/isle.md` (\"Closure\") for the\n\
          selection method and what `lhsReasons` / `defaultExcludedBy` mean. -/\n\n",
     );
-    let mut ops: Vec<String> = E_OPCODES.iter().map(|s| s.to_string()).collect();
+    let mut ops: Vec<String> =
+        E_OPCODES.iter().chain(BACKEND_EXTRA_OPCODES).map(|s| s.to_string()).collect();
     ops.sort();
     let _ = writeln!(o, "def opcodes : List String := {}\n", lstrs(&ops));
     let roots_s: Vec<String> = ROOTS.iter().map(|s| s.to_string()).collect();

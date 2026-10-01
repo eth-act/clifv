@@ -19,8 +19,9 @@ the values of the def operands, the new world and a control outcome.
   `op k allocs`, which reads its uses from their allocated locations, writes early defs,
   havocs its clobbers (`Clobbered`: any value, except that a callee-saved register keeps its
   `keep`-part, AAPCS64's "callee preserves the low 64 bits of v8–v15"), then writes late defs.
-  A branch's def values are havocked (`HavocOuts`: `JTSequence`'s temporaries are dead after
-  the branch, and the checker forgets them).
+  The defs past an instruction's `MInst.keptDefs` are havocked (`HavocOuts`: a branch's defs,
+  `JTSequence`'s temporaries, are dead after the branch; the scratch registers of the LL/SC
+  loops are dead after the loop), and the checker forgets them.
   No parallel copy on edges: the allocator's moves do that.
 
 `Rets` returns the values of its uses; `halt` (a trap) stops with the world. The two
@@ -161,10 +162,15 @@ inductive MNext (b k n : Nat) (i : MInst) (uses : List V) (its : List RItem) (m 
   | ret {us} : i = .rets us → MNext b k n i uses its m w .ret (.ret uses m w)
   | halt : MNext b k n i uses its m w .halt (.halt w)
 
-/-- The def values the allocated code writes: those of `sem`, except that a branch's defs
-(`JTSequence`'s temporaries, dead after the branch; the checker forgets them) are havocked. -/
+/-- The def values the allocated code writes: those of `sem`, except the defs past
+`MInst.keptDefs` (a branch's defs, `JTSequence`'s temporaries, dead after the branch; the
+scratch registers of the LL/SC loops; the checker forgets them), which are havocked. -/
 def HavocOuts (i : MInst) (outs outs' : List V) : Prop :=
-  outs'.length = outs.length ∧ (i.isBranch = false → outs' = outs)
+  outs'.length = outs.length ∧ (i.keptDefs = none → outs' = outs) ∧
+    ∀ n, i.keptDefs = some n → outs'.take n = outs.take n
+
+theorem HavocOuts.refl (i : MInst) (outs : List V) : HavocOuts i outs outs :=
+  ⟨rfl, fun _ => rfl, fun _ _ => rfl⟩
 
 /-- One step of the allocated code: execute the next item of the current block. -/
 inductive MStep : MConf V W → MConf V W → Prop
