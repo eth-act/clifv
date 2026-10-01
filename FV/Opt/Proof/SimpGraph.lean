@@ -909,9 +909,37 @@ theorem chooseSkel_mem {orig : Isle.Opt.SkelInst} {cands : List Isle.Opt.SkelSim
   · exact List.mem_of_mem_take (List.mem_reverse.1 h)
   · cases h
 
+/-- An undefined read (`skelReads`) makes the original instruction or terminator stuck, so every
+simplification refines it. -/
+theorem skelRefines_of_undef {tb : BlockId → Option TrapCode} {fr : Frame} {mem : Mem}
+    {i : Isle.Opt.SkelInst} {y : ValueId} (hy : y ∈ skelReads i) (hn : fr.regs y = none)
+    (c : Isle.Opt.SkelSimp) : SkelRefines tb fr mem i c := by
+  cases i with
+  | inst i =>
+    obtain ⟨m, hm⟩ : ∃ m, evalInst fr mem i = .stuck m := by
+      cases he : evalInst fr mem i with
+      | stuck m => exact ⟨m, rfl⟩
+      | ok r =>
+        obtain ⟨a, ha⟩ := evalInst_ops (fun m h => by rw [he] at h; cases h) y hy
+        rw [hn] at ha; cases ha
+      | trap t =>
+        obtain ⟨a, ha⟩ := evalInst_ops (fun m h => by rw [he] at h; cases h) y hy
+        rw [hn] at ha; cases ha
+    unfold SkelRefines
+    split <;> (try split) <;> simp_all [ResRefines]
+  | term t =>
+    obtain ⟨m, hm⟩ : ∃ m, termEval fr mem t = .stuck m := by
+      cases t <;> simp only [skelReads, List.mem_singleton, List.not_mem_nil] at hy
+      all_goals
+        subst hy
+        exact ⟨_, by simp [termEval, Frame.get, hn, Res.ofOption, bind, Res.bind]; rfl⟩
+    unfold SkelRefines
+    split <;> (try split) <;> simp_all [BrRefines, seqEval]
+
 /-- A skeleton simplification chosen by `runSkel` refines the instruction or terminator. -/
 theorem runSkel_spec {skel : SkeletonFn} (hS : SimplifySound rules) (hK : SkeletonSound skel)
-    (hE : GoodEnv f fr mem) {st : SState} (h : GInv f ρ fr mem st) (i : Isle.Opt.SkelInst) :
+    (hE : GoodEnv f fr mem) {st : SState} (h : GInv f ρ fr mem st) (i : Isle.Opt.SkelInst)
+    (hk : ∀ y ∈ skelReads i, st.known y = true) :
     GInv f ρ fr mem (runSkel skel rules allowed st i).2 ∧
       Grow ρ fr mem st (runSkel skel rules allowed st i).2 ∧
       ∀ c, (runSkel skel rules allowed st i).1 = some c →
@@ -944,7 +972,15 @@ theorem runSkel_spec {skel : SkeletonFn} (hS : SimplifySound rules) (hK : Skelet
         refine ⟨h2, g01.trans g2, fun c' hc' => ?_⟩
         have hc2 : chooseSkel i cands = some c' := hc'
         rw [hch] at hc2; cases hc2
-        exact hc c (chooseSkel_mem hch)
+        by_cases hd : ∀ y ∈ skelReads i, ∃ a, gval ρ fr mem { st with made := {} } y = some a
+        · exact hc hd c (chooseSkel_mem hch)
+        · -- an undefined read: known, so still undefined, and the original is stuck
+          simp only [Classical.not_forall, not_exists] at hd
+          obtain ⟨y, hy, hn⟩ := hd
+          apply skelRefines_of_undef hy
+          show gval ρ fr mem st2 y = none
+          rw [(g01.trans g2).fix y (hk y hy)]
+          exact Option.eq_none_iff_forall_ne_some.2 hn
       · obtain ⟨h2, g2⟩ := h1.of_same (st' := { st1 with stats := { st1.stats with fired } })
           rfl rfl rfl rfl rfl rfl (Nat.le_refl _) rfl rfl rfl rfl
         exact ⟨h2, g01.trans g2, fun c hc => by cases hc⟩
