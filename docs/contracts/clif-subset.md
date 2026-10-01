@@ -10,7 +10,15 @@
   `sigN`, like `call`); it was stuck before. A callee that is a function of the program is
   entered as before. This is what `E2E.backend_correct_final` now covers for `call_indirect`,
   `func_addr` and `try_call_indirect` (`docs/contracts/e2e.md`, "Indirect calls").
-  `scripts/clif-filetests.sh`: RESULT_PLACEHOLDER
+  Effect on the differential tools: `scripts/clif-filetests.sh` 6072 pass / 7 fail / 13
+  disagree, 0 printed files rejected — the documented 6070 / 7 / 13 plus the two runs of
+  `runtests/try_call.clif` (both call `%call_i64`, a direct `try_call`); no runtest calls an
+  extern indirectly, so no run and no agreement with the Cranelift interpreter changes.
+  (Without `; data:` objects `Program.initMem` registers no function symbols, so `func_addr`
+  stays stuck there, as before.) Under `clif-filetest --rust-env` with a data image,
+  `func_addr` of `memset`, a vtable data object pointing at it, and a `try_call_indirect` of it
+  now run (they were stuck), and the Lean backend's runs of the same file agree with
+  Cranelift-native (`lean-backend-filetests.sh`, the Rust runtime linked).
 
 - **2026-09-28 (M4Ctl3, contract change #9)**: `br_table` jump tables have fewer than `2^32`
   entries (`jump_table_size` is `u32`; the bounds check compares 32 bits); `lowerCheck`'s `brIdxOk`.
