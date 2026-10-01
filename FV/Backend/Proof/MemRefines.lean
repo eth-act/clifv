@@ -537,7 +537,7 @@ theorem memRefines_csem (X : ExtSem) {sb : Nat} {syms : String → Option Nat}
     (hsb : ctx.slotBase = sb) (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b) :
     MemRefines F sb syms (csem F ctx X) := by
   subst hsb
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · intro op d am fl uses w a hop ha hav
     rw [csem_straight rfl]
     split
@@ -574,5 +574,14 @@ theorem memRefines_csem (X : ExtSem) {sb : Nat} {syms : String → Option Nat}
     exact csem_rmwLoop F ctx X ty op fl ra ro rd r1 r2 u x w hty hav
   · intro ty fl ra re rx rd r1 u e x w hty hav
     exact csem_casLoop F ctx X ty fl ra re rx rd r1 u e x w hty hav
+  · -- `tls_value`: the address, the thread pointer, the flags as the TLSDESC call leaves them
+    intro d t n b w hn
+    refine ⟨_, _, by simp [csem, hsym n b hn]; exact ⟨rfl, rfl⟩, ?_, fun a _ => ?_, ?_⟩
+    · intro f hf hfl
+      simp only [Arm.write_pstate]
+      rw [Arm.r_of_w_different (hfl _), Arm.r_of_w_different (hfl _),
+        Arm.r_of_w_different (hfl _), Arm.r_of_w_different (hfl _)]
+    · simp [Arm.write_pstate, Arm.ArmState.mem_w_eq_mem]
+    · simp [Arm.write_pstate, Arm.w_program]
 
 end Backend.Proof

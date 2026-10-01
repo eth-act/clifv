@@ -55,9 +55,11 @@ def ckeep : Reg → CV → CV
   | _, x => x
 
 /-- State fields outside the world: allocatable registers (x0–x15, x19–x28, v0–v31), the
-emitter temporaries x16/x17, and the pc (control is matched by code position). -/
+emitter temporaries x16/x17, the link register x30 (not allocatable; the prologue saves it and
+the epilogue reloads it, a `bl`/`blr` and the TLSDESC call of `tls_value` overwrite it), and the
+pc (control is matched by code position). -/
 def Masked : Arm.StateField → Prop
-  | .GPR i => i.toNat < 29 ∧ i.toNat ≠ 18
+  | .GPR i => (i.toNat < 29 ∧ i.toNat ≠ 18) ∨ i.toNat = 30
   | .SFP _ => True
   | .PC => True
   | _ => False

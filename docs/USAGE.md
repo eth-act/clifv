@@ -362,6 +362,13 @@ arguments of `call` verified; debug, `examples/compare.sh` SAME for all three): 
 verified of 1346 (8 unverified, 6 fallback), survey 3174 of 3179 (5 unverified), vendor 4395 of
 4399 (4 unverified: 3 `tls_value`, 1 stack-passed arguments of a `try_call`).
 
+After agent/stack-tls-proof `tls_value` (2026-10-01: `tls_value` verified, one thread, the
+TLSDESC hook contract `TlsOk`; debug, `examples/compare.sh` SAME for all three: fv-demo 19,
+survey 53, vendor 189 test outcomes): fv-demo 1336 verified of 1346 (4 unverified, 6
+fallback), survey 3174 of 3179 (5 unverified), vendor 4398 of 4399 (1 unverified: stack-passed
+arguments of a `try_call`). `lean-e2e-check`: 1148 in scope (1146 before, plus the 2 functions
+of `corpus/clif-regress/tls_elf_gd.clif`), 0 rejected, 0 not covered.
+
 Of the verified, `verified (normal returns; unwinding trusted)`: fv-demo 231 / 204, survey
 492 / 419, vendor 820 / 727 (debug / release). Before (main fbbd5d9, `try_call` functions
 compiled but unverified) survey debug had 2537 verified of 3179. No function is over the
@@ -454,7 +461,8 @@ report the same test outcomes as `cargo test` (fv-demo 18/18, survey 53/53, vend
 ### Thread-local storage and dead blocks (agent/fv-lcheck-tls)
 
 * **`tls_value`** (the `thread_local!` accessors: `symbol tls` global values) compiles, flagged
-  unverified ("tls_value (outside backend_correct)"). The lowering is Cranelift's for cg_clif's
+  unverified ("tls_value (outside backend_correct)"; verified since agent/stack-tls-proof,
+  see above). The lowering is Cranelift's for cg_clif's
   `tls_model=elf_gd`: `ElfTlsGetAddr`, the TLSDESC sequence `adrp x0, :tlsdesc:v` /
   `ldr xT, [x0, :tlsdesc_lo12:v]` / `add x0, x0, :tlsdesc_lo12:v` / `blr xT` (relocations
   `R_AARCH64_TLSDESC_ADR_PAGE21`/`LD64_LO12`/`ADD_LO12`/`CALL`, the variable an `STT_TLS`

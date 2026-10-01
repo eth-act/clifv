@@ -731,7 +731,7 @@ def lowerCheck (f : Clif.Function) (vc : VCode) : Bool :=
       let gn := gnAt (gnTable st0.nextVreg (aliasOf f bl))
       shapeOk f vc ctx st0 gn bl && certOk f ctx st0 gn bl (inFix f ctx gn) && brIdxOk f ctx &&
         -- a `tryCall` in the VCode only for a function with a `try_call`
-        (f.blocks.any (·.term.isTry) || !vc.hasTryCall) &&
+        ((f.blocks.any (·.term.isTry) || !vc.hasTryCall) && (hasTls f || !vc.hasTls)) &&
         -- the outgoing area holds every call's stack arguments; the entry's parameter locations
         (callsStackOkB f vc.outgoing && entryOkB f)
 

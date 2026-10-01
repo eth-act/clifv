@@ -2,7 +2,8 @@
 ; (adrp/ldr/add/blr with R_AARCH64_TLSDESC_* relocations against the variable, then
 ; mrs tpidr_el0 and add). Cranelift's filetest isa/aarch64/tls-elf-gd.clif with %names, plus a
 ; non-colocated variable and a value live across the sequence (the resolver preserves every
-; register but x0 and x30). Compiled and encode-checked; outside the end-to-end theorem.
+; register but x0 and x30). Compiled and encode-checked; inside E2E.backend_correct_final
+; (one thread, the TLSDESC hook contract TlsOk), counted by lean-e2e-check.
 test compile
 set tls_model=elf_gd
 target aarch64

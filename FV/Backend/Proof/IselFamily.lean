@@ -114,7 +114,7 @@ def instNames : Clif.Inst → String × String
   | .atomicRmw .. => ("AtomicRmw", "AtomicRmw")
   | .atomicCas .. => ("AtomicCas", "AtomicCas")
   | .fence => ("NullAry", "Fence")
-  -- agent/fv-lcheck-tls: `tls_value` (unverified, outside `E2E.InSubset`)
+  -- `tls_value` (agent/stack-tls-proof)
   | .tlsValue .. => ("UnaryGlobalValue", "TlsValue")
   | _ => ("", "")
 

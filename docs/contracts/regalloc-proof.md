@@ -134,9 +134,23 @@ verified in-state. Entry: `Inv_entryState`.
 
 Concrete instance: `V = CV = BitVec 128` (an X register zero-extended, `regVal`), `keep = ckeep`,
 `W = Arm.ArmState` compared by `SameWorld F` (equal outside the allocatable registers, x16/x17,
-the pc and the frame addresses `F`), emitted code run by `execMInst` (`MInst.lines` →
-`Insn.toArmInst` → `Arm.exec_inst`; with M5's `Insn.stepi_eq_sem` this is what `Arm.stepi`
-does on the encoded word).
+the link register x30, the pc and the frame addresses `F`), emitted code run by `execMInst`
+(`MInst.lines` → `Insn.toArmInst` → `Arm.exec_inst`; with M5's `Insn.stepi_eq_sem` this is what
+`Arm.stepi` does on the encoded word).
+
+x30 is in `Masked` since agent/stack-tls-proof (the TLSDESC `blr` of `tls_value` overwrites it
+inside the body). For functions without `tls_value` the end-to-end statement does not get
+weaker: x30 is not allocatable and no body instruction reads it; the prologue stores the entry
+x30 in the fp/lr slot (an `F` address: `frameF`), the epilogue reloads it from there
+(`ret_machine`: the return address comes from the slot, `AbiEntry.lr`), and every function has
+a frame (`lowerRFunc_frame`); `ArmRet` never mentioned x30. In the statement `Masked` occurs in
+`BodyEntry.other`, a premise on the body-entry world `w₀`: masking x30 drops the requirement
+that `w₀` and `s` agree on x30 (a weaker premise). In the callee contract `CalleeOk.os`
+(`OperandsSound` of the call hook) the callee no longer has to return with x30 equal to the
+world's (a `bl`/`blr` sets x30 to the return address, so the old clause was only satisfiable
+when `X.call` put that address in the world), and in exchange it is quantified over caller
+states whose x30 differs from the world's: a real callee's effect on everything but the pc
+(`CalleeOk.pc`) does not depend on its return address.
 
 ```lean
 def OperandsSound (F) (exec : MInst → ArmState → Option ArmState) (sem : ISem CV ArmState) (i : MInst) : Prop :=

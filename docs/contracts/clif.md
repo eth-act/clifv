@@ -279,8 +279,8 @@ passes the verifier (default flags).
   (`clif-native`, 28/28). The Cranelift interpreter does not implement data symbols
   (`GlobalValueData::Symbol => unimplemented!()`), so those 28 runs are `oracle-error`.
 - `tls_value.ty gvN` (a `symbol tls` gv): `Clif.run` has one thread, whose instance of the
-  variable is the image's symbol (`mem.symbols name + offset`, as `symbol_value`). Outside
-  subset E (compiled, unverified).
+  variable is the image's symbol (`mem.symbols name + offset`, as `symbol_value`). In subset E
+  as `tls_value.i64` with offset 0 (agent/stack-tls-proof; `docs/contracts/e2e.md`, "`tls_value`").
 - Not modelled: function symbols in data (vtables of `fn` pointers), threads, data symbols of
   other functions' `gv` offsets beyond the object (out-of-bounds reads trap/stuck as usual).
 

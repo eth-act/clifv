@@ -163,6 +163,8 @@ theorem backend_correct_opt (cfg : Opt.Config)
     (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
     (hC : ∀ s, CalleeOk
       (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
+    (hTls : hasTls (Opt.optimize f cfg) = true → ∀ s, TlsOk
+      (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
     (hX : ∀ s, XCallsOk env (f.externs.map (·.2)) (fun sl cm w =>
       Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
         slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X)
@@ -190,7 +192,7 @@ theorem backend_correct_opt (cfg : Opt.Config)
     simp [optEntry, hb']
   have hnci := hF.noCI (noCI_of f hci hnt)
   have hA := backend_correct_final (inSubset_opt cfg hsub hci hnt) hc hcov hC
-    (fun ⟨B, hB, h⟩ => by rw [hnci.2 B hB] at h; cases h)
+    (fun ⟨B, hB, h⟩ => by rw [hnci.2 B hB] at h; cases h) hTls
     (fun s' => by rw [rel_holds_slots hF.slots, hF.externs]; exact hX s')
     (fun _ => by rw [indSigs_nil_of_noCI hnci]; exact xCallsIndOk_nil _ _ _) hsym hslot hent hres hbe
     (by rw [hF.sig]; exact hargs) hcs'

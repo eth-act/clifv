@@ -332,7 +332,8 @@ semantics: the `Type → Option Type` predicates of `tyPred` (`fits_in_*`, `ty_i
 `use_lse`/`use_dotprod`/`use_i8mm` (ISA flags off by default), `sign_return_address_disabled`
 and `tls_model` (`elf_gd`, cg_clif's setting for ELF targets, like `is_pic`; it selects
 Cranelift's `ElfTlsGetAddr` lowering of `tls_value`, the TLSDESC call sequence with
-`R_AARCH64_TLSDESC_*` relocations, unverified).
+`R_AARCH64_TLSDESC_*` relocations; inside `E2E.backend_correct_final` under the TLSDESC hook
+contract `TlsOk`, `docs/contracts/e2e.md`).
 
 ## ABI (Cranelift aarch64 `system_v`, `isa/aarch64/abi.rs`)
 

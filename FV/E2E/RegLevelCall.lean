@@ -156,7 +156,7 @@ theorem realizes_call {R : RL} (hR : R.Wf) (hC : CalleeOk R.F R.X R.H) {s : Arm.
     have hj : R.L[j]? = some (.ins x) := drop_get (Z := []) hd
     simp only [callExec, Option.some.injEq] at hex
     subst hex
-    refine ⟨by simp only [List.length_singleton, iterN]; exact hstep s j hj hprog hpc, ?_⟩
+    refine ⟨1, by simp only [iterN]; exact hstep s j hj hprog hpc, ?_⟩
     rw [hC.pc _ _ herr, hpc, List.length_singleton, pcOf_succ hj]
   cases hd : info'.dest with
   | sym n =>
@@ -260,7 +260,7 @@ theorem runsAs_symAddr {R : RL} (hR : R.Wf) {i' : MInst} {x1 x2 : Insn}
   have hj1 : R.L[j + 1]? = some (.ins x2) := drop_get1 (ls := []) hd
   have e := hstep s j hj hj1 hprog hpc
   simp only [hex] at e
-  refine ⟨by simpa [iterN] using e, ?_⟩
+  refine ⟨2, by simpa [iterN] using e, ?_⟩
   -- the pc: `symExec` advances by 8
   have hpc8 : Arm.r .PC s' = Arm.r .PC s + 8 := by
     revert hex

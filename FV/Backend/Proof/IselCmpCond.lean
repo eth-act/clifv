@@ -275,7 +275,7 @@ def eOpNames : List String :=
    "Istore32", "Select", "Nop", "SymbolValue", "StackAddr", "Call", "CallIndirect", "FuncAddr",
    -- `bmask`, the atomics and `fence` (agent/atomics-proof)
    "Bmask", "AtomicLoad", "AtomicStore", "AtomicRmw", "AtomicCas", "Fence",
-   -- agent/fv-lcheck-tls: `tls_value` (unverified, outside `E2E.InSubset`)
+   -- `tls_value` (agent/stack-tls-proof)
    "TlsValue"]
 
 theorem instNames_snd_mem (cl : Clif.Inst) : (instNames cl).2 ∈ eOpNames := by

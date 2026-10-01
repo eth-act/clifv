@@ -73,3 +73,42 @@ This is sound for the CLIF semantics `Clif.run`, which is single-threaded. It do
 model concurrent agents: a theorem about a multi-threaded execution would need a memory
 model and a monitor, and Cranelift's LL/SC retry loops would then be needed. The co-simulation
 (`scripts/arm-cosim.sh`) does not exercise exclusives against another agent.
+
+## Thread-local storage: trusted TLSDESC hook (agent/stack-tls-proof, 2026-10-01)
+
+`E2E.backend_correct_final` covers `tls_value` (`elf_gd`, cg_clif's setting). Its code is
+Cranelift's TLSDESC sequence (`ElfTlsGetAddr`, `emit.rs`):
+
+```
+adrp x0, :tlsdesc:v ; ldr tmp, [x0, :tlsdesc_lo12:v] ; add x0, x0, :tlsdesc_lo12:v
+blr tmp ; mrs tmp, tpidr_el0 ; add x0, x0, tmp
+```
+
+The model cannot run it: it has no system registers (`mrs tpidr_el0` stops with an error), and
+the resolver `tmp` calls is code of the dynamic linker, outside the function. The machine of the
+theorem (`ArmStepX X H fa`, `FV/E2E/RegLevelMachine.lean`) therefore hooks the sequence, as it
+hooks calls: the `adrp` only advances the pc, and at the `ldr` the rest of the sequence runs as
+one step `H.tls v tmp`. The hook's contract `TlsOk F X H` (`FV/E2E/RegLevelTls.lean`, premise
+`hTls` of `backend_correct_final`, only for a function with a `tls_value`) is the **trusted**
+part:
+
+- `pc`: the hooked step ends at the instruction after the sequence;
+- `seq`: x0 holds the variable's address `X.sym v 0`, `tmp` holds the thread pointer `X.tp`;
+  every other register except x30 (the `blr` writes it), the condition flags, the memory and
+  the program are unchanged;
+- `flags`: the flags are `X.tlsFlags v w`, a function of the world (the resolver may change
+  them).
+
+`Clif.run` has one thread, whose instance of a thread-local variable `v` is the memory's symbol
+`v` (`Clif.Mem.symbols`, `docs/contracts/clif.md`); `tls_value` gives its address, as
+`symbol_value` does. The theorem is about that one thread: the caller's `syms` (with `hsym`,
+`X.sym v 0` is `syms v`) gives the address of the running thread's instance of `v`, and
+`TlsOk.seq` says the sequence computes it (`TPIDR_EL0` plus the resolver's offset). That
+the dynamic linker's resolver and the thread pointer produce this address is trusted, like
+the GOT contents of `symbol_value`.
+
+The register clause is Cranelift's TLSDESC convention (`ElfTlsGetAddr` in
+`inst/mod.rs`: the resolver "is required to preserve all registers except x0 and x30"; the
+register allocator keeps values live in every other register across the sequence). `TlsOk` is
+that convention, plus the flags: it lets the resolver change NZCV, so the proof does not rely on
+the flags surviving the sequence.

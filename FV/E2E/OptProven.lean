@@ -33,6 +33,8 @@ theorem backend_correct_opt_proven (cfg : Opt.Config) (hr : cfg.rules = .craneli
     (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
     (hC : ∀ s, CalleeOk
       (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
+    (hTls : hasTls (Opt.optimize f cfg) = true → ∀ s, TlsOk
+      (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
     (hX : ∀ s, XCallsOk env (f.externs.map (·.2)) (fun sl cm w =>
       Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
         slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X)
@@ -46,7 +48,7 @@ theorem backend_correct_opt_proven (cfg : Opt.Config) (hr : cfg.rules = .craneli
       syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicit env (Opt.optimizeProgram p cfg) (optEntry cfg f cs)) (fuel : Nat) :
     ArmRefines fb base ra (ArmStepX X H fa) s (Clif.runLoop env p fuel cs) :=
-  backend_correct_opt cfg (Opt.simplifyPassSim_proven hr ha) hsub hci hnt hc hcov hC hX hsym hslot hE
+  backend_correct_opt cfg (Opt.simplifyPassSim_proven hr ha) hsub hci hnt hc hcov hC hTls hX hsym hslot hE
     hent hres hbe hargs hcs hrel htr fuel
 
 end E2E

@@ -1,3 +1,4 @@
+import FV.E2E.RegLevelTls
 import FV.E2E.RegLevelFrame
 import FV.E2E.RegLevelTry
 import FV.Backend.Proof.RegallocCover
@@ -181,6 +182,7 @@ end
 /-- **The machine realises the allocated code** under `Q ∧ AInv`: every item case. -/
 theorem realizes_all {R : RL} (hR : R.Wf) (hC : CalleeOk R.F R.X R.H)
     (hT : R.vc.hasTryCall = true → CalleeTryOk R.F R.X R.H)
+    (hTls : R.vc.hasTls = true → TlsOk R.F R.X R.H)
     (hcov : FormsCovered R.ctx R.vc) :
     Realizes R.vc R.rf R.sem ckeep R.step (fun s c => Q R s c ∧ AInv c) := by
   intro s c c' ⟨hq, hA⟩ h
@@ -286,6 +288,19 @@ theorem realizes_all {R : RL} (hR : R.Wf) (hC : CalleeOk R.F R.X R.H)
           obtain ⟨n, c'', hm, hq'⟩ := realizes_tryCall hR hC (hT (hasTryCall_of_mem hvb hi)) hq hvb
             hi hops hsz hsem hlen hk1 hsucc hitems rfl
           exact fin n c'' hm hq'
+      case elfTlsGetAddr nm rd tmp =>
+        have hv := ctlCheck_inst hck hvb hi
+        simp only [ctlInstOk, Bool.and_eq_true] at hv
+        obtain ⟨d, rfl⟩ := isVregInt_iff hv.1
+        obtain ⟨t, rfl⟩ := isVregInt_iff hv.2
+        have hsem' := hsem
+        simp only [RL.sem, csem, Option.some.injEq, Prod.mk.injEq] at hsem'
+        obtain ⟨-, -, rfl⟩ := hsem'
+        cases hn with
+        | next hk =>
+          obtain ⟨n, c'', hm, hq'⟩ := realizes_tls hR (hTls (hasTls_of_mem hvb hi)) hq hvb hi
+            hops hsz hsem hlen hk
+          exact fin n c'' hm hq'
 
 /-! ## The register-level theorem -/
 
@@ -338,7 +353,8 @@ theorem rets_store {us : List (Reg × Reg)} {ops : Array Operand} {allocs : Arra
 and laid-out function, the machine `ArmStepX X H fa` realises every return and every trap of
 the prepared VCode under `csem` (frame addresses `frameF`, function context
 `⟨fa.k, af.slotBase⟩`, external semantics `X`), given the form coverage `FormsCovered`
-(decided by `formsCoveredB`) and the callee contract `CalleeOk` of every activation. -/
+(decided by `formsCoveredB`), the callee contract `CalleeOk` of every activation, and (for code
+with a `tls_value`) the TLSDESC contract `TlsOk`. -/
 theorem regLevelCorrect_backend {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
     {fb : FnBin} {k : Nat} (hcheck : checkAlloc vcp rf = .ok ()) (halloc : lowerRFunc vcp rf = .ok af)
     (hemit : emitFunc k af = .ok fa) (hlayout : fa.layout = .ok fb) {X : ExtSem} {H : ArmHooks}
@@ -346,6 +362,8 @@ theorem regLevelCorrect_backend {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : Fn
     (hC : ∀ s, CalleeOk
       (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
     (hCT : vcp.hasTryCall = true → ∀ s, CalleeTryOk
+      (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
+    (hTls : vcp.hasTls = true → ∀ s, TlsOk
       (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H) :
     RegLevelCorrect
       (fun s => csem (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s)
@@ -363,7 +381,7 @@ theorem regLevelCorrect_backend {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : Fn
   obtain ⟨n0, hq0, hA0, hf0⟩ := q_init hR hent hbe
   obtain ⟨Rl, hSim, hinit, hkeep⟩ :=
     checkAlloc_sound R.vc R.rf R.sem ckeep hcheck (locVal R.fr (iterN R.step n0 s)) ρ₀ w₀
-  have hRz := realizes_all hR (hC s) (fun h => hCT h s) hcov
+  have hRz := realizes_all hR (hC s) (fun h => hCT h s) (fun h => hTls h s) hcov
   refine ⟨fun us vals w hret => ?_, fun c htr => ?_⟩
   · -- a return
     obtain ⟨b, k, ρ, w₁, vb, ops, outs, hstar, hvb, hi, hops, hvals, hsem⟩ := hret

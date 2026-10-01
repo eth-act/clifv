@@ -82,6 +82,16 @@ theorem hasTry_of_hasTryCall {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf 
     rw [noTryCall_of_prepCheck hc.prepOk (noTryCall_of_check hc.lowerOk hf)] at h
     cases h
 
+/-- The prepared VCode has an `ElfTlsGetAddr` only if the function has a `tls_value` (the
+validators `lowerCheck`/`prepCheck`). -/
+theorem hasTls_of_vcode {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc}
+    {af : AFunc} {fa : FnAsm} {fb : FnBin} (hc : Compiled f k vc vcp rf af fa fb)
+    (h : vcp.hasTls = true) : hasTls f = true := by
+  cases hf : hasTls f
+  · rw [noTls_of_prepCheck hc.prepOk (noTls_of_check hc.lowerOk hf)] at h
+    cases h
+  · rfl
+
 theorem le_alignTo (n a : Nat) (ha : 0 < a) : n ≤ alignTo n a := by
   unfold alignTo
   have := Nat.div_add_mod (n + a - 1) a
@@ -135,7 +145,8 @@ run of the compiled function refines the CLIF run (a `try_call`: its normal retu
 obligations are discharged (`refines_csem`, `memRefines_csem`). Remaining hypotheses: the form
 coverage `FormsCovered` (decided per function by `formsCoveredB`), the callee contract `CalleeOk`
 of the machine's call hook (and, for a function with a `try_call`, `CalleeTryOk`: the exception
-payload registers), the external contract `XCallsOk`, and the link-time facts `hsym`/`hslot`. -/
+payload registers; for a function with a `tls_value`, `TlsOk`: the TLSDESC hook), the external
+contract `XCallsOk`, and the link-time facts `hsym`/`hslot`. -/
 theorem backend_correct_final {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}
     {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb)
@@ -147,6 +158,9 @@ theorem backend_correct_final {p : Clif.Program} {f : Clif.Function} {k : Nat} {
       (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
     -- the callee contract of the call of a `try_call` (only for a function with one)
     (hCT : (∃ B ∈ f.blocks, B.term.isTry = true) → ∀ s, CalleeTryOk
+      (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
+    -- the TLSDESC contract of the machine's `tls_value` hook (only for a function with one)
+    (hTls : hasTls f = true → ∀ s, TlsOk
       (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
     -- the external contract (callees of `f`, linker)
     (hX : ∀ s, XCallsOk env (f.externs.map (·.2)) (fun sl cm w =>
@@ -172,7 +186,7 @@ theorem backend_correct_final {p : Clif.Program} {f : Clif.Function} {k : Nat} {
     ArmRefines fb base ra (ArmStepX X H fa) s (Clif.runLoop env p fuel cs) :=
   backend_correct_m4 (ctx := fun _ => ⟨fa.k, af.slotBase⟩) (X := fun _ => X) hsub hc
     (regLevelCorrect_backend hc.check hc.alloc hc.emit hc.layout hcov hC
-      fun h => hCT (hasTry_of_hasTryCall hc h))
+      (fun h => hCT (hasTry_of_hasTryCall hc h)) (fun h => hTls (hasTls_of_vcode hc h)))
     (refines_final vcp rf af fa X) hX hXI (fun _ => hsym)
     (fun _ => memRefines_csem _ _ X hslot hsym) (outgoing_le_intBase hc)
     hent hres hbe hargs (stackArgsAvoid_frameF hc hres hent hargs) hcs hrel htr fuel
@@ -225,6 +239,8 @@ theorem backend_correct_final_indirectFree {p : Clif.Program} {f : Clif.Function
       (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
     (hCT : (∃ B ∈ f.blocks, B.term.isTry = true) → ∀ s, CalleeTryOk
       (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
+    (hTls : hasTls f = true → ∀ s, TlsOk
+      (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
     (hX : ∀ s, XCallsOk env (f.externs.map (·.2)) (fun sl cm w =>
       Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
         slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X)
@@ -237,7 +253,7 @@ theorem backend_correct_final_indirectFree {p : Clif.Program} {f : Clif.Function
       syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ArmRefines fb base ra (ArmStepX X H fa) s (Clif.runLoop env p fuel cs) :=
-  backend_correct_final hsub hc hcov hC hCT hX
+  backend_correct_final hsub hc hcov hC hCT hTls hX
     (fun _ => by rw [indSigs_eq_nil hci htci]; exact xCallsIndOk_nil _ _ _) hsym hslot hent hres
     hbe hargs hcs hrel htr fuel
 

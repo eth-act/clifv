@@ -16,6 +16,11 @@ uses link-time symbol addresses, which are outside the laid-out function: `ArmSt
   `xd := X.sym sym off` (the linker's resolved address), and the paired `ldr xd, [xd,
   :got_lo12:sym]` / `add xd, xd, :lo12:sym+off`: no further effect (the pair computes the
   address). Both advance the pc by 4.
+* the TLSDESC sequence of `tls_value` (`ElfTlsGetAddr`, agent/stack-tls-proof): its `adrp x0,
+  :tlsdesc:sym` advances the pc by 4 (the descriptor address is part of the resolver call), and
+  at its `ldr tmp, [x0, :tlsdesc_lo12:sym]` the rest of the sequence (`add`, the resolver call
+  `blr tmp`, `mrs tmp, tpidr_el0`, `add x0, x0, tmp`) runs as one step `H.tls sym tmp` (the Arm
+  model has no system registers and the resolver is outside the function; contract `TlsOk`).
 
 The instruction at the pc is found from the function's line list `fa`; the load address `base`
 is the address of the first word of the program (`progBase`: `AbiEntry.program` puts the
@@ -26,9 +31,12 @@ namespace Backend.Proof
 
 open Backend
 
-/-- The callee: the Arm state at the return of `bl name` (`some name`) or `blr` (`none`). -/
+/-- The callee: the Arm state at the return of `bl name` (`some name`) or `blr` (`none`); the
+TLSDESC sequence of `tls_value` of symbol `sym` with temporary `tmp` from its `ldr`: the state
+after the sequence (`tls sym tmp`). -/
 structure ArmHooks where
   call : Option String → Arm.ArmState → Arm.ArmState
+  tls : String → Reg → Arm.ArmState → Arm.ArmState
 
 /-- Address of the first word of the loaded program. -/
 def progBase (s : Arm.ArmState) : BitVec 64 :=
@@ -57,6 +65,8 @@ noncomputable def ArmStepX (X : ExtSem) (H : ArmHooks) (fa : FnAsm) (s : Arm.Arm
   | some (.adrp rd n off) =>
     Arm.w .PC (pc + 4) (Arm.w (.GPR (rd.encZR.toOption.getD 31#5)) (X.sym n off) s)
   | some (.addLo12 _ _ _ _) => Arm.w .PC (pc + 4) s
+  | some (.adrpTlsDesc _ _) => Arm.w .PC (pc + 4) s
+  | some (.ldrTlsDescLo12 tmp _ n) => H.tls n tmp s
   | _ => Arm.stepi s
 
 /-! ## Finding the instruction at the pc -/
@@ -141,9 +151,11 @@ namespace Backend.Proof
 
 open Backend
 
-/-- Instructions the machine hooks (calls, relocated address computations). -/
+/-- Instructions the machine hooks (calls, relocated address computations, the TLSDESC
+sequence). -/
 def _root_.Backend.Insn.hooked : Insn → Bool
   | .bl _ | .blr _ | .adrpGot .. | .ldrGotLo12 .. | .adrp .. | .addLo12 .. => true
+  | .adrpTlsDesc .. | .ldrTlsDescLo12 .. => true
   | _ => false
 
 theorem codeLines_sizes : ∀ L : List Line, (L.map Line.size).sum = 4 * (codeLines L).length

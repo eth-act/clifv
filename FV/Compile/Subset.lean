@@ -60,11 +60,15 @@ def instE : Inst → Bool
   | .atomicRmw _ ty f _ _ => tyE ty && flagsE f
   | .atomicCas ty f _ _ _ => tyE ty && flagsE f
   | .fence => true
+  -- `tls_value` (agent/stack-tls-proof: one thread, the `elf_gd` TLSDESC sequence)
+  | .tlsValue ty _ => ty == .i64
   | _ => false
 
-/-- Global values: only `symbol %name[+offset]` (the target of `symbol_value`). -/
+/-- Global values: `symbol %name[+offset]` (the target of `symbol_value`) and
+`symbol tls %name[+offset]` (the target of `tls_value`). -/
 def globalE : GlobalValue → Bool
   | .symbol .. => true
+  | .tlsSymbol .. => true
   | _ => false
 
 def termE : Terminator → Bool

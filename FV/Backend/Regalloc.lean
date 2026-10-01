@@ -293,6 +293,7 @@ def ctlInstOk (b k : Nat) : MInst → Bool
     a.isVregInt && e.isVregInt && r.isVregInt && d.isVregInt && s1.isVregInt
   | .rets us => us.all (·.1.isVregInt)
   | .tryCall _ ti => !ti.clobberAll
+  | .elfTlsGetAddr _ rd tmp => rd.isVregInt && tmp.isVregInt
   | _ => true
 
 /-- Control forms the register-level proof relies on (always true for `lowerFunction` +

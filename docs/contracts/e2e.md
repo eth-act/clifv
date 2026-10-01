@@ -36,6 +36,7 @@ contract `IselContract.lean`), `regalloc-proof.md` (M6), `encoder.md` (M5), `cli
 | **Atomics stage A** (2026-10-01, `agent/atomics-proof`): `bmask`, `atomic_load`, `atomic_store` and `fence` are in E (`Compile.instE`) and inside `backend_correct_final`, on the single-threaded Arm model (`docs/decisions/arm-model.md`, "Atomics"). `atomic_rmw`/`atomic_cas` stay outside E: their root rules (994–1004, 1007) are proven vacuous from `CtxInv.instE` | **proven** (`bmask_ok` 936, `fence_ok` 1024, `atomic_load_ok` 983, `atomic_store_ok` 984, `uextend_atomic_load_ok` 810, `atomic_loop_ok`; M6: `corr_csetm`/`corr_fence`/`corr_loadAcquire`/`corr_storeRelease`, `straight_loadAcquire`/`straight_storeRelease`, `ref_csetm`/`ref_fence`); `lean-e2e-check`: 1118 in scope (1092 before), 0 rejected, 0 not covered; filetests corpus 114/114, extrt 22/22, runtests 4672/0/0, `atomics_loops.clif` Lean 11/11; encode-check 1291 identical / 0 differ; `cargo fv` debug verified: fv-demo 1323/1346, survey 3156/3179, vendor 4324/4399, `compare.sh` SAME |
 | **Atomics stage B** (2026-10-02, `agent/atomics-proof`): `atomic_rmw` (all 11 ops, i8–i64) and `atomic_cas` (i8–i64) are in E and inside `backend_correct_final`, on the same single-threaded Arm model (the LL/SC loop body runs once: `stlxr` succeeds and writes status 0). The loops are `isCtl` in `csem` (`loopSem`: one symbolic run of the body, FV/Backend/Proof/LoopRun.lean); register level in FV/E2E/RegLevelAtomic.lean (`realizes_rmwLoop`, `realizes_casLoop`). The RMW memory clause only fixes the low `ty.bytes*8` bits of the old-value def (smin/smax i8/i16 sign-extend x27 in place). The checker `ctlInstOk` requires every loop operand to be an int vreg. The CAS i32 comparison uses `uxtw` (deviation from Cranelift's upstream bug, docs/research/upstream-bugs.md) | **proven** (`atomic_rmw_*_ok` rules 2357–2377, `atomic_cas_ok` 2390; `rmwBody_spec`, `casHead_spec`, `stlxr_spec`; `csem_rmwLoop`, `csem_casLoop`). lean-e2e-check 1126 in scope / 0 rejected; cargo fv debug verified: survey 3174/3179, vendor 4381/4399, fv-demo 1332/1346 |
 | **Stack-passed parameters and `call` arguments** (2026-10-01, `agent/stack-tls-proof`): functions with more than 8 parameters (an `sret` pointer does not count) and `call`s of externs with more than 8 parameters are inside `backend_correct_final`. `InSubset` drops `regParams`/`callRegArgs` (a `try_call`'s callee and the indirect calls keep at most 8 register parameters: `tryRegArgs`, `indSigs`). Entry: `ArgsIn` puts a stack location `off` (`locsOf`, `sigArgLocs`) at `sp + off` of the ABI entry state (`StackArgAt`); the entry code loads it from `fp + 16 + off` (`DriverCheck.entryLoads`, `entry_step`). Calls: the outgoing stores go to `[sp + off]` (`argStores_run`), the callee contract `XCallsOk` takes `ArgsAt` (stack arguments read from memory at `sp + off`). `Rel` gains the outgoing-area size `out` (`OutRel`: `[sp, sp + out)` fits, avoids `F` and holds no live CLIF byte; `backend_correct_final` takes `out := intBase`). `lowerCheck` adds `callsStackOkB` (every call's stack area fits `vc.outgoing`, `stackLayoutOk`) and `entryOkB`; `prepCheck` keeps `outgoing`. Specialisations (new ⇒ old for ≤ 8 parameters / no stack arguments): `InSubset.of_regArgs`, `argsIn_iff_of_regs`, `argsAt_iff_of_regs`, `xCallsOk_of_regArgs`, `Rel.holds_zero` | **proven** (`call_bl_ruleOk`/`call_got_ruleOk` any arity, `entry_step`, `callsStack_of_check`, `entryOk_of_check`, `stackArgsAvoid_frameF`, `outgoing_le_intBase`); `lean-e2e-check`: 1146 in scope (1126 before), 0 rejected, 0 not covered |
+| **`tls_value`** (2026-10-01, `agent/stack-tls-proof`): `tls_value.i64` of a `symbol tls` global value (offset 0; `elf_gd`, cg_clif's TLS model) is in E (`Compile.instE`, `globalE`) and inside `backend_correct_final` for the one thread `Clif.run` models (its instance of the variable is the memory's symbol). M4: root rules 1129 (`elf_gd`, `tls_value_ok`) and 1130 (`macho`, vacuous), `MemRefines`' TLSDESC clause (`memRefines_csem`). M6: `ElfTlsGetAddr` is `isCtl`; `csem` gives `[X.sym n 0, X.tp]` and the flags `X.tlsFlags n w` (`ExtSem.tp`/`tlsFlags`); the machine hooks the TLSDESC sequence (`ArmStepX`: `adrp` advances the pc, `ldr` runs `H.tls n tmp`) under the trusted contract `TlsOk` (premise `hTls`, only for a function with a `tls_value`; see "`tls_value`" below); `realizes_tls`/`os_tls` (FV/E2E/RegLevelTls.lean). x30 joins `Masked` (`docs/contracts/regalloc-proof.md`: no weakening for other functions). Validators: `lowerCheck` (`noTls_of_check`) and `prepCheck` (`noTls_of_prepCheck`) keep `ElfTlsGetAddr` out of the VCode of a function without `tls_value`; `ctlInstOk` requires int vregs | **proven**; `lean-e2e-check`: 1148 in scope (1146 before), 0 rejected, 0 not covered; cargo fv debug verified fv-demo 1336/1346, survey 3174/3179, vendor 4398/4399 |
 
 ### Final hypotheses (`E2E.backend_correct_final`, 2026-09-28)
 
@@ -49,6 +50,7 @@ fp/lr pair and padding above the CLIF slots, the code words), `cx := ⟨fa.k, af
 | `FormsCovered cx vcp` | per-function decidable premise (`formsCoveredB`, the covered straight-line forms `FormOk`, including the per-instruction bitmask check `logicImmOk`; control forms are handled by the proof); decided by `lean-e2e-check` (corpus + extrt + runtests: 913 of 913 checked functions covered, M6Refines) |
 | `∀ s, CalleeOk (FF s) X H` | callee contract of the machine's call hook `H` (AAPCS64: `OperandsSound` of every call, return to pc+4, `X.call` error-free and program-preserving) — environment |
 | `(∃ B ∈ f.blocks, B.term.isTry = true) → ∀ s, CalleeTryOk (FF s) X H` (`hCT`) | only for a function with a `try_call`: the def registers of a `try_call`'s call hold what `csem` gives them — the results, then the exception payload registers x0/x1 that are not return registers, as the callee's world `X.call` has them (see "`try_call`") — environment; vacuous for a function without `try_call` |
+| `hasTls f = true → ∀ s, TlsOk (FF s) X H` (`hTls`) | only for a function with a `tls_value`: the machine's TLSDESC hook `H.tls` ends after the sequence, puts the variable's address `X.sym n 0` in x0 and the thread pointer `X.tp` in the temporary, keeps every other register but x30, the memory and the program, and leaves the flags `X.tlsFlags n w` — trusted (`docs/decisions/arm-model.md`, "Thread-local storage"); vacuous for a function without `tls_value` |
 | `∀ s, XCallsOk env (f.externs.map (·.2)) (Rel.holds ⟨FF s, syms, slotOff, OB⟩ f) X` (`OB := (RAFrame.compute vcp rf).intBase`, the outgoing stack-argument area) | external contract for the externs `f` declares: callees, linker symbols — environment. The arguments are given by `ArgsAt` (register ones in their registers, stack-passed ones in memory at `sp + off`; for externs with at most 8 parameters this is the former "at most 8 values, all in registers", `xCallsOk_of_regArgs`); the callee returns a world related by `Rel.holds`, so in particular its outgoing area `[sp, sp + OB)` still avoids the frame and holds no live CLIF byte (`OutRel`; trivial when `OB = 0`, `Rel.holds_zero`). A call returns one value per ABI return of the declaration (`sigRets`), the first ones the extern's results (`PrefixHold`); for declarations without `sret` this is implied by the former extern-independent contract (`xCallsOk_of_results`) |
 | `∀ s, XCallsIndOk env (indSigs f) (Rel.holds ⟨FF s, syms, slotOff, OB⟩ f) X` (`hXI`) | external contract for the indirect calls of `f` (`call_indirect`, `try_call_indirect`), per call-site signature (`Backend.indSigs f`): a `blr` whose target holds `X.sym n 0` of an extern `n` of `env` behaves as `env.extern n` does under that signature (the same clause as `XCallsOk`'s GOT call) — environment; vacuous for a function without indirect calls (`xCallsIndOk_nil`, `backend_correct_final_indirectFree`) |
 | `∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b` (`hsym`) | linker: the external semantics' symbol addresses are the linked ones — environment; with `hslot` it discharges the former `MemRefines` hypothesis (`memRefines_csem`, M6MemRef) |
@@ -143,6 +145,36 @@ the `retN`/value arguments).
   `try_call` out with an explicit premise (`hnt : ∀ B ∈ f.blocks, B.term.isTry = false`);
   `lean-backend` flags such functions unverified under `--opt`/`--opt-proven-only` and after
   `i128` legalisation.
+
+### `tls_value` (one thread, trusted TLSDESC hook)
+
+`Clif.run` has one thread: `tls_value.i64 gvN` of `gvN = symbol tls %v` gives the address of
+the memory's symbol `v` (`Clif.Mem.symbols`, as `symbol_value`). The backend lowers it by
+Cranelift's `elf_gd` rule to `ElfTlsGetAddr v x0 tmp`, emitted as the TLSDESC sequence
+`adrp x0, :tlsdesc:v; ldr tmp, [x0, :tlsdesc_lo12:v]; add x0, x0, :tlsdesc_lo12:v; blr tmp;
+mrs tmp, tpidr_el0; add x0, x0, tmp`.
+
+* **Scope**: `Compile.instE` admits `tls_value.i64`, `globalE` admits `symbol tls`; a `tls`
+  symbol with an offset is rejected by the lowering (`instData`, Cranelift drops the offset).
+* **M4**: `tls_value_ok` (rule 1129, `IselTls.lean`) from `MemRefines`' TLSDESC clause (the
+  first def is the linked symbol's address, the world agrees up to the flags);
+  `tls_value_macho_ok` (rule 1130) never matches (`tls_model` is `elf_gd`).
+* **M6**: `csem` (`ElfTlsGetAddr` is `isCtl`) gives the defs `[X.sym v 0, X.tp]` and the world
+  with the flags `X.tlsFlags v w`. The machine `ArmStepX` hooks the sequence: the `adrp` only
+  advances the pc, and at the `ldr` the rest runs as one step `H.tls v tmp`. Its contract
+  `TlsOk F X H` (`FV/E2E/RegLevelTls.lean`, premise `hTls`) is trusted: the step ends after
+  the sequence, x0 is `X.sym v 0`, `tmp` is `X.tp`, every other register but x30 and the flags,
+  the memory and the program are unchanged, and the flags are `X.tlsFlags v w` for a world `w`
+  of the state. `os_tls`/`realizes_tls` prove the item case of `realizes_all` from it.
+  `RunsAs` counts the machine steps existentially (the hooked sequence takes 2 steps for 6
+  lines).
+* **x30** is in `Masked` (the `blr` writes it); see `docs/contracts/regalloc-proof.md` for why
+  this does not weaken the statement for other functions.
+* **Validators**: `lowerCheck` checks `hasTls f || !vc.hasTls` (`noTls_of_check`), `prepCheck`
+  `vc.hasTls || !vcp.hasTls` (`noTls_of_prepCheck`), so `hTls` is needed only for a function
+  with a `tls_value` (`hasTls_of_vcode`); `ctlInstOk` requires both defs to be int vregs.
+* **Mid-end and `i128` theorems**: `backend_correct_opt`/`_opt_proven` take `hTls` for the
+  optimised function, `backend_correct_legal` for the legalised `g`.
 
 ### Indirect calls and function addresses
 
@@ -464,6 +496,11 @@ also `MemRefines` and `OutArgsOk` (stores into `[sp, sp + outB)` keep `MR`); `Ca
 `callsStackOkB`) and `DriverHyp.tryRegArgs`/`entryLocs`; `InstCalls` takes "statement of `f`";
 `IselSim` takes `ArgsAtEntry` (stack parameters at `fp + 16 + off`); `MemRefines`'s memory forms
 include `spOffset`/`fpOffset` (M6: `amodeAddr`, `corr_load_sp/fp`, `os_load_sp/fp`).
+agent/stack-tls-proof (`tls_value`): `MemRefines` has a ninth clause (TLSDESC: the address of a
+linked symbol in the first def, a world agreeing up to the flags); `memRootRule` adds 1129/1130;
+`ExtSem` gains `tp` and `tlsFlags`; `ArmHooks` gains `tls`; `Masked` includes x30; `RunsAs`
+quantifies the step count; `realizes_all`/`regLevelCorrect_backend` take `TlsOk` for VCode with
+an `ElfTlsGetAddr`; `lowerCheck`/`prepCheck` gain the `hasTls` conjuncts.
 M6Ctl3 (compiler, behaviour-preserving): `ctlCheck` also requires every value of a `Rets` to be
 an int vreg (so the `j`-th returned pair is the `j`-th fixed use); `lean-backend` on corpus,
 extrt and runtests (445 files): no function rejected.
@@ -493,6 +530,11 @@ extrt and runtests (445 files): no function rejected.
   `ldar`/`stlr` are plain accesses, an exclusive store always succeeds, there is no monitor, and
   `dmb` is a no-op (`docs/decisions/arm-model.md`, "Atomics"). `atomic_rmw`/`atomic_cas` stay
   outside E: their root rules are proven vacuous from `CtxInv.instE`.
+* **TLSDESC hook** (agent/stack-tls-proof): `TlsOk` (premise `hTls`, functions with a
+  `tls_value`): the resolver and `TPIDR_EL0` give the running thread's instance address of the
+  variable (`X.sym v 0`, the `syms` address `Clif.run` uses for its one thread), preserve every
+  register but x0, x30 and the temporary (Cranelift's TLSDESC convention) and may change the
+  flags (`docs/decisions/arm-model.md`, "Thread-local storage").
 * **Object writing, linking and loading** (`elfObject`, rust-lld, the loader): the words of `fb`
   at `base`, relocations resolved to `syms`/callee addresses (M6's hooks), GOT contents.
 * **Runtime/callee contracts**: externs implement `Clif.Env.extern` under AAPCS64
