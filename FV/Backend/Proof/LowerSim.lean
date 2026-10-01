@@ -165,8 +165,10 @@ structure DriverHyp (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) 
   indSig : ∀ B ∈ f.blocks, ∀ st ∈ B.body, IndSigOk f (indSigs f) st.inst
   /-- `f` is in subset E (`E2E.InSubset.subsetE`; new since `call_indirect`/`func_addr` compile) -/
   subE : Compile.functionE f = true
-  /-- every extern takes at most 8 (register) parameters (`E2E.InSubset.callRegArgs`) -/
-  regArgs : CallRegArgs f
+  /-- a `try_call` calls an extern with at most 8 (register) parameters
+  (`E2E.InSubset.tryRegArgs`) -/
+  tryRegArgs : ∀ B ∈ f.blocks, ∀ fn args et, B.term = .tryCall fn args et →
+    ∀ e, f.extern? fn = some e → e.sig.params.length ≤ 8
   /-- `br_table` indices have at most 32 bits (`lowerCheck`'s `brIdxOk`) -/
   brIdx : ∀ B ∈ f.blocks, BrIdxTyped ctx B.term
   /-- no tail calls (`return_call` is outside clif-subset-v2 E) -/
@@ -183,6 +185,9 @@ structure DriverHyp (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) 
   tryIndSig : ∀ B ∈ f.blocks, ∀ c args et s, B.term = .tryCallIndirect c args et →
     f.sigDecls.lookup et.sig = some s → s ∈ indSigs f ∧ s.params.length ≤ 8
   cfg : ∃ ss ps, vc.cfg = .ok (ss, ps)
+  /-- the signature's parameter locations and byte sizes compute, one per parameter
+  (`lowerCheck`'s `entryOkB`) -/
+  entryLocs : (locsOf f.sig).length = f.sig.params.length ∧ ∃ bytes, sigParamBytes f.sig = .ok bytes
 
 section
 variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg → Reg}
@@ -219,7 +224,7 @@ theorem stmt_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
   have hBmem : B ∈ f.blocks := List.mem_of_getElem? hB
   have hstmmem : stm ∈ B.body := List.mem_of_getElem? hstm
   have hok := H.insts ctx (L.start + j) info stm.inst sl.st sl.rss sl.st' tr
-    H.shape.ctxInv H.regArgs H.subE hinfo hclif (H.indSig B hBmem stm hstmmem) hemp
+    H.shape.ctxInv ⟨B, hBmem, stm, hstmmem, rfl⟩ H.subE hinfo hclif (H.indSig B hBmem stm hstmmem) hemp
     (fun x r h => Nat.lt_of_lt_of_le (H.shape.valsBelow x r h) hst0) hrun
   rw [hres] at hok
   obtain ⟨hargs, hresults, hnodup, hnext, hnoclob⟩ := H.cert.stmt b B L j stm sl hB hL hstm hsl
@@ -1327,7 +1332,8 @@ theorem term_step_try (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
       refine ⟨.call fn args, fun y hy => by
           simp only [instArgs] at hy; simp [termArgs, hy], hnd,
         fun s' hs => ?_, H.tries ctx (L.start + B.body.length) fn args et L.data T.sig T.items
-          L.targets T.info T.regs L.tst T.st1 out L.tst' tr H.shape.ctxInv H.regArgs hdata' hexn
+          L.targets T.info T.regs L.tst T.st1 out L.tst' tr H.shape.ctxInv
+          (H.tryRegArgs B hBmem fn args et hBT) hdata' hexn
           (H.shape.tslot b B L hB hL) hinfo hregs hvbL hrun⟩
       obtain ⟨ext, bc, rvals, cm', regs', hx, htn, hO, hset, rfl⟩ := hnx s' hs
       rw [hfunc, hx0] at hx
@@ -1655,38 +1661,240 @@ theorem vdefUpd_argOps {ns : List (Nat × Reg)} {outs : List CV} {ρ : Nat → C
       simp [argOps]
     rw [this]; exact hnd
 
-/-- **Entry**: the entry block's `Args` defines the parameters from the argument registers. -/
+/-- The arguments in the body-entry world `w` as the entry code reads them (the driver's entry
+premise): a register-passed parameter in its argument register (low bits), a stack-passed one
+in the caller's outgoing area at `fp + 16 + off` (above the saved fp/lr pair), whose bytes avoid
+the frame addresses `F`. -/
+def ArgsAtEntry (F : BitVec 64 → Prop) (sig : Clif.Signature) (args : List Clif.Val)
+    (w : Arm.ArmState) : Prop :=
+  ∀ loc v, (loc, v) ∈ (locsOf sig).zip args → match loc with
+    | .reg r => VHolds v (regVal w r)
+    | .stack off =>
+      Avoids F v.ty.bytes (Arm.r (.GPR 29#5) w + BitVec.ofInt 64 (16 + (off : Int))) ∧
+      (Arm.read_mem_bytes v.ty.bytes (Arm.r (.GPR 29#5) w + BitVec.ofInt 64 (16 + (off : Int)))
+        w).setWidth v.ty.width = v.bits
+
+theorem loadVal_congr {F : BitVec 64 → Prop} {s t : Arm.ArmState} (op : LoadOp) {a : BitVec 64}
+    (h : ∀ x, ¬ F x → s.mem x = t.mem x) (hav : Avoids F op.bytes a) :
+    loadVal op a s = loadVal op a t := by
+  have hr : Arm.read_mem_bytes op.bytes a s = Arm.read_mem_bytes op.bytes a t :=
+    read_mem_bytes_congr _ a (fun k hk => h _ (hav k hk))
+  simp only [loadVal, hr]
+
+theorem loadOpOfBytes_facts {b : Nat} (hb : b = 1 ∨ b = 2 ∨ b = 4 ∨ b = 8) :
+    (loadOpOfBytes b).bytes = b ∧ loadOpOfBytes b ≠ .fpuLoad128 ∧ loadSigned (loadOpOfBytes b) = false := by
+  rcases hb with rfl | rfl | rfl | rfl <;> exact ⟨rfl, by decide, rfl⟩
+
+/-- One entry load: the parameter's vreg gets the loaded value. -/
+theorem seqRun_load_cons {sem : Sem} {op : LoadOp} {x : Nat} {k : Int} {fl : Clif.MemFlags}
+    {ρ : Nat → CV} {w w1 : Arm.ArmState} {o : CV}
+    (h : sem (.load op (.vreg x .int) (.fpOffset k) fl) [] w = some ([o], w1, .next))
+    (ms : List MInst) :
+    seqRun sem (.load op (.vreg x .int) (.fpOffset k) fl :: ms) ρ w =
+      (seqRun sem ms (upd ρ x o) w1).map SeqEnd.succ := by
+  have hops : (MInst.load op (.vreg x .int) (.fpOffset k) fl).operands =
+      .ok #[⟨x, .int, .def, .late, .reg⟩] := rfl
+  have hv : vuses #[(⟨x, .int, .def, .late, .reg⟩ : Operand)] ρ = [] := rfl
+  simp only [seqRun, hops, hv, h]
+  simp [Operand.isDef, Operand.isEarly, Operand.isLate, vdefUpd, writeV]
+
+/-- **The entry loads** of the stack-passed parameters: each reads its parameter from the
+caller's outgoing area (unchanged by the earlier loads: its bytes avoid `F`), the world changes
+only outside the memory relation's view. -/
+theorem entryLoads_run {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
+    (hMem : MemRefines F sb syms sem) (hMR : MRStable F MR) :
+    ∀ (E : List (((Nat × Clif.Ty) × ArgLoc) × Nat)) (ρ : Nat → CV) (sl : List (Clif.SlotId × Nat))
+      (cm : Clif.Mem) (w : Arm.ArmState),
+      (∀ q ∈ E, R (.vreg q.1.1.1 .int) = .vreg q.1.1.1 .int) →
+      (E.map (·.1.1.1)).Nodup →
+      (∀ q ∈ E, ∀ off, q.1.2 = .stack off → (q.2 = 1 ∨ q.2 = 2 ∨ q.2 = 4 ∨ q.2 = 8) ∧
+        Avoids F q.2 (Arm.r (.GPR 29#5) w + BitVec.ofInt 64 (16 + (off : Int)))) →
+      MR sl cm w →
+      ∃ ρ' w', seqRun sem (E.filterMap (entryLoadOf R)) ρ w = some (.fall ρ' w') ∧
+        MR sl cm w' ∧
+        (∀ y, y ∉ E.map (·.1.1.1) → ρ' y = ρ y) ∧
+        (∀ q ∈ E, ∀ p, q.1.2 = .reg p → ρ' q.1.1.1 = ρ q.1.1.1) ∧
+        (∀ q ∈ E, ∀ off, q.1.2 = .stack off →
+          ρ' q.1.1.1 = ofX (loadVal (loadOpOfBytes q.2)
+            (Arm.r (.GPR 29#5) w + BitVec.ofInt 64 (16 + (off : Int))) w))
+  | [], ρ, _, _, w, _, _, _, hmr => ⟨ρ, w, rfl, hmr, fun _ _ => rfl, by simp, by simp⟩
+  | q :: E, ρ, sl, cm, w, hR, hnd, hst, hmr => by
+    simp only [List.map_cons, List.nodup_cons] at hnd
+    obtain ⟨⟨⟨x, ty⟩, loc⟩, b⟩ := q
+    simp only at hnd
+    have hnx : ∀ q ∈ E, q.1.1.1 ≠ x := fun q hq e => hnd.1 (List.mem_map.mpr ⟨q, hq, e⟩)
+    cases loc with
+    | reg p =>
+      obtain ⟨ρ', w', hrun, hmr', hfr, hreg, hstk⟩ := entryLoads_run hMem hMR E ρ sl cm w
+        (fun q hq => hR q (List.mem_cons_of_mem _ hq)) hnd.2
+        (fun q hq => hst q (List.mem_cons_of_mem _ hq)) hmr
+      refine ⟨ρ', w', by exact hrun, hmr', fun y hy => hfr y (fun h => hy
+        (List.mem_cons_of_mem _ h)), fun q hq p' hp => ?_, fun q hq off ho => ?_⟩
+      · rcases List.mem_cons.mp hq with rfl | hq
+        · exact hfr x hnd.1
+        · exact hreg q hq p' hp
+      · rcases List.mem_cons.mp hq with rfl | hq
+        · cases ho
+        · exact hstk q hq off ho
+    | stack off =>
+      obtain ⟨hb, hav⟩ := hst (((x, ty), ArgLoc.stack off), b) (List.mem_cons_self ..) off rfl
+      obtain ⟨hob, hop, -⟩ := loadOpOfBytes_facts hb
+      have ha : amodeAddr sb (.fpOffset (16 + (off : Int))) (loadOpOfBytes b).bytes [] w =
+          some (Arm.r (.GPR 29#5) w + BitVec.ofInt 64 (16 + (off : Int))) := rfl
+      obtain ⟨w1, hw1, hsw⟩ := hMem.1 (loadOpOfBytes b) x (.fpOffset (16 + (off : Int))) trustedFlags
+        [] w _ hop ha (by rw [hob]; exact hav)
+      have hmr1 : MR sl cm w1 := hMR _ _ _ _ ⟨fun f hf _ => hsw.1 f hf, hsw.2.1, hsw.2.2⟩ hmr
+      have h29 : Arm.r (.GPR 29#5) w1 = Arm.r (.GPR 29#5) w :=
+        hsw.1 (.GPR 29#5) (by simp [Masked])
+      obtain ⟨ρ', w', hrun, hmr', hfr, hreg, hstk⟩ := entryLoads_run hMem hMR E
+        (upd ρ x (ofX (loadVal (loadOpOfBytes b) (Arm.r (.GPR 29#5) w + BitVec.ofInt 64 (16 + (off : Int))) w)))
+        sl cm w1 (fun q hq => hR q (List.mem_cons_of_mem _ hq)) hnd.2
+        (fun q hq o ho => by rw [h29]; exact hst q (List.mem_cons_of_mem _ hq) o ho) hmr1
+      have hRx : R (.vreg x .int) = .vreg x .int := hR _ (List.mem_cons_self ..)
+      refine ⟨ρ', w', ?_, hmr', fun y hy => ?_, fun q hq p hp => ?_, fun q hq o ho => ?_⟩
+      · simp only [List.filterMap_cons, entryLoadOf, hRx]
+        rw [seqRun_load_cons hw1, hrun]; rfl
+      · have hyx : y ≠ x := fun e => hy (by rw [e]; exact List.mem_cons_self ..)
+        rw [hfr y (fun h => hy (List.mem_cons_of_mem _ h))]
+        simp [upd, hyx]
+      · rcases List.mem_cons.mp hq with rfl | hq
+        · cases hp
+        · rw [hreg q hq p hp]
+          simp [upd, hnx q hq]
+      · rcases List.mem_cons.mp hq with rfl | hq
+        · simp only [ArgLoc.stack.injEq] at ho
+          subst ho
+          rw [hfr x hnd.1]
+          simp [upd]
+        · rw [hstk q hq o ho, h29]
+          obtain ⟨hb', hav'⟩ := hst q (List.mem_cons_of_mem _ hq) o ho
+          rw [loadVal_congr (F := F) _ (fun a ha => hsw.2.1 a ha)
+            (by rw [(loadOpOfBytes_facts hb').1]; exact hav')]
+
+/-- The register pairs of the entry's `Args` (parameter id, argument register). -/
+def entryNs (E : List (((Nat × Clif.Ty) × ArgLoc) × Nat)) : List (Nat × Reg) :=
+  E.filterMap fun q => match q.1.2 with
+    | .reg p => some (q.1.1.1, p)
+    | .stack _ => none
+
+theorem entryRegs_eq : ∀ (E : List (((Nat × Clif.Ty) × ArgLoc) × Nat)),
+    (∀ q ∈ E, R (.vreg q.1.1.1 .int) = .vreg q.1.1.1 .int) →
+    E.filterMap (entryRegOf R) = argPairs (entryNs E)
+  | [], _ => rfl
+  | ((⟨x, ty⟩, .reg p), b) :: E, h => by
+    simp only [List.filterMap_cons, entryRegOf, entryNs, argPairs, List.map_cons]
+    rw [h _ (List.mem_cons_self ..)]
+    congr 1
+    exact entryRegs_eq E (fun q hq => h q (List.mem_cons_of_mem _ hq))
+  | ((⟨x, ty⟩, .stack o), b) :: E, h => by
+    simp only [List.filterMap_cons, entryRegOf, entryNs]
+    exact entryRegs_eq E (fun q hq => h q (List.mem_cons_of_mem _ hq))
+
+theorem entryNs_sublist : ∀ (E : List (((Nat × Clif.Ty) × ArgLoc) × Nat)),
+    List.Sublist ((entryNs E).map (·.1)) (E.map (·.1.1.1))
+  | [] => by simp [entryNs]
+  | ((⟨x, ty⟩, .reg p), b) :: E => by
+    simpa [entryNs] using (entryNs_sublist E).cons₂ x
+  | ((⟨x, ty⟩, .stack o), b) :: E => by
+    simpa [entryNs] using (entryNs_sublist E).cons x
+
+theorem mem_entryNs {E : List (((Nat × Clif.Ty) × ArgLoc) × Nat)} {q : ((Nat × Clif.Ty) × ArgLoc) × Nat}
+    {p : Reg} (hq : q ∈ E) (hp : q.1.2 = .reg p) : (q.1.1.1, p) ∈ entryNs E := by
+  unfold entryNs
+  exact List.mem_filterMap.mpr ⟨q, hq, by rw [hp]⟩
+
+/-- **Entry**: the entry block's `Args` defines the register-passed parameters from their
+argument registers, then the loads the stack-passed ones from the caller's outgoing area. -/
 theorem entry_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
+    {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
+    (hMem : MemRefines F sb syms sem) (hMR : MRStable F MR)
     {cs : Clif.State} {B0 : Clif.Block} (hB0 : f.blocks[0]? = some B0)
     (hcall : cs.callers = []) (hfunc : cs.frame.func = f) (hslots : cs.frame.slots = slots)
     (hbody : cs.frame.body = B0.body) (hterm : cs.frame.term = B0.term) {args : List Clif.Val}
     (hregs : Clif.Regs.empty.setMany (B0.params.map (·.1)) args = some cs.frame.regs)
     (hty : args.map (·.ty) = B0.params.map (·.2))
+    (hsig : args.map (·.ty) = f.sig.params.map (·.ty))
     {ρ₀ : Nat → CV} {w₀ : Arm.ArmState} (hmr : MR slots cs.mem w₀)
-    (hargs : ∀ (i : Nat) v, args[i]? = some v → VHolds v (regVal w₀ (.x (argIdx f.sig i)))) :
-    ∃ ρ₁, VStep vc sem (.run ⟨0, 0, ρ₀, w₀⟩) (.run ⟨0, 1, ρ₁, w₀⟩) ∧
-      Match f ctx R gn bl A MR slots cs ⟨0, 1, ρ₁, w₀⟩ := by
+    (hargs : ArgsAtEntry F f.sig args w₀) :
+    ∃ k ρ₁ w₁, Star (VStep vc sem) (.run ⟨0, 0, ρ₀, w₀⟩) (.run ⟨0, k, ρ₁, w₁⟩) ∧
+      Match f ctx R gn bl A MR slots cs ⟨0, k, ρ₁, w₁⟩ := by
   obtain ⟨L, hL⟩ := H.blow hB0
   obtain ⟨vb, hvb, -, -, -, -, -, -, hcode, htne, -⟩ := H.shape.blk 0 B0 L hB0 hL
   obtain ⟨hnd, hA⟩ := H.cert.entry B0 hB0
   have hB0mem : B0 ∈ f.blocks := List.mem_of_getElem? hB0
-  let ns : List (Nat × Reg) := B0.params.zipIdx.map fun q => (q.1.1, Reg.x (argIdx f.sig q.2))
-  have hpre : pre f R 0 = [.args (argPairs ns)] := by
-    simp only [pre, hB0, argPairs, ns, List.map_map]
-    congr 2
-    apply List.map_congr_left
+  obtain ⟨hlocs, bytes, hb⟩ := H.entryLocs
+  have hbm := sigParamBytes_eq_map hb
+  -- lengths: parameters, arguments, locations, byte sizes
+  have hla : args.length = B0.params.length := by
+    have := congrArg List.length hty; simpa using this
+  have hls : args.length = f.sig.params.length := by
+    have := congrArg List.length hsig; simpa using this
+  have hlb : bytes.length = f.sig.params.length := by rw [hbm, List.length_map]
+  obtain ⟨E, hEdef⟩ : ∃ E, E = entryParams f B0 := ⟨_, rfl⟩
+  have hE : E = (B0.params.zip (locsOf f.sig)).zip bytes := by
+    rw [hEdef]; simp only [entryParams, hb]
+  have hEids : E.map (·.1.1.1) = B0.params.map (·.1) := by
+    rw [hE]
+    have h1 : (B0.params.zip (locsOf f.sig)).length = B0.params.length := by
+      simp [List.length_zip]; omega
+    have h2 : ((B0.params.zip (locsOf f.sig)).zip bytes).map Prod.fst =
+        B0.params.zip (locsOf f.sig) := List.map_fst_zip (by omega)
+    have h3 : (B0.params.zip (locsOf f.sig)).map Prod.fst = B0.params :=
+      List.map_fst_zip (by omega)
+    rw [show (fun q : ((Nat × Clif.Ty) × ArgLoc) × Nat => q.1.1.1) =
+      (fun q : Nat × Clif.Ty => q.1) ∘ Prod.fst ∘ Prod.fst from rfl, ← List.map_map,
+      ← List.map_map, h2, h3]
+  have hRid : ∀ q ∈ E, R (.vreg q.1.1.1 .int) = .vreg q.1.1.1 .int := by
     intro q hq
-    have hq1 : q.1 ∈ B0.params := (List.mem_zipIdx hq).2.2 ▸ List.getElem_mem _
-    simp [Function.comp_def, H.shape.ren.vreg, H.shape.params B0 hB0mem q.1 hq1]
-  have hns1 : ns.map (·.1) = B0.params.map (·.1) := by
-    simp only [ns, List.map_map, Function.comp_def]
-    rw [show (fun q : (Nat × Clif.Ty) × Nat => q.1.1) = (fun x => x.1) ∘ Prod.fst from rfl,
-      ← List.map_map, List.zipIdx_map_fst]
-  have hnsm : ∀ (m : Nat) q, B0.params[m]? = some q → ns[m]? = some (q.1, Reg.x (argIdx f.sig m)) := by
+    have hq1 : q.1.1 ∈ B0.params := by
+      rw [hE] at hq
+      exact (List.of_mem_zip (List.of_mem_zip hq).1).1
+    simp [H.shape.ren.vreg, H.shape.params B0 hB0mem q.1.1 hq1]
+  -- parameter `m`: its entry, argument and location
+  have hEget : ∀ (m : Nat) (q : Clif.ValueId × Clif.Ty), B0.params[m]? = some q →
+      ∃ (loc : ArgLoc) (b : Nat), (locsOf f.sig)[m]? = some loc ∧
+      bytes[m]? = some b ∧ E[m]? = some ((q, loc), b) := by
     intro m q hq
-    simp [ns, List.getElem?_zipIdx, hq]
-  have hvb0 : vb.insts[0]? = some (.args (argPairs ns)) := by
-    rw [← Array.getElem?_toList, hcode, hpre]; rfl
+    have hm : m < B0.params.length := (List.getElem?_eq_some_iff.mp hq).1
+    obtain ⟨loc, hloc⟩ : ∃ loc, (locsOf f.sig)[m]? = some loc :=
+      ⟨(locsOf f.sig)[m]'(by omega), by simp⟩
+    obtain ⟨b, hbb⟩ : ∃ b, bytes[m]? = some b := ⟨bytes[m]'(by omega), by simp⟩
+    exact ⟨loc, b, hloc, hbb, by rw [hE]; simp [List.getElem?_zip_eq_some, hq, hloc, hbb]⟩
+  have hbyte : ∀ (m : Nat) (v : Clif.Val) (b : Nat), args[m]? = some v → bytes[m]? = some b → b = v.ty.bytes := by
+    intro m v b hv hbb
+    rw [hbm, List.getElem?_map] at hbb
+    have := congrArg (·[m]?) hsig
+    simp only [List.getElem?_map, hv, Option.map_some] at this
+    cases hp : f.sig.params[m]? with
+    | none => rw [hp] at this; cases this
+    | some p =>
+      rw [hp] at this hbb
+      simp only [Option.map_some, Option.some.injEq] at this hbb
+      rw [← hbb, this]
+  -- every entry of `E` is a parameter's
+  have hEmem : ∀ q ∈ E, ∃ (m : Nat) (v : Clif.Val), E[m]? = some q ∧ args[m]? = some v := by
+    intro q hq
+    obtain ⟨m, hm⟩ := List.mem_iff_getElem?.mp hq
+    have hmE : m < E.length := (List.getElem?_eq_some_iff.mp hm).1
+    have : E.length ≤ args.length := by rw [hE]; simp [List.length_zip]; omega
+    exact ⟨m, args[m]'(by omega), hm, by simp⟩
+  have hentry : ∀ q ∈ E, ∀ (m : Nat) (v : Clif.Val), E[m]? = some q → args[m]? = some v →
+      (q.1.2, v) ∈ (locsOf f.sig).zip args ∧ q.2 = v.ty.bytes ∧ bytes[m]? = some q.2 := by
+    intro q hq m v hm hv
+    rw [hE] at hm
+    simp only [List.getElem?_zip_eq_some] at hm
+    obtain ⟨⟨-, hl⟩, hbb⟩ := hm
+    exact ⟨List.mem_iff_getElem?.mpr ⟨m, by simp [List.getElem?_zip_eq_some, hl, hv]⟩,
+      hbyte m v _ hv hbb, hbb⟩
+  -- the code before the statements
+  obtain ⟨ns, hnsdef⟩ : ∃ ns, ns = entryNs E := ⟨_, rfl⟩
+  have hpre : pre f R 0 = .args (argPairs ns) :: E.filterMap (entryLoadOf R) := by
+    simp only [pre, hB0, entryRegs, entryLoads, ← hEdef]
+    rw [entryRegs_eq E hRid, ← hnsdef]
+  have hnsnd : (ns.map (·.1)).Nodup := by
+    rw [hnsdef]
+    exact (entryNs_sublist E).nodup (by rw [hEids]; exact hnd)
+  -- `Args`
   have hops := operands_args ns
   have hvu : vuses (argOps ns).toArray ρ₀ = [] := by
     simp only [vuses, List.toList_toArray, List.map_eq_nil_iff, List.filter_eq_nil_iff]
@@ -1704,30 +1912,85 @@ theorem entry_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
       rw [← hq']; rfl
     rw [List.toList_toArray, this]
     simp only [List.length_map, argPairs, argOps]
-  have hsz : 0 + 1 < vb.insts.size := by
+  obtain ⟨ρ₁, hρ₁⟩ : ∃ ρ₁, ρ₁ = vdefUpd (argOps ns).toArray ((argPairs ns).map fun d => regVal w₀ d.2) ρ₀ :=
+    ⟨_, rfl⟩
+  -- the loads
+  obtain ⟨ρ₂, w₂, hrun, hmr₂, -, hreg, hstk⟩ := entryLoads_run hMem hMR E ρ₁ slots cs.mem w₀ hRid
+    (by rw [hEids]; exact hnd)
+    (fun q hq off ho => by
+      obtain ⟨m, v, hm, hv⟩ := hEmem q hq
+      obtain ⟨hmem, hqb, hqbm⟩ := hentry q hq m v hm hv
+      have h := hargs _ _ hmem
+      rw [ho] at h
+      obtain ⟨hav, -⟩ := h
+      rw [hqb]
+      exact ⟨hqb ▸ sigArgs_bytes hb _ (List.mem_of_getElem? hqbm), hav⟩) hmr
+  have hseq : seqRun sem (E.filterMap (entryLoadOf R)) ρ₁ w₀ = some (.fall ρ₂ w₂) := hrun
+  have hsz : (pre f R 0).length < vb.insts.size := by
     have h1 : vb.insts.size = vb.insts.toList.length := by simp
     have h2 : 0 < (tseg R bl 0).length := List.length_pos_iff.mpr htne
-    rw [h1, hcode, hpre]; simp only [List.length_append, List.length_singleton]; omega
-  refine ⟨_, VStep.step hvb hvb0 hops hsem hlen (VNext.next hsz), hcall, hfunc, hslots, hmr,
-    B0, 0, hB0, hterm, Nat.zero_le _, by simp [hbody], by simp [pos, hpre], ?_, ?_⟩
+    rw [h1, hcode]; simp only [List.length_append]; omega
+  have hseg0 : SegAt vb 0 (pre f R 0) := by
+    intro k hk
+    rw [Nat.zero_add, ← Array.getElem?_toList, hcode, List.append_assoc,
+      List.getElem?_append_left hk, List.getElem?_eq_getElem hk]
+  have hvb0 : vb.insts[0]? = some (.args (argPairs ns)) := by
+    exact SegAt.head (show SegAt vb 0 (MInst.args (argPairs ns) :: E.filterMap (entryLoadOf R)) by
+      rw [← hpre]; exact hseg0)
+  have hstep : VStep vc sem (.run ⟨0, 0, ρ₀, w₀⟩) (.run ⟨0, 1, ρ₁, w₀⟩) := by
+    rw [hρ₁]
+    exact VStep.step hvb hvb0 hops hsem hlen (VNext.next (by rw [hpre] at hsz; simp at hsz; omega))
+  have hseg1 : SegAt vb 1 (E.filterMap (entryLoadOf R)) := by
+    have := (show SegAt vb 0 (.args (argPairs ns) :: E.filterMap (entryLoadOf R)) by
+      rw [← hpre]; exact hseg0).tail
+    simpa using this
+  have hstar := seqRun_fall_star hvb hseg1 (by rw [hpre] at hsz; simp at hsz; omega) hseq
+  refine ⟨1 + (E.filterMap (entryLoadOf R)).length, ρ₂, w₂, .step hstep hstar, hcall, hfunc,
+    hslots, hmr₂, B0, 0, hB0, hterm, Nat.zero_le _, by simp [hbody],
+    by simp [pos, hpre]; omega, ?_, ?_⟩
   · intro x hx
     obtain ⟨hxp, -⟩ := hA x hx
     obtain ⟨m, hm, hxm⟩ := List.getElem_of_mem hxp
     have hm' : m < B0.params.length := by simpa using hm
     have hqm : B0.params[m]? = some B0.params[m] := List.getElem?_eq_getElem hm'
     have hxq : B0.params[m].1 = x := by simpa using hxm
-    have hla := setMany_length hregs
-    have hma : m < args.length := by simp at hla; omega
+    have hma : m < args.length := by omega
     have hrx : cs.frame.regs x = some args[m] :=
       setMany_nodup hregs hnd m x args[m] (by rw [← hxq]; simp [hqm]) (List.getElem?_eq_getElem hma)
     refine ⟨args[m], hrx, ?_⟩
     have hgx : gn x = x := by
       rw [← hxq]; exact H.shape.params B0 hB0mem _ (List.getElem_mem hm')
-    show VHolds args[m] (vdefUpd (argOps ns).toArray _ ρ₀ (gn x))
-    rw [hgx, ← hxq]
-    rw [vdefUpd_argOps (by rw [hns1]; exact hnd) (by simp [argPairs]) m (hnsm m _ hqm)
-      (x := regVal w₀ (.x (argIdx f.sig m))) (by simp [argPairs, hnsm m _ hqm])]
-    exact hargs m _ (List.getElem?_eq_getElem hma)
+    show VHolds args[m] (ρ₂ (gn x))
+    rw [hgx]
+    obtain ⟨loc, b, hloc, hbb, hEm⟩ := hEget m _ hqm
+    have hqE : ((B0.params[m], loc), b) ∈ E := List.mem_of_getElem? hEm
+    have hmem : (loc, args[m]) ∈ (locsOf f.sig).zip args :=
+      List.mem_iff_getElem?.mpr ⟨m, by simp [List.getElem?_zip_eq_some, hloc, hma]⟩
+    have hb' : b = args[m].ty.bytes := hbyte m _ b (List.getElem?_eq_getElem hma) hbb
+    have h := hargs _ _ hmem
+    cases loc with
+    | reg r =>
+      have h1 := hreg _ hqE r rfl
+      simp only at h1
+      rw [← hxq, h1]
+      have hns : (B0.params[m].1, r) ∈ ns := hnsdef ▸ mem_entryNs hqE rfl
+      obtain ⟨i, hi⟩ := List.mem_iff_getElem?.mp hns
+      rw [hρ₁, vdefUpd_argOps hnsnd (by simp [argPairs]) i hi (x := regVal w₀ r) (by simp [argPairs, hi])]
+      exact h
+    | stack off =>
+      have h1 := hstk _ hqE off rfl
+      simp only at h1
+      rw [← hxq, h1, hb']
+      obtain ⟨-, hrd⟩ := h
+      have hbs : args[m].ty.bytes = 1 ∨ args[m].ty.bytes = 2 ∨ args[m].ty.bytes = 4 ∨
+          args[m].ty.bytes = 8 := hb' ▸ sigArgs_bytes hb _ (List.mem_of_getElem? hbb)
+      obtain ⟨hob, -, hsg⟩ := loadOpOfBytes_facts hbs
+      have hw : args[m].ty.width ≤ 64 :=
+        (show ∀ t : Clif.Ty, (t.bytes = 1 ∨ t.bytes = 2 ∨ t.bytes = 4 ∨ t.bytes = 8) →
+          t.width ≤ 64 by intro t; cases t <;> decide) _ hbs
+      simp only [VHolds, ofX, loadVal, hsg, Bool.false_eq_true, ↓reduceIte]
+      rw [hob, BitVec.setWidth_setWidth_of_le _ (by omega), BitVec.setWidth_setWidth_of_le _ hw]
+      exact hrd
   · refine ⟨fun x d info cl v hd _ _ _ hv => ?_, fun x t v ht hv => ?_⟩
     · have hx0 : x ∈ A 0 0 := restrict_regs_isSome (by rw [hv]; rfl)
       rw [(hA x hx0).2] at hd
@@ -1907,18 +2170,21 @@ bound to `args`, which the VCode world holds in x0..) is realised by the VCode r
 entry: returns through `rets` with the returned values held, and memory related; explicit traps
 reach an instruction halting with the same code (a `try_call`: its normal return). -/
 theorem driver_correct (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
+    {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
+    (hMem : MemRefines F sb syms sem) (hMR : MRStable F MR)
     {cs : Clif.State} {B0 : Clif.Block} (hB0 : f.blocks[0]? = some B0)
     (hcall : cs.callers = []) (hfunc : cs.frame.func = f) (hslots : cs.frame.slots = slots)
     (hbody : cs.frame.body = B0.body) (hterm : cs.frame.term = B0.term) {args : List Clif.Val}
     (hregs : Clif.Regs.empty.setMany (B0.params.map (·.1)) args = some cs.frame.regs)
     (hty : args.map (·.ty) = B0.params.map (·.2))
+    (hsig : args.map (·.ty) = f.sig.params.map (·.ty))
     {ρ₀ : Nat → CV} {w₀ : Arm.ArmState} (hmr : MR slots cs.mem w₀)
-    (hargs : ∀ (i : Nat) v, args[i]? = some v → VHolds v (regVal w₀ (.x (argIdx f.sig i))))
+    (hargs : ArgsAtEntry F f.sig args w₀)
     (hP : RunPrem env p f cs) (fuel : Nat) :
     RunOk vc sem MR slots ⟨0, 0, ρ₀, w₀⟩ (Clif.runLoop env p fuel cs) := by
-  obtain ⟨ρ₁, hstep, hm⟩ := entry_step H hB0 hcall hfunc hslots hbody hterm hregs hty hmr hargs
-    (ρ₀ := ρ₀)
-  exact RunOk.prefix (Star.single hstep) (sim_run H hP fuel cs _ (.refl _) hm)
+  obtain ⟨k, ρ₁, w₁, hstar, hm⟩ := entry_step H hMem hMR hB0 hcall hfunc hslots hbody hterm hregs
+    hty hsig hmr hargs (ρ₀ := ρ₀)
+  exact RunOk.prefix hstar (sim_run H hP fuel cs _ (.refl _) hm)
 
 end
 

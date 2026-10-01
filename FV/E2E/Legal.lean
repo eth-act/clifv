@@ -88,7 +88,7 @@ theorem backend_correct_legal_env {f g : Clif.Function} {cert : Opt.Legalize128.
       (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
     (hX : ∀ s, XCallsOk env (g.externs.map (·.2)) (fun sl cm w =>
       Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
-        slotOff⟩ g sl cm w) X)
+        slotOff, (RAFrame.compute vcp rf).intBase⟩ g sl cm w) X)
     (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
     (hslot : af.slotBase = slotOff)
     -- the run: `f` on `args`, `g` on the ABI-split `args'` (same slots and memory)
@@ -99,7 +99,7 @@ theorem backend_correct_legal_env {f g : Clif.Function} {cert : Opt.Legalize128.
     (hargs : ArgsIn g.sig args' s) (hcs : ClifEntry f args cs) (hcs' : ClifEntry g args' cs')
     (hsl : cs'.frame.slots = cs.frame.slots) (hmem : cs'.mem = cs.mem)
     (hrel : Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s,
-      syms, slotOff⟩ g cs'.frame.slots cs'.mem w₀)
+      syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ g cs'.frame.slots cs'.mem w₀)
     (htrS : TrapsExplicit env p cs) (htr : TrapsExplicit env p' cs') (fuel : Nat) :
     ArmRefinesLegal ((Opt.Legal.groups f.sig.returns).getD []) fb base ra (ArmStepX X H fa) s
       (Clif.runLoop env p fuel cs) := by
@@ -157,7 +157,7 @@ theorem backend_correct_legal {f g : Clif.Function} {cert : Opt.Legalize128.Cert
       (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
     (hX : ∀ s, XCallsOk Clif.Rust.env (g.externs.map (·.2)) (fun sl cm w =>
       Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
-        slotOff⟩ g sl cm w) X)
+        slotOff, (RAFrame.compute vcp rf).intBase⟩ g sl cm w) X)
     (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
     (hslot : af.slotBase = slotOff)
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args args' : List Clif.Val}
@@ -167,7 +167,7 @@ theorem backend_correct_legal {f g : Clif.Function} {cert : Opt.Legalize128.Cert
     (hargs : ArgsIn g.sig args' s) (hcs : ClifEntry f args cs) (hcs' : ClifEntry g args' cs')
     (hsl : cs'.frame.slots = cs.frame.slots) (hmem : cs'.mem = cs.mem)
     (hrel : Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s,
-      syms, slotOff⟩ g cs'.frame.slots cs'.mem w₀)
+      syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ g cs'.frame.slots cs'.mem w₀)
     (htrS : TrapsExplicit Clif.Rust.env p cs) (htr : TrapsExplicit Clif.Rust.env p' cs')
     (fuel : Nat) :
     ArmRefinesLegal ((Opt.Legal.groups f.sig.returns).getD []) fb base ra (ArmStepX X H fa) s

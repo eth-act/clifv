@@ -35,6 +35,7 @@ contract `IselContract.lean`), `regalloc-proof.md` (M6), `encoder.md` (M5), `cli
 | **Indirect calls** (2026-10-01, `agent/indirect-proof`): `call_indirect`, `func_addr` and `try_call_indirect` (normal return) are inside `backend_correct_final`: an indirect call of an extern under the contract `XCallsIndOk` (hypothesis `hXI`), an indirect call of a function of the program excluded by the run premise `TrapsExplicit.indirect`/`tryIndirect` (see "Indirect calls" below). Trusted-semantics growth: `Clif.stepCallIndirect` calls the extern at the callee address (`Clif.callExternAt`) where it was stuck | **proven** (`call_ind_ruleOk` 1033, `func_addr_ok` 1026, `try_ind_ruleOk` 1036, `stepCallIndirect_eq`, `term_step_try` over `IsTryWith`); `lean-e2e-check`: 1092 in scope (1083 before, plus the 9 functions of `corpus/clif-regress/call_indirect.clif`), 0 rejected, 0 not covered |
 | **Atomics stage A** (2026-10-01, `agent/atomics-proof`): `bmask`, `atomic_load`, `atomic_store` and `fence` are in E (`Compile.instE`) and inside `backend_correct_final`, on the single-threaded Arm model (`docs/decisions/arm-model.md`, "Atomics"). `atomic_rmw`/`atomic_cas` stay outside E: their root rules (994–1004, 1007) are proven vacuous from `CtxInv.instE` | **proven** (`bmask_ok` 936, `fence_ok` 1024, `atomic_load_ok` 983, `atomic_store_ok` 984, `uextend_atomic_load_ok` 810, `atomic_loop_ok`; M6: `corr_csetm`/`corr_fence`/`corr_loadAcquire`/`corr_storeRelease`, `straight_loadAcquire`/`straight_storeRelease`, `ref_csetm`/`ref_fence`); `lean-e2e-check`: 1118 in scope (1092 before), 0 rejected, 0 not covered; filetests corpus 114/114, extrt 22/22, runtests 4672/0/0, `atomics_loops.clif` Lean 11/11; encode-check 1291 identical / 0 differ; `cargo fv` debug verified: fv-demo 1323/1346, survey 3156/3179, vendor 4324/4399, `compare.sh` SAME |
 | **Atomics stage B** (2026-10-02, `agent/atomics-proof`): `atomic_rmw` (all 11 ops, i8–i64) and `atomic_cas` (i8–i64) are in E and inside `backend_correct_final`, on the same single-threaded Arm model (the LL/SC loop body runs once: `stlxr` succeeds and writes status 0). The loops are `isCtl` in `csem` (`loopSem`: one symbolic run of the body, FV/Backend/Proof/LoopRun.lean); register level in FV/E2E/RegLevelAtomic.lean (`realizes_rmwLoop`, `realizes_casLoop`). The RMW memory clause only fixes the low `ty.bytes*8` bits of the old-value def (smin/smax i8/i16 sign-extend x27 in place). The checker `ctlInstOk` requires every loop operand to be an int vreg. The CAS i32 comparison uses `uxtw` (deviation from Cranelift's upstream bug, docs/research/upstream-bugs.md) | **proven** (`atomic_rmw_*_ok` rules 2357–2377, `atomic_cas_ok` 2390; `rmwBody_spec`, `casHead_spec`, `stlxr_spec`; `csem_rmwLoop`, `csem_casLoop`). lean-e2e-check 1126 in scope / 0 rejected; cargo fv debug verified: survey 3174/3179, vendor 4381/4399, fv-demo 1332/1346 |
+| **Stack-passed parameters and `call` arguments** (2026-10-01, `agent/stack-tls-proof`): functions with more than 8 parameters (an `sret` pointer does not count) and `call`s of externs with more than 8 parameters are inside `backend_correct_final`. `InSubset` drops `regParams`/`callRegArgs` (a `try_call`'s callee and the indirect calls keep at most 8 register parameters: `tryRegArgs`, `indSigs`). Entry: `ArgsIn` puts a stack location `off` (`locsOf`, `sigArgLocs`) at `sp + off` of the ABI entry state (`StackArgAt`); the entry code loads it from `fp + 16 + off` (`DriverCheck.entryLoads`, `entry_step`). Calls: the outgoing stores go to `[sp + off]` (`argStores_run`), the callee contract `XCallsOk` takes `ArgsAt` (stack arguments read from memory at `sp + off`). `Rel` gains the outgoing-area size `out` (`OutRel`: `[sp, sp + out)` fits, avoids `F` and holds no live CLIF byte; `backend_correct_final` takes `out := intBase`). `lowerCheck` adds `callsStackOkB` (every call's stack area fits `vc.outgoing`, `stackLayoutOk`) and `entryOkB`; `prepCheck` keeps `outgoing`. Specialisations (new ⇒ old for ≤ 8 parameters / no stack arguments): `InSubset.of_regArgs`, `argsIn_iff_of_regs`, `argsAt_iff_of_regs`, `xCallsOk_of_regArgs`, `Rel.holds_zero` | **proven** (`call_bl_ruleOk`/`call_got_ruleOk` any arity, `entry_step`, `callsStack_of_check`, `entryOk_of_check`, `stackArgsAvoid_frameF`, `outgoing_le_intBase`); `lean-e2e-check`: 1146 in scope (1126 before), 0 rejected, 0 not covered |
 
 ### Final hypotheses (`E2E.backend_correct_final`, 2026-09-28)
 
@@ -48,11 +49,11 @@ fp/lr pair and padding above the CLIF slots, the code words), `cx := ⟨fa.k, af
 | `FormsCovered cx vcp` | per-function decidable premise (`formsCoveredB`, the covered straight-line forms `FormOk`, including the per-instruction bitmask check `logicImmOk`; control forms are handled by the proof); decided by `lean-e2e-check` (corpus + extrt + runtests: 913 of 913 checked functions covered, M6Refines) |
 | `∀ s, CalleeOk (FF s) X H` | callee contract of the machine's call hook `H` (AAPCS64: `OperandsSound` of every call, return to pc+4, `X.call` error-free and program-preserving) — environment |
 | `(∃ B ∈ f.blocks, B.term.isTry = true) → ∀ s, CalleeTryOk (FF s) X H` (`hCT`) | only for a function with a `try_call`: the def registers of a `try_call`'s call hold what `csem` gives them — the results, then the exception payload registers x0/x1 that are not return registers, as the callee's world `X.call` has them (see "`try_call`") — environment; vacuous for a function without `try_call` |
-| `∀ s, XCallsOk env (f.externs.map (·.2)) (Rel.holds ⟨FF s, syms, slotOff⟩ f) X` | external contract for the externs `f` declares: callees, linker symbols — environment. A call returns one value per ABI return of the declaration (`sigRets`), the first ones the extern's results (`PrefixHold`); for declarations without `sret` this is implied by the former extern-independent contract (`xCallsOk_of_results`) |
-| `∀ s, XCallsIndOk env (indSigs f) (Rel.holds ⟨FF s, syms, slotOff⟩ f) X` (`hXI`) | external contract for the indirect calls of `f` (`call_indirect`, `try_call_indirect`), per call-site signature (`Backend.indSigs f`): a `blr` whose target holds `X.sym n 0` of an extern `n` of `env` behaves as `env.extern n` does under that signature (the same clause as `XCallsOk`'s GOT call) — environment; vacuous for a function without indirect calls (`xCallsIndOk_nil`, `backend_correct_final_indirectFree`) |
+| `∀ s, XCallsOk env (f.externs.map (·.2)) (Rel.holds ⟨FF s, syms, slotOff, OB⟩ f) X` (`OB := (RAFrame.compute vcp rf).intBase`, the outgoing stack-argument area) | external contract for the externs `f` declares: callees, linker symbols — environment. The arguments are given by `ArgsAt` (register ones in their registers, stack-passed ones in memory at `sp + off`; for externs with at most 8 parameters this is the former "at most 8 values, all in registers", `xCallsOk_of_regArgs`); the callee returns a world related by `Rel.holds`, so in particular its outgoing area `[sp, sp + OB)` still avoids the frame and holds no live CLIF byte (`OutRel`; trivial when `OB = 0`, `Rel.holds_zero`). A call returns one value per ABI return of the declaration (`sigRets`), the first ones the extern's results (`PrefixHold`); for declarations without `sret` this is implied by the former extern-independent contract (`xCallsOk_of_results`) |
+| `∀ s, XCallsIndOk env (indSigs f) (Rel.holds ⟨FF s, syms, slotOff, OB⟩ f) X` (`hXI`) | external contract for the indirect calls of `f` (`call_indirect`, `try_call_indirect`), per call-site signature (`Backend.indSigs f`): a `blr` whose target holds `X.sym n 0` of an extern `n` of `env` behaves as `env.extern n` does under that signature (the same clause as `XCallsOk`'s GOT call) — environment; vacuous for a function without indirect calls (`xCallsIndOk_nil`, `backend_correct_final_indirectFree`) |
 | `∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b` (`hsym`) | linker: the external semantics' symbol addresses are the linked ones — environment; with `hslot` it discharges the former `MemRefines` hypothesis (`memRefines_csem`, M6MemRef) |
 | `af.slotBase = slotOff` (`hslot`) | the relation's slot-region offset is the frame's slot base — caller (instantiate `slotOff := af.slotBase`) |
-| per run: `AbiEntry fb base ra s`, `StackAvail af s`, `BodyEntry af s w₀`, `ArgsIn f.sig args s`, `ClifEntry f args cs`, `Rel.holds ⟨FF s, syms, slotOff⟩ f cs.frame.slots cs.mem w₀`, `TrapsExplicit env p cs` (with the `try_call`/`try_call_indirect` trap clauses, and the indirect-call clauses `indirect`/`tryIndirect`: an indirect call of the entered function reaches no function of `p`; all vacuous for a function without them: `TrapsExplicit.of_tryFree`, `TrapsExplicit.of_indirectFree`) | caller of the theorem |
+| per run: `AbiEntry fb base ra s`, `StackAvail af s`, `BodyEntry af s w₀`, `ArgsIn f.sig args s`, `ClifEntry f args cs`, `Rel.holds ⟨FF s, syms, slotOff, OB⟩ f cs.frame.slots cs.mem w₀`, `TrapsExplicit env p cs` (with the `try_call`/`try_call_indirect` trap clauses, and the indirect-call clauses `indirect`/`tryIndirect`: an indirect call of the entered function reaches no function of `p`; all vacuous for a function without them: `TrapsExplicit.of_tryFree`, `TrapsExplicit.of_indirectFree`) | caller of the theorem |
 
 Conclusion: `ArmRefines fb base ra (ArmStepX X H fa) s (Clif.runLoop env p fuel cs)`.
 `Refines` of `csem` is discharged (`refines_final`/`refines_csem`, M6Refines), as is `MemRefines`
@@ -71,9 +72,10 @@ The proof covers them as follows.
 * **Scope** `InSubset.abiSigs`: `sigAbiOk` of `f`'s signature and of every extern's — `normal`
   parameters and returns plus at most one `sret` `i64` parameter, and then no returns
   (`Backend.abiSigs`; other special purposes such as `vmctx`/`sarg` stay unverified).
-* **Entry** `ArgsIn sig args s`: argument `i` in `x (argIdx sig i)` (`abiArgIdx`: x0.. in
-  order, the `sret` parameter in x8). Without `sret` it is the former "argument `i` in `x i`"
-  (`argsIn_iff_of_noSret`). `lowerCheck`'s entry `Args` (`pre`) uses the same registers;
+* **Entry** `ArgsIn sig args s`: a register-located argument in its register (`locsOf`:
+  x0.. in order, the `sret` parameter in x8), a stack-located one at `sp + off`; with at most 8
+  parameters this is "argument `i` in `x (argIdx sig i)`" (`argsIn_iff_of_regs`), and without
+  `sret` `argIdx sig i = i` (`argIdx_of_noSret`). `lowerCheck`'s entry `Args` (`pre`) uses the same registers;
   `BodyEntry` keeps x0–x8 (`argsIn_body`, `argIdx_lt`).
 * **Return**: `LowerShape`/`lowerCheck` lower `abiTerm f B.term`; the certificate makes the
   appended `sret` value available at every `return` (`Cert.term`), so the `rets` returns the
@@ -81,8 +83,9 @@ The proof covers them as follows.
   `PrefixHold vals outs` (the CLIF values are the first ABI returns); the conclusion
   `ArmRefines` is unchanged (CLIF return values in x0.., memory), so for an `sret` function it
   claims the memory the function wrote through the pointer, not the value of x0.
-* **Calls**: `gen_call_args` with at most 8 parameters puts argument `i` in
-  `x (abiArgIdx …)[i]` (`sigArgLocs_regs`); `gen_call_output` allocates one def per
+* **Calls**: `gen_call_args` puts argument `i` at `(locsOf sig)[i]`: a register (with at most 8
+  parameters `x (abiArgIdx …)[i]`, `sigArgLocs_regs`) or a store to `[sp + off]` of the outgoing
+  area (`argStores_run`); `gen_call_output` allocates one def per
   `sigRets` entry. `CallsRefine`/`XCallsOk` are stated for the declared externs (`exts :=
   f.externs.map (·.2)`) with `ds.length = (sigRets ext.sig).length` defs, `outs.length =
   ds.length` and `PrefixHold rvals outs`; an `sret` call has no CLIF result (`CtxInv.resTys`),
@@ -199,17 +202,17 @@ value, run as `env.extern` with the argument and result types checked against th
 ```lean
 theorem backend_correct {p f k vc vcp rf af fa fb}
     (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb)
-    {sem : Arm.ArmState → Sem} {F syms slotOff astep env}
+    {sem : Arm.ArmState → Sem} {F syms slotOff out astep env}
     -- M4
     (hrules : LowerRulesCorrect Isle.Aarch64.program)
     (hex : ExcludedUnmatchable Isle.Aarch64.program)
     (hcallRules : CallRulesCorrect Isle.Aarch64.program)
     (hindRules : IndRulesCorrect Isle.Aarch64.program)
     (hmemRules : MemRulesCorrect Isle.Aarch64.program)
-    (hterms : ∀ s, TermCalls (sem s) (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w))
-    (htries : ∀ s, TryCalls f (sem s) (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w)
+    (hterms : ∀ s, TermCalls (sem s) (fun sl cm w => Rel.holds ⟨F s, syms, slotOff, out⟩ f sl cm w))
+    (htries : ∀ s, TryCalls f (sem s) (fun sl cm w => Rel.holds ⟨F s, syms, slotOff, out⟩ f sl cm w)
       env p)
-    (htryInds : ∀ s, TryIndCalls (sem s) (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w)
+    (htryInds : ∀ s, TryIndCalls (sem s) (fun sl cm w => Rel.holds ⟨F s, syms, slotOff, out⟩ f sl cm w)
       env p (indSigs f))
     -- M6 + M5
     (hM6 : RegLevelCorrect sem F astep vcp af fb)
@@ -217,16 +220,19 @@ theorem backend_correct {p f k vc vcp rf af fa fb}
     (hRef : ∀ s, Refines (F s) (sem s)) (hds : ∀ s, DriverSem (sem s))
     -- the callee contract (M6, from `CalleeSound`)
     (hcalls : ∀ s, CallsRefine (F s) env (f.externs.map (·.2))
-      (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w) (sem s))
+      (fun sl cm w => Rel.holds ⟨F s, syms, slotOff, out⟩ f sl cm w) (sem s))
     -- the indirect-call contract (M6, from `XCallsIndOk`)
     (hicalls : ∀ s, IndCallsRefine env (indSigs f)
-      (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w) (sem s))
+      (fun sl cm w => Rel.holds ⟨F s, syms, slotOff, out⟩ f sl cm w) (sem s))
     (hmem : ∀ s, MemRefines (F s) slotOff syms (sem s))
+    -- the outgoing stack-argument area of the relation holds every call's stack arguments
+    (houtB : vc.outgoing ≤ out)
     -- the run
     {base ra s w₀ args cs}
     (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hbe : BodyEntry af s w₀)
-    (hargs : ArgsIn f.sig args s) (hcs : ClifEntry f args cs)
-    (hrel : Rel.holds ⟨F s, syms, slotOff⟩ f cs.frame.slots cs.mem w₀)
+    (hargs : ArgsIn f.sig args s) (hargF : StackArgsAvoid (F s) f.sig args s)
+    (hcs : ClifEntry f args cs)
+    (hrel : Rel.holds ⟨F s, syms, slotOff, out⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ArmRefines fb base ra astep s (Clif.runLoop env p fuel cs)
 ```
@@ -252,9 +258,10 @@ the `try_call_indirect` statements `TryIndRulesCorrect`, `TryIndUnmatchable` (of
   bits unspecified); `XHolds v x := VHolds v (ofX x)` for a 64-bit register (= low bits for
   widths ≤ 64, `XHolds_iff`).
 * **Subset** `InSubset p f`: `p.func? f.name = some f`, `Compile.functionE f` (clif-subset-v2
-  E), at most 8 parameters (all in registers), every `call` targets an extern (not a function
-  of `p`), every extern of `f` takes at most 8 parameters (`callRegArgs`: no stack-passed call
-  arguments; the compiler flags such functions unverified, `Backend.regArgCalls`), and the
+  E), every `call` targets an extern (not a function of `p`), the extern of every `try_call`
+  takes at most 8 parameters (`tryRegArgs`: no stack-passed arguments of a `try_call`; the
+  compiler flags such functions unverified, `Backend.regArgCalls`; parameters and `call`
+  arguments beyond the registers are passed on the stack, agent/stack-tls-proof), and the
   signatures of `f` and its externs pass `sigAbiOk` (`abiSigs`: `normal` plus at most one
   `sret`; `Backend.abiSigs`), every `try_call` calls an extern (`tryExterns`), and the
   indirect calls' signatures take at most 8 parameters and pass `sigAbiOk` (`indSigs`,
@@ -278,7 +285,9 @@ the `try_call_indirect` statements `TryIndRulesCorrect`, `TryIndUnmatchable` (of
   `F` (the allocator-private part of the frame: spill/save slots, fp/lr); `cm.symbols = syms`
   (link-time `symbol_value` addresses).
 * **Slots** `Rel.holds Γ f slots cm w := MemRel Γ.F Γ.syms cm w ∧ SlotRel f (Γ.slotReg w)
-  slots`, `Γ.slotReg w = sp(w) + Γ.slotOff`, `SlotRel`: slot `id` is at `base + off(id)` with
+  slots ∧ OutRel Γ.F Γ.out cm w`, `Γ.slotReg w = sp(w) + Γ.slotOff`; `OutRel`: the outgoing
+  stack-argument area `[sp(w), sp(w) + Γ.out)` fits the address space, avoids `F` and holds no
+  byte of a live CLIF allocation (vacuous for `Γ.out = 0`: `Rel.holds_zero`); `SlotRel`: slot `id` is at `base + off(id)` with
   `off` from `slotLayout f.slots`. This is M4's `MR` (`MRStable`, `mrStable_holds`).
 * **Traps** `TrapsExplicit env p cs`: every trap of the CLIF run from `cs` comes from a `trap`
   terminator or a `div` (explicit check + `udf`/`trapIf` in the code; `stmt`), and the step of a
@@ -287,8 +296,11 @@ the `try_call_indirect` statements `TryIndRulesCorrect`, `TryIndUnmatchable` (of
   the theorem (for DSL output traps are unreachable, PLAN.md §3.2).
 * **ABI entry** `AbiEntry fb base ra s`: code words of `fb` loaded at `base`
   (`s.program = fb.program base`), pc = base, no model error, x30 = ra outside the code, sp
-  16-aligned, code fits the address space. `ArgsIn f.sig args s`: argument `i` in
-  `x (argIdx f.sig i)` (low bits): x0.. in order, an `sret` parameter in x8.
+  16-aligned, code fits the address space. `ArgsIn f.sig args s`: the argument at a register
+  location of `locsOf f.sig` in that register (low bits; x0.. in order, an `sret` parameter in
+  x8), the argument at a stack location `off` in the caller's outgoing area (`StackArgAt`: its
+  bytes at `sp(s) + off`, inside the address space, not code). `StackArgsAvoid` (internal to
+  `backend_correct`, discharged by `stackArgsAvoid_frameF`): those bytes avoid the frame.
 * **Resource precondition** `StackAvail af s`: the frame (`af.frameSize` + fp/lr) fits below sp.
   Callee stack use is part of the callee contract (M6's `CalleeSound`).
 * **Body entry** `BodyEntry af s w₀` (M6Rest2's definition): the world the function body starts
@@ -444,6 +456,14 @@ M4Ctl, integrator-approved: change #5 38600e8 (calls: `CallsRefine`, `CallRuleOk
 `DriverHyp.regArgs`, `InstCalls` premise `CallRegArgs f`, ispec control forms); change #6
 (`BrIdxTyped` premise of `BranchRuleOk` and `TermCalls`, decided by `lowerCheck`'s `brIdxOk`,
 `LoweringObligations`/`DriverHyp.brIdx`).
+agent/stack-tls-proof (stack arguments): `CallsRefine`'s call/try-call clauses take `ArgsAt`
+(stack-passed arguments read from memory at `sp + off`) instead of "at most 8 values, all in
+registers"; `CallRuleOk` takes the outgoing area `outB` with `SigStackOk` and `CallRulesCorrect`
+also `MemRefines` and `OutArgsOk` (stores into `[sp, sp + outB)` keep `MR`); `CallsRegArgs` and
+`DriverHyp.regArgs` are replaced by `CallsStack f vc.outgoing` (decided by `lowerCheck`'s
+`callsStackOkB`) and `DriverHyp.tryRegArgs`/`entryLocs`; `InstCalls` takes "statement of `f`";
+`IselSim` takes `ArgsAtEntry` (stack parameters at `fp + 16 + off`); `MemRefines`'s memory forms
+include `spOffset`/`fpOffset` (M6: `amodeAddr`, `corr_load_sp/fp`, `os_load_sp/fp`).
 M6Ctl3 (compiler, behaviour-preserving): `ctlCheck` also requires every value of a `Rets` to be
 an int vreg (so the `j`-th returned pair is the `j`-th fixed use); `lean-backend` on corpus,
 extrt and runtests (445 files): no function rejected.
@@ -457,8 +477,9 @@ extrt and runtests (445 files): no function rejected.
    `driverSem_csem`); open: `Refines`/`MemRefines` of `csem` (M6Insts) and the decision of
    `FormsCovered` by `lean-e2e-check` (`formsCoveredB`).
 3. **Scope extensions**: calls between compiled functions (induction on call depth, using
-   `backend_correct` of the callee as its callee contract); stack-passed parameters
-   (`InSubset.regParams`); memory-access traps (need a fault model).
+   `backend_correct` of the callee as its callee contract); stack-passed arguments of a
+   `try_call` and of indirect calls (`InSubset.tryRegArgs`, `indSigs`); memory-access traps
+   (need a fault model).
 
 ## Trusted (not proven)
 

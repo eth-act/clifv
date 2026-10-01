@@ -2,6 +2,7 @@ import FV.E2E.Compose
 import FV.Backend.Proof.DriverCheckSound
 import FV.Backend.Proof.PrepareSound
 import FV.Backend.Proof.IselMemArm
+import FV.E2E.RegLevelEmit
 
 /-!
 # M7: `backend_correct`
@@ -33,17 +34,18 @@ theorem memRel_free {F : BitVec 64 → Prop} {syms} {cm : Clif.Mem} {w : Arm.Arm
 /-- The CLIF ↔ VCode relation only looks at memory outside `F` and at `sp`: M4's `MRStable`. -/
 theorem mrStable_holds (Γ : Rel) (f : Clif.Function) :
     MRStable Γ.F (fun sl cm w => Γ.holds f sl cm w) := by
-  intro sl cm w w' hsw ⟨hm, hs⟩
+  intro sl cm w w' hsw ⟨hm, hs, ho⟩
   have hsp : spv w' = spv w := by
     simp only [spv]
     exact hsw.1 (.GPR 31#5) (by simp [Masked]) (fun fl h => by cases h)
-  refine ⟨⟨fun a b ha hb => ?_, hm.valid, hm.symbols⟩, ?_⟩
+  refine ⟨⟨fun a b ha hb => ?_, hm.valid, hm.symbols⟩, ?_, ?_⟩
   · have hF := (hm.valid a 1 ha).2 0 (by omega)
     simp only [Nat.add_zero] at hF
     rw [← hm.bytes a b ha hb]
     simp only [Arm.read_mem, Arm.read_store]
     rw [hsw.2.1 _ hF]
   · simpa [Rel.slotReg, hsp] using hs
+  · simpa only [OutRel, hsp] using ho
 
 /-- The CLIF ↔ VCode relation satisfies what M4's memory rules need (`MemRelOk`, contract change
 #7): bytes/allocations/symbols from `MemRel`, slots from `SlotRel`, and a store of `n` bytes to a
@@ -55,12 +57,14 @@ theorem memRelOk_holds (Γ : Rel) (f : Clif.Function) :
   valid := fun _ _ _ a n h ha => h.1.valid a n ha
   symbols := fun _ _ _ h => h.1.symbols
   slots := fun _ _ w id b h hl => by
-    obtain ⟨off, ho, hb⟩ := h.2 id b hl
+    obtain ⟨off, ho, hb⟩ := h.2.1 id b hl
     exact ⟨off, ho, by rw [hb]; rfl⟩
   store := fun sl cm w a n y h hv => by
-    obtain ⟨hm, hs⟩ := h
+    obtain ⟨hm, hs, ho⟩ := h
     have hA := (hm.valid a n hv).1
-    refine ⟨⟨fun a' b ha' hb => ?_, fun a' k hk => hm.valid a' k hk, hm.symbols⟩, ?_⟩
+    have hsp' : spv (Arm.write_mem_bytes n (BitVec.ofNat 64 a) y w) = spv w := by
+      simp only [spv, Arm.r_of_write_mem_bytes]
+    refine ⟨⟨fun a' b ha' hb => ?_, fun a' k hk => hm.valid a' k hk, hm.symbols⟩, ?_, ?_⟩
     · rw [writeBits_valid] at ha'
       have ha64 := (hm.valid a' 1 ha').1
       rw [read_mem_write_mem_bytes y w hA (by omega)]
@@ -75,9 +79,31 @@ theorem memRelOk_holds (Γ : Rel) (f : Clif.Function) :
       · rename_i hin
         rw [if_neg hin] at hb
         exact hm.bytes a' b ha' hb
-    · have hsp : spv (Arm.write_mem_bytes n (BitVec.ofNat 64 a) y w) = spv w := by
-        simp only [spv, Arm.r_of_write_mem_bytes]
-      simpa [Rel.slotReg, hsp] using hs
+    · simpa [Rel.slotReg, hsp'] using hs
+    · refine ⟨ho.1, by rw [hsp']; exact ho.2.1, fun a' k hv' => ?_⟩
+      rw [hsp']
+      exact ho.2.2 a' k (by rwa [writeBits_valid] at hv')
+
+/-- The relation keeps the outgoing stack-argument area free (`OutRel`): writes there keep it
+(M4's `OutArgsOk`, agent/stack-tls-proof). -/
+theorem outArgsOk_holds (Γ : Rel) (f : Clif.Function) :
+    OutArgsOk Γ.F Γ.out (fun sl cm w => Γ.holds f sl cm w) := by
+  intro sl cm w ⟨hm, hs, ho⟩
+  refine ⟨ho.1, ho.2.1, fun k n y hkn => ?_⟩
+  have hsp' : spv (Arm.write_mem_bytes n (spOf w + BitVec.ofNat 64 k) y w) = spv w := by
+    simp only [spv, Arm.r_of_write_mem_bytes]
+  have hne : ∀ a, (∃ n', cm.valid a n' = true ∧ 0 < n') → ∀ j < n,
+      BitVec.ofNat 64 a ≠ spOf w + BitVec.ofNat 64 k + BitVec.ofNat 64 j := by
+    intro a ⟨n', hv, hn'⟩ j hj e
+    rw [BitVec.add_assoc, show BitVec.ofNat 64 k + BitVec.ofNat 64 j = BitVec.ofNat 64 (k + j) by
+      apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_add]] at e
+    exact ho.2.2 a n' hv 0 hn' (k + j) (by omega) (by simpa using (show BitVec.ofNat 64 a = spv w + BitVec.ofNat 64 (k + j) from e))
+  refine ⟨⟨fun a b ha hb => ?_, hm.valid, hm.symbols⟩, ?_, ?_⟩
+  · rw [← hm.bytes a b ha hb]
+    simp only [Arm.read_mem, Arm.read_store]
+    rw [writeBytes_mem_ne _ _ _ _ _ (hne a ⟨1, ha, by omega⟩)]
+  · simpa [Rel.slotReg, hsp'] using hs
+  · simpa only [OutRel, hsp'] using ho
 
 theorem noTail_of_subset {p : Clif.Program} {f : Clif.Function} (h : InSubset p f) :
     ∀ B ∈ f.blocks, ∀ fn args, B.term ≠ .returnCall fn args := by
@@ -96,12 +122,6 @@ theorem lookup_mem {α β : Type} [BEq α] [LawfulBEq α] :
     · subst hk; simp at h; subst h; simp
     · simp only [List.lookup, show (a == k) = false from by simpa using hk] at h
       exact List.mem_cons_of_mem _ (lookup_mem h)
-
-theorem callRegArgs_of_subset {p : Clif.Program} {f : Clif.Function} (h : InSubset p f) :
-    CallRegArgs f := by
-  intro fn e he
-  unfold Clif.Function.extern? at he
-  exact h.callRegArgs (fn, e) (lookup_mem he)
 
 theorem cfg_of_prepare {vc vcp : VCode} (h : prepare vc = .ok vcp) :
     ∃ ss ps, vc.cfg = .ok (ss, ps) := by
@@ -132,11 +152,13 @@ theorem tryIndSig_of_subset {p : Clif.Program} {f : Clif.Function} (h : InSubset
     rw [ht]; simp [hs]
   exact ⟨hmem, (h.indSigs s hmem).1⟩
 
-/-- **CLIF → VCode** from the driver simulation. -/
+/-- **CLIF → VCode** from the driver simulation (the entry loads read memory through `sem`'s
+load forms, `MemRefines`). -/
 theorem iselSim_of_driver {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState}
     {R : Reg → Reg} {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId}
     {sem : Sem} {Γ : Rel} {env : Clif.Env} {p : Clif.Program}
-    (H : DriverHyp f vc ctx st0 R gn bl A sem (fun sl cm w => Γ.holds f sl cm w) env p) :
+    (H : DriverHyp f vc ctx st0 R gn bl A sem (fun sl cm w => Γ.holds f sl cm w) env p)
+    {sb : Nat} (hMem : MemRefines Γ.F sb Γ.syms sem) :
     IselSim sem Γ env p f vc := by
   intro args cs w₀ ρ₀ hce hrel hargs htr fuel
   obtain ⟨B0, hent, hbody, hterm, hty, hregs⟩ := hce.entry
@@ -152,8 +174,8 @@ theorem iselSim_of_driver {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LS
         htr.indirect s st rest sig callee args hr hb hi ⟨B, hf ▸ hB, hst⟩,
       fun s callee args et hr hb hT ⟨B, hB, e⟩ =>
         htr.tryIndirect s callee args et hr hb hT ⟨B, hf ▸ hB, e⟩⟩
-  have hrun := driver_correct H hB0 hce.callers hce.func rfl hbody hterm hregs hty.symm (ρ₀ := ρ₀) hrel
-    (fun i v h => hargs i v h) hP fuel
+  have hrun := driver_correct H hMem (mrStable_holds Γ f) hB0 hce.callers hce.func rfl hbody hterm
+    hregs hty.symm hce.sig (ρ₀ := ρ₀) hrel hargs hP fuel
   refine ⟨fun vals cm h => ?_, fun c h => ?_⟩
   · rw [h] at hrun
     obtain ⟨us, outs, w, cm0, hret, h1, h2, h3, h4, h5⟩ := hrun
@@ -171,17 +193,52 @@ theorem prepareCorrect_of_check {sem : Sem} {vc vcp : VCode} (hds : DriverSem se
     (h : prepCheck vc vcp = true) : PrepareCorrect sem vc vcp :=
   fun ρ₀ w₀ => prep_sound hds h ρ₀ w₀
 
-/-- The arguments are in their registers (x0–x8) of the body-entry world too. -/
-theorem argsIn_body {p : Clif.Program} {f : Clif.Function} {args : List Clif.Val} {cs : Clif.State}
-    {af : AFunc} {s w₀ : Arm.ArmState} (hsub : InSubset p f) (hcs : ClifEntry f args cs)
-    (hbe : BodyEntry af s w₀) (h : ArgsIn f.sig args s) : ArgsIn f.sig args w₀ := by
-  intro i v hi
-  have hlen : args.length = f.sig.params.length := by
-    have := congrArg List.length hcs.sig; simpa using this
-  have hi9 : argIdx f.sig i < 9 :=
-    argIdx_lt hsub.regParams (by have := (List.getElem?_eq_some_iff.mp hi).1; omega)
-  rw [XHolds, show xreg (argIdx f.sig i) w₀ = xreg (argIdx f.sig i) s from hbe.args _ hi9]
-  exact h i v hi
+/-- The stack-passed arguments' bytes avoid the frame addresses `F` (agent/stack-tls-proof; for
+the backend's frame `frameF` this follows from `ArgsIn` and `StackAvail`, `stackArgsAvoid_frameF`). -/
+def StackArgsAvoid (F : BitVec 64 → Prop) (sig : Clif.Signature) (args : List Clif.Val)
+    (s : Arm.ArmState) : Prop :=
+  ∀ off v, (ArgLoc.stack off, v) ∈ (locsOf sig).zip args →
+    Avoids F v.ty.bytes (spv s + BitVec.ofNat 64 off)
+
+theorem fp_off_eq (a : BitVec 64) (off : Nat) :
+    a - 16#64 + BitVec.ofInt 64 (16 + (off : Int)) = a + BitVec.ofNat 64 off := by
+  have h : BitVec.ofInt 64 (16 + (off : Int)) = 16#64 + BitVec.ofNat 64 off := by
+    apply BitVec.eq_of_toNat_eq
+    rw [show (16 + (off : Int)) = ((16 + off : Nat) : Int) by push_cast; rfl, BitVec.ofInt_natCast]
+    simp [BitVec.toNat_add]
+  rw [h, ← BitVec.add_assoc, BitVec.sub_add_cancel]
+
+/-- The arguments of the ABI entry state `s` are where the entry code reads them in the
+body-entry world `w₀`: the register-passed ones in x0–x8 (kept by the prologue), the
+stack-passed ones at `fp + 16 + off` (the prologue's fp is `sp - 16`; memory is unchanged). -/
+theorem argsAtEntry_body {f : Clif.Function} {args : List Clif.Val} {af : AFunc}
+    {s w₀ : Arm.ArmState} {F : BitVec 64 → Prop} (hframe : af.frame = true)
+    (hregs : ∀ l ∈ locsOf f.sig, ∀ r, l = .reg r → ∃ n, r = .x n ∧ n ≤ 8)
+    (hbe : BodyEntry af s w₀) (h : ArgsIn f.sig args s) (hav : StackArgsAvoid F f.sig args s) :
+    ArgsAtEntry F f.sig args w₀ := by
+  intro loc v hm
+  have hl : loc ∈ locsOf f.sig := (List.of_mem_zip hm).1
+  have h1 := h loc v hm
+  have hfp : Arm.r (.GPR 29#5) w₀ = spv s - 16#64 := by
+    have := hbe.fp; simp only [hframe, ↓reduceIte] at this; exact this
+  cases loc with
+  | reg r =>
+    obtain ⟨n, rfl, hn⟩ := hregs _ hl r rfl
+    simp only at h1 ⊢
+    rw [regVal_x, show xreg n w₀ = xreg n s from hbe.args n (by omega)]
+    exact h1
+  | stack off =>
+    simp only at h1 ⊢
+    rw [hfp, fp_off_eq]
+    refine ⟨hav off v hm, ?_⟩
+    rw [show Arm.read_mem_bytes v.ty.bytes (spv s + BitVec.ofNat 64 off) w₀ =
+        Arm.read_mem_bytes v.ty.bytes (spv s + BitVec.ofNat 64 off) s from
+      read_mem_bytes_congr _ _ (fun k _ => by rw [hbe.mem])]
+    exact h1.bytes
+
+theorem callsStack_mono {f : Clif.Function} {a b : Nat} (h : CallsStack f a) (hab : a ≤ b) :
+    CallsStack f b := fun B hB st hst fn args e hi he =>
+  ⟨Nat.le_trans (h B hB st hst fn args e hi he).1 hab, (h B hB st hst fn args e hi he).2⟩
 
 /-- **`backend_correct` (M7).** For an in-subset CLIF function `f` of `p`, compiled by the
 Lean backend (`Compiled`, including M7's validators) and loaded at `base`, an Arm execution
@@ -195,7 +252,7 @@ theorem backend_correct {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp
     {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb)
     {sem : Arm.ArmState → Sem} {F : Arm.ArmState → BitVec 64 → Prop}
-    {syms : String → Option Nat} {slotOff : Nat} {astep : Arm.ArmState → Arm.ArmState}
+    {syms : String → Option Nat} {slotOff out : Nat} {astep : Arm.ArmState → Arm.ArmState}
     {env : Clif.Env}
     -- M4
     (hrules : LowerRulesCorrect Isle.Aarch64.program)
@@ -203,10 +260,10 @@ theorem backend_correct {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp
     (hcallRules : CallRulesCorrect Isle.Aarch64.program)
     (hindRules : IndRulesCorrect Isle.Aarch64.program)
     (hmemRules : MemRulesCorrect Isle.Aarch64.program)
-    (hterms : ∀ s, TermCalls (sem s) (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w))
-    (htries : ∀ s, TryCalls f (sem s) (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w)
+    (hterms : ∀ s, TermCalls (sem s) (fun sl cm w => Rel.holds ⟨F s, syms, slotOff, out⟩ f sl cm w))
+    (htries : ∀ s, TryCalls f (sem s) (fun sl cm w => Rel.holds ⟨F s, syms, slotOff, out⟩ f sl cm w)
       env p)
-    (htryInds : ∀ s, TryIndCalls (sem s) (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w)
+    (htryInds : ∀ s, TryIndCalls (sem s) (fun sl cm w => Rel.holds ⟨F s, syms, slotOff, out⟩ f sl cm w)
       env p (indSigs f))
     -- M6 + M5
     (hM6 : RegLevelCorrect sem F astep vcp af fb)
@@ -214,36 +271,44 @@ theorem backend_correct {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp
     (hRef : ∀ s, Refines (F s) (sem s)) (hds : ∀ s, DriverSem (sem s))
     -- the callee contract (M6, from `CalleeSound`)
     (hcalls : ∀ s, CallsRefine (F s) env (f.externs.map (·.2))
-      (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w) (sem s))
+      (fun sl cm w => Rel.holds ⟨F s, syms, slotOff, out⟩ f sl cm w) (sem s))
     -- the indirect-call contract (M6, from `XCallsIndOk`)
     (hicalls : ∀ s, IndCallsRefine env (indSigs f)
-      (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w) (sem s))
+      (fun sl cm w => Rel.holds ⟨F s, syms, slotOff, out⟩ f sl cm w) (sem s))
     -- the memory forms (M6: loads/stores/`loadAddr`/GOT loads of `csem` with slot base `slotOff`
     -- and the link-time symbol addresses `syms`)
     (hmem : ∀ s, MemRefines (F s) slotOff syms (sem s))
+    -- the outgoing stack-argument area of the relation holds every call's stack arguments
+    (houtB : vc.outgoing ≤ out)
     -- the run
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hbe : BodyEntry af s w₀)
-    (hargs : ArgsIn f.sig args s) (hcs : ClifEntry f args cs)
-    (hrel : Rel.holds ⟨F s, syms, slotOff⟩ f cs.frame.slots cs.mem w₀)
+    (hargs : ArgsIn f.sig args s) (hargF : StackArgsAvoid (F s) f.sig args s)
+    (hcs : ClifEntry f args cs)
+    (hrel : Rel.holds ⟨F s, syms, slotOff, out⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ArmRefines fb base ra astep s (Clif.runLoop env p fuel cs) := by
   obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr⟩ := loweringObligations_of_check hc.lowerOk
   refine backend_correct_of_layers (fun s' => iselSim_of_driver (ctx := ctx) (st0 := st0) (R := R)
-    (gn := gn) (bl := bl) (A := A) ?_) (fun s' => prepareCorrect_of_check (hds s') hc.prepOk) hM6
-    hent hres hbe (argsIn_body hsub hcs hbe hargs) hcs hrel htr fuel
+    (gn := gn) (bl := bl) (A := A) ?_ (hmem s')) (fun s' => prepareCorrect_of_check (hds s') hc.prepOk)
+    hM6 hent hres hbe
+    (argsAtEntry_body (lowerRFunc_frame hc.alloc) (entryRegs_of_check hc.lowerOk) hbe hargs hargF)
+    hcs hrel htr fuel
   exact {
     shape := hshape
     cert := hcert
     dsem := hds s'
     insts := instCalls_of_rules hrules hex hcallRules hindRules hmemRules (hRef s')
-      (mrStable_holds ⟨F s', syms, slotOff⟩ f) (hcalls s') (hicalls s') (hmem s')
-      (memRelOk_holds ⟨F s', syms, slotOff⟩ f)
+      (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hcalls s') (hicalls s') (hmem s')
+      (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f)
+      (callsStack_mono (callsStack_of_check hc.lowerOk) houtB)
+      (memRelOk_holds ⟨F s', syms, slotOff, out⟩ f)
     terms := hterms s'
     ext := fun B hB st hst fn args hi e he => hsub.externCalls B hB st hst fn args hi e he
     indSig := indSig_of_subset hsub
     subE := hsub.subsetE
-    regArgs := callRegArgs_of_subset hsub
+    tryRegArgs := hsub.tryRegArgs
+    entryLocs := entryOk_of_check hc.lowerOk
     brIdx := hbr
     noTail := noTail_of_subset hsub
     tries := htries s'
@@ -259,7 +324,7 @@ theorem backend_correct_of_rules {p : Clif.Program} {f : Clif.Function} {k : Nat
     {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb)
     {sem : Arm.ArmState → Sem} {F : Arm.ArmState → BitVec 64 → Prop}
-    {syms : String → Option Nat} {slotOff : Nat} {astep : Arm.ArmState → Arm.ArmState}
+    {syms : String → Option Nat} {slotOff out : Nat} {astep : Arm.ArmState → Arm.ArmState}
     {env : Clif.Env}
     -- M4
     (hrules : LowerRulesCorrect Isle.Aarch64.program)
@@ -281,28 +346,31 @@ theorem backend_correct_of_rules {p : Clif.Program} {f : Clif.Function} {k : Nat
     (hRef : ∀ s, Refines (F s) (sem s)) (hds : ∀ s, DriverSem (sem s))
     -- the callee contract (M6, from `CalleeSound`)
     (hcalls : ∀ s, CallsRefine (F s) env (f.externs.map (·.2))
-      (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w) (sem s))
+      (fun sl cm w => Rel.holds ⟨F s, syms, slotOff, out⟩ f sl cm w) (sem s))
     -- the indirect-call contract (M6, from `XCallsIndOk`)
     (hicalls : ∀ s, IndCallsRefine env (indSigs f)
-      (fun sl cm w => Rel.holds ⟨F s, syms, slotOff⟩ f sl cm w) (sem s))
+      (fun sl cm w => Rel.holds ⟨F s, syms, slotOff, out⟩ f sl cm w) (sem s))
     -- the memory forms (M6: loads/stores/`loadAddr`/GOT loads of `csem` with slot base `slotOff`
     -- and the link-time symbol addresses `syms`)
     (hmem : ∀ s, MemRefines (F s) slotOff syms (sem s))
+    -- the outgoing stack-argument area of the relation holds every call's stack arguments
+    (houtB : vc.outgoing ≤ out)
     -- the run
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hbe : BodyEntry af s w₀)
-    (hargs : ArgsIn f.sig args s) (hcs : ClifEntry f args cs)
-    (hrel : Rel.holds ⟨F s, syms, slotOff⟩ f cs.frame.slots cs.mem w₀)
+    (hargs : ArgsIn f.sig args s) (hargF : StackArgsAvoid (F s) f.sig args s)
+    (hcs : ClifEntry f args cs)
+    (hrel : Rel.holds ⟨F s, syms, slotOff, out⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ArmRefines fb base ra astep s (Clif.runLoop env p fuel cs) :=
   backend_correct hsub hc hrules hex hcallRules hindRules hmemRules
     (fun s' => termCalls_of_rules htermRules htermUn hbranch hbranchEx (hRef s')
-      (mrStable_holds ⟨F s', syms, slotOff⟩ f))
+      (mrStable_holds ⟨F s', syms, slotOff, out⟩ f))
     (fun s' => tryCalls_of_rules htryRules htryUn (hRef s')
-      (mrStable_holds ⟨F s', syms, slotOff⟩ f) (hcalls s'))
+      (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hcalls s'))
     (fun s' => tryIndCalls_of_rules htryIndRules htryIndUn (hRef s')
-      (mrStable_holds ⟨F s', syms, slotOff⟩ f) (hicalls s'))
-    hM6 hRef hds hcalls hicalls hmem hent hres hbe hargs hcs hrel htr fuel
+      (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hicalls s'))
+    hM6 hRef hds hcalls hicalls hmem houtB hent hres hbe hargs hargF hcs hrel htr fuel
 
 end E2E
 

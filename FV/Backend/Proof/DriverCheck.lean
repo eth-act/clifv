@@ -149,11 +149,36 @@ def seg (bi j : Nat) : List MInst :=
     | _, _ => []
   | _, _ => []
 
-/-- The entry block's `Args`: parameter `k` from `x (argIdx f.sig k)` (x0.. in order, an `sret`
-parameter from x8; `sigArgLocs`). -/
+/-- The entry block's parameters with their locations and byte sizes (`sigArgLocs`,
+`sigParamBytes`, zipped as `lowerFunction`'s `gen_arg_setup` zips them). -/
+def entryParams (B : Clif.Block) : List (((Clif.ValueId × Clif.Ty) × ArgLoc) × Nat) :=
+  (B.params.zip (locsOf f.sig)).zip (match sigParamBytes f.sig with | .ok b => b | .error _ => [])
+
+/-- The `Args` pair of a register-passed parameter (x0.. in order, an `sret` parameter in x8). -/
+def entryRegOf (q : ((Clif.ValueId × Clif.Ty) × ArgLoc) × Nat) : Option (Reg × Reg) :=
+  match q.1.2 with
+  | .reg p => some (R (.vreg q.1.1.1 .int), p)
+  | .stack _ => none
+
+/-- The load of a stack-passed parameter from the caller's outgoing area (`fp + 16 + off`:
+above the saved fp/lr pair). -/
+def entryLoadOf (q : ((Clif.ValueId × Clif.Ty) × ArgLoc) × Nat) : Option MInst :=
+  match q.1.2 with
+  | .stack off =>
+    some (.load (loadOpOfBytes q.2) (R (.vreg q.1.1.1 .int)) (.fpOffset (16 + off)) trustedFlags)
+  | .reg _ => none
+
+/-- The `Args` pairs of the register-passed parameters. -/
+def entryRegs (B : Clif.Block) : List (Reg × Reg) := (entryParams f B).filterMap (entryRegOf R)
+
+/-- The loads of the stack-passed parameters. -/
+def entryLoads (B : Clif.Block) : List MInst := (entryParams f B).filterMap (entryLoadOf R)
+
+/-- The entry block's code before its statements (`gen_arg_setup`): the `Args` of the
+register-passed parameters, then a load of each stack-passed one. -/
 def pre (bi : Nat) : List MInst :=
   match bi, f.blocks[bi]? with
-  | 0, some B => [.args ((B.params.zipIdx).map fun ((v, _), k) => (R (.vreg v .int), .x (argIdx f.sig k)))]
+  | 0, some B => .args (entryRegs f R B) :: entryLoads f R B
   | _, _ => []
 
 /-- The terminator's segment. -/
@@ -671,8 +696,30 @@ def brIdxOk (f : Clif.Function) (ctx : Ctx) : Bool :=
       | _ => false
     | _ => true
 
+/-- The calls (`call`) of `f`'s statements pass at most `out` bytes on the stack, with a
+well-formed stack-argument layout (`CallsStack`). -/
+def callsStackOkB (f : Clif.Function) (out : Nat) : Bool :=
+  f.blocks.all fun B => B.body.all fun st => match st.inst with
+    | .call fn _ => match f.extern? fn with
+      | some e => decide (stackBytes e.sig ≤ out) && stackLayoutOk e.sig
+      | none => true
+    | _ => true
+
+/-- The signature's parameter locations and byte sizes compute, one per parameter (the entry
+block's `Args` and loads, `pre`), and the register-passed parameters are in x0..x8. -/
+def entryOkB (f : Clif.Function) : Bool :=
+  (locsOf f.sig).length == f.sig.params.length &&
+    (locsOf f.sig).all (fun l => match l with
+      | .reg (.x n) => decide (n ≤ 8)
+      | .reg _ => false
+      | .stack _ => true) &&
+    match sigParamBytes f.sig with
+    | .ok _ => true
+    | .error _ => false
+
 /-- **The lowering validator.** Accepts `vc` iff it is the lowering of `f` in the structure
-the driver proof needs, with an SSA availability certificate, and every `br_table` index has at most 32 bits. -/
+the driver proof needs, with an SSA availability certificate, and every `br_table` index has at most 32 bits;
+the outgoing area holds every call's stack arguments and the entry's parameter locations compute. -/
 def lowerCheck (f : Clif.Function) (vc : VCode) : Bool :=
   match buildCtx f with
   | .error _ => false
@@ -684,6 +731,8 @@ def lowerCheck (f : Clif.Function) (vc : VCode) : Bool :=
       let gn := gnAt (gnTable st0.nextVreg (aliasOf f bl))
       shapeOk f vc ctx st0 gn bl && certOk f ctx st0 gn bl (inFix f ctx gn) && brIdxOk f ctx &&
         -- a `tryCall` in the VCode only for a function with a `try_call`
-        (f.blocks.any (·.term.isTry) || !vc.hasTryCall)
+        (f.blocks.any (·.term.isTry) || !vc.hasTryCall) &&
+        -- the outgoing area holds every call's stack arguments; the entry's parameter locations
+        (callsStackOkB f vc.outgoing && entryOkB f)
 
 end Backend.Proof.Driver

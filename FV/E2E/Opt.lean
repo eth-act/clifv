@@ -65,7 +65,7 @@ theorem inSubset_opt (cfg : Opt.Config) {p : Clif.Program} {f : Clif.Function}
     rw [show ((fun x : Clif.Function => x.name == n) ∘ fun x => Opt.optimize x cfg) =
       (fun x => x.name == n) from by funext g; simp [hname]]
   have hnci := hF.noCI (noCI_of f hci hnt)
-  refine ⟨?_, hF.subsetE hsub.subsetE, by rw [hF.sig]; exact hsub.regParams, ?_, ?_, ?_, ?_,
+  refine ⟨?_, hF.subsetE hsub.subsetE, ?_, ?_, ?_, ?_,
     by rw [indSigs_nil_of_noCI hnci]; simp⟩
   · rw [hfind, hF.name, hsub.func]; rfl
   · intro b hb st hst fn args hc e he
@@ -77,7 +77,9 @@ theorem inSubset_opt (cfg : Opt.Config) {p : Clif.Program} {f : Clif.Function}
   · intro b hb fn args et ht
     have := hnci.2 b hb
     rw [ht] at this; cases this
-  · rw [hF.externs]; exact hsub.callRegArgs
+  · intro b hb fn args et ht
+    have := hnci.2 b hb
+    rw [ht] at this; cases this
   · constructor
     · rw [hF.sig]; exact hsub.abiSigs.1
     · intro e he
@@ -163,7 +165,7 @@ theorem backend_correct_opt (cfg : Opt.Config)
       (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
     (hX : ∀ s, XCallsOk env (f.externs.map (·.2)) (fun sl cm w =>
       Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
-        slotOff⟩ f sl cm w) X)
+        slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X)
     (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
     (hslot : af.slotBase = slotOff)
     (hE : Opt.EnvKeepsSymbols env)
@@ -171,7 +173,7 @@ theorem backend_correct_opt (cfg : Opt.Config)
     (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hbe : BodyEntry af s w₀)
     (hargs : ArgsIn f.sig args s) (hcs : ClifEntry f args cs)
     (hrel : Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s,
-      syms, slotOff⟩ f cs.frame.slots cs.mem w₀)
+      syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicit env (Opt.optimizeProgram p cfg) (optEntry cfg f cs)) (fuel : Nat) :
     ArmRefines fb base ra (ArmStepX X H fa) s (Clif.runLoop env p fuel cs) := by
   have hF := Opt.optimize_facts cfg f

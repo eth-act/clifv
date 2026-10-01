@@ -207,6 +207,14 @@ theorem straight_load (op : LoadOp) (hop : op ≠ .fpuLoad128) (d : Nat) (am : A
     exact ss_load hop (amC := .slotOffset off) rfl rfl (by mr_fin) trivial (by mr_fin)
       herr hal (by mr_fin) hav
   · cases ha
+    rename_i off
+    exact ss_load hop (amC := .spOffset off) rfl rfl (by mr_fin) trivial (by mr_fin)
+      herr hal (by mr_fin) hav
+  · cases ha
+    rename_i off
+    exact ss_load hop (amC := .fpOffset off) rfl rfl (by mr_fin) trivial (by mr_fin)
+      herr hal (by mr_fin) hav
+  · cases ha
 
 set_option maxHeartbeats 1000000 in
 /-- A store through a covered addressing mode, on the canonical run (`straightSem`). -/
@@ -258,6 +266,14 @@ theorem straight_store (op : StoreOp) (hop : op ≠ .fpuStore128) (d : Nat) (am 
   · cases ha
     rename_i off
     exact ss_store hop (amC := .slotOffset off) rfl rfl (by mr_fin) trivial (by mr_fin) (by mr_fin)
+      herr hal (by mr_fin) hav
+  · cases ha
+    rename_i off
+    exact ss_store hop (amC := .spOffset off) rfl rfl (by mr_fin) trivial (by mr_fin) (by mr_fin)
+      herr hal (by mr_fin) hav
+  · cases ha
+    rename_i off
+    exact ss_store hop (amC := .fpOffset off) rfl rfl (by mr_fin) trivial (by mr_fin) (by mr_fin)
       herr hal (by mr_fin) hav
   · cases ha
 

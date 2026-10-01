@@ -277,4 +277,88 @@ theorem corr_store2 (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (op : Sto
     (by simp [rnum]) hacc hex (by rw [hg, hg]; simp [rnum])
   store_fin
 
+/-! ## Register-free addressing modes: outgoing (`sp`) and incoming (`fp`) argument offsets -/
+
+theorem corr_load0g (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (op : LoadOp)
+    (hop : op ≠ .fpuLoad128) (d : Nat) (am : AMode) (fl : Clif.MemFlags)
+    (hmm : MemMode op.bytes am)
+    (hA : ∀ s w : Arm.ArmState, SameWorld F s w → am.addr ctx op.bytes w = am.addr ctx op.bytes s) :
+    Corr F ctx env #[⟨d, .int, .def, .late, .reg⟩] (fun r => .load op (r.getD 0 .xzr) am fl) := by
+  intro regs s w t' ha hw hal hacc hex herr
+  have hsz := ha.size
+  simp only [List.size_toArray, List.length_cons, List.length_nil] at hsz
+  have hf := ha.fits
+  obtain ⟨r0, rfl⟩ := regs1 hsz
+  simp [RegFits] at hf
+  rcases hf with ⟨n0, rfl, hn0⟩
+  have hcanon : canonRegs #[⟨d, .int, .def, .late, .reg⟩] = #[.x 0] := by
+    simp [canonRegs, canonReg, canonBase, List.range_succ]
+  have ht : placeUses #[⟨d, .int, .def, .late, .reg⟩] (canonRegs #[⟨d, .int, .def, .late, .reg⟩])
+      (useVals #[⟨d, .int, .def, .late, .reg⟩] #[.x n0] s) w = w := by
+    simp [placeUses, useVals, hcanon, Operand.isUse]
+  rw [ht, hcanon] at hex hacc
+  rw [hcanon]
+  have hsp : Arm.r (.GPR 31#5) w = Arm.r (.GPR 31#5) s := sw_r_eq hw (by simp [Masked])
+  have hcore := load_core ctx env op hop fl hn0 (m := am) (mC := am)
+    hmm hmm hal hw hsp (fun x hx => (hw.2.1 x hx).symm) hacc hex (hA s w hw)
+  load_fin
+
+theorem corr_store0g (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (op : StoreOp)
+    (hop : op ≠ .fpuStore128) (d : Nat) (am : AMode) (fl : Clif.MemFlags)
+    (hmm : MemMode op.bytes am)
+    (hA : ∀ (s w : Arm.ArmState) (v : BitVec 64), SameWorld F s w →
+      am.addr ctx op.bytes (Arm.w (.GPR 0#5) v w) = am.addr ctx op.bytes s) :
+    Corr F ctx env #[⟨d, .int, .use, .early, .reg⟩] (fun r => .store op (r.getD 0 .xzr) am fl) := by
+  intro regs s w t' ha hw hal hacc hex herr
+  have hsz := ha.size
+  simp only [List.size_toArray, List.length_cons, List.length_nil] at hsz
+  have hf := ha.fits
+  obtain ⟨r0, rfl⟩ := regs1 hsz
+  simp [RegFits] at hf
+  rcases hf with ⟨n0, rfl, hn0⟩
+  have hcanon : canonRegs #[⟨d, .int, .use, .early, .reg⟩] = #[.x 0] := by
+    simp [canonRegs, canonReg, canonBase, List.range_succ]
+  have ht : placeUses #[⟨d, .int, .use, .early, .reg⟩] (canonRegs #[⟨d, .int, .use, .early, .reg⟩])
+      (useVals #[⟨d, .int, .use, .early, .reg⟩] #[.x n0] s) w =
+      Arm.w (.GPR 0#5) (Arm.r (.GPR (rnum n0)) s) w := by
+    simp [placeUses, useVals, hcanon, Operand.isUse, lo64, regVal, rnum]
+  rw [ht, hcanon] at hex hacc
+  rw [hcanon]
+  have hsp : Arm.r (.GPR 31#5) (Arm.w (.GPR 0#5) (Arm.r (.GPR (rnum n0)) s) w) = Arm.r (.GPR 31#5) s := by
+    rw [Arm.r_of_w_different (by simp)]; exact sw_r_eq hw (by simp [Masked])
+  have hcore := store_core ctx env op hop fl hn0 (m := am) (mC := am)
+    hmm hmm hal (SameWorld.w_right (by simp [Masked]) hw) hsp
+    (by simp [rnum]) hacc hex (hA s w _ hw)
+  store_fin
+
+theorem corr_load_sp (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (op : LoadOp)
+    (hop : op ≠ .fpuLoad128) (d : Nat) (off : Int) (fl : Clif.MemFlags) :
+    Corr F ctx env #[⟨d, .int, .def, .late, .reg⟩]
+      (fun r => .load op (r.getD 0 .xzr) (.spOffset off) fl) :=
+  corr_load0g F ctx env op hop d _ fl trivial fun s w hw => by
+    simp only [AMode.addr, spOf]; rw [sw_r_eq hw (by simp [Masked])]
+
+theorem corr_load_fp (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (op : LoadOp)
+    (hop : op ≠ .fpuLoad128) (d : Nat) (off : Int) (fl : Clif.MemFlags) :
+    Corr F ctx env #[⟨d, .int, .def, .late, .reg⟩]
+      (fun r => .load op (r.getD 0 .xzr) (.fpOffset off) fl) :=
+  corr_load0g F ctx env op hop d _ fl trivial fun s w hw => by
+    simp only [AMode.addr, regX]; rw [sw_r_eq hw (by simp [Masked, rnum])]
+
+theorem corr_store_sp (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (op : StoreOp)
+    (hop : op ≠ .fpuStore128) (d : Nat) (off : Int) (fl : Clif.MemFlags) :
+    Corr F ctx env #[⟨d, .int, .use, .early, .reg⟩]
+      (fun r => .store op (r.getD 0 .xzr) (.spOffset off) fl) :=
+  corr_store0g F ctx env op hop d _ fl trivial fun s w v hw => by
+    simp only [AMode.addr, spOf]
+    rw [Arm.r_of_w_different (by simp), sw_r_eq hw (by simp [Masked])]
+
+theorem corr_store_fp (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (op : StoreOp)
+    (hop : op ≠ .fpuStore128) (d : Nat) (off : Int) (fl : Clif.MemFlags) :
+    Corr F ctx env #[⟨d, .int, .use, .early, .reg⟩]
+      (fun r => .store op (r.getD 0 .xzr) (.fpOffset off) fl) :=
+  corr_store0g F ctx env op hop d _ fl trivial fun s w v hw => by
+    simp only [AMode.addr, regX]
+    rw [Arm.r_of_w_different (by simp [rnum]), sw_r_eq hw (by simp [Masked, rnum])]
+
 end Backend.Proof
