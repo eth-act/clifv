@@ -194,5 +194,8 @@ helpers). New premises of `backend_correct_legal`: `hCT` (`try_call` callee cont
   theorems).
 * Runs of `g` that trap inside a `__*ti3` helper (see `htr` above).
 * `umulhi`/`smulhi`, atomics, overflow ops at `i128`, stack-passed `i128` arguments,
-  `try_call_indirect`, `func_addr`, `call_indirect` with `i128` operands: not legalised or
-  rejected.
+  `try_call_indirect`, `call_indirect` with `i128` operands: not legalised or rejected.
+
+`func_addr` (release survey `g_u128` test functions pass function pointers to the test
+harness; agent/last-unverified "release i128"): planned as `same` when the declaration's name in
+`g` is `f`'s (`evalInst_same` takes that instead of excluding `func_addr`).

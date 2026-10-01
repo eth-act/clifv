@@ -28,7 +28,7 @@ target's (`hind`: an indirect call resolves to the same extern; `lean-backend` c
 `TrapsExplicit` of the source run (also: an indirect call of the source reaches no function of
 the program). The validator accepts `try_call` (its arguments, returns and normal-return
 successor arguments split like a `call`'s and a branch's) and `call_indirect` without `i128`
-operands; it rejects `try_call_indirect` and `func_addr`. The backend's
+operands, and `func_addr` (the same symbol name in `g`); it rejects `try_call_indirect`. The backend's
 `TrapsExplicit` premise stays on the run of `g` (as for `backend_correct_opt_proven`, it is not
 derived from the source's): in particular an `i128` division by zero or `sdiv MIN, -1` traps in
 the source at a `div` (explicit), but in `g` inside the `__*ti3` helper call (an extern trap,
