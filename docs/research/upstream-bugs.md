@@ -36,10 +36,46 @@ trackers), so nothing below has been reported upstream yet.
 
   Cranelift-native returns `[5, 5]`: memory unchanged. Expected: `[5, 7]`.
   `scripts/lean-backend-filetests.sh -v corpus/clif-regress/atomics_loops.clif` shows Lean 11/11
-  pass and Cranelift-native disagreeing on this run.
+  pass and Cranelift-native disagreeing on this run. Standalone copy:
+  `corpus/upstream-bugs/cranelift-atomic-cas-i32.clif`.
 - **Fix:** for I32, use the extended-register form with `uxtw` (`bit21 = 1`,
   `extend_op = 0b010000`), i.e. `cmp x27, w26, uxtw`. This is what the Lean backend emits
   (`FV/Backend/Asm.lean` `casLoopCmp`, a documented deviation from Cranelift).
 - **Impact:** any `atomic_cas.i32` whose expected operand comes from a value with dirty upper
   bits. Rust code compiled with rustc_codegen_cranelift (`AtomicU32::compare_exchange`) can hit
   it when the expected value is produced by a truncation.
+
+## Cranelift mid-end: `shifts.isle` (x << N) >> N rules build ill-typed IR for out-of-range N
+
+- **Component:** Cranelift 0.136.1, `cranelift/codegen/src/opts/shifts.isle`, the two rules
+  after the comment "(x << N) >> N == x as T_SMALL as T_LARGE" (lines 84 and 88: `sshr`/`ushr`
+  of `ishl` by the same `iconst`).
+- **Found by:** RulesRest (mid-end rule proofs: these two rules are the only ones found false
+  under the CLIF semantics), 2026-10-03; reproduced with `clif2obj --opt-level speed`.
+- **Bug:** the rules read the shift constant as a raw `u64` (`shift_u64`) and compute
+  `u64_wrapping_sub (ty_bits ty) shift_u64` without masking the amount to the type width. CLIF
+  shifts take the amount modulo the width, so `iconst.i64 -8` shifts an `i8` by 0. But
+  `8 - 0xFFFF_FFFF_FFFF_FFF8` wraps to 16, so `shift_amt_to_type` gives `i16`, and the rule
+  builds `sextend.i8 (ireduce.i16 x)` with `x : i8`. That is ill-typed (ireduce to a wider type,
+  sextend to a narrower one). The original expression is just `x`.
+- **Reproduction** (`corpus/upstream-bugs/cranelift-shifts-84-88.clif`):
+
+  ```
+  function %sshr_ishl_neg8(i8) -> i8 {
+  block0(v0: i8):
+      v1 = iconst.i64 -8
+      v2 = ishl v0, v1
+      v3 = sshr v2, v1
+      return v3
+  }
+  ```
+
+  `clif2obj --opt-level speed …` aborts: "inst7 (v8 = sextend.i8 v7): arg 0 (v7) with type i16
+  failed to satisfy type set … 2 verifier errors detected. Compilation aborted." With
+  `opt_level=none` it compiles and returns `x` (`clif-native`: all runs pass). With the verifier
+  disabled, the ill-typed IR reaches lowering (not tried).
+- **Fix:** mask the amount first (e.g. `shift_masked = shift_u64 & (ty_bits ty - 1)`, or require
+  `u64_lt shift_u64 (ty_bits ty)` in an `if-let`), as the other shift rules do.
+- **Effect here:** none. Neither rule is in the proven allow-list, and the Lean mid-end with all
+  rules (`clif-opt`) doesn't apply it to the repro: the rewrite is dropped and the `ushr` variant
+  folds to `v0`, which is correct.
