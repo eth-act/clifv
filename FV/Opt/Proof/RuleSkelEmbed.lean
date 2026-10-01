@@ -264,6 +264,121 @@ theorem skel_brif_two_else {c : ValueId} {th el : BlockCall} {code : TrapCode}
 
 end
 
+/-! ## Helper specifications: `Imm64` division -/
+
+/-- Rust `/`, `%` of non-negative values. -/
+theorem tdiv_natCast_toNat {w : Nat} (x y : BitVec w) :
+    Rust.tdiv (x.toNat : Int) (y.toNat : Int) = ((x / y).toNat : Int) := by
+  simp only [Rust.tdiv, BitVec.toNat_udiv, ← Int.ofNat_tdiv]
+
+theorem trem_natCast_toNat {w : Nat} (x y : BitVec w) :
+    Rust.trem (x.toNat : Int) (y.toNat : Int) = ((x % y).toNat : Int) := by
+  simp only [Rust.trem, BitVec.toNat_umod, ← Int.ofNat_tmod]
+
+/-- `x & ty_mask` of a presented immediate. -/
+theorem band64_mask_imm {t : Ty} (ht : t ≠ .i128) (c : BitVec t.width) :
+    Rust.band64 (Rust.asU64 (imm64OfBits c)) (2 ^ t.width - 1) = c.toNat := by
+  rw [asU64_imm64OfBits ht]
+  imm_cases t c <;> (
+    simp only [band64_eq, ofInt64_natCast_toNat, Int.reducePow, Int.reduceSub]
+    rw [show (c.toNat : Int) = ((c.setWidth 64).toNat : Int) by
+      simp only [BitVec.toNat_setWidth]; have := c.isLt; rw [Nat.mod_eq_of_lt (by omega)]]
+    rw [natCast_inj']
+    simp only [BitVec.ofInt_ofNat]
+    bv_decide)
+
+set_option maxHeartbeats 4000000 in
+/-- `imm64_udiv`/`imm64_urem`/`imm64_srem`/`imm64_sdiv` (constant folding of `cprop.isle` 32-50):
+`none` exactly when Rust's checked operation fails. -/
+@[opt_imm] theorem imm64Udiv_spec {t : Ty} (ht : t ≠ .i128) (b c : BitVec t.width) :
+    Rust.imm64Udiv (CTy.ofClif t) (imm64OfBits b) (imm64OfBits c) =
+      .ok (if c = 0#t.width then none else some (imm64OfBits (b / c))) := by
+  imm_pre [Rust.imm64Udiv, band64_mask_imm ht, tdiv_natCast_toNat, trem_natCast_toNat]
+  imm_cases t b c <;> (
+    simp (disch := decide) only [maskTo_of_lt, maskTo_64]
+    by_cases hc : c = 0
+    · subst hc; simp
+    · have hc' : (c.toNat : Int) ≠ 0 := by
+        intro h; apply hc; apply BitVec.eq_of_toNat_eq; simp; omega
+      simp only [hc, hc', beq_iff_eq, ite_false, Except.ok.injEq, Option.some.injEq]
+      imm_solve)
+set_option maxHeartbeats 4000000 in
+@[opt_imm] theorem imm64Urem_spec {t : Ty} (ht : t ≠ .i128) (b c : BitVec t.width) :
+    Rust.imm64Urem (CTy.ofClif t) (imm64OfBits b) (imm64OfBits c) =
+      .ok (if c = 0#t.width then none else some (imm64OfBits (b % c))) := by
+  imm_pre [Rust.imm64Urem, band64_mask_imm ht, tdiv_natCast_toNat, trem_natCast_toNat]
+  imm_cases t b c <;> (
+    simp (disch := decide) only [maskTo_of_lt, maskTo_64]
+    by_cases hc : c = 0
+    · subst hc; simp
+    · have hc' : (c.toNat : Int) ≠ 0 := by
+        intro h; apply hc; apply BitVec.eq_of_toNat_eq; simp; omega
+      simp only [hc, hc', beq_iff_eq, ite_false, Except.ok.injEq, Option.some.injEq]
+      imm_solve)
+
+/-- `imm64OfBits` of a result as `Int` (the right-hand side of the helper specifications). -/
+theorem imm64OfBits_ofInt_toNat {w : Nat} (h : w < 64) (q : BitVec w) :
+    ((BitVec.ofInt w q.toInt).toNat : Int) = imm64OfBits q := by
+  rw [BitVec.ofInt_toInt, imm64OfBits_eq (by omega), natCast_toNat_lt h]
+
+theorem imm64OfBits_64 (q : BitVec 64) : q.toInt = imm64OfBits q := by
+  rw [imm64OfBits_eq (by omega), BitVec.setWidth_eq]
+
+/-- `ty_smin` sign-extended, per width. -/
+theorem sext_tySmin_8 : Rust.sext 8 (Rust.asI64 (2 ^ 7)) = (BitVec.intMin 8).toInt := by decide
+theorem sext_tySmin_16 : Rust.sext 16 (Rust.asI64 (2 ^ 15)) = (BitVec.intMin 16).toInt := by decide
+theorem sext_tySmin_32 : Rust.sext 32 (Rust.asI64 (2 ^ 31)) = (BitVec.intMin 32).toInt := by decide
+theorem sext_tySmin_64 : Rust.sext 64 (Rust.asI64 (2 ^ 63)) = (BitVec.intMin 64).toInt := by decide
+
+@[opt_imm] theorem imm64Srem_spec {t : Ty} (ht : t ≠ .i128) (b c : BitVec t.width) :
+    Rust.imm64Srem (CTy.ofClif t) (imm64OfBits b) (imm64OfBits c) =
+      .ok (if (c.toInt == 0 || b.toInt == -2 ^ 63 && c.toInt == -1) = true then none
+        else some (imm64OfBits (b.srem c))) := by
+  imm_pre [Rust.imm64Srem]
+  imm_cases t b c <;> (
+    simp (disch := decide) only [sext_imm64OfBits, maskTo_of_lt, maskTo_64, Rust.trem,
+      ← BitVec.toInt_srem]
+    by_cases hC : (c.toInt == 0 || b.toInt == -2 ^ 63 && c.toInt == -1) = true
+    · simp only [hC, ite_true]
+    · simp only [hC, ite_false, Except.ok.injEq, Option.some.injEq, Bool.false_eq_true]
+      first | exact imm64OfBits_ofInt_toNat (by decide) _ | exact imm64OfBits_64 _)
+
+@[opt_imm] theorem imm64Sdiv_spec {t : Ty} (ht : t ≠ .i128) (b c : BitVec t.width) :
+    Rust.imm64Sdiv (CTy.ofClif t) (imm64OfBits b) (imm64OfBits c) =
+      .ok (if (b.toInt == (BitVec.intMin t.width).toInt && c.toInt == -1) = true then none
+        else if (c.toInt == 0 || b.toInt == -2 ^ 63 && c.toInt == -1) = true then none
+        else some (imm64OfBits (b.sdiv c))) := by
+  imm_pre [Rust.imm64Sdiv, Rust.tySmin]
+  imm_cases t b c <;> (
+    simp (config := {decide := true}) (disch := decide) only [sext_imm64OfBits, maskTo_of_lt,
+      maskTo_64, Rust.tdiv, ite_false, Nat.reduceBEq, Nat.reduceGT, except_ok_bind',
+      Bool.false_eq_true, sext_tySmin_8, sext_tySmin_16, sext_tySmin_32, sext_tySmin_64,
+      Nat.reduceSub, Nat.reducePow]
+    split
+    · rename_i h1; simp only [h1, ite_true]
+    · rename_i h1
+      split
+      · rename_i h2; simp only [h1, h2, ite_true, ite_false, Bool.false_eq_true]
+      · rename_i h2
+        simp only [h1, h2, ite_false, Except.ok.injEq, Option.some.injEq, Bool.false_eq_true]
+        have hne : b ≠ BitVec.intMin _ ∨ c ≠ -1#_ := by
+          by_cases hb : b = BitVec.intMin _
+          · refine .inr fun hc => h1 ?_
+            subst hb hc; decide
+          · exact .inl hb
+        rw [← BitVec.toInt_sdiv_of_ne_or_ne b c hne]
+        first | exact imm64OfBits_ofInt_toNat (by decide) _ | exact imm64OfBits_64 _)
+
+/-- Signed immediate tests as `BitVec` tests (the conditions of `imm64_sdiv`/`imm64_srem`). -/
+theorem toInt_beq_zero {w : Nat} (b : BitVec w) : (b.toInt == 0) = (b == 0#w) := by
+  rw [Bool.eq_iff_iff]; simp only [beq_iff_eq]
+  rw [← BitVec.toInt_zero (w := w), BitVec.toInt_inj]
+
+theorem toInt_beq_neg_one {t : Ty} (b : BitVec t.width) :
+    (b.toInt == -1) = (b == BitVec.allOnes t.width) := by
+  rw [Bool.eq_iff_iff]; simp only [beq_iff_eq]; exact toInt_eq_neg_one b
+
+
 /-! ## The template -/
 
 /-- An `Int` cast compared with a literal (immediate facts `asU64 imm = k` after
@@ -353,9 +468,10 @@ immediate facts normalised; no trap (`divOk`) and the value (`divVal`). -/
 macro "skel_div" : tactic => `(tactic| (
   apply skel_div_rwv (hle4 _ _ (by opt_den)) (hle4 _ _ (by opt_den))
   intro a b ha hb
-  subst ha
   opt_destruct
+  all_goals subst_vars
   skel_imm
+  try simp only [toInt_beq_zero, toInt_beq_neg_one, toInt_beq_toInt] at *
   refine ⟨?_, ?_⟩
   · simp only [divOk]
     rule_bits
@@ -407,13 +523,26 @@ macro "skel_auto_div " r:ident : tactic => `(tactic| (
   all_goals (skel_rhs; skel_good; skel_div)))
 
 set_option hygiene false in
+/-- `rule_iflets` splitting closed `if`s first: the helper specifications (`imm64_sdiv`, …) return
+an `if` inside the extern result, which a `split` on the result's `match` would leave behind. -/
+macro "skel_rule_iflets" : tactic => `(tactic| (
+  opt_eval hil
+  repeat' ((first | opt_split_ite hil | split at hil) <;> try opt_eval hil)
+  all_goals (try (simp at hil; done))
+  all_goals (
+    simp only [Except.ok.injEq, Prod.mk.injEq] at hil
+    obtain ⟨rfl, rfl, rfl⟩ := hil
+    simp only [List.mem_singleton, List.mem_cons, List.not_mem_nil, or_false] at henv2)
+  all_goals subst henv2))
+
+set_option hygiene false in
 /-- The whole template for a `div` rule with if-lets. -/
 macro "skel_auto_div_i " r:ident : tactic => `(tactic| (
   skel_intro $r
   rule_lhs hG
   skel_reads
   rule_lhs hG
-  all_goals rule_iflets
+  all_goals (skel_rule_iflets; skel_iflets)
   all_goals (skel_rhs; skel_good; skel_div)))
 
 /-! ## `truthy` in an if-let

@@ -35,6 +35,22 @@ theorem ok_rule_arithmetic_132 {p : Isle.Program} (hd : Data p) : SkelRuleOk p r
   skel_auto_div rule_arithmetic_132
 
 set_option maxHeartbeats 4000000 in
+theorem ok_rule_cprop_32 {p : Isle.Program} (hd : Data p) : SkelRuleOk p rule_cprop_32 := by
+  skel_auto_div_i rule_cprop_32
+
+set_option maxHeartbeats 4000000 in
+theorem ok_rule_cprop_38 {p : Isle.Program} (hd : Data p) : SkelRuleOk p rule_cprop_38 := by
+  skel_auto_div_i rule_cprop_38
+
+set_option maxHeartbeats 4000000 in
+theorem ok_rule_cprop_44 {p : Isle.Program} (hd : Data p) : SkelRuleOk p rule_cprop_44 := by
+  skel_auto_div_i rule_cprop_44
+
+set_option maxHeartbeats 4000000 in
+theorem ok_rule_cprop_50 {p : Isle.Program} (hd : Data p) : SkelRuleOk p rule_cprop_50 := by
+  skel_auto_div_i rule_cprop_50
+
+set_option maxHeartbeats 4000000 in
 theorem ok_rule_skeleton_7 {p : Isle.Program} (hd : Data p) : SkelRuleOk p rule_skeleton_7 := by
   skel_auto_br rule_skeleton_7
 
