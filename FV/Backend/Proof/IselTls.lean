@@ -193,7 +193,6 @@ theorem tls_lower_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem)
   show VHolds _ (vdefUpd _ _ ρ st.nextVreg)
   simp [vdefUpd, writeV, Operand.isDef, Operand.isEarly, Operand.isLate, upd, hne]
   simp [VHolds, Clif.Val.ofInt, ofX, Clif.Ty.width]
-  exact (addr_nat_off _ _).symm
 
 end Builders
 
@@ -227,8 +226,12 @@ theorem tls_value_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
   simp only at hs'
   rw [hs] at hs'
   subst hs'
-  refine ⟨_, ?_, _, rfl, tls_lower_ok hMR hM hMRo _ ‹_›⟩
-  simp [LState.emit, LState.fresh, Array.push_eq_append]
+  have hg1 := ‹List.lookup _ ctx.func.globals = some (Clif.GlobalValue.tlsSymbol _ _ _)›
+  have hg2 := ‹List.lookup _ f.globals = some (Clif.GlobalValue.tlsSymbol _ 0 _)›
+  rw [hctx.func, hg2] at hg1
+  cases hg1
+  refine ⟨[_], ?_, _, rfl, tls_lower_ok hMR hM hMRo _ (hctx.func ▸ hg2)⟩
+  exact Array.push_eq_append
 
 include hp in
 /-- **`tls_value`** with `tls_model` `macho` (rule id 1130): never matches (`tls_model` is
@@ -238,5 +241,6 @@ theorem tls_value_macho_ok : MemRuleOk F sb syms isem MR env cp p rule_lower_322
     hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
   mem_inv hp [ext_tls_model_iff] at hmatch
+  exact absurd ‹2 = VIdx.TlsModel.ElfGd› (by decide)
 
 end Backend.Proof

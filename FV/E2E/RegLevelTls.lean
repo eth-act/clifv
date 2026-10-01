@@ -46,6 +46,14 @@ structure TlsOk (F : BitVec 64 → Prop) (X : ExtSem) (H : ArmHooks) : Prop wher
     (∀ a, (H.tls n (.x k) s).mem a = s.mem a) ∧ (H.tls n (.x k) s).program = s.program
   flags : ∀ n k s w, SameWorld F s w → Arm.read_pstate (H.tls n (.x k) s) = X.tlsFlags n w
 
+theorem hasTls_of_mem {vc : VCode} {b k : Nat} {vb : VBlock} {n : String} {rd tmp : Reg}
+    (hvb : vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some (.elfTlsGetAddr n rd tmp)) :
+    vc.hasTls = true := by
+  simp only [VCode.hasTls, Array.any_eq_true]
+  obtain ⟨hb, rfl⟩ := Array.getElem?_eq_some_iff.mp hvb
+  obtain ⟨hk, hk'⟩ := Array.getElem?_eq_some_iff.mp hi
+  exact ⟨b, hb, k, hk, by rw [hk']⟩
+
 /-- The hooked TLSDESC sequence as the machine runs it: the `adrp` step, then `H.tls` (for the
 allocated form, x0 and another temporary). -/
 def tlsExec (H : ArmHooks) : MInst → Arm.ArmState → Option Arm.ArmState
@@ -112,18 +120,13 @@ theorem r_write_pstate_other {f : Arm.StateField} (hf : ∀ fl, f ≠ .FLAG fl) 
 
 theorem r_flag_of_pstate {s t : Arm.ArmState} (h : Arm.read_pstate s = Arm.read_pstate t)
     (fl : Arm.PFlag) : Arm.r (.FLAG fl) s = Arm.r (.FLAG fl) t := by
-  simp only [Arm.read_pstate, Arm.make_pstate, Arm.PState.mk.injEq] at h
-  cases fl
-  · exact h.1
-  · exact h.2.1
-  · exact h.2.2.1
-  · exact h.2.2.2
+  simp only [Arm.read_pstate] at h
+  cases fl <;> simp only [Arm.r, Arm.read_base_flag, h]
 
 theorem read_pstate_write_pstate (P : Arm.PState) (w : Arm.ArmState) :
     Arm.read_pstate (Arm.write_pstate P w) = P := by
   obtain ⟨n, z, c, v⟩ := P
-  simp [Arm.read_pstate, Arm.write_pstate, Arm.make_pstate, Arm.r_of_w_same,
-    Arm.r_of_w_different]
+  simp [Arm.read_pstate, Arm.write_pstate, Arm.w, Arm.write_base_flag]
 
 /-- **`OperandsSound` of the hooked TLSDESC sequence** (from `TlsOk`). -/
 theorem os_tls {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {H : ArmHooks}
@@ -153,7 +156,7 @@ theorem os_tls {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {H : ArmHooks
   -- the state after the `adrp` step, and after the hooked step
   obtain ⟨s1, hs1⟩ : ∃ s1, s1 = Arm.w .PC (Arm.r .PC s + 4) s := ⟨_, rfl⟩
   have herr1 : Arm.r .ERR s1 = .None := by rw [hs1, Arm.r_of_w_different (by simp)]; exact herr
-  have hw1 : SameWorld F s1 w := SameWorld.w_left (by simp [Masked]) hw
+  have hw1 : SameWorld F s1 w := by rw [hs1]; exact SameWorld.w_left (by simp [Masked]) hw
   obtain ⟨hx0, hxk, hfr, hmem, hprog⟩ := hT.seq n k s1 hk29 hk0 hk16 hk17 hk18 herr1
   have hfl := hT.flags n k s1 w hw1
   have hex : tlsExec H (.elfTlsGetAddr n (.x 0) (.x k)) s = some (H.tls n (.x k) s1) := by
@@ -186,7 +189,9 @@ theorem os_tls {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {H : ArmHooks
     exact hw.2.2
   · -- the frame: `sp` and memory kept
     simp only [spOf]
-    exact hkeep _ (by simp) (by simp [rnum]) (by simp [rnum_toNat, hk29]; omega) (by simp)
+    exact hkeep _ (by simp) (by simp [rnum])
+      (fun e => rnum_ne (a := 31) (b := k) (by omega) (by omega) (by omega)
+        (Arm.StateField.GPR.inj e)) (by simp)
       (fun fl => by simp)
   · rw [hmem a, hs1]; simp [Arm.ArmState.mem_w_eq_mem]
   · -- the defs
@@ -209,7 +214,8 @@ theorem os_tls {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {H : ArmHooks
       have hmk : m ≠ k := fun e => hnek (by rw [e])
       rw [hkeep _ (by simp) (by simp; exact rnum_ne (by omega) (by omega) hm0)
         (by simp; exact rnum_ne (by omega) (by omega) hmk)
-        (by simp; exact rnum_ne (n := 30) (by omega) (by omega) (by omega))
+        (fun e => rnum_ne (a := m) (b := 30) (by omega) (by omega) (by omega)
+          (Arm.StateField.GPR.inj e))
         (fun fl => by simp)]
     · simp only [regVal]
       rw [hkeep _ (by simp) (by simp) (by simp) (by simp) (fun fl => by simp)]
@@ -293,7 +299,6 @@ theorem realizes_tls {R : RL} (hR : R.Wf) (hT : TlsOk R.F R.X R.H) {s : Arm.ArmS
       congr 1
       apply BitVec.eq_of_toNat_eq
       simp [BitVec.toNat_add]
-      omega
   | _ => simp [tlsExec] at hex
 
 end Backend.Proof

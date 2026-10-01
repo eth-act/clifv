@@ -242,8 +242,9 @@ def instData (f : Clif.Function) : Clif.Inst → Except String V
     else pure (instDataV "AtomicCas"
       [opcodeV "AtomicCas", .values [p, e, x], .op (.memFlags flags)])
   | .fence => pure (instDataV "NullAry" [opcodeV "Fence"])
-  -- `tls_value` (outside `E2E.backend_correct`, `unverifiedReason?`): lowered by Cranelift's
-  -- `tls_model=elf_gd` rule. Cranelift's rule drops the symbol's offset, so one is rejected.
+  -- `tls_value` (inside `E2E.backend_correct_final` under the TLSDESC hook contract `TlsOk`):
+  -- lowered by Cranelift's `tls_model=elf_gd` rule. Cranelift's rule drops the symbol's offset,
+  -- so one is rejected.
   | .tlsValue ty gv =>
     if ty != .i64 then throw "tls_value with a non-i64 address type"
     else match f.globals.lookup gv with

@@ -86,6 +86,8 @@ theorem backend_correct_legal_env {f g : Clif.Function} {cert : Opt.Legalize128.
     (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
     (hC : ∀ s, CalleeOk
       (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
+    (hTls : hasTls g = true → ∀ s, TlsOk
+      (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
     (hX : ∀ s, XCallsOk env (g.externs.map (·.2)) (fun sl cm w =>
       Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
         slotOff, (RAFrame.compute vcp rf).intBase⟩ g sl cm w) X)
@@ -116,7 +118,7 @@ theorem backend_correct_legal_env {f g : Clif.Function} {cert : Opt.Legalize128.
   rw [hst] at hr1 hr2
   rw [hst'] at hr1 hr2
   have hB := fun k => backend_correct_final hsub hc hcov hC
-    (fun ⟨B, hB, h⟩ => by rw [hnt B hB] at h; cases h) hX
+    (fun ⟨B, hB, h⟩ => by rw [hnt B hB] at h; cases h) hTls hX
     (fun _ => by
       rw [indSigs_eq_nil hci fun B hB callee args et e => by
         have := hnt B hB; rw [e] at this; cases this]
@@ -155,6 +157,8 @@ theorem backend_correct_legal {f g : Clif.Function} {cert : Opt.Legalize128.Cert
     (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
     (hC : ∀ s, CalleeOk
       (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
+    (hTls : hasTls g = true → ∀ s, TlsOk
+      (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
     (hX : ∀ s, XCallsOk Clif.Rust.env (g.externs.map (·.2)) (fun sl cm w =>
       Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
         slotOff, (RAFrame.compute vcp rf).intBase⟩ g sl cm w) X)
@@ -173,7 +177,7 @@ theorem backend_correct_legal {f g : Clif.Function} {cert : Opt.Legalize128.Cert
     ArmRefinesLegal ((Opt.Legal.groups f.sig.returns).getD []) fb base ra (ArmStepX X H fa) s
       (Clif.runLoop Clif.Rust.env p fuel cs) :=
   backend_correct_legal_env hchk hsub hci hnt hc Clif.Rust.helperOk_env Clif.Rust.extLegal_env
-    Clif.Rust.envKeepsAllocs_env hext hext' hcov hC hX hsym hslot hent hres hbe hexp hargs hcs
+    Clif.Rust.envKeepsAllocs_env hext hext' hcov hC hTls hX hsym hslot hent hres hbe hexp hargs hcs
     hcs' hsl hmem hrel htrS htr fuel
 
 end E2E

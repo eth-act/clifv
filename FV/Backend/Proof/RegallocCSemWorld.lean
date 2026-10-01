@@ -138,6 +138,12 @@ theorem csem_next_world' {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i 
     | (simp only [Option.map_eq_some_iff, Prod.mk.injEq, reduceCtorEq, and_false, false_and,
         exists_false] at h; done)
     | (simp only [Option.some.injEq, Prod.mk.injEq] at h; obtain ⟨-, rfl, -⟩ := h; exact ⟨herr, rfl⟩)
+    | (simp only [Option.some.injEq, Prod.mk.injEq] at h; obtain ⟨-, rfl, -⟩ := h
+       exact ⟨by
+         simp only [Arm.write_pstate]
+         rw [Arm.r_of_w_different (by simp), Arm.r_of_w_different (by simp),
+           Arm.r_of_w_different (by simp), Arm.r_of_w_different (by simp)]
+         exact herr, by simp [Arm.write_pstate, Arm.w_program]⟩)
     | (split at h <;> simp only [Option.some.injEq, Prod.mk.injEq, reduceCtorEq, and_false] at h <;> done)
     | (exfalso; exact hl (.inl ⟨_, _, _, _, _, _, _, _, rfl⟩))
     | (exfalso; exact hl (.inr ⟨_, _, _, _, _, _, _, rfl⟩))
