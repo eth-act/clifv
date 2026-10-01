@@ -348,6 +348,10 @@ unwinding trusted)`: 252, 493, 837. No function is unverified for an indirect ca
 arguments, calls of functions of the same file, rejected `i128` legalisations). Release
 builds were not re-measured.
 
+After agent/atomics-proof stage A (2026-10-01: `bmask`, `atomic_load`, `atomic_store` and
+`fence` verified; `atomic_rmw`/`atomic_cas` not yet; debug, `examples/compare.sh` SAME for all
+three): fv-demo 1323 verified of 1346, survey 3156 of 3179, vendor 4324 of 4399.
+
 Of the verified, `verified (normal returns; unwinding trusted)`: fv-demo 231 / 204, survey
 492 / 419, vendor 820 / 727 (debug / release). Before (main fbbd5d9, `try_call` functions
 compiled but unverified) survey debug had 2537 verified of 3179. No function is over the
