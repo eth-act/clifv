@@ -431,7 +431,7 @@ def logicImmOk (op : ALUOp) (sz : OperandSize) (imm : ImmLogic) : Bool :=
 
 /-- The covered addressing modes of a load/store of `bytes` bytes (`amodeAddr`'s forms). -/
 def memOk (bytes : Nat) : AMode → Bool
-  | .slotOffset _ => true
+  | .slotOffset _ | .spOffset _ | .fpOffset _ => true
   | .unscaled (.vreg _ .int) off => decide (-256 ≤ off ∧ off < 256)
   | .unsignedOffset (.vreg _ .int) off => decide (off % bytes = 0 ∧ off / bytes < 4096)
   | .regReg (.vreg _ .int) (.vreg _ .int) | .regScaled (.vreg _ .int) (.vreg _ .int) => true

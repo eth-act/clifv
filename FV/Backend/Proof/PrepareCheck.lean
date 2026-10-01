@@ -80,8 +80,9 @@ def prepCheck (vc vcp : VCode) : Bool :=
       | none => false
       | some b' => keptOk vc vcp ss ss' b b' &&
           (ss[b]?.getD #[]).all fun s => decide (s < vc.blocks.size) && liveOf ss s) &&
-    -- no `tryCall` appears (`prepare` keeps and retargets the instructions)
-    (vc.hasTryCall || !vcp.hasTryCall)
+    -- no `tryCall` appears (`prepare` keeps and retargets the instructions); the outgoing
+    -- argument area is kept
+    ((vc.hasTryCall || !vcp.hasTryCall) && vcp.outgoing == vc.outgoing)
   | _, _ => false
 
 end Backend.Proof.Driver

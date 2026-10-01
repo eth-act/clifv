@@ -314,6 +314,39 @@ def sigArgLocs (s : Clif.Signature) : Except String (List ArgLoc × Nat) := do
     pure (locs.toList, (argLocs normal).2)
   else pure (argLocs bytes)
 
+/-- The locations of the parameters of `s` (`sigArgLocs`: x0..x7, an `sret` parameter in x8,
+then the outgoing stack area; empty where `sigArgLocs` fails). -/
+def locsOf (s : Clif.Signature) : List ArgLoc :=
+  match sigArgLocs s with
+  | .ok (locs, _) => locs
+  | .error _ => []
+
+/-- The size of the stack-argument area of a call of `s` (`sigArgLocs`, a multiple of 16; the
+lowering's `gen_call_info` raises the outgoing area to it). -/
+def stackBytes (s : Clif.Signature) : Nat :=
+  match sigArgLocs s with
+  | .ok (_, n) => n
+  | .error _ => 0
+
+/-- The (offset, byte size) of the stack-passed parameters, in parameter order. -/
+def stackSlots (locs : List ArgLoc) (bytes : List Nat) : List (Nat × Nat) :=
+  (locs.zip bytes).filterMap fun q => match q.1 with
+    | .stack off => some (off, q.2)
+    | .reg _ => none
+
+/-- Slots in increasing, non-overlapping order, all at or above `lo` and inside `[0, S)`. -/
+def slotsOk : List (Nat × Nat) → Nat → Nat → Bool
+  | [], _, _ => true
+  | (off, b) :: rest, lo, S => decide (lo ≤ off ∧ off + b ≤ S) && slotsOk rest (off + b) S
+
+/-- The stack-argument layout of `s` (`sigArgLocs`) is well formed: the stack-passed parameters
+occupy non-overlapping byte ranges of the stack-argument area, in parameter order (a
+translation-validation check of `argLocs`; `lowerCheck` checks it for every call). -/
+def stackLayoutOk (s : Clif.Signature) : Bool :=
+  match sigArgLocs s, sigArgs s with
+  | .ok (locs, S), .ok bytes => slotsOk (stackSlots locs bytes) 0 S
+  | _, _ => false
+
 /-- The returns of a signature as the ABI sees them (`from_func_sig` /
 `ensure_struct_return_ptr_is_returned`, which is `keep in sync` in Cranelift's abi.rs): a
 signature with an `sret` parameter and no returns returns the struct pointer in x0, i.e.

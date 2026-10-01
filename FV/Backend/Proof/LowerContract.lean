@@ -31,8 +31,8 @@ vregs are above every value's vreg, `ValsBelow`; an indirect call's signature am
 indirect-call signatures with register arguments, `IndSigOk`) satisfies M4's `LowerInstOk`. -/
 def InstCalls (f : Clif.Function) (sem : Sem) (MR : MemRelT) (env : Clif.Env) (p : Clif.Program) :
     Prop :=
-  ∀ ctx ii info inst st rss st' tr, CtxInv f ctx → CallRegArgs f →
-    Compile.functionE f = true →
+  ∀ ctx ii info inst st rss st' tr, CtxInv f ctx →
+    (∃ B ∈ f.blocks, ∃ stm ∈ B.body, stm.inst = inst) → Compile.functionE f = true →
     ctx.insts[ii]? = some info →
     info.clif = some inst → IndSigOk f (indSigs f) inst → st.emitted = #[] → ValsBelow ctx st →
     runTerm ctx "lower" [.inst ii] st = .ok (some (.regsVec rss), st', tr) →
@@ -68,13 +68,15 @@ theorem instCalls_of_rules (hrules : LowerRulesCorrect Isle.Aarch64.program)
     {MR : MemRelT} {env : Clif.Env} {p : Clif.Program} {f : Clif.Function} (hR : Refines F sem)
     (hMR : MRStable F MR) (hcr : CallsRefine F env (f.externs.map (·.2)) MR sem)
     (hicr : IndCallsRefine env (indSigs f) MR sem)
-    (hMem : MemRefines F sb syms sem)
+    (hMem : MemRefines F sb syms sem) {outB : Nat} (hout : OutArgsOk F outB MR)
+    (hstk : CallsStack f outB)
     (hMRo : MemRelOk F sb syms f MR) : InstCalls f sem MR env p := by
-  intro ctx ii info inst st rss st' tr hctx hra hE hi hc hsig hemp hvb hrun
-  obtain ⟨ms, rss', hem, hout, hok⟩ := lowerInstOk_runTerm hrules hex hcalls hind hmem
-    (env := env) (cp := p) hR hMR hcr hicr hMem hctx hra (externsIn_self f) hE hMRo hi hc hsig
-    hvb hrun
-  cases hout
+  intro ctx ii info inst st rss st' tr hctx hmem' hE hi hc hsig hemp hvb hrun
+  obtain ⟨B, hB, stm, hstm, rfl⟩ := hmem'
+  obtain ⟨ms, rss', hem, hov, hok⟩ := lowerInstOk_runTerm hrules hex hcalls hind hmem
+    (env := env) (cp := p) hR hMR hcr hicr hMem hctx hout (externsIn_self f) hE hMRo hi hc hsig
+    (fun fn args e hc he => hstk B hB stm hstm fn args e hc he) hvb hrun
+  cases hov
   rw [hemp, Array.empty_append] at hem
   rw [hem, List.toList_toArray]
   exact hok
@@ -296,7 +298,8 @@ value's vreg) satisfies `LowerTryOk`. From M4's rule statements: `tryCalls_of_ru
 def TryCalls (f : Clif.Function) (sem : Sem) (MR : MemRelT) (env : Clif.Env) (p : Clif.Program) :
     Prop :=
   ∀ ctx ti fn args et data sig items targets info trs lo st1 out st' tr, CtxInv f ctx →
-    CallRegArgs f → tryCallData f (.tryCall fn args et) = .ok data →
+    (∀ e, f.extern? fn = some e → e.sig.params.length ≤ 8) →
+    tryCallData f (.tryCall fn args et) = .ok data →
     exnTableOpnd f et = .ok (sig, items) → ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩ →
     tryInfoOf sig items targets = some info → tryRegsOf sig lo = some (trs, st1) →
     ValsBelow ctx lo →
@@ -325,7 +328,7 @@ theorem tryCalls_of_rules (htr : TryRulesCorrect Isle.Aarch64.program)
     termCtx_insts_self hph data
   have hregs' : tryRegsOf sig lo = some ((tryCtx ctx ti data trs).tryRegs, st1) := hregs
   have hvb' : ValsBelow (tryCtx ctx ti data trs) lo := hvb
-  obtain ⟨ms, hem, hok⟩ := tryOk_runTerm htr hun hR hMR hcr hctx' hra (externsIn_self f) hd he hi
+  obtain ⟨ms, hem, hok⟩ := tryOk_runTerm htr hun hR hMR hcr hctx' (externsIn_self f) hra hd he hi
     hinfo hregs' hvb' (st := { st1 with emitted := #[] }) (Nat.le_refl _) hrun
   have : ms = st'.emitted.toList := by
     simp only [Array.empty_append] at hem; rw [hem, List.toList_toArray]

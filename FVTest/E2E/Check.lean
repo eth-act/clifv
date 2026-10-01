@@ -174,8 +174,7 @@ def main (args : List String) : IO UInt32 := do
       if !Compile.functionE f then
         skipped := skipped + 1
         continue
-      if f.sig.params.length > 8 || !Backend.regArgCalls f || !Backend.abiSigs f ||
-          !Backend.indSigsOk f then
+      if !Backend.regArgCalls f || !Backend.abiSigs f || !Backend.indSigsOk f then
         skipped := skipped + 1
         continue
       if lg.accepted.contains p.name then legal := legal + 1

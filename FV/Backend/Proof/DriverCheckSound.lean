@@ -920,8 +920,8 @@ theorem lowering_of_check {f : Clif.Function} {vc : VCode} (h : lowerCheck f vc 
     · rename_i bl hl
       simp only [Bool.and_eq_true] at h
       have hS := lowerShape_of_ok (gn := gnAt (gnTable st0.nextVreg (aliasOf f bl))) hb hl
-        (fun n hn => gnAt_temp hn) h.1.1.1
-      exact ⟨ctx, st0, _, _, bl, _, hS, cert_of_ok hS.len h.1.1.2, brIdx_of_ok h.1.2⟩
+        (fun n hn => gnAt_temp hn) h.1.1.1.1
+      exact ⟨ctx, st0, _, _, bl, _, hS, cert_of_ok hS.len h.1.1.1.2, brIdx_of_ok h.1.1.2⟩
 
 /-- A function without `try_call` lowers to VCode without `tryCall` (`lowerCheck`'s last
 conjunct). -/
@@ -933,9 +933,60 @@ theorem noTryCall_of_check {f : Clif.Function} {vc : VCode} (h : lowerCheck f vc
   · split at h
     · cases h
     · simp only [Bool.and_eq_true, Bool.or_eq_true, Bool.not_eq_true'] at h
-      rcases h.2 with h2 | h2
+      rcases h.1.2 with h2 | h2
       · obtain ⟨B, hB, hB'⟩ := List.any_eq_true.mp h2
         rw [hf B hB] at hB'; cases hB'
       · exact h2
+
+/-- The calls of `f` fit the VCode's outgoing area (`lowerCheck`'s last conjunct). -/
+theorem callsStack_of_check {f : Clif.Function} {vc : VCode} (h : lowerCheck f vc = true) :
+    CallsStack f vc.outgoing := by
+  unfold lowerCheck at h
+  split at h
+  · cases h
+  · split at h
+    · cases h
+    · simp only [Bool.and_eq_true] at h
+      have h2 := h.2.1
+      intro B hB st hst fn args e hi he
+      have := List.all_eq_true.mp (List.all_eq_true.mp h2 B hB) st hst
+      rw [hi] at this
+      simp only [he, Bool.and_eq_true, decide_eq_true_eq] at this
+      exact this
+
+/-- The entry's parameter locations and byte sizes compute (`lowerCheck`'s `entryOkB`). -/
+theorem entryOk_of_check {f : Clif.Function} {vc : VCode} (h : lowerCheck f vc = true) :
+    (locsOf f.sig).length = f.sig.params.length ∧ ∃ bytes, sigParamBytes f.sig = .ok bytes := by
+  unfold lowerCheck at h
+  split at h
+  · cases h
+  · split at h
+    · cases h
+    · simp only [Bool.and_eq_true] at h
+      have h2 := h.2.2
+      simp only [entryOkB, Bool.and_eq_true, beq_iff_eq] at h2
+      refine ⟨h2.1, ?_⟩
+      have h3 := h2.2.2
+      split at h3
+      · exact ⟨_, ‹_›⟩
+      · cases h3
+
+/-- The register-passed parameters of the entry are in x0..x8 (`lowerCheck`'s `entryOkB`). -/
+theorem entryRegs_of_check {f : Clif.Function} {vc : VCode} (h : lowerCheck f vc = true) :
+    ∀ l ∈ locsOf f.sig, ∀ r, l = .reg r → ∃ n, r = .x n ∧ n ≤ 8 := by
+  unfold lowerCheck at h
+  split at h
+  · cases h
+  · split at h
+    · cases h
+    · simp only [Bool.and_eq_true] at h
+      have h2 := h.2.2
+      simp only [entryOkB, Bool.and_eq_true, beq_iff_eq] at h2
+      intro l hl r hr
+      have := List.all_eq_true.mp h2.2.1 l hl
+      subst hr
+      cases r with
+      | x n => exact ⟨n, rfl, by simpa using this⟩
+      | _ => cases this
 
 end Backend.Proof.Driver

@@ -346,6 +346,181 @@ theorem ctor_is_pic_iff (st : LState) (v : V) (st' : LState) :
   have : externCtor ctx T.is_pic [] st = .ok (.bool true, st) := rfl
   rw [this]; simp [eq_comm]
 
+/-! ## Stack-passed arguments (agent/stack-tls-proof)
+
+`gen_call_args` keeps the register-passed arguments as the call's fixed uses and emits one
+`spOffset` store per stack-passed argument (in parameter order, before the call). -/
+
+/-- The register pairs of `gen_call_args`' (location, register, byte size) triples. -/
+def argRegPairs (L : List ((ArgLoc × Reg) × Nat)) : List (Reg × Reg) :=
+  L.filterMap fun q => match q.1.1 with
+    | .reg p => some (q.1.2, p)
+    | .stack _ => none
+
+/-- The stores `gen_call_args` emits for its triples. -/
+def argStores (L : List ((ArgLoc × Reg) × Nat)) : List MInst :=
+  L.filterMap fun q => match q.1.1 with
+    | .stack off => some (.store (storeOpOfBytes q.2) q.1.2 (.spOffset off) trustedFlags)
+    | .reg _ => none
+
+theorem foldl_argStep_gen : ∀ (L : List ((ArgLoc × Reg) × Nat)) (acc : Array (Reg × Reg))
+    (st : LState),
+    L.foldl argStep (acc, st) =
+      (acc ++ (argRegPairs L).toArray, { st with emitted := st.emitted ++ (argStores L).toArray })
+  | [], acc, st => by simp [argRegPairs, argStores]
+  | ((.reg p, r), b) :: L, acc, st => by
+    rw [List.foldl_cons, show argStep (acc, st) ((ArgLoc.reg p, r), b) = (acc.push (r, p), st) from rfl,
+      foldl_argStep_gen L]
+    simp [argRegPairs, argStores]
+  | ((.stack off, r), b) :: L, acc, st => by
+    rw [List.foldl_cons, show argStep (acc, st) ((ArgLoc.stack off, r), b) =
+      (acc, st.emit (.store (storeOpOfBytes b) r (.spOffset off) trustedFlags)) from rfl,
+      foldl_argStep_gen L]
+    cases st
+    simp [argRegPairs, argStores, LState.emit]
+
+/-- The register-passed arguments of a call's (location, argument value, byte size) triples,
+with their argument registers. -/
+def regPairsOf (T : List ((ArgLoc × Nat) × Nat)) : List (Nat × Reg) :=
+  T.filterMap fun q => match q.1.1 with
+    | .reg p => some (q.1.2, p)
+    | .stack _ => none
+
+/-- The stack-passed arguments of a call's triples: (offset, argument value, byte size). -/
+def stackEnts (T : List ((ArgLoc × Nat) × Nat)) : List (Nat × Nat × Nat) :=
+  T.filterMap fun q => match q.1.1 with
+    | .stack off => some (off, q.1.2, q.2)
+    | .reg _ => none
+
+/-- The store `gen_call_args` emits for a stack-passed argument (offset, value, byte size). -/
+def argStore (e : Nat × Nat × Nat) : MInst :=
+  .store (storeOpOfBytes e.2.2) (.vreg e.2.1 .int) (.spOffset e.1) trustedFlags
+
+theorem zip3_map (g : Nat → Reg) : ∀ (locs : List ArgLoc) (args bytes : List Nat),
+    (locs.zip (args.map g)).zip bytes = ((locs.zip args).zip bytes).map fun q => ((q.1.1, g q.1.2), q.2)
+  | [], _, _ => by simp
+  | _ :: _, [], _ => by simp
+  | _ :: _, _ :: _, [] => by simp
+  | l :: locs, a :: args, b :: bytes => by simp [zip3_map g locs args bytes]
+
+theorem argRegPairs_map : ∀ (T : List ((ArgLoc × Nat) × Nat)),
+    argRegPairs (T.map fun q => ((q.1.1, Reg.vreg q.1.2 .int), q.2)) = retPairs (regPairsOf T)
+  | [] => rfl
+  | ((.reg p, x), b) :: T => by
+    simp only [List.map_cons, argRegPairs, regPairsOf, List.filterMap_cons] at *
+    rw [show retPairs ((x, p) :: _) = (Reg.vreg x .int, p) :: retPairs _ from rfl]
+    congr 1
+    exact argRegPairs_map T
+  | ((.stack off, x), b) :: T => by
+    simp only [List.map_cons, argRegPairs, regPairsOf, List.filterMap_cons] at *
+    exact argRegPairs_map T
+
+theorem argStores_map : ∀ (T : List ((ArgLoc × Nat) × Nat)),
+    argStores (T.map fun q => ((q.1.1, Reg.vreg q.1.2 .int), q.2)) = (stackEnts T).map argStore
+  | [] => rfl
+  | ((.reg p, x), b) :: T => by
+    simp only [List.map_cons, argStores, stackEnts, List.filterMap_cons] at *
+    exact argStores_map T
+  | ((.stack off, x), b) :: T => by
+    simp only [List.map_cons, argStores, stackEnts, List.filterMap_cons, List.map_cons] at *
+    rw [show argStore (off, x, b) = .store (storeOpOfBytes b) (.vreg x .int) (.spOffset off)
+      trustedFlags from rfl]
+    congr 1
+    exact argStores_map T
+
+/-- **`gen_call_args`** (any number of parameters): the register-passed arguments become the
+call's uses, every stack-passed one a store. -/
+theorem ctor_gen_call_args_gen (st : LState) (s : Clif.Signature) (args : List Nat)
+    {bytes : List Nat} (hb : sigParamBytes s = .ok bytes) {locs : List ArgLoc} {S : Nat}
+    (hl : sigArgLocs s = .ok (locs, S)) (v : V) (st' : LState) :
+    externCtor ctx T.gen_call_args
+      [.op (.sig s), .regsVec ((args.map fun a => Reg.vreg a .int).map fun r => [r])] st = .ok (v, st') ↔
+      v = .op (.callArgs (retPairs (regPairsOf ((locs.zip args).zip bytes)))) ∧
+        st' = { st with emitted := st.emitted ++
+          ((stackEnts ((locs.zip args).zip bytes)).map argStore).toArray } := by
+  have : externCtor ctx T.gen_call_args
+      [.op (.sig s), .regsVec ((args.map fun a => Reg.vreg a .int).map fun r => [r])] st =
+      match sigArgLocs s, ((args.map fun a => Reg.vreg a .int).map fun r => [r]).mapM single? with
+      | .ok (locs, _), some rs =>
+        let bytes := match sigParamBytes s with | .ok b => b | _ => []
+        let r := (((locs.zip rs).zip bytes).foldl argStep (#[], st))
+        .ok (.op (.callArgs r.1.toList), r.2)
+      | .error e, _ => .unmodeled s!"gen_call_args: {e}"
+      | _, none => .unmodeled "gen_call_args: multi-register value" := rfl
+  rw [this, hl, hb, mapM_single_map]
+  simp only []
+  rw [foldl_argStep_gen, zip3_map, argRegPairs_map, argStores_map]
+  simp [eq_comm]
+
+theorem ctor_gen_call_info_gen (st : LState) (s : Clif.Signature) (n : String)
+    (us ds : List (Reg × Reg)) (a b : V) {locs : List ArgLoc} {S : Nat}
+    (hl : sigArgLocs s = .ok (locs, S)) (v : V) (st' : LState) :
+    externCtor ctx T.gen_call_info [.op (.sig s), .op (.extName n), .op (.callArgs us),
+      .op (.callRets ds), a, b] st = .ok (v, st') ↔
+      v = .op (.callInfo ⟨.sym n, us, ds⟩) ∧ st' = { st with outgoing := max st.outgoing S } := by
+  have : externCtor ctx T.gen_call_info [.op (.sig s), .op (.extName n), .op (.callArgs us),
+      .op (.callRets ds), a, b] st = match sigArgLocs s with
+      | .ok (_, stack) => .ok (.op (.callInfo ⟨.sym n, us, ds⟩),
+          { st with outgoing := max st.outgoing stack })
+      | .error e => .unmodeled s!"gen_call_info: {e}" := rfl
+  rw [this, hl]; simp [eq_comm]
+
+theorem ctor_gen_call_ind_info_gen (st : LState) (s : Clif.Signature) (r : Reg)
+    (us ds : List (Reg × Reg)) (a : V) {locs : List ArgLoc} {S : Nat}
+    (hl : sigArgLocs s = .ok (locs, S)) (v : V) (st' : LState) :
+    externCtor ctx T.gen_call_ind_info [.op (.sig s), .reg r, .op (.callArgs us),
+      .op (.callRets ds), a] st = .ok (v, st') ↔
+      v = .op (.callInfo ⟨.reg r, us, ds⟩) ∧ st' = { st with outgoing := max st.outgoing S } := by
+  have : externCtor ctx T.gen_call_ind_info [.op (.sig s), .reg r, .op (.callArgs us),
+      .op (.callRets ds), a] st = match sigArgLocs s with
+      | .ok (_, stack) => .ok (.op (.callInfo ⟨.reg r, us, ds⟩),
+          { st with outgoing := max st.outgoing stack })
+      | .error e => .unmodeled s!"gen_call_ind_info: {e}" := rfl
+  rw [this, hl]; simp [eq_comm]
+
+/-! ### Specialisation: at most 8 parameters -/
+
+theorem locsOf_of_regs {s : Clif.Signature} {bytes : List Nat}
+    (hb : sigParamBytes s = .ok bytes) (h8 : bytes.length ≤ 8) :
+    locsOf s = (abiArgIdx s.params 0).map fun n => ArgLoc.reg (.x n) := by
+  simp [locsOf, sigArgLocs_regs hb h8]
+
+theorem regArgVals_of_regs {s : Clif.Signature} {bytes : List Nat}
+    (hb : sigParamBytes s = .ok bytes) (h8 : bytes.length ≤ 8) {vals : List Clif.Val}
+    (hl : vals.length = s.params.length) : regArgVals s vals = vals := by
+  rw [regArgVals, locsOf_of_regs hb h8]
+  have hlen : (abiArgIdx s.params 0).length = vals.length := by rw [abiArgIdx_length, hl]
+  clear hl
+  generalize abiArgIdx s.params 0 = L at hlen
+  induction L generalizing vals with
+  | nil =>
+    cases vals with
+    | nil => rfl
+    | cons => simp at hlen
+  | cons n L ih =>
+    cases vals with
+    | nil => simp at hlen
+    | cons v vals =>
+      simp only [List.length_cons, Nat.add_right_cancel_iff] at hlen
+      simp [ih hlen]
+
+theorem stackArgsAt_of_regs {s : Clif.Signature} {bytes : List Nat}
+    (hb : sigParamBytes s = .ok bytes) (h8 : bytes.length ≤ 8) (vals : List Clif.Val)
+    (w : Arm.ArmState) : StackArgsAt s vals w := by
+  intro off v hm
+  rw [locsOf_of_regs hb h8] at hm
+  obtain ⟨i, hi⟩ := List.mem_iff_getElem?.mp hm
+  simp [List.getElem?_zip_eq_some] at hi
+
+/-- **Specialisation**: with at most 8 parameters every argument of a call is in a register,
+and `ArgsAt` is the former premise (`AllHold`, one value per parameter). -/
+theorem argsAt_iff_of_regs {s : Clif.Signature} {bytes : List Nat}
+    (hb : sigParamBytes s = .ok bytes) (h8 : bytes.length ≤ 8) {vals : List Clif.Val}
+    {args : List CV} {w : Arm.ArmState} (hl : vals.length = s.params.length) :
+    ArgsAt s vals args w ↔ AllHold vals args := by
+  simp only [ArgsAt, regArgVals_of_regs hb h8 hl, hl, true_and]
+  exact ⟨fun h => h.1, fun h => ⟨h, stackArgsAt_of_regs hb h8 vals w⟩⟩
+
 end
 
 end Backend.Proof

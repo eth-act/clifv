@@ -67,13 +67,13 @@ theorem mem_lower_2518 : rule_lower_2518 ∈ program.rulesOf TId.lower :=
 /-- **`CallRulesCorrect`**: under the callee contract, the `call` rules of `lower` (`bl`, rule id
 1031; GOT + `blr`, rule id 1032) are correct. -/
 theorem callRulesCorrect : CallRulesCorrect program := by
-  intro F isem MR env cp exts hR hMR hCR r hr hroot
+  intro F isem MR env cp exts sb syms outB hR hMR hMem hout hCR r hr hroot
   simp only [callRootRule, Bool.or_eq_true, beq_iff_eq] at hroot
   rcases hroot with h | h
   · rw [eq_of_mem_of_id lower_ids_nodup hr mem_lower_2508 (by rw [h]; rfl)]
-    exact call_bl_ruleOk data_program hR hMR hCR
+    exact call_bl_ruleOk data_program hR hMR hMem hout hCR
   · rw [eq_of_mem_of_id lower_ids_nodup hr mem_lower_2518 (by rw [h]; rfl)]
-    exact call_got_ruleOk data_program hR hMR hCR
+    exact call_got_ruleOk data_program hR hMR hMem hout hCR
 
 theorem mem_lower_2529 : rule_lower_2529 ∈ program.rulesOf TId.lower :=
   List.mem_iff_getElem?.mpr ⟨345, by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl⟩

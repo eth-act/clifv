@@ -64,24 +64,27 @@ def spv (s : Arm.ArmState) : BitVec 64 := Arm.r (.GPR 31#5) s
 /-! ## The subset -/
 
 /-- The CLIF functions the theorem covers: clif-subset-v2 E (`Compile.functionE`), plus the
-current restrictions of the proof (e2e.md, "Remaining"): parameters passed in registers,
-calls only to externs (calls between compiled functions compose by induction on the call
-depth, not done yet; for indirect calls this is the run premise `TrapsExplicit.indirect`),
-externs and indirect calls with at most 8 (register) parameters (no stack-passed call
-arguments), and signatures (the function's, its externs' and its indirect calls') with `normal`
-parameters and returns plus at most one `sret` struct-return pointer (`sigAbiOk`: in x8,
-returned in x0, no other returns); other special-purpose parameters are compiled and flagged
-unverified. -/
+current restrictions of the proof (e2e.md, "Remaining"): calls only to externs (calls between
+compiled functions compose by induction on the call depth, not done yet; for indirect calls
+this is the run premise `TrapsExplicit.indirect`), `try_call`s and indirect calls with at most
+8 (register) parameters (stack-passed arguments only for `call`), and signatures (the
+function's, its externs' and its indirect calls') with `normal` parameters and returns plus at
+most one `sret` struct-return pointer (`sigAbiOk`: in x8, returned in x0, no other returns);
+other special-purpose parameters are compiled and flagged unverified. Parameters beyond x0..x7
+(the function's own, and a `call`'s arguments) are passed on the stack (agent/stack-tls-proof:
+`ArgsIn`, `Backend.Proof.ArgsAt`). -/
 structure InSubset (p : Clif.Program) (f : Clif.Function) : Prop where
   func : p.func? f.name = some f
   subsetE : Compile.functionE f = true
-  regParams : f.sig.params.length ≤ 8
   externCalls : ∀ b ∈ f.blocks, ∀ st ∈ b.body, ∀ fn args, st.inst = .call fn args →
     ∀ e, f.extern? fn = some e → p.func? e.name = none
   /-- a `try_call` calls an extern, like `externCalls` -/
   tryExterns : ∀ b ∈ f.blocks, ∀ fn args et, b.term = .tryCall fn args et →
     ∀ e, f.extern? fn = some e → p.func? e.name = none
-  callRegArgs : ∀ e ∈ f.externs, e.2.sig.params.length ≤ 8
+  /-- a `try_call` passes its arguments in registers (its callee takes at most 8 parameters;
+  `Backend.regArgCalls`) -/
+  tryRegArgs : ∀ b ∈ f.blocks, ∀ fn args et, b.term = .tryCall fn args et →
+    ∀ e, f.extern? fn = some e → e.sig.params.length ≤ 8
   abiSigs : sigAbiOk f.sig = true ∧ ∀ e ∈ f.externs, sigAbiOk e.2.sig = true
   /-- the signatures of the indirect calls (`call_indirect`, `try_call_indirect`) take at most
   8 (register) parameters and pass `sigAbiOk` (`Backend.indSigsOk`) -/
@@ -104,8 +107,28 @@ theorem indSigs_eq_nil {f : Clif.Function}
     | tryCallIndirect callee args et => exact absurd h (htci B hB callee args et)
     | _ => rfl
 
-/-- **Specialisation**: for a function without indirect calls, `InSubset` is the former subset
-(the same fields, without `indSigs`, which is vacuous: `indSigs_eq_nil`). -/
+/-- **Specialisation**: the former subset (with at most 8 parameters for `f` and every
+extern, `regParams`/`callRegArgs`, and the indirect-call signature condition) is inside the
+new one: `tryRegArgs` follows from `callRegArgs`; for a function without indirect calls
+`indSigs` is vacuous (`indSigs_eq_nil`). -/
+theorem InSubset.of_regArgs {p : Clif.Program} {f : Clif.Function}
+    (hfunc : p.func? f.name = some f) (hE : Compile.functionE f = true)
+    (_hreg : f.sig.params.length ≤ 8)
+    (hext : ∀ b ∈ f.blocks, ∀ st ∈ b.body, ∀ fn args, st.inst = .call fn args →
+      ∀ e, f.extern? fn = some e → p.func? e.name = none)
+    (htry : ∀ b ∈ f.blocks, ∀ fn args et, b.term = .tryCall fn args et →
+      ∀ e, f.extern? fn = some e → p.func? e.name = none)
+    (hcra : ∀ e ∈ f.externs, e.2.sig.params.length ≤ 8)
+    (habi : sigAbiOk f.sig = true ∧ ∀ e ∈ f.externs, sigAbiOk e.2.sig = true)
+    (hind : ∀ s ∈ indSigs f, s.params.length ≤ 8 ∧ sigAbiOk s = true) :
+    InSubset p f :=
+  ⟨hfunc, hE, hext, htry, fun _ _ fn _ _ _ e he => by
+    unfold Clif.Function.extern? at he
+    obtain ⟨l₁, l₂, he2, -⟩ := List.lookup_eq_some_iff.mp he
+    exact hcra (fn, e) (by rw [he2]; simp), habi, hind⟩
+
+/-- **Specialisation**: for a function without indirect calls, the former subset (without
+`indSigs`, which is vacuous: `indSigs_eq_nil`). -/
 theorem InSubset.of_indirectFree {p : Clif.Program} {f : Clif.Function}
     (hfunc : p.func? f.name = some f) (hE : Compile.functionE f = true)
     (hreg : f.sig.params.length ≤ 8)
@@ -118,7 +141,7 @@ theorem InSubset.of_indirectFree {p : Clif.Program} {f : Clif.Function}
     (hci : ∀ B ∈ f.blocks, ∀ st ∈ B.body, ∀ sig callee args, st.inst ≠ .callIndirect sig callee args)
     (htci : ∀ B ∈ f.blocks, ∀ callee args et, B.term ≠ .tryCallIndirect callee args et) :
     InSubset p f :=
-  ⟨hfunc, hE, hreg, hext, htry, hcra, habi, by rw [indSigs_eq_nil hci htci]; simp⟩
+  .of_regArgs hfunc hE hreg hext htry hcra habi (by rw [indSigs_eq_nil hci htci]; simp)
 
 /-! ## The compiled code -/
 
@@ -169,9 +192,25 @@ structure Rel where
   F : BitVec 64 → Prop
   syms : String → Option Nat
   slotOff : Nat
+  /-- the size of the outgoing stack-argument area at `sp` of the VCode world (M6: the
+  allocated frame's `intBase`; `0` for a function whose calls pass no argument on the stack) -/
+  out : Nat
 
 /-- Address of the stack-slot region in world `w`. -/
 def Rel.slotReg (Γ : Rel) (w : Arm.ArmState) : Nat := (spv w).toNat + Γ.slotOff
+
+/-- The outgoing stack-argument area `[sp, sp + out)` of world `w` (agent/stack-tls-proof): it
+fits the address space, avoids the frame addresses `F`, and no byte of a live CLIF allocation is
+in it (the calls write their stack-passed arguments there). For `out = 0` it holds trivially
+(`outRel_zero`). -/
+def OutRel (F : BitVec 64 → Prop) (out : Nat) (cm : Clif.Mem) (w : Arm.ArmState) : Prop :=
+  out ≤ 2 ^ 64 ∧ Avoids F out (spv w) ∧
+    ∀ a n, cm.valid a n = true → ∀ k < n, ∀ j < out,
+      BitVec.ofNat 64 (a + k) ≠ spv w + BitVec.ofNat 64 j
+
+theorem outRel_zero (F : BitVec 64 → Prop) (cm : Clif.Mem) (w : Arm.ArmState) :
+    OutRel F 0 cm w :=
+  ⟨by decide, fun _ h => absurd h (Nat.not_lt_zero _), fun _ _ _ _ _ _ h => absurd h (Nat.not_lt_zero _)⟩
 
 /-- The stack slots of an activation are at the frame's slot region. -/
 def SlotRel (f : Clif.Function) (base : Nat) (slots : List (Clif.SlotId × Nat)) : Prop :=
@@ -181,7 +220,15 @@ def SlotRel (f : Clif.Function) (base : Nat) (slots : List (Clif.SlotId × Nat))
 /-- The CLIF memory/slots ↔ VCode world relation M4's rule statements are relative to. -/
 def Rel.holds (Γ : Rel) (f : Clif.Function) (slots : List (Clif.SlotId × Nat)) (cm : Clif.Mem)
     (w : Arm.ArmState) : Prop :=
-  MemRel Γ.F Γ.syms cm w ∧ SlotRel f (Γ.slotReg w) slots
+  MemRel Γ.F Γ.syms cm w ∧ SlotRel f (Γ.slotReg w) slots ∧ OutRel Γ.F Γ.out cm w
+
+/-- **Specialisation**: without an outgoing stack-argument area (`out = 0`), `Rel.holds` is the
+former relation (memory and slots). -/
+theorem Rel.holds_zero {F : BitVec 64 → Prop} {syms : String → Option Nat} {slotOff : Nat}
+    {f : Clif.Function} {slots : List (Clif.SlotId × Nat)} {cm : Clif.Mem} {w : Arm.ArmState} :
+    Rel.holds ⟨F, syms, slotOff, 0⟩ f slots cm w ↔
+      MemRel F syms cm w ∧ SlotRel f ((spv w).toNat + slotOff) slots :=
+  ⟨fun h => ⟨h.1, h.2.1⟩, fun h => ⟨h.1, h.2, outRel_zero F cm w⟩⟩
 
 /-- Live CLIF memory agrees with the Arm memory (the observable memory at return). -/
 def MemAgree (cm : Clif.Mem) (s : Arm.ArmState) : Prop :=
@@ -271,17 +318,24 @@ structure AbiEntry (fb : FnBin) (base ra : BitVec 64) (s : Arm.ArmState) : Prop 
   spAligned : (spv s).toNat % 16 = 0
   fits : base.toNat + 4 * fb.words.size ≤ 2 ^ 64
 
-/-- The arguments in their AAPCS64 registers (register parameters only, `InSubset.regParams`):
-parameter `i` of signature `sig` in `x (argIdx sig i)` — x0.. in order, an `sret` struct-return
-pointer in x8 (`sigArgLocs`). Without an `sret` parameter, argument `i` is in `x i`. -/
-def ArgsIn (sig : Clif.Signature) (args : List Clif.Val) (s : Arm.ArmState) : Prop :=
-  ∀ i v, args[i]? = some v → XHolds v (xreg (argIdx sig i) s)
+/-- A stack-passed argument `v` at offset `off` of the caller's outgoing area at `sp` of `s`
+(AAPCS64): its `ty.bytes` bytes are inside the address space, not code, and hold its bits
+(little-endian). -/
+structure StackArgAt (v : Clif.Val) (off : Nat) (s : Arm.ArmState) : Prop where
+  fits : (spv s).toNat + off + v.ty.bytes ≤ 2 ^ 64
+  noCode : ∀ k < v.ty.bytes, ¬ CodeAddr s (spv s + BitVec.ofNat 64 (off + k))
+  bytes : (Arm.read_mem_bytes v.ty.bytes (spv s + BitVec.ofNat 64 off) s).setWidth v.ty.width =
+    v.bits
 
-/-- For a signature without `sret` parameter, `ArgsIn` is "argument `i` in `x i`". -/
-theorem argsIn_iff_of_noSret {sig : Clif.Signature} {args : List Clif.Val} {s : Arm.ArmState}
-    (h : sig.params.any (·.purpose == .sret) = false) :
-    ArgsIn sig args s ↔ ∀ i v, args[i]? = some v → XHolds v (xreg i s) := by
-  simp only [ArgsIn, argIdx_of_noSret h]
+/-- The arguments where AAPCS64 puts them (`sigArgLocs`, agent/stack-tls-proof): a parameter at a
+register location in that register (low bits; x0.. in order, an `sret` struct-return pointer in
+x8), a parameter at a stack location `off` in the caller's outgoing area at `sp + off`
+(`StackArgAt`). With at most 8 parameters every argument is in a register and this is the
+former "argument `i` in `x (argIdx sig i)`" (`E2E.argsIn_iff_of_regs`). -/
+def ArgsIn (sig : Clif.Signature) (args : List Clif.Val) (s : Arm.ArmState) : Prop :=
+  ∀ loc v, (loc, v) ∈ (locsOf sig).zip args → match loc with
+    | .reg r => VHolds v (regVal s r)
+    | .stack off => StackArgAt v off s
 
 /-- **Resource precondition**: the frame (fp/lr pair and `frameSize` bytes) fits below sp
 without wrapping, and does not overlap the code. Stack used by callees is part of the callee
@@ -345,7 +399,7 @@ at an entry state whose slots/memory are related to the VCode entry world `w₀`
 def IselSim (sem : Sem) (Γ : Rel) (env : Clif.Env) (p : Clif.Program) (f : Clif.Function)
     (vc : VCode) : Prop :=
   ∀ args cs w₀ (ρ₀ : Nat → CV), ClifEntry f args cs → Γ.holds f cs.frame.slots cs.mem w₀ →
-    ArgsIn f.sig args w₀ → TrapsExplicit env p cs → ∀ fuel,
+    ArgsAtEntry Γ.F f.sig args w₀ → TrapsExplicit env p cs → ∀ fuel,
     (∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
       ∃ us outs w, VReturns vc sem ρ₀ w₀ us outs w ∧
         us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧

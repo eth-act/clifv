@@ -51,6 +51,16 @@ theorem os_load_slot (op : LoadOp) (hop : op ≠ .fpuLoad128) (d : Nat) (off : I
     OperandsSound F (execMInst ctx env) (csem F ctx X) (.load op (.vreg d .int) (.slotOffset off) fl) :=
   os_of_corr rfl _ (by assign_tac) (by fo_tac) rfl rfl (corr_load0 F ctx env op hop d off fl)
 
+theorem os_load_sp (op : LoadOp) (hop : op ≠ .fpuLoad128) (d : Nat) (off : Int)
+    (fl : Clif.MemFlags) :
+    OperandsSound F (execMInst ctx env) (csem F ctx X) (.load op (.vreg d .int) (.spOffset off) fl) :=
+  os_of_corr rfl _ (by assign_tac) (by fo_tac) rfl rfl (corr_load_sp F ctx env op hop d off fl)
+
+theorem os_load_fp (op : LoadOp) (hop : op ≠ .fpuLoad128) (d : Nat) (off : Int)
+    (fl : Clif.MemFlags) :
+    OperandsSound F (execMInst ctx env) (csem F ctx X) (.load op (.vreg d .int) (.fpOffset off) fl) :=
+  os_of_corr rfl _ (by assign_tac) (by fo_tac) rfl rfl (corr_load_fp F ctx env op hop d off fl)
+
 theorem os_load_unscaled (op : LoadOp) (hop : op ≠ .fpuLoad128) (d n : Nat) (off : Int)
     (h1 : -256 ≤ off) (h2 : off < 256) (fl : Clif.MemFlags) :
     OperandsSound F (execMInst ctx env) (csem F ctx X)
@@ -103,6 +113,16 @@ theorem os_store_slot (op : StoreOp) (hop : op ≠ .fpuStore128) (d : Nat) (off 
     (fl : Clif.MemFlags) :
     OperandsSound F (execMInst ctx env) (csem F ctx X) (.store op (.vreg d .int) (.slotOffset off) fl) :=
   os_of_corr rfl _ (by assign_tac) (by fo_tac) rfl rfl (corr_store0 F ctx env op hop d off fl)
+
+theorem os_store_sp (op : StoreOp) (hop : op ≠ .fpuStore128) (d : Nat) (off : Int)
+    (fl : Clif.MemFlags) :
+    OperandsSound F (execMInst ctx env) (csem F ctx X) (.store op (.vreg d .int) (.spOffset off) fl) :=
+  os_of_corr rfl _ (by assign_tac) (by fo_tac) rfl rfl (corr_store_sp F ctx env op hop d off fl)
+
+theorem os_store_fp (op : StoreOp) (hop : op ≠ .fpuStore128) (d : Nat) (off : Int)
+    (fl : Clif.MemFlags) :
+    OperandsSound F (execMInst ctx env) (csem F ctx X) (.store op (.vreg d .int) (.fpOffset off) fl) :=
+  os_of_corr rfl _ (by assign_tac) (by fo_tac) rfl rfl (corr_store_fp F ctx env op hop d off fl)
 
 theorem os_store_unscaled (op : StoreOp) (hop : op ≠ .fpuStore128) (d n : Nat) (off : Int)
     (h1 : -256 ≤ off) (h2 : off < 256) (fl : Clif.MemFlags) :

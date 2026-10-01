@@ -237,6 +237,8 @@ macro_rules
     all_goals first
       | (first
           | exact os_load_slot _ _ _ _ _ hop _ _ _
+          | exact os_load_sp _ _ _ _ _ hop _ _ _
+          | exact os_load_fp _ _ _ _ _ hop _ _ _
           | exact os_load_unscaled _ _ _ _ _ hop _ _ _ hm.1 hm.2 _
           | exact os_load_uoff _ _ _ _ _ hop _ _ _ hm.1 hm.2 _
           | exact os_load_regReg _ _ _ _ _ hop _ _ _ _
@@ -244,6 +246,8 @@ macro_rules
           | exact os_load_regScaledExtended _ _ _ _ _ hop _ _ _ _ hm _
           | exact os_load_regExtended _ _ _ _ _ hop _ _ _ _ hm _
           | exact os_store_slot _ _ _ _ _ hop _ _ _
+          | exact os_store_sp _ _ _ _ _ hop _ _ _
+          | exact os_store_fp _ _ _ _ _ hop _ _ _
           | exact os_store_unscaled _ _ _ _ _ hop _ _ _ hm.1 hm.2 _
           | exact os_store_uoff _ _ _ _ _ hop _ _ _ hm.1 hm.2 _
           | exact os_store_regReg _ _ _ _ _ hop _ _ _ _

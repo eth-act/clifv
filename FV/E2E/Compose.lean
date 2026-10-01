@@ -27,15 +27,15 @@ theorem memAgree_of {F : BitVec 64 → Prop} {syms} {cm : Clif.Mem} {w s : Arm.A
 /-- **Composition.** -/
 theorem backend_correct_of_layers {p : Clif.Program} {f : Clif.Function} {vc vcp : VCode}
     {af : AFunc} {fb : FnBin} {sem : Arm.ArmState → Sem} {F : Arm.ArmState → BitVec 64 → Prop}
-    {syms : String → Option Nat} {slotOff : Nat}
+    {syms : String → Option Nat} {slotOff out : Nat}
     {astep : Arm.ArmState → Arm.ArmState} {env : Clif.Env}
-    (hIsel : ∀ s, IselSim (sem s) ⟨F s, syms, slotOff⟩ env p f vc)
+    (hIsel : ∀ s, IselSim (sem s) ⟨F s, syms, slotOff, out⟩ env p f vc)
     (hPrep : ∀ s, PrepareCorrect (sem s) vc vcp)
     (hReg : RegLevelCorrect sem F astep vcp af fb)
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hbe : BodyEntry af s w₀)
-    (hargs : ArgsIn f.sig args w₀)
-    (hcs : ClifEntry f args cs) (hrel : Rel.holds ⟨F s, syms, slotOff⟩ f cs.frame.slots cs.mem w₀)
+    (hargs : ArgsAtEntry (F s) f.sig args w₀)
+    (hcs : ClifEntry f args cs) (hrel : Rel.holds ⟨F s, syms, slotOff, out⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ArmRefines fb base ra astep s (Clif.runLoop env p fuel cs) := by
   have hI := hIsel s args cs w₀ (fun _ => 0) hcs hrel hargs htr fuel

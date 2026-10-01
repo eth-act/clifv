@@ -188,8 +188,8 @@ theorem tryRets_get {ctx : Ctx} {N b : Nat}
 theorem try_sym_lowerTryOk {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} {env : Clif.Env}
     {cp : Clif.Program} {exts : List Clif.ExtFunc} (hCR : CallsRefine F env exts MR isem)
     {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) {fn : Clif.FnRef} {args : List Nat}
-    {ext : Clif.ExtFunc} (hext : f.extern? fn = some ext) (hin : ext ∈ exts)
-    (h8 : ext.sig.params.length ≤ 8) {info : TryInfo} {b : Nat}
+    {ext : Clif.ExtFunc} (hext : f.extern? fn = some ext) (hin : ext ∈ exts) {bytes : List Nat}
+    (hb : sigParamBytes ext.sig = .ok bytes) (h8 : ext.sig.params.length ≤ 8) {info : TryInfo} {b : Nat}
     (htr : ctx.tryRegs = ((List.range (sigRets ext.sig).length).map fun j => Reg.vreg (b + j) .int,
       [.vreg b .int, .vreg (b + 1) .int]))
     {st st' : LState} (hst' : st'.nextVreg = st.nextVreg) :
@@ -215,8 +215,9 @@ theorem try_sym_lowerTryOk {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} 
         (retPairs (args.zip ((abiArgIdx ext.sig.params 0).map Reg.x)))
         (callDefs (outDefs b (max (sigRets ext.sig).length 2))) info
         ((args.zip ((abiArgIdx ext.sig.params 0).map Reg.x)).map (ρ ·.1)) (args.map ρ) vals rvals
-        cm' hg (.inl ⟨rfl, huses⟩) (by rw [hdl]; exact Nat.le_max_left _ _) (by omega)
-        (allHold_args hvh hvals) hmr hgo hrN
+        cm' hg (.inl ⟨rfl, huses⟩) (by rw [hdl]; exact Nat.le_max_left _ _) 
+        ((argsAt_iff_of_regs hb (by rw [sigParamBytes_length hb]; exact h8) hvl).mpr
+          (allHold_args hvh hvals)) hmr hgo hrN
       have hol' : outs.length = (outDefs b (max (sigRets ext.sig).length 2)).length := by
         rw [hol, hdl]; simp [outDefs]
       rw [show ∀ c : CallInfo, tryFix info [MInst.call c] = [MInst.tryCall c info] from
@@ -239,7 +240,7 @@ theorem try_bl_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) {F : BitVec 
     {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program} (hR : Refines F isem)
     (hMR : MRStable F MR) {exts : List Clif.ExtFunc} (hCR : CallsRefine F env exts MR isem) :
     TryRuleOk isem MR env cp exts p rule_lower_2542 := by
-  intro f ctx hctx hreg hexts ti fn args et data sig items targets info lo st1 hd he hi hinfo htr
+  intro f ctx hctx hexts ti fn args et data sig items targets info lo st1 hreg hd he hi hinfo htr
     hvb cfg hc m n st tr env' s1 out st' tr' hm hn hst _ hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
   obtain ⟨n, rfl⟩ : ∃ n', n = n' + 100 := ⟨n - 100, by omega⟩
@@ -270,7 +271,7 @@ theorem try_bl_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) {F : BitVec 
   rw [hinfo] at hti'
   cases hti'
   obtain ⟨bytes, hb⟩ := ctor_gen_call_args_bytes ‹externCtor ctx T.gen_call_args _ _ = _›
-  have h8 : bytes.length ≤ 8 := sigParamBytes_length hb ▸ hreg fn _ hext
+  have h8 : bytes.length ≤ 8 := sigParamBytes_length hb ▸ hreg _ hext
   have hrs := mapM_valueReg hctx ‹List.mapM ctx.valueReg? args = some _›
   subst hrs
   simp only [ctor_gen_call_args_iff _ _ _ hb h8, mapM_single_map, Option.some.injEq,
@@ -294,7 +295,7 @@ theorem try_bl_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) {F : BitVec 
     simp [callDefs, outDefs, List.map_map, Function.comp_def]
   rw [hcd] at hs2
   simp only at hs1 hs2
-  refine ⟨_, ?_, try_sym_lowerTryOk hCR hctx hext (hexts fn _ hext) (hreg fn _ hext) htrs
+  refine ⟨_, ?_, try_sym_lowerTryOk hCR hctx hext (hexts fn _ hext) hb (hreg _ hext) htrs
     (by rw [hs2, hs1]; simp [LState.emit])⟩
   rw [hs2, hs1]; simp [LState.emit]
 
@@ -302,7 +303,8 @@ theorem try_got_lowerTryOk {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} 
     {cp : Clif.Program} (hMR : MRStable F MR) {exts : List Clif.ExtFunc}
     (hCR : CallsRefine F env exts MR isem) {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx)
     {fn : Clif.FnRef} {args : List Nat} {ext : Clif.ExtFunc} (hext : f.extern? fn = some ext)
-    (hin : ext ∈ exts) (h8 : ext.sig.params.length ≤ 8) {info : TryInfo} {b : Nat}
+    (hin : ext ∈ exts) {bytes : List Nat} (hb : sigParamBytes ext.sig = .ok bytes)
+    (h8 : ext.sig.params.length ≤ 8) {info : TryInfo} {b : Nat}
     (htr : ctx.tryRegs = ((List.range (sigRets ext.sig).length).map fun j => Reg.vreg (b + j) .int,
       [.vreg b .int, .vreg (b + 1) .int]))
     {st st' : LState} (hargs : ∀ x ∈ args, x < st.nextVreg)
@@ -354,8 +356,9 @@ theorem try_got_lowerTryOk {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} 
         (upd ρ t (ofX (sym ext.name)) t ::
           (args.zip ((abiArgIdx ext.sig.params 0).map Reg.x)).map (upd ρ t (ofX (sym ext.name)) ·.1))
         (args.map ρ) vals rvals cm' hg
-        (.inr ⟨_, rfl, by rw [ht1, huses]⟩) (by rw [hdl]; exact Nat.le_max_left _ _) (by omega)
-        (allHold_args hvh hvals) hmr1 hgo hrN
+        (.inr ⟨_, rfl, by rw [ht1, huses]⟩) (by rw [hdl]; exact Nat.le_max_left _ _) 
+        ((argsAt_iff_of_regs hb (by rw [sigParamBytes_length hb]; exact h8) hvl).mpr
+          (allHold_args hvh hvals)) hmr1 hgo hrN
       have hol' : outs.length = (outDefs b (max (sigRets ext.sig).length 2)).length := by
         rw [hol, hdl]; simp [outDefs]
       have hrun2 := seqRun_tryCall_reg (info := info) hi hol'
@@ -383,7 +386,7 @@ theorem try_got_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) {F : BitVec
     {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program} (hR : Refines F isem)
     (hMR : MRStable F MR) {exts : List Clif.ExtFunc} (hCR : CallsRefine F env exts MR isem) :
     TryRuleOk isem MR env cp exts p rule_lower_2551 := by
-  intro f ctx hctx hreg hexts ti fn args et data sig items targets info lo st1 hd he hi hinfo htr
+  intro f ctx hctx hexts ti fn args et data sig items targets info lo st1 hreg hd he hi hinfo htr
     hvb cfg hc m n st tr env' s1 out st' tr' hm hn hst _ hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
   obtain ⟨n, rfl⟩ : ∃ n', n = n' + 100 := ⟨n - 100, by omega⟩
@@ -416,7 +419,7 @@ theorem try_got_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) {F : BitVec
   rw [hinfo] at hti'
   cases hti'
   obtain ⟨bytes, hb⟩ := ctor_gen_call_args_bytes ‹externCtor ctx T.gen_call_args _ _ = _›
-  have h8 : bytes.length ≤ 8 := sigParamBytes_length hb ▸ hreg fn _ hext
+  have h8 : bytes.length ≤ 8 := sigParamBytes_length hb ▸ hreg _ hext
   have hbelow := mapM_valueReg_below hvb ‹List.mapM ctx.valueReg? args = some _›
   have hrs := mapM_valueReg hctx ‹List.mapM ctx.valueReg? args = some _›
   subst hrs
@@ -445,7 +448,7 @@ theorem try_got_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) {F : BitVec
   simp only at hs0 hs1 hs2
   have hfr : ∀ s : LState, (s.fresh .int).1 = .vreg s.nextVreg .int := fun s => rfl
   rw [hfr] at hs2 hs0
-  refine ⟨_, ?_, try_got_lowerTryOk hMR hCR hctx hext (hexts fn _ hext) (hreg fn _ hext) htrs
+  refine ⟨_, ?_, try_got_lowerTryOk hMR hCR hctx hext (hexts fn _ hext) hb (hreg _ hext) htrs
     (fun x hx => by have := hbelow x hx; omega)
     (by rw [hs2, hs1, hs0]; simp [LState.emit, LState.fresh])⟩
   rw [hs2, hs1, hs0]

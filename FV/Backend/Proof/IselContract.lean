@@ -704,6 +704,10 @@ def amodeAddr (sb : Nat) (am : AMode) (bytes : Nat) (uses : List CV) (w : Arm.Ar
   | .unsignedOffset (.vreg _ .int) off, [a] =>
     if off % bytes = 0 ∧ off ≤ 4095 * bytes then some (lo64 a + BitVec.ofNat 64 off) else none
   | .slotOffset off, [] => some (spOf w + BitVec.ofInt 64 (off + sb))
+  -- the outgoing stack arguments of a call (`gen_call_args`) and the incoming ones (the entry
+  -- block's loads, `lowerFunction`)
+  | .spOffset off, [] => some (spOf w + BitVec.ofInt 64 off)
+  | .fpOffset off, [] => some (Arm.r (.GPR 29#5) w + BitVec.ofInt 64 off)
   | _, _ => none
 
 /-- Sign-extending loads (`ldrsb`/`ldrsh`/`ldrsw` into an X register). -/
@@ -846,19 +850,117 @@ def LowerRulesCorrect (p : Program) : Prop :=
     ∀ r ∈ p.rulesOf TId.lower, closureRoot r = true → callRootRule r = false →
       indRootRule r = false → memRootRule r = false → LowerRuleOk isem MR env cp p r
 
-/-! ### Calls (contract change #5) -/
+/-! ### Calls (contract change #5; stack-passed arguments: agent/stack-tls-proof) -/
+
+/-- The byte sizes of a signature's parameters (`sigArgs`) are their types' sizes. -/
+theorem sigArgs_eq_map : ∀ {ps : List Clif.AbiParam} {bytes : List Nat},
+    ps.mapM (fun p => if p.ty == .i128 then throw "i128 parameter"
+      else match p.purpose with
+        | .normal | .vmctx => pure p.ty.bytes
+        | .sret => if p.ty == .i64 then pure 8 else throw "sret parameter must be i64"
+        | _ => throw "special-purpose parameter (sarg)") = (.ok bytes : Except String _) →
+    bytes = ps.map (·.ty.bytes)
+  | [], bytes, h => by simp [pure, Except.pure] at h; simp [h]
+  | p :: ps, bytes, h => by
+    rw [List.mapM_cons] at h
+    simp only [bind, Except.bind] at h
+    split at h
+    · cases h
+    · rename_i b hb
+      split at h
+      · cases h
+      · rename_i bs hbs
+        simp only [pure, Except.pure, Except.ok.injEq] at h
+        subst h
+        rw [sigArgs_eq_map hbs, List.map_cons]
+        congr 1
+        split at hb
+        · cases hb
+        · split at hb
+          · simp only [pure, Except.pure, Except.ok.injEq] at hb; exact hb.symm
+          · simp only [pure, Except.pure, Except.ok.injEq] at hb; exact hb.symm
+          · rename_i hty
+            split at hb
+            · rename_i h64
+              simp only [pure, Except.pure, Except.ok.injEq] at hb
+              rw [← hb, show p.ty = .i64 from by simpa using h64]; rfl
+            · cases hb
+          · cases hb
+
+theorem sigParamBytes_eq_map {s : Clif.Signature} {bytes : List Nat}
+    (hb : sigParamBytes s = .ok bytes) : bytes = s.params.map (·.ty.bytes) :=
+  sigArgs_eq_map hb
+
+/-- The byte sizes of a signature's parameters are 1, 2, 4 or 8 (`sigArgs` rejects `i128`). -/
+theorem sigArgs_bytes : ∀ {ps : List Clif.AbiParam} {bytes : List Nat},
+    ps.mapM (fun p => if p.ty == .i128 then throw "i128 parameter"
+      else match p.purpose with
+        | .normal | .vmctx => pure p.ty.bytes
+        | .sret => if p.ty == .i64 then pure 8 else throw "sret parameter must be i64"
+        | _ => throw "special-purpose parameter (sarg)") = (.ok bytes : Except String _) →
+    ∀ b ∈ bytes, b = 1 ∨ b = 2 ∨ b = 4 ∨ b = 8
+  | [], bytes, h => by
+    simp only [List.mapM_nil, pure, Except.pure, Except.ok.injEq] at h
+    subst h; simp
+  | p :: ps, bytes, h => by
+    rw [List.mapM_cons] at h
+    simp only [bind, Except.bind] at h
+    split at h
+    · cases h
+    · rename_i b hb
+      split at h
+      · cases h
+      · rename_i bs hbs
+        simp only [pure, Except.pure, Except.ok.injEq] at h
+        subst h
+        intro c hc
+        rcases List.mem_cons.mp hc with rfl | hc
+        · have hty : p.ty ≠ .i128 := fun e => by simp [e] at hb
+          have hbt : ∀ t : Clif.Ty, t ≠ .i128 → t.bytes = 1 ∨ t.bytes = 2 ∨ t.bytes = 4 ∨ t.bytes = 8 := by
+            intro t ht; cases t <;> simp_all [Clif.Ty.bytes, Clif.Ty.width]
+          simp only [hty, beq_iff_eq, ↓reduceIte] at hb
+          split at hb
+          · simp only [pure, Except.pure, Except.ok.injEq] at hb; rw [← hb]; exact hbt _ hty
+          · simp only [pure, Except.pure, Except.ok.injEq] at hb; rw [← hb]; exact hbt _ hty
+          · split at hb
+            · simp only [pure, Except.pure, Except.ok.injEq] at hb; rw [← hb]; simp
+            · cases hb
+          · cases hb
+        · exact sigArgs_bytes hbs c hc
+
+/-- The arguments of a call of `s` passed in registers, in parameter order. -/
+def regArgVals (s : Clif.Signature) (vals : List Clif.Val) : List Clif.Val :=
+  ((locsOf s).zip vals).filterMap fun q => match q.1 with
+    | .reg _ => some q.2
+    | .stack _ => none
+
+/-- The stack-passed arguments of a call of `s` are in the outgoing area at `sp` of `w`: an
+argument at location `.stack off` is the `ty.bytes` little-endian bytes at `sp + off`. -/
+def StackArgsAt (s : Clif.Signature) (vals : List Clif.Val) (w : Arm.ArmState) : Prop :=
+  ∀ (off : Nat) (v : Clif.Val), (ArgLoc.stack off, v) ∈ (locsOf s).zip vals →
+    (Arm.read_mem_bytes v.ty.bytes (spOf w + BitVec.ofNat 64 off) w).setWidth v.ty.width = v.bits
+
+/-- **The arguments of a call of `s`** in world `w` (AAPCS64, `sigArgLocs`): one value per
+parameter; the register-passed ones held (low bits, `AllHold`) by the argument values `args`
+(x0.. in order, an `sret` pointer in x8), the others in the outgoing stack area
+(`StackArgsAt`). With at most 8 parameters every argument is in a register and this is
+`AllHold vals args` (`argsAt_iff_of_regs`). -/
+def ArgsAt (s : Clif.Signature) (vals : List Clif.Val) (args : List CV) (w : Arm.ArmState) :
+    Prop :=
+  vals.length = s.params.length ∧ AllHold (regArgVals s vals) args ∧ StackArgsAt s vals w
 
 /-- **The callee contract at the VCode level** (M6 discharges it for `csem` from `CalleeSound`
 and `ExtSem.sym`), for the externs `exts` (the call sites' declarations): there is a link-time
 address `sym n` for every symbol such that `loadExtNameGot rd n` loads it (changing nothing else
 the memory relation sees), and a call of the extern `ext ∈ exts` (`bl name`, or `blr` of a
-register holding `sym name`, whose value is then the first use) with at most 8 argument values
-(`AllHold`: low bits) and one def per ABI return (`sigRets`: an `sret` signature without
-returns also returns its struct pointer) returns one value per def, the first ones the extern's
-results (`PrefixHold`), and a world related to the extern's memory. The same holds of a
-`tryCall` (the call of a `try_call`, with the exception payload registers among its defs after
-the returns), which then continues at its normal-return successor (successor number
-`ti.handlers.length`, the last). -/
+register holding `sym name`, whose value is then the first use) whose arguments are where the
+ABI puts them (`ArgsAt`: the register-passed ones held by the argument values, low bits; the
+others in the outgoing stack area of the world) and with one def per ABI return (`sigRets`: an
+`sret` signature without returns also returns its struct pointer) returns one value per def, the
+first ones the extern's results (`PrefixHold`), and a world related to the extern's memory. The
+same holds of a `tryCall` (the call of a `try_call`, with the exception payload registers among
+its defs after the returns), which then continues at its normal-return successor (successor
+number `ti.handlers.length`, the last). -/
 def CallsRefine (F : BitVec 64 → Prop) (env : Clif.Env) (exts : List Clif.ExtFunc) (MR : MemRelT)
     (isem : Sem) : Prop :=
   ∃ sym : String → BitVec 64,
@@ -870,7 +972,7 @@ def CallsRefine (F : BitVec 64 → Prop) (env : Clif.Env) (exts : List Clif.ExtF
       env.extern ext.name = some g →
       (dest = .sym ext.name ∧ uses = args ∨ ∃ r, dest = .reg r ∧ uses = ofX (sym ext.name) :: args) →
       ds.length = (sigRets ext.sig).length →
-      vals.length ≤ 8 → AllHold vals args → MR sl cm w →
+      ArgsAt ext.sig vals args w → MR sl cm w →
       g vals cm = .returned rvals cm' → rvals.length = ext.sig.returns.length →
       ∃ outs w', isem (.call ⟨dest, us, ds⟩) uses w = some (outs, w', .next) ∧
         outs.length = ds.length ∧ PrefixHold rvals outs ∧ MR sl cm' w') ∧
@@ -880,26 +982,54 @@ def CallsRefine (F : BitVec 64 → Prop) (env : Clif.Env) (exts : List Clif.ExtF
       env.extern ext.name = some g →
       (dest = .sym ext.name ∧ uses = args ∨ ∃ r, dest = .reg r ∧ uses = ofX (sym ext.name) :: args) →
       (sigRets ext.sig).length ≤ ds.length →
-      vals.length ≤ 8 → AllHold vals args → MR sl cm w →
+      ArgsAt ext.sig vals args w → MR sl cm w →
       g vals cm = .returned rvals cm' → rvals.length = ext.sig.returns.length →
       ∃ outs w', isem (.tryCall ⟨dest, us, ds⟩ ti) uses w = some (outs, w', .goto ti.handlers.length) ∧
         outs.length = ds.length ∧ PrefixHold rvals outs ∧ MR sl cm' w'
 
-/-- Every extern of `f` takes at most 8 parameters (all in registers; `E2E.InSubset.callRegArgs`):
-calls with stack-passed arguments are outside the theorem. -/
-def CallRegArgs (f : Clif.Function) : Prop :=
-  ∀ (fn : Clif.FnRef) (e : Clif.ExtFunc), f.extern? fn = some e → e.sig.params.length ≤ 8
+/-- Writing `n` bytes at `a` leaves every other byte. -/
+theorem writeBytes_mem_ne : ∀ (n : Nat) (a : BitVec 64) (v : BitVec (n * 8)) (s : Arm.ArmState)
+    (x : BitVec 64), (∀ k < n, x ≠ a + BitVec.ofNat 64 k) → (Arm.write_mem_bytes n a v s).mem x = s.mem x
+  | 0, _, _, _, _, _ => rfl
+  | n + 1, a, v, s, x, h => by
+    simp only [Arm.write_mem_bytes]
+    rw [writeBytes_mem_ne n (a + 1#64) _ _ x (fun k hk e => h (k + 1) (by omega) (by
+      rw [e, BitVec.add_assoc]; congr 1; apply BitVec.eq_of_toNat_eq; simp; omega))]
+    have h0 : x ≠ a := by simpa using h 0 (by omega)
+    simp [Arm.write_mem, Arm.write_store, h0]
+
+/-- **The outgoing argument area** (agent/stack-tls-proof): in a world related to CLIF memory,
+the `out` bytes at `sp` avoid the frame addresses `F`, and writing bytes there keeps the memory
+relation (no live CLIF allocation is in it, `sp` is unchanged). M7's `Rel.holds` with the
+outgoing area of the activation satisfies it (`E2E.outArgsOk_holds`); for `out = 0` it is
+vacuous. -/
+def OutArgsOk (F : BitVec 64 → Prop) (out : Nat) (MR : MemRelT) : Prop :=
+  ∀ sl cm w, MR sl cm w → out ≤ 2 ^ 64 ∧ Avoids F out (spOf w) ∧
+    ∀ (k n : Nat) (y : BitVec (n * 8)), k + n ≤ out →
+      MR sl cm (Arm.write_mem_bytes n (spOf w + BitVec.ofNat 64 k) y w)
+
+/-- A call of `s` passes at most `out` bytes on the stack (`stackBytes`), with a well-formed
+layout (`stackLayoutOk`). -/
+def SigStackOk (s : Clif.Signature) (out : Nat) : Prop :=
+  stackBytes s ≤ out ∧ stackLayoutOk s = true
+
+/-- The calls (`call`) of the statements of `f` fit the outgoing area `out` (decided by
+`lowerCheck` against the VCode's outgoing area, `callsStackOkB`). -/
+def CallsStack (f : Clif.Function) (out : Nat) : Prop :=
+  ∀ B ∈ f.blocks, ∀ st ∈ B.body, ∀ fn args e, st.inst = .call fn args → f.extern? fn = some e →
+    SigStackOk e.sig out
 
 /-- Every extern `f` declares is in `exts` (the externs `CallsRefine` covers). -/
 def ExternsIn (f : Clif.Function) (exts : List Clif.ExtFunc) : Prop :=
   ∀ (fn : Clif.FnRef) (e : Clif.ExtFunc), f.extern? fn = some e → e ∈ exts
 
-/-- `LowerRuleOk` for a call rule: additionally assumes `CallRegArgs f` and that the callee
-contract covers `f`'s externs (`ExternsIn f exts`). -/
+/-- `LowerRuleOk` for a call rule: additionally assumes that the callee contract covers `f`'s
+externs (`ExternsIn f exts`) and that a call's stack arguments fit the outgoing area `outB`. -/
 def CallRuleOk (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
-    (exts : List Clif.ExtFunc) (p : Program) (r : Rule) : Prop :=
-  ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx → CallRegArgs f → ExternsIn f exts →
+    (exts : List Clif.ExtFunc) (outB : Nat) (p : Program) (r : Rule) : Prop :=
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx → ExternsIn f exts →
   ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info → info.clif = some inst →
+  (∀ fn args e, inst = .call fn args → f.extern? fn = some e → SigStackOk e.sig outB) →
   ∀ (cfg : Config), cfg.checkOverlap = false →
   ∀ (m n : Nat) (st : LState) (tr : Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId)
     (out : V) (st' : LState) (tr' : Array RuleId), 1000 ≤ m → 1000 ≤ n → ValsBelow ctx st →
@@ -910,13 +1040,15 @@ def CallRuleOk (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
     ∃ ms rss, st'.emitted = st.emitted ++ ms.toArray ∧ out = .regsVec rss ∧
       LowerInstOk isem MR env cp ctx inst info.results st rss st' ms
 
-/-- **M4's target for the call rules**: under the callee contract, the call root rules are
+/-- **M4's target for the call rules**: under the callee contract, the memory forms (the
+outgoing stack arguments are `spOffset` stores) and the outgoing area, the call root rules are
 correct. -/
 def CallRulesCorrect (p : Program) : Prop :=
   ∀ (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
-    (exts : List Clif.ExtFunc),
-    Refines F isem → MRStable F MR → CallsRefine F env exts MR isem →
-    ∀ r ∈ p.rulesOf TId.lower, callRootRule r = true → CallRuleOk isem MR env cp exts p r
+    (exts : List Clif.ExtFunc) (sb : Nat) (syms : String → Option Nat) (outB : Nat),
+    Refines F isem → MRStable F MR → MemRefines F sb syms isem → OutArgsOk F outB MR →
+    CallsRefine F env exts MR isem →
+    ∀ r ∈ p.rulesOf TId.lower, callRootRule r = true → CallRuleOk isem MR env cp exts outB p r
 
 /-! ### Indirect calls
 
@@ -1052,11 +1184,12 @@ theorem lowerInstOk_of_rules {p : Program} (hp : Data p) (hrules : LowerRulesCor
     (hMR : MRStable F MR) {exts : List Clif.ExtFunc} (hcr : CallsRefine F env exts MR isem)
     {sigs : List Clif.Signature} (hicr : IndCallsRefine env sigs MR isem)
     (hMem : MemRefines F sb syms isem)
-    {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) (hra : CallRegArgs f)
+    {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) {outB : Nat} (hout : OutArgsOk F outB MR)
     (hnorm : ExternsIn f exts) (hE : Compile.functionE f = true)
     (hMRo : MemRelOk F sb syms f MR) {ii : Nat} {info : IInfo}
     {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
     (hsig : IndSigOk f sigs inst)
+    (hstk : ∀ fn args e, inst = .call fn args → f.extern? fn = some e → SigStackOk e.sig outB)
     {cfg : Config} (hco : cfg.checkOverlap = false) {n : Nat}
     (hn : 1002 + (p.rulesOf TId.lower).length ≤ n) {ty : TypeId} {st : LState}
     {tr : Array RuleId} {out : V} {st' : LState} {tr' : Array RuleId} (hvb : ValsBelow ctx st)
@@ -1090,7 +1223,8 @@ theorem lowerInstOk_of_rules {p : Program} (hp : Data p) (hrules : LowerRulesCor
             cfg hco m n st tr env' s1 out st' tr2 (by omega) (by omega) hvb hfirst hmatch heval
       · exact hind F isem MR env cp sigs hR hMR hicr r hr hind' f ctx hctx ii info inst hi hc hsig
           cfg hco m n st tr env' s1 out st' tr2 (by omega) (by omega) hvb hfirst hmatch heval
-    · exact hcalls F isem MR env cp exts hR hMR hcr r hr hcall f ctx hctx hra hnorm ii info inst hi hc
+    · exact hcalls F isem MR env cp exts sb syms outB hR hMR hMem hout hcr r hr hcall f ctx hctx
+        hnorm ii info inst hi hc hstk
         cfg hco m n st tr env' s1 out st' tr2 (by omega) (by omega) hvb hfirst hmatch heval
 
 set_option maxRecDepth 20000 in
@@ -1104,11 +1238,12 @@ theorem lowerInstOk_runTerm (hrules : LowerRulesCorrect program)
     {exts : List Clif.ExtFunc} (hcr : CallsRefine F env exts MR isem)
     {sigs : List Clif.Signature} (hicr : IndCallsRefine env sigs MR isem)
     (hMem : MemRefines F sb syms isem)
-    {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) (hra : CallRegArgs f)
+    {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) {outB : Nat} (hout : OutArgsOk F outB MR)
     (hnorm : ExternsIn f exts) (hE : Compile.functionE f = true)
     (hMRo : MemRelOk F sb syms f MR) {ii : Nat} {info : IInfo}
     {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
     (hsig : IndSigOk f sigs inst)
+    (hstk : ∀ fn args e, inst = .call fn args → f.extern? fn = some e → SigStackOk e.sig outB)
     {st : LState} {out : V} {st' : LState} {tr : List RuleId} (hvb : ValsBelow ctx st)
     (h : runTerm ctx "lower" [.inst ii] st = .ok (some out, st', tr)) :
     ∃ ms rss, st'.emitted = st.emitted ++ ms.toArray ∧ out = .regsVec rss ∧
@@ -1131,7 +1266,7 @@ theorem lowerInstOk_runTerm (hrules : LowerRulesCorrect program)
     have hlen : (program.rulesOf TId.lower).length ≤ 1000 := by
       rw [show TId.lower = 686 from rfl, data_program.r686]; decide
     obtain ⟨ms, rss, h1, h2, h3⟩ := lowerInstOk_of_rules data_program hrules hex hcalls hind hmem
-      hR hMR hcr hicr hMem hctx hra hnorm hE hMRo hi hc hsig rfl (by omega) hvb ha
+      hR hMR hcr hicr hMem hctx hout hnorm hE hMRo hi hc hsig hstk rfl (by omega) hvb ha
     exact ⟨ms, rss, by simpa using h1, h2, h3⟩
 
 /-! ## Terminators (stated by M7; M4's obligations `LowerTermRulesCorrect`, `TermUnmatchable`,
@@ -1375,14 +1510,16 @@ def tryRootRule (r : Rule) : Bool := r.id == 1034 || r.id == 1035
 
 /-- **Root rule correctness (`lower_branch` on `try_call`)**: whenever rule `r` matches the
 `try_call` at `ti` (data `tryCallData`, in a context whose `tryRegs` are `tryRegsOf`'s vregs,
-allocated from a state `lo` above every value's vreg and below the rule's start state `st`),
-the instructions it appended satisfy `LowerTryOk` for the `try_call_info` of the targets. -/
+allocated from a state `lo` above every value's vreg and below the rule's start state `st`) of
+an extern with at most 8 (register) parameters, the instructions it appended satisfy
+`LowerTryOk` for the `try_call_info` of the targets. -/
 def TryRuleOk (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
     (exts : List Clif.ExtFunc) (p : Program) (r : Rule) : Prop :=
-  ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx → CallRegArgs f → ExternsIn f exts →
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx → ExternsIn f exts →
   ∀ (ti : Nat) (fn : Clif.FnRef) (args : List Nat) (et : Clif.ExnTable) (data : V)
     (sig : Clif.Signature) (items : List (Option Nat)) (targets : List Label) (info : TryInfo)
     (lo st1 : LState),
+  (∀ e, f.extern? fn = some e → e.sig.params.length ≤ 8) →
   tryCallData f (.tryCall fn args et) = .ok data → exnTableOpnd f et = .ok (sig, items) →
   ctx.insts[ti]? = some ⟨data, [], [], none⟩ → tryInfoOf sig items targets = some info →
   tryRegsOf sig lo = some (ctx.tryRegs, st1) → ValsBelow ctx lo →
@@ -1470,10 +1607,10 @@ theorem tryOk_of_rules {p : Program} (hp : Data p) (hrules : TryRulesCorrect p)
     (hun : TryUnmatchable p) {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} {env : Clif.Env}
     {cp : Clif.Program} {exts : List Clif.ExtFunc}
     (hR : Refines F isem) (hMR : MRStable F MR) (hcr : CallsRefine F env exts MR isem)
-    {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) (hra : CallRegArgs f)
+    {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx)
     (hext : ExternsIn f exts) {ti : Nat} {fn : Clif.FnRef} {args : List Nat} {et : Clif.ExnTable}
     {data : V} {sig : Clif.Signature} {items : List (Option Nat)} {targets : List Label}
-    {info : TryInfo} {lo st1 : LState}
+    {info : TryInfo} {lo st1 : LState} (hra : ∀ e, f.extern? fn = some e → e.sig.params.length ≤ 8)
     (hd : tryCallData f (.tryCall fn args et) = .ok data) (he : exnTableOpnd f et = .ok (sig, items))
     (hi : ctx.insts[ti]? = some ⟨data, [], [], none⟩) (hinfo : tryInfoOf sig items targets = some info)
     (htr : tryRegsOf sig lo = some (ctx.tryRegs, st1)) (hvb : ValsBelow ctx lo)
@@ -1503,8 +1640,8 @@ theorem tryOk_of_rules {p : Program} (hp : Data p) (hrules : TryRulesCorrect p)
   rw [← hs.1] at heval
   cases hroot : tryRootRule r
   · exact absurd hmatch (hun r hr hroot f ctx hctx ti fn args et data targets hd hi cfg m (st, tr) env' s1)
-  · exact hrules F isem MR env cp exts hR hMR hcr r hr hroot f ctx hctx hra hext ti fn args et data
-      sig items targets info lo st1 hd he hi hinfo htr hvb cfg hco m n st tr env' s1 out st' tr2
+  · exact hrules F isem MR env cp exts hR hMR hcr r hr hroot f ctx hctx hext ti fn args et data
+      sig items targets info lo st1 hra hd he hi hinfo htr hvb cfg hco m n st tr env' s1 out st' tr2
       (by omega) (by omega) hst hfirst hmatch heval
 
 set_option maxRecDepth 20000 in
@@ -1514,9 +1651,10 @@ theorem tryOk_runTerm (hrules : TryRulesCorrect program) (hun : TryUnmatchable p
     {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program}
     {exts : List Clif.ExtFunc} (hR : Refines F isem) (hMR : MRStable F MR)
     (hcr : CallsRefine F env exts MR isem) {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx)
-    (hra : CallRegArgs f) (hext : ExternsIn f exts) {ti : Nat} {fn : Clif.FnRef}
+    (hext : ExternsIn f exts) {ti : Nat} {fn : Clif.FnRef}
     {args : List Nat} {et : Clif.ExnTable} {data : V} {sig : Clif.Signature}
     {items : List (Option Nat)} {targets : List Label} {info : TryInfo} {lo st1 : LState}
+    (hra : ∀ e, f.extern? fn = some e → e.sig.params.length ≤ 8)
     (hd : tryCallData f (.tryCall fn args et) = .ok data) (he : exnTableOpnd f et = .ok (sig, items))
     (hi : ctx.insts[ti]? = some ⟨data, [], [], none⟩) (hinfo : tryInfoOf sig items targets = some info)
     (htr : tryRegsOf sig lo = some (ctx.tryRegs, st1)) (hvb : ValsBelow ctx lo)
@@ -1541,7 +1679,7 @@ theorem tryOk_runTerm (hrules : TryRulesCorrect program) (hun : TryUnmatchable p
     subst h2
     have hlen : (program.rulesOf TId.lower_branch).length ≤ 1000 := by
       rw [show TId.lower_branch = 687 from rfl, data_program.r687]; decide
-    obtain ⟨ms, h1, h2⟩ := tryOk_of_rules data_program hrules hun hR hMR hcr hctx hra hext hd he hi
+    obtain ⟨ms, h1, h2⟩ := tryOk_of_rules data_program hrules hun hR hMR hcr hctx hext hra hd he hi
       hinfo htr hvb rfl (by omega) hst ha
     exact ⟨ms, by simpa using h1, h2⟩
 
