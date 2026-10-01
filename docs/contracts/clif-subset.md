@@ -94,6 +94,7 @@ VeriISLE run excludes the `i128` tag. Floats and vectors are in neither list.
 | `bswap` | yes (i16/i32/i64) | v2: `i16 i32 i64` only (`bswap.i8` is not CLIF; `i128` excluded as everywhere) |
 | `bitrev` | no | v2: `i8..i64` (`reverse_bits`) |
 | `symbol_value` | no | v2: `symbol_value.i64 gvN` only, `gvN = symbol [colocated] %name[+offset]` naming a **data object** of the link-time image (`Clif.Image`); no `tls`, no function symbols, no other global-value kinds. Loads from it follow the `load` rules; stores into read-only objects are `stuck` (a precondition) |
+| `tls_value` | no | v3 (agent/stack-tls-proof): `tls_value.i64 gvN`, `gvN = symbol [colocated] tls %name` (offset 0; the lowering rejects an offset). One thread: the address of the memory's symbol, as `symbol_value` (`Clif.run`); the backend's TLSDESC sequence under the trusted hook contract `TlsOk` (`docs/decisions/arm-model.md`) |
 | `bmask` | no | v3 (agent/atomics-proof): result and operand `i8..i64` (Cranelift's `lower_bmask`: `cmp #0` + `csetm ne`, an `i8`/`i16` operand masked first) |
 | `atomic_load` `atomic_store` | no | v3: `i8..i64`, little-endian, `i64` address (`ldar`/`stlr`). Single-threaded semantics: a plain load/store (`docs/decisions/arm-model.md`, "Atomics") |
 | `fence` | no | v3: `dmb ish`, no effect in the single-threaded model |
