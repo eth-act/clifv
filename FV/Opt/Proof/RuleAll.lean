@@ -35,7 +35,7 @@ import FV.Opt.Proof.RuleArith4
 import FV.Opt.Proof.RuleArith5
 import FV.Opt.Proof.RuleCprop2
 import FV.Opt.Proof.RuleRemat
-import FV.Opt.Proof.RuleSkel
+import FV.Opt.Proof.RuleSkeleton
 import FV.Opt.Optimize
 
 /-!
@@ -44,7 +44,8 @@ import FV.Opt.Optimize
 `simplifyRulesCorrect_proven`: every `simplify` rule of `Isle.Opt.program` whose id is in
 `Opt.provenSimplifyRules` is `RuleOk`. `simplifySound_proven`: the Cranelift rule set with the
 `proven` allow-list is a sound rule set (`Opt.SimplifySound`), the obligation the `simplify`
-pass proof takes (`Opt.Config.simplifyFn` with `ruleAllow := .proven`).
+pass proof takes (`Opt.Config.simplifyFn` with `ruleAllow := .proven`). The same for
+`simplify_skeleton` (`Opt.provenSkeletonRules`, `SkelRuleOk`): `skeletonSound_proven`.
 
 The proof walks the generated rule list `R.«simplify»` (a list literal of the rule constants
 `rule_X`) with `allowed_ok%`: an allow-listed `rule_X` takes the per-rule theorem
@@ -52,7 +53,7 @@ The proof walks the generated rule list `R.«simplify»` (a list literal of the 
 `allow rule_X.id = false` by `rfl`. The proof term is built directly and checked by the kernel
 only (one allow-list lookup on `Nat` literals per skipped rule); no elaborator `rfl`/`decide`
 runs over the generated rule data. A new family: import its module and append its ids to
-`Opt.provenSimplifyRules`; nothing in this file lists rules.
+`Opt.provenSimplifyRules` (or `Opt.provenSkeletonRules`); nothing in this file lists rules.
 -/
 
 namespace Opt.Proof
@@ -156,7 +157,8 @@ theorem simplify_rules_length : (program.rulesOf T.«simplify».id).length = 128
 theorem simplifySound_proven : SimplifySound (RuleSetId.fnWith .proven .cranelift) :=
   simplifySound _ simplifyRulesCorrect_proven (by rw [simplify_rules_length]; decide)
 
-/-- No `simplify_skeleton` rule is in the proven allow-list. -/
+/-- Every allow-listed `simplify_skeleton` rule is `SkelRuleOk` (`Opt.provenSkeletonRules`,
+theorems in `FV/Opt/Proof/RuleSkeleton.lean`). -/
 theorem skeleton_allowed_ok : AllowedOk (SkelRuleOk program) RuleAllow.proven.pred
     (program.rulesOf T.«simplify_skeleton».id) :=
   allowed_ok% (SkelRuleOk program) RuleAllow.proven.pred (program.rulesOf T.«simplify_skeleton».id)

@@ -73,12 +73,20 @@ def provenSimplifyRules : List Nat :=
    1362, 1363, 1364, 1365, 1399, 1400, 1401, 1402, 1403, 1404, 1405, 1406, 1407, 1408, 1409, 1410,
    1411, 1412, 1413, 1414, 1415, 1416, 1417, 1418]
 
-/-- Which exported rules may contribute candidates (`Isle.Opt.simplify`'s allow-list); the other
-rules still run, their candidates are dropped. -/
+/-- Ids of the exported `simplify_skeleton` rules whose correctness is proven
+(`Opt.Proof.skeletonRulesCorrect_proven`; the theorems are in `FV/Opt/Proof/RuleSkeleton.lean`):
+`arithmetic.isle` 79, 80, 130, 131, 132 (division/remainder by 1 and -1) and `skeleton.isle` 7, 9,
+22, 26, 33, 37, 44 (conditional traps and branches on constants, branches to trap blocks). -/
+def provenSkeletonRules : List Nat :=
+  [83, 84, 92, 93, 94, 1366, 1367, 1370, 1371, 1372, 1373, 1374]
+
+/-- Which exported rules may contribute candidates (`Isle.Opt.simplify`'s and
+`Isle.Opt.simplifySkeleton`'s allow-list); the other rules still run, their candidates are
+dropped. -/
 inductive RuleAllow where
   /-- Every rule (default; not yet proven). -/
   | all
-  /-- Only `provenSimplifyRules` (no skeleton rule is proven yet, so none contributes). -/
+  /-- Only `provenSimplifyRules` and `provenSkeletonRules`. -/
   | proven
   /-- An explicit list of rule ids. -/
   | ids (l : List Nat)
@@ -86,7 +94,7 @@ inductive RuleAllow where
 
 def RuleAllow.pred : RuleAllow → Nat → Bool
   | .all => fun _ => true
-  | .proven => fun r => provenSimplifyRules.contains r
+  | .proven => fun r => provenSimplifyRules.contains r || provenSkeletonRules.contains r
   | .ids l => fun r => l.contains r
 
 end Opt
