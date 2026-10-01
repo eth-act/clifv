@@ -363,6 +363,36 @@ end Opt.Proof
 
 namespace Opt.Proof
 
+open Lean Meta Elab Tactic in
+set_option hygiene false in
+/-- `opt_types` for operand values that are `Val` locals (`try simp only at hty`: the type
+`c.ty` of a local `c` does not reduce). -/
+elab "opt_types_x" : tactic => do
+  let g ← getMainGoal
+  let hyps ← g.withContext do
+    let mut out := #[]
+    for d in ← getLCtx do
+      if d.isImplementationDetail then continue
+      let t ← instantiateMVars d.type
+      if let some (_, l, r) := t.eq? then
+        if l.isAppOfArity `Isle.Opt.EGraph.typeOf 4 && r.isAppOfArity ``Option.some 2 &&
+            r.appArg!.isFVar then
+          out := out.push d.fvarId
+    pure out
+  for h in hyps do
+    let g ← getMainGoal
+    g.withContext do
+      let hs ← Term.exprToSyntax (mkFVar h)
+      try
+        evalTactic (← `(tactic| (
+          have hty := GraphOk.typeOf_eq hG (by opt_P) $hs (by opt_den)
+          try simp only at hty
+          subst hty)))
+      catch _ => pure ()
+
+theorem except_throw_bind' {ε α β : Type} (e : ε) (k : α → Except ε β) :
+    ((throw e : Except ε α) >>= k) = throw e := rfl
+
 set_option hygiene false in
 /-- `rule_rhs_x` that cases on every `typeOf` read of a made node's operand as soon as it
 appears (`opt_split_typeof`, then `opt_types`), instead of after the whole right-hand side:
@@ -375,8 +405,9 @@ macro_rules
   | `(tactic| rule_rhs_y [$ts,*]) => `(tactic| (
       opt_norm hev [$ts,*]
       repeat' (first
-        | (opt_split_typeof hev <;> (try opt_types) <;> try opt_norm hev [$ts,*])
-        | (opt_unfold hev; opt_norm hev [$ts,*]))
+        | (opt_split_typeof hev <;> (try opt_types_x) <;>
+            try opt_norm hev [except_throw_bind', except_error_bind', $ts,*])
+        | (opt_unfold hev; opt_norm hev [except_throw_bind', except_error_bind', $ts,*]))
       repeat' (split at hev <;>
         (try (rename_i hq; opt_split_ite hq <;>
            (try simp only [Option.some.injEq, reduceCtorEq, Bool.false_eq_true, ite_false,
@@ -392,7 +423,7 @@ macro_rules
         simp only [List.mem_singleton, List.mem_cons, List.not_mem_nil, or_false, V.value.injEq,
           reduceCtorEq] at hm <;>
         subst hm)
-      all_goals opt_types))
+      all_goals (try opt_types_x)))
 
 /-- `rule_auto_xr` with `rule_rhs_y`. -/
 syntax "rule_auto_y " ident ("[" (Lean.Parser.Tactic.simpStar <|> Lean.Parser.Tactic.simpErase <|> Lean.Parser.Tactic.simpLemma),* "]")? : tactic
