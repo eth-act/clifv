@@ -534,7 +534,7 @@ Driver: `Opt.RuleAllow` (`all` default | `proven` | `ids`), `RuleSetId.fnWith`/`
 the `simplify` call's arguments), option `--opt-proven-only`. Corpus difftest: default 114/114
 agree, 4321 → 2018 insts; `--opt-proven-only` 114/114, 4321 → 2475 (skeleton rules off).
 
-**Proven rules** (MidRulesInfra2, RulesBitops, RulesIcmpSel, RuleAllScale): **842 `simplify` roots** = `Opt.provenSimplifyRules` —
+**Proven rules** (MidRulesInfra2, RulesBitops, RulesIcmpSel, RuleAllScale, RulesShiftsExt): **936 `simplify` roots** = `Opt.provenSimplifyRules` —
 `arithmetic.isle` 172 of 258 (`RuleArith.lean`), `cprop.isle` 52 of 68 (`RuleCprop.lean`),
 `bitops.isle` 444 of 450 (`RuleBitops1..7.lean`, tactics/lemmas in `RuleBitopsEmbed.lean`:
 `rule_auto` 393, `rule_auto_b` 18, `rule_auto_i` 2, `rule_auto_z` 31). No skeleton rule is proven yet
@@ -548,6 +548,23 @@ signed immediates as sign-bit facts; `_f`/`_fi`/`_fz`/`_fiz`: the left-hand side
 `simp_all`, which rewrites a literal-match fact such as `asU64 imm = 0` away with a copy of itself;
 `_g`: `_f` plus the `P s0`-guarded model facts and `opt_den_merge`). Each theorem names the
 `first` chain it was checked with.
+`extends.isle` 26 of 29 (`RuleExtends.lean`), `shifts.isle` 48 of 75 (`RuleShifts1.lean`,
+`RuleShifts2.lean`), `spaceship.isle` 20 of 40 (`RuleSpaceship.lean`), with the templates of
+`RuleExtEmbed.lean` (`rule_auto_x`: width side conditions of made `ireduce`/extends, `Val` type
+equalities substituted, `int_bv` turning `Int` immediates/if-let conditions into `BitVec`;
+`_xr`: if-let results of internal constructors such as `iconst_u` split; `_xz`: `Val`s split and
+types split on `i128` so `ty_mask` evaluates; `_cat`: shift amounts given by `iconcat`; `_y`:
+`typeOf` reads split eagerly; `imm64_shl ty -1 k`/`imm64_ushr ty ty_mask k` specs).
+Not proven (proof-tooling limits; no rule found false): `extends.isle` 40, 42, 44 (`eq`/`ne`/signed
+`icmp` of a `sextend` against `iconst_s 0`: 4M-heartbeat timeout); `shifts.isle` 41, 270 (timeout),
+50, 61, 71 (`sshr (ishl (u/sextend x) k) k`: the matched-class finish fails at `i128`), 84, 88
+(`u64_extract_non_zero` multi-extractor in an if-let, `shift_amt_to_type`: no evaluation lemmas),
+152, 161, 170, 184, 193 (shift-amount merging: timeout), 239–242, 244–247, 259, 261, 264, 266
+(rotate regrouping through `iadd_uextend`/`isub_uextend`: later `value_type` reads in the
+constructor's rules not resolved; `opt_rw_typeof` is a candidate fix), 280, 285 (`bor` of shifts to
+`rotl`: `Int`-level if-let not fully bit-blasted), 315 (SAT timeout); `spaceship.isle` 13–137 (the 20
+`select` rules: the right-hand side's two made `icmp`s under `sextend_maybe` blow up the term;
+>10 min per rule even with eager `typeOf` splitting).
 Not proven (proof-tooling limits; none is false under the CLIF semantics): `icmp.isle` 196, 199,
 202 (`sge`/`slt x (iconst_s 1)`, `sgt x (iconst_s -1)`: the right-hand `iconst_s ty 0` goes through
 the constructor's `i64_sextend_u64` if-let at a type variable, which no template evaluates);
