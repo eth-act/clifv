@@ -25,6 +25,16 @@ import FV.Opt.Proof.RuleExtends
 import FV.Opt.Proof.RuleShifts1
 import FV.Opt.Proof.RuleShifts2
 import FV.Opt.Proof.RuleSpaceship
+import FV.Opt.Proof.RuleIcmp9
+import FV.Opt.Proof.RuleShifts3
+import FV.Opt.Proof.RuleShifts4
+import FV.Opt.Proof.RuleShifts5
+import FV.Opt.Proof.RuleArith2
+import FV.Opt.Proof.RuleArith3
+import FV.Opt.Proof.RuleArith4
+import FV.Opt.Proof.RuleArith5
+import FV.Opt.Proof.RuleCprop2
+import FV.Opt.Proof.RuleRemat
 import FV.Opt.Proof.RuleSkel
 import FV.Opt.Optimize
 

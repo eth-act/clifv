@@ -217,7 +217,7 @@ def Isle.Opt.simplifySkeleton {σ} (enodes …) (typeOf …) (make …)
   `simplify` calls, 12 `simplify_skeleton` calls and 930 `simplify` calls over the CLIF corpus
   fire the same rules as a `trace-log` build at `opt_level=speed` (per call, on e-classes whose
   operands are single original nodes).
-  842 `simplify` rules and their helpers are proven (see "Rule proofs").
+  1012 `simplify` roots and their helpers are proven (see "Rule proofs").
 
 ## Results (2026-09-28, default configuration: Cranelift rules, 1 round)
 
@@ -341,7 +341,7 @@ Goal: `Opt.optimize` refines `Clif.run`, and `E2E.backend_correct_final` extends
   rule sets (`E2E.backend_correct_opt_proven`); only 4 `simplify` rules are proven, so the
   default configuration (all rules) still rests on the differential tests for the rule
   obligations (`SimplifySound`/`SkeletonSound` of the full rule set).
-- Proven: the rule interpreter's soundness and 842 `simplify` rules ("Rule proofs"); the passes
+- Proven: the rule interpreter's soundness and 1012 `simplify` roots ("Rule proofs"); the passes
   and the pipeline are not, so the differential tests remain the evidence for them.
 - Missing Cranelift mid-end features: alias analysis (redundant-load elimination,
   store-to-load forwarding), merging of identical trapping instructions, elaboration-based
@@ -494,7 +494,7 @@ Design decisions (approved by the integrator):
 
 ## Rule proofs (MidRulesFoundation, branch `agent/mid-rules`)
 
-Status: the framework is complete and proven; **842 `simplify` rules proven** (see below),
+Status: the framework is complete and proven; **1012 `simplify` roots proven** (see below),
 allow-list embedding done. Files `FV/Opt/Proof/{Sem,InterpMatch,InterpState,InterpEval,RuleBase,
 RuleData,RuleNode,RuleEmbed,RuleTactic,RuleImm,RuleCtor,RuleSkel,RuleAuto,RuleArith,RuleCprop,
 RuleAll}.lean`; generator
@@ -534,12 +534,12 @@ Driver: `Opt.RuleAllow` (`all` default | `proven` | `ids`), `RuleSetId.fnWith`/`
 the `simplify` call's arguments), option `--opt-proven-only`. Corpus difftest: default 114/114
 agree, 4321 → 2018 insts; `--opt-proven-only` 114/114, 4321 → 2475 (skeleton rules off).
 
-**Proven rules** (MidRulesInfra2, RulesBitops, RulesIcmpSel, RuleAllScale, RulesShiftsExt): **936 `simplify` roots** = `Opt.provenSimplifyRules` —
-`arithmetic.isle` 172 of 258 (`RuleArith.lean`), `cprop.isle` 52 of 68 (`RuleCprop.lean`),
+**Proven rules** (MidRulesInfra2, RulesBitops, RulesIcmpSel, RuleAllScale, RulesShiftsExt, RulesRest): **1012 `simplify` roots** = `Opt.provenSimplifyRules` —
+`arithmetic.isle` 216 of 258 (`RuleArith.lean`, `RuleArith2..5.lean`), `cprop.isle` 61 of 68 (`RuleCprop.lean`, `RuleCprop2.lean`), `remat.isle` 12 of 12 (`RuleRemat.lean`),
 `bitops.isle` 444 of 450 (`RuleBitops1..7.lean`, tactics/lemmas in `RuleBitopsEmbed.lean`:
 `rule_auto` 393, `rule_auto_b` 18, `rule_auto_i` 2, `rule_auto_z` 31). No skeleton rule is proven yet
 (`skeleton_allowed_ok` takes no rule; `SkelRuleOk` + `skeletonSound` are ready, `div_const` is not).
-`icmp.isle` 92 of 124 (`RuleIcmp1..8.lean`) and `selects.isle` 82 of 100 (`RuleSelects1..6.lean`),
+`icmp.isle` 95 of 124 (`RuleIcmp1..9.lean`) and `selects.isle` 82 of 100 (`RuleSelects1..6.lean`),
 with the template variants of `RuleIcmpEmbed.lean` (`rule_auto_c`/`_ci`: `arr_step` for a value
 variable bound twice, `opt_split_typeof` for a made `icmp` under `subsume`; `_d`/`_di`: `Int`
 literals of if-lets reduced, `ty_smin`/`ty_smax` specs passed as extra lemmas) and
@@ -548,27 +548,53 @@ signed immediates as sign-bit facts; `_f`/`_fi`/`_fz`/`_fiz`: the left-hand side
 `simp_all`, which rewrites a literal-match fact such as `asU64 imm = 0` away with a copy of itself;
 `_g`: `_f` plus the `P s0`-guarded model facts and `opt_den_merge`). Each theorem names the
 `first` chain it was checked with.
-`extends.isle` 26 of 29 (`RuleExtends.lean`), `shifts.isle` 48 of 75 (`RuleShifts1.lean`,
-`RuleShifts2.lean`), `spaceship.isle` 20 of 40 (`RuleSpaceship.lean`), with the templates of
+`extends.isle` 26 of 29 (`RuleExtends.lean`), `shifts.isle` 56 of 75 (`RuleShifts1..5.lean`), `spaceship.isle` 20 of 40 (`RuleSpaceship.lean`), with the templates of
 `RuleExtEmbed.lean` (`rule_auto_x`: width side conditions of made `ireduce`/extends, `Val` type
 equalities substituted, `int_bv` turning `Int` immediates/if-let conditions into `BitVec`;
 `_xr`: if-let results of internal constructors such as `iconst_u` split; `_xz`: `Val`s split and
 types split on `i128` so `ty_mask` evaluates; `_cat`: shift amounts given by `iconcat`; `_y`:
 `typeOf` reads split eagerly; `imm64_shl ty -1 k`/`imm64_ushr ty ty_mask k` specs).
-Not proven (proof-tooling limits; no rule found false): `extends.isle` 40, 42, 44 (`eq`/`ne`/signed
-`icmp` of a `sextend` against `iconst_s 0`: 4M-heartbeat timeout); `shifts.isle` 41, 270 (timeout),
-50, 61, 71 (`sshr (ishl (u/sextend x) k) k`: the matched-class finish fails at `i128`), 84, 88
-(`u64_extract_non_zero` multi-extractor in an if-let, `shift_amt_to_type`: no evaluation lemmas),
-152, 161, 170, 184, 193 (shift-amount merging: timeout), 239–242, 244–247, 259, 261, 264, 266
-(rotate regrouping through `iadd_uextend`/`isub_uextend`: later `value_type` reads in the
-constructor's rules not resolved; `opt_rw_typeof` is a candidate fix), 280, 285 (`bor` of shifts to
-`rotl`: `Int`-level if-let not fully bit-blasted), 315 (SAT timeout); `spaceship.isle` 13–137 (the 20
-`select` rules: the right-hand side's two made `icmp`s under `sextend_maybe` blow up the term;
->10 min per rule even with eager `typeOf` splitting).
-Not proven (proof-tooling limits; none is false under the CLIF semantics): `icmp.isle` 196, 199,
-202 (`sge`/`slt x (iconst_s 1)`, `sgt x (iconst_s -1)`: the right-hand `iconst_s ty 0` goes through
-the constructor's `i64_sextend_u64` if-let at a type variable, which no template evaluates);
-`selects.isle` 15 (`select(icmp, 1, 0)` to `uextend_maybe`: its `simp_all`-free proof passed
+RulesRest templates (`RuleRestEmbed.lean`): `rule_auto_v` (`rule_auto_xz` whose if-lets unfold
+`matchAllN`/`bindAll`, keeping the conditions of internal constructors' rule matches such as
+`shift_amt_to_type`; `imm64Masked_i128`; `i64SextendU64_spec` for `iconst_s ty k` under a type
+variable), `rule_auto_w` (`rule_auto_y` plus `opt_rw_typeof`, `opt_heq_typeof`, `opt_beq_subst`,
+`opt_ty_facts` for the later `value_type` reads of `iadd_uextend`/`isub_uextend`), `rule_finish_w`
+(closed type side facts decided, width side conditions of made extends, `bif`/conjunction facts
+split, `val_congr` after the type split); helper specs `imm64_sshr`, `imm64_rotl`, `imm64_rotr`
+(`opt_imm`).
+**False under the CLIF semantics (findings):** `shifts.isle` 84 and 88 (`sshr`/`ushr (ishl x k) k` to
+`s/uextend ty (ireduce ty_small x)`): `u64_wrapping_sub (ty_bits ty) shift_u64` wraps for shift
+constants above the type width, e.g. `ishl.i8 x, v` / `sshr.i8 _, v` with `v = iconst.i64 -8`
+(or `-24`; `i16` with `-16`): `ty_small` becomes `i16`/`i32`, wider than `ty`, so the rule builds
+`ireduce.i16` of an `i8` value and `sextend.i8` of it — ill-typed IR with no value, while the
+original is `x` (shift amount `-8 mod 8 = 0`). The proof fails exactly in these cases.
+Not proven after RulesRest (proof-tooling limits unless stated): `arithmetic.isle` 38, 42, 46
+(`iabs`: no `bif` form / recursion depth), 50, 333, 334, 343, 349, 587, 590, 593, 596, 603
+(`iconst_u`/`iconst_s ty k` made under a type variable: the made `iconst`'s data does not reduce,
+`makeInst` stays stuck), 181 (`imm64_power_of_two`: no spec), 200, 206 (heartbeat timeout),
+251–288 (the 8 `eq`/`ne` of `imul` by an odd constant: timeout), 410–421, 427, 428 (`icmp` of
+`isub`/`iadd` with a variable bound twice: `simp` type mismatch at the icmp result width with every
+template), 615–622 (64-bit products: SAT timeout); `cprop.isle` 269 (`imm64_neg` of a sign-cast
+immediate: `makeInst` stuck), 320, 322, 324, 375, 377, 379 (not run with the RulesRest templates:
+their runs were lost to a module rebuild); `icmp.isle` 196, 199, 202 are now proven
+(`rule_auto_v`). Skeleton rules: none proven — `SkelRuleOk` cannot be met by rules that match
+operand nodes (all of them except `skeleton.isle` 33/37): the left-hand side's node facts hold in
+the start state `s0`, but `SkelRefines` is evaluated in later valuations, and `GraphModel` neither
+keeps a class's nodes in later states nor forces an operand defined there to have been defined in
+`s0`; so e.g. `sdiv x (iconst 1)` may see a divisor value unrelated to the matched `iconst`. Proving
+them needs node persistence (`enodes s ⊆ enodes s'` along the model states) in `GraphModel` or a
+defined-operands premise in `SkelRuleOk`. `skeleton.isle` 33/37 (`just_trap_block`) need evaluation
+lemmas for `just_trap_block`/`block_call_block` and `seqEval`; not done.
+Still not proven from the RulesShiftsExt list: `extends.isle` 40, 42, 44 (`eq`/`ne`/signed
+`icmp` of a `sextend` against `iconst_s 0`: timeout also at 16M heartbeats); `shifts.isle` 161
+(killed after 5 min at 16M, twice), 170 (maximum recursion depth), 184, 193 (unsolved goals), 239–242,
+244–247, 259, 261, 264, 266 (rotate regrouping through `iadd_uextend`/`isub_uextend`: `rule_auto_w`
+now evaluates the right-hand side and closes most type combinations; about 50 of the 125 per-type
+goals still fail — `bv_decide` timeouts on 128-bit rotations and nested made operands left
+unreduced), 315 (SAT timeout); `spaceship.isle` 13–137 (the 20 `select` rules: the right-hand
+side's two made `icmp`s under `sextend_maybe` blow up the term; >10 min per rule even with eager
+`typeOf` splitting). Proven by RulesRest: `shifts.isle` 41, 50, 61, 71, 152, 270, 280, 285.
+Not proven (proof-tooling limits; none is false under the CLIF semantics): `selects.isle` 15 (`select(icmp, 1, 0)` to `uextend_maybe`: its `simp_all`-free proof passed
 once and then failed deterministically in the full build; left out), 81, 85 (`select` of two `uextend`/`sextend`s with `value_type`: heartbeat timeout at
 4M), 97–100 (`select` of `sgt`/`sge`/`sle`/`slt` against 0 to `iabs`: `Sem.iabs` has no `bif` normal
 form for `bv_decide`; the `simp_all`-free variant runs out of memory/time), 188, 189, 193–196,
@@ -606,31 +632,36 @@ unfolds the helper, `imm_cases` splits the widths, `imm_solve` turns `Int` arith
 `BitVec 64` and runs `bv_decide`; `clz`/`ctz` bridge `Nat.log2`/the Rust loop to `BitVec.clz`/`ctz`).
 
 **Proven rule lines** (`rule_<file>_<line>`, ISLE source lines):
-- `arithmetic.isle` (172): 8, 13, 18, 24, 26, 28, 31, 35, 59, 233, 239, 240, 243, 244, 247, 295, 296, 297, 298, 301, 302,
-  303, 304, 307, 308, 311, 312, 313, 314, 317, 318, 319, 320, 323, 324, 337, 338, 339, 340, 346,
-  352, 353, 354, 355, 356, 357, 358, 359, 362, 363, 364, 365, 366, 367, 368, 369, 372, 373, 374,
-  375, 378, 379, 380, 381, 384, 385, 388, 389, 390, 391, 424, 451, 452, 453, 454, 457, 458, 459,
-  460, 461, 462, 463, 464, 467, 468, 469, 470, 471, 472, 473, 474, 477, 478, 479, 480, 481, 482,
-  483, 484, 485, 486, 487, 488, 489, 490, 491, 492, 495, 496, 497, 498, 500, 501, 502, 503, 505,
-  506, 507, 508, 510, 511, 512, 513, 515, 516, 517, 518, 520, 521, 522, 523, 525, 526, 527, 528,
-  530, 531, 532, 533, 536, 537, 538, 539, 541, 542, 543, 544, 546, 547, 548, 549, 551, 552, 553,
-  554, 556, 557, 558, 559, 561, 562, 563, 564, 566, 567, 568, 569, 571, 572, 573, 574, 599.
-- `cprop.isle` (52): 3, 9, 14, 20, 26, 56, 62, 68, 74, 104, 109, 114, 119, 147, 152, 155, 159, 162, 165, 169, 170,
-  171, 172, 174, 183, 193, 197, 201, 205, 209, 214, 217, 220, 223, 227, 229, 232, 235, 238, 241,
-  247, 249, 252, 254, 257, 259, 333, 337, 341, 345, 349, 521.
-- `icmp.isle` (92): 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 21, 23, 25, 27, 29, 31, 33, 35, 41, 43, 84,
-  96, 104, 108, 112, 116, 120, 125, 130, 135, 140, 145, 150, 190, 193, 299, 300, 303, 304, 306,
-  307, 310, 311, 312, 313, 314, 315, 316, 317, 325, 329, 333, 337, 341, 345, 349, 353, 359, 362,
-  371, 374, 377, 380, 438, 442, 447, 451, 479, 482, 485, 486, 489, 490, 491, 492, 495, 498, 501,
-  502, 505, 506, 509, 510, 513, 514, 517, 520, 523, 526, 529, 532, 535.
+- `arithmetic.isle` (216): 8, 13, 18, 24, 26, 28, 31, 35, 53, 59, 65, 69, 73, 75, 173, 226, 233,
+  236, 239, 240, 243, 244, 247, 295, 296, 297, 298, 301, 302, 303, 304, 307, 308, 311, 312, 313,
+  314, 317, 318, 319, 320, 323, 324, 327, 328, 329, 330, 337, 338, 339, 340, 346, 352, 353, 354,
+  355, 356, 357, 358, 359, 362, 363, 364, 365, 366, 367, 368, 369, 372, 373, 374, 375, 378, 379,
+  380, 381, 384, 385, 388, 389, 390, 391, 404, 405, 406, 407, 424, 431, 432, 433, 434, 435, 436,
+  437, 438, 441, 442, 443, 444, 445, 446, 447, 448, 451, 452, 453, 454, 457, 458, 459, 460, 461,
+  462, 463, 464, 467, 468, 469, 470, 471, 472, 473, 474, 477, 478, 479, 480, 481, 482, 483, 484,
+  485, 486, 487, 488, 489, 490, 491, 492, 495, 496, 497, 498, 500, 501, 502, 503, 505, 506, 507,
+  508, 510, 511, 512, 513, 515, 516, 517, 518, 520, 521, 522, 523, 525, 526, 527, 528, 530, 531,
+  532, 533, 536, 537, 538, 539, 541, 542, 543, 544, 546, 547, 548, 549, 551, 552, 553, 554, 556,
+  557, 558, 559, 561, 562, 563, 564, 566, 567, 568, 569, 571, 572, 573, 574, 577, 578, 579, 580,
+  581, 582, 583, 584, 599, 607, 610, 611, 612.
+- `cprop.isle` (61): 3, 9, 14, 20, 26, 56, 62, 68, 74, 79, 84, 89, 94, 99, 104, 109, 114, 119,
+  125, 130, 132, 135, 147, 152, 155, 159, 162, 165, 169, 170, 171, 172, 174, 183, 193, 197, 201,
+  205, 209, 214, 217, 220, 223, 227, 229, 232, 235, 238, 241, 247, 249, 252, 254, 257, 259, 333,
+  337, 341, 345, 349, 521.
+- `icmp.isle` (95): 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 21, 23, 25, 27, 29, 31, 33, 35, 41, 43, 84,
+  96, 104, 108, 112, 116, 120, 125, 130, 135, 140, 145, 150, 190, 193, 196, 199, 202, 299, 300,
+  303, 304, 306, 307, 310, 311, 312, 313, 314, 315, 316, 317, 325, 329, 333, 337, 341, 345, 349,
+  353, 359, 362, 371, 374, 377, 380, 438, 442, 447, 451, 479, 482, 485, 486, 489, 490, 491, 492,
+  495, 498, 501, 502, 505, 506, 509, 510, 513, 514, 517, 520, 523, 526, 529, 532, 535.
 - `selects.isle` (82): 4, 9, 26, 27, 28, 29, 30, 31, 32, 33, 36, 37, 38, 39, 40, 41, 42, 43, 91,
   95, 103, 109, 110, 113, 114, 115, 116, 117, 118, 119, 120, 124, 125, 126, 127, 130, 131, 132,
   133, 137, 138, 139, 140, 141, 142, 143, 144, 148, 149, 150, 151, 152, 153, 154, 155, 159, 160,
   161, 162, 163, 164, 165, 166, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182,
   183, 184, 185, 205, 209, 213.
-- Not proven in `cprop.isle`: 79, 84, 89, 94, 99, 125, 130, 132, 135, 269, 320, 322, 324, 375,
-  377, 379; `arithmetic.isle`: the other 86 roots (`Isle.Opt.Closure` roots of term 177 minus
-  the list above).
+- `remat.isle` (12): 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26.
+- `shifts.isle`, added by RulesRest: 41, 50, 61, 71, 152, 270, 280, 285.
+- Not proven in `cprop.isle`: 269, 320, 322, 324, 375, 377, 379; `arithmetic.isle`: the 42 roots
+  listed under "Not proven after RulesRest"
 
 **Template** (`RuleAuto.lean`): `rule_auto r` = `rule_intro` (fuel `k+1000`), `rule_no_iflets`,
 `rule_lhs hG`, `rule_rhs`, `rule_finish`.
@@ -677,7 +708,7 @@ term 177 = `simplify`):
    `ok_rule_X`" if an id has no proof). Shared files
    (`RuleAuto`, `RuleEmbed`, `RuleNode`, `RuleImm`) need one owner or serialized merges.
 
-Known gaps, by frequency in the failed roots (arithmetic 86 incl. 7 SAT-timeout-flaky ones, cprop 16):
+Known gaps, by frequency in the failed roots (as of the first fan-out; arithmetic 86, cprop 16 — now 42 and 7, see above):
 1. If-lets (`rule_no_iflets` only handles `[]`; 30+ arithmetic roots): evaluate `hil` like `hev`
    and split on the `Bool` condition — the right-hand side then runs under that fact.
 2. Internal constructors with if-lets on the right (`iconst_u`/`iconst_s ty k` with `k ≠ 0`,
