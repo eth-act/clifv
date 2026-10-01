@@ -37,6 +37,7 @@ contract `IselContract.lean`), `regalloc-proof.md` (M6), `encoder.md` (M5), `cli
 | **Atomics stage B** (2026-10-02, `agent/atomics-proof`): `atomic_rmw` (all 11 ops, i8–i64) and `atomic_cas` (i8–i64) are in E and inside `backend_correct_final`, on the same single-threaded Arm model (the LL/SC loop body runs once: `stlxr` succeeds and writes status 0). The loops are `isCtl` in `csem` (`loopSem`: one symbolic run of the body, FV/Backend/Proof/LoopRun.lean); register level in FV/E2E/RegLevelAtomic.lean (`realizes_rmwLoop`, `realizes_casLoop`). The RMW memory clause only fixes the low `ty.bytes*8` bits of the old-value def (smin/smax i8/i16 sign-extend x27 in place). The checker `ctlInstOk` requires every loop operand to be an int vreg. The CAS i32 comparison uses `uxtw` (deviation from Cranelift's upstream bug, docs/research/upstream-bugs.md) | **proven** (`atomic_rmw_*_ok` rules 2357–2377, `atomic_cas_ok` 2390; `rmwBody_spec`, `casHead_spec`, `stlxr_spec`; `csem_rmwLoop`, `csem_casLoop`). lean-e2e-check 1126 in scope / 0 rejected; cargo fv debug verified: survey 3174/3179, vendor 4381/4399, fv-demo 1332/1346 |
 | **Stack-passed parameters and `call` arguments** (2026-10-01, `agent/stack-tls-proof`): functions with more than 8 parameters (an `sret` pointer does not count) and `call`s of externs with more than 8 parameters are inside `backend_correct_final`. `InSubset` drops `regParams`/`callRegArgs` (a `try_call`'s callee and the indirect calls keep at most 8 register parameters: `tryRegArgs`, `indSigs`). Entry: `ArgsIn` puts a stack location `off` (`locsOf`, `sigArgLocs`) at `sp + off` of the ABI entry state (`StackArgAt`); the entry code loads it from `fp + 16 + off` (`DriverCheck.entryLoads`, `entry_step`). Calls: the outgoing stores go to `[sp + off]` (`argStores_run`), the callee contract `XCallsOk` takes `ArgsAt` (stack arguments read from memory at `sp + off`). `Rel` gains the outgoing-area size `out` (`OutRel`: `[sp, sp + out)` fits, avoids `F` and holds no live CLIF byte; `backend_correct_final` takes `out := intBase`). `lowerCheck` adds `callsStackOkB` (every call's stack area fits `vc.outgoing`, `stackLayoutOk`) and `entryOkB`; `prepCheck` keeps `outgoing`. Specialisations (new ⇒ old for ≤ 8 parameters / no stack arguments): `InSubset.of_regArgs`, `argsIn_iff_of_regs`, `argsAt_iff_of_regs`, `xCallsOk_of_regArgs`, `Rel.holds_zero` | **proven** (`call_bl_ruleOk`/`call_got_ruleOk` any arity, `entry_step`, `callsStack_of_check`, `entryOk_of_check`, `stackArgsAvoid_frameF`, `outgoing_le_intBase`); `lean-e2e-check`: 1146 in scope (1126 before), 0 rejected, 0 not covered |
 | **`tls_value`** (2026-10-01, `agent/stack-tls-proof`): `tls_value.i64` of a `symbol tls` global value (offset 0; `elf_gd`, cg_clif's TLS model) is in E (`Compile.instE`, `globalE`) and inside `backend_correct_final` for the one thread `Clif.run` models (its instance of the variable is the memory's symbol). M4: root rules 1129 (`elf_gd`, `tls_value_ok`) and 1130 (`macho`, vacuous), `MemRefines`' TLSDESC clause (`memRefines_csem`). M6: `ElfTlsGetAddr` is `isCtl`; `csem` gives `[X.sym n 0, X.tp]` and the flags `X.tlsFlags n w` (`ExtSem.tp`/`tlsFlags`); the machine hooks the TLSDESC sequence (`ArmStepX`: `adrp` advances the pc, `ldr` runs `H.tls n tmp`) under the trusted contract `TlsOk` (premise `hTls`, only for a function with a `tls_value`; see "`tls_value`" below); `realizes_tls`/`os_tls` (FV/E2E/RegLevelTls.lean). x30 joins `Masked` (`docs/contracts/regalloc-proof.md`: no weakening for other functions). Validators: `lowerCheck` (`noTls_of_check`) and `prepCheck` (`noTls_of_prepCheck`) keep `ElfTlsGetAddr` out of the VCode of a function without `tls_value`; `ctlInstOk` requires int vregs | **proven**; `lean-e2e-check`: 1148 in scope (1146 before), 0 rejected, 0 not covered; cargo fv debug verified fv-demo 1336/1346, survey 3174/3179, vendor 4398/4399 |
+| **Last unverified functions** (2026-10-01, `agent/last-unverified`): (1) stack-passed arguments of a `try_call` are inside `backend_correct_final`: `TryRuleOk` takes `SigStackOk e.sig outB` instead of "at most 8 parameters", `TryRulesCorrect` also `MemRefines`/`OutArgsOk` (as `CallRulesCorrect`), `TryCalls` takes the outgoing area, `DriverHyp.tries` carries `TryStack f out`, `lowerCheck`'s `callsStackOkB` also checks `try_call` callees (`tryStack_of_check`); `InSubset.tryRegArgs` and `Backend.regArgCalls` are gone. (2) `Opt.Legal.check` accepts `try_call` (expanded arguments/returns, normal-return arguments `expandTry`) and `call_indirect` without `i128` operands (plan `callInd`); `backend_correct_legal` drops `hci`/`hnt` and takes `hCT`, `hXI` and `hind` (vacuous without such calls: `backend_correct_legal_callFree` is the former statement). (3) recursion: `cargo fv` renames a function's self-call declaration to an extern alias (see "Calls of the function itself") | **proven** (`try_sym_lowerTryOk`/`try_got_lowerTryOk` any arity; `sim_try`, `sim_callInd`, `check_callInd`); `cargo fv` debug: fv-demo 1340/1346 (6 skipped), survey 3179/3179, vendor all verified |
 
 ### Final hypotheses (`E2E.backend_correct_final`, 2026-09-28)
 
@@ -108,7 +109,10 @@ the `retN`/value arguments).
 
 * **Scope** `InSubset.tryExterns`: a `try_call` calls an extern that is not a function of `p`
   (like `externCalls`); `Compile.termE` admits `try_call` and `try_call_indirect` (see
-  "Indirect calls").
+  "Indirect calls"). A `try_call`'s callee may take stack-passed arguments (agent/last-unverified:
+  the stores into the outgoing area precede the `tryCall`, `try_sym_lowerTryOk`/
+  `try_got_lowerTryOk`; `lowerCheck`'s `callsStackOkB` checks the callee's area against
+  `vc.outgoing`).
 * **Claim**: exactly the normal return. `ArmRefines` is unchanged: when `Clif.runLoop`
   returns or traps, so does the Arm code. A run that passes through a `try_call` is related
   only along the path where the callee returns normally.
@@ -143,8 +147,9 @@ the `retN`/value arguments).
   `InSubset.tryExterns`), so the statement specialises to the former one. The mid-end and
   `i128` theorems (`backend_correct_opt`/`_opt_proven`, `backend_correct_legal`) keep
   `try_call` out with an explicit premise (`hnt : ∀ B ∈ f.blocks, B.term.isTry = false`);
-  `lean-backend` flags such functions unverified under `--opt`/`--opt-proven-only` and after
-  `i128` legalisation.
+  `lean-backend` flags such functions unverified under `--opt`/`--opt-proven-only`.
+  `backend_correct_legal` covers `try_call` since agent/last-unverified
+  (`docs/contracts/legalize128.md`).
 
 ### `tls_value` (one thread, trusted TLSDESC hook)
 
@@ -221,11 +226,27 @@ value, run as `env.extern` with the argument and result types checked against th
   (`InSubset.of_indirectFree`, `xCallsIndOk_nil`, `backend_correct_final_indirectFree`) and so
   are the new `TrapsExplicit` clauses (`TrapsExplicit.of_indirectFree`): the statement is the
   former one.
-* **Mid-end and `i128`**: `lstep` does not model `call_indirect`, so `backend_correct_opt`/
-  `_opt_proven` and `backend_correct_legal` keep the premise that the (source resp. legalised)
-  function has none (`hci`, next to `hnt`); the indirect-call contract is then vacuous.
-  `lean-backend` flags `call_indirect` functions unverified under `--opt` and after `i128`
-  legalisation (`Opt.Legal.check` rejects indirect calls anyway).
+* **Mid-end**: `lstep` does not model `call_indirect`, so `backend_correct_opt`/
+  `_opt_proven` keep the premise that the function has none (`hci`, next to `hnt`); the
+  indirect-call contract is then vacuous. `lean-backend` flags `call_indirect` functions
+  unverified under `--opt`. **`i128`** (agent/last-unverified): `backend_correct_legal` covers a
+  `call_indirect` without `i128` operands (premises `hXI` and `hind`; `Opt.Legal.check` rejects
+  `try_call_indirect` and `func_addr`).
+
+### Calls of the function itself (recursion, `cargo fv`)
+
+`InSubset.externCalls` excludes calls of functions of the program: `Clif.run` enters such a
+callee, while the Arm model abstracts every call through the callee contract. `cargo fv`
+compiles each function in its own file, so the only such call is a recursive one; every other
+call of a crate function is already an extern call under `XCallsOk`/`CalleeOk`. `cargo fv`
+(`self_call_alias`, `rust/crates/cargo-fv/src/pipeline.rs`) renames the self-call declarations
+`fnK = [colocated] %f(…)` to the extern `%f__fvself(…)`, compiles that file (inside the theorem,
+the recursive call under the callee contract like any other), and redirects the alias's
+relocations to `f` (`llvm-objcopy --redefine-sym`): the code is the same (disassembly identical
+to compiling the original file), the linker resolves both names to `f`. The claim is the modular
+one made for every call: the callee at `f`'s address behaves as the environment's `f__fvself`.
+`lean-backend` itself still reports a call of a function of the file unverified (multi-function
+files, runtests).
 * **Regression file**: `corpus/clif-regress/call_indirect.clif` (a vtable built with
   `func_addr` and dispatched through, a function address returned as a value, `try_call_indirect`).
 
@@ -471,8 +492,7 @@ functions over the validation budget (`Backend.validationBudget`: instructions �
 `compiled, unverified (validation budget)`.
 
 **Functions outside the theorem** (`FV/Backend.lean` `unverifiedReason?`: outside
-clif-subset-v2 E, more than 8 parameters, calls (also `try_call`s) of functions of the same
-file, special-purpose parameters other than one `sret` pointer (`abiSigs`), indirect calls
+clif-subset-v2 E, calls (also `try_call`s) of functions of the same file, special-purpose parameters other than one `sret` pointer (`abiSigs`), indirect calls
 with more than 8 parameters or special-purpose parameters (`indSigsOk`)) are still
 compiled, without validation, and reported as unverified (`FileAsm.unverified`; `lean-backend`
 prints `compiled, unverified (outside backend_correct): …`).
@@ -513,10 +533,10 @@ extrt and runtests (445 files): no function rejected.
 2. **M6**: `RegLevelCorrect` and `DriverSem` are discharged (`regLevelCorrect_backend`,
    `driverSem_csem`); open: `Refines`/`MemRefines` of `csem` (M6Insts) and the decision of
    `FormsCovered` by `lean-e2e-check` (`formsCoveredB`).
-3. **Scope extensions**: calls between compiled functions (induction on call depth, using
-   `backend_correct` of the callee as its callee contract); stack-passed arguments of a
-   `try_call` and of indirect calls (`InSubset.tryRegArgs`, `indSigs`); memory-access traps
-   (need a fault model).
+3. **Scope extensions**: calls between compiled functions of one file (induction on call
+   depth, using `backend_correct` of the callee as its callee contract; `cargo fv` avoids them,
+   see "Calls of the function itself"); stack-passed arguments of indirect calls (`indSigs`);
+   memory-access traps (need a fault model).
 
 ## Trusted (not proven)
 

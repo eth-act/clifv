@@ -242,9 +242,10 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   The report labels it **`verified (normal returns; unwinding trusted)`** and counts it among
   the verified functions, with a footnote giving how many there are. Nothing is claimed about
   unwinding: the landing pads, the payload on the handler edges, the LSDA and the `.eh_frame`
-  rows are trusted. `try_call_indirect` is verified the same way (agent/indirect-proof). Every
-  `try_call` function stays unverified under `--opt-proven-only` and after `i128`
-  legalisation (those theorems cover `try_call`-free functions only).
+  rows are trusted. `try_call_indirect` is verified the same way (agent/indirect-proof). A `try_call`'s callee may take stack-passed arguments (agent/last-unverified). Every
+  `try_call` function stays unverified under `--opt-proven-only` (that theorem covers
+  `try_call`-free functions only); after `i128` legalisation `try_call` is covered
+  (`E2E.backend_correct_legal`, agent/last-unverified), `try_call_indirect` is not.
 * **Indirect calls are verified** (agent/indirect-proof): functions with `call_indirect`,
   `func_addr` (vtables, `fn` pointers, `dyn` dispatch) and `try_call_indirect` are inside
   `E2E.backend_correct_final` when the indirect calls have at most 8 register parameters and
@@ -253,8 +254,14 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   function not compiled in the same file, e.g. a `dyn` method from another codegen unit or
   the standard library) under the contract `XCallsIndOk`; one that reaches a function of the
   same file is excluded by the run premise `TrapsExplicit.indirect`, as direct calls of
-  functions of the file are. Under `--opt-proven-only` and after `i128` legalisation,
-  `call_indirect` functions stay unverified (the mid-end simulation does not model them).
+  functions of the file are. Under `--opt-proven-only` `call_indirect` functions stay
+  unverified (the mid-end simulation does not model them); after `i128` legalisation a
+  `call_indirect` without `i128` operands is covered (agent/last-unverified).
+* **Recursion**: each function is compiled in its own file, so a recursive call is the only
+  call of a function of the file. `cargo fv` compiles it as a call of an extern alias
+  `<symbol>__fvself` and points the alias's relocations back at `<symbol>` (the same code):
+  the recursive call is then covered by the callee contract like every other call
+  (`docs/contracts/e2e.md`, "Calls of the function itself").
 * With the shipped cg_clif (no unwinding build, or `FV_CG_CLIF=cranelift`), no function has a
   landing pad, `cargo fv` prints a note, and the program behaves as under plain cg_clif: the
   reference for comparisons is then plain cg_clif, not LLVM (`BASELINE=cg_clif
@@ -368,6 +375,19 @@ survey 53, vendor 189 test outcomes): fv-demo 1336 verified of 1346 (4 unverifie
 fallback), survey 3174 of 3179 (5 unverified), vendor 4398 of 4399 (1 unverified: stack-passed
 arguments of a `try_call`). `lean-e2e-check`: 1148 in scope (1146 before, plus the 2 functions
 of `corpus/clif-regress/tls_elf_gd.clif`), 0 rejected, 0 not covered.
+
+After agent/last-unverified (2026-10-01: stack-passed arguments of a `try_call`, `try_call` and
+`call_indirect` in `i128`-legalised functions, recursion through the self-call alias;
+debug, `cargo fv build --tests`): fv-demo 1340 verified of 1346 (0 unverified, 6 fallback:
+`package.metadata.fv.skip`), survey 3179 of 3179, vendor all verified. The last unverified
+functions were: the 5 survey `g_u128` test functions (`try_call`s of `i128` functions) and 2
+fv-demo `downcast_ref` instances (`call_indirect`), rejected by `Opt.Legal.check`; vendor's
+`hashbrown` `reserve_rehash` (a `try_call` of an extern with more than 8 parameters); and
+fv-demo's recursive `unwind::deep` (2 instances: a call of a function of the file).
+`examples/compare.sh` SAME for all three, debug (fv-demo 19, survey 53, vendor 189 test
+outcomes; `cargo fv test`: fv-demo 1340/1346, survey 3179/3179, vendor 4399/4399) and
+`--release` (fv-demo 947/953, 6 fallback; survey 2203/2208, 5 unverified: `i128` legalisations
+the validator still rejects — not investigated; vendor 3082/3082).
 
 Of the verified, `verified (normal returns; unwinding trusted)`: fv-demo 231 / 204, survey
 492 / 419, vendor 820 / 727 (debug / release). Before (main fbbd5d9, `try_call` functions
