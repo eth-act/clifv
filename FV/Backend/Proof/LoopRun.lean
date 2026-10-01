@@ -1,4 +1,5 @@
 import FV.Backend.Proof.RegallocAtomic
+import FV.Backend.Proof.IselSemCmp
 
 /-!
 # Runs of the LL/SC loop bodies (M6 proof)
