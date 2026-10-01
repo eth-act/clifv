@@ -422,8 +422,7 @@ theorem csem_rmwLoop (X : ExtSem) (ty : CTy) (op : AtomicRmwLoopOp) (fl : Clif.M
     simp only [hrun, herr', hprog', and_self, ite_true, List.map_cons, List.map_nil]
     refine ⟨t', _, _, _, rfl, ?_, ?_⟩
     · simp only [regVal]
-      rw [← h27, BitVec.setWidth_setWidth_of_le _ h8]
-      simp [rnum]
+      rw [BitVec.setWidth_setWidth_of_le _ (by omega), ← h27]; rfl
     · refine sameNF_of_frame [24#5, 27#5, 28#5] [25#5, 26#5] (by simp [Masked])
         (by simp [Masked]) hfr (fun f hf => ?_) (fun f => Arm.r_of_write_mem_bytes)
         (fun a _ => by rw [hmem, Arm.mem_write_mem_bytes_of_mem_eq (s₂ := w) (by simp [Arm.ArmState.mem_w_eq_mem])])
@@ -433,7 +432,18 @@ theorem csem_rmwLoop (X : ExtSem) (ty : CTy) (op : AtomicRmwLoopOp) (fl : Clif.M
         Arm.r_of_w_different (by simpa [rnum] using hf.1)]
   · rename_i herr
     rw [if_pos ⟨hty, hav⟩]
-    exact ⟨_, _, _, _, rfl, ofX_setWidth_setWidth h8 _, SameWorldNF.refl F _⟩
+    exact ⟨_, _, _, _, rfl, ofX_setWidth_setWidth h8 _, fun _ _ _ => rfl, fun _ _ => rfl, rfl⟩
+
+/-- A loop run (`loopSem`) that ends without error. -/
+theorem loopSem_eq {ty : CTy} {a : CV} {body : List Line} {regs : List Reg} {uses : List CV}
+    {defs : List Reg} {w t' : Arm.ArmState}
+    (hc : AtomTy ty ∧ Avoids F ty.bytes (lo64 a) ∧ Arm.r .ERR w = .None)
+    (hrun : execLines env0 body ((regs.zip uses).foldl (fun s p => setReg s p.1 p.2) w) = some t')
+    (h2 : Arm.r .ERR t' = .None ∧ t'.program = w.program) :
+    loopSem F ty a body regs uses defs w = some (defs.map (regVal t'), t', .next) := by
+  unfold loopSem
+  rw [if_pos hc, hrun]
+  simp only [h2, and_self, ite_true]
 
 /-- `csem` of an `atomic_cas` loop: its head once (`casHead_spec`), then, if the values are
 equal (`b.ne` not taken), its `stlxr` (`stlxr_spec`). -/
@@ -446,74 +456,64 @@ theorem csem_casLoop (X : ExtSem) (ty : CTy) (fl : Clif.MemFlags) (ra re rx rd r
         (if Arm.read_mem_bytes ty.bytes (lo64 u) w = (lo64 e).setWidth (ty.bytes * 8) then
           Arm.write_mem_bytes ty.bytes (lo64 u) ((lo64 x).setWidth (ty.bytes * 8)) w
         else w) := by
-  simp only [csem]
-  split
-  · rename_i herr
-    simp only [loopSem, List.zip_cons_cons, List.zip_nil_right, List.zip_nil_left, List.foldl_cons,
-      List.foldl_nil, setReg_x]
-    rw [if_pos ⟨hty, hav, herr⟩]
-    let t0 := Arm.w (.GPR (rnum 28)) (lo64 x) (Arm.w (.GPR (rnum 26)) (lo64 e)
-      (Arm.w (.GPR (rnum 25)) (lo64 u) w))
-    have h0 : ∀ f, f ≠ .GPR 25#5 → f ≠ .GPR 26#5 → f ≠ .GPR 28#5 → Arm.r f t0 = Arm.r f w := by
-      intro f h1 h2 h3
-      simp only [t0]
-      rw [Arm.r_of_w_different (by simpa [rnum] using h3), Arm.r_of_w_different (by simpa [rnum] using h2),
-        Arm.r_of_w_different (by simpa [rnum] using h1)]
-    have h25 : Arm.r (.GPR 25#5) t0 = lo64 u := by simp [t0, rnum]
-    have h26 : Arm.r (.GPR 26#5) t0 = lo64 e := by simp [t0, rnum]
-    have h28 : Arm.r (.GPR 28#5) t0 = lo64 x := by simp [t0, rnum]
-    have hm0 : t0.mem = w.mem := by simp [t0, Arm.ArmState.mem_w_eq_mem]
-    have hrd : Arm.read_mem_bytes ty.bytes (lo64 u) t0 = Arm.read_mem_bytes ty.bytes (lo64 u) w := by
-      simp [t0, Arm.read_mem_bytes_of_w]
-    obtain ⟨t1, hrun, -, h27, hfr, hmem, hprog, hne⟩ := casHead_spec hty fl env0 t0 (by simp [t0, herr])
-    rw [h25, hrd] at h27 hne
-    rw [h26] at hne
-    have herr1 : Arm.r .ERR t1 = .None := by
-      rw [hfr .ERR (by simp) (by simp) (by simp), h0 .ERR (by simp) (by simp) (by simp), herr]
-    have hprog1 : t1.program = w.program := by rw [hprog]; simp [t0, Arm.w_program]
-    have hsw1 : ∀ f, f ≠ .PC → f ≠ .GPR 27#5 → (∀ g, f ≠ .FLAG g) → f ≠ .GPR 25#5 →
-        f ≠ .GPR 26#5 → f ≠ .GPR 28#5 → Arm.r f t1 = Arm.r f w := fun f a b c d e g => by
-      rw [hfr f a (by simpa using b) c, h0 f d e g]
-    simp only [show ([Reg.x 25, .x 26, .x 28].zip [u, e, x]).foldl (fun s p => setReg s p.1 p.2) w = t0
-      from rfl, hrun, herr1, hprog1, and_self, ite_true, List.map_cons, List.map_nil]
-    split
-    · rename_i hc
-      refine ⟨t1, _, ?_, ?_⟩
-      · simp only [regVal, h27]; rfl
-      · rw [if_neg (hne.1 hc)]
-        refine ⟨fun f hf hfl => hsw1 f (fun e => hf (by subst e; trivial))
-          (fun e => hf (by subst e; simp [Masked])) hfl (fun e => hf (by subst e; simp [Masked]))
-          (fun e => hf (by subst e; simp [Masked])) (fun e => hf (by subst e; simp [Masked])),
-          fun a _ => by rw [hmem, hm0], hprog1⟩
-    · rename_i hc
-      have heq : Arm.read_mem_bytes ty.bytes (lo64 u) w = (lo64 e).setWidth (ty.bytes * 8) := by
-        by_contra h; exact hc (hne.2 h)
-      rw [if_pos heq]
-      have h25' : Arm.r (.GPR 25#5) t1 = lo64 u := by
-        rw [hfr _ (by simp) (by simp) (by simp), h25]
-      have h28' : Arm.r (.GPR 28#5) t1 = lo64 x := by
-        rw [hfr _ (by simp) (by simp) (by simp), h28]
-      obtain ⟨t2, hrun2, -, hfr2, hmem2, hprog2⟩ := stlxr_spec hty fl env0 t1 herr1
-      rw [h25', h28'] at hmem2
-      have herr2 : Arm.r .ERR t2 = .None := by rw [hfr2 .ERR (by simp) (by simp), herr1]
-      have hprog2' : t2.program = t1.program := hprog2
-      rw [if_pos ⟨hty, hav, herr1⟩]
-      simp only [List.zip_nil_left, List.foldl_nil, hrun2, herr2, hprog2', and_self, ite_true,
-        List.map_cons, List.map_nil]
-      refine ⟨t2, _, ?_, ?_⟩
-      · simp only [regVal]
-        rw [hfr2 _ (by simp) (by simp), h27]; rfl
-      · refine ⟨fun f hf hfl => ?_, fun a _ => ?_, ?_⟩
-        · rw [Arm.r_of_write_mem_bytes, hfr2 f (fun e => hf (by subst e; trivial))
-            (fun e => hf (by subst e; simp [Masked]))]
-          exact hsw1 f (fun e => hf (by subst e; trivial))
-            (fun e => hf (by subst e; simp [Masked])) hfl (fun e => hf (by subst e; simp [Masked]))
-            (fun e => hf (by subst e; simp [Masked])) (fun e => hf (by subst e; simp [Masked]))
-        · rw [hmem2, Arm.mem_write_mem_bytes_of_mem_eq (s₂ := w) (by rw [hmem, hm0])]
-        · rw [hprog2', hprog1, Arm.write_mem_bytes_program]
-  · rename_i herr
+  rcases (Classical.em (Arm.r .ERR w = .None)).symm with herr | herr
+  · simp only [csem, herr, ite_false]
     rw [if_pos ⟨hty, hav⟩]
-    exact ⟨_, _, rfl, SameWorldNF.refl F _⟩
+    exact ⟨_, _, rfl, fun _ _ _ => rfl, fun _ _ => rfl, rfl⟩
+  have h0 : ∀ f, f ≠ .GPR 25#5 → f ≠ .GPR 26#5 → f ≠ .GPR 28#5 →
+      Arm.r f (Arm.w (.GPR (rnum 28)) (lo64 x) (Arm.w (.GPR (rnum 26)) (lo64 e)
+        (Arm.w (.GPR (rnum 25)) (lo64 u) w))) = Arm.r f w := by
+    intro f h1 h2 h3
+    rw [Arm.r_of_w_different (by simpa [rnum] using h3), Arm.r_of_w_different (by simpa [rnum] using h2),
+      Arm.r_of_w_different (by simpa [rnum] using h1)]
+  obtain ⟨t1, hrun, -, h27, hfr, hmem, hprog, hne⟩ := casHead_spec hty fl env0
+    (Arm.w (.GPR (rnum 28)) (lo64 x) (Arm.w (.GPR (rnum 26)) (lo64 e)
+      (Arm.w (.GPR (rnum 25)) (lo64 u) w))) (by rw [h0 _ (by simp) (by simp) (by simp), herr])
+  simp only [rnum, Arm.r_of_w_same, Arm.read_mem_bytes_of_w,
+    show ∀ v (t : Arm.ArmState), Arm.r (.GPR 25#5) (Arm.w (.GPR 28#5) v t) = Arm.r (.GPR 25#5) t
+      from fun _ _ => Arm.r_of_w_different (by decide),
+    show ∀ v (t : Arm.ArmState), Arm.r (.GPR 25#5) (Arm.w (.GPR 26#5) v t) = Arm.r (.GPR 25#5) t
+      from fun _ _ => Arm.r_of_w_different (by decide),
+    show ∀ v (t : Arm.ArmState), Arm.r (.GPR 26#5) (Arm.w (.GPR 28#5) v t) = Arm.r (.GPR 26#5) t
+      from fun _ _ => Arm.r_of_w_different (by decide)] at h27 hne
+  have hm0 : (Arm.w (.GPR (rnum 28)) (lo64 x) (Arm.w (.GPR (rnum 26)) (lo64 e)
+      (Arm.w (.GPR (rnum 25)) (lo64 u) w))).mem = w.mem := by simp [Arm.ArmState.mem_w_eq_mem]
+  have herr1 : Arm.r .ERR t1 = .None := by
+    rw [hfr .ERR (by simp) (by simp) (by simp), h0 .ERR (by simp) (by simp) (by simp), herr]
+  have hprog1 : t1.program = w.program := by rw [hprog]; simp [Arm.w_program]
+  have hsw1 : ∀ f, ¬ Masked f → (∀ g, f ≠ .FLAG g) → Arm.r f t1 = Arm.r f w := fun f hf hfl => by
+    rw [hfr f (fun e => hf (by subst e; trivial)) (by simpa using fun e => hf (by subst e; simp [Masked])) hfl,
+      h0 f (fun e => hf (by subst e; simp [Masked])) (fun e => hf (by subst e; simp [Masked]))
+        (fun e => hf (by subst e; simp [Masked]))]
+  have hhead := loopSem_eq F (body := casLoopHead ty.bits fl) (regs := [.x 25, .x 26, .x 28])
+    (uses := [u, e, x]) (defs := [.x 27, .x 24]) ⟨hty, hav, herr⟩ hrun ⟨herr1, hprog1⟩
+  simp only [csem, herr, ite_true, hhead]
+  by_cases hc : Arm.ConditionHolds Cond.ne.bits t1 = true
+  · rw [if_pos hc, if_neg (hne.1 hc)]
+    refine ⟨t1, regVal t1 (.x 24), ?_, hsw1, fun a _ => by rw [hmem, hm0], hprog1⟩
+    simp only [List.map_cons, List.map_nil, regVal, rnum, h27]; rfl
+  · rw [if_neg hc]
+    have heq : Arm.read_mem_bytes ty.bytes (lo64 u) w = (lo64 e).setWidth (ty.bytes * 8) :=
+      Classical.byContradiction fun h => hc (hne.2 h)
+    rw [if_pos heq]
+    have h25' : Arm.r (.GPR 25#5) t1 = lo64 u := by
+      rw [hfr _ (by simp) (by simp) (by simp)]; simp [rnum]
+    have h28' : Arm.r (.GPR 28#5) t1 = lo64 x := by
+      rw [hfr _ (by simp) (by simp) (by simp)]; simp [rnum]
+    obtain ⟨t2, hrun2, -, hfr2, hmem2, hprog2⟩ := stlxr_spec hty fl env0 t1 herr1
+    rw [h25', h28'] at hmem2
+    have herr2 : Arm.r .ERR t2 = .None := by rw [hfr2 .ERR (by simp) (by simp), herr1]
+    rw [loopSem_eq F (body := [.ins (.stlxr ty.bits (.x 24) (.x 28) (.x 25)) fl.trapCode])
+      (regs := []) (uses := []) (defs := [.x 27, .x 24]) ⟨hty, hav, herr1⟩ hrun2 ⟨herr2, hprog2⟩]
+    refine ⟨t2, regVal t2 (.x 24), ?_, ?_⟩
+    · simp only [List.map_cons, List.map_nil, regVal, rnum]
+      rw [hfr2 _ (by simp) (by simp), h27]; rfl
+    · refine ⟨fun f hf hfl => ?_, fun a _ => ?_, ?_⟩
+      · rw [Arm.r_of_write_mem_bytes, hfr2 f (fun e => hf (by subst e; trivial))
+          (fun e => hf (by subst e; simp [Masked]))]
+        exact hsw1 f hf hfl
+      · rw [hmem2, Arm.mem_write_mem_bytes_of_mem_eq (s₂ := w) (by rw [hmem, hm0])]
+      · rw [hprog2, hprog1, Arm.write_mem_bytes_program]
 
 /-- **`MemRefines` for `csem`** (M6): at slot base `ctx.slotBase` and the link-time symbol
 addresses `syms` that the external semantics' `sym` agrees with. -/
