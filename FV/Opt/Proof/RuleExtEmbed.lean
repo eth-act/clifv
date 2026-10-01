@@ -142,6 +142,14 @@ theorem toNat_eq_lit {w k : Nat} (x : BitVec w) (h : k < 2 ^ w) :
 theorem lit_eq_toNat {w k : Nat} (x : BitVec w) (h : k < 2 ^ w) :
     k = x.toNat ↔ BitVec.ofNat w k = x := by
   simp only [BitVec.toNat_eq, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h]
+theorem imm64OfBits_bv {w : Nat} (b : BitVec w) : imm64OfBits b = (b.setWidth 64).toInt := by
+  simp only [imm64OfBits, Rust.asI64, ofInt_natCast_toNat]
+/-- A signed immediate fact `x.toInt = k` (`iconst_s`) as a bit-vector equation. -/
+theorem toInt_eq_iff_ofInt {w : Nat} (x : BitVec w) (k : Int) (h : (BitVec.ofInt w k).toInt = k) :
+    x.toInt = k ↔ x = BitVec.ofInt w k := by
+  constructor
+  · intro hx; rw [← BitVec.toInt_inj, hx, h]
+  · rintro rfl; exact h
 theorem toNat_le_lit {w k : Nat} (x : BitVec w) (h : k < 2 ^ w) :
     x.toNat ≤ k ↔ x ≤ BitVec.ofNat w k := by
   simp only [BitVec.le_def, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h]
@@ -160,9 +168,11 @@ theorem toNat_beq_lit {w k : Nat} (x : BitVec w) (h : k < 2 ^ w) :
 
 /-- `Int` immediates and if-let conditions to `BitVec` (see above). -/
 macro "int_bv" : tactic => `(tactic| simp (disch := decide) only [band64_bv, bor64_bv, bxor64_bv,
-  asU64_bv, asI64_bv, ofInt_natCast_toNat, ofInt_toInt_signExtend, BitVec.ofInt_add,
+  asU64_bv, asI64_bv, ofInt_natCast_toNat, ofInt_toInt_signExtend, BitVec.ofInt_add, ofInt_sub',
+  BitVec.ofInt_neg, BitVec.ofInt_mul, BitVec.ofInt_natCast, Int.toNat_natCast, BitVec.ofNat_toNat,
   BitVec.ofInt_ofNat, natCast_beq_natCast, natCast_beq_lit, lit_beq_natCast, lit_beq_toNat, toNat_beq_toNat,
-  natCast_eq_lit, lit_eq_natCast, toNat_eq_lit, lit_eq_toNat, Int.natCast_inj, toNat_beq_toNat_wide,
+  natCast_eq_lit, lit_eq_natCast, toNat_eq_lit, lit_eq_toNat, Int.natCast_inj, toInt_eq_iff_ofInt,
+  imm64OfBits_bv, BitVec.toInt_inj, toNat_beq_toNat_wide,
   natCast_le_lit, natCast_lt_lit, lit_le_natCast, lit_lt_natCast, Int.ofNat_le, Int.ofNat_lt,
   toNat_le_lit, toNat_lt_lit, lit_le_toNat, lit_lt_toNat, toNat_beq_lit, toNat_le_toNat_wide,
   toNat_lt_toNat_wide, decide_eq_true_eq, beq_true, Int.reducePow, Int.reduceSub, Int.reduceAdd,
@@ -214,8 +224,8 @@ macro_rules
       repeat' (split at hev <;>
         (try (rename_i hq; opt_split_ite hq <;>
            (try simp only [Option.some.injEq, reduceCtorEq, Bool.false_eq_true, ite_false,
-             ↓reduceIte] at hq) <;> (try subst hq) <;> (try opt_eval hev [$ts,*]))) <;>
-        try opt_norm hev [$ts,*])
+             ↓reduceIte] at hq) <;> (try subst hq))) <;>
+        try opt_eval hev [$ts,*])
       all_goals (try (simp only [reduceCtorEq] at hev; done))
       all_goals (try simp only [Option.map_eq_some_iff, Option.map_eq_none_iff] at *)
       opt_destruct
@@ -348,5 +358,83 @@ macro_rules
       all_goals opt_split_i128
       all_goals (first | rule_no_iflets | rule_iflets_c [$ts,*])
       all_goals (rule_rhs_x [$ts,*]; opt_some_subst; rule_finish_x)))
+
+end Opt.Proof
+
+namespace Opt.Proof
+
+set_option hygiene false in
+/-- `rule_rhs_x` that cases on every `typeOf` read of a made node's operand as soon as it
+appears (`opt_split_typeof`, then `opt_types`), instead of after the whole right-hand side:
+with two made `icmp`s feeding constructors (`spaceship_u`/`_s` under `sextend_maybe`) the
+unsplit reads are copied into every later state and the term grows exponentially. -/
+syntax "rule_rhs_y" ("[" (Lean.Parser.Tactic.simpStar <|> Lean.Parser.Tactic.simpErase <|> Lean.Parser.Tactic.simpLemma),* "]")? : tactic
+set_option hygiene false in
+macro_rules
+  | `(tactic| rule_rhs_y) => `(tactic| rule_rhs_y [])
+  | `(tactic| rule_rhs_y [$ts,*]) => `(tactic| (
+      opt_norm hev [$ts,*]
+      repeat' (first
+        | (opt_split_typeof hev <;> (try opt_types) <;> try opt_norm hev [$ts,*])
+        | (opt_unfold hev; opt_norm hev [$ts,*]))
+      repeat' (split at hev <;>
+        (try (rename_i hq; opt_split_ite hq <;>
+           (try simp only [Option.some.injEq, reduceCtorEq, Bool.false_eq_true, ite_false,
+             ↓reduceIte] at hq) <;> (try subst hq))) <;>
+        try opt_eval hev [$ts,*])
+      all_goals (try (simp only [reduceCtorEq] at hev; done))
+      all_goals (try simp only [Option.map_eq_some_iff, Option.map_eq_none_iff] at *)
+      opt_destruct
+      all_goals subst_vars
+      all_goals (
+        simp only [Except.ok.injEq, Prod.mk.injEq] at hev
+        obtain ⟨rfl, rfl, rfl⟩ := hev
+        simp only [List.mem_singleton, List.mem_cons, List.not_mem_nil, or_false, V.value.injEq,
+          reduceCtorEq] at hm <;>
+        subst hm)
+      all_goals opt_types))
+
+/-- `rule_auto_xr` with `rule_rhs_y`. -/
+syntax "rule_auto_y " ident ("[" (Lean.Parser.Tactic.simpStar <|> Lean.Parser.Tactic.simpErase <|> Lean.Parser.Tactic.simpLemma),* "]")? : tactic
+set_option hygiene false in
+macro_rules
+  | `(tactic| rule_auto_y $r:ident) => `(tactic| rule_auto_y $r [])
+  | `(tactic| rule_auto_y $r:ident [$ts,*]) => `(tactic| (
+      rule_intro $r
+      rule_lhs hG
+      all_goals (first | rule_no_iflets | rule_iflets)
+      all_goals (rule_rhs_y [$ts,*]; opt_some_subst; (try opt_val_ty_subst); rule_finish_x)))
+
+end Opt.Proof
+
+/-! ## Mask immediates of `shifts.isle` 27, 32, 41 (`imm64_shl ty -1 k`, `imm64_ushr ty (ty_mask ty) k`) -/
+
+namespace Opt.Proof
+
+open Isle Isle.Opt Clif
+
+set_option linter.unusedSimpArgs false
+
+@[opt_imm] theorem asI64_u64_max : Rust.asI64 18446744073709551615 = -1 := by decide
+
+@[opt_imm] theorem imm64Shl_neg_one {t t' : Ty} (ht : t ≠ .i128) (ht' : t' ≠ .i128)
+    (c : BitVec t'.width) :
+    Rust.imm64Shl (CTy.ofClif t) (-1) (imm64OfBits c) =
+      .ok (imm64OfBits (Sem.ishl (BitVec.allOnes t.width) c)) := by
+  imm_pre [Rust.imm64Shl]
+  simp only [Rust.band64, Rust.asU64, int_toNat_natCast, ofInt_mul_two_pow, shiftLeft_toNat']
+  cases t <;> (try contradiction) <;> imm_cases t' c <;> simp (disch := decide) only [ishl_mask,
+    Nat.reduceBEq, Bool.false_eq_true, reduceIte, Int.reduceSub, Int.reducePow, Nat.reduceSub] <;>
+    imm_solve
+
+@[opt_imm] theorem imm64Ushr_ty_mask {t t' : Ty} (ht : t ≠ .i128) (ht' : t' ≠ .i128)
+    (c : BitVec t'.width) :
+    Rust.imm64Ushr (CTy.ofClif t) (Rust.asI64 (2 ^ t.width - 1)) (imm64OfBits c) =
+      .ok (imm64OfBits (Sem.ushr (BitVec.allOnes t.width) c)) := by
+  imm_pre [Rust.imm64Ushr]
+  simp only [Rust.band64, Rust.asU64, int_toNat_natCast, natCast_div_two_pow, ushiftRight_toNat']
+  cases t <;> (try contradiction) <;> imm_cases t' c <;> simp (disch := decide) only [ushr_mask,
+    Nat.reduceBEq, Bool.false_eq_true, reduceIte, Int.reduceSub, Int.reducePow, Nat.reduceSub,
+    Ty.width] <;> imm_solve
 
 end Opt.Proof
