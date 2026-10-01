@@ -217,7 +217,8 @@ def Isle.Opt.simplifySkeleton {σ} (enodes …) (typeOf …) (make …)
   `simplify` calls, 12 `simplify_skeleton` calls and 930 `simplify` calls over the CLIF corpus
   fire the same rules as a `trace-log` build at `opt_level=speed` (per call, on e-classes whose
   operands are single original nodes).
-  1012 `simplify` roots and their helpers are proven (see "Rule proofs").
+  1012 `simplify` roots, 19 `simplify_skeleton` roots and their helpers are proven (see "Rule
+  proofs").
 
 ## Results (2026-09-28, default configuration: Cranelift rules, 1 round)
 
@@ -338,11 +339,11 @@ Goal: `Opt.optimize` refines `Clif.run`, and `E2E.backend_correct_final` extends
 ## Gaps
 
 - Proven: the pipeline refines (every pass, see "Pass proofs"), end to end for the proven
-  rule sets (`E2E.backend_correct_opt_proven`); only 4 `simplify` rules are proven, so the
+  rule sets (`E2E.backend_correct_opt_proven`); only the allow-listed rules are proven, so the
   default configuration (all rules) still rests on the differential tests for the rule
   obligations (`SimplifySound`/`SkeletonSound` of the full rule set).
-- Proven: the rule interpreter's soundness and 1012 `simplify` roots ("Rule proofs"); the passes
-  and the pipeline are not, so the differential tests remain the evidence for them.
+- Proven: the rule interpreter's soundness, 1012 `simplify` roots and 19 `simplify_skeleton`
+  roots ("Rule proofs").
 - Missing Cranelift mid-end features: alias analysis (redundant-load elimination,
   store-to-load forwarding), merging of identical trapping instructions, elaboration-based
   sinking and general rematerialisation (only constants, optionally), full e-class visibility
@@ -537,8 +538,8 @@ agree, 4321 → 2018 insts; `--opt-proven-only` 114/114, 4321 → 2475 (skeleton
 **Proven rules** (MidRulesInfra2, RulesBitops, RulesIcmpSel, RuleAllScale, RulesShiftsExt, RulesRest): **1012 `simplify` roots** = `Opt.provenSimplifyRules` —
 `arithmetic.isle` 216 of 258 (`RuleArith.lean`, `RuleArith2..5.lean`), `cprop.isle` 61 of 68 (`RuleCprop.lean`, `RuleCprop2.lean`), `remat.isle` 12 of 12 (`RuleRemat.lean`),
 `bitops.isle` 444 of 450 (`RuleBitops1..7.lean`, tactics/lemmas in `RuleBitopsEmbed.lean`:
-`rule_auto` 393, `rule_auto_b` 18, `rule_auto_i` 2, `rule_auto_z` 31). No skeleton rule is proven yet
-(`skeleton_allowed_ok` takes no rule; `SkelRuleOk` + `skeletonSound` are ready, `div_const` is not).
+`rule_auto` 393, `rule_auto_b` 18, `rule_auto_i` 2, `rule_auto_z` 31). **19 `simplify_skeleton` roots**
+(`Opt.provenSkeletonRules`, `RuleSkeleton.lean`, see "Skeleton rules" below).
 `icmp.isle` 95 of 124 (`RuleIcmp1..9.lean`) and `selects.isle` 82 of 100 (`RuleSelects1..6.lean`),
 with the template variants of `RuleIcmpEmbed.lean` (`rule_auto_c`/`_ci`: `arr_step` for a value
 variable bound twice, `opt_split_typeof` for a made `icmp` under `subsume`; `_d`/`_di`: `Int`
@@ -577,14 +578,7 @@ Not proven after RulesRest (proof-tooling limits unless stated): `arithmetic.isl
 template), 615–622 (64-bit products: SAT timeout); `cprop.isle` 269 (`imm64_neg` of a sign-cast
 immediate: `makeInst` stuck), 320, 322, 324, 375, 377, 379 (not run with the RulesRest templates:
 their runs were lost to a module rebuild); `icmp.isle` 196, 199, 202 are now proven
-(`rule_auto_v`). Skeleton rules: none proven — `SkelRuleOk` cannot be met by rules that match
-operand nodes (all of them except `skeleton.isle` 33/37): the left-hand side's node facts hold in
-the start state `s0`, but `SkelRefines` is evaluated in later valuations, and `GraphModel` neither
-keeps a class's nodes in later states nor forces an operand defined there to have been defined in
-`s0`; so e.g. `sdiv x (iconst 1)` may see a divisor value unrelated to the matched `iconst`. Proving
-them needs node persistence (`enodes s ⊆ enodes s'` along the model states) in `GraphModel` or a
-defined-operands premise in `SkelRuleOk`. `skeleton.isle` 33/37 (`just_trap_block`) need evaluation
-lemmas for `just_trap_block`/`block_call_block` and `seqEval`; not done.
+(`rule_auto_v`). Skeleton rules: see "Skeleton rules" below.
 Still not proven from the RulesShiftsExt list: `extends.isle` 40, 42, 44 (`eq`/`ne`/signed
 `icmp` of a `sextend` against `iconst_s 0`: timeout also at 16M heartbeats); `shifts.isle` 161
 (killed after 5 min at 16M, twice), 170 (maximum recursion depth), 184, 193 (unsolved goals), 239–242,
@@ -630,6 +624,34 @@ umin/umax/smin/smax/icmp/masked/clz/ctz/shl/ushr` at every non-`i128` type, in t
 `Rust.imm64X (ofClif t) (imm64OfBits b) … = .ok (imm64OfBits (<BitVec op> b …))` (proof: `imm_pre`
 unfolds the helper, `imm_cases` splits the widths, `imm_solve` turns `Int` arithmetic into
 `BitVec 64` and runs `bv_decide`; `clz`/`ctz` bridge `Nat.log2`/the Rust loop to `BitVec.clz`/`ctz`).
+
+**Skeleton rules** (SkeletonProof, 2026-10-01). *Framework fix:* `SkelRuleOk` could not be met:
+the left-hand side's node facts hold in the start state, but `SkelRefines` is checked in later
+valuations, and a class undefined at the start may become defined later with a value unrelated to
+the matched nodes. Now `Opt.skelReads i` (every operand of an instruction; the condition of
+`brif`, the index of `br_table`) must be defined when the rules run: `SkeletonSound` concludes the
+refinement only under `∀ y ∈ skelReads i, ∃ a, den st y = some a`, and `SkelRuleOk` gets it as
+the invariant `SkelReadsDef` of `RuleSpec` (defined reads keep their value in every later state).
+The pass discharges the undefined case itself (`runSkel_spec`, new premise: the reads are known):
+known values never change their valuation (`Grow.fix`), so an undefined read stays undefined and
+the original is stuck (`skelRefines_of_undef`, via `evalInst_ops`). `simplify_facts`,
+`simplifyPassSim`, `optimize_sim_proven` and `E2E.backend_correct_opt_proven` keep their
+statements. `RuleBase`: `RuleSpecAt fm` / `applyMulti_genAt` (fuel-general lifting; `RuleSpec`,
+`applyMulti_gen` are the `fuelMin` instances) so a multi term called from an if-let can be lifted.
+*Template* (`RuleSkelEmbed.lean`): `inst_data`/`ofSkel` inversion, outcome lemmas per shape
+(`skel_div_rwv`, `skel_trapz_remove`, `skel_brif_jump_then/else`, `skel_brTable_jump`,
+`skel_brif_cond`, `skel_trapz/trapnz_cond`, `skel_brif_two_then/else`), `skel_auto_div`,
+`skel_auto_div_i`, `skel_auto_br`, `skel_auto_truthy`; `imm64_udiv/urem/sdiv/srem` specs;
+`truthy` soundness (`TruthyOk` for its 11 rules, `truthy_sound`, `truthy_iflet`).
+*Proven* (19): `arithmetic.isle` 79, 80, 130, 131, 132; `cprop.isle` 32, 38, 44, 50;
+`skeleton.isle` 7, 9, 22, 26, 33, 37, 44, 50, 53, 56. *Not proven* (proof effort; none is known to
+be false): `arithmetic.isle` 83, 87, 102, 135, 142 (power-of-two `div`/`rem`: the shift sequences
+need helper specs for `u64_ilog2`/`*_trailing_zeros`/`*_power_of_two` and a case split on the
+exponent — `bv_decide` times out with a symbolic shift, decides each constant one in < 1 s),
+114, 117, 122, 125, 157, 160, 165, 168 (`div_const` magic numbers: needs a correctness proof of
+`Rust.magicU`/`magicS` for every divisor), `icmp.isle` 461, 466, 471, 475 (the `i128` cases of
+the made `iconst_u`/`band` blow up the term), `skeleton.isle` 80 (`imm64_power_of_two`: no spec).
+These rewrites replace one instruction by several, so they do not lower the instruction counts.
 
 **Proven rule lines** (`rule_<file>_<line>`, ISLE source lines):
 - `arithmetic.isle` (216): 8, 13, 18, 24, 26, 28, 31, 35, 53, 59, 65, 69, 73, 75, 173, 226, 233,
@@ -718,5 +740,4 @@ Known gaps, by frequency in the failed roots (as of the first fan-out; arithmeti
    `BitVec` amount), `u64_bswap16/32/64`, `imm64_power_of_two`, `u64_*` arithmetic.
 4. `bv_decide` limits: 64-bit multiplication identities that are not AC (`x*(-1)`, `x*2`),
    `iabs` (needs `Sem.iabs` in `bif` form).
-5. Skeleton rules: `SkelRuleOk` obligations need the same template on `simplify_skeleton`
-   (`div_const`: `magicU`/`magicS` specs; the simple ones — `x / 1`, `x % 1` — should be first).
+5. Skeleton rules: 19 proven ("Skeleton rules"); `div_const` needs `magicU`/`magicS` specs.
