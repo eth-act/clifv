@@ -24,10 +24,6 @@ theorem ok_rule_selects_4 {p : Isle.Program} (hd : Data p) : RuleOk p rule_selec
 theorem ok_rule_selects_9 {p : Isle.Program} (hd : Data p) : RuleOk p rule_selects_9 := by
   first | rule_auto_c rule_selects_9 | rule_auto_ci rule_selects_9
 
-/-- `selects.isle:20`. -/
-theorem ok_rule_selects_20 {p : Isle.Program} (hd : Data p) : RuleOk p rule_selects_20 := by
-  rule_auto_f rule_selects_20
-
 /-- `selects.isle:26`. -/
 theorem ok_rule_selects_26 {p : Isle.Program} (hd : Data p) : RuleOk p rule_selects_26 := by
   first | rule_auto rule_selects_26 | rule_auto_b rule_selects_26 | rule_auto_i rule_selects_26 | rule_auto_z rule_selects_26

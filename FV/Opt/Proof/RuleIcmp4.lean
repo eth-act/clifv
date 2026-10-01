@@ -16,54 +16,6 @@ open Isle Isle.Opt
 
 set_option maxHeartbeats 4000000
 
-set_option maxHeartbeats 16000000 in
-/-- `icmp.isle:254`. -/
-theorem ok_rule_icmp_254 {p : Isle.Program} (hd : Data p) : RuleOk p rule_icmp_254 := by
-  first | rule_auto_f rule_icmp_254 [tySmin_ofClif, tySmax_ofClif] | rule_auto_fi rule_icmp_254 [tySmin_ofClif, tySmax_ofClif] | rule_auto_fz rule_icmp_254 [tySmin_ofClif, tySmax_ofClif] | rule_auto_fiz rule_icmp_254 [tySmin_ofClif, tySmax_ofClif]
-
-set_option maxHeartbeats 16000000 in
-/-- `icmp.isle:259`. -/
-theorem ok_rule_icmp_259 {p : Isle.Program} (hd : Data p) : RuleOk p rule_icmp_259 := by
-  first | rule_auto_f rule_icmp_259 [tySmin_ofClif, tySmax_ofClif] | rule_auto_fi rule_icmp_259 [tySmin_ofClif, tySmax_ofClif] | rule_auto_fz rule_icmp_259 [tySmin_ofClif, tySmax_ofClif] | rule_auto_fiz rule_icmp_259 [tySmin_ofClif, tySmax_ofClif]
-
-set_option maxHeartbeats 16000000 in
-/-- `icmp.isle:264`. -/
-theorem ok_rule_icmp_264 {p : Isle.Program} (hd : Data p) : RuleOk p rule_icmp_264 := by
-  first | rule_auto_f rule_icmp_264 [tySmin_ofClif, tySmax_ofClif] | rule_auto_fi rule_icmp_264 [tySmin_ofClif, tySmax_ofClif] | rule_auto_fz rule_icmp_264 [tySmin_ofClif, tySmax_ofClif] | rule_auto_fiz rule_icmp_264 [tySmin_ofClif, tySmax_ofClif]
-
-set_option maxHeartbeats 16000000 in
-/-- `icmp.isle:269`. -/
-theorem ok_rule_icmp_269 {p : Isle.Program} (hd : Data p) : RuleOk p rule_icmp_269 := by
-  first | rule_auto_f rule_icmp_269 [tySmin_ofClif, tySmax_ofClif] | rule_auto_fi rule_icmp_269 [tySmin_ofClif, tySmax_ofClif] | rule_auto_fz rule_icmp_269 [tySmin_ofClif, tySmax_ofClif] | rule_auto_fiz rule_icmp_269 [tySmin_ofClif, tySmax_ofClif]
-
-set_option maxHeartbeats 16000000 in
-/-- `icmp.isle:274`. -/
-theorem ok_rule_icmp_274 {p : Isle.Program} (hd : Data p) : RuleOk p rule_icmp_274 := by
-  first | rule_auto_f rule_icmp_274 [tySmin_ofClif, tySmax_ofClif] | rule_auto_fi rule_icmp_274 [tySmin_ofClif, tySmax_ofClif] | rule_auto_fz rule_icmp_274 [tySmin_ofClif, tySmax_ofClif] | rule_auto_fiz rule_icmp_274 [tySmin_ofClif, tySmax_ofClif]
-
-set_option maxHeartbeats 16000000 in
-/-- `icmp.isle:279`. -/
-theorem ok_rule_icmp_279 {p : Isle.Program} (hd : Data p) : RuleOk p rule_icmp_279 := by
-  rule_auto_f rule_icmp_279
-
-set_option maxHeartbeats 16000000 in
-/-- `icmp.isle:284`. -/
-theorem ok_rule_icmp_284 {p : Isle.Program} (hd : Data p) : RuleOk p rule_icmp_284 := by
-  rule_auto_f rule_icmp_284
-
-set_option maxHeartbeats 16000000 in
-/-- `icmp.isle:289`. -/
-theorem ok_rule_icmp_289 {p : Isle.Program} (hd : Data p) : RuleOk p rule_icmp_289 := by
-  rule_auto_f rule_icmp_289
-
-/-- `icmp.isle:295`. -/
-theorem ok_rule_icmp_295 {p : Isle.Program} (hd : Data p) : RuleOk p rule_icmp_295 := by
-  first | rule_auto_f rule_icmp_295 | rule_auto_fi rule_icmp_295 | rule_auto_fz rule_icmp_295 | rule_auto_fiz rule_icmp_295
-
-/-- `icmp.isle:296`. -/
-theorem ok_rule_icmp_296 {p : Isle.Program} (hd : Data p) : RuleOk p rule_icmp_296 := by
-  first | rule_auto_f rule_icmp_296 | rule_auto_fi rule_icmp_296 | rule_auto_fz rule_icmp_296 | rule_auto_fiz rule_icmp_296
-
 /-- `icmp.isle:299`. -/
 theorem ok_rule_icmp_299 {p : Isle.Program} (hd : Data p) : RuleOk p rule_icmp_299 := by
   first | rule_auto rule_icmp_299 | rule_auto_b rule_icmp_299 | rule_auto_i rule_icmp_299 | rule_auto_z rule_icmp_299

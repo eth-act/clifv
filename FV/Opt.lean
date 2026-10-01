@@ -3,6 +3,7 @@ import FV.Opt.Cfg
 import FV.Opt.Check
 import FV.Opt.Cost
 import FV.Opt.Rules
+import FV.Opt.RuleAllow
 import FV.Opt.HandRules
 import FV.Opt.Simplify
 import FV.Opt.Gvn

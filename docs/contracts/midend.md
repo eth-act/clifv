@@ -217,7 +217,7 @@ def Isle.Opt.simplifySkeleton {σ} (enodes …) (typeOf …) (make …)
   `simplify` calls, 12 `simplify_skeleton` calls and 930 `simplify` calls over the CLIF corpus
   fire the same rules as a `trace-log` build at `opt_level=speed` (per call, on e-classes whose
   operands are single original nodes).
-  872 `simplify` rules and their helpers are proven (see "Rule proofs").
+  842 `simplify` rules and their helpers are proven (see "Rule proofs").
 
 ## Results (2026-09-28, default configuration: Cranelift rules, 1 round)
 
@@ -341,7 +341,7 @@ Goal: `Opt.optimize` refines `Clif.run`, and `E2E.backend_correct_final` extends
   rule sets (`E2E.backend_correct_opt_proven`); only 4 `simplify` rules are proven, so the
   default configuration (all rules) still rests on the differential tests for the rule
   obligations (`SimplifySound`/`SkeletonSound` of the full rule set).
-- Proven: the rule interpreter's soundness and 872 `simplify` rules ("Rule proofs"); the passes
+- Proven: the rule interpreter's soundness and 842 `simplify` rules ("Rule proofs"); the passes
   and the pipeline are not, so the differential tests remain the evidence for them.
 - Missing Cranelift mid-end features: alias analysis (redundant-load elimination,
   store-to-load forwarding), merging of identical trapping instructions, elaboration-based
@@ -494,7 +494,7 @@ Design decisions (approved by the integrator):
 
 ## Rule proofs (MidRulesFoundation, branch `agent/mid-rules`)
 
-Status: the framework is complete and proven; **872 `simplify` rules proven** (see below),
+Status: the framework is complete and proven; **842 `simplify` rules proven** (see below),
 allow-list embedding done. Files `FV/Opt/Proof/{Sem,InterpMatch,InterpState,InterpEval,RuleBase,
 RuleData,RuleNode,RuleEmbed,RuleTactic,RuleImm,RuleCtor,RuleSkel,RuleAuto,RuleArith,RuleCprop,
 RuleAll}.lean`; generator
@@ -534,12 +534,12 @@ Driver: `Opt.RuleAllow` (`all` default | `proven` | `ids`), `RuleSetId.fnWith`/`
 the `simplify` call's arguments), option `--opt-proven-only`. Corpus difftest: default 114/114
 agree, 4321 → 2018 insts; `--opt-proven-only` 114/114, 4321 → 2475 (skeleton rules off).
 
-**Proven rules** (MidRulesInfra2, RulesBitops, RulesIcmpSel): **872 `simplify` roots** = `Opt.provenSimplifyRules` —
+**Proven rules** (MidRulesInfra2, RulesBitops, RulesIcmpSel, RuleAllScale): **842 `simplify` roots** = `Opt.provenSimplifyRules` —
 `arithmetic.isle` 172 of 258 (`RuleArith.lean`), `cprop.isle` 52 of 68 (`RuleCprop.lean`),
 `bitops.isle` 444 of 450 (`RuleBitops1..7.lean`, tactics/lemmas in `RuleBitopsEmbed.lean`:
 `rule_auto` 393, `rule_auto_b` 18, `rule_auto_i` 2, `rule_auto_z` 31). No skeleton rule is proven yet
-(`skeleton_rules_proven` is `[]`; `SkelRuleOk` + `skeletonSound` are ready, `div_const` is not).
-`icmp.isle` 121 of 124 (`RuleIcmp1..8.lean`) and `selects.isle` 83 of 100 (`RuleSelects1..6.lean`),
+(`skeleton_allowed_ok` takes no rule; `SkelRuleOk` + `skeletonSound` are ready, `div_const` is not).
+`icmp.isle` 92 of 124 (`RuleIcmp1..8.lean`) and `selects.isle` 82 of 100 (`RuleSelects1..6.lean`),
 with the template variants of `RuleIcmpEmbed.lean` (`rule_auto_c`/`_ci`: `arr_step` for a value
 variable bound twice, `opt_split_typeof` for a made `icmp` under `subsume`; `_d`/`_di`: `Int`
 literals of if-lets reduced, `ty_smin`/`ty_smax` specs passed as extra lemmas) and
@@ -547,7 +547,7 @@ literals of if-lets reduced, `ty_smin`/`ty_smax` specs passed as extra lemmas) a
 signed immediates as sign-bit facts; `_f`/`_fi`/`_fz`/`_fiz`: the left-hand side without
 `simp_all`, which rewrites a literal-match fact such as `asU64 imm = 0` away with a copy of itself;
 `_g`: `_f` plus the `P s0`-guarded model facts and `opt_den_merge`). Each theorem names the
-`first` chain it was checked with; rules 279/284/289 of `icmp.isle` need 16M heartbeats.
+`first` chain it was checked with.
 Not proven (proof-tooling limits; none is false under the CLIF semantics): `icmp.isle` 196, 199,
 202 (`sge`/`slt x (iconst_s 1)`, `sgt x (iconst_s -1)`: the right-hand `iconst_s ty 0` goes through
 the constructor's `i64_sextend_u64` if-let at a type variable, which no template evaluates);
@@ -557,6 +557,15 @@ once and then failed deterministically in the full build; left out), 81, 85 (`se
 form for `bv_decide`; the `simp_all`-free variant runs out of memory/time), 188, 189, 193–196,
 199–202 (literal-match facts lost under `simp_all`, and the `simp_all`-free variants exceed 12G /
 50 min per rule).
+Removed from the icmp/selects modules (RuleAllScale, 2026-10-01): their proofs passed in per-rule
+runs but not in the modules, which never built (each module run was OOM-killed at 16G and 24G;
+checked one theorem per process, 8–10G cap, 25 min): out of memory — `icmp.isle` 63, 70, 160,
+175, 254, 259, 264, 269, 274 (279, 284, 289 are the same 16M-heartbeat group; not rerun),
+365, 368, `selects.isle` 20;
+failing — `icmp.isle` 49, 77, 91 (`GraphOk.make_val` does not unify with the goal), 155, 165,
+170 (`bv_decide` counterexample after the earlier alternatives time out), 180, 184, 386, 394, 402,
+410 (heartbeat timeouts), 205 (`simp` made no progress), 295, 296 (no hypothesis in the
+`bv_decide` fragment).
 Not proven in `bitops.isle` (proof-tooling limits; none is false under the CLIF semantics): rule 79
 (`or(and(x, k), z)` mask condition: needs 64-bit and/not immediate specs), 157 and 170 (32/64-bit
 byte-swap patterns: time out at 12–20M heartbeats), 126/127/129 (go through the multi-result
@@ -583,18 +592,16 @@ unfolds the helper, `imm_cases` splits the widths, `imm_solve` turns `Int` arith
 - `cprop.isle` (52): 3, 9, 14, 20, 26, 56, 62, 68, 74, 104, 109, 114, 119, 147, 152, 155, 159, 162, 165, 169, 170,
   171, 172, 174, 183, 193, 197, 201, 205, 209, 214, 217, 220, 223, 227, 229, 232, 235, 238, 241,
   247, 249, 252, 254, 257, 259, 333, 337, 341, 345, 349, 521.
-- `icmp.isle` (121): 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 21, 23, 25, 27, 29, 31, 33, 35, 41, 43, 49,
-  63, 70, 77, 84, 91, 96, 104, 108, 112, 116, 120, 125, 130, 135, 140, 145, 150, 155, 160, 165,
-  170, 175, 180, 184, 190, 193, 205, 254, 259, 264, 269, 274, 279, 284, 289, 295, 296, 299, 300,
-  303, 304, 306, 307, 310, 311, 312, 313, 314, 315, 316, 317, 325, 329, 333, 337, 341, 345, 349,
-  353, 359, 362, 365, 368, 371, 374, 377, 380, 386, 394, 402, 410, 438, 442, 447, 451, 479, 482,
-  485, 486, 489, 490, 491, 492, 495, 498, 501, 502, 505, 506, 509, 510, 513, 514, 517, 520, 523,
-  526, 529, 532, 535.
-- `selects.isle` (83): 4, 9, 20, 26, 27, 28, 29, 30, 31, 32, 33, 36, 37, 38, 39, 40, 41, 42, 43,
-  91, 95, 103, 109, 110, 113, 114, 115, 116, 117, 118, 119, 120, 124, 125, 126, 127, 130, 131,
-  132, 133, 137, 138, 139, 140, 141, 142, 143, 144, 148, 149, 150, 151, 152, 153, 154, 155, 159,
-  160, 161, 162, 163, 164, 165, 166, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181,
-  182, 183, 184, 185, 205, 209, 213.
+- `icmp.isle` (92): 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 21, 23, 25, 27, 29, 31, 33, 35, 41, 43, 84,
+  96, 104, 108, 112, 116, 120, 125, 130, 135, 140, 145, 150, 190, 193, 299, 300, 303, 304, 306,
+  307, 310, 311, 312, 313, 314, 315, 316, 317, 325, 329, 333, 337, 341, 345, 349, 353, 359, 362,
+  371, 374, 377, 380, 438, 442, 447, 451, 479, 482, 485, 486, 489, 490, 491, 492, 495, 498, 501,
+  502, 505, 506, 509, 510, 513, 514, 517, 520, 523, 526, 529, 532, 535.
+- `selects.isle` (82): 4, 9, 26, 27, 28, 29, 30, 31, 32, 33, 36, 37, 38, 39, 40, 41, 42, 43, 91,
+  95, 103, 109, 110, 113, 114, 115, 116, 117, 118, 119, 120, 124, 125, 126, 127, 130, 131, 132,
+  133, 137, 138, 139, 140, 141, 142, 143, 144, 148, 149, 150, 151, 152, 153, 154, 155, 159, 160,
+  161, 162, 163, 164, 165, 166, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182,
+  183, 184, 185, 205, 209, 213.
 - Not proven in `cprop.isle`: 79, 84, 89, 94, 99, 125, 130, 132, 135, 269, 320, 322, 324, 375,
   377, 379; `arithmetic.isle`: the other 86 roots (`Isle.Opt.Closure` roots of term 177 minus
   the list above).
@@ -638,10 +645,10 @@ term 177 = `simplify`):
    lemma (helper spec → `RuleImm.lean` in the normal form above; extractor/type predicate →
    `RuleEmbed.lean`; `evalNode` form → `RuleNode.lean`); a failing `bv_decide` names the
    missing `sem_simp` normal form.
-3. Append the proven ids: `python3`-style regeneration of `Opt.provenSimplifyRules`
-   (`FV/Opt/Rules.lean`, rule ids from `Closure.rules`) and of the list/cases of
-   `RuleAll.simplify_rules_proven`/`simplifyRulesCorrect_proven` in `R.«simplify»` order (the
-   `rfl` compares the filtered rule list), import the new file in `RuleAll.lean`. Shared files
+3. Append the proven ids to `Opt.provenSimplifyRules` (`FV/Opt/RuleAllow.lean`, rule ids from
+   `Closure.rules`) and import the new file in `RuleAll.lean`; nothing else in `RuleAll.lean`
+   names rules (`allowed_ok%` fails with "`rule_X` is allow-listed but there is no theorem
+   `ok_rule_X`" if an id has no proof). Shared files
    (`RuleAuto`, `RuleEmbed`, `RuleNode`, `RuleImm`) need one owner or serialized merges.
 
 Known gaps, by frequency in the failed roots (arithmetic 86 incl. 7 SAT-timeout-flaky ones, cprop 16):

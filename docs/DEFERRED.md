@@ -36,7 +36,7 @@ available by proving them and adding them to the allow-list; the theorems don't 
 
 **How to add a family:** follow the recipe in midend.md "Rule proofs":
 1. Write a per-family file with `RuleOk` proofs over an abstract `p` with `Data p`.
-2. Add the rule ids to `Opt.provenSimplifyRules`, and a case to `RuleAll.simplifyRulesCorrect_proven` (skeleton rules: `skeletonSound_proven`).
+2. Add the rule ids to `Opt.provenSimplifyRules` (`FV/Opt/RuleAllow.lean`) and import the new file in `FV/Opt/Proof/RuleAll.lean` (a skeleton rule needs `ok_rule_X : SkelRuleOk p rule_X`).
 3. Run `scripts/opt-difftest.sh` with `--opt-proven-only` and record how many instructions the proven subset removes.
 
 Families are independent and can run in parallel, one agent per opts file.
