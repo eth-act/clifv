@@ -1,5 +1,5 @@
 import FV.E2E.RegLevelOp
-import FV.Backend.Proof.RegallocMemOS
+import FV.Backend.Proof.RegallocAtomic
 import FV.Backend.Proof.RegallocMemAddr
 
 /-!
@@ -294,8 +294,10 @@ theorem formOk_sound {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MI
   rotate_left
   all_goals (try cases h) <;> refine ⟨fun env => ?_, fun regs i' hasg => ?_⟩
   all_goals first
+    | exact os_loadAcquire _ _ _ _ _ (of_decide_eq_true h) _ _ _
+    | exact os_storeRelease _ _ _ _ _ (of_decide_eq_true h) _ _ _
     | (first
-        | apply os_aluRRR | apply os_aluRRR_rnZ | apply os_aluRRR_rdZ | apply os_aluRRR_rmZ
+        | apply os_csetm | apply os_fence | apply os_aluRRR | apply os_aluRRR_rnZ | apply os_aluRRR_rdZ | apply os_aluRRR_rmZ
         | apply os_aluRRR_rdZ_rmZ | apply os_aluRRRR | apply os_aluRRRR_raZ
         | apply os_aluRRImm12 | apply os_aluRRImm12_rdZ | apply os_aluRRImmLogic
         | apply os_aluRRImmLogic_rdZ | apply os_aluRRImmLogic_rnZ | apply os_aluRRImmShift
@@ -317,6 +319,8 @@ theorem formOk_sound {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MI
          | exact linesOk_rrrShift ..
          | exact linesOk_vecMisc ..
          | exact linesOk_vecRRR ..
-         | exact linesOk_loadAddr_slot ..)
+         | exact linesOk_loadAddr_slot ..
+         | exact linesOk_of_oneLine ⟨_, _, fun _ => rfl, rfl,
+             plain_trap _ rfl (fun _ h => Insn.noConfusion h) _⟩)
 
 end Backend.Proof

@@ -11,7 +11,8 @@ world with an error or a misaligned `sp` (or an ill-formed use list) is `csem`'s
 `mspec`, which states exactly `MemRefines`' result; otherwise it is `straightSem`, the Arm run of
 the canonical allocation (`ss_load`/`ss_store`, from `execMInst_load`/`execMInst_store`, and
 `execMInst_loadAddr_slot'`), computed per addressing mode of `amodeAddr`. A GOT load is
-`X.sym n 0`.
+`X.sym n 0`. `ldar`/`stlr` (`atomic_load`/`atomic_store`) are a plain load/store at the address
+register (`straight_loadAcquire`/`straight_storeRelease`).
 -/
 
 namespace Backend.Proof
@@ -285,13 +286,92 @@ theorem straight_loadAddr (d : Nat) (off : Int) (w : Arm.ArmState)
     exact SameWorld.w_left (by simp [Masked]) (SameWorld.w_left (by simp [Masked])
       (sameWorld_x16w o none (SameWorld.refl F w)))
 
+attribute [local csimp_rules] Arm.LDST.exec_reg_exclusive Insn.armFields.exclFields CTy.bits
+  Arm.r_of_write_mem_bytes Arm.ldst_read Arm.read_mem_bytes_of_w
+
+/-- The canonical `ldar` (address in `x0`, into `x1`). -/
+theorem exec_ldar_canon {ty : CTy} (hty : AtomTy ty) (fl : Clif.MemFlags) (t : Arm.ArmState) :
+    execMInst ctx env0 (.loadAcquire ty (.x 1) (.x 0) fl) t =
+      some (Arm.w .PC (Arm.r .PC t + 4#64) (Arm.w (.GPR 1#5)
+        ((Arm.read_mem_bytes ty.bytes (Arm.r (.GPR 0#5) t) t).setWidth 64) t)) := by
+  rcases hty with rfl | rfl | rfl | rfl <;> simp (config := {decide := true}) [csimp_rules, CTy.bytes]
+
+theorem exec_stlr_canon {ty : CTy} (hty : AtomTy ty) (fl : Clif.MemFlags) (t : Arm.ArmState) :
+    execMInst ctx env0 (.storeRelease ty (.x 1) (.x 0) fl) t =
+      some (Arm.w .PC (Arm.r .PC t + 4#64) (Arm.write_mem_bytes ty.bytes (Arm.r (.GPR 0#5) t)
+        ((Arm.r (.GPR 1#5) t).setWidth (ty.bytes * 8)) t)) := by
+  rcases hty with rfl | rfl | rfl | rfl <;> simp (config := {decide := true}) [csimp_rules, CTy.bytes]
+
+set_option maxHeartbeats 1000000 in
+/-- An `ldar`, on the canonical run (`straightSem`). -/
+theorem straight_loadAcquire (ty : CTy) (hty : AtomTy ty) (d r : Nat) (fl : Clif.MemFlags)
+    (u : CV) (w : Arm.ArmState) (hav : Avoids F ty.bytes (lo64 u))
+    (herr : Arm.r .ERR w = .None) :
+    ∃ w', straightSem F ctx (.loadAcquire ty (.vreg d .int) (.vreg r .int) fl) [u] w =
+      some ([ofX ((Arm.read_mem_bytes ty.bytes (lo64 u) w).setWidth 64)], w', .next) ∧
+      SameWorld F w' w := by
+  have hcanon : canonRegs #[(⟨r, .int, .use, .early, .reg⟩ : Operand), ⟨d, .int, .def, .late, .reg⟩] =
+      #[.x 0, .x 1] := by simp [canonRegs, canonReg, canonBase, List.range_succ]
+  have hpl : placeUses #[(⟨r, .int, .use, .early, .reg⟩ : Operand), ⟨d, .int, .def, .late, .reg⟩]
+      (canonRegs #[⟨r, .int, .use, .early, .reg⟩, ⟨d, .int, .def, .late, .reg⟩]) [u] w =
+      Arm.w (.GPR 0#5) (lo64 u) w := by
+    simp [placeUses, hcanon, Operand.isUse, setReg, lo64]; rfl
+  refine ⟨Arm.w .PC (Arm.r .PC (Arm.w (.GPR 0#5) (lo64 u) w) + 4#64) (Arm.w (.GPR 1#5)
+    ((Arm.read_mem_bytes ty.bytes (Arm.r (.GPR 0#5) (Arm.w (.GPR 0#5) (lo64 u) w))
+      (Arm.w (.GPR 0#5) (lo64 u) w)).setWidth 64) (Arm.w (.GPR 0#5) (lo64 u) w)), ?_, ?_⟩
+  rotate_left
+  · exact SameWorld.w_left (by simp [Masked]) (SameWorld.w_left (by simp [Masked])
+      (SameWorld.w_left (by simp [Masked]) (SameWorld.refl F w)))
+  rw [straightSem_of (ops := #[⟨r, .int, .use, .early, .reg⟩, ⟨d, .int, .def, .late, .reg⟩])
+    (ic := .loadAcquire ty (.x 1) (.x 0) fl) rfl (by rw [hcanon]; rfl) ?_
+    (by rw [hpl]; exact exec_ldar_canon ctx hty fl _) ?_ ?_]
+  · simp [defVals, hcanon, Operand.isDef, regVal, rnum, ofX, Arm.read_mem_bytes_of_w]
+  · rw [hpl]; intro p hp
+    simp [MInst.accesses, regX, rnum] at hp
+    subst hp; simpa using hav
+  · simp [herr]
+  · simp only [Arm.w_program]
+
+set_option maxHeartbeats 1000000 in
+/-- An `stlr`, on the canonical run (`straightSem`). -/
+theorem straight_storeRelease (ty : CTy) (hty : AtomTy ty) (x r : Nat) (fl : Clif.MemFlags)
+    (u v : CV) (w : Arm.ArmState) (hav : Avoids F ty.bytes (lo64 u))
+    (herr : Arm.r .ERR w = .None) :
+    ∃ w', straightSem F ctx (.storeRelease ty (.vreg x .int) (.vreg r .int) fl) [u, v] w =
+      some ([], w', .next) ∧
+      SameWorld F w' (Arm.write_mem_bytes ty.bytes (lo64 u) ((lo64 v).setWidth (ty.bytes * 8)) w) := by
+  have hcanon : canonRegs #[(⟨r, .int, .use, .early, .reg⟩ : Operand), ⟨x, .int, .use, .early, .reg⟩] =
+      #[.x 0, .x 1] := by simp [canonRegs, canonReg, canonBase, List.range_succ]
+  have hpl : placeUses #[(⟨r, .int, .use, .early, .reg⟩ : Operand), ⟨x, .int, .use, .early, .reg⟩]
+      (canonRegs #[⟨r, .int, .use, .early, .reg⟩, ⟨x, .int, .use, .early, .reg⟩]) [u, v] w =
+      Arm.w (.GPR 1#5) (lo64 v) (Arm.w (.GPR 0#5) (lo64 u) w) := by
+    simp [placeUses, hcanon, Operand.isUse, setReg, lo64]; rfl
+  refine ⟨Arm.w .PC (Arm.r .PC (Arm.w (.GPR 1#5) (lo64 v) (Arm.w (.GPR 0#5) (lo64 u) w)) + 4#64)
+    (Arm.write_mem_bytes ty.bytes (Arm.r (.GPR 0#5) (Arm.w (.GPR 1#5) (lo64 v) (Arm.w (.GPR 0#5) (lo64 u) w)))
+      ((Arm.r (.GPR 1#5) (Arm.w (.GPR 1#5) (lo64 v) (Arm.w (.GPR 0#5) (lo64 u) w))).setWidth (ty.bytes * 8))
+      (Arm.w (.GPR 1#5) (lo64 v) (Arm.w (.GPR 0#5) (lo64 u) w))), ?_, ?_⟩
+  · rw [straightSem_of (ops := #[⟨r, .int, .use, .early, .reg⟩, ⟨x, .int, .use, .early, .reg⟩])
+      (ic := .storeRelease ty (.x 1) (.x 0) fl) rfl (by rw [hcanon]; rfl) ?_
+      (by rw [hpl]; exact exec_stlr_canon ctx hty fl _) ?_ ?_]
+    · simp [defVals, hcanon, Operand.isDef]
+    · rw [hpl]; intro p hp
+      simp [MInst.accesses, regX, rnum] at hp
+      subst hp; simpa using hav
+    · simp [Arm.r_of_write_mem_bytes, herr]
+    · simp only [Arm.w_program, Arm.write_mem_bytes_program]
+  · refine SameWorld.w_left (by simp [Masked]) ?_
+    simp only [Arm.r_of_w_different (show Arm.StateField.GPR 0#5 ≠ Arm.StateField.GPR 1#5 by decide),
+      Arm.r_of_w_same]
+    exact SameWorld.write_mem_bytes (SameWorld.w_left (by simp [Masked])
+      (SameWorld.w_left (by simp [Masked]) (SameWorld.refl F w))) _ _ _
+
 /-- **`MemRefines` for `csem`** (M6): at slot base `ctx.slotBase` and the link-time symbol
 addresses `syms` that the external semantics' `sym` agrees with. -/
 theorem memRefines_csem (X : ExtSem) {sb : Nat} {syms : String → Option Nat}
     (hsb : ctx.slotBase = sb) (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b) :
     MemRefines F sb syms (csem F ctx X) := by
   subst hsb
-  refine ⟨?_, ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
   · intro op d am fl uses w a hop ha hav
     rw [csem_straight rfl]
     split
@@ -312,5 +392,17 @@ theorem memRefines_csem (X : ExtSem) {sb : Nat} {syms : String → Option Nat}
     · exact ⟨w, by simp [mspec], SameWorld.refl F w⟩
   · intro d n b w hn
     exact ⟨w, by simp [csem, hsym n b hn], SameWorld.refl F w⟩
+  · intro ty d r fl u w hty hav
+    rw [csem_straight rfl]
+    split
+    · rename_i hc
+      exact straight_loadAcquire F ctx ty hty d r fl u w hav hc.2.1
+    · exact ⟨w, by simp [mspec, hty], SameWorld.refl F w⟩
+  · intro ty d r fl u v w hty hav
+    rw [csem_straight rfl]
+    split
+    · rename_i hc
+      exact straight_storeRelease F ctx ty hty d r fl u v w hav hc.2.1
+    · exact ⟨_, by simp [mspec, hty], SameWorld.refl F _⟩
 
 end Backend.Proof

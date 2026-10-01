@@ -453,7 +453,9 @@ def ctxOk (f : Clif.Function) (ctx : Ctx) : Bool :=
     | some t => [CTy.int 8, .int 16, .int 32, .int 64].any fun u => decide (t = u)
     | none => true) &&
   ctx.insts.toList.all (fun info => match info.clif with
-    | some (.load _ _ _ x _) | some (.store _ _ _ _ x _) => decide (ctx.valueType? x = some (.int 64))
+    | some (.load _ _ _ x _) | some (.store _ _ _ _ x _) | some (.atomicLoad _ _ x)
+    | some (.atomicStore _ _ _ x) | some (.atomicRmw _ _ _ x _) | some (.atomicCas _ _ x _ _) =>
+      decide (ctx.valueType? x = some (.int 64))
     | _ => true)
 
 /-- The successor facts of `LowerShape` for block `B` (lowering `L`). For a `try_call`: an edge

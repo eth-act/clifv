@@ -273,7 +273,7 @@ def eOpNames : List String :=
    "Umin", "Umax", "Udiv", "Sdiv", "Urem", "Srem", "Icmp", "Uextend", "Sextend", "Ireduce", "Load",
    "Uload8", "Sload8", "Uload16", "Sload16", "Uload32", "Sload32", "Store", "Istore8", "Istore16",
    "Istore32", "Select", "Nop", "SymbolValue", "StackAddr", "Call", "CallIndirect", "FuncAddr",
-   -- agent/fv-fallback: `bmask` and the atomic opcodes (unverified, outside `E2E.InSubset`)
+   -- `bmask`, the atomics and `fence` (agent/atomics-proof)
    "Bmask", "AtomicLoad", "AtomicStore", "AtomicRmw", "AtomicCas", "Fence",
    -- agent/fv-lcheck-tls: `tls_value` (unverified, outside `E2E.InSubset`)
    "TlsValue"]

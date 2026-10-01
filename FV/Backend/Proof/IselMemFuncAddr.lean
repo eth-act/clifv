@@ -2,13 +2,13 @@ import FV.Backend.Proof.IselMemRoots
 import FV.Backend.Proof.IselCtlCall
 
 /-!
-# Memory family: `func_addr` (rule id 1026) and `MemRulesCorrect`
+# Memory family: `func_addr` (rule id 1026)
 
 `rule_lower_2486` lowers `func_addr.i64 fnN` to `load_ext_name` of the declaration's name at
 offset 0 (the GOT load under `is_pic`), as `symbol_value` (`symbol_value_ok`) does for a data
 symbol: the result is the declaration's link-time address (`MemRefines`: a GOT load of a linked
 symbol; `MemRelOk.symbols`: CLIF's `func_addr` reads the same `symbols`).
-`memRulesCorrect_program` collects the memory root rules (`memRootRule`).
+`memRulesCorrect_program` (`IselAtomic`) collects the memory root rules (`memRootRule`).
 -/
 
 namespace Backend.Proof
@@ -17,11 +17,6 @@ open Backend Isle Isle.Interp Isle.Aarch64
 
 set_option maxRecDepth 20000
 
-@[isel_data] theorem term_2296_kind : T.«Opcode.FuncAddr».kind = (.enumVariant 12) := rfl
-@[isel_data] theorem term_2296_name : T.«Opcode.FuncAddr».name = "Opcode.FuncAddr" := rfl
-@[isel_data] theorem term_2459_kind : T.«InstructionData.FuncAddr».kind = (.enumVariant 12) := rfl
-@[isel_data] theorem term_2459_name :
-    T.«InstructionData.FuncAddr».name = "InstructionData.FuncAddr" := rfl
 
 /-- The term facts of the `func_addr` rule beyond `Data`. -/
 structure FAData (p : Program) : Prop where
@@ -130,44 +125,5 @@ theorem func_addr_ok {p : Program} (hp : Data p) (hpF : FAData p) (hR : Refines 
   simp only at hs'
   subst hs'
   exact ⟨ms, hsym.frag.emitted, _, rfl, funcAddr_lower_ok hMR hMRo hsym ‹_›⟩
-
-/-! ## `MemRulesCorrect` -/
-
-/-- The memory root rules of `lower`, in order. -/
-theorem lower_memRoot_filter : (program.rulesOf TId.lower).filter memRootRule =
-    [rule_lower_1300, rule_lower_1359, rule_lower_2486, rule_lower_2491, rule_lower_2604, rule_lower_2607, rule_lower_2610, rule_lower_2613, rule_lower_2647, rule_lower_2650, rule_lower_2653, rule_lower_2656, rule_lower_2659, rule_lower_2662, rule_lower_2705, rule_lower_2709, rule_lower_2713, rule_lower_2717, rule_lower_2722, rule_lower_2726, rule_lower_2730, rule_lower_2849] := by
-  rw [program_rulesOf_686]
-  rfl
-
-/-- **The memory family (M4)**: every memory root rule of `lower` is correct under
-`MemRefines`, for every function whose memory relation is `MemRelOk`. -/
-theorem memRulesCorrect_program : MemRulesCorrect program := by
-  intro F sb syms isem MR env cp hR hMR hM r hr hmem
-  have hsub : r ∈ (program.rulesOf TId.lower).filter memRootRule := List.mem_filter.2 ⟨hr, hmem⟩
-  rw [lower_memRoot_filter] at hsub
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hsub
-  rcases hsub with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact uextend_load_ok data_program
-  · exact sextend_load_ok data_program
-  · exact func_addr_ok data_program faData_program hR hMR hM
-  · exact symbol_value_ok data_program hR hMR hM
-  · exact load_i8_ok data_program hR hMR hM
-  · exact load_i16_ok data_program hR hMR hM
-  · exact load_i32_ok data_program hR hMR hM
-  · exact load_i64_ok data_program hR hMR hM
-  · exact uload8_ok data_program hR hMR hM
-  · exact sload8_ok data_program hR hMR hM
-  · exact uload16_ok data_program hR hMR hM
-  · exact sload16_ok data_program hR hMR hM
-  · exact uload32_ok data_program hR hMR hM
-  · exact sload32_ok data_program hR hMR hM
-  · exact store_i8_ok data_program hR hMR hM
-  · exact store_i16_ok data_program hR hMR hM
-  · exact store_i32_ok data_program hR hMR hM
-  · exact store_i64_ok data_program hR hMR hM
-  · exact istore8_ok data_program hR hMR hM
-  · exact istore16_ok data_program hR hMR hM
-  · exact istore32_ok data_program hR hMR hM
-  · exact stack_addr_ok data_program hMR hM
 
 end Backend.Proof

@@ -52,6 +52,11 @@ def instE : Inst → Bool
   -- and function addresses
   | .callIndirect _ _ _ => true
   | .funcAddr ty _ => ty == .i64
+  -- `bmask`, the single-threaded atomic loads and stores (`ldar`/`stlr`) and `fence`
+  | .bmask ty _ => tyE ty
+  | .atomicLoad ty f _ => tyE ty && flagsE f
+  | .atomicStore ty f _ _ => tyE ty && flagsE f
+  | .fence => true
   | _ => false
 
 /-- Global values: only `symbol %name[+offset]` (the target of `symbol_value`). -/

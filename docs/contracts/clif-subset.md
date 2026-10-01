@@ -2,6 +2,15 @@
 
 ## Changelog / Status
 
+- **2026-10-01 (agent/atomics-proof), E grows by `bmask`, `atomic_load`, `atomic_store` and
+  `fence`** (`Compile.instE`; rows in the E table). `E2E.backend_correct_final` now covers
+  functions with them: their root rules are proven (`FV/Backend/Proof/IselAtomic.lean`), and
+  the register-level layer covers `csetm`, `dmb ish`, `ldar` and `stlr`
+  (`RegallocAtomic.lean`, `MemRefines.lean`). This rests on the single-threaded Arm model
+  (`docs/decisions/arm-model.md`, "Atomics"). `atomic_rmw` and `atomic_cas` (Cranelift's LL/SC
+  loops) are still outside E. Their root rules are in the backend closure but proven vacuous:
+  no instruction of `CtxInv` is outside E.
+
 - **2026-10-01 (agent/indirect-proof), trusted-semantics growth of S**: `Clif.stepCallIndirect`
   (`call_indirect`, and `try_call_indirect` through it) whose callee address is no function of
   the program now calls the extern of the program at that address (`Clif.callExternAt`: the
@@ -79,6 +88,9 @@ VeriISLE run excludes the `i128` tag. Floats and vectors are in neither list.
 | `bswap` | yes (i16/i32/i64) | v2: `i16 i32 i64` only (`bswap.i8` is not CLIF; `i128` excluded as everywhere) |
 | `bitrev` | no | v2: `i8..i64` (`reverse_bits`) |
 | `symbol_value` | no | v2: `symbol_value.i64 gvN` only, `gvN = symbol [colocated] %name[+offset]` naming a **data object** of the link-time image (`Clif.Image`); no `tls`, no function symbols, no other global-value kinds. Loads from it follow the `load` rules; stores into read-only objects are `stuck` (a precondition) |
+| `bmask` | no | v3 (agent/atomics-proof): result and operand `i8..i64` (Cranelift's `lower_bmask`: `cmp #0` + `csetm ne`, an `i8`/`i16` operand masked first) |
+| `atomic_load` `atomic_store` | no | v3: `i8..i64`, little-endian, `i64` address (`ldar`/`stlr`). Single-threaded semantics: a plain load/store (`docs/decisions/arm-model.md`, "Atomics") |
+| `fence` | no | v3: `dmb ish`, no effect in the single-threaded model |
 
 Deliberately excluded from E:
 

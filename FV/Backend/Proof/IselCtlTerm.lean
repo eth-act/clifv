@@ -183,6 +183,7 @@ theorem filter_isDef_retOps (ns : List (Nat × Reg)) : (retOps ns).filter Operan
   simp [retOps, Operand.isDef]
   intro _ _ _ _ h; subst h; simp
 
+set_option maxHeartbeats 800000 in
 /-- **`return`** (`rule_lower_2574`). -/
 theorem ret_ruleOk {p : Program} (hp : Data p) {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT}
     (hR : Refines F isem) (hMR : MRStable F MR) : LowerTermRuleOk isem MR p rule_lower_2574 := by

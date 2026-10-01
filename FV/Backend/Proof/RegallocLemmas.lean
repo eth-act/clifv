@@ -298,6 +298,35 @@ theorem writeV_notDef {ρ : Nat → V} :
     rw [this]
     simp [upd, Ne.symm (h p (by simp))]
 
+theorem writeV_cons (ρ : Nat → V) (p : Operand × V) (dv : List (Operand × V)) :
+    writeV ρ (p :: dv) = writeV (upd ρ p.1.vreg p.2) dv := rfl
+
+/-- Writing the same defs with values that agree on every def of vreg `u` (from files that agree
+at `u`) agrees at `u`. -/
+theorem writeV_zip_filter_congr (q : Operand → Bool) (u : Nat) :
+    ∀ (L : List Operand) (o o' : List V) (ρ ρ' : Nat → V), ρ u = ρ' u → o.length = o'.length →
+      (∀ (k : Nat) (d : Operand), L[k]? = some d → d.vreg = u → o[k]? = o'[k]?) →
+      writeV ρ ((L.zip o).filter (fun p => q p.1)) u =
+        writeV ρ' ((L.zip o').filter (fun p => q p.1)) u
+  | [], _, _, _, _, h, _, _ => by simpa [writeV] using h
+  | _ :: _, [], [], _, _, h, _, _ => by simpa [writeV] using h
+  | _ :: _, [], _ :: _, _, _, _, hl, _ => by simp at hl
+  | _ :: _, _ :: _, [], _, _, _, hl, _ => by simp at hl
+  | d :: L, a :: o, a' :: o', ρ, ρ', h, hl, hk => by
+    have hl' : o.length = o'.length := by simpa using hl
+    have hk' : ∀ (k : Nat) (d' : Operand), L[k]? = some d' → d'.vreg = u → o[k]? = o'[k]? :=
+      fun k d' hd hu => by simpa using hk (k + 1) d' (by simpa using hd) hu
+    simp only [List.zip_cons_cons, List.filter_cons]
+    split
+    · rw [writeV_cons, writeV_cons]
+      refine writeV_zip_filter_congr q u L o o' _ _ ?_ hl' hk'
+      by_cases hu : u = d.vreg
+      · have := hk 0 d rfl hu.symm
+        simp only [List.getElem?_cons_zero, Option.some.injEq] at this
+        simp [upd, hu, this]
+      · simp [upd, hu, h]
+    · exact writeV_zip_filter_congr q u L o o' ρ ρ' h hl' hk'
+
 theorem AState.mem_get_forgetDefs {a : AState} {pairs : List (Operand × Loc)} {l : Loc} {s : Sym}
     (h : s ∈ (forgetDefs a pairs).get l) :
     s ∈ a.get l ∧ ∀ p ∈ pairs, p.1.kind = .def → s ≠ .vreg p.1.vreg := by
@@ -362,29 +391,44 @@ theorem op_sound {w : String} {i : MInst} {ops : Array Operand} {allocs : Array 
     have h3 := Inv_defineAll
       ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs').filter (·.1.1.isLate)) h2
     rw [defs_late hlen', ← defs_vcode hsz outs' Operand.isLate] at h3
-    cases hb : i.isBranch with
-    | false =>
-      have e := hho.2 hb
+    cases hk : i.keptDefs with
+    | none =>
+      have e := hho.2.1 hk
       subst e
-      simpa only [transferOp, hb, Bool.false_eq_true, ite_false] using h3
-    | true =>
-      simp only [transferOp, hb, ite_true]
+      simpa only [transferOp, hk] using h3
+    | some nk =>
+      simp only [transferOp, hk]
       refine Inv_forgetDefs h3 fun u hu => ?_
-      -- `u` is not a def vreg: both files keep `ρ u`
-      have hnd : ∀ (o : List V) (q : Operand → Bool),
-          ∀ p ∈ ((ops.toList.filter Operand.isDef).zip o).filter (fun p => q p.1), p.1.vreg ≠ u := by
-        intro o q p hp e
-        have hp1 : p.1 ∈ ops.toList.filter Operand.isDef :=
-          (List.of_mem_zip (List.mem_filter.mp hp).1).1
-        rw [← pairs_fst hsz] at hp1
-        obtain ⟨pp, hpp, e'⟩ := List.mem_map.mp hp1
-        have hpp' := List.mem_filter.mp hpp
-        exact hu pp hpp'.1 (by simpa [Operand.isDef] using hpp'.2) (by rw [e', e])
-      rw [writeV_notDef _ _ (hnd outs' _), writeV_notDef _ _ (hnd outs' _),
-        writeV_notDef _ _ (hnd outs _), writeV_notDef _ _ (hnd outs _)]
+      -- `u` is no forgotten def's vreg: the kept defs (the first `nk`) have the same values in
+      -- both files
+      have hD : ∀ (k : Nat) (d : Operand), (ops.toList.filter Operand.isDef)[k]? = some d →
+          d.vreg = u → outs'[k]? = outs[k]? := by
+        intro k d hd hdu
+        by_cases hkn : k < nk
+        · have := congrArg (·[k]?) (hho.2.2 nk hk)
+          simpa [List.getElem?_take, hkn] using this
+        · exfalso
+          have hfst := pairs_fst hsz Operand.isDef
+          have hk' : (((ops.zip allocs).toList.filter (·.1.isDef)).map Prod.fst)[k]? = some d := by
+            rw [hfst]; exact hd
+          rw [List.getElem?_map] at hk'
+          obtain ⟨pp, hpp, rfl⟩ := Option.map_eq_some_iff.mp hk'
+          have hmem : pp ∈ ((ops.zip allocs).toList.filter (·.1.kind == .def)).drop nk := by
+            have e : (((ops.zip allocs).toList.filter (·.1.kind == .def)).drop nk)[k - nk]? =
+                some pp := by
+              rw [List.getElem?_drop, show nk + (k - nk) = k by omega]
+              simpa [Operand.isDef] using hpp
+            exact List.mem_of_getElem? e
+          have hkd : pp.1.kind = .def := by
+            have := List.mem_of_getElem? hpp
+            simpa [Operand.isDef] using (List.mem_filter.mp this).2
+          exact hu pp hmem hkd hdu.symm
+      have hl : outs'.length = outs.length := hho.1
+      exact writeV_zip_filter_congr _ u _ _ _ _ _
+        (writeV_zip_filter_congr _ u _ _ _ ρ ρ rfl hl hD) hl hD
   · intro us hi
     subst hi
-    simpa [transferOp, MInst.isBranch] using retCheck_ok hret
+    simpa [transferOp, MInst.keptDefs, MInst.isBranch] using retCheck_ok hret
 
 end
 

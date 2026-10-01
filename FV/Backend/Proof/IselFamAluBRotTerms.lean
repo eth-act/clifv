@@ -387,7 +387,7 @@ theorem small_rotr_imm_run (hR : Refines F isem) {w : Nat} (hw : w = 8 ∨ w = 1
     rw [setWidth_resX32 (by omega)]
     exact small_rot_fin hw u hn
 
-set_option maxHeartbeats 1000000 in
+set_option maxHeartbeats 3000000 in
 include hp hc in
 /-- **Contract of `small_rotr`** (`lower.isle:1879`) at `i8`/`i16`. -/
 theorem small_rotr_ok (hR : Refines F isem) {n : Nat} (hn : 100 ≤ n) {w : Nat} (hw : w = 8 ∨ w = 16)

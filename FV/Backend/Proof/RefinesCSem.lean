@@ -23,14 +23,21 @@ theorem mspec_of_ispec {sb : Nat} {i : MInst} {us : List CV} {w : Arm.ArmState}
     {r : List CV × Arm.ArmState × Ctl} (h : ispec i us w = some r) : mspec sb i us w = some r := by
   unfold mspec
   split
-  · simp [ispec] at h
-  · simp [ispec] at h
-  · simp [ispec] at h
-  · exact h
+  all_goals first | (simp [ispec] at h; done) | exact h
 
 theorem holds_eq (k : CondBrKind) (us : List CV) (w : Arm.ArmState) :
     k.holds us w = condBrHolds k us w := by
   cases k <;> rcases us with _ | ⟨a, _ | ⟨b, _⟩⟩ <;> rfl
+
+attribute [local csimp_rules] Arm.BR.exec_barrier
+
+set_option maxHeartbeats 4000000 in
+theorem ref_csetm (d : Nat) (c : Cond) : RefAt F ctx (.csetm (.vreg d .int) c) [] := by
+  cases c <;> ref_tac_fl
+
+set_option maxHeartbeats 4000000 in
+theorem ref_fence : RefAt F ctx .fence [] := by
+  ref_tac
 
 set_option maxHeartbeats 4000000 in
 /-- The per-form `RefAt` lemmas, by cases on the covered form and the number of use values. -/
@@ -60,7 +67,7 @@ theorem refAt_of_wf {i : MInst} {us : List CV} (h : csemWF ctx i us = true) : Re
         | apply ref_bitRR | apply ref_movWide' | apply ref_movK | apply ref_extend
         | apply ref_bitfieldMove | apply ref_cset | apply ref_csel | apply ref_ccmpImm
         | apply ref_movToFpu | apply ref_movFromVec | apply ref_vecMisc | apply ref_vecLanes
-        | apply ref_vecRRR) <;>
+        | apply ref_vecRRR | apply ref_csetm | apply ref_fence) <;>
       first | assumption | decide
     | (apply refAt_none'; intro w; simp [ispec]; done)
 

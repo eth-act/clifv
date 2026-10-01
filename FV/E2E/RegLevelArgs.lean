@@ -225,7 +225,7 @@ theorem realizes_args {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {alloc
   rw [hvb] at hvb'; cases hvb'
   rw [hi] at hi'; cases hi'
   rw [hops] at hops'; cases hops'
-  obtain rfl := hho.2 rfl
+  obtain rfl := hho.2.1 rfl
   have hsem' := hsem
   simp only [RL.sem, csem, Option.some.injEq, Prod.mk.injEq] at hsem'
   obtain ⟨rfl, rfl, rfl⟩ := hsem'

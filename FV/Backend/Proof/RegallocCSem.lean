@@ -366,6 +366,7 @@ def _root_.Backend.AMode.addr (ctx : FnCtx) (m : AMode) (bytes : Nat) (s : Arm.A
 def _root_.Backend.MInst.accesses (ctx : FnCtx) : MInst → Arm.ArmState → List (BitVec 64 × Nat)
   | .load op _ m _, s => [(m.addr ctx op.bytes s, op.bytes)]
   | .store op _ m _, s => [(m.addr ctx op.bytes s, op.bytes)]
+  | .loadAcquire ty _ rn _, s | .storeRelease ty _ rn _, s => [(regX s rn, ty.bytes)]
   | _, _ => []
 
 /-- Every memory access of `i` in state `s` avoids the frame addresses `F`. -/
@@ -438,6 +439,8 @@ def memOk (bytes : Nat) : AMode → Bool
     decide (extOk e)
   | _ => false
 
+instance (ty : CTy) : Decidable (AtomTy ty) := by unfold AtomTy; infer_instance
+
 /-- **The covered straight-line forms.** A zero-register destination is register 31 in the
 encoding, which the immediate and extended-register `add`/`sub` and the logical-immediate forms
 read as `sp` unless they set the flags: those are covered only as `adds`/`subs`/`ands`. A logical
@@ -479,6 +482,11 @@ def FormOk (_ctx : FnCtx) : MInst → Bool
   | .store op (.vreg _ .int) m _ => op != .fpuStore128 && memOk op.bytes m
   | .loadAddr (.vreg _ .int) (.slotOffset _) => true
   | .aluRRImmLogic op sz (.vreg _ .int) .xzr imm => logicOpOk op && logicImmOk op sz imm
+  -- `csetm` (`bmask`), `dmb ish` (`fence`), `ldar`/`stlr`
+  | .csetm (.vreg _ .int) _ => true
+  | .fence => true
+  | .loadAcquire ty (.vreg _ .int) (.vreg _ .int) _ => decide (AtomTy ty)
+  | .storeRelease ty (.vreg _ .int) (.vreg _ .int) _ => decide (AtomTy ty)
   | _ => false
 
 /-- The number of use operands. -/
@@ -533,6 +541,13 @@ def mspec (sb : Nat) : Sem := fun i uses w =>
       ([], Arm.write_mem_bytes op.bytes a ((lo64 v).setWidth (op.bytes * 8)) w, .next)
   | .loadAddr (.vreg _ .int) (.slotOffset off), [] =>
     some ([ofX (spOf w + BitVec.ofInt 64 (off + sb))], w, .next)
+  | .loadAcquire ty (.vreg _ .int) (.vreg _ .int) _, [u] =>
+    if AtomTy ty then some ([ofX ((Arm.read_mem_bytes ty.bytes (lo64 u) w).setWidth 64)], w, .next)
+    else none
+  | .storeRelease ty (.vreg _ .int) (.vreg _ .int) _, [u, v] =>
+    if AtomTy ty then
+      some ([], Arm.write_mem_bytes ty.bytes (lo64 u) ((lo64 v).setWidth (ty.bytes * 8)) w, .next)
+    else none
   | i, us => ispec i us w
 
 /-- **The concrete instruction semantics.** -/

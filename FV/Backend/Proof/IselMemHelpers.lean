@@ -233,7 +233,7 @@ theorem runs_got {sb : Nat} {syms : String → Option Nat} (hM : MemRefines F sb
     {nm : String} {b : Nat} (hb : syms nm = some b) (ρ : Nat → CV) (w : Arm.ArmState) :
     Runs F isem [.loadExtNameGot (.vreg d .int) nm] ρ w
       (fun ρ' _ => ρ' = upd ρ d (ofX (BitVec.ofNat 64 b))) := by
-  obtain ⟨w', hs, hsw⟩ := hM.2.2.2 d nm b w hb
+  obtain ⟨w', hs, hsw⟩ := hM.2.2.2.1 d nm b w hb
   exact ⟨_, w', seqRun_isem_one (operands_loadExtNameGot d nm) hs rfl, hsw.toNF, rfl⟩
 
 /-- What `load_ext_name name off _` produced: code defining fresh vregs and reading only fresh

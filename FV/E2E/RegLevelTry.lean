@@ -194,7 +194,7 @@ theorem realizes_tryCall {R : RL} (hR : R.Wf) (hC : CalleeOk R.F R.X R.H)
       ftList (.ins (.b (.block ti.continuation)) none :: (ls2 ++ nxtOf R.af b)) ++ T := by
     rw [← List.drop_drop, hdrop']; rfl
   obtain ⟨n, jl, hn, hjl⟩ := reach_b hR hdrop1 hprog' hpc1 herr'
-  refine ⟨n + 1, _, MStep.op hvb hi hops hsz hsem hlen ⟨rfl, fun _ => rfl⟩ hc2'
+  refine ⟨n + 1, _, MStep.op hvb hi hops hsz hsem hlen (HavocOuts.refl _ _) hc2'
     (MNext.goto hk1 hsucc hitems), ?_⟩
   have hiter : iterN R.step (n + 1) s = Arm.w .PC (R.pcOf jl) s' := by
     simp only [iterN]; rw [hs1, hn]

@@ -56,3 +56,20 @@ extraction.
 - Symbolic simulation: the ported `sym_n` proves register effects of straight-line programs,
   including one with a load (`FVTest/Arm/Sym/Demo.lean`). That meets the M3 validator's need.
 - Nothing so far suggests revisiting this decision.
+
+## Atomics: trusted single-threaded assumption (agent/atomics-proof, 2026-10-01)
+
+`E2E.backend_correct_final` covers `atomic_load`, `atomic_store` and `fence`. Once the LL/SC
+loops are proven, it will also cover `atomic_rmw`/`atomic_cas`. These rest on a **trusted**
+property of the Arm model, which is single-core and has no other agents:
+
+- `LDAR`/`LDAXR` (`Arm.LDST.exec_reg_exclusive`, `L = 1`) are plain zero-extending loads.
+- `STLR`/`STLXR` are plain stores. An exclusive store **always succeeds** and writes status 0
+  to `Rs` (for `STLR`, `Rs` is `XZR`, so nothing is written). There is **no exclusive
+  monitor**.
+- `DMB ISH` (`Arm.BR.exec_barrier`) only advances the pc.
+
+This is sound for the CLIF semantics `Clif.run`, which is single-threaded. It does **not**
+model concurrent agents: a theorem about a multi-threaded execution would need a memory
+model and a monitor, and Cranelift's LL/SC retry loops would then be needed. The co-simulation
+(`scripts/arm-cosim.sh`) does not exercise exclusives against another agent.

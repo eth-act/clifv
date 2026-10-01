@@ -497,7 +497,10 @@ theorem realizes_jt {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs 
           (·.1.isUse)).map (m ·.2)) w = some (outs, w, .goto jj) := by
       rw [hU]; simp only [RL.sem, csem, hhs]; exact hsem
     refine ⟨n, _, MStep.op (outs' := [regVal s' (.x na), regVal s' (.x nb)]) (w' := w) hvb hi hops hsz'
-      hsem' hlen ⟨by rw [hout2]; rfl, fun h => by cases h⟩ (hcl0 _) (MNext.goto hk1 hsucc hitems), ?_⟩
+      hsem' hlen ⟨by rw [hout2]; rfl,
+        fun h => by simp [MInst.keptDefs, MInst.isBranch] at h,
+        fun n h => by simp [MInst.keptDefs, MInst.isBranch] at h; subst h; rfl⟩
+      (hcl0 _) (MNext.goto hk1 hsucc hitems), ?_⟩
     rw [hstore, hn]
     exact q_entry hR hst0 hvs hitems hjl hpc' (stRel_regs hst hna hnb hna18 hnb18 hf hmem hprog)
   -- which successor

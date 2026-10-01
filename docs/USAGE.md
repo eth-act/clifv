@@ -348,6 +348,10 @@ unwinding trusted)`: 252, 493, 837. No function is unverified for an indirect ca
 arguments, calls of functions of the same file, rejected `i128` legalisations). Release
 builds were not re-measured.
 
+After agent/atomics-proof stage A (2026-10-01: `bmask`, `atomic_load`, `atomic_store` and
+`fence` verified; `atomic_rmw`/`atomic_cas` not yet; debug, `examples/compare.sh` SAME for all
+three): fv-demo 1323 verified of 1346, survey 3156 of 3179, vendor 4324 of 4399.
+
 Of the verified, `verified (normal returns; unwinding trusted)`: fv-demo 231 / 204, survey
 492 / 419, vendor 820 / 727 (debug / release). Before (main fbbd5d9, `try_call` functions
 compiled but unverified) survey debug had 2537 verified of 3179. No function is over the
@@ -392,10 +396,11 @@ agent/fv-fallback: the Cranelift non-LSE lowering (cg_clif's aarch64 flags have 
 i.e. `ldar`/`stlr` and the `atomic_rmw_loop`/`atomic_cas_loop` LL/SC pseudo-instructions
 (`ldaxr`/`stlxr` loops over the fixed registers x24–x28), `csetm` for `bmask`, `dmb ish` for
 `fence` — all encode-checked byte-for-byte against llvm-mc and differentially executed
-against Cranelift-native on the atomic/bmask/fence runtests. They are flagged unverified
-(`bmask / atomic instructions / fence (outside backend_correct)`; `E2E.InSubset` is
-unchanged), and the stack-slot allocator rejects the loop pseudo-instructions (regalloc2, the
-default, handles their fixed registers).
+against Cranelift-native on the atomic/bmask/fence runtests. `bmask`, `atomic_load`,
+`atomic_store` and `fence` are in E and inside `E2E.backend_correct_final` (single-threaded
+Arm model, `docs/decisions/arm-model.md`, "Atomics"). `atomic_rmw`/`atomic_cas` are still
+outside E (reported as "outside clif-subset-v2 E"). The stack-slot allocator rejects the loop
+pseudo-instructions (regalloc2, the default, handles their fixed registers).
 
 `examples/vendor` vendors dep-free crates.io crates (`crc32fast`, `itoa`, `memchr`, `hex`,
 `bitflags`, `cfg-if`, `once_cell`) plus a `harness` crate with reference-value tests, to

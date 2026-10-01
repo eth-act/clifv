@@ -27,6 +27,7 @@ import FV.Backend.Proof.IselFamAluBPopcnt
 import FV.Backend.Proof.IselCmpSelect
 import FV.Backend.Proof.IselCtlUnmatch
 import FV.Backend.Proof.IselExclData
+import FV.Backend.Proof.IselAtomic
 
 /-!
 # M4: `LowerRulesCorrect program`
@@ -116,7 +117,7 @@ theorem lowerRulesCorrect_program : LowerRulesCorrect program := by
   simp only [closureRootIds, List.contains_cons, List.contains_nil, Bool.or_false,
     Bool.or_eq_true, beq_iff_eq] at hroot
 
-  rcases hroot with h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h
+  rcases hroot with h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h
   · rw [lower_rule_eq hr (k := 172) (r0 := rule_lower_53) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
     apply iconst_ok <;> assumption
   · rw [lower_rule_eq hr (k := 177) (r0 := rule_lower_78) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
@@ -205,6 +206,7 @@ theorem lowerRulesCorrect_program : LowerRulesCorrect program := by
     apply vec_umax_ruleOk <;> assumption
   · rw [lower_rule_eq hr (k := 459) (r0 := rule_lower_1261) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
     apply uextend_ok <;> assumption
+  · exfalso; simp [memRootRule, h] at hmem
   · rw [lower_rule_eq hr (k := 132) (r0 := rule_lower_1281) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
     apply uextend_icmp_ruleOk <;> assumption
   · exfalso; simp [memRootRule, h] at hmem
@@ -303,6 +305,8 @@ theorem lowerRulesCorrect_program : LowerRulesCorrect program := by
     apply bswap_i32_ok <;> assumption
   · rw [lower_rule_eq hr (k := 292) (r0 := rule_lower_2041) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
     apply bswap_i64_ok <;> assumption
+  · rw [lower_rule_eq hr (k := 294) (r0 := rule_lower_2052) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    apply bmask_ok <;> assumption
   · rw [lower_rule_eq hr (k := 295) (r0 := rule_lower_2074) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
     apply popcnt_8_ok <;> assumption
   · rw [lower_rule_eq hr (k := 296) (r0 := rule_lower_2080) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
@@ -319,6 +323,22 @@ theorem lowerRulesCorrect_program : LowerRulesCorrect program := by
     exact lowerRuleOk_of_fmt rfl (.inl rfl)
   · rw [lower_rule_eq hr (k := 308) (r0 := rule_lower_2267) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
     apply select_ruleOk <;> assumption
+  · exfalso; simp [memRootRule, h] at hmem
+  · exfalso; simp [memRootRule, h] at hmem
+  · exfalso; simp [memRootRule, h] at hmem
+  · exfalso; simp [memRootRule, h] at hmem
+  · exfalso; simp [memRootRule, h] at hmem
+  · exfalso; simp [memRootRule, h] at hmem
+  · exfalso; simp [memRootRule, h] at hmem
+  · exfalso; simp [memRootRule, h] at hmem
+  · exfalso; simp [memRootRule, h] at hmem
+  · exfalso; simp [memRootRule, h] at hmem
+  · exfalso; simp [memRootRule, h] at hmem
+  · exfalso; simp [memRootRule, h] at hmem
+  · exfalso; simp [memRootRule, h] at hmem
+  · exfalso; simp [memRootRule, h] at hmem
+  · rw [lower_rule_eq hr (k := 337) (r0 := rule_lower_2476) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    apply fence_ok <;> assumption
   · exfalso; simp [memRootRule, h] at hmem
   · exfalso; simp [memRootRule, h] at hmem
   · exfalso; simp [callRootRule, h] at hcall
