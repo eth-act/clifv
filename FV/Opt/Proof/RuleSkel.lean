@@ -75,7 +75,7 @@ theorem skeletonSound (allow : RuleId → Bool) (hc : SkeletonRulesCorrect progr
       -- the model facts, whatever the reads
       obtain ⟨h1, h2, -⟩ := applyMulti_gen program hG allow (.inst (some i)) (fun _ => True)
         (fun _ _ _ => True) (fun _ _ _ _ => trivial) (fun _ _ _ _ _ _ => trivial)
-        T.«simplify_skeleton» _ (fun _ _ _ => by unfold RuleSpec; intros; exact True.intro)
+        T.«simplify_skeleton» _ (fun _ _ _ => by unfold RuleSpec RuleSpecAt; intros; exact True.intro)
         cfg.fuel hlen { inner := st } #[] vals s1 tr1 hP trivial hx
       refine ⟨h1, h2, fun hd => ?_⟩
       obtain ⟨-, -, h3⟩ := applyMulti_gen program hG allow (.inst (some i)) (SkelReadsDef den i)

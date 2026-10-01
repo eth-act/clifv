@@ -21,6 +21,9 @@ about the read values:
 * `skel_brif_two_then`, `skel_brif_two_else`: a branch to a trap block replaced by a conditional
   trap and a jump.
 
+The `truthy` if-let of `skeleton.isle` 50/53/56 (a multi term: its results cannot be unfolded
+over the abstract e-graph) is handled by the soundness of its rules (`truthy_iflet`).
+
 Embedding lemmas (`opt_match`): `inst_data` on the skeleton instruction (`extract_inst_data`)
 and the inversion of `ofSkel` per `InstructionData` variant.
 -/
@@ -412,5 +415,201 @@ macro "skel_auto_div_i " r:ident : tactic => `(tactic| (
   rule_lhs hG
   all_goals rule_iflets
   all_goals (skel_rhs; skel_good; skel_div)))
+
+/-! ## `truthy` in an if-let
+
+`(if-let x (truthy c))` calls the multi term `truthy` (`bitops.isle` 110-122): each of its rules
+is proven to return a class with `c`'s truthiness (`TruthyOk`, the generic `RuleSpecAt` at fuel
+`truthyFuel`), `truthy_sound` lifts them with `applyMulti_genAt`, and `truthy_iflet` gives the
+if-let's environments. -/
+
+/-- The result property of `truthy c` (`vc` the value of `c`): a class whose value has the
+truthiness of `vc`. -/
+def TruthyRes {σ : Type} (den : σ → Valuation) (vc : Val) (w : V) (s : St σ) : Prop :=
+  ∃ m vm, w = .value m ∧ den s.inner m = some vm ∧ Sem.truthy vm.bits = Sem.truthy vc.bits
+
+/-- The fuel the `truthy` rules are proven at: the if-let calls the multi term with the fuel
+of a skeleton rule (at least `fuelMin`) minus a few interpreter steps. -/
+def truthyFuel : Nat := 900
+
+/-- The obligation of one rule of the multi term `truthy` (`bitops.isle` 111-122). -/
+def TruthyOk (p : Isle.Program) (r : Rule) : Prop :=
+  ∀ (σ : Type) (G : EGraph σ) (P : σ → Prop) (den : σ → Valuation) (fr : Frame) (mem : Mem),
+  GraphOk G P den fr mem → ∀ c vc, RuleSpecAt truthyFuel p G P den (.value c)
+    (fun s => den s.inner c = some vc) (fun _ w s => TruthyRes den vc w s) r
+
+set_option hygiene false in
+/-- The template of a `truthy` rule: the left-hand side, then the operand's truthiness per type. -/
+macro "truthy_auto " r:ident : tactic => `(tactic| (
+  intro σ G P den fr mem hG c vc s0 hP hv env1 hrel n hn s1 tr1 envs2 s2 tr2 hP1 hle1 hil env2
+    henv2 s3 tr3 ws s4 tr4 hP3 hle3 hev w hw
+  obtain ⟨n, rfl⟩ : ∃ k, n = k + 900 := ⟨n - 900, by simp [truthyFuel] at hn; omega⟩
+  unfold $r:ident at hrel hil hev
+  dsimp only at hrel hil hev
+  rule_no_iflets
+  rule_lhs hG
+  all_goals (
+    opt_eval hev
+    simp only [Except.ok.injEq, Prod.mk.injEq] at hev
+    obtain ⟨rfl, rfl, rfl⟩ := hev
+    simp only [List.mem_singleton] at hw
+    subst hw
+    refine ⟨_, _, rfl, by apply Valuation.le_trans hle1 hle3; assumption, ?_⟩
+    skel_imm
+    opt_some_subst
+    try simp only [bne_iff_ne, ne_eq] at *
+    opt_cases_val
+    opt_cases_ty <;> (try simp only [Ty.width] at *) <;> (try omega) <;> opt_widths <;>
+      (try sem_simp) <;> (try (simp only [Option.some.injEq] at *; subst_vars)) <;> (try bswap_unroll) <;> (try simp only [Sem.bitrev] at *) <;> bv_decide)))
+
+set_option maxHeartbeats 4000000 in
+theorem ok_truthy_bitops_111 {p : Isle.Program} (hd : Data p) : TruthyOk p rule_bitops_111 := by
+  truthy_auto rule_bitops_111
+
+set_option maxHeartbeats 4000000 in
+theorem ok_truthy_bitops_112 {p : Isle.Program} (hd : Data p) : TruthyOk p rule_bitops_112 := by
+  truthy_auto rule_bitops_112
+
+set_option maxHeartbeats 4000000 in
+theorem ok_truthy_bitops_113 {p : Isle.Program} (hd : Data p) : TruthyOk p rule_bitops_113 := by
+  truthy_auto rule_bitops_113
+
+set_option maxHeartbeats 4000000 in
+theorem ok_truthy_bitops_114 {p : Isle.Program} (hd : Data p) : TruthyOk p rule_bitops_114 := by
+  truthy_auto rule_bitops_114
+
+set_option maxHeartbeats 4000000 in
+theorem ok_truthy_bitops_115 {p : Isle.Program} (hd : Data p) : TruthyOk p rule_bitops_115 := by
+  truthy_auto rule_bitops_115
+
+set_option maxHeartbeats 4000000 in
+theorem ok_truthy_bitops_116 {p : Isle.Program} (hd : Data p) : TruthyOk p rule_bitops_116 := by
+  truthy_auto rule_bitops_116
+
+set_option maxHeartbeats 4000000 in
+theorem ok_truthy_bitops_117 {p : Isle.Program} (hd : Data p) : TruthyOk p rule_bitops_117 := by
+  truthy_auto rule_bitops_117
+
+set_option maxHeartbeats 4000000 in
+theorem ok_truthy_bitops_118 {p : Isle.Program} (hd : Data p) : TruthyOk p rule_bitops_118 := by
+  truthy_auto rule_bitops_118
+
+set_option maxHeartbeats 4000000 in
+theorem ok_truthy_bitops_119 {p : Isle.Program} (hd : Data p) : TruthyOk p rule_bitops_119 := by
+  truthy_auto rule_bitops_119
+
+set_option maxHeartbeats 4000000 in
+theorem ok_truthy_bitops_120 {p : Isle.Program} (hd : Data p) : TruthyOk p rule_bitops_120 := by
+  truthy_auto rule_bitops_120
+
+set_option maxHeartbeats 4000000 in
+theorem ok_truthy_bitops_122 {p : Isle.Program} (hd : Data p) : TruthyOk p rule_bitops_122 := by
+  truthy_auto rule_bitops_122
+
+
+section
+variable {σ : Type} {G : EGraph σ} {P : σ → Prop} {den : σ → Valuation} {fr : Frame} {mem : Mem}
+
+/-- **`truthy` is sound**: every result of the multi term on a class `c` with value `vc` is a class
+with `vc`'s truthiness, in the end state. -/
+theorem truthy_sound {p : Isle.Program} (hd : Data p) (hG : GraphOk G P den fr mem) (c : Nat)
+    (vc : Val) (n : Nat) (hn : truthyFuel + 11 ≤ n) (s : St σ) (tr : Array RuleId)
+    (res : List (RuleId × V)) (s' : St σ) (tr' : Array RuleId) (hP : P s.inner)
+    (hv : den s.inner c = some vc)
+    (h : (applyMulti p (sem G) cfg n T.«truthy» [rule_bitops_111, rule_bitops_112, rule_bitops_113,
+      rule_bitops_114, rule_bitops_115, rule_bitops_116, rule_bitops_117, rule_bitops_118,
+      rule_bitops_119, rule_bitops_120, rule_bitops_122] [.value c]).run (s, tr) =
+      .ok (res, (s', tr'))) :
+    P s'.inner ∧ Valuation.Le (den s.inner) (den s'.inner) ∧
+      ∀ rid w, (rid, w) ∈ res → TruthyRes den vc w s' := by
+  obtain ⟨h1, h2, h3⟩ := applyMulti_genAt p hG (fun _ => true) (.value c)
+    (fun s => den s.inner c = some vc) (fun _ w s => TruthyRes den vc w s)
+    (fun _ _ h hle => hle _ _ h)
+    (fun _ _ _ _ h hle => let ⟨m, vm, e, hm, ht⟩ := h; ⟨m, vm, e, hle _ _ hm, ht⟩)
+    T.«truthy» truthyFuel (by decide) _ (by
+      intro r hr _
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      · exact ok_truthy_bitops_111 hd σ G P den fr mem hG c vc
+      · exact ok_truthy_bitops_112 hd σ G P den fr mem hG c vc
+      · exact ok_truthy_bitops_113 hd σ G P den fr mem hG c vc
+      · exact ok_truthy_bitops_114 hd σ G P den fr mem hG c vc
+      · exact ok_truthy_bitops_115 hd σ G P den fr mem hG c vc
+      · exact ok_truthy_bitops_116 hd σ G P den fr mem hG c vc
+      · exact ok_truthy_bitops_117 hd σ G P den fr mem hG c vc
+      · exact ok_truthy_bitops_118 hd σ G P den fr mem hG c vc
+      · exact ok_truthy_bitops_119 hd σ G P den fr mem hG c vc
+      · exact ok_truthy_bitops_120 hd σ G P den fr mem hG c vc
+      · exact ok_truthy_bitops_122 hd σ G P den fr mem hG c vc)
+    n (by simpa using hn) s tr res s' tr' hP hv h
+  exact ⟨h1, h2, fun rid w hm => h3 rid w hm rfl⟩
+
+/-- `bindAll` of a state-preserving singleton function. -/
+theorem bindAll_pure_single {α β : Type} (g : α → β) :
+    ∀ l : List α, bindAll (fun a => (pure [g a] : M (St σ) (List β))) l = pure (l.map g)
+  | [] => rfl
+  | a :: as => by
+    simp only [bindAll, bindAll_pure_single g as, List.map_cons]
+    rfl
+
+/-- The if-let `(if-let x (truthy c))` of the skeleton rules: it keeps the model and binds `x`
+(variable 1) to classes with `c`'s truthiness. -/
+theorem truthy_iflet {p : Isle.Program} (hd : Data p) (hG : GraphOk G P den fr mem)
+    {env : Interp.Env V} {c : Nat} {vc : Val} (he : env[0]? = some (some (.value c)))
+    (hsz : 1 < env.size) {n : Nat} (hn : 1000 ≤ n) {s : St σ} {tr : Array RuleId}
+    {envs : List (Interp.Env V)} {s' : St σ} {tr' : Array RuleId} (hP : P s.inner)
+    (hv : den s.inner c = some vc)
+    (h : (matchIfLetsN p (sem G) cfg n [⟨.bind 15 1 (.wildcard 15), .term 15 235 [.var 15 0]⟩]
+      env).run (s, tr) = .ok (envs, (s', tr'))) :
+    P s'.inner ∧ Valuation.Le (den s.inner) (den s'.inner) ∧
+      ∀ e ∈ envs, ∃ m vm, e = env.set! 1 (some (.value m)) ∧ den s'.inner m = some vm ∧
+        Sem.truthy vm.bits = Sem.truthy vc.bits := by
+  obtain ⟨n, rfl⟩ : ∃ k, n = k + 1000 := ⟨n - 1000, by omega⟩
+  opt_eval h [he]
+  have hb : ∀ v, (do
+      let x ← (get : M (St σ) (St σ × Array RuleId))
+      let envs ← liftM (matchPatN p (sem G) x.fst (Pattern.bind 15 1 (Pattern.wildcard 15)) v env)
+      bindAll (fun e => matchIfLetsN p (sem G) cfg (n + 999) [] e) envs) =
+      (pure [env.set! 1 (some v)] : M (St σ) (List (Interp.Env V))) := by
+    intro v
+    funext st
+    simp [matchPatN, hsz, matchIfLetsN, bindAll, liftM, bind, StateT.bind, get, getThe,
+      MonadStateOf.get, StateT.get, pure, StateT.pure, Except.pure, monadLift, MonadLift.monadLift,
+      StateT.lift, Except.bind]
+  simp only [hb, bindAll_pure_single] at h
+  simp only [bind, Except.bind] at h
+  split at h
+  · cases h
+  · rename_i a ha
+    obtain ⟨vals, s1, tr1⟩ := a
+    obtain ⟨h1, h2, h3⟩ := truthy_sound hd hG c vc _ (by simp [truthyFuel]) s tr vals s1 tr1 hP hv ha
+    simp only [StateT.run, pure, StateT.pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
+    obtain ⟨rfl, rfl, rfl⟩ := h
+    refine ⟨h1, h2, fun e he' => ?_⟩
+    simp only [List.map_map, List.mem_map, Function.comp] at he'
+    obtain ⟨⟨rid, w⟩, hm, rfl⟩ := he'
+    obtain ⟨m, vm, rfl, hm', ht⟩ := h3 rid w hm
+    exact ⟨m, vm, rfl, hm', ht⟩
+end
+
+set_option hygiene false in
+/-- The whole template for a condition stripped by `truthy` (`skeleton.isle` 50, 53, 56). -/
+macro "skel_auto_truthy " r:ident : tactic => `(tactic| (
+  skel_intro $r
+  rule_lhs hG
+  skel_reads
+  rule_lhs hG
+  obtain ⟨hP2, hle2, hx⟩ := truthy_iflet hd hG (by simp <;> rfl) (by simp) (by omega) hP1
+    (hle1 _ _ ‹den s0.inner _ = some _›) hil
+  obtain ⟨m, vm, rfl, hm, ht⟩ := hx env2 henv2
+  skel_rhs
+  skel_good
+  first
+    | exact skel_brif_cond (hle4 _ _ (hle3 _ _ (hle2 _ _ (hle1 _ _ ‹den s0.inner _ = some _›))))
+        (hle4 _ _ (hle3 _ _ hm)) ht
+    | exact skel_trapz_cond (hle4 _ _ (hle3 _ _ (hle2 _ _ (hle1 _ _ ‹den s0.inner _ = some _›))))
+        (hle4 _ _ (hle3 _ _ hm)) ht
+    | exact skel_trapnz_cond (hle4 _ _ (hle3 _ _ (hle2 _ _ (hle1 _ _ ‹den s0.inner _ = some _›))))
+        (hle4 _ _ (hle3 _ _ hm)) ht))
 
 end Opt.Proof

@@ -76,9 +76,10 @@ def provenSimplifyRules : List Nat :=
 /-- Ids of the exported `simplify_skeleton` rules whose correctness is proven
 (`Opt.Proof.skeletonRulesCorrect_proven`; the theorems are in `FV/Opt/Proof/RuleSkeleton.lean`):
 `arithmetic.isle` 79, 80, 130, 131, 132 (division/remainder by 1 and -1) and `skeleton.isle` 7, 9,
-22, 26, 33, 37, 44 (conditional traps and branches on constants, branches to trap blocks). -/
+22, 26, 33, 37, 44 (conditional traps and branches on constants, branches to trap blocks), 50, 53,
+56 (conditions stripped by `truthy`). -/
 def provenSkeletonRules : List Nat :=
-  [83, 84, 92, 93, 94, 1366, 1367, 1370, 1371, 1372, 1373, 1374]
+  [83, 84, 92, 93, 94, 1366, 1367, 1370, 1371, 1372, 1373, 1374, 1375, 1376, 1377]
 
 /-- Which exported rules may contribute candidates (`Isle.Opt.simplify`'s and
 `Isle.Opt.simplifySkeleton`'s allow-list); the other rules still run, their candidates are

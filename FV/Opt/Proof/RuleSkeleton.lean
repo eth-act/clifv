@@ -5,8 +5,9 @@ import FV.Opt.Proof.RuleSkelEmbed
 
 `ok_rule_X : SkelRuleOk p rule_X` for the skeleton rules in `Opt.provenSkeletonRules`
 (`FV/Opt/RuleAllow.lean`), with the templates of `FV/Opt/Proof/RuleSkelEmbed.lean`:
-`skel_auto_div` (a division by a constant replaced by a value) and `skel_auto_br` (conditional
-traps and branches with a known condition, branches to trap blocks).
+`skel_auto_div` (a division by a constant replaced by a value), `skel_auto_br` (conditional
+traps and branches with a known condition, branches to trap blocks) and `skel_auto_truthy` (a
+condition stripped by `truthy`).
 -/
 
 namespace Opt.Proof
@@ -60,5 +61,17 @@ theorem ok_rule_skeleton_37 {p : Isle.Program} (hd : Data p) : SkelRuleOk p rule
 set_option maxHeartbeats 4000000 in
 theorem ok_rule_skeleton_44 {p : Isle.Program} (hd : Data p) : SkelRuleOk p rule_skeleton_44 := by
   skel_auto_br rule_skeleton_44
+
+set_option maxHeartbeats 4000000 in
+theorem ok_rule_skeleton_50 {p : Isle.Program} (hd : Data p) : SkelRuleOk p rule_skeleton_50 := by
+  skel_auto_truthy rule_skeleton_50
+
+set_option maxHeartbeats 4000000 in
+theorem ok_rule_skeleton_53 {p : Isle.Program} (hd : Data p) : SkelRuleOk p rule_skeleton_53 := by
+  skel_auto_truthy rule_skeleton_53
+
+set_option maxHeartbeats 4000000 in
+theorem ok_rule_skeleton_56 {p : Isle.Program} (hd : Data p) : SkelRuleOk p rule_skeleton_56 := by
+  skel_auto_truthy rule_skeleton_56
 
 end Opt.Proof
