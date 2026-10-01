@@ -53,6 +53,11 @@ theorem instOutcome_congr {fr fr' : Clif.Frame} (hf : fr'.func = fr.func)
   | call fn args =>
     simp only [instArgs] at h
     simp only [instOutcome, hf, getMany_congr h]
+  | callIndirect sig callee args =>
+    simp only [instArgs, List.mem_cons] at h
+    have hc : fr'.get callee = fr.get callee := by
+      simp only [Clif.Frame.get, h callee (.inl rfl)]
+    simp only [instOutcome, hf, hc, getMany_congr (fun x hx => h x (.inr hx))]
   | _ => simp only [instOutcome]; exact evalInst_congr hf hs cm _ h
 
 theorem restrict_regs_of_mem {fr : Clif.Frame} {A : List Clif.ValueId} {x : Clif.ValueId}
@@ -131,11 +136,60 @@ theorem res_ofOption_eq_ok {α : Type} {m : String} {o : Option α} {a : α} :
     Clif.Res.ofOption m o = .ok a ↔ o = some a := by
   cases o <;> simp [Clif.Res.ofOption]
 
+/-- The CLIF outcome of an indirect call that returns: the call site's signature, the callee
+address (an `i64` value), the extern at that address, and its results. -/
+theorem instOutcome_callIndirect_ok {env : Clif.Env} {cp : Clif.Program} {fr : Clif.Frame}
+    {cm : Clif.Mem} {sig callee : Nat} {args : List Clif.ValueId} {rvals : List Clif.Val}
+    {cm' : Clif.Mem}
+    (h : instOutcome env cp fr cm (.callIndirect sig callee args) = .ok (rvals, cm')) :
+    ∃ (declared : Clif.Signature) (x : BitVec 64) (vals : List Clif.Val) (name : String)
+      (g : List Clif.Val → Clif.Mem → Clif.Outcome), fr.func.sigDecls.lookup sig = some declared ∧
+      fr.get callee = .ok ⟨.i64, x⟩ ∧ fr.getMany args = .ok vals ∧
+      cm.symbols name = some x.toNat ∧ env.extern name = some g ∧
+      vals.map (·.ty) = Clif.AbiParam.tys declared.params ∧ g vals cm = .returned rvals cm' ∧
+      rvals.map (·.ty) = Clif.AbiParam.tys declared.returns := by
+  simp only [instOutcome] at h
+  obtain ⟨⟨declared, addr, vals⟩, h1, h2⟩ := res_bind_eq_ok'.mp h
+  obtain ⟨d', hd, h1⟩ := res_bind_eq_ok.mp h1
+  obtain ⟨cv, hcv, h1⟩ := res_bind_eq_ok.mp h1
+  obtain ⟨cv64, hcv64, h1⟩ := res_bind_eq_ok.mp h1
+  obtain ⟨vs, hvs, h1⟩ := res_bind_eq_ok.mp h1
+  simp only [Clif.Res.pure_eq, Clif.Res.ok.injEq, Prod.mk.injEq] at h1
+  obtain ⟨rfl, rfl, rfl⟩ := h1
+  rw [res_ofOption_eq_ok] at hd hcv64
+  have hcv' := val_as_i64 hcv64
+  subst hcv'
+  simp only at h2
+  split at h2
+  · cases h2
+  · simp only [Clif.callExternAt] at h2
+    obtain ⟨name, hname, h2⟩ := res_bind_eq_ok.mp h2
+    obtain ⟨g, hg, h2⟩ := res_bind_eq_ok.mp h2
+    obtain ⟨u, hck, h2⟩ := res_bind_eq_ok.mp h2
+    rw [res_ofOption_eq_ok] at hname hg
+    have hsym := List.find?_some hname
+    simp only [beq_iff_eq] at hsym
+    have hty : vs.map (·.ty) = Clif.AbiParam.tys d'.params := by
+      unfold Clif.checkTys Clif.Res.check at hck
+      split at hck
+      · rename_i hc; simpa using hc
+      · cases hck
+    split at h2
+    · rename_i rv mem' hgo
+      split at h2
+      · rename_i hrt
+        simp only [Clif.Res.pure_eq, Clif.Res.ok.injEq, Prod.mk.injEq] at h2
+        obtain ⟨rfl, rfl⟩ := h2
+        exact ⟨d', cv64, vs, name, g, hd, hcv, hvs, hsym, hg, hty, hgo, by simpa using hrt⟩
+      · cases h2
+    all_goals cases h2
+
 /-- **Typing of `evalInst`**: the results have the instruction's result types. -/
 theorem evalInst_types {fr : Clif.Frame} {cm cm' : Clif.Mem} {i : Clif.Inst}
-    {vals : List Clif.Val} {sigOf : Clif.FnRef → Option Clif.Signature} {tys : List Clif.Ty}
+    {vals : List Clif.Val} {sigOf : Clif.FnRef → Option Clif.Signature}
+    {sigDeclOf : Nat → Option Clif.Signature} {tys : List Clif.Ty}
     (h : Clif.evalInst fr cm i = .ok (vals, cm'))
-    (ht : i.resultTypes sigOf (fun _ => none) = some tys) :
+    (ht : i.resultTypes sigOf sigDeclOf = some tys) :
     vals.map (·.ty) = tys := by
   cases i <;> simp only [Clif.evalInst] at h <;>
     simp only [Clif.Inst.resultTypes, Option.some.injEq] at ht
@@ -147,11 +201,12 @@ theorem evalInst_types {fr : Clif.Frame} {cm cm' : Clif.Mem} {i : Clif.Inst}
   all_goals (try (first | (cases h; done) | (obtain ⟨rfl, -⟩ := h; subst ht; rfl) | (obtain ⟨rfl, -⟩ := h; simp_all)))
 
 /-- **Typing of `instOutcome`** (calls: the extern's returns are checked against its
-signature). -/
+signature; indirect calls: against the call site's signature). -/
 theorem instOutcome_types {env : Clif.Env} {p : Clif.Program} {fr : Clif.Frame}
     {cm cm' : Clif.Mem} {i : Clif.Inst} {vals : List Clif.Val} {tys : List Clif.Ty}
     (h : instOutcome env p fr cm i = .ok (vals, cm'))
-    (ht : i.resultTypes (fun r => (fr.func.extern? r).map (·.sig)) (fun _ => none) = some tys) :
+    (ht : i.resultTypes (fun r => (fr.func.extern? r).map (·.sig)) (fr.func.sigDecls.lookup ·) =
+      some tys) :
     vals.map (·.ty) = tys := by
   cases i with
   | call fn args =>
@@ -169,6 +224,11 @@ theorem instOutcome_types {env : Clif.Env} {p : Clif.Program} {fr : Clif.Frame}
     simp only [Clif.Res.ok.injEq, Prod.mk.injEq] at h
     obtain ⟨rfl, rfl⟩ := h
     simpa [Clif.AbiParam.tys] using heq
+  | callIndirect sig callee args =>
+    obtain ⟨declared, x, vs, name, g, hd, -, -, -, -, -, -, hrty⟩ := instOutcome_callIndirect_ok h
+    simp only [Clif.Inst.resultTypes, hd, Option.map_some, Option.some.injEq] at ht
+    subst ht
+    simpa [Clif.AbiParam.tys] using hrty
   | _ => simp only [instOutcome] at h; exact evalInst_types h ht
 
 end Backend.Proof.Driver

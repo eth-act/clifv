@@ -268,4 +268,51 @@ theorem callsRefine_csem {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {en
       simp only [List.length_append, List.length_map, List.length_drop]
       omega
 
+/-! ## Indirect calls -/
+
+/-- **The contract of the external semantics for indirect calls**, for the call-site signatures
+`sigs` of a function's `call_indirect`s and `try_call_indirect`s: a `blr` (`X.call none`) whose
+target (the first use) holds, in its low 64 bits, the link-time address `X.sym n 0` of an extern
+`n` of `env`, with at most 8 arguments related to CLIF values `vals` (in the registers of the
+call site's signature), from a world related (`MR`) to CLIF memory `cm`, where the extern returns
+`rvals` (one value per return of the call site's signature) with memory `cm'`, returns one value
+per ABI return of the call site's signature (`sigRets`), the first ones related to `rvals`, and
+a world related to `cm'`. It is `XCallsOk`'s `blr` clause for every extern of `env` at its
+address, with the call site's signature. -/
+def XCallsIndOk (env : Clif.Env) (sigs : List Clif.Signature) (MR : MemRelT) (X : ExtSem) :
+    Prop :=
+  ∀ sig ∈ sigs, ∀ (n : String) g (sl : List (Clif.SlotId × Nat)) (cm : Clif.Mem)
+    (w : Arm.ArmState) (u : CV) (args : List CV) (vals rvals : List Clif.Val) (cm' : Clif.Mem),
+    env.extern n = some g → lo64 u = X.sym n 0 →
+    vals.length ≤ 8 → AllHold vals args → MR sl cm w →
+    g vals cm = .returned rvals cm' → rvals.length = sig.returns.length →
+    ∃ outs w', X.call none (u :: args) w = some (outs, w') ∧ outs.length = (sigRets sig).length ∧
+      PrefixHold rvals outs ∧ MR sl cm' w'
+
+/-- Without indirect calls (no signatures) the indirect-call contract is vacuous. -/
+theorem xCallsIndOk_nil (env : Clif.Env) (MR : MemRelT) (X : ExtSem) : XCallsIndOk env [] MR X :=
+  fun _ h => nomatch h
+
+/-- **`IndCallsRefine` for `csem`**, from the external contract `XCallsIndOk` and the link-time
+symbol addresses (`X.sym n 0` is the address `syms` gives `n`, and the memory relation's CLIF
+memory has the link-time `symbols`). -/
+theorem indCallsRefine_csem {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {env : Clif.Env}
+    {sigs : List Clif.Signature} {MR : MemRelT} {syms : String → Option Nat}
+    (hX : XCallsIndOk env sigs MR X) (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
+    (hMRs : ∀ sl cm w, MR sl cm w → cm.symbols = syms) :
+    IndCallsRefine env sigs MR (csem F ctx X) := by
+  refine ⟨?_, ?_⟩
+  · intro sig hin n g sl cm w a r us ds u args vals rvals cm' hg ha hu hds hlen hall hmr hret hrl
+    have hs : X.sym n 0 = BitVec.ofNat 64 a := hsym n a (by rw [← hMRs sl cm w hmr]; exact ha)
+    obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX sig hin n g sl cm w u args vals rvals cm' hg
+      (by rw [hu, hs]) hlen hall hmr hret hrl
+    exact ⟨outs, w', by simp [csem, hc], by rw [hol, hds], ho, hm⟩
+  · intro sig hin n g sl cm w a r us ds ti u args vals rvals cm' hg ha hu hds hlen hall hmr hret hrl
+    have hs : X.sym n 0 = BitVec.ofNat 64 a := hsym n a (by rw [← hMRs sl cm w hmr]; exact ha)
+    obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX sig hin n g sl cm w u args vals rvals cm' hg
+      (by rw [hu, hs]) hlen hall hmr hret hrl
+    refine ⟨_, w', by simp only [csem, hc, Option.map_some]; rfl, ?_, ho.append _, hm⟩
+    simp only [List.length_append, List.length_map, List.length_drop]
+    omega
+
 end Backend.Proof

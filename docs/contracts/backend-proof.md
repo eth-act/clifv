@@ -580,8 +580,16 @@ compares against `n mod 2^32`. Announced to M6Rest4; `jtSequence`'s `ispec`/`cse
 
 **Calls: `CallRulesCorrect program` proven** (`callRulesCorrect`, `IselCtl.lean`; rule theorems
 `call_bl_ruleOk` 1031, `call_got_ruleOk` 1032 in `IselCtlCallRules.lean`: `call` operand view,
-`CallsRefine` application, `resultsHeld_call` via `writeV_nodup_ctl`). `call_indirect` 1033 is
-covered by `ExcludedUnmatchable` (closureRoot false; M4Excl).
+`CallsRefine` application, `resultsHeld_call` via `writeV_nodup_ctl`).
+
+**Indirect calls (agent/indirect-proof).** `call_indirect` 1033 (`indRootRule`, out of
+`LowerRulesCorrect`): `IndRulesCorrect program` (`indRulesCorrect`, `IselCtl.lean`; rule theorem
+`call_ind_ruleOk`, `IselCtlCallInd.lean`: the GOT call's shape with the callee value's vreg as
+the `blr` target and the call site's `sigN` as ABI, under `IndCallsRefine`). `func_addr` 1026
+is a memory root rule (`memRootRule`; `func_addr_ok`, `IselMemFuncAddr.lean`: `load_ext_name`
+at offset 0, as `symbol_value`). `try_call_indirect` 1036 of `lower_branch` (`tryIndRootRule`):
+`TryIndRulesCorrect`/`TryIndUnmatchable` (`tryIndRulesCorrect`, `tryIndUnmatchable`,
+`IselCtlTryInd.lean`). `CtxInv.noFA` is gone and `CtxInv.resTys` reads `sigN` declarations.
 
 **Contract change #8** (fd746ab, integrator-approved): `TargetsLen t targets` premise of
 `BranchRuleOk`/`TermCalls` (`br_table`: `targets.length = tbl.length + 1`), discharged in

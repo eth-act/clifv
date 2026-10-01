@@ -178,10 +178,10 @@ theorem loadOpcode_inj {a b : Clif.LoadOp} (h : loadOpcode a = loadOpcode b) : a
 theorem storeOpcode_inj {a b : Clif.StoreOp} (h : storeOpcode a = storeOpcode b) : a = b := by
   cases a <;> cases b <;> simp_all [storeOpcode]
 
-theorem width_of_resTy {g : Nat → Option Clif.Signature} {inst : Clif.Inst} {ty : Clif.Ty}
-    (hr : inst.resultTypes g (fun _ => none) = some [ty]) {info : IInfo} {tys : List Clif.Ty} {w : Nat}
+theorem width_of_resTy {g sd : Nat → Option Clif.Signature} {inst : Clif.Inst} {ty : Clif.Ty}
+    (hr : inst.resultTypes g sd = some [ty]) {info : IInfo} {tys : List Clif.Ty} {w : Nat}
     (h2 : CTy.int w = info.resTys.head?.getD .invalid) (h3 : info.resTys = tys.map CTy.ofClif)
-    (h4 : inst.resultTypes g (fun _ => none) = some tys) : ty.width = w := by
+    (h4 : inst.resultTypes g sd = some tys) : ty.width = w := by
   rw [hr, Option.some.injEq] at h4
   subst h4
   rw [h3] at h2
@@ -192,11 +192,11 @@ theorem width_of_resTy {g : Nat → Option Clif.Signature} {inst : Clif.Inst} {t
 theorem ty_bytes8 (ty : Clif.Ty) : ty.bytes * 8 = ty.width := by cases ty <;> rfl
 
 /-- `load.ty` with `ty` of `w` bits, lowered by an unsigned load of `w / 8` bytes. -/
-theorem cond_load {g : Nat → Option Clif.Signature} {op : Clif.LoadOp} {ty : Clif.Ty}
+theorem cond_load {g sd : Nat → Option Clif.Signature} {op : Clif.LoadOp} {ty : Clif.Ty}
     {fl : Clif.MemFlags} {x : Nat} {off : Int} {info : IInfo} {tys : List Clif.Ty} {w : Nat}
     {aop : LoadOp} (h1 : (variantNames 151)[29]? = some (loadOpcode op))
     (h2 : CTy.int w = info.resTys.head?.getD .invalid) (h3 : info.resTys = tys.map CTy.ofClif)
-    (h4 : Clif.Inst.resultTypes g (fun _ => none) (Clif.Inst.load op ty fl x off) = some tys) (haw : aop.bytes * 8 = w)
+    (h4 : Clif.Inst.resultTypes g sd (Clif.Inst.load op ty fl x off) = some tys) (haw : aop.bytes * 8 = w)
     (hsg : loadSigned aop = false) : aop.bytes = op.size ty ∧ loadSigned aop = op.signed := by
   have h29 : (variantNames 151)[29]? = some (loadOpcode .load) := rfl
   rw [h29, Option.some.injEq] at h1
@@ -277,10 +277,10 @@ theorem cond_store {ctx : Ctx} {x w : Nat} {ty : Clif.Ty} {aop : StoreOp}
   simp only [Clif.StoreOp.size]
   omega
 
-theorem width_stackAddr {g : Nat → Option Clif.Signature} {info : IInfo} {tys : List Clif.Ty}
+theorem width_stackAddr {g sd : Nat → Option Clif.Signature} {info : IInfo} {tys : List Clif.Ty}
     {ty : Clif.Ty} {sl : Nat} {o : Int} (hRE : ∀ t ∈ info.resTys, t ∈ eCTys)
     (h3 : info.resTys = tys.map CTy.ofClif)
-    (h4 : Clif.Inst.resultTypes g (fun _ => none) (Clif.Inst.stackAddr ty sl o) = some tys) : ty.width ≤ 64 := by
+    (h4 : Clif.Inst.resultTypes g sd (Clif.Inst.stackAddr ty sl o) = some tys) : ty.width ≤ 64 := by
   simp only [Clif.Inst.resultTypes, Option.some.injEq] at h4
   subst h4
   have := hRE (CTy.ofClif ty) (by rw [h3]; simp)
@@ -658,43 +658,5 @@ theorem sextend_load_ok : MemRuleOk F sb syms isem MR env cp p rule_lower_1359 :
     hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
   mem_inv hp [ctor_is_sinkable_inst] at hmatch
-
-/-! ## `MemRulesCorrect` -/
-
-/-- The memory root rules of `lower`, in order. -/
-theorem lower_memRoot_filter : (program.rulesOf TId.lower).filter memRootRule =
-    [rule_lower_1300, rule_lower_1359, rule_lower_2491, rule_lower_2604, rule_lower_2607, rule_lower_2610, rule_lower_2613, rule_lower_2647, rule_lower_2650, rule_lower_2653, rule_lower_2656, rule_lower_2659, rule_lower_2662, rule_lower_2705, rule_lower_2709, rule_lower_2713, rule_lower_2717, rule_lower_2722, rule_lower_2726, rule_lower_2730, rule_lower_2849] := by
-  rw [program_rulesOf_686]
-  rfl
-
-/-- **The memory family (M4)**: every memory root rule of `lower` is correct under
-`MemRefines`, for every function whose memory relation is `MemRelOk`. -/
-theorem memRulesCorrect_program : MemRulesCorrect program := by
-  intro F sb syms isem MR env cp hR hMR hM r hr hmem
-  have hsub : r ∈ (program.rulesOf TId.lower).filter memRootRule := List.mem_filter.2 ⟨hr, hmem⟩
-  rw [lower_memRoot_filter] at hsub
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hsub
-  rcases hsub with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact uextend_load_ok data_program
-  · exact sextend_load_ok data_program
-  · exact symbol_value_ok data_program hR hMR hM
-  · exact load_i8_ok data_program hR hMR hM
-  · exact load_i16_ok data_program hR hMR hM
-  · exact load_i32_ok data_program hR hMR hM
-  · exact load_i64_ok data_program hR hMR hM
-  · exact uload8_ok data_program hR hMR hM
-  · exact sload8_ok data_program hR hMR hM
-  · exact uload16_ok data_program hR hMR hM
-  · exact sload16_ok data_program hR hMR hM
-  · exact uload32_ok data_program hR hMR hM
-  · exact sload32_ok data_program hR hMR hM
-  · exact store_i8_ok data_program hR hMR hM
-  · exact store_i16_ok data_program hR hMR hM
-  · exact store_i32_ok data_program hR hMR hM
-  · exact store_i64_ok data_program hR hMR hM
-  · exact istore8_ok data_program hR hMR hM
-  · exact istore16_ok data_program hR hMR hM
-  · exact istore32_ok data_program hR hMR hM
-  · exact stack_addr_ok data_program hMR hM
 
 end Backend.Proof

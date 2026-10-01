@@ -21,6 +21,10 @@ namespace Backend.Proof.Driver
 
 open Backend Backend.Proof
 
+/-- `t` is a `try_call` or a `try_call_indirect` with exception table `et`. -/
+def IsTryWith (t : Clif.Terminator) (et : Clif.ExnTable) : Prop :=
+  (∃ fn args, t = .tryCall fn args et) ∨ (∃ callee args, t = .tryCallIndirect callee args et)
+
 variable (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) (R : Reg → Reg)
   (gn : Nat → Nat) (bl : List BLow)
 
@@ -61,9 +65,10 @@ structure LowerShape : Prop where
       ∃ out tr, runTerm (termCtx ctx (L.start + B.body.length) L.data)
         (termCall B.term (L.start + B.body.length) L.targets).1
         (termCall B.term (L.start + B.body.length) L.targets).2 L.tst = .ok (some out, L.tst', tr)) ∧
-    -- a `try_call`: its data, exception table, return/payload vregs (allocated from `L.tst`),
-    -- `try_call_info`, and the `lower_branch` call from the state after the allocation
-    (∀ fn args et, B.term = .tryCall fn args et → ∃ T, L.tl = some T ∧
+    -- a `try_call`/`try_call_indirect`: its data, exception table, return/payload vregs
+    -- (allocated from `L.tst`), `try_call_info`, and the `lower_branch` call from the state
+    -- after the allocation
+    (∀ et, IsTryWith B.term et → ∃ T, L.tl = some T ∧
       tryCallData f B.term = .ok L.data ∧ exnTableOpnd f et = .ok (T.sig, T.items) ∧
       tryRegsOf T.sig L.tst = some (T.regs, T.st1) ∧ tryInfoOf T.sig T.items L.targets = some T.info ∧
       ∃ out tr, runTerm (tryCtx ctx (L.start + B.body.length) L.data T.regs) "lower_branch"
@@ -80,7 +85,7 @@ structure LowerShape : Prop where
     -- successors
     (match B.term with
       | .jump bc => ∃ tl, blockIdx? f bc.block = some tl ∧ L.targets = [tl]
-      | .tryCall _ _ et => L.targets.length = et.dests.length ∧
+      | .tryCall _ _ et | .tryCallIndirect _ _ et => L.targets.length = et.dests.length ∧
         ∃ tl tlab T eb, blockIdx? f et.normal.block = some tl ∧ L.targets.getLast? = some tlab ∧
           L.tl = some T ∧ vc.blocks[tlab]? = some eb ∧ eb.insts = #[.jump tl] ∧ eb.params = #[] ∧
           eb.branchArgs = (et.normal.args.map (normArgReg R T.regs.1)).toArray ∧

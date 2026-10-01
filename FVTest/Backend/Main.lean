@@ -45,10 +45,12 @@ def usage : String :=
 
 /-- The rules the end-to-end theorem covers: the emitter-subset closure, and the `try_call`
 rules of `lower_branch` (ids 1034 `bl`, 1035 GOT + `blr`: `Backend.Proof.tryRootRule`, proven by
-`tryRulesCorrect`), which are outside the generated closure (its opcodes have no `try_call`). -/
+`tryRulesCorrect`; 1036 `try_call_indirect`: `Backend.Proof.tryIndRootRule`, proven by
+`tryIndRulesCorrect`), which are outside the generated closure (its opcodes have no
+`try_call`). -/
 def closureIds : Std.HashSet Isle.RuleId :=
   Isle.Aarch64.Closure.rules.foldl (fun s r => s.insert r.rule) ({} : Std.HashSet Isle.RuleId)
-    |>.insert 1034 |>.insert 1035
+    |>.insert 1034 |>.insert 1035 |>.insert 1036
 
 structure Opts where
   traps : Option String := none
@@ -69,14 +71,22 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
     | some _ => lg.unverified ++ lg.accepted.map
         (·, "i128 legalized and optimised (outside backend_correct_legal: --opt)")
     | none => lg.unverified
-  -- the mid-end and `i128` theorems cover functions without `try_call` only
+  -- the mid-end and `i128` theorems cover functions without `try_call`/`try_call_indirect` and
+  -- `call_indirect` only
   let unvTry := pf.funcs.filterMap fun p => match p.func with
     | .ok f =>
-      if !hasTryCall f then none
-      else if o.opt.isSome then
-        some (p.name, "try_call (outside backend_correct_opt_proven: try_call-free functions only)")
-      else if lg.accepted.contains p.name then
-        some (p.name, "try_call in an i128-legalized function (outside backend_correct_legal)")
+      if hasTryCall f then
+        if o.opt.isSome then
+          some (p.name, "try_call (outside backend_correct_opt_proven: try_call-free functions only)")
+        else if lg.accepted.contains p.name then
+          some (p.name, "try_call in an i128-legalized function (outside backend_correct_legal)")
+        else none
+      else if Opt.hasCallIndirect f then
+        if o.opt.isSome then
+          some (p.name, "call_indirect (outside backend_correct_opt_proven: functions without indirect calls only)")
+        else if lg.accepted.contains p.name then
+          some (p.name, "call_indirect in an i128-legalized function (outside backend_correct_legal)")
+        else none
       else none
     | .error _ => none
   let fa ← compileFileIO alloc pf (unv128 ++ unvTry)

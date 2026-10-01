@@ -333,6 +333,22 @@ def sigAbiOk (s : Clif.Signature) : Bool :=
     (s.params.filter (·.purpose == .sret)).length ≤ 1 &&
     (!s.params.any (·.purpose == .sret) || s.returns.isEmpty)
 
+/-- The call-site signatures of `f`'s indirect calls (`call_indirect sigN`, and the exception
+table's signature of a `try_call_indirect`), from `f`'s signature declarations. -/
+def indSigs (f : Clif.Function) : List Clif.Signature :=
+  f.blocks.flatMap fun b =>
+    (b.body.filterMap fun st => match st.inst with
+      | .callIndirect sig _ _ => f.sigDecls.lookup sig
+      | _ => none) ++
+    match b.term with
+    | .tryCallIndirect _ _ et => (f.sigDecls.lookup et.sig).toList
+    | _ => []
+
+/-- The indirect calls of `f` pass their arguments in registers under a signature the
+end-to-end theorem covers (`E2E.InSubset.indSigs`): at most 8 parameters, `sigAbiOk`. -/
+def indSigsOk (f : Clif.Function) : Bool :=
+  (indSigs f).all fun s => s.params.length ≤ 8 && sigAbiOk s
+
 /-- The X-register number of each parameter of a signature whose parameters are all passed in
 registers (`sigArgLocs` with at most 8 non-`sret` parameters): an `sret` parameter in x8, the
 others in x0, x1, … in order (the `sret` parameter does not take a slot of that sequence).

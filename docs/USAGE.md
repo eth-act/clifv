@@ -242,9 +242,19 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   The report labels it **`verified (normal returns; unwinding trusted)`** and counts it among
   the verified functions, with a footnote giving how many there are. Nothing is claimed about
   unwinding: the landing pads, the payload on the handler edges, the LSDA and the `.eh_frame`
-  rows are trusted. `try_call_indirect` stays unverified ("try_call_indirect (outside
-  backend_correct)"), and so does every `try_call` function under `--opt-proven-only` and
-  after `i128` legalisation (those theorems cover `try_call`-free functions only).
+  rows are trusted. `try_call_indirect` is verified the same way (agent/indirect-proof). Every
+  `try_call` function stays unverified under `--opt-proven-only` and after `i128`
+  legalisation (those theorems cover `try_call`-free functions only).
+* **Indirect calls are verified** (agent/indirect-proof): functions with `call_indirect`,
+  `func_addr` (vtables, `fn` pointers, `dyn` dispatch) and `try_call_indirect` are inside
+  `E2E.backend_correct_final` when the indirect calls have at most 8 register parameters and
+  plain/`sret` signatures (otherwise "indirect call with stack-passed arguments or a
+  special-purpose parameter"). An indirect call is covered when it reaches an extern (a
+  function not compiled in the same file, e.g. a `dyn` method from another codegen unit or
+  the standard library) under the contract `XCallsIndOk`; one that reaches a function of the
+  same file is excluded by the run premise `TrapsExplicit.indirect`, as direct calls of
+  functions of the file are. Under `--opt-proven-only` and after `i128` legalisation,
+  `call_indirect` functions stay unverified (the mid-end simulation does not model them).
 * With the shipped cg_clif (no unwinding build, or `FV_CG_CLIF=cranelift`), no function has a
   landing pad, `cargo fv` prints a note, and the program behaves as under plain cg_clif: the
   reference for comparisons is then plain cg_clif, not LLVM (`BASELINE=cg_clif
@@ -328,6 +338,15 @@ lowering validator; `examples/compare.sh`, which requires every test outcome to 
 | survey | release | 50/50 + 3 ignored (overflow checks off) | 2208 | 2091 | 117 | 0 | 0 | 2208 |
 | vendor | debug | 187/187 + 2 ignored | 4399 | 4191 | 208 | 0 | 0 | 4273 |
 | vendor | release | 187/187 + 2 ignored | 3082 | 2847 | 235 | 0 | 0 | 2872 |
+
+After agent/indirect-proof (2026-10-01: `call_indirect`, `func_addr`, `try_call_indirect`
+verified; debug, `examples/compare.sh` SAME for all three: fv-demo 19, survey 53, vendor 189
+test outcomes): fv-demo 1320 verified of 1346 (20 unverified, 6 fallback), survey 3147 of 3179
+(32 unverified), vendor 4302 of 4399 (97 unverified); of them `verified (normal returns;
+unwinding trusted)`: 252, 493, 837. No function is unverified for an indirect call any more
+(the remaining reasons: atomics/`bmask`/`fence`, `tls_value`, stack-passed parameters or call
+arguments, calls of functions of the same file, rejected `i128` legalisations). Release
+builds were not re-measured.
 
 Of the verified, `verified (normal returns; unwinding trusted)`: fv-demo 231 / 204, survey
 492 / 419, vendor 820 / 727 (debug / release). Before (main fbbd5d9, `try_call` functions

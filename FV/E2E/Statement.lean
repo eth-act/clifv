@@ -66,29 +66,59 @@ def spv (s : Arm.ArmState) : BitVec 64 := Arm.r (.GPR 31#5) s
 /-- The CLIF functions the theorem covers: clif-subset-v2 E (`Compile.functionE`), plus the
 current restrictions of the proof (e2e.md, "Remaining"): parameters passed in registers,
 calls only to externs (calls between compiled functions compose by induction on the call
-depth, not done yet), externs with at most 8 (register) parameters (no stack-passed call
-arguments), and signatures (the function's and its externs') with `normal` parameters and
-returns plus at most one `sret` struct-return pointer (`sigAbiOk`: in x8, returned in x0, no
-other returns); other special-purpose parameters are compiled and flagged unverified. -/
+depth, not done yet; for indirect calls this is the run premise `TrapsExplicit.indirect`),
+externs and indirect calls with at most 8 (register) parameters (no stack-passed call
+arguments), and signatures (the function's, its externs' and its indirect calls') with `normal`
+parameters and returns plus at most one `sret` struct-return pointer (`sigAbiOk`: in x8,
+returned in x0, no other returns); other special-purpose parameters are compiled and flagged
+unverified. -/
 structure InSubset (p : Clif.Program) (f : Clif.Function) : Prop where
   func : p.func? f.name = some f
   subsetE : Compile.functionE f = true
   regParams : f.sig.params.length ≤ 8
   externCalls : ∀ b ∈ f.blocks, ∀ st ∈ b.body, ∀ fn args, st.inst = .call fn args →
     ∀ e, f.extern? fn = some e → p.func? e.name = none
-  /-- a `try_call` calls an extern, like `externCalls` (subset E admits `try_call`, not
-  `try_call_indirect`) -/
+  /-- a `try_call` calls an extern, like `externCalls` -/
   tryExterns : ∀ b ∈ f.blocks, ∀ fn args et, b.term = .tryCall fn args et →
     ∀ e, f.extern? fn = some e → p.func? e.name = none
   callRegArgs : ∀ e ∈ f.externs, e.2.sig.params.length ≤ 8
   abiSigs : sigAbiOk f.sig = true ∧ ∀ e ∈ f.externs, sigAbiOk e.2.sig = true
-  /-- no `call_indirect` statements (`clif-subset.md`: outside the theorem; rust-route step 4:
-  they compile and run but are flagged unverified, so subset E admits them while `InSubset`
-  does not) -/
-  noCI : ∀ B ∈ f.blocks, ∀ st ∈ B.body, ∀ sig callee args, st.inst ≠ .callIndirect sig callee args
-  /-- no `func_addr` statements (rust-route step 4: compiled and flagged unverified like
-  `call_indirect`; `lowerCheck` rejects them, `CtxInv.noFA`) -/
-  noFA : ∀ B ∈ f.blocks, ∀ st ∈ B.body, ∀ ty fn, st.inst ≠ .funcAddr ty fn
+  /-- the signatures of the indirect calls (`call_indirect`, `try_call_indirect`) take at most
+  8 (register) parameters and pass `sigAbiOk` (`Backend.indSigsOk`) -/
+  indSigs : ∀ s ∈ indSigs f, s.params.length ≤ 8 ∧ sigAbiOk s = true
+
+/-- A function without indirect calls has no indirect-call signatures. -/
+theorem indSigs_eq_nil {f : Clif.Function}
+    (hci : ∀ B ∈ f.blocks, ∀ st ∈ B.body, ∀ sig callee args, st.inst ≠ .callIndirect sig callee args)
+    (htci : ∀ B ∈ f.blocks, ∀ callee args et, B.term ≠ .tryCallIndirect callee args et) :
+    indSigs f = [] := by
+  unfold indSigs
+  rw [List.flatMap_eq_nil_iff]
+  intro B hB
+  rw [List.append_eq_nil_iff, List.filterMap_eq_nil_iff]
+  refine ⟨fun st hst => ?_, ?_⟩
+  · cases h : st.inst with
+    | callIndirect sig callee args => exact absurd h (hci B hB st hst sig callee args)
+    | _ => rfl
+  · cases h : B.term with
+    | tryCallIndirect callee args et => exact absurd h (htci B hB callee args et)
+    | _ => rfl
+
+/-- **Specialisation**: for a function without indirect calls, `InSubset` is the former subset
+(the same fields, without `indSigs`, which is vacuous: `indSigs_eq_nil`). -/
+theorem InSubset.of_indirectFree {p : Clif.Program} {f : Clif.Function}
+    (hfunc : p.func? f.name = some f) (hE : Compile.functionE f = true)
+    (hreg : f.sig.params.length ≤ 8)
+    (hext : ∀ b ∈ f.blocks, ∀ st ∈ b.body, ∀ fn args, st.inst = .call fn args →
+      ∀ e, f.extern? fn = some e → p.func? e.name = none)
+    (htry : ∀ b ∈ f.blocks, ∀ fn args et, b.term = .tryCall fn args et →
+      ∀ e, f.extern? fn = some e → p.func? e.name = none)
+    (hcra : ∀ e ∈ f.externs, e.2.sig.params.length ≤ 8)
+    (habi : sigAbiOk f.sig = true ∧ ∀ e ∈ f.externs, sigAbiOk e.2.sig = true)
+    (hci : ∀ B ∈ f.blocks, ∀ st ∈ B.body, ∀ sig callee args, st.inst ≠ .callIndirect sig callee args)
+    (htci : ∀ B ∈ f.blocks, ∀ callee args et, B.term ≠ .tryCallIndirect callee args et) :
+    InSubset p f :=
+  ⟨hfunc, hE, hreg, hext, htry, hcra, habi, by rw [indSigs_eq_nil hci htci]; simp⟩
 
 /-! ## The compiled code -/
 
@@ -157,10 +187,12 @@ def Rel.holds (Γ : Rel) (f : Clif.Function) (slots : List (Clif.SlotId × Nat))
 def MemAgree (cm : Clif.Mem) (s : Arm.ArmState) : Prop :=
   ∀ a b, cm.valid a 1 = true → cm.bytes a = some b → Arm.read_mem (BitVec.ofNat 64 a) s = b
 
-/-- Every trap of the CLIF run is explicit: a `trap` terminator, or a division (whose lowering
-checks and traps). Memory-access traps (`heap_oob`) and traps inside externs are excluded: the
-Arm model has no memory faults and callees are outside the theorem. For DSL output this holds
-trivially (traps are unreachable, PLAN.md §3.2). -/
+/-- The run premises: every trap of the CLIF run is explicit, a `trap` terminator or a division
+(whose lowering checks and traps); memory-access traps (`heap_oob`) and traps inside externs are
+excluded (the Arm model has no memory faults and callees are outside the theorem; for DSL
+output this holds trivially, traps are unreachable, PLAN.md §3.2). And an indirect call of the
+entered function calls an extern: no function of `p` is at its callee address (calls between
+the program's functions are outside the theorem, as for `call`: `InSubset.externCalls`). -/
 structure TrapsExplicit (env : Clif.Env) (p : Clif.Program) (cs : Clif.State) : Prop where
   /-- a statement traps only if it is an explicitly trapping instruction -/
   stmt : ∀ s c st rest, Reach env p cs s → Clif.step env p s = .trapped c →
@@ -170,15 +202,49 @@ structure TrapsExplicit (env : Clif.Env) (p : Clif.Program) (cs : Clif.State) : 
   tryCall : ∀ s c fn args et, Reach env p cs s → Clif.step env p s = .trapped c →
     s.frame.body = [] → s.frame.term = .tryCall fn args et →
     ∀ B ∈ cs.frame.func.blocks, B.term ≠ .tryCall fn args et
+  /-- the same for a `try_call_indirect` terminator -/
+  tryCallInd : ∀ s c callee args et, Reach env p cs s → Clif.step env p s = .trapped c →
+    s.frame.body = [] → s.frame.term = .tryCallIndirect callee args et →
+    ∀ B ∈ cs.frame.func.blocks, B.term ≠ .tryCallIndirect callee args et
+  /-- a `call_indirect` statement of the entered function calls an extern: no function of `p`
+  is at the callee address (`Clif.stepCallIndirect` would enter it) -/
+  indirect : ∀ s st rest sig callee args, Reach env p cs s → s.frame.body = st :: rest →
+    st.inst = .callIndirect sig callee args → (∃ B ∈ cs.frame.func.blocks, st ∈ B.body) → ∀ cv,
+    s.frame.get callee = .ok cv → ∀ g ∈ p.funcs, s.mem.symbols g.name ≠ some cv.toNat
+  /-- the same for a `try_call_indirect` terminator of the entered function -/
+  tryIndirect : ∀ s callee args et, Reach env p cs s → s.frame.body = [] →
+    s.frame.term = .tryCallIndirect callee args et →
+    (∃ B ∈ cs.frame.func.blocks, B.term = .tryCallIndirect callee args et) → ∀ cv,
+    s.frame.get callee = .ok cv → ∀ g ∈ p.funcs, s.mem.symbols g.name ≠ some cv.toNat
 
-/-- For an entered function without `try_call` terminators, `TrapsExplicit` is its statement
-clause. -/
+/-- **Specialisation**: for an entered function without indirect calls (no `call_indirect`
+statement, no `try_call_indirect` terminator), `TrapsExplicit` is its former two clauses (the
+statement and `try_call` trap clauses); the indirect-call clauses are vacuous. -/
+theorem TrapsExplicit.of_indirectFree {env : Clif.Env} {p : Clif.Program} {cs : Clif.State}
+    (hci : ∀ B ∈ cs.frame.func.blocks, ∀ st ∈ B.body, ∀ sig callee args,
+      st.inst ≠ .callIndirect sig callee args)
+    (htci : ∀ B ∈ cs.frame.func.blocks, ∀ callee args et, B.term ≠ .tryCallIndirect callee args et)
+    (h : ∀ s c st rest, Reach env p cs s → Clif.step env p s = .trapped c →
+      s.frame.body = st :: rest → explicitTrapInst st.inst = true)
+    (ht : ∀ s c fn args et, Reach env p cs s → Clif.step env p s = .trapped c →
+      s.frame.body = [] → s.frame.term = .tryCall fn args et →
+      ∀ B ∈ cs.frame.func.blocks, B.term ≠ .tryCall fn args et) :
+    TrapsExplicit env p cs :=
+  ⟨h, ht, fun _ _ callee args et _ _ _ _ B hB e => htci B hB callee args et e,
+    fun _ st _ sig callee args _ _ hi ⟨B, hB, hst⟩ => absurd hi (hci B hB st hst sig callee args),
+    fun _ callee args et _ _ _ ⟨B, hB, e⟩ => absurd e (htci B hB callee args et)⟩
+
+/-- For an entered function without `try_call`/`try_call_indirect` terminators and without
+`call_indirect` statements, `TrapsExplicit` is its statement clause. -/
 theorem TrapsExplicit.of_tryFree {env : Clif.Env} {p : Clif.Program} {cs : Clif.State}
     (hf : ∀ B ∈ cs.frame.func.blocks, B.term.isTry = false)
+    (hci : ∀ B ∈ cs.frame.func.blocks, ∀ st ∈ B.body, ∀ sig callee args,
+      st.inst ≠ .callIndirect sig callee args)
     (h : ∀ s c st rest, Reach env p cs s → Clif.step env p s = .trapped c →
       s.frame.body = st :: rest → explicitTrapInst st.inst = true) :
     TrapsExplicit env p cs :=
-  ⟨h, fun _ _ fn args et _ _ _ _ B hB e => by have := hf B hB; rw [e] at this; cases this⟩
+  .of_indirectFree hci (fun B hB callee args et e => by have := hf B hB; rw [e] at this; cases this)
+    h (fun _ _ fn args et _ _ _ _ B hB e => by have := hf B hB; rw [e] at this; cases this)
 
 /-! ## Arm side: entry, return, trap -/
 

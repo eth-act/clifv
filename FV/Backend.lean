@@ -76,11 +76,10 @@ def abiSigs (f : Clif.Function) : Bool :=
   sigAbiOk f.sig && f.externs.all (sigAbiOk ·.2.sig)
 
 /-- The theorem's conditions that do not need the rest of the file (`E2E.InSubset.subsetE`,
-`E2E.InSubset.regParams`, `E2E.InSubset.callRegArgs`, `E2E.InSubset.abiSigs`). -/
+`E2E.InSubset.regParams`, `E2E.InSubset.callRegArgs`, `E2E.InSubset.abiSigs`,
+`E2E.InSubset.indSigs`). -/
 def verifiable (f : Clif.Function) : Bool :=
-  Compile.functionE f && f.sig.params.length ≤ 8 && regArgCalls f && abiSigs f &&
-    f.blocks.all (fun B => B.body.all (fun st => match st.inst with
-      | .callIndirect .. | .funcAddr .. => false | _ => true))
+  Compile.functionE f && f.sig.params.length ≤ 8 && regArgCalls f && abiSigs f && indSigsOk f
 
 /-- The lowering validator's size measure: instructions (statements and terminators) × values.
 `lowerCheck` re-runs the lowering recording every statement's states (their vreg class arrays
@@ -156,10 +155,6 @@ def callees (f : Clif.Function) : List String :=
 def hasTryCall (f : Clif.Function) : Bool :=
   f.blocks.any (·.term.isTry)
 
-/-- Does `f` have a `try_call_indirect`? -/
-def hasTryCallIndirect (f : Clif.Function) : Bool :=
-  f.blocks.any fun b => b.term matches .tryCallIndirect ..
-
 /-- `bmask`, `atomic_*` and `fence` in `f` (their lowering is Cranelift's, but the ISLE
 rules are outside the proven emitter-subset closure used by `E2E.backend_correct`). -/
 def hasUnproven (f : Clif.Function) : Bool :=
@@ -175,21 +170,22 @@ def hasTls (f : Clif.Function) : Bool :=
     | _ => false
 
 /-- Why a compiled function of `pf` is outside `E2E.backend_correct` (`E2E.InSubset`), if it is:
-`try_call_indirect`, `bmask`/atomic/fence instructions, `tls_value`, outside clif-subset-v2 E,
-stack-passed parameters, stack-passed call arguments (an extern with more than 8 parameters), or
-a call (also a `try_call`) of a function of the file. A `try_call` of an extern is inside the
-theorem for its normal return (`hasTryCall`: the landing pads and the LSDA are trusted). -/
+`bmask`/atomic/fence instructions, `tls_value`, outside clif-subset-v2 E, stack-passed
+parameters, stack-passed call arguments (an extern or an indirect call with more than 8
+parameters), special-purpose parameters, or a call (also a `try_call`) of a function of the
+file. A `try_call`/`try_call_indirect` of an extern is inside the theorem for its normal return
+(`hasTryCall`: the landing pads and the LSDA are trusted); `call_indirect`, `try_call_indirect`
+and `func_addr` are inside it (an indirect call of a function of the file is excluded by the
+theorem's run premise `TrapsExplicit.indirect`). -/
 def unverifiedReason? (pf : Clif.ParsedFile) (f : Clif.Function) : Option String :=
-  if hasTryCallIndirect f then some "try_call_indirect (outside backend_correct)"
-  else if hasUnproven f then some "bmask / atomic instructions / fence (outside backend_correct)"
+  if hasUnproven f then some "bmask / atomic instructions / fence (outside backend_correct)"
   else if hasTls f then some "tls_value (outside backend_correct)"
   else if !Compile.functionE f then some "outside clif-subset-v2 E"
   else if f.sig.params.length > 8 then some "stack-passed parameters (more than 8)"
   else if !regArgCalls f then some "stack-passed call arguments (an extern with more than 8 parameters)"
   else if !abiSigs f then some "special-purpose parameter other than one sret pointer (outside backend_correct)"
-  else if f.blocks.any (fun b => b.body.any (fun st => match st.inst with
-    | .callIndirect .. | .funcAddr .. => true | _ => false)) then
-    some "indirect call / func_addr (outside backend_correct)"
+  else if !indSigsOk f then
+    some "indirect call with stack-passed arguments or a special-purpose parameter (outside backend_correct)"
   else
     let own := pf.funcs.map (·.name)
     match (callees f).find? (own.contains ·) with

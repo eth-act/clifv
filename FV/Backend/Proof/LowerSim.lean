@@ -160,8 +160,9 @@ structure DriverHyp (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) 
   terms : TermCalls sem MR
   ext : ∀ B ∈ f.blocks, ∀ st ∈ B.body, ∀ fn args, st.inst = .call fn args →
     ∀ e, f.extern? fn = some e → p.func? e.name = none
-  /-- no indirect calls (`E2E.InSubset.noCI`, rust-route step 4) -/
-  noCI : ∀ B ∈ f.blocks, ∀ st ∈ B.body, ∀ sig callee args, st.inst ≠ .callIndirect sig callee args
+  /-- the signature of an indirect call is among `f`'s indirect-call signatures, with register
+  arguments (`E2E.InSubset.indSigs`) -/
+  indSig : ∀ B ∈ f.blocks, ∀ st ∈ B.body, IndSigOk f (indSigs f) st.inst
   /-- `f` is in subset E (`E2E.InSubset.subsetE`; new since `call_indirect`/`func_addr` compile) -/
   subE : Compile.functionE f = true
   /-- every extern takes at most 8 (register) parameters (`E2E.InSubset.callRegArgs`) -/
@@ -170,13 +171,17 @@ structure DriverHyp (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) 
   brIdx : ∀ B ∈ f.blocks, BrIdxTyped ctx B.term
   /-- no tail calls (`return_call` is outside clif-subset-v2 E) -/
   noTail : ∀ B ∈ f.blocks, ∀ fn args, B.term ≠ .returnCall fn args
-  /-- no `try_call_indirect` (outside clif-subset-v2 E, like `call_indirect`) -/
-  noTryCI : ∀ B ∈ f.blocks, ∀ c args et, B.term ≠ .tryCallIndirect c args et
   /-- M4: `lower_branch` on `try_call`s (`tryCalls_of_rules`) -/
   tries : TryCalls f sem MR env p
   /-- a `try_call` calls an extern (`E2E.InSubset.tryExterns`) -/
   tryExt : ∀ B ∈ f.blocks, ∀ fn args et, B.term = .tryCall fn args et →
     ∀ e, f.extern? fn = some e → p.func? e.name = none
+  /-- M4: `lower_branch` on `try_call_indirect`s (`tryIndCalls_of_rules`) -/
+  tryInd : TryIndCalls sem MR env p (indSigs f)
+  /-- the signature of a `try_call_indirect` is among `f`'s indirect-call signatures, with
+  register arguments (`E2E.InSubset.indSigs`) -/
+  tryIndSig : ∀ B ∈ f.blocks, ∀ c args et s, B.term = .tryCallIndirect c args et →
+    f.sigDecls.lookup et.sig = some s → s ∈ indSigs f ∧ s.params.length ≤ 8
   cfg : ∃ ss ps, vc.cfg = .ok (ss, ps)
 
 section
@@ -193,7 +198,9 @@ theorem DriverHyp.blow (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) {bi :
 theorem stmt_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : Arm.ArmState}
     (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩)
-    {stm : Clif.Stmt} {rest : List Clif.Stmt} (hbody : s.frame.body = stm :: rest) :
+    {stm : Clif.Stmt} {rest : List Clif.Stmt} (hbody : s.frame.body = stm :: rest)
+    (hind : ∀ sig callee args, stm.inst = .callIndirect sig callee args → ∀ cv,
+      s.frame.get callee = .ok cv → ∀ g ∈ p.funcs, s.mem.symbols g.name ≠ some cv.toNat) :
     (∀ s', Clif.step env p s = .next s' →
       ∃ vs', Star (VStep vc sem) (.run ⟨b, k, ρ, w⟩) (.run vs') ∧
         Match f ctx R gn bl A MR slots s' vs') ∧
@@ -209,13 +216,13 @@ theorem stmt_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     ⟨L.sl[j]'(by omega), List.getElem?_eq_getElem _⟩
   obtain ⟨⟨info, hinfo, hclif, hres⟩, hemp, hst0, ⟨tr, hrun⟩, halias⟩ := hstmts j stm sl hstm hsl
   obtain ⟨ranges, hctx⟩ := H.shape.hctx
+  have hBmem : B ∈ f.blocks := List.mem_of_getElem? hB
+  have hstmmem : stm ∈ B.body := List.mem_of_getElem? hstm
   have hok := H.insts ctx (L.start + j) info stm.inst sl.st sl.rss sl.st' tr
-    H.shape.ctxInv H.regArgs H.subE hinfo hclif hemp
+    H.shape.ctxInv H.regArgs H.subE hinfo hclif (H.indSig B hBmem stm hstmmem) hemp
     (fun x r h => Nat.lt_of_lt_of_le (H.shape.valsBelow x r h) hst0) hrun
   rw [hres] at hok
   obtain ⟨hargs, hresults, hnodup, hnext, hnoclob⟩ := H.cert.stmt b B L j stm sl hB hL hstm hsl
-  have hBmem : B ∈ f.blocks := List.mem_of_getElem? hB
-  have hstmmem : stm ∈ B.body := List.mem_of_getElem? hstm
   let fr' := restrict s.frame (A b j)
   let ρ₀ : Nat → CV := fun n => ρ (gn n)
   have hvh : ValsHeld fr' ρ₀ := by
@@ -233,7 +240,7 @@ theorem stmt_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
   rw [hio] at hrun'
   have hstep := step_stmt env p s stm rest hbody
     (fun fn args hi e he => H.ext B hBmem stm hstmmem fn args hi e (by rw [← hfunc]; exact he))
-    (fun sig callee args hi => H.noCI B hBmem stm hstmmem sig callee args hi)
+    hind
   let D : Nat → Prop := fun n => sl.st.nextVreg ≤ n ∧ n < sl.st'.nextVreg
   have hD : ∀ d, D d → gn d = d := fun d hd => H.shape.temps d (by simp only [D] at hd; omega)
   have hdefs : ∀ m ∈ sl.st'.emitted.toList, ∀ d ∈ vdefs m, D d := hok.defs
@@ -926,7 +933,9 @@ theorem term_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
         (VNext.goto hK (by rw [hsucc_eq, htgs]; rfl) henv))), hM⟩
     · rename_i fn0 args0 et0 hT
       rw [hT] at hBnt; cases hBnt
-    · rename_i hnj _
+    · rename_i callee0 args0 et0 hT
+      rw [hT] at hBnt; cases hBnt
+    · rename_i hnj _ _
       have hbargs' : vb.branchArgs = #[] := by
         rw [hbargs]; split
         · rename_i bc0 hT; exact absurd hT (hnj bc0)
@@ -1164,6 +1173,73 @@ theorem stepTry_spec {env : Clif.Env} {p : Clif.Program} {s : Clif.State} {fn : 
     · cases e
     · cases e; exact ⟨ext, bc, rvals, cm', regs', h1, h2, h3, h4, rfl⟩
 
+theorem stepTryInd_spec {env : Clif.Env} {p : Clif.Program} {s : Clif.State} {callee : Nat}
+    {args : List Clif.ValueId} {et : Clif.ExnTable}
+    (hnp : ∀ cv, s.frame.get callee = .ok cv → ∀ g ∈ p.funcs, s.mem.symbols g.name ≠ some cv.toNat) :
+    (∀ vals cm, Clif.stepTerm env p s (.tryCallIndirect callee args et) ≠ .done vals cm) ∧
+    ∀ s', Clif.stepTerm env p s (.tryCallIndirect callee args et) = .next s' →
+      ∃ declared bc rvals cm' regs', s.frame.func.sigDecls.lookup et.sig = some declared ∧
+        Clif.tryNormal et s.frame.func.freshValue = .ok bc ∧
+        instOutcome env p s.frame s.mem (.callIndirect et.sig callee args) = .ok (rvals, cm') ∧
+        s.frame.regs.setMany ((List.range declared.returns.length).map
+          (s.frame.func.freshValue + ·)) rvals = some regs' ∧
+        s' = tryNext s regs' bc cm' := by
+  have key : ∀ r, Clif.stepTerm env p s (.tryCallIndirect callee args et) = r →
+      (∃ m, r = .stuck m) ∨ (∃ c, r = .trapped c) ∨
+      ∃ declared bc rvals cm' regs', s.frame.func.sigDecls.lookup et.sig = some declared ∧
+        Clif.tryNormal et s.frame.func.freshValue = .ok bc ∧
+        instOutcome env p s.frame s.mem (.callIndirect et.sig callee args) = .ok (rvals, cm') ∧
+        s.frame.regs.setMany ((List.range declared.returns.length).map
+          (s.frame.func.freshValue + ·)) rvals = some regs' ∧
+        r = .next (tryNext s regs' bc cm') := by
+    intro r hr
+    subst hr
+    simp only [Clif.stepTerm, Clif.stepTryCallIndirect]
+    cases hsd : s.frame.func.sigDecls.lookup et.sig with
+    | none => left; simp [hsd]
+    | some sig =>
+      cases htn : Clif.tryNormal et s.frame.func.freshValue with
+      | trap c =>
+        right; left
+        simp only [hsd, htn, Clif.Res.ofOption_some, Clif.Res.ok_bind, Clif.Res.trap_bind,
+          Clif.StepResult.ofRes_trap]
+        exact ⟨_, rfl⟩
+      | stuck m =>
+        left
+        simp only [hsd, htn, Clif.Res.ofOption_some, Clif.Res.ok_bind, Clif.Res.stuck_bind,
+          Clif.StepResult.ofRes_stuck]
+        exact ⟨_, rfl⟩
+      | ok bc =>
+        simp only [hsd, htn, Clif.Res.ofOption_some, Clif.Res.ok_bind, Clif.Res.pure_eq,
+          Clif.StepResult.ofRes_ok]
+        rw [stepCallIndirect_eq env p { s with frame := { s.frame with body := [], term := .jump bc } }
+          [] _ et.sig callee args (fun cv hcv g hg => hnp cv hcv g hg)]
+        have hio : instOutcome env p { s.frame with body := [], term := .jump bc } s.mem
+            (.callIndirect et.sig callee args) =
+            instOutcome env p s.frame s.mem (.callIndirect et.sig callee args) :=
+          instOutcome_congr (fr := s.frame) (fr' := { s.frame with body := [], term := .jump bc })
+            rfl rfl env p s.mem _ (fun _ _ => rfl)
+        simp only [hio]
+        cases hO : instOutcome env p s.frame s.mem (.callIndirect et.sig callee args) with
+        | trap c => right; left; exact ⟨c, rfl⟩
+        | stuck m => left; exact ⟨m, rfl⟩
+        | ok r =>
+          obtain ⟨rvals, cm'⟩ := r
+          simp only [Clif.StepResult.ofRes, Clif.continueWith]
+          cases hset : s.frame.regs.setMany ((List.range sig.returns.length).map
+              (s.frame.func.freshValue + ·)) rvals with
+          | none => left; simp only [hset]; exact ⟨_, rfl⟩
+          | some regs' =>
+            right; right
+            simp only [hset]
+            exact ⟨sig, bc, rvals, cm', regs', rfl, rfl, rfl, hset, rfl⟩
+  refine ⟨fun vals cm h => ?_, fun s' h => ?_⟩
+  · rcases key _ h with ⟨_, e⟩ | ⟨_, e⟩ | ⟨_, _, _, _, _, _, _, _, _, e⟩ <;> cases e
+  · rcases key _ h with ⟨_, e⟩ | ⟨_, e⟩ | ⟨d, bc, rvals, cm', regs', h1, h2, h3, h4, e⟩
+    · cases e
+    · cases e
+    · cases e; exact ⟨d, bc, rvals, cm', regs', h1, h2, h3, h4, rfl⟩
+
 theorem vdefs_tryCall (c : CallInfo) (info : TryInfo) :
     vdefs (.tryCall c info) = vdefs (.call c) := by
   simp only [vdefs, operands_tryCall_call]
@@ -1179,15 +1255,23 @@ def tryArgNum (gn : Nat → Nat) (bb : Nat) : Clif.TryArg → Nat
   | .ret i => bb + i
   | .exn _ => 0
 
-/-- **`try_call` step** (the normal return). The CLIF call of the extern (its results bound to
-fresh values, the jump to the normal return pending) and the jump are matched by the
-terminator's code, ending in the `tryCall` (which continues at the normal-return edge block),
-and the edge block's `jump` (the parallel copy of the renamed arguments). -/
+/-- The exception table's values are operands of a `try_call`/`try_call_indirect`. -/
+theorem etVals_termArgs {t : Clif.Terminator} {et : Clif.ExnTable} (h : IsTryWith t et) :
+    ∀ y ∈ et.vals, y ∈ termArgs t := by
+  intro y hy
+  rcases h with ⟨fn, args, rfl⟩ | ⟨c, args, rfl⟩ <;> simp [termArgs, hy]
+
+/-- **`try_call`/`try_call_indirect` step** (the normal return). The CLIF call of the extern
+(its results bound to fresh values, the jump to the normal return pending) and the jump are
+matched by the terminator's code, ending in the `tryCall` (which continues at the normal-return
+edge block), and the edge block's `jump` (the parallel copy of the renamed arguments). `hind`:
+an indirect callee is no function of `p`. -/
 theorem term_step_try (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : Arm.ArmState}
     (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩) (hbody : s.frame.body = [])
-    {fn : Clif.FnRef} {args : List Clif.ValueId} {et : Clif.ExnTable}
-    (hT : s.frame.term = .tryCall fn args et) :
+    {et : Clif.ExnTable} (hT : IsTryWith s.frame.term et)
+    (hind : ∀ callee args, s.frame.term = .tryCallIndirect callee args et → ∀ cv,
+      s.frame.get callee = .ok cv → ∀ g ∈ p.funcs, s.mem.symbols g.name ≠ some cv.toNat) :
     (∀ vals cm, Clif.step env p s ≠ .done vals cm) ∧
     ∀ s', Clif.step env p s = .next s' →
       (∀ c, Clif.step env p s' ≠ .trapped c) ∧ (∀ vals cm, Clif.step env p s' ≠ .done vals cm) ∧
@@ -1202,18 +1286,77 @@ theorem term_step_try (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     have := List.drop_eq_nil_iff.mp hbody
     omega
   subst hjn
-  have hBT : B.term = .tryCall fn args et := hterm.symm.trans hT
+  have hBT : IsTryWith B.term et := hterm ▸ hT
   have hBmem : B ∈ f.blocks := List.mem_of_getElem? hB
-  have hext : ∀ e, s.frame.func.extern? fn = some e → p.func? e.name = none :=
-    fun e he => H.tryExt B hBmem fn args et hBT e (hfunc ▸ he)
-  have hstep : Clif.step env p s = Clif.stepTerm env p s (.tryCall fn args et) := by
-    rw [Clif.step_term env p s hbody, hT]
-  obtain ⟨hnd, hnx⟩ := stepTry_spec (env := env) (p := p) (args := args) (et := et) hext
+  have hstep : Clif.step env p s = Clif.stepTerm env p s B.term := by
+    rw [Clif.step_term env p s hbody, hterm]
+  -- the lowering of the terminator
+  obtain ⟨L, hL⟩ := H.blow hB
+  obtain ⟨vb, hvb, -, -, -, hst0t, -, htry, hcode, -, -, hbargs, hsucc⟩ :=
+    H.shape.blk b B L hB hL
+  obtain ⟨T, hTl, hdata, hexn, hregs, hinfo, out, tr, hrun⟩ := htry et hBT
+  have hvbL : ValsBelow ctx L.tst := fun x r h =>
+    Nat.lt_of_lt_of_le (H.shape.valsBelow x r h) hst0t
+  obtain ⟨hargsTA, hnoclobT, -⟩ := H.cert.term b B L hB hL
+  have hnr : abiTerm f B.term = B.term := by
+    rcases hBT with ⟨_, _, h⟩ | ⟨_, _, h⟩ <;> rw [h] <;> rfl
+  have htA : ∀ y ∈ termArgs B.term, y ∈ A b B.body.length := fun y hy =>
+    hargsTA y (by rw [hnr]; exact hy)
+  -- the call `ci` of the terminator: its CLIF step and its lowering
+  obtain ⟨ci, hciA, hnd, hnx, hok⟩ : ∃ ci : Clif.Inst,
+      (∀ y ∈ instArgs ci, y ∈ termArgs B.term) ∧
+      (∀ vals cm, Clif.stepTerm env p s B.term ≠ .done vals cm) ∧
+      (∀ s', Clif.stepTerm env p s B.term = .next s' → ∃ bc rvals cm' regs',
+        Clif.tryNormal et s.frame.func.freshValue = .ok bc ∧
+        instOutcome env p s.frame s.mem ci = .ok (rvals, cm') ∧
+        s.frame.regs.setMany ((List.range T.sig.returns.length).map
+          (s.frame.func.freshValue + ·)) rvals = some regs' ∧
+        s' = tryNext s regs' bc cm') ∧
+      LowerTryOk sem MR env p (tryCtx ctx (L.start + B.body.length) L.data T.regs) ci T.info
+        { T.st1 with emitted := #[] } L.tst' L.tst'.emitted.toList := by
+    rcases hBT with ⟨fn, args, hBT⟩ | ⟨callee, args, hBT⟩
+    · have hext : ∀ e, s.frame.func.extern? fn = some e → p.func? e.name = none :=
+        fun e he => H.tryExt B hBmem fn args et hBT e (hfunc ▸ he)
+      have hdata' : tryCallData f (.tryCall fn args et) = .ok L.data := hBT ▸ hdata
+      obtain ⟨sig0, items0, ext0, hexn0, hx0, hsig0⟩ := tryCallData_spec hdata'
+      rw [hexn] at hexn0
+      simp only [Except.ok.injEq, Prod.mk.injEq] at hexn0
+      obtain ⟨rfl, rfl⟩ := hexn0
+      obtain ⟨hnd, hnx⟩ := stepTry_spec (env := env) (p := p) (args := args) (et := et) hext
+      rw [hBT]
+      refine ⟨.call fn args, fun y hy => by
+          simp only [instArgs] at hy; simp [termArgs, hy], hnd,
+        fun s' hs => ?_, H.tries ctx (L.start + B.body.length) fn args et L.data T.sig T.items
+          L.targets T.info T.regs L.tst T.st1 out L.tst' tr H.shape.ctxInv H.regArgs hdata' hexn
+          (H.shape.tslot b B L hB hL) hinfo hregs hvbL hrun⟩
+      obtain ⟨ext, bc, rvals, cm', regs', hx, htn, hO, hset, rfl⟩ := hnx s' hs
+      rw [hfunc, hx0] at hx
+      cases hx
+      exact ⟨bc, rvals, cm', regs', htn, hO, by rw [← hsig0]; exact hset, rfl⟩
+    · have hdata' : tryCallData f (.tryCallIndirect callee args et) = .ok L.data := hBT ▸ hdata
+      have hsd := exnTableOpnd_sig hexn
+      obtain ⟨hsin, h8⟩ := H.tryIndSig B hBmem callee args et T.sig hBT hsd
+      obtain ⟨hnd, hnx⟩ := stepTryInd_spec (env := env) (p := p) (args := args) (et := et)
+        (hind callee args (hterm.trans hBT))
+      rw [hBT]
+      refine ⟨.callIndirect et.sig callee args,
+        fun y hy => by
+          simp only [instArgs] at hy
+          simp only [termArgs, List.cons_append]
+          exact List.mem_cons.mpr ((List.mem_cons.mp hy).imp id fun h => List.mem_append_left _ h),
+        hnd, fun s' hs => ?_,
+        H.tryInd f ctx (L.start + B.body.length) callee args et L.data T.sig T.items L.targets
+          T.info T.regs L.tst T.st1 out L.tst' tr H.shape.ctxInv hdata' hexn hsin h8
+          (H.shape.tslot b B L hB hL) hinfo hregs hvbL hrun⟩
+      obtain ⟨declared, bc, rvals, cm', regs', hd, htn, hO, hset, rfl⟩ := hnx s' hs
+      rw [hfunc, hsd] at hd
+      cases hd
+      exact ⟨bc, rvals, cm', regs', htn, hO, hset, rfl⟩
   refine ⟨fun vals cm h => hnd vals cm (hstep.symm.trans h), fun s' hs => ?_⟩
   rw [hstep] at hs
-  obtain ⟨ext, bc, rvals, cm', regs', hx, htn, hO, hset, rfl⟩ := hnx s' hs
+  obtain ⟨bc, rvals, cm', regs', htn, hO, hset, rfl⟩ := hnx s' hs
   have hbc := tryNormal_ok htn
-  rw [hfunc] at hbc hset hx
+  rw [hfunc] at hbc hset
   have hstep' : Clif.step env p (tryNext s regs' bc cm') =
       Clif.stepTerm env p (tryNext s regs' bc cm') (.jump bc) := Clif.step_term env p _ rfl
   have hjne : dests (.jump bc) ≠ [] := by simp [dests]
@@ -1226,43 +1369,31 @@ theorem term_step_try (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     | zero => simp [dests] at hbc'; exact hbc'
     | succ n => simp [dests] at hbc'
   subst hbcbc
-  -- the lowering of the `try_call`
-  obtain ⟨L, hL⟩ := H.blow hB
-  obtain ⟨vb, hvb, -, -, -, hst0t, -, htry, hcode, -, -, hbargs, hsucc⟩ :=
-    H.shape.blk b B L hB hL
-  obtain ⟨T, hTl, hdata, hexn, hregs, hinfo, out, tr, hrun⟩ := htry fn args et hBT
-  rw [hBT] at hsucc
-  obtain ⟨-, tl, tlab, T', eb, htl, hlast, hTl', heb, hebi, hebp, hebba, hargsOk⟩ := hsucc
+  have hsucc2 : L.targets.length = et.dests.length ∧
+      ∃ tl tlab T eb, blockIdx? f et.normal.block = some tl ∧ L.targets.getLast? = some tlab ∧
+        L.tl = some T ∧ vc.blocks[tlab]? = some eb ∧ eb.insts = #[.jump tl] ∧ eb.params = #[] ∧
+        eb.branchArgs = (et.normal.args.map (normArgReg R T.regs.1)).toArray ∧
+        ∀ a ∈ et.normal.args, match a with
+          | .val _ => True
+          | .ret i => i < T.sig.returns.length
+          | .exn _ => False := by
+    rcases hBT with ⟨_, _, h⟩ | ⟨_, _, h⟩ <;> rw [h] at hsucc <;> exact hsucc
+  obtain ⟨-, tl, tlab, T', eb, htl, hlast, hTl', heb, hebi, hebp, hebba, hargsOk⟩ := hsucc2
   rw [hTl] at hTl'
   cases hTl'
-  have hbargs' : vb.branchArgs = #[] := by rw [hbargs, hBT]
-  have hdata' : tryCallData f (.tryCall fn args et) = .ok L.data := hBT ▸ hdata
-  have hvbL : ValsBelow ctx L.tst := fun x r h =>
-    Nat.lt_of_lt_of_le (H.shape.valsBelow x r h) hst0t
-  have hok := H.tries ctx (L.start + B.body.length) fn args et L.data T.sig T.items L.targets
-    T.info T.regs L.tst T.st1 out L.tst' tr H.shape.ctxInv H.regArgs hdata' hexn
-    (H.shape.tslot b B L hB hL) hinfo hregs hvbL hrun
-  obtain ⟨sig0, items0, ext0, hexn0, hx0, hsig0⟩ := tryCallData_spec hdata'
-  rw [hexn] at hexn0
-  simp only [Except.ok.injEq, Prod.mk.injEq] at hexn0
-  obtain ⟨rfl, rfl⟩ := hexn0
-  have hee : ext0 = ext := Option.some.inj (hx0.symm.trans hx)
-  subst hee
+  have hbargs' : vb.branchArgs = #[] := by
+    rw [hbargs]; rcases hBT with ⟨_, _, h⟩ | ⟨_, _, h⟩ <;> rw [h]
   obtain ⟨-, hregsEq, hst1, -⟩ := tryRegsOf_spec (exnTableOpnd_cc hexn) hregs
-  obtain ⟨pre, ci, hms, hpre, hcd⟩ := hok.shape
+  obtain ⟨pre, ci', hms, hpre, hcd⟩ := hok.shape
   have hmono : T.st1.nextVreg ≤ L.tst'.nextVreg := hok.mono
   have hmax1 : (sigRets T.sig).length ≤ max (sigRets T.sig).length 2 := Nat.le_max_left _ _
   have hmax2 : 2 ≤ max (sigRets T.sig).length 2 := Nat.le_max_right _ _
-  have hfix : tryFix T.info L.tst'.emitted.toList = pre ++ [.tryCall ci T.info] := by
+  have hfix : tryFix T.info L.tst'.emitted.toList = pre ++ [.tryCall ci' T.info] := by
     rw [hms, tryFix_append]
-  obtain ⟨hargsTA, hnoclobT, -⟩ := H.cert.term b B L hB hL
-  have htA : ∀ y ∈ termArgs (.tryCall fn args et), y ∈ A b B.body.length := fun y hy =>
-    hargsTA y (by rw [hBT]; exact hy)
-  have hargsA : ∀ y ∈ args, y ∈ A b B.body.length := fun y hy =>
-    htA y (by simp [termArgs, hy])
+  have hargsA : ∀ y ∈ instArgs ci, y ∈ A b B.body.length := fun y hy => htA y (hciA y hy)
   -- the call's results are not tracked values
   have hnotres : ∀ x ∈ A b B.body.length,
-      x ∉ (List.range ext0.sig.returns.length).map (f.freshValue + ·) := by
+      x ∉ (List.range T.sig.returns.length).map (f.freshValue + ·) := by
     intro x hx hm
     obtain ⟨a, -, rfl⟩ := List.mem_map.mp hm
     have h1 : f.freshValue + a < st0.nextVreg := H.cert.small _ _ _ hx
@@ -1279,17 +1410,16 @@ theorem term_step_try (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
   have hrun' := hok.run fr' s.mem ρ₀ w
     (by simp [fr', restrict, hfunc, tryCtx, termCtx, H.shape.ctxInv.func]) hvh
     (dfgCons_termCtx hcons _ _) (by simpa [fr', restrict, hslots] using hmem)
-  have hio : instOutcome env p fr' s.mem (.call fn args) =
-      instOutcome env p s.frame s.mem (.call fn args) :=
+  have hio : instOutcome env p fr' s.mem ci = instOutcome env p s.frame s.mem ci :=
     instOutcome_congr (fr := s.frame) (fr' := fr') rfl rfl env p s.mem _
-      fun x hx => restrict_regs_of_mem (hargsA x (by simpa [instArgs] using hx))
+      fun x hx => restrict_regs_of_mem (hargsA x hx)
   rw [hio, hO] at hrun'
   obtain ⟨hU, k', i, ops, ρ₁, w₁, outs, w₂, hsr, hk1, hrets, hmr⟩ := hrun'
   rw [hfix] at hsr
   let D : Nat → Prop := fun n => L.tst.nextVreg ≤ n ∧ n < L.tst'.nextVreg
   have hD : ∀ d, D d → gn d = d := fun d hd => H.shape.temps d (by
     have : L.tst.nextVreg ≤ d := hd.1; omega)
-  have hdefs : ∀ m ∈ pre ++ [.tryCall ci T.info], ∀ d ∈ vdefs m, D d := by
+  have hdefs : ∀ m ∈ pre ++ [.tryCall ci' T.info], ∀ d ∈ vdefs m, D d := by
     intro m hm d hd
     rcases List.mem_append.mp hm with hm | hm
     · obtain ⟨h1, h2⟩ := hpre m hm d hd
@@ -1305,7 +1435,7 @@ theorem term_step_try (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
       show L.tst.nextVreg ≤ d ∧ d < L.tst'.nextVreg
       rcases hmem' with ⟨a, ha, rfl⟩ | rfl | rfl <;> constructor <;> omega
   have huses : UsesOk { T.st1 with emitted := #[] } fr' L.tst'.emitted.toList →
-      ∀ m ∈ pre ++ [.tryCall ci T.info], ∀ u ∈ vuseNums m, D u ∨ ¬ D (gn u) := by
+      ∀ m ∈ pre ++ [.tryCall ci' T.info], ∀ u ∈ vuseNums m, D u ∨ ¬ D (gn u) := by
     intro hU m hm u hu
     have hU' : ∀ m ∈ L.tst'.emitted.toList, ∀ u ∈ vuseNums m, D u ∨ ¬ D (gn u) := by
       intro m hm u hu
@@ -1328,7 +1458,7 @@ theorem term_step_try (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     (H.dsem.rename R gn H.shape.ren) hD hdefs
   obtain ⟨ρ₁', hsr', -, hA2⟩ := (hren (huses hU) hAg).2 hsr
   obtain ⟨hsegat, hsize⟩ := tseg_at hcode
-  have htseg : tseg R bl b = (pre ++ [MInst.tryCall ci T.info]).map (·.mapRegs R) := by
+  have htseg : tseg R bl b = (pre ++ [MInst.tryCall ci' T.info]).map (·.mapRegs R) := by
     rw [tseg_eq hL, hTl]
     show (tryFix T.info _).map _ = _
     rw [hfix]
@@ -1338,14 +1468,14 @@ theorem term_step_try (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
   have hk' : k' = pre.length := by
     rw [hms] at hk1; simp only [List.length_append, List.length_singleton] at hk1; omega
   subst hk'
-  have hiT : i = .tryCall ci T.info := by
+  have hiT : i = .tryCall ci' T.info := by
     rw [List.getElem?_append_right (Nat.le_refl _)] at hmk
     simp only [Nat.sub_self, List.getElem?_cons_zero, Option.some.injEq] at hmk
     exact hmk.symm
   subst hiT
   have hK : pos f R bl b B.body.length + pre.length + 1 = vb.insts.size := by
     rw [hsize]; simp only [List.length_map, List.length_append, List.length_singleton]; omega
-  have hback : vb.insts.back? = some ((MInst.tryCall ci T.info).mapRegs R) := by
+  have hback : vb.insts.back? = some ((MInst.tryCall ci' T.info).mapRegs R) := by
     rw [Array.back?_eq_getElem?, ← hK, Nat.add_sub_cancel]; exact hi
   obtain ⟨ss, ps, hcfg⟩ := H.cfg
   obtain ⟨hcont, -⟩ := tryInfoOf_spec hinfo
@@ -1372,7 +1502,8 @@ theorem term_step_try (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
   have hstep1 := VStep.step hvb hi hops hsem hlen (VNext.goto hK hsucc1 henv1)
   -- the successor
   let xs := et.normal.args.map (tryArgNum gn L.tst.nextVreg)
-  have hbcb : bc.block ∈ edgeIds B.term := by rw [hBT, hbc]; simp [edgeIds]
+  have hbcb : bc.block ∈ edgeIds B.term := by
+    rw [hbc]; rcases hBT with ⟨_, _, h⟩ | ⟨_, _, h⟩ <;> rw [h] <;> simp [edgeIds]
   have htl' : blockIdx? f bc.block = some tl := by rw [hbc]; exact htl
   have hheld' : Held gn (A b B.body.length) ρ (tryNext s regs' bc cm').frame := by
     intro x hx
@@ -1405,10 +1536,9 @@ theorem term_step_try (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
       have hv' : regs' _ = some v := hv
       cases ta with
       | val v0 =>
-        have hv0A : v0 ∈ A b B.body.length := htA v0 (by
-          simp only [termArgs, List.mem_append, Clif.ExnTable.vals, Clif.TryDest.vals,
-            List.mem_filterMap]
-          exact .inr (.inl ⟨.val v0, htam, rfl⟩))
+        have hv0A : v0 ∈ A b B.body.length := htA v0 (etVals_termArgs hBT v0 (by
+          simp only [Clif.ExnTable.vals, Clif.TryDest.vals, List.mem_append, List.mem_filterMap]
+          exact .inl ⟨.val v0, htam, rfl⟩))
         show VHolds v (ρ₂ (gn v0))
         rw [hρ₂ v0 hv0A]
         simp only [tryArgVal] at hv'
@@ -1418,9 +1548,8 @@ theorem term_step_try (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
         exact hh
       | ret ii =>
         have hii : ii < T.sig.returns.length := hargsOk _ htam
-        rw [← hsig0] at hii
         have hiN : ii < (sigRets T.sig).length :=
-          Nat.lt_of_lt_of_le (hsig0 ▸ hii) (returns_le_sigRets _)
+          Nat.lt_of_lt_of_le hii (returns_le_sigRets _)
         have hvi : regs' (f.freshValue + ii) = some rvals[ii] :=
           setMany_nodup hset (List.Pairwise.map _ (fun a b h e => h (Nat.add_left_cancel e)) List.nodup_range) ii _ _
             (by simp [List.getElem?_map, hii]) (List.getElem?_eq_getElem (by omega))
@@ -1629,10 +1758,11 @@ theorem stmt_not_done {env : Clif.Env} {p : Clif.Program} {s : Clif.State} {st :
     {rest : List Clif.Stmt} (h : s.frame.body = st :: rest)
     (hext : ∀ fn args, st.inst = .call fn args → ∀ e, s.frame.func.extern? fn = some e →
       p.func? e.name = none)
-    (hci : ∀ sig callee args, st.inst ≠ .callIndirect sig callee args)
+    (hind : ∀ sig callee args, st.inst = .callIndirect sig callee args → ∀ cv,
+      s.frame.get callee = .ok cv → ∀ g ∈ p.funcs, s.mem.symbols g.name ≠ some cv.toNat)
     {vals : List Clif.Val} {cm : Clif.Mem} :
     Clif.step env p s ≠ .done vals cm := by
-  rw [step_stmt env p s st rest h hext hci]
+  rw [step_stmt env p s st rest h hext hind]
   cases instOutcome env p s.frame s.mem st.inst with
   | ok r =>
     simp only [Clif.StepResult.ofRes, Clif.continueWith]
@@ -1663,15 +1793,33 @@ theorem RunOk.prefix {vs vs' : VState CV Arm.ArmState} {o : Clif.Outcome}
   | trapped c => exact VTrapFrom.prefix h h'
   | _ => trivial
 
+/-- The run premises of the driver simulation from the CLIF state `cs` of `f` (the trap and
+indirect-call clauses of `E2E.TrapsExplicit`): statements trap only explicitly; the step of one
+of `f`'s `try_call`/`try_call_indirect` terminators does not trap (the callee returns
+normally); an indirect call of `f` (a `call_indirect` statement or a `try_call_indirect`) calls
+no function of `p` (its callee is an extern). -/
+structure RunPrem (env : Clif.Env) (p : Clif.Program) (f : Clif.Function) (cs : Clif.State) :
+    Prop where
+  stmt : ∀ s c st rest, Reach env p cs s → Clif.step env p s = .trapped c →
+    s.frame.body = st :: rest → explicitTrapInst st.inst = true
+  tryCall : ∀ s c fn args et, Reach env p cs s → Clif.step env p s = .trapped c →
+    s.frame.body = [] → s.frame.term = .tryCall fn args et → ∀ B ∈ f.blocks,
+      B.term ≠ .tryCall fn args et
+  tryCallInd : ∀ s c callee args et, Reach env p cs s → Clif.step env p s = .trapped c →
+    s.frame.body = [] → s.frame.term = .tryCallIndirect callee args et → ∀ B ∈ f.blocks,
+      B.term ≠ .tryCallIndirect callee args et
+  indirect : ∀ s st rest sig callee args, Reach env p cs s → s.frame.body = st :: rest →
+    st.inst = .callIndirect sig callee args → (∃ B ∈ f.blocks, st ∈ B.body) → ∀ cv,
+    s.frame.get callee = .ok cv → ∀ g ∈ p.funcs, s.mem.symbols g.name ≠ some cv.toNat
+  tryIndirect : ∀ s callee args et, Reach env p cs s → s.frame.body = [] →
+    s.frame.term = .tryCallIndirect callee args et →
+    (∃ B ∈ f.blocks, B.term = .tryCallIndirect callee args et) → ∀ cv,
+    s.frame.get callee = .ok cv → ∀ g ∈ p.funcs, s.mem.symbols g.name ≠ some cv.toNat
+
 /-- **Whole runs**: from matching states, every CLIF outcome is realised by the VCode run
-(`htr`: statements trap only explicitly; `htt`: the step of one of `f`'s `try_call` terminators
-does not trap — the callee returns normally). -/
+(under the run premises `RunPrem`). -/
 theorem sim_run (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) {cs : Clif.State}
-    (htr : ∀ s c st rest, Reach env p cs s → Clif.step env p s = .trapped c →
-      s.frame.body = st :: rest → explicitTrapInst st.inst = true)
-    (htt : ∀ s c fn args et, Reach env p cs s → Clif.step env p s = .trapped c →
-      s.frame.body = [] → s.frame.term = .tryCall fn args et → ∀ B ∈ f.blocks,
-        B.term ≠ .tryCall fn args et) :
+    (hP : RunPrem env p f cs) :
     ∀ fuel s (vs : VState CV Arm.ArmState), Reach env p cs s →
       Match f ctx R gn bl A MR slots s vs → RunOk vc sem MR slots vs (Clif.runLoop env p fuel s) := by
   intro fuel
@@ -1701,13 +1849,15 @@ theorem sim_run (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) {cs : Clif.S
       | true =>
         obtain ⟨B, j, hB, hterm, -⟩ := hm.2.2.2.2
         have hBmem : B ∈ f.blocks := List.mem_of_getElem? hB
-        obtain ⟨fn, args, et, hT⟩ : ∃ fn args et, s.frame.term = .tryCall fn args et := by
+        obtain ⟨et, hT⟩ : ∃ et, IsTryWith s.frame.term et := by
           cases ht : s.frame.term with
-          | tryCall fn args et => exact ⟨fn, args, et, rfl⟩
-          | tryCallIndirect c args et =>
-            exact absurd (hterm.symm.trans ht) (H.noTryCI B hBmem c args et)
+          | tryCall fn args et => exact ⟨et, .inl ⟨fn, args, rfl⟩⟩
+          | tryCallIndirect c args et => exact ⟨et, .inr ⟨c, args, rfl⟩⟩
           | _ => rw [ht] at hty; cases hty
-        obtain ⟨Tnd, Tnx⟩ := term_step_try H hm hbody hT
+        have hind : ∀ callee args, s.frame.term = .tryCallIndirect callee args et → ∀ cv,
+            s.frame.get callee = .ok cv → ∀ g ∈ p.funcs, s.mem.symbols g.name ≠ some cv.toNat :=
+          fun callee args ht => hP.tryIndirect s callee args et hr hbody ht ⟨B, hBmem, hterm.symm.trans ht⟩
+        obtain ⟨Tnd, Tnx⟩ := term_step_try H hm hbody hT hind
         cases hs : Clif.step env p s with
         | next s' =>
           obtain ⟨N1, N2, N3⟩ := Tnx s' hs
@@ -1724,30 +1874,32 @@ theorem sim_run (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) {cs : Clif.S
             | trapped c => exact absurd hs' (N1 c)
             | stuck => trivial
         | done vals cm => exact absurd hs (Tnd vals cm)
-        | trapped c => exact absurd (hterm.symm.trans hT) (htt s c fn args et hr hs hbody hT B hBmem)
+        | trapped c =>
+          rcases hT with ⟨fn, args, hT⟩ | ⟨callee, args, hT⟩
+          · exact absurd (hterm.symm.trans hT) (hP.tryCall s c fn args et hr hs hbody hT B hBmem)
+          · exact absurd (hterm.symm.trans hT)
+              (hP.tryCallInd s c callee args et hr hs hbody hT B hBmem)
         | stuck => trivial
     | cons st rest =>
+      obtain ⟨-, -, -, -, B, j, hB, -, -, hbd, -⟩ := id hm
+      have hst : st ∈ B.body := by
+        rw [hbd] at hbody
+        exact List.mem_of_mem_drop (hbody ▸ List.mem_cons_self)
+      have hBmem : B ∈ f.blocks := List.mem_of_getElem? hB
       have hext : ∀ fn args, st.inst = .call fn args → ∀ e, s.frame.func.extern? fn = some e →
           p.func? e.name = none := by
-        obtain ⟨-, -, -, -, B, j, hB, -, -, hbd, -⟩ := hm
-        have hst : st ∈ B.body := by
-          rw [hbd] at hbody
-          exact List.mem_of_mem_drop (hbody ▸ List.mem_cons_self)
         intro fn args hi e he
-        exact H.ext B (List.mem_of_getElem? hB) st hst fn args hi e (hfunc ▸ he)
-      have hnoci : ∀ sig callee args, st.inst ≠ .callIndirect sig callee args := by
-        obtain ⟨-, -, -, -, B, j, hB, -, -, hbd, -⟩ := hm
-        have hst : st ∈ B.body := by
-          rw [hbd] at hbody
-          exact List.mem_of_mem_drop (hbody ▸ List.mem_cons_self)
-        exact H.noCI B (List.mem_of_getElem? hB) st hst
-      obtain ⟨S1, S2⟩ := stmt_step H hm hbody
+        exact H.ext B hBmem st hst fn args hi e (hfunc ▸ he)
+      have hind : ∀ sig callee args, st.inst = .callIndirect sig callee args → ∀ cv,
+          s.frame.get callee = .ok cv → ∀ g ∈ p.funcs, s.mem.symbols g.name ≠ some cv.toNat :=
+        fun sig callee args hi => hP.indirect s st rest sig callee args hr hbody hi ⟨B, hBmem, hst⟩
+      obtain ⟨S1, S2⟩ := stmt_step H hm hbody hind
       cases hs : Clif.step env p s with
       | next s' =>
         obtain ⟨vs', hstar, hm'⟩ := S1 s' hs
         exact RunOk.prefix hstar (ih n (by omega) s' vs' (hr.snoc hs) hm')
-      | done vals cm => exact absurd hs (stmt_not_done hbody hext hnoci)
-      | trapped c => exact S2 c hs (htr s c st rest hr hs hbody)
+      | done vals cm => exact absurd hs (stmt_not_done hbody hext hind)
+      | trapped c => exact S2 c hs (hP.stmt s c st rest hr hs hbody)
       | stuck => trivial
 
 /-- **The driver lemma (CLIF → VCode).** A CLIF run of `f` from an entry state (parameters
@@ -1762,15 +1914,11 @@ theorem driver_correct (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     (hty : args.map (·.ty) = B0.params.map (·.2))
     {ρ₀ : Nat → CV} {w₀ : Arm.ArmState} (hmr : MR slots cs.mem w₀)
     (hargs : ∀ (i : Nat) v, args[i]? = some v → VHolds v (regVal w₀ (.x (argIdx f.sig i))))
-    (htr : ∀ s c st rest, Reach env p cs s → Clif.step env p s = .trapped c →
-      s.frame.body = st :: rest → explicitTrapInst st.inst = true)
-    (htt : ∀ s c fn args et, Reach env p cs s → Clif.step env p s = .trapped c →
-      s.frame.body = [] → s.frame.term = .tryCall fn args et → ∀ B ∈ f.blocks,
-        B.term ≠ .tryCall fn args et) (fuel : Nat) :
+    (hP : RunPrem env p f cs) (fuel : Nat) :
     RunOk vc sem MR slots ⟨0, 0, ρ₀, w₀⟩ (Clif.runLoop env p fuel cs) := by
   obtain ⟨ρ₁, hstep, hm⟩ := entry_step H hB0 hcall hfunc hslots hbody hterm hregs hty hmr hargs
     (ρ₀ := ρ₀)
-  exact RunOk.prefix (Star.single hstep) (sim_run H htr htt fuel cs _ (.refl _) hm)
+  exact RunOk.prefix (Star.single hstep) (sim_run H hP fuel cs _ (.refl _) hm)
 
 end
 
