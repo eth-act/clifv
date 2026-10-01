@@ -501,8 +501,8 @@ RuleAll}.lean`; generator
 `FVTest/Opt/Proof/GenData.lean` (`lake env lean --run FVTest/Opt/Proof/GenData.lean >
 FV/Opt/Proof/RuleData.lean`, 33 s build). No `sorry`; axioms of every theorem below:
 `propext`, `Classical.choice`, `Quot.sound`, plus the `*._native.bv_decide.ax_*` certificates of
-the `bv_decide` calls (as in the backend proofs). Full build of `RuleAll` ~16 min wall on 32 cores
-(`RuleArith.lean` dominates).
+the `bv_decide` calls (as in the backend proofs); `RuleAll` uses no `native_decide`. Full build of
+the rule modules: see the build note under "Proven rules" (`RuleArith.lean` dominates).
 
 **Interface** (`Sem.lean`, owned by MidPassProofs, copied byte-identical): `Opt.evalNode`,
 `Opt.Valuation`, `GraphModel` (A1 nodes, A2 types), `MakeSound` (A3), `SimplifySound`,
@@ -570,9 +570,18 @@ Not proven in `bitops.isle` (proof-tooling limits; none is false under the CLIF 
 (`or(and(x, k), z)` mask condition: needs 64-bit and/not immediate specs), 157 and 170 (32/64-bit
 byte-swap patterns: time out at 12–20M heartbeats), 126/127/129 (go through the multi-result
 constructor `truthy` in an if-let: needs a spec for its rules). Build note: changing
-`FV/Opt/Rules.lean` rebuilds every rule module; build them one at a time (`lake build
-FV.Opt.Proof.RuleArith`, …, `RuleSelects6`; `LEAN_NUM_THREADS=2`, 24G cap; `RuleArith` ~17 min,
-the others 1–9 min each), then `RuleAll`/`FV.E2E.OptProven` (parallel builds of the rule modules OOM).
+`FV/Opt/Rules.lean` (or anything under `RuleBase`) rebuilds every rule module; the allow-list lives
+in `FV/Opt/RuleAllow.lean`, which no rule module imports, so extending it rebuilds only
+`Optimize`, `RuleAll` and their dependents. Build the rule modules one at a time (`lake build
+FV.Opt.Proof.RuleArith`, …, `RuleSelects6`; `LEAN_NUM_THREADS=2`, 16G cap; 2026-10-01: `RuleArith`
+14 min / 15.4G, `RuleBitops1..7` 1–11 min / 3–11.7G, `RuleCprop` 3 min / 7.4G, icmp/selects
+modules 0.3–5 min / ≤5.2G), then `RuleAll`/`FV.E2E.OptProven` (parallel builds of the rule modules
+OOM). Check the log for "Build completed successfully": `memcap.sh` under `/usr/bin/time` can
+report rc=0 for an OOM-killed build. `RuleAll` itself: 16 s, 3.6G (`LEAN_NUM_THREADS=1`; kernel
+check of the `allowed_ok%` term, ~0.3 s to build it). Its previous form (`rfl` on the
+`List.filter` of the 1281 `simplify` rules by `provenSimplifyRules.contains`, elaborated by
+`Meta.isDefEq`, then an `AllOk` conjunction) cost 74 s, 11.4G at the same 842 rules (33 s elaborator `rfl`, 40 s kernel); the 32G OOMs
+seen when building `RuleAll` at 872 rules came from the icmp/selects modules it imports.
 Helper specifications (`RuleImm.lean`, simp set `opt_imm`): `imm64_add/sub/mul/and/or/xor/not/neg/
 umin/umax/smin/smax/icmp/masked/clz/ctz/shl/ushr` at every non-`i128` type, in the normal form
 `Rust.imm64X (ofClif t) (imm64OfBits b) … = .ok (imm64OfBits (<BitVec op> b …))` (proof: `imm_pre`
