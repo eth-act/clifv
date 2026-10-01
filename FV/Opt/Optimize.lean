@@ -6,6 +6,7 @@ import FV.Opt.HandRules
 import FV.Compile.Subset
 import FV.Isle.Opt.Simplify
 import FV.Opt.Validate
+import FV.Opt.RuleAllow
 
 /-!
 # `Opt.optimize`: the mid-end pipeline (unproven; `docs/contracts/midend.md`)

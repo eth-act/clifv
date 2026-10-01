@@ -17,9 +17,9 @@ available by proving them and adding them to the allow-list; the theorems don't 
 - Template tactics and the generated constructor lemmas.
 - The exact proven set and the per-family recipe are in `docs/contracts/midend.md`, section "Rule proofs".
 
-**Status (2026-09-30):** 668 `simplify` roots are proven and allow-listed: arithmetic 172 of 258, cprop 52 of 68 and bitops 444 of 450. The skeleton allow-list is empty. `E2E.backend_correct_opt_proven` covers exactly this set. With only these rules enabled, corpus instructions fall from 4668 to 2628 (all rules: 2287), and runtests from 3389 to 3128 (all rules: 3040). Bitops rules rarely fire in these corpora, so this batch changed the corpus count by only 2 instructions.
+**Status (2026-10-01):** 842 `simplify` roots are proven and allow-listed: arithmetic 172 of 258, cprop 52 of 68, bitops 444 of 450, icmp 92 of 124 and selects 82 of 100. The skeleton allow-list is empty. `E2E.backend_correct_opt_proven` covers exactly this set. With only these rules enabled, corpus instructions fall from 4668 to 2606 (all rules: 2287), and runtests from 3389 to 3052 (all rules: 3040). 30 icmp/selects proofs were removed because their modules never built (out of memory or failing proofs; midend.md lists them); `RuleAll` now checks the allow-list in 16 s / 3.6G, so it no longer limits how many rules can be added.
 
-**Remaining:** prove the rest of the E-closure roots, one opts file per family. The remaining counts are arithmetic 86, cprop 16 (shift/rotate folds, if-let right-hand sides, bswap folds; midend.md lists them), and all roots of the families below:
+**Remaining:** prove the rest of the E-closure roots, one opts file per family. The remaining counts are arithmetic 86, cprop 16, bitops 6, icmp 32 and selects 18 (midend.md lists them); shifts, spaceship, extends, remat and skeleton have no proofs yet. Roots per family:
 
 | Family | Roots |
 | --- | --- |
@@ -36,7 +36,7 @@ available by proving them and adding them to the allow-list; the theorems don't 
 
 **How to add a family:** follow the recipe in midend.md "Rule proofs":
 1. Write a per-family file with `RuleOk` proofs over an abstract `p` with `Data p`.
-2. Add the rule ids to `Opt.provenSimplifyRules`, and a case to `RuleAll.simplifyRulesCorrect_proven` (skeleton rules: `skeletonSound_proven`).
+2. Add the rule ids to `Opt.provenSimplifyRules` (`FV/Opt/RuleAllow.lean`) and import the new file in `FV/Opt/Proof/RuleAll.lean` (a skeleton rule needs `ok_rule_X : SkelRuleOk p rule_X`).
 3. Run `scripts/opt-difftest.sh` with `--opt-proven-only` and record how many instructions the proven subset removes.
 
 Families are independent and can run in parallel, one agent per opts file.
