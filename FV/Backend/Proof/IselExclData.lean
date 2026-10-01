@@ -55,7 +55,7 @@ def eNamePairs : List (String × String) :=
    -- `bmask`, the atomics and `fence` (agent/atomics-proof: E instructions)
    ("Unary", "Bmask"), ("LoadNoOffset", "AtomicLoad"), ("StoreNoOffset", "AtomicStore"),
    ("AtomicRmw", "AtomicRmw"), ("AtomicCas", "AtomicCas"), ("NullAry", "Fence"),
-   -- agent/fv-lcheck-tls: `tls_value` (unverified, outside `E2E.InSubset`)
+   -- `tls_value` (agent/stack-tls-proof: an E instruction)
    ("UnaryGlobalValue", "TlsValue")]
 
 theorem unaryOpcode_mem {op : Clif.UnaryOp} {n : String} (h : unaryOpcode op = some n) :
@@ -100,40 +100,21 @@ theorem instNames_mem {f : Clif.Function} {c : Clif.Inst} {d : V} (h : instData 
   case extend op _ _ => cases op <;> simp [instNames, eNamePairs]
   all_goals simp [instNames, eNamePairs]
 
-/-- The opcode names only unverified instructions (`Compile.instE` false) produce. -/
-def unverifiedNames : List String := ["TlsValue"]
-
 set_option maxRecDepth 20000 in
-/-- Every name pair of `eNamePairs` is a format and an opcode of `eOps`, or an `unverifiedNames`
-opcode (the `tls_value` instruction lowers but is outside `E2E.InSubset`, so its opcode stays out
-of `eOps` — the excluded-root refutations need that). -/
+/-- Every name pair of `eNamePairs` is a format and an opcode of `eOps`. -/
 theorem eNamePairs_idx : eNamePairs.all (fun pr =>
     match variantIdx 152 pr.1, variantIdx 151 pr.2 with
-    | some _, some ko => eOps.contains ko || unverifiedNames.contains pr.2
+    | some _, some ko => eOps.contains ko
     | _, _ => false) = true := by
   decide +kernel
 
-/-- An E instruction is not a `tls_value`. -/
-theorem instE_atomic_ne {c : Clif.Inst} (hE : Compile.instE c = true) :
-    (instNames c).2 ∉ unverifiedNames := by
-  cases c
-  all_goals first
-    | (simp [Compile.instE] at hE; done)
-    | (simp only [instNames]; decide)
-    | (simp only [instNames]; rename_i op _ _; cases op <;> decide)
-    | (simp only [instNames]; rename_i op _ _ _; cases op <;> decide)
-    | (simp only [instNames]; rename_i op _ _ _ _; cases op <;> decide)
-    | (simp only [instNames]; rename_i op _ _ _ _ _; cases op <;> decide)
-    | (simp only [instNames]; rename_i op _ _ _ _ _ _; cases op <;> decide)
-
 /-- **The data of an E instruction**: format `kf`, E opcode `ko`, fields `fs`. -/
-theorem instData_shape {f : Clif.Function} {c : Clif.Inst} {d : V} (hE : Compile.instE c = true)
+theorem instData_shape {f : Clif.Function} {c : Clif.Inst} {d : V} (_hE : Compile.instE c = true)
     (h : instData f c = .ok d) :
     ∃ kf ko fs, d = .data 152 kf (.data 151 ko [] :: fs) ∧ ko ∈ eOps := by
   obtain ⟨rest, hd⟩ := instData_names h
   have hm := List.all_eq_true.mp eNamePairs_idx _ (instNames_mem h)
-  have hatom := instE_atomic_ne hE
-  generalize instNames c = pr at hm hd hatom
+  generalize instNames c = pr at hm hd
   obtain ⟨n1, n2⟩ := pr
   unfold instDataV opcodeV mkVariant at hd
   cases h1 : variantIdx 152 n1 with
@@ -142,11 +123,8 @@ theorem instData_shape {f : Clif.Function} {c : Clif.Inst} {d : V} (hE : Compile
     cases h2 : variantIdx 151 n2 with
     | none => simp only [h1, h2] at hm; cases hm
     | some ko =>
-      simp only [h1, h2, Bool.or_eq_true] at hm hd
-      refine ⟨kf, ko, rest, hd, ?_⟩
-      rcases hm with hm | hm
-      · exact List.contains_iff_mem.mp hm
-      · exact absurd (List.contains_iff_mem.mp hm) hatom
+      simp only [h1, h2] at hm hd
+      exact ⟨kf, ko, rest, hd, List.contains_iff_mem.mp hm⟩
 
 set_option maxRecDepth 20000 in
 theorem variantNames_Uextend_ex : (variantNames 151)[VIdx.Opcode.Uextend]? = some "Uextend" := rfl

@@ -933,9 +933,22 @@ theorem noTryCall_of_check {f : Clif.Function} {vc : VCode} (h : lowerCheck f vc
   · split at h
     · cases h
     · simp only [Bool.and_eq_true, Bool.or_eq_true, Bool.not_eq_true'] at h
-      rcases h.1.2 with h2 | h2
+      rcases h.1.2.1 with h2 | h2
       · obtain ⟨B, hB, hB'⟩ := List.any_eq_true.mp h2
         rw [hf B hB] at hB'; cases hB'
+      · exact h2
+
+/-- A function without `tls_value` lowers to VCode without `ElfTlsGetAddr` (`lowerCheck`). -/
+theorem noTls_of_check {f : Clif.Function} {vc : VCode} (h : lowerCheck f vc = true)
+    (hf : hasTls f = false) : vc.hasTls = false := by
+  unfold lowerCheck at h
+  split at h
+  · cases h
+  · split at h
+    · cases h
+    · simp only [Bool.and_eq_true, Bool.or_eq_true, Bool.not_eq_true'] at h
+      rcases h.1.2.2 with h2 | h2
+      · rw [hf] at h2; cases h2
       · exact h2
 
 /-- The calls of `f` fit the VCode's outgoing area (`lowerCheck`'s last conjunct). -/

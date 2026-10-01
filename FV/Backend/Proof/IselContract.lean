@@ -741,7 +741,10 @@ runs once) read the old value into their first def (`atomic_rmw`: its low bits; 
 loops of `i8`/`i16` sign-extend it in place) and write the new one — the operation of
 `atomic_rmw` on the old value and the operand's low bits, the replacement value of
 `atomic_cas` if the old value equals the expected value's low bits — with a world that agrees
-up to the flags (`SameWorldNF`; the scratch defs' values are unspecified). -/
+up to the flags (`SameWorldNF`; the scratch defs' values are unspecified). `tls_value`
+(agent/stack-tls-proof, one thread): the TLSDESC sequence of a linked symbol defines its
+address in the first def (the thread pointer, unspecified here, in the second) with a world
+that agrees up to the flags (the resolver may change them). -/
 def MemRefines (F : BitVec 64 → Prop) (sb : Nat) (syms : String → Option Nat) (isem : Sem) :
     Prop :=
   (∀ (op : LoadOp) (d : Nat) (am : AMode) (fl : Clif.MemFlags) (uses : List CV)
@@ -786,7 +789,10 @@ def MemRefines (F : BitVec 64 → Prop) (sb : Nat) (syms : String → Option Nat
       SameWorldNF F w'
         (if Arm.read_mem_bytes ty.bytes (lo64 u) w = (lo64 e).setWidth (ty.bytes * 8) then
           Arm.write_mem_bytes ty.bytes (lo64 u) ((lo64 x).setWidth (ty.bytes * 8)) w
-        else w))
+        else w)) ∧
+  (∀ (d t : Nat) (n : String) (b : Nat) (w : Arm.ArmState), syms n = some b → ∃ w' o,
+    isem (.elfTlsGetAddr n (.vreg d .int) (.vreg t .int)) [] w =
+      some ([ofX (BitVec.ofNat 64 b), o], w', .next) ∧ SameWorldNF F w' w)
 
 /-- **What the memory rules need of the memory relation** of function `f` (M7's `Rel.holds`
 satisfies it): initialised bytes of live allocations are the Arm bytes, live allocations are
@@ -810,11 +816,13 @@ the stores (1064–1067 `store`, 1068–1070 `istore*`), `stack_addr` (1093), an
 `uextend`/`sextend` of a load (815, 824: never match, the backend does not sink loads); the
 atomics (agent/atomics-proof): `atomic_load` (983), `atomic_store` (984), `atomic_rmw`
 (994–1004, one per operation), `atomic_cas` (1007), and `uextend` of an `atomic_load` (810:
-never matches). -/
+never matches); `tls_value` (agent/stack-tls-proof): the `elf_gd` rule (1129) and the `macho`
+rule (1130: never matches, `tls_model` is `elf_gd`). -/
 def memRootRule (r : Rule) : Bool :=
   r.id == 1027 || r.id == 1026 || r.id == 1093 || r.id == 815 || r.id == 824 ||
     (1041 ≤ r.id && r.id ≤ 1044) || (1052 ≤ r.id && r.id ≤ 1057) || (1064 ≤ r.id && r.id ≤ 1070) ||
-    r.id == 810 || r.id == 983 || r.id == 984 || (994 ≤ r.id && r.id ≤ 1004) || r.id == 1007
+    r.id == 810 || r.id == 983 || r.id == 984 || (994 ≤ r.id && r.id ≤ 1004) || r.id == 1007 ||
+    r.id == 1129 || r.id == 1130
 
 /-- `LowerRuleOk` for a memory rule: additionally assumes `MemRelOk F sb syms f MR`. -/
 def MemRuleOk (F : BitVec 64 → Prop) (sb : Nat) (syms : String → Option Nat) (isem : Sem)

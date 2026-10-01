@@ -44,9 +44,11 @@ pub const E_OPCODES: &[&str] = &[
 /// Opcodes of the backend closure only (not of the mid-end closure, `opt_closure`, whose
 /// subset stays `E_OPCODES`): `bmask`, the atomics and `fence` (agent/atomics-proof: inside
 /// `E2E.backend_correct_final`; Cranelift's non-LSE rules, `load_acquire`/`store_release` =
-/// ldar/stlr and the `atomic_rmw_loop`/`atomic_cas_loop` LL/SC pseudo-instructions).
+/// ldar/stlr and the `atomic_rmw_loop`/`atomic_cas_loop` LL/SC pseudo-instructions), and
+/// `tls_value` (agent/stack-tls-proof: the `elf_gd` TLSDESC sequence; the `macho` rule is a
+/// root too and is proven never to match, `tls_model` is `elf_gd`).
 pub const BACKEND_EXTRA_OPCODES: &[&str] =
-    &["bmask", "atomic_load", "atomic_store", "atomic_rmw", "atomic_cas", "fence"];
+    &["bmask", "atomic_load", "atomic_store", "atomic_rmw", "atomic_cas", "fence", "tls_value"];
 
 /// Extern extractors on ISA flags the backend disables (`isa_flags`: no LSE), which fail on
 /// every instruction (the Lean checker's `flagOff`).

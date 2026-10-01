@@ -160,14 +160,8 @@ def callees (f : Clif.Function) : List String :=
 def hasTryCall (f : Clif.Function) : Bool :=
   f.blocks.any (·.term.isTry)
 
-/-- `tls_value` in `f` (Cranelift's `elf_gd` TLSDESC sequence; outside clif-subset-v2 E). -/
-def hasTls (f : Clif.Function) : Bool :=
-  f.blocks.any fun b => b.body.any fun st => match st.inst with
-    | .tlsValue .. => true
-    | _ => false
-
 /-- Why a compiled function of `pf` is outside `E2E.backend_correct` (`E2E.InSubset`), if it is:
-`tls_value`, outside clif-subset-v2 E, stack-passed arguments of a `try_call` or an indirect
+outside clif-subset-v2 E, stack-passed arguments of a `try_call` or an indirect
 call (more than 8 parameters), special-purpose parameters, or a call (also a `try_call`) of a
 function of the file. Stack-passed parameters and stack-passed arguments of a `call` are inside
 the theorem (agent/stack-tls-proof). A `try_call`/`try_call_indirect` of an
@@ -175,10 +169,11 @@ extern is inside the theorem for its normal return (`hasTryCall`: the landing pa
 are trusted); `call_indirect`, `try_call_indirect` and `func_addr` are inside it (an indirect
 call of a function of the file is excluded by the theorem's run premise
 `TrapsExplicit.indirect`); so are `bmask`, the atomics and `fence` (single-threaded semantics;
-the Arm model's exclusive store always succeeds, `docs/decisions/arm-model.md`). -/
+the Arm model's exclusive store always succeeds, `docs/decisions/arm-model.md`), and
+`tls_value` (one thread; the TLSDESC resolver under the trusted hook contract `TlsOk`,
+agent/stack-tls-proof). -/
 def unverifiedReason? (pf : Clif.ParsedFile) (f : Clif.Function) : Option String :=
-  if hasTls f then some "tls_value (outside backend_correct)"
-  else if !Compile.functionE f then some "outside clif-subset-v2 E"
+  if !Compile.functionE f then some "outside clif-subset-v2 E"
   else if !regArgCalls f then
     some "stack-passed arguments of a try_call (an extern with more than 8 parameters)"
   else if !abiSigs f then some "special-purpose parameter other than one sret pointer (outside backend_correct)"

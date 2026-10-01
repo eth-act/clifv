@@ -1,4 +1,5 @@
 import FV.Backend.Proof.IselMemFuncAddr
+import FV.Backend.Proof.IselTls
 import FV.Backend.Proof.IselCmpCond
 import FV.Backend.Proof.IselFamAluBShiftTerms
 import FV.Backend.Proof.IselCtlUnmatch
@@ -695,7 +696,7 @@ theorem atomicCas_lower_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem
   dsimp only
   obtain ⟨ha, hA64, havoid⟩ := atom_addr hMRo hdfg hv hp64 hpv hmr hvalid
   rw [← ofClif_bytes hety] at havoid
-  obtain ⟨w2, o1, hs, hsw⟩ := hM.2.2.2.2.2.2.2 (CTy.ofClif ty) fl p e x st.nextVreg
+  obtain ⟨w2, o1, hs, hsw⟩ := hM.2.2.2.2.2.2.2.1 (CTy.ofClif ty) fl p e x st.nextVreg
     (st.nextVreg + 1) (ρ p) (ρ e) (ρ x) w (atomTy_ofClif hety) havoid
   have hr := seqRun_isem_one (operands_casLoop _ _ _ _ _ _ _) (ρ := ρ) hs rfl
   have hev' := getAs_ok hev
@@ -1502,7 +1503,7 @@ end LoopRoots
 
 /-- The memory root rules of `lower`, in order. -/
 theorem lower_memRoot_filter : (program.rulesOf TId.lower).filter memRootRule =
-    [rule_lower_1272, rule_lower_1300, rule_lower_1359, rule_lower_2316, rule_lower_2321, rule_lower_2357, rule_lower_2359, rule_lower_2361, rule_lower_2363, rule_lower_2365, rule_lower_2367, rule_lower_2369, rule_lower_2371, rule_lower_2373, rule_lower_2375, rule_lower_2377, rule_lower_2390, rule_lower_2486, rule_lower_2491, rule_lower_2604, rule_lower_2607, rule_lower_2610, rule_lower_2613, rule_lower_2647, rule_lower_2650, rule_lower_2653, rule_lower_2656, rule_lower_2659, rule_lower_2662, rule_lower_2705, rule_lower_2709, rule_lower_2713, rule_lower_2717, rule_lower_2722, rule_lower_2726, rule_lower_2730, rule_lower_2849] := by
+    [rule_lower_1272, rule_lower_1300, rule_lower_1359, rule_lower_2316, rule_lower_2321, rule_lower_2357, rule_lower_2359, rule_lower_2361, rule_lower_2363, rule_lower_2365, rule_lower_2367, rule_lower_2369, rule_lower_2371, rule_lower_2373, rule_lower_2375, rule_lower_2377, rule_lower_2390, rule_lower_2486, rule_lower_2491, rule_lower_2604, rule_lower_2607, rule_lower_2610, rule_lower_2613, rule_lower_2647, rule_lower_2650, rule_lower_2653, rule_lower_2656, rule_lower_2659, rule_lower_2662, rule_lower_2705, rule_lower_2709, rule_lower_2713, rule_lower_2717, rule_lower_2722, rule_lower_2726, rule_lower_2730, rule_lower_2849, rule_lower_3217, rule_lower_3220] := by
   rw [program_rulesOf_686]
   rfl
 
@@ -1513,7 +1514,7 @@ theorem memRulesCorrect_program : MemRulesCorrect program := by
   have hsub : r ∈ (program.rulesOf TId.lower).filter memRootRule := List.mem_filter.2 ⟨hr, hmem⟩
   rw [lower_memRoot_filter] at hsub
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hsub
-  rcases hsub with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  rcases hsub with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact uextend_atomic_load_ok data_program
   · exact uextend_load_ok data_program
   · exact sextend_load_ok data_program
@@ -1551,5 +1552,7 @@ theorem memRulesCorrect_program : MemRulesCorrect program := by
   · exact istore16_ok data_program hR hMR hM
   · exact istore32_ok data_program hR hMR hM
   · exact stack_addr_ok data_program hMR hM
+  · exact tls_value_ok data_program hMR hM
+  · exact tls_value_macho_ok data_program
 
 end Backend.Proof

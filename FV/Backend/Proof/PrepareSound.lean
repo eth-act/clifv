@@ -308,7 +308,16 @@ theorem noTryCall_of_prepCheck {vc vcp : VCode} (h : prepCheck vc vcp = true)
   unfold prepCheck at h
   split at h
   · simp only [Bool.and_eq_true] at h
-    simpa [hvc] using h.2.1
+    simpa [hvc] using h.2.1.1
+  · cases h
+
+/-- `prepare` introduces no `ElfTlsGetAddr` (`prepCheck`'s last conjunct). -/
+theorem noTls_of_prepCheck {vc vcp : VCode} (h : prepCheck vc vcp = true)
+    (hvc : vc.hasTls = false) : vcp.hasTls = false := by
+  unfold prepCheck at h
+  split at h
+  · simp only [Bool.and_eq_true] at h
+    simpa [hvc] using h.2.1.2
   · cases h
 
 /-- `prepare` keeps the outgoing argument area (`prepCheck`'s last conjunct). -/

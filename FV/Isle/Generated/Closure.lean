@@ -9,7 +9,7 @@ open Isle
 (`clif-subset-v2`) at `i8`..`i64`; see `docs/contracts/isle.md` ("Closure") for the
 selection method and what `lhsReasons` / `defaultExcludedBy` mean. -/
 
-def opcodes : List String := ["atomic_cas", "atomic_load", "atomic_rmw", "atomic_store", "band", "bitrev", "bmask", "bnot", "bor", "br_table", "brif", "bswap", "bxor", "call", "call_indirect", "clz", "ctz", "fence", "func_addr", "iadd", "icmp", "iconst", "imul", "ineg", "ireduce", "ishl", "istore16", "istore32", "istore8", "isub", "jump", "load", "nop", "popcnt", "return", "rotl", "rotr", "sdiv", "select", "sextend", "sload16", "sload32", "sload8", "smax", "smin", "smulhi", "srem", "sshr", "stack_addr", "store", "symbol_value", "trap", "udiv", "uextend", "uload16", "uload32", "uload8", "umax", "umin", "umulhi", "urem", "ushr"]
+def opcodes : List String := ["atomic_cas", "atomic_load", "atomic_rmw", "atomic_store", "band", "bitrev", "bmask", "bnot", "bor", "br_table", "brif", "bswap", "bxor", "call", "call_indirect", "clz", "ctz", "fence", "func_addr", "iadd", "icmp", "iconst", "imul", "ineg", "ireduce", "ishl", "istore16", "istore32", "istore8", "isub", "jump", "load", "nop", "popcnt", "return", "rotl", "rotr", "sdiv", "select", "sextend", "sload16", "sload32", "sload8", "smax", "smin", "smulhi", "srem", "sshr", "stack_addr", "store", "symbol_value", "tls_value", "trap", "udiv", "uextend", "uload16", "uload32", "uload8", "umax", "umin", "umulhi", "urem", "ushr"]
 
 def roots : List String := ["lower", "lower_branch"]
 
@@ -235,6 +235,8 @@ def rules : Array ClosureRule := #[
   ⟨458, "rule_inst_4780", 638, false, [], [], []⟩,
   ⟨459, "rule_inst_4786", 639, false, [], [], []⟩,
   ⟨463, "rule_inst_4810", 643, false, [], [], []⟩,
+  ⟨485, "rule_inst_4918", 647, false, [], [], []⟩,
+  ⟨486, "rule_inst_4926", 648, false, [], [], []⟩,
   ⟨487, "rule_inst_4954", 649, false, [], [], []⟩,
   ⟨488, "rule_inst_4955", 649, false, [], [], []⟩,
   ⟨489, "rule_inst_4956", 649, false, [], [], []⟩,
@@ -483,6 +485,8 @@ def rules : Array ClosureRule := #[
   ⟨1069, "rule_lower_2726", 686, true, [], [], []⟩,
   ⟨1070, "rule_lower_2730", 686, true, [], [], []⟩,
   ⟨1093, "rule_lower_2849", 686, true, [], [], []⟩,
+  ⟨1129, "rule_lower_3217", 686, true, ["TODO"], [], []⟩,
+  ⟨1130, "rule_lower_3220", 686, true, ["TODO"], [], []⟩,
   ⟨1132, "rule_lower_3231", 687, true, ["TODO", "wasm_category_stack"], ["wasm_category_stack"], []⟩,
   ⟨1133, "rule_lower_3236", 722, false, [], [], []⟩,
   ⟨1134, "rule_lower_3238", 722, false, [], [], []⟩,
@@ -842,8 +846,6 @@ def excludedRootRules : Array (String × List String) := #[
   ("rule_lower_3174", ["Opcode.SmulOverflow"]),
   ("rule_lower_3190", ["Opcode.SmulOverflow"]),
   ("rule_lower_3204", ["Opcode.SmulOverflow"]),
-  ("rule_lower_3217", ["Opcode.TlsValue"]),
-  ("rule_lower_3220", ["Opcode.TlsValue"]),
   ("rule_lower_3225", ["Opcode.FvpromoteLow"]),
   ("rule_lower_3286", ["Opcode.GetExceptionHandlerAddress"]),
   ("rule_lower_3292", ["Opcode.SequencePoint"]),
@@ -941,6 +943,7 @@ def terms : Array ClosureTerm := #[
   ⟨254, "with_flags", .decl, none, none, true, false, ["TODO"]⟩,
   ⟨255, "with_flags_reg", .decl, none, none, false, true, []⟩,
   ⟨256, "with_flags_side_effect", .decl, none, none, false, true, []⟩,
+  ⟨258, "tls_model", .decl, none, (some "tls_model"), false, false, ["TODO"]⟩,
   ⟨264, "box_external_name", .decl, (some "box_external_name"), none, false, false, []⟩,
   ⟨265, "func_ref_data", .decl, none, (some "func_ref_data"), false, false, []⟩,
   ⟨267, "symbol_value_data", .decl, none, (some "symbol_value_data"), false, false, []⟩,
@@ -1106,6 +1109,8 @@ def terms : Array ClosureTerm := #[
   ⟨638, "call_impl", .decl, none, none, false, true, []⟩,
   ⟨639, "call_ind_impl", .decl, none, none, false, true, []⟩,
   ⟨643, "compute_stack_addr", .decl, none, none, false, false, []⟩,
+  ⟨647, "elf_tls_get_addr", .decl, none, none, false, true, []⟩,
+  ⟨648, "macho_tls_get_addr", .decl, none, none, false, true, []⟩,
   ⟨649, "cond_result_invert", .decl, none, none, false, true, []⟩,
   ⟨650, "is_nonzero_cmp", .decl, none, none, false, true, []⟩,
   ⟨651, "is_nonzero", .decl, none, none, false, true, []⟩,
@@ -1184,6 +1189,8 @@ def terms : Array ClosureTerm := #[
   ⟨1803, "ConsumesFlags.ConsumesFlagsTwiceReturnsValueRegs", .enumVariant, none, none, false, false, []⟩,
   ⟨1804, "ConsumesFlags.ConsumesFlagsFourTimesReturnsValueRegs", .enumVariant, none, none, false, false, []⟩,
   ⟨1805, "ConsumesFlags.ConsumesFlagsNop", .enumVariant, none, none, true, false, []⟩,
+  ⟨1807, "TlsModel.ElfGd", .enumVariant, none, none, false, false, []⟩,
+  ⟨1808, "TlsModel.Macho", .enumVariant, none, none, false, false, []⟩,
   ⟨1816, "ArgumentExtension.Uext", .enumVariant, none, none, false, false, []⟩,
   ⟨1817, "ArgumentExtension.Sext", .enumVariant, none, none, false, false, []⟩,
   ⟨1820, "MInst.AluRRR", .enumVariant, none, none, true, false, ["isaspec_generated"]⟩,
@@ -1240,6 +1247,8 @@ def terms : Array ClosureTerm := #[
   ⟨1948, "MInst.LoadExtNameNear", .enumVariant, none, none, false, false, []⟩,
   ⟨1949, "MInst.LoadExtNameFar", .enumVariant, none, none, false, false, []⟩,
   ⟨1954, "MInst.EmitIsland", .enumVariant, none, none, false, false, []⟩,
+  ⟨1955, "MInst.ElfTlsGetAddr", .enumVariant, none, none, false, false, []⟩,
+  ⟨1956, "MInst.MachOTlsGetAddr", .enumVariant, none, none, false, false, []⟩,
   ⟨1962, "ALUOp.Add", .enumVariant, none, none, false, false, []⟩,
   ⟨1963, "ALUOp.Sub", .enumVariant, none, none, false, false, []⟩,
   ⟨1964, "ALUOp.Orr", .enumVariant, none, none, false, false, []⟩,
@@ -1402,6 +1411,7 @@ def terms : Array ClosureTerm := #[
   ⟨2323, "Opcode.Istore32", .enumVariant, none, none, false, false, []⟩,
   ⟨2331, "Opcode.StackAddr", .enumVariant, none, none, false, false, []⟩,
   ⟨2333, "Opcode.SymbolValue", .enumVariant, none, none, false, false, []⟩,
+  ⟨2334, "Opcode.TlsValue", .enumVariant, none, none, false, false, []⟩,
   ⟨2341, "Opcode.Iconst", .enumVariant, none, none, false, false, []⟩,
   ⟨2348, "Opcode.Nop", .enumVariant, none, none, false, false, []⟩,
   ⟨2349, "Opcode.Select", .enumVariant, none, none, false, false, []⟩,
@@ -1469,9 +1479,9 @@ def terms : Array ClosureTerm := #[
 
 /-- Summary counts (also in `docs/contracts/isle.md`). -/
 def summary : List (String × Nat) := [
-  ("rules", 473), ("rootRules", 148), ("excludedRootRules", 377),
+  ("rules", 477), ("rootRules", 150), ("excludedRootRules", 375),
   ("rulesExcludedByDefaultTags", 48), ("rulesWithLhsReasons", 38),
-  ("terms", 590), ("externTerms", 131), ("externConstructors", 97),
-  ("externExtractors", 38), ("externTermsWithSpec", 87)]
+  ("terms", 598), ("externTerms", 132), ("externConstructors", 97),
+  ("externExtractors", 39), ("externTermsWithSpec", 87)]
 
 end Isle.Aarch64.Closure

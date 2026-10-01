@@ -377,10 +377,15 @@ def AccessOk (F : BitVec 64 → Prop) (ctx : FnCtx) (i : MInst) (s : Arm.ArmStat
 
 /-- What the function's code relies on outside itself: callees (`call d args w`: the results
 and the world after the call; `d = some name` for `bl name`, `none` for `blr`, whose target
-address is the first argument) and link-time symbol addresses (`sym name addend`). -/
+address is the first argument), link-time symbol addresses (`sym name addend`), and for
+`tls_value` (agent/stack-tls-proof; one thread, whose instance of a thread-local variable is
+its link-time symbol) the thread pointer `tp` (`TPIDR_EL0`) and the condition flags the TLSDESC
+call of symbol `n` leaves from world `w` (`tlsFlags n w`: the resolver may change them). -/
 structure ExtSem where
   call : Option String → List CV → Arm.ArmState → Option (List CV × Arm.ArmState)
   sym : String → Int → BitVec 64
+  tp : BitVec 64
+  tlsFlags : String → Arm.ArmState → Arm.PState
 
 /-! ## Covered forms -/
 
@@ -394,7 +399,7 @@ LL/SC loops); every other form is `straightSem`. -/
 def _root_.Backend.MInst.isCtl : MInst → Bool
   | .call .. | .args .. | .rets .. | .loadExtNameGot .. | .loadExtNameNear .. | .jump ..
   | .condBr .. | .testBitAndBranch .. | .trapIf .. | .udf .. | .emitIsland .. | .jtSequence ..
-  | .tryCall .. | .atomicRmwLoop .. | .atomicCasLoop .. => true
+  | .tryCall .. | .atomicRmwLoop .. | .atomicCasLoop .. | .elfTlsGetAddr .. => true
   | _ => false
 
 /-- `aluRRImmLogic` ops the emitter expands. -/
@@ -590,6 +595,10 @@ noncomputable def csem (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) : ISe
   | .rets _ => some ([], w, .ret)
   | .loadExtNameGot _ n => some ([ofX (X.sym n 0)], w, .next)
   | .loadExtNameNear _ n off => some ([ofX (X.sym n off)], w, .next)
+  -- `tls_value` (one thread): the variable's address (its link-time symbol) in the first def,
+  -- the thread pointer (`mrs tmp, tpidr_el0`) in the second, the flags as the TLSDESC call
+  -- leaves them
+  | .elfTlsGetAddr n _ _ => some ([ofX (X.sym n 0), ofX X.tp], Arm.write_pstate (X.tlsFlags n w) w, .next)
   | .jump _ => some ([], w, .goto 0)
   | .condBr _ _ k => some ([], w, .goto (if k.holds uses w then 0 else 1))
   | .testBitAndBranch k _ _ _ bit =>

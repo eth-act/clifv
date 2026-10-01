@@ -155,12 +155,14 @@ theorem op_checked {R : RL} {vb : VBlock} {k : Nat} {allocs : Array Loc} {its : 
 
 
 /-- The machine runs the lines `ls1` of the allocated instruction `i'`, placed at line `j`, to
-the state `exec (R.envOf j) i'` gives, ending at the line after them. -/
+the state `exec (R.envOf j) i'` gives, ending at the line after them (in some number of steps:
+one per line, or fewer where the machine runs several lines as one hooked step, as for the
+TLSDESC sequence of `tls_value`). -/
 def RunsAs (R : RL) (exec : Env → MInst → Arm.ArmState → Option Arm.ArmState) (i' : MInst)
     (ls1 : List Line) : Prop :=
   ∀ j T s s', R.L.drop j = ls1 ++ T → s.program = R.fb.program R.base → Arm.r .PC s = R.pcOf j →
     Arm.r .ERR s = .None → exec (R.envOf j) i' s = some s' →
-    iterN R.step ls1.length s = s' ∧ Arm.r .PC s' = R.pcOf (j + ls1.length)
+    ∃ n, iterN R.step n s = s' ∧ Arm.r .PC s' = R.pcOf (j + ls1.length)
 
 /-- **An instruction item that falls through, on the machine** (`MStep.op` with control
 `next`), for any execution function `exec` of allocated instructions the machine realises
@@ -213,7 +215,6 @@ theorem realizes_op_core {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
   rw [h1'] at h1
   simp only [Except.ok.injEq, Prod.mk.injEq] at h1
   obtain ⟨rfl, rfl⟩ := h1
-  refine ⟨ls1.length, _, MStep.op hvb hi hops hsz hsem hlen (HavocOuts.refl _ _) hc2' (MNext.next hk), ?_⟩
   -- the lines at `j`
   have hZ : ∀ n, (ls2 ++ nxtOf R.af b)[1]? ≠ some (.label (.trap n)) := by
     intro n e
@@ -224,7 +225,8 @@ theorem realizes_op_core {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
       split at hm <;> simp at hm
   have hdrop' : R.L.drop j = ls1 ++ (ftList (ls2 ++ nxtOf R.af b) ++ T) := by
     rw [hdrop, List.append_assoc, ftList_plain_append _ _ hpl hZ, List.append_assoc]
-  obtain ⟨hiter, hpc'⟩ := hruns j _ s s' hdrop' hst.prog hpc hst.err hex
+  obtain ⟨nst, hiter, hpc'⟩ := hruns j _ s s' hdrop' hst.prog hpc hst.err hex
+  refine ⟨nst, _, MStep.op hvb hi hops hsz hsem hlen (HavocOuts.refl _ _) hc2' (MNext.next hk), ?_⟩
   have hfr := R.frameOk hR
   refine ⟨j + ls1.length, vb, items, pre ++ [.op k (regs.map Loc.reg)], c2, ls2, ps1, ps2, T, hvb,
     hit, by rw [hsplit]; simp, hchk', hc2, h2, htr, ?_, ?_, ?_⟩
@@ -265,7 +267,7 @@ theorem runsAs_of_linesOk {R : RL} (hR : R.Wf) {i' : MInst} {ls1 : List Line}
     obtain ⟨i, t, e, -⟩ := hins ln h; exact ⟨i, t, e⟩
   have hrun : execLines (R.envOf j) ls1 s = some s' := by
     simp only [execMInst, hl1] at hex; exact hex
-  refine ⟨iterN_execLines hR.layout hR.lm hR.fit ls1 j s s' hat
+  refine ⟨ls1.length, iterN_execLines hR.layout hR.lm hR.fit ls1 j s s' hat
       (fun i t h => by obtain ⟨i', t', e, hh⟩ := hins _ h; cases e; exact hh)
       hprog (by rw [hpc]; rfl) herr (hint _ _ _ herr hrun) hrun, ?_⟩
   rw [execLines_pc hrun, hpc]

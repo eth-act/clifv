@@ -72,7 +72,9 @@ def eOps : List Nat :=
    VIdx.Opcode.Call, VIdx.Opcode.CallIndirect, VIdx.Opcode.FuncAddr,
    -- agent/atomics-proof
    VIdx.Opcode.Bmask, VIdx.Opcode.AtomicLoad, VIdx.Opcode.AtomicStore, VIdx.Opcode.AtomicRmw,
-   VIdx.Opcode.AtomicCas, VIdx.Opcode.Fence]
+   VIdx.Opcode.AtomicCas, VIdx.Opcode.Fence,
+   -- agent/stack-tls-proof
+   VIdx.Opcode.TlsValue]
 
 /-- The fields of the `InstructionData` of an E instruction with opcode `ko`, where the checker
 needs them (`instData`): `uextend`/`sextend` have one value, `store` a value pair, flags and
@@ -192,7 +194,8 @@ def closureRootIds : List Nat :=
    904, 906, 907, 908, 909, 910, 911, 915, 916, 918, 919, 920, 922, 924, 925, 927, 932, 933, 934,
    936, 937, 938, 939, 940, 946, 958, 964, 971, 983, 984, 994, 995, 996, 997, 998, 999, 1000, 1001,
    1002, 1003, 1004, 1007, 1024, 1026, 1027, 1031, 1032, 1033, 1037, 1041, 1042, 1043, 1044,
-   1052, 1053, 1054, 1055, 1056, 1057, 1064, 1065, 1066, 1067, 1068, 1069, 1070, 1093, 1132, 1137,
+   1052, 1053, 1054, 1055, 1056, 1057, 1064, 1065, 1066, 1067, 1068, 1069, 1070, 1093, 1129, 1130,
+   1132, 1137,
    1138, 1139, 1140]
 
 /-- A root rule of `lower` is in the closure or cannot match an instruction. -/

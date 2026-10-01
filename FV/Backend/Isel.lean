@@ -366,6 +366,12 @@ def sigAbiOk (s : Clif.Signature) : Bool :=
     (s.params.filter (·.purpose == .sret)).length ≤ 1 &&
     (!s.params.any (·.purpose == .sret) || s.returns.isEmpty)
 
+/-- Does `f` have a `tls_value` (Cranelift's `elf_gd` TLSDESC sequence)? -/
+def hasTls (f : Clif.Function) : Bool :=
+  f.blocks.any fun b => b.body.any fun st => match st.inst with
+    | .tlsValue .. => true
+    | _ => false
+
 /-- The call-site signatures of `f`'s indirect calls (`call_indirect sigN`, and the exception
 table's signature of a `try_call_indirect`), from `f`'s signature declarations. -/
 def indSigs (f : Clif.Function) : List Clif.Signature :=
@@ -1006,6 +1012,10 @@ structure VCode where
 /-- Does the VCode contain a `tryCall` (the call of a `try_call`)? -/
 def VCode.hasTryCall (vc : VCode) : Bool :=
   vc.blocks.any fun vb => vb.insts.any fun i => i matches .tryCall ..
+
+/-- Does the VCode contain an `ElfTlsGetAddr` (the TLSDESC sequence of a `tls_value`)? -/
+def VCode.hasTls (vc : VCode) : Bool :=
+  vc.blocks.any fun vb => vb.insts.any fun i => i matches .elfTlsGetAddr ..
 
 /-- Stack-slot layout (`Callee::new`): slots in id order, each aligned to
 `max(8, align)`. -/

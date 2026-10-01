@@ -6,9 +6,9 @@ import FV.Backend.Proof.IselAttr
 
 Regenerate: `lake env lean --run FVTest/Backend/Proof/Probe/GenData.lean closure > FV/Backend/Proof/IselData.lean`.
 
-Roots: 148 root rules (closure); 590 terms reachable from them (patterns, if-lets,
+Roots: 150 root rules (closure); 598 terms reachable from them (patterns, if-lets,
 right-hand sides, and the rules of every internal constructor they call, transitively), of
-which the internal constructors have 850 rules. `lower`/`lower_branch` are included with
+which the internal constructors have 852 rules. `lower`/`lower_branch` are included with
 their full rule lists.
 
 `Data p` bundles `Interp.termOf p t = pure T.x` and `p.rulesOf t = [...]` for these terms.
@@ -153,6 +153,8 @@ open Isle Isle.Aarch64
 @[isel_data] theorem term_255_name : T.«with_flags_reg».name = "with_flags_reg" := rfl
 @[isel_data] theorem term_256_kind : T.«with_flags_side_effect».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
 @[isel_data] theorem term_256_name : T.«with_flags_side_effect».name = "with_flags_side_effect" := rfl
+@[isel_data] theorem term_258_kind : T.«tls_model».kind = (.decl ⟨false, false, false, false⟩ none (some (.external "tls_model" true))) := rfl
+@[isel_data] theorem term_258_name : T.«tls_model».name = "tls_model" := rfl
 @[isel_data] theorem term_264_kind : T.«box_external_name».kind = (.decl ⟨false, false, false, false⟩ (some (.external "box_external_name")) none) := rfl
 @[isel_data] theorem term_264_name : T.«box_external_name».name = "box_external_name" := rfl
 @[isel_data] theorem term_265_kind : T.«func_ref_data».kind = (.decl ⟨false, false, false, false⟩ none (some (.external "func_ref_data" true))) := rfl
@@ -483,6 +485,10 @@ open Isle Isle.Aarch64
 @[isel_data] theorem term_639_name : T.«call_ind_impl».name = "call_ind_impl" := rfl
 @[isel_data] theorem term_643_kind : T.«compute_stack_addr».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
 @[isel_data] theorem term_643_name : T.«compute_stack_addr».name = "compute_stack_addr" := rfl
+@[isel_data] theorem term_647_kind : T.«elf_tls_get_addr».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
+@[isel_data] theorem term_647_name : T.«elf_tls_get_addr».name = "elf_tls_get_addr" := rfl
+@[isel_data] theorem term_648_kind : T.«macho_tls_get_addr».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
+@[isel_data] theorem term_648_name : T.«macho_tls_get_addr».name = "macho_tls_get_addr" := rfl
 @[isel_data] theorem term_649_kind : T.«cond_result_invert».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
 @[isel_data] theorem term_649_name : T.«cond_result_invert».name = "cond_result_invert" := rfl
 @[isel_data] theorem term_650_kind : T.«is_nonzero_cmp».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
@@ -639,6 +645,10 @@ open Isle Isle.Aarch64
 @[isel_data] theorem term_1804_name : T.«ConsumesFlags.ConsumesFlagsFourTimesReturnsValueRegs».name = "ConsumesFlags.ConsumesFlagsFourTimesReturnsValueRegs" := rfl
 @[isel_data] theorem term_1805_kind : T.«ConsumesFlags.ConsumesFlagsNop».kind = (.enumVariant 6) := rfl
 @[isel_data] theorem term_1805_name : T.«ConsumesFlags.ConsumesFlagsNop».name = "ConsumesFlags.ConsumesFlagsNop" := rfl
+@[isel_data] theorem term_1807_kind : T.«TlsModel.ElfGd».kind = (.enumVariant 1) := rfl
+@[isel_data] theorem term_1807_name : T.«TlsModel.ElfGd».name = "TlsModel.ElfGd" := rfl
+@[isel_data] theorem term_1808_kind : T.«TlsModel.Macho».kind = (.enumVariant 2) := rfl
+@[isel_data] theorem term_1808_name : T.«TlsModel.Macho».name = "TlsModel.Macho" := rfl
 @[isel_data] theorem term_1816_kind : T.«ArgumentExtension.Uext».kind = (.enumVariant 1) := rfl
 @[isel_data] theorem term_1816_name : T.«ArgumentExtension.Uext».name = "ArgumentExtension.Uext" := rfl
 @[isel_data] theorem term_1817_kind : T.«ArgumentExtension.Sext».kind = (.enumVariant 2) := rfl
@@ -751,6 +761,10 @@ open Isle Isle.Aarch64
 @[isel_data] theorem term_1949_name : T.«MInst.LoadExtNameFar».name = "MInst.LoadExtNameFar" := rfl
 @[isel_data] theorem term_1954_kind : T.«MInst.EmitIsland».kind = (.enumVariant 136) := rfl
 @[isel_data] theorem term_1954_name : T.«MInst.EmitIsland».name = "MInst.EmitIsland" := rfl
+@[isel_data] theorem term_1955_kind : T.«MInst.ElfTlsGetAddr».kind = (.enumVariant 137) := rfl
+@[isel_data] theorem term_1955_name : T.«MInst.ElfTlsGetAddr».name = "MInst.ElfTlsGetAddr" := rfl
+@[isel_data] theorem term_1956_kind : T.«MInst.MachOTlsGetAddr».kind = (.enumVariant 138) := rfl
+@[isel_data] theorem term_1956_name : T.«MInst.MachOTlsGetAddr».name = "MInst.MachOTlsGetAddr" := rfl
 @[isel_data] theorem term_1962_kind : T.«ALUOp.Add».kind = (.enumVariant 0) := rfl
 @[isel_data] theorem term_1962_name : T.«ALUOp.Add».name = "ALUOp.Add" := rfl
 @[isel_data] theorem term_1963_kind : T.«ALUOp.Sub».kind = (.enumVariant 1) := rfl
@@ -1075,6 +1089,8 @@ open Isle Isle.Aarch64
 @[isel_data] theorem term_2331_name : T.«Opcode.StackAddr».name = "Opcode.StackAddr" := rfl
 @[isel_data] theorem term_2333_kind : T.«Opcode.SymbolValue».kind = (.enumVariant 49) := rfl
 @[isel_data] theorem term_2333_name : T.«Opcode.SymbolValue».name = "Opcode.SymbolValue" := rfl
+@[isel_data] theorem term_2334_kind : T.«Opcode.TlsValue».kind = (.enumVariant 50) := rfl
+@[isel_data] theorem term_2334_name : T.«Opcode.TlsValue».name = "Opcode.TlsValue" := rfl
 @[isel_data] theorem term_2341_kind : T.«Opcode.Iconst».kind = (.enumVariant 57) := rfl
 @[isel_data] theorem term_2341_name : T.«Opcode.Iconst».name = "Opcode.Iconst" := rfl
 @[isel_data] theorem term_2348_kind : T.«Opcode.Nop».kind = (.enumVariant 64) := rfl
@@ -1293,6 +1309,7 @@ structure Data (p : Program) : Prop where
   t256 : Interp.termOf p 256 = pure T.«with_flags_side_effect»
   r256 : p.rulesOf 256 =
     [rule_prelude_lower_1000, rule_prelude_lower_1006, rule_prelude_lower_1016, rule_prelude_lower_1023, rule_prelude_lower_1030, rule_prelude_lower_1035, rule_prelude_lower_1040, rule_prelude_lower_1045, rule_prelude_lower_1050]
+  t258 : Interp.termOf p 258 = pure T.«tls_model»
   t264 : Interp.termOf p 264 = pure T.«box_external_name»
   t265 : Interp.termOf p 265 = pure T.«func_ref_data»
   t267 : Interp.termOf p 267 = pure T.«symbol_value_data»
@@ -1690,6 +1707,12 @@ structure Data (p : Program) : Prop where
   t643 : Interp.termOf p 643 = pure T.«compute_stack_addr»
   r643 : p.rulesOf 643 =
     [rule_inst_4810]
+  t647 : Interp.termOf p 647 = pure T.«elf_tls_get_addr»
+  r647 : p.rulesOf 647 =
+    [rule_inst_4918]
+  t648 : Interp.termOf p 648 = pure T.«macho_tls_get_addr»
+  r648 : p.rulesOf 648 =
+    [rule_inst_4926]
   t649 : Interp.termOf p 649 = pure T.«cond_result_invert»
   r649 : p.rulesOf 649 =
     [rule_inst_4954, rule_inst_4955, rule_inst_4956, rule_inst_4957, rule_inst_4959]
@@ -1832,6 +1855,8 @@ structure Data (p : Program) : Prop where
   t1803 : Interp.termOf p 1803 = pure T.«ConsumesFlags.ConsumesFlagsTwiceReturnsValueRegs»
   t1804 : Interp.termOf p 1804 = pure T.«ConsumesFlags.ConsumesFlagsFourTimesReturnsValueRegs»
   t1805 : Interp.termOf p 1805 = pure T.«ConsumesFlags.ConsumesFlagsNop»
+  t1807 : Interp.termOf p 1807 = pure T.«TlsModel.ElfGd»
+  t1808 : Interp.termOf p 1808 = pure T.«TlsModel.Macho»
   t1816 : Interp.termOf p 1816 = pure T.«ArgumentExtension.Uext»
   t1817 : Interp.termOf p 1817 = pure T.«ArgumentExtension.Sext»
   t1820 : Interp.termOf p 1820 = pure T.«MInst.AluRRR»
@@ -1888,6 +1913,8 @@ structure Data (p : Program) : Prop where
   t1948 : Interp.termOf p 1948 = pure T.«MInst.LoadExtNameNear»
   t1949 : Interp.termOf p 1949 = pure T.«MInst.LoadExtNameFar»
   t1954 : Interp.termOf p 1954 = pure T.«MInst.EmitIsland»
+  t1955 : Interp.termOf p 1955 = pure T.«MInst.ElfTlsGetAddr»
+  t1956 : Interp.termOf p 1956 = pure T.«MInst.MachOTlsGetAddr»
   t1962 : Interp.termOf p 1962 = pure T.«ALUOp.Add»
   t1963 : Interp.termOf p 1963 = pure T.«ALUOp.Sub»
   t1964 : Interp.termOf p 1964 = pure T.«ALUOp.Orr»
@@ -2050,6 +2077,7 @@ structure Data (p : Program) : Prop where
   t2323 : Interp.termOf p 2323 = pure T.«Opcode.Istore32»
   t2331 : Interp.termOf p 2331 = pure T.«Opcode.StackAddr»
   t2333 : Interp.termOf p 2333 = pure T.«Opcode.SymbolValue»
+  t2334 : Interp.termOf p 2334 = pure T.«Opcode.TlsValue»
   t2341 : Interp.termOf p 2341 = pure T.«Opcode.Iconst»
   t2348 : Interp.termOf p 2348 = pure T.«Opcode.Nop»
   t2349 : Interp.termOf p 2349 = pure T.«Opcode.Select»
@@ -2206,6 +2234,7 @@ theorem program_rulesOf_255 : program.rulesOf 255 =
 theorem program_term_256 : Interp.termOf program 256 = pure T.«with_flags_side_effect» := rfl
 theorem program_rulesOf_256 : program.rulesOf 256 =
     [rule_prelude_lower_1000, rule_prelude_lower_1006, rule_prelude_lower_1016, rule_prelude_lower_1023, rule_prelude_lower_1030, rule_prelude_lower_1035, rule_prelude_lower_1040, rule_prelude_lower_1045, rule_prelude_lower_1050] := rfl
+theorem program_term_258 : Interp.termOf program 258 = pure T.«tls_model» := rfl
 theorem program_term_264 : Interp.termOf program 264 = pure T.«box_external_name» := rfl
 theorem program_term_265 : Interp.termOf program 265 = pure T.«func_ref_data» := rfl
 theorem program_term_267 : Interp.termOf program 267 = pure T.«symbol_value_data» := rfl
@@ -2603,6 +2632,12 @@ theorem program_rulesOf_639 : program.rulesOf 639 =
 theorem program_term_643 : Interp.termOf program 643 = pure T.«compute_stack_addr» := rfl
 theorem program_rulesOf_643 : program.rulesOf 643 =
     [rule_inst_4810] := rfl
+theorem program_term_647 : Interp.termOf program 647 = pure T.«elf_tls_get_addr» := rfl
+theorem program_rulesOf_647 : program.rulesOf 647 =
+    [rule_inst_4918] := rfl
+theorem program_term_648 : Interp.termOf program 648 = pure T.«macho_tls_get_addr» := rfl
+theorem program_rulesOf_648 : program.rulesOf 648 =
+    [rule_inst_4926] := rfl
 theorem program_term_649 : Interp.termOf program 649 = pure T.«cond_result_invert» := rfl
 theorem program_rulesOf_649 : program.rulesOf 649 =
     [rule_inst_4954, rule_inst_4955, rule_inst_4956, rule_inst_4957, rule_inst_4959] := rfl
@@ -2745,6 +2780,8 @@ theorem program_term_1802 : Interp.termOf program 1802 = pure T.«ConsumesFlags.
 theorem program_term_1803 : Interp.termOf program 1803 = pure T.«ConsumesFlags.ConsumesFlagsTwiceReturnsValueRegs» := rfl
 theorem program_term_1804 : Interp.termOf program 1804 = pure T.«ConsumesFlags.ConsumesFlagsFourTimesReturnsValueRegs» := rfl
 theorem program_term_1805 : Interp.termOf program 1805 = pure T.«ConsumesFlags.ConsumesFlagsNop» := rfl
+theorem program_term_1807 : Interp.termOf program 1807 = pure T.«TlsModel.ElfGd» := rfl
+theorem program_term_1808 : Interp.termOf program 1808 = pure T.«TlsModel.Macho» := rfl
 theorem program_term_1816 : Interp.termOf program 1816 = pure T.«ArgumentExtension.Uext» := rfl
 theorem program_term_1817 : Interp.termOf program 1817 = pure T.«ArgumentExtension.Sext» := rfl
 theorem program_term_1820 : Interp.termOf program 1820 = pure T.«MInst.AluRRR» := rfl
@@ -2801,6 +2838,8 @@ theorem program_term_1947 : Interp.termOf program 1947 = pure T.«MInst.LoadExtN
 theorem program_term_1948 : Interp.termOf program 1948 = pure T.«MInst.LoadExtNameNear» := rfl
 theorem program_term_1949 : Interp.termOf program 1949 = pure T.«MInst.LoadExtNameFar» := rfl
 theorem program_term_1954 : Interp.termOf program 1954 = pure T.«MInst.EmitIsland» := rfl
+theorem program_term_1955 : Interp.termOf program 1955 = pure T.«MInst.ElfTlsGetAddr» := rfl
+theorem program_term_1956 : Interp.termOf program 1956 = pure T.«MInst.MachOTlsGetAddr» := rfl
 theorem program_term_1962 : Interp.termOf program 1962 = pure T.«ALUOp.Add» := rfl
 theorem program_term_1963 : Interp.termOf program 1963 = pure T.«ALUOp.Sub» := rfl
 theorem program_term_1964 : Interp.termOf program 1964 = pure T.«ALUOp.Orr» := rfl
@@ -2963,6 +3002,7 @@ theorem program_term_2322 : Interp.termOf program 2322 = pure T.«Opcode.Sload32
 theorem program_term_2323 : Interp.termOf program 2323 = pure T.«Opcode.Istore32» := rfl
 theorem program_term_2331 : Interp.termOf program 2331 = pure T.«Opcode.StackAddr» := rfl
 theorem program_term_2333 : Interp.termOf program 2333 = pure T.«Opcode.SymbolValue» := rfl
+theorem program_term_2334 : Interp.termOf program 2334 = pure T.«Opcode.TlsValue» := rfl
 theorem program_term_2341 : Interp.termOf program 2341 = pure T.«Opcode.Iconst» := rfl
 theorem program_term_2348 : Interp.termOf program 2348 = pure T.«Opcode.Nop» := rfl
 theorem program_term_2349 : Interp.termOf program 2349 = pure T.«Opcode.Select» := rfl
@@ -3107,6 +3147,7 @@ theorem data_program : Data program where
   r255 := program_rulesOf_255
   t256 := program_term_256
   r256 := program_rulesOf_256
+  t258 := program_term_258
   t264 := program_term_264
   t265 := program_term_265
   t267 := program_term_267
@@ -3388,6 +3429,10 @@ theorem data_program : Data program where
   r639 := program_rulesOf_639
   t643 := program_term_643
   r643 := program_rulesOf_643
+  t647 := program_term_647
+  r647 := program_rulesOf_647
+  t648 := program_term_648
+  r648 := program_rulesOf_648
   t649 := program_term_649
   r649 := program_rulesOf_649
   t650 := program_term_650
@@ -3498,6 +3543,8 @@ theorem data_program : Data program where
   t1803 := program_term_1803
   t1804 := program_term_1804
   t1805 := program_term_1805
+  t1807 := program_term_1807
+  t1808 := program_term_1808
   t1816 := program_term_1816
   t1817 := program_term_1817
   t1820 := program_term_1820
@@ -3554,6 +3601,8 @@ theorem data_program : Data program where
   t1948 := program_term_1948
   t1949 := program_term_1949
   t1954 := program_term_1954
+  t1955 := program_term_1955
+  t1956 := program_term_1956
   t1962 := program_term_1962
   t1963 := program_term_1963
   t1964 := program_term_1964
@@ -3716,6 +3765,7 @@ theorem data_program : Data program where
   t2323 := program_term_2323
   t2331 := program_term_2331
   t2333 := program_term_2333
+  t2334 := program_term_2334
   t2341 := program_term_2341
   t2348 := program_term_2348
   t2349 := program_term_2349
