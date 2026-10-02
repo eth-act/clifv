@@ -1653,4 +1653,41 @@ theorem xCallsOk (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g : Clif.
 
 end LinkSys
 
+/-! ## The induction -/
+
+namespace LinkSys
+
+variable (L : LinkSys)
+
+theorem tlsOk_hooks {F : BitVec 64 → Prop} {K M : Nat} (h : TlsOk F K L.Xb L.Hb) :
+    TlsOk F K (L.X M) (L.hooks M) := by
+  cases M <;> exact ⟨h.pc, h.seq, h.flags⟩
+
+/-- **The induction step**: the linking statement at depth `M` from the one at depth `M - 1`. -/
+theorem thm_of (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) : L.Thm M := by
+  intro g hg vals cs w₀ fuel rvals cm' hWE hrun
+  have hc := hL.compiled g hg
+  have hfree : Clif.LinkFree cs.frame.func := by
+    rw [hWE.clif.func]; exact hL.linkable.free g hg
+  have h := backend_correct_world (hL.subset g hg) hc (X := L.X M) (syms := L.syms)
+    (env := Clif.linkEnvN L.P L.base M) (K := L.K M) (F := L.F) (c := spv w₀) (hL.covered g hg)
+    (L.xCallsOk hL ih hg hWE.room hWE.dead hWE.align)
+    (by rw [indSigs_nil_of_linkFree (hL.linkable.free g hg)]; exact xCallsIndOk_nil _ _ _)
+    (fun n b hn => hL.symOk n b hn) rfl hWE.clif hWE.rel hWE.args
+    (trapsExplicit_of_returned hfree hrun) fuel
+  obtain ⟨us, outs, wf, hus, hlen, hhold, hmem, hall⟩ := h.1 rvals cm' hrun
+  refine ⟨us, outs, wf, hus, hlen, hhold, hmem, fun G ra s hME => ?_⟩
+  exact hall (L.hooks M) G (L.A g).base ra s ⟨hME.abi, hME.stack, hME.gfree, hME.hF,
+    L.calleeOk hL ih hg hME,
+    fun ht => absurd (hasTry_of_hasTryCall hc ht) (fun ⟨B, hB, hT⟩ => by
+      rw [hL.noTry g hg B hB] at hT; cases hT),
+    fun ht => L.tlsOk_hooks (hL.baseTls g hg (hasTls_of_vcode hc ht) L.F (L.K M)), hME.body⟩
+
+/-- **The linking statement at every depth.** -/
+theorem thm (hL : L.Ok) : ∀ M, L.Thm M
+  | 0 => L.thm_of hL fun h => absurd h (Nat.lt_irrefl 0)
+  | M + 1 => L.thm_of hL fun _ => thm hL M
+
+end LinkSys
+
 end E2E
