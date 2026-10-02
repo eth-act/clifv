@@ -109,40 +109,6 @@ theorem frameF_not_below {K lo hi : Nat} {af : AFunc} {s : Arm.ArmState} (hst : 
     rw [e] at h
     omega
 
-/-- **The operand-view obligation at one state `s`** (`OperandsSoundCtl` instantiated at `s`),
-with the world compared outside `F` and the frame kept on `FK`. -/
-def OperandsSoundCtlAt (F FK : BitVec 64 → Prop) (exec : MInst → Arm.ArmState → Option Arm.ArmState)
-    (sem : ISem CV Arm.ArmState) (i : MInst) (ctl : Ctl) (s : Arm.ArmState) : Prop :=
-  ∀ (c : CheckCtx) (wh : String) (ops : Array Operand) (regs : Array Reg) (i' : MInst)
-    (w : Arm.ArmState) (outs : List CV) (w' : Arm.ArmState),
-    i.operands = .ok ops →
-    c.checkStatic wh ops (regs.map .reg) i.clobbers = .ok () →
-    i.assign regs = .ok i' →
-    SameWorld F s w → Arm.CheckSPAlignment s → Arm.r .ERR s = .None →
-    sem i (useVals ops regs s) w = some (outs, w', ctl) →
-    ∃ s', exec i' s = some s' ∧ SameWorld F s' w' ∧ FrameKeep FK s s' ∧
-      (∀ p ∈ defRegs ops regs outs, regVal s' p.1.2 = p.2) ∧
-      (∀ r, r.allocatable = true → (∀ p ∈ (ops.zip regs).toList, p.1.isDef = true → p.2 ≠ r) →
-        r ∉ i.clobbers → regVal s' r = regVal s r) ∧
-      (∀ r ∈ i.clobbers, r ∈ calleeSaved → ckeep r (regVal s' r) = ckeep r (regVal s r))
-
-/-- `OperandsSoundCtl` at a state, keeping a smaller frame `FK ⊆ F`. -/
-theorem OperandsSoundCtl.at {F FK : BitVec 64 → Prop}
-    {exec : MInst → Arm.ArmState → Option Arm.ArmState} {sem : ISem CV Arm.ArmState} {i : MInst}
-    {ctl : Ctl} (h : OperandsSoundCtl F exec sem i ctl) (hFK : ∀ a, FK a → F a)
-    (s : Arm.ArmState) : OperandsSoundCtlAt F FK exec sem i ctl s := by
-  intro c wh ops regs i' w outs w' hops hst hasg hw hal herr hsem
-  obtain ⟨s', hex, hW, hK, hd, ho, hc⟩ := h c wh ops regs i' s w outs w' hops hst hasg hw hal herr hsem
-  exact ⟨s', hex, hW, ⟨hK.1, fun a ha => hK.2 a (hFK a ha)⟩, hd, ho, hc⟩
-
-theorem OperandsSoundCtlAt.mono {F FK FK' : BitVec 64 → Prop}
-    {exec : MInst → Arm.ArmState → Option Arm.ArmState} {sem : ISem CV Arm.ArmState} {i : MInst}
-    {ctl : Ctl} {s : Arm.ArmState} (h : OperandsSoundCtlAt F FK exec sem i ctl s)
-    (hFK : ∀ a, FK' a → FK a) : OperandsSoundCtlAt F FK' exec sem i ctl s := by
-  intro c wh ops regs i' w outs w' hops hst hasg hw hal herr hsem
-  obtain ⟨s', hex, hW, hK, hd, ho, hc⟩ := h c wh ops regs i' w outs w' hops hst hasg hw hal herr hsem
-  exact ⟨s', hex, hW, ⟨hK.1, fun a ha => hK.2 a (hFK a ha)⟩, hd, ho, hc⟩
-
 /-- **The operand-view obligation of a call with a dead stack of `K` bytes**: at every state
 whose `K` bytes below `sp` fit (`K ≤ sp`) and lie outside the world (in `F`: the caller holds
 nothing live there), the emitted call satisfies `OperandsSoundCtl`, keeping the frame `F` only

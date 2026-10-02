@@ -632,7 +632,8 @@ The callee contract changed (`docs/contracts/e2e.md`, "Callee contract with a de
 `RL.FK = frameF …` (the frame `FrameKeep` keeps), `RL.Wf.stack : StackAvail R.K R.af R.s0`.
 `realizes_op_core` takes `OperandsSoundCtlAt R.F R.FK` at the state (`OperandsSoundCtl.at` for
 straight-line instructions, `RL.callAt` for calls, the call of a `try_call` and the TLSDESC hook);
-`operandsSound_stepAt` is `operandsSound_step` at one state with the kept frame `FK`.
+`operandsSound_step` is stated at one state (`OperandsSoundCtlAt F FK`, in `RegallocOperands`),
+with the kept frame `FK`.
 `regLevelCorrect_backend` takes `K`, `hC : ∀ s, CalleeOk (frameW K lo hi af s) K X H
 vcp.CallSite` and gives `RegLevelCorrect (fun s => csem (frameW K lo hi af s) …) (frameW K lo hi
 af) K (ArmStepX X H fa) vcp af fb`.

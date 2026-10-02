@@ -120,7 +120,7 @@ theorem realizes_tryCall {R : RL} (hR : R.Wf) (hC : CalleeOk R.F R.K R.X R.H R.v
     simpa [ctlInstOk] using this
   have hm : ∀ r, r.allocatable = true → m (.reg r) = regVal s r := fun r hr =>
     hst.store (.reg r) (fun r' e => by cases e; exact hr) trivial
-  obtain ⟨s', m2, hex, hW, hK, hc2', hr2, hl2⟩ := operandsSound_stepAt
+  obtain ⟨s', m2, hex, hW, hK, hc2', hr2, hl2⟩ := operandsSound_step
     (RL.callAt hR (os_tryCall hC hT R.ctx info ⟨b, vb, k, hvb, .inr ⟨ti, hi⟩⟩ hcl) hst.sp) hops hstat hasg hm hst.world hst.align
     hst.err hsem hlen
   obtain ⟨ic, rfl, -⟩ := (assign_call_tryCall info regs).2 ti i' hasg
