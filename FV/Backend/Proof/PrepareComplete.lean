@@ -1775,4 +1775,23 @@ theorem prepCheck_complete {vc vcp : VCode} (h : prepare vc = .ok vcp) (hd : Pre
           cases i' <;> simp_all
         · intro l; rfl
 
+/-- `PrepDomain`, decided. -/
+def prepDomainB (vc : VCode) : Bool :=
+  decide (0 < vc.blocks.size) && decide (vc.blocks.toList.map VBlock.label).Nodup &&
+    vc.blocks.all fun vb => vb.branchArgs.isEmpty ||
+      (vb.insts.back?.map fun t => decide (t.targets.length < 2)).getD true
+
+theorem prepDomain_of {vc : VCode} (h : prepDomainB vc = true) : PrepDomain vc := by
+  simp only [prepDomainB, Bool.and_eq_true, decide_eq_true_eq, Array.all_eq_true] at h
+  obtain ⟨⟨h0, hn⟩, ha⟩ := h
+  refine ⟨h0, hn, fun b vb t hvb ht h2 => ?_⟩
+  obtain ⟨hb, rfl⟩ := Array.getElem?_eq_some_iff.mp hvb
+  have := ha b hb
+  rw [ht] at this
+  simp only [Bool.or_eq_true, Array.isEmpty_iff, Option.map_some, Option.getD_some,
+    decide_eq_true_eq] at this
+  rcases this with h | h
+  · exact h
+  · omega
+
 end Backend.Proof.Prep
