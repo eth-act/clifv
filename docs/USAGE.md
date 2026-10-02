@@ -20,16 +20,25 @@ for that function. Functions the Lean backend cannot compile keep cg_clif's code
 * **fallback**: cg_clif's code (the reason is given).
 
 ```
-$ cargo fv test
-   Compiling fv-demo v0.1.0 (…/examples/fv-demo)
+$ cd examples/deps && cargo fv test
+   Compiling deps-demo v0.1.0 (…/examples/deps)
 cargo fv report — aarch64-unknown-linux-musl debug profile, mode plain
   verified = compiled by the Lean backend and inside E2E.backend_correct_final
-  package              kind  crate root             functions  verified unverified  fallback   Lean in exe
-  fv-demo              lib   src/lib.rs                   …
+  package                kind  crate root             functions  verified unverified  fallback   Lean in exe
+  deps-demo              test  tests/crates.rs             2358      2338          0        20         19808
   …
-cargo fv: 968 of 975 functions compiled by the Lean backend (717 verified); report: …/target/fv-report.json
+  regex-automata         dep   src/lib.rs                  5039      5039          0         0
+  serde_json             dep   src/lib.rs                  1177      1127          0        50
+  …
+  your crate(s)                                            4056      4028          0        28
+  dependencies                                            16965     16793          3       169
+  total                                                   21021     20821          3       197
+  std (not compiled by us: prebuilt std/core/alloc rlibs, plus compiler_builtins and musl libc)
+  exe deps-demo (test tests/crates.rs): 21682 functions: Lean 19808 (your crate(s) 3052, dependencies 16756), cg_clif fallback 142, std (prebuilt) 1732, other not compiled by us 0
+  …
+cargo fv: 20824 of 21021 functions compiled by the Lean backend (20821 verified): your crate(s) 4028 of 4056 (4028 verified), dependencies 16796 of 16965 (16793 verified); report: …/target/fv-report.json
      Running unittests src/lib.rs (…)
-test tests::arithmetic ... ok
+test tests::perms ... ok
 …
 ```
 

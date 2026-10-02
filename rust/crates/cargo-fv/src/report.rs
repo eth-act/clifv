@@ -336,19 +336,42 @@ fn short_root(src: &str) -> &str {
     if src.contains("../") { src.rsplit('/').next().unwrap_or(src) } else { src }
 }
 
-/// Group reasons: function and value names vary, the reason does not.
+/// Group reasons: function names (`%f`), value names (`v12`) and measured sizes (numbers of 5
+/// or more digits, e.g. the validation budget's cost) vary, the reason does not.
 fn generalize(r: &str) -> String {
     let mut out = String::new();
     let mut chars = r.chars().peekable();
+    let mut prev: Option<char> = None;
     while let Some(c) = chars.next() {
+        let at_word_start = !prev.is_some_and(|p| p.is_alphanumeric() || p == '_');
         if c == '%' {
             out.push_str("%X");
             while chars.peek().is_some_and(|c| c.is_alphanumeric() || *c == '_' || *c == '$' || *c == '.') {
                 chars.next();
             }
+        } else if c == 'v' && at_word_start && chars.peek().is_some_and(|d| d.is_ascii_digit()) {
+            let mut digits = String::new();
+            while let Some(d) = chars.peek().filter(|d| d.is_ascii_digit()) {
+                digits.push(*d);
+                chars.next();
+            }
+            if chars.peek().is_some_and(|n| n.is_alphanumeric() || *n == '_') {
+                out.push('v');
+                out.push_str(&digits);
+            } else {
+                out.push_str("vN");
+            }
+        } else if c.is_ascii_digit() && at_word_start {
+            let mut digits = String::from(c);
+            while let Some(d) = chars.peek().filter(|d| d.is_ascii_digit()) {
+                digits.push(*d);
+                chars.next();
+            }
+            out.push_str(if digits.len() >= 5 { "N" } else { &digits });
         } else {
             out.push(c);
         }
+        prev = out.chars().last();
     }
     out
 }
