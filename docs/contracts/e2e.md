@@ -28,7 +28,7 @@ contract `IselContract.lean`), `regalloc-proof.md` (M6), `encoder.md` (M5), `cli
 | Validators run by the compiler (`FV/Backend.lean` `lowerChecked`, `FV/Backend/Regalloc.lean` `allocateRegalloc2`: a rejection is a compile error) | done |
 | **`backend_correct`**, **`backend_correct_of_rules`** from the hypotheses below | **proven**, sorry-free |
 | **`backend_correct_m4`** (`FV/E2E/Final.lean`): `backend_correct_of_rules` with all M4 predicates discharged (`lowerRulesCorrect_program`, `excludedUnmatchable`, `callRulesCorrect`, `indRulesCorrect`, `memRulesCorrect_program`, `lowerTermRulesCorrect`, `termUnmatchable`, `branchRulesCorrect`, `branchExcludedUnmatchable`, `tryRulesCorrect`, `tryUnmatchable`, `tryIndRulesCorrect`, `tryIndUnmatchable`) and `sem s := csem (F s) (ctx s) (X s)` (discharges `DriverSem` by `driverSem_csem`, `CallsRefine` by `callsRefine_csem` from `XCallsOk`, `IndCallsRefine` by `indCallsRefine_csem` from `XCallsIndOk`) | **proven**; axioms: `propext`, `Classical.choice`, `Quot.sound` + 130 `_native.bv_decide` certificates |
-| **`RegLevelCorrect`** for the backend's code (`regLevelCorrect_backend`, `FV/E2E/RegLevelCorrect.lean`, M6Ctl3): frame addresses `frameF`, context `⟨fa.k, af.slotBase⟩`, one external semantics `X`, machine `ArmStepX X H fa`; from `FormsCovered` and `CalleeOk` | **proven** |
+| **`RegLevelCorrect`** for the backend's code (`regLevelCorrect_backend`, `FV/E2E/RegLevelCorrect.lean`, M6Ctl3): addresses outside the world `frameW K` (frame addresses `frameF` and, since agent/callee-fix, the callees' dead stack), context `⟨fa.k, af.slotBase⟩`, one external semantics `X`, machine `ArmStepX X H fa`; from `FormsCovered` and `CalleeOk` | **proven** |
 | **`backend_correct_final`** (`FV/E2E/Final.lean`): `backend_correct_m4` with `hM6` discharged by `regLevelCorrect_backend` | **proven**; axioms: `propext`, `Classical.choice`, `Quot.sound` + `_native.bv_decide` certificates (M4's, M5's decoder `decode_armBits_*`/`decode_raw_inst_of_*`, `Arm.Memory.read_write_bytes_different`) |
 | **`sret`** (2026-09-30, `agent/sret-proof`): functions with a struct-return pointer parameter and calls of `sret` callees are inside `backend_correct_final` (`InSubset.abiSigs`; see "`sret`" below) | **proven**; `lean-e2e-check`: all `sret` functions in scope accepted and covered |
 | **`try_call`** (2026-09-30, `agent/trycall-proof`): functions with `try_call` of an extern are inside `backend_correct_final` **for their normal returns** (see "`try_call`" below); nothing is claimed about unwinding, landing pads or the LSDA | **proven** (`term_step_try`, `tryRulesCorrect`, `tryUnmatchable`, `realizes_tryCall`) |
@@ -38,26 +38,30 @@ contract `IselContract.lean`), `regalloc-proof.md` (M6), `encoder.md` (M5), `cli
 | **Stack-passed parameters and `call` arguments** (2026-10-01, `agent/stack-tls-proof`): functions with more than 8 parameters (an `sret` pointer does not count) and `call`s of externs with more than 8 parameters are inside `backend_correct_final`. `InSubset` drops `regParams`/`callRegArgs` (a `try_call`'s callee and the indirect calls keep at most 8 register parameters: `tryRegArgs`, `indSigs`). Entry: `ArgsIn` puts a stack location `off` (`locsOf`, `sigArgLocs`) at `sp + off` of the ABI entry state (`StackArgAt`); the entry code loads it from `fp + 16 + off` (`DriverCheck.entryLoads`, `entry_step`). Calls: the outgoing stores go to `[sp + off]` (`argStores_run`), the callee contract `XCallsOk` takes `ArgsAt` (stack arguments read from memory at `sp + off`). `Rel` gains the outgoing-area size `out` (`OutRel`: `[sp, sp + out)` fits, avoids `F` and holds no live CLIF byte; `backend_correct_final` takes `out := intBase`). `lowerCheck` adds `callsStackOkB` (every call's stack area fits `vc.outgoing`, `stackLayoutOk`) and `entryOkB`; `prepCheck` keeps `outgoing`. Specialisations (new ⇒ old for ≤ 8 parameters / no stack arguments): `InSubset.of_regArgs`, `argsIn_iff_of_regs`, `argsAt_iff_of_regs`, `xCallsOk_of_regArgs`, `Rel.holds_zero` | **proven** (`call_bl_ruleOk`/`call_got_ruleOk` any arity, `entry_step`, `callsStack_of_check`, `entryOk_of_check`, `stackArgsAvoid_frameF`, `outgoing_le_intBase`); `lean-e2e-check`: 1146 in scope (1126 before), 0 rejected, 0 not covered |
 | **`tls_value`** (2026-10-01, `agent/stack-tls-proof`): `tls_value.i64` of a `symbol tls` global value (offset 0; `elf_gd`, cg_clif's TLS model) is in E (`Compile.instE`, `globalE`) and inside `backend_correct_final` for the one thread `Clif.run` models (its instance of the variable is the memory's symbol). M4: root rules 1129 (`elf_gd`, `tls_value_ok`) and 1130 (`macho`, vacuous), `MemRefines`' TLSDESC clause (`memRefines_csem`). M6: `ElfTlsGetAddr` is `isCtl`; `csem` gives `[X.sym n 0, X.tp]` and the flags `X.tlsFlags n w` (`ExtSem.tp`/`tlsFlags`); the machine hooks the TLSDESC sequence (`ArmStepX`: `adrp` advances the pc, `ldr` runs `H.tls n tmp`) under the trusted contract `TlsOk` (premise `hTls`, only for a function with a `tls_value`; see "`tls_value`" below); `realizes_tls`/`os_tls` (FV/E2E/RegLevelTls.lean). x30 joins `Masked` (`docs/contracts/regalloc-proof.md`: no weakening for other functions). Validators: `lowerCheck` (`noTls_of_check`) and `prepCheck` (`noTls_of_prepCheck`) keep `ElfTlsGetAddr` out of the VCode of a function without `tls_value`; `ctlInstOk` requires int vregs | **proven**; `lean-e2e-check`: 1148 in scope (1146 before), 0 rejected, 0 not covered; cargo fv debug verified fv-demo 1336/1346, survey 3174/3179, vendor 4398/4399 |
 | **Last unverified functions** (2026-10-01, `agent/last-unverified`): (1) stack-passed arguments of a `try_call` are inside `backend_correct_final`: `TryRuleOk` takes `SigStackOk e.sig outB` instead of "at most 8 parameters", `TryRulesCorrect` also `MemRefines`/`OutArgsOk` (as `CallRulesCorrect`), `TryCalls` takes the outgoing area, `DriverHyp.tries` carries `TryStack f out`, `lowerCheck`'s `callsStackOkB` also checks `try_call` callees (`tryStack_of_check`); `InSubset.tryRegArgs` and `Backend.regArgCalls` are gone. (2) `Opt.Legal.check` accepts `try_call` (expanded arguments/returns, normal-return arguments `expandTry`) and `call_indirect` without `i128` operands (plan `callInd`); `backend_correct_legal` drops `hci`/`hnt` and takes `hCT`, `hXI` and `hind` (vacuous without such calls: `backend_correct_legal_callFree` is the former statement). (3) recursion: `cargo fv` renames a function's self-call declaration to an extern alias (see "Calls of the function itself") | **proven** (`try_sym_lowerTryOk`/`try_got_lowerTryOk` any arity; `sim_try`, `sim_callInd`, `check_callInd`); `cargo fv` debug: fv-demo 1340/1346 (6 skipped), survey 3179/3179, vendor all verified |
-| **Linking** (2026-10-02, `agent/link-proof`): the CLIF side of linking the per-function theorems is proven — a whole-program run `Clif.runLoop base P` (calls and `try_call`s of functions of `P` enter them) that returns or traps is a per-function run of `P.only f` under `Clif.linkEnv P base` (`Clif.runLoop_link`) — and `E2E.backend_correct_linked` states `f`'s Arm code against the whole-program run, with the program callees' contracts as premises. Discharging those from the callees' own theorems is **not** done: the callee contract `CalleeOk` cannot be met by code that saves its return address below `sp` (`E2E.calleeOk_saves_lr_false`); see "Linking" below | **proven** (CLIF layer, contract-level theorem, no-go lemma); Arm-level discharge open |
+| **Linking** (2026-10-02, `agent/link-proof`): the CLIF side of linking the per-function theorems is proven — a whole-program run `Clif.runLoop base P` (calls and `try_call`s of functions of `P` enter them) that returns or traps is a per-function run of `P.only f` under `Clif.linkEnv P base` (`Clif.runLoop_link`) — and `E2E.backend_correct_linked` states `f`'s Arm code against the whole-program run, with the program callees' contracts as premises. Discharging those from the callees' own theorems is **not** done (see "Linking" below) | **proven** (CLIF layer, contract-level theorem); Arm-level discharge open |
+| **Callee contract with a dead stack, non-vacuity** (2026-10-02, `agent/callee-fix`): the former `CalleeOk` was unsatisfiable by every callee that saves its return address below `sp` (proven on main as `calleeOk_saves_lr_false`), so `backend_correct_final` and the theorems built on it were vacuous for every function calling such a callee. The callee contract now leaves the callees' dead stack (`K` bytes below the caller's `sp`) unspecified, is required only at the compiled code's call sites, and the theorems are proven again; a witness callee that pushes two frames meets every contract premise (`E2E.final_contracts_witness`, `E2E.backend_correct_final_witness`, `FV/E2E/NonVacuity.lean`). See "Callee contract with a dead stack" and "Non-vacuity" below | **proven**; `try_call` callees: open (the exception payload registers, see there) |
 
 ### Final hypotheses (`E2E.backend_correct_final`, 2026-09-28)
 
-Notation: `FF s := frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s`
-(the allocator-private frame addresses of the activation entered in `s`: spill/save slots, the
-fp/lr pair and padding above the CLIF slots, the code words), `cx := ⟨fa.k, af.slotBase⟩`.
+Notation (since agent/callee-fix): `FF s := frameW K (RAFrame.compute vcp rf).intBase
+(RAFrame.compute vcp rf).size af s` — the addresses outside the world of the activation entered
+in `s`: its allocator-private frame addresses `frameF` (spill/save slots, the fp/lr pair and
+padding above the CLIF slots, the code words) and the callees' dead stack, the `K` bytes below
+the body's `sp` (`StackBelow K (spv s - frameDrop af)`); `K` is a parameter of the theorem (the
+callees' stack budget), `cx := ⟨fa.k, af.slotBase⟩`.
 
 | Hypothesis | Kind / owner |
 | --- | --- |
 | `InSubset p f`, `Compiled f k vc vcp rf af fa fb` | the compiler ran (pipeline + validators) |
 | `FormsCovered cx vcp` | per-function decidable premise (`formsCoveredB`, the covered straight-line forms `FormOk`, including the per-instruction bitmask check `logicImmOk`; control forms are handled by the proof); decided by `lean-e2e-check` (corpus + extrt + runtests: 913 of 913 checked functions covered, M6Refines) |
-| `∀ s, CalleeOk (FF s) X H` | callee contract of the machine's call hook `H` (AAPCS64: `OperandsSound` of every call, return to pc+4, `X.call` error-free and program-preserving) — environment |
-| `(∃ B ∈ f.blocks, B.term.isTry = true) → ∀ s, CalleeTryOk (FF s) X H` (`hCT`) | only for a function with a `try_call`: the def registers of a `try_call`'s call hold what `csem` gives them — the results, then the exception payload registers x0/x1 that are not return registers, as the callee's world `X.call` has them (see "`try_call`") — environment; vacuous for a function without `try_call` |
-| `hasTls f = true → ∀ s, TlsOk (FF s) X H` (`hTls`) | only for a function with a `tls_value`: the machine's TLSDESC hook `H.tls` ends after the sequence, puts the variable's address `X.sym n 0` in x0 and the thread pointer `X.tp` in the temporary, keeps every other register but x30, the memory and the program, and leaves the flags `X.tlsFlags n w` — trusted (`docs/decisions/arm-model.md`, "Thread-local storage"); vacuous for a function without `tls_value` |
+| `∀ s, CalleeOk (FF s) K X H vcp.CallSite` | callee contract of the machine's call hook `H` at the call sites of the compiled code (AAPCS64: `CallSoundCtl` of every call — from a state whose `K` bytes below `sp` fit and lie in `FF s`, the callee leaves the world `X.call` computes outside `FF s`, keeps `sp` and the frame outside that dead stack, the callee-saved registers, and puts the results in the def registers —, return to pc+4 from an aligned `sp`, `X.call` error-free and program-preserving; see "Callee contract with a dead stack") — environment |
+| `(∃ B ∈ f.blocks, B.term.isTry = true) → ∀ s, CalleeTryOk (FF s) X H vcp.CallSite` (`hCT`) | only for a function with a `try_call`: the def registers of a `try_call`'s call hold what `csem` gives them — the results, then the exception payload registers x0/x1 that are not return registers, as the callee's world `X.call` has them (see "`try_call`") — environment; vacuous for a function without `try_call` |
+| `hasTls f = true → ∀ s, TlsOk (FF s) K X H` (`hTls`) | only for a function with a `tls_value`: the machine's TLSDESC hook `H.tls` ends after the sequence, puts the variable's address `X.sym n 0` in x0 and the thread pointer `X.tp` in the temporary, keeps every other register but x30, the memory outside the `K` bytes below `sp` (a resolver may save registers there) and the program, and leaves the flags `X.tlsFlags n w` — trusted (`docs/decisions/arm-model.md`, "Thread-local storage"); vacuous for a function without `tls_value` |
 | `∀ s, XCallsOk env (f.externs.map (·.2)) (Rel.holds ⟨FF s, syms, slotOff, OB⟩ f) X` (`OB := (RAFrame.compute vcp rf).intBase`, the outgoing stack-argument area) | external contract for the externs `f` declares: callees, linker symbols — environment. The arguments are given by `ArgsAt` (register ones in their registers, stack-passed ones in memory at `sp + off`; for externs with at most 8 parameters this is the former "at most 8 values, all in registers", `xCallsOk_of_regArgs`); the callee returns a world related by `Rel.holds`, so in particular its outgoing area `[sp, sp + OB)` still avoids the frame and holds no live CLIF byte (`OutRel`; trivial when `OB = 0`, `Rel.holds_zero`). A call returns one value per ABI return of the declaration (`sigRets`), the first ones the extern's results (`PrefixHold`); for declarations without `sret` this is implied by the former extern-independent contract (`xCallsOk_of_results`) |
 | `∀ s, XCallsIndOk env (indSigs f) (Rel.holds ⟨FF s, syms, slotOff, OB⟩ f) X` (`hXI`) | external contract for the indirect calls of `f` (`call_indirect`, `try_call_indirect`), per call-site signature (`Backend.indSigs f`): a `blr` whose target holds `X.sym n 0` of an extern `n` of `env` behaves as `env.extern n` does under that signature (the same clause as `XCallsOk`'s GOT call) — environment; vacuous for a function without indirect calls (`xCallsIndOk_nil`, `backend_correct_final_indirectFree`) |
 | `∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b` (`hsym`) | linker: the external semantics' symbol addresses are the linked ones — environment; with `hslot` it discharges the former `MemRefines` hypothesis (`memRefines_csem`, M6MemRef) |
 | `af.slotBase = slotOff` (`hslot`) | the relation's slot-region offset is the frame's slot base — caller (instantiate `slotOff := af.slotBase`) |
-| per run: `AbiEntry fb base ra s`, `StackAvail af s`, `BodyEntry af s w₀`, `ArgsIn f.sig args s`, `ClifEntry f args cs`, `Rel.holds ⟨FF s, syms, slotOff, OB⟩ f cs.frame.slots cs.mem w₀`, `TrapsExplicit env p cs` (with the `try_call`/`try_call_indirect` trap clauses, and the indirect-call clauses `indirect`/`tryIndirect`: an indirect call of the entered function reaches no function of `p`; all vacuous for a function without them: `TrapsExplicit.of_tryFree`, `TrapsExplicit.of_indirectFree`) | caller of the theorem |
+| per run: `AbiEntry fb base ra s`, `StackAvail K af s` (the frame and the callees' `K` bytes fit below `sp` and hold no code), `BodyEntry af s w₀`, `ArgsIn f.sig args s`, `ClifEntry f args cs`, `Rel.holds ⟨FF s, syms, slotOff, OB⟩ f cs.frame.slots cs.mem w₀`, `TrapsExplicit env p cs` (with the `try_call`/`try_call_indirect` trap clauses, and the indirect-call clauses `indirect`/`tryIndirect`: an indirect call of the entered function reaches no function of `p`; all vacuous for a function without them: `TrapsExplicit.of_tryFree`, `TrapsExplicit.of_indirectFree`) | caller of the theorem |
 
 Conclusion: `ArmRefines fb base ra (ArmStepX X H fa) s (Clif.runLoop env p fuel cs)`.
 `Refines` of `csem` is discharged (`refines_final`/`refines_csem`, M6Refines), as is `MemRefines`
@@ -251,6 +255,120 @@ files, runtests).
 * **Regression file**: `corpus/clif-regress/call_indirect.clif` (a vtable built with
   `func_addr` and dispatched through, a function address returned as a value, `try_call_indirect`).
 
+### Callee contract with a dead stack (2026-10-02, `agent/callee-fix`)
+
+**The flaw.** `CalleeOk.os` was `OperandsSound F (callExec H) (csem F ctx X) (.call info)`: from
+every state `s` with the caller's world `w` (`SameWorld F s w`), the hooked callee's state had to
+equal `X.call`'s world on all memory outside the caller's frame addresses `F`. `X.call` sees only
+`w`, which masks the pc, x30 and the allocatable registers; a callee that stores its return
+address `pc + 4` (or a callee-saved register, or a spill) below `sp` writes bytes outside `F` that
+depend on them. So no such callee met the contract whenever its `X.call` returned (proven on
+main: `E2E.calleeOk_mem_world`, `E2E.calleeOk_saves_lr_false`), and every end-to-end theorem was
+vacuous for a function calling a callee with a frame — our own prologue
+`stp x29, x30, [sp, #-16]!` included. Auditing the other per-call clauses found a second
+obstruction of the same kind: `os` quantified over **every** `CallInfo`, including calls whose
+def registers are not the callee's return registers. Two calls of the same callee with the same
+arguments, one defining x19 (allocatable, not clobbered) and one without defs, force the hooked
+callee to both write `X.call`'s result to x19 and preserve x19: unsatisfiable whenever `X.call`
+returns a value — which `XCallsOk` demands for every extern with a return.
+
+**Old premises** (main 5a3ee06), with `FF s := frameF lo hi af s`
+(`lo`/`hi` = `intBase`/`size` of `RAFrame.compute vcp rf`):
+
+```lean
+structure CalleeOk (F : BitVec 64 → Prop) (X : ExtSem) (H : ArmHooks) : Prop where
+  os : ∀ ctx info, OperandsSound F (callExec H) (csem F ctx X) (.call info)
+  pc : ∀ d s, Arm.r .ERR s = .None → Arm.r .PC (H.call d s) = Arm.r .PC s + 4
+  ext : ∀ d uses w outs w', X.call d uses w = some (outs, w') → Arm.r .ERR w = .None →
+    Arm.r .ERR w' = .None ∧ w'.program = w.program
+def CalleeTryOk (F) (X) (H) : Prop := ∀ ctx info ti c wh ops regs i' s w outs w', …
+structure TlsOk (F) (X) (H) : Prop where …
+  seq : … → (∀ a, (H.tls n (.x k) s).mem a = s.mem a) ∧ …
+def StackAvail (af) (s) : Prop := af.frameSize + 16 ≤ (spv s).toNat ∧ ∀ a, CodeAddr s a → …
+(hC : ∀ s, CalleeOk (FF s) X H) (hCT : … → ∀ s, CalleeTryOk (FF s) X H)
+(hTls : … → ∀ s, TlsOk (FF s) X H) (hres : StackAvail af s)
+(hX hXI hrel : … Rel.holds ⟨FF s, …⟩ …)
+```
+
+**New premises** (`FV/E2E/RegLevelSim.lean`, `RegLevelCall.lean`, `RegLevelTry.lean`,
+`RegLevelTls.lean`, `Statement.lean`), with a new theorem parameter `K : Nat` (the callees'
+stack budget) and `FF s := frameW K lo hi af s`:
+
+```lean
+def StackBelow (K : Nat) (sp a : BitVec 64) : Prop := a.toNat < sp.toNat ∧ sp.toNat ≤ a.toNat + K
+def frameW (K lo hi : Nat) (af : AFunc) (s : Arm.ArmState) (a : BitVec 64) : Prop :=
+  frameF lo hi af s a ∨ StackBelow K (spv s - BitVec.ofNat 64 (frameDrop af)) a
+/-- OperandsSoundCtl at one state `s`, world compared outside `F`, frame kept on `FK` -/
+def OperandsSoundCtlAt (F FK) (exec) (sem) (i) (ctl) (s) : Prop
+def CallSoundCtl (F : BitVec 64 → Prop) (K : Nat) exec sem i ctl : Prop :=
+  ∀ s, K ≤ (spOf s).toNat → (∀ a, StackBelow K (spOf s) a → F a) →
+    OperandsSoundCtlAt F (fun a => F a ∧ ¬ StackBelow K (spOf s) a) exec sem i ctl s
+def VCode.CallSite (vc : VCode) (info : CallInfo) : Prop  -- a `call`/`try_call` of `vc`
+structure CalleeOk (F : BitVec 64 → Prop) (K : Nat) (X : ExtSem) (H : ArmHooks)
+    (S : CallInfo → Prop) : Prop where
+  os : ∀ ctx info, S info → CallSoundCtl F K (callExec H) (csem F ctx X) (.call info) .next
+  pc : ∀ d s, Arm.r .ERR s = .None → Arm.CheckSPAlignment s →
+    Arm.r .PC (H.call d s) = Arm.r .PC s + 4
+  ext : (unchanged)
+-- `callExec H` runs the hook only from an aligned `sp` (AAPCS64)
+def CalleeTryOk (F) (X) (H) (S : CallInfo → Prop) : Prop := ∀ ctx info ti, S info → (as before)
+structure TlsOk (F) (K : Nat) (X) (H) : Prop where …
+  seq : … → K ≤ (spOf s).toNat → … ∧ (∀ a, ¬ StackBelow K (spOf s) a →
+    (H.tls n (.x k) s).mem a = s.mem a) ∧ …
+def StackRoom (n : Nat) (s) : Prop := n ≤ (spv s).toNat ∧ ∀ a, CodeAddr s a → n ≤ (a - (spv s - n)).toNat
+def StackAvail (K : Nat) (af) (s) : Prop := StackRoom (af.frameSize + 16 + K) s
+(hC : ∀ s, CalleeOk (FF s) K X H vcp.CallSite)
+(hCT : … → ∀ s, CalleeTryOk (FF s) X H vcp.CallSite)
+(hTls : … → ∀ s, TlsOk (FF s) K X H) (hres : StackAvail K af s)
+(hX hXI hrel : … Rel.holds ⟨FF s, …⟩ …)    -- FF s now includes the dead stack
+```
+
+The conclusion `ArmRefines` and every other premise are unchanged. `RegLevelCorrect` takes `K`
+(its `StackAvail K` premise); `backend_correct`/`_of_rules`/`_m4` take it through `hM6`.
+
+**Why the new callee premises are weaker.** For every `F`, the old `CalleeOk F X H` implies the
+new `CalleeOk F K X H S` for every `K` and `S`: `CallSoundCtl` only adds preconditions (`K ≤ sp`,
+the dead stack outside the world, membership in `S`, an aligned `sp` for `pc`) and only weakens
+the frame clause (`FrameKeep` outside the dead stack); the memory comparison is the same
+`SameWorld F`. With `K = 0`, `StackBelow 0` is empty, so `frameW 0 = frameF` and `StackAvail 0`
+is the former `StackAvail`: the new theorem at `K = 0` is the former one with the weaker callee
+contract. For `K > 0` the world excludes the dead stack, which is what makes the callee premises
+satisfiable by real callees (they write state-dependent bytes there), at the price of two run
+premises that real setups meet: no live CLIF byte in the `K` bytes below the body's `sp`
+(`MemRel.valid` against `frameW`, and `OutRel` for the outgoing area) and no code there
+(`StackAvail K`).
+
+**Why they are sufficient.** The proof only uses the contract at its call sites, from `Q`: there
+`sp` is the body's `sp` (`StRel.sp`), so the dead stack of the call is exactly the activation's
+(`RL.F = frameW R.K …`), `K ≤ sp` follows from `StackAvail K` (`RL.K_le`), and the frame
+addresses `R.FK = frameF …` (spill/save slots, fp/lr, code) are disjoint from it
+(`frameF_not_below`, `RL.FK_not_below`), so they are kept (`RL.callAt`). The simulation relation
+`Q` compares the world outside `R.F` and keeps the frame on `R.FK` (`realizes_op_core` takes
+`OperandsSoundCtlAt R.F R.FK`; the straight-line instructions' `OperandsSound R.F` give it by
+`OperandsSoundCtl.at`). Nothing the theorem tracks lives in the dead stack: live CLIF bytes avoid
+`FF s` (`MemRel.valid`), the explicit stack slots and the outgoing area are at or above the body's
+`sp`, the stack-passed parameters above the entry `sp` (`stackArgsAvoid_frameW`). The register
+part of the contract (results in the def registers, x19–x28 and the low halves of v8–v15 kept,
+x16/x17 and x30 masked, `sp`, x18, x29, flags and the other unmasked fields as `X.call`'s world)
+is unchanged: a real callee computes its results and flags from its arguments and the world, and
+restores the callee-saved registers. The call-site restriction removes only calls the compiler
+never emits.
+
+**Audit of the other per-call clauses.** x30, x16/x17, the allocatable registers and the pc are
+masked (no change); the v-registers: only the low 64 bits of v8–v15 are kept (AAPCS64); flags: part
+of the world, given by `X.call` (a callee's flags are a function of its arguments and the world);
+`TlsOk`: the memory clause had the same flaw (a dynamic TLSDESC resolver saves registers on the
+stack) and now leaves the dead stack unspecified; `XCallsOk`/`XCallsIndOk` constrain only `X`
+(no machine state), `ext` only `X.call`'s error flag and program; `BodyEntry` (`w₀.mem = s.mem`,
+registers as at entry) relates the caller-chosen body world to the entry state and is met by
+construction; `AbiEntry` and `StackAvail` are facts of the entry state. **Open**: `CalleeTryOk`
+fixes the exception payload registers that are not return registers (x0/x1 after fewer than two
+results) to `X.call`'s world, but a callee that does not write them leaves the caller's values,
+which the world masks: unsatisfiable for such callees (whose call sites a `try_call` emits with
+these defs). Fixing it needs the allocated-code semantics to havoc those defs on the normal
+return (a per-edge transfer in the checker: they are live on the handler edges), so functions
+with a `try_call` are still covered only vacuously in that case.
+
 ### Linking (2026-10-02, `agent/link-proof`)
 
 `cargo fv` compiles each function `f` of a program `P` as its own CLIF file, in which every
@@ -311,7 +429,8 @@ theorem xCallsOk_link
 ```
 
 (`hcov`, `hC`, `hCT`, `hTls`, `hsym`, `hslot` and the run premises exactly as in
-`backend_correct_final`, `FF`/`OB` as in "Final hypotheses"; the indirect-call contract is
+`backend_correct_final`, with the stack budget `K`, `FF`/`OB` as in "Final hypotheses"; the
+indirect-call contract is
 vacuous, `indSigs_nil_of_linkFree`.) So the Arm code of `f` refines the **whole-program** CLIF
 run. Its premises are those of `backend_correct_final` at `env := linkEnv P base`,
 `p := P.only f`: by `xCallsOk_link` the external contract splits into the base environment's
@@ -331,35 +450,93 @@ symbol addresses (`hsym`), and the machine model of a call: at `bl g` the machin
 `H.call` (one step) whose contract `CalleeOk`/`XCallsOk` is a premise, now also for the
 program's own functions.
 
-**Why the program callees' contracts are not discharged** (proven obstruction and the gaps):
+**Why the program callees' contracts are not discharged** (the gaps):
 
-1. *`CalleeOk` is unsatisfiable for real non-leaf callees.* Its `os` clause compares the hooked
-   callee's state with `X.call`'s world by `SameWorld F` (equal memory outside the caller's
-   frame addresses `F`) for every state with the caller's world, and `X.call` sees only the
-   world. So the memory a callee leaves outside `F` cannot depend on the pc, x19–x28 or x30
-   (`calleeOk_mem_world`); a callee that stores its return address `pc + 4` below `sp` — every
-   prologue `stp x29, x30, [sp, #-16]!`, ours included — contradicts it whenever its `X.call`
-   returns (`calleeOk_saves_lr_false`). (The same holds for leaf externs only if they write no
-   state-dependent byte below `sp`.)
+1. *Dead stack* — **fixed** (agent/callee-fix, "Callee contract with a dead stack"): the former
+   `CalleeOk` compared all memory outside the caller's frame with `X.call`'s world, so no callee
+   saving its return address below `sp` could meet it (`calleeOk_saves_lr_false`, removed with
+   the old contract). The contract now leaves the callees' `K`-byte dead stack unspecified and
+   holds for such callees (`E2E.calleeOk_witness`, `E2E.witness_saves_lr`).
 2. *Exact world.* `X.call` must give the exact 128-bit def registers and the exact world (flags,
    memory outside `F`) of the hooked callee, while a compiled callee's theorem fixes only the
    low bits of its results and the live CLIF bytes (`ArmRefines`).
 3. *Frame locality.* `ArmRefines` does not say that the callee leaves the caller's frame `F` and
-   the memory outside live CLIF allocations unchanged, which `CalleeOk` (`FrameKeep`) needs.
+   the memory outside live CLIF allocations and its own stack unchanged, which `CalleeOk`
+   (`FrameKeep`, `SameWorld`) needs.
 4. *Slot placement.* `Clif.run` places a callee's slots with its bump allocator
    (`enterFunc`), the Arm code `sp`-relatively; the per-function theorem puts the entered
    function's slots at the Arm frame (`ClifEntry`, `SlotRel`). A program callee whose slot
    addresses escape (returned, compared) has different CLIF and Arm results, so its `linkEnv`
    contract is unsatisfiable; for the others it is satisfiable.
+5. *`try_call` payload registers* (`CalleeTryOk`, see "Callee contract with a dead stack").
 
 The remaining plan is in `docs/DEFERRED.md` ("Linking").
+
+### Non-vacuity (2026-10-02, `agent/callee-fix`, `FV/E2E/NonVacuity.lean`)
+
+A premise set that cannot hold makes a theorem say nothing. The contract premises on the
+machine's hooks and the external semantics are the ones that cannot be checked per function, so
+they are witnessed by a concrete, realistic callee:
+
+* `framed g body` — `bl g` and the function at `g` as the Arm model runs it: our backend's frame
+  code for an empty frame, `prologueLines 0` (`stp x29, x30, [sp, #-16]!; mov x29, sp`), `body`,
+  `epilogueLines 0` (`ldp x29, x30, [sp], #16; ret`), each instruction executed by
+  `Arm.exec_inst` of its encoding. `framed_spec`: with a body of stack budget `K` (`KeepsBut K`:
+  every field but the pc and x30, the program and the memory outside the `K` bytes below `sp`
+  kept) it has budget `K + 16`, returns to `pc + 4`, and leaves `pc + 4` and the caller's fp in
+  the 16 bytes below `sp`.
+* `witnessHooks g h sym tp`: every call runs `witnessCall g h := framed g (framed h id)` (a
+  function that calls a leaf; two frames pushed), the TLSDESC hook is the static resolver's
+  effect. `witness_saves_lr`: `read_mem_bytes 16 (sp - 16) (witnessCall g h s) = (pc + 4) ++ x29`
+  — exactly the callee the former contract excluded.
+* `witnessX sym tp`: every callee returns nothing and keeps the world.
+
+```lean
+theorem calleeOk_witness (F : BitVec 64 → Prop) {K : Nat} (hK : 32 ≤ K) (S : CallInfo → Prop)
+    (g h : BitVec 64) (sym : String → Int → BitVec 64) (tp : BitVec 64) :
+    CalleeOk F K (witnessX sym tp) (witnessHooks g h sym tp) S
+theorem final_contracts_witness … (hK : 32 ≤ K) (g h tp : BitVec 64)
+    (hsig : ∀ ext ∈ f.externs.map (·.2), sigRets ext.sig = [] ∧ ext.sig.returns = [])
+    (hisig : ∀ sig ∈ indSigs f, sigRets sig = [] ∧ sig.returns = [])
+    (hnoop : ∀ ext ∈ f.externs.map (·.2), ∀ G, env.extern ext.name = some G →
+      ∀ vals cm rvals cm', G vals cm = .returned rvals cm' → cm' = cm)
+    (hnoopI : ∀ sig ∈ indSigs f, ∀ n G, env.extern n = some G → ∀ vals cm rvals cm',
+      G vals cm = .returned rvals cm' → cm' = cm) :
+    (∀ s, CalleeOk (FF s) K X H vcp.CallSite) ∧ (∀ s, TlsOk (FF s) K X H) ∧
+    (∀ s, XCallsOk env (f.externs.map (·.2)) (Rel.holds ⟨FF s, syms, slotOff, OB⟩ f) X) ∧
+    (∀ s, XCallsIndOk env (indSigs f) (Rel.holds ⟨FF s, syms, slotOff, OB⟩ f) X) ∧
+    (∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
+  -- X := witnessX (witnessSym syms) tp, H := witnessHooks g h (witnessSym syms) tp
+theorem backend_correct_final_witness (hsub) (hc) (hK : 32 ≤ K) (g h tp) (hcov)
+    (hnt : ∀ B ∈ f.blocks, B.term.isTry = false) (hsig) (hisig) (hnoop) (hnoopI) (hslot)
+    (hent) (hres : StackAvail K af s) (hbe) (hargs) (hcs) (hrel) (htr) (fuel) :
+    ArmRefines fb base ra (ArmStepX X H fa) s (Clif.runLoop env p fuel cs)
+```
+
+Witnesses per top-level theorem (the run premises `AbiEntry`, `StackAvail K`, `BodyEntry`,
+`ArgsIn`, `ClifEntry`, `Rel.holds`, `TrapsExplicit` are facts of a concrete run; they were
+satisfiable before and only gained "no live CLIF byte and no code in the `K` bytes below the
+body's `sp`"):
+
+| Theorem | Contract premises | Witness |
+| --- | --- | --- |
+| `backend_correct_final` | `hC`, `hCT`, `hTls`, `hX`, `hXI`, `hsym` | `final_contracts_witness` (`hC`, `hTls`, `hX`, `hXI`, `hsym`, for a function whose externs and indirect-call signatures return nothing, in an environment whose externs keep the memory when they return (those `f` declares; all of them if it has an indirect call); `CalleeOk` itself holds for every set of call sites); `hCT` vacuous without `try_call`; `backend_correct_final_witness` is the theorem with all of them discharged |
+| `backend_correct_opt_proven` | `hC`, `hTls`, `hX`, `hsym` (for the optimised function; `try_call` and `call_indirect` excluded by premises) | `final_contracts_witness` at `f := Opt.optimize f cfg` |
+| `backend_correct_legal` | `hC`, `hCT`, `hTls`, `hX`, `hXI`, `hsym` (for the legalised `g`, environment `Clif.Rust.env`) | `final_contracts_witness` at `f := g`, `env := Clif.Rust.env`, for functions without indirect calls whose externs are the diverging panic entry points (they never return, so `hnoop` holds) |
+| `backend_correct_linked` | `hC`, `hCT`, `hTls`, `hX` (environment `Clif.linkEnv P base`); `hXI` discharged by `Linkable` | `final_contracts_witness` at `env := Clif.linkEnv P base`, when the program callees and the base externs return nothing and keep the memory |
+
+**Not witnessed** (stated, not proven to be satisfiable): `hCT` for a function with a `try_call`
+(the payload registers, "Callee contract with a dead stack"), and callees that return values: the
+contract restricted to the compiled code's call sites admits them (a callee returning its first
+argument in x0 meets it at call sites whose first argument and def are in x0), but no witness is
+proven.
 
 ## The theorem (`FV/E2E/Main.lean`)
 
 ```lean
 theorem backend_correct {p f k vc vcp rf af fa fb}
     (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb)
-    {sem : Arm.ArmState → Sem} {F syms slotOff out astep env}
+    {sem : Arm.ArmState → Sem} {F syms slotOff out K astep env}
     -- M4
     (hrules : LowerRulesCorrect Isle.Aarch64.program)
     (hex : ExcludedUnmatchable Isle.Aarch64.program)
@@ -372,7 +549,7 @@ theorem backend_correct {p f k vc vcp rf af fa fb}
     (htryInds : ∀ s, TryIndCalls (sem s) (fun sl cm w => Rel.holds ⟨F s, syms, slotOff, out⟩ f sl cm w)
       env p (indSigs f))
     -- M6 + M5
-    (hM6 : RegLevelCorrect sem F astep vcp af fb)
+    (hM6 : RegLevelCorrect sem F K astep vcp af fb)
     -- the shared VCode semantics of each activation (M6's `csem (F s)`)
     (hRef : ∀ s, Refines (F s) (sem s)) (hds : ∀ s, DriverSem (sem s))
     -- the callee contract (M6, from `CalleeSound`)
@@ -386,7 +563,7 @@ theorem backend_correct {p f k vc vcp rf af fa fb}
     (houtB : vc.outgoing ≤ out)
     -- the run
     {base ra s w₀ args cs}
-    (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hbe : BodyEntry af s w₀)
+    (hent : AbiEntry fb base ra s) (hres : StackAvail K af s) (hbe : BodyEntry af s w₀)
     (hargs : ArgsIn f.sig args s) (hargF : StackArgsAvoid (F s) f.sig args s)
     (hcs : ClifEntry f args cs)
     (hrel : Rel.holds ⟨F s, syms, slotOff, out⟩ f cs.frame.slots cs.mem w₀)
@@ -438,9 +615,10 @@ the `try_call_indirect` statements `TryIndRulesCorrect`, `TryIndUnmatchable` (of
   (`clifEntry_initState`), the Arm frame another. The theorem is about `Clif.runLoop` from the
   entry state whose slots are at the Arm frame's slot region (`SlotRel`).
 * **Memory** `MemRel F syms cm s`: initialised bytes of live CLIF allocations are the Arm bytes
-  at the same addresses; every live CLIF address is below 2⁶⁴ and outside the frame addresses
-  `F` (the allocator-private part of the frame: spill/save slots, fp/lr); `cm.symbols = syms`
-  (link-time `symbol_value` addresses).
+  at the same addresses; every live CLIF address is below 2⁶⁴ and outside the addresses `F`
+  outside the world (the allocator-private part of the frame: spill/save slots, fp/lr; since
+  agent/callee-fix also the callees' dead stack, `frameW`); `cm.symbols = syms` (link-time
+  `symbol_value` addresses).
 * **Slots** `Rel.holds Γ f slots cm w := MemRel Γ.F Γ.syms cm w ∧ SlotRel f (Γ.slotReg w)
   slots ∧ OutRel Γ.F Γ.out cm w`, `Γ.slotReg w = sp(w) + Γ.slotOff`; `OutRel`: the outgoing
   stack-argument area `[sp(w), sp(w) + Γ.out)` fits the address space, avoids `F` and holds no
@@ -457,9 +635,11 @@ the `try_call_indirect` statements `TryIndRulesCorrect`, `TryIndUnmatchable` (of
   location of `locsOf f.sig` in that register (low bits; x0.. in order, an `sret` parameter in
   x8), the argument at a stack location `off` in the caller's outgoing area (`StackArgAt`: its
   bytes at `sp(s) + off`, inside the address space, not code). `StackArgsAvoid` (internal to
-  `backend_correct`, discharged by `stackArgsAvoid_frameF`): those bytes avoid the frame.
-* **Resource precondition** `StackAvail af s`: the frame (`af.frameSize` + fp/lr) fits below sp.
-  Callee stack use is part of the callee contract (M6's `CalleeSound`).
+  `backend_correct`, discharged by `stackArgsAvoid_frameW`): those bytes avoid the frame and the
+  callees' dead stack.
+* **Resource precondition** `StackAvail K af s` (`StackRoom (af.frameSize + 16 + K) s`): the
+  frame (`af.frameSize` + fp/lr) and the callees' stack budget `K` fit below sp without wrapping
+  and hold no code. The callees use the `K` bytes below the body's `sp` (`CalleeOk`).
 * **Body entry** `BodyEntry af s w₀` (M6Rest2's definition): the world the function body starts
   in after the prologue: sp lowered by `frameDrop af`, x29 the frame pointer, x0–x7 and v0–v7, memory,
   program and every unmasked field other than x29/sp as in `s`. The VCode runs (and the CLIF
@@ -638,9 +818,11 @@ extrt and runtests (445 files): no function rejected.
    `driverSem_csem`); open: `Refines`/`MemRefines` of `csem` (M6Insts) and the decision of
    `FormsCovered` by `lean-e2e-check` (`formsCoveredB`).
 3. **Scope extensions**: discharging the program callees' contracts of
-   `backend_correct_linked` from their own theorems (induction on call depth; blocked by the
-   callee contract's shape, see "Linking" and `docs/DEFERRED.md`); stack-passed arguments of
-   indirect calls (`indSigs`); memory-access traps (need a fault model).
+   `backend_correct_linked` from their own theorems (induction on call depth; the dead-stack
+   obstruction is fixed, the exact world, frame locality and slot placement remain, see
+   "Linking" and `docs/DEFERRED.md`); the `try_call` payload registers (`CalleeTryOk`, "Callee
+   contract with a dead stack"); stack-passed arguments of indirect calls (`indSigs`);
+   memory-access traps (need a fault model).
 
 ## Trusted (not proven)
 
@@ -690,8 +872,10 @@ Backend.Proof.regLevelCorrect_backend:
   `Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9`
 E2E.backend_correct_final: those of `backend_correct_m4` and `regLevelCorrect_backend`
 E2E.backend_correct_linked: those of `backend_correct_final`
-Clif.runLoop_link, E2E.xCallsOk_link, E2E.calleeOk_mem_world, E2E.calleeOk_saves_lr_false:
-  [propext, Classical.choice, Quot.sound]
+Clif.runLoop_link, E2E.xCallsOk_link: [propext, Classical.choice, Quot.sound]
+E2E.calleeOk_witness, E2E.final_contracts_witness, E2E.witness_saves_lr:
+  [propext, Classical.choice, Quot.sound, Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9]
+E2E.backend_correct_final_witness: those of `backend_correct_final`
 ```
 
 **Status (M6Insts2, 2026-09-28)**: `hRef`/`hmem` of `backend_correct_m4` are not yet discharged.

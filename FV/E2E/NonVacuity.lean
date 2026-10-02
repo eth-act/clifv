@@ -436,17 +436,17 @@ theorem xCallsOk_witness {env : Clif.Env} {exts : List Clif.ExtFunc} (MR : MemRe
   exact ⟨[], w, rfl, by rw [(hsig ext hin).1]; rfl, ⟨Nat.le_refl _, fun _ _ _ h => nomatch h⟩, hmr⟩
 
 /-- **The indirect-call contract holds for the witness** for call-site signatures without
-returns, in an environment whose externs keep the memory. -/
+returns, in an environment whose externs keep the memory (if there is a signature). -/
 theorem xCallsIndOk_witness {env : Clif.Env} {sigs : List Clif.Signature} (MR : MemRelT)
     (sym : String → Int → BitVec 64) (tp : BitVec 64)
     (hsig : ∀ sig ∈ sigs, sigRets sig = [] ∧ sig.returns = [])
-    (hnoop : ∀ n g, env.extern n = some g → ∀ vals cm rvals cm',
+    (hnoop : ∀ sig ∈ sigs, ∀ n g, env.extern n = some g → ∀ vals cm rvals cm',
       g vals cm = .returned rvals cm' → cm' = cm) :
     XCallsIndOk env sigs MR (witnessX sym tp) := by
   intro sig hin n g sl cm w u args vals rvals cm' hg _ _ _ hmr hret hrl
   have h0 : rvals = [] := List.eq_nil_of_length_eq_zero (by rw [hrl, (hsig sig hin).2]; rfl)
   subst h0
-  rw [hnoop n g hg _ _ _ _ hret]
+  rw [hnoop sig hin n g hg _ _ _ _ hret]
   exact ⟨[], w, rfl, by rw [(hsig sig hin).1]; rfl, ⟨Nat.le_refl _, fun _ _ _ h => nomatch h⟩, hmr⟩
 
 /-! ## The premises of the end-to-end theorems -/
@@ -463,7 +463,8 @@ theorem witnessSym_ok (syms : String → Option Nat) :
 /-- **Non-vacuity of the contract premises of `backend_correct_final`** (and of `_opt_proven`,
 `_legal`, `_linked`, which take the same ones for their compiled function): for a compiled
 function whose externs and indirect-call signatures return nothing, in an environment whose
-externs keep the memory, the witness hooks (every call runs a callee that pushes two frames
+externs (those `f` declares; all of them if `f` has an indirect call) keep the memory when they
+return, the witness hooks (every call runs a callee that pushes two frames
 below `sp`, `witness_saves_lr`) and the witness external semantics meet the callee contract
 `hC`, the TLSDESC contract `hTls`, the external contracts `hX`/`hXI` and the symbol premise
 `hsym`, for every stack budget `K ≥ 32`. -/
@@ -472,7 +473,9 @@ theorem final_contracts_witness {f : Clif.Function} {vcp : VCode} {rf : RFunc} {
     (g h tp : BitVec 64)
     (hsig : ∀ ext ∈ f.externs.map (·.2), sigRets ext.sig = [] ∧ ext.sig.returns = [])
     (hisig : ∀ sig ∈ indSigs f, sigRets sig = [] ∧ sig.returns = [])
-    (hnoop : ∀ n G, env.extern n = some G → ∀ vals cm rvals cm',
+    (hnoop : ∀ ext ∈ f.externs.map (·.2), ∀ G, env.extern ext.name = some G →
+      ∀ vals cm rvals cm', G vals cm = .returned rvals cm' → cm' = cm)
+    (hnoopI : ∀ sig ∈ indSigs f, ∀ n G, env.extern n = some G → ∀ vals cm rvals cm',
       G vals cm = .returned rvals cm' → cm' = cm) :
     (∀ s, CalleeOk
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K
@@ -488,8 +491,8 @@ theorem final_contracts_witness {f : Clif.Function} {vcp : VCode} {rf : RFunc} {
         slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) (witnessX (witnessSym syms) tp)) ∧
     (∀ n b, syms n = some b → (witnessX (witnessSym syms) tp).sym n 0 = BitVec.ofNat 64 b) :=
   ⟨fun _ => calleeOk_witness _ hK _ g h _ tp, fun _ => tlsOk_witness _ K g h _ tp,
-    fun _ => xCallsOk_witness _ _ tp hsig fun ext _ => hnoop ext.name,
-    fun _ => xCallsIndOk_witness _ _ tp hisig hnoop, witnessSym_ok syms⟩
+    fun _ => xCallsOk_witness _ _ tp hsig hnoop,
+    fun _ => xCallsIndOk_witness _ _ tp hisig hnoopI, witnessSym_ok syms⟩
 
 /-- **`backend_correct_final` with the witness callees**: for a function without `try_call`
 whose externs and indirect-call signatures return nothing, in an environment whose externs keep
@@ -507,7 +510,9 @@ theorem backend_correct_final_witness {p : Clif.Program} {f : Clif.Function} {k 
     (hnt : ∀ B ∈ f.blocks, B.term.isTry = false)
     (hsig : ∀ ext ∈ f.externs.map (·.2), sigRets ext.sig = [] ∧ ext.sig.returns = [])
     (hisig : ∀ sig ∈ indSigs f, sigRets sig = [] ∧ sig.returns = [])
-    (hnoop : ∀ n G, env.extern n = some G → ∀ vals cm rvals cm',
+    (hnoop : ∀ ext ∈ f.externs.map (·.2), ∀ G, env.extern ext.name = some G →
+      ∀ vals cm rvals cm', G vals cm = .returned rvals cm' → cm' = cm)
+    (hnoopI : ∀ sig ∈ indSigs f, ∀ n G, env.extern n = some G → ∀ vals cm rvals cm',
       G vals cm = .returned rvals cm' → cm' = cm)
     (hslot : af.slotBase = slotOff)
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
@@ -520,7 +525,7 @@ theorem backend_correct_final_witness {p : Clif.Program} {f : Clif.Function} {k 
       (witnessHooks g h (witnessSym syms) tp) fa) s (Clif.runLoop env p fuel cs) := by
   obtain ⟨hC, hTls, hX, hXI, hsym⟩ :=
     final_contracts_witness (f := f) (vcp := vcp) (rf := rf) (af := af) (slotOff := slotOff)
-      hK g h tp hsig hisig hnoop
+      hK g h tp hsig hisig hnoop hnoopI
   exact backend_correct_final hsub hc hcov hC
     (fun ⟨B, hB, ht⟩ => absurd ht (by rw [hnt B hB]; decide)) (fun _ => hTls) hX hXI hsym hslot
     hent hres hbe hargs hcs hrel htr fuel
