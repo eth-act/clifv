@@ -185,6 +185,7 @@ theorem StRel.pc {R : RL} {s : Arm.ArmState} {m : Loc → CV} {w : Arm.ArmState}
   align := align_of_sp (by simp only [spOf]; rw [Arm.r_of_w_different (by simp)]) h.align
   fplr := fun hf => by rw [Arm.read_mem_bytes_of_w]; exact h.fplr hf
   code := fun k w hk => by rw [Arm.read_mem_bytes_of_w]; exact h.code k w hk
+  gkeep := fun a ha => by rw [Arm.mem_w_of_mem_eq rfl]; exact h.gkeep a ha
 
 /-! ## Entering a block -/
 

@@ -180,14 +180,14 @@ end
 /-! ## `Realizes` by cases -/
 
 /-- **The machine realises the allocated code** under `Q ∧ AInv`: every item case. -/
-theorem realizes_all {R : RL} (hR : R.Wf) (hC : CalleeOk R.F R.K R.X R.H R.vc.CallSite)
+theorem realizes_all {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (CallPc R.fa R.base) R.X R.H R.vc.CallSite)
     (hT : R.vc.hasTryCall = true → CalleeTryOk R.F R.X R.H R.vc.TrySite)
     (hTls : R.vc.hasTls = true → TlsOk R.F R.K R.X R.H)
     (hcov : FormsCovered R.ctx R.vc) :
-    Realizes R.vc R.rf R.sem ckeep R.step (fun s c => Q R s c ∧ AInv c) := by
+    Realizes R.vc R.rf R.sem ckeep R.step (fun s c => Q R s c ∧ AInv R c) := by
   intro s c c' ⟨hq, hA⟩ h
   have fin : ∀ n c'', MStep R.vc R.sem ckeep R.rf c c'' → Q R (iterN R.step n s) c'' →
-      ∃ n c'', MStep R.vc R.sem ckeep R.rf c c'' ∧ (Q R (iterN R.step n s) c'' ∧ AInv c'') :=
+      ∃ n c'', MStep R.vc R.sem ckeep R.rf c c'' ∧ (Q R (iterN R.step n s) c'' ∧ AInv R c'') :=
     fun n c'' hm hq' => ⟨n, c'', hm, hq', aInv_step hR hq hA hm⟩
   have hck := (lowerRFunc_ok hR.alloc).2.2.2
   cases h with
@@ -349,40 +349,47 @@ theorem rets_store {us : List (Reg × Reg)} {ops : Array Operand} {allocs : Arra
   funext l
   exact hcl.1 l (by simp [MInst.clobbers])
 
-/-- **`RegLevelCorrect` for the backend's code** (M6 + M5): for the allocated, lowered, emitted
-and laid-out function, the machine `ArmStepX X H fa` realises every return and every trap of
-the prepared VCode under `csem` (addresses outside the world `frameW K`: the frame and the
-callees' dead stack of `K` bytes; function context `⟨fa.k, af.slotBase⟩`, external semantics
-`X`), given the form coverage `FormsCovered` (decided by `formsCoveredB`), the callee contract
-`CalleeOk` of every activation (with stack budget `K`, for the call sites of `vcp`), and (for code with a `tls_value`) the
-TLSDESC contract `TlsOk`. -/
-theorem regLevelCorrect_backend {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
+/-- **The register-level theorem with kept addresses and the final world** (M6 + M5, for
+linking): `RegLevelCorrect`'s simulation for the activation entered in `s` whose addresses
+outside the world are `frameWG K … G s` (the frame, the callees' dead stack and addresses `G`
+it keeps: its callers' frames, the program's code), from a body-entry world `w₀` that agrees
+with `s` only outside them and on the registers the entry `Args` reads (`BodyEntryW`), with the
+callee contract required only at the states that keep `G` (`CalleeOkG`). A return additionally
+leaves every unmasked field but x29/`sp` as the VCode run's final world `w` (the flags, x18, …),
+the memory at `G` as at entry and the program unchanged. -/
+theorem regLevelCorrect_world {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
     {fb : FnBin} {k : Nat} (hcheck : checkAlloc vcp rf = .ok ()) (halloc : lowerRFunc vcp rf = .ok af)
     (hemit : emitFunc k af = .ok fa) (hlayout : fa.layout = .ok fb) {X : ExtSem} {H : ArmHooks}
-    {K : Nat} (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
-    (hC : ∀ s, CalleeOk
-      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H vcp.CallSite)
-    (hCT : vcp.hasTryCall = true → ∀ s, CalleeTryOk
-      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H vcp.TrySite)
-    (hTls : vcp.hasTls = true → ∀ s, TlsOk
-      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H) :
-    RegLevelCorrect
-      (fun s => csem (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s)
-        ⟨fa.k, af.slotBase⟩ X)
-      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af) K
-      (ArmStepX X H fa) vcp af fb := by
-  intro base ra s hent hres w₀ hbe ρ₀
+    {K : Nat} {G : BitVec 64 → Prop} (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
+    {base ra : BitVec 64} {s : Arm.ArmState} (hent : AbiEntry fb base ra s)
+    (hres : StackAvail K af s) (hG : ∀ a, G a → ¬ StackBelow (frameDrop af + K) (spv s) a)
+    (hC : CalleeOkG (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) K G s
+      (CallPc fa base) X H vcp.CallSite)
+    (hCT : vcp.hasTryCall = true → CalleeTryOk (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) X H vcp.TrySite)
+    (hTls : vcp.hasTls = true → TlsOk (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) K X H)
+    {w₀ : Arm.ArmState} (hbe : BodyEntryW (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) vcp.EntryArg af s w₀) (ρ₀ : Nat → CV) :
+    (∀ us vals w, VReturns vcp (csem (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ us vals w →
+      ∃ n, ArmRet ra s (E2E.runX (ArmStepX X H fa) n s) ∧
+        (∀ (j : Nat) v p x, us[j]? = some (v, p) → vals[j]? = some x →
+          regVal (E2E.runX (ArmStepX X H fa) n s) p = x) ∧
+        (∀ a, ¬ (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) a → (E2E.runX (ArmStepX X H fa) n s).mem a = w.mem a) ∧
+        (∀ f, ¬ Masked f → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 →
+          Arm.r f (E2E.runX (ArmStepX X H fa) n s) = Arm.r f w) ∧
+        (∀ a, G a → (E2E.runX (ArmStepX X H fa) n s).mem a = s.mem a) ∧
+        (E2E.runX (ArmStepX X H fa) n s).program = s.program) ∧
+    (∀ c, VTraps vcp (csem (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ c →
+      ∃ n, TrapAt fb base c (E2E.runX (ArmStepX X H fa) n s)) := by
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hlayout
   obtain ⟨body, psF, hb, -, hk⟩ := emitFunc_ok hemit
   subst hk
-  let R : RL := ⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K⟩
+  let R : RL := ⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, G⟩
   have hR : R.Wf := ⟨hcheck, halloc, hemit, hlayout, hlm, by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres,
-    ⟨body, hb⟩, hent.program⟩
+    ⟨body, hb⟩, hent.program, hG⟩
   have hck := (lowerRFunc_ok hR.alloc).2.2.2
   obtain ⟨n0, hq0, hA0, hf0⟩ := q_init hR hent hbe
   obtain ⟨Rl, hSim, hinit, hkeep⟩ :=
     checkAlloc_sound R.vc R.rf R.sem ckeep hcheck (locVal R.fr (iterN R.step n0 s)) ρ₀ w₀
-  have hRz := realizes_all hR (hC s) (fun h => hCT h s) (fun h => hTls h s) hcov
+  have hRz := realizes_all hR hC hCT hTls hcov
   refine ⟨fun us vals w hret => ?_, fun c htr => ?_⟩
   · -- a return
     obtain ⟨b, k, ρ, w₁, vb, ops, outs, hstar, hvb, hi, hops, hvals, hsem⟩ := hret
@@ -422,12 +429,13 @@ theorem regLevelCorrect_backend {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : Fn
         | ret _ =>
         rw [rets_store hlen2 rfl hho hcl] at hks
         have hst := q_stRel hq2
-        obtain ⟨n3, hpc, herr, hsp, hx29, hregs, hmem, hvalsM⟩ := ret_machine hR hent hq2 hvb hi
+        obtain ⟨n3, hpc, herr, hsp, hx29, hregs, hmem, hfld, hprogF, hvalsM⟩ :=
+          ret_machine hR hent hq2 hvb hi
         have hm0 : ∀ r, locVal R.fr (iterN R.step n0 s) (.reg r) = regVal (iterN R.step n0 s) r :=
           fun _ => rfl
         have hms : ∀ r, r.allocatable = true → _ = regVal _ r := fun r hr =>
           hst.store (.reg r) (fun r' e => by cases e; exact hr) trivial
-        refine ⟨n0 + n1 + n2 + n3, ⟨?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩ <;> rw [hfin]
+        refine ⟨n0 + n1 + n2 + n3, ⟨?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_⟩ <;> rw [hfin]
         · exact hpc
         · exact herr
         · exact hsp
@@ -468,6 +476,14 @@ theorem regLevelCorrect_backend {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : Fn
         · intro a ha
           rw [hmem]
           exact hst.world.2.1 a ha
+        · intro f hf h29 h31
+          rw [hfld f hf h29 h31]
+          exact hst.world.1 f hf
+        · intro a ha
+          rw [hmem]
+          exact hst.gkeep a ha
+        · rw [hprogF, hst.prog]
+          exact hent.program.symm
   · -- a trap
     obtain ⟨b, k, ρ, w, vb, i, ops, outs, w', hstar, hvb, hi, hops, hsem, htc⟩ := htr
     obtain ⟨n1, c1, ⟨hq1, hA1⟩, hr1⟩ := forward hSim hRz hstar hinit ⟨hq0, hA0⟩
@@ -509,5 +525,40 @@ theorem regLevelCorrect_backend {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : Fn
             subst htc
             obtain ⟨n3, htrap⟩ := trap_trapIf hR hq2 hvb hi hops' hholds
             exact ⟨n0 + n1 + n2 + n3, by rw [hfin]; exact htrap⟩
+
+
+/-- **`RegLevelCorrect` for the backend's code** (M6 + M5): for the allocated, lowered, emitted
+and laid-out function, the machine `ArmStepX X H fa` realises every return and every trap of
+the prepared VCode under `csem` (addresses outside the world `frameW K`: the frame and the
+callees' dead stack of `K` bytes; function context `⟨fa.k, af.slotBase⟩`, external semantics
+`X`), given the form coverage `FormsCovered` (decided by `formsCoveredB`), the callee contract
+`CalleeOk` of every activation (with stack budget `K`, for the call sites of `vcp`), and (for code with a `tls_value`) the
+TLSDESC contract `TlsOk`. (`regLevelCorrect_world` without kept addresses.) -/
+theorem regLevelCorrect_backend {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
+    {fb : FnBin} {k : Nat} (hcheck : checkAlloc vcp rf = .ok ()) (halloc : lowerRFunc vcp rf = .ok af)
+    (hemit : emitFunc k af = .ok fa) (hlayout : fa.layout = .ok fb) {X : ExtSem} {H : ArmHooks}
+    {K : Nat} (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
+    (hC : ∀ s, CalleeOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H vcp.CallSite)
+    (hCT : vcp.hasTryCall = true → ∀ s, CalleeTryOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H vcp.TrySite)
+    (hTls : vcp.hasTls = true → ∀ s, TlsOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H) :
+    RegLevelCorrect
+      (fun s => csem (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s)
+        ⟨fa.k, af.slotBase⟩ X)
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af) K
+      (ArmStepX X H fa) vcp af fb := by
+  intro base ra s hent hres w₀ hbe ρ₀
+  have e := frameWG_false K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s
+  have h := regLevelCorrect_world (G := fun _ => False) hcheck halloc hemit hlayout hcov hent hres
+    (fun _ h => h.elim) (by rw [e]; exact (hC s).g _ s _) (by rw [e]; exact fun h => hCT h s)
+    (by rw [e]; exact fun h => hTls h s)
+    (by rw [e]; exact hbe.w _ fun r ⟨_, _, hvb, hi, _, hv⟩ =>
+      ((ctlCheck_args (lowerRFunc_ok halloc).2.2.2 hvb hi).2.2 _ hv).2) ρ₀
+  rw [e] at h
+  exact ⟨fun us vals w hret => by
+    obtain ⟨n, h1, h2, h3, -⟩ := h.1 us vals w hret
+    exact ⟨n, h1, h2, h3⟩, h.2⟩
 
 end Backend.Proof

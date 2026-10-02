@@ -114,7 +114,18 @@ premises. Deferred, in order:
   the normal-return edge only (`CheckCtx.edgeForget`), and `CalleeTryOk` constrains only the
   results at the `try_call` sites (`VCode.TrySite`). Witness: `E2E.calleeTryOk_witness`,
   `E2E.backend_correct_final_try_witness`.
-- **Exact world of a call.** `X.call` is a function of the arguments and the world and must give
+- **Arm-level linking: done for the scope of `LinkSys.Ok`** (agent/arm-link,
+  `E2E.backend_correct_program`): exact world (one VCode outcome per body-entry world,
+  `backend_correct_world`), frame locality (`G` kept), the induction on depth (`LinkSys.thm`).
+  Witness done (`E2E.LinkWitness.backend_correct_program_witness`, `FV/E2E/NonVacuityLink.lean`;
+  it found `raCall` unsatisfiable for every program with a call, now stated per call-site
+  callee). Remaining: widen the scope: directly self-recursive functions (`raCall`), callees
+  with stack slots
+  (slot-placement oracle or relocation invariance), stack-passed arguments (the callee's
+  outgoing area is caller garbage: needs it in `F` or a write-before-read argument), `try_call`
+  (`CalleeTryOk` from `ActRet`), `blr` call sites, float parameters; a depth-free machine
+  (monotonicity of `linkedCall` in the depth, needs base hooks preserving errors).
+- **Exact world of a call.** (superseded for program callees by agent/arm-link) `X.call` is a function of the arguments and the world and must give
   the exact def registers and world of the hooked callee; a compiled callee's theorem fixes only
   the low bits of its results and the live CLIF bytes. Either make `csem`'s call clause
   relational (a set of outcomes; driver and M6 refactor) or prove non-interference of compiled

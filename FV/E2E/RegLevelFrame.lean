@@ -397,9 +397,9 @@ theorem sp_sub16 (x : BitVec 64) (n : Nat) :
 (store = the machine's locations, world = any body-entry world `w₀`), `AInv` holds, and every
 field but the pc, x16, x29 and `sp` is as at entry. -/
 theorem q_init {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiEntry R.fb R.base ra R.s0)
-    {w₀ : Arm.ArmState} (hbe : BodyEntry R.af R.s0 w₀) :
+    {w₀ : Arm.ArmState} (hbe : BodyEntryW R.F R.vc.EntryArg R.af R.s0 w₀) :
     ∃ n, Q R (iterN R.step n R.s0) (MConf.init R.rf (locVal R.fr (iterN R.step n R.s0)) w₀) ∧
-      AInv (MConf.init R.rf (locVal R.fr (iterN R.step n R.s0)) w₀) ∧
+      AInv R (MConf.init R.rf (locVal R.fr (iterN R.step n R.s0)) w₀) ∧
       ∀ f, f ≠ .PC → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 →
         Arm.r f (iterN R.step n R.s0) = Arm.r f R.s0 := by
   have hframe := lowerRFunc_frame hR.alloc
@@ -430,7 +430,7 @@ theorem q_init {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiEntry R.fb R.bas
     exact write_bytes_outside 16 _ _ _ ha
   have hmemF : ∀ a, ¬ R.F a → s'.mem a = w₀.mem a := by
     intro a ha
-    rw [hslot a (fun k hk e => ha (e ▸ RL.FK_F (fplr_inF hR hframe k hk))), hbe.mem]
+    rw [hslot a (fun k hk e => ha (e ▸ RL.FK_F (fplr_inF hR hframe k hk))), hbe.mem a ha]
   have hcode' : ∀ a, CodeAddr R.s0 a → s'.mem a = R.s0.mem a := by
     intro a ha
     apply hslot
@@ -450,6 +450,22 @@ theorem q_init {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiEntry R.fb R.bas
     omega
   have hfield : ∀ f, f ≠ .PC → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 →
       Arm.r f s' = Arm.r f R.s0 := ho'
+  -- the kept addresses are not the fp/lr slot
+  have hgk : ∀ a, R.G a → s'.mem a = R.s0.mem a := by
+    intro a ha
+    apply hslot
+    intro k hk e
+    apply hR.gfree a ha
+    rw [e, hdrop0]
+    have := hst0.1
+    have hk64 : (spv R.s0 - 16#64 + BitVec.ofNat 64 k).toNat = (spv R.s0).toNat - 16 + k := by
+      simp only [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat]
+      have := (spv R.s0).isLt
+      rw [Nat.mod_eq_of_lt (a := k) (by omega)]
+      simp only [spv] at *
+      omega
+    simp only [StackBelow, hk64]
+    constructor <;> omega
   refine ⟨?_, ?_, hfield⟩
   · have hitems : R.rf.blocks[0]! = items := by simp [getElem!_def, hit]
     simp only [MConf.init, hitems]
@@ -457,7 +473,7 @@ theorem q_init {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiEntry R.fb R.bas
       hit, rfl, itemsChecked_block hR hvb hit, hcode, hls, htr, ?_, hpc', ?_⟩
     · rw [← List.drop_drop, hdrop, List.drop_left]
     · refine ⟨fun l _ _ => rfl, ⟨fun f hf => ?_, hmemF, ?_⟩, by rw [herr', hent.err], by rw [hprog', hent.program],
-        hspB, ?_, fun _ => ?_, code_keep hR.prog0 hent.code hcode'⟩
+        hspB, ?_, fun _ => ?_, code_keep hR.prog0 hent.code hcode', hgk⟩
       · by_cases h29 : f = .GPR 29#5
         · subst h29
           have := hbe.fp
@@ -487,6 +503,9 @@ theorem q_init {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiEntry R.fb R.bas
         exact read_mem_bytes_congr _ _ (fun k _ => by rw [hm']; rfl)
   · intro _ _ r hr
     show regVal s' r = regVal w₀ r
+    rw [hbe.args r hr]
+    obtain ⟨vb', ds, hvb', hi', v, hv⟩ := hr
+    have hr := ((ctlCheck_args (lowerRFunc_ok hR.alloc).2.2.2 hvb' hi').2.2 _ hv).2
     cases r with
     | x n =>
       simp only [Reg.isArgReg, decide_eq_true_eq] at hr
@@ -495,15 +514,9 @@ theorem q_init {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiEntry R.fb R.bas
       simp only [regVal]
       rw [hfield _ (by simp) (hne 29 (by omega) (by omega)) (hne 31 (by omega) (by omega))
         (hne 16 (by omega) (by omega))]
-      have h9 : n < 9 := by omega
-      have := hbe.args n h9
-      simp only [xreg] at this
-      simp only [rnum, this]
     | v n =>
-      simp only [Reg.isArgReg, decide_eq_true_eq] at hr
       simp only [regVal]
       rw [hfield _ (by simp) (by simp) (by simp) (by simp)]
-      exact (hbe.argsV n hr).symm
     | _ => simp [Reg.isArgReg] at hr
 
 /-! ## The return on the machine -/
@@ -576,6 +589,8 @@ theorem ret_machine {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiEntry R.fb 
       spv (iterN R.step n s) = spv R.s0 ∧ xreg 29 (iterN R.step n s) = xreg 29 R.s0 ∧
       (∀ r, r.allocatable = true → regVal (iterN R.step n s) r = regVal s r) ∧
       (iterN R.step n s).mem = s.mem ∧
+      (∀ f, ¬ Masked f → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → Arm.r f (iterN R.step n s) = Arm.r f s) ∧
+      (iterN R.step n s).program = s.program ∧
       ∀ ops, (MInst.rets us).operands = .ok ops → ∀ (j : Nat) (v p : Reg) (x : CV), us[j]? = some (v, p) →
         ((((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)))[j]? = some x →
         regVal (iterN R.step n s) p = x := by
@@ -654,7 +669,7 @@ theorem ret_machine {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiEntry R.fb 
       rw [ho1 _ (by simp) (by simp) (by simp) (by simp) (by simp)]
   refine ⟨(spAdjLines false R.af.frameSize ++
       [Line.ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16)) none]).length + 1,
-    ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> rw [hfin]
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> rw [hfin]
   · rw [Arm.r_of_w_same, hx30, hfplr, BitVec.extractLsb'_append_eq_left, hent.lr]
   · rw [Arm.r_of_w_different (by simp), herr1, hst.err]
   · simp only [spv]
@@ -669,6 +684,12 @@ theorem ret_machine {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiEntry R.fb 
     rfl
   · exact hregs
   · rw [Arm.ArmState.mem_w_eq_mem, hm1]
+  · intro f hf h29 h31
+    have hpc : f ≠ .PC := by rintro rfl; exact hf trivial
+    rw [Arm.r_of_w_different hpc]
+    exact ho1 f hpc h29 (by rintro rfl; exact hf (by simp [Masked])) h31
+      (by rintro rfl; exact hf (by simp [Masked]))
+  · rw [Arm.w_program, hprog1]
   · intro ops' hops' j v p x hj hx
     obtain ⟨ns, rfl⟩ := ctlCheck_rets hck hvb hi
     rw [operands_rets] at hops' hops
