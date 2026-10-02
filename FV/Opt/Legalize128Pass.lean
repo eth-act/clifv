@@ -206,17 +206,22 @@ def rewriteBC (C : Ctx) (bc : BlockCall) : M BlockCall :=
 /-- A `try_call` successor (exception handlers, `try_call_indirect`): an `i128` value is split
 into its pair; `retN` of an `i128` return becomes the two return slots of its pair (after a
 pad); payloads (`exnN`, pointer-sized) are unchanged. -/
-def rewriteTryDest (C : Ctx) (rg : List (List SlotEl)) (d : TryDest) : M TryDest := do
+def rewriteTryDest (C : Ctx) (rg : List (List SlotEl)) (d : TryDest) :
+    Except String TryDest := do
   let some tb := C.f.block? d.block | throw s!"legalize128: unknown block{d.block}"
   let starts := (rg.foldl (fun (acc, n) g => (acc.push n, n + g.length)) (#[], 0)).1
-  let rec go : List TryArg → List (ValueId × Ty) → M (List TryArg)
+  let pairOf (v : ValueId) : Except String (ValueId × ValueId) :=
+    match C.pair v with
+    | some p => pure p
+    | none => throw s!"legalize128: v{v} is not an i128 value"
+  let rec go : List TryArg → List (ValueId × Ty) → Except String (List TryArg)
     | [], [] => return []
     | a :: as, (_, t) :: ps => do
       let more ← go as ps
       match a with
       | .val v =>
         if t == .i128 then do
-          let (x, y) ← pairOf C v
+          let (x, y) ← pairOf v
           return .val x :: .val y :: more
         else return .val v :: more
       | .ret i =>
@@ -229,7 +234,8 @@ def rewriteTryDest (C : Ctx) (rg : List (List SlotEl)) (d : TryDest) : M TryDest
     | _, _ => throw s!"legalize128: arity of block{d.block}"
   return { d with args := ← go d.args tb.params }
 
-def rewriteItems (C : Ctx) (rg : List (List SlotEl)) (items : List ExnItem) : M (List ExnItem) :=
+def rewriteItems (C : Ctx) (rg : List (List SlotEl)) (items : List ExnItem) :
+    Except String (List ExnItem) :=
   items.mapM fun
     | .tag n d => do return ExnItem.tag n (← rewriteTryDest C rg d)
     | .default d => do return ExnItem.default (← rewriteTryDest C rg d)
@@ -271,15 +277,15 @@ def rewriteTerm (C : Ctx) (rg : List (List SlotEl)) : Terminator → M Terminato
     let some args' := expandArgs C gs args | throw "legalize128: try_call arguments"
     let some nargs := expandTry C rgs et.normal.args B.params
       | throw "legalize128: try_call normal-return arguments"
-    let items ← rewriteItems C rgs et.items
+    let items ← liftE (rewriteItems C rgs et.items)
     return .tryCall fn args' { et with normal := { et.normal with args := nargs }, items }
   | .tryCallIndirect c args et => do
     let some sig := C.f.sigDecls.lookup et.sig | throw s!"legalize128: unknown sig{et.sig}"
     let gs ← liftE (expandGroups sig.params)
     let rgs ← liftE (expandGroups sig.returns)
     let some args' := expandArgs C gs args | throw "legalize128: try_call arguments"
-    let normal ← rewriteTryDest C rgs et.normal
-    let items ← rewriteItems C rgs et.items
+    let normal ← liftE (rewriteTryDest C rgs et.normal)
+    let items ← liftE (rewriteItems C rgs et.items)
     return .tryCallIndirect c args' { et with normal, items }
 
 /-! ## Blocks and the function -/
