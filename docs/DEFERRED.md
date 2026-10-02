@@ -105,10 +105,13 @@ stays the runtime check (`parsedFile128`).
 **Mismatches found** (legaliser output `check` rejects; none occurs in the corpora). Each needs a
 legaliser fix (a `throw`, no change on well-typed CLIF; rerun `clif-filetest --legalize128`) or a
 `LegalDomain` precondition:
-- `iconst.i128` is emitted unchanged, but `planOf` has no plan for it (fix: throw);
-- an `i128` operand of a narrow `unary`, `icmp`, `iconcat` operand, or the address of an `i128`
-  `store` is not rejected by the legaliser, but `same`/`copy2`/`store` need plain operands (fix:
-  throw, as the other narrow cases do);
+- **fixed (2026-10-02):** `iconst.i128` was emitted unchanged although `planOf` has no plan for
+  it; an `i128` operand of a narrow `unary`/`icmp`, an `i128` `iconcat` operand and an `i128`
+  address of an `i128` `store` were not rejected although `same`/`copy2`/`store` need plain
+  operands. `rewriteStmt` now throws in these cases. After the fix: `clif-filetest --legalize128`
+  over the 64 `i128` runtest files gives legal pass 973 / fail 7 / agree 980 / disagree 0
+  (unchanged), `check` still accepts all 163 legalised functions, and the filetests are unchanged
+  (corpus 114/114, extrt 22/22, runtests 4672/0/0);
 - an `i128` `load`/`store` with a big-endian flag or a non-plain opcode (`planOf` needs
   `.load`/`.store` and not big-endian) (fix: throw);
 - `call_indirect` with an `i128` signature is expanded by the legaliser, but `planOf` only has
