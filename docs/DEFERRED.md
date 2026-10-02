@@ -62,6 +62,66 @@ Deferred:
 - a correct `umulhi`/`smulhi` expansion at `i128` (now unsupported), `try_call` with `i128`
   in the validator, `i128` overflow ops and atomics, stack-passed `i128` arguments.
 
+## Completeness of `Opt.Legal.check` for `Opt.Legalize128` (in progress, 2026-10-02)
+
+Goal (owner-approved): `function128Cert f = .ok (g, cert) → mentions128 f = true → LegalDomain f →
+Opt.Legal.check f g cert = true`. With `check_refines` this gives `legalize_refines` and
+`E2E.backend_correct_legal_direct` without the `hchk` premise. Not finished. The validator
+stays the runtime check (`parsedFile128`).
+
+**Exists:**
+- Empirically complete. On the runtests and corpora (185 `i128` functions, 163 legalised, 22
+  legaliser failures), `check` accepts all 163 legalised functions (throwaway driver over
+  `function128Cert`/`check`).
+- `FV/Opt/Proof/LegalComplete.lean` (layer 1). `pureOk_of` is the generic lemma for every
+  `Plan.pure` case: a renamed well-formed pattern (`PatWF`, decidable per pattern) passes
+  `pureOk` when the values it writes are distinct, none an input, each an output or fresh.
+  Also the `@[simp]` run lemmas that evaluate the legaliser's `M` computations symbolically
+  (`fresh_run`, `emit1_run`, `kI64_run`, …). One `simp only [un128, StateT.run_bind, …]` turns
+  a case's emission into `st.out ++ pat.map (renameStmt τ)`.
+
+**Plan (remaining, about 3-4k lines):**
+1. *Allocation ledger.* Every `fresh` id is at least `maxValueId f + 1 = T0 + 1`, ids are
+   allocated once, and pairs only grow (`phaseA1` before `rewriteM`, then `groupRet` for `i128`
+   call results). So for the final certificate, the ids a statement allocates (`[st.next,
+   st'.next)`) are fresh (`Ctx.fresh`): not the zero (allocated first in `rewriteM`), not a pair
+   component (earlier ones are below `st.next`, later ones at or above `st'.next`). State it as
+   a relation `Ledger T0 C st` derived from `Ev st stFinal`.
+2. *`phaseA1` invariant.* A pair exists only for a value whose `tyOf f` is `i128`; components
+   are in range, `a ≠ b`, and different values have disjoint pairs. Loop reasoning like
+   `PrepareComplete.forIn_inv`, for `StateT St (Except String)`.
+3. *Type map.* `typeMapOf f` (`HashMap`, last insert wins) agrees with `tyOf f` (`defsOf`, first
+   definition) under distinct definitions.
+4. *Statements.* One lemma per `rewriteStmt` case: evaluate the run with the layer-1 simp set and
+   show `planOf C s = some pl`, `pl.len = seg.length` and `segOk C s pl seg`. The pure cases go
+   through `pureOk_of`. `load`/`store`/`div`/`call`/`trap` are direct.
+5. *Blocks.* The `rewriteM` block loop: `paramsOf`/`entryParamsOk`, `blockParamsOf`/`paramsOk`,
+   the entry block's zero statement, `codeOk` from the per-statement segments (out =
+   segments ++ terminator condition statements), `rewriteTerm`/`termOk` (`rewriteBC`/`bcOk`,
+   `argsOf`/`expandArgs`, `rewriteTryDest`/`expandTry`).
+6. *Assembly.* `certOk` from the ledger (`HashMap.toList` lookups, distinct keys); `g.externs =
+   newExterns ++ extraExts` (helper refs are above `maxFnRef f`); `sigExp f.sig = some g.sig`.
+
+**Mismatches found** (legaliser output `check` rejects; none occurs in the corpora). Each needs a
+legaliser fix (a `throw`, no change on well-typed CLIF; rerun `clif-filetest --legalize128`) or a
+`LegalDomain` precondition:
+- `iconst.i128` is emitted unchanged, but `planOf` has no plan for it (fix: throw);
+- an `i128` operand of a narrow `unary`, `icmp`, `iconcat` operand, or the address of an `i128`
+  `store` is not rejected by the legaliser, but `same`/`copy2`/`store` need plain operands (fix:
+  throw, as the other narrow cases do);
+- an `i128` `load`/`store` with a big-endian flag or a non-plain opcode (`planOf` needs
+  `.load`/`.store` and not big-endian) (fix: throw);
+- `call_indirect` with an `i128` signature is expanded by the legaliser, but `planOf` only has
+  `callInd` (the unchanged statement) (precondition: no `i128` `call_indirect` signature;
+  throwing would make such functions unsupported instead of unverified);
+- statements with a result count different from `Inst.resultTypes` (`head!` in the legaliser)
+  (precondition: result arity);
+- `func_addr` of an undeclared `FnRef` (the helper refs may reuse it) (precondition: declared
+  refs).
+The f-only conjuncts of `check` become preconditions too: distinct definitions (`defsOf`),
+every id below `maxValueId f`, a statement never reads its own result (`pureOk` injectivity),
+distinct call results, and for `try_call`, `maxValueId f ≤ f.freshValue`.
+
 ## `sret`: what `E2E.backend_correct_final` does not cover (2026-09-30)
 
 Functions with a struct-return pointer and calls of `sret` callees are inside the end-to-end
