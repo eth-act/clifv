@@ -46,7 +46,7 @@ pub struct BinaryCheck {
     /// Set when the check could not run (e.g. a stripped binary).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub note: Option<String>,
-    /// Where the executable's functions come from (filled in by `cargo fv` from all units).
+    /// Where the executable's functions come from (from the link map).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<ExeOrigin>,
 }
@@ -60,9 +60,11 @@ pub struct ExeOrigin {
     pub lean_deps: usize,
     /// Functions of crates we compiled that run cg_clif's code (fallbacks).
     pub cg_clif: usize,
-    /// Functions of no unit we compiled: std/core/alloc (prebuilt rlibs), compiler_builtins,
-    /// musl libc, and crates outside the scope (`--members-only`, skip-deps).
-    pub not_ours: usize,
+    /// Not compiled by us, prebuilt (the sysroot): std/core/alloc, compiler_builtins, musl libc.
+    pub prebuilt: usize,
+    /// Not compiled by us, other inputs: crates outside the scope (`--members-only`,
+    /// skip-deps), linker-synthesised code.
+    pub other: usize,
     /// Lean-compiled functions per package (`<package>` or `<package> (dep)`).
     pub lean_by_package: BTreeMap<String, usize>,
 }
@@ -250,7 +252,7 @@ impl Report {
                 o.lean_by_package.iter().filter(|(p, _)| p.ends_with(" (dep)")).map(|(p, n)| format!("{} {n}", p.trim_end_matches(" (dep)"))).collect();
             let _ = writeln!(
                 s,
-                "  exe {} ({} {}): {} functions: Lean {} (your crate(s) {}, dependencies {}), cg_clif fallback {}, not compiled by us (std, …) {}",
+                "  exe {} ({} {}): {} functions: Lean {} (your crate(s) {}, dependencies {}), cg_clif fallback {}, std (prebuilt) {}, other not compiled by us {}",
                 u.unit.package,
                 u.unit.kind,
                 short_root(&u.unit.src),
@@ -259,7 +261,8 @@ impl Report {
                 o.lean_members,
                 o.lean_deps,
                 o.cg_clif,
-                o.not_ours
+                o.prebuilt,
+                o.other
             );
             if !deps.is_empty() {
                 let _ = writeln!(s, "    Lean in exe per dependency: {}", deps.join(", "));

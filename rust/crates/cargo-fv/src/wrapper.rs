@@ -467,70 +467,117 @@ fn check_binary(path: &Path) -> BinaryCheck {
     b
 }
 
-/// `__fv_<tag>_<name>` (a local symbol the symbol surgery renamed) → `<name>`.
-fn original_name(s: &str) -> &str {
-    s.strip_prefix("__fv_")
-        .and_then(|r| r.get(..13).filter(|t| t.ends_with('_') && t[..12].bytes().all(|b| b.is_ascii_hexdigit())).map(|_| &r[13..]))
-        .unwrap_or(s)
-}
-
-/// Fill in [`ExeOrigin`] for every checked executable: which of its functions run Lean code
-/// (per package, members vs dependencies), which run cg_clif's code of a unit we compiled
-/// (fallbacks), and which come from no unit we compiled (std/core/alloc, compiler_builtins,
-/// musl libc; crates outside the scope).
-pub fn attribute_binaries(units: &mut [UnitReport]) {
-    let mut owner: HashMap<String, (String, bool)> = HashMap::new();
-    for u in units.iter() {
-        for f in &u.functions {
-            owner.entry(f.symbol.clone()).or_insert_with(|| (u.package.clone(), u.dep));
+/// Input sections of the `.text*` output sections of an lld link map: (start, end, input
+/// file), sorted. The input file of `lib.rlib(member.o):(.text.f)` is `lib.rlib`.
+fn map_text_inputs(map: &str) -> Vec<(u64, u64, String)> {
+    let mut v = Vec::new();
+    let mut in_text = false;
+    for line in map.lines() {
+        // `VMA LMA Size Align` then the Out (indent 1), In (indent 9) or Symbol (indent 17) column
+        let mut rest = line;
+        let mut nums = [0u64; 3];
+        let mut ok = true;
+        for k in 0..4 {
+            rest = rest.trim_start();
+            let end = rest.find(' ').unwrap_or(rest.len());
+            let tok = &rest[..end];
+            if k < 3 {
+                match u64::from_str_radix(tok, 16) {
+                    Ok(n) => nums[k] = n,
+                    Err(_) => ok = false,
+                }
+            } else if tok.parse::<u64>().is_err() {
+                ok = false;
+            }
+            rest = &rest[end..];
         }
-    }
-    for u in units.iter_mut() {
-        let Some(b) = u.binary.as_mut() else { continue };
-        if b.note.is_some() {
+        if !ok {
             continue;
         }
-        let Ok(data) = fs::read(&b.path) else { continue };
-        let Ok(file) = object::File::parse(&*data) else { continue };
-        let mut marked: HashSet<u64> = HashSet::new();
-        let mut by_addr: HashMap<u64, Vec<&str>> = HashMap::new();
-        for s in file.symbols() {
-            let Ok(n) = s.name() else { continue };
-            if s.is_undefined() || n.is_empty() {
-                continue;
-            }
-            if n.starts_with(MARKER) {
-                marked.insert(s.address());
-            } else if s.kind() == object::SymbolKind::Text && s.size() > 0 {
-                by_addr.entry(s.address()).or_default().push(n);
-            }
+        let indent = rest.len() - rest.trim_start().len();
+        let text = rest.trim();
+        if indent <= 1 {
+            in_text = text.starts_with(".text");
+        } else if indent <= 9 && in_text && nums[2] > 0 {
+            let file = text.rfind(":(").map_or(text, |i| &text[..i]);
+            let file = match file.find('(') {
+                Some(i) if file.ends_with(')') => &file[..i],
+                _ => file,
+            };
+            v.push((nums[0], nums[0] + nums[2], file.to_string()));
         }
-        let mut o = ExeOrigin { functions: by_addr.len(), ..Default::default() };
-        for (a, names) in &by_addr {
-            let own = names.iter().find_map(|n| owner.get(original_name(n)));
-            if marked.contains(a) {
-                match own {
-                    Some((pkg, true)) => {
-                        o.lean_deps += 1;
-                        *o.lean_by_package.entry(format!("{pkg} (dep)")).or_default() += 1;
-                    }
-                    Some((pkg, false)) => {
-                        o.lean_members += 1;
-                        *o.lean_by_package.entry(pkg.clone()).or_default() += 1;
-                    }
-                    None => {
-                        o.lean_members += 1;
-                        *o.lean_by_package.entry("?".into()).or_default() += 1;
-                    }
-                }
-            } else if own.is_some() {
-                o.cg_clif += 1;
-            } else {
-                o.not_ours += 1;
-            }
-        }
-        b.origin = Some(o);
     }
+    v.sort();
+    v
+}
+
+/// Where the functions of a linked executable come from, from the link map: Lean-compiled (a
+/// marker at the address) or cg_clif's code, of a unit we compiled (this one, or a library whose
+/// unit report exists); prebuilt (the sysroot: std/core/alloc, compiler_builtins, musl libc
+/// and its crt objects); or another input (a crate outside the scope).
+fn exe_origin(cfg: &Config, meta: &UnitMeta, exe: &Path, map: &Path) -> Result<ExeOrigin, String> {
+    let text = fs::read_to_string(map).map_err(|e| format!("{}: {e}", map.display()))?;
+    let inputs = map_text_inputs(&text);
+    let data = fs::read(exe).map_err(|e| format!("{}: {e}", exe.display()))?;
+    let file = object::File::parse(&*data).map_err(|e| e.to_string())?;
+    let mut marked: HashSet<u64> = HashSet::new();
+    let mut funcs: HashSet<u64> = HashSet::new();
+    for s in file.symbols() {
+        let Ok(n) = s.name() else { continue };
+        if s.is_undefined() || n.is_empty() {
+            continue;
+        }
+        if n.starts_with(MARKER) {
+            marked.insert(s.address());
+        } else if s.kind() == object::SymbolKind::Text && s.size() > 0 {
+            funcs.insert(s.address());
+        }
+    }
+    // input file → (package, dependency?) of the unit we compiled it in, if any
+    let own_prefix = format!("{}.", meta.unit);
+    let mut owners: HashMap<String, Option<(String, bool)>> = HashMap::new();
+    let mut owner_of = |f: &str| -> Option<(String, bool)> {
+        owners
+            .entry(f.to_string())
+            .or_insert_with(|| {
+                let p = Path::new(f);
+                let name = p.file_name()?.to_string_lossy().into_owned();
+                if name.starts_with(&own_prefix) && name.ends_with(".rcgu.o") {
+                    return Some((meta.package.clone(), meta.dep));
+                }
+                // `<crate><extra-filename>` names the unit uniquely in the target dir
+                let unit = name.strip_prefix("lib")?.strip_suffix(".rlib")?;
+                let text = fs::read_to_string(cfg.report_dir.join(format!("{unit}.json"))).ok()?;
+                let u: UnitReport = serde_json::from_str(&text).ok()?;
+                Some((u.package, u.dep))
+            })
+            .clone()
+    };
+    let mut o = ExeOrigin { functions: funcs.len(), ..Default::default() };
+    for a in funcs {
+        let i = inputs.partition_point(|(s, _, _)| *s <= a);
+        let input = i.checked_sub(1).map(|i| &inputs[i]).filter(|(_, e, _)| a < *e).map(|(_, _, f)| f.as_str());
+        let owner = input.and_then(&mut owner_of);
+        match (marked.contains(&a), owner) {
+            (true, Some((pkg, dep))) => {
+                if dep {
+                    o.lean_deps += 1;
+                    *o.lean_by_package.entry(format!("{pkg} (dep)")).or_default() += 1;
+                } else {
+                    o.lean_members += 1;
+                    *o.lean_by_package.entry(pkg).or_default() += 1;
+                }
+            }
+            (true, None) => {
+                o.lean_deps += 1;
+                *o.lean_by_package.entry(format!("? {}", input.unwrap_or("?"))).or_default() += 1;
+            }
+            (false, Some(_)) => o.cg_clif += 1,
+            (false, None) if input.is_some_and(|f| f.contains("/lib/rustlib/")) => o.prebuilt += 1,
+            (false, None) => o.other += 1,
+        }
+    }
+    Ok(o)
 }
 
 /// Linker mode: rustc runs `fv-rustc` as the linker of a member's executable.
@@ -565,7 +612,10 @@ pub fn linker_main(meta_json: &str, argv: Vec<OsString>) -> i32 {
     let mut r = new_report(&cfg, &meta, &output);
     process_objects(&cfg, &meta, &objs, &mut r);
     write_report(&cfg, &r);
-    let status = Command::new(&cfg.rust_lld).args(&argv).status();
+    // the link map attributes every function of the executable to its input object
+    let _ = fs::create_dir_all(&cfg.tmp_dir);
+    let map = cfg.tmp_dir.join(format!("link-{}.map", pipeline::tag_of(&output.display().to_string())));
+    let status = Command::new(&cfg.rust_lld).args(&argv).arg(format!("-Map={}", map.display())).status();
     let code = match status {
         Ok(s) => s.code().unwrap_or(1),
         Err(e) => {
@@ -574,8 +624,18 @@ pub fn linker_main(meta_json: &str, argv: Vec<OsString>) -> i32 {
         }
     };
     if code == 0 {
-        r.binary = Some(check_binary(&output));
+        let mut b = check_binary(&output);
+        if b.note.is_none() {
+            match exe_origin(&cfg, &meta, &output, &map) {
+                Ok(o) => b.origin = Some(o),
+                Err(e) => b.note = Some(format!("function origins: {e}")),
+            }
+        }
+        r.binary = Some(b);
         write_report(&cfg, &r);
+    }
+    if !cfg.keep_temps {
+        let _ = fs::remove_file(&map);
     }
     code
 }

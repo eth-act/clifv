@@ -376,8 +376,12 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
         let out = fv_dir.join(TARGET).join(&profile);
         if out.exists() {
             eprintln!("cargo fv: the Lean tools or the FV settings changed: rebuilding every target crate ({})", out.display());
-            if let Err(e) = std::fs::remove_dir_all(&out) {
-                die(&format!("{}: {e}", out.display()));
+            for d in [&out, &cfg.report_dir] {
+                if let Err(e) = std::fs::remove_dir_all(d) {
+                    if d.exists() {
+                        die(&format!("{}: {e}", d.display()));
+                    }
+                }
             }
         }
         let _ = std::fs::create_dir_all(&fv_dir);
@@ -425,7 +429,6 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
     units.sort_by(|a, b| {
         (a.dep, &a.package, &a.crate_name, &a.kind, &a.src, &a.unit).cmp(&(b.dep, &b.package, &b.crate_name, &b.kind, &b.src, &b.unit))
     });
-    cargo_fv::wrapper::attribute_binaries(&mut units);
     let report = Report::new(&profile, mode.name(), mode.theorem().map(String::from), &panic_desc, units);
     let rp = report_path(&target);
     let _ = std::fs::write(&rp, serde_json::to_string_pretty(&report).expect("report serialises"));
