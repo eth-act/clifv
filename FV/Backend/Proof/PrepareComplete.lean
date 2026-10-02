@@ -337,8 +337,8 @@ theorem rpo_eq (succs : Array (Array Nat)) (h : succs.size ≠ 0) :
       rcases p with ⟨b, i⟩
       simp only [dStep]
       cases hs : (succs[b]! : Array Nat)[i]? with
-      | none => simp only [hs]
-      | some s => simp only [hs]; split <;> rfl
+      | none => simp only
+      | some s => simp only; split <;> rfl
 
 /-- The weight of a block: its successors and itself. -/
 def wt (succs : Array (Array Nat)) (b : Nat) : Nat := (succs[b]! : Array Nat).size + 1
@@ -900,7 +900,7 @@ theorem kept_sublist : ∀ (l1 : List α) (l2 : List Bool),
     exact .cons a (kept_sublist l1 l2)
   | a :: l1, true :: l2 => by
     rw [List.zip_cons_cons, List.filterMap_cons]
-    exact .cons₂ a (kept_sublist l1 l2)
+    exact .cons_cons a (kept_sublist l1 l2)
 
 theorem kept_head {a : α} {l1 : List α} {l2 : List Bool} :
     ((a :: l1).zip (true :: l2)).filterMap (fun x => if x.2 = true then some x.1 else none) =
@@ -916,7 +916,7 @@ abbrev keep (V : Array VBlock) (live : Array Bool) : Array VBlock :=
 theorem keep_toList (V : Array VBlock) (live : Array Bool) :
     (keep V live).toList =
       (V.toList.zip live.toList).filterMap (fun x => if x.2 = true then some x.1 else none) := by
-  simp [keep, Array.toList_filterMap, Array.toList_zip]
+  simp [keep, Array.toList_zip]
 
 theorem keep_lbls {V : Array VBlock} (hn : Lbls V) (live : Array Bool) : Lbls (keep V live) := by
   unfold Lbls at *
@@ -1056,7 +1056,7 @@ theorem innerFold (ps : Array (Array Nat)) (next0 : Nat) : ∀ (xs : List (Nat �
         (ls'.back! = x.2 ∨ ∃ e : Nat, E'[e]? = some ({ label := ls'.back!, insts := #[.jump x.2] } : VBlock)) := by
       by_cases hc : (ps[x.1]! : Array Nat).size > 1
       · refine ⟨next + 1, E.push { label := next, insts := #[.jump x.2] }, ls.push next,
-          by simp only [innerStep, if_pos hc], by rw [Array.size_push]; omega, ?_,
+          by simp only [innerStep, hc, ↓reduceIte], by rw [Array.size_push]; omega, ?_,
           ext_push E _, by simp, by simp, .inr ⟨E.size, by simp⟩⟩
         intro e hes
         simp only [Array.size_push] at hes
@@ -1066,7 +1066,7 @@ theorem innerFold (ps : Array (Array Nat)) (next0 : Nat) : ∀ (xs : List (Nat �
         · have : e = E.size := by omega
           subst this
           exact ⟨x.2, by simp only [Array.getElem_push_eq]; congr 1; rw [← hn, Nat.add_comm]⟩
-      · exact ⟨next, E, ls.push x.2, by simp only [innerStep, if_neg hc], hn, he, ext_refl E,
+      · exact ⟨next, E, ls.push x.2, by simp only [innerStep, hc, ↓reduceIte], hn, he, ext_refl E,
           by simp, by simp, .inl (by simp)⟩
     obtain ⟨next', E', ls', heq, hn', he', hext, hls, hsz, hlast⟩ := hstep
     rw [heq]
@@ -1236,5 +1236,543 @@ theorem prepare_facts {vc vcp : VCode} (h : prepare vc = .ok vcp) :
       · simp [throw, throwThe, MonadExceptOf.throw] at hf
   · refine ⟨?_, fun e he => by simp at he, rfl, fun j _ h => by simp at h⟩
     simp only [Array.size_empty, Nat.zero_add, next0Of, keep]
+
+/-! ## The split blocks `B ++ E` -/
+
+theorem succsIn_of {V : Array VBlock} {ss : Array (Array Nat)} (cs : CfgSpec V ss) : SuccsIn ss := by
+  intro b s hs
+  rcases Nat.lt_or_ge b V.size with hb | hb
+  · obtain ⟨t, ts, -, -, hts, htsz, hl⟩ := cs.blk b V[b] (Array.getElem?_eq_getElem hb)
+    have e : (ss[b]! : Array Nat) = ts := by simp [getElem!_def, hts]
+    rw [e] at hs
+    obtain ⟨j, hj, rfl⟩ := List.getElem_of_mem hs
+    simp only [Array.length_toList] at hj
+    obtain ⟨l, hl'⟩ : ∃ l, t.targets[j]? = some l :=
+      ⟨_, List.getElem?_eq_getElem (by rw [← htsz]; exact hj)⟩
+    obtain ⟨k, hk, hlab⟩ := hl j l hl'
+    rw [Array.getElem?_eq_getElem hj] at hk
+    cases hk
+    obtain ⟨hk', -⟩ := lab_some hlab
+    simp only [Array.getElem_toList]
+    rw [cs.size]; exact hk'
+  · have : (ss[b]! : Array Nat) = #[] := by
+      simp [getElem!_def, Array.getElem?_eq_none (show ss.size ≤ b by rw [cs.size]; exact hb)]; rfl
+    rw [this] at hs; simp at hs
+
+theorem rw_fields {E : Array VBlock} {vb vb' : VBlock} (h : RwOk E vb vb') :
+    vb'.label = vb.label ∧ vb'.params = vb.params ∧ vb'.branchArgs = vb.branchArgs := by
+  rcases h with rfl | ⟨_, _, _, _, _, _, rfl, _⟩ <;> exact ⟨rfl, rfl, rfl⟩
+
+section split
+variable {V1 B E : Array VBlock} {next : Nat}
+  (hS : SInv V1 (next0Of V1) V1.size (next, B, E))
+include hS
+
+theorem lbls2 (hn : Lbls V1) : Lbls (B ++ E) := by
+  have hB : B.toList.map VBlock.label = V1.toList.map VBlock.label := by
+    apply List.ext_getElem
+    · simp [hS.size]
+    · intro j h1 h2
+      simp only [List.getElem_map, Array.getElem_toList]
+      simp only [List.length_map, Array.length_toList] at h1 h2
+      exact (rw_fields (hS.rw j h2 h1)).1
+  have hE : E.toList.map VBlock.label = (List.range E.size).map (next0Of V1 + ·) := by
+    apply List.ext_getElem
+    · simp
+    · intro j h1 h2
+      simp only [List.length_map, Array.length_toList] at h1
+      obtain ⟨l, hl⟩ := hS.edges j h1
+      simp [hl]
+  unfold Lbls at *
+  rw [Array.toList_append, List.map_append, hB, hE, List.nodup_append]
+  refine ⟨hn, List.Pairwise.map _ (fun a b h e => h (by simp at e; omega)) List.nodup_range, ?_⟩
+  intro a ha b hb e
+  subst e
+  obtain ⟨vb, hvb, rfl⟩ := List.mem_map.mp ha
+  obtain ⟨j, -, hj⟩ := List.mem_map.mp hb
+  obtain ⟨k, hk, rfl⟩ := List.getElem_of_mem hvb
+  simp only [Array.length_toList] at hk
+  have h1 : V1[k].label < next0Of V1 := lt_next0 hk
+  have hj' : next0Of V1 + j = V1[k].label := by simpa using hj
+  rw [← hj'] at h1
+  exact absurd h1 (Nat.not_lt.mpr (Nat.le_add_right _ _))
+
+theorem v2_B {k : Nat} (hk : k < V1.size) : ∃ hkB : k < B.size, (B ++ E)[k]? = some B[k] := by
+  have hkB : k < B.size := by rw [hS.size]; exact hk
+  exact ⟨hkB, by rw [Array.getElem?_append_left hkB, Array.getElem?_eq_getElem hkB]⟩
+
+theorem v2_E {e : Nat} : (B ++ E)[V1.size + e]? = E[e]? := by
+  rw [Array.getElem?_append_right (by rw [hS.size]; omega)]
+  congr 1; rw [hS.size]; omega
+
+theorem v2_size : (B ++ E).size = V1.size + E.size := by simp [hS.size]
+
+/-- A kept block and its rewrite in `B`. -/
+theorem blk2 {ss1 : Array (Array Nat)} (cs1 : CfgSpec V1 ss1) {k : Nat} (hk : k < V1.size) :
+    ∃ (hkB : k < B.size) (t t' : MInst), V1[k].insts.back? = some t ∧ B[k].insts.back? = some t' ∧
+      B[k].label = V1[k].label ∧ B[k].params = V1[k].params ∧
+      B[k].branchArgs = V1[k].branchArgs ∧ B[k].insts.size = V1[k].insts.size ∧
+      B[k].insts.pop = V1[k].insts.pop ∧ (t' = t ∨ t.setTargets t'.targets = some t') ∧
+      t'.targets.length = t.targets.length ∧
+      ∀ (j : Nat) (l' : Label), t'.targets[j]? = some l' → ∃ l, t.targets[j]? = some l ∧
+        (l' = l ∨ (2 ≤ t.targets.length ∧
+          ∃ e : Nat, E[e]? = some ({ label := l', insts := #[.jump l] } : VBlock))) := by
+  have hkB : k < B.size := by rw [hS.size]; exact hk
+  obtain ⟨t, -, ht, -⟩ := cs1.blk k V1[k] (Array.getElem?_eq_getElem hk)
+  refine ⟨hkB, ?_⟩
+  rcases hS.rw k hk hkB with e | ⟨t0, t', ls, h1, h2, h3, h4, h5⟩
+  · rw [e]
+    exact ⟨t, t, ht, ht, rfl, rfl, rfl, rfl, rfl, .inl rfl, rfl,
+      fun j l' hl => ⟨l', hl, .inl rfl⟩⟩
+  · rw [ht] at h1
+    cases h1
+    obtain ⟨hT, hlen, -⟩ := setTargets_targets h3
+    have hne : 0 < V1[k].insts.size := by
+      rcases Nat.eq_zero_or_pos V1[k].insts.size with h | h
+      · simp [Array.back?, h] at ht
+      · exact h
+    rw [h4]
+    refine ⟨t, t', ht, by simp, rfl, rfl, rfl, by simp; omega, by simp, .inr (by rw [hT]; exact h3),
+      by rw [hT, hlen], fun j l' hl => ?_⟩
+    rw [hT] at hl
+    rcases h5 j l' hl with h | ⟨e, l, he, hl2⟩
+    · exact ⟨l', h, .inl rfl⟩
+    · exact ⟨l, hl2, .inr ⟨h2, e, by rw [he]⟩⟩
+
+end split
+
+/-! ## The reordered blocks -/
+
+section order
+variable {V2 : Array VBlock} {R : Array Nat} (hR : ∀ i ∈ R.toList, i < V2.size)
+include hR
+
+theorem v3_get {q : Nat} (hq : q < R.size) :
+    ∃ hi : R[q] < V2.size, (R.map fun i => V2[i]!)[q]? = some V2[R[q]] := by
+  have hi : R[q] < V2.size := hR _ (by simp)
+  refine ⟨hi, ?_⟩
+  simp [Array.getElem?_map, Array.getElem?_eq_getElem hq, getElem!_pos V2 R[q] hi]
+
+theorem lbls3 (hn : Lbls V2) (hRn : R.toList.Nodup) : Lbls (R.map fun i => V2[i]!) := by
+  unfold Lbls
+  rw [List.nodup_iff_eq_of_getElem_eq]
+  intro p q hp hq e
+  simp only [List.length_map, Array.length_toList, Array.size_map] at hp hq
+  simp only [List.getElem_map, Array.getElem_toList, Array.getElem_map] at e
+  have hp' : R[p] < V2.size := hR _ (by simp)
+  have hq' : R[q] < V2.size := hR _ (by simp)
+  rw [getElem!_pos V2 R[p] hp', getElem!_pos V2 R[q] hq'] at e
+  have := lbl_inj hn hp' hq' e
+  exact hRn.eq_of_getElem_eq (by simpa using hp) (by simpa using hq) (by simpa using this)
+
+theorem lab3 (hn : Lbls V2) (hRn : R.toList.Nodup) {i : Nat} (hi : i ∈ R.toList) :
+    ∃ q, ∃ hq : q < R.size, R[q] = i ∧ lab (R.map fun i => V2[i]!) (V2[i]!).label = some q := by
+  obtain ⟨q, hq, e⟩ := List.getElem_of_mem hi
+  simp only [Array.length_toList, Array.getElem_toList] at hq e
+  refine ⟨q, hq, e, lab_of (lbls3 hR hn hRn) (by simpa using hq) (by simp [e])⟩
+
+theorem lab3_inv {l : Label} {q : Nat} (h : lab (R.map fun i => V2[i]!) l = some q) :
+    ∃ hq : q < R.size, ∃ hi : R[q] < V2.size,
+      (R.map fun i => V2[i]!)[q]? = some V2[R[q]] ∧ V2[R[q]].label = l := by
+  obtain ⟨hq, hl⟩ := lab_some h
+  have hq' : q < R.size := by simpa using hq
+  obtain ⟨hi, e⟩ := v3_get hR hq'
+  refine ⟨hq', hi, e, ?_⟩
+  rw [← hl]
+  simp [getElem!_pos V2 R[q] hi]
+
+end order
+
+/-! ## Reachability across the steps -/
+
+theorem reach_mk {ss : Array (Array Nat)} (hin : SuccsIn ss) (h0 : ss.size ≠ 0) {b : Nat}
+    (h : Reach ss b) : mk (reachable ss) b := by
+  induction h with
+  | entry => exact (reachable_spec hin h0).2.1
+  | step _ hs ih => exact (reachable_spec hin h0).2.2.1 _ ih _ hs
+
+/-- The successor `s` of block `b`, by label. -/
+theorem succ_of {V : Array VBlock} {ss : Array (Array Nat)} (cs : CfgSpec V ss) {b s : Nat}
+    (hs : s ∈ (ss[b]! : Array Nat).toList) :
+    ∃ (hb : b < V.size) (t : MInst) (j : Nat) (l : Label), V[b].insts.back? = some t ∧
+      t.targets[j]? = some l ∧ lab V l = some s := by
+  have hb : b < V.size := by
+    rcases Nat.lt_or_ge b V.size with h | h
+    · exact h
+    · have : (ss[b]! : Array Nat) = #[] := by
+        simp [getElem!_def, Array.getElem?_eq_none (show ss.size ≤ b by rw [cs.size]; exact h)]; rfl
+      rw [this] at hs; simp at hs
+  obtain ⟨t, ts, ht, -, hts, htsz, hl⟩ := cs.blk b V[b] (Array.getElem?_eq_getElem hb)
+  have e : (ss[b]! : Array Nat) = ts := by simp [getElem!_def, hts]
+  rw [e] at hs
+  obtain ⟨j, hj, hjs⟩ := List.getElem_of_mem hs
+  simp only [Array.length_toList, Array.getElem_toList] at hj hjs
+  obtain ⟨l, hl'⟩ : ∃ l, t.targets[j]? = some l :=
+    ⟨_, List.getElem?_eq_getElem (by rw [← htsz]; exact hj)⟩
+  obtain ⟨k, hk, hlab⟩ := hl j l hl'
+  rw [Array.getElem?_eq_getElem hj, hjs] at hk
+  cases hk
+  exact ⟨hb, t, j, l, ht, hl', hlab⟩
+
+/-- A successor by label: `lab V l` is among the successors of a block targeting `l`. -/
+theorem succ_mem {V : Array VBlock} {ss : Array (Array Nat)} (cs : CfgSpec V ss) {b : Nat}
+    (hb : b < V.size) {t : MInst} (ht : V[b].insts.back? = some t) {j : Nat} {l : Label}
+    (hl : t.targets[j]? = some l) {s : Nat} (hs : lab V l = some s) :
+    s ∈ (ss[b]! : Array Nat).toList := by
+  obtain ⟨t', ts, ht', -, hts, -, hl'⟩ := cs.blk b V[b] (Array.getElem?_eq_getElem hb)
+  rw [ht] at ht'; cases ht'
+  obtain ⟨k, hk, hlab⟩ := hl' j l hl
+  rw [hs] at hlab; cases hlab
+  have e : (ss[b]! : Array Nat) = ts := by simp [getElem!_def, hts]
+  rw [e]
+  obtain ⟨hj, rfl⟩ := Array.getElem?_eq_some_iff.mp hk
+  simp
+
+theorem reach01 {V0 : Array VBlock} {ss0 ss1 : Array (Array Nat)} (cs0 : CfgSpec V0 ss0)
+    (cs1 : CfgSpec (keep V0 (reachable ss0)) ss1) (hn : Lbls V0) (h0 : 0 < V0.size) {b : Nat}
+    (h : Reach ss0 b) : ∃ k, ∃ hk : k < (keep V0 (reachable ss0)).size, ∃ hb : b < V0.size,
+      (keep V0 (reachable ss0))[k] = V0[b] ∧ Reach ss1 k := by
+  have hin := succsIn_of cs0
+  have hs0 : ss0.size ≠ 0 := by rw [cs0.size]; omega
+  induction h with
+  | entry =>
+    obtain ⟨hk, e⟩ := keep_zero h0 (reachable_spec hin hs0).2.1
+    exact ⟨0, hk, h0, e, .entry⟩
+  | @step b s hr hs ih =>
+    obtain ⟨k, hk, hb, e, hrk⟩ := ih
+    obtain ⟨hb', t, j, l, ht, hl, hlab⟩ := succ_of cs0 hs
+    obtain ⟨hs', hls⟩ := lab_some hlab
+    have hmk := reach_mk hin hs0 (Reach.step hr hs)
+    obtain ⟨k', hk', e'⟩ := keep_dst hs' hmk
+    refine ⟨k', hk', hs', e', .step hrk (succ_mem cs1 hk (t := t) (by rw [e]; exact ht) hl ?_)⟩
+    exact lab_of (keep_lbls hn _) hk' (by rw [e', hls])
+
+theorem reach12 {V1 B E : Array VBlock} {next : Nat} (hS : SInv V1 (next0Of V1) V1.size (next, B, E))
+    {ss1 ss2 : Array (Array Nat)} (cs1 : CfgSpec V1 ss1) (cs2 : CfgSpec (B ++ E) ss2)
+    (hn : Lbls V1) (h0 : 0 < V1.size) {k : Nat} (h : Reach ss1 k) : k < V1.size ∧ Reach ss2 k := by
+  have hn2 := lbls2 hS hn
+  have lab_k : ∀ k (hk : k < V1.size), lab (B ++ E) V1[k].label = some k := fun k hk => by
+    obtain ⟨hkB, e⟩ := v2_B hS hk
+    have hk2 : k < (B ++ E).size := (Array.getElem?_eq_some_iff.mp e).1
+    refine lab_of hn2 hk2 ?_
+    have : (B ++ E)[k] = B[k] := Option.some.inj (by rw [← Array.getElem?_eq_getElem hk2, e])
+    rw [this]
+    exact (rw_fields (hS.rw k hk hkB)).1
+  induction h with
+  | entry => exact ⟨h0, .entry⟩
+  | @step k k' _ hs ih =>
+    obtain ⟨hk, hr⟩ := ih
+    obtain ⟨hk1, t, j, l, ht, hl, hlab⟩ := succ_of cs1 hs
+    obtain ⟨hk', hlk'⟩ := lab_some hlab
+    obtain ⟨hkB, t0, t', ht0, ht', -, -, -, -, -, -, hlen, hrel⟩ := blk2 hS cs1 hk
+    obtain rfl : t0 = t := by rw [ht] at ht0; exact (Option.some.inj ht0).symm
+    obtain ⟨hkB', e2⟩ := v2_B hS hk
+    have hk2 : k < (B ++ E).size := (Array.getElem?_eq_some_iff.mp e2).1
+    have hBk : (B ++ E)[k] = B[k] := Option.some.inj (by rw [← Array.getElem?_eq_getElem hk2, e2])
+    obtain ⟨l', hl'⟩ : ∃ l', t'.targets[j]? = some l' :=
+      ⟨_, List.getElem?_eq_getElem (by rw [hlen]; exact (List.getElem?_eq_some_iff.mp hl).1)⟩
+    obtain ⟨l0, hl0, hcase⟩ := hrel j l' hl'
+    rw [hl] at hl0; cases hl0
+    refine ⟨hk', ?_⟩
+    rcases hcase with rfl | ⟨-, e, he⟩
+    · exact .step hr (succ_mem cs2 hk2 (by rw [hBk]; exact ht') hl' (by rw [← hlk']; exact lab_k k' hk'))
+    · have he2 : (B ++ E)[V1.size + e]? = some { label := l', insts := #[.jump l] } := by
+        rw [v2_E hS, he]
+      have hu : V1.size + e < (B ++ E).size := (Array.getElem?_eq_some_iff.mp he2).1
+      have hEu : (B ++ E)[V1.size + e] = { label := l', insts := #[.jump l] } :=
+        Option.some.inj (by rw [← Array.getElem?_eq_getElem hu, he2])
+      have hr2 : Reach ss2 (V1.size + e) :=
+        .step hr (succ_mem cs2 hk2 (by rw [hBk]; exact ht') hl' (lab_of hn2 hu (by rw [hEu])))
+      refine .step hr2 (succ_mem cs2 hu (t := .jump l) (j := 0) (by rw [hEu]; rfl) rfl ?_)
+      rw [← hlk']; exact lab_k k' hk'
+
+/-! ## Completeness -/
+
+/-- The VCode on which `prepCheck` accepts `prepare`'s output: at least one block, distinct
+labels, and branch arguments only on blocks with at most one successor (`lowerFunction`'s
+VCode: labels are block indices, `branchArgs` only on a `jump` block or an edge block). -/
+structure PrepDomain (vc : VCode) : Prop where
+  nonempty : 0 < vc.blocks.size
+  labels : Lbls vc.blocks
+  args : ∀ (b : Nat) (vb : VBlock) (t : MInst), vc.blocks[b]? = some vb → vb.insts.back? = some t →
+    2 ≤ t.targets.length → vb.branchArgs = #[]
+
+theorem pop_mem {α : Type} {xs : Array α} {x : α} (h : x ∈ xs.pop.toList) : x ∈ xs.toList := by
+  rw [Array.toList_pop] at h
+  exact List.dropLast_subset _ h
+
+section main
+variable {vc : VCode} {ss0 ss1 ss2 : Array (Array Nat)} {next : Nat} {B E : Array VBlock}
+  (hd : PrepDomain vc) (cs0 : CfgSpec vc.blocks ss0)
+  (cs1 : CfgSpec (keep vc.blocks (reachable ss0)) ss1) (cs2 : CfgSpec (B ++ E) ss2)
+  (hS : SInv (keep vc.blocks (reachable ss0)) (next0Of (keep vc.blocks (reachable ss0)))
+    (keep vc.blocks (reachable ss0)).size (next, B, E))
+
+local notation "V1" => keep vc.blocks (reachable ss0)
+
+include hd cs0 cs1 cs2 hS
+
+omit cs1 in
+theorem facts_basic :
+    0 < (keep vc.blocks (reachable ss0)).size ∧ (keep vc.blocks (reachable ss0))[0]? = vc.blocks[0]? ∧
+      mk (reachable ss0) 0 ∧ Lbls (keep vc.blocks (reachable ss0)) ∧ Lbls (B ++ E) ∧
+      (∀ i ∈ (rpo ss2).toList, i < (B ++ E).size) ∧ (rpo ss2).toList.Nodup ∧
+      (rpo ss2)[0]? = some 0 ∧
+      (∀ i ∈ (rpo ss2).toList, ∀ s ∈ (ss2[i]! : Array Nat).toList, s ∈ (rpo ss2).toList) ∧
+      (∀ b, Reach ss2 b → b ∈ (rpo ss2).toList) := by
+  have hs0 : ss0.size ≠ 0 := by rw [cs0.size]; have := hd.nonempty; omega
+  obtain ⟨-, hl0, -, -⟩ := reachable_spec (succsIn_of cs0) hs0
+  obtain ⟨h10, hk0⟩ := keep_zero hd.nonempty hl0
+  have hn1 := keep_lbls hd.labels (reachable ss0)
+  have hs2 : ss2.size ≠ 0 := by rw [cs2.size, v2_size hS]; omega
+  obtain ⟨hRlt, hRn, hR0, hRcl, hRre⟩ := rpo_spec (succsIn_of cs2) hs2
+  refine ⟨h10, by rw [Array.getElem?_eq_getElem h10, Array.getElem?_eq_getElem hd.nonempty, hk0],
+    hl0, hn1, lbls2 hS hn1, fun i hi => cs2.size ▸ hRlt i hi, hRn, hR0, hRcl, hRre⟩
+
+omit cs1 in
+/-- `prepare`'s output has a CFG. -/
+theorem cfg3 : ∃ ss3 ps3, ({ vc with blocks := (rpo ss2).map fun i => (B ++ E)[i]! } : VCode).cfg = .ok (ss3, ps3) := by
+  obtain ⟨-, -, -, -, hn2, hR, hRn, -, hRcl, -⟩ := facts_basic hd cs0 cs2 hS
+  apply cfg_of
+  intro q vb hq
+  have hqR : q < (rpo ss2).size := by
+    have := (Array.getElem?_eq_some_iff.mp hq).1; simpa using this
+  obtain ⟨hi, e⟩ := v3_get hR hqR
+  have hvb : vb = (B ++ E)[(rpo ss2)[q]] := by
+    have : ((rpo ss2).map fun i => (B ++ E)[i]!)[q]? = some vb := hq
+    rw [e] at this; exact (Option.some.inj this).symm
+  subst hvb
+  obtain ⟨t, ts, ht, hterm, hts, htsz, hl⟩ := cs2.blk _ _ (Array.getElem?_eq_getElem hi)
+  refine ⟨t, ht, hterm, fun l hlm => ?_⟩
+  obtain ⟨j, hj, rfl⟩ := List.getElem_of_mem hlm
+  obtain ⟨k, -, hk⟩ := hl j _ (List.getElem?_eq_getElem hj)
+  have hkR := hRcl _ (by simp) k (succ_mem cs2 hi ht (List.getElem?_eq_getElem hj) hk)
+  obtain ⟨q', -, -, hq'⟩ := lab3 hR hn2 hRn hkR
+  obtain ⟨hk2, hlk⟩ := lab_some hk
+  rw [getElem!_pos (B ++ E) k hk2, hlk] at hq'
+  exact ⟨q', hq'⟩
+
+omit cs1 in
+/-- Every instruction of `prepare`'s output is one of `vc`, a retargeted one, or an edge
+block's `jump`. -/
+theorem insts3 {vb' : VBlock} (hvb : vb' ∈ ((rpo ss2).map fun i => (B ++ E)[i]!).toList) {i' : MInst} (hi : i' ∈ vb'.insts.toList) :
+    (∃ vb ∈ vc.blocks.toList, i' ∈ vb.insts.toList) ∨
+      (∃ vb ∈ vc.blocks.toList, ∃ i ∈ vb.insts.toList, ∃ ls, i.setTargets ls = some i') ∨
+      ∃ l, i' = .jump l := by
+  obtain ⟨-, -, -, -, -, hR, -, -, -, -⟩ := facts_basic hd cs0 cs2 hS
+  rw [Array.mem_toList_iff, Array.mem_map] at hvb
+  obtain ⟨i, hiR, rfl⟩ := hvb
+  have hi2 : i < (B ++ E).size := hR i (by simpa using hiR)
+  rw [getElem!_pos (B ++ E) i hi2] at hi
+  by_cases hiB : i < B.size
+  · rw [Array.getElem_append_left hiB] at hi
+    have hi1 : i < (V1).size := by rw [← hS.size]; exact hiB
+    obtain ⟨b, hb, e, -⟩ := keep_src hi1
+    have hmem : (V1)[i] ∈ vc.blocks.toList := by rw [e]; simp
+    rcases hS.rw i hi1 hiB with h | ⟨t, t', ls, h1, -, h3, h4, -⟩
+    · rw [h] at hi; exact .inl ⟨_, hmem, hi⟩
+    · rw [h4] at hi
+      simp only [Array.toList_push, List.mem_append, List.mem_singleton] at hi
+      rcases hi with hi | rfl
+      · exact .inl ⟨_, hmem, pop_mem hi⟩
+      · exact .inr (.inl ⟨_, hmem, t, Array.mem_toList_iff.mpr (Array.mem_of_back? h1), ls, h3⟩)
+  · rw [Array.getElem_append_right (Nat.le_of_not_lt hiB)] at hi
+    have he : i - B.size < E.size := by simp at hi2; omega
+    obtain ⟨l, hl⟩ := hS.edges _ he
+    rw [hl] at hi
+    simp at hi
+    exact .inr (.inr ⟨l, hi⟩)
+
+/-- A live block of `vc`: its counterpart in `prepare`'s output, accepted by `keptOk`. -/
+theorem live_ok {ss3 ps3 : Array (Array Nat)}
+    (hc3 : ({ vc with blocks := (rpo ss2).map fun i => (B ++ E)[i]! } : VCode).cfg = .ok (ss3, ps3)) {b : Nat} (hb : b < vc.blocks.size)
+    (hl : mk (reachable ss0) b) : ∃ q, sigmaOf vc { vc with blocks := (rpo ss2).map fun i => (B ++ E)[i]! } b = some q ∧
+      keptOk vc { vc with blocks := (rpo ss2).map fun i => (B ++ E)[i]! } ss0 ss3 b q = true := by
+  obtain ⟨h10, -, -, hn1, hn2, hR, hRn, -, -, hRre⟩ := facts_basic hd cs0 cs2 hS
+  have cs3 : CfgSpec ((rpo ss2).map fun i => (B ++ E)[i]!) ss3 := cfg_spec hc3
+  have hs0 : ss0.size ≠ 0 := by rw [cs0.size]; have := hd.nonempty; omega
+  have hb' := (reachable_spec (succsIn_of cs0) hs0).2.2.2 b hl
+  obtain ⟨k, hk, hb0, ek, hr1⟩ := reach01 cs0 cs1 hd.labels hd.nonempty hb'
+  obtain ⟨-, hr2⟩ := reach12 hS cs1 cs2 hn1 h10 hr1
+  obtain ⟨q, hq, hRq, hlab⟩ := lab3 hR hn2 hRn (hRre k hr2)
+  obtain ⟨hkB, e2⟩ := v2_B hS hk
+  have hk2 : k < (B ++ E).size := (Array.getElem?_eq_some_iff.mp e2).1
+  have hBk : (B ++ E)[k] = B[k] := Option.some.inj (by rw [← Array.getElem?_eq_getElem hk2, e2])
+  obtain ⟨hkB2, t, t', ht, ht', hlabel, hpar, hargs, hsz, hpop, hsame, hlen, hrel⟩ := blk2 hS cs1 hk
+  rw [ek] at ht hlabel hpar hargs hsz hpop
+  have hlabk : (B ++ E)[k]!.label = vc.blocks[b].label := by
+    rw [getElem!_pos (B ++ E) k hk2, hBk, hlabel]
+  rw [hlabk] at hlab
+  -- the counterpart
+  have hσ : ∀ s (hs : s < vc.blocks.size), sigmaOf vc { vc with blocks := (rpo ss2).map fun i => (B ++ E)[i]! } s =
+      lab ((rpo ss2).map fun i => (B ++ E)[i]!) vc.blocks[s].label := fun s hs => by
+    unfold sigmaOf; rw [Array.getElem?_eq_getElem hs]; rfl
+  have hq3 : ((rpo ss2).map fun i => (B ++ E)[i]!)[q]? = some B[k] := by
+    obtain ⟨hi, e⟩ := v3_get hR hq
+    rw [e]; congr 1; simp only [hRq]; exact hBk
+  refine ⟨q, by rw [hσ b hb]; exact hlab, ?_⟩
+  unfold keptOk
+  rw [Array.getElem?_eq_getElem hb]
+  simp only [hq3]
+  simp only [Bool.and_eq_true, decide_eq_true_eq]
+  refine ⟨⟨⟨⟨⟨hpar, hargs⟩, hsz⟩, hpop⟩, ?_⟩, ?_⟩
+  · unfold lastOk
+    rw [ht, ht']
+    simp only [Bool.or_eq_true, decide_eq_true_eq]
+    exact hsame
+  · obtain ⟨t0, sb, ht0, -, hsb, hsbz, hl0⟩ := cs0.blk b _ (Array.getElem?_eq_getElem hb)
+    rw [ht] at ht0; cases ht0
+    obtain ⟨t3, sb', ht3, -, hsb', hsbz', hl3⟩ := cs3.blk q _ hq3
+    rw [ht'] at ht3; cases ht3
+    rw [hsb, hsb']
+    simp only [Bool.and_eq_true, decide_eq_true_eq]
+    refine ⟨by rw [hsbz, hsbz', hlen], ?_⟩
+    rw [List.all_eq_true]
+    intro j hj
+    rw [List.mem_range] at hj
+    obtain ⟨l, hlj⟩ : ∃ l, t.targets[j]? = some l :=
+      ⟨_, List.getElem?_eq_getElem (by rw [← hsbz]; exact hj)⟩
+    obtain ⟨l', hlj'⟩ : ∃ l', t'.targets[j]? = some l' :=
+      ⟨_, List.getElem?_eq_getElem (by rw [hlen, ← hsbz]; exact hj)⟩
+    obtain ⟨s, hs, hls⟩ := hl0 j l hlj
+    obtain ⟨u, hu, hlu⟩ := hl3 j l' hlj'
+    rw [hs, hu]
+    simp only
+    obtain ⟨hs', hls'⟩ := lab_some hls
+    rw [hσ s hs', hls']
+    obtain ⟨l0, hl0', hcase⟩ := hrel j l' hlj'
+    rw [hlj] at hl0'; cases hl0'
+    rcases hcase with rfl | ⟨h2, e, he⟩
+    · rw [hlu]; simp
+    · -- an edge block
+      obtain ⟨hu3, hiu, eu, hlabu⟩ := lab3_inv hR hlu
+      have he2 : (B ++ E)[(V1).size + e]? = some { label := l', insts := #[.jump l] } := by
+        rw [v2_E hS, he]
+      have hiE : (V1).size + e < (B ++ E).size := (Array.getElem?_eq_some_iff.mp he2).1
+      have hEe : (B ++ E)[(V1).size + e] = { label := l', insts := #[.jump l] } :=
+        Option.some.inj (by rw [← Array.getElem?_eq_getElem hiE, he2])
+      have hiu' : (rpo ss2)[u] = (V1).size + e := lbl_inj hn2 hiu hiE (by rw [hlabu, hEe])
+      have hV3u : ((rpo ss2).map fun i => (B ++ E)[i]!)[u]? = some { label := l', insts := #[.jump l] } := by
+        rw [eu, ← hEe]; congr 1; simp only [hiu']
+      obtain ⟨t4, ts4, ht4, -, hts4, hts4z, hl4⟩ := cs3.blk u _ hV3u
+      simp only [Array.back?] at ht4
+      simp at ht4
+      subst ht4
+      obtain ⟨w, hw, hlw⟩ := hl4 0 l rfl
+      have hts4' : ts4 = #[w] := by
+        apply Array.ext
+        · simp [hts4z, MInst.targets]
+        · intro i h1 h2
+          have : i = 0 := by simp [hts4z, MInst.targets] at h1; omega
+          subst this
+          simp only [Array.getElem?_eq_getElem h1] at hw
+          simpa using hw
+      rw [hlw]
+      simp only [Bool.or_eq_true, Bool.and_eq_true, decide_eq_true_eq]
+      refine .inr ⟨hd.args b _ t (Array.getElem?_eq_getElem hb) ht h2, ?_⟩
+      unfold edgeBlockOk
+      rw [hV3u]
+      simp [hts4, hts4']
+
+omit cs1 in
+/-- An instruction property kept back through retargeting and false of `jump`s holds in
+`vc` if it holds in `prepare`'s output. -/
+theorem any3 (P : MInst → Bool)
+    (hP : ∀ i ls i', i.setTargets ls = some i' → P i' = true → P i = true)
+    (hJ : ∀ l, P (.jump l) = false)
+    (h : (((rpo ss2).map fun i => (B ++ E)[i]!).any fun vb => vb.insts.any P) = true) :
+    (vc.blocks.any fun vb => vb.insts.any P) = true := by
+  rw [Array.any_eq_true'] at h ⊢
+  obtain ⟨vb', hvb', hany⟩ := h
+  rw [Array.any_eq_true'] at hany
+  obtain ⟨i', hi', hp⟩ := hany
+  rcases insts3 hd cs0 cs2 hS (Array.mem_toList_iff.mpr hvb') (Array.mem_toList_iff.mpr hi') with
+    ⟨vb, hvb, hi⟩ | ⟨vb, hvb, i, hi, ls, hset⟩ | ⟨l, rfl⟩
+  · exact ⟨vb, Array.mem_toList_iff.mp hvb, Array.any_eq_true'.mpr ⟨i', Array.mem_toList_iff.mp hi, hp⟩⟩
+  · exact ⟨vb, Array.mem_toList_iff.mp hvb,
+      Array.any_eq_true'.mpr ⟨i, Array.mem_toList_iff.mp hi, hP i ls i' hset hp⟩⟩
+  · rw [hJ] at hp; cases hp
+
+end main
+
+/-- **Completeness of the `prepare` validator.** On `PrepDomain` VCode, `prepCheck` accepts
+every output of `prepare`. -/
+theorem prepCheck_complete {vc vcp : VCode} (h : prepare vc = .ok vcp) (hd : PrepDomain vc) :
+    prepCheck vc vcp = true := by
+  obtain ⟨ss0, ps0, ss1, ps1, ss2, ps2, next, B, E, hc0, hc1, hS, hc2, rfl⟩ := prepare_facts h
+  have cs0 := cfg_spec hc0
+  have cs1 : CfgSpec (keep vc.blocks (reachable ss0)) ss1 := cfg_spec hc1
+  have cs2 : CfgSpec (B ++ E) ss2 := cfg_spec hc2
+  obtain ⟨h10, hk0, hl0, hn1, hn2, hR, hRn, hR0, -, -⟩ := facts_basic hd cs0 cs2 hS
+  obtain ⟨ss3, ps3, hc3⟩ := cfg3 hd cs0 cs2 hS
+  have hs0 : ss0.size ≠ 0 := by rw [cs0.size]; have := hd.nonempty; omega
+  obtain ⟨-, -, hlcl, -⟩ := reachable_spec (succsIn_of cs0) hs0
+  unfold prepCheck
+  rw [hc0, hc3]
+  simp only [Bool.and_eq_true, decide_eq_true_eq, Bool.or_eq_true, Bool.not_eq_true', beq_iff_eq]
+  refine ⟨⟨⟨?_, hl0⟩, ?_⟩, ⟨?_, ?_⟩, trivial⟩
+  · -- the entry is its own counterpart
+    unfold sigmaOf
+    rw [Array.getElem?_eq_getElem hd.nonempty]
+    have hR0' : 0 < (rpo ss2).size := (Array.getElem?_eq_some_iff.mp hR0).1
+    obtain ⟨hi, e⟩ := v3_get hR hR0'
+    have e0 : (rpo ss2)[0] = 0 := by
+      have := Array.getElem?_eq_getElem hR0'; rw [hR0] at this; exact (Option.some.inj this).symm
+    show lab _ _ = _
+    have hsz3 : 0 < ((rpo ss2).map fun i => (B ++ E)[i]!).size := by simpa using hR0'
+    apply lab_zero hsz3
+    have h3 : ((rpo ss2).map fun i => (B ++ E)[i]!)[0] = (B ++ E)[(rpo ss2)[0]]'hi :=
+      Option.some.inj (by rw [← Array.getElem?_eq_getElem hsz3, e])
+    rw [h3]
+    obtain ⟨hkB, e2⟩ := v2_B hS h10
+    have hk2 : 0 < (B ++ E).size := (Array.getElem?_eq_some_iff.mp e2).1
+    have h4 : (B ++ E)[(rpo ss2)[0]]'hi = B[0] := by
+      simp only [e0]
+      exact Option.some.inj (by rw [← Array.getElem?_eq_getElem hk2, e2])
+    rw [h4, (rw_fields (hS.rw 0 h10 hkB)).1]
+    have := hk0
+    rw [Array.getElem?_eq_getElem h10, Array.getElem?_eq_getElem hd.nonempty] at this
+    rw [Option.some.inj this]
+  · -- every live block
+    rw [List.all_eq_true]
+    intro b hb
+    rw [List.mem_range] at hb
+    simp only [Bool.or_eq_true, Bool.not_eq_true']
+    by_cases hlb : mk (reachable ss0) b
+    · right
+      obtain ⟨q, hq, hk⟩ := live_ok hd cs0 cs1 cs2 hS hc3 hb hlb
+      rw [hq]
+      simp only [Bool.and_eq_true]
+      refine ⟨hk, ?_⟩
+      have e : ss0[b]?.getD #[] = ss0[b]! := by
+        simp only [getElem!_def]; split <;> simp_all <;> rfl
+      rw [e, Array.all_eq_true]
+      intro i hi
+      have hs : (ss0[b]! : Array Nat)[i] ∈ (ss0[b]! : Array Nat).toList := Array.getElem_mem_toList hi
+      simp only [Bool.and_eq_true, decide_eq_true_eq]
+      exact ⟨cs0.size ▸ succsIn_of cs0 b _ hs, hlcl b hlb _ hs⟩
+    · left
+      simpa [liveOf, mk] using hlb
+  · by_cases ht : vc.hasTryCall = true
+    · exact .inl ht
+    · right
+      cases hv : VCode.hasTryCall { vc with blocks := (rpo ss2).map fun i => (B ++ E)[i]! }
+      · rfl
+      · refine absurd (any3 hd cs0 cs2 hS (fun i => i matches .tryCall ..) ?_ ?_ hv) ht
+        · intro i ls i' hset hp
+          obtain ⟨-, -, htry, -⟩ := setTargets_targets hset
+          obtain ⟨a, b, rfl⟩ := htry (by cases i' <;> simp_all)
+          rfl
+        · intro l; rfl
+  · by_cases ht : vc.hasTls = true
+    · exact .inl ht
+    · right
+      cases hv : VCode.hasTls { vc with blocks := (rpo ss2).map fun i => (B ++ E)[i]! }
+      · rfl
+      · refine absurd (any3 hd cs0 cs2 hS (fun i => i matches .elfTlsGetAddr ..) ?_ ?_ hv) ht
+        · intro i ls i' hset hp
+          obtain ⟨-, -, -, htls⟩ := setTargets_targets hset
+          cases i' <;> simp_all
+        · intro l; rfl
 
 end Backend.Proof.Prep
