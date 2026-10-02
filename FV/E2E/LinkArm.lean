@@ -1268,4 +1268,208 @@ theorem X_ext (hL : L.Ok) {M : Nat} {d : Option String} {uses : List CV} {w : Ar
 
 end LinkSys
 
+/-! ## The callee contract of the linked machine -/
+
+theorem setVal_regVal (t : Arm.ArmState) (r : Reg) : setVal r (regVal t r) = regVal t r := by
+  cases r with
+  | x n =>
+    simp only [setVal, regVal, ofX, lo64]
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_setWidth]
+    have := (Arm.r (.GPR (rnum n)) t).isLt
+    rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+  | _ => rfl
+
+theorem stackBelow_mono {m n : Nat} {sp a : BitVec 64} (h : StackBelow m sp a) (hmn : m ≤ n) :
+    StackBelow n sp a := ⟨h.1, by have := h.2; omega⟩
+
+theorem regVal_set_program (s : Arm.ArmState) (p : Arm.Program) (r : Reg) :
+    regVal (Arm.set_program s p) r = regVal s r := by
+  cases r <;> simp only [regVal] <;> first | rfl | rw [r_set_program]
+
+namespace LinkSys
+
+variable (L : LinkSys)
+
+theorem K_succ (M : Nat) (hM : 0 < M) : L.K M = L.K (M - 1) + L.D := by
+  simp only [K]
+  obtain ⟨M', rfl⟩ : ∃ M', M = M' + 1 := ⟨M - 1, by omega⟩
+  simp [Nat.mul_succ]
+
+/-- **The operand-view obligation of a call of a function of `P`** in the linked machine at
+depth `M` (from the linking statement at depth `M - 1`). -/
+theorem progOs (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g : Clif.Function}
+    (hg : g ∈ L.P.funcs) {G : BitVec 64 → Prop} {s0 : Arm.ArmState}
+    (himgG : ∀ a, L.Img a → G a) (himgS : ∀ a, L.Img a → s0.mem a = L.imgMem a)
+    {info : CallInfo} {h : Clif.Function} (hsite : L.ProgSite g info h) (ctx : FnCtx) :
+    CallSoundCtlG L.F (L.K M) G s0 (CallPc (L.A g).fa (L.A g).base) (callExec (L.hooks M))
+      (csem L.F ctx (L.X M)) (.call info) .next := by
+  have ⟨_, n, hdest, hpf⟩ := hsite
+  obtain ⟨hh, hname⟩ := Clif.Program.func?_some hpf
+  subst hname
+  obtain ⟨hsl, hsz⟩ := hL.calleeSlots g hg info h hsite
+  obtain ⟨n', Lu, Ld, hinfo, hLu, hLd⟩ := hL.callRegs g hg info h hsite
+  subst hinfo
+  cases hdest
+  obtain ⟨hnd, harg, -⟩ := hL.argRegs h hh
+  intro t hK hD hG hP c wh ops regs i' w outs w' hops hst hasg hsw hal herr hsem
+  rw [operands_call_sym] at hops
+  cases hops
+  obtain ⟨hsz', hloc, -, -⟩ := checkStatic_facts hst
+  have hregs := callRegs_eq (regs := regs) (by simpa using hsz')
+    (fun p hp r hr => (hloc p hp).2 r hr)
+  rw [call_useVals hregs] at hsem
+  generalize huses : Lu.map (fun q => regVal t q.2) = uses at hsem
+  -- the external semantics' call
+  have hx : L.progX M h h.name uses w = some (outs, w') := by
+    simp only [csem, Option.map_eq_some_iff, Prod.mk.injEq] at hsem
+    obtain ⟨⟨o, w2⟩, hx, rfl, rfl, -⟩ := hsem
+    rw [L.X_prog hpf] at hx
+    exact hx
+  unfold progX at hx
+  have hcond : L.Cond M h uses w ∧
+      Arm.r .ERR ((L.hooks M).call (some h.name) (L.canon h uses w)) = .None :=
+    Classical.byContradiction fun hc => by rw [if_neg hc] at hx; cases hx
+  rw [if_pos hcond] at hx
+  obtain ⟨⟨hM, herrw, halw, hroom, hdead, vals, cm, cs, rvals, cm', hmr, hargs, hinit, hrun⟩,
+    -⟩ := hcond
+  simp only [Option.some.injEq, Prod.mk.injEq] at hx
+  obtain ⟨rfl, rfl⟩ := hx
+  obtain ⟨us, outsV, wf, hus, hlen, hhold, hmemR, hcall⟩ :=
+    L.progCall hL hM (ih hM) hpf hsl hsz herrw halw hroom hdead hmr hargs hinit hrun
+  -- the caller state is compatible with the canonical one
+  have hcOk : L.CallerOk h uses w t := by
+    refine ⟨hsw, fun a ha => (hG a (himgG a ha)).trans (himgS a ha), fun r hr => ?_,
+      hL.raCall g hg h hh _ hP⟩
+    rw [← hLu] at hr
+    obtain ⟨j, hj⟩ := List.mem_iff_getElem?.mp hr
+    have hrA : r.isArgReg = true := harg r (by rw [← hLu]; exact List.mem_of_getElem? hj)
+    have hu : uses[j]? = some (regVal t r) := by
+      simp only [List.getElem?_map, Option.map_eq_some_iff] at hj
+      obtain ⟨q, hq, rfl⟩ := hj
+      simp [← huses, hq]
+    rw [L.regVal_canon _ _ _ hrA, placeArgs_regVal _ _ _ hnd harg (by rw [← hLu]; exact hj) hu,
+      setVal_regVal]
+  obtain ⟨ks, hs_eq, hs_ret⟩ := hcall t hcOk
+  obtain ⟨kc, hc_eq, hc_ret⟩ := hcall _ (L.callerOk_canon hL hh uses w)
+  -- the allocated call
+  obtain ⟨us', ds', rfl⟩ := assign_call_sym hasg
+  refine ⟨_, by simp [callExec, hal]; rfl, ?_, ?_, ?_, ?_, ?_⟩
+  · -- the world
+    rw [hs_eq, hc_eq]
+    refine ⟨fun f hf => ?_, fun a ha => ?_, ?_⟩
+    · rw [r_set_program, r_set_program]
+      by_cases h29 : f = .GPR 29#5
+      · subst h29
+        have e1 := hs_ret.ret.savedX 29 (by decide)
+        have e2 := hc_ret.ret.savedX 29 (by decide)
+        simp only [xreg] at e1 e2
+        rw [show (BitVec.ofNat 5 29) = 29#5 from rfl] at e1 e2
+        rw [e1, e2, r_enterAt _ _ (by simp) (by simp), r_enterAt _ _ (by simp) (by simp),
+          (L.callerOk_canon hL hh uses w).world.1 _ hf, hsw.1 _ hf]
+      by_cases h31 : f = .GPR 31#5
+      · subst h31
+        have e1 := hs_ret.ret.sp
+        have e2 := hc_ret.ret.sp
+        simp only [spv] at e1 e2
+        rw [e1, e2, r_enterAt _ _ (by simp) (by simp), r_enterAt _ _ (by simp) (by simp),
+          (L.callerOk_canon hL hh uses w).world.1 _ hf, hsw.1 _ hf]
+      · rw [hs_ret.fields f hf h29 h31, hc_ret.fields f hf h29 h31]
+    · simp only [mem_set_program]
+      rw [hs_ret.mem a ha, hc_ret.mem a ha]
+    · simp only [program_set_program]
+      rw [hsw.2.2, L.program_canon]
+  · -- the frame outside the dead stack
+    rw [hs_eq]
+    refine ⟨?_, fun a ⟨ha, hb⟩ => ?_⟩
+    · show spv (Arm.set_program _ _) = spv t
+      simp only [spv]; rw [r_set_program]
+      have := hs_ret.ret.sp
+      simp only [spv] at this
+      rw [this, r_enterAt _ _ (by simp) (by simp)]
+    · rw [mem_set_program, hs_ret.gkeep a ⟨ha, fun hb' => hb ?_⟩, mem_enterAt]
+      have hd := hL.depth h hh
+      have hsp : spv w = spOf t := (hsw.1 (.GPR 31#5) (by simp [Masked])).symm
+      rw [hsp] at hb'
+      exact stackBelow_mono hb' (by rw [L.K_succ M hM]; omega)
+  · -- the results
+    intro p hp
+    obtain ⟨⟨op, r⟩, x⟩ := p
+    rw [defRegs, call_defs hregs] at hp
+    obtain ⟨j, hj⟩ := List.mem_iff_getElem?.mp hp
+    simp only [List.getElem?_zip_eq_some] at hj
+    obtain ⟨⟨-, hr⟩, hx⟩ := hj
+    rw [hLd] at hr
+    simp only [List.getElem?_map, Option.map_eq_some_iff] at hr hx
+    obtain ⟨j1, hj1, rfl⟩ := hr
+    obtain ⟨j2, hj2, rfl⟩ := hx
+    have hjr : j < (sigRets h.sig).length := by
+      have := (List.getElem?_eq_some_iff.mp hj1).1; simpa using this
+    rw [List.getElem?_range hjr, Option.some.injEq] at hj1 hj2
+    subst hj1 hj2
+    show regVal _ (Reg.x j) = regVal _ (Reg.x j)
+    rw [hs_eq, regVal_set_program, hc_eq, regVal_set_program]
+    -- the `j`-th result register is a return register of the callee
+    have hrt := Clif.runLoop_returned_tys hL.linkable.free M cs rvals cm'
+      (runInv_entry hh (clifEntry_initState hpf hinit)) hrun
+    have hbot : cs.bottom = h := by
+      have hce := clifEntry_initState (f := h) hpf hinit
+      simp [Clif.State.bottom, hce.callers, hce.func]
+    rw [hbot] at hrt
+    have hlr : (sigRets h.sig).length ≤ us.length := by
+      rw [sigRets_of_noSret (hL.noSret h hh), hlen]
+      have := congrArg List.length hrt
+      simp only [List.length_map, Clif.AbiParam.tys] at this
+      rw [← this]; exact hhold.1
+    have hju : j < us.length := by omega
+    have hus_j : us[j]? = some ((us[j]'hju).1, Reg.x j) := by
+      have := congrArg (·[j]?) hus
+      simp only [List.getElem?_map, List.getElem?_range hju, List.getElem?_eq_getElem hju,
+        Option.map_some, Option.some.injEq] at this
+      rw [List.getElem?_eq_getElem hju, ← this]
+    have hoj : outsV[j]? = some (outsV[j]'(by omega)) := List.getElem?_eq_getElem _
+    rw [hs_ret.regs j _ _ _ hus_j hoj, hc_ret.regs j _ _ _ hus_j hoj]
+  · -- the registers the callee preserves
+    intro r hr hnd' hnc
+    rw [hs_eq, regVal_set_program]
+    have hnotd : r ∉ Ld.map (·.1) := by
+      intro hm
+      obtain ⟨q, hq, rfl⟩ := List.mem_map.mp hm
+      have hmem : (⟨⟨q.2, .int, .def, .late, .fixed q.1⟩, q.1⟩ : Operand × Reg) ∈
+          ((retOps Lu ++ callDefOps Ld).toArray.zip regs).toList := by
+        rw [call_zip hregs]
+        exact List.mem_append_right _ (List.mem_iff_getElem?.mpr (by
+          obtain ⟨i, hi⟩ := List.mem_iff_getElem?.mp hq
+          exact ⟨i, by simp [callDefOps, List.getElem?_zip_eq_some, hi]⟩))
+      exact hnd' _ hmem rfl rfl
+    have hnD : r ∉ defaultAapcsClobbers := by
+      intro hm
+      apply hnc
+      simp only [MInst.clobbers, List.mem_filter, hm, true_and, callDefs]
+      simp only [List.any_map, Bool.not_eq_true', List.any_eq_false, beq_iff_eq]
+      exact fun q hq e => hnotd (List.mem_map.mpr ⟨q, hq, by simpa using e⟩)
+    rcases allocatable_cases hr with ⟨m, rfl, hm, h16, h17, h18⟩ | ⟨m, rfl, hm⟩
+    · have h19 : 19 ≤ m :=
+        Classical.byContradiction fun hc => hnD (by simp [defaultAapcsClobbers]; omega)
+      have e := hs_ret.ret.savedX m (by simp [calleeSavedX]; exact ⟨m - 19, by omega, by omega⟩)
+      simp only [xreg] at e
+      simp only [regVal]
+      rw [show rnum m = BitVec.ofNat 5 m from rfl, e, r_enterAt _ _ (by simp) (fun e' => by
+        have := congrArg (fun f => match f with | Arm.StateField.GPR i => i.toNat | _ => 0) e'
+        simp [rnum_toNat (show m < 32 by omega)] at this; omega)]
+    · exact absurd (by simp [defaultAapcsClobbers]; omega) hnD
+  · -- the callee-saved registers the call clobbers: the low halves of v8–v15
+    intro r hr hcs
+    rw [hs_eq, regVal_set_program]
+    have hrD : r ∈ defaultAapcsClobbers := (List.mem_filter.mp hr).1
+    simp only [calleeSaved, List.mem_append, List.mem_map, List.mem_range] at hcs
+    rcases hcs with ⟨i, hi, rfl⟩ | ⟨i, hi, rfl⟩
+    · exact absurd hrD (by simp [defaultAapcsClobbers]; omega)
+    · have e := hs_ret.ret.savedV (8 + i) (by omega) (by omega)
+      simp only [ckeep, regVal]
+      rw [show rnum (8 + i) = BitVec.ofNat 5 (8 + i) from rfl, e,
+        r_enterAt _ _ (by simp) (by simp)]
+
+end LinkSys
+
 end E2E
