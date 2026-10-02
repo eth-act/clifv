@@ -30,7 +30,11 @@ with it).
 * **`tlsOk_witness`**, **`xCallsOk_witness`**, **`xCallsIndOk_witness`**: the TLSDESC contract
   and the external contracts for environments whose externs are the identity on their first
   argument (`idf`) or no-ops.
-* **`final_contracts_witness`**: all the contract premises of `backend_correct_final` at once.
+* **`final_contracts_witness`**: all the contract premises of `backend_correct_final` at once;
+  **`backend_correct_final_witness`**: the theorem with them discharged.
+* Value-returning callees: `idX` (callees `idf` return their first argument), `IdSite idf` (the
+  call-site shapes of `(i64) -> i64` calls and of calls without results), `calleeOk_id`,
+  `xCallsOk_id`, `final_contracts_id`, **`backend_correct_final_id`**.
 -/
 
 namespace E2E
@@ -332,18 +336,27 @@ theorem regVal_keep {s t : Arm.ArmState}
   | _ => rfl
 
 /-- **A callee that keeps everything but the pc, x30 and its dead stack, and returns to
-`pc + 4`, meets the callee contract** with the witness external semantics (no results, world
-unchanged), for every frame `F`, budget `K` and set of call sites `S`. -/
-theorem calleeOk_of_keepsBut {F : BitVec 64 → Prop} {K : Nat} {H : ArmHooks}
-    {S : CallInfo → Prop} (sym : String → Int → BitVec 64) (tp : BitVec 64)
-    (hk : ∀ d, KeepsBut K (H.call d))
+`pc + 4`, meets the callee contract** for every frame `F`, budget `K` and call sites `S`, with an
+external semantics `X` that keeps the world and, at the call sites `S`, gives a value only to a
+def in x0, the value x0 holds at the call (a callee returning its first argument, or nothing). -/
+theorem calleeOk_of_keepsBut {F : BitVec 64 → Prop} {K : Nat} {X : ExtSem} {H : ArmHooks}
+    {S : CallInfo → Prop} (hk : ∀ d, KeepsBut K (H.call d))
     (hpc : ∀ d s, Arm.r .ERR s = .None → Arm.CheckSPAlignment s →
-      Arm.r .PC (H.call d s) = Arm.r .PC s + 4) :
-    CalleeOk F K (witnessX sym tp) H S := by
-  refine ⟨fun ctx info _ s hKs hD c wh ops regs i' w outs w' hops hst hasg hw hal herr hsem => ?_,
+      Arm.r .PC (H.call d s) = Arm.r .PC s + 4)
+    (hw : ∀ d uses w outs w', X.call d uses w = some (outs, w') → w' = w)
+    (hdef : ∀ info, S info → ∀ (c : CheckCtx) wh ops regs s w outs w',
+      (MInst.call info).operands = .ok ops →
+      c.checkStatic wh ops (regs.map .reg) (MInst.call info).clobbers = .ok () →
+      X.call (match info.dest with | .sym n => some n | .reg _ => none) (useVals ops regs s) w =
+        some (outs, w') →
+      ∀ p ∈ defRegs ops regs outs, p.1.2 = .x 0 ∧ p.2 = regVal s (.x 0)) :
+    CalleeOk F K X H S := by
+  refine ⟨fun ctx info hS s hKs hD c wh ops regs i' w outs w' hops hst hasg hww hal herr hsem => ?_,
     fun d s herr hal => hpc d s herr hal, fun d uses w outs w' hx herr => ?_⟩
-  · simp only [csem, witnessX, Option.map_some, Option.some.injEq, Prod.mk.injEq] at hsem
-    obtain ⟨rfl, rfl, -⟩ := hsem
+  · simp only [csem, Option.map_eq_some_iff, Prod.mk.injEq] at hsem
+    obtain ⟨⟨o, w2⟩, hx, rfl, rfl, -⟩ := hsem
+    have hdefs := hdef info hS c wh ops regs s w o w2 hops hst hx
+    obtain rfl := hw _ _ _ _ _ hx
     obtain ⟨ic, rfl⟩ := assign_call_form hasg
     obtain ⟨hf, hm, hp⟩ := hk (match ic.dest with | .sym n => some n | .reg _ => none) s herr hal
     have hnb : ∀ a, ¬ StackBelow K (spOf s) a →
@@ -357,10 +370,12 @@ theorem calleeOk_of_keepsBut {F : BitVec 64 → Prop} {K : Nat} {H : ArmHooks}
       fun r _ hcs => ?_⟩
     · have h1 : f ≠ .PC := fun e => hf' (by rw [e]; simp [Masked])
       have h2 : f ≠ .GPR 30#5 := fun e => hf' (by rw [e]; simp [Masked])
-      rw [hf f h1 h2]; exact hw.1 f hf'
-    · rw [hnb a fun hb => ha (hD a hb)]; exact hw.2.1 a ha
-    · rw [hp]; exact hw.2.2
-    · simp [defRegs] at hp
+      rw [hf f h1 h2]; exact hww.1 f hf'
+    · rw [hnb a fun hb => ha (hD a hb)]; exact hww.2.1 a ha
+    · rw [hp]; exact hww.2.2
+    · obtain ⟨h1, h2⟩ := hdefs p hp
+      rw [h1, h2]
+      exact regVal_keep hf fun n e => by cases e; omega
     · refine regVal_keep hf fun n e => ?_
       subst e
       rcases allocatable_cases hr with ⟨m, e, hm29, -⟩ | ⟨m, e, -⟩ <;> cases e
@@ -370,8 +385,7 @@ theorem calleeOk_of_keepsBut {F : BitVec 64 → Prop} {K : Nat} {H : ArmHooks}
       simp only [calleeSaved, List.mem_append, List.mem_map, List.mem_range] at hcs
       rcases hcs with ⟨i, hi, e⟩ | ⟨i, hi, e⟩ <;> cases e
       omega
-  · simp only [witnessX, Option.some.injEq, Prod.mk.injEq] at hx
-    obtain ⟨-, rfl⟩ := hx
+  · obtain rfl := hw _ _ _ _ _ hx
     exact ⟨herr, rfl⟩
 
 /-- **The callee contract holds for the witness** — a callee that saves its return address
@@ -380,8 +394,13 @@ call sites `S`. -/
 theorem calleeOk_witness (F : BitVec 64 → Prop) {K : Nat} (hK : 32 ≤ K) (S : CallInfo → Prop)
     (g h : BitVec 64) (sym : String → Int → BitVec 64) (tp : BitVec 64) :
     CalleeOk F K (witnessX sym tp) (witnessHooks g h sym tp) S :=
-  calleeOk_of_keepsBut sym tp (fun _ => keepsBut_mono (witnessCall_keepsBut g h) hK)
+  calleeOk_of_keepsBut (fun _ => keepsBut_mono (witnessCall_keepsBut g h) hK)
     (fun _ s herr hal => witnessCall_pc g h s herr hal)
+    (fun _ _ _ _ _ hx => by simp only [witnessX, Option.some.injEq, Prod.mk.injEq] at hx; exact hx.2.symm)
+    (fun _ _ _ _ _ _ _ _ outs _ _ _ hx p hp => by
+      simp only [witnessX, Option.some.injEq, Prod.mk.injEq] at hx
+      rw [← hx.1] at hp
+      simp [defRegs] at hp)
 
 theorem read_pstate_eq {s t : Arm.ArmState} (h : ∀ fl, Arm.r (.FLAG fl) s = Arm.r (.FLAG fl) t) :
     Arm.read_pstate s = Arm.read_pstate t := by
@@ -396,26 +415,27 @@ theorem read_pstate_w {f : Arm.StateField} (hf : ∀ fl, f ≠ .FLAG fl) (v) (s 
     Arm.read_pstate (Arm.w f v s) = Arm.read_pstate s :=
   read_pstate_eq fun fl => Arm.r_of_w_different (Ne.symm (hf fl))
 
-/-- **The TLSDESC contract holds for the witness**, for every frame `F` and budget `K`. -/
-theorem tlsOk_witness (F : BitVec 64 → Prop) (K : Nat) (g h : BitVec 64)
-    (sym : String → Int → BitVec 64) (tp : BitVec 64) :
-    TlsOk F K (witnessX sym tp) (witnessHooks g h sym tp) := by
+/-- **The TLSDESC contract holds for the witness**, for every frame `F` and budget `K`, with an
+external semantics whose TLSDESC call keeps the flags. -/
+theorem tlsOk_witness (F : BitVec 64 → Prop) (K : Nat) (g h : BitVec 64) (X : ExtSem)
+    (hfl : ∀ n w, X.tlsFlags n w = Arm.read_pstate w) :
+    TlsOk F K X (witnessHooks g h X.sym X.tp) := by
   refine ⟨fun n tmp s _ => ?_, fun n k s hk29 hk0 _ _ _ _ _ => ?_, fun n k s w hw => ?_⟩
   · cases tmp <;> simp [witnessHooks, tlsWitness, Arm.r_of_w_same]
   · have h0k : (0#5 : BitVec 5) ≠ rnum k := fun e =>
       hk0 (by have := rnum_ne (a := 0) (b := k) (by omega) (by omega); simp_all [rnum])
     refine ⟨?_, ?_, fun f h1 h2 h3 _ _ => ?_, fun a _ => ?_, ?_⟩
-    · simp only [witnessHooks, tlsWitness, xreg, witnessX]
+    · simp only [witnessHooks, tlsWitness, xreg]
       rw [Arm.r_of_w_different (by simp), Arm.r_of_w_different (fun e => h0k
         (Arm.StateField.GPR.inj e)), Arm.r_of_w_same]
-    · simp only [witnessHooks, tlsWitness, witnessX]
+    · simp only [witnessHooks, tlsWitness]
       rw [Arm.r_of_w_different (by simp), Arm.r_of_w_same]
     · simp only [witnessHooks, tlsWitness]
       have h2' : f ≠ .GPR 0#5 := h2
       rw [Arm.r_of_w_different h1, Arm.r_of_w_different h3, Arm.r_of_w_different h2']
     · simp [witnessHooks, tlsWitness, Arm.ArmState.mem_w_eq_mem]
     · simp [witnessHooks, tlsWitness, Arm.w_program]
-  · simp only [witnessHooks, tlsWitness, witnessX]
+  · simp only [witnessHooks, tlsWitness, hfl]
     rw [read_pstate_w (fun _ => by simp), read_pstate_w (fun _ => by simp),
       read_pstate_w (fun _ => by simp)]
     exact read_pstate_eq fun fl => hw.1 _ (by simp [Masked])
@@ -490,7 +510,7 @@ theorem final_contracts_witness {f : Clif.Function} {vcp : VCode} {rf : RFunc} {
       Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
         slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) (witnessX (witnessSym syms) tp)) ∧
     (∀ n b, syms n = some b → (witnessX (witnessSym syms) tp).sym n 0 = BitVec.ofNat 64 b) :=
-  ⟨fun _ => calleeOk_witness _ hK _ g h _ tp, fun _ => tlsOk_witness _ K g h _ tp,
+  ⟨fun _ => calleeOk_witness _ hK _ g h _ tp, fun _ => tlsOk_witness _ K g h (witnessX (witnessSym syms) tp) fun _ _ => rfl,
     fun _ => xCallsOk_witness _ _ tp hsig hnoop,
     fun _ => xCallsIndOk_witness _ _ tp hisig hnoopI, witnessSym_ok syms⟩
 
@@ -526,6 +546,253 @@ theorem backend_correct_final_witness {p : Clif.Program} {f : Clif.Function} {k 
   obtain ⟨hC, hTls, hX, hXI, hsym⟩ :=
     final_contracts_witness (f := f) (vcp := vcp) (rf := rf) (af := af) (slotOff := slotOff)
       hK g h tp hsig hisig hnoop hnoopI
+  exact backend_correct_final hsub hc hcov hC
+    (fun ⟨B, hB, ht⟩ => absurd ht (by rw [hnt B hB]; decide)) (fun _ => hTls) hX hXI hsym hslot
+    hent hres hbe hargs hcs hrel htr fuel
+
+/-! ## Callees that return a value -/
+
+open Classical in
+/-- **The witness external semantics with value-returning callees**: a callee whose name
+satisfies `idf` returns its first argument (a `bl n`, or a `blr` whose target is the address
+`sym n 0` of such a callee), every other one returns nothing; the world is unchanged. -/
+noncomputable def idX (sym : String → Int → BitVec 64) (tp : BitVec 64) (idf : String → Prop) :
+    ExtSem :=
+  ⟨fun d uses w => some ((match d with
+      | some n => if idf n then uses.take 1 else []
+      | none => if ∃ n, idf n ∧ lo64 (uses.headD 0) = sym n 0 then (uses.drop 1).take 1 else []),
+      w), sym, tp, fun _ w => Arm.read_pstate w⟩
+
+/-- The call sites the value-returning witness serves (the shapes `gen_call_args` and
+`gen_call_output` emit for callees of signature `(i64) -> i64` and for callees without results
+with int arguments): a direct call of an `idf` callee with its argument and result in x0; a direct
+call of any other callee; an indirect call (`blr` of an int vreg) with int arguments in registers
+and no result, or with one argument and one result in x0. -/
+def IdSite (idf : String → Prop) (info : CallInfo) : Prop :=
+  (∃ n u d, idf n ∧ info = ⟨.sym n, retPairs [(u, .x 0)], callDefs [(.x 0, d)]⟩) ∨
+  (∃ n, ¬ idf n ∧ info.dest = .sym n) ∨
+  (∃ t L, info = ⟨.reg (.vreg t .int), retPairs L, callDefs []⟩) ∨
+  (∃ t u d, info = ⟨.reg (.vreg t .int), retPairs [(u, .x 0)], callDefs [(.x 0, d)]⟩)
+
+theorem defRegs_nil_right (ops : Array Operand) (regs : Array Reg) :
+    defRegs ops regs [] = [] := by simp [defRegs]
+
+/-- At the witness call sites, every def the witness semantics gives a value is x0, with the value
+x0 held at the call. -/
+theorem idSite_defs {idf : String → Prop} {sym : String → Int → BitVec 64} {tp : BitVec 64}
+    {info : CallInfo} (hS : IdSite idf info) {c : CheckCtx} {wh : String} {ops : Array Operand}
+    {regs : Array Reg} {s w : Arm.ArmState} {outs : List CV} {w' : Arm.ArmState}
+    (hops : (MInst.call info).operands = .ok ops)
+    (hst : c.checkStatic wh ops (regs.map .reg) (MInst.call info).clobbers = .ok ())
+    (hx : (idX sym tp idf).call (match info.dest with | .sym n => some n | .reg _ => none)
+      (useVals ops regs s) w = some (outs, w')) :
+    w' = w ∧ ∀ p ∈ defRegs ops regs outs, p.1.2 = .x 0 ∧ p.2 = regVal s (.x 0) := by
+  obtain ⟨hsz, hloc, -, -⟩ := checkStatic_facts hst
+  simp only [Array.size_map] at hsz
+  rcases hS with ⟨n, u, d, hn, rfl⟩ | ⟨n, hn, hd⟩ | ⟨t, L, rfl⟩ | ⟨t, u, d, rfl⟩
+  · rw [operands_call_sym] at hops
+    cases hops
+    obtain ⟨r0, r1, rfl⟩ : ∃ r0 r1, regs = #[r0, r1] := by
+      have h2 : regs.size = 2 := by simp [retOps, callDefOps] at hsz; omega
+      exact ⟨regs[0], regs[1], Array.ext (by simp [h2]) fun i h1 h2' => by
+        have : i = 0 ∨ i = 1 := by omega
+        rcases this with rfl | rfl <;> rfl⟩
+    have h0 := (hloc (⟨u, .int, .use, .early, .fixed (.x 0)⟩, .reg r0) (by simp [retOps, callDefOps])).2
+      (.x 0) rfl
+    have h1 := (hloc (⟨d, .int, .def, .late, .fixed (.x 0)⟩, .reg r1) (by simp [retOps, callDefOps])).2
+      (.x 0) rfl
+    simp only [Loc.reg.injEq] at h0 h1
+    subst h0 h1
+    simp only [idX, hn, ↓reduceIte, Option.some.injEq, Prod.mk.injEq] at hx
+    obtain ⟨rfl, rfl⟩ := hx
+    refine ⟨rfl, fun p hp => ?_⟩
+    simp [defRegs, useVals, retOps, callDefOps, Operand.isDef, Operand.isUse] at hp
+    subst hp
+    simp
+  · rw [hd] at hx
+    simp only [idX, hn, ↓reduceIte, Option.some.injEq, Prod.mk.injEq] at hx
+    obtain ⟨rfl, rfl⟩ := hx
+    exact ⟨rfl, by simp [defRegs_nil_right]⟩
+  · rw [operands_call_reg t L []] at hops
+    cases hops
+    simp only [idX, Option.some.injEq, Prod.mk.injEq] at hx
+    obtain ⟨-, rfl⟩ := hx
+    refine ⟨rfl, fun p hp => ?_⟩
+    have hnd : ∀ q ∈ ((tgtOp t :: (retOps L ++ callDefOps [])).zip regs.toList),
+        q.1.isDef = false := by
+      intro q hq
+      have hq1 := (List.of_mem_zip hq).1
+      simp only [callDefOps, List.map_nil, List.append_nil, List.mem_cons, retOps,
+        List.mem_map] at hq1
+      rcases hq1 with e | ⟨a, -, e⟩
+      · rw [e]; rfl
+      · rw [← e]; rfl
+    have : ((tgtOp t :: (retOps L ++ callDefOps [])).zip regs.toList).filter (·.1.isDef) = [] :=
+      List.filter_eq_nil_iff.mpr fun q hq => by rw [hnd q hq]; decide
+    simp only [defRegs, Array.toList_zip, this, List.zip_nil_left,
+      List.not_mem_nil] at hp
+  · rw [operands_call_reg t [(u, .x 0)] [(.x 0, d)]] at hops
+    cases hops
+    obtain ⟨r0, r1, r2, rfl⟩ : ∃ r0 r1 r2, regs = #[r0, r1, r2] := by
+      have h3 : regs.size = 3 := by simp [retOps, callDefOps] at hsz; omega
+      exact ⟨regs[0], regs[1], regs[2], Array.ext (by simp [h3]) fun i h1 h2' => by
+        have : i = 0 ∨ i = 1 ∨ i = 2 := by omega
+        rcases this with rfl | rfl | rfl <;> rfl⟩
+    have h1 := (hloc (⟨u, .int, .use, .early, .fixed (.x 0)⟩, .reg r1)
+      (by simp [tgtOp, retOps, callDefOps])).2 (.x 0) rfl
+    have h2 := (hloc (⟨d, .int, .def, .late, .fixed (.x 0)⟩, .reg r2)
+      (by simp [tgtOp, retOps, callDefOps])).2 (.x 0) rfl
+    simp only [Loc.reg.injEq] at h1 h2
+    subst h1 h2
+    simp only [idX, Option.some.injEq, Prod.mk.injEq] at hx
+    obtain ⟨hout, rfl⟩ := hx
+    refine ⟨rfl, fun p hp => ?_⟩
+    split at hout
+    · subst hout
+      simp [defRegs, useVals, tgtOp, retOps, callDefOps, Operand.isDef, Operand.isUse] at hp
+      subst hp
+      simp
+    · subst hout
+      simp [defRegs_nil_right] at hp
+
+theorem _root_.Backend.Proof.CalleeOk.mono {F : BitVec 64 → Prop} {K : Nat} {X : ExtSem} {H : ArmHooks}
+    {S S' : CallInfo → Prop} (h : CalleeOk F K X H S) (hS : ∀ info, S' info → S info) :
+    CalleeOk F K X H S' :=
+  ⟨fun ctx info hi => h.os ctx info (hS info hi), h.pc, h.ext⟩
+
+/-- **The callee contract holds for value-returning callees**: the witness callee (two frames
+pushed below `sp`, x0 kept: it returns its first argument) with `idX` meets `CalleeOk` at the
+witness call sites `IdSite idf`, for every frame `F` and budget `K ≥ 32`. Over every `CallInfo`
+no callee returning a value could (a call whose def is x19 would force it to overwrite x19,
+which a call without defs must preserve): the call sites are the compiled code's. -/
+theorem calleeOk_id (F : BitVec 64 → Prop) {K : Nat} (hK : 32 ≤ K) (g h : BitVec 64)
+    (sym : String → Int → BitVec 64) (tp : BitVec 64) (idf : String → Prop) :
+    CalleeOk F K (idX sym tp idf) (witnessHooks g h sym tp) (IdSite idf) :=
+  calleeOk_of_keepsBut (fun _ => keepsBut_mono (witnessCall_keepsBut g h) hK)
+    (fun _ s herr hal => witnessCall_pc g h s herr hal)
+    (fun _ _ _ _ _ hx => by simp only [idX, Option.some.injEq, Prod.mk.injEq] at hx; exact hx.2.symm)
+    (fun _ hS _ _ _ _ _ _ _ _ hops hst hx => (idSite_defs hS hops hst hx).2)
+
+/-- **The external contract holds for value-returning callees**: in an environment whose
+declared `idf` externs take one register argument and return it (memory unchanged) and whose
+other declared externs return nothing and keep the memory, with distinct symbol addresses of the
+`idf` callees. -/
+theorem xCallsOk_id {env : Clif.Env} {exts : List Clif.ExtFunc} (MR : MemRelT)
+    (sym : String → Int → BitVec 64) (tp : BitVec 64) (idf : String → Prop)
+    (hinj : ∀ a b, idf b → sym a 0 = sym b 0 → a = b)
+    (hid : ∀ ext ∈ exts, idf ext.name →
+      (∃ bytes, sigParamBytes ext.sig = .ok bytes ∧ bytes.length ≤ 8) ∧
+      ext.sig.params.length = 1 ∧ (sigRets ext.sig).length = 1 ∧
+      ∀ G, env.extern ext.name = some G → ∀ vals cm rvals cm',
+        G vals cm = .returned rvals cm' → rvals = vals ∧ cm' = cm)
+    (hnoop : ∀ ext ∈ exts, ¬ idf ext.name → sigRets ext.sig = [] ∧ ext.sig.returns = [] ∧
+      ∀ G, env.extern ext.name = some G → ∀ vals cm rvals cm',
+        G vals cm = .returned rvals cm' → cm' = cm) :
+    XCallsOk env exts MR (idX sym tp idf) := by
+  intro ext hin g sl cm w d uses args vals rvals cm' hg hd hargs hmr hret hrl
+  by_cases hi : idf ext.name
+  · obtain ⟨⟨bytes, hb, h8⟩, hp1, hr1, hG⟩ := hid ext hin hi
+    obtain ⟨rfl, rfl⟩ := hG g hg _ _ _ _ hret
+    have hall : AllHold rvals args :=
+      (argsAt_iff_of_regs hb h8 (hargs.1)).mp hargs
+    have hl1 : args.length = 1 := by rw [← hall.1, hargs.1, hp1]
+    have hx : (idX sym tp idf).call d uses w = some (args, w) := by
+      rcases hd with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+      · simp only [idX, hi, ↓reduceIte, Option.some.injEq, Prod.mk.injEq, and_true]
+        exact List.take_of_length_le (by omega)
+      · have hc : ∃ n, idf n ∧ lo64 ((ofX (sym ext.name 0) :: args).headD 0) = sym n 0 :=
+          ⟨ext.name, hi, by simp [lo64_ofX]⟩
+        simp only [idX, hc, ↓reduceIte, Option.some.injEq, Prod.mk.injEq, and_true, List.drop_one,
+          List.tail_cons]
+        exact List.take_of_length_le (by omega)
+    exact ⟨args, w, hx, by rw [hl1, hr1], hall.prefixHold, hmr⟩
+  · obtain ⟨hs0, hr0, hG⟩ := hnoop ext hin hi
+    have h0 : rvals = [] := List.eq_nil_of_length_eq_zero (by rw [hrl, hr0]; rfl)
+    subst h0
+    rw [hG g hg _ _ _ _ hret]
+    have hx : (idX sym tp idf).call d uses w = some ([], w) := by
+      rcases hd with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+      · simp [idX, hi]
+      · have hc : ¬ ∃ n, idf n ∧ lo64 ((ofX (sym ext.name 0) :: args).headD 0) = sym n 0 := by
+          rintro ⟨n, hn, e⟩
+          simp only [List.headD_cons, lo64_ofX] at e
+          exact hi (hinj _ _ hn e ▸ hn)
+        simp only [idX, hc, ↓reduceIte]
+    exact ⟨[], w, hx, by rw [hs0]; rfl, ⟨Nat.le_refl _, fun _ _ _ h => nomatch h⟩, hmr⟩
+
+/-- **Non-vacuity with value-returning callees**: for a compiled function without indirect calls
+whose call sites have the witness shapes (`IdSite idf`: direct calls of `(i64) -> i64` callees
+`idf`, calls of callees without results), in an environment whose `idf` externs return their
+argument and whose other externs return nothing (memory unchanged), with distinct addresses
+of the `idf` callees, the witness hooks and `idX` meet `hC`, `hTls`, `hX` and `hXI`, for every
+stack budget `K ≥ 32`. -/
+theorem final_contracts_id {f : Clif.Function} {vcp : VCode} {rf : RFunc} {af : AFunc}
+    {syms : String → Option Nat} {slotOff K : Nat} {env : Clif.Env} (hK : 32 ≤ K)
+    (g h tp : BitVec 64) (sym : String → Int → BitVec 64) (idf : String → Prop)
+    (hsites : ∀ info, vcp.CallSite info → IdSite idf info)
+    (hinj : ∀ a b, idf b → sym a 0 = sym b 0 → a = b)
+    (hid : ∀ ext ∈ f.externs.map (·.2), idf ext.name →
+      (∃ bytes, sigParamBytes ext.sig = .ok bytes ∧ bytes.length ≤ 8) ∧
+      ext.sig.params.length = 1 ∧ (sigRets ext.sig).length = 1 ∧
+      ∀ G, env.extern ext.name = some G → ∀ vals cm rvals cm',
+        G vals cm = .returned rvals cm' → rvals = vals ∧ cm' = cm)
+    (hnoop : ∀ ext ∈ f.externs.map (·.2), ¬ idf ext.name → sigRets ext.sig = [] ∧
+      ext.sig.returns = [] ∧ ∀ G, env.extern ext.name = some G → ∀ vals cm rvals cm',
+        G vals cm = .returned rvals cm' → cm' = cm)
+    (hind : indSigs f = []) :
+    (∀ s, CalleeOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K
+      (idX sym tp idf) (witnessHooks g h sym tp) vcp.CallSite) ∧
+    (∀ s, TlsOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K
+      (idX sym tp idf) (witnessHooks g h sym tp)) ∧
+    (∀ s, XCallsOk env (f.externs.map (·.2)) (fun sl cm w =>
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+        slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) (idX sym tp idf)) ∧
+    (∀ s, XCallsIndOk env (indSigs f) (fun sl cm w =>
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+        slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) (idX sym tp idf)) :=
+  ⟨fun _ => (calleeOk_id _ hK g h sym tp idf).mono hsites,
+    fun _ => tlsOk_witness _ K g h (idX sym tp idf) fun _ _ => rfl,
+    fun _ => xCallsOk_id _ sym tp idf hinj hid hnoop,
+    fun _ => by rw [hind]; exact xCallsIndOk_nil _ _ _⟩
+
+/-- **`backend_correct_final` with value-returning witness callees**: for a function without
+`try_call` and without indirect calls whose call sites have the witness shapes, calling `(i64) ->
+i64` externs that return their argument and externs without results that keep the memory, the
+Arm code run on the machine whose every call runs the witness callee (two frames pushed below
+`sp`, x0 kept) refines the CLIF run from the run premises, the form coverage and the linked
+symbol addresses alone. -/
+theorem backend_correct_final_id {p : Clif.Program} {f : Clif.Function} {k : Nat}
+    {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
+    (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb)
+    {syms : String → Option Nat} {slotOff K : Nat} {env : Clif.Env} (hK : 32 ≤ K)
+    (g h tp : BitVec 64) (sym : String → Int → BitVec 64) (idf : String → Prop)
+    (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
+    (hnt : ∀ B ∈ f.blocks, B.term.isTry = false) (hind : indSigs f = [])
+    (hsites : ∀ info, vcp.CallSite info → IdSite idf info)
+    (hinj : ∀ a b, idf b → sym a 0 = sym b 0 → a = b)
+    (hid : ∀ ext ∈ f.externs.map (·.2), idf ext.name →
+      (∃ bytes, sigParamBytes ext.sig = .ok bytes ∧ bytes.length ≤ 8) ∧
+      ext.sig.params.length = 1 ∧ (sigRets ext.sig).length = 1 ∧
+      ∀ G, env.extern ext.name = some G → ∀ vals cm rvals cm',
+        G vals cm = .returned rvals cm' → rvals = vals ∧ cm' = cm)
+    (hnoop : ∀ ext ∈ f.externs.map (·.2), ¬ idf ext.name → sigRets ext.sig = [] ∧
+      ext.sig.returns = [] ∧ ∀ G, env.extern ext.name = some G → ∀ vals cm rvals cm',
+        G vals cm = .returned rvals cm' → cm' = cm)
+    (hsym : ∀ n b, syms n = some b → sym n 0 = BitVec.ofNat 64 b)
+    (hslot : af.slotBase = slotOff)
+    {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
+    (hent : AbiEntry fb base ra s) (hres : StackAvail K af s) (hbe : BodyEntry af s w₀)
+    (hargs : ArgsIn f.sig args s) (hcs : ClifEntry f args cs)
+    (hrel : Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s,
+      syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f cs.frame.slots cs.mem w₀)
+    (htr : TrapsExplicit env p cs) (fuel : Nat) :
+    ArmRefines fb base ra (ArmStepX (idX sym tp idf) (witnessHooks g h sym tp) fa) s
+      (Clif.runLoop env p fuel cs) := by
+  obtain ⟨hC, hTls, hX, hXI⟩ :=
+    final_contracts_id (f := f) (vcp := vcp) (rf := rf) (af := af) (syms := syms)
+      (slotOff := slotOff) hK g h tp sym idf hsites hinj hid hnoop hind
   exact backend_correct_final hsub hc hcov hC
     (fun ⟨B, hB, ht⟩ => absurd ht (by rw [hnt B hB]; decide)) (fun _ => hTls) hX hXI hsym hslot
     hent hres hbe hargs hcs hrel htr fuel

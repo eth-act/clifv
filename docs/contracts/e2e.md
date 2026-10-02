@@ -520,16 +520,43 @@ body's `sp`"):
 
 | Theorem | Contract premises | Witness |
 | --- | --- | --- |
-| `backend_correct_final` | `hC`, `hCT`, `hTls`, `hX`, `hXI`, `hsym` | `final_contracts_witness` (`hC`, `hTls`, `hX`, `hXI`, `hsym`, for a function whose externs and indirect-call signatures return nothing, in an environment whose externs keep the memory when they return (those `f` declares; all of them if it has an indirect call); `CalleeOk` itself holds for every set of call sites); `hCT` vacuous without `try_call`; `backend_correct_final_witness` is the theorem with all of them discharged |
+| `backend_correct_final` | `hC`, `hCT`, `hTls`, `hX`, `hXI`, `hsym` | `final_contracts_witness` (`hC`, `hTls`, `hX`, `hXI`, `hsym`, for a function whose externs and indirect-call signatures return nothing, in an environment whose externs keep the memory when they return (those `f` declares; all of them if it has an indirect call); `CalleeOk` itself holds for every set of call sites); `final_contracts_id` (callees returning a value, call sites `IdSite`); `hCT` vacuous without `try_call`; `backend_correct_final_witness`/`backend_correct_final_id` are the theorem with all of them discharged |
 | `backend_correct_opt_proven` | `hC`, `hTls`, `hX`, `hsym` (for the optimised function; `try_call` and `call_indirect` excluded by premises) | `final_contracts_witness` at `f := Opt.optimize f cfg` |
 | `backend_correct_legal` | `hC`, `hCT`, `hTls`, `hX`, `hXI`, `hsym` (for the legalised `g`, environment `Clif.Rust.env`) | `final_contracts_witness` at `f := g`, `env := Clif.Rust.env`, for functions without indirect calls whose externs are the diverging panic entry points (they never return, so `hnoop` holds) |
 | `backend_correct_linked` | `hC`, `hCT`, `hTls`, `hX` (environment `Clif.linkEnv P base`); `hXI` discharged by `Linkable` | `final_contracts_witness` at `env := Clif.linkEnv P base`, when the program callees and the base externs return nothing and keep the memory |
 
+**Callees that return values** (`idX sym tp idf`: a callee `n` with `idf n` returns its first
+argument — a `bl n` or a `blr` to `sym n 0` —, every other callee returns nothing; the hooks are
+the same witness, which keeps x0): `calleeOk_id` gives `CalleeOk F K (idX …) (witnessHooks …)
+(IdSite idf)` for every `F` and `K ≥ 32`, where `IdSite idf` are the call-site shapes the
+compiler emits for a `(i64) -> i64` callee (`⟨.sym n, [(vreg u, x0)], [(x0, vreg d)]⟩`, and the
+GOT form `⟨.reg (vreg t), [(vreg u, x0)], [(x0, vreg d)]⟩`) and for callees without results;
+`xCallsOk_id` the external contract for an environment whose `idf` externs return their argument;
+`final_contracts_id`/**`backend_correct_final_id`**: `backend_correct_final` with every contract
+premise discharged for a function without `try_call` and indirect calls whose call sites are
+`IdSite idf` (`hsites : ∀ info, vcp.CallSite info → IdSite idf info`, a decidable fact of the
+compiled code). Smoke check: the pipeline (`lowerFunction`, `prepare`) on
+
+```
+function %caller(i64) -> i64 {
+    fn0 = colocated %id(i64) -> i64
+    fn1 = %id2(i64) -> i64
+    fn2 = colocated %sink(i64)
+block0(v0: i64):
+    v1 = call fn0(v0)
+    v2 = call fn1(v1)
+    call fn2(v2)
+    return v2
+}
+```
+
+emits exactly the three `IdSite` shapes (`bl id`; GOT `blr` of `id2`, argument and result in x0;
+`bl sink` without defs). This is why the contract is restricted to the call sites: over every
+`CallInfo` no callee returning a value meets it (a call with the same callee and arguments whose
+def is x19 forces the callee to overwrite x19, which a call without defs requires it to keep).
+
 **Not witnessed** (stated, not proven to be satisfiable): `hCT` for a function with a `try_call`
-(the payload registers, "Callee contract with a dead stack"), and callees that return values: the
-contract restricted to the compiled code's call sites admits them (a callee returning its first
-argument in x0 meets it at call sites whose first argument and def are in x0), but no witness is
-proven.
+(the payload registers, "Callee contract with a dead stack").
 
 ## The theorem (`FV/E2E/Main.lean`)
 
@@ -873,9 +900,10 @@ Backend.Proof.regLevelCorrect_backend:
 E2E.backend_correct_final: those of `backend_correct_m4` and `regLevelCorrect_backend`
 E2E.backend_correct_linked: those of `backend_correct_final`
 Clif.runLoop_link, E2E.xCallsOk_link: [propext, Classical.choice, Quot.sound]
-E2E.calleeOk_witness, E2E.final_contracts_witness, E2E.witness_saves_lr:
+E2E.calleeOk_witness, E2E.final_contracts_witness, E2E.witness_saves_lr, E2E.calleeOk_id,
+E2E.final_contracts_id:
   [propext, Classical.choice, Quot.sound, Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9]
-E2E.backend_correct_final_witness: those of `backend_correct_final`
+E2E.backend_correct_final_witness, E2E.backend_correct_final_id: those of `backend_correct_final`
 ```
 
 **Status (M6Insts2, 2026-09-28)**: `hRef`/`hmem` of `backend_correct_m4` are not yet discharged.
