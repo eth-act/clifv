@@ -1,11 +1,14 @@
 # `cargo fv`: building Rust crates with the Lean backend
 
 `cargo fv build|run|test` works like the corresponding cargo command, but the functions of
-your crate are compiled by the all-Lean CLIF → AArch64 backend of this repository. The Rust
-frontend is rustc_codegen_cranelift (cg_clif): it lowers Rust to CLIF, and for every function
-of a workspace member the Lean backend compiles that CLIF again. The Lean code replaces
-cg_clif's code for that function. Functions the Lean backend cannot compile keep cg_clif's
-code (**fallback**), so the build never fails because of the Lean backend. After each build,
+your crate **and of its dependencies** are compiled by the all-Lean CLIF → AArch64 backend of
+this repository. The Rust frontend is rustc_codegen_cranelift (cg_clif): it lowers Rust to
+CLIF, and for every function of every crate compiled for the target (the workspace members
+and all their dependencies: registry, git and path packages) the Lean backend compiles that
+CLIF again. Only std (the prebuilt standard library) and the host-side code that is not part
+of the program (build scripts, proc macros) are not. The Lean code replaces cg_clif's code
+for that function. Functions the Lean backend cannot compile keep cg_clif's code
+(**fallback**), so the build never fails because of the Lean backend. After each build,
 `target/fv-report.json` and a summary on stderr list every function as one of:
 
 * **verified**: compiled by the Lean backend and inside the end-to-end theorem
@@ -79,8 +82,9 @@ Options of `cargo fv` (all other options go to cargo unchanged):
 |---|---|
 | `--opt` | run the Lean mid-end with every rule. Most simplify rules are unproven, so no function is reported verified. |
 | `--opt-proven-only` | run the Lean mid-end with the proven rule set; verified = inside `E2E.backend_correct_opt_proven` |
-| `--no-fallback` | fail (exit 1, before running anything) unless every function of every workspace member runs Lean code |
-| `--trap-replaced` | overwrite cg_clif's code of every Lean-compiled function with `udf` traps (see *Checking that the Lean code runs*) |
+| `--no-fallback` | fail (exit 1, before running anything) unless every function of every workspace member runs Lean code (dependencies may keep fallbacks, e.g. float code; the report lists them) |
+| `--trap-replaced` | overwrite cg_clif's code of every Lean-compiled function (members and dependencies) with `udf` traps (see *Checking that the Lean code runs*) |
+| `--members-only` | only the workspace members go through the Lean backend; dependencies are plain cg_clif (the behaviour before agent/fv-deps; own target directory) |
 | `--keep-temps` | keep the per-codegen-unit work directories (`target/fv/<mode>/tmp/`) |
 | `--panic-abort` | build with `-Cpanic=abort -Zpanic-abort-tests` (the pre-unwinding behaviour; the shipped cg_clif; own target directory) |
 
@@ -91,7 +95,8 @@ Environment variables:
 
 | variable | effect |
 |---|---|
-| `FV_JOBS` | parallel `lean-backend` processes per codegen unit (default: number of CPUs) |
+| `FV_JOBS` | `lean-backend` processes at a time in the whole build, across all crates cargo compiles in parallel (default: number of CPUs; file-lock slots in `target/fv/<mode>/tmp/slots/`) |
+| `FV_SKIP_DEPS=a,b` | dependency packages (Cargo package names) that keep plain cg_clif |
 | `FV_SKIP=pat,…` / `FV_ONLY=pat,…` | debugging: functions whose symbol or Rust path contains a pattern fall back / only those are compiled |
 | `FV_TOOLCHAIN` | the nightly (default `nightly-2026-09-26`) |
 | `FV_CG_CLIF` | the codegen backend: a cg_clif `.so`, or `cranelift` for the shipped one (default: `target/cg_clif-unwind/librustc_codegen_cranelift.so` of the checkout if it exists and panic=unwind, else `cranelift`) |
@@ -99,29 +104,49 @@ Environment variables:
 | `FV_OBJCOPY`, `FV_AR`, `FV_RUST_LLD`, `FV_PYTHON` | tool paths |
 | `CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_RUNNER` | the runner (default `qemu-aarch64-static`) |
 
-Per package, `Cargo.toml` can keep functions on cg_clif:
+Per package, `Cargo.toml` can keep functions on cg_clif, and the workspace's packages can keep
+whole dependencies on cg_clif:
 
 ```toml
 [package.metadata.fv]
 skip = ["interop::cg_clif_"]   # substrings of the symbol or the Rust path
+skip-deps = ["ring"]           # dependency packages compiled by plain cg_clif
 ```
 
+(`skip-deps` is read from every workspace member and from `[workspace.metadata.fv]`;
+`FV_SKIP_DEPS` adds to it.)
+
 Artifacts are in `target/fv/<mode>/aarch64-unknown-linux-musl/<profile>/…`, where `<mode>` is
-`plain`, `opt`, `opt-proven-only`, or one of those with `-trap` and/or `-abort`. Each configuration has its
-own target directory because cargo does not see the Lean-side settings. For the same reason,
-`cargo fv` keeps a stamp per profile (`target/fv/<mode>/fv-stamp.<profile>`) of the Lean tools
-(`lean-backend`, `clif-data-export`, `lean-regalloc`, `normalize.py`, `fv-rustc`, the codegen backend `.so`), `FV_SKIP`,
-`FV_ONLY` and `package.metadata.fv`. When the stamp changes, it runs `cargo clean -p` on the
-workspace members, so they are compiled again with the new tools or settings. Dependencies
-are not cleaned.
+`plain`, `opt`, `opt-proven-only`, or one of those with `-members` (`--members-only`), `-trap`
+and/or `-abort`. Each configuration has its own target directory because cargo does not see
+the Lean-side settings. For the same reason, `cargo fv` keeps a stamp per profile
+(`target/fv/<mode>/fv-stamp.<profile>`) of the Lean tools (`lean-backend`, `clif-data-export`,
+`lean-regalloc`, `normalize.py`, `fv-rustc`, the codegen backend `.so`), `FV_SKIP`, `FV_ONLY`,
+`package.metadata.fv` (`skip`, `skip-deps`) and `FV_SKIP_DEPS`. When the stamp changes, it
+deletes the profile's whole target-side output (`target/fv/<mode>/aarch64-unknown-linux-musl/<profile>/`,
+members and dependencies, including their build-script runs) and the unit reports, so every
+crate is compiled again with the new tools or settings. Host-side artifacts (build scripts,
+proc macros, `target/fv/<mode>/<profile>/`) do not depend on the Lean side and stay.
 
 ### Report format
 
 `target/fv-report.json` has one entry per compiled unit (a library, a binary, a test harness):
-`package`, `crate_name`, `kind`, `src` (crate root), `counts`, and `functions`. Each function
+`package`, `crate_name`, `kind`, `src` (crate root), `dep` (true for a dependency: not a
+workspace member), `counts`, and `functions`. Each function
 has `symbol`, `instance` (the Rust item, from cg_clif's dump), `status` (`verified`,
-`unverified` or `fallback`) and `reason`. Linked executables also have `binary`: how many
-function symbols in the executable resolve to Lean-compiled code, plus any check failures.
+`unverified` or `fallback`) and `reason`. The top level has `totals` and its split into
+`members` ("your crate(s)") and `deps` ("dependencies"); std is not compiled by us and has no
+function counts. Linked executables also have `binary`: how many function symbols in the
+executable resolve to Lean-compiled code (members and dependencies), plus any check failures,
+and `origin`: the executable's functions (distinct addresses) attributed through the link map
+to Lean code of the members (`lean_members`) or of the dependencies (`lean_deps`, and per
+package `lean_by_package`), cg_clif code of a crate we compiled (`cg_clif`: fallbacks and
+cg_clif-generated helpers without a CLIF dump), the prebuilt sysroot (`prebuilt`: std, core,
+alloc, compiler_builtins, musl libc) and other inputs (`other`: crates outside the scope with
+`--members-only`/skip-deps). In the summary, dependency libraries are the rows of kind `dep`,
+followed by the `your crate(s)` / `dependencies` / `total` rows, one `exe` line per
+executable with that attribution (`Lean in exe per dependency`), and the unverified and
+fallback reasons by count, separately for your crate(s) and the dependencies.
 The file covers the units of the last `cargo fv` command, fresh or rebuilt. The top-level
 `mode`, `profile` and `theorem` say what "verified" refers to, and `panic` the panic strategy
 and the codegen backend (also the second line of the summary).
@@ -135,9 +160,16 @@ linker `rust-lld` and the runner `qemu-aarch64-static`. First it runs a build (`
 or `cargo test --no-run`) whose JSON artifact messages identify the units, then the report,
 then `cargo run`/`cargo test` itself (everything is fresh by then).
 
-`fv-rustc` passes every rustc invocation through unchanged, except codegen of a workspace
-member for the target. Dependencies, the standard library (the prebuilt one, compiled by
-LLVM), build scripts and proc macros are not changed. For a member it adds:
+`fv-rustc` passes every rustc invocation through unchanged, except codegen of a crate for the
+target: rustc's `--target` is `aarch64-unknown-linux-musl`, it emits `link`, and the crate
+type is `lib`/`rlib`/`bin` or a test harness. That covers the workspace members and every
+dependency (cargo passes dependencies `--cap-lints`, `-C metadata`, `-C extra-filename`,
+`-C embed-bitcode=no`, `--crate-type lib`: the unit is named `<crate><extra-filename>` like
+its rlib, and the hashed mangling makes its symbol names unique). Not changed: host crates
+(build scripts `build_script_build`, proc macros like `serde_derive`, and their own
+dependencies, which cargo compiles without `--target`, for x86_64), dependencies excluded by
+`--members-only`/skip-deps, and the standard library (prebuilt, compiled by LLVM). For a
+crate it compiles it adds:
 
 * `--emit=llvm-ir`: cg_clif then writes every function's CLIF to `<out-dir>/<unit>.clif/`
   (`<symbol>.unopt.clif`, the frontend's output, which is what we compile, plus `.vcode`).
@@ -148,7 +180,7 @@ LLVM), build scripts and proc macros are not changed. For a member it adds:
 * for executables and test harnesses, `-Clinker=fv-rustc`, so rustc runs `fv-rustc` in
   *linker mode* on the crate's objects before `rust-lld`.
 
-Each codegen-unit object of a member (the `*.rcgu.o` members of a library's rlib after rustc,
+Each codegen-unit object of such a crate (the `*.rcgu.o` members of a library's rlib after rustc,
 or an executable's `*.rcgu.o` files at link time) then goes through this pipeline
 (`rust/crates/cargo-fv/src/pipeline.rs`):
 
@@ -275,11 +307,18 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
 
 * **Binary check** (automatic): after linking an executable, `fv-rustc` looks up every
   `__fvlean$<symbol>` marker in the executable's symbol table and checks that `<symbol>` has
-  the same address, i.e. that the linked program calls the Lean code. The count is the
-  "Lean in exe" column. A mismatch makes `cargo fv` exit 1 (it would be a bug in cargo fv).
-* `--trap-replaced` overwrites cg_clif's (dead) code of every Lean-compiled function with
-  `udf` traps in the objects, so executing it would crash. The tests pass with it, and
-  `--gc-sections` drops those bodies from the executables anyway.
+  the same address, i.e. that the linked program calls the Lean code. The markers of the
+  dependencies' Lean-compiled functions are in their rlibs, so they count too. The count is
+  the "Lean in exe" column; the `exe` lines split it per crate through the link map (`Lean in
+  exe per dependency`). A mismatch makes `cargo fv` exit 1 (it would be a bug in cargo fv).
+* `--trap-replaced` overwrites cg_clif's (dead) code of every Lean-compiled function, members
+  and dependencies, with `udf` traps in the objects, so executing it would crash. The tests
+  pass with it, and `--gc-sections` drops those bodies from the executables anyway.
+* **Which Lean code ran**: `scripts/fv-exec-trace.py EXE [args]` runs an executable built with
+  `--keep-temps` (whose link map stays in `target/fv/<mode>/tmp/link-<tag>.map`) under
+  `qemu-aarch64-static -d exec,nochain` and counts, per crate, the Lean-compiled functions
+  (marker at the address) and the other functions the run executed. For examples/deps see
+  *Dependencies* below.
 * `--no-fallback`: every function of the workspace members must be Lean-compiled.
 * `examples/compare.sh DIR`: `cargo test` with LLVM (under qemu) against `cargo fv test`,
   test by test. `BASELINE=cg_clif` compares against plain cg_clif instead (the same backend
@@ -308,10 +347,17 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   the largest function of `examples/` costs 3276540): such a function is compiled and
   reported **compiled, unverified** with the reason `validation budget: N instructions × values
   > 25000000, lowerCheck not run` (`lean-backend` prints `compiled, unverified (validation
-  budget): …`). No function of `examples/` reaches it.
-* Not verified: rustc and cg_clif (Rust → CLIF), `normalize.py`, `clif-data-export`, the
-  object surgery above, the linker, std and dependencies (cg_clif or LLVM code), and
-  everything the report lists as unverified or fallback. `--opt` runs unproven rules.
+  budget): …`). In `examples/` only the fully unrolled SHA-256/SHA-512 round functions of
+  the `sha2` dependency (`sha2::sha{256,512}::soft::unroll::compress_block`, 52–604 M) reach
+  it (examples/deps).
+* Not verified (trusted): rustc and cg_clif (Rust → CLIF), `normalize.py`,
+  `clif-data-export`, the object surgery above, the linker, std (the prebuilt standard
+  library: std/core/alloc, compiler_builtins, musl libc; LLVM code), dependencies excluded by
+  `--members-only`/skip-deps (cg_clif code), and everything the report lists as unverified
+  or fallback (cg_clif code). `--opt` runs unproven rules. Build scripts and proc macros
+  (e.g. `serde_derive`) run on the host at build time and are plain rustc: they are not part
+  of the target program, but the code they generate is, and it is compiled like any other
+  code of the crate that uses it. The executable's `exe` line counts the prebuilt functions.
 * The report is per function and per build; it does not cover the executable as a whole.
 
 ## Examples and results
@@ -332,6 +378,14 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   used in place) as a workspace. Each crate's `tests/values.rs` checks the values in
   `tests/expected.txt`, which `gen-expected.sh` computes with rustc's LLVM backend for the
   same target (under qemu). There are 53 tests, including 9 `should_panic` ones.
+* `examples/deps`: a crate with real crates.io dependencies from the offline registry
+  (`Cargo.lock` committed, `.cargo/config.toml` sets `net.offline`): serde + serde_derive
+  (a proc macro, host-built), serde_json, regex, sha2, tiny-keccak, num-bigint, base64, hex,
+  hashbrown, indexmap, smallvec, arrayvec, bitflags, byteorder, crc32fast, itoa, ryu, memchr,
+  num-traits, rand — 37 dependency packages compiled for the target. 16 tests check reference
+  values (serde_json round trips of a derived struct, regex captures/replace/sets, SHA-2 and
+  Keccak/SHA-3 test vectors, big-integer factorials, base64/hex round trips, hashbrown/indexmap
+  operations, rand with fixed seeds against the LLVM build's values, …). See *Dependencies*.
 
 Results (2026-09-30, agent/trycall-proof: `try_call` verified for normal returns, near-linear
 lowering validator; `examples/compare.sh`, which requires every test outcome to match the
@@ -423,8 +477,8 @@ now verified or, 80 of them, reported for their indirect calls; 53/53 tests pass
 13 fv-demo tests), `--opt-proven-only` (survey 53/53), `--opt` (fv-demo 13/13) and
 `--trap-replaced` (fv-demo 13/13) gave the same test outcomes.
 
-A crate with crates.io dependencies (`itoa`, `smallvec`, `crc32fast`; the dependencies are
-compiled by cg_clif) also passed (unit tests and a doctest, same outcomes as `cargo test`;
+Before agent/fv-deps, a crate with crates.io dependencies (`itoa`, `smallvec`, `crc32fast`;
+the dependencies were then compiled by plain cg_clif) also passed (unit tests and a doctest, same outcomes as `cargo test`;
 checked with panic=abort).
 
 ### Atomics, `bmask`, `fence`, and the vendored real-world crates (agent/fv-fallback)
@@ -444,8 +498,9 @@ pseudo-instructions (regalloc2, the default, handles their fixed registers).
 measure and drive out fallbacks on real code. Vendor patches: dev-dependencies pruned,
 `quickcheck!` blocks replaced by deterministic LCG `#[test]`s, itoa's optional `no-panic`
 dependency removed, the aarch64-specialized crc32fast tests dropped (their
-`stable_arm_crc32_intrinsics` cfg is not set by cg_clif, which made the test set differ
-between `cargo test` and `cargo fv test`). The `once_cell` `race` module is what exercises
+`stable_arm_crc32_intrinsics` cfg was not set under `cargo fv`, which made the test set differ
+between `cargo test` and `cargo fv test`; the cause, found in agent/fv-deps, was the build
+script's `$RUSTC --version` failing silently, see *Troubleshooting*, now fixed). The `once_cell` `race` module is what exercises
 the atomics. Release-mode functions whose unoptimised CLIF references a data object that
 Cranelift's optimiser removed from cg_clif's object (a dead panic path's `Location`, …) are
 retried with the `.opt.clif` dump (`docs/research/rust-route.md`, "agent/fv-fallback"), which
@@ -522,8 +577,9 @@ fv-demo 19/19, survey 53/53 and vendor 189/189, debug and `--release`.
 
 * Target `aarch64-unknown-linux-musl` only. The host is x86_64, so executables run under
   qemu. Linking always uses `rust-lld`.
-* Only workspace members are compiled by the Lean backend. Dependencies use cg_clif and std
-  is the prebuilt LLVM one; which crates get the Lean backend may become configurable later.
+* Every crate compiled for the target goes through the Lean backend (`--members-only` and
+  skip-deps restrict it); std is the prebuilt LLVM one (rebuilding it with `-Zbuild-std`
+  would be the way to cover it, not done).
 * panic=unwind: full unwinding semantics (`Drop` during unwinding, `catch_unwind` in the crate)
   need the unwinding cg_clif (Install, 5); the shipped one has no landing pads at all. The
   landing pads of Lean-compiled functions and their LSDA are compiled but not verified: the
@@ -553,10 +609,18 @@ fv-demo 19/19, survey 53/53 and vendor 189/189, debug and `--release`.
   binfmt_misc (Install, 2).
 * `catch_unwind` does not catch or `Drop` does not run during unwinding: the build uses the
   shipped cg_clif (the summary's `panic=` line says which); build the unwinding one (Install, 5).
+* A build script that runs `$RUSTC` (libc, crc32fast, serde, …) fails with `libLLVM….so: cannot
+  open shared object file`, or silently sets different `cfg`s than under `cargo test`: fixed in
+  agent/fv-deps. `cargo fv` started through another toolchain's rustup proxy (a
+  `rust-toolchain.toml` above the crate, e.g. this repository's) inherited that toolchain's
+  `LD_LIBRARY_PATH`; cargo puts the nightly's `rustlib/<host>/lib` (with a `librustc_driver`
+  when `rustc-dev` is installed) first for build scripts, and the nightly rustc then could not
+  find its libLLVM. `cargo fv` now puts the pinned toolchain's `lib/` first.
 * A function falls back and you want to know why: `cargo fv report --functions`, or
   `target/fv-report.json`. `--keep-temps` keeps the normalised CLIF (`split/`), the
   per-function objects (`o/`) and the merge inputs in `target/fv/<mode>/tmp/<tag>/`.
 * A test fails under `cargo fv test` but passes under `cargo test`: bisect with
-  `FV_SKIP=<path substring>` / `FV_ONLY=…`; changing them rebuilds the members. Then look at
+  `FV_SKIP=<path substring>` / `FV_ONLY=…` (or `FV_SKIP_DEPS=<package>` for a dependency);
+  changing them rebuilds every target crate. Then look at
   the function's CLIF and `llvm-objdump -d` of its object in `--keep-temps`. That is how the
   sret mismatch was found.
