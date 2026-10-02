@@ -789,4 +789,452 @@ theorem cfg_of {vc : VCode}
       exact ⟨_, rfl⟩
     · exact ⟨_, _, rfl⟩
 
+/-! ## Labels -/
+
+/-- The blocks have distinct labels. -/
+def Lbls (V : Array VBlock) : Prop := (V.toList.map VBlock.label).Nodup
+
+theorem lbl_inj {V : Array VBlock} (hn : Lbls V) {j k : Nat} (hj : j < V.size) (hk : k < V.size)
+    (h : V[j].label = V[k].label) : j = k :=
+  hn.eq_of_getElem_eq (by simpa using hj) (by simpa using hk) (by simpa using h)
+
+theorem lab_some {V : Array VBlock} {l : Label} {k : Nat} (h : lab V l = some k) :
+    ∃ hk : k < V.size, V[k].label = l := by
+  obtain ⟨hk, hp, -⟩ := Array.findIdx?_eq_some_iff_getElem.mp h
+  exact ⟨hk, by simpa using hp⟩
+
+theorem lab_of {V : Array VBlock} (hn : Lbls V) {l : Label} {k : Nat} (hk : k < V.size)
+    (hl : V[k].label = l) : lab V l = some k :=
+  Array.findIdx?_eq_some_iff_getElem.mpr ⟨hk, by simp [hl], fun j hj hp => by
+    have := lbl_inj hn (Nat.lt_trans hj hk) hk (by simp at hp; rw [hp, hl])
+    omega⟩
+
+theorem lab_zero {V : Array VBlock} {l : Label} (hk : 0 < V.size) (hl : V[0].label = l) :
+    lab V l = some 0 :=
+  Array.findIdx?_eq_some_iff_getElem.mpr ⟨hk, by simp [hl], fun j hj => absurd hj (Nat.not_lt_zero _)⟩
+
+/-! ## `setTargets` -/
+
+theorem tryTargets {c : Label} : ∀ (hs : List TryHandler) (ls : List Label),
+    ls.length = hs.length + 1 →
+    ((hs.zip ls).map fun (x : TryHandler × Label) => match x.1 with
+        | .tag n _ => TryHandler.tag n x.2
+        | .default _ => .default x.2).map TryHandler.label ++ [ls.getLastD c] = ls
+  | [], [l], _ => rfl
+  | [], [], h => by simp at h
+  | [], _ :: _ :: _, h => by simp at h
+  | h :: hs, [], e => by simp at e
+  | h :: hs, l :: ls, e => by
+    simp only [List.length_cons, Nat.add_right_cancel_iff] at e
+    have := tryTargets (c := c) hs ls e
+    cases ls with
+    | nil => simp at e
+    | cons l' ls =>
+      cases h <;> simpa [TryHandler.label, List.getLastD] using this
+
+theorem setTargets_targets {i i' : MInst} {ls : List Label} (h : i.setTargets ls = some i') :
+    i'.targets = ls ∧ ls.length = i.targets.length ∧
+      ((∃ info ti', i' = .tryCall info ti') → ∃ info ti, i = .tryCall info ti) ∧
+      ∀ a b c, i' ≠ .elfTlsGetAddr a b c := by
+  unfold MInst.setTargets at h
+  split at h
+  all_goals (try split at h)
+  all_goals (try (cases h; done))
+  all_goals (cases h)
+  all_goals refine ⟨?_, ?_, ?_, fun _ _ _ e => by cases e⟩
+  all_goals first
+    | exact fun _ => ⟨_, _, rfl⟩
+    | (rintro ⟨_, _, e⟩; cases e; done)
+    | (simp only [MInst.targets]; done)
+    | (simp_all [MInst.targets]; done)
+    | skip
+  rename_i heq
+  simp only [beq_iff_eq] at heq
+  simp only [MInst.targets]
+  exact tryTargets _ _ heq
+
+/-! ## The kept blocks -/
+
+theorem mk_iff {a : Array Bool} {b : Nat} : mk a b ↔ a.toList[b]? = some true := by
+  simp only [mk, Array.getElem?_toList]
+  cases a[b]? <;> simp
+
+section
+variable {α : Type}
+
+theorem kept_mem : ∀ {l1 : List α} {l2 : List Bool} {x : α},
+    x ∈ (l1.zip l2).filterMap (fun x => if x.2 = true then some x.1 else none) ↔
+      ∃ i : Nat, l1[i]? = some x ∧ l2[i]? = some true
+  | [], _, x => by simp
+  | _ :: _, [], x => by simp
+  | a :: l1, b :: l2, x => by
+    rw [List.zip_cons_cons, List.filterMap_cons]
+    have ih := kept_mem (l1 := l1) (l2 := l2) (x := x)
+    constructor
+    · intro h
+      cases b
+      · simp only [Bool.false_eq_true, ite_false] at h
+        obtain ⟨i, h1, h2⟩ := ih.mp h
+        exact ⟨i + 1, by simpa using h1, by simpa using h2⟩
+      · simp only [ite_true, List.mem_cons] at h
+        rcases h with rfl | h
+        · exact ⟨0, rfl, rfl⟩
+        · obtain ⟨i, h1, h2⟩ := ih.mp h
+          exact ⟨i + 1, by simpa using h1, by simpa using h2⟩
+    · rintro ⟨i, h1, h2⟩
+      cases i with
+      | zero =>
+        simp only [List.getElem?_cons_zero, Option.some.injEq] at h1 h2
+        subst h1 h2
+        simp
+      | succ i =>
+        have := ih.mpr ⟨i, by simpa using h1, by simpa using h2⟩
+        split <;> simp [this]
+
+theorem kept_sublist : ∀ (l1 : List α) (l2 : List Bool),
+    ((l1.zip l2).filterMap (fun x => if x.2 = true then some x.1 else none)).Sublist l1
+  | [], _ => by simp
+  | _ :: _, [] => by simp
+  | a :: l1, false :: l2 => by
+    rw [List.zip_cons_cons, List.filterMap_cons]
+    exact .cons a (kept_sublist l1 l2)
+  | a :: l1, true :: l2 => by
+    rw [List.zip_cons_cons, List.filterMap_cons]
+    exact .cons₂ a (kept_sublist l1 l2)
+
+theorem kept_head {a : α} {l1 : List α} {l2 : List Bool} :
+    ((a :: l1).zip (true :: l2)).filterMap (fun x => if x.2 = true then some x.1 else none) =
+      a :: (l1.zip l2).filterMap (fun x => if x.2 = true then some x.1 else none) := by
+  simp
+
+end
+
+/-- The blocks `prepare` keeps. -/
+abbrev keep (V : Array VBlock) (live : Array Bool) : Array VBlock :=
+  Array.filterMap (fun x => if x.snd = true then some x.fst else none) (V.zip live)
+
+theorem keep_toList (V : Array VBlock) (live : Array Bool) :
+    (keep V live).toList =
+      (V.toList.zip live.toList).filterMap (fun x => if x.2 = true then some x.1 else none) := by
+  simp [keep, Array.toList_filterMap, Array.toList_zip]
+
+theorem keep_lbls {V : Array VBlock} (hn : Lbls V) (live : Array Bool) : Lbls (keep V live) := by
+  unfold Lbls at *
+  rw [keep_toList]
+  exact hn.sublist ((kept_sublist _ _).map _)
+
+theorem keep_src {V : Array VBlock} {live : Array Bool} {k : Nat} (hk : k < (keep V live).size) :
+    ∃ b, ∃ hb : b < V.size, (keep V live)[k] = V[b] ∧ mk live b := by
+  have hm : (keep V live)[k] ∈ (keep V live).toList := Array.getElem_mem_toList hk
+  rw [keep_toList] at hm
+  obtain ⟨b, h1, h2⟩ := kept_mem.mp hm
+  obtain ⟨hb, e⟩ := List.getElem?_eq_some_iff.mp h1
+  rw [Array.length_toList] at hb
+  exact ⟨b, hb, by rw [← e, Array.getElem_toList], mk_iff.mpr h2⟩
+
+theorem keep_dst {V : Array VBlock} {live : Array Bool} {b : Nat} (hb : b < V.size) (hl : mk live b) :
+    ∃ k, ∃ hk : k < (keep V live).size, (keep V live)[k] = V[b] := by
+  have hm : V[b] ∈ (keep V live).toList := by
+    rw [keep_toList]
+    exact kept_mem.mpr ⟨b, by rw [Array.getElem?_toList, Array.getElem?_eq_getElem hb], mk_iff.mp hl⟩
+  obtain ⟨k, hk, e⟩ := List.getElem_of_mem hm
+  rw [Array.length_toList] at hk
+  exact ⟨k, hk, by rw [← e, Array.getElem_toList]⟩
+
+theorem keep_zero {V : Array VBlock} {live : Array Bool} (h0 : 0 < V.size) (hl : mk live 0) :
+    ∃ hk : 0 < (keep V live).size, (keep V live)[0] = V[0] := by
+  have e := keep_toList V live
+  have hv : V.toList = V[0] :: V.toList.tail := by
+    rcases hV : V.toList with _ | ⟨a, l⟩
+    · have := Array.length_toList (xs := V); rw [hV] at this; simp at this; omega
+    · have : V[0] = a := by rw [← Array.getElem_toList (h := h0)]; simp [hV]
+      simp [this]
+  have hL : live.toList = true :: live.toList.tail := by
+    have h := mk_iff.mp hl
+    cases hl' : live.toList with
+    | nil => rw [hl'] at h; cases h
+    | cons c l => rw [hl'] at h; simp at h; simp [h]
+  rw [hv, hL, kept_head] at e
+  have hk : 0 < (keep V live).size := by
+    rw [← Array.length_toList, e]; exact Nat.zero_lt_succ _
+  refine ⟨hk, ?_⟩
+  rw [← Array.getElem_toList (h := hk)]
+  simp only [e, List.getElem_cons_zero]
+
+/-! ## Critical-edge splitting -/
+
+theorem forIn_inv {ε α β : Type} (f : α → β → Except ε (ForInStep β)) :
+    ∀ (l : List α) (P : Nat → β → Prop),
+    (∀ k x b b', l[k]? = some x → P k b → f x b = .ok (.yield b') → P (k + 1) b') →
+    (∀ x b b', f x b ≠ .ok (.done b')) →
+    ∀ b r, P 0 b → forIn l b f = .ok r → P l.length r
+  | [], P, _, _, b, r, h0, h => by
+    simp only [List.forIn_nil, pure, Except.pure, Except.ok.injEq] at h
+    subst h; exact h0
+  | a :: l, P, hs, hd, b, r, h0, h => by
+    rw [List.forIn_cons] at h
+    simp only [bind, Except.bind] at h
+    split at h
+    · cases h
+    rename_i st hst
+    cases st with
+    | done b' => exact absurd hst (hd a b b')
+    | yield b' =>
+      have := forIn_inv f l (fun k => P (k + 1)) (fun k x c c' hx hc hf => hs (k + 1) x c c'
+        (by simpa using hx) hc hf) hd b' r (hs 0 a b b' rfl h0 hst) h
+      simpa using this
+
+/-- Edge blocks: block `e` is labelled `next0 + e` and only jumps. -/
+def EdgesOk (next0 : Nat) (E : Array VBlock) : Prop :=
+  ∀ (e : Nat) (he : e < E.size), ∃ l, E[e] = { label := next0 + e, insts := #[.jump l] }
+
+/-- `E'` extends `E`. -/
+def Ext (E E' : Array VBlock) : Prop := E.size ≤ E'.size ∧ ∀ e, e < E.size → E'[e]? = E[e]?
+
+theorem ext_refl (E : Array VBlock) : Ext E E := ⟨Nat.le_refl _, fun _ _ => rfl⟩
+
+theorem ext_trans {E E' E'' : Array VBlock} (h : Ext E E') (h' : Ext E' E'') : Ext E E'' :=
+  ⟨Nat.le_trans h.1 h'.1, fun e he => by rw [h'.2 e (Nat.lt_of_lt_of_le he h.1), h.2 e he]⟩
+
+theorem ext_push (E : Array VBlock) (b : VBlock) : Ext E (E.push b) :=
+  ⟨by simp, fun e he => by simp [Array.getElem?_push, Nat.ne_of_lt he]⟩
+
+/-- Block `vb'` is block `vb`, or `vb` with its terminator retargeted, a target being either
+the old label or that of an edge block of `E` jumping to it. -/
+def RwOk (E : Array VBlock) (vb vb' : VBlock) : Prop :=
+  vb' = vb ∨ ∃ (t t' : MInst) (ls : List Label), vb.insts.back? = some t ∧ 2 ≤ t.targets.length ∧
+    t.setTargets ls = some t' ∧ vb' = { vb with insts := vb.insts.pop.push t' } ∧
+    ∀ (m : Nat) (l' : Label), ls[m]? = some l' → t.targets[m]? = some l' ∨
+      ∃ (e : Nat) (l : Label), E[e]? = some { label := l', insts := #[.jump l] } ∧
+        t.targets[m]? = some l
+
+theorem rwOk_ext {E E' : Array VBlock} (h : Ext E E') {vb vb' : VBlock} (hr : RwOk E vb vb') :
+    RwOk E' vb vb' := by
+  rcases hr with rfl | ⟨t, t', ls, h1, h2, h3, h4, h5⟩
+  · exact .inl rfl
+  · refine .inr ⟨t, t', ls, h1, h2, h3, h4, fun m l' hm => ?_⟩
+    rcases h5 m l' hm with h | ⟨e, l, he, hl⟩
+    · exact .inl h
+    · have hlt : e < E.size := (Array.getElem?_eq_some_iff.mp he).1
+      exact .inr ⟨e, l, by rw [h.2 e hlt, he], hl⟩
+
+/-- The invariant of the splitting loop after `k` kept blocks. -/
+structure SInv (V1 : Array VBlock) (next0 k : Nat) (st : Nat × Array VBlock × Array VBlock) :
+    Prop where
+  next : st.2.2.size + next0 = st.1
+  edges : EdgesOk next0 st.2.2
+  size : st.2.1.size = k
+  rw : ∀ (j : Nat) (h1 : j < V1.size) (h2 : j < st.2.1.size), RwOk st.2.2 V1[j] st.2.1[j]
+
+/-- One successor of the splitting loop's inner loop. -/
+def innerStep (ps : Array (Array Nat)) (st : Nat × Array VBlock × Array Label) (x : Nat × Label) :
+    Nat × Array VBlock × Array Label :=
+  if (ps[x.1]! : Array Nat).size > 1 then
+    (st.1 + 1, st.2.1.push { label := st.1, insts := #[.jump x.2] }, st.2.2.push st.1)
+  else (st.1, st.2.1, st.2.2.push x.2)
+
+theorem innerFold (ps : Array (Array Nat)) (next0 : Nat) : ∀ (xs : List (Nat × Label))
+    (next : Nat) (E : Array VBlock) (ls : Array Label), E.size + next0 = next → EdgesOk next0 E →
+    (xs.foldl (innerStep ps) (next, E, ls)).2.1.size + next0 = (xs.foldl (innerStep ps) (next, E, ls)).1 ∧
+    EdgesOk next0 (xs.foldl (innerStep ps) (next, E, ls)).2.1 ∧
+    Ext E (xs.foldl (innerStep ps) (next, E, ls)).2.1 ∧
+    (xs.foldl (innerStep ps) (next, E, ls)).2.2.size = ls.size + xs.length ∧
+    (∀ j, j < ls.size → (xs.foldl (innerStep ps) (next, E, ls)).2.2[j]? = ls[j]?) ∧
+    ∀ (j : Nat) (x : Nat × Label), xs[j]? = some x → ∃ l',
+      (xs.foldl (innerStep ps) (next, E, ls)).2.2[ls.size + j]? = some l' ∧
+      (l' = x.2 ∨ ∃ e : Nat, (xs.foldl (innerStep ps) (next, E, ls)).2.1[e]? =
+        some ({ label := l', insts := #[.jump x.2] } : VBlock))
+  | [], next, E, ls, hn, he => by
+    simp only [List.foldl_nil, List.length_nil, Nat.add_zero]
+    exact ⟨hn, he, ext_refl E, by simp, fun _ _ => by simp, fun j x h => by simp at h⟩
+  | x :: xs, next, E, ls, hn, he => by
+    simp only [List.foldl_cons]
+    have hstep : ∃ (next' : Nat) (E' : Array VBlock) (ls' : Array Label),
+        innerStep ps (next, E, ls) x = (next', E', ls') ∧
+        E'.size + next0 = next' ∧ EdgesOk next0 E' ∧ Ext E E' ∧ ls' = ls.push ls'.back! ∧
+        ls'.size = ls.size + 1 ∧
+        (ls'.back! = x.2 ∨ ∃ e : Nat, E'[e]? = some ({ label := ls'.back!, insts := #[.jump x.2] } : VBlock)) := by
+      by_cases hc : (ps[x.1]! : Array Nat).size > 1
+      · refine ⟨next + 1, E.push { label := next, insts := #[.jump x.2] }, ls.push next,
+          by simp only [innerStep, if_pos hc], by rw [Array.size_push]; omega, ?_,
+          ext_push E _, by simp, by simp, .inr ⟨E.size, by simp⟩⟩
+        intro e hes
+        simp only [Array.size_push] at hes
+        by_cases hee : e < E.size
+        · obtain ⟨l, hl⟩ := he e hee
+          exact ⟨l, by simp [Array.getElem_push, hee, hl]⟩
+        · have : e = E.size := by omega
+          subst this
+          exact ⟨x.2, by simp only [Array.getElem_push_eq]; congr 1; rw [← hn, Nat.add_comm]⟩
+      · exact ⟨next, E, ls.push x.2, by simp only [innerStep, if_neg hc], hn, he, ext_refl E,
+          by simp, by simp, .inl (by simp)⟩
+    obtain ⟨next', E', ls', heq, hn', he', hext, hls, hsz, hlast⟩ := hstep
+    rw [heq]
+    obtain ⟨r1, r2, r3, r4, r5, r6⟩ := innerFold ps next0 xs next' E' ls' hn' he'
+    refine ⟨r1, r2, ext_trans hext r3, by rw [r4, hsz]; simp; omega, fun j hj => ?_, ?_⟩
+    · rw [r5 j (by omega), hls, Array.getElem?_push]
+      simp [Nat.ne_of_lt hj]
+    · intro j y hy
+      cases j with
+      | zero =>
+        simp only [List.getElem?_cons_zero, Option.some.injEq] at hy
+        subst hy
+        refine ⟨ls'.back!, ?_, ?_⟩
+        · rw [Nat.add_zero, r5 ls.size (by omega), hls]; simp
+        · rcases hlast with h | ⟨e, he⟩
+          · exact .inl h
+          · have hlt : e < E'.size := (Array.getElem?_eq_some_iff.mp he).1
+            exact .inr ⟨e, by rw [r3.2 e hlt, he]⟩
+      | succ j =>
+        obtain ⟨l', h1, h2⟩ := r6 j y (by simpa using hy)
+        exact ⟨l', by rw [hsz] at h1; rw [← h1]; congr 1; omega, h2⟩
+
+/-- The first edge-block label: above every kept label. -/
+def next0Of (V : Array VBlock) : Nat := Array.foldl (fun m b => max m b.label) 0 V + 1
+
+theorem foldl_max_ge : ∀ (l : List VBlock) (m : Nat), m ≤ l.foldl (fun m b => max m b.label) m ∧
+    ∀ b ∈ l, b.label ≤ l.foldl (fun m b => max m b.label) m
+  | [], m => by simp
+  | b :: l, m => by
+    obtain ⟨h1, h2⟩ := foldl_max_ge l (max m b.label)
+    simp only [List.foldl_cons, List.mem_cons]
+    have := Nat.le_max_left m b.label
+    have := Nat.le_max_right m b.label
+    refine ⟨by omega, fun c hc => ?_⟩
+    rcases hc with rfl | hc
+    · exact Nat.le_trans (Nat.le_max_right _ _) h1
+    · exact h2 c hc
+
+theorem lt_next0 {V : Array VBlock} {k : Nat} (hk : k < V.size) : V[k].label < next0Of V := by
+  have := (foldl_max_ge V.toList 0).2 V[k] (by simp)
+  unfold next0Of
+  rw [← Array.foldl_toList]
+  exact Nat.lt_succ_of_le this
+
+/-- **`prepare`, step by step.** -/
+theorem prepare_facts {vc vcp : VCode} (h : prepare vc = .ok vcp) :
+    ∃ (ss0 ps0 ss1 ps1 ss2 ps2 : Array (Array Nat)) (next : Nat) (B E : Array VBlock),
+      vc.cfg = .ok (ss0, ps0) ∧
+      ({ vc with blocks := keep vc.blocks (reachable ss0) } : VCode).cfg = .ok (ss1, ps1) ∧
+      SInv (keep vc.blocks (reachable ss0)) (next0Of (keep vc.blocks (reachable ss0)))
+        (keep vc.blocks (reachable ss0)).size (next, B, E) ∧
+      ({ vc with blocks := B ++ E } : VCode).cfg = .ok (ss2, ps2) ∧
+      vcp = { vc with blocks := (rpo ss2).map fun i => (B ++ E)[i]! } := by
+  unfold prepare at h
+  simp only [bind, Except.bind] at h
+  split at h
+  · cases h
+  rename_i r0 hc0
+  split at h
+  · cases h
+  rename_i r1 hc1
+  split at h
+  · simp [throw, throwThe, MonadExceptOf.throw] at h
+  split at h
+  · simp [throw, throwThe, MonadExceptOf.throw] at h
+  split at h
+  · cases h
+  rename_i st hfor
+  split at h
+  · cases h
+  rename_i r2 hc2
+  simp only [pure, Except.pure, Except.ok.injEq] at h
+  have hcs1 := cfg_spec hc1
+  refine ⟨r0.1, r0.2, r1.1, r1.2, r2.1, r2.2, st.1, st.2.1, st.2.2, hc0, hc1, ?_, hc2, h.symm⟩
+  rw [← Array.forIn_toList] at hfor
+  have := forIn_inv _ _ (fun k st => SInv (keep vc.blocks (reachable r0.1))
+      (next0Of (keep vc.blocks (reachable r0.1))) k st) ?_ ?_ _ st ?_ hfor
+  · rw [Array.length_toList, Array.size_zipIdx] at this; exact this
+  · intro k x b b' hx hb hf
+    rw [Array.toList_zipIdx, List.getElem?_zipIdx] at hx
+    obtain ⟨vb, hvb, rfl⟩ : ∃ vb, (keep vc.blocks (reachable r0.1)).toList[k]? = some vb ∧ x = (vb, 0 + k) := by
+      cases e : (keep vc.blocks (reachable r0.1)).toList[k]? with
+      | none => rw [e] at hx; cases hx
+      | some vb => rw [e] at hx; simp only [Option.map_some, Option.some.injEq] at hx
+                   exact ⟨vb, rfl, hx.symm⟩
+    simp only [Nat.zero_add] at hf ⊢
+    obtain ⟨hk, hvb'⟩ := List.getElem?_eq_some_iff.mp hvb
+    rw [Array.length_toList] at hk
+    have hvbk : (keep vc.blocks (reachable r0.1))[k] = vb := by rw [← hvb', Array.getElem_toList]
+    split at hf
+    · -- no splitting
+      simp only [pure, Except.pure, Except.ok.injEq, ForInStep.yield.injEq] at hf
+      subst hf
+      refine ⟨hb.next, hb.edges, by simp [hb.size], fun j h1 h2 => ?_⟩
+      simp only [Array.size_push] at h2
+      by_cases hj : j < b.2.1.size
+      · simp only [Array.getElem_push, hj, dite_true]
+        exact hb.rw j h1 hj
+      · have : j = k := by have := hb.size; omega
+        subst this
+        simp only [Array.getElem_push, hj, dite_false]
+        exact .inl hvbk.symm
+    · rename_i hge
+      split at hf
+      · rename_i t ht
+        split at hf
+        · cases hf
+        rename_i v hv
+        split at hf
+        · rename_i t' ht'
+          simp only [pure, Except.pure, Except.ok.injEq, ForInStep.yield.injEq] at hf
+          subst hf
+          rw [← Array.forIn_toList, forIn_yield_foldl _ _ (innerStep r1.2) _
+            (fun a c => by simp only [innerStep]; split <;> rfl)] at hv
+          simp only [pure, Except.pure, Except.ok.injEq] at hv
+          subst hv
+          obtain ⟨r1', r2', r3', r4', -, r6'⟩ := innerFold r1.2 (next0Of (keep vc.blocks (reachable r0.1)))
+            ((r1.1[k]! : Array Nat).zip t.targets.toArray).toList b.1 b.2.2 #[] hb.next hb.edges
+          -- the successors of the kept block
+          obtain ⟨t0, ts, hb0, -, hts, htsz, -⟩ := hcs1.blk k vb (by
+            show (keep vc.blocks (reachable r0.1))[k]? = some vb
+            rw [← Array.getElem?_toList]; exact hvb)
+          rw [ht] at hb0
+          cases hb0
+          have hts' : (r1.1[k]! : Array Nat) = ts := by
+            simp only [getElem!_def, hts]
+          rw [hts'] at hge
+          have h2 : 2 ≤ t.targets.length := by omega
+          refine ⟨r1', r2', by simp [hb.size], fun j h1 h2' => ?_⟩
+          simp only [Array.size_push] at h2'
+          by_cases hj : j < b.2.1.size
+          · simp only [Array.getElem_push, hj, dite_true]
+            exact rwOk_ext r3' (hb.rw j h1 hj)
+          · have : j = k := by have := hb.size; omega
+            subst this
+            simp only [Array.getElem_push, hj, dite_false]
+            rw [hvbk]
+            refine .inr ⟨t, t', _, ht, h2, ht', rfl, fun m l' hm => ?_⟩
+            rw [Array.getElem?_toList] at hm
+            have hmlt := (Array.getElem?_eq_some_iff.mp hm).1
+            rw [r4'] at hmlt
+            simp only [Array.size_empty, Nat.zero_add] at hmlt
+            obtain ⟨y, hy⟩ : ∃ y, (((r1.1[j]! : Array Nat).zip t.targets.toArray).toList)[m]? = some y :=
+              ⟨_, List.getElem?_eq_getElem hmlt⟩
+            obtain ⟨l'', hl1, hl2⟩ := r6' m y hy
+            simp only [Array.size_empty, Nat.zero_add] at hl1
+            rw [hm] at hl1
+            cases hl1
+            have hty : t.targets[m]? = some y.2 := by
+              rw [Array.toList_zip] at hy
+              have := (List.getElem?_zip_eq_some.mp hy).2
+              simpa using this
+            rcases hl2 with e | ⟨e, he⟩
+            · exact .inl (by rw [hty, e])
+            · exact .inr ⟨e, y.2, he, hty⟩
+        · simp [throw, throwThe, MonadExceptOf.throw] at hf
+      · simp [throw, throwThe, MonadExceptOf.throw] at hf
+  · intro x c c' hf
+    split at hf
+    · cases hf
+    · split at hf
+      · split at hf
+        · cases hf
+        · split at hf
+          · cases hf
+          · simp [throw, throwThe, MonadExceptOf.throw] at hf
+      · simp [throw, throwThe, MonadExceptOf.throw] at hf
+  · refine ⟨?_, fun e he => by simp at he, rfl, fun j _ h => by simp at h⟩
+    simp only [Array.size_empty, Nat.zero_add, next0Of, keep]
+
 end Backend.Proof.Prep
