@@ -3,9 +3,10 @@
 //! * `cargo-fv` (src/main.rs) runs cargo on the pinned nightly with rustc_codegen_cranelift
 //!   (cg_clif), target `aarch64-unknown-linux-musl`, and `RUSTC_WRAPPER=fv-rustc`, then writes
 //!   `target/fv-report.json` and prints a summary.
-//! * `fv-rustc` (src/bin/fv-rustc.rs) is the wrapper: for a workspace member it makes cg_clif
-//!   dump its CLIF, and recompiles every function of every codegen unit with the Lean
-//!   backend ([`pipeline`]); for executables it is also the linker rustc runs ([`wrapper`]).
+//! * `fv-rustc` (src/bin/fv-rustc.rs) is the wrapper: for every crate compiled for the target
+//!   (workspace members and dependencies; not host crates) it makes cg_clif dump its CLIF, and
+//!   recompiles every function of every codegen unit with the Lean backend ([`pipeline`]); for
+//!   executables it is also the linker rustc runs ([`wrapper`]).
 //!
 //! See docs/USAGE.md.
 pub mod config;
