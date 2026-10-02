@@ -327,20 +327,30 @@ def Cond (M : Nat) (g : Clif.Function) (uses : List CV) (w : Arm.ArmState) : Pro
     Clif.initState L.P g.name vals cm = .ok cs ∧ Clif.runLoop L.base L.P M cs = .returned rvals cm'
 
 open Classical in
-/-- **The external semantics of an activation at depth `M`**: a call of a function `g` of `P`
-gives the results (x0.., one per ABI return) and world of the linked machine's call of `g` from
-the canonical state, when `Cond` holds and that call returned; the rest is the base's. -/
+/-- A call of the function `g` of `P` (name `n`) at depth `M`: the results (x0.., one per ABI
+return) and world of the linked machine's call of `g` from the canonical state, when `Cond`
+holds and that call returned. -/
+noncomputable def progX (M : Nat) (g : Clif.Function) (n : String) (uses : List CV)
+    (w : Arm.ArmState) : Option (List CV × Arm.ArmState) :=
+  if L.Cond M g uses w ∧ Arm.r .ERR ((L.hooks M).call (some n) (L.canon g uses w)) = .None then
+    some ((List.range (sigRets g.sig).length).map fun j =>
+        regVal ((L.hooks M).call (some n) (L.canon g uses w)) (.x j),
+      (L.hooks M).call (some n) (L.canon g uses w))
+  else none
+
+/-- **The external semantics of an activation at depth `M`**: a call (`bl`) of a function of
+`P` is `progX`, as is an indirect call (`blr`) whose target is a function of `P`'s symbol; the
+rest is the base's. -/
 noncomputable def X (M : Nat) : ExtSem where
   call d uses w := match d with
     | some n => (match L.P.func? n with
-      | some g =>
-        if L.Cond M g uses w ∧ Arm.r .ERR ((L.hooks M).call (some n) (L.canon g uses w)) = .None then
-          some ((List.range (sigRets g.sig).length).map fun j =>
-              regVal ((L.hooks M).call (some n) (L.canon g uses w)) (.x j),
-            (L.hooks M).call (some n) (L.canon g uses w))
-        else none
+      | some g => L.progX M g n uses w
       | none => L.Xb.call d uses w)
-    | none => L.Xb.call none uses w
+    | none => (match uses with
+      | u :: args => (match L.P.funcs.find? (fun h => L.Xb.sym h.name 0 == lo64 u) with
+        | some h => L.progX M h h.name args w
+        | none => L.Xb.call none uses w)
+      | [] => L.Xb.call none uses w)
   sym := L.Xb.sym
   tp := L.Xb.tp
   tlsFlags := L.Xb.tlsFlags
@@ -622,6 +632,119 @@ theorem vHolds_setVal {v : Clif.Val} {r : Reg} {u : CV} (hw : v.ty.width ≤ 64)
     exact h
   | _ => exact h
 
+/-! ## The operands of a call -/
+
+theorem zip_fixed : ∀ (os : List Operand) (rs : List Reg) (fr : List Reg),
+    os.length = rs.length → os.length = fr.length →
+    (∀ (i : Nat) (o : Operand) (r : Reg), os[i]? = some o → fr[i]? = some r → o.con = .fixed r) →
+    (∀ p ∈ os.zip (rs.map Loc.reg), ∀ r, p.1.con = .fixed r → p.2 = .reg r) → rs = fr
+  | [], [], [], _, _, _, _ => rfl
+  | o :: os, r :: rs, f :: fr, h1, h2, hc, hf => by
+    have e := hf (o, .reg r) (by simp) f (hc 0 o f rfl rfl)
+    simp only [Loc.reg.injEq] at e
+    subst e
+    congr 1
+    exact zip_fixed os rs fr (by simpa using h1) (by simpa using h2)
+      (fun i o' r' h h' => hc (i + 1) o' r' h h')
+      (fun p hp r' hr' => hf p (by simp only [List.map_cons, List.zip_cons_cons]; exact List.mem_cons_of_mem _ hp) r' hr')
+  | [], _ :: _, _, h1, _, _, _ => by simp at h1
+  | _ :: _, [], _, h1, _, _, _ => by simp at h1
+  | [], [], _ :: _, _, h2, _, _ => by simp at h2
+  | _ :: _, _ :: _, [], _, h2, _, _ => by simp at h2
+
+theorem callRegs_eq {Lu : List (Nat × Reg)} {Ld : List (Reg × Nat)} {regs : Array Reg}
+    (hsz : (retOps Lu ++ callDefOps Ld).length = regs.size)
+    (hfix : ∀ p ∈ ((retOps Lu ++ callDefOps Ld).toArray.zip (regs.map Loc.reg)).toList, ∀ r,
+      p.1.con = .fixed r → p.2 = .reg r) :
+    regs.toList = Lu.map (·.2) ++ Ld.map (·.1) := by
+  apply zip_fixed (retOps Lu ++ callDefOps Ld) regs.toList _ (by simpa using hsz)
+    (by simp [retOps, callDefOps])
+  · intro i o r ho hr
+    rw [List.getElem?_append] at ho hr
+    simp only [retOps, callDefOps, List.length_map] at ho hr
+    split at ho
+    · rw [if_pos (by assumption)] at hr
+      simp only [List.getElem?_map, Option.map_eq_some_iff] at ho hr
+      obtain ⟨q, hq, rfl⟩ := ho
+      obtain ⟨q', hq', rfl⟩ := hr
+      rw [hq] at hq'; cases hq'; rfl
+    · rw [if_neg (by assumption)] at hr
+      simp only [List.getElem?_map, Option.map_eq_some_iff] at ho hr
+      obtain ⟨q, hq, rfl⟩ := ho
+      obtain ⟨q', hq', rfl⟩ := hr
+      rw [hq] at hq'; cases hq'; rfl
+  · intro p hp r hr
+    exact hfix p (by simpa using hp) r hr
+
+theorem call_zip {Lu : List (Nat × Reg)} {Ld : List (Reg × Nat)} {regs : Array Reg}
+    (hr : regs.toList = Lu.map (·.2) ++ Ld.map (·.1)) :
+    ((retOps Lu ++ callDefOps Ld).toArray.zip regs).toList =
+      (retOps Lu).zip (Lu.map (·.2)) ++ (callDefOps Ld).zip (Ld.map (·.1)) := by
+  rw [Array.toList_zip, hr, List.toList_toArray, List.zip_append (by simp [retOps])]
+
+theorem map_zip_retOps (s : Arm.ArmState) : ∀ Lu : List (Nat × Reg),
+    ((retOps Lu).zip (Lu.map (·.2))).map (fun p => regVal s p.2) = Lu.map (fun q => regVal s q.2)
+  | [] => rfl
+  | q :: Lu => by
+    have := map_zip_retOps s Lu
+    simp only [retOps, List.map_cons, List.zip_cons_cons] at this ⊢
+    rw [this]
+
+theorem call_useVals {Lu : List (Nat × Reg)} {Ld : List (Reg × Nat)} {regs : Array Reg}
+    (hr : regs.toList = Lu.map (·.2) ++ Ld.map (·.1)) (s : Arm.ArmState) :
+    useVals (retOps Lu ++ callDefOps Ld).toArray regs s = Lu.map (fun q => regVal s q.2) := by
+  simp only [useVals, call_zip hr, List.filter_append]
+  rw [List.filter_eq_self.mpr, List.filter_eq_nil_iff.mpr]
+  · rw [List.append_nil]; exact map_zip_retOps s Lu
+  · intro p hp
+    have := (List.of_mem_zip hp).1
+    simp only [callDefOps, List.mem_map] at this
+    obtain ⟨q, -, e⟩ := this
+    rw [← e]; simp [Operand.isUse]
+  · intro p hp
+    have := (List.of_mem_zip hp).1
+    simp only [retOps, List.mem_map] at this
+    obtain ⟨q, -, e⟩ := this
+    rw [← e]; simp [Operand.isUse]
+
+theorem call_defs {Lu : List (Nat × Reg)} {Ld : List (Reg × Nat)} {regs : Array Reg}
+    (hr : regs.toList = Lu.map (·.2) ++ Ld.map (·.1)) :
+    ((retOps Lu ++ callDefOps Ld).toArray.zip regs).toList.filter (·.1.isDef) =
+      (callDefOps Ld).zip (Ld.map (·.1)) := by
+  rw [call_zip hr, List.filter_append, List.filter_eq_nil_iff.mpr, List.filter_eq_self.mpr]
+  · rfl
+  · intro p hp
+    have := (List.of_mem_zip hp).1
+    simp only [callDefOps, List.mem_map] at this
+    obtain ⟨q, -, e⟩ := this
+    rw [← e]; simp [Operand.isDef]
+  · intro p hp
+    have := (List.of_mem_zip hp).1
+    simp only [retOps, List.mem_map] at this
+    obtain ⟨q, -, e⟩ := this
+    rw [← e]; simp [Operand.isDef]
+
+theorem assign_call_sym {n : String} {us ds : List (Reg × Reg)} {regs : Array Reg} {i' : MInst}
+    (h : (MInst.call ⟨.sym n, us, ds⟩).assign regs = .ok i') :
+    ∃ us' ds', i' = .call ⟨.sym n, us', ds'⟩ := by
+  unfold MInst.assign at h
+  simp only [MInst.visitOperands, bind, StateT.bind, Except.bind, pure, StateT.pure, Except.pure,
+    StateT.run] at h
+  split at h
+  · cases h
+  · rename_i v hv
+    split at h
+    · cases h
+    · simp only [Except.ok.injEq] at h
+      subst h
+      split at hv
+      · cases hv
+      · split at hv
+        · cases hv
+        · simp only [Except.ok.injEq] at hv
+          subst hv
+          exact ⟨_, _, rfl⟩
+
 /-! ## The premises and the induction statement -/
 
 /-- The destination of a call as the hooks see it (`bl name`: `some name`; `blr`: `none`). -/
@@ -667,6 +790,10 @@ structure Ok : Prop where
   callRegs : ∀ g ∈ L.P.funcs, ∀ info h, L.ProgSite g info h →
     ∃ n Lu Ld, info = ⟨.sym n, retPairs Lu, callDefs Ld⟩ ∧ Lu.map (·.2) = regLocs h.sig ∧
       Ld.map (·.1) = (List.range (sigRets h.sig).length).map Reg.x
+  /-- scope: every call site of the compiled code is a `bl` -/
+  noBlr : ∀ g ∈ L.P.funcs, ∀ info, (L.A g).vcp.CallSite info → ∃ n, info.dest = .sym n
+  /-- the link-time address of a function of `P` is no other symbol's -/
+  symInj : ∀ h ∈ L.P.funcs, ∀ n, L.Xb.sym h.name 0 = L.Xb.sym n 0 → n = h.name
   /-- the entry `Args` reads parameter registers -/
   entryRegs : ∀ g ∈ L.P.funcs, ∀ r, (L.A g).vcp.EntryArg r → r ∈ regLocs g.sig
   /-- layout: every function's words fit at its base -/
