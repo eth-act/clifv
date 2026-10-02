@@ -186,11 +186,11 @@ theorem checkAlloc_ok {vc : VCode} {rf : RFunc} (h : checkAlloc vc rf = .ok ()) 
   obtain ⟨_, h⟩ := Except.seq_ok h
   exact ⟨succs, preds, ins, hcfg, by simpa using ensure_ok h1, by simpa using ensure_ok h2, h⟩
 
-theorem edge_ok {V : Type} {keep : Reg → V → V} {b s : Nat} {out e : AState}
-    (h : c.edge b s out = .ok e) {m : Loc → V} {ρ : Nat → V} {r₀ : Reg → V}
+theorem edgeCopy_ok {V : Type} {keep : Reg → V → V} {b s : Nat} {out e : AState}
+    (h : c.edgeCopy b s out = .ok e) {m : Loc → V} {ρ : Nat → V} {r₀ : Reg → V}
     (hi : Inv keep out m ρ r₀) :
     ∃ ρ', edgeEnv c.vc b s ρ = some ρ' ∧ Inv keep e m ρ' r₀ := by
-  unfold CheckCtx.edge at h
+  unfold CheckCtx.edgeCopy at h
   split at h
   · rename_i vb sb hb hs
     obtain ⟨h1, h⟩ := Except.seq_ok h
@@ -215,6 +215,14 @@ theorem edge_ok {V : Type} {keep : Reg → V → V} {b s : Nat} {out e : AState}
         exact Inv_parCopy (by simpa using ensure_ok h3) hi
   · cases h
   · cases h
+
+/-- An edge of the checker from a state whose dead defs are already forgotten
+(`CheckCtx.edgeForget`). -/
+theorem edge_ok {V : Type} {keep : Reg → V → V} {b s : Nat} {out e : AState}
+    (h : c.edge b s out = .ok e) {m : Loc → V} {ρ : Nat → V} {r₀ : Reg → V}
+    (hi : Inv keep (c.edgeForget b s out) m ρ r₀) :
+    ∃ ρ', edgeEnv c.vc b s ρ = some ρ' ∧ Inv keep e m ρ' r₀ :=
+  edgeCopy_ok h hi
 
 theorem succOf_mem {vc : VCode} {succs preds} (hcfg : vc.cfg = .ok (succs, preds)) {b j s : Nat}
     (h : succOf vc b j = some s) : s ∈ (succs[b]?.getD #[]).toList := by
@@ -348,20 +356,59 @@ theorem Inv_forgetDefs {a : AState} {pairs : List (Operand × Loc)} {m : Loc →
     rw [this, hρ u (fun p hp hk e => hn p hp hk (by rw [e]))]
   | entry r => exact this
 
+theorem forgetDefs_eq_forgetOps (a : AState) (pairs : List (Operand × Loc)) :
+    forgetDefs a pairs = forgetOps a (pairs.map (·.1)) := by
+  simp [forgetDefs, forgetOps, List.any_map, Function.comp_def]
+
+/-- Forgetting defs keeps the invariant (for a file agreeing on the vregs not forgotten). -/
+theorem Inv_forgetOps {a : AState} {os : List Operand} {m : Loc → V} {ρ ρ' : Nat → V}
+    {r₀ : Reg → V} (h : Inv keep a m ρ r₀)
+    (hρ : ∀ u, (∀ o ∈ os, o.kind = .def → u ≠ o.vreg) → ρ u = ρ' u) :
+    Inv keep (forgetOps a os) m ρ' r₀ := by
+  have e : forgetOps a os = forgetDefs a (os.map fun o => (o, Loc.reg (.x 0))) := by
+    rw [forgetDefs_eq_forgetOps, List.map_map]
+    simp [Function.comp_def]
+  rw [e]
+  refine Inv_forgetDefs h fun u hu => hρ u fun o ho hk => ?_
+  exact hu (o, Loc.reg (.x 0)) (List.mem_map_of_mem ho) hk
+
+/-- The abstract state after instruction `i` (operands `ops`) with control outcome `ctl`, from
+its transfer `a`: the defs past `havocFrom` that `transferOp` keeps (the exception payload defs
+of a `try_call`'s call, on its normal return) forgotten — the checker forgets them on that edge
+(`CheckCtx.edgeForget`). -/
+def tryForget (i : MInst) (ctl : Ctl) (ops : Array Operand) (a : AState) : AState :=
+  match i.keptDefs, havocFrom i ctl with
+  | none, some n => forgetOps a ((ops.toList.filter (·.kind == .def)).drop n)
+  | _, _ => a
+
+theorem tryForget_of_ne {i : MInst} {ctl : Ctl} (h : ∀ j, ctl ≠ .goto j) (ops : Array Operand)
+    (a : AState) : tryForget i ctl ops a = a := by
+  unfold tryForget havocFrom
+  cases i.keptDefs with
+  | some n => rfl
+  | none =>
+    cases i.normalDead with
+    | none => rfl
+    | some p => cases ctl with
+      | goto j => exact absurd rfl (h j)
+      | _ => rfl
+
 /-- The checker's step of an original instruction is sound: the allocated code reads the
 values the VCode reads, and the invariant holds after the instruction (early defs, clobbers,
-late defs; a branch's havocked defs `outs'` are forgotten). -/
+late defs; the havocked defs `outs'`, past `havocFrom`, are forgotten: by the transfer for a
+branch's defs and the LL/SC loops' scratch registers, by `tryForget` for a `try_call`'s
+exception payloads on its normal return). -/
 theorem op_sound {w : String} {i : MInst} {ops : Array Operand} {allocs : Array Loc}
     {a a' : AState} (hstep : c.stepOp w i ops allocs a = .ok a')
     {m : Loc → V} {ρ : Nat → V} {r₀ : Reg → V} (hinv : Inv keep a m ρ r₀)
     {outs outs' : List V} (hlen : outs.length = ((ops.zip allocs).toList.filter (·.1.isDef)).length)
-    (hho : HavocOuts i outs outs') {m2 : Loc → V}
+    {ctl : Ctl} (hho : HavocOuts i ctl outs outs') {m2 : Loc → V}
     (hclob : Clobbered keep i.clobbers
       (writeM m ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs').filter (·.1.1.isEarly))) m2) :
     ops.size = allocs.size ∧
     ((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2) =
       (ops.toList.filter Operand.isUse).map (ρ ·.vreg) ∧
-    Inv keep a'
+    Inv keep (tryForget i ctl ops a')
       (writeM m2 ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs').filter (·.1.1.isLate)))
       (writeV (writeV ρ (((ops.toList.filter Operand.isDef).zip outs).filter (·.1.isEarly)))
         (((ops.toList.filter Operand.isDef).zip outs).filter (·.1.isLate))) r₀ ∧
@@ -391,13 +438,15 @@ theorem op_sound {w : String} {i : MInst} {ops : Array Operand} {allocs : Array 
     have h3 := Inv_defineAll
       ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs').filter (·.1.1.isLate)) h2
     rw [defs_late hlen', ← defs_vcode hsz outs' Operand.isLate] at h3
-    cases hk : i.keptDefs with
-    | none =>
-      have e := hho.2.1 hk
-      subst e
-      simpa only [transferOp, hk] using h3
-    | some nk =>
-      simp only [transferOp, hk]
+    -- forgetting the defs past `nk`, where both def lists agree on the first `nk`
+    have key : ∀ nk, outs'.take nk = outs.take nk → Inv keep
+        (forgetDefs (defineAll (clobberAll (defineAll a (atPos (ops.zip allocs).toList .def .early))
+          i.clobbers) (atPos (ops.zip allocs).toList .def .late))
+          (((ops.zip allocs).toList.filter (·.1.kind == .def)).drop nk))
+        (writeM m2 ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs').filter (·.1.1.isLate)))
+        (writeV (writeV ρ (((ops.toList.filter Operand.isDef).zip outs).filter (·.1.isEarly)))
+          (((ops.toList.filter Operand.isDef).zip outs).filter (·.1.isLate))) r₀ := by
+      intro nk htk
       refine Inv_forgetDefs h3 fun u hu => ?_
       -- `u` is no forgotten def's vreg: the kept defs (the first `nk`) have the same values in
       -- both files
@@ -405,7 +454,7 @@ theorem op_sound {w : String} {i : MInst} {ops : Array Operand} {allocs : Array 
           d.vreg = u → outs'[k]? = outs[k]? := by
         intro k d hd hdu
         by_cases hkn : k < nk
-        · have := congrArg (·[k]?) (hho.2.2 nk hk)
+        · have := congrArg (·[k]?) htk
           simpa [List.getElem?_take, hkn] using this
         · exfalso
           have hfst := pairs_fst hsz Operand.isDef
@@ -426,9 +475,74 @@ theorem op_sound {w : String} {i : MInst} {ops : Array Operand} {allocs : Array 
       have hl : outs'.length = outs.length := hho.1
       exact writeV_zip_filter_congr _ u _ _ _ _ _
         (writeV_zip_filter_congr _ u _ _ _ ρ ρ rfl hl hD) hl hD
+    cases hk : i.keptDefs with
+    | none =>
+      cases hh : havocFrom i ctl with
+      | none =>
+        have e := hho.2.1 hh
+        subst e
+        simpa only [tryForget, transferOp, hk, hh] using h3
+      | some n =>
+        have e : forgetOps (defineAll (clobberAll (defineAll a (atPos (ops.zip allocs).toList .def
+            .early)) i.clobbers) (atPos (ops.zip allocs).toList .def .late))
+            ((ops.toList.filter (·.kind == .def)).drop n) =
+            forgetDefs (defineAll (clobberAll (defineAll a (atPos (ops.zip allocs).toList .def
+            .early)) i.clobbers) (atPos (ops.zip allocs).toList .def .late))
+            (((ops.zip allocs).toList.filter (·.1.kind == .def)).drop n) := by
+          rw [forgetDefs_eq_forgetOps, List.map_drop]
+          congr 2
+          exact (pairs_fst hsz (·.kind == .def)).symm
+        simp only [tryForget, transferOp, hk, hh]
+        rw [e]
+        exact key n (hho.2.2 n hh)
+    | some nk =>
+      have hh : havocFrom i ctl = some nk := by simp [havocFrom, hk]
+      simp only [tryForget, transferOp, hk]
+      exact key nk (hho.2.2 nk hh)
   · intro us hi
     subst hi
-    simpa [transferOp, MInst.keptDefs, MInst.isBranch] using retCheck_ok hret
+    simpa [transferOp, tryForget, havocFrom, MInst.keptDefs, MInst.normalDead, MInst.isBranch]
+      using retCheck_ok hret
+
+/-- **The edge from a terminator**: the invariant after terminator `i` (instruction `k`, the
+last, of block `b`) with outcome `goto j` (`tryForget`) gives the invariant of the state
+entering the successor `s` before the parallel copy (`CheckCtx.edgeForget`): both forget a
+`try_call`'s exception payload defs on the normal-return edge; when `s` is the normal-return
+successor reached by another successor number, `edgeForget` forgets more. -/
+theorem edgeForget_inv {preds : Array (Array Nat)} (hcfg : c.vc.cfg = .ok (c.succs, preds))
+    {b k j s : Nat} {vb : VBlock} {i : MInst} {ops : Array Operand} {a : AState}
+    {m : Loc → V} {ρ : Nat → V} {r₀ : Reg → V}
+    (hvb : c.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some i) (hk1 : k + 1 = vb.insts.size)
+    (hops : i.operands = .ok ops) (hsucc : succOf c.vc b j = some s)
+    (h : Inv keep (tryForget i (.goto j) ops a) m ρ r₀) : Inv keep (c.edgeForget b s a) m ρ r₀ := by
+  have hback : vb.insts.back? = some i := by
+    rw [Array.back?_eq_getElem?, show vb.insts.size - 1 = k by omega, hi]
+  have hsucc' : c.succs[b]?.bind (·[j]?) = some s := by simpa [succOf, hcfg] using hsucc
+  unfold CheckCtx.edgeForget
+  simp only [hvb, hback]
+  cases hnd : i.normalDead with
+  | none =>
+    have e : tryForget i (.goto j) ops a = a := by
+      unfold tryForget havocFrom
+      cases i.keptDefs <;> simp [hnd]
+    rwa [e] at h
+  | some p =>
+    obtain ⟨j0, n⟩ := p
+    have hkd : i.keptDefs = none := by
+      cases i <;> simp_all [MInst.normalDead, MInst.keptDefs, MInst.isBranch]
+    simp only [hops]
+    by_cases hj : j = j0
+    · subst hj
+      simp only [hsucc', ↓reduceIte]
+      have e : tryForget i (.goto j) ops a = forgetOps a ((ops.toList.filter (·.kind == .def)).drop n) := by
+        simp [tryForget, havocFrom, hkd, hnd]
+      rwa [e] at h
+    · have e : tryForget i (.goto j) ops a = a := by
+        simp [tryForget, havocFrom, hkd, hnd, hj]
+      rw [e] at h
+      split
+      · exact Inv_forgetOps h fun _ _ => rfl
+      · exact h
 
 end
 

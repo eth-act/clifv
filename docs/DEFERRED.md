@@ -109,11 +109,11 @@ premises. Deferred, in order:
   required only at the compiled code's call sites (`VCode.CallSite`); `TlsOk` likewise. Witness:
   `E2E.calleeOk_witness`/`final_contracts_witness` (`FV/E2E/NonVacuity.lean`), a callee pushing
   two frames below `sp`. The flags stay part of the world, produced by `X.call`.
-- **`try_call` payload registers.** `CalleeTryOk` fixes the def registers of a `try_call`'s call
-  beyond its results (x0/x1, the exception payload) to `X.call`'s world, but a callee that does
-  not write them leaves the caller's (masked) values: unsatisfiable for such callees. Needs the
-  allocated-code semantics to havoc those defs on the normal return while the checker keeps them
-  for the handler edges (a per-edge transfer in `RegallocCheck` and its soundness proof).
+- ~~**`try_call` payload registers.**~~ Done (agent/trycall-contract): the payload defs of a
+  `try_call`'s call are havocked on the normal return (`havocFrom`), the checker forgets them on
+  the normal-return edge only (`CheckCtx.edgeForget`), and `CalleeTryOk` constrains only the
+  results at the `try_call` sites (`VCode.TrySite`). Witness: `E2E.calleeTryOk_witness`,
+  `E2E.backend_correct_final_try_witness`.
 - **Exact world of a call.** `X.call` is a function of the arguments and the world and must give
   the exact def registers and world of the hooked callee; a compiled callee's theorem fixes only
   the low bits of its results and the live CLIF bytes. Either make `csem`'s call clause

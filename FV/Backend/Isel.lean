@@ -428,14 +428,16 @@ def payloadRegs (c : Option Clif.CallConv) : List Reg :=
 
 /-- `try_call_info` (`machinst/isle.rs`): one landing-pad label per `tag`/`default` item (in
 item order), then the continuation (the last label). `clobberAll` is
-`get_regs_clobbered_by_call(callee, true) = ALL_CLOBBERS` (`tail`/`preserve_all` callees). -/
+`get_regs_clobbered_by_call(callee, true) = ALL_CLOBBERS` (`tail`/`preserve_all` callees);
+`rets` the number of ABI returns (`sigRets`), the results `gen_try_call_rets` puts first. -/
 def tryInfoOf (sig : Clif.Signature) (items : List (Option Nat)) (ls : List Label) :
     Option TryInfo :=
   if ls.length != items.length + 1 then none
   else some {
     continuation := ls.getLastD 0
     handlers := (items.zip ls).map fun | (some n, l) => .tag n l | (none, l) => .default l
-    clobberAll := sig.callConv == some .tail || sig.callConv == some .preserveAll }
+    clobberAll := sig.callConv == some .tail || sig.callConv == some .preserveAll
+    rets := (sigRets sig).length }
 
 /-- The `ExceptionTable` operand of a `try_call`: its signature and item kinds. Callee
 conventions other than `system_v` are rejected (Cranelift 0.136.1 panics on a `fast` one;

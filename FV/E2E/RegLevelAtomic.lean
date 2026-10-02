@@ -379,9 +379,9 @@ theorem realizes_rmwLoop {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
     MStep.op (outs' := [regVal (Arm.w .PC (R.pcOf (j0 + 1 + (rmwLoopBody ty.bits op fl).length + 1)) s1) (.x 27),
       regVal (Arm.w .PC (R.pcOf (j0 + 1 + (rmwLoopBody ty.bits op fl).length + 1)) s1) (.x 24),
       regVal (Arm.w .PC (R.pcOf (j0 + 1 + (rmwLoopBody ty.bits op fl).length + 1)) s1) (.x 28)])
-      (m2 := m) hvb hi hops hsz' hsem0 hlen ⟨by simp, fun h => by simp [MInst.keptDefs] at h,
+      (m2 := m) hvb hi hops hsz' hsem0 hlen ⟨by simp, fun h => by simp [havocFrom, MInst.keptDefs] at h,
         fun n h => ?_⟩ ?_ (MNext.next hk), ?_⟩
-  · simp only [MInst.keptDefs, Option.some.injEq] at h
+  · simp only [havocFrom, MInst.keptDefs, Option.some.injEq] at h
     subst h
     simp [regVal, rnum, h27]
   · refine ⟨fun l _ => ?_, fun c hc => by simp [MInst.clobbers] at hc⟩
@@ -586,9 +586,9 @@ theorem realizes_casLoop {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
       cases hn with
       | next hk => exact hk
     refine ⟨nst, _, MStep.op (outs' := [regVal sF (.x 27), regVal sF (.x 24)]) (m2 := m) hvb hi hops
-      hsz' hsem0 hlen ⟨by simp [hlen2], fun h => by simp [MInst.keptDefs] at h, fun n h => ?_⟩ ?_
+      hsz' hsem0 hlen ⟨by simp [hlen2], fun h => by simp [havocFrom, MInst.keptDefs] at h, fun n h => ?_⟩ ?_
       (MNext.next hk), ?_⟩
-    · simp only [MInst.keptDefs, Option.some.injEq] at h
+    · simp only [havocFrom, MInst.keptDefs, Option.some.injEq] at h
       subst h
       simpa using h27F
     · refine ⟨fun l _ => ?_, fun c hc => by simp [MInst.clobbers] at hc⟩

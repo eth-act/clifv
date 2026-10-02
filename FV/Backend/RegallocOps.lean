@@ -328,6 +328,16 @@ def MInst.keptDefs (i : MInst) : Option Nat :=
   | .atomicRmwLoop .. | .atomicCasLoop .. => some 1
   | i => if i.isBranch then some 0 else none
 
+/-- Defs dead on one edge only: `some (j, n)` when the defs past the first `n` (in operand
+order) are dead on the edge to successor number `j`. A `try_call`'s call defines its results,
+then the exception payload registers that are not return registers (`gen_try_call_rets`);
+those are meaningful only on the handler edges: on the normal return (successor
+`ti.handlers.length`, the last) the callee leaves in them whatever it likes, and the checker
+forgets them on that edge (`CheckCtx.edgeForget`). -/
+def MInst.normalDead : MInst → Option (Nat × Nat)
+  | .tryCall _ ti => some (ti.handlers.length, ti.rets)
+  | _ => none
+
 /-- Does the instruction end a block (`is_term` is not `None`)? -/
 def MInst.isTerminator (i : MInst) : Bool :=
   i.isBranch || i.isRet || i matches .tryCall ..

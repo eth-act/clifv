@@ -19,9 +19,10 @@ the values of the def operands, the new world and a control outcome.
   `op k allocs`, which reads its uses from their allocated locations, writes early defs,
   havocs its clobbers (`Clobbered`: any value, except that a callee-saved register keeps its
   `keep`-part, AAPCS64's "callee preserves the low 64 bits of v8–v15"), then writes late defs.
-  The defs past an instruction's `MInst.keptDefs` are havocked (`HavocOuts`: a branch's defs,
+  The defs past an instruction's `havocFrom` are havocked (`HavocOuts`: a branch's defs,
   `JTSequence`'s temporaries, are dead after the branch; the scratch registers of the LL/SC
-  loops are dead after the loop), and the checker forgets them.
+  loops are dead after the loop; the exception payload registers of a `try_call`'s call are
+  dead on its normal return), and the checker forgets them.
   No parallel copy on edges: the allocator's moves do that.
 
 `Rets` returns the values of its uses; `halt` (a trap) stops with the world. The two
@@ -162,14 +163,25 @@ inductive MNext (b k n : Nat) (i : MInst) (uses : List V) (its : List RItem) (m 
   | ret {us} : i = .rets us → MNext b k n i uses its m w .ret (.ret uses m w)
   | halt : MNext b k n i uses its m w .halt (.halt w)
 
-/-- The def values the allocated code writes: those of `sem`, except the defs past
-`MInst.keptDefs` (a branch's defs, `JTSequence`'s temporaries, dead after the branch; the
-scratch registers of the LL/SC loops; the checker forgets them), which are havocked. -/
-def HavocOuts (i : MInst) (outs outs' : List V) : Prop :=
-  outs'.length = outs.length ∧ (i.keptDefs = none → outs' = outs) ∧
-    ∀ n, i.keptDefs = some n → outs'.take n = outs.take n
+/-- The number of leading defs whose values the allocated code keeps when instruction `i` has
+control outcome `ctl` (`none`: all): `MInst.keptDefs`, or for a `try_call`'s call returning
+normally (`MInst.normalDead`, successor `ti.handlers.length`) its results. -/
+def havocFrom (i : MInst) (ctl : Ctl) : Option Nat :=
+  match i.keptDefs with
+  | some n => some n
+  | none => match i.normalDead, ctl with
+    | some (j, n), .goto j' => if j' = j then some n else none
+    | _, _ => none
 
-theorem HavocOuts.refl (i : MInst) (outs : List V) : HavocOuts i outs outs :=
+/-- The def values the allocated code writes: those of `sem`, except the defs past
+`havocFrom` (a branch's defs, `JTSequence`'s temporaries, dead after the branch; the
+scratch registers of the LL/SC loops; the exception payload registers of a `try_call`'s call
+on its normal return; the checker forgets them), which are havocked. -/
+def HavocOuts (i : MInst) (ctl : Ctl) (outs outs' : List V) : Prop :=
+  outs'.length = outs.length ∧ (havocFrom i ctl = none → outs' = outs) ∧
+    ∀ n, havocFrom i ctl = some n → outs'.take n = outs.take n
+
+theorem HavocOuts.refl (i : MInst) (ctl : Ctl) (outs : List V) : HavocOuts i ctl outs outs :=
   ⟨rfl, fun _ => rfl, fun _ _ => rfl⟩
 
 /-- One step of the allocated code: execute the next item of the current block. -/
@@ -181,7 +193,7 @@ inductive MStep : MConf V W → MConf V W → Prop
       allocs.size = ops.size →
       sem i (((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)) w = some (outs, w', ctl) →
       outs.length = ((ops.zip allocs).toList.filter (·.1.isDef)).length →
-      HavocOuts i outs outs' →
+      HavocOuts i ctl outs outs' →
       Clobbered keep i.clobbers
         (writeM m ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs').filter (·.1.1.isEarly)))
         m2 →

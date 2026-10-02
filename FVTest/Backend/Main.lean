@@ -110,15 +110,14 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
     IO.eprintln s!"lean-backend: {input}: %{n}: compiled, unverified (outside backend_correct): {why}"
   for (n, why) in fa.unvalidated do
     IO.eprintln s!"lean-backend: {input}: %{n}: compiled, unverified (validation budget): {why}"
-  -- A function with a `try_call` is compiled and inside `backend_correct_final`'s scope, but the
-  -- callee contract `CalleeTryOk` its theorem assumes is not yet satisfiable by realistic try_call
-  -- callees (payload registers x0/x1 fixed to `X.call`'s world; docs/contracts/e2e.md,
-  -- "Non-vacuity"), so the theorem is vacuous for it: report it as unverified until that is fixed.
+  -- A function with a `try_call` is inside `backend_correct_final` for the runs in which every
+  -- callee of a `try_call` returns normally (callee contract `CalleeTryOk`: the results only; the
+  -- exception payload registers are havocked on the normal return); unwinding is trusted.
   for p in pf.funcs do
     if let .ok f := p.func then
       if hasTryCall f && fa.funcs.any (·.name == p.name) && !fa.unverified.any (·.1 == p.name) &&
           !fa.unvalidated.any (·.1 == p.name) then
-        IO.eprintln s!"lean-backend: {input}: %{p.name}: compiled, unverified (outside backend_correct): try_call: callee contract CalleeTryOk not yet satisfiable (theorem vacuous)"
+        IO.eprintln s!"lean-backend: {input}: %{p.name}: compiled, verified for normal returns (try_call: unwinding, landing pads and the LSDA trusted)"
   return 0
 
 def main (args : List String) : IO UInt32 := do

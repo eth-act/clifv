@@ -165,7 +165,7 @@ theorem backend_correct_final {p : Clif.Program} {f : Clif.Function} {k : Nat} {
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H vcp.CallSite)
     -- the callee contract of the call of a `try_call` (only for a function with one)
     (hCT : (∃ B ∈ f.blocks, B.term.isTry = true) → ∀ s, CalleeTryOk
-      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H vcp.CallSite)
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H vcp.TrySite)
     -- the TLSDESC contract of the machine's `tls_value` hook (only for a function with one)
     (hTls : hasTls f = true → ∀ s, TlsOk
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H)
@@ -246,7 +246,7 @@ theorem backend_correct_final_indirectFree {p : Clif.Program} {f : Clif.Function
     (hC : ∀ s, CalleeOk
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H vcp.CallSite)
     (hCT : (∃ B ∈ f.blocks, B.term.isTry = true) → ∀ s, CalleeTryOk
-      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H vcp.CallSite)
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H vcp.TrySite)
     (hTls : hasTls f = true → ∀ s, TlsOk
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H)
     (hX : ∀ s, XCallsOk env (f.externs.map (·.2)) (fun sl cm w =>

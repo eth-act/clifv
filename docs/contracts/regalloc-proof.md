@@ -627,7 +627,9 @@ Remaining: `Refines`/`MemRefines` of `csem` (M6Insts), deciding `FormsCovered`
 
 The callee contract changed (`docs/contracts/e2e.md`, "Callee contract with a dead stack"):
 `CalleeOk F K X H S` (`os : ∀ ctx info, S info → CallSoundCtl F K (callExec H) (csem F ctx X)
-(.call info) .next`), `TlsOk F K X H`, `CalleeTryOk F X H S`; `RL` has the callees' stack budget
+(.call info) .next`), `TlsOk F K X H`, `CalleeTryOk F X H S` (since agent/trycall-contract over the `try_call` sites
+`VCode.TrySite` and for the results only: the exception payload defs are havocked on the
+normal return, `havocFrom`, and the checker forgets them on that edge, `CheckCtx.edgeForget`); `RL` has the callees' stack budget
 `K`, `RL.F = frameW K …` (the world excludes the frame and the dead stack below `spB`),
 `RL.FK = frameF …` (the frame `FrameKeep` keeps), `RL.Wf.stack : StackAvail R.K R.af R.s0`.
 `realizes_op_core` takes `OperandsSoundCtlAt R.F R.FK` at the state (`OperandsSoundCtl.at` for
