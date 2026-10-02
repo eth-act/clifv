@@ -351,4 +351,178 @@ theorem armStepX_X (M : Nat) (H : ArmHooks) (fa : FnAsm) :
 
 end LinkSys
 
+/-! ## CLIF helpers -/
+
+/-- A returning run never reaches a trapping step. -/
+theorem reach_not_trapped {env : Clif.Env} {p : Clif.Program} :
+    ∀ {fuel : Nat} {cs : Clif.State} {vals : List Clif.Val} {cm : Clif.Mem},
+      Clif.runLoop env p fuel cs = .returned vals cm → ∀ {s : Clif.State}, Reach env p cs s →
+      ∀ c, Clif.step env p s ≠ .trapped c := by
+  intro fuel cs vals cm hrun s hr
+  induction hr generalizing fuel with
+  | refl s =>
+    intro c hc
+    cases fuel with
+    | zero => cases hrun
+    | succ n => rw [Clif.runLoop_succ, hc] at hrun; cases hrun
+  | step hs _ ih =>
+    cases fuel with
+    | zero => cases hrun
+    | succ n =>
+      rw [Clif.runLoop_succ, hs] at hrun
+      exact ih hrun
+
+/-- **A returning run satisfies the run premises** (`TrapsExplicit`) when the entered function
+has no indirect calls (`LinkFree`). -/
+theorem trapsExplicit_of_returned {env : Clif.Env} {p : Clif.Program} {cs : Clif.State}
+    (hfree : Clif.LinkFree cs.frame.func) {fuel : Nat} {vals : List Clif.Val} {cm : Clif.Mem}
+    (hrun : Clif.runLoop env p fuel cs = .returned vals cm) : TrapsExplicit env p cs where
+  stmt := fun s c _ _ hr hs _ => absurd hs (reach_not_trapped hrun hr c)
+  tryCall := fun s c _ _ _ hr hs _ _ => absurd hs (reach_not_trapped hrun hr c)
+  tryCallInd := fun s c _ _ _ hr hs _ _ => absurd hs (reach_not_trapped hrun hr c)
+  indirect := fun _ st _ sig callee args _ _ hi ⟨B, hB, hst⟩ =>
+    absurd hi ((hfree B hB).1 st hst sig callee args)
+  tryIndirect := fun _ callee args et _ _ _ ⟨B, hB, e⟩ =>
+    absurd e ((hfree B hB).2.1 callee args et)
+
+/-- The entry state of a function without stack slots: no slots, the memory unchanged. -/
+theorem initState_noSlots {P : Clif.Program} {h : Clif.Function} {n : String}
+    {vals : List Clif.Val} {cm : Clif.Mem} {cs : Clif.State} (hf : P.func? n = some h)
+    (hs : h.slots = []) (hi : Clif.initState P n vals cm = .ok cs) :
+    cs.frame.slots = [] ∧ cs.mem = cm := by
+  simp only [Clif.initState, hf, Clif.Res.ofOption_some, Clif.Res.ok_bind] at hi
+  cases he : Clif.enterFunc h vals cm with
+  | ok r =>
+    rw [he] at hi
+    obtain ⟨fr, mem'⟩ := r
+    simp only [Clif.Res.ok_bind, Clif.Res.pure_eq, Clif.Res.ok.injEq] at hi
+    subst hi
+    obtain ⟨_, _, _, _, _, _, hal, -⟩ := Opt.enterFunc_ok he
+    rw [hs] at hal
+    simp only [Opt.allocSlots, List.foldl_nil, Prod.mk.injEq] at hal
+    exact ⟨hal.1.symm, hal.2.symm⟩
+  | trap => rw [he] at hi; cases hi
+  | stuck => rw [he] at hi; cases hi
+
+/-! ## The premises and the induction statement -/
+
+/-- The destination of a call as the hooks see it (`bl name`: `some name`; `blr`: `none`). -/
+def destOf (info : CallInfo) : Option String :=
+  match info.dest with
+  | .sym n => some n
+  | .reg _ => none
+
+namespace LinkSys
+
+variable (L : LinkSys)
+
+/-- A call outside `P` (an extern of the base environment, or `blr`). -/
+def BaseDest (d : Option String) : Prop := d = none ∨ ∃ n, d = some n ∧ L.P.func? n = none
+
+/-- A call site of `g`'s compiled code calling the function `h` of `P`. -/
+def ProgSite (g : Clif.Function) (info : CallInfo) (h : Clif.Function) : Prop :=
+  (L.A g).vcp.CallSite info ∧ ∃ n, info.dest = .sym n ∧ L.P.func? n = some h
+
+/-- **The premises of the linked program** (`backend_correct_program`): the program and its
+compilation, the scope of this layer, the link layout, and the base environment's contracts. -/
+structure Ok : Prop where
+  /-- distinct names, no `call_indirect`/`try_call_indirect`/`return_call` -/
+  linkable : Linkable L.P
+  subset : ∀ g ∈ L.P.funcs, InSubset (L.P.only g) g
+  compiled : ∀ g ∈ L.P.funcs, Compiled g (L.A g).k (L.A g).vc (L.A g).vcp (L.A g).rf
+    (L.A g).af (L.A g).fa (L.A g).fb
+  covered : ∀ g ∈ L.P.funcs, FormsCovered ⟨(L.A g).fa.k, (L.A g).af.slotBase⟩ (L.A g).vcp
+  /-- scope: no `try_call` -/
+  noTry : ∀ g ∈ L.P.funcs, ∀ B ∈ g.blocks, B.term.isTry = false
+  /-- scope: no stack-passed call arguments (no outgoing-argument area) -/
+  noOut : ∀ g ∈ L.P.funcs, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase = 0
+  /-- scope: parameters in registers (distinct argument registers), no `sret` -/
+  regParams : ∀ g ∈ L.P.funcs, ∀ l ∈ locsOf g.sig, ∃ r, l = .reg r
+  argRegs : ∀ g ∈ L.P.funcs, (regLocs g.sig).Nodup ∧ ∀ r ∈ regLocs g.sig, r.isArgReg = true
+  noSret : ∀ g ∈ L.P.funcs, g.sig.params.any (·.purpose == .sret) = false
+  /-- scope: the functions called from `P` have no stack slots (their frame is the allocator's) -/
+  calleeSlots : ∀ g ∈ L.P.funcs, ∀ info h, L.ProgSite g info h → h.slots = [] ∧
+    (RAFrame.compute (L.A h).vcp (L.A h).rf).size = (L.A h).af.frameSize
+  /-- scope: a call of a function `h` of `P` passes integer arguments in `h`'s parameter
+  registers and takes the results from x0.. (checked per call site) -/
+  callRegs : ∀ g ∈ L.P.funcs, ∀ info h, L.ProgSite g info h →
+    ∃ n Lu Ld, info = ⟨.sym n, retPairs Lu, callDefs Ld⟩ ∧ Lu.map (·.2) = regLocs h.sig ∧
+      Ld.map (·.1) = (List.range (sigRets h.sig).length).map Reg.x
+  /-- the entry `Args` reads parameter registers -/
+  entryRegs : ∀ g ∈ L.P.funcs, ∀ r, (L.A g).vcp.EntryArg r → r ∈ regLocs g.sig
+  /-- layout: every function's words fit at its base -/
+  fits : ∀ g ∈ L.P.funcs, (L.A g).base.toNat + 4 * (L.A g).fb.words.size ≤ 2 ^ 64
+  /-- layout: the code image (`Img`, holding `imgMem`) contains every function's words -/
+  imgAddr : ∀ g ∈ L.P.funcs, ∀ a, CodeAddr (Arm.set_program Arm.ArmState.default
+    ((L.A g).fb.program (L.A g).base)) a → L.Img a
+  imgCode : ∀ g ∈ L.P.funcs, ∀ t : Arm.ArmState, (∀ a, L.Img a → t.mem a = L.imgMem a) →
+    ∀ k w, (L.A g).fb.words[k]? = some w →
+      Arm.read_mem_bytes 4 ((L.A g).base + BitVec.ofNat 64 (4 * k)) t = w
+  /-- the code is outside every activation's world -/
+  imgF : ∀ a, L.Img a → L.F a
+  /-- layout: the return address of a call is not in the callee's code -/
+  raCall : ∀ g ∈ L.P.funcs, ∀ h ∈ L.P.funcs, ∀ pc, CallPc (L.A g).fa (L.A g).base pc →
+    ∀ k < (L.A h).fb.words.size, pc + 4 ≠ (L.A h).base + BitVec.ofNat 64 (4 * k)
+  raStar : ∀ h ∈ L.P.funcs, ∀ k < (L.A h).fb.words.size,
+    L.raStar ≠ (L.A h).base + BitVec.ofNat 64 (4 * k)
+  /-- the stack of one call level -/
+  depth : ∀ g ∈ L.P.funcs, frameDrop (L.A g).af ≤ L.D
+  /-- the base environment: symbols, the contracts of the calls outside `P` (at the program's
+  call sites), the CLIF contract of the base externs, TLS -/
+  symOk : ∀ n b, L.syms n = some b → L.Xb.sym n 0 = BitVec.ofNat 64 b
+  baseOs : ∀ g ∈ L.P.funcs, ∀ info, (L.A g).vcp.CallSite info → L.BaseDest (destOf info) →
+    ∀ F K G s0 Pc ctx, CallSoundCtlG F K G s0 Pc (callExec L.Hb) (csem F ctx L.Xb) (.call info) .next
+  basePc : ∀ d s, L.BaseDest d → Arm.r .ERR s = .None → Arm.CheckSPAlignment s →
+    Arm.r .PC (L.Hb.call d s) = Arm.r .PC s + 4
+  baseExt : ∀ d uses w outs w', L.BaseDest d → L.Xb.call d uses w = some (outs, w') →
+    Arm.r .ERR w = .None → Arm.r .ERR w' = .None ∧ w'.program = w.program
+  baseX : ∀ g ∈ L.P.funcs, ∀ F slotOff out c, XCallsOk L.base
+    ((g.externs.map (·.2)).filter fun e => (L.P.func? e.name).isNone)
+    (RelW ⟨F, L.syms, slotOff, out⟩ g c) L.Xb
+  baseTls : ∀ g ∈ L.P.funcs, hasTls g = true → ∀ F K, TlsOk F K L.Xb L.Hb
+
+/-- **The machine side of an activation of `g` at depth `M`** entered in `s` with body-entry
+world `w₀`: the ABI entry, the stack (frame and the callees' budget `K M`), the addresses `G` it
+keeps (outside its stack; containing the code image, which `s` holds), the addresses outside
+its world are `F`, and `w₀` agrees with `s`. -/
+structure MachEntry (M : Nat) (g : Clif.Function) (G : BitVec 64 → Prop) (ra : BitVec 64)
+    (s w₀ : Arm.ArmState) : Prop where
+  abi : AbiEntry (L.A g).fb (L.A g).base ra s
+  stack : StackAvail (L.K M) (L.A g).af s
+  gfree : ∀ a, G a → ¬ StackBelow (frameDrop (L.A g).af + L.K M) (spv s) a
+  hF : frameWG (L.K M) (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase
+    (RAFrame.compute (L.A g).vcp (L.A g).rf).size (L.A g).af G s = L.F
+  imgG : ∀ a, L.Img a → G a
+  imgS : ∀ a, L.Img a → s.mem a = L.imgMem a
+  body : BodyEntryW L.F (L.A g).vcp.EntryArg (L.A g).af s w₀
+
+/-- **The world side of an activation of `g` at depth `M`**: the CLIF entry state on `vals`
+related to the body-entry world `w₀` (`RelW` with the body's `sp`), the arguments where the body
+reads them, and the callees' dead stack below the body's `sp` fits and lies outside the world
+and the code. -/
+structure WorldEntry (M : Nat) (g : Clif.Function) (vals : List Clif.Val) (cs : Clif.State)
+    (w₀ : Arm.ArmState) : Prop where
+  clif : ClifEntry g vals cs
+  rel : RelW ⟨L.F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩
+    g (spv w₀) cs.frame.slots cs.mem w₀
+  args : ArgsAtEntry L.F g.sig vals w₀
+  room : L.K M ≤ (spv w₀).toNat
+  dead : ∀ a, StackBelow (L.K M) (spv w₀) a → L.F a ∧ ¬ L.Img a
+  align : (spv w₀).toNat % 16 = 0
+
+/-- **The linking statement at depth `M`**: for every function `g` of `P` and every world-side
+activation whose per-function run (program callees running at most `M` steps) returns, one VCode
+outcome that every machine-side activation at depth `M` realises. -/
+def Thm (M : Nat) : Prop :=
+  ∀ g ∈ L.P.funcs, ∀ (vals : List Clif.Val) (cs : Clif.State) (w₀ : Arm.ArmState) (fuel : Nat)
+    (rvals : List Clif.Val) (cm' : Clif.Mem), L.WorldEntry M g vals cs w₀ →
+    Clif.runLoop (Clif.linkEnvN L.P L.base M) (L.P.only g) fuel cs = .returned rvals cm' →
+    ∃ (us : List (Reg × Reg)) (outs : List CV) (wf : Arm.ArmState),
+      us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+      PrefixHold rvals outs ∧ MemRel L.F L.syms cm' wf ∧
+      ∀ G ra s, L.MachEntry M g G ra s w₀ →
+        ∃ n, ActRet ra L.F G us outs wf s (runX (L.mach M g) n s)
+
+end LinkSys
+
 end E2E
