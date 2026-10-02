@@ -1,5 +1,5 @@
 import FV.Backend
-import FV.Opt.Legal
+import FV.Opt.Legalize128Pass
 import FVTest.Opt.Common
 
 /-!

@@ -1,5 +1,5 @@
 import FV.Clif
-import FV.Opt.Legalize128
+import FV.Opt.Legalize128Pass
 import Lean.Data.Json
 
 /-!

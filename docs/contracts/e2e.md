@@ -598,6 +598,13 @@ theorems are unchanged. `PrepDomain` is what `lowerFunction` produces: labels ar
 `prepare` output. The compiler keeps running `prepCheck` (`allocateRegalloc2`) as a runtime
 double-check.
 
+**Validator completeness: `Opt.Legalize128` is correct without `Opt.Legal.check`** (2026-10-02,
+`FV/Opt/Proof/LegalComplete.lean`, `FV/Opt/Proof/LegalDirect.lean`, `FV/E2E/LegalDirect.lean`;
+`docs/contracts/legalize128.md` "Completeness"): `Opt.Legal.Complete.check_complete` (`Pre f` and
+`function128Cert f = .ok (g, cert)` ⇒ `check f g cert = true`), hence
+`Opt.Legal.legalize_refines` and `E2E.backend_correct_legal_direct` (`backend_correct_legal`
+with `hpre`/`hlg` in place of `hchk`).
+
 The proof follows `prepare` step by step. `reachable` (fuel-bounded worklist) marks a set that
 contains the entry, is closed under successors, and is reachable from the entry
 (`reachable_spec`; termination by the measure "queued + unmarked"). The kept blocks keep their

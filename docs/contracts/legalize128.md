@@ -6,7 +6,7 @@ backend theorem (`InSubset`, `lowerCheck`); `lean-backend` reports those verifie
 
 ## Design (validator with fallback)
 
-`Opt.Legalize128.function128Cert f` (untrusted, `FV/Opt/Legalize128.lean`) returns the
+`Opt.Legalize128.function128Cert f` (untrusted, `FV/Opt/Legalize128Pass.lean`) returns the
 legalised function `g` and a certificate `Cert` (the `(lo, hi)` pair of every `i128` value,
 the shared zero of the pad values). `Opt.Legal.check f g cert : Bool` (`FV/Opt/Legal.lean`)
 re-derives, statement by statement, the segment of `g` each statement of `f` must be
@@ -135,6 +135,44 @@ Discharged: the environment contracts for `Clif.Rust.env` (below), `MemBounded` 
 memory (`memBounded_of_holds`: `MemRel.valid` of the backend relation), `NoMemTrap`.
 `backend_correct_legal_env` is the same theorem for any environment with `HelperOk`,
 `ExtLegal` and `EnvKeepsAllocs`.
+
+## Completeness: no validator premise (2026-10-02)
+
+The pass is driven by the validator's plans: it gives every `i128` value a pair of consecutive
+fresh ids (`allocPairs`, the certificate) and the pad zero the next id, then emits for every
+statement the segment of its `planOf` plan (`emitPlan`: the canonical pattern with temporaries
+`base + c` above the zero, the two `i64` accesses, the helper call, the expanded call), and
+for terminators and block parameters exactly what `termOk`/`entryParamsOk`/`paramsOk` expect
+(throwing otherwise). `Opt.Legal.check` is proven complete for its output
+(`FV/Opt/Proof/LegalComplete.lean`, `LegalDirect.lean`, `FV/E2E/LegalDirect.lean`):
+
+```lean
+structure Opt.Legal.Complete.Pre (f : Function) : Prop where
+  mentions : mentions128 f = true
+  defs : ((defsOf f).map (·.1)).Nodup
+  ids : ∀ v ∈ idsOf f, v < maxValueId f
+  noSelf : ∀ b ∈ f.blocks, ∀ s ∈ b.body, ∀ x ∈ instOps s.inst, x ∉ s.results
+  callInd : ∀ b ∈ f.blocks, ∀ s ∈ b.body, ∀ sig callee args,
+    s.inst = .callIndirect sig callee args → ∀ d, f.sigDecls.lookup sig = some d → sig128 d = false
+  noTryInd : ∀ b ∈ f.blocks, ∀ c args et, b.term ≠ .tryCallIndirect c args et
+
+theorem Opt.Legal.Complete.check_complete (hp : Pre f)
+    (h : function128Cert f = .ok (g, cert)) : check f g cert = true
+theorem Opt.Legal.legalize_refines (hp : Complete.Pre f) (hl : function128Cert f = .ok (g, cert))
+    … (check_refines's premises) : (returns of f ⇒ split returns of g) ∧ (traps ⇒ traps)
+theorem E2E.backend_correct_legal_direct (hpre : Opt.Legal.Complete.Pre f)
+    (hlg : Opt.Legalize128.function128Cert f = .ok (g, cert)) … (backend_correct_legal's other
+    premises) : ArmRefinesLegal …
+```
+
+`Pre`: `mentions` (otherwise `function128Cert` returns `f` itself), the two `f`-only conjuncts of
+`check` (`defs`, `ids`), a statement never reads its own result (`noSelf`: the pattern's outputs
+must not overwrite its inputs), and the two constructs the pass still expands outside the
+validator (`call_indirect` with an `i128` signature, `try_call_indirect`; such functions stay
+"unverified"). Axioms: `propext`, `Classical.choice`, `Quot.sound`. The compiler keeps running
+`check` as a runtime double-check. Behaviour: on the 64 `i128` runtest files `clif-filetest
+--legalize128` gives legal pass 973 / fail 7 / agree 980 / disagree 0 (unchanged), and `check`
+accepts all 163 legalised functions (185 `i128` functions, 22 not legalisable).
 
 ## Layers (all proven)
 
