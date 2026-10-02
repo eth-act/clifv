@@ -1,12 +1,23 @@
 import FV.Opt.Legalize128Pass
 
 /-!
-# Completeness of `Opt.Legal.check` for `Opt.Legalize128`'s output: the local lemmas
+# Completeness of `Opt.Legal.check` for `Opt.Legalize128`'s output
 
-`pureOk_of`: a segment that is the renaming of a well-formed canonical pattern (`PatWF`) passes
-`pureOk` as soon as the values it writes are distinct, not inputs, and outputs or fresh. The
-legaliser emits each pure pattern exactly that way (temporaries from `fresh`), so this one lemma
-covers every `Plan.pure` case.
+`check_complete`: for a function `f` satisfying `Pre`, the validator accepts the legalisation
+`function128Cert f = .ok (g, cert)`. The pass (`FV/Opt/Legalize128Pass.lean`) emits for every
+statement the segment of its `planOf` plan, so the proof is about the values it writes:
+
+* the certificate (`allocPairs`): pair components are consecutive ids between `maxValueId f`
+  and the zero, different values have disjoint pairs (`CGood`, `cgood_alloc`, `certOk_of`);
+* pattern instances (`emitPat`): temporaries are `base + c` for the state's next id `base`
+  above the zero, hence fresh; a well-formed pattern (`PatWF`, decided per pattern) renamed
+  that way passes `pureOk` when its outputs are distinct and not inputs (`pureOk_emit`);
+* every pure plan reads images of the statement's operands and writes exactly the images of
+  its results (`planOf_spec`), which are disjoint when the statement does not read its own
+  result (`imgOf_disj`);
+* statements, bodies, block parameters, terminators and blocks by the legaliser's run
+  (`emitPlan_spec` … `rewriteBlocks_spec`), the legaliser's context `⟨f, g0, cert⟩` and the
+  checker's `⟨f, g, cert⟩` agreeing on everything but `g`'s blocks (`Agree`, `planOf_congr`, …).
 -/
 
 namespace Opt.Legal.Complete

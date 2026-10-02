@@ -76,7 +76,9 @@ and `Opt.Legalize128` are covered through proven validators (`lowerCheck`, `prep
 outright: `prepCheck` is complete on the VCode `lowerFunction` produces
 (`Prep.prepCheck_complete`, `PrepDomain`), so `E2E.Compiled.of_prepDomain` discharges the
 `prepCheck` premise and the runtime `prepCheck` is a double-check that cannot fail there
-(`docs/contracts/e2e.md` "Validator completeness"). `lowerCheck` stays a validator only
+(`docs/contracts/e2e.md` "Validator completeness"). Likewise `Opt.Legal.check` is complete
+for `Opt.Legalize128`'s output on functions satisfying `Opt.Legal.Complete.Pre`
+(`check_complete`, `E2E.backend_correct_legal_direct`). `lowerCheck` stays a validator only
 (`docs/DEFERRED.md`, feasibility of its completeness).
 
 ## Building

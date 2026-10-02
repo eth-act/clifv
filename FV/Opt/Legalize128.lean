@@ -44,6 +44,11 @@ Semantics (all against `Clif.Sem`, which is what `Clif.run` executes — the dif
   trapping semantics of the opcodes it replaces (`int_divz`, and `int_ovf` for
   `sdiv(i128::MIN, -1)`), so `Clif.run` original and legalised agree.
 
+This module has the shared definitions (the type map, the ABI groups, the helpers' signature,
+the certificate); the canonical `i64` patterns are `Opt.Legal.Pat` (`FV/Opt/Legal.lean`) and the
+pass, which emits for every statement the pattern of its `Opt.Legal.planOf` plan, is
+`FV/Opt/Legalize128Pass.lean`.
+
 An instruction this pass does not implement (atomics at `i128`, float conversions, …) makes
 the legalisation fail: the function is left alone and reported unsupported by the backend,
 exactly as before.
