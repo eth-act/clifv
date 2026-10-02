@@ -69,6 +69,16 @@ for `i128` functions, the `Opt.Legalize128.parsedFile128` path (it runs `Opt.Leg
 validator itself is inside the proof — and the extern-name condition; it keeps legalised
 functions unverified under `--opt`).
 
+Validators and passes: the untrusted passes `lowerFunction`, `prepare`, the register allocator
+and `Opt.Legalize128` are covered through proven validators (`lowerCheck`, `prepCheck`,
+`checkAlloc`, `Opt.Legal.check`) that the compiler runs; a rejection is a compile error or an
+"unverified" report, never wrong code under the theorem. `prepare` is also proven correct
+outright: `prepCheck` is complete on the VCode `lowerFunction` produces
+(`Prep.prepCheck_complete`, `PrepDomain`), so `E2E.Compiled.of_prepDomain` discharges the
+`prepCheck` premise and the runtime `prepCheck` is a double-check that cannot fail there
+(`docs/contracts/e2e.md` "Validator completeness"). `lowerCheck` stays a validator only
+(`docs/DEFERRED.md`, feasibility of its completeness).
+
 ## Building
 
 - Lean: `lake build` (all of `FV`), or `lake build FV.Clif.Run` for a single module.

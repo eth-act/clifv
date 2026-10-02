@@ -24,7 +24,7 @@ contract `IselContract.lean`), `regalloc-proof.md` (M6), `encoder.md` (M5), `cli
 | `MRStable` of the CLIF ↔ VCode relation (`mrStable_holds`) | **proven** |
 | `Clif.run`'s initial state is a `ClifEntry` (`clifEntry_initState`) | **proven** |
 | `LoweringObligations f vc` (`LowerShape` incl. `CtxInv`, `ValsBelow`, types; SSA certificate `Cert`) | **discharged**: `lowerCheck f vc = true` ⇒ it (`loweringObligations_of_check`) |
-| `PrepareCorrect sem vc vcp` (unreachable blocks, critical-edge splitting, RPO) | **discharged**: `prepCheck vc vcp = true` ⇒ it (`prepareCorrect_of_check`) |
+| `PrepareCorrect sem vc vcp` (unreachable blocks, critical-edge splitting, RPO) | **discharged**: `prepCheck vc vcp = true` ⇒ it (`prepareCorrect_of_check`); and without the validator on `PrepDomain` VCode (`prepareCorrect_of_domain`, from `prepCheck_complete`; see "Validator completeness") |
 | Validators run by the compiler (`FV/Backend.lean` `lowerChecked`, `FV/Backend/Regalloc.lean` `allocateRegalloc2`: a rejection is a compile error) | done |
 | **`backend_correct`**, **`backend_correct_of_rules`** from the hypotheses below | **proven**, sorry-free |
 | **`backend_correct_m4`** (`FV/E2E/Final.lean`): `backend_correct_of_rules` with all M4 predicates discharged (`lowerRulesCorrect_program`, `excludedUnmatchable`, `callRulesCorrect`, `indRulesCorrect`, `memRulesCorrect_program`, `lowerTermRulesCorrect`, `termUnmatchable`, `branchRulesCorrect`, `branchExcludedUnmatchable`, `tryRulesCorrect`, `tryUnmatchable`, `tryIndRulesCorrect`, `tryIndUnmatchable`) and `sem s := csem (F s) (ctx s) (X s)` (discharges `DriverSem` by `driverSem_csem`, `CallsRefine` by `callsRefine_csem` from `XCallsOk`, `IndCallsRefine` by `indCallsRefine_csem` from `XCallsIndOk`) | **proven**; axioms: `propext`, `Classical.choice`, `Quot.sound` + 130 `_native.bv_decide` certificates |
@@ -485,7 +485,7 @@ the `try_call_indirect` statements `TryIndRulesCorrect`, `TryIndUnmatchable` (of
 | `Refines (F s) (sem s)` (the VCode semantics refines M4's `ispec`, every control) | M6 (`csem` characterization lemmas) | **proven** for `csem` (`refines_csem`, M6Refines) |
 | `DriverSem (sem s)` (`Args` reads the argument registers, `jump` → `goto 0`, invariance under class-preserving vreg renamings, **invariance under branch retargeting** `setTargets`) | M6 (`csem`) | agreed (retarget: M6Rest2 2026-09-27), open (M6) |
 | `LoweringObligations f vc` | M7 | **discharged** by `lowerCheck` (`Compiled.lowerOk`) |
-| `PrepareCorrect (sem s) vc vcp` | M7 | **discharged** by `prepCheck` (`Compiled.prepOk`) + `DriverSem` |
+| `PrepareCorrect (sem s) vc vcp` | M7 | **discharged** by `prepCheck` (`Compiled.prepOk`) + `DriverSem`; `Compiled.prepOk` itself follows from `PrepDomain vc` (`Compiled.of_prepDomain`) |
 
 M6's own premises (`CalleeSound`, jump tables readable, relocation hooks `ArmStepX ext`) are
 premises of its instantiation of `RegLevelCorrect`, so they become premises of the
@@ -565,6 +565,48 @@ the entry is its own counterpart; successors are reached directly or through an 
 (`jump`, no parameters/arguments) from a block without branch arguments. Dead blocks are not
 checked (`prepare` drops them, and its edge blocks may reuse their labels). Soundness:
 `prep_sound` (simulation over live blocks; a split edge takes one extra `jump` step).
+
+**Validator completeness: `prepare` is correct without `prepCheck`** (2026-10-02,
+`FV/Backend/Proof/PrepareComplete.lean`, `PrepareDirect.lean`, `FV/E2E/PrepDirect.lean`):
+
+```lean
+structure PrepDomain (vc : VCode) : Prop where
+  nonempty : 0 < vc.blocks.size
+  labels : Lbls vc.blocks          -- (vc.blocks.toList.map VBlock.label).Nodup
+  args : ∀ b vb t, vc.blocks[b]? = some vb → vb.insts.back? = some t →
+    2 ≤ t.targets.length → vb.branchArgs = #[]
+
+theorem Prep.prepCheck_complete {vc vcp : VCode} (h : prepare vc = .ok vcp)
+    (hd : PrepDomain vc) : prepCheck vc vcp = true
+theorem Prep.prepare_correct (hds : DriverSem sem) (h : prepare vc = .ok vcp)
+    (hd : PrepDomain vc) (ρ₀ w₀) : (returns of vc ⇒ returns of vcp) ∧ (traps ⇒ traps)
+theorem E2E.prepareCorrect_of_domain (hds : DriverSem sem) (h : prepare vc = .ok vcp)
+    (hd : PrepDomain vc) : PrepareCorrect sem vc vcp
+theorem E2E.Compiled.of_prepDomain (hl : lowerFunction f = .ok vc) (hlo : lowerCheck f vc = true)
+    (hp : prepare vc = .ok vcp) (hd : PrepDomain vc) (hch : checkAlloc vcp rf = .ok ())
+    (ha : lowerRFunc vcp rf = .ok af) (he : emitFunc k af = .ok fa) (hla : fa.layout = .ok fb) :
+    Compiled f k vc vcp rf af fa fb
+```
+
+Every end-to-end theorem that takes `hc : Compiled …` (`backend_correct_final`,
+`backend_correct_opt_proven`, `backend_correct_legal`, …) therefore holds with
+`Compiled.of_prepDomain …` in place of `hc`, without the `prepCheck` premise. The existing
+theorems are unchanged. `PrepDomain` is what `lowerFunction` produces: labels are block indices
+(`lowerCheck`'s `shapeOk`), and only a `jump` block or an edge block carries branch arguments.
+`prepDomainB` decides it (`prepDomain_of`). On the corpus and the runtests, every
+`lowerFunction` result (1067 functions) is in `PrepDomain`, and `prepCheck` accepts every
+`prepare` output. The compiler keeps running `prepCheck` (`allocateRegalloc2`) as a runtime
+double-check.
+
+The proof follows `prepare` step by step. `reachable` (fuel-bounded worklist) marks a set that
+contains the entry, is closed under successors, and is reachable from the entry
+(`reachable_spec`; termination by the measure "queued + unmarked"). The kept blocks keep their
+labels, with the entry first. Edge splitting retargets a terminator only to the old label or
+to a fresh edge label (above every kept label) whose block jumps to the old one (`SInv`,
+`innerFold`). `rpo` (fuel-bounded DFS) lists each block reachable from the entry once, entry
+first, closed under successors (`rpo_spec`; termination by the potential "stack frames' unvisited
+successors + unmarked blocks' weights" against the fuel `1 + Σ (|succs b| + 1)`). Reachability is
+carried across the three CFGs by label (`reach01`, `reach12`).
 
 Results with `sret` (2026-09-30, after merging main with the `i128` legalisation): `lean-e2e-check`
 1076 accepted / 0 rejected / 149 out of scope, `prepCheck` 1076 / 0, `formsCoveredB` 1076 / 0
