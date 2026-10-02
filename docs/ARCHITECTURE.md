@@ -52,6 +52,14 @@ first, then update its producer and its consumers together.
   untrusted); when the validator `Opt.Legal.check f g cert` accepts and `g` is `InSubset`, the
   Arm code of `g` on the ABI-split arguments refines the original function's `Clif.run`.
 
+Linking (`FV/E2E/{LinkClif,Link}.lean`, `docs/contracts/e2e.md` "Linking"):
+`Clif.runLoop_link` proves that a whole-program CLIF run (calls between the program's functions
+enter them) that returns or traps is a per-function run under `Clif.linkEnv`, and
+`E2E.backend_correct_linked` states a function's Arm code against the whole-program run, with
+the program callees' contracts `CalleeOk`/`XCallsOk (linkEnv …)` still premises (not discharged
+from the callees' own theorems: `E2E.calleeOk_saves_lr_false`, `docs/DEFERRED.md`). It does not
+change which functions `lean-backend` reports verified.
+
 Trusted: the CLIF semantics (`FV/Clif`, incl. the extern contracts `Clif.Rust.env` — for the
 `__*ti3` helpers the semantics `Opt.Legal.HelperOk` is proven against `Clif.Sem.div`, so what is
 trusted is that the native helpers implement it), the Arm model, the theorems' premises
