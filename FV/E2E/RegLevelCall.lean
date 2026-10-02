@@ -6,9 +6,9 @@ import FV.E2E.RegLevelNext
 The machine `ArmStepX` runs the callee of `bl`/`blr` as one hooked step (`H.call`) and the
 relocated address pairs `adrp`/`ldr got` and `adrp`/`add lo12` as two hooked steps (`X.sym`).
 
-* `CalleeOk F K X H`: the callee contract of an activation whose addresses outside the world
-  are `F` and whose callees may use the `K` bytes below `sp` (the dead stack): the hooked call
-  (`callExec H`) satisfies `CallSoundCtl` against `csem`'s call clause (`X.call`: the AAPCS64
+* `CalleeOk F K X H S`: the callee contract of an activation whose addresses outside the world
+  are `F` and whose callees may use the `K` bytes below `sp` (the dead stack), for its call
+  sites `S`: the hooked call (`callExec H`) satisfies `CallSoundCtl` against `csem`'s call clause (`X.call`: the AAPCS64
   contract — results, preserved registers, `sp` kept, the world as `X.call` says outside `F`,
   the frame kept outside the dead stack), returns to the next instruction, and `X.call` keeps
   the program and yields no model error.
@@ -106,11 +106,18 @@ noncomputable def callExec (H : ArmHooks) : MInst → Arm.ArmState → Option Ar
       some (H.call (match info.dest with | .sym n => some n | .reg _ => none) s) else none
   | _, _ => none
 
-/-- **The callee contract** of an activation whose addresses outside the world are `F`, with a
-stack budget of `K` bytes for its callees (AAPCS64, stated for the machine's hook `H` and
-`csem`'s callee semantics `X.call`, which does not depend on the function context):
+/-- The call sites of `vc`: the `CallInfo` of a `call` or of a `try_call`'s call in one of its
+blocks. -/
+def _root_.Backend.VCode.CallSite (vc : VCode) (info : CallInfo) : Prop :=
+  ∃ (b : Nat) (vb : VBlock) (k : Nat), vc.blocks[b]? = some vb ∧
+    (vb.insts[k]? = some (MInst.call info) ∨ ∃ ti, vb.insts[k]? = some (MInst.tryCall info ti))
 
-* `os`: `CallSoundCtl` of every call against the hooked callee: from every state whose `K` bytes
+/-- **The callee contract** of an activation whose addresses outside the world are `F`, with a
+stack budget of `K` bytes for its callees, for its call sites `S` (AAPCS64, stated for the
+machine's hook `H` and `csem`'s callee semantics `X.call`, which does not depend on the function
+context):
+
+* `os`: `CallSoundCtl` of every call of `S` against the hooked callee: from every state whose `K` bytes
   below `sp` (the dead stack, where the callee pushes its frame: the return address, the
   callee-saved registers, spills) are outside the world, the results are in the fixed result
   registers, the world is the one `X.call` computes (memory compared outside `F`, which contains
@@ -120,17 +127,23 @@ stack budget of `K` bytes for its callees (AAPCS64, stated for the machine's hoo
 * `ext`: `X.call` keeps the program and yields no model error.
 
 The dead stack makes the contract satisfiable by callees that save state-dependent bytes below
-`sp` (`calleeOk_nonLeaf`, `FV/E2E/NonVacuity.lean`); the former contract compared all memory
-outside `F` and no callee pushing its return address could meet it. -/
-structure CalleeOk (F : BitVec 64 → Prop) (K : Nat) (X : ExtSem) (H : ArmHooks) : Prop where
-  os : ∀ ctx info, CallSoundCtl F K (callExec H) (csem F ctx X) (.call info) .next
+`sp` (`calleeOk_witness`, `FV/E2E/NonVacuity.lean`): the former contract compared all memory
+outside `F`, and no callee pushing its return address could meet it. The call sites `S` (the
+theorems take the compiled code's, `VCode.CallSite`) make it satisfiable by callees that return
+values: over every `CallInfo` it would also constrain calls whose def registers are not the
+callee's return registers (e.g. a def in x19, which another call of the same callee must
+preserve). -/
+structure CalleeOk (F : BitVec 64 → Prop) (K : Nat) (X : ExtSem) (H : ArmHooks)
+    (S : CallInfo → Prop) : Prop where
+  os : ∀ ctx info, S info → CallSoundCtl F K (callExec H) (csem F ctx X) (.call info) .next
   pc : ∀ d s, Arm.r .ERR s = .None → Arm.CheckSPAlignment s →
     Arm.r .PC (H.call d s) = Arm.r .PC s + 4
   ext : ∀ d uses w outs w', X.call d uses w = some (outs, w') → Arm.r .ERR w = .None →
     Arm.r .ERR w' = .None ∧ w'.program = w.program
 
 /-- **A call on the machine**: one hooked step. -/
-theorem realizes_call {R : RL} (hR : R.Wf) (hC : CalleeOk R.F R.K R.X R.H) {s : Arm.ArmState}
+theorem realizes_call {R : RL} (hR : R.Wf) (hC : CalleeOk R.F R.K R.X R.H R.vc.CallSite)
+    {s : Arm.ArmState}
     {b k : Nat} {allocs : Array Loc} {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
     (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩))
     {vb : VBlock} {info : CallInfo} {ops : Array Operand} {outs : List CV} {w' : Arm.ArmState}
@@ -152,7 +165,7 @@ theorem realizes_call {R : RL} (hR : R.Wf) (hC : CalleeOk R.F R.K R.X R.H) {s : 
     obtain ⟨rfl, rfl, -⟩ := he
     exact hC.ext _ _ _ _ _ hx herr
   refine realizes_op_core hR hq hvb hi hops hsz hsem hlen hk (exec := fun _ => callExec R.H)
-    (fun _ => RL.callAt hR (hC.os R.ctx info) (q_stRel hq).sp) (fun regs i' hasg _ => ?_) hW'
+    (fun _ => RL.callAt hR (hC.os R.ctx info ⟨b, vb, k, hvb, .inl hi⟩) (q_stRel hq).sp) (fun regs i' hasg _ => ?_) hW'
   obtain ⟨info', rfl⟩ := assign_call_form hasg
   have hgen : ∀ x, (∀ ps, (MInst.call info').lines R.ctx ps = .ok ([.ins x], ps)) →
       (Line.ins x).plain = true →

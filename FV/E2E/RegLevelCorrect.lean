@@ -180,8 +180,8 @@ end
 /-! ## `Realizes` by cases -/
 
 /-- **The machine realises the allocated code** under `Q ∧ AInv`: every item case. -/
-theorem realizes_all {R : RL} (hR : R.Wf) (hC : CalleeOk R.F R.K R.X R.H)
-    (hT : R.vc.hasTryCall = true → CalleeTryOk R.F R.X R.H)
+theorem realizes_all {R : RL} (hR : R.Wf) (hC : CalleeOk R.F R.K R.X R.H R.vc.CallSite)
+    (hT : R.vc.hasTryCall = true → CalleeTryOk R.F R.X R.H R.vc.CallSite)
     (hTls : R.vc.hasTls = true → TlsOk R.F R.K R.X R.H)
     (hcov : FormsCovered R.ctx R.vc) :
     Realizes R.vc R.rf R.sem ckeep R.step (fun s c => Q R s c ∧ AInv c) := by
@@ -354,16 +354,16 @@ and laid-out function, the machine `ArmStepX X H fa` realises every return and e
 the prepared VCode under `csem` (addresses outside the world `frameW K`: the frame and the
 callees' dead stack of `K` bytes; function context `⟨fa.k, af.slotBase⟩`, external semantics
 `X`), given the form coverage `FormsCovered` (decided by `formsCoveredB`), the callee contract
-`CalleeOk` of every activation (with stack budget `K`), and (for code with a `tls_value`) the
+`CalleeOk` of every activation (with stack budget `K`, for the call sites of `vcp`), and (for code with a `tls_value`) the
 TLSDESC contract `TlsOk`. -/
 theorem regLevelCorrect_backend {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
     {fb : FnBin} {k : Nat} (hcheck : checkAlloc vcp rf = .ok ()) (halloc : lowerRFunc vcp rf = .ok af)
     (hemit : emitFunc k af = .ok fa) (hlayout : fa.layout = .ok fb) {X : ExtSem} {H : ArmHooks}
     {K : Nat} (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
     (hC : ∀ s, CalleeOk
-      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H)
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H vcp.CallSite)
     (hCT : vcp.hasTryCall = true → ∀ s, CalleeTryOk
-      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H vcp.CallSite)
     (hTls : vcp.hasTls = true → ∀ s, TlsOk
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H) :
     RegLevelCorrect

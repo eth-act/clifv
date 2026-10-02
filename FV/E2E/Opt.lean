@@ -159,7 +159,7 @@ theorem backend_correct_opt (cfg : Opt.Config)
     {X : ExtSem} {H : ArmHooks} {syms : String → Option Nat} {slotOff K : Nat} {env : Clif.Env}
     (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
     (hC : ∀ s, CalleeOk
-      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H)
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H vcp.CallSite)
     (hTls : hasTls (Opt.optimize f cfg) = true → ∀ s, TlsOk
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H)
     (hX : ∀ s, XCallsOk env (f.externs.map (·.2)) (fun sl cm w =>
