@@ -1690,4 +1690,109 @@ theorem thm (hL : L.Ok) : ∀ M, L.Thm M
 
 end LinkSys
 
+/-! ## The whole-program theorem -/
+
+/-- **The backend's end-to-end theorem for a linked program** (`docs/contracts/e2e.md`,
+"Linking at the Arm level"): for a function `f` of a program `P` whose functions are compiled
+and laid out as `L` describes (`L.Ok`), the Arm machine whose calls of the program's functions
+run their compiled code (`L.mach M f`: the linked hooks of depth `M`, `LinkSys.hooks`) refines
+the **whole-program** CLIF run of at most `M + 1` steps, from an ABI entry state with the code
+image loaded and stack for `M` call levels. The addresses outside the world `L.F` are the entry
+activation's frame, its callees' stack and the code (`hF`). The program callees' contracts are
+discharged (by induction on the depth, `LinkSys.thm`); the premises left are the base
+environment's contracts, the scope and the link layout (`LinkSys.Ok`), and the entry. -/
+theorem backend_correct_program (L : LinkSys) (hL : L.Ok) {f : Clif.Function}
+    (hf : f ∈ L.P.funcs) (M : Nat) {ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val}
+    {cs : Clif.State}
+    (hent : AbiEntry (L.A f).fb (L.A f).base ra s) (hres : StackAvail (L.K M) (L.A f).af s)
+    (hF : L.F = frameWG (L.K M) (RAFrame.compute (L.A f).vcp (L.A f).rf).intBase
+      (RAFrame.compute (L.A f).vcp (L.A f).rf).size (L.A f).af L.Img s)
+    (hgfree : ∀ a, L.Img a → ¬ StackBelow (frameDrop (L.A f).af + L.K M) (spv s) a)
+    (himg : ∀ a, L.Img a → s.mem a = L.imgMem a)
+    (hbe : BodyEntry (L.A f).af s w₀) (hargs : ArgsIn f.sig args s) (hcs : ClifEntry f args cs)
+    (hrel : Rel.holds ⟨L.F, L.syms, (L.A f).af.slotBase,
+      (RAFrame.compute (L.A f).vcp (L.A f).rf).intBase⟩ f cs.frame.slots cs.mem w₀)
+    (htr : TrapsExplicit (Clif.linkEnvN L.P L.base M) (L.P.only f) cs) :
+    ArmRefines (L.A f).fb (L.A f).base ra (L.mach M f) s (Clif.runLoop L.base L.P (M + 1) cs) := by
+  have hc := hL.compiled f hf
+  have hfr := lowerRFunc_frame hc.alloc
+  have hst := hres
+  obtain ⟨hB, hK⟩ := spBody_toNat hres
+  have hd : frameDrop (L.A f).af = (L.A f).af.frameSize + 16 := by simp [frameDrop, hfr]
+  -- the world side
+  have hWE : L.WorldEntry M f args cs w₀ := by
+    refine ⟨hcs, ⟨hrel, rfl, ?_⟩, ?_, ?_, ?_, ?_⟩
+    · rw [hbe.other .ERR (by simp [Masked]) (by simp) (by simp)]; exact hent.err
+    · refine argsAtEntry_body hfr (entryRegs_of_check hc.lowerOk) hbe hargs fun off v hm => ?_
+      obtain ⟨r, e⟩ := hL.regParams f hf _ (List.of_mem_zip hm).1
+      cases e
+    · rw [hbe.sp, hB]; omega
+    · intro a ha
+      rw [hbe.sp] at ha
+      refine ⟨by rw [hF]; exact .inl (.inr ha), fun hi => hgfree a hi ?_⟩
+      obtain ⟨h1, h2⟩ := ha
+      rw [hB] at h1 h2
+      exact ⟨by omega, by omega⟩
+    · rw [hbe.sp, hB, hd]
+      have := hent.spAligned
+      have := L.frameSize_mod hL hf
+      omega
+  -- the machine side
+  have hME : L.MachEntry M f L.Img ra s w₀ :=
+    ⟨hent, hres, hgfree, hF.symm, fun _ h => h, himg,
+      hbe.w L.F fun r ⟨_, _, hvb, hi, _, hv⟩ =>
+        ((ctlCheck_args (lowerRFunc_ok hc.alloc).2.2.2 hvb hi).2.2 _ hv).2⟩
+  -- the whole-program run is a per-function run
+  have hlink := Clif.runLoop_linkN (base := L.base) M hL.linkable.names hf hL.linkable.free (M + 1)
+    cs (Nat.le_refl _) (runInv_entry hf hcs)
+  cases ho : Clif.runLoop L.base L.P (M + 1) cs with
+  | stuck m => trivial
+  | outOfFuel => trivial
+  | returned vals cm =>
+    obtain ⟨m, hm⟩ := hlink (by rw [ho]; exact fun _ h => nomatch h) (by rw [ho]; exact fun h => nomatch h)
+    rw [ho] at hm
+    obtain ⟨us, outs, wf, hus, hlen, hhold, hmemR, hall⟩ :=
+      L.thm hL M f hf args cs w₀ m vals cm hWE hm
+    obtain ⟨n, hret⟩ := hall L.Img ra s hME
+    exact armRefines_of_actRet hus hlen hhold hmemR hret
+  | trapped c =>
+    obtain ⟨m, hm⟩ := hlink (by rw [ho]; exact fun _ h => nomatch h) (by rw [ho]; exact fun h => nomatch h)
+    rw [ho] at hm
+    have ih : 0 < M → L.Thm (M - 1) := fun _ => L.thm hL (M - 1)
+    have h := backend_correct_world (hL.subset f hf) hc (X := L.X M) (syms := L.syms)
+      (env := Clif.linkEnvN L.P L.base M) (K := L.K M) (F := L.F) (c := spv w₀) (hL.covered f hf)
+      (L.xCallsOk hL ih hf hWE.room hWE.dead hWE.align)
+      (by rw [indSigs_nil_of_linkFree (hL.linkable.free f hf)]; exact xCallsIndOk_nil _ _ _)
+      (fun n b hn => hL.symOk n b hn) rfl hWE.clif hWE.rel hWE.args htr m
+    exact h.2 c hm (L.hooks M) L.Img (L.A f).base ra s ⟨hME.abi, hME.stack, hME.gfree, hME.hF,
+      L.calleeOk hL ih hf hME,
+      fun ht => absurd (hasTry_of_hasTryCall hc ht) (fun ⟨B, hB, hT⟩ => by
+        rw [hL.noTry f hf B hB] at hT; cases hT),
+      fun ht => L.tlsOk_hooks (hL.baseTls f hf (hasTls_of_vcode hc ht) L.F (L.K M)), hME.body⟩
+
+/-- **The returning runs**: `backend_correct_program` without the run premise `TrapsExplicit`
+(a returning run satisfies it, `trapsExplicit_of_returned`). -/
+theorem backend_correct_program_returned (L : LinkSys) (hL : L.Ok) {f : Clif.Function}
+    (hf : f ∈ L.P.funcs) (M : Nat) {ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val}
+    {cs : Clif.State}
+    (hent : AbiEntry (L.A f).fb (L.A f).base ra s) (hres : StackAvail (L.K M) (L.A f).af s)
+    (hF : L.F = frameWG (L.K M) (RAFrame.compute (L.A f).vcp (L.A f).rf).intBase
+      (RAFrame.compute (L.A f).vcp (L.A f).rf).size (L.A f).af L.Img s)
+    (hgfree : ∀ a, L.Img a → ¬ StackBelow (frameDrop (L.A f).af + L.K M) (spv s) a)
+    (himg : ∀ a, L.Img a → s.mem a = L.imgMem a)
+    (hbe : BodyEntry (L.A f).af s w₀) (hargs : ArgsIn f.sig args s) (hcs : ClifEntry f args cs)
+    (hrel : Rel.holds ⟨L.F, L.syms, (L.A f).af.slotBase,
+      (RAFrame.compute (L.A f).vcp (L.A f).rf).intBase⟩ f cs.frame.slots cs.mem w₀)
+    {vals : List Clif.Val} {cm : Clif.Mem}
+    (hrun : Clif.runLoop L.base L.P (M + 1) cs = .returned vals cm) :
+    ArmRefines (L.A f).fb (L.A f).base ra (L.mach M f) s (.returned vals cm) := by
+  obtain ⟨m, hm⟩ := Clif.runLoop_linkN (base := L.base) M hL.linkable.names hf hL.linkable.free
+    (M + 1) cs (Nat.le_refl _) (runInv_entry hf hcs) (by rw [hrun]; exact fun _ h => nomatch h)
+    (by rw [hrun]; exact fun h => nomatch h)
+  rw [hrun] at hm
+  have hfree : Clif.LinkFree cs.frame.func := by rw [hcs.func]; exact hL.linkable.free f hf
+  rw [← hrun]
+  exact backend_correct_program L hL hf M hent hres hF hgfree himg hbe hargs hcs hrel
+    (trapsExplicit_of_returned hfree hm)
+
 end E2E
