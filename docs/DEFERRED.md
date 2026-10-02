@@ -82,6 +82,46 @@ Stack-passed parameters and stack-passed arguments of `call` are inside the end-
   `OutRel` of the caller's outgoing area; that the callee does not touch live CLIF memory in it
   is part of the environment contract, not derived from AAPCS64.
 
+## Linking: what `E2E.backend_correct_linked` does not cover (2026-10-02)
+
+Proven (`docs/contracts/e2e.md`, "Linking"): whole-program CLIF runs are per-function runs under
+`Clif.linkEnv` (`Clif.runLoop_link`, with `call` and `try_call` between program functions,
+recursion included), and `E2E.backend_correct_linked` states a function's Arm code against the
+whole-program run with the program callees' contracts (`CalleeOk`, `XCallsOk (linkEnv …)`) as
+premises. Deferred, in order:
+- **Callee contract with a dead stack.** `CalleeOk.os` compares the hooked callee's state with
+  `X.call`'s world on all memory outside the caller's frame `F`, so it rejects any callee that
+  writes state-dependent bytes below `sp` (`E2E.calleeOk_saves_lr_false`: the saved return
+  address). Split the region of `OperandsSoundCtl` for calls: the world comparison ignores `F`
+  and the dead stack `D = [sp_body − K, sp_body)` (`K` a stack budget), `FrameKeep` keeps only
+  `F`; `Q`'s world relation becomes `SameWorld (F ∪ D)`; `MemRel`/`OutRel` additionally keep
+  live CLIF bytes outside `D` (an entry premise and part of `XCallsOk`'s relation); the flags
+  either masked across calls (AAPCS64 does not preserve NZCV) or produced by `X.call`. Touches
+  `realizes_call`/`realizes_tryCall`, `realizes_op_core` and every lemma that unfolds `frameF`.
+- **Exact world of a call.** `X.call` is a function of the arguments and the world and must give
+  the exact def registers and world of the hooked callee; a compiled callee's theorem fixes only
+  the low bits of its results and the live CLIF bytes. Either make `csem`'s call clause
+  relational (a set of outcomes; driver and M6 refactor) or prove non-interference of compiled
+  code (results/world depend only on the arguments, unmasked registers and memory outside
+  `F ∪ D`), e.g. from `RegLevelCorrect`'s final-memory clause and the determinism of the VCode
+  run once `BodyEntry`'s memory premise is relaxed to agreement outside the caller's frame.
+- **Frame locality of the conclusion.** `ArmRefines` (returned) should also state that memory
+  outside the live CLIF allocations and the callee's own frame, x18 and the other unmasked
+  registers are unchanged (threaded through M4's `MRStable`), which `CalleeOk`'s `FrameKeep`
+  and `SameWorld` need.
+- **Slot placement of callees.** `Clif.run` allocates a callee's slots with its bump allocator,
+  the Arm code at `sp`-relative addresses; for a callee whose slot addresses escape, `linkEnv`'s
+  outcome differs from the code's. Needs a slot-placement oracle in the whole-program semantics
+  (trusted-semantics change) or a relocation-invariance lemma for runs whose slot addresses do
+  not escape.
+- **Then the induction.** Define the linked hook by depth (`H_{d+1}.call (some g) s`: run `g`'s
+  code by `ArmStepX X_d H_d fa_g` from the `bl` state with `g`'s image, until its return) and
+  discharge `hC`/`hX` for program callees from each callee's `backend_correct_final`, by
+  induction on the depth (bounded by the whole-program fuel, as in `runLoop_link`).
+- `call_indirect`/`try_call_indirect` between program functions (the whole-program
+  `stepCallIndirect` resolves addresses among all functions and externs of `P`), `return_call`,
+  and traps inside program callees.
+
 ## Other deferred items
 
 - **M3 validator** (Cranelift's own machine code vs CLIF, per function): paused on branch `agent/validator`. Only needed to ship Cranelift's bytes with assurance.
