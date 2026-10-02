@@ -843,12 +843,16 @@ def rewriteBC (f : Function) (bc : BlockCall) : M BlockCall := do
 it; the original results are kept when their types do not change). -/
 def rewriteStmt (f : Function) (ty : ValueId → Option Ty) (s : Stmt) : M Unit := do
   match s.inst with
-  | .iconst .. => emitS s
+  | .iconst t _ =>
+    -- `planOf` has no plan for an `i128` constant (Cranelift builds them with `iconcat`)
+    if t == .i128 then throw "legalize128: iconst.i128" else emitS s
   | .unary op t x =>
     if t == .i128 then do
       let (rl, rh) ← pairOf s.results.head!
       let (xl, xh) ← pairOf x
       un128 op rl rh xl xh
+    else if ty x == some .i128 then
+      throw "legalize128: i128 operand of a non-i128 unary instruction"
     else
       emitS { s with inst := .unary op t x }
   | .binary op t x y =>
@@ -888,6 +892,8 @@ def rewriteStmt (f : Function) (ty : ValueId → Option Ty) (s : Stmt) : M Unit 
       let (xl, xh) ← pairOf x
       let (yl, yh) ← pairOf y
       icmp128 cc s.results.head! xl xh yl yh
+    else if ty x == some .i128 || ty y == some .i128 then
+      throw "legalize128: i128 operand of a non-i128 icmp"
     else
       emitS { s with inst := .icmp cc t x y }
   | .select t c x y | .selectSpectreGuard t c x y =>
@@ -980,7 +986,9 @@ def rewriteStmt (f : Function) (ty : ValueId → Option Ty) (s : Stmt) : M Unit 
   | .iconcat t lo hi =>
     -- the controlling type is the operand type; the result has twice the width. Its pair
     -- is a copy of the operands (a pair is never shared with other values)
-    if t == .i64 then do
+    if t == .i64 && (ty lo == some .i128 || ty hi == some .i128) then
+      throw "legalize128: i128 operand of iconcat"
+    else if t == .i64 then do
       let (rl, rh) ← pairOf s.results.head!
       emit1 rl (.binary .bor .i64 lo lo)
       emit1 rh (.binary .bor .i64 hi hi)
@@ -1006,7 +1014,9 @@ def rewriteStmt (f : Function) (ty : ValueId → Option Ty) (s : Stmt) : M Unit 
     else
       emitS { s with inst := .load op t flags p off }
   | .store op t flags x p off =>
-    if t == .i128 then do
+    if t == .i128 && ty p == some .i128 then
+      throw "legalize128: i128 address"
+    else if t == .i128 then do
       let (xl, xh) ← pairOf x
       let p' := p
       emitS { results := [], inst := .store .store .i64 flags xl p' off }
