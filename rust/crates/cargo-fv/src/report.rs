@@ -46,6 +46,25 @@ pub struct BinaryCheck {
     /// Set when the check could not run (e.g. a stripped binary).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub note: Option<String>,
+    /// Where the executable's functions come from (filled in by `cargo fv` from all units).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub origin: Option<ExeOrigin>,
+}
+
+/// The function symbols of a linked executable (distinct addresses), by origin.
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct ExeOrigin {
+    pub functions: usize,
+    /// Lean-compiled code (a marker at the address), of a workspace member / a dependency.
+    pub lean_members: usize,
+    pub lean_deps: usize,
+    /// Functions of crates we compiled that run cg_clif's code (fallbacks).
+    pub cg_clif: usize,
+    /// Functions of no unit we compiled: std/core/alloc (prebuilt rlibs), compiler_builtins,
+    /// musl libc, and crates outside the scope (`--members-only`, skip-deps).
+    pub not_ours: usize,
+    /// Lean-compiled functions per package (`<package>` or `<package> (dep)`).
+    pub lean_by_package: BTreeMap<String, usize>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -59,6 +78,9 @@ pub struct UnitReport {
     /// The crate root rustc compiled (as cargo passed it, e.g. `src/lib.rs`, `tests/t.rs`).
     #[serde(default)]
     pub src: String,
+    /// Not a workspace member: a dependency (registry, git or path package).
+    #[serde(default)]
+    pub dep: bool,
     /// The output rustc wrote (rlib or executable), for matching cargo's artifact messages.
     pub artifact: String,
     pub mode: String,
@@ -124,6 +146,11 @@ pub struct Report {
     #[serde(default)]
     pub panic: String,
     pub totals: Counts,
+    /// Of `totals`: the workspace members' units ("your crate(s)") and the dependencies'.
+    #[serde(default)]
+    pub members: Counts,
+    #[serde(default)]
+    pub deps: Counts,
     pub units: Vec<UnitEntry>,
 }
 
@@ -137,11 +164,14 @@ pub struct UnitEntry {
 impl Report {
     pub fn new(profile: &str, mode: &str, theorem: Option<String>, panic: &str, units: Vec<UnitReport>) -> Report {
         let mut totals = Counts::default();
+        let mut members = Counts::default();
+        let mut deps = Counts::default();
         let units: Vec<UnitEntry> = units
             .into_iter()
             .map(|u| {
                 let counts = Counts::of(&u.functions);
                 totals.sum(&counts);
+                if u.dep { &mut deps } else { &mut members }.sum(&counts);
                 UnitEntry { counts, unit: u }
             })
             .collect();
@@ -153,6 +183,8 @@ impl Report {
             theorem,
             panic: panic.into(),
             totals,
+            members,
+            deps,
             units,
         }
     }
@@ -181,26 +213,29 @@ impl Report {
             let _ = writeln!(s, "  panic={}", self.panic);
         }
         let _ = writeln!(s, "  verified = compiled by the Lean backend and inside {th}");
+        let row = |s: &mut String, pkg: &str, kind: &str, root: &str, c: &Counts, linked: &str| {
+            let _ = writeln!(
+                s,
+                "  {:<22} {:<5} {:<22} {:>9} {:>9} {:>10} {:>9} {:>13}",
+                pkg, kind, root, c.functions, c.verified, c.unverified, c.fallback, linked
+            );
+        };
         let _ = writeln!(
             s,
-            "  {:<20} {:<5} {:<22} {:>9} {:>9} {:>10} {:>9} {:>13}",
+            "  {:<22} {:<5} {:<22} {:>9} {:>9} {:>10} {:>9} {:>13}",
             "package", "kind", "crate root", "functions", "verified", "unverified", "fallback", "Lean in exe"
         );
         for u in &self.units {
-            let c = &u.counts;
             let linked = u.unit.binary.as_ref().map(|b| b.lean_functions_linked.to_string()).unwrap_or_default();
-            let _ = writeln!(
-                s,
-                "  {:<20} {:<5} {:<22} {:>9} {:>9} {:>10} {:>9} {:>13}",
-                u.unit.package, u.unit.kind, short_root(&u.unit.src), c.functions, c.verified, c.unverified, c.fallback, linked
-            );
+            // a dependency's library: kind `dep`
+            let kind = if u.unit.dep { "dep" } else { u.unit.kind.as_str() };
+            row(&mut s, &u.unit.package, kind, short_root(&u.unit.src), &u.counts, &linked);
         }
+        row(&mut s, "your crate(s)", "", "", &self.members, "");
+        row(&mut s, "dependencies", "", "", &self.deps, "");
+        row(&mut s, "total", "", "", &self.totals, "");
+        let _ = writeln!(s, "  std (not compiled by us: prebuilt std/core/alloc rlibs, plus compiler_builtins and musl libc)");
         let t = &self.totals;
-        let _ = writeln!(
-            s,
-            "  {:<20} {:<5} {:<22} {:>9} {:>9} {:>10} {:>9}",
-            "total", "", "", t.functions, t.verified, t.unverified, t.fallback
-        );
         if t.verified_normal_returns > 0 {
             let _ = writeln!(
                 s,
@@ -209,24 +244,48 @@ impl Report {
                 t.verified_normal_returns
             );
         }
-        for (label, st) in [("unverified", Status::Unverified), ("fallback", Status::Fallback)] {
-            let mut reasons: BTreeMap<String, usize> = BTreeMap::new();
-            for u in &self.units {
-                for f in u.unit.functions.iter().filter(|f| f.status == st) {
-                    *reasons.entry(generalize(f.reason.as_deref().unwrap_or("?"))).or_default() += 1;
+        for u in &self.units {
+            let Some(o) = u.unit.binary.as_ref().and_then(|b| b.origin.as_ref()) else { continue };
+            let deps: Vec<String> =
+                o.lean_by_package.iter().filter(|(p, _)| p.ends_with(" (dep)")).map(|(p, n)| format!("{} {n}", p.trim_end_matches(" (dep)"))).collect();
+            let _ = writeln!(
+                s,
+                "  exe {} ({} {}): {} functions: Lean {} (your crate(s) {}, dependencies {}), cg_clif fallback {}, not compiled by us (std, …) {}",
+                u.unit.package,
+                u.unit.kind,
+                short_root(&u.unit.src),
+                o.functions,
+                o.lean_members + o.lean_deps,
+                o.lean_members,
+                o.lean_deps,
+                o.cg_clif,
+                o.not_ours
+            );
+            if !deps.is_empty() {
+                let _ = writeln!(s, "    Lean in exe per dependency: {}", deps.join(", "));
+            }
+        }
+        for (group, dep) in [("your crate(s)", false), ("dependencies", true)] {
+            for (label, st) in [("unverified", Status::Unverified), ("fallback", Status::Fallback)] {
+                let mut reasons: BTreeMap<String, usize> = BTreeMap::new();
+                for u in self.units.iter().filter(|u| u.unit.dep == dep) {
+                    for f in u.unit.functions.iter().filter(|f| f.status == st) {
+                        *reasons.entry(generalize(f.reason.as_deref().unwrap_or("?"))).or_default() += 1;
+                    }
                 }
-            }
-            if reasons.is_empty() {
-                continue;
-            }
-            let mut rs: Vec<_> = reasons.into_iter().collect();
-            rs.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
-            let _ = writeln!(s, "  {label} reasons:");
-            for (r, n) in rs.iter().take(8) {
-                let _ = writeln!(s, "    {n:>5}  {r}");
-            }
-            if rs.len() > 8 {
-                let _ = writeln!(s, "    …{} more (target/fv-report.json)", rs.len() - 8);
+                if reasons.is_empty() {
+                    continue;
+                }
+                let mut rs: Vec<_> = reasons.into_iter().collect();
+                rs.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
+                let _ = writeln!(s, "  {label} reasons ({group}):");
+                let shown = if functions { rs.len() } else { 8 };
+                for (r, n) in rs.iter().take(shown) {
+                    let _ = writeln!(s, "    {n:>5}  {r}");
+                }
+                if rs.len() > shown {
+                    let _ = writeln!(s, "    …{} more (cargo fv report --functions)", rs.len() - shown);
+                }
             }
         }
         for u in &self.units {
@@ -261,8 +320,16 @@ impl Report {
     }
 }
 
-/// A crate root outside the package (`../../x.rs`): just the file name.
+/// A crate root outside the package (`../../x.rs`): just the file name; an absolute one (a
+/// registry or git dependency): the path inside the package (`src/lib.rs`).
 fn short_root(src: &str) -> &str {
+    if src.starts_with('/') {
+        let mut ends = src.rmatch_indices('/').map(|(i, _)| i);
+        return match (ends.next(), ends.next()) {
+            (Some(_), Some(i)) => &src[i + 1..],
+            _ => src,
+        };
+    }
     if src.contains("../") { src.rsplit('/').next().unwrap_or(src) } else { src }
 }
 

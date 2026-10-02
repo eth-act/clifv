@@ -1,21 +1,24 @@
 //! `fv-rustc`: the RUSTC_WRAPPER `cargo fv` installs, and the linker rustc runs for
 //! executables of workspace members.
 //!
-//! Wrapper mode (`fv-rustc <rustc> <args>`): an invocation that codegens a workspace member
-//! for the target gets `--emit=llvm-ir` (cg_clif then dumps every function's CLIF into
+//! Wrapper mode (`fv-rustc <rustc> <args>`): an invocation that codegens a crate for the target
+//! (a workspace member or, unless `--members-only`/skip-deps, a dependency) gets
+//! `--emit=llvm-ir` (cg_clif then dumps every function's CLIF into
 //! `<out-dir>/<unit>.clif/`) and hashed symbol mangling (v0 names of monomorphised iterator
 //! adapters exceed the 255-byte file-name limit of those dumps). Libraries: after rustc, every
 //! `*.rcgu.o` member of the rlib goes through [`pipeline::process_object`] and is put back.
 //! Executables and test harnesses: rustc links through `fv-rustc` itself (linker mode), which
 //! processes the crate's `*.rcgu.o` objects before running `rust-lld`, then checks the linked
-//! binary. Every other invocation (dependencies, build scripts, `--print`) runs rustc as is.
+//! binary. Every other invocation (host crates: build scripts, proc macros and their
+//! dependencies, which cargo compiles without `--target`; skipped dependencies; `--print`) runs
+//! rustc as is.
 //!
 //! rustc copies `<unit>.<cgu>.rcgu.ll` to `<unit>.ll` when there is exactly one codegen unit,
 //! a file cg_clif never writes; that copy error (and only it) makes fv-rustc create the empty
 //! file and run rustc again.
 use crate::config::Config;
 use crate::pipeline::{self, read_syms, DumpIndex, MARKER};
-use crate::report::{BinaryCheck, FnReport, Status, UnitReport};
+use crate::report::{BinaryCheck, ExeOrigin, FnReport, Status, UnitReport};
 use object::read::{Object, ObjectSymbol};
 use std::collections::{HashMap, HashSet};
 use std::ffi::OsString;
@@ -34,6 +37,8 @@ struct UnitMeta {
     kind: String,
     src: String,
     clif_dir: PathBuf,
+    #[serde(default)]
+    dep: bool,
 }
 
 fn eprint_fv(msg: &str) {
@@ -101,7 +106,7 @@ fn strip_linker(args: &[String]) -> Vec<String> {
     out
 }
 
-/// Parsed facts about a rustc invocation that codegens a member crate.
+/// Parsed facts about a rustc invocation that codegens a crate we compile.
 struct Invocation {
     unit: String,
     src: String,
@@ -109,9 +114,14 @@ struct Invocation {
     out_dir: PathBuf,
     kind: String,
     links: bool,
+    /// Not a workspace member.
+    dep: bool,
 }
 
-fn member_invocation(cfg: &Config, args: &[String]) -> Option<Invocation> {
+/// The invocation codegens a crate for the target that we compile: a workspace member, or
+/// (unless `--members-only` / skip-deps) any other package. Host crates (build scripts,
+/// proc macros and their dependencies) are compiled without `--target` and stay plain rustc.
+fn target_invocation(cfg: &Config, args: &[String]) -> Option<Invocation> {
     let crate_name = opt_values(args, "--crate-name").pop()?;
     if crate_name == "build_script_build" || crate_name == "___" || args.iter().any(|a| a.starts_with("--print")) {
         return None;
@@ -124,7 +134,8 @@ fn member_invocation(cfg: &Config, args: &[String]) -> Option<Invocation> {
         return None;
     }
     let manifest = std::env::var_os("CARGO_MANIFEST_DIR")?;
-    if !cfg.is_member(Path::new(&manifest)) {
+    let dep = !cfg.is_member(Path::new(&manifest));
+    if dep && !cfg.compiles_dep(&std::env::var("CARGO_PKG_NAME").unwrap_or_default()) {
         return None;
     }
     let types: Vec<String> =
@@ -143,7 +154,7 @@ fn member_invocation(cfg: &Config, args: &[String]) -> Option<Invocation> {
     let extra = codegen_opt(args, "extra-filename").unwrap_or_default();
     let out_dir = PathBuf::from(opt_values(args, "--out-dir").pop()?);
     let src = args.iter().find(|a| a.ends_with(".rs") && !a.starts_with('-')).cloned().unwrap_or_default();
-    Some(Invocation { unit: format!("{crate_name}{extra}"), src, crate_name, out_dir, kind, links })
+    Some(Invocation { unit: format!("{crate_name}{extra}"), src, crate_name, out_dir, kind, links, dep })
 }
 
 /// The `could not copy "SRC" to "DST"` sources of rustc's `.ll` copy errors, if those are the
@@ -205,6 +216,7 @@ fn new_report(cfg: &Config, m: &UnitMeta, artifact: &Path) -> UnitReport {
         package: m.package.clone(),
         kind: m.kind.clone(),
         src: m.src.clone(),
+        dep: m.dep,
         artifact: artifact.display().to_string(),
         mode: cfg.mode.name().into(),
         theorem: cfg.mode.theorem().map(String::from),
@@ -327,7 +339,7 @@ pub fn wrapper_main(argv: Vec<OsString>) -> i32 {
         Some(Ok(c)) => c,
     };
     let args: Vec<String> = rest.iter().map(|a| a.to_string_lossy().into_owned()).collect();
-    let Some(inv) = member_invocation(&cfg, &args) else { return plain() };
+    let Some(inv) = target_invocation(&cfg, &args) else { return plain() };
 
     let clif_dir = inv.out_dir.join(format!("{}.clif", inv.unit));
     let meta = UnitMeta {
@@ -337,6 +349,7 @@ pub fn wrapper_main(argv: Vec<OsString>) -> i32 {
         kind: inv.kind.clone(),
         src: inv.src.clone(),
         clif_dir: clif_dir.clone(),
+        dep: inv.dep,
     };
     let mut rargs = if inv.links { strip_linker(&args) } else { args.clone() };
     rargs.extend(["--emit=llvm-ir", "-Zunstable-options", "-Csymbol-mangling-version=hashed"].map(String::from));
@@ -452,6 +465,72 @@ fn check_binary(path: &Path) -> BinaryCheck {
         }
     }
     b
+}
+
+/// `__fv_<tag>_<name>` (a local symbol the symbol surgery renamed) → `<name>`.
+fn original_name(s: &str) -> &str {
+    s.strip_prefix("__fv_")
+        .and_then(|r| r.get(..13).filter(|t| t.ends_with('_') && t[..12].bytes().all(|b| b.is_ascii_hexdigit())).map(|_| &r[13..]))
+        .unwrap_or(s)
+}
+
+/// Fill in [`ExeOrigin`] for every checked executable: which of its functions run Lean code
+/// (per package, members vs dependencies), which run cg_clif's code of a unit we compiled
+/// (fallbacks), and which come from no unit we compiled (std/core/alloc, compiler_builtins,
+/// musl libc; crates outside the scope).
+pub fn attribute_binaries(units: &mut [UnitReport]) {
+    let mut owner: HashMap<String, (String, bool)> = HashMap::new();
+    for u in units.iter() {
+        for f in &u.functions {
+            owner.entry(f.symbol.clone()).or_insert_with(|| (u.package.clone(), u.dep));
+        }
+    }
+    for u in units.iter_mut() {
+        let Some(b) = u.binary.as_mut() else { continue };
+        if b.note.is_some() {
+            continue;
+        }
+        let Ok(data) = fs::read(&b.path) else { continue };
+        let Ok(file) = object::File::parse(&*data) else { continue };
+        let mut marked: HashSet<u64> = HashSet::new();
+        let mut by_addr: HashMap<u64, Vec<&str>> = HashMap::new();
+        for s in file.symbols() {
+            let Ok(n) = s.name() else { continue };
+            if s.is_undefined() || n.is_empty() {
+                continue;
+            }
+            if n.starts_with(MARKER) {
+                marked.insert(s.address());
+            } else if s.kind() == object::SymbolKind::Text && s.size() > 0 {
+                by_addr.entry(s.address()).or_default().push(n);
+            }
+        }
+        let mut o = ExeOrigin { functions: by_addr.len(), ..Default::default() };
+        for (a, names) in &by_addr {
+            let own = names.iter().find_map(|n| owner.get(original_name(n)));
+            if marked.contains(a) {
+                match own {
+                    Some((pkg, true)) => {
+                        o.lean_deps += 1;
+                        *o.lean_by_package.entry(format!("{pkg} (dep)")).or_default() += 1;
+                    }
+                    Some((pkg, false)) => {
+                        o.lean_members += 1;
+                        *o.lean_by_package.entry(pkg.clone()).or_default() += 1;
+                    }
+                    None => {
+                        o.lean_members += 1;
+                        *o.lean_by_package.entry("?".into()).or_default() += 1;
+                    }
+                }
+            } else if own.is_some() {
+                o.cg_clif += 1;
+            } else {
+                o.not_ours += 1;
+            }
+        }
+        b.origin = Some(o);
+    }
 }
 
 /// Linker mode: rustc runs `fv-rustc` as the linker of a member's executable.

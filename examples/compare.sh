@@ -50,7 +50,7 @@ ref=$?
 fv=$?
 outcomes "$tmp/ref.log" >"$tmp/ref.txt"
 outcomes "$tmp/fv.log" >"$tmp/fv.txt"
-grep -E '^  (package|total|[A-Za-z0-9_-]+ +(lib|test|bin) )' "$tmp/fv.log"
+grep -E '^  (package|total|your crate|dependencies|std |exe |  Lean in exe per|[A-Za-z0-9_-]+ +(lib|test|bin|dep) )' "$tmp/fv.log"
 grep -E '^cargo fv:|^  panic=' "$tmp/fv.log"
 counts() { echo "$(grep -c ' ok$' "$1") ok, $(grep -c ' ignored' "$1") ignored, $(grep -vc ' ok$\| ignored' "$1") failed"; }
 echo "cargo test ($baseline): exit $ref, $(counts "$tmp/ref.txt")"

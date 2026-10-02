@@ -9,19 +9,26 @@ use std::process::{Command, Stdio};
 
 const USAGE: &str = "\
 usage: cargo fv <build|run|test> [--opt | --opt-proven-only] [--no-fallback] [--trap-replaced] [--keep-temps]
-                                [--panic-abort] [cargo options] [-- args]
+                                [--panic-abort] [--members-only] [cargo options] [-- args]
        cargo fv report [--functions] [--json] [--manifest-path PATH]
 
-Builds for aarch64-unknown-linux-musl with rustc_codegen_cranelift; every function of the
-workspace members that the Lean backend compiles runs the Lean backend's code, the rest keeps
-cg_clif's (fallback). Executables run under qemu-aarch64-static. After a build the report is in
-target/fv-report.json (`cargo fv report` prints it).
+Builds for aarch64-unknown-linux-musl with rustc_codegen_cranelift; every function of every crate
+compiled for the target (the workspace members and their dependencies; not std, which is
+prebuilt, and not build scripts or proc macros, which run on the host) that the Lean backend
+compiles runs the Lean backend's code, the rest keeps cg_clif's (fallback). Executables run
+under qemu-aarch64-static. After a build the report is in target/fv-report.json (`cargo fv
+report` prints it).
 
   --opt               run the Lean mid-end (all rules; nothing is reported verified)
   --opt-proven-only   run the Lean mid-end with the proven rules (E2E.backend_correct_opt_proven)
+  --members-only      only the workspace members go through the Lean backend; dependencies are
+                      plain cg_clif (separate target dir). Single dependencies: FV_SKIP_DEPS=a,b
+                      or [package.metadata.fv] / [workspace.metadata.fv] skip-deps = [\"a\"]
   --no-fallback       fail unless every function of every workspace member runs Lean code
-  --trap-replaced     overwrite cg_clif's code of every Lean-compiled function with traps (proof
-                      that the tests run the Lean code; separate target dir)
+                      (dependencies may keep fallbacks; the report lists them)
+  --trap-replaced     overwrite cg_clif's code of every Lean-compiled function (members and
+                      dependencies) with traps (proof that the tests run the Lean code; separate
+                      target dir)
   --keep-temps        keep the per-codegen-unit work directories (target/fv/<mode>/tmp)
   --panic-abort       build with -Cpanic=abort -Zpanic-abort-tests (default: panic=unwind, as cargo;
                       separate target dir)
@@ -58,12 +65,15 @@ fn capture(cmd: &mut Command) -> String {
 struct Meta {
     /// Manifest directories of the workspace members.
     members: Vec<PathBuf>,
-    ids: HashSet<String>,
     target: PathBuf,
     /// `[package.metadata.fv] skip = [...]`: (manifest dir, pattern).
     skip: Vec<(PathBuf, String)>,
-    /// Package names of the members.
-    names: Vec<String>,
+    /// `[package.metadata.fv] skip-deps` of the members and `[workspace.metadata.fv] skip-deps`.
+    skip_deps: Vec<String>,
+}
+
+fn str_list(v: &serde_json::Value) -> impl Iterator<Item = String> + '_ {
+    v.as_array().into_iter().flatten().filter_map(|x| x.as_str().map(String::from))
 }
 
 /// `cargo metadata --no-deps`.
@@ -81,22 +91,24 @@ fn metadata(cargo: &Path, toolchain: &str, manifest: Option<&str>) -> Meta {
         .unwrap_or_default();
     let mut members = Vec::new();
     let mut skip = Vec::new();
-    let mut names = Vec::new();
+    let mut skip_deps: Vec<String> = str_list(&v["metadata"]["fv"]["skip-deps"]).collect();
     for p in v["packages"].as_array().into_iter().flatten() {
         if ids.contains(p["id"].as_str().unwrap_or("")) {
             if let Some(m) = p["manifest_path"].as_str() {
                 let d = Path::new(m).parent().unwrap_or(Path::new("/")).to_path_buf();
                 let d = d.canonicalize().unwrap_or(d);
-                for pat in p["metadata"]["fv"]["skip"].as_array().into_iter().flatten().filter_map(|x| x.as_str()) {
-                    skip.push((d.clone(), pat.to_string()));
+                for pat in str_list(&p["metadata"]["fv"]["skip"]) {
+                    skip.push((d.clone(), pat));
                 }
+                skip_deps.extend(str_list(&p["metadata"]["fv"]["skip-deps"]));
                 members.push(d);
-                names.extend(p["name"].as_str().map(String::from));
             }
         }
     }
     let target = PathBuf::from(v["target_directory"].as_str().unwrap_or_else(|| die("cargo metadata: no target_directory")));
-    Meta { members, ids, target, skip, names }
+    skip_deps.sort();
+    skip_deps.dedup();
+    Meta { members, target, skip, skip_deps }
 }
 
 fn find_tool(env: &str, candidates: &[PathBuf]) -> PathBuf {
@@ -153,7 +165,7 @@ fn stamp_of(cfg: &Config, wrapper: &Path, backend: &str) -> String {
             m.and_then(|m| m.modified().ok())
         ));
     }
-    // the codegen backend (a rebuilt unwinding cg_clif at the same path must rebuild the members)
+    // the codegen backend (a rebuilt unwinding cg_clif at the same path must rebuild everything)
     let m = std::fs::metadata(backend).ok();
     s.push_str(&format!("backend {backend} {} {:?}\n", m.as_ref().map(|m| m.len()).unwrap_or(0), m.and_then(|m| m.modified().ok())));
     for k in ["FV_SKIP", "FV_ONLY"] {
@@ -161,6 +173,9 @@ fn stamp_of(cfg: &Config, wrapper: &Path, backend: &str) -> String {
     }
     for (d, p) in &cfg.pkg_skip {
         s.push_str(&format!("skip {} {p}\n", d.display()));
+    }
+    for p in &cfg.skip_deps {
+        s.push_str(&format!("skip-dep {p}\n"));
     }
     s
 }
@@ -213,6 +228,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
     let mut keep_temps = false;
     let mut trap_replaced = false;
     let mut panic_abort = false;
+    let mut members_only = false;
     let mut cargo_args = Vec::new();
     for a in before {
         match a.as_str() {
@@ -222,6 +238,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
             "--keep-temps" => keep_temps = true,
             "--trap-replaced" => trap_replaced = true,
             "--panic-abort" => panic_abort = true,
+            "--members-only" => members_only = true,
             _ => cargo_args.push(a),
         }
     }
@@ -241,7 +258,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
     let rustc = which_tool(&toolchain, "rustc");
     let rustdoc = which_tool(&toolchain, "rustdoc");
     let root = repo_root();
-    let Meta { members, ids: member_ids, target, skip: pkg_skip, names } =
+    let Meta { members, target, skip: pkg_skip, mut skip_deps } =
         metadata(&cargo, &toolchain, value_of(&cargo_args, "--manifest-path").as_deref());
     let sysroot = PathBuf::from(capture(Command::new(&rustc).arg("--print").arg("sysroot")).trim());
     let host = capture(Command::new(&rustc).arg("-vV"))
@@ -270,10 +287,17 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
     if !panic_abort && backend == "cranelift" {
         eprintln!("cargo fv: note: the shipped cg_clif has no landing pads (Drop during unwinding, catch_unwind in the crate); build the unwinding one with scripts/build-cg-clif-unwind.sh (docs/USAGE.md)");
     }
+    // `FV_SKIP_DEPS=a,b`: more dependency packages that keep plain cg_clif
+    skip_deps.extend(
+        std::env::var("FV_SKIP_DEPS").unwrap_or_default().split([',', ' ']).filter(|s| !s.is_empty()).map(String::from),
+    );
+    skip_deps.sort();
+    skip_deps.dedup();
     // one target dir per configuration that changes the objects (cargo does not see FV_*)
     let fv_dir = target.join("fv").join(format!(
-        "{}{}{}",
+        "{}{}{}{}",
         mode.name(),
+        if members_only { "-members" } else { "" },
         if trap_replaced { "-trap" } else { "" },
         if panic_abort { "-abort" } else { "" }
     ));
@@ -281,6 +305,8 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
         root,
         mode,
         members,
+        members_only,
+        skip_deps,
         report_dir: fv_dir.join("units"),
         tmp_dir: fv_dir.join("tmp"),
         rust_lld: find_tool("FV_RUST_LLD", &[bin.join("rust-lld")]),
@@ -313,7 +339,18 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
         docflags.extend(["-Cpanic=abort", "-Zpanic-abort-tests"].map(String::from));
     }
     let runner_var = "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_RUNNER";
+    // The pinned toolchain's lib dir first: `cargo fv` itself may run under another toolchain's
+    // rustup proxy (e.g. a rust-toolchain.toml above the crate), which put that toolchain's lib
+    // dir in LD_LIBRARY_PATH; cargo adds the sysroot's rustlib/<host>/lib (holding a
+    // librustc_driver when rustc-dev is installed) for build scripts, and a build script that
+    // runs `$RUSTC` (libc, serde, …) then needs this toolchain's libLLVM.
+    let ld_path = {
+        let mut p = vec![sysroot.join("lib")];
+        p.extend(std::env::var_os("LD_LIBRARY_PATH").map(|v| std::env::split_paths(&v).collect::<Vec<_>>()).unwrap_or_default());
+        std::env::join_paths(p).unwrap_or_else(|e| die(&format!("LD_LIBRARY_PATH: {e}")))
+    };
     let setup = |c: &mut Command| {
+        c.env("LD_LIBRARY_PATH", &ld_path);
         c.env("RUSTUP_TOOLCHAIN", &toolchain)
             .env("RUSTC", &rustc)
             .env("RUSTDOC", &rustdoc)
@@ -330,22 +367,17 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
         }
     };
 
-    // cargo does not see the Lean tools or the FV settings: when they change, rebuild the
-    // members (dependencies are plain cg_clif and stay)
+    // cargo does not see the Lean tools or the FV settings: when they change, every unit we
+    // compile (members and dependencies) is stale, so the profile's target-side output is
+    // removed as a whole (host build scripts and proc macros live elsewhere and stay)
     let stamp_path = fv_dir.join(format!("fv-stamp.{profile}"));
     let stamp = stamp_of(&cfg, &wrapper, &backend);
     if std::fs::read_to_string(&stamp_path).ok().as_deref() != Some(stamp.as_str()) {
-        if fv_dir.exists() {
-            eprintln!("cargo fv: the Lean tools or the FV settings changed: rebuilding the workspace members");
-            for n in &names {
-                let mut c = Command::new(&cargo);
-                let cargo_profile = if profile == "debug" { "dev" } else { profile.as_str() };
-                c.args(["clean", "-q", "-p", n, "--target", TARGET, "--profile", cargo_profile]);
-                if let Some(m) = value_of(&cargo_args, "--manifest-path") {
-                    c.args(["--manifest-path", &m]);
-                }
-                setup(&mut c);
-                let _ = c.status();
+        let out = fv_dir.join(TARGET).join(&profile);
+        if out.exists() {
+            eprintln!("cargo fv: the Lean tools or the FV settings changed: rebuilding every target crate ({})", out.display());
+            if let Err(e) = std::fs::remove_dir_all(&out) {
+                die(&format!("{}: {e}", out.display()));
             }
         }
         let _ = std::fs::create_dir_all(&fv_dir);
@@ -364,10 +396,11 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
     setup(&mut b);
     b.stdout(Stdio::piped()).stderr(Stdio::inherit());
     let out = b.output().unwrap_or_else(|e| die(&format!("{}: {e}", cargo.display())));
+    // every target unit cargo reported (members and dependencies, fresh or rebuilt)
     let mut artifacts: HashSet<(u64, u64)> = HashSet::new();
     for line in String::from_utf8_lossy(&out.stdout).lines() {
         let Ok(v) = serde_json::from_str::<serde_json::Value>(line) else { continue };
-        if v["reason"] != "compiler-artifact" || !member_ids.contains(v["package_id"].as_str().unwrap_or("")) {
+        if v["reason"] != "compiler-artifact" {
             continue;
         }
         let mut paths: Vec<&str> = v["filenames"].as_array().into_iter().flatten().filter_map(|f| f.as_str()).collect();
@@ -388,7 +421,11 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
             }
         }
     }
-    units.sort_by(|a, b| (&a.crate_name, &a.kind, &a.src, &a.unit).cmp(&(&b.crate_name, &b.kind, &b.src, &b.unit)));
+    // members first, then dependencies
+    units.sort_by(|a, b| {
+        (a.dep, &a.package, &a.crate_name, &a.kind, &a.src, &a.unit).cmp(&(b.dep, &b.package, &b.crate_name, &b.kind, &b.src, &b.unit))
+    });
+    cargo_fv::wrapper::attribute_binaries(&mut units);
     let report = Report::new(&profile, mode.name(), mode.theorem().map(String::from), &panic_desc, units);
     let rp = report_path(&target);
     let _ = std::fs::write(&rp, serde_json::to_string_pretty(&report).expect("report serialises"));
@@ -397,16 +434,23 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
     }
     eprint!("{}", report.summary(false));
     let exes: Vec<usize> = report.units.iter().filter_map(|u| u.unit.binary.as_ref()).map(|b| b.lean_functions_linked).collect();
+    let (m, d) = (&report.members, &report.deps);
     eprintln!(
-        "cargo fv: {} of {} functions compiled by the Lean backend ({} verified); report: {}",
+        "cargo fv: {} of {} functions compiled by the Lean backend ({} verified): your crate(s) {} of {} ({} verified), dependencies {} of {} ({} verified); report: {}",
         report.totals.verified + report.totals.unverified,
         report.totals.functions,
         report.totals.verified,
+        m.verified + m.unverified,
+        m.functions,
+        m.verified,
+        d.verified + d.unverified,
+        d.functions,
+        d.verified,
         rp.display()
     );
     if !exes.is_empty() {
         eprintln!(
-            "cargo fv: checked {} linked executable(s): {} function symbols in total resolve to Lean-compiled code (\"Lean in exe\")",
+            "cargo fv: checked {} linked executable(s): {} function symbols in total resolve to Lean-compiled code (\"Lean in exe\", members and dependencies)",
             exes.len(),
             exes.iter().sum::<usize>()
         );
@@ -419,15 +463,17 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
         return 1;
     }
     if no_fallback {
-        let fb = report.fallbacks();
+        // the members: dependencies keep the fallbacks the Lean backend cannot cover (floats,
+        // SIMD, …); `cargo fv report` lists them with reasons
+        let fb: Vec<_> = report.fallbacks().into_iter().filter(|(u, _)| !u.dep).collect();
         if !fb.is_empty() {
-            eprintln!("cargo fv: --no-fallback: {} functions keep cg_clif's code:", fb.len());
+            eprintln!("cargo fv: --no-fallback: {} functions of the workspace members keep cg_clif's code:", fb.len());
             for (u, f) in fb.iter().take(30) {
                 eprintln!("  {} ({}): {} — {}", u.crate_name, u.kind, f.instance, f.reason.as_deref().unwrap_or("?"));
             }
             return 1;
         }
-        if report.units.is_empty() {
+        if !report.units.iter().any(|u| !u.unit.dep) {
             eprintln!("cargo fv: --no-fallback: no workspace member was compiled");
             return 1;
         }

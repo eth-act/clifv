@@ -369,6 +369,29 @@ fn self_call_alias(input: &Path, sym: &str, alias: &str, out: &Path) -> Result<O
     Ok(Some(p))
 }
 
+/// Hold one of the build's `cfg.jobs` lean-backend slots (`<tmp>/slots/<k>.lock`, an advisory
+/// file lock released when the file is dropped or the process dies). cargo runs many rustc
+/// processes at once once dependencies are compiled too, so the limit must hold across all
+/// fv-rustc processes of the build, not per codegen unit. `None`: no lock directory (the run
+/// proceeds unthrottled).
+fn backend_slot(cfg: &Config) -> Option<fs::File> {
+    let dir = cfg.tmp_dir.join("slots");
+    fs::create_dir_all(&dir).ok()?;
+    let n = cfg.jobs.max(1);
+    let mut files: Vec<fs::File> = (0..n)
+        .filter_map(|k| fs::OpenOptions::new().create(true).truncate(false).write(true).open(dir.join(format!("{k}.lock"))).ok())
+        .collect();
+    if files.is_empty() {
+        return None;
+    }
+    loop {
+        if let Some(i) = files.iter().position(|f| f.try_lock().is_ok()) {
+            return Some(files.swap_remove(i));
+        }
+        std::thread::sleep(std::time::Duration::from_millis(15));
+    }
+}
+
 /// Compile one function from its normalised `.unopt.clif` dump into `o/f{i}.o`.
 ///
 /// Retry: the unoptimised CLIF may reference data objects that cg_clif's optimiser removed
@@ -399,6 +422,7 @@ fn compile_one(
         };
         // `--personality`: functions with landing pads (`try_call`) get cg_clif's LSDA and
         // personality (`rust_eh_personality`, which cg_clif hard-codes too)
+        let slot = backend_slot(cfg);
         let c = match Command::new(cfg.lean_backend())
             .arg(aliased.as_deref().unwrap_or(input))
             .arg(out)
@@ -407,7 +431,10 @@ fn compile_one(
             .env("LEAN_REGALLOC", cfg.lean_regalloc())
             .output()
         {
-            Ok(o) => classify(cfg, &String::from_utf8_lossy(&o.stderr), o.status.success(), out, sym),
+            Ok(o) => {
+                drop(slot);
+                classify(cfg, &String::from_utf8_lossy(&o.stderr), o.status.success(), out, sym)
+            }
             Err(e) => Compiled::Fallback(format!("cannot run lean-backend: {e}")),
         };
         // the alias's relocations go to the function itself
