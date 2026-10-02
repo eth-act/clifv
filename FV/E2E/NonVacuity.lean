@@ -35,6 +35,9 @@ with it).
 * Value-returning callees: `idX` (callees `idf` return their first argument), `IdSite idf` (the
   call-site shapes of `(i64) -> i64` calls and of calls without results), `calleeOk_id`,
   `xCallsOk_id`, `final_contracts_id`, **`backend_correct_final_id`**.
+* Functions with `try_call`s: `calleeTryOk_witness` (the `try_call` contract at sites whose
+  callee returns nothing, for every hook: the payload registers x0/x1 are unconstrained on a
+  normal return), **`backend_correct_final_try_witness`**.
 -/
 
 namespace E2E
@@ -796,5 +799,51 @@ theorem backend_correct_final_id {p : Clif.Program} {f : Clif.Function} {k : Nat
   exact backend_correct_final hsub hc hcov hC
     (fun ⟨B, hB, ht⟩ => absurd ht (by rw [hnt B hB]; decide)) (fun _ => hTls) hX hXI hsym hslot
     hent hres hbe hargs hcs hrel htr fuel
+
+/-! ## Functions with `try_call` -/
+
+/-- **The `try_call` callee contract holds for the witness**: at `try_call` sites whose callee
+returns nothing (`ti.rets = 0`: the call's defs are the exception payload registers x0/x1 only),
+`CalleeTryOk` holds for every hook, in particular for the witness callee, which leaves x0/x1 as
+the caller had them (the former contract fixed them to `X.call`'s world, which masks the
+caller's registers: unsatisfiable for such a callee). -/
+theorem calleeTryOk_witness {vcp : VCode} (hrets : ∀ info ti, vcp.TrySite info ti → ti.rets = 0)
+    (F : BitVec 64 → Prop) (X : ExtSem) (H : ArmHooks) : CalleeTryOk F X H vcp.TrySite :=
+  calleeTryOk_of_rets0 hrets
+
+/-- **`backend_correct_final` with the witness callees, for a function with `try_call`s**: for
+a function whose externs and indirect-call signatures return nothing (so its `try_call` sites
+define only the exception payload registers, `hrets`), in an environment whose externs keep the
+memory, the Arm code run on the machine whose every call runs the witness callee (two frames
+pushed below `sp`, x0/x1 left as they were) refines the CLIF run on the runs where every callee
+of a `try_call` returns normally, from the run premises alone. Every contract premise of
+`backend_correct_final`, `hCT` included, is discharged. -/
+theorem backend_correct_final_try_witness {p : Clif.Program} {f : Clif.Function} {k : Nat}
+    {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
+    (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb)
+    {syms : String → Option Nat} {slotOff K : Nat} {env : Clif.Env} (hK : 32 ≤ K)
+    (g h tp : BitVec 64)
+    (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
+    (hrets : ∀ info ti, vcp.TrySite info ti → ti.rets = 0)
+    (hsig : ∀ ext ∈ f.externs.map (·.2), sigRets ext.sig = [] ∧ ext.sig.returns = [])
+    (hisig : ∀ sig ∈ indSigs f, sigRets sig = [] ∧ sig.returns = [])
+    (hnoop : ∀ ext ∈ f.externs.map (·.2), ∀ G, env.extern ext.name = some G →
+      ∀ vals cm rvals cm', G vals cm = .returned rvals cm' → cm' = cm)
+    (hnoopI : ∀ sig ∈ indSigs f, ∀ n G, env.extern n = some G → ∀ vals cm rvals cm',
+      G vals cm = .returned rvals cm' → cm' = cm)
+    (hslot : af.slotBase = slotOff)
+    {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
+    (hent : AbiEntry fb base ra s) (hres : StackAvail K af s) (hbe : BodyEntry af s w₀)
+    (hargs : ArgsIn f.sig args s) (hcs : ClifEntry f args cs)
+    (hrel : Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s,
+      syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f cs.frame.slots cs.mem w₀)
+    (htr : TrapsExplicit env p cs) (fuel : Nat) :
+    ArmRefines fb base ra (ArmStepX (witnessX (witnessSym syms) tp)
+      (witnessHooks g h (witnessSym syms) tp) fa) s (Clif.runLoop env p fuel cs) := by
+  obtain ⟨hC, hTls, hX, hXI, hsym⟩ :=
+    final_contracts_witness (f := f) (vcp := vcp) (rf := rf) (af := af) (slotOff := slotOff)
+      hK g h tp hsig hisig hnoop hnoopI
+  exact backend_correct_final hsub hc hcov hC (fun _ _ => calleeTryOk_witness hrets _ _ _)
+    (fun _ => hTls) hX hXI hsym hslot hent hres hbe hargs hcs hrel htr fuel
 
 end E2E

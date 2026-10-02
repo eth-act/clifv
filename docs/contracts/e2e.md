@@ -40,6 +40,7 @@ contract `IselContract.lean`), `regalloc-proof.md` (M6), `encoder.md` (M5), `cli
 | **Last unverified functions** (2026-10-01, `agent/last-unverified`): (1) stack-passed arguments of a `try_call` are inside `backend_correct_final`: `TryRuleOk` takes `SigStackOk e.sig outB` instead of "at most 8 parameters", `TryRulesCorrect` also `MemRefines`/`OutArgsOk` (as `CallRulesCorrect`), `TryCalls` takes the outgoing area, `DriverHyp.tries` carries `TryStack f out`, `lowerCheck`'s `callsStackOkB` also checks `try_call` callees (`tryStack_of_check`); `InSubset.tryRegArgs` and `Backend.regArgCalls` are gone. (2) `Opt.Legal.check` accepts `try_call` (expanded arguments/returns, normal-return arguments `expandTry`) and `call_indirect` without `i128` operands (plan `callInd`); `backend_correct_legal` drops `hci`/`hnt` and takes `hCT`, `hXI` and `hind` (vacuous without such calls: `backend_correct_legal_callFree` is the former statement). (3) recursion: `cargo fv` renames a function's self-call declaration to an extern alias (see "Calls of the function itself") | **proven** (`try_sym_lowerTryOk`/`try_got_lowerTryOk` any arity; `sim_try`, `sim_callInd`, `check_callInd`); `cargo fv` debug: fv-demo 1340/1346 (6 skipped), survey 3179/3179, vendor all verified |
 | **Linking** (2026-10-02, `agent/link-proof`): the CLIF side of linking the per-function theorems is proven — a whole-program run `Clif.runLoop base P` (calls and `try_call`s of functions of `P` enter them) that returns or traps is a per-function run of `P.only f` under `Clif.linkEnv P base` (`Clif.runLoop_link`) — and `E2E.backend_correct_linked` states `f`'s Arm code against the whole-program run, with the program callees' contracts as premises. Discharging those from the callees' own theorems is **not** done (see "Linking" below) | **proven** (CLIF layer, contract-level theorem); Arm-level discharge open |
 | **Callee contract with a dead stack, non-vacuity** (2026-10-02, `agent/callee-fix`): the former `CalleeOk` was unsatisfiable by every callee that saves its return address below `sp` (proven on main as `calleeOk_saves_lr_false`), so `backend_correct_final` and the theorems built on it were vacuous for every function calling such a callee. The callee contract now leaves the callees' dead stack (`K` bytes below the caller's `sp`) unspecified, is required only at the compiled code's call sites, and the theorems are proven again; a witness callee that pushes two frames meets every contract premise, for callees without results and for callees returning their argument (`E2E.final_contracts_witness`/`final_contracts_id`, `E2E.backend_correct_final_witness`/`backend_correct_final_id`, `FV/E2E/NonVacuity.lean`). See "Callee contract with a dead stack" and "Non-vacuity" below | **proven**; `try_call` callees: open (the exception payload registers, see there) |
+| **`try_call` callee contract, non-vacuity** (2026-10-02, `agent/trycall-contract`): the former `CalleeTryOk` fixed the exception payload registers of a `try_call`'s call (x0/x1 when not return registers) to `X.call`'s world, which a callee that does not write them cannot meet (it leaves the caller's values, which the world masks), so the theorems were vacuous for every function with a `try_call`. The payload defs are now dead on the normal-return edge: the allocated-code semantics havocs them there (`havocFrom`), the regalloc checker forgets them on that edge only (`CheckCtx.edgeForget`; kept for the handler edges), and `CalleeTryOk` constrains only the results, at the compiled code's `try_call` sites (`VCode.TrySite`). Witness: `E2E.backend_correct_final_try_witness` (see "`try_call` payload registers" and "Non-vacuity") | **proven** (`checkAlloc_sound` with `edgeForget_inv`, `realizes_tryCall`, every E2E theorem); lean-backend reports `try_call` functions verified for normal returns again |
 
 ### Final hypotheses (`E2E.backend_correct_final`, 2026-09-28)
 
@@ -55,7 +56,7 @@ callees' stack budget), `cx := ⟨fa.k, af.slotBase⟩`.
 | `InSubset p f`, `Compiled f k vc vcp rf af fa fb` | the compiler ran (pipeline + validators) |
 | `FormsCovered cx vcp` | per-function decidable premise (`formsCoveredB`, the covered straight-line forms `FormOk`, including the per-instruction bitmask check `logicImmOk`; control forms are handled by the proof); decided by `lean-e2e-check` (corpus + extrt + runtests: 913 of 913 checked functions covered, M6Refines) |
 | `∀ s, CalleeOk (FF s) K X H vcp.CallSite` | callee contract of the machine's call hook `H` at the call sites of the compiled code (AAPCS64: `CallSoundCtl` of every call — from a state whose `K` bytes below `sp` fit and lie in `FF s`, the callee leaves the world `X.call` computes outside `FF s`, keeps `sp` and the frame outside that dead stack, the callee-saved registers, and puts the results in the def registers —, return to pc+4 from an aligned `sp`, `X.call` error-free and program-preserving; see "Callee contract with a dead stack") — environment |
-| `(∃ B ∈ f.blocks, B.term.isTry = true) → ∀ s, CalleeTryOk (FF s) X H vcp.CallSite` (`hCT`) | only for a function with a `try_call`: the def registers of a `try_call`'s call hold what `csem` gives them — the results, then the exception payload registers x0/x1 that are not return registers, as the callee's world `X.call` has them (see "`try_call`") — environment; vacuous for a function without `try_call` |
+| `(∃ B ∈ f.blocks, B.term.isTry = true) → ∀ s, CalleeTryOk (FF s) X H vcp.TrySite` (`hCT`) | only for a function with a `try_call`, at its `try_call` sites: on a normal return the result registers of the call (its first `ti.rets` defs) hold what `csem` gives them; the exception payload registers past them are unconstrained (havocked on that edge, see "`try_call` payload registers") — environment; vacuous for a function without `try_call`, and for sites whose callee returns nothing (`calleeTryOk_of_rets0`) |
 | `hasTls f = true → ∀ s, TlsOk (FF s) K X H` (`hTls`) | only for a function with a `tls_value`: the machine's TLSDESC hook `H.tls` ends after the sequence, puts the variable's address `X.sym n 0` in x0 and the thread pointer `X.tp` in the temporary, keeps every other register but x30, the memory outside the `K` bytes below `sp` (a resolver may save registers there) and the program, and leaves the flags `X.tlsFlags n w` — trusted (`docs/decisions/arm-model.md`, "Thread-local storage"); vacuous for a function without `tls_value` |
 | `∀ s, XCallsOk env (f.externs.map (·.2)) (Rel.holds ⟨FF s, syms, slotOff, OB⟩ f) X` (`OB := (RAFrame.compute vcp rf).intBase`, the outgoing stack-argument area) | external contract for the externs `f` declares: callees, linker symbols — environment. The arguments are given by `ArgsAt` (register ones in their registers, stack-passed ones in memory at `sp + off`; for externs with at most 8 parameters this is the former "at most 8 values, all in registers", `xCallsOk_of_regArgs`); the callee returns a world related by `Rel.holds`, so in particular its outgoing area `[sp, sp + OB)` still avoids the frame and holds no live CLIF byte (`OutRel`; trivial when `OB = 0`, `Rel.holds_zero`). A call returns one value per ABI return of the declaration (`sigRets`), the first ones the extern's results (`PrefixHold`); for declarations without `sret` this is implied by the former extern-independent contract (`xCallsOk_of_results`) |
 | `∀ s, XCallsIndOk env (indSigs f) (Rel.holds ⟨FF s, syms, slotOff, OB⟩ f) X` (`hXI`) | external contract for the indirect calls of `f` (`call_indirect`, `try_call_indirect`), per call-site signature (`Backend.indSigs f`): a `blr` whose target holds `X.sym n 0` of an extern `n` of `env` behaves as `env.extern n` does under that signature (the same clause as `XCallsOk`'s GOT call) — environment; vacuous for a function without indirect calls (`xCallsIndOk_nil`, `backend_correct_final_indirectFree`) |
@@ -124,12 +125,13 @@ the `retN`/value arguments).
 * **Traps** `TrapsExplicit.tryCall`: the step of a `try_call` terminator of the entered function
   does not trap (the callee returns normally), as calls in statements are excluded by
   `TrapsExplicit.stmt` (a call is not an explicit trap).
-* **Callee contract** `CalleeTryOk F X H` (`FV/E2E/RegLevelTry.lean`, hypothesis `hCT`, only for
-  functions with a `try_call`): the call of a `try_call` defines, beyond the results, the
-  exception payload registers x0/x1 that are not return registers (`gen_try_call_rets`); on a
-  normal return their values are unconstrained by the ABI, so the clause states that the
-  hooked callee leaves in every def register the value `csem`'s `tryCall` clause gives it
-  (the results as `CalleeOk` says; the payload registers as the callee's world `X.call` says).
+* **Callee contract** `CalleeTryOk F X H S` (`FV/E2E/RegLevelTry.lean`, hypothesis `hCT`, only
+  for functions with a `try_call`, at its sites `S = vcp.TrySite`): the call of a `try_call`
+  defines, beyond the results, the exception payload registers x0/x1 that are not return
+  registers (`gen_try_call_rets`); on a normal return their values are unconstrained by the
+  ABI, so they are dead on that edge (havocked by the allocated-code semantics, forgotten by the
+  regalloc checker on the normal-return edge only), and the clause states only that the hooked
+  callee leaves in the result registers (the first `ti.rets` defs) the values `csem` gives them.
   `CallsRefine` has a third clause for the `tryCall` (proven for `csem` from `XCallsOk`,
   `callsRefine_csem`), which continues at successor `ti.handlers.length` (the normal return).
 * **Not claimed**: nothing about unwinding. The landing pads (the handler edge blocks and their
@@ -313,6 +315,7 @@ structure CalleeOk (F : BitVec 64 → Prop) (K : Nat) (X : ExtSem) (H : ArmHooks
   ext : (unchanged)
 -- `callExec H` runs the hook only from an aligned `sp` (AAPCS64)
 def CalleeTryOk (F) (X) (H) (S : CallInfo → Prop) : Prop := ∀ ctx info ti, S info → (as before)
+  -- since agent/trycall-contract: S : CallInfo → TryInfo → Prop, results only ("`try_call` payload registers")
 structure TlsOk (F) (K : Nat) (X) (H) : Prop where …
   seq : … → K ≤ (spOf s).toNat → … ∧ (∀ a, ¬ StackBelow K (spOf s) a →
     (H.tls n (.x k) s).mem a = s.mem a) ∧ …
@@ -362,13 +365,66 @@ of the world, given by `X.call` (a callee's flags are a function of its argument
 stack) and now leaves the dead stack unspecified; `XCallsOk`/`XCallsIndOk` constrain only `X`
 (no machine state), `ext` only `X.call`'s error flag and program; `BodyEntry` (`w₀.mem = s.mem`,
 registers as at entry) relates the caller-chosen body world to the entry state and is met by
-construction; `AbiEntry` and `StackAvail` are facts of the entry state. **Open**: `CalleeTryOk`
-fixes the exception payload registers that are not return registers (x0/x1 after fewer than two
-results) to `X.call`'s world, but a callee that does not write them leaves the caller's values,
-which the world masks: unsatisfiable for such callees (whose call sites a `try_call` emits with
-these defs). Fixing it needs the allocated-code semantics to havoc those defs on the normal
-return (a per-edge transfer in the checker: they are live on the handler edges), so functions
-with a `try_call` are still covered only vacuously in that case.
+construction; `AbiEntry` and `StackAvail` are facts of the entry state. `CalleeTryOk` had the
+remaining flaw, fixed next.
+
+### `try_call` payload registers (2026-10-02, `agent/trycall-contract`)
+
+**The flaw.** A `try_call`'s call defines its results, then the exception payload registers
+that are not return registers (`gen_try_call_rets`: x0/x1 after fewer than two results). The
+former contract (over the call sites `vcp.CallSite`, every `ti`) was
+
+```lean
+def CalleeTryOk (F) (X) (H) (S : CallInfo → Prop) : Prop :=
+  ∀ ctx info ti, S info → ∀ c wh ops regs i' s w outs w', … →
+    csem F ctx X (.tryCall info ti) (useVals ops regs s) w = some (outs, w', .goto ti.handlers.length) →
+    ∃ s', callExec H i' s = some s' ∧ ∀ p ∈ defRegs ops regs outs, regVal s' p.1.2 = p.2
+```
+
+and `csem` gives the payload defs `regVal p.2 d.1` of `X.call`'s world `p.2`. A callee that does
+not write x0/x1 leaves the caller's values there, which the world masks (`SameWorld` ignores the
+allocatable registers): no `X` can know them, so the contract was unsatisfiable for such callees
+and every theorem vacuous for every function with a `try_call`.
+
+**The fix.** On the normal return the payload defs are dead (only the handler edges read them):
+
+* `TryInfo.rets` (set by `tryInfoOf` to `(sigRets sig).length`) counts the call's results;
+  `MInst.normalDead (.tryCall _ ti) = some (ti.handlers.length, ti.rets)`: the defs past the
+  first `ti.rets` are dead on the edge to successor `ti.handlers.length`.
+* **Allocated-code semantics** (`FV/Backend/Proof/VCodeSem.lean`): `HavocOuts i ctl outs outs'`
+  now takes the control outcome; `havocFrom i ctl` is `keptDefs` or, for a `try_call`'s call with
+  outcome `goto ti.handlers.length`, `some ti.rets`: the payload defs take any value there.
+  `csem` is unchanged (its payload values no longer matter).
+* **Regalloc checker** (`FV/Backend/RegallocCheck.lean`): `CheckCtx.edge b s` is
+  `edgeCopy b s (edgeForget b s a)`; `edgeForget` forgets the dead defs of `b`'s terminator when
+  `s` is the successor `normalDead` names (`forgetOps`), so the payload vregs stay available on
+  the handler edges and leave every set on the normal-return edge. Soundness: `op_sound` gives the
+  invariant after the instruction with those defs forgotten (`tryForget i ctl ops`),
+  `edgeForget_inv` turns it into the invariant of `edgeForget` (equal forgetting on the normal
+  edge; more when another successor number reaches the same block), `checkAlloc_sound` unchanged.
+* **The contract**, over the compiled code's `try_call` sites:
+
+```lean
+def VCode.TrySite (vc : VCode) (info : CallInfo) (ti : TryInfo) : Prop  -- a `tryCall info ti` of `vc`
+def CalleeTryOk (F) (X) (H) (S : CallInfo → TryInfo → Prop) : Prop :=
+  ∀ ctx info ti, S info ti → ∀ c wh ops regs i' s w outs w' s', … →
+    csem F ctx X (.tryCall info ti) (useVals ops regs s) w = some (outs, w', .goto ti.handlers.length) →
+    callExec H i' s = some s' → ∀ p ∈ (defRegs ops regs outs).take ti.rets, regVal s' p.1.2 = p.2
+(hCT : (∃ B ∈ f.blocks, B.term.isTry = true) → ∀ s, CalleeTryOk (FF s) X H vcp.TrySite)
+```
+
+**Weaker.** The old contract implies the new one: `callExec` is deterministic, the new clause
+asks for a prefix of the old def list, and only at the `try_call` sites (with their own `ti`).
+At sites whose callee returns nothing (`ti.rets = 0`) it holds for every hook
+(`calleeTryOk_of_rets0`); otherwise it asks what `CalleeOk` already says of the results `X.call`
+returns, for the first `ti.rets` defs.
+
+**Sufficient.** `realizes_tryCall` takes the world, frame, kept registers and callee-saved
+registers from `CalleeOk` at the plain call (`RL.callAt`), the results from `CalleeTryOk`, and
+lets the `MStep` write the values the callee left in every def register (`HavocOuts` with
+`take_machine_defs`; `operandsSound_post` builds the store), so `Q` holds at the normal-return
+successor. Acceptance: no allocation of the corpus reads a payload vreg on a normal-return edge
+(lean-backend-regalloc-test: 0 allocation errors).
 
 ### Linking (2026-10-02, `agent/link-proof`)
 
@@ -469,7 +525,9 @@ program's own functions.
    function's slots at the Arm frame (`ClifEntry`, `SlotRel`). A program callee whose slot
    addresses escape (returned, compared) has different CLIF and Arm results, so its `linkEnv`
    contract is unsatisfiable; for the others it is satisfiable.
-5. *`try_call` payload registers* (`CalleeTryOk`, see "Callee contract with a dead stack").
+5. *`try_call` payload registers* — **fixed** (agent/trycall-contract, "`try_call` payload
+   registers"): the payload defs are dead on the normal return and `CalleeTryOk` constrains only
+   the results (`E2E.calleeTryOk_witness`).
 
 The remaining plan is in `docs/DEFERRED.md` ("Linking").
 
@@ -521,7 +579,7 @@ body's `sp`"):
 
 | Theorem | Contract premises | Witness |
 | --- | --- | --- |
-| `backend_correct_final` | `hC`, `hCT`, `hTls`, `hX`, `hXI`, `hsym` | `final_contracts_witness` (`hC`, `hTls`, `hX`, `hXI`, `hsym`, for a function whose externs and indirect-call signatures return nothing, in an environment whose externs keep the memory when they return (those `f` declares; all of them if it has an indirect call); `CalleeOk` itself holds for every set of call sites); `final_contracts_id` (callees returning a value, call sites `IdSite`); `hCT` vacuous without `try_call`; `backend_correct_final_witness`/`backend_correct_final_id` are the theorem with all of them discharged |
+| `backend_correct_final` | `hC`, `hCT`, `hTls`, `hX`, `hXI`, `hsym` | `final_contracts_witness` (`hC`, `hTls`, `hX`, `hXI`, `hsym`, for a function whose externs and indirect-call signatures return nothing, in an environment whose externs keep the memory when they return (those `f` declares; all of them if it has an indirect call); `CalleeOk` itself holds for every set of call sites); `final_contracts_id` (callees returning a value, call sites `IdSite`); `hCT`: vacuous without `try_call`, `calleeTryOk_witness` at `try_call` sites whose callee returns nothing; `backend_correct_final_witness`/`backend_correct_final_id`/`backend_correct_final_try_witness` are the theorem with all of them discharged |
 | `backend_correct_opt_proven` | `hC`, `hTls`, `hX`, `hsym` (for the optimised function; `try_call` and `call_indirect` excluded by premises) | `final_contracts_witness` at `f := Opt.optimize f cfg` |
 | `backend_correct_legal` | `hC`, `hCT`, `hTls`, `hX`, `hXI`, `hsym` (for the legalised `g`, environment `Clif.Rust.env`) | `final_contracts_witness` at `f := g`, `env := Clif.Rust.env`, for functions without indirect calls whose externs are the diverging panic entry points (they never return, so `hnoop` holds) |
 | `backend_correct_linked` | `hC`, `hCT`, `hTls`, `hX` (environment `Clif.linkEnv P base`); `hXI` discharged by `Linkable` | `final_contracts_witness` at `env := Clif.linkEnv P base`, when the program callees and the base externs return nothing and keep the memory |
@@ -556,8 +614,33 @@ emits exactly the three `IdSite` shapes (`bl id`; GOT `blr` of `id2`, argument a
 `CallInfo` no callee returning a value meets it (a call with the same callee and arguments whose
 def is x19 forces the callee to overwrite x19, which a call without defs requires it to keep).
 
-**Not witnessed** (stated, not proven to be satisfiable): `hCT` for a function with a `try_call`
-(the payload registers, "Callee contract with a dead stack").
+**Functions with `try_call`s** (agent/trycall-contract): `calleeTryOk_witness` gives
+`CalleeTryOk F X H vcp.TrySite` for every `F`, `X`, `H` when the `try_call` sites of `vcp` have no
+results (`hrets : ∀ info ti, vcp.TrySite info ti → ti.rets = 0`, a decidable fact of the compiled
+code; it holds when the `try_call` callees return nothing, as `hsig` says of every extern), and
+**`backend_correct_final_try_witness`** is `backend_correct_final` with every contract premise
+discharged (`hCT` included) for such a function, with the witness callee, which leaves x0/x1 as
+the caller had them — the callee the former `CalleeTryOk` excluded. Smoke check: the pipeline
+(`lowerFunction`, `prepare`, regalloc2, `checkAlloc`) on
+
+```
+function %tc(i64) -> i64 system_v {
+    sig0 = (i64) system_v
+    fn0 = %sink(i64) system_v
+block0(v0: i64):
+    try_call fn0(v0), sig0, block1, [ tag0: block2(exn0, exn1) ]
+block1:
+    return v0
+block2(v1: i64, v2: i64):
+    v3 = iadd v1, v2
+    return v3
+}
+```
+
+emits one `tryCall` with `ti.rets = 0` whose defs are the payload vregs in x0 and x1, the handler
+edge block passes both payloads to `block2`, and regalloc2's allocation passes `checkAlloc`.
+
+**Not witnessed** (stated, not proven to be satisfiable): nothing among the contract premises.
 
 ## The theorem (`FV/E2E/Main.lean`)
 
@@ -897,8 +980,7 @@ extrt and runtests (445 files): no function rejected.
 3. **Scope extensions**: discharging the program callees' contracts of
    `backend_correct_linked` from their own theorems (induction on call depth; the dead-stack
    obstruction is fixed, the exact world, frame locality and slot placement remain, see
-   "Linking" and `docs/DEFERRED.md`); the `try_call` payload registers (`CalleeTryOk`, "Callee
-   contract with a dead stack"); stack-passed arguments of indirect calls (`indSigs`);
+   "Linking" and `docs/DEFERRED.md`); stack-passed arguments of indirect calls (`indSigs`);
    memory-access traps (need a fault model).
 
 ## Trusted (not proven)

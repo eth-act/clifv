@@ -150,8 +150,8 @@ theorem stackArgsAvoid_frameW {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf
 run of the compiled function refines the CLIF run (a `try_call`: its normal return). M6's `csem`
 obligations are discharged (`refines_csem`, `memRefines_csem`). Remaining hypotheses: the form
 coverage `FormsCovered` (decided per function by `formsCoveredB`), the callee contract `CalleeOk`
-of the machine's call hook (and, for a function with a `try_call`, `CalleeTryOk`: the exception
-payload registers; for a function with a `tls_value`, `TlsOk`: the TLSDESC hook), the external
+of the machine's call hook (and, for a function with a `try_call`, `CalleeTryOk`: the results
+of a `try_call`'s call; for a function with a `tls_value`, `TlsOk`: the TLSDESC hook), the external
 contract `XCallsOk`, and the link-time facts `hsym`/`hslot`. -/
 theorem backend_correct_final {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}
     {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
@@ -165,7 +165,7 @@ theorem backend_correct_final {p : Clif.Program} {f : Clif.Function} {k : Nat} {
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H vcp.CallSite)
     -- the callee contract of the call of a `try_call` (only for a function with one)
     (hCT : (∃ B ∈ f.blocks, B.term.isTry = true) → ∀ s, CalleeTryOk
-      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H vcp.CallSite)
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H vcp.TrySite)
     -- the TLSDESC contract of the machine's `tls_value` hook (only for a function with one)
     (hTls : hasTls f = true → ∀ s, TlsOk
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H)
@@ -246,7 +246,7 @@ theorem backend_correct_final_indirectFree {p : Clif.Program} {f : Clif.Function
     (hC : ∀ s, CalleeOk
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H vcp.CallSite)
     (hCT : (∃ B ∈ f.blocks, B.term.isTry = true) → ∀ s, CalleeTryOk
-      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H vcp.CallSite)
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H vcp.TrySite)
     (hTls : hasTls f = true → ∀ s, TlsOk
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H)
     (hX : ∀ s, XCallsOk env (f.externs.map (·.2)) (fun sl cm w =>

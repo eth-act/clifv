@@ -227,7 +227,7 @@ theorem realizes_op_core {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
   have hdrop' : R.L.drop j = ls1 ++ (ftList (ls2 ++ nxtOf R.af b) ++ T) := by
     rw [hdrop, List.append_assoc, ftList_plain_append _ _ hpl hZ, List.append_assoc]
   obtain ⟨nst, hiter, hpc'⟩ := hruns j _ s s' hdrop' hst.prog hpc hst.err hex
-  refine ⟨nst, _, MStep.op hvb hi hops hsz hsem hlen (HavocOuts.refl _ _) hc2' (MNext.next hk), ?_⟩
+  refine ⟨nst, _, MStep.op hvb hi hops hsz hsem hlen (HavocOuts.refl _ _ _) hc2' (MNext.next hk), ?_⟩
   have hfr := R.frameOkK hR
   refine ⟨j + ls1.length, vb, items, pre ++ [.op k (regs.map Loc.reg)], c2, ls2, ps1, ps2, T, hvb,
     hit, by rw [hsplit]; simp, hchk', hc2, h2, htr, ?_, ?_, ?_⟩

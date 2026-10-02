@@ -277,18 +277,24 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   and a `zLPR` CIE with `rust_eh_personality` (`lean-backend --personality`). Callees with the
   `tail`/`preserve_all` convention and exception-table `context` items are rejected
   (fallback); cg_clif emits neither.
-* **`try_call` functions are reported unverified for now** (2026-10-04). agent/trycall-proof
-  brought them inside `E2E.backend_correct_final` for the path where every callee returns
-  normally, and the report used to label them `verified (normal returns; unwinding trusted)`.
-  The non-vacuity audit (agent/callee-fix, docs/contracts/e2e.md "Non-vacuity") found that the
-  premise `CalleeTryOk` cannot be met by a realistic `try_call` callee: it fixes the payload
-  registers x0/x1 (those that are not return registers) to `X.call`'s world, while a callee that
-  doesn't write them leaves the caller's values there, which the world masks. So the theorem
-  says nothing about these functions, and `lean-backend` now reports them **compiled,
-  unverified** with the reason `try_call: callee contract CalleeTryOk not yet satisfiable
-  (theorem vacuous)` until the contract is fixed. The code itself is unchanged and tested
-  (compare.sh SAME); nothing about unwinding (landing pads, LSDA, `.eh_frame`) is claimed in
-  any case.
+* **`try_call` is verified for normal returns** (agent/trycall-proof, agent/trycall-contract):
+  a function whose `try_call`s call externs is inside `E2E.backend_correct_final` for the path
+  where every callee returns normally (the call, its results, the jump to the normal-return
+  successor). The report labels it **`verified (normal returns; unwinding trusted)`** and counts
+  it among the verified functions, with a footnote giving how many there are. Nothing is
+  claimed about unwinding: the landing pads, the payload on the handler edges, the LSDA and the
+  `.eh_frame` rows are trusted. `try_call_indirect` is verified the same way
+  (agent/indirect-proof). A `try_call`'s callee may take stack-passed arguments
+  (agent/last-unverified). Every `try_call` function stays unverified under `--opt-proven-only`
+  (that theorem covers `try_call`-free functions only); after `i128` legalisation `try_call` is
+  covered (`E2E.backend_correct_legal`, agent/last-unverified), `try_call_indirect` is not.
+  Between agent/callee-fix and agent/trycall-contract (2026-10-02) these functions were reported
+  **compiled, unverified** (`try_call: callee contract CalleeTryOk not yet satisfiable (theorem
+  vacuous)`): the callee contract `CalleeTryOk` fixed the exception payload registers x0/x1 to
+  `X.call`'s world, which a callee that does not write them cannot meet. They are now dead on the
+  normal return (havocked there; the register-allocation checker forgets them on that edge only)
+  and `CalleeTryOk` constrains only the results (docs/contracts/e2e.md, "`try_call` payload
+  registers"), with a witness (`E2E.backend_correct_final_try_witness`).
 * **Indirect calls are verified** (agent/indirect-proof): functions with `call_indirect`,
   `func_addr` (vtables, `fn` pointers, `dyn` dispatch) and `try_call_indirect` are inside
   `E2E.backend_correct_final` when the indirect calls have at most 8 register parameters and
@@ -343,13 +349,14 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   (hypotheses: `docs/contracts/e2e.md`). Calls to other functions are extern calls in that
   theorem: the proof assumes the callee behaves as its CLIF (the callee contract), whether the
   callee is Lean-compiled, cg_clif-compiled or in std.
-* (Before 2026-10-04 there was a third status, **verified (normal returns; unwinding
-  trusted)**, for functions with `try_call`s. It is not issued any more, see "`try_call`
-  functions are reported unverified for now" above.)
+* **verified (normal returns; unwinding trusted)** = verified as above for a function with
+  `try_call`s: the theorem covers the runs in which every callee of a `try_call` returns
+  normally (with the callee contract `CalleeTryOk` for its results); the unwinding path
+  (landing pads, LSDA, unwind tables) is trusted.
 * **Non-vacuity.** Every top-level theorem has a witness that its contract premises can all
   hold for realistic callees (docs/contracts/e2e.md, "Non-vacuity";
-  `E2E.backend_correct_final_witness`, `E2E.backend_correct_final_id`), except `CalleeTryOk`,
-  which is why `try_call` functions are reported unverified.
+  `E2E.backend_correct_final_witness`, `E2E.backend_correct_final_id`, and for functions with
+  `try_call`s `E2E.backend_correct_final_try_witness`).
 * **Validation budget.** "verified" needs the lowering validator (`lowerCheck`, whose
   acceptance the theorem assumes) to accept the function. Its cost is near-linear in practice
   but grows, in the worst case, with the number of instructions times the number of values
@@ -468,6 +475,14 @@ runs); plain cg_clif
 `cargo test` in a fresh target directory: 0.3 s / 0.3 s, 0.9 s / 1.1 s, 3.6 s / 2.5 s. (Before
 the near-linear validator, `lean-backend` ran for over an hour on each of the survey's largest
 `try_call` test functions, and the survey build did not finish.)
+
+After agent/trycall-contract (2026-10-02: `CalleeTryOk` satisfiable, the `try_call` payload
+defs dead on the normal return; debug, `cargo fv test`): fv-demo 1340 verified of 1346 (6
+fallback), survey 3179 of 3179, vendor 4527 of 4527, deps 20821 verified of 21021 (20824
+compiled); of them `verified (normal returns; unwinding trusted)`: fv-demo 253, survey 498,
+vendor 886, deps 3144. Between agent/callee-fix and agent/trycall-contract, with the `try_call`
+functions reported unverified: fv-demo 1087, survey 2681, vendor 3641, deps 17677 verified.
+`examples/compare.sh` SAME for all three (fv-demo 19, survey 53, vendor 189 test outcomes).
 
 With the shipped cg_clif (`FV_CG_CLIF=cranelift`, no landing pads) or `--panic-abort`
 there are no landing-pad fallbacks:

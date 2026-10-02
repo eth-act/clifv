@@ -583,10 +583,11 @@ noncomputable def csem (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) : ISe
     (X.call (match info.dest with | .sym n => some n | .reg _ => none) uses w).map
       fun p => (p.1, p.2, .next)
   -- the call of a `try_call`, returning normally (the only way `Clif.run` resumes after it):
-  -- the callee's results (`X.call`), then the values the callee left in the def registers
-  -- beyond them (the exception payload registers x0/x1 that are not return registers,
-  -- unconstrained on a normal return: read from the callee's world), and the normal-return
-  -- successor (the last, number `ti.handlers.length`)
+  -- the callee's results (`X.call`), then values for the def registers beyond them (the
+  -- exception payload registers x0/x1 that are not return registers, unconstrained on a normal
+  -- return: the allocated-code semantics havocs them there, `havocFrom`, so these values from
+  -- the callee's world are never compared with the machine's), and the normal-return successor
+  -- (the last, number `ti.handlers.length`)
   | .tryCall info ti =>
     (X.call (match info.dest with | .sym n => some n | .reg _ => none) uses w).map
       fun p => (p.1 ++ (info.defs.drop p.1.length).map (fun d => regVal p.2 d.1), p.2,

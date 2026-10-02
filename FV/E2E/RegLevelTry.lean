@@ -8,11 +8,17 @@ The allocated `tryCall` runs as `bl name` / `blr xn` (the hooked callee, `H.call
 `b continuation` (dropped by `fallthrough` when the continuation is the next block). Only the
 normal return is covered: `csem` continues at the normal-return successor.
 
-* `CalleeTryOk F X H S`: the def clause of the callee contract for the call of a `try_call`: on a
-  normal return the def registers hold the values `csem` gives them — the results (as
-  `CalleeOk.os` says of a call), then the exception payload registers that are not return
-  registers (x0/x1 after fewer than two results), as the callee's world `X.call` says. It is
-  the only callee assumption beyond `CalleeOk` (`os_tryCall`).
+The call's defs are its results, then the exception payload registers that are not return
+registers (x0/x1 after fewer than two results, `gen_try_call_rets`); the latter are dead on the
+normal return (the allocated-code semantics havocs them, `havocFrom`, and the regalloc checker
+forgets them on that edge, `CheckCtx.edgeForget`), so the callee may leave anything there.
+
+* `VCode.TrySite vc info ti`: the `try_call` call sites of `vc` (`info` with its `TryInfo`).
+* `CalleeTryOk F X H S`: the def clause of the callee contract for the call of a `try_call` at
+  the sites `S`: on a normal return its results (the first `ti.rets` defs) hold the values
+  `csem` gives them. It is the only callee assumption beyond `CalleeOk`, which already says so
+  of the results the callee's world `X.call` returns (`calleeTryOk_of_rets0`: vacuous at sites
+  without results).
 * `realizes_tryCall`: the `op`/`goto` case of `Realizes` for `tryCall`.
 -/
 
@@ -20,21 +26,36 @@ namespace Backend.Proof
 
 open Backend E2E
 
-/-- **The callee contract of a `try_call`'s call** beyond `CalleeOk` (a normal return): the
-hooked callee leaves in the call's def registers the values `csem` gives them — the results,
-then the exception payload registers that are not return registers, as the callee's world
-says, for the call sites `S`. -/
-def CalleeTryOk (F : BitVec 64 → Prop) (X : ExtSem) (H : ArmHooks) (S : CallInfo → Prop) : Prop :=
-  ∀ (ctx : FnCtx) (info : CallInfo) (ti : TryInfo), S info → ∀ (c : CheckCtx) (wh : String)
+/-- The `try_call` call sites of `vc`: a `tryCall info ti` in one of its blocks. -/
+def _root_.Backend.VCode.TrySite (vc : VCode) (info : CallInfo) (ti : TryInfo) : Prop :=
+  ∃ (b : Nat) (vb : VBlock) (k : Nat), vc.blocks[b]? = some vb ∧
+    vb.insts[k]? = some (MInst.tryCall info ti)
+
+/-- **The callee contract of a `try_call`'s call** beyond `CalleeOk` (a normal return), for the
+sites `S`: the hooked callee leaves in the call's result registers (the first `ti.rets` defs)
+the values `csem` gives them. The exception payload registers past them are unconstrained. -/
+def CalleeTryOk (F : BitVec 64 → Prop) (X : ExtSem) (H : ArmHooks)
+    (S : CallInfo → TryInfo → Prop) : Prop :=
+  ∀ (ctx : FnCtx) (info : CallInfo) (ti : TryInfo), S info ti → ∀ (c : CheckCtx) (wh : String)
     (ops : Array Operand) (regs : Array Reg) (i' : MInst) (s w : Arm.ArmState) (outs : List CV)
-    (w' : Arm.ArmState),
+    (w' s' : Arm.ArmState),
     (MInst.tryCall info ti).operands = .ok ops →
     c.checkStatic wh ops (regs.map .reg) (MInst.tryCall info ti).clobbers = .ok () →
     (MInst.tryCall info ti).assign regs = .ok i' →
     SameWorld F s w → Arm.CheckSPAlignment s → Arm.r .ERR s = .None →
     csem F ctx X (.tryCall info ti) (useVals ops regs s) w =
       some (outs, w', .goto ti.handlers.length) →
-    ∃ s', callExec H i' s = some s' ∧ ∀ p ∈ defRegs ops regs outs, regVal s' p.1.2 = p.2
+    callExec H i' s = some s' →
+    ∀ p ∈ (defRegs ops regs outs).take ti.rets, regVal s' p.1.2 = p.2
+
+/-- At `try_call` sites without results (`ti.rets = 0`: the callee returns nothing, its defs
+are the exception payload registers only), `CalleeTryOk` holds for every callee. -/
+theorem calleeTryOk_of_rets0 {F : BitVec 64 → Prop} {X : ExtSem} {H : ArmHooks}
+    {S : CallInfo → TryInfo → Prop} (h : ∀ info ti, S info ti → ti.rets = 0) :
+    CalleeTryOk F X H S := by
+  intro _ info ti hS _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ p hp
+  rw [h info ti hS, List.take_zero] at hp
+  cases hp
 
 theorem hasTryCall_of_mem {vc : VCode} {b k : Nat} {vb : VBlock} {info : CallInfo} {ti : TryInfo}
     (hvb : vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some (.tryCall info ti)) :
@@ -48,38 +69,55 @@ theorem clobbers_tryCall {info : CallInfo} {ti : TryInfo} (h : ti.clobberAll = f
     (MInst.tryCall info ti).clobbers = (MInst.call info).clobbers := by
   simp [MInst.clobbers, h]
 
-/-- **`CallSoundCtl` of the call of a `try_call`** (control: the normal-return successor), from
-the callee contract of calls and `CalleeTryOk`. -/
-theorem os_tryCall {F : BitVec 64 → Prop} {K : Nat} {X : ExtSem} {H : ArmHooks}
-    {S : CallInfo → Prop} (hC : CalleeOk F K X H S) (hT : CalleeTryOk F X H S) (ctx : FnCtx)
-    (info : CallInfo) {ti : TryInfo} (hS : S info) (hcl : ti.clobberAll = false) :
-    CallSoundCtl F K (callExec H) (csem F ctx X) (.tryCall info ti) (.goto ti.handlers.length) := by
-  intro s hK hD c wh ops regs i' w outs w' hops hst hasg hw hal herr hsem
-  obtain ⟨ic, rfl, hasg'⟩ := (assign_call_tryCall info regs).2 ti i' hasg
-  have hsem0 := hsem
-  simp only [csem, Option.map_eq_some_iff] at hsem0
-  obtain ⟨⟨xo, w2⟩, hx, he⟩ := hsem0
-  simp only [Prod.mk.injEq] at he
-  obtain ⟨-, rfl, -⟩ := he
-  have hsemc : csem F ctx X (.call info) (useVals ops regs s) w = some (xo, w2, .next) := by
-    simp [csem, hx]
-  obtain ⟨s', hex, hW, hK, -, hoth, hkeep⟩ := hC.os ctx info hS s hK hD c wh ops regs (.call ic) w xo
-    w2 (by rw [← operands_tryCall_call info ti]; exact hops) (by rw [← clobbers_tryCall hcl]; exact hst)
-    hasg' hw hal herr hsemc
-  obtain ⟨s'', hex', hdef⟩ := hT ctx info ti hS c wh ops regs (.tryCall ic ti) s w outs w2 hops hst
-    hasg hw hal herr hsem
-  have hss : s'' = s' := by
-    simp only [callExec, if_pos hal, Option.some.injEq] at hex hex'
-    rw [← hex, ← hex']
-  subst hss
-  exact ⟨s'', hex', hW, hK, hdef, fun r ha hnd hnc => hoth r ha hnd (by rw [← clobbers_tryCall hcl]; exact hnc),
-    fun r hr hcs => hkeep r (by rw [clobbers_tryCall hcl] at hr; exact hr) hcs⟩
+theorem mem_zip_map_self {α β : Type} (f : α → β) :
+    ∀ (L : List α) (p : α × β), p ∈ L.zip (L.map f) → p.2 = f p.1
+  | [], _, h => by simp at h
+  | a :: L, p, h => by
+    simp only [List.map_cons, List.zip_cons_cons, List.mem_cons] at h
+    rcases h with rfl | h
+    · rfl
+    · exact mem_zip_map_self f L p h
+
+/-- The values the machine leaves in the def registers agree with `outs` on the first `n` defs
+when every one of those def registers holds its value of `outs`. -/
+theorem take_machine_defs {ops : Array Operand} {regs : Array Reg} {outs : List CV}
+    {s' : Arm.ArmState} {n : Nat}
+    (hlen : outs.length = ((ops.zip regs).toList.filter (·.1.isDef)).length)
+    (h : ∀ p ∈ (defRegs ops regs outs).take n, regVal s' p.1.2 = p.2) :
+    (((ops.zip regs).toList.filter (·.1.isDef)).map (fun p => regVal s' p.2)).take n =
+      outs.take n := by
+  apply List.ext_getElem?
+  intro k
+  simp only [List.getElem?_take]
+  split
+  · rename_i hk
+    rw [List.getElem?_map]
+    cases hD : ((ops.zip regs).toList.filter (·.1.isDef))[k]? with
+    | none =>
+      have : outs[k]? = none := by
+        rw [List.getElem?_eq_none_iff] at hD ⊢; omega
+      rw [this]; rfl
+    | some d =>
+      obtain ⟨o, ho⟩ : ∃ o, outs[k]? = some o := by
+        have : k < outs.length := by
+          rw [hlen]; exact (List.getElem?_eq_some_iff.mp hD).1
+        exact ⟨outs[k], List.getElem?_eq_getElem this⟩
+      rw [ho]
+      have hm : (d, o) ∈ (defRegs ops regs outs).take n := by
+        apply List.mem_of_getElem? (i := k)
+        rw [List.getElem?_take]
+        simp only [hk, ↓reduceIte]
+        rw [defRegs, List.getElem?_zip_eq_some]
+        exact ⟨hD, ho⟩
+      simp [h _ hm]
+  · rfl
 
 /-- **The call of a `try_call` on the machine**: from `Q` at a `tryCall` item, the machine runs
 the hooked callee and the branch to the normal-return successor, reaching `Q` at that
-successor's items (an `MStep` of the allocated code). -/
+successor's items (an `MStep` of the allocated code, whose exception payload defs take the
+values the callee left in their registers). -/
 theorem realizes_tryCall {R : RL} (hR : R.Wf) (hC : CalleeOk R.F R.K R.X R.H R.vc.CallSite)
-    (hT : CalleeTryOk R.F R.X R.H R.vc.CallSite) {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc}
+    (hT : CalleeTryOk R.F R.X R.H R.vc.TrySite) {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc}
     {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
     (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩))
     {vb : VBlock} {info : CallInfo} {ti : TryInfo} {ops : Array Operand} {outs : List CV}
@@ -104,8 +142,12 @@ theorem realizes_tryCall {R : RL} (hR : R.Wf) (hC : CalleeOk R.F R.K R.X R.H R.v
   obtain ⟨cc, wh, i2, ops2, hi2, hops2, hstat, hchk'⟩ := op_checked hchk
   rw [hi] at hi2; cases hi2
   rw [hops] at hops2; cases hops2
+  have hm : ∀ r, r.allocatable = true → m (.reg r) = regVal s r := fun r hr =>
+    hst.store (.reg r) (fun r' e => by cases e; exact hr) trivial
+  have hsemU := hsem
+  rw [useVals_of_store hstat hm] at hsemU
   -- the control outcome and the callee's world
-  have hsem0 := hsem
+  have hsem0 := hsemU
   simp only [RL.sem, csem, Option.map_eq_some_iff] at hsem0
   obtain ⟨⟨xo, w2⟩, hx, he⟩ := hsem0
   simp only [Prod.mk.injEq] at he
@@ -114,16 +156,38 @@ theorem realizes_tryCall {R : RL} (hR : R.Wf) (hC : CalleeOk R.F R.K R.X R.H R.v
   have herr : Arm.r .ERR w = .None := by
     rw [← hst.world.1 .ERR (by simp [Masked]), hst.err]
   have hW' : Arm.r .ERR w2 = .None ∧ w2.program = w.program := hC.ext _ _ _ _ _ hx herr
-  -- the instruction's effect
+  -- the instruction's effect: the callee contract of the plain call, then the results
   have hcl : ti.clobberAll = false := by
     have := ctlCheck_inst hck hvb hi
     simpa [ctlInstOk] using this
-  have hm : ∀ r, r.allocatable = true → m (.reg r) = regVal s r := fun r hr =>
-    hst.store (.reg r) (fun r' e => by cases e; exact hr) trivial
-  obtain ⟨s', m2, hex, hW, hK, hc2', hr2, hl2⟩ := operandsSound_step
-    (RL.callAt hR (os_tryCall hC hT R.ctx info ⟨b, vb, k, hvb, .inr ⟨ti, hi⟩⟩ hcl) hst.sp) hops hstat hasg hm hst.world hst.align
-    hst.err hsem hlen
-  obtain ⟨ic, rfl, -⟩ := (assign_call_tryCall info regs).2 ti i' hasg
+  obtain ⟨ic, rfl, hasg'⟩ := (assign_call_tryCall info regs).2 ti i' hasg
+  have hsemC : csem R.F R.ctx R.X (.call info) (useVals ops regs s) w = some (xo, w2, .next) := by
+    simp [csem, hx]
+  obtain ⟨s', hex, hW, hK, -, hoth, hkeep⟩ :=
+    RL.callAt hR (hC.os R.ctx info ⟨b, vb, k, hvb, .inr ⟨ti, hi⟩⟩) hst.sp cc wh ops regs (.call ic)
+      w xo w2 (by rw [← operands_tryCall_call info ti]; exact hops)
+      (by rw [← clobbers_tryCall hcl]; exact hstat) hasg' hst.world hst.align hst.err hsemC
+  have hexT : callExec R.H (.tryCall ic ti) s = some s' := by
+    simp only [callExec] at hex ⊢; exact hex
+  have hres := hT R.ctx info ti ⟨b, vb, k, hvb, hi⟩ cc wh ops regs (.tryCall ic ti) s w outs w2 s'
+    hops hstat hasg hst.world hst.align hst.err hsemU hexT
+  -- the def values the allocated code writes: what the callee left in the def registers
+  have hlenD : outs.length = ((ops.zip regs).toList.filter (·.1.isDef)).length := by
+    rw [hlen, pairs_regs, List.filter_map, List.length_map]; rfl
+  have hlen' : (((ops.zip regs).toList.filter (·.1.isDef)).map (fun p => regVal s' p.2)).length =
+      ((ops.zip (regs.map Loc.reg)).toList.filter (·.1.isDef)).length := by
+    rw [List.length_map, ← hlenD, hlen]
+  have hho : HavocOuts (MInst.tryCall ic ti) (.goto ti.handlers.length) outs
+      (((ops.zip regs).toList.filter (·.1.isDef)).map (fun p => regVal s' p.2)) := by
+    have hh : havocFrom (MInst.tryCall ic ti) (.goto ti.handlers.length) = some ti.rets := by
+      simp [havocFrom, MInst.keptDefs, MInst.isBranch, MInst.normalDead]
+    refine ⟨by rw [List.length_map, ← hlenD], fun h => (by rw [hh] at h; cases h), fun n h => ?_⟩
+    rw [hh] at h; cases h
+    exact take_machine_defs hlenD hres
+  obtain ⟨m2, hc2', hr2, hl2⟩ := operandsSound_post (s' := s') hstat hm hlen'
+    (fun p hp => (mem_zip_map_self _ _ p hp).symm)
+    (fun r ha hnd hnc => hoth r ha hnd (by rw [← clobbers_tryCall hcl]; exact hnc))
+    (fun r hr hcs => hkeep r (by rw [clobbers_tryCall hcl] at hr; exact hr) hcs)
   -- the successor's label
   obtain ⟨c, ins, hc⟩ := checked_of_checkAlloc hR.check
   obtain ⟨preds, hcfg⟩ := hc.cfg
@@ -195,7 +259,7 @@ theorem realizes_tryCall {R : RL} (hR : R.Wf) (hC : CalleeOk R.F R.K R.X R.H R.v
       ftList (.ins (.b (.block ti.continuation)) none :: (ls2 ++ nxtOf R.af b)) ++ T := by
     rw [← List.drop_drop, hdrop']; rfl
   obtain ⟨n, jl, hn, hjl⟩ := reach_b hR hdrop1 hprog' hpc1 herr'
-  refine ⟨n + 1, _, MStep.op hvb hi hops hsz hsem hlen (HavocOuts.refl _ _) hc2'
+  refine ⟨n + 1, _, MStep.op hvb hi hops hsz hsem hlen hho hc2'
     (MNext.goto hk1 hsucc hitems), ?_⟩
   have hiter : iterN R.step (n + 1) s = Arm.w .PC (R.pcOf jl) s' := by
     simp only [iterN]; rw [hs1, hn]
@@ -203,7 +267,8 @@ theorem realizes_tryCall {R : RL} (hR : R.Wf) (hC : CalleeOk R.F R.K R.X R.H R.v
   have hfr := R.frameOkK hR
   have hsp' : spOf s' = R.spB := hK.1.trans hst.sp
   have hstr : StRel R s' (writeM m2 ((((ops.zip (regs.map Loc.reg)).toList.filter (·.1.isDef)).zip
-      outs).filter (·.1.1.isLate))) w2 := by
+      (((ops.zip regs).toList.filter (·.1.isDef)).map (fun p => regVal s' p.2))).filter
+        (·.1.1.isLate))) w2 := by
     refine ⟨fun l hl hL => ?_, hW, herr', hprog', hsp', align_of_sp (by rw [hsp', hst.sp]) hst.align,
       fun hframe => ?_, code_keep hR.prog0 hst.code fun a ha => hK.2 a (.inr (.inr ha))⟩
     · cases l with

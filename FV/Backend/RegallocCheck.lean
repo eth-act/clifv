@@ -33,6 +33,9 @@ Transfer functions:
      temporaries, dead after the branch; the scratch defs of the LL/SC loops) leave every set;
   7. at a `Rets`: every callee-saved register `r` needs `entry r ∈ A r`;
 * edge `b → s` with branch arguments `a⃗` for parameters `p⃗` (the VCode's parallel copy):
+  the defs of `b`'s terminator dead on that edge leave every set (`MInst.normalDead`: the
+  exception payload defs of a `try_call`'s call past its results, on the normal-return edge;
+  they stay for the handler edges), then
   `A' ℓ = (A ℓ \ {vreg p⃗}) ∪ {vreg pᵢ | vreg aᵢ ∈ A ℓ}`.
 
 Entry state: callee-saved register `r` holds `{entry r}`, everything else `∅`.
@@ -245,6 +248,10 @@ registers; the proof's allocated-code semantics havocs them). -/
 def forgetDefs (a : AState) (pairs : List (Operand × Loc)) : AState :=
   a.map (·.filter fun s => !(pairs.any fun p => p.1.kind == .def && s == .vreg p.1.vreg))
 
+/-- The def vregs of the operands `os` leave every location (`forgetDefs` without locations). -/
+def forgetOps (a : AState) (os : List Operand) : AState :=
+  a.map (·.filter fun s => !(os.any fun o => o.kind == .def && s == .vreg o.vreg))
+
 /-- The transfer of an original instruction with operand–location pairs `pairs`, in execution
 order: early defs, clobbers, late defs; the defs past the first `keptDefs` are then forgotten. -/
 def transferOp (i : MInst) (pairs : List (Operand × Loc)) (a : AState) : AState :=
@@ -321,8 +328,25 @@ def CheckCtx.runBlock (b : Nat) (a : AState) : Except String AState :=
   | none, _ => throw s!"no block {b}"
   | _, none => throw s!"no allocated block {b}"
 
-/-- The state entering successor `s` of block `b` (branch arguments as a parallel copy). -/
-def CheckCtx.edge (b s : Nat) (a : AState) : Except String AState :=
+/-- The state entering successor `s` of block `b` before the branch arguments: the defs of
+`b`'s terminator that are dead on that edge (`MInst.normalDead`: the exception payload defs of
+a `try_call`'s call, on its normal-return edge) leave every set. -/
+def CheckCtx.edgeForget (b s : Nat) (a : AState) : AState :=
+  match c.vc.blocks[b]? with
+  | some vb => match vb.insts.back? with
+    | some i => match i.normalDead with
+      | some (j, n) =>
+        if c.succs[b]?.bind (·[j]?) = some s then
+          match i.operands with
+          | .ok ops => forgetOps a ((ops.toList.filter (·.kind == .def)).drop n)
+          | .error _ => a
+        else a
+      | none => a
+    | none => a
+  | none => a
+
+/-- The parallel copy of the branch arguments of block `b` into the parameters of `s`. -/
+def CheckCtx.edgeCopy (b s : Nat) (a : AState) : Except String AState :=
   match c.vc.blocks[b]?, c.vc.blocks[s]? with
   | some vb, some sb => do
     ensure (vb.branchArgs.size == sb.params.size) fun _ =>
@@ -335,6 +359,11 @@ def CheckCtx.edge (b s : Nat) (a : AState) : Except String AState :=
       pure (a.parCopy ps xs)
   | none, _ => throw s!"no block {b}"
   | _, none => throw s!"no block {s}"
+
+/-- The state entering successor `s` of block `b`: the defs dead on the edge forgotten
+(`edgeForget`), then the branch arguments as a parallel copy (`edgeCopy`). -/
+def CheckCtx.edge (b s : Nat) (a : AState) : Except String AState :=
+  c.edgeCopy b s (c.edgeForget b s a)
 
 /-- One round over all blocks; returns the new in-states and whether any changed. -/
 def CheckCtx.round (ins : Array (Option AState)) : Except String (Array (Option AState) × Bool) := do

@@ -181,7 +181,7 @@ end
 
 /-- **The machine realises the allocated code** under `Q ∧ AInv`: every item case. -/
 theorem realizes_all {R : RL} (hR : R.Wf) (hC : CalleeOk R.F R.K R.X R.H R.vc.CallSite)
-    (hT : R.vc.hasTryCall = true → CalleeTryOk R.F R.X R.H R.vc.CallSite)
+    (hT : R.vc.hasTryCall = true → CalleeTryOk R.F R.X R.H R.vc.TrySite)
     (hTls : R.vc.hasTls = true → TlsOk R.F R.K R.X R.H)
     (hcov : FormsCovered R.ctx R.vc) :
     Realizes R.vc R.rf R.sem ckeep R.step (fun s c => Q R s c ∧ AInv c) := by
@@ -336,9 +336,9 @@ theorem calleeSaved_v {n : Nat} (h1 : 8 ≤ n) (h2 : n < 16) :
 
 /-- The store after a `Rets` step is the store before it (no defs, no clobbers). -/
 theorem rets_store {us : List (Reg × Reg)} {ops : Array Operand} {allocs : Array Loc}
-    {outs outs' : List CV} {m m2 : Loc → CV}
+    {outs outs' : List CV} {m m2 : Loc → CV} {ctl : Ctl}
     (hlen : outs.length = ((ops.zip allocs).toList.filter (·.1.isDef)).length)
-    (hnil : outs = []) (hho : HavocOuts (MInst.rets us) outs outs')
+    (hnil : outs = []) (hho : HavocOuts (MInst.rets us) ctl outs outs')
     (hcl : Clobbered ckeep (MInst.rets us).clobbers
       (writeM m ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs').filter (·.1.1.isEarly))) m2) :
     writeM m2 ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs').filter (·.1.1.isLate)) = m := by
@@ -363,7 +363,7 @@ theorem regLevelCorrect_backend {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : Fn
     (hC : ∀ s, CalleeOk
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H vcp.CallSite)
     (hCT : vcp.hasTryCall = true → ∀ s, CalleeTryOk
-      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H vcp.CallSite)
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H vcp.TrySite)
     (hTls : vcp.hasTls = true → ∀ s, TlsOk
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H) :
     RegLevelCorrect

@@ -113,9 +113,11 @@ theorem sim_step (hc : Checked vc rf c ins) {ms : MState V W} {vs : VState V W} 
     have hvbc : c.vc.blocks[b]? = some vb := by rw [hc.vc_eq]; exact hvb
     cases hnext with
     | next hk1 =>
+      rw [tryForget_of_ne (ctl := .next) (fun _ e => nomatch e)] at hinv'
       exact ⟨_, VStep.step hvb hi hops hsem hlen' (VNext.next hk1),
         rfl, rfl, vb, _, out, hvbc, hrun', hinv', hedges⟩
     | ret hus =>
+      rw [tryForget_of_ne (ctl := .ret) (fun _ e => nomatch e)] at hinv'
       exact ⟨_, VStep.step hvb hi hops hsem hlen' (VNext.ret hus), rfl, rfl,
         fun r hr => (hinv' _ _ (hret _ hus r hr)).2⟩
     | halt =>
@@ -132,7 +134,9 @@ theorem sim_step (hc : Checked vc rf c ins) {ms : MState V W} {vs : VState V W} 
       obtain ⟨_, rfl⟩ := runItems_nil hrun'
       obtain ⟨preds, hcfg⟩ := hc.cfg
       obtain ⟨e, a'', hedge, hins, hle⟩ := hedges _ (succOf_mem hcfg hsucc)
-      obtain ⟨ρ', henv, hinve⟩ := edge_ok hedge hinv'
+      have hcfg' : c.vc.cfg = .ok (c.succs, preds) := by rw [hc.vc_eq]; exact hcfg
+      have hinvF := edgeForget_inv hcfg' hvbc hi hk1 hops (by rw [hc.vc_eq]; exact hsucc) hinv'
+      obtain ⟨ρ', henv, hinve⟩ := edge_ok hedge hinvF
       rw [hc.vc_eq] at henv
       obtain ⟨items', hitems', hmr⟩ := enter_block keep hc (w := w') (edgeEnv_lt henv) hins hle hinve
       rw [hitems] at hitems'
@@ -175,7 +179,7 @@ theorem sim_progress (hc : Checked vc rf c ins) {ms : MState V W} {vs : VState V
           (writeM m ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs).filter (·.1.1.isEarly)))
           (writeM m ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs).filter (·.1.1.isEarly))) :=
         ⟨fun _ _ => rfl, fun _ _ _ => rfl⟩
-      have hho : HavocOuts i outs outs := HavocOuts.refl _ _
+      have hho : HavocOuts i ctl outs outs := HavocOuts.refl _ _ _
       obtain ⟨-, huse, -, -⟩ := op_sound hstep hinv hlen' hho hclob
       rw [← huse] at hsem hnext
       cases hnext with

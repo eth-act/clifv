@@ -276,11 +276,15 @@ def TryHandler.label : TryHandler → Label
 /-- `TryCallInfo`: the normal-return continuation and the handlers (exception-table order).
 `clobberAll`: the callee's exceptional ABI restores no register (`tail`/`preserve_all`
 callees, `get_regs_clobbered_by_call(_, true) = ALL_CLOBBERS`); for `system_v` the unwinder
-restores the callee-saved registers, so the clobbers are the normal call's. -/
+restores the callee-saved registers, so the clobbers are the normal call's. `rets`: the number
+of the call's defs that are results (`gen_try_call_rets` puts them first); the defs past them
+are the exception payload registers that are not return registers, dead on the normal return
+(the regalloc checker forgets them on that edge, `CheckCtx.edgeForget`). -/
 structure TryInfo where
   continuation : Label
   handlers : List TryHandler
   clobberAll : Bool := false
+  rets : Nat := 0
   deriving DecidableEq, Repr, Inhabited, BEq
 
 inductive LoadOp where
