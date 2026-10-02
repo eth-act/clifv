@@ -15,6 +15,7 @@ release-oc), dumped by `scripts/rust-clif/dump.sh` into `/tmp/rust-clif-survey/o
 | 4. `dyn`/fn pointers (`call_indirect`, `func_addr`) | **done (native runs verified, flagged unverified)** — `Clif.run` supports both (`stepCallIndirect`, `func_addr` via `mem.symbols`); parser/printer handle `sigN`; the Lean backend lowers both via the exported ISLE rules (`rule_lower_2529`, `func_addr` → `load_ext_name`, `gen_call_ind_info`, `value_slice_unwrap`, `InstructionData.CallIndirect/FuncAddr` term data). Step 4 closes with three commits: (1) both opcodes admitted to the emitter-subset closure (`E_OPCODES` + regenerated `Closure.lean`, 444 rules / 131 roots; `closureRootIds` gains the FuncAddr/CallIndirect root rules 1026/1033) with `instE` admitting them (flagged unverified: `InSubset.noCI`, `unverifiedReason?` "indirect call / func_addr (outside backend_correct)"); (2) **`Clif.Mem.Image.memWith`** — data-object relocations resolve function/extern symbols (stubs registered before `writeItems`; `Program.initMem` routes through it) — without it `Clif.run` of vtable-bearing files was `stuck`; (3) fixture `scripts/rust-clif/fixtures/dyn-vtable.clif`: self-contained `dyn_pick`/`dyn_hash` runs over the recovered Fnv/Xor vtables — 3 `; run:` lines pass in `Clif.run` (3-element FNV hash 2121893058 and XOR 33 agree with rustc/LLVM; addresses are the interpreter's link-time layout — native `%name` run args are future work). DriverHyp/noCI etc. as before; OptProven's `step_eq_lift` callIndirect case owned by the OptProvenFix agent (WIP diff in `/tmp/rustroute3_semsim.patch`).| 5. Re-count | **in progress (this run)** — recount with `scripts/rust-clif/tools.sh`: **863/933 compile** with `lean-backend` (debug 423/454, release 220/239, release-oc 220/240; clif2obj 933/933). Causes by count: `i128 parameter` 31, `prepCheck` 24, `extend to i128` 6, `calls %X, which is not compiled` 5 (transitive), `i128 return value` 4 — i.e. **i128/u128 ≈ 41** and **prepCheck ≈ 24**. `call_indirect`/`func_addr` functions all compile now (the closure work). prepCheck root cause found (OptProvenFix's area): `prepare` drops unreachable vc blocks; `prepCheck.keptOk` walks every vc block and fails on the dropped ones (repro: `/tmp/rust-clif-survey/tools/debug-a_arith.unopt.reader.clif` `%cmp_bool`, vc block 5 unreachable-and-aliased, insts.size 2 vs 1) — `prepCheck` must skip vc blocks absent from vcp. i128 backend scope (unstarted): `sigArgs`/`sigL` must pass an i128 as **two x-registers** (Cranelift's aarch64 ABI; the `add_u128` vcode shows `adds x8, x0, x2` / `adc x1, x13, x3` + the overflow check via `subs`/`sbcs` + `__multi3`-style helper `blr` for `imul`), `buildCtx` must give i128 values `.int 128` types (the ISLE rules match `$I128`), and the exclusion checker's `eCTys`/`AV.tys` must cover it; new MInst encode/sem forms for `adds`/`adc`/`sbcs` (+ proofs = flagged unverified). Clif.run needs nothing: a census confirms every i128 opcode the corpus uses (iadd/isub/imul/band/bor/bxor/ishl/ushr/sshr/icmp/uextend/sextend/ireduce/load/store/udiv/sdiv/urem/srem) already runs.
 | 5. Survey to 933/933 (**done**, `agent/rust-i128`) | **933/933 compiled** (debug 454/454, release 239/239, release-oc 240/240). The 41 i128 functions are legalised before the backend by **`Opt.Legalize128`** (`FV/Opt/Legalize128.lean`) — the DECIDED design: no backend/proof change, a CLIF→CLIF pass that rewrites `i128` away the way Cranelift's legalizer does. Every `i128` value becomes an `(lo, hi)` pair of `i64` values: `iadd`/`isub` via the carry/borrow chain, `imul`/`umulhi`/`smulhi` via cross products, `band`/`bor`/`bxor`/`bnot` pairwise, `icmp` lexicographic, `uextend`/`sextend` (`hi = 0` / `sshr lo, 63`), `ireduce` = `lo`, `iconcat`/`isplit`/`bitcast` are the pair, `select`/`bmask`/`bitselect` pairwise, `iabs`/`clz`/`ctz`/`cls`/`popcnt`/`bitrev`/`bswap` from the halves; shifts/rotates by the amount mod 128 with a half-crossing `select` (constant amounts folded); loads/stores as two `i64` accesses at `+0`/`+8`; block params/branch args split; signatures become even/odd `i64` register pairs with an unused `i64` pad reproducing the AAPCS64 skipped register (Cranelift aarch64 `compute_arg_locs`, for returns too), at call sites and in the `fnN`/`sigN` declarations; `udiv`/`sdiv`/`urem`/`srem` at `i128` call `__udivti3`/`__divti3`/`__umodti3`/`__modti3` (freestanding C long division in `rust-runtime.c`; byte-exact `Clif.Rust.env` semantics with the `int_divz`/`int_ovf` traps of the opcodes they replace, so `Clif.run` original and legalised agree). `lean-backend` legalises automatically when a function mentions `i128` (before the mid-end) and flags legalised functions unverified (`i128 legalized (outside backend_correct)`, via `compileFileWith`'s `preUnverified`); the backend's value model and all proof files are untouched. Differential `clif-filetest --legalize128` (every run line through the original and the legalised program): the 31 i128 runtests files 742 pass / 0 fail / **0 disagree** (the 8 `fcvt_*`/float lines are outside `Clif.run` too), survey smoke **0 disagreements**; native (`--functions-obj`, qemu): i128 runtests 735 pass / 0 fail / **0 disagree** vs Cranelift's own aarch64 code, smoke **101/101 pass vs rustc/LLVM** (was 88 pass / 13 not-compiled). `tools.sh`: **933/933** compiled, 0 unsupported. Gates: filetests corpus **114/114**, runtests **4067 pass / 0 fail / 0 disagree** (was 3085); encode-check **1132 identical / 0 differ**; `lean-e2e-check` **910 accepted / 0 rejected** (22 out of scope), formsCoveredB 910 / 0 not covered; `lake build FV.E2E` green. Not legalised (stay unsupported, as `Clif.run` does not run them either): the `fcvt_*`/float i128 runtest functions. Pre-existing (recorded for the integrator): `clif-native`'s prebuilt blame cannot attribute an undefined *data*-symbol reference (`%fn_ptr_table`'s `symbol_value %alloc33`) → "undefined symbols … not referenced by any CLIF function" for `--functions-obj` runs of files with undefined data symbols; independent of i128. |
 | 6. `panic=unwind` in `cargo fv` (**done**, `agent/fv-unwind`) | Lean objects carry `.eh_frame` (unverified, `FV/Backend/Unwind.lean`); cg_clif with its `unwinding` feature (`scripts/build-cg-clif-unwind.sh`) supplies landing pads; functions with `try_call` fall back ("landing pad"). See §"Step 6". |
+| 7. Dependencies through the Lean backend (**done**, `agent/fv-deps`) | `cargo fv` compiles every crate built for the target (members + registry/git/path dependencies); host crates (build scripts, proc macros and their deps), std (prebuilt) and `--members-only`/skip-deps opt-outs stay as before. examples/deps (42 crates.io dependencies, offline) SAME vs LLVM debug/release and with `--trap-replaced`; per-crate coverage, link-map attribution and an exec trace in §"agent/fv-deps". |
 
 ## Step 1: data objects from cg_clif (`clif-data-export`)
 
@@ -506,3 +507,58 @@ the same files 0 disagreements.
   own object (whose code for the same functions is Cranelift output too, so this is the same
   oracle without cg_clif's data/symbol layout); calls into `core`/`alloc` beyond the
   allocator are stubs.
+
+## agent/fv-deps: dependencies compiled by the Lean backend
+
+**Change.** `fv-rustc` used to compile only workspace members (`Config::is_member`); now any
+rustc invocation that codegens for `--target aarch64-unknown-linux-musl` (emit `link`, crate
+type lib/rlib/bin or a test harness) goes through the pipeline, unless `--members-only`
+(own target dir `target/fv/<mode>-members`) or the package is in `skip-deps`
+(`[package|workspace.metadata.fv]`, `FV_SKIP_DEPS`). Host crates are recognised from rustc's
+arguments, not guessed: cargo compiles build scripts (`build_script_build`), proc macros
+(`--crate-type proc-macro`) and their dependencies without `--target`. Dependency invocations
+differ from members only in flags the pipeline does not look at (`--cap-lints`,
+`-C embed-bitcode=no`, `-C metadata`); the unit is `<crate><extra-filename>` like the rlib, and
+hashed mangling makes their symbols unique. Nothing in `pipeline.rs` had to change for them.
+
+* **Stamp**: a change of the Lean tools/settings now deletes the profile's whole target-side
+  directory (`target/fv/<mode>/aarch64-unknown-linux-musl/<profile>`: members, dependencies
+  and their build-script runs) and the unit reports, instead of `cargo clean -p` per member.
+* **Throttle**: `FV_JOBS` was per codegen unit; with ~40 crates compiling at once that is
+  unbounded, so `lean-backend` runs now take one of `FV_JOBS` file-lock slots
+  (`tmp/slots/<k>.lock`, `File::try_lock`) shared by the whole build.
+* **Report**: `UnitReport.dep`; `Report.members`/`deps` next to `totals`; dependency rows have
+  kind `dep`; reasons by count per group. Each linked executable gets `binary.origin` from an
+  lld link map (`-Map`, written by linker mode): every function symbol (distinct address) is
+  attributed to its input object — Lean (marker) or cg_clif code of a unit we compiled (rlib
+  `lib<unit>.rlib` with a unit report, or the executable's own `<unit>.*.rcgu.o`), the sysroot
+  (`prebuilt`: std, core, alloc, compiler_builtins, musl) or anything else (`other`). A first
+  attempt attributed by symbol name and misclassified std's local copies of `#[inline]` core
+  functions (same v0 name as our units' copies) as ours; the link map is exact.
+* **Environment bug found**: build scripts that run `$RUSTC --version` (libc panics; crc32fast
+  silently drops its `stable_arm_crc32_intrinsics` cfg) failed under `cargo fv` started from
+  this repository: the 1.96 rustup proxy's `LD_LIBRARY_PATH` plus cargo's
+  `rustlib/<host>/lib` (which holds a `librustc_driver` with rustc-dev installed) made the
+  nightly rustc miss its libLLVM. `cargo fv` now prepends the pinned toolchain's `lib/`. This
+  was the unexplained "crc32fast cfg not set by cg_clif" of agent/fv-fallback.
+
+**Results** (examples/deps; details and the per-package table in docs/USAGE.md,
+"Dependencies"): debug 21021 functions, 20821 verified, 3 unverified, 197 fallback (your
+crate(s) 4056/4028/0/28, dependencies 16965/16793/3/169); release 14587/14461/2/124
+(3713/3676/0/37, 10874/10785/2/87). Remaining reasons: floats (f64/f32 types, `f64const`),
+NEON SIMD (`i64x2`/`i32x4`: sha2's SHA intrinsics, zmij), 2 release functions of
+regex-automata with `i128` values and atomics (`Opt.Legalize128`: "atomics are not
+legalised", so the backend reports the raw `iconcat`), and the validation budget for fully
+unrolled hash rounds (sha2 `soft::unroll::compress_block`, tiny-keccak `keccakf` in debug).
+compare.sh SAME: fv-demo 19/19, survey 53/53, vendor 189/189, deps 16/16, debug and release;
+deps also with `--trap-replaced`. Evidence that dependency code is Lean code at run time:
+`scripts/fv-exec-trace.py` (qemu `-d exec,nochain` + link map) on the `--trap-replaced` debug
+harness: 2421 Lean-compiled regex-automata functions executed, 1578 regex-syntax, 870
+aho-corasick, 420 serde_json, 268 num-bigint, 141 regex, 103 rand, 73 sha2, 59 tiny-keccak,
+0 executed std functions are Lean (std is prebuilt).
+
+**Not done / open.** std is still the prebuilt LLVM build (`-Zbuild-std` with cg_clif would
+put it through the same path). Legalising atomics in `i128` functions and lifting the
+validation budget for unrolled hash rounds need FV work (validator + proofs); floats and SIMD
+are outside the backend.
+

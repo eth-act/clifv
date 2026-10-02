@@ -382,7 +382,8 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   (`Cargo.lock` committed, `.cargo/config.toml` sets `net.offline`): serde + serde_derive
   (a proc macro, host-built), serde_json, regex, sha2, tiny-keccak, num-bigint, base64, hex,
   hashbrown, indexmap, smallvec, arrayvec, bitflags, byteorder, crc32fast, itoa, ryu, memchr,
-  num-traits, rand — 37 dependency packages compiled for the target. 16 tests check reference
+  num-traits, rand — 42 dependency packages compiled for the target (and 6 host-only ones:
+  serde_derive, proc-macro2, quote, syn, unicode-ident, autocfg). 16 tests check reference
   values (serde_json round trips of a derived struct, regex captures/replace/sets, SHA-2 and
   Keccak/SHA-3 test vectors, big-integer factorials, base64/hex round trips, hashbrown/indexmap
   operations, rand with fixed seeds against the LLVM build's values, …). See *Dependencies*.
@@ -572,6 +573,114 @@ report the same test outcomes as `cargo test` (fv-demo 18/18, survey 53/53, vend
 
 (fv-demo's counts include the new `tls` module.) `examples/compare.sh` reports SAME for
 fv-demo 19/19, survey 53/53 and vendor 189/189, debug and `--release`.
+
+### Dependencies (agent/fv-deps)
+
+Since agent/fv-deps every crate compiled for the target goes through the Lean backend, not
+only the workspace members. In examples/deps, `cargo fv test` compiles 42 dependency packages
+with the Lean backend; the 6 host-only packages (the proc macro `serde_derive` with
+`proc-macro2`/`quote`/`syn`/`unicode-ident`, and `autocfg`, a build dependency) and every
+build script stay plain rustc. A from-scratch `cargo fv test --no-run` of examples/deps
+takes about 45–60 s (32 CPUs).
+
+`examples/compare.sh` (LLVM `cargo test` vs `cargo fv test`, test by test) reports SAME for
+fv-demo 19/19, survey 53/53, vendor 189/189 and deps 16/16, debug and `--release`, and for
+deps also with `--trap-replaced` (debug and `--release`). fv-demo, survey and vendor have no
+non-member dependencies (vendor's crates are workspace members), so their numbers did not
+change.
+
+Per package (`cargo fv test --no-run`, panic=unwind; units of the same package summed: e.g.
+deps-demo's lib, bin and test harnesses, which also hold the monomorphised generic code of the
+dependencies they instantiate):
+
+| package | | debug: functions / verified / unverified / fallback | release: functions / verified / unverified / fallback |
+|---|---|---|---|
+| deps-demo | member | 4056 / 4028 / 0 / 28 | 3713 / 3676 / 0 / 37 |
+| aho-corasick | dep | 2063 / 2063 / 0 / 0 | 1268 / 1268 / 0 / 0 |
+| allocator-api2 | dep | 17 / 17 / 0 / 0 | 7 / 7 / 0 / 0 |
+| arrayvec | dep | 1 / 1 / 0 / 0 | 1 / 1 / 0 / 0 |
+| base64 | dep | 142 / 142 / 0 / 0 | 57 / 57 / 0 / 0 |
+| bitflags | dep | 74 / 74 / 0 / 0 | 28 / 28 / 0 / 0 |
+| block-buffer | dep | 1 / 1 / 0 / 0 | 1 / 1 / 0 / 0 |
+| byteorder | dep | 3 / 3 / 0 / 0 | 2 / 2 / 0 / 0 |
+| chacha20 | dep | 79 / 79 / 0 / 0 | 35 / 35 / 0 / 0 |
+| const-oid | dep | 110 / 110 / 0 / 0 | 42 / 42 / 0 / 0 |
+| cpufeatures | dep | 1 / 1 / 0 / 0 | 1 / 1 / 0 / 0 |
+| crc32fast | dep | 124 / 124 / 0 / 0 | 80 / 80 / 0 / 0 |
+| crypto-common | dep | 1580 / 1580 / 0 / 0 | 544 / 544 / 0 / 0 |
+| digest | dep | 3 / 3 / 0 / 0 | 3 / 3 / 0 / 0 |
+| foldhash | dep | 29 / 29 / 0 / 0 | 12 / 12 / 0 / 0 |
+| getrandom | dep | 97 / 97 / 0 / 0 | 49 / 49 / 0 / 0 |
+| hashbrown | dep | 45 / 45 / 0 / 0 | 14 / 14 / 0 / 0 |
+| hex | dep | 26 / 26 / 0 / 0 | 4 / 4 / 0 / 0 |
+| hybrid-array | dep | 1 / 1 / 0 / 0 | 1 / 1 / 0 / 0 |
+| indexmap | dep | 4 / 4 / 0 / 0 | 2 / 2 / 0 / 0 |
+| itoa | dep | 47 / 47 / 0 / 0 | 13 / 13 / 0 / 0 |
+| libc | dep | 27 / 27 / 0 / 0 | 11 / 11 / 0 / 0 |
+| memchr | dep | 245 / 245 / 0 / 0 | 106 / 106 / 0 / 0 |
+| num-bigint | dep | 1051 / 1024 / 0 / 27 | 626 / 610 / 0 / 16 |
+| num-integer | dep | 235 / 208 / 0 / 27 | 90 / 77 / 0 / 13 |
+| num-traits | dep | 74 / 60 / 0 / 14 | 34 / 32 / 0 / 2 |
+| rand | dep | 318 / 302 / 0 / 16 | 182 / 182 / 0 / 0 |
+| rand_core | dep | 10 / 10 / 0 / 0 | 0 / 0 / 0 / 0 |
+| regex | dep | 429 / 429 / 0 / 0 | 638 / 638 / 0 / 0 |
+| regex-automata | dep | 5039 / 5039 / 0 / 0 | 3673 / 3671 / 0 / 2 |
+| regex-syntax | dep | 3015 / 3015 / 0 / 0 | 2025 / 2025 / 0 / 0 |
+| ryu | dep | 61 / 55 / 0 / 6 | 12 / 10 / 0 / 2 |
+| serde | dep | 123 / 121 / 0 / 2 | 98 / 97 / 0 / 1 |
+| serde_core | dep | 236 / 228 / 0 / 8 | 177 / 170 / 0 / 7 |
+| serde_json | dep | 1177 / 1127 / 0 / 50 | 721 / 689 / 0 / 32 |
+| sha2 | dep | 222 / 212 / 2 / 8 | 168 / 161 / 2 / 5 |
+| smallvec | dep | 15 / 15 / 0 / 0 | 8 / 8 / 0 / 0 |
+| tiny-keccak | dep | 71 / 70 / 1 / 0 | 38 / 38 / 0 / 0 |
+| typenum | dep | 12 / 12 / 0 / 0 | 5 / 5 / 0 / 0 |
+| zmij | dep | 158 / 147 / 0 / 11 | 98 / 91 / 0 / 7 |
+| **your crate(s)** | | 4056 / 4028 / 0 / 28 | 3713 / 3676 / 0 / 37 |
+| **dependencies** | | 16965 / 16793 / 3 / 169 | 10874 / 10785 / 2 / 87 |
+| **total** | | 21021 / 20821 / 3 / 197 | 14587 / 14461 / 2 / 124 |
+
+Reasons, by count (debug / release):
+
+| reason | your crate(s) | dependencies |
+|---|---|---|
+| fallback: `unsupported: type f64` / `f32` (floats: serde_json, ryu/zmij float formatting, num-traits/num-bigint float conversions, rand's float distributions) | 28 / 37 | 159 / 78 |
+| fallback: `unsupported: type i64x2` / `i32x4` (NEON SIMD: sha2's `vsha256*`/`vsha512*` intrinsics and `aarch64_sha2::compress`, zmij `to_bcd_4x4`) | — | 9 / 6 |
+| fallback: `unsupported: opcode f64const` (serde_json `parse_exponent_overflow`) | — | 1 / 1 |
+| fallback: `` `iconcat.i64 …` is not in E `` (regex-automata `meta::wrappers::…::new`, release: the function has `i128` values *and* atomics, which `Opt.Legalize128` does not legalise — "legalize128: atomics are not legalised" — so the backend sees the raw `iconcat`) | — | 0 / 2 |
+| unverified: validation budget (`sha2::sha{256,512}::soft::unroll::compress_block`, debug also `tiny_keccak::keccakf::keccakf`: fully unrolled rounds) | — | 3 / 2 |
+
+All of these are the hard cases (floats, SIMD, i128 together with atomics, the validation
+budget guard); no cheap unsupported construct was left. Every other dependency function is
+verified (`E2E.backend_correct_final`; `try_call` functions for their normal returns).
+
+**The dependencies' Lean code runs.** Each executable's `exe` line attributes its functions
+through the link map. Debug, `tests/crates.rs`: 21682 functions, 19808 Lean-compiled (members
+3052, dependencies 16756, e.g. regex-automata 5039, regex-syntax 3015, aho-corasick 2063,
+crypto-common 1580, serde_json 1127, num-bigint 1024), 142 cg_clif fallbacks, 1732 prebuilt
+(std/core/alloc, compiler_builtins, musl libc). Under `--trap-replaced` (cg_clif's copy of
+every Lean-compiled function, members and dependencies, is a trap) the 16 tests pass, and
+`scripts/fv-exec-trace.py` on that build's `tests/crates.rs` harness counts the functions the
+run executed (debug; release in parentheses):
+
+| crate | Lean-compiled functions executed | other functions executed |
+|---|---|---|
+| regex-automata | 2421 (1501) | 0 (2) |
+| regex-syntax | 1578 (878) | 0 (0) |
+| aho-corasick | 870 (370) | 0 (0) |
+| serde_json | 420 (134) | 15 (4) |
+| num-bigint | 268 (113) | 8 (2) |
+| regex | 141 (247) | 0 (0) |
+| memchr | 118 (7) | 0 (0) |
+| rand | 103 (release: inlined into the harness) | 0 |
+| zmij | 82 (53) | 10 (9) |
+| sha2 | 73 (62) | 16 (33) |
+| tiny-keccak | 59 (27) | 0 (0) |
+| crc32fast | 47 (31) | 1 (1) |
+| the test harness itself (`crates`) | 1804 (1566) | 22 (23) |
+| std (prebuilt) | 0 | 410 (388) |
+
+("other" in a dependency = its float/SIMD fallbacks, e.g. sha2's NEON SHA instructions, which
+the CPU qemu emulates has.)
 
 ## Limitations
 
