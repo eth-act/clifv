@@ -255,13 +255,16 @@ structure RL.Wf (R : RL) : Prop where
   psF : ∃ body, blocksLinesE R.ctx R.af R.af.blocks.toList {} = .ok (body, R.psF)
   /-- the entry state holds the function's program -/
   prog0 : R.s0.program = R.fb.program R.base
+  /-- the kept addresses are not in the frame or the callees' dead stack -/
+  gfree : ∀ a, R.G a → ¬ StackBelow (frameDrop R.af + R.K) (spv R.s0) a
 
 theorem RL.size_lt {R : RL} (hR : R.Wf) : R.fr.size < 32768 :=
   (lowerRFunc_ok hR.alloc).2.1
 
-/-- The activation's frame is laid out correctly (its slots in the frame addresses `R.FK`). -/
-theorem RL.frameOkK {R : RL} (hR : R.Wf) :
-    FrameOk R.fr (Live R.rf) (R.rf.floatMove = true) R.spB R.FK := by
+/-- The activation's frame is laid out correctly (its slots in the frame addresses `frameF`). -/
+theorem RL.frameOkF {R : RL} (hR : R.Wf) :
+    FrameOk R.fr (Live R.rf) (R.rf.floatMove = true) R.spB
+      (frameF R.fr.intBase R.fr.size R.af R.s0) := by
   obtain ⟨⟨hfs, -⟩, hlt, hfr, -⟩ := lowerRFunc_ok hR.alloc
   have hlt' : R.fr.size < 32768 := hlt
   have hle : R.fr.size ≤ R.fr.total := compute_size_le_total R.vc R.rf
@@ -269,7 +272,7 @@ theorem RL.frameOkK {R : RL} (hR : R.Wf) :
   have hst' : R.fr.total + 16 ≤ (spv R.s0).toNat := by rw [hfs] at hst; exact hst
   by_cases h0 : R.fr.total = 0
   · -- empty frame: no live slot has an offset below `size`
-    refine frameOk_compute R.vc R.rf R.spB R.FK (by simp only [RL.fr] at h0 hle; omega) ?_
+    refine frameOk_compute R.vc R.rf R.spB _ (by simp only [RL.fr] at h0 hle; omega) ?_
     intro o _ ho; simp only [RL.fr] at h0 hle; omega
   · have hframe := hfr h0
     have hd : frameDrop R.af = R.fr.total + 16 := by
@@ -278,9 +281,9 @@ theorem RL.frameOkK {R : RL} (hR : R.Wf) :
       simp only [RL.spB, hd]
       have hm : (R.fr.total + 16) % 2 ^ 64 = R.fr.total + 16 := Nat.mod_eq_of_lt (by omega)
       rw [BitVec.toNat_sub_of_le] <;> simp only [BitVec.le_def, BitVec.toNat_ofNat, hm, RL.fr] at * <;> omega
-    refine frameOk_compute R.vc R.rf R.spB R.FK (by simp only [RL.fr] at hsp hle ⊢; omega) ?_
+    refine frameOk_compute R.vc R.rf R.spB _ (by simp only [RL.fr] at hsp hle ⊢; omega) ?_
     intro o hlo hhi
-    simp only [RL.FK, frameF, ← RL.spB.eq_def]
+    simp only [frameF, ← RL.spB.eq_def]
     have : (R.spB + BitVec.ofNat 64 o - R.spB).toNat = o := by
       rw [BitVec.add_comm, BitVec.add_sub_cancel]; simp; omega
     simp only [RL.spB] at this ⊢
@@ -293,11 +296,17 @@ theorem FrameOk.mono {fr : RAFrame} {D : Loc → Prop} {T : Prop} {sp0 : BitVec 
   ⟨h.sep, fun l o hl ho k hk => hF _ (h.inF l o hl ho k hk), h.tmpSep,
     fun hT k hk => hF _ (h.tmpF hT k hk)⟩
 
+/-- The activation's frame is laid out correctly (its slots in the frame addresses `R.FK`). -/
+theorem RL.frameOkK {R : RL} (hR : R.Wf) :
+    FrameOk R.fr (Live R.rf) (R.rf.floatMove = true) R.spB R.FK :=
+  (RL.frameOkF hR).mono fun _ h => .inl h
+
 /-- The frame addresses are outside the world. -/
-theorem RL.FK_F {R : RL} {a : BitVec 64} (h : R.FK a) : R.F a := .inl h
+theorem RL.FK_F {R : RL} {a : BitVec 64} (h : R.FK a) : R.F a :=
+  h.elim (fun h => .inl (.inl h)) .inr
 
 /-- The callees' dead stack is outside the world. -/
-theorem RL.below_F {R : RL} {a : BitVec 64} (h : StackBelow R.K R.spB a) : R.F a := .inr h
+theorem RL.below_F {R : RL} {a : BitVec 64} (h : StackBelow R.K R.spB a) : R.F a := .inl (.inr h)
 
 /-- The activation's slots lie outside the world. -/
 theorem RL.frameOk {R : RL} (hR : R.Wf) :
@@ -316,8 +325,30 @@ theorem RL.size_le_drop {R : RL} (hR : R.Wf) : R.fr.size ≤ frameDrop R.af := b
 
 /-- **The frame is not in the dead stack.** -/
 theorem RL.FK_not_below {R : RL} (hR : R.Wf) {a : BitVec 64} (h : R.FK a) :
-    ¬ StackBelow R.K R.spB a :=
-  frameF_not_below hR.stack (RL.size_le_drop hR) h
+    ¬ StackBelow R.K R.spB a := by
+  rcases h with h | h
+  · exact frameF_not_below hR.stack (RL.size_le_drop hR) h
+  · rintro ⟨h1, h2⟩
+    obtain ⟨hB, hK⟩ := spBody_toNat hR.stack
+    simp only [RL.spB] at h1 h2
+    rw [hB] at h1 h2
+    exact hR.gfree a h ⟨by omega, by omega⟩
+
+/-- The kept addresses are not in the frame's slot area. -/
+theorem RL.G_not_slot {R : RL} (hR : R.Wf) {a : BitVec 64} (h : R.G a) :
+    ∀ o, o < R.fr.size → a ≠ R.spB + BitVec.ofNat 64 o := by
+  intro o ho e
+  have hd := RL.size_le_drop hR
+  obtain ⟨hB, hK⟩ := spBody_toNat hR.stack
+  apply hR.gfree a h
+  subst e
+  simp only [RL.spB] at hB ⊢
+  have : (spv R.s0 - BitVec.ofNat 64 (frameDrop R.af) + BitVec.ofNat 64 o).toNat =
+      (spv R.s0).toNat - frameDrop R.af + o := by
+    rw [BitVec.toNat_add, hB, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := o) (by omega)]
+    exact Nat.mod_eq_of_lt (by have := (spv R.s0).isLt; omega)
+  simp only [StackBelow, this]
+  omega
 
 /-- The callees' budget fits below the body's `sp`. -/
 theorem RL.K_le {R : RL} (hR : R.Wf) : R.K ≤ R.spB.toNat := by
@@ -331,6 +362,18 @@ theorem RL.callAt {R : RL} (hR : R.Wf) {exec : MInst → Arm.ArmState → Option
     {sem : ISem CV Arm.ArmState} {i : MInst} {ctl : Ctl} (h : CallSoundCtl R.F R.K exec sem i ctl)
     {s : Arm.ArmState} (hsp : spOf s = R.spB) : OperandsSoundCtlAt R.F R.FK exec sem i ctl s := by
   refine (h s (by rw [hsp]; exact RL.K_le hR) (fun a ha => ?_)).mono fun a ha => ⟨RL.FK_F ha, ?_⟩
+  · rw [hsp] at ha; exact RL.below_F ha
+  · rw [hsp]; exact RL.FK_not_below hR ha
+
+/-- `RL.callAt` for the contract relative to the kept addresses (`CallSoundCtlG`): the state
+keeps `G` (`StRel.gkeep`). -/
+theorem RL.callAtG {R : RL} (hR : R.Wf) {exec : MInst → Arm.ArmState → Option Arm.ArmState}
+    {sem : ISem CV Arm.ArmState} {i : MInst} {ctl : Ctl}
+    (h : CallSoundCtlG R.F R.K R.G R.s0 exec sem i ctl)
+    {s : Arm.ArmState} (hsp : spOf s = R.spB) (hg : ∀ a, R.G a → s.mem a = R.s0.mem a) :
+    OperandsSoundCtlAt R.F R.FK exec sem i ctl s := by
+  refine (h s (by rw [hsp]; exact RL.K_le hR) (fun a ha => ?_) hg).mono
+    fun a ha => ⟨RL.FK_F ha, ?_⟩
   · rw [hsp] at ha; exact RL.below_F ha
   · rw [hsp]; exact RL.FK_not_below hR ha
 
@@ -511,7 +554,8 @@ theorem realizes_move {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b : Nat} {src dst
     have hw' := hmo.world
     refine ⟨move_agree hst.store hvs hLs hmo.store, hw', herr, by rw [hprog, hst.prog], hsp',
       align_of_sp (by rw [hsp', hst.sp]) hst.align, fun hframe => ?_,
-      code_frameKeep hR hmo.mem hst.code⟩
+      code_frameKeep hR hmo.mem hst.code,
+      fun a ha => (hmo.mem a (RL.G_not_slot hR ha)).trans (hst.gkeep a ha)⟩
     rw [← hst.fplr hframe]
     apply read_mem_bytes_congr
     intro k hk

@@ -95,13 +95,14 @@ theorem ctlCheck_before {vc : VCode} {rf : RFunc} (h : ctlCheck vc rf = true)
 
 /-! ## The invariant -/
 
-/-- The store holds the world's argument registers. -/
-def ArgsOk (m : Loc → CV) (w : Arm.ArmState) : Prop :=
-  ∀ r, r.isArgReg = true → m (.reg r) = regVal w r
+/-- The store holds the world's argument registers `A`. -/
+def ArgsOk (A : Reg → Prop) (m : Loc → CV) (w : Arm.ArmState) : Prop :=
+  ∀ r, A r → m (.reg r) = regVal w r
 
-/-- While instruction 0 of block 0 is pending, the store holds the argument registers. -/
-def AInv : MConf CV Arm.ArmState → Prop
-  | .run ⟨b, its, m, w⟩ => b = 0 → (∃ a, RItem.op 0 a ∈ its) → ArgsOk m w
+/-- While instruction 0 of block 0 is pending, the store holds the argument registers the entry
+`Args` reads (`VCode.EntryArg`). -/
+def AInv (R : RL) : MConf CV Arm.ArmState → Prop
+  | .run ⟨b, its, m, w⟩ => b = 0 → (∃ a, RItem.op 0 a ∈ its) → ArgsOk R.vc.EntryArg m w
   | _ => True
 
 theorem upd_other {α β : Type} [DecidableEq α] {f : α → β} {a b : α} {x : β} (h : b ≠ a) :
@@ -109,7 +110,7 @@ theorem upd_other {α β : Type} [DecidableEq α] {f : α → β} {a b : α} {x 
 
 /-- `AInv` is kept by every step of the allocated code from a `Q` state. -/
 theorem aInv_step {R : RL} (hR : R.Wf) {s : Arm.ArmState} {c c' : MConf CV Arm.ArmState}
-    (hq : Q R s c) (hA : AInv c) (h : MStep R.vc R.sem ckeep R.rf c c') : AInv c' := by
+    (hq : Q R s c) (hA : AInv R c) (h : MStep R.vc R.sem ckeep R.rf c c') : AInv R c' := by
   have hck := (lowerRFunc_ok hR.alloc).2.2.2
   cases h with
   | @move b src dst its m w =>
@@ -207,7 +208,7 @@ theorem assign_args {ds : List (Reg × Reg)} {regs : Array Reg} {i' : MInst}
 /-- **`Args` on the machine**: no code; the store is unchanged. -/
 theorem realizes_args {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc}
     {its : List RItem} {m : Loc → CV} {w : Arm.ArmState} {c' : MConf CV Arm.ArmState}
-    (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩)) (hA : AInv (.run ⟨b, .op k allocs :: its, m, w⟩))
+    (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩)) (hA : AInv R (.run ⟨b, .op k allocs :: its, m, w⟩))
     {vb : VBlock} {ds : List (Reg × Reg)}
     (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some (.args ds))
     (h : MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c') :
@@ -280,7 +281,8 @@ theorem realizes_args {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {alloc
     · intro p hp r hr
       exact (hloc p (by simpa using hp)).2 r hr
     · intro q hq
-      exact hAO q.2 (hds _ (by simp [argPairs]; exact ⟨q.1, q.2, hq, rfl⟩)).2
+      exact hAO q.2 ⟨vb, argPairs ns, hvb, hi, .vreg q.1 .int, by
+        simp only [argPairs, List.mem_map]; exact ⟨q, hq, rfl⟩⟩
   rw [hself]
   exact ⟨j, vb, items, pre ++ [.op 0 (regs.map Loc.reg)], c2, ls, ps1, ps2, T, hvb, hit,
     by rw [hsplit]; simp, hchk', hc2, by simpa [codeLinesE] using hls, htr, hdrop, hpc, hst⟩

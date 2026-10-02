@@ -49,6 +49,17 @@ CLIF byte is there (`MemRel.valid`), and a call leaves them unspecified (`Callee
 def frameW (K lo hi : Nat) (af : AFunc) (s : Arm.ArmState) (a : BitVec 64) : Prop :=
   frameF lo hi af s a ∨ StackBelow K (spv s - BitVec.ofNat 64 (frameDrop af)) a
 
+/-- `frameW` and addresses `G` that the activation keeps (its callers' frames, the program's
+code; `RL.G`): the addresses outside the world of an activation inside a linked program. -/
+def frameWG (K lo hi : Nat) (af : AFunc) (G : BitVec 64 → Prop) (s : Arm.ArmState)
+    (a : BitVec 64) : Prop :=
+  frameW K lo hi af s a ∨ G a
+
+/-- Without kept addresses `frameWG` is `frameW`. -/
+theorem frameWG_false (K lo hi : Nat) (af : AFunc) (s : Arm.ArmState) :
+    frameWG K lo hi af (fun _ => False) s = frameW K lo hi af s :=
+  funext fun _ => or_false _
+
 theorem frameDrop_le (af : AFunc) : frameDrop af ≤ af.frameSize + 16 := by
   unfold frameDrop; split <;> omega
 
@@ -118,6 +129,54 @@ def CallSoundCtl (F : BitVec 64 → Prop) (K : Nat) (exec : MInst → Arm.ArmSta
   ∀ s, K ≤ (spOf s).toNat → (∀ a, StackBelow K (spOf s) a → F a) →
     OperandsSoundCtlAt F (fun a => F a ∧ ¬ StackBelow K (spOf s) a) exec sem i ctl s
 
+/-- `CallSoundCtl` at the states whose memory at `G` is `s0`'s: the callee may assume that the
+addresses `G` the calling activation keeps (`RL.G`: e.g. its callers' frames and the program's
+code) hold what they held at the activation's entry `s0`. -/
+def CallSoundCtlG (F : BitVec 64 → Prop) (K : Nat) (G : BitVec 64 → Prop) (s0 : Arm.ArmState)
+    (exec : MInst → Arm.ArmState → Option Arm.ArmState) (sem : ISem CV Arm.ArmState) (i : MInst)
+    (ctl : Ctl) : Prop :=
+  ∀ s, K ≤ (spOf s).toNat → (∀ a, StackBelow K (spOf s) a → F a) →
+    (∀ a, G a → s.mem a = s0.mem a) →
+    OperandsSoundCtlAt F (fun a => F a ∧ ¬ StackBelow K (spOf s) a) exec sem i ctl s
+
+theorem CallSoundCtl.g {F : BitVec 64 → Prop} {K : Nat} {exec : MInst → Arm.ArmState → Option Arm.ArmState}
+    {sem : ISem CV Arm.ArmState} {i : MInst} {ctl : Ctl} (h : CallSoundCtl F K exec sem i ctl)
+    (G : BitVec 64 → Prop) (s0 : Arm.ArmState) : CallSoundCtlG F K G s0 exec sem i ctl :=
+  fun s h1 h2 _ => h s h1 h2
+
+/-- The registers the entry `Args` of `vc` (instruction 0 of block 0) reads. -/
+def _root_.Backend.VCode.EntryArg (vc : VCode) (r : Reg) : Prop :=
+  ∃ vb ds, vc.blocks[0]? = some vb ∧ vb.insts[0]? = some (.args ds) ∧ ∃ v, (v, r) ∈ ds
+
+/-- `BodyEntry` relative to the addresses `F` outside the world and the argument registers `A`
+the body reads: the body-entry world `w₀` agrees with the entry state `s` on the memory outside
+`F` and on the registers `A` (`BodyEntry` fixes all memory and x0–x8, v0–v7). -/
+structure BodyEntryW (F : BitVec 64 → Prop) (A : Reg → Prop) (af : AFunc) (s w₀ : Arm.ArmState) :
+    Prop where
+  sp : spv w₀ = spv s - BitVec.ofNat 64 (frameDrop af)
+  fp : xreg 29 w₀ = if af.frame then spv s - 16#64 else xreg 29 s
+  args : ∀ r, A r → regVal w₀ r = regVal s r
+  other : ∀ f, ¬ Masked f → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → Arm.r f w₀ = Arm.r f s
+  mem : ∀ a, ¬ F a → w₀.mem a = s.mem a
+  program : w₀.program = s.program
+
+/-- `BodyEntry` gives `BodyEntryW` for every `F` and every set of argument registers. -/
+theorem _root_.E2E.BodyEntry.w {af : AFunc} {s w₀ : Arm.ArmState} (h : BodyEntry af s w₀)
+    (F : BitVec 64 → Prop) {A : Reg → Prop} (hA : ∀ r, A r → r.isArgReg = true) :
+    BodyEntryW F A af s w₀ := by
+  refine ⟨h.sp, h.fp, fun r hr => ?_, h.other, fun a _ => by rw [h.mem], h.program⟩
+  have := hA r hr
+  cases r with
+  | x n =>
+    simp only [Reg.isArgReg, decide_eq_true_eq] at this
+    have e := h.args n (by omega)
+    simp only [xreg] at e
+    simp only [regVal, rnum, e]
+  | v n =>
+    simp only [Reg.isArgReg, decide_eq_true_eq] at this
+    exact h.argsV n this
+  | _ => simp [Reg.isArgReg] at this
+
 /-- The fixed data of one activation. -/
 structure RL where
   vc : VCode
@@ -135,6 +194,9 @@ structure RL where
   psF : PState
   /-- the callees' stack budget below the body's `sp` (the dead stack of the calls) -/
   K : Nat
+  /-- addresses the activation keeps and leaves outside its world (its callers' frames, the
+  program's code; `fun _ => False` for the per-function theorems) -/
+  G : BitVec 64 → Prop
 
 namespace RL
 variable (R : RL)
@@ -144,10 +206,10 @@ def L : List Line := R.fa.lines.toList
 def ctx : FnCtx := ⟨R.fa.k, R.af.slotBase⟩
 /-- `sp` in the body. -/
 def spB : BitVec 64 := spv R.s0 - BitVec.ofNat 64 (frameDrop R.af)
-/-- The frame addresses (kept by every step of the body). -/
-def FK : BitVec 64 → Prop := frameF R.fr.intBase R.fr.size R.af R.s0
-/-- The addresses outside the world: the frame and the callees' dead stack below `spB`. -/
-def F : BitVec 64 → Prop := frameW R.K R.fr.intBase R.fr.size R.af R.s0
+/-- The frame addresses and the kept addresses `G` (kept by every step of the body). -/
+def FK : BitVec 64 → Prop := fun a => frameF R.fr.intBase R.fr.size R.af R.s0 a ∨ R.G a
+/-- The addresses outside the world: the frame, the callees' dead stack below `spB` and `G`. -/
+def F : BitVec 64 → Prop := frameWG R.K R.fr.intBase R.fr.size R.af R.G R.s0
 /-- Address of line `j`. -/
 def pcOf (j : Nat) : BitVec 64 := R.base + BitVec.ofNat 64 (lineOffset R.L j)
 /-- The encoder's environment at line `j`. -/
@@ -173,6 +235,8 @@ structure StRel (R : RL) (s : Arm.ArmState) (m : Loc → CV) (w : Arm.ArmState) 
   /-- the code words are readable as data -/
   code : ∀ k w, R.fb.words[k]? = some w →
     Arm.read_mem_bytes 4 (R.base + BitVec.ofNat 64 (4 * k)) s = w
+  /-- the kept addresses hold what they held at entry -/
+  gkeep : ∀ a, R.G a → s.mem a = R.s0.mem a
 
 /-- The checker accepts the remaining items of block `vb` (from VCode index `k`). -/
 def ItemsChecked (R : RL) (vb : VBlock) (its : List RItem) : Prop :=

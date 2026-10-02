@@ -116,7 +116,7 @@ theorem take_machine_defs {ops : Array Operand} {regs : Array Reg} {outs : List 
 the hooked callee and the branch to the normal-return successor, reaching `Q` at that
 successor's items (an `MStep` of the allocated code, whose exception payload defs take the
 values the callee left in their registers). -/
-theorem realizes_tryCall {R : RL} (hR : R.Wf) (hC : CalleeOk R.F R.K R.X R.H R.vc.CallSite)
+theorem realizes_tryCall {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 R.X R.H R.vc.CallSite)
     (hT : CalleeTryOk R.F R.X R.H R.vc.TrySite) {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc}
     {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
     (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩))
@@ -164,7 +164,7 @@ theorem realizes_tryCall {R : RL} (hR : R.Wf) (hC : CalleeOk R.F R.K R.X R.H R.v
   have hsemC : csem R.F R.ctx R.X (.call info) (useVals ops regs s) w = some (xo, w2, .next) := by
     simp [csem, hx]
   obtain ⟨s', hex, hW, hK, -, hoth, hkeep⟩ :=
-    RL.callAt hR (hC.os R.ctx info ⟨b, vb, k, hvb, .inr ⟨ti, hi⟩⟩) hst.sp cc wh ops regs (.call ic)
+    RL.callAtG hR (hC.os R.ctx info ⟨b, vb, k, hvb, .inr ⟨ti, hi⟩⟩) hst.sp hst.gkeep cc wh ops regs (.call ic)
       w xo w2 (by rw [← operands_tryCall_call info ti]; exact hops)
       (by rw [← clobbers_tryCall hcl]; exact hstat) hasg' hst.world hst.align hst.err hsemC
   have hexT : callExec R.H (.tryCall ic ti) s = some s' := by
@@ -270,7 +270,8 @@ theorem realizes_tryCall {R : RL} (hR : R.Wf) (hC : CalleeOk R.F R.K R.X R.H R.v
       (((ops.zip regs).toList.filter (·.1.isDef)).map (fun p => regVal s' p.2))).filter
         (·.1.1.isLate))) w2 := by
     refine ⟨fun l hl hL => ?_, hW, herr', hprog', hsp', align_of_sp (by rw [hsp', hst.sp]) hst.align,
-      fun hframe => ?_, code_keep hR.prog0 hst.code fun a ha => hK.2 a (.inr (.inr ha))⟩
+      fun hframe => ?_, code_keep hR.prog0 hst.code fun a ha => hK.2 a (.inl (.inr (.inr ha))),
+      fun a ha => (hK.2 a (.inr ha)).trans (hst.gkeep a ha)⟩
     · cases l with
       | reg r => exact hr2 r (hl r rfl)
       | stack k' c =>

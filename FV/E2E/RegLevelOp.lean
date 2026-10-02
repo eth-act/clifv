@@ -111,7 +111,8 @@ theorem fplr_inF {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) :
   have hd : frameDrop R.af = R.fr.total + 16 := by
     simp only [frameDrop, hframe, ite_true, hfs, RL.fr]
   intro k hk
-  simp only [RL.FK, frameF, hd]
+  refine .inl ?_
+  simp only [frameF, hd]
   rw [hfs] at hst
   simp only [RL.fr] at *
   have hm : (R.fr.total + 16) % 2 ^ 64 = R.fr.total + 16 := Nat.mod_eq_of_lt (by simp [RL.fr]; omega)
@@ -238,7 +239,8 @@ theorem realizes_op_core {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
     have herr' : Arm.r .ERR s' = .None := by
       rw [hW.1 .ERR (by simp [Masked]), hW'.1]
     refine ⟨fun l hl hL => ?_, hW, herr', ?_, hsp', align_of_sp (by rw [hsp', hst.sp]) hst.align,
-      fun hframe => ?_, code_keep hR.prog0 hst.code fun a ha => hK.2 a (.inr (.inr ha))⟩
+      fun hframe => ?_, code_keep hR.prog0 hst.code fun a ha => hK.2 a (.inl (.inr (.inr ha))),
+      fun a ha => (hK.2 a (.inr ha)).trans (hst.gkeep a ha)⟩
     · cases l with
       | reg r => exact hr2 r (hl r rfl)
       | stack k' c =>

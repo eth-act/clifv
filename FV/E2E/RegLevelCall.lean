@@ -141,8 +141,24 @@ structure CalleeOk (F : BitVec 64 → Prop) (K : Nat) (X : ExtSem) (H : ArmHooks
   ext : ∀ d uses w outs w', X.call d uses w = some (outs, w') → Arm.r .ERR w = .None →
     Arm.r .ERR w' = .None ∧ w'.program = w.program
 
+/-- **The callee contract relative to the kept addresses `G`** of the activation entered in
+`s0`: `CalleeOk` whose operand-view obligation (`CallSoundCtlG`) is required only at the states
+that keep `G` (`StRel.gkeep`). `CalleeOk` gives it (`CalleeOk.g`). -/
+structure CalleeOkG (F : BitVec 64 → Prop) (K : Nat) (G : BitVec 64 → Prop) (s0 : Arm.ArmState)
+    (X : ExtSem) (H : ArmHooks) (S : CallInfo → Prop) : Prop where
+  os : ∀ ctx info, S info → CallSoundCtlG F K G s0 (callExec H) (csem F ctx X) (.call info) .next
+  pc : ∀ d s, Arm.r .ERR s = .None → Arm.CheckSPAlignment s →
+    Arm.r .PC (H.call d s) = Arm.r .PC s + 4
+  ext : ∀ d uses w outs w', X.call d uses w = some (outs, w') → Arm.r .ERR w = .None →
+    Arm.r .ERR w' = .None ∧ w'.program = w.program
+
+theorem CalleeOk.g {F : BitVec 64 → Prop} {K : Nat} {X : ExtSem} {H : ArmHooks}
+    {S : CallInfo → Prop} (h : CalleeOk F K X H S) (G : BitVec 64 → Prop) (s0 : Arm.ArmState) :
+    CalleeOkG F K G s0 X H S :=
+  ⟨fun ctx info hs => (h.os ctx info hs).g G s0, h.pc, h.ext⟩
+
 /-- **A call on the machine**: one hooked step. -/
-theorem realizes_call {R : RL} (hR : R.Wf) (hC : CalleeOk R.F R.K R.X R.H R.vc.CallSite)
+theorem realizes_call {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 R.X R.H R.vc.CallSite)
     {s : Arm.ArmState}
     {b k : Nat} {allocs : Array Loc} {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
     (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩))
@@ -165,7 +181,8 @@ theorem realizes_call {R : RL} (hR : R.Wf) (hC : CalleeOk R.F R.K R.X R.H R.vc.C
     obtain ⟨rfl, rfl, -⟩ := he
     exact hC.ext _ _ _ _ _ hx herr
   refine realizes_op_core hR hq hvb hi hops hsz hsem hlen hk (exec := fun _ => callExec R.H)
-    (fun _ => RL.callAt hR (hC.os R.ctx info ⟨b, vb, k, hvb, .inl hi⟩) (q_stRel hq).sp) (fun regs i' hasg _ => ?_) hW'
+    (fun _ => RL.callAtG hR (hC.os R.ctx info ⟨b, vb, k, hvb, .inl hi⟩) (q_stRel hq).sp
+      (q_stRel hq).gkeep) (fun regs i' hasg _ => ?_) hW'
   obtain ⟨info', rfl⟩ := assign_call_form hasg
   have hgen : ∀ x, (∀ ps, (MInst.call info').lines R.ctx ps = .ok ([.ins x], ps)) →
       (Line.ins x).plain = true →

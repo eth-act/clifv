@@ -172,7 +172,8 @@ theorem stRel_after {R : RL} (hR : R.Wf) {s s' : Arm.ArmState} {m m' : Loc → C
   have hfr := R.frameOkK hR
   refine ⟨fun l hl hL => ?_, hw, herr, by rw [hprog]; exact hst.prog, hK.1.trans hst.sp,
     align_of_sp hK.1 hst.align, fun hframe => ?_,
-    code_keep hR.prog0 hst.code fun a ha => hK.2 a (.inr (.inr ha))⟩
+    code_keep hR.prog0 hst.code fun a ha => hK.2 a (.inl (.inr (.inr ha))),
+    fun a ha => (hK.2 a (.inr ha)).trans (hst.gkeep a ha)⟩
   · cases l with
     | reg r => rw [hreg r (hl r rfl)]; rfl
     | stack k c =>

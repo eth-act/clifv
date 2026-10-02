@@ -326,7 +326,7 @@ theorem stRel_regs {R : RL} {s s' : Arm.ArmState} {m : Loc → CV} {w : Arm.ArmS
   have hrd : ∀ n a, Arm.read_mem_bytes n a s' = Arm.read_mem_bytes n a s := fun n a =>
     read_mem_bytes_congr n a (fun k _ => by rw [hmem])
   refine ⟨fun l hl hL => ?_, ⟨fun f hfm => ?_, fun a ha' => ?_, ?_⟩, ?_, ?_, ?_,
-    align_of_sp hsp hst.align, fun hfr => ?_, fun k wd hk => ?_⟩
+    align_of_sp hsp hst.align, fun hfr => ?_, fun k wd hk => ?_, fun a ha => ?_⟩
   · cases l with
     | reg r =>
       by_cases e2 : r = .x nb
@@ -363,6 +363,7 @@ theorem stRel_regs {R : RL} {s s' : Arm.ArmState} {m : Loc → CV} {w : Arm.ArmS
   · rw [hsp]; exact hst.sp
   · rw [hrd]; exact hst.fplr hfr
   · rw [hrd]; exact hst.code k wd hk
+  · rw [hmem]; exact hst.gkeep a ha
 
 /-! ## The `Realizes` case -/
 
