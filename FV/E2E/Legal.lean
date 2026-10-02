@@ -88,7 +88,7 @@ theorem backend_correct_legal_env {f g : Clif.Function} {cert : Opt.Legalize128.
     {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubset p' g)
     (hc : Compiled g k vc vcp rf af fa fb)
-    {X : ExtSem} {H : ArmHooks} {syms : String → Option Nat} {slotOff : Nat} {env : Clif.Env}
+    {X : ExtSem} {H : ArmHooks} {syms : String → Option Nat} {slotOff K : Nat} {env : Clif.Env}
     -- the environment's contracts (`FV/Opt/Proof/LegalExt.lean`)
     (hH : Opt.Legal.HelperOk env) (hXL : Opt.Legal.ExtLegal env)
     (hK : Opt.Legal.EnvKeepsAllocs env)
@@ -102,27 +102,27 @@ theorem backend_correct_legal_env {f g : Clif.Function} {cert : Opt.Legalize128.
     -- `backend_correct_final`'s premises about `g`
     (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
     (hC : ∀ s, CalleeOk
-      (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H)
     (hCT : (∃ B ∈ g.blocks, B.term.isTry = true) → ∀ s, CalleeTryOk
-      (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
     (hTls : hasTls g = true → ∀ s, TlsOk
-      (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H)
     (hX : ∀ s, XCallsOk env (g.externs.map (·.2)) (fun sl cm w =>
-      Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
         slotOff, (RAFrame.compute vcp rf).intBase⟩ g sl cm w) X)
     (hXI : ∀ s, XCallsIndOk env (indSigs g) (fun sl cm w =>
-      Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
         slotOff, (RAFrame.compute vcp rf).intBase⟩ g sl cm w) X)
     (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
     (hslot : af.slotBase = slotOff)
     -- the run: `f` on `args`, `g` on the ABI-split `args'` (same slots and memory)
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args args' : List Clif.Val}
     {cs cs' : Clif.State}
-    (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hbe : BodyEntry af s w₀)
+    (hent : AbiEntry fb base ra s) (hres : StackAvail K af s) (hbe : BodyEntry af s w₀)
     (hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args')
     (hargs : ArgsIn g.sig args' s) (hcs : ClifEntry f args cs) (hcs' : ClifEntry g args' cs')
     (hsl : cs'.frame.slots = cs.frame.slots) (hmem : cs'.mem = cs.mem)
-    (hrel : Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s,
+    (hrel : Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s,
       syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ g cs'.frame.slots cs'.mem w₀)
     (htrS : TrapsExplicit env p cs) (htr : TrapsExplicit env p' cs') (fuel : Nat) :
     ArmRefinesLegal ((Opt.Legal.groups f.sig.returns).getD []) fb base ra (ArmStepX X H fa) s
@@ -169,7 +169,7 @@ theorem backend_correct_legal {f g : Clif.Function} {cert : Opt.Legalize128.Cert
     {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubset p' g)
     (hc : Compiled g k vc vcp rf af fa fb)
-    {X : ExtSem} {H : ArmHooks} {syms : String → Option Nat} {slotOff : Nat}
+    {X : ExtSem} {H : ArmHooks} {syms : String → Option Nat} {slotOff K : Nat}
     (hext : ∀ fn e, f.extern? fn = some e → p.func? e.name = none)
     (hext' : ∀ fn e, g.extern? fn = some e → p'.func? e.name = none)
     (hind : (∃ B ∈ f.blocks, ∃ st ∈ B.body, ∃ sig callee args,
@@ -177,26 +177,26 @@ theorem backend_correct_legal {f g : Clif.Function} {cert : Opt.Legalize128.Cert
       p'.funcs.map (·.name) = p.funcs.map (·.name) ∧ p.externNames <+: p'.externNames)
     (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
     (hC : ∀ s, CalleeOk
-      (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H)
     (hCT : (∃ B ∈ g.blocks, B.term.isTry = true) → ∀ s, CalleeTryOk
-      (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
     (hTls : hasTls g = true → ∀ s, TlsOk
-      (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H)
     (hX : ∀ s, XCallsOk Clif.Rust.env (g.externs.map (·.2)) (fun sl cm w =>
-      Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
         slotOff, (RAFrame.compute vcp rf).intBase⟩ g sl cm w) X)
     (hXI : ∀ s, XCallsIndOk Clif.Rust.env (indSigs g) (fun sl cm w =>
-      Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
         slotOff, (RAFrame.compute vcp rf).intBase⟩ g sl cm w) X)
     (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
     (hslot : af.slotBase = slotOff)
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args args' : List Clif.Val}
     {cs cs' : Clif.State}
-    (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hbe : BodyEntry af s w₀)
+    (hent : AbiEntry fb base ra s) (hres : StackAvail K af s) (hbe : BodyEntry af s w₀)
     (hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args')
     (hargs : ArgsIn g.sig args' s) (hcs : ClifEntry f args cs) (hcs' : ClifEntry g args' cs')
     (hsl : cs'.frame.slots = cs.frame.slots) (hmem : cs'.mem = cs.mem)
-    (hrel : Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s,
+    (hrel : Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s,
       syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ g cs'.frame.slots cs'.mem w₀)
     (htrS : TrapsExplicit Clif.Rust.env p cs) (htr : TrapsExplicit Clif.Rust.env p' cs')
     (fuel : Nat) :
@@ -218,26 +218,26 @@ theorem backend_correct_legal_callFree {f g : Clif.Function} {cert : Opt.Legaliz
     (hci : ∀ B ∈ g.blocks, ∀ st ∈ B.body, ∀ sig callee args, st.inst ≠ .callIndirect sig callee args)
     (hnt : ∀ B ∈ g.blocks, B.term.isTry = false)
     (hc : Compiled g k vc vcp rf af fa fb)
-    {X : ExtSem} {H : ArmHooks} {syms : String → Option Nat} {slotOff : Nat}
+    {X : ExtSem} {H : ArmHooks} {syms : String → Option Nat} {slotOff K : Nat}
     (hext : ∀ fn e, f.extern? fn = some e → p.func? e.name = none)
     (hext' : ∀ fn e, g.extern? fn = some e → p'.func? e.name = none)
     (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
     (hC : ∀ s, CalleeOk
-      (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H)
     (hTls : hasTls g = true → ∀ s, TlsOk
-      (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H)
     (hX : ∀ s, XCallsOk Clif.Rust.env (g.externs.map (·.2)) (fun sl cm w =>
-      Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
         slotOff, (RAFrame.compute vcp rf).intBase⟩ g sl cm w) X)
     (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
     (hslot : af.slotBase = slotOff)
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args args' : List Clif.Val}
     {cs cs' : Clif.State}
-    (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hbe : BodyEntry af s w₀)
+    (hent : AbiEntry fb base ra s) (hres : StackAvail K af s) (hbe : BodyEntry af s w₀)
     (hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args')
     (hargs : ArgsIn g.sig args' s) (hcs : ClifEntry f args cs) (hcs' : ClifEntry g args' cs')
     (hsl : cs'.frame.slots = cs.frame.slots) (hmem : cs'.mem = cs.mem)
-    (hrel : Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s,
+    (hrel : Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s,
       syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ g cs'.frame.slots cs'.mem w₀)
     (htrS : TrapsExplicit Clif.Rust.env p cs) (htr : TrapsExplicit Clif.Rust.env p' cs')
     (fuel : Nat) :

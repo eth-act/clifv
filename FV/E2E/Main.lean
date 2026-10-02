@@ -256,7 +256,7 @@ theorem backend_correct {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp
     {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb)
     {sem : Arm.ArmState → Sem} {F : Arm.ArmState → BitVec 64 → Prop}
-    {syms : String → Option Nat} {slotOff out : Nat} {astep : Arm.ArmState → Arm.ArmState}
+    {syms : String → Option Nat} {slotOff out K : Nat} {astep : Arm.ArmState → Arm.ArmState}
     {env : Clif.Env}
     -- M4
     (hrules : LowerRulesCorrect Isle.Aarch64.program)
@@ -270,7 +270,7 @@ theorem backend_correct {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp
     (htryInds : ∀ s, TryIndCalls (sem s) (fun sl cm w => Rel.holds ⟨F s, syms, slotOff, out⟩ f sl cm w)
       env p (indSigs f))
     -- M6 + M5
-    (hM6 : RegLevelCorrect sem F astep vcp af fb)
+    (hM6 : RegLevelCorrect sem F K astep vcp af fb)
     -- the shared VCode semantics (M6's `csem`)
     (hRef : ∀ s, Refines (F s) (sem s)) (hds : ∀ s, DriverSem (sem s))
     -- the callee contract (M6, from `CalleeSound`)
@@ -286,7 +286,7 @@ theorem backend_correct {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp
     (houtB : vc.outgoing ≤ out)
     -- the run
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
-    (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hbe : BodyEntry af s w₀)
+    (hent : AbiEntry fb base ra s) (hres : StackAvail K af s) (hbe : BodyEntry af s w₀)
     (hargs : ArgsIn f.sig args s) (hargF : StackArgsAvoid (F s) f.sig args s)
     (hcs : ClifEntry f args cs)
     (hrel : Rel.holds ⟨F s, syms, slotOff, out⟩ f cs.frame.slots cs.mem w₀)
@@ -327,7 +327,7 @@ theorem backend_correct_of_rules {p : Clif.Program} {f : Clif.Function} {k : Nat
     {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb)
     {sem : Arm.ArmState → Sem} {F : Arm.ArmState → BitVec 64 → Prop}
-    {syms : String → Option Nat} {slotOff out : Nat} {astep : Arm.ArmState → Arm.ArmState}
+    {syms : String → Option Nat} {slotOff out K : Nat} {astep : Arm.ArmState → Arm.ArmState}
     {env : Clif.Env}
     -- M4
     (hrules : LowerRulesCorrect Isle.Aarch64.program)
@@ -344,7 +344,7 @@ theorem backend_correct_of_rules {p : Clif.Program} {f : Clif.Function} {k : Nat
     (htryIndRules : TryIndRulesCorrect Isle.Aarch64.program)
     (htryIndUn : TryIndUnmatchable Isle.Aarch64.program)
     -- M6 + M5
-    (hM6 : RegLevelCorrect sem F astep vcp af fb)
+    (hM6 : RegLevelCorrect sem F K astep vcp af fb)
     -- the shared VCode semantics (M6's `csem`)
     (hRef : ∀ s, Refines (F s) (sem s)) (hds : ∀ s, DriverSem (sem s))
     -- the callee contract (M6, from `CalleeSound`)
@@ -360,7 +360,7 @@ theorem backend_correct_of_rules {p : Clif.Program} {f : Clif.Function} {k : Nat
     (houtB : vc.outgoing ≤ out)
     -- the run
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
-    (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hbe : BodyEntry af s w₀)
+    (hent : AbiEntry fb base ra s) (hres : StackAvail K af s) (hbe : BodyEntry af s w₀)
     (hargs : ArgsIn f.sig args s) (hargF : StackArgsAvoid (F s) f.sig args s)
     (hcs : ClifEntry f args cs)
     (hrel : Rel.holds ⟨F s, syms, slotOff, out⟩ f cs.frame.slots cs.mem w₀)

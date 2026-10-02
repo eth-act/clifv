@@ -17,12 +17,11 @@ Arm code of `f` refines `Clif.runLoop env (P.only f)`, assuming its callees meet
   `Clif.runLoop base P fuel cs`, from the premises of `backend_correct_final` at
   `env := Clif.linkEnv P base`, `p := P.only f`. `xCallsOk_link` splits the external contract into
   the base environment's (externs outside `P`) and the program functions' (`linkEnv`).
-* `calleeOk_mem_world`, `calleeOk_saves_lr_false`: **why the program functions' contracts are not
-  discharged from their own theorems** (docs/contracts/e2e.md, "Linking"): `CalleeOk` forces the
-  memory a callee leaves outside the caller's frame to be a function of the caller's *world*
-  (`SameWorld`), so a callee whose code stores its return address (or any callee-saved
-  register) below `sp` — the prologue of every function with a frame, ours included — cannot
-  meet it together with an `X.call` that returns.
+* The program callees' contracts `hC`/`hX` stay premises: discharging them from each callee's
+  own theorem (the Arm-level linking step) is open (docs/contracts/e2e.md, "Linking"). They are
+  satisfiable by callees that push a frame below `sp` (`E2E.calleeOk_nonLeaf`,
+  `FV/E2E/NonVacuity.lean`): the callee contract leaves the callees' dead stack (`K` bytes below
+  the caller's `sp`) unspecified.
 -/
 
 namespace E2E
@@ -104,23 +103,23 @@ theorem backend_correct_linked {P : Clif.Program} {baseEnv : Clif.Env} {f : Clif
     {k : Nat} {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hP : Linkable P) (hf : f ∈ P.funcs)
     (hsub : InSubset (P.only f) f) (hc : Compiled f k vc vcp rf af fa fb)
-    {X : ExtSem} {H : ArmHooks} {syms : String → Option Nat} {slotOff : Nat}
+    {X : ExtSem} {H : ArmHooks} {syms : String → Option Nat} {slotOff K : Nat}
     (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
     (hC : ∀ s, CalleeOk
-      (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H)
     (hCT : (∃ B ∈ f.blocks, B.term.isTry = true) → ∀ s, CalleeTryOk
-      (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
     (hTls : hasTls f = true → ∀ s, TlsOk
-      (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H)
     (hX : ∀ s, XCallsOk (Clif.linkEnv P baseEnv) (f.externs.map (·.2)) (fun sl cm w =>
-      Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
         slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X)
     (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
     (hslot : af.slotBase = slotOff)
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
-    (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hbe : BodyEntry af s w₀)
+    (hent : AbiEntry fb base ra s) (hres : StackAvail K af s) (hbe : BodyEntry af s w₀)
     (hargs : ArgsIn f.sig args s) (hcs : ClifEntry f args cs)
-    (hrel : Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s,
+    (hrel : Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s,
       syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicit (Clif.linkEnv P baseEnv) (P.only f) cs) (fuel : Nat) :
     ArmRefines fb base ra (ArmStepX X H fa) s (Clif.runLoop baseEnv P fuel cs) := by
@@ -128,70 +127,5 @@ theorem backend_correct_linked {P : Clif.Program} {baseEnv : Clif.Env} {f : Clif
   exact backend_correct_final hsub hc hcov hC hCT hTls hX
     (fun _ => by rw [indSigs_nil_of_linkFree (hP.free f hf)]; exact xCallsIndOk_nil _ _ _) hsym
     hslot hent hres hbe hargs hcs hrel htr m
-
-/-! ## Why the program functions' contracts stay premises -/
-
-/-- **`CalleeOk` fixes the callee's memory effect by the world**: for a direct call with no
-argument and no result whose external semantics returns (`X.call (some n) [] w = some …`), the
-hooked callee leaves the same memory outside the caller's frame addresses `F` from every state
-with the world `w` — states that differ in the pc, the allocatable registers or the frame. -/
-theorem calleeOk_mem_world {F : BitVec 64 → Prop} {X : ExtSem} {H : ArmHooks}
-    (hC : CalleeOk F X H) {n : String} {w w' : Arm.ArmState} {outs : List CV}
-    (hx : X.call (some n) [] w = some (outs, w')) {s₁ s₂ : Arm.ArmState}
-    (h₁ : SameWorld F s₁ w) (h₂ : SameWorld F s₂ w)
-    (ha₁ : Arm.CheckSPAlignment s₁) (ha₂ : Arm.CheckSPAlignment s₂)
-    (he₁ : Arm.r .ERR s₁ = .None) (he₂ : Arm.r .ERR s₂ = .None) :
-    ∀ a, ¬ F a → (H.call (some n) s₁).mem a = (H.call (some n) s₂).mem a := by
-  let info : CallInfo := ⟨.sym n, [], []⟩
-  let c : CheckCtx := ⟨default, default, default, default⟩
-  have hops : (MInst.call info).operands = .ok #[] := rfl
-  have hasg : (MInst.call info).assign #[] = .ok (MInst.call info) := rfl
-  have hst : c.checkStatic "" #[] ((#[] : Array Reg).map Loc.reg) (MInst.call info).clobbers =
-      Except.ok () := by
-    simp [CheckCtx.checkStatic, ensure, forM, List.forM, pure, Except.pure, bind, Except.bind]
-  have hsem : ∀ s, csem F ⟨0, 0⟩ X (.call info) (useVals #[] #[] s) w = some (outs, w', .next) := by
-    intro s
-    simp [csem, info, useVals, hx]
-  have key : ∀ s, SameWorld F s w → Arm.CheckSPAlignment s → Arm.r .ERR s = .None →
-      ∀ a, ¬ F a → (H.call (some n) s).mem a = w'.mem a := by
-    intro s hs ha he a hFa
-    obtain ⟨s', hex, hw, -⟩ := hC.os ⟨0, 0⟩ info c "" #[] #[] (.call info) s w outs w' hops hst
-      hasg hs ha he (hsem s)
-    simp only [callExec, info, Option.some.injEq] at hex
-    subst hex
-    exact hw.2.1 a hFa
-  intro a hFa
-  rw [key s₁ h₁ ha₁ he₁ a hFa, key s₂ h₂ ha₂ he₂ a hFa]
-
-/-- **A callee that saves its return address below `sp` does not meet `CalleeOk`** (with an
-`X.call` that returns): the saved word `pc + 4` depends on the pc of the call, which is outside
-the world. Our own functions' prologues (`stp x29, x30, [sp, #-16]!`) do exactly this, so the
-program functions' contracts `hC`/`hX` of `backend_correct_linked` cannot be met by the hook that
-runs their code; see docs/contracts/e2e.md, "Linking". -/
-theorem calleeOk_saves_lr_false {F : BitVec 64 → Prop} {X : ExtSem} {H : ArmHooks}
-    (hC : CalleeOk F X H) {n : String} {w w' : Arm.ArmState} {outs : List CV}
-    (hx : X.call (some n) [] w = some (outs, w'))
-    (ha : Arm.CheckSPAlignment w) (he : Arm.r .ERR w = .None)
-    (hsave : ∀ s, Arm.read_mem_bytes 8 (spv s - 8#64) (H.call (some n) s) = Arm.r .PC s + 4#64)
-    (hF : ∀ j < 8, ¬ F (spv w - 8#64 + BitVec.ofNat 64 j)) : False := by
-  let s₂ := Arm.w .PC (Arm.r .PC w + 4#64) w
-  have h₂ : SameWorld F s₂ w := SameWorld.w_left (by simp [Masked]) (SameWorld.refl F w)
-  have hsp : spv s₂ = spv w := by
-    simp only [s₂, spv]
-    exact Arm.r_of_w_different (by simp)
-  have ha₂ : Arm.CheckSPAlignment s₂ := by
-    simp only [Arm.CheckSPAlignment, Arm.read_gpr] at ha ⊢
-    rw [show Arm.r (.GPR 31#5) s₂ = Arm.r (.GPR 31#5) w from Arm.r_of_w_different (by simp)]
-    exact ha
-  have he₂ : Arm.r .ERR s₂ = .None := by
-    simp only [s₂]; rw [Arm.r_of_w_different (by simp)]; exact he
-  have hm := calleeOk_mem_world hC hx (SameWorld.refl F w) h₂ ha ha₂ he he₂
-  have hr := read_mem_bytes_congr (s := H.call (some n) w) (t := H.call (some n) s₂) 8
-    (spv w - 8#64) fun j hj => hm _ (hF j hj)
-  rw [hsave w, ← hsp, hsave s₂] at hr
-  have hpc : Arm.r .PC s₂ = Arm.r .PC w + 4#64 := by simp [s₂]
-  rw [hpc] at hr
-  generalize Arm.r .PC w = x at hr
-  bv_omega
 
 end E2E

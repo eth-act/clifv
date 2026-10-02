@@ -27,13 +27,13 @@ theorem memAgree_of {F : BitVec 64 → Prop} {syms} {cm : Clif.Mem} {w s : Arm.A
 /-- **Composition.** -/
 theorem backend_correct_of_layers {p : Clif.Program} {f : Clif.Function} {vc vcp : VCode}
     {af : AFunc} {fb : FnBin} {sem : Arm.ArmState → Sem} {F : Arm.ArmState → BitVec 64 → Prop}
-    {syms : String → Option Nat} {slotOff out : Nat}
+    {syms : String → Option Nat} {slotOff out K : Nat}
     {astep : Arm.ArmState → Arm.ArmState} {env : Clif.Env}
     (hIsel : ∀ s, IselSim (sem s) ⟨F s, syms, slotOff, out⟩ env p f vc)
     (hPrep : ∀ s, PrepareCorrect (sem s) vc vcp)
-    (hReg : RegLevelCorrect sem F astep vcp af fb)
+    (hReg : RegLevelCorrect sem F K astep vcp af fb)
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
-    (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hbe : BodyEntry af s w₀)
+    (hent : AbiEntry fb base ra s) (hres : StackAvail K af s) (hbe : BodyEntry af s w₀)
     (hargs : ArgsAtEntry (F s) f.sig args w₀)
     (hcs : ClifEntry f args cs) (hrel : Rel.holds ⟨F s, syms, slotOff, out⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
