@@ -576,12 +576,46 @@ call site is a `bl`; no stack-passed call arguments (`intBase = 0`), parameters 
 argument registers (width ≤ 64), no `sret`; program callees have no stack slots (gap "slot
 placement" avoided: their frame is the allocator's); program call sites pass integer arguments in
 the callee's parameter registers and take results from x0.. (checked per site); declarations
-equal definitions. **Trusted / premises**: the link layout (bases, the code image `Img`/`imgMem`,
-return addresses outside callees' code, `raStar`, distinct symbol addresses), the base
+equal definitions; no function calls itself directly (`raCall`: the return address of a call
+is outside the code of the function it calls, stated per call site). **Trusted / premises**: the
+link layout (bases, the code image `Img`/`imgMem`, return addresses outside callees' code,
+`raStar`, distinct symbol addresses), the base
 environment's contracts (calls outside `P`, `XCallsOk` of the base externs, TLS), the stack
 budget `D` per call level, and the entry state. The machine is depth-indexed (`L.mach M f` for
-runs of at most `M + 1` steps). **Not done**: a non-vacuity witness of `LinkSys.Ok` for a closed
-program (needs a concrete compiled program; see `docs/DEFERRED.md`, "Linking").
+runs of at most `M + 1` steps).
+
+**Non-vacuity** (`FV/E2E/NonVacuityLink.lean`, namespace `E2E.LinkWitness`): the closed program
+`P = {f, g, h}` — `f` calls `g`, `g` calls `h` (a non-leaf program callee; `g` keeps its argument
+in x19 across the call), `colocated`, `(i64) -> i64` — parsed from an embedded source and
+compiled by the pipeline (`lowerFunction`, `prepare`, the `lean-regalloc` output for this file
+embedded as JSON and rebuilt by `parseRAOut`/`buildRFunc`, `checkAlloc`, `lowerRFunc`,
+`emitFunc`, `layout`), loaded at `0x30000`/`0x20000`/`0x10000`, closed base environment (no
+extern outside `P`, no TLS):
+
+```lean
+theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
+theorem backend_correct_program_witness :
+    (L F0).Ok ∧ fF ∈ (L F0).P.funcs ∧ fG ∈ (L F0).P.funcs ∧ fH ∈ (L F0).P.funcs ∧
+    (∃ info, (L F0).ProgSite fF info fG) ∧ (∃ info, (L F0).ProgSite fG info fH) ∧
+    run0 = .returned [⟨.i64, 83#64⟩] (retMem run0) ∧
+    ArmRefines (A fF).fb (A fF).base 8 ((L F0).mach M0 fF) s0 run0
+```
+
+Every per-function premise of `LinkSys.Ok` (`compiled`, `covered`, `noTry`, `noOut`, `regParams`,
+`argRegs`, `noSret`, `calleeSlots`, `callRegs`, `noBlr`, `declSig`, `entryRegs`, `fits`, `raCall`,
+`depth`, `subset`, `linkable`, the image `imgCode`) is an executable check with a soundness lemma
+(`chk`/`Facts`, `siteOk_sound`, `entryB_sound`, `raCallB_sound`, `linkFreeB_sound`,
+`imgCode_of`), decided by `native_decide` (`okB_true`); `symInj`, `symOk` and the base contracts
+(`baseOs`, `basePc`, `baseExt`, `baseX`, `baseTls`) are proven (vacuous or immediate for the
+closed environment). The second theorem discharges the entry premises too (`AbiEntry`,
+`StackAvail`, `hF`, `hgfree`, `himg`, `BodyEntry`, `ArgsIn`, `ClifEntry`, `Rel.holds`, the
+returning CLIF run, `native_decide`: `entryFactsB_true`, `callChainB_true`) for `f` on `41` at
+depth `M0 = 20` and applies `backend_correct_program_returned`. Axioms: standard plus the
+`_native` axioms of `names`, `okB_true`, `entryFactsB_true`, `callChainB_true` (and the existing
+`bv_decide`/`native_decide` ones of the backend proofs). The witness found the former `raCall`
+(the return address of every call outside the code of **every** function of `P`, including the
+caller's own) unsatisfiable for every program with a call; it is now stated for the callees of
+the caller's call sites (`LinkSys.ProgSite`).
 
 ### Non-vacuity (2026-10-02, `agent/callee-fix`, `FV/E2E/NonVacuity.lean`)
 
@@ -635,6 +669,7 @@ body's `sp`"):
 | `backend_correct_opt_proven` | `hC`, `hTls`, `hX`, `hsym` (for the optimised function; `try_call` and `call_indirect` excluded by premises) | `final_contracts_witness` at `f := Opt.optimize f cfg` |
 | `backend_correct_legal` | `hC`, `hCT`, `hTls`, `hX`, `hXI`, `hsym` (for the legalised `g`, environment `Clif.Rust.env`) | `final_contracts_witness` at `f := g`, `env := Clif.Rust.env`, for functions without indirect calls whose externs are the diverging panic entry points (they never return, so `hnoop` holds) |
 | `backend_correct_linked` | `hC`, `hCT`, `hTls`, `hX` (environment `Clif.linkEnv P base`); `hXI` discharged by `Linkable` | `final_contracts_witness` at `env := Clif.linkEnv P base`, when the program callees and the base externs return nothing and keep the memory |
+| `backend_correct_program` | `L.Ok` (program, compilation, layout, base environment) and the entry premises | `E2E.LinkWitness.backend_correct_program_witness` (`FV/E2E/NonVacuityLink.lean`): `P = {f, g, h}` compiled by the pipeline, all premises discharged, `f 41` returns `83` |
 
 **Callees that return values** (`idX sym tp idf`: a callee `n` with `idf n` returns its first
 argument — a `bl n` or a `blr` to `sym n 0` —, every other callee returns nothing; the hooks are

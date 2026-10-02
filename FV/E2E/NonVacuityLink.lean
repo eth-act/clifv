@@ -1,5 +1,26 @@
 import FV.E2E.LinkArm
 
+/-! # Non-vacuity of `backend_correct_program` (docs/contracts/e2e.md, "Non-vacuity")
+
+A concrete linked program for which every premise of `E2E.backend_correct_program` holds:
+`P = {f, g, h}` (`f` calls `g`, `g` calls `h`, `colocated`, integer register arguments, no stack
+slots), parsed from the embedded source `src`, compiled by the backend's pipeline
+(`lowerFunction`, `prepare`, regalloc2's allocation `raOut` — the output of `lean-regalloc` on the
+pipeline's input for this file, rebuilt by `buildRFunc` and accepted by `checkAlloc` —,
+`lowerRFunc`, `emitFunc`, `layout`), loaded at `0x30000`, `0x20000`, `0x10000`.
+
+* The per-function premises of `LinkSys.Ok` are executable checks (`chk`, `okB`, each with a
+  soundness lemma: `siteOk_sound`, `entryB_sound`, `raCallB_sound`, `linkFreeB_sound`,
+  `imgCode_of`, …), decided by `native_decide` (`okB_true`; the project's axiom policy allows
+  `_native.native_decide` axioms).
+* The base environment is closed: no extern outside `P` (`Xb.call` undefined), calls outside
+  `P` continue at the next instruction (`Hb`), no TLS.
+* **`L_ok`**: `(L F).Ok` for every `F` containing the code.
+* **`backend_correct_program_witness`**: with the entry premises of `f` on the argument `41`
+  (ABI entry state `s0`, body-entry world `w0`, CLIF entry state `cs0`), the theorem applies:
+  the linked machine refines `f`'s CLIF run, which returns `83`.
+-/
+
 namespace E2E.LinkWitness
 
 open Backend Backend.Proof Backend.Proof.Driver
@@ -281,6 +302,11 @@ def okB : Bool :=
 
 theorem okB_true : okB = true := by native_decide
 
+theorem okB_imgB : imgB P A = true := by
+  have := okB_true
+  simp only [okB, Bool.and_eq_true] at this
+  exact this.2.2.1
+
 /-! ## Soundness of the image check -/
 
 theorem wordsAt_mem {base : BitVec 64} {w : BitVec 32} :
@@ -504,5 +530,246 @@ theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
     obtain ⟨hm, hnone⟩ := hext
     obtain ⟨h', hf', -⟩ := (facts hg).externs ext hm
     rw [hf'] at hnone; cases hnone
+
+/-! ## A concrete entry of `f` -/
+
+/-- The call depth of the witness run. -/
+def M0 : Nat := 20
+
+def sp0 : BitVec 64 := 0x100000
+
+/-- The argument `41 : i64`. -/
+def arg : Clif.Val := ⟨.i64, 41#64⟩
+
+/-- The entry block of `f`. -/
+def bF : Clif.Block := fF.entry?.getD default
+
+/-- The CLIF entry state of `f` on `41` (no stack slots, empty memory). -/
+def cs0 : Clif.State where
+  frame := { func := fF, regs := (Clif.Regs.empty.setMany (bF.params.map (·.1)) [arg]).getD default,
+             slots := [], body := bF.body, term := bF.term }
+  callers := []
+  mem := Clif.Mem.empty
+
+/-- The CLIF run of the program from `cs0`. -/
+def run0 : Clif.Outcome := Clif.runLoop Clif.Env.empty P (M0 + 1) cs0
+
+def retVals : Clif.Outcome → List Clif.Val
+  | .returned v _ => v
+  | _ => []
+
+def retMem : Clif.Outcome → Clif.Mem
+  | .returned _ m => m
+  | _ => Clif.Mem.empty
+
+def isRet : Clif.Outcome → Bool
+  | .returned _ _ => true
+  | _ => false
+
+theorem eq_returned {o : Clif.Outcome} (h : isRet o = true) : o = .returned (retVals o) (retMem o) := by
+  cases o <;> simp_all [isRet, retVals, retMem]
+
+/-- Every code address of `P` is in `[0x10000, 0x40000)`. -/
+def boundB : Bool :=
+  P.funcs.all fun g => let a := A g
+    decide (a.base.toNat + 4 * a.fb.words.size + 4 ≤ 0x40000)
+
+def locB : Bool :=
+  match locsOf fF.sig with
+  | [.reg (.x 0)] => true
+  | _ => false
+
+/-- The entry facts of `f` and its run: `f` returns `2 * 41 + 1`. -/
+def entryFactsB : Bool :=
+  boundB && locB && (A fF).af.frame && decide (frameDrop (A fF).af = 16) &&
+  decide (P.func? fF.name = some fF) && decide (fF.entry? = some bF) &&
+  decide ([arg].map (·.ty) = fF.sig.params.map (·.ty)) &&
+  decide (bF.params.map (·.2) = [arg].map (·.ty)) &&
+  (Clif.Regs.empty.setMany (bF.params.map (·.1)) [arg]).isSome &&
+  isRet run0 && decide (retVals run0 = [⟨.i64, 83#64⟩])
+
+theorem entryFactsB_true : entryFactsB = true := by native_decide
+
+theorem wordsAt_mem_inv {base : BitVec 64} {p : BitVec 64 × BitVec 32} :
+    ∀ {ws : List (BitVec 32)} {k : Nat}, List.Mem p (wordsAt base k ws) →
+      ∃ j < ws.length, p.1 = base + BitVec.ofNat 64 (4 * (k + j))
+  | [], _, h => nomatch h
+  | x :: ws, k, h => by
+    cases h with
+    | head => exact ⟨0, by simp, by simp⟩
+    | tail _ h =>
+      obtain ⟨j, hj, e⟩ := wordsAt_mem_inv h
+      exact ⟨j + 1, by simp; omega, by rw [e]; congr 2; omega⟩
+
+theorem codeAddr_lt {a : Art} (hb : a.base.toNat + 4 * a.fb.words.size + 4 ≤ 0x40000) {x : BitVec 64}
+    {t : Arm.ArmState} (ht : t.program = a.fb.program a.base) (h : CodeAddr t x) :
+    x.toNat < 0x40000 := by
+  obtain ⟨p, hp, hx⟩ := h
+  rw [ht] at hp
+  obtain ⟨j, hj, e⟩ := wordsAt_mem_inv (k := 0) hp
+  simp only [Array.length_toList] at hj
+  rw [e, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat] at hx
+  have := a.base.isLt
+  have := x.isLt
+  rw [Nat.mod_eq_of_lt (by omega : 4 * (0 + j) < 2 ^ 64),
+    Nat.mod_eq_of_lt (by omega : a.base.toNat + 4 * (0 + j) < 2 ^ 64)] at hx
+  omega
+
+theorem img_lt {x : BitVec 64} (h : Img P A x) : x.toNat < 0x40000 := by
+  obtain ⟨g, hg, hc⟩ := h
+  have := entryFactsB_true
+  simp only [entryFactsB, boundB, Bool.and_eq_true, List.all_eq_true, decide_eq_true_eq] at this
+  exact codeAddr_lt (this.1.1.1.1.1.1.1.1.1.1 g hg) rfl hc
+
+/-- The ABI entry state of `f`: its code loaded at its base (program and memory, the image of
+the whole program in memory), the argument `41` in x0, `sp = 0x100000`, return address `8`. -/
+def s0 : Arm.ArmState :=
+  Arm.w .PC (A fF).base (Arm.w (.GPR 30#5) 8 (Arm.w (.GPR 31#5) sp0 (Arm.w (.GPR 0#5) 41#64
+    (setMem (Arm.set_program Arm.ArmState.default ((A fF).fb.program (A fF).base))
+      (memOf (progAll P A))))))
+
+/-- The body-entry world: after the prologue (`stp x29, x30, [sp, #-16]!; mov x29, sp`). -/
+def w0 : Arm.ArmState := Arm.w (.GPR 31#5) (sp0 - 16) (Arm.w (.GPR 29#5) (sp0 - 16) s0)
+
+/-- The addresses outside the world of the entry activation: its frame, its callees' stack,
+the code. -/
+def F0 : BitVec 64 → Prop :=
+  frameWG (32 * M0) (RAFrame.compute (A fF).vcp (A fF).rf).intBase
+    (RAFrame.compute (A fF).vcp (A fF).rf).size (A fF).af (Img P A) s0
+
+theorem mem_w (f : Arm.StateField) (v : Arm.state_value f) (s : Arm.ArmState) :
+    (Arm.w f v s).mem = s.mem :=
+  funext fun a => (Arm.read_mem_of_w (addr := a) (fld := f) (v := v) (s := s) :)
+
+theorem s0_mem : s0.mem = memOf (progAll P A) := by simp [s0, mem_w]
+
+theorem s0_program : s0.program = (A fF).fb.program (A fF).base := by
+  simp [s0, Arm.w_program]
+
+theorem gpr_ne {i j : Nat} (hi : i < 32) (hj : j < 32) (h : i ≠ j) :
+    Arm.StateField.GPR (BitVec.ofNat 5 i) ≠ .GPR (BitVec.ofNat 5 j) := by
+  intro e
+  injection e with e
+  have := congrArg BitVec.toNat e
+  simp only [BitVec.toNat_ofNat] at this
+  omega
+
+/-- `vc` has a `call` of the symbol `n`. -/
+def callsB (vc : VCode) (n : String) : Bool :=
+  vc.blocks.any fun vb => vb.insts.any fun i => match i with
+    | .call info => decide (info.dest = .sym n)
+    | _ => false
+
+theorem callsB_sound {vc : VCode} {n : String} (h : callsB vc n = true) :
+    ∃ info, vc.CallSite info ∧ info.dest = .sym n := by
+  simp only [callsB, Array.any_eq_true] at h
+  obtain ⟨b, hb, k, hk, hi⟩ := h
+  revert hi
+  split
+  · rename_i info e
+    intro hd
+    exact ⟨info, ⟨b, _, k, Array.getElem?_eq_getElem hb, .inl (by rw [Array.getElem?_eq_getElem hk, e])⟩,
+      of_decide_eq_true hd⟩
+  · simp
+
+/-- `f` calls `g` and `g` calls `h` (in their compiled code). -/
+def callChainB : Bool :=
+  callsB (A fF).vcp "g" && callsB (A fG).vcp "h" &&
+  decide (P.func? "g" = some fG) && decide (P.func? "h" = some fH)
+
+theorem callChainB_true : callChainB = true := by native_decide
+
+/-- **Non-vacuity of `backend_correct_program`**: for the program `P = {f, g, h}` (`f` calls `g`,
+`g` calls `h`: a caller and a non-leaf callee of the program), compiled by the backend's
+pipeline (regalloc2's allocation, accepted by `checkAlloc`), linked at `0x30000`, `0x20000`,
+`0x10000`, every premise of the theorem holds — `L.Ok` and the entry premises of `f` on the
+argument `41` — and the theorem gives: the linked Arm machine refines `f`'s CLIF run, which
+returns `83`. -/
+theorem backend_correct_program_witness :
+    (L F0).Ok ∧ fF ∈ (L F0).P.funcs ∧ fG ∈ (L F0).P.funcs ∧ fH ∈ (L F0).P.funcs ∧
+    (∃ info, (L F0).ProgSite fF info fG) ∧ (∃ info, (L F0).ProgSite fG info fH) ∧
+    run0 = .returned [⟨.i64, 83#64⟩] (retMem run0) ∧
+    ArmRefines (A fF).fb (A fF).base 8 ((L F0).mach M0 fF) s0 run0 := by
+  have hF : ∀ a, Img P A a → F0 a := fun a ha => .inr ha
+  have hL := L_ok F0 hF
+  have hfF : fF ∈ (L F0).P.funcs := by simp [L, P]
+  have hc := callChainB_true
+  simp only [callChainB, Bool.and_eq_true, decide_eq_true_eq] at hc
+  obtain ⟨⟨⟨hcf, hcg⟩, hpg⟩, hph⟩ := hc
+  have he := entryFactsB_true
+  simp only [entryFactsB, Bool.and_eq_true, decide_eq_true_eq] at he
+  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨hbound, hloc⟩, hframe⟩, hdrop⟩, hfunc⟩, hentry⟩, hsig⟩, hparams⟩, hset⟩, hret⟩,
+    hvals⟩ := he
+  have hrun : run0 = .returned [⟨.i64, 83#64⟩] (retMem run0) := by
+    rw [← hvals]; exact eq_returned hret
+  have hfa := facts (g := fF) (by simp [P])
+  have hfs : (A fF).af.frameSize = 0 := by simp [frameDrop, hframe] at hdrop; exact hdrop
+  have hlocs : locsOf fF.sig = [.reg (.x 0)] := by
+    unfold locB at hloc
+    split at hloc
+    · assumption
+    · cases hloc
+  have hbF : (A fF).base.toNat + 4 * (A fF).fb.words.size + 4 ≤ 0x40000 := by
+    simp only [boundB, List.all_eq_true, decide_eq_true_eq] at hbound
+    exact hbound fF (by simp [P])
+  have hsp : spv s0 = sp0 := by simp [s0, spv, Arm.r_of_w_different, Arm.r_of_w_same]
+  refine ⟨hL, hfF, by simp [L, P], by simp [L, P], ?_, ?_, hrun, ?_⟩
+  · obtain ⟨info, hs, hd⟩ := callsB_sound hcf
+    exact ⟨info, hs, "g", hd, hpg⟩
+  · obtain ⟨info, hs, hd⟩ := callsB_sound hcg
+    exact ⟨info, hs, "h", hd, hph⟩
+  rw [hrun]
+  refine backend_correct_program_returned (L F0) hL hfF M0 (w₀ := w0) (args := [arg]) (cs := cs0)
+    ?hent ?hres rfl ?hgfree ?himg ?hbe ?hargs ?hcs ?hrel (hrun ▸ rfl)
+  case hent =>
+    refine ⟨s0_program, imgCode_of (okB_imgB) (by simp [P]) s0 (fun a _ => by rw [s0_mem]),
+      by simp [s0, L, Arm.r_of_w_same], ?_, ?_, hL.raStar fF hfF, ?_, hL.fits fF hfF⟩
+    · simp [s0, Arm.r_of_w_different, r_setMem, r_set_program, Arm.r, Arm.read_base_error,
+        Arm.ArmState.default]
+    · simp [s0, xreg, Arm.r_of_w_different, Arm.r_of_w_same]
+    · simp [s0, spv, Arm.r_of_w_different, Arm.r_of_w_same, sp0]
+  case hres =>
+    refine ⟨by simp [L, LinkSys.K, hfs, hsp, sp0, M0], fun a ha => ?_⟩
+    have hlt := codeAddr_lt hbF s0_program ha
+    simp only [L, LinkSys.K, hfs, hsp, sp0, M0]
+    simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
+    have : (1048576 : BitVec 64).toNat = 1048576 := rfl
+    omega
+  case hgfree =>
+    intro a ha ⟨h1, h2⟩
+    have hlt := img_lt ha
+    simp only [L, LinkSys.K, hdrop, hsp, sp0, M0] at h1 h2
+    simp at h2
+    omega
+  case himg => exact fun a _ => by rw [s0_mem]; rfl
+  case hbe =>
+    refine ⟨?_, ?_, fun i hi => ?_, fun i _ => ?_, fun f _ h29 h31 => ?_, ?_, ?_⟩
+    · simp only [L, hdrop, hsp]; simp [w0, spv, Arm.r_of_w_same]
+    · simp only [L, hframe, ite_true, hsp]; simp [w0, xreg, Arm.r_of_w_different, Arm.r_of_w_same]
+    · simp only [xreg, w0]
+      rw [Arm.r_of_w_different (gpr_ne (by omega) (by omega) (by omega : i ≠ 31)),
+        Arm.r_of_w_different (gpr_ne (by omega) (by omega) (by omega : i ≠ 29))]
+    · simp [w0, Arm.r_of_w_different]
+    · simp only [w0]; rw [Arm.r_of_w_different h31, Arm.r_of_w_different h29]
+    · simp [w0, mem_w]
+    · simp [w0, Arm.w_program]
+  case hargs =>
+    intro loc v hm
+    rw [hlocs] at hm
+    simp only [List.zip_cons_cons, List.zip_nil_right, List.mem_singleton, Prod.mk.injEq] at hm
+    obtain ⟨rfl, rfl⟩ := hm
+    simp [VHolds, regVal, rnum, s0, Arm.r_of_w_different, Arm.r_of_w_same, arg]
+    rfl
+  case hcs =>
+    refine ⟨rfl, rfl, hsig, ⟨bF, hentry, rfl, rfl, hparams, ?_⟩, by simp [cs0, hfa.slots]⟩
+    obtain ⟨r, hr⟩ := Option.isSome_iff_exists.1 hset
+    simp only [cs0, hr, Option.getD_some]
+  case hrel =>
+    refine ⟨⟨fun a b ha _ => by simp [cs0, Clif.Mem.valid, Clif.Mem.empty] at ha,
+      fun a n ha => by simp [cs0, Clif.Mem.valid, Clif.Mem.empty] at ha, rfl⟩,
+      fun id b h => by simp [cs0] at h, ?_⟩
+    show OutRel _ (RAFrame.compute (A fF).vcp (A fF).rf).intBase _ _
+    rw [hfa.noOut]
+    exact outRel_zero _ _ _
 
 end E2E.LinkWitness

@@ -117,8 +117,10 @@ premises. Deferred, in order:
 - **Arm-level linking: done for the scope of `LinkSys.Ok`** (agent/arm-link,
   `E2E.backend_correct_program`): exact world (one VCode outcome per body-entry world,
   `backend_correct_world`), frame locality (`G` kept), the induction on depth (`LinkSys.thm`).
-  Remaining: a non-vacuity witness of `LinkSys.Ok` (a closed program compiled by the Lean backend,
-  `Compiled` by `native_decide`, layout and image); then widen the scope: callees with stack slots
+  Witness done (`E2E.LinkWitness.backend_correct_program_witness`, `FV/E2E/NonVacuityLink.lean`;
+  it found `raCall` unsatisfiable for every program with a call, now stated per call-site
+  callee). Remaining: widen the scope: directly self-recursive functions (`raCall`), callees
+  with stack slots
   (slot-placement oracle or relocation invariance), stack-passed arguments (the callee's
   outgoing area is caller garbage: needs it in `F` or a write-before-read argument), `try_call`
   (`CalleeTryOk` from `ActRet`), `blr` call sites, float parameters; a depth-free machine
