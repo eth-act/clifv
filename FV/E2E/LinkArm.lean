@@ -404,6 +404,224 @@ theorem initState_noSlots {P : Clif.Program} {h : Clif.Function} {n : String}
   | trap => rw [he] at hi; cases hi
   | stuck => rw [he] at hi; cases hi
 
+/-! ## Stack and frame arithmetic -/
+
+theorem off_toNat (a sp : BitVec 64) (D : Nat) (hD : D ≤ sp.toNat) :
+    ((a - (sp - BitVec.ofNat 64 D)).toNat < D ↔ a.toNat < sp.toNat ∧ sp.toNat ≤ a.toNat + D) ∧
+    (a.toNat < (sp - BitVec.ofNat 64 D).toNat ↔ a.toNat < sp.toNat - D) ∧
+    (sp - BitVec.ofNat 64 D).toNat = sp.toNat - D := by
+  have hsp := sp.isLt
+  have ha := a.isLt
+  have hB : (sp - BitVec.ofNat 64 D).toNat = sp.toNat - D := by
+    rw [BitVec.toNat_sub_of_le] <;> simp only [BitVec.le_def, BitVec.toNat_ofNat] <;>
+      rw [Nat.mod_eq_of_lt (by omega)] <;> omega
+  refine ⟨?_, by rw [hB], hB⟩
+  rw [BitVec.toNat_sub, hB]
+  rcases Nat.lt_or_ge a.toNat (sp.toNat - D) with h | h
+  · rw [Nat.mod_eq_of_lt (by omega)]; omega
+  · rw [show 2 ^ 64 - (sp.toNat - D) + a.toNat = (a.toNat - (sp.toNat - D)) + 2 ^ 64 by omega,
+      Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
+    omega
+
+theorem frameWG_noSlots {K : Nat} {af : AFunc} {G : BitVec 64 → Prop} {u : Arm.ArmState}
+    {a : BitVec 64} (hfr : af.frame = true) (hroom : af.frameSize + 16 + K ≤ (spv u).toNat) :
+    frameWG K 0 af.frameSize af G u a ↔
+      StackBelow (af.frameSize + 16 + K) (spv u) a ∨ CodeAddr u a ∨ G a := by
+  have hd : frameDrop af = af.frameSize + 16 := by simp [frameDrop, hfr]
+  obtain ⟨h1, h2, h3⟩ := off_toNat a (spv u) (af.frameSize + 16) (by omega)
+  simp only [frameWG, frameW, frameF, StackBelow, hd]
+  constructor
+  · rintro (((⟨-, h⟩ | ⟨-, h⟩ | hc) | ⟨hl, hr⟩) | hg)
+    · exact .inl (by have := h1.1 (by omega); omega)
+    · exact .inl (by have := h1.1 h; omega)
+    · exact .inr (.inl hc)
+    · rw [h3] at hr; exact .inl (by have := h2.1 hl; omega)
+    · exact .inr (.inr hg)
+  · rintro (⟨hl, hr⟩ | hc | hg)
+    · by_cases hb : a.toNat < (spv u).toNat - (af.frameSize + 16)
+      · exact .inl (.inr ⟨h2.2 hb, by rw [h3]; omega⟩)
+      · have := h1.2 ⟨hl, by omega⟩
+        by_cases hs : (a - (spv u - BitVec.ofNat 64 (af.frameSize + 16))).toNat < af.frameSize
+        · exact .inl (.inl (.inl ⟨Nat.zero_le _, hs⟩))
+        · exact .inl (.inl (.inr (.inl ⟨by omega, this⟩)))
+    · exact .inl (.inl (.inr (.inr hc)))
+    · exact .inr hg
+
+/-- No code in the `n` bytes below `sp` gives the stack room. -/
+theorem stackRoom_of {n : Nat} {u : Arm.ArmState} (hn : n ≤ (spv u).toNat)
+    (hc : ∀ a, CodeAddr u a → ¬ StackBelow n (spv u) a) : StackRoom n u := by
+  refine ⟨hn, fun a ha => ?_⟩
+  have := (off_toNat a (spv u) n hn).1
+  apply Classical.byContradiction
+  intro hlt
+  exact hc a ha (this.1 (by omega))
+
+/-! ## Entering a callee, the canonical state -/
+
+theorem r_enterAt (a : Art) (u : Arm.ArmState) {f : Arm.StateField} (h1 : f ≠ .PC)
+    (h2 : f ≠ .GPR 30#5) : Arm.r f (enterAt a u) = Arm.r f u := by
+  simp only [enterAt]
+  rw [Arm.r_of_w_different h1, Arm.r_of_w_different h2, r_set_program]
+
+@[simp] theorem pc_enterAt (a : Art) (u : Arm.ArmState) : Arm.r .PC (enterAt a u) = a.base := by
+  simp only [enterAt, Arm.r_of_w_same]
+
+theorem x30_enterAt (a : Art) (u : Arm.ArmState) : xreg 30 (enterAt a u) = Arm.r .PC u + 4 := by
+  simp only [enterAt, xreg]
+  rw [Arm.r_of_w_different (by simp)]
+  exact Arm.r_of_w_same
+
+@[simp] theorem mem_enterAt (a : Art) (u : Arm.ArmState) : (enterAt a u).mem = u.mem := by
+  simp only [enterAt]
+  exact Arm.mem_w_of_mem_eq (Arm.mem_w_of_mem_eq rfl _ _) _ _
+
+@[simp] theorem program_enterAt (a : Art) (u : Arm.ArmState) :
+    (enterAt a u).program = a.fb.program a.base := by
+  simp only [enterAt, Arm.w_program, program_set_program]
+
+theorem spv_enterAt (a : Art) (u : Arm.ArmState) : spv (enterAt a u) = spv u :=
+  r_enterAt a u (by simp) (by simp)
+
+theorem regVal_enterAt (a : Art) (u : Arm.ArmState) {r : Reg} (hr : r.isArgReg = true) :
+    regVal (enterAt a u) r = regVal u r := by
+  cases r with
+  | x n =>
+    simp only [Reg.isArgReg, decide_eq_true_eq] at hr
+    simp only [regVal]
+    rw [r_enterAt a u (by simp) (fun e => by
+      have := congrArg (fun f => match f with | Arm.StateField.GPR i => i.toNat | _ => 0) e
+      simp [rnum_toNat (show n < 32 by omega)] at this; omega)]
+  | v n => simp only [regVal]; rw [r_enterAt a u (by simp) (by simp)]
+  | _ => simp [Reg.isArgReg] at hr
+
+theorem r_withImg (L : LinkSys) (w : Arm.ArmState) (f : Arm.StateField) :
+    Arm.r f (L.withImg w) = Arm.r f w := r_setMem f w _
+
+open Classical in
+theorem mem_withImg (L : LinkSys) (w : Arm.ArmState) (a : BitVec 64) :
+    (L.withImg w).mem a = if L.Img a then L.imgMem a else w.mem a := by
+  classical
+  simp only [LinkSys.withImg, mem_setMem]
+
+@[simp] theorem program_withImg (L : LinkSys) (w : Arm.ArmState) :
+    (L.withImg w).program = w.program := rfl
+
+/-- The value a register holds after `setReg` (an X register keeps 64 bits). -/
+def setVal : Reg → CV → CV
+  | .x _, v => ofX (lo64 v)
+  | _, v => v
+
+theorem regVal_setReg_same {s : Arm.ArmState} {r : Reg} {v : CV} (hr : r.isArgReg = true) :
+    regVal (setReg s r v) r = setVal r v := by
+  cases r with
+  | x n => simp [regVal, setVal, Arm.r_of_w_same, ofX]
+  | v n => simp [regVal, setVal, Arm.r_of_w_same]
+  | _ => simp [Reg.isArgReg] at hr
+
+theorem regVal_setReg_ne {s : Arm.ArmState} {r r' : Reg} {v : CV} (hr : r.isArgReg = true)
+    (hr' : r'.isArgReg = true) (hne : r ≠ r') : regVal (setReg s r' v) r = regVal s r := by
+  cases r <;> cases r' <;> simp only [Reg.isArgReg, decide_eq_true_eq] at hr hr' <;>
+    (try simp at hr) <;> (try simp at hr')
+  · rename_i n m
+    simp only [setReg_x, regVal]
+    rw [Arm.r_of_w_different]
+    intro e
+    injection e with e
+    exact rnum_ne (by omega) (by omega) (fun h => hne (by rw [h])) e
+  · simp only [setReg_v, regVal]; rw [Arm.r_of_w_different (by simp)]
+  · simp only [setReg_x, regVal]; rw [Arm.r_of_w_different (by simp)]
+  · rename_i n m
+    simp only [setReg_v, regVal]
+    rw [Arm.r_of_w_different]
+    intro e
+    injection e with e
+    exact rnum_ne (by omega) (by omega) (fun h => hne (by rw [h])) e
+
+theorem r_setReg {s : Arm.ArmState} {r : Reg} {v : CV} (hr : r.isArgReg = true)
+    {f : Arm.StateField} (hf : ¬ Masked f) : Arm.r f (setReg s r v) = Arm.r f s := by
+  cases r with
+  | x n =>
+    simp only [Reg.isArgReg, decide_eq_true_eq] at hr
+    simp only [setReg_x]
+    exact Arm.r_of_w_different (fun e => hf (by subst e; exact Masked_gpr (by omega) (by omega)))
+  | v n =>
+    simp only [setReg_v]
+    exact Arm.r_of_w_different (fun e => hf (by subst e; trivial))
+  | _ => rfl
+
+theorem mem_setReg (s : Arm.ArmState) (r : Reg) (v : CV) : (setReg s r v).mem = s.mem := by
+  cases r <;> simp only [setReg] <;> first | rfl | exact Arm.mem_w_of_mem_eq rfl _ _
+
+theorem program_setReg (s : Arm.ArmState) (r : Reg) (v : CV) :
+    (setReg s r v).program = s.program := by
+  cases r <;> simp only [setReg] <;> first | rfl | exact Arm.w_program
+
+theorem placeArgs_cons (r : Reg) (rs : List Reg) (u : CV) (us : List CV) (s : Arm.ArmState) :
+    placeArgs (r :: rs) (u :: us) s = placeArgs rs us (setReg s r u) := rfl
+
+theorem placeArgs_nil_left (us : List CV) (s : Arm.ArmState) : placeArgs [] us s = s := rfl
+
+theorem placeArgs_nil_right (rs : List Reg) (s : Arm.ArmState) : placeArgs rs [] s = s := by
+  cases rs <;> rfl
+
+theorem placeArgs_r : ∀ (rs : List Reg) (us : List CV) (s : Arm.ArmState),
+    (∀ r ∈ rs, r.isArgReg = true) → ∀ f, ¬ Masked f → Arm.r f (placeArgs rs us s) = Arm.r f s
+  | [], _, _, _, _, _ => rfl
+  | _ :: _, [], _, _, _, _ => by rw [placeArgs_nil_right]
+  | r :: rs, u :: us, s, h, f, hf => by
+    rw [placeArgs_cons, placeArgs_r rs us _ (fun r' hr' => h r' (List.mem_cons_of_mem _ hr')) f hf,
+      r_setReg (h r (List.mem_cons_self ..)) hf]
+
+theorem placeArgs_mem : ∀ (rs : List Reg) (us : List CV) (s : Arm.ArmState),
+    (placeArgs rs us s).mem = s.mem
+  | [], _, _ => rfl
+  | _ :: _, [], _ => by rw [placeArgs_nil_right]
+  | r :: rs, u :: us, s => by rw [placeArgs_cons, placeArgs_mem rs us, mem_setReg]
+
+theorem placeArgs_program : ∀ (rs : List Reg) (us : List CV) (s : Arm.ArmState),
+    (placeArgs rs us s).program = s.program
+  | [], _, _ => rfl
+  | _ :: _, [], _ => by rw [placeArgs_nil_right]
+  | r :: rs, u :: us, s => by rw [placeArgs_cons, placeArgs_program rs us, program_setReg]
+
+theorem placeArgs_regVal_ne : ∀ (rs : List Reg) (us : List CV) (s : Arm.ArmState) {r : Reg},
+    (∀ r' ∈ rs, r'.isArgReg = true) → r.isArgReg = true → r ∉ rs →
+      regVal (placeArgs rs us s) r = regVal s r
+  | [], _, _, _, _, _, _ => rfl
+  | _ :: _, [], _, _, _, _, _ => by rw [placeArgs_nil_right]
+  | r0 :: rs, u :: us, s, r, h, hr, hn => by
+    rw [placeArgs_cons, placeArgs_regVal_ne rs us _ (fun r' hr' => h r' (List.mem_cons_of_mem _ hr'))
+      hr (fun h' => hn (List.mem_cons_of_mem _ h')),
+      regVal_setReg_ne hr (h r0 (List.mem_cons_self ..)) (fun e => hn (e ▸ List.mem_cons_self ..))]
+
+theorem placeArgs_regVal : ∀ (rs : List Reg) (us : List CV) (s : Arm.ArmState) {j : Nat} {r : Reg}
+    {u : CV}, rs.Nodup → (∀ r' ∈ rs, r'.isArgReg = true) → rs[j]? = some r → us[j]? = some u →
+      regVal (placeArgs rs us s) r = setVal r u
+  | [], _, _, _, _, _, _, _, h, _ => by simp at h
+  | _ :: _, [], _, _, _, _, _, _, _, h => by simp at h
+  | r0 :: rs, u0 :: us, s, j, r, u, hnd, harg, hr, hu => by
+    rw [placeArgs_cons]
+    cases j with
+    | zero =>
+      simp only [List.getElem?_cons_zero, Option.some.injEq] at hr hu
+      subst hr hu
+      rw [placeArgs_regVal_ne rs us _ (fun r' hr' => harg r' (List.mem_cons_of_mem _ hr'))
+        (harg _ (List.mem_cons_self ..)) (List.nodup_cons.mp hnd).1,
+        regVal_setReg_same (harg _ (List.mem_cons_self ..))]
+    | succ j =>
+      simp only [List.getElem?_cons_succ] at hr hu
+      exact placeArgs_regVal rs us _ (List.nodup_cons.mp hnd).2
+        (fun r' hr' => harg r' (List.mem_cons_of_mem _ hr')) hr hu
+
+theorem vHolds_setVal {v : Clif.Val} {r : Reg} {u : CV} (hw : v.ty.width ≤ 64) (h : VHolds v u) :
+    VHolds v (setVal r u) := by
+  cases r with
+  | x n =>
+    simp only [setVal, VHolds, ofX, lo64] at h ⊢
+    rw [BitVec.setWidth_setWidth_of_le _ (by omega), BitVec.setWidth_setWidth_of_le _ hw]
+    exact h
+  | _ => exact h
+
 /-! ## The premises and the induction statement -/
 
 /-- The destination of a call as the hooks see it (`bl name`: `some name`; `blr`: `none`). -/
