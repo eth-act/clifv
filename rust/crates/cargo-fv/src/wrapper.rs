@@ -1,21 +1,24 @@
 //! `fv-rustc`: the RUSTC_WRAPPER `cargo fv` installs, and the linker rustc runs for
 //! executables of workspace members.
 //!
-//! Wrapper mode (`fv-rustc <rustc> <args>`): an invocation that codegens a workspace member
-//! for the target gets `--emit=llvm-ir` (cg_clif then dumps every function's CLIF into
+//! Wrapper mode (`fv-rustc <rustc> <args>`): an invocation that codegens a crate for the target
+//! (a workspace member or, unless `--members-only`/skip-deps, a dependency) gets
+//! `--emit=llvm-ir` (cg_clif then dumps every function's CLIF into
 //! `<out-dir>/<unit>.clif/`) and hashed symbol mangling (v0 names of monomorphised iterator
 //! adapters exceed the 255-byte file-name limit of those dumps). Libraries: after rustc, every
 //! `*.rcgu.o` member of the rlib goes through [`pipeline::process_object`] and is put back.
 //! Executables and test harnesses: rustc links through `fv-rustc` itself (linker mode), which
 //! processes the crate's `*.rcgu.o` objects before running `rust-lld`, then checks the linked
-//! binary. Every other invocation (dependencies, build scripts, `--print`) runs rustc as is.
+//! binary. Every other invocation (host crates: build scripts, proc macros and their
+//! dependencies, which cargo compiles without `--target`; skipped dependencies; `--print`) runs
+//! rustc as is.
 //!
 //! rustc copies `<unit>.<cgu>.rcgu.ll` to `<unit>.ll` when there is exactly one codegen unit,
 //! a file cg_clif never writes; that copy error (and only it) makes fv-rustc create the empty
 //! file and run rustc again.
 use crate::config::Config;
 use crate::pipeline::{self, read_syms, DumpIndex, MARKER};
-use crate::report::{BinaryCheck, FnReport, Status, UnitReport};
+use crate::report::{BinaryCheck, ExeOrigin, FnReport, Status, UnitReport};
 use object::read::{Object, ObjectSymbol};
 use std::collections::{HashMap, HashSet};
 use std::ffi::OsString;
@@ -34,6 +37,8 @@ struct UnitMeta {
     kind: String,
     src: String,
     clif_dir: PathBuf,
+    #[serde(default)]
+    dep: bool,
 }
 
 fn eprint_fv(msg: &str) {
@@ -101,7 +106,7 @@ fn strip_linker(args: &[String]) -> Vec<String> {
     out
 }
 
-/// Parsed facts about a rustc invocation that codegens a member crate.
+/// Parsed facts about a rustc invocation that codegens a crate we compile.
 struct Invocation {
     unit: String,
     src: String,
@@ -109,9 +114,14 @@ struct Invocation {
     out_dir: PathBuf,
     kind: String,
     links: bool,
+    /// Not a workspace member.
+    dep: bool,
 }
 
-fn member_invocation(cfg: &Config, args: &[String]) -> Option<Invocation> {
+/// The invocation codegens a crate for the target that we compile: a workspace member, or
+/// (unless `--members-only` / skip-deps) any other package. Host crates (build scripts,
+/// proc macros and their dependencies) are compiled without `--target` and stay plain rustc.
+fn target_invocation(cfg: &Config, args: &[String]) -> Option<Invocation> {
     let crate_name = opt_values(args, "--crate-name").pop()?;
     if crate_name == "build_script_build" || crate_name == "___" || args.iter().any(|a| a.starts_with("--print")) {
         return None;
@@ -124,7 +134,8 @@ fn member_invocation(cfg: &Config, args: &[String]) -> Option<Invocation> {
         return None;
     }
     let manifest = std::env::var_os("CARGO_MANIFEST_DIR")?;
-    if !cfg.is_member(Path::new(&manifest)) {
+    let dep = !cfg.is_member(Path::new(&manifest));
+    if dep && !cfg.compiles_dep(&std::env::var("CARGO_PKG_NAME").unwrap_or_default()) {
         return None;
     }
     let types: Vec<String> =
@@ -143,7 +154,7 @@ fn member_invocation(cfg: &Config, args: &[String]) -> Option<Invocation> {
     let extra = codegen_opt(args, "extra-filename").unwrap_or_default();
     let out_dir = PathBuf::from(opt_values(args, "--out-dir").pop()?);
     let src = args.iter().find(|a| a.ends_with(".rs") && !a.starts_with('-')).cloned().unwrap_or_default();
-    Some(Invocation { unit: format!("{crate_name}{extra}"), src, crate_name, out_dir, kind, links })
+    Some(Invocation { unit: format!("{crate_name}{extra}"), src, crate_name, out_dir, kind, links, dep })
 }
 
 /// The `could not copy "SRC" to "DST"` sources of rustc's `.ll` copy errors, if those are the
@@ -205,6 +216,7 @@ fn new_report(cfg: &Config, m: &UnitMeta, artifact: &Path) -> UnitReport {
         package: m.package.clone(),
         kind: m.kind.clone(),
         src: m.src.clone(),
+        dep: m.dep,
         artifact: artifact.display().to_string(),
         mode: cfg.mode.name().into(),
         theorem: cfg.mode.theorem().map(String::from),
@@ -327,7 +339,7 @@ pub fn wrapper_main(argv: Vec<OsString>) -> i32 {
         Some(Ok(c)) => c,
     };
     let args: Vec<String> = rest.iter().map(|a| a.to_string_lossy().into_owned()).collect();
-    let Some(inv) = member_invocation(&cfg, &args) else { return plain() };
+    let Some(inv) = target_invocation(&cfg, &args) else { return plain() };
 
     let clif_dir = inv.out_dir.join(format!("{}.clif", inv.unit));
     let meta = UnitMeta {
@@ -337,6 +349,7 @@ pub fn wrapper_main(argv: Vec<OsString>) -> i32 {
         kind: inv.kind.clone(),
         src: inv.src.clone(),
         clif_dir: clif_dir.clone(),
+        dep: inv.dep,
     };
     let mut rargs = if inv.links { strip_linker(&args) } else { args.clone() };
     rargs.extend(["--emit=llvm-ir", "-Zunstable-options", "-Csymbol-mangling-version=hashed"].map(String::from));
@@ -454,6 +467,119 @@ fn check_binary(path: &Path) -> BinaryCheck {
     b
 }
 
+/// Input sections of the `.text*` output sections of an lld link map: (start, end, input
+/// file), sorted. The input file of `lib.rlib(member.o):(.text.f)` is `lib.rlib`.
+fn map_text_inputs(map: &str) -> Vec<(u64, u64, String)> {
+    let mut v = Vec::new();
+    let mut in_text = false;
+    for line in map.lines() {
+        // `VMA LMA Size Align` then the Out (indent 1), In (indent 9) or Symbol (indent 17) column
+        let mut rest = line;
+        let mut nums = [0u64; 3];
+        let mut ok = true;
+        for k in 0..4 {
+            rest = rest.trim_start();
+            let end = rest.find(' ').unwrap_or(rest.len());
+            let tok = &rest[..end];
+            if k < 3 {
+                match u64::from_str_radix(tok, 16) {
+                    Ok(n) => nums[k] = n,
+                    Err(_) => ok = false,
+                }
+            } else if tok.parse::<u64>().is_err() {
+                ok = false;
+            }
+            rest = &rest[end..];
+        }
+        if !ok {
+            continue;
+        }
+        let indent = rest.len() - rest.trim_start().len();
+        let text = rest.trim();
+        if indent <= 1 {
+            in_text = text.starts_with(".text");
+        } else if indent <= 9 && in_text && nums[2] > 0 {
+            let file = text.rfind(":(").map_or(text, |i| &text[..i]);
+            let file = match file.find('(') {
+                Some(i) if file.ends_with(')') => &file[..i],
+                _ => file,
+            };
+            v.push((nums[0], nums[0] + nums[2], file.to_string()));
+        }
+    }
+    v.sort();
+    v
+}
+
+/// Where the functions of a linked executable come from, from the link map: Lean-compiled (a
+/// marker at the address) or cg_clif's code, of a unit we compiled (this one, or a library whose
+/// unit report exists); prebuilt (the sysroot: std/core/alloc, compiler_builtins, musl libc
+/// and its crt objects); or another input (a crate outside the scope).
+fn exe_origin(cfg: &Config, meta: &UnitMeta, exe: &Path, map: &Path) -> Result<ExeOrigin, String> {
+    let text = fs::read_to_string(map).map_err(|e| format!("{}: {e}", map.display()))?;
+    let inputs = map_text_inputs(&text);
+    let data = fs::read(exe).map_err(|e| format!("{}: {e}", exe.display()))?;
+    let file = object::File::parse(&*data).map_err(|e| e.to_string())?;
+    let mut marked: HashSet<u64> = HashSet::new();
+    let mut funcs: HashSet<u64> = HashSet::new();
+    for s in file.symbols() {
+        let Ok(n) = s.name() else { continue };
+        if s.is_undefined() || n.is_empty() {
+            continue;
+        }
+        if n.starts_with(MARKER) {
+            marked.insert(s.address());
+        } else if s.kind() == object::SymbolKind::Text && s.size() > 0 {
+            funcs.insert(s.address());
+        }
+    }
+    // input file → (package, dependency?) of the unit we compiled it in, if any
+    let own_prefix = format!("{}.", meta.unit);
+    let mut owners: HashMap<String, Option<(String, bool)>> = HashMap::new();
+    let mut owner_of = |f: &str| -> Option<(String, bool)> {
+        owners
+            .entry(f.to_string())
+            .or_insert_with(|| {
+                let p = Path::new(f);
+                let name = p.file_name()?.to_string_lossy().into_owned();
+                if name.starts_with(&own_prefix) && name.ends_with(".rcgu.o") {
+                    return Some((meta.package.clone(), meta.dep));
+                }
+                // `<crate><extra-filename>` names the unit uniquely in the target dir
+                let unit = name.strip_prefix("lib")?.strip_suffix(".rlib")?;
+                let text = fs::read_to_string(cfg.report_dir.join(format!("{unit}.json"))).ok()?;
+                let u: UnitReport = serde_json::from_str(&text).ok()?;
+                Some((u.package, u.dep))
+            })
+            .clone()
+    };
+    let mut o = ExeOrigin { functions: funcs.len(), ..Default::default() };
+    for a in funcs {
+        let i = inputs.partition_point(|(s, _, _)| *s <= a);
+        let input = i.checked_sub(1).map(|i| &inputs[i]).filter(|(_, e, _)| a < *e).map(|(_, _, f)| f.as_str());
+        let owner = input.and_then(&mut owner_of);
+        match (marked.contains(&a), owner) {
+            (true, Some((pkg, dep))) => {
+                if dep {
+                    o.lean_deps += 1;
+                    *o.lean_by_package.entry(format!("{pkg} (dep)")).or_default() += 1;
+                } else {
+                    o.lean_members += 1;
+                    *o.lean_by_package.entry(pkg).or_default() += 1;
+                }
+            }
+            (true, None) => {
+                o.lean_deps += 1;
+                *o.lean_by_package.entry(format!("? {}", input.unwrap_or("?"))).or_default() += 1;
+            }
+            (false, Some(_)) => o.cg_clif += 1,
+            (false, None) if input.is_some_and(|f| f.contains("/lib/rustlib/")) => o.prebuilt += 1,
+            (false, None) => o.other += 1,
+        }
+    }
+    Ok(o)
+}
+
 /// Linker mode: rustc runs `fv-rustc` as the linker of a member's executable.
 pub fn linker_main(meta_json: &str, argv: Vec<OsString>) -> i32 {
     let cfg = match Config::from_env() {
@@ -486,7 +612,10 @@ pub fn linker_main(meta_json: &str, argv: Vec<OsString>) -> i32 {
     let mut r = new_report(&cfg, &meta, &output);
     process_objects(&cfg, &meta, &objs, &mut r);
     write_report(&cfg, &r);
-    let status = Command::new(&cfg.rust_lld).args(&argv).status();
+    // the link map attributes every function of the executable to its input object
+    let _ = fs::create_dir_all(&cfg.tmp_dir);
+    let map = cfg.tmp_dir.join(format!("link-{}.map", pipeline::tag_of(&output.display().to_string())));
+    let status = Command::new(&cfg.rust_lld).args(&argv).arg(format!("-Map={}", map.display())).status();
     let code = match status {
         Ok(s) => s.code().unwrap_or(1),
         Err(e) => {
@@ -495,8 +624,18 @@ pub fn linker_main(meta_json: &str, argv: Vec<OsString>) -> i32 {
         }
     };
     if code == 0 {
-        r.binary = Some(check_binary(&output));
+        let mut b = check_binary(&output);
+        if b.note.is_none() {
+            match exe_origin(&cfg, &meta, &output, &map) {
+                Ok(o) => b.origin = Some(o),
+                Err(e) => b.note = Some(format!("function origins: {e}")),
+            }
+        }
+        r.binary = Some(b);
         write_report(&cfg, &r);
+    }
+    if !cfg.keep_temps {
+        let _ = fs::remove_file(&map);
     }
     code
 }

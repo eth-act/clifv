@@ -56,8 +56,14 @@ pub struct Config {
     /// The repository root (lean-backend, clif-data-export, lean-regalloc, normalize.py).
     pub root: PathBuf,
     pub mode: Mode,
-    /// `CARGO_MANIFEST_DIR`s of the workspace members: only they are compiled by us.
+    /// `CARGO_MANIFEST_DIR`s of the workspace members.
     pub members: Vec<PathBuf>,
+    /// `--members-only`: only the members are compiled by us (dependencies: plain cg_clif).
+    /// Otherwise every crate compiled for the target is, except the packages in `skip_deps`.
+    pub members_only: bool,
+    /// Dependency packages that keep plain cg_clif (`package.metadata.fv.skip-deps`,
+    /// `workspace.metadata.fv.skip-deps`, `FV_SKIP_DEPS`).
+    pub skip_deps: Vec<String>,
     /// Per-unit reports (`<unit>.json`).
     pub report_dir: PathBuf,
     /// Scratch space (one directory per codegen unit, removed unless `keep_temps`).
@@ -66,7 +72,7 @@ pub struct Config {
     pub objcopy: PathBuf,
     pub ar: PathBuf,
     pub python: String,
-    /// Parallel `lean-backend` processes per codegen unit.
+    /// `lean-backend` processes at a time, across all fv-rustc processes of the build.
     pub jobs: usize,
     pub keep_temps: bool,
     /// Overwrite cg_clif's replaced function bodies with traps (`--trap-replaced`).
@@ -101,6 +107,8 @@ impl Config {
             ("FV_ROOT".into(), self.root.display().to_string()),
             ("FV_MODE".into(), self.mode.name().into()),
             ("FV_MEMBERS".into(), members),
+            ("FV_MEMBERS_ONLY".into(), if self.members_only { "1" } else { "0" }.into()),
+            ("FV_DEP_SKIP".into(), self.skip_deps.join("\n")),
             ("FV_REPORT_DIR".into(), self.report_dir.display().to_string()),
             ("FV_TMP_DIR".into(), self.tmp_dir.display().to_string()),
             ("FV_RUST_LLD".into(), self.rust_lld.display().to_string()),
@@ -126,6 +134,8 @@ impl Config {
                 root: var("FV_ROOT")?.into(),
                 mode: Mode::parse(&mode).ok_or(format!("FV_MODE: unknown mode {mode}"))?,
                 members: var("FV_MEMBERS")?.lines().filter(|l| !l.is_empty()).map(PathBuf::from).collect(),
+                members_only: var("FV_MEMBERS_ONLY")? == "1",
+                skip_deps: var("FV_DEP_SKIP")?.lines().filter(|l| !l.is_empty()).map(String::from).collect(),
                 report_dir: var("FV_REPORT_DIR")?.into(),
                 tmp_dir: var("FV_TMP_DIR")?.into(),
                 rust_lld: var("FV_RUST_LLD")?.into(),
@@ -153,5 +163,10 @@ impl Config {
     pub fn is_member(&self, manifest_dir: &Path) -> bool {
         let d = manifest_dir.canonicalize().unwrap_or(manifest_dir.to_path_buf());
         self.members.iter().any(|m| *m == d)
+    }
+
+    /// Whether a non-member package (by its Cargo package name) is compiled by us.
+    pub fn compiles_dep(&self, package: &str) -> bool {
+        !self.members_only && !self.skip_deps.iter().any(|s| s == package)
     }
 }

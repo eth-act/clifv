@@ -1,2 +1,4 @@
 target/
 Cargo.lock
+# examples/deps pins its crates.io dependency graph (offline registry)
+!deps/Cargo.lock
