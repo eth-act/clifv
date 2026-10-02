@@ -27,14 +27,14 @@ open Backend Backend.Proof Backend.Proof.Driver
 callees' budget `K`), kept addresses `G` outside the frame and the dead stack, the addresses
 outside the world are `F = frameWG K … G s`, the callee contracts (relative to `G`), and the
 body-entry world `w₀`. -/
-structure ActEntry (vcp : VCode) (rf : RFunc) (af : AFunc) (fb : FnBin) (K : Nat)
+structure ActEntry (vcp : VCode) (rf : RFunc) (af : AFunc) (fa : FnAsm) (fb : FnBin) (K : Nat)
     (F G : BitVec 64 → Prop) (X : ExtSem) (H : ArmHooks) (base ra : BitVec 64)
     (s w₀ : Arm.ArmState) : Prop where
   abi : AbiEntry fb base ra s
   stack : StackAvail K af s
   gfree : ∀ a, G a → ¬ StackBelow (frameDrop af + K) (spv s) a
   hF : frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s = F
-  calls : CalleeOkG F K G s X H vcp.CallSite
+  calls : CalleeOkG F K G s (CallPc fa base) X H vcp.CallSite
   tries : vcp.hasTryCall = true → CalleeTryOk F X H vcp.TrySite
   tls : vcp.hasTls = true → TlsOk F K X H
   body : BodyEntryW F vcp.EntryArg af s w₀
@@ -128,17 +128,17 @@ theorem backend_correct_world {p : Clif.Program} {f : Clif.Function} {k : Nat} {
         us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MemRel F syms cm w ∧
         ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
-          ActEntry vcp rf af fb K F G X H base ra s w₀ →
+          ActEntry vcp rf af fa fb K F G X H base ra s w₀ →
           ∃ n, ActRet ra F G us outs w s (runX (ArmStepX X H fa) n s)) ∧
     (∀ c, Clif.runLoop env p fuel cs = .trapped c →
       ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
-        ActEntry vcp rf af fb K F G X H base ra s w₀ →
+        ActEntry vcp rf af fa fb K F G X H base ra s w₀ →
         ∃ n, TrapAt fb base c (runX (ArmStepX X H fa) n s)) := by
   have hI := iselSim_final hsub hc hX hXI hsym hslot args cs w₀ (fun _ => 0) hcs hrel hargs htr fuel
   have hP := prepareCorrect_of_check (driverSem_csem F ⟨fa.k, af.slotBase⟩ X) hc.prepOk
     (fun _ => 0) w₀
   have hM6 : ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
-      ActEntry vcp rf af fb K F G X H base ra s w₀ → _ := fun H G base ra s he => by
+      ActEntry vcp rf af fa fb K F G X H base ra s w₀ → _ := fun H G base ra s he => by
     have h := regLevelCorrect_world hc.check hc.alloc hc.emit hc.layout (X := X) (H := H)
       (K := K) (G := G) hcov he.abi he.stack he.gfree (by rw [he.hF]; exact he.calls)
       (by rw [he.hF]; exact he.tries) (by rw [he.hF]; exact he.tls) (by rw [he.hF]; exact he.body)

@@ -145,20 +145,86 @@ structure CalleeOk (F : BitVec 64 → Prop) (K : Nat) (X : ExtSem) (H : ArmHooks
 `s0`: `CalleeOk` whose operand-view obligation (`CallSoundCtlG`) is required only at the states
 that keep `G` (`StRel.gkeep`). `CalleeOk` gives it (`CalleeOk.g`). -/
 structure CalleeOkG (F : BitVec 64 → Prop) (K : Nat) (G : BitVec 64 → Prop) (s0 : Arm.ArmState)
-    (X : ExtSem) (H : ArmHooks) (S : CallInfo → Prop) : Prop where
-  os : ∀ ctx info, S info → CallSoundCtlG F K G s0 (callExec H) (csem F ctx X) (.call info) .next
+    (Pc : BitVec 64 → Prop) (X : ExtSem) (H : ArmHooks) (S : CallInfo → Prop) : Prop where
+  os : ∀ ctx info, S info → CallSoundCtlG F K G s0 Pc (callExec H) (csem F ctx X) (.call info) .next
   pc : ∀ d s, Arm.r .ERR s = .None → Arm.CheckSPAlignment s →
     Arm.r .PC (H.call d s) = Arm.r .PC s + 4
   ext : ∀ d uses w outs w', X.call d uses w = some (outs, w') → Arm.r .ERR w = .None →
     Arm.r .ERR w' = .None ∧ w'.program = w.program
 
 theorem CalleeOk.g {F : BitVec 64 → Prop} {K : Nat} {X : ExtSem} {H : ArmHooks}
-    {S : CallInfo → Prop} (h : CalleeOk F K X H S) (G : BitVec 64 → Prop) (s0 : Arm.ArmState) :
-    CalleeOkG F K G s0 X H S :=
-  ⟨fun ctx info hs => (h.os ctx info hs).g G s0, h.pc, h.ext⟩
+    {S : CallInfo → Prop} (h : CalleeOk F K X H S) (G : BitVec 64 → Prop) (s0 : Arm.ArmState)
+    (Pc : BitVec 64 → Prop) : CalleeOkG F K G s0 Pc X H S :=
+  ⟨fun ctx info hs => (h.os ctx info hs).g G s0 Pc, h.pc, h.ext⟩
+
+theorem ftStep_call {x : Insn} (hx : (∃ n, x = .bl n) ∨ (∃ r, x = .blr r)) (n1 n2 : Option Line) :
+    ftStep (.ins x none) n1 n2 = ([.ins x none], 1) := by
+  have hc : x.condTarget? = none := by rcases hx with ⟨_, rfl⟩ | ⟨_, rfl⟩ <;> rfl
+  have hb : ∀ y, x ≠ .b y := by rcases hx with ⟨_, rfl⟩ | ⟨_, rfl⟩ <;> intro y h <;> cases h
+  unfold ftStep
+  split
+  · rename_i h
+    simp only [Line.ins.injEq] at h
+    exact absurd h.1 (hb _)
+  · split
+    · rename_i heq _
+      simp only [Line.ins.injEq] at heq
+      obtain ⟨rfl, -⟩ := heq
+      simp [hc]
+    · rfl
+
+/-- The pc of a `Q` state at a call item (`call` or `try_call`) is a call instruction of the
+activation's code (`CallPc`). -/
+theorem callPc_of_q {R : RL} {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc}
+    {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
+    (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock} {i : MInst}
+    (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some i)
+    (hcall : ∀ regs i', i.assign regs = .ok i' → (∀ ds, i' ≠ .args ds) ∧ (∀ us, i' ≠ .rets us) ∧
+      ∃ x ls, (∀ ps, i'.lines R.ctx ps = .ok (.ins x none :: ls, ps)) ∧
+        ((∃ n, x = .bl n) ∨ (∃ r, x = .blr r))) :
+    CallPc R.fa R.base (Arm.r .PC s) := by
+  obtain ⟨j0, items, pre, regs, i', c1, c2, ls1, ls2, ps1, psm, ps2, T, cc, wh, ops, -, -, -, hasg,
+    hc1', -, -, -, -, h1, -, -, hdrop, hpc, -⟩ := q_op hq hvb hi
+  obtain ⟨hna, hnr, x, ls, hl, hx⟩ := hcall regs i' hasg
+  rcases hc1' with ⟨rfl, -, -⟩ | ⟨ds, rfl, -⟩ | ⟨us, rfl, -⟩
+  · have h1' := codeLinesE_single h1
+    rw [hl ps1] at h1'
+    simp only [Except.ok.injEq, Prod.mk.injEq] at h1'
+    obtain ⟨rfl, -⟩ := h1'
+    rw [List.cons_append, ftList_cons, ftStep_call hx] at hdrop
+    simp only [List.drop_one, List.tail_cons, List.singleton_append, List.cons_append] at hdrop
+    have hj : R.L[j0]? = some (.ins x none) := drop_get (Z := []) (by rw [hdrop]; rfl)
+    exact ⟨j0, x, none, hj, hx, hpc⟩
+  · exact absurd rfl (hna ds)
+  · exact absurd rfl (hnr us)
+
+/-- The lines of an allocated `call`: one `bl`/`blr`. -/
+theorem call_hcall {ctx : FnCtx} {info : CallInfo} :
+    ∀ regs i', (MInst.call info).assign regs = .ok i' → (∀ ds, i' ≠ .args ds) ∧
+      (∀ us, i' ≠ .rets us) ∧ ∃ x ls, (∀ ps, i'.lines ctx ps = .ok (.ins x none :: ls, ps)) ∧
+        ((∃ n, x = .bl n) ∨ (∃ r, x = .blr r)) := by
+  intro regs i' hasg
+  obtain ⟨ic, rfl⟩ := assign_call_form hasg
+  refine ⟨fun _ h => MInst.noConfusion h, fun _ h => MInst.noConfusion h, ?_⟩
+  cases hd : ic.dest with
+  | sym n => exact ⟨.bl n, [], fun ps => by simp [MInst.lines, hd, pure, Except.pure], .inl ⟨n, rfl⟩⟩
+  | reg r => exact ⟨.blr r, [], fun ps => by simp [MInst.lines, hd, pure, Except.pure], .inr ⟨r, rfl⟩⟩
+
+/-- The lines of an allocated `try_call`: a `bl`/`blr`, then the branch to the continuation. -/
+theorem tryCall_hcall {ctx : FnCtx} {info : CallInfo} {ti : TryInfo} :
+    ∀ regs i', (MInst.tryCall info ti).assign regs = .ok i' → (∀ ds, i' ≠ .args ds) ∧
+      (∀ us, i' ≠ .rets us) ∧ ∃ x ls, (∀ ps, i'.lines ctx ps = .ok (.ins x none :: ls, ps)) ∧
+        ((∃ n, x = .bl n) ∨ (∃ r, x = .blr r)) := by
+  intro regs i' hasg
+  obtain ⟨ic, rfl, -⟩ := (assign_call_tryCall info regs).2 ti i' hasg
+  refine ⟨fun _ h => MInst.noConfusion h, fun _ h => MInst.noConfusion h, ?_⟩
+  cases hd : ic.dest with
+  | sym n => exact ⟨.bl n, _, fun ps => by simp [MInst.lines, hd, pure, Except.pure]; rfl, .inl ⟨n, rfl⟩⟩
+  | reg r => exact ⟨.blr r, _, fun ps => by simp [MInst.lines, hd, pure, Except.pure]; rfl, .inr ⟨r, rfl⟩⟩
 
 /-- **A call on the machine**: one hooked step. -/
-theorem realizes_call {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 R.X R.H R.vc.CallSite)
+theorem realizes_call {R : RL} (hR : R.Wf)
+    (hC : CalleeOkG R.F R.K R.G R.s0 (CallPc R.fa R.base) R.X R.H R.vc.CallSite)
     {s : Arm.ArmState}
     {b k : Nat} {allocs : Array Loc} {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
     (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩))
@@ -182,7 +248,7 @@ theorem realizes_call {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 R.X 
     exact hC.ext _ _ _ _ _ hx herr
   refine realizes_op_core hR hq hvb hi hops hsz hsem hlen hk (exec := fun _ => callExec R.H)
     (fun _ => RL.callAtG hR (hC.os R.ctx info ⟨b, vb, k, hvb, .inl hi⟩) (q_stRel hq).sp
-      (q_stRel hq).gkeep) (fun regs i' hasg _ => ?_) hW'
+      (q_stRel hq).gkeep (callPc_of_q hq hvb hi call_hcall)) (fun regs i' hasg _ => ?_) hW'
   obtain ⟨info', rfl⟩ := assign_call_form hasg
   have hgen : ∀ x, (∀ ps, (MInst.call info').lines R.ctx ps = .ok ([.ins x], ps)) →
       (Line.ins x).plain = true →

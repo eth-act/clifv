@@ -180,7 +180,7 @@ end
 /-! ## `Realizes` by cases -/
 
 /-- **The machine realises the allocated code** under `Q ∧ AInv`: every item case. -/
-theorem realizes_all {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 R.X R.H R.vc.CallSite)
+theorem realizes_all {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (CallPc R.fa R.base) R.X R.H R.vc.CallSite)
     (hT : R.vc.hasTryCall = true → CalleeTryOk R.F R.X R.H R.vc.TrySite)
     (hTls : R.vc.hasTls = true → TlsOk R.F R.K R.X R.H)
     (hcov : FormsCovered R.ctx R.vc) :
@@ -363,7 +363,8 @@ theorem regLevelCorrect_world {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAs
     {K : Nat} {G : BitVec 64 → Prop} (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
     {base ra : BitVec 64} {s : Arm.ArmState} (hent : AbiEntry fb base ra s)
     (hres : StackAvail K af s) (hG : ∀ a, G a → ¬ StackBelow (frameDrop af + K) (spv s) a)
-    (hC : CalleeOkG (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) K G s X H vcp.CallSite)
+    (hC : CalleeOkG (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) K G s
+      (CallPc fa base) X H vcp.CallSite)
     (hCT : vcp.hasTryCall = true → CalleeTryOk (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) X H vcp.TrySite)
     (hTls : vcp.hasTls = true → TlsOk (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) K X H)
     {w₀ : Arm.ArmState} (hbe : BodyEntryW (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) vcp.EntryArg af s w₀) (ρ₀ : Nat → CV) :
@@ -551,7 +552,7 @@ theorem regLevelCorrect_backend {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : Fn
   intro base ra s hent hres w₀ hbe ρ₀
   have e := frameWG_false K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s
   have h := regLevelCorrect_world (G := fun _ => False) hcheck halloc hemit hlayout hcov hent hres
-    (fun _ h => h.elim) (by rw [e]; exact (hC s).g _ s) (by rw [e]; exact fun h => hCT h s)
+    (fun _ h => h.elim) (by rw [e]; exact (hC s).g _ s _) (by rw [e]; exact fun h => hCT h s)
     (by rw [e]; exact fun h => hTls h s)
     (by rw [e]; exact hbe.w _ fun r ⟨_, _, hvb, hi, _, hv⟩ =>
       ((ctlCheck_args (lowerRFunc_ok halloc).2.2.2 hvb hi).2.2 _ hv).2) ρ₀

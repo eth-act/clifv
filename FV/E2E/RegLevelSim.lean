@@ -133,16 +133,24 @@ def CallSoundCtl (F : BitVec 64 → Prop) (K : Nat) (exec : MInst → Arm.ArmSta
 addresses `G` the calling activation keeps (`RL.G`: e.g. its callers' frames and the program's
 code) hold what they held at the activation's entry `s0`. -/
 def CallSoundCtlG (F : BitVec 64 → Prop) (K : Nat) (G : BitVec 64 → Prop) (s0 : Arm.ArmState)
+    (Pc : BitVec 64 → Prop)
     (exec : MInst → Arm.ArmState → Option Arm.ArmState) (sem : ISem CV Arm.ArmState) (i : MInst)
     (ctl : Ctl) : Prop :=
   ∀ s, K ≤ (spOf s).toNat → (∀ a, StackBelow K (spOf s) a → F a) →
-    (∀ a, G a → s.mem a = s0.mem a) →
+    (∀ a, G a → s.mem a = s0.mem a) → Pc (Arm.r .PC s) →
     OperandsSoundCtlAt F (fun a => F a ∧ ¬ StackBelow K (spOf s) a) exec sem i ctl s
 
 theorem CallSoundCtl.g {F : BitVec 64 → Prop} {K : Nat} {exec : MInst → Arm.ArmState → Option Arm.ArmState}
     {sem : ISem CV Arm.ArmState} {i : MInst} {ctl : Ctl} (h : CallSoundCtl F K exec sem i ctl)
-    (G : BitVec 64 → Prop) (s0 : Arm.ArmState) : CallSoundCtlG F K G s0 exec sem i ctl :=
-  fun s h1 h2 _ => h s h1 h2
+    (G : BitVec 64 → Prop) (s0 : Arm.ArmState) (Pc : BitVec 64 → Prop) :
+    CallSoundCtlG F K G s0 Pc exec sem i ctl :=
+  fun s h1 h2 _ _ => h s h1 h2
+
+/-- `pc` is the address of a call instruction (`bl`, `blr`) of the laid-out function `fa` loaded
+at `base`: the states `CallSoundCtlG` is required at (`Pc := CallPc fa base`). -/
+def CallPc (fa : FnAsm) (base pc : BitVec 64) : Prop :=
+  ∃ j i t, fa.lines.toList[j]? = some (.ins i t) ∧ ((∃ n, i = .bl n) ∨ (∃ r, i = .blr r)) ∧
+    pc = base + BitVec.ofNat 64 (lineOffset fa.lines.toList j)
 
 /-- The registers the entry `Args` of `vc` (instruction 0 of block 0) reads. -/
 def _root_.Backend.VCode.EntryArg (vc : VCode) (r : Reg) : Prop :=

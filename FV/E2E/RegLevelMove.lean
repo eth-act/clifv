@@ -369,10 +369,11 @@ theorem RL.callAt {R : RL} (hR : R.Wf) {exec : MInst → Arm.ArmState → Option
 keeps `G` (`StRel.gkeep`). -/
 theorem RL.callAtG {R : RL} (hR : R.Wf) {exec : MInst → Arm.ArmState → Option Arm.ArmState}
     {sem : ISem CV Arm.ArmState} {i : MInst} {ctl : Ctl}
-    (h : CallSoundCtlG R.F R.K R.G R.s0 exec sem i ctl)
-    {s : Arm.ArmState} (hsp : spOf s = R.spB) (hg : ∀ a, R.G a → s.mem a = R.s0.mem a) :
+    (h : CallSoundCtlG R.F R.K R.G R.s0 (CallPc R.fa R.base) exec sem i ctl)
+    {s : Arm.ArmState} (hsp : spOf s = R.spB) (hg : ∀ a, R.G a → s.mem a = R.s0.mem a)
+    (hpc : CallPc R.fa R.base (Arm.r .PC s)) :
     OperandsSoundCtlAt R.F R.FK exec sem i ctl s := by
-  refine (h s (by rw [hsp]; exact RL.K_le hR) (fun a ha => ?_) hg).mono
+  refine (h s (by rw [hsp]; exact RL.K_le hR) (fun a ha => ?_) hg hpc).mono
     fun a ha => ⟨RL.FK_F ha, ?_⟩
   · rw [hsp] at ha; exact RL.below_F ha
   · rw [hsp]; exact RL.FK_not_below hR ha
