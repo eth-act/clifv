@@ -656,7 +656,8 @@ structure Ok : Prop where
   noOut : ∀ g ∈ L.P.funcs, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase = 0
   /-- scope: parameters in registers (distinct argument registers), no `sret` -/
   regParams : ∀ g ∈ L.P.funcs, ∀ l ∈ locsOf g.sig, ∃ r, l = .reg r
-  argRegs : ∀ g ∈ L.P.funcs, (regLocs g.sig).Nodup ∧ ∀ r ∈ regLocs g.sig, r.isArgReg = true
+  argRegs : ∀ g ∈ L.P.funcs, (regLocs g.sig).Nodup ∧ (∀ r ∈ regLocs g.sig, r.isArgReg = true) ∧
+    ∀ p ∈ g.sig.params, p.ty.width ≤ 64
   noSret : ∀ g ∈ L.P.funcs, g.sig.params.any (·.purpose == .sret) = false
   /-- scope: the functions called from `P` have no stack slots (their frame is the allocator's) -/
   calleeSlots : ∀ g ∈ L.P.funcs, ∀ info h, L.ProgSite g info h → h.slots = [] ∧
@@ -740,6 +741,320 @@ def Thm (M : Nat) : Prop :=
       PrefixHold rvals outs ∧ MemRel L.F L.syms cm' wf ∧
       ∀ G ra s, L.MachEntry M g G ra s w₀ →
         ∃ n, ActRet ra L.F G us outs wf s (runX (L.mach M g) n s)
+
+end LinkSys
+
+/-! ## The callee's body-entry world, the canonical call state -/
+
+/-- The body-entry world of an activation entered in `u` that agrees with `u` (`BodyEntry`):
+`sp` lowered by the frame, the frame pointer set. -/
+def bodyOf (af : AFunc) (u : Arm.ArmState) : Arm.ArmState :=
+  Arm.w (.GPR 29#5) (if af.frame then spv u - 16#64 else xreg 29 u)
+    (Arm.w (.GPR 31#5) (spv u - BitVec.ofNat 64 (frameDrop af)) u)
+
+theorem spv_bodyOf (af : AFunc) (u : Arm.ArmState) :
+    spv (bodyOf af u) = spv u - BitVec.ofNat 64 (frameDrop af) := by
+  simp only [bodyOf, spv]
+  rw [Arm.r_of_w_different (by simp), Arm.r_of_w_same]
+
+theorem x29_bodyOf (af : AFunc) (u : Arm.ArmState) :
+    xreg 29 (bodyOf af u) = if af.frame then spv u - 16#64 else xreg 29 u := by
+  simp only [bodyOf, xreg]
+  exact Arm.r_of_w_same
+
+theorem r_bodyOf (af : AFunc) (u : Arm.ArmState) {f : Arm.StateField} (h29 : f ≠ .GPR 29#5)
+    (h31 : f ≠ .GPR 31#5) : Arm.r f (bodyOf af u) = Arm.r f u := by
+  simp only [bodyOf]
+  rw [Arm.r_of_w_different h29, Arm.r_of_w_different h31]
+
+@[simp] theorem mem_bodyOf (af : AFunc) (u : Arm.ArmState) : (bodyOf af u).mem = u.mem :=
+  Arm.mem_w_of_mem_eq (Arm.mem_w_of_mem_eq rfl _ _) _ _
+
+@[simp] theorem program_bodyOf (af : AFunc) (u : Arm.ArmState) :
+    (bodyOf af u).program = u.program := by
+  simp only [bodyOf, Arm.w_program]
+
+theorem argReg_ne29 {r : Reg} (hr : r.isArgReg = true) {f : Arm.StateField} (hf : r.field = some f) :
+    f ≠ .GPR 29#5 ∧ f ≠ .GPR 31#5 ∧ f ≠ .GPR 30#5 ∧ f ≠ .PC := by
+  cases r with
+  | x n =>
+    simp only [Reg.isArgReg, decide_eq_true_eq] at hr
+    simp only [Reg.field, Option.some.injEq] at hf
+    subst hf
+    have h : ∀ m, 8 < m → m < 32 → Arm.StateField.GPR (rnum n) ≠ .GPR (BitVec.ofNat 5 m) :=
+      fun m h1 h2 e => rnum_ne (a := n) (b := m) (by omega) h2 (by omega) (Arm.StateField.GPR.inj e)
+    exact ⟨h 29 (by omega) (by omega), h 31 (by omega) (by omega), h 30 (by omega) (by omega),
+      by simp⟩
+  | v n =>
+    simp only [Reg.field, Option.some.injEq] at hf
+    subst hf
+    simp
+  | _ => simp [Reg.isArgReg] at hr
+
+theorem regVal_eq_of_field {s t : Arm.ArmState} {r : Reg} (hr : r.isArgReg = true)
+    (h : ∀ f, r.field = some f → Arm.r f s = Arm.r f t) : regVal s r = regVal t r := by
+  cases r with
+  | x n => simp only [regVal]; rw [h _ rfl]
+  | v n => simp only [regVal]; rw [h _ rfl]
+  | _ => simp [Reg.isArgReg] at hr
+
+theorem regVal_bodyOf (af : AFunc) (u : Arm.ArmState) {r : Reg} (hr : r.isArgReg = true) :
+    regVal (bodyOf af u) r = regVal u r :=
+  regVal_eq_of_field hr fun f hf => r_bodyOf af u (argReg_ne29 hr hf).1 (argReg_ne29 hr hf).2.1
+
+namespace LinkSys
+
+variable (L : LinkSys)
+
+theorem r_canon {g : Clif.Function} (hg : ∀ r ∈ regLocs g.sig, r.isArgReg = true) (uses : List CV)
+    (w : Arm.ArmState) {f : Arm.StateField} (hf : ¬ Masked f) :
+    Arm.r f (L.canon g uses w) = Arm.r f w := by
+  simp only [canon]
+  rw [Arm.r_of_w_different (by rintro rfl; exact hf trivial), placeArgs_r _ _ _ hg f hf, r_withImg]
+
+theorem mem_canon (g : Clif.Function) (uses : List CV) (w : Arm.ArmState) :
+    (L.canon g uses w).mem = (L.withImg w).mem := by
+  simp only [canon]
+  exact Arm.mem_w_of_mem_eq (placeArgs_mem _ _ _) _ _
+
+theorem program_canon (g : Clif.Function) (uses : List CV) (w : Arm.ArmState) :
+    (L.canon g uses w).program = w.program := by
+  simp only [canon, Arm.w_program, placeArgs_program, program_withImg]
+
+theorem regVal_canon (g : Clif.Function) (uses : List CV) (w : Arm.ArmState) {r : Reg}
+    (hr : r.isArgReg = true) :
+    regVal (L.canon g uses w) r = regVal (placeArgs (regLocs g.sig) uses (L.withImg w)) r :=
+  regVal_eq_of_field hr fun f hf => by
+    simp only [canon]; rw [Arm.r_of_w_different (argReg_ne29 hr hf).2.2.2]
+
+/-- A state from which a call of `g` (arguments `uses`, caller's world `w`) behaves as from the
+canonical one: the same world, the code image, the same parameter registers, a return address
+outside `g`'s code. -/
+structure CallerOk (g : Clif.Function) (uses : List CV) (w t : Arm.ArmState) : Prop where
+  world : SameWorld L.F t w
+  img : ∀ a, L.Img a → t.mem a = L.imgMem a
+  regs : ∀ r ∈ regLocs g.sig, regVal t r = regVal (L.canon g uses w) r
+  ra : ∀ k < (L.A g).fb.words.size, Arm.r .PC t + 4 ≠ (L.A g).base + BitVec.ofNat 64 (4 * k)
+
+theorem callerOk_canon (hL : L.Ok) {g : Clif.Function} (hg : g ∈ L.P.funcs) (uses : List CV)
+    (w : Arm.ArmState) : L.CallerOk g uses w (L.canon g uses w) := by
+  have harg := (hL.argRegs g hg).2.1
+  refine ⟨⟨fun f hf => L.r_canon harg uses w hf, fun a ha => ?_, L.program_canon g uses w⟩,
+    fun a ha => ?_, fun _ _ => rfl, fun k hk => ?_⟩
+  · rw [L.mem_canon, mem_withImg, if_neg (fun hi => ha (hL.imgF a hi))]
+  · rw [L.mem_canon, mem_withImg, if_pos ha]
+  · simp only [canon, Arm.r_of_w_same, BitVec.sub_add_cancel]
+    exact hL.raStar g hg k hk
+
+end LinkSys
+
+/-! ## A call of a program function -/
+
+theorem allReg_zip : ∀ (ls : List ArgLoc) (vs : List Clif.Val), (∀ l ∈ ls, ∃ r, l = .reg r) →
+    ∀ {i : Nat} {r : Reg} {v : Clif.Val}, (ls.zip vs)[i]? = some (.reg r, v) →
+      (ls.filterMap fun l => match l with | .reg r => some r | .stack _ => none)[i]? = some r ∧
+      ((ls.zip vs).filterMap fun q => match q.1 with | .reg _ => some q.2 | .stack _ => none)[i]? =
+        some v
+  | [], _, _, _, _, _, h => by simp at h
+  | _ :: _, [], _, _, _, _, h => by simp at h
+  | l :: ls, v0 :: vs, hall, i, r, v, h => by
+    obtain ⟨r0, rfl⟩ := hall l (List.mem_cons_self ..)
+    cases i with
+    | zero =>
+      simp only [List.zip_cons_cons, List.getElem?_cons_zero, Option.some.injEq, Prod.mk.injEq,
+        ArgLoc.reg.injEq] at h
+      obtain ⟨rfl, rfl⟩ := h
+      simp
+    | succ i =>
+      simp only [List.zip_cons_cons, List.getElem?_cons_succ] at h
+      simp only [List.filterMap_cons, List.zip_cons_cons, List.getElem?_cons_succ]
+      exact allReg_zip ls vs (fun l hl => hall l (List.mem_cons_of_mem _ hl)) h
+
+namespace LinkSys
+
+variable (L : LinkSys)
+
+/-- The body-entry world of the canonical call agrees with a compatible caller's callee entry. -/
+theorem bodyEntryW_compat (hL : L.Ok) {h : Clif.Function} (hh : h ∈ L.P.funcs) {uses : List CV}
+    {w t : Arm.ArmState} (ht : L.CallerOk h uses w t) :
+    BodyEntryW L.F (L.A h).vcp.EntryArg (L.A h).af (enterAt (L.A h) t)
+      (bodyOf (L.A h).af (enterAt (L.A h) (L.canon h uses w))) := by
+  have harg := (hL.argRegs h hh).2.1
+  have hc := L.callerOk_canon hL hh uses w
+  have hsp : spv (enterAt (L.A h) (L.canon h uses w)) = spv (enterAt (L.A h) t) := by
+    rw [spv_enterAt, spv_enterAt]; simp only [spv]
+    rw [hc.world.1 _ (by simp [Masked]), ht.world.1 _ (by simp [Masked])]
+  have h29 : xreg 29 (enterAt (L.A h) (L.canon h uses w)) = xreg 29 (enterAt (L.A h) t) := by
+    simp only [xreg]
+    rw [r_enterAt _ _ (by simp) (by simp), r_enterAt _ _ (by simp) (by simp),
+      hc.world.1 _ (by simp [Masked]), ht.world.1 _ (by simp [Masked])]
+  refine ⟨by rw [spv_bodyOf, hsp], by rw [x29_bodyOf, hsp, h29], fun r hr => ?_, fun f hf h29' h31 => ?_,
+    fun a ha => ?_, by simp⟩
+  · have hra := harg r (hL.entryRegs h hh r hr)
+    rw [regVal_bodyOf _ _ hra, regVal_enterAt _ _ hra, regVal_enterAt _ _ hra,
+      ht.regs r (hL.entryRegs h hh r hr)]
+  · have hpc : f ≠ .PC := by rintro rfl; exact hf trivial
+    have h30 : f ≠ .GPR 30#5 := by rintro rfl; exact hf (by simp [Masked])
+    rw [r_bodyOf _ _ h29' h31, r_enterAt _ _ hpc h30, r_enterAt _ _ hpc h30,
+      hc.world.1 f hf, ht.world.1 f hf]
+  · rw [mem_bodyOf, mem_enterAt, mem_enterAt, hc.world.2.1 a ha, ht.world.2.1 a ha]
+
+end LinkSys
+
+namespace LinkSys
+
+variable (L : LinkSys)
+
+theorem frameSize_mod (hL : L.Ok) {h : Clif.Function} (hh : h ∈ L.P.funcs) :
+    (L.A h).af.frameSize % 16 = 0 := by
+  rw [(lowerRFunc_ok (hL.compiled h hh).alloc).1.1]
+  exact alignTo16_mod _
+
+theorem frameDrop_eq (hL : L.Ok) {h : Clif.Function} (hh : h ∈ L.P.funcs) :
+    frameDrop (L.A h).af = (L.A h).af.frameSize + 16 := by
+  simp [frameDrop, lowerRFunc_frame (hL.compiled h hh).alloc]
+
+/-- **A call of a function `h` of `P`** at depth `M` (its whole-program run returns within `M`
+steps) from a world `w` with room for the callee's stack: one VCode outcome of `h`, which the
+linked machine's call realises from every caller state compatible with `w` (`CallerOk`), in
+particular from the canonical one. -/
+theorem progCall (hL : L.Ok) {M : Nat} (hM : 0 < M) (ih : L.Thm (M - 1)) {n : String}
+    {h : Clif.Function} (hpf : L.P.func? n = some h) (hsl : h.slots = [])
+    (hsz : (RAFrame.compute (L.A h).vcp (L.A h).rf).size = (L.A h).af.frameSize)
+    {uses : List CV} {w : Arm.ArmState} (herr : Arm.r .ERR w = .None)
+    (hal : (spv w).toNat % 16 = 0)
+    (hroom : frameDrop (L.A h).af + L.K (M - 1) ≤ (spv w).toNat)
+    (hdead : ∀ a, StackBelow (frameDrop (L.A h).af + L.K (M - 1)) (spv w) a → L.F a ∧ ¬ L.Img a)
+    {vals : List Clif.Val} {cm : Clif.Mem} {cs : Clif.State} {rvals : List Clif.Val}
+    {cm' : Clif.Mem} (hmr : MemRel L.F L.syms cm w) (hargs : ArgsAt h.sig vals uses w)
+    (hinit : Clif.initState L.P n vals cm = .ok cs)
+    (hrun : Clif.runLoop L.base L.P M cs = .returned rvals cm') :
+    ∃ (us : List (Reg × Reg)) (outs : List CV) (wf : Arm.ArmState),
+      us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+      PrefixHold rvals outs ∧ MemRel L.F L.syms cm' wf ∧
+      ∀ t, L.CallerOk h uses w t → ∃ k,
+        (L.hooks M).call (some n) t =
+          Arm.set_program (runX (L.mach (M - 1) h) k (enterAt (L.A h) t)) t.program ∧
+        ActRet (Arm.r .PC t + 4) L.F
+          (fun a => L.F a ∧ ¬ StackBelow (frameDrop (L.A h).af + L.K (M - 1)) (spv w) a)
+          us outs wf (enterAt (L.A h) t) (runX (L.mach (M - 1) h) k (enterAt (L.A h) t)) := by
+  obtain ⟨hh, hname⟩ := Clif.Program.func?_some hpf
+  subst hname
+  have hc := hL.compiled h hh
+  have hfr := lowerRFunc_frame hc.alloc
+  have hdrop := L.frameDrop_eq hL hh
+  have hfs := L.frameSize_mod hL hh
+  obtain ⟨hnd, harg, hwid⟩ := hL.argRegs h hh
+  obtain ⟨hsl', hcm⟩ := initState_noSlots hpf hsl hinit
+  have hce : ClifEntry h vals cs := clifEntry_initState hpf hinit
+  -- the per-function run (program callees at most `M - 1` steps)
+  obtain ⟨m, hm⟩ := Clif.runLoop_linkN (base := L.base) (M - 1) hL.linkable.names hh
+    hL.linkable.free M cs (by omega) (runInv_entry hh hce) (by rw [hrun]; intro _ e; cases e)
+    (by rw [hrun]; intro e; cases e)
+  rw [hrun] at hm
+  -- the canonical state and the shared body-entry world
+  let cn := L.canon h uses w
+  let w₀ := bodyOf (L.A h).af (enterAt (L.A h) cn)
+  have hcOk := L.callerOk_canon hL hh uses w
+  have hsp0 : spv cn = spv w := hcOk.world.1 _ (by simp [Masked])
+  have hspw₀ : spv w₀ = spv w - BitVec.ofNat 64 (frameDrop (L.A h).af) := by
+    rw [spv_bodyOf, spv_enterAt, hsp0]
+  obtain ⟨-, -, hB⟩ := off_toNat 0 (spv w) (frameDrop (L.A h).af) (by omega)
+  have hWE : L.WorldEntry (M - 1) h vals cs w₀ := by
+    refine ⟨hce, ?_, ?_, ?_, ?_, ?_⟩
+    · rw [hsl', hcm]
+      refine ⟨⟨⟨fun a b hv hb => ?_, hmr.valid, hmr.symbols⟩, fun id b hl => by simp at hl, ?_⟩,
+        rfl, ?_⟩
+      · rw [← hmr.bytes a b hv hb]
+        simp only [Arm.read_mem, Arm.read_store, w₀, mem_bodyOf, mem_enterAt]
+        rw [L.mem_canon, mem_withImg, if_neg]
+        intro hi
+        exact (hmr.valid a 1 hv).2 0 (by omega) (by simpa using hL.imgF _ hi)
+      · rw [hL.noOut h hh]; exact outRel_zero _ _ _
+      · simp only [w₀]
+        rw [r_bodyOf _ _ (by simp) (by simp), r_enterAt _ _ (by simp) (by simp),
+          hcOk.world.1 _ (by simp [Masked])]
+        exact herr
+    · intro loc v hmem
+      obtain ⟨i, hi⟩ := List.mem_iff_getElem?.mp hmem
+      cases loc with
+      | stack off =>
+        obtain ⟨r, e⟩ := hL.regParams h hh _ (List.of_mem_zip hmem).1
+        cases e
+      | reg r =>
+        obtain ⟨hr, hv⟩ := allReg_zip _ _ (hL.regParams h hh) hi
+        have hlen := hargs.2.1.1
+        obtain ⟨u, hu⟩ : ∃ u, uses[i]? = some u := by
+          have hi' : i < uses.length := by
+            rw [← hlen]; exact (List.getElem?_eq_some_iff.mp hv).1
+          exact ⟨uses[i]'hi', List.getElem?_eq_getElem _⟩
+        have hvh := hargs.2.1.2 i v u hv hu
+        have hrA : r.isArgReg = true := harg r (List.mem_of_getElem? hr)
+        simp only
+        rw [show regVal w₀ r = regVal (placeArgs (regLocs h.sig) uses (L.withImg w)) r by
+          simp only [w₀]; rw [regVal_bodyOf _ _ hrA, regVal_enterAt _ _ hrA, L.regVal_canon _ _ _ hrA],
+          placeArgs_regVal _ _ _ hnd harg hr hu]
+        refine vHolds_setVal ?_ hvh
+        have hty := hce.sig
+        have hvmem : v ∈ vals := List.of_mem_zip hmem |>.2
+        obtain ⟨j, hj⟩ := List.mem_iff_getElem?.mp hvmem
+        have e := congrArg (·[j]?) hty
+        simp only [List.getElem?_map, hj, Option.map_some] at e
+        cases hp : h.sig.params[j]? with
+        | none => rw [hp] at e; cases e
+        | some p =>
+          rw [hp] at e
+          simp only [Option.map_some, Option.some.injEq] at e
+          rw [e]; exact hwid p (List.mem_of_getElem? hp)
+    · rw [hspw₀, hB]; omega
+    · intro a ha
+      apply hdead
+      rw [hspw₀] at ha
+      obtain ⟨h1, h2⟩ := ha
+      rw [hB] at h1 h2
+      exact ⟨by omega, by omega⟩
+    · rw [hspw₀, hB, hdrop]; omega
+  obtain ⟨us, outs, wf, hus, hlen, hhold, hmemR, hall⟩ :=
+    ih h hh vals cs w₀ m rvals cm' hWE hm
+  refine ⟨us, outs, wf, hus, hlen, hhold, hmemR, fun t ht => ?_⟩
+  -- the callee's activation from `t`
+  let G : BitVec 64 → Prop :=
+    fun a => L.F a ∧ ¬ StackBelow (frameDrop (L.A h).af + L.K (M - 1)) (spv w) a
+  have hspt : spv (enterAt (L.A h) t) = spv w := by
+    rw [spv_enterAt]; exact ht.world.1 _ (by simp [Masked])
+  have hcode : ∀ a, CodeAddr (enterAt (L.A h) t) a → L.Img a := fun a ha =>
+    hL.imgAddr h hh a (by simpa [CodeAddr] using ha)
+  have hME : L.MachEntry (M - 1) h G (Arm.r .PC t + 4) (enterAt (L.A h) t) w₀ := by
+    refine ⟨⟨by simp, fun k wd hk => hL.imgCode h hh _ (fun a ha => by
+        rw [mem_enterAt]; exact ht.img a ha) k wd hk, by simp, ?_, x30_enterAt _ _, ht.ra, ?_,
+        hL.fits h hh⟩, ?_, fun a ha => ?_, ?_, fun a ha => ⟨hL.imgF a ha, fun hb => (hdead a hb).2 ha⟩,
+      fun a ha => by rw [mem_enterAt]; exact ht.img a ha, L.bodyEntryW_compat hL hh ht⟩
+    · rw [r_enterAt _ _ (by simp) (by simp), ht.world.1 _ (by simp [Masked])]; exact herr
+    · rw [hspt]; exact hal
+    · refine stackRoom_of (by rw [hspt, ← hdrop]; exact hroom) fun a ha hb => ?_
+      rw [hspt, ← hdrop] at hb
+      exact (hdead a hb).2 (hcode a ha)
+    · rw [hspt]; exact ha.2
+    · funext a
+      apply propext
+      rw [hL.noOut h hh, hsz, frameWG_noSlots hfr (by rw [hspt, ← hdrop]; exact hroom), ← hdrop, hspt]
+      constructor
+      · rintro (hb | hc | hg)
+        · exact (hdead a hb).1
+        · exact hL.imgF a (hcode a hc)
+        · exact hg.1
+      · intro hF
+        by_cases hb : StackBelow (frameDrop (L.A h).af + L.K (M - 1)) (spv w) a
+        · exact .inl hb
+        · exact .inr (.inr ⟨hF, hb⟩)
+  obtain ⟨k, hret⟩ := hall G (Arm.r .PC t + 4) (enterAt (L.A h) t) hME
+  refine ⟨k, ?_, hret⟩
+  obtain ⟨M', rfl⟩ : ∃ M', M = M' + 1 := ⟨M - 1, by omega⟩
+  obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
+  show callHook L.Hb L.P _ (some h.name) t = _
+  simp only [callHook, hpf]
+  exact linkedCall_eq hc.layout hlm ht.ra
+    ⟨hret.ret.pc, hret.ret.err, hret.prog.trans (program_enterAt _ _)⟩
 
 end LinkSys
 
