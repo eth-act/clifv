@@ -327,7 +327,6 @@ def function128Cert (f : Function) : Except String (Function × Cert) := do
 def function128 (f : Function) : Except String Function :=
   (·.1) <$> function128Cert f
 
-namespace Opt.Legalize128
 
 /-- The unverified reason of a legalised function the validator rejects. -/
 def rejectedReason : String := "i128 legalized (outside backend_correct: Opt.Legal.check rejects)"
