@@ -810,8 +810,10 @@ structure Ok : Prop where
       Arm.read_mem_bytes 4 ((L.A g).base + BitVec.ofNat 64 (4 * k)) t = w
   /-- the code is outside every activation's world -/
   imgF : ∀ a, L.Img a → L.F a
-  /-- layout: the return address of a call is not in the callee's code -/
-  raCall : ∀ g ∈ L.P.funcs, ∀ h ∈ L.P.funcs, ∀ pc, CallPc (L.A g).fa (L.A g).base pc →
+  /-- layout: the return address of a call is not in the code of a function of `P` that `g`
+  calls (stated for the callees of `g`'s call sites, not for every function of `P`: the return
+  address is in `g`'s own code, so a function calling itself directly is outside this layer) -/
+  raCall : ∀ g ∈ L.P.funcs, ∀ info h, L.ProgSite g info h → ∀ pc, CallPc (L.A g).fa (L.A g).base pc →
     ∀ k < (L.A h).fb.words.size, pc + 4 ≠ (L.A h).base + BitVec.ofNat 64 (4 * k)
   raStar : ∀ h ∈ L.P.funcs, ∀ k < (L.A h).fb.words.size,
     L.raStar ≠ (L.A h).base + BitVec.ofNat 64 (4 * k)
@@ -1344,7 +1346,7 @@ theorem progOs (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g : Clif.Fu
   -- the caller state is compatible with the canonical one
   have hcOk : L.CallerOk h uses w t := by
     refine ⟨hsw, fun a ha => (hG a (himgG a ha)).trans (himgS a ha), fun r hr => ?_,
-      hL.raCall g hg h hh _ hP⟩
+      hL.raCall g hg _ h hsite _ hP⟩
     rw [← hLu] at hr
     obtain ⟨j, hj⟩ := List.mem_iff_getElem?.mp hr
     have hrA : r.isArgReg = true := harg r (by rw [← hLu]; exact List.mem_of_getElem? hj)
