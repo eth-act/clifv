@@ -2,7 +2,7 @@ import FV.Backend
 import FV.Backend.Proof.DriverCheck
 import FV.Backend.Proof.PrepareCheck
 import FV.Backend.Proof.RegallocCover
-import FV.Opt.Legal
+import FV.Opt.Legalize128Pass
 import FVTest.Opt.Common
 
 /-!

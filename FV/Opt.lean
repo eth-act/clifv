@@ -11,3 +11,4 @@ import FV.Opt.Dce
 import FV.Opt.Licm
 import FV.Opt.Optimize
 import FV.Opt.Legal
+import FV.Opt.Legalize128Pass
