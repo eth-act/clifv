@@ -1185,4 +1185,87 @@ theorem progCall (hL : L.Ok) {M : Nat} (hM : 0 < M) (ih : L.Thm (M - 1)) {n : St
 
 end LinkSys
 
+theorem func?_of_mem {P : Clif.Program} (hnd : (P.funcs.map (·.name)).Nodup) {h : Clif.Function}
+    (hh : h ∈ P.funcs) : P.func? h.name = some h := by
+  cases e : P.func? h.name with
+  | none => exact absurd rfl (Clif.Program.func?_none e h hh)
+  | some g =>
+    obtain ⟨hg, hgn⟩ := Clif.Program.func?_some e
+    rw [Clif.name_inj hnd hg hh hgn]
+
+/-! ## The hooks and the external semantics of the linked system -/
+
+namespace LinkSys
+
+variable (L : LinkSys)
+
+theorem hooks_base {M : Nat} {d : Option String} (h : L.BaseDest d) (u : Arm.ArmState) :
+    (L.hooks M).call d u = L.Hb.call d u := by
+  rcases h with rfl | ⟨n, rfl, hn⟩
+  · cases M <;> rfl
+  · cases M <;> simp [hooks, callHook, hn]
+
+theorem hooks_tls (M : Nat) : (L.hooks M).tls = L.Hb.tls := by cases M <;> rfl
+
+theorem hooks_prog {M : Nat} {n : String} {h : Clif.Function} (hpf : L.P.func? n = some h)
+    (u : Arm.ArmState) :
+    ((L.hooks M).call (some n) u).program = u.program ∧
+      Arm.r .PC ((L.hooks M).call (some n) u) = Arm.r .PC u + 4 := by
+  have hj : (junkAt u).program = u.program ∧ Arm.r .PC (junkAt u) = Arm.r .PC u + 4 := by
+    simp only [junkAt, Arm.w_program, true_and]
+    rw [Arm.r_of_w_different (by simp), Arm.r_of_w_same]
+  cases M with
+  | zero => simp only [hooks, callHook, hpf]; exact hj
+  | succ M =>
+    simp only [hooks, callHook, hpf, linkedCall]
+    split
+    · rename_i hex
+      have := Classical.choose_spec hex
+      exact ⟨rfl, by rw [r_set_program]; exact this.1⟩
+    · exact hj
+
+theorem X_base {M : Nat} {n : String} (hn : L.P.func? n = none) (uses : List CV)
+    (w : Arm.ArmState) : (L.X M).call (some n) uses w = L.Xb.call (some n) uses w := by
+  simp [X, hn]
+
+theorem X_prog {M : Nat} {n : String} {h : Clif.Function} (hpf : L.P.func? n = some h)
+    (uses : List CV) (w : Arm.ArmState) : (L.X M).call (some n) uses w = L.progX M h n uses w := by
+  simp [X, hpf]
+
+theorem progX_ext {M : Nat} {n : String} {h : Clif.Function} (hpf : L.P.func? n = some h)
+    {uses : List CV} {w : Arm.ArmState} {outs : List CV} {w' : Arm.ArmState}
+    (hx : L.progX M h n uses w = some (outs, w')) :
+    Arm.r .ERR w' = .None ∧ w'.program = w.program := by
+  unfold progX at hx
+  split at hx
+  · rename_i hc
+    simp only [Option.some.injEq, Prod.mk.injEq] at hx
+    obtain ⟨-, rfl⟩ := hx
+    exact ⟨hc.2, by rw [(L.hooks_prog hpf _).1, L.program_canon]⟩
+  · cases hx
+
+theorem X_ext (hL : L.Ok) {M : Nat} {d : Option String} {uses : List CV} {w : Arm.ArmState}
+    {outs : List CV} {w' : Arm.ArmState} (hx : (L.X M).call d uses w = some (outs, w'))
+    (herr : Arm.r .ERR w = .None) : Arm.r .ERR w' = .None ∧ w'.program = w.program := by
+  cases d with
+  | some n =>
+    cases hpf : L.P.func? n with
+    | none =>
+      rw [L.X_base hpf] at hx
+      exact hL.baseExt _ _ _ _ _ (.inr ⟨n, rfl, hpf⟩) hx herr
+    | some h =>
+      rw [L.X_prog hpf] at hx
+      exact L.progX_ext hpf hx
+  | none =>
+    simp only [X] at hx
+    split at hx
+    · split at hx
+      · rename_i h hfind
+        have hh := List.mem_of_find?_eq_some hfind
+        exact L.progX_ext (func?_of_mem hL.linkable.names hh) hx
+      · exact hL.baseExt _ _ _ _ _ (.inl rfl) hx herr
+    · exact hL.baseExt _ _ _ _ _ (.inl rfl) hx herr
+
+end LinkSys
+
 end E2E
