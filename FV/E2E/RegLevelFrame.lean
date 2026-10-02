@@ -403,7 +403,7 @@ theorem q_init {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiEntry R.fb R.bas
       ∀ f, f ≠ .PC → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 →
         Arm.r f (iterN R.step n R.s0) = Arm.r f R.s0 := by
   have hframe := lowerRFunc_frame hR.alloc
-  have hst0 := hR.stack
+  have hst0 := hR.stack.frame
   have hsp0 := (spv R.s0).isLt
   have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; omega
   have hal0 : Arm.CheckSPAlignment R.s0 := (checkSP_iff _).2 hent.spAligned
@@ -430,7 +430,7 @@ theorem q_init {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiEntry R.fb R.bas
     exact write_bytes_outside 16 _ _ _ ha
   have hmemF : ∀ a, ¬ R.F a → s'.mem a = w₀.mem a := by
     intro a ha
-    rw [hslot a (fun k hk e => ha (e ▸ fplr_inF hR hframe k hk)), hbe.mem]
+    rw [hslot a (fun k hk e => ha (e ▸ RL.FK_F (fplr_inF hR hframe k hk))), hbe.mem]
   have hcode' : ∀ a, CodeAddr R.s0 a → s'.mem a = R.s0.mem a := by
     intro a ha
     apply hslot
@@ -581,7 +581,7 @@ theorem ret_machine {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiEntry R.fb 
         regVal (iterN R.step n s) p = x := by
   have hframe := lowerRFunc_frame hR.alloc
   have hck := (lowerRFunc_ok hR.alloc).2.2.2
-  have hst0 := hR.stack
+  have hst0 := hR.stack.frame
   have hsp0 := (spv R.s0).isLt
   have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; omega
   obtain ⟨j0, items, pre, regs, i', c1, c2, ls1, ls2, ps1, psm, ps2, T, cc, wh, ops, rfl, hit, hsplit,

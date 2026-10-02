@@ -105,13 +105,13 @@ theorem locVal_frame_keep {fr : RAFrame} {D : Loc → Prop} {T : Prop} {sp0 : Bi
 
 /-- The fp/lr slot lies in the frame addresses. -/
 theorem fplr_inF {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) :
-    ∀ k < 16, R.F (spv R.s0 - 16#64 + BitVec.ofNat 64 k) := by
+    ∀ k < 16, R.FK (spv R.s0 - 16#64 + BitVec.ofNat 64 k) := by
   obtain ⟨⟨hfs, -⟩, hlt, -⟩ := lowerRFunc_ok hR.alloc
-  have hst := hR.stack.1
+  have hst := hR.stack.frame.1
   have hd : frameDrop R.af = R.fr.total + 16 := by
     simp only [frameDrop, hframe, ite_true, hfs, RL.fr]
   intro k hk
-  simp only [RL.F, frameF, hd]
+  simp only [RL.FK, frameF, hd]
   rw [hfs] at hst
   simp only [RL.fr] at *
   have hm : (R.fr.total + 16) % 2 ^ 64 = R.fr.total + 16 := Nat.mod_eq_of_lt (by simp [RL.fr]; omega)
@@ -154,6 +154,82 @@ theorem op_checked {R : RL} {vb : VBlock} {k : Nat} {allocs : Array Loc} {its : 
   exact ⟨c, _, i, ops, hi, hops, (stepOp_ok hso).1, ⟨c, k + 1, a', out, hcr, hcv, hrun⟩⟩
 
 
+/-- **`OperandsSoundCtlAt` makes a concrete instruction an `MStep.op`** (as
+`operandsSound_step`, at the one state `s`, keeping the frame `FK`). -/
+theorem operandsSound_stepAt {F FK : BitVec 64 → Prop}
+    {exec : MInst → Arm.ArmState → Option Arm.ArmState}
+    {sem : ISem CV Arm.ArmState} {i : MInst} {ctl : Ctl} {s : Arm.ArmState}
+    (hs : OperandsSoundCtlAt F FK exec sem i ctl s)
+    {c : CheckCtx} {wh : String} {ops : Array Operand} {regs : Array Reg} {i' : MInst}
+    (hops : i.operands = .ok ops)
+    (hst : c.checkStatic wh ops (regs.map Loc.reg) i.clobbers = .ok ())
+    (hasg : i.assign regs = .ok i') {m : Loc → CV} {w : Arm.ArmState}
+    (hm : ∀ r, r.allocatable = true → m (.reg r) = regVal s r) (hw : SameWorld F s w)
+    (hal : Arm.CheckSPAlignment s) (herr : Arm.r .ERR s = .None) {outs : List CV} {w' : Arm.ArmState}
+    (hsem : sem i (((ops.zip (regs.map Loc.reg)).toList.filter (·.1.isUse)).map (m ·.2)) w =
+      some (outs, w', ctl))
+    (hlen : outs.length = ((ops.zip (regs.map Loc.reg)).toList.filter (·.1.isDef)).length) :
+    ∃ s' m2, exec i' s = some s' ∧ SameWorld F s' w' ∧ FrameKeep FK s s' ∧
+      Clobbered ckeep i.clobbers
+        (writeM m ((((ops.zip (regs.map Loc.reg)).toList.filter (·.1.isDef)).zip outs).filter
+          (·.1.1.isEarly))) m2 ∧
+      (∀ r, r.allocatable = true →
+        writeM m2 ((((ops.zip (regs.map Loc.reg)).toList.filter (·.1.isDef)).zip outs).filter
+          (·.1.1.isLate)) (.reg r) = regVal s' r) ∧
+      (∀ l, (∀ r, l ≠ .reg r) →
+        writeM m2 ((((ops.zip (regs.map Loc.reg)).toList.filter (·.1.isDef)).zip outs).filter
+          (·.1.1.isLate)) l = m l) := by
+  obtain ⟨_, hloc, hnd, hdc⟩ := checkStatic_facts hst
+  have halloc : ∀ p ∈ (ops.zip regs).toList, p.2.allocatable = true := by
+    intro p hp
+    have := (hloc (p.1, .reg p.2) (by rw [pairs_regs]; exact List.mem_map_of_mem hp)).1
+    simp only [CheckCtx.locOk, Loc.cls?, Bool.and_eq_true] at this
+    exact this.2
+  have huse : ((ops.zip (regs.map Loc.reg)).toList.filter (·.1.isUse)).map (m ·.2) =
+      useVals ops regs s := by
+    rw [pairs_regs, useVals, List.filter_map, List.map_map]
+    apply List.map_congr_left
+    intro p hp
+    exact hm _ (halloc p (List.mem_filter.mp hp).1)
+  rw [huse] at hsem
+  obtain ⟨s', hex, hW, hK, hdef, hoth, hcl⟩ := hs c wh ops regs i' w outs w' hops hst hasg hw hal herr hsem
+  have htrip : ((ops.zip (regs.map Loc.reg)).toList.filter (·.1.isDef)).zip outs =
+      (defRegs ops regs outs).map (fun p => ((p.1.1, Loc.reg p.1.2), p.2)) := by
+    rw [pairs_regs, List.filter_map, defRegs, List.zip_map_left]
+    rfl
+  have hfst : (((ops.zip (regs.map Loc.reg)).toList.filter (·.1.isDef)).zip outs).map (·.1) =
+      (ops.zip (regs.map Loc.reg)).toList.filter (·.1.isDef) :=
+    List.map_fst_zip (by omega)
+  obtain ⟨m2, hc2, hr2, hl2⟩ := defs_store (s := s) (s' := s') (m := m) (clob := i.clobbers)
+    (((ops.zip (regs.map Loc.reg)).toList.filter (·.1.isDef)).zip outs)
+    (by
+      rw [show ∀ D : List ((Operand × Loc) × CV), D.map (·.1.2) = (D.map (·.1)).map (·.2) from
+        fun D => by simp, hfst]
+      exact hnd)
+    (by
+      intro p hp
+      rw [htrip] at hp
+      obtain ⟨q, hq, rfl⟩ := List.mem_map.mp hp
+      exact ⟨q.1.2, rfl, hdef q hq⟩)
+    (by
+      intro p hp r hr
+      have hp' : p.1 ∈ (ops.zip (regs.map Loc.reg)).toList.filter (·.1.isDef) := by
+        rw [← hfst]; exact List.mem_map_of_mem hp
+      have := List.mem_filter.mp hp'
+      exact hdc p.1 this.1 (by simpa [Operand.isDef] using this.2) r hr)
+    hm
+    (by
+      intro r hr hnD hc
+      refine hoth r hr (fun q hq hqd e => ?_) hc
+      have hq' : (q.1, Loc.reg q.2) ∈ (ops.zip (regs.map Loc.reg)).toList.filter (·.1.isDef) := by
+        rw [pairs_regs, List.filter_map]
+        exact List.mem_map_of_mem (List.mem_filter.mpr ⟨hq, hqd⟩)
+      rw [← hfst] at hq'
+      obtain ⟨p, hp, e'⟩ := List.mem_map.mp hq'
+      exact hnD p hp (by rw [e', e]))
+    hcl
+  exact ⟨s', m2, hex, hW, hK, hc2, hr2, hl2⟩
+
 /-- The machine runs the lines `ls1` of the allocated instruction `i'`, placed at line `j`, to
 the state `exec (R.envOf j) i'` gives, ending at the line after them (in some number of steps:
 one per line, or fewer where the machine runs several lines as one hooked step, as for the
@@ -166,7 +242,8 @@ def RunsAs (R : RL) (exec : Env → MInst → Arm.ArmState → Option Arm.ArmSta
 
 /-- **An instruction item that falls through, on the machine** (`MStep.op` with control
 `next`), for any execution function `exec` of allocated instructions the machine realises
-(`RunsAs`): given `OperandsSound` for `exec`, the machine reaches `Q` at the next item. -/
+(`RunsAs`): given the operand-view obligation for `exec` at the state (`OperandsSoundCtlAt`,
+keeping the frame `R.FK`), the machine reaches `Q` at the next item. -/
 theorem realizes_op_core {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc}
     {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
     (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩))
@@ -178,7 +255,7 @@ theorem realizes_op_core {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
     (hlen : outs.length = ((ops.zip allocs).toList.filter (·.1.isDef)).length)
     (hk : k + 1 < vb.insts.size)
     {exec : Env → MInst → Arm.ArmState → Option Arm.ArmState}
-    (hOS : ∀ env, OperandsSound R.F (exec env) R.sem i)
+    (hOS : ∀ env, OperandsSoundCtlAt R.F R.FK (exec env) R.sem i .next s)
     (hL : ∀ regs i', i.assign regs = .ok i' → (∃ env s s', exec env i' s = some s') →
       ∃ ls1, (∀ ps, i'.lines R.ctx ps = .ok (ls1, ps)) ∧
       (∀ ln ∈ ls1, ln.plain = true) ∧ (∀ ds, i' ≠ .args ds) ∧ (∀ us, i' ≠ .rets us) ∧
@@ -202,8 +279,8 @@ theorem realizes_op_core {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
   -- the instruction's effect
   have hm : ∀ r, r.allocatable = true → m (.reg r) = regVal s r := fun r hr =>
     hst.store (.reg r) (fun r' e => by cases e; exact hr) trivial
-  obtain ⟨s', m2, hex, hW, hK, hc2', hr2, hl2⟩ := operandsSound_step (hOS (R.envOf j)) hops hstat hasg
-    hm hst.world hst.align hst.err hsem hlen
+  obtain ⟨s', m2, hex, hW, hK, hc2', hr2, hl2⟩ := operandsSound_stepAt (hOS (R.envOf j)) hops hstat
+    hasg hm hst.world hst.align hst.err hsem hlen
   obtain ⟨ls1, hl1, hpl, hna, hnr, hruns⟩ := hL regs i' hasg ⟨_, _, _, hex⟩
   rcases hc1' with ⟨rfl, -, -⟩ | ⟨ds, rfl, -⟩ | ⟨us, rfl, -⟩
   rotate_left
@@ -227,7 +304,7 @@ theorem realizes_op_core {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
     rw [hdrop, List.append_assoc, ftList_plain_append _ _ hpl hZ, List.append_assoc]
   obtain ⟨nst, hiter, hpc'⟩ := hruns j _ s s' hdrop' hst.prog hpc hst.err hex
   refine ⟨nst, _, MStep.op hvb hi hops hsz hsem hlen (HavocOuts.refl _ _) hc2' (MNext.next hk), ?_⟩
-  have hfr := R.frameOk hR
+  have hfr := R.frameOkK hR
   refine ⟨j + ls1.length, vb, items, pre ++ [.op k (regs.map Loc.reg)], c2, ls2, ps1, ps2, T, hvb,
     hit, by rw [hsplit]; simp, hchk', hc2, h2, htr, ?_, ?_, ?_⟩
   · rw [← List.drop_drop, hdrop', List.drop_left]
@@ -296,7 +373,8 @@ theorem realizes_op_next {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
     (hW' : Arm.r .ERR w' = .None ∧ w'.program = w.program) :
     ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
       Q R (iterN R.step n s) c'' :=
-  realizes_op_core hR hq hvb hi hops hsz hsem hlen hk (exec := fun env => execMInst R.ctx env) hOS
+  realizes_op_core hR hq hvb hi hops hsz hsem hlen hk (exec := fun env => execMInst R.ctx env)
+    (fun env => (hOS env).at (fun _ => RL.FK_F) s)
     (fun regs i' hasg _ => by
       obtain ⟨⟨ls1, hl1, hins, hpl, hint⟩, hna, hnr⟩ := hL regs i' hasg
       exact ⟨ls1, hl1, hpl, hna, hnr, runsAs_of_linesOk hR hl1 hins hint⟩) hW'

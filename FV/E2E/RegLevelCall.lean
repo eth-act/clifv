@@ -6,10 +6,12 @@ import FV.E2E.RegLevelNext
 The machine `ArmStepX` runs the callee of `bl`/`blr` as one hooked step (`H.call`) and the
 relocated address pairs `adrp`/`ldr got` and `adrp`/`add lo12` as two hooked steps (`X.sym`).
 
-* `CalleeOk F X H`: the callee contract of an activation with frame addresses `F`: the hooked
-  call (`callExec H`) satisfies `OperandsSound` against `csem`'s call clause (`X.call`: the
-  AAPCS64 contract — results, preserved registers, frame and `sp` kept, world as `X.call` says),
-  returns to the next instruction, and `X.call` keeps the program and yields no model error.
+* `CalleeOk F K X H`: the callee contract of an activation whose addresses outside the world
+  are `F` and whose callees may use the `K` bytes below `sp` (the dead stack): the hooked call
+  (`callExec H`) satisfies `CallSoundCtl` against `csem`'s call clause (`X.call`: the AAPCS64
+  contract — results, preserved registers, `sp` kept, the world as `X.call` says outside `F`,
+  the frame kept outside the dead stack), returns to the next instruction, and `X.call` keeps
+  the program and yields no model error.
 * `realizes_call`, `realizes_symAddr`: the `op`/`next` case of `Realizes` for calls and
   `loadExtNameGot/Near`, instances of `realizes_op_core`.
 -/
@@ -94,29 +96,41 @@ theorem drop_get1 {L ls T : List Line} {j : Nat} {a b : Line} (hd : L.drop j = a
 
 /-! ## Calls -/
 
-/-- The callee as the machine runs it (`bl name` / `blr`; also the call of a `try_call`). -/
-def callExec (H : ArmHooks) : MInst → Arm.ArmState → Option Arm.ArmState
-  | .call info, s => some (H.call (match info.dest with | .sym n => some n | .reg _ => none) s)
-  | .tryCall info _, s => some (H.call (match info.dest with | .sym n => some n | .reg _ => none) s)
+open Classical in
+/-- The callee as the machine runs it (`bl name` / `blr`; also the call of a `try_call`), from a
+state whose `sp` is 16-byte aligned (AAPCS64; every call site of the body is). -/
+noncomputable def callExec (H : ArmHooks) : MInst → Arm.ArmState → Option Arm.ArmState
+  | .call info, s => if Arm.CheckSPAlignment s then
+      some (H.call (match info.dest with | .sym n => some n | .reg _ => none) s) else none
+  | .tryCall info _, s => if Arm.CheckSPAlignment s then
+      some (H.call (match info.dest with | .sym n => some n | .reg _ => none) s) else none
   | _, _ => none
 
-/-- **The callee contract** of an activation with frame addresses `F` (AAPCS64, stated for
-the machine's hook `H` and `csem`'s callee semantics `X.call`, which does not depend on the
-function context):
+/-- **The callee contract** of an activation whose addresses outside the world are `F`, with a
+stack budget of `K` bytes for its callees (AAPCS64, stated for the machine's hook `H` and
+`csem`'s callee semantics `X.call`, which does not depend on the function context):
 
-* `os`: `OperandsSound` of every call against the hooked callee: results in the fixed result
-  registers, the world `X.call` computes, allocatable registers outside the clobber set
-  preserved, the low 64 bits of v8–v15 preserved, `sp` and the frame bytes `F` untouched;
-* `pc`: the callee returns to the instruction after the call;
-* `ext`: `X.call` keeps the program and yields no model error. -/
-structure CalleeOk (F : BitVec 64 → Prop) (X : ExtSem) (H : ArmHooks) : Prop where
-  os : ∀ ctx info, OperandsSound F (callExec H) (csem F ctx X) (.call info)
-  pc : ∀ d s, Arm.r .ERR s = .None → Arm.r .PC (H.call d s) = Arm.r .PC s + 4
+* `os`: `CallSoundCtl` of every call against the hooked callee: from every state whose `K` bytes
+  below `sp` (the dead stack, where the callee pushes its frame: the return address, the
+  callee-saved registers, spills) are outside the world, the results are in the fixed result
+  registers, the world is the one `X.call` computes (memory compared outside `F`, which contains
+  the dead stack), allocatable registers outside the clobber set are preserved, the low 64 bits
+  of v8–v15 are preserved, `sp` is kept and the bytes of `F` outside the dead stack untouched;
+* `pc`: the callee returns to the instruction after the call (from an aligned `sp`);
+* `ext`: `X.call` keeps the program and yields no model error.
+
+The dead stack makes the contract satisfiable by callees that save state-dependent bytes below
+`sp` (`calleeOk_nonLeaf`, `FV/E2E/NonVacuity.lean`); the former contract compared all memory
+outside `F` and no callee pushing its return address could meet it. -/
+structure CalleeOk (F : BitVec 64 → Prop) (K : Nat) (X : ExtSem) (H : ArmHooks) : Prop where
+  os : ∀ ctx info, CallSoundCtl F K (callExec H) (csem F ctx X) (.call info) .next
+  pc : ∀ d s, Arm.r .ERR s = .None → Arm.CheckSPAlignment s →
+    Arm.r .PC (H.call d s) = Arm.r .PC s + 4
   ext : ∀ d uses w outs w', X.call d uses w = some (outs, w') → Arm.r .ERR w = .None →
     Arm.r .ERR w' = .None ∧ w'.program = w.program
 
 /-- **A call on the machine**: one hooked step. -/
-theorem realizes_call {R : RL} (hR : R.Wf) (hC : CalleeOk R.F R.X R.H) {s : Arm.ArmState}
+theorem realizes_call {R : RL} (hR : R.Wf) (hC : CalleeOk R.F R.K R.X R.H) {s : Arm.ArmState}
     {b k : Nat} {allocs : Array Loc} {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
     (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩))
     {vb : VBlock} {info : CallInfo} {ops : Array Operand} {outs : List CV} {w' : Arm.ArmState}
@@ -138,7 +152,7 @@ theorem realizes_call {R : RL} (hR : R.Wf) (hC : CalleeOk R.F R.X R.H) {s : Arm.
     obtain ⟨rfl, rfl, -⟩ := he
     exact hC.ext _ _ _ _ _ hx herr
   refine realizes_op_core hR hq hvb hi hops hsz hsem hlen hk (exec := fun _ => callExec R.H)
-    (fun _ => hC.os R.ctx info) (fun regs i' hasg _ => ?_) hW'
+    (fun _ => RL.callAt hR (hC.os R.ctx info) (q_stRel hq).sp) (fun regs i' hasg _ => ?_) hW'
   obtain ⟨info', rfl⟩ := assign_call_form hasg
   have hgen : ∀ x, (∀ ps, (MInst.call info').lines R.ctx ps = .ok ([.ins x], ps)) →
       (Line.ins x).plain = true →
@@ -154,10 +168,14 @@ theorem realizes_call {R : RL} (hR : R.Wf) (hC : CalleeOk R.F R.X R.H) {s : Arm.
       fun _ h => MInst.noConfusion h, fun _ h => MInst.noConfusion h,
       fun j T s s' hd hprog hpc herr hex => ?_⟩
     have hj : R.L[j]? = some (.ins x) := drop_get (Z := []) hd
-    simp only [callExec, Option.some.injEq] at hex
-    subst hex
-    refine ⟨1, by simp only [iterN]; exact hstep s j hj hprog hpc, ?_⟩
-    rw [hC.pc _ _ herr, hpc, List.length_singleton, pcOf_succ hj]
+    simp only [callExec] at hex
+    split at hex
+    · rename_i hal
+      simp only [Option.some.injEq] at hex
+      subst hex
+      refine ⟨1, by simp only [iterN]; exact hstep s j hj hprog hpc, ?_⟩
+      rw [hC.pc _ _ herr hal, hpc, List.length_singleton, pcOf_succ hj]
+    · cases hex
   cases hd : info'.dest with
   | sym n =>
     refine hgen (.bl n) (fun ps => by simp [MInst.lines, hd, pure, Except.pure])
@@ -294,7 +312,7 @@ theorem realizes_symAddr {R : RL} (hR : R.Wf) {s : Arm.ArmState}
       obtain ⟨-, rfl, -⟩ := hsem
       exact ⟨herr, rfl⟩
   refine realizes_op_core hR hq hvb hi hops hsz hsem hlen hk (exec := fun _ => symExec R.X)
-    (fun _ => os_symAddr hform) (fun regs i' _ hex => ?_) hW'
+    (fun _ => (os_symAddr hform).at (fun _ => RL.FK_F) s) (fun regs i' _ hex => ?_) hW'
   obtain ⟨_, s0, _, hex⟩ := hex
   cases i' with
   | loadExtNameGot rd n =>

@@ -13,8 +13,9 @@ The Arm machine `ArmStepX` running the laid-out function realises the allocated 
 * **store**: every valid location (allocatable register, spill/save slot) holds in `s` what the
   store `m` says (`locVal`);
 * **world**: `s` has the world `w` (`SameWorld (R.F)`: equal outside allocatable registers,
-  x16/x17, the pc and the frame addresses), no error, the function's program, `sp` at the
-  body's frame, fp/lr saved at the top of the frame.
+  x16/x17, the pc and the addresses `R.F` — the frame addresses `R.FK` and the callees' dead
+  stack `[sp_body - K, sp_body)`), no error, the function's program, `sp` at the body's frame,
+  fp/lr saved at the top of the frame.
 
 Returns and traps are the last step of a run and are treated separately (their `Q` is `True`).
 -/
@@ -35,6 +36,122 @@ def frameF (lo hi : Nat) (af : AFunc) (s : Arm.ArmState) (a : BitVec 64) : Prop 
     (a - (spv s - BitVec.ofNat 64 (frameDrop af))).toNat < frameDrop af) ∨
   CodeAddr s a
 
+/-- The `K` bytes below `sp` (`[sp - K, sp)`, without wrapping: `[0, sp)` when `sp < K`). -/
+def StackBelow (K : Nat) (sp a : BitVec 64) : Prop :=
+  a.toNat < sp.toNat ∧ sp.toNat ≤ a.toNat + K
+
+/-- The addresses outside the world of the activation entered in `s` (`lo`, `hi` as in
+`frameF`): its frame addresses `frameF`, and the callees' dead stack: the `K` bytes below the
+body's `sp` (`StackBelow`), where every callee builds its frame (the saved return address and
+callee-saved registers, spills: bytes that depend on more than the caller's world). No live
+CLIF byte is there (`MemRel.valid`), and a call leaves them unspecified (`CalleeOk`). With
+`K = 0` this is `frameF`. -/
+def frameW (K lo hi : Nat) (af : AFunc) (s : Arm.ArmState) (a : BitVec 64) : Prop :=
+  frameF lo hi af s a ∨ StackBelow K (spv s - BitVec.ofNat 64 (frameDrop af)) a
+
+theorem frameDrop_le (af : AFunc) : frameDrop af ≤ af.frameSize + 16 := by
+  unfold frameDrop; split <;> omega
+
+/-- The body's `sp` (`sp_entry - frameDrop`) does not wrap, and the callees' budget `K` fits
+below it. -/
+theorem spBody_toNat {K : Nat} {af : AFunc} {s : Arm.ArmState} (hst : StackAvail K af s) :
+    (spv s - BitVec.ofNat 64 (frameDrop af)).toNat = (spv s).toNat - frameDrop af ∧
+      frameDrop af + K ≤ (spv s).toNat := by
+  have h1 := hst.1
+  have h2 := frameDrop_le af
+  have hlt := (spv s).isLt
+  refine ⟨?_, by omega⟩
+  rw [BitVec.toNat_sub_of_le] <;>
+    simp only [BitVec.le_def, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : frameDrop af < 2 ^ 64)]
+  omega
+
+/-- **The frame addresses are not in the dead stack**: with enough stack (`StackAvail K`) and
+the allocator's slots inside the dropped frame (`hi ≤ frameDrop`), no frame address — slot,
+fp/lr, code — lies in the `K` bytes below the body's `sp`. -/
+theorem frameF_not_below {K lo hi : Nat} {af : AFunc} {s : Arm.ArmState} (hst : StackAvail K af s)
+    (hhi : hi ≤ frameDrop af) {a : BitVec 64} (ha : frameF lo hi af s a) :
+    ¬ StackBelow K (spv s - BitVec.ofNat 64 (frameDrop af)) a := by
+  obtain ⟨hB, hK⟩ := spBody_toNat hst
+  rintro ⟨hlt, hle⟩
+  have hsp := (spv s).isLt
+  have hfd := frameDrop_le af
+  rcases ha with ⟨-, h⟩ | ⟨-, h⟩ | hc
+  · rw [BitVec.toNat_sub, hB] at h
+    have := a.isLt
+    rw [hB] at hlt
+    have e : (2 ^ 64 - ((spv s).toNat - frameDrop af) + a.toNat) % 2 ^ 64 =
+        2 ^ 64 - ((spv s).toNat - frameDrop af) + a.toNat := Nat.mod_eq_of_lt (by omega)
+    rw [e] at h
+    omega
+  · rw [BitVec.toNat_sub, hB] at h
+    have := a.isLt
+    rw [hB] at hlt
+    have e : (2 ^ 64 - ((spv s).toNat - frameDrop af) + a.toNat) % 2 ^ 64 =
+        2 ^ 64 - ((spv s).toNat - frameDrop af) + a.toNat := Nat.mod_eq_of_lt (by omega)
+    rw [e] at h
+    omega
+  · have h := hst.2 a hc
+    have h1 := hst.1
+    rw [hB] at hlt hle
+    have hn : (spv s - BitVec.ofNat 64 (af.frameSize + 16 + K)).toNat =
+        (spv s).toNat - (af.frameSize + 16 + K) := by
+      rw [BitVec.toNat_sub_of_le] <;>
+        simp only [BitVec.le_def, BitVec.toNat_ofNat,
+          Nat.mod_eq_of_lt (by omega : af.frameSize + 16 + K < 2 ^ 64)]
+      omega
+    rw [BitVec.toNat_sub, hn] at h
+    have := a.isLt
+    have e : (2 ^ 64 - ((spv s).toNat - (af.frameSize + 16 + K)) + a.toNat) % 2 ^ 64 =
+        a.toNat - ((spv s).toNat - (af.frameSize + 16 + K)) := by
+      rw [show 2 ^ 64 - ((spv s).toNat - (af.frameSize + 16 + K)) + a.toNat =
+        (a.toNat - ((spv s).toNat - (af.frameSize + 16 + K))) + 2 ^ 64 by omega,
+        Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
+    rw [e] at h
+    omega
+
+/-- **The operand-view obligation at one state `s`** (`OperandsSoundCtl` instantiated at `s`),
+with the world compared outside `F` and the frame kept on `FK`. -/
+def OperandsSoundCtlAt (F FK : BitVec 64 → Prop) (exec : MInst → Arm.ArmState → Option Arm.ArmState)
+    (sem : ISem CV Arm.ArmState) (i : MInst) (ctl : Ctl) (s : Arm.ArmState) : Prop :=
+  ∀ (c : CheckCtx) (wh : String) (ops : Array Operand) (regs : Array Reg) (i' : MInst)
+    (w : Arm.ArmState) (outs : List CV) (w' : Arm.ArmState),
+    i.operands = .ok ops →
+    c.checkStatic wh ops (regs.map .reg) i.clobbers = .ok () →
+    i.assign regs = .ok i' →
+    SameWorld F s w → Arm.CheckSPAlignment s → Arm.r .ERR s = .None →
+    sem i (useVals ops regs s) w = some (outs, w', ctl) →
+    ∃ s', exec i' s = some s' ∧ SameWorld F s' w' ∧ FrameKeep FK s s' ∧
+      (∀ p ∈ defRegs ops regs outs, regVal s' p.1.2 = p.2) ∧
+      (∀ r, r.allocatable = true → (∀ p ∈ (ops.zip regs).toList, p.1.isDef = true → p.2 ≠ r) →
+        r ∉ i.clobbers → regVal s' r = regVal s r) ∧
+      (∀ r ∈ i.clobbers, r ∈ calleeSaved → ckeep r (regVal s' r) = ckeep r (regVal s r))
+
+/-- `OperandsSoundCtl` at a state, keeping a smaller frame `FK ⊆ F`. -/
+theorem OperandsSoundCtl.at {F FK : BitVec 64 → Prop}
+    {exec : MInst → Arm.ArmState → Option Arm.ArmState} {sem : ISem CV Arm.ArmState} {i : MInst}
+    {ctl : Ctl} (h : OperandsSoundCtl F exec sem i ctl) (hFK : ∀ a, FK a → F a)
+    (s : Arm.ArmState) : OperandsSoundCtlAt F FK exec sem i ctl s := by
+  intro c wh ops regs i' w outs w' hops hst hasg hw hal herr hsem
+  obtain ⟨s', hex, hW, hK, hd, ho, hc⟩ := h c wh ops regs i' s w outs w' hops hst hasg hw hal herr hsem
+  exact ⟨s', hex, hW, ⟨hK.1, fun a ha => hK.2 a (hFK a ha)⟩, hd, ho, hc⟩
+
+theorem OperandsSoundCtlAt.mono {F FK FK' : BitVec 64 → Prop}
+    {exec : MInst → Arm.ArmState → Option Arm.ArmState} {sem : ISem CV Arm.ArmState} {i : MInst}
+    {ctl : Ctl} {s : Arm.ArmState} (h : OperandsSoundCtlAt F FK exec sem i ctl s)
+    (hFK : ∀ a, FK' a → FK a) : OperandsSoundCtlAt F FK' exec sem i ctl s := by
+  intro c wh ops regs i' w outs w' hops hst hasg hw hal herr hsem
+  obtain ⟨s', hex, hW, hK, hd, ho, hc⟩ := h c wh ops regs i' w outs w' hops hst hasg hw hal herr hsem
+  exact ⟨s', hex, hW, ⟨hK.1, fun a ha => hK.2 a (hFK a ha)⟩, hd, ho, hc⟩
+
+/-- **The operand-view obligation of a call with a dead stack of `K` bytes**: at every state
+whose `K` bytes below `sp` fit (`K ≤ sp`) and lie outside the world (in `F`: the caller holds
+nothing live there), the emitted call satisfies `OperandsSoundCtl`, keeping the frame `F` only
+outside that dead stack (the callee builds its frame there). -/
+def CallSoundCtl (F : BitVec 64 → Prop) (K : Nat) (exec : MInst → Arm.ArmState → Option Arm.ArmState)
+    (sem : ISem CV Arm.ArmState) (i : MInst) (ctl : Ctl) : Prop :=
+  ∀ s, K ≤ (spOf s).toNat → (∀ a, StackBelow K (spOf s) a → F a) →
+    OperandsSoundCtlAt F (fun a => F a ∧ ¬ StackBelow K (spOf s) a) exec sem i ctl s
+
 /-- The fixed data of one activation. -/
 structure RL where
   vc : VCode
@@ -50,6 +167,8 @@ structure RL where
   H : ArmHooks
   /-- the emitter's final state (trap table) -/
   psF : PState
+  /-- the callees' stack budget below the body's `sp` (the dead stack of the calls) -/
+  K : Nat
 
 namespace RL
 variable (R : RL)
@@ -59,8 +178,10 @@ def L : List Line := R.fa.lines.toList
 def ctx : FnCtx := ⟨R.fa.k, R.af.slotBase⟩
 /-- `sp` in the body. -/
 def spB : BitVec 64 := spv R.s0 - BitVec.ofNat 64 (frameDrop R.af)
-/-- The frame addresses. -/
-def F : BitVec 64 → Prop := frameF R.fr.intBase R.fr.size R.af R.s0
+/-- The frame addresses (kept by every step of the body). -/
+def FK : BitVec 64 → Prop := frameF R.fr.intBase R.fr.size R.af R.s0
+/-- The addresses outside the world: the frame and the callees' dead stack below `spB`. -/
+def F : BitVec 64 → Prop := frameW R.K R.fr.intBase R.fr.size R.af R.s0
 /-- Address of line `j`. -/
 def pcOf (j : Nat) : BitVec 64 := R.base + BitVec.ofNat 64 (lineOffset R.L j)
 /-- The encoder's environment at line `j`. -/

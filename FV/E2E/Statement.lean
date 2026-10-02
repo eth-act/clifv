@@ -329,13 +329,40 @@ def ArgsIn (sig : Clif.Signature) (args : List Clif.Val) (s : Arm.ArmState) : Pr
     | .reg r => VHolds v (regVal s r)
     | .stack off => StackArgAt v off s
 
-/-- **Resource precondition**: the frame (fp/lr pair and `frameSize` bytes) fits below sp
-without wrapping, and does not overlap the code. Stack used by callees is part of the callee
-contract. -/
-def StackAvail (af : AFunc) (s : Arm.ArmState) : Prop :=
-  af.frameSize + 16 ≤ (spv s).toNat ∧
-    ∀ a, CodeAddr s a →
-      af.frameSize + 16 ≤ (a - (spv s - BitVec.ofNat 64 (af.frameSize + 16))).toNat
+/-- `n` bytes fit below `sp` without wrapping and hold no code. -/
+def StackRoom (n : Nat) (s : Arm.ArmState) : Prop :=
+  n ≤ (spv s).toNat ∧ ∀ a, CodeAddr s a → n ≤ (a - (spv s - BitVec.ofNat 64 n)).toNat
+
+theorem StackRoom.mono {m n : Nat} {s : Arm.ArmState} (h : StackRoom m s) (hnm : n ≤ m) :
+    StackRoom n s := by
+  refine ⟨Nat.le_trans hnm h.1, fun a ha => ?_⟩
+  have h2 := h.2 a ha
+  have h1 := h.1
+  have hm : m < 2 ^ 64 := Nat.lt_of_le_of_lt h1 (spv s).isLt
+  have e : a - (spv s - BitVec.ofNat 64 n) =
+      (a - (spv s - BitVec.ofNat 64 m)) - BitVec.ofNat 64 (m - n) := by
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
+    rw [Nat.mod_eq_of_lt (by omega : n < 2 ^ 64), Nat.mod_eq_of_lt (by omega : m < 2 ^ 64),
+      Nat.mod_eq_of_lt (by omega : m - n < 2 ^ 64)]
+    have := a.isLt
+    have := (spv s).isLt
+    omega
+  rw [e, BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : m - n < 2 ^ 64)]
+  have := (a - (spv s - BitVec.ofNat 64 m)).isLt
+  omega
+
+/-- **Resource precondition** with a stack budget `K` for the callees: the frame (fp/lr pair and
+`frameSize` bytes) and `K` more bytes below it fit below sp without wrapping and hold no code.
+The callees' stack `[sp_body - K, sp_body)` is the dead stack of every call (`CalleeOk`). With
+`K = 0` this is the former precondition (the frame only). -/
+def StackAvail (K : Nat) (af : AFunc) (s : Arm.ArmState) : Prop :=
+  StackRoom (af.frameSize + 16 + K) s
+
+/-- The frame part of `StackAvail` (the former precondition). -/
+theorem StackAvail.frame {K : Nat} {af : AFunc} {s : Arm.ArmState} (h : StackAvail K af s) :
+    StackRoom (af.frameSize + 16) s :=
+  StackRoom.mono h (Nat.le_add_right _ _)
 
 /-- The state the function body starts in, relative to the ABI entry state `s`: the prologue
 (when `af.frame`) pushed fp/lr and set up the frame: `sp` lowered by `16 + frameSize`, `x29` the
@@ -405,13 +432,14 @@ def PrepareCorrect (sem : Sem) (vc vcp : VCode) : Prop :=
     (∀ c, VTraps vc sem ρ₀ w₀ c → VTraps vcp sem ρ₀ w₀ c)
 
 /-- **VCode → Arm (M6 + M5, agent M6Rest).** For the prepared VCode `vcp`, allocated and laid
-out as `af`/`fb`, loaded at `base`, from an ABI entry state `s` with enough stack: VCode runs of
-the activation's semantics `sem s` from a body-entry world `w₀` (`BodyEntry`: after the
-prologue) are realised by the Arm machine `astep` from `s`. `F s` is the frame-address set of
-the activation entered in `s` (allocator-private slots, fp/lr). -/
-def RegLevelCorrect (sem : Arm.ArmState → Sem) (F : Arm.ArmState → BitVec 64 → Prop)
+out as `af`/`fb`, loaded at `base`, from an ABI entry state `s` with enough stack (the frame and
+the callees' budget `K`): VCode runs of the activation's semantics `sem s` from a body-entry
+world `w₀` (`BodyEntry`: after the prologue) are realised by the Arm machine `astep` from `s`.
+`F s` is the set of addresses outside the world of the activation entered in `s`
+(allocator-private slots, fp/lr, the callees' dead stack). -/
+def RegLevelCorrect (sem : Arm.ArmState → Sem) (F : Arm.ArmState → BitVec 64 → Prop) (K : Nat)
     (astep : Arm.ArmState → Arm.ArmState) (vcp : VCode) (af : AFunc) (fb : FnBin) : Prop :=
-  ∀ base ra s, AbiEntry fb base ra s → StackAvail af s → ∀ w₀, BodyEntry af s w₀ →
+  ∀ base ra s, AbiEntry fb base ra s → StackAvail K af s → ∀ w₀, BodyEntry af s w₀ →
     ∀ ρ₀ : Nat → CV,
     (∀ us vals w, VReturns vcp (sem s) ρ₀ w₀ us vals w →
       ∃ n, ArmRet ra s (runX astep n s) ∧
