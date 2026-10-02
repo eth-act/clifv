@@ -531,6 +531,58 @@ program's own functions.
 
 The remaining plan is in `docs/DEFERRED.md` ("Linking").
 
+### Linking at the Arm level (2026-10-02, `agent/arm-link`)
+
+The program callees' contracts of `backend_correct_linked` are discharged from their own
+per-function theorems, by induction on the call depth (`FV/E2E/LinkArm.lean`):
+
+```lean
+theorem backend_correct_program (L : LinkSys) (hL : L.Ok) (hf : f ∈ L.P.funcs) (M : Nat)
+    (hent : AbiEntry (L.A f).fb (L.A f).base ra s) (hres : StackAvail (L.K M) (L.A f).af s)
+    (hF : L.F = frameWG (L.K M) intBase size (L.A f).af L.Img s)
+    (hgfree : ∀ a, L.Img a → ¬ StackBelow (frameDrop (L.A f).af + L.K M) (spv s) a)
+    (himg : ∀ a, L.Img a → s.mem a = L.imgMem a)
+    (hbe : BodyEntry (L.A f).af s w₀) (hargs : ArgsIn f.sig args s) (hcs : ClifEntry f args cs)
+    (hrel : Rel.holds ⟨L.F, L.syms, slotBase, intBase⟩ f cs.frame.slots cs.mem w₀)
+    (htr : TrapsExplicit (Clif.linkEnvN L.P L.base M) (L.P.only f) cs) :
+    ArmRefines (L.A f).fb (L.A f).base ra (L.mach M f) s (Clif.runLoop L.base L.P (M + 1) cs)
+```
+
+(`backend_correct_program_returned`: returning runs, without `htr`.) The machine `L.mach M f`
+runs `f`'s code with the linked hooks of depth `M` (`LinkSys.hooks`): a `bl g` of a function of
+`P` enters `g`'s image (`enterAt`) and runs its code until its return (`linkedCall`); externs
+outside `P` and TLS keep the base hooks. Layers added for it:
+
+* **M6 with kept addresses** (`regLevelCorrect_world`): `RL.G`, `frameWG` (frame, dead stack and
+  addresses `G` the activation keeps: its callers' frames, the code), `StRel.gkeep`, the callee
+  contract `CalleeOkG` (required at states that keep `G`, at a `bl`/`blr` of the activation,
+  `CallPc`), `BodyEntryW` (body-entry world equal to the entry state only outside `F` and on the
+  entry `Args` registers), and the final world (unmasked fields, `G`, program) at a return.
+  `regLevelCorrect_backend` is derived (`G := ⊥`).
+* **Per-function theorem with the final world** (`backend_correct_world`, `FV/E2E/LinkWorld.lean`,
+  memory relation `RelW`: `Rel.holds`, the body's `sp`, no error): one VCode outcome realised by
+  every Arm activation entered with the same body-entry world — the non-interference that makes
+  `X.call` a function of the arguments and the caller's world (gap "exact world").
+* **CLIF with bounded callee runs** (`Clif.linkEnvN`, `Clif.runLoop_linkN`, `LinkClifN.lean`).
+* **The induction** (`LinkSys.thm`): `X M` (the external semantics at depth `M`) computes a
+  program call from a canonical state (`canon`: arguments in the callee's parameter registers,
+  the code image, return address `raStar`); `progCall` shows the linked machine's call from every
+  compatible caller state realises the callee's one VCode outcome (`ActRet`: results, world,
+  callers' frames kept — gap "frame locality"); `calleeOk`/`xCallsOk` discharge `CalleeOkG` and
+  `XCallsOk (linkEnvN …)` at depth `M` from depth `M - 1`.
+
+**Scope** (`LinkSys.Ok`): no `call_indirect`/`try_call_indirect`/`return_call`/`try_call`; every
+call site is a `bl`; no stack-passed call arguments (`intBase = 0`), parameters in distinct
+argument registers (width ≤ 64), no `sret`; program callees have no stack slots (gap "slot
+placement" avoided: their frame is the allocator's); program call sites pass integer arguments in
+the callee's parameter registers and take results from x0.. (checked per site); declarations
+equal definitions. **Trusted / premises**: the link layout (bases, the code image `Img`/`imgMem`,
+return addresses outside callees' code, `raStar`, distinct symbol addresses), the base
+environment's contracts (calls outside `P`, `XCallsOk` of the base externs, TLS), the stack
+budget `D` per call level, and the entry state. The machine is depth-indexed (`L.mach M f` for
+runs of at most `M + 1` steps). **Not done**: a non-vacuity witness of `LinkSys.Ok` for a closed
+program (needs a concrete compiled program; see `docs/DEFERRED.md`, "Linking").
+
 ### Non-vacuity (2026-10-02, `agent/callee-fix`, `FV/E2E/NonVacuity.lean`)
 
 A premise set that cannot hold makes a theorem say nothing. The contract premises on the
