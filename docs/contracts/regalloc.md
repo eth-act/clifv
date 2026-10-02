@@ -149,7 +149,10 @@ Transfer:
   uses require `vreg v ∈ A ℓ`; (4) each `c ∈ C`: `A c := A c ∩ {entry c}` (the callee
   preserves callee-saved entry values); (5) late defs as (2); (6) at `Rets`: every
   callee-saved r requires `entry r ∈ A (reg r)`;
-* edge `b → s` with args `a⃗` for params `p⃗`: `A' ℓ = (A ℓ \ {vreg p⃗}) ∪ {vreg pᵢ | vreg aᵢ ∈ A ℓ}`.
+* edge `b → s` with args `a⃗` for params `p⃗`: first the defs of `b`'s terminator dead on that
+  edge leave every set (`CheckCtx.edgeForget`, `MInst.normalDead`: the exception payload defs of
+  a `try_call`'s call past its `ti.rets` results, on the normal-return edge only; agent/trycall-contract),
+  then `A' ℓ = (A ℓ \ {vreg p⃗}) ∪ {vreg pᵢ | vreg aᵢ ∈ A ℓ}`.
 
 Entry state: `A (reg r) = {entry r}` for callee-saved r, all else ∅.
 

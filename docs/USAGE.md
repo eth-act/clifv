@@ -476,6 +476,14 @@ runs); plain cg_clif
 the near-linear validator, `lean-backend` ran for over an hour on each of the survey's largest
 `try_call` test functions, and the survey build did not finish.)
 
+After agent/trycall-contract (2026-10-02: `CalleeTryOk` satisfiable, the `try_call` payload
+defs dead on the normal return; debug, `cargo fv test`): fv-demo 1340 verified of 1346 (6
+fallback), survey 3179 of 3179, vendor 4527 of 4527, deps 20821 verified of 21021 (20824
+compiled); of them `verified (normal returns; unwinding trusted)`: fv-demo 253, survey 498,
+vendor 886, deps 3144. Between agent/callee-fix and agent/trycall-contract, with the `try_call`
+functions reported unverified: fv-demo 1087, survey 2681, vendor 3641, deps 17677 verified.
+`examples/compare.sh` SAME for all three (fv-demo 19, survey 53, vendor 189 test outcomes).
+
 With the shipped cg_clif (`FV_CG_CLIF=cranelift`, no landing pads) or `--panic-abort`
 there are no landing-pad fallbacks:
 

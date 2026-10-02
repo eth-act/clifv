@@ -82,8 +82,10 @@ ret | halt`). Observables — memory effects, calls with their arguments, traps,
   `m : Loc → V` (registers, spill slots, callee-save slots). `move src dst` is
   `m[dst ↦ m src]`; `op k allocs` reads its uses from `allocs`, writes early defs, havocs its
   clobbers (`Clobbered keep`: any value, a callee-saved register keeps its `keep`-part), writes
-  late defs. No copy on edges (the allocator's moves do it). A return yields the use values and
-  the final store.
+  late defs; the defs past `havocFrom i ctl` take any value (`HavocOuts`: a branch's defs, the
+  LL/SC loops' scratch registers, a `try_call`'s exception payload defs when it returns normally).
+  No copy on edges (the allocator's moves do it). A return yields the use values and the final
+  store.
 
 ## Theorem (`RegallocSound.lean`)
 
@@ -127,8 +129,10 @@ states when the machine's remaining items check (`runItems`) from an abstract st
 Instructions: `op_sound` — early uses by the use check, late uses by the use check after the
 early defs plus "an early def is disjoint from every use" (static check), then
 `Inv_defineAll` / `Inv_clobberAll` / `Inv_defineAll`; the return check gives the callee-saved
-conclusion. Branches: `edge_ok` (`Inv_parCopy`, distinct parameters) and `Inv_mono` against the
-verified in-state. Entry: `Inv_entryState`.
+conclusion; the havocked defs are forgotten (`transferOp`'s `keptDefs`, and `tryForget` for a
+`try_call`'s payload defs on its normal return). Branches: `edgeForget_inv` (the terminator's
+dead defs forgotten on the edge, `CheckCtx.edgeForget`), `edge_ok` (`Inv_parCopy`, distinct
+parameters) and `Inv_mono` against the verified in-state. Entry: `Inv_entryState`.
 
 ## Operand-view obligation (`RegallocOperands.lean`)
 

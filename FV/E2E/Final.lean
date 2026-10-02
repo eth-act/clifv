@@ -150,8 +150,8 @@ theorem stackArgsAvoid_frameW {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf
 run of the compiled function refines the CLIF run (a `try_call`: its normal return). M6's `csem`
 obligations are discharged (`refines_csem`, `memRefines_csem`). Remaining hypotheses: the form
 coverage `FormsCovered` (decided per function by `formsCoveredB`), the callee contract `CalleeOk`
-of the machine's call hook (and, for a function with a `try_call`, `CalleeTryOk`: the exception
-payload registers; for a function with a `tls_value`, `TlsOk`: the TLSDESC hook), the external
+of the machine's call hook (and, for a function with a `try_call`, `CalleeTryOk`: the results
+of a `try_call`'s call; for a function with a `tls_value`, `TlsOk`: the TLSDESC hook), the external
 contract `XCallsOk`, and the link-time facts `hsym`/`hslot`. -/
 theorem backend_correct_final {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}
     {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
