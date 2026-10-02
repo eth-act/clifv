@@ -167,9 +167,9 @@ theorem stRel_after {R : RL} (hR : R.Wf) {s s' : Arm.ArmState} {m m' : Loc → C
     {w w' : Arm.ArmState} (hst : StRel R s m w)
     (hreg : ∀ r, r.allocatable = true → m' (.reg r) = regVal s' r)
     (hoth : ∀ l, (∀ r, l ≠ .reg r) → m' l = m l) (hw : SameWorld R.F s' w')
-    (herr : Arm.r .ERR s' = .None) (hprog : s'.program = s.program) (hK : FrameKeep R.F s s') :
+    (herr : Arm.r .ERR s' = .None) (hprog : s'.program = s.program) (hK : FrameKeep R.FK s s') :
     StRel R s' m' w' := by
-  have hfr := R.frameOk hR
+  have hfr := R.frameOkK hR
   refine ⟨fun l hl hL => ?_, hw, herr, by rw [hprog]; exact hst.prog, hK.1.trans hst.sp,
     align_of_sp hK.1 hst.align, fun hframe => ?_,
     code_keep hR.prog0 hst.code fun a ha => hK.2 a (.inr (.inr ha))⟩
@@ -410,7 +410,7 @@ theorem realizes_rmwLoop {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
     · simp only [spOf]; exact hfr2 _ (by simp) (by simp [rnum]) (by simp)
     · simp only [Arm.ArmState.mem_w_eq_mem, hmem1]
       refine mem_write_mem_bytes_ne _ _ _ _ _ (fun k hk e => hav k hk ?_)
-      rw [← e]; exact ha
+      rw [← e]; exact RL.FK_F ha
 
 /-! ## `atomic_cas` -/
 
@@ -598,7 +598,7 @@ theorem realizes_casLoop {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
       c2, ls2, _, ps2, T, hvb, hit, by rw [hsplit]; simp, hchk', hc2, hl2, htr, ?_, hpcF, ?_⟩
     · rw [← List.drop_drop, hdrop']
       exact List.drop_left' (by simp [casLoopLines, casLoopHead])
-    · refine stRel_after hR hst ?_ ?_ hswF ?_ hprogF ⟨?_, hmemF⟩
+    · refine stRel_after hR hst ?_ ?_ hswF ?_ hprogF ⟨?_, fun a ha => hmemF a (RL.FK_F ha)⟩
       · refine store_regs hst [27, 24] (by simp) ?_ ?_ hfrF
         · intro n hn
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hn

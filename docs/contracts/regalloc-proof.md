@@ -623,3 +623,17 @@ Remaining: `Refines`/`MemRefines` of `csem` (M6Insts), deciding `FormsCovered`
 - `#print axioms E2E.backend_correct_final`: `propext`, `Classical.choice`, `Quot.sound` and
   `_native.bv_decide` axioms only (no `sorryAx`).
 
+## Status update (agent/callee-fix, 2026-10-02)
+
+The callee contract changed (`docs/contracts/e2e.md`, "Callee contract with a dead stack"):
+`CalleeOk F K X H S` (`os : ∀ ctx info, S info → CallSoundCtl F K (callExec H) (csem F ctx X)
+(.call info) .next`), `TlsOk F K X H`, `CalleeTryOk F X H S`; `RL` has the callees' stack budget
+`K`, `RL.F = frameW K …` (the world excludes the frame and the dead stack below `spB`),
+`RL.FK = frameF …` (the frame `FrameKeep` keeps), `RL.Wf.stack : StackAvail R.K R.af R.s0`.
+`realizes_op_core` takes `OperandsSoundCtlAt R.F R.FK` at the state (`OperandsSoundCtl.at` for
+straight-line instructions, `RL.callAt` for calls, the call of a `try_call` and the TLSDESC hook);
+`operandsSound_step` is stated at one state (`OperandsSoundCtlAt F FK`, in `RegallocOperands`),
+with the kept frame `FK`.
+`regLevelCorrect_backend` takes `K`, `hC : ∀ s, CalleeOk (frameW K lo hi af s) K X H
+vcp.CallSite` and gives `RegLevelCorrect (fun s => csem (frameW K lo hi af s) …) (frameW K lo hi
+af) K (ArmStepX X H fa) vcp af fb`.

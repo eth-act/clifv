@@ -19,7 +19,8 @@ semantics fixed to M6's concrete `csem` (per activation `s`: frame `F s`, functi
 
 `backend_correct_final`: additionally the register-level layer (`RegLevelCorrect`, hypothesis
 `hM6` of `backend_correct_m4`) is discharged by `regLevelCorrect_backend` for the backend's
-concrete choices: frame addresses `frameF` of the allocated frame, function context
+concrete choices: the addresses `frameW K` outside the world (the allocated frame `frameF` and
+the callees' dead stack of `K` bytes below the body's `sp`), function context
 `⟨fa.k, af.slotBase⟩`, one external semantics `X` and the machine `ArmStepX X H fa`. -/
 
 namespace E2E
@@ -31,10 +32,10 @@ theorem backend_correct_m4 {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc 
     (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb)
     {F : Arm.ArmState → BitVec 64 → Prop} {ctx : Arm.ArmState → FnCtx}
     {X : Arm.ArmState → ExtSem}
-    {syms : String → Option Nat} {slotOff out : Nat} {astep : Arm.ArmState → Arm.ArmState}
+    {syms : String → Option Nat} {slotOff out K : Nat} {astep : Arm.ArmState → Arm.ArmState}
     {env : Clif.Env}
     -- M6 + M5
-    (hM6 : RegLevelCorrect (fun s => csem (F s) (ctx s) (X s)) F astep vcp af fb)
+    (hM6 : RegLevelCorrect (fun s => csem (F s) (ctx s) (X s)) F K astep vcp af fb)
     (hRef : ∀ s, Refines (F s) (csem (F s) (ctx s) (X s)))
     -- the external contract (callees of `f`, linker)
     (hX : ∀ s, XCallsOk env (f.externs.map (·.2))
@@ -49,7 +50,7 @@ theorem backend_correct_m4 {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc 
     (houtB : vc.outgoing ≤ out)
     -- the run
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
-    (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hbe : BodyEntry af s w₀)
+    (hent : AbiEntry fb base ra s) (hres : StackAvail K af s) (hbe : BodyEntry af s w₀)
     (hargs : ArgsIn f.sig args s) (hargF : StackArgsAvoid (F s) f.sig args s)
     (hcs : ClifEntry f args cs)
     (hrel : Rel.holds ⟨F s, syms, slotOff, out⟩ f cs.frame.slots cs.mem w₀)
@@ -65,9 +66,9 @@ theorem backend_correct_m4 {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc 
     hent hres hbe hargs hargF hcs hrel htr fuel
 
 /-- `hRef` of `backend_correct_m4` at the backend's concrete choices (`refines_csem`). -/
-theorem refines_final (vcp : VCode) (rf : RFunc) (af : AFunc) (fa : FnAsm) (X : ExtSem) :
-    ∀ s, Refines (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s)
-      (csem (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s)
+theorem refines_final (K : Nat) (vcp : VCode) (rf : RFunc) (af : AFunc) (fa : FnAsm) (X : ExtSem) :
+    ∀ s, Refines (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s)
+      (csem (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s)
         ⟨fa.k, af.slotBase⟩ X) :=
   fun _ => refines_csem _ _ X
 
@@ -109,12 +110,13 @@ theorem outgoing_le_intBase {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf :
   exact le_alignTo _ 16 (by decide)
 
 /-- The stack-passed arguments of the ABI entry state lie above the entry `sp`, outside the
-frame and the code (`StackAvail`, `StackArgAt`): they avoid the frame addresses `frameF`. -/
-theorem stackArgsAvoid_frameF {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc}
-    {af : AFunc} {fa : FnAsm} {fb : FnBin} (hc : Compiled f k vc vcp rf af fa fb)
-    {s : Arm.ArmState} {base ra : BitVec 64} {args : List Clif.Val} (hres : StackAvail af s)
+frame, the callees' dead stack below the body's `sp` and the code (`StackAvail`, `StackArgAt`):
+they avoid the addresses `frameW` outside the world. -/
+theorem stackArgsAvoid_frameW {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc}
+    {af : AFunc} {fa : FnAsm} {fb : FnBin} (hc : Compiled f k vc vcp rf af fa fb) {K : Nat}
+    {s : Arm.ArmState} {base ra : BitVec 64} {args : List Clif.Val} (hres : StackAvail K af s)
     (_hent : AbiEntry fb base ra s) (hargs : ArgsIn f.sig args s) :
-    StackArgsAvoid (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s)
+    StackArgsAvoid (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s)
       f.sig args s := by
   intro off v hm j hj hF
   have h := hargs _ _ hm
@@ -131,7 +133,7 @@ theorem stackArgsAvoid_frameF {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf
       (spv s - BitVec.ofNat 64 (frameDrop af))).toNat = off + j + frameDrop af := by
     rw [hD]
     bv_omega
-  rcases hF with ⟨-, h2⟩ | ⟨-, h2⟩ | hcode
+  rcases hF with (⟨-, h2⟩ | ⟨-, h2⟩ | hcode) | ⟨hlt, -⟩
   · rw [hx] at h2; omega
   · rw [hx] at h2; omega
   · have e : spv s + BitVec.ofNat 64 off + BitVec.ofNat 64 j = spv s + BitVec.ofNat 64 (off + j) := by
@@ -139,6 +141,10 @@ theorem stackArgsAvoid_frameF {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf
       apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_add]
     rw [e] at hcode
     exact h.noCode j hj hcode
+  · rw [(spBody_toNat hres).1] at hlt
+    have : (spv s + BitVec.ofNat 64 off + BitVec.ofNat 64 j).toNat = (spv s).toNat + off + j := by
+      bv_omega
+    omega
 
 /-- **The backend's end-to-end theorem** (`docs/contracts/e2e.md`, "Final hypotheses"): the Arm
 run of the compiled function refines the CLIF run (a `try_call`: its normal return). M6's `csem`
@@ -151,26 +157,27 @@ theorem backend_correct_final {p : Clif.Program} {f : Clif.Function} {k : Nat} {
     {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb)
     {X : ExtSem} {H : ArmHooks} {syms : String → Option Nat} {slotOff : Nat} {env : Clif.Env}
+    {K : Nat}
     -- the straight-line forms of the prepared VCode are covered (decided by `formsCoveredB`)
     (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
     -- the callee contract of the machine's call hook (AAPCS64)
     (hC : ∀ s, CalleeOk
-      (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H vcp.CallSite)
     -- the callee contract of the call of a `try_call` (only for a function with one)
     (hCT : (∃ B ∈ f.blocks, B.term.isTry = true) → ∀ s, CalleeTryOk
-      (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H vcp.CallSite)
     -- the TLSDESC contract of the machine's `tls_value` hook (only for a function with one)
     (hTls : hasTls f = true → ∀ s, TlsOk
-      (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H)
     -- the external contract (callees of `f`, linker)
     (hX : ∀ s, XCallsOk env (f.externs.map (·.2)) (fun sl cm w =>
-      Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
         slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X)
     -- the external contract of the indirect calls of `f` (`call_indirect`, `try_call_indirect`:
     -- the externs at their link-time addresses, with the call sites' signatures; vacuous
     -- without indirect calls, `xCallsIndOk_nil`)
     (hXI : ∀ s, XCallsIndOk env (indSigs f) (fun sl cm w =>
-      Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
         slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X)
     -- memory forms (`memRefines_csem`): the external semantics' symbol addresses are the linked
     -- ones, and the relation's slot-region offset is the frame's slot base
@@ -178,18 +185,18 @@ theorem backend_correct_final {p : Clif.Program} {f : Clif.Function} {k : Nat} {
     (hslot : af.slotBase = slotOff)
     -- the run
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
-    (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hbe : BodyEntry af s w₀)
+    (hent : AbiEntry fb base ra s) (hres : StackAvail K af s) (hbe : BodyEntry af s w₀)
     (hargs : ArgsIn f.sig args s) (hcs : ClifEntry f args cs)
-    (hrel : Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s,
+    (hrel : Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s,
       syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ArmRefines fb base ra (ArmStepX X H fa) s (Clif.runLoop env p fuel cs) :=
   backend_correct_m4 (ctx := fun _ => ⟨fa.k, af.slotBase⟩) (X := fun _ => X) hsub hc
     (regLevelCorrect_backend hc.check hc.alloc hc.emit hc.layout hcov hC
       (fun h => hCT (hasTry_of_hasTryCall hc h)) (fun h => hTls (hasTls_of_vcode hc h)))
-    (refines_final vcp rf af fa X) hX hXI (fun _ => hsym)
+    (refines_final K vcp rf af fa X) hX hXI (fun _ => hsym)
     (fun _ => memRefines_csem _ _ X hslot hsym) (outgoing_le_intBase hc)
-    hent hres hbe hargs (stackArgsAvoid_frameF hc hres hent hargs) hcs hrel htr fuel
+    hent hres hbe hargs (stackArgsAvoid_frameW hc hres hent hargs) hcs hrel htr fuel
 
 /-- **Specialisation**: for a signature with at most 8 parameters (all passed in registers),
 `ArgsIn` is the former premise "argument `i` in `x (argIdx sig i)`" (low bits). -/
@@ -234,22 +241,23 @@ theorem backend_correct_final_indirectFree {p : Clif.Program} {f : Clif.Function
     (htci : ∀ B ∈ f.blocks, ∀ callee args et, B.term ≠ .tryCallIndirect callee args et)
     (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb)
     {X : ExtSem} {H : ArmHooks} {syms : String → Option Nat} {slotOff : Nat} {env : Clif.Env}
+    {K : Nat}
     (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
     (hC : ∀ s, CalleeOk
-      (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H vcp.CallSite)
     (hCT : (∃ B ∈ f.blocks, B.term.isTry = true) → ∀ s, CalleeTryOk
-      (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H vcp.CallSite)
     (hTls : hasTls f = true → ∀ s, TlsOk
-      (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H)
     (hX : ∀ s, XCallsOk env (f.externs.map (·.2)) (fun sl cm w =>
-      Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
         slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X)
     (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
     (hslot : af.slotBase = slotOff)
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
-    (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hbe : BodyEntry af s w₀)
+    (hent : AbiEntry fb base ra s) (hres : StackAvail K af s) (hbe : BodyEntry af s w₀)
     (hargs : ArgsIn f.sig args s) (hcs : ClifEntry f args cs)
-    (hrel : Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s,
+    (hrel : Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s,
       syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ArmRefines fb base ra (ArmStepX X H fa) s (Clif.runLoop env p fuel cs) :=

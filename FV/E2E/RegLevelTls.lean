@@ -17,10 +17,11 @@ the rest of the sequence runs as one hooked step `H.tls n tmp` to the instructio
 final `add`. Its contract `TlsOk` is the trusted part (Cranelift's TLSDESC convention): the
 variable's address `X.sym n 0` in x0 (one thread: its instance of the variable is the
 link-time symbol, as in `Clif.run`), the thread pointer `X.tp` in `tmp`, every other register,
-memory and the program unchanged except x30 (the `blr` writes it) and the condition flags
-(`X.tlsFlags`: the resolver may change them).
+the memory outside the dead stack below `sp` (where a resolver may save registers) and the
+program unchanged except x30 (the `blr` writes it) and the condition flags (`X.tlsFlags`: the
+resolver may change them).
 
-* `os_tls`: `OperandsSound` of the hooked sequence against `csem`'s clause, from `TlsOk`;
+* `os_tls`: `CallSoundCtl` of the hooked sequence against `csem`'s clause, from `TlsOk`;
 * `realizes_tls`: the `op`/`next` case of `Realizes`, an instance of `realizes_op_core`.
 -/
 
@@ -29,21 +30,25 @@ namespace Backend.Proof
 open Backend E2E
 
 /-- **The TLSDESC contract** of the machine's hook `H.tls` (the TLSDESC sequence of `tls_value`
-of symbol `n` with temporary `tmp`, from its `ldr`), relative to the external semantics `X`
-and the frame addresses `F` of the activation (the trusted part of `tls_value`):
+of symbol `n` with temporary `tmp`, from its `ldr`), relative to the external semantics `X`,
+the addresses `F` outside the activation's world and its callees' stack budget `K` (the
+trusted part of `tls_value`):
 
 * `pc`: the hooked step ends at the instruction after the sequence (five instructions on);
-* `seq`: for an allocatable temporary `x k` (`k ≠ 0`): x0 holds the variable's address
-  `X.sym n 0`, `x k` the thread pointer `X.tp`, and every other state field but x30 and the
-  condition flags, the memory and the program are unchanged;
+* `seq`: for an allocatable temporary `x k` (`k ≠ 0`), when the `K` bytes below `sp` fit: x0
+  holds the variable's address `X.sym n 0`, `x k` the thread pointer `X.tp`, every other state
+  field but x30 and the condition flags and the program are unchanged, and so is the memory
+  outside the `K` bytes below `sp` (the dead stack, where a resolver may save registers);
 * `flags`: the flags are `X.tlsFlags n w` for a world `w` of the state. -/
-structure TlsOk (F : BitVec 64 → Prop) (X : ExtSem) (H : ArmHooks) : Prop where
+structure TlsOk (F : BitVec 64 → Prop) (K : Nat) (X : ExtSem) (H : ArmHooks) : Prop where
   pc : ∀ n tmp s, Arm.r .ERR s = .None → Arm.r .PC (H.tls n tmp s) = Arm.r .PC s + 20
   seq : ∀ n k s, k < 29 → k ≠ 0 → k ≠ 16 → k ≠ 17 → k ≠ 18 → Arm.r .ERR s = .None →
+    K ≤ (spOf s).toNat →
     xreg 0 (H.tls n (.x k) s) = X.sym n 0 ∧ Arm.r (.GPR (rnum k)) (H.tls n (.x k) s) = X.tp ∧
     (∀ f, f ≠ .PC → f ≠ .GPR (rnum 0) → f ≠ .GPR (rnum k) → f ≠ .GPR 30#5 →
       (∀ fl, f ≠ .FLAG fl) → Arm.r f (H.tls n (.x k) s) = Arm.r f s) ∧
-    (∀ a, (H.tls n (.x k) s).mem a = s.mem a) ∧ (H.tls n (.x k) s).program = s.program
+    (∀ a, ¬ StackBelow K (spOf s) a → (H.tls n (.x k) s).mem a = s.mem a) ∧
+    (H.tls n (.x k) s).program = s.program
   flags : ∀ n k s w, SameWorld F s w → Arm.read_pstate (H.tls n (.x k) s) = X.tlsFlags n w
 
 theorem hasTls_of_mem {vc : VCode} {b k : Nat} {vb : VBlock} {n : String} {rd tmp : Reg}
@@ -128,11 +133,12 @@ theorem read_pstate_write_pstate (P : Arm.PState) (w : Arm.ArmState) :
   obtain ⟨n, z, c, v⟩ := P
   simp [Arm.read_pstate, Arm.write_pstate, Arm.w, Arm.write_base_flag]
 
-/-- **`OperandsSound` of the hooked TLSDESC sequence** (from `TlsOk`). -/
-theorem os_tls {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {H : ArmHooks}
-    (hT : TlsOk F X H) (n : String) (d t : Nat) :
-    OperandsSound F (tlsExec H) (csem F ctx X) (.elfTlsGetAddr n (.vreg d .int) (.vreg t .int)) := by
-  intro c wh ops regs i' s w outs w' hops' hst hasg hw hal herr hsem
+/-- **`CallSoundCtl` of the hooked TLSDESC sequence** (from `TlsOk`). -/
+theorem os_tls {F : BitVec 64 → Prop} {K : Nat} {ctx : FnCtx} {X : ExtSem} {H : ArmHooks}
+    (hT : TlsOk F K X H) (n : String) (d t : Nat) :
+    CallSoundCtl F K (tlsExec H) (csem F ctx X) (.elfTlsGetAddr n (.vreg d .int) (.vreg t .int))
+      .next := by
+  intro s hK hD c wh ops regs i' w outs w' hops' hst hasg hw hal herr hsem
   rw [operands_tls] at hops'
   cases hops'
   obtain ⟨r0, r1, rfl, rfl⟩ := assign_tls hasg
@@ -157,7 +163,11 @@ theorem os_tls {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {H : ArmHooks
   obtain ⟨s1, hs1⟩ : ∃ s1, s1 = Arm.w .PC (Arm.r .PC s + 4) s := ⟨_, rfl⟩
   have herr1 : Arm.r .ERR s1 = .None := by rw [hs1, Arm.r_of_w_different (by simp)]; exact herr
   have hw1 : SameWorld F s1 w := by rw [hs1]; exact SameWorld.w_left (by simp [Masked]) hw
-  obtain ⟨hx0, hxk, hfr, hmem, hprog⟩ := hT.seq n k s1 hk29 hk0 hk16 hk17 hk18 herr1
+  have hsp1 : spOf s1 = spOf s := by
+    rw [hs1]; simp only [spOf]; exact Arm.r_of_w_different (by simp)
+  obtain ⟨hx0, hxk, hfr, hmem, hprog⟩ :=
+    hT.seq n k s1 hk29 hk0 hk16 hk17 hk18 herr1 (by rw [hsp1]; exact hK)
+  rw [hsp1] at hmem
   have hfl := hT.flags n k s1 w hw1
   have hex : tlsExec H (.elfTlsGetAddr n (.x 0) (.x k)) s = some (H.tls n (.x k) s1) := by
     simp [tlsExec, hk0, hs1]
@@ -167,7 +177,7 @@ theorem os_tls {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {H : ArmHooks
       (∀ fl, f ≠ .FLAG fl) → Arm.r f (H.tls n (.x k) s1) = Arm.r f s := by
     intro f h1 h2 h3 h4 h5
     rw [hfr f h1 h2 h3 h4 h5, hs1, Arm.r_of_w_different h1]
-  refine ⟨_, hex, ⟨fun f hf => ?_, fun a ha => ?_, ?_⟩, ⟨?_, fun a _ => ?_⟩, ?_, ?_, ?_⟩
+  refine ⟨_, hex, ⟨fun f hf => ?_, fun a ha => ?_, ?_⟩, ⟨?_, fun a hak => ?_⟩, ?_, ?_, ?_⟩
   · -- the world: the flags as `X.tlsFlags` says, every other unmasked field kept
     by_cases hff : ∃ fl, f = .FLAG fl
     · obtain ⟨fl, rfl⟩ := hff
@@ -181,7 +191,7 @@ theorem os_tls {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {H : ArmHooks
       have h30 : f ≠ .GPR 30#5 := fun e => hf (by rw [e]; simp [Masked])
       rw [hkeep f hpc h0 hk h30 hnf]
       exact hw.1 f hf
-  · rw [hmem a, hs1]
+  · rw [hmem a (fun hb => ha (hD a hb)), hs1]
     simp only [Arm.ArmState.mem_w_eq_mem, Arm.write_pstate]
     exact hw.2.1 a ha
   · rw [hprog, hs1]
@@ -193,7 +203,7 @@ theorem os_tls {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {H : ArmHooks
       (fun e => rnum_ne (a := 31) (b := k) (by omega) (by omega) (by omega)
         (Arm.StateField.GPR.inj e)) (by simp)
       (fun fl => by simp)
-  · rw [hmem a, hs1]; simp [Arm.ArmState.mem_w_eq_mem]
+  · rw [hmem a hak.2, hs1]; simp [Arm.ArmState.mem_w_eq_mem]
   · -- the defs
     intro p hp
     simp only [defRegs] at hp
@@ -222,7 +232,7 @@ theorem os_tls {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {H : ArmHooks
   · intro r hr; simp [MInst.clobbers] at hr
 
 /-- **`ElfTlsGetAddr` on the machine**: the `adrp` step, then the hooked step. -/
-theorem realizes_tls {R : RL} (hR : R.Wf) (hT : TlsOk R.F R.X R.H) {s : Arm.ArmState}
+theorem realizes_tls {R : RL} (hR : R.Wf) (hT : TlsOk R.F R.K R.X R.H) {s : Arm.ArmState}
     {b k : Nat} {allocs : Array Loc} {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
     (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩))
     {vb : VBlock} {n : String} {d t : Nat} {ops : Array Operand} {outs : List CV}
@@ -246,7 +256,7 @@ theorem realizes_tls {R : RL} (hR : R.Wf) (hT : TlsOk R.F R.X R.H) {s : Arm.ArmS
     exact ⟨by rw [r_write_pstate_other (fun fl => by simp)]; exact herr,
       by simp [Arm.write_pstate, Arm.w_program]⟩
   refine realizes_op_core hR hq hvb hi hops hsz hsem hlen hk (exec := fun _ => tlsExec R.H)
-    (fun _ => os_tls hT n d t) (fun regs i' _ hex => ?_) hW'
+    (fun _ => RL.callAt hR (os_tls hT n d t) (q_stRel hq).sp) (fun regs i' _ hex => ?_) hW'
   obtain ⟨_, s0, _, hex⟩ := hex
   cases i' with
   | elfTlsGetAddr n' rd tmp =>

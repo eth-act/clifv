@@ -27,9 +27,10 @@ accept, from every state, if `sem` gives defs `outs`, world `w'` and falls throu
 emitted code produces a state with the same world as `w'`, `outs` in the def registers, every
 other allocatable register unchanged except the clobbers, whose callee-saved part survives,
 and the frame (`sp` and the memory at the frame addresses `F`) untouched.
-`operandsSound_step` turns that into the store of `MStep.op` (with `ckeep`, the clobber
-havoc chosen from the concrete state), which is how the concrete execution plugs into
-`checkAlloc_sound`.
+`operandsSound_step` turns that (at one state, `OperandsSoundCtlAt`, with the kept frame `FK`
+possibly smaller than `F`: a call keeps the frame only outside the callees' dead stack) into the
+store of `MStep.op` (with `ckeep`, the clobber havoc chosen from the concrete state), which is
+how the concrete execution plugs into `checkAlloc_sound`.
 -/
 
 namespace Backend.Proof
@@ -146,6 +147,40 @@ def OperandsSoundCtl (F : BitVec 64 → Prop) (exec : MInst → Arm.ArmState →
 abbrev OperandsSound (F : BitVec 64 → Prop) (exec : MInst → Arm.ArmState → Option Arm.ArmState)
     (sem : ISem CV Arm.ArmState) (i : MInst) : Prop :=
   OperandsSoundCtl F exec sem i .next
+
+/-- **The operand-view obligation at one state `s`** (`OperandsSoundCtl` instantiated at `s`),
+with the world compared outside `F` and the frame kept on `FK`. -/
+def OperandsSoundCtlAt (F FK : BitVec 64 → Prop) (exec : MInst → Arm.ArmState → Option Arm.ArmState)
+    (sem : ISem CV Arm.ArmState) (i : MInst) (ctl : Ctl) (s : Arm.ArmState) : Prop :=
+  ∀ (c : CheckCtx) (wh : String) (ops : Array Operand) (regs : Array Reg) (i' : MInst)
+    (w : Arm.ArmState) (outs : List CV) (w' : Arm.ArmState),
+    i.operands = .ok ops →
+    c.checkStatic wh ops (regs.map .reg) i.clobbers = .ok () →
+    i.assign regs = .ok i' →
+    SameWorld F s w → Arm.CheckSPAlignment s → Arm.r .ERR s = .None →
+    sem i (useVals ops regs s) w = some (outs, w', ctl) →
+    ∃ s', exec i' s = some s' ∧ SameWorld F s' w' ∧ FrameKeep FK s s' ∧
+      (∀ p ∈ defRegs ops regs outs, regVal s' p.1.2 = p.2) ∧
+      (∀ r, r.allocatable = true → (∀ p ∈ (ops.zip regs).toList, p.1.isDef = true → p.2 ≠ r) →
+        r ∉ i.clobbers → regVal s' r = regVal s r) ∧
+      (∀ r ∈ i.clobbers, r ∈ calleeSaved → ckeep r (regVal s' r) = ckeep r (regVal s r))
+
+/-- `OperandsSoundCtl` at a state, keeping a smaller frame `FK ⊆ F`. -/
+theorem OperandsSoundCtl.at {F FK : BitVec 64 → Prop}
+    {exec : MInst → Arm.ArmState → Option Arm.ArmState} {sem : ISem CV Arm.ArmState} {i : MInst}
+    {ctl : Ctl} (h : OperandsSoundCtl F exec sem i ctl) (hFK : ∀ a, FK a → F a)
+    (s : Arm.ArmState) : OperandsSoundCtlAt F FK exec sem i ctl s := by
+  intro c wh ops regs i' w outs w' hops hst hasg hw hal herr hsem
+  obtain ⟨s', hex, hW, hK, hd, ho, hc⟩ := h c wh ops regs i' s w outs w' hops hst hasg hw hal herr hsem
+  exact ⟨s', hex, hW, ⟨hK.1, fun a ha => hK.2 a (hFK a ha)⟩, hd, ho, hc⟩
+
+theorem OperandsSoundCtlAt.mono {F FK FK' : BitVec 64 → Prop}
+    {exec : MInst → Arm.ArmState → Option Arm.ArmState} {sem : ISem CV Arm.ArmState} {i : MInst}
+    {ctl : Ctl} {s : Arm.ArmState} (h : OperandsSoundCtlAt F FK exec sem i ctl s)
+    (hFK : ∀ a, FK' a → FK a) : OperandsSoundCtlAt F FK' exec sem i ctl s := by
+  intro c wh ops regs i' w outs w' hops hst hasg hw hal herr hsem
+  obtain ⟨s', hex, hW, hK, hd, ho, hc⟩ := h c wh ops regs i' w outs w' hops hst hasg hw hal herr hsem
+  exact ⟨s', hex, hW, ⟨hK.1, fun a ha => hK.2 a (hFK a ha)⟩, hd, ho, hc⟩
 
 deriving instance ReflBEq, LawfulBEq for RegClass
 deriving instance ReflBEq, LawfulBEq for Reg
@@ -457,20 +492,23 @@ theorem defs_store {s s' : Arm.ArmState} {m : Loc → CV} {clob : List Reg}
 agrees with the Arm state `s` on allocatable registers and `s` has the world `w`, executing the
 emitted instruction gives a state `s'` with the world `sem` computes, and a clobber havoc `m2`
 (`Clobbered ckeep`, as `MStep.op` requires) such that the store after the late defs agrees
-with `s'` on allocatable registers; frame locations are untouched. -/
-theorem operandsSound_step {F : BitVec 64 → Prop}
+with `s'` on allocatable registers; the frame `FK` is untouched. Stated for the obligation at
+the one state `s` (`OperandsSoundCtlAt`; `OperandsSoundCtl.at` for the obligation at every
+state). -/
+theorem operandsSound_step {F FK : BitVec 64 → Prop}
     {exec : MInst → Arm.ArmState → Option Arm.ArmState}
-    {sem : ISem CV Arm.ArmState} {i : MInst} {ctl : Ctl} (hs : OperandsSoundCtl F exec sem i ctl)
+    {sem : ISem CV Arm.ArmState} {i : MInst} {ctl : Ctl} {s : Arm.ArmState}
+    (hs : OperandsSoundCtlAt F FK exec sem i ctl s)
     {c : CheckCtx} {wh : String} {ops : Array Operand} {regs : Array Reg} {i' : MInst}
     (hops : i.operands = .ok ops)
     (hst : c.checkStatic wh ops (regs.map Loc.reg) i.clobbers = .ok ())
-    (hasg : i.assign regs = .ok i') {m : Loc → CV} {s w : Arm.ArmState}
+    (hasg : i.assign regs = .ok i') {m : Loc → CV} {w : Arm.ArmState}
     (hm : ∀ r, r.allocatable = true → m (.reg r) = regVal s r) (hw : SameWorld F s w)
     (hal : Arm.CheckSPAlignment s) (herr : Arm.r .ERR s = .None) {outs : List CV} {w' : Arm.ArmState}
     (hsem : sem i (((ops.zip (regs.map Loc.reg)).toList.filter (·.1.isUse)).map (m ·.2)) w =
       some (outs, w', ctl))
     (hlen : outs.length = ((ops.zip (regs.map Loc.reg)).toList.filter (·.1.isDef)).length) :
-    ∃ s' m2, exec i' s = some s' ∧ SameWorld F s' w' ∧ FrameKeep F s s' ∧
+    ∃ s' m2, exec i' s = some s' ∧ SameWorld F s' w' ∧ FrameKeep FK s s' ∧
       Clobbered ckeep i.clobbers
         (writeM m ((((ops.zip (regs.map Loc.reg)).toList.filter (·.1.isDef)).zip outs).filter
           (·.1.1.isEarly))) m2 ∧
@@ -493,7 +531,7 @@ theorem operandsSound_step {F : BitVec 64 → Prop}
     intro p hp
     exact hm _ (halloc p (List.mem_filter.mp hp).1)
   rw [huse] at hsem
-  obtain ⟨s', hex, hW, hK, hdef, hoth, hcl⟩ := hs c wh ops regs i' s w outs w' hops hst hasg hw hal herr hsem
+  obtain ⟨s', hex, hW, hK, hdef, hoth, hcl⟩ := hs c wh ops regs i' w outs w' hops hst hasg hw hal herr hsem
   have htrip : ((ops.zip (regs.map Loc.reg)).toList.filter (·.1.isDef)).zip outs =
       (defRegs ops regs outs).map (fun p => ((p.1.1, Loc.reg p.1.2), p.2)) := by
     rw [pairs_regs, List.filter_map, defRegs, List.zip_map_left]

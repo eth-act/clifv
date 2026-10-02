@@ -80,24 +80,25 @@ theorem E2E.backend_correct_legal {f g : Clif.Function} {cert : Opt.Legalize128.
     {p p' : Clif.Program} {k : Nat} {vc vcp : VCode}
     {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubset p' g) (hc : Compiled g k vc vcp rf af fa fb)
-    {X : ExtSem} {H : ArmHooks} {syms : String → Option Nat} {slotOff : Nat}
+    {X : ExtSem} {H : ArmHooks} {syms : String → Option Nat} {slotOff K : Nat}
     (hext : ∀ fn e, f.extern? fn = some e → p.func? e.name = none)
     (hext' : ∀ fn e, g.extern? fn = some e → p'.func? e.name = none)
     (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
     (hC : ∀ s, CalleeOk
-      (frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H)
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H
+      vcp.CallSite)
     (hX : ∀ s, XCallsOk Clif.Rust.env (fun sl cm w =>
-      Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
         slotOff⟩ g sl cm w) X)
     (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
     (hslot : af.slotBase = slotOff)
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args args' : List Clif.Val}
     {cs cs' : Clif.State}
-    (hent : AbiEntry fb base ra s) (hres : StackAvail af s) (hbe : BodyEntry af s w₀)
+    (hent : AbiEntry fb base ra s) (hres : StackAvail K af s) (hbe : BodyEntry af s w₀)
     (hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args')
     (hargs : ArgsIn args' s) (hcs : ClifEntry f args cs) (hcs' : ClifEntry g args' cs')
     (hsl : cs'.frame.slots = cs.frame.slots) (hmem : cs'.mem = cs.mem)
-    (hrel : Rel.holds ⟨frameF (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s,
+    (hrel : Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s,
       syms, slotOff⟩ g cs'.frame.slots cs'.mem w₀)
     (htrS : TrapsExplicit Clif.Rust.env p cs) (htr : TrapsExplicit Clif.Rust.env p' cs')
     (fuel : Nat) :

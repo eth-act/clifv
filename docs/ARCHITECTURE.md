@@ -57,8 +57,11 @@ Linking (`FV/E2E/{LinkClif,Link}.lean`, `docs/contracts/e2e.md` "Linking"):
 enter them) that returns or traps is a per-function run under `Clif.linkEnv`, and
 `E2E.backend_correct_linked` states a function's Arm code against the whole-program run, with
 the program callees' contracts `CalleeOk`/`XCallsOk (linkEnv …)` still premises (not discharged
-from the callees' own theorems: `E2E.calleeOk_saves_lr_false`, `docs/DEFERRED.md`). It does not
-change which functions `lean-backend` reports verified.
+from the callees' own theorems, `docs/DEFERRED.md`). The callee contract leaves the callees' dead
+stack (`K` bytes below the caller's `sp`) unspecified, so callees that push a frame meet it;
+`FV/E2E/NonVacuity.lean` proves every contract premise satisfiable by such a callee
+(`E2E.final_contracts_witness`, `docs/contracts/e2e.md` "Non-vacuity"). It does not change
+which functions `lean-backend` reports verified.
 
 Trusted: the CLIF semantics (`FV/Clif`, incl. the extern contracts `Clif.Rust.env` — for the
 `__*ti3` helpers the semantics `Opt.Legal.HelperOk` is proven against `Clif.Sem.div`, so what is

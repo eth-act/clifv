@@ -250,7 +250,7 @@ structure RL.Wf (R : RL) : Prop where
   layout : R.fa.layout = .ok R.fb
   lm : labelOffsets R.fa.lines = .ok R.lm
   fit : 4 * R.fb.words.size ≤ 2 ^ 64
-  stack : StackAvail R.af R.s0
+  stack : StackAvail R.K R.af R.s0
   /-- `psF` is the emitter's final state -/
   psF : ∃ body, blocksLinesE R.ctx R.af R.af.blocks.toList {} = .ok (body, R.psF)
   /-- the entry state holds the function's program -/
@@ -259,17 +259,17 @@ structure RL.Wf (R : RL) : Prop where
 theorem RL.size_lt {R : RL} (hR : R.Wf) : R.fr.size < 32768 :=
   (lowerRFunc_ok hR.alloc).2.1
 
-/-- The activation's frame is laid out correctly. -/
-theorem RL.frameOk {R : RL} (hR : R.Wf) :
-    FrameOk R.fr (Live R.rf) (R.rf.floatMove = true) R.spB R.F := by
+/-- The activation's frame is laid out correctly (its slots in the frame addresses `R.FK`). -/
+theorem RL.frameOkK {R : RL} (hR : R.Wf) :
+    FrameOk R.fr (Live R.rf) (R.rf.floatMove = true) R.spB R.FK := by
   obtain ⟨⟨hfs, -⟩, hlt, hfr, -⟩ := lowerRFunc_ok hR.alloc
   have hlt' : R.fr.size < 32768 := hlt
   have hle : R.fr.size ≤ R.fr.total := compute_size_le_total R.vc R.rf
-  have hst := hR.stack.1
+  have hst := hR.stack.frame.1
   have hst' : R.fr.total + 16 ≤ (spv R.s0).toNat := by rw [hfs] at hst; exact hst
   by_cases h0 : R.fr.total = 0
   · -- empty frame: no live slot has an offset below `size`
-    refine frameOk_compute R.vc R.rf R.spB R.F (by simp only [RL.fr] at h0 hle; omega) ?_
+    refine frameOk_compute R.vc R.rf R.spB R.FK (by simp only [RL.fr] at h0 hle; omega) ?_
     intro o _ ho; simp only [RL.fr] at h0 hle; omega
   · have hframe := hfr h0
     have hd : frameDrop R.af = R.fr.total + 16 := by
@@ -278,14 +278,61 @@ theorem RL.frameOk {R : RL} (hR : R.Wf) :
       simp only [RL.spB, hd]
       have hm : (R.fr.total + 16) % 2 ^ 64 = R.fr.total + 16 := Nat.mod_eq_of_lt (by omega)
       rw [BitVec.toNat_sub_of_le] <;> simp only [BitVec.le_def, BitVec.toNat_ofNat, hm, RL.fr] at * <;> omega
-    refine frameOk_compute R.vc R.rf R.spB R.F (by simp only [RL.fr] at hsp hle ⊢; omega) ?_
+    refine frameOk_compute R.vc R.rf R.spB R.FK (by simp only [RL.fr] at hsp hle ⊢; omega) ?_
     intro o hlo hhi
-    simp only [RL.F, frameF, ← RL.spB.eq_def]
+    simp only [RL.FK, frameF, ← RL.spB.eq_def]
     have : (R.spB + BitVec.ofNat 64 o - R.spB).toNat = o := by
       rw [BitVec.add_comm, BitVec.add_sub_cancel]; simp; omega
     simp only [RL.spB] at this ⊢
     rw [this]
     exact .inl ⟨hlo, hhi⟩
+
+theorem FrameOk.mono {fr : RAFrame} {D : Loc → Prop} {T : Prop} {sp0 : BitVec 64}
+    {F F' : BitVec 64 → Prop} (h : FrameOk fr D T sp0 F) (hF : ∀ a, F a → F' a) :
+    FrameOk fr D T sp0 F' :=
+  ⟨h.sep, fun l o hl ho k hk => hF _ (h.inF l o hl ho k hk), h.tmpSep,
+    fun hT k hk => hF _ (h.tmpF hT k hk)⟩
+
+/-- The frame addresses are outside the world. -/
+theorem RL.FK_F {R : RL} {a : BitVec 64} (h : R.FK a) : R.F a := .inl h
+
+/-- The callees' dead stack is outside the world. -/
+theorem RL.below_F {R : RL} {a : BitVec 64} (h : StackBelow R.K R.spB a) : R.F a := .inr h
+
+/-- The activation's slots lie outside the world. -/
+theorem RL.frameOk {R : RL} (hR : R.Wf) :
+    FrameOk R.fr (Live R.rf) (R.rf.floatMove = true) R.spB R.F :=
+  (RL.frameOkK hR).mono fun _ => RL.FK_F
+
+/-- The allocator's slots lie inside the dropped frame. -/
+theorem RL.size_le_drop {R : RL} (hR : R.Wf) : R.fr.size ≤ frameDrop R.af := by
+  obtain ⟨⟨hfs, -⟩, -, hfr, -⟩ := lowerRFunc_ok hR.alloc
+  have hle : R.fr.size ≤ R.fr.total := compute_size_le_total R.vc R.rf
+  by_cases h0 : R.fr.total = 0
+  · simp only [RL.fr] at h0 hle ⊢; omega
+  · have hframe := hfr h0
+    simp only [frameDrop, hframe, ite_true, hfs]
+    simp only [RL.fr] at hle ⊢; omega
+
+/-- **The frame is not in the dead stack.** -/
+theorem RL.FK_not_below {R : RL} (hR : R.Wf) {a : BitVec 64} (h : R.FK a) :
+    ¬ StackBelow R.K R.spB a :=
+  frameF_not_below hR.stack (RL.size_le_drop hR) h
+
+/-- The callees' budget fits below the body's `sp`. -/
+theorem RL.K_le {R : RL} (hR : R.Wf) : R.K ≤ R.spB.toNat := by
+  obtain ⟨hB, hK⟩ := spBody_toNat hR.stack
+  simp only [RL.spB]
+  omega
+
+/-- **A call at the body's `sp`**: the callee's contract (`CallSoundCtl` with the activation's
+budget) gives the operand-view obligation at the state, keeping the frame `R.FK`. -/
+theorem RL.callAt {R : RL} (hR : R.Wf) {exec : MInst → Arm.ArmState → Option Arm.ArmState}
+    {sem : ISem CV Arm.ArmState} {i : MInst} {ctl : Ctl} (h : CallSoundCtl R.F R.K exec sem i ctl)
+    {s : Arm.ArmState} (hsp : spOf s = R.spB) : OperandsSoundCtlAt R.F R.FK exec sem i ctl s := by
+  refine (h s (by rw [hsp]; exact RL.K_le hR) (fun a ha => ?_)).mono fun a ha => ⟨RL.FK_F ha, ?_⟩
+  · rw [hsp] at ha; exact RL.below_F ha
+  · rw [hsp]; exact RL.FK_not_below hR ha
 
 
 theorem mem_blocks_flat {rf : RFunc} {b : Nat} {items : Array RItem} {it : RItem}
@@ -361,7 +408,7 @@ theorem fplr_outside {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) :
   obtain ⟨⟨hfs, -⟩, hlt, -⟩ := lowerRFunc_ok hR.alloc
   have hlt' : R.fr.size < 32768 := hlt
   have hle : R.fr.size ≤ R.fr.total := compute_size_le_total R.vc R.rf
-  have hst := hR.stack.1
+  have hst := hR.stack.frame.1
   have hst' : R.fr.total + 16 ≤ (spv R.s0).toNat := by rw [hfs] at hst; exact hst
   have hd : frameDrop R.af = R.fr.total + 16 := by
     simp only [frameDrop, hframe, ite_true, hfs, RL.fr]
@@ -386,8 +433,8 @@ theorem code_outside {R : RL} (hR : R.Wf) {a : BitVec 64} (ha : CodeAddr R.s0 a)
   obtain ⟨⟨hfs, -⟩, hlt, hfr, -⟩ := lowerRFunc_ok hR.alloc
   have hlt' : R.fr.size < 32768 := hlt
   have hle : R.fr.size ≤ R.fr.total := compute_size_le_total R.vc R.rf
-  have hst := hR.stack.1
-  have hap := hR.stack.2 a ha
+  have hst := hR.stack.frame.1
+  have hap := hR.stack.frame.2 a ha
   intro o ho e
   by_cases h0 : R.fr.total = 0
   · simp only [RL.fr] at h0 hle ho; omega

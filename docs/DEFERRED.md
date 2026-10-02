@@ -103,15 +103,17 @@ Proven (`docs/contracts/e2e.md`, "Linking"): whole-program CLIF runs are per-fun
 recursion included), and `E2E.backend_correct_linked` states a function's Arm code against the
 whole-program run with the program callees' contracts (`CalleeOk`, `XCallsOk (linkEnv …)`) as
 premises. Deferred, in order:
-- **Callee contract with a dead stack.** `CalleeOk.os` compares the hooked callee's state with
-  `X.call`'s world on all memory outside the caller's frame `F`, so it rejects any callee that
-  writes state-dependent bytes below `sp` (`E2E.calleeOk_saves_lr_false`: the saved return
-  address). Split the region of `OperandsSoundCtl` for calls: the world comparison ignores `F`
-  and the dead stack `D = [sp_body − K, sp_body)` (`K` a stack budget), `FrameKeep` keeps only
-  `F`; `Q`'s world relation becomes `SameWorld (F ∪ D)`; `MemRel`/`OutRel` additionally keep
-  live CLIF bytes outside `D` (an entry premise and part of `XCallsOk`'s relation); the flags
-  either masked across calls (AAPCS64 does not preserve NZCV) or produced by `X.call`. Touches
-  `realizes_call`/`realizes_tryCall`, `realizes_op_core` and every lemma that unfolds `frameF`.
+- ~~**Callee contract with a dead stack.**~~ Done (agent/callee-fix): `CalleeOk F K X H S`
+  compares the world outside `F = frameW K …` (the frame and the callees' `K`-byte dead stack
+  below the body's `sp`), keeps the frame only outside the dead stack (`CallSoundCtl`), and is
+  required only at the compiled code's call sites (`VCode.CallSite`); `TlsOk` likewise. Witness:
+  `E2E.calleeOk_witness`/`final_contracts_witness` (`FV/E2E/NonVacuity.lean`), a callee pushing
+  two frames below `sp`. The flags stay part of the world, produced by `X.call`.
+- **`try_call` payload registers.** `CalleeTryOk` fixes the def registers of a `try_call`'s call
+  beyond its results (x0/x1, the exception payload) to `X.call`'s world, but a callee that does
+  not write them leaves the caller's (masked) values: unsatisfiable for such callees. Needs the
+  allocated-code semantics to havoc those defs on the normal return while the checker keeps them
+  for the handler edges (a per-edge transfer in `RegallocCheck` and its soundness proof).
 - **Exact world of a call.** `X.call` is a function of the arguments and the world and must give
   the exact def registers and world of the hooked callee; a compiled callee's theorem fixes only
   the low bits of its results and the live CLIF bytes. Either make `csem`'s call clause

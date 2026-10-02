@@ -105,13 +105,13 @@ theorem locVal_frame_keep {fr : RAFrame} {D : Loc → Prop} {T : Prop} {sp0 : Bi
 
 /-- The fp/lr slot lies in the frame addresses. -/
 theorem fplr_inF {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) :
-    ∀ k < 16, R.F (spv R.s0 - 16#64 + BitVec.ofNat 64 k) := by
+    ∀ k < 16, R.FK (spv R.s0 - 16#64 + BitVec.ofNat 64 k) := by
   obtain ⟨⟨hfs, -⟩, hlt, -⟩ := lowerRFunc_ok hR.alloc
-  have hst := hR.stack.1
+  have hst := hR.stack.frame.1
   have hd : frameDrop R.af = R.fr.total + 16 := by
     simp only [frameDrop, hframe, ite_true, hfs, RL.fr]
   intro k hk
-  simp only [RL.F, frameF, hd]
+  simp only [RL.FK, frameF, hd]
   rw [hfs] at hst
   simp only [RL.fr] at *
   have hm : (R.fr.total + 16) % 2 ^ 64 = R.fr.total + 16 := Nat.mod_eq_of_lt (by simp [RL.fr]; omega)
@@ -166,7 +166,8 @@ def RunsAs (R : RL) (exec : Env → MInst → Arm.ArmState → Option Arm.ArmSta
 
 /-- **An instruction item that falls through, on the machine** (`MStep.op` with control
 `next`), for any execution function `exec` of allocated instructions the machine realises
-(`RunsAs`): given `OperandsSound` for `exec`, the machine reaches `Q` at the next item. -/
+(`RunsAs`): given the operand-view obligation for `exec` at the state (`OperandsSoundCtlAt`,
+keeping the frame `R.FK`), the machine reaches `Q` at the next item. -/
 theorem realizes_op_core {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc}
     {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
     (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩))
@@ -178,7 +179,7 @@ theorem realizes_op_core {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
     (hlen : outs.length = ((ops.zip allocs).toList.filter (·.1.isDef)).length)
     (hk : k + 1 < vb.insts.size)
     {exec : Env → MInst → Arm.ArmState → Option Arm.ArmState}
-    (hOS : ∀ env, OperandsSound R.F (exec env) R.sem i)
+    (hOS : ∀ env, OperandsSoundCtlAt R.F R.FK (exec env) R.sem i .next s)
     (hL : ∀ regs i', i.assign regs = .ok i' → (∃ env s s', exec env i' s = some s') →
       ∃ ls1, (∀ ps, i'.lines R.ctx ps = .ok (ls1, ps)) ∧
       (∀ ln ∈ ls1, ln.plain = true) ∧ (∀ ds, i' ≠ .args ds) ∧ (∀ us, i' ≠ .rets us) ∧
@@ -202,8 +203,8 @@ theorem realizes_op_core {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
   -- the instruction's effect
   have hm : ∀ r, r.allocatable = true → m (.reg r) = regVal s r := fun r hr =>
     hst.store (.reg r) (fun r' e => by cases e; exact hr) trivial
-  obtain ⟨s', m2, hex, hW, hK, hc2', hr2, hl2⟩ := operandsSound_step (hOS (R.envOf j)) hops hstat hasg
-    hm hst.world hst.align hst.err hsem hlen
+  obtain ⟨s', m2, hex, hW, hK, hc2', hr2, hl2⟩ := operandsSound_step (hOS (R.envOf j)) hops hstat
+    hasg hm hst.world hst.align hst.err hsem hlen
   obtain ⟨ls1, hl1, hpl, hna, hnr, hruns⟩ := hL regs i' hasg ⟨_, _, _, hex⟩
   rcases hc1' with ⟨rfl, -, -⟩ | ⟨ds, rfl, -⟩ | ⟨us, rfl, -⟩
   rotate_left
@@ -227,7 +228,7 @@ theorem realizes_op_core {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
     rw [hdrop, List.append_assoc, ftList_plain_append _ _ hpl hZ, List.append_assoc]
   obtain ⟨nst, hiter, hpc'⟩ := hruns j _ s s' hdrop' hst.prog hpc hst.err hex
   refine ⟨nst, _, MStep.op hvb hi hops hsz hsem hlen (HavocOuts.refl _ _) hc2' (MNext.next hk), ?_⟩
-  have hfr := R.frameOk hR
+  have hfr := R.frameOkK hR
   refine ⟨j + ls1.length, vb, items, pre ++ [.op k (regs.map Loc.reg)], c2, ls2, ps1, ps2, T, hvb,
     hit, by rw [hsplit]; simp, hchk', hc2, h2, htr, ?_, ?_, ?_⟩
   · rw [← List.drop_drop, hdrop', List.drop_left]
@@ -296,7 +297,8 @@ theorem realizes_op_next {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
     (hW' : Arm.r .ERR w' = .None ∧ w'.program = w.program) :
     ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
       Q R (iterN R.step n s) c'' :=
-  realizes_op_core hR hq hvb hi hops hsz hsem hlen hk (exec := fun env => execMInst R.ctx env) hOS
+  realizes_op_core hR hq hvb hi hops hsz hsem hlen hk (exec := fun env => execMInst R.ctx env)
+    (fun env => (hOS env).at (fun _ => RL.FK_F) s)
     (fun regs i' hasg _ => by
       obtain ⟨⟨ls1, hl1, hins, hpl, hint⟩, hna, hnr⟩ := hL regs i' hasg
       exact ⟨ls1, hl1, hpl, hna, hnr, runsAs_of_linesOk hR hl1 hins hint⟩) hW'
