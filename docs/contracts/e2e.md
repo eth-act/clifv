@@ -640,6 +640,15 @@ runs of at most `M + 1` steps).
      of `DriverSem`): the simulation runs on any world type, so it can run on **pairs of
      worlds** (the two activations of a callee). `driver_correct` (Arm worlds, with the entry)
      takes `DriverSem` separately; its statement is otherwise unchanged.
+   * **The lockstep of `csem`** (`FV/E2E/Lockstep.lean`, `csem_lockstep`): one instruction on two
+     worlds that agree outside `Z ⊇ F` (`SameWorld Z`), whose reads avoid `Z` (`LockGuard`),
+     with callees and the TLSDESC resolver that keep the agreement: the same outputs and control,
+     worlds that agree outside `Z` minus the bytes written (`WriteSet`). The straight forms
+     without memory access go through M6's `formOk_sound` (`OperandsSound Z`) at the canonical
+     registers, which pass the checker's static checks (`canon_facts`, decided per form); the
+     memory forms through their `MemRefines` characterisations; `ispec`/`mspec` and the control
+     forms read the world only through the flags, `sp` and `x29`. Not yet covered: the LL/SC
+     loops, `try_call` and `Args`.
    Findings (why the earlier routes cannot work): the footprint cannot come from the memory
    relation alone, since `MemRelOk.store` must hold for every valid store, so no `MR` can say
    "the slot bytes are uninitialised" (a store into them must keep `MR`); and the VCode
@@ -652,14 +661,11 @@ runs of at most `M + 1` steps).
    VCode to read the bytes it is about to write). M6 does not change: two VCode runs with the
    same outcome are realised by the two activations through the existing per-function theorem.
    **Remaining** (route A', in order):
-   1. *Lockstep of `csem`* (one instruction, two worlds `SameWorld Z w w̃` with `F ⊆ Z`, reads
-      avoiding `Z`): same outputs and control, worlds `SameWorld Z` after, agreeing on the bytes
-      written. Straight forms through `formOk_sound` (`OperandsSound Z`, needs registers passing
-      `checkStatic` for each `FormOk` form, e.g. the canonical ones), the memory forms through
-      their `MemRefines` characterisations, the LL/SC loops through `rmwBody_congr`/
-      `casHead_congr`/`stlxr_congr` extended to the scratch defs (x24, x28), control forms
-      directly; `try_call`'s extra defs (`regVal` of the callee's world in `csem`) must become
-      constants (they are havocked in M6), and `tls_value`'s `tlsFlags` needs a premise.
+   1. *The rest of the lockstep*: the LL/SC loops through `rmwBody_congr`/`casHead_congr`/
+      `stlxr_congr` extended to the scratch defs (x24, x28); `try_call`'s extra defs (`regVal`
+      of the callee's world in `csem`) must become constants (they are havocked in M6); `Args`
+      at the entry (the argument registers equal in both worlds). `tls_value`'s `tlsFlags` is a
+      premise of `csem_lockstep` (`hT`), to be discharged for the base and the linked hooks.
    2. *Guarded instances per step*: `csemG F ctx X Rd` (`csem` with reads outside `Rd` failing)
       satisfies `Refines`, `MemRefinesR Rd`, `CallsRefine`, `IndCallsRefine`; the call and
       `try_call` rules take `MemRefinesR Rd` (they only store); `lowerInstOk_of_rules` with

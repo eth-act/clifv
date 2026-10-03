@@ -142,17 +142,18 @@ premises. Deferred, in order:
     (agent/link-widen stage 2; e2e.md "Widening" item 2 has the route and the remaining steps).
     Done: the memory rules' read footprint (`MemRefinesR`/`LowerInstOkR`/`MemRulesCorrectR`:
     a memory rule's VCode reads only bytes its CLIF instruction reads) and the driver generic
-    in the world type (it can run on pairs of worlds). Findings: (a) the footprint cannot come
+    in the world type (it can run on pairs of worlds), and the one-instruction lockstep of
+    `csem` on two worlds (`E2E.csem_lockstep`, all forms but the LL/SC loops, `try_call` and
+    `Args`). Findings: (a) the footprint cannot come
     from the memory relation (`MemRelOk.store` must keep `MR` for every valid store, so `MR`
     cannot say that a slot byte is uninitialised) nor from an instrumented VCode semantics
     (its world is an `Arm.ArmState`; the fields the contracts leave free are the ones `MR` may
     not depend on, `MRStable`), only from the memory rules' proofs, instantiated per CLIF step
     with the guard `¬ (D₀ ∩ uninit(cm))`; (b) M6 need not change: the product run gives two
     VCode runs with one outcome, each realised by its activation through the existing
-    per-function theorem. Remaining: the one-instruction lockstep of `csem` (straight forms via
-    `formOk_sound` at canonical registers, whose `checkStatic` `simp` decides per form; the
-    LL/SC loops' scratch defs; `try_call`'s extra defs, read from the callee's world in `csem`,
-    to become constants; a `tlsFlags` premise), the guarded per-step instances, the product
+    per-function theorem. Remaining: the rest of the lockstep (the LL/SC loops'
+    scratch defs; `try_call`'s extra defs, read from the callee's world in `csem`, to become
+    constants; `Args`), the guarded per-step instances, the product
     instance and the per-function non-interference clause of `backend_correct_world`, the
     premise on `X` (base externs: `LinkSys.Ok`; program callees: the induction), the
     slot-placement oracle in `Clif.Mem` (`enterFunc` places a callee's slots at the compiled
