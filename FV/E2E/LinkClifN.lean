@@ -67,7 +67,7 @@ structure IndScope (P : Program) (base : Env) (f : Function) (syms : String → 
 theorem enterFunc_symbols {g : Function} {vals : List Val} {mem mem' : Mem} {fr : Frame}
     (h : enterFunc g vals mem = .ok (fr, mem')) : mem'.symbols = mem.symbols := by
   obtain ⟨_, _, _, _, _, _, hal, -⟩ := Opt.enterFunc_ok h
-  have := (Opt.allocSlots_ids g.slots mem).2
+  have := (Opt.enterSlots_ids g mem).2
   rw [hal] at this
   exact this
 
@@ -132,7 +132,7 @@ theorem step_symbols {P : Program} (hP : ∀ g ∈ P.funcs, LinkFree g) {env : E
         rw [hl] at h; cases h
         exact (Opt.lstep_next_frame hl).2.2
       | call ext vals rs rest => rw [hl] at h; exact callCont_symbols hk h
-      | ret vals => rw [hl] at h; rw [returnValues_mem.1 s1 h]; rfl
+      | ret vals => rw [hl] at h; rw [returnValues_mem.1 s1 h, Mem.leave_symbols]; rfl
       | tail ext vals => exact absurd hl (lstep_ne_tail hP hI.1)
       | trap c => rw [hl] at h; cases h
       | stuck m => rw [hl] at h; cases h
@@ -151,7 +151,7 @@ theorem step_symbols {P : Program} (hP : ∀ g ∈ P.funcs, LinkFree g) {env : E
       exact absurd h indCont_ne_done
     · rw [Opt.step_eq_lift env P s hci] at h
       cases hl : Opt.lstep s.frame s.mem with
-      | ret vals => rw [hl] at h; rw [returnValues_mem.2 v m h]; rfl
+      | ret vals => rw [hl] at h; rw [returnValues_mem.2 v m h, Mem.leave_symbols]; rfl
       | call ext vals rs rest => rw [hl] at h; exact absurd h callCont_ne_done
       | tail ext vals => exact absurd hl (lstep_ne_tail hP hI.1)
       | next fr1 m1 => rw [hl] at h; cases h

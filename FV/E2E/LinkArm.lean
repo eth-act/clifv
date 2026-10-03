@@ -555,12 +555,24 @@ theorem valid_of_allocs {m m' : Mem} (h : m'.allocs = m.allocs) {a k : Nat}
     (hv : m'.valid a k = true) : m.valid a k = true := by
   simpa [Mem.valid, h] using hv
 
+theorem enterSlots_nil {g : Function} (hs : g.slots = []) (mem : Mem) :
+    ∃ pl, enterSlots g mem = ([], { mem with place := pl }) := by
+  unfold enterSlots
+  rw [hs]
+  split
+  · exact ⟨mem.place, rfl⟩
+  · split
+    · exact ⟨_, rfl⟩
+    · exact ⟨_, rfl⟩
+
+/-- Entering a function without stack slots changes only the slot-placement oracle. -/
 theorem enterFunc_noSlots {g : Function} {vals : List Val} {mem mem' : Mem} {fr : Clif.Frame}
-    (hs : g.slots = []) (h : enterFunc g vals mem = .ok (fr, mem')) : mem' = mem := by
+    (hs : g.slots = []) (h : enterFunc g vals mem = .ok (fr, mem')) :
+    fr.slots = [] ∧ ∃ pl, mem' = { mem with place := pl } := by
   obtain ⟨_, _, _, _, _, _, hal, -⟩ := Opt.enterFunc_ok h
-  rw [hs] at hal
-  simp only [Opt.allocSlots, List.foldl_nil, Prod.mk.injEq] at hal
-  exact hal.2.symm
+  obtain ⟨pl, hpl⟩ := enterSlots_nil hs mem
+  rw [hpl, Prod.mk.injEq] at hal
+  exact ⟨hal.1.symm, pl, hal.2.symm⟩
 
 theorem callCont_valid {env : Clif.Env} {p : Program} {t : State} {rest : List Stmt}
     {rs : List ValueId} {ext : ExtFunc} {vals : List Val} {s1 : State} (hna : NoAllocEnv env)
@@ -574,7 +586,8 @@ theorem callCont_valid {env : Clif.Env} {p : Program} {t : State} {rest : List S
     split at h
     · obtain ⟨⟨fr', mem'⟩, he, h⟩ := Opt.StepResult.ofRes_eq_next h
       cases h
-      exact (enterFunc_noSlots (hslot g hg) he) ▸ hv
+      obtain ⟨-, pl, rfl⟩ := enterFunc_noSlots (hslot g hg) he
+      exact hv
     · cases h
   · split at h
     · rename_i gsem hgs
@@ -614,7 +627,9 @@ theorem step_valid {P : Program} (hP : ∀ g ∈ P.funcs, LinkFree g) {env : Cli
     intro t rest rs sig d a' v htm hnf s1 hc a k hv
     rw [← htm]
     rcases indCont_next hc with ⟨-, g, mem', hg, he, hm, hsym⟩ | ⟨-, -, n, g, rv, hg, hr⟩
-    · rw [hm, enterFunc_noSlots (haddr ⟨_, hI.1.1, hnf⟩ g hg (by rw [← htm, hsym]; simp)) he] at hv
+    · obtain ⟨-, pl, hpl⟩ :=
+        enterFunc_noSlots (haddr ⟨_, hI.1.1, hnf⟩ g hg (by rw [← htm, hsym]; simp)) he
+      rw [hm, hpl] at hv
       exact hv
     · exact hna _ _ hg _ _ _ _ hr a k hv
   have hnfT : ∀ callee args et, s.frame.body = [] → s.frame.term = .tryCallIndirect callee args et →
@@ -668,7 +683,7 @@ theorem step_valid {P : Program} (hP : ∀ g ∈ P.funcs, LinkFree g) {env : Cli
       | ret vals =>
         rw [hl] at h
         rw [returnValues_mem.1 s1 h]
-        exact fun a k hv => valid_free hv
+        exact fun a k hv => valid_free (by rwa [Mem.leave_valid] at hv)
       | tail ext vals => exact absurd hl (lstep_ne_tail hP hI.1)
       | trap c => rw [hl] at h; cases h
       | stuck m => rw [hl] at h; cases h
@@ -676,7 +691,7 @@ theorem step_valid {P : Program} (hP : ∀ g ∈ P.funcs, LinkFree g) {env : Cli
       | ret vals =>
         rw [hl] at h
         rw [returnValues_mem.2 v m h]
-        exact fun a k hv => valid_free hv
+        exact fun a k hv => valid_free (by rwa [Mem.leave_valid] at hv)
       | call ext vals rs rest => rw [hl] at h; exact absurd h callCont_ne_done
       | tail ext vals => exact absurd hl (lstep_ne_tail hP hI.1)
       | next fr1 m1 => rw [hl] at h; cases h
@@ -765,11 +780,12 @@ theorem reach_symbols {P : Clif.Program} (hP : ∀ g ∈ P.funcs, Clif.LinkFree 
     obtain ⟨h1, h2⟩ := ih (Clif.step_next_linv hP hI hs).1
     exact ⟨h1.trans ((Clif.step_symbols hP hk hI).1 _ hs), h2⟩
 
-/-- The entry state of a function without stack slots: no slots, the memory unchanged. -/
+/-- The entry state of a function without stack slots: no slots, the memory unchanged but for
+the slot-placement oracle. -/
 theorem initState_noSlots {P : Clif.Program} {h : Clif.Function} {n : String}
     {vals : List Clif.Val} {cm : Clif.Mem} {cs : Clif.State} (hf : P.func? n = some h)
     (hs : h.slots = []) (hi : Clif.initState P n vals cm = .ok cs) :
-    cs.frame.slots = [] ∧ cs.mem = cm := by
+    cs.frame.slots = [] ∧ ∃ pl, cs.mem = { cm with place := pl } := by
   simp only [Clif.initState, hf, Clif.Res.ofOption_some, Clif.Res.ok_bind] at hi
   cases he : Clif.enterFunc h vals cm with
   | ok r =>
@@ -777,10 +793,7 @@ theorem initState_noSlots {P : Clif.Program} {h : Clif.Function} {n : String}
     obtain ⟨fr, mem'⟩ := r
     simp only [Clif.Res.ok_bind, Clif.Res.pure_eq, Clif.Res.ok.injEq] at hi
     subst hi
-    obtain ⟨_, _, _, _, _, _, hal, -⟩ := Opt.enterFunc_ok he
-    rw [hs] at hal
-    simp only [Opt.allocSlots, List.foldl_nil, Prod.mk.injEq] at hal
-    exact ⟨hal.1.symm, hal.2.symm⟩
+    exact enterFunc_noSlots hs he
   | trap => rw [he] at hi; cases hi
   | stuck => rw [he] at hi; cases hi
 
@@ -1731,7 +1744,7 @@ theorem progCall (hL : L.Ok) {M : Nat} (hM : 0 < M) (ih : L.Thm (M - 1)) {n : St
   have hdrop := L.frameDrop_eq hL hh
   have hfs := L.frameSize_mod hL hh
   obtain ⟨hnd, harg, hwid⟩ := hL.argRegs h hh
-  obtain ⟨hsl', hcm⟩ := initState_noSlots hpf hsl hinit
+  obtain ⟨hsl', pl, hcm⟩ := initState_noSlots hpf hsl hinit
   have hce : ClifEntry h vals cs := clifEntry_initState hpf hinit
   -- the per-function run (program callees at most `M - 1` steps)
   obtain ⟨m, hm⟩ := Clif.runLoop_linkN (base := L.base) (syms := L.syms) (M - 1) hL.names hh
@@ -1851,7 +1864,7 @@ theorem progCall (hL : L.Ok) {M : Nat} (hM : 0 < M) (ih : L.Thm (M - 1)) {n : St
           have ⟨k0, hk0, hnk⟩ := hkk
           refine ⟨(hL.indScope k0 hk0 hnk).keep, fun h' hh' hs' =>
             hL.addrSlots ⟨h, hh, hib0⟩ hkk h' hh' ?_⟩
-          rwa [hcm, hmr.symbols] at hs') hrun a n hv
+          rw [hcm] at hs'; rwa [← hmr.symbols]) hrun a n hv
       rw [hcm] at hv0
       exact hmr.valid a n hv0
   -- the callee's activation from a caller state `t`
@@ -2750,13 +2763,13 @@ theorem progResult (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g h : C
     · rw [hib0]; exact outRel_zero _ _ _
     · refine ⟨hout.1, by rw [hspT]; exact hout.2.1, fun a n hv k hk j hj => ?_⟩
       rw [hspT]
-      have hcs := (initState_noSlots hpf hsl hinit).2
+      obtain ⟨-, pl, hcs⟩ := initState_noSlots hpf hsl hinit
       have hv0 := runLoop_valid hL.free (hL.baseNoAlloc ⟨g, hg, hib0⟩) (L.slotFree hL) M
         cs rvals cm' (runInv_entry hh hce)
         (fun hkk => by
           have ⟨k0, hk0, hnk⟩ := hkk
           refine ⟨(hL.indScope k0 hk0 hnk).keep, fun h' hh' hs' => hL.addrSlots ⟨g, hg, hib0⟩ hkk h' hh' ?_⟩
-          rwa [hcs, hmemR0.symbols] at hs') hret a n hv
+          rw [hcs] at hs'; simpa [hmemR0.symbols] using hs') hret a n hv
       rw [hcs] at hv0
       exact hout.2.2 a n hv0 k hk j hj
   · rw [hspT, hsp]

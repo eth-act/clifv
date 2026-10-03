@@ -10,7 +10,9 @@ import FV.Clif.Syntax
   `stuck` (a precondition violation), never a value.
 * Allocation is a bump allocator (`Mem.next`): addresses are never reused, so a stale
   pointer never aliases a newer allocation. Consecutive allocations are separated by a
-  16-byte gap.
+  16-byte gap. Exception: with the slot-placement oracle (`Mem.place`, a linked program's
+  semantics) the stack slots of the functions it covers are placed at their compiled frame
+  addresses (`Mem.allocAt`, fresh uninitialised bytes), which later activations reuse.
 * Multi-byte values are little-endian unless the access carries the `big` flag.
 -/
 
@@ -85,6 +87,15 @@ structure Alloc where
 def Alloc.contains (a : Alloc) (addr n : Nat) : Bool :=
   a.base ≤ addr && addr + n ≤ a.base + a.size
 
+/-- **The slot-placement oracle** of a linked program (`docs/contracts/e2e.md`, "Linking at
+the Arm level"): where the compiled code puts the stack slots of an activation. `sps`: the
+stack pointers of the activations (the running one's first); `frame`: per function name, the
+drop of its frame (the `sp` of an activation of it is its caller's minus the drop) and the
+offsets of its stack slots from its `sp`. Bookkeeping only: no access checks it. -/
+structure Place where
+  sps : List (BitVec 64)
+  frame : String → Option (Nat × (SlotId → Nat))
+
 /-- Memory state. -/
 structure Mem where
   allocs : List Alloc := []
@@ -94,6 +105,10 @@ structure Mem where
   /-- Link-time symbol addresses (`symbol_value`), fixed by the initial image
   (`Clif.Image.mem`); never changed by execution. -/
   symbols : String → Option Nat := fun _ => none
+  /-- The slot-placement oracle (`Place`): `none` (the default) allocates stack slots with the
+  bump allocator; `some` places the slots of the functions it covers at their compiled frame
+  addresses (`Clif.enterSlots`). -/
+  place : Option Place := none
 
 namespace Mem
 
@@ -112,6 +127,27 @@ base address. -/
 def alloc (m : Mem) (size align : Nat) : Nat × Mem :=
   let base := alignUp m.next (max align 16)
   (base, { m with allocs := { base, size } :: m.allocs, next := base + size + 16 })
+
+/-- Allocate `[base, base + size)` at a given address, uninitialised (a stack slot the
+slot-placement oracle places). -/
+def allocAt (m : Mem) (base size : Nat) : Mem :=
+  { m with allocs := { base, size } :: m.allocs,
+           bytes := fun a => if base ≤ a ∧ a < base + size then none else m.bytes a }
+
+/-- Leave an activation: the slot-placement oracle drops its stack pointer. -/
+def leave (m : Mem) : Mem :=
+  match m.place with
+  | some pl => { m with place := some { pl with sps := pl.sps.tail } }
+  | none => m
+
+@[simp] theorem leave_allocs (m : Mem) : m.leave.allocs = m.allocs := by
+  unfold leave; split <;> rfl
+@[simp] theorem leave_bytes (m : Mem) : m.leave.bytes = m.bytes := by
+  unfold leave; split <;> rfl
+@[simp] theorem leave_symbols (m : Mem) : m.leave.symbols = m.symbols := by
+  unfold leave; split <;> rfl
+@[simp] theorem leave_valid (m : Mem) (addr n : Nat) : m.leave.valid addr n = m.valid addr n := by
+  simp only [valid, leave_allocs]
 
 /-- Free the allocations with the given base addresses. Their bytes become unreachable
 (addresses are never reused). -/

@@ -890,7 +890,7 @@ theorem mem_syms_inj {a b : Mem} {S : String → Option Nat}
     a = b := by
   cases a; cases b
   simp only [Mem.mk.injEq] at h hs ⊢
-  exact ⟨h.1, h.2.1, h.2.2.1, hs⟩
+  exact ⟨h.1, h.2.1, h.2.2.1, hs, h.2.2.2.2⟩
 
 theorem memPlus_eq (m : Mem) : memPlus m = { m with symbols := (memPlus m).symbols } := rfl
 
