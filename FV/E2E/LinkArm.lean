@@ -317,13 +317,15 @@ noncomputable def canon (g : Clif.Function) (uses : List CV) (w : Arm.ArmState) 
 
 /-- When the external semantics at depth `M` defines a call of `g` from world `w`: the callee's
 stack (its frame and its callees' budget) fits below `sp` outside the world and the code, no
-error, and the call's arguments and the world are related to CLIF arguments and memory on which
-`g`'s whole-program run returns within `M` steps. -/
+error, and the call's arguments (the stack-passed ones in the world, outside `F`) and the world
+are related to CLIF arguments and memory on which `g`'s whole-program run returns within `M`
+steps. -/
 def Cond (M : Nat) (g : Clif.Function) (uses : List CV) (w : Arm.ArmState) : Prop :=
   0 < M ∧ Arm.r .ERR w = .None ∧ (spv w).toNat % 16 = 0 ∧
   frameDrop (L.A g).af + L.K (M - 1) ≤ (spv w).toNat ∧
   (∀ a, StackBelow (frameDrop (L.A g).af + L.K (M - 1)) (spv w) a → L.F a ∧ ¬ L.Img a) ∧
   ∃ vals cm cs rvals cm', MemRel L.F L.syms cm w ∧ ArgsAt g.sig vals uses w ∧
+    StackArgsAvoid L.F g.sig vals w ∧
     Clif.initState L.P g.name vals cm = .ok cs ∧ Clif.runLoop L.base L.P M cs = .returned rvals cm'
 
 open Classical in
@@ -362,6 +364,208 @@ theorem armStepX_X (M : Nat) (H : ArmHooks) (fa : FnAsm) :
 end LinkSys
 
 /-! ## CLIF helpers -/
+
+/-- The declared returns are the first ABI returns (`sigRets`: an `sret` signature without
+returns adds the struct pointer). -/
+theorem returns_le_sigRets (s : Clif.Signature) : s.returns.length ≤ (sigRets s).length := by
+  unfold sigRets
+  split
+  · split
+    · rename_i h; simp [List.isEmpty_iff.mp h]
+    · exact Nat.le_refl _
+  · exact Nat.le_refl _
+
+/-! ## CLIF: runs that enter no function with stack slots keep the live allocations -/
+
+/-- The externs of `env` create no allocation: an address valid after a call was valid before. -/
+def NoAllocEnv (env : Clif.Env) : Prop :=
+  ∀ n g, env.extern n = some g → ∀ vals m rvals m', g vals m = .returned rvals m' →
+    ∀ a k, m'.valid a k = true → m.valid a k = true
+
+section ValidKeep
+open Clif Opt
+
+theorem store_allocs {w : Nat} {m : Mem} {fl a n} {x : BitVec w} {m'}
+    (h : m.store fl a n x = .ok m') : m'.allocs = m.allocs := by
+  simp only [Mem.store, Res.bind_eq_ok, Res.pure_eq_ok] at h
+  obtain ⟨_, _, _, _, rfl⟩ := h
+  rfl
+
+theorem evalInst_allocs {fr mem i vals mem'} (h : evalInst fr mem i = .ok (vals, mem')) :
+    mem'.allocs = mem.allocs := by
+  cases i <;> simp only [evalInst, Res.bind_eq_ok, Res.pure_eq_ok, Prod.mk.injEq] at h
+  all_goals (repeat' (first | obtain ⟨_, _, h⟩ := h | split at h)) <;>
+    (try simp only [Res.pure_eq_ok, Prod.mk.injEq, Res.bind_eq_ok] at h) <;>
+    (repeat' (first | obtain ⟨_, _, h⟩ := h | split at h))
+  all_goals first | rfl | exact store_allocs ‹_›
+
+theorem lstep_next_allocs {fr m fr' m'} (h : lstep fr m = .next fr' m') : m'.allocs = m.allocs := by
+  obtain ⟨func, regs, slots, body, term⟩ := fr
+  cases body with
+  | nil =>
+    simp only [lstep] at h
+    cases term <;> simp only [LRes.ofRes] at h <;> (repeat' split at h) <;> (try contradiction) <;>
+      (cases h; rfl)
+  | cons st rest =>
+    simp only [lstep] at h
+    split at h
+    · simp only [LRes.ofRes] at h; split at h <;> contradiction
+    · simp only [LRes.ofRes] at h
+      split at h <;> try contradiction
+      split at h <;> try contradiction
+      cases h
+      exact evalInst_allocs ‹_›
+
+theorem valid_free {m : Mem} {bs : List Nat} {a k : Nat} (h : (m.free bs).valid a k = true) :
+    m.valid a k = true := by
+  simp only [Mem.valid, Mem.free, List.any_eq_true, List.mem_filter] at h ⊢
+  obtain ⟨x, ⟨hx, -⟩, hc⟩ := h
+  exact ⟨x, hx, hc⟩
+
+theorem valid_of_allocs {m m' : Mem} (h : m'.allocs = m.allocs) {a k : Nat}
+    (hv : m'.valid a k = true) : m.valid a k = true := by
+  simpa [Mem.valid, h] using hv
+
+theorem enterFunc_noSlots {g : Function} {vals : List Val} {mem mem' : Mem} {fr : Clif.Frame}
+    (hs : g.slots = []) (h : enterFunc g vals mem = .ok (fr, mem')) : mem' = mem := by
+  obtain ⟨_, _, _, _, _, _, hal, -⟩ := Opt.enterFunc_ok h
+  rw [hs] at hal
+  simp only [Opt.allocSlots, List.foldl_nil, Prod.mk.injEq] at hal
+  exact hal.2.symm
+
+theorem returnValues_mem {s : State} {vals : List Val} {mem : Mem} :
+    (∀ s1, returnValues s vals mem = .next s1 → s1.mem = mem.free (s.frame.slots.map (·.2))) ∧
+    (∀ v m, returnValues s vals mem = .done v m → m = mem.free (s.frame.slots.map (·.2))) := by
+  refine ⟨fun s1 h => ?_, fun v m h => ?_⟩
+  · obtain ⟨_, h⟩ := Opt.StepResult.ofRes_eq_next h
+    obtain ⟨frame, callers, m'⟩ := s
+    cases callers with
+    | nil => cases h.2
+    | cons c cs =>
+      obtain ⟨caller, results⟩ := c
+      simp only at h
+      split at h
+      · cases h.2; rfl
+      · cases h.2
+  · obtain ⟨_, -, h⟩ := ofRes_eq_done h
+    obtain ⟨frame, callers, m'⟩ := s
+    cases callers with
+    | nil => simp only [StepResult.done.injEq] at h; exact h.2.symm
+    | cons c cs =>
+      obtain ⟨caller, results⟩ := c
+      simp only at h
+      revert h
+      split <;> intro h <;> cases h
+
+theorem callCont_valid {env : Clif.Env} {p : Program} {t : State} {rest : List Stmt}
+    {rs : List ValueId} {ext : ExtFunc} {vals : List Val} {s1 : State} (hna : NoAllocEnv env)
+    (hslot : ∀ g, p.func? ext.name = some g → g.slots = [])
+    (h : Opt.callCont env p t rest rs ext vals = .next s1) :
+    ∀ a k, s1.mem.valid a k = true → t.mem.valid a k = true := by
+  intro a k hv
+  unfold Opt.callCont at h
+  split at h
+  · rename_i g hg
+    split at h
+    · obtain ⟨⟨fr', mem'⟩, he, h⟩ := Opt.StepResult.ofRes_eq_next h
+      cases h
+      exact (enterFunc_noSlots (hslot g hg) he) ▸ hv
+    · cases h
+  · split at h
+    · rename_i gsem hgs
+      split at h
+      · rename_i rvals mem' hr
+        split at h
+        · unfold continueWith at h
+          split at h
+          · cases h
+            exact hna _ _ hgs _ _ _ _ hr a k hv
+          · cases h
+        · cases h
+      all_goals cases h
+    · cases h
+
+/-- **A whole-program step keeps the live allocations** when the functions it enters have no
+stack slots and the externs create none. -/
+theorem step_valid {P : Program} (hP : ∀ g ∈ P.funcs, LinkFree g) {env : Clif.Env} (hna : NoAllocEnv env)
+    (hsl : ∀ g ∈ P.funcs, ∀ fn e h, g.extern? fn = some e → P.func? e.name = some h → h.slots = [])
+    {s : State} (hI : LInv P s) :
+    (∀ s1, step env P s = .next s1 → ∀ a k, s1.mem.valid a k = true → s.mem.valid a k = true) ∧
+    (∀ v m, step env P s = .done v m → ∀ a k, m.valid a k = true → s.mem.valid a k = true) := by
+  have hcall : ∀ (t : State) rest rs ext vals fn args, t.mem = s.mem → t.frame.func = s.frame.func →
+      Opt.callArgs t.frame fn args = .ok (ext, vals) → ∀ s1,
+      Opt.callCont env P t rest rs ext vals = .next s1 →
+      ∀ a k, s1.mem.valid a k = true → s.mem.valid a k = true := by
+    intro t rest rs ext vals fn args htm htf hca s1 hc a k hv
+    rw [← htm]
+    refine callCont_valid hna (fun g hg => hsl _ hI.1.1 fn ext g ?_ hg) hc a k hv
+    rw [← htf]; exact Opt.callArgs_extern hca
+  by_cases hT : ∃ fn args et, s.frame.body = [] ∧ s.frame.term = .tryCall fn args et
+  · obtain ⟨fn, args, et, hb, ht⟩ := hT
+    refine ⟨fun s1 h => ?_, fun v m h => ?_⟩
+    · rw [step_try env P s hb ht] at h
+      obtain ⟨⟨n, b, bc⟩, -, h⟩ := Opt.StepResult.ofRes_eq_next h
+      obtain ⟨⟨ext, vals⟩, hca, h⟩ := Opt.StepResult.ofRes_eq_next h
+      exact hcall (tryState s bc) [] _ ext vals fn args rfl rfl hca s1 h
+    · rw [step_try env P s hb ht] at h
+      obtain ⟨⟨n, b, bc⟩, -, h⟩ := ofRes_eq_done h
+      obtain ⟨⟨ext, vals⟩, -, h⟩ := ofRes_eq_done h
+      exact absurd h callCont_ne_done
+  · have hnt : ∀ fn args et, s.frame.body = [] → s.frame.term ≠ .tryCall fn args et :=
+      fun fn args et hb ht => hT ⟨fn, args, et, hb, ht⟩
+    rw [Opt.step_eq_lift env P s (hI.1.headNoCI hP hnt)]
+    refine ⟨fun s1 h => ?_, fun v m h => ?_⟩
+    · cases hl : Opt.lstep s.frame s.mem with
+      | next fr1 m1 =>
+        rw [hl] at h; cases h
+        exact fun a k hv => valid_of_allocs (lstep_next_allocs hl) hv
+      | call ext vals rs rest =>
+        rw [hl] at h
+        obtain ⟨st, fn, args, -, -, -, hca⟩ := Opt.lstep_call_inv hl
+        exact hcall s rest rs ext vals fn args rfl rfl hca s1 h
+      | ret vals =>
+        rw [hl] at h
+        rw [returnValues_mem.1 s1 h]
+        exact fun a k hv => valid_free hv
+      | tail ext vals => exact absurd hl (lstep_ne_tail hP hI.1)
+      | trap c => rw [hl] at h; cases h
+      | stuck m => rw [hl] at h; cases h
+    · cases hl : Opt.lstep s.frame s.mem with
+      | ret vals =>
+        rw [hl] at h
+        rw [returnValues_mem.2 v m h]
+        exact fun a k hv => valid_free hv
+      | call ext vals rs rest => rw [hl] at h; exact absurd h callCont_ne_done
+      | tail ext vals => exact absurd hl (lstep_ne_tail hP hI.1)
+      | next fr1 m1 => rw [hl] at h; cases h
+      | trap c => rw [hl] at h; cases h
+      | stuck m => rw [hl] at h; cases h
+
+/-- **A returning whole-program run keeps the live allocations** (functions entered without stack
+slots, externs that create none). -/
+theorem runLoop_valid {P : Program} (hP : ∀ g ∈ P.funcs, LinkFree g) {env : Clif.Env}
+    (hna : NoAllocEnv env)
+    (hsl : ∀ g ∈ P.funcs, ∀ fn e h, g.extern? fn = some e → P.func? e.name = some h → h.slots = []) :
+    ∀ (N : Nat) (s : State) (vals : List Val) (mem : Mem), LInv P s →
+      runLoop env P N s = .returned vals mem → ∀ a k, mem.valid a k = true → s.mem.valid a k = true
+  | 0, _, _, _, _, h => by simp at h
+  | N + 1, s, vals, mem, hI, h => by
+    rw [runLoop_succ'] at h
+    cases hs : step env P s with
+    | next s1 =>
+      rw [hs] at h
+      intro a k hv
+      exact (step_valid hP hna hsl hI).1 s1 hs a k
+        (runLoop_valid hP hna hsl N s1 vals mem (step_next_linv hP hI hs).1 h a k hv)
+    | done v m =>
+      rw [hs] at h
+      simp only [afterStep, Outcome.returned.injEq] at h
+      obtain ⟨rfl, rfl⟩ := h
+      exact (step_valid hP hna hsl hI).2 v m hs
+    | trapped c => rw [hs] at h; cases h
+    | stuck m => rw [hs] at h; cases h
+
+end ValidKeep
 
 /-- A returning run never reaches a trapping step. -/
 theorem reach_not_trapped {env : Clif.Env} {p : Clif.Program} :
@@ -773,18 +977,29 @@ structure Ok : Prop where
   compiled : ∀ g ∈ L.P.funcs, Compiled g (L.A g).k (L.A g).vc (L.A g).vcp (L.A g).rf
     (L.A g).af (L.A g).fa (L.A g).fb
   covered : ∀ g ∈ L.P.funcs, FormsCovered ⟨(L.A g).fa.k, (L.A g).af.slotBase⟩ (L.A g).vcp
-  /-- scope: no stack-passed call arguments (no outgoing-argument area) -/
-  noOut : ∀ g ∈ L.P.funcs, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase = 0
-  /-- scope: parameters in registers (distinct argument registers), no `sret` -/
-  regParams : ∀ g ∈ L.P.funcs, ∀ l ∈ locsOf g.sig, ∃ r, l = .reg r
+  /-- scope: the outgoing-argument area of a function holds the stack-passed arguments of the
+  functions of `P` it declares (checked per declaration; vacuous for register-only signatures) -/
+  outFits : ∀ g ∈ L.P.funcs, ∀ e ∈ g.externs.map (·.2), (L.P.func? e.name).isSome →
+    ∀ (i off : Nat) (p : Clif.AbiParam), (locsOf e.sig)[i]? = some (ArgLoc.stack off) →
+      e.sig.params[i]? = some p →
+      off + p.ty.bytes ≤ (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase
+  /-- the base externs create no allocation (needed only when a function of `P` has an
+  outgoing-argument area: the callees' runs keep it free of live CLIF bytes) -/
+  baseNoAlloc : (∃ g ∈ L.P.funcs, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase ≠ 0) →
+    NoAllocEnv L.base
   argRegs : ∀ g ∈ L.P.funcs, (regLocs g.sig).Nodup ∧ (∀ r ∈ regLocs g.sig, r.isArgReg = true) ∧
     ∀ p ∈ g.sig.params, p.ty.width ≤ 64
-  noSret : ∀ g ∈ L.P.funcs, g.sig.params.any (·.purpose == .sret) = false
+  /-- an `sret` function's returns carry its ABI results (the struct pointer: `lowerFunction`
+  appends it to every `return`), checked on the compiled code -/
+  sretRets : ∀ g ∈ L.P.funcs, g.sig.params.any (·.purpose == .sret) = true → ∀ us,
+    (L.A g).vc.RetsSite us → (sigRets g.sig).length ≤ us.length
   /-- scope: the functions called from `P` (at a call site, or declared as an extern) have no
-  stack slots (their frame is the allocator's) -/
+  stack slots and no outgoing-argument area (their frame is the allocator's: only functions no
+  function of `P` calls pass arguments on the stack) -/
   calleeSlots : ∀ g ∈ L.P.funcs, ∀ h, ((∃ info, L.ProgSite g info h) ∨
       ∃ e ∈ g.externs.map (·.2), L.P.func? e.name = some h) →
-    h.slots = [] ∧ (RAFrame.compute (L.A h).vcp (L.A h).rf).size = (L.A h).af.frameSize
+    h.slots = [] ∧ (RAFrame.compute (L.A h).vcp (L.A h).rf).size = (L.A h).af.frameSize ∧
+    (RAFrame.compute (L.A h).vcp (L.A h).rf).intBase = 0
   /-- scope: a call of a function `h` of `P` passes integer arguments in `h`'s parameter
   registers and takes the results from x0.. (the defs past the results: a `try_call`'s exception
   payload registers; checked per call site) -/
@@ -878,7 +1093,7 @@ def Thm (M : Nat) : Prop :=
     Clif.runLoop (Clif.linkEnvN L.P L.base M) (L.P.only g) fuel cs = .returned rvals cm' →
     ∃ (us : List (Reg × Reg)) (outs : List CV) (wf : Arm.ArmState),
       us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
-      PrefixHold rvals outs ∧ MemRel L.F L.syms cm' wf ∧
+      PrefixHold rvals outs ∧ MemRel L.F L.syms cm' wf ∧ (L.A g).vc.RetsSite us ∧
       ∀ G ra s, L.MachEntry M g G ra s w₀ →
         ∃ n, ActRet ra L.F G us outs wf s (runX (L.mach M g) n s)
 
@@ -990,25 +1205,34 @@ end LinkSys
 
 /-! ## A call of a program function -/
 
-theorem allReg_zip : ∀ (ls : List ArgLoc) (vs : List Clif.Val), (∀ l ∈ ls, ∃ r, l = .reg r) →
-    ∀ {i : Nat} {r : Reg} {v : Clif.Val}, (ls.zip vs)[i]? = some (.reg r, v) →
-      (ls.filterMap fun l => match l with | .reg r => some r | .stack _ => none)[i]? = some r ∧
-      ((ls.zip vs).filterMap fun q => match q.1 with | .reg _ => some q.2 | .stack _ => none)[i]? =
+/-- A register-located parameter at position `i` of a signature's locations is at some position
+`j` of the register locations (`regLocs`) and of the register-passed values (`regArgVals`). -/
+theorem reg_zip : ∀ (ls : List ArgLoc) (vs : List Clif.Val) {i : Nat} {r : Reg} {v : Clif.Val},
+    (ls.zip vs)[i]? = some (.reg r, v) → ∃ j : Nat,
+      (ls.filterMap fun l => match l with | .reg r => some r | .stack _ => none)[j]? = some r ∧
+      ((ls.zip vs).filterMap fun q => match q.1 with | .reg _ => some q.2 | .stack _ => none)[j]? =
         some v
-  | [], _, _, _, _, _, h => by simp at h
-  | _ :: _, [], _, _, _, _, h => by simp at h
-  | l :: ls, v0 :: vs, hall, i, r, v, h => by
-    obtain ⟨r0, rfl⟩ := hall l (List.mem_cons_self ..)
+  | [], _, _, _, _, h => by simp at h
+  | _ :: _, [], _, _, _, h => by simp at h
+  | l :: ls, v0 :: vs, i, r, v, h => by
     cases i with
     | zero =>
-      simp only [List.zip_cons_cons, List.getElem?_cons_zero, Option.some.injEq, Prod.mk.injEq,
-        ArgLoc.reg.injEq] at h
+      simp only [List.zip_cons_cons, List.getElem?_cons_zero, Option.some.injEq,
+        Prod.mk.injEq] at h
       obtain ⟨rfl, rfl⟩ := h
-      simp
+      exact ⟨0, by simp, by simp⟩
     | succ i =>
       simp only [List.zip_cons_cons, List.getElem?_cons_succ] at h
-      simp only [List.filterMap_cons, List.zip_cons_cons, List.getElem?_cons_succ]
-      exact allReg_zip ls vs (fun l hl => hall l (List.mem_cons_of_mem _ hl)) h
+      obtain ⟨j, h1, h2⟩ := reg_zip ls vs h
+      cases l with
+      | reg r0 =>
+        refine ⟨j + 1, ?_, ?_⟩
+        · simpa [List.filterMap_cons] using h1
+        · simpa [List.filterMap_cons, List.zip_cons_cons] using h2
+      | stack o =>
+        refine ⟨j, ?_, ?_⟩
+        · simpa [List.filterMap_cons] using h1
+        · simpa [List.filterMap_cons, List.zip_cons_cons] using h2
 
 namespace LinkSys
 
@@ -1054,6 +1278,20 @@ theorem frameDrop_eq (hL : L.Ok) {h : Clif.Function} (hh : h ∈ L.P.funcs) :
     frameDrop (L.A h).af = (L.A h).af.frameSize + 16 := by
   simp [frameDrop, lowerRFunc_frame (hL.compiled h hh).alloc]
 
+theorem mem_of_lookup {α β : Type} [BEq α] [LawfulBEq α] :
+    ∀ {l : List (α × β)} {a : α} {b : β}, l.lookup a = some b → b ∈ l.map (·.2)
+  | [], _, _, h => by simp at h
+  | (x, y) :: l, a, b, h => by
+    simp only [List.lookup] at h
+    split at h
+    · cases h; simp
+    · exact List.mem_cons_of_mem _ (mem_of_lookup h)
+
+/-- The functions a function of `P` calls have no stack slots. -/
+theorem slotFree (hL : L.Ok) : ∀ g ∈ L.P.funcs, ∀ fn e h, g.extern? fn = some e →
+    L.P.func? e.name = some h → h.slots = [] :=
+  fun g hg _ e h he hf => (hL.calleeSlots g hg h (.inr ⟨e, mem_of_lookup he, hf⟩)).1
+
 /-- **A call of a function `h` of `P`** at depth `M` (its whole-program run returns within `M`
 steps) from a world `w` with room for the callee's stack: one VCode outcome of `h`, which the
 linked machine's call realises from every caller state compatible with `w` (`CallerOk`), in
@@ -1061,17 +1299,19 @@ particular from the canonical one. -/
 theorem progCall (hL : L.Ok) {M : Nat} (hM : 0 < M) (ih : L.Thm (M - 1)) {n : String}
     {h : Clif.Function} (hpf : L.P.func? n = some h) (hsl : h.slots = [])
     (hsz : (RAFrame.compute (L.A h).vcp (L.A h).rf).size = (L.A h).af.frameSize)
+    (hib : (RAFrame.compute (L.A h).vcp (L.A h).rf).intBase = 0)
     {uses : List CV} {w : Arm.ArmState} (herr : Arm.r .ERR w = .None)
     (hal : (spv w).toNat % 16 = 0)
     (hroom : frameDrop (L.A h).af + L.K (M - 1) ≤ (spv w).toNat)
     (hdead : ∀ a, StackBelow (frameDrop (L.A h).af + L.K (M - 1)) (spv w) a → L.F a ∧ ¬ L.Img a)
     {vals : List Clif.Val} {cm : Clif.Mem} {cs : Clif.State} {rvals : List Clif.Val}
     {cm' : Clif.Mem} (hmr : MemRel L.F L.syms cm w) (hargs : ArgsAt h.sig vals uses w)
+    (hsav : StackArgsAvoid L.F h.sig vals w)
     (hinit : Clif.initState L.P n vals cm = .ok cs)
     (hrun : Clif.runLoop L.base L.P M cs = .returned rvals cm') :
     ∃ (us : List (Reg × Reg)) (outs : List CV) (wf : Arm.ArmState),
       us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
-      PrefixHold rvals outs ∧ MemRel L.F L.syms cm' wf ∧
+      PrefixHold rvals outs ∧ MemRel L.F L.syms cm' wf ∧ (L.A h).vc.RetsSite us ∧
       ∀ t, L.CallerOk h uses w t → ∃ k,
         (L.hooks M).call (some n) t =
           Arm.set_program (runX (L.mach (M - 1) h) k (enterAt (L.A h) t)) t.program ∧
@@ -1110,7 +1350,7 @@ theorem progCall (hL : L.Ok) {M : Nat} (hM : 0 < M) (ih : L.Thm (M - 1)) {n : St
         rw [L.mem_canon, mem_withImg, if_neg]
         intro hi
         exact (hmr.valid a 1 hv).2 0 (by omega) (by simpa using hL.imgF _ hi)
-      · rw [hL.noOut h hh]; exact outRel_zero _ _ _
+      · rw [hib]; exact outRel_zero _ _ _
       · simp only [w₀]
         rw [r_bodyOf _ _ (by simp) (by simp), r_enterAt _ _ (by simp) (by simp),
           hcOk.world.1 _ (by simp [Masked])]
@@ -1119,10 +1359,21 @@ theorem progCall (hL : L.Ok) {M : Nat} (hM : 0 < M) (ih : L.Thm (M - 1)) {n : St
       obtain ⟨i, hi⟩ := List.mem_iff_getElem?.mp hmem
       cases loc with
       | stack off =>
-        obtain ⟨r, e⟩ := hL.regParams h hh _ (List.of_mem_zip hmem).1
-        cases e
+        simp only
+        have hx29 : Arm.r (.GPR 29#5) w₀ = spv w - 16#64 := by
+          have := x29_bodyOf (L.A h).af (enterAt (L.A h) cn)
+          rw [if_pos hfr, spv_enterAt, hsp0] at this
+          exact this
+        rw [hx29, fp_off_eq]
+        refine ⟨hsav off v hmem, ?_⟩
+        rw [show Arm.read_mem_bytes v.ty.bytes (spv w + BitVec.ofNat 64 off) w₀ =
+            Arm.read_mem_bytes v.ty.bytes (spv w + BitVec.ofNat 64 off) w from
+          read_mem_bytes_congr _ _ (fun k hk => by
+            simp only [w₀, mem_bodyOf, mem_enterAt]
+            rw [L.mem_canon, mem_withImg, if_neg (fun hi => hsav off v hmem k hk (hL.imgF _ hi))])]
+        exact hargs.2.2 off v hmem
       | reg r =>
-        obtain ⟨hr, hv⟩ := allReg_zip _ _ (hL.regParams h hh) hi
+        obtain ⟨i, hr, hv⟩ := reg_zip _ _ hi
         have hlen := hargs.2.1.1
         obtain ⟨u, hu⟩ : ∃ u, uses[i]? = some u := by
           have hi' : i < uses.length := by
@@ -1154,9 +1405,9 @@ theorem progCall (hL : L.Ok) {M : Nat} (hM : 0 < M) (ih : L.Thm (M - 1)) {n : St
       rw [hB] at h1 h2
       exact ⟨by omega, by omega⟩
     · rw [hspw₀, hB, hdrop]; omega
-  obtain ⟨us, outs, wf, hus, hlen, hhold, hmemR, hall⟩ :=
+  obtain ⟨us, outs, wf, hus, hlen, hhold, hmemR, hrs, hall⟩ :=
     ih h hh vals cs w₀ m rvals cm' hWE hm
-  refine ⟨us, outs, wf, hus, hlen, hhold, hmemR, fun t ht => ?_⟩
+  refine ⟨us, outs, wf, hus, hlen, hhold, hmemR, hrs, fun t ht => ?_⟩
   -- the callee's activation from `t`
   let G : BitVec 64 → Prop :=
     fun a => L.F a ∧ ¬ StackBelow (frameDrop (L.A h).af + L.K (M - 1)) (spv w) a
@@ -1177,7 +1428,7 @@ theorem progCall (hL : L.Ok) {M : Nat} (hM : 0 < M) (ih : L.Thm (M - 1)) {n : St
     · rw [hspt]; exact ha.2
     · funext a
       apply propext
-      rw [hL.noOut h hh, hsz, frameWG_noSlots hfr (by rw [hspt, ← hdrop]; exact hroom), ← hdrop, hspt]
+      rw [hib, hsz, frameWG_noSlots hfr (by rw [hspt, ← hdrop]; exact hroom), ← hdrop, hspt]
       constructor
       · rintro (hb | hc | hg)
         · exact (hdead a hb).1
@@ -1320,7 +1571,7 @@ theorem progOs (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g : Clif.Fu
   have ⟨_, n, hdest, hpf⟩ := hsite
   obtain ⟨hh, hname⟩ := Clif.Program.func?_some hpf
   subst hname
-  obtain ⟨hsl, hsz⟩ := hL.calleeSlots g hg h (.inl ⟨info, hsite⟩)
+  obtain ⟨hsl, hsz, hib⟩ := hL.calleeSlots g hg h (.inl ⟨info, hsite⟩)
   obtain ⟨n', Lu, Ld, hinfo, hLu, hLd⟩ := hL.callRegs g hg info h hsite
   subst hinfo
   cases hdest
@@ -1344,12 +1595,12 @@ theorem progOs (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g : Clif.Fu
       Arm.r .ERR ((L.hooks M).call (some h.name) (L.canon h uses w)) = .None :=
     Classical.byContradiction fun hc => by rw [if_neg hc] at hx; cases hx
   rw [if_pos hcond] at hx
-  obtain ⟨⟨hM, herrw, halw, hroom, hdead, vals, cm, cs, rvals, cm', hmr, hargs, hinit, hrun⟩,
+  obtain ⟨⟨hM, herrw, halw, hroom, hdead, vals, cm, cs, rvals, cm', hmr, hargs, hsav, hinit, hrun⟩,
     -⟩ := hcond
   simp only [Option.some.injEq, Prod.mk.injEq] at hx
   obtain ⟨rfl, rfl⟩ := hx
-  obtain ⟨us, outsV, wf, hus, hlen, hhold, hmemR, hcall⟩ :=
-    L.progCall hL hM (ih hM) hpf hsl hsz herrw halw hroom hdead hmr hargs hinit hrun
+  obtain ⟨us, outsV, wf, hus, hlen, hhold, hmemR, hrs, hcall⟩ :=
+    L.progCall hL hM (ih hM) hpf hsl hsz hib herrw halw hroom hdead hmr hargs hsav hinit hrun
   -- the caller state is compatible with the canonical one
   have hcOk : L.CallerOk h uses w t := by
     refine ⟨hsw, fun a ha => (hG a (himgG a ha)).trans (himgS a ha), fun r hr => ?_,
@@ -1433,10 +1684,13 @@ theorem progOs (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g : Clif.Fu
       simp [Clif.State.bottom, hce.callers, hce.func]
     rw [hbot] at hrt
     have hlr : (sigRets h.sig).length ≤ us.length := by
-      rw [sigRets_of_noSret (hL.noSret h hh), hlen]
-      have := congrArg List.length hrt
-      simp only [List.length_map, Clif.AbiParam.tys] at this
-      rw [← this]; exact hhold.1
+      cases hsr : h.sig.params.any (·.purpose == .sret) with
+      | true => exact hL.sretRets h hh hsr us hrs
+      | false =>
+        rw [sigRets_of_noSret hsr, hlen]
+        have := congrArg List.length hrt
+        simp only [List.length_map, Clif.AbiParam.tys] at this
+        rw [← this]; exact hhold.1
     have hju : j < us.length := by omega
     have hus_j : us[j]? = some ((us[j]'hju).1, Reg.x j) := by
       have := congrArg (·[j]?) hus
@@ -1656,7 +1910,7 @@ theorem xCallsOk (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g : Clif.
       rcases hd with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
       · exact L.X_prog hpf _ _
       · simp only [X, lo64_ofX, (L.find_sym hL ext.name).1 h hpf, hname]
-    obtain ⟨⟨hmemR0, hslot, -⟩, hsp, herrw⟩ := hmr
+    obtain ⟨⟨hmemR0, hslot, hout⟩, hsp, herrw⟩ := hmr
     have hd := hL.depth h hh
     have hroom' : frameDrop (L.A h).af + L.K (M - 1) ≤ (spv w).toNat := by
       rw [hsp]; have := L.K_succ M hM; omega
@@ -1664,15 +1918,39 @@ theorem xCallsOk (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g : Clif.
         L.F a ∧ ¬ L.Img a := fun a ha =>
       hdead a (by rw [← hsp]; exact stackBelow_mono ha (by have := L.K_succ M hM; omega))
     rw [hsig] at hargs
-    obtain ⟨hsl, hsz⟩ := hL.calleeSlots g hg h (.inr ⟨ext, hin, hpf⟩)
-    obtain ⟨us, outsV, wf, hus, hlen, hhold, hmemR, hcall⟩ :=
-      L.progCall hL hM (ih hM) hpf hsl hsz herrw (by rw [hsp]; exact halign) hroom' hdead' hmemR0
-        hargs hinit hret
+    obtain ⟨hsl, hsz, hib⟩ := hL.calleeSlots g hg h (.inr ⟨ext, hin, hpf⟩)
+    -- the stack-passed arguments are in the caller's outgoing area, outside `F`
+    have hsav : StackArgsAvoid L.F h.sig vals w := by
+      intro off v hm k hk
+      obtain ⟨i, hi⟩ := List.mem_iff_getElem?.mp hm
+      rw [List.getElem?_zip_eq_some] at hi
+      obtain ⟨hli, hvi⟩ := hi
+      have hty := (clifEntry_initState (f := h) (by rw [hname]; exact hpf)
+        (by rw [hname]; exact hinit)).sig
+      obtain ⟨p, hp⟩ : ∃ p, h.sig.params[i]? = some p := by
+        have := congrArg (·[i]?) hty
+        simp only [List.getElem?_map, hvi, Option.map_some] at this
+        cases hp : h.sig.params[i]? with
+        | none => rw [hp] at this; cases this
+        | some p => exact ⟨p, rfl⟩
+      have hvp : v.ty = p.ty := by
+        have := congrArg (·[i]?) hty
+        simp only [List.getElem?_map, hvi, hp, Option.map_some, Option.some.injEq] at this
+        exact this
+      have hfit := hL.outFits g hg ext hin (by simp [hpf]) i off p (by rw [hsig]; exact hli)
+        (by rw [hsig]; exact hp)
+      rw [hvp] at hk
+      rw [add_ofNat_add]
+      have hav : Avoids L.F (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase (spv w) := hout.2.1
+      exact hav (off + k) (by omega)
+    obtain ⟨us, outsV, wf, hus, hlen, hhold, hmemR, -, hcall⟩ :=
+      L.progCall hL hM (ih hM) hpf hsl hsz hib herrw (by rw [hsp]; exact halign) hroom' hdead'
+        hmemR0 hargs hsav hinit hret
     obtain ⟨kc, hc_eq, hc_ret⟩ := hcall _ (L.callerOk_canon hL hh args w)
     have hcond : L.Cond M h args w ∧
         Arm.r .ERR ((L.hooks M).call (some ext.name) (L.canon h args w)) = .None := by
       refine ⟨⟨hM, herrw, by rw [hsp]; exact halign, hroom', hdead', vals, cm, cs, rvals, cm',
-        hmemR0, hargs, by rw [hname]; exact hinit, hret⟩, ?_⟩
+        hmemR0, hargs, hsav, by rw [hname]; exact hinit, hret⟩, ?_⟩
       rw [hc_eq, r_set_program]; exact hc_ret.ret.err
     have hspT : spv ((L.hooks M).call (some ext.name) (L.canon h args w)) = spv w := by
       rw [hc_eq]
@@ -1682,9 +1960,9 @@ theorem xCallsOk (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g : Clif.
       simp only [spv] at this
       rw [this, r_enterAt _ _ (by simp) (by simp)]
       exact (L.callerOk_canon hL hh args w).world.1 _ (by simp [Masked])
-    have hlr : (sigRets h.sig).length = rvals.length := by
-      rw [sigRets_of_noSret (hL.noSret h hh), hrl, hsig]
-    refine ⟨_, _, by rw [hx_eq, progX, if_pos hcond], ?_, ⟨by simp [hlr], fun j v x hv hx => ?_⟩,
+    have hlr : rvals.length ≤ (sigRets h.sig).length := by
+      rw [hrl, hsig]; exact returns_le_sigRets _
+    refine ⟨_, _, by rw [hx_eq, progX, if_pos hcond], ?_, ⟨by simpa using hlr, fun j v x hv hx => ?_⟩,
       ⟨⟨⟨fun a b hv hb => ?_, hmemR.valid, hmemR.symbols⟩, ?_, ?_⟩, ?_, hcond.2⟩⟩
     · rw [List.length_map, List.length_range, hsig]
     · -- the results
@@ -1706,7 +1984,16 @@ theorem xCallsOk (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g : Clif.
       simp only [Arm.read_mem, Arm.read_store]
       rw [hc_eq, mem_set_program, hc_ret.mem _ (by simpa using (hmemR.valid a 1 hv).2 0 (by omega))]
     · simpa [Rel.slotReg, hspT] using hslot
-    · rw [hL.noOut g hg]; exact outRel_zero _ _ _
+    · -- the caller's outgoing area: the callee's run creates no allocation there
+      by_cases hib0 : (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase = 0
+      · rw [hib0]; exact outRel_zero _ _ _
+      · refine ⟨hout.1, by rw [hspT]; exact hout.2.1, fun a n hv k hk j hj => ?_⟩
+        rw [hspT]
+        have hcs := (initState_noSlots hpf hsl hinit).2
+        have hv0 := runLoop_valid hL.linkable.free (hL.baseNoAlloc ⟨g, hg, hib0⟩) (L.slotFree hL) M
+          cs rvals cm' (runInv_entry hh (clifEntry_initState (by rw [hname]; exact hpf) (by rw [hname]; exact hinit))) hret a n hv
+        rw [hcs] at hv0
+        exact hout.2.2 a n hv0 k hk j hj
     · rw [hspT, hsp]
 
 end LinkSys
@@ -1733,8 +2020,8 @@ theorem thm_of (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) : L.Thm M :=
     (by rw [indSigs_nil_of_linkFree (hL.linkable.free g hg)]; exact xCallsIndOk_nil _ _ _)
     (fun n b hn => hL.symOk n b hn) rfl hWE.clif hWE.rel hWE.args
     (trapsExplicit_of_returned hfree hrun) fuel
-  obtain ⟨us, outs, wf, hus, hlen, hhold, hmem, hall⟩ := h.1 rvals cm' hrun
-  refine ⟨us, outs, wf, hus, hlen, hhold, hmem, fun G ra s hME => ?_⟩
+  obtain ⟨us, outs, wf, hus, hlen, hhold, hmem, hrs, hall⟩ := h.1 rvals cm' hrun
+  refine ⟨us, outs, wf, hus, hlen, hhold, hmem, hrs, fun G ra s hME => ?_⟩
   exact hall (L.hooks M) G (L.A g).base ra s ⟨hME.abi, hME.stack, hME.gfree, hME.hF,
     L.calleeOk hL ih hg hME,
     fun _ => L.calleeTryOk hL ih hg hME,
@@ -1767,6 +2054,7 @@ theorem backend_correct_program (L : LinkSys) (hL : L.Ok) {f : Clif.Function}
     (hgfree : ∀ a, L.Img a → ¬ StackBelow (frameDrop (L.A f).af + L.K M) (spv s) a)
     (himg : ∀ a, L.Img a → s.mem a = L.imgMem a)
     (hbe : BodyEntry (L.A f).af s w₀) (hargs : ArgsIn f.sig args s) (hcs : ClifEntry f args cs)
+    (hsav : StackArgsAvoid L.Img f.sig args s)
     (hrel : Rel.holds ⟨L.F, L.syms, (L.A f).af.slotBase,
       (RAFrame.compute (L.A f).vcp (L.A f).rf).intBase⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicit (Clif.linkEnvN L.P L.base M) (L.P.only f) cs) :
@@ -1780,9 +2068,11 @@ theorem backend_correct_program (L : LinkSys) (hL : L.Ok) {f : Clif.Function}
   have hWE : L.WorldEntry M f args cs w₀ := by
     refine ⟨hcs, ⟨hrel, rfl, ?_⟩, ?_, ?_, ?_, ?_⟩
     · rw [hbe.other .ERR (by simp [Masked]) (by simp) (by simp)]; exact hent.err
-    · refine argsAtEntry_body hfr (entryRegs_of_check hc.lowerOk) hbe hargs fun off v hm => ?_
-      obtain ⟨r, e⟩ := hL.regParams f hf _ (List.of_mem_zip hm).1
-      cases e
+    · refine argsAtEntry_body hfr (entryRegs_of_check hc.lowerOk) hbe hargs fun off v hm k hk hk' => ?_
+      rw [hF] at hk'
+      rcases hk' with hw | hi
+      · exact stackArgsAvoid_frameW hc hres hent hargs off v hm k hk hw
+      · exact hsav off v hm k hk hi
     · rw [hbe.sp, hB]; omega
     · intro a ha
       rw [hbe.sp] at ha
@@ -1808,7 +2098,7 @@ theorem backend_correct_program (L : LinkSys) (hL : L.Ok) {f : Clif.Function}
   | returned vals cm =>
     obtain ⟨m, hm⟩ := hlink (by rw [ho]; exact fun _ h => nomatch h) (by rw [ho]; exact fun h => nomatch h)
     rw [ho] at hm
-    obtain ⟨us, outs, wf, hus, hlen, hhold, hmemR, hall⟩ :=
+    obtain ⟨us, outs, wf, hus, hlen, hhold, hmemR, -, hall⟩ :=
       L.thm hL M f hf args cs w₀ m vals cm hWE hm
     obtain ⟨n, hret⟩ := hall L.Img ra s hME
     exact armRefines_of_actRet hus hlen hhold hmemR hret
@@ -1837,6 +2127,7 @@ theorem backend_correct_program_returned (L : LinkSys) (hL : L.Ok) {f : Clif.Fun
     (hgfree : ∀ a, L.Img a → ¬ StackBelow (frameDrop (L.A f).af + L.K M) (spv s) a)
     (himg : ∀ a, L.Img a → s.mem a = L.imgMem a)
     (hbe : BodyEntry (L.A f).af s w₀) (hargs : ArgsIn f.sig args s) (hcs : ClifEntry f args cs)
+    (hsav : StackArgsAvoid L.Img f.sig args s)
     (hrel : Rel.holds ⟨L.F, L.syms, (L.A f).af.slotBase,
       (RAFrame.compute (L.A f).vcp (L.A f).rf).intBase⟩ f cs.frame.slots cs.mem w₀)
     {vals : List Clif.Val} {cm : Clif.Mem}
@@ -1848,7 +2139,7 @@ theorem backend_correct_program_returned (L : LinkSys) (hL : L.Ok) {f : Clif.Fun
   rw [hrun] at hm
   have hfree : Clif.LinkFree cs.frame.func := by rw [hcs.func]; exact hL.linkable.free f hf
   rw [← hrun]
-  exact backend_correct_program L hL hf M hent hres hF hgfree himg hbe hargs hcs hrel
+  exact backend_correct_program L hL hf M hent hres hF hgfree himg hbe hargs hcs hsav hrel
     (trapsExplicit_of_returned hfree hm)
 
 end E2E

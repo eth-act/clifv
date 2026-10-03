@@ -163,6 +163,10 @@ theorem iselSim_relW {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : 
   · rw [h] at hrun
     exact hrun
 
+/-- The VCode `vc` has the return `rets us` (in one of its blocks). -/
+def _root_.Backend.VCode.RetsSite (vc : VCode) (us : List (Reg × Reg)) : Prop :=
+  ∃ (b : Nat) (vb : VBlock) (k : Nat), vc.blocks[b]? = some vb ∧ vb.insts[k]? = some (MInst.rets us)
+
 /-- **The per-function theorem with the final world** (see the module doc): for a returning
 CLIF run, one VCode outcome (`us`, `outs`, `w`; related to the CLIF results and memory) that
 every activation entered with the body-entry world `w₀` realises (`ActRet`); for a trapping run,
@@ -188,7 +192,7 @@ theorem backend_correct_world {p : Clif.Program} {f : Clif.Function} {k : Nat} {
     (∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
       ∃ (us : List (Reg × Reg)) (outs : List CV) (w : Arm.ArmState),
         us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
-        PrefixHold vals outs ∧ MemRel F syms cm w ∧
+        PrefixHold vals outs ∧ MemRel F syms cm w ∧ vc.RetsSite us ∧
         ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
           ActEntry vcp rf af fa fb K F G X H base ra s w₀ →
           ∃ n, ActRet ra F G us outs w s (runX (ArmStepX X H fa) n s)) ∧
@@ -209,7 +213,10 @@ theorem backend_correct_world {p : Clif.Program} {f : Clif.Function} {k : Nat} {
     exact h
   refine ⟨fun vals cm hrun => ?_, fun c' hrun H G base ra s he => ?_⟩
   · obtain ⟨us, outs, w, hv, hus, hlen, hhold, hmemR⟩ := hI.1 vals cm hrun
-    refine ⟨us, outs, w, hus, hlen, hhold, hmemR, fun H G base ra s he => ?_⟩
+    have hrs : vc.RetsSite us := by
+      obtain ⟨b, k, ρ, w₁, vb, ops, outs', -, hvb, hk, -⟩ := hv
+      exact ⟨b, vb, k, hvb, hk⟩
+    refine ⟨us, outs, w, hus, hlen, hhold, hmemR, hrs, fun H G base ra s he => ?_⟩
     obtain ⟨n, h1, h2, h3, h4, h5, h6⟩ := (hM6 H G base ra s he).1 us outs w (hP.1 _ _ _ hv)
     exact ⟨n, ⟨h1, h2, h3, h4, h5, h6⟩⟩
   · exact (hM6 H G base ra s he).2 c' (hP.2 c' (hI.2 c' hrun))
