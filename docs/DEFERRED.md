@@ -119,11 +119,12 @@ premises. Deferred, in order:
   `backend_correct_world`), frame locality (`G` kept), the induction on depth (`LinkSys.thm`).
   Witness done (`E2E.LinkWitness.backend_correct_program_witness`, `FV/E2E/NonVacuityLink.lean`;
   it found `raCall` unsatisfiable for every program with a call, now stated per call-site
-  callee). Remaining: widen the scope: directly self-recursive functions (`raCall`), callees
+  callee). Widened (agent/link-widen, e2e.md "Widening"): `try_call` between program functions
+  (normal returns). Remaining: widen the scope: directly self-recursive functions (`raCall`), callees
   with stack slots
   (slot-placement oracle or relocation invariance), stack-passed arguments (the callee's
-  outgoing area is caller garbage: needs it in `F` or a write-before-read argument), `try_call`
-  (`CalleeTryOk` from `ActRet`), `blr` call sites, float parameters; a depth-free machine
+  outgoing area is caller garbage: needs it in `F` or a write-before-read argument),
+  `blr` call sites, float parameters; a depth-free machine
   (monotonicity of `linkedCall` in the depth, needs base hooks preserving errors).
 - **Exact world of a call.** (superseded for program callees by agent/arm-link) `X.call` is a function of the arguments and the world and must give
   the exact def registers and world of the hooked callee; a compiled callee's theorem fixes only

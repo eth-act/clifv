@@ -35,7 +35,7 @@ structure ActEntry (vcp : VCode) (rf : RFunc) (af : AFunc) (fa : FnAsm) (fb : Fn
   gfree : ∀ a, G a → ¬ StackBelow (frameDrop af + K) (spv s) a
   hF : frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s = F
   calls : CalleeOkG F K G s (CallPc fa base) X H vcp.CallSite
-  tries : vcp.hasTryCall = true → CalleeTryOk F X H vcp.TrySite
+  tries : vcp.hasTryCall = true → CalleeTryOkG F K G s (CallPc fa base) X H vcp.TrySite
   tls : vcp.hasTls = true → TlsOk F K X H
   body : BodyEntryW F vcp.EntryArg af s w₀
 

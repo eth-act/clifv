@@ -3,7 +3,7 @@ import FV.E2E.LinkArm
 /-! # Non-vacuity of `backend_correct_program` (docs/contracts/e2e.md, "Non-vacuity")
 
 A concrete linked program for which every premise of `E2E.backend_correct_program` holds:
-`P = {f, g, h}` (`f` calls `g`, `g` calls `h`, `colocated`, integer register arguments, no stack
+`P = {f, g, h}` (`f` calls `g` by a `try_call`, `g` calls `h`, `colocated`, integer register arguments, no stack
 slots), parsed from the embedded source `src`, compiled by the backend's pipeline
 (`lowerFunction`, `prepare`, regalloc2's allocation `raOut` — the output of `lean-regalloc` on the
 pipeline's input for this file, rebuilt by `buildRFunc` and accepted by `checkAlloc` —,
@@ -25,30 +25,34 @@ namespace E2E.LinkWitness
 
 open Backend Backend.Proof Backend.Proof.Driver
 
-def src : String := "function %h(i64) -> i64 {
+def src : String := "function %h(i64) -> i64 system_v {
 block0(v0: i64):
     v1 = iconst.i64 1
     v2 = iadd v0, v1
     return v2
 }
 
-function %g(i64) -> i64 {
-    fn0 = colocated %h(i64) -> i64
+function %g(i64) -> i64 system_v {
+    fn0 = colocated %h(i64) -> i64 system_v
 block0(v0: i64):
     v1 = call fn0(v0)
     v2 = iadd v1, v0
     return v2
 }
 
-function %f(i64) -> i64 {
-    fn0 = colocated %g(i64) -> i64
+function %f(i64) -> i64 system_v {
+    sig0 = (i64) -> i64 system_v
+    fn0 = colocated %g(i64) -> i64 system_v
 block0(v0: i64):
-    v1 = call fn0(v0)
+    try_call fn0(v0), sig0, block1(ret0), [ tag0: block2(exn0) ]
+block1(v1: i64):
     return v1
+block2(v2: i64):
+    return v2
 }
 "
 
-def raOut : String := "{\"functions\":[{\"allocs\":[[\"x0\"],[\"x2\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"h\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x0\",\"x19\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x0\",\"inst\":1,\"pos\":\"before\",\"to\":\"x19\"}],\"name\":\"g\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"f\",\"num_spillslots\":0,\"ok\":true}]}"
+def raOut : String := "{\"functions\":[{\"allocs\":[[\"x0\"],[\"x2\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"h\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x0\",\"x19\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x0\",\"inst\":1,\"pos\":\"before\",\"to\":\"x19\"}],\"name\":\"g\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x0\",\"x0\",\"x1\"],[],[\"x0\"],[],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"f\",\"num_spillslots\":0,\"ok\":true}]}"
 
 deriving instance Inhabited for Art
 
@@ -148,14 +152,15 @@ def decD (ds : List (Reg × Reg)) : List (Reg × Nat) :=
   ds.map fun p => (p.1, match p.2 with | .vreg n _ => n | _ => 0)
 
 /-- A call site: a `bl` of a function `h` of `P`, arguments in `h`'s parameter registers, results
-from x0... -/
+from x0.. (then, at a `try_call`, the exception payload registers). -/
 def siteOk (P : Clif.Program) (g : Clif.Function) (info : CallInfo) : Bool :=
   match info.dest with
   | .sym n => match P.func? n with
     | some h => decide (h ≠ g) && decide (info.uses = retPairs (decU info.uses)) &&
         decide (info.defs = callDefs (decD info.defs)) &&
         decide ((decU info.uses).map (·.2) = regLocs h.sig) &&
-        decide ((decD info.defs).map (·.1) = (List.range (sigRets h.sig).length).map Reg.x)
+        decide (((decD info.defs).map (·.1)).take (sigRets h.sig).length =
+          (List.range (sigRets h.sig).length).map Reg.x)
     | none => false
   | .reg _ => false
 
@@ -163,7 +168,8 @@ theorem siteOk_sound {P : Clif.Program} {g : Clif.Function} {info : CallInfo}
     (h : siteOk P g info = true) :
     ∃ n h', info.dest = .sym n ∧ P.func? n = some h' ∧ h' ≠ g ∧ ∃ Lu Ld,
       info = ⟨.sym n, retPairs Lu, callDefs Ld⟩ ∧ Lu.map (·.2) = regLocs h'.sig ∧
-      Ld.map (·.1) = (List.range (sigRets h'.sig).length).map Reg.x := by
+      (Ld.map (·.1)).take (sigRets h'.sig).length =
+        (List.range (sigRets h'.sig).length).map Reg.x := by
   obtain ⟨d, us, ds⟩ := info
   unfold siteOk at h
   cases d with
@@ -175,6 +181,22 @@ theorem siteOk_sound {P : Clif.Program} {g : Clif.Function} {info : CallInfo}
       simp only [hf, Bool.and_eq_true, decide_eq_true_eq] at h
       obtain ⟨⟨⟨⟨hne, hu⟩, hd⟩, h1⟩, h2⟩ := h
       exact ⟨n, h', rfl, hf, hne, _, _, by rw [← hu, ← hd], h1, h2⟩
+
+/-- A `try_call` of a function `h` of `P` takes at most `h`'s results. -/
+def tryB (P : Clif.Program) : MInst → Bool
+  | .tryCall info ti => match info.dest with
+    | .sym n => match P.func? n with
+      | some h => decide (ti.rets ≤ (sigRets h.sig).length)
+      | none => true
+    | .reg _ => true
+  | _ => true
+
+theorem tryB_sound {P : Clif.Program} {vc : VCode} (h : allInsts vc (tryB P) = true)
+    {info : CallInfo} {ti : TryInfo} (hs : vc.TrySite info ti) {n : String} {h' : Clif.Function}
+    (hd : info.dest = .sym n) (hf : P.func? n = some h') : ti.rets ≤ (sigRets h'.sig).length := by
+  obtain ⟨b, vb, k, hb, hk⟩ := hs
+  have := allInsts_sound h hb hk
+  simpa [tryB, hd, hf] using this
 
 def isRegLoc : ArgLoc → Bool
   | .reg _ => true
@@ -282,7 +304,7 @@ def chk (g : Clif.Function) : Bool :=
   let a := A g
   (pipe g (idx g) (baseOf g)).toBool && (lowerCheck g a.vc && (prepCheck a.vc a.vcp &&
   ((checkAlloc a.vcp a.rf).toBool && (formsCoveredB ⟨a.fa.k, a.af.slotBase⟩ a.vcp &&
-  (g.blocks.all (fun B => !B.term.isTry) && ((RAFrame.compute a.vcp a.rf).intBase == 0 &&
+  (allInsts a.vcp (tryB P) && ((RAFrame.compute a.vcp a.rf).intBase == 0 &&
   ((locsOf g.sig).all isRegLoc && (decide (regLocs g.sig).Nodup &&
   ((regLocs g.sig).all (·.isArgReg) && (g.sig.params.all (fun p => decide (p.ty.width ≤ 64)) &&
   ((g.sig.params.any (·.purpose == .sret) == false) && (decide (g.slots = []) &&
@@ -361,7 +383,7 @@ structure Facts (g : Clif.Function) : Prop where
   prepOk : prepCheck (A g).vc (A g).vcp = true
   check : checkAlloc (A g).vcp (A g).rf = .ok ()
   covered : FormsCovered ⟨(A g).fa.k, (A g).af.slotBase⟩ (A g).vcp
-  noTry : ∀ B ∈ g.blocks, B.term.isTry = false
+  tries : allInsts (A g).vcp (tryB P) = true
   noOut : (RAFrame.compute (A g).vcp (A g).rf).intBase = 0
   regParams : ∀ l ∈ locsOf g.sig, ∃ r, l = .reg r
   nodup : (regLocs g.sig).Nodup
@@ -460,19 +482,26 @@ theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
   have site : ∀ g ∈ P.funcs, ∀ info h, (L F).ProgSite g info h →
       h ∈ P.funcs ∧ h ≠ g ∧ ∃ n Lu Ld, info = ⟨.sym n, retPairs Lu, callDefs Ld⟩ ∧
         Lu.map (·.2) = regLocs h.sig ∧
-        Ld.map (·.1) = (List.range (sigRets h.sig).length).map Reg.x := by
+        (Ld.map (·.1)).take (sigRets h.sig).length = (List.range (sigRets h.sig).length).map Reg.x := by
     intro g hg info h ⟨hs, n, hd, hf⟩
     obtain ⟨n', h', hd', hf', hne, Lu, Ld, he, h1, h2⟩ := siteOk_sound (site_sound (facts hg).sites hs)
     rw [hd] at hd'; cases hd'
     have : h' = h := by simp only [L] at hf; rw [hf] at hf'; cases hf'; rfl
     subst this
     exact ⟨(Clif.Program.func?_some hf').1, hne, n, Lu, Ld, he, h1, h2⟩
+  have noBase : ∀ g ∈ P.funcs, ∀ info, (A g).vcp.CallSite info → ¬ (L F).BaseDest (destOf info) := by
+    intro g hg info hs hb
+    obtain ⟨n, h', hd, hf, -⟩ := siteOk_sound (site_sound (facts hg).sites hs)
+    simp only [destOf, hd, LinkSys.BaseDest] at hb
+    rcases hb with hb | ⟨n', hn, hb⟩
+    · cases hb
+    · cases hn; simp only [L] at hb; rw [hf] at hb; cases hb
   refine
     { linkable := ⟨hnames, fun g hg => (facts hg).free⟩
       subset := fun g hg => ⟨?_, (facts hg).subsetE, ?_, ?_, (facts hg).abi, ?_⟩
       compiled := fun g hg => ?_
       covered := fun g hg => (facts hg).covered
-      noTry := fun g hg => (facts hg).noTry
+      tryRets := fun g hg info ti h hs ⟨_, n, hd, hf⟩ => tryB_sound (facts hg).tries hs hd hf
       noOut := fun g hg => (facts hg).noOut
       regParams := fun g hg => (facts hg).regParams
       argRegs := fun g hg => ⟨(facts hg).nodup, (facts hg).argReg, (facts hg).width⟩
@@ -495,7 +524,8 @@ theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
       basePc := fun d s _ _ _ => by simp [L, Hb, Arm.r_of_w_same]
       baseExt := fun d uses w outs w' _ hx => by simp [L, Xb] at hx
       baseX := fun g hg F' slotOff out c => ?_
-      baseTls := fun g hg ht => absurd ht (by simp [L, (facts hg).tls]) }
+      baseTls := fun g hg ht => absurd ht (by simp [L, (facts hg).tls])
+      baseTry := fun g hg F' _ info _ hs => absurd hs.2 (noBase g hg info hs.1.callSite) }
   · simp [L, Clif.Program.only, Clif.Program.func?]
   · intro b _ st _ fn args _ e he
     have hne := (facts hg).extName e (lookup_mem he)
@@ -520,11 +550,7 @@ theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
     exact raCallB_sound (facts hg).ra hpc h hh hne
   · simp only [raStarB, List.all_eq_true, List.mem_range, bne_iff_ne] at hstar
     exact hstar h hh k hk
-  · obtain ⟨n, h', hd, hf, -⟩ := siteOk_sound (site_sound (facts hg).sites hs)
-    simp only [destOf, hd, LinkSys.BaseDest] at hb
-    rcases hb with hb | ⟨n', hn, hb⟩
-    · cases hb
-    · cases hn; simp only [L] at hb; rw [hf] at hb; cases hb
+  · exact absurd hb (noBase g hg info hs)
   · intro ext hext
     simp only [L, List.mem_filter, Option.isNone_iff_eq_none] at hext
     obtain ⟨hm, hnone⟩ := hext
@@ -672,22 +698,41 @@ theorem callsB_sound {vc : VCode} {n : String} (h : callsB vc n = true) :
       of_decide_eq_true hd⟩
   · simp
 
-/-- `f` calls `g` and `g` calls `h` (in their compiled code). -/
+/-- `vc` has a `try_call` of the symbol `n`. -/
+def tryCallsB (vc : VCode) (n : String) : Bool :=
+  vc.blocks.any fun vb => vb.insts.any fun i => match i with
+    | .tryCall info _ => decide (info.dest = .sym n)
+    | _ => false
+
+theorem tryCallsB_sound {vc : VCode} {n : String} (h : tryCallsB vc n = true) :
+    ∃ info ti, vc.TrySite info ti ∧ info.dest = .sym n := by
+  simp only [tryCallsB, Array.any_eq_true] at h
+  obtain ⟨b, hb, k, hk, hi⟩ := h
+  revert hi
+  split
+  · rename_i info ti e
+    intro hd
+    exact ⟨info, ti, ⟨b, _, k, Array.getElem?_eq_getElem hb, by rw [Array.getElem?_eq_getElem hk, e]⟩,
+      of_decide_eq_true hd⟩
+  · simp
+
+/-- `f` calls `g` by a `try_call` and `g` calls `h` (in their compiled code). -/
 def callChainB : Bool :=
-  callsB (A fF).vcp "g" && callsB (A fG).vcp "h" &&
+  tryCallsB (A fF).vcp "g" && callsB (A fG).vcp "h" &&
   decide (P.func? "g" = some fG) && decide (P.func? "h" = some fH)
 
 theorem callChainB_true : callChainB = true := by native_decide
 
-/-- **Non-vacuity of `backend_correct_program`**: for the program `P = {f, g, h}` (`f` calls `g`,
-`g` calls `h`: a caller and a non-leaf callee of the program), compiled by the backend's
-pipeline (regalloc2's allocation, accepted by `checkAlloc`), linked at `0x30000`, `0x20000`,
-`0x10000`, every premise of the theorem holds — `L.Ok` and the entry premises of `f` on the
-argument `41` — and the theorem gives: the linked Arm machine refines `f`'s CLIF run, which
-returns `83`. -/
+/-- **Non-vacuity of `backend_correct_program`**: for the program `P = {f, g, h}` (`f` calls `g`
+by a `try_call` with a result, `g` calls `h`: a caller and a non-leaf callee of the program),
+compiled by the backend's pipeline (regalloc2's allocation, accepted by `checkAlloc`), linked at
+`0x30000`, `0x20000`, `0x10000`, every premise of the theorem holds — `L.Ok` and the entry
+premises of `f` on the argument `41` — and the theorem gives: the linked Arm machine refines
+`f`'s CLIF run, which returns `83`. -/
 theorem backend_correct_program_witness :
     (L F0).Ok ∧ fF ∈ (L F0).P.funcs ∧ fG ∈ (L F0).P.funcs ∧ fH ∈ (L F0).P.funcs ∧
-    (∃ info, (L F0).ProgSite fF info fG) ∧ (∃ info, (L F0).ProgSite fG info fH) ∧
+    (∃ info ti, (A fF).vcp.TrySite info ti ∧ (L F0).ProgSite fF info fG) ∧
+    (∃ info, (L F0).ProgSite fG info fH) ∧
     run0 = .returned [⟨.i64, 83#64⟩] (retMem run0) ∧
     ArmRefines (A fF).fb (A fF).base 8 ((L F0).mach M0 fF) s0 run0 := by
   have hF : ∀ a, Img P A a → F0 a := fun a ha => .inr ha
@@ -714,8 +759,8 @@ theorem backend_correct_program_witness :
     exact hbound fF (by simp [P])
   have hsp : spv s0 = sp0 := by simp [s0, spv, Arm.r_of_w_different, Arm.r_of_w_same]
   refine ⟨hL, hfF, by simp [L, P], by simp [L, P], ?_, ?_, hrun, ?_⟩
-  · obtain ⟨info, hs, hd⟩ := callsB_sound hcf
-    exact ⟨info, hs, "g", hd, hpg⟩
+  · obtain ⟨info, ti, hs, hd⟩ := tryCallsB_sound hcf
+    exact ⟨info, ti, hs, hs.callSite, "g", hd, hpg⟩
   · obtain ⟨info, hs, hd⟩ := callsB_sound hcg
     exact ⟨info, hs, "h", hd, hph⟩
   rw [hrun]

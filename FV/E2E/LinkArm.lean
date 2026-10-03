@@ -773,8 +773,6 @@ structure Ok : Prop where
   compiled : ∀ g ∈ L.P.funcs, Compiled g (L.A g).k (L.A g).vc (L.A g).vcp (L.A g).rf
     (L.A g).af (L.A g).fa (L.A g).fb
   covered : ∀ g ∈ L.P.funcs, FormsCovered ⟨(L.A g).fa.k, (L.A g).af.slotBase⟩ (L.A g).vcp
-  /-- scope: no `try_call` -/
-  noTry : ∀ g ∈ L.P.funcs, ∀ B ∈ g.blocks, B.term.isTry = false
   /-- scope: no stack-passed call arguments (no outgoing-argument area) -/
   noOut : ∀ g ∈ L.P.funcs, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase = 0
   /-- scope: parameters in registers (distinct argument registers), no `sret` -/
@@ -788,10 +786,15 @@ structure Ok : Prop where
       ∃ e ∈ g.externs.map (·.2), L.P.func? e.name = some h) →
     h.slots = [] ∧ (RAFrame.compute (L.A h).vcp (L.A h).rf).size = (L.A h).af.frameSize
   /-- scope: a call of a function `h` of `P` passes integer arguments in `h`'s parameter
-  registers and takes the results from x0.. (checked per call site) -/
+  registers and takes the results from x0.. (the defs past the results: a `try_call`'s exception
+  payload registers; checked per call site) -/
   callRegs : ∀ g ∈ L.P.funcs, ∀ info h, L.ProgSite g info h →
     ∃ n Lu Ld, info = ⟨.sym n, retPairs Lu, callDefs Ld⟩ ∧ Lu.map (·.2) = regLocs h.sig ∧
-      Ld.map (·.1) = (List.range (sigRets h.sig).length).map Reg.x
+      (Ld.map (·.1)).take (sigRets h.sig).length = (List.range (sigRets h.sig).length).map Reg.x
+  /-- a `try_call` of a function `h` of `P` takes at most `h`'s results (the compiler's
+  `ti.rets` is their number) -/
+  tryRets : ∀ g ∈ L.P.funcs, ∀ info ti h, (L.A g).vcp.TrySite info ti → L.ProgSite g info h →
+    ti.rets ≤ (sigRets h.sig).length
   /-- scope: every call site of the compiled code is a `bl` -/
   noBlr : ∀ g ∈ L.P.funcs, ∀ info, (L.A g).vcp.CallSite info → ∃ n, info.dest = .sym n
   /-- the link-time address of a function of `P` is no other symbol's -/
@@ -832,6 +835,10 @@ structure Ok : Prop where
     ((g.externs.map (·.2)).filter fun e => (L.P.func? e.name).isNone)
     (RelW ⟨F, L.syms, slotOff, out⟩ g c) L.Xb
   baseTls : ∀ g ∈ L.P.funcs, hasTls g = true → ∀ F K, TlsOk F K L.Xb L.Hb
+  /-- the results of a `try_call` of an extern outside `P` (normal return; vacuous without such
+  `try_call`s) -/
+  baseTry : ∀ g ∈ L.P.funcs, ∀ F, CalleeTryOk F L.Xb L.Hb
+    fun info ti => (L.A g).vcp.TrySite info ti ∧ L.BaseDest (destOf info)
 
 /-- **The machine side of an activation of `g` at depth `M`** entered in `s` with body-entry
 world `w₀`: the ABI entry, the stack (frame and the callees' budget `K M`), the addresses `G` it
@@ -1405,12 +1412,15 @@ theorem progOs (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g : Clif.Fu
     obtain ⟨j, hj⟩ := List.mem_iff_getElem?.mp hp
     simp only [List.getElem?_zip_eq_some] at hj
     obtain ⟨⟨-, hr⟩, hx⟩ := hj
-    rw [hLd] at hr
-    simp only [List.getElem?_map, Option.map_eq_some_iff] at hr hx
-    obtain ⟨j1, hj1, rfl⟩ := hr
+    simp only [List.getElem?_map, Option.map_eq_some_iff] at hx
     obtain ⟨j2, hj2, rfl⟩ := hx
     have hjr : j < (sigRets h.sig).length := by
-      have := (List.getElem?_eq_some_iff.mp hj1).1; simpa using this
+      have := (List.getElem?_eq_some_iff.mp hj2).1; simpa using this
+    have e : ((Ld.map (·.1)).take (sigRets h.sig).length)[j]? = (Ld.map (·.1))[j]? := by
+      rw [List.getElem?_take]; simp [hjr]
+    rw [← e, hLd] at hr
+    simp only [List.getElem?_map, Option.map_eq_some_iff] at hr
+    obtain ⟨j1, hj1, rfl⟩ := hr
     rw [List.getElem?_range hjr, Option.some.injEq] at hj1 hj2
     subst hj1 hj2
     show regVal _ (Reg.x j) = regVal _ (Reg.x j)
@@ -1521,6 +1531,52 @@ theorem calleeOk (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g : Clif.
         exact hL.basePc _ _ (.inr ⟨n, rfl, hpf⟩) herr hal
       | some h => exact (L.hooks_prog hpf u).2
   ext _ _ _ _ _ hx herr := L.X_ext hL hx herr
+
+/-- **The `try_call` contract of the linked machine at depth `M`** for an activation of `g`: at
+a `try_call` of a function of `P` the plain call's contract (`calleeOk`) with the results
+`progX` returns (`tryRets`); at a `try_call` of an extern outside `P` the base's. -/
+theorem calleeTryOk (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g : Clif.Function}
+    (hg : g ∈ L.P.funcs) {G : BitVec 64 → Prop} {ra : BitVec 64} {s w₀ : Arm.ArmState}
+    (he : L.MachEntry M g G ra s w₀) :
+    CalleeTryOkG L.F (L.K M) G s (CallPc (L.A g).fa (L.A g).base) (L.X M) (L.hooks M)
+      (L.A g).vcp.TrySite := by
+  intro ctx info ti hsite
+  obtain ⟨n, hdest⟩ := hL.noBlr g hg info hsite.callSite
+  cases hpf : L.P.func? n with
+  | some h =>
+    refine calleeTryOkG_of_call (S := fun i t => i = info ∧ t = ti)
+      (fun ctx' i t ⟨e1, _⟩ => e1 ▸ (L.calleeOk hL ih hg he).os ctx' info hsite.callSite)
+      (fun i t ⟨_, e2⟩ => e2 ▸ trySite_clobberAll (hL.compiled g hg).alloc hsite)
+      (fun i t ⟨e1, e2⟩ uses w outs w' hx => ?_) ctx info ti ⟨rfl, rfl⟩
+    subst e1 e2
+    rw [hdest] at hx
+    simp only at hx
+    rw [L.X_prog hpf] at hx
+    have hr := hL.tryRets g hg i t h hsite ⟨hsite.callSite, n, hdest, hpf⟩
+    unfold progX at hx
+    split at hx
+    · simp only [Option.some.injEq, Prod.mk.injEq] at hx
+      obtain ⟨rfl, -⟩ := hx
+      simpa using hr
+    · cases hx
+  | none =>
+    have hb : L.BaseDest (destOf info) := .inr ⟨n, by simp [destOf, hdest], hpf⟩
+    intro c wh ops regs i' t w outs w' s' _ _ _ _ hops hst hasg hsw hal herr hsem hex
+    obtain ⟨d, us, ds⟩ := info
+    simp only at hdest
+    subst hdest
+    have hsem' : csem L.F ctx L.Xb (.tryCall ⟨.sym n, us, ds⟩ ti) (useVals ops regs t) w =
+        some (outs, w', .goto ti.handlers.length) := by
+      rw [← hsem]; simp [csem, L.X_base hpf]
+    obtain ⟨ic, rfl, hasg'⟩ := (assign_call_tryCall _ regs).2 ti i' hasg
+    obtain ⟨us', ds', hic⟩ := assign_call_sym hasg'
+    cases hic
+    have hex' : callExec L.Hb (.tryCall ⟨.sym n, us', ds'⟩ ti) t = some s' := by
+      simp only [callExec] at hex ⊢
+      rw [← L.hooks_base (M := M) (.inr ⟨n, rfl, hpf⟩)]
+      exact hex
+    exact hL.baseTry g hg L.F ctx _ ti ⟨hsite, hb⟩ c wh ops regs _ t w outs w' s' hops hst hasg hsw
+      hal herr hsem' hex'
 
 theorem find_sym (hL : L.Ok) (n : String) :
     (∀ h, L.P.func? n = some h → L.P.funcs.find? (fun h' => L.Xb.sym h'.name 0 == L.Xb.sym n 0) = some h) ∧
@@ -1681,8 +1737,7 @@ theorem thm_of (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) : L.Thm M :=
   refine ⟨us, outs, wf, hus, hlen, hhold, hmem, fun G ra s hME => ?_⟩
   exact hall (L.hooks M) G (L.A g).base ra s ⟨hME.abi, hME.stack, hME.gfree, hME.hF,
     L.calleeOk hL ih hg hME,
-    fun ht => absurd (hasTry_of_hasTryCall hc ht) (fun ⟨B, hB, hT⟩ => by
-      rw [hL.noTry g hg B hB] at hT; cases hT),
+    fun _ => L.calleeTryOk hL ih hg hME,
     fun ht => L.tlsOk_hooks (hL.baseTls g hg (hasTls_of_vcode hc ht) L.F (L.K M)), hME.body⟩
 
 /-- **The linking statement at every depth.** -/
@@ -1768,8 +1823,7 @@ theorem backend_correct_program (L : LinkSys) (hL : L.Ok) {f : Clif.Function}
       (fun n b hn => hL.symOk n b hn) rfl hWE.clif hWE.rel hWE.args htr m
     exact h.2 c hm (L.hooks M) L.Img (L.A f).base ra s ⟨hME.abi, hME.stack, hME.gfree, hME.hF,
       L.calleeOk hL ih hf hME,
-      fun ht => absurd (hasTry_of_hasTryCall hc ht) (fun ⟨B, hB, hT⟩ => by
-        rw [hL.noTry f hf B hB] at hT; cases hT),
+      fun _ => L.calleeTryOk hL ih hf hME,
       fun ht => L.tlsOk_hooks (hL.baseTls f hf (hasTls_of_vcode hc ht) L.F (L.K M)), hME.body⟩
 
 /-- **The returning runs**: `backend_correct_program` without the run premise `TrapsExplicit`

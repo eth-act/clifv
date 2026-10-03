@@ -571,7 +571,7 @@ outside `P` and TLS keep the base hooks. Layers added for it:
   callers' frames kept — gap "frame locality"); `calleeOk`/`xCallsOk` discharge `CalleeOkG` and
   `XCallsOk (linkEnvN …)` at depth `M` from depth `M - 1`.
 
-**Scope** (`LinkSys.Ok`): no `call_indirect`/`try_call_indirect`/`return_call`/`try_call`; every
+**Scope** (`LinkSys.Ok`): no `call_indirect`/`try_call_indirect`/`return_call`; every
 call site is a `bl`; no stack-passed call arguments (`intBase = 0`), parameters in distinct
 argument registers (width ≤ 64), no `sret`; program callees have no stack slots (gap "slot
 placement" avoided: their frame is the allocator's); program call sites pass integer arguments in
@@ -580,13 +580,29 @@ equal definitions; no function calls itself directly (`raCall`: the return addre
 is outside the code of the function it calls, stated per call site). **Trusted / premises**: the
 link layout (bases, the code image `Img`/`imgMem`, return addresses outside callees' code,
 `raStar`, distinct symbol addresses), the base
-environment's contracts (calls outside `P`, `XCallsOk` of the base externs, TLS), the stack
+environment's contracts (calls outside `P`, `XCallsOk` of the base externs, TLS, the results of
+`try_call`s of base externs `baseTry`), the stack
 budget `D` per call level, and the entry state. The machine is depth-indexed (`L.mach M f` for
 runs of at most `M + 1` steps).
 
+**Widening** (agent/link-widen):
+
+1. *`try_call` between program functions* (normal returns; unwinding trusted, as per function).
+   `Ok.noTry` is gone; `callRegs` constrains only the first `sigRets` defs (a `try_call`'s
+   exception payload registers follow them), `tryRets` (a `try_call` of `h ∈ P` takes at most
+   `h`'s results: `ti.rets`, the compiler's count of them) and `baseTry` (`CalleeTryOk` of the
+   base hooks at `try_call`s of externs outside `P`; vacuous without them) are added — all
+   implied by the former `noTry`. The contract `ActEntry.tries`/`regLevelCorrect_world`'s `hCT`
+   is now `CalleeTryOkG` (required at the states that keep `G` at a call pc, like `CalleeOkG`;
+   implied by `CalleeTryOk`, `CalleeTryOk.g`), since a linked callee runs the code image the
+   caller keeps. `LinkSys.calleeTryOk` discharges it from the plain call's contract
+   (`calleeTryOkG_of_call`: the results of a `try_call`'s call are the first `ti.rets` of the
+   plain call's).
+
 **Non-vacuity** (`FV/E2E/NonVacuityLink.lean`, namespace `E2E.LinkWitness`): the closed program
-`P = {f, g, h}` — `f` calls `g`, `g` calls `h` (a non-leaf program callee; `g` keeps its argument
-in x19 across the call), `colocated`, `(i64) -> i64` — parsed from an embedded source and
+`P = {f, g, h}` — `f` calls `g` by a `try_call` with a result (`block1(ret0)`, handler
+`tag0: block2(exn0)`), `g` calls `h` (a non-leaf program callee; `g` keeps its argument
+in x19 across the call), `colocated`, `(i64) -> i64 system_v` — parsed from an embedded source and
 compiled by the pipeline (`lowerFunction`, `prepare`, the `lean-regalloc` output for this file
 embedded as JSON and rebuilt by `parseRAOut`/`buildRFunc`, `checkAlloc`, `lowerRFunc`,
 `emitFunc`, `layout`), loaded at `0x30000`/`0x20000`/`0x10000`, closed base environment (no
@@ -596,17 +612,18 @@ extern outside `P`, no TLS):
 theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
 theorem backend_correct_program_witness :
     (L F0).Ok ∧ fF ∈ (L F0).P.funcs ∧ fG ∈ (L F0).P.funcs ∧ fH ∈ (L F0).P.funcs ∧
-    (∃ info, (L F0).ProgSite fF info fG) ∧ (∃ info, (L F0).ProgSite fG info fH) ∧
+    (∃ info ti, (A fF).vcp.TrySite info ti ∧ (L F0).ProgSite fF info fG) ∧
+    (∃ info, (L F0).ProgSite fG info fH) ∧
     run0 = .returned [⟨.i64, 83#64⟩] (retMem run0) ∧
     ArmRefines (A fF).fb (A fF).base 8 ((L F0).mach M0 fF) s0 run0
 ```
 
-Every per-function premise of `LinkSys.Ok` (`compiled`, `covered`, `noTry`, `noOut`, `regParams`,
+Every per-function premise of `LinkSys.Ok` (`compiled`, `covered`, `tryRets`, `noOut`, `regParams`,
 `argRegs`, `noSret`, `calleeSlots`, `callRegs`, `noBlr`, `declSig`, `entryRegs`, `fits`, `raCall`,
 `depth`, `subset`, `linkable`, the image `imgCode`) is an executable check with a soundness lemma
-(`chk`/`Facts`, `siteOk_sound`, `entryB_sound`, `raCallB_sound`, `linkFreeB_sound`,
+(`chk`/`Facts`, `siteOk_sound`, `tryB_sound`, `entryB_sound`, `raCallB_sound`, `linkFreeB_sound`,
 `imgCode_of`), decided by `native_decide` (`okB_true`); `symInj`, `symOk` and the base contracts
-(`baseOs`, `basePc`, `baseExt`, `baseX`, `baseTls`) are proven (vacuous or immediate for the
+(`baseOs`, `basePc`, `baseExt`, `baseX`, `baseTls`, `baseTry`) are proven (vacuous or immediate for the
 closed environment). The second theorem discharges the entry premises too (`AbiEntry`,
 `StackAvail`, `hF`, `hgfree`, `himg`, `BodyEntry`, `ArgsIn`, `ClifEntry`, `Rel.holds`, the
 returning CLIF run, `native_decide`: `entryFactsB_true`, `callChainB_true`) for `f` on `41` at
