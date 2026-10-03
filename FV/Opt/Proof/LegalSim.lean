@@ -1735,14 +1735,16 @@ theorem find_none_of {p : Program} {mem : Mem} {a : Nat}
 resolves is resolved to the same extern in `p'`. -/
 theorem callExternAt_prefix {env : Env} {p p' : Program} (hpre : p.externNames <+: p'.externNames)
     {mem : Mem} {d : Signature} {a : Nat} {vals : List Val}
-    (h : (p.externNames.find? fun n => mem.symbols n == some a).isSome) :
+    (h : ((env.names ++ p.externNames).find? fun n => mem.symbols n == some a).isSome) :
     callExternAt env p' mem d a vals = callExternAt env p mem d a vals := by
   obtain ⟨t, ht⟩ := hpre
   obtain ⟨n, hn⟩ := Option.isSome_iff_exists.mp h
-  simp only [callExternAt, ← ht, List.find?_append, hn, Option.some_or]
+  have hn' : ((env.names ++ p'.externNames).find? fun n => mem.symbols n == some a) = some n := by
+    rw [← ht, ← List.append_assoc, List.find?_append, hn, Option.some_or]
+  simp only [callExternAt, hn, hn']
 
 theorem callExternAt_none {env : Env} {p : Program} {mem : Mem} {d : Signature} {a : Nat}
-    {vals : List Val} (h : (p.externNames.find? fun n => mem.symbols n == some a) = none) :
+    {vals : List Val} (h : ((env.names ++ p.externNames).find? fun n => mem.symbols n == some a) = none) :
     ∃ msg, callExternAt env p mem d a vals = .stuck msg := by
   simp only [callExternAt, h, Res.ofOption]
   exact ⟨_, rfl⟩
@@ -1752,7 +1754,7 @@ theorem callExternAt_ok {env : Env} {p : Program} {mem : Mem} {d : Signature} {a
     ∃ name g, env.extern name = some g ∧ g vals mem = .returned rv mem' ∧
       rv.map (·.ty) = AbiParam.tys d.returns := by
   unfold callExternAt at h
-  cases hf : p.externNames.find? fun n => mem.symbols n == some a with
+  cases hf : (env.names ++ p.externNames).find? fun n => mem.symbols n == some a with
   | none => simp [hf, Res.ofOption, bind, Res.bind] at h
   | some n =>
     cases hg : env.extern n with
@@ -1861,7 +1863,7 @@ theorem sim_callInd {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} (hE : E
     intro g hg
     simpa using hnf' g hg
 
-  cases hfx : (p.externNames.find? fun n => m.symbols n == some b.toNat) with
+  cases hfx : ((env.names ++ p.externNames).find? fun n => m.symbols n == some b.toNat) with
   | none =>
     obtain ⟨msg, hs⟩ := callExternAt_none (env := env) (d := d) (vals := vals) hfx
     rw [hs]; trivial
