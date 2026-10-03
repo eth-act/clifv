@@ -543,6 +543,7 @@ theorem backend_correct_program (L : LinkSys) (hL : L.Ok) (hf : f ∈ L.P.funcs)
     (hgfree : ∀ a, L.Img a → ¬ StackBelow (frameDrop (L.A f).af + L.K M) (spv s) a)
     (himg : ∀ a, L.Img a → s.mem a = L.imgMem a)
     (hbe : BodyEntry (L.A f).af s w₀) (hargs : ArgsIn f.sig args s) (hcs : ClifEntry f args cs)
+    (hsav : StackArgsAvoid L.Img f.sig args s)  -- agent/link-widen: stack-passed parameters
     (hrel : Rel.holds ⟨L.F, L.syms, slotBase, intBase⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicit (Clif.linkEnvN L.P L.base M) (L.P.only f) cs) :
     ArmRefines (L.A f).fb (L.A f).base ra (L.mach M f) s (Clif.runLoop L.base L.P (M + 1) cs)
@@ -571,48 +572,120 @@ outside `P` and TLS keep the base hooks. Layers added for it:
   callers' frames kept — gap "frame locality"); `calleeOk`/`xCallsOk` discharge `CalleeOkG` and
   `XCallsOk (linkEnvN …)` at depth `M` from depth `M - 1`.
 
-**Scope** (`LinkSys.Ok`): no `call_indirect`/`try_call_indirect`/`return_call`/`try_call`; every
-call site is a `bl`; no stack-passed call arguments (`intBase = 0`), parameters in distinct
-argument registers (width ≤ 64), no `sret`; program callees have no stack slots (gap "slot
-placement" avoided: their frame is the allocator's); program call sites pass integer arguments in
-the callee's parameter registers and take results from x0.. (checked per site); declarations
-equal definitions; no function calls itself directly (`raCall`: the return address of a call
-is outside the code of the function it calls, stated per call site). **Trusted / premises**: the
+**Scope** (`LinkSys.Ok`): no `call_indirect`/`try_call_indirect`/`return_call`; every
+call site is a `bl`; parameters in distinct argument registers (width ≤ 64) or on the stack;
+program callees (functions some function of `P` calls or declares) have no stack slots and no
+outgoing-argument area (`calleeSlots`: their frame is the allocator's; only functions no
+function of `P` calls pass arguments on the stack, `outFits`); program call sites pass integer
+register arguments in the callee's parameter registers and take results from x0.. (checked per
+site); declarations equal definitions; no function calls itself directly (`raCall`: the return
+address of a call is outside the code of the function it calls, stated per call site).
+**Trusted / premises**: the
 link layout (bases, the code image `Img`/`imgMem`, return addresses outside callees' code,
 `raStar`, distinct symbol addresses), the base
-environment's contracts (calls outside `P`, `XCallsOk` of the base externs, TLS), the stack
-budget `D` per call level, and the entry state. The machine is depth-indexed (`L.mach M f` for
+environment's contracts (calls outside `P`, `XCallsOk` of the base externs, TLS, the results of
+`try_call`s of base externs `baseTry`; when a function of `P` has an outgoing-argument area, the
+base externs create no allocation, `baseNoAlloc`), the stack
+budget `D` per call level, and the entry state (with `StackArgsAvoid L.Img` for an entry
+function with stack-passed parameters). The machine is depth-indexed (`L.mach M f` for
 runs of at most `M + 1` steps).
 
+**Widening** (agent/link-widen):
+
+1. *`try_call` between program functions* (normal returns; unwinding trusted, as per function).
+   `Ok.noTry` is gone; `callRegs` constrains only the first `sigRets` defs (a `try_call`'s
+   exception payload registers follow them), `tryRets` (a `try_call` of `h ∈ P` takes at most
+   `h`'s results: `ti.rets`, the compiler's count of them) and `baseTry` (`CalleeTryOk` of the
+   base hooks at `try_call`s of externs outside `P`; vacuous without them) are added — all
+   implied by the former `noTry`. The contract `ActEntry.tries`/`regLevelCorrect_world`'s `hCT`
+   is now `CalleeTryOkG` (required at the states that keep `G` at a call pc, like `CalleeOkG`;
+   implied by `CalleeTryOk`, `CalleeTryOk.g`), since a linked callee runs the code image the
+   caller keeps. `LinkSys.calleeTryOk` discharges it from the plain call's contract
+   (`calleeTryOkG_of_call`: the results of a `try_call`'s call are the first `ti.rets` of the
+   plain call's).
+2. *Callees with CLIF stack slots*: **not done** — blocked by a non-interference gap, not by
+   slot placement. A callee's slot region `[sp_body + size, sp_body + frameSize)` is part of its
+   world (outside `frameF`: `MemRel` needs the live slot bytes outside `F`), but lies in the
+   caller's dead stack, whose content at the call is caller garbage (earlier callees' frames).
+   The linked `X` computes a program call from the canonical state built from the caller's VCode
+   world; the actual machine state agrees with it only outside the caller's `F`. So the callee's
+   body-entry worlds from the canonical and the actual state differ on the slot region, and the
+   per-function theorem (one VCode outcome per body-entry world) gives two outcomes that it does
+   not relate. Linking needs: the VCode outcome (result registers, unmasked fields, memory
+   outside `F` and the slot region) does not depend on the initial content of the CLIF-valid but
+   uninitialised slot bytes (a returning CLIF run never reads them). That is a cross-layer
+   non-interference property (driver + M6), see `docs/DEFERRED.md` ("Linking"). The placement
+   itself (`Clif.run`'s bump allocator vs `sp`-relative slots) is a second, smaller gap: a
+   slot-placement oracle in `Clif.Mem` (`enterFunc` placing the callee's slots at the compiled
+   frame's addresses, `sp` tracked per activation) would make the addresses equal.
+3. *`sret` and stack-passed arguments between program functions*. `noSret`, `regParams` and
+   `noOut` are gone. `sret`: the per-function theorem now exports the VCode return it took
+   (`backend_correct_world`: `vc.RetsSite us`), and `sretRets` (the returns of an `sret`
+   function carry its ABI results, checked on the code; vacuous without `sret`) gives the
+   struct-pointer result x0 of the callee's one outcome; the CLIF call has no result
+   (`returns_le_sigRets`). Stack-passed arguments: `Cond` carries `StackArgsAvoid L.F` (the
+   arguments in the caller's outgoing area, part of every world, so the canonical and the actual
+   caller state agree on them); `xCallsOk` derives it from the caller's `OutRel` and `outFits`;
+   the callee reads them at `fp + 16 + off` of its body-entry world. A function with an outgoing
+   area must not be a program callee (`calleeSlots` adds `intBase = 0`: the area of a callee
+   would lie in its caller's dead stack — the same non-interference gap as 2.). After a call the
+   caller's `OutRel` holds again because the callee's whole-program run creates no allocation
+   (`runLoop_valid`: entered functions without slots, `baseNoAlloc`). All new premises are implied
+   by the former ones.
+4. *Direct self-recursion*: handled through `cargo fv`'s alias, as two distinct functions with
+   the same body: `P` contains `r` (its self-call renamed to `r__fvself`, as `cargo fv` emits)
+   and `r__fvself` (`r`'s body and signature under the alias name, its self-call naming `r`);
+   the two call each other, so `raCall` (return address outside the *callee's* code) holds and
+   no premise changes. Trusted: the real binary has one copy (the linker resolves `r__fvself` to
+   `r`); the theorem is about the two-copy layout. Refining `raCall` for a single copy needs the
+   linked call to find the callee's return without the "return address outside its code"
+   argument (`retStuck`): an M6 invariant that no intermediate state of an activation is at a
+   post-call address with the entry `sp` (not done).
+
 **Non-vacuity** (`FV/E2E/NonVacuityLink.lean`, namespace `E2E.LinkWitness`): the closed program
-`P = {f, g, h}` — `f` calls `g`, `g` calls `h` (a non-leaf program callee; `g` keeps its argument
-in x19 across the call), `colocated`, `(i64) -> i64` — parsed from an embedded source and
+`P = {f, g, h, s, k, r, r__fvself}` — the entry `f` (a stack slot, a 16-byte outgoing area)
+passes an `sret` pointer to its slot to `s` (which stores through it and returns the pointer),
+calls `k` with 9 arguments (the 9th on the stack), calls `g` by a `try_call` with a result
+(`block1(ret0)`, handler `tag0: block2(exn0)`) and calls the recursive `r` (`r 3 = 6`, through
+its alias `r__fvself`); `g` calls `h` (a non-leaf program callee; `g` keeps its argument
+in x19 across the call); `colocated`, `system_v` — parsed from an embedded source and
 compiled by the pipeline (`lowerFunction`, `prepare`, the `lean-regalloc` output for this file
 embedded as JSON and rebuilt by `parseRAOut`/`buildRFunc`, `checkAlloc`, `lowerRFunc`,
-`emitFunc`, `layout`), loaded at `0x30000`/`0x20000`/`0x10000`, closed base environment (no
-extern outside `P`, no TLS):
+`emitFunc`, `layout`), loaded at `0x70000` (`f`) and `0x10000`…`0x60000`, closed base
+environment (no extern outside `P`, no TLS), depth `M0 = 100`:
 
 ```lean
 theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
 theorem backend_correct_program_witness :
     (L F0).Ok ∧ fF ∈ (L F0).P.funcs ∧ fG ∈ (L F0).P.funcs ∧ fH ∈ (L F0).P.funcs ∧
-    (∃ info, (L F0).ProgSite fF info fG) ∧ (∃ info, (L F0).ProgSite fG info fH) ∧
-    run0 = .returned [⟨.i64, 83#64⟩] (retMem run0) ∧
+    fS ∈ (L F0).P.funcs ∧ fK ∈ (L F0).P.funcs ∧
+    (∃ info ti, (A fF).vcp.TrySite info ti ∧ (L F0).ProgSite fF info fG) ∧
+    (∃ info, (L F0).ProgSite fG info fH) ∧
+    (∃ info, (L F0).ProgSite fF info fS) ∧ fS.sig.params.any (·.purpose == .sret) = true ∧
+    (∃ info, (L F0).ProgSite fF info fK) ∧ (∃ off, ArgLoc.stack off ∈ locsOf fK.sig) ∧
+    (RAFrame.compute (A fF).vcp (A fF).rf).intBase ≠ 0 ∧ fF.slots ≠ [] ∧
+    fR ∈ (L F0).P.funcs ∧ fRS ∈ (L F0).P.funcs ∧ (∃ info, (L F0).ProgSite fF info fR) ∧
+    (∃ info, (L F0).ProgSite fR info fRS) ∧ (∃ info, (L F0).ProgSite fRS info fR) ∧
+    fRS.name = fR.name ++ "__fvself" ∧ fRS.blocks = fR.blocks ∧ fRS.sig = fR.sig ∧
+    run0 = .returned [⟨.i64, 185#64⟩] (retMem run0) ∧
     ArmRefines (A fF).fb (A fF).base 8 ((L F0).mach M0 fF) s0 run0
 ```
 
-Every per-function premise of `LinkSys.Ok` (`compiled`, `covered`, `noTry`, `noOut`, `regParams`,
-`argRegs`, `noSret`, `calleeSlots`, `callRegs`, `noBlr`, `declSig`, `entryRegs`, `fits`, `raCall`,
-`depth`, `subset`, `linkable`, the image `imgCode`) is an executable check with a soundness lemma
-(`chk`/`Facts`, `siteOk_sound`, `entryB_sound`, `raCallB_sound`, `linkFreeB_sound`,
-`imgCode_of`), decided by `native_decide` (`okB_true`); `symInj`, `symOk` and the base contracts
-(`baseOs`, `basePc`, `baseExt`, `baseX`, `baseTls`) are proven (vacuous or immediate for the
-closed environment). The second theorem discharges the entry premises too (`AbiEntry`,
-`StackAvail`, `hF`, `hgfree`, `himg`, `BodyEntry`, `ArgsIn`, `ClifEntry`, `Rel.holds`, the
-returning CLIF run, `native_decide`: `entryFactsB_true`, `callChainB_true`) for `f` on `41` at
-depth `M0 = 20` and applies `backend_correct_program_returned`. Axioms: standard plus the
-`_native` axioms of `names`, `okB_true`, `entryFactsB_true`, `callChainB_true` (and the existing
-`bv_decide`/`native_decide` ones of the backend proofs). The witness found the former `raCall`
+Every per-function premise of `LinkSys.Ok` (`compiled`, `covered`, `tryRets`, `outFits`,
+`argRegs`, `sretRets`, `calleeSlots`, `callRegs`, `noBlr`, `declSig`, `entryRegs`, `fits`,
+`raCall`, `depth`, `subset`, `linkable`, the image `imgCode`) is an executable check with a
+soundness lemma (`chks`/`Facts`, `siteOk_sound`, `tryB_sound`, `retsB_sound`, `outFitsB_sound`,
+`entryB_sound`, `raCallB_sound`, `linkFreeB_sound`, `imgCode_of`), decided by `native_decide`
+(`okB_true`); `symInj`, `symOk` and the base contracts (`baseOs`, `basePc`, `baseExt`, `baseX`,
+`baseTls`, `baseTry`, `baseNoAlloc`) are proven (vacuous or immediate for the closed
+environment). The second theorem discharges the entry premises too (`AbiEntry`, `StackAvail`,
+`hF`, `hgfree`, `himg`, `BodyEntry`, `ArgsIn`, `ClifEntry` with `f`'s slot at its frame address
+`sp0 - 32`, `StackArgsAvoid`, `Rel.holds` (the slot's allocation outside `F0`, `SlotRel`,
+`OutRel` of the 16-byte outgoing area), the returning CLIF run, `native_decide`:
+`entryFactsB_true`, `callChainB_true`) for `f` on `41` at depth `M0 = 20` and applies
+`backend_correct_program_returned`. Axioms: standard plus the `_native` axioms of `names`,
+`okB_true`, `entryFactsB_true`, `callChainB_true` (and the existing `bv_decide`/`native_decide`
+ones of the backend proofs). The witness found the former `raCall`
 (the return address of every call outside the code of **every** function of `P`, including the
 caller's own) unsatisfiable for every program with a call; it is now stated for the callees of
 the caller's call sites (`LinkSys.ProgSite`).
@@ -669,7 +742,7 @@ body's `sp`"):
 | `backend_correct_opt_proven` | `hC`, `hTls`, `hX`, `hsym` (for the optimised function; `try_call` and `call_indirect` excluded by premises) | `final_contracts_witness` at `f := Opt.optimize f cfg` |
 | `backend_correct_legal` | `hC`, `hCT`, `hTls`, `hX`, `hXI`, `hsym` (for the legalised `g`, environment `Clif.Rust.env`) | `final_contracts_witness` at `f := g`, `env := Clif.Rust.env`, for functions without indirect calls whose externs are the diverging panic entry points (they never return, so `hnoop` holds) |
 | `backend_correct_linked` | `hC`, `hCT`, `hTls`, `hX` (environment `Clif.linkEnv P base`); `hXI` discharged by `Linkable` | `final_contracts_witness` at `env := Clif.linkEnv P base`, when the program callees and the base externs return nothing and keep the memory |
-| `backend_correct_program` | `L.Ok` (program, compilation, layout, base environment) and the entry premises | `E2E.LinkWitness.backend_correct_program_witness` (`FV/E2E/NonVacuityLink.lean`): `P = {f, g, h}` compiled by the pipeline, all premises discharged, `f 41` returns `83` |
+| `backend_correct_program` | `L.Ok` (program, compilation, layout, base environment) and the entry premises | `E2E.LinkWitness.backend_correct_program_witness` (`FV/E2E/NonVacuityLink.lean`): `P = {f, g, h, s, k}` compiled by the pipeline (a `try_call` f→g, an `sret` call f→s into `f`'s stack slot, a stack-passed argument f→k, a non-leaf callee g→h, recursion r↔r__fvself), all premises discharged, `f 41` returns `185` |
 
 **Callees that return values** (`idX sym tp idf`: a callee `n` with `idf n` returns its first
 argument — a `bl n` or a `blr` to `sym n 0` —, every other callee returns nothing; the hooks are
