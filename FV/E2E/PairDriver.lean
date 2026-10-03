@@ -717,7 +717,7 @@ theorem vcode_ni {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCod
 /-- **The per-function theorem with the final world and non-interference**: as
 `backend_correct_world`, and the one VCode outcome of the body-entry world `w₀` is realised also
 by every activation entered with a body-entry world `w₀'` related to the same CLIF entry, that
-agrees with `w₀` outside `F ∪ D` (with the same argument registers and stack-passed argument
+agrees with `w₀` outside `F ∪ D` (when the external semantics keeps the agreement: `XNI`, `XTls`) (with the same argument registers and stack-passed argument
 bytes), up to the addresses `F ∪ D`. -/
 theorem backend_correct_world_ni {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}
     {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
@@ -731,7 +731,6 @@ theorem backend_correct_world_ni {p : Clif.Program} {f : Clif.Function} {k : Nat
       (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
     (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
     (hslot : af.slotBase = slotOff)
-    (hNI : XNI F syms (CallLg env (f.externs.map (·.2)) (indSigs f)) X) (hTls : XTls F X)
     {w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hcs : ClifEntry f args cs)
     (hrel : RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c cs.frame.slots cs.mem w₀)
@@ -744,6 +743,7 @@ theorem backend_correct_world_ni {p : Clif.Program} {f : Clif.Function} {k : Nat
         (∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
           ActEntry vcp rf af fa fb K F G X H base ra s w₀ →
           ∃ n, ActRet ra F G us outs w s (runX (ArmStepX X H fa) n s)) ∧
+        (XNI F syms (CallLg env (f.externs.map (·.2)) (indSigs f)) X → XTls F X →
         ∀ (D : BitVec 64 → Prop) (w₀' : Arm.ArmState),
           RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c cs.frame.slots cs.mem w₀' →
           SameWorld (fun b => F b ∨ D b) w₀ w₀' →
@@ -753,7 +753,7 @@ theorem backend_correct_world_ni {p : Clif.Program} {f : Clif.Function} {k : Nat
               w₀.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k)) →
           ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
             ActEntry vcp rf af fa fb K F G X H base ra s w₀' →
-            ∃ n, ActRet ra (fun a => F a ∨ D a) G us outs w s (runX (ArmStepX X H fa) n s) := by
+            ∃ n, ActRet ra (fun a => F a ∨ D a) G us outs w s (runX (ArmStepX X H fa) n s)) := by
   intro vals cm hrun
   have hI := iselSim_relW hsub hc hX hXI hsym hslot (fun _ => 0) hcs hrel hargs htr fuel
   have hM6 : ∀ (w₀ : Arm.ArmState) (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64)
@@ -770,7 +770,7 @@ theorem backend_correct_world_ni {p : Clif.Program} {f : Clif.Function} {k : Nat
     obtain ⟨b, k, ρ, w₁, vb, ops, outs', -, hvb, hk, -⟩ := hv
     exact ⟨b, vb, k, hvb, hk⟩
   refine ⟨us, outs, w, hus, hlen, hhold, hmemR, hrs, fun H G base ra s he => ?_,
-    fun D w₀' hrel' hsw hreg hstk H G base ra s he => ?_⟩
+    fun hNI hTls D w₀' hrel' hsw hreg hstk H G base ra s he => ?_⟩
   · have hP := prepareCorrect_of_check (driverSem_csem F ⟨fa.k, af.slotBase⟩ X) hc.prepOk
       (fun _ => 0) w₀
     obtain ⟨n, h1, h2, h3, h4, h5, h6⟩ := (hM6 w₀ H G base ra s he).1 us outs w (hP.1 _ _ _ hv)
