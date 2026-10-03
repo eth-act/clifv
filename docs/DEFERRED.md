@@ -149,6 +149,25 @@ premises. Deferred, in order:
     `sp`, restored at return; trusted-semantics change, `none` = today's bump allocator) makes
     CLIF and Arm slot addresses equal, including escaping ones (`stack_addr` passed to callees,
     the usual `cg_clif` pattern); a relocation lemma cannot cover those.
+    Findings (agent/link-widen, stage 2 attempt): non-interference cannot be obtained from the
+    existing layers. `CLIF` itself is fine (an uninitialised byte is `none`, `Mem.load` of it is
+    `stuck`, so a returning run reads only initialised bytes); the difference between the two
+    body-entry worlds is Arm garbage, and neither `backend_correct_world` nor M6 relates the
+    outcomes of two body-entry worlds. Both routes need a read footprint that only the M4 rule
+    proofs know (a VCode load's address is the CLIF load's, `VHolds` at `i64`): (A) a two-world
+    `driver_correct`/`iselSim_relW` (each `LowerRuleOk` re-proved for a pair of worlds agreeing
+    outside the not-yet-written fresh bytes `U`; `Sem` is fixed to `Arm.ArmState` worlds, so a
+    product-world instance of the existing driver is impossible); or (B) a footprint export of
+    the driver (every `csem` memory read of the constructed VCode run is outside `U` or written
+    earlier in the run) plus an M6 generalisation (`BodyEntryW (F ∪ U)`, `SameWorld` outside
+    `F ∪ U_t` with `U_t` shrinking at stores) and a clause of `backend_correct_world`: two
+    body-entry worlds agreeing outside `F ∪ U` give the same `us`, `outs`, unmasked fields and
+    memory outside `F ∪ U`. The base externs then need the matching premise (their `X.call`
+    does not depend on bytes not initialised in CLIF). `LinkSys.Thm` would carry the clause so
+    `progCall` can equate the canonical and the actual call of a slotted callee; with the
+    placement oracle `calleeSlots` then drops `h.slots = []`/`intBase = 0`. Route (B) is the
+    smaller one (one new driver invariant instead of re-proving every rule), but still touches
+    `driver_correct` and every memory rule's lowered sequence (their reads).
   - indirect calls reaching functions the caller does not declare (vtables in `cg_clif` output:
     needs a linked environment that resolves addresses against the whole program, not the
     per-function program's declarations), recursion through a pointer (the caller's own

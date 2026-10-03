@@ -619,7 +619,9 @@ runs of at most `M + 1` steps).
    caller keeps. `LinkSys.calleeTryOk` discharges it from the plain call's contract
    (`calleeTryOkG_of_call`: the results of a `try_call`'s call are the first `ti.rets` of the
    plain call's).
-2. *Callees with CLIF stack slots*: **not done** — blocked by a non-interference gap, not by
+2. *Callees with CLIF stack slots* (and stack arguments of called functions): **not done**
+   (attempted again after stages 5/6; the precise route, (B) in `docs/DEFERRED.md` "Linking",
+   needs a read-footprint export of `driver_correct`) — blocked by a non-interference gap, not by
    slot placement. A callee's slot region `[sp_body + size, sp_body + frameSize)` is part of its
    world (outside `frameF`: `MemRel` needs the live slot bytes outside `F`), but lies in the
    caller's dead stack, whose content at the call is caller garbage (earlier callees' frames).
