@@ -649,6 +649,12 @@ runs of at most `M + 1` steps).
      memory forms through their `MemRefines` characterisations; `ispec`/`mspec` and the control
      forms read the world only through the flags, `sp` and `x29`. Not yet covered: the LL/SC
      loops, `try_call` and `Args`.
+   * **The guarded semantics** (`FV/E2E/Guarded.lean`, `csemG F ctx X Rd`: `csem` where the
+     memory accesses have the memory rules' forms and every byte read satisfies `Rd`): it
+     satisfies `Refines`, `MemRefinesR Rd`, `CallsRefine`, `IndCallsRefine` (`refines_csemG`,
+     `memRefinesR_csemG`, `callsRefine_csemG`, `indCallsRefine_csemG`), and a step of it with
+     `Rd := ¬ Z` is a step of `csem` that `csem` repeats on every world agreeing outside `Z`
+     (`csemG_lockstep`).
    Findings (why the earlier routes cannot work): the footprint cannot come from the memory
    relation alone, since `MemRelOk.store` must hold for every valid store, so no `MR` can say
    "the slot bytes are uninitialised" (a store into them must keep `MR`); and the VCode
@@ -666,10 +672,10 @@ runs of at most `M + 1` steps).
       of the callee's world in `csem`) must become constants (they are havocked in M6); `Args`
       at the entry (the argument registers equal in both worlds). `tls_value`'s `tlsFlags` is a
       premise of `csem_lockstep` (`hT`), to be discharged for the base and the linked hooks.
-   2. *Guarded instances per step*: `csemG F ctx X Rd` (`csem` with reads outside `Rd` failing)
-      satisfies `Refines`, `MemRefinesR Rd`, `CallsRefine`, `IndCallsRefine`; the call and
-      `try_call` rules take `MemRefinesR Rd` (they only store); `lowerInstOk_of_rules` with
-      `MemRulesCorrectR` gives `LowerInstOkR` per statement.
+   2. *Guarded instances per step*: the call and `try_call` rules (`CallRulesCorrect`,
+      `TryRulesCorrect`, …) to take `MemRefinesR Rd` instead of `MemRefines` (they only use the
+      store clauses; an M4 signature change); a `lowerInstOk_of_rules` with `MemRulesCorrectR`
+      giving `LowerInstOkR` per statement, instantiated at `csemG … (¬ Z)` per CLIF step.
    3. *The product instance*: `semP` (`csem` on both worlds, equal outputs), `MR_P` (`RelW` on
       both and `SameWorld (F ∪ D₀)`), `InstCalls`/`TermCalls`/`TryCalls`/`TryIndCalls`/
       `DriverSemG` of the pair from the guarded instance on the first world, the plain
