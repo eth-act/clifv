@@ -120,51 +120,24 @@ premises. Deferred, in order:
   Witness done (`E2E.LinkWitness.backend_correct_program_witness`, `FV/E2E/NonVacuityLink.lean`;
   it found `raCall` unsatisfiable for every program with a call, now stated per call-site
   callee). Widened (agent/link-widen, e2e.md "Widening"): `try_call` between program functions
-  (normal returns); `sret` between program functions; stack-passed arguments from functions no
-  function of `P` calls; direct self-recursion through the `cargo fv` alias (two copies);
+  (normal returns); `sret` between program functions; stack-passed arguments between program
+  functions; direct self-recursion through the `cargo fv` alias (two copies);
   indirect calls (`call_indirect`, `try_call_indirect`, GOT `blr`) between program functions
   (the caller declares every function with an address, has none itself; register-only,
   non-`sret` indirect callees; the M6 callee contract now holds for the call instruction at the
   pc, `CallAt`); `i128` pairs between the functions of a legalised program (`Opt.Legalize128`;
-  per-function composition with `backend_correct_legal`, `a2_legal`). Remaining:
+  per-function composition with `backend_correct_legal`, `a2_legal`); program callees with
+  stack slots or an outgoing-argument area (stage 2: the VCode non-interference
+  `backend_correct_world_ni` from the memory rules' read footprint and pinned calls, the
+  premises `baseNI`/`baseTlsNI` needed only then; the slot-placement oracle `Clif.Mem.place`,
+  a trusted-semantics change, with the entry premise `hpl` placing the reference run's slots at
+  the compiled frames — CLIF leaves slot addresses unspecified, so this picks one legitimate CLIF
+  behaviour; witness callees `t` and `u`). Remaining:
   - **The `i128` source program as a whole**: `backend_correct_program` relates the Arm run to
     the legalised program; relating that to the source program's whole-program run needs a
     program-level legalisation refinement (`Opt.Legal.check_refines` per function under a
     linked environment satisfying `ExtLegal`, by induction on the call depth; `NoMemTrap` of
     callee runs, `EnvKeepsAllocs` of the linked environment).
-  - **Callees with stack slots or an outgoing-argument area** (the frame regions of a callee
-    that belong to its world but lie in its caller's dead stack). Blocker: the callee's
-    body-entry world contains the caller's garbage there (the actual machine state and the
-    canonical one of `LinkSys.X` agree only outside the caller's `F`), so `X.call` being a
-    function of the caller's world needs **non-interference**: the VCode outcome (result
-    registers, unmasked fields, memory outside `F` and those regions) does not depend on the
-    initial content of CLIF-uninitialised slot bytes and of the outgoing area. In progress
-    (agent/link-widen stage 2; e2e.md "Widening" item 2 has the route and the remaining steps).
-    Done: the memory rules' read footprint (`MemRefinesR`/`LowerInstOkR`/`MemRulesCorrectR`:
-    a memory rule's VCode reads only bytes its CLIF instruction reads), the driver generic
-    in the world type (it can run on pairs of worlds), the lockstep of `csem` on two worlds
-    (`E2E.csem_lockstep`, the LL/SC loops `rmw_lockstep2`/`cas_lockstep2`; `csem`'s scratch and
-    payload defs, havocked by M6, are now 0), the call contracts with pinned calls
-    (`CallsRefineP`/`IndCallsRefineP`, the call and `try_call` rules under `MemRefinesR` and the
-    pin, `FV/Backend/Proof/IselContractP.lean`), the guarded semantics `csemG` (guarded reads,
-    pinned calls, `csemG_lockstep2`), and the **VCode non-interference** of a compiled function
-    (`E2E.vcode_ni`, `E2E.backend_correct_world_ni`, `FV/E2E/PairDriver.lean`: the driver on
-    pairs of worlds; premises on the external semantics `XNI`, `XTls`). Findings: (a) the
-    footprint cannot come from the memory relation (`MemRelOk.store` must keep `MR` for every
-    valid store, so `MR` cannot say that a slot byte is uninitialised) nor from an instrumented
-    VCode semantics (its world is an `Arm.ArmState`; the fields the contracts leave free are the
-    ones `MR` may not depend on, `MRStable`), only from the memory rules' proofs, instantiated
-    per CLIF step with the guard `¬ (F ∪ (D ∩ uninit(cm)))`; (b) a call's stack-passed
-    arguments lie in `D`: the two runs agree on them only through the pinned CLIF call (its
-    argument values), so the call contracts carry the pin; (c) M6 need not change: the product
-    run gives two VCode runs with one outcome, each realised by its activation through the
-    existing per-function theorem. Remaining: `LinkSys.Thm` with an activation's own `F` and the
-    non-interference clause, `XNI` for the linked `X` (base externs: a `LinkSys.Ok` premise
-    needed only for callees with slots or an outgoing area; program callees: the induction),
-    the slot-placement oracle in `Clif.Mem` (`enterFunc` places a callee's slots at the
-    compiled frame's addresses below the tracked `sp`, restored at return; trusted-semantics
-    change, `none` = today's bump allocator), then `calleeSlots` drops and the witness gains a
-    called function with a stack slot and one passing stack arguments.
   - indirect calls reaching functions the caller does not declare (vtables in `cg_clif` output:
     needs a linked environment that resolves addresses against the whole program, not the
     per-function program's declarations), recursion through a pointer (the caller's own
