@@ -11,7 +11,7 @@ const USAGE: &str = "\
 usage: cargo fv <build|run|test> [--opt | --opt-proven-only] [--no-fallback] [--trap-replaced] [--keep-temps]
                                 [--panic-abort] [--members-only] [cargo options] [-- args]
        cargo fv report [--functions] [--json] [--manifest-path PATH]
-       cargo fv link-proof [--exe SUBSTR] [--crate NAME] [--out DIR] [--lean FILE --module NAME]
+       cargo fv link-proof [--exe SUBSTR]… [--crate NAME] [--out DIR] [--lean FILE --module NAME]
                            [--entries a,b] [--prune] [--manifest-path PATH]
 
 Builds for aarch64-unknown-linux-musl with rustc_codegen_cranelift; every function of every crate

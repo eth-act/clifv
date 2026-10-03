@@ -141,10 +141,30 @@ premises. Deferred, in order:
   - indirect calls reaching functions the caller does not declare (vtables in `cg_clif` output:
     needs a linked environment that resolves addresses against the whole program, not the
     per-function program's declarations), recursion through a pointer (the caller's own
-    address), indirect callees with stack-passed or `sret` parameters.
-  - directly self-recursive functions in one copy (handled through the `cargo fv` alias as two copies; one copy needs an M6 return-detection invariant for `linkedCall`), float parameters; a
-    depth-free machine (monotonicity of `linkedCall` in the depth, needs base hooks preserving
-    errors).
+    address), indirect callees with stack-passed or `sret` parameters. On real code
+    (agent/crate-check, e2e.md "Crate-level instance"): `fn` pointers make every indirect caller
+    fail `IndDecl` (`h_dyn_generic` 4, `fv-demo` 13 functions), and vtable methods, addressed
+    only by data relocations, are not CLIF image symbols at all.
+  - **`blr` premises at GOT calls** (the main blocker on real code, agent/crate-check:
+    `blrRegs` fails in 8 of the 9 survey crates and for 45 of `fv-demo`'s 550 functions):
+    `Ok.blrRegs`/`blrTry` and `LinkSys.X`'s `blr` branch range over every declared function of
+    `P` with as many register parameters, not over the call's target; a GOT call of a std panic
+    entry point (`(i64)`, no results) in a function that also declares a `(i32) -> i32` function
+    of the crate fails. A GOT `blr`'s target is the loaded symbol: follow the GOT load's vreg to
+    the call, or restrict the premises to `blr`s of `call_indirect`/`try_call_indirect`.
+  - directly self-recursive functions in one copy (handled through the `cargo fv` alias as two
+    copies; one copy needs an M6 return-detection invariant for `linkedCall`; in a crate-level
+    instance the alias `f__fvself` has no address and is a base extern, its contract a base
+    premise), float parameters; a depth-free machine (monotonicity of `linkedCall` in the depth,
+    needs base hooks preserving errors).
+  - **Crate-level instance** (agent/crate-check, `FV/E2E/LinkCheck.lean`, `cargo fv
+    link-proof`; done for `g_u128` whole and 54 of `a_arith`'s 58 functions): an entry-level
+    instance for a crate function (the entry premises of `ProgStmt` for concrete arguments and a
+    CLIF entry memory holding the crate's data objects, as `backend_correct_program_witness`
+    does for its `f 41`); the image premise `himg` with the relocated words of the process image
+    (`imgMem` is the unrelocated encoding; relocation in Lean, or relocation-independence of the
+    machine); moving `NonVacuityLink.lean` onto `LinkCheck` (it keeps its own copy of the
+    checks); the checker's time (dominated by `lowerCheck`, minutes for hundreds of functions).
 - **Exact world of a call.** (superseded for program callees by agent/arm-link) `X.call` is a function of the arguments and the world and must give
   the exact def registers and world of the hooked callee; a compiled callee's theorem fixes only
   the low bits of its results and the live CLIF bytes. Either make `csem`'s call clause

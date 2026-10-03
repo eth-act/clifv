@@ -906,6 +906,167 @@ slot at its frame address), `native_decide`: `entryFactsB_true`, `callChainB_tru
 caller's own) unsatisfiable for every program with a call; it is now stated for the callees of
 the caller's call sites (`LinkSys.ProgSite`).
 
+### Crate-level instance (2026-10-03, `agent/crate-check`)
+
+`backend_correct_program` for a real crate built by `cargo fv`: `LinkSys.Ok` is decided per
+crate on the build's own data, by a general checker with a soundness proof
+(`FV/E2E/LinkCheck.lean`, namespace `E2E.LinkCheck`), and the generated proof file states the
+theorem for the crate's functions (`FVTest/Crates/*.lean`; how to run it: `docs/USAGE.md`,
+"Proving a crate").
+
+```lean
+structure FnInput where clif : String; ra : String; k : Nat := 0; j : Nat := 0
+structure LinkInput where
+  funcs : List FnInput            -- the CLIF file lean-backend compiled, lean-regalloc's output
+  addrs : List (String × Nat)     -- the link map: the machine's symbol addresses (`Xb.sym`)
+  syms : List (String × Nat)      -- the CLIF image's symbols (`L.syms`)
+  raStar : Nat
+  D : Nat
+structure BaseEnv where           -- everything outside the program
+  env : Clif.Env; call : Option String → List CV → Arm.ArmState → Option (List CV × Arm.ArmState)
+  tp : BitVec 64; tlsFlags : String → Arm.ArmState → Arm.PState; hooks : ArmHooks
+def LinkSys.ofInput (I : LinkInput) (B : BaseEnv) (F : BitVec 64 → Prop) : LinkSys
+def okB (I : LinkInput) : Bool
+structure BaseOk (L : LinkSys) : Prop      -- the base environment's premises of `LinkSys.Ok`
+theorem okB_sound (hI : okB I = true) (hB : BaseOk (LinkSys.ofInput I B F))
+    (hF : ∀ a, (LinkSys.ofInput I B F).Img a → F a) : (LinkSys.ofInput I B F).Ok
+def CrateStmt (I : LinkInput) (n : String) : Prop :=
+  ∀ B F, BaseOk (LinkSys.ofInput I B F) → (∀ a, (LinkSys.ofInput I B F).Img a → F a) →
+    ProgStmt (LinkSys.ofInput I B F) n   -- backend_correct_program for `n`, all premises but `Ok`
+theorem crate_correct (hI : okB I = true) (n : String) : CrateStmt I n
+theorem baseOk_closed (htls : ∀ g ∈ (progOf I.results).funcs, hasTls g = false) :
+    BaseOk (LinkSys.ofInput I closedBase F)
+```
+
+**The linked system** (`LinkSys.ofInput`): `P` is the input's functions, parsed and
+`i128`-legalised as `lean-backend` does (`FnInput.func`); `A g` is the pipeline run in Lean
+on them (`pipe`: `lowerFunction`, `prepare`, `parseRAOut`/`buildRFunc` of the recorded
+`lean-regalloc` output, `lowerRFunc`, `emitFunc`, `layout`; `I.results`, looked up by name,
+`artOf`), loaded at the function's link-map address, so `Compiled` follows from the pipeline's
+result (`pipe_spec`) and is not assumed; `base`, `Xb.call`, `Xb.tp`, `Xb.tlsFlags`, `Hb` are
+the base environment's; `Xb.sym n off` is `n`'s link-map address plus `off` (`0` for a name
+outside the map); `L.syms` is `I.syms`; the code image `Img` is the compiled words' addresses
+and `imgMem` their bytes (`memT`); `raStar`, `D` from the input.
+
+**The checker** (`okB`, `okR`): per function (`staticChks ++ linkChks`, each check named by
+the premise it discharges): the pipeline succeeds, `lowerCheck`, `prepCheck`, `checkAlloc`
+(`compiled`), `FormsCovered`, `tryRets`/`blrTry`, `sretRets`, `outFits`, `argRegs`,
+`calleeFrame`/`slotFits`, `callRegs`/`blrRegs` (per call site: a `bl` of a function of `P`
+passes its ABI registers; a `bl` of an extern outside `P` needs nothing; a `blr` site,
+`blrOk`), `declSig`, `entryRegs`, `fits`, `raCall`/`raBlr` (the return address of every call
+is outside every other function's code, an interval check), `depth`, `free`, `subset`
+(clif-subset-v2 E, no direct self-call, ABI and indirect-call signatures),
+`indScope`/`indNoSym`/`indSig`; for the program (`globalChks`): distinct names, the image reads
+back word by word (`imgB`, which also rejects overlapping or misaligned code), `raStar`,
+`symInj` (every function's link-map address is nonzero and no other map entry's), `symOk` (the
+CLIF image's symbols are at their link-map addresses), `Clif.SymInj` of the names with an
+address (when some function has an indirect call), `addrSlots`. `okB_sound` builds every field
+of `LinkSys.Ok` from them (`Facts`, `facts`, the soundness lemmas of the witness's checks,
+generalised), except `imgF` (`hF`) and the base fields. `diag`/`diagR` is the diagnostic version
+(the failing checks by function; `diagR_nil`: empty implies `okR`). Only standard axioms
+(`#print axioms E2E.LinkCheck.okB_sound`).
+
+**What stays a premise** (`BaseOk`), exactly the fields of `LinkSys.Ok` about the base
+environment, gated as there: `baseNoAlloc`, `keepSyms` (`Clif.IndScope.keep`), `baseOs`,
+`basePc`, `baseExt`, `baseX`, `baseXI`, `baseTls`, `baseTry`, `baseNI`, `baseTlsNI`,
+`baseKeepsPlace`, `baseKeepsAllocs`: the contracts of std (panics, the allocator, formatting),
+of other crates' code and cg_clif fallbacks, of the runtime (`memcpy`, …), of TLS, and of a
+recursive function's self-call alias (below). With `hF` (the code is outside the world) and the
+entry premises of `backend_correct_program`, they are the premises of the crate's theorem. They
+are satisfiable: `baseOk_closed`, for the closed base environment `closedBase` (no extern
+outside the program has a semantics, calls outside it continue at the next instruction), for
+every input without `tls_value`; the crate's theorem then covers the runs that call nothing
+outside the program.
+
+**Tooling.** `cargo fv build|test --keep-temps` keeps per codegen unit `fv-link.json`: per
+Lean-compiled function the CLIF file `lean-backend` compiled (with the self-call alias, or the
+optimised dump of the missing-data retry), `lean-regalloc`'s output for it (`fv-rustc` runs as
+the `lean-regalloc` of `lean-backend` and keeps a copy, `cargo_fv::linkproof::regalloc_tee`),
+and the merge's names (each CLIF name → the symbol it is linked as); and per executable the lld
+link map (`link-<tag>.map`, `link-<tag>.json`). `cargo fv link-proof` writes the input
+directory: the CLIF renamed to the linked symbols (local symbols renamed by the merge,
+`c_LdataN` → `__fv_<tag>_LdataN`), the functions at their `__fvlean$` marker in the map, the
+other referenced names at their address in the executable's symbol table, and each function's
+bytes from the executable. `lake exe link-check` completes the input (`syms`: every `symbol`
+global value and `func_addr` target; `D`: the largest frame; `raStar = 8`), prints the failing
+checks per function and premise with details, prunes (`--prune`: the failing functions and,
+transitively, their callers, so the rest is closed under calls and no function of the crate
+becomes a base extern), compares the executable's bytes with the compiled words (outside
+relocated fields) and every `bl` target with the link map (an untrusted check of the object
+writer, the merge and the linker: no difference on any surveyed crate), and with `--lean` writes
+the proof file: the input as string literals, `okB_input : okB input = true := by
+native_decide`, `link_ok`, `noTls`/`base_closed` (without `tls_value`), `entries_present`,
+and `correct_i : CrateStmt input "<name>"` per entry.
+
+**Delivered** (`FVTest/Crates/`, from `examples/survey`'s `tests/values.rs` executables):
+`GU128.lean`, the whole of `g_u128` (19 functions, all Lean-compiled functions of the crate's
+codegen unit; its `i128` functions are the `Opt.Legalize128` legalisations, so the theorem is
+about the legalised program, as in "Widening" 6); `AArith.lean`, 54 of `a_arith`'s 58 (the 2
+functions failing `blrRegs` and their 2 callers dropped). Each builds in about 10 s. Axioms:
+`link_ok`: standard plus `okB_input._native.native_decide.ax_1_1`; `correct_i`: those and the
+backend's existing `bv_decide`/`native_decide` ones (`dbm_sxtb`, `dbm_sxth`, the
+`decode_armBits_*`); `okB_sound`, `crate_correct` (generic): standard plus the backend's.
+
+**Survey** (`link-check --prune`, each crate's codegen unit in its `values` test executable;
+`fv-demo`: its binary, two units):
+
+| crate | functions | pass (call-closed) | failing premises (functions) |
+| --- | --- | --- | --- |
+| a_arith | 58 | 54 | `blrRegs` 2 (+2 callers) |
+| b_slices | 59 | 47 | `blrRegs` 2 (+10 callers) |
+| c_structs_enums | 27 | 25 | `blrRegs` 2 |
+| d_loops_iters | 117 | 107 | `blrRegs` 5 (+5 callers) |
+| e_option_result | 48 | 45 | `blrRegs` 1 (+2 callers) |
+| f_crypto | 40 | 34 | `blrRegs` 4 (+2 callers) |
+| g_u128 | 19 | 19 | — |
+| h_dyn_generic | 43 | 34 | `indScope` 4, `blrRegs` 1 (+5 callers) |
+| i_alloc | 49 | 39 | `blrRegs` 4 (+6 callers) |
+| fv-demo | 550 | 379 | `blrRegs` 45, `indScope` 13, `blrTry` 1 (+114 callers) |
+
+**Blockers on real code** (what fails, and why):
+
+1. *`blrRegs`/`blrTry` at GOT calls of base externs* (every crate but `g_u128`). `cg_clif`
+   declares std's panic entry points non-`colocated`, so their calls are `adrp`/`ldr :got:`/`blr`
+   (`CallInfo` with a register destination). `Ok.blrRegs` (and `blrTry`, and `LinkSys.X`'s `blr`
+   branch behind them) quantifies over every program function the caller declares with as many
+   register parameters, not over the call's actual target, so a GOT call of
+   `panic_const_add_overflow(i64)` (no results) fails as soon as the caller also declares a
+   program function `(i32) -> i32`. The target of a GOT `blr` is known (the loaded symbol); the
+   premise would have to follow it (the GOT load's vreg to the call), or be restricted to `blr`s
+   from `call_indirect`/`func_addr`. Not fixable in the checker: it is the statement of
+   `LinkSys.Ok` (`LinkArm.lean`).
+2. *Indirect calls whose targets the caller does not declare* (`h_dyn_generic`, `fv-demo`):
+   `fn` pointers (`func_addr` of a function of the crate) make every indirect caller fail
+   `Clif.IndDecl` (it must declare every name of `P` with an address). `dyn` calls go through
+   vtables, whose method addresses are data relocations: they are not CLIF image symbols, so a
+   CLIF `call_indirect` through a vtable resolves no function (stuck: those runs are covered
+   only vacuously), and adding them to `syms` makes `IndDecl` fail for every vtable caller.
+   Needs a linked environment that resolves addresses against the whole program (LinkScope).
+3. *Callers of failing functions*: dropped by `--prune` so that the rest is closed under calls.
+
+Not blocking: `try_call` between program functions and to base externs (95 `fv-demo` functions
+and every survey crate's landing-pad code pass), `sret` (121 `fv-demo` functions), data objects
+(`symbol_value`: in `syms`, their contents are entry premises: the CLIF entry memory), std calls
+(base premises), stack-passed and `i128` arguments. A directly recursive function (one in
+`fv-demo`) passes, but only because its self-call names `cargo fv`'s alias `f__fvself`, which is
+not a function of `P` and has no address: the recursive call is a base extern whose contract
+(that it behaves as `f`) is a base premise (`baseX`, …), and `closedBase` gives it no semantics.
+The one-copy linking of recursion (the linker resolves the alias to `f`) is LinkScope's.
+
+**Trusted** in addition to `backend_correct_program`'s: that `cargo fv` records the file it
+passed to `lean-backend` and the output of the `lean-regalloc` run it made (a different
+allocation would only make `checkAlloc` or the image comparison fail), the merge's renaming,
+and the link map's addresses; `imgMem` is the unrelocated encoding (`bl`, `adrp`, GOT and `lo12`
+fields are zero), while the process image has the relocated words (`link-check` compares the
+rest and the `bl` targets: no difference in the 17000 words of the nine survey crates).
+Checker time is dominated by `lowerCheck` (1–50 s per survey crate, 13 min for `fv-demo`'s 550
+functions); `native_decide` repeats it once.
+
+Not done: an entry-level instance for a crate function (the entry premises of `ProgStmt` for
+concrete arguments, as `backend_correct_program_witness` does for `f 41`); the witness
+(`NonVacuityLink.lean`) keeps its own copy of the checks (moving it onto `LinkCheck` was left
+until LinkScope's changes to it land).
+
 ### Non-vacuity (2026-10-02, `agent/callee-fix`, `FV/E2E/NonVacuity.lean`)
 
 A premise set that cannot hold makes a theorem say nothing. The contract premises on the

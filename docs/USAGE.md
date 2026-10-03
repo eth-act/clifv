@@ -83,6 +83,7 @@ cargo fv build [--release] [cargo options]
 cargo fv run   [--release] [cargo options] [-- program args]
 cargo fv test  [--release] [cargo options] [-- test-harness args]
 cargo fv report [--functions] [--json]
+cargo fv link-proof [--exe SUBSTR]… [--crate NAME] [--out DIR] [--prune] [--lean FILE --module NAME] [--entries a,b]
 ```
 
 Options of `cargo fv` (all other options go to cargo unchanged):
@@ -94,7 +95,7 @@ Options of `cargo fv` (all other options go to cargo unchanged):
 | `--no-fallback` | fail (exit 1, before running anything) unless every function of every workspace member runs Lean code (dependencies may keep fallbacks, e.g. float code; the report lists them) |
 | `--trap-replaced` | overwrite cg_clif's code of every Lean-compiled function (members and dependencies) with `udf` traps (see *Checking that the Lean code runs*) |
 | `--members-only` | only the workspace members go through the Lean backend; dependencies are plain cg_clif (the behaviour before agent/fv-deps; own target directory) |
-| `--keep-temps` | keep the per-codegen-unit work directories (`target/fv/<mode>/tmp/`) |
+| `--keep-temps` | keep the per-codegen-unit work directories (`target/fv/<mode>/tmp/`), with what `cargo fv link-proof` needs: per function the CLIF file `lean-backend` compiled, `lean-regalloc`'s output for it and the linked symbol names (`fv-link.json`), per executable the link map |
 | `--panic-abort` | build with `-Cpanic=abort -Zpanic-abort-tests` (the pre-unwinding behaviour; the shipped cg_clif; own target directory) |
 
 `cargo fv report` prints the summary of the last build again. `--functions` lists every
@@ -379,7 +380,62 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   (e.g. `serde_derive`) run on the host at build time and are plain rustc: they are not part
   of the target program, but the code they generate is, and it is compiled like any other
   code of the crate that uses it. The executable's `exe` line counts the prebuilt functions.
-* The report is per function and per build; it does not cover the executable as a whole.
+* The report is per function and per build; it does not cover the executable as a whole. For
+  that, see *Proving a crate*: one theorem for the crate's functions linked together.
+
+## Proving a crate (`cargo fv link-proof`)
+
+`E2E.backend_correct_program` covers a whole program: the linked code of a set of functions,
+each calling the others' compiled code, refines the program's CLIF run; only calls outside the
+set go to a base environment whose contracts stay premises (std, other crates, the runtime).
+For a crate built by `cargo fv`, its premise `LinkSys.Ok` is checked and proven per crate
+(docs/contracts/e2e.md, "Crate-level instance"):
+
+```
+$ cd examples/survey && cargo fv test -p g_u128 --keep-temps
+$ cargo fv link-proof --exe /g_u128/ --exe /values- --crate g_u128 --prune \
+    --lean ../../FVTest/Crates/GU128.lean --module GU128
+cargo fv link-proof: 19 functions of 1 codegen unit(s) of …/values-ec05ef9aac510256 (skipped 0), 60 addresses (0 names unresolved) → …/target/fv/link-proof
+link-check: …/values-ec05ef9aac510256
+  19 functions, 60 link-map addresses, 30 CLIF image symbols, D = 144; checked in 569 ms
+  --prune: 19 of 19 functions pass (0 dropped)
+  image: 865 words of 19 functions compared with the executable, 0 function(s) differ
+  okB: true
+  wrote ../../FVTest/Crates/GU128.lean (19 functions, 19 entries)
+$ cd ../.. && lake build FVTest.Crates.GU128
+```
+
+1. Build with `--keep-temps` (`cargo fv build` or `test`).
+2. `cargo fv link-proof` picks the executable whose path contains every `--exe` (default: the
+   only one linked) and the Lean-compiled, **verified** functions of its codegen units (`--crate NAME`:
+   only the crate's own units, `NAME-<hash>`), and writes `--out` (default
+   `target/fv/link-proof`): `fns/<i>.clif` (the CLIF with every name replaced by the symbol it
+   is linked as), `fns/<i>.ra.json` (`lean-regalloc`'s output), `fns/<i>.bin` (the function's
+   bytes in the executable) and `link.json` (the functions and the link-map addresses of them
+   and of every name they use). It then runs `lake exe link-check` on it (build it once:
+   `lake build link-check`), passing `--prune`, `--lean`, `--module`, `--entries`.
+3. `lake exe link-check DIR` compiles every function again in Lean from its CLIF and allocation,
+   evaluates the checker `E2E.LinkCheck.okB` and prints the failing premises of `LinkSys.Ok` per
+   function, with details (the call site, the undeclared name), and a count per premise; it
+   compares the executable's bytes with the compiled words (relocated fields excepted; `bl`
+   targets against the link map). `--prune` drops the failing functions and their callers
+   (transitively), so the rest is closed under calls. `--profile` times the slowest functions.
+   Exit status 0 iff the (pruned) set passes.
+4. With `--lean FILE --module NAME` (and the checks passing) it writes the proof file:
+   `okB_input` (`native_decide`), `link_ok` (`LinkSys.Ok` of the crate for every base
+   environment satisfying `BaseOk`), `base_closed` (the base premises are satisfiable; written
+   when no function has `tls_value`), `entries_present`, and `correct_<i> : CrateStmt input
+   "<symbol>"` for every function (`--entries a,b`: those). The proof does not trust
+   `link-check`: `native_decide` evaluates `okB` again, and `okB_sound` is a theorem.
+
+What the theorem says, and assumes: e2e.md "Crate-level instance" (the base environment's
+contracts, `BaseOk`, are premises; the entry state is a premise as in `backend_correct_program`).
+What blocks functions today (blocker list there): a `blr` call through the GOT of an extern
+outside the crate in a function that also calls a crate function with as many register
+parameters (most failures), and indirect calls whose targets the caller does not declare (`fn`
+pointers, vtables). The checker's time is dominated by the lowering validator: seconds for a
+small crate, about 13 minutes for `examples/fv-demo`'s 550 functions; `native_decide` in the
+proof file repeats it once.
 
 ## Examples and results
 

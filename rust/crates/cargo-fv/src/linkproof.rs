@@ -165,7 +165,7 @@ fn rename_clif(text: &str, names: &BTreeMap<String, String>) -> (String, BTreeSe
 }
 
 struct Opts {
-    exe: Option<String>,
+    exe: Vec<String>,
     krate: Option<String>,
     out: PathBuf,
     lean: Option<PathBuf>,
@@ -176,11 +176,11 @@ struct Opts {
 }
 
 const LP_USAGE: &str = "\
-usage: cargo fv link-proof [--exe SUBSTR] [--crate NAME] [--out DIR] [--lean FILE.lean --module NAME]
+usage: cargo fv link-proof [--exe SUBSTR]… [--crate NAME] [--out DIR] [--lean FILE.lean --module NAME]
                            [--entries a,b,…] [--prune] [--mode DIR] [--manifest-path PATH]
 
 After `cargo fv build|test --keep-temps`: the Lean-compiled, verified functions of the executable
-whose path contains SUBSTR (default: the only one), restricted to the codegen units of the crate
+whose path contains every SUBSTR (default: the only one), restricted to the codegen units of the crate
 NAME (its units `NAME-<hash>`), as the input of the crate-level linking theorem
 (docs/contracts/e2e.md, \"Crate-level instance\"): DIR (default target/fv/link-proof) gets the
 renamed CLIF files, the regalloc outputs and link.json. Then `lake exe link-check DIR` reports
@@ -191,7 +191,7 @@ target/fv (default plain).";
 
 fn parse_opts(args: &[String], target: &Path) -> Result<Opts, String> {
     let mut o = Opts {
-        exe: None,
+        exe: Vec::new(),
         krate: None,
         out: target.join("fv/link-proof"),
         lean: None,
@@ -204,7 +204,7 @@ fn parse_opts(args: &[String], target: &Path) -> Result<Opts, String> {
     while let Some(a) = it.next() {
         let mut val = || it.next().cloned().ok_or_else(|| format!("{a}: missing value\n{LP_USAGE}"));
         match a.as_str() {
-            "--exe" => o.exe = Some(val()?),
+            "--exe" => o.exe.push(val()?),
             "--crate" => o.krate = Some(val()?),
             "--out" => o.out = PathBuf::from(val()?),
             "--lean" => o.lean = Some(PathBuf::from(val()?)),
@@ -238,7 +238,7 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
         if n.starts_with("link-") && n.ends_with(".json") {
             let j = read_json(&e.path())?;
             let out = j["output"].as_str().unwrap_or_default().to_string();
-            if o.exe.as_deref().is_none_or(|s| out.contains(s)) {
+            if o.exe.iter().all(|s| out.contains(s.as_str())) {
                 links.push((out, PathBuf::from(j["map"].as_str().unwrap_or_default())));
             }
         }
@@ -246,7 +246,7 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
     let (exe, map_path) = match links.len() {
         1 => links.remove(0),
         0 => return Err(format!("no linked executable{} in {} (build with --keep-temps)",
-            o.exe.as_deref().map(|s| format!(" matching `{s}`")).unwrap_or_default(), tmp.display())),
+            if o.exe.is_empty() { String::new() } else { format!(" matching {:?}", o.exe) }, tmp.display())),
         _ => return Err(format!("several executables; choose one with --exe:\n  {}",
             links.iter().map(|l| l.0.as_str()).collect::<Vec<_>>().join("\n  "))),
     };
