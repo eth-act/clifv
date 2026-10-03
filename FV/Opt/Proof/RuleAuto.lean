@@ -163,7 +163,9 @@ macro "sem_simp" : tactic => `(tactic| simp (disch := decide) only [ishl_mask, u
   Sem.sextend, Sem.ireduce, Sem.clz, Sem.ctz, Rust.intccSwapArgs, Rust.intccComplement, Ty.width] at *)
 
 /-- The bit-level goal: normalise immediates, split the type, decide. Only the goal and the
-bit-vector facts matter; the context is not `simp_all`ed (it holds the whole e-graph model). -/
+bit-vector facts matter; the context is not `simp_all`ed (it holds the whole e-graph model).
+`bv_decide` gets a 120 s SAT timeout instead of the default 10 s: these goals take a few seconds
+alone, but the default made full builds fail intermittently under load. -/
 macro "rule_bits" : tactic => `(tactic| (
   try simp (disch := assumption) only [asU64_imm64OfBits, Int.natCast_eq_zero, Int.natCast_inj,
     toNat_eq_iff_ofNat, ofInt_imm64OfBits, bne_iff_ne, ne_eq, toNat_eq_zero_iff] at *
@@ -176,7 +178,8 @@ macro "rule_bits" : tactic => `(tactic| (
        first
          | (simp only [Sem.binary, Sem.unary, Sem.iadd, Sem.imul, Sem.band, Sem.bor, Sem.bxor]
             ac_rfl)
-         | (opt_cases_ty <;> opt_widths <;> (try sem_simp) <;> first | ac_rfl | bv_decide))))
+         | (opt_cases_ty <;> opt_widths <;> (try sem_simp) <;>
+             first | ac_rfl | bv_decide (config := { timeout := 120 })))))
 
 set_option hygiene false in
 /-- Phase 4 when the candidate is a class matched by the left-hand side. -/
