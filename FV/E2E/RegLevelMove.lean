@@ -366,14 +366,14 @@ theorem RL.callAt {R : RL} (hR : R.Wf) {exec : MInst → Arm.ArmState → Option
   · rw [hsp]; exact RL.FK_not_below hR ha
 
 /-- `RL.callAt` for the contract relative to the kept addresses (`CallSoundCtlG`): the state
-keeps `G` (`StRel.gkeep`). -/
+keeps `G` (`StRel.gkeep`); the allocated instructions `P` are at the pc. -/
 theorem RL.callAtG {R : RL} (hR : R.Wf) {exec : MInst → Arm.ArmState → Option Arm.ArmState}
     {sem : ISem CV Arm.ArmState} {i : MInst} {ctl : Ctl}
-    (h : CallSoundCtlG R.F R.K R.G R.s0 (CallPc R.fa R.base) exec sem i ctl)
+    (h : CallSoundCtlG R.F R.K R.G R.s0 (CallAt R.fa R.base) exec sem i ctl)
     {s : Arm.ArmState} (hsp : spOf s = R.spB) (hg : ∀ a, R.G a → s.mem a = R.s0.mem a)
-    (hpc : CallPc R.fa R.base (Arm.r .PC s)) :
-    OperandsSoundCtlAt R.F R.FK exec sem i ctl s := by
-  refine (h s (by rw [hsp]; exact RL.K_le hR) (fun a ha => ?_) hg hpc).mono
+    {P : MInst → Prop} (hpc : ∀ i', P i' → CallAt R.fa R.base (Arm.r .PC s) i') :
+    OperandsSoundCtlAtI R.F R.FK P exec sem i ctl s := by
+  refine (h s (by rw [hsp]; exact RL.K_le hR) (fun a ha => ?_) hg).mono hpc
     fun a ha => ⟨RL.FK_F ha, ?_⟩
   · rw [hsp] at ha; exact RL.below_F ha
   · rw [hsp]; exact RL.FK_not_below hR ha

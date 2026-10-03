@@ -256,7 +256,7 @@ theorem realizes_tls {R : RL} (hR : R.Wf) (hT : TlsOk R.F R.K R.X R.H) {s : Arm.
     exact ⟨by rw [r_write_pstate_other (fun fl => by simp)]; exact herr,
       by simp [Arm.write_pstate, Arm.w_program]⟩
   refine realizes_op_core hR hq hvb hi hops hsz hsem hlen hk (exec := fun _ => tlsExec R.H)
-    (fun _ => RL.callAt hR (os_tls hT n d t) (q_stRel hq).sp) (fun regs i' _ hex => ?_) hW'
+    (fun _ => (RL.callAt hR (os_tls hT n d t) (q_stRel hq).sp).toI _) (fun regs i' _ hex => ?_) hW'
   obtain ⟨_, s0, _, hex⟩ := hex
   cases i' with
   | elfTlsGetAddr n' rd tmp =>

@@ -30,12 +30,13 @@ open Backend Backend.Proof Backend.Proof.Driver
 
 /-! ## The program conditions -/
 
-/-- The programs the linking theorem covers: distinct function names, and no `call_indirect`,
-`try_call_indirect` or `return_call` in any function (`Clif.LinkFree`; `call` and `try_call`
-are allowed). -/
+/-- The programs the linking theorem covers: distinct function names, and no `return_call`
+(`Clif.LinkFree`), `call_indirect` or `try_call_indirect` (`Clif.IndFree`) in any function (`call`
+and `try_call` are allowed). -/
 structure Linkable (P : Clif.Program) : Prop where
   names : (P.funcs.map (·.name)).Nodup
   free : ∀ g ∈ P.funcs, Clif.LinkFree g
+  indFree : ∀ g ∈ P.funcs, Clif.IndFree g
 
 /-- An entry state of a function of `P` satisfies the run invariant of `Clif.runLoop_link`. -/
 theorem runInv_entry {P : Clif.Program} {f : Clif.Function} {args : List Clif.Val}
@@ -54,7 +55,7 @@ theorem armRefines_link {P : Clif.Program} {baseEnv : Clif.Env} {f : Clif.Functi
     {fb : FnBin} {base ra : BitVec 64} {astep : Arm.ArmState → Arm.ArmState} {s : Arm.ArmState}
     (h : ∀ m, ArmRefines fb base ra astep s (Clif.runLoop (Clif.linkEnv P baseEnv) (P.only f) m cs))
     (fuel : Nat) : ArmRefines fb base ra astep s (Clif.runLoop baseEnv P fuel cs) := by
-  have hlink := Clif.runLoop_link (base := baseEnv) hP.names hf hP.free fuel cs hinv
+  have hlink := Clif.runLoop_link (base := baseEnv) hP.names hf hP.free hP.indFree fuel cs hinv
   cases ho : Clif.runLoop baseEnv P fuel cs with
   | stuck m => trivial
   | outOfFuel => trivial
@@ -85,9 +86,9 @@ theorem xCallsOk_link {P : Clif.Program} {baseEnv : Clif.Env} {exts : List Clif.
     exact hprog ext (List.mem_filter.mpr ⟨hin, by simp [hpf]⟩) g sl cm w d uses args vals rvals cm' hg
 
 /-- A function without `call_indirect`/`try_call_indirect` has no indirect-call signatures. -/
-theorem indSigs_nil_of_linkFree {f : Clif.Function} (h : Clif.LinkFree f) : indSigs f = [] :=
+theorem indSigs_nil_of_indFree {f : Clif.Function} (h : Clif.IndFree f) : indSigs f = [] :=
   indSigs_eq_nil (fun B hB st hst sig callee args => (h B hB).1 st hst sig callee args)
-    (fun B hB callee args et => (h B hB).2.1 callee args et)
+    (fun B hB callee args et => (h B hB).2 callee args et)
 
 /-! ## The linked theorem -/
 
@@ -125,7 +126,7 @@ theorem backend_correct_linked {P : Clif.Program} {baseEnv : Clif.Env} {f : Clif
     ArmRefines fb base ra (ArmStepX X H fa) s (Clif.runLoop baseEnv P fuel cs) := by
   refine armRefines_link hP hf (runInv_entry hf hcs) (fun m => ?_) fuel
   exact backend_correct_final hsub hc hcov hC hCT hTls hX
-    (fun _ => by rw [indSigs_nil_of_linkFree (hP.free f hf)]; exact xCallsIndOk_nil _ _ _) hsym
+    (fun _ => by rw [indSigs_nil_of_indFree (hP.indFree f hf)]; exact xCallsIndOk_nil _ _ _) hsym
     hslot hent hres hbe hargs hcs hrel htr m
 
 end E2E
