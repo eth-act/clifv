@@ -3,15 +3,18 @@ import FV.E2E.LinkArm
 /-! # Non-vacuity of `backend_correct_program` (docs/contracts/e2e.md, "Non-vacuity")
 
 A concrete linked program for which every premise of `E2E.backend_correct_program` holds:
-`P = {f, g, h, s, k}`, parsed from the embedded source `src`, compiled by the backend's pipeline
-(`lowerFunction`, `prepare`, regalloc2's allocation `raOut` — the output of `lean-regalloc` on the
-pipeline's input for this file, rebuilt by `buildRFunc` and accepted by `checkAlloc` —,
-`lowerRFunc`, `emitFunc`, `layout`), loaded at `0x50000`, `0x20000`, `0x10000`, `0x30000`,
-`0x40000`. The entry `f` has a stack slot and an outgoing-argument area; it calls
+`P = {f, g, h, s, k, r, r__fvself}`, parsed from the embedded source `src`, compiled by the
+backend's pipeline (`lowerFunction`, `prepare`, regalloc2's allocation `raOut` — the output of
+`lean-regalloc` on the pipeline's input for this file, rebuilt by `buildRFunc` and accepted by
+`checkAlloc` —, `lowerRFunc`, `emitFunc`, `layout`), loaded at `0x70000` (`f`), `0x20000`,
+`0x10000`, `0x30000`, `0x40000`, `0x50000`, `0x60000`. The entry `f` has a stack slot and an
+outgoing-argument area; it calls
 
 * `s` with an `sret` pointer to its slot (`s` stores through it, returns the pointer in x0),
 * `k` with 9 arguments (the 9th on the stack, in `f`'s outgoing area),
-* `g` by a `try_call` with a result (`g` calls `h`: a non-leaf program callee).
+* `g` by a `try_call` with a result (`g` calls `h`: a non-leaf program callee),
+* the recursive `r` (`r n = 2 n`): its self-call is `cargo fv`'s alias `r__fvself`, linked as a
+  second function with `r`'s body whose self-call names `r` (the two call each other).
 
 * The per-function premises of `LinkSys.Ok` are executable checks (`chks`, `okB`, each with a
   soundness lemma: `siteOk_sound`, `tryB_sound`, `retsB_sound`, `outFitsB_sound`,
@@ -23,7 +26,7 @@ pipeline's input for this file, rebuilt by `buildRFunc` and accepted by `checkAl
 * **`backend_correct_program_witness`**: with the entry premises of `f` on the argument `41`
   (ABI entry state `s0`, body-entry world `w0`, CLIF entry state `cs0` with `f`'s slot at its
   frame address), the theorem applies: the linked machine refines `f`'s CLIF run, which returns
-  `179`.
+  `185`.
 -/
 
 namespace E2E.LinkWitness
@@ -59,12 +62,45 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64, v6: i64, v7: i64, v
     return v9
 }
 
+function %r(i64) -> i64 system_v {
+    fn0 = colocated %r__fvself(i64) -> i64 system_v
+block0(v0: i64):
+    brif v0, block1, block2
+block1:
+    v1 = iconst.i64 1
+    v2 = isub v0, v1
+    v3 = call fn0(v2)
+    v4 = iconst.i64 2
+    v5 = iadd v3, v4
+    return v5
+block2:
+    v6 = iconst.i64 0
+    return v6
+}
+
+function %r__fvself(i64) -> i64 system_v {
+    fn0 = colocated %r(i64) -> i64 system_v
+block0(v0: i64):
+    brif v0, block1, block2
+block1:
+    v1 = iconst.i64 1
+    v2 = isub v0, v1
+    v3 = call fn0(v2)
+    v4 = iconst.i64 2
+    v5 = iadd v3, v4
+    return v5
+block2:
+    v6 = iconst.i64 0
+    return v6
+}
+
 function %f(i64) -> i64 system_v {
     ss0 = explicit_slot 8
     sig0 = (i64) -> i64 system_v
     fn0 = colocated %g(i64) -> i64 system_v
     fn1 = colocated %s(i64 sret, i64) system_v
     fn2 = colocated %k(i64, i64, i64, i64, i64, i64, i64, i64, i64) -> i64 system_v
+    fn3 = colocated %r(i64) -> i64 system_v
 block0(v0: i64):
     v1 = stack_addr.i64 ss0
     call fn1(v1, v0)
@@ -73,13 +109,16 @@ block0(v0: i64):
     v4 = call fn2(v2, v3, v3, v3, v3, v3, v3, v3, v0)
     try_call fn0(v4), sig0, block1(ret0), [ tag0: block2(exn0) ]
 block1(v5: i64):
-    return v5
+    v7 = iconst.i64 3
+    v8 = call fn3(v7)
+    v9 = iadd v5, v8
+    return v9
 block2(v6: i64):
     return v6
 }
 "
 
-def raOut : String := "{\"functions\":[{\"allocs\":[[\"x0\"],[\"x2\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"h\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x0\",\"x19\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x0\",\"inst\":1,\"pos\":\"before\",\"to\":\"x19\"}],\"name\":\"g\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x8\",\"x0\"],[\"x3\"],[\"x5\",\"x0\"],[\"x5\",\"x8\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x8\",\"inst\":4,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"s\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\",\"x2\",\"x3\",\"x4\",\"x5\",\"x6\",\"x7\"],[\"x9\"],[\"x0\",\"x0\",\"x9\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"k\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x8\"],[\"x8\",\"x0\",\"x0\"],[\"x0\"],[\"x7\"],[\"x19\"],[\"x0\",\"x1\",\"x2\",\"x3\",\"x4\",\"x5\",\"x6\",\"x7\",\"x0\"],[\"x0\",\"x0\",\"x1\"],[],[\"x0\"],[],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x0\",\"inst\":2,\"pos\":\"before\",\"to\":\"x19\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x2\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x3\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x4\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x5\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x6\"}],\"name\":\"f\",\"num_spillslots\":0,\"ok\":true}]}"
+def raOut : String := "{\"functions\":[{\"allocs\":[[\"x0\"],[\"x2\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"h\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x0\",\"x19\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x0\",\"inst\":1,\"pos\":\"before\",\"to\":\"x19\"}],\"name\":\"g\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x8\",\"x0\"],[\"x3\"],[\"x5\",\"x0\"],[\"x5\",\"x8\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x8\",\"inst\":4,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"s\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\",\"x2\",\"x3\",\"x4\",\"x5\",\"x6\",\"x7\"],[\"x9\"],[\"x0\",\"x0\",\"x9\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"k\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x0\"],[\"x0\"],[\"x0\"],[\"x5\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x11\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"r\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x0\"],[\"x0\"],[\"x0\"],[\"x5\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x11\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"r__fvself\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x8\"],[\"x8\",\"x0\",\"x0\"],[\"x0\"],[\"x7\"],[\"x19\"],[\"x0\",\"x1\",\"x2\",\"x3\",\"x4\",\"x5\",\"x6\",\"x7\",\"x0\"],[\"x0\",\"x0\",\"x1\"],[],[\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x1\",\"x0\"],[\"x0\"],[],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x0\",\"inst\":2,\"pos\":\"before\",\"to\":\"x19\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x2\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x3\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x4\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x5\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x6\"},{\"from\":\"x0\",\"inst\":8,\"pos\":\"before\",\"to\":\"x19\"},{\"from\":\"x19\",\"inst\":11,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x0\",\"inst\":13,\"pos\":\"before\",\"to\":\"x19\"},{\"from\":\"x19\",\"inst\":14,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"f\",\"num_spillslots\":0,\"ok\":true}]}"
 
 deriving instance Inhabited for Art
 
@@ -99,7 +138,10 @@ def fH : Clif.Function := fn 0
 def fG : Clif.Function := fn 1
 def fS : Clif.Function := fn 2
 def fK : Clif.Function := fn 3
-def fF : Clif.Function := fn 4
+def fR : Clif.Function := fn 4
+/-- `r`'s alias (`cargo fv`'s `r__fvself`): `r`'s body, its self-call naming `r`. -/
+def fRS : Clif.Function := fn 5
+def fF : Clif.Function := fn 6
 
 def raJ (i : Nat) : Lean.Json :=
   (((getOk (Lean.Json.parse raOut)).getObjVal? "functions").bind (·.getArr?)).toOption.getD #[] |>.getD i default
@@ -118,12 +160,13 @@ def pipe (f : Clif.Function) (k : Nat) (base : BitVec 64) : Except String Art :=
 
 /-! ## The program and its compiled image -/
 
-/-- The program `{f, g, h, s, k}`. -/
-def P : Clif.Program := { funcs := [fF, fG, fH, fS, fK] }
+/-- The program `{f, g, h, s, k, r, r__fvself}`. -/
+def P : Clif.Program := { funcs := [fF, fG, fH, fS, fK, fR, fRS] }
 
 /-- The file index of a function of `P` (the regalloc2 output and the local labels). -/
 def idx (g : Clif.Function) : Nat :=
-  if g = fF then 4 else if g = fG then 1 else if g = fS then 2 else if g = fK then 3 else 0
+  if g = fF then 6 else if g = fG then 1 else if g = fS then 2 else if g = fK then 3
+  else if g = fR then 4 else if g = fRS then 5 else 0
 
 /-- The load address of a function of `P`. -/
 def baseOf (g : Clif.Function) : BitVec 64 := 0x10000 * BitVec.ofNat 64 (idx g + 1)
@@ -505,8 +548,9 @@ theorem facts {g : Clif.Function} (hg : g ∈ P.funcs) : Facts g := by
 
 /-- The link-time symbol addresses: every function at its base. -/
 def symOf (n : String) : BitVec 64 :=
-  if n = "f" then 0x50000 else if n = "g" then 0x20000 else if n = "h" then 0x10000
-  else if n = "s" then 0x30000 else if n = "k" then 0x40000 else 0
+  if n = "f" then 0x70000 else if n = "g" then 0x20000 else if n = "h" then 0x10000
+  else if n = "s" then 0x30000 else if n = "k" then 0x40000 else if n = "r" then 0x50000
+  else if n = "r__fvself" then 0x60000 else 0
 
 /-- The base environment's machine semantics: no extern outside `P` (`call` undefined), the
 symbols at the functions' bases. -/
@@ -519,7 +563,7 @@ def Xb : ExtSem where
 /-- The base hooks: a call outside `P` continues at the next instruction; TLS keeps the state. -/
 def Hb : ArmHooks := ⟨fun _ s => Arm.w .PC (Arm.r .PC s + 4) s, fun _ _ s => s⟩
 
-/-- **The linked program** `{f, g, h, s, k}` with the addresses `F` outside the world. -/
+/-- **The linked program** `{f, g, h, s, k, r, r__fvself}` with the addresses `F` outside the world. -/
 def L (F : BitVec 64 → Prop) : LinkSys where
   P := P
   A := A
@@ -533,15 +577,18 @@ def L (F : BitVec 64 → Prop) : LinkSys where
   raStar := 8
   D := 64
 
-theorem names : fF.name = "f" ∧ fG.name = "g" ∧ fH.name = "h" ∧ fS.name = "s" ∧ fK.name = "k" := by
+theorem names : fF.name = "f" ∧ fG.name = "g" ∧ fH.name = "h" ∧ fS.name = "s" ∧ fK.name = "k" ∧
+    fR.name = "r" ∧ fRS.name = "r__fvself" := by
   native_decide
 
-theorem mem_P {g : Clif.Function} : g ∈ P.funcs ↔ g = fF ∨ g = fG ∨ g = fH ∨ g = fS ∨ g = fK := by
+theorem mem_P {g : Clif.Function} :
+    g ∈ P.funcs ↔ g = fF ∨ g = fG ∨ g = fH ∨ g = fS ∨ g = fK ∨ g = fR ∨ g = fRS := by
   simp [P]
 
-theorem symOf_cases (n : String) : (n = "f" ∧ symOf n = 0x50000) ∨ (n = "g" ∧ symOf n = 0x20000) ∨
+theorem symOf_cases (n : String) : (n = "f" ∧ symOf n = 0x70000) ∨ (n = "g" ∧ symOf n = 0x20000) ∨
     (n = "h" ∧ symOf n = 0x10000) ∨ (n = "s" ∧ symOf n = 0x30000) ∨
-    (n = "k" ∧ symOf n = 0x40000) ∨ symOf n = 0 := by
+    (n = "k" ∧ symOf n = 0x40000) ∨ (n = "r" ∧ symOf n = 0x50000) ∨
+    (n = "r__fvself" ∧ symOf n = 0x60000) ∨ symOf n = 0 := by
   unfold symOf
   by_cases h1 : n = "f"
   · simp [h1]
@@ -553,19 +600,25 @@ theorem symOf_cases (n : String) : (n = "f" ∧ symOf n = 0x50000) ∨ (n = "g" 
   · simp [h4]
   by_cases h5 : n = "k"
   · simp [h5]
-  simp [h1, h2, h3, h4, h5]
+  by_cases h6 : n = "r"
+  · simp [h6]
+  by_cases h7 : n = "r__fvself"
+  · simp [h7]
+  simp [h1, h2, h3, h4, h5, h6, h7]
 
-theorem symOf_eq {n m : String} (hm : m = "f" ∨ m = "g" ∨ m = "h" ∨ m = "s" ∨ m = "k")
+theorem symOf_eq {n m : String}
+    (hm : m = "f" ∨ m = "g" ∨ m = "h" ∨ m = "s" ∨ m = "k" ∨ m = "r" ∨ m = "r__fvself")
     (h : symOf m = symOf n) : n = m := by
-  rcases symOf_cases n with ⟨rfl, hn⟩ | ⟨rfl, hn⟩ | ⟨rfl, hn⟩ | ⟨rfl, hn⟩ | ⟨rfl, hn⟩ | hn <;>
-    rcases hm with rfl | rfl | rfl | rfl | rfl <;> rw [hn] at h <;>
+  rcases symOf_cases n with ⟨rfl, hn⟩ | ⟨rfl, hn⟩ | ⟨rfl, hn⟩ | ⟨rfl, hn⟩ | ⟨rfl, hn⟩ |
+      ⟨rfl, hn⟩ | ⟨rfl, hn⟩ | hn <;>
+    rcases hm with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rw [hn] at h <;>
     first | rfl | (exfalso; revert h; simp (config := { decide := true }) [symOf])
 
 theorem symInj {h : Clif.Function} (hh : h ∈ P.funcs) (n : String)
     (hn : Xb.sym h.name 0 = Xb.sym n 0) : n = h.name := by
-  obtain ⟨n1, n2, n3, n4, n5⟩ := names
+  obtain ⟨n1, n2, n3, n4, n5, n6, n7⟩ := names
   refine symOf_eq ?_ hn
-  rcases mem_P.1 hh with rfl | rfl | rfl | rfl | rfl <;> simp [n1, n2, n3, n4, n5]
+  rcases mem_P.1 hh with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [n1, n2, n3, n4, n5, n6, n7]
 
 /-- **`L.Ok`**: every premise of the linked program, for every `F` containing the code. -/
 theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok := by
@@ -663,7 +716,7 @@ theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
 /-! ## A concrete entry of `f` -/
 
 /-- The call depth of the witness run. -/
-def M0 : Nat := 20
+def M0 : Nat := 100
 
 def sp0 : BitVec 64 := 0x100000
 
@@ -703,10 +756,10 @@ def isRet : Clif.Outcome → Bool
 theorem eq_returned {o : Clif.Outcome} (h : isRet o = true) : o = .returned (retVals o) (retMem o) := by
   cases o <;> simp_all [isRet, retVals, retMem]
 
-/-- Every code address of `P` is in `[0x10000, 0x60000)`. -/
+/-- Every code address of `P` is in `[0x10000, 0x80000)`. -/
 def boundB : Bool :=
   P.funcs.all fun g => let a := A g
-    decide (a.base.toNat + 4 * a.fb.words.size + 4 ≤ 0x60000)
+    decide (a.base.toNat + 4 * a.fb.words.size + 4 ≤ 0x80000)
 
 def locB : Bool :=
   match locsOf fF.sig with
@@ -721,14 +774,14 @@ def frameB : Bool :=
   decide ((RAFrame.compute (A fF).vcp (A fF).rf).size = 32) &&
   decide ((slotLayout fF.slots).1 = [(0, 0)]) && decide (fF.slots.map (·.1) = [0])
 
-/-- The entry facts of `f` and its run: `f 41 = h (k (s 41, 0, …, 41)) + …` returns `179`. -/
+/-- The entry facts of `f` and its run: `f 41 = g (k (s 41, 0, …, 41)) + r 3` returns `185`. -/
 def entryFactsB : Bool :=
   boundB && locB && frameB &&
   decide (P.func? fF.name = some fF) && decide (fF.entry? = some bF) &&
   decide ([arg].map (·.ty) = fF.sig.params.map (·.ty)) &&
   decide (bF.params.map (·.2) = [arg].map (·.ty)) &&
   (Clif.Regs.empty.setMany (bF.params.map (·.1)) [arg]).isSome &&
-  isRet run0 && decide (retVals run0 = [⟨.i64, 179#64⟩])
+  isRet run0 && decide (retVals run0 = [⟨.i64, 185#64⟩])
 
 theorem entryFactsB_true : entryFactsB = true := by native_decide
 
@@ -737,7 +790,7 @@ theorem entryFacts :
     fF.entry? = some bF ∧ [arg].map (·.ty) = fF.sig.params.map (·.ty) ∧
     bF.params.map (·.2) = [arg].map (·.ty) ∧
     (Clif.Regs.empty.setMany (bF.params.map (·.1)) [arg]).isSome = true ∧ isRet run0 = true ∧
-    retVals run0 = [⟨.i64, 179#64⟩] := by
+    retVals run0 = [⟨.i64, 185#64⟩] := by
   have he := entryFactsB_true
   simp only [entryFactsB, Bool.and_eq_true, decide_eq_true_eq] at he
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩, h7⟩, h8⟩, h9⟩, h10⟩ := he
@@ -764,9 +817,9 @@ theorem wordsAt_mem_inv {base : BitVec 64} {p : BitVec 64 × BitVec 32} :
       obtain ⟨j, hj, e⟩ := wordsAt_mem_inv h
       exact ⟨j + 1, by simp; omega, by rw [e]; congr 2; omega⟩
 
-theorem codeAddr_lt {a : Art} (hb : a.base.toNat + 4 * a.fb.words.size + 4 ≤ 0x60000) {x : BitVec 64}
+theorem codeAddr_lt {a : Art} (hb : a.base.toNat + 4 * a.fb.words.size + 4 ≤ 0x80000) {x : BitVec 64}
     {t : Arm.ArmState} (ht : t.program = a.fb.program a.base) (h : CodeAddr t x) :
-    x.toNat < 0x60000 := by
+    x.toNat < 0x80000 := by
   obtain ⟨p, hp, hx⟩ := h
   rw [ht] at hp
   obtain ⟨j, hj, e⟩ := wordsAt_mem_inv (k := 0) hp
@@ -779,12 +832,12 @@ theorem codeAddr_lt {a : Art} (hb : a.base.toNat + 4 * a.fb.words.size + 4 ≤ 0
   omega
 
 theorem bound_of {g : Clif.Function} (hg : g ∈ P.funcs) :
-    (A g).base.toNat + 4 * (A g).fb.words.size + 4 ≤ 0x60000 := by
+    (A g).base.toNat + 4 * (A g).fb.words.size + 4 ≤ 0x80000 := by
   have h := entryFacts.1
   simp only [boundB, List.all_eq_true, decide_eq_true_eq] at h
   exact h g hg
 
-theorem img_lt {x : BitVec 64} (h : Img P A x) : x.toNat < 0x60000 := by
+theorem img_lt {x : BitVec 64} (h : Img P A x) : x.toNat < 0x80000 := by
   obtain ⟨g, hg, hc⟩ := h
   exact codeAddr_lt (bound_of hg) rfl hc
 
@@ -881,25 +934,31 @@ theorem tryCallsB_sound {vc : VCode} {n : String} (h : tryCallsB vc n = true) :
       of_decide_eq_true hd⟩
   · simp
 
-/-- `f` calls `s` (an `sret` callee), `k` (a stack-passed argument) and `g` by a `try_call`;
-`g` calls `h` (in their compiled code). -/
+/-- `f` calls `s` (an `sret` callee), `k` (a stack-passed argument), `g` by a `try_call` and
+the recursive `r`; `g` calls `h`; `r` and its alias `r__fvself` call each other (in their
+compiled code). -/
 def callChainB : Bool :=
   tryCallsB (A fF).vcp "g" && callsB (A fG).vcp "h" && callsB (A fF).vcp "s" &&
   callsB (A fF).vcp "k" &&
   decide (P.func? "g" = some fG) && decide (P.func? "h" = some fH) &&
   decide (P.func? "s" = some fS) && decide (P.func? "k" = some fK) &&
   fS.sig.params.any (·.purpose == .sret) &&
-  (locsOf fK.sig).any (fun l => match l with | .stack _ => true | .reg _ => false)
+  (locsOf fK.sig).any (fun l => match l with | .stack _ => true | .reg _ => false) &&
+  callsB (A fR).vcp "r__fvself" && callsB (A fRS).vcp "r" && callsB (A fF).vcp "r" &&
+  decide (P.func? "r" = some fR) && decide (P.func? "r__fvself" = some fRS) &&
+  decide (fRS.name = fR.name ++ "__fvself") && decide (fRS.blocks = fR.blocks) &&
+  decide (fRS.sig = fR.sig)
 
 theorem callChainB_true : callChainB = true := by native_decide
 
-/-- **Non-vacuity of `backend_correct_program`**: for the program `P = {f, g, h, s, k}` — `f`
-passes an `sret` pointer to its stack slot to `s`, a stack-passed argument to `k` and calls `g`
-by a `try_call` with a result; `g` calls `h` (a non-leaf callee) —, compiled by the backend's
-pipeline (regalloc2's allocation, accepted by `checkAlloc`), linked at `0x50000`, `0x20000`,
-`0x10000`, `0x30000`, `0x40000`, every premise of the theorem holds — `L.Ok` and the entry
-premises of `f` on the argument `41` — and the theorem gives: the linked Arm machine refines
-`f`'s CLIF run, which returns `179`. -/
+/-- **Non-vacuity of `backend_correct_program`**: for the program
+`P = {f, g, h, s, k, r, r__fvself}` — `f` passes an `sret` pointer to its stack slot to `s`, a
+stack-passed argument to `k`, calls `g` by a `try_call` with a result and the recursive `r`;
+`g` calls `h` (a non-leaf callee); `r` recurses through its alias `r__fvself` (same body and
+signature) —, compiled by the backend's pipeline (regalloc2's allocation, accepted by
+`checkAlloc`), every premise of the theorem holds — `L.Ok` and the entry premises of `f` on the
+argument `41` — and the theorem gives: the linked Arm machine refines `f`'s CLIF run, which
+returns `185`. -/
 theorem backend_correct_program_witness :
     (L F0).Ok ∧ fF ∈ (L F0).P.funcs ∧ fG ∈ (L F0).P.funcs ∧ fH ∈ (L F0).P.funcs ∧
     fS ∈ (L F0).P.funcs ∧ fK ∈ (L F0).P.funcs ∧
@@ -908,17 +967,21 @@ theorem backend_correct_program_witness :
     (∃ info, (L F0).ProgSite fF info fS) ∧ fS.sig.params.any (·.purpose == .sret) = true ∧
     (∃ info, (L F0).ProgSite fF info fK) ∧ (∃ off, ArgLoc.stack off ∈ locsOf fK.sig) ∧
     (RAFrame.compute (A fF).vcp (A fF).rf).intBase ≠ 0 ∧ fF.slots ≠ [] ∧
-    run0 = .returned [⟨.i64, 179#64⟩] (retMem run0) ∧
+    fR ∈ (L F0).P.funcs ∧ fRS ∈ (L F0).P.funcs ∧ (∃ info, (L F0).ProgSite fF info fR) ∧
+    (∃ info, (L F0).ProgSite fR info fRS) ∧ (∃ info, (L F0).ProgSite fRS info fR) ∧
+    fRS.name = fR.name ++ "__fvself" ∧ fRS.blocks = fR.blocks ∧ fRS.sig = fR.sig ∧
+    run0 = .returned [⟨.i64, 185#64⟩] (retMem run0) ∧
     ArmRefines (A fF).fb (A fF).base 8 ((L F0).mach M0 fF) s0 run0 := by
   have hF : ∀ a, Img P A a → F0 a := fun a ha => .inr ha
   have hL := L_ok F0 hF
   have hfF : fF ∈ (L F0).P.funcs := by simp [L, P]
   have hc := callChainB_true
   simp only [callChainB, Bool.and_eq_true, decide_eq_true_eq] at hc
-  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨hcf, hcg⟩, hcs⟩, hck⟩, hpg⟩, hph⟩, hps⟩, hpk⟩, hsret⟩, hstk⟩ := hc
+  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨hcf, hcg⟩, hcs⟩, hck⟩, hpg⟩, hph⟩, hps⟩, hpk⟩, hsret⟩, hstk⟩, hcr⟩, hcrs⟩,
+    hcfr⟩, hpr⟩, hprs⟩, hnm⟩, hbl⟩, hsg⟩ := hc
   obtain ⟨hbound, hloc, -, hfunc, hentry, hsig, hparams, hset, hret, hvals⟩ := entryFacts
   obtain ⟨hframe, hdrop, hfs, hsb, hib, hsz, hlay, hslots⟩ := frameFacts
-  have hrun : run0 = .returned [⟨.i64, 179#64⟩] (retMem run0) := by
+  have hrun : run0 = .returned [⟨.i64, 185#64⟩] (retMem run0) := by
     rw [← hvals]; exact eq_returned hret
   have hfa := facts (g := fF) (by simp [P])
   have hlocs : locsOf fF.sig = [.reg (.x 0)] := by
@@ -926,9 +989,10 @@ theorem backend_correct_program_witness :
     split at hloc
     · assumption
     · cases hloc
-  have hbF : (A fF).base.toNat + 4 * (A fF).fb.words.size + 4 ≤ 0x60000 := bound_of (by simp [P])
+  have hbF : (A fF).base.toNat + 4 * (A fF).fb.words.size + 4 ≤ 0x80000 := bound_of (by simp [P])
   refine ⟨hL, hfF, by simp [L, P], by simp [L, P], by simp [L, P], by simp [L, P], ?_, ?_, ?_,
-    hsret, ?_, ?_, by rw [hib]; decide, fun h => by simp [h] at hslots, hrun, ?_⟩
+    hsret, ?_, ?_, by rw [hib]; decide, fun h => by simp [h] at hslots, by simp [L, P],
+    by simp [L, P], ?_, ?_, ?_, hnm, hbl, hsg, hrun, ?_⟩
   · obtain ⟨info, ti, hs, hd⟩ := tryCallsB_sound hcf
     exact ⟨info, ti, hs, hs.callSite, "g", hd, hpg⟩
   · obtain ⟨info, hs, hd⟩ := callsB_sound hcg
@@ -941,6 +1005,12 @@ theorem backend_correct_program_witness :
     cases l with
     | stack off => exact ⟨off, hl⟩
     | reg _ => cases hst
+  · obtain ⟨info, hs, hd⟩ := callsB_sound hcfr
+    exact ⟨info, hs, "r", hd, hpr⟩
+  · obtain ⟨info, hs, hd⟩ := callsB_sound hcr
+    exact ⟨info, hs, "r__fvself", hd, hprs⟩
+  · obtain ⟨info, hs, hd⟩ := callsB_sound hcrs
+    exact ⟨info, hs, "r", hd, hpr⟩
   rw [hrun]
   refine backend_correct_program_returned (L F0) hL hfF M0 (w₀ := w0) (args := [arg]) (cs := cs0)
     ?hent ?hres rfl ?hgfree ?himg ?hbe ?hargs ?hcs ?hsav ?hrel (hrun ▸ rfl)

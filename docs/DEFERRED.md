@@ -139,7 +139,7 @@ premises. Deferred, in order:
     `sp`, restored at return; trusted-semantics change, `none` = today's bump allocator) makes
     CLIF and Arm slot addresses equal, including escaping ones (`stack_addr` passed to callees,
     the usual `cg_clif` pattern); a relocation lemma cannot cover those.
-  - directly self-recursive functions (`raCall`), `blr` call sites, float parameters; a
+  - directly self-recursive functions in one copy (handled through the `cargo fv` alias as two copies; one copy needs an M6 return-detection invariant for `linkedCall`), `blr` call sites, float parameters; a
     depth-free machine (monotonicity of `linkedCall` in the depth, needs base hooks preserving
     errors).
 - **Exact world of a call.** (superseded for program callees by agent/arm-link) `X.call` is a function of the arguments and the world and must give

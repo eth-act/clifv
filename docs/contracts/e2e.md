@@ -632,17 +632,27 @@ runs of at most `M + 1` steps).
    caller's `OutRel` holds again because the callee's whole-program run creates no allocation
    (`runLoop_valid`: entered functions without slots, `baseNoAlloc`). All new premises are implied
    by the former ones.
+4. *Direct self-recursion*: handled through `cargo fv`'s alias, as two distinct functions with
+   the same body: `P` contains `r` (its self-call renamed to `r__fvself`, as `cargo fv` emits)
+   and `r__fvself` (`r`'s body and signature under the alias name, its self-call naming `r`);
+   the two call each other, so `raCall` (return address outside the *callee's* code) holds and
+   no premise changes. Trusted: the real binary has one copy (the linker resolves `r__fvself` to
+   `r`); the theorem is about the two-copy layout. Refining `raCall` for a single copy needs the
+   linked call to find the callee's return without the "return address outside its code"
+   argument (`retStuck`): an M6 invariant that no intermediate state of an activation is at a
+   post-call address with the entry `sp` (not done).
 
 **Non-vacuity** (`FV/E2E/NonVacuityLink.lean`, namespace `E2E.LinkWitness`): the closed program
-`P = {f, g, h, s, k}` — the entry `f` (a stack slot, a 16-byte outgoing area) passes an `sret`
-pointer to its slot to `s` (which stores through it and returns the pointer), calls `k` with 9
-arguments (the 9th on the stack) and calls `g` by a `try_call` with a result (`block1(ret0)`,
-handler `tag0: block2(exn0)`); `g` calls `h` (a non-leaf program callee; `g` keeps its argument
+`P = {f, g, h, s, k, r, r__fvself}` — the entry `f` (a stack slot, a 16-byte outgoing area)
+passes an `sret` pointer to its slot to `s` (which stores through it and returns the pointer),
+calls `k` with 9 arguments (the 9th on the stack), calls `g` by a `try_call` with a result
+(`block1(ret0)`, handler `tag0: block2(exn0)`) and calls the recursive `r` (`r 3 = 6`, through
+its alias `r__fvself`); `g` calls `h` (a non-leaf program callee; `g` keeps its argument
 in x19 across the call); `colocated`, `system_v` — parsed from an embedded source and
 compiled by the pipeline (`lowerFunction`, `prepare`, the `lean-regalloc` output for this file
 embedded as JSON and rebuilt by `parseRAOut`/`buildRFunc`, `checkAlloc`, `lowerRFunc`,
-`emitFunc`, `layout`), loaded at `0x50000`/`0x20000`/`0x10000`/`0x30000`/`0x40000`, closed base
-environment (no extern outside `P`, no TLS):
+`emitFunc`, `layout`), loaded at `0x70000` (`f`) and `0x10000`…`0x60000`, closed base
+environment (no extern outside `P`, no TLS), depth `M0 = 100`:
 
 ```lean
 theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
@@ -654,7 +664,10 @@ theorem backend_correct_program_witness :
     (∃ info, (L F0).ProgSite fF info fS) ∧ fS.sig.params.any (·.purpose == .sret) = true ∧
     (∃ info, (L F0).ProgSite fF info fK) ∧ (∃ off, ArgLoc.stack off ∈ locsOf fK.sig) ∧
     (RAFrame.compute (A fF).vcp (A fF).rf).intBase ≠ 0 ∧ fF.slots ≠ [] ∧
-    run0 = .returned [⟨.i64, 179#64⟩] (retMem run0) ∧
+    fR ∈ (L F0).P.funcs ∧ fRS ∈ (L F0).P.funcs ∧ (∃ info, (L F0).ProgSite fF info fR) ∧
+    (∃ info, (L F0).ProgSite fR info fRS) ∧ (∃ info, (L F0).ProgSite fRS info fR) ∧
+    fRS.name = fR.name ++ "__fvself" ∧ fRS.blocks = fR.blocks ∧ fRS.sig = fR.sig ∧
+    run0 = .returned [⟨.i64, 185#64⟩] (retMem run0) ∧
     ArmRefines (A fF).fb (A fF).base 8 ((L F0).mach M0 fF) s0 run0
 ```
 
@@ -729,7 +742,7 @@ body's `sp`"):
 | `backend_correct_opt_proven` | `hC`, `hTls`, `hX`, `hsym` (for the optimised function; `try_call` and `call_indirect` excluded by premises) | `final_contracts_witness` at `f := Opt.optimize f cfg` |
 | `backend_correct_legal` | `hC`, `hCT`, `hTls`, `hX`, `hXI`, `hsym` (for the legalised `g`, environment `Clif.Rust.env`) | `final_contracts_witness` at `f := g`, `env := Clif.Rust.env`, for functions without indirect calls whose externs are the diverging panic entry points (they never return, so `hnoop` holds) |
 | `backend_correct_linked` | `hC`, `hCT`, `hTls`, `hX` (environment `Clif.linkEnv P base`); `hXI` discharged by `Linkable` | `final_contracts_witness` at `env := Clif.linkEnv P base`, when the program callees and the base externs return nothing and keep the memory |
-| `backend_correct_program` | `L.Ok` (program, compilation, layout, base environment) and the entry premises | `E2E.LinkWitness.backend_correct_program_witness` (`FV/E2E/NonVacuityLink.lean`): `P = {f, g, h, s, k}` compiled by the pipeline (a `try_call` f→g, an `sret` call f→s into `f`'s stack slot, a stack-passed argument f→k, a non-leaf callee g→h), all premises discharged, `f 41` returns `179` |
+| `backend_correct_program` | `L.Ok` (program, compilation, layout, base environment) and the entry premises | `E2E.LinkWitness.backend_correct_program_witness` (`FV/E2E/NonVacuityLink.lean`): `P = {f, g, h, s, k}` compiled by the pipeline (a `try_call` f→g, an `sret` call f→s into `f`'s stack slot, a stack-passed argument f→k, a non-leaf callee g→h, recursion r↔r__fvself), all premises discharged, `f 41` returns `185` |
 
 **Callees that return values** (`idX sym tp idf`: a callee `n` with `idf n` returns its first
 argument — a `bl n` or a `blr` to `sym n 0` —, every other callee returns nothing; the hooks are
