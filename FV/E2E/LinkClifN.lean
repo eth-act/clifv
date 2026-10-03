@@ -10,15 +10,22 @@ not finish within `M` steps is `outOfFuel`, which the caller treats as `stuck`).
 `runLoop_linkN`: a complete whole-program run of at most `M + 1` steps is a complete
 per-function run under `linkEnvN P base M` (`runLoop_link` with bounded callee runs: every
 callee's sub-run is shorter than the whole run), also with `call_indirect`/`try_call_indirect`
-(between functions of `P` too: the per-function program resolves the callee address through the
-declarations, `IndScope`).
+(between functions of `P` too: the per-function program resolves a callee address through the
+linked environment's names — every name of `P` and of the base environment — whatever `f`
+declares, `IndScope`).
 -/
 
 namespace Clif
 
+/-- The names an indirect call of a function of `P` can resolve: the functions of `P` and the
+externs they declare. -/
+def Program.names (P : Program) : List String := P.funcs.map (·.name) ++ P.externNames
+
 /-- **The environment of the per-function programs of `P` with callee runs of at most `M` steps**:
 a call of a function `g` of `P` runs `g`'s whole-program run for at most `M` steps; every other
-extern is `base`'s. -/
+extern is `base`'s. An indirect call resolves its address among every name of `P` and of `base`
+(`names`): a function of `P` is reached through a pointer whether or not the caller declares
+it. -/
 def linkEnvN (P : Program) (base : Env) (M : Nat) : Env where
   extern n := match P.func? n with
     | some _ => some fun vals mem =>
@@ -27,6 +34,7 @@ def linkEnvN (P : Program) (base : Env) (M : Nat) : Env where
       | .trap c => .trapped c
       | .stuck m => .stuck m
     | none => base.extern n
+  names := P.names ++ base.names
 
 theorem linkEnvN_none {P : Program} {base : Env} {M : Nat} {n : String} (h : P.func? n = none) :
     (linkEnvN P base M).extern n = base.extern n := by
@@ -41,28 +49,20 @@ theorem linkEnvN_some {P : Program} {base : Env} {M : Nat} {n : String} {g : Fun
       | .stuck m => .stuck m := by
   simp [linkEnvN, h]
 
+@[simp] theorem linkEnvN_names {P : Program} {base : Env} {M : Nat} :
+    (linkEnvN P base M).names = P.names ++ base.names := rfl
+
 /-! ## The link-time symbols -/
 
-/-- The names an indirect call of a function of `P` can resolve: the functions of `P` and the
-externs they declare. -/
-def Program.names (P : Program) : List String := P.funcs.map (·.name) ++ P.externNames
+/-- Distinct names of `ns` have distinct link-time addresses. -/
+def SymInj (ns : List String) (syms : String → Option Nat) : Prop :=
+  ∀ a ∈ ns, ∀ b ∈ ns, ∀ x, syms a = some x → syms b = some x → a = b
 
-/-- Distinct names of `P` have distinct link-time addresses. -/
-def SymInj (P : Program) (syms : String → Option Nat) : Prop :=
-  ∀ a ∈ P.names, ∀ b ∈ P.names, ∀ x, syms a = some x → syms b = some x → a = b
-
-/-- `f` declares every name of `P` with a link-time address except its own: its indirect calls
-resolve (`Clif.callExternAt` searches the declarations of the per-function program) whatever
-function or extern of `P` they reach. -/
-def IndDecl (P : Program) (f : Function) (syms : String → Option Nat) : Prop :=
-  ∀ n ∈ P.names, n ≠ f.name → syms n ≠ none → n ∈ f.externs.map (·.2.name)
-
-/-- **The scope of the indirect calls of `f`**: the base externs keep the symbols, distinct names
-have distinct addresses, `f` declares every name with an address. -/
-structure IndScope (P : Program) (base : Env) (f : Function) (syms : String → Option Nat) : Prop where
+/-- **The scope of indirect calls in the linked program**: the base externs keep the symbols,
+and distinct names of `P` and of the base environment have distinct addresses. -/
+structure IndScope (P : Program) (base : Env) (syms : String → Option Nat) : Prop where
   keep : Opt.EnvKeepsSymbols base
-  inj : SymInj P syms
-  decl : IndDecl P f syms
+  inj : SymInj (P.names ++ base.names) syms
 
 theorem enterFunc_symbols {g : Function} {vals : List Val} {mem mem' : Mem} {fr : Frame}
     (h : enterFunc g vals mem = .ok (fr, mem')) : mem'.symbols = mem.symbols := by
@@ -255,29 +255,47 @@ theorem only_externNames (P : Program) (f : Function) :
     (P.only f).externNames = f.externs.map (·.2.name) := by
   simp [Program.externNames, Program.only]
 
+/-- Every name the per-function program of `f` resolves an indirect call through (the linked
+environment's, then `f`'s declarations) is a name of `P` or of `base`. -/
+theorem linkNames_sub {P : Program} {base : Env} {f : Function} {M : Nat} (hf : f ∈ P.funcs)
+    {n : String} (hn : n ∈ (linkEnvN P base M).names ++ (P.only f).externNames) :
+    n ∈ P.names ++ base.names := by
+  rw [linkEnvN_names, only_externNames, List.mem_append] at hn
+  rcases hn with hn | hn
+  · exact hn
+  · exact List.mem_append_left _ (names_extern (externs_sub hf n hn))
+
 /-- An indirect call to no function of `P` resolves to the same extern in the per-function
-program of `f` (which declares every extern with an address, `IndDecl`). -/
+program of `f` (the linked environment's names hold every name of `P` and of `base`). -/
 theorem callExternAt_eq {P : Program} {base : Env} {f : Function} {syms : String → Option Nat}
-    {M : Nat} (hf : f ∈ P.funcs) (hS : IndScope P base f syms) {mem : Mem} (hm : mem.symbols = syms)
+    {M : Nat} (hf : f ∈ P.funcs) (hS : IndScope P base syms) {mem : Mem} (hm : mem.symbols = syms)
     {d : Signature} {a : Nat} {vals : List Val}
     (hnone : P.funcs.find? (fun g => mem.symbols g.name == some a) = none) :
     callExternAt (linkEnvN P base M) (P.only f) mem d a vals = callExternAt base P mem d a vals := by
   have hno : ∀ g ∈ P.funcs, mem.symbols g.name ≠ some a := fun g hg e => by
     have := List.find?_eq_none.mp hnone g hg
     simp [e] at this
-  have hfind : (P.only f).externNames.find? (fun n => mem.symbols n == some a) =
-      P.externNames.find? (fun n => mem.symbols n == some a) := by
-    rw [only_externNames]
-    refine find_sub (externs_sub hf) (fun n hn n' hn' hq hq' => ?_) (fun n hn hq => ?_)
+  have hfind : ((linkEnvN P base M).names ++ (P.only f).externNames).find?
+        (fun n => mem.symbols n == some a) =
+      (base.names ++ P.externNames).find? (fun n => mem.symbols n == some a) := by
+    refine (find_sub (fun n hn => ?_) (fun n hn n' hn' hq hq' => ?_) (fun n hn hq => ?_)).symm
+    · rw [linkEnvN_names, List.append_assoc, List.mem_append]
+      rcases List.mem_append.mp hn with hn | hn
+      · exact .inr (List.mem_append_left _ hn)
+      · exact .inl (names_extern hn)
     · simp only [beq_iff_eq] at hq hq'
       rw [hm] at hq hq'
-      exact hS.inj n (names_extern hn) n' (names_extern hn') a hq (hq'.trans rfl)
+      exact hS.inj n (linkNames_sub hf hn) n' (linkNames_sub hf hn') a hq hq'
     · simp only [beq_iff_eq] at hq
-      refine hS.decl n (names_extern hn) (fun e => hno f hf (e ▸ hq)) ?_
-      rw [← hm, hq]; simp
+      rcases List.mem_append.mp (linkNames_sub hf hn) with hn | hn
+      · rcases List.mem_append.mp hn with hn | hn
+        · obtain ⟨g, hg, rfl⟩ := List.mem_map.mp hn
+          exact absurd hq (hno g hg)
+        · exact List.mem_append_right _ hn
+      · exact List.mem_append_left _ hn
   unfold callExternAt
   rw [hfind]
-  cases hn : P.externNames.find? (fun n => mem.symbols n == some a) with
+  cases hn : (base.names ++ P.externNames).find? (fun n => mem.symbols n == some a) with
   | none => rfl
   | some n =>
     have hq : mem.symbols n = some a := by simpa using List.find?_some hn
@@ -293,11 +311,11 @@ theorem callExternAt_eq {P : Program} {base : Env} {f : Function} {syms : String
 `linkEnvN P base M`): a complete whole-program run of at most `M + 1` steps is a complete
 per-function run whose program callees run at most `M` steps. The run's frames are `f`'s in the
 per-function program (`LInv (P.only f)`); an indirect call of `f` (`call_indirect`,
-`try_call_indirect`) resolves, in the per-function program, through `f`'s declarations
-(`IndScope`, with the memory's symbols `syms`). -/
+`try_call_indirect`) resolves, in the per-function program, through the linked environment's
+names (`IndScope`, with the memory's symbols `syms`), whatever `f` declares. -/
 theorem runLoop_linkN {P : Program} {base : Env} {f : Function} {syms : String → Option Nat}
     (M : Nat) (hnd : (P.funcs.map (·.name)).Nodup) (hf : f ∈ P.funcs)
-    (hP : ∀ g ∈ P.funcs, LinkFree g) (hio : ¬ IndFree f → IndScope P base f syms) :
+    (hP : ∀ g ∈ P.funcs, LinkFree g) (hio : ¬ IndFree f → IndScope P base syms) :
     ∀ (N : Nat) (s : State), N ≤ M + 1 → LInv P s → LInv (P.only f) s →
       (¬ IndFree f → s.mem.symbols = syms) →
       (∀ msg, runLoop base P N s ≠ .stuck msg) → runLoop base P N s ≠ .outOfFuel →
@@ -505,16 +523,16 @@ theorem runLoop_linkN {P : Program} {base : Env} {f : Function} {syms : String �
           simp only [beq_iff_eq] at e
           rw [hm] at e hha
           exact absurd (name_inj hnd hf hhP
-            (hS.inj f.name (names_func hf) h.name (names_func hhP) a e hha)).symm hhf
-      -- the per-function program resolves the address to `h`'s declaration
-      have hname : (P.only f).externNames.find? (fun n => t.mem.symbols n == some a) = some h.name := by
-        rw [only_externNames]
-        refine find_unique (hS.decl h.name (names_func hhP)
-          (fun e => hhf (name_inj hnd hhP hf e)) (by rw [← hm, hha]; simp)) (by simp [hha])
+            (hS.inj f.name (List.mem_append_left _ (names_func hf)) h.name
+              (List.mem_append_left _ (names_func hhP)) a e hha)).symm hhf
+      -- the per-function program resolves the address to `h` (a name of the linked environment)
+      have hname : ((linkEnvN P base M).names ++ (P.only f).externNames).find?
+          (fun n => t.mem.symbols n == some a) = some h.name := by
+        refine find_unique (by rw [linkEnvN_names]; simp [names_func hhP]) (by simp [hha])
           fun n hn hq => ?_
         simp only [beq_iff_eq] at hq
         rw [hm] at hq hha
-        exact hS.inj n (names_extern (externs_sub hf n hn)) h.name (names_func hhP) a hq hha
+        exact hS.inj n (linkNames_sub hf hn) h.name (List.mem_append_left _ (names_func hhP)) a hq hha
       have hpf : P.func? h.name = some h := by
         cases e : P.func? h.name with
         | none => exact absurd rfl (Program.func?_none e h hhP)

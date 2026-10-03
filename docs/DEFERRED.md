@@ -123,9 +123,11 @@ premises. Deferred, in order:
   (normal returns); `sret` between program functions; stack-passed arguments between program
   functions; direct self-recursion through the `cargo fv` alias (two copies);
   indirect calls (`call_indirect`, `try_call_indirect`, GOT `blr`) between program functions
-  (the caller declares every function with an address, has none itself; register-only,
-  non-`sret` indirect callees; the M6 callee contract now holds for the call instruction at the
-  pc, `CallAt`); `i128` pairs between the functions of a legalised program (`Opt.Legalize128`;
+  (the caller has no address itself; register-only, non-`sret` indirect callees; the M6 callee
+  contract now holds for the call instruction at the pc, `CallAt`); undeclared indirect callees
+  (vtables, agent/link-scope: `Clif.Env.names`, `linkEnvN` resolves program-wide,
+  `LinkSys.MayCall`; `blrRegs`/`callRegs` constrain only the defs a site has); `i128` pairs
+  between the functions of a legalised program (`Opt.Legalize128`;
   per-function composition with `backend_correct_legal`, `a2_legal`); program callees with
   stack slots or an outgoing-argument area (stage 2: the VCode non-interference
   `backend_correct_world_ni` from the memory rules' read footprint and pinned calls, the
@@ -138,33 +140,26 @@ premises. Deferred, in order:
     program-level legalisation refinement (`Opt.Legal.check_refines` per function under a
     linked environment satisfying `ExtLegal`, by induction on the call depth; `NoMemTrap` of
     callee runs, `EnvKeepsAllocs` of the linked environment).
-  - indirect calls reaching functions the caller does not declare (vtables in `cg_clif` output:
-    needs a linked environment that resolves addresses against the whole program, not the
-    per-function program's declarations), recursion through a pointer (the caller's own
-    address), indirect callees with stack-passed or `sret` parameters. On real code
-    (agent/crate-check, e2e.md "Crate-level instance"): `fn` pointers make every indirect caller
-    fail `IndDecl` (`h_dyn_generic` 4, `fv-demo` 13 functions), and vtable methods, addressed
-    only by data relocations, are not CLIF image symbols at all.
-  - **`blr` premises at GOT calls** (the main blocker on real code, agent/crate-check:
-    `blrRegs` fails in 8 of the 9 survey crates and for 45 of `fv-demo`'s 550 functions):
-    `Ok.blrRegs`/`blrTry` and `LinkSys.X`'s `blr` branch range over every declared function of
-    `P` with as many register parameters, not over the call's target; a GOT call of a std panic
-    entry point (`(i64)`, no results) in a function that also declares a `(i32) -> i32` function
-    of the crate fails. A GOT `blr`'s target is the loaded symbol: follow the GOT load's vreg to
-    the call, or restrict the premises to `blr`s of `call_indirect`/`try_call_indirect`.
+  - recursion through a pointer (the caller's own address), indirect callees with stack-passed
+    or `sret` parameters; `blrRegs`' argument registers and `blrTry` are still required for every
+    function a `blr` site may call with its arity, not only a GOT site's symbol (the target
+    register's value is not in M6's callee contract).
   - directly self-recursive functions in one copy (handled through the `cargo fv` alias as two
     copies; one copy needs an M6 return-detection invariant for `linkedCall`; in a crate-level
     instance the alias `f__fvself` has no address and is a base extern, its contract a base
     premise), float parameters; a depth-free machine (monotonicity of `linkedCall` in the depth,
     needs base hooks preserving errors).
   - **Crate-level instance** (agent/crate-check, `FV/E2E/LinkCheck.lean`, `cargo fv
-    link-proof`; done for `g_u128` whole and 54 of `a_arith`'s 58 functions): an entry-level
-    instance for a crate function (the entry premises of `ProgStmt` for concrete arguments and a
-    CLIF entry memory holding the crate's data objects, as `backend_correct_program_witness`
-    does for its `f 41`); the image premise `himg` with the relocated words of the process image
-    (`imgMem` is the unrelocated encoding; relocation in Lean, or relocation-independence of the
-    machine); moving `NonVacuityLink.lean` onto `LinkCheck` (it keeps its own copy of the
-    checks); the checker's time (dominated by `lowerCheck`, minutes for hundreds of functions).
+    link-proof`, e2e.md "Crate-level instance"): an entry-level instance for a crate function
+    (the entry premises of `ProgStmt` for concrete arguments and a CLIF entry memory holding the
+    crate's data objects, as `backend_correct_program_witness` does for its `f 41`); the image
+    premise `himg` with the relocated words of the process image (`imgMem` is the unrelocated
+    encoding; relocation in Lean, or relocation-independence of the machine); moving
+    `NonVacuityLink.lean` onto `LinkCheck` (it keeps its own copy of the checks); the checker's
+    time (dominated by `lowerCheck`, minutes for hundreds of functions, and `native_decide` runs
+    FV's code in Lean's interpreter: `examples/fv-demo`'s 379 passing functions did not finish in
+    40 minutes; per-function `native_decide` theorems would let the elaborator run them in
+    parallel).
 - **Exact world of a call.** (superseded for program callees by agent/arm-link) `X.call` is a function of the arguments and the world and must give
   the exact def registers and world of the hooked callee; a compiled callee's theorem fixes only
   the low bits of its results and the live CLIF bytes. Either make `csem`'s call clause

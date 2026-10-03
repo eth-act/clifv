@@ -38,9 +38,12 @@ def Outcome.returnedVals? : Outcome → Option (List Val)
     (Outcome.returned vals mem).returnedVals? = some vals := rfl
 
 /-- Semantics of extern callees, by name (without the leading `%`). An extern returning
-`outOfFuel` is treated as `stuck`. -/
+`outOfFuel` is treated as `stuck`. `names`: further link-time names an indirect call may reach
+(`callExternAt`), besides the externs the program declares — the rest of the image's code
+symbols (empty by default). -/
 structure Env where
   extern : String → Option (List Val → Mem → Outcome) := fun _ => none
+  names : List String := []
 
 def Env.empty : Env := {}
 
@@ -406,14 +409,15 @@ function symbols of the program's image (`Program.initMem` gives each an entry s
 def Program.externNames (p : Program) : List String :=
   p.funcs.flatMap fun f => f.externs.map (·.2.name)
 
-/-- An indirect call of an extern: the first extern of `p` (`Program.externNames`) whose
+/-- An indirect call of an extern: the first name of `env.names ++ p.externNames` (the
+environment's further code symbols, then the externs of `p`, `Program.externNames`) whose
 link-time address (`mem.symbols`) is the callee address `addr`, called as `env.extern` on
 `vals` with the call site's signature `declared` (argument and result types checked against
 it, as `stepCall` checks the declaration's). -/
 def callExternAt (env : Env) (p : Program) (mem : Mem) (declared : Signature) (addr : Nat)
     (vals : List Val) : Res (List Val × Mem) := do
   let name ← Res.ofOption "call_indirect: no function at the callee address"
-    (p.externNames.find? fun n => mem.symbols n == some addr)
+    ((env.names ++ p.externNames).find? fun n => mem.symbols n == some addr)
   let g ← Res.ofOption s!"unknown callee %{name}" (env.extern name)
   checkTys s!"arguments of call_indirect to %{name}" vals (AbiParam.tys declared.params)
   match g vals mem with
@@ -426,9 +430,9 @@ def callExternAt (env : Env) (p : Program) (mem : Mem) (declared : Signature) (a
 
 /-- Execute a `call_indirect sigN, callee(args)` statement: the callee value is a code
 address. A function of the program at that address (what `func_addr` of its declaration
-evaluates to) is entered (`stuck` on a signature mismatch); otherwise the extern of the
-program at that address is called like a `call` (`callExternAt`); `stuck` for an address
-with no function. -/
+evaluates to) is entered (`stuck` on a signature mismatch); otherwise the extern at that
+address (a name of the environment or of the program, `callExternAt`) is called like a
+`call`; `stuck` for an address with no function. -/
 def stepCallIndirect (env : Env) (p : Program) (s : State) (rest : List Stmt)
     (results : List ValueId) (sig : Nat) (callee : ValueId) (args : List ValueId) :
     StepResult :=

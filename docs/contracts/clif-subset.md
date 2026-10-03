@@ -17,6 +17,13 @@
   loops) are still outside E. Their root rules are in the backend closure but proven vacuous:
   no instruction of `CtxInv` is outside E.
 
+- **2026-10-03 (agent/link-scope), trusted-semantics growth of S (default unchanged)**:
+  `Clif.Env` gains `names : List String := []` (further link-time code symbols an indirect call
+  may reach); `Clif.callExternAt` resolves the callee address through `env.names ++
+  p.externNames` instead of `p.externNames`. Every environment the tools build has `names = []`,
+  so every run is the former one. Used by the linking layer (`Clif.linkEnvN` lists every name
+  of the program, so a function reached through a vtable need not be declared by the caller).
+
 - **2026-10-01 (agent/indirect-proof), trusted-semantics growth of S**: `Clif.stepCallIndirect`
   (`call_indirect`, and `try_call_indirect` through it) whose callee address is no function of
   the program now calls the extern of the program at that address (`Clif.callExternAt`: the
