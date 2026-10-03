@@ -456,7 +456,8 @@ theorem loopSem_eq {ty : CTy} {a : CV} {body : List Line} {regs : List Reg} {use
     (hc : AtomTy ty ∧ Avoids F ty.bytes (lo64 a) ∧ Arm.r .ERR w = .None)
     (hrun : execLines env0 body ((regs.zip uses).foldl (fun s p => setReg s p.1 p.2) w) = some t')
     (h2 : Arm.r .ERR t' = .None ∧ t'.program = w.program) :
-    loopSem F ty a body regs uses defs w = some (defs.map (regVal t'), t', .next) := by
+    loopSem F ty a body regs uses defs w =
+      some ((defs.take 1).map (regVal t') ++ (defs.drop 1).map (fun _ => ofX 0), t', .next) := by
   unfold loopSem
   rw [if_pos hc, hrun]
   simp only [h2, and_self, ite_true]
@@ -506,8 +507,9 @@ theorem csem_casLoop (X : ExtSem) (ty : CTy) (fl : Clif.MemFlags) (ra re rx rd r
   simp only [csem, herr, ite_true, hhead]
   by_cases hc : Arm.ConditionHolds Cond.ne.bits t1 = true
   · rw [if_pos hc, if_neg (hne.1 hc)]
-    refine ⟨t1, regVal t1 (.x 24), ?_, hsw1, fun a _ => by rw [hmem, hm0], hprog1⟩
-    simp only [List.map_cons, List.map_nil, regVal, rnum, h27]; rfl
+    refine ⟨t1, ofX 0, ?_, hsw1, fun a _ => by rw [hmem, hm0], hprog1⟩
+    simp only [List.map_cons, List.map_nil, List.take, List.cons_append, List.nil_append, regVal,
+      rnum, h27]; rfl
   · rw [if_neg hc]
     have heq : Arm.read_mem_bytes ty.bytes (lo64 u) w = (lo64 e).setWidth (ty.bytes * 8) :=
       Classical.byContradiction fun h => hc (hne.2 h)
@@ -521,8 +523,9 @@ theorem csem_casLoop (X : ExtSem) (ty : CTy) (fl : Clif.MemFlags) (ra re rx rd r
     have herr2 : Arm.r .ERR t2 = .None := by rw [hfr2 .ERR (by simp) (by simp), herr1]
     rw [loopSem_eq F (body := [.ins (.stlxr ty.bits (.x 24) (.x 28) (.x 25)) fl.trapCode])
       (regs := []) (uses := []) (defs := [.x 27, .x 24]) ⟨hty, hav, herr1⟩ hrun2 ⟨herr2, hprog2⟩]
-    refine ⟨t2, regVal t2 (.x 24), ?_, ?_⟩
-    · simp only [List.map_cons, List.map_nil, regVal, rnum]
+    refine ⟨t2, ofX 0, ?_, ?_⟩
+    · simp only [List.take, List.drop, List.map_cons, List.map_nil, List.cons_append,
+        List.nil_append, regVal, rnum]
       rw [hfr2 _ (by simp) (by simp), h27]; rfl
     · refine ⟨fun f hf hfl => ?_, fun a _ => ?_, ?_⟩
       · rw [Arm.r_of_write_mem_bytes, hfr2 f (fun e => hf (by subst e; trivial))

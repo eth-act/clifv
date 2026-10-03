@@ -141,26 +141,30 @@ premises. Deferred, in order:
     initial content of CLIF-uninitialised slot bytes and of the outgoing area. In progress
     (agent/link-widen stage 2; e2e.md "Widening" item 2 has the route and the remaining steps).
     Done: the memory rules' read footprint (`MemRefinesR`/`LowerInstOkR`/`MemRulesCorrectR`:
-    a memory rule's VCode reads only bytes its CLIF instruction reads) and the driver generic
-    in the world type (it can run on pairs of worlds), and the one-instruction lockstep of
-    `csem` on two worlds (`E2E.csem_lockstep`, all forms but the LL/SC loops, `try_call` and
-    `Args`), and the guarded semantics `csemG` (the rule contracts with guarded reads,
-    `csemG_lockstep`). Findings: (a) the footprint cannot come
-    from the memory relation (`MemRelOk.store` must keep `MR` for every valid store, so `MR`
-    cannot say that a slot byte is uninitialised) nor from an instrumented VCode semantics
-    (its world is an `Arm.ArmState`; the fields the contracts leave free are the ones `MR` may
-    not depend on, `MRStable`), only from the memory rules' proofs, instantiated per CLIF step
-    with the guard `¬ (D₀ ∩ uninit(cm))`; (b) M6 need not change: the product run gives two
-    VCode runs with one outcome, each realised by its activation through the existing
-    per-function theorem. Remaining: the rest of the lockstep (the LL/SC loops'
-    scratch defs; `try_call`'s extra defs, read from the callee's world in `csem`, to become
-    constants; `Args`), the call/`try_call` rules under `MemRefinesR`, the guarded per-step instances, the product
-    instance and the per-function non-interference clause of `backend_correct_world`, the
-    premise on `X` (base externs: `LinkSys.Ok`; program callees: the induction), the
-    slot-placement oracle in `Clif.Mem` (`enterFunc` places a callee's slots at the compiled
-    frame's addresses below the tracked `sp`, restored at return; trusted-semantics change,
-    `none` = today's bump allocator), then `calleeSlots` drops and the witness gains a called
-    function with a stack slot and one passing stack arguments.
+    a memory rule's VCode reads only bytes its CLIF instruction reads), the driver generic
+    in the world type (it can run on pairs of worlds), the lockstep of `csem` on two worlds
+    (`E2E.csem_lockstep`, the LL/SC loops `rmw_lockstep2`/`cas_lockstep2`; `csem`'s scratch and
+    payload defs, havocked by M6, are now 0), the call contracts with pinned calls
+    (`CallsRefineP`/`IndCallsRefineP`, the call and `try_call` rules under `MemRefinesR` and the
+    pin, `FV/Backend/Proof/IselContractP.lean`), the guarded semantics `csemG` (guarded reads,
+    pinned calls, `csemG_lockstep2`), and the **VCode non-interference** of a compiled function
+    (`E2E.vcode_ni`, `E2E.backend_correct_world_ni`, `FV/E2E/PairDriver.lean`: the driver on
+    pairs of worlds; premises on the external semantics `XNI`, `XTls`). Findings: (a) the
+    footprint cannot come from the memory relation (`MemRelOk.store` must keep `MR` for every
+    valid store, so `MR` cannot say that a slot byte is uninitialised) nor from an instrumented
+    VCode semantics (its world is an `Arm.ArmState`; the fields the contracts leave free are the
+    ones `MR` may not depend on, `MRStable`), only from the memory rules' proofs, instantiated
+    per CLIF step with the guard `¬ (F ∪ (D ∩ uninit(cm)))`; (b) a call's stack-passed
+    arguments lie in `D`: the two runs agree on them only through the pinned CLIF call (its
+    argument values), so the call contracts carry the pin; (c) M6 need not change: the product
+    run gives two VCode runs with one outcome, each realised by its activation through the
+    existing per-function theorem. Remaining: `LinkSys.Thm` with an activation's own `F` and the
+    non-interference clause, `XNI` for the linked `X` (base externs: a `LinkSys.Ok` premise
+    needed only for callees with slots or an outgoing area; program callees: the induction),
+    the slot-placement oracle in `Clif.Mem` (`enterFunc` places a callee's slots at the
+    compiled frame's addresses below the tracked `sp`, restored at return; trusted-semantics
+    change, `none` = today's bump allocator), then `calleeSlots` drops and the witness gains a
+    called function with a stack slot and one passing stack arguments.
   - indirect calls reaching functions the caller does not declare (vtables in `cg_clif` output:
     needs a linked environment that resolves addresses against the whole program, not the
     per-function program's declarations), recursion through a pointer (the caller's own

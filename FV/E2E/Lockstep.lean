@@ -446,13 +446,13 @@ theorem mspec_lockstep {Z : BitVec 64 → Prop} {sb : Nat} {i : MInst} (hm : i.i
 
 set_option maxHeartbeats 4000000 in
 /-- **The lockstep of `csem` on one instruction**: two worlds that agree outside `Z` (containing
-the frame `F`), an instruction whose reads avoid `Z` (`LockGuard`), callees and the TLSDESC
-resolver that keep the agreement (`hX`, `hT`): the same outputs and control, worlds that agree
-outside `Z` minus the bytes written. -/
+the frame `F`), an instruction whose reads avoid `Z` (`LockGuard`), callees (of a `call`) and the
+TLSDESC resolver that keep the agreement (`hX`, `hT`): the same outputs and control, worlds that
+agree outside `Z` minus the bytes written. -/
 theorem csem_lockstep {F Z : BitVec 64 → Prop} (hFZ : ∀ a, F a → Z a) {ctx : FnCtx} {X : ExtSem}
     {i : MInst} {us : List CV} {w w' : Arm.ArmState} (hw : SameWorld Z w w')
     (hg : LockGuard F Z ctx.slotBase i us w)
-    (hX : ∀ d o x, X.call d us w = some (o, x) →
+    (hX : ∀ info, i = .call info → ∀ d o x, X.call d us w = some (o, x) →
       ∃ x', X.call d us w' = some (o, x') ∧ SameWorld Z x x')
     (hT : ∀ n, X.tlsFlags n w = X.tlsFlags n w')
     {o : List CV} {w₁ : Arm.ArmState} {c : Ctl} (h : csem F ctx X i us w = some (o, w₁, c)) :
@@ -470,7 +470,7 @@ theorem csem_lockstep {F Z : BitVec 64 → Prop} (hFZ : ∀ a, F a → Z a) {ctx
     · -- call
       simp only [Option.map_eq_some_iff, Prod.mk.injEq] at h
       obtain ⟨⟨o', x⟩, hp, rfl, rfl, rfl⟩ := h
-      obtain ⟨x', hx', hs⟩ := hX _ _ _ hp
+      obtain ⟨x', hx', hs⟩ := hX _ (by first | rfl | assumption) _ _ _ hp
       exact ⟨x', by rw [hx']; rfl, hs⟩
     · simp [LockGuard] at hg
     · simp [LockGuard] at hg
@@ -559,5 +559,178 @@ theorem csem_lockstep {F Z : BitVec 64 → Prop} (hFZ : ∀ a, F a → Z a) {ctx
     all_goals first
       | exact hg.elim
       | (exfalso; cases i <;> simp [MInst.isMemAcc] at hmem <;> solve_by_elim)
+
+/-! ## The LL/SC loops, on two runs -/
+
+theorem loopSem_inv' {F : BitVec 64 → Prop} {ty : CTy} {a : CV} {body : List Line}
+    {regs : List Reg} {uses : List CV} {defs : List Reg} {w : Arm.ArmState} {outs : List CV}
+    {w' : Arm.ArmState} {c : Ctl} (h : loopSem F ty a body regs uses defs w = some (outs, w', c)) :
+    AtomTy ty ∧ Avoids F ty.bytes (lo64 a) ∧
+      execLines env0 body ((regs.zip uses).foldl (fun s p => setReg s p.1 p.2) w) = some w' ∧
+      outs = (defs.take 1).map (regVal w') ++ (defs.drop 1).map (fun _ => ofX 0) ∧ c = .next := by
+  unfold loopSem at h
+  split at h
+  · rename_i hc
+    split at h
+    · rename_i t' ht
+      split at h
+      · simp only [Option.some.injEq, Prod.mk.injEq] at h
+        obtain ⟨rfl, rfl, rfl⟩ := h
+        exact ⟨hc.1, hc.2.1, ht, rfl, rfl⟩
+      · cases h
+    · cases h
+  · cases h
+
+theorem regVal_x_eq {s t : Arm.ArmState} {n : Nat} (h : Arm.r (.GPR (rnum n)) s = Arm.r (.GPR (rnum n)) t) :
+    regVal s (.x n) = regVal t (.x n) := by
+  simp only [regVal, h]
+
+theorem SameWorld.write_both_mono {Z : BitVec 64 → Prop} {s t : Arm.ArmState} (h : SameWorld Z s t)
+    (n : Nat) (a : BitVec 64) (v : BitVec (n * 8)) :
+    SameWorld Z (Arm.write_mem_bytes n a v s) (Arm.write_mem_bytes n a v t) :=
+  SameWorld.mono (fun _ hb => hb.1) (SameWorld.write_both h n a v)
+
+set_option maxHeartbeats 4000000 in
+/-- **The `atomic_rmw` loop on two runs**: two worlds that agree outside `Z`, an access avoiding
+`Z`: the same outputs (the old value; the scratch defs are 0) and worlds that agree outside
+`Z`. -/
+theorem rmw_lockstep2 {F Z : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {ty : CTy}
+    {op : AtomicRmwLoopOp} {fl : Clif.MemFlags} {a b c d e : Reg} {u x : CV}
+    {w w' : Arm.ArmState} (hw : SameWorld Z w w') (hZ : Avoids Z ty.bytes (lo64 u))
+    {o o' : List CV} {w₁ w₁' : Arm.ArmState} {k k' : Ctl}
+    (h : csem F ctx X (.atomicRmwLoop ty op fl a b c d e) [u, x] w = some (o, w₁, k))
+    (h' : csem F ctx X (.atomicRmwLoop ty op fl a b c d e) [u, x] w' = some (o', w₁', k')) :
+    o = o' ∧ k = k' ∧ SameWorld Z w₁ w₁' := by
+  have herr : Arm.r .ERR w = Arm.r .ERR w' := hw.1 .ERR (by simp [Masked])
+  simp only [csem] at h h'
+  by_cases he : Arm.r .ERR w = .None
+  · rw [if_pos he] at h
+    rw [if_pos (herr ▸ he)] at h'
+    obtain ⟨hty, -, hrun, rfl, rfl⟩ := loopSem_inv' h
+    obtain ⟨-, -, hrun', rfl, rfl⟩ := loopSem_inv' h'
+    simp only [List.zip_cons_cons, List.zip_nil_right, List.foldl_cons, List.foldl_nil, setReg_x,
+      rnum] at hrun hrun'
+    have hsw0 : SameWorld Z (Arm.w (.GPR 26#5) (lo64 x) (Arm.w (.GPR 25#5) (lo64 u) w))
+        (Arm.w (.GPR 26#5) (lo64 x) (Arm.w (.GPR 25#5) (lo64 u) w')) :=
+      SameWorld.w_both (SameWorld.w_both hw)
+    have hav : Avoids Z ty.bytes (Arm.r (.GPR 25#5)
+        (Arm.w (.GPR 26#5) (lo64 x) (Arm.w (.GPR 25#5) (lo64 u) w'))) := by
+      rw [Arm.r_of_w_different (by decide), Arm.r_of_w_same]; exact hZ
+    obtain ⟨hsw, h27⟩ := rmwBody_congr (F := Z) hty op fl env0 env0 hsw0
+      (by simp [Arm.r_of_w_different]) (by simp [Arm.r_of_w_different]) hav hrun hrun'
+    refine ⟨?_, rfl, hsw⟩
+    simp only [List.take, List.drop, List.map_cons, List.map_nil, List.cons_append,
+      List.nil_append, List.cons.injEq, and_true]
+    exact regVal_x_eq (by simpa [rnum] using h27)
+  · rw [if_neg he] at h
+    rw [if_neg (herr ▸ he)] at h'
+    split at h
+    · rw [if_pos ‹_›] at h'
+      simp only [Option.some.injEq, Prod.mk.injEq] at h h'
+      obtain ⟨rfl, rfl, rfl⟩ := h
+      obtain ⟨rfl, rfl, rfl⟩ := h'
+      rw [read_mem_bytes_sameWorld hw hZ]
+      exact ⟨rfl, rfl, SameWorld.write_both_mono hw _ _ _⟩
+    · cases h
+
+set_option maxHeartbeats 4000000 in
+/-- **The `atomic_cas` loop on two runs** (as `rmw_lockstep2`). -/
+theorem cas_lockstep2 {F Z : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {ty : CTy}
+    {fl : Clif.MemFlags} {a b c d e : Reg} {u v x : CV}
+    {w w' : Arm.ArmState} (hw : SameWorld Z w w') (hZ : Avoids Z ty.bytes (lo64 u))
+    {o o' : List CV} {w₁ w₁' : Arm.ArmState} {k k' : Ctl}
+    (h : csem F ctx X (.atomicCasLoop ty fl a b c d e) [u, v, x] w = some (o, w₁, k))
+    (h' : csem F ctx X (.atomicCasLoop ty fl a b c d e) [u, v, x] w' = some (o', w₁', k')) :
+    o = o' ∧ k = k' ∧ SameWorld Z w₁ w₁' := by
+  have herr : Arm.r .ERR w = Arm.r .ERR w' := hw.1 .ERR (by simp [Masked])
+  simp only [csem] at h h'
+  by_cases he : Arm.r .ERR w = .None
+  · rw [if_pos he] at h
+    rw [if_pos (herr ▸ he)] at h'
+    split at h
+    · rename_i outs t1 c1 hhead
+      split at h'
+      · rename_i outs' t1' c1' hhead'
+        obtain ⟨hty, -, hrun, rfl, rfl⟩ := loopSem_inv' hhead
+        obtain ⟨-, -, hrun', rfl, rfl⟩ := loopSem_inv' hhead'
+        simp only [List.zip_cons_cons, List.zip_nil_right, List.foldl_cons, List.foldl_nil,
+          setReg_x, rnum] at hrun hrun'
+        have hsw0 : SameWorld Z (Arm.w (.GPR 28#5) (lo64 x) (Arm.w (.GPR 26#5) (lo64 v)
+            (Arm.w (.GPR 25#5) (lo64 u) w))) (Arm.w (.GPR 28#5) (lo64 x) (Arm.w (.GPR 26#5) (lo64 v)
+            (Arm.w (.GPR 25#5) (lo64 u) w'))) :=
+          SameWorld.w_both (SameWorld.w_both (SameWorld.w_both hw))
+        have hav : Avoids Z ty.bytes (Arm.r (.GPR 25#5) (Arm.w (.GPR 28#5) (lo64 x)
+            (Arm.w (.GPR 26#5) (lo64 v) (Arm.w (.GPR 25#5) (lo64 u) w')))) := by
+          simp only [Arm.r_of_w_different (show Arm.StateField.GPR 25#5 ≠ .GPR 28#5 by decide),
+            Arm.r_of_w_different (show Arm.StateField.GPR 25#5 ≠ .GPR 26#5 by decide),
+            Arm.r_of_w_same]; exact hZ
+        obtain ⟨hsw1, h27⟩ := casHead_congr (F := Z) hty fl env0 env0 hsw0
+          (by simp [Arm.r_of_w_different]) (by simp [Arm.r_of_w_different]) hav hrun hrun'
+        have hcond : Arm.ConditionHolds Cond.ne.bits t1 = Arm.ConditionHolds Cond.ne.bits t1' :=
+          ConditionHolds_sameWorld hsw1 _
+        by_cases hc : Arm.ConditionHolds Cond.ne.bits t1 = true
+        · rw [if_pos hc] at h
+          rw [if_pos (hcond ▸ hc)] at h'
+          simp only [Option.some.injEq, Prod.mk.injEq] at h h'
+          obtain ⟨rfl, rfl, rfl⟩ := h
+          obtain ⟨rfl, rfl, rfl⟩ := h'
+          refine ⟨?_, rfl, hsw1⟩
+          simp only [List.take, List.drop, List.map_cons, List.map_nil, List.cons_append,
+            List.nil_append, List.cons.injEq, and_true]
+          exact regVal_x_eq (by simpa [rnum] using h27)
+        · rw [if_neg hc] at h
+          rw [if_neg (hcond ▸ hc)] at h'
+          obtain ⟨-, -, hrun2, rfl, rfl⟩ := loopSem_inv' h
+          obtain ⟨-, -, hrun2', rfl, rfl⟩ := loopSem_inv' h'
+          simp only [List.zip_nil_left, List.foldl_nil] at hrun2 hrun2'
+          obtain ⟨t0, ht0, -, -, hfr0, -, -, -⟩ := casHead_spec hty fl env0 _
+            (by simp [Arm.r_of_w_different, he] : Arm.r .ERR (Arm.w (.GPR 28#5) (lo64 x)
+              (Arm.w (.GPR 26#5) (lo64 v) (Arm.w (.GPR 25#5) (lo64 u) w))) = .None)
+          rw [hrun, Option.some.injEq] at ht0
+          subst ht0
+          obtain ⟨t0', ht0', -, -, hfr0', -, -, -⟩ := casHead_spec hty fl env0 _
+            (by simp [Arm.r_of_w_different, ← herr, he] : Arm.r .ERR (Arm.w (.GPR 28#5) (lo64 x)
+              (Arm.w (.GPR 26#5) (lo64 v) (Arm.w (.GPR 25#5) (lo64 u) w'))) = .None)
+          rw [hrun', Option.some.injEq] at ht0'
+          subst ht0'
+          have herrt : Arm.r .ERR t1 = .None := by
+            rw [hfr0 .ERR (by simp) (by simp) (by simp)]; simp [Arm.r_of_w_different, he]
+          have h25 : Arm.r (.GPR 25#5) t1 = Arm.r (.GPR 25#5) t1' := by
+            rw [hfr0 _ (by simp) (by simp) (by simp), hfr0' _ (by simp) (by simp) (by simp)]
+            simp [Arm.r_of_w_different]
+          have h28 : Arm.r (.GPR 28#5) t1 = Arm.r (.GPR 28#5) t1' := by
+            rw [hfr0 _ (by simp) (by simp) (by simp), hfr0' _ (by simp) (by simp) (by simp)]
+            simp [Arm.r_of_w_different]
+          have hsw2 := stlxr_congr (F := Z) hty fl env0 env0 hsw1 h25 h28 hrun2 hrun2'
+          obtain ⟨s2, hs2, -, hfrs, -, -⟩ := stlxr_spec hty fl env0 t1 herrt
+          rw [hrun2, Option.some.injEq] at hs2
+          subst hs2
+          have herrt' : Arm.r .ERR t1' = .None := by
+            rw [← hsw1.1 .ERR (by simp [Masked])]; exact herrt
+          obtain ⟨s2', hs2', -, hfrs', -, -⟩ := stlxr_spec hty fl env0 t1' herrt'
+          rw [hrun2', Option.some.injEq] at hs2'
+          subst hs2'
+          refine ⟨?_, rfl, hsw2⟩
+          simp only [List.take, List.drop, List.map_cons, List.map_nil, List.cons_append,
+            List.nil_append, List.cons.injEq, and_true]
+          refine regVal_x_eq ?_
+          simp only [rnum]
+          rw [hfrs _ (by simp) (by simp), hfrs' _ (by simp) (by simp)]
+          simpa [rnum] using h27
+      · cases h'
+    · cases h
+  · rw [if_neg he] at h
+    rw [if_neg (herr ▸ he)] at h'
+    split at h
+    · rw [if_pos ‹_›] at h'
+      simp only [Option.some.injEq, Prod.mk.injEq] at h h'
+      obtain ⟨rfl, rfl, rfl⟩ := h
+      obtain ⟨rfl, rfl, rfl⟩ := h'
+      rw [read_mem_bytes_sameWorld hw hZ]
+      refine ⟨rfl, rfl, ?_⟩
+      split
+      · exact SameWorld.write_both_mono hw _ _ _
+      · exact hw
+    · cases h
 
 end E2E
