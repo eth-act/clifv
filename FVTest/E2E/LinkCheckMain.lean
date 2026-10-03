@@ -21,7 +21,7 @@ function): the proof does not trust this executable.
 Exit status: 0 iff the (pruned) input passes.
 -/
 
-open E2E E2E.LinkCheck Lean
+open E2E E2E.LinkCheck Lean Backend
 
 /-- The names a function's CLIF takes the address of: its `symbol` global values and its
 `func_addr` targets. -/
@@ -38,8 +38,60 @@ def leanStr (s : String) : String :=
     else if c == '\n' then "\\n" else if c == '\t' then "\\t"
     else if c.toNat < 0x20 then s!"\\x{(Nat.toDigits 16 c.toNat).asString}" else c.toString) ++ "\""
 
+/-- Why a check fails, in more detail (for the call-site and indirect-call checks). -/
+def detail (I : LinkInput) (P : Clif.Program) (g : Clif.Function) (a : Art) (check : String) :
+    List String :=
+  if check == "callRegs/blrRegs" then
+    a.vcp.blocks.toList.flatMap fun vb => vb.insts.toList.filterMap fun i => match i with
+      | .call info | .tryCall info _ =>
+        if siteOk P g info then none else some (match info.dest with
+          | .sym n => s!"bl {n}: arguments/results not in the callee's ABI registers"
+          | .reg _ =>
+            let nu := (decU info.uses).length
+            let hs := P.funcs.filter fun h => declB g h.name && (regLocs h.sig).length == nu &&
+              !(decide ((decU info.uses).map (·.2) = regLocs h.sig) &&
+                decide (((decD info.defs).map (·.1)).take (sigRets h.sig).length =
+                  (List.range (sigRets h.sig).length).map Reg.x))
+            s!"blr with {nu} register argument(s), {info.defs.length} def(s): not the ABI registers of the declared program function(s) with {nu} register parameter(s): {hs.map (·.name)}")
+      | _ => none
+  else if check == "indScope/indNoSym/indSig" then
+    let S := fun n => I.syms.lookup n
+    (if (indSigs g).all (fun s => !s.params.any (·.purpose == .sret)) then []
+      else ["indSig: an indirect call passes an sret pointer"]) ++
+    (P.funcs.filter (fun h => declB g h.name && (h.sig.params.any (·.purpose == .sret) ||
+      (match sigParamBytes h.sig with | .ok b => decide (b.length > 8) | .error _ => true)))).map
+      (fun h => s!"indSig: declared program function {h.name} has an sret or stack-passed parameter") ++
+    (if S g.name == none then [] else ["indNoSym: the function's own address is taken"]) ++
+    ((Clif.Program.names P).eraseDups.filter (fun n => n != g.name && S n != none &&
+      !g.externs.any (·.2.name == n))).map
+      (fun n => s!"indScope: does not declare {n} (a name of the program with an address)")
+  else []
+
+/-- The compiled words of `a` against the executable's bytes `b` at its address: equal outside
+relocated fields; a `bl` (`call26`) reaches its symbol's link-map address. -/
+def imageDiff (I : LinkInput) (a : Art) (b : ByteArray) : List String := Id.run do
+  let ws := a.fb.words
+  let mut out : List String := []
+  if b.size != 4 * ws.size then
+    out := out ++ [s!"{b.size} bytes in the executable, {4 * ws.size} compiled"]
+  for k in [0:min ws.size (b.size / 4)] do
+    let x : BitVec 32 := BitVec.ofNat 32 (b[4*k]!.toNat + 256 * b[4*k+1]!.toNat +
+      65536 * b[4*k+2]!.toNat + 16777216 * b[4*k+3]!.toNat)
+    match a.fb.relocs.find? (·.offset == 4 * k) with
+    | none =>
+      if x != ws[k]! then out := out ++ [s!"word {k}: executable {x.toHex}, compiled {ws[k]!.toHex}"]
+    | some r =>
+      if r.type == .call26 then
+        let imm : Nat := x.toNat % (2 ^ 26 : Nat)
+        let off : Int := if imm < 2 ^ 25 then (imm : Int) else (imm : Int) - (2 ^ 26 : Int)
+        let tgt : Int := (a.base.toNat : Int) + 4 * (k : Int) + 4 * off
+        match I.addrs.lookup r.sym with
+        | some t => if tgt != (t : Int) then out := out ++ [s!"word {k}: bl {r.sym} reaches {tgt}, its address is {t}"]
+        | none => pure ()
+  return out
+
 def usage : String :=
-  "usage: link-check <dir> [--lean FILE.lean --module NAME] [--entries a,b,…] [--prune]"
+  "usage: link-check <dir> [--lean FILE.lean --module NAME] [--entries a,b,…] [--prune] [--profile]"
 
 structure Opts where
   dir : String
@@ -47,6 +99,7 @@ structure Opts where
   module : String := "Crate"
   entries : Option (List String) := none
   prune : Bool := false
+  profile : Bool := false
 
 def parseOpts : List String → Option Opts → Option Opts
   | [], o => o
@@ -55,6 +108,7 @@ def parseOpts : List String → Option Opts → Option Opts
   | "--entries" :: e :: rest, some o =>
     parseOpts rest (some { o with entries := some ((e.splitOn ",").filter (· ≠ "")) })
   | "--prune" :: rest, some o => parseOpts rest (some { o with prune := true })
+  | "--profile" :: rest, some o => parseOpts rest (some { o with profile := true })
   | d :: rest, none => parseOpts rest (some { dir := d })
   | _, _ => none
 
@@ -138,10 +192,14 @@ def main (args : List String) : IO UInt32 := do
   let exe := (j.getObjValAs? String "exe").toOption.getD "?"
   let fjs := ((j.getObjVal? "functions").bind (·.getArr?)).toOption.getD #[]
   let mut fis : Array FnInput := #[]
+  let mut bins : Array (Option ByteArray) := #[]
   for fj in fjs do
     let clif := (fj.getObjValAs? String "clif").toOption.getD ""
     let ra := (fj.getObjValAs? String "ra").toOption.getD ""
     fis := fis.push { clif := ← IO.FS.readFile (dir / clif), ra := ← IO.FS.readFile (dir / ra) }
+    bins := bins.push (← match (fj.getObjValAs? String "bin").toOption with
+      | some b => do pure (some (← IO.FS.readBinFile (dir / b)))
+      | none => pure none)
   let ajs := ((j.getObjVal? "addrs").bind (·.getArr?)).toOption.getD #[]
   let addrs : List (String × Nat) := ajs.toList.filterMap fun a => do
     let arr ← a.getArr?.toOption
@@ -149,6 +207,25 @@ def main (args : List String) : IO UInt32 := do
     let v ← (arr[1]?.bind (·.getNat?.toOption))
     pure (n, v)
   let I0 : LinkInput := { funcs := fis.toList, addrs, syms := [], raStar := 8, D := 0 }
+  if o.profile then
+    -- the slowest functions: the pipeline, the lowering validator, the allocation checker
+    let mut tot : Array (Nat × String × Nat × Nat × Nat) := #[]
+    for fi in fis do
+      let t0 ← IO.monoMsNow
+      let f := fi.func
+      let r := pipe f fi.k 0 (raJ fi.ra fi.j)
+      let ok := r.toBool
+      let t1 ← IO.monoMsNow
+      let a := getOk r
+      let lc := Backend.Proof.Driver.lowerCheck f a.vc
+      let t2 ← IO.monoMsNow
+      let ca := (checkAlloc a.vcp a.rf).toBool
+      let t3 ← IO.monoMsNow
+      if !(ok && lc && ca) then IO.println s!"  profile: {f.name} fails the pipeline or a validator"
+      tot := tot.push (t3 - t0, f.name, t1 - t0, t2 - t1, t3 - t2)
+    for (t, n, a, b, c) in (tot.qsort (fun x y => x.1 > y.1)).toList.take 10 do
+      IO.println s!"  profile: {t} ms {n} (pipeline {a}, lowerCheck {b}, checkAlloc {c})"
+    IO.println s!"  profile: {(tot.map (·.1)).foldl (· + ·) 0} ms in total"
   let t0 ← IO.monoMsNow
   let R0 := I0.results
   -- the CLIF image's symbols and the call-level stack
@@ -181,9 +258,13 @@ def main (args : List String) : IO UInt32 := do
   IO.println s!"link-check: {exe}"
   IO.println s!"  {R0.length} functions, {I0.addrs.length} link-map addresses, {I.syms.length} CLIF image symbols, D = {I.D}; checked in {ms} ms"
   let failing := if o.prune then dropped ++ d else d
+  let P0 := progOf R0
   for (n, bs) in failing do
     IO.println s!"  FAIL {n}:"
-    for b in bs do IO.println s!"      {b}"
+    for b in bs do
+      IO.println s!"      {b}"
+      if let some e := R0.find? (·.1.name == n) then
+        for l in detail I P0 e.1 (getOk e.2) b do IO.println s!"        {l}"
   let mut counts : Std.HashMap String Nat := {}
   for (_, bs) in failing do
     for b in bs.eraseDups do counts := counts.insert b (counts.getD b 0 + 1)
@@ -193,6 +274,20 @@ def main (args : List String) : IO UInt32 := do
       IO.println s!"    {c}  {b}"
   if o.prune then
     IO.println s!"  --prune: {keep.length} of {R0.length} functions pass ({dropped.length} dropped)"
+  -- the executable's bytes against the compiled words (not a premise: a check of the trusted
+  -- object writer and linker)
+  let mut imgBad := 0
+  let mut imgWords := 0
+  for (e, b) in R0.zip bins.toList do
+    if let some b := b then
+      let a := getOk e.2
+      let msgs := imageDiff I0 a b
+      imgWords := imgWords + a.fb.words.size
+      if !msgs.isEmpty then
+        imgBad := imgBad + 1
+        IO.println s!"  IMAGE {e.1.name}:"
+        for m in msgs.take 5 do IO.println s!"      {m}"
+  IO.println s!"  image: {imgWords} words of {(bins.filter (·.isSome)).size} functions compared with the executable, {imgBad} function(s) differ"
   let ok := d.isEmpty
   IO.println (if ok then "  okB: true" else "  okB: false")
   -- the Lean file

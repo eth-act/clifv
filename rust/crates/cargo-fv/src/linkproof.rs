@@ -108,6 +108,13 @@ fn read_map(p: &Path) -> Result<LinkMap, String> {
     }
     Ok(m)
 }
+/// The bytes of the function `name` at `addr` in the executable (its symbol's size).
+fn exe_code(file: &object::File, addr: u64, name: &str) -> Option<Vec<u8>> {
+    use object::{Object, ObjectSection, ObjectSymbol};
+    let sym = file.symbols().find(|s| s.address() == addr && s.name() == Ok(name) && s.size() > 0)?;
+    file.sections().find_map(|sec| sec.data_range(addr, sym.size()).ok().flatten()).map(<[u8]>::to_vec)
+}
+
 /// The defined symbols of an executable: name → addresses.
 fn read_exe_syms(p: &Path) -> Result<HashMap<String, BTreeSet<u64>>, String> {
     use object::{Object, ObjectSymbol, SymbolKind};
@@ -268,6 +275,8 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
         return Err(format!("no Lean-compiled codegen unit of {exe}{} was kept", o.krate.as_deref().map(|k| format!(" of crate {k}")).unwrap_or_default()));
     }
     let _ = fs::remove_dir_all(&o.out);
+    let exe_data = fs::read(&exe).map_err(|e| format!("{exe}: {e}"))?;
+    let exe_file = object::File::parse(&*exe_data).map_err(|e| format!("{exe}: {e}"))?;
     let fns_dir = o.out.join("fns");
     fs::create_dir_all(&fns_dir).map_err(|e| format!("{}: {e}", fns_dir.display()))?;
     let mut funcs = Vec::new();
@@ -301,10 +310,21 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
             fs::copy(&ra, &rp).map_err(|e| format!("{}: {e} (rebuild with --keep-temps)", ra.display()))?;
             referenced.extend(seen);
             fn_addr.insert(fin.clone(), addr);
+            // the function's bytes in the executable (link-check compares them with the words
+            // it compiles, outside relocated fields)
+            let bin = exe_code(&exe_file, addr, &fin).map(|b| {
+                let bp = fns_dir.join(format!("{i}.bin"));
+                fs::write(&bp, b).map(|_| format!("fns/{i}.bin")).map_err(|e| format!("{}: {e}", bp.display()))
+            });
+            let bin = match bin {
+                Some(r) => Some(r?),
+                None => None,
+            };
             funcs.push(serde_json::json!({
                 "name": fin,
                 "clif": format!("fns/{i}.clif"),
                 "ra": format!("fns/{i}.ra.json"),
+                "bin": bin,
                 "object": obj,
                 "symbol": f["symbol"],
             }));

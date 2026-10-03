@@ -152,15 +152,18 @@ structure BaseEnv where
   tlsFlags : String → Arm.ArmState → Arm.PState
   hooks : ArmHooks
 
-/-- The words of every compiled function at its base. -/
-def progT (T : List (Clif.Function × Art)) : Arm.Program :=
-  T.flatMap fun e => e.2.fb.program e.2.base
+/-- The code words of the compiled functions by address. -/
+def wordMap (T : List (Clif.Function × Art)) : Std.HashMap (BitVec 64) (BitVec 32) :=
+  T.foldl (fun m e => (List.range e.2.fb.words.size).foldl
+    (fun m k => m.insert (e.2.base + BitVec.ofNat 64 (4 * k)) e.2.fb.words[k]!) m) {}
 
-/-- The bytes of a list of code words. -/
-def memOf (prog : Arm.Program) : Arm.Memory := fun a =>
-  match List.find? (fun (p : BitVec 64 × BitVec 32) => decide ((a - p.1).toNat < 4)) prog with
-  | some p => p.2.extractLsb' (8 * (a - p.1).toNat) 8
-  | none => 0
+/-- **The code image**: the byte at `a` of the word at `a` rounded down to 4 bytes (the
+checker's `imgB` reads every word back from it, so overlapping or misaligned code is rejected). -/
+def memT (T : List (Clif.Function × Art)) : Arm.Memory :=
+  let m := wordMap T
+  fun a => match m[a &&& ~~~3#64]? with
+    | some w => w.extractLsb' (8 * (a &&& 3#64).toNat) 8
+    | none => 0
 
 /-- The code addresses of the compiled functions. -/
 def ImgT (T : List (Clif.Function × Art)) (a : BitVec 64) : Prop :=
@@ -177,7 +180,7 @@ def ofRes (I : LinkInput) (R : Res) (B : BaseEnv) (F : BitVec 64 → Prop) : Lin
   syms := fun n => I.syms.lookup n
   F := F
   Img := ImgT (tabOf R)
-  imgMem := memOf (progT (tabOf R))
+  imgMem := memT (tabOf R)
   raStar := BitVec.ofNat 64 I.raStar
   D := I.D
 
@@ -454,15 +457,30 @@ def callLine : Line → Bool
   | .ins (.blr _) _ => true
   | _ => false
 
+/-- `ra` is outside the code of `a` (whose words fit the address space). -/
+def outside (ra : BitVec 64) (a : Art) : Bool :=
+  decide (a.base.toNat + 4 * a.fb.words.size ≤ 2 ^ 64) &&
+    (decide (ra.toNat < a.base.toNat) || decide (a.base.toNat + 4 * a.fb.words.size ≤ ra.toNat))
+
+theorem outside_sound {ra : BitVec 64} {a : Art} (h : outside ra a = true) :
+    ∀ k < a.fb.words.size, ra ≠ a.base + BitVec.ofNat 64 (4 * k) := by
+  intro k hk e
+  simp only [outside, Bool.and_eq_true, decide_eq_true_eq, Bool.or_eq_true] at h
+  obtain ⟨hfit, hr⟩ := h
+  have hb := a.base.isLt
+  have : ra.toNat = a.base.toNat + 4 * k := by
+    rw [e, BitVec.toNat_add, BitVec.toNat_ofNat]
+    omega
+  omega
+
 /-- The return address of every call of `a` (the code of `g`) is outside the code of every other
 function of the table. -/
 def raCallB (T : List (Clif.Function × Art)) (g : Clif.Function) (a : Art) : Bool :=
   let ls := a.fa.lines.toList
-  (List.range ls.length).all fun j =>
-    match ls[j]? with
+  (List.range a.fa.lines.size).all fun j =>
+    match a.fa.lines[j]? with
     | some l => !callLine l || T.all fun e => e.1.name == g.name ||
-        (List.range e.2.fb.words.size).all fun k =>
-          a.base + BitVec.ofNat 64 (lineOffset ls j) + 4 != e.2.base + BitVec.ofNat 64 (4 * k)
+        outside (a.base + BitVec.ofNat 64 (lineOffset ls j) + 4) e.2
     | none => true
 
 theorem raCallB_sound {T : List (Clif.Function × Art)} {g : Clif.Function} {a : Art}
@@ -471,24 +489,24 @@ theorem raCallB_sound {T : List (Clif.Function × Art)} {g : Clif.Function} {a :
       pc + 4 ≠ e.2.base + BitVec.ofNat 64 (4 * k) := by
   obtain ⟨j, i, t, hj, hi, rfl⟩ := hpc
   intro e he hne k hk
-  have hjl : j < a.fa.lines.toList.length := (List.getElem?_eq_some_iff.1 hj).1
+  have hj' : a.fa.lines[j]? = some (.ins i t) := by simpa using hj
+  have hjl : j < a.fa.lines.size := (Array.getElem?_eq_some_iff.1 hj').1
   simp only [raCallB, List.all_eq_true, List.mem_range] at h
   have := h j hjl
-  rw [hj] at this
+  rw [hj'] at this
   have hc : callLine (.ins i t) = true := by
     rcases hi with ⟨n, rfl⟩ | ⟨r, rfl⟩ <;> rfl
-  simp only [hc, Bool.not_true, Bool.false_or, List.all_eq_true, List.mem_range, bne_iff_ne,
-    Bool.or_eq_true, beq_iff_eq] at this
-  exact (this e he).resolve_left hne k hk
+  simp only [hc, Bool.not_true, Bool.false_or, List.all_eq_true, Bool.or_eq_true,
+    beq_iff_eq] at this
+  exact outside_sound ((this e he).resolve_left hne) k hk
 
-def raStarB (T : List (Clif.Function × Art)) (ra : BitVec 64) : Bool :=
-  T.all fun e => (List.range e.2.fb.words.size).all fun k => ra != e.2.base + BitVec.ofNat 64 (4 * k)
+def raStarB (T : List (Clif.Function × Art)) (ra : BitVec 64) : Bool := T.all (outside ra ·.2)
 
 /-- The image read back word by word. -/
 def imgB (T : List (Clif.Function × Art)) : Bool :=
+  let s := setMem Arm.ArmState.default (memT T)
   T.all fun e => (List.range e.2.fb.words.size).all fun k =>
-    Arm.read_mem_bytes 4 (e.2.base + BitVec.ofNat 64 (4 * k))
-      (setMem Arm.ArmState.default (memOf (progT T))) == e.2.fb.words[k]!
+    Arm.read_mem_bytes 4 (e.2.base + BitVec.ofNat 64 (4 * k)) s == e.2.fb.words[k]!
 
 theorem wordsAt_mem {base : BitVec 64} {w : BitVec 32} :
     ∀ {ws : List (BitVec 32)} {k j : Nat}, ws[j]? = some w →
@@ -516,7 +534,7 @@ theorem rmb_congr {t t' : Arm.ArmState} : ∀ (n : Nat) (x : BitVec 64),
 
 theorem imgCode_of {T : List (Clif.Function × Art)} (h : imgB T = true)
     {e : Clif.Function × Art} (he : e ∈ T) (t : Arm.ArmState)
-    (ht : ∀ a, ImgT T a → t.mem a = memOf (progT T) a) (k : Nat) (w : BitVec 32)
+    (ht : ∀ a, ImgT T a → t.mem a = memT T a) (k : Nat) (w : BitVec 32)
     (hw : e.2.fb.words[k]? = some w) :
     Arm.read_mem_bytes 4 (e.2.base + BitVec.ofNat 64 (4 * k)) t = w := by
   have hk : k < e.2.fb.words.size := (Array.getElem?_eq_some_iff.1 hw).1
@@ -953,8 +971,8 @@ theorem okB_sound {I : LinkInput} (hI : okB I = true) {B : BaseEnv} {F : BitVec 
       · exact h' e1.symm
   · obtain ⟨hh, hne, -⟩ := site g hg info h hs
     exact raCallB_sound (fa hg).ra hpc _ (tab_mem hn hh) hne
-  · simp only [raStarB, List.all_eq_true, List.mem_range, bne_iff_ne] at hstar
-    exact hstar _ (tab_mem hn hh) k hk
+  · simp only [raStarB, List.all_eq_true] at hstar
+    exact outside_sound (hstar _ (tab_mem hn hh)) k hk
   · simp only [symOkB, List.all_eq_true, beq_iff_eq] at hsymok
     have := hsymok _ (lookup_pair hn')
     show I.symAddr n 0 = _
