@@ -123,9 +123,11 @@ premises. Deferred, in order:
   (normal returns); `sret` between program functions; stack-passed arguments between program
   functions; direct self-recursion through the `cargo fv` alias (two copies);
   indirect calls (`call_indirect`, `try_call_indirect`, GOT `blr`) between program functions
-  (the caller declares every function with an address, has none itself; register-only,
-  non-`sret` indirect callees; the M6 callee contract now holds for the call instruction at the
-  pc, `CallAt`); `i128` pairs between the functions of a legalised program (`Opt.Legalize128`;
+  (the caller has no address itself; register-only, non-`sret` indirect callees; the M6 callee
+  contract now holds for the call instruction at the pc, `CallAt`); undeclared indirect callees
+  (vtables, agent/link-scope: `Clif.Env.names`, `linkEnvN` resolves program-wide,
+  `LinkSys.MayCall`; `blrRegs`/`callRegs` constrain only the defs a site has); `i128` pairs
+  between the functions of a legalised program (`Opt.Legalize128`;
   per-function composition with `backend_correct_legal`, `a2_legal`); program callees with
   stack slots or an outgoing-argument area (stage 2: the VCode non-interference
   `backend_correct_world_ni` from the memory rules' read footprint and pinned calls, the
@@ -138,10 +140,10 @@ premises. Deferred, in order:
     program-level legalisation refinement (`Opt.Legal.check_refines` per function under a
     linked environment satisfying `ExtLegal`, by induction on the call depth; `NoMemTrap` of
     callee runs, `EnvKeepsAllocs` of the linked environment).
-  - indirect calls reaching functions the caller does not declare (vtables in `cg_clif` output:
-    needs a linked environment that resolves addresses against the whole program, not the
-    per-function program's declarations), recursion through a pointer (the caller's own
-    address), indirect callees with stack-passed or `sret` parameters.
+  - recursion through a pointer (the caller's own address), indirect callees with stack-passed
+    or `sret` parameters; `blrRegs`' argument registers and `blrTry` are still required for every
+    function a `blr` site may call with its arity, not only a GOT site's symbol (the target
+    register's value is not in M6's callee contract).
   - directly self-recursive functions in one copy (handled through the `cargo fv` alias as two copies; one copy needs an M6 return-detection invariant for `linkedCall`), float parameters; a
     depth-free machine (monotonicity of `linkedCall` in the depth, needs base hooks preserving
     errors).

@@ -282,8 +282,7 @@ theorem blrTarget_of {fa : FnAsm} {fb : FnBin} {base : BitVec 64} {lm : Std.Hash
 /-! ## The linked system -/
 
 /-- `n` names a declaration of `g` other than `g` itself: the program functions an activation of
-`g` calls (directly, or through a pointer, which the per-function program resolves through the
-declarations, `Clif.callExternAt`). -/
+`g` calls directly (and, through a pointer, at least those: `LinkSys.MayCall`). -/
 def DeclN (g : Clif.Function) (n : String) : Prop := n ∈ g.externs.map (·.2.name) ∧ n ≠ g.name
 
 /-- **A linked program**: the functions `P` with their compiled images `A`; the base
@@ -441,9 +440,18 @@ noncomputable def canon (g : Clif.Function) (uses : List CV) (w : Arm.ArmState) 
 def ProgSite (g : Clif.Function) (info : CallInfo) (h : Clif.Function) : Prop :=
   (L.A g).vcp.CallSite info ∧ ∃ n, info.dest = .sym n ∧ L.P.func? n = some h
 
-/-- `h` is a callee of `g`: a call site of `g`'s compiled code calls it, or `g` declares it. -/
+/-- The names an activation of `g` may call: the declarations of `g` other than `g` (`DeclN`),
+and, when `g` has indirect calls, every other name with a link-time address (a pointer to a
+function of `P`, e.g. a vtable slot, need not come from `g`'s declarations: `Clif.linkEnvN`
+resolves it program-wide). -/
+def MayCall (g : Clif.Function) (n : String) : Prop :=
+  DeclN g n ∨ (¬ Clif.IndFree g ∧ n ≠ g.name ∧ L.syms n ≠ none)
+
+/-- `h` is a callee of `g`: a call site of `g`'s compiled code calls it, `g` declares it, or `g`
+may reach it (`MayCall`: through a pointer). -/
 def Callee (g h : Clif.Function) : Prop :=
-  (∃ info, L.ProgSite g info h) ∨ ∃ e ∈ g.externs.map (·.2), L.P.func? e.name = some h
+  (∃ info, L.ProgSite g info h) ∨ (∃ e ∈ g.externs.map (·.2), L.P.func? e.name = some h) ∨
+    (h ∈ L.P.funcs ∧ L.MayCall g h.name)
 
 /-- Some program callee has an outgoing-argument area or a slot region: its activations from the
 canonical and the actual caller state differ there, so the linking needs non-interference. -/
@@ -495,8 +503,9 @@ noncomputable def progX (M : Nat) (F : BitVec 64 → Prop) (g : Clif.Function) (
 open Classical in
 /-- **The external semantics of an activation of `g` at depth `M`**: a call (`bl`) of a function
 of `P` is `progX`, as is an indirect call (`blr`) whose target is the address of a function of
-`P` that `g` declares (`DeclN`; other than `g`) with as many register parameters as the call has
-arguments (otherwise undefined); the rest is the base's. -/
+`P` that `g` may reach (`MayCall`: declared, or with a link-time address when `g` has indirect
+calls; other than `g`) with as many register parameters as the call has arguments (otherwise
+undefined); the rest is the base's. -/
 noncomputable def X (M : Nat) (g : Clif.Function) (F : BitVec 64 → Prop) : ExtSem where
   call d uses w := match d with
     | some n => (match L.P.func? n with
@@ -504,7 +513,7 @@ noncomputable def X (M : Nat) (g : Clif.Function) (F : BitVec 64 → Prop) : Ext
       | none => L.Xb.call d uses w)
     | none => (match uses with
       | u :: args => (match symCallee L.Xb L.P (lo64 u) with
-        | some h => if DeclN g h.name ∧ args.length = (regLocs h.sig).length then
+        | some h => if L.MayCall g h.name ∧ args.length = (regLocs h.sig).length then
             L.progX M F h args w else none
         | none => L.Xb.call none uses w)
       | [] => L.Xb.call none uses w)
@@ -514,15 +523,16 @@ noncomputable def X (M : Nat) (g : Clif.Function) (F : BitVec 64 → Prop) : Ext
 
 open Classical in
 /-- **The CLIF environment of an activation of `g` at depth `M`** with stack pointer `c`:
-`linkEnvN`, without the functions of `P` that `g` does not declare (and `g` itself), the
-functions of `P` called only from a memory whose slot-placement oracle has `c` (when program
-callees have slots). The run of `P.only g` only calls declared externs, from its own activation
-(`step_envOf`), so it is the run under `linkEnvN`. -/
+`linkEnvN`, without the functions of `P` that `g` may not reach (`MayCall`; `g` itself among
+them), the functions of `P` called only from a memory whose slot-placement oracle has `c` (when
+program callees have slots). The run of `P.only g` only calls reachable functions, from its own
+activation (`step_envOf`), so it is the run under `linkEnvN`. -/
 noncomputable def envOf (M : Nat) (g : Clif.Function) (c : BitVec 64) : Clif.Env where
-  extern n := if (L.P.func? n).isSome ∧ ¬ DeclN g n then none
+  extern n := if (L.P.func? n).isSome ∧ ¬ L.MayCall g n then none
     else if (L.P.func? n).isSome then ((Clif.linkEnvN L.P L.base M).extern n).map
       fun G vals cm => if L.NeedSlots → L.PlaceAt cm c then G vals cm else .stuck "slot placement"
     else (Clif.linkEnvN L.P L.base M).extern n
+  names := (Clif.linkEnvN L.P L.base M).names
 
 end LinkSys
 
@@ -1377,44 +1387,47 @@ structure Ok : Prop where
     (slotLayout h.slots).1.lookup p.1 = some off ∧
       (L.A h).af.slotBase + off + p.2.size ≤ (L.A h).af.frameSize
   /-- scope: a call of a function `h` of `P` passes integer arguments in `h`'s parameter
-  registers and takes the results from x0.. (the defs past the results: a `try_call`'s exception
-  payload registers; checked per call site) -/
+  registers and takes its results from x0.. (those of its defs that are results: the defs past
+  them are a `try_call`'s exception payload registers; checked per call site) -/
   callRegs : ∀ g ∈ L.P.funcs, ∀ info h, L.ProgSite g info h →
     ∃ n Lu Ld, info = ⟨.sym n, retPairs Lu, callDefs Ld⟩ ∧ Lu.map (·.2) = regLocs h.sig ∧
-      (Ld.map (·.1)).take (sigRets h.sig).length = (List.range (sigRets h.sig).length).map Reg.x
+      (Ld.map (·.1)).take (sigRets h.sig).length =
+        (List.range (min (sigRets h.sig).length Ld.length)).map Reg.x
   /-- a `try_call` of a function `h` of `P` takes at most `h`'s results (the compiler's
   `ti.rets` is their number) -/
   tryRets : ∀ g ∈ L.P.funcs, ∀ info ti h, (L.A g).vcp.TrySite info ti → L.ProgSite g info h →
     ti.rets ≤ (sigRets h.sig).length
   /-- scope: a `blr` call site (an indirect call, or a call through the GOT) passes integer
-  arguments in the parameter registers of every function of `P` its function declares that has as
-  many register parameters, and takes that function's results from x0.. (checked per site;
-  vacuous without `blr` sites) -/
+  arguments in the parameter registers of every function of `P` its function may reach (`MayCall`)
+  that has as many register parameters, and takes the results its defs hold from x0.. (a site
+  with fewer defs than that function's results, e.g. a GOT call of a base extern without
+  results, constrains nothing more; checked per site; vacuous without `blr` sites) -/
   blrRegs : ∀ g ∈ L.P.funcs, ∀ info, (L.A g).vcp.CallSite info → (∀ n, info.dest ≠ .sym n) →
     ∃ t Lu Ld, info = ⟨.reg (.vreg t .int), retPairs Lu, callDefs Ld⟩ ∧
-      ∀ h ∈ L.P.funcs, DeclN g h.name → (regLocs h.sig).length = Lu.length →
+      ∀ h ∈ L.P.funcs, L.MayCall g h.name → (regLocs h.sig).length = Lu.length →
         Lu.map (·.2) = regLocs h.sig ∧
-        (Ld.map (·.1)).take (sigRets h.sig).length = (List.range (sigRets h.sig).length).map Reg.x
-  /-- a `blr` `try_call` takes at most the results of the declared functions it may call -/
+        (Ld.map (·.1)).take (sigRets h.sig).length =
+          (List.range (min (sigRets h.sig).length Ld.length)).map Reg.x
+  /-- a `blr` `try_call` takes at most the results of the functions it may call -/
   blrTry : ∀ g ∈ L.P.funcs, ∀ info ti, (L.A g).vcp.TrySite info ti → ∀ t Lu Ld,
-    info = ⟨.reg (.vreg t .int), retPairs Lu, callDefs Ld⟩ → ∀ h ∈ L.P.funcs, DeclN g h.name →
+    info = ⟨.reg (.vreg t .int), retPairs Lu, callDefs Ld⟩ → ∀ h ∈ L.P.funcs, L.MayCall g h.name →
       (regLocs h.sig).length = Lu.length → ti.rets ≤ (sigRets h.sig).length
   /-- layout: the return address of a `blr` is not in the code of a function of `P` it may call
-  (the declared ones other than the caller) -/
+  (`MayCall`: other than the caller) -/
   raBlr : ∀ g ∈ L.P.funcs, ∀ info, (L.A g).vcp.CallSite info → (∀ n, info.dest ≠ .sym n) →
-    ∀ h ∈ L.P.funcs, DeclN g h.name → ∀ pc, CallPc (L.A g).fa (L.A g).base pc →
+    ∀ h ∈ L.P.funcs, L.MayCall g h.name → ∀ pc, CallPc (L.A g).fa (L.A g).base pc →
       ∀ k < (L.A h).fb.words.size, pc + 4 ≠ (L.A h).base + BitVec.ofNat 64 (4 * k)
-  /-- scope of the indirect calls (`call_indirect`, `try_call_indirect`) of a function `g`: the
-  base externs keep the symbols, distinct names of `P` have distinct addresses, `g` declares every
-  name of `P` with an address but its own (`Clif.IndScope`), and `g` has no address (it calls no
-  pointer to itself) -/
-  indScope : ∀ g ∈ L.P.funcs, ¬ Clif.IndFree g → Clif.IndScope L.P L.base g L.syms
+  /-- scope of the indirect calls (`call_indirect`, `try_call_indirect`; vacuous without them):
+  the base externs keep the symbols and distinct names of `P` and of the base environment have
+  distinct addresses (`Clif.IndScope`), and a function with indirect calls has no address (it
+  calls no pointer to itself) -/
+  indScope : ∀ g ∈ L.P.funcs, ¬ Clif.IndFree g → Clif.IndScope L.P L.base L.syms
   indNoSym : ∀ g ∈ L.P.funcs, ¬ Clif.IndFree g → L.syms g.name = none
-  /-- the indirect calls of `g` and the functions it declares pass their arguments in registers
+  /-- the indirect calls of `g` and the functions it may reach pass their arguments in registers
   and return no `sret` pointer -/
   indSig : ∀ g ∈ L.P.funcs, ¬ Clif.IndFree g →
     (∀ sig ∈ indSigs g, sig.params.any (·.purpose == .sret) = false) ∧
-    ∀ h ∈ L.P.funcs, DeclN g h.name → h.sig.params.any (·.purpose == .sret) = false ∧
+    ∀ h ∈ L.P.funcs, L.MayCall g h.name → h.sig.params.any (·.purpose == .sret) = false ∧
       ∃ bytes, sigParamBytes h.sig = .ok bytes ∧ bytes.length ≤ 8
   /-- when a function of `P` has an outgoing-argument area and one has indirect calls, the
   functions with an address have no stack slots (an indirect call enters no slotted function) -/
@@ -1752,7 +1765,7 @@ none. -/
 theorem slotFree (hns : ¬ L.NeedSlots) : ∀ g ∈ L.P.funcs, ∀ fn e h, g.extern? fn = some e →
     L.P.func? e.name = some h → h.slots = [] :=
   fun g hg _ e h he hf => Classical.byContradiction fun hne =>
-    hns ⟨g, hg, h, .inr ⟨e, mem_of_lookup he, hf⟩, hne⟩
+    hns ⟨g, hg, h, .inr (.inl ⟨e, mem_of_lookup he, hf⟩), hne⟩
 
 /-- **The entry state of a callee** `h` from a memory `cm` whose slot-placement oracle has the
 stack pointer `c` (or of a callee without slots): its slots placed in its frame below `c` (`sp`:
@@ -2277,7 +2290,7 @@ open Classical in
 theorem X_ind {M : Nat} {g : Clif.Function} {F : BitVec 64 → Prop} {u : CV} {args : List CV}
     {w : Arm.ArmState}
     {h : Clif.Function} (hs : symCallee L.Xb L.P (lo64 u) = some h) :
-    (L.X M g F).call none (u :: args) w = if DeclN g h.name ∧ args.length = (regLocs h.sig).length
+    (L.X M g F).call none (u :: args) w = if L.MayCall g h.name ∧ args.length = (regLocs h.sig).length
       then L.progX M F h args w else none := by
   simp only [X, hs]
 
@@ -2356,13 +2369,12 @@ a caller state `t` whose arguments are in `h`'s parameter registers (`hLu`), the
 gives `progX`'s results (in x0.., `hLd`) and world. -/
 theorem progOsCore (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g h : Clif.Function}
     (hg : g ∈ L.P.funcs) (hh : h ∈ L.P.funcs)
-    (hcallee : (∃ info, L.ProgSite g info h) ∨
-      ∃ e ∈ g.externs.map (·.2), L.P.func? e.name = some h)
+    (hcallee : L.Callee g h)
     {F G : BitVec 64 → Prop} {s0 : Arm.ArmState} (himgF : ∀ a, L.Img a → F a)
     (himgG : ∀ a, L.Img a → G a) (himgS : ∀ a, L.Img a → s0.mem a = L.imgMem a)
     {Lu : List (Nat × Reg)} {Ld : List (Reg × Nat)} (hLu : Lu.map (·.2) = regLocs h.sig)
     (hLd : (Ld.map (·.1)).take (sigRets h.sig).length =
-      (List.range (sigRets h.sig).length).map Reg.x)
+      (List.range (min (sigRets h.sig).length Ld.length)).map Reg.x)
     {info : CallInfo} (hdefs0 : info.defs = callDefs Ld)
     {ops : Array Operand} {regs : Array Reg}
     (hdefs : ((ops.zip regs).toList.filter (·.1.isDef)) = (callDefOps Ld).zip (Ld.map (·.1)))
@@ -2467,12 +2479,16 @@ theorem progOsCore (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g h : C
     obtain ⟨j2, hj2, rfl⟩ := hx
     have hjr : j < (sigRets h.sig).length := by
       have := (List.getElem?_eq_some_iff.mp hj2).1; simpa using this
+    have hjL : j < Ld.length := by
+      have := (List.getElem?_eq_some_iff.mp hr).1; simpa using this
     have e : ((Ld.map (·.1)).take (sigRets h.sig).length)[j]? = (Ld.map (·.1))[j]? := by
       rw [List.getElem?_take]; simp [hjr]
     rw [← e, hLd] at hr
     simp only [List.getElem?_map, Option.map_eq_some_iff] at hr
     obtain ⟨j1, hj1, rfl⟩ := hr
-    rw [List.getElem?_range hjr, Option.some.injEq] at hj1 hj2
+    rw [List.getElem?_range (by omega : j < min (sigRets h.sig).length Ld.length),
+      Option.some.injEq] at hj1
+    rw [List.getElem?_range hjr, Option.some.injEq] at hj2
     subst hj1 hj2
     show regVal _ (Reg.x j) = regVal _ (Reg.x j)
     rw [hs_eq, regVal_set_program, hc_eq, regVal_set_program]
@@ -2645,14 +2661,10 @@ theorem progOsReg (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g : Clif
     split at hx
     · rename_i hdecl
       have hh : h ∈ L.P.funcs := List.mem_of_find?_eq_some hs
-      have hpf := func?_of_mem hL.names hh
       obtain ⟨hLu, hLd⟩ := hregs h hh hdecl.1 (by rw [← hdecl.2, List.length_map])
       have hb : (blrTarget t).bind (symCallee L.Xb L.P) = some h := by rw [htgt]; exact hs
-      obtain ⟨e, he, hen⟩ : ∃ e ∈ g.externs.map (·.2), e.name = h.name := by
-        obtain ⟨e, he, hen⟩ := List.mem_map.mp hdecl.1.1
-        exact ⟨e.2, List.mem_map_of_mem he, hen⟩
       exact ⟨L.pcall M h t, by simp only [callExec, hal, ↓reduceIte, L.hooks_none hb],
-        L.progOsCore hL ih hg hh (.inr ⟨e, he, by rw [hen]; exact hpf⟩) himgF himgG himgS hLu hLd rfl
+        L.progOsCore hL ih hg hh (.inr (.inr ⟨hh, hdecl.1⟩)) himgF himgG himgS hLu hLd rfl
           (call_defs_reg hregs0) hK hG
           (hL.raBlr g hg _ hsite hreg h hh hdecl.1 _ hP.callPc) hsw hx⟩
     · cases hx
@@ -2872,7 +2884,7 @@ whole-program run returning within `M` steps): `progX` is defined and gives the 
 results and memory in `g`'s relation. -/
 theorem progResult (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g h : Clif.Function}
     (hg : g ∈ L.P.funcs) (hh : h ∈ L.P.funcs)
-    (hcallee : ∃ e ∈ g.externs.map (·.2), L.P.func? e.name = some h) {F : BitVec 64 → Prop}
+    (hcallee : L.Callee g h) {F : BitVec 64 → Prop}
     (himgF : ∀ a, L.Img a → F a) {c : BitVec 64}
     (hroom : L.K M ≤ c.toNat) (hdead : ∀ a, StackBelow (L.K M) c a → F a ∧ ¬ L.Img a)
     (halign : c.toNat % 16 = 0)
@@ -2904,11 +2916,11 @@ theorem progResult (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g h : C
     by_cases h0 : (RAFrame.compute (L.A h).vcp (L.A h).rf).intBase = 0
     · by_cases h1 : (RAFrame.compute (L.A h).vcp (L.A h).rf).size = (L.A h).af.frameSize
       · exact .inl ⟨h0, h1⟩
-      · exact .inr ⟨g, hg, h, (.inr hcallee), .inr h1⟩
-    · exact .inr ⟨g, hg, h, (.inr hcallee), .inl h0⟩
+      · exact .inr ⟨g, hg, h, hcallee, .inr h1⟩
+    · exact .inr ⟨g, hg, h, hcallee, .inl h0⟩
   have hplw : L.NeedSlots → L.PlaceAt cm (spv w) := fun hN => by rw [hsp]; exact hpl hN
   obtain ⟨us, outsV, wf, hus, hlen, hhold, hmemR, -, hcall, -⟩ :=
-    L.progCall hL hM (ih hM) hpf ⟨g, hg, .inr hcallee⟩ hib himgF herrw (by rw [hsp]; exact halign)
+    L.progCall hL hM (ih hM) hpf ⟨g, hg, hcallee⟩ hib himgF herrw (by rw [hsp]; exact halign)
       hroom' hdead' hmemR0 hargs hsav hplw hinit hret
   obtain ⟨kc, hc_eq, hc_ret⟩ := hcall _ (L.callerOk_canon hL hh himgF args w)
   have hcond : L.Cond M F h args w ∧ Arm.r .ERR (L.pcall M h (L.canon h args w)) = .None := by
@@ -2962,7 +2974,7 @@ theorem progResult (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g h : C
       · exact hout.2.2 a n (Clif.runLoop_allocs hL.free (hL.baseKeepsAllocs hN) M cs rvals cm'
           (runInv_entry hh hce) (Clif.initState_allocInv hinit) hret a n hv) k hk j hj
       have hsl : h.slots = [] := Classical.byContradiction fun hne =>
-        hN ⟨g, hg, h, .inr hcallee, hne⟩
+        hN ⟨g, hg, h, hcallee, hne⟩
       obtain ⟨-, pl, hcs⟩ := initState_noSlots hpf hsl hinit
       have hv0 := runLoop_valid hL.free (hL.baseNoAlloc ⟨g, hg, hib0⟩) (L.slotFree hN) M
         cs rvals cm' (runInv_entry hh hce)
@@ -2974,13 +2986,13 @@ theorem progResult (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g h : C
       exact hout.2.2 a n hv0 k hk j hj
   · rw [hspT, hsp]
 
-/-- An extern of `envOf`: the base's outside `P`, or (for a declared function of `P`) the linked
-environment's, returning only from a memory whose oracle has `c` (when program callees have
-slots). -/
+/-- An extern of `envOf`: the base's outside `P`, or (for a function of `P` that `g` may reach)
+the linked environment's, returning only from a memory whose oracle has `c` (when program
+callees have slots). -/
 theorem envOf_some {M : Nat} {g : Clif.Function} {c : BitVec 64} {n : String}
     {G : List Clif.Val → Clif.Mem → Clif.Outcome} (h : (L.envOf M g c).extern n = some G) :
     (L.P.func? n = none ∧ L.base.extern n = some G) ∨
-    (∃ h', L.P.func? n = some h' ∧ DeclN g n ∧ ∃ G0, (Clif.linkEnvN L.P L.base M).extern n = some G0 ∧
+    (∃ h', L.P.func? n = some h' ∧ L.MayCall g n ∧ ∃ G0, (Clif.linkEnvN L.P L.base M).extern n = some G0 ∧
       ∀ vals cm rv cm', G vals cm = .returned rv cm' →
         (L.NeedSlots → L.PlaceAt cm c) ∧ G0 vals cm = .returned rv cm') := by
   simp only [envOf] at h
@@ -3006,10 +3018,10 @@ theorem envOf_some {M : Nat} {g : Clif.Function} {c : BitVec 64} {n : String}
         · rw [if_pos hp] at hr; exact ⟨hp, hr⟩
         · rw [if_neg hp] at hr; cases hr
 
-/-- A declared extern of `envOf` called from a memory whose oracle has `c` is the linked
+/-- A reachable extern of `envOf` called from a memory whose oracle has `c` is the linked
 environment's. -/
 theorem envOf_map {M : Nat} {g : Clif.Function} {c : BitVec 64} {n : String}
-    (h : L.P.func? n = none ∨ DeclN g n) (vals : List Clif.Val) {cm : Clif.Mem}
+    (h : L.P.func? n = none ∨ L.MayCall g n) (vals : List Clif.Val) {cm : Clif.Mem}
     (hpl : L.NeedSlots → L.PlaceAt cm c) :
     ((L.envOf M g c).extern n).map (· vals cm) =
       ((Clif.linkEnvN L.P L.base M).extern n).map (· vals cm) := by
@@ -3100,8 +3112,8 @@ theorem xCallsOk (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g : Clif.
       exact hav (off + k) (by omega)
     rw [← hname] at hinit
     obtain ⟨outs, w', hx, hol, hho, hmr'⟩ :=
-      L.progResult hL ih hg hh ⟨ext, hin, hpf⟩ himgF hroom hdead halign hargs hsav hmr hpl hinit
-        hret
+      L.progResult hL ih hg hh (.inr (.inl ⟨ext, hin, hpf⟩)) himgF hroom hdead halign hargs hsav
+        hmr hpl hinit hret
     refine ⟨outs, w', ?_, by rw [hol, hsig], hho, hmr'⟩
     rcases hd with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
     · rw [L.X_prog hpf]; exact hx
@@ -3113,8 +3125,8 @@ theorem xCallsOk (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g : Clif.
 
 /-- **The indirect-call contract of an activation of `g` at depth `M`** under its environment: an
 indirect call reaching an extern outside `P` is the base's; one reaching a function of `P` that
-`g` declares is the linked machine's call from the canonical state (its parameters are in
-registers, `indSig`). -/
+`g` may reach (`MayCall`: declared or not) is the linked machine's call from the canonical state
+(its parameters are in registers, `indSig`). -/
 theorem xCallsIndOk (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g : Clif.Function}
     (hg : g ∈ L.P.funcs) {F : BitVec 64 → Prop} (himgF : ∀ a, L.Img a → F a) {c : BitVec 64}
     (hroom : L.K M ≤ c.toNat)
@@ -3160,11 +3172,8 @@ theorem xCallsIndOk (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g : Cl
       rw [locsOf_of_regs hb hb8] at hm
       obtain ⟨i, hi⟩ := List.mem_iff_getElem?.mp hm
       simp [List.getElem?_zip_eq_some] at hi
-    obtain ⟨e, he, hen⟩ : ∃ e ∈ g.externs.map (·.2), e.name = h.name := by
-      obtain ⟨e, he, hen⟩ := List.mem_map.mp hdecl.1
-      exact ⟨e.2, List.mem_map_of_mem he, hen⟩
     obtain ⟨outs, w', hx, hol, hho, hmr'⟩ :=
-      L.progResult hL ih hg hh ⟨e, he, by rw [hen]; exact hpf⟩ himgF hroom hdead halign hargs hsav
+      L.progResult hL ih hg hh (.inr (.inr ⟨hh, hdecl⟩)) himgF hroom hdead halign hargs hsav
         hmr hpl hinit hret
     refine ⟨outs, w', ?_, ?_, hho, hmr'⟩
     · rw [L.X_ind hs, if_pos ⟨hdecl, argsAt_regLocs hargs⟩]
@@ -3250,7 +3259,7 @@ arguments where `h`'s ABI puts them in both, on which the callee's whole-program
 the two calls (`progX`) give the same results and worlds that agree outside `Z`. -/
 theorem progX_ni (hL : L.Ok) (hN : L.NeedNI) {M : Nat} (ih : 0 < M → L.Thm (M - 1))
     {g h : Clif.Function} (hg : g ∈ L.P.funcs) (hh : h ∈ L.P.funcs)
-    (hcallee : ∃ e ∈ g.externs.map (·.2), L.P.func? e.name = some h) {F Z : BitVec 64 → Prop}
+    (hcallee : L.Callee g h) {F Z : BitVec 64 → Prop}
     (himgF : ∀ a, L.Img a → F a) (hFZ : ∀ a, F a → Z a) {w w' : Arm.ArmState}
     (hsw : SameWorld Z w w') {cm : Clif.Mem} {vals : List Clif.Val} {args : List CV}
     (hm : MemRel F L.syms cm w) (hm' : MemRel F L.syms cm w') (ha : ArgsAt h.sig vals args w)
@@ -3276,7 +3285,7 @@ theorem progX_ni (hL : L.Ok) (hN : L.NeedNI) {M : Nat} (ih : 0 < M → L.Thm (M 
     rw [(clifEntry_initState hpf hinit).sig, (clifEntry_initState hpf hinit1).sig]
   have hsav := stackArgsAvoid_tys hsav1 hty
   obtain ⟨us, outs, wf, hus, hlen, hhold, -, hrs, hall, hni⟩ :=
-    L.progCall hL hM (ih hM) hpf ⟨g, hg, .inr hcallee⟩ (.inr hN) himgF herr hal hroom hdead hm ha
+    L.progCall hL hM (ih hM) hpf ⟨g, hg, hcallee⟩ (.inr hN) himgF herr hal hroom hdead hm ha
       hsav hpl hinit hrun
   have hc0 := L.callerOk_canon hL hh himgF args w
   have hc1 := L.callerOk_canon hL hh himgF args w'
@@ -3383,11 +3392,7 @@ theorem xni (hL : L.Ok) (hN : L.NeedNI) {M : Nat} (ih : 0 < M → L.Thm (M - 1))
     have hvl : vals.length = h.sig.params.length := by
       have := congrArg List.length hce.sig
       simpa using this
-    obtain ⟨e, he, hen⟩ : ∃ e ∈ g.externs.map (·.2), e.name = h.name := by
-      obtain ⟨e, he, hen⟩ := List.mem_map.mp hdecl.1
-      exact ⟨e.2, List.mem_map_of_mem he, hen⟩
-    have hcallee : ∃ e ∈ g.externs.map (·.2), L.P.func? e.name = some h :=
-      ⟨e, he, by rw [hen]; exact hpf⟩
+    have hcallee : L.Callee g h := .inr (.inr ⟨hh, hdecl⟩)
     have hAA : ArgsAt h.sig vals args w ∧ ArgsAt h.sig vals args w' := by
       rcases hA with ⟨⟨e', he', hen', hes⟩, h1, h2⟩ | ⟨hsig, h8, hall⟩
       · have := hL.declSig g hg e' he' h (by rw [hen']; exact hpf)
@@ -3443,9 +3448,10 @@ theorem callCont_envEq {E₁ E₂ : Clif.Env} {p : Clif.Program} {t : Clif.State
 
 theorem indCont_envEq {E₁ E₂ : Clif.Env} {p : Clif.Program} {t : Clif.State}
     {rest : List Clif.Stmt} {rs : List Clif.ValueId} {sig : Nat} {d : Clif.Signature} {a : Nat}
-    {v : List Clif.Val}
-    (h : p.funcs.find? (fun f => t.mem.symbols f.name == some a) = none → ∀ n ∈ p.externNames,
-      t.mem.symbols n = some a → (E₁.extern n).map (· v t.mem) = (E₂.extern n).map (· v t.mem)) :
+    {v : List Clif.Val} (hnames : E₁.names = E₂.names)
+    (h : p.funcs.find? (fun f => t.mem.symbols f.name == some a) = none →
+      ∀ n ∈ E₁.names ++ p.externNames, t.mem.symbols n = some a →
+        (E₁.extern n).map (· v t.mem) = (E₂.extern n).map (· v t.mem)) :
     Clif.indCont E₁ p t rest rs sig d a v = Clif.indCont E₂ p t rest rs sig d a v := by
   unfold Clif.indCont
   cases hf : p.funcs.find? (fun f => t.mem.symbols f.name == some a) with
@@ -3454,7 +3460,8 @@ theorem indCont_envEq {E₁ E₂ : Clif.Env} {p : Clif.Program} {t : Clif.State}
     simp only
     congr 1
     unfold Clif.callExternAt
-    cases hn : p.externNames.find? (fun n => t.mem.symbols n == some a) with
+    rw [← hnames]
+    cases hn : (E₁.names ++ p.externNames).find? (fun n => t.mem.symbols n == some a) with
     | none => rfl
     | some n =>
       have hq : t.mem.symbols n = some a := by simpa using List.find?_some hn
@@ -3474,16 +3481,17 @@ theorem extern_mem {g : Clif.Function} {fn : Clif.FnRef} {e : Clif.ExtFunc}
   mem_of_lookup h
 
 /-- **The run invariant of an activation of `g` with stack pointer `c`**: its frames are
-`LFrame`s, it runs in its own frame (no callers), `g` has no address when it has indirect calls,
-and the slot-placement oracle has `c` (when program callees have slots). -/
+`LFrame`s, it runs in its own frame (no callers), the memory has the link-time symbols when `g`
+has indirect calls, and the slot-placement oracle has `c` (when program callees have slots). -/
 def ActInv (g : Clif.Function) (c : BitVec 64) (s : Clif.State) : Prop :=
-  Clif.LInv (L.P.only g) s ∧ s.callers = [] ∧ (¬ Clif.IndFree g → s.mem.symbols g.name = none) ∧
+  Clif.LInv (L.P.only g) s ∧ s.callers = [] ∧ (¬ Clif.IndFree g → s.mem.symbols = L.syms) ∧
     (L.NeedSlots → L.PlaceAt s.mem c)
 
-/-- **The run of `P.only g` only calls declared externs, from a memory whose oracle has `c`**:
-its steps under `envOf` and under `linkEnvN` are the same. -/
+/-- **The run of `P.only g` only calls functions of `P` it may reach (`MayCall`), from a memory
+whose oracle has `c`**: its steps under `envOf` and under `linkEnvN` are the same. -/
 theorem step_envOf {M : Nat} {g : Clif.Function} {c : BitVec 64} {s : Clif.State}
     (hP : Clif.LinkFree g) (hI : Clif.LFrame (L.P.only g) s.frame)
+    (hsym : ¬ Clif.IndFree g → s.mem.symbols = L.syms)
     (hpl : L.NeedSlots → L.PlaceAt s.mem c) :
     Clif.step (L.envOf M g c) (L.P.only g) s =
       Clif.step (Clif.linkEnvN L.P L.base M) (L.P.only g) s := by
@@ -3498,7 +3506,7 @@ theorem step_envOf {M : Nat} {g : Clif.Function} {c : BitVec 64} {s : Clif.State
       Opt.callCont (L.envOf M g c) (L.P.only g) t rest rs ext vals =
         Opt.callCont (Clif.linkEnvN L.P L.base M) (L.P.only g) t rest rs ext vals := by
     intro t fn args ext vals rest rs htf htm hca
-    refine callCont_envEq fun hn => L.envOf_map (.inr ⟨?_, fun e => ?_⟩) vals
+    refine callCont_envEq fun hn => L.envOf_map (.inr (.inl ⟨?_, fun e => ?_⟩)) vals
       (by rw [htm]; exact hpl)
     · have := Opt.callArgs_extern hca
       rw [htf] at this
@@ -3507,27 +3515,41 @@ theorem step_envOf {M : Nat} {g : Clif.Function} {c : BitVec 64} {s : Clif.State
       obtain ⟨x, hx, rfl⟩ := h'
       exact ⟨x, hx, rfl⟩
     · rw [Clif.Program.only_func?, if_pos e.symm] at hn; cases hn
-  -- an indirect call: `callExternAt` searches `g`'s declarations
-  have hind : ∀ (t : Clif.State) rest rs sig d a v, t.mem = s.mem →
+  -- an indirect call: `callExternAt` searches the linked names; a function of `P` with an
+  -- address other than `g` is reachable
+  have hind : ∀ (t : Clif.State) rest rs sig d a v, t.mem = s.mem → ¬ Clif.IndFree g →
       Clif.indCont (L.envOf M g c) (L.P.only g) t rest rs sig d a v =
         Clif.indCont (Clif.linkEnvN L.P L.base M) (L.P.only g) t rest rs sig d a v := by
-    intro t rest rs sig d a v htm
-    refine indCont_envEq fun hf n hn hq => L.envOf_map (.inr ⟨?_, fun e => ?_⟩) v
-      (by rw [htm]; exact hpl)
-    · rw [Clif.only_externNames] at hn; exact hn
-    · subst e
-      have := List.find?_eq_none.mp hf g (by simp [Clif.Program.only])
-      simp [hq] at this
+    intro t rest rs sig d a v htm hnf
+    refine indCont_envEq rfl fun hf n _ hq => L.envOf_map ?_ v (by rw [htm]; exact hpl)
+    cases hpn : L.P.func? n with
+    | none => exact .inl rfl
+    | some h' =>
+      refine .inr (.inr ⟨hnf, fun e => ?_, ?_⟩)
+      · subst e
+        have := List.find?_eq_none.mp hf g (by simp [Clif.Program.only])
+        simp [hq] at this
+      · rw [← hsym hnf, ← htm, hq]; simp
   rcases Clif.step_shape s with ⟨fn, args, et, hb, ht⟩ | ⟨callee, args, et, hb, ht⟩ |
     ⟨st, rest, sig, callee, args, hb, hi⟩ | hci
   · rw [Clif.step_try _ _ s hb ht, Clif.step_try _ _ s hb ht]
     refine ofRes_congr fun ⟨n, b, bc⟩ _ => ofRes_congr fun ⟨ext, vals⟩ hca => ?_
     exact hcall _ fn args ext vals _ _ hfg rfl hca
-  · rw [Clif.step_tryInd _ _ s hb ht, Clif.step_tryInd _ _ s hb ht]
+  · have hnf : ¬ Clif.IndFree g := fun hif => by
+      rcases hI.2 with ⟨b0, hb0, -, ht0⟩ | ⟨-, bc0, ht0⟩
+      · rw [hfg] at hb0
+        exact (hif b0 hb0).2 callee args et (ht0.symm.trans ht)
+      · rw [ht] at ht0; cases ht0
+    rw [Clif.step_tryInd _ _ s hb ht, Clif.step_tryInd _ _ s hb ht]
     refine ofRes_congr fun ⟨n, b, bc⟩ _ => ofRes_congr fun ⟨d, a, v⟩ _ => ?_
-    exact hind _ _ _ _ d a v rfl
-  · rw [Clif.step_ind _ _ s hb hi, Clif.step_ind _ _ s hb hi]
-    exact ofRes_congr fun ⟨d, a, v⟩ _ => hind _ _ _ _ d a v rfl
+    exact hind _ _ _ _ d a v rfl hnf
+  · have hnf : ¬ Clif.IndFree g := fun hif => by
+      rcases hI.2 with ⟨b0, hb0, hsuf, -⟩ | ⟨hnil, -⟩
+      · rw [hfg] at hb0
+        exact (hif b0 hb0).1 st (hsuf.subset (by rw [hb]; simp)) sig callee args hi
+      · rw [hnil] at hb; cases hb
+    rw [Clif.step_ind _ _ s hb hi, Clif.step_ind _ _ s hb hi]
+    exact ofRes_congr fun ⟨d, a, v⟩ _ => hind _ _ _ _ d a v rfl hnf
   · rw [Opt.step_eq_lift _ _ s hci, Opt.step_eq_lift _ _ s hci]
     cases hl : Opt.lstep s.frame s.mem with
     | call ext vals rs rest =>
@@ -3625,7 +3647,8 @@ theorem actInv_step (hL : L.Ok) {M : Nat} {g : Clif.Function} (hg : g ∈ L.P.fu
   have hPf : ∀ f ∈ (L.P.only g).funcs, Clif.LinkFree f := fun f hf => by
     simp only [Clif.Program.only, List.mem_cons, List.not_mem_nil, or_false] at hf
     subst hf; exact hL.free f hg
-  have hc1 := L.step_callers (hL.subset g hg) (hL.free g hg) hI.1 hc hsym hs
+  have hc1 := L.step_callers (hL.subset g hg) (hL.free g hg) hI.1 hc
+    (fun hnf => by rw [hsym hnf]; exact hL.indNoSym g hg hnf) hs
   refine ⟨(Clif.step_next_linv hPf hI hs).1, hc1, fun hnf => ?_, fun hN => ?_⟩
   · rw [(Clif.step_symbols hPf (Clif.linkEnvN_keeps hL.free (hL.indScope g hg hnf).keep) hI).1 s1 hs]
     exact hsym hnf
@@ -3645,7 +3668,7 @@ theorem runLoop_envOf (hL : L.Ok) {M : Nat} {g : Clif.Function} (hg : g ∈ L.P.
         Clif.runLoop (Clif.linkEnvN L.P L.base M) (L.P.only g) n s
   | 0, _, _ => rfl
   | n + 1, s, hJ => by
-    rw [Clif.runLoop_succ', Clif.runLoop_succ', L.step_envOf (hL.free g hg) hJ.1.1 hJ.2.2.2]
+    rw [Clif.runLoop_succ', Clif.runLoop_succ', L.step_envOf (hL.free g hg) hJ.1.1 hJ.2.2.1 hJ.2.2.2]
     cases hs : Clif.step (Clif.linkEnvN L.P L.base M) (L.P.only g) s with
     | next s1 => exact runLoop_envOf hL hg n s1 (L.actInv_step hL hg hJ hs)
     | _ => rfl
@@ -3657,7 +3680,7 @@ theorem reach_envOf (hL : L.Ok) {M : Nat} {g : Clif.Function} (hg : g ∈ L.P.fu
   induction hr with
   | refl => exact ⟨.refl _, hJ⟩
   | step hs _ ih =>
-    rw [L.step_envOf (hL.free g hg) hJ.1.1 hJ.2.2.2] at hs
+    rw [L.step_envOf (hL.free g hg) hJ.1.1 hJ.2.2.1 hJ.2.2.2] at hs
     obtain ⟨h1, h2⟩ := ih (L.actInv_step hL hg hJ hs)
     exact ⟨.step hs h1, h2⟩
 
@@ -3668,15 +3691,15 @@ theorem trapsExplicit_envOf (hL : L.Ok) {M : Nat} {g : Clif.Function} (hg : g �
     TrapsExplicit (L.envOf M g c) (L.P.only g) cs where
   stmt := fun s c st rest hr hs hb => by
     obtain ⟨hr', hJs⟩ := L.reach_envOf hL hg hr hJ
-    rw [L.step_envOf (hL.free g hg) hJs.1.1 hJs.2.2.2] at hs
+    rw [L.step_envOf (hL.free g hg) hJs.1.1 hJs.2.2.1 hJs.2.2.2] at hs
     exact h.stmt s c st rest hr' hs hb
   tryCall := fun s c fn args et hr hs hb ht => by
     obtain ⟨hr', hJs⟩ := L.reach_envOf hL hg hr hJ
-    rw [L.step_envOf (hL.free g hg) hJs.1.1 hJs.2.2.2] at hs
+    rw [L.step_envOf (hL.free g hg) hJs.1.1 hJs.2.2.1 hJs.2.2.2] at hs
     exact h.tryCall s c fn args et hr' hs hb ht
   tryCallInd := fun s c callee args et hr hs hb ht => by
     obtain ⟨hr', hJs⟩ := L.reach_envOf hL hg hr hJ
-    rw [L.step_envOf (hL.free g hg) hJs.1.1 hJs.2.2.2] at hs
+    rw [L.step_envOf (hL.free g hg) hJs.1.1 hJs.2.2.1 hJs.2.2.2] at hs
     exact h.tryCallInd s c callee args et hr' hs hb ht
   indirect := fun s st rest sig callee args hr hb hi hst =>
     h.indirect s st rest sig callee args (L.reach_envOf hL hg hr hJ).1 hb hi hst
@@ -3700,8 +3723,8 @@ theorem thm_of (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) : L.Thm M :=
   intro g hg F vals cs w₀ fuel rvals cm' hWE hrun
   have hc := hL.compiled g hg
   have hI : Clif.LInv (L.P.only g) cs := runInv_entry (by simp [Clif.Program.only]) hWE.clif
-  have hJ : L.ActInv g (spv w₀) cs := ⟨hI, hWE.clif.callers, fun hnf => by
-    rw [hWE.rel.1.1.symbols]; exact hL.indNoSym g hg hnf, hWE.place⟩
+  have hJ : L.ActInv g (spv w₀) cs :=
+    ⟨hI, hWE.clif.callers, fun _ => hWE.rel.1.1.symbols, hWE.place⟩
   have hrun' : Clif.runLoop (L.envOf M g (spv w₀)) (L.P.only g) fuel cs = .returned rvals cm' := by
     rw [L.runLoop_envOf hL hg fuel cs hJ]; exact hrun
   -- the indirect calls of `g` reach no function of the program: `g` has no address
@@ -3820,8 +3843,7 @@ theorem backend_correct_program (L : LinkSys) (hL : L.Ok) {f : Clif.Function}
     obtain ⟨m, hm⟩ := hlink (by rw [ho]; exact fun _ h => nomatch h) (by rw [ho]; exact fun h => nomatch h)
     rw [ho] at hm
     have ih : 0 < M → L.Thm (M - 1) := fun _ => L.thm hL (M - 1)
-    have hJ : L.ActInv f (spv w₀) cs := ⟨hIf, hcs.callers, fun hnf => by
-      rw [hrel.1.symbols]; exact hL.indNoSym f hf hnf, hpl⟩
+    have hJ : L.ActInv f (spv w₀) cs := ⟨hIf, hcs.callers, fun _ => hrel.1.symbols, hpl⟩
     have hm' : Clif.runLoop (L.envOf M f (spv w₀)) (L.P.only f) m cs = .trapped c := by
       rw [L.runLoop_envOf hL hf m cs hJ]; exact hm
     have h := backend_correct_world (hL.subset f hf) hc (X := L.X M f L.F) (syms := L.syms)
