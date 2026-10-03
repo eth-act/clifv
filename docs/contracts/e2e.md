@@ -549,6 +549,7 @@ theorem backend_correct_program (L : LinkSys) (hL : L.Ok) (hf : f ∈ L.P.funcs)
     (hbe : BodyEntry (L.A f).af s w₀) (hargs : ArgsIn f.sig args s) (hcs : ClifEntry f args cs)
     (hsav : StackArgsAvoid L.Img f.sig args s)  -- agent/link-widen: stack-passed parameters
     (hrel : Rel.holds ⟨L.F, L.syms, slotBase, intBase⟩ f cs.frame.slots cs.mem w₀)
+    (hpl : L.NeedSlots → L.PlaceAt cs.mem (spv w₀))  -- agent/link-widen: slot placement
     (htr : TrapsExplicit (Clif.linkEnvN L.P L.base M) (L.P.only f) cs) :
     ArmRefines (L.A f).fb (L.A f).base ra (L.mach M f) s (Clif.runLoop L.base L.P (M + 1) cs)
 ```
@@ -578,14 +579,19 @@ the base hooks. Layers added for it:
   machine's call from every compatible caller state realises the callee's one VCode outcome
   (`ActRet`: results, world, callers' frames kept — gap "frame locality"); `calleeOk`/`xCallsOk`/
   `xCallsIndOk` discharge `CalleeOkG` and `XCallsOk`/`XCallsIndOk` of the activation's
-  environment `envOf M g` (`linkEnvN` without the functions of `P` that `g` does not declare:
-  the run of `P.only g` is the same, `step_envOf`) at depth `M` from depth `M - 1`.
+  environment `envOf M g c` (`linkEnvN` without the functions of `P` that `g` does not declare,
+  and with the declared ones returning only from a memory whose slot-placement oracle has the
+  activation's `sp` `c` when program callees have slots: the run of `P.only g` is the same,
+  `step_envOf`, `runLoop_envOf` under the activation invariant `ActInv`) at depth `M` from depth
+  `M - 1`.
 
 **Scope** (`LinkSys.Ok`): no `return_call`; parameters in distinct argument registers
 (width ≤ 64) or on the stack;
-program callees (functions some function of `P` calls or declares) have no stack slots and no
-outgoing-argument area (`calleeSlots`: their frame is the allocator's; only functions no
-function of `P` calls pass arguments on the stack, `outFits`); program call sites pass integer
+program callees (functions some function of `P` calls or declares) may have stack slots and an
+outgoing-argument area: a callee without slots has no slot region (`calleeFrame`), the slots of
+one with slots fit in its slot region (`slotFits`; both checked per function on the code), and
+the outgoing area of a function holds the stack-passed arguments of the program functions it
+declares (`outFits`); program call sites pass integer
 register arguments in the callee's parameter registers and take results from x0.. (checked per
 site; for a `blr` site, for every declared function with as many register parameters,
 `blrRegs`); declarations equal definitions; no function calls itself directly (`raCall`, `raBlr`:
@@ -601,10 +607,24 @@ link layout (bases, the code image `Img`/`imgMem`, return addresses outside call
 `raStar`, distinct symbol addresses), the base
 environment's contracts (calls outside `P`, `XCallsOk` and `XCallsIndOk` of the base externs,
 TLS, the results of `try_call`s of base externs `baseTry`; when a function of `P` has an
-outgoing-argument area, the base externs create no allocation, `baseNoAlloc`), the stack
+outgoing-argument area, the base externs create no allocation, `baseNoAlloc`; when a program
+callee has an outgoing area or a slot region (`NeedNI`), the base externs' non-interference
+`baseNI` and TLSDESC flags independent of the world outside `F`, `baseTlsNI`; when a program
+callee has stack slots (`NeedSlots`), the base externs keep the slot-placement oracle and create
+no allocation, `baseKeepsPlace`/`baseKeepsAllocs`), the stack
 budget `D` per call level, and the entry state (with `StackArgsAvoid L.Img` for an entry
-function with stack-passed parameters). The machine is depth-indexed (`L.mach M f` for
-runs of at most `M + 1` steps).
+function with stack-passed parameters, and, when a program callee has stack slots, the entry
+memory's slot-placement oracle at the body's `sp` with the program's compiled frames, `hpl`).
+The machine is depth-indexed (`L.mach M f` for runs of at most `M + 1` steps).
+
+*Why `hpl` does not weaken the claim.* CLIF leaves the addresses of stack slots unspecified
+(`stack_addr` yields some address of a fresh, uninitialised allocation), so no CLIF program can
+depend on where its slots are; the CLIF semantics models this freedom with the slot-placement
+oracle `Clif.Mem.place` (`none`: the bump allocator; `some`: a callee's slots at its compiled
+frame's addresses below the caller's `sp`). `hpl` picks, for the reference CLIF run, the
+placement the compiled code uses — one legitimate CLIF behaviour among those the source allows —
+so that a callee's slot accesses and the caller's view of its dead stack refer to the same
+bytes. It is vacuous without program callees with slots (`NeedSlots`).
 
 **Widening** (agent/link-widen):
 
@@ -619,15 +639,16 @@ runs of at most `M + 1` steps).
    caller keeps. `LinkSys.calleeTryOk` discharges it from the plain call's contract
    (`calleeTryOkG_of_call`: the results of a `try_call`'s call are the first `ti.rets` of the
    plain call's).
-2. *Callees with CLIF stack slots* (and stack arguments of called functions): **in progress**
-   (agent/link-widen, stage 2). Linking them needs **non-interference**: a callee's slot region
+2. *Callees with CLIF stack slots and callees with an outgoing-argument area* (stack arguments
+   of called functions): **done** (agent/link-widen, stage 2). Linking them needs
+   **non-interference**: a callee's slot region
    `[sp_body + size, sp_body + frameSize)` and its outgoing area are part of its world but lie in
    the caller's dead stack, whose content at the call is garbage; the linked `X` runs the callee
    from the canonical state built from the caller's VCode world, which agrees with the machine
    state only outside the caller's `F`. The two body-entry worlds of the callee (canonical,
    actual) differ there, so the callee's VCode outcome must not depend on bytes that are not
    initialised in CLIF (a returning CLIF run never reads them; the code writes the outgoing
-   area before a call reads it). Layers proven so far (no existing statement changed):
+   area before a call reads it). Layers:
    * **The memory rules' read footprint** (`MemRefinesR Rd`, `LowerInstOkR Rd`,
      `MemRuleOkR`, `MemRulesCorrectR`, `memRulesCorrectR_program`): under a VCode semantics
      whose reads (loads, `ldar`, the LL/SC loops) are only required where every byte read
@@ -663,10 +684,11 @@ runs of at most `M + 1` steps).
      the pinned contracts (`callRulesCorrectP`, `indRulesCorrectP`, `tryRulesCorrectP`,
      `tryIndRulesCorrectP`; the former statements are derived, `…_of_P`);
      `lowerInstOkP_runTerm`/`tryOkP_runTerm`/`tryIndOkP_runTerm` for every rule family.
-   * **The guarded semantics** (`FV/E2E/Guarded.lean`, `csemG F ctx X Rd syms Pc`: `csem` where
+   * **The guarded semantics** (`FV/E2E/Guarded.lean`, `csemG F ctx X Rd syms exts sigs sp0 Pc`: `csem` where
      the memory accesses have the memory rules' forms and every byte read satisfies `Rd`
      (`GuardR`), every call is pinned (`GuardC`, `CallG`: `Pc` admits it, the world is related
-     to its CLIF memory, its arguments are where the ABI puts them), `Args` excluded): it
+     to its CLIF memory with stack pointer `sp0`, its arguments are where the ABI puts them),
+     `Args` excluded): it
      satisfies `Refines`, `MemRefinesR Rd`, `CallsRefineP Pc`, `IndCallsRefineP Pc`, and two
      runs of it on worlds that agree outside `Z ⊇ F` (`Rd := ¬ Z`) go in lockstep
      (`csemG_lockstep2`) when the callees of two pinned calls keep the agreement.
@@ -700,17 +722,36 @@ runs of at most `M + 1` steps).
   tracks the written bytes cannot see that the call rule's stores wrote them). M6 does not
   change: two VCode runs with the same outcome are realised by the two activations through the
   existing per-function theorem.
-  **Remaining** (in order):
-   1. *Calls*: `LinkSys.Thm` with an activation's own `F` (a callee's `F` is its caller's minus
-      its slots and outgoing area) and the non-interference clause; `XNI` for the linked `X`
-      (program callees from the induction, base externs a `LinkSys.Ok` premise needed only when
-      a program callee has slots or an outgoing area); `progCall` equates the canonical and the
-      actual call of such a callee through the clause.
-   2. *Placement*: the slot-placement oracle in `Clif.Mem` (`enterFunc` places a callee's slots
-      at the compiled frame's addresses below the tracked `sp`, restored at return; `none` keeps
-      the bump allocator; trusted-semantics change with the differential gates).
-   3. `LinkSys.Ok` drops `calleeSlots`'s `h.slots = []`/`intBase = 0`; the witness gains a
-      called function with a stack slot and one that passes stack arguments.
+  **The linking** (the steps of stage 2, in order):
+   1. *Calls* (70d75f7): `LinkSys.Thm` with an activation's own `F` (a callee's `F` is its
+      caller's minus its outgoing area and its slot region) and the non-interference clause
+      (`NeedNI`-gated); `XNI` for the linked `X` (program callees from the induction,
+      `progX_ni`/`xni`; base externs the `LinkSys.Ok` premise `baseNI`, needed only when a
+      program callee has an outgoing area or a slot region); `progCall` equates the canonical
+      and the actual call of such a callee through the clause. `XNI`/`CallG` carry the
+      activation's `sp` (`spv w = sp0`), which turns the oracle guard below into the callee's
+      placement.
+   2. *Placement* (77f96df, trusted-semantics change, differential gates unchanged): the
+      slot-placement oracle `Clif.Mem.place` (`enterFunc`/`Clif.enterSlots` push the
+      activation's `sp` and place a covered callee's slots at its compiled frame's addresses
+      below its caller's `sp`, `Mem.allocAt`; returns pop it, `Mem.leave`; `none` keeps the
+      bump allocator).
+   3. *Slotted callees* (`FV/E2E/LinkPlace.lean`, `LinkArm.lean`): a callee's whole-program run
+      gives back the oracle and creates no allocation outside its arguments' and its slots'
+      (`runLoop_place`, `runLoop_allocs`, `linkEnvN_keepsPlace`), so the caller's relation holds
+      after the call; `initState_mem` places the callee's slots in its slot region (`slotFits`),
+      so its entry memory is related to its body-entry world with its own `F`. The activation's
+      environment `envOf M g c` returns from a declared function of `P` only from a memory whose
+      oracle has `c` (the activation's `sp`, `PlaceAt`); `xCallsOk`/`xCallsIndOk`/`xni` take the
+      callee's placement from that guard. The guard does not change the run of `P.only g`: from
+      its entry the run stays in `g`'s own frame (`step_callers`: `InSubset.externCalls`/
+      `tryExterns`, no address for `g`) and keeps the oracle (`actInv_step`), so `ActInv` holds
+      at every step and `step_envOf` applies. `LinkSys.Ok`'s `calleeSlots` is replaced by
+      `calleeFrame` (a callee without slots has no slot region) and `slotFits`, plus
+      `baseKeepsPlace`/`baseKeepsAllocs` (needed only with `NeedSlots`); `backend_correct_program`
+      gains `hpl` (the entry memory's oracle at the body's `sp`; vacuous without `NeedSlots`).
+      All new premises are vacuous or implied under the former scope. The witness has a called
+      function with a stack slot (`t`) and one passing a stack argument (`u`).
 3. *`sret` and stack-passed arguments between program functions*. `noSret`, `regParams` and
    `noOut` are gone. `sret`: the per-function theorem now exports the VCode return it took
    (`backend_correct_world`: `vc.RetsSite us`), and `sretRets` (the returns of an `sret`
@@ -719,12 +760,10 @@ runs of at most `M + 1` steps).
    (`returns_le_sigRets`). Stack-passed arguments: `Cond` carries `StackArgsAvoid L.F` (the
    arguments in the caller's outgoing area, part of every world, so the canonical and the actual
    caller state agree on them); `xCallsOk` derives it from the caller's `OutRel` and `outFits`;
-   the callee reads them at `fp + 16 + off` of its body-entry world. A function with an outgoing
-   area must not be a program callee (`calleeSlots` adds `intBase = 0`: the area of a callee
-   would lie in its caller's dead stack — the same non-interference gap as 2.). After a call the
-   caller's `OutRel` holds again because the callee's whole-program run creates no allocation
-   (`runLoop_valid`: entered functions without slots, `baseNoAlloc`). All new premises are implied
-   by the former ones.
+   the callee reads them at `fp + 16 + off` of its body-entry world. After a call the caller's
+   `OutRel` holds again because the callee's whole-program run creates no allocation outside its
+   own slots (`runLoop_valid`: entered functions without slots, `baseNoAlloc`; with slots,
+   `runLoop_allocs`). A program callee with an outgoing area of its own is covered by 2.
 4. *Direct self-recursion*: handled through `cargo fv`'s alias, as two distinct functions with
    the same body: `P` contains `r` (its self-call renamed to `r__fvself`, as `cargo fv` emits)
    and `r__fvself` (`r`'s body and signature under the alias name, its self-call naming `r`);
@@ -757,7 +796,7 @@ runs of at most `M + 1` steps).
      `blr` branch is `progX` for a function `h` that `g` declares (other than `g`) with as many
      register parameters as the call has arguments, undefined for the other functions of `P`
      (so the contract at a `blr` reaching `g` itself, whose return the linked call could not
-     find, is vacuous). The activation's CLIF environment is `envOf M g` (the run of `P.only g`
+     find, is vacuous). The activation's CLIF environment is `envOf M g c` (the run of `P.only g`
      is unchanged, `runLoop_envOf`), so `XCallsIndOk` is needed only for declared callees
      (`xCallsIndOk`; register-passed arguments, no `sret`: `indSig`). `progOsReg` (and the
      `try_call` case of `calleeTryOk`) discharge the contract at `blr` sites, sharing
@@ -786,21 +825,30 @@ runs of at most `M + 1` steps).
    runs and `EnvKeepsAllocs` of the linked environment.
 
 **Non-vacuity** (`FV/E2E/NonVacuityLink.lean`, namespace `E2E.LinkWitness`): the closed program
-`P = {f, g, h, s, k, r, r__fvself, q, v, a2, w}` — the entry `f` (a stack slot, a 16-byte outgoing area)
+`P = {f, g, h, s, k, r, r__fvself, q, v, a2, w, t, u}` — the entry `f` (a stack slot, a 16-byte
+outgoing area)
 passes an `sret` pointer to its slot to `s` (which stores through it and returns the pointer),
 calls `k` with 9 arguments (the 9th on the stack), calls `g` by a `try_call` with a result
 (`block1(ret0)`, handler `tag0: block2(exn0)`), calls the recursive `r` (`r 3 = 6`, through
-its alias `r__fvself`), `v` and `w`; `g` calls `h` (a non-leaf program callee; `g` keeps its
+its alias `r__fvself`), `v`, `w`, `t` and `u`; `g` calls `h` (a non-leaf program callee; `g` keeps its
 argument in x19 across the call); `v` takes `q`'s address (`func_addr`), calls it by
 `call_indirect` and calls `q` again through the GOT (a non-`colocated` declaration:
 `adrp`/`ldr :got:`/`blr`); `w` passes two `i128` values to `a2 : (i128, i128) -> i128` and splits
 its result (`a2` and `w` are the `Opt.Legalize128` outputs the validator accepts: pairs in x0–x3,
-the result in x0/x1); `system_v` — parsed from an embedded source, legalised and
+the result in x0/x1); `t` has a stack slot (it stores `n + 10` through `stack_addr` and loads it
+back: `t n = 2 n + 10`; a 16-byte slot region, `size ≠ frameSize`), placed by the slot-placement
+oracle at its compiled frame address; `u` has an outgoing-argument area (it calls `k` with 9
+arguments, `n` on the stack: `u n = 1 + n`); `system_v` — parsed from an embedded source,
+legalised and
 compiled by the pipeline (`lowerFunction`, `prepare`, the `lean-regalloc` output for this file
 embedded as JSON and rebuilt by `parseRAOut`/`buildRFunc`, `checkAlloc`, `lowerRFunc`,
-`emitFunc`, `layout`), loaded at `0x70000` (`f`) and `0x10000`…`0xB0000`, closed base
+`emitFunc`, `layout`), loaded at `0x70000` (`f`) and `0x10000`…`0xD0000`, closed base
 environment (no extern outside `P`, no TLS), the CLIF image's symbols: `q` at its base
-`0x80000` (`symsW`), depth `M0 = 100`:
+`0x80000` (`symsW`), depth `M0 = 100`. `t` and `u` make `NeedSlots` and `NeedNI` hold, so the
+premises they gate are discharged rather than vacuous (`baseNI`: `Xb.call` is undefined;
+`baseTlsNI`: the TLSDESC flags are the world's `pstate`, unmasked; `baseKeepsPlace`/
+`baseKeepsAllocs`: no base extern; `calleeFrame`/`slotFits`: checked per function; `hpl`: `cs0`'s
+oracle is `⟨[sp0 - 64], framesW⟩`, `framesW = (L F).frames`):
 
 ```lean
 theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
@@ -827,27 +875,33 @@ theorem backend_correct_program_witness :
     fR ∈ (L F0).P.funcs ∧ fRS ∈ (L F0).P.funcs ∧ (∃ info, (L F0).ProgSite fF info fR) ∧
     (∃ info, (L F0).ProgSite fR info fRS) ∧ (∃ info, (L F0).ProgSite fRS info fR) ∧
     fRS.name = fR.name ++ "__fvself" ∧ fRS.blocks = fR.blocks ∧ fRS.sig = fR.sig ∧
-    run0 = .returned [⟨.i64, 390#64⟩] (retMem run0) ∧
+    fT ∈ (L F0).P.funcs ∧ fU ∈ (L F0).P.funcs ∧ (∃ info, (L F0).ProgSite fF info fT) ∧
+    fT.slots ≠ [] ∧ (∃ info, (L F0).ProgSite fF info fU) ∧ (∃ info, (L F0).ProgSite fU info fK) ∧
+    (RAFrame.compute (A fU).vcp (A fU).rf).intBase ≠ 0 ∧ (L F0).NeedSlots ∧ (L F0).NeedNI ∧
+    (L F0).PlaceAt cs0.mem (spv w0) ∧
+    run0 = .returned [⟨.i64, 791#64⟩] (retMem run0) ∧
     ArmRefines (A fF).fb (A fF).base 8 ((L F0).mach M0 fF) s0 run0
 ```
 
 Every per-function premise of `LinkSys.Ok` (`compiled`, `covered`, `tryRets`, `outFits`,
-`argRegs`, `sretRets`, `calleeSlots`, `callRegs`, `blrRegs`, `blrTry`, `raBlr`, `indSig`,
-`indScope`'s declarations, `indNoSym`, `addrSlots`, `declSig`, `entryRegs`, `fits`,
+`argRegs`, `sretRets`, `calleeFrame`, `slotFits`, `callRegs`, `blrRegs`, `blrTry`, `raBlr`,
+`indSig`, `indScope`'s declarations, `indNoSym`, `addrSlots`, `declSig`, `entryRegs`, `fits`,
 `raCall`, `depth`, `subset`, `free`, the image `imgCode`) is an executable check with a
 soundness lemma (`chks`/`Facts`, `siteOk_sound`, `blrOk_sound`, `tryB_sound`, `tryB_reg`,
-`retsB_sound`, `outFitsB_sound`, `entryB_sound`, `raCallB_sound`, `linkFreeB_sound`,
-`indFacts`, `imgCode_of`), decided by `native_decide` (`okB_true`); `symInj`, `symOk` and the
-base contracts (`baseOs`, `basePc`, `baseExt`, `baseX`, `baseXI`, `baseTls`, `baseTry`,
-`baseNoAlloc`, the base's symbol keeping) are proven (vacuous or immediate for the closed
+`retsB_sound`, `outFitsB_sound`, `slotFitsB_sound`, `entryB_sound`, `raCallB_sound`,
+`linkFreeB_sound`, `indFacts`, `imgCode_of`), decided by `native_decide` (`okB_true`); `symInj`,
+`symOk` and the base contracts (`baseOs`, `basePc`, `baseExt`, `baseX`, `baseXI`, `baseTls`,
+`baseTry`, `baseNoAlloc`, `baseNI`, `baseTlsNI` (`xbTls`), `baseKeepsPlace`, `baseKeepsAllocs`,
+the base's symbol keeping) are proven (vacuous or immediate for the closed
 environment). The second theorem discharges the entry premises too (`AbiEntry`, `StackAvail`,
 `hF`, `hgfree`, `himg`, `BodyEntry`, `ArgsIn`, `ClifEntry` with `f`'s slot at its frame address
 `sp0 - 32`, `StackArgsAvoid`, `Rel.holds` (the slot's allocation outside `F0`, `SlotRel`,
-`OutRel` of the 16-byte outgoing area), the returning CLIF run, `native_decide`:
-`entryFactsB_true`, `callChainB_true`) for `f` on `41` at depth `M0 = 20` and applies
+`OutRel` of the 16-byte outgoing area), `hpl`, the returning CLIF run (with the oracle: `t`'s
+slot at its frame address), `native_decide`: `entryFactsB_true`, `callChainB_true`,
+`slotChainB_true`) for `f` on `41` at depth `M0 = 100` and applies
 `backend_correct_program_returned`. Axioms: standard plus the `_native` axioms of `names`,
-`okB_true`, `entryFactsB_true`, `callChainB_true` (and the existing `bv_decide`/`native_decide`
-ones of the backend proofs). The witness found the former `raCall`
+`okB_true`, `entryFactsB_true`, `callChainB_true`, `slotChainB_true` (and the existing
+`bv_decide`/`native_decide` ones of the backend proofs). The witness found the former `raCall`
 (the return address of every call outside the code of **every** function of `P`, including the
 caller's own) unsatisfiable for every program with a call; it is now stated for the callees of
 the caller's call sites (`LinkSys.ProgSite`).
@@ -904,7 +958,7 @@ body's `sp`"):
 | `backend_correct_opt_proven` | `hC`, `hTls`, `hX`, `hsym` (for the optimised function; `try_call` and `call_indirect` excluded by premises) | `final_contracts_witness` at `f := Opt.optimize f cfg` |
 | `backend_correct_legal` | `hC`, `hCT`, `hTls`, `hX`, `hXI`, `hsym` (for the legalised `g`, environment `Clif.Rust.env`) | `final_contracts_witness` at `f := g`, `env := Clif.Rust.env`, for functions without indirect calls whose externs are the diverging panic entry points (they never return, so `hnoop` holds) |
 | `backend_correct_linked` | `hC`, `hCT`, `hTls`, `hX` (environment `Clif.linkEnv P base`); `hXI` discharged by `Linkable` | `final_contracts_witness` at `env := Clif.linkEnv P base`, when the program callees and the base externs return nothing and keep the memory |
-| `backend_correct_program` | `L.Ok` (program, compilation, layout, base environment) and the entry premises | `E2E.LinkWitness.backend_correct_program_witness` (`FV/E2E/NonVacuityLink.lean`): `P = {f, g, h, s, k, r, r__fvself, q, v, a2, w}` compiled by the pipeline (a `try_call` f→g, an `sret` call f→s into `f`'s stack slot, a stack-passed argument f→k, a non-leaf callee g→h, recursion r↔r__fvself, `call_indirect` of `func_addr` and a GOT call v→q, `i128` pairs w→a2 of the legalised `i128` functions), all premises discharged, `f 41` returns `390` |
+| `backend_correct_program` | `L.Ok` (program, compilation, layout, base environment) and the entry premises | `E2E.LinkWitness.backend_correct_program_witness` (`FV/E2E/NonVacuityLink.lean`): `P = {f, g, h, s, k, r, r__fvself, q, v, a2, w, t, u}` compiled by the pipeline (a `try_call` f→g, an `sret` call f→s into `f`'s stack slot, a stack-passed argument f→k, a non-leaf callee g→h, recursion r↔r__fvself, `call_indirect` of `func_addr` and a GOT call v→q, `i128` pairs w→a2 of the legalised `i128` functions, a called function with a stack slot f→t placed by the slot-placement oracle, a called function passing a stack argument f→u→k), all premises discharged (`NeedSlots` and `NeedNI` hold, their premises proven), `f 41` returns `791` |
 
 **Callees that return values** (`idX sym tp idf`: a callee `n` with `idf n` returns its first
 argument — a `bl n` or a `blr` to `sym n 0` —, every other callee returns nothing; the hooks are
