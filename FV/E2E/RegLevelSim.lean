@@ -129,28 +129,89 @@ def CallSoundCtl (F : BitVec 64 → Prop) (K : Nat) (exec : MInst → Arm.ArmSta
   ∀ s, K ≤ (spOf s).toNat → (∀ a, StackBelow K (spOf s) a → F a) →
     OperandsSoundCtlAt F (fun a => F a ∧ ¬ StackBelow K (spOf s) a) exec sem i ctl s
 
+/-- `OperandsSoundCtlAt` for the allocated instructions `i'` that satisfy `P` (e.g. the one whose
+code is at the pc of the state, `CallAt`). -/
+def OperandsSoundCtlAtI (F FK : BitVec 64 → Prop) (P : MInst → Prop)
+    (exec : MInst → Arm.ArmState → Option Arm.ArmState)
+    (sem : ISem CV Arm.ArmState) (i : MInst) (ctl : Ctl) (s : Arm.ArmState) : Prop :=
+  ∀ (c : CheckCtx) (wh : String) (ops : Array Operand) (regs : Array Reg) (i' : MInst)
+    (w : Arm.ArmState) (outs : List CV) (w' : Arm.ArmState),
+    i.operands = .ok ops →
+    c.checkStatic wh ops (regs.map .reg) i.clobbers = .ok () →
+    i.assign regs = .ok i' → P i' →
+    SameWorld F s w → Arm.CheckSPAlignment s → Arm.r .ERR s = .None →
+    sem i (useVals ops regs s) w = some (outs, w', ctl) →
+    ∃ s', exec i' s = some s' ∧ SameWorld F s' w' ∧ FrameKeep FK s s' ∧
+      (∀ p ∈ defRegs ops regs outs, regVal s' p.1.2 = p.2) ∧
+      (∀ r, r.allocatable = true → (∀ p ∈ (ops.zip regs).toList, p.1.isDef = true → p.2 ≠ r) →
+        r ∉ i.clobbers → regVal s' r = regVal s r) ∧
+      (∀ r ∈ i.clobbers, r ∈ calleeSaved → ckeep r (regVal s' r) = ckeep r (regVal s r))
+
+theorem OperandsSoundCtlAt.toI {F FK : BitVec 64 → Prop}
+    {exec : MInst → Arm.ArmState → Option Arm.ArmState} {sem : ISem CV Arm.ArmState} {i : MInst}
+    {ctl : Ctl} {s : Arm.ArmState} (h : OperandsSoundCtlAt F FK exec sem i ctl s)
+    (P : MInst → Prop) : OperandsSoundCtlAtI F FK P exec sem i ctl s :=
+  fun c wh ops regs i' w outs w' hops hst hasg _ hw hal herr hsem =>
+    h c wh ops regs i' w outs w' hops hst hasg hw hal herr hsem
+
+theorem OperandsSoundCtlAtI.mono {F FK FK' : BitVec 64 → Prop} {P P' : MInst → Prop}
+    {exec : MInst → Arm.ArmState → Option Arm.ArmState} {sem : ISem CV Arm.ArmState} {i : MInst}
+    {ctl : Ctl} {s : Arm.ArmState} (h : OperandsSoundCtlAtI F FK P exec sem i ctl s)
+    (hP : ∀ i', P' i' → P i') (hFK : ∀ a, FK' a → FK a) :
+    OperandsSoundCtlAtI F FK' P' exec sem i ctl s := by
+  intro c wh ops regs i' w outs w' hops hst hasg hp hw hal herr hsem
+  obtain ⟨s', hex, hW, hK, hd, ho, hc⟩ := h c wh ops regs i' w outs w' hops hst hasg (hP i' hp) hw hal
+    herr hsem
+  exact ⟨s', hex, hW, ⟨hK.1, fun a ha => hK.2 a (hFK a ha)⟩, hd, ho, hc⟩
+
 /-- `CallSoundCtl` at the states whose memory at `G` is `s0`'s: the callee may assume that the
 addresses `G` the calling activation keeps (`RL.G`: e.g. its callers' frames and the program's
-code) hold what they held at the activation's entry `s0`. -/
+code) hold what they held at the activation's entry `s0`, and that the allocated call `i'` is the
+instruction at the pc (`Pc pc i'`, `CallAt`: e.g. a `blr` reads the target from the register the
+allocation gave it). -/
 def CallSoundCtlG (F : BitVec 64 → Prop) (K : Nat) (G : BitVec 64 → Prop) (s0 : Arm.ArmState)
-    (Pc : BitVec 64 → Prop)
+    (Pc : BitVec 64 → MInst → Prop)
     (exec : MInst → Arm.ArmState → Option Arm.ArmState) (sem : ISem CV Arm.ArmState) (i : MInst)
     (ctl : Ctl) : Prop :=
   ∀ s, K ≤ (spOf s).toNat → (∀ a, StackBelow K (spOf s) a → F a) →
-    (∀ a, G a → s.mem a = s0.mem a) → Pc (Arm.r .PC s) →
-    OperandsSoundCtlAt F (fun a => F a ∧ ¬ StackBelow K (spOf s) a) exec sem i ctl s
+    (∀ a, G a → s.mem a = s0.mem a) →
+    OperandsSoundCtlAtI F (fun a => F a ∧ ¬ StackBelow K (spOf s) a) (Pc (Arm.r .PC s)) exec sem i
+      ctl s
 
 theorem CallSoundCtl.g {F : BitVec 64 → Prop} {K : Nat} {exec : MInst → Arm.ArmState → Option Arm.ArmState}
     {sem : ISem CV Arm.ArmState} {i : MInst} {ctl : Ctl} (h : CallSoundCtl F K exec sem i ctl)
-    (G : BitVec 64 → Prop) (s0 : Arm.ArmState) (Pc : BitVec 64 → Prop) :
+    (G : BitVec 64 → Prop) (s0 : Arm.ArmState) (Pc : BitVec 64 → MInst → Prop) :
     CallSoundCtlG F K G s0 Pc exec sem i ctl :=
-  fun s h1 h2 _ _ => h s h1 h2
+  fun s h1 h2 _ => (h s h1 h2).toI _
 
 /-- `pc` is the address of a call instruction (`bl`, `blr`) of the laid-out function `fa` loaded
-at `base`: the states `CallSoundCtlG` is required at (`Pc := CallPc fa base`). -/
+at `base`. -/
 def CallPc (fa : FnAsm) (base pc : BitVec 64) : Prop :=
   ∃ j i t, fa.lines.toList[j]? = some (.ins i t) ∧ ((∃ n, i = .bl n) ∨ (∃ r, i = .blr r)) ∧
     pc = base + BitVec.ofNat 64 (lineOffset fa.lines.toList j)
+
+/-- The call instruction an allocated `call`/`try_call` emits first (`bl name`, `blr reg`). -/
+def _root_.Backend.MInst.callInsn? : MInst → Option Insn
+  | .call info | .tryCall info _ => some (match info.dest with
+    | .sym n => .bl n
+    | .reg r => .blr r)
+  | _ => none
+
+/-- **The allocated call `i'` is the instruction at `pc`** of the laid-out function `fa` loaded at
+`base`: the states and instructions `CallSoundCtlG` is required at (`Pc := CallAt fa base`). -/
+def CallAt (fa : FnAsm) (base pc : BitVec 64) (i' : MInst) : Prop :=
+  ∃ j x t, fa.lines.toList[j]? = some (.ins x t) ∧ i'.callInsn? = some x ∧
+    pc = base + BitVec.ofNat 64 (lineOffset fa.lines.toList j)
+
+theorem CallAt.callPc {fa : FnAsm} {base pc : BitVec 64} {i' : MInst} (h : CallAt fa base pc i') :
+    CallPc fa base pc := by
+  obtain ⟨j, x, t, hj, hx, hpc⟩ := h
+  refine ⟨j, x, t, hj, ?_, hpc⟩
+  unfold MInst.callInsn? at hx
+  split at hx
+  all_goals first
+    | (simp only [Option.some.injEq] at hx; subst hx; split <;> simp)
+    | cases hx
 
 /-- The registers the entry `Args` of `vc` (instruction 0 of block 0) reads. -/
 def _root_.Backend.VCode.EntryArg (vc : VCode) (r : Reg) : Prop :=

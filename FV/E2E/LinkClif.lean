@@ -15,8 +15,9 @@ returns (`linkEnv P base`; the externs outside `P` are `base`'s).
 * `runLim`: the outcome of a run with unbounded fuel (`outOfFuel` iff no fuel suffices).
 * `runLoop_link`: **every complete whole-program run (returned or trapped) is a complete
   per-function run** of the entered function under `linkEnv P base`, for programs without
-  `call_indirect`, `try_call_indirect` and `return_call` (`LinkFree`; `call` and `try_call`,
-  whose normal return `Clif.run` models, are allowed) and with distinct function names.
+  `return_call` (`LinkFree`), `call_indirect` and `try_call_indirect` (`IndFree`; `call` and
+  `try_call`, whose normal return `Clif.run` models, are allowed) and with distinct function
+  names. `runLoop_linkN` (`LinkClifN.lean`) admits indirect calls.
 -/
 
 namespace Clif
@@ -343,14 +344,17 @@ theorem Program.only_func? (p : Program) (f : Function) (n : String) :
     rw [hb]
     simp [h]
 
-/-! ## The programs: no indirect calls and no `return_call` -/
+/-! ## The programs: no `return_call` -/
 
-/-- `g` has no `call_indirect` statement and no `try_call_indirect` or `return_call`
-terminator (`call` and `try_call` are allowed). -/
+/-- `g` has no `return_call` terminator (`call`, `try_call`, `call_indirect` and
+`try_call_indirect` are allowed). -/
 def LinkFree (g : Function) : Prop :=
+  ∀ b ∈ g.blocks, ∀ fn args, b.term ≠ .returnCall fn args
+
+/-- `g` has no `call_indirect` statement and no `try_call_indirect` terminator. -/
+def IndFree (g : Function) : Prop :=
   ∀ b ∈ g.blocks, (∀ st ∈ b.body, ∀ sig callee args, st.inst ≠ .callIndirect sig callee args) ∧
-    (∀ callee args et, b.term ≠ .tryCallIndirect callee args et) ∧
-    ∀ fn args, b.term ≠ .returnCall fn args
+    ∀ callee args et, b.term ≠ .tryCallIndirect callee args et
 
 /-- A frame of a function of `P`, at a program point of one of its blocks, or at the pending
 `jump` to the normal-return successor of a `try_call` (`Clif.stepTryCall`). -/
@@ -381,14 +385,14 @@ theorem LFrame.enterFunc {P : Program} {g : Function} {vals : List Val} {mem : M
   exact ⟨hg, .inl ⟨b, List.mem_of_mem_head? hb, List.suffix_refl _, rfl⟩⟩
 
 /-- The next step of an `LFrame` that is not at a `try_call` is a local step (`Opt.lstep`). -/
-theorem LFrame.headNoCI {P : Program} (hP : ∀ g ∈ P.funcs, LinkFree g) {fr : Frame}
+theorem LFrame.headNoCI {P : Program} {fr : Frame} (hif : IndFree fr.func)
     (h : LFrame P fr) (hnt : ∀ fn args et, fr.body = [] → fr.term ≠ .tryCall fn args et) :
     Opt.HeadNoCI fr := by
   rcases h with ⟨hf, ⟨b, hbm, hsuf, ht⟩ | ⟨hnil, bc, ht⟩⟩
-  · refine ⟨fun st rest hbd => (hP _ hf b hbm).1 st (hsuf.subset (by rw [hbd]; simp)), fun hb => ?_⟩
+  · refine ⟨fun st rest hbd => (hif b hbm).1 st (hsuf.subset (by rw [hbd]; simp)), fun hb => ?_⟩
     cases hterm : fr.term with
     | tryCall fn args et => exact absurd hterm (hnt fn args et hb)
-    | tryCallIndirect c a et => exact absurd (ht.symm.trans hterm) ((hP _ hf b hbm).2.1 c a et)
+    | tryCallIndirect c a et => exact absurd (ht.symm.trans hterm) ((hif b hbm).2 c a et)
     | _ => rfl
   · refine ⟨fun st rest hbd => ?_, fun _ => ?_⟩
     · rw [hnil] at hbd; cases hbd
@@ -419,7 +423,7 @@ theorem lstep_ne_tail {P : Program} (hP : ∀ g ∈ P.funcs, LinkFree g) {fr : F
   intro hl
   obtain ⟨fn, args, ht, -⟩ := Opt.lstep_tail_term hl
   rcases hI with ⟨hf, ⟨b, hb, -, hbt⟩ | ⟨-, bc, hbt⟩⟩
-  · exact (hP _ hf b hb).2.2 fn args (hbt ▸ ht)
+  · exact hP _ hf b hb fn args (hbt ▸ ht)
   · rw [hbt] at ht; cases ht
 
 /-! ## Step shapes -/
@@ -561,6 +565,210 @@ theorem step_try (env : Env) (p : Program) (s : State) {fn : FnRef} {args : List
   rw [step_term env p s hb, ht]
   rfl
 
+theorem returnValues_mem {s : State} {vals : List Val} {mem : Mem} :
+    (∀ s1, returnValues s vals mem = .next s1 → s1.mem = mem.free (s.frame.slots.map (·.2))) ∧
+    (∀ v m, returnValues s vals mem = .done v m → m = mem.free (s.frame.slots.map (·.2))) := by
+  refine ⟨fun s1 h => ?_, fun v m h => ?_⟩
+  · obtain ⟨_, h⟩ := Opt.StepResult.ofRes_eq_next h
+    obtain ⟨frame, callers, m'⟩ := s
+    cases callers with
+    | nil => cases h.2
+    | cons c cs =>
+      obtain ⟨caller, results⟩ := c
+      simp only at h
+      split at h
+      · cases h.2; rfl
+      · cases h.2
+  · obtain ⟨_, -, h⟩ := ofRes_eq_done h
+    obtain ⟨frame, callers, m'⟩ := s
+    cases callers with
+    | nil => simp only [StepResult.done.injEq] at h; exact h.2.symm
+    | cons c cs =>
+      obtain ⟨caller, results⟩ := c
+      simp only at h
+      revert h
+      split <;> intro h <;> cases h
+
+/-! ## Indirect calls -/
+
+/-- The prelude of `Clif.stepCallIndirect`: the call site's signature, the callee address, the
+arguments. -/
+def indPre (fr : Frame) (sig : Nat) (callee : ValueId) (args : List ValueId) :
+    Res (Signature × Nat × List Val) := do
+  let declared ← Res.ofOption s!"unknown signature sig{sig}" (fr.func.sigDecls.lookup sig)
+  let cv ← fr.get callee
+  let cv64 ← Res.ofOption "call_indirect: callee is not i64" (cv.as? .i64)
+  let vals ← fr.getMany args
+  pure (declared, cv64.toNat, vals)
+
+/-- The continuation of `Clif.stepCallIndirect` after its prelude. -/
+def indCont (env : Env) (p : Program) (s : State) (rest : List Stmt) (results : List ValueId)
+    (sig : Nat) (declared : Signature) (addr : Nat) (vals : List Val) : StepResult :=
+  match p.funcs.find? fun f => (s.mem.symbols f.name) == some addr with
+  | some target =>
+    if AbiParam.tys declared.params == AbiParam.tys target.sig.params &&
+        AbiParam.tys declared.returns == AbiParam.tys target.sig.returns then
+      StepResult.ofRes (enterFunc target vals s.mem) fun (fr', mem') =>
+        .next { frame := fr', callers := ({ s.frame with body := rest }, results) :: s.callers,
+                mem := mem' }
+    else .stuck s!"call_indirect sig{sig}: signature does not match %{target.name}"
+  | none =>
+    StepResult.ofRes (callExternAt env p s.mem declared addr vals) fun (rvals, mem') =>
+      continueWith s rest results rvals mem'
+
+theorem stepCallIndirect_eq (env : Env) (p : Program) (s : State) (rest : List Stmt)
+    (results : List ValueId) (sig : Nat) (callee : ValueId) (args : List ValueId) :
+    stepCallIndirect env p s rest results sig callee args =
+      StepResult.ofRes (indPre s.frame sig callee args) fun (d, a, v) =>
+        indCont env p s rest results sig d a v := rfl
+
+/-- **A `call_indirect` step**: its prelude, then `indCont`. -/
+theorem step_ind (env : Env) (p : Program) (s : State) {st : Stmt} {rest : List Stmt} {sig : Nat}
+    {callee : ValueId} {args : List ValueId} (hb : s.frame.body = st :: rest)
+    (hi : st.inst = .callIndirect sig callee args) :
+    step env p s = StepResult.ofRes (indPre s.frame sig callee args) fun (d, a, v) =>
+      indCont env p s rest st.results sig d a v := by
+  rw [← stepCallIndirect_eq]
+  simp [step, hb, hi]
+
+/-- The prelude of `Clif.stepTryCallIndirect`. -/
+def tryIndPre (fr : Frame) (et : ExnTable) : Res (Nat × ValueId × BlockCall) := do
+  let sig ← Res.ofOption s!"unknown signature sig{et.sig}" (fr.func.sigDecls.lookup et.sig)
+  let base := fr.func.freshValue
+  let bc ← tryNormal et base
+  pure (sig.returns.length, base, bc)
+
+/-- **A `try_call_indirect` step**: its prelude, the call's prelude, then `indCont` from the frame
+waiting at the normal-return `jump`. -/
+theorem step_tryInd (env : Env) (p : Program) (s : State) {callee : ValueId}
+    {args : List ValueId} {et : ExnTable} (hb : s.frame.body = [])
+    (ht : s.frame.term = .tryCallIndirect callee args et) :
+    step env p s = StepResult.ofRes (tryIndPre s.frame et) fun (n, b, bc) =>
+      StepResult.ofRes (indPre (tryState s bc).frame et.sig callee args) fun (d, a, v) =>
+        indCont env p (tryState s bc) [] ((List.range n).map (b + ·)) et.sig d a v := by
+  rw [step_term env p s hb, ht]
+  rfl
+
+theorem callExternAt_ok {env : Env} {p : Program} {mem : Mem} {d : Signature} {a : Nat}
+    {vals rvals : List Val} {mem' : Mem} (h : callExternAt env p mem d a vals = .ok (rvals, mem')) :
+    ∃ n g, env.extern n = some g ∧ g vals mem = .returned rvals mem' := by
+  simp only [callExternAt, Opt.Res.bind_eq_ok, Opt.Res.ofOption_eq_ok] at h
+  obtain ⟨n, -, g, hg, -, -, h⟩ := h
+  refine ⟨n, g, hg, ?_⟩
+  revert h
+  cases g vals mem with
+  | returned rv m' =>
+    intro h
+    dsimp only at h
+    split at h
+    · simp only [Opt.Res.pure_eq_ok, Prod.mk.injEq] at h
+      obtain ⟨rfl, rfl⟩ := h
+      rfl
+    · cases h
+  | trapped c => intro h; cases h
+  | stuck m => intro h; cases h
+  | outOfFuel => intro h; cases h
+
+/-- An indirect call from `t` that continues: the callee function entered (a frame pushed), or an
+extern returned (`t`'s frame continues). -/
+theorem indCont_next {env : Env} {p : Program} {t : State} {rest : List Stmt} {rs : List ValueId}
+    {sig : Nat} {d : Signature} {a : Nat} {v : List Val} {s1 : State}
+    (h : indCont env p t rest rs sig d a v = .next s1) :
+    (s1.callers = ({ t.frame with body := rest }, rs) :: t.callers ∧
+      ∃ g mem', g ∈ p.funcs ∧ enterFunc g v t.mem = .ok (s1.frame, mem') ∧ s1.mem = mem' ∧
+        t.mem.symbols g.name = some a) ∨
+    (s1.callers = t.callers ∧ (∃ regs, s1.frame = { t.frame with regs, body := rest }) ∧
+      ∃ n g rv, env.extern n = some g ∧ g v t.mem = .returned rv s1.mem) := by
+  unfold indCont at h
+  split at h
+  · rename_i g hg
+    split at h
+    · obtain ⟨⟨fr', mem'⟩, he, h⟩ := Opt.StepResult.ofRes_eq_next h
+      cases h
+      exact .inl ⟨rfl, g, mem', List.mem_of_find?_eq_some hg, he, rfl, by
+        simpa using List.find?_some hg⟩
+    · cases h
+  · obtain ⟨⟨rv, mem'⟩, hc, h⟩ := Opt.StepResult.ofRes_eq_next h
+    obtain ⟨n, g, hg, hr⟩ := callExternAt_ok hc
+    dsimp only at h
+    unfold continueWith at h
+    split at h
+    · rename_i regs _
+      injection h with h
+      subst h
+      exact .inr ⟨rfl, ⟨regs, rfl⟩, n, g, rv, hg, hr⟩
+    · cases h
+
+theorem indCont_ne_done {env : Env} {p : Program} {t : State} {rest : List Stmt}
+    {rs : List ValueId} {sig : Nat} {d : Signature} {a : Nat} {v : List Val} {vs : List Val}
+    {m : Mem} : indCont env p t rest rs sig d a v ≠ .done vs m := by
+  intro h
+  unfold indCont at h
+  split at h
+  · split at h
+    · cases he : enterFunc _ v t.mem with
+      | ok x => rw [he] at h; cases h
+      | trap c => rw [he] at h; cases h
+      | stuck m => rw [he] at h; cases h
+    · cases h
+  · cases hc : callExternAt env p t.mem d a v with
+    | ok x =>
+      rw [hc] at h
+      obtain ⟨rv, mem'⟩ := x
+      simp only [StepResult.ofRes_ok] at h
+      unfold continueWith at h
+      split at h <;> cases h
+    | trap c => rw [hc] at h; cases h
+    | stuck m => rw [hc] at h; cases h
+
+/-- The shapes of a step: the call of a `try_call`, of a `try_call_indirect`, a `call_indirect`
+statement, or a local step (`Opt.lstep`, `Opt.step_eq_lift`). -/
+theorem step_shape (s : State) :
+    (∃ fn args et, s.frame.body = [] ∧ s.frame.term = .tryCall fn args et) ∨
+    (∃ callee args et, s.frame.body = [] ∧ s.frame.term = .tryCallIndirect callee args et) ∨
+    (∃ st rest sig callee args, s.frame.body = st :: rest ∧ st.inst = .callIndirect sig callee args) ∨
+    Opt.HeadNoCI s.frame := by
+  cases hb : s.frame.body with
+  | nil =>
+    cases ht : s.frame.term with
+    | tryCall fn args et => exact .inl ⟨fn, args, et, rfl, rfl⟩
+    | tryCallIndirect c args et => exact .inr (.inl ⟨c, args, et, rfl, rfl⟩)
+    | _ => exact .inr (.inr (.inr ⟨fun st rest h => (by rw [hb] at h; cases h),
+        fun _ => (by rw [ht]; rfl)⟩))
+  | cons st rest =>
+    cases hi : st.inst with
+    | callIndirect sig c args => exact .inr (.inr (.inl ⟨st, rest, sig, c, args, rfl, hi⟩))
+    | _ =>
+      refine .inr (.inr (.inr ⟨fun st' rest' h sig c a e => ?_, fun h => (by rw [hb] at h; cases h)⟩))
+      rw [hb] at h
+      cases h
+      rw [hi] at e
+      cases e
+
+/-- A step that enters a function of `P` (from a frame `t` running `s`'s function, the rest of the
+block `rest`) or continues `t`'s frame keeps `LInv` and the bottom frame's function. -/
+theorem next_linv {P : Program} {s s1 t : State} {rest : List Stmt} {rs : List ValueId}
+    {v : List Val} (hI : LInv P s) (htc : t.callers = s.callers)
+    (htf : t.frame.func = s.frame.func) (hfr : ∀ regs, LFrame P { t.frame with regs, body := rest })
+    (h : (s1.callers = ({ t.frame with body := rest }, rs) :: t.callers ∧
+      ∃ g mem', g ∈ P.funcs ∧ enterFunc g v t.mem = .ok (s1.frame, mem')) ∨
+      (s1.callers = t.callers ∧ ∃ regs, s1.frame = { t.frame with regs, body := rest })) :
+    LInv P s1 ∧ s1.bottom = s.bottom := by
+  rcases h with ⟨hc1, g, mem', hg, he⟩ | ⟨hc1, regs, hf1⟩
+  · refine ⟨⟨LFrame.enterFunc hg he, ?_⟩, ?_⟩
+    · rw [hc1, htc]
+      simp only [List.forall_mem_cons]
+      exact ⟨hfr t.frame.regs, hI.2⟩
+    · obtain ⟨fr1, cs1, m1⟩ := s1
+      obtain ⟨fr, cs, m⟩ := s
+      simp only at hc1 htc htf
+      subst hc1 htc
+      exact bottom_push htf
+  · refine ⟨⟨hf1 ▸ hfr regs, by rw [hc1, htc]; exact hI.2⟩, ?_⟩
+    obtain ⟨fr1, cs1, m1⟩ := s1
+    simp only at hc1 hf1
+    simp only [State.bottom, hc1, htc, hf1, htf]
+
 /-- Steps of a whole-program run keep `LInv` and the bottom frame's function. -/
 theorem step_next_linv {P : Program} (hP : ∀ g ∈ P.funcs, LinkFree g) {env : Env} {s s1 : State}
     (hI : LInv P s) (h : step env P s = .next s1) : LInv P s1 ∧ s1.bottom = s.bottom := by
@@ -569,29 +777,33 @@ theorem step_next_linv {P : Program} (hP : ∀ g ∈ P.funcs, LinkFree g) {env :
       (∀ regs, LFrame P { t.frame with regs, body := rest }) →
       Opt.callCont env P t rest rs ext vals = .next s1 → LInv P s1 ∧ s1.bottom = s.bottom := by
     intro t rest rs ext vals htc htf hfr hc
-    rcases callCont_next hc with ⟨hc1, g, mem', hg, he⟩ | ⟨hc1, regs, hf1⟩
-    · refine ⟨⟨LFrame.enterFunc (Program.func?_some hg).1 he, ?_⟩, ?_⟩
-      · rw [hc1, htc]
-        simp only [List.forall_mem_cons]
-        exact ⟨hfr t.frame.regs, hI.2⟩
-      · obtain ⟨fr1, cs1, m1⟩ := s1
-        obtain ⟨fr, cs, m⟩ := s
-        simp only at hc1 htc htf
-        subst hc1 htc
-        exact bottom_push htf
-    · refine ⟨⟨hf1 ▸ hfr regs, by rw [hc1, htc]; exact hI.2⟩, ?_⟩
-      obtain ⟨fr1, cs1, m1⟩ := s1
-      simp only at hc1 hf1
-      simp only [State.bottom, hc1, htc, hf1, htf]
-  by_cases hT : ∃ fn args et, s.frame.body = [] ∧ s.frame.term = .tryCall fn args et
-  · obtain ⟨fn, args, et, hb, ht⟩ := hT
-    rw [step_try env P s hb ht] at h
+    refine next_linv (v := vals) (rs := rs) hI htc htf hfr ?_
+    rcases callCont_next hc with ⟨hc1, g, mem', hg, he⟩ | h2
+    · exact .inl ⟨hc1, g, mem', (Program.func?_some hg).1, he⟩
+    · exact .inr h2
+  -- an indirect call (`indCont`) likewise
+  have hind : ∀ (t : State) rest rs sig d a v, t.callers = s.callers →
+      t.frame.func = s.frame.func → (∀ regs, LFrame P { t.frame with regs, body := rest }) →
+      indCont env P t rest rs sig d a v = .next s1 → LInv P s1 ∧ s1.bottom = s.bottom := by
+    intro t rest rs sig d a v htc htf hfr hc
+    refine next_linv (v := v) (rs := rs) hI htc htf hfr ?_
+    rcases indCont_next hc with ⟨hc1, g, mem', hg, he, -, -⟩ | ⟨hc1, h2, -⟩
+    · exact .inl ⟨hc1, g, mem', hg, he⟩
+    · exact .inr ⟨hc1, h2⟩
+  rcases step_shape s with ⟨fn, args, et, hb, ht⟩ | ⟨callee, args, et, hb, ht⟩ |
+    ⟨st, rest, sig, callee, args, hb, hi⟩ | hci
+  · rw [step_try env P s hb ht] at h
     obtain ⟨⟨n, b, bc⟩, -, h⟩ := Opt.StepResult.ofRes_eq_next h
     obtain ⟨⟨ext, vals⟩, -, h⟩ := Opt.StepResult.ofRes_eq_next h
     exact hcall (tryState s bc) [] _ ext vals rfl rfl (fun regs => LFrame.jump hI.1.1 regs bc) h
-  · have hnt : ∀ fn args et, s.frame.body = [] → s.frame.term ≠ .tryCall fn args et :=
-      fun fn args et hb ht => hT ⟨fn, args, et, hb, ht⟩
-    rw [Opt.step_eq_lift env P s (hI.1.headNoCI hP hnt)] at h
+  · rw [step_tryInd env P s hb ht] at h
+    obtain ⟨⟨n, b, bc⟩, -, h⟩ := Opt.StepResult.ofRes_eq_next h
+    obtain ⟨⟨d, a, v⟩, -, h⟩ := Opt.StepResult.ofRes_eq_next h
+    exact hind (tryState s bc) [] _ _ d a v rfl rfl (fun regs => LFrame.jump hI.1.1 regs bc) h
+  · rw [step_ind env P s hb hi] at h
+    obtain ⟨⟨d, a, v⟩, -, h⟩ := Opt.StepResult.ofRes_eq_next h
+    exact hind s rest st.results sig d a v rfl rfl (fun regs => hI.1.rest hb regs) h
+  · rw [Opt.step_eq_lift env P s hci] at h
     cases hl : Opt.lstep s.frame s.mem with
     | next fr1 m1 =>
       rw [hl] at h; cases h
@@ -619,15 +831,20 @@ return types. -/
 theorem step_done_linv {P : Program} (hP : ∀ g ∈ P.funcs, LinkFree g) {env : Env} {s : State}
     {v : List Val} {m : Mem} (hI : LInv P s) (h : step env P s = .done v m) :
     s.callers = [] ∧ v.map (·.ty) = AbiParam.tys s.frame.func.sig.returns := by
-  by_cases hT : ∃ fn args et, s.frame.body = [] ∧ s.frame.term = .tryCall fn args et
-  · obtain ⟨fn, args, et, hb, ht⟩ := hT
-    rw [step_try env P s hb ht] at h
+  rcases step_shape s with ⟨fn, args, et, hb, ht⟩ | ⟨callee, args, et, hb, ht⟩ |
+    ⟨st, rest, sig, callee, args, hb, hi⟩ | hci
+  · rw [step_try env P s hb ht] at h
     obtain ⟨⟨n, b, bc⟩, -, h⟩ := ofRes_eq_done h
     obtain ⟨⟨ext, vals⟩, -, h⟩ := ofRes_eq_done h
     exact absurd h callCont_ne_done
-  · have hnt : ∀ fn args et, s.frame.body = [] → s.frame.term ≠ .tryCall fn args et :=
-      fun fn args et hb ht => hT ⟨fn, args, et, hb, ht⟩
-    rw [Opt.step_eq_lift env P s (hI.1.headNoCI hP hnt)] at h
+  · rw [step_tryInd env P s hb ht] at h
+    obtain ⟨⟨n, b, bc⟩, -, h⟩ := ofRes_eq_done h
+    obtain ⟨⟨d, a, w⟩, -, h⟩ := ofRes_eq_done h
+    exact absurd h indCont_ne_done
+  · rw [step_ind env P s hb hi] at h
+    obtain ⟨⟨d, a, w⟩, -, h⟩ := ofRes_eq_done h
+    exact absurd h indCont_ne_done
+  · rw [Opt.step_eq_lift env P s hci] at h
     cases hl : Opt.lstep s.frame s.mem with
     | ret vals =>
       rw [hl] at h
@@ -696,14 +913,15 @@ theorem ofRes_cases {α : Type} (X : Res α) (k₁ k₂ : α → StepResult) :
   | _ => exact .inl rfl
 
 /-- **Linking at the CLIF level.** For a program `P` with distinct function names whose
-functions have no `call_indirect`, `try_call_indirect` or `return_call` (`LinkFree`; `call` and
+functions have no `call_indirect`, `try_call_indirect` (`IndFree`) or `return_call` (`LinkFree`; `call` and
 `try_call` are allowed), a whole-program run (a call of a function of `P` enters it) from a
 state whose frames run functions of `P` (`LInv`) that returns or traps within `N` steps is a
 per-function run of `P.only f` (only `f` is entered; a call of any other function `g` of `P` is
 atomic and returns what `g`'s whole-program run returns, `linkEnv P base`) with the same
 outcome. -/
 theorem runLoop_link {P : Program} {base : Env} {f : Function}
-    (hnd : (P.funcs.map (·.name)).Nodup) (hf : f ∈ P.funcs) (hP : ∀ g ∈ P.funcs, LinkFree g) :
+    (hnd : (P.funcs.map (·.name)).Nodup) (hf : f ∈ P.funcs) (hP : ∀ g ∈ P.funcs, LinkFree g)
+    (hIF : ∀ g ∈ P.funcs, IndFree g) :
     ∀ (N : Nat) (s : State), LInv P s →
       (∀ msg, runLoop base P N s ≠ .stuck msg) → runLoop base P N s ≠ .outOfFuel →
       ∃ m, runLoop (linkEnv P base) (P.only f) m s = runLoop base P N s := by
@@ -853,7 +1071,7 @@ theorem runLoop_link {P : Program} {base : Env} {f : Function}
     exact call (tryState s bc) [] _ ext vals rfl rfl (fun regs => LFrame.jump hI.1.1 regs bc) e1 e2
   have hnt : ∀ fn args et, s.frame.body = [] → s.frame.term ≠ .tryCall fn args et :=
     fun fn args et hb ht => hT ⟨fn, args, et, hb, ht⟩
-  have hci := hI.1.headNoCI hP hnt
+  have hci := hI.1.headNoCI (hIF _ hI.1.1) hnt
   have e1 := Opt.step_eq_lift base P s hci
   have e2 := Opt.step_eq_lift (linkEnv P base) (P.only f) s hci
   cases hl : Opt.lstep s.frame s.mem with

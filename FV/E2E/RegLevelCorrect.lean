@@ -180,8 +180,8 @@ end
 /-! ## `Realizes` by cases -/
 
 /-- **The machine realises the allocated code** under `Q ∧ AInv`: every item case. -/
-theorem realizes_all {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (CallPc R.fa R.base) R.X R.H R.vc.CallSite)
-    (hT : R.vc.hasTryCall = true → CalleeTryOkG R.F R.K R.G R.s0 (CallPc R.fa R.base) R.X R.H R.vc.TrySite)
+theorem realizes_all {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.CallSite)
+    (hT : R.vc.hasTryCall = true → CalleeTryOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.TrySite)
     (hTls : R.vc.hasTls = true → TlsOk R.F R.K R.X R.H)
     (hcov : FormsCovered R.ctx R.vc) :
     Realizes R.vc R.rf R.sem ckeep R.step (fun s c => Q R s c ∧ AInv R c) := by
@@ -364,9 +364,9 @@ theorem regLevelCorrect_world {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAs
     {base ra : BitVec 64} {s : Arm.ArmState} (hent : AbiEntry fb base ra s)
     (hres : StackAvail K af s) (hG : ∀ a, G a → ¬ StackBelow (frameDrop af + K) (spv s) a)
     (hC : CalleeOkG (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) K G s
-      (CallPc fa base) X H vcp.CallSite)
+      (CallAt fa base) X H vcp.CallSite)
     (hCT : vcp.hasTryCall = true → CalleeTryOkG (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) K G s
-      (CallPc fa base) X H vcp.TrySite)
+      (CallAt fa base) X H vcp.TrySite)
     (hTls : vcp.hasTls = true → TlsOk (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) K X H)
     {w₀ : Arm.ArmState} (hbe : BodyEntryW (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) vcp.EntryArg af s w₀) (ρ₀ : Nat → CV) :
     (∀ us vals w, VReturns vcp (csem (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ us vals w →

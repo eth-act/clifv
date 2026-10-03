@@ -165,6 +165,36 @@ def RunsAs (R : RL) (exec : Env → MInst → Arm.ArmState → Option Arm.ArmSta
     Arm.r .ERR s = .None → exec (R.envOf j) i' s = some s' →
     ∃ n, iterN R.step n s = s' ∧ Arm.r .PC s' = R.pcOf (j + ls1.length)
 
+/-- `operandsSound_step` for the obligation at the allocated instructions `P` (`P i'`). -/
+theorem operandsSound_stepI {F FK : BitVec 64 → Prop} {P : MInst → Prop}
+    {exec : MInst → Arm.ArmState → Option Arm.ArmState}
+    {sem : ISem CV Arm.ArmState} {i : MInst} {ctl : Ctl} {s : Arm.ArmState}
+    (hs : OperandsSoundCtlAtI F FK P exec sem i ctl s)
+    {c : CheckCtx} {wh : String} {ops : Array Operand} {regs : Array Reg} {i' : MInst}
+    (hops : i.operands = .ok ops)
+    (hst : c.checkStatic wh ops (regs.map Loc.reg) i.clobbers = .ok ())
+    (hasg : i.assign regs = .ok i') (hP : P i') {m : Loc → CV} {w : Arm.ArmState}
+    (hm : ∀ r, r.allocatable = true → m (.reg r) = regVal s r) (hw : SameWorld F s w)
+    (hal : Arm.CheckSPAlignment s) (herr : Arm.r .ERR s = .None) {outs : List CV} {w' : Arm.ArmState}
+    (hsem : sem i (((ops.zip (regs.map Loc.reg)).toList.filter (·.1.isUse)).map (m ·.2)) w =
+      some (outs, w', ctl))
+    (hlen : outs.length = ((ops.zip (regs.map Loc.reg)).toList.filter (·.1.isDef)).length) :
+    ∃ s' m2, exec i' s = some s' ∧ SameWorld F s' w' ∧ FrameKeep FK s s' ∧
+      Clobbered ckeep i.clobbers
+        (writeM m ((((ops.zip (regs.map Loc.reg)).toList.filter (·.1.isDef)).zip outs).filter
+          (·.1.1.isEarly))) m2 ∧
+      (∀ r, r.allocatable = true →
+        writeM m2 ((((ops.zip (regs.map Loc.reg)).toList.filter (·.1.isDef)).zip outs).filter
+          (·.1.1.isLate)) (.reg r) = regVal s' r) ∧
+      (∀ l, (∀ r, l ≠ .reg r) →
+        writeM m2 ((((ops.zip (regs.map Loc.reg)).toList.filter (·.1.isDef)).zip outs).filter
+          (·.1.1.isLate)) l = m l) := by
+  rw [useVals_of_store hst hm] at hsem
+  obtain ⟨s', hex, hW, hK, hdef, hoth, hcl⟩ :=
+    hs c wh ops regs i' w outs w' hops hst hasg hP hw hal herr hsem
+  obtain ⟨m2, hc2, hr2, hl2⟩ := operandsSound_post hst hm hlen hdef hoth hcl
+  exact ⟨s', m2, hex, hW, hK, hc2, hr2, hl2⟩
+
 /-- **An instruction item that falls through, on the machine** (`MStep.op` with control
 `next`), for any execution function `exec` of allocated instructions the machine realises
 (`RunsAs`): given the operand-view obligation for `exec` at the state (`OperandsSoundCtlAt`,
@@ -180,7 +210,8 @@ theorem realizes_op_core {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
     (hlen : outs.length = ((ops.zip allocs).toList.filter (·.1.isDef)).length)
     (hk : k + 1 < vb.insts.size)
     {exec : Env → MInst → Arm.ArmState → Option Arm.ArmState}
-    (hOS : ∀ env, OperandsSoundCtlAt R.F R.FK (exec env) R.sem i .next s)
+    (hOS : ∀ env, OperandsSoundCtlAtI R.F R.FK
+      (fun i' => ∃ regs, allocs = regs.map Loc.reg ∧ i.assign regs = .ok i') (exec env) R.sem i .next s)
     (hL : ∀ regs i', i.assign regs = .ok i' → (∃ env s s', exec env i' s = some s') →
       ∃ ls1, (∀ ps, i'.lines R.ctx ps = .ok (ls1, ps)) ∧
       (∀ ln ∈ ls1, ln.plain = true) ∧ (∀ ds, i' ≠ .args ds) ∧ (∀ us, i' ≠ .rets us) ∧
@@ -204,8 +235,8 @@ theorem realizes_op_core {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
   -- the instruction's effect
   have hm : ∀ r, r.allocatable = true → m (.reg r) = regVal s r := fun r hr =>
     hst.store (.reg r) (fun r' e => by cases e; exact hr) trivial
-  obtain ⟨s', m2, hex, hW, hK, hc2', hr2, hl2⟩ := operandsSound_step (hOS (R.envOf j)) hops hstat
-    hasg hm hst.world hst.align hst.err hsem hlen
+  obtain ⟨s', m2, hex, hW, hK, hc2', hr2, hl2⟩ := operandsSound_stepI (hOS (R.envOf j)) hops hstat
+    hasg ⟨regs, rfl, hasg⟩ hm hst.world hst.align hst.err hsem hlen
   obtain ⟨ls1, hl1, hpl, hna, hnr, hruns⟩ := hL regs i' hasg ⟨_, _, _, hex⟩
   rcases hc1' with ⟨rfl, -, -⟩ | ⟨ds, rfl, -⟩ | ⟨us, rfl, -⟩
   rotate_left
@@ -300,7 +331,7 @@ theorem realizes_op_next {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
     ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
       Q R (iterN R.step n s) c'' :=
   realizes_op_core hR hq hvb hi hops hsz hsem hlen hk (exec := fun env => execMInst R.ctx env)
-    (fun env => (hOS env).at (fun _ => RL.FK_F) s)
+    (fun env => ((hOS env).at (fun _ => RL.FK_F) s).toI _)
     (fun regs i' hasg _ => by
       obtain ⟨⟨ls1, hl1, hins, hpl, hint⟩, hna, hnr⟩ := hL regs i' hasg
       exact ⟨ls1, hl1, hpl, hna, hnr, runsAs_of_linesOk hR hl1 hins hint⟩) hW'
