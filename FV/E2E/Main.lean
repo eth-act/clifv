@@ -3,6 +3,7 @@ import FV.Backend.Proof.DriverCheckSound
 import FV.Backend.Proof.PrepareSound
 import FV.Backend.Proof.IselMemArm
 import FV.E2E.RegLevelEmit
+import FV.Opt.Proof.SemSim
 
 /-!
 # M7: `backend_correct`
@@ -30,6 +31,11 @@ theorem memRel_free {F : BitVec 64 → Prop} {syms} {cm : Clif.Mem} {w : Arm.Arm
     exact ⟨x, hx, hc⟩
   exact ⟨fun a b ha hb => h.bytes a b (hv a 1 ha) hb, fun a n ha => h.valid a n (hv a n ha),
     h.symbols⟩
+
+theorem memRel_leave {F : BitVec 64 → Prop} {syms} {cm : Clif.Mem} {w : Arm.ArmState}
+    (h : MemRel F syms cm w) : MemRel F syms cm.leave w :=
+  ⟨fun a b ha hb => h.bytes a b (by simpa using ha) (by simpa using hb),
+    fun a n ha => h.valid a n (by simpa using ha), by simpa using h.symbols⟩
 
 /-- The CLIF ↔ VCode relation only looks at memory outside `F` and at `sp`: M4's `MRStable`. -/
 theorem mrStable_holds (Γ : Rel) (f : Clif.Function) :
@@ -179,7 +185,7 @@ theorem iselSim_of_driver {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LS
   refine ⟨fun vals cm h => ?_, fun c h => ?_⟩
   · rw [h] at hrun
     obtain ⟨us, outs, w, cm0, hret, h1, h2, h3, h4, h5⟩ := hrun
-    exact ⟨us, outs, w, hret, h1, h2, h3, h5 ▸ memRel_free h4.1 _⟩
+    exact ⟨us, outs, w, hret, h1, h2, h3, h5 ▸ memRel_leave (memRel_free h4.1 _)⟩
   · rw [h] at hrun
     exact hrun
 
@@ -382,20 +388,7 @@ namespace E2E
 
 open Backend Backend.Proof Backend.Proof.Driver
 
-theorem slots_fold_ids (ss : List (Clif.SlotId × Clif.StackSlot)) :
-    ∀ (acc : List (Clif.SlotId × Nat)) (m : Clif.Mem),
-      (ss.foldl (fun (acc : List (Clif.SlotId × Nat) × Clif.Mem) (s : Clif.SlotId × Clif.StackSlot) =>
-        let (base, m) := acc.2.alloc s.2.size (s.2.align.getD 1)
-        (acc.1 ++ [(s.1, base)], m)) (acc, m)).1.map (·.1) = acc.map (·.1) ++ ss.map (·.1) := by
-  induction ss with
-  | nil => intro acc m; simp
-  | cons s ss ih =>
-    intro acc m
-    simp only [List.foldl_cons]
-    rw [ih]
-    simp
-
-/-- `Clif.run`'s own initial state (bump-allocated slots) is a `ClifEntry`: the theorem's CLIF
+/-- `Clif.run`'s own initial state (slots from `Clif.enterSlots`) is a `ClifEntry`: the theorem's CLIF
 entry states differ from `Clif.initState` only in the (unspecified) slot addresses and the
 initial memory. -/
 theorem clifEntry_initState {p : Clif.Program} {f : Clif.Function} {args : List Clif.Val}
@@ -431,8 +424,7 @@ theorem clifEntry_initState {p : Clif.Program} {f : Clif.Function} {args : List 
             obtain ⟨rfl, rfl⟩ := he
             refine ⟨rfl, rfl, by simpa [Clif.AbiParam.tys] using hty1,
               ⟨b, hen, rfl, rfl, hty2.symm, hs⟩, ?_⟩
-            have := slots_fold_ids f.slots [] mem
-            simpa using this
+            exact (Opt.enterSlots_ids f mem).1
         · rw [hc2] at he; cases he
     · rw [hc1] at he; cases he
   | trap => rw [he] at h; cases h

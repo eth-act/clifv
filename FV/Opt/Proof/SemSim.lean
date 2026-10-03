@@ -189,7 +189,7 @@ def tailCont (env : Env) (p : Program) (s : State) (ext : ExtFunc) (vals : List 
   | some callee =>
     if AbiParam.tys callee.sig.params == AbiParam.tys ext.sig.params &&
         AbiParam.tys callee.sig.returns == AbiParam.tys ext.sig.returns then
-      let mem := s.mem.free (fr.slots.map (·.2))
+      let mem := (s.mem.free (fr.slots.map (·.2))).leave
       StepResult.ofRes (enterFunc callee vals mem) fun (fr', mem') =>
         .next { s with frame := fr', mem := mem' }
     else .stuck s!"signature of %{ext.name} does not match its declaration"
@@ -372,13 +372,9 @@ theorem LStar.frame {fr m fr' m'} (h : LStar fr m fr' m') :
 
 /-! ## Function entry -/
 
-/-- The slot allocation of `enterFunc`. -/
-def allocSlots (slots : List (SlotId × StackSlot)) (mem : Mem) : List (SlotId × Nat) × Mem :=
-  slots.foldl
-    (fun (acc : List (SlotId × Nat) × Mem) (s : SlotId × StackSlot) =>
-      let (base, m) := acc.2.alloc s.2.size (s.2.align.getD 1)
-      (acc.1 ++ [(s.1, base)], m))
-    ([], mem)
+/-- The slot allocation of `enterFunc` without the slot-placement oracle. -/
+abbrev allocSlots (slots : List (SlotId × StackSlot)) (mem : Mem) : List (SlotId × Nat) × Mem :=
+  bumpSlots slots mem
 
 theorem allocSlots_ids_aux (slots : List (SlotId × StackSlot)) (acc : List (SlotId × Nat) × Mem) :
     (slots.foldl (fun (acc : List (SlotId × Nat) × Mem) (s : SlotId × StackSlot) =>
@@ -401,14 +397,54 @@ theorem allocSlots_ids (slots : List (SlotId × StackSlot)) (mem : Mem) :
     (allocSlots slots mem).1.map (·.1) = slots.map (·.1) ∧
       (allocSlots slots mem).2.symbols = mem.symbols := by
   have := allocSlots_ids_aux slots ([], mem)
-  simpa [allocSlots] using this
+  simpa [allocSlots, bumpSlots] using this
+
+theorem placeSlots_ids_aux (slots : List (SlotId × StackSlot)) (sp : BitVec 64)
+    (off : SlotId → Nat) (acc : List (SlotId × Nat) × Mem) :
+    (slots.foldl (fun (acc : List (SlotId × Nat) × Mem) (s : SlotId × StackSlot) =>
+      (acc.1 ++ [(s.1, sp.toNat + off s.1)], acc.2.allocAt (sp.toNat + off s.1) s.2.size))
+      acc).1.map (·.1) = acc.1.map (·.1) ++ slots.map (·.1) ∧
+    (slots.foldl (fun (acc : List (SlotId × Nat) × Mem) (s : SlotId × StackSlot) =>
+      (acc.1 ++ [(s.1, sp.toNat + off s.1)], acc.2.allocAt (sp.toNat + off s.1) s.2.size))
+      acc).2.symbols = acc.2.symbols := by
+  induction slots generalizing acc with
+  | nil => simp
+  | cons s ss ih =>
+    simp only [List.foldl_cons]
+    obtain ⟨h1, h2⟩ := ih (acc.1 ++ [(s.1, sp.toNat + off s.1)],
+      acc.2.allocAt (sp.toNat + off s.1) s.2.size)
+    refine ⟨?_, ?_⟩
+    · rw [h1]; simp
+    · rw [h2]; rfl
+
+theorem placeSlots_ids (slots : List (SlotId × StackSlot)) (sp : BitVec 64) (off : SlotId → Nat)
+    (mem : Mem) :
+    (placeSlots slots sp off mem).1.map (·.1) = slots.map (·.1) ∧
+      (placeSlots slots sp off mem).2.symbols = mem.symbols := by
+  have := placeSlots_ids_aux slots sp off ([], mem)
+  simpa [placeSlots] using this
+
+theorem enterSlots_congr {f g : Function} (hn : g.name = f.name) (hs : g.slots = f.slots)
+    (mem : Mem) : enterSlots g mem = enterSlots f mem := by
+  unfold enterSlots; rw [hn, hs]
+
+/-- The slots of an activation have the function's slot ids; entering keeps the symbols. -/
+theorem enterSlots_ids (f : Function) (mem : Mem) :
+    (enterSlots f mem).1.map (·.1) = f.slots.map (·.1) ∧
+      (enterSlots f mem).2.symbols = mem.symbols := by
+  unfold enterSlots
+  split
+  · exact allocSlots_ids f.slots mem
+  · split
+    · exact placeSlots_ids _ _ _ _
+    · exact allocSlots_ids f.slots _
 
 theorem enterFunc_ok {f : Function} {vals : List Val} {mem : Mem} {fr : Frame} {mem' : Mem}
     (h : enterFunc f vals mem = .ok (fr, mem')) :
     ∃ b regs, f.entry? = some b ∧ vals.map (·.ty) = AbiParam.tys f.sig.params ∧
       vals.map (·.ty) = b.params.map (·.2) ∧
       Regs.empty.setMany (b.params.map (·.1)) vals = some regs ∧
-      allocSlots f.slots mem = (fr.slots, mem') ∧
+      enterSlots f mem = (fr.slots, mem') ∧
       fr = ⟨f, regs, fr.slots, b.body, b.term⟩ := by
   simp only [enterFunc, checkTys, Res.bind_eq_ok, Res.check_eq_ok, beq_iff_eq,
     Res.ofOption_eq_ok, Res.pure_eq_ok] at h
@@ -420,8 +456,8 @@ theorem enterFunc_of {f : Function} {vals : List Val} {mem : Mem} {b : Block} {r
     (hb : f.entry? = some b) (h1 : vals.map (·.ty) = AbiParam.tys f.sig.params)
     (h2 : vals.map (·.ty) = b.params.map (·.2))
     (hr : Regs.empty.setMany (b.params.map (·.1)) vals = some regs) :
-    enterFunc f vals mem = .ok (⟨f, regs, (allocSlots f.slots mem).1, b.body, b.term⟩,
-      (allocSlots f.slots mem).2) := by
+    enterFunc f vals mem = .ok (⟨f, regs, (enterSlots f mem).1, b.body, b.term⟩,
+      (enterSlots f mem).2) := by
   have h3 : AbiParam.tys f.sig.params = b.params.map (·.2) := h1.symm.trans h2
   simp only [enterFunc, checkTys, h1, h3, hb, hr, beq_self_eq_true, Res.check_true,
     Res.ofOption_some, Res.ok_bind]
@@ -623,11 +659,11 @@ theorem funSim_entry {syms f g} (h : FunSim f g) {vals mem fr mem'}
   obtain ⟨b, regs, hb, h1, h2, hr, hsl, hfr⟩ := enterFunc_ok he
   obtain ⟨R, hR, hent⟩ := h.sim syms
   obtain ⟨b', hb', hp, hrel⟩ := hent b hb
-  have hids := allocSlots_ids f.slots mem
+  have hids := enterSlots_ids f mem
   rw [hsl] at hids
   refine ⟨⟨g, regs, fr.slots, b'.body, b'.term⟩, ?_, ⟨R, hR, ?_⟩, hids.2⟩
   · rw [enterFunc_of hb' (by rw [h.sig]; exact h1) (by rw [hp]; exact h2) (by rw [hp]; exact hr),
-      h.slots, hsl]
+      enterSlots_congr h.name h.slots, hsl]
   · rw [hfr]; exact hrel vals regs fr.slots h2 hr hids.1
 
 theorem GR.isSim (syms) : IsSim syms (GR syms) where
@@ -681,7 +717,7 @@ theorem returnValues_rel {syms : String → Option Nat} {s : State} {fr2 : Frame
         simp only [hr']
         refine ⟨fun s1 h => ?_, fun _ _ h => (by cases h), fun _ h => (by cases h)⟩
         cases h
-        exact ⟨_, rfl, rfl, by rw [← hsym]; rfl, hg, hcs⟩
+        exact ⟨_, rfl, rfl, by rw [Mem.leave_symbols, ← hsym]; rfl, hg, hcs⟩
   · have hck : ∀ w, ∃ m, checkTys w vals (AbiParam.tys s.frame.func.sig.returns) = .stuck m := by
       intro w; simp [checkTys, hty, Res.check]
     obtain ⟨m1, h1⟩ := hck s!"return values of %{s.frame.func.name}"
@@ -783,7 +819,7 @@ theorem tailCont_rel {syms : String → Option Nat} {env : Env} (hE : EnvKeepsSy
     simp only [hq, hfs.sig, hsl]
     split
     · rename_i hcond
-      cases he : enterFunc callee vals (s.mem.free (s.frame.slots.map (·.2))) with
+      cases he : enterFunc callee vals (s.mem.free (s.frame.slots.map (·.2))).leave with
       | trap c => exact absurd he (enterFunc_not_trap _ _ _ _)
       | stuck m => exact StepRel.stuck
       | ok x =>
@@ -794,7 +830,7 @@ theorem tailCont_rel {syms : String → Option Nat} {env : Env} (hE : EnvKeepsSy
         cases h
         have hr2 : AbiParam.tys callee.sig.returns = AbiParam.tys ext.sig.returns := by
           simp only [Bool.and_eq_true, beq_iff_eq] at hcond; exact hcond.2
-        refine ⟨_, rfl, rfl, hsy.trans hsym, hg, ?_⟩
+        refine ⟨_, rfl, rfl, hsy.trans (by rw [Mem.leave_symbols]; exact hsym), hg, ?_⟩
         obtain ⟨_, _, _, _, _, _, _, this⟩ := enterFunc_ok he
         simp only
         rw [this]

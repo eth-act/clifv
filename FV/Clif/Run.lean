@@ -316,16 +316,44 @@ def enterBlock (fr : Frame) (bc : BlockCall) : Res Frame := do
   let regs ← Res.ofOption "block arity" (fr.regs.setMany (b.params.map (·.1)) args)
   pure { fr with regs, body := b.body, term := b.term }
 
-/-- Start an activation of `f` on `args`: allocate its stack slots (fresh, uninitialised)
-and enter its entry block. -/
-def enterFunc (f : Function) (args : List Val) (mem : Mem) : Res (Frame × Mem) := do
-  checkTys s!"arguments of %{f.name}" args (AbiParam.tys f.sig.params)
-  let entry ← Res.ofOption s!"%{f.name} has no blocks" f.entry?
-  let (slots, mem') := f.slots.foldl
+/-- Stack slots from the bump allocator (fresh, uninitialised). -/
+def bumpSlots (slots : List (SlotId × StackSlot)) (mem : Mem) : List (SlotId × Nat) × Mem :=
+  slots.foldl
     (fun (acc : List (SlotId × Nat) × Mem) (s : SlotId × StackSlot) =>
       let (base, m) := acc.2.alloc s.2.size (s.2.align.getD 1)
       (acc.1 ++ [(s.1, base)], m))
     ([], mem)
+
+/-- Stack slots placed at `sp + off id` (uninitialised). -/
+def placeSlots (slots : List (SlotId × StackSlot)) (sp : BitVec 64) (off : SlotId → Nat)
+    (mem : Mem) : List (SlotId × Nat) × Mem :=
+  slots.foldl
+    (fun (acc : List (SlotId × Nat) × Mem) (s : SlotId × StackSlot) =>
+      (acc.1 ++ [(s.1, sp.toNat + off s.1)], acc.2.allocAt (sp.toNat + off s.1) s.2.size))
+    ([], mem)
+
+/-- The stack slots of an activation of `f` entered with memory `mem`, and the memory after
+allocating them. With the slot-placement oracle (`Mem.place`) the activation's stack pointer is
+pushed: for a function the oracle covers (frame drop `d`, slot offsets `off`), its caller's
+minus `d`, and its slots are placed at that `sp` plus `off` (`Mem.allocAt`); otherwise the
+caller's, and the slots come from the bump allocator, as without the oracle. -/
+def enterSlots (f : Function) (mem : Mem) : List (SlotId × Nat) × Mem :=
+  match mem.place with
+  | none => bumpSlots f.slots mem
+  | some pl =>
+    match pl.frame f.name with
+    | some (d, off) =>
+      let sp := pl.sps.headD 0 - BitVec.ofNat 64 d
+      placeSlots f.slots sp off { mem with place := some { pl with sps := sp :: pl.sps } }
+    | none =>
+      bumpSlots f.slots { mem with place := some { pl with sps := pl.sps.headD 0 :: pl.sps } }
+
+/-- Start an activation of `f` on `args`: allocate its stack slots (`enterSlots`: fresh,
+uninitialised) and enter its entry block. -/
+def enterFunc (f : Function) (args : List Val) (mem : Mem) : Res (Frame × Mem) := do
+  checkTys s!"arguments of %{f.name}" args (AbiParam.tys f.sig.params)
+  let entry ← Res.ofOption s!"%{f.name} has no blocks" f.entry?
+  let (slots, mem') := enterSlots f mem
   checkTys s!"entry block of %{f.name}" args (entry.params.map (·.2))
   let regs ← Res.ofOption "entry arity" (Regs.empty.setMany (entry.params.map (·.1)) args)
   pure ({ func := f, regs, slots, body := entry.body, term := entry.term }, mem')
@@ -423,12 +451,13 @@ def stepCallIndirect (env : Env) (p : Program) (s : State) (rest : List Stmt)
     StepResult.ofRes (callExternAt env p s.mem declared addr vals) fun (rvals, mem') =>
       continueWith s rest results rvals mem'
 
-/-- Return `vals` from the current frame (memory `mem`): free its stack slots, then resume
-the caller (binding the results of its pending call) or finish. -/
+/-- Return `vals` from the current frame (memory `mem`): free its stack slots (and leave the
+activation, `Mem.leave`), then resume the caller (binding the results of its pending call) or
+finish. -/
 def returnValues (s : State) (vals : List Val) (mem : Mem) : StepResult :=
   StepResult.ofRes (checkTys s!"return values of %{s.frame.func.name}" vals
       (AbiParam.tys s.frame.func.sig.returns)) fun _ =>
-  let mem := mem.free (s.frame.slots.map (·.2))
+  let mem := (mem.free (s.frame.slots.map (·.2))).leave
   match s.callers with
   | [] => .done vals mem
   | (caller, results) :: callers =>
@@ -451,7 +480,7 @@ def stepReturnCall (env : Env) (p : Program) (s : State) (fn : FnRef) (args : Li
   | some callee =>
     if AbiParam.tys callee.sig.params == AbiParam.tys ext.sig.params &&
         AbiParam.tys callee.sig.returns == AbiParam.tys ext.sig.returns then
-      let mem := s.mem.free (fr.slots.map (·.2))
+      let mem := (s.mem.free (fr.slots.map (·.2))).leave
       StepResult.ofRes (enterFunc callee vals mem) fun (fr', mem') =>
         .next { s with frame := fr', mem := mem' }
     else .stuck s!"signature of %{ext.name} does not match its declaration"

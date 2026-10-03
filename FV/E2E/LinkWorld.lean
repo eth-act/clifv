@@ -159,7 +159,7 @@ theorem iselSim_relW {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : 
   refine ⟨fun vals cm h => ?_, fun c' h => ?_⟩
   · rw [h] at hrun
     obtain ⟨us, outs, w, cm0, hret, h1, h2, h3, h4, h5⟩ := hrun
-    exact ⟨us, outs, w, hret, h1, h2, h3, h5 ▸ memRel_free h4.1.1 _⟩
+    exact ⟨us, outs, w, hret, h1, h2, h3, h5 ▸ memRel_leave (memRel_free h4.1.1 _)⟩
   · rw [h] at hrun
     exact hrun
 

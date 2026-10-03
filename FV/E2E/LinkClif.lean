@@ -566,8 +566,10 @@ theorem step_try (env : Env) (p : Program) (s : State) {fn : FnRef} {args : List
   rfl
 
 theorem returnValues_mem {s : State} {vals : List Val} {mem : Mem} :
-    (∀ s1, returnValues s vals mem = .next s1 → s1.mem = mem.free (s.frame.slots.map (·.2))) ∧
-    (∀ v m, returnValues s vals mem = .done v m → m = mem.free (s.frame.slots.map (·.2))) := by
+    (∀ s1, returnValues s vals mem = .next s1 →
+      s1.mem = (mem.free (s.frame.slots.map (·.2))).leave) ∧
+    (∀ v m, returnValues s vals mem = .done v m →
+      m = (mem.free (s.frame.slots.map (·.2))).leave) := by
   refine ⟨fun s1 h => ?_, fun v m h => ?_⟩
   · obtain ⟨_, h⟩ := Opt.StepResult.ofRes_eq_next h
     obtain ⟨frame, callers, m'⟩ := s

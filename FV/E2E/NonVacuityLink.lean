@@ -877,6 +877,22 @@ theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
     refine ⟨hh, hne, ?_, n, Lu, Ld, heq, h1, h2⟩
     simp only [calleeB, List.any_eq_true, beq_iff_eq]
     exact ⟨g, hg, e, he, by rw [hen, hname]⟩
+  have hcal : ∀ g ∈ P.funcs, ∀ h, (L F).Callee g h → h.slots = [] ∧
+      (RAFrame.compute (A h).vcp (A h).rf).size = (A h).af.frameSize ∧
+      (RAFrame.compute (A h).vcp (A h).rf).intBase = 0 := by
+    intro g hg h hh
+    have hc : calleeB h = true ∧ h ∈ P.funcs := by
+      rcases hh with ⟨info, hs⟩ | ⟨e, he, hf⟩
+      · obtain ⟨hh', -, hc, -⟩ := site g hg info h hs
+        exact ⟨hc, hh'⟩
+      · obtain ⟨hh', hname⟩ := Clif.Program.func?_some hf
+        refine ⟨?_, hh'⟩
+        obtain ⟨⟨fn, e'⟩, hm, rfl⟩ := List.mem_map.1 he
+        simp only [calleeB, List.any_eq_true, beq_iff_eq]
+        exact ⟨g, hg, (fn, e'), hm, hname.symm⟩
+    exact (facts hc.2).callee hc.1
+  -- no program callee has an outgoing-argument area: the non-interference premises are vacuous
+  have hNN : ¬ (L F).NeedNI := fun ⟨g, hg, h, hc, hne⟩ => hne (hcal g hg h hc).2.2
   refine
     { names := hnames
       free := fun g hg => (facts hg).free
@@ -888,7 +904,7 @@ theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
       tryRets := fun g hg info ti h hs ⟨_, n, hd, hf⟩ => tryB_sound (facts hg).tries hs hd hf
       argRegs := fun g hg => ⟨(facts hg).nodup, (facts hg).argReg, (facts hg).width⟩
       sretRets := fun g hg hs us hr => retsB_sound (facts hg).rets hs hr
-      calleeSlots := fun g hg h hh => ?_
+      calleeSlots := fun g hg h hh => ⟨(hcal g hg h hh).1, (hcal g hg h hh).2.1⟩
       callRegs := fun g hg info h hs => (site g hg info h hs).2.2.2
       blrRegs := fun g hg info hs hreg =>
         blrOk_sound (siteOk_reg (site_sound (facts hg).sites hs) hreg)
@@ -930,7 +946,9 @@ theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
         simp [L, Clif.Env.empty] at hgs
       baseTls := fun g hg ht => absurd ht (by simp [L, (facts hg).tls])
       baseTry := fun g hg F' ctx info ti _ c wh ops regs i' s w outs w' s' _ _ _ _ _ _ hsem => by
-        simp [csem, L, Xb] at hsem }
+        simp [csem, L, Xb] at hsem
+      baseNI := fun hN => absurd hN hNN
+      baseTlsNI := fun hN => absurd hN hNN }
   · simp [L, Clif.Program.only, Clif.Program.func?]
   · intro b _ st _ fn args _ e he
     have hne := (facts hg).extName e (lookup_mem he)
@@ -945,16 +963,6 @@ theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
     exact ⟨hl, (facts hg).lowerOk, hp, (facts hg).prepOk, (facts hg).check, ha, he, hla⟩
   · obtain ⟨⟨fn, e'⟩, hm, rfl⟩ := List.mem_map.1 he
     exact outFitsB_sound ((facts hg).outFits _ hm hs) hl hp
-  · have hc : calleeB h = true ∧ h ∈ P.funcs := by
-      rcases hh with ⟨info, hs⟩ | ⟨e, he, hf⟩
-      · obtain ⟨hh', -, hc, -⟩ := site g hg info h hs
-        exact ⟨hc, hh'⟩
-      · obtain ⟨hh', hname⟩ := Clif.Program.func?_some hf
-        refine ⟨?_, hh'⟩
-        obtain ⟨⟨fn, e'⟩, hm, rfl⟩ := List.mem_map.1 he
-        simp only [calleeB, List.any_eq_true, beq_iff_eq]
-        exact ⟨g, hg, (fn, e'), hm, hname.symm⟩
-    exact (facts hc.2).callee hc.1
   · obtain ⟨h', hf', hs⟩ := (facts hg).externs e he
     simp only [L] at hf
     rw [hf] at hf'; cases hf'; exact hs

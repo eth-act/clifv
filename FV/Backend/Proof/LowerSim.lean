@@ -716,9 +716,10 @@ theorem stepTerm_ret {env : Clif.Env} {p : Clif.Program} {s : Clif.State} {xs : 
     (∀ s', Clif.stepTerm env p s (.ret xs) ≠ .next s') ∧
     (∀ c, Clif.stepTerm env p s (.ret xs) ≠ .trapped c) ∧
     (∀ vals cm, Clif.stepTerm env p s (.ret xs) = .done vals cm →
-      s.frame.getMany xs = .ok vals ∧ cm = s.mem.free (s.frame.slots.map (·.2))) := by
+      s.frame.getMany xs = .ok vals ∧ cm = (s.mem.free (s.frame.slots.map (·.2))).leave) := by
   have key : ∀ r, Clif.stepTerm env p s (.ret xs) = r →
-      (∃ vals, s.frame.getMany xs = .ok vals ∧ r = .done vals (s.mem.free (s.frame.slots.map (·.2)))) ∨
+      (∃ vals, s.frame.getMany xs = .ok vals ∧
+        r = .done vals (s.mem.free (s.frame.slots.map (·.2))).leave) ∨
       ∃ m, r = .stuck m := by
     intro r h
     subst h
@@ -790,7 +791,7 @@ theorem term_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     (∀ vals cm, Clif.step env p s = .done vals cm →
       ∃ us outs w', VRetFrom vc sem ⟨b, k, ρ, w⟩ us outs w' ∧
         us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
-        PrefixHold vals outs ∧ MR slots s.mem w' ∧ cm = s.mem.free (slots.map (·.2))) ∧
+        PrefixHold vals outs ∧ MR slots s.mem w' ∧ cm = (s.mem.free (slots.map (·.2))).leave) ∧
     (∀ c, Clif.step env p s = .trapped c → VTrapFrom vc sem ⟨b, k, ρ, w⟩ c) := by
   obtain ⟨hcall, hfunc, hslots, hmem, B, j, hB, hterm, hj, hbd, hk, hheld, hcons⟩ := hm
   simp only at hk hheld hcons hB hmem
@@ -2316,7 +2317,7 @@ def RunOk (vc : VCode) (sem : ISem CV W) (MR : MemRelTW W) (slots : List (Clif.S
     (vs : VState CV W) : Clif.Outcome → Prop
   | .returned vals cm => ∃ us outs w cm0, VRetFrom vc sem vs us outs w ∧
       us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
-      PrefixHold vals outs ∧ MR slots cm0 w ∧ cm = cm0.free (slots.map (·.2))
+      PrefixHold vals outs ∧ MR slots cm0 w ∧ cm = (cm0.free (slots.map (·.2))).leave
   | .trapped c => VTrapFrom vc sem vs c
   | .stuck _ | .outOfFuel => True
 
