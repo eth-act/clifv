@@ -619,23 +619,81 @@ runs of at most `M + 1` steps).
    caller keeps. `LinkSys.calleeTryOk` discharges it from the plain call's contract
    (`calleeTryOkG_of_call`: the results of a `try_call`'s call are the first `ti.rets` of the
    plain call's).
-2. *Callees with CLIF stack slots* (and stack arguments of called functions): **not done**
-   (attempted again after stages 5/6; the precise route, (B) in `docs/DEFERRED.md` "Linking",
-   needs a read-footprint export of `driver_correct`) — blocked by a non-interference gap, not by
-   slot placement. A callee's slot region `[sp_body + size, sp_body + frameSize)` is part of its
-   world (outside `frameF`: `MemRel` needs the live slot bytes outside `F`), but lies in the
-   caller's dead stack, whose content at the call is caller garbage (earlier callees' frames).
-   The linked `X` computes a program call from the canonical state built from the caller's VCode
-   world; the actual machine state agrees with it only outside the caller's `F`. So the callee's
-   body-entry worlds from the canonical and the actual state differ on the slot region, and the
-   per-function theorem (one VCode outcome per body-entry world) gives two outcomes that it does
-   not relate. Linking needs: the VCode outcome (result registers, unmasked fields, memory
-   outside `F` and the slot region) does not depend on the initial content of the CLIF-valid but
-   uninitialised slot bytes (a returning CLIF run never reads them). That is a cross-layer
-   non-interference property (driver + M6), see `docs/DEFERRED.md` ("Linking"). The placement
-   itself (`Clif.run`'s bump allocator vs `sp`-relative slots) is a second, smaller gap: a
-   slot-placement oracle in `Clif.Mem` (`enterFunc` placing the callee's slots at the compiled
-   frame's addresses, `sp` tracked per activation) would make the addresses equal.
+2. *Callees with CLIF stack slots* (and stack arguments of called functions): **in progress**
+   (agent/link-widen, stage 2). Linking them needs **non-interference**: a callee's slot region
+   `[sp_body + size, sp_body + frameSize)` and its outgoing area are part of its world but lie in
+   the caller's dead stack, whose content at the call is garbage; the linked `X` runs the callee
+   from the canonical state built from the caller's VCode world, which agrees with the machine
+   state only outside the caller's `F`. The two body-entry worlds of the callee (canonical,
+   actual) differ there, so the callee's VCode outcome must not depend on bytes that are not
+   initialised in CLIF (a returning CLIF run never reads them; the code writes the outgoing
+   area before a call reads it). Layers proven so far (no existing statement changed):
+   * **The memory rules' read footprint** (`MemRefinesR Rd`, `LowerInstOkR Rd`,
+     `MemRuleOkR`, `MemRulesCorrectR`, `memRulesCorrectR_program`): under a VCode semantics
+     whose reads (loads, `ldar`, the LL/SC loops) are only required where every byte read
+     satisfies `Rd`, every memory root rule is correct when the initialised bytes of the CLIF
+     memory satisfy `Rd` (`InitIn Rd cm`): a memory rule's VCode reads only bytes its CLIF
+     instruction reads. `memRulesCorrect_program` is derived from it (`Rd` true).
+   * **The driver generic in the world** (`DriverHyp`, `InstCalls`, `TermCalls`, `TryCalls`,
+     `TryIndCalls`, `LowerInstOk`, `LowerTermOk`, `LowerTryOk`, `VRetFrom`, `VTrapFrom`,
+     `RunOk`, `sim_run` over `ISem CV W`/`MemRelTW W`; `DriverSemG`, the world-independent part
+     of `DriverSem`): the simulation runs on any world type, so it can run on **pairs of
+     worlds** (the two activations of a callee). `driver_correct` (Arm worlds, with the entry)
+     takes `DriverSem` separately; its statement is otherwise unchanged.
+   * **The lockstep of `csem`** (`FV/E2E/Lockstep.lean`, `csem_lockstep`): one instruction on two
+     worlds that agree outside `Z ⊇ F` (`SameWorld Z`), whose reads avoid `Z` (`LockGuard`),
+     with callees and the TLSDESC resolver that keep the agreement: the same outputs and control,
+     worlds that agree outside `Z` minus the bytes written (`WriteSet`). The straight forms
+     without memory access go through M6's `formOk_sound` (`OperandsSound Z`) at the canonical
+     registers, which pass the checker's static checks (`canon_facts`, decided per form); the
+     memory forms through their `MemRefines` characterisations; `ispec`/`mspec` and the control
+     forms read the world only through the flags, `sp` and `x29`. Not yet covered: the LL/SC
+     loops, `try_call` and `Args`.
+   * **The guarded semantics** (`FV/E2E/Guarded.lean`, `csemG F ctx X Rd`: `csem` where the
+     memory accesses have the memory rules' forms and every byte read satisfies `Rd`): it
+     satisfies `Refines`, `MemRefinesR Rd`, `CallsRefine`, `IndCallsRefine` (`refines_csemG`,
+     `memRefinesR_csemG`, `callsRefine_csemG`, `indCallsRefine_csemG`), and a step of it with
+     `Rd := ¬ Z` is a step of `csem` that `csem` repeats on every world agreeing outside `Z`
+     (`csemG_lockstep`).
+   Findings (why the earlier routes cannot work): the footprint cannot come from the memory
+   relation alone, since `MemRelOk.store` must hold for every valid store, so no `MR` can say
+   "the slot bytes are uninitialised" (a store into them must keep `MR`); and the VCode
+   semantics cannot see the CLIF memory (its world is an `Arm.ArmState`, and every field the
+   contracts leave free — masked registers, memory in `F` — is one `MR` must not depend on,
+   `MRStable`). The footprint therefore has to come from the memory rules' proofs (the guard
+   `Rd`, discharged at each read from the CLIF read's bytes), instantiated **per CLIF step**
+   with `Rd := ¬ (D₀ ∩ uninit(cm))` for the step's CLIF memory `cm` (the bytes where the two
+   worlds may differ and CLIF has not initialised them; this also forbids a store step's
+   VCode to read the bytes it is about to write). M6 does not change: two VCode runs with the
+   same outcome are realised by the two activations through the existing per-function theorem.
+   **Remaining** (route A', in order):
+   1. *The rest of the lockstep*: the LL/SC loops through `rmwBody_congr`/`casHead_congr`/
+      `stlxr_congr` extended to the scratch defs (x24, x28); `try_call`'s extra defs (`regVal`
+      of the callee's world in `csem`) must become constants (they are havocked in M6); `Args`
+      at the entry (the argument registers equal in both worlds). `tls_value`'s `tlsFlags` is a
+      premise of `csem_lockstep` (`hT`), to be discharged for the base and the linked hooks.
+   2. *Guarded instances per step*: the call and `try_call` rules (`CallRulesCorrect`,
+      `TryRulesCorrect`, …) to take `MemRefinesR Rd` instead of `MemRefines` (they only use the
+      store clauses; an M4 signature change); a `lowerInstOk_of_rules` with `MemRulesCorrectR`
+      giving `LowerInstOkR` per statement, instantiated at `csemG … (¬ Z)` per CLIF step.
+   3. *The product instance*: `semP` (`csem` on both worlds, equal outputs), `MR_P` (`RelW` on
+      both and `SameWorld (F ∪ D₀)`), `InstCalls`/`TermCalls`/`TryCalls`/`TryIndCalls`/
+      `DriverSemG` of the pair from the guarded instance on the first world, the plain
+      instance on the second and the lockstep; the entry (the `Args` registers and the
+      stack-passed arguments outside `D₀`). `sim_run` on pairs gives the per-function
+      **VCode non-interference**: two body-entry worlds `SameWorld (F ∪ D₀)` with
+      `D₀ ∩ init(cs.mem) = ∅` return through the same `rets us` with the same `outs` and worlds
+      `SameWorld (F ∪ D₀)`; a clause of `backend_correct_world` composes it with M6.
+   4. *Calls*: the premise on `X` (equal results and `SameWorld (F ∪ V)` worlds from
+      `SameWorld (F ∪ V)` worlds when `V` is uninitialised in CLIF at the call and holds no
+      stack-passed argument): for the base externs a `LinkSys.Ok` premise, for program callees
+      by the induction (`LinkSys.Thm` carries the non-interference clause; `progCall` equates
+      the canonical and the actual call of a slotted callee through it).
+   5. *Placement*: the slot-placement oracle in `Clif.Mem` (`enterFunc` places a callee's slots
+      at the compiled frame's addresses below the tracked `sp`, restored at return; `none` keeps
+      the bump allocator; trusted-semantics change with the differential gates).
+   6. `LinkSys.Ok` drops `calleeSlots`'s `h.slots = []`/`intBase = 0`; the witness gains a
+      called function with a stack slot and one that passes stack arguments.
 3. *`sret` and stack-passed arguments between program functions*. `noSret`, `regParams` and
    `noOut` are gone. `sret`: the per-function theorem now exports the VCode return it took
    (`backend_correct_world`: `vc.RetsSite us`), and `sretRets` (the returns of an `sret`

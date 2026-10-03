@@ -29,7 +29,8 @@ open Backend Backend.Proof
 /-- Every `lower` call `lowerFunction` makes on a statement of `f` (from a state whose fresh
 vregs are above every value's vreg, `ValsBelow`; an indirect call's signature among `f`'s
 indirect-call signatures with register arguments, `IndSigOk`) satisfies M4's `LowerInstOk`. -/
-def InstCalls (f : Clif.Function) (sem : Sem) (MR : MemRelT) (env : Clif.Env) (p : Clif.Program) :
+def InstCalls {W : Type} (f : Clif.Function) (sem : ISem CV W) (MR : MemRelTW W) (env : Clif.Env)
+    (p : Clif.Program) :
     Prop :=
   ∀ ctx ii info inst st rss st' tr, CtxInv f ctx →
     (∃ B ∈ f.blocks, ∃ stm ∈ B.body, stm.inst = inst) → Compile.functionE f = true →
@@ -41,7 +42,7 @@ def InstCalls (f : Clif.Function) (sem : Sem) (MR : MemRelT) (env : Clif.Env) (p
 /-- Every terminator call `lowerFunction` makes (in a context satisfying `CtxInv` whose slot
 `ti` is `buildCtx`'s terminator placeholder, from a state above every value's vreg) satisfies
 M4's `LowerTermOk`. From M4's terminator rule statements: `termCalls_of_rules`. -/
-def TermCalls (sem : Sem) (MR : MemRelT) : Prop :=
+def TermCalls {W : Type} (sem : ISem CV W) (MR : MemRelTW W) : Prop :=
   ∀ f ctx ti t data targets out st st' tr, CtxInv f ctx → BrIdxTyped ctx t → TargetsLen t targets →
     ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩ → ValsBelow ctx st →
     termData t = .ok data → st.emitted = #[] →
@@ -81,16 +82,21 @@ theorem instCalls_of_rules (hrules : LowerRulesCorrect Isle.Aarch64.program)
   rw [hem, List.toList_toArray]
   exact hok
 
-/-- Facts about the driver-emitted pseudo-instructions and alias resolution that the VCode
-semantics must satisfy (M6's `csem`: `Args` reads the argument registers of the world, an edge
-block's `jump` goes to its only successor, renaming invariance, label invariance). -/
-structure DriverSem (sem : Sem) : Prop where
-  args : ∀ ds w, sem (.args ds) [] w = some (ds.map (fun d => regVal w d.2), w, .next)
+/-- The driver's facts about the semantics that do not read the world (generic in the world
+type `W`): an edge block's `jump` goes to its only successor, renaming invariance, label
+invariance. -/
+structure DriverSemG {W : Type} (sem : ISem CV W) : Prop where
   jump : ∀ l w, sem (.jump l) [] w = some ([], w, .goto 0)
   rename : ∀ g gn, VRenaming g gn → ∀ i, sem (i.mapRegs g) = sem i
   /-- a branch's semantics does not depend on its label values (`prepare` retargets split
   critical edges) -/
   retarget : ∀ i ls i', MInst.setTargets i ls = some i' → sem i' = sem i
+
+/-- Facts about the driver-emitted pseudo-instructions and alias resolution that the VCode
+semantics must satisfy (M6's `csem`: `Args` reads the argument registers of the world, and
+`DriverSemG`). -/
+structure DriverSem (sem : Sem) extends DriverSemG sem : Prop where
+  args : ∀ ds w, sem (.args ds) [] w = some (ds.map (fun d => regVal w d.2), w, .next)
 
 /-! ## `Clif.step` on a statement is `instOutcome` -/
 
@@ -296,7 +302,8 @@ theorem termCalls_of_rules (hlt : LowerTermRulesCorrect Isle.Aarch64.program)
 context `tryCtx`, whose return/payload vregs `tryRegsOf` allocated from a state `lo` above every
 value's vreg) whose callee's stack arguments fit the outgoing area `outB` satisfies
 `LowerTryOk`. From M4's rule statements: `tryCalls_of_rules`. -/
-def TryCalls (f : Clif.Function) (sem : Sem) (MR : MemRelT) (env : Clif.Env) (p : Clif.Program)
+def TryCalls {W : Type} (f : Clif.Function) (sem : ISem CV W) (MR : MemRelTW W) (env : Clif.Env)
+    (p : Clif.Program)
     (outB : Nat) : Prop :=
   ∀ ctx ti fn args et data sig items targets info trs lo st1 out st' tr, CtxInv f ctx →
     (∀ e, f.extern? fn = some e → SigStackOk e.sig outB) →
@@ -341,7 +348,7 @@ theorem tryCalls_of_rules (htr : TryRulesCorrect Isle.Aarch64.program)
 call-site signature is in `sigs` with at most 8 parameters (in its `try_call` context, as
 `TryCalls`) satisfies `LowerTryOk` for the indirect call. From M4's rule statements:
 `tryIndCalls_of_rules`. -/
-def TryIndCalls (sem : Sem) (MR : MemRelT) (env : Clif.Env) (p : Clif.Program)
+def TryIndCalls {W : Type} (sem : ISem CV W) (MR : MemRelTW W) (env : Clif.Env) (p : Clif.Program)
     (sigs : List Clif.Signature) : Prop :=
   ∀ f ctx ti callee args et data sig items targets info trs lo st1 out st' tr, CtxInv f ctx →
     tryCallData f (.tryCallIndirect callee args et) = .ok data →

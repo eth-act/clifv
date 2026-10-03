@@ -121,7 +121,7 @@ theorem iselSim_relW {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : 
   have H : DriverHyp f vc ctx st0 R gn bl A (csem F ⟨fa.k, af.slotBase⟩ X) (RelW Γ f c) env p := {
     shape := hshape
     cert := hcert
-    dsem := driverSem_csem F ⟨fa.k, af.slotBase⟩ X
+    dsem := (driverSem_csem F ⟨fa.k, af.slotBase⟩ X).toDriverSemG
     insts := instCalls_of_rules lowerRulesCorrect_program excludedUnmatchable callRulesCorrect
       indRulesCorrect memRulesCorrect_program hRef (mrStable_relW Γ f c) hcalls hicalls hmem
       (outArgsOk_relW Γ f c) (callsStack_mono (callsStack_of_check hc.lowerOk) houtB)
@@ -154,7 +154,7 @@ theorem iselSim_relW {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : 
         htr.indirect s st rest sig callee args hr hb hi ⟨B, hf ▸ hB, hst⟩,
       fun s callee args et hr hb hT ⟨B, hB, e⟩ =>
         htr.tryIndirect s callee args et hr hb hT ⟨B, hf ▸ hB, e⟩⟩
-  have hrun := driver_correct H hmem (mrStable_relW Γ f c) hB0 hce.callers hce.func rfl hbody hterm
+  have hrun := driver_correct H (driverSem_csem F ⟨fa.k, af.slotBase⟩ X) hmem (mrStable_relW Γ f c) hB0 hce.callers hce.func rfl hbody hterm
     hregs hty.symm hce.sig (ρ₀ := ρ₀) hrel hargs hP fuel
   refine ⟨fun vals cm h => ?_, fun c' h => ?_⟩
   · rw [h] at hrun

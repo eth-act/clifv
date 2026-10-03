@@ -47,7 +47,7 @@ theorem inv_funcAddr_root {f : Clif.Function} {cl : Clif.Inst} {w : V}
     rw [hty]
 
 section Builders
-variable {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat} {isem : Sem}
+variable {Rd : BitVec 64 → Prop} {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat} {isem : Sem}
   {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program} {f : Clif.Function} {ctx : Ctx}
 
 theorem instOutcome_funcAddr (fr : Clif.Frame) (cm : Clif.Mem) (ty : Clif.Ty) (fn : Nat) :
@@ -97,13 +97,13 @@ theorem funcAddr_lower_ok (hMR : MRStable F MR) (hMRo : MemRelOk F sb syms f MR)
 
 end Builders
 
-variable {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat} {isem : Sem}
+variable {Rd : BitVec 64 → Prop} {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat} {isem : Sem}
   {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program}
 
 set_option maxHeartbeats 2000000 in
 /-- **`func_addr`** (`lower.isle:2486`, rule id 1026). -/
 theorem func_addr_ok {p : Program} (hp : Data p) (hpF : FAData p) (hR : Refines F isem) (hMR : MRStable F MR)
-    (hM : MemRefines F sb syms isem) : MemRuleOk F sb syms isem MR env cp p rule_lower_2486 := by
+    (hM : MemRefinesR Rd F sb syms isem) : MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_2486 := by
   intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
     hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
@@ -124,6 +124,6 @@ theorem func_addr_ok {p : Program} (hp : Data p) (hpF : FAData p) (hR : Refines 
   obtain ⟨rfl, hs'⟩ := output_reg_inv hp ctx hco (by omega) hO
   simp only at hs'
   subst hs'
-  exact ⟨ms, hsym.frag.emitted, _, rfl, funcAddr_lower_ok hMR hMRo hsym ‹_›⟩
+  exact ⟨ms, hsym.frag.emitted, _, rfl, (funcAddr_lower_ok hMR hMRo hsym ‹_›).toR⟩
 
 end Backend.Proof
