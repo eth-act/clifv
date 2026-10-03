@@ -166,7 +166,8 @@ theorem frag_emit0 (st : LState) (m : MInst) (hd : vdefs m = []) : Frag st (st.e
 /-! ## The builders -/
 
 section Builders
-variable {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat} {isem : Sem}
+variable {Rd : BitVec 64 → Prop} {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
+  {isem : Sem}
   {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program} {f : Clif.Function} {ctx : Ctx}
 
 theorem instOutcome_load (fr : Clif.Frame) (cm : Clif.Mem) (op : Clif.LoadOp) (ty : Clif.Ty)
@@ -188,21 +189,21 @@ theorem instOutcome_symbolValue (fr : Clif.Frame) (cm : Clif.Mem) (ty : Clif.Ty)
 
 /-- **A load through an addressing mode** (`AmOk`): the mode's code, then `ldr` into a fresh
 register. -/
-theorem load_lower_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem)
+theorem load_lower_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem)
     (hctx : CtxInv f ctx) (hMRo : MemRelOk F sb syms f MR) {st st2 : LState} {ms : List MInst}
     {am : AMode} {aop : LoadOp} {op : Clif.LoadOp} {ty : Clif.Ty} {fl : Clif.MemFlags} {p : Nat}
     {off : Int} {results : List Nat}
     (hok : AmOk F isem sb ctx st st2 ms am aop.bytes p off) (haop : aop ≠ .fpuLoad128)
     (hsz : aop.bytes = op.size ty) (hsg : loadSigned aop = op.signed) (hw : ty.width ≤ 64)
     (hfl : fl.endianness ≠ some .big) (hp64 : ctx.valueType? p = some (.int 64)) :
-    LowerInstOk isem MR env cp ctx (.load op ty fl p off) results st [[(st2.fresh .int).1]]
+    LowerInstOkR Rd isem MR env cp ctx (.load op ty fl p off) results st [[(st2.fresh .int).1]]
       ((st2.fresh .int).2.emit (.load aop (st2.fresh .int).1 am fl))
       (ms ++ [.load aop (st2.fresh .int).1 am fl]) := by
   rw [fresh_fst]
   have hops := load_ops aop st2.nextVreg hok.vregs fl
   have hfr := hok.frag.append (frag_one st2 _ hops.defs)
   refine ⟨hfr.mono, hfr.defs, ?_⟩
-  intro fr cm ρ w hf hv hdfg hmr
+  intro fr cm ρ w hf hv hdfg hmr hRd
   rw [instOutcome_load]
   cases he : Clif.evalInst fr cm (.load op ty fl p off) with
   | trap c => intro h; simp [explicitTrapInst] at h
@@ -221,7 +222,12 @@ theorem load_lower_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem)
     intro k hk
     rw [← BitVec.ofNat_add]
     exact hF k (by omega)
-  obtain ⟨w2, hs, hsw⟩ := hM.1 aop st2.nextVreg am fl _ w1 _ haop haddr havoid
+  have hrd : ∀ k < aop.bytes, Rd (BitVec.ofNat 64 A + BitVec.ofNat 64 k) := by
+    intro k hk
+    rw [← BitVec.ofNat_add]
+    have hk' : k < op.size ty := by rw [← hsz]; exact hk
+    exact hRd _ (valid_sub hvalid hk') ((readBits_spec hread).1 k hk')
+  obtain ⟨w2, hs, hsw⟩ := hM.1 aop st2.nextVreg am fl _ w1 _ haop haddr havoid hrd
   obtain ⟨ops, hopsE, hvu, hlen, hupd⟩ := hops.ops
   rw [← hvu] at hs
   have hr2 := seqRun_isem_one hopsE hs (by rw [hlen]; rfl)
@@ -261,7 +267,7 @@ theorem store_setWidth {ty : Clif.Ty} {a : BitVec ty.width} {c : CV} (hh : VHold
 
 /-- **A store through an addressing mode** (`AmOk`): the mode's code, then `str` of the value's
 register. -/
-theorem store_lower_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem)
+theorem store_lower_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem)
     (hctx : CtxInv f ctx) (hMRo : MemRelOk F sb syms f MR) {st st2 : LState} {ms : List MInst}
     {am : AMode} {aop : StoreOp} {op : Clif.StoreOp} {ty : Clif.Ty} {fl : Clif.MemFlags}
     {x p : Nat} {off : Int} {results : List Nat}
@@ -338,7 +344,7 @@ theorem setWidth_ofInt64 {ty : Clif.Ty} (hw : ty.width ≤ 64) (z : Int) :
     simp only [ofX, BitVec.toNat_setWidth, BitVec.toNat_ofInt] <;> omega
 
 /-- **`stack_addr`**: `LoadAddr` of the slot's `SlotOffset` into a fresh register. -/
-theorem stackAddr_lower_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem)
+theorem stackAddr_lower_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem)
     (hctx : CtxInv f ctx) (hMRo : MemRelOk F sb syms f MR) {st : LState} {ty : Clif.Ty}
     {sl base : Nat} {o : Int} {results : List Nat} (hbase : ctx.slotOff.lookup sl = some base)
     (hw : ty.width ≤ 64) :

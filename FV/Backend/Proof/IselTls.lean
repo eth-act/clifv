@@ -134,14 +134,14 @@ theorem evalInst_tlsValue_inv {fr : Clif.Frame} {cm cm' : Clif.Mem} {ty : Clif.T
   | _ => cases h
 
 section Builders
-variable {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat} {isem : Sem}
+variable {Rd : BitVec 64 → Prop} {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat} {isem : Sem}
   {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program} {ctx : Ctx}
 
 theorem instOutcome_tlsValue (fr : Clif.Frame) (cm : Clif.Mem) (ty : Clif.Ty) (gv : Nat) :
     instOutcome env cp fr cm (.tlsValue ty gv) = Clif.evalInst fr cm (.tlsValue ty gv) := rfl
 
 /-- **`tls_value`** through `ElfTlsGetAddr` (the TLSDESC clause of `MemRefines`). -/
-theorem tls_lower_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem)
+theorem tls_lower_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem)
     {f : Clif.Function} (hMRo : MemRelOk F sb syms f MR) (st : LState) {gv : Nat} {name : String}
     {col : Bool} {results : List Nat}
     (hg : ctx.func.globals.lookup gv = some (.tlsSymbol name 0 col)) :
@@ -198,14 +198,14 @@ end Builders
 
 /-! ## The root rules -/
 
-variable {p : Program} (hp : Data p) {F : BitVec 64 → Prop} {sb : Nat}
+variable {p : Program} (hp : Data p) {Rd : BitVec 64 → Prop} {F : BitVec 64 → Prop} {sb : Nat}
   {syms : String → Option Nat} {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program}
 
 set_option maxHeartbeats 2000000 in
 include hp in
 /-- **`tls_value`** (`lower.isle:3217`, rule id 1129, `tls_model` `elf_gd`). -/
-theorem tls_value_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
-    MemRuleOk F sb syms isem MR env cp p rule_lower_3217 := by
+theorem tls_value_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :
+    MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_3217 := by
   intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
     hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
@@ -230,13 +230,13 @@ theorem tls_value_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
   have hg2 := ‹List.lookup _ f.globals = some (Clif.GlobalValue.tlsSymbol _ 0 _)›
   rw [hctx.func, hg2] at hg1
   cases hg1
-  refine ⟨[_], ?_, _, rfl, tls_lower_ok hMR hM hMRo _ (hctx.func ▸ hg2)⟩
+  refine ⟨[_], ?_, _, rfl, (tls_lower_ok hMR hM hMRo _ (hctx.func ▸ hg2)).toR⟩
   exact Array.push_eq_append
 
 include hp in
 /-- **`tls_value`** with `tls_model` `macho` (rule id 1130): never matches (`tls_model` is
 `elf_gd`). -/
-theorem tls_value_macho_ok : MemRuleOk F sb syms isem MR env cp p rule_lower_3220 := by
+theorem tls_value_macho_ok : MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_3220 := by
   intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
     hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩

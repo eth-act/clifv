@@ -388,23 +388,35 @@ theorem atom_addr {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option 
   rw [ha, ← BitVec.ofNat_add]
   exact hF k hk
 
+/-- The bytes an atomic access reads are initialised CLIF bytes, so they satisfy every `Rd` that
+holds at the initialised bytes (`InitIn`). -/
+theorem atom_rd {Rd : BitVec 64 → Prop} {ty : Clif.Ty} (hety : eTy ty = true) {cm : Clif.Mem}
+    (hRd : InitIn Rd cm) {u : CV} {A : Nat} (ha : lo64 u = BitVec.ofNat 64 A)
+    (hvalid : cm.valid A ty.bytes = true) {raw : BitVec ty.width}
+    (hread : cm.readBits false A ty.bytes ty.width = some raw) :
+    ∀ k < (CTy.ofClif ty).bytes, Rd (lo64 u + BitVec.ofNat 64 k) := by
+  intro k hk
+  rw [ofClif_bytes hety] at hk
+  rw [ha, ← BitVec.ofNat_add]
+  exact hRd _ (valid_sub hvalid hk) ((readBits_spec hread).1 k hk)
+
 section Builders
-variable {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat} {isem : Sem}
+variable {Rd : BitVec 64 → Prop} {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat} {isem : Sem}
   {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program} {f : Clif.Function} {ctx : Ctx}
 
 /-- **`atomic_load`**: `ldar` of the address register into a fresh register. -/
-theorem atomicLoad_lower_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem)
+theorem atomicLoad_lower_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem)
     (hMRo : MemRelOk F sb syms f MR) {st : LState} {ty : Clif.Ty} {fl : Clif.MemFlags}
     {p : Nat} {results : List Nat} (hety : eTy ty = true) (hfl : fl.endianness ≠ some .big)
     (hp64 : ctx.valueType? p = some (.int 64)) :
-    LowerInstOk isem MR env cp ctx (.atomicLoad ty fl p) results st [[(st.fresh .int).1]]
+    LowerInstOkR Rd isem MR env cp ctx (.atomicLoad ty fl p) results st [[(st.fresh .int).1]]
       ((st.fresh .int).2.emit (.loadAcquire (CTy.ofClif ty) (st.fresh .int).1 (.vreg p .int) fl))
       [.loadAcquire (CTy.ofClif ty) (st.fresh .int).1 (.vreg p .int) fl] := by
   rw [fresh_fst]
   have hfr := frag_one st (.loadAcquire (CTy.ofClif ty) (.vreg st.nextVreg .int) (.vreg p .int) fl)
     (by simp [vdefs, operands_loadAcquire, Operand.isDef])
   refine ⟨hfr.mono, hfr.defs, ?_⟩
-  intro fr cm ρ w hf hv hdfg hmr
+  intro fr cm ρ w hf hv hdfg hmr hRd
   show match Clif.evalInst fr cm (.atomicLoad ty fl p) with
     | .ok (vals, cm') => _ | .trap c => _ | .stuck _ => _
   cases he : Clif.evalInst fr cm (.atomicLoad ty fl p) with
@@ -417,7 +429,7 @@ theorem atomicLoad_lower_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms ise
   obtain ⟨ha, hA64, havoid⟩ := atom_addr hMRo hdfg hv hp64 hpv hmr hvalid
   rw [← ofClif_bytes hety] at havoid
   obtain ⟨w2, hs, hsw⟩ := hM.2.2.2.2.1 (CTy.ofClif ty) st.nextVreg p fl (ρ p) w
-    (atomTy_ofClif hety) havoid
+    (atomTy_ofClif hety) havoid (atom_rd hety hRd ha hvalid hread)
   have hr := seqRun_isem_one (operands_loadAcquire _ _ _ _) (ρ := ρ) hs rfl
   refine ⟨?_, _, w2, hr, .inr ⟨rfl, ?_⟩, hMR _ _ _ _ hsw.toNF hmr⟩
   · intro m hm u hu
@@ -452,7 +464,7 @@ theorem atom_store_eq {ty : Clif.Ty} (hety : eTy ty = true) {cm : Clif.Mem} {A :
   rw [writeBits_setWidth A ty.bytes a h8, store_setWidth hh h8 hw, ofClif_bytes hety]
 
 /-- **`atomic_store`**: `stlr` of the value register at the address register. -/
-theorem atomicStore_lower_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem)
+theorem atomicStore_lower_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem)
     (hMRo : MemRelOk F sb syms f MR) {st : LState} {ty : Clif.Ty} {fl : Clif.MemFlags}
     {x p : Nat} {results : List Nat} (hety : eTy ty = true) (hfl : fl.endianness ≠ some .big)
     (hp64 : ctx.valueType? p = some (.int 64)) {t : CTy} (hvt : ctx.valueType? x = some t) :
@@ -583,12 +595,12 @@ theorem holds_of_setWidth {ty : Clif.Ty} (hety : eTy ty = true) {raw : BitVec ty
 
 /-- **`atomic_rmw`** with operation `cop` (`AtomicRMWLoop` with `op.clif = cop`): the old value
 in the first fresh register, the new value in memory. -/
-theorem atomicRmw_lower_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem)
+theorem atomicRmw_lower_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem)
     (hMRo : MemRelOk F sb syms f MR) {st : LState} {ty : Clif.Ty} {fl : Clif.MemFlags}
     {cop : Clif.AtomicRmwOp} {op : AtomicRmwLoopOp} (hop : op.clif = cop)
     {p x : Nat} {results : List Nat} (hety : eTy ty = true) (hfl : fl.endianness ≠ some .big)
     (hp64 : ctx.valueType? p = some (.int 64)) :
-    LowerInstOk isem MR env cp ctx (.atomicRmw cop ty fl p x) results st [[(st.fresh .int).1]]
+    LowerInstOkR Rd isem MR env cp ctx (.atomicRmw cop ty fl p x) results st [[(st.fresh .int).1]]
       ((((st.fresh .int).2.fresh .int).2.fresh .int).2.emit (.atomicRmwLoop (CTy.ofClif ty) op fl
         (.vreg p .int) (.vreg x .int) (st.fresh .int).1 ((st.fresh .int).2.fresh .int).1
         (((st.fresh .int).2.fresh .int).2.fresh .int).1))
@@ -600,7 +612,7 @@ theorem atomicRmw_lower_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem
     (by simp [vdefs, operands_rmwLoop, Operand.isDef])
   simp only [LState.fresh] at hfr
   refine ⟨hfr.mono, hfr.defs, ?_⟩
-  intro fr cm ρ w hf hv hdfg hmr
+  intro fr cm ρ w hf hv hdfg hmr hRd
   show match Clif.evalInst fr cm (.atomicRmw cop ty fl p x) with
     | .ok (vals, cm') => _ | .trap c => _ | .stuck _ => _
   cases he : Clif.evalInst fr cm (.atomicRmw cop ty fl p x) with
@@ -614,6 +626,7 @@ theorem atomicRmw_lower_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem
   rw [← ofClif_bytes hety] at havoid
   obtain ⟨w2, o0, o1, o2, hs, ho0, hsw⟩ := hM.2.2.2.2.2.2.1 (CTy.ofClif ty) op fl p x st.nextVreg
     (st.nextVreg + 1) (st.nextVreg + 2) (ρ p) (ρ x) w (atomTy_ofClif hety) havoid
+    (atom_rd hety hRd ha hvalid hread)
   have hr := seqRun_isem_one (operands_rmwLoop _ _ _ _ _ _ _ _) (ρ := ρ) hs rfl
   have hxv := getAs_ok hax
   have hbits := atom_read_eq hety hread hA64
@@ -668,11 +681,11 @@ theorem bits_eq_iff {w1 w2 : Nat} (h : w1 = w2) {a b : BitVec w1} {c d : BitVec 
 
 /-- **`atomic_cas`**: the old value in the first fresh register; the replacement value in
 memory if the old value is the expected one. -/
-theorem atomicCas_lower_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem)
+theorem atomicCas_lower_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem)
     (hMRo : MemRelOk F sb syms f MR) {st : LState} {ty : Clif.Ty} {fl : Clif.MemFlags}
     {p e x : Nat} {results : List Nat} (hety : eTy ty = true) (hfl : fl.endianness ≠ some .big)
     (hp64 : ctx.valueType? p = some (.int 64)) :
-    LowerInstOk isem MR env cp ctx (.atomicCas ty fl p e x) results st [[(st.fresh .int).1]]
+    LowerInstOkR Rd isem MR env cp ctx (.atomicCas ty fl p e x) results st [[(st.fresh .int).1]]
       (((st.fresh .int).2.fresh .int).2.emit (.atomicCasLoop (CTy.ofClif ty) fl
         (.vreg p .int) (.vreg e .int) (.vreg x .int) (st.fresh .int).1
         ((st.fresh .int).2.fresh .int).1))
@@ -684,7 +697,7 @@ theorem atomicCas_lower_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem
     (by simp [vdefs, operands_casLoop, Operand.isDef])
   simp only [LState.fresh] at hfr
   refine ⟨hfr.mono, hfr.defs, ?_⟩
-  intro fr cm ρ w hf hv hdfg hmr
+  intro fr cm ρ w hf hv hdfg hmr hRd
   show match Clif.evalInst fr cm (.atomicCas ty fl p e x) with
     | .ok (vals, cm') => _ | .trap c => _ | .stuck _ => _
   cases he : Clif.evalInst fr cm (.atomicCas ty fl p e x) with
@@ -698,6 +711,7 @@ theorem atomicCas_lower_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem
   rw [← ofClif_bytes hety] at havoid
   obtain ⟨w2, o1, hs, hsw⟩ := hM.2.2.2.2.2.2.2.1 (CTy.ofClif ty) fl p e x st.nextVreg
     (st.nextVreg + 1) (ρ p) (ρ e) (ρ x) w (atomTy_ofClif hety) havoid
+    (atom_rd hety hRd ha hvalid hread)
   have hr := seqRun_isem_one (operands_casLoop _ _ _ _ _ _ _) (ρ := ρ) hs rfl
   have hev' := getAs_ok hev
   have hxv := getAs_ok hax
@@ -779,7 +793,7 @@ theorem evalInst_bmask_ok {fr : Clif.Frame} {cm cm' : Clif.Mem} {ty : Clif.Ty} {
 macro "decide_bv_iff" : tactic => `(tactic| (constructor <;> intro h <;> bv_decide))
 
 section BmaskRun
-variable {F : BitVec 64 → Prop} {isem : Sem}
+variable {Rd : BitVec 64 → Prop} {F : BitVec 64 → Prop} {isem : Sem}
 
 theorem ispec_csetm_ne (d : Nat) (w : Arm.ArmState) :
     ispec (.csetm (.vreg d .int) .ne) [] w = some ([ofX (if Arm.ConditionHolds Cond.ne.invert.bits w
@@ -887,7 +901,7 @@ theorem vdefs_csetm (d : Nat) (c : Cond) : vdefs (.csetm (.vreg d .int) c) = [d]
 theorem vuseNums_csetm (d : Nat) (c : Cond) : vuseNums (.csetm (.vreg d .int) c) = [] := rfl
 
 section BmaskLower
-variable {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program}
+variable {Rd : BitVec 64 → Prop} {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program}
   {ctx : Ctx}
 
 theorem bmask_lower_3264 (hR : Refines F isem) (hMR : MRStable F MR) {st : LState} {ty : Clif.Ty}
@@ -1235,14 +1249,14 @@ theorem inv_atomicCas_root {f : Clif.Function} {cl : Clif.Inst} {w1 w2 : V}
       exact ⟨ty, fl, p, e, x, rfl, rfl, rfl, by simpa using he, by simpa using hb⟩
 
 section Roots
-variable {p : Program} (hp : Data p) {F : BitVec 64 → Prop} {sb : Nat}
+variable {p : Program} (hp : Data p) {Rd : BitVec 64 → Prop} {F : BitVec 64 → Prop} {sb : Nat}
   {syms : String → Option Nat} {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program}
 
 set_option maxHeartbeats 2000000 in
 include hp in
 /-- **`atomic_load`** (`lower.isle:2316`, rule id 983): `ldar`. -/
-theorem atomic_load_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
-    MemRuleOk F sb syms isem MR env cp p rule_lower_2316 := by
+theorem atomic_load_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :
+    MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_2316 := by
   intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
     hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
@@ -1278,8 +1292,8 @@ theorem atomic_load_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
 set_option maxHeartbeats 2000000 in
 include hp in
 /-- **`atomic_store`** (`lower.isle:2321`, rule id 984): `stlr`. -/
-theorem atomic_store_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
-    MemRuleOk F sb syms isem MR env cp p rule_lower_2321 := by
+theorem atomic_store_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :
+    MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_2321 := by
   intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
     hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
@@ -1303,13 +1317,13 @@ theorem atomic_store_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
   simp only at hs' hs4 ⊢
   rw [hs4] at hs'
   subst hs'
-  refine ⟨_, ?_, _, rfl, atomicStore_lower_ok hMR hM hMRo hety hfl (hA64 _ rfl) ‹_›⟩
+  refine ⟨_, ?_, _, rfl, (atomicStore_lower_ok hMR hM hMRo hety hfl (hA64 _ rfl) ‹_›).toR⟩
   exact (frag_emit0 _ (.storeRelease _ (.vreg _ .int) (.vreg _ .int) _)
     (by simp [vdefs, operands_storeRelease, Operand.isDef])).emitted
 
 include hp in
 /-- **`uextend` of an `atomic_load`** (rule id 810): never matches (`is_sinkable_inst` fails). -/
-theorem uextend_atomic_load_ok : MemRuleOk F sb syms isem MR env cp p rule_lower_1272 := by
+theorem uextend_atomic_load_ok : MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_1272 := by
   intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
     hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
@@ -1378,91 +1392,91 @@ macro_rules
       (.vreg _ .int) (.vreg _ .int)) (by simp [vdefs, operands_rmwLoop, Operand.isDef])).emitted))
 
 section LoopRoots
-variable {p : Program} (hp : Data p) {F : BitVec 64 → Prop} {sb : Nat}
+variable {p : Program} (hp : Data p) {Rd : BitVec 64 → Prop} {F : BitVec 64 → Prop} {sb : Nat}
   {syms : String → Option Nat} {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program}
 
 set_option maxHeartbeats 4000000 in
 include hp in
 /-- **`atomic_rmw` `add`** (`lower.isle:2357`). -/
-theorem atomic_rmw_add_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
-    MemRuleOk F sb syms isem MR env cp p rule_lower_2357 := by
+theorem atomic_rmw_add_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :
+    MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_2357 := by
   rmw_root
 
 set_option maxHeartbeats 4000000 in
 include hp in
 /-- **`atomic_rmw` `sub`** (`lower.isle:2359`). -/
-theorem atomic_rmw_sub_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
-    MemRuleOk F sb syms isem MR env cp p rule_lower_2359 := by
+theorem atomic_rmw_sub_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :
+    MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_2359 := by
   rmw_root
 
 set_option maxHeartbeats 4000000 in
 include hp in
 /-- **`atomic_rmw` `and`** (`lower.isle:2361`). -/
-theorem atomic_rmw_and_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
-    MemRuleOk F sb syms isem MR env cp p rule_lower_2361 := by
+theorem atomic_rmw_and_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :
+    MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_2361 := by
   rmw_root
 
 set_option maxHeartbeats 4000000 in
 include hp in
 /-- **`atomic_rmw` `nand`** (`lower.isle:2363`). -/
-theorem atomic_rmw_nand_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
-    MemRuleOk F sb syms isem MR env cp p rule_lower_2363 := by
+theorem atomic_rmw_nand_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :
+    MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_2363 := by
   rmw_root
 
 set_option maxHeartbeats 4000000 in
 include hp in
 /-- **`atomic_rmw` `or`** (`lower.isle:2365`). -/
-theorem atomic_rmw_or_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
-    MemRuleOk F sb syms isem MR env cp p rule_lower_2365 := by
+theorem atomic_rmw_or_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :
+    MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_2365 := by
   rmw_root
 
 set_option maxHeartbeats 4000000 in
 include hp in
 /-- **`atomic_rmw` `xor`** (`lower.isle:2367`). -/
-theorem atomic_rmw_xor_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
-    MemRuleOk F sb syms isem MR env cp p rule_lower_2367 := by
+theorem atomic_rmw_xor_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :
+    MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_2367 := by
   rmw_root
 
 set_option maxHeartbeats 4000000 in
 include hp in
 /-- **`atomic_rmw` `smin`** (`lower.isle:2369`). -/
-theorem atomic_rmw_smin_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
-    MemRuleOk F sb syms isem MR env cp p rule_lower_2369 := by
+theorem atomic_rmw_smin_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :
+    MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_2369 := by
   rmw_root
 
 set_option maxHeartbeats 4000000 in
 include hp in
 /-- **`atomic_rmw` `smax`** (`lower.isle:2371`). -/
-theorem atomic_rmw_smax_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
-    MemRuleOk F sb syms isem MR env cp p rule_lower_2371 := by
+theorem atomic_rmw_smax_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :
+    MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_2371 := by
   rmw_root
 
 set_option maxHeartbeats 4000000 in
 include hp in
 /-- **`atomic_rmw` `umin`** (`lower.isle:2373`). -/
-theorem atomic_rmw_umin_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
-    MemRuleOk F sb syms isem MR env cp p rule_lower_2373 := by
+theorem atomic_rmw_umin_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :
+    MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_2373 := by
   rmw_root
 
 set_option maxHeartbeats 4000000 in
 include hp in
 /-- **`atomic_rmw` `umax`** (`lower.isle:2375`). -/
-theorem atomic_rmw_umax_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
-    MemRuleOk F sb syms isem MR env cp p rule_lower_2375 := by
+theorem atomic_rmw_umax_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :
+    MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_2375 := by
   rmw_root
 
 set_option maxHeartbeats 4000000 in
 include hp in
 /-- **`atomic_rmw` `xchg`** (`lower.isle:2377`). -/
-theorem atomic_rmw_xchg_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
-    MemRuleOk F sb syms isem MR env cp p rule_lower_2377 := by
+theorem atomic_rmw_xchg_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :
+    MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_2377 := by
   rmw_root
 
 set_option maxHeartbeats 4000000 in
 include hp in
 /-- **`atomic_cas`** (`lower.isle:2390`, rule id 1007): `AtomicCASLoop`. -/
-theorem atomic_cas_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
-    MemRuleOk F sb syms isem MR env cp p rule_lower_2390 := by
+theorem atomic_cas_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :
+    MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_2390 := by
   intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
     hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
@@ -1507,10 +1521,11 @@ theorem lower_memRoot_filter : (program.rulesOf TId.lower).filter memRootRule =
   rw [program_rulesOf_686]
   rfl
 
-/-- **The memory family (M4)**: every memory root rule of `lower` is correct under
-`MemRefines`, for every function whose memory relation is `MemRelOk`. -/
-theorem memRulesCorrect_program : MemRulesCorrect program := by
-  intro F sb syms isem MR env cp hR hMR hM r hr hmem
+/-- **The memory family (M4)**, with the read footprint: every memory root rule of `lower` is
+correct under `MemRefinesR Rd` (reads guarded by `Rd`), for every function whose memory relation
+is `MemRelOk`, assuming `Rd` at the initialised CLIF bytes. -/
+theorem memRulesCorrectR_program : MemRulesCorrectR program := by
+  intro Rd F sb syms isem MR env cp hR hMR hM r hr hmem
   have hsub : r ∈ (program.rulesOf TId.lower).filter memRootRule := List.mem_filter.2 ⟨hr, hmem⟩
   rw [lower_memRoot_filter] at hsub
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hsub
@@ -1554,5 +1569,10 @@ theorem memRulesCorrect_program : MemRulesCorrect program := by
   · exact stack_addr_ok data_program hMR hM
   · exact tls_value_ok data_program hMR hM
   · exact tls_value_macho_ok data_program
+
+/-- **The memory family (M4)**: every memory root rule of `lower` is correct under
+`MemRefines`, for every function whose memory relation is `MemRelOk`. -/
+theorem memRulesCorrect_program : MemRulesCorrect program :=
+  memRulesCorrect_of_R memRulesCorrectR_program
 
 end Backend.Proof

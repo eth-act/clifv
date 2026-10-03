@@ -132,11 +132,11 @@ theorem output_reg_inv {n : Nat} (hn : 20 ≤ n) {r : Reg} {s s' : LState × Arr
 
 end
 
-variable {p : Program} (hp : Data p) {F : BitVec 64 → Prop} {sb : Nat}
+variable {p : Program} (hp : Data p) {Rd : BitVec 64 → Prop} {F : BitVec 64 → Prop} {sb : Nat}
   {syms : String → Option Nat} {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program}
 
 include hp in
-theorem load_root_finish (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines F sb syms isem)
+theorem load_root_finish (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem)
     {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) (hMRo : MemRelOk F sb syms f MR)
     {cfg : Config} (hc : cfg.checkOverlap = false) {n1 n2 : Nat} (hn1 : 300 ≤ n1) (hn2 : 20 ≤ n2)
     {st st' : LState} {tr tr' : Array RuleId} (hvb : ValsBelow ctx st)
@@ -153,7 +153,7 @@ theorem load_root_finish (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRe
       rv = .reg (s2.1.fresh .int).1 ∧ s3.1 = (s2.1.fresh .int).2.emit m)
     (hO : ApplyInternal p (sem ctx) cfg n2 25 172 [rv] s3 out (st', tr')) :
     ∃ ms, st'.emitted = st.emitted ++ ms.toArray ∧ ∃ rss, out = .regsVec rss ∧
-      LowerInstOk isem MR env cp ctx (.load op ty fl x off) results st rss st' ms := by
+      LowerInstOkR Rd isem MR env cp ctx (.load op ty fl x off) results st rss st' ms := by
   obtain ⟨ms, am, ham, hok⟩ := amode_ok hp ctx hc hR hctx hn1 hvb hb hA (sb := sb)
   obtain ⟨mi, hmi, rfl, hs3⟩ := hH
   rw [hofV _ _ _ ham, Option.some.injEq] at hmi
@@ -222,7 +222,7 @@ theorem cond_ext {k : Nat} {cop op : Clif.LoadOp} {ty : Clif.Ty} {aop : LoadOp}
   exact ⟨hsz, hsg⟩
 
 include hp in
-theorem store_root_finish (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines F sb syms isem)
+theorem store_root_finish (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem)
     {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) (hMRo : MemRelOk F sb syms f MR)
     {cfg : Config} (hc : cfg.checkOverlap = false) {n1 n3 : Nat} (hn1 : 300 ≤ n1) (hn3 : 60 ≤ n3)
     {st st' : LState} {tr tr' : Array RuleId} (hvb : ValsBelow ctx st)
@@ -242,7 +242,7 @@ theorem store_root_finish (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemR
       s4.1 = s2.1)
     (hS : ApplyInternal p (sem ctx) cfg n3 25 243 [sv] s4 out (st', tr')) :
     ∃ ms, st'.emitted = st.emitted ++ ms.toArray ∧ ∃ rss, out = .regsVec rss ∧
-      LowerInstOk isem MR env cp ctx (.store op ty fl x y off) results st rss st' ms := by
+      LowerInstOkR Rd isem MR env cp ctx (.store op ty fl x y off) results st rss st' ms := by
   obtain ⟨ms, am, ham, hok⟩ := amode_ok hp ctx hc hR hctx hn1 hvb hb hA (sb := sb)
   obtain ⟨rfl, hs4⟩ := hH
   obtain ⟨mi, hmi, hs', rfl⟩ := side_effect_inst_ok hp hc (ctx := ctx) hn3 hS
@@ -254,7 +254,7 @@ theorem store_root_finish (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemR
   rw [htb] at hok
   have hL := store_lower_ok (env := env) (cp := cp) (results := results) hMR hM hctx hMRo hok haop
     hsz (eTy_width hety) hfl hp64 (hvb x _ hxr)
-  refine ⟨_, ?_, _, rfl, hL⟩
+  refine ⟨_, ?_, _, rfl, hL.toR⟩
   exact (hok.frag.append (frag_emit0 s2.1 _ (store_ops aop x hok.vregs fl).defs)).emitted
 
 theorem store_op_of {k : Nat} {cop op : Clif.StoreOp}
@@ -290,8 +290,8 @@ theorem width_stackAddr {g sd : Nat → Option Clif.Signature} {info : IInfo} {t
 
 set_option maxHeartbeats 2000000 in
 include hp in
-theorem load_i8_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
-    MemRuleOk F sb syms isem MR env cp p rule_lower_2604 := by
+theorem load_i8_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :
+    MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_2604 := by
   intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
     hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
@@ -308,8 +308,8 @@ theorem load_i8_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines 
 
 set_option maxHeartbeats 2000000 in
 include hp in
-theorem load_i16_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
-    MemRuleOk F sb syms isem MR env cp p rule_lower_2607 := by
+theorem load_i16_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :
+    MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_2607 := by
   intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
     hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
@@ -326,8 +326,8 @@ theorem load_i16_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines
 
 set_option maxHeartbeats 2000000 in
 include hp in
-theorem load_i32_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
-    MemRuleOk F sb syms isem MR env cp p rule_lower_2610 := by
+theorem load_i32_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :
+    MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_2610 := by
   intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
     hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
@@ -344,8 +344,8 @@ theorem load_i32_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines
 
 set_option maxHeartbeats 2000000 in
 include hp in
-theorem load_i64_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
-    MemRuleOk F sb syms isem MR env cp p rule_lower_2613 := by
+theorem load_i64_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :
+    MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_2613 := by
   intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
     hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
@@ -362,8 +362,8 @@ theorem load_i64_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines
 
 set_option maxHeartbeats 2000000 in
 include hp in
-theorem uload8_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
-    MemRuleOk F sb syms isem MR env cp p rule_lower_2647 := by
+theorem uload8_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :
+    MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_2647 := by
   intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
     hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
@@ -380,8 +380,8 @@ theorem uload8_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines F
 
 set_option maxHeartbeats 2000000 in
 include hp in
-theorem sload8_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
-    MemRuleOk F sb syms isem MR env cp p rule_lower_2650 := by
+theorem sload8_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :
+    MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_2650 := by
   intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
     hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
@@ -398,8 +398,8 @@ theorem sload8_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines F
 
 set_option maxHeartbeats 2000000 in
 include hp in
-theorem uload16_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
-    MemRuleOk F sb syms isem MR env cp p rule_lower_2653 := by
+theorem uload16_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :
+    MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_2653 := by
   intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
     hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
@@ -416,8 +416,8 @@ theorem uload16_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines 
 
 set_option maxHeartbeats 2000000 in
 include hp in
-theorem sload16_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
-    MemRuleOk F sb syms isem MR env cp p rule_lower_2656 := by
+theorem sload16_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :
+    MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_2656 := by
   intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
     hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
@@ -434,8 +434,8 @@ theorem sload16_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines 
 
 set_option maxHeartbeats 2000000 in
 include hp in
-theorem uload32_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
-    MemRuleOk F sb syms isem MR env cp p rule_lower_2659 := by
+theorem uload32_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :
+    MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_2659 := by
   intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
     hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
@@ -452,8 +452,8 @@ theorem uload32_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines 
 
 set_option maxHeartbeats 2000000 in
 include hp in
-theorem sload32_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
-    MemRuleOk F sb syms isem MR env cp p rule_lower_2662 := by
+theorem sload32_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :
+    MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_2662 := by
   intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
     hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
@@ -470,8 +470,8 @@ theorem sload32_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines 
 
 set_option maxHeartbeats 2000000 in
 include hp in
-theorem store_i8_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
-    MemRuleOk F sb syms isem MR env cp p rule_lower_2705 := by
+theorem store_i8_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :
+    MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_2705 := by
   intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
     hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
@@ -489,8 +489,8 @@ theorem store_i8_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines
 
 set_option maxHeartbeats 2000000 in
 include hp in
-theorem store_i16_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
-    MemRuleOk F sb syms isem MR env cp p rule_lower_2709 := by
+theorem store_i16_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :
+    MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_2709 := by
   intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
     hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
@@ -508,8 +508,8 @@ theorem store_i16_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefine
 
 set_option maxHeartbeats 2000000 in
 include hp in
-theorem store_i32_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
-    MemRuleOk F sb syms isem MR env cp p rule_lower_2713 := by
+theorem store_i32_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :
+    MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_2713 := by
   intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
     hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
@@ -527,8 +527,8 @@ theorem store_i32_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefine
 
 set_option maxHeartbeats 2000000 in
 include hp in
-theorem store_i64_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
-    MemRuleOk F sb syms isem MR env cp p rule_lower_2717 := by
+theorem store_i64_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :
+    MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_2717 := by
   intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
     hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
@@ -546,8 +546,8 @@ theorem store_i64_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefine
 
 set_option maxHeartbeats 2000000 in
 include hp in
-theorem istore8_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
-    MemRuleOk F sb syms isem MR env cp p rule_lower_2722 := by
+theorem istore8_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :
+    MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_2722 := by
   intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
     hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
@@ -565,8 +565,8 @@ theorem istore8_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines 
 
 set_option maxHeartbeats 2000000 in
 include hp in
-theorem istore16_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
-    MemRuleOk F sb syms isem MR env cp p rule_lower_2726 := by
+theorem istore16_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :
+    MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_2726 := by
   intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
     hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
@@ -584,8 +584,8 @@ theorem istore16_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines
 
 set_option maxHeartbeats 2000000 in
 include hp in
-theorem istore32_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
-    MemRuleOk F sb syms isem MR env cp p rule_lower_2730 := by
+theorem istore32_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :
+    MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_2730 := by
   intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
     hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
@@ -604,8 +604,8 @@ theorem istore32_ok (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRefines
 set_option maxHeartbeats 2000000 in
 include hp in
 /-- **`stack_addr`** (`lower.isle:2849`, rule id 1093). -/
-theorem stack_addr_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
-    MemRuleOk F sb syms isem MR env cp p rule_lower_2849 := by
+theorem stack_addr_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :
+    MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_2849 := by
   intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
     hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
@@ -619,8 +619,8 @@ theorem stack_addr_ok (hMR : MRStable F MR) (hM : MemRefines F sb syms isem) :
   simp only at hs'
   rw [hs3] at hs'
   subst hs'
-  refine ⟨_, ?_, _, rfl, stackAddr_lower_ok hMR hM hctx hMRo hbase
-    (width_stackAddr hRE (by assumption) (by assumption))⟩
+  refine ⟨_, ?_, _, rfl, (stackAddr_lower_ok hMR hM hctx hMRo hbase
+    (width_stackAddr hRE (by assumption) (by assumption))).toR⟩
   rw [fresh_fst]
   exact (frag_one _ (.loadAddr (.vreg _ .int) (.slotOffset _)) rfl).emitted
 
@@ -628,7 +628,7 @@ set_option maxHeartbeats 2000000 in
 include hp in
 /-- **`symbol_value`** (`lower.isle:2491`, rule id 1027). -/
 theorem symbol_value_ok (hR : Refines F isem) (hMR : MRStable F MR)
-    (hM : MemRefines F sb syms isem) : MemRuleOk F sb syms isem MR env cp p rule_lower_2491 := by
+    (hM : MemRefinesR Rd F sb syms isem) : MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_2491 := by
   intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
     hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
@@ -641,11 +641,11 @@ theorem symbol_value_ok (hR : Refines F isem) (hMR : MRStable F MR)
   obtain ⟨rfl, hs'⟩ := output_reg_inv hp ctx hco (by omega) hO
   simp only at hs'
   subst hs'
-  exact ⟨ms, hsym.frag.emitted, _, rfl, symbol_lower_ok hMR hMRo hsym ‹_›⟩
+  exact ⟨ms, hsym.frag.emitted, _, rfl, (symbol_lower_ok hMR hMRo hsym ‹_›).toR⟩
 
 include hp in
 /-- **`uextend_load`** (rule id 815): never matches (`is_sinkable_inst` fails). -/
-theorem uextend_load_ok : MemRuleOk F sb syms isem MR env cp p rule_lower_1300 := by
+theorem uextend_load_ok : MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_1300 := by
   intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
     hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
@@ -653,7 +653,7 @@ theorem uextend_load_ok : MemRuleOk F sb syms isem MR env cp p rule_lower_1300 :
 
 include hp in
 /-- **`sextend_load`** (rule id 824): never matches (`is_sinkable_inst` fails). -/
-theorem sextend_load_ok : MemRuleOk F sb syms isem MR env cp p rule_lower_1359 := by
+theorem sextend_load_ok : MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_1359 := by
   intro f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out st' tr' hm hn hvb _
     hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩

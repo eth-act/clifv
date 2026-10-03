@@ -220,7 +220,7 @@ theorem load_ext_name_got_ok {n : Nat} (hn : 40 ≤ n) {nm : String}
 /-! ## `load_ext_name` -/
 
 section Sym
-variable {F : BitVec 64 → Prop} {isem : Sem}
+variable {Rd : BitVec 64 → Prop} {F : BitVec 64 → Prop} {isem : Sem}
 
 theorem mem_lo64_ofX (r : BitVec 64) : lo64 (ofX r) = r := by
   simp [lo64, ofX, BitVec.setWidth_setWidth_of_le]
@@ -229,7 +229,7 @@ theorem operands_loadExtNameGot (d : Nat) (nm : String) :
     (MInst.loadExtNameGot (.vreg d .int) nm).operands = .ok #[⟨d, .int, .def, .late, .reg⟩] := rfl
 
 /-- The GOT load of a linked symbol (`MemRefines`). -/
-theorem runs_got {sb : Nat} {syms : String → Option Nat} (hM : MemRefines F sb syms isem) {d : Nat}
+theorem runs_got {sb : Nat} {syms : String → Option Nat} (hM : MemRefinesR Rd F sb syms isem) {d : Nat}
     {nm : String} {b : Nat} (hb : syms nm = some b) (ρ : Nat → CV) (w : Arm.ArmState) :
     Runs F isem [.loadExtNameGot (.vreg d .int) nm] ρ w
       (fun ρ' _ => ρ' = upd ρ d (ofX (BitVec.ofNat 64 b))) := by
@@ -250,7 +250,7 @@ theorem vdefs_got (d : Nat) (nm : String) : vdefs (.loadExtNameGot (.vreg d .int
 
 theorem vuseNums_got (d : Nat) (nm : String) : vuseNums (.loadExtNameGot (.vreg d .int) nm) = [] := rfl
 
-theorem symOk_got {sb : Nat} {syms : String → Option Nat} (hM : MemRefines F sb syms isem)
+theorem symOk_got {sb : Nat} {syms : String → Option Nat} (hM : MemRefinesR Rd F sb syms isem)
     (st : LState) (nm : String) :
     SymOk F isem syms st ((st.fresh .int).2.emit (.loadExtNameGot (st.fresh .int).1 nm))
       [.loadExtNameGot (st.fresh .int).1 nm] st.nextVreg nm 0 := by
@@ -263,7 +263,7 @@ theorem symOk_got {sb : Nat} {syms : String → Option Nat} (hM : MemRefines F s
     subst e
     rw [upd_same, mem_lo64_ofX]; simp
 
-theorem symOk_add {sb : Nat} {syms : String → Option Nat} (hM : MemRefines F sb syms isem)
+theorem symOk_add {sb : Nat} {syms : String → Option Nat} (hM : MemRefinesR Rd F sb syms isem)
     (st : LState) {st3 : LState} {ms : List MInst} {nm : String} {off : Int} {d : Nat}
     (hadd : AddOk F isem ((st.fresh .int).2.emit (.loadExtNameGot (st.fresh .int).1 nm)) st3 ms
       st.nextVreg off d)
@@ -287,12 +287,12 @@ theorem symOk_add {sb : Nat} {syms : String → Option Nat} (hM : MemRefines F s
 
 end Sym
 
-variable {F : BitVec 64 → Prop} {isem : Sem}
+variable {Rd : BitVec 64 → Prop} {F : BitVec 64 → Prop} {isem : Sem}
 
 include hp hc in
 /-- **`load_ext_name name off dist`** (`is_pic` rules; the non-PIC rules fail). -/
 theorem load_ext_name_ok (hR : Refines F isem) {sb : Nat} {syms : String → Option Nat}
-    (hM : MemRefines F sb syms isem) {n : Nat} (hn : 100 ≤ n) {nm : String} {off : Int} {dist : V}
+    (hM : MemRefinesR Rd F sb syms isem) {n : Nat} (hn : 100 ≤ n) {nm : String} {off : Int} {dist : V}
     {s s' : LState × Array RuleId} {v : V}
     (h : ApplyInternal p (sem ctx) cfg n 27 570 [.op (.extName nm), .int off, dist] s v s') :
     ∃ ms d, v = .reg (.vreg d .int) ∧ SymOk F isem syms s.1 s'.1 ms d nm off := by

@@ -794,6 +794,119 @@ def MemRefines (F : BitVec 64 → Prop) (sb : Nat) (syms : String → Option Nat
     isem (.elfTlsGetAddr n (.vreg d .int) (.vreg t .int)) [] w =
       some ([ofX (BitVec.ofNat 64 b), o], w', .next) ∧ SameWorldNF F w' w)
 
+/-- **`MemRefines` with guarded reads** (agent/link-widen, stage 2: the read footprint of the
+memory rules): as `MemRefines`, but a load, an `ldar` and the LL/SC loops are required only when
+every byte they read satisfies `Rd`. A semantics whose reads of the other bytes fail satisfies it,
+and the memory rules hold under it when the initialised bytes of the CLIF memory satisfy `Rd`
+(`MemRuleOkR`, `InitIn`): the VCode reads only bytes its CLIF instruction reads. With `Rd` true
+it is `MemRefines` (`memRefinesR_of`, `memRefines_of_true`). -/
+def MemRefinesR (Rd : BitVec 64 → Prop) (F : BitVec 64 → Prop) (sb : Nat)
+    (syms : String → Option Nat) (isem : Sem) : Prop :=
+  (∀ (op : LoadOp) (d : Nat) (am : AMode) (fl : Clif.MemFlags) (uses : List CV)
+      (w : Arm.ArmState) (a : BitVec 64),
+    op ≠ .fpuLoad128 → amodeAddr sb am op.bytes uses w = some a → Avoids F op.bytes a →
+    (∀ k < op.bytes, Rd (a + BitVec.ofNat 64 k)) →
+    ∃ w', isem (.load op (.vreg d .int) am fl) uses w = some ([ofX (loadVal op a w)], w', .next) ∧
+      SameWorld F w' w) ∧
+  (∀ (op : StoreOp) (d : Nat) (am : AMode) (fl : Clif.MemFlags) (v : CV) (uses : List CV)
+      (w : Arm.ArmState) (a : BitVec 64),
+    op ≠ .fpuStore128 → amodeAddr sb am op.bytes uses w = some a → Avoids F op.bytes a →
+    ∃ w', isem (.store op (.vreg d .int) am fl) (v :: uses) w = some ([], w', .next) ∧
+      SameWorld F w' (Arm.write_mem_bytes op.bytes a ((lo64 v).setWidth (op.bytes * 8)) w)) ∧
+  (∀ (d : Nat) (off : Int) (w : Arm.ArmState), ∃ w',
+    isem (.loadAddr (.vreg d .int) (.slotOffset off)) [] w =
+      some ([ofX (spOf w + BitVec.ofInt 64 (off + sb))], w', .next) ∧ SameWorld F w' w) ∧
+  (∀ (d : Nat) (n : String) (b : Nat) (w : Arm.ArmState), syms n = some b → ∃ w',
+    isem (.loadExtNameGot (.vreg d .int) n) [] w = some ([ofX (BitVec.ofNat 64 b)], w', .next) ∧
+      SameWorld F w' w) ∧
+  (∀ (ty : CTy) (d r : Nat) (fl : Clif.MemFlags) (u : CV) (w : Arm.ArmState),
+    AtomTy ty → Avoids F ty.bytes (lo64 u) → (∀ k < ty.bytes, Rd (lo64 u + BitVec.ofNat 64 k)) →
+    ∃ w', isem (.loadAcquire ty (.vreg d .int) (.vreg r .int) fl) [u] w =
+      some ([ofX ((Arm.read_mem_bytes ty.bytes (lo64 u) w).setWidth 64)], w', .next) ∧
+      SameWorld F w' w) ∧
+  (∀ (ty : CTy) (d r : Nat) (fl : Clif.MemFlags) (u v : CV) (w : Arm.ArmState),
+    AtomTy ty → Avoids F ty.bytes (lo64 u) → ∃ w',
+    isem (.storeRelease ty (.vreg d .int) (.vreg r .int) fl) [u, v] w = some ([], w', .next) ∧
+      SameWorld F w' (Arm.write_mem_bytes ty.bytes (lo64 u) ((lo64 v).setWidth (ty.bytes * 8)) w)) ∧
+  (∀ (ty : CTy) (op : AtomicRmwLoopOp) (fl : Clif.MemFlags) (ra ro rd r1 r2 : Nat) (u x : CV)
+      (w : Arm.ArmState),
+    AtomTy ty → Avoids F ty.bytes (lo64 u) → (∀ k < ty.bytes, Rd (lo64 u + BitVec.ofNat 64 k)) →
+    ∃ w' o0 o1 o2,
+    isem (.atomicRmwLoop ty op fl (.vreg ra .int) (.vreg ro .int) (.vreg rd .int) (.vreg r1 .int)
+        (.vreg r2 .int)) [u, x] w = some ([o0, o1, o2], w', .next) ∧
+      o0.setWidth (ty.bytes * 8) = Arm.read_mem_bytes ty.bytes (lo64 u) w ∧
+      SameWorldNF F w' (Arm.write_mem_bytes ty.bytes (lo64 u)
+        (Clif.Sem.atomicRmw op.clif (Arm.read_mem_bytes ty.bytes (lo64 u) w)
+          ((lo64 x).setWidth (ty.bytes * 8))) w)) ∧
+  (∀ (ty : CTy) (fl : Clif.MemFlags) (ra re rx rd r1 : Nat) (u e x : CV) (w : Arm.ArmState),
+    AtomTy ty → Avoids F ty.bytes (lo64 u) → (∀ k < ty.bytes, Rd (lo64 u + BitVec.ofNat 64 k)) →
+    ∃ w' o1,
+    isem (.atomicCasLoop ty fl (.vreg ra .int) (.vreg re .int) (.vreg rx .int) (.vreg rd .int)
+        (.vreg r1 .int)) [u, e, x] w =
+      some ([ofX ((Arm.read_mem_bytes ty.bytes (lo64 u) w).setWidth 64), o1], w', .next) ∧
+      SameWorldNF F w'
+        (if Arm.read_mem_bytes ty.bytes (lo64 u) w = (lo64 e).setWidth (ty.bytes * 8) then
+          Arm.write_mem_bytes ty.bytes (lo64 u) ((lo64 x).setWidth (ty.bytes * 8)) w
+        else w)) ∧
+  (∀ (d t : Nat) (n : String) (b : Nat) (w : Arm.ArmState), syms n = some b → ∃ w' o,
+    isem (.elfTlsGetAddr n (.vreg d .int) (.vreg t .int)) [] w =
+      some ([ofX (BitVec.ofNat 64 b), o], w', .next) ∧ SameWorldNF F w' w)
+
+theorem memRefinesR_of {Rd : BitVec 64 → Prop} {F : BitVec 64 → Prop} {sb : Nat}
+    {syms : String → Option Nat} {isem : Sem} (h : MemRefines F sb syms isem) :
+    MemRefinesR Rd F sb syms isem :=
+  ⟨fun op d am fl uses w a h1 h2 h3 _ => h.1 op d am fl uses w a h1 h2 h3, h.2.1, h.2.2.1,
+    h.2.2.2.1, fun ty d r fl u w h1 h2 _ => h.2.2.2.2.1 ty d r fl u w h1 h2, h.2.2.2.2.2.1,
+    fun ty op fl ra ro rd r1 r2 u x w h1 h2 _ => h.2.2.2.2.2.2.1 ty op fl ra ro rd r1 r2 u x w h1 h2,
+    fun ty fl ra re rx rd r1 u e x w h1 h2 _ => h.2.2.2.2.2.2.2.1 ty fl ra re rx rd r1 u e x w h1 h2,
+    h.2.2.2.2.2.2.2.2⟩
+
+theorem memRefines_of_true {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
+    {isem : Sem} (h : MemRefinesR (fun _ => True) F sb syms isem) : MemRefines F sb syms isem :=
+  ⟨fun op d am fl uses w a h1 h2 h3 => h.1 op d am fl uses w a h1 h2 h3 fun _ _ => trivial,
+    h.2.1, h.2.2.1, h.2.2.2.1,
+    fun ty d r fl u w h1 h2 => h.2.2.2.2.1 ty d r fl u w h1 h2 fun _ _ => trivial, h.2.2.2.2.2.1,
+    fun ty op fl ra ro rd r1 r2 u x w h1 h2 =>
+      h.2.2.2.2.2.2.1 ty op fl ra ro rd r1 r2 u x w h1 h2 fun _ _ => trivial,
+    fun ty fl ra re rx rd r1 u e x w h1 h2 =>
+      h.2.2.2.2.2.2.2.1 ty fl ra re rx rd r1 u e x w h1 h2 fun _ _ => trivial,
+    h.2.2.2.2.2.2.2.2⟩
+
+/-- The initialised bytes of the live allocations of `cm` satisfy `Rd`. -/
+def InitIn (Rd : BitVec 64 → Prop) (cm : Clif.Mem) : Prop :=
+  ∀ a, cm.valid a 1 = true → (cm.bytes a).isSome = true → Rd (BitVec.ofNat 64 a)
+
+/-- `LowerInstOk` whose run assumes that the initialised bytes of the CLIF memory satisfy `Rd`
+(`InitIn`): the form of a memory rule's obligation under `MemRefinesR Rd`. -/
+structure LowerInstOkR (Rd : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env)
+    (p : Clif.Program) (ctx : Ctx) (inst : Clif.Inst) (results : List Nat) (st : LState)
+    (rss : List (List Reg)) (st' : LState) (ms : List MInst) : Prop where
+  mono : st.nextVreg ≤ st'.nextVreg
+  defs : ∀ m ∈ ms, ∀ d ∈ vdefs m, st.nextVreg ≤ d ∧ d < st'.nextVreg
+  run : ∀ (fr : Clif.Frame) (cm : Clif.Mem) (ρ : Nat → CV) (w : Arm.ArmState),
+    fr.func = ctx.func → ValsHeld fr ρ → DFGCons ctx fr → MR fr.slots cm w → InitIn Rd cm →
+    match instOutcome env p fr cm inst with
+    | .ok (vals, cm') => UsesOk st fr ms ∧ ∃ ρ' w', seqRun isem ms ρ w = some (.fall ρ' w') ∧
+        (results = [] ∨ ResultsHeld st.nextVreg fr rss vals ρ') ∧ MR fr.slots cm' w'
+    | .trap c => explicitTrapInst inst = true → UsesOk st fr ms ∧
+        ∃ k i ops ρ₁ w₁ outs w₂, seqRun isem ms ρ w = some (.stop k i ops ρ₁ w₁ outs w₂ .halt) ∧
+          trapCode? i = some c
+    | .stuck _ => True
+
+theorem LowerInstOk.toR {Rd : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} {env : Clif.Env}
+    {p : Clif.Program} {ctx : Ctx} {inst : Clif.Inst} {results : List Nat} {st : LState}
+    {rss : List (List Reg)} {st' : LState} {ms : List MInst}
+    (h : LowerInstOk isem MR env p ctx inst results st rss st' ms) :
+    LowerInstOkR Rd isem MR env p ctx inst results st rss st' ms :=
+  ⟨h.mono, h.defs, fun fr cm ρ w hf hv hd hmr _ => h.run fr cm ρ w hf hv hd hmr⟩
+
+theorem LowerInstOkR.toOk {isem : Sem} {MR : MemRelT} {env : Clif.Env}
+    {p : Clif.Program} {ctx : Ctx} {inst : Clif.Inst} {results : List Nat} {st : LState}
+    {rss : List (List Reg)} {st' : LState} {ms : List MInst}
+    (h : LowerInstOkR (fun _ => True) isem MR env p ctx inst results st rss st' ms) :
+    LowerInstOk isem MR env p ctx inst results st rss st' ms :=
+  ⟨h.mono, h.defs, fun fr cm ρ w hf hv hd hmr => h.run fr cm ρ w hf hv hd hmr fun _ _ _ => trivial⟩
+
 /-- **What the memory rules need of the memory relation** of function `f` (M7's `Rel.holds`
 satisfies it): initialised bytes of live allocations are the Arm bytes, live allocations are
 64-bit addresses outside `F`, `symbol_value` addresses are `syms`, slot `id` is at
@@ -846,6 +959,41 @@ def MemRulesCorrect (p : Program) : Prop :=
     (env : Clif.Env) (cp : Clif.Program),
     Refines F isem → MRStable F MR → MemRefines F sb syms isem →
     ∀ r ∈ p.rulesOf TId.lower, memRootRule r = true → MemRuleOk F sb syms isem MR env cp p r
+
+/-- `MemRuleOk` under `MemRefinesR Rd` (guarded reads): the obligation is `LowerInstOkR Rd`
+(its run assumes the initialised CLIF bytes satisfy `Rd`). -/
+def MemRuleOkR (Rd : BitVec 64 → Prop) (F : BitVec 64 → Prop) (sb : Nat)
+    (syms : String → Option Nat) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
+    (p : Program) (r : Rule) : Prop :=
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx → MemRelOk F sb syms f MR →
+  ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info → info.clif = some inst →
+  ∀ (cfg : Config), cfg.checkOverlap = false →
+  ∀ (m n : Nat) (st : LState) (tr : Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId)
+    (out : V) (st' : LState) (tr' : Array RuleId), 1000 ≤ m → 1000 ≤ n → ValsBelow ctx st →
+    (∀ pre post, p.rulesOf TId.lower = pre ++ r :: post → ∀ r' ∈ pre, ∃ m', 1000 ≤ m' ∧
+      ∃ s', (matchRule p (sem ctx) cfg m' r' [.inst ii]).run (st, tr) = .ok (none, s')) →
+    (matchRule p (sem ctx) cfg m r [.inst ii]).run (st, tr) = .ok (some env', s1) →
+    (evalExpr p (sem ctx) cfg n r.rhs env').run s1 = .ok (some out, (st', tr')) →
+    ∃ ms rss, st'.emitted = st.emitted ++ ms.toArray ∧ out = .regsVec rss ∧
+      LowerInstOkR Rd isem MR env cp ctx inst info.results st rss st' ms
+
+/-- **The memory rules with their read footprint** (agent/link-widen, stage 2): under
+`MemRefinesR Rd`, every memory root rule is correct, for every `Rd` that holds at the
+initialised CLIF bytes: a memory rule's VCode reads only bytes its CLIF instruction reads.
+Implies `MemRulesCorrect` (`memRulesCorrect_of_R`). -/
+def MemRulesCorrectR (p : Program) : Prop :=
+  ∀ (Rd : BitVec 64 → Prop) (F : BitVec 64 → Prop) (sb : Nat) (syms : String → Option Nat)
+    (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program),
+    Refines F isem → MRStable F MR → MemRefinesR Rd F sb syms isem →
+    ∀ r ∈ p.rulesOf TId.lower, memRootRule r = true → MemRuleOkR Rd F sb syms isem MR env cp p r
+
+theorem memRulesCorrect_of_R {p : Program} (h : MemRulesCorrectR p) : MemRulesCorrect p := by
+  intro F sb syms isem MR env cp hR hMR hM r hr hm f ctx hctx hMRo ii info inst hi hic cfg hco m n
+    st tr env' s1 out st' tr' hm' hn hvb hpre hmatch heval
+  obtain ⟨ms, rss, h1, h2, h3⟩ := h (fun _ => True) F sb syms isem MR env cp hR hMR
+    (memRefinesR_of hM) r hr hm f ctx hctx hMRo ii info inst hi hic cfg hco m n st tr env' s1 out
+    st' tr' hm' hn hvb hpre hmatch heval
+  exact ⟨ms, rss, h1, h2, h3.toOk⟩
 
 /-- **M4's target (`lower`).** For every VCode semantics refining `ispec` and every stable
 memory relation, every root rule of `lower` in the E-closure other than the call rules
