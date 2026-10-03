@@ -1032,60 +1032,62 @@ the proof file: the input as string literals, `okB_input : okB input = true := b
 native_decide`, `link_ok`, `noTls`/`base_closed` (without `tls_value`), `entries_present`,
 and `correct_i : CrateStmt input "<name>"` per entry.
 
-**Delivered** (`FVTest/Crates/`, from `examples/survey`'s `tests/values.rs` executables):
-`GU128.lean`, the whole of `g_u128` (19 functions, all Lean-compiled functions of the crate's
-codegen unit; its `i128` functions are the `Opt.Legalize128` legalisations, so the theorem is
-about the legalised program, as in "Widening" 6); `AArith.lean`, 54 of `a_arith`'s 58 (the 2
-functions failing `blrRegs` and their 2 callers dropped). Each builds in about 10 s. Axioms:
-`link_ok`: standard plus `okB_input._native.native_decide.ax_1_1`; `correct_i`: those and the
-backend's existing `bv_decide`/`native_decide` ones (`dbm_sxtb`, `dbm_sxth`, the
-`decode_armBits_*`); `okB_sound`, `crate_correct` (generic): standard plus the backend's.
+**Delivered** (`FVTest/Crates/`, from `examples/survey`'s `tests/values.rs` executables;
+after merging agent/link-scope): `AArith.lean` (all 58 Lean-compiled functions of `a_arith`),
+`GU128.lean` (all 19 of `g_u128`; its `i128` functions are the `Opt.Legalize128` legalisations,
+so the theorem is about the legalised program, as in "Widening" 6), `HDynGeneric.lean` (all 43
+of `h_dyn_generic`: `dyn` dispatch through vtables, `fn` pointers, closures). The three build in
+about 30 s. Axioms: `link_ok`: standard plus `okB_input._native.native_decide.ax_1_1`;
+`correct_i`: those and the backend's existing `bv_decide`/`native_decide` ones (`dbm_sxtb`,
+`dbm_sxth`, the `decode_armBits_*`); `okB_sound`, `crate_correct` (generic): standard plus the
+backend's.
 
 **Survey** (`link-check --prune`, each crate's codegen unit in its `values` test executable;
-`fv-demo`: its binary, two units):
+`fv-demo`: its binary, two units), before and after agent/link-scope (`LinkSys.MayCall`,
+program-wide indirect resolution, call-result clauses restricted to the site's defs):
 
-| crate | functions | pass (call-closed) | failing premises (functions) |
-| --- | --- | --- | --- |
-| a_arith | 58 | 54 | `blrRegs` 2 (+2 callers) |
-| b_slices | 59 | 47 | `blrRegs` 2 (+10 callers) |
-| c_structs_enums | 27 | 25 | `blrRegs` 2 |
-| d_loops_iters | 117 | 107 | `blrRegs` 5 (+5 callers) |
-| e_option_result | 48 | 45 | `blrRegs` 1 (+2 callers) |
-| f_crypto | 40 | 34 | `blrRegs` 4 (+2 callers) |
-| g_u128 | 19 | 19 | — |
-| h_dyn_generic | 43 | 34 | `indScope` 4, `blrRegs` 1 (+5 callers) |
-| i_alloc | 49 | 39 | `blrRegs` 4 (+6 callers) |
-| fv-demo | 550 | 379 | `blrRegs` 45, `indScope` 13, `blrTry` 1 (+114 callers) |
+| crate | functions | pass before | pass after | failing after (functions) |
+| --- | --- | --- | --- | --- |
+| a_arith | 58 | 54 | 58 | — |
+| b_slices | 59 | 47 | 59 | — |
+| c_structs_enums | 27 | 25 | 27 | — |
+| d_loops_iters | 117 | 107 | 117 | — |
+| e_option_result | 48 | 45 | 48 | — |
+| f_crypto | 40 | 34 | 40 | — |
+| g_u128 | 19 | 19 | 19 | — |
+| h_dyn_generic | 43 | 34 | 43 | — |
+| i_alloc | 49 | 39 | 48 | `blrRegs` 1 |
+| fv-demo | 550 | 379 | 482 | `indSig` 13, `blrRegs` 6, `blrTry` 4 (+51 callers) |
 
-**Blockers on real code** (what fails, and why):
+**Blockers on real code** (after agent/link-scope):
 
-1. *`blrRegs`/`blrTry` at GOT calls of base externs* (every crate but `g_u128`). `cg_clif`
-   declares std's panic entry points non-`colocated`, so their calls are `adrp`/`ldr :got:`/`blr`
-   (`CallInfo` with a register destination). `Ok.blrRegs` (and `blrTry`, and `LinkSys.X`'s `blr`
-   branch behind them) quantifies over every program function the caller declares with as many
-   register parameters, not over the call's actual target, so a GOT call of
-   `panic_const_add_overflow(i64)` (no results) fails as soon as the caller also declares a
-   program function `(i32) -> i32`. The target of a GOT `blr` is known (the loaded symbol); the
-   premise would have to follow it (the GOT load's vreg to the call), or be restricted to `blr`s
-   from `call_indirect`/`func_addr`. Not fixable in the checker: it is the statement of
-   `LinkSys.Ok` (`LinkArm.lean`).
-2. *Indirect calls whose targets the caller does not declare* (`h_dyn_generic`, `fv-demo`):
-   `fn` pointers (`func_addr` of a function of the crate) make every indirect caller fail
-   `Clif.IndDecl` (it must declare every name of `P` with an address). `dyn` calls go through
-   vtables, whose method addresses are data relocations: they are not CLIF image symbols, so a
-   CLIF `call_indirect` through a vtable resolves no function (stuck: those runs are covered
-   only vacuously), and adding them to `syms` makes `IndDecl` fail for every vtable caller.
-   Needs a linked environment that resolves addresses against the whole program (LinkScope).
+1. *`indSig` with `MayCall`* (`fv-demo` 13): a function with indirect calls may call every
+   function with a link-time address (`MayCall`), so every such function must be register-only
+   and without `sret`; `fv-demo` has address-taken functions (vtable methods) with an `sret` or
+   stack-passed parameter, so every indirect caller fails, whatever its call signatures. Needs
+   `MayCall` restricted by the call's signature (`indSigs`), or `indSig` stated per signature.
+2. *`blrRegs`' argument registers and `blrTry` at `blr` sites* (`i_alloc` 1, `fv-demo` 10):
+   required for every function the site may call with its arity, not only a GOT site's symbol
+   (agent/link-scope2's `BlrTo`/`GotV` restricts a GOT site to its symbol; not merged here yet).
 3. *Callers of failing functions*: dropped by `--prune` so that the rest is closed under calls.
+
+Before agent/link-scope, `blrRegs` at GOT calls of base externs (panics without results next to
+a declared program function of the same arity with results) failed in 8 of the 9 survey crates,
+and `Clif.IndDecl` failed for every indirect caller of `fn` pointers and vtables (vtable methods
+were not CLIF image symbols; `cargo fv link-proof` now adds the program functions held by the
+data objects the program reaches, `data_syms`).
 
 Not blocking: `try_call` between program functions and to base externs (95 `fv-demo` functions
 and every survey crate's landing-pad code pass), `sret` (121 `fv-demo` functions), data objects
 (`symbol_value`: in `syms`, their contents are entry premises: the CLIF entry memory), std calls
-(base premises), stack-passed and `i128` arguments. A directly recursive function (one in
+(base premises), stack-passed and `i128` arguments.
+
+**Recursion is covered only modulo a base premise.** A directly recursive function (one in
 `fv-demo`) passes, but only because its self-call names `cargo fv`'s alias `f__fvself`, which is
-not a function of `P` and has no address: the recursive call is a base extern whose contract
-(that it behaves as `f`) is a base premise (`baseX`, …), and `closedBase` gives it no semantics.
-The one-copy linking of recursion (the linker resolves the alias to `f`) is LinkScope's.
+not a function of `P` and has no address: in the crate's theorem the recursive call is a call of
+a base extern, and its contract (that `f__fvself` behaves as `f`) is a base premise (`baseX`,
+`baseOs`, …; `closedBase` gives it no semantics). The binary has one copy (the linker resolves
+the alias to `f`); linking it as one copy is agent/link-scope2's.
 
 **Trusted** in addition to `backend_correct_program`'s: that `cargo fv` records the file it
 passed to `lean-backend` and the output of the `lean-regalloc` run it made (a different
@@ -1093,8 +1095,10 @@ allocation would only make `checkAlloc` or the image comparison fail), the merge
 and the link map's addresses; `imgMem` is the unrelocated encoding (`bl`, `adrp`, GOT and `lo12`
 fields are zero), while the process image has the relocated words (`link-check` compares the
 rest and the `bl` targets: no difference in the 17000 words of the nine survey crates).
-Checker time is dominated by `lowerCheck` (1–50 s per survey crate, 13 min for `fv-demo`'s 550
-functions); `native_decide` repeats it once.
+Checker time is dominated by `lowerCheck` (1–50 s per survey crate, about 13 min for
+`fv-demo`'s 550 functions, 25 min for its whole `cargo fv link-proof --prune` run); `native_decide` repeats it
+once, in Lean's interpreter (no precompiled modules): a proof file for `fv-demo`'s 379 passing
+functions did not finish in 40 minutes.
 
 Not done: an entry-level instance for a crate function (the entry premises of `ProgStmt` for
 concrete arguments, as `backend_correct_program_witness` does for `f 41`); the witness

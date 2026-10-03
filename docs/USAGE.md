@@ -430,12 +430,15 @@ $ cd ../.. && lake build FVTest.Crates.GU128
 
 What the theorem says, and assumes: e2e.md "Crate-level instance" (the base environment's
 contracts, `BaseOk`, are premises; the entry state is a premise as in `backend_correct_program`).
-What blocks functions today (blocker list there): a `blr` call through the GOT of an extern
-outside the crate in a function that also calls a crate function with as many register
-parameters (most failures), and indirect calls whose targets the caller does not declare (`fn`
-pointers, vtables). The checker's time is dominated by the lowering validator: seconds for a
-small crate, about 13 minutes for `examples/fv-demo`'s 550 functions; `native_decide` in the
-proof file repeats it once.
+What blocks functions today (blocker list there): every function of the nine survey crates but
+one passes; in `examples/fv-demo` 482 of 550 do. The failures are indirect callers when some
+address-taken function has an `sret` or stack-passed parameter (`indSig`), and `blr` sites
+whose argument registers differ from some function of the same arity they may call. A
+recursive function passes only modulo a base premise: its self-call goes through `cargo fv`'s
+alias `f__fvself`, a base extern in the theorem. The checker's time is dominated by the
+lowering validator: seconds for a small crate, about 25 minutes for `examples/fv-demo`'s 550
+functions; `native_decide` in the proof file repeats it in Lean's interpreter, which does not
+scale to hundreds of functions yet.
 
 ## Examples and results
 
