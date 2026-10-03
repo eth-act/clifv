@@ -229,16 +229,27 @@ def main (args : List String) : IO UInt32 := do
   let t0 ← IO.monoMsNow
   let R0 := I0.results
   -- the CLIF image's symbols and the call-level stack
+  -- the checks that do not depend on the rest of the program, once (`staticChks`: the
+  -- validators); then `diagR` with them (`chks = staticChks ++ linkChks`)
+  let D0 := (R0.map fun e => frameDrop (getOk e.2).af).foldl max 0
+  let stat := R0.map fun e => (e.1.name, staticChks { I0 with D := D0 } e.1 e.2)
   let mut keep := R0
   let mut dropped : List (String × List String) := []
-  let mut d := diagR I0 []
+  let mut d : List (String × List String) := []
   let mut I := I0
   repeat
     let names := ((keep.flatMap fun e => addrNames e.1).eraseDups)
     let syms := names.filterMap fun n => (I0.addrs.lookup n).map (n, ·)
     let D := (keep.map fun e => frameDrop (getOk e.2).af).foldl max 0
     I := { I0 with syms, D }
-    d := diagR I keep
+    let P := progOf keep
+    let T := tabOf keep
+    let gl := bad (globalChks I P T)
+    let fs := keep.filterMap fun e =>
+      match bad ((stat.lookup e.1.name).getD [] ++ linkChks I P T e.1 e.2) with
+      | [] => none
+      | b => some (e.1.name, b ++ (match e.2 with | .error m => [m] | .ok _ => []))
+    d := (if gl.isEmpty then [] else [("(program)", gl)]) ++ fs
     let bad := d.filter (·.1 != "(program)")
     if !o.prune || bad.isEmpty then break
     dropped := dropped ++ bad

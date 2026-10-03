@@ -602,39 +602,49 @@ def addrSlotsB (P : Clif.Program) (T : List (Clif.Function × Art)) (S : String 
   !(T.any (fun e => (RAFrame.compute e.2.vcp e.2.rf).intBase != 0) && P.funcs.any (!indFreeB ·)) ||
     P.funcs.all fun h => (S h.name).isNone || h.slots.isEmpty
 
-/-- **The per-function checks** of `g` (pipeline result `r`), named by the premise of
-`LinkSys.Ok` (or of `Compiled`/`InSubset`) they discharge. -/
-def chks (I : LinkInput) (P : Clif.Program) (T : List (Clif.Function × Art)) (g : Clif.Function)
-    (r : Except String Art) : List (String × Bool) :=
+/-- **The per-function checks of `g` that do not depend on the rest of the program** (pipeline
+result `r`), named by the premise of `LinkSys.Ok` (or of `Compiled`/`InSubset`) they discharge.
+They include the validators (`lowerCheck` dominates the checker's time). -/
+def staticChks (I : LinkInput) (g : Clif.Function) (r : Except String Art) : List (String × Bool) :=
   let a := getOk r
-  let fr := RAFrame.compute a.vcp a.rf
   [("compiled: pipeline", r.toBool),
    ("compiled: lowerCheck", lowerCheck g a.vc),
    ("compiled: prepCheck", prepCheck a.vc a.vcp),
    ("compiled: checkAlloc", (checkAlloc a.vcp a.rf).toBool),
    ("covered", formsCoveredB ⟨a.fa.k, a.af.slotBase⟩ a.vcp),
-   ("tryRets/blrTry", allInsts a.vcp (tryB P g)),
    ("sretRets", allInsts a.vc (retsB g)),
-   ("outFits", g.externs.all (fun e => !(P.func? e.2.name).isSome || outFitsB e.2.sig fr.intBase)),
    ("argRegs: distinct", decide (regLocs g.sig).Nodup),
    ("argRegs: argument registers", (regLocs g.sig).all (·.isArgReg)),
    ("argRegs: width ≤ 64", g.sig.params.all (fun p => decide (p.ty.width ≤ 64))),
+   ("entryRegs", entryB g a.vcp),
+   ("fits", decide (a.base.toNat + 4 * a.fb.words.size ≤ 2 ^ 64)),
+   ("depth", decide (frameDrop a.af ≤ I.D)),
+   ("free (no return_call)", linkFreeB g),
+   ("subset: clif-subset-v2 E", Compile.functionE g),
+   ("subset: no direct self-call", g.externs.all (fun e => e.2.name != g.name)),
+   ("subset: ABI signatures", sigAbiOk g.sig && g.externs.all (fun e => sigAbiOk e.2.sig)),
+   ("subset: indirect-call signatures", indSigsOk g)]
+
+/-- **The per-function checks of `g` against the program** `P` (its compiled table `T`). -/
+def linkChks (I : LinkInput) (P : Clif.Program) (T : List (Clif.Function × Art)) (g : Clif.Function)
+    (r : Except String Art) : List (String × Bool) :=
+  let a := getOk r
+  let fr := RAFrame.compute a.vcp a.rf
+  [("tryRets/blrTry", allInsts a.vcp (tryB P g)),
+   ("outFits", g.externs.all (fun e => !(P.func? e.2.name).isSome || outFitsB e.2.sig fr.intBase)),
    ("calleeFrame/slotFits",
      !calleeB P g || ((!g.slots.isEmpty || fr.size == a.af.frameSize) && slotFitsB g a)),
    ("callRegs/blrRegs", allInsts a.vcp (siteB (siteOk P g))),
    ("declSig", g.externs.all fun e => match P.func? e.2.name with
       | some h => decide (e.2.sig = h.sig)
       | none => true),
-   ("entryRegs", entryB g a.vcp),
-   ("fits", decide (a.base.toNat + 4 * a.fb.words.size ≤ 2 ^ 64)),
    ("raCall/raBlr", raCallB T g a),
-   ("depth", decide (frameDrop a.af ≤ I.D)),
-   ("free (no return_call)", linkFreeB g),
-   ("subset: clif-subset-v2 E", Compile.functionE g),
-   ("subset: no direct self-call", g.externs.all (fun e => e.2.name != g.name)),
-   ("subset: ABI signatures", sigAbiOk g.sig && g.externs.all (fun e => sigAbiOk e.2.sig)),
-   ("subset: indirect-call signatures", indSigsOk g),
    ("indScope/indNoSym/indSig", indB P (fun n => I.syms.lookup n) g)]
+
+/-- **The per-function checks** of `g`. -/
+def chks (I : LinkInput) (P : Clif.Program) (T : List (Clif.Function × Art)) (g : Clif.Function)
+    (r : Except String Art) : List (String × Bool) :=
+  staticChks I g r ++ linkChks I P T g r
 
 /-- The checks of the whole program (`P`, the layout, the symbols). -/
 def globalChks (I : LinkInput) (P : Clif.Program) (T : List (Clif.Function × Art)) :
@@ -760,9 +770,10 @@ theorem facts {I : LinkInput} (h : okB I = true) {g : Clif.Function}
     simp only [okB, okR, Bool.and_eq_true, List.all_eq_true] at h
     exact h.2 e he
   rw [hart]
-  simp only [chks, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hall
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19,
-    h20, h21, h22, h23, h24⟩ := hall
+  simp only [chks, staticChks, linkChks, List.cons_append, List.nil_append, List.mem_cons,
+    List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hall
+  obtain ⟨h1, h2, h3, h4, h5, h7, h9, h10, h11, h15, h16, h18, h19, h20, h21, h22, h23, h6, h8,
+    h12, h13, h14, h17, h24⟩ := hall
   simp only [List.all_eq_true, decide_eq_true_eq, Bool.or_eq_true, Bool.not_eq_true',
     Bool.and_eq_true, beq_iff_eq, bne_iff_ne, ne_eq] at h8 h9 h10 h11 h12 h14 h16 h18 h21 h22
   obtain ⟨k, j, hp⟩ := results_spec he
