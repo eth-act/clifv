@@ -138,36 +138,27 @@ premises. Deferred, in order:
     canonical one of `LinkSys.X` agree only outside the caller's `F`), so `X.call` being a
     function of the caller's world needs **non-interference**: the VCode outcome (result
     registers, unmasked fields, memory outside `F` and those regions) does not depend on the
-    initial content of CLIF-uninitialised slot bytes and of the outgoing area (a returning CLIF
-    run never reads the former; the code writes the latter before a call reads it). Route: a
-    two-world version of the driver's memory relation (the CLIF memory related to a pair of
-    worlds that agree outside `F` and the uninitialised bytes), which needs `driver_correct` and
-    the M4 memory-rule proofs generic in the world, or an M6 invariant tracking agreement on the
-    bytes written since entry plus a CLIF fact that loads read only those. Then placement:
-    `Clif.run`'s bump allocator vs `sp`-relative slots — a slot-placement oracle in `Clif.Mem`
-    (`enterFunc` places a callee's slots at the compiled frame's addresses below the tracked
-    `sp`, restored at return; trusted-semantics change, `none` = today's bump allocator) makes
-    CLIF and Arm slot addresses equal, including escaping ones (`stack_addr` passed to callees,
-    the usual `cg_clif` pattern); a relocation lemma cannot cover those.
-    Findings (agent/link-widen, stage 2 attempt): non-interference cannot be obtained from the
-    existing layers. `CLIF` itself is fine (an uninitialised byte is `none`, `Mem.load` of it is
-    `stuck`, so a returning run reads only initialised bytes); the difference between the two
-    body-entry worlds is Arm garbage, and neither `backend_correct_world` nor M6 relates the
-    outcomes of two body-entry worlds. Both routes need a read footprint that only the M4 rule
-    proofs know (a VCode load's address is the CLIF load's, `VHolds` at `i64`): (A) a two-world
-    `driver_correct`/`iselSim_relW` (each `LowerRuleOk` re-proved for a pair of worlds agreeing
-    outside the not-yet-written fresh bytes `U`; `Sem` is fixed to `Arm.ArmState` worlds, so a
-    product-world instance of the existing driver is impossible); or (B) a footprint export of
-    the driver (every `csem` memory read of the constructed VCode run is outside `U` or written
-    earlier in the run) plus an M6 generalisation (`BodyEntryW (F ∪ U)`, `SameWorld` outside
-    `F ∪ U_t` with `U_t` shrinking at stores) and a clause of `backend_correct_world`: two
-    body-entry worlds agreeing outside `F ∪ U` give the same `us`, `outs`, unmasked fields and
-    memory outside `F ∪ U`. The base externs then need the matching premise (their `X.call`
-    does not depend on bytes not initialised in CLIF). `LinkSys.Thm` would carry the clause so
-    `progCall` can equate the canonical and the actual call of a slotted callee; with the
-    placement oracle `calleeSlots` then drops `h.slots = []`/`intBase = 0`. Route (B) is the
-    smaller one (one new driver invariant instead of re-proving every rule), but still touches
-    `driver_correct` and every memory rule's lowered sequence (their reads).
+    initial content of CLIF-uninitialised slot bytes and of the outgoing area. In progress
+    (agent/link-widen stage 2; e2e.md "Widening" item 2 has the route and the remaining steps).
+    Done: the memory rules' read footprint (`MemRefinesR`/`LowerInstOkR`/`MemRulesCorrectR`:
+    a memory rule's VCode reads only bytes its CLIF instruction reads) and the driver generic
+    in the world type (it can run on pairs of worlds). Findings: (a) the footprint cannot come
+    from the memory relation (`MemRelOk.store` must keep `MR` for every valid store, so `MR`
+    cannot say that a slot byte is uninitialised) nor from an instrumented VCode semantics
+    (its world is an `Arm.ArmState`; the fields the contracts leave free are the ones `MR` may
+    not depend on, `MRStable`), only from the memory rules' proofs, instantiated per CLIF step
+    with the guard `¬ (D₀ ∩ uninit(cm))`; (b) M6 need not change: the product run gives two
+    VCode runs with one outcome, each realised by its activation through the existing
+    per-function theorem. Remaining: the one-instruction lockstep of `csem` (straight forms via
+    `formOk_sound` at canonical registers, whose `checkStatic` `simp` decides per form; the
+    LL/SC loops' scratch defs; `try_call`'s extra defs, read from the callee's world in `csem`,
+    to become constants; a `tlsFlags` premise), the guarded per-step instances, the product
+    instance and the per-function non-interference clause of `backend_correct_world`, the
+    premise on `X` (base externs: `LinkSys.Ok`; program callees: the induction), the
+    slot-placement oracle in `Clif.Mem` (`enterFunc` places a callee's slots at the compiled
+    frame's addresses below the tracked `sp`, restored at return; trusted-semantics change,
+    `none` = today's bump allocator), then `calleeSlots` drops and the witness gains a called
+    function with a stack slot and one passing stack arguments.
   - indirect calls reaching functions the caller does not declare (vtables in `cg_clif` output:
     needs a linked environment that resolves addresses against the whole program, not the
     per-function program's declarations), recursion through a pointer (the caller's own
