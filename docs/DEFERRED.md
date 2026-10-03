@@ -120,12 +120,28 @@ premises. Deferred, in order:
   Witness done (`E2E.LinkWitness.backend_correct_program_witness`, `FV/E2E/NonVacuityLink.lean`;
   it found `raCall` unsatisfiable for every program with a call, now stated per call-site
   callee). Widened (agent/link-widen, e2e.md "Widening"): `try_call` between program functions
-  (normal returns). Remaining: widen the scope: directly self-recursive functions (`raCall`), callees
-  with stack slots
-  (slot-placement oracle or relocation invariance), stack-passed arguments (the callee's
-  outgoing area is caller garbage: needs it in `F` or a write-before-read argument),
-  `blr` call sites, float parameters; a depth-free machine
-  (monotonicity of `linkedCall` in the depth, needs base hooks preserving errors).
+  (normal returns); `sret` between program functions; stack-passed arguments from functions no
+  function of `P` calls. Remaining:
+  - **Callees with stack slots or an outgoing-argument area** (the frame regions of a callee
+    that belong to its world but lie in its caller's dead stack). Blocker: the callee's
+    body-entry world contains the caller's garbage there (the actual machine state and the
+    canonical one of `LinkSys.X` agree only outside the caller's `F`), so `X.call` being a
+    function of the caller's world needs **non-interference**: the VCode outcome (result
+    registers, unmasked fields, memory outside `F` and those regions) does not depend on the
+    initial content of CLIF-uninitialised slot bytes and of the outgoing area (a returning CLIF
+    run never reads the former; the code writes the latter before a call reads it). Route: a
+    two-world version of the driver's memory relation (the CLIF memory related to a pair of
+    worlds that agree outside `F` and the uninitialised bytes), which needs `driver_correct` and
+    the M4 memory-rule proofs generic in the world, or an M6 invariant tracking agreement on the
+    bytes written since entry plus a CLIF fact that loads read only those. Then placement:
+    `Clif.run`'s bump allocator vs `sp`-relative slots — a slot-placement oracle in `Clif.Mem`
+    (`enterFunc` places a callee's slots at the compiled frame's addresses below the tracked
+    `sp`, restored at return; trusted-semantics change, `none` = today's bump allocator) makes
+    CLIF and Arm slot addresses equal, including escaping ones (`stack_addr` passed to callees,
+    the usual `cg_clif` pattern); a relocation lemma cannot cover those.
+  - directly self-recursive functions (`raCall`), `blr` call sites, float parameters; a
+    depth-free machine (monotonicity of `linkedCall` in the depth, needs base hooks preserving
+    errors).
 - **Exact world of a call.** (superseded for program callees by agent/arm-link) `X.call` is a function of the arguments and the world and must give
   the exact def registers and world of the hooked callee; a compiled callee's theorem fixes only
   the low bits of its results and the live CLIF bytes. Either make `csem`'s call clause
