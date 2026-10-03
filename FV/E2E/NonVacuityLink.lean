@@ -3,18 +3,20 @@ import FV.E2E.LinkArm
 /-! # Non-vacuity of `backend_correct_program` (docs/contracts/e2e.md, "Non-vacuity")
 
 A concrete linked program for which every premise of `E2E.backend_correct_program` holds:
-`P = {f, g, h, s, k, r, r__fvself}`, parsed from the embedded source `src`, compiled by the
+`P = {f, g, h, s, k, r, r__fvself, q, v}`, parsed from the embedded source `src`, compiled by the
 backend's pipeline (`lowerFunction`, `prepare`, regalloc2's allocation `raOut` — the output of
 `lean-regalloc` on the pipeline's input for this file, rebuilt by `buildRFunc` and accepted by
 `checkAlloc` —, `lowerRFunc`, `emitFunc`, `layout`), loaded at `0x70000` (`f`), `0x20000`,
-`0x10000`, `0x30000`, `0x40000`, `0x50000`, `0x60000`. The entry `f` has a stack slot and an
-outgoing-argument area; it calls
+`0x10000`, `0x30000`, `0x40000`, `0x50000`, `0x60000`, `0x80000`, `0x90000`. The entry `f` has a
+stack slot and an outgoing-argument area; it calls
 
 * `s` with an `sret` pointer to its slot (`s` stores through it, returns the pointer in x0),
 * `k` with 9 arguments (the 9th on the stack, in `f`'s outgoing area),
 * `g` by a `try_call` with a result (`g` calls `h`: a non-leaf program callee),
 * the recursive `r` (`r n = 2 n`): its self-call is `cargo fv`'s alias `r__fvself`, linked as a
-  second function with `r`'s body whose self-call names `r` (the two call each other).
+  second function with `r`'s body whose self-call names `r` (the two call each other),
+* `v`, which calls `q` (`q n = n + 5`) through a pointer (`func_addr`, `call_indirect`: a `blr`
+  the linked machine resolves by the address in its register) and through the GOT (`blr`).
 
 * The per-function premises of `LinkSys.Ok` are executable checks (`chks`, `okB`, each with a
   soundness lemma: `siteOk_sound`, `tryB_sound`, `retsB_sound`, `outFitsB_sound`,
@@ -710,7 +712,8 @@ def Xb : ExtSem where
 /-- The base hooks: a call outside `P` continues at the next instruction; TLS keeps the state. -/
 def Hb : ArmHooks := ⟨fun _ s => Arm.w .PC (Arm.r .PC s + 4) s, fun _ _ s => s⟩
 
-/-- **The linked program** `{f, g, h, s, k, r, r__fvself}` with the addresses `F` outside the world. -/
+/-- **The linked program** `{f, g, h, s, k, r, r__fvself, q, v}` with the addresses `F` outside
+the world. -/
 def L (F : BitVec 64 → Prop) : LinkSys where
   P := P
   A := A
@@ -979,7 +982,7 @@ def frameB : Bool :=
   decide ((RAFrame.compute (A fF).vcp (A fF).rf).size = 32) &&
   decide ((slotLayout fF.slots).1 = [(0, 0)]) && decide (fF.slots.map (·.1) = [0])
 
-/-- The entry facts of `f` and its run: `f 41 = g (k (s 41, 0, …, 41)) + r 3` returns `185`. -/
+/-- The entry facts of `f` and its run: `f 41 = v (g (k (s 41, 0, …, 41)) + r 3)` returns `195`. -/
 def entryFactsB : Bool :=
   boundB && locB && frameB &&
   decide (P.func? fF.name = some fF) && decide (fF.entry? = some bF) &&
@@ -1178,13 +1181,14 @@ def callChainB : Bool :=
 theorem callChainB_true : callChainB = true := by native_decide
 
 /-- **Non-vacuity of `backend_correct_program`**: for the program
-`P = {f, g, h, s, k, r, r__fvself}` — `f` passes an `sret` pointer to its stack slot to `s`, a
-stack-passed argument to `k`, calls `g` by a `try_call` with a result and the recursive `r`;
-`g` calls `h` (a non-leaf callee); `r` recurses through its alias `r__fvself` (same body and
-signature) —, compiled by the backend's pipeline (regalloc2's allocation, accepted by
+`P = {f, g, h, s, k, r, r__fvself, q, v}` — `f` passes an `sret` pointer to its stack slot to
+`s`, a stack-passed argument to `k`, calls `g` by a `try_call` with a result, the recursive `r`
+and `v`; `g` calls `h` (a non-leaf callee); `r` recurses through its alias `r__fvself` (same body
+and signature); `v` calls `q` through a pointer (`call_indirect` of `func_addr`) and through the
+GOT —, compiled by the backend's pipeline (regalloc2's allocation, accepted by
 `checkAlloc`), every premise of the theorem holds — `L.Ok` and the entry premises of `f` on the
 argument `41` — and the theorem gives: the linked Arm machine refines `f`'s CLIF run, which
-returns `185`. -/
+returns `195`. -/
 theorem backend_correct_program_witness :
     (L F0).Ok ∧ fF ∈ (L F0).P.funcs ∧ fG ∈ (L F0).P.funcs ∧ fH ∈ (L F0).P.funcs ∧
     fQ ∈ (L F0).P.funcs ∧ fV ∈ (L F0).P.funcs ∧ (∃ info, (L F0).ProgSite fF info fV) ∧

@@ -445,10 +445,13 @@ noncomputable def linkEnv (P : Program) (base : Env) : Env where
     | some _ => some fun vals mem => match initState P n vals mem with
       | .ok s => runLim base P s | .trap c => .trapped c | .stuck m => .stuck m
     | none => base.extern n
-/-- no `call_indirect`, `try_call_indirect`, `return_call` (`call`, `try_call` allowed) -/
+/-- no `return_call` -/
 def LinkFree (g : Function) : Prop
+/-- no `call_indirect`, `try_call_indirect` -/
+def IndFree (g : Function) : Prop
 theorem runLoop_link {P : Program} {base : Env} {f : Function}
-    (hnd : (P.funcs.map (·.name)).Nodup) (hf : f ∈ P.funcs) (hP : ∀ g ∈ P.funcs, LinkFree g) :
+    (hnd : (P.funcs.map (·.name)).Nodup) (hf : f ∈ P.funcs) (hP : ∀ g ∈ P.funcs, LinkFree g)
+    (hIF : ∀ g ∈ P.funcs, IndFree g) :
     ∀ (N : Nat) (s : State), LInv P s →
       (∀ msg, runLoop base P N s ≠ .stuck msg) → runLoop base P N s ≠ .outOfFuel →
       ∃ m, runLoop (linkEnv P base) (P.only f) m s = runLoop base P N s
@@ -470,6 +473,7 @@ allocate `g`'s stack slots identically (`enterFunc` on the same memory, freed at
 structure Linkable (P : Clif.Program) : Prop where
   names : (P.funcs.map (·.name)).Nodup
   free : ∀ g ∈ P.funcs, Clif.LinkFree g
+  indFree : ∀ g ∈ P.funcs, Clif.IndFree g
 theorem armRefines_link (hP : Linkable P) (hf : f ∈ P.funcs) (hinv : Clif.LInv P cs)
     (h : ∀ m, ArmRefines fb base ra astep s (Clif.runLoop (Clif.linkEnv P baseEnv) (P.only f) m cs))
     (fuel : Nat) : ArmRefines fb base ra astep s (Clif.runLoop baseEnv P fuel cs)
@@ -551,41 +555,53 @@ theorem backend_correct_program (L : LinkSys) (hL : L.Ok) (hf : f ∈ L.P.funcs)
 
 (`backend_correct_program_returned`: returning runs, without `htr`.) The machine `L.mach M f`
 runs `f`'s code with the linked hooks of depth `M` (`LinkSys.hooks`): a `bl g` of a function of
-`P` enters `g`'s image (`enterAt`) and runs its code until its return (`linkedCall`); externs
-outside `P` and TLS keep the base hooks. Layers added for it:
+`P`, and a `blr` whose target register (as the machine decodes the instruction word at the pc,
+`blrTarget`) holds the link-time address of a function `g` of `P` (`symCallee`), enter `g`'s
+image (`enterAt`) and run its code until its return (`linkedCall`); other calls and TLS keep
+the base hooks. Layers added for it:
 
 * **M6 with kept addresses** (`regLevelCorrect_world`): `RL.G`, `frameWG` (frame, dead stack and
   addresses `G` the activation keeps: its callers' frames, the code), `StRel.gkeep`, the callee
-  contract `CalleeOkG` (required at states that keep `G`, at a `bl`/`blr` of the activation,
-  `CallPc`), `BodyEntryW` (body-entry world equal to the entry state only outside `F` and on the
-  entry `Args` registers), and the final world (unmasked fields, `G`, program) at a return.
+  contract `CalleeOkG` (required at states that keep `G`, for the allocated call that is the
+  instruction at the pc: `CallAt`, so a `blr`'s contract knows its target register),
+  `BodyEntryW` (body-entry world equal to the entry state only outside `F` and on the entry
+  `Args` registers), and the final world (unmasked fields, `G`, program) at a return.
   `regLevelCorrect_backend` is derived (`G := ⊥`).
 * **Per-function theorem with the final world** (`backend_correct_world`, `FV/E2E/LinkWorld.lean`,
   memory relation `RelW`: `Rel.holds`, the body's `sp`, no error): one VCode outcome realised by
   every Arm activation entered with the same body-entry world — the non-interference that makes
   `X.call` a function of the arguments and the caller's world (gap "exact world").
 * **CLIF with bounded callee runs** (`Clif.linkEnvN`, `Clif.runLoop_linkN`, `LinkClifN.lean`).
-* **The induction** (`LinkSys.thm`): `X M` (the external semantics at depth `M`) computes a
-  program call from a canonical state (`canon`: arguments in the callee's parameter registers,
-  the code image, return address `raStar`); `progCall` shows the linked machine's call from every
-  compatible caller state realises the callee's one VCode outcome (`ActRet`: results, world,
-  callers' frames kept — gap "frame locality"); `calleeOk`/`xCallsOk` discharge `CalleeOkG` and
-  `XCallsOk (linkEnvN …)` at depth `M` from depth `M - 1`.
+* **The induction** (`LinkSys.thm`): `X M g` (the external semantics of an activation of `g` at
+  depth `M`) computes a program call from a canonical state (`canon`: arguments in the callee's
+  parameter registers, the code image, return address `raStar`); `progCall` shows the linked
+  machine's call from every compatible caller state realises the callee's one VCode outcome
+  (`ActRet`: results, world, callers' frames kept — gap "frame locality"); `calleeOk`/`xCallsOk`/
+  `xCallsIndOk` discharge `CalleeOkG` and `XCallsOk`/`XCallsIndOk` of the activation's
+  environment `envOf M g` (`linkEnvN` without the functions of `P` that `g` does not declare:
+  the run of `P.only g` is the same, `step_envOf`) at depth `M` from depth `M - 1`.
 
-**Scope** (`LinkSys.Ok`): no `call_indirect`/`try_call_indirect`/`return_call`; every
-call site is a `bl`; parameters in distinct argument registers (width ≤ 64) or on the stack;
+**Scope** (`LinkSys.Ok`): no `return_call`; parameters in distinct argument registers
+(width ≤ 64) or on the stack;
 program callees (functions some function of `P` calls or declares) have no stack slots and no
 outgoing-argument area (`calleeSlots`: their frame is the allocator's; only functions no
 function of `P` calls pass arguments on the stack, `outFits`); program call sites pass integer
 register arguments in the callee's parameter registers and take results from x0.. (checked per
-site); declarations equal definitions; no function calls itself directly (`raCall`: the return
-address of a call is outside the code of the function it calls, stated per call site).
+site; for a `blr` site, for every declared function with as many register parameters,
+`blrRegs`); declarations equal definitions; no function calls itself directly (`raCall`, `raBlr`:
+the return address of a call is outside the code of the function it calls, stated per call
+site); a function with indirect calls (`call_indirect`, `try_call_indirect`) declares every name
+of `P` with a link-time address but its own and has none itself, the names have distinct
+addresses, the base externs keep the symbols (`indScope`, `indNoSym`), its indirect-call
+signatures and declared functions pass no `sret` and at most 8 register parameters (`indSig`),
+and with an outgoing-argument area in `P` the functions with an address have no slots
+(`addrSlots`).
 **Trusted / premises**: the
 link layout (bases, the code image `Img`/`imgMem`, return addresses outside callees' code,
 `raStar`, distinct symbol addresses), the base
-environment's contracts (calls outside `P`, `XCallsOk` of the base externs, TLS, the results of
-`try_call`s of base externs `baseTry`; when a function of `P` has an outgoing-argument area, the
-base externs create no allocation, `baseNoAlloc`), the stack
+environment's contracts (calls outside `P`, `XCallsOk` and `XCallsIndOk` of the base externs,
+TLS, the results of `try_call`s of base externs `baseTry`; when a function of `P` has an
+outgoing-argument area, the base externs create no allocation, `baseNoAlloc`), the stack
 budget `D` per call level, and the entry state (with `StackArgsAvoid L.Img` for an entry
 function with stack-passed parameters). The machine is depth-indexed (`L.mach M f` for
 runs of at most `M + 1` steps).
@@ -641,23 +657,64 @@ runs of at most `M + 1` steps).
    linked call to find the callee's return without the "return address outside its code"
    argument (`retStuck`): an M6 invariant that no intermediate state of an activation is at a
    post-call address with the entry `sp` (not done).
+5. *Indirect calls between program functions* (`call_indirect`, `try_call_indirect`; and the
+   `blr` of a call through the GOT). `Ok.noBlr` and `Linkable`'s indirect-call exclusion are
+   gone (`Clif.LinkFree` excludes only `return_call`; `Clif.IndFree` is separate, still required
+   by the per-function-contract theorem `backend_correct_linked`).
+   * CLIF: `runLoop_linkN` admits indirect calls. The per-function program resolves a callee
+     address through the declarations of `P.only f` (`Clif.callExternAt`), the whole program
+     through all functions and declarations; they agree when `f` declares every name with an
+     address but its own, the addresses are distinct and the base externs keep the symbols
+     (`Clif.IndScope`; invariant: the memory's symbols are `syms`). A call reaching a function
+     `h` of `P` is then atomic like a `call` (`atomic`: whole-program enter, per-function
+     `linkEnvN` run of `h`).
+   * M6: the callee contract was unsatisfiable for any hook that reads a `blr`'s target
+     register: `CallSoundCtlG` quantified over every register assignment of the call at every
+     call pc. It now holds for the allocated call whose instruction is at the pc
+     (`OperandsSoundCtlAtI`, `Pc := CallAt fa base`; `callAt_of_q`, `realizes_op_core` passes the
+     item's allocation) — a weaker premise of `regLevelCorrect_world`/`backend_correct_world`,
+     implied by `CalleeOk` (`CalleeOk.g`); `backend_correct_final` is unchanged.
+   * Arm: the linked hook of `blr` decodes the word at the pc with the Arm model's decoder
+     (`blrTarget`; `blrTarget_of` from the encoder round trip `Insn.decode_encode`) and runs the
+     function of `P` at that address (`symCallee`, `L.Xb.sym`). `X M g` is per activation: its
+     `blr` branch is `progX` for a function `h` that `g` declares (other than `g`) with as many
+     register parameters as the call has arguments, undefined for the other functions of `P`
+     (so the contract at a `blr` reaching `g` itself, whose return the linked call could not
+     find, is vacuous). The activation's CLIF environment is `envOf M g` (the run of `P.only g`
+     is unchanged, `runLoop_envOf`), so `XCallsIndOk` is needed only for declared callees
+     (`xCallsIndOk`; register-passed arguments, no `sret`: `indSig`). `progOsReg` (and the
+     `try_call` case of `calleeTryOk`) discharge the contract at `blr` sites, sharing
+     `progOsCore` with `bl` sites. The indirect calls of `g` never reach `g` itself: `g` has no
+     address (`indNoSym`, giving `TrapsExplicit`'s indirect clauses for callee runs).
+   New premises (`blrRegs`, `blrTry`, `raBlr`, `indScope`, `indNoSym`, `indSig`, `addrSlots`,
+   `baseXI`) are vacuous without indirect calls and `blr` sites, so implied by the former ones.
+   Not covered: indirect calls of a function to itself (recursion through a pointer), callers
+   that do not declare the functions they reach through pointers (`cg_clif` declares only
+   referenced functions; a vtable call reaches undeclared ones: needs a `linkEnv` that resolves
+   addresses whole-program), indirect callees with stack-passed or `sret` parameters.
 
 **Non-vacuity** (`FV/E2E/NonVacuityLink.lean`, namespace `E2E.LinkWitness`): the closed program
-`P = {f, g, h, s, k, r, r__fvself}` — the entry `f` (a stack slot, a 16-byte outgoing area)
+`P = {f, g, h, s, k, r, r__fvself, q, v}` — the entry `f` (a stack slot, a 16-byte outgoing area)
 passes an `sret` pointer to its slot to `s` (which stores through it and returns the pointer),
 calls `k` with 9 arguments (the 9th on the stack), calls `g` by a `try_call` with a result
-(`block1(ret0)`, handler `tag0: block2(exn0)`) and calls the recursive `r` (`r 3 = 6`, through
-its alias `r__fvself`); `g` calls `h` (a non-leaf program callee; `g` keeps its argument
-in x19 across the call); `colocated`, `system_v` — parsed from an embedded source and
+(`block1(ret0)`, handler `tag0: block2(exn0)`), calls the recursive `r` (`r 3 = 6`, through
+its alias `r__fvself`) and `v`; `g` calls `h` (a non-leaf program callee; `g` keeps its argument
+in x19 across the call); `v` takes `q`'s address (`func_addr`), calls it by `call_indirect`
+and calls `q` again through the GOT (a non-`colocated` declaration: `adrp`/`ldr :got:`/`blr`);
+`system_v` — parsed from an embedded source and
 compiled by the pipeline (`lowerFunction`, `prepare`, the `lean-regalloc` output for this file
 embedded as JSON and rebuilt by `parseRAOut`/`buildRFunc`, `checkAlloc`, `lowerRFunc`,
-`emitFunc`, `layout`), loaded at `0x70000` (`f`) and `0x10000`…`0x60000`, closed base
-environment (no extern outside `P`, no TLS), depth `M0 = 100`:
+`emitFunc`, `layout`), loaded at `0x70000` (`f`) and `0x10000`…`0x90000`, closed base
+environment (no extern outside `P`, no TLS), the CLIF image's symbols: `q` at its base
+`0x80000` (`symsW`), depth `M0 = 100`:
 
 ```lean
 theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
 theorem backend_correct_program_witness :
     (L F0).Ok ∧ fF ∈ (L F0).P.funcs ∧ fG ∈ (L F0).P.funcs ∧ fH ∈ (L F0).P.funcs ∧
+    fQ ∈ (L F0).P.funcs ∧ fV ∈ (L F0).P.funcs ∧ (∃ info, (L F0).ProgSite fF info fV) ∧
+    ¬ Clif.IndFree fV ∧ (∃ info, (A fV).vcp.CallSite info ∧ ∀ n, info.dest ≠ .sym n) ∧
+    DeclN fV fQ.name ∧ (L F0).syms fQ.name = some 0x80000 ∧
     fS ∈ (L F0).P.funcs ∧ fK ∈ (L F0).P.funcs ∧
     (∃ info ti, (A fF).vcp.TrySite info ti ∧ (L F0).ProgSite fF info fG) ∧
     (∃ info, (L F0).ProgSite fG info fH) ∧
@@ -667,17 +724,19 @@ theorem backend_correct_program_witness :
     fR ∈ (L F0).P.funcs ∧ fRS ∈ (L F0).P.funcs ∧ (∃ info, (L F0).ProgSite fF info fR) ∧
     (∃ info, (L F0).ProgSite fR info fRS) ∧ (∃ info, (L F0).ProgSite fRS info fR) ∧
     fRS.name = fR.name ++ "__fvself" ∧ fRS.blocks = fR.blocks ∧ fRS.sig = fR.sig ∧
-    run0 = .returned [⟨.i64, 185#64⟩] (retMem run0) ∧
+    run0 = .returned [⟨.i64, 195#64⟩] (retMem run0) ∧
     ArmRefines (A fF).fb (A fF).base 8 ((L F0).mach M0 fF) s0 run0
 ```
 
 Every per-function premise of `LinkSys.Ok` (`compiled`, `covered`, `tryRets`, `outFits`,
-`argRegs`, `sretRets`, `calleeSlots`, `callRegs`, `noBlr`, `declSig`, `entryRegs`, `fits`,
-`raCall`, `depth`, `subset`, `linkable`, the image `imgCode`) is an executable check with a
-soundness lemma (`chks`/`Facts`, `siteOk_sound`, `tryB_sound`, `retsB_sound`, `outFitsB_sound`,
-`entryB_sound`, `raCallB_sound`, `linkFreeB_sound`, `imgCode_of`), decided by `native_decide`
-(`okB_true`); `symInj`, `symOk` and the base contracts (`baseOs`, `basePc`, `baseExt`, `baseX`,
-`baseTls`, `baseTry`, `baseNoAlloc`) are proven (vacuous or immediate for the closed
+`argRegs`, `sretRets`, `calleeSlots`, `callRegs`, `blrRegs`, `blrTry`, `raBlr`, `indSig`,
+`indScope`'s declarations, `indNoSym`, `addrSlots`, `declSig`, `entryRegs`, `fits`,
+`raCall`, `depth`, `subset`, `free`, the image `imgCode`) is an executable check with a
+soundness lemma (`chks`/`Facts`, `siteOk_sound`, `blrOk_sound`, `tryB_sound`, `tryB_reg`,
+`retsB_sound`, `outFitsB_sound`, `entryB_sound`, `raCallB_sound`, `linkFreeB_sound`,
+`indFacts`, `imgCode_of`), decided by `native_decide` (`okB_true`); `symInj`, `symOk` and the
+base contracts (`baseOs`, `basePc`, `baseExt`, `baseX`, `baseXI`, `baseTls`, `baseTry`,
+`baseNoAlloc`, the base's symbol keeping) are proven (vacuous or immediate for the closed
 environment). The second theorem discharges the entry premises too (`AbiEntry`, `StackAvail`,
 `hF`, `hgfree`, `himg`, `BodyEntry`, `ArgsIn`, `ClifEntry` with `f`'s slot at its frame address
 `sp0 - 32`, `StackArgsAvoid`, `Rel.holds` (the slot's allocation outside `F0`, `SlotRel`,
@@ -742,7 +801,7 @@ body's `sp`"):
 | `backend_correct_opt_proven` | `hC`, `hTls`, `hX`, `hsym` (for the optimised function; `try_call` and `call_indirect` excluded by premises) | `final_contracts_witness` at `f := Opt.optimize f cfg` |
 | `backend_correct_legal` | `hC`, `hCT`, `hTls`, `hX`, `hXI`, `hsym` (for the legalised `g`, environment `Clif.Rust.env`) | `final_contracts_witness` at `f := g`, `env := Clif.Rust.env`, for functions without indirect calls whose externs are the diverging panic entry points (they never return, so `hnoop` holds) |
 | `backend_correct_linked` | `hC`, `hCT`, `hTls`, `hX` (environment `Clif.linkEnv P base`); `hXI` discharged by `Linkable` | `final_contracts_witness` at `env := Clif.linkEnv P base`, when the program callees and the base externs return nothing and keep the memory |
-| `backend_correct_program` | `L.Ok` (program, compilation, layout, base environment) and the entry premises | `E2E.LinkWitness.backend_correct_program_witness` (`FV/E2E/NonVacuityLink.lean`): `P = {f, g, h, s, k}` compiled by the pipeline (a `try_call` f→g, an `sret` call f→s into `f`'s stack slot, a stack-passed argument f→k, a non-leaf callee g→h, recursion r↔r__fvself), all premises discharged, `f 41` returns `185` |
+| `backend_correct_program` | `L.Ok` (program, compilation, layout, base environment) and the entry premises | `E2E.LinkWitness.backend_correct_program_witness` (`FV/E2E/NonVacuityLink.lean`): `P = {f, g, h, s, k, r, r__fvself, q, v}` compiled by the pipeline (a `try_call` f→g, an `sret` call f→s into `f`'s stack slot, a stack-passed argument f→k, a non-leaf callee g→h, recursion r↔r__fvself, `call_indirect` of `func_addr` and a GOT call v→q), all premises discharged, `f 41` returns `195` |
 
 **Callees that return values** (`idX sym tp idf`: a callee `n` with `idf n` returns its first
 argument — a `bl n` or a `blr` to `sym n 0` —, every other callee returns nothing; the hooks are

@@ -121,7 +121,11 @@ premises. Deferred, in order:
   it found `raCall` unsatisfiable for every program with a call, now stated per call-site
   callee). Widened (agent/link-widen, e2e.md "Widening"): `try_call` between program functions
   (normal returns); `sret` between program functions; stack-passed arguments from functions no
-  function of `P` calls. Remaining:
+  function of `P` calls; direct self-recursion through the `cargo fv` alias (two copies);
+  indirect calls (`call_indirect`, `try_call_indirect`, GOT `blr`) between program functions
+  (the caller declares every function with an address, has none itself; register-only,
+  non-`sret` indirect callees; the M6 callee contract now holds for the call instruction at the
+  pc, `CallAt`). Remaining:
   - **Callees with stack slots or an outgoing-argument area** (the frame regions of a callee
     that belong to its world but lie in its caller's dead stack). Blocker: the callee's
     body-entry world contains the caller's garbage there (the actual machine state and the
@@ -139,7 +143,11 @@ premises. Deferred, in order:
     `sp`, restored at return; trusted-semantics change, `none` = today's bump allocator) makes
     CLIF and Arm slot addresses equal, including escaping ones (`stack_addr` passed to callees,
     the usual `cg_clif` pattern); a relocation lemma cannot cover those.
-  - directly self-recursive functions in one copy (handled through the `cargo fv` alias as two copies; one copy needs an M6 return-detection invariant for `linkedCall`), `blr` call sites, float parameters; a
+  - indirect calls reaching functions the caller does not declare (vtables in `cg_clif` output:
+    needs a linked environment that resolves addresses against the whole program, not the
+    per-function program's declarations), recursion through a pointer (the caller's own
+    address), indirect callees with stack-passed or `sret` parameters.
+  - directly self-recursive functions in one copy (handled through the `cargo fv` alias as two copies; one copy needs an M6 return-detection invariant for `linkedCall`), float parameters; a
     depth-free machine (monotonicity of `linkedCall` in the depth, needs base hooks preserving
     errors).
 - **Exact world of a call.** (superseded for program callees by agent/arm-link) `X.call` is a function of the arguments and the world and must give
