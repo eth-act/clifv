@@ -73,8 +73,13 @@ theorem PrefixHold.append {vals : List Clif.Val} {xs : List CV} (h : PrefixHold 
   have hlt : j < xs.length := Nat.lt_of_lt_of_le (List.getElem?_eq_some_iff.mp hj).1 h.1
   rwa [List.getElem?_append_left hlt] at hx
 
+/-- Relation between the CLIF memory (with the activation's slot bases) and a VCode world of
+type `W` (the driver is generic in the world: agent/link-widen, stage 2, runs it on pairs of
+worlds). -/
+abbrev MemRelTW (W : Type) := List (Clif.SlotId × Nat) → Clif.Mem → W → Prop
+
 /-- Relation between the CLIF memory (with the activation's slot bases) and the VCode world. -/
-abbrev MemRelT := List (Clif.SlotId × Nat) → Clif.Mem → Arm.ArmState → Prop
+abbrev MemRelT := MemRelTW Arm.ArmState
 
 /-- Every defined CLIF value `x` is held by vreg `x` (`buildCtx`: value `x` has vreg `x`). -/
 def ValsHeld (fr : Clif.Frame) (ρ : Nat → CV) : Prop :=
@@ -592,12 +597,13 @@ def UsesOk (st : LState) (fr : Clif.Frame) (ms : List MInst) : Prop :=
 
 /-- **`lower` on a non-terminator** (results `results`; lowering state `st` → `st'`, emitted
 code `ms`). -/
-structure LowerInstOk (isem : Sem) (MR : MemRelT) (env : Clif.Env) (p : Clif.Program)
+structure LowerInstOk {W : Type} (isem : ISem CV W) (MR : MemRelTW W) (env : Clif.Env)
+    (p : Clif.Program)
     (ctx : Ctx) (inst : Clif.Inst) (results : List Nat) (st : LState) (rss : List (List Reg))
     (st' : LState) (ms : List MInst) : Prop where
   mono : st.nextVreg ≤ st'.nextVreg
   defs : ∀ m ∈ ms, ∀ d ∈ vdefs m, st.nextVreg ≤ d ∧ d < st'.nextVreg
-  run : ∀ (fr : Clif.Frame) (cm : Clif.Mem) (ρ : Nat → CV) (w : Arm.ArmState),
+  run : ∀ (fr : Clif.Frame) (cm : Clif.Mem) (ρ : Nat → CV) (w : W),
     fr.func = ctx.func → ValsHeld fr ρ → DFGCons ctx fr → MR fr.slots cm w →
     match instOutcome env p fr cm inst with
     | .ok (vals, cm') => UsesOk st fr ms ∧ ∃ ρ' w', seqRun isem ms ρ w = some (.fall ρ' w') ∧
@@ -617,11 +623,12 @@ def branchIdx (fr : Clif.Frame) : Clif.Terminator → Clif.Res Nat
   | _ => .stuck "not a branch"
 
 /-- **`lower` on `return`/`trap`, `lower_branch` on a branch** (terminator `t`). -/
-structure LowerTermOk (isem : Sem) (MR : MemRelT) (ctx : Ctx) (t : Clif.Terminator)
+structure LowerTermOk {W : Type} (isem : ISem CV W) (MR : MemRelTW W) (ctx : Ctx)
+    (t : Clif.Terminator)
     (targets : List Label) (st st' : LState) (ms : List MInst) : Prop where
   mono : st.nextVreg ≤ st'.nextVreg
   defs : ∀ m ∈ ms, ∀ d ∈ vdefs m, st.nextVreg ≤ d ∧ d < st'.nextVreg
-  run : ∀ (fr : Clif.Frame) (cm : Clif.Mem) (ρ : Nat → CV) (w : Arm.ArmState),
+  run : ∀ (fr : Clif.Frame) (cm : Clif.Mem) (ρ : Nat → CV) (w : W),
     fr.func = ctx.func → ValsHeld fr ρ → DFGCons ctx fr → MR fr.slots cm w →
     match t with
     | .ret xs => ∀ vals, fr.getMany xs = .ok vals → UsesOk st fr ms ∧
@@ -1647,14 +1654,15 @@ defs are among the return and payload vregs, the instructions before it define f
 with the last call replaced by the `tryCall`, a normal return of the callee runs to the
 `tryCall` with outcome `goto info.handlers.length` (the normal-return successor), the return
 vregs holding the results. -/
-structure LowerTryOk (isem : Sem) (MR : MemRelT) (env : Clif.Env) (p : Clif.Program) (ctx : Ctx)
+structure LowerTryOk {W : Type} (isem : ISem CV W) (MR : MemRelTW W) (env : Clif.Env)
+    (p : Clif.Program) (ctx : Ctx)
     (ci : Clif.Inst) (info : TryInfo) (st st' : LState) (ms : List MInst) :
     Prop where
   mono : st.nextVreg ≤ st'.nextVreg
   shape : ∃ pre ci, ms = pre ++ [.call ci] ∧
     (∀ m ∈ pre, ∀ d ∈ vdefs m, st.nextVreg ≤ d ∧ d < st'.nextVreg) ∧
     ∀ d ∈ vdefs (.call ci), Reg.vreg d .int ∈ tryDefRegs ctx
-  run : ∀ (fr : Clif.Frame) (cm : Clif.Mem) (ρ : Nat → CV) (w : Arm.ArmState),
+  run : ∀ (fr : Clif.Frame) (cm : Clif.Mem) (ρ : Nat → CV) (w : W),
     fr.func = ctx.func → ValsHeld fr ρ → DFGCons ctx fr → MR fr.slots cm w →
     match instOutcome env p fr cm ci with
     | .ok (rvals, cm') => UsesOk st fr ms ∧ ∃ k i ops ρ₁ w₁ outs w₂,

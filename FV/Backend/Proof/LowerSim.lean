@@ -30,35 +30,36 @@ def Held (gn : Nat → Nat) (A : List Clif.ValueId) (ρ : Nat → CV) (fr : Clif
 
 /-- The simulation relation. -/
 def Match (f : Clif.Function) (ctx : Ctx) (R : Reg → Reg) (gn : Nat → Nat) (bl : List BLow)
-    (A : Nat → Nat → List Clif.ValueId) (MR : MemRelT) (slots : List (Clif.SlotId × Nat))
-    (s : Clif.State) (vs : VState CV Arm.ArmState) : Prop :=
+    (A : Nat → Nat → List Clif.ValueId) {W : Type} (MR : MemRelTW W)
+    (slots : List (Clif.SlotId × Nat)) (s : Clif.State) (vs : VState CV W) : Prop :=
   s.callers = [] ∧ s.frame.func = f ∧ s.frame.slots = slots ∧ MR slots s.mem vs.w ∧
   ∃ B j, f.blocks[vs.b]? = some B ∧ s.frame.term = B.term ∧ j ≤ B.body.length ∧
     s.frame.body = B.body.drop j ∧ vs.k = pos f R bl vs.b j ∧
     Held gn (A vs.b j) vs.ρ s.frame ∧ DFGCons ctx (restrict s.frame (A vs.b j))
 
 /-- From `vs`, the VCode run reaches an instruction that halts with trap code `c`. -/
-def VTrapFrom (vc : VCode) (sem : Sem) (vs : VState CV Arm.ArmState) (c : Clif.TrapCode) : Prop :=
+def VTrapFrom {W : Type} (vc : VCode) (sem : ISem CV W) (vs : VState CV W) (c : Clif.TrapCode) :
+    Prop :=
   ∃ b k ρ w vb i ops outs w', Star (VStep vc sem) (.run vs) (.run ⟨b, k, ρ, w⟩) ∧
     vc.blocks[b]? = some vb ∧ vb.insts[k]? = some i ∧ i.operands = .ok ops ∧
     sem i (vuses ops ρ) w = some (outs, w', .halt) ∧ trapCode? i = some c
 
 /-- From `vs`, the VCode run executes `rets us` with use values `vals`, final world `w`. -/
-def VRetFrom (vc : VCode) (sem : Sem) (vs : VState CV Arm.ArmState) (us : List (Reg × Reg))
-    (vals : List CV) (w : Arm.ArmState) : Prop :=
+def VRetFrom {W : Type} (vc : VCode) (sem : ISem CV W) (vs : VState CV W) (us : List (Reg × Reg))
+    (vals : List CV) (w : W) : Prop :=
   ∃ b k ρ w₁ vb ops outs, Star (VStep vc sem) (.run vs) (.run ⟨b, k, ρ, w₁⟩) ∧
     vc.blocks[b]? = some vb ∧ vb.insts[k]? = some (.rets us) ∧
     (MInst.rets us).operands = .ok ops ∧ vals = vuses ops ρ ∧
     sem (.rets us) vals w₁ = some (outs, w, .ret)
 
-theorem VTrapFrom.prefix {vc : VCode} {sem : Sem} {vs vs' : VState CV Arm.ArmState}
+theorem VTrapFrom.prefix {W : Type} {vc : VCode} {sem : ISem CV W} {vs vs' : VState CV W}
     {c : Clif.TrapCode} (h : Star (VStep vc sem) (.run vs) (.run vs')) (h' : VTrapFrom vc sem vs' c) :
     VTrapFrom vc sem vs c := by
   obtain ⟨b, k, ρ, w, vb, i, ops, outs, w', hs, h1⟩ := h'
   exact ⟨b, k, ρ, w, vb, i, ops, outs, w', h.trans hs, h1⟩
 
-theorem VRetFrom.prefix {vc : VCode} {sem : Sem} {vs vs' : VState CV Arm.ArmState}
-    {us : List (Reg × Reg)} {vals : List CV} {w : Arm.ArmState}
+theorem VRetFrom.prefix {W : Type} {vc : VCode} {sem : ISem CV W} {vs vs' : VState CV W}
+    {us : List (Reg × Reg)} {vals : List CV} {w : W}
     (h : Star (VStep vc sem) (.run vs) (.run vs')) (h' : VRetFrom vc sem vs' us vals w) :
     VRetFrom vc sem vs us vals w := by
   obtain ⟨b, k, ρ, w₁, vb, ops, outs, hs, h1⟩ := h'
@@ -149,11 +150,11 @@ end
 certificate, the driver-level semantics facts, M4's contracts, extern-only calls, and a
 successful `VCode.cfg`. -/
 structure DriverHyp (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) (R : Reg → Reg)
-    (gn : Nat → Nat) (bl : List BLow) (A : Nat → Nat → List Clif.ValueId) (sem : Sem)
-    (MR : MemRelT) (env : Clif.Env) (p : Clif.Program) : Prop where
+    (gn : Nat → Nat) (bl : List BLow) (A : Nat → Nat → List Clif.ValueId) {W : Type}
+    (sem : ISem CV W) (MR : MemRelTW W) (env : Clif.Env) (p : Clif.Program) : Prop where
   shape : LowerShape f vc ctx st0 R gn bl
   cert : Cert f ctx st0 gn bl A
-  dsem : DriverSem sem
+  dsem : DriverSemG sem
   /-- M4: `lower` on statements (`instCalls_of_rules`) -/
   insts : InstCalls f sem MR env p
   /-- M4 (open): terminator calls -/
@@ -188,8 +189,9 @@ structure DriverHyp (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) 
 
 section
 variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg → Reg}
-  {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId} {sem : Sem}
-  {MR : MemRelT} {env : Clif.Env} {p : Clif.Program} {slots : List (Clif.SlotId × Nat)}
+  {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId} {W : Type}
+  {sem : ISem CV W} {MR : MemRelTW W} {env : Clif.Env} {p : Clif.Program}
+  {slots : List (Clif.SlotId × Nat)}
 
 theorem DriverHyp.blow (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) {bi : Nat}
     {B : Clif.Block} (hB : f.blocks[bi]? = some B) : ∃ L, bl[bi]? = some L := by
@@ -198,7 +200,7 @@ theorem DriverHyp.blow (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) {bi :
 
 /-- **Statement step.** -/
 theorem stmt_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
-    {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : Arm.ArmState}
+    {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : W}
     (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩)
     {stm : Clif.Stmt} {rest : List Clif.Stmt} (hbody : s.frame.body = stm :: rest)
     (hind : ∀ sig callee args, stm.inst = .callIndirect sig callee args → ∀ cv,
@@ -490,7 +492,7 @@ theorem enter_match (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     (hxl : xs.length = bc.args.length)
     (hxv : ∀ (m : Nat) a v x, bc.args[m]? = some a → s.frame.regs a = some v → xs[m]? = some x →
       VHolds v (ρ₂ x))
-    {w₂ : Arm.ArmState} (hmr : MR slots s.mem w₂) :
+    {w₂ : W} (hmr : MR slots s.mem w₂) :
     ∃ TB, f.blocks[tl]? = some TB ∧ bc.args.length = TB.params.length ∧ tl ≠ 0 ∧
       Match f ctx R gn bl A MR slots { s with frame := fr2 }
         ⟨tl, 0, parCopyEnv ρ₂ (TB.params.map (·.1)) xs, w₂⟩ := by
@@ -583,7 +585,7 @@ theorem enter_match_br (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     (hcons : DFGCons ctx (restrict s.frame (A b B.body.length)))
     {bc : Clif.BlockCall} (hbc : bc ∈ dests B.term) {tl : Nat} (htl : blockIdx? f bc.block = some tl)
     {fr2 : Clif.Frame} (hent : Clif.enterBlock s.frame bc = .ok fr2) {ρ₂ : Nat → CV}
-    (hρ₂ : ∀ x ∈ A b B.body.length, ρ₂ (gn x) = ρ (gn x)) {w₂ : Arm.ArmState}
+    (hρ₂ : ∀ x ∈ A b B.body.length, ρ₂ (gn x) = ρ (gn x)) {w₂ : W}
     (hmr : MR slots s.mem w₂) :
     ∃ TB, f.blocks[tl]? = some TB ∧ bc.args.length = TB.params.length ∧ tl ≠ 0 ∧
       Match f ctx R gn bl A MR slots { s with frame := fr2 }
@@ -779,7 +781,7 @@ theorem getMany_append_of {fr : Clif.Frame} {ys : List Clif.ValueId}
 
 /-- **Terminator step**: returns, traps, branches (a `try_call`: `term_step_try`). -/
 theorem term_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
-    {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : Arm.ArmState}
+    {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : W}
     (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩) (hbody : s.frame.body = [])
     (hnt : s.frame.term.isTry = false) :
     (∀ s', Clif.step env p s = .next s' →
@@ -1269,7 +1271,7 @@ matched by the terminator's code, ending in the `tryCall` (which continues at th
 edge block), and the edge block's `jump` (the parallel copy of the renamed arguments). `hind`:
 an indirect callee is no function of `p`. -/
 theorem term_step_try (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
-    {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : Arm.ArmState}
+    {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : W}
     (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩) (hbody : s.frame.body = [])
     {et : Clif.ExnTable} (hT : IsTryWith s.frame.term et)
     (hind : ∀ callee args, s.frame.term = .tryCallIndirect callee args et → ∀ cv,
@@ -1658,6 +1660,15 @@ theorem vdefUpd_argOps {ns : List (Nat × Reg)} {outs : List CV} {ρ : Nat → C
       simp [argOps]
     rw [this]; exact hnd
 
+end
+
+/-! ## The entry (Arm worlds) -/
+
+section
+variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg → Reg}
+  {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId} {sem : Sem}
+  {MR : MemRelT} {env : Clif.Env} {p : Clif.Program} {slots : List (Clif.SlotId × Nat)}
+
 /-- The arguments in the body-entry world `w` as the entry code reads them (the driver's entry
 premise): a register-passed parameter in its argument register (low bits), a stack-passed one
 in the caller's outgoing area at `fp + 16 + off` (above the saved fp/lr pair), whose bytes avoid
@@ -1802,7 +1813,7 @@ theorem mem_entryNs {E : List (((Nat × Clif.Ty) × ArgLoc) × Nat)} {q : ((Nat 
 
 /-- **Entry**: the entry block's `Args` defines the register-passed parameters from their
 argument registers, then the loads the stack-passed ones from the caller's outgoing area. -/
-theorem entry_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
+theorem entry_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : DriverSem sem)
     {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
     (hMem : MemRefines F sb syms sem) (hMR : MRStable F MR)
     {cs : Clif.State} {B0 : Clif.Block} (hB0 : f.blocks[0]? = some B0)
@@ -1898,7 +1909,7 @@ theorem entry_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     intro o ho
     obtain ⟨q', -, hq'⟩ := List.mem_map.mp ho
     rw [← hq']; simp [Operand.isUse]
-  have hsem := H.dsem.args (argPairs ns) w₀
+  have hsem := hds.args (argPairs ns) w₀
   rw [← hvu] at hsem
   have hlen : ((argPairs ns).map fun d => regVal w₀ d.2).length =
       ((argOps ns).toArray.toList.filter Operand.isDef).length := by
@@ -2031,19 +2042,20 @@ theorem stmt_not_done {env : Clif.Env} {p : Clif.Program} {s : Clif.State} {st :
 
 section
 variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg → Reg}
-  {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId} {sem : Sem}
-  {MR : MemRelT} {env : Clif.Env} {p : Clif.Program} {slots : List (Clif.SlotId × Nat)}
+  {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId} {W : Type}
+  {sem : ISem CV W} {MR : MemRelTW W} {env : Clif.Env} {p : Clif.Program}
+  {slots : List (Clif.SlotId × Nat)}
 
 /-- What a VCode run from `vs` does when the CLIF run from the matching state ends. -/
-def RunOk (vc : VCode) (sem : Sem) (MR : MemRelT) (slots : List (Clif.SlotId × Nat))
-    (vs : VState CV Arm.ArmState) : Clif.Outcome → Prop
+def RunOk (vc : VCode) (sem : ISem CV W) (MR : MemRelTW W) (slots : List (Clif.SlotId × Nat))
+    (vs : VState CV W) : Clif.Outcome → Prop
   | .returned vals cm => ∃ us outs w cm0, VRetFrom vc sem vs us outs w ∧
       us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
       PrefixHold vals outs ∧ MR slots cm0 w ∧ cm = cm0.free (slots.map (·.2))
   | .trapped c => VTrapFrom vc sem vs c
   | .stuck _ | .outOfFuel => True
 
-theorem RunOk.prefix {vs vs' : VState CV Arm.ArmState} {o : Clif.Outcome}
+theorem RunOk.prefix {vs vs' : VState CV W} {o : Clif.Outcome}
     (h : Star (VStep vc sem) (.run vs) (.run vs')) (h' : RunOk vc sem MR slots vs' o) :
     RunOk vc sem MR slots vs o := by
   cases o with
@@ -2080,7 +2092,7 @@ structure RunPrem (env : Clif.Env) (p : Clif.Program) (f : Clif.Function) (cs : 
 (under the run premises `RunPrem`). -/
 theorem sim_run (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) {cs : Clif.State}
     (hP : RunPrem env p f cs) :
-    ∀ fuel s (vs : VState CV Arm.ArmState), Reach env p cs s →
+    ∀ fuel s (vs : VState CV W), Reach env p cs s →
       Match f ctx R gn bl A MR slots s vs → RunOk vc sem MR slots vs (Clif.runLoop env p fuel s) := by
   intro fuel
   induction fuel using Nat.strongRecOn with
@@ -2162,11 +2174,18 @@ theorem sim_run (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) {cs : Clif.S
       | trapped c => exact S2 c hs (hP.stmt s c st rest hr hs hbody)
       | stuck => trivial
 
+end
+
+section
+variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg → Reg}
+  {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId} {sem : Sem}
+  {MR : MemRelT} {env : Clif.Env} {p : Clif.Program} {slots : List (Clif.SlotId × Nat)}
+
 /-- **The driver lemma (CLIF → VCode).** A CLIF run of `f` from an entry state (parameters
 bound to `args`, which the VCode world holds in x0..) is realised by the VCode run from the
 entry: returns through `rets` with the returned values held, and memory related; explicit traps
 reach an instruction halting with the same code (a `try_call`: its normal return). -/
-theorem driver_correct (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
+theorem driver_correct (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : DriverSem sem)
     {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
     (hMem : MemRefines F sb syms sem) (hMR : MRStable F MR)
     {cs : Clif.State} {B0 : Clif.Block} (hB0 : f.blocks[0]? = some B0)
@@ -2179,7 +2198,7 @@ theorem driver_correct (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     (hargs : ArgsAtEntry F f.sig args w₀)
     (hP : RunPrem env p f cs) (fuel : Nat) :
     RunOk vc sem MR slots ⟨0, 0, ρ₀, w₀⟩ (Clif.runLoop env p fuel cs) := by
-  obtain ⟨k, ρ₁, w₁, hstar, hm⟩ := entry_step H hMem hMR hB0 hcall hfunc hslots hbody hterm hregs
+  obtain ⟨k, ρ₁, w₁, hstar, hm⟩ := entry_step H hds hMem hMR hB0 hcall hfunc hslots hbody hterm hregs
     hty hsig hmr hargs (ρ₀ := ρ₀)
   exact RunOk.prefix hstar (sim_run H hP fuel cs _ (.refl _) hm)
 

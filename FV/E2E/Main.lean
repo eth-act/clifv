@@ -158,7 +158,7 @@ theorem iselSim_of_driver {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LS
     {R : Reg → Reg} {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId}
     {sem : Sem} {Γ : Rel} {env : Clif.Env} {p : Clif.Program}
     (H : DriverHyp f vc ctx st0 R gn bl A sem (fun sl cm w => Γ.holds f sl cm w) env p)
-    {sb : Nat} (hMem : MemRefines Γ.F sb Γ.syms sem) :
+    (hds : DriverSem sem) {sb : Nat} (hMem : MemRefines Γ.F sb Γ.syms sem) :
     IselSim sem Γ env p f vc := by
   intro args cs w₀ ρ₀ hce hrel hargs htr fuel
   obtain ⟨B0, hent, hbody, hterm, hty, hregs⟩ := hce.entry
@@ -174,7 +174,7 @@ theorem iselSim_of_driver {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LS
         htr.indirect s st rest sig callee args hr hb hi ⟨B, hf ▸ hB, hst⟩,
       fun s callee args et hr hb hT ⟨B, hB, e⟩ =>
         htr.tryIndirect s callee args et hr hb hT ⟨B, hf ▸ hB, e⟩⟩
-  have hrun := driver_correct H hMem (mrStable_holds Γ f) hB0 hce.callers hce.func rfl hbody hterm
+  have hrun := driver_correct H hds hMem (mrStable_holds Γ f) hB0 hce.callers hce.func rfl hbody hterm
     hregs hty.symm hce.sig (ρ₀ := ρ₀) hrel hargs hP fuel
   refine ⟨fun vals cm h => ?_, fun c h => ?_⟩
   · rw [h] at hrun
@@ -294,14 +294,14 @@ theorem backend_correct {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp
     ArmRefines fb base ra astep s (Clif.runLoop env p fuel cs) := by
   obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr⟩ := loweringObligations_of_check hc.lowerOk
   refine backend_correct_of_layers (fun s' => iselSim_of_driver (ctx := ctx) (st0 := st0) (R := R)
-    (gn := gn) (bl := bl) (A := A) ?_ (hmem s')) (fun s' => prepareCorrect_of_check (hds s') hc.prepOk)
+    (gn := gn) (bl := bl) (A := A) ?_ (hds s') (hmem s')) (fun s' => prepareCorrect_of_check (hds s') hc.prepOk)
     hM6 hent hres hbe
     (argsAtEntry_body (lowerRFunc_frame hc.alloc) (entryRegs_of_check hc.lowerOk) hbe hargs hargF)
     hcs hrel htr fuel
   exact {
     shape := hshape
     cert := hcert
-    dsem := hds s'
+    dsem := (hds s').toDriverSemG
     insts := instCalls_of_rules hrules hex hcallRules hindRules hmemRules (hRef s')
       (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hcalls s') (hicalls s') (hmem s')
       (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f)
