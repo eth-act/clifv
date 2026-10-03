@@ -482,18 +482,18 @@ theorem realizes_goto {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {alloc
       (∀ kd t e rn bit, i = .testBitAndBranch kd t e rn bit →
         ∃ a, U = [a] ∧ j = if ((lo64 a).getLsbD bit == (kd == .nz)) then 0 else 1) := by
     rcases hbr with ⟨l, rfl⟩ | ⟨t, e, kk, rfl⟩ | ⟨kd, t, e, rn, bit, rfl⟩
-    · simp only [RL.sem, csem, Option.some.injEq, Prod.mk.injEq] at hsem
+    · simp only [RL.sem, csemV, csem, Option.some.injEq, Prod.mk.injEq] at hsem
       obtain ⟨rfl, rfl, rfl⟩ := hsem
       refine ⟨rfl, rfl, 0, rfl, fun _ _ => rfl, ?_, ?_⟩
       · intro _ _ _ h; cases h
       · intro _ _ _ _ _ h; cases h
-    · simp only [RL.sem, csem, Option.some.injEq, Prod.mk.injEq] at hsem
+    · simp only [RL.sem, csemV, csem, Option.some.injEq, Prod.mk.injEq] at hsem
       obtain ⟨rfl, rfl, rfl⟩ := hsem
       refine ⟨rfl, rfl, _, rfl, ?_, ?_, ?_⟩
       · intro _ h; cases h
       · intro t' e' kk' h; cases h; rfl
       · intro _ _ _ _ _ h; cases h
-    · simp only [RL.sem, csem] at hsem
+    · simp only [RL.sem, csemV, csem] at hsem
       split at hsem
       · rename_i a
         simp only [Option.some.injEq, Prod.mk.injEq] at hsem

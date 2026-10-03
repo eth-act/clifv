@@ -441,7 +441,7 @@ theorem realizes_jt {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs 
   rw [hU] at hsem
   have hhs : Arm.ConditionHolds Cond.hs.bits w = Arm.ConditionHolds Cond.hs.bits s :=
     (ConditionHolds_sameWorld hst.world _).symm
-  simp only [RL.sem, csem] at hsem
+  simp only [RL.sem, csemV, csem] at hsem
   rw [hhs] at hsem
   -- the successor
   have hti : t0 = MInst.jtSequence d ts (.vreg vr .int) (.vreg va .int) (.vreg vb' .int) := by
@@ -496,7 +496,7 @@ theorem realizes_jt {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs 
         (((#[(⟨vr, .int, .use, .early, .reg⟩ : Operand), ⟨va, .int, .def, .early, .reg⟩,
           ⟨vb', .int, .def, .early, .reg⟩].zip (#[Reg.x nr, .x na, .x nb].map Loc.reg)).toList.filter
           (·.1.isUse)).map (m ·.2)) w = some (outs, w, .goto jj) := by
-      rw [hU]; simp only [RL.sem, csem, hhs]; exact hsem
+      rw [hU]; simp only [RL.sem, csemV, csem, hhs]; exact hsem
     refine ⟨n, _, MStep.op (outs' := [regVal s' (.x na), regVal s' (.x nb)]) (w' := w) hvb hi hops hsz'
       hsem' hlen ⟨by rw [hout2]; rfl,
         fun h => by simp [havocFrom, MInst.keptDefs, MInst.isBranch] at h,

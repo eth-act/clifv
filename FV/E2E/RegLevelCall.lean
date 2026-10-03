@@ -143,19 +143,30 @@ structure CalleeOk (F : BitVec 64 → Prop) (K : Nat) (X : ExtSem) (H : ArmHooks
 
 /-- **The callee contract relative to the kept addresses `G`** of the activation entered in
 `s0`: `CalleeOk` whose operand-view obligation (`CallSoundCtlG`) is required only at the states
-that keep `G` (`StRel.gkeep`). `CalleeOk` gives it (`CalleeOk.g`). -/
+that keep `G` (`StRel.gkeep`), and for the calls the VCode run reaches (`csemV gv`: a call through
+the GOT, `gv t n`, only with `n`'s address as its target). `CalleeOk` gives it (`CalleeOk.g`). -/
 structure CalleeOkG (F : BitVec 64 → Prop) (K : Nat) (G : BitVec 64 → Prop) (s0 : Arm.ArmState)
-    (Pc : BitVec 64 → MInst → Prop) (X : ExtSem) (H : ArmHooks) (S : CallInfo → Prop) : Prop where
-  os : ∀ ctx info, S info → CallSoundCtlG F K G s0 Pc (callExec H) (csem F ctx X) (.call info) .next
+    (Pc : BitVec 64 → MInst → Prop) (X : ExtSem) (H : ArmHooks) (S : CallInfo → Prop)
+    (gv : Nat → String → Prop) : Prop where
+  os : ∀ ctx info, S info → CallSoundCtlG F K G s0 Pc (callExec H) (csemV gv F ctx X) (.call info) .next
   pc : ∀ d s, Arm.r .ERR s = .None → Arm.CheckSPAlignment s →
     Arm.r .PC (H.call d s) = Arm.r .PC s + 4
   ext : ∀ d uses w outs w', X.call d uses w = some (outs, w') → Arm.r .ERR w = .None →
     Arm.r .ERR w' = .None ∧ w'.program = w.program
 
+/-- `CallSoundCtlG` of `csem` gives that of `csemV gv` (a guarded semantics). -/
+theorem CallSoundCtlG.v {F : BitVec 64 → Prop} {K : Nat} {G : BitVec 64 → Prop} {s0 : Arm.ArmState}
+    {Pc : BitVec 64 → MInst → Prop} {exec : MInst → Arm.ArmState → Option Arm.ArmState}
+    {ctx : FnCtx} {X : ExtSem} {i : MInst} {ctl : Ctl}
+    (h : CallSoundCtlG F K G s0 Pc exec (csem F ctx X) i ctl) (gv : Nat → String → Prop) :
+    CallSoundCtlG F K G s0 Pc exec (csemV gv F ctx X) i ctl :=
+  fun s h1 h2 h3 c wh ops regs i' w outs w' hops hst hasg hp hw hal herr hsem =>
+    h s h1 h2 h3 c wh ops regs i' w outs w' hops hst hasg hp hw hal herr (csemV_sub hsem)
+
 theorem CalleeOk.g {F : BitVec 64 → Prop} {K : Nat} {X : ExtSem} {H : ArmHooks}
     {S : CallInfo → Prop} (h : CalleeOk F K X H S) (G : BitVec 64 → Prop) (s0 : Arm.ArmState)
-    (Pc : BitVec 64 → MInst → Prop) : CalleeOkG F K G s0 Pc X H S :=
-  ⟨fun ctx info hs => (h.os ctx info hs).g G s0 Pc, h.pc, h.ext⟩
+    (Pc : BitVec 64 → MInst → Prop) (gv : Nat → String → Prop) : CalleeOkG F K G s0 Pc X H S gv :=
+  ⟨fun ctx info hs => ((h.os ctx info hs).g G s0 Pc).v gv, h.pc, h.ext⟩
 
 theorem ftStep_call {x : Insn} (hx : (∃ n, x = .bl n) ∨ (∃ r, x = .blr r)) (n1 n2 : Option Line) :
     ftStep (.ins x none) n1 n2 = ([.ins x none], 1) := by
@@ -248,7 +259,7 @@ theorem tryCall_hcall {ctx : FnCtx} {info : CallInfo} {ti : TryInfo} :
 
 /-- **A call on the machine**: one hooked step. -/
 theorem realizes_call {R : RL} (hR : R.Wf)
-    (hC : CalleeOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.CallSite)
+    (hC : CalleeOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.CallSite R.gv)
     {s : Arm.ArmState}
     {b k : Nat} {allocs : Array Loc} {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
     (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩))
@@ -265,7 +276,8 @@ theorem realizes_call {R : RL} (hR : R.Wf)
     have herr : Arm.r .ERR w = .None := by
       have hst := q_stRel hq
       rw [← hst.world.1 .ERR (by simp [Masked]), hst.err]
-    simp only [RL.sem, csem, Option.map_eq_some_iff] at hsem
+    have hsem := R.sem_csem hsem
+    simp only [csem, Option.map_eq_some_iff] at hsem
     obtain ⟨⟨o, w2⟩, hx, he⟩ := hsem
     simp only [Prod.mk.injEq] at he
     obtain ⟨rfl, rfl, -⟩ := he
@@ -428,12 +440,13 @@ theorem realizes_symAddr {R : RL} (hR : R.Wf) {s : Arm.ArmState}
     have herr : Arm.r .ERR w = .None := by
       have hst := q_stRel hq
       rw [← hst.world.1 .ERR (by simp [Masked]), hst.err]
+    have hsem := R.sem_csem hsem
     rcases hform with ⟨d, n, rfl⟩ | ⟨d, n, off, rfl⟩ <;>
-    · simp only [RL.sem, csem, Option.some.injEq, Prod.mk.injEq] at hsem
+    · simp only [csem, Option.some.injEq, Prod.mk.injEq] at hsem
       obtain ⟨-, rfl, -⟩ := hsem
       exact ⟨herr, rfl⟩
   refine realizes_op_core hR hq hvb hi hops hsz hsem hlen hk (exec := fun _ => symExec R.X)
-    (fun _ => ((os_symAddr hform).at (fun _ => RL.FK_F) s).toI _) (fun regs i' _ hex => ?_) hW'
+    (fun _ => (((os_symAddr hform).at (fun _ => RL.FK_F) s).toI _).v R.gv) (fun regs i' _ hex => ?_) hW'
   obtain ⟨_, s0, _, hex⟩ := hex
   cases i' with
   | loadExtNameGot rd n =>

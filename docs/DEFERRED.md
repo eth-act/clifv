@@ -126,7 +126,9 @@ premises. Deferred, in order:
   (the caller has no address itself; register-only, non-`sret` indirect callees; the M6 callee
   contract now holds for the call instruction at the pc, `CallAt`); undeclared indirect callees
   (vtables, agent/link-scope: `Clif.Env.names`, `linkEnvN` resolves program-wide,
-  `LinkSys.MayCall`; `blrRegs`/`callRegs` constrain only the defs a site has); `i128` pairs
+  `LinkSys.MayCall`; `blrRegs`/`callRegs` constrain only the defs a site has); calls through
+  the GOT pinned to their symbol (agent/link-scope2: M6's VCode semantics `csemV` with the static
+  GOT analysis `GotV`, `LinkSys.BlrTo`: a GOT site constrains only its symbol's function); `i128` pairs
   between the functions of a legalised program (`Opt.Legalize128`;
   per-function composition with `backend_correct_legal`, `a2_legal`); program callees with
   stack slots or an outgoing-argument area (stage 2: the VCode non-interference
@@ -141,9 +143,9 @@ premises. Deferred, in order:
     linked environment satisfying `ExtLegal`, by induction on the call depth; `NoMemTrap` of
     callee runs, `EnvKeepsAllocs` of the linked environment).
   - recursion through a pointer (the caller's own address), indirect callees with stack-passed
-    or `sret` parameters; `blrRegs`' argument registers and `blrTry` are still required for every
-    function a `blr` site may call with its arity, not only a GOT site's symbol (the target
-    register's value is not in M6's callee contract).
+    or `sret` parameters; at a genuine indirect call (`call_indirect`) `blrRegs`/`blrTry` still
+    quantify over every function the caller may reach with the site's arity (`MayCall`), not
+    only the ones its signature admits.
   - directly self-recursive functions in one copy (handled through the `cargo fv` alias as two copies; one copy needs an M6 return-detection invariant for `linkedCall`), float parameters; a
     depth-free machine (monotonicity of `linkedCall` in the depth, needs base hooks preserving
     errors).

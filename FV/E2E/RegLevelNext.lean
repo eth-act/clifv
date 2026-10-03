@@ -110,7 +110,7 @@ theorem realizes_island {R : RL} {s : Arm.ArmState} {b k : Nat} {allocs : Array 
   rw [hvb] at hvb'; cases hvb'
   rw [hi] at hi'; cases hi'
   obtain rfl := hho.2.1 rfl
-  simp only [RL.sem, csem, Option.some.injEq, Prod.mk.injEq] at hsem
+  simp only [RL.sem, csemV, csem, Option.some.injEq, Prod.mk.injEq] at hsem
   obtain ⟨rfl, rfl, rfl⟩ := hsem
   cases hn with
   | next hk =>
@@ -152,7 +152,7 @@ theorem realizes_trapIf_next {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat}
   rw [hi] at hi'; cases hi'
   rw [hops] at hops'; cases hops'
   obtain rfl := hho.2.1 rfl
-  simp only [RL.sem, csem, Option.some.injEq, Prod.mk.injEq] at hsem
+  simp only [RL.sem, csemV, csem, Option.some.injEq, Prod.mk.injEq] at hsem
   obtain ⟨rfl, rfl, hctl⟩ := hsem
   cases hn with
   | halt => exact absurd rfl (hnh _)
