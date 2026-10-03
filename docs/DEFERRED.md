@@ -125,7 +125,13 @@ premises. Deferred, in order:
   indirect calls (`call_indirect`, `try_call_indirect`, GOT `blr`) between program functions
   (the caller declares every function with an address, has none itself; register-only,
   non-`sret` indirect callees; the M6 callee contract now holds for the call instruction at the
-  pc, `CallAt`). Remaining:
+  pc, `CallAt`); `i128` pairs between the functions of a legalised program (`Opt.Legalize128`;
+  per-function composition with `backend_correct_legal`, `a2_legal`). Remaining:
+  - **The `i128` source program as a whole**: `backend_correct_program` relates the Arm run to
+    the legalised program; relating that to the source program's whole-program run needs a
+    program-level legalisation refinement (`Opt.Legal.check_refines` per function under a
+    linked environment satisfying `ExtLegal`, by induction on the call depth; `NoMemTrap` of
+    callee runs, `EnvKeepsAllocs` of the linked environment).
   - **Callees with stack slots or an outgoing-argument area** (the frame regions of a callee
     that belong to its world but lie in its caller's dead stack). Blocker: the callee's
     body-entry world contains the caller's garbage there (the actual machine state and the

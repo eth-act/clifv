@@ -693,18 +693,35 @@ runs of at most `M + 1` steps).
    referenced functions; a vtable call reaches undeclared ones: needs a `linkEnv` that resolves
    addresses whole-program), indirect callees with stack-passed or `sret` parameters.
 
+6. *`i128` pairs between program functions*. The backend compiles a file with `i128` functions
+   as its legalisation (`Opt.Legalize128.parsedFile128`: an `i128` parameter or result becomes
+   an `i64` pair, AAPCS64-aligned with a pad where needed); `backend_correct_program` applies to
+   that legalised program `P'` unchanged (`argRegs`' width ≤ 64 holds), so an `i128` passes
+   between program functions as a register pair (x0–x7) and returns in x0/x1. Composition with
+   the `i128` source: per function, `backend_correct_legal`/`_direct` relate the code of a
+   legalised function to its source when its callees are externs (`hext`); for the witness's
+   callee `a2` every function-level premise is discharged on the linked code itself
+   (`E2E.LinkWitness.a2_legal`). Not covered: the whole-program run of the `i128` source
+   program. That needs a program-level legalisation refinement: `Opt.Legal.check_refines` per
+   function under a linked environment satisfying `ExtLegal` (a callee called with the split
+   arguments returns the split results — the callees' source and legalised whole-program runs
+   related), by induction on the call depth as `LinkSys.thm`, with `NoMemTrap` of the callee
+   runs and `EnvKeepsAllocs` of the linked environment.
+
 **Non-vacuity** (`FV/E2E/NonVacuityLink.lean`, namespace `E2E.LinkWitness`): the closed program
-`P = {f, g, h, s, k, r, r__fvself, q, v}` — the entry `f` (a stack slot, a 16-byte outgoing area)
+`P = {f, g, h, s, k, r, r__fvself, q, v, a2, w}` — the entry `f` (a stack slot, a 16-byte outgoing area)
 passes an `sret` pointer to its slot to `s` (which stores through it and returns the pointer),
 calls `k` with 9 arguments (the 9th on the stack), calls `g` by a `try_call` with a result
 (`block1(ret0)`, handler `tag0: block2(exn0)`), calls the recursive `r` (`r 3 = 6`, through
-its alias `r__fvself`) and `v`; `g` calls `h` (a non-leaf program callee; `g` keeps its argument
-in x19 across the call); `v` takes `q`'s address (`func_addr`), calls it by `call_indirect`
-and calls `q` again through the GOT (a non-`colocated` declaration: `adrp`/`ldr :got:`/`blr`);
-`system_v` — parsed from an embedded source and
+its alias `r__fvself`), `v` and `w`; `g` calls `h` (a non-leaf program callee; `g` keeps its
+argument in x19 across the call); `v` takes `q`'s address (`func_addr`), calls it by
+`call_indirect` and calls `q` again through the GOT (a non-`colocated` declaration:
+`adrp`/`ldr :got:`/`blr`); `w` passes two `i128` values to `a2 : (i128, i128) -> i128` and splits
+its result (`a2` and `w` are the `Opt.Legalize128` outputs the validator accepts: pairs in x0–x3,
+the result in x0/x1); `system_v` — parsed from an embedded source, legalised and
 compiled by the pipeline (`lowerFunction`, `prepare`, the `lean-regalloc` output for this file
 embedded as JSON and rebuilt by `parseRAOut`/`buildRFunc`, `checkAlloc`, `lowerRFunc`,
-`emitFunc`, `layout`), loaded at `0x70000` (`f`) and `0x10000`…`0x90000`, closed base
+`emitFunc`, `layout`), loaded at `0x70000` (`f`) and `0x10000`…`0xB0000`, closed base
 environment (no extern outside `P`, no TLS), the CLIF image's symbols: `q` at its base
 `0x80000` (`symsW`), depth `M0 = 100`:
 
@@ -715,6 +732,15 @@ theorem backend_correct_program_witness :
     fQ ∈ (L F0).P.funcs ∧ fV ∈ (L F0).P.funcs ∧ (∃ info, (L F0).ProgSite fF info fV) ∧
     ¬ Clif.IndFree fV ∧ (∃ info, (A fV).vcp.CallSite info ∧ ∀ n, info.dest ≠ .sym n) ∧
     DeclN fV fQ.name ∧ (L F0).syms fQ.name = some 0x80000 ∧
+    fA2 ∈ (L F0).P.funcs ∧ fW ∈ (L F0).P.funcs ∧ (∃ info, (L F0).ProgSite fF info fW) ∧
+    (∃ info, (L F0).ProgSite fW info fA2) ∧
+    Opt.Legalize128.function128Cert (srcFn 9) = .ok (fA2, certOf 9) ∧
+    Opt.Legal.check (srcFn 9) fA2 (certOf 9) = true ∧
+    Opt.Legalize128.function128Cert (srcFn 10) = .ok (fW, certOf 10) ∧
+    Opt.Legal.check (srcFn 10) fW (certOf 10) = true ∧
+    (srcFn 9).sig.params.map (·.ty) = [.i128, .i128] ∧ (srcFn 9).sig.returns.map (·.ty) = [.i128] ∧
+    fA2.sig.params.map (·.ty) = [.i64, .i64, .i64, .i64] ∧
+    fA2.sig.returns.map (·.ty) = [.i64, .i64] ∧
     fS ∈ (L F0).P.funcs ∧ fK ∈ (L F0).P.funcs ∧
     (∃ info ti, (A fF).vcp.TrySite info ti ∧ (L F0).ProgSite fF info fG) ∧
     (∃ info, (L F0).ProgSite fG info fH) ∧
@@ -724,7 +750,7 @@ theorem backend_correct_program_witness :
     fR ∈ (L F0).P.funcs ∧ fRS ∈ (L F0).P.funcs ∧ (∃ info, (L F0).ProgSite fF info fR) ∧
     (∃ info, (L F0).ProgSite fR info fRS) ∧ (∃ info, (L F0).ProgSite fRS info fR) ∧
     fRS.name = fR.name ++ "__fvself" ∧ fRS.blocks = fR.blocks ∧ fRS.sig = fR.sig ∧
-    run0 = .returned [⟨.i64, 195#64⟩] (retMem run0) ∧
+    run0 = .returned [⟨.i64, 390#64⟩] (retMem run0) ∧
     ArmRefines (A fF).fb (A fF).base 8 ((L F0).mach M0 fF) s0 run0
 ```
 
@@ -801,7 +827,7 @@ body's `sp`"):
 | `backend_correct_opt_proven` | `hC`, `hTls`, `hX`, `hsym` (for the optimised function; `try_call` and `call_indirect` excluded by premises) | `final_contracts_witness` at `f := Opt.optimize f cfg` |
 | `backend_correct_legal` | `hC`, `hCT`, `hTls`, `hX`, `hXI`, `hsym` (for the legalised `g`, environment `Clif.Rust.env`) | `final_contracts_witness` at `f := g`, `env := Clif.Rust.env`, for functions without indirect calls whose externs are the diverging panic entry points (they never return, so `hnoop` holds) |
 | `backend_correct_linked` | `hC`, `hCT`, `hTls`, `hX` (environment `Clif.linkEnv P base`); `hXI` discharged by `Linkable` | `final_contracts_witness` at `env := Clif.linkEnv P base`, when the program callees and the base externs return nothing and keep the memory |
-| `backend_correct_program` | `L.Ok` (program, compilation, layout, base environment) and the entry premises | `E2E.LinkWitness.backend_correct_program_witness` (`FV/E2E/NonVacuityLink.lean`): `P = {f, g, h, s, k, r, r__fvself, q, v}` compiled by the pipeline (a `try_call` f→g, an `sret` call f→s into `f`'s stack slot, a stack-passed argument f→k, a non-leaf callee g→h, recursion r↔r__fvself, `call_indirect` of `func_addr` and a GOT call v→q), all premises discharged, `f 41` returns `195` |
+| `backend_correct_program` | `L.Ok` (program, compilation, layout, base environment) and the entry premises | `E2E.LinkWitness.backend_correct_program_witness` (`FV/E2E/NonVacuityLink.lean`): `P = {f, g, h, s, k, r, r__fvself, q, v, a2, w}` compiled by the pipeline (a `try_call` f→g, an `sret` call f→s into `f`'s stack slot, a stack-passed argument f→k, a non-leaf callee g→h, recursion r↔r__fvself, `call_indirect` of `func_addr` and a GOT call v→q, `i128` pairs w→a2 of the legalised `i128` functions), all premises discharged, `f 41` returns `390` |
 
 **Callees that return values** (`idX sym tp idf`: a callee `n` with `idf n` returns its first
 argument — a `bl n` or a `blr` to `sym n 0` —, every other callee returns nothing; the hooks are

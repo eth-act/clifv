@@ -1,13 +1,16 @@
 import FV.E2E.LinkArm
+import FV.Opt.Legalize128Pass
+import FV.E2E.Legal
 
 /-! # Non-vacuity of `backend_correct_program` (docs/contracts/e2e.md, "Non-vacuity")
 
 A concrete linked program for which every premise of `E2E.backend_correct_program` holds:
-`P = {f, g, h, s, k, r, r__fvself, q, v}`, parsed from the embedded source `src`, compiled by the
+`P = {f, g, h, s, k, r, r__fvself, q, v, a2, w}`, parsed from the embedded source `src`, legalised
+(`Opt.Legalize128.parsedFile128`), compiled by the
 backend's pipeline (`lowerFunction`, `prepare`, regalloc2's allocation `raOut` — the output of
 `lean-regalloc` on the pipeline's input for this file, rebuilt by `buildRFunc` and accepted by
 `checkAlloc` —, `lowerRFunc`, `emitFunc`, `layout`), loaded at `0x70000` (`f`), `0x20000`,
-`0x10000`, `0x30000`, `0x40000`, `0x50000`, `0x60000`, `0x80000`, `0x90000`. The entry `f` has a
+`0x10000`, `0x30000`, `0x40000`, `0x50000`, `0x60000`, `0x80000`…`0xB0000`. The entry `f` has a
 stack slot and an outgoing-argument area; it calls
 
 * `s` with an `sret` pointer to its slot (`s` stores through it, returns the pointer in x0),
@@ -16,7 +19,10 @@ stack slot and an outgoing-argument area; it calls
 * the recursive `r` (`r n = 2 n`): its self-call is `cargo fv`'s alias `r__fvself`, linked as a
   second function with `r`'s body whose self-call names `r` (the two call each other),
 * `v`, which calls `q` (`q n = n + 5`) through a pointer (`func_addr`, `call_indirect`: a `blr`
-  the linked machine resolves by the address in its register) and through the GOT (`blr`).
+  the linked machine resolves by the address in its register) and through the GOT (`blr`),
+* `w`, which passes two `i128` values to `a2` (`i128` addition) and adds the halves of its result:
+  `a2` and `w` are legalised (`i128` pairs in x0–x3, the result in x0/x1); `a2_legal` composes
+  `a2`'s linked code with `backend_correct_legal` against the `i128` source.
 
 * The per-function premises of `LinkSys.Ok` are executable checks (`chks`, `okB`, each with a
   soundness lemma: `siteOk_sound`, `tryB_sound`, `retsB_sound`, `outFitsB_sound`,
@@ -104,6 +110,7 @@ function %f(i64) -> i64 system_v {
     fn2 = colocated %k(i64, i64, i64, i64, i64, i64, i64, i64, i64) -> i64 system_v
     fn3 = colocated %r(i64) -> i64 system_v
     fn4 = colocated %v(i64) -> i64 system_v
+    fn5 = colocated %w(i64) -> i64 system_v
 block0(v0: i64):
     v1 = stack_addr.i64 ss0
     call fn1(v1, v0)
@@ -116,7 +123,8 @@ block1(v5: i64):
     v8 = call fn3(v7)
     v9 = iadd v5, v8
     v10 = call fn4(v9)
-    return v10
+    v11 = call fn5(v10)
+    return v11
 block2(v6: i64):
     return v6
 }
@@ -138,9 +146,25 @@ block0(v0: i64):
     v3 = call fn1(v2)
     return v3
 }
+
+function %a2(i128, i128) -> i128 system_v {
+block0(v0: i128, v1: i128):
+    v2 = iadd v0, v1
+    return v2
+}
+
+function %w(i64) -> i64 system_v {
+    fn0 = colocated %a2(i128, i128) -> i128 system_v
+block0(v0: i64):
+    v1 = uextend.i128 v0
+    v2 = call fn0(v1, v1)
+    v3, v4 = isplit v2
+    v5 = iadd v3, v4
+    return v5
+}
 "
 
-def raOut : String := "{\"functions\":[{\"allocs\":[[\"x0\"],[\"x2\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"h\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x0\",\"x19\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x0\",\"inst\":1,\"pos\":\"before\",\"to\":\"x19\"}],\"name\":\"g\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x8\",\"x0\"],[\"x3\"],[\"x5\",\"x0\"],[\"x5\",\"x8\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x8\",\"inst\":4,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"s\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\",\"x2\",\"x3\",\"x4\",\"x5\",\"x6\",\"x7\"],[\"x9\"],[\"x0\",\"x0\",\"x9\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"k\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x0\"],[\"x0\"],[\"x0\"],[\"x5\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x11\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"r\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x0\"],[\"x0\"],[\"x0\"],[\"x5\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x11\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"r__fvself\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x8\"],[\"x8\",\"x0\",\"x0\"],[\"x0\"],[\"x7\"],[\"x19\"],[\"x0\",\"x1\",\"x2\",\"x3\",\"x4\",\"x5\",\"x6\",\"x7\",\"x0\"],[\"x0\",\"x0\",\"x1\"],[],[\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x1\",\"x0\"],[\"x0\",\"x0\"],[\"x0\"],[],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x0\",\"inst\":2,\"pos\":\"before\",\"to\":\"x19\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x2\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x3\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x4\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x5\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x6\"},{\"from\":\"x0\",\"inst\":8,\"pos\":\"before\",\"to\":\"x19\"},{\"from\":\"x19\",\"inst\":11,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x0\",\"inst\":14,\"pos\":\"before\",\"to\":\"x19\"},{\"from\":\"x19\",\"inst\":15,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"f\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"q\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x2\",\"x0\",\"x0\"],[\"x7\"],[\"x7\",\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"v\",\"num_spillslots\":0,\"ok\":true}]}"
+def raOut : String := "{\"functions\":[{\"allocs\":[[\"x0\"],[\"x2\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"h\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x0\",\"x19\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x0\",\"inst\":1,\"pos\":\"before\",\"to\":\"x19\"}],\"name\":\"g\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x8\",\"x0\"],[\"x3\"],[\"x5\",\"x0\"],[\"x5\",\"x8\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x8\",\"inst\":4,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"s\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\",\"x2\",\"x3\",\"x4\",\"x5\",\"x6\",\"x7\"],[\"x9\"],[\"x0\",\"x0\",\"x9\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"k\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x0\"],[\"x0\"],[\"x0\"],[\"x5\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x11\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"r\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x0\"],[\"x0\"],[\"x0\"],[\"x5\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x11\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"r__fvself\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x8\"],[\"x8\",\"x0\",\"x0\"],[\"x0\"],[\"x7\"],[\"x19\"],[\"x0\",\"x1\",\"x2\",\"x3\",\"x4\",\"x5\",\"x6\",\"x7\",\"x0\"],[\"x0\",\"x0\",\"x1\"],[],[\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x1\",\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x0\"],[],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x0\",\"inst\":2,\"pos\":\"before\",\"to\":\"x19\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x2\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x3\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x4\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x5\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x6\"},{\"from\":\"x0\",\"inst\":8,\"pos\":\"before\",\"to\":\"x19\"},{\"from\":\"x19\",\"inst\":11,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x0\",\"inst\":15,\"pos\":\"before\",\"to\":\"x19\"},{\"from\":\"x19\",\"inst\":16,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"f\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"q\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x2\",\"x0\",\"x0\"],[\"x7\"],[\"x7\",\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"v\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\",\"x2\",\"x3\"],[\"x5\"],[\"x7\",\"x0\",\"x2\"],[\"x7\",\"x0\"],[\"x10\"],[\"x7\",\"x0\"],[\"x13\"],[\"x15\",\"x1\",\"x3\"],[\"x1\",\"x15\",\"x10\"],[\"x0\",\"x1\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x7\",\"inst\":9,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"a2\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x2\",\"x0\",\"x0\"],[\"x3\"],[\"x0\",\"x1\",\"x2\",\"x3\",\"x0\",\"x1\"],[\"x11\",\"x0\",\"x0\"],[\"x13\",\"x1\",\"x1\"],[\"x0\",\"x11\",\"x13\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x2\",\"inst\":4,\"pos\":\"before\",\"to\":\"x0\"},{\"from\":\"x3\",\"inst\":4,\"pos\":\"before\",\"to\":\"x1\"}],\"name\":\"w\",\"num_spillslots\":0,\"ok\":true}]}"
 
 deriving instance Inhabited for Art
 
@@ -152,7 +176,10 @@ theorem getOk_eq {ε α : Type} [Inhabited α] {x : Except ε α} (h : x.toBool 
     x = .ok (getOk x) := by
   cases x <;> simp_all [getOk, Except.toBool]
 
-def fn (i : Nat) : Clif.Function := match (Clif.parseFile src).funcs[i]? with
+/-- Function `i` of the file as the backend compiles it: legalised (`Opt.Legalize128`, the
+identity on the functions without `i128`). -/
+def fn (i : Nat) : Clif.Function :=
+  match (Opt.Legalize128.parsedFile128 (Clif.parseFile src)).file.funcs[i]? with
   | some p => getOk p.func
   | none => default
 
@@ -167,6 +194,19 @@ def fF : Clif.Function := fn 6
 def fQ : Clif.Function := fn 7
 /-- `v` calls `q` through a pointer (`func_addr`, `call_indirect`) and through the GOT. -/
 def fV : Clif.Function := fn 8
+/-- The legalisation of `a2 : (i128, i128) -> i128`: `(i64, i64, i64, i64) -> (i64, i64)`. -/
+def fA2 : Clif.Function := fn 9
+/-- The legalisation of `w`, which passes `i128` pairs to `a2` and splits its `i128` result. -/
+def fW : Clif.Function := fn 10
+
+/-- Function `i` of the file as written (before legalisation). -/
+def srcFn (i : Nat) : Clif.Function := match (Clif.parseFile src).funcs[i]? with
+  | some p => getOk p.func
+  | none => default
+
+/-- The legalisation certificate of function `i`. -/
+def certOf (i : Nat) : Opt.Legalize128.Cert :=
+  (getOk (Opt.Legalize128.function128Cert (srcFn i))).2
 
 def raJ (i : Nat) : Lean.Json :=
   (((getOk (Lean.Json.parse raOut)).getObjVal? "functions").bind (·.getArr?)).toOption.getD #[] |>.getD i default
@@ -185,13 +225,14 @@ def pipe (f : Clif.Function) (k : Nat) (base : BitVec 64) : Except String Art :=
 
 /-! ## The program and its compiled image -/
 
-/-- The program `{f, g, h, s, k, r, r__fvself, q, v}`. -/
-def P : Clif.Program := { funcs := [fF, fG, fH, fS, fK, fR, fRS, fQ, fV] }
+/-- The program `{f, g, h, s, k, r, r__fvself, q, v, a2, w}`. -/
+def P : Clif.Program := { funcs := [fF, fG, fH, fS, fK, fR, fRS, fQ, fV, fA2, fW] }
 
 /-- The file index of a function of `P` (the regalloc2 output and the local labels). -/
 def idx (g : Clif.Function) : Nat :=
   if g = fF then 6 else if g = fG then 1 else if g = fS then 2 else if g = fK then 3
-  else if g = fR then 4 else if g = fRS then 5 else if g = fQ then 7 else if g = fV then 8 else 0
+  else if g = fR then 4 else if g = fRS then 5 else if g = fQ then 7 else if g = fV then 8
+  else if g = fA2 then 9 else if g = fW then 10 else 0
 
 /-- The load address of a function of `P`. -/
 def baseOf (g : Clif.Function) : BitVec 64 := 0x10000 * BitVec.ofNat 64 (idx g + 1)
@@ -699,7 +740,7 @@ def symOf (n : String) : BitVec 64 :=
   if n = "f" then 0x70000 else if n = "g" then 0x20000 else if n = "h" then 0x10000
   else if n = "s" then 0x30000 else if n = "k" then 0x40000 else if n = "r" then 0x50000
   else if n = "r__fvself" then 0x60000 else if n = "q" then 0x80000 else if n = "v" then 0x90000
-  else 0
+  else if n = "a2" then 0xA0000 else if n = "w" then 0xB0000 else 0
 
 /-- The base environment's machine semantics: no extern outside `P` (`call` undefined), the
 symbols at the functions' bases. -/
@@ -712,7 +753,7 @@ def Xb : ExtSem where
 /-- The base hooks: a call outside `P` continues at the next instruction; TLS keeps the state. -/
 def Hb : ArmHooks := ⟨fun _ s => Arm.w .PC (Arm.r .PC s + 4) s, fun _ _ s => s⟩
 
-/-- **The linked program** `{f, g, h, s, k, r, r__fvself, q, v}` with the addresses `F` outside
+/-- **The linked program** `{f, g, h, s, k, r, r__fvself, q, v, a2, w}` with the addresses `F` outside
 the world. -/
 def L (F : BitVec 64 → Prop) : LinkSys where
   P := P
@@ -728,19 +769,21 @@ def L (F : BitVec 64 → Prop) : LinkSys where
   D := 64
 
 theorem names : fF.name = "f" ∧ fG.name = "g" ∧ fH.name = "h" ∧ fS.name = "s" ∧ fK.name = "k" ∧
-    fR.name = "r" ∧ fRS.name = "r__fvself" ∧ fQ.name = "q" ∧ fV.name = "v" := by
+    fR.name = "r" ∧ fRS.name = "r__fvself" ∧ fQ.name = "q" ∧ fV.name = "v" ∧ fA2.name = "a2" ∧
+    fW.name = "w" := by
   native_decide
 
 theorem mem_P {g : Clif.Function} :
     g ∈ P.funcs ↔ g = fF ∨ g = fG ∨ g = fH ∨ g = fS ∨ g = fK ∨ g = fR ∨ g = fRS ∨ g = fQ ∨
-      g = fV := by
+      g = fV ∨ g = fA2 ∨ g = fW := by
   simp [P]
 
 theorem symOf_cases (n : String) : (n = "f" ∧ symOf n = 0x70000) ∨ (n = "g" ∧ symOf n = 0x20000) ∨
     (n = "h" ∧ symOf n = 0x10000) ∨ (n = "s" ∧ symOf n = 0x30000) ∨
     (n = "k" ∧ symOf n = 0x40000) ∨ (n = "r" ∧ symOf n = 0x50000) ∨
     (n = "r__fvself" ∧ symOf n = 0x60000) ∨ (n = "q" ∧ symOf n = 0x80000) ∨
-    (n = "v" ∧ symOf n = 0x90000) ∨ symOf n = 0 := by
+    (n = "v" ∧ symOf n = 0x90000) ∨ (n = "a2" ∧ symOf n = 0xA0000) ∨
+    (n = "w" ∧ symOf n = 0xB0000) ∨ symOf n = 0 := by
   unfold symOf
   by_cases h1 : n = "f"
   · simp [h1]
@@ -760,23 +803,27 @@ theorem symOf_cases (n : String) : (n = "f" ∧ symOf n = 0x70000) ∨ (n = "g" 
   · simp [h8]
   by_cases h9 : n = "v"
   · simp [h9]
-  simp [h1, h2, h3, h4, h5, h6, h7, h8, h9]
+  by_cases h10 : n = "a2"
+  · simp [h10]
+  by_cases h11 : n = "w"
+  · simp [h11]
+  simp [h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11]
 
 theorem symOf_eq {n m : String}
     (hm : m = "f" ∨ m = "g" ∨ m = "h" ∨ m = "s" ∨ m = "k" ∨ m = "r" ∨ m = "r__fvself" ∨ m = "q" ∨
-      m = "v")
+      m = "v" ∨ m = "a2" ∨ m = "w")
     (h : symOf m = symOf n) : n = m := by
   rcases symOf_cases n with ⟨rfl, hn⟩ | ⟨rfl, hn⟩ | ⟨rfl, hn⟩ | ⟨rfl, hn⟩ | ⟨rfl, hn⟩ |
-      ⟨rfl, hn⟩ | ⟨rfl, hn⟩ | ⟨rfl, hn⟩ | ⟨rfl, hn⟩ | hn <;>
-    rcases hm with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rw [hn] at h <;>
+      ⟨rfl, hn⟩ | ⟨rfl, hn⟩ | ⟨rfl, hn⟩ | ⟨rfl, hn⟩ | ⟨rfl, hn⟩ | ⟨rfl, hn⟩ | hn <;>
+    rcases hm with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rw [hn] at h <;>
     first | rfl | (exfalso; revert h; simp (config := { decide := true }) [symOf])
 
 theorem symInj {h : Clif.Function} (hh : h ∈ P.funcs) (n : String)
     (hn : Xb.sym h.name 0 = Xb.sym n 0) : n = h.name := by
-  obtain ⟨n1, n2, n3, n4, n5, n6, n7, n8, n9⟩ := names
+  obtain ⟨n1, n2, n3, n4, n5, n6, n7, n8, n9, n10, n11⟩ := names
   refine symOf_eq ?_ hn
-  rcases mem_P.1 hh with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp [n1, n2, n3, n4, n5, n6, n7, n8, n9]
+  rcases mem_P.1 hh with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+    simp [n1, n2, n3, n4, n5, n6, n7, n8, n9, n10, n11]
 
 theorem symsW_some {n : String} {b : Nat} (h : symsW n = some b) : n = "q" ∧ b = 0x80000 := by
   unfold symsW at h
@@ -964,10 +1011,10 @@ def isRet : Clif.Outcome → Bool
 theorem eq_returned {o : Clif.Outcome} (h : isRet o = true) : o = .returned (retVals o) (retMem o) := by
   cases o <;> simp_all [isRet, retVals, retMem]
 
-/-- Every code address of `P` is in `[0x10000, 0xA0000)`. -/
+/-- Every code address of `P` is in `[0x10000, 0xC0000)`. -/
 def boundB : Bool :=
   P.funcs.all fun g => let a := A g
-    decide (a.base.toNat + 4 * a.fb.words.size + 4 ≤ 0xA0000)
+    decide (a.base.toNat + 4 * a.fb.words.size + 4 ≤ 0xC0000)
 
 def locB : Bool :=
   match locsOf fF.sig with
@@ -982,14 +1029,14 @@ def frameB : Bool :=
   decide ((RAFrame.compute (A fF).vcp (A fF).rf).size = 32) &&
   decide ((slotLayout fF.slots).1 = [(0, 0)]) && decide (fF.slots.map (·.1) = [0])
 
-/-- The entry facts of `f` and its run: `f 41 = v (g (k (s 41, 0, …, 41)) + r 3)` returns `195`. -/
+/-- The entry facts of `f` and its run: `f 41 = w (v (g (k (s 41, 0, …, 41)) + r 3))` returns `390`. -/
 def entryFactsB : Bool :=
   boundB && locB && frameB &&
   decide (P.func? fF.name = some fF) && decide (fF.entry? = some bF) &&
   decide ([arg].map (·.ty) = fF.sig.params.map (·.ty)) &&
   decide (bF.params.map (·.2) = [arg].map (·.ty)) &&
   (Clif.Regs.empty.setMany (bF.params.map (·.1)) [arg]).isSome &&
-  isRet run0 && decide (retVals run0 = [⟨.i64, 195#64⟩])
+  isRet run0 && decide (retVals run0 = [⟨.i64, 390#64⟩])
 
 theorem entryFactsB_true : entryFactsB = true := by native_decide
 
@@ -998,7 +1045,7 @@ theorem entryFacts :
     fF.entry? = some bF ∧ [arg].map (·.ty) = fF.sig.params.map (·.ty) ∧
     bF.params.map (·.2) = [arg].map (·.ty) ∧
     (Clif.Regs.empty.setMany (bF.params.map (·.1)) [arg]).isSome = true ∧ isRet run0 = true ∧
-    retVals run0 = [⟨.i64, 195#64⟩] := by
+    retVals run0 = [⟨.i64, 390#64⟩] := by
   have he := entryFactsB_true
   simp only [entryFactsB, Bool.and_eq_true, decide_eq_true_eq] at he
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩, h7⟩, h8⟩, h9⟩, h10⟩ := he
@@ -1025,9 +1072,9 @@ theorem wordsAt_mem_inv {base : BitVec 64} {p : BitVec 64 × BitVec 32} :
       obtain ⟨j, hj, e⟩ := wordsAt_mem_inv h
       exact ⟨j + 1, by simp; omega, by rw [e]; congr 2; omega⟩
 
-theorem codeAddr_lt {a : Art} (hb : a.base.toNat + 4 * a.fb.words.size + 4 ≤ 0xA0000) {x : BitVec 64}
+theorem codeAddr_lt {a : Art} (hb : a.base.toNat + 4 * a.fb.words.size + 4 ≤ 0xC0000) {x : BitVec 64}
     {t : Arm.ArmState} (ht : t.program = a.fb.program a.base) (h : CodeAddr t x) :
-    x.toNat < 0xA0000 := by
+    x.toNat < 0xC0000 := by
   obtain ⟨p, hp, hx⟩ := h
   rw [ht] at hp
   obtain ⟨j, hj, e⟩ := wordsAt_mem_inv (k := 0) hp
@@ -1040,12 +1087,12 @@ theorem codeAddr_lt {a : Art} (hb : a.base.toNat + 4 * a.fb.words.size + 4 ≤ 0
   omega
 
 theorem bound_of {g : Clif.Function} (hg : g ∈ P.funcs) :
-    (A g).base.toNat + 4 * (A g).fb.words.size + 4 ≤ 0xA0000 := by
+    (A g).base.toNat + 4 * (A g).fb.words.size + 4 ≤ 0xC0000 := by
   have h := entryFacts.1
   simp only [boundB, List.all_eq_true, decide_eq_true_eq] at h
   exact h g hg
 
-theorem img_lt {x : BitVec 64} (h : Img P A x) : x.toNat < 0xA0000 := by
+theorem img_lt {x : BitVec 64} (h : Img P A x) : x.toNat < 0xC0000 := by
   obtain ⟨g, hg, hc⟩ := h
   exact codeAddr_lt (bound_of hg) rfl hc
 
@@ -1176,24 +1223,45 @@ def callChainB : Bool :=
   decide (fRS.name = fR.name ++ "__fvself") && decide (fRS.blocks = fR.blocks) &&
   decide (fRS.sig = fR.sig) &&
   callsB (A fF).vcp "v" && decide (P.func? "v" = some fV) && decide (P.func? "q" = some fQ) &&
-  regCallsB (A fV).vcp && !indFreeB fV && declB fV "q" && decide (symsW "q" = some 0x80000)
+  regCallsB (A fV).vcp && !indFreeB fV && declB fV "q" && decide (symsW "q" = some 0x80000) &&
+  callsB (A fF).vcp "w" && callsB (A fW).vcp "a2" && decide (P.func? "w" = some fW) &&
+  decide (P.func? "a2" = some fA2) &&
+  (Opt.Legalize128.function128Cert (srcFn 9)).toBool &&
+  decide ((getOk (Opt.Legalize128.function128Cert (srcFn 9))).1 = fA2) &&
+  Opt.Legal.check (srcFn 9) fA2 (certOf 9) &&
+  (Opt.Legalize128.function128Cert (srcFn 10)).toBool &&
+  decide ((getOk (Opt.Legalize128.function128Cert (srcFn 10))).1 = fW) &&
+  Opt.Legal.check (srcFn 10) fW (certOf 10) &&
+  decide ((srcFn 9).sig.params.map (·.ty) = [.i128, .i128]) &&
+  decide ((srcFn 9).sig.returns.map (·.ty) = [.i128]) &&
+  decide (fA2.sig.params.map (·.ty) = [.i64, .i64, .i64, .i64]) &&
+  decide (fA2.sig.returns.map (·.ty) = [.i64, .i64])
 
 theorem callChainB_true : callChainB = true := by native_decide
 
 /-- **Non-vacuity of `backend_correct_program`**: for the program
-`P = {f, g, h, s, k, r, r__fvself, q, v}` — `f` passes an `sret` pointer to its stack slot to
+`P = {f, g, h, s, k, r, r__fvself, q, v, a2, w}` — `f` passes an `sret` pointer to its stack slot to
 `s`, a stack-passed argument to `k`, calls `g` by a `try_call` with a result, the recursive `r`
 and `v`; `g` calls `h` (a non-leaf callee); `r` recurses through its alias `r__fvself` (same body
 and signature); `v` calls `q` through a pointer (`call_indirect` of `func_addr`) and through the
-GOT —, compiled by the backend's pipeline (regalloc2's allocation, accepted by
+GOT; `w` passes `i128` pairs to `a2` (both legalised by `Opt.Legalize128`) —, compiled by the backend's pipeline (regalloc2's allocation, accepted by
 `checkAlloc`), every premise of the theorem holds — `L.Ok` and the entry premises of `f` on the
 argument `41` — and the theorem gives: the linked Arm machine refines `f`'s CLIF run, which
-returns `195`. -/
+returns `390`. -/
 theorem backend_correct_program_witness :
     (L F0).Ok ∧ fF ∈ (L F0).P.funcs ∧ fG ∈ (L F0).P.funcs ∧ fH ∈ (L F0).P.funcs ∧
     fQ ∈ (L F0).P.funcs ∧ fV ∈ (L F0).P.funcs ∧ (∃ info, (L F0).ProgSite fF info fV) ∧
     ¬ Clif.IndFree fV ∧ (∃ info, (A fV).vcp.CallSite info ∧ ∀ n, info.dest ≠ .sym n) ∧
     DeclN fV fQ.name ∧ (L F0).syms fQ.name = some 0x80000 ∧
+    fA2 ∈ (L F0).P.funcs ∧ fW ∈ (L F0).P.funcs ∧ (∃ info, (L F0).ProgSite fF info fW) ∧
+    (∃ info, (L F0).ProgSite fW info fA2) ∧
+    Opt.Legalize128.function128Cert (srcFn 9) = .ok (fA2, certOf 9) ∧
+    Opt.Legal.check (srcFn 9) fA2 (certOf 9) = true ∧
+    Opt.Legalize128.function128Cert (srcFn 10) = .ok (fW, certOf 10) ∧
+    Opt.Legal.check (srcFn 10) fW (certOf 10) = true ∧
+    (srcFn 9).sig.params.map (·.ty) = [.i128, .i128] ∧ (srcFn 9).sig.returns.map (·.ty) = [.i128] ∧
+    fA2.sig.params.map (·.ty) = [.i64, .i64, .i64, .i64] ∧
+    fA2.sig.returns.map (·.ty) = [.i64, .i64] ∧
     fS ∈ (L F0).P.funcs ∧ fK ∈ (L F0).P.funcs ∧
     (∃ info ti, (A fF).vcp.TrySite info ti ∧ (L F0).ProgSite fF info fG) ∧
     (∃ info, (L F0).ProgSite fG info fH) ∧
@@ -1203,18 +1271,19 @@ theorem backend_correct_program_witness :
     fR ∈ (L F0).P.funcs ∧ fRS ∈ (L F0).P.funcs ∧ (∃ info, (L F0).ProgSite fF info fR) ∧
     (∃ info, (L F0).ProgSite fR info fRS) ∧ (∃ info, (L F0).ProgSite fRS info fR) ∧
     fRS.name = fR.name ++ "__fvself" ∧ fRS.blocks = fR.blocks ∧ fRS.sig = fR.sig ∧
-    run0 = .returned [⟨.i64, 195#64⟩] (retMem run0) ∧
+    run0 = .returned [⟨.i64, 390#64⟩] (retMem run0) ∧
     ArmRefines (A fF).fb (A fF).base 8 ((L F0).mach M0 fF) s0 run0 := by
   have hF : ∀ a, Img P A a → F0 a := fun a ha => .inr ha
   have hL := L_ok F0 hF
   have hfF : fF ∈ (L F0).P.funcs := by simp [L, P]
   have hc := callChainB_true
   simp only [callChainB, Bool.and_eq_true, decide_eq_true_eq] at hc
-  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨hcf, hcg⟩, hcs⟩, hck⟩, hpg⟩, hph⟩, hps⟩, hpk⟩, hsret⟩, hstk⟩, hcr⟩,
-    hcrs⟩, hcfr⟩, hpr⟩, hprs⟩, hnm⟩, hbl⟩, hsg⟩, hcv⟩, hpv⟩, hpq⟩, hreg⟩, hind⟩, hdecl⟩, hsq⟩ := hc
+  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨hcf, hcg⟩, hcs⟩, hck⟩, hpg⟩, hph⟩, hps⟩, hpk⟩, hsret⟩, hstk⟩, hcr⟩,
+    hcrs⟩, hcfr⟩, hpr⟩, hprs⟩, hnm⟩, hbl⟩, hsg⟩, hcv⟩, hpv⟩, hpq⟩, hreg⟩, hind⟩, hdecl⟩, hsq⟩, hcw⟩,
+    hca2⟩, hpw⟩, hpa2⟩, hl9⟩, hl9e⟩, hk9⟩, hl10⟩, hl10e⟩, hk10⟩, hs9p⟩, hs9r⟩, ha2p⟩, ha2r⟩ := hc
   obtain ⟨hbound, hloc, -, hfunc, hentry, hsig, hparams, hset, hret, hvals⟩ := entryFacts
   obtain ⟨hframe, hdrop, hfs, hsb, hib, hsz, hlay, hslots⟩ := frameFacts
-  have hrun : run0 = .returned [⟨.i64, 195#64⟩] (retMem run0) := by
+  have hrun : run0 = .returned [⟨.i64, 390#64⟩] (retMem run0) := by
     rw [← hvals]; exact eq_returned hret
   have hfa := facts (g := fF) (by simp [P])
   have hlocs : locsOf fF.sig = [.reg (.x 0)] := by
@@ -1222,17 +1291,29 @@ theorem backend_correct_program_witness :
     split at hloc
     · assumption
     · cases hloc
-  have hbF : (A fF).base.toNat + 4 * (A fF).fb.words.size + 4 ≤ 0xA0000 := bound_of (by simp [P])
-  obtain ⟨-, -, -, -, -, -, -, hnq, hnv⟩ := names
+  have hbF : (A fF).base.toNat + 4 * (A fF).fb.words.size + 4 ≤ 0xC0000 := bound_of (by simp [P])
+  obtain ⟨-, -, -, -, -, -, -, hnq, hnv, -, -⟩ := names
+  have hcert : ∀ i g, (Opt.Legalize128.function128Cert (srcFn i)).toBool = true →
+      (getOk (Opt.Legalize128.function128Cert (srcFn i))).1 = g →
+      Opt.Legalize128.function128Cert (srcFn i) = .ok (g, certOf i) := by
+    intro i g h1 h2
+    rw [getOk_eq h1, ← h2]
+    rfl
   refine ⟨hL, hfF, by simp [L, P], by simp [L, P], by simp [L, P], by simp [L, P], ?_,
     fun h => (by rw [indFreeB_of h] at hind; cases hind), ?_,
     (by rw [hnq]; exact declB_sound hdecl), (by simp only [L, hnq]; exact hsq),
+    by simp [L, P], by simp [L, P], ?_, ?_, hcert 9 fA2 hl9 hl9e, hk9, hcert 10 fW hl10 hl10e, hk10,
+    hs9p, hs9r, ha2p, ha2r,
     by simp [L, P], by simp [L, P], ?_, ?_, ?_,
     hsret, ?_, ?_, by rw [hib]; decide, fun h => by simp [h] at hslots, by simp [L, P],
     by simp [L, P], ?_, ?_, ?_, hnm, hbl, hsg, hrun, ?_⟩
   · obtain ⟨info, hs, hd⟩ := callsB_sound hcv
     exact ⟨info, hs, "v", hd, hpv⟩
   · exact regCallsB_sound hreg
+  · obtain ⟨info, hs, hd⟩ := callsB_sound hcw
+    exact ⟨info, hs, "w", hd, hpw⟩
+  · obtain ⟨info, hs, hd⟩ := callsB_sound hca2
+    exact ⟨info, hs, "a2", hd, hpa2⟩
   · obtain ⟨info, ti, hs, hd⟩ := tryCallsB_sound hcf
     exact ⟨info, ti, hs, hs.callSite, "g", hd, hpg⟩
   · obtain ⟨info, hs, hd⟩ := callsB_sound hcg
@@ -1292,7 +1373,6 @@ theorem backend_correct_program_witness :
     simp only [List.zip_cons_cons, List.zip_nil_right, List.mem_singleton, Prod.mk.injEq] at hm
     obtain ⟨rfl, rfl⟩ := hm
     simp [VHolds, regVal, rnum, s0, Arm.r_of_w_different, Arm.r_of_w_same, arg]
-    rfl
   case hcs =>
     refine ⟨rfl, rfl, hsig, ⟨bF, hentry, rfl, rfl, hparams, ?_⟩, by simp [cs0, hslots]⟩
     obtain ⟨r, hr⟩ := Option.isSome_iff_exists.1 hset
@@ -1336,5 +1416,65 @@ theorem backend_correct_program_witness :
         simp only [sp0, slotAddr] at this h1 h2
         rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
         bv_omega
+
+/-! ## The legalised callee against its `i128` source -/
+
+/-- `a2` (source and legalisation) declares nothing, has no indirect call, no `try_call` and no
+call site in its compiled code. -/
+def a2B : Bool :=
+  (srcFn 9).externs.isEmpty && fA2.externs.isEmpty && indFreeB (srcFn 9) && indFreeB fA2 &&
+  fA2.blocks.all (fun b => !b.term.isTry) &&
+  allInsts (A fA2).vcp (fun i => match i with | .call _ | .tryCall _ _ => false | _ => true) &&
+  Opt.Legal.check (srcFn 9) fA2 (certOf 9)
+
+theorem a2B_true : a2B = true := by native_decide
+
+/-- **The composition with `backend_correct_legal`** for the program's legalised callee `a2`:
+the code linked into the witness program (`A fA2`, compiled from the legalisation `fA2` the
+validator accepts) refines, by `backend_correct_legal`, the run of the ORIGINAL `i128` function
+`a2` — its arguments and results ABI-split into register pairs. Every function-level premise is
+discharged (callee-free: the callee contracts are vacuous with the base hooks); the entry
+premises remain. In the linked program the same code is reached by `w`'s `bl a2` with the pairs in
+x0–x3 (`backend_correct_program_witness`): `backend_correct_program` relates the Arm run to the
+legalised program, this theorem the callee to its `i128` source. -/
+theorem a2_legal {F : BitVec 64 → Prop} {p : Clif.Program} {K : Nat}
+    {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args args' : List Clif.Val}
+    {cs cs' : Clif.State}
+    (hent : AbiEntry (A fA2).fb base ra s) (hres : StackAvail K (A fA2).af s)
+    (hbe : BodyEntry (A fA2).af s w₀)
+    (hexp : Opt.Legal.ExpRel ((Opt.Legal.groups (srcFn 9).sig.params).getD []) args args')
+    (hargs : ArgsIn fA2.sig args' s) (hcs : ClifEntry (srcFn 9) args cs)
+    (hcs' : ClifEntry fA2 args' cs')
+    (hsl : cs'.frame.slots = cs.frame.slots) (hmem : cs'.mem = cs.mem)
+    (hrel : Rel.holds ⟨frameW K (RAFrame.compute (A fA2).vcp (A fA2).rf).intBase
+      (RAFrame.compute (A fA2).vcp (A fA2).rf).size (A fA2).af s, fun _ => none,
+      (A fA2).af.slotBase, (RAFrame.compute (A fA2).vcp (A fA2).rf).intBase⟩ fA2
+      cs'.frame.slots cs'.mem w₀)
+    (htrS : TrapsExplicit Clif.Rust.env p cs)
+    (htr : TrapsExplicit Clif.Rust.env ((L F).P.only fA2) cs') (fuel : Nat) :
+    ArmRefinesLegal ((Opt.Legal.groups (srcFn 9).sig.returns).getD []) (A fA2).fb base ra
+      (ArmStepX Xb Hb (A fA2).fa) s (Clif.runLoop Clif.Rust.env p fuel cs) := by
+  have hL := L_ok (fun _ => True) (fun _ _ => trivial)
+  have hA2 : fA2 ∈ P.funcs := by simp [P]
+  have hfa := facts hA2
+  have ha := a2B_true
+  simp only [a2B, Bool.and_eq_true, List.isEmpty_iff, List.all_eq_true, Bool.not_eq_true'] at ha
+  obtain ⟨⟨⟨⟨⟨⟨he9, heA⟩, hi9⟩, hiA⟩, hnt⟩, hnc⟩, hchk⟩ := ha
+  refine backend_correct_legal (X := Xb) (H := Hb) (syms := fun _ => none)
+    (slotOff := (A fA2).af.slotBase) (K := K) hchk (hL.subset fA2 hA2) (hL.compiled fA2 hA2)
+    (fun fn e h => by simp [Clif.Function.extern?, he9] at h)
+    (fun fn e h => by simp [Clif.Function.extern?, heA] at h)
+    (fun ⟨B, hB, st, hst, sig, callee, args, hi⟩ =>
+      absurd hi ((indFreeB_sound hi9 B hB).1 st hst sig callee args))
+    (hL.covered fA2 hA2) (fun _ => ⟨fun ctx info hsite => ?_, fun d u _ _ => by
+      simp [Hb, Arm.r_of_w_same], fun d uses w outs w' hx _ => by simp [Xb] at hx⟩)
+    (fun ⟨B, hB, ht⟩ => absurd ht (by simpa using hnt B hB))
+    (fun ht => absurd ht (by simp [hfa.tls]))
+    (fun _ ext hin => by simp [heA] at hin)
+    (fun _ => by rw [indSigs_nil_of_indFree (indFreeB_sound hiA)]; exact xCallsIndOk_nil _ _ _)
+    (fun n b h => by cases h) rfl hent hres hbe hexp hargs hcs hcs' hsl hmem hrel htrS htr fuel
+  obtain ⟨b, vb, k, hb, hk | ⟨ti, hk⟩⟩ := hsite
+  · have := allInsts_sound hnc hb hk; simp at this
+  · have := allInsts_sound hnc hb hk; simp at this
 
 end E2E.LinkWitness
