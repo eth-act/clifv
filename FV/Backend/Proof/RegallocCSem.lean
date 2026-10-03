@@ -560,16 +560,18 @@ open Classical in
 back edge) run once on the world with the use values in the fixed use registers (`regs`), when
 the access avoids the frame addresses `F` and the run ends without error, with the program
 unchanged: in the single-threaded Arm model the exclusive store succeeds (`stlxr`'s status
-register is 0, so the `cbnz` back edge is not taken; `docs/decisions/arm-model.md`). The defs
-are read back from their fixed registers (x27, then the scratch registers, whose values the
-allocated-code semantics havocs, `MInst.keptDefs`). -/
+register is 0, so the `cbnz` back edge is not taken; `docs/decisions/arm-model.md`). The first
+def is read back from its fixed register (x27); the scratch defs, whose values the
+allocated-code semantics havocs (`MInst.keptDefs`), are 0 (not the registers: `xchg` does not
+write x28, and they must not depend on the world's registers). -/
 noncomputable def loopSem (F : BitVec 64 → Prop) (ty : CTy) (a : CV) (body : List Line)
     (regs : List Reg) (uses : List CV) (defs : List Reg) (w : Arm.ArmState) :
     Option (List CV × Arm.ArmState × Ctl) :=
   if AtomTy ty ∧ Avoids F ty.bytes (lo64 a) ∧ Arm.r .ERR w = .None then
     match execLines env0 body ((regs.zip uses).foldl (fun s p => setReg s p.1 p.2) w) with
     | some t' =>
-      if Arm.r .ERR t' = .None ∧ t'.program = w.program then some (defs.map (regVal t'), t', .next)
+      if Arm.r .ERR t' = .None ∧ t'.program = w.program then
+        some ((defs.take 1).map (regVal t') ++ (defs.drop 1).map (fun _ => ofX 0), t', .next)
       else none
     | none => none
   else none
@@ -583,14 +585,14 @@ noncomputable def csem (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) : ISe
     (X.call (match info.dest with | .sym n => some n | .reg _ => none) uses w).map
       fun p => (p.1, p.2, .next)
   -- the call of a `try_call`, returning normally (the only way `Clif.run` resumes after it):
-  -- the callee's results (`X.call`), then values for the def registers beyond them (the
+  -- the callee's results (`X.call`), then the value 0 for the def registers beyond them (the
   -- exception payload registers x0/x1 that are not return registers, unconstrained on a normal
-  -- return: the allocated-code semantics havocs them there, `havocFrom`, so these values from
-  -- the callee's world are never compared with the machine's), and the normal-return successor
-  -- (the last, number `ti.handlers.length`)
+  -- return: the allocated-code semantics havocs them there, `havocFrom`, so these values are
+  -- never compared with the machine's; constants, so that they do not depend on the callee's
+  -- world), and the normal-return successor (the last, number `ti.handlers.length`)
   | .tryCall info ti =>
     (X.call (match info.dest with | .sym n => some n | .reg _ => none) uses w).map
-      fun p => (p.1 ++ (info.defs.drop p.1.length).map (fun d => regVal p.2 d.1), p.2,
+      fun p => (p.1 ++ (info.defs.drop p.1.length).map (fun _ => ofX 0), p.2,
         .goto ti.handlers.length)
   | .args ds => some (ds.map (fun p => regVal w p.2), w, .next)
   | .rets _ => some ([], w, .ret)

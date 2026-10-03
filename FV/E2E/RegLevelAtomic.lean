@@ -192,7 +192,7 @@ theorem loopSem_inv {F : BitVec 64 → Prop} {ty : CTy} {a : CV} {body : List Li
     {w' : Arm.ArmState} {c : Ctl} (h : loopSem F ty a body regs uses defs w = some (outs, w', c)) :
     AtomTy ty ∧ Avoids F ty.bytes (lo64 a) ∧
       execLines env0 body ((regs.zip uses).foldl (fun s p => setReg s p.1 p.2) w) = some w' ∧
-      outs = defs.map (regVal w') ∧ c = .next := by
+      outs = (defs.take 1).map (regVal w') ++ (defs.drop 1).map (fun _ => ofX 0) ∧ c = .next := by
   unfold loopSem at h
   split at h
   · rename_i hc
@@ -675,6 +675,7 @@ theorem realizes_casLoop {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
         List.cons.injEq, and_true]
       rw [Arm.r_of_w_different (by simp), hfr3 _ (by simp) (by simp), Arm.r_of_w_different (by simp),
         h27, hfrw2 _ (by simp) (by simp)]
+      simp
     · intro f h1 h2 h3
       simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, rnum] at h2
       rw [Arm.r_of_w_different h1, hfr3 f h1 h2.2, Arm.r_of_w_different h1]

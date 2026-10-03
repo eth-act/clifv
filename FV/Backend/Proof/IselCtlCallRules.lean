@@ -2,6 +2,7 @@ import FV.Backend.Proof.IselCtlCall
 import FV.Backend.Proof.IselFamily
 import FV.Backend.Proof.LowerLemmas
 import FV.Arm.Memory.MemoryProofs
+import FV.Backend.Proof.IselContractP
 
 /-!
 # Family Ctl: the `call` rules (rule theorems)
@@ -406,8 +407,8 @@ theorem add_ofNat_ne {a : BitVec 64} {k k' : Nat} (hk : k < 2 ^ 64) (hk' : k' < 
   exact hne this
 
 /-- One outgoing store: the low `b` bytes of the argument at `sp + off`. -/
-theorem argStore_step {F : BitVec 64 → Prop} {isem : Sem} {sb : Nat}
-    {syms : String → Option Nat} (hMem : MemRefines F sb syms isem) {off x b : Nat}
+theorem argStore_step {Rd F : BitVec 64 → Prop} {isem : Sem} {sb : Nat}
+    {syms : String → Option Nat} (hMem : MemRefinesR Rd F sb syms isem) {off x b : Nat}
     (hb : b = 1 ∨ b = 2 ∨ b = 4 ∨ b = 8) (v : CV) (w : Arm.ArmState)
     (hav : Avoids F b (spOf w + BitVec.ofNat 64 off)) :
     ∃ w1, isem (argStore (off, x, b)) [v] w = some ([], w1, .next) ∧
@@ -422,8 +423,8 @@ theorem argStore_step {F : BitVec 64 → Prop} {isem : Sem} {sb : Nat}
 in increasing non-overlapping slots inside the outgoing area): they run, keep the memory relation
 and `sp`, and leave each argument's low bytes in its slot (and the area below the first slot
 untouched). -/
-theorem argStores_run {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} {sb : Nat}
-    {syms : String → Option Nat} (hMR : MRStable F MR) (hMem : MemRefines F sb syms isem)
+theorem argStores_run {Rd F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} {sb : Nat}
+    {syms : String → Option Nat} (hMR : MRStable F MR) (hMem : MemRefinesR Rd F sb syms isem)
     {outB : Nat} (hout : OutArgsOk F outB MR) (ρ : Nat → CV) :
     ∀ (E : List (Nat × Nat × Nat)) (lo : Nat) (sl : List (Clif.SlotId × Nat)) (cm : Clif.Mem)
       (w : Arm.ArmState),
@@ -590,8 +591,8 @@ theorem map_zip_args {locs : List ArgLoc} {args bytes : List Nat} {u : Nat}
 — the arguments where the ABI puts them (`ArgsAt`) in the world after the stores, and in every
 world that agrees with it outside the frame addresses up to the flags (a GOT load before the
 call). -/
-theorem argsAt_after_stores {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} {sb : Nat}
-    {syms : String → Option Nat} (hMR : MRStable F MR) (hMem : MemRefines F sb syms isem)
+theorem argsAt_after_stores {Rd F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} {sb : Nat}
+    {syms : String → Option Nat} (hMR : MRStable F MR) (hMem : MemRefinesR Rd F sb syms isem)
     {outB : Nat} (hout : OutArgsOk F outB MR) {s : Clif.Signature} (hso : SigStackOk s outB)
     {bytes : List Nat} (hb : sigParamBytes s = .ok bytes) {locs : List ArgLoc} {S : Nat}
     (hl : sigArgLocs s = .ok (locs, S)) {args : List Nat} {vals : List Clif.Val}
@@ -659,10 +660,11 @@ theorem argsAt_after_stores {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT}
     rw [BitVec.setWidth_setWidth_of_le _ hw.2, BitVec.setWidth_setWidth_of_le _ hw.1]
     exact hvx
 
-theorem call_sym_lowerInstOk {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} {env : Clif.Env}
-    {cp : Clif.Program} {sb : Nat} {syms : String → Option Nat} (hMR : MRStable F MR)
-    (hMem : MemRefines F sb syms isem) {outB : Nat} (hout : OutArgsOk F outB MR)
-    {exts : List Clif.ExtFunc} (hCR : CallsRefine F env exts MR isem)
+theorem call_sym_lowerInstOk {Rd F : BitVec 64 → Prop}
+    {Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop} {isem : Sem} {MR : MemRelT}
+    {env : Clif.Env} {cp : Clif.Program} {sb : Nat} {syms : String → Option Nat}
+    (hMR : MRStable F MR) (hMem : MemRefinesR Rd F sb syms isem) {outB : Nat}
+    (hout : OutArgsOk F outB MR) {exts : List Clif.ExtFunc} (hCR : CallsRefineP Pc F env exts MR isem)
     {f : Clif.Function} {ctx : Ctx}
     (hctx : CtxInv f ctx) {fn : Clif.FnRef} {args : List Nat} {ext : Clif.ExtFunc}
     (hext : f.extern? fn = some ext) (hin : ext ∈ exts) (hso : SigStackOk ext.sig outB)
@@ -670,7 +672,7 @@ theorem call_sym_lowerInstOk {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT
     (hl : sigArgLocs ext.sig = .ok (locs, S))
     {st st' : LState} {results : List Nat} (hres : results.length = ext.sig.returns.length)
     (hst' : st'.nextVreg = st.nextVreg + (sigRets ext.sig).length) :
-    LowerInstOk isem MR env cp ctx (.call fn args) results st
+    LowerInstOkP Rd Pc isem MR env cp ctx (.call fn args) results st
       (outRegs' st.nextVreg (sigRets ext.sig).length) st'
       ((stackEnts ((locs.zip args).zip bytes)).map argStore ++
         [.call ⟨.sym ext.name, retPairs (regPairsOf ((locs.zip args).zip bytes)),
@@ -686,12 +688,14 @@ theorem call_sym_lowerInstOk {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT
       simp only [outDefs, List.map_map, List.mem_map, List.mem_range, Function.comp_def] at hd
       obtain ⟨j, hj, rfl⟩ := hd
       omega
-  · intro fr cm ρ w hfr hvh _ hmr
+  · intro fr cm ρ w hfr hvh _ hmr _ hpin
     split
     · rename_i rvals cm' hO
       obtain ⟨ext', vals, g, hx, hvals, hty, hg, hgo, hrty⟩ := instOutcome_call_ok hO
+      have hx0 := hx
       rw [hfr, hctx.func, hext] at hx
       cases hx
+      have hpc := hpin.1 fn args ext vals g rvals cm' rfl hx0 hvals hg hgo
       have hrN : rvals.length = ext.sig.returns.length := by
         have := congrArg List.length hrty; simpa [Clif.AbiParam.tys] using this
       obtain ⟨hlen, hvx⟩ := getMany_ok hvals
@@ -703,7 +707,8 @@ theorem call_sym_lowerInstOk {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT
       obtain ⟨outs, w', hi, hol, hro, hmr'⟩ := hcall ext hin g fr.slots cm w1 (.sym ext.name)
         (retPairs (regPairsOf ((locs.zip args).zip bytes)))
         (callDefs (outDefs st.nextVreg (sigRets ext.sig).length))
-        _ _ vals rvals cm' hg (.inl ⟨rfl, rfl⟩) hdl (hargs w1 (SameWorldNF.refl F w1)) hmr1 hgo hrN
+        _ _ vals rvals cm' hg (.inl ⟨rfl, rfl⟩) hdl (hargs w1 (SameWorldNF.refl F w1)) hmr1 hpc hgo
+        hrN
       have hol' : outs.length = (outDefs st.nextVreg (sigRets ext.sig).length).length := by
         rw [hol]; simp [callDefs, outDefs]
       refine ⟨?_, _, _, seqRun_append_fall' isem hrun1 (seqRun_call_sym hi hol'),
@@ -862,10 +867,11 @@ theorem vdefs_got_ctl (t : Nat) (nm : String) : vdefs (.loadExtNameGot (.vreg t 
 theorem vuseNums_got_ctl (t : Nat) (nm : String) :
     vuseNums (.loadExtNameGot (.vreg t .int) nm) = [] := rfl
 
-theorem call_got_lowerInstOk {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} {env : Clif.Env}
-    {cp : Clif.Program} {sb : Nat} {syms : String → Option Nat} (hMR : MRStable F MR)
-    (hMem : MemRefines F sb syms isem) {outB : Nat} (hout : OutArgsOk F outB MR)
-    {exts : List Clif.ExtFunc} (hCR : CallsRefine F env exts MR isem) {f : Clif.Function}
+theorem call_got_lowerInstOk {Rd F : BitVec 64 → Prop}
+    {Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop} {isem : Sem} {MR : MemRelT}
+    {env : Clif.Env} {cp : Clif.Program} {sb : Nat} {syms : String → Option Nat}
+    (hMR : MRStable F MR) (hMem : MemRefinesR Rd F sb syms isem) {outB : Nat}
+    (hout : OutArgsOk F outB MR) {exts : List Clif.ExtFunc} (hCR : CallsRefineP Pc F env exts MR isem) {f : Clif.Function}
     {ctx : Ctx} (hctx : CtxInv f ctx) {fn : Clif.FnRef} {args : List Nat} {ext : Clif.ExtFunc}
     (hext : f.extern? fn = some ext) (hin : ext ∈ exts) (hso : SigStackOk ext.sig outB)
     {bytes : List Nat} (hb : sigParamBytes ext.sig = .ok bytes) {locs : List ArgLoc} {S : Nat}
@@ -873,7 +879,7 @@ theorem call_got_lowerInstOk {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT
     {st st' : LState} {results : List Nat} (hres : results.length = ext.sig.returns.length)
     (hargs : ∀ x ∈ args, x < st.nextVreg)
     (hst' : st'.nextVreg = st.nextVreg + (sigRets ext.sig).length + 1) :
-    LowerInstOk isem MR env cp ctx (.call fn args) results st
+    LowerInstOkP Rd Pc isem MR env cp ctx (.call fn args) results st
       (outRegs' st.nextVreg (sigRets ext.sig).length) st'
       ((stackEnts ((locs.zip args).zip bytes)).map argStore ++
        [.loadExtNameGot (.vreg (st.nextVreg + (sigRets ext.sig).length) .int) ext.name,
@@ -894,12 +900,14 @@ theorem call_got_lowerInstOk {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT
         simp only [outDefs, List.map_map, List.mem_map, List.mem_range, Function.comp_def] at hd
         obtain ⟨j, hj, rfl⟩ := hd
         omega
-  · intro fr cm ρ w hfr hvh _ hmr
+  · intro fr cm ρ w hfr hvh _ hmr _ hpin
     split
     · rename_i rvals cm' hO
       obtain ⟨ext', vals, g, hx, hvals, hty, hg, hgo, hrty⟩ := instOutcome_call_ok hO
+      have hx0 := hx
       rw [hfr, hctx.func, hext] at hx
       cases hx
+      have hpc := hpin.1 fn args ext vals g rvals cm' rfl hx0 hvals hg hgo
       have hrN : rvals.length = ext.sig.returns.length := by
         have := congrArg List.length hrty; simpa [Clif.AbiParam.tys] using this
       obtain ⟨hlen, hvx⟩ := getMany_ok hvals
@@ -929,7 +937,7 @@ theorem call_got_lowerInstOk {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT
         (upd ρ t (ofX (sym ext.name)) t ::
           (regPairsOf ((locs.zip args).zip bytes)).map (upd ρ t (ofX (sym ext.name)) ·.1))
         ((regPairsOf ((locs.zip args).zip bytes)).map (ρ ·.1)) vals rvals cm' hg
-        (.inr ⟨_, rfl, by rw [ht1, huses]⟩) hdl (hargsAt w2 hsw) hmr2 hgo hrN
+        (.inr ⟨_, rfl, by rw [ht1, huses]⟩) hdl (hargsAt w2 hsw) hmr2 hpc hgo hrN
       have hol' : outs.length = (outDefs st.nextVreg (sigRets ext.sig).length).length := by
         rw [hol]; simp [callDefs, outDefs]
       have hrun3 := seqRun_call_reg hi hol'
@@ -953,12 +961,14 @@ theorem call_got_lowerInstOk {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT
     · trivial
 
 set_option maxHeartbeats 5000000 in
-theorem call_bl_ruleOk {p : Program} (hp : Data p) {F : BitVec 64 → Prop} {isem : Sem}
+theorem call_bl_ruleOk {p : Program} (hp : Data p) {Rd F : BitVec 64 → Prop}
+    {Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop} {isem : Sem}
     {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program} (hR : Refines F isem)
-    (hMR : MRStable F MR) {sb : Nat} {syms : String → Option Nat} (hMem : MemRefines F sb syms isem)
+    (hMR : MRStable F MR) {sb : Nat} {syms : String → Option Nat}
+    (hMem : MemRefinesR Rd F sb syms isem)
     {outB : Nat} (hout : OutArgsOk F outB MR) {exts : List Clif.ExtFunc}
-    (hCR : CallsRefine F env exts MR isem) :
-    CallRuleOk isem MR env cp exts outB p rule_lower_2508 := by
+    (hCR : CallsRefineP Pc F env exts MR isem) :
+    CallRuleOkP Rd Pc isem MR env cp exts outB p rule_lower_2508 := by
   intro f ctx hctx hexts ii info inst hi hcl hstk cfg hc m n st tr env' s1 out st' tr' hm hn hvb _
     hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
@@ -1033,12 +1043,14 @@ theorem mapM_valueReg_below {ctx : Ctx} {st : LState} (hvb : ValsBelow ctx st) :
     · exact mapM_valueReg_below hvb hrs y hy
 
 set_option maxHeartbeats 5000000 in
-theorem call_got_ruleOk {p : Program} (hp : Data p) {F : BitVec 64 → Prop} {isem : Sem}
+theorem call_got_ruleOk {p : Program} (hp : Data p) {Rd F : BitVec 64 → Prop}
+    {Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop} {isem : Sem}
     {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program} (hR : Refines F isem)
-    (hMR : MRStable F MR) {sb : Nat} {syms : String → Option Nat} (hMem : MemRefines F sb syms isem)
+    (hMR : MRStable F MR) {sb : Nat} {syms : String → Option Nat}
+    (hMem : MemRefinesR Rd F sb syms isem)
     {outB : Nat} (hout : OutArgsOk F outB MR) {exts : List Clif.ExtFunc}
-    (hCR : CallsRefine F env exts MR isem) :
-    CallRuleOk isem MR env cp exts outB p rule_lower_2518 := by
+    (hCR : CallsRefineP Pc F env exts MR isem) :
+    CallRuleOkP Rd Pc isem MR env cp exts outB p rule_lower_2518 := by
   intro f ctx hctx hexts ii info inst hi hcl hstk cfg hc m n st tr env' s1 out st' tr' hm hn hvb _
     hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩

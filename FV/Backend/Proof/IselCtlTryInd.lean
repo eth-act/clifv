@@ -49,27 +49,32 @@ theorem ext_exception_sig_iff {ctx : Ctx} (st : LState) (s : Clif.Signature)
 
 /-! ## The call of a `try_call_indirect` -/
 
-theorem try_ind_lowerTryOk {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program}
-    {sigs : List Clif.Signature} (hCR : IndCallsRefine env sigs MR isem)
+theorem try_ind_lowerTryOk {Rd : BitVec 64 → Prop}
+    {Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop} {isem : Sem} {MR : MemRelT}
+    {env : Clif.Env} {cp : Clif.Program}
+    {sigs : List Clif.Signature} (hCR : IndCallsRefineP Pc env sigs MR isem)
     {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) {callee : Nat} {args : List Nat}
     {et : Clif.ExnTable} {sig : Clif.Signature} (hsd : f.sigDecls.lookup et.sig = some sig)
     (hin : sig ∈ sigs) (h8 : sig.params.length ≤ 8) {info : TryInfo} {b : Nat}
     (htr : ctx.tryRegs = ((List.range (sigRets sig).length).map fun j => Reg.vreg (b + j) .int,
       [.vreg b .int, .vreg (b + 1) .int]))
     {st st' : LState} (hst' : st'.nextVreg = st.nextVreg) :
-    LowerTryOk isem MR env cp ctx (.callIndirect et.sig callee args) info st st'
+    LowerTryOkP Rd Pc isem MR env cp ctx (.callIndirect et.sig callee args) info st st'
       [.call ⟨.reg (.vreg callee .int), retPairs (args.zip ((abiArgIdx sig.params 0).map Reg.x)),
         callDefs (outDefs b (max (sigRets sig).length 2))⟩] := by
   refine ⟨by omega, ⟨[], _, rfl, by simp, fun d hd => ?_⟩, ?_⟩
   · rw [vdefs_call_reg] at hd
     exact tryDefs_mem htr d hd
-  · intro fr cm ρ w hfr hvh _ hmr
+  · intro fr cm ρ w hfr hvh _ hmr _ hpin
     split
     · rename_i rvals cm' hO
       obtain ⟨declared, x, vals, name, g, hd, hcv, hvals, hsym, hg, hty, hgo, hrty⟩ :=
         Driver.instOutcome_callIndirect_ok hO
+      have hd0 := hd
       rw [hfr, hctx.func, hsd] at hd
       cases hd
+      have hpc := hpin.2 et.sig callee args sig x vals name g rvals cm' rfl hd0 hcv hvals hsym hg
+        hgo
       have hvl : vals.length = sig.params.length := by
         have := congrArg List.length hty; simpa [Clif.AbiParam.tys] using this
       have hal : args.length = sig.params.length := (getMany_ok hvals).1 ▸ hvl
@@ -90,7 +95,7 @@ theorem try_ind_lowerTryOk {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Cl
         (.vreg callee .int) (retPairs (args.zip ((abiArgIdx sig.params 0).map Reg.x)))
         (callDefs (outDefs b (max (sigRets sig).length 2))) info (ρ callee) (args.map ρ) vals
         rvals cm' hg hsym hlo (by rw [hdl]; exact Nat.le_max_left _ _) (by omega)
-        (allHold_args hvh hvals) hmr hgo hrN
+        (allHold_args hvh hvals) hmr hpc hgo hrN
       have hol' : outs.length = (outDefs b (max (sigRets sig).length 2)).length := by
         rw [hol, hdl]; simp [outDefs]
       rw [← huses] at hi
@@ -113,10 +118,12 @@ theorem try_ind_lowerTryOk {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Cl
 
 set_option maxHeartbeats 20000000 in
 theorem try_ind_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) (hpI : IndData p)
-    (hpJ : TryIndData p) {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} {env : Clif.Env}
+    (hpJ : TryIndData p) {Rd F : BitVec 64 → Prop}
+    {Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop} {isem : Sem} {MR : MemRelT}
+    {env : Clif.Env}
     {cp : Clif.Program} (hR : Refines F isem) (hMR : MRStable F MR) {sigs : List Clif.Signature}
-    (hCR : IndCallsRefine env sigs MR isem) :
-    TryIndRuleOk isem MR env cp sigs p rule_lower_2561 := by
+    (hCR : IndCallsRefineP Pc env sigs MR isem) :
+    TryIndRuleOkP Rd Pc isem MR env cp sigs p rule_lower_2561 := by
   intro f ctx hctx ti callee args et data sig items targets info lo st1 hd he hsig h8' hi hinfo htr
     hvb cfg hc m n st tr env' s1 out st' tr' hm hn hst _ hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
@@ -178,16 +185,20 @@ theorem mem_lower_branch_2561 : rule_lower_2561 ∈ program.rulesOf TId.lower_br
   rw [show TId.lower_branch = 687 from rfl, data_program.r687]
   simp
 
-/-- **`TryIndRulesCorrect`**: under the indirect-call contract, the `try_call_indirect` rule of
-`lower_branch` (rule id 1036) is correct. -/
-theorem tryIndRulesCorrect : TryIndRulesCorrect program := by
-  intro F isem MR env cp sigs hR hMR hCR r hr hroot
+/-- **`TryIndRulesCorrectP`**: under the pinned indirect-call contract, the `try_call_indirect`
+rule of `lower_branch` (rule id 1036) is correct. -/
+theorem tryIndRulesCorrectP : TryIndRulesCorrectP program := by
+  intro Rd Pc F isem MR env cp sigs hR hMR hCR r hr hroot
   simp only [tryIndRootRule, beq_iff_eq] at hroot
   have hnd : ((program.rulesOf TId.lower_branch).map Rule.id).Nodup := by
     rw [show TId.lower_branch = 687 from rfl, data_program.r687]
     decide +kernel
   rw [eq_of_mem_of_rid hnd hr mem_lower_branch_2561 (by rw [hroot]; rfl)]
   exact try_ind_ruleOk data_program tryData_program indData_program tryIndData_program hR hMR hCR
+
+/-- **`TryIndRulesCorrect`** (`tryIndRulesCorrectP` with nothing pinned). -/
+theorem tryIndRulesCorrect : TryIndRulesCorrect program :=
+  tryIndRulesCorrect_of_P tryIndRulesCorrectP
 
 /-- The root format of the rules of `lower_branch` other than the `try_call_indirect` rule is
 not `TryCallIndirect` (2475). -/

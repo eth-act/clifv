@@ -185,10 +185,11 @@ theorem tryRets_get {ctx : Ctx} {N b : Nat}
   refine ⟨hlt, ?_⟩
   rw [← heq]; simp
 
-theorem try_sym_lowerTryOk {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} {env : Clif.Env}
-    {cp : Clif.Program} {sb : Nat} {syms : String → Option Nat} (hMR : MRStable F MR)
-    (hMem : MemRefines F sb syms isem) {outB : Nat} (hout : OutArgsOk F outB MR)
-    {exts : List Clif.ExtFunc} (hCR : CallsRefine F env exts MR isem)
+theorem try_sym_lowerTryOk {Rd F : BitVec 64 → Prop}
+    {Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop} {isem : Sem} {MR : MemRelT}
+    {env : Clif.Env} {cp : Clif.Program} {sb : Nat} {syms : String → Option Nat}
+    (hMR : MRStable F MR) (hMem : MemRefinesR Rd F sb syms isem) {outB : Nat}
+    (hout : OutArgsOk F outB MR) {exts : List Clif.ExtFunc} (hCR : CallsRefineP Pc F env exts MR isem)
     {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) {fn : Clif.FnRef} {args : List Nat}
     {ext : Clif.ExtFunc} (hext : f.extern? fn = some ext) (hin : ext ∈ exts)
     (hso : SigStackOk ext.sig outB) {bytes : List Nat} (hb : sigParamBytes ext.sig = .ok bytes)
@@ -197,7 +198,7 @@ theorem try_sym_lowerTryOk {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} 
     (htr : ctx.tryRegs = ((List.range (sigRets ext.sig).length).map fun j => Reg.vreg (b + j) .int,
       [.vreg b .int, .vreg (b + 1) .int]))
     {st st' : LState} (hst' : st'.nextVreg = st.nextVreg) :
-    LowerTryOk isem MR env cp ctx (.call fn args) info st st'
+    LowerTryOkP Rd Pc isem MR env cp ctx (.call fn args) info st st'
       ((stackEnts ((locs.zip args).zip bytes)).map argStore ++
         [.call ⟨.sym ext.name, retPairs (regPairsOf ((locs.zip args).zip bytes)),
           callDefs (outDefs b (max (sigRets ext.sig).length 2))⟩]) := by
@@ -208,12 +209,14 @@ theorem try_sym_lowerTryOk {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} 
     simp [vdefs_argStore] at hd
   · rw [vdefs_call_sym] at hd
     exact tryDefs_mem htr d hd
-  · intro fr cm ρ w hfr hvh _ hmr
+  · intro fr cm ρ w hfr hvh _ hmr _ hpin
     split
     · rename_i rvals cm' hO
       obtain ⟨ext', vals, g, hx, hvals, hty, hg, hgo, hrty⟩ := instOutcome_call_ok hO
+      have hx0 := hx
       rw [hfr, hctx.func, hext] at hx
       cases hx
+      have hpc := hpin.1 fn args ext vals g rvals cm' rfl hx0 hvals hg hgo
       have hrN : rvals.length = ext.sig.returns.length := by
         have := congrArg List.length hrty; simpa [Clif.AbiParam.tys] using this
       obtain ⟨hlen, hvx⟩ := getMany_ok hvals
@@ -227,7 +230,7 @@ theorem try_sym_lowerTryOk {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} 
         (retPairs (regPairsOf ((locs.zip args).zip bytes)))
         (callDefs (outDefs b (max (sigRets ext.sig).length 2))) info
         _ _ vals rvals cm' hg (.inl ⟨rfl, rfl⟩) (by rw [hdl]; exact Nat.le_max_left _ _)
-        (hargsAt w1 (SameWorldNF.refl F w1)) hmr1 hgo hrN
+        (hargsAt w1 (SameWorldNF.refl F w1)) hmr1 hpc hgo hrN
       have hol' : outs.length = (outDefs b (max (sigRets ext.sig).length 2)).length := by
         rw [hol, hdl]; simp [outDefs]
       rw [tryFix_append]
@@ -251,12 +254,14 @@ theorem try_sym_lowerTryOk {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} 
     · trivial
 
 set_option maxHeartbeats 5000000 in
-theorem try_bl_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) {F : BitVec 64 → Prop} {isem : Sem}
+theorem try_bl_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) {Rd F : BitVec 64 → Prop}
+    {Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop} {isem : Sem}
     {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program} (hR : Refines F isem)
-    (hMR : MRStable F MR) {sb : Nat} {syms : String → Option Nat} (hMem : MemRefines F sb syms isem)
+    (hMR : MRStable F MR) {sb : Nat} {syms : String → Option Nat}
+    (hMem : MemRefinesR Rd F sb syms isem)
     {outB : Nat} (hout : OutArgsOk F outB MR) {exts : List Clif.ExtFunc}
-    (hCR : CallsRefine F env exts MR isem) :
-    TryRuleOk isem MR env cp exts outB p rule_lower_2542 := by
+    (hCR : CallsRefineP Pc F env exts MR isem) :
+    TryRuleOkP Rd Pc isem MR env cp exts outB p rule_lower_2542 := by
   intro f ctx hctx hexts ti fn args et data sig items targets info lo st1 hreg hd he hi hinfo htr
     hvb cfg hc m n st tr env' s1 out st' tr' hm hn hst _ hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
@@ -316,10 +321,11 @@ theorem try_bl_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) {F : BitVec 
     hb hl htrs (by rw [hs2, hs1]; simp [LState.emit, freshN_nextVreg])⟩
   rw [hs2, hs1]; simp [LState.emit, freshN_emitted]
 
-theorem try_got_lowerTryOk {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} {env : Clif.Env}
-    {cp : Clif.Program} {sb : Nat} {syms : String → Option Nat} (hMR : MRStable F MR)
-    (hMem : MemRefines F sb syms isem) {outB : Nat} (hout : OutArgsOk F outB MR)
-    {exts : List Clif.ExtFunc} (hCR : CallsRefine F env exts MR isem) {f : Clif.Function}
+theorem try_got_lowerTryOk {Rd F : BitVec 64 → Prop}
+    {Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop} {isem : Sem} {MR : MemRelT}
+    {env : Clif.Env} {cp : Clif.Program} {sb : Nat} {syms : String → Option Nat}
+    (hMR : MRStable F MR) (hMem : MemRefinesR Rd F sb syms isem) {outB : Nat}
+    (hout : OutArgsOk F outB MR) {exts : List Clif.ExtFunc} (hCR : CallsRefineP Pc F env exts MR isem) {f : Clif.Function}
     {ctx : Ctx} (hctx : CtxInv f ctx) {fn : Clif.FnRef} {args : List Nat} {ext : Clif.ExtFunc}
     (hext : f.extern? fn = some ext) (hin : ext ∈ exts) (hso : SigStackOk ext.sig outB)
     {bytes : List Nat} (hb : sigParamBytes ext.sig = .ok bytes) {locs : List ArgLoc} {S : Nat}
@@ -328,7 +334,7 @@ theorem try_got_lowerTryOk {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} 
       [.vreg b .int, .vreg (b + 1) .int]))
     {st st' : LState} (hargs : ∀ x ∈ args, x < st.nextVreg)
     (hst' : st'.nextVreg = st.nextVreg + 1) :
-    LowerTryOk isem MR env cp ctx (.call fn args) info st st'
+    LowerTryOkP Rd Pc isem MR env cp ctx (.call fn args) info st st'
       ((stackEnts ((locs.zip args).zip bytes)).map argStore ++
        [.loadExtNameGot (.vreg st.nextVreg .int) ext.name,
        .call ⟨.reg (.vreg st.nextVreg .int),
@@ -349,12 +355,14 @@ theorem try_got_lowerTryOk {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} 
   · intro d hd
     rw [vdefs_call_reg] at hd
     exact tryDefs_mem htr d hd
-  · intro fr cm ρ w hfr hvh _ hmr
+  · intro fr cm ρ w hfr hvh _ hmr _ hpin
     split
     · rename_i rvals cm' hO
       obtain ⟨ext', vals, g, hx, hvals, hty, hg, hgo, hrty⟩ := instOutcome_call_ok hO
+      have hx0 := hx
       rw [hfr, hctx.func, hext] at hx
       cases hx
+      have hpc := hpin.1 fn args ext vals g rvals cm' rfl hx0 hvals hg hgo
       have hrN : rvals.length = ext.sig.returns.length := by
         have := congrArg List.length hrty; simpa [Clif.AbiParam.tys] using this
       obtain ⟨hlen, hvx⟩ := getMany_ok hvals
@@ -386,7 +394,7 @@ theorem try_got_lowerTryOk {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} 
           (regPairsOf ((locs.zip args).zip bytes)).map (upd ρ t (ofX (sym ext.name)) ·.1))
         ((regPairsOf ((locs.zip args).zip bytes)).map (ρ ·.1)) vals rvals cm' hg
         (.inr ⟨_, rfl, by rw [ht1, huses]⟩) (by rw [hdl]; exact Nat.le_max_left _ _)
-        (hargsAt w2 hsw) hmr2 hgo hrN
+        (hargsAt w2 hsw) hmr2 hpc hgo hrN
       have hol' : outs.length = (outDefs b (max (sigRets ext.sig).length 2)).length := by
         rw [hol, hdl]; simp [outDefs]
       have hrun3 := seqRun_tryCall_reg (info := info) hi hol'
@@ -418,12 +426,14 @@ theorem try_got_lowerTryOk {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} 
     · trivial
 
 set_option maxHeartbeats 20000000 in
-theorem try_got_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) {F : BitVec 64 → Prop}
+theorem try_got_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) {Rd F : BitVec 64 → Prop}
+    {Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop}
     {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program} (hR : Refines F isem)
-    (hMR : MRStable F MR) {sb : Nat} {syms : String → Option Nat} (hMem : MemRefines F sb syms isem)
+    (hMR : MRStable F MR) {sb : Nat} {syms : String → Option Nat}
+    (hMem : MemRefinesR Rd F sb syms isem)
     {outB : Nat} (hout : OutArgsOk F outB MR) {exts : List Clif.ExtFunc}
-    (hCR : CallsRefine F env exts MR isem) :
-    TryRuleOk isem MR env cp exts outB p rule_lower_2551 := by
+    (hCR : CallsRefineP Pc F env exts MR isem) :
+    TryRuleOkP Rd Pc isem MR env cp exts outB p rule_lower_2551 := by
   intro f ctx hctx hexts ti fn args et data sig items targets info lo st1 hreg hd he hi hinfo htr
     hvb cfg hc m n st tr env' s1 out st' tr' hm hn hst _ hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
@@ -515,10 +525,11 @@ theorem mem_lower_branch_2551 : rule_lower_2551 ∈ program.rulesOf TId.lower_br
   rw [show TId.lower_branch = 687 from rfl, data_program.r687]
   simp
 
-/-- **`TryRulesCorrect`**: under the callee contract, the `try_call` rules of `lower_branch`
-(`bl`, rule id 1034; GOT + `blr`, rule id 1035) are correct. -/
-theorem tryRulesCorrect : TryRulesCorrect program := by
-  intro F isem MR env cp exts sb syms outB hR hMR hMem hout hCR r hr hroot
+/-- **`TryRulesCorrectP`**: under the pinned callee contract and the guarded memory forms, the
+`try_call` rules of `lower_branch` (`bl`, rule id 1034; GOT + `blr`, rule id 1035) are
+correct. -/
+theorem tryRulesCorrectP : TryRulesCorrectP program := by
+  intro Rd Pc F isem MR env cp exts sb syms outB hR hMR hMem hout hCR r hr hroot
   simp only [tryRootRule, Bool.or_eq_true, beq_iff_eq] at hroot
   have hnd : ((program.rulesOf TId.lower_branch).map Rule.id).Nodup := by
     rw [show TId.lower_branch = 687 from rfl, data_program.r687]
@@ -528,6 +539,10 @@ theorem tryRulesCorrect : TryRulesCorrect program := by
     exact try_bl_ruleOk data_program tryData_program hR hMR hMem hout hCR
   · rw [eq_of_mem_of_rid hnd hr mem_lower_branch_2551 (by rw [h]; rfl)]
     exact try_got_ruleOk data_program tryData_program hR hMR hMem hout hCR
+
+/-- **`TryRulesCorrect`**: under the callee contract, the `try_call` rules of `lower_branch`
+are correct (`tryRulesCorrectP` with nothing pinned). -/
+theorem tryRulesCorrect : TryRulesCorrect program := tryRulesCorrect_of_P tryRulesCorrectP
 
 /-- The root format of the rules of `lower_branch` other than the `try_call` rules is not
 `TryCall` (2474). -/

@@ -64,10 +64,10 @@ theorem mem_lower_2508 : rule_lower_2508 ∈ program.rulesOf TId.lower :=
 theorem mem_lower_2518 : rule_lower_2518 ∈ program.rulesOf TId.lower :=
   List.mem_iff_getElem?.mpr ⟨344, by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl⟩
 
-/-- **`CallRulesCorrect`**: under the callee contract, the `call` rules of `lower` (`bl`, rule id
-1031; GOT + `blr`, rule id 1032) are correct. -/
-theorem callRulesCorrect : CallRulesCorrect program := by
-  intro F isem MR env cp exts sb syms outB hR hMR hMem hout hCR r hr hroot
+/-- **`CallRulesCorrectP`**: under the pinned callee contract and the guarded memory forms, the
+`call` rules of `lower` (`bl`, rule id 1031; GOT + `blr`, rule id 1032) are correct. -/
+theorem callRulesCorrectP : CallRulesCorrectP program := by
+  intro Rd Pc F isem MR env cp exts sb syms outB hR hMR hMem hout hCR r hr hroot
   simp only [callRootRule, Bool.or_eq_true, beq_iff_eq] at hroot
   rcases hroot with h | h
   · rw [eq_of_mem_of_id lower_ids_nodup hr mem_lower_2508 (by rw [h]; rfl)]
@@ -75,16 +75,23 @@ theorem callRulesCorrect : CallRulesCorrect program := by
   · rw [eq_of_mem_of_id lower_ids_nodup hr mem_lower_2518 (by rw [h]; rfl)]
     exact call_got_ruleOk data_program hR hMR hMem hout hCR
 
+/-- **`CallRulesCorrect`**: under the callee contract, the `call` rules of `lower` are correct
+(`callRulesCorrectP` with nothing pinned). -/
+theorem callRulesCorrect : CallRulesCorrect program := callRulesCorrect_of_P callRulesCorrectP
+
 theorem mem_lower_2529 : rule_lower_2529 ∈ program.rulesOf TId.lower :=
   List.mem_iff_getElem?.mpr ⟨345, by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl⟩
 
-/-- **`IndRulesCorrect`**: under the indirect-call contract, the `call_indirect` rule of `lower`
-(`blr` of the callee value, rule id 1033) is correct. -/
-theorem indRulesCorrect : IndRulesCorrect program := by
-  intro F isem MR env cp sigs hR hMR hCR r hr hroot
+/-- **`IndRulesCorrectP`**: under the pinned indirect-call contract, the `call_indirect` rule of
+`lower` (`blr` of the callee value, rule id 1033) is correct. -/
+theorem indRulesCorrectP : IndRulesCorrectP program := by
+  intro Rd Pc F isem MR env cp sigs hR hMR hCR r hr hroot
   simp only [indRootRule, beq_iff_eq] at hroot
   rw [eq_of_mem_of_id lower_ids_nodup hr mem_lower_2529 (by rw [hroot]; rfl)]
   exact call_ind_ruleOk data_program indData_program hR hMR hCR
+
+/-- **`IndRulesCorrect`** (`indRulesCorrectP` with nothing pinned). -/
+theorem indRulesCorrect : IndRulesCorrect program := indRulesCorrect_of_P indRulesCorrectP
 
 /-- **`BranchRulesCorrect`**: the closure root rules of `lower_branch` — `brif` (1132), `tbnz`
 (1137), `tbz` (1138), `jump` (1139), `br_table` (1140) — are correct; the `try_call` rules are

@@ -647,52 +647,69 @@ runs of at most `M + 1` steps).
      without memory access go through M6's `formOk_sound` (`OperandsSound Z`) at the canonical
      registers, which pass the checker's static checks (`canon_facts`, decided per form); the
      memory forms through their `MemRefines` characterisations; `ispec`/`mspec` and the control
-     forms read the world only through the flags, `sp` and `x29`. Not yet covered: the LL/SC
-     loops, `try_call` and `Args`.
-   * **The guarded semantics** (`FV/E2E/Guarded.lean`, `csemG F ctx X Rd`: `csem` where the
-     memory accesses have the memory rules' forms and every byte read satisfies `Rd`): it
-     satisfies `Refines`, `MemRefinesR Rd`, `CallsRefine`, `IndCallsRefine` (`refines_csemG`,
-     `memRefinesR_csemG`, `callsRefine_csemG`, `indCallsRefine_csemG`), and a step of it with
-     `Rd := ¬ Z` is a step of `csem` that `csem` repeats on every world agreeing outside `Z`
-     (`csemG_lockstep`).
-   Findings (why the earlier routes cannot work): the footprint cannot come from the memory
-   relation alone, since `MemRelOk.store` must hold for every valid store, so no `MR` can say
-   "the slot bytes are uninitialised" (a store into them must keep `MR`); and the VCode
-   semantics cannot see the CLIF memory (its world is an `Arm.ArmState`, and every field the
-   contracts leave free — masked registers, memory in `F` — is one `MR` must not depend on,
-   `MRStable`). The footprint therefore has to come from the memory rules' proofs (the guard
-   `Rd`, discharged at each read from the CLIF read's bytes), instantiated **per CLIF step**
-   with `Rd := ¬ (D₀ ∩ uninit(cm))` for the step's CLIF memory `cm` (the bytes where the two
-   worlds may differ and CLIF has not initialised them; this also forbids a store step's
-   VCode to read the bytes it is about to write). M6 does not change: two VCode runs with the
-   same outcome are realised by the two activations through the existing per-function theorem.
-   **Remaining** (route A', in order):
-   1. *The rest of the lockstep*: the LL/SC loops through `rmwBody_congr`/`casHead_congr`/
-      `stlxr_congr` extended to the scratch defs (x24, x28); `try_call`'s extra defs (`regVal`
-      of the callee's world in `csem`) must become constants (they are havocked in M6); `Args`
-      at the entry (the argument registers equal in both worlds). `tls_value`'s `tlsFlags` is a
-      premise of `csem_lockstep` (`hT`), to be discharged for the base and the linked hooks.
-   2. *Guarded instances per step*: the call and `try_call` rules (`CallRulesCorrect`,
-      `TryRulesCorrect`, …) to take `MemRefinesR Rd` instead of `MemRefines` (they only use the
-      store clauses; an M4 signature change); a `lowerInstOk_of_rules` with `MemRulesCorrectR`
-      giving `LowerInstOkR` per statement, instantiated at `csemG … (¬ Z)` per CLIF step.
-   3. *The product instance*: `semP` (`csem` on both worlds, equal outputs), `MR_P` (`RelW` on
-      both and `SameWorld (F ∪ D₀)`), `InstCalls`/`TermCalls`/`TryCalls`/`TryIndCalls`/
-      `DriverSemG` of the pair from the guarded instance on the first world, the plain
-      instance on the second and the lockstep; the entry (the `Args` registers and the
-      stack-passed arguments outside `D₀`). `sim_run` on pairs gives the per-function
-      **VCode non-interference**: two body-entry worlds `SameWorld (F ∪ D₀)` with
-      `D₀ ∩ init(cs.mem) = ∅` return through the same `rets us` with the same `outs` and worlds
-      `SameWorld (F ∪ D₀)`; a clause of `backend_correct_world` composes it with M6.
-   4. *Calls*: the premise on `X` (equal results and `SameWorld (F ∪ V)` worlds from
-      `SameWorld (F ∪ V)` worlds when `V` is uninitialised in CLIF at the call and holds no
-      stack-passed argument): for the base externs a `LinkSys.Ok` premise, for program callees
-      by the induction (`LinkSys.Thm` carries the non-interference clause; `progCall` equates
-      the canonical and the actual call of a slotted callee through it).
-   5. *Placement*: the slot-placement oracle in `Clif.Mem` (`enterFunc` places a callee's slots
+     forms read the world only through the flags, `sp` and `x29`. The LL/SC loops on two runs:
+     `rmw_lockstep2`, `cas_lockstep2`.
+   * **Constant scratch defs in `csem`** (`RegallocCSem`): the defs M6 havocs no longer read the
+     world's registers — `loopSem`'s defs past the first (the LL/SC scratch registers; `xchg`
+     does not write x28) and a `try_call`'s defs past the callee's results (the payload
+     registers) are 0. M6 never compares them (`MInst.keptDefs`, `havocFrom`); `MemRefines`
+     leaves them unspecified.
+   * **The call contracts with pinned calls** (`FV/Backend/Proof/IselContractP.lean`):
+     `CallsRefineP Pc`/`IndCallsRefineP Pc` (the call clauses also assume
+     `Pc name sig vals cm`, the call's extern, signature, argument values and CLIF memory),
+     `LowerInstOkP Rd Pc`/`LowerTryOkP Rd Pc` (their runs assume `InitIn Rd cm` and
+     `CallPin Pc env inst fr cm`: the instruction's returning CLIF call satisfies `Pc`), and the
+     call, `call_indirect`, `try_call` and `try_call_indirect` rules under `MemRefinesR Rd` and
+     the pinned contracts (`callRulesCorrectP`, `indRulesCorrectP`, `tryRulesCorrectP`,
+     `tryIndRulesCorrectP`; the former statements are derived, `…_of_P`);
+     `lowerInstOkP_runTerm`/`tryOkP_runTerm`/`tryIndOkP_runTerm` for every rule family.
+   * **The guarded semantics** (`FV/E2E/Guarded.lean`, `csemG F ctx X Rd syms Pc`: `csem` where
+     the memory accesses have the memory rules' forms and every byte read satisfies `Rd`
+     (`GuardR`), every call is pinned (`GuardC`, `CallG`: `Pc` admits it, the world is related
+     to its CLIF memory, its arguments are where the ABI puts them), `Args` excluded): it
+     satisfies `Refines`, `MemRefinesR Rd`, `CallsRefineP Pc`, `IndCallsRefineP Pc`, and two
+     runs of it on worlds that agree outside `Z ⊇ F` (`Rd := ¬ Z`) go in lockstep
+     (`csemG_lockstep2`) when the callees of two pinned calls keep the agreement.
+   * **The VCode non-interference** (`FV/E2E/Pair.lean`, `FV/E2E/PairDriver.lean`): the
+     world-generic driver at `W = ArmState × ArmState` with `pairSem (csem …)` (the same
+     instruction on both worlds, the same outputs) and `MRP` (`RelW` on both, agreement outside
+     `Zof F D cm`: `F` and the bytes of `D` the current CLIF memory has not initialised; the
+     initialised ones agree through `MemRel`). Its contracts (`instCalls_pair`,
+     `termCalls_pair`, `tryCalls_pair`, `tryIndCalls_pair`, `driverSemG_pair`) come per CLIF
+     step from the rule contracts on each world at `csemG (¬ Zof F D cm) (StepPin …)` (the
+     step's CLIF call), paired by `seqRun_pair`; the entry by `entry_step2` (`LowerSim`: the
+     entry code on two worlds with the same argument registers and stack-argument bytes gives
+     one vreg file). `vcode_ni`: two body-entry worlds related to the same CLIF entry that
+     agree outside `F ∪ D` return through the same `rets` with the same values, final worlds
+     agreeing outside `F ∪ D`. Premises on the external semantics: `XNI` (two pinned calls on
+     worlds agreeing outside `Z ⊇ F`, related to the same CLIF memory, with the same argument
+     bytes, return the same values and worlds agreeing outside `Z`) and `XTls` (the TLSDESC
+     flags do not depend on the world outside `F`). `backend_correct_world_ni` composes it with
+     M6 (and the determinism of the VCode run, `vRetFrom_det`): the outcome of `w₀` is realised,
+     up to `F ∪ D`, by every activation entered with a related body-entry world.
+  Findings (why the earlier routes cannot work): the footprint cannot come from the memory
+  relation alone, since `MemRelOk.store` must hold for every valid store, so no `MR` can say
+  "the slot bytes are uninitialised" (a store into them must keep `MR`); and the VCode
+  semantics cannot see the CLIF memory (its world is an `Arm.ArmState`, and every field the
+  contracts leave free — masked registers, memory in `F` — is one `MR` must not depend on,
+  `MRStable`). The footprint therefore has to come from the memory rules' proofs (the guard
+  `Rd`, discharged at each read from the CLIF read's bytes), instantiated **per CLIF step**
+  with `Rd := ¬ Zof F D cm`. A call's stack-passed arguments are in bytes of `D` (the
+  outgoing area): the two runs agree on them only because each run's call is the step's CLIF
+  call with its argument values, so the call contracts carry the pin `Pc` (a lockstep that
+  tracks the written bytes cannot see that the call rule's stores wrote them). M6 does not
+  change: two VCode runs with the same outcome are realised by the two activations through the
+  existing per-function theorem.
+  **Remaining** (in order):
+   1. *Calls*: `LinkSys.Thm` with an activation's own `F` (a callee's `F` is its caller's minus
+      its slots and outgoing area) and the non-interference clause; `XNI` for the linked `X`
+      (program callees from the induction, base externs a `LinkSys.Ok` premise needed only when
+      a program callee has slots or an outgoing area); `progCall` equates the canonical and the
+      actual call of such a callee through the clause.
+   2. *Placement*: the slot-placement oracle in `Clif.Mem` (`enterFunc` places a callee's slots
       at the compiled frame's addresses below the tracked `sp`, restored at return; `none` keeps
       the bump allocator; trusted-semantics change with the differential gates).
-   6. `LinkSys.Ok` drops `calleeSlots`'s `h.slots = []`/`intBase = 0`; the witness gains a
+   3. `LinkSys.Ok` drops `calleeSlots`'s `h.slots = []`/`intBase = 0`; the witness gains a
       called function with a stack slot and one that passes stack arguments.
 3. *`sret` and stack-passed arguments between program functions*. `noSret`, `regParams` and
    `noOut` are gone. `sret`: the per-function theorem now exports the VCode return it took

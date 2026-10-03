@@ -86,14 +86,16 @@ theorem frame_get_regs {fr : Clif.Frame} {x : Nat} {v : Clif.Val} (h : fr.get x 
 
 theorem lo64_of_vholds {x : BitVec 64} {c : CV} (h : VHolds ⟨.i64, x⟩ c) : lo64 c = x := h
 
-theorem call_ind_lowerInstOk {isem : Sem} {MR : MemRelT} {env : Clif.Env}
-    {cp : Clif.Program} {sigs : List Clif.Signature} (hCR : IndCallsRefine env sigs MR isem)
+theorem call_ind_lowerInstOk {Rd : BitVec 64 → Prop}
+    {Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop} {isem : Sem} {MR : MemRelT}
+    {env : Clif.Env} {cp : Clif.Program} {sigs : List Clif.Signature}
+    (hCR : IndCallsRefineP Pc env sigs MR isem)
     {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) {sig callee : Nat} {args : List Nat}
     {s : Clif.Signature} (hs : f.sigDecls.lookup sig = some s) (hin : s ∈ sigs)
     (h8 : s.params.length ≤ 8) {st st' : LState} {results : List Nat}
     (hres : results.length = s.returns.length)
     (hst' : st'.nextVreg = st.nextVreg + (sigRets s).length) :
-    LowerInstOk isem MR env cp ctx (.callIndirect sig callee args) results st
+    LowerInstOkP Rd Pc isem MR env cp ctx (.callIndirect sig callee args) results st
       (outRegs' st.nextVreg (sigRets s).length) st'
       [.call ⟨.reg (.vreg callee .int), retPairs (args.zip ((abiArgIdx s.params 0).map Reg.x)),
         callDefs (outDefs st.nextVreg (sigRets s).length)⟩] := by
@@ -105,13 +107,15 @@ theorem call_ind_lowerInstOk {isem : Sem} {MR : MemRelT} {env : Clif.Env}
     simp only [outDefs, List.map_map, List.mem_map, List.mem_range, Function.comp_def] at hd
     obtain ⟨j, hj, rfl⟩ := hd
     omega
-  · intro fr cm ρ w hfr hvh _ hmr
+  · intro fr cm ρ w hfr hvh _ hmr _ hpin
     split
     · rename_i rvals cm' hO
       obtain ⟨declared, x, vals, name, g, hd, hcv, hvals, hsym, hg, hty, hgo, hrty⟩ :=
         Driver.instOutcome_callIndirect_ok hO
+      have hd0 := hd
       rw [hfr, hctx.func, hs] at hd
       cases hd
+      have hpc := hpin.2 sig callee args s x vals name g rvals cm' rfl hd0 hcv hvals hsym hg hgo
       have hvl : vals.length = s.params.length := by
         have := congrArg List.length hty; simpa [Clif.AbiParam.tys] using this
       have hal : args.length = s.params.length := (getMany_ok hvals).1 ▸ hvl
@@ -131,7 +135,7 @@ theorem call_ind_lowerInstOk {isem : Sem} {MR : MemRelT} {env : Clif.Env}
       obtain ⟨outs, w', hi, hol, hro, hmr'⟩ := hcall s hin name g fr.slots cm w x.toNat
         (.vreg callee .int) (retPairs (args.zip ((abiArgIdx s.params 0).map Reg.x)))
         (callDefs (outDefs st.nextVreg (sigRets s).length)) (ρ callee) (args.map ρ) vals rvals cm'
-        hg hsym hlo hdl (by omega) (allHold_args hvh hvals) hmr hgo hrN
+        hg hsym hlo hdl (by omega) (allHold_args hvh hvals) hmr hpc hgo hrN
       have hol' : outs.length = (outDefs st.nextVreg (sigRets s).length).length := by
         rw [hol]; simp [callDefs, outDefs]
       rw [← huses] at hi
@@ -148,10 +152,11 @@ theorem call_ind_lowerInstOk {isem : Sem} {MR : MemRelT} {env : Clif.Env}
     · trivial
 
 set_option maxHeartbeats 5000000 in
-theorem call_ind_ruleOk {p : Program} (hp : Data p) (hpI : IndData p) {F : BitVec 64 → Prop} {isem : Sem}
+theorem call_ind_ruleOk {p : Program} (hp : Data p) (hpI : IndData p) {Rd F : BitVec 64 → Prop}
+    {Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop} {isem : Sem}
     {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program} (hR : Refines F isem)
-    (hMR : MRStable F MR) {sigs : List Clif.Signature} (hCR : IndCallsRefine env sigs MR isem) :
-    IndRuleOk isem MR env cp sigs p rule_lower_2529 := by
+    (hMR : MRStable F MR) {sigs : List Clif.Signature} (hCR : IndCallsRefineP Pc env sigs MR isem) :
+    IndRuleOkP Rd Pc isem MR env cp sigs p rule_lower_2529 := by
   intro f ctx hctx ii info inst hi hcl hsig cfg hc m n st tr env' s1 out st' tr' hm hn hvb _ hmatch
     heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
