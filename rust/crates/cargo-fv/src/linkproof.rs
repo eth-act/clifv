@@ -108,6 +108,28 @@ fn read_map(p: &Path) -> Result<LinkMap, String> {
     }
     Ok(m)
 }
+/// The data objects of a codegen unit (`clif-data-export`'s `; data: %name [writable] = …`
+/// lines) with the names their contents refer to.
+fn read_data_refs(p: &Path) -> HashMap<String, Vec<String>> {
+    let mut m = HashMap::new();
+    for l in fs::read_to_string(p).unwrap_or_default().lines() {
+        let Some(rest) = l.strip_prefix("; data: %") else { continue };
+        let name: String = rest.chars().take_while(|c| is_name_char(*c)).collect();
+        let refs = rest
+            .split_once(" = ")
+            .map(|(_, items)| {
+                items
+                    .split_whitespace()
+                    .filter_map(|t| t.strip_prefix('%'))
+                    .map(|t| t.chars().take_while(|c| is_name_char(*c)).collect::<String>())
+                    .collect()
+            })
+            .unwrap_or_default();
+        m.insert(name, refs);
+    }
+    m
+}
+
 /// The bytes of the function `name` at `addr` in the executable (its symbol's size).
 fn exe_code(file: &object::File, addr: u64, name: &str) -> Option<Vec<u8>> {
     use object::{Object, ObjectSection, ObjectSymbol};
@@ -253,6 +275,7 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
     let map = read_map(&map_path)?;
     // the codegen units linked into it
     let mut cgus = Vec::new();
+    let mut cgu_dir: HashMap<String, PathBuf> = HashMap::new();
     for e in fs::read_dir(&tmp).map_err(|e| format!("{}: {e}", tmp.display()))?.flatten() {
         let p = e.path().join(CGU_FILE);
         if !p.exists() {
@@ -268,6 +291,7 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
                 continue;
             }
         }
+        cgu_dir.insert(obj.clone(), e.path());
         cgus.push((obj, j));
     }
     cgus.sort_by(|a, b| a.0.cmp(&b.0));
@@ -283,7 +307,12 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
     let mut referenced: BTreeSet<String> = BTreeSet::new();
     let mut fn_addr: BTreeMap<String, u64> = BTreeMap::new();
     let mut skipped: Vec<(String, String)> = Vec::new();
+    // functions whose address is in a data object the functions reach (vtables): CLIF image
+    // symbols, so that an indirect call through them resolves
+    let mut data_fns: BTreeSet<String> = BTreeSet::new();
     for (obj, j) in &cgus {
+        let data = cgu_dir.get(obj).map(|d| read_data_refs(&d.join("data-unopt.clif"))).unwrap_or_default();
+        let mut start: Vec<String> = Vec::new();
         let names: BTreeMap<String, String> = j["names"]
             .as_object()
             .map(|m| m.iter().filter_map(|(k, v)| v.as_str().map(|v| (k.clone(), v.to_string()))).collect())
@@ -303,6 +332,7 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
             let ra = PathBuf::from(f["ra"].as_str().unwrap_or_default());
             let text = fs::read_to_string(&clif).map_err(|e| format!("{}: {e}", clif.display()))?;
             let (renamed, seen) = rename_clif(&text, &names);
+            start.extend(rename_clif(&text, &BTreeMap::new()).1);
             let i = funcs.len();
             let cp = fns_dir.join(format!("{i}.clif"));
             let rp = fns_dir.join(format!("{i}.ra.json"));
@@ -329,7 +359,23 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
                 "symbol": f["symbol"],
             }));
         }
+        // the data objects reachable from the functions' names, and the functions they hold
+        let mut seen: BTreeSet<String> = BTreeSet::new();
+        let mut todo: Vec<String> = start.into_iter().filter(|n| data.contains_key(n)).collect();
+        while let Some(d) = todo.pop() {
+            if !seen.insert(d.clone()) {
+                continue;
+            }
+            for r in data.get(&d).into_iter().flatten() {
+                if data.contains_key(r) {
+                    todo.push(r.clone());
+                } else {
+                    data_fns.insert(names.get(r).cloned().unwrap_or_else(|| r.clone()));
+                }
+            }
+        }
     }
+    let data_fns: Vec<&String> = data_fns.iter().filter(|n| fn_addr.contains_key(*n)).collect();
     // the addresses: functions at their Lean code (the map's markers), other names where the
     // executable's symbol table has them (the map shows demangled names)
     let exe_syms = read_exe_syms(Path::new(&exe))?;
@@ -351,6 +397,7 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
         "functions": funcs,
         "addrs": addrs,
         "unresolved": unresolved,
+        "data_syms": data_fns,
         "skipped": skipped,
     });
     let lp = o.out.join("link.json");

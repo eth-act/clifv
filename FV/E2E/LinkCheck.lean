@@ -255,26 +255,65 @@ theorem declB_of {g : Clif.Function} {n : String} (h : DeclN g n) : declB g n = 
   simp only [declB, Bool.and_eq_true, List.any_eq_true, beq_iff_eq, bne_iff_ne, ne_eq]
   exact ⟨⟨e, he, hen⟩, hne⟩
 
-/-- A `blr` site: arguments in the parameter registers, results from x0.., of every function of
-`P` that `g` declares with as many register parameters. -/
-def blrOk (P : Clif.Program) (g : Clif.Function) (info : CallInfo) : Bool :=
+/-- No `call_indirect`, `try_call_indirect`. -/
+def indFreeB (g : Clif.Function) : Bool :=
+  g.blocks.all fun b =>
+    b.body.all (fun st => match st.inst with | .callIndirect .. => false | _ => true) &&
+    (match b.term with | .tryCallIndirect .. => false | _ => true)
+
+theorem indFreeB_sound {g : Clif.Function} (h : indFreeB g = true) : Clif.IndFree g := by
+  intro b hb
+  simp only [indFreeB, List.all_eq_true, Bool.and_eq_true] at h
+  obtain ⟨h1, h2⟩ := h b hb
+  refine ⟨fun st hst sig callee args he => ?_, fun callee args et he => ?_⟩
+  · have := h1 st hst; rw [he] at this; simp at this
+  · rw [he] at h2; simp at h2
+
+/-- `g` may call `n` (`LinkSys.MayCall`, with the CLIF image's symbols `S`): declared, or with
+an address when `g` has indirect calls. -/
+def mayB (S : String → Option Nat) (g : Clif.Function) (n : String) : Bool :=
+  declB g n || (!indFreeB g && n != g.name && (S n).isSome)
+
+theorem indFreeB_false {g : Clif.Function} (h : ¬ Clif.IndFree g) : indFreeB g = false := by
+  cases hb : indFreeB g
+  · rfl
+  · exact absurd (indFreeB_sound hb) h
+
+theorem mayB_of {L : LinkSys} {g : Clif.Function} {n : String} (h : L.MayCall g n) :
+    mayB L.syms g n = true := by
+  rcases h with hd | ⟨hnf, hne, hs⟩
+  · simp [mayB, declB_of hd]
+  · simp only [mayB, indFreeB_false hnf, Bool.or_eq_true, Bool.and_eq_true, Bool.not_false,
+      bne_iff_ne, ne_eq, true_and]
+    exact .inr ⟨hne, by cases h' : L.syms n <;> simp_all⟩
+
+theorem mayCall_ne {L : LinkSys} {g : Clif.Function} {n : String} (h : L.MayCall g n) :
+    n ≠ g.name := by
+  rcases h with hd | ⟨-, hne, -⟩
+  · exact hd.2
+  · exact hne
+
+/-- A `blr` site: arguments in the parameter registers, of every function of `P` the caller may
+call (`may`) with as many register parameters, and the results its defs hold from x0... -/
+def blrOk (P : Clif.Program) (may : String → Bool) (info : CallInfo) : Bool :=
   match info.dest with
   | .reg (.vreg _ .int) =>
     decide (info.uses = retPairs (decU info.uses)) &&
     decide (info.defs = callDefs (decD info.defs)) &&
-    P.funcs.all fun h => !declB g h.name ||
+    P.funcs.all fun h => !may h.name ||
       decide ((regLocs h.sig).length ≠ (decU info.uses).length) ||
       (decide ((decU info.uses).map (·.2) = regLocs h.sig) &&
         decide (((decD info.defs).map (·.1)).take (sigRets h.sig).length =
-          (List.range (sigRets h.sig).length).map Reg.x))
+          (List.range (min (sigRets h.sig).length (decD info.defs).length)).map Reg.x))
   | _ => false
 
-theorem blrOk_sound {P : Clif.Program} {g : Clif.Function} {info : CallInfo}
-    (h : blrOk P g info = true) :
+theorem blrOk_sound {P : Clif.Program} {may : String → Bool} {info : CallInfo}
+    (h : blrOk P may info = true) :
     ∃ t Lu Ld, info = ⟨.reg (.vreg t .int), retPairs Lu, callDefs Ld⟩ ∧
-      ∀ h ∈ P.funcs, DeclN g h.name → (regLocs h.sig).length = Lu.length →
+      ∀ h ∈ P.funcs, may h.name = true → (regLocs h.sig).length = Lu.length →
         Lu.map (·.2) = regLocs h.sig ∧
-        (Ld.map (·.1)).take (sigRets h.sig).length = (List.range (sigRets h.sig).length).map Reg.x := by
+        (Ld.map (·.1)).take (sigRets h.sig).length =
+          (List.range (min (sigRets h.sig).length Ld.length)).map Reg.x := by
   obtain ⟨d, us, ds⟩ := info
   unfold blrOk at h
   split at h
@@ -284,17 +323,18 @@ theorem blrOk_sound {P : Clif.Program} {g : Clif.Function} {info : CallInfo}
     simp only [Bool.and_eq_true, decide_eq_true_eq, List.all_eq_true, Bool.or_eq_true,
       Bool.not_eq_true'] at h
     obtain ⟨⟨hu, hd⟩, hall⟩ := h
-    refine ⟨t, decU us, decD ds, by rw [← hu, ← hd], fun h' hh hdecl hl => ?_⟩
+    refine ⟨t, decU us, decD ds, by rw [← hu, ← hd], fun h' hh hmay hl => ?_⟩
     rcases hall h' hh with (h1 | h1) | h1
-    · rw [declB_of hdecl] at h1; cases h1
+    · rw [hmay] at h1; cases h1
     · exact absurd hl h1
     · exact h1
   · cases h
 
 /-- A call site: a `bl` of a function `h` of `P` (other than `g`) that `g` declares, arguments in
-`h`'s parameter registers, results from x0.. (then, at a `try_call`, the exception payload
-registers); a `bl` of an extern outside `P` (the base's contract); or a `blr` site (`blrOk`). -/
-def siteOk (P : Clif.Program) (g : Clif.Function) (info : CallInfo) : Bool :=
+`h`'s parameter registers, the results its defs hold from x0.. (then, at a `try_call`, the
+exception payload registers); a `bl` of an extern outside `P` (the base's contract); or a `blr`
+site (`blrOk`). -/
+def siteOk (P : Clif.Program) (g : Clif.Function) (may : String → Bool) (info : CallInfo) : Bool :=
   match info.dest with
   | .sym n => match P.func? n with
     | some h => (h.name != g.name) && g.externs.any (fun e => e.2.name == n) &&
@@ -302,25 +342,25 @@ def siteOk (P : Clif.Program) (g : Clif.Function) (info : CallInfo) : Bool :=
         decide (info.defs = callDefs (decD info.defs)) &&
         decide ((decU info.uses).map (·.2) = regLocs h.sig) &&
         decide (((decD info.defs).map (·.1)).take (sigRets h.sig).length =
-          (List.range (sigRets h.sig).length).map Reg.x)
+          (List.range (min (sigRets h.sig).length (decD info.defs).length)).map Reg.x)
     | none => true
-  | .reg _ => blrOk P g info
+  | .reg _ => blrOk P may info
 
-theorem siteOk_reg {P : Clif.Program} {g : Clif.Function} {info : CallInfo}
-    (h : siteOk P g info = true) (hd : ∀ n, info.dest ≠ .sym n) : blrOk P g info = true := by
+theorem siteOk_reg {P : Clif.Program} {g : Clif.Function} {may : String → Bool} {info : CallInfo}
+    (h : siteOk P g may info = true) (hd : ∀ n, info.dest ≠ .sym n) : blrOk P may info = true := by
   obtain ⟨d, us, ds⟩ := info
   unfold siteOk at h
   cases d with
   | reg r => exact h
   | sym n => exact absurd rfl (hd n)
 
-theorem siteOk_sound {P : Clif.Program} {g : Clif.Function} {info : CallInfo}
-    (h : siteOk P g info = true) {n : String} {h' : Clif.Function} (hd : info.dest = .sym n)
+theorem siteOk_sound {P : Clif.Program} {g : Clif.Function} {may : String → Bool} {info : CallInfo}
+    (h : siteOk P g may info = true) {n : String} {h' : Clif.Function} (hd : info.dest = .sym n)
     (hf : P.func? n = some h') :
     h'.name ≠ g.name ∧ (∃ e ∈ g.externs, e.2.name = n) ∧ ∃ Lu Ld,
       info = ⟨.sym n, retPairs Lu, callDefs Ld⟩ ∧ Lu.map (·.2) = regLocs h'.sig ∧
       (Ld.map (·.1)).take (sigRets h'.sig).length =
-        (List.range (sigRets h'.sig).length).map Reg.x := by
+        (List.range (min (sigRets h'.sig).length Ld.length)).map Reg.x := by
   obtain ⟨d, us, ds⟩ := info
   simp only at hd
   subst hd
@@ -331,22 +371,22 @@ theorem siteOk_sound {P : Clif.Program} {g : Clif.Function} {info : CallInfo}
   exact ⟨hne, hd, _, _, by rw [← hu, ← hdd], h1, h2⟩
 
 /-- A `try_call` of a function `h` of `P` takes at most `h`'s results (at a `blr`: of every
-declared function with as many register parameters). -/
-def tryB (P : Clif.Program) (g : Clif.Function) : MInst → Bool
+function the caller may call with as many register parameters). -/
+def tryB (P : Clif.Program) (may : String → Bool) : MInst → Bool
   | .tryCall info ti => match info.dest with
     | .sym n => match P.func? n with
       | some h => decide (ti.rets ≤ (sigRets h.sig).length)
       | none => true
-    | .reg _ => P.funcs.all fun h => !declB g h.name ||
+    | .reg _ => P.funcs.all fun h => !may h.name ||
       decide ((regLocs h.sig).length ≠ (decU info.uses).length) ||
       decide (ti.rets ≤ (sigRets h.sig).length)
   | _ => true
 
-theorem tryB_reg {P : Clif.Program} {g : Clif.Function} {vc : VCode}
-    (h : allInsts vc (tryB P g) = true) {info : CallInfo} {ti : TryInfo} (hs : vc.TrySite info ti)
+theorem tryB_reg {P : Clif.Program} {may : String → Bool} {vc : VCode}
+    (h : allInsts vc (tryB P may) = true) {info : CallInfo} {ti : TryInfo} (hs : vc.TrySite info ti)
     {t : Nat} {Lu : List (Nat × Reg)} {Ld : List (Reg × Nat)}
     (hi : info = ⟨.reg (.vreg t .int), retPairs Lu, callDefs Ld⟩) {h' : Clif.Function}
-    (hh : h' ∈ P.funcs) (hdecl : DeclN g h'.name) (hl : (regLocs h'.sig).length = Lu.length) :
+    (hh : h' ∈ P.funcs) (hmay : may h'.name = true) (hl : (regLocs h'.sig).length = Lu.length) :
     ti.rets ≤ (sigRets h'.sig).length := by
   obtain ⟨b, vb, k, hb, hk⟩ := hs
   have := allInsts_sound h hb hk
@@ -355,11 +395,12 @@ theorem tryB_reg {P : Clif.Program} {g : Clif.Function} {vc : VCode}
   have hdu : decU (retPairs Lu) = Lu := by
     simp [decU, retPairs, Function.comp_def]
   rcases this h' hh with (h1 | h1) | h1
-  · rw [declB_of hdecl] at h1; cases h1
+  · rw [hmay] at h1; cases h1
   · rw [hdu] at h1; exact absurd hl h1
   · exact h1
 
-theorem tryB_sound {P : Clif.Program} {g : Clif.Function} {vc : VCode} (h : allInsts vc (tryB P g) = true)
+theorem tryB_sound {P : Clif.Program} {may : String → Bool} {vc : VCode}
+    (h : allInsts vc (tryB P may) = true)
     {info : CallInfo} {ti : TryInfo} (hs : vc.TrySite info ti) {n : String} {h' : Clif.Function}
     (hd : info.dest = .sym n) (hf : P.func? n = some h') : ti.rets ≤ (sigRets h'.sig).length := by
   obtain ⟨b, vb, k, hb, hk⟩ := hs
@@ -414,20 +455,6 @@ theorem linkFreeB_sound {g : Clif.Function} (h : linkFreeB g = true) : Clif.Link
   simp only [linkFreeB, List.all_eq_true] at h
   have := h b hb
   rw [he] at this; simp at this
-
-/-- No `call_indirect`, `try_call_indirect`. -/
-def indFreeB (g : Clif.Function) : Bool :=
-  g.blocks.all fun b =>
-    b.body.all (fun st => match st.inst with | .callIndirect .. => false | _ => true) &&
-    (match b.term with | .tryCallIndirect .. => false | _ => true)
-
-theorem indFreeB_sound {g : Clif.Function} (h : indFreeB g = true) : Clif.IndFree g := by
-  intro b hb
-  simp only [indFreeB, List.all_eq_true, Bool.and_eq_true] at h
-  obtain ⟨h1, h2⟩ := h b hb
-  refine ⟨fun st hst sig callee args he => ?_, fun callee args et he => ?_⟩
-  · have := h1 st hst; rw [he] at this; simp at this
-  · rw [he] at h2; simp at h2
 
 theorem lookup_mem {α β : Type} [BEq α] [LawfulBEq α] :
     ∀ {l : List (α × β)} {a : α} {b : β}, l.lookup a = some b → b ∈ l.map (·.2)
@@ -552,8 +579,9 @@ theorem imgCode_of {T : List (Clif.Function × Art)} (h : imgB T = true)
   omega
 
 /-- `g` is called in `P`: a function of `P` declares it. -/
-def calleeB (P : Clif.Program) (g : Clif.Function) : Bool :=
-  P.funcs.any fun g' => g'.externs.any fun e => e.2.name == g.name
+def calleeB (P : Clif.Program) (S : String → Option Nat) (g : Clif.Function) : Bool :=
+  P.funcs.any (fun g' => g'.externs.any fun e => e.2.name == g.name) ||
+    ((S g.name).isSome && P.funcs.any (!indFreeB ·))
 
 /-- The slots of `g` fit in its compiled slot region (`LinkSys.Ok.slotFits`). -/
 def slotFitsB (g : Clif.Function) (a : Art) : Bool :=
@@ -575,16 +603,14 @@ theorem slotFitsB_sound {g : Clif.Function} {a : Art} (h : slotFitsB g a = true)
 with the CLIF image's symbols `S`. -/
 def indB (P : Clif.Program) (S : String → Option Nat) (g : Clif.Function) : Bool :=
   indFreeB g || ((indSigs g).all (fun s => !s.params.any (·.purpose == .sret)) &&
-    P.funcs.all (fun h => !declB g h.name || (!h.sig.params.any (·.purpose == .sret) &&
+    P.funcs.all (fun h => !mayB S g h.name || (!h.sig.params.any (·.purpose == .sret) &&
       (match sigParamBytes h.sig with | .ok b => decide (b.length ≤ 8) | .error _ => false))) &&
-    S g.name == none &&
-    (Clif.Program.names P).all (fun n => n == g.name || S n == none ||
-      g.externs.any (·.2.name == n)))
+    S g.name == none)
 
-/-- Distinct names of `P` with an address have distinct addresses (`Clif.SymInj`). -/
-def symNamesB (P : Clif.Program) (S : String → Option Nat) : Bool :=
-  let ns := (Clif.Program.names P).filter fun n => (S n).isSome
-  ns.all fun a => ns.all fun b => S a != S b || a == b
+/-- Distinct names of the CLIF image have distinct addresses (`Clif.SymInj` of every list of
+names, those of the base environment included). -/
+def symsInjB (I : LinkInput) : Bool :=
+  I.syms.all fun p => I.syms.all fun q => p.2 != q.2 || p.1 == q.1
 
 /-- The machine's address of every function of `P` is no other symbol's (`Ok.symInj`): it is
 a nonzero 64-bit address (names without one resolve to `0`) that no other link-map entry has. -/
@@ -630,11 +656,12 @@ def linkChks (I : LinkInput) (P : Clif.Program) (T : List (Clif.Function × Art)
     (r : Except String Art) : List (String × Bool) :=
   let a := getOk r
   let fr := RAFrame.compute a.vcp a.rf
-  [("tryRets/blrTry", allInsts a.vcp (tryB P g)),
+  let may := mayB (fun n => I.syms.lookup n) g
+  [("tryRets/blrTry", allInsts a.vcp (tryB P may)),
    ("outFits", g.externs.all (fun e => !(P.func? e.2.name).isSome || outFitsB e.2.sig fr.intBase)),
    ("calleeFrame/slotFits",
-     !calleeB P g || ((!g.slots.isEmpty || fr.size == a.af.frameSize) && slotFitsB g a)),
-   ("callRegs/blrRegs", allInsts a.vcp (siteB (siteOk P g))),
+     !calleeB P (fun n => I.syms.lookup n) g || ((!g.slots.isEmpty || fr.size == a.af.frameSize) && slotFitsB g a)),
+   ("callRegs/blrRegs", allInsts a.vcp (siteB (siteOk P g may))),
    ("declSig", g.externs.all fun e => match P.func? e.2.name with
       | some h => decide (e.2.sig = h.sig)
       | none => true),
@@ -655,7 +682,7 @@ def globalChks (I : LinkInput) (P : Clif.Program) (T : List (Clif.Function × Ar
    ("raStar", raStarB T (BitVec.ofNat 64 I.raStar)),
    ("symInj", symInjB I P),
    ("symOk", symOkB I),
-   ("indScope: SymInj", P.funcs.all indFreeB || symNamesB P S),
+   ("indScope: SymInj", P.funcs.all indFreeB || symsInjB I),
    ("addrSlots", addrSlotsB P T S)]
 
 def okR (I : LinkInput) (R : Res) : Bool :=
@@ -729,17 +756,18 @@ structure Facts (I : LinkInput) (g : Clif.Function) (a : Art) : Prop where
   check : checkAlloc a.vcp a.rf = .ok ()
   covered : FormsCovered ⟨a.fa.k, a.af.slotBase⟩
     a.vcp
-  tries : allInsts a.vcp (tryB (progOf I.results) g) = true
+  tries : allInsts a.vcp (tryB (progOf I.results) (mayB (fun n => I.syms.lookup n) g)) = true
   rets : allInsts a.vc (retsB g) = true
   outFits : ∀ e ∈ g.externs, ((progOf I.results).func? e.2.name).isSome = true →
     outFitsB e.2.sig (RAFrame.compute a.vcp a.rf).intBase = true
   nodup : (regLocs g.sig).Nodup
   argReg : ∀ r ∈ regLocs g.sig, r.isArgReg = true
   width : ∀ p ∈ g.sig.params, p.ty.width ≤ 64
-  callee : calleeB (progOf I.results) g = true → (g.slots = [] →
+  callee : calleeB (progOf I.results) (fun n => I.syms.lookup n) g = true → (g.slots = [] →
     (RAFrame.compute a.vcp a.rf).size =
       a.af.frameSize) ∧ slotFitsB g a = true
-  sites : allInsts a.vcp (siteB (siteOk (progOf I.results) g)) = true
+  sites : allInsts a.vcp (siteB (siteOk (progOf I.results) g
+    (mayB (fun n => I.syms.lookup n) g))) = true
   declSig : ∀ e ∈ g.externs.map (·.2), ∀ h, (progOf I.results).func? e.name = some h → e.sig = h.sig
   entry : entryB g a.vcp = true
   fits : a.base.toNat + 4 * a.fb.words.size ≤ 2 ^ 64
@@ -797,40 +825,31 @@ theorem facts {I : LinkInput} (h : okB I = true) {g : Clif.Function}
   · obtain ⟨⟨fn, e'⟩, hm, rfl⟩ := List.mem_map.1 hx
     simpa using h21 _ hm
 
-theorem symNames_sound {P : Clif.Program} {S : String → Option Nat} (h : symNamesB P S = true) :
-    Clif.SymInj P S := by
-  intro a ha b hb x hxa hxb
-  simp only [symNamesB, List.all_eq_true, List.mem_filter, Bool.or_eq_true, bne_iff_ne, ne_eq,
-    beq_iff_eq] at h
-  rcases h a ⟨ha, by simp [hxa]⟩ b ⟨hb, by simp [hxb]⟩ with h' | h'
-  · exact absurd (hxa.trans hxb.symm) h'
+theorem symsInj_sound {I : LinkInput} (h : symsInjB I = true) (ns : List String) :
+    Clif.SymInj ns (fun n => I.syms.lookup n) := by
+  intro a _ b _ x hxa hxb
+  simp only [symsInjB, List.all_eq_true, Bool.or_eq_true, bne_iff_ne, ne_eq, beq_iff_eq] at h
+  rcases h _ (lookup_pair hxa) _ (lookup_pair hxb) with h' | h'
+  · exact absurd rfl h'
   · exact h'
 
 theorem indFacts {I : LinkInput} (h : okB I = true) {g : Clif.Function}
     (hg : g ∈ (progOf I.results).funcs) (hnf : ¬ Clif.IndFree g) :
     (∀ sig ∈ indSigs g, sig.params.any (·.purpose == .sret) = false) ∧
-    (∀ h ∈ (progOf I.results).funcs, DeclN g h.name → h.sig.params.any (·.purpose == .sret) = false ∧
+    (∀ h ∈ (progOf I.results).funcs, mayB (fun n => I.syms.lookup n) g h.name = true →
+      h.sig.params.any (·.purpose == .sret) = false ∧
       ∃ bytes, sigParamBytes h.sig = .ok bytes ∧ bytes.length ≤ 8) ∧
-    I.syms.lookup g.name = none ∧
-    ∀ n ∈ Clif.Program.names (progOf I.results), n ≠ g.name → I.syms.lookup n ≠ none →
-      n ∈ g.externs.map (·.2.name) := by
+    I.syms.lookup g.name = none := by
   have h := (facts h hg).ind
   simp only [indB, Bool.or_eq_true, Bool.and_eq_true, List.all_eq_true] at h
-  rcases h with h | ⟨⟨⟨h1, h2⟩, h3⟩, h4⟩
+  rcases h with h | ⟨⟨h1, h2⟩, h3⟩
   · exact absurd (indFreeB_sound h) hnf
-  refine ⟨fun sig hs => by simpa using h1 sig hs, fun h' hh hd => ?_, by simpa using h3,
-    fun n hn hne hs => ?_⟩
-  · have h2' := h2 h' hh
-    rw [declB_of hd] at h2'
-    revert h2'
-    cases hs : h'.sig.params.any (·.purpose == .sret) <;>
-      cases hb : sigParamBytes h'.sig <;> simp_all
-  · have := h4 n hn
-    simp only [Bool.or_eq_true, beq_iff_eq, List.any_eq_true] at this
-    rcases this with (e | e) | ⟨x, hx, hxn⟩
-    · exact absurd e hne
-    · exact absurd e hs
-    · exact List.mem_map.mpr ⟨x, hx, hxn⟩
+  refine ⟨fun sig hs => by simpa using h1 sig hs, fun h' hh hd => ?_, by simpa using h3⟩
+  have h2' := h2 h' hh
+  rw [hd] at h2'
+  revert h2'
+  cases hs : h'.sig.params.any (·.purpose == .sret) <;>
+    cases hb : sigParamBytes h'.sig <;> simp_all
 
 theorem addrOf_of_lookup {I : LinkInput} {n : String} {b : Nat} (h : I.addrs.lookup n = some b) :
     I.addrOf n = b := by
@@ -861,31 +880,45 @@ theorem okB_sound {I : LinkInput} (hI : okB I = true) {B : BaseEnv} {F : BitVec 
   have fa := fun {g} (hg : g ∈ (progOf I.results).funcs) => facts hI hg
   have site : ∀ g ∈ (progOf I.results).funcs, ∀ info h,
       (LinkSys.ofInput I B F).ProgSite g info h →
-      h ∈ (progOf I.results).funcs ∧ h.name ≠ g.name ∧ calleeB (progOf I.results) h = true ∧
+      h ∈ (progOf I.results).funcs ∧ h.name ≠ g.name ∧
+        calleeB (progOf I.results) (fun n => I.syms.lookup n) h = true ∧
         ∃ n Lu Ld, info = ⟨.sym n, retPairs Lu, callDefs Ld⟩ ∧
         Lu.map (·.2) = regLocs h.sig ∧
-        (Ld.map (·.1)).take (sigRets h.sig).length = (List.range (sigRets h.sig).length).map Reg.x := by
+        (Ld.map (·.1)).take (sigRets h.sig).length =
+          (List.range (min (sigRets h.sig).length Ld.length)).map Reg.x := by
     intro g hg info h ⟨hs, n, hd, hf⟩
     have hf' : (progOf I.results).func? n = some h := hf
     obtain ⟨hne, ⟨e, he, hen⟩, Lu, Ld, heq, h1, h2⟩ :=
       siteOk_sound (site_sound (fa hg).sites hs) hd hf'
     obtain ⟨hh, hname⟩ := Clif.Program.func?_some hf'
     refine ⟨hh, hne, ?_, n, Lu, Ld, heq, h1, h2⟩
-    simp only [calleeB, List.any_eq_true, beq_iff_eq]
-    exact ⟨g, hg, e, he, by rw [hen, hname]⟩
+    simp only [calleeB, Bool.or_eq_true, List.any_eq_true, beq_iff_eq]
+    exact .inl ⟨g, hg, e, he, by rw [hen, hname]⟩
   have hcal : ∀ g ∈ (progOf I.results).funcs, ∀ h, (LinkSys.ofInput I B F).Callee g h →
       (h.slots = [] → (RAFrame.compute (artOf I.results h).vcp (artOf I.results h).rf).size =
         (artOf I.results h).af.frameSize) ∧ slotFitsB h (artOf I.results h) = true := by
     intro g hg h hh
-    have hc : calleeB (progOf I.results) h = true ∧ h ∈ (progOf I.results).funcs := by
-      rcases hh with ⟨info, hs⟩ | ⟨e, he, hf⟩
+    have hc : calleeB (progOf I.results) (fun n => I.syms.lookup n) h = true ∧
+        h ∈ (progOf I.results).funcs := by
+      rcases hh with ⟨info, hs⟩ | ⟨e, he, hf⟩ | ⟨hh', hmay⟩
       · obtain ⟨hh', -, hc, -⟩ := site g hg info h hs
         exact ⟨hc, hh'⟩
       · obtain ⟨hh', hname⟩ := Clif.Program.func?_some (p := progOf I.results) hf
         refine ⟨?_, hh'⟩
         obtain ⟨⟨fn, e'⟩, hm, rfl⟩ := List.mem_map.1 he
-        simp only [calleeB, List.any_eq_true, beq_iff_eq]
-        exact ⟨g, hg, (fn, e'), hm, hname.symm⟩
+        simp only [calleeB, Bool.or_eq_true, List.any_eq_true, beq_iff_eq]
+        exact .inl ⟨g, hg, (fn, e'), hm, hname.symm⟩
+      · refine ⟨?_, hh'⟩
+        simp only [calleeB, Bool.or_eq_true, List.any_eq_true, beq_iff_eq, Bool.and_eq_true,
+          Bool.not_eq_true']
+        rcases hmay with ⟨hm, -⟩ | ⟨hnf, -, hs⟩
+        · obtain ⟨⟨fn, e'⟩, he, hen⟩ := List.mem_map.1 hm
+          exact .inl ⟨g, hg, (fn, e'), he, hen⟩
+        · refine .inr ⟨?_, g, hg, indFreeB_false hnf⟩
+          show (I.syms.lookup h.name).isSome = true
+          cases h' : I.syms.lookup h.name
+          · exact absurd h' hs
+          · rfl
     exact (fa hc.2).callee hc.1
   have hpipe : ∀ g ∈ (progOf I.results).funcs,
       Compiled g (artOf I.results g).k (artOf I.results g).vc (artOf I.results g).vcp
@@ -909,15 +942,17 @@ theorem okB_sound {I : LinkInput} (hI : okB I = true) {B : BaseEnv} {F : BitVec 
       calleeFrame := fun g hg h hh hs => (hcal g hg h hh).1 hs
       slotFits := fun g hg h hh => slotFitsB_sound (hcal g hg h hh).2
       callRegs := fun g hg info h hs => (site g hg info h hs).2.2.2
-      blrRegs := fun g hg info hs hreg =>
-        blrOk_sound (siteOk_reg (site_sound (fa hg).sites hs) hreg)
-      blrTry := fun g hg info ti hs t Lu Ld hi h hh hdecl hl =>
-        tryB_reg (fa hg).tries hs hi hh hdecl hl
-      raBlr := fun g hg info hs hreg h hh hdecl pc hpc k hk =>
-        raCallB_sound (fa hg).ra hpc _ (tab_mem hn hh) hdecl.2 k hk
-      indScope := fun g hg hnf => ⟨hB.keepSyms ⟨g, hg, hnf⟩, ?_, (indFacts hI hg hnf).2.2.2⟩
-      indNoSym := fun g hg hnf => (indFacts hI hg hnf).2.2.1
-      indSig := fun g hg hnf => ⟨(indFacts hI hg hnf).1, (indFacts hI hg hnf).2.1⟩
+      blrRegs := fun g hg info hs hreg => by
+        obtain ⟨t, Lu, Ld, heq, hall⟩ := blrOk_sound (siteOk_reg (site_sound (fa hg).sites hs) hreg)
+        exact ⟨t, Lu, Ld, heq, fun h hh hmay hl => hall h hh (mayB_of hmay) hl⟩
+      blrTry := fun g hg info ti hs t Lu Ld hi h hh hmay hl =>
+        tryB_reg (fa hg).tries hs hi hh (mayB_of hmay) hl
+      raBlr := fun g hg info hs hreg h hh hmay pc hpc k hk =>
+        raCallB_sound (fa hg).ra hpc _ (tab_mem hn hh) (mayCall_ne hmay) k hk
+      indScope := fun g hg hnf => ⟨hB.keepSyms ⟨g, hg, hnf⟩, ?_⟩
+      indNoSym := fun g hg hnf => (indFacts hI hg hnf).2.2
+      indSig := fun g hg hnf => ⟨(indFacts hI hg hnf).1,
+        fun h hh hmay => (indFacts hI hg hnf).2.1 h hh (mayB_of hmay)⟩
       addrSlots := fun ⟨g, hg, hout⟩ ⟨g', hg', hind⟩ h hh hs => ?_
       symInj := fun h hh n hn => ?_
       declSig := fun g hg e he h hf => (fa hg).declSig e he h hf
@@ -956,7 +991,7 @@ theorem okB_sound {I : LinkInput} (hI : okB I = true) {B : BaseEnv} {F : BitVec 
   · simp only [Bool.or_eq_true, List.all_eq_true] at hsymn
     rcases hsymn with h | h
     · exact absurd (indFreeB_sound (h g hg)) hnf
-    · exact symNames_sound h
+    · exact symsInj_sound h _
   · simp only [addrSlotsB, Bool.or_eq_true, Bool.not_eq_true', Bool.and_eq_false_iff,
       List.any_eq_false, List.all_eq_true, Bool.not_eq_true, bne_iff_ne, ne_eq,
       Decidable.not_not, Bool.or_eq_true, Option.isNone_iff_eq_none, List.isEmpty_iff] at haddr

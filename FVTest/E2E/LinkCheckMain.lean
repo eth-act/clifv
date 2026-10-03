@@ -10,7 +10,8 @@ its layout, `FV/E2E/LinkCheck.lean`) on the input of a crate-level instance writ
 `fns/<i>.ra.json`, `lean-regalloc`'s output for it) and the link-map addresses (`addrs`).
 
 It completes the input (the CLIF image's symbols `syms`: every `symbol` global value and
-`func_addr` target of the functions, at its link-map address; `D`: the largest frame of a
+`func_addr` target of the functions, and the functions of the program in the data objects they
+reach (vtables, `data_syms` of `link.json`), at its link-map address; `D`: the largest frame of a
 function; `raStar = 8`) and prints the failing checks per function and premise (`diagR`, the
 diagnostic version of `okB`), then a count per premise. With `--prune` it drops the failing
 functions (they become externs of the base environment) until the rest passes. With `--lean` it
@@ -41,30 +42,28 @@ def leanStr (s : String) : String :=
 /-- Why a check fails, in more detail (for the call-site and indirect-call checks). -/
 def detail (I : LinkInput) (P : Clif.Program) (g : Clif.Function) (a : Art) (check : String) :
     List String :=
+  let S := fun n => I.syms.lookup n
+  let may := mayB S g
   if check == "callRegs/blrRegs" then
     a.vcp.blocks.toList.flatMap fun vb => vb.insts.toList.filterMap fun i => match i with
       | .call info | .tryCall info _ =>
-        if siteOk P g info then none else some (match info.dest with
+        if siteOk P g may info then none else some (match info.dest with
           | .sym n => s!"bl {n}: arguments/results not in the callee's ABI registers"
           | .reg _ =>
             let nu := (decU info.uses).length
-            let hs := P.funcs.filter fun h => declB g h.name && (regLocs h.sig).length == nu &&
+            let hs := P.funcs.filter fun h => may h.name && (regLocs h.sig).length == nu &&
               !(decide ((decU info.uses).map (·.2) = regLocs h.sig) &&
                 decide (((decD info.defs).map (·.1)).take (sigRets h.sig).length =
-                  (List.range (sigRets h.sig).length).map Reg.x))
-            s!"blr with {nu} register argument(s), {info.defs.length} def(s): not the ABI registers of the declared program function(s) with {nu} register parameter(s): {hs.map (·.name)}")
+                  (List.range (min (sigRets h.sig).length (decD info.defs).length)).map Reg.x))
+            s!"blr with {nu} register argument(s), {info.defs.length} def(s): not the ABI registers of the program function(s) it may call (MayCall) with {nu} register parameter(s): {hs.map (·.name)}")
       | _ => none
   else if check == "indScope/indNoSym/indSig" then
-    let S := fun n => I.syms.lookup n
     (if (indSigs g).all (fun s => !s.params.any (·.purpose == .sret)) then []
       else ["indSig: an indirect call passes an sret pointer"]) ++
-    (P.funcs.filter (fun h => declB g h.name && (h.sig.params.any (·.purpose == .sret) ||
+    (P.funcs.filter (fun h => may h.name && (h.sig.params.any (·.purpose == .sret) ||
       (match sigParamBytes h.sig with | .ok b => decide (b.length > 8) | .error _ => true)))).map
-      (fun h => s!"indSig: declared program function {h.name} has an sret or stack-passed parameter") ++
-    (if S g.name == none then [] else ["indNoSym: the function's own address is taken"]) ++
-    ((Clif.Program.names P).eraseDups.filter (fun n => n != g.name && S n != none &&
-      !g.externs.any (·.2.name == n))).map
-      (fun n => s!"indScope: does not declare {n} (a name of the program with an address)")
+      (fun h => s!"indSig: program function {h.name} it may call has an sret or stack-passed parameter") ++
+    (if S g.name == none then [] else ["indNoSym: the function's own address is taken"])
   else []
 
 /-- The compiled words of `a` against the executable's bytes `b` at its address: equal outside
@@ -206,6 +205,9 @@ def main (args : List String) : IO UInt32 := do
     let n ← (arr[0]?.bind (·.getStr?.toOption))
     let v ← (arr[1]?.bind (·.getNat?.toOption))
     pure (n, v)
+  -- functions whose address is in a data object the program reaches (vtable methods)
+  let dataSyms : List String := (((j.getObjVal? "data_syms").bind (·.getArr?)).toOption.getD #[]).toList.filterMap
+    (·.getStr?.toOption)
   let I0 : LinkInput := { funcs := fis.toList, addrs, syms := [], raStar := 8, D := 0 }
   if o.profile then
     -- the slowest functions: the pipeline, the lowering validator, the allocation checker
@@ -238,7 +240,8 @@ def main (args : List String) : IO UInt32 := do
   let mut d : List (String × List String) := []
   let mut I := I0
   repeat
-    let names := ((keep.flatMap fun e => addrNames e.1).eraseDups)
+    let names := ((keep.flatMap fun e => addrNames e.1) ++
+      dataSyms.filter (fun n => keep.any (·.1.name == n))).eraseDups
     let syms := names.filterMap fun n => (I0.addrs.lookup n).map (n, ·)
     let D := (keep.map fun e => frameDrop (getOk e.2).af).foldl max 0
     I := { I0 with syms, D }
