@@ -641,10 +641,9 @@ def okB (I : LinkInput) : Bool := okR I I.results
 /-- The names of the failing checks. -/
 def bad (cs : List (String × Bool)) : List String := (cs.filter (!·.2)).map (·.1)
 
-/-- **The diagnostic version of `okB`**: the failing global checks, then per function (by name)
-the failing checks (and the pipeline's error). `okB I = true` if it is empty (`diag_nil`). -/
-def diag (I : LinkInput) : List (String × List String) :=
-  let R := I.results
+/-- **The diagnostic version of `okR`**: the failing global checks, then per function (by name)
+the failing checks (and the pipeline's error). `okR I R = true` if it is empty (`diagR_nil`). -/
+def diagR (I : LinkInput) (R : Res) : List (String × List String) :=
   let P := progOf R
   let T := tabOf R
   let gl := bad (globalChks I P T)
@@ -653,6 +652,9 @@ def diag (I : LinkInput) : List (String × List String) :=
     | [] => none
     | b => some (e.1.name, b ++ (match e.2 with | .error m => [m] | .ok _ => []))
   (if gl.isEmpty then [] else [("(program)", gl)]) ++ fs
+
+/-- **The diagnostic version of `okB`** (`diag_nil`). -/
+def diag (I : LinkInput) : List (String × List String) := diagR I I.results
 
 /-! ## Soundness -/
 
@@ -958,6 +960,59 @@ theorem okB_sound {I : LinkInput} (hI : okB I = true) {B : BaseEnv} {F : BitVec 
     show I.symAddr n 0 = _
     rw [symAddr_zero, this]
 
+/-! ## The base premises are satisfiable -/
+
+/-- **The closed base environment**: no extern outside the program has a semantics (CLIF:
+`Clif.Env.empty`; machine: `call` undefined), a call outside the program continues at the next
+instruction, TLS keeps the state, the TLSDESC flags are the world's. -/
+def closedBase : BaseEnv where
+  env := Clif.Env.empty
+  call _ _ _ := none
+  tp := 0
+  tlsFlags _ s := Arm.read_pstate s
+  hooks := ⟨fun _ s => Arm.w .PC (Arm.r .PC s + 4) s, fun _ _ s => s⟩
+
+theorem closedBase_tlsNI {I : LinkInput} {R : Res} {F' : BitVec 64 → Prop}
+    (F : BitVec 64 → Prop) : XTls F (ofRes I R closedBase F').Xb := by
+  intro Z n w w' _ hsw
+  have e : ∀ fl, Arm.r (.FLAG fl) w = Arm.r (.FLAG fl) w' := fun fl => hsw.1 _ (by simp [Masked])
+  have h1 := e .N
+  have h2 := e .Z
+  have h3 := e .C
+  have h4 := e .V
+  simp only [Arm.r, Arm.read_base_flag] at h1 h2 h3 h4
+  show Arm.read_pstate w = Arm.read_pstate w'
+  apply Arm.PState.ext <;> simp only [Arm.read_pstate] <;> assumption
+
+/-- **Non-vacuity of `BaseOk`**: the closed base environment satisfies every base premise of
+every input without `tls_value` (decidable: `hasTls`). With it the crate's theorem covers the
+runs that call nothing outside the program (a call outside it is stuck in CLIF). -/
+theorem baseOk_closed {I : LinkInput} {F : BitVec 64 → Prop}
+    (htls : ∀ g ∈ (progOf I.results).funcs, hasTls g = false) :
+    BaseOk (LinkSys.ofInput I closedBase F) where
+  baseNoAlloc := fun _ n gsem hn => by
+    simp [LinkSys.ofInput, ofRes, closedBase, Clif.Env.empty] at hn
+  keepSyms := fun _ n f h => by simp [LinkSys.ofInput, ofRes, closedBase, Clif.Env.empty] at h
+  baseOs := fun g hg info hs hb F' K G s0 Pc ctx s _ _ _ c wh ops regs i' w outs w' _ _ _ _ _ _
+      _ hsem => by simp [csem, LinkSys.ofInput, ofRes, closedBase] at hsem
+  basePc := fun d s _ _ _ => by simp [LinkSys.ofInput, ofRes, closedBase, Arm.r_of_w_same]
+  baseExt := fun d uses w outs w' _ hx => by simp [LinkSys.ofInput, ofRes, closedBase] at hx
+  baseX := fun g hg F' slotOff out c => by
+    intro ext _ gs sl cm w d uses args vals rvals cm' he
+    simp [LinkSys.ofInput, ofRes, closedBase, Clif.Env.empty] at he
+  baseXI := fun g hg F' slotOff out c sig _ n gsem sl cm w u args vals rvals cm' hgs => by
+    simp [LinkSys.ofInput, ofRes, closedBase, Clif.Env.empty] at hgs
+  baseTls := fun g hg ht => absurd ht (by simp [htls g hg])
+  baseTry := fun g hg F' ctx info ti _ c wh ops regs i' s w outs w' s' _ _ _ _ _ _ hsem => by
+    simp [csem, LinkSys.ofInput, ofRes, closedBase] at hsem
+  baseNI := fun _ g hg F' c n sig vals cm args d uses Z w w' o x o' x' _ _ _ _ _ _ _ _ _ hx _ => by
+    simp [LinkSys.ofInput, ofRes, closedBase] at hx
+  baseTlsNI := fun _ F' => closedBase_tlsNI F'
+  baseKeepsPlace := fun _ n gsem hn => by
+    simp [LinkSys.ofInput, ofRes, closedBase, Clif.Env.empty] at hn
+  baseKeepsAllocs := fun _ n gsem hn => by
+    simp [LinkSys.ofInput, ofRes, closedBase, Clif.Env.empty] at hn
+
 /-! ## The crate's theorem -/
 
 /-- `okB` and `diag` agree. -/
@@ -967,13 +1022,13 @@ theorem bad_nil {cs : List (String × Bool)} (h : bad cs = []) : cs.all (·.2) =
   intro c hc
   simpa using h c hc
 
-theorem diag_nil {I : LinkInput} (h : diag I = []) : okB I = true := by
-  unfold diag at h
+theorem diagR_nil {I : LinkInput} {R : Res} (h : diagR I R = []) : okR I R = true := by
+  unfold diagR at h
   rw [List.append_eq_nil_iff, List.filterMap_eq_nil_iff] at h
   obtain ⟨hg, hf⟩ := h
-  simp only [okB, okR, Bool.and_eq_true, List.all_eq_true]
+  simp only [okR, Bool.and_eq_true, List.all_eq_true]
   refine ⟨fun c hc => ?_, fun e he => List.all_eq_true.1 (bad_nil ?_)⟩
-  · have : bad (globalChks I (progOf I.results) (tabOf I.results)) = [] := by
+  · have : bad (globalChks I (progOf R) (tabOf R)) = [] := by
       revert hg
       split
       · rename_i hb; intro _; exact List.isEmpty_iff.1 hb
@@ -981,9 +1036,11 @@ theorem diag_nil {I : LinkInput} (h : diag I = []) : okB I = true := by
     exact List.all_eq_true.1 (bad_nil this) c hc
   · have := hf e he
     revert this
-    cases hb : bad (chks I (progOf I.results) (tabOf I.results) e.1 e.2) with
+    cases hb : bad (chks I (progOf R) (tabOf R) e.1 e.2) with
     | nil => intro _; rfl
-    | cons x xs => intro h; simp [hb] at h
+    | cons x xs => intro h; simp at h
+
+theorem diag_nil {I : LinkInput} (h : diag I = []) : okB I = true := diagR_nil h
 
 /-- **`backend_correct_program` for the function named `n` of the linked system `L`**, every
 premise but `L.Ok`: for every entry of `n`, the linked machine refines the whole-program CLIF

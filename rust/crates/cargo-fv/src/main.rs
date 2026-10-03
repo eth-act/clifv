@@ -11,6 +11,8 @@ const USAGE: &str = "\
 usage: cargo fv <build|run|test> [--opt | --opt-proven-only] [--no-fallback] [--trap-replaced] [--keep-temps]
                                 [--panic-abort] [--members-only] [cargo options] [-- args]
        cargo fv report [--functions] [--json] [--manifest-path PATH]
+       cargo fv link-proof [--exe SUBSTR] [--crate NAME] [--out DIR] [--lean FILE --module NAME]
+                           [--entries a,b] [--prune] [--manifest-path PATH]
 
 Builds for aarch64-unknown-linux-musl with rustc_codegen_cranelift; every function of every crate
 compiled for the target (the workspace members and their dependencies; not std, which is
@@ -33,7 +35,11 @@ report` prints it).
   --panic-abort       build with -Cpanic=abort -Zpanic-abort-tests (default: panic=unwind, as cargo;
                       separate target dir)
   --functions         (report) list every function with its status and reason
-  --json              (report) print target/fv-report.json";
+  --json              (report) print target/fv-report.json
+
+`cargo fv link-proof` (after a build with --keep-temps): the input of the crate-level linking
+theorem for one executable's Lean-compiled functions, checked by `lake exe link-check`
+(docs/contracts/e2e.md, \"Crate-level instance\"; `cargo fv link-proof --help`).";
 
 fn die(msg: &str) -> ! {
     eprintln!("cargo fv: {msg}");
@@ -199,6 +205,16 @@ fn cmd_report(args: &[String]) -> i32 {
     0
 }
 
+fn cmd_link_proof(args: &[String]) -> i32 {
+    let toolchain = std::env::var("FV_TOOLCHAIN").unwrap_or(TOOLCHAIN.into());
+    let cargo = which_tool(&toolchain, "cargo");
+    let target = metadata(&cargo, &toolchain, value_of(args, "--manifest-path").as_deref()).target;
+    match cargo_fv::linkproof::run(&target, &repo_root(), args) {
+        Ok(c) => c,
+        Err(e) => die(&e),
+    }
+}
+
 fn main() {
     let mut argv: Vec<String> = std::env::args().skip(1).collect();
     if argv.first().map(String::as_str) == Some("fv") {
@@ -209,6 +225,7 @@ fn main() {
     let code = match sub.as_str() {
         "build" | "run" | "test" => cmd_cargo(&sub, rest),
         "report" => cmd_report(&rest),
+        "link-proof" => cmd_link_proof(&rest),
         "help" | "--help" | "-h" => {
             println!("{USAGE}");
             0
