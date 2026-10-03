@@ -84,12 +84,12 @@ def CallLg (env : Clif.Env) (exts : List Clif.ExtFunc) (sigs : List Clif.Signatu
 
 /-- **Non-interference of the external semantics** at the calls `Lg` admits (extern `n`,
 signature `sig`, argument values `vals`, CLIF memory `cm`): two worlds that agree outside `Z ⊇ F`,
-both related to `cm`, with the arguments as the call's kind puts them — a declared extern (in
+both related to `cm` with stack pointer `sp0`, with the arguments as the call's kind puts them — a declared extern (in
 `exts`) with its arguments where the ABI puts them in both, or an indirect call (signature in
 `sigs`) with at most 8 register arguments — give, when the call returns on both, the same values
 and worlds that agree outside `Z`. -/
 def XNI (F : BitVec 64 → Prop) (syms : String → Option Nat) (exts : List Clif.ExtFunc)
-    (sigs : List Clif.Signature)
+    (sigs : List Clif.Signature) (sp0 : BitVec 64)
     (Lg : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop) (X : ExtSem) : Prop :=
   ∀ (n : String) (sig : Clif.Signature) (vals : List Clif.Val) (cm : Clif.Mem) (args : List CV)
     (d : Option String) (uses : List CV) (Z : BitVec 64 → Prop) (w w' : Arm.ArmState)
@@ -97,6 +97,7 @@ def XNI (F : BitVec 64 → Prop) (syms : String → Option Nat) (exts : List Cli
     Lg n sig vals cm →
     (d = some n ∧ uses = args ∨ d = none ∧ ∃ u, uses = u :: args ∧ lo64 u = X.sym n 0) →
     (∀ a, F a → Z a) → SameWorld Z w w' → MemRel F syms cm w → MemRel F syms cm w' →
+    spv w = sp0 → spv w' = sp0 →
     ((∃ e ∈ exts, e.name = n ∧ e.sig = sig) ∧ ArgsAt sig vals args w ∧ ArgsAt sig vals args w' ∨
       sig ∈ sigs ∧ vals.length ≤ 8 ∧ AllHold vals args) →
     X.call d uses w = some (o, x) → X.call d uses w' = some (o', x') → o = o' ∧ SameWorld Z x x'
@@ -153,16 +154,16 @@ theorem callPin_stepPin {env : Clif.Env} {f : Clif.Function} {inst : Clif.Inst} 
 same instruction on two worlds that agree outside `Z ⊇ F` are the same call. -/
 theorem callLockstep {F : BitVec 64 → Prop} {syms : String → Option Nat} {X : ExtSem}
     {env : Clif.Env} {exts : List Clif.ExtFunc} {sigs : List Clif.Signature} {inst : Clif.Inst}
-    {fr : Clif.Frame} {cm : Clif.Mem} (hNI : XNI F syms exts sigs (CallLg env exts sigs) X)
+    {fr : Clif.Frame} {cm : Clif.Mem} {sp0 : BitVec 64} (hNI : XNI F syms exts sigs sp0 (CallLg env exts sigs) X)
     {Z : BitVec 64 → Prop} (hFZ : ∀ a, F a → Z a) {us : List CV} {w w' : Arm.ArmState}
     (hw : SameWorld Z w w') :
-    ∀ dest, CallG F syms X exts sigs (StepPin env exts sigs inst fr cm) dest us w →
-      CallG F syms X exts sigs (StepPin env exts sigs inst fr cm) dest us w' →
+    ∀ dest, CallG F syms X exts sigs sp0 (StepPin env exts sigs inst fr cm) dest us w →
+      CallG F syms X exts sigs sp0 (StepPin env exts sigs inst fr cm) dest us w' →
       ∀ o x o' x', X.call (destName dest) us w = some (o, x) →
         X.call (destName dest) us w' = some (o', x') → o = o' ∧ SameWorld Z x x' := by
   intro dest h1 h2 o x o' x' hc hc'
-  obtain ⟨n1, sig1, vals1, cm1, args1, ⟨hcm1, hlg1, hsc1⟩, hm1, ha1, hd1⟩ := h1
-  obtain ⟨n2, sig2, vals2, cm2, args2, ⟨hcm2, -, hsc2⟩, hm2, ha2, hd2⟩ := h2
+  obtain ⟨n1, sig1, vals1, cm1, args1, ⟨hcm1, hlg1, hsc1⟩, ⟨hm1, hc1⟩, ha1, hd1⟩ := h1
+  obtain ⟨n2, sig2, vals2, cm2, args2, ⟨hcm2, -, hsc2⟩, ⟨hm2, hc2⟩, ha2, hd2⟩ := h2
   rw [hcm2, ← hcm1] at hm2
   obtain ⟨rfl, rfl⟩ := stepCall_unique hsc1 hsc2
   have hargs : args1 = args2 := by
@@ -185,8 +186,8 @@ theorem callLockstep {F : BitVec 64 → Prop} {syms : String → Option Nat} {X 
       · exact .inl ⟨hk, ha1, ha2⟩
       · exact .inr ha2
     · exact .inr ha1
-  exact hNI n1 sig1 vals1 cm1 args1 (destName dest) us Z w w' o x o' x' hlg1 hd hFZ hw hm1 hm2 hA
-    hc hc'
+  exact hNI n1 sig1 vals1 cm1 args1 (destName dest) us Z w w' o x o' x' hlg1 hd hFZ hw hm1 hm2 hc1
+    hc2 hA hc hc'
 
 /-! ## Pairing straight-line ends -/
 
@@ -256,17 +257,17 @@ variable {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf :
 
 /-- The paired lockstep of the guarded runs of one step (memory `cm`, pin `Pc`). -/
 theorem guardedStep
-    (hNI : XNI F syms (f.externs.map (·.2)) (indSigs f)
+    (hNI : XNI F syms (f.externs.map (·.2)) (indSigs f) c
       (CallLg env (f.externs.map (·.2)) (indSigs f)) X)
     (hTls : XTls F X) (ctx : FnCtx) (inst : Clif.Inst) (fr : Clif.Frame) (cm : Clif.Mem)
     (ms : List MInst) :
-    ∀ i ∈ ms, ∀ us w w' o w₁ c o' w₁' c', SameWorld (Zof F D cm) w w' →
-      csemG F ctx X (fun b => ¬ Zof F D cm b) syms (f.externs.map (·.2)) (indSigs f)
-        (StepPin env (f.externs.map (·.2)) (indSigs f) inst fr cm) i us w = some (o, w₁, c) →
-      csemG F ctx X (fun b => ¬ Zof F D cm b) syms (f.externs.map (·.2)) (indSigs f)
-        (StepPin env (f.externs.map (·.2)) (indSigs f) inst fr cm) i us w' = some (o', w₁', c') →
-      o = o' ∧ c = c' ∧ SameWorld (Zof F D cm) w₁ w₁' := by
-  intro i _ us w w' o w₁ c o' w₁' c' hw h h'
+    ∀ i ∈ ms, ∀ us w w' o w₁ ct o' w₁' ct', SameWorld (Zof F D cm) w w' →
+      csemG F ctx X (fun b => ¬ Zof F D cm b) syms (f.externs.map (·.2)) (indSigs f) c
+        (StepPin env (f.externs.map (·.2)) (indSigs f) inst fr cm) i us w = some (o, w₁, ct) →
+      csemG F ctx X (fun b => ¬ Zof F D cm b) syms (f.externs.map (·.2)) (indSigs f) c
+        (StepPin env (f.externs.map (·.2)) (indSigs f) inst fr cm) i us w' = some (o', w₁', ct') →
+      o = o' ∧ ct = ct' ∧ SameWorld (Zof F D cm) w₁ w₁' := by
+  intro i _ us w w' o w₁ ct o' w₁' ct' hw h h'
   have hFZ : ∀ a, F a → Zof F D cm a := fun a h => .inl h
   exact csemG_lockstep2 hFZ hw (callLockstep hNI hFZ hw) (fun n => hTls _ n w w' hFZ hw) h h'
 
@@ -274,9 +275,9 @@ theorem guardedStep
 theorem guardedStep0 (hTls : XTls F X) (ctx : FnCtx) (cm : Clif.Mem) (ms : List MInst)
     (exts : List Clif.ExtFunc) (sigs : List Clif.Signature) :
     ∀ i ∈ ms, ∀ us w w' o w₁ c o' w₁' c', SameWorld (Zof F D cm) w w' →
-      csemG F ctx X (fun b => ¬ Zof F D cm b) syms exts sigs (fun _ _ _ _ => False) i us w =
+      csemG F ctx X (fun b => ¬ Zof F D cm b) syms exts sigs 0 (fun _ _ _ _ => False) i us w =
         some (o, w₁, c) →
-      csemG F ctx X (fun b => ¬ Zof F D cm b) syms exts sigs (fun _ _ _ _ => False) i us w' =
+      csemG F ctx X (fun b => ¬ Zof F D cm b) syms exts sigs 0 (fun _ _ _ _ => False) i us w' =
         some (o', w₁', c') →
       o = o' ∧ c = c' ∧ SameWorld (Zof F D cm) w₁ w₁' := by
   intro i _ us w w' o w₁ c o' w₁' c' hw h h'
@@ -286,9 +287,9 @@ theorem guardedStep0 (hTls : XTls F X) (ctx : FnCtx) (cm : Clif.Mem) (ms : List 
   exact hf.elim
 
 theorem csemG_sub' {ctx : FnCtx} {Rd : BitVec 64 → Prop} {exts : List Clif.ExtFunc}
-    {sigs : List Clif.Signature}
+    {sigs : List Clif.Signature} {sp0 : BitVec 64}
     {Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop} :
-    ∀ i us w r, csemG F ctx X Rd syms exts sigs Pc i us w = some r → csem F ctx X i us w = some r :=
+    ∀ i us w r, csemG F ctx X Rd syms exts sigs sp0 Pc i us w = some r → csem F ctx X i us w = some r :=
   fun _ _ _ _ h => (csemG_sub h).2.2
 
 theorem zof_sub (cm : Clif.Mem) : ∀ b, Zof F D cm b → F b ∨ D b := by
@@ -306,7 +307,7 @@ theorem instCalls_pair (hc : Compiled f k vc vcp rf af fa fb)
       (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
     (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
     (hslot : af.slotBase = slotOff)
-    (hNI : XNI F syms (f.externs.map (·.2)) (indSigs f)
+    (hNI : XNI F syms (f.externs.map (·.2)) (indSigs f) c
       (CallLg env (f.externs.map (·.2)) (indSigs f)) X) (hTls : XTls F X) :
     InstCalls f (pairSem (csem F ⟨fa.k, af.slotBase⟩ X))
       (MRP ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c D) env p := by
@@ -316,15 +317,15 @@ theorem instCalls_pair (hc : Compiled f k vc vcp rf af fa fb)
   have key : ∀ (Rd : BitVec 64 → Prop)
       (Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop),
       LowerInstOkP Rd Pc
-        (csemG F ⟨fa.k, af.slotBase⟩ X Rd syms (f.externs.map (·.2)) (indSigs f) Pc) (RelW Γ f c)
+        (csemG F ⟨fa.k, af.slotBase⟩ X Rd syms (f.externs.map (·.2)) (indSigs f) c Pc) (RelW Γ f c)
         env p ctx inst
         info.results st rss st' st'.emitted.toList := by
     intro Rd Pc
     obtain ⟨B, hB, stm, hstm, hst⟩ := hmem
     obtain ⟨ms, rss', hem, hov, hok⟩ := lowerInstOkP_runTerm lowerRulesCorrect_program
       excludedUnmatchable callRulesCorrectP indRulesCorrectP memRulesCorrectR_program
-      refines_csemG (mrStable_relW Γ f c) (callsRefineP_csemG hX (fun _ _ _ h => h.1.1))
-      (indCallsRefineP_csemG hXI hsym (fun _ _ _ h => h.1.1)) (memRefinesR_csemG (ctx := ⟨fa.k, af.slotBase⟩) hslot hsym)
+      refines_csemG (mrStable_relW Γ f c) (callsRefineP_csemG hX (fun _ _ _ h => h.1.1) (fun _ _ _ h => h.2.1))
+      (indCallsRefineP_csemG hXI hsym (fun _ _ _ h => h.1.1) (fun _ _ _ h => h.2.1)) (memRefinesR_csemG (ctx := ⟨fa.k, af.slotBase⟩) hslot hsym)
       hctx (outArgsOk_relW Γ f c) (externsIn_self f) hE (memRelOk_relW Γ f c) hi hcl hsig
       (fun fn args e hc' he => hstk B hB stm hstm fn args e (hst ▸ hc') he) hvb hrun
     cases hov
@@ -365,7 +366,7 @@ theorem termCalls_pair {f₀ : Clif.Function} (Γ : Rel) (hΓ : Γ.F = F) (hTls 
     (ctx' : FnCtx) : TermCalls (pairSem (csem F ctx' X)) (MRP Γ f₀ c D) := by
   intro f ctx ti t data targets out st st' tr hctx hbt htl hph hvb hd hemp hrun
   have key : ∀ (Rd : BitVec 64 → Prop), LowerTermOk
-      (csemG F ctx' X Rd Γ.syms [] [] (fun _ _ _ _ => False))
+      (csemG F ctx' X Rd Γ.syms [] [] 0 (fun _ _ _ _ => False))
       (RelW Γ f₀ c) (termCtx ctx ti data) t targets st st' st'.emitted.toList := fun Rd =>
     termCalls_of_rules lowerTermRulesCorrect termUnmatchable branchRulesCorrect
       branchExcludedUnmatchable refines_csemG (hΓ ▸ mrStable_relW Γ f₀ c) f ctx ti t data
@@ -413,7 +414,7 @@ theorem tryCalls_pair (hc : Compiled f k vc vcp rf af fa fb)
       (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
     (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
     (hslot : af.slotBase = slotOff)
-    (hNI : XNI F syms (f.externs.map (·.2)) (indSigs f)
+    (hNI : XNI F syms (f.externs.map (·.2)) (indSigs f) c
       (CallLg env (f.externs.map (·.2)) (indSigs f)) X) (hTls : XTls F X) :
     TryCalls f (pairSem (csem F ⟨fa.k, af.slotBase⟩ X))
       (MRP ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c D) env p
@@ -429,14 +430,14 @@ theorem tryCalls_pair (hc : Compiled f k vc vcp rf af fa fb)
   have key : ∀ (Rd : BitVec 64 → Prop)
       (Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop),
       LowerTryOkP Rd Pc
-        (csemG F ⟨fa.k, af.slotBase⟩ X Rd syms (f.externs.map (·.2)) (indSigs f) Pc) (RelW Γ f c)
+        (csemG F ⟨fa.k, af.slotBase⟩ X Rd syms (f.externs.map (·.2)) (indSigs f) c Pc) (RelW Γ f c)
         env p
         (tryCtx ctx ti data trs) (.call fn args) info { st1 with emitted := #[] } st'
         st'.emitted.toList := by
     intro Rd Pc
     obtain ⟨ms, hem, hok⟩ := tryOkP_runTerm tryRulesCorrectP tryUnmatchable refines_csemG
       (mrStable_relW Γ f c) (memRefinesR_csemG (ctx := ⟨fa.k, af.slotBase⟩) hslot hsym) (outArgsOk_relW Γ f c)
-      (callsRefineP_csemG hX (fun _ _ _ h => h.1.1)) hctx' (externsIn_self f) hra hd he hi
+      (callsRefineP_csemG hX (fun _ _ _ h => h.1.1) (fun _ _ _ h => h.2.1)) hctx' (externsIn_self f) hra hd he hi
       hinfo hregs' hvb' (st := { st1 with emitted := #[] }) (Nat.le_refl _) hrun
     have : ms = st'.emitted.toList := by
       simp only [Array.empty_append] at hem; rw [hem, List.toList_toArray]
@@ -473,7 +474,7 @@ theorem tryIndCalls_pair (hc : Compiled f k vc vcp rf af fa fb)
     (hXI : XCallsIndOk env (indSigs f)
       (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
     (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
-    (hNI : XNI F syms (f.externs.map (·.2)) (indSigs f)
+    (hNI : XNI F syms (f.externs.map (·.2)) (indSigs f) c
       (CallLg env (f.externs.map (·.2)) (indSigs f)) X) (hTls : XTls F X) :
     TryIndCalls (pairSem (csem F ⟨fa.k, af.slotBase⟩ X))
       (MRP ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c D) env p (indSigs f) := by
@@ -488,13 +489,13 @@ theorem tryIndCalls_pair (hc : Compiled f k vc vcp rf af fa fb)
   have key : ∀ (Rd : BitVec 64 → Prop)
       (Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop),
       LowerTryOkP Rd Pc
-        (csemG F ⟨fa.k, af.slotBase⟩ X Rd syms (f.externs.map (·.2)) (indSigs f) Pc) (RelW Γ f c)
+        (csemG F ⟨fa.k, af.slotBase⟩ X Rd syms (f.externs.map (·.2)) (indSigs f) c Pc) (RelW Γ f c)
         env p
         (tryCtx ctx ti data trs) (.callIndirect et.sig callee args) info
         { st1 with emitted := #[] } st' st'.emitted.toList := by
     intro Rd Pc
     obtain ⟨ms, hem, hok⟩ := tryIndOkP_runTerm tryIndRulesCorrectP tryIndUnmatchable
-      refines_csemG (mrStable_relW Γ f c) (indCallsRefineP_csemG hXI hsym (fun _ _ _ h => h.1.1))
+      refines_csemG (mrStable_relW Γ f c) (indCallsRefineP_csemG hXI hsym (fun _ _ _ h => h.1.1) (fun _ _ _ h => h.2.1))
       hctx' hd he hsig h8 hi hinfo hregs' hvb' (st := { st1 with emitted := #[] })
       (Nat.le_refl _) hrun
     have : ms = st'.emitted.toList := by
@@ -631,7 +632,7 @@ theorem vcode_ni {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCod
       (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
     (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
     (hslot : af.slotBase = slotOff)
-    (hNI : XNI F syms (f.externs.map (·.2)) (indSigs f)
+    (hNI : XNI F syms (f.externs.map (·.2)) (indSigs f) c
       (CallLg env (f.externs.map (·.2)) (indSigs f)) X) (hTls : XTls F X)
     {args : List Clif.Val} {cs : Clif.State} {w₀ w₀' : Arm.ArmState} {D : BitVec 64 → Prop}
     (ρ₀ : Nat → CV) (hce : ClifEntry f args cs)
@@ -761,7 +762,7 @@ theorem backend_correct_world_ni {p : Clif.Program} {f : Clif.Function} {k : Nat
         (∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
           ActEntry vcp rf af fa fb K F G X H base ra s w₀ →
           ∃ n, ActRet ra F G us outs w s (runX (ArmStepX X H fa) n s)) ∧
-        (XNI F syms (f.externs.map (·.2)) (indSigs f)
+        (XNI F syms (f.externs.map (·.2)) (indSigs f) c
           (CallLg env (f.externs.map (·.2)) (indSigs f)) X → XTls F X →
         ∀ (D : BitVec 64 → Prop) (w₀' : Arm.ArmState),
           RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c cs.frame.slots cs.mem w₀' →

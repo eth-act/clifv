@@ -5,12 +5,12 @@ import FV.E2E.Legal
 /-! # Non-vacuity of `backend_correct_program` (docs/contracts/e2e.md, "Non-vacuity")
 
 A concrete linked program for which every premise of `E2E.backend_correct_program` holds:
-`P = {f, g, h, s, k, r, r__fvself, q, v, a2, w}`, parsed from the embedded source `src`, legalised
-(`Opt.Legalize128.parsedFile128`), compiled by the
+`P = {f, g, h, s, k, r, r__fvself, q, v, a2, w, t, u}`, parsed from the embedded source `src`,
+legalised (`Opt.Legalize128.parsedFile128`), compiled by the
 backend's pipeline (`lowerFunction`, `prepare`, regalloc2's allocation `raOut` — the output of
 `lean-regalloc` on the pipeline's input for this file, rebuilt by `buildRFunc` and accepted by
 `checkAlloc` —, `lowerRFunc`, `emitFunc`, `layout`), loaded at `0x70000` (`f`), `0x20000`,
-`0x10000`, `0x30000`, `0x40000`, `0x50000`, `0x60000`, `0x80000`…`0xB0000`. The entry `f` has a
+`0x10000`, `0x30000`, `0x40000`, `0x50000`, `0x60000`, `0x80000`…`0xD0000`. The entry `f` has a
 stack slot and an outgoing-argument area; it calls
 
 * `s` with an `sret` pointer to its slot (`s` stores through it, returns the pointer in x0),
@@ -22,19 +22,24 @@ stack slot and an outgoing-argument area; it calls
   the linked machine resolves by the address in its register) and through the GOT (`blr`),
 * `w`, which passes two `i128` values to `a2` (`i128` addition) and adds the halves of its result:
   `a2` and `w` are legalised (`i128` pairs in x0–x3, the result in x0/x1); `a2_legal` composes
-  `a2`'s linked code with `backend_correct_legal` against the `i128` source.
+  `a2`'s linked code with `backend_correct_legal` against the `i128` source,
+* `t`, a callee with a stack slot (`t n = 2 n + 10`: it stores `n + 10` through `stack_addr` and
+  loads it back), placed by the slot-placement oracle at its compiled frame address,
+* `u`, a callee with an outgoing-argument area (`u n = 1 + n`: it passes `n` to `k` on the stack).
 
 * The per-function premises of `LinkSys.Ok` are executable checks (`chks`, `okB`, each with a
   soundness lemma: `siteOk_sound`, `tryB_sound`, `retsB_sound`, `outFitsB_sound`,
   `entryB_sound`, `raCallB_sound`, `linkFreeB_sound`, `imgCode_of`, …), decided by
   `native_decide` (`okB_true`; the project's axiom policy allows `_native.native_decide` axioms).
-* The base environment is closed: no extern outside `P` (`Xb.call` undefined), calls outside
-  `P` continue at the next instruction (`Hb`), no TLS.
-* **`L_ok`**: `(L F).Ok` for every `F` containing the code.
+* The base environment is closed: no extern outside `P` (`Xb.call` undefined, so `baseNI` holds
+  vacuously), calls outside `P` continue at the next instruction (`Hb`), no TLS (the TLSDESC flags
+  are the world's `pstate`: `baseTlsNI`).
+* **`L_ok`**: `(L F).Ok` for every `F` containing the code. `t` and `u` make the premises gated by
+  `NeedSlots` and `NeedNI` non-vacuous.
 * **`backend_correct_program_witness`**: with the entry premises of `f` on the argument `41`
   (ABI entry state `s0`, body-entry world `w0`, CLIF entry state `cs0` with `f`'s slot at its
-  frame address), the theorem applies: the linked machine refines `f`'s CLIF run, which returns
-  `185`.
+  frame address and the slot-placement oracle at the body's `sp`), the theorem applies: the
+  linked machine refines `f`'s CLIF run, which returns `791`.
 -/
 
 namespace E2E.LinkWitness
@@ -111,6 +116,8 @@ function %f(i64) -> i64 system_v {
     fn3 = colocated %r(i64) -> i64 system_v
     fn4 = colocated %v(i64) -> i64 system_v
     fn5 = colocated %w(i64) -> i64 system_v
+    fn6 = colocated %t(i64) -> i64 system_v
+    fn7 = colocated %u(i64) -> i64 system_v
 block0(v0: i64):
     v1 = stack_addr.i64 ss0
     call fn1(v1, v0)
@@ -124,7 +131,9 @@ block1(v5: i64):
     v9 = iadd v5, v8
     v10 = call fn4(v9)
     v11 = call fn5(v10)
-    return v11
+    v12 = call fn6(v11)
+    v13 = call fn7(v12)
+    return v13
 block2(v6: i64):
     return v6
 }
@@ -162,9 +171,29 @@ block0(v0: i64):
     v5 = iadd v3, v4
     return v5
 }
+
+function %t(i64) -> i64 system_v {
+    ss0 = explicit_slot 8
+block0(v0: i64):
+    v1 = stack_addr.i64 ss0
+    v2 = iconst.i64 10
+    v3 = iadd v0, v2
+    store.i64 notrap aligned v3, v1
+    v4 = load.i64 notrap aligned v1
+    v5 = iadd v4, v0
+    return v5
+}
+
+function %u(i64) -> i64 system_v {
+    fn0 = colocated %k(i64, i64, i64, i64, i64, i64, i64, i64, i64) -> i64 system_v
+block0(v0: i64):
+    v1 = iconst.i64 1
+    v2 = call fn0(v1, v1, v1, v1, v1, v1, v1, v1, v0)
+    return v2
+}
 "
 
-def raOut : String := "{\"functions\":[{\"allocs\":[[\"x0\"],[\"x2\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"h\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x0\",\"x19\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x0\",\"inst\":1,\"pos\":\"before\",\"to\":\"x19\"}],\"name\":\"g\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x8\",\"x0\"],[\"x3\"],[\"x5\",\"x0\"],[\"x5\",\"x8\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x8\",\"inst\":4,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"s\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\",\"x2\",\"x3\",\"x4\",\"x5\",\"x6\",\"x7\"],[\"x9\"],[\"x0\",\"x0\",\"x9\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"k\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x0\"],[\"x0\"],[\"x0\"],[\"x5\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x11\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"r\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x0\"],[\"x0\"],[\"x0\"],[\"x5\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x11\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"r__fvself\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x8\"],[\"x8\",\"x0\",\"x0\"],[\"x0\"],[\"x7\"],[\"x19\"],[\"x0\",\"x1\",\"x2\",\"x3\",\"x4\",\"x5\",\"x6\",\"x7\",\"x0\"],[\"x0\",\"x0\",\"x1\"],[],[\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x1\",\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x0\"],[],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x0\",\"inst\":2,\"pos\":\"before\",\"to\":\"x19\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x2\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x3\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x4\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x5\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x6\"},{\"from\":\"x0\",\"inst\":8,\"pos\":\"before\",\"to\":\"x19\"},{\"from\":\"x19\",\"inst\":11,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x0\",\"inst\":15,\"pos\":\"before\",\"to\":\"x19\"},{\"from\":\"x19\",\"inst\":16,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"f\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"q\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x2\",\"x0\",\"x0\"],[\"x7\"],[\"x7\",\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"v\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\",\"x2\",\"x3\"],[\"x5\"],[\"x7\",\"x0\",\"x2\"],[\"x7\",\"x0\"],[\"x10\"],[\"x7\",\"x0\"],[\"x13\"],[\"x15\",\"x1\",\"x3\"],[\"x1\",\"x15\",\"x10\"],[\"x0\",\"x1\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x7\",\"inst\":9,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"a2\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x2\",\"x0\",\"x0\"],[\"x3\"],[\"x0\",\"x1\",\"x2\",\"x3\",\"x0\",\"x1\"],[\"x11\",\"x0\",\"x0\"],[\"x13\",\"x1\",\"x1\"],[\"x0\",\"x11\",\"x13\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x2\",\"inst\":4,\"pos\":\"before\",\"to\":\"x0\"},{\"from\":\"x3\",\"inst\":4,\"pos\":\"before\",\"to\":\"x1\"}],\"name\":\"w\",\"num_spillslots\":0,\"ok\":true}]}"
+def raOut : String := "{\"functions\":[{\"allocs\":[[\"x0\"],[\"x2\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"h\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x0\",\"x19\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x0\",\"inst\":1,\"pos\":\"before\",\"to\":\"x19\"}],\"name\":\"g\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x8\",\"x0\"],[\"x3\"],[\"x5\",\"x0\"],[\"x5\",\"x8\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x8\",\"inst\":4,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"s\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\",\"x2\",\"x3\",\"x4\",\"x5\",\"x6\",\"x7\"],[\"x9\"],[\"x0\",\"x0\",\"x9\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"k\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x0\"],[\"x0\"],[\"x0\"],[\"x5\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x11\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"r\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x0\"],[\"x0\"],[\"x0\"],[\"x5\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x11\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"r__fvself\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x8\"],[\"x8\",\"x0\",\"x0\"],[\"x0\"],[\"x7\"],[\"x19\"],[\"x0\",\"x1\",\"x2\",\"x3\",\"x4\",\"x5\",\"x6\",\"x7\",\"x0\"],[\"x0\",\"x0\",\"x1\"],[],[\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x1\",\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x0\"],[],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x0\",\"inst\":2,\"pos\":\"before\",\"to\":\"x19\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x2\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x3\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x4\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x5\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x6\"},{\"from\":\"x0\",\"inst\":8,\"pos\":\"before\",\"to\":\"x20\"},{\"from\":\"x20\",\"inst\":11,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x0\",\"inst\":17,\"pos\":\"before\",\"to\":\"x20\"},{\"from\":\"x20\",\"inst\":18,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"f\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"q\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x2\",\"x0\",\"x0\"],[\"x7\"],[\"x7\",\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"v\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\",\"x2\",\"x3\"],[\"x5\"],[\"x7\",\"x0\",\"x2\"],[\"x7\",\"x0\"],[\"x10\"],[\"x7\",\"x0\"],[\"x13\"],[\"x15\",\"x1\",\"x3\"],[\"x1\",\"x15\",\"x10\"],[\"x0\",\"x1\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x7\",\"inst\":9,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"a2\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x2\",\"x0\",\"x0\"],[\"x3\"],[\"x0\",\"x1\",\"x2\",\"x3\",\"x0\",\"x1\"],[\"x11\",\"x0\",\"x0\"],[\"x13\",\"x1\",\"x1\"],[\"x0\",\"x11\",\"x13\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x2\",\"inst\":4,\"pos\":\"before\",\"to\":\"x0\"},{\"from\":\"x3\",\"inst\":4,\"pos\":\"before\",\"to\":\"x1\"}],\"name\":\"w\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x4\"],[\"x6\",\"x0\"],[\"x6\"],[\"x9\"],[\"x0\",\"x9\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"t\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x7\"],[\"x0\"],[\"x0\",\"x1\",\"x2\",\"x3\",\"x4\",\"x5\",\"x6\",\"x7\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x0\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x2\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x3\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x4\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x5\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x6\"}],\"name\":\"u\",\"num_spillslots\":0,\"ok\":true}]}"
 
 deriving instance Inhabited for Art
 
@@ -198,6 +227,10 @@ def fV : Clif.Function := fn 8
 def fA2 : Clif.Function := fn 9
 /-- The legalisation of `w`, which passes `i128` pairs to `a2` and splits its `i128` result. -/
 def fW : Clif.Function := fn 10
+/-- A callee with a stack slot, written and read through `stack_addr`. -/
+def fT : Clif.Function := fn 11
+/-- A callee with an outgoing-argument area: it passes a stack argument to `k`. -/
+def fU : Clif.Function := fn 12
 
 /-- Function `i` of the file as written (before legalisation). -/
 def srcFn (i : Nat) : Clif.Function := match (Clif.parseFile src).funcs[i]? with
@@ -225,14 +258,15 @@ def pipe (f : Clif.Function) (k : Nat) (base : BitVec 64) : Except String Art :=
 
 /-! ## The program and its compiled image -/
 
-/-- The program `{f, g, h, s, k, r, r__fvself, q, v, a2, w}`. -/
-def P : Clif.Program := { funcs := [fF, fG, fH, fS, fK, fR, fRS, fQ, fV, fA2, fW] }
+/-- The program `{f, g, h, s, k, r, r__fvself, q, v, a2, w, t, u}`. -/
+def P : Clif.Program := { funcs := [fF, fG, fH, fS, fK, fR, fRS, fQ, fV, fA2, fW, fT, fU] }
 
 /-- The file index of a function of `P` (the regalloc2 output and the local labels). -/
 def idx (g : Clif.Function) : Nat :=
   if g = fF then 6 else if g = fG then 1 else if g = fS then 2 else if g = fK then 3
   else if g = fR then 4 else if g = fRS then 5 else if g = fQ then 7 else if g = fV then 8
-  else if g = fA2 then 9 else if g = fW then 10 else 0
+  else if g = fA2 then 9 else if g = fW then 10 else if g = fT then 11 else if g = fU then 12
+  else 0
 
 /-- The load address of a function of `P`. -/
 def baseOf (g : Clif.Function) : BitVec 64 := 0x10000 * BitVec.ofNat 64 (idx g + 1)
@@ -587,6 +621,22 @@ def symB : Bool :=
 def calleeB (g : Clif.Function) : Bool :=
   P.funcs.any fun g' => g'.externs.any fun e => e.2.name == g.name
 
+/-- The slots of `g` fit in its compiled slot region (`LinkSys.Ok.slotFits`). -/
+def slotFitsB (g : Clif.Function) (a : Art) : Bool :=
+  g.slots.all fun p => match (slotLayout g.slots).1.lookup p.1 with
+    | some off => decide (a.af.slotBase + off + p.2.size ≤ a.af.frameSize)
+    | none => false
+
+theorem slotFitsB_sound {g : Clif.Function} {a : Art} (h : slotFitsB g a = true) :
+    ∀ p ∈ g.slots, ∃ off, (slotLayout g.slots).1.lookup p.1 = some off ∧
+      a.af.slotBase + off + p.2.size ≤ a.af.frameSize := by
+  intro p hp
+  have := List.all_eq_true.mp h p hp
+  revert this
+  cases (slotLayout g.slots).1.lookup p.1 with
+  | none => simp
+  | some off => exact fun h' => ⟨off, rfl, of_decide_eq_true h'⟩
+
 /-- The per-function checks. -/
 def chks (g : Clif.Function) : List Bool :=
   let a := A g
@@ -597,7 +647,7 @@ def chks (g : Clif.Function) : List Bool :=
     g.externs.all (fun e => !(P.func? e.2.name).isSome || outFitsB e.2.sig fr.intBase),
     decide (regLocs g.sig).Nodup, (regLocs g.sig).all (·.isArgReg),
     g.sig.params.all (fun p => decide (p.ty.width ≤ 64)),
-    !calleeB g || (decide (g.slots = []) && (fr.size == a.af.frameSize && fr.intBase == 0)),
+    !calleeB g || ((!g.slots.isEmpty || fr.size == a.af.frameSize) && slotFitsB g a),
     allInsts a.vcp (siteB (siteOk P g)),
     g.externs.all (fun e => match P.func? e.2.name with
       | some h => decide (e.2.sig = h.sig)
@@ -681,9 +731,8 @@ structure Facts (g : Clif.Function) : Prop where
   nodup : (regLocs g.sig).Nodup
   argReg : ∀ r ∈ regLocs g.sig, r.isArgReg = true
   width : ∀ p ∈ g.sig.params, p.ty.width ≤ 64
-  callee : calleeB g = true → g.slots = [] ∧
-    (RAFrame.compute (A g).vcp (A g).rf).size = (A g).af.frameSize ∧
-    (RAFrame.compute (A g).vcp (A g).rf).intBase = 0
+  callee : calleeB g = true → (g.slots = [] →
+    (RAFrame.compute (A g).vcp (A g).rf).size = (A g).af.frameSize) ∧ slotFitsB g (A g) = true
   sites : allInsts (A g).vcp (siteB (siteOk P g)) = true
   externs : ∀ e ∈ g.externs.map (·.2), ∃ h, P.func? e.name = some h ∧ e.sig = h.sig
   entry : entryB g (A g).vcp = true
@@ -715,9 +764,12 @@ theorem chk_sound {g : Clif.Function} (h : chk g = true) : Facts g := by
   · rcases h8 e he with h | h
     · simp [hs] at h
     · exact h
-  · rcases h12 with h | h
+  · rcases h12 with h | ⟨h', hfit⟩
     · simp [hc] at h
-    · exact ⟨h.1, h.2.1, h.2.2⟩
+    · refine ⟨fun hs => ?_, hfit⟩
+      rcases h' with h | h
+      · simp [hs] at h
+      · exact h
   · obtain ⟨⟨fn, e'⟩, hm, rfl⟩ := List.mem_map.1 he
     have := h14 _ hm
     revert this
@@ -740,7 +792,8 @@ def symOf (n : String) : BitVec 64 :=
   if n = "f" then 0x70000 else if n = "g" then 0x20000 else if n = "h" then 0x10000
   else if n = "s" then 0x30000 else if n = "k" then 0x40000 else if n = "r" then 0x50000
   else if n = "r__fvself" then 0x60000 else if n = "q" then 0x80000 else if n = "v" then 0x90000
-  else if n = "a2" then 0xA0000 else if n = "w" then 0xB0000 else 0
+  else if n = "a2" then 0xA0000 else if n = "w" then 0xB0000 else if n = "t" then 0xC0000
+  else if n = "u" then 0xD0000 else 0
 
 /-- The base environment's machine semantics: no extern outside `P` (`call` undefined), the
 symbols at the functions' bases. -/
@@ -753,8 +806,8 @@ def Xb : ExtSem where
 /-- The base hooks: a call outside `P` continues at the next instruction; TLS keeps the state. -/
 def Hb : ArmHooks := ⟨fun _ s => Arm.w .PC (Arm.r .PC s + 4) s, fun _ _ s => s⟩
 
-/-- **The linked program** `{f, g, h, s, k, r, r__fvself, q, v, a2, w}` with the addresses `F` outside
-the world. -/
+/-- **The linked program** `{f, g, h, s, k, r, r__fvself, q, v, a2, w, t, u}` with the addresses
+`F` outside the world. -/
 def L (F : BitVec 64 → Prop) : LinkSys where
   P := P
   A := A
@@ -770,12 +823,12 @@ def L (F : BitVec 64 → Prop) : LinkSys where
 
 theorem names : fF.name = "f" ∧ fG.name = "g" ∧ fH.name = "h" ∧ fS.name = "s" ∧ fK.name = "k" ∧
     fR.name = "r" ∧ fRS.name = "r__fvself" ∧ fQ.name = "q" ∧ fV.name = "v" ∧ fA2.name = "a2" ∧
-    fW.name = "w" := by
+    fW.name = "w" ∧ fT.name = "t" ∧ fU.name = "u" := by
   native_decide
 
 theorem mem_P {g : Clif.Function} :
     g ∈ P.funcs ↔ g = fF ∨ g = fG ∨ g = fH ∨ g = fS ∨ g = fK ∨ g = fR ∨ g = fRS ∨ g = fQ ∨
-      g = fV ∨ g = fA2 ∨ g = fW := by
+      g = fV ∨ g = fA2 ∨ g = fW ∨ g = fT ∨ g = fU := by
   simp [P]
 
 theorem symOf_cases (n : String) : (n = "f" ∧ symOf n = 0x70000) ∨ (n = "g" ∧ symOf n = 0x20000) ∨
@@ -783,7 +836,8 @@ theorem symOf_cases (n : String) : (n = "f" ∧ symOf n = 0x70000) ∨ (n = "g" 
     (n = "k" ∧ symOf n = 0x40000) ∨ (n = "r" ∧ symOf n = 0x50000) ∨
     (n = "r__fvself" ∧ symOf n = 0x60000) ∨ (n = "q" ∧ symOf n = 0x80000) ∨
     (n = "v" ∧ symOf n = 0x90000) ∨ (n = "a2" ∧ symOf n = 0xA0000) ∨
-    (n = "w" ∧ symOf n = 0xB0000) ∨ symOf n = 0 := by
+    (n = "w" ∧ symOf n = 0xB0000) ∨ (n = "t" ∧ symOf n = 0xC0000) ∨
+    (n = "u" ∧ symOf n = 0xD0000) ∨ symOf n = 0 := by
   unfold symOf
   by_cases h1 : n = "f"
   · simp [h1]
@@ -807,23 +861,30 @@ theorem symOf_cases (n : String) : (n = "f" ∧ symOf n = 0x70000) ∨ (n = "g" 
   · simp [h10]
   by_cases h11 : n = "w"
   · simp [h11]
-  simp [h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11]
+  by_cases h12 : n = "t"
+  · simp [h12]
+  by_cases h13 : n = "u"
+  · simp [h13]
+  simp [h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13]
 
 theorem symOf_eq {n m : String}
     (hm : m = "f" ∨ m = "g" ∨ m = "h" ∨ m = "s" ∨ m = "k" ∨ m = "r" ∨ m = "r__fvself" ∨ m = "q" ∨
-      m = "v" ∨ m = "a2" ∨ m = "w")
+      m = "v" ∨ m = "a2" ∨ m = "w" ∨ m = "t" ∨ m = "u")
     (h : symOf m = symOf n) : n = m := by
   rcases symOf_cases n with ⟨rfl, hn⟩ | ⟨rfl, hn⟩ | ⟨rfl, hn⟩ | ⟨rfl, hn⟩ | ⟨rfl, hn⟩ |
-      ⟨rfl, hn⟩ | ⟨rfl, hn⟩ | ⟨rfl, hn⟩ | ⟨rfl, hn⟩ | ⟨rfl, hn⟩ | ⟨rfl, hn⟩ | hn <;>
-    rcases hm with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rw [hn] at h <;>
+      ⟨rfl, hn⟩ | ⟨rfl, hn⟩ | ⟨rfl, hn⟩ | ⟨rfl, hn⟩ | ⟨rfl, hn⟩ | ⟨rfl, hn⟩ | ⟨rfl, hn⟩ |
+      ⟨rfl, hn⟩ | hn <;>
+    rcases hm with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+    rw [hn] at h <;>
     first | rfl | (exfalso; revert h; simp (config := { decide := true }) [symOf])
 
 theorem symInj {h : Clif.Function} (hh : h ∈ P.funcs) (n : String)
     (hn : Xb.sym h.name 0 = Xb.sym n 0) : n = h.name := by
-  obtain ⟨n1, n2, n3, n4, n5, n6, n7, n8, n9, n10, n11⟩ := names
+  obtain ⟨n1, n2, n3, n4, n5, n6, n7, n8, n9, n10, n11, n12, n13⟩ := names
   refine symOf_eq ?_ hn
-  rcases mem_P.1 hh with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp [n1, n2, n3, n4, n5, n6, n7, n8, n9, n10, n11]
+  rcases mem_P.1 hh with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+      rfl <;>
+    simp [n1, n2, n3, n4, n5, n6, n7, n8, n9, n10, n11, n12, n13]
 
 theorem symsW_some {n : String} {b : Nat} (h : symsW n = some b) : n = "q" ∧ b = 0x80000 := by
   unfold symsW at h
@@ -856,6 +917,19 @@ theorem indFacts {g : Clif.Function} (hg : g ∈ P.funcs) (hnf : ¬ Clif.IndFree
     · exact absurd e hs
     · exact List.mem_map.mpr ⟨x, hx, hxn⟩
 
+/-- The TLSDESC flags of the base (the world's `pstate`) are the same in two worlds that agree
+on the unmasked fields. -/
+theorem xbTls (F : BitVec 64 → Prop) : XTls F Xb := by
+  intro Z n w w' _ hsw
+  have e : ∀ fl, Arm.r (.FLAG fl) w = Arm.r (.FLAG fl) w' := fun fl => hsw.1 _ (by simp [Masked])
+  have h1 := e .N
+  have h2 := e .Z
+  have h3 := e .C
+  have h4 := e .V
+  simp only [Arm.r, Arm.read_base_flag] at h1 h2 h3 h4
+  show Arm.read_pstate w = Arm.read_pstate w'
+  apply Arm.PState.ext <;> simp only [Arm.read_pstate] <;> assumption
+
 /-- **`L.Ok`**: every premise of the linked program, for every `F` containing the code. -/
 theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok := by
   have hok := okB_true
@@ -877,9 +951,9 @@ theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
     refine ⟨hh, hne, ?_, n, Lu, Ld, heq, h1, h2⟩
     simp only [calleeB, List.any_eq_true, beq_iff_eq]
     exact ⟨g, hg, e, he, by rw [hen, hname]⟩
-  have hcal : ∀ g ∈ P.funcs, ∀ h, (L F).Callee g h → h.slots = [] ∧
-      (RAFrame.compute (A h).vcp (A h).rf).size = (A h).af.frameSize ∧
-      (RAFrame.compute (A h).vcp (A h).rf).intBase = 0 := by
+  have hcal : ∀ g ∈ P.funcs, ∀ h, (L F).Callee g h → (h.slots = [] →
+      (RAFrame.compute (A h).vcp (A h).rf).size = (A h).af.frameSize) ∧
+      slotFitsB h (A h) = true := by
     intro g hg h hh
     have hc : calleeB h = true ∧ h ∈ P.funcs := by
       rcases hh with ⟨info, hs⟩ | ⟨e, he, hf⟩
@@ -891,8 +965,6 @@ theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
         simp only [calleeB, List.any_eq_true, beq_iff_eq]
         exact ⟨g, hg, (fn, e'), hm, hname.symm⟩
     exact (facts hc.2).callee hc.1
-  -- no program callee has an outgoing-argument area: the non-interference premises are vacuous
-  have hNN : ¬ (L F).NeedNI := fun ⟨g, hg, h, hc, hne⟩ => hne (hcal g hg h hc).2.2
   refine
     { names := hnames
       free := fun g hg => (facts hg).free
@@ -904,7 +976,8 @@ theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
       tryRets := fun g hg info ti h hs ⟨_, n, hd, hf⟩ => tryB_sound (facts hg).tries hs hd hf
       argRegs := fun g hg => ⟨(facts hg).nodup, (facts hg).argReg, (facts hg).width⟩
       sretRets := fun g hg hs us hr => retsB_sound (facts hg).rets hs hr
-      calleeSlots := fun g hg h hh => ⟨(hcal g hg h hh).1, (hcal g hg h hh).2.1⟩
+      calleeFrame := fun g hg h hh hs => (hcal g hg h hh).1 hs
+      slotFits := fun g hg h hh => slotFitsB_sound (hcal g hg h hh).2
       callRegs := fun g hg info h hs => (site g hg info h hs).2.2.2
       blrRegs := fun g hg info hs hreg =>
         blrOk_sound (siteOk_reg (site_sound (facts hg).sites hs) hreg)
@@ -947,8 +1020,11 @@ theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
       baseTls := fun g hg ht => absurd ht (by simp [L, (facts hg).tls])
       baseTry := fun g hg F' ctx info ti _ c wh ops regs i' s w outs w' s' _ _ _ _ _ _ hsem => by
         simp [csem, L, Xb] at hsem
-      baseNI := fun hN => absurd hN hNN
-      baseTlsNI := fun hN => absurd hN hNN }
+      baseNI := fun _ g hg F' c n sig vals cm args d uses Z w w' o x o' x' _ _ _ _ _ _ _ _ _ hx _ => by
+        simp [L, Xb] at hx
+      baseTlsNI := fun _ F' => xbTls F'
+      baseKeepsPlace := fun _ n gsem hn => by simp [L, Clif.Env.empty] at hn
+      baseKeepsAllocs := fun _ n gsem hn => by simp [L, Clif.Env.empty] at hn }
   · simp [L, Clif.Program.only, Clif.Program.func?]
   · intro b _ st _ fn args _ e he
     have hne := (facts hg).extName e (lookup_mem he)
@@ -993,13 +1069,23 @@ def bF : Clif.Block := fF.entry?.getD default
 slot base `32`. -/
 def slotAddr : Nat := 0x100000 - 32
 
+/-- The slot-placement oracle's frames of the linked program (`LinkSys.frames`): every function
+of `P` at its compiled frame. -/
+def framesW (n : String) : Option (Nat × (Clif.SlotId → Nat)) :=
+  (P.func? n).map fun h => (frameDrop (A h).af,
+    fun id => (A h).af.slotBase + ((slotLayout h.slots).1.lookup id).getD 0)
+
+theorem frames_eq (F : BitVec 64 → Prop) : (L F).frames = framesW := rfl
+
 /-- The CLIF entry state of `f` on `41`: its slot at its frame address, the memory holding that
-(uninitialised) allocation only. -/
+(uninitialised) allocation only, the slot-placement oracle at `f`'s body `sp` (`sp0 - 64`) with
+the program's frames. -/
 def cs0 : Clif.State where
   frame := { func := fF, regs := (Clif.Regs.empty.setMany (bF.params.map (·.1)) [arg]).getD default,
              slots := [(0, slotAddr)], body := bF.body, term := bF.term }
   callers := []
-  mem := { allocs := [{ base := slotAddr, size := 8 }], symbols := symsW }
+  mem := { allocs := [{ base := slotAddr, size := 8 }], symbols := symsW,
+           place := some ⟨[sp0 - 64], framesW⟩ }
 
 /-- The CLIF run of the program from `cs0`. -/
 def run0 : Clif.Outcome := Clif.runLoop Clif.Env.empty P (M0 + 1) cs0
@@ -1019,10 +1105,10 @@ def isRet : Clif.Outcome → Bool
 theorem eq_returned {o : Clif.Outcome} (h : isRet o = true) : o = .returned (retVals o) (retMem o) := by
   cases o <;> simp_all [isRet, retVals, retMem]
 
-/-- Every code address of `P` is in `[0x10000, 0xC0000)`. -/
+/-- Every code address of `P` is in `[0x10000, 0xE0000)`. -/
 def boundB : Bool :=
   P.funcs.all fun g => let a := A g
-    decide (a.base.toNat + 4 * a.fb.words.size + 4 ≤ 0xC0000)
+    decide (a.base.toNat + 4 * a.fb.words.size + 4 ≤ 0xE0000)
 
 def locB : Bool :=
   match locsOf fF.sig with
@@ -1037,14 +1123,14 @@ def frameB : Bool :=
   decide ((RAFrame.compute (A fF).vcp (A fF).rf).size = 32) &&
   decide ((slotLayout fF.slots).1 = [(0, 0)]) && decide (fF.slots.map (·.1) = [0])
 
-/-- The entry facts of `f` and its run: `f 41 = w (v (g (k (s 41, 0, …, 41)) + r 3))` returns `390`. -/
+/-- The entry facts of `f` and its run: `f 41 = u (t (w (v (g (k (s 41, 0, …, 41)) + r 3))))` returns `791`. -/
 def entryFactsB : Bool :=
   boundB && locB && frameB &&
   decide (P.func? fF.name = some fF) && decide (fF.entry? = some bF) &&
   decide ([arg].map (·.ty) = fF.sig.params.map (·.ty)) &&
   decide (bF.params.map (·.2) = [arg].map (·.ty)) &&
   (Clif.Regs.empty.setMany (bF.params.map (·.1)) [arg]).isSome &&
-  isRet run0 && decide (retVals run0 = [⟨.i64, 390#64⟩])
+  isRet run0 && decide (retVals run0 = [⟨.i64, 791#64⟩])
 
 theorem entryFactsB_true : entryFactsB = true := by native_decide
 
@@ -1053,7 +1139,7 @@ theorem entryFacts :
     fF.entry? = some bF ∧ [arg].map (·.ty) = fF.sig.params.map (·.ty) ∧
     bF.params.map (·.2) = [arg].map (·.ty) ∧
     (Clif.Regs.empty.setMany (bF.params.map (·.1)) [arg]).isSome = true ∧ isRet run0 = true ∧
-    retVals run0 = [⟨.i64, 390#64⟩] := by
+    retVals run0 = [⟨.i64, 791#64⟩] := by
   have he := entryFactsB_true
   simp only [entryFactsB, Bool.and_eq_true, decide_eq_true_eq] at he
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩, h7⟩, h8⟩, h9⟩, h10⟩ := he
@@ -1080,9 +1166,9 @@ theorem wordsAt_mem_inv {base : BitVec 64} {p : BitVec 64 × BitVec 32} :
       obtain ⟨j, hj, e⟩ := wordsAt_mem_inv h
       exact ⟨j + 1, by simp; omega, by rw [e]; congr 2; omega⟩
 
-theorem codeAddr_lt {a : Art} (hb : a.base.toNat + 4 * a.fb.words.size + 4 ≤ 0xC0000) {x : BitVec 64}
+theorem codeAddr_lt {a : Art} (hb : a.base.toNat + 4 * a.fb.words.size + 4 ≤ 0xE0000) {x : BitVec 64}
     {t : Arm.ArmState} (ht : t.program = a.fb.program a.base) (h : CodeAddr t x) :
-    x.toNat < 0xC0000 := by
+    x.toNat < 0xE0000 := by
   obtain ⟨p, hp, hx⟩ := h
   rw [ht] at hp
   obtain ⟨j, hj, e⟩ := wordsAt_mem_inv (k := 0) hp
@@ -1095,12 +1181,12 @@ theorem codeAddr_lt {a : Art} (hb : a.base.toNat + 4 * a.fb.words.size + 4 ≤ 0
   omega
 
 theorem bound_of {g : Clif.Function} (hg : g ∈ P.funcs) :
-    (A g).base.toNat + 4 * (A g).fb.words.size + 4 ≤ 0xC0000 := by
+    (A g).base.toNat + 4 * (A g).fb.words.size + 4 ≤ 0xE0000 := by
   have h := entryFacts.1
   simp only [boundB, List.all_eq_true, decide_eq_true_eq] at h
   exact h g hg
 
-theorem img_lt {x : BitVec 64} (h : Img P A x) : x.toNat < 0xC0000 := by
+theorem img_lt {x : BitVec 64} (h : Img P A x) : x.toNat < 0xE0000 := by
   obtain ⟨g, hg, hc⟩ := h
   exact codeAddr_lt (bound_of hg) rfl hc
 
@@ -1247,15 +1333,28 @@ def callChainB : Bool :=
 
 theorem callChainB_true : callChainB = true := by native_decide
 
+/-- `f` calls `t` (a callee with a stack slot, beyond its allocator frame: a slot region) and `u`
+(a callee with an outgoing-argument area: it passes a stack argument to `k`). -/
+def slotChainB : Bool :=
+  callsB (A fF).vcp "t" && callsB (A fF).vcp "u" && callsB (A fU).vcp "k" &&
+  decide (P.func? "t" = some fT) && decide (P.func? "u" = some fU) &&
+  !fT.slots.isEmpty && decide ((RAFrame.compute (A fU).vcp (A fU).rf).intBase ≠ 0) &&
+  decide ((RAFrame.compute (A fT).vcp (A fT).rf).size ≠ (A fT).af.frameSize)
+
+theorem slotChainB_true : slotChainB = true := by native_decide
+
 /-- **Non-vacuity of `backend_correct_program`**: for the program
-`P = {f, g, h, s, k, r, r__fvself, q, v, a2, w}` — `f` passes an `sret` pointer to its stack slot to
-`s`, a stack-passed argument to `k`, calls `g` by a `try_call` with a result, the recursive `r`
-and `v`; `g` calls `h` (a non-leaf callee); `r` recurses through its alias `r__fvself` (same body
+`P = {f, g, h, s, k, r, r__fvself, q, v, a2, w, t, u}` — `f` passes an `sret` pointer to its stack
+slot to `s`, a stack-passed argument to `k`, calls `g` by a `try_call` with a result, the
+recursive `r`, `v`, `t` (a callee with a stack slot) and `u` (a callee passing a stack argument
+to `k`); `g` calls `h` (a non-leaf callee); `r` recurses through its alias `r__fvself` (same body
 and signature); `v` calls `q` through a pointer (`call_indirect` of `func_addr`) and through the
-GOT; `w` passes `i128` pairs to `a2` (both legalised by `Opt.Legalize128`) —, compiled by the backend's pipeline (regalloc2's allocation, accepted by
-`checkAlloc`), every premise of the theorem holds — `L.Ok` and the entry premises of `f` on the
-argument `41` — and the theorem gives: the linked Arm machine refines `f`'s CLIF run, which
-returns `390`. -/
+GOT; `w` passes `i128` pairs to `a2` (both legalised by `Opt.Legalize128`) —, compiled by the
+backend's pipeline (regalloc2's allocation, accepted by `checkAlloc`), every premise of the
+theorem holds — `L.Ok` (with `NeedSlots` and `NeedNI`: its non-interference and placement
+premises are discharged, not vacuous) and the entry premises of `f` on the argument `41`
+(including the slot-placement oracle at `f`'s body `sp`) — and the theorem gives: the linked Arm
+machine refines `f`'s CLIF run, which returns `791`. -/
 theorem backend_correct_program_witness :
     (L F0).Ok ∧ fF ∈ (L F0).P.funcs ∧ fG ∈ (L F0).P.funcs ∧ fH ∈ (L F0).P.funcs ∧
     fQ ∈ (L F0).P.funcs ∧ fV ∈ (L F0).P.funcs ∧ (∃ info, (L F0).ProgSite fF info fV) ∧
@@ -1279,7 +1378,11 @@ theorem backend_correct_program_witness :
     fR ∈ (L F0).P.funcs ∧ fRS ∈ (L F0).P.funcs ∧ (∃ info, (L F0).ProgSite fF info fR) ∧
     (∃ info, (L F0).ProgSite fR info fRS) ∧ (∃ info, (L F0).ProgSite fRS info fR) ∧
     fRS.name = fR.name ++ "__fvself" ∧ fRS.blocks = fR.blocks ∧ fRS.sig = fR.sig ∧
-    run0 = .returned [⟨.i64, 390#64⟩] (retMem run0) ∧
+    fT ∈ (L F0).P.funcs ∧ fU ∈ (L F0).P.funcs ∧ (∃ info, (L F0).ProgSite fF info fT) ∧
+    fT.slots ≠ [] ∧ (∃ info, (L F0).ProgSite fF info fU) ∧ (∃ info, (L F0).ProgSite fU info fK) ∧
+    (RAFrame.compute (A fU).vcp (A fU).rf).intBase ≠ 0 ∧ (L F0).NeedSlots ∧ (L F0).NeedNI ∧
+    (L F0).PlaceAt cs0.mem (spv w0) ∧
+    run0 = .returned [⟨.i64, 791#64⟩] (retMem run0) ∧
     ArmRefines (A fF).fb (A fF).base 8 ((L F0).mach M0 fF) s0 run0 := by
   have hF : ∀ a, Img P A a → F0 a := fun a ha => .inr ha
   have hL := L_ok F0 hF
@@ -1291,7 +1394,7 @@ theorem backend_correct_program_witness :
     hca2⟩, hpw⟩, hpa2⟩, hl9⟩, hl9e⟩, hk9⟩, hl10⟩, hl10e⟩, hk10⟩, hs9p⟩, hs9r⟩, ha2p⟩, ha2r⟩ := hc
   obtain ⟨hbound, hloc, -, hfunc, hentry, hsig, hparams, hset, hret, hvals⟩ := entryFacts
   obtain ⟨hframe, hdrop, hfs, hsb, hib, hsz, hlay, hslots⟩ := frameFacts
-  have hrun : run0 = .returned [⟨.i64, 390#64⟩] (retMem run0) := by
+  have hrun : run0 = .returned [⟨.i64, 791#64⟩] (retMem run0) := by
     rw [← hvals]; exact eq_returned hret
   have hfa := facts (g := fF) (by simp [P])
   have hlocs : locsOf fF.sig = [.reg (.x 0)] := by
@@ -1299,8 +1402,24 @@ theorem backend_correct_program_witness :
     split at hloc
     · assumption
     · cases hloc
-  have hbF : (A fF).base.toNat + 4 * (A fF).fb.words.size + 4 ≤ 0xC0000 := bound_of (by simp [P])
-  obtain ⟨-, -, -, -, -, -, -, hnq, hnv, -, -⟩ := names
+  have hbF : (A fF).base.toNat + 4 * (A fF).fb.words.size + 4 ≤ 0xE0000 := bound_of (by simp [P])
+  obtain ⟨-, -, -, -, -, -, -, hnq, hnv, -, -, -, -⟩ := names
+  have hsc := slotChainB_true
+  simp only [slotChainB, Bool.and_eq_true, decide_eq_true_eq] at hsc
+  obtain ⟨⟨⟨⟨⟨⟨⟨hct, hcu⟩, hcuk⟩, hpt⟩, hpu⟩, hslT⟩, hibU⟩, -⟩ := hsc
+  have hslT' : fT.slots ≠ [] := fun h => by simp [h] at hslT
+  have hsT : ∃ info, (L F0).ProgSite fF info fT := by
+    obtain ⟨info, hs, hd⟩ := callsB_sound hct
+    exact ⟨info, hs, "t", hd, hpt⟩
+  have hsU : ∃ info, (L F0).ProgSite fF info fU := by
+    obtain ⟨info, hs, hd⟩ := callsB_sound hcu
+    exact ⟨info, hs, "u", hd, hpu⟩
+  have hsUK : ∃ info, (L F0).ProgSite fU info fK := by
+    obtain ⟨info, hs, hd⟩ := callsB_sound hcuk
+    exact ⟨info, hs, "k", hd, hpk⟩
+  have hNS : (L F0).NeedSlots := ⟨fF, hfF, fT, .inl hsT, hslT'⟩
+  have hNN : (L F0).NeedNI := ⟨fF, hfF, fU, .inl hsU, .inl hibU⟩
+  have hplace : (L F0).PlaceAt cs0.mem (spv w0) := ⟨[], by rw [spv_w0, frames_eq]; rfl⟩
   have hcert : ∀ i g, (Opt.Legalize128.function128Cert (srcFn i)).toBool = true →
       (getOk (Opt.Legalize128.function128Cert (srcFn i))).1 = g →
       Opt.Legalize128.function128Cert (srcFn i) = .ok (g, certOf i) := by
@@ -1314,7 +1433,8 @@ theorem backend_correct_program_witness :
     hs9p, hs9r, ha2p, ha2r,
     by simp [L, P], by simp [L, P], ?_, ?_, ?_,
     hsret, ?_, ?_, by rw [hib]; decide, fun h => by simp [h] at hslots, by simp [L, P],
-    by simp [L, P], ?_, ?_, ?_, hnm, hbl, hsg, hrun, ?_⟩
+    by simp [L, P], ?_, ?_, ?_, hnm, hbl, hsg, by simp [L, P], by simp [L, P], hsT, hslT', hsU, hsUK,
+    hibU, hNS, hNN, hplace, hrun, ?_⟩
   · obtain ⟨info, hs, hd⟩ := callsB_sound hcv
     exact ⟨info, hs, "v", hd, hpv⟩
   · exact regCallsB_sound hreg
@@ -1342,7 +1462,7 @@ theorem backend_correct_program_witness :
     exact ⟨info, hs, "r", hd, hpr⟩
   rw [hrun]
   refine backend_correct_program_returned (L F0) hL hfF M0 (w₀ := w0) (args := [arg]) (cs := cs0)
-    ?hent ?hres rfl ?hgfree ?himg ?hbe ?hargs ?hcs ?hsav ?hrel (hrun ▸ rfl)
+    ?hent ?hres rfl ?hgfree ?himg ?hbe ?hargs ?hcs ?hsav ?hrel (fun _ => hplace) (hrun ▸ rfl)
   case hent =>
     refine ⟨s0_program, imgCode_of (okB_imgB) (by simp [P]) s0 (fun a _ => by rw [s0_mem]),
       by simp [s0, L, Arm.r_of_w_same], ?_, ?_, hL.raStar fF hfF, ?_, hL.fits fF hfF⟩
