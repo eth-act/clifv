@@ -615,7 +615,14 @@ pub fn linker_main(meta_json: &str, argv: Vec<OsString>) -> i32 {
     // the link map attributes every function of the executable to its input object
     let _ = fs::create_dir_all(&cfg.tmp_dir);
     let map = cfg.tmp_dir.join(format!("link-{}.map", pipeline::tag_of(&output.display().to_string())));
-    let status = Command::new(&cfg.rust_lld).args(&argv).arg(format!("-Map={}", map.display())).status();
+    // `--no-relax`: lld keeps the address pairs as emitted (`adrp; add`, the GOT `adrp; ldr`),
+    // resolving only their immediates, so the executable's code is the compiled words (the
+    // binary check, `E2E.BinCheck`); relaxed, they would become `nop; adr`
+    let status = Command::new(&cfg.rust_lld)
+        .args(&argv)
+        .arg("--no-relax")
+        .arg(format!("-Map={}", map.display()))
+        .status();
     let code = match status {
         Ok(s) => s.code().unwrap_or(1),
         Err(e) => {
