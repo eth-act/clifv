@@ -17,8 +17,9 @@ executable file, read by the ELF reader `FV/E2E/Elf.lean`:
     without a relocation is the compiled word (`plain`); every relocation is resolved
     (`RelocOk`): `bl` → `blW (T - P)` with `T = I.baseOf sym`; an `adrp`/`add` or GOT
     `adrp`/`ldr` pair → `PairOk` (the executable's two words put `T = I.symAddr sym addend`
-    into the compiled `adrp`'s register `rd`: `adrp`+`add`, `nop`+`adr` (lld's relaxation),
-    or, for the GOT, `adrp`+`ldr` of a GOT slot `G` with `readN (loadMem file) 8 G = T`); a
+    into the compiled `adrp`'s register `rd`: `adrp`+`add` (the compiled pair with its
+    immediates resolved; `cargo fv` links with `--no-relax`, so lld's `nop`+`adr` relaxation
+    is not accepted), or, for the GOT, `adrp`+`ldr` of a GOT slot `G` with `readN (loadMem file) 8 G = T`); a
     TLSDESC sequence → lld's local-exec relaxation `movz x0`/`movk x0`/`nop`/`nop` of the
     symbol's thread-pointer offset (`TpOff`);
   - `DataOk I file o` (per CLIF data object `o`): at `I.addrOf o.name` the loaded image holds
@@ -132,12 +133,9 @@ def rd5 (w : BitVec 32) : Nat := w.toNat % 32
 /-- A signed 21-bit immediate as its two's-complement field. -/
 def imm21 (d : Int) : Nat := (d % 2 ^ 21).toNat
 
-/-- `ADR`/`ADRP` (`op`) of register `rd` with immediate `d` (`immhi:immlo`). -/
+/-- `ADRP` (`op = 1`) of register `rd` with immediate `d` (`immhi:immlo`). -/
 def adrLike (op rd : Nat) (d : Int) : BitVec 32 :=
   BitVec.ofNat 32 (op * 2 ^ 31 + imm21 d % 4 * 2 ^ 29 + 0x10000000 + imm21 d / 4 * 32 + rd)
-
-/-- `ADR Xrd, pc + d`. -/
-def adrW (rd : Nat) (d : Int) : BitVec 32 := adrLike 0 rd d
 
 /-- `ADRP Xrd, page(pc) + dp pages`. -/
 def adrpW (rd : Nat) (dp : Int) : BitVec 32 := adrLike 1 rd dp
@@ -178,13 +176,11 @@ def gotOf (P : Nat) (x0 x1 : BitVec 32) : Nat :=
 /-! ## The resolved code -/
 
 /-- **The executable's words `x0`, `x1` at `P`, `P + 4` put the address `T` into register
-`rd`**, in one of the forms lld leaves: `ADRP`+`ADD`; `NOP`+`ADR` (relaxed); for a GOT access
-(`got`), `ADRP`+`LDR` of a GOT slot `G` holding `T`. -/
+`rd`**, as the compiled pair with resolved immediates (lld with `--no-relax`): `ADRP`+`ADD`; for
+a GOT access (`got`), `ADRP`+`LDR` of a GOT slot `G` holding `T`. -/
 inductive PairOk (m : PMem) (P T rd : Nat) (got : Bool) (x0 x1 : BitVec 32) : Prop
   | adrpAdd : inR (-2 ^ 20) (2 ^ 20) (pageOf T - pageOf P) = true →
       x0 = adrpW rd (pageOf T - pageOf P) → x1 = addW rd rd (T % 4096) → PairOk m P T rd got x0 x1
-  | nopAdr : inR (-2 ^ 20) (2 ^ 20) ((T : Int) - (P + 4)) = true →
-      x0 = nopW → x1 = adrW rd ((T : Int) - (P + 4)) → PairOk m P T rd got x0 x1
   | adrpLdr (G : Nat) : got = true → G % 8 = 0 → inR (-2 ^ 20) (2 ^ 20) (pageOf G - pageOf P) = true →
       x0 = adrpW rd (pageOf G - pageOf P) → x1 = ldrW rd rd (G % 4096 / 8) →
       readN m 8 (BitVec.ofNat 64 G) = some (BitVec.ofNat (8 * 8) T) → PairOk m P T rd got x0 x1
@@ -192,8 +188,6 @@ inductive PairOk (m : PMem) (P T rd : Nat) (got : Bool) (x0 x1 : BitVec 32) : Pr
 def pairB (m : PMem) (P T rd : Nat) (got : Bool) (x0 x1 : BitVec 32) : Bool :=
   (inR (-2 ^ 20) (2 ^ 20) (pageOf T - pageOf P) && x0 == adrpW rd (pageOf T - pageOf P) &&
     x1 == addW rd rd (T % 4096)) ||
-  (inR (-2 ^ 20) (2 ^ 20) ((T : Int) - (P + 4)) && x0 == nopW &&
-    x1 == adrW rd ((T : Int) - (P + 4))) ||
   (let G := gotOf P x0 x1
    got && G % 8 == 0 && inR (-2 ^ 20) (2 ^ 20) (pageOf G - pageOf P) &&
     x0 == adrpW rd (pageOf G - pageOf P) && x1 == ldrW rd rd (G % 4096 / 8) &&
@@ -202,9 +196,8 @@ def pairB (m : PMem) (P T rd : Nat) (got : Bool) (x0 x1 : BitVec 32) : Bool :=
 theorem pairB_sound {m m' : PMem} (hm : PExt m m') {P T rd : Nat} {got : Bool}
     {x0 x1 : BitVec 32} (h : pairB m P T rd got x0 x1 = true) : PairOk m' P T rd got x0 x1 := by
   simp only [pairB, Bool.or_eq_true, Bool.and_eq_true, beq_iff_eq] at h
-  rcases h with ((⟨⟨h1, h2⟩, h3⟩ | ⟨⟨h1, h2⟩, h3⟩) | h)
+  rcases h with (⟨⟨h1, h2⟩, h3⟩ | h)
   · exact .adrpAdd h1 h2 h3
-  · exact .nopAdr h1 h2 h3
   · obtain ⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩ := h
     exact .adrpLdr _ h1 h2 h3 h4 h5 (readN_ext hm h6)
 

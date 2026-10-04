@@ -38,7 +38,13 @@ pub fn verdict_of(out: &str, ok: bool) -> Verdict {
             Some((p, t))
         })
         .unwrap_or((0, 0));
-    let stack = field(out, "stack: ").map(|s| format!("; stack: {s}")).unwrap_or_default();
+    // the stack line without its list of recursive functions
+    let stack = field(out, "stack: ")
+        .map(|s| match (s.find(": ["), s.find("; the other")) {
+            (Some(i), Some(j)) if i < j => format!("; stack: {}{}", &s[..i], &s[j..]),
+            _ => format!("; stack: {s}"),
+        })
+        .unwrap_or_default();
     let first_fail = out
         .lines()
         .position(|l| l.trim_start().starts_with("FAIL "))
@@ -68,7 +74,12 @@ pub fn verdict_of(out: &str, ok: bool) -> Verdict {
             first_fail.unwrap_or_else(|| "?".into())
         ));
     }
-    Verdict { verified: true, summary: format!("verified: E2E.Binary.binary_correct holds for its {total} Lean-compiled functions{stack}") }
+    let which = if field(out, "stack: ").is_some_and(|s| s.starts_with("recursive")) {
+        "E2E.Binary.binary_correct (binary_correct_depth for the functions whose calls reach a call cycle: their stack stays a premise)"
+    } else {
+        "E2E.Binary.binary_correct"
+    };
+    Verdict { verified: true, summary: format!("verified: {which} holds for its {total} Lean-compiled functions{stack}") }
 }
 
 /// Check the executable `exe` linked in the build under `fv_dir` (`target/fv/<mode>`).

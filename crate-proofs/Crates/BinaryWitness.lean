@@ -55,11 +55,19 @@ def cs : Clif.State where
 /-- The program's CLIF run from `cs`. -/
 def run : Clif.Outcome := Clif.runLoop closedBase.env (progOf I.results) (M + 1) cs
 
-/-- The machine state of the call: pc at `f`'s address, x30 the caller's return address,
-`sp0`, the arguments in x0 and x1. -/
-def r : Arm.ArmState :=
+/-- The machine state of the call with memory `m`: pc at `f`'s address, x30 the caller's return
+address, `sp0`, the arguments in x0 and x1. -/
+def r (m : Arm.Memory) : Arm.ArmState :=
   Arm.w .PC (artOf I.results f).base (Arm.w (.GPR 30#5) ra0 (Arm.w (.GPR 31#5) sp0
-    (Arm.w (.GPR 0#5) 2#64 (Arm.w (.GPR 1#5) 3#64 Arm.ArmState.default))))
+    (Arm.w (.GPR 0#5) 2#64 (Arm.w (.GPR 1#5) 3#64 (setMem Arm.ArmState.default m)))))
+
+/-- The executable's loaded image as the machine's memory (`0` outside the segments). -/
+def memOf (file : ByteArray) : Arm.Memory := fun a => (Elf.loadMem file a).getD 0
+
+/-- A file holding the excerpt `ex` (zero elsewhere). -/
+def fileOf (ex : Elf.Excerpt) : ByteArray :=
+  let n := ex.foldl (fun n c => max n (c.1 + c.2.size)) 0
+  ex.foldl (fun f c => c.2.copySlice 0 f c.1 c.2.size) (ByteArray.mk (Array.replicate n 0))
 
 def locB : Bool :=
   match locsOf f.sig with
@@ -75,7 +83,8 @@ def factsB : Bool :=
   locB &&
   LinkWitness.isRet run && decide (LinkWitness.retVals run = [⟨.i32, 5#32⟩]) &&
   (tabOf I.results).all (fun e => decide (e.2.base.toNat + 4 * e.2.fb.words.size + 4 ≤ 2 ^ 32)) &&
-  decide (frameDrop (artOf I.results f).af + I.D * M ≤ 2 ^ 20)
+  decide (frameDrop (artOf I.results f).af + I.D * M ≤ 2 ^ 20) &&
+  StackBound.goodN I n && decide (StackBound.stackFn I f ≤ 2 ^ 20)
 
 theorem factsB_true : factsB = true := by native_decide
 
@@ -86,11 +95,12 @@ theorem facts :
     locB = true ∧ LinkWitness.isRet run = true ∧ LinkWitness.retVals run = [⟨.i32, 5#32⟩] ∧
     (tabOf I.results).all (fun e => decide (e.2.base.toNat + 4 * e.2.fb.words.size + 4 ≤ 2 ^ 32))
       = true ∧
-    frameDrop (artOf I.results f).af + I.D * M ≤ 2 ^ 20 := by
+    frameDrop (artOf I.results f).af + I.D * M ≤ 2 ^ 20 ∧ StackBound.goodN I n = true ∧
+    StackBound.stackFn I f ≤ 2 ^ 20 := by
   have h := factsB_true
   simp only [factsB, Bool.and_eq_true, decide_eq_true_eq] at h
-  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩, h7⟩, h8⟩, h9⟩, h10⟩, h11⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11⟩
+  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩, h7⟩, h8⟩, h9⟩, h10⟩, h11⟩, h12⟩, h13⟩ := h
+  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩
 
 /-- Every code address of the program is below `2^32`. -/
 theorem img_lt {x : BitVec 64} (h : img I x) : x.toNat < 2 ^ 32 := by
@@ -110,33 +120,36 @@ theorem img_lt {x : BitVec 64} (h : img I x) : x.toNat < 2 ^ 32 := by
 
 theorem sp0_toNat : sp0.toNat = 2 ^ 40 := rfl
 
-theorem pc_r : Arm.r .PC r = (artOf I.results f).base := Arm.r_of_w_same
+variable (m : Arm.Memory)
 
-theorem spv_r : spv r = sp0 := by
+theorem pc_r : Arm.r .PC (r m) = (artOf I.results f).base := Arm.r_of_w_same
+
+theorem spv_r : spv (r m) = sp0 := by
   simp only [spv, r]
   rw [Arm.r_of_w_different (by decide), Arm.r_of_w_different (by decide), Arm.r_of_w_same]
 
-theorem x30_r : xreg 30 r = ra0 := by
+theorem x30_r : xreg 30 (r m) = ra0 := by
   simp only [xreg, r]
   rw [Arm.r_of_w_different (by decide), Arm.r_of_w_same]
 
-theorem err_r : Arm.r .ERR r = .None := by
+theorem err_r : Arm.r .ERR (r m) = .None := by
   simp only [r]
   rw [Arm.r_of_w_different (by decide), Arm.r_of_w_different (by decide),
     Arm.r_of_w_different (by decide), Arm.r_of_w_different (by decide),
-    Arm.r_of_w_different (by decide)]
+    Arm.r_of_w_different (by decide), r_setMem]
   simp [Arm.r, Arm.read_base_error, Arm.ArmState.default]
 
-theorem x0_r : Arm.r (.GPR (rnum 0)) r = 2#64 := by
+theorem x0_r : Arm.r (.GPR (rnum 0)) (r m) = 2#64 := by
   simp only [r, rnum]
   rw [Arm.r_of_w_different (by decide), Arm.r_of_w_different (by decide),
     Arm.r_of_w_different (by decide), Arm.r_of_w_same]
 
-theorem x1_r : Arm.r (.GPR (rnum 1)) r = 3#64 := by
+theorem x1_r : Arm.r (.GPR (rnum 1)) (r m) = 3#64 := by
   simp only [r, rnum]
   rw [Arm.r_of_w_different (by decide), Arm.r_of_w_different (by decide),
     Arm.r_of_w_different (by decide), Arm.r_of_w_different (by decide), Arm.r_of_w_same]
 
+omit m in
 theorem locs : locsOf f.sig = [.reg (.x 0), .reg (.x 1)] := by
   have h := facts.2.2.2.2.2.2.1
   unfold locB at h
@@ -144,34 +157,34 @@ theorem locs : locsOf f.sig = [.reg (.x 0), .reg (.x 1)] := by
   · assumption
   · cases h
 
-/-- The outside caller's contract holds in `r` (stack `frameDrop + D·M` bytes). -/
-theorem outsideCall :
-    OutsideCall I (fun _ => none) f (frameDrop (art I f).af + I.D * M) r args cs.mem where
-  pc := pc_r
-  err := err_r
+/-- The outside caller's contract holds in `r m` with a stack of `N ≤ 2^20` bytes (the caller's
+CLIF memory has no live allocation, so any read-only data facts `roB` do). -/
+theorem outsideCall (roB : BitVec 64 → Option (BitVec 8)) {N : Nat} (hN : N ≤ 2 ^ 20) :
+    OutsideCall I roB f N (r m) args cs.mem where
+  pc := pc_r m
+  err := err_r m
   ra := fun h => by have := img_lt h; rw [x30_r] at this; simp [ra0] at this
   spAligned := by rw [spv_r]; decide
-  stack := by rw [spv_r, sp0_toNat]; have := facts.2.2.2.2.2.2.2.2.2.2; simp only [art]; omega
+  stack := by rw [spv_r, sp0_toNat]; omega
   stackFree := fun a ha hb => by
     have := img_lt ha
-    have := facts.2.2.2.2.2.2.2.2.2.2
     rw [spv_r] at hb
     obtain ⟨-, h2⟩ := hb
     rw [sp0_toNat] at h2
-    simp only [art] at h2
     omega
   args := fun loc v hm => by
     rw [locs] at hm
     simp only [args, List.zip_cons_cons, List.zip_nil_right, List.mem_cons, Prod.mk.injEq,
       List.not_mem_nil, or_false] at hm
     rcases hm with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-    · simp only [VHolds, regVal, x0_r]; rfl
-    · simp only [VHolds, regVal, x1_r]; rfl
+    · simp only [VHolds, regVal, x0_r m]; rfl
+    · simp only [VHolds, regVal, x1_r m]; rfl
   bytes := fun _ _ hv => by simp [cs, cm, Clif.Mem.valid] at hv
   image := fun _ _ _ hv => by simp [cs, cm, Clif.Mem.valid] at hv
   valid := fun _ _ hv => by simp [cs, cm, Clif.Mem.valid] at hv
   symbols := rfl
 
+omit m in
 theorem clifEntry : ClifEntry f args cs := by
   obtain ⟨-, hb, hsig, hpar, hset, hsl, -⟩ := facts
   refine ⟨rfl, rfl, hsig, ⟨bF, hb, rfl, rfl, hpar, ?_⟩, by simp [cs, hsl]⟩
@@ -180,13 +193,14 @@ theorem clifEntry : ClifEntry f args cs := by
   cases Clif.Regs.empty.setMany (bF.params.map (·.1)) args <;> simp
 
 /-- The reference CLIF run. -/
-theorem clifRun : ClifRun I closedBase f r args cs where
+theorem clifRun : ClifRun I closedBase f (r m) args cs where
   entry := clifEntry
   slots := fun _ _ h => by simp [cs] at h
   place := fun _ => ⟨[], by
     show some _ = some _
-    rw [show spBody (art I f).af r = sb by simp only [spBody, spv_r, sb]]⟩
+    rw [show spBody (art I f).af (r m) = sb by simp only [spBody, spv_r, sb]]⟩
 
+omit m in
 /-- The program's CLIF run returns `5`. -/
 theorem run_eq : run = .returned [⟨.i32, 5#32⟩] (LinkWitness.retMem run) := by
   rw [← facts.2.2.2.2.2.2.2.2.1]
@@ -198,20 +212,68 @@ machine state `r` in which outside code calls the executable's Lean-compiled
 CLIF run exists and returns `5`, and the theorem gives the machine's return to the caller's
 return address with `5` in x0. -/
 theorem binary_depth_witness :
-    OutsideCall I (fun _ => none) f (frameDrop (art I f).af + I.D * M) r args cs.mem ∧
-    ClifRun I closedBase f r args cs ∧
+    OutsideCall I (fun _ => none) f (frameDrop (art I f).af + I.D * M) (r m) args cs.mem ∧
+    ClifRun I closedBase f (r m) args cs ∧
     Clif.runLoop closedBase.env (prog I) (M + 1) cs = .returned [⟨.i32, 5#32⟩] (LinkWitness.retMem run) ∧
-    ∃ k, ArmRet ra0 (modelOf I f r) (runX ((sys I closedBase).mach M f) k (modelOf I f r)) ∧
-      XHolds ⟨.i32, 5#32⟩ (xreg 0 (runX ((sys I closedBase).mach M f) k (modelOf I f r))) := by
+    ∃ k, ArmRet ra0 (modelOf I f (r m)) (runX ((sys I closedBase).mach M f) k (modelOf I f (r m))) ∧
+      XHolds ⟨.i32, 5#32⟩ (xreg 0 (runX ((sys I closedBase).mach M f) k (modelOf I f (r m)))) := by
   have hf := facts.1
   have hfm := (Clif.Program.func?_some hf).1
   have hL := okB_sound Crates.AArithAbort.okB_input (Crates.AArithAbort.base_closed (img I))
     (fun _ h => h)
   have htr := trapsExplicit_of_run hL hfm clifEntry rfl run_eq
+  have hoc := outsideCall m (fun _ => none) facts.2.2.2.2.2.2.2.2.2.2.1
   have h := binary_correct_depth Crates.AArithAbort.okB_input closedBase
-    (Crates.AArithAbort.base_closed _) hf M outsideCall clifRun htr
+    (Crates.AArithAbort.base_closed _) hf M hoc (clifRun m) htr
   rw [show Clif.runLoop closedBase.env (prog I) (M + 1) cs = run from rfl, run_eq, x30_r] at h
   obtain ⟨k, hret, hx, -⟩ := h
-  exact ⟨outsideCall, clifRun, run_eq, k, hret, hx 0 _ rfl⟩
+  exact ⟨hoc, clifRun m, run_eq, k, hret, hx 0 _ rfl⟩
+
+omit m in
+/-- The excerpts of the proof are consistent: some file holds them (the executable does). -/
+theorem agrees_fileOf : Elf.Agrees (fileOf Crates.AArithAbort.exAll) Crates.AArithAbort.exAll := by
+  unfold Elf.Agrees; native_decide
+
+omit m in
+/-- **Non-vacuity of `binary_correct_of_checks`** on the `a_arith` executable (panic=abort,
+linked with `--no-relax`): for every file holding the proof's excerpts of the executable (one
+exists, `agrees_fileOf`; the executable is one), the machine state whose memory is the file's
+loaded image, in which outside code calls its Lean-compiled `core::num::<i32>::wrapping_add`
+with `2` and `3` and `stackFn` bytes of stack, meets every premise — the binary checks
+(`bin_ok`, `okB_input`), the loader premise, the stack check (`goodN`), the boundary contract,
+the reference CLIF run (which returns `5`) — and the theorem gives the machine's return to the
+caller with `5` in x0, the model state differing from the machine state only at relocated
+instruction bytes. -/
+theorem binary_witness :
+    (∃ file, Elf.Agrees file Crates.AArithAbort.exAll) ∧
+    ∀ file, Elf.Agrees file Crates.AArithAbort.exAll →
+      (imageOf file).Intact (r (memOf file)) ∧
+      OutsideCall I (BinCheck.roByte I Crates.AArithAbort.dataObjs) f (StackBound.stackFn I f)
+        (r (memOf file)) args cs.mem ∧
+      ClifRun I closedBase f (r (memOf file)) args cs ∧
+      Clif.runLoop closedBase.env (prog I) (M + 1) cs =
+        .returned [⟨.i32, 5#32⟩] (LinkWitness.retMem run) ∧
+      (∃ k, ArmRet ra0 (modelOf I f (r (memOf file)))
+          (runX ((sys I closedBase).mach M f) k (modelOf I f (r (memOf file)))) ∧
+        XHolds ⟨.i32, 5#32⟩
+          (xreg 0 (runX ((sys I closedBase).mach M f) k (modelOf I f (r (memOf file)))))) ∧
+      ∀ a, (modelOf I f (r (memOf file))).mem a ≠ (r (memOf file)).mem a → BinCheck.RelocAt I a := by
+  refine ⟨⟨_, agrees_fileOf⟩, fun file hfile => ?_⟩
+  have hf := facts.1
+  have hfm := (Clif.Program.func?_some hf).1
+  have hX : (imageOf file).Intact (r (memOf file)) := fun a b _ hb => by
+    simp only [r, LinkWitness.mem_w, mem_setMem, memOf]
+    exact (congrArg (Option.getD · 0) hb).trans rfl
+  have hoc := outsideCall (memOf file) (BinCheck.roByte I Crates.AArithAbort.dataObjs)
+    facts.2.2.2.2.2.2.2.2.2.2.2.2
+  have hL := okB_sound Crates.AArithAbort.okB_input (Crates.AArithAbort.base_closed (img I))
+    (fun _ h => h)
+  have htr := trapsExplicit_of_run hL hfm clifEntry rfl run_eq
+  obtain ⟨h1, h2⟩ := binary_correct_of_checks Crates.AArithAbort.okB_input
+    (Crates.AArithAbort.bin_ok file hfile) closedBase (Crates.AArithAbort.base_closed _)
+    facts.2.2.2.2.2.2.2.2.2.2.2.1 hf M hX hoc (clifRun _) htr
+  rw [show Clif.runLoop closedBase.env (prog I) (M + 1) cs = run from rfl, run_eq, x30_r] at h1
+  obtain ⟨k, hret, hx, -⟩ := h1
+  exact ⟨hX, hoc, clifRun _, run_eq, ⟨k, hret, hx 0 _ rfl⟩, h2⟩
 
 end Crates.BinaryWitness

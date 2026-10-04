@@ -1,4 +1,5 @@
 import FV.E2E.StackBound
+import FV.E2E.BinCheck
 
 /-! # The binary-level theorem (M9, docs/contracts/e2e.md, "Binary level (M9)")
 
@@ -465,7 +466,8 @@ structure Image where
 /-- **The loader premise**: the machine state `r` holds the executable's kept bytes (the OS maps
 the segments at their link addresses; read-only segments are never written, and no code writes
 the relocation-read-only data). -/
-def Image.Intact (X : Image) (r : Arm.ArmState) : Prop := ∀ a, X.kept a → X.mem a = some (r.mem a)
+def Image.Intact (X : Image) (r : Arm.ArmState) : Prop :=
+  ∀ a b, X.kept a → X.mem a = some b → r.mem a = b
 
 /-- **The binary facts** of an executable `X` for a crate input `I` (what the binary checks
 establish, `binary_correct_of_checks`): the input passes the crate checker (`okB`); the program's
@@ -504,11 +506,8 @@ theorem binary_correct {I : LinkInput} {X : Image} {R : BitVec 64 → Prop}
     have himgF : ∀ a, (LinkSys.ofInput I B (worldF I f (StackBound.bud I f) r)).Img a →
         worldF I f (StackBound.bud I f) r a := fun _ h => .inr h
     have hL := okB_sound hbin.ok hB' himgF
-    have hro : ∀ a b, roB a = some b → r.mem a = b := fun a b h => by
-      have h1 := hbin.data a b h
-      have h2 := hX a h1.1
-      rw [h1.2] at h2
-      exact (Option.some.inj h2).symm
+    have hro : ∀ a b, roB a = some b → r.mem a = b := fun a b h =>
+      hX a b (hbin.data a b h).1 (hbin.data a b h).2
     obtain ⟨hent, -, hgfree, himg, hbe, hargs, hsav, hrel, hpl⟩ :=
       premises hL (Clif.Program.func?_some hf).1 hro ho hr
     rw [mach_F I B (fun _ => False) (worldF I f (StackBound.bud I f) r)]
@@ -517,9 +516,7 @@ theorem binary_correct {I : LinkInput} {X : Image} {R : BitVec 64 → Prop}
   · by_cases hi : img I a
     · rw [mem_modelOf_img hi] at hne
       rcases (hbin.code a hi).2 with h | h
-      · have h2 := hX a (hbin.code a hi).1
-        rw [h] at h2
-        exact absurd (Option.some.inj h2) hne
+      · exact absurd (hX a _ (hbin.code a hi).1 h).symm hne
       · exact h
     · exact absurd (mem_modelOf_not hi) hne
 
@@ -540,5 +537,42 @@ theorem binary_correct_bound {I : LinkInput} {X : Image} {R : BitVec 64 → Prop
     exact (StackBound.stackB_some hS).1 f (Clif.Program.func?_some hf).1
   exact binary_correct hbin B hB hn hf M hX
     (ho.mono (StackBound.stackFn_le hS (Clif.Program.func?_some hf).1)) hr htr
+
+/-! ## The binary checks -/
+
+/-- **The loaded image of an ELF file** (`FV/E2E/Elf.lean`): its bytes, and the addresses nothing
+writes after loading (the read-only segments; the relocation-read-only data). -/
+def imageOf (file : ByteArray) : Image := ⟨Elf.loadMem file, fun a => Elf.ro file a ∨ Elf.relro file a⟩
+
+/-- **The binary facts from the checks**: an input that passes the crate checker and an
+executable file that passes the binary checks (`BinCheck.BinOk`: its code is the compiled code
+with resolved relocations, its CLIF data objects and symbols are the input's). -/
+theorem binFacts_of_checks {I : LinkInput} {D : List Clif.DataObject} {file : ByteArray}
+    (hI : okB I = true) (hB : BinCheck.BinOk I D file) :
+    BinFacts I (imageOf file) (BinCheck.RelocAt I) (BinCheck.roByte I D) where
+  ok := hI
+  code := fun _ ha =>
+    have h := BinCheck.img_bytes hB hI ha
+    ⟨.inl h.1, h.2⟩
+  data := fun _ _ h =>
+    have h' := BinCheck.roByte_sound hB.data h
+    ⟨h'.2, h'.1⟩
+
+/-- **The binary-level theorem for an executable file** that passes the checks (`okB` on the
+crate input `I`, `BinOk` on the file with the CLIF data objects `D`): `binary_correct` with the
+executable's loaded image (`imageOf file`), its relocated instruction bytes `RelocAt I` and its
+read-only CLIF data `roByte I D`. -/
+theorem binary_correct_of_checks {I : LinkInput} {D : List Clif.DataObject} {file : ByteArray}
+    (hI : okB I = true) (hbin : BinCheck.BinOk I D file) (B : BaseEnv) (hB : BaseOk (sys I B))
+    {n : String} (hn : StackBound.goodN I n = true) {f : Clif.Function}
+    (hf : (prog I).func? n = some f) (M : Nat) {r : Arm.ArmState} {args : List Clif.Val}
+    {cs : Clif.State} (hX : (imageOf file).Intact r)
+    (ho : OutsideCall I (BinCheck.roByte I D) f (StackBound.stackFn I f) r args cs.mem)
+    (hr : ClifRun I B f r args cs)
+    (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) ((prog I).only f) cs) :
+    ArmRefines (art I f).fb (art I f).base (xreg 30 r) ((sys I B).mach M f) (modelOf I f r)
+      (Clif.runLoop B.env (prog I) (M + 1) cs) ∧
+    ∀ a, (modelOf I f r).mem a ≠ r.mem a → BinCheck.RelocAt I a :=
+  binary_correct (binFacts_of_checks hI hbin) B hB hn hf M hX ho hr htr
 
 end E2E.Binary
