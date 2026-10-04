@@ -556,6 +556,26 @@ def main (args : List String) : IO UInt32 := do
       codeBad := codeBad + 1
       IO.println s!"  BIN code {n}:"
       for m in (artDiag I' r phs a).take 8 do IO.println s!"      {m}"
+  -- the forms the linker left the relocated words in
+  let mut nBl := 0
+  let mut nNopAdr := 0
+  let mut nAdrpAdd := 0
+  let mut nGot := 0
+  let mut nTls := 0
+  for (_, a) in arts do
+    for rl in a.fb.relocs do
+      match rl.type with
+      | .call26 => nBl := nBl + 1
+      | .adrGotPage | .adrPrelPgHi21 =>
+        match wordIn r phs (wAt a rl.offset), wordIn r phs (wAt a (rl.offset + 4)) with
+        | some x0, some x1 =>
+          if x0 == nopW then nNopAdr := nNopAdr + 1
+          else if x1.toNat / 2 ^ 22 == 0x3e5 then nGot := nGot + 1
+          else nAdrpAdd := nAdrpAdd + 1
+        | _, _ => pure ()
+      | .tlsDescAdrPage21 => nTls := nTls + 1
+      | _ => pure ()
+  IO.println s!"  relocations: {nBl} bl, address pairs {nNopAdr} nop+adr, {nAdrpAdd} adrp+add, {nGot} adrp+ldr (GOT), {nTls} TLSDESC sequences"
   -- the data objects the kept functions reach
   let allData := parseData dataLines
   let mut reach : List String := (keep.flatMap fun e => addrNames e.1).eraseDups
