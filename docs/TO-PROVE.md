@@ -317,3 +317,61 @@ Large, low priority.
   `lean-e2e-check` (≥ 1148 accepted, 0 rejected); if CLIF semantics change, `scripts/clif-filetests.sh` at
   its baseline and `scripts/opt-difftest.sh` with 0 failures.
 - When a WP lands, mark it here (`**done** (commit)`) and update §2.
+
+## 8. Issues and claiming
+
+Every WP has a GitHub issue (label `work-package`, plus `critical-path`, `rule-proofs`, `scope` or
+`trusted-base`). The issue is the claim: **before starting a WP, check that its issue has no `claimed`
+label**; list the free ones with
+`gh issue list --repo eth-act/clifv --label work-package --search "-label:claimed"`.
+
+- **Claim:** `gh issue edit <N> --repo eth-act/clifv --add-label claimed`, then comment
+  `Claimed by <agent or person>, branch agent/<name>`. Agents may do this themselves (it isn't a git
+  push); everything else in §7 still applies.
+- **Release** (stopping before done): remove the label and comment what's done and what's left.
+- **Done:** comment with the merge commit, close the issue, and mark the WP here and in the table below.
+- Prefer WPs whose dependencies (listed in each issue) are done; §3 "Parallel from day one" lists the ones
+  with none.
+
+| WP | Issue | Status |
+| --- | --- | --- |
+| V1+V2 | [#4](https://github.com/eth-act/clifv/issues/4) `lowerCheck` completeness (+ V2, `PrepDomain` of the lowering output) | claimed (`agent/lower-complete`) |
+| V3 | [#5](https://github.com/eth-act/clifv/issues/5) Form coverage (`formsCoveredB`) | open |
+| V4 | [#6](https://github.com/eth-act/clifv/issues/6) Register allocation without trusting regalloc2 | open |
+| V5 | [#7](https://github.com/eth-act/clifv/issues/7) Frame and control-lowering rejections (totality) | open |
+| V6 | [#8](https://github.com/eth-act/clifv/issues/8) Branch range (totality) | open |
+| L2a | [#9](https://github.com/eth-act/clifv/issues/9) Linking without validators: split `okB` into input conditions + properties proven by construction | open |
+| L2b | [#10](https://github.com/eth-act/clifv/issues/10) Static linker in Lean for the executable (BinOk by construction) | open |
+| L3 | [#11](https://github.com/eth-act/clifv/issues/11) Executable-bytes simulation (M9 item 1b) | open |
+| L4 | [#12](https://github.com/eth-act/clifv/issues/12) Stack bound without a per-program check | open |
+| L1 | [#13](https://github.com/eth-act/clifv/issues/13) The executable compiler as one Lean function | open |
+| R0 | [#14](https://github.com/eth-act/clifv/issues/14) Mid-end rule proofs: shared infrastructure (iabs normal form, makeInst for type-variable constants, helper specs, module splitting) | open |
+| R1 | [#15](https://github.com/eth-act/clifv/issues/15) Mid-end rule proofs: arithmetic (42 rules left) | open |
+| R2 | [#16](https://github.com/eth-act/clifv/issues/16) Mid-end rule proofs: icmp (29 rules left) | open |
+| R3 | [#17](https://github.com/eth-act/clifv/issues/17) Mid-end rule proofs: selects (18 rules left) | open |
+| R4 | [#18](https://github.com/eth-act/clifv/issues/18) Mid-end rule proofs: shifts (19 rules left) | open |
+| R5 | [#19](https://github.com/eth-act/clifv/issues/19) Mid-end rule proofs: spaceship (20 rules left) | open |
+| R6 | [#20](https://github.com/eth-act/clifv/issues/20) Mid-end rule proofs: cprop (7 rules left) | open |
+| R7 | [#21](https://github.com/eth-act/clifv/issues/21) Mid-end rule proofs: bitops (6 rules left) | open |
+| R8 | [#22](https://github.com/eth-act/clifv/issues/22) Mid-end rule proofs: extends (3 rules left) | open |
+| R9 | [#23](https://github.com/eth-act/clifv/issues/23) Mid-end rule proofs: skeleton (18 rules left) | open |
+| M1 | [#24](https://github.com/eth-act/clifv/issues/24) Mid-end validators: completeness (optional, quality only) | open |
+| S1 | [#25](https://github.com/eth-act/clifv/issues/25) Optimiser with `call_indirect` and `try_call`/`try_call_indirect` | open |
+| S2 | [#26](https://github.com/eth-act/clifv/issues/26) Legalisation + optimisation composed; legalised functions in the linking theorem | open |
+| S3 | [#27](https://github.com/eth-act/clifv/issues/27) Whole-program refinement of the original i128 source program | open |
+| S4 | [#28](https://github.com/eth-act/clifv/issues/28) i128 gaps: `umulhi`/`smulhi`, `try_call`, overflow ops, atomics, stack-passed i128, i128 indirect signatures, `try_call_indirect` | open |
+| S5 | [#29](https://github.com/eth-act/clifv/issues/29) Stack-passed arguments of `call_indirect`/`try_call_indirect` (≤ 8 register params today) | open |
+| S6 | [#30](https://github.com/eth-act/clifv/issues/30) A decidable `Pre` for legalisation (`noSelf`, `defs`, `ids`) so `check` is provably redundant on `InScope` | open |
+| S7 | [#31](https://github.com/eth-act/clifv/issues/31) `vmctx`/`sarg` parameters; `sret` return register (x0 holds the pointer) | open |
+| S8 | [#32](https://github.com/eth-act/clifv/issues/32) `return_call`; recursion through a pointer; a function calling itself under its own name; indirect callees with stack-passed or `sret` params | open |
+| S9 | [#33](https://github.com/eth-act/clifv/issues/33) Trapping helpers (`__*ti3` division by zero) and traps inside program callees | open |
+| S10 | [#34](https://github.com/eth-act/clifv/issues/34) Unwinding: landing pads, LSDA, `.eh_frame`, `try_call`'s exceptional edge | open |
+| S11 | [#35](https://github.com/eth-act/clifv/issues/35) Floats (f32/f64 in `Clif.run`, Arm FP instructions co-simulated, rules + proofs, FP register class in `checkAlloc`/V4) | open |
+| S12 | [#36](https://github.com/eth-act/clifv/issues/36) SIMD | open |
+| T1 | [#37](https://github.com/eth-act/clifv/issues/37) Trusted base: TLS: TLSDESC hook vs lld's local-exec rewrite | open |
+| T2 | [#38](https://github.com/eth-act/clifv/issues/38) Trusted base: Atomics on a single-core model (`ldar`/`stlr` plain, exclusive store always succeeds, `dmb` no-op) | open |
+| T3 | [#39](https://github.com/eth-act/clifv/issues/39) Trusted base: std/musl contracts: compile std through `cargo fv` (`-Zbuild-std`) | open |
+| T4 | [#40](https://github.com/eth-act/clifv/issues/40) Trusted base: Arm model fidelity (ASL-derived, qemu co-simulation) | open |
+| T5 | [#41](https://github.com/eth-act/clifv/issues/41) Trusted base: `Clif.run` fidelity (Cranelift interpreter + native runs) | open |
+| T6 | [#42](https://github.com/eth-act/clifv/issues/42) Trusted base: `Lean.ofReduceBool`/`native_decide` in the fixed proofs (bv_decide certificates, encoder facts) | open |
+| T7 | [#43](https://github.com/eth-act/clifv/issues/43) Trusted base: `normalize.py`, `clif-data-export` (frontend-side tools) | open |
