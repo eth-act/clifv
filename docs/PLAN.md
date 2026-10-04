@@ -326,6 +326,24 @@ same axioms as `backend_correct_final`.
 - **Remaining** (`docs/DEFERRED.md`, "Linking"): whole-program refinement of the original i128 source program, the opt/legal variants inside the linking theorem, floats/SIMD (the main fallback reason), std compiled by us.
 - **Upstream findings:** two Cranelift bugs (`atomic_cas.i32` 64-bit compare, a fix PR prepared; `shifts.isle` rules building ill-typed IR), in `docs/research/upstream-bugs.md`.
 
+### Next steps (proposed 2026-10-04, in recommended order)
+
+The goal "a real crate is covered by one theorem" is reached (all example crates proven whole). These are the candidate directions, ranked by value. Pick one before starting; details and the already-recorded leftovers are in `docs/DEFERRED.md`.
+
+1. **Whole programs with real dependencies (recommended next).** The crate proofs so far treat other crates' functions as outside code (base-environment contracts). `examples/deps` has about 21k Lean-compiled functions across 42 crates.io packages (regex, serde_json, sha2, num-bigint, …). Run `cargo fv link-proof` on a whole executable with the dependencies inside the program `P`. This tests that the checker and proof generation scale (about 40× the current largest), surfaces the next blockers on real-world code, and turns the dependencies' contracts into proven calls, leaving only std outside. Exit criterion: one theorem per executable of `examples/deps`, or a precise blocker list.
+2. **Floats.** The largest remaining fallback reason in real code (most of the 197 cg_clif-fallback functions in `examples/deps`, and the 28 fallbacks in the example crates themselves). Needs: f32/f64 in `Clif.run` (IEEE 754, NaN canonicalisation as Cranelift specifies), the Arm floating-point instructions in the model (co-simulated against qemu), the lowering rules and their proofs, and the regalloc checker for the FP register class. SIMD is a further step after this.
+3. **Shrink the trusted base**, by tractability:
+   - **linker and object merge**: `link-check` already compares the executable's bytes with the proven image (0 differences). Make that comparison part of the crate theorem, so the linker and `cargo fv`'s object surgery leave the trusted list;
+   - **unwinding**: prove the emitted landing pads, LSDA and `.eh_frame` correct, extending the try_call results beyond normal returns;
+   - **std**: compile it through `cargo fv` (`-Zbuild-std`), so its functions are proven instead of assumed. It needs floats, SIMD and inline asm, so it depends partly on item 2;
+   - the frontend (rustc / cg_clif → CLIF) stays trusted. Removing it would be a separate, much larger project.
+4. **Deferred proofs** (coverage of the guarantee, not of what's usable): the remaining ~180 `simplify` rules and 18 skeleton rules (constant-divisor and power-of-two division need specs for Cranelift's magic-number helpers); `lowerCheck` completeness (6–10k lines; see the feasibility note in DEFERRED); the optimised and i128 variants inside the linking theorem; the declared-callee case of the `call_indirect` purpose check (DEFERRED, "Linking").
+5. **Engineering and outreach**:
+   - CI running the gates (today they run by hand on one machine, about 1.5 h);
+   - `cargo fv` installable outside this repository;
+   - upstream: file the `shifts.isle` bug, and turn the `atomic_cas.i32` fix (PR on the owner's fork) into an upstream PR once reviewed;
+   - performance: optimised output is about 1.4× Cranelift's size at `speed`.
+
 ## 5. Trusted base by milestone
 
 | After | Trusted |
