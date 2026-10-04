@@ -1473,27 +1473,32 @@ theorem binary_correct_depth (hI : okB I = true) (B) (hB : BaseOk (sys I B))
 
 structure Image where mem : BitVec 64 → Option (BitVec 8); kept : BitVec 64 → Prop
 def Image.Intact (X : Image) (r) : Prop := ∀ a, X.kept a → X.mem a = some (r.mem a)
-structure BinFacts (I) (X : Image) (R : BitVec 64 → Prop) (roB) (bud : Clif.Function → Nat) where
+structure BinFacts (I) (X : Image) (R : BitVec 64 → Prop) (roB) where
   ok : okB I = true
   code : ∀ a, img I a → X.kept a ∧ (X.mem a = some (imgMem I a) ∨ R a)
   data : ∀ a b, roB a = some b → X.kept a ∧ X.mem a = some b
-  stack : ∀ n B F, BaseOk (ofInput I B F) → (∀ a, Img a → F a) → BudStmt (ofInput I B F) bud n
 
-theorem binary_correct (hbin : BinFacts I X R roB bud) (B) (hB : BaseOk (sys I B))
-    (hf : (prog I).func? n = some f) (M : Nat) (hX : X.Intact r)
-    (ho : OutsideCall I roB f (frameDrop (art I f).af + bud f) r args cs.mem)
+theorem binary_correct (hbin : BinFacts I X R roB) (B) (hB : BaseOk (sys I B))
+    (hn : StackBound.goodN I n = true) (hf : (prog I).func? n = some f) (M : Nat)
+    (hX : X.Intact r)
+    (ho : OutsideCall I roB f (StackBound.stackFn I f) r args cs.mem)
     (hr : ClifRun I B f r args cs)
     (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) ((prog I).only f) cs) :
     ArmRefines (art I f).fb (art I f).base (xreg 30 r) ((sys I B).mach M f) (modelOf I f r)
       (Clif.runLoop B.env (prog I) (M + 1) cs) ∧
     ∀ a, (modelOf I f r).mem a ≠ r.mem a → R a
+theorem binary_correct_bound (hbin : BinFacts I X R roB) (hS : StackBound.stackB I = some S) …
+    (ho : OutsideCall I roB f S r args cs.mem) … -- every function of a non-recursive program
+theorem trapsExplicit_of_run (hL : L.Ok) (hf : f ∈ L.P.funcs) (hcs : ClifEntry f args cs)
+    (hsym : cs.mem.symbols = L.syms)
+    (hrun : Clif.runLoop L.base L.P (M + 1) cs = .returned vals cm) :
+    TrapsExplicit (Clif.linkEnvN L.P L.base M) (L.P.only f) cs
 ```
 
-`BudStmt L bud n` is `ProgStmt` with the depth-independent callees' budget `bud f` in place of
-`L.K M` (stack premise `frameDrop + bud f ≤ sp`, no code in those bytes, `F` with `bud f`).
-`binary_correct_depth` is the statement for every program (recursive ones included: the stack
-premise grows with the depth, as in CompCert); `binary_correct` the one for an executable with
-the binary facts.
+`binary_correct` goes through `StackBound.crate_correct_stackN` (the stack bound `stackFn I f`
+of a function whose calls reach no call cycle, every fuel `M`); `binary_correct_depth` through
+`crate_correct` (the stack grows with the depth: the statement for functions on call cycles, as
+in CompCert). A returning run needs no `TrapsExplicit` (`trapsExplicit_of_run`).
 
 **The model state.** The model machine (`L.mach M f`, `ArmStepX`) fetches instructions from
 `s.program` and runs relocated instructions (`bl`, `adrp`/`add`, `adrp`/`ldr` through the GOT)
@@ -1513,7 +1518,7 @@ the relocated instruction bytes `R`, where the executable holds the resolved enc
 | `AbiEntry.pc`, `.err`, `.spAligned` | `OutsideCall` | the call (AAPCS64) |
 | `AbiEntry.lr` | discharged | `ra := xreg 30 r` |
 | `AbiEntry.raOutside` | `OutsideCall.ra` (weaker form) | the return address is outside the program's code |
-| `StackAvail`, `hgfree` | `OutsideCall.stack`/`stackFree` with `N` | `N = frameDrop + D·M` (depth) or `frameDrop + bud f` (binary facts) |
+| `StackAvail`, `hgfree` | `OutsideCall.stack`/`stackFree` with `N` | `N = stackFn I f` (`binary_correct`), `S` (`binary_correct_bound`), `frameDrop + D·M` (`binary_correct_depth`) |
 | `hF` (addresses outside the world) | discharged | `F := worldF I f K r` |
 | `himg` | discharged | `modelOf`; `R` relates it to the file |
 | `BodyEntry` | discharged | the body-entry world is `bodyOf af s` |

@@ -1,4 +1,4 @@
-import FV.E2E.LinkCheck
+import FV.E2E.StackBound
 
 /-! # The binary-level theorem (M9, docs/contracts/e2e.md, "Binary level (M9)")
 
@@ -455,26 +455,6 @@ theorem trapsExplicit_of_run {L : LinkSys} (hL : L.Ok) {f : Clif.Function} (hf :
 
 /-! ## The binary facts -/
 
-/-- **`backend_correct_program` for `n` with a depth-independent callees' budget** `bud f` (the
-stack bound of a non-recursive program, `FV/E2E/StackBound.lean`): the stack premises are about
-one stack size, `frameDrop + bud f` bytes below the entry `sp`, for every depth `M`. -/
-def BudStmt (L : LinkSys) (bud : Clif.Function → Nat) (n : String) : Prop :=
-  ∀ (f : Clif.Function), L.P.func? n = some f →
-  ∀ (M : Nat) (ra : BitVec 64) (s w₀ : Arm.ArmState) (args : List Clif.Val) (cs : Clif.State),
-    AbiEntry (L.A f).fb (L.A f).base ra s →
-    frameDrop (L.A f).af + bud f ≤ (spv s).toNat →
-    (∀ a, L.Img a → ¬ StackBelow (frameDrop (L.A f).af + bud f) (spv s) a) →
-    L.F = frameWG (bud f) (RAFrame.compute (L.A f).vcp (L.A f).rf).intBase
-      (RAFrame.compute (L.A f).vcp (L.A f).rf).size (L.A f).af L.Img s →
-    (∀ a, L.Img a → s.mem a = L.imgMem a) →
-    BodyEntry (L.A f).af s w₀ → ArgsIn f.sig args s → ClifEntry f args cs →
-    StackArgsAvoid L.Img f.sig args s →
-    Rel.holds ⟨L.F, L.syms, (L.A f).af.slotBase,
-      (RAFrame.compute (L.A f).vcp (L.A f).rf).intBase⟩ f cs.frame.slots cs.mem w₀ →
-    (L.NeedSlots → L.PlaceAt cs.mem (spv w₀)) →
-    TrapsExplicit (Clif.linkEnvN L.P L.base M) (L.P.only f) cs →
-    ArmRefines (L.A f).fb (L.A f).base ra (L.mach M f) s (Clif.runLoop L.base L.P (M + 1) cs)
-
 /-- **The executable's loaded segments** as the binary checks read them: the byte at each loaded
 address (`mem`), and the addresses nothing writes after loading (`kept`: the read-only segments;
 the relocation-read-only data, `PT_GNU_RELRO`). -/
@@ -491,51 +471,49 @@ def Image.Intact (X : Image) (r : Arm.ArmState) : Prop := ∀ a, X.kept a → X.
 establish, `binary_correct_of_checks`): the input passes the crate checker (`okB`); the program's
 code bytes are kept bytes of the executable, equal to the compiled image except at the bytes `R`
 of relocated instructions (which hold the resolved encodings, `FV/E2E/BinCheck.lean`); the CLIF
-image's read-only data `roB` are kept bytes of the executable; and the stack bound: the crate's
-theorem with the depth-independent budget `bud` (`FV/E2E/StackBound.lean`). -/
+image's read-only data `roB` are kept bytes of the executable. -/
 structure BinFacts (I : LinkInput) (X : Image) (R : BitVec 64 → Prop)
-    (roB : BitVec 64 → Option (BitVec 8)) (bud : Clif.Function → Nat) : Prop where
+    (roB : BitVec 64 → Option (BitVec 8)) : Prop where
   ok : okB I = true
   code : ∀ a, img I a → X.kept a ∧ (X.mem a = some (imgMem I a) ∨ R a)
   data : ∀ a b, roB a = some b → X.kept a ∧ X.mem a = some b
-  stack : ∀ (n : String) (B : BaseEnv) (F : BitVec 64 → Prop), BaseOk (LinkSys.ofInput I B F) →
-    (∀ a, (LinkSys.ofInput I B F).Img a → F a) → BudStmt (LinkSys.ofInput I B F) bud n
 
 /-- **The binary-level theorem** (`docs/contracts/e2e.md`, "Binary level (M9)"): for an
 executable with the binary facts of a crate input (`BinFacts`), whose loaded kept bytes the
-machine state `r` holds (`Image.Intact`), a function `f` of the program called by outside code
-that meets the boundary contract (`OutsideCall`, with the stack bound `frameDrop + bud f`), the
-linked machine (at every depth `M`) from the model state of `r` refines the whole-program CLIF
-run from the reference entry state (`ClifRun`), returning to the caller's return address; and
-the model state differs from `r` only at the relocated instruction bytes `R`. The premises left:
-the base environment's contracts (`BaseOk`) and the CLIF run's explicit traps
+machine state `r` holds (`Image.Intact`), a function `f` of the program whose calls reach no call
+cycle (`goodN`, the stack check of `FV/E2E/StackBound.lean`) called by outside code that meets
+the boundary contract (`OutsideCall`, with `f`'s stack bound `stackFn I f`), the linked machine
+(at every depth `M`) from the model state of `r` refines the whole-program CLIF run of at most
+`M + 1` steps from the reference entry state (`ClifRun`), returning to the caller's return
+address; and the model state differs from `r` only at the relocated instruction bytes `R`. The
+premises left: the base environment's contracts (`BaseOk`) and the CLIF run's explicit traps
 (`TrapsExplicit`). -/
 theorem binary_correct {I : LinkInput} {X : Image} {R : BitVec 64 → Prop}
-    {roB : BitVec 64 → Option (BitVec 8)} {bud : Clif.Function → Nat}
-    (hbin : BinFacts I X R roB bud) (B : BaseEnv) (hB : BaseOk (sys I B)) {n : String}
-    {f : Clif.Function} (hf : (prog I).func? n = some f) (M : Nat) {r : Arm.ArmState}
+    {roB : BitVec 64 → Option (BitVec 8)} (hbin : BinFacts I X R roB) (B : BaseEnv)
+    (hB : BaseOk (sys I B)) {n : String} (hn : StackBound.goodN I n = true) {f : Clif.Function}
+    (hf : (prog I).func? n = some f) (M : Nat) {r : Arm.ArmState}
     {args : List Clif.Val} {cs : Clif.State} (hX : X.Intact r)
-    (ho : OutsideCall I roB f (frameDrop (art I f).af + bud f) r args cs.mem)
+    (ho : OutsideCall I roB f (StackBound.stackFn I f) r args cs.mem)
     (hr : ClifRun I B f r args cs)
     (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) ((prog I).only f) cs) :
     ArmRefines (art I f).fb (art I f).base (xreg 30 r) ((sys I B).mach M f) (modelOf I f r)
       (Clif.runLoop B.env (prog I) (M + 1) cs) ∧
     ∀ a, (modelOf I f r).mem a ≠ r.mem a → R a := by
   refine ⟨?_, fun a hne => ?_⟩
-  · have hB' : BaseOk (LinkSys.ofInput I B (worldF I f (bud f) r)) := baseOk_F hB
-    have himgF : ∀ a, (LinkSys.ofInput I B (worldF I f (bud f) r)).Img a →
-        worldF I f (bud f) r a := fun _ h => .inr h
+  · have hB' : BaseOk (LinkSys.ofInput I B (worldF I f (StackBound.bud I f) r)) := baseOk_F hB
+    have himgF : ∀ a, (LinkSys.ofInput I B (worldF I f (StackBound.bud I f) r)).Img a →
+        worldF I f (StackBound.bud I f) r a := fun _ h => .inr h
     have hL := okB_sound hbin.ok hB' himgF
     have hro : ∀ a b, roB a = some b → r.mem a = b := fun a b h => by
       have h1 := hbin.data a b h
       have h2 := hX a h1.1
       rw [h1.2] at h2
       exact (Option.some.inj h2).symm
-    obtain ⟨hent, hres, hgfree, himg, hbe, hargs, hsav, hrel, hpl⟩ :=
+    obtain ⟨hent, -, hgfree, himg, hbe, hargs, hsav, hrel, hpl⟩ :=
       premises hL (Clif.Program.func?_some hf).1 hro ho hr
-    rw [mach_F I B (fun _ => False) (worldF I f (bud f) r)]
-    exact hbin.stack n B _ hB' himgF f hf M _ _ _ args cs hent (by rw [spv_modelOf]; exact ho.stack) hgfree rfl himg hbe hargs
-      hr.entry hsav hrel hpl htr
+    rw [mach_F I B (fun _ => False) (worldF I f (StackBound.bud I f) r)]
+    exact StackBound.crate_correct_stackN hbin.ok hn B _ hB' himgF f hf M _ _ _ args cs hent
+      (by rw [spv_modelOf]; exact ho.stack) hgfree rfl himg hbe hargs hr.entry hsav hrel hpl htr
   · by_cases hi : img I a
     · rw [mem_modelOf_img hi] at hne
       rcases (hbin.code a hi).2 with h | h
@@ -544,5 +522,23 @@ theorem binary_correct {I : LinkInput} {X : Image} {R : BitVec 64 → Prop}
         exact absurd (Option.some.inj h2) hne
       · exact h
     · exact absurd (mem_modelOf_not hi) hne
+
+/-- **`binary_correct` for a non-recursive program** (`stackB I = some S`): every function, with
+`S` bytes of stack. -/
+theorem binary_correct_bound {I : LinkInput} {X : Image} {R : BitVec 64 → Prop}
+    {roB : BitVec 64 → Option (BitVec 8)} (hbin : BinFacts I X R roB) {S : Nat}
+    (hS : StackBound.stackB I = some S) (B : BaseEnv) (hB : BaseOk (sys I B)) {n : String}
+    {f : Clif.Function} (hf : (prog I).func? n = some f) (M : Nat) {r : Arm.ArmState}
+    {args : List Clif.Val} {cs : Clif.State} (hX : X.Intact r)
+    (ho : OutsideCall I roB f S r args cs.mem) (hr : ClifRun I B f r args cs)
+    (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) ((prog I).only f) cs) :
+    ArmRefines (art I f).fb (art I f).base (xreg 30 r) ((sys I B).mach M f) (modelOf I f r)
+      (Clif.runLoop B.env (prog I) (M + 1) cs) ∧
+    ∀ a, (modelOf I f r).mem a ≠ r.mem a → R a := by
+  have hn : StackBound.goodN I n = true := by
+    unfold StackBound.goodN; rw [show (progOf I.results).func? n = some f from hf]
+    exact (StackBound.stackB_some hS).1 f (Clif.Program.func?_some hf).1
+  exact binary_correct hbin B hB hn hf M hX
+    (ho.mono (StackBound.stackFn_le hS (Clif.Program.func?_some hf).1)) hr htr
 
 end E2E.Binary
