@@ -12,7 +12,9 @@ per-function run under `linkEnvN P base M` (`runLoop_link` with bounded callee r
 callee's sub-run is shorter than the whole run), also with `call_indirect`/`try_call_indirect`
 (between functions of `P` too: the per-function program resolves a callee address through the
 linked environment's names — every name of `P` and of the base environment — whatever `f`
-declares, `IndScope`).
+declares, `IndScope`), and under any restriction of `linkEnvN` keeping the functions of `P`
+the whole-program run of `f` can call (declared, or entered by an indirect call whose call-site
+signature matches theirs, `Signature.abiMatch`).
 -/
 
 namespace Clif

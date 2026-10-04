@@ -612,10 +612,9 @@ noncomputable def progX (M : Nat) (F : BitVec 64 → Prop) (g : Clif.Function) (
 open Classical in
 /-- **The external semantics of an activation of `g` at depth `M`**: a call (`bl`) of a function
 of `P` is `progX`, as is an indirect call (`blr`) whose target is the address of a function of
-`P` that `g` may enter through an address (`IndTo`: declared, or with a link-time address and the
-parameter types and number of results of one of `g`'s indirect calls; other than `g`) with as
-many register parameters as the call has arguments (otherwise undefined); the rest is the
-base's. -/
+`P` that `g` may enter through an address (`IndTo`: declared, or with a link-time address and a
+signature one of `g`'s indirect calls matches; other than `g`) with as many register parameters
+as the call has arguments (otherwise undefined); the rest is the base's. -/
 noncomputable def X (M : Nat) (g : Clif.Function) (F : BitVec 64 → Prop) : ExtSem where
   call d uses w := match d with
     | some n => (match L.P.func? n with
