@@ -80,6 +80,13 @@ been reported to bytecodealliance yet.
   disabled, the ill-typed IR reaches lowering (not tried).
 - **Fix:** mask the amount first (e.g. `shift_masked = shift_u64 & (ty_bits ty - 1)`, or require
   `u64_lt shift_u64 (ty_bits ty)` in an `if-let`), as the other shift rules do.
+- **PR (owner's fork, for review):** https://github.com/kevaundray/wasmtime/pull/2, branch
+  `fix-shifts-ishl-shr-out-of-range`. Commit 1 adds a runtest (`runtests/shift-left-right-same-amount.clif`,
+  `opt_level=speed`) and `egraph/shifts.clif` cases that fail with the verifier error. Commit 2
+  masks the amount with `ty_shift_mask` (as the neighbouring shift rules do) and requires the
+  masked amount to be non-zero, so `T_SMALL` is always strictly narrower than `ty`. Whole
+  filetests directory: 1322 tests pass. Side note in the PR: after the fix the `sshr` cases keep
+  a shift by `iconst 0`, since Cranelift has no `sshr x, 0` rule (a separate missed optimisation).
 - **Effect here:** none. Neither rule is in the proven allow-list, and the Lean mid-end with all
   rules (`clif-opt`) doesn't apply it to the repro: the rewrite is dropped and the `ushr` variant
   folds to `v0`, which is correct.
