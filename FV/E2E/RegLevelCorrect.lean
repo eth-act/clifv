@@ -208,7 +208,7 @@ theorem realizes_all {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (Call
       cases hn with
       | next hk =>
         have hnc : ∀ info, i ≠ .call info := by rintro info rfl; simp [MInst.isCtl] at hct
-        obtain ⟨n, c'', hm, hq'⟩ := realizes_op_next hR hq hvb hi hops hsz hsem hlen hk hOS hL
+        obtain ⟨n, c'', hm, hq', -⟩ := realizes_op_next hR hq hvb hi hops hsz hsem hlen hk hOS hL
           (csem_next_world' (R.sem_csem hsem) hnc herrw)
         exact fin n c'' hm hq'
     · cases i <;> simp only [MInst.isCtl, reduceCtorEq] at hct
@@ -220,7 +220,7 @@ theorem realizes_all {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (Call
         subst hc
         cases hn with
         | next hk =>
-          obtain ⟨n, c'', hm, hq'⟩ := realizes_call hR hC hq hvb hi hops hsz hsem hlen hk
+          obtain ⟨n, c'', hm, hq', -⟩ := realizes_call hR hC hq hvb hi hops hsz hsem hlen hk
           exact fin n c'' hm hq'
       case args ds => exact fin 0 c' hstep (realizes_args hR hq hA hvb hi hstep)
       case rets us =>
@@ -235,7 +235,7 @@ theorem realizes_all {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (Call
         obtain ⟨-, -, rfl⟩ := hsem'
         cases hn with
         | next hk =>
-          obtain ⟨n, c'', hm, hq'⟩ := realizes_symAddr hR hq hvb hi (.inl ⟨d, nm, rfl⟩) hops hsz
+          obtain ⟨n, c'', hm, hq', -⟩ := realizes_symAddr hR hq hvb hi (.inl ⟨d, nm, rfl⟩) hops hsz
             hsem hlen hk
           exact fin n c'' hm hq'
       case loadExtNameNear rd nm off =>
@@ -245,7 +245,7 @@ theorem realizes_all {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (Call
         obtain ⟨-, -, rfl⟩ := hsem'
         cases hn with
         | next hk =>
-          obtain ⟨n, c'', hm, hq'⟩ := realizes_symAddr hR hq hvb hi (.inr ⟨d, nm, off, rfl⟩) hops
+          obtain ⟨n, c'', hm, hq', -⟩ := realizes_symAddr hR hq hvb hi (.inr ⟨d, nm, off, rfl⟩) hops
             hsz hsem hlen hk
           exact fin n c'' hm hq'
       case jump l =>
@@ -300,7 +300,7 @@ theorem realizes_all {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (Call
         obtain ⟨-, -, rfl⟩ := hsem'
         cases hn with
         | next hk =>
-          obtain ⟨n, c'', hm, hq'⟩ := realizes_tls hR (hTls (hasTls_of_mem hvb hi)) hq hvb hi
+          obtain ⟨n, c'', hm, hq', -⟩ := realizes_tls hR (hTls (hasTls_of_mem hvb hi)) hq hvb hi
             hops hsz hsem hlen hk
           exact fin n c'' hm hq'
 

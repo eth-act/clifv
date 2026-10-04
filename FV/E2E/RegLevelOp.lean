@@ -154,6 +154,78 @@ theorem op_checked {R : RL} {vb : VBlock} {k : Nat} {allocs : Array Loc} {its : 
   rename_i a' hso
   exact ⟨c, _, i, ops, hi, hops, (stepOp_ok hso).1, ⟨c, k + 1, a', out, hcr, hcv, hrun⟩⟩
 
+/-- **After a line that is no call, no return into the code**: a state at the line after an
+instruction line other than `bl`/`blr` satisfies `RL.Good`. -/
+theorem RL.good_succ {R : RL} (hR : R.Wf) {j : Nat} {x : Insn} {t : Option Clif.TrapCode}
+    (hj : R.L[j]? = some (.ins x t)) (hx : ∀ n, x ≠ .bl n) (hx' : ∀ r, x ≠ .blr r)
+    {u : Arm.ArmState} (hpc : Arm.r .PC u = R.pcOf (j + 1)) : R.Good u := by
+  left
+  rintro ⟨q, ⟨j', i', t', hj', hcall, rfl⟩, he⟩
+  rw [hpc] at he
+  simp only [RL.pcOf, RL.L] at he hj
+  have hsz : (R.fa.lines.toList.map Line.size).sum ≤ 2 ^ 64 := by
+    rw [layout_sum hR.layout]; exact hR.fit
+  have hl1 := lineOffset_le_size R.fa.lines.toList (j + 1)
+  have hl2 := lineOffset_le_size R.fa.lines.toList (j' + 1)
+  have hs1 := lineOffset_succ R.fa.lines.toList j _ hj
+  have hs2 := lineOffset_succ R.fa.lines.toList j' _ hj'
+  simp only [Line.size] at hs1 hs2
+  rw [BitVec.add_assoc] at he
+  have he2 := congrArg BitVec.toNat ((BitVec.add_right_inj _).mp he)
+  have h4 : (4 : BitVec 64).toNat = 4 := rfl
+  simp only [BitVec.toNat_add, BitVec.toNat_ofNat, h4] at he2
+  have he3 : lineOffset R.fa.lines.toList j = lineOffset R.fa.lines.toList j' := by
+    rw [hs1] at he2 hl1
+    omega
+  have := lineOffset_inj hj hj' he3
+  subst this
+  rw [hj] at hj'
+  cases hj'
+  rcases hcall with ⟨n, rfl⟩ | ⟨r, rfl⟩
+  · exact hx n rfl
+  · exact hx' r rfl
+
+/-- A state with the body's `sp` satisfies `RL.Good`. -/
+theorem RL.good_of_sp {R : RL} {u : Arm.ArmState} (h : spOf u = R.spB) : R.Good u := .inr h
+
+theorem Insn.not_call_of_hooked {x : Insn} (h : x.hooked = false) :
+    (∀ n, x ≠ .bl n) ∧ (∀ r, x ≠ .blr r) :=
+  ⟨fun n e => by subst e; simp [Insn.hooked] at h, fun r e => by subst e; simp [Insn.hooked] at h⟩
+
+theorem execLines_ins : ∀ {env : Env} {ls : List Line} {s s' : Arm.ArmState},
+    execLines env ls s = some s' → ∀ ln ∈ ls, ∃ x t, ln = .ins x t
+  | _, [], _, _, _, _, h => by simp at h
+  | _, .label _ :: _, _, _, h, _, _ => by simp [execLines] at h
+  | _, .word _ _ :: _, _, _, h, _, _ => by simp [execLines] at h
+  | env, .ins i t :: ls, s, s', h, ln, hm => by
+    rcases List.mem_cons.mp hm with rfl | hm
+    · exact ⟨i, t, rfl⟩
+    · simp only [execLines] at h
+      split at h
+      · split at h
+        · exact execLines_ins h ln hm
+        · cases h
+      · cases h
+
+/-- **The states of a straight-line run** (unhooked instruction lines) after its first are no
+return into the code. -/
+theorem RL.good_execLines {R : RL} (hR : R.Wf) {ls : List Line} {j : Nat} {s s' : Arm.ArmState}
+    (hat : ∀ k ln, ls[k]? = some ln → R.fa.lines.toList[j + k]? = some ln)
+    (hhook : ∀ i t, Line.ins i t ∈ ls → i.hooked = false)
+    (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j)
+    (herr : Arm.r .ERR s = .None) (hinter : InterOk (R.envOf j) ls s)
+    (hrun : execLines (R.envOf j) ls s = some s') :
+    ∀ i, 0 < i → i ≤ ls.length → R.Good (iterN R.step i s) := by
+  intro i hi0 hi
+  have hpcs := iterN_execLines_pc (X := R.X) (H := R.H) hR.layout hR.lm hR.fit ls j s s' hat hhook
+    hprog hpc herr hinter hrun i hi
+  obtain ⟨i', rfl⟩ : ∃ i', i = i' + 1 := ⟨i - 1, by omega⟩
+  obtain ⟨ln, hln⟩ : ∃ ln, ls[i']? = some ln := ⟨ls[i'], List.getElem?_eq_getElem (by omega)⟩
+  have hj := hat i' ln hln
+  obtain ⟨x, t, rfl⟩ := execLines_ins hrun ln (List.mem_of_getElem? hln)
+  obtain ⟨hx, hx'⟩ := Insn.not_call_of_hooked (hhook x t (List.mem_of_getElem? hln))
+  have hpcs' : Arm.r .PC (iterN R.step (i' + 1) s) = R.pcOf (j + i' + 1) := hpcs
+  exact R.good_succ hR (j := j + i') hj hx hx' hpcs'
 
 /-- The machine runs the lines `ls1` of the allocated instruction `i'`, placed at line `j`, to
 the state `exec (R.envOf j) i'` gives, ending at the line after them (in some number of steps:
@@ -163,7 +235,8 @@ def RunsAs (R : RL) (exec : Env → MInst → Arm.ArmState → Option Arm.ArmSta
     (ls1 : List Line) : Prop :=
   ∀ j T s s', R.L.drop j = ls1 ++ T → s.program = R.fb.program R.base → Arm.r .PC s = R.pcOf j →
     Arm.r .ERR s = .None → exec (R.envOf j) i' s = some s' →
-    ∃ n, iterN R.step n s = s' ∧ Arm.r .PC s' = R.pcOf (j + ls1.length)
+    ∃ n, iterN R.step n s = s' ∧ Arm.r .PC s' = R.pcOf (j + ls1.length) ∧
+      ∀ i, 0 < i → i < n → R.Good (iterN R.step i s)
 
 /-- `operandsSound_step` for the obligation at the allocated instructions `P` (`P i'`). -/
 theorem operandsSound_stepI {F FK : BitVec 64 → Prop} {P : MInst → Prop}
@@ -218,7 +291,7 @@ theorem realizes_op_core {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
       RunsAs R exec i' ls1)
     (hW' : Arm.r .ERR w' = .None ∧ w'.program = w.program) :
     ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
-      Q R (iterN R.step n s) c'' := by
+      Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.Good (iterN R.step i s) := by
   obtain ⟨j, vb0, items, pre, code, ls, ps1, ps2, T, hvb0, hit, hsplit, hchk, hcode, hls, htr, hdrop,
     hpc, hst⟩ := hq
   rw [hvb] at hvb0
@@ -258,8 +331,13 @@ theorem realizes_op_core {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
       split at hm <;> simp at hm
   have hdrop' : R.L.drop j = ls1 ++ (ftList (ls2 ++ nxtOf R.af b) ++ T) := by
     rw [hdrop, List.append_assoc, ftList_plain_append _ _ hpl hZ, List.append_assoc]
-  obtain ⟨nst, hiter, hpc'⟩ := hruns j _ s s' hdrop' hst.prog hpc hst.err hex
-  refine ⟨nst, _, MStep.op hvb hi hops hsz hsem hlen (HavocOuts.refl _ _ _) hc2' (MNext.next hk), ?_⟩
+  obtain ⟨nst, hiter, hpc', hgood⟩ := hruns j _ s s' hdrop' hst.prog hpc hst.err hex
+  refine ⟨nst, _, MStep.op hvb hi hops hsz hsem hlen (HavocOuts.refl _ _ _) hc2' (MNext.next hk), ?_,
+    fun i hi => ?_⟩
+  rotate_left
+  · rcases Nat.eq_zero_or_pos i with rfl | hi0
+    · exact RL.good_of_sp hst.sp
+    · exact hgood i hi0 hi
   have hfr := R.frameOkK hR
   refine ⟨j + ls1.length, vb, items, pre ++ [.op k (regs.map Loc.reg)], c2, ls2, ps1, ps2, T, hvb,
     hit, by rw [hsplit]; simp, hchk', hc2, h2, htr, ?_, ?_, ?_⟩
@@ -303,7 +381,10 @@ theorem runsAs_of_linesOk {R : RL} (hR : R.Wf) {i' : MInst} {ls1 : List Line}
     simp only [execMInst, hl1] at hex; exact hex
   refine ⟨ls1.length, iterN_execLines hR.layout hR.lm hR.fit ls1 j s s' hat
       (fun i t h => by obtain ⟨i', t', e, hh⟩ := hins _ h; cases e; exact hh)
-      hprog (by rw [hpc]; rfl) herr (hint _ _ _ herr hrun) hrun, ?_⟩
+      hprog (by rw [hpc]; rfl) herr (hint _ _ _ herr hrun) hrun, ?_,
+    fun i hi0 hi => R.good_execLines hR hat
+      (fun i t h => by obtain ⟨i', t', e, hh⟩ := hins _ h; cases e; exact hh)
+      hprog hpc herr (hint _ _ _ herr hrun) hrun i hi0 (by omega)⟩
   rw [execLines_pc hrun, hpc]
   simp only [RL.pcOf, RL.L]
   rw [lineOffset_drop_ins (by simpa [RL.L] using hdrop') hins', BitVec.add_assoc]
@@ -329,7 +410,7 @@ theorem realizes_op_next {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
       LinesOk R.ctx i' ∧ (∀ ds, i' ≠ .args ds) ∧ (∀ us, i' ≠ .rets us))
     (hW' : Arm.r .ERR w' = .None ∧ w'.program = w.program) :
     ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
-      Q R (iterN R.step n s) c'' :=
+      Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.Good (iterN R.step i s) :=
   realizes_op_core hR hq hvb hi hops hsz hsem hlen hk (exec := fun env => execMInst R.ctx env)
     (fun env => (((hOS env).at (fun _ => RL.FK_F) s).toI _).v R.gv)
     (fun regs i' hasg _ => by

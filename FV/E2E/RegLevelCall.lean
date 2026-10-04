@@ -271,7 +271,7 @@ theorem realizes_call {R : RL} (hR : R.Wf)
     (hlen : outs.length = ((ops.zip allocs).toList.filter (·.1.isDef)).length)
     (hk : k + 1 < vb.insts.size) :
     ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
-      Q R (iterN R.step n s) c'' := by
+      Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.Good (iterN R.step i s) := by
   have hW' : Arm.r .ERR w' = .None ∧ w'.program = w.program := by
     have herr : Arm.r .ERR w = .None := by
       have hst := q_stRel hq
@@ -306,7 +306,7 @@ theorem realizes_call {R : RL} (hR : R.Wf)
     · rename_i hal
       simp only [Option.some.injEq] at hex
       subst hex
-      refine ⟨1, by simp only [iterN]; exact hstep s j hj hprog hpc, ?_⟩
+      refine ⟨1, by simp only [iterN]; exact hstep s j hj hprog hpc, ?_, fun i hi0 hi => by omega⟩
       rw [hC.pc _ _ herr hal, hpc, List.length_singleton, pcOf_succ hj]
     · cases hex
   cases hd : info'.dest with
@@ -404,14 +404,20 @@ theorem runsAs_symAddr {R : RL} (hR : R.Wf) {i' : MInst} {x1 x2 : Insn}
     (hl : ∀ ps, i'.lines R.ctx ps = .ok ([.ins x1, .ins x2], ps))
     (hstep : ∀ s j, R.L[j]? = some (.ins x1) → R.L[j + 1]? = some (.ins x2) →
       s.program = R.fb.program R.base → Arm.r .PC s = R.pcOf j →
-      R.step (R.step s) = match symExec R.X i' s with | some s' => s' | none => s) :
+      R.step (R.step s) = match symExec R.X i' s with | some s' => s' | none => s)
+    (hx1 : (∀ n, x1 ≠ .bl n) ∧ (∀ r, x1 ≠ .blr r))
+    (hmid : ∀ s j, R.L[j]? = some (.ins x1) → s.program = R.fb.program R.base →
+      Arm.r .PC s = R.pcOf j → Arm.r .PC (R.step s) = R.pcOf (j + 1)) :
     RunsAs R (fun _ => symExec R.X) i' [.ins x1, .ins x2] := by
   intro j T s s' hd hprog hpc herr hex
   have hj : R.L[j]? = some (.ins x1) := drop_get (Z := [.ins x2]) hd
   have hj1 : R.L[j + 1]? = some (.ins x2) := drop_get1 (ls := []) hd
   have e := hstep s j hj hj1 hprog hpc
   simp only [hex] at e
-  refine ⟨2, by simpa [iterN] using e, ?_⟩
+  refine ⟨2, by simpa [iterN] using e, ?_, fun i hi0 hi => ?_⟩
+  rotate_left
+  · obtain rfl : i = 1 := by omega
+    exact R.good_succ hR hj hx1.1 hx1.2 (hmid s j hj hprog hpc)
   -- the pc: `symExec` advances by 8
   have hpc8 : Arm.r .PC s' = Arm.r .PC s + 8 := by
     revert hex
@@ -435,7 +441,7 @@ theorem realizes_symAddr {R : RL} (hR : R.Wf) {s : Arm.ArmState}
     (hlen : outs.length = ((ops.zip allocs).toList.filter (·.1.isDef)).length)
     (hk : k + 1 < vb.insts.size) :
     ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
-      Q R (iterN R.step n s) c'' := by
+      Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.Good (iterN R.step i s) := by
   have hW' : Arm.r .ERR w' = .None ∧ w'.program = w.program := by
     have herr : Arm.r .ERR w = .None := by
       have hst := q_stRel hq
@@ -453,7 +459,8 @@ theorem realizes_symAddr {R : RL} (hR : R.Wf) {s : Arm.ArmState}
     refine ⟨[.ins (.adrpGot rd n), .ins (.ldrGotLo12 rd rd n)],
       fun ps => by simp [MInst.lines, pure, Except.pure], ?_, fun _ h => MInst.noConfusion h,
       fun _ h => MInst.noConfusion h, runsAs_symAddr hR (fun ps => by simp [MInst.lines, pure,
-        Except.pure]) fun s j hj hj1 hprog hpc => ?_⟩
+        Except.pure]) (fun s j hj hj1 hprog hpc => ?_) ⟨fun _ h => Insn.noConfusion h, fun _ h => Insn.noConfusion h⟩
+        (fun s j hj hprog hpc => ?_)⟩
     · intro ln hln; simp at hln; rcases hln with rfl | rfl <;> simp [Line.plain, Insn.condTarget?]
     · rw [step_adrpGot (off := 0) (r := .xzr) (rn := .xzr) hR hj hprog hpc]
       rw [step_ldrGotLo12 (off := 0) (r := .xzr) hR hj1 (by simp [Arm.w_program, hprog])
@@ -461,11 +468,14 @@ theorem realizes_symAddr {R : RL} (hR : R.Wf) {s : Arm.ArmState}
       simp only [symExec, Arm.r_of_w_same, Arm.w_of_w_shadow, BitVec.add_assoc]
       rw [Arm.w_of_w_commute (by simp)]
       rfl
+    · rw [step_adrpGot (off := 0) (r := .xzr) (rn := .xzr) hR hj hprog hpc, Arm.r_of_w_same, hpc,
+        pcOf_succ hj]
   | loadExtNameNear rd n off =>
     refine ⟨[.ins (.adrp rd n off), .ins (.addLo12 rd rd n off)],
       fun ps => by simp [MInst.lines, pure, Except.pure], ?_, fun _ h => MInst.noConfusion h,
       fun _ h => MInst.noConfusion h, runsAs_symAddr hR (fun ps => by simp [MInst.lines, pure,
-        Except.pure]) fun s j hj hj1 hprog hpc => ?_⟩
+        Except.pure]) (fun s j hj hj1 hprog hpc => ?_) ⟨fun _ h => Insn.noConfusion h, fun _ h => Insn.noConfusion h⟩
+        (fun s j hj hprog hpc => ?_)⟩
     · intro ln hln; simp at hln; rcases hln with rfl | rfl <;> simp [Line.plain, Insn.condTarget?]
     · rw [step_adrp (r := .xzr) (rn := .xzr) hR hj hprog hpc]
       rw [step_addLo12 (r := .xzr) hR hj1 (by simp [Arm.w_program, hprog])
@@ -473,6 +483,7 @@ theorem realizes_symAddr {R : RL} (hR : R.Wf) {s : Arm.ArmState}
       simp only [symExec, Arm.r_of_w_same, Arm.w_of_w_shadow, BitVec.add_assoc]
       rw [Arm.w_of_w_commute (by simp)]
       rfl
+    · rw [step_adrp (r := .xzr) (rn := .xzr) hR hj hprog hpc, Arm.r_of_w_same, hpc, pcOf_succ hj]
   | _ => simp [symExec] at hex
 
 end Backend.Proof
