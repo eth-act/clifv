@@ -634,7 +634,7 @@ pub fn linker_main(meta_json: &str, argv: Vec<OsString>) -> i32 {
         r.binary = Some(b);
         write_report(&cfg, &r);
     }
-    if !cfg.keep_temps {
+    if !cfg.keep_link() {
         let _ = fs::remove_file(&map);
     } else {
         // `cargo fv link-proof`: which executable this map is of
