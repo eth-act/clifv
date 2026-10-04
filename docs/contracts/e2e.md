@@ -1365,6 +1365,107 @@ Not done: an entry-level instance for a crate function (the entry premises of `P
 concrete arguments, as `backend_correct_program_witness` does for `f 41`); the witness
 (`NonVacuityLink.lean`) keeps its own copy of the checks.
 
+### Binary level (M9)
+
+#### Entry boundary (2026-10-05, `agent/bin-boundary`, `FV/E2E/Binary.lean`)
+
+The per-run premises of `crate_correct` are restated as a contract on the **real machine state**
+`r` in which code outside the program (std's `lang_start`, a fallback function, a callback)
+enters a function `f` of the program, plus the choice of the reference CLIF run; every premise the
+binary determines is discharged.
+
+```lean
+-- E2E.Binary; prog I / art I f / img I / imgMem I: LinkSys.ofInput's P / A f / Img / imgMem
+noncomputable def modelOf (I) (f) (r) : Arm.ArmState  -- r, program := f's compiled words,
+                                                      -- mem on img I := imgMem I
+structure OutsideCall (I) (roB : BitVec 64 → Option (BitVec 8)) (f) (N : Nat) (r) (args) (cm) where
+  pc : Arm.r .PC r = (art I f).base                    -- f's link-map address
+  err : Arm.r .ERR r = .None
+  ra : ¬ img I (xreg 30 r)                             -- the caller is outside the program's code
+  spAligned : (spv r).toNat % 16 = 0
+  stack : N ≤ (spv r).toNat                            -- N bytes of stack below sp
+  stackFree : ∀ a, img I a → ¬ StackBelow N (spv r) a  -- none of them is code
+  args : ArgsOut (img I) f.sig args r                  -- AAPCS64 locations; stack args not code
+  bytes : ∀ a b, cm.valid a 1 → cm.bytes a = some b → roB a = none → read_mem a r = b
+  image : ∀ a b b', cm.valid a 1 → cm.bytes a = some b → roB a = some b' → b = b'
+  valid : ∀ a n, cm.valid a n → a + n ≤ 2^64 ∧ ∀ k < n, ¬ img I (a+k) ∧
+    (StackBelow N (spv r) (a+k) → SlotArea (art I f).af r (a+k))
+  symbols : cm.symbols = fun n => I.syms.lookup n
+structure ClifRun (I) (B) (f) (r) (args) (cs) where    -- the reference CLIF run (a choice)
+  entry : ClifEntry f args cs
+  slots : SlotRel f ((spBody af r).toNat + af.slotBase) cs.frame.slots
+  place : (sys I B).NeedSlots → (sys I B).PlaceAt cs.mem (spBody af r)
+
+theorem binary_correct_depth (hI : okB I = true) (B) (hB : BaseOk (sys I B))
+    (hf : (prog I).func? n = some f) (M : Nat)
+    (ho : OutsideCall I (fun _ => none) f (frameDrop (art I f).af + I.D * M) r args cs.mem)
+    (hr : ClifRun I B f r args cs)
+    (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) ((prog I).only f) cs) :
+    ArmRefines (art I f).fb (art I f).base (xreg 30 r) ((sys I B).mach M f) (modelOf I f r)
+      (Clif.runLoop B.env (prog I) (M + 1) cs)
+
+structure Image where mem : BitVec 64 → Option (BitVec 8); kept : BitVec 64 → Prop
+def Image.Intact (X : Image) (r) : Prop := ∀ a, X.kept a → X.mem a = some (r.mem a)
+structure BinFacts (I) (X : Image) (R : BitVec 64 → Prop) (roB) (bud : Clif.Function → Nat) where
+  ok : okB I = true
+  code : ∀ a, img I a → X.kept a ∧ (X.mem a = some (imgMem I a) ∨ R a)
+  data : ∀ a b, roB a = some b → X.kept a ∧ X.mem a = some b
+  stack : ∀ n B F, BaseOk (ofInput I B F) → (∀ a, Img a → F a) → BudStmt (ofInput I B F) bud n
+
+theorem binary_correct (hbin : BinFacts I X R roB bud) (B) (hB : BaseOk (sys I B))
+    (hf : (prog I).func? n = some f) (M : Nat) (hX : X.Intact r)
+    (ho : OutsideCall I roB f (frameDrop (art I f).af + bud f) r args cs.mem)
+    (hr : ClifRun I B f r args cs)
+    (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) ((prog I).only f) cs) :
+    ArmRefines (art I f).fb (art I f).base (xreg 30 r) ((sys I B).mach M f) (modelOf I f r)
+      (Clif.runLoop B.env (prog I) (M + 1) cs) ∧
+    ∀ a, (modelOf I f r).mem a ≠ r.mem a → R a
+```
+
+`BudStmt L bud n` is `ProgStmt` with the depth-independent callees' budget `bud f` in place of
+`L.K M` (stack premise `frameDrop + bud f ≤ sp`, no code in those bytes, `F` with `bud f`).
+`binary_correct_depth` is the statement for every program (recursive ones included: the stack
+premise grows with the depth, as in CompCert); `binary_correct` the one for an executable with
+the binary facts.
+
+**The model state.** The model machine (`L.mach M f`, `ArmStepX`) fetches instructions from
+`s.program` and runs relocated instructions (`bl`, `adrp`/`add`, `adrp`/`ldr` through the GOT)
+by their link-map semantics; the compiled image (`imgMem`, `fb.words`) holds those instructions
+with zero relocation fields. `modelOf I f r` is `r` with the program `f`'s words and the program's
+code bytes the compiled image; `binary_correct`'s second conjunct shows it differs from `r` only at
+the relocated instruction bytes `R`, where the executable holds the resolved encodings
+(`FV/E2E/BinCheck.lean`).
+
+**Each premise of `backend_correct_program`:**
+
+| Premise | Status | By |
+| --- | --- | --- |
+| `L.Ok` | discharged | `okB I = true` (`okB_sound`) except `BaseOk` |
+| `BaseOk` (contracts of std, other crates, the runtime) | **premise** | not about the program |
+| `AbiEntry.program`, `.code`, `.fits` | discharged | `modelOf` (program, code bytes), `Ok.imgCode`, `Ok.fits` |
+| `AbiEntry.pc`, `.err`, `.spAligned` | `OutsideCall` | the call (AAPCS64) |
+| `AbiEntry.lr` | discharged | `ra := xreg 30 r` |
+| `AbiEntry.raOutside` | `OutsideCall.ra` (weaker form) | the return address is outside the program's code |
+| `StackAvail`, `hgfree` | `OutsideCall.stack`/`stackFree` with `N` | `N = frameDrop + D·M` (depth) or `frameDrop + bud f` (binary facts) |
+| `hF` (addresses outside the world) | discharged | `F := worldF I f K r` |
+| `himg` | discharged | `modelOf`; `R` relates it to the file |
+| `BodyEntry` | discharged | the body-entry world is `bodyOf af s` |
+| `ArgsIn`, `StackArgsAvoid` | `OutsideCall.args` | stated on `r`; `noCode` from "not program code" |
+| `ClifEntry` | `ClifRun.entry` | the reference run |
+| `Rel.holds`: `MemRel.bytes` | `OutsideCall.bytes` + `.image` | read-only CLIF data: `BinFacts.data` + `Image.Intact` |
+| `Rel.holds`: `MemRel.valid` | `OutsideCall.valid` | live CLIF bytes not code, in the free stack only in `f`'s slot region |
+| `Rel.holds`: `MemRel.symbols` | `OutsideCall.symbols` | the CLIF image's symbol table |
+| `Rel.holds`: `SlotRel` | `ClifRun.slots` | CLIF leaves slot addresses unspecified |
+| `Rel.holds`: `OutRel` | discharged | the outgoing area is free stack below the slot region |
+| `hpl` | `ClifRun.place` | as `SlotRel` (vacuous without slotted program callees) |
+| `TrapsExplicit` | **premise** | about the CLIF run (no memory-access traps) |
+
+**Trusted for the binary statement** (besides the M8 list): the loader premise `Image.Intact`
+(the OS maps the segments at their link addresses and read-only segments are never written; the
+relocation-read-only data is not written by outside code), and the model's semantics of the
+relocated instructions (`ArmStepX`: the resolved encodings the binary checks find compute the
+link-map addresses the model uses).
+
 ### Non-vacuity (2026-10-02, `agent/callee-fix`, `FV/E2E/NonVacuity.lean`)
 
 A premise set that cannot hold makes a theorem say nothing. The contract premises on the
