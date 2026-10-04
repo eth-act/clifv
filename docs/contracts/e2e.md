@@ -1456,7 +1456,9 @@ comment.
 | IAlloc | 49 | 3082 | 57 | 123 | 56 | 96 | 0 |
 | FvDemo | 551 | 24063 | 376 | 996 | 651 | 653 | 2 |
 
-`lake build` of all ten proofs: about 12 s. Findings:
+`lake build` of all ten proofs: about 12 s. With `--panic-abort` (the v1 configuration;
+`cargo fv link-proof --mode plain-abort`) `g_u128` and `a_arith` pass as well (865 and 1351
+words, 38 and 54 data objects). Findings:
 
 1. **lld relaxes every address pair**: all 1425 `adrp`/`add` and GOT `adrp`/`ldr` pairs of
    the ten executables are `nop` + `adr` (target within ±1 MiB), and the two TLSDESC sequences
