@@ -263,6 +263,11 @@ theorem goodN_of_all {I : LinkInput} {ns : List String} (h : goodAll I ns = true
     rw [budO_eq hs]
     exact this
 
+/-- `goodN` of the `k`-th name of `ns` (the generated crate proofs). -/
+theorem goodN_of_idx {I : LinkInput} {ns : List String} (h : goodAll I ns = true) (k : Nat)
+    (hk : k < ns.length) : goodN I ns[k] = true :=
+  goodN_of_all h (List.getElem_mem hk)
+
 /-- With the stack bound of the program, every function has a budget. -/
 theorem stackB_some {I : LinkInput} {S : Nat} (hS : stackB I = some S) :
     (∀ g ∈ (progOf I.results).funcs, (budO I g).isSome = true) ∧

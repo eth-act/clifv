@@ -203,7 +203,7 @@ premises), and the `correct_*` theorems are `backend_correct_program` for the en
 `stack_ok` decides the stack bound (`FV/E2E/StackBound.lean`: the call graph has no cycle), and
 the `correct_stack_*` theorems are `backend_correct_program_stack` for the entries (at every
 fuel)" else if !stackEntries.isEmpty then ";
-`stack_entries` decides that the calls of the entries in `stackEntries` never reach a cycle of
+`stack_entriesK` decide that the calls of the entries in `stackEntriesK` never reach a cycle of
 the call graph (`FV/E2E/StackBound.lean`), and the `correct_stack_*` theorems are
 `backend_correct_program_stack` for them (at every fuel)" else ""}.
 -/
@@ -242,17 +242,21 @@ theorem stack_ok : StackBound.stackB input = some {S} := by native_decide
     for (e, i) in entries.zipIdx do
       main := main ++ s!"/-- **`backend_correct_program_stack` for `{e}`**: at every fuel, with the stack bound. -/\ntheorem correct_stack_{i} : StackBound.StackStmt input {leanStr e} :=\n  StackBound.crate_correct_stack okB_input stack_ok _\n\n"
   else if !stackEntries.isEmpty then
-    main := main ++ s!"/-- The entries whose calls never reach a cycle of the call graph. -/
-def stackEntries : List String := [{", ".intercalate (stackEntries.map leanStr)}]
+    -- in chunks of `sliceSize` (the generated proofs index them by `decide`)
+    let nCh := (stackEntries.length + sliceSize - 1) / sliceSize
+    for c in List.range nCh do
+      let ch := (stackEntries.drop (c * sliceSize)).take sliceSize
+      main := main ++ s!"/-- Entries whose calls never reach a cycle of the call graph (chunk {c}). -/
+def stackEntries{c} : List String := [{", ".intercalate (ch.map leanStr)}]
 
-/-- **The stack bound of the entries in `stackEntries`** (`FV/E2E/StackBound.lean`): their calls
+/-- **The stack bound of the entries in `stackEntries{c}`** (`FV/E2E/StackBound.lean`): their calls
 never reach a cycle of the call graph (the program has recursive functions). -/
-theorem stack_entries : StackBound.goodAll input stackEntries = true := by native_decide
+theorem stack_entries{c} : StackBound.goodAll input stackEntries{c} = true := by native_decide
 
 "
     for (e, i) in entries.zipIdx do
       if let some k := stackEntries.idxOf? e then
-        main := main ++ s!"/-- **`backend_correct_program_stack` for `{e}`**: at every fuel, with its stack bound. -/\ntheorem correct_stack_{i} : StackBound.StackStmt input {leanStr e} :=\n  StackBound.crate_correct_stackN okB_input\n    (StackBound.goodN_of_all stack_entries (List.getElem_mem (l := stackEntries) (i := {k}) (by decide)))\n\n"
+        main := main ++ s!"/-- **`backend_correct_program_stack` for `{e}`**: at every fuel, with its stack bound. -/\ntheorem correct_stack_{i} : StackBound.StackStmt input {leanStr e} :=\n  StackBound.crate_correct_stackN okB_input\n    (StackBound.goodN_of_idx stack_entries{k / sliceSize} {k % sliceSize} (by decide))\n\n"
   let footer := s!"end {ns}\n"
   if !split then
     return [(out, header ("import FV.E2E.StackBound\n\n" ++ doc.trimAsciiEnd.toString) ++ inp ++ sliceThm 0 ++ main ++ footer)]
