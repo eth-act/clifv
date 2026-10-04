@@ -13,8 +13,8 @@ per-function theorems (`backend_correct_world`), by induction on the whole-progr
 
 * `linkedCall M a s`: a `bl` of a function compiled as `a` from state `s`, run by the machine
   `M`: the callee's ABI entry (`enterAt`: its program, pc at its base, return address in x30),
-  then the state at its first return to `pc + 4` without error (with the caller's program
-  again); a callee that never returns gives an error state (`junkAt`).
+  then the state at its first return to `pc + 4` with the entry `sp`, without error (with the
+  caller's program again); a callee that never returns gives an error state (`junkAt`).
 * `LinkSys.hooks M`: the hooks of the linked machine whose program callees run at most `M`
   levels deep (`hooks (M + 1)` runs a callee `g` of `P` by `ArmStepX _ (hooks M) (A g).fa`);
   calls of externs outside `P` and TLS keep the base hooks.
@@ -82,19 +82,54 @@ def enterAt (a : Art) (s : Arm.ArmState) : Arm.ArmState :=
 def junkAt (s : Arm.ArmState) : Arm.ArmState :=
   Arm.w .ERR (.Other "linked callee did not return") (Arm.w .PC (Arm.r .PC s + 4) s)
 
-/-- The callee `a`, called at `s`, has returned in `t`: at the return address, without error,
-with its own program. -/
+/-- The callee `a`, called at `s`, has returned in `t`: at the return address, with the
+caller's `sp`, without error, with its own program. -/
 def RetOf (a : Art) (s t : Arm.ArmState) : Prop :=
-  Arm.r .PC t = Arm.r .PC s + 4 ∧ Arm.r .ERR t = .None ∧ t.program = a.fb.program a.base
+  Arm.r .PC t = Arm.r .PC s + 4 ∧ Arm.r .ERR t = .None ∧ t.program = a.fb.program a.base ∧
+    spv t = spv s
+
+open Classical in
+/-- The first `i ≥ k` (searching `fuel` steps) with `p i`. -/
+noncomputable def findFrom (p : Nat → Prop) : Nat → Nat → Nat
+  | 0, k => k
+  | fuel + 1, k => if p k then k else findFrom p fuel (k + 1)
+
+theorem findFrom_spec (p : Nat → Prop) : ∀ fuel k, (∃ j, k ≤ j ∧ j ≤ k + fuel ∧ p j) →
+    p (findFrom p fuel k) ∧ ∀ i, k ≤ i → i < findFrom p fuel k → ¬ p i
+  | 0, k, ⟨j, h1, h2, hj⟩ => by
+    obtain rfl : j = k := by omega
+    exact ⟨hj, fun i h1 h2 => by simp [findFrom] at h2; omega⟩
+  | fuel + 1, k, ⟨j, h1, h2, hj⟩ => by
+    classical
+    by_cases hk : p k
+    · simp only [findFrom, if_pos hk]
+      exact ⟨hk, fun i h1 h2 => by omega⟩
+    · simp only [findFrom, if_neg hk]
+      have hjk : j ≠ k := fun e => hk (e ▸ hj)
+      obtain ⟨hp, hmin⟩ := findFrom_spec p fuel (k + 1) ⟨j, by omega, by omega, hj⟩
+      refine ⟨hp, fun i hi1 hi2 => ?_⟩
+      rcases Nat.lt_or_ge i (k + 1) with h | h
+      · obtain rfl : i = k := by omega
+        exact hk
+      · exact hmin i h hi2
+
+/-- The least `n` with `p n`. -/
+noncomputable def firstNat (p : Nat → Prop) (h : ∃ n, p n) : Nat :=
+  findFrom p (Classical.choose h) 0
+
+theorem firstNat_spec (p : Nat → Prop) (h : ∃ n, p n) :
+    p (firstNat p h) ∧ ∀ i < firstNat p h, ¬ p i :=
+  have hs := findFrom_spec p (Classical.choose h) 0
+    ⟨_, Nat.zero_le _, by omega, Classical.choose_spec h⟩
+  ⟨hs.1, fun i hi => hs.2 i (Nat.zero_le _) hi⟩
 
 open Classical in
 /-- **A `bl` of the function compiled as `a`, run by the machine `M`**: from the callee's entry
-state, the state at its return, with the caller's program (the return is unique: past it the
-machine stops with an error, `retStuck`). -/
+state, the state at its first return (`RetOf`), with the caller's program. -/
 noncomputable def linkedCall (M : Arm.ArmState → Arm.ArmState) (a : Art) (s : Arm.ArmState) :
     Arm.ArmState :=
   if h : ∃ n, RetOf a s (runX M n (enterAt a s)) then
-    Arm.set_program (runX M (Classical.choose h) (enterAt a s)) s.program
+    Arm.set_program (runX M (firstNat _ h) (enterAt a s)) s.program
   else junkAt s
 
 theorem wordsAt_find_none {base a : BitVec 64} :
@@ -211,34 +246,63 @@ theorem retStuck {X : ExtSem} {H : ArmHooks} {a : Art} {lm : Std.HashMap Lbl Nat
       exact ih
   exact fun n => (hP n).2.2
 
+/-- The linked call returns at the first return of the callee's machine. -/
+theorem linkedCall_first {M : Arm.ArmState → Arm.ArmState} {a : Art} {s : Arm.ArmState} {n : Nat}
+    (hret : RetOf a s (runX M n (enterAt a s)))
+    (hfirst : ∀ i < n, ¬ RetOf a s (runX M i (enterAt a s))) :
+    linkedCall M a s = Arm.set_program (runX M n (enterAt a s)) s.program := by
+  classical
+  have hex : ∃ n, RetOf a s (runX M n (enterAt a s)) := ⟨n, hret⟩
+  unfold linkedCall
+  rw [dif_pos hex]
+  obtain ⟨hp, hmin⟩ := firstNat_spec _ hex
+  have : firstNat _ hex = n := by
+    rcases Nat.lt_trichotomy (firstNat _ hex) n with h | h | h
+    · exact absurd hp (hfirst _ h)
+    · exact h
+    · exact absurd hret (hmin n h)
+  rw [this]
+
+/-- **Where a call of the function compiled as `a` returns to**, from the call at `pc`: outside
+`a`'s code, or (a call into `a`'s own code: one copy of a recursive function) after a call
+instruction of `a`'s code, not at its entry. -/
+def RaOk (a : Art) (pc : BitVec 64) : Prop :=
+  (∀ k < a.fb.words.size, pc + 4 ≠ a.base + BitVec.ofNat 64 (4 * k)) ∨
+    (CallPc a.fa a.base pc ∧ pc + 4 ≠ a.base)
+
 /-- **The linked call returns where the per-function theorem says**: a return (`RetOf`) of the
-callee's machine at step `n`, with the return address outside the callee's code, is the one
-`linkedCall` takes. -/
+callee's machine at step `n` is the one `linkedCall` takes, when the return address is outside
+the callee's code (past a return the machine stops with an error, `retStuck`), or after one of
+its calls (`RaOk`) and no state of the run before `n` at an address after a call has the entry
+`sp` (`PostTrace`: there the callee's `sp` is its body's, `frameDrop` below). -/
 theorem linkedCall_eq {X : ExtSem} {H : ArmHooks} {a : Art} {lm : Std.HashMap Lbl Nat}
     (hl : a.fa.layout = .ok a.fb) (hm : labelOffsets a.fa.lines = .ok lm) {s : Arm.ArmState}
-    (hra : ∀ k < a.fb.words.size, Arm.r .PC s + 4 ≠ a.base + BitVec.ofNat 64 (4 * k)) {n : Nat}
+    (hra : RaOk a (Arm.r .PC s)) (hfd : 0 < frameDrop a.af) (hfd' : frameDrop a.af < 2 ^ 64)
+    {n : Nat} (htr : PostTrace a.fa a.af a.base (ArmStepX X H a.fa) (enterAt a s) n)
     (hret : RetOf a s (runX (ArmStepX X H a.fa) n (enterAt a s))) :
     linkedCall (ArmStepX X H a.fa) a s =
       Arm.set_program (runX (ArmStepX X H a.fa) n (enterAt a s)) s.program := by
-  have hex : ∃ n, RetOf a s (runX (ArmStepX X H a.fa) n (enterAt a s)) := ⟨n, hret⟩
-  unfold linkedCall
-  rw [dif_pos hex]
-  have hm' := Classical.choose_spec hex
-  generalize Classical.choose hex = m at hm' ⊢
-  -- the return is unique: past one, the machine has an error
-  have huniq : ∀ i j, RetOf a s (runX (ArmStepX X H a.fa) i (enterAt a s)) →
-      RetOf a s (runX (ArmStepX X H a.fa) j (enterAt a s)) → ¬ i < j := by
-    intro i j hi hj hlt
-    have := retStuck (X := X) (H := H) hl hm hi.2.2 (by rw [hi.1]; exact hra)
-      (j - i - 1)
-    rw [← runX_add, show i + (j - i - 1 + 1) = j by omega] at this
-    exact this hj.2.1
-  have : m = n := by
-    rcases Nat.lt_trichotomy m n with h | h | h
-    · exact absurd h (huniq m n hm' hret)
-    · exact h
-    · exact absurd h (huniq n m hret hm')
-  rw [this]
+  refine linkedCall_first hret fun i hi hri => ?_
+  rcases hra with hra | ⟨hcp, hne⟩
+  · -- past a return outside the code the machine has an error
+    have := retStuck (X := X) (H := H) hl hm hri.2.2.1 (by rw [hri.1]; exact hra) (n - i - 1)
+    rw [← runX_add, show i + (n - i - 1 + 1) = n by omega] at this
+    exact this hret.2.1
+  · rcases Nat.eq_zero_or_pos i with rfl | hi0
+    · -- the entry is at the callee's base
+      apply hne
+      rw [← hri.1]
+      simp [runX, enterAt, Arm.r_of_w_same]
+    · -- after a call of the callee's code, its `sp` is the body's
+      have hsp := htr i hi0 hi ⟨_, hcp, hri.1⟩
+      have hse : spv (enterAt a s) = spv s := by
+        simp only [spv, enterAt]
+        rw [Arm.r_of_w_different (by simp), Arm.r_of_w_different (by simp), r_set_program]
+      rw [hri.2.2.2, hse] at hsp
+      have e := congrArg BitVec.toNat hsp
+      have hlt := (spv s).isLt
+      rw [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hfd'] at e
+      omega
 
 /-! ## `blr`: the call target the instruction names -/
 
@@ -1420,10 +1484,11 @@ structure Ok : Prop where
     info = ⟨.reg (.vreg t .int), retPairs Lu, callDefs Ld⟩ → ∀ h ∈ L.P.funcs, L.BlrTo g t h →
       (regLocs h.sig).length = Lu.length → ti.rets ≤ (sigRets h.sig).length
   /-- layout: the return address of a `blr` is not in the code of a function of `P` it may call
-  (`MayCall`: other than the caller) -/
+  (`MayCall`), or is after a call instruction of that function's code, not at its entry
+  (`RaOk`: functions sharing one copy of code) -/
   raBlr : ∀ g ∈ L.P.funcs, ∀ info, (L.A g).vcp.CallSite info → (∀ n, info.dest ≠ .sym n) →
     ∀ h ∈ L.P.funcs, L.MayCall g h.name → ∀ pc, CallPc (L.A g).fa (L.A g).base pc →
-      ∀ k < (L.A h).fb.words.size, pc + 4 ≠ (L.A h).base + BitVec.ofNat 64 (4 * k)
+      RaOk (L.A h) pc
   /-- scope of the indirect calls (`call_indirect`, `try_call_indirect`; vacuous without them):
   the base externs keep the symbols and distinct names of `P` and of the base environment have
   distinct addresses (`Clif.IndScope`), and a function with indirect calls has no address (it
@@ -1457,10 +1522,12 @@ structure Ok : Prop where
   /-- the code is outside every activation's world -/
   imgF : ∀ a, L.Img a → L.F a
   /-- layout: the return address of a call is not in the code of a function of `P` that `g`
-  calls (stated for the callees of `g`'s call sites, not for every function of `P`: the return
-  address is in `g`'s own code, so a function calling itself directly is outside this layer) -/
+  calls, or is after a call instruction of that function's code, not at its entry (`RaOk`;
+  stated for the callees of `g`'s call sites, not for every function of `P`: the return address
+  is in `g`'s own code, so a callee sharing `g`'s code — `cargo fv`'s alias of a recursive
+  function at the function's own address — takes the second case) -/
   raCall : ∀ g ∈ L.P.funcs, ∀ info h, L.ProgSite g info h → ∀ pc, CallPc (L.A g).fa (L.A g).base pc →
-    ∀ k < (L.A h).fb.words.size, pc + 4 ≠ (L.A h).base + BitVec.ofNat 64 (4 * k)
+    RaOk (L.A h) pc
   raStar : ∀ h ∈ L.P.funcs, ∀ k < (L.A h).fb.words.size,
     L.raStar ≠ (L.A h).base + BitVec.ofNat 64 (4 * k)
   /-- the stack of one call level -/
@@ -1503,12 +1570,12 @@ structure Ok : Prop where
   baseKeepsAllocs : L.NeedSlots → Clif.EnvKeepsAllocs L.base
 
 /-- **The machine side of an activation of `g` at depth `M`** entered in `s` with body-entry
-world `w₀`: the ABI entry, the stack (frame and the callees' budget `K M`), the addresses `G` it
+world `w₀`: the ABI entry of a call (the return address may be in `g`'s code), the stack (frame and the callees' budget `K M`), the addresses `G` it
 keeps (outside its stack; containing the code image, which `s` holds), the addresses outside
 its world are `F`, and `w₀` agrees with `s`. -/
 structure MachEntry (M : Nat) (g : Clif.Function) (F G : BitVec 64 → Prop) (ra : BitVec 64)
     (s w₀ : Arm.ArmState) : Prop where
-  abi : AbiEntry (L.A g).fb (L.A g).base ra s
+  abi : AbiCall (L.A g).fb (L.A g).base ra s
   stack : StackAvail (L.K M) (L.A g).af s
   gfree : ∀ a, G a → ¬ StackBelow (frameDrop (L.A g).af + L.K M) (spv s) a
   hF : frameWG (L.K M) (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase
@@ -1539,7 +1606,8 @@ most `M` steps) returns, one VCode outcome that every machine-side activation at
 realises, and (when the linking needs non-interference, `NeedNI`) that every machine-side
 activation entered with a body-entry world related to the same CLIF entry, agreeing outside
 `F ∪ D` (with the same argument registers and stack-passed argument bytes), realises up to
-`F ∪ D`. -/
+`F ∪ D`; no state of the run before the return but the entry is at an address after a call of
+`g`'s code with the entry `sp` (`PostTrace`). -/
 def Thm (M : Nat) : Prop :=
   ∀ g ∈ L.P.funcs, ∀ (F : BitVec 64 → Prop) (vals : List Clif.Val) (cs : Clif.State)
     (w₀ : Arm.ArmState) (fuel : Nat)
@@ -1549,7 +1617,8 @@ def Thm (M : Nat) : Prop :=
       us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
       PrefixHold rvals outs ∧ MemRel F L.syms cm' wf ∧ (L.A g).vc.RetsSite us ∧
       (∀ G ra s, L.MachEntry M g F G ra s w₀ →
-        ∃ n, ActRet ra F G us outs wf s (runX (L.mach M g) n s)) ∧
+        ∃ n, ActRet ra F G us outs wf s (runX (L.mach M g) n s) ∧
+          PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.mach M g) s n) ∧
       (L.NeedNI → ∀ (D : BitVec 64 → Prop) (w₀' : Arm.ArmState),
         RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩
           g (spv w₀) cs.frame.slots cs.mem w₀' →
@@ -1559,7 +1628,8 @@ def Thm (M : Nat) : Prop :=
           w₀'.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k) =
             w₀.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k)) →
         ∀ G ra s, L.MachEntry M g F G ra s w₀' →
-          ∃ n, ActRet ra (fun a => F a ∨ D a) G us outs wf s (runX (L.mach M g) n s))
+          ∃ n, ActRet ra (fun a => F a ∨ D a) G us outs wf s (runX (L.mach M g) n s) ∧
+            PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.mach M g) s n)
 
 end LinkSys
 
@@ -1648,20 +1718,20 @@ theorem regVal_canon (g : Clif.Function) (uses : List CV) (w : Arm.ArmState) {r 
 
 /-- A state from which a call of `g` (arguments `uses`, caller's world `w`) behaves as from the
 canonical one: the same world, the code image, the same parameter registers, a return address
-outside `g`'s code. -/
+outside `g`'s code or after one of its calls (`RaOk`). -/
 structure CallerOk (F : BitVec 64 → Prop) (g : Clif.Function) (uses : List CV) (w t : Arm.ArmState) :
     Prop where
   world : SameWorld F t w
   img : ∀ a, L.Img a → t.mem a = L.imgMem a
   regs : ∀ r ∈ regLocs g.sig, regVal t r = regVal (L.canon g uses w) r
-  ra : ∀ k < (L.A g).fb.words.size, Arm.r .PC t + 4 ≠ (L.A g).base + BitVec.ofNat 64 (4 * k)
+  ra : RaOk (L.A g) (Arm.r .PC t)
 
 theorem callerOk_canon (hL : L.Ok) {g : Clif.Function} (hg : g ∈ L.P.funcs) {F : BitVec 64 → Prop}
     (himgF : ∀ a, L.Img a → F a) (uses : List CV)
     (w : Arm.ArmState) : L.CallerOk F g uses w (L.canon g uses w) := by
   have harg := (hL.argRegs g hg).2.1
   refine ⟨⟨fun f hf => L.r_canon harg uses w hf, fun a ha => ?_, L.program_canon g uses w⟩,
-    fun a ha => ?_, fun _ _ => rfl, fun k hk => ?_⟩
+    fun a ha => ?_, fun _ _ => rfl, .inl fun k hk => ?_⟩
   · rw [L.mem_canon, mem_withImg, if_neg (fun hi => ha (himgF a hi))]
   · rw [L.mem_canon, mem_withImg, if_pos ha]
   · simp only [canon, Arm.r_of_w_same, BitVec.sub_add_cancel]
@@ -1864,7 +1934,7 @@ theorem progCall (hL : L.Ok) {M : Nat} (hM : 0 < M) (ih : L.Thm (M - 1)) {n : St
       (L.NeedNI → ∀ (Z : BitVec 64 → Prop) (t : Arm.ArmState), (∀ a, F a → Z a) →
         SameWorld Z t w → (∀ a, L.Img a → t.mem a = L.imgMem a) →
         (∀ r ∈ regLocs h.sig, regVal t r = regVal (L.canon h uses w) r) →
-        (∀ k < (L.A h).fb.words.size, Arm.r .PC t + 4 ≠ (L.A h).base + BitVec.ofNat 64 (4 * k)) →
+        RaOk (L.A h) (Arm.r .PC t) →
         MemRel F L.syms cm t →
         (∀ off v, (ArgLoc.stack off, v) ∈ (locsOf h.sig).zip vals → ∀ k < v.ty.bytes,
           t.mem (spv w + BitVec.ofNat 64 off + BitVec.ofNat 64 k) =
@@ -2084,10 +2154,9 @@ theorem progCall (hL : L.Ok) {M : Nat} (hM : 0 < M) (ih : L.Thm (M - 1)) {n : St
     hL.imgAddr h hh a (by simpa [CodeAddr] using ha)
   have hME : ∀ t w₀', spv t = spv w → Arm.r .ERR t = .None →
       (∀ a, L.Img a → t.mem a = L.imgMem a) →
-      (∀ k < (L.A h).fb.words.size, Arm.r .PC t + 4 ≠ (L.A h).base + BitVec.ofNat 64 (4 * k)) →
       BodyEntryW Fh (L.A h).vcp.EntryArg (L.A h).af (enterAt (L.A h) t) w₀' →
       L.MachEntry (M - 1) h Fh G (Arm.r .PC t + 4) (enterAt (L.A h) t) w₀' := by
-    intro t w₀' hst herrt himgt hrat hbw
+    intro t w₀' hst herrt himgt hbw
     have hspt : spv (enterAt (L.A h) t) = spv w := by rw [spv_enterAt]; exact hst
     have hFrame : frameWG (L.K (M - 1)) ib (RAFrame.compute (L.A h).vcp (L.A h).rf).size
         (L.A h).af G (enterAt (L.A h) t) = Fh := by
@@ -2105,7 +2174,7 @@ theorem progCall (hL : L.Ok) {M : Nat} (hM : 0 < M) (ih : L.Thm (M - 1)) {n : St
         · exact .inl ⟨hb, hno, hns⟩
         · exact .inr (.inr ⟨hF, hb⟩)
     refine ⟨⟨by simp, fun k wd hk => hL.imgCode h hh _ (fun a ha => by
-        rw [mem_enterAt]; exact himgt a ha) k wd hk, by simp, ?_, x30_enterAt _ _, hrat, ?_,
+        rw [mem_enterAt]; exact himgt a ha) k wd hk, by simp, ?_, x30_enterAt _ _, ?_,
         hL.fits h hh⟩, ?_, fun a ha => ?_, hFrame,
       fun a ha => ⟨himgF a ha, fun hb => (hdead a hb).2 ha⟩,
       fun a ha => by rw [mem_enterAt]; exact himgt a ha, hbw⟩
@@ -2115,18 +2184,19 @@ theorem progCall (hL : L.Ok) {M : Nat} (hM : 0 < M) (ih : L.Thm (M - 1)) {n : St
       rw [hspt, ← hdrop] at hb
       exact (hdead a hb).2 (hcode t a ha)
     · rw [hspt]; exact ha.2
-  have hpcall : ∀ t k, (∀ k' < (L.A h).fb.words.size,
-      Arm.r .PC t + 4 ≠ (L.A h).base + BitVec.ofNat 64 (4 * k')) →
+  have hpcall : ∀ t k, RaOk (L.A h) (Arm.r .PC t) →
+      PostTrace (L.A h).fa (L.A h).af (L.A h).base (L.mach (M - 1) h) (enterAt (L.A h) t) k →
       ArmRet (Arm.r .PC t + 4) (enterAt (L.A h) t)
         (runX (L.mach (M - 1) h) k (enterAt (L.A h) t)) →
       (runX (L.mach (M - 1) h) k (enterAt (L.A h) t)).program = (enterAt (L.A h) t).program →
       L.pcall M h t =
         Arm.set_program (runX (L.mach (M - 1) h) k (enterAt (L.A h) t)) t.program := by
-    intro t k hra hret hprog
+    intro t k hra htrk hret hprog
     obtain ⟨M', rfl⟩ : ∃ M', M = M' + 1 := ⟨M - 1, by omega⟩
     obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
     show linkedCall _ _ _ = _
-    exact linkedCall_eq hc.layout hlm hra ⟨hret.pc, hret.err, hprog.trans (program_enterAt _ _)⟩
+    exact linkedCall_eq hc.layout hlm hra (by rw [hdrop]; omega) (by omega) htrk
+      ⟨hret.pc, hret.err, hprog.trans (program_enterAt _ _), hret.sp.trans (spv_enterAt _ _)⟩
   have hx29 : Arm.r (.GPR 29#5) w₀ = spv w - 16#64 := by
     have := x29_bodyOf (L.A h).af (enterAt (L.A h) cn)
     rw [if_pos hfr, spv_enterAt, hsp0] at this
@@ -2136,7 +2206,7 @@ theorem progCall (hL : L.Ok) {M : Nat} (hM : 0 < M) (ih : L.Thm (M - 1)) {n : St
   have key2 : L.NeedNI → ∀ (Z : BitVec 64 → Prop) (t : Arm.ArmState), (∀ a, F a → Z a) →
       SameWorld Z t w → (∀ a, L.Img a → t.mem a = L.imgMem a) →
       (∀ r ∈ regLocs h.sig, regVal t r = regVal (L.canon h uses w) r) →
-      (∀ k < (L.A h).fb.words.size, Arm.r .PC t + 4 ≠ (L.A h).base + BitVec.ofNat 64 (4 * k)) →
+      RaOk (L.A h) (Arm.r .PC t) →
       MemRel F L.syms cm t →
       (∀ off v, (ArgLoc.stack off, v) ∈ (locsOf h.sig).zip vals → ∀ k < v.ty.bytes,
         t.mem (spv w + BitVec.ofNat 64 off + BitVec.ofNat 64 k) =
@@ -2203,9 +2273,9 @@ theorem progCall (hL : L.Ok) {M : Nat} (hM : 0 < M) (ih : L.Thm (M - 1)) {n : St
       have hnF := hsav off v hm k hk
       simp only [w₀, w₀', mem_bodyOf, mem_enterAt]
       rw [hstkt off v hm k hk, hcOk.world.2.1 _ hnF]
-    obtain ⟨k, hret⟩ := hni hN D w₀' hrel' hsw hreg hstk G (Arm.r .PC t + 4) (enterAt (L.A h) t)
-      (hME t w₀' hst herrt himgt hrat hbw)
-    refine ⟨k, hpcall t k hrat hret.ret hret.prog, ⟨hret.ret, hret.regs, fun a ha => hret.mem a
+    obtain ⟨k, hret, htrk⟩ := hni hN D w₀' hrel' hsw hreg hstk G (Arm.r .PC t + 4)
+      (enterAt (L.A h) t) (hME t w₀' hst herrt himgt hbw)
+    refine ⟨k, hpcall t k hrat htrk hret.ret hret.prog, ⟨hret.ret, hret.regs, fun a ha => hret.mem a
       (fun h' => ha (h'.elim (fun h1 => hFZ a h1.1) (fun h2 => h2.1))), hret.fields, hret.gkeep,
       hret.prog⟩⟩
   refine ⟨us, outs, wf, hus, hlen, hhold, hmemF, hrs, fun t ht => ?_, key2⟩
@@ -2223,9 +2293,9 @@ theorem progCall (hL : L.Ok) {M : Nat} (hM : 0 < M) (ih : L.Thm (M - 1)) {n : St
       rw [hFh]; exact L.bodyEntryW_compat hL hh himgF ht
     have hst : spv t = spv w := ht.world.1 _ (by simp [Masked])
     have herrt : Arm.r .ERR t = .None := by rw [ht.world.1 _ (by simp [Masked])]; exact herr
-    obtain ⟨k, hret⟩ := hall G (Arm.r .PC t + 4) (enterAt (L.A h) t)
-      (hME t w₀ hst herrt ht.img ht.ra hbw)
-    exact ⟨k, hpcall t k ht.ra hret.ret hret.prog, ⟨hret.ret, hret.regs, fun a ha => hret.mem a
+    obtain ⟨k, hret, htrk⟩ := hall G (Arm.r .PC t + 4) (enterAt (L.A h) t)
+      (hME t w₀ hst herrt ht.img hbw)
+    exact ⟨k, hpcall t k ht.ra htrk hret.ret hret.prog, ⟨hret.ret, hret.regs, fun a ha => hret.mem a
       (fun h' => ha h'.1), hret.fields, hret.gkeep, hret.prog⟩⟩
 
 end LinkSys
@@ -2274,7 +2344,7 @@ theorem pcall_pc (M : Nat) (h : Clif.Function) (u : Arm.ArmState) :
     simp only [pcall, linkedCall]
     split
     · rename_i hex
-      have := Classical.choose_spec hex
+      have := (firstNat_spec _ hex).1
       exact ⟨rfl, by rw [r_set_program]; exact this.1⟩
     · exact hj
 
@@ -2387,8 +2457,7 @@ theorem progOsCore (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g h : C
     (hdefs : ((ops.zip regs).toList.filter (·.1.isDef)) = (callDefOps Ld).zip (Ld.map (·.1)))
     {t w w' : Arm.ArmState} {outs : List CV}
     (hK : L.K M ≤ (spOf t).toNat) (hG : ∀ a, G a → t.mem a = s0.mem a)
-    (hra : ∀ k < (L.A h).fb.words.size,
-      Arm.r .PC t + 4 ≠ (L.A h).base + BitVec.ofNat 64 (4 * k))
+    (hra : RaOk (L.A h) (Arm.r .PC t))
     (hsw : SameWorld F t w)
     (hx : L.progX M F h (Lu.map (fun q => regVal t q.2)) w = some (outs, w')) :
     SameWorld F (L.pcall M h t) w' ∧
@@ -3853,7 +3922,7 @@ theorem backend_correct_program (L : LinkSys) (hL : L.Ok) {f : Clif.Function}
       omega
   -- the machine side
   have hME : L.MachEntry M f L.F L.Img ra s w₀ :=
-    ⟨hent, hres, hgfree, hF.symm, fun _ h => h, himg,
+    ⟨hent.toCall, hres, hgfree, hF.symm, fun _ h => h, himg,
       hbe.w L.F fun r ⟨_, _, hvb, hi, _, hv⟩ =>
         ((ctlCheck_args (lowerRFunc_ok hc.alloc).2.2.2 hvb hi).2.2 _ hv).2⟩
   -- the whole-program run is a per-function run
@@ -3869,7 +3938,7 @@ theorem backend_correct_program (L : LinkSys) (hL : L.Ok) {f : Clif.Function}
     rw [ho] at hm
     obtain ⟨us, outs, wf, hus, hlen, hhold, hmemR, -, hall, -⟩ :=
       L.thm hL M f hf L.F args cs w₀ m vals cm hWE hm
-    obtain ⟨n, hret⟩ := hall L.Img ra s hME
+    obtain ⟨n, hret, -⟩ := hall L.Img ra s hME
     exact armRefines_of_actRet hus hlen hhold hmemR hret
   | trapped c =>
     obtain ⟨m, hm⟩ := hlink (by rw [ho]; exact fun _ h => nomatch h) (by rw [ho]; exact fun h => nomatch h)

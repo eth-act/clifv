@@ -394,15 +394,18 @@ For a crate built by `cargo fv`, its premise `LinkSys.Ok` is checked and proven 
 ```
 $ cd examples/survey && cargo fv test -p g_u128 --keep-temps
 $ cargo fv link-proof --exe /g_u128/ --exe /values- --crate g_u128 --prune \
-    --lean ../../FVTest/Crates/GU128.lean --module GU128
+    --lean ../../crate-proofs/Crates/GU128.lean --module GU128
 cargo fv link-proof: 19 functions of 1 codegen unit(s) of …/values-ec05ef9aac510256 (skipped 0), 60 addresses (0 names unresolved) → …/target/fv/link-proof
 link-check: …/values-ec05ef9aac510256
-  19 functions, 60 link-map addresses, 30 CLIF image symbols, D = 144; checked in 569 ms
+  static checks (the validators): 0 function(s) fail
+  static checks done in 177 ms
+  19 functions, 60 link-map addresses, 30 CLIF image symbols, D = 144; checked in 185 ms
   --prune: 19 of 19 functions pass (0 dropped)
   image: 865 words of 19 functions compared with the executable, 0 function(s) differ
   okB: true
-  wrote ../../FVTest/Crates/GU128.lean (19 functions, 19 entries)
-$ cd ../.. && lake build FVTest.Crates.GU128
+  wrote ../../crate-proofs/Crates/GU128.lean
+  19 functions, 19 entries
+$ cd ../../crate-proofs && lake build Crates.GU128
 ```
 
 1. Build with `--keep-temps` (`cargo fv build` or `test`).
@@ -419,26 +422,32 @@ $ cd ../.. && lake build FVTest.Crates.GU128
    function, with details (the call site, the undeclared name), and a count per premise; it
    compares the executable's bytes with the compiled words (relocated fields excepted; `bl`
    targets against the link map). `--prune` drops the failing functions and their callers
-   (transitively), so the rest is closed under calls. `--profile` times the slowest functions.
-   Exit status 0 iff the (pruned) set passes.
-4. With `--lean FILE --module NAME` (and the checks passing) it writes the proof file:
-   `okB_input` (`native_decide`), `link_ok` (`LinkSys.Ok` of the crate for every base
-   environment satisfying `BaseOk`), `base_closed` (the base premises are satisfiable; written
-   when no function has `tls_value`), `entries_present`, and `correct_<i> : CrateStmt input
-   "<symbol>"` for every function (`--entries a,b`: those). The proof does not trust
-   `link-check`: `native_decide` evaluates `okB` again, and `okB_sound` is a theorem.
+   (transitively), so the rest is closed under calls. A recursive function's self-call alias
+   `f__fvself` becomes a function of the program at `f`'s address (one copy of the code).
+   `--profile` times the slowest functions. Exit status 0 iff the (pruned) set passes.
+4. With `--lean FILE --module NAME` (and the checks passing) it writes the proof: `okB_input`
+   (`native_decide`: `globalB_input` for the program, `sliceK_ok` per slice of 32 functions),
+   `link_ok` (`LinkSys.Ok` of the crate for every base environment satisfying `BaseOk`),
+   `base_closed` (the base premises are satisfiable; written when no function has
+   `tls_value`), `entries_present`, and `correct_<i> : CrateStmt input "<symbol>"` for every
+   function (`--entries a,b`: those). Up to 32 functions it is one file; beyond, `FILE`
+   imports `NAME/Input.lean` and one module per slice, `NAME/SliceK.lean` (rewritten on every
+   run), which Lake builds in parallel. The proof does not trust `link-check`: `native_decide`
+   evaluates `okB` again, and `okB_sound` is a theorem.
+5. Build it in the package `crate-proofs/` (`FILE` under `crate-proofs/Crates/`, `lake build`
+   there, or `lake build Crates.NAME`): it loads the compiled code of `FV.E2E.LinkCheck` and
+   its imports as a shared library (`fvcheck`, built by Lake from the same sources), so
+   `native_decide` runs the checker natively instead of in Lean's interpreter (about 15× faster).
 
 What the theorem says, and assumes: e2e.md "Crate-level instance" (the base environment's
 contracts, `BaseOk`, are premises; the entry state is a premise as in `backend_correct_program`).
-What blocks functions today (blocker list there): every function of the nine survey crates but
-one passes; in `examples/fv-demo` 482 of 550 do. The failures are indirect callers when some
-address-taken function has an `sret` or stack-passed parameter (`indSig`), and `blr` sites
-whose argument registers differ from some function of the same arity they may call. A
-recursive function passes only modulo a base premise: its self-call goes through `cargo fv`'s
-alias `f__fvself`, a base extern in the theorem. The checker's time is dominated by the
-lowering validator: seconds for a small crate, about 25 minutes for `examples/fv-demo`'s 550
-functions; `native_decide` in the proof file repeats it in Lean's interpreter, which does not
-scale to hundreds of functions yet.
+What blocks functions today (blocker list there): every function of the nine survey crates
+passes, and 495 of `examples/fv-demo`'s 550 (with its recursive function's alias, 496 functions
+of the program); the failures are indirect callers (`call_indirect`) when some address-taken
+function has an `sret` or stack-passed parameter (`indSig`), or different argument registers
+than another function of the same arity (`blrRegs`/`blrTry`), and their callers. Times: under
+a second per survey crate and 8 s for `fv-demo` in `link-check`; `lake build` of all ten proofs
+(`crate-proofs/Crates/`, `fv-demo`'s 496 functions in 16 slices) about 20 s.
 
 ## Examples and results
 

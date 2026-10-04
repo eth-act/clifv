@@ -47,13 +47,17 @@ structure FnInput where
 /-- **The input of a crate-level instance**: the program's functions; the link map (`addrs`:
 every symbol's address, `Xb.sym`); the CLIF image's symbol table (`syms`: `L.syms`, the
 `symbol_value`/`func_addr` names of the program's CLIF with their addresses); a return address
-outside all code (`raStar`); the stack of one call level (`D`). -/
+outside all code (`raStar`); the stack of one call level (`D`); `cargo fv`'s self-call aliases
+(`aliases`: `(f__fvself, f)`, a function of the program with `f`'s body, its self-call naming
+`f`, loaded at `f`'s address — one copy of the code, as the linker resolves the alias; the alias
+has no symbol in the executable, so `addrs` gives it a fresh address no other symbol has). -/
 structure LinkInput where
   funcs : List FnInput
   addrs : List (String × Nat)
   syms : List (String × Nat)
   raStar : Nat
   D : Nat
+  aliases : List (String × String) := []
   deriving Inhabited
 
 deriving instance Inhabited for Art
@@ -83,6 +87,9 @@ def raJ (ra : String) (j : Nat) : Lean.Json :=
 
 /-- The link-map address of `n` (`0` when it has none). -/
 def LinkInput.addrOf (I : LinkInput) (n : String) : Nat := (I.addrs.lookup n).getD 0
+
+/-- The load address of the function `n`: its link-map address, or its function's for an alias. -/
+def LinkInput.baseOf (I : LinkInput) (n : String) : Nat := I.addrOf ((I.aliases.lookup n).getD n)
 
 /-- The machine's link-time symbol addresses: the link map. -/
 def LinkInput.symAddr (I : LinkInput) (n : String) (off : Int) : BitVec 64 :=
@@ -127,7 +134,7 @@ abbrev Res := List (Clif.Function × Except String Art)
 /-- Every function of the input, compiled and loaded at its link-map address. -/
 def LinkInput.results (I : LinkInput) : Res :=
   I.funcs.map fun fi => let f := fi.func
-    (f, pipe f fi.k (BitVec.ofNat 64 (I.addrOf f.name)) (raJ fi.ra fi.j))
+    (f, pipe f fi.k (BitVec.ofNat 64 (I.baseOf f.name)) (raJ fi.ra fi.j))
 
 def progOf (R : Res) : Clif.Program := { funcs := R.map (·.1) }
 
@@ -157,13 +164,15 @@ def wordMap (T : List (Clif.Function × Art)) : Std.HashMap (BitVec 64) (BitVec 
   T.foldl (fun m e => (List.range e.2.fb.words.size).foldl
     (fun m k => m.insert (e.2.base + BitVec.ofNat 64 (4 * k)) e.2.fb.words[k]!) m) {}
 
+/-- The memory of a map of code words: the byte at `a` of the word at `a` rounded down to 4. -/
+def memOfMap (m : Std.HashMap (BitVec 64) (BitVec 32)) (a : BitVec 64) : BitVec 8 :=
+  match m[a &&& ~~~3#64]? with
+  | some w => w.extractLsb' (8 * (a &&& 3#64).toNat) 8
+  | none => 0
+
 /-- **The code image**: the byte at `a` of the word at `a` rounded down to 4 bytes (the
 checker's `imgB` reads every word back from it, so overlapping or misaligned code is rejected). -/
-def memT (T : List (Clif.Function × Art)) : Arm.Memory :=
-  let m := wordMap T
-  fun a => match m[a &&& ~~~3#64]? with
-    | some w => w.extractLsb' (8 * (a &&& 3#64).toNat) 8
-    | none => 0
+def memT (T : List (Clif.Function × Art)) : Arm.Memory := memOfMap (wordMap T)
 
 /-- The code addresses of the compiled functions. -/
 def ImgT (T : List (Clif.Function × Art)) (a : BitVec 64) : Prop :=
@@ -518,22 +527,51 @@ theorem outside_sound {ra : BitVec 64} {a : Art} (h : outside ra a = true) :
     omega
   omega
 
+/-- `LinkSys.RaOk` decided: the return address `pc + 4` is outside `ah`'s code, or `pc` is a
+call of `ah`'s own code (one copy of code shared with the caller: `cargo fv`'s self-call alias)
+and `pc + 4` is not its entry. -/
+def raOkB (ah : Art) (pc : BitVec 64) : Bool :=
+  outside (pc + 4) ah ||
+  (pc + 4 != ah.base && (List.range ah.fa.lines.toList.length).any fun j =>
+    match ah.fa.lines.toList[j]? with
+    | some l => callLine l && pc == ah.base + BitVec.ofNat 64 (lineOffset ah.fa.lines.toList j)
+    | none => false)
+
+theorem raOkB_sound {ah : Art} {pc : BitVec 64} (h : raOkB ah pc = true) : RaOk ah pc := by
+  simp only [raOkB, Bool.or_eq_true, Bool.and_eq_true, List.any_eq_true,
+    List.mem_range, bne_iff_ne, ne_eq] at h
+  rcases h with h | ⟨hne, j, -, hl⟩
+  · exact .inl (outside_sound h)
+  · refine .inr ⟨?_, hne⟩
+    revert hl
+    cases e : ah.fa.lines.toList[j]? with
+    | none => simp
+    | some l =>
+      intro hl
+      simp only [Bool.and_eq_true, beq_iff_eq] at hl
+      obtain ⟨hc, rfl⟩ := hl
+      cases l with
+      | ins i t =>
+        cases i <;> simp only [callLine, Bool.false_eq_true] at hc
+        · exact ⟨j, _, t, e, .inl ⟨_, rfl⟩, rfl⟩
+        · exact ⟨j, _, t, e, .inr ⟨_, rfl⟩, rfl⟩
+      | _ => simp [callLine] at hc
+
 /-- The return address of every call of `a` (the code of `g`) is outside the code of every other
-function of the table. -/
+function of the table, or after a call of that function's own code (`raOkB`). -/
 def raCallB (T : List (Clif.Function × Art)) (g : Clif.Function) (a : Art) : Bool :=
   let ls := a.fa.lines.toList
   (List.range a.fa.lines.size).all fun j =>
     match a.fa.lines[j]? with
     | some l => !callLine l || T.all fun e => e.1.name == g.name ||
-        outside (a.base + BitVec.ofNat 64 (lineOffset ls j) + 4) e.2
+        raOkB e.2 (a.base + BitVec.ofNat 64 (lineOffset ls j))
     | none => true
 
 theorem raCallB_sound {T : List (Clif.Function × Art)} {g : Clif.Function} {a : Art}
     (h : raCallB T g a = true) {pc : BitVec 64} (hpc : CallPc a.fa a.base pc) :
-    ∀ e ∈ T, e.1.name ≠ g.name → ∀ k < e.2.fb.words.size,
-      pc + 4 ≠ e.2.base + BitVec.ofNat 64 (4 * k) := by
+    ∀ e ∈ T, e.1.name ≠ g.name → RaOk e.2 pc := by
   obtain ⟨j, i, t, hj, hi, rfl⟩ := hpc
-  intro e he hne k hk
+  intro e he hne
   have hj' : a.fa.lines[j]? = some (.ins i t) := by simpa using hj
   have hjl : j < a.fa.lines.size := (Array.getElem?_eq_some_iff.1 hj').1
   simp only [raCallB, List.all_eq_true, List.mem_range] at h
@@ -543,13 +581,15 @@ theorem raCallB_sound {T : List (Clif.Function × Art)} {g : Clif.Function} {a :
     rcases hi with ⟨n, rfl⟩ | ⟨r, rfl⟩ <;> rfl
   simp only [hc, Bool.not_true, Bool.false_or, List.all_eq_true, Bool.or_eq_true,
     beq_iff_eq] at this
-  exact outside_sound ((this e he).resolve_left hne) k hk
+  exact raOkB_sound ((this e he).resolve_left hne)
 
 def raStarB (T : List (Clif.Function × Art)) (ra : BitVec 64) : Bool := T.all (outside ra ·.2)
 
 /-- The image read back word by word. -/
 def imgB (T : List (Clif.Function × Art)) : Bool :=
-  let s := setMem Arm.ArmState.default (memT T)
+  -- the map once (`memT T` itself compiles to a function of the address that rebuilds it)
+  let m := wordMap T
+  let s := setMem Arm.ArmState.default (memOfMap m)
   T.all fun e => (List.range e.2.fb.words.size).all fun k =>
     Arm.read_mem_bytes 4 (e.2.base + BitVec.ofNat 64 (4 * k)) s == e.2.fb.words[k]!
 
@@ -711,30 +751,33 @@ def okR (I : LinkInput) (R : Res) : Bool :=
 /-- **The checker**: every premise of `LinkSys.Ok` about the program and its layout. -/
 def okB (I : LinkInput) : Bool := okR I I.results
 
-/-- The checks of one input function that do not depend on the rest of the program
-(`staticChks` of its pipeline result; the validators): a crate's file decides them by one
-`native_decide` per function, so they run in parallel (`okB_of`). -/
-def staticFnB (I : LinkInput) (fi : FnInput) : Bool :=
-  let f := fi.func
-  (staticChks I f (pipe f fi.k (BitVec.ofNat 64 (I.addrOf f.name)) (raJ fi.ra fi.j))).all (·.2)
+/-- The checks of the program (`globalChks`). -/
+def globalB (I : LinkInput) : Bool :=
+  let R := I.results
+  (globalChks I (progOf R) (tabOf R)).all (·.2)
 
-/-- The rest of `okB`: the program's checks and every function's `linkChks`. -/
-def linkB (I : LinkInput) : Bool :=
+/-- The per-function checks (`chks`: `staticChks ++ linkChks`) of the functions `fs` (a slice of
+the input's) against the input's program. A crate's proof decides `okB` by one `native_decide`
+per slice, in separate modules that Lake builds in parallel (`okB_of`, `fnsB_append`). -/
+def fnsB (I : LinkInput) (fs : List FnInput) : Bool :=
   let R := I.results
   let P := progOf R
   let T := tabOf R
-  (globalChks I P T).all (·.2) && R.all fun e => (linkChks I P T e.1 e.2).all (·.2)
+  fs.all fun fi => let f := fi.func
+    (chks I P T f (pipe f fi.k (BitVec.ofNat 64 (I.baseOf f.name)) (raJ fi.ra fi.j))).all (·.2)
 
-/-- `okB` from its parts: `linkB` and `staticFnB` of every function. -/
-theorem okB_of {I : LinkInput} (hl : linkB I = true) (hs : I.funcs.all (staticFnB I) = true) :
+theorem fnsB_append (I : LinkInput) (l₁ l₂ : List FnInput) :
+    fnsB I (l₁ ++ l₂) = (fnsB I l₁ && fnsB I l₂) := by
+  simp only [fnsB, List.all_append]
+
+/-- `okB` from its parts: `globalB` and `fnsB` of all the functions. -/
+theorem okB_of {I : LinkInput} (hg : globalB I = true) (hf : fnsB I I.funcs = true) :
     okB I = true := by
-  simp only [linkB, Bool.and_eq_true, List.all_eq_true] at hl
-  simp only [okB, okR, chks, Bool.and_eq_true, List.all_eq_true]
-  refine ⟨hl.1, fun e he c hc => ?_⟩
-  rcases List.mem_append.1 hc with hc | hc
-  · obtain ⟨fi, hfi, rfl⟩ := List.mem_map.1 he
-    exact List.all_eq_true.1 (List.all_eq_true.1 hs fi hfi) c hc
-  · exact hl.2 e he c hc
+  simp only [okB, okR, Bool.and_eq_true]
+  refine ⟨hg, ?_⟩
+  simp only [fnsB] at hf
+  simp only [LinkInput.results, List.all_map]
+  exact hf
 
 /-- The names of the failing checks. -/
 def bad (cs : List (String × Bool)) : List String := (cs.filter (!·.2)).map (·.1)
@@ -768,7 +811,7 @@ theorem name_inj : ∀ {l : List Clif.Function}, (l.map (·.name)).Nodup →
     · exact name_inj hn.2 ha' hb' he
 
 theorem results_spec {I : LinkInput} {e : Clif.Function × Except String Art}
-    (he : e ∈ I.results) : ∃ k j, e.2 = pipe e.1 k (BitVec.ofNat 64 (I.addrOf e.1.name)) j := by
+    (he : e ∈ I.results) : ∃ k j, e.2 = pipe e.1 k (BitVec.ofNat 64 (I.baseOf e.1.name)) j := by
   obtain ⟨fi, -, rfl⟩ := List.mem_map.1 he
   exact ⟨_, _, rfl⟩
 
@@ -793,7 +836,7 @@ theorem tab_mem {R : Res} (hn : ((progOf R).funcs.map (·.name)).Nodup) {g : Cli
 
 /-- What the checks give for a function `g` of `P` (`P`, `A`, `T` of the input's results). -/
 structure Facts (I : LinkInput) (g : Clif.Function) (a : Art) : Prop where
-  pipe : ∃ k j, pipe g k (BitVec.ofNat 64 (I.addrOf g.name)) j = .ok a
+  pipe : ∃ k j, pipe g k (BitVec.ofNat 64 (I.baseOf g.name)) j = .ok a
   lowerOk : lowerCheck g a.vc = true
   prepOk : prepCheck a.vc a.vcp = true
   check : checkAlloc a.vcp a.rf = .ok ()
@@ -966,7 +1009,7 @@ theorem okB_sound {I : LinkInput} (hI : okB I = true) {B : BaseEnv} {F : BitVec 
   have hpipe : ∀ g ∈ (progOf I.results).funcs,
       Compiled g (artOf I.results g).k (artOf I.results g).vc (artOf I.results g).vcp
         (artOf I.results g).rf (artOf I.results g).af (artOf I.results g).fa
-        (artOf I.results g).fb ∧ (artOf I.results g).base = BitVec.ofNat 64 (I.addrOf g.name) := by
+        (artOf I.results g).fb ∧ (artOf I.results g).base = BitVec.ofNat 64 (I.baseOf g.name) := by
     intro g hg
     obtain ⟨k, j, hp⟩ := (fa hg).pipe
     obtain ⟨hl, hpr, ha, he, hla, -, hb⟩ := pipe_spec hp
@@ -991,8 +1034,8 @@ theorem okB_sound {I : LinkInput} (hI : okB I = true) {B : BaseEnv} {F : BitVec 
           hall h hh (mayB_of hb.1) (fun n hn => (hb.2 n (gotOf_sound hn)).symm) hl⟩
       blrTry := fun g hg info ti hs t Lu Ld hi h hh hb hl =>
         tryB_reg (fa hg).tries hs hi hh (mayB_of hb.1) (fun n hn => (hb.2 n (gotOf_sound hn)).symm) hl
-      raBlr := fun g hg info hs hreg h hh hmay pc hpc k hk =>
-        raCallB_sound (fa hg).ra hpc _ (tab_mem hn hh) (mayCall_ne hmay) k hk
+      raBlr := fun g hg info hs hreg h hh hmay pc hpc =>
+        raCallB_sound (fa hg).ra hpc _ (tab_mem hn hh) (mayCall_ne hmay)
       indScope := fun g hg hnf => ⟨hB.keepSyms ⟨g, hg, hnf⟩, ?_⟩
       indNoSym := fun g hg hnf => (indFacts hI hg hnf).2.2
       indSig := fun g hg hnf => ⟨(indFacts hI hg hnf).1,

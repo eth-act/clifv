@@ -154,7 +154,6 @@ theorem op_checked {R : RL} {vb : VBlock} {k : Nat} {allocs : Array Loc} {its : 
   rename_i a' hso
   exact ⟨c, _, i, ops, hi, hops, (stepOp_ok hso).1, ⟨c, k + 1, a', out, hcr, hcv, hrun⟩⟩
 
-
 /-- The machine runs the lines `ls1` of the allocated instruction `i'`, placed at line `j`, to
 the state `exec (R.envOf j) i'` gives, ending at the line after them (in some number of steps:
 one per line, or fewer where the machine runs several lines as one hooked step, as for the
@@ -163,7 +162,8 @@ def RunsAs (R : RL) (exec : Env → MInst → Arm.ArmState → Option Arm.ArmSta
     (ls1 : List Line) : Prop :=
   ∀ j T s s', R.L.drop j = ls1 ++ T → s.program = R.fb.program R.base → Arm.r .PC s = R.pcOf j →
     Arm.r .ERR s = .None → exec (R.envOf j) i' s = some s' →
-    ∃ n, iterN R.step n s = s' ∧ Arm.r .PC s' = R.pcOf (j + ls1.length)
+    ∃ n, iterN R.step n s = s' ∧ Arm.r .PC s' = R.pcOf (j + ls1.length) ∧
+      ∀ i, 0 < i → i < n → R.Good (iterN R.step i s)
 
 /-- `operandsSound_step` for the obligation at the allocated instructions `P` (`P i'`). -/
 theorem operandsSound_stepI {F FK : BitVec 64 → Prop} {P : MInst → Prop}
@@ -218,7 +218,7 @@ theorem realizes_op_core {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
       RunsAs R exec i' ls1)
     (hW' : Arm.r .ERR w' = .None ∧ w'.program = w.program) :
     ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
-      Q R (iterN R.step n s) c'' := by
+      Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.Good (iterN R.step i s) := by
   obtain ⟨j, vb0, items, pre, code, ls, ps1, ps2, T, hvb0, hit, hsplit, hchk, hcode, hls, htr, hdrop,
     hpc, hst⟩ := hq
   rw [hvb] at hvb0
@@ -258,8 +258,13 @@ theorem realizes_op_core {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
       split at hm <;> simp at hm
   have hdrop' : R.L.drop j = ls1 ++ (ftList (ls2 ++ nxtOf R.af b) ++ T) := by
     rw [hdrop, List.append_assoc, ftList_plain_append _ _ hpl hZ, List.append_assoc]
-  obtain ⟨nst, hiter, hpc'⟩ := hruns j _ s s' hdrop' hst.prog hpc hst.err hex
-  refine ⟨nst, _, MStep.op hvb hi hops hsz hsem hlen (HavocOuts.refl _ _ _) hc2' (MNext.next hk), ?_⟩
+  obtain ⟨nst, hiter, hpc', hgood⟩ := hruns j _ s s' hdrop' hst.prog hpc hst.err hex
+  refine ⟨nst, _, MStep.op hvb hi hops hsz hsem hlen (HavocOuts.refl _ _ _) hc2' (MNext.next hk), ?_,
+    fun i hi => ?_⟩
+  rotate_left
+  · rcases Nat.eq_zero_or_pos i with rfl | hi0
+    · exact RL.good_of_sp hst.sp
+    · exact hgood i hi0 hi
   have hfr := R.frameOkK hR
   refine ⟨j + ls1.length, vb, items, pre ++ [.op k (regs.map Loc.reg)], c2, ls2, ps1, ps2, T, hvb,
     hit, by rw [hsplit]; simp, hchk', hc2, h2, htr, ?_, ?_, ?_⟩
@@ -303,7 +308,10 @@ theorem runsAs_of_linesOk {R : RL} (hR : R.Wf) {i' : MInst} {ls1 : List Line}
     simp only [execMInst, hl1] at hex; exact hex
   refine ⟨ls1.length, iterN_execLines hR.layout hR.lm hR.fit ls1 j s s' hat
       (fun i t h => by obtain ⟨i', t', e, hh⟩ := hins _ h; cases e; exact hh)
-      hprog (by rw [hpc]; rfl) herr (hint _ _ _ herr hrun) hrun, ?_⟩
+      hprog (by rw [hpc]; rfl) herr (hint _ _ _ herr hrun) hrun, ?_,
+    fun i hi0 hi => R.good_execLines hR hat
+      (fun i t h => by obtain ⟨i', t', e, hh⟩ := hins _ h; cases e; exact hh)
+      hprog hpc herr (hint _ _ _ herr hrun) hrun i hi0 (by omega)⟩
   rw [execLines_pc hrun, hpc]
   simp only [RL.pcOf, RL.L]
   rw [lineOffset_drop_ins (by simpa [RL.L] using hdrop') hins', BitVec.add_assoc]
@@ -329,7 +337,7 @@ theorem realizes_op_next {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
       LinesOk R.ctx i' ∧ (∀ ds, i' ≠ .args ds) ∧ (∀ us, i' ≠ .rets us))
     (hW' : Arm.r .ERR w' = .None ∧ w'.program = w.program) :
     ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
-      Q R (iterN R.step n s) c'' :=
+      Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.Good (iterN R.step i s) :=
   realizes_op_core hR hq hvb hi hops hsz hsem hlen hk (exec := fun env => execMInst R.ctx env)
     (fun env => (((hOS env).at (fun _ => RL.FK_F) s).toI _).v R.gv)
     (fun regs i' hasg _ => by

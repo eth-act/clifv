@@ -121,7 +121,9 @@ premises. Deferred, in order:
   it found `raCall` unsatisfiable for every program with a call, now stated per call-site
   callee). Widened (agent/link-widen, e2e.md "Widening"): `try_call` between program functions
   (normal returns); `sret` between program functions; stack-passed arguments between program
-  functions; direct self-recursion through the `cargo fv` alias (two copies);
+  functions; direct self-recursion through the `cargo fv` alias in one copy (agent/link-scope2:
+  the alias at the function's address, `RaOk`, M6's post-call trace `PostTrace`, `linkedCall`
+  takes the first return with the caller's `sp`);
   indirect calls (`call_indirect`, `try_call_indirect`, GOT `blr`) between program functions
   (the caller has no address itself; register-only, non-`sret` indirect callees; the M6 callee
   contract now holds for the call instruction at the pc, `CallAt`); undeclared indirect callees
@@ -146,11 +148,9 @@ premises. Deferred, in order:
     or `sret` parameters; at a genuine indirect call (`call_indirect`) `blrRegs`/`blrTry` still
     quantify over every function the caller may reach with the site's arity (`MayCall`), not
     only the ones its signature admits.
-  - directly self-recursive functions in one copy (handled through the `cargo fv` alias as two
-    copies; one copy needs an M6 return-detection invariant for `linkedCall`; in a crate-level
-    instance the alias `f__fvself` has no address and is a base extern, its contract a base
-    premise), float parameters; a depth-free machine (monotonicity of `linkedCall` in the depth,
-    needs base hooks preserving errors).
+  - a function calling itself under its own name (excluded at the CLIF level by `InSubset (P.only f)`; `cargo fv`'s alias covers it), float parameters; a
+    depth-free machine (monotonicity of `linkedCall` in the depth, needs base hooks preserving
+    errors).
   - **`indSig` under `MayCall`** (agent/crate-check, `fv-demo` 13 functions): a function with
     indirect calls may call every function with an address, so all of them must be
     register-only without `sret`; restrict `MayCall` (or `indSig`) by the call's signature.
@@ -160,11 +160,7 @@ premises. Deferred, in order:
     crate's data objects, as `backend_correct_program_witness` does for its `f 41`); the image
     premise `himg` with the relocated words of the process image (`imgMem` is the unrelocated
     encoding; relocation in Lean, or relocation-independence of the machine); moving
-    `NonVacuityLink.lean` onto `LinkCheck` (it keeps its own copy of the checks); the checker's
-    time (dominated by `lowerCheck`, minutes for hundreds of functions, and `native_decide` runs
-    FV's code in Lean's interpreter: `examples/fv-demo`'s 379 passing functions did not finish in
-    40 minutes; per-function `native_decide` theorems would let the elaborator run them in
-    parallel).
+    `NonVacuityLink.lean` onto `LinkCheck` (it keeps its own copy of the checks).
 - **Exact world of a call.** (superseded for program callees by agent/arm-link) `X.call` is a function of the arguments and the world and must give
   the exact def registers and world of the hooked callee; a compiled callee's theorem fixes only
   the low bits of its results and the live CLIF bytes. Either make `csem`'s call clause

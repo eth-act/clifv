@@ -559,16 +559,20 @@ theorem backend_correct_program (L : LinkSys) (hL : L.Ok) (hf : f ∈ L.P.funcs)
 runs `f`'s code with the linked hooks of depth `M` (`LinkSys.hooks`): a `bl g` of a function of
 `P`, and a `blr` whose target register (as the machine decodes the instruction word at the pc,
 `blrTarget`) holds the link-time address of a function `g` of `P` (`symCallee`), enter `g`'s
-image (`enterAt`) and run its code until its return (`linkedCall`); other calls and TLS keep
-the base hooks. Layers added for it:
+image (`enterAt`) and run its code until its first return (`linkedCall`: at the return address,
+with the caller's `sp`, without error); other calls and TLS keep the base hooks. Layers added
+for it:
 
 * **M6 with kept addresses** (`regLevelCorrect_world`): `RL.G`, `frameWG` (frame, dead stack and
   addresses `G` the activation keeps: its callers' frames, the code), `StRel.gkeep`, the callee
   contract `CalleeOkG` (required at states that keep `G`, for the allocated call that is the
   instruction at the pc: `CallAt`, so a `blr`'s contract knows its target register),
   `BodyEntryW` (body-entry world equal to the entry state only outside `F` and on the entry
-  `Args` registers), and the final world (unmasked fields, `G`, program) at a return.
-  `regLevelCorrect_backend` is derived (`G := ⊥`).
+  `Args` registers), the final world (unmasked fields, `G`, program) at a return, and the trace
+  of the run before it (every state but the entry at an address after a call of the function's
+  code has the body's `sp`: `PostCall`, `RL.Good`, `Realizes` with a trace invariant). The entry
+  is `AbiCall` (`AbiEntry` without the return address outside the code: a linked call may return
+  into the callee's own code). `regLevelCorrect_backend` is derived (`G := ⊥`).
 * **Per-function theorem with the final world** (`backend_correct_world`, `FV/E2E/LinkWorld.lean`,
   memory relation `RelW`: `Rel.holds`, the body's `sp`, no error): one VCode outcome realised by
   every Arm activation entered with the same body-entry world — the non-interference that makes
@@ -597,9 +601,10 @@ register arguments in the callee's parameter registers and take results from x0.
 site; the result clause constrains only the defs the site has; for a `blr` site, for every
 function it may enter (`BlrTo`: one it may call, `MayCall`; at a call through the GOT only the
 GOT symbol's function) with as many register parameters, `blrRegs`); declarations
-equal definitions; no function calls itself directly (`raCall`, `raBlr`:
-the return address of a call is outside the code of the function it calls, stated per call
-site); a function with indirect calls (`call_indirect`, `try_call_indirect`) has no link-time
+equal definitions; the return address of a call is outside the code of the function it calls,
+or after a call instruction of that function's code and not at its entry (`RaOk`: a callee
+sharing one copy of code with its caller, as `cargo fv`'s alias of a recursive function), stated
+per call site (`raCall`, `raBlr`); a function with indirect calls (`call_indirect`, `try_call_indirect`) has no link-time
 address itself, the names of `P` and of the base environment have distinct addresses, the base
 externs keep the symbols (`indScope`, `indNoSym`), its indirect-call signatures and the
 functions it may call (`MayCall`: declared, or any other function of `P` with an address) pass
@@ -607,7 +612,8 @@ no `sret` and at most 8 register parameters (`indSig`),
 and with an outgoing-argument area in `P` the functions with an address have no slots
 (`addrSlots`).
 **Trusted / premises**: the
-link layout (bases, the code image `Img`/`imgMem`, return addresses outside callees' code,
+link layout (bases, the code image `Img`/`imgMem`, return addresses outside callees' code or
+after their calls,
 `raStar`, distinct symbol addresses), the base
 environment's contracts (calls outside `P`, `XCallsOk` and `XCallsIndOk` of the base externs,
 TLS, the results of `try_call`s of base externs `baseTry`; when a function of `P` has an
@@ -768,15 +774,32 @@ bytes. It is vacuous without program callees with slots (`NeedSlots`).
    `OutRel` holds again because the callee's whole-program run creates no allocation outside its
    own slots (`runLoop_valid`: entered functions without slots, `baseNoAlloc`; with slots,
    `runLoop_allocs`). A program callee with an outgoing area of its own is covered by 2.
-4. *Direct self-recursion*: handled through `cargo fv`'s alias, as two distinct functions with
-   the same body: `P` contains `r` (its self-call renamed to `r__fvself`, as `cargo fv` emits)
-   and `r__fvself` (`r`'s body and signature under the alias name, its self-call naming `r`);
-   the two call each other, so `raCall` (return address outside the *callee's* code) holds and
-   no premise changes. Trusted: the real binary has one copy (the linker resolves `r__fvself` to
-   `r`); the theorem is about the two-copy layout. Refining `raCall` for a single copy needs the
-   linked call to find the callee's return without the "return address outside its code"
-   argument (`retStuck`): an M6 invariant that no intermediate state of an activation is at a
-   post-call address with the entry `sp` (not done).
+4. *Direct self-recursion, one copy* (agent/link-scope2): `cargo fv`'s alias as a program call.
+   `P` contains `r` (its self-call renamed to `r__fvself`, as `cargo fv` emits) and `r__fvself`
+   (`r`'s body and signature under the alias name, its self-call naming `r`), compiled to the
+   same words and loaded at `r`'s address (`A r__fvself` and `A r` share `base` and `fb.words`;
+   one copy in the image, as the linker resolves `r__fvself` to `r`). Each call returns into the
+   callee's own code, so the linked call cannot find the return by "past it the machine stops"
+   (`retStuck`). Instead:
+   * M6 gives a trace (`regLevelCorrect_world`'s last clause, `PostTrace` in
+     `backend_correct_world(_ni)` and `LinkSys.Thm`): every state of an activation's run before
+     its return, but the entry, that is at an address after a call of its code (`PostCall`) has
+     the body's `sp`, `frameDrop` below the entry `sp` (every realisation lemma gives `RL.Good`
+     for the states of its run: a state after a non-call line is no post-call address,
+     `RL.good_succ`; after a call the callee contract gives the body's `sp`).
+   * `RetOf` also requires the caller's `sp`, and `linkedCall` takes the **first** return
+     (`firstNat`). `linkedCall_eq`: with the return address outside the callee's code, an
+     earlier return is impossible by `retStuck`; with it after a call of the callee's code and
+     not at its entry (`RaOk`), an earlier return would be a post-call state with the entry `sp`,
+     which the trace excludes (`frameDrop > 0`: `lowerRFunc` always builds a frame).
+   * `raCall`/`raBlr` are weakened to `RaOk` (outside the callee's code, **or** `CallPc` of the
+     callee's code with `pc + 4 ≠ base`); `CallerOk.ra`, `progCall`, `progOsCore` take `RaOk`;
+     `MachEntry.abi`/`ActEntry.abi` are `AbiCall` (no return address outside the code).
+   The witness checks it per call (`raOkB`, `raCallB_sound`) and states the shared base and words
+   and that the calls of `r` and `r__fvself` return into each other's code (`oneCopyB`). For a
+   crate, `r__fvself` resolves to `r` as a program call (not a base extern). Not covered: a
+   function calling itself under its own name (excluded at the CLIF level, `InSubset (P.only f)`),
+   recursion through a pointer.
 5. *Indirect calls between program functions* (`call_indirect`, `try_call_indirect`; and the
    `blr` of a call through the GOT). `Ok.noBlr` and `Linkable`'s indirect-call exclusion are
    gone (`Clif.LinkFree` excludes only `return_call`; `Clif.IndFree` is separate, still required
@@ -938,6 +961,11 @@ theorem backend_correct_program_witness :
     fR ∈ (L F0).P.funcs ∧ fRS ∈ (L F0).P.funcs ∧ (∃ info, (L F0).ProgSite fF info fR) ∧
     (∃ info, (L F0).ProgSite fR info fRS) ∧ (∃ info, (L F0).ProgSite fRS info fR) ∧
     fRS.name = fR.name ++ "__fvself" ∧ fRS.blocks = fR.blocks ∧ fRS.sig = fR.sig ∧
+    (A fRS).base = (A fR).base ∧ (A fRS).fb.words = (A fR).fb.words ∧
+    (∃ pc, CallPc (A fR).fa (A fR).base pc ∧
+      ∃ k < (A fRS).fb.words.size, pc + 4 = (A fRS).base + BitVec.ofNat 64 (4 * k)) ∧
+    (∃ pc, CallPc (A fRS).fa (A fRS).base pc ∧
+      ∃ k < (A fR).fb.words.size, pc + 4 = (A fR).base + BitVec.ofNat 64 (4 * k)) ∧
     fT ∈ (L F0).P.funcs ∧ fU ∈ (L F0).P.funcs ∧ (∃ info, (L F0).ProgSite fF info fT) ∧
     fT.slots ≠ [] ∧ (∃ info, (L F0).ProgSite fF info fU) ∧ (∃ info, (L F0).ProgSite fU info fK) ∧
     (RAFrame.compute (A fU).vcp (A fU).rf).intBase ≠ 0 ∧ (L F0).NeedSlots ∧ (L F0).NeedNI ∧
@@ -970,22 +998,22 @@ environment). The second theorem discharges the entry premises too (`AbiEntry`, 
 `sp0 - 32`, `StackArgsAvoid`, `Rel.holds` (the slot's allocation outside `F0`, `SlotRel`,
 `OutRel` of the 16-byte outgoing area), `hpl`, the returning CLIF run (with the oracle: `t`'s
 slot at its frame address), `native_decide`: `entryFactsB_true`, `callChainB_true`,
-`slotChainB_true`, `vtChainB_true`, `gotChainB_true`) for `f` on `41` at depth `M0 = 100` and applies
+`slotChainB_true`, `vtChainB_true`, `gotChainB_true`, `oneCopyB_true`) for `f` on `41` at depth `M0 = 100` and applies
 `backend_correct_program_returned`. Axioms: standard plus the `_native` axioms of `names`,
 `okB_true`, `entryFactsB_true`, `callChainB_true`, `slotChainB_true`, `vtChainB_true`,
-`gotChainB_true` (and the existing
+`gotChainB_true`, `oneCopyB_true` (and the existing
 `bv_decide`/`native_decide` ones of the backend proofs). The witness found the former `raCall`
 (the return address of every call outside the code of **every** function of `P`, including the
 caller's own) unsatisfiable for every program with a call; it is now stated for the callees of
 the caller's call sites (`LinkSys.ProgSite`).
 
-### Crate-level instance (2026-10-03, `agent/crate-check`)
+### Crate-level instance (2026-10-04, `agent/crate-check`)
 
 `backend_correct_program` for a real crate built by `cargo fv`: `LinkSys.Ok` is decided per
 crate on the build's own data, by a general checker with a soundness proof
-(`FV/E2E/LinkCheck.lean`, namespace `E2E.LinkCheck`), and the generated proof file states the
-theorem for the crate's functions (`FVTest/Crates/*.lean`; how to run it: `docs/USAGE.md`,
-"Proving a crate").
+(`FV/E2E/LinkCheck.lean`, namespace `E2E.LinkCheck`), and the generated proof states the
+theorem for the crate's functions (the package `crate-proofs/`, `Crates/*.lean`; how to run it:
+`docs/USAGE.md`, "Proving a crate").
 
 ```lean
 structure FnInput where clif : String; ra : String; k : Nat := 0; j : Nat := 0
@@ -995,11 +1023,16 @@ structure LinkInput where
   syms : List (String × Nat)      -- the CLIF image's symbols (`L.syms`)
   raStar : Nat
   D : Nat
+  aliases : List (String × String) := []   -- cargo fv's self-call aliases (f__fvself, f)
 structure BaseEnv where           -- everything outside the program
   env : Clif.Env; call : Option String → List CV → Arm.ArmState → Option (List CV × Arm.ArmState)
   tp : BitVec 64; tlsFlags : String → Arm.ArmState → Arm.PState; hooks : ArmHooks
 def LinkSys.ofInput (I : LinkInput) (B : BaseEnv) (F : BitVec 64 → Prop) : LinkSys
 def okB (I : LinkInput) : Bool
+def globalB (I : LinkInput) : Bool                     -- the program's checks
+def fnsB (I : LinkInput) (fs : List FnInput) : Bool    -- the per-function checks of a slice
+theorem okB_of (hg : globalB I = true) (hf : fnsB I I.funcs = true) : okB I = true
+theorem fnsB_append : fnsB I (l₁ ++ l₂) = (fnsB I l₁ && fnsB I l₂)
 structure BaseOk (L : LinkSys) : Prop      -- the base environment's premises of `LinkSys.Ok`
 theorem okB_sound (hI : okB I = true) (hB : BaseOk (LinkSys.ofInput I B F))
     (hF : ∀ a, (LinkSys.ofInput I B F).Img a → F a) : (LinkSys.ofInput I B F).Ok
@@ -1015,41 +1048,52 @@ theorem baseOk_closed (htls : ∀ g ∈ (progOf I.results).funcs, hasTls g = fal
 `i128`-legalised as `lean-backend` does (`FnInput.func`); `A g` is the pipeline run in Lean
 on them (`pipe`: `lowerFunction`, `prepare`, `parseRAOut`/`buildRFunc` of the recorded
 `lean-regalloc` output, `lowerRFunc`, `emitFunc`, `layout`; `I.results`, looked up by name,
-`artOf`), loaded at the function's link-map address, so `Compiled` follows from the pipeline's
-result (`pipe_spec`) and is not assumed; `base`, `Xb.call`, `Xb.tp`, `Xb.tlsFlags`, `Hb` are
-the base environment's; `Xb.sym n off` is `n`'s link-map address plus `off` (`0` for a name
-outside the map); `L.syms` is `I.syms`; the code image `Img` is the compiled words' addresses
-and `imgMem` their bytes (`memT`); `raStar`, `D` from the input.
+`artOf`), loaded at the function's link-map address (an alias at its function's: `baseOf`), so
+`Compiled` follows from the pipeline's result (`pipe_spec`) and is not assumed; `base`,
+`Xb.call`, `Xb.tp`, `Xb.tlsFlags`, `Hb` are the base environment's; `Xb.sym n off` is `n`'s
+link-map address plus `off` (`0` for a name outside the map); `L.syms` is `I.syms`; the code
+image `Img` is the compiled words' addresses and `imgMem` their bytes (`memT`); `raStar`, `D`
+from the input.
 
-**The checker** (`okB`, `okR`): per function (`staticChks ++ linkChks`, each check named by
-the premise it discharges): the pipeline succeeds, `lowerCheck`, `prepCheck`, `checkAlloc`
+**Recursion, one copy.** A directly recursive `f` calls itself through `cargo fv`'s alias
+`f__fvself`, which the linker resolves to `f`. Since agent/link-scope2's one-copy recursion
+(`RaOk`), the alias is a function of the program: `link-check` adds it to `P` with `f`'s body
+(its self-call naming `f`) at `f`'s address (`aliases`, `baseOf`): one copy of the code, the two
+calling each other, each call returning into the callee's own code (`raOkB`, the second case of
+`RaOk`). The recursive call is a program call, not a base extern, so its contract is no longer
+a base premise. The alias has no symbol in the executable; `addrs` gives it a fresh address that
+no other symbol has (only `symInj` reads it). `fv-demo`'s recursive function is covered this way.
+
+**The checker** (`okB`, `okR`): per function (`chks = staticChks ++ linkChks`, each check named
+by the premise it discharges): the pipeline succeeds, `lowerCheck`, `prepCheck`, `checkAlloc`
 (`compiled`), `FormsCovered`, `tryRets`/`blrTry`, `sretRets`, `outFits`, `argRegs`,
 `calleeFrame`/`slotFits`, `callRegs`/`blrRegs` (per call site: a `bl` of a function of `P`
-passes its ABI registers; a `bl` of an extern outside `P` needs nothing; a `blr` site,
-`blrOk`), `declSig`, `entryRegs`, `fits`, `raCall`/`raBlr` (the return address of every call
-is outside every other function's code, an interval check), `depth`, `free`, `subset`
+passes its ABI registers; a `bl` of an extern outside `P` needs nothing; a `blr` site, `blrOk`,
+for every function it may enter, `LinkSys.BlrTo`: at a call through the GOT, `gotOf`/`gotOf_sound`
+of agent/link-scope2's `GotFlow`, only the GOT symbol's), `declSig`, `entryRegs`, `fits`,
+`raCall`/`raBlr` (`raOkB`: the return address of every call is outside every other function's
+code, an interval check, or after a call of that function's own code), `depth`, `free`, `subset`
 (clif-subset-v2 E, no direct self-call, ABI and indirect-call signatures),
-`indScope`/`indNoSym`/`indSig`; for the program (`globalChks`): distinct names, the image reads
-back word by word (`imgB`, which also rejects overlapping or misaligned code), `raStar`,
-`symInj` (every function's link-map address is nonzero and no other map entry's), `symOk` (the
-CLIF image's symbols are at their link-map addresses), `Clif.SymInj` of the names with an
-address (when some function has an indirect call), `addrSlots`. `okB_sound` builds every field
-of `LinkSys.Ok` from them (`Facts`, `facts`, the soundness lemmas of the witness's checks,
+`indScope`/`indNoSym`/`indSig`; for the program (`globalChks`, `globalB`): distinct names, the
+image reads back word by word (`imgB`, which also rejects overlapping or misaligned code),
+`raStar`, `symInj` (every function's link-map address is nonzero and no other map entry's),
+`symOk` (the CLIF image's symbols are at their link-map addresses), `Clif.SymInj` of the names
+with an address (when some function has an indirect call), `addrSlots`. `okB_sound` builds every
+field of `LinkSys.Ok` from them (`Facts`, `facts`, the soundness lemmas of the witness's checks,
 generalised), except `imgF` (`hF`) and the base fields. `diag`/`diagR` is the diagnostic version
 (the failing checks by function; `diagR_nil`: empty implies `okR`). Only standard axioms
-(`#print axioms E2E.LinkCheck.okB_sound`).
+(`#print axioms E2E.LinkCheck.okB_sound`, `okB_of`).
 
 **What stays a premise** (`BaseOk`), exactly the fields of `LinkSys.Ok` about the base
 environment, gated as there: `baseNoAlloc`, `keepSyms` (`Clif.IndScope.keep`), `baseOs`,
 `basePc`, `baseExt`, `baseX`, `baseXI`, `baseTls`, `baseTry`, `baseNI`, `baseTlsNI`,
 `baseKeepsPlace`, `baseKeepsAllocs`: the contracts of std (panics, the allocator, formatting),
-of other crates' code and cg_clif fallbacks, of the runtime (`memcpy`, …), of TLS, and of a
-recursive function's self-call alias (below). With `hF` (the code is outside the world) and the
-entry premises of `backend_correct_program`, they are the premises of the crate's theorem. They
-are satisfiable: `baseOk_closed`, for the closed base environment `closedBase` (no extern
-outside the program has a semantics, calls outside it continue at the next instruction), for
-every input without `tls_value`; the crate's theorem then covers the runs that call nothing
-outside the program.
+of other crates' code and cg_clif fallbacks, of the runtime (`memcpy`, …), and of TLS. With `hF`
+(the code is outside the world) and the entry premises of `backend_correct_program`, they are the
+premises of the crate's theorem. They are satisfiable: `baseOk_closed`, for the closed base
+environment `closedBase` (no extern outside the program has a semantics, calls outside it
+continue at the next instruction), for every input without `tls_value`; the crate's theorem then
+covers the runs that call nothing outside the program.
 
 **Tooling.** `cargo fv build|test --keep-temps` keeps per codegen unit `fv-link.json`: per
 Lean-compiled function the CLIF file `lean-backend` compiled (with the self-call alias, or the
@@ -1061,53 +1105,94 @@ directory: the CLIF renamed to the linked symbols (local symbols renamed by the 
 `c_LdataN` → `__fv_<tag>_LdataN`), the functions at their `__fvlean$` marker in the map, the
 other referenced names at their address in the executable's symbol table, and each function's
 bytes from the executable. `lake exe link-check` completes the input (`syms`: every `symbol`
-global value and `func_addr` target; `D`: the largest frame; `raStar = 8`), prints the failing
-checks per function and premise with details, prunes (`--prune`: the failing functions and,
-transitively, their callers, so the rest is closed under calls and no function of the crate
-becomes a base extern), compares the executable's bytes with the compiled words (outside
-relocated fields) and every `bl` target with the link map (an untrusted check of the object
-writer, the merge and the linker: no difference on any surveyed crate), and with `--lean` writes
-the proof file: the input as string literals, `okB_input : okB input = true := by
-native_decide`, `link_ok`, `noTls`/`base_closed` (without `tls_value`), `entries_present`,
-and `correct_i : CrateStmt input "<name>"` per entry.
+global value and `func_addr` target; `D`: the largest frame; `raStar = 8`; the self-call
+aliases), prints the failing checks per function and premise with details, prunes (`--prune`:
+the failing functions and, transitively, their callers, so the rest is closed under calls and no
+function of the crate becomes a base extern), compares the executable's bytes with the compiled
+words (outside relocated fields) and every `bl` target with the link map (an untrusted check of
+the object writer, the merge and the linker: no difference on any surveyed crate), and with
+`--lean` writes the proof: the input as string literals (`fnK`, `sliceK`: 32 functions each,
+`input`), `sliceK_ok : fnsB input sliceK = true` and `globalB_input` by `native_decide`,
+`okB_input` from them (`okB_of`, `fnsB_append`), `link_ok`, `noTls`/`base_closed` (without
+`tls_value`), `entries_present`, and `correct_i : CrateStmt input "<name>"` per entry. Up to 32
+functions it is one file, beyond that `NAME/Input.lean`, one module per slice
+(`NAME/SliceK.lean`) and `NAME.lean` importing them.
 
-**Delivered** (`FVTest/Crates/`, from `examples/survey`'s `tests/values.rs` executables;
-after merging agent/link-scope): `AArith.lean` (all 58 Lean-compiled functions of `a_arith`),
-`GU128.lean` (all 19 of `g_u128`; its `i128` functions are the `Opt.Legalize128` legalisations,
-so the theorem is about the legalised program, as in "Widening" 6), `HDynGeneric.lean` (all 43
-of `h_dyn_generic`: `dyn` dispatch through vtables, `fn` pointers, closures). The three build in
-about 30 s. Axioms: `link_ok`: standard plus `okB_input._native.native_decide.ax_1_1`;
-`correct_i`: those and the backend's existing `bv_decide`/`native_decide` ones (`dbm_sxtb`,
-`dbm_sxth`, the `decode_armBits_*`); `okB_sound`, `crate_correct` (generic): standard plus the
-backend's.
+**Running the checker as compiled code.** `native_decide` (Lean 4.34: `evalConst` of an
+auxiliary definition, then an axiom `…_native.native_decide.ax_1_1`) runs a definition natively
+when its module's compiled code is loaded, else in the IR interpreter. `precompileModules` on
+the crate library would load the shared library of the whole `FV` library, which cannot be built
+(some `bv_decide` proof modules of `FV.Opt.Proof` produce C files of up to 3.5 GB, more than
+Clang accepts), and Lake's per-module shared libraries are not linked against their imports
+on Linux, so loading `FV.E2E.LinkCheck`'s alone fails. So the proofs live in a separate Lake
+package, `crate-proofs/` (`require fv from ".."`), whose custom target `fvcheck` links the
+object files of `FV.E2E.LinkCheck` and of the 292 modules it imports (151 MB of C, already
+compiled for `link-check`) into one shared library, and whose library `Crates` loads it while
+elaborating (`dynlibs`); Lake rebuilds it when any of those modules changes. Within one file the
+`native_decide` theorems run one after another (`nativeEqTrue` compiles and evaluates with
+`Elab.async` off), so a large crate's checks are split into slice modules that Lake builds in
+parallel.
+
+**Timing** (this machine, 32 cores; `link-check --prune` including the image comparison; `lake
+build` of `crate-proofs` from a clean `Crates` build, the FV oleans present):
+
+| | before | after |
+| --- | --- | --- |
+| `link-check --prune`, nine survey crates | 0.5–17 s each | 0.2–1.1 s each |
+| `link-check --prune`, `fv-demo` (550 functions) | 21 min | 7.4 s |
+| `GU128` proof (19 functions, one file), one `lean` | 17.4 s (interpreted) | 1.6 s |
+| one slice of `fv-demo` (32 functions), one `lean` | 60.5 s (interpreted) | 4.2 s |
+| `fv-demo` proof (496 functions) | 379 functions did not finish in 40 min (interpreted, one `native_decide`) | 16 slices and the main module, 6–11 s each |
+| all ten proofs, `lake build` in `crate-proofs` | — | 18.7 s wall |
+
+Most of the old checker time was not the validators: `memT` (a `let` before a `fun`) compiles to
+a function of the address that rebuilt the word map on every byte read, so `imgB` was quadratic in
+the code size (10.6 s for `d_loops_iters`' 4424 words, minutes for `fv-demo`'s 24000); `imgB`
+now builds the map once (`memOfMap`), 10 ms.
+
+**Delivered** (`crate-proofs/Crates/`, from `examples/survey`'s `tests/values.rs` executables
+and `examples/fv-demo`'s binary): every Lean-compiled function of the nine survey crates —
+`AArith` (58), `BSlices` (59), `CStructsEnums` (27), `DLoopsIters` (117), `EOptionResult` (48),
+`FCrypto` (40), `GU128` (19; its `i128` functions are the `Opt.Legalize128` legalisations, so the
+theorem is about the legalised program, as in "Widening" 6), `HDynGeneric` (43: `dyn` dispatch
+through vtables, `fn` pointers, closures), `IAlloc` (49) — and `FvDemo`: 495 of `fv-demo`'s 550
+functions plus its recursive function's alias (496), closed under calls. Axioms of `link_ok`:
+standard plus `globalB_input._native.native_decide.ax_1_1` and one `sliceK_ok._native…` per
+slice; of `correct_i`: those and the backend's existing `bv_decide`/`native_decide` ones
+(`dbm_sxtb`, `dbm_sxth`, the `decode_armBits_*`); `okB_sound`, `okB_of`: standard.
 
 **Survey** (`link-check --prune`, each crate's codegen unit in its `values` test executable;
-`fv-demo`: its binary, two units), before and after agent/link-scope (`LinkSys.MayCall`,
-program-wide indirect resolution, call-result clauses restricted to the site's defs):
+`fv-demo`: its binary, two units), after agent/link-scope (`MayCall`, program-wide indirect
+resolution, call-result clauses restricted to the site's defs) and after agent/link-scope2
+(`BlrTo`: a call through the GOT constrains only its symbol's function; one-copy recursion):
 
-| crate | functions | pass before | pass after | failing after (functions) |
+| crate | functions | pass (link-scope) | pass (link-scope2) | failing (functions) |
 | --- | --- | --- | --- | --- |
-| a_arith | 58 | 54 | 58 | — |
-| b_slices | 59 | 47 | 59 | — |
-| c_structs_enums | 27 | 25 | 27 | — |
-| d_loops_iters | 117 | 107 | 117 | — |
-| e_option_result | 48 | 45 | 48 | — |
-| f_crypto | 40 | 34 | 40 | — |
+| a_arith | 58 | 58 | 58 | — |
+| b_slices | 59 | 59 | 59 | — |
+| c_structs_enums | 27 | 27 | 27 | — |
+| d_loops_iters | 117 | 117 | 117 | — |
+| e_option_result | 48 | 48 | 48 | — |
+| f_crypto | 40 | 40 | 40 | — |
 | g_u128 | 19 | 19 | 19 | — |
-| h_dyn_generic | 43 | 34 | 43 | — |
-| i_alloc | 49 | 39 | 48 | `blrRegs` 1 |
-| fv-demo | 550 | 379 | 482 | `indSig` 13, `blrRegs` 6, `blrTry` 4 (+51 callers) |
+| h_dyn_generic | 43 | 43 | 43 | — |
+| i_alloc | 49 | 48 | 49 | — |
+| fv-demo | 550 | 482 | 495 (+ the alias) | `indSig` 13, `blrRegs` 3, `blrTry` 3 (+42 callers) |
 
-**Blockers on real code** (after agent/link-scope):
+**Blockers on real code** (after agent/link-scope2), all at genuine indirect calls
+(`call_indirect` of a `fn` pointer or a vtable slot, not through the GOT):
 
 1. *`indSig` with `MayCall`* (`fv-demo` 13): a function with indirect calls may call every
    function with a link-time address (`MayCall`), so every such function must be register-only
    and without `sret`; `fv-demo` has address-taken functions (vtable methods) with an `sret` or
    stack-passed parameter, so every indirect caller fails, whatever its call signatures. Needs
    `MayCall` restricted by the call's signature (`indSigs`), or `indSig` stated per signature.
-2. *`blrRegs`' argument registers and `blrTry` at `blr` sites* (`i_alloc` 1, `fv-demo` 10):
-   required for every function the site may call with its arity, not only a GOT site's symbol
-   (agent/link-scope2's `BlrTo`/`GotV` restricts a GOT site to its symbol; not merged here yet).
+2. *`blrRegs`/`blrTry` at `call_indirect`* (`fv-demo` 3 + 3, all also failing `indSig`): the
+   `call_indirect`/`try_call_indirect` sites of these functions may enter two address-taken
+   functions with as many register parameters but an `sret` or stack-passed parameter (other
+   argument registers, fewer results); the same restriction by signature would exclude them.
+   With link-scope, `i_alloc` 1 and `fv-demo` 10 (`blrRegs` 6, `blrTry` 4) failed; the GOT sites
+   among them pass with `BlrTo`, the 6 left are at `call_indirect`.
 3. *Callers of failing functions*: dropped by `--prune` so that the rest is closed under calls.
 
 Before agent/link-scope, `blrRegs` at GOT calls of base externs (panics without results next to
@@ -1119,30 +1204,20 @@ data objects the program reaches, `data_syms`).
 Not blocking: `try_call` between program functions and to base externs (95 `fv-demo` functions
 and every survey crate's landing-pad code pass), `sret` (121 `fv-demo` functions), data objects
 (`symbol_value`: in `syms`, their contents are entry premises: the CLIF entry memory), std calls
-(base premises), stack-passed and `i128` arguments.
-
-**Recursion is covered only modulo a base premise.** A directly recursive function (one in
-`fv-demo`) passes, but only because its self-call names `cargo fv`'s alias `f__fvself`, which is
-not a function of `P` and has no address: in the crate's theorem the recursive call is a call of
-a base extern, and its contract (that `f__fvself` behaves as `f`) is a base premise (`baseX`,
-`baseOs`, …; `closedBase` gives it no semantics). The binary has one copy (the linker resolves
-the alias to `f`); linking it as one copy is agent/link-scope2's.
+(base premises), stack-passed and `i128` arguments, direct recursion (one copy, above).
 
 **Trusted** in addition to `backend_correct_program`'s: that `cargo fv` records the file it
 passed to `lean-backend` and the output of the `lean-regalloc` run it made (a different
 allocation would only make `checkAlloc` or the image comparison fail), the merge's renaming,
 and the link map's addresses; `imgMem` is the unrelocated encoding (`bl`, `adrp`, GOT and `lo12`
 fields are zero), while the process image has the relocated words (`link-check` compares the
-rest and the `bl` targets: no difference in the 17000 words of the nine survey crates).
-Checker time is dominated by `lowerCheck` (1–50 s per survey crate, about 13 min for
-`fv-demo`'s 550 functions, 25 min for its whole `cargo fv link-proof --prune` run); `native_decide` repeats it
-once, in Lean's interpreter (no precompiled modules): a proof file for `fv-demo`'s 379 passing
-functions did not finish in 40 minutes.
+rest and the `bl` targets: no difference in the 44000 words of the ten crates); `native_decide`
+(Lean's compiler, now also its C backend and the `fvcheck` shared library Lake links from the
+same sources, instead of the IR interpreter).
 
 Not done: an entry-level instance for a crate function (the entry premises of `ProgStmt` for
 concrete arguments, as `backend_correct_program_witness` does for `f 41`); the witness
-(`NonVacuityLink.lean`) keeps its own copy of the checks (moving it onto `LinkCheck` was left
-until LinkScope's changes to it land).
+(`NonVacuityLink.lean`) keeps its own copy of the checks.
 
 ### Non-vacuity (2026-10-02, `agent/callee-fix`, `FV/E2E/NonVacuity.lean`)
 

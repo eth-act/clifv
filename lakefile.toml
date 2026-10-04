@@ -20,13 +20,6 @@ root = "FVTest.Arm.Cosim.Main"
 name = "clif-filetest"
 root = "FVTest.Clif.Filetest"
 
-# Crate-level instances (`cargo fv link-proof` / `lake exe link-check --lean`): their
-# `native_decide` proofs run FV's checker as compiled code, loaded from the shared library of
-# `FV.E2E.LinkCheck` (and of the modules it imports).
-[[lean_lib]]
-name = "Crates"
-globs = ["Crates.+"]
-
 [[lean_lib]]
 name = "Corpus"
 srcDir = "corpus/dsl"

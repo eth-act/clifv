@@ -310,6 +310,22 @@ structure AbiEntry (fb : FnBin) (base ra : BitVec 64) (s : Arm.ArmState) : Prop 
   spAligned : (spv s).toNat % 16 = 0
   fits : base.toNat + 4 * fb.words.size ≤ 2 ^ 64
 
+/-- The ABI entry of a call (`AbiEntry` without the return address outside the code): what the
+register-level proof uses. A linked call of a function into its own code (one copy of a
+recursive function) enters its callee this way. -/
+structure AbiCall (fb : FnBin) (base ra : BitVec 64) (s : Arm.ArmState) : Prop where
+  program : s.program = fb.program base
+  code : ∀ k w, fb.words[k]? = some w → Arm.read_mem_bytes 4 (base + BitVec.ofNat 64 (4 * k)) s = w
+  pc : Arm.r .PC s = base
+  err : Arm.r .ERR s = .None
+  lr : xreg 30 s = ra
+  spAligned : (spv s).toNat % 16 = 0
+  fits : base.toNat + 4 * fb.words.size ≤ 2 ^ 64
+
+theorem AbiEntry.toCall {fb : FnBin} {base ra : BitVec 64} {s : Arm.ArmState}
+    (h : AbiEntry fb base ra s) : AbiCall fb base ra s :=
+  ⟨h.program, h.code, h.pc, h.err, h.lr, h.spAligned, h.fits⟩
+
 /-- A stack-passed argument `v` at offset `off` of the caller's outgoing area at `sp` of `s`
 (AAPCS64): its `ty.bytes` bytes are inside the address space, not code, and hold its bits
 (little-endian). -/

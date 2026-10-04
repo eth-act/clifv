@@ -30,7 +30,7 @@ body-entry world `w₀`. -/
 structure ActEntry (vcp : VCode) (rf : RFunc) (af : AFunc) (fa : FnAsm) (fb : FnBin) (K : Nat)
     (F G : BitVec 64 → Prop) (X : ExtSem) (H : ArmHooks) (base ra : BitVec 64)
     (s w₀ : Arm.ArmState) : Prop where
-  abi : AbiEntry fb base ra s
+  abi : AbiCall fb base ra s
   stack : StackAvail K af s
   gfree : ∀ a, G a → ¬ StackBelow (frameDrop af + K) (spv s) a
   hF : frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s = F
@@ -51,6 +51,15 @@ structure ActRet (ra : BitVec 64) (F G : BitVec 64 → Prop) (us : List (Reg × 
   fields : ∀ f, ¬ Masked f → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → Arm.r f t = Arm.r f w
   gkeep : ∀ a, G a → t.mem a = s.mem a
   prog : t.program = s.program
+
+/-- **No return into the code before the return**: every state of the run of `M` from `s`
+before step `n`, but the entry, at the address after a call of `fa` (laid out at `base`) has the
+body's `sp` (`frameDrop af` below the entry `sp`). A linked call of a function into its own code
+(one copy of a recursive function) tells the callee's return from its own calls' returns by it. -/
+def PostTrace (fa : FnAsm) (af : AFunc) (base : BitVec 64) (M : Arm.ArmState → Arm.ArmState)
+    (s : Arm.ArmState) (n : Nat) : Prop :=
+  ∀ i, 0 < i → i < n → PostCall fa base (Arm.r .PC (runX M i s)) →
+    spv (runX M i s) = spv s - BitVec.ofNat 64 (frameDrop af)
 
 /-- **The memory relation of an activation inside a linked program**: `Rel.holds`, the world's
 `sp` is the body's `sp` `c` (the VCode run never moves it), and no model error. -/
@@ -195,7 +204,8 @@ theorem backend_correct_world {p : Clif.Program} {f : Clif.Function} {k : Nat} {
         PrefixHold vals outs ∧ MemRel F syms cm w ∧ vc.RetsSite us ∧
         ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
           ActEntry vcp rf af fa fb K F G X H base ra s w₀ →
-          ∃ n, ActRet ra F G us outs w s (runX (ArmStepX X H fa) n s)) ∧
+          ∃ n, ActRet ra F G us outs w s (runX (ArmStepX X H fa) n s) ∧
+            PostTrace fa af base (ArmStepX X H fa) s n) ∧
     (∀ c', Clif.runLoop env p fuel cs = .trapped c' →
       ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
         ActEntry vcp rf af fa fb K F G X H base ra s w₀ →
@@ -217,9 +227,9 @@ theorem backend_correct_world {p : Clif.Program} {f : Clif.Function} {k : Nat} {
       obtain ⟨b, k, ρ, w₁, vb, ops, outs', -, hvb, hk, -⟩ := hv
       exact ⟨b, vb, k, hvb, hk⟩
     refine ⟨us, outs, w, hus, hlen, hhold, hmemR, hrs, fun H G base ra s he => ?_⟩
-    obtain ⟨n, h1, h2, h3, h4, h5, h6⟩ :=
+    obtain ⟨n, h1, h2, h3, h4, h5, h6, h7⟩ :=
       (hM6 H G base ra s he).1 us outs w (vReturns_gotV (hP.1 _ _ _ hv))
-    exact ⟨n, ⟨h1, h2, h3, h4, h5, h6⟩⟩
+    exact ⟨n, ⟨h1, h2, h3, h4, h5, h6⟩, h7⟩
   · exact (hM6 H G base ra s he).2 c' (vTraps_gotV (hP.2 c' (hI.2 c' hrun)))
 
 /-- An `ActRet` return is an `ArmRefines` return: the results' low bits and the live CLIF bytes
