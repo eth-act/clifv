@@ -83,6 +83,7 @@ author's estimate, not measured), **Risk**.
 
 ### V1. `lowerCheck` completeness
 
+- **Claimed (2026-10-05):** in progress, https://github.com/eth-act/clifv/issues/4, branch `agent/lower-complete`.
 - **Now:** `lowerCheck f vc = true` is `Compiled.lowerOk`. Not attempted; feasibility note in
   `docs/DEFERRED.md` "Completeness of the lowering validator `lowerCheck`", estimate 6–10k lines.
 - **Deliver:** `lowerCheck_complete : Dominated f → InScope f → lowerFunction f = .ok vc → lowerCheck f vc = true`,
@@ -104,6 +105,7 @@ author's estimate, not measured), **Risk**.
 
 ### V2. `PrepDomain` of the lowering output
 
+- **Claimed (2026-10-05):** together with V1, https://github.com/eth-act/clifv/issues/4.
 - **Now:** `prepCheck_complete` needs `PrepDomain vc`; `prepDomainB` holds on all 1067 corpus/runtest
   functions, but nobody proved `lowerFunction` always produces it.
 - **Deliver:** `lowerFunction f = .ok vc → PrepDomain vc` (non-empty, labels = block indices, branch
