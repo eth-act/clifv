@@ -966,13 +966,58 @@ bytes. It is vacuous without program callees with slots (`NeedSlots`).
      indirect call of `y` has `s`'s parameter types, so `¬ IndTo fY fS` and the former
      `blrRegs` failed (`blrChainB_true`; `y` is not called by `f`, so `f 41 = 802` is unchanged).
    Not covered: an indirect call whose signature equals the CLIF types of a reachable function
-   with an `sret` parameter (CLIF's `call_indirect` checks types, not purposes: `(i64, i64)`
-   admits `(i64 sret, i64)`), unless the callee value is known (below, "Crate-level instance").
+   with an `sret` parameter (CLIF's `call_indirect` checked types, not purposes: `(i64, i64)`
+   admitted `(i64 sret, i64)`): Widening 11.
+11. *Indirect callees restricted by the parameter purposes* (2026-10-04, agent/sret-purpose).
+   Blocker: `fv-demo`'s two `catch_unwind` shims call `func_addr fn1` with the signature
+   `(i64, i64)` in their landing pads, and two address-taken vtable methods have the signature
+   `(i64 sret, i64)`: same types, so `IndSigMatch` admitted them and `indSig` (an `sret`
+   parameter) and `blrRegs` (x8/x0 against the site's x0/x1) failed.
+   * Semantics (trusted, a restriction): `Clif.stepCallIndirect` enters a function of the program
+     only when `Clif.Signature.abiMatch declared target.sig` (same parameter types **and
+     purposes**, same return types; it compared types only), else it is stuck. Cranelift requires
+     "the called function must match the specified signature" (`call_indirect`); a purpose
+     mismatch is another calling convention (the `sret` pointer in x8, not x0), so the runs
+     removed are calls violating that precondition. `docs/contracts/clif-subset.md`, 2026-10-04.
+     `Clif.callExternAt` (an extern at the address) is unchanged: an extern's semantics is
+     untyped, so there is no callee signature to compare.
+   * CLIF linking: `runLoop_linkN` takes the per-function environment `E` as a parameter: any
+     environment with `linkEnvN`'s names, its externs outside `P`, and its extern for every
+     function `h ≠ f` of `P` that `f` declares or that one of `f`'s indirect calls can enter
+     (`syms h.name ≠ none` and `∃ d, IndSig f d ∧ d.abiMatch h.sig`, `IndSig f d`: `d` is the
+     call-site signature of an indirect call of `f`). The whole-program run enters no other
+     function of `P`: at such an indirect call `stepCallIndirect` is stuck, which contradicts the
+     run's hypothesis. The linked machine uses `LinkSys.envR M g` (`linkEnvN` without the
+     functions of `P` that `g` may not reach, `MayCall`); `envOf` is `envR` with the
+     slot-placement guard (`step_envOf` is now an equality with `envR`, unconditional), and a step
+     under `envR` that is not stuck is `linkEnvN`'s (`EnvRestricts`, `step_of_restrict`), which
+     transfers `ActInv` and `TrapsExplicit` (`step_envOf_link`). `Thm` is about the run under
+     `envR`; `backend_correct_program`'s statement is unchanged (its `TrapsExplicit` premise is
+     still about `linkEnvN`).
+   * `LinkSys.IndSigMatch sig h := sig.abiMatch h.sig` (purposes and return types too; the former
+     type-only relation is `IndTyMatch`). `MayCall g n` for a function of `P` that `g` does not
+     declare now also needs `∃ sig ∈ indSigs g, IndSigMatch sig h`: weaker wherever `MayCall` is
+     a hypothesis (`raBlr`, `indSig`, `Callee`, so `NeedNI`/`NeedSlots`/`slotFits`/`calleeFrame`,
+     and `IndTo`, so `blrRegs`/`blrTry`). `Ok.indSig`'s hypothesis is `(∃ sig ∈ indSigs g,
+     IndSigMatch sig h) ∨ (DeclN g h.name ∧ ∃ sig ∈ indSigs g, IndTyMatch sig h)` (weaker: the
+     former `∃ sig, IndTyMatch sig h` follows from it): a declared function stays in `envOf` for
+     its direct calls, and the per-function run may enter it through a pointer with any
+     signature of its parameter types (`callExternAt` sees no purposes). `xCallsIndOk`/`xni` get
+     the disjunction from `MayCall` (`indReach`), and `IndTo` from `MayCall` alone (`indTo_of`).
+     `LinkSys.Ok` changes only by weakening.
+   * Checker: `LinkCheck.indSigB` (the disjunction above) in `indB`; `mayB` is unchanged (an
+     over-approximation of `MayCall`); `indToB` follows `IndSigMatch`. `fv-demo`: 551 of 551.
+   * Witness: `z(p, x, y)` calls `p` with the signature `(i64, i64)` (arguments in x0/x1); `s`
+     (`(i64 sret, i64)`, x8/x0) has an address and the same parameter types and number of results
+     (`IndTyMatch`), but not the purposes, so `¬ MayCall fZ fS.name` and `¬ IndTo fZ fS`
+     (`zChainB_true`); with the type-only relation, `indSig` (`s`'s `sret`) and `blrRegs` (this
+     `blr` site) failed on it. `v` no longer reaches `k` and `y` no longer reaches `s`
+     (`¬ MayCall`): no indirect call of theirs matches.
 
 **Non-vacuity** (`FV/E2E/NonVacuityLink.lean`, namespace `E2E.LinkWitness`): the closed program
-`P = {f, g, h, s, k, r, r__fvself, q, v, a2, w, t, u, m, d, e, y}` (`m`, `d`: the vtable dispatch of
+`P = {f, g, h, s, k, r, r__fvself, q, v, a2, w, t, u, m, d, e, y, z}` (`m`, `d`: the vtable dispatch of
 Widening 7; `e`: the GOT call of a base extern of Widening 8, not called by `f`; `y`: the indirect
-caller of Widening 10, not called by `f`) — the entry `f` (a stack slot, a 16-byte
+caller of Widening 10, `z` that of Widening 11, neither called by `f`) — the entry `f` (a stack slot, a 16-byte
 outgoing area)
 passes an `sret` pointer to its slot to `s` (which stores through it and returns the pointer),
 calls `k` with 9 arguments (the 9th on the stack), calls `g` by a `try_call` with a result
@@ -990,7 +1035,8 @@ which calls the method `m` it loads from it (`f 41 = 802`); `system_v` — parse
 legalised and
 compiled by the pipeline (`lowerFunction`, `prepare`, the `lean-regalloc` output for this file
 embedded as JSON and rebuilt by `parseRAOut`/`buildRFunc`, `checkAlloc`, `lowerRFunc`,
-`emitFunc`, `layout`), loaded at `0x70000` (`f`), `0x10000`…`0xF0000` and `0xF4000` (`e`),
+`emitFunc`, `layout`), loaded at `0x70000` (`f`), `0x10000`…`0xF0000`, `0xF4000` (`e`), `0xF6000`
+(`y`) and `0xF7000` (`z`),
 closed base environment (no extern outside `P` is defined, no TLS), the CLIF image's symbols: `q`
 and `m` at their bases and the vtable `vt` at `0xF8000` (`symsW`), depth `M0 = 100`. `t` and `u` make `NeedSlots` and `NeedNI` hold, so the
 premises they gate are discharged rather than vacuous (`baseNI`: `Xb.call` is undefined;
@@ -1005,7 +1051,8 @@ theorem backend_correct_program_witness :
     fQ ∈ (L F0).P.funcs ∧ fV ∈ (L F0).P.funcs ∧ (∃ info, (L F0).ProgSite fF info fV) ∧
     ¬ Clif.IndFree fV ∧ (∃ info, (A fV).vcp.CallSite info ∧ ∀ n, info.dest ≠ .sym n) ∧
     DeclN fV fQ.name ∧ (L F0).syms fQ.name = some 0x80000 ∧
-    (L F0).MayCall fV fK.name ∧ (∀ sig ∈ indSigs fV, ¬ LinkSys.IndSigMatch sig fK) ∧
+    (L F0).syms fK.name = some 0x40000 ∧ ¬ (L F0).MayCall fV fK.name ∧
+    (∀ sig ∈ indSigs fV, ¬ LinkSys.IndTyMatch sig fK) ∧
     ¬ (∃ bytes, sigParamBytes fK.sig = .ok bytes ∧ bytes.length ≤ 8) ∧
     fA2 ∈ (L F0).P.funcs ∧ fW ∈ (L F0).P.funcs ∧ (∃ info, (L F0).ProgSite fF info fW) ∧
     (∃ info, (L F0).ProgSite fW info fA2) ∧
@@ -1043,6 +1090,15 @@ theorem backend_correct_program_witness :
     (sigRets fS.sig).length = 1 ∧
     (∃ info t Lu Ld, (A fE).vcp.CallSite info ∧ info = ⟨.reg (.vreg t .int), retPairs Lu, callDefs Ld⟩ ∧
       GotV (A fE).vcp t "pz" ∧ (regLocs fS.sig).length = Lu.length ∧ Lu.map (·.2) ≠ regLocs fS.sig) ∧
+    fY ∈ (L F0).P.funcs ∧ ¬ Clif.IndFree fY ∧ (L F0).syms fS.name = some 0x30000 ∧
+    ¬ (L F0).MayCall fY fS.name ∧ ¬ (L F0).IndTo fY fS ∧
+    (∃ info t Lu Ld, (A fY).vcp.CallSite info ∧ info = ⟨.reg (.vreg t .int), retPairs Lu, callDefs Ld⟩ ∧
+      (regLocs fS.sig).length = Lu.length ∧ Lu.map (·.2) ≠ regLocs fS.sig) ∧
+    fZ ∈ (L F0).P.funcs ∧ ¬ Clif.IndFree fZ ∧
+    (∃ sig ∈ indSigs fZ, LinkSys.IndTyMatch sig fS ∧ sig.returns.length = fS.sig.returns.length) ∧
+    ¬ (L F0).MayCall fZ fS.name ∧ ¬ (L F0).IndTo fZ fS ∧
+    (∃ info t Lu Ld, (A fZ).vcp.CallSite info ∧ info = ⟨.reg (.vreg t .int), retPairs Lu, callDefs Ld⟩ ∧
+      (regLocs fS.sig).length = Lu.length ∧ Lu.map (·.2) ≠ regLocs fS.sig) ∧
     run0 = .returned [⟨.i64, 802#64⟩] (retMem run0) ∧
     ArmRefines (A fF).fb (A fF).base 8 ((L F0).mach M0 fF) s0 run0
 ```
@@ -1062,16 +1118,17 @@ environment). The second theorem discharges the entry premises too (`AbiEntry`, 
 `sp0 - 32`, `StackArgsAvoid`, `Rel.holds` (the slot's allocation outside `F0`, `SlotRel`,
 `OutRel` of the 16-byte outgoing area), `hpl`, the returning CLIF run (with the oracle: `t`'s
 slot at its frame address), `native_decide`: `entryFactsB_true`, `callChainB_true`,
-`slotChainB_true`, `vtChainB_true`, `gotChainB_true`, `oneCopyB_true`, `sigChainB_true`) for `f` on `41` at depth `M0 = 100` and applies
+`slotChainB_true`, `vtChainB_true`, `gotChainB_true`, `oneCopyB_true`, `sigChainB_true`,
+`blrChainB_true`, `zChainB_true`) for `f` on `41` at depth `M0 = 100` and applies
 `backend_correct_program_returned`. Axioms: standard plus the `_native` axioms of `names`,
 `okB_true`, `entryFactsB_true`, `callChainB_true`, `slotChainB_true`, `vtChainB_true`,
-`gotChainB_true`, `oneCopyB_true`, `sigChainB_true` (and the existing
+`gotChainB_true`, `oneCopyB_true`, `sigChainB_true`, `blrChainB_true`, `zChainB_true` (and the existing
 `bv_decide`/`native_decide` ones of the backend proofs). The witness found the former `raCall`
 (the return address of every call outside the code of **every** function of `P`, including the
 caller's own) unsatisfiable for every program with a call; it is now stated for the callees of
 the caller's call sites (`LinkSys.ProgSite`).
 
-### Crate-level instance (2026-10-04, `agent/crate-check`; `agent/crate-check3`)
+### Crate-level instance (2026-10-04, `agent/crate-check`; `agent/crate-check3`; `agent/sret-purpose`)
 
 `backend_correct_program` for a real crate built by `cargo fv`: `LinkSys.Ok` is decided per
 crate on the build's own data, by a general checker with a soundness proof
@@ -1134,13 +1191,14 @@ by the premise it discharges): the pipeline succeeds, `lowerCheck`, `prepCheck`,
 `calleeFrame`/`slotFits`, `callRegs`/`blrRegs` (per call site: a `bl` of a function of `P`
 passes its ABI registers; a `bl` of an extern outside `P` needs nothing; a `blr` site, `blrOk`,
 for every function it may enter, `LinkSys.BlrTo`: one it declares or that one of its indirect
-calls admits, `indToB` for `IndTo`; at a call through the GOT, `gotOf`/`gotOf_sound` of
+calls can enter, `indToB` for `IndTo`; at a call through the GOT, `gotOf`/`gotOf_sound` of
 agent/link-scope2's `GotFlow`, only the GOT symbol's), `declSig`, `entryRegs`, `fits`,
 `raCall`/`raBlr` (`raOkB`: the return address of every call is outside every other function's
 code, an interval check, or after a call of that function's own code), `depth`, `free`, `subset`
 (clif-subset-v2 E, no direct self-call, ABI and indirect-call signatures),
-`indScope`/`indNoSym`/`indSig` (`indSig` for the functions matching one of the caller's
-indirect-call signatures, `IndSigMatch`); for the program (`globalChks`, `globalB`): distinct
+`indScope`/`indNoSym`/`indSig` (`indSig` for the functions one of the caller's indirect calls
+can enter, `indSigB`: a matching signature, `IndSigMatch`, or declared with the parameter types,
+`IndTyMatch`); for the program (`globalChks`, `globalB`): distinct
 names, the image reads back word by word (`imgB`, which also rejects overlapping or misaligned
 code), `raStar`, `symInj` (every function's link-map address is nonzero and no other map
 entry's), `symOk` (the CLIF image's symbols are at their link-map addresses; with `symInj` they
@@ -1212,7 +1270,8 @@ build` of `crate-proofs` from a clean `Crates` build, the FV oleans present):
 | one slice of `fv-demo` (32 functions), one `lean` | 60.5 s (interpreted) | 4.2 s |
 | `fv-demo` proof (496 functions) | 379 functions did not finish in 40 min (interpreted, one `native_decide`) | 16 slices and the main module, 6–11 s each |
 | `fv-demo` proof (545 functions, crate-check3) | — | 18 slices and the main module, 3.0–4.6 s each |
-| all ten proofs, `lake build` in `crate-proofs` | — | 18.7 s wall (crate-check3, `fv-demo` with 545 functions: 12.9 s) |
+| all ten proofs, `lake build` in `crate-proofs` | — | 18.7 s wall (crate-check3, `fv-demo` with 545 functions: 12.9 s; sret-purpose, 551 functions: 13.3 s) |
+| `link-check --prune`, `fv-demo` (551 functions, sret-purpose) | — | 4.4 s |
 
 Most of the old checker time was not the validators: `memT` (a `let` before a `fun`) compiles to
 a function of the address that rebuilt the word map on every byte read, so `imgB` was quadratic in
@@ -1224,8 +1283,8 @@ and `examples/fv-demo`'s binary): every Lean-compiled function of the nine surve
 `AArith` (58), `BSlices` (59), `CStructsEnums` (27), `DLoopsIters` (117), `EOptionResult` (48),
 `FCrypto` (40), `GU128` (19; its `i128` functions are the `Opt.Legalize128` legalisations, so the
 theorem is about the legalised program, as in "Widening" 6), `HDynGeneric` (43: `dyn` dispatch
-through vtables, `fn` pointers, closures), `IAlloc` (49) — and `FvDemo`: 544 of `fv-demo`'s 550
-functions plus its recursive function's alias (545), closed under calls. Axioms of `link_ok`:
+through vtables, `fn` pointers, closures), `IAlloc` (49) — and `FvDemo`: all 550 of `fv-demo`'s
+functions plus its recursive function's alias (551; 544 + alias before agent/sret-purpose). Axioms of `link_ok`:
 standard plus `globalB_input._native.native_decide.ax_1_1` and one `sliceK_ok._native…` per
 slice; of `correct_i`: those and the backend's existing `bv_decide`/`native_decide` ones
 (`dbm_sxtb`, `dbm_sxth`, the `decode_armBits_*`); `okB_sound`, `okB_of`: standard.
@@ -1235,20 +1294,24 @@ slice; of `correct_i`: those and the backend's existing `bv_decide`/`native_deci
 resolution, call-result clauses restricted to the site's defs) and after agent/link-scope2
 (`BlrTo`: a call through the GOT constrains only its symbol's function; one-copy recursion), and
 after agent/crate-check3 (`indSig` and `blrRegs`/`blrTry` for the callees an indirect call's
-signature admits, `IndSigMatch`/`IndTo`; aliases outside `P`, Widening 10):
+signature admits, `IndSigMatch`/`IndTo`; aliases outside `P`, Widening 10), and after
+agent/sret-purpose (the parameter purposes in `IndSigMatch` and `MayCall`, Widening 11):
 
-| crate | functions | pass (link-scope) | pass (link-scope2) | pass (crate-check3) | failing (functions) |
-| --- | --- | --- | --- | --- | --- |
-| a_arith | 58 | 58 | 58 | 58 | — |
-| b_slices | 59 | 59 | 59 | 59 | — |
-| c_structs_enums | 27 | 27 | 27 | 27 | — |
-| d_loops_iters | 117 | 117 | 117 | 117 | — |
-| e_option_result | 48 | 48 | 48 | 48 | — |
-| f_crypto | 40 | 40 | 40 | 40 | — |
-| g_u128 | 19 | 19 | 19 | 19 | — |
-| h_dyn_generic | 43 | 43 | 43 | 43 | — |
-| i_alloc | 49 | 48 | 49 | 49 | — |
-| fv-demo | 550 | 482 | 495 (+ the alias) | 544 (+ the alias) | `indSig` and `blrRegs` 2 (+4 callers) |
+| crate | functions | pass (link-scope) | pass (link-scope2) | pass (crate-check3) | pass (sret-purpose) | failing (functions) |
+| --- | --- | --- | --- | --- | --- | --- |
+| a_arith | 58 | 58 | 58 | 58 | 58 | — |
+| b_slices | 59 | 59 | 59 | 59 | 59 | — |
+| c_structs_enums | 27 | 27 | 27 | 27 | 27 | — |
+| d_loops_iters | 117 | 117 | 117 | 117 | 117 | — |
+| e_option_result | 48 | 48 | 48 | 48 | 48 | — |
+| f_crypto | 40 | 40 | 40 | 40 | 40 | — |
+| g_u128 | 19 | 19 | 19 | 19 | 19 | — |
+| h_dyn_generic | 43 | 43 | 43 | 43 | 43 | — |
+| i_alloc | 49 | 48 | 49 | 49 | 49 | — |
+| fv-demo | 550 | 482 | 495 (+ the alias) | 544 (+ the alias) | 550 (+ the alias) | — |
+
+(The survey crates' proofs were not regenerated: their inputs are unchanged, and `lake build` of
+`crate-proofs` re-runs the new checker on them.)
 
 With agent/link-scope2's checker, `fv-demo` failed `indSig` 13, `blrRegs` 3, `blrTry` 3 (+42
 callers). Once `indSig` checked only the callees matching a signature, its indirect callers
@@ -1257,7 +1320,8 @@ stayed in the program and the program check `Clif.SymInj` of every name with an 
 declared by `fv-demo` functions; vacuous before, every indirect caller having been dropped), and
 `blrRegs`/`blrTry` still failed at 6 sites; Widening 10 removes both.
 
-**Blockers on real code** (after agent/crate-check3):
+**Blockers on real code**: none on the surveyed crates after agent/sret-purpose. Before it
+(after agent/crate-check3):
 
 1. *An indirect call whose signature admits an `sret` callee* (`fv-demo` 2: `Hct6dxdt7Dqo`,
    `HgJo4HgiHAMF`, `catch_unwind` shims). Each has `try_call_indirect` of `func_addr fn0` and, in
@@ -1270,7 +1334,9 @@ declared by `fv-demo` functions; vacuous before, every indirect caller having be
    of `func_addr fnN` holds `fnN`'s address at every use it dominates) restricting `MayCall` at
    such sites to the declared function, with the machine-side counterpart for the vreg's origin
    (as `GotV` does for GOT loads); or CLIF semantics checking the `sret` purpose at
-   `call_indirect` (a trusted-semantics change).
+   `call_indirect` (a trusted-semantics change). Done the second way (Widening 11):
+   `Clif.stepCallIndirect` compares the parameter purposes, so `MayCall` excludes the two
+   methods at the shims' calls; the shims and their 4 callers pass.
 2. *Callers of failing functions* (4): dropped by `--prune` so that the rest is closed under calls.
 
 Before agent/link-scope, `blrRegs` at GOT calls of base externs (panics without results next to

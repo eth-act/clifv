@@ -2,6 +2,29 @@
 
 ## Changelog / Status
 
+- **2026-10-04 (agent/sret-purpose), trusted-semantics restriction of S**: `Clif.stepCallIndirect`
+  (`call_indirect`, and `try_call_indirect` through it) enters a function of the program at the
+  callee address only when the call site's `sigN` matches the function's signature
+  (`Clif.Signature.abiMatch`: the same parameter types **and parameter purposes** — `sret`,
+  `vmctx`, `sarg(N)`, normal — and the same return types); it compared the types only. Otherwise
+  the step is stuck, as for a type mismatch before. Cranelift's definition of `call_indirect`
+  (`cranelift/codegen/meta/src/shared/instructions.rs`): "The called function must match the
+  specified signature." A purpose mismatch is a different calling convention (an `sret` pointer
+  is passed in x8, a normal argument in x0, …): the compiled call passes the arguments as the
+  call site's signature says and the callee reads them as its own says, so such a call breaks
+  Cranelift's precondition and has no defined behaviour; the restriction only removes those runs
+  (the theorems claim nothing about stuck runs). Extension flags and calling conventions are not
+  compared. An extern at the callee address (`Clif.callExternAt`) is unchanged: an extern's
+  semantics is an untyped `List Val → Mem → Outcome` and an environment name has no declaration,
+  so there is no callee signature to compare; it is called with the call site's signature, as
+  before. **Stricter than Cranelift's interpreter**, which checks only the value types
+  (`validate_signature_params`, `cranelift/interpreter/src/step.rs`): on a call between program
+  functions with equal types and different purposes the interpreter runs the callee, `Clif.run`
+  is stuck. Effect on the differential tools: none (no runtest has such a call):
+  `scripts/clif-filetests.sh` pass 6072 / fail 7 / agree 6036 / disagree 13, printed files 154,
+  0 rejected (the baseline); `scripts/opt-difftest.sh` 0 fail. Used by the linking proof
+  (`docs/contracts/e2e.md`, "Widening" 11).
+
 - **2026-10-02 (agent/atomics-proof stage B), E grows by `atomic_rmw` (all 11 operations) and
   `atomic_cas`**, i8–i64 little-endian (`Compile.instE`). Their root rules (2357–2377, 2390)
   are proven (`IselAtomic.lean`); the LL/SC loops are covered by one symbolic run of the loop

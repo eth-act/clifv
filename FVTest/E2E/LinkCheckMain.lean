@@ -64,11 +64,10 @@ def detail (I : LinkInput) (P : Clif.Program) (g : Clif.Function) (a : Art) (che
   else if check == "indScope/indNoSym/indSig" then
     (if (indSigs g).all (fun s => !s.params.any (·.purpose == .sret)) then []
       else ["indSig: an indirect call passes an sret pointer"]) ++
-    (P.funcs.filter (fun h => mayB S g h.name &&
-      (indSigs g).any (fun s => decide (LinkSys.IndSigMatch s h)) &&
+    (P.funcs.filter (fun h => mayB S g h.name && indSigB g h &&
       (h.sig.params.any (·.purpose == .sret) ||
       (match sigParamBytes h.sig with | .ok b => decide (b.length > 8) | .error _ => true)))).map
-      (fun h => s!"indSig: program function {h.name} it may call with the parameter types of one of its indirect calls has an sret or stack-passed parameter") ++
+      (fun h => s!"indSig: program function {h.name} one of its indirect calls may enter (matching signature, or declared with matching parameter types) has an sret or stack-passed parameter") ++
     (if S g.name == none then [] else ["indNoSym: the function's own address is taken"])
   else []
 

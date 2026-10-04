@@ -356,6 +356,19 @@ def IndFree (g : Function) : Prop :=
   ∀ b ∈ g.blocks, (∀ st ∈ b.body, ∀ sig callee args, st.inst ≠ .callIndirect sig callee args) ∧
     ∀ callee args et, b.term ≠ .tryCallIndirect callee args et
 
+/-- `d` is the call-site signature of one of `g`'s indirect calls (a `call_indirect sigN`
+statement, or the exception table's signature of a `try_call_indirect`). -/
+def IndSig (g : Function) (d : Signature) : Prop :=
+  ∃ b ∈ g.blocks, (∃ st ∈ b.body, ∃ sig callee args, st.inst = .callIndirect sig callee args ∧
+      g.sigDecls.lookup sig = some d) ∨
+    ∃ callee args et, b.term = .tryCallIndirect callee args et ∧ g.sigDecls.lookup et.sig = some d
+
+theorem IndSig.not_indFree {g : Function} {d : Signature} (h : IndSig g d) : ¬ IndFree g := by
+  intro hif
+  obtain ⟨b, hb, ⟨st, hst, sig, callee, args, hi, -⟩ | ⟨callee, args, et, ht, -⟩⟩ := h
+  · exact (hif b hb).1 st hst sig callee args hi
+  · exact (hif b hb).2 callee args et ht
+
 /-- A frame of a function of `P`, at a program point of one of its blocks, or at the pending
 `jump` to the normal-return successor of a `try_call` (`Clif.stepTryCall`). -/
 def LFrame (P : Program) (fr : Frame) : Prop :=
@@ -608,8 +621,7 @@ def indCont (env : Env) (p : Program) (s : State) (rest : List Stmt) (results : 
     (sig : Nat) (declared : Signature) (addr : Nat) (vals : List Val) : StepResult :=
   match p.funcs.find? fun f => (s.mem.symbols f.name) == some addr with
   | some target =>
-    if AbiParam.tys declared.params == AbiParam.tys target.sig.params &&
-        AbiParam.tys declared.returns == AbiParam.tys target.sig.returns then
+    if declared.abiMatch target.sig then
       StepResult.ofRes (enterFunc target vals s.mem) fun (fr', mem') =>
         .next { frame := fr', callers := ({ s.frame with body := rest }, results) :: s.callers,
                 mem := mem' }
@@ -650,6 +662,15 @@ theorem step_tryInd (env : Env) (p : Program) (s : State) {callee : ValueId}
         indCont env p (tryState s bc) [] ((List.range n).map (b + ·)) et.sig d a v := by
   rw [step_term env p s hb, ht]
   rfl
+
+/-- The signature `indPre` reads is the call site's declaration. -/
+theorem indPre_lookup {fr : Frame} {sig : Nat} {callee : ValueId} {args : List ValueId}
+    {d : Signature} {a : Nat} {v : List Val} (h : indPre fr sig callee args = .ok (d, a, v)) :
+    fr.func.sigDecls.lookup sig = some d := by
+  simp only [indPre, Opt.Res.bind_eq_ok, Opt.Res.ofOption_eq_ok] at h
+  obtain ⟨d', hd', _, _, _, _, _, _, hp⟩ := h
+  simp only [Opt.Res.pure_eq_ok, Prod.mk.injEq] at hp
+  rw [hd', hp.1]
 
 theorem callExternAt_ok {env : Env} {p : Program} {mem : Mem} {d : Signature} {a : Nat}
     {vals rvals : List Val} {mem' : Mem} (h : callExternAt env p mem d a vals = .ok (rvals, mem')) :
@@ -909,9 +930,9 @@ theorem name_inj {fs : List Function} (h : (fs.map (·.name)).Nodup) {g g' : Fun
 
 theorem ofRes_cases {α : Type} (X : Res α) (k₁ k₂ : α → StepResult) :
     StepResult.ofRes X k₁ = StepResult.ofRes X k₂ ∨
-      ∃ a, StepResult.ofRes X k₁ = k₁ a ∧ StepResult.ofRes X k₂ = k₂ a := by
+      ∃ a, X = .ok a ∧ StepResult.ofRes X k₁ = k₁ a ∧ StepResult.ofRes X k₂ = k₂ a := by
   cases X with
-  | ok a => exact .inr ⟨a, rfl, rfl⟩
+  | ok a => exact .inr ⟨a, rfl, rfl, rfl⟩
   | _ => exact .inl rfl
 
 /-- **Linking at the CLIF level.** For a program `P` with distinct function names whose
@@ -1060,12 +1081,12 @@ theorem runLoop_link {P : Program} {base : Env} {f : Function}
     obtain ⟨fn, args, et, hb, ht⟩ := hT
     have e1 := step_try base P s hb ht
     have e2 := step_try (linkEnv P base) (P.only f) s hb ht
-    rcases ofRes_cases (tryPre s.frame fn et) _ _ with h1 | ⟨⟨n, b, bc⟩, h1, h1'⟩
+    rcases ofRes_cases (tryPre s.frame fn et) _ _ with h1 | ⟨⟨n, b, bc⟩, -, h1, h1'⟩
     · exact same (by rw [e1, e2]; exact h1.symm)
     rw [h1] at e1
     rw [h1'] at e2
     dsimp only at e1 e2
-    rcases ofRes_cases (Opt.callArgs (tryState s bc).frame fn args) _ _ with h2 | ⟨⟨ext, vals⟩, h2, h2'⟩
+    rcases ofRes_cases (Opt.callArgs (tryState s bc).frame fn args) _ _ with h2 | ⟨⟨ext, vals⟩, -, h2, h2'⟩
     · exact same (by rw [e1, e2]; exact h2.symm)
     rw [h2] at e1
     rw [h2'] at e2

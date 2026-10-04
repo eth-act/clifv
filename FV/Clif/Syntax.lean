@@ -386,7 +386,9 @@ inductive ArgExt where
   | none | uext | sext
   deriving DecidableEq, Repr, Inhabited
 
-/-- Special purpose of a parameter (`vmctx`, `sret`, `sarg(N)`); no effect on `Clif.run`. -/
+/-- Special purpose of a parameter (`vmctx`, `sret`, `sarg(N)`); in `Clif.run` it only matters
+to `call_indirect`, which enters a function of the program only when the call-site signature
+has its parameter purposes (`Clif.Signature.abiMatch`). -/
 inductive ArgPurpose where
   | normal | vmctx | sret
   | sarg (size : Nat)

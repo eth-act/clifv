@@ -12,7 +12,9 @@ per-function run under `linkEnvN P base M` (`runLoop_link` with bounded callee r
 callee's sub-run is shorter than the whole run), also with `call_indirect`/`try_call_indirect`
 (between functions of `P` too: the per-function program resolves a callee address through the
 linked environment's names — every name of `P` and of the base environment — whatever `f`
-declares, `IndScope`).
+declares, `IndScope`), and under any restriction of `linkEnvN` keeping the functions of `P`
+the whole-program run of `f` can call (declared, or entered by an indirect call whose call-site
+signature matches theirs, `Signature.abiMatch`).
 -/
 
 namespace Clif
@@ -348,19 +350,52 @@ theorem callExternAt_eq {P : Program} {base : Env} {f : Function} {syms : String
       rw [hm] at hq₁ hq₂
       exact hS.alias n₁ (linkNames_sub hf hm₁) n₂ hn₂ a hq₁ hq₂ hp₁ hp₂
 
+/-- The name of an extern a function declares is a name of its declarations. -/
+theorem lookup_name_mem : ∀ {l : List (FnRef × ExtFunc)} {fn : FnRef} {e : ExtFunc},
+    l.lookup fn = some e → e.name ∈ l.map (·.2.name)
+  | [], _, _, h => by simp at h
+  | (x, y) :: l, fn, e, h => by
+    simp only [List.lookup] at h
+    split at h
+    · cases h; simp
+    · exact List.mem_cons_of_mem _ (lookup_name_mem h)
+
+/-- `callExternAt` under environments with the same names and the same externs at the names
+with the callee address. -/
+theorem callExternAt_congr {E₁ E₂ : Env} {p : Program} {mem : Mem} {d : Signature} {a : Nat}
+    {vals : List Val} (hn : E₁.names = E₂.names)
+    (hx : ∀ n, mem.symbols n = some a → E₁.extern n = E₂.extern n) :
+    callExternAt E₁ p mem d a vals = callExternAt E₂ p mem d a vals := by
+  unfold callExternAt
+  rw [hn]
+  cases hf : (E₂.names ++ p.externNames).find? (fun n => mem.symbols n == some a) with
+  | none => rfl
+  | some n =>
+    have hq : mem.symbols n = some a := by simpa using List.find?_some hf
+    simp only [Res.ofOption_some, Res.ok_bind, hx n hq]
+
 /-- **Linking at the CLIF level with bounded callee runs** (`runLoop_link` with
 `linkEnvN P base M`): a complete whole-program run of at most `M + 1` steps is a complete
 per-function run whose program callees run at most `M` steps. The run's frames are `f`'s in the
 per-function program (`LInv (P.only f)`); an indirect call of `f` (`call_indirect`,
 `try_call_indirect`) resolves, in the per-function program, through the linked environment's
-names (`IndScope`, with the memory's symbols `syms`), whatever `f` declares. -/
+names (`IndScope`, with the memory's symbols `syms`), whatever `f` declares. The per-function
+environment `E` may be `linkEnvN P base M` without the functions of `P` that the whole-program
+run of `f` cannot call (`hEp`): those `f` neither declares nor can enter through one of its
+indirect calls, whose call-site signature (`IndSig`) must match the callee's
+(`Signature.abiMatch`, checked by `Clif.stepCallIndirect`). -/
 theorem runLoop_linkN {P : Program} {base : Env} {f : Function} {syms : String → Option Nat}
     (M : Nat) (hnd : (P.funcs.map (·.name)).Nodup) (hf : f ∈ P.funcs)
-    (hP : ∀ g ∈ P.funcs, LinkFree g) (hio : ¬ IndFree f → IndScope P base syms) :
+    (hP : ∀ g ∈ P.funcs, LinkFree g) (hio : ¬ IndFree f → IndScope P base syms) {E : Env}
+    (hEn : E.names = (linkEnvN P base M).names)
+    (hEb : ∀ n, P.func? n = none → E.extern n = (linkEnvN P base M).extern n)
+    (hEp : ∀ h ∈ P.funcs, h.name ≠ f.name → (h.name ∈ f.externs.map (·.2.name) ∨
+      (syms h.name ≠ none ∧ ∃ d, IndSig f d ∧ d.abiMatch h.sig = true)) →
+      E.extern h.name = (linkEnvN P base M).extern h.name) :
     ∀ (N : Nat) (s : State), N ≤ M + 1 → LInv P s → LInv (P.only f) s →
       (¬ IndFree f → s.mem.symbols = syms) →
       (∀ msg, runLoop base P N s ≠ .stuck msg) → runLoop base P N s ≠ .outOfFuel →
-      ∃ m, runLoop (linkEnvN P base M) (P.only f) m s = runLoop base P N s := by
+      ∃ m, runLoop E (P.only f) m s = runLoop base P N s := by
   have hPf : ∀ g ∈ (P.only f).funcs, LinkFree g := fun g hg => by
     simp only [Program.only, List.mem_cons, List.not_mem_nil, or_false] at hg
     subst hg; exact hP g hf
@@ -373,9 +408,9 @@ theorem runLoop_linkN {P : Program} {base : Env} {f : Function} {syms : String �
   | succ N =>
   -- a per-function step `r` after which the whole-program run continues with `n` steps
   have helper : ∀ (r : StepResult) (n : Nat), n < N + 1 →
-      step (linkEnvN P base M) (P.only f) s = r → runLoop base P (N + 1) s = afterStep base P n r →
+      step E (P.only f) s = r → runLoop base P (N + 1) s = afterStep base P n r →
       (∀ s1, r = .next s1 → LInv P s1 ∧ LInv (P.only f) s1 ∧ (¬ IndFree f → s1.mem.symbols = syms)) →
-      ∃ m, runLoop (linkEnvN P base M) (P.only f) m s = runLoop base P (N + 1) s := by
+      ∃ m, runLoop E (P.only f) m s = runLoop base P (N + 1) s := by
     intro r n hn hr hrun hinv
     cases r with
     | next s1 =>
@@ -385,8 +420,8 @@ theorem runLoop_linkN {P : Program} {base : Env} {f : Function} {syms : String �
       exact ⟨m + 1, by rw [runLoop_succ', hr]; exact hm⟩
     | _ => exact ⟨0 + 1, by rw [runLoop_succ', hr, hrun]; rfl⟩
   -- the steps that do not call another function of `P` are the same
-  have same : step (linkEnvN P base M) (P.only f) s = step base P s →
-      ∃ m, runLoop (linkEnvN P base M) (P.only f) m s = runLoop base P (N + 1) s := fun h =>
+  have same : step E (P.only f) s = step base P s →
+      ∃ m, runLoop E (P.only f) m s = runLoop base P (N + 1) s := fun h =>
     helper _ N (by omega) h (runLoop_succ' ..) fun s1 hs1 =>
       ⟨(step_next_linv hP hI hs1).1, (step_next_linv hPf hIf (h.trans hs1)).1,
         fun hn => ((step_symbols hP (hio hn).keep hI).1 s1 hs1).trans (hsy hn)⟩
@@ -403,10 +438,10 @@ theorem runLoop_linkN {P : Program} {base : Env} {f : Function} {syms : String �
       (∀ fr' mem', enterFunc g vals t.mem = .ok (fr', mem') →
         (∀ rvals mem2, runLoop base P M ⟨fr', [], mem'⟩ = .returned rvals mem2 →
           rvals.map (·.ty) = AbiParam.tys g.sig.returns →
-          step (linkEnvN P base M) (P.only f) s = continueWith t rest rs rvals mem2) ∧
+          step E (P.only f) s = continueWith t rest rs rvals mem2) ∧
         (∀ c, runLoop base P M ⟨fr', [], mem'⟩ = .trapped c →
-          step (linkEnvN P base M) (P.only f) s = .trapped c)) →
-      ∃ m, runLoop (linkEnvN P base M) (P.only f) m s = runLoop base P (N + 1) s := by
+          step E (P.only f) s = .trapped c)) →
+      ∃ m, runLoop E (P.only f) m s = runLoop base P (N + 1) s := by
     intro t rest rs g vals hgP htc hfr htsy e1 e2
     rw [runLoop_succ', e1] at hst hof
     rw [runLoop_succ', e1]
@@ -488,16 +523,18 @@ theorem runLoop_linkN {P : Program} {base : Env} {f : Function} {syms : String �
   have call : ∀ (t : State) rest rs ext vals, t.callers = s.callers → t.mem = s.mem →
       (∀ regs, LFrame P { t.frame with regs, body := rest } ∧
         LFrame (P.only f) { t.frame with regs, body := rest }) →
+      ext.name ∈ f.externs.map (·.2.name) →
       step base P s = Opt.callCont base P t rest rs ext vals →
-      step (linkEnvN P base M) (P.only f) s = Opt.callCont (linkEnvN P base M) (P.only f) t rest rs ext vals →
-      ∃ m, runLoop (linkEnvN P base M) (P.only f) m s = runLoop base P (N + 1) s := by
-    intro t rest rs ext vals htc htm hfr e1 e2
+      step E (P.only f) s = Opt.callCont E (P.only f) t rest rs ext vals →
+      ∃ m, runLoop E (P.only f) m s = runLoop base P (N + 1) s := by
+    intro t rest rs ext vals htc htm hfr hext e1 e2
     cases hpf : P.func? ext.name with
     | none =>
       have hfn : f.name ≠ ext.name := Program.func?_none hpf f hf
       apply same
       rw [e1, e2]
-      simp only [Opt.callCont, hpf, Program.only_func?, hfn, ↓reduceIte, linkEnvN_none hpf]
+      simp only [Opt.callCont, hpf, Program.only_func?, hfn, ↓reduceIte, hEb _ hpf,
+        linkEnvN_none hpf]
     | some g =>
       obtain ⟨hgP, hgn⟩ := Program.func?_some hpf
       by_cases hgf : g = f
@@ -506,8 +543,11 @@ theorem runLoop_linkN {P : Program} {base : Env} {f : Function} {syms : String �
         rw [e1, e2]
         simp only [Opt.callCont, hpf, Program.only_func?, hgn, ↓reduceIte]
       have hfn : f.name ≠ ext.name := fun h => hgf (name_inj hnd hgP hf (hgn.trans h.symm))
+      have hEg : E.extern ext.name = (linkEnvN P base M).extern ext.name := by
+        rw [← hgn]
+        exact hEp g hgP (fun h => hfn (h.symm.trans hgn)) (.inl (by rw [hgn]; exact hext))
       have e2' := e2
-      simp only [Opt.callCont, Program.only_func?, hfn, ↓reduceIte, linkEnvN_some hpf] at e2'
+      simp only [Opt.callCont, Program.only_func?, hfn, ↓reduceIte, hEg, linkEnvN_some hpf] at e2'
       cases hsig : (AbiParam.tys g.sig.params == AbiParam.tys ext.sig.params &&
           AbiParam.tys g.sig.returns == AbiParam.tys ext.sig.returns) with
       | false =>
@@ -530,11 +570,12 @@ theorem runLoop_linkN {P : Program} {base : Env} {f : Function} {syms : String �
   -- an indirect call (`indCont`) from `t`, a frame of `f`
   have ind : ∀ (t : State) rest rs sig d a v, t.callers = s.callers → t.mem = s.mem →
       (∀ regs, LFrame P { t.frame with regs, body := rest } ∧
-        LFrame (P.only f) { t.frame with regs, body := rest }) → ¬ IndFree f →
+        LFrame (P.only f) { t.frame with regs, body := rest }) → IndSig f d →
       step base P s = indCont base P t rest rs sig d a v →
-      step (linkEnvN P base M) (P.only f) s = indCont (linkEnvN P base M) (P.only f) t rest rs sig d a v →
-      ∃ m, runLoop (linkEnvN P base M) (P.only f) m s = runLoop base P (N + 1) s := by
-    intro t rest rs sig d a v htc htm hfr hnf e1 e2
+      step E (P.only f) s = indCont E (P.only f) t rest rs sig d a v →
+      ∃ m, runLoop E (P.only f) m s = runLoop base P (N + 1) s := by
+    intro t rest rs sig d a v htc htm hfr hdS e1 e2
+    have hnf : ¬ IndFree f := hdS.not_indFree
     have hS := hio hnf
     have hm : t.mem.symbols = syms := htm ▸ hsy hnf
     cases hfind : P.funcs.find? (fun g => t.mem.symbols g.name == some a) with
@@ -543,10 +584,19 @@ theorem runLoop_linkN {P : Program} {base : Env} {f : Function} {syms : String �
         simp only [Program.only, List.find?_cons, List.find?_nil]
         have := List.find?_eq_none.mp hfind f hf
         simp only [this]
+      have hcg : callExternAt E (P.only f) t.mem d a v =
+          callExternAt (linkEnvN P base M) (P.only f) t.mem d a v := by
+        refine callExternAt_congr hEn fun n hq => hEb n ?_
+        cases e : P.func? n with
+        | none => rfl
+        | some g =>
+          obtain ⟨hg, rfl⟩ := Program.func?_some e
+          have := List.find?_eq_none.mp hfind g hg
+          simp [hq] at this
       rcases callExternAt_eq (M := M) (d := d) (vals := v) hf hS hm hfind with he | ⟨-, m₂, h₂⟩
       · apply same
         rw [e1, e2]
-        simp only [indCont, hfind, h1, he]
+        simp only [indCont, hfind, h1, hcg, he]
       · rw [runLoop_succ', e1] at hst
         simp only [indCont, hfind, h₂, StepResult.ofRes_stuck, afterStep] at hst
         exact absurd rfl (hst _)
@@ -572,9 +622,9 @@ theorem runLoop_linkN {P : Program} {base : Env} {f : Function} {syms : String �
             hhf
       -- the per-function program resolves the address to `h` (the first function of `P` there,
       -- the first names of the linked environment)
-      have hname : ((linkEnvN P base M).names ++ (P.only f).externNames).find?
+      have hname : (E.names ++ (P.only f).externNames).find?
           (fun n => t.mem.symbols n == some a) = some h.name := by
-        simp only [linkEnvN_names, Program.names, List.append_assoc, List.find?_append,
+        simp only [hEn, linkEnvN_names, Program.names, List.append_assoc, List.find?_append,
           List.find?_map, Function.comp_def, hfind, Option.map_some, Option.some_or]
       have hpf : P.func? h.name = some h := by
         cases e : P.func? h.name with
@@ -582,29 +632,31 @@ theorem runLoop_linkN {P : Program} {base : Env} {f : Function} {syms : String �
         | some g =>
           obtain ⟨hg, hgn⟩ := Program.func?_some e
           rw [name_inj hnd hg hhP hgn]
-      cases hsig : (AbiParam.tys d.params == AbiParam.tys h.sig.params &&
-          AbiParam.tys d.returns == AbiParam.tys h.sig.returns) with
+      cases hsig : d.abiMatch h.sig with
       | false =>
         rw [runLoop_succ', e1] at hst
         simp only [indCont, hfind, hsig, Bool.false_eq_true, ↓reduceIte, afterStep] at hst
         exact absurd rfl (hst _)
       | true =>
-        simp only [Bool.and_eq_true, beq_iff_eq] at hsig
+        have hsig' := Signature.abiMatch_eq_true.mp hsig
+        have hEh : E.extern h.name = (linkEnvN P base M).extern h.name :=
+          hEp h hhP (fun e => hhf (name_inj hnd hhP hf e))
+            (.inr ⟨by rw [← hm, hha]; exact Option.some_ne_none a, d, hdS, hsig⟩)
         refine atomic t rest rs h v hhP htc hfr (fun _ => hm)
-          (by rw [e1]; simp only [indCont, hfind, hsig, beq_self_eq_true, Bool.and_self, ↓reduceIte])
+          (by rw [e1]; simp only [indCont, hfind, hsig, ↓reduceIte])
           fun fr' mem' he => ?_
         have hinit : initState P h.name v t.mem = .ok ⟨fr', [], mem'⟩ := by
           simp [initState, hpf, he, Res.ofOption, bind, Res.bind, pure]
         have hvt : v.map (·.ty) = AbiParam.tys d.params := by
           obtain ⟨_, _, _, h1, -⟩ := Opt.enterFunc_ok he
-          rw [h1, hsig.1]
+          rw [h1, hsig'.1]
         refine ⟨fun rvals mem2 hlim hty => ?_, fun c hlim => ?_⟩
         · rw [e2]
-          simp only [indCont, h1, callExternAt, hname, Res.ofOption_some, Res.ok_bind,
+          simp only [indCont, h1, callExternAt, hname, Res.ofOption_some, Res.ok_bind, hEh,
             linkEnvN_some hpf, checkTys, hvt, beq_self_eq_true, Res.check_true, hinit, hlim, hty,
-            hsig.2, ↓reduceIte, Res.pure_eq, StepResult.ofRes_ok]
+            hsig'.2.2, ↓reduceIte, Res.pure_eq, StepResult.ofRes_ok]
         · rw [e2]
-          simp only [indCont, h1, callExternAt, hname, Res.ofOption_some, Res.ok_bind,
+          simp only [indCont, h1, callExternAt, hname, Res.ofOption_some, Res.ok_bind, hEh,
             linkEnvN_some hpf, checkTys, hvt, beq_self_eq_true, Res.check_true, hinit, hlim,
             StepResult.ofRes_trap]
   have hff : s.frame.func = f := by
@@ -614,57 +666,64 @@ theorem runLoop_linkN {P : Program} {base : Env} {f : Function} {syms : String �
     ⟨st, rest, sig, callee, args, hb, hi⟩ | hci
   · -- a `try_call`: its preludes are the same, then the call from the waiting frame
     have e1 := step_try base P s hb ht
-    have e2 := step_try (linkEnvN P base M) (P.only f) s hb ht
-    rcases ofRes_cases (tryPre s.frame fn et) _ _ with h1 | ⟨⟨n, b, bc⟩, h1, h1'⟩
+    have e2 := step_try E (P.only f) s hb ht
+    rcases ofRes_cases (tryPre s.frame fn et) _ _ with h1 | ⟨⟨n, b, bc⟩, -, h1, h1'⟩
     · exact same (by rw [e1, e2]; exact h1.symm)
     rw [h1] at e1
     rw [h1'] at e2
     dsimp only at e1 e2
-    rcases ofRes_cases (Opt.callArgs (tryState s bc).frame fn args) _ _ with h2 | ⟨⟨ext, vals⟩, h2, h2'⟩
+    rcases ofRes_cases (Opt.callArgs (tryState s bc).frame fn args) _ _ with h2 | ⟨⟨ext, vals⟩, hX, h2, h2'⟩
     · exact same (by rw [e1, e2]; exact h2.symm)
     rw [h2] at e1
     rw [h2'] at e2
     dsimp only at e1 e2
+    have hext : f.extern? fn = some ext := by
+      have := Opt.callArgs_extern hX; rw [← hff]; exact this
     exact call (tryState s bc) [] _ ext vals rfl rfl
-      (fun regs => ⟨LFrame.jump hI.1.1 regs bc, LFrame.jump hIf.1.1 regs bc⟩) e1 e2
+      (fun regs => ⟨LFrame.jump hI.1.1 regs bc, LFrame.jump hIf.1.1 regs bc⟩)
+      (lookup_name_mem hext) e1 e2
   · -- a `try_call_indirect`
     have e1 := step_tryInd base P s hb ht
-    have e2 := step_tryInd (linkEnvN P base M) (P.only f) s hb ht
-    rcases ofRes_cases (tryIndPre s.frame et) _ _ with h1 | ⟨⟨n, b, bc⟩, h1, h1'⟩
+    have e2 := step_tryInd E (P.only f) s hb ht
+    rcases ofRes_cases (tryIndPre s.frame et) _ _ with h1 | ⟨⟨n, b, bc⟩, -, h1, h1'⟩
     · exact same (by rw [e1, e2]; exact h1.symm)
     rw [h1] at e1
     rw [h1'] at e2
     dsimp only at e1 e2
     rcases ofRes_cases (indPre (tryState s bc).frame et.sig callee args) _ _ with
-      h2 | ⟨⟨d, a, v⟩, h2, h2'⟩
+      h2 | ⟨⟨d, a, v⟩, hX, h2, h2'⟩
     · exact same (by rw [e1, e2]; exact h2.symm)
     rw [h2] at e1
     rw [h2'] at e2
     dsimp only at e1 e2
-    have hnf : ¬ IndFree f := fun hif => by
+    have hdS : IndSig f d := by
+      have hl := indPre_lookup hX
       rcases hIf.1 with ⟨-, ⟨b0, hb0, -, ht0⟩ | ⟨-, bc0, ht0⟩⟩
       · rw [hff] at hb0
-        exact (hif b0 hb0).2 callee args et (ht0.symm.trans ht)
+        refine ⟨b0, hb0, .inr ⟨callee, args, et, ht0.symm.trans ht, ?_⟩⟩
+        rw [← hff]; exact hl
       · rw [ht] at ht0; cases ht0
     exact ind (tryState s bc) [] _ et.sig d a v rfl rfl
-      (fun regs => ⟨LFrame.jump hI.1.1 regs bc, LFrame.jump hIf.1.1 regs bc⟩) hnf e1 e2
+      (fun regs => ⟨LFrame.jump hI.1.1 regs bc, LFrame.jump hIf.1.1 regs bc⟩) hdS e1 e2
   · -- a `call_indirect` statement
     have e1 := step_ind base P s hb hi
-    have e2 := step_ind (linkEnvN P base M) (P.only f) s hb hi
-    rcases ofRes_cases (indPre s.frame sig callee args) _ _ with h1 | ⟨⟨d, a, v⟩, h1, h1'⟩
+    have e2 := step_ind E (P.only f) s hb hi
+    rcases ofRes_cases (indPre s.frame sig callee args) _ _ with h1 | ⟨⟨d, a, v⟩, hX, h1, h1'⟩
     · exact same (by rw [e1, e2]; exact h1.symm)
     rw [h1] at e1
     rw [h1'] at e2
     dsimp only at e1 e2
-    have hnf : ¬ IndFree f := fun hif => by
+    have hdS : IndSig f d := by
+      have hl := indPre_lookup hX
       rcases hIf.1 with ⟨-, ⟨b0, hb0, hsuf, -⟩ | ⟨hnil, -⟩⟩
       · rw [hff] at hb0
-        exact (hif b0 hb0).1 st (hsuf.subset (by rw [hb]; simp)) sig callee args hi
+        refine ⟨b0, hb0, .inl ⟨st, hsuf.subset (by rw [hb]; simp), sig, callee, args, hi, ?_⟩⟩
+        rw [← hff]; exact hl
       · rw [hnil] at hb; cases hb
     exact ind s rest st.results sig d a v rfl rfl
-      (fun regs => ⟨hI.1.rest hb regs, hIf.1.rest hb regs⟩) hnf e1 e2
+      (fun regs => ⟨hI.1.rest hb regs, hIf.1.rest hb regs⟩) hdS e1 e2
   · have e1 := Opt.step_eq_lift base P s hci
-    have e2 := Opt.step_eq_lift (linkEnvN P base M) (P.only f) s hci
+    have e2 := Opt.step_eq_lift E (P.only f) s hci
     cases hl : Opt.lstep s.frame s.mem with
     | next fr1 m1 => exact same (by rw [e1, e2, hl]; rfl)
     | ret vals => exact same (by rw [e1, e2, hl]; rfl)
@@ -673,8 +732,10 @@ theorem runLoop_linkN {P : Program} {base : Env} {f : Function} {syms : String �
     | tail ext vals => exact absurd hl (lstep_ne_tail hP hI.1)
     | call ext vals rs rest =>
       rw [hl] at e1 e2
-      obtain ⟨st, fn, args, hb, -, -, -⟩ := Opt.lstep_call_inv hl
-      exact call s rest rs ext vals rfl rfl (fun regs => ⟨hI.1.rest hb regs, hIf.1.rest hb regs⟩) e1 e2
+      obtain ⟨st, fn, args, hb, -, -, hca⟩ := Opt.lstep_call_inv hl
+      have hext : f.extern? fn = some ext := by rw [← hff]; exact Opt.callArgs_extern hca
+      exact call s rest rs ext vals rfl rfl (fun regs => ⟨hI.1.rest hb regs, hIf.1.rest hb regs⟩)
+        (lookup_name_mem hext) e1 e2
 
 
 end Clif

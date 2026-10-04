@@ -283,8 +283,8 @@ theorem indFreeB_sound {g : Clif.Function} (h : indFreeB g = true) : Clif.IndFre
   · have := h1 st hst; rw [he] at this; simp at this
   · rw [he] at h2; simp at h2
 
-/-- `g` may call `n` (`LinkSys.MayCall`, with the CLIF image's symbols `S`): declared, or with
-an address when `g` has indirect calls. -/
+/-- `g` may call `n` (an over-approximation of `LinkSys.MayCall`, with the CLIF image's symbols
+`S`): declared, or with an address when `g` has indirect calls. -/
 def mayB (S : String → Option Nat) (g : Clif.Function) (n : String) : Bool :=
   declB g n || (!indFreeB g && n != g.name && (S n).isSome)
 
@@ -295,7 +295,7 @@ theorem indFreeB_false {g : Clif.Function} (h : ¬ Clif.IndFree g) : indFreeB g 
 
 theorem mayB_of {L : LinkSys} {g : Clif.Function} {n : String} (h : L.MayCall g n) :
     mayB L.syms g n = true := by
-  rcases h with hd | ⟨hnf, hne, hs⟩
+  rcases h with hd | ⟨hnf, hne, hs, -⟩
   · simp [mayB, declB_of hd]
   · simp only [mayB, indFreeB_false hnf, Bool.or_eq_true, Bool.and_eq_true, Bool.not_false,
       bne_iff_ne, ne_eq, true_and]
@@ -307,7 +307,8 @@ theorem mayCall_ne {L : LinkSys} {g : Clif.Function} {n : String} (h : L.MayCall
   · exact hd.2
   · exact hne
 
-/-- One of `g`'s indirect calls can enter `h` (`LinkSys.IndSigMatch`, and as many results). -/
+/-- One of `g`'s indirect calls can enter `h` (`LinkSys.IndSigMatch`: its call-site signature
+matches `h`'s, and as many results). -/
 def indMatchB (g h : Clif.Function) : Bool :=
   (indSigs g).any fun s => decide (LinkSys.IndSigMatch s h) && h.sig.returns.length == s.returns.length
 
@@ -678,12 +679,19 @@ theorem slotFitsB_sound {g : Clif.Function} {a : Art} (h : slotFitsB g a = true)
   | none => simp
   | some off => exact fun h' => ⟨off, rfl, of_decide_eq_true h'⟩
 
+/-- One of `g`'s indirect calls can enter `h` in the per-function run (`LinkSys.Ok.indSig`): its
+call-site signature matches `h`'s (`LinkSys.IndSigMatch`), or `g` declares `h` and the call has
+`h`'s parameter types (`LinkSys.IndTyMatch`). -/
+def indSigB (g h : Clif.Function) : Bool :=
+  (indSigs g).any (fun s => decide (LinkSys.IndSigMatch s h)) ||
+    (declB g h.name && (indSigs g).any (fun s => decide (LinkSys.IndTyMatch s h)))
+
 /-- The scope of the indirect calls of `g` (`indScope`'s declarations, `indNoSym`, `indSig`),
-with the CLIF image's symbols `S`: the functions `g` may call whose parameter types are those of
-one of `g`'s indirect-call signatures (`IndSigMatch`) take register arguments and no `sret`. -/
+with the CLIF image's symbols `S`: the functions `g` may call that one of its indirect calls can
+enter (`indSigB`) take register arguments and no `sret`. -/
 def indB (P : Clif.Program) (S : String → Option Nat) (g : Clif.Function) : Bool :=
   indFreeB g || ((indSigs g).all (fun s => !s.params.any (·.purpose == .sret)) &&
-    P.funcs.all (fun h => !mayB S g h.name || !(indSigs g).any (fun s => decide (LinkSys.IndSigMatch s h)) ||
+    P.funcs.all (fun h => !mayB S g h.name || !indSigB g h ||
       (!h.sig.params.any (·.purpose == .sret) &&
       (match sigParamBytes h.sig with | .ok b => decide (b.length ≤ 8) | .error _ => false))) &&
     S g.name == none)
@@ -932,7 +940,8 @@ theorem indFacts {I : LinkInput} (h : okB I = true) {g : Clif.Function}
     (hg : g ∈ (progOf I.results).funcs) (hnf : ¬ Clif.IndFree g) :
     (∀ sig ∈ indSigs g, sig.params.any (·.purpose == .sret) = false) ∧
     (∀ h ∈ (progOf I.results).funcs, mayB (fun n => I.syms.lookup n) g h.name = true →
-      (∃ sig ∈ indSigs g, LinkSys.IndSigMatch sig h) →
+      ((∃ sig ∈ indSigs g, LinkSys.IndSigMatch sig h) ∨
+        (DeclN g h.name ∧ ∃ sig ∈ indSigs g, LinkSys.IndTyMatch sig h)) →
       h.sig.params.any (·.purpose == .sret) = false ∧
       ∃ bytes, sigParamBytes h.sig = .ok bytes ∧ bytes.length ≤ 8) ∧
     I.syms.lookup g.name = none := by
@@ -940,10 +949,12 @@ theorem indFacts {I : LinkInput} (h : okB I = true) {g : Clif.Function}
   simp only [indB, Bool.or_eq_true, Bool.and_eq_true, List.all_eq_true] at h
   rcases h with h | ⟨⟨h1, h2⟩, h3⟩
   · exact absurd (indFreeB_sound h) hnf
-  refine ⟨fun sig hs => by simpa using h1 sig hs, fun h' hh hd ⟨sig, hs, hm⟩ => ?_,
-    by simpa using h3⟩
-  have hany : (indSigs g).any (fun s => decide (LinkSys.IndSigMatch s h')) = true :=
-    List.any_eq_true.2 ⟨sig, hs, decide_eq_true hm⟩
+  refine ⟨fun sig hs => by simpa using h1 sig hs, fun h' hh hd hm => ?_, by simpa using h3⟩
+  have hany : indSigB g h' = true := by
+    simp only [indSigB, Bool.or_eq_true, Bool.and_eq_true, List.any_eq_true, decide_eq_true_eq]
+    rcases hm with ⟨sig, hs, hm⟩ | ⟨hdn, sig, hs, hm⟩
+    · exact .inl ⟨sig, hs, hm⟩
+    · exact .inr ⟨declB_of hdn, sig, hs, hm⟩
   have h2' := h2 h' hh
   rw [hd, hany] at h2'
   revert h2'
@@ -1010,7 +1021,7 @@ theorem okB_sound {I : LinkInput} (hI : okB I = true) {B : BaseEnv} {F : BitVec 
       · refine ⟨?_, hh'⟩
         simp only [calleeB, Bool.or_eq_true, List.any_eq_true, beq_iff_eq, Bool.and_eq_true,
           Bool.not_eq_true']
-        rcases hmay with ⟨hm, -⟩ | ⟨hnf, -, hs⟩
+        rcases hmay with ⟨hm, -⟩ | ⟨hnf, -, hs, -⟩
         · obtain ⟨⟨fn, e'⟩, he, hen⟩ := List.mem_map.1 hm
           exact .inl ⟨g, hg, (fn, e'), he, hen⟩
         · refine .inr ⟨?_, g, hg, indFreeB_false hnf⟩

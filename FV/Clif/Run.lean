@@ -127,6 +127,27 @@ end Frame
 /-- Types of a list of ABI parameters. -/
 def AbiParam.tys (ps : List AbiParam) : List Ty := ps.map (·.ty)
 
+/-- Purposes (`sret`, `vmctx`, `sarg`, normal) of a list of ABI parameters. -/
+def AbiParam.purposes (ps : List AbiParam) : List ArgPurpose := ps.map (·.purpose)
+
+/-- An indirect call whose call-site signature is `declared` may enter a function whose
+signature is `target` (`stepCallIndirect`): the same parameter types and parameter purposes
+(`sret`, `vmctx`, …: a different purpose is a different calling convention, e.g. an `sret`
+pointer goes in x8 rather than x0), and the same return types. Cranelift requires "the called
+function must match the specified signature" (`call_indirect`); a call violating it has no
+defined behaviour, so `Clif.run` is stuck there. (Cranelift's interpreter checks only the value
+types; extension flags and calling conventions are not compared.) -/
+def Signature.abiMatch (declared target : Signature) : Bool :=
+  AbiParam.tys declared.params == AbiParam.tys target.params &&
+    AbiParam.purposes declared.params == AbiParam.purposes target.params &&
+    AbiParam.tys declared.returns == AbiParam.tys target.returns
+
+theorem Signature.abiMatch_eq_true {d t : Signature} :
+    d.abiMatch t = true ↔ AbiParam.tys d.params = AbiParam.tys t.params ∧
+      AbiParam.purposes d.params = AbiParam.purposes t.params ∧
+      AbiParam.tys d.returns = AbiParam.tys t.returns := by
+  simp [Signature.abiMatch, and_assoc]
+
 /-- `stuck` unless the values have exactly the given types. -/
 def checkTys (what : String) (vs : List Val) (tys : List Ty) : Res Unit :=
   Res.check (vs.map (·.ty) == tys) s!"{what}: type/arity mismatch"
@@ -413,7 +434,11 @@ def Program.externNames (p : Program) : List String :=
 environment's further code symbols, then the externs of `p`, `Program.externNames`) whose
 link-time address (`mem.symbols`) is the callee address `addr`, called as `env.extern` on
 `vals` with the call site's signature `declared` (argument and result types checked against
-it, as `stepCall` checks the declaration's). -/
+it, as `stepCall` checks the declaration's). There is no callee signature to match purposes
+against (unlike a function of the program, `Signature.abiMatch`): an extern's semantics is an
+untyped `List Val → Mem → Outcome`, the names of `env.names` have no declaration, and the
+functions of `p` may declare one extern with different signatures; the extern's semantics
+receives the call's values, whatever the convention. -/
 def callExternAt (env : Env) (p : Program) (mem : Mem) (declared : Signature) (addr : Nat)
     (vals : List Val) : Res (List Val × Mem) := do
   let name ← Res.ofOption "call_indirect: no function at the callee address"
@@ -430,9 +455,11 @@ def callExternAt (env : Env) (p : Program) (mem : Mem) (declared : Signature) (a
 
 /-- Execute a `call_indirect sigN, callee(args)` statement: the callee value is a code
 address. A function of the program at that address (what `func_addr` of its declaration
-evaluates to) is entered (`stuck` on a signature mismatch); otherwise the extern at that
-address (a name of the environment or of the program, `callExternAt`) is called like a
-`call`; `stuck` for an address with no function. -/
+evaluates to) is entered when the call-site signature matches its own (`Signature.abiMatch`:
+parameter types and purposes, return types; `stuck` otherwise, Cranelift's "the called function
+must match the specified signature"); otherwise the extern at that address (a name of the
+environment or of the program, `callExternAt`) is called like a `call`; `stuck` for an address
+with no function. -/
 def stepCallIndirect (env : Env) (p : Program) (s : State) (rest : List Stmt)
     (results : List ValueId) (sig : Nat) (callee : ValueId) (args : List ValueId) :
     StepResult :=
@@ -445,8 +472,7 @@ def stepCallIndirect (env : Env) (p : Program) (s : State) (rest : List Stmt)
     pure (declared, cv64.toNat, vals)) fun (declared, addr, vals) =>
   match p.funcs.find? fun f => (s.mem.symbols f.name) == some addr with
   | some target =>
-    if AbiParam.tys declared.params == AbiParam.tys target.sig.params &&
-        AbiParam.tys declared.returns == AbiParam.tys target.sig.returns then
+    if declared.abiMatch target.sig then
       StepResult.ofRes (enterFunc target vals s.mem) fun (fr', mem') =>
         .next { frame := fr', callers := ({ fr with body := rest }, results) :: s.callers,
                 mem := mem' }
