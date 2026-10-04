@@ -368,6 +368,18 @@ The goal "a real crate is covered by one theorem" is reached (all example crates
 - `cargo fv build` running the binary check on every executable and printing a per-executable verdict next to the per-function report (`cargo fv link-proof` stays, for a standalone Lean-checked certificate);
 - a non-vacuity witness for the binary-level theorem on a real executable.
 
+**v1 status (2026-10-05): done**, merged at `80cf5eb`. `E2E.Binary.binary_correct_of_checks` holds with only the standard axioms (plus `_native` certificates via its inputs). Every survey executable and fv-demo pass the per-executable verdict `cargo fv build` prints.
+
+**One gap remains between the theorem and literally "the executable's bytes run" (item 1b, next):** the theorem is about the model machine started from the executable's state with the compiled code (`modelOf r`), which is proven to differ from the executable only at relocated instruction words. Those words hold the compiled instruction with resolved immediates (`--no-relax`). But in the model, address-forming pairs (GOT `adrp` + `ldr`), calls and TLS go through hooks rather than being executed instruction by instruction. So these are trusted parts of the model semantics:
+- the hooked GOT pair computes what the real `adrp`/`ldr` compute, with the slot unchanged during the run;
+- the register is written one instruction later in the executable than in the model;
+- no branch lands between a pair's two words;
+- lld's TLS local-exec rewrite matches the TLSDESC hook.
+
+Closing it needs a simulation layer: running the executable's own bytes refines the hooked model machine, by induction through the linked calls. That is a multi-day item, comparable to one of items 1–4.
+
+| 1b | Executable-bytes simulation | the theorem is about the hooked model machine (`modelOf r`), equal to the executable except at relocated words | prove that running the executable's own instructions (resolved `adrp`/`ldr`, `bl`, the TLS local-exec sequence) refines the hooked model, per pair and through `linkedCall` | medium–large | not started |
+
 ## 5. Trusted base by milestone
 
 | After | Trusted |
