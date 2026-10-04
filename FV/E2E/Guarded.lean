@@ -263,9 +263,9 @@ theorem indCallsRefineP_csemG {env : Clif.Env} {sigs : List Clif.Signature} {MR 
     IndCallsRefineP Pc env sigs MR (csemG F ctx X Rd syms exts sigs sp0 Pc) := by
   obtain ⟨h1, h2⟩ := indCallsRefine_csem (F := F) (ctx := ctx) hX hsym
     (fun sl cm w h => (hMRm sl cm w h).symbols)
-  refine ⟨fun sig hin n g sl cm w a r us ds u args vals rvals cm' a1 a2 a3 a4 a5 a6 a7 hpc a9 a10 =>
-    ?_, fun sig hin n g sl cm w a r us ds ti u args vals rvals cm' a1 a2 a3 a4 a5 a6 a7 hpc a9 a10 =>
-    ?_⟩
+  refine ⟨fun sig hin n g sl cm w a r us ds u args vals rvals cm' a1 a2 a3 a4 a5 a6 a7 hpc a9 a10
+    a11 => ?_, fun sig hin n g sl cm w a r us ds ti u args vals rvals cm' a1 a2 a3 a4 a5 a6 a7 hpc
+    a9 a10 a11 => ?_⟩
   · have hm := hMRm sl cm w a7
     have hu : lo64 u = X.sym n 0 := by
       rw [a3, hsym n a (by rw [← hm.symbols]; exact a2)]
@@ -273,7 +273,7 @@ theorem indCallsRefineP_csemG {env : Clif.Env} {sigs : List Clif.Signature} {MR 
       ⟨n, sig, vals, cm, args, hpc, ⟨hm, hMRc sl cm w a7⟩, (.inr ⟨hin, a5, a6⟩), .inr ⟨⟨r, rfl⟩, u, rfl, hu⟩⟩
     have hr : GuardR F Rd ctx.slotBase (.call ⟨.reg r, us, ds⟩) (u :: args) w := trivial
     rw [csemG_of hr hg]
-    exact h1 sig hin n g sl cm w a r us ds u args vals rvals cm' a1 a2 a3 a4 a5 a6 a7 a9 a10
+    exact h1 sig hin n g sl cm w a r us ds u args vals rvals cm' a1 a2 a3 a4 a5 a6 a7 a9 a10 a11
   · have hm := hMRm sl cm w a7
     have hu : lo64 u = X.sym n 0 := by
       rw [a3, hsym n a (by rw [← hm.symbols]; exact a2)]
@@ -281,7 +281,7 @@ theorem indCallsRefineP_csemG {env : Clif.Env} {sigs : List Clif.Signature} {MR 
       ⟨n, sig, vals, cm, args, hpc, ⟨hm, hMRc sl cm w a7⟩, (.inr ⟨hin, a5, a6⟩), .inr ⟨⟨r, rfl⟩, u, rfl, hu⟩⟩
     have hr : GuardR F Rd ctx.slotBase (.tryCall ⟨.reg r, us, ds⟩ ti) (u :: args) w := trivial
     rw [csemG_of hr hg]
-    exact h2 sig hin n g sl cm w a r us ds ti u args vals rvals cm' a1 a2 a3 a4 a5 a6 a7 a9 a10
+    exact h2 sig hin n g sl cm w a r us ds ti u args vals rvals cm' a1 a2 a3 a4 a5 a6 a7 a9 a10 a11
 
 theorem minst_cases (i : MInst) :
     (∃ info, i = .call info) ∨ (∃ info ti, i = .tryCall info ti) ∨ (∃ ds, i = .args ds) ∨

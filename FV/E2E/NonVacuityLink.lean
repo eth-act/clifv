@@ -708,21 +708,25 @@ def imgB (P : Clif.Program) (A : Clif.Function → Art) : Bool :=
 /-- The address of the vtable `vt` (a data object, after the code). -/
 def vtAddr : Nat := 0xF8000
 
-/-- The link-time addresses of the CLIF image: `q` (the function `v` calls through a pointer)
-and `m` (the method in the vtable) at their bases, and the vtable `vt`. -/
+/-- The link-time addresses of the CLIF image: `q` (the function `v` calls through a pointer),
+`m` (the method in the vtable) and `k` (a function with a stack-passed parameter, whose
+signature no indirect call has) at their bases, and the vtable `vt`. -/
 def symsW (n : String) : Option Nat :=
   if n = "q" then some 0x80000 else if n = "m" then some 0xE0000
-  else if n = "vt" then some vtAddr else none
+  else if n = "vt" then some vtAddr else if n = "k" then some 0x40000 else none
 
 /-- `g` may call `n` (`LinkSys.MayCall` of the witness): declared, or with an address when `g`
 has indirect calls. -/
 def mayB (g : Clif.Function) (n : String) : Bool :=
   declB g n || (!indFreeB g && n != g.name && (symsW n).isSome)
 
-/-- The scope of the indirect calls of `g` (`indNoSym`, `indSig`). -/
+/-- The scope of the indirect calls of `g` (`indNoSym`, `indSig`: the functions `g` may reach
+with the parameter types of one of its indirect calls). -/
 def indB (g : Clif.Function) : Bool :=
   indFreeB g || ((indSigs g).all (fun s => !s.params.any (·.purpose == .sret)) &&
-    P.funcs.all (fun h => !mayB g h.name || (!h.sig.params.any (·.purpose == .sret) &&
+    P.funcs.all (fun h => !mayB g h.name ||
+      !(indSigs g).any (fun s => decide (Clif.AbiParam.tys h.sig.params = Clif.AbiParam.tys s.params)) ||
+      (!h.sig.params.any (·.purpose == .sret) &&
       (match sigParamBytes h.sig with | .ok b => decide (b.length ≤ 8) | .error _ => false))) &&
     symsW g.name == none)
 
@@ -987,15 +991,18 @@ theorem symInj {h : Clif.Function} (hh : h ∈ P.funcs) (n : String)
     exact (((hdist _ hxm).2 _ (lookup_pair hy)).resolve_left (fun e => e hn)).symm
 
 theorem symsW_some {n : String} {b : Nat} (h : symsW n = some b) :
-    (n = "q" ∧ b = 0x80000) ∨ (n = "m" ∧ b = 0xE0000) ∨ (n = "vt" ∧ b = vtAddr) := by
+    (n = "q" ∧ b = 0x80000) ∨ (n = "m" ∧ b = 0xE0000) ∨ (n = "vt" ∧ b = vtAddr) ∨
+      (n = "k" ∧ b = 0x40000) := by
   unfold symsW at h
   split at h
   · cases h; exact .inl ⟨by assumption, rfl⟩
   · split at h
     · cases h; exact .inr (.inl ⟨by assumption, rfl⟩)
     · split at h
-      · cases h; exact .inr (.inr ⟨by assumption, rfl⟩)
-      · cases h
+      · cases h; exact .inr (.inr (.inl ⟨by assumption, rfl⟩))
+      · split at h
+        · cases h; exact .inr (.inr (.inr ⟨by assumption, rfl⟩))
+        · cases h
 
 /-- `MayCall` of the witness is decided by `mayB`. -/
 theorem mayB_of {F : BitVec 64 → Prop} {g : Clif.Function} {n : String}
@@ -1019,16 +1026,22 @@ theorem mayCall_ne {F : BitVec 64 → Prop} {g h : Clif.Function} (hm : (L F).Ma
 theorem indFacts {F : BitVec 64 → Prop} {g : Clif.Function} (hg : g ∈ P.funcs)
     (hnf : ¬ Clif.IndFree g) :
     (∀ sig ∈ indSigs g, sig.params.any (·.purpose == .sret) = false) ∧
-    (∀ h ∈ P.funcs, (L F).MayCall g h.name → h.sig.params.any (·.purpose == .sret) = false ∧
+    (∀ h ∈ P.funcs, (L F).MayCall g h.name → (∃ sig ∈ indSigs g, LinkSys.IndSigMatch sig h) →
+      h.sig.params.any (·.purpose == .sret) = false ∧
       ∃ bytes, sigParamBytes h.sig = .ok bytes ∧ bytes.length ≤ 8) ∧
     symsW g.name = none := by
   have h := (facts hg).ind
   simp only [indB, Bool.or_eq_true, Bool.and_eq_true, List.all_eq_true] at h
   rcases h with h | ⟨⟨h1, h2⟩, h3⟩
   · exact absurd (indFreeB_sound h) hnf
-  refine ⟨fun sig hs => by simpa using h1 sig hs, fun h' hh hd => ?_, by simpa using h3⟩
+  refine ⟨fun sig hs => by simpa using h1 sig hs, fun h' hh hd ⟨sig, hsig, hm⟩ => ?_,
+    by simpa using h3⟩
   have h2' := h2 h' hh
   rw [mayB_of hd] at h2'
+  have hany : (indSigs g).any (fun s => decide (Clif.AbiParam.tys h'.sig.params =
+      Clif.AbiParam.tys s.params)) = true :=
+    List.any_eq_true.mpr ⟨sig, hsig, decide_eq_true hm⟩
+  rw [hany] at h2'
   revert h2'
   cases hs : h'.sig.params.any (·.purpose == .sret) <;>
     cases hb : sigParamBytes h'.sig <;> simp_all
@@ -1134,10 +1147,11 @@ theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
       raStar := fun h hh k hk => ?_
       depth := fun g hg => (facts hg).depth
       symOk := fun n b hn => by
-        rcases symsW_some hn with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+        rcases symsW_some hn with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
         · show symOf "q" = _; decide
         · show symOf "m" = _; decide
         · show symOf "vt" = _; decide
+        · show symOf "k" = _; decide
       baseOs := fun g hg info hs hb F' K G s0 Pc ctx s _ _ _ c wh ops regs i' w outs w' _ _ _ _ _ _
         _ hsem => by simp [csem, L, Xb] at hsem
       basePc := fun d s _ _ _ => by simp [L, Hb, Arm.r_of_w_same]
@@ -1554,6 +1568,15 @@ def oneCopyB : Bool :=
 
 theorem oneCopyB_true : oneCopyB = true := by native_decide
 
+/-- `k` (a stack-passed parameter: more than 8 argument registers' worth) has an address, so the
+indirect caller `v` may reach it, but no indirect call of `v` has `k`'s parameter types. -/
+def sigChainB : Bool :=
+  decide (symsW "k" = some 0x40000) &&
+  (indSigs fV).all (fun s => !decide (Clif.AbiParam.tys fK.sig.params = Clif.AbiParam.tys s.params)) &&
+  (match sigParamBytes fK.sig with | .ok b => decide (8 < b.length) | .error _ => true)
+
+theorem sigChainB_true : sigChainB = true := by native_decide
+
 /-- `f` calls `t` (a callee with a stack slot, beyond its allocator frame: a slot region) and `u`
 (a callee with an outgoing-argument area: it passes a stack argument to `k`). -/
 def slotChainB : Bool :=
@@ -1616,7 +1639,9 @@ the recursive `r`, `v`, `t` (a callee with a stack slot), `u` (a callee passing 
 to `k`) and `d` with the address of the vtable `vt`; `g` calls `h` (a non-leaf callee); `r`
 recurses through its alias `r__fvself` (same body and signature, one copy of the code: the same
 address and words, so each call returns into the callee's own code); `v` calls `q` through a pointer
-(`call_indirect` of `func_addr`) and through the GOT; `w` passes `i128` pairs to `a2` (both
+(`call_indirect` of `func_addr`) and through the GOT, and may reach `k` (which has an address and a
+stack-passed parameter) but with no indirect call of `k`'s parameter types (`indSig` constrains only
+the reachable callees); `w` passes `i128` pairs to `a2` (both
 legalised by `Opt.Legalize128`); `d` calls the method `m` it loads from the vtable (a read-only
 data object holding `m`'s address, written by the loader) without declaring it; `e` calls the
 base extern `pz` through the GOT next to the declared `s` of the same arity, whose argument
@@ -1631,6 +1656,8 @@ theorem backend_correct_program_witness :
     fQ ∈ (L F0).P.funcs ∧ fV ∈ (L F0).P.funcs ∧ (∃ info, (L F0).ProgSite fF info fV) ∧
     ¬ Clif.IndFree fV ∧ (∃ info, (A fV).vcp.CallSite info ∧ ∀ n, info.dest ≠ .sym n) ∧
     DeclN fV fQ.name ∧ (L F0).syms fQ.name = some 0x80000 ∧
+    (L F0).MayCall fV fK.name ∧ (∀ sig ∈ indSigs fV, ¬ LinkSys.IndSigMatch sig fK) ∧
+    ¬ (∃ bytes, sigParamBytes fK.sig = .ok bytes ∧ bytes.length ≤ 8) ∧
     fA2 ∈ (L F0).P.funcs ∧ fW ∈ (L F0).P.funcs ∧ (∃ info, (L F0).ProgSite fF info fW) ∧
     (∃ info, (L F0).ProgSite fW info fA2) ∧
     Opt.Legalize128.function128Cert (srcFn 9) = .ok (fA2, certOf 9) ∧
@@ -1689,7 +1716,11 @@ theorem backend_correct_program_witness :
     · assumption
     · cases hloc
   have hbF : (A fF).base.toNat + 4 * (A fF).fb.words.size + 4 ≤ 0xF8000 := bound_of (by simp [P])
-  obtain ⟨-, -, -, hns, -, -, -, hnq, hnv, -, -, -, -, hnm', hnd, -⟩ := names
+  obtain ⟨-, -, -, hns, hnk, -, -, hnq, hnv, -, -, -, -, hnm', hnd, -⟩ := names
+  have hsk := sigChainB_true
+  simp only [sigChainB, Bool.and_eq_true, decide_eq_true_eq, List.all_eq_true, Bool.not_eq_true',
+    decide_eq_false_iff_not] at hsk
+  obtain ⟨⟨hsymk, hnomatch⟩, hbytes⟩ := hsk
   have hgc := gotChainB_true
   simp only [gotChainB, Bool.and_eq_true, decide_eq_true_eq] at hgc
   obtain ⟨⟨⟨⟨⟨-, hpz⟩, hde⟩, hie⟩, hgc'⟩, hsr⟩ := hgc
@@ -1725,6 +1756,9 @@ theorem backend_correct_program_witness :
   refine ⟨hL, hfF, by simp [L, P], by simp [L, P], by simp [L, P], by simp [L, P], ?_,
     fun h => (by rw [indFreeB_of h] at hind; cases hind), ?_,
     (by rw [hnq]; exact declB_sound hdecl), (by simp only [L, hnq]; exact hsq),
+    .inr ⟨fun h => (by rw [indFreeB_of h] at hind; cases hind), by rw [hnk, hnv]; decide,
+      by simp only [L, hnk, hsymk]; simp⟩,
+    hnomatch, fun ⟨b, hb, hb8⟩ => by rw [hb] at hbytes; simp at hbytes; omega,
     by simp [L, P], by simp [L, P], ?_, ?_, hcert 9 fA2 hl9 hl9e, hk9, hcert 10 fW hl10 hl10e, hk10,
     hs9p, hs9r, ha2p, ha2r,
     by simp [L, P], by simp [L, P], ?_, ?_, ?_,

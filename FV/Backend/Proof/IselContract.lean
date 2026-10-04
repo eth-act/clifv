@@ -1231,7 +1231,8 @@ the call site's signature (`sigN`) as the ABI. -/
 /-- **The indirect-call contract at the VCode level** (M6 discharges it for `csem` from the
 external contract `XCallsIndOk` and the link-time symbol addresses), for the call-site
 signatures `sigs`: a `blr` whose target register holds (low 64 bits) the link-time address `a`
-of an extern `n` (`cm.symbols n = some a`), with at most 8 argument values (`AllHold`) and one
+of an extern `n` (`cm.symbols n = some a`), with at most 8 argument values (`AllHold`) of the
+call site's parameter types (as `Clif.callExternAt` checks them) and one
 def per ABI return of the call site's signature (`sigRets`), returns one value per def, the
 first ones the extern's results (`PrefixHold`), and a world related to the extern's memory;
 the same of the `tryCall` of a `try_call_indirect`, which continues at its normal-return
@@ -1244,6 +1245,7 @@ def IndCallsRefine (env : Clif.Env) (sigs : List Clif.Signature) (MR : MemRelT) 
     env.extern n = some g → cm.symbols n = some a → lo64 u = BitVec.ofNat 64 a →
     ds.length = (sigRets sig).length → vals.length ≤ 8 → AllHold vals args → MR sl cm w →
     g vals cm = .returned rvals cm' → rvals.length = sig.returns.length →
+    vals.map (·.ty) = Clif.AbiParam.tys sig.params →
     ∃ outs w', isem (.call ⟨.reg r, us, ds⟩) (u :: args) w = some (outs, w', .next) ∧
       outs.length = ds.length ∧ PrefixHold rvals outs ∧ MR sl cm' w') ∧
   (∀ sig ∈ sigs, ∀ (n : String) g (sl : List (Clif.SlotId × Nat)) (cm : Clif.Mem)
@@ -1252,6 +1254,7 @@ def IndCallsRefine (env : Clif.Env) (sigs : List Clif.Signature) (MR : MemRelT) 
     env.extern n = some g → cm.symbols n = some a → lo64 u = BitVec.ofNat 64 a →
     (sigRets sig).length ≤ ds.length → vals.length ≤ 8 → AllHold vals args → MR sl cm w →
     g vals cm = .returned rvals cm' → rvals.length = sig.returns.length →
+    vals.map (·.ty) = Clif.AbiParam.tys sig.params →
     ∃ outs w', isem (.tryCall ⟨.reg r, us, ds⟩ ti) (u :: args) w =
         some (outs, w', .goto ti.handlers.length) ∧
       outs.length = ds.length ∧ PrefixHold rvals outs ∧ MR sl cm' w')

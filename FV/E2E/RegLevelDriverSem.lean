@@ -307,7 +307,7 @@ theorem callsRefine_csem {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {en
 `sigs` of a function's `call_indirect`s and `try_call_indirect`s: a `blr` (`X.call none`) whose
 target (the first use) holds, in its low 64 bits, the link-time address `X.sym n 0` of an extern
 `n` of `env`, with at most 8 arguments related to CLIF values `vals` (in the registers of the
-call site's signature), from a world related (`MR`) to CLIF memory `cm`, where the extern returns
+call site's signature, of its parameter types: `Clif.callExternAt` checks them), from a world related (`MR`) to CLIF memory `cm`, where the extern returns
 `rvals` (one value per return of the call site's signature) with memory `cm'`, returns one value
 per ABI return of the call site's signature (`sigRets`), the first ones related to `rvals`, and
 a world related to `cm'`. It is `XCallsOk`'s `blr` clause for every extern of `env` at its
@@ -319,6 +319,7 @@ def XCallsIndOk (env : Clif.Env) (sigs : List Clif.Signature) (MR : MemRelT) (X 
     env.extern n = some g → lo64 u = X.sym n 0 →
     vals.length ≤ 8 → AllHold vals args → MR sl cm w →
     g vals cm = .returned rvals cm' → rvals.length = sig.returns.length →
+    vals.map (·.ty) = Clif.AbiParam.tys sig.params →
     ∃ outs w', X.call none (u :: args) w = some (outs, w') ∧ outs.length = (sigRets sig).length ∧
       PrefixHold rvals outs ∧ MR sl cm' w'
 
@@ -335,15 +336,16 @@ theorem indCallsRefine_csem {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} 
     (hMRs : ∀ sl cm w, MR sl cm w → cm.symbols = syms) :
     IndCallsRefine env sigs MR (csem F ctx X) := by
   refine ⟨?_, ?_⟩
-  · intro sig hin n g sl cm w a r us ds u args vals rvals cm' hg ha hu hds hlen hall hmr hret hrl
+  · intro sig hin n g sl cm w a r us ds u args vals rvals cm' hg ha hu hds hlen hall hmr hret hrl hty
     have hs : X.sym n 0 = BitVec.ofNat 64 a := hsym n a (by rw [← hMRs sl cm w hmr]; exact ha)
     obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX sig hin n g sl cm w u args vals rvals cm' hg
-      (by rw [hu, hs]) hlen hall hmr hret hrl
+      (by rw [hu, hs]) hlen hall hmr hret hrl hty
     exact ⟨outs, w', by simp [csem, hc], by rw [hol, hds], ho, hm⟩
   · intro sig hin n g sl cm w a r us ds ti u args vals rvals cm' hg ha hu hds hlen hall hmr hret hrl
+      hty
     have hs : X.sym n 0 = BitVec.ofNat 64 a := hsym n a (by rw [← hMRs sl cm w hmr]; exact ha)
     obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX sig hin n g sl cm w u args vals rvals cm' hg
-      (by rw [hu, hs]) hlen hall hmr hret hrl
+      (by rw [hu, hs]) hlen hall hmr hret hrl hty
     refine ⟨_, w', by simp only [csem, hc, Option.map_some]; rfl, ?_, ho.append _, hm⟩
     simp only [List.length_append, List.length_map, List.length_drop]
     omega

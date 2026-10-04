@@ -74,7 +74,7 @@ theorem try_ind_lowerTryOk {Rd : BitVec 64 → Prop}
       rw [hfr, hctx.func, hsd] at hd
       cases hd
       have hpc := hpin.2 et.sig callee args sig x vals name g rvals cm' rfl hd0 hcv hvals hsym hg
-        hgo
+        hgo hty
       have hvl : vals.length = sig.params.length := by
         have := congrArg List.length hty; simpa [Clif.AbiParam.tys] using this
       have hal : args.length = sig.params.length := (getMany_ok hvals).1 ▸ hvl
@@ -95,7 +95,7 @@ theorem try_ind_lowerTryOk {Rd : BitVec 64 → Prop}
         (.vreg callee .int) (retPairs (args.zip ((abiArgIdx sig.params 0).map Reg.x)))
         (callDefs (outDefs b (max (sigRets sig).length 2))) info (ρ callee) (args.map ρ) vals
         rvals cm' hg hsym hlo (by rw [hdl]; exact Nat.le_max_left _ _) (by omega)
-        (allHold_args hvh hvals) hmr hpc hgo hrN
+        (allHold_args hvh hvals) hmr hpc hgo hrN hty
       have hol' : outs.length = (outDefs b (max (sigRets sig).length 2)).length := by
         rw [hol, hdl]; simp [outDefs]
       rw [← huses] at hi
