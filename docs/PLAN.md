@@ -344,7 +344,6 @@ The goal "a real crate is covered by one theorem" is reached (all example crates
    - upstream: file the `shifts.isle` bug, and turn the `atomic_cas.i32` fix (PR on the owner's fork) into an upstream PR once reviewed;
    - performance: optimised output is about 1.4× Cranelift's size at `speed`.
 
-
 ### M9 (started 2026-10-05): binary in, binary out
 
 **Goal.** A guarantee about the executable file `cargo fv` produces, not about a Lean reconstruction of it: *for this executable, every machine run of a Lean-compiled function, entered per the ABI by code that meets its contract, refines the whole-program CLIF run, provided the stack bound holds.* The remaining assumptions are the contracts of std/musl and of cg_clif-fallback functions, and the frontend (the theorem is relative to the CLIF rustc/cg_clif produced).
@@ -368,6 +367,7 @@ The goal "a real crate is covered by one theorem" is reached (all example crates
 - a top-level binary-level theorem (`E2E.binary_correct` or similar) combining them with `crate_correct` and the boundary statement;
 - `cargo fv build` running the binary check on every executable and printing a per-executable verdict next to the per-function report (`cargo fv link-proof` stays, for a standalone Lean-checked certificate);
 - a non-vacuity witness for the binary-level theorem on a real executable.
+
 ## 5. Trusted base by milestone
 
 | After | Trusted |

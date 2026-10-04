@@ -1,8 +1,9 @@
 # Upstream bugs found by this project
 
 Bugs in pinned upstream components found by differential testing or proof work. Each entry has
-a self-contained reproduction and is ready to be filed. Filing is the owner's decision (public
-trackers), so nothing below has been reported upstream yet.
+a self-contained reproduction. Filing upstream is the owner's decision (public trackers). The fixes
+are prepared as PRs on the owner's fork (`kevaundray/wasmtime`) for review first; nothing has
+been reported to bytecodealliance yet.
 
 ## Cranelift aarch64: `atomic_cas.i32` compares all 64 bits of the expected value
 
@@ -41,6 +42,9 @@ trackers), so nothing below has been reported upstream yet.
 - **Fix:** for I32, use the extended-register form with `uxtw` (`bit21 = 1`,
   `extend_op = 0b010000`), i.e. `cmp x27, w26, uxtw`. This is what the Lean backend emits
   (`FV/Backend/Asm.lean` `casLoopCmp`, a documented deviation from Cranelift).
+- **PR (owner's fork, for review):** https://github.com/kevaundray/wasmtime/pull/1, branch
+  `fix-aarch64-atomic-cas-i32`. Commit 1 adds a runtest and a precise-output test showing the
+  bug (the runtest fails under qemu on aarch64); commit 2 is the fix.
 - **Impact:** any `atomic_cas.i32` whose expected operand comes from a value with dirty upper
   bits. Rust code compiled with rustc_codegen_cranelift (`AtomicU32::compare_exchange`) can hit
   it when the expected value is produced by a truncation.
