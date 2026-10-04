@@ -5,13 +5,13 @@ import FV.E2E.Legal
 /-! # Non-vacuity of `backend_correct_program` (docs/contracts/e2e.md, "Non-vacuity")
 
 A concrete linked program for which every premise of `E2E.backend_correct_program` holds:
-`P = {f, g, h, s, k, r, r__fvself, q, v, a2, w, t, u, m, d, e, y}`, parsed from the embedded source
+`P = {f, g, h, s, k, r, r__fvself, q, v, a2, w, t, u, m, d, e, y, z}`, parsed from the embedded source
 `src`, legalised (`Opt.Legalize128.parsedFile128`), compiled by the
 backend's pipeline (`lowerFunction`, `prepare`, regalloc2's allocation `raOut` — the output of
 `lean-regalloc` on the pipeline's input for this file, rebuilt by `buildRFunc` and accepted by
 `checkAlloc` —, `lowerRFunc`, `emitFunc`, `layout`), loaded at `0x70000` (`f`), `0x20000`,
 `0x10000`, `0x30000`, `0x40000`, `0x50000` (`r` and `r__fvself`: one copy), `0x80000`…`0xF0000`,
-`0xF4000` (`e`), `0xF6000` (`y`). The entry `f` has a
+`0xF4000` (`e`), `0xF6000` (`y`), `0xF7000` (`z`). The entry `f` has a
 stack slot and an outgoing-argument area; it calls
 
 * `s` with an `sret` pointer to its slot (`s` stores through it, returns the pointer in x0),
@@ -40,10 +40,17 @@ arguments in x0/x1) next to the declared program function `s` of the same regist
 entry (`GotV`), so it constrains no function of `P` (`LinkSys.BlrTo`); the former `blrRegs`,
 which quantified over every declared function of that arity, failed on it. `P` also contains `y`
 (not called by `f`): it calls the pointer it is passed (`call_indirect`, signature
-`(i64, i32) -> i32`, arguments in x0/x1) and may reach `s`, which has an address (its `sret`
-pointer in x8, its argument in x0); no indirect call of `y` has `s`'s parameter types, so the
+`(i64, i32) -> i32`, arguments in x0/x1) next to `s`, which has an address (its `sret`
+pointer in x8, its argument in x0); no indirect call of `y` matches `s`'s signature, so the
 `blr` constrains only the functions it can enter (`LinkSys.IndTo`); a `blrRegs` over every
-function `y` may reach failed on it.
+function with an address failed on it. `P` also contains `z` (not called by `f`): it calls the
+pointer it is passed with the signature `(i64, i64)` (arguments in x0/x1), which has the
+parameter types of `s` (`(i64 sret, i64)`) but not its parameter purposes. `Clif.stepCallIndirect`
+enters a function only when the call-site signature matches its own, purposes included
+(`Clif.Signature.abiMatch`, Cranelift's "the called function must match the specified
+signature"), so `z` cannot reach `s` (`LinkSys.MayCall`), and neither `indSig` nor `blrRegs`
+constrains `s` at `z`'s calls. With the former type-only matching, `indSig` (`s` takes an
+`sret` pointer) and `blrRegs` (x8/x0 against the call's x0/x1) both failed on it.
 
 * The per-function premises of `LinkSys.Ok` are executable checks (`chks`, `okB`, each with a
   soundness lemma: `siteOk_sound`, `tryB_sound`, `retsB_sound`, `outFitsB_sound`,
@@ -248,9 +255,16 @@ block0(v0: i64, v1: i64, v2: i32):
     v3 = call_indirect sig0, v0(v1, v2)
     return v3
 }
+
+function %z(i64, i64, i64) system_v {
+    sig0 = (i64, i64) system_v
+block0(v0: i64, v1: i64, v2: i64):
+    call_indirect sig0, v0(v1, v2)
+    return
+}
 "
 
-def raOut : String := "{\"functions\":[{\"allocs\":[[\"x0\"],[\"x2\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"h\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x0\",\"x19\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x0\",\"inst\":1,\"pos\":\"before\",\"to\":\"x19\"}],\"name\":\"g\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x8\",\"x0\"],[\"x3\"],[\"x5\",\"x0\"],[\"x5\",\"x8\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x8\",\"inst\":4,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"s\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\",\"x2\",\"x3\",\"x4\",\"x5\",\"x6\",\"x7\"],[\"x9\"],[\"x0\",\"x0\",\"x9\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"k\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x0\"],[\"x0\"],[\"x0\"],[\"x5\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x11\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"r\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x0\"],[\"x0\"],[\"x0\"],[\"x5\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x11\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"r__fvself\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x8\"],[\"x8\",\"x0\",\"x0\"],[\"x0\"],[\"x7\"],[\"x21\"],[\"x0\",\"x1\",\"x2\",\"x3\",\"x4\",\"x5\",\"x6\",\"x7\",\"x0\"],[\"x0\",\"x0\",\"x1\"],[],[\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x1\",\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x0\"],[\"x0\",\"x1\",\"x0\"],[\"x0\"],[],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x0\",\"inst\":2,\"pos\":\"before\",\"to\":\"x21\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x2\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x3\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x4\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x5\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x6\"},{\"from\":\"x0\",\"inst\":8,\"pos\":\"before\",\"to\":\"x25\"},{\"from\":\"x25\",\"inst\":11,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x0\",\"inst\":16,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x0\",\"inst\":19,\"pos\":\"before\",\"to\":\"x25\"},{\"from\":\"x25\",\"inst\":20,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"f\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"q\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x2\",\"x0\",\"x0\"],[\"x7\"],[\"x7\",\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"v\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\",\"x2\",\"x3\"],[\"x5\"],[\"x7\",\"x0\",\"x2\"],[\"x7\",\"x0\"],[\"x10\"],[\"x7\",\"x0\"],[\"x13\"],[\"x15\",\"x1\",\"x3\"],[\"x1\",\"x15\",\"x10\"],[\"x0\",\"x1\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x7\",\"inst\":9,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"a2\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x2\",\"x0\",\"x0\"],[\"x3\"],[\"x0\",\"x1\",\"x2\",\"x3\",\"x0\",\"x1\"],[\"x11\",\"x0\",\"x0\"],[\"x13\",\"x1\",\"x1\"],[\"x0\",\"x11\",\"x13\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x2\",\"inst\":4,\"pos\":\"before\",\"to\":\"x0\"},{\"from\":\"x3\",\"inst\":4,\"pos\":\"before\",\"to\":\"x1\"}],\"name\":\"w\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x4\"],[\"x6\",\"x0\"],[\"x6\"],[\"x9\"],[\"x0\",\"x9\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"t\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x7\"],[\"x0\"],[\"x0\",\"x1\",\"x2\",\"x3\",\"x4\",\"x5\",\"x6\",\"x7\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x0\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x2\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x3\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x4\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x5\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x6\"}],\"name\":\"u\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"m\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\"],[\"x3\",\"x0\"],[\"x3\",\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x1\",\"inst\":2,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"d\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\"],[\"x1\"],[\"x8\",\"x0\",\"x0\"],[\"x0\"],[\"x6\"],[\"x6\",\"x0\",\"x1\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x0\",\"inst\":1,\"pos\":\"before\",\"to\":\"x8\"},{\"from\":\"x1\",\"inst\":2,\"pos\":\"before\",\"to\":\"x19\"},{\"from\":\"x19\",\"inst\":2,\"pos\":\"before\",\"to\":\"x0\"},{\"from\":\"x19\",\"inst\":3,\"pos\":\"before\",\"to\":\"x0\"},{\"from\":\"x1\",\"inst\":4,\"pos\":\"before\",\"to\":\"x19\"},{\"from\":\"x8\",\"inst\":5,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x19\",\"inst\":5,\"pos\":\"before\",\"to\":\"x0\"},{\"from\":\"x19\",\"inst\":6,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"e\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\",\"x2\"],[\"x7\",\"x0\",\"x1\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x0\",\"inst\":1,\"pos\":\"before\",\"to\":\"x7\"},{\"from\":\"x1\",\"inst\":1,\"pos\":\"before\",\"to\":\"x0\"},{\"from\":\"x2\",\"inst\":1,\"pos\":\"before\",\"to\":\"x1\"}],\"name\":\"y\",\"num_spillslots\":0,\"ok\":true}]}"
+def raOut : String := "{\"functions\":[{\"allocs\":[[\"x0\"],[\"x2\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"h\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x0\",\"x19\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x0\",\"inst\":1,\"pos\":\"before\",\"to\":\"x19\"}],\"name\":\"g\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x8\",\"x0\"],[\"x3\"],[\"x5\",\"x0\"],[\"x5\",\"x8\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x8\",\"inst\":4,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"s\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\",\"x2\",\"x3\",\"x4\",\"x5\",\"x6\",\"x7\"],[\"x9\"],[\"x0\",\"x0\",\"x9\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"k\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x0\"],[\"x0\"],[\"x0\"],[\"x5\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x11\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"r\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x0\"],[\"x0\"],[\"x0\"],[\"x5\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x11\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"r__fvself\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x8\"],[\"x8\",\"x0\",\"x0\"],[\"x0\"],[\"x7\"],[\"x21\"],[\"x0\",\"x1\",\"x2\",\"x3\",\"x4\",\"x5\",\"x6\",\"x7\",\"x0\"],[\"x0\",\"x0\",\"x1\"],[],[\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x1\",\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x0\"],[\"x0\",\"x1\",\"x0\"],[\"x0\"],[],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x0\",\"inst\":2,\"pos\":\"before\",\"to\":\"x21\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x2\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x3\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x4\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x5\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x6\"},{\"from\":\"x0\",\"inst\":8,\"pos\":\"before\",\"to\":\"x25\"},{\"from\":\"x25\",\"inst\":11,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x0\",\"inst\":16,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x0\",\"inst\":19,\"pos\":\"before\",\"to\":\"x25\"},{\"from\":\"x25\",\"inst\":20,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"f\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"q\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x2\",\"x0\",\"x0\"],[\"x7\"],[\"x7\",\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"v\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\",\"x2\",\"x3\"],[\"x5\"],[\"x7\",\"x0\",\"x2\"],[\"x7\",\"x0\"],[\"x10\"],[\"x7\",\"x0\"],[\"x13\"],[\"x15\",\"x1\",\"x3\"],[\"x1\",\"x15\",\"x10\"],[\"x0\",\"x1\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x7\",\"inst\":9,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"a2\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x2\",\"x0\",\"x0\"],[\"x3\"],[\"x0\",\"x1\",\"x2\",\"x3\",\"x0\",\"x1\"],[\"x11\",\"x0\",\"x0\"],[\"x13\",\"x1\",\"x1\"],[\"x0\",\"x11\",\"x13\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x2\",\"inst\":4,\"pos\":\"before\",\"to\":\"x0\"},{\"from\":\"x3\",\"inst\":4,\"pos\":\"before\",\"to\":\"x1\"}],\"name\":\"w\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x4\"],[\"x6\",\"x0\"],[\"x6\"],[\"x9\"],[\"x0\",\"x9\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"t\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x7\"],[\"x0\"],[\"x0\",\"x1\",\"x2\",\"x3\",\"x4\",\"x5\",\"x6\",\"x7\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x0\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x2\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x3\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x4\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x5\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x6\"}],\"name\":\"u\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"m\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\"],[\"x3\",\"x0\"],[\"x3\",\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x1\",\"inst\":2,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"d\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\"],[\"x1\"],[\"x8\",\"x0\",\"x0\"],[\"x0\"],[\"x6\"],[\"x6\",\"x0\",\"x1\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x0\",\"inst\":1,\"pos\":\"before\",\"to\":\"x8\"},{\"from\":\"x1\",\"inst\":2,\"pos\":\"before\",\"to\":\"x19\"},{\"from\":\"x19\",\"inst\":2,\"pos\":\"before\",\"to\":\"x0\"},{\"from\":\"x19\",\"inst\":3,\"pos\":\"before\",\"to\":\"x0\"},{\"from\":\"x1\",\"inst\":4,\"pos\":\"before\",\"to\":\"x19\"},{\"from\":\"x8\",\"inst\":5,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x19\",\"inst\":5,\"pos\":\"before\",\"to\":\"x0\"},{\"from\":\"x19\",\"inst\":6,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"e\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\",\"x2\"],[\"x7\",\"x0\",\"x1\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x0\",\"inst\":1,\"pos\":\"before\",\"to\":\"x7\"},{\"from\":\"x1\",\"inst\":1,\"pos\":\"before\",\"to\":\"x0\"},{\"from\":\"x2\",\"inst\":1,\"pos\":\"before\",\"to\":\"x1\"}],\"name\":\"y\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\",\"x2\"],[\"x6\",\"x0\",\"x1\"],[]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x0\",\"inst\":1,\"pos\":\"before\",\"to\":\"x6\"},{\"from\":\"x1\",\"inst\":1,\"pos\":\"before\",\"to\":\"x0\"},{\"from\":\"x2\",\"inst\":1,\"pos\":\"before\",\"to\":\"x1\"}],\"name\":\"z\",\"num_spillslots\":0,\"ok\":true}]}"
 
 deriving instance Inhabited for Art
 
@@ -301,6 +315,9 @@ def fE : Clif.Function := fn 15
 reach `s` (which has an address), whose argument registers differ from the call's, but no
 indirect call of `y` has `s`'s parameter types (`LinkSys.IndTo`). -/
 def fY : Clif.Function := fn 16
+/-- `z` calls the pointer it is passed (`call_indirect`, signature `(i64, i64)`): the parameter
+types of `s` (`(i64 sret, i64)`) but not its parameter purposes, so it cannot reach `s`. -/
+def fZ : Clif.Function := fn 17
 
 /-- Function `i` of the file as written (before legalisation). -/
 def srcFn (i : Nat) : Clif.Function := match (Clif.parseFile src).funcs[i]? with
@@ -328,9 +345,9 @@ def pipe (f : Clif.Function) (k : Nat) (base : BitVec 64) : Except String Art :=
 
 /-! ## The program and its compiled image -/
 
-/-- The program `{f, g, h, s, k, r, r__fvself, q, v, a2, w, t, u, m, d, e, y}`. -/
+/-- The program `{f, g, h, s, k, r, r__fvself, q, v, a2, w, t, u, m, d, e, y, z}`. -/
 def P : Clif.Program :=
-  { funcs := [fF, fG, fH, fS, fK, fR, fRS, fQ, fV, fA2, fW, fT, fU, fM, fD, fE, fY] }
+  { funcs := [fF, fG, fH, fS, fK, fR, fRS, fQ, fV, fA2, fW, fT, fU, fM, fD, fE, fY, fZ] }
 
 /-- The file index of a function of `P` (the regalloc2 output and the local labels). -/
 def idx (g : Clif.Function) : Nat :=
@@ -338,12 +355,13 @@ def idx (g : Clif.Function) : Nat :=
   else if g = fR then 4 else if g = fRS then 5 else if g = fQ then 7 else if g = fV then 8
   else if g = fA2 then 9 else if g = fW then 10 else if g = fT then 11 else if g = fU then 12
   else if g = fM then 13 else if g = fD then 14 else if g = fE then 15 else if g = fY then 16
-  else 0
+  else if g = fZ then 17 else 0
 
-/-- The load address of a function of `P` (`e` and `y` between `d` and the vtable; `r__fvself` at
-`r`'s address: one copy of their code). -/
+/-- The load address of a function of `P` (`e`, `y` and `z` between `d` and the vtable;
+`r__fvself` at `r`'s address: one copy of their code). -/
 def baseOf (g : Clif.Function) : BitVec 64 :=
-  if idx g = 15 then 0xF4000 else if idx g = 16 then 0xF6000 else if idx g = 5 then 0x50000
+  if idx g = 15 then 0xF4000 else if idx g = 16 then 0xF6000 else if idx g = 17 then 0xF7000
+  else if idx g = 5 then 0x50000
   else 0x10000 * BitVec.ofNat 64 (idx g + 1)
 
 /-- The compiled image of every function. -/
@@ -734,23 +752,25 @@ def symsW (n : String) : Option Nat :=
   else if n = "vt" then some vtAddr else if n = "k" then some 0x40000
   else if n = "s" then some 0x30000 else none
 
-/-- `g` may call `n` (`LinkSys.MayCall` of the witness): declared, or with an address when `g`
-has indirect calls. -/
+/-- `g` may call `n` (an over-approximation of `LinkSys.MayCall` of the witness): declared, or
+with an address when `g` has indirect calls. -/
 def mayB (g : Clif.Function) (n : String) : Bool :=
   declB g n || (!indFreeB g && n != g.name && (symsW n).isSome)
 
 /-- `g` may enter `h` through an address (`LinkSys.IndTo` of the witness): it may call it, and
-declares it or one of its indirect calls has `h`'s parameter types and number of results. -/
+declares it or one of its indirect calls matches `h`'s signature, with as many results. -/
 def indToB (g h : Clif.Function) : Bool :=
   mayB g h.name && (declB g h.name || (indSigs g).any fun s =>
     decide (LinkSys.IndSigMatch s h) && h.sig.returns.length == s.returns.length)
 
 /-- The scope of the indirect calls of `g` (`indNoSym`, `indSig`: the functions `g` may reach
-with the parameter types of one of its indirect calls). -/
+whose signature one of its indirect calls matches, or that it declares and one of its indirect
+calls has the parameter types of). -/
 def indB (g : Clif.Function) : Bool :=
   indFreeB g || ((indSigs g).all (fun s => !s.params.any (·.purpose == .sret)) &&
     P.funcs.all (fun h => !mayB g h.name ||
-      !(indSigs g).any (fun s => decide (Clif.AbiParam.tys h.sig.params = Clif.AbiParam.tys s.params)) ||
+      !((indSigs g).any (fun s => decide (LinkSys.IndSigMatch s h)) ||
+        (declB g h.name && (indSigs g).any (fun s => decide (LinkSys.IndTyMatch s h)))) ||
       (!h.sig.params.any (·.purpose == .sret) &&
       (match sigParamBytes h.sig with | .ok b => decide (b.length ≤ 8) | .error _ => false))) &&
     symsW g.name == none)
@@ -771,7 +791,7 @@ def symTab : List (String × BitVec 64) :=
   [("f", 0x70000), ("g", 0x20000), ("h", 0x10000), ("s", 0x30000), ("k", 0x40000),
     ("r", 0x50000), ("r__fvself", 0x60000), ("q", 0x80000), ("v", 0x90000), ("a2", 0xA0000),
     ("w", 0xB0000), ("t", 0xC0000), ("u", 0xD0000), ("m", 0xE0000), ("d", 0xF0000),
-    ("e", 0xF4000), ("y", 0xF6000), ("vt", BitVec.ofNat 64 vtAddr)]
+    ("e", 0xF4000), ("y", 0xF6000), ("z", 0xF7000), ("vt", BitVec.ofNat 64 vtAddr)]
 
 def symOf (n : String) : BitVec 64 := (symTab.lookup n).getD 0
 
@@ -957,7 +977,7 @@ def Xb : ExtSem where
 /-- The base hooks: a call outside `P` continues at the next instruction; TLS keeps the state. -/
 def Hb : ArmHooks := ⟨fun _ s => Arm.w .PC (Arm.r .PC s + 4) s, fun _ _ s => s⟩
 
-/-- **The linked program** `{f, g, h, s, k, r, r__fvself, q, v, a2, w, t, u, m, d, e}` with the
+/-- **The linked program** `{f, g, h, s, k, r, r__fvself, q, v, a2, w, t, u, m, d, e, y, z}` with the
 addresses `F` outside the world. -/
 def L (F : BitVec 64 → Prop) : LinkSys where
   P := P
@@ -975,12 +995,13 @@ def L (F : BitVec 64 → Prop) : LinkSys where
 theorem names : fF.name = "f" ∧ fG.name = "g" ∧ fH.name = "h" ∧ fS.name = "s" ∧ fK.name = "k" ∧
     fR.name = "r" ∧ fRS.name = "r__fvself" ∧ fQ.name = "q" ∧ fV.name = "v" ∧ fA2.name = "a2" ∧
     fW.name = "w" ∧ fT.name = "t" ∧ fU.name = "u" ∧ fM.name = "m" ∧ fD.name = "d" ∧
-    fE.name = "e" ∧ fY.name = "y" := by
+    fE.name = "e" ∧ fY.name = "y" ∧ fZ.name = "z" := by
   native_decide
 
 theorem mem_P {g : Clif.Function} :
     g ∈ P.funcs ↔ g = fF ∨ g = fG ∨ g = fH ∨ g = fS ∨ g = fK ∨ g = fR ∨ g = fRS ∨ g = fQ ∨
-      g = fV ∨ g = fA2 ∨ g = fW ∨ g = fT ∨ g = fU ∨ g = fM ∨ g = fD ∨ g = fE ∨ g = fY := by
+      g = fV ∨ g = fA2 ∨ g = fW ∨ g = fT ∨ g = fU ∨ g = fM ∨ g = fD ∨ g = fE ∨ g = fY ∨
+      g = fZ := by
   simp [P]
 
 theorem lookup_pair {α β : Type} [BEq α] [LawfulBEq α] :
@@ -1034,7 +1055,7 @@ theorem symsW_some {n : String} {b : Nat} (h : symsW n = some b) :
 /-- `MayCall` of the witness is decided by `mayB`. -/
 theorem mayB_of {F : BitVec 64 → Prop} {g : Clif.Function} {n : String}
     (h : (L F).MayCall g n) : mayB g n = true := by
-  rcases h with h | ⟨hnf, hne, hs⟩
+  rcases h with h | ⟨hnf, hne, hs, -⟩
   · simp [mayB, declB_of h]
   · have hi : indFreeB g = false := by
       cases e : indFreeB g
@@ -1061,7 +1082,8 @@ theorem mayCall_ne {F : BitVec 64 → Prop} {g h : Clif.Function} (hm : (L F).Ma
 theorem indFacts {F : BitVec 64 → Prop} {g : Clif.Function} (hg : g ∈ P.funcs)
     (hnf : ¬ Clif.IndFree g) :
     (∀ sig ∈ indSigs g, sig.params.any (·.purpose == .sret) = false) ∧
-    (∀ h ∈ P.funcs, (L F).MayCall g h.name → (∃ sig ∈ indSigs g, LinkSys.IndSigMatch sig h) →
+    (∀ h ∈ P.funcs, (L F).MayCall g h.name → ((∃ sig ∈ indSigs g, LinkSys.IndSigMatch sig h) ∨
+      (DeclN g h.name ∧ ∃ sig ∈ indSigs g, LinkSys.IndTyMatch sig h)) →
       h.sig.params.any (·.purpose == .sret) = false ∧
       ∃ bytes, sigParamBytes h.sig = .ok bytes ∧ bytes.length ≤ 8) ∧
     symsW g.name = none := by
@@ -1069,13 +1091,15 @@ theorem indFacts {F : BitVec 64 → Prop} {g : Clif.Function} (hg : g ∈ P.func
   simp only [indB, Bool.or_eq_true, Bool.and_eq_true, List.all_eq_true] at h
   rcases h with h | ⟨⟨h1, h2⟩, h3⟩
   · exact absurd (indFreeB_sound h) hnf
-  refine ⟨fun sig hs => by simpa using h1 sig hs, fun h' hh hd ⟨sig, hsig, hm⟩ => ?_,
-    by simpa using h3⟩
+  refine ⟨fun sig hs => by simpa using h1 sig hs, fun h' hh hd hm => ?_, by simpa using h3⟩
   have h2' := h2 h' hh
   rw [mayB_of hd] at h2'
-  have hany : (indSigs g).any (fun s => decide (Clif.AbiParam.tys h'.sig.params =
-      Clif.AbiParam.tys s.params)) = true :=
-    List.any_eq_true.mpr ⟨sig, hsig, decide_eq_true hm⟩
+  have hany : ((indSigs g).any (fun s => decide (LinkSys.IndSigMatch s h')) ||
+      (declB g h'.name && (indSigs g).any (fun s => decide (LinkSys.IndTyMatch s h')))) = true := by
+    simp only [Bool.or_eq_true, Bool.and_eq_true, List.any_eq_true, decide_eq_true_eq]
+    rcases hm with ⟨sig, hs, hm⟩ | ⟨hdn, sig, hs, hm⟩
+    · exact .inl ⟨sig, hs, hm⟩
+    · exact .inr ⟨declB_of hdn, sig, hs, hm⟩
   rw [hany] at h2'
   revert h2'
   cases hs : h'.sig.params.any (·.purpose == .sret) <;>
@@ -1606,10 +1630,11 @@ def oneCopyB : Bool :=
 
 theorem oneCopyB_true : oneCopyB = true := by native_decide
 
-/-- `k` (a stack-passed parameter: more than 8 argument registers' worth) has an address, so the
-indirect caller `v` may reach it, but no indirect call of `v` has `k`'s parameter types. -/
+/-- `k` (a stack-passed parameter: more than 8 argument registers' worth) has an address, but the
+indirect caller `v` does not declare it and no indirect call of `v` has `k`'s parameter types, so
+`v` cannot reach it. -/
 def sigChainB : Bool :=
-  decide (symsW "k" = some 0x40000) &&
+  decide (symsW "k" = some 0x40000) && !declB fV "k" &&
   (indSigs fV).all (fun s => !decide (Clif.AbiParam.tys fK.sig.params = Clif.AbiParam.tys s.params)) &&
   (match sigParamBytes fK.sig with | .ok b => decide (8 < b.length) | .error _ => true)
 
@@ -1694,9 +1719,9 @@ theorem blrArgsB_sound {vc : VCode} {rl : List Reg} (h : blrArgsB vc rl = true) 
       by rw [← hu, ← hd], hl, hne⟩
   · simp
 
-/-- `y` has indirect calls and declares nothing; `s` has an address, so `y` may reach it; `y` has a
-`blr` site with as many register arguments as `s` has register parameters, in other registers
-(`s`'s `sret` pointer is in x8), but no indirect call of `y` has `s`'s parameter types. -/
+/-- `y` has indirect calls and declares nothing; `s` has an address; `y` has a `blr` site with as
+many register arguments as `s` has register parameters, in other registers (`s`'s `sret` pointer
+is in x8), but no indirect call of `y` matches `s`'s signature. -/
 def blrChainB : Bool :=
   decide (P.func? "y" = some fY) && !indFreeB fY && decide (fY.externs = []) &&
   decide (symsW "s" = some 0x30000) &&
@@ -1705,22 +1730,40 @@ def blrChainB : Bool :=
 
 theorem blrChainB_true : blrChainB = true := by native_decide
 
+/-- `z` has indirect calls and declares nothing; `s` has an address and an `sret` parameter; an
+indirect call of `z` has `s`'s parameter types and number of results, but none matches `s`'s
+signature (the parameter purposes differ); `z` has a `blr` site with as many register arguments
+as `s` has register parameters, in other registers. -/
+def zChainB : Bool :=
+  decide (P.func? "z" = some fZ) && !indFreeB fZ && decide (fZ.externs = []) &&
+  decide (symsW "s" = some 0x30000) && fS.sig.params.any (·.purpose == .sret) &&
+  (indSigs fZ).any (fun s =>
+    decide (LinkSys.IndTyMatch s fS) && decide (s.returns.length = fS.sig.returns.length)) &&
+  (indSigs fZ).all (fun s => !decide (LinkSys.IndSigMatch s fS)) &&
+  blrArgsB (A fZ).vcp (regLocs fS.sig)
+
+theorem zChainB_true : zChainB = true := by native_decide
+
 /-- **Non-vacuity of `backend_correct_program`**: for the program
-`P = {f, g, h, s, k, r, r__fvself, q, v, a2, w, t, u, m, d, e, y}` — `f` passes an `sret` pointer to
+`P = {f, g, h, s, k, r, r__fvself, q, v, a2, w, t, u, m, d, e, y, z}` — `f` passes an `sret` pointer to
 its stack slot to `s`, a stack-passed argument to `k`, calls `g` by a `try_call` with a result,
 the recursive `r`, `v`, `t` (a callee with a stack slot), `u` (a callee passing a stack argument
 to `k`) and `d` with the address of the vtable `vt`; `g` calls `h` (a non-leaf callee); `r`
 recurses through its alias `r__fvself` (same body and signature, one copy of the code: the same
 address and words, so each call returns into the callee's own code); `v` calls `q` through a pointer
-(`call_indirect` of `func_addr`) and through the GOT, and may reach `k` (which has an address and a
-stack-passed parameter) but with no indirect call of `k`'s parameter types (`indSig` constrains only
-the reachable callees); `w` passes `i128` pairs to `a2` (both
+(`call_indirect` of `func_addr`) and through the GOT, and cannot reach `k` (which has an address and
+a stack-passed parameter): no indirect call of `v` has `k`'s parameter types (`indSig` constrains
+only the reachable callees); `w` passes `i128` pairs to `a2` (both
 legalised by `Opt.Legalize128`); `d` calls the method `m` it loads from the vtable (a read-only
 data object holding `m`'s address, written by the loader) without declaring it; `e` calls the
 base extern `pz` through the GOT next to the declared `s` of the same arity, whose argument
-registers differ; `y` calls a pointer with two register arguments and may reach `s` (which has an
-address and other argument registers) but with no indirect call of `s`'s parameter types (`blrRegs`
-constrains only the functions a `blr` can enter, `IndTo`) —, compiled by
+registers differ; `y` calls a pointer with two register arguments next to `s` (which has an address
+and other argument registers) but with no indirect call matching `s`'s signature (`blrRegs`
+constrains only the functions a `blr` can enter, `IndTo`); `z` calls a pointer with the signature
+`(i64, i64)`, which has the parameter types of `s` (`(i64 sret, i64)`) but not its parameter
+purposes, so `z` cannot reach `s` (`Clif.stepCallIndirect` requires the purposes to match, and
+`MayCall` follows it): `indSig` (which `s`'s `sret` pointer would fail) and `blrRegs` (x8/x0
+against the call's x0/x1) do not constrain `s` there —, compiled by
 the backend's pipeline (regalloc2's allocation, accepted by `checkAlloc`), every premise of the
 theorem holds — `L.Ok` (with `NeedSlots` and `NeedNI`: its non-interference and placement
 premises are discharged, not vacuous) and the entry premises of `f` on the argument `41`
@@ -1731,7 +1774,8 @@ theorem backend_correct_program_witness :
     fQ ∈ (L F0).P.funcs ∧ fV ∈ (L F0).P.funcs ∧ (∃ info, (L F0).ProgSite fF info fV) ∧
     ¬ Clif.IndFree fV ∧ (∃ info, (A fV).vcp.CallSite info ∧ ∀ n, info.dest ≠ .sym n) ∧
     DeclN fV fQ.name ∧ (L F0).syms fQ.name = some 0x80000 ∧
-    (L F0).MayCall fV fK.name ∧ (∀ sig ∈ indSigs fV, ¬ LinkSys.IndSigMatch sig fK) ∧
+    (L F0).syms fK.name = some 0x40000 ∧ ¬ (L F0).MayCall fV fK.name ∧
+    (∀ sig ∈ indSigs fV, ¬ LinkSys.IndTyMatch sig fK) ∧
     ¬ (∃ bytes, sigParamBytes fK.sig = .ok bytes ∧ bytes.length ≤ 8) ∧
     fA2 ∈ (L F0).P.funcs ∧ fW ∈ (L F0).P.funcs ∧ (∃ info, (L F0).ProgSite fF info fW) ∧
     (∃ info, (L F0).ProgSite fW info fA2) ∧
@@ -1769,8 +1813,14 @@ theorem backend_correct_program_witness :
     (sigRets fS.sig).length = 1 ∧
     (∃ info t Lu Ld, (A fE).vcp.CallSite info ∧ info = ⟨.reg (.vreg t .int), retPairs Lu, callDefs Ld⟩ ∧
       GotV (A fE).vcp t "pz" ∧ (regLocs fS.sig).length = Lu.length ∧ Lu.map (·.2) ≠ regLocs fS.sig) ∧
-    fY ∈ (L F0).P.funcs ∧ ¬ Clif.IndFree fY ∧ (L F0).MayCall fY fS.name ∧ ¬ (L F0).IndTo fY fS ∧
+    fY ∈ (L F0).P.funcs ∧ ¬ Clif.IndFree fY ∧ (L F0).syms fS.name = some 0x30000 ∧
+    ¬ (L F0).MayCall fY fS.name ∧ ¬ (L F0).IndTo fY fS ∧
     (∃ info t Lu Ld, (A fY).vcp.CallSite info ∧ info = ⟨.reg (.vreg t .int), retPairs Lu, callDefs Ld⟩ ∧
+      (regLocs fS.sig).length = Lu.length ∧ Lu.map (·.2) ≠ regLocs fS.sig) ∧
+    fZ ∈ (L F0).P.funcs ∧ ¬ Clif.IndFree fZ ∧
+    (∃ sig ∈ indSigs fZ, LinkSys.IndTyMatch sig fS ∧ sig.returns.length = fS.sig.returns.length) ∧
+    ¬ (L F0).MayCall fZ fS.name ∧ ¬ (L F0).IndTo fZ fS ∧
+    (∃ info t Lu Ld, (A fZ).vcp.CallSite info ∧ info = ⟨.reg (.vreg t .int), retPairs Lu, callDefs Ld⟩ ∧
       (regLocs fS.sig).length = Lu.length ∧ Lu.map (·.2) ≠ regLocs fS.sig) ∧
     run0 = .returned [⟨.i64, 802#64⟩] (retMem run0) ∧
     ArmRefines (A fF).fb (A fF).base 8 ((L F0).mach M0 fF) s0 run0 := by
@@ -1794,11 +1844,11 @@ theorem backend_correct_program_witness :
     · assumption
     · cases hloc
   have hbF : (A fF).base.toNat + 4 * (A fF).fb.words.size + 4 ≤ 0xF8000 := bound_of (by simp [P])
-  obtain ⟨-, -, -, hns, hnk, -, -, hnq, hnv, -, -, -, -, hnm', hnd, -, hny⟩ := names
+  obtain ⟨-, -, -, hns, hnk, -, -, hnq, hnv, -, -, -, -, hnm', hnd, -, -, -⟩ := names
   have hsk := sigChainB_true
   simp only [sigChainB, Bool.and_eq_true, decide_eq_true_eq, List.all_eq_true, Bool.not_eq_true',
     decide_eq_false_iff_not] at hsk
-  obtain ⟨⟨hsymk, hnomatch⟩, hbytes⟩ := hsk
+  obtain ⟨⟨⟨hsymk, hndk⟩, hnomatch⟩, hbytes⟩ := hsk
   have hgc := gotChainB_true
   simp only [gotChainB, Bool.and_eq_true, decide_eq_true_eq] at hgc
   obtain ⟨⟨⟨⟨⟨-, hpz⟩, hde⟩, hie⟩, hgc'⟩, hsr⟩ := hgc
@@ -1807,6 +1857,27 @@ theorem backend_correct_program_witness :
     decide_eq_false_iff_not] at hbc
   obtain ⟨⟨⟨⟨⟨-, hiy⟩, hexty⟩, hsyms⟩, hnomatchY⟩, hblrY⟩ := hbc
   have hniY : ¬ Clif.IndFree fY := fun h => by rw [indFreeB_of h] at hiy; cases hiy
+  have hzc := zChainB_true
+  simp only [zChainB, Bool.and_eq_true, decide_eq_true_eq, List.all_eq_true, List.any_eq_true,
+    Bool.not_eq_true', decide_eq_false_iff_not] at hzc
+  obtain ⟨⟨⟨⟨⟨⟨⟨-, hiz⟩, hextz⟩, -⟩, -⟩, hanyZ⟩, hnoZ⟩, hblrZ⟩ := hzc
+  have hniZ : ¬ Clif.IndFree fZ := fun h => by rw [indFreeB_of h] at hiz; cases hiz
+  have hpS : (L F0).P.func? fS.name = some fS := by show P.func? fS.name = some fS; rw [hns]; exact hps
+  have hnmY : ¬ (L F0).MayCall fY fS.name := by
+    rintro (hd | ⟨-, -, -, hall⟩)
+    · have h1 := hd.1; rw [hexty] at h1; simp at h1
+    · obtain ⟨sig, hs, hm⟩ := hall fS hpS
+      exact hnomatchY sig hs hm
+  have hnmZ : ¬ (L F0).MayCall fZ fS.name := by
+    rintro (hd | ⟨-, -, -, hall⟩)
+    · have h1 := hd.1; rw [hextz] at h1; simp at h1
+    · obtain ⟨sig, hs, hm⟩ := hall fS hpS
+      exact hnoZ sig hs hm
+  have hnmV : ¬ (L F0).MayCall fV fK.name := by
+    rintro (hd | ⟨-, -, -, hall⟩)
+    · have := declB_of hd; rw [hnk, hndk] at this; cases this
+    · obtain ⟨sig, hs, hm⟩ := hall fK (by show P.func? fK.name = some fK; rw [hnk]; exact hpk)
+      exact hnomatch sig hs hm.ty
   have hvt := vtChainB_true
   simp only [vtChainB, Bool.and_eq_true, decide_eq_true_eq] at hvt
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨hcd, hpd⟩, hpm⟩, hregD⟩, hindD⟩, hextD⟩, hsm⟩, hsvt⟩, hdrop8⟩ := hvt
@@ -1839,8 +1910,7 @@ theorem backend_correct_program_witness :
   refine ⟨hL, hfF, by simp [L, P], by simp [L, P], by simp [L, P], by simp [L, P], ?_,
     fun h => (by rw [indFreeB_of h] at hind; cases hind), ?_,
     (by rw [hnq]; exact declB_sound hdecl), (by simp only [L, hnq]; exact hsq),
-    .inr ⟨fun h => (by rw [indFreeB_of h] at hind; cases hind), by rw [hnk, hnv]; decide,
-      by simp only [L, hnk, hsymk]; simp⟩,
+    (by simp only [L, hnk]; exact hsymk), hnmV,
     hnomatch, fun ⟨b, hb, hb8⟩ => by rw [hb] at hbytes; simp at hbytes; omega,
     by simp [L, P], by simp [L, P], ?_, ?_, hcert 9 fA2 hl9 hl9e, hk9, hcert 10 fW hl10 hl10e, hk10,
     hs9p, hs9r, ha2p, ha2r,
@@ -1853,13 +1923,9 @@ theorem backend_correct_program_witness :
     (fun h => by have h1 := h.1; rw [hextD'] at h1; simp at h1), regCallsB_sound hregD,
     (by simp only [L, hnm']; exact hsm), (by show symsW "vt" = some vtAddr; exact hsvt), hdrop8,
     ?_, by simp [L, P], indFreeB_sound hie, (by rw [hns]; exact declB_sound hde), hpz, hsr,
-    gotCallB_sound hgc', by simp [L, P], hniY,
-    .inr ⟨hniY, by rw [hns, hny]; decide, by simp only [L, hns, hsyms]; simp⟩,
-    (fun ⟨_, hd⟩ => by
-      rcases hd with hd | ⟨sig, hs, hm, -⟩
-      · have h1 := hd.1; rw [hexty] at h1; simp at h1
-      · exact hnomatchY sig hs hm),
-    blrArgsB_sound hblrY, hrun, ?_⟩
+    gotCallB_sound hgc', by simp [L, P], hniY, (by simp only [L, hns]; exact hsyms), hnmY,
+    (fun ⟨hm, _⟩ => hnmY hm), blrArgsB_sound hblrY, by simp [L, P], hniZ, hanyZ, hnmZ,
+    (fun ⟨hm, _⟩ => hnmZ hm), blrArgsB_sound hblrZ, hrun, ?_⟩
   · obtain ⟨info, hs, hd⟩ := callsB_sound hcv
     exact ⟨info, hs, "v", hd, hpv⟩
   · exact regCallsB_sound hreg
