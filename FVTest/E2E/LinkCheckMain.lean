@@ -1,4 +1,4 @@
-import FV.E2E.LinkCheck
+import FV.E2E.StackBound
 
 /-!
 # `lake exe link-check <dir> [--lean FILE --module NAME] [--entries a,b,…] [--prune]`
@@ -13,16 +13,23 @@ It completes the input (the CLIF image's symbols `syms`: every `symbol` global v
 `func_addr` target of the functions, and the functions of the program in the data objects they
 reach (vtables, `data_syms` of `link.json`), at its link-map address; `D`: the largest frame of a
 function; `raStar = 8`) and prints the failing checks per function and premise (`diagR`, the
-diagnostic version of `okB`), then a count per premise. With `--prune` it drops the failing
-functions (they become externs of the base environment) until the rest passes. With `--lean` it
+diagnostic version of `okB`), then a count per premise, then the stack bound
+(`E2E.StackBound.stackR`, `FV/E2E/StackBound.lean`: the largest stack an activation of a function
+of the program uses with its callees, and the bound of each entry, a function no other function
+of the program calls; the functions whose calls reach a cycle of the call graph are `recursive`
+and have none). With `--prune` it drops
+the failing functions (they become externs of the base environment) until the rest passes. With `--lean` it
 writes, when the checks pass, the Lean file that proves `LinkSys.Ok` of the crate by
 `native_decide` on `okB` and states `backend_correct_program` for the entries (default: every
-function): the proof does not trust this executable.
+function), and decides the stack bound (`stack_ok` when the call graph has no cycle, else
+`stack_entries`: the entries whose calls never reach one) and states
+`backend_correct_program_stack` for those entries (`StackStmt`: at every fuel, with the fixed
+bound): the proof does not trust this executable.
 
 Exit status: 0 iff the (pruned) input passes.
 -/
 
-open E2E E2E.LinkCheck Lean Backend
+open E2E E2E.LinkCheck E2E.StackBound Lean Backend
 
 /-- The names a function's CLIF takes the address of: its `symbol` global values and its
 `func_addr` targets. -/
@@ -125,7 +132,8 @@ def sliceSize : Nat := 32
 (`Crates.NAME.SliceK`; Lake builds them in parallel, `native_decide` theorems of one file run one
 after the other), and `out`, which combines them. -/
 def leanFiles (I : LinkInput) (names : List String) (entries : List String) (out module exe : String)
-    (noTls : Bool) : List (String × String) := Id.run do
+    (noTls : Bool) (stack : Option Nat) (stackEntries : List String) :
+    List (String × String) := Id.run do
   let ns := s!"Crates.{module}"
   let n := I.funcs.length
   let idx := List.range n
@@ -188,10 +196,16 @@ link's symbol names, and `lean-regalloc`'s output), loaded at their addresses in
 executable's link map (`addrs`). `okB_input` decides every premise of `LinkSys.Ok` about the
 program and its layout by `native_decide` (`okB_of`: the program's checks, `globalB_input`, and
 the per-function checks by slices of {sliceSize} functions, `sliceK_ok`{if split then ", each in its own module" else ""}), run as compiled
-code (the package `crate-proofs` loads the shared library of `FV.E2E.LinkCheck`); `link_ok` is
+code (the package `crate-proofs` loads the shared library of `FV.E2E.StackBound`); `link_ok` is
 `LinkSys.Ok` of the crate's linked system for every base environment satisfying the base
 premises (`BaseOk`: the contracts of std, other crates' code and the runtime, which stay
-premises), and the `correct_*` theorems are `backend_correct_program` for the entries.
+premises), and the `correct_*` theorems are `backend_correct_program` for the entries{if stack.isSome then ";
+`stack_ok` decides the stack bound (`FV/E2E/StackBound.lean`: the call graph has no cycle), and
+the `correct_stack_*` theorems are `backend_correct_program_stack` for the entries (at every
+fuel)" else if !stackEntries.isEmpty then ";
+`stack_entries` decides that the calls of the entries in `stackEntries` never reach a cycle of
+the call graph (`FV/E2E/StackBound.lean`), and the `correct_stack_*` theorems are
+`backend_correct_program_stack` for them (at every fuel)" else ""}.
 -/
 
 "
@@ -218,16 +232,37 @@ theorem entries_present :
 "
   for (e, i) in entries.zipIdx do
     main := main ++ s!"/-- **`backend_correct_program` for `{e}`** -/\ntheorem correct_{i} : CrateStmt input {leanStr e} :=\n  crate_correct okB_input _\n\n"
+  if let some S := stack then
+    main := main ++ s!"/-- **The stack bound** (`FV/E2E/StackBound.lean`): the program's call graph has no cycle, and an
+activation of any of its functions uses at most {S} bytes of stack with its callees
+(`StackBound.stackFn_le`). -/
+theorem stack_ok : StackBound.stackB input = some {S} := by native_decide
+
+"
+    for (e, i) in entries.zipIdx do
+      main := main ++ s!"/-- **`backend_correct_program_stack` for `{e}`**: at every fuel, with the stack bound. -/\ntheorem correct_stack_{i} : StackBound.StackStmt input {leanStr e} :=\n  StackBound.crate_correct_stack okB_input stack_ok _\n\n"
+  else if !stackEntries.isEmpty then
+    main := main ++ s!"/-- The entries whose calls never reach a cycle of the call graph. -/
+def stackEntries : List String := [{", ".intercalate (stackEntries.map leanStr)}]
+
+/-- **The stack bound of the entries in `stackEntries`** (`FV/E2E/StackBound.lean`): their calls
+never reach a cycle of the call graph (the program has recursive functions). -/
+theorem stack_entries : StackBound.goodAll input stackEntries = true := by native_decide
+
+"
+    for (e, i) in entries.zipIdx do
+      if let some k := stackEntries.idxOf? e then
+        main := main ++ s!"/-- **`backend_correct_program_stack` for `{e}`**: at every fuel, with its stack bound. -/\ntheorem correct_stack_{i} : StackBound.StackStmt input {leanStr e} :=\n  StackBound.crate_correct_stackN okB_input\n    (StackBound.goodN_of_all stack_entries (List.getElem_mem (l := stackEntries) (i := {k}) (by decide)))\n\n"
   let footer := s!"end {ns}\n"
   if !split then
-    return [(out, header ("import FV.E2E.LinkCheck\n\n" ++ doc.trimAsciiEnd.toString) ++ inp ++ sliceThm 0 ++ main ++ footer)]
+    return [(out, header ("import FV.E2E.StackBound\n\n" ++ doc.trimAsciiEnd.toString) ++ inp ++ sliceThm 0 ++ main ++ footer)]
   let dir := out.dropRight ".lean".length
   let mut files := [(s!"{dir}/Input.lean",
     header s!"import FV.E2E.LinkCheck\n\n/-! The input of `{ns}` (generated; see there). -/" ++ inp ++ footer)]
   for k in sl do
     files := files ++ [(s!"{dir}/Slice{k}.lean",
       header s!"import {ns}.Input\n\n/-! Slice {k} of `{ns}`'s checks (generated; see there). -/" ++ sliceThm k ++ footer)]
-  let imports := "\n".intercalate (sl.map (s!"import {ns}.Slice{·}"))
+  let imports := "\n".intercalate (sl.map (s!"import {ns}.Slice{·}")) ++ "\nimport FV.E2E.StackBound"
   return files ++ [(out, header (imports ++ "\n\n" ++ doc.trimAsciiEnd.toString) ++ main ++ footer)]
 
 def main (args : List String) : IO UInt32 := do
@@ -371,6 +406,29 @@ def main (args : List String) : IO UInt32 := do
   IO.println s!"  image: {imgWords} words of {(bins.filter (·.isSome)).size} functions compared with the executable, {imgBad} function(s) differ"
   let ok := d.isEmpty
   IO.println (if ok then "  okB: true" else "  okB: false")
+  -- the stack bound (`stackR`) of the (pruned) program
+  let Pk := progOf keep
+  let Sk := fun n => I.syms.lookup n
+  let stackC := stackR I keep
+  let stackOf (g : Clif.Function) : Option Nat :=
+    (stackC.bind (· g)).map (frameDrop (artOf keep g).af + ·)
+  match stackC with
+  | some _ =>
+    let bad := Pk.funcs.filter fun g => (stackOf g).isNone
+    let s := Pk.funcs.foldl (fun x g => max x ((stackOf g).getD 0)) 0
+    if bad.isEmpty then
+      IO.println s!"  stack: {s} bytes at most (no call cycle)"
+    else
+      IO.println s!"  stack: recursive: the calls of {bad.length} function(s) reach a call cycle (their stack stays a premise): {(bad.map (·.name)).take 10}{if bad.length > 10 then " …" else ""}; the other {Pk.funcs.length - bad.length}: {s} bytes at most"
+    let es := (Pk.funcs.filter fun h => !Pk.funcs.any fun g => edgeB Sk g h).map fun g =>
+      (g.name, stackOf g)
+    let es := es.mergeSort fun x y => x.2.getD (2 ^ 64) ≥ y.2.getD (2 ^ 64)
+    IO.println s!"  stack: {es.length} entries (no caller in the program):"
+    for (n, v) in es.take 10 do
+      IO.println s!"      {match v with | some v => toString v | none => "recursive"}  {n}"
+    if es.length > 10 then IO.println s!"      … {es.length - 10} more"
+  | none =>
+    IO.println s!"  stack: the budget check fails (budMap's budgets are wrong)"
   -- the Lean file
   if let some out := o.lean then
     if !ok then
@@ -392,7 +450,13 @@ def main (args : List String) : IO UInt32 := do
       for e in ← dir.readDir do
         if e.fileName == "Input.lean" || (e.fileName.startsWith "Slice" && e.fileName.endsWith ".lean") then
           IO.FS.removeFile e.path
-    for (p, t) in leanFiles I' (funcs.map (·.2)) entries out o.module exe noTls do
+    let stackGood := entries.filter fun e => match Pk.func? e with
+      | some f => (stackOf f).isSome
+      | none => false
+    let stackAll := stackC.isSome && Pk.funcs.all fun g => (stackOf g).isSome
+    let stackS := if stackAll then some (Pk.funcs.foldl (fun x g => max x ((stackOf g).getD 0)) 0)
+      else none
+    for (p, t) in leanFiles I' (funcs.map (·.2)) entries out o.module exe noTls stackS stackGood do
       if let some pd := (p : System.FilePath).parent then IO.FS.createDirAll pd
       IO.FS.writeFile p t
       IO.println s!"  wrote {p}"

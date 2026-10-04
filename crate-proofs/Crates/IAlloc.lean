@@ -1,5 +1,6 @@
 import Crates.IAlloc.Slice0
 import Crates.IAlloc.Slice1
+import FV.E2E.StackBound
 
 /-! # Crate-level instance of `backend_correct_program` (generated)
 
@@ -13,10 +14,13 @@ link's symbol names, and `lean-regalloc`'s output), loaded at their addresses in
 executable's link map (`addrs`). `okB_input` decides every premise of `LinkSys.Ok` about the
 program and its layout by `native_decide` (`okB_of`: the program's checks, `globalB_input`, and
 the per-function checks by slices of 32 functions, `sliceK_ok`, each in its own module), run as compiled
-code (the package `crate-proofs` loads the shared library of `FV.E2E.LinkCheck`); `link_ok` is
+code (the package `crate-proofs` loads the shared library of `FV.E2E.StackBound`); `link_ok` is
 `LinkSys.Ok` of the crate's linked system for every base environment satisfying the base
 premises (`BaseOk`: the contracts of std, other crates' code and the runtime, which stay
-premises), and the `correct_*` theorems are `backend_correct_program` for the entries.
+premises), and the `correct_*` theorems are `backend_correct_program` for the entries;
+`stack_ok` decides the stack bound (`FV/E2E/StackBound.lean`: the call graph has no cycle), and
+the `correct_stack_*` theorems are `backend_correct_program_stack` for the entries (at every
+fuel).
 -/
 
 namespace Crates.IAlloc
@@ -248,5 +252,206 @@ theorem correct_47 : CrateStmt input "vec_squares" :=
 /-- **`backend_correct_program` for `vec_sum`** -/
 theorem correct_48 : CrateStmt input "vec_sum" :=
   crate_correct okB_input _
+
+/-- **The stack bound** (`FV/E2E/StackBound.lean`): the program's call graph has no cycle, and an
+activation of any of its functions uses at most 1696 bytes of stack with its callees
+(`StackBound.stackFn_le`). -/
+theorem stack_ok : StackBound.stackB input = some 1696 := by native_decide
+
+/-- **`backend_correct_program_stack` for `__fv_c6d66374090f__RNvMs6_NtCsazjiGSRkgVH_4core3numm12wrapping_add`**: at every fuel, with the stack bound. -/
+theorem correct_stack_0 : StackBound.StackStmt input "__fv_c6d66374090f__RNvMs6_NtCsazjiGSRkgVH_4core3numm12wrapping_add" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_c6d66374090f__RNvMs6_NtCsazjiGSRkgVH_4core3numm12wrapping_mul`**: at every fuel, with the stack bound. -/
+theorem correct_stack_1 : StackBound.StackStmt input "__fv_c6d66374090f__RNvMs6_NtCsazjiGSRkgVH_4core3numm12wrapping_mul" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_c6d66374090f__RNvXs10_NtNtCsazjiGSRkgVH_4core3cmp5implsmNtB8_10PartialOrd2lt`**: at every fuel, with the stack bound. -/
+theorem correct_stack_2 : StackBound.StackStmt input "__fv_c6d66374090f__RNvXs10_NtNtCsazjiGSRkgVH_4core3cmp5implsmNtB8_10PartialOrd2lt" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_c6d66374090f__RNvXsU_NtNtCsazjiGSRkgVH_4core3cmp5implsjNtB7_10PartialOrd2lt`**: at every fuel, with the stack bound. -/
+theorem correct_stack_3 : StackBound.StackStmt input "__fv_c6d66374090f__RNvXsU_NtNtCsazjiGSRkgVH_4core3cmp5implsjNtB7_10PartialOrd2lt" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `_RNxC7i_alloc11H7R1G6XaE3S`**: at every fuel, with the stack bound. -/
+theorem correct_stack_4 : StackBound.StackStmt input "_RNxC7i_alloc11H7R1G6XaE3S" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `_RNxC7i_alloc12H1KIlHSh3Yce`**: at every fuel, with the stack bound. -/
+theorem correct_stack_5 : StackBound.StackStmt input "_RNxC7i_alloc12H1KIlHSh3Yce" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_c6d66374090f__RNxC7i_alloc12H1Nc2aIZCkz7`**: at every fuel, with the stack bound. -/
+theorem correct_stack_6 : StackBound.StackStmt input "__fv_c6d66374090f__RNxC7i_alloc12H1Nc2aIZCkz7" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_c6d66374090f__RNxC7i_alloc12H1RjFMmCyxXB`**: at every fuel, with the stack bound. -/
+theorem correct_stack_7 : StackBound.StackStmt input "__fv_c6d66374090f__RNxC7i_alloc12H1RjFMmCyxXB" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_c6d66374090f__RNxC7i_alloc12H1veyxZLX0fP`**: at every fuel, with the stack bound. -/
+theorem correct_stack_8 : StackBound.StackStmt input "__fv_c6d66374090f__RNxC7i_alloc12H1veyxZLX0fP" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `_RNxC7i_alloc12H2KRLjzqheeW`**: at every fuel, with the stack bound. -/
+theorem correct_stack_9 : StackBound.StackStmt input "_RNxC7i_alloc12H2KRLjzqheeW" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_c6d66374090f__RNxC7i_alloc12H2OrpvPZnSvw`**: at every fuel, with the stack bound. -/
+theorem correct_stack_10 : StackBound.StackStmt input "__fv_c6d66374090f__RNxC7i_alloc12H2OrpvPZnSvw" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_c6d66374090f__RNxC7i_alloc12H3DWzoshuDMI`**: at every fuel, with the stack bound. -/
+theorem correct_stack_11 : StackBound.StackStmt input "__fv_c6d66374090f__RNxC7i_alloc12H3DWzoshuDMI" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `_RNxC7i_alloc12H3l0mtkMd3Yr`**: at every fuel, with the stack bound. -/
+theorem correct_stack_12 : StackBound.StackStmt input "_RNxC7i_alloc12H3l0mtkMd3Yr" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_c6d66374090f__RNxC7i_alloc12H4rJfNBckiEZ`**: at every fuel, with the stack bound. -/
+theorem correct_stack_13 : StackBound.StackStmt input "__fv_c6d66374090f__RNxC7i_alloc12H4rJfNBckiEZ" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_c6d66374090f__RNxC7i_alloc12H4zNQyiRkWJj`**: at every fuel, with the stack bound. -/
+theorem correct_stack_14 : StackBound.StackStmt input "__fv_c6d66374090f__RNxC7i_alloc12H4zNQyiRkWJj" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_c6d66374090f__RNxC7i_alloc12H53GPeeJ2eJP`**: at every fuel, with the stack bound. -/
+theorem correct_stack_15 : StackBound.StackStmt input "__fv_c6d66374090f__RNxC7i_alloc12H53GPeeJ2eJP" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `_RNxC7i_alloc12H5Qg8GD2rkNo`**: at every fuel, with the stack bound. -/
+theorem correct_stack_16 : StackBound.StackStmt input "_RNxC7i_alloc12H5Qg8GD2rkNo" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `_RNxC7i_alloc12H5rXY3wxhkDb`**: at every fuel, with the stack bound. -/
+theorem correct_stack_17 : StackBound.StackStmt input "_RNxC7i_alloc12H5rXY3wxhkDb" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `_RNxC7i_alloc12H7XLcs2GUI1c`**: at every fuel, with the stack bound. -/
+theorem correct_stack_18 : StackBound.StackStmt input "_RNxC7i_alloc12H7XLcs2GUI1c" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `_RNxC7i_alloc12H8Ea4kOfmvGQ`**: at every fuel, with the stack bound. -/
+theorem correct_stack_19 : StackBound.StackStmt input "_RNxC7i_alloc12H8Ea4kOfmvGQ" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_c6d66374090f__RNxC7i_alloc12H9iZx82JkYw7`**: at every fuel, with the stack bound. -/
+theorem correct_stack_20 : StackBound.StackStmt input "__fv_c6d66374090f__RNxC7i_alloc12H9iZx82JkYw7" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `_RNxC7i_alloc12HahHZmLPjj4d`**: at every fuel, with the stack bound. -/
+theorem correct_stack_21 : StackBound.StackStmt input "_RNxC7i_alloc12HahHZmLPjj4d" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_c6d66374090f__RNxC7i_alloc12Haj7DeHTs2jN`**: at every fuel, with the stack bound. -/
+theorem correct_stack_22 : StackBound.StackStmt input "__fv_c6d66374090f__RNxC7i_alloc12Haj7DeHTs2jN" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `_RNxC7i_alloc12HaqIKGLUeCNy`**: at every fuel, with the stack bound. -/
+theorem correct_stack_23 : StackBound.StackStmt input "_RNxC7i_alloc12HaqIKGLUeCNy" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `_RNxC7i_alloc12HauXEhFkDFN0`**: at every fuel, with the stack bound. -/
+theorem correct_stack_24 : StackBound.StackStmt input "_RNxC7i_alloc12HauXEhFkDFN0" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `_RNxC7i_alloc12Hb3O96xCyidJ`**: at every fuel, with the stack bound. -/
+theorem correct_stack_25 : StackBound.StackStmt input "_RNxC7i_alloc12Hb3O96xCyidJ" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_c6d66374090f__RNxC7i_alloc12Hb9CtW6O3re5`**: at every fuel, with the stack bound. -/
+theorem correct_stack_26 : StackBound.StackStmt input "__fv_c6d66374090f__RNxC7i_alloc12Hb9CtW6O3re5" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `_RNxC7i_alloc12HbIfMPsroWzG`**: at every fuel, with the stack bound. -/
+theorem correct_stack_27 : StackBound.StackStmt input "_RNxC7i_alloc12HbIfMPsroWzG" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `_RNxC7i_alloc12HbSWyD42FJZH`**: at every fuel, with the stack bound. -/
+theorem correct_stack_28 : StackBound.StackStmt input "_RNxC7i_alloc12HbSWyD42FJZH" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_c6d66374090f__RNxC7i_alloc12HbpEBYosZ7sv`**: at every fuel, with the stack bound. -/
+theorem correct_stack_29 : StackBound.StackStmt input "__fv_c6d66374090f__RNxC7i_alloc12HbpEBYosZ7sv" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_c6d66374090f__RNxC7i_alloc12Hdoi0QhNR8mt`**: at every fuel, with the stack bound. -/
+theorem correct_stack_30 : StackBound.StackStmt input "__fv_c6d66374090f__RNxC7i_alloc12Hdoi0QhNR8mt" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_c6d66374090f__RNxC7i_alloc12He6uveSUrfbQ`**: at every fuel, with the stack bound. -/
+theorem correct_stack_31 : StackBound.StackStmt input "__fv_c6d66374090f__RNxC7i_alloc12He6uveSUrfbQ" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_c6d66374090f__RNxC7i_alloc12HeKdFs0wDjlO`**: at every fuel, with the stack bound. -/
+theorem correct_stack_32 : StackBound.StackStmt input "__fv_c6d66374090f__RNxC7i_alloc12HeKdFs0wDjlO" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `_RNxC7i_alloc12HeNF0eRdarFS`**: at every fuel, with the stack bound. -/
+theorem correct_stack_33 : StackBound.StackStmt input "_RNxC7i_alloc12HeNF0eRdarFS" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `_RNxC7i_alloc12Hek9O4Pkaitv`**: at every fuel, with the stack bound. -/
+theorem correct_stack_34 : StackBound.StackStmt input "_RNxC7i_alloc12Hek9O4Pkaitv" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_c6d66374090f__RNxC7i_alloc12HfDNcrEinuTW`**: at every fuel, with the stack bound. -/
+theorem correct_stack_35 : StackBound.StackStmt input "__fv_c6d66374090f__RNxC7i_alloc12HfDNcrEinuTW" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `_RNxC7i_alloc12Hfn40IKvcr1b`**: at every fuel, with the stack bound. -/
+theorem correct_stack_36 : StackBound.StackStmt input "_RNxC7i_alloc12Hfn40IKvcr1b" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `_RNxC7i_alloc12HgNN8t9kOI4K`**: at every fuel, with the stack bound. -/
+theorem correct_stack_37 : StackBound.StackStmt input "_RNxC7i_alloc12HgNN8t9kOI4K" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_c6d66374090f__RNxC7i_alloc12Hi3r89KYWWPU`**: at every fuel, with the stack bound. -/
+theorem correct_stack_38 : StackBound.StackStmt input "__fv_c6d66374090f__RNxC7i_alloc12Hi3r89KYWWPU" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_c6d66374090f__RNxC7i_alloc12HiEujeSNC9gp`**: at every fuel, with the stack bound. -/
+theorem correct_stack_39 : StackBound.StackStmt input "__fv_c6d66374090f__RNxC7i_alloc12HiEujeSNC9gp" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_c6d66374090f__RNxC7i_alloc12HiOozerOCwPa`**: at every fuel, with the stack bound. -/
+theorem correct_stack_40 : StackBound.StackStmt input "__fv_c6d66374090f__RNxC7i_alloc12HiOozerOCwPa" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_c6d66374090f__RNxC7i_alloc12HkBSXtJ5jNas`**: at every fuel, with the stack bound. -/
+theorem correct_stack_41 : StackBound.StackStmt input "__fv_c6d66374090f__RNxC7i_alloc12HkBSXtJ5jNas" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_c6d66374090f__RNxC7i_alloc12Hkdizm8s3Jql`**: at every fuel, with the stack bound. -/
+theorem correct_stack_42 : StackBound.StackStmt input "__fv_c6d66374090f__RNxC7i_alloc12Hkdizm8s3Jql" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `_RNxC7i_alloc12HkhlPaykQSaj`**: at every fuel, with the stack bound. -/
+theorem correct_stack_43 : StackBound.StackStmt input "_RNxC7i_alloc12HkhlPaykQSaj" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `_RNxC7i_alloc12HliSX3CB3qis`**: at every fuel, with the stack bound. -/
+theorem correct_stack_44 : StackBound.StackStmt input "_RNxC7i_alloc12HliSX3CB3qis" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `_RNxC7i_alloc12HlyF1veVEF33`**: at every fuel, with the stack bound. -/
+theorem correct_stack_45 : StackBound.StackStmt input "_RNxC7i_alloc12HlyF1veVEF33" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `boxed`**: at every fuel, with the stack bound. -/
+theorem correct_stack_46 : StackBound.StackStmt input "boxed" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `vec_squares`**: at every fuel, with the stack bound. -/
+theorem correct_stack_47 : StackBound.StackStmt input "vec_squares" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `vec_sum`**: at every fuel, with the stack bound. -/
+theorem correct_stack_48 : StackBound.StackStmt input "vec_sum" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
 
 end Crates.IAlloc

@@ -1,4 +1,4 @@
-import FV.E2E.LinkCheck
+import FV.E2E.StackBound
 
 /-! # Crate-level instance of `backend_correct_program` (generated)
 
@@ -12,10 +12,13 @@ link's symbol names, and `lean-regalloc`'s output), loaded at their addresses in
 executable's link map (`addrs`). `okB_input` decides every premise of `LinkSys.Ok` about the
 program and its layout by `native_decide` (`okB_of`: the program's checks, `globalB_input`, and
 the per-function checks by slices of 32 functions, `sliceK_ok`), run as compiled
-code (the package `crate-proofs` loads the shared library of `FV.E2E.LinkCheck`); `link_ok` is
+code (the package `crate-proofs` loads the shared library of `FV.E2E.StackBound`); `link_ok` is
 `LinkSys.Ok` of the crate's linked system for every base environment satisfying the base
 premises (`BaseOk`: the contracts of std, other crates' code and the runtime, which stay
-premises), and the `correct_*` theorems are `backend_correct_program` for the entries.
+premises), and the `correct_*` theorems are `backend_correct_program` for the entries;
+`stack_ok` decides the stack bound (`FV/E2E/StackBound.lean`: the call graph has no cycle), and
+the `correct_stack_*` theorems are `backend_correct_program_stack` for the entries (at every
+fuel).
 -/
 
 namespace Crates.CStructsEnums
@@ -353,5 +356,118 @@ theorem correct_25 : CrateStmt input "point_add" :=
 /-- **`backend_correct_program` for `point_eq`** -/
 theorem correct_26 : CrateStmt input "point_eq" :=
   crate_correct okB_input _
+
+/-- **The stack bound** (`FV/E2E/StackBound.lean`): the program's call graph has no cycle, and an
+activation of any of its functions uses at most 80 bytes of stack with its callees
+(`StackBound.stackFn_le`). -/
+theorem stack_ok : StackBound.stackB input = some 80 := by native_decide
+
+/-- **`backend_correct_program_stack` for `__fv_7fb05af77b95__RNvMs0_NtCsazjiGSRkgVH_4core3numl12wrapping_add`**: at every fuel, with the stack bound. -/
+theorem correct_stack_0 : StackBound.StackStmt input "__fv_7fb05af77b95__RNvMs0_NtCsazjiGSRkgVH_4core3numl12wrapping_add" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_7fb05af77b95__RNvMs6_NtCsazjiGSRkgVH_4core3numm12wrapping_add`**: at every fuel, with the stack bound. -/
+theorem correct_stack_1 : StackBound.StackStmt input "__fv_7fb05af77b95__RNvMs6_NtCsazjiGSRkgVH_4core3numm12wrapping_add" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_7fb05af77b95__RNvMs6_NtCsazjiGSRkgVH_4core3numm12wrapping_mul`**: at every fuel, with the stack bound. -/
+theorem correct_stack_2 : StackBound.StackStmt input "__fv_7fb05af77b95__RNvMs6_NtCsazjiGSRkgVH_4core3numm12wrapping_mul" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_7fb05af77b95__RNvMs6_NtCsazjiGSRkgVH_4core3numm12wrapping_sub`**: at every fuel, with the stack bound. -/
+theorem correct_stack_3 : StackBound.StackStmt input "__fv_7fb05af77b95__RNvMs6_NtCsazjiGSRkgVH_4core3numm12wrapping_sub" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_7fb05af77b95__RNvMs7_NtCsazjiGSRkgVH_4core3numy11rotate_left`**: at every fuel, with the stack bound. -/
+theorem correct_stack_4 : StackBound.StackStmt input "__fv_7fb05af77b95__RNvMs7_NtCsazjiGSRkgVH_4core3numy11rotate_left" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_7fb05af77b95__RNxC15c_structs_enums12H3IbBgysBe2b`**: at every fuel, with the stack bound. -/
+theorem correct_stack_5 : StackBound.StackStmt input "__fv_7fb05af77b95__RNxC15c_structs_enums12H3IbBgysBe2b" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_7fb05af77b95__RNxC15c_structs_enums12H6Vzi7DH1sNU`**: at every fuel, with the stack bound. -/
+theorem correct_stack_6 : StackBound.StackStmt input "__fv_7fb05af77b95__RNxC15c_structs_enums12H6Vzi7DH1sNU" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_7fb05af77b95__RNxC15c_structs_enums12H90Od89UDVny`**: at every fuel, with the stack bound. -/
+theorem correct_stack_7 : StackBound.StackStmt input "__fv_7fb05af77b95__RNxC15c_structs_enums12H90Od89UDVny" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `_RNxC15c_structs_enums12HbiXkrxUILza`**: at every fuel, with the stack bound. -/
+theorem correct_stack_8 : StackBound.StackStmt input "_RNxC15c_structs_enums12HbiXkrxUILza" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `_RNxC15c_structs_enums12HdiRehvtQqnG`**: at every fuel, with the stack bound. -/
+theorem correct_stack_9 : StackBound.StackStmt input "_RNxC15c_structs_enums12HdiRehvtQqnG" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_7fb05af77b95__RNxC15c_structs_enums12HjJ7xn5HXGIl`**: at every fuel, with the stack bound. -/
+theorem correct_stack_10 : StackBound.StackStmt input "__fv_7fb05af77b95__RNxC15c_structs_enums12HjJ7xn5HXGIl" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_7fb05af77b95__RNxC15c_structs_enums12Hkudx9sPlvC1`**: at every fuel, with the stack bound. -/
+theorem correct_stack_11 : StackBound.StackStmt input "__fv_7fb05af77b95__RNxC15c_structs_enums12Hkudx9sPlvC1" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `_RNxC15c_structs_enums12HlcMKsU575yF`**: at every fuel, with the stack bound. -/
+theorem correct_stack_12 : StackBound.StackStmt input "_RNxC15c_structs_enums12HlcMKsU575yF" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `apply`**: at every fuel, with the stack bound. -/
+theorem correct_stack_13 : StackBound.StackStmt input "apply" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `area`**: at every fuel, with the stack bound. -/
+theorem correct_stack_14 : StackBound.StackStmt input "area" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `big_make`**: at every fuel, with the stack bound. -/
+theorem correct_stack_15 : StackBound.StackStmt input "big_make" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `big_sum`**: at every fuel, with the stack bound. -/
+theorem correct_stack_16 : StackBound.StackStmt input "big_sum" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `char_kind`**: at every fuel, with the stack bound. -/
+theorem correct_stack_17 : StackBound.StackStmt input "char_kind" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `classify`**: at every fuel, with the stack bound. -/
+theorem correct_stack_18 : StackBound.StackStmt input "classify" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `decode_op`**: at every fuel, with the stack bound. -/
+theorem correct_stack_19 : StackBound.StackStmt input "decode_op" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `dense_switch`**: at every fuel, with the stack bound. -/
+theorem correct_stack_20 : StackBound.StackStmt input "dense_switch" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `make_shape`**: at every fuel, with the stack bound. -/
+theorem correct_stack_21 : StackBound.StackStmt input "make_shape" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `manhattan`**: at every fuel, with the stack bound. -/
+theorem correct_stack_22 : StackBound.StackStmt input "manhattan" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `nested`**: at every fuel, with the stack bound. -/
+theorem correct_stack_23 : StackBound.StackStmt input "nested" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `niche_ref`**: at every fuel, with the stack bound. -/
+theorem correct_stack_24 : StackBound.StackStmt input "niche_ref" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `point_add`**: at every fuel, with the stack bound. -/
+theorem correct_stack_25 : StackBound.StackStmt input "point_add" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `point_eq`**: at every fuel, with the stack bound. -/
+theorem correct_stack_26 : StackBound.StackStmt input "point_eq" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
 
 end Crates.CStructsEnums
