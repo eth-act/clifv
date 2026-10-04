@@ -80,7 +80,8 @@ Unsupported outputs do not pass. Expected stock failures without code are exclud
 
 Pipeline time: **${data.elapsed_seconds.toFixed(1)} seconds** (build, validation, artifact generation, and comparison).
 Peak runner memory used: **${(data.peak_runner_memory_used_bytes / 2 ** 30).toFixed(2)} GiB**, sampled every 0.1 seconds, including the OS.
-This job uses two comparison workers. Toolchain setup and cache transfers are outside the pipeline time.
+This job uses two comparison workers. Rust toolchain setup is included in the pipeline time.
+Lean installation and cache transfers are outside the pipeline time.
 
 A successful job means the measurement completed, not that both compilers fully agree.
 `;

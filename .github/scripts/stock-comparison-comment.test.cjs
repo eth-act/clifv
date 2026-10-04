@@ -53,7 +53,8 @@ async function publish(f, summary = data()) {
 
 test('render distinguishes coverage, output agreement, and complete-file agreement', () => {
   const body = render(data(), repo, run);
-  for (const expected of ['116 / 484 (24.0%)', '425 / 4,455 (9.5%)', '19 / 484 (3.9%)', '3,047', 'including the OS']) assert.ok(body.includes(expected), expected);
+  for (const expected of ['116 / 484 (24.0%)', '425 / 4,455 (9.5%)', '19 / 484 (3.9%)', '3,047', 'including the OS',
+    'Rust toolchain setup is included', 'Lean installation and cache transfers are outside']) assert.ok(body.includes(expected), expected);
 });
 test('invalid, partial, or mismatched reports cannot publish', () => {
   for (const edit of [d => d.measurement_complete = false, d => d.head_sha = 'b'.repeat(40),

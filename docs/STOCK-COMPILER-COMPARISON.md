@@ -44,7 +44,9 @@ assertions fail CI. Unsupported Lean settings or operations remain coverage gaps
 The workflow saves the full artifacts and logs for seven days. It writes a job
 summary and posts a PR comment with coverage, exact output matches, complete-file
 matches, elapsed pipeline time, and sampled runner memory use. Memory includes
-the OS; time excludes toolchain setup and cache transfers.
+the OS and is measured as `MemTotal - MemAvailable` every 0.1 seconds. Pipeline
+time includes Rust toolchain setup. It excludes Lean installation and cache
+transfers.
 
 After a successful new measurement, the publisher creates the new comment and
 deletes the previous marked comment from `github-actions[bot]`. It preserves
