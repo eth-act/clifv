@@ -1039,7 +1039,7 @@ theorem okB_sound {I : LinkInput} (hI : okB I = true) {B : BaseEnv} {F : BitVec 
       indScope := fun g hg hnf => ⟨hB.keepSyms ⟨g, hg, hnf⟩, ?_⟩
       indNoSym := fun g hg hnf => (indFacts hI hg hnf).2.2
       indSig := fun g hg hnf => ⟨(indFacts hI hg hnf).1,
-        fun h hh hmay => (indFacts hI hg hnf).2.1 h hh (mayB_of hmay)⟩
+        fun h hh hmay _ => (indFacts hI hg hnf).2.1 h hh (mayB_of hmay)⟩
       addrSlots := fun ⟨g, hg, hout⟩ ⟨g', hg', hind⟩ h hh hs => ?_
       symInj := fun h hh n hn => ?_
       declSig := fun g hg e he h hf => (fa hg).declSig e he h hf
