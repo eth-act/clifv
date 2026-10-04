@@ -846,6 +846,16 @@ the CPU qemu emulates has.)
   optimiser removed falls back. We compile the unoptimised CLIF, and the object has no symbol
   for that data.
 
+## Stock Cranelift compiler-output comparison
+
+`bash scripts/stock-compiler-comparison.sh --out target/stock-comparison-new`
+builds the pinned allocator, Lean backend and instrumented stock compiler, runs
+validation, then inventories all official Cranelift filetests and compares literal
+function code/relocations under their declared settings. Unsupported settings and
+unknown execution metadata remain gaps; this does not claim full CI equivalence.
+See [STOCK-COMPILER-COMPARISON.md](STOCK-COMPILER-COMPARISON.md) for prerequisites,
+the precise contract, retained artifacts, progress tracking and baseline results.
+
 ## Troubleshooting
 
 * `no such command: fv`: put `rust/target/release` on `PATH`.
