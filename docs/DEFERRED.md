@@ -153,7 +153,9 @@ premises. Deferred, in order:
     errors).
   - **`indSig` under `MayCall`** (agent/crate-check, `fv-demo` 13 functions): a function with
     indirect calls may call every function with an address, so all of them must be
-    register-only without `sret`; restrict `MayCall` (or `indSig`) by the call's signature.
+    register-only without `sret`; restrict `MayCall` (or `indSig`) by the call's signature (it
+    would also pass `blrRegs`/`blrTry` at the `call_indirect` sites of 3 + 3 of them, which may
+    enter address-taken functions of the same arity with an `sret` or stack-passed parameter).
   - **Crate-level instance** (agent/crate-check, `FV/E2E/LinkCheck.lean`, `cargo fv
     link-proof`, e2e.md "Crate-level instance"): an entry-level instance for a crate function
     (the entry premises of `ProgStmt` for concrete arguments and a CLIF entry memory holding the
