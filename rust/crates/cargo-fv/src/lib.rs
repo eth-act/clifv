@@ -9,8 +9,11 @@
 //!   executables it is also the linker rustc runs ([`wrapper`]).
 //! * `cargo fv link-proof` ([`linkproof`]): the input of the crate-level linking theorem from a
 //!   `--keep-temps` build.
+//! * the per-executable binary check of `cargo fv build` ([`bincheck`]): `link-proof` and
+//!   `link-check` on every linked executable (`E2E.Binary.binary_correct`).
 //!
 //! See docs/USAGE.md.
+pub mod bincheck;
 pub mod config;
 pub mod linkproof;
 pub mod pipeline;

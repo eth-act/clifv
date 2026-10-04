@@ -480,6 +480,23 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
             exes.iter().sum::<usize>()
         );
     }
+    if bin_check {
+        // the binary-level theorem's checks, per linked executable with Lean-compiled code
+        let manifest = value_of(&cargo_args, "--manifest-path");
+        let (mut checked, mut verified) = (0, 0);
+        for b in report.units.iter().filter_map(|u| u.unit.binary.as_ref()) {
+            if b.note.is_some() || b.lean_functions_linked == 0 {
+                continue;
+            }
+            let v = cargo_fv::bincheck::check(&fv_dir, &b.path, manifest.as_deref());
+            eprintln!("cargo fv: binary {}: {}", b.path, v.summary);
+            checked += 1;
+            verified += usize::from(v.verified);
+        }
+        if checked > 0 {
+            eprintln!("cargo fv: binary check: {verified} of {checked} executable(s) verified (docs/contracts/e2e.md, \"Binary level (M9)\")");
+        }
+    }
     let mism = report.binary_mismatches();
     if !mism.is_empty() {
         for m in &mism {
