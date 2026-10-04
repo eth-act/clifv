@@ -1118,18 +1118,20 @@ theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
       blrRegs := fun g hg info hs hreg => by
         obtain ⟨t, Lu, Ld, hi, hall⟩ := blrOk_sound (siteOk_reg (site_sound (facts hg).sites hs) hreg)
         exact ⟨t, Lu, Ld, hi, fun h hh hb =>
-          hall h hh (mayB_of hb.1) fun n hn => (hb.2 n (gotOf_sound hn)).symm⟩
+          hall h hh (mayB_of hb.1.1) fun n hn => (hb.2 n (gotOf_sound hn)).symm⟩
       blrTry := fun g hg info ti hs t Lu Ld hi h hh hb hl =>
-        tryB_reg (facts hg).tries hs hi hh (mayB_of hb.1) (fun n hn => (hb.2 n (gotOf_sound hn)).symm) hl
+        tryB_reg (facts hg).tries hs hi hh (mayB_of hb.1.1) (fun n hn => (hb.2 n (gotOf_sound hn)).symm) hl
       raBlr := fun g hg info hs hreg h hh hdecl pc hpc =>
         raCallB_sound (facts hg).ra hpc h hh (mayCall_ne hdecl)
       indScope := fun g hg hnf => ⟨fun n f h => by simp [L, Clif.Env.empty] at h,
         fun a ha b hb x hxa hxb => by
-          simp only [L, Clif.Env.empty, List.append_nil] at ha hb
-          have := hinj a ha b hb
+          obtain ⟨ga, hga, rfl⟩ := List.mem_map.1 ha
+          obtain ⟨gb, hgb, rfl⟩ := List.mem_map.1 hb
+          have := hinj _ (Clif.names_func hga) _ (Clif.names_func hgb)
           simp only [L] at hxa hxb
           rw [hxa, hxb] at this
-          simpa using this⟩
+          simpa using this,
+        fun _ _ _ _ _ _ _ _ _ => by simp [L, Clif.Env.empty]⟩
       indNoSym := fun g hg hnf => (indFacts (F := F) hg hnf).2.2
       indSig := fun g hg hnf => ⟨(indFacts (F := F) hg hnf).1, (indFacts hg hnf).2.1⟩
       addrSlots := fun _ _ h hh hs => by

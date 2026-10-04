@@ -59,10 +59,14 @@ def SymInj (ns : List String) (syms : String → Option Nat) : Prop :=
   ∀ a ∈ ns, ∀ b ∈ ns, ∀ x, syms a = some x → syms b = some x → a = b
 
 /-- **The scope of indirect calls in the linked program**: the base externs keep the symbols,
-and distinct names of `P` and of the base environment have distinct addresses. -/
+the functions of `P` have distinct addresses, and names of `P` and of the base environment that
+share an address of no function of `P` (aliases: one copy of code under several symbols, e.g.
+folded by the linker) are the same extern of the base environment. -/
 structure IndScope (P : Program) (base : Env) (syms : String → Option Nat) : Prop where
   keep : Opt.EnvKeepsSymbols base
-  inj : SymInj (P.names ++ base.names) syms
+  inj : SymInj (P.funcs.map (·.name)) syms
+  alias : ∀ a ∈ P.names ++ base.names, ∀ b ∈ P.names ++ base.names, ∀ x, syms a = some x →
+    syms b = some x → P.func? a = none → P.func? b = none → base.extern a = base.extern b
 
 theorem enterFunc_symbols {g : Function} {vals : List Val} {mem mem' : Mem} {fr : Frame}
     (h : enterFunc g vals mem = .ok (fr, mem')) : mem'.symbols = mem.symbols := by
@@ -221,25 +225,6 @@ theorem linkEnvN_keeps {P : Program} {base : Env} {M : Nat} (hP : ∀ g ∈ P.fu
 
 /-! ## Resolving an indirect call in the per-function program -/
 
-theorem find_unique {l : List String} {q : String → Bool} {x : String} (hmem : x ∈ l) (hq : q x = true)
-    (hu : ∀ n ∈ l, q n = true → n = x) : l.find? q = some x := by
-  cases hf : l.find? q with
-  | none => exact absurd hq (by simpa using List.find?_eq_none.mp hf x hmem)
-  | some y =>
-    rw [hu y (List.mem_of_find?_eq_some hf) (List.find?_some hf)]
-
-theorem find_sub {l l' : List String} {q : String → Bool} (hsub : ∀ n ∈ l', n ∈ l)
-    (hu : ∀ n ∈ l, ∀ n' ∈ l, q n = true → q n' = true → n = n')
-    (hcov : ∀ n ∈ l, q n = true → n ∈ l') : l'.find? q = l.find? q := by
-  cases hf : l.find? q with
-  | some y =>
-    have hy := List.mem_of_find?_eq_some hf
-    have hq := List.find?_some hf
-    exact find_unique (hcov y hy hq) hq fun n hn hqn => hu n (hsub n hn) y hy hqn hq
-  | none =>
-    rw [List.find?_eq_none] at hf ⊢
-    exact fun n hn => hf n (hsub n hn)
-
 theorem names_func {P : Program} {g : Function} (hg : g ∈ P.funcs) : g.name ∈ P.names :=
   List.mem_append_left _ (List.mem_map_of_mem hg)
 
@@ -265,47 +250,103 @@ theorem linkNames_sub {P : Program} {base : Env} {f : Function} {M : Nat} (hf : 
   · exact hn
   · exact List.mem_append_left _ (names_extern (externs_sub hf n hn))
 
-/-- An indirect call to no function of `P` resolves to the same extern in the per-function
-program of `f` (the linked environment's names hold every name of `P` and of `base`). -/
+/-- `callExternAt` resolving the callee address to names with the same extern gives the same
+result, up to the messages of a stuck call (they name the extern). -/
+theorem callExternAt_alias {E₁ E₂ : Env} {p₁ p₂ : Program} {mem : Mem} {d : Signature} {a : Nat}
+    {vals : List Val} {n₁ n₂ : String}
+    (h₁ : (E₁.names ++ p₁.externNames).find? (fun n => mem.symbols n == some a) = some n₁)
+    (h₂ : (E₂.names ++ p₂.externNames).find? (fun n => mem.symbols n == some a) = some n₂)
+    (he : E₁.extern n₁ = E₂.extern n₂) :
+    callExternAt E₁ p₁ mem d a vals = callExternAt E₂ p₂ mem d a vals ∨
+      ((∃ m, callExternAt E₁ p₁ mem d a vals = .stuck m) ∧
+        ∃ m, callExternAt E₂ p₂ mem d a vals = .stuck m) := by
+  unfold callExternAt
+  rw [h₁, h₂]
+  simp only [Res.ofOption_some, Res.ok_bind]
+  rw [← he]
+  cases E₁.extern n₁ with
+  | none => exact .inr ⟨⟨_, rfl⟩, _, rfl⟩
+  | some g =>
+    simp only [Res.ofOption_some, Res.ok_bind, checkTys]
+    cases (vals.map (·.ty) == AbiParam.tys d.params) with
+    | false => exact .inr ⟨⟨_, rfl⟩, _, rfl⟩
+    | true =>
+      simp only [Res.check_true, Res.ok_bind]
+      cases g vals mem with
+      | returned rvals mem' =>
+        dsimp only
+        cases (List.map (fun x => x.ty) rvals == AbiParam.tys d.returns) with
+        | false => exact .inr ⟨⟨_, rfl⟩, _, rfl⟩
+        | true => exact .inl rfl
+      | trapped c => exact .inl rfl
+      | stuck m => exact .inl rfl
+      | outOfFuel => exact .inr ⟨⟨_, rfl⟩, _, rfl⟩
+
+/-- An indirect call to no function of `P` resolves, in the per-function program of `f`, to an
+extern of `base` (the linked environment's names hold every name of `P` and of `base`) with the
+whole program's semantics (`IndScope.alias`): the same result, up to the messages of a stuck
+call. -/
 theorem callExternAt_eq {P : Program} {base : Env} {f : Function} {syms : String → Option Nat}
     {M : Nat} (hf : f ∈ P.funcs) (hS : IndScope P base syms) {mem : Mem} (hm : mem.symbols = syms)
     {d : Signature} {a : Nat} {vals : List Val}
     (hnone : P.funcs.find? (fun g => mem.symbols g.name == some a) = none) :
-    callExternAt (linkEnvN P base M) (P.only f) mem d a vals = callExternAt base P mem d a vals := by
+    callExternAt (linkEnvN P base M) (P.only f) mem d a vals = callExternAt base P mem d a vals ∨
+      ((∃ m, callExternAt (linkEnvN P base M) (P.only f) mem d a vals = .stuck m) ∧
+        ∃ m, callExternAt base P mem d a vals = .stuck m) := by
   have hno : ∀ g ∈ P.funcs, mem.symbols g.name ≠ some a := fun g hg e => by
     have := List.find?_eq_none.mp hnone g hg
     simp [e] at this
-  have hfind : ((linkEnvN P base M).names ++ (P.only f).externNames).find?
-        (fun n => mem.symbols n == some a) =
-      (base.names ++ P.externNames).find? (fun n => mem.symbols n == some a) := by
-    refine (find_sub (fun n hn => ?_) (fun n hn n' hn' hq hq' => ?_) (fun n hn hq => ?_)).symm
-    · rw [linkEnvN_names, List.append_assoc, List.mem_append]
-      rcases List.mem_append.mp hn with hn | hn
-      · exact .inr (List.mem_append_left _ hn)
-      · exact .inl (names_extern hn)
-    · simp only [beq_iff_eq] at hq hq'
-      rw [hm] at hq hq'
-      exact hS.inj n (linkNames_sub hf hn) n' (linkNames_sub hf hn') a hq hq'
-    · simp only [beq_iff_eq] at hq
+  have hnp : ∀ n, mem.symbols n = some a → P.func? n = none := fun n hq => by
+    cases e : P.func? n with
+    | none => rfl
+    | some g =>
+      obtain ⟨hg, rfl⟩ := Program.func?_some e
+      exact absurd hq (hno g hg)
+  have hsub : ∀ n, mem.symbols n = some a →
+      n ∈ (linkEnvN P base M).names ++ (P.only f).externNames → n ∈ base.names ++ P.externNames :=
+    fun n hq hn => by
       rcases List.mem_append.mp (linkNames_sub hf hn) with hn | hn
       · rcases List.mem_append.mp hn with hn | hn
         · obtain ⟨g, hg, rfl⟩ := List.mem_map.mp hn
           exact absurd hq (hno g hg)
         · exact List.mem_append_right _ hn
       · exact List.mem_append_left _ hn
-  unfold callExternAt
-  rw [hfind]
-  cases hn : (base.names ++ P.externNames).find? (fun n => mem.symbols n == some a) with
-  | none => rfl
-  | some n =>
-    have hq : mem.symbols n = some a := by simpa using List.find?_some hn
-    have hpn : P.func? n = none := by
-      cases e : P.func? n with
-      | none => rfl
-      | some g =>
-        obtain ⟨hg, rfl⟩ := Program.func?_some e
-        exact absurd hq (hno g hg)
-    simp only [Res.ofOption_some, Res.ok_bind, linkEnvN_none hpn]
+  have hsup : ∀ n, n ∈ base.names ++ P.externNames →
+      n ∈ (linkEnvN P base M).names ++ (P.only f).externNames := fun n hn => by
+    rw [linkEnvN_names, List.append_assoc, List.mem_append]
+    rcases List.mem_append.mp hn with hn | hn
+    · exact .inr (List.mem_append_left _ hn)
+    · exact .inl (names_extern hn)
+  cases h₂ : (base.names ++ P.externNames).find? (fun n => mem.symbols n == some a) with
+  | none =>
+    have h₁ : ((linkEnvN P base M).names ++ (P.only f).externNames).find?
+        (fun n => mem.symbols n == some a) = none := by
+      rw [List.find?_eq_none] at h₂ ⊢
+      intro n hn hq
+      exact h₂ n (hsub n (by simpa using hq) hn) hq
+    left
+    unfold callExternAt
+    rw [h₁, h₂]
+    rfl
+  | some n₂ =>
+    have hq₂ : mem.symbols n₂ = some a := by simpa using List.find?_some h₂
+    have hm₂ := List.mem_of_find?_eq_some h₂
+    cases h₁ : ((linkEnvN P base M).names ++ (P.only f).externNames).find?
+        (fun n => mem.symbols n == some a) with
+    | none => exact absurd (List.find?_eq_none.mp h₁ n₂ (hsup n₂ hm₂)) (by simp [hq₂])
+    | some n₁ =>
+      have hq₁ : mem.symbols n₁ = some a := by simpa using List.find?_some h₁
+      have hm₁ := List.mem_of_find?_eq_some h₁
+      have hp₁ := hnp n₁ hq₁
+      have hp₂ := hnp n₂ hq₂
+      refine callExternAt_alias h₁ h₂ ?_
+      rw [linkEnvN_none hp₁]
+      have hn₂ : n₂ ∈ P.names ++ base.names := by
+        rcases List.mem_append.mp hm₂ with h | h
+        · exact List.mem_append_right _ h
+        · exact List.mem_append_left _ (names_extern h)
+      rw [hm] at hq₁ hq₂
+      exact hS.alias n₁ (linkNames_sub hf hm₁) n₂ hn₂ a hq₁ hq₂ hp₁ hp₂
 
 /-- **Linking at the CLIF level with bounded callee runs** (`runLoop_link` with
 `linkEnvN P base M`): a complete whole-program run of at most `M + 1` steps is a complete
@@ -502,9 +543,13 @@ theorem runLoop_linkN {P : Program} {base : Env} {f : Function} {syms : String �
         simp only [Program.only, List.find?_cons, List.find?_nil]
         have := List.find?_eq_none.mp hfind f hf
         simp only [this]
-      apply same
-      rw [e1, e2]
-      simp only [indCont, hfind, h1, callExternAt_eq hf hS hm hfind]
+      rcases callExternAt_eq (M := M) (d := d) (vals := v) hf hS hm hfind with he | ⟨-, m₂, h₂⟩
+      · apply same
+        rw [e1, e2]
+        simp only [indCont, hfind, h1, he]
+      · rw [runLoop_succ', e1] at hst
+        simp only [indCont, hfind, h₂, StepResult.ofRes_stuck, afterStep] at hst
+        exact absurd rfl (hst _)
     | some h =>
       have hhP := List.mem_of_find?_eq_some hfind
       have hha : t.mem.symbols h.name = some a := by simpa using List.find?_some hfind
@@ -523,16 +568,14 @@ theorem runLoop_linkN {P : Program} {base : Env} {f : Function} {syms : String �
           simp only [beq_iff_eq] at e
           rw [hm] at e hha
           exact absurd (name_inj hnd hf hhP
-            (hS.inj f.name (List.mem_append_left _ (names_func hf)) h.name
-              (List.mem_append_left _ (names_func hhP)) a e hha)).symm hhf
-      -- the per-function program resolves the address to `h` (a name of the linked environment)
+            (hS.inj f.name (List.mem_map_of_mem hf) h.name (List.mem_map_of_mem hhP) a e hha)).symm
+            hhf
+      -- the per-function program resolves the address to `h` (the first function of `P` there,
+      -- the first names of the linked environment)
       have hname : ((linkEnvN P base M).names ++ (P.only f).externNames).find?
           (fun n => t.mem.symbols n == some a) = some h.name := by
-        refine find_unique (by rw [linkEnvN_names]; simp [names_func hhP]) (by simp [hha])
-          fun n hn hq => ?_
-        simp only [beq_iff_eq] at hq
-        rw [hm] at hq hha
-        exact hS.inj n (linkNames_sub hf hn) h.name (List.mem_append_left _ (names_func hhP)) a hq hha
+        simp only [linkEnvN_names, Program.names, List.append_assoc, List.find?_append,
+          List.find?_map, Function.comp_def, hfind, Option.map_some, Option.some_or]
       have hpf : P.func? h.name = some h := by
         cases e : P.func? h.name with
         | none => exact absurd rfl (Program.func?_none e h hhP)

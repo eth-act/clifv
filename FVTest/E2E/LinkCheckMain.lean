@@ -43,7 +43,7 @@ def leanStr (s : String) : String :=
 def detail (I : LinkInput) (P : Clif.Program) (g : Clif.Function) (a : Art) (check : String) :
     List String :=
   let S := fun n => I.syms.lookup n
-  let may := mayB S g
+  let may := indToB S g
   if check == "callRegs/blrRegs" then
     a.vcp.blocks.toList.flatMap fun vb => vb.insts.toList.filterMap fun i => match i with
       | .call info | .tryCall info _ =>
@@ -54,7 +54,7 @@ def detail (I : LinkInput) (P : Clif.Program) (g : Clif.Function) (a : Art) (che
             let got := match r with
               | .vreg t .int => gotOf a.vcp t
               | _ => none
-            let hs := P.funcs.filter fun h => may h.name && (got.all (· == h.name)) &&
+            let hs := P.funcs.filter fun h => may h && (got.all (· == h.name)) &&
               (regLocs h.sig).length == nu &&
               !(decide ((decU info.uses).map (·.2) = regLocs h.sig) &&
                 decide (((decD info.defs).map (·.1)).take (sigRets h.sig).length =
@@ -64,9 +64,11 @@ def detail (I : LinkInput) (P : Clif.Program) (g : Clif.Function) (a : Art) (che
   else if check == "indScope/indNoSym/indSig" then
     (if (indSigs g).all (fun s => !s.params.any (·.purpose == .sret)) then []
       else ["indSig: an indirect call passes an sret pointer"]) ++
-    (P.funcs.filter (fun h => may h.name && (h.sig.params.any (·.purpose == .sret) ||
+    (P.funcs.filter (fun h => mayB S g h.name &&
+      (indSigs g).any (fun s => decide (LinkSys.IndSigMatch s h)) &&
+      (h.sig.params.any (·.purpose == .sret) ||
       (match sigParamBytes h.sig with | .ok b => decide (b.length > 8) | .error _ => true)))).map
-      (fun h => s!"indSig: program function {h.name} it may call has an sret or stack-passed parameter") ++
+      (fun h => s!"indSig: program function {h.name} it may call with the parameter types of one of its indirect calls has an sret or stack-passed parameter") ++
     (if S g.name == none then [] else ["indNoSym: the function's own address is taken"])
   else []
 
