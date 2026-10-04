@@ -1,8 +1,9 @@
 # Upstream bugs found by this project
 
 Bugs in pinned upstream components found by differential testing or proof work. Each entry has
-a self-contained reproduction and is ready to be filed. Filing is the owner's decision (public
-trackers), so nothing below has been reported upstream yet.
+a self-contained reproduction. Filing upstream is the owner's decision (public trackers). The fixes
+are prepared as PRs on the owner's fork (`kevaundray/wasmtime`) for review first; nothing has
+been reported to bytecodealliance yet.
 
 ## Cranelift aarch64: `atomic_cas.i32` compares all 64 bits of the expected value
 
@@ -41,6 +42,9 @@ trackers), so nothing below has been reported upstream yet.
 - **Fix:** for I32, use the extended-register form with `uxtw` (`bit21 = 1`,
   `extend_op = 0b010000`), i.e. `cmp x27, w26, uxtw`. This is what the Lean backend emits
   (`FV/Backend/Asm.lean` `casLoopCmp`, a documented deviation from Cranelift).
+- **PR (owner's fork, for review):** https://github.com/kevaundray/wasmtime/pull/1, branch
+  `fix-aarch64-atomic-cas-i32`. Commit 1 adds a runtest and a precise-output test showing the
+  bug (the runtest fails under qemu on aarch64); commit 2 is the fix.
 - **Impact:** any `atomic_cas.i32` whose expected operand comes from a value with dirty upper
   bits. Rust code compiled with rustc_codegen_cranelift (`AtomicU32::compare_exchange`) can hit
   it when the expected value is produced by a truncation.
@@ -76,6 +80,13 @@ trackers), so nothing below has been reported upstream yet.
   disabled, the ill-typed IR reaches lowering (not tried).
 - **Fix:** mask the amount first (e.g. `shift_masked = shift_u64 & (ty_bits ty - 1)`, or require
   `u64_lt shift_u64 (ty_bits ty)` in an `if-let`), as the other shift rules do.
+- **PR (owner's fork, for review):** https://github.com/kevaundray/wasmtime/pull/2, branch
+  `fix-shifts-ishl-shr-out-of-range`. Commit 1 adds a runtest (`runtests/shift-left-right-same-amount.clif`,
+  `opt_level=speed`) and `egraph/shifts.clif` cases that fail with the verifier error. Commit 2
+  masks the amount with `ty_shift_mask` (as the neighbouring shift rules do) and requires the
+  masked amount to be non-zero, so `T_SMALL` is always strictly narrower than `ty`. Whole
+  filetests directory: 1322 tests pass. Side note in the PR: after the fix the `sshr` cases keep
+  a shift by `iconst 0`, since Cranelift has no `sshr x, 0` rule (a separate missed optimisation).
 - **Effect here:** none. Neither rule is in the proven allow-list, and the Lean mid-end with all
   rules (`clif-opt`) doesn't apply it to the repro: the rewrite is dropped and the `ushr` variant
   folds to `v0`, which is correct.
