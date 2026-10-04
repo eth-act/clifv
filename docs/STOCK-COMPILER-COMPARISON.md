@@ -28,6 +28,36 @@ Build, toolchain and validation logs are retained in `<output>.build-logs/`.
 The allocator path is pinned; inherited Rust wrappers/flags/target directories
 are not used to build the comparison infrastructure.
 
+## GitHub Actions
+
+Every pull request runs the full pipeline on `ubuntu-24.04`, with two comparison
+workers. CI uses `FV_COMPARE_MEMCAP=0`, because a systemd user session is not
+required on the hosted runner. The workflow installs the checksum-pinned Lean
+toolchain and caches toolchains, Rust downloads, and compiler build outputs.
+
+A green measurement job means that the full inventory was processed and the
+report is valid. It does **not** mean compiler equivalence. The CI adapter accepts
+the pipeline's expected exit code 1 only with a complete report. Crashes, partial
+inventories, missing reference outputs, changed test sources, and failed stock
+assertions fail CI. Unsupported Lean settings or operations remain coverage gaps.
+
+The workflow saves the full artifacts and logs for seven days. It writes a job
+summary and posts a PR comment with coverage, exact output matches, complete-file
+matches, elapsed pipeline time, and sampled runner memory use. Memory includes
+the OS; time excludes toolchain setup and cache transfers.
+
+After a successful new measurement, the publisher creates the new comment and
+deletes the previous marked comment from `github-actions[bot]`. It preserves
+human comments and unrelated bot comments. A failed build or comparison leaves
+the previous result intact. A stale commit or older run cannot replace a newer
+result.
+
+Same-repository PRs publish in a separate job after the measurement succeeds.
+Fork builds use read-only permissions. A separate `workflow_run` publisher reads
+the small data artifact and posts their comments. It checks out only the default
+branch and never executes fork code. GitHub activates that publisher only after
+its workflow and script are merged into the default branch.
+
 Use a fresh output directory; if `--out` is omitted a timestamped directory is
 chosen. `--input <official-file.clif>` selects a pilot;
 the report still retains the complete official inventory and says how many files
