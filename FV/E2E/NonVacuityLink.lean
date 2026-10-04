@@ -10,15 +10,17 @@ A concrete linked program for which every premise of `E2E.backend_correct_progra
 backend's pipeline (`lowerFunction`, `prepare`, regalloc2's allocation `raOut` — the output of
 `lean-regalloc` on the pipeline's input for this file, rebuilt by `buildRFunc` and accepted by
 `checkAlloc` —, `lowerRFunc`, `emitFunc`, `layout`), loaded at `0x70000` (`f`), `0x20000`,
-`0x10000`, `0x30000`, `0x40000`, `0x50000`, `0x60000`, `0x80000`…`0xF0000`, `0xF4000` (`e`). The
-entry `f` has a
+`0x10000`, `0x30000`, `0x40000`, `0x50000` (`r` and `r__fvself`: one copy), `0x80000`…`0xF0000`,
+`0xF4000` (`e`). The entry `f` has a
 stack slot and an outgoing-argument area; it calls
 
 * `s` with an `sret` pointer to its slot (`s` stores through it, returns the pointer in x0),
 * `k` with 9 arguments (the 9th on the stack, in `f`'s outgoing area),
 * `g` by a `try_call` with a result (`g` calls `h`: a non-leaf program callee),
-* the recursive `r` (`r n = 2 n`): its self-call is `cargo fv`'s alias `r__fvself`, linked as a
-  second function with `r`'s body whose self-call names `r` (the two call each other),
+* the recursive `r` (`r n = 2 n`): its self-call is `cargo fv`'s alias `r__fvself`, a second
+  function with `r`'s body whose self-call names `r` (the two call each other), compiled to the
+  same words and loaded at `r`'s address: one copy of the code, each call returning into the
+  callee's own code (`raCall`'s second case, `RaOk`),
 * `v`, which calls `q` (`q n = n + 5`) through a pointer (`func_addr`, `call_indirect`: a `blr`
   the linked machine resolves by the address in its register) and through the GOT (`blr`),
 * `w`, which passes two `i128` values to `a2` (`i128` addition) and adds the halves of its result:
@@ -322,9 +324,11 @@ def idx (g : Clif.Function) : Nat :=
   else if g = fM then 13 else if g = fD then 14 else if g = fE then 15
   else 0
 
-/-- The load address of a function of `P` (`e` between `d` and the vtable). -/
+/-- The load address of a function of `P` (`e` between `d` and the vtable; `r__fvself` at `r`'s
+address: one copy of their code). -/
 def baseOf (g : Clif.Function) : BitVec 64 :=
-  if idx g = 15 then 0xF4000 else 0x10000 * BitVec.ofNat 64 (idx g + 1)
+  if idx g = 15 then 0xF4000 else if idx g = 5 then 0x50000
+  else 0x10000 * BitVec.ofNat 64 (idx g + 1)
 
 /-- The compiled image of every function. -/
 def A (g : Clif.Function) : Art := getOk (pipe g (idx g) (baseOf g))
@@ -620,31 +624,59 @@ def callLine : Line → Bool
   | .ins (.blr _) _ => true
   | _ => false
 
+/-- `LinkSys.RaOk` decided: the return address of the call at `pc` is outside `ah`'s code, or
+after a call instruction of `ah`'s code and not at its entry. -/
+def raOkB (ah : Art) (pc : BitVec 64) : Bool :=
+  (List.range ah.fb.words.size).all (fun k => pc + 4 != ah.base + BitVec.ofNat 64 (4 * k)) ||
+  (pc + 4 != ah.base && (List.range ah.fa.lines.toList.length).any fun j =>
+    match ah.fa.lines.toList[j]? with
+    | some l => callLine l && pc == ah.base + BitVec.ofNat 64 (lineOffset ah.fa.lines.toList j)
+    | none => false)
+
+theorem raOkB_sound {ah : Art} {pc : BitVec 64} (h : raOkB ah pc = true) : RaOk ah pc := by
+  simp only [raOkB, Bool.or_eq_true, Bool.and_eq_true, List.all_eq_true, List.any_eq_true,
+    List.mem_range, bne_iff_ne, ne_eq] at h
+  rcases h with h | ⟨hne, j, -, hl⟩
+  · exact .inl fun k hk => h k hk
+  · refine .inr ⟨?_, hne⟩
+    revert hl
+    cases e : ah.fa.lines.toList[j]? with
+    | none => simp
+    | some l =>
+      intro hl
+      simp only [Bool.and_eq_true, beq_iff_eq] at hl
+      obtain ⟨hc, rfl⟩ := hl
+      cases l with
+      | ins i t =>
+        cases i <;> simp only [callLine, Bool.false_eq_true] at hc
+        · exact ⟨j, _, t, e, .inl ⟨_, rfl⟩, rfl⟩
+        · exact ⟨j, _, t, e, .inr ⟨_, rfl⟩, rfl⟩
+      | _ => simp [callLine] at hc
+
 /-- The return address of every call of `a` (the code of `g`) is outside the code of every other
-function of `P`. -/
+function of `P`, or after a call of that function's code (`raOkB`). -/
 def raCallB (P : Clif.Program) (A : Clif.Function → Art) (g : Clif.Function) (a : Art) : Bool :=
   let ls := a.fa.lines.toList
   (List.range ls.length).all fun j =>
     match ls[j]? with
-    | some l => !callLine l || P.funcs.all fun h => decide (h = g) || let ah := A h
-        (List.range ah.fb.words.size).all fun k =>
-          a.base + BitVec.ofNat 64 (lineOffset ls j) + 4 != ah.base + BitVec.ofNat 64 (4 * k)
+    | some l => !callLine l || P.funcs.all fun h => decide (h = g) ||
+        raOkB (A h) (a.base + BitVec.ofNat 64 (lineOffset ls j))
     | none => true
 
 theorem raCallB_sound {P : Clif.Program} {A : Clif.Function → Art} {g : Clif.Function} {a : Art}
     (h : raCallB P A g a = true) {pc : BitVec 64} (hpc : CallPc a.fa a.base pc) :
-    ∀ h' ∈ P.funcs, h' ≠ g → ∀ k < (A h').fb.words.size, pc + 4 ≠ (A h').base + BitVec.ofNat 64 (4 * k) := by
+    ∀ h' ∈ P.funcs, h' ≠ g → RaOk (A h') pc := by
   obtain ⟨j, i, t, hj, hi, rfl⟩ := hpc
-  intro h' hh hne k hk
+  intro h' hh hne
   have hjl : j < a.fa.lines.toList.length := (List.getElem?_eq_some_iff.1 hj).1
   simp only [raCallB, List.all_eq_true, List.mem_range] at h
   have := h j hjl
   rw [hj] at this
   have hc : callLine (.ins i t) = true := by
     rcases hi with ⟨n, rfl⟩ | ⟨r, rfl⟩ <;> rfl
-  simp only [hc, Bool.not_true, Bool.false_or, List.all_eq_true, List.mem_range, bne_iff_ne,
-    Bool.or_eq_true, decide_eq_true_eq] at this
-  exact (this h' hh).resolve_left hne k hk
+  simp only [hc, Bool.not_true, Bool.false_or, List.all_eq_true, Bool.or_eq_true,
+    decide_eq_true_eq] at this
+  exact raOkB_sound ((this h' hh).resolve_left hne)
 
 def raStarB (P : Clif.Program) (A : Clif.Function → Art) (ra : BitVec 64) : Bool :=
   P.funcs.all fun h => let ah := A h
@@ -1076,8 +1108,8 @@ theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
           hall h hh (mayB_of hb.1) fun n hn => (hb.2 n (gotOf_sound hn)).symm⟩
       blrTry := fun g hg info ti hs t Lu Ld hi h hh hb hl =>
         tryB_reg (facts hg).tries hs hi hh (mayB_of hb.1) (fun n hn => (hb.2 n (gotOf_sound hn)).symm) hl
-      raBlr := fun g hg info hs hreg h hh hdecl pc hpc k hk =>
-        raCallB_sound (facts hg).ra hpc h hh (mayCall_ne hdecl) k hk
+      raBlr := fun g hg info hs hreg h hh hdecl pc hpc =>
+        raCallB_sound (facts hg).ra hpc h hh (mayCall_ne hdecl)
       indScope := fun g hg hnf => ⟨fun n f h => by simp [L, Clif.Env.empty] at h,
         fun a ha b hb x hxa hxb => by
           simp only [L, Clif.Env.empty, List.append_nil] at ha hb
@@ -1487,6 +1519,41 @@ def callChainB : Bool :=
 
 theorem callChainB_true : callChainB = true := by native_decide
 
+/-- A call of `a`'s code (laid out at its base) returns into `b`'s code. -/
+def retIntoB (a b : Art) : Bool :=
+  let ls := a.fa.lines.toList
+  (List.range ls.length).any fun j => match ls[j]? with
+    | some l => callLine l && (List.range b.fb.words.size).any fun k =>
+        a.base + BitVec.ofNat 64 (lineOffset ls j) + 4 == b.base + BitVec.ofNat 64 (4 * k)
+    | none => false
+
+theorem retIntoB_sound {a b : Art} (h : retIntoB a b = true) :
+    ∃ pc, CallPc a.fa a.base pc ∧ ∃ k < b.fb.words.size, pc + 4 = b.base + BitVec.ofNat 64 (4 * k) := by
+  simp only [retIntoB, List.any_eq_true, List.mem_range] at h
+  obtain ⟨j, -, hl⟩ := h
+  revert hl
+  cases e : a.fa.lines.toList[j]? with
+  | none => simp
+  | some l =>
+    intro hl
+    simp only [Bool.and_eq_true, List.any_eq_true, List.mem_range, beq_iff_eq] at hl
+    obtain ⟨hc, k, hk, he⟩ := hl
+    refine ⟨_, ?_, k, hk, he⟩
+    cases l with
+    | ins i t =>
+      cases i <;> simp only [callLine, Bool.false_eq_true] at hc
+      · exact ⟨j, _, t, e, .inl ⟨_, rfl⟩, rfl⟩
+      · exact ⟨j, _, t, e, .inr ⟨_, rfl⟩, rfl⟩
+    | _ => simp [callLine] at hc
+
+/-- `r` and its alias `r__fvself` are one copy of code (the same load address and words), and the
+calls of each return into the other's code. -/
+def oneCopyB : Bool :=
+  decide ((A fRS).base = (A fR).base) && decide ((A fRS).fb.words = (A fR).fb.words) &&
+  retIntoB (A fR) (A fRS) && retIntoB (A fRS) (A fR)
+
+theorem oneCopyB_true : oneCopyB = true := by native_decide
+
 /-- `f` calls `t` (a callee with a stack slot, beyond its allocator frame: a slot region) and `u`
 (a callee with an outgoing-argument area: it passes a stack argument to `k`). -/
 def slotChainB : Bool :=
@@ -1547,7 +1614,8 @@ theorem gotChainB_true : gotChainB = true := by native_decide
 its stack slot to `s`, a stack-passed argument to `k`, calls `g` by a `try_call` with a result,
 the recursive `r`, `v`, `t` (a callee with a stack slot), `u` (a callee passing a stack argument
 to `k`) and `d` with the address of the vtable `vt`; `g` calls `h` (a non-leaf callee); `r`
-recurses through its alias `r__fvself` (same body and signature); `v` calls `q` through a pointer
+recurses through its alias `r__fvself` (same body and signature, one copy of the code: the same
+address and words, so each call returns into the callee's own code); `v` calls `q` through a pointer
 (`call_indirect` of `func_addr`) and through the GOT; `w` passes `i128` pairs to `a2` (both
 legalised by `Opt.Legalize128`); `d` calls the method `m` it loads from the vtable (a read-only
 data object holding `m`'s address, written by the loader) without declaring it; `e` calls the
@@ -1581,6 +1649,11 @@ theorem backend_correct_program_witness :
     fR ∈ (L F0).P.funcs ∧ fRS ∈ (L F0).P.funcs ∧ (∃ info, (L F0).ProgSite fF info fR) ∧
     (∃ info, (L F0).ProgSite fR info fRS) ∧ (∃ info, (L F0).ProgSite fRS info fR) ∧
     fRS.name = fR.name ++ "__fvself" ∧ fRS.blocks = fR.blocks ∧ fRS.sig = fR.sig ∧
+    (A fRS).base = (A fR).base ∧ (A fRS).fb.words = (A fR).fb.words ∧
+    (∃ pc, CallPc (A fR).fa (A fR).base pc ∧
+      ∃ k < (A fRS).fb.words.size, pc + 4 = (A fRS).base + BitVec.ofNat 64 (4 * k)) ∧
+    (∃ pc, CallPc (A fRS).fa (A fRS).base pc ∧
+      ∃ k < (A fR).fb.words.size, pc + 4 = (A fR).base + BitVec.ofNat 64 (4 * k)) ∧
     fT ∈ (L F0).P.funcs ∧ fU ∈ (L F0).P.funcs ∧ (∃ info, (L F0).ProgSite fF info fT) ∧
     fT.slots ≠ [] ∧ (∃ info, (L F0).ProgSite fF info fU) ∧ (∃ info, (L F0).ProgSite fU info fK) ∧
     (RAFrame.compute (A fU).vcp (A fU).rf).intBase ≠ 0 ∧ (L F0).NeedSlots ∧ (L F0).NeedNI ∧
@@ -1640,6 +1713,9 @@ theorem backend_correct_program_witness :
   have hNS : (L F0).NeedSlots := ⟨fF, hfF, fT, .inl hsT, hslT'⟩
   have hNN : (L F0).NeedNI := ⟨fF, hfF, fU, .inl hsU, .inl hibU⟩
   have hplace : (L F0).PlaceAt cs0.mem (spv w0) := ⟨[], by rw [spv_w0, frames_eq]; rfl⟩
+  have hone := oneCopyB_true
+  simp only [oneCopyB, Bool.and_eq_true, decide_eq_true_eq] at hone
+  obtain ⟨⟨⟨hob, how⟩, hri1⟩, hri2⟩ := hone
   have hcert : ∀ i g, (Opt.Legalize128.function128Cert (srcFn i)).toBool = true →
       (getOk (Opt.Legalize128.function128Cert (srcFn i))).1 = g →
       Opt.Legalize128.function128Cert (srcFn i) = .ok (g, certOf i) := by
@@ -1653,7 +1729,8 @@ theorem backend_correct_program_witness :
     hs9p, hs9r, ha2p, ha2r,
     by simp [L, P], by simp [L, P], ?_, ?_, ?_,
     hsret, ?_, ?_, by rw [hib]; decide, fun h => by simp [h] at hslots, by simp [L, P],
-    by simp [L, P], ?_, ?_, ?_, hnm, hbl, hsg, by simp [L, P], by simp [L, P], hsT, hslT', hsU, hsUK,
+    by simp [L, P], ?_, ?_, ?_, hnm, hbl, hsg, hob, how, retIntoB_sound hri1, retIntoB_sound hri2,
+    by simp [L, P], by simp [L, P], hsT, hslT', hsU, hsUK,
     hibU, hNS, hNN, hplace, by simp [L, P], by simp [L, P], ?_,
     fun h => (by rw [indFreeB_of h] at hindD; cases hindD), hextD',
     (fun h => by have h1 := h.1; rw [hextD'] at h1; simp at h1), regCallsB_sound hregD,

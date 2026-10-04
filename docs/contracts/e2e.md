@@ -559,16 +559,20 @@ theorem backend_correct_program (L : LinkSys) (hL : L.Ok) (hf : f ∈ L.P.funcs)
 runs `f`'s code with the linked hooks of depth `M` (`LinkSys.hooks`): a `bl g` of a function of
 `P`, and a `blr` whose target register (as the machine decodes the instruction word at the pc,
 `blrTarget`) holds the link-time address of a function `g` of `P` (`symCallee`), enter `g`'s
-image (`enterAt`) and run its code until its return (`linkedCall`); other calls and TLS keep
-the base hooks. Layers added for it:
+image (`enterAt`) and run its code until its first return (`linkedCall`: at the return address,
+with the caller's `sp`, without error); other calls and TLS keep the base hooks. Layers added
+for it:
 
 * **M6 with kept addresses** (`regLevelCorrect_world`): `RL.G`, `frameWG` (frame, dead stack and
   addresses `G` the activation keeps: its callers' frames, the code), `StRel.gkeep`, the callee
   contract `CalleeOkG` (required at states that keep `G`, for the allocated call that is the
   instruction at the pc: `CallAt`, so a `blr`'s contract knows its target register),
   `BodyEntryW` (body-entry world equal to the entry state only outside `F` and on the entry
-  `Args` registers), and the final world (unmasked fields, `G`, program) at a return.
-  `regLevelCorrect_backend` is derived (`G := ⊥`).
+  `Args` registers), the final world (unmasked fields, `G`, program) at a return, and the trace
+  of the run before it (every state but the entry at an address after a call of the function's
+  code has the body's `sp`: `PostCall`, `RL.Good`, `Realizes` with a trace invariant). The entry
+  is `AbiCall` (`AbiEntry` without the return address outside the code: a linked call may return
+  into the callee's own code). `regLevelCorrect_backend` is derived (`G := ⊥`).
 * **Per-function theorem with the final world** (`backend_correct_world`, `FV/E2E/LinkWorld.lean`,
   memory relation `RelW`: `Rel.holds`, the body's `sp`, no error): one VCode outcome realised by
   every Arm activation entered with the same body-entry world — the non-interference that makes
@@ -597,9 +601,10 @@ register arguments in the callee's parameter registers and take results from x0.
 site; the result clause constrains only the defs the site has; for a `blr` site, for every
 function it may enter (`BlrTo`: one it may call, `MayCall`; at a call through the GOT only the
 GOT symbol's function) with as many register parameters, `blrRegs`); declarations
-equal definitions; no function calls itself directly (`raCall`, `raBlr`:
-the return address of a call is outside the code of the function it calls, stated per call
-site); a function with indirect calls (`call_indirect`, `try_call_indirect`) has no link-time
+equal definitions; the return address of a call is outside the code of the function it calls,
+or after a call instruction of that function's code and not at its entry (`RaOk`: a callee
+sharing one copy of code with its caller, as `cargo fv`'s alias of a recursive function), stated
+per call site (`raCall`, `raBlr`); a function with indirect calls (`call_indirect`, `try_call_indirect`) has no link-time
 address itself, the names of `P` and of the base environment have distinct addresses, the base
 externs keep the symbols (`indScope`, `indNoSym`), its indirect-call signatures and the
 functions it may call (`MayCall`: declared, or any other function of `P` with an address) pass
@@ -607,7 +612,8 @@ no `sret` and at most 8 register parameters (`indSig`),
 and with an outgoing-argument area in `P` the functions with an address have no slots
 (`addrSlots`).
 **Trusted / premises**: the
-link layout (bases, the code image `Img`/`imgMem`, return addresses outside callees' code,
+link layout (bases, the code image `Img`/`imgMem`, return addresses outside callees' code or
+after their calls,
 `raStar`, distinct symbol addresses), the base
 environment's contracts (calls outside `P`, `XCallsOk` and `XCallsIndOk` of the base externs,
 TLS, the results of `try_call`s of base externs `baseTry`; when a function of `P` has an
@@ -768,15 +774,32 @@ bytes. It is vacuous without program callees with slots (`NeedSlots`).
    `OutRel` holds again because the callee's whole-program run creates no allocation outside its
    own slots (`runLoop_valid`: entered functions without slots, `baseNoAlloc`; with slots,
    `runLoop_allocs`). A program callee with an outgoing area of its own is covered by 2.
-4. *Direct self-recursion*: handled through `cargo fv`'s alias, as two distinct functions with
-   the same body: `P` contains `r` (its self-call renamed to `r__fvself`, as `cargo fv` emits)
-   and `r__fvself` (`r`'s body and signature under the alias name, its self-call naming `r`);
-   the two call each other, so `raCall` (return address outside the *callee's* code) holds and
-   no premise changes. Trusted: the real binary has one copy (the linker resolves `r__fvself` to
-   `r`); the theorem is about the two-copy layout. Refining `raCall` for a single copy needs the
-   linked call to find the callee's return without the "return address outside its code"
-   argument (`retStuck`): an M6 invariant that no intermediate state of an activation is at a
-   post-call address with the entry `sp` (not done).
+4. *Direct self-recursion, one copy* (agent/link-scope2): `cargo fv`'s alias as a program call.
+   `P` contains `r` (its self-call renamed to `r__fvself`, as `cargo fv` emits) and `r__fvself`
+   (`r`'s body and signature under the alias name, its self-call naming `r`), compiled to the
+   same words and loaded at `r`'s address (`A r__fvself` and `A r` share `base` and `fb.words`;
+   one copy in the image, as the linker resolves `r__fvself` to `r`). Each call returns into the
+   callee's own code, so the linked call cannot find the return by "past it the machine stops"
+   (`retStuck`). Instead:
+   * M6 gives a trace (`regLevelCorrect_world`'s last clause, `PostTrace` in
+     `backend_correct_world(_ni)` and `LinkSys.Thm`): every state of an activation's run before
+     its return, but the entry, that is at an address after a call of its code (`PostCall`) has
+     the body's `sp`, `frameDrop` below the entry `sp` (every realisation lemma gives `RL.Good`
+     for the states of its run: a state after a non-call line is no post-call address,
+     `RL.good_succ`; after a call the callee contract gives the body's `sp`).
+   * `RetOf` also requires the caller's `sp`, and `linkedCall` takes the **first** return
+     (`firstNat`). `linkedCall_eq`: with the return address outside the callee's code, an
+     earlier return is impossible by `retStuck`; with it after a call of the callee's code and
+     not at its entry (`RaOk`), an earlier return would be a post-call state with the entry `sp`,
+     which the trace excludes (`frameDrop > 0`: `lowerRFunc` always builds a frame).
+   * `raCall`/`raBlr` are weakened to `RaOk` (outside the callee's code, **or** `CallPc` of the
+     callee's code with `pc + 4 ≠ base`); `CallerOk.ra`, `progCall`, `progOsCore` take `RaOk`;
+     `MachEntry.abi`/`ActEntry.abi` are `AbiCall` (no return address outside the code).
+   The witness checks it per call (`raOkB`, `raCallB_sound`) and states the shared base and words
+   and that the calls of `r` and `r__fvself` return into each other's code (`oneCopyB`). For a
+   crate, `r__fvself` resolves to `r` as a program call (not a base extern). Not covered: a
+   function calling itself under its own name (excluded at the CLIF level, `InSubset (P.only f)`),
+   recursion through a pointer.
 5. *Indirect calls between program functions* (`call_indirect`, `try_call_indirect`; and the
    `blr` of a call through the GOT). `Ok.noBlr` and `Linkable`'s indirect-call exclusion are
    gone (`Clif.LinkFree` excludes only `return_call`; `Clif.IndFree` is separate, still required
@@ -938,6 +961,11 @@ theorem backend_correct_program_witness :
     fR ∈ (L F0).P.funcs ∧ fRS ∈ (L F0).P.funcs ∧ (∃ info, (L F0).ProgSite fF info fR) ∧
     (∃ info, (L F0).ProgSite fR info fRS) ∧ (∃ info, (L F0).ProgSite fRS info fR) ∧
     fRS.name = fR.name ++ "__fvself" ∧ fRS.blocks = fR.blocks ∧ fRS.sig = fR.sig ∧
+    (A fRS).base = (A fR).base ∧ (A fRS).fb.words = (A fR).fb.words ∧
+    (∃ pc, CallPc (A fR).fa (A fR).base pc ∧
+      ∃ k < (A fRS).fb.words.size, pc + 4 = (A fRS).base + BitVec.ofNat 64 (4 * k)) ∧
+    (∃ pc, CallPc (A fRS).fa (A fRS).base pc ∧
+      ∃ k < (A fR).fb.words.size, pc + 4 = (A fR).base + BitVec.ofNat 64 (4 * k)) ∧
     fT ∈ (L F0).P.funcs ∧ fU ∈ (L F0).P.funcs ∧ (∃ info, (L F0).ProgSite fF info fT) ∧
     fT.slots ≠ [] ∧ (∃ info, (L F0).ProgSite fF info fU) ∧ (∃ info, (L F0).ProgSite fU info fK) ∧
     (RAFrame.compute (A fU).vcp (A fU).rf).intBase ≠ 0 ∧ (L F0).NeedSlots ∧ (L F0).NeedNI ∧
@@ -970,10 +998,10 @@ environment). The second theorem discharges the entry premises too (`AbiEntry`, 
 `sp0 - 32`, `StackArgsAvoid`, `Rel.holds` (the slot's allocation outside `F0`, `SlotRel`,
 `OutRel` of the 16-byte outgoing area), `hpl`, the returning CLIF run (with the oracle: `t`'s
 slot at its frame address), `native_decide`: `entryFactsB_true`, `callChainB_true`,
-`slotChainB_true`, `vtChainB_true`, `gotChainB_true`) for `f` on `41` at depth `M0 = 100` and applies
+`slotChainB_true`, `vtChainB_true`, `gotChainB_true`, `oneCopyB_true`) for `f` on `41` at depth `M0 = 100` and applies
 `backend_correct_program_returned`. Axioms: standard plus the `_native` axioms of `names`,
 `okB_true`, `entryFactsB_true`, `callChainB_true`, `slotChainB_true`, `vtChainB_true`,
-`gotChainB_true` (and the existing
+`gotChainB_true`, `oneCopyB_true` (and the existing
 `bv_decide`/`native_decide` ones of the backend proofs). The witness found the former `raCall`
 (the return address of every call outside the code of **every** function of `P`, including the
 caller's own) unsatisfiable for every program with a call; it is now stated for the callees of

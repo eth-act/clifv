@@ -375,6 +375,17 @@ noncomputable def step : Arm.ArmState → Arm.ArmState := ArmStepX R.X R.H R.fa
 
 end RL
 
+/-- `pc` is the address after a call instruction (`bl`, `blr`) of the laid-out function `fa`
+loaded at `base`: where a call of the function returns to. -/
+def PostCall (fa : FnAsm) (base pc : BitVec 64) : Prop := ∃ q, CallPc fa base q ∧ pc = q + 4
+
+/-- **A state of the activation that is no return into its own code**: at an address after one
+of its calls only with the body's `sp`. Every state of a run of the activation before its return
+satisfies it (`regLevelCorrect_world`), which tells the linked call of a function calling itself
+(one copy of the code) where the callee returns. -/
+def RL.Good (R : RL) (u : Arm.ArmState) : Prop :=
+  ¬ PostCall R.fa R.base (Arm.r .PC u) ∨ spOf u = R.spB
+
 /-- The Arm state `s` represents store `m` and world `w`. -/
 structure StRel (R : RL) (s : Arm.ArmState) (m : Loc → CV) (w : Arm.ArmState) : Prop where
   store : ∀ l, ValidLoc l → Live R.rf l → m l = locVal R.fr s l

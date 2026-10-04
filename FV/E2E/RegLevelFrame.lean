@@ -323,7 +323,8 @@ theorem iterN_steps {R : RL} (hR : R.Wf) {ls T : List Line} {j : Nat} {s s' : Ar
     (hins : ∀ ln ∈ ls, ∃ x, ln = .ins x none ∧ x.hooked = false)
     (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j)
     (herr : Arm.r .ERR s = .None) (h : StepsOk (R.envOf j) ls s s') :
-    iterN R.step ls.length s = s' ∧ Arm.r .PC s' = R.pcOf (j + ls.length) := by
+    iterN R.step ls.length s = s' ∧ Arm.r .PC s' = R.pcOf (j + ls.length) ∧
+      ∀ i, 0 < i → i ≤ ls.length → R.Good (iterN R.step i s) := by
   have hat : ∀ k ln, ls[k]? = some ln → R.fa.lines.toList[j + k]? = some ln := by
     intro k ln hk
     have := congrArg (·[k]?) hdrop
@@ -335,7 +336,9 @@ theorem iterN_steps {R : RL} (hR : R.Wf) {ls T : List Line} {j : Nat} {s s' : Ar
   have hrun := h.exec
   refine ⟨iterN_execLines hR.layout hR.lm hR.fit ls j s s' hat
       (fun i t hm => by obtain ⟨x, e, hh⟩ := hins _ hm; cases e; exact hh)
-      hprog (by rw [hpc]; rfl) herr (stepsOk_interOk h herr) hrun, ?_⟩
+      hprog (by rw [hpc]; rfl) herr (stepsOk_interOk h herr) hrun, ?_,
+    R.good_execLines hR hat (fun i t hm => by obtain ⟨x, e, hh⟩ := hins _ hm; cases e; exact hh)
+      hprog hpc herr (stepsOk_interOk h herr) hrun⟩
   rw [execLines_pc hrun, hpc]
   simp only [RL.pcOf, RL.L]
   rw [lineOffset_drop_ins (by simpa [RL.L] using hdrop) hins', BitVec.add_assoc]
@@ -396,9 +399,10 @@ theorem sp_sub16 (x : BitVec 64) (n : Nat) :
 /-- **After the prologue**: the machine is at the entry configuration of the allocated code
 (store = the machine's locations, world = any body-entry world `w₀`), `AInv` holds, and every
 field but the pc, x16, x29 and `sp` is as at entry. -/
-theorem q_init {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiEntry R.fb R.base ra R.s0)
+theorem q_init {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
     {w₀ : Arm.ArmState} (hbe : BodyEntryW R.F R.vc.EntryArg R.af R.s0 w₀) :
-    ∃ n, Q R (iterN R.step n R.s0) (MConf.init R.rf (locVal R.fr (iterN R.step n R.s0)) w₀) ∧
+    ∃ n, (∀ i, 0 < i → i < n → R.Good (iterN R.step i R.s0)) ∧
+      Q R (iterN R.step n R.s0) (MConf.init R.rf (locVal R.fr (iterN R.step n R.s0)) w₀) ∧
       AInv R (MConf.init R.rf (locVal R.fr (iterN R.step n R.s0)) w₀) ∧
       ∀ f, f ≠ .PC → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 →
         Arm.r f (iterN R.step n R.s0) = Arm.r f R.s0 := by
@@ -414,11 +418,11 @@ theorem q_init {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiEntry R.fb R.bas
     simp only [RL.pcOf, RL.L] at hj0 ⊢
     rw [lineOffset_succ _ _ _ hj0]
     simp [lineOffset, Line.size]
-  obtain ⟨hiter, hpc'⟩ := iterN_steps hR hdrop
+  obtain ⟨hiter, hpc', hgood⟩ := iterN_steps hR hdrop
     (fun ln h => by obtain ⟨x, e, hh, -⟩ := prologueLines_ins _ ln h; exact ⟨x, e, hh⟩)
     hent.program hpc1 hent.err hsteps
   obtain ⟨herr', hprog'⟩ := hsteps.err
-  refine ⟨(prologueLines R.af.frameSize).length, ?_⟩
+  refine ⟨(prologueLines R.af.frameSize).length, fun i h0 hi => hgood i h0 (Nat.le_of_lt hi), ?_⟩
   rw [hiter]
   have hdrop0 : frameDrop R.af = R.af.frameSize + 16 := by simp [frameDrop, hframe]
   have hspB : spOf s' = R.spB := by
@@ -581,11 +585,12 @@ theorem iterN_one_succ {S : Type} (f : S → S) (n : Nat) (s : S) :
 /-- **The return on the machine**: from `Q` at a `Rets` item, the epilogue and `ret` reach the
 return address with `sp` and x29 as at entry, the allocatable registers and the memory as at
 the item, and the returned values in their fixed registers. -/
-theorem ret_machine {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiEntry R.fb R.base ra R.s0)
+theorem ret_machine {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
     {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc} {its : List RItem} {m : Loc → CV}
     {w : Arm.ArmState} (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock}
     {us : List (Reg × Reg)} (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some (.rets us)) :
-    ∃ n, Arm.r .PC (iterN R.step n s) = ra ∧ Arm.r .ERR (iterN R.step n s) = .None ∧
+    ∃ n, (∀ i < n, R.Good (iterN R.step i s)) ∧
+      Arm.r .PC (iterN R.step n s) = ra ∧ Arm.r .ERR (iterN R.step n s) = .None ∧
       spv (iterN R.step n s) = spv R.s0 ∧ xreg 29 (iterN R.step n s) = xreg 29 R.s0 ∧
       (∀ r, r.allocatable = true → regVal (iterN R.step n s) r = regVal s r) ∧
       (iterN R.step n s).mem = s.mem ∧
@@ -633,7 +638,7 @@ theorem ret_machine {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiEntry R.fb 
     have := hent.spAligned
     simp; omega
   obtain ⟨s1, hsteps, hsp1, hx29, hx30, ho1, hm1⟩ := epilogue_ok (R.envOf j0) hs s hal
-  obtain ⟨hiter, hpc1⟩ := iterN_steps hR hdrop'
+  obtain ⟨hiter, hpc1, hgood⟩ := iterN_steps hR hdrop'
     (fun ln h => by
       rcases List.mem_append.1 h with h | h
       · obtain ⟨x, e, hh, -⟩ := spAdjLines_ins false _ ln h; exact ⟨x, e, hh⟩
@@ -669,7 +674,11 @@ theorem ret_machine {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiEntry R.fb 
       rw [ho1 _ (by simp) (by simp) (by simp) (by simp) (by simp)]
   refine ⟨(spAdjLines false R.af.frameSize ++
       [Line.ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16)) none]).length + 1,
-    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> rw [hfin]
+    fun i hi => ?_, ?_⟩
+  · rcases Nat.eq_zero_or_pos i with rfl | hi0
+    · exact RL.good_of_sp hst.sp
+    · exact hgood i hi0 (by omega)
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> rw [hfin]
   · rw [Arm.r_of_w_same, hx30, hfplr, BitVec.extractLsb'_append_eq_left, hent.lr]
   · rw [Arm.r_of_w_different (by simp), herr1, hst.err]
   · simp only [spv]

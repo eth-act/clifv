@@ -246,7 +246,7 @@ theorem realizes_tls {R : RL} (hR : R.Wf) (hT : TlsOk R.F R.K R.X R.H) {s : Arm.
     (hlen : outs.length = ((ops.zip allocs).toList.filter (·.1.isDef)).length)
     (hk : k + 1 < vb.insts.size) :
     ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
-      Q R (iterN R.step n s) c'' := by
+      Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.Good (iterN R.step i s) := by
   have hW' : Arm.r .ERR w' = .None ∧ w'.program = w.program := by
     have herr : Arm.r .ERR w = .None := by
       have hst := q_stRel hq
@@ -294,7 +294,12 @@ theorem realizes_tls {R : RL} (hR : R.Wf) (hT : TlsOk R.F R.K R.X R.H) {s : Arm.
       have hpc1 : Arm.r .PC (Arm.w .PC (Arm.r .PC s + 4) s) = R.pcOf (j + 1) := by
         rw [Arm.r_of_w_same, hpc, pcOf_succ hj]
       have h2 := step_ldrTlsDescLo12 hR hj1 hprog1 hpc1
-      refine ⟨2, by simp only [iterN, h1, h2], ?_⟩
+      refine ⟨2, by simp only [iterN, h1, h2], ?_, fun i hi0 hi => ?_⟩
+      rotate_left
+      · obtain rfl : i = 1 := by omega
+        have e1 : iterN R.step 1 s = Arm.w .PC (Arm.r .PC s + 4) s := by simp only [iterN, h1]
+        rw [e1]
+        exact R.good_succ hR hj (fun _ h => by cases h) (fun _ h => by cases h) hpc1
       have herr1 : Arm.r .ERR (Arm.w .PC (Arm.r .PC s + 4) s) = .None := by
         rw [Arm.r_of_w_different (by simp)]; exact herr
       rw [hT.pc _ _ _ herr1, Arm.r_of_w_same, hpc]

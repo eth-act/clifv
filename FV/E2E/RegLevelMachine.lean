@@ -267,4 +267,71 @@ theorem iterN_execLines {X : ExtSem} {H : ArmHooks} {fa : FnAsm} {fb : FnBin}
         · simpa [hoff] using h
     · cases h
 
+/-- **The pcs of a straight-line run**: after `i` of the `ls.length` machine steps of
+`iterN_execLines`, the pc is at line `j + i`. -/
+theorem iterN_execLines_pc {X : ExtSem} {H : ArmHooks} {fa : FnAsm} {fb : FnBin}
+    {lm : Std.HashMap Lbl Nat} {base : BitVec 64}
+    (hl : fa.layout = .ok fb) (hm : labelOffsets fa.lines = .ok lm)
+    (hfit : 4 * fb.words.size ≤ 2 ^ 64) :
+    ∀ (ls : List Line) (j : Nat) (s s' : Arm.ArmState),
+      (∀ k ln, ls[k]? = some ln → fa.lines.toList[j + k]? = some ln) →
+      (∀ i t, Line.ins i t ∈ ls → i.hooked = false) →
+      s.program = fb.program base →
+      Arm.r .PC s = base + BitVec.ofNat 64 (lineOffset fa.lines.toList j) →
+      Arm.r .ERR s = .None →
+      InterOk ⟨lineOffset fa.lines.toList j, (lm[·]?)⟩ ls s →
+      execLines ⟨lineOffset fa.lines.toList j, (lm[·]?)⟩ ls s = some s' →
+      ∀ i ≤ ls.length, Arm.r .PC (iterN (ArmStepX X H fa) i s) =
+        base + BitVec.ofNat 64 (lineOffset fa.lines.toList (j + i))
+  | [], _, s, s', _, _, _, hpc, _, _, _ => fun i hi => by
+    obtain rfl : i = 0 := by simpa using hi
+    exact hpc
+  | .label _ :: _, _, _, _, _, _, _, _, _, _, h => by simp [execLines] at h
+  | .word _ _ :: _, _, _, _, _, _, _, _, _, _, h => by simp [execLines] at h
+  | .ins i t :: ls, j, s, s', hat, hhook, hprog, hpc, herr, hinter, h => by
+    intro k hk
+    cases k with
+    | zero => exact hpc
+    | succ k =>
+    have hj : fa.lines.toList[j]? = some (.ins i t) := by simpa using hat 0 _ rfl
+    obtain ⟨a, ha, hstep⟩ := armStepX_ins (X := X) (H := H) hl hm hfit hj
+      (hhook i t (by simp)) hprog hpc herr
+    simp only [execLines, ha] at h
+    split at h
+    · rename_i hpc'
+      have hoff := lineOffset_succ fa.lines.toList j _ hj
+      simp only [Line.size] at hoff
+      simp only [iterN]
+      rw [hstep]
+      cases ls with
+      | nil =>
+        obtain rfl : k = 0 := by simpa using hk
+        simp only [iterN]
+        rw [hpc', hpc, hoff, BitVec.add_assoc]
+        congr 1
+        apply BitVec.eq_of_toNat_eq
+        simp
+      | cons ln ls' =>
+        have h1 := hinter 1 (by omega) (by simp) (Arm.exec_inst a s)
+          (by simp [execLines, ha, hpc'])
+        have := iterN_execLines_pc (X := X) (H := H) (base := base) hl hm hfit (ln :: ls') (j + 1) _ s'
+          (fun k' ln' hk' => by
+            have := hat (k' + 1) ln' (by simpa using hk')
+            rwa [show j + (k' + 1) = j + 1 + k' by omega] at this)
+          (fun i' t' hm' => hhook i' t' (List.mem_cons_of_mem _ hm'))
+          (by rw [h1.2, hprog])
+          (by
+            rw [hpc', hpc, hoff, BitVec.add_assoc]
+            congr 1
+            apply BitVec.eq_of_toNat_eq
+            simp)
+          h1.1
+          (fun k' hk0 hk' s1 hs1 => by
+            have := hinter (k' + 1) (by omega) (by simp at hk' ⊢; omega) s1
+              (by simp [execLines, ha, hpc']; simpa [hoff] using hs1)
+            exact ⟨this.1, by rw [this.2, h1.2]⟩)
+          (by simpa [hoff] using h) k (by simpa using hk)
+        rwa [show j + 1 + k = j + (k + 1) by omega] at this
+    · cases h
+
 end Backend.Proof

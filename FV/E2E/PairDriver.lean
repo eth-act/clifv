@@ -761,7 +761,8 @@ theorem backend_correct_world_ni {p : Clif.Program} {f : Clif.Function} {k : Nat
         PrefixHold vals outs ∧ MemRel F syms cm w ∧ vc.RetsSite us ∧
         (∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
           ActEntry vcp rf af fa fb K F G X H base ra s w₀ →
-          ∃ n, ActRet ra F G us outs w s (runX (ArmStepX X H fa) n s)) ∧
+          ∃ n, ActRet ra F G us outs w s (runX (ArmStepX X H fa) n s) ∧
+            PostTrace fa af base (ArmStepX X H fa) s n) ∧
         (XNI F syms (f.externs.map (·.2)) (indSigs f) c
           (CallLg env (f.externs.map (·.2)) (indSigs f)) X → XTls F X →
         ∀ (D : BitVec 64 → Prop) (w₀' : Arm.ArmState),
@@ -773,7 +774,8 @@ theorem backend_correct_world_ni {p : Clif.Program} {f : Clif.Function} {k : Nat
               w₀.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k)) →
           ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
             ActEntry vcp rf af fa fb K F G X H base ra s w₀' →
-            ∃ n, ActRet ra (fun a => F a ∨ D a) G us outs w s (runX (ArmStepX X H fa) n s)) := by
+            ∃ n, ActRet ra (fun a => F a ∨ D a) G us outs w s (runX (ArmStepX X H fa) n s) ∧
+              PostTrace fa af base (ArmStepX X H fa) s n) := by
   intro vals cm hrun
   have hI := iselSim_relW hsub hc hX hXI hsym hslot (fun _ => 0) hcs hrel hargs htr fuel
   have hM6 : ∀ (w₀ : Arm.ArmState) (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64)
@@ -793,17 +795,17 @@ theorem backend_correct_world_ni {p : Clif.Program} {f : Clif.Function} {k : Nat
     fun hNI hTls D w₀' hrel' hsw hreg hstk H G base ra s he => ?_⟩
   · have hP := prepareCorrect_of_check (driverSem_csem F ⟨fa.k, af.slotBase⟩ X) hc.prepOk
       (fun _ => 0) w₀
-    obtain ⟨n, h1, h2, h3, h4, h5, h6⟩ := (hM6 w₀ H G base ra s he).1 us outs w
+    obtain ⟨n, h1, h2, h3, h4, h5, h6, h7⟩ := (hM6 w₀ H G base ra s he).1 us outs w
       (vReturns_gotV (hP.1 _ _ _ hv))
-    exact ⟨n, ⟨h1, h2, h3, h4, h5, h6⟩⟩
+    exact ⟨n, ⟨h1, h2, h3, h4, h5, h6⟩, h7⟩
   · obtain ⟨us', outs', w1, w2, hv1, hv2, hsw12⟩ := vcode_ni hsub hc hX hXI hsym hslot hNI hTls
       (fun _ => 0) hcs hrel hrel' hargs hsw hreg hstk htr fuel vals cm hrun
     obtain ⟨rfl, rfl, rfl⟩ := vRetFrom_det (vs := ⟨0, 0, fun _ => 0, w₀⟩) hv1 hv
     have hP := prepareCorrect_of_check (driverSem_csem F ⟨fa.k, af.slotBase⟩ X) hc.prepOk
       (fun _ => 0) w₀'
-    obtain ⟨n, h1, h2, h3, h4, h5, h6⟩ := (hM6 w₀' H G base ra s he).1 us' outs' w2
+    obtain ⟨n, h1, h2, h3, h4, h5, h6, h7⟩ := (hM6 w₀' H G base ra s he).1 us' outs' w2
       (vReturns_gotV (hP.1 _ _ _ hv2))
-    refine ⟨n, ⟨h1, h2, fun a ha => ?_, fun g hg h29 h31 => ?_, h5, h6⟩⟩
+    refine ⟨n, ⟨h1, h2, fun a ha => ?_, fun g hg h29 h31 => ?_, h5, h6⟩, h7⟩
     · rw [h3 a (fun hf => ha (.inl hf))]
       exact (hsw12.2.1 a ha).symm
     · rw [h4 g hg h29 h31]

@@ -164,7 +164,7 @@ theorem realizes_tryCall {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (
     (hsucc : succOf R.vc b j = some st) (hitems : R.rf.blocks[st]? = some items)
     (hctl : ctl = .goto j) :
     ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
-      Q R (iterN R.step n s) c'' := by
+      Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.Good (iterN R.step i s) := by
   have hck := (lowerRFunc_ok hR.alloc).2.2.2
   have hcpc := callAt_of_q hq hvb hi tryCall_hcall
   obtain ⟨j0, vb0, items0, pre, code, ls, ps1, ps2, T, hvb0, hit, hsplit, hchk, hcode, hls, htr,
@@ -299,14 +299,20 @@ theorem realizes_tryCall {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (
   have hdrop1 : R.L.drop (j0 + 1) =
       ftList (.ins (.b (.block ti.continuation)) none :: (ls2 ++ nxtOf R.af b)) ++ T := by
     rw [← List.drop_drop, hdrop']; rfl
-  obtain ⟨n, jl, hn, hjl⟩ := reach_b hR hdrop1 hprog' hpc1 herr'
+  obtain ⟨n, jl, hn, hjl, hspn⟩ := reach_b hR hdrop1 hprog' hpc1 herr'
+  have hsp' : spOf s' = R.spB := hK.1.trans hst.sp
   refine ⟨n + 1, _, MStep.op hvb hi hops hsz hsem hlen hho hc2'
-    (MNext.goto hk1 hsucc hitems), ?_⟩
+    (MNext.goto hk1 hsucc hitems), ?_, fun i hi => ?_⟩
+  rotate_right
+  · cases i with
+    | zero => exact RL.good_of_sp hst.sp
+    | succ i =>
+      simp only [iterN]; rw [hs1]
+      exact RL.good_of_sp ((hspn i (by omega)).trans hsp')
   have hiter : iterN R.step (n + 1) s = Arm.w .PC (R.pcOf jl) s' := by
     simp only [iterN]; rw [hs1, hn]
   rw [hiter]
   have hfr := R.frameOkK hR
-  have hsp' : spOf s' = R.spB := hK.1.trans hst.sp
   have hstr : StRel R s' (writeM m2 ((((ops.zip (regs.map Loc.reg)).toList.filter (·.1.isDef)).zip
       (((ops.zip regs).toList.filter (·.1.isDef)).map (fun p => regVal s' p.2))).filter
         (·.1.1.isLate))) w2 := by
