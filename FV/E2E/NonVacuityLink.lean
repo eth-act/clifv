@@ -1155,7 +1155,7 @@ theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
         exact .inl ⟨g, hg, (fn, e'), hm, hname.symm⟩
       · refine ⟨?_, hh'⟩
         simp only [calleeB, Bool.or_eq_true, List.any_eq_true, beq_iff_eq]
-        rcases hm with ⟨hd, -⟩ | ⟨-, -, hs⟩
+        rcases hm with ⟨hd, -⟩ | ⟨-, -, hs, -⟩
         · obtain ⟨⟨fn, e'⟩, hm, hen⟩ := List.mem_map.1 hd
           exact .inl ⟨g, hg, (fn, e'), hm, hen⟩
         · exact .inr (by simpa [L, Option.isSome_iff_ne_none] using hs)
