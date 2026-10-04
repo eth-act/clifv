@@ -442,12 +442,12 @@ $ cd ../../crate-proofs && lake build Crates.GU128
 What the theorem says, and assumes: e2e.md "Crate-level instance" (the base environment's
 contracts, `BaseOk`, are premises; the entry state is a premise as in `backend_correct_program`).
 What blocks functions today (blocker list there): every function of the nine survey crates
-passes, and 495 of `examples/fv-demo`'s 550 (with its recursive function's alias, 496 functions
-of the program); the failures are indirect callers (`call_indirect`) when some address-taken
-function has an `sret` or stack-passed parameter (`indSig`), or different argument registers
-than another function of the same arity (`blrRegs`/`blrTry`), and their callers. Times: under
-a second per survey crate and 8 s for `fv-demo` in `link-check`; `lake build` of all ten proofs
-(`crate-proofs/Crates/`, `fv-demo`'s 496 functions in 16 slices) about 20 s.
+passes, and 544 of `examples/fv-demo`'s 550 (with its recursive function's alias, 545 functions
+of the program); the failures are two `catch_unwind` shims whose `call_indirect` signature
+`(i64, i64)` has the CLIF types of address-taken vtable methods with an `sret` parameter
+(`indSig`, `blrRegs`: CLIF checks types, not the `sret` purpose), and their four callers.
+Times: under a second per survey crate and 5 s for `fv-demo` in `link-check`; `lake build` of
+all ten proofs (`crate-proofs/Crates/`, `fv-demo`'s 545 functions in 18 slices) about 13 s.
 
 ## Examples and results
 

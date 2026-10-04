@@ -600,14 +600,16 @@ the outgoing area of a function holds the stack-passed arguments of the program 
 declares (`outFits`); program call sites pass integer
 register arguments in the callee's parameter registers and take results from x0.. (checked per
 site; the result clause constrains only the defs the site has; for a `blr` site, for every
-function it may enter (`BlrTo`: one it may call, `MayCall`; at a call through the GOT only the
-GOT symbol's function) with as many register parameters, `blrRegs`); declarations
+function it may enter (`BlrTo`: one it may call, `MayCall`, that it declares or that one of its
+indirect calls admits, `IndTo`; at a call through the GOT only the GOT symbol's function) with as
+many register parameters, `blrRegs`); declarations
 equal definitions; the return address of a call is outside the code of the function it calls,
 or after a call instruction of that function's code and not at its entry (`RaOk`: a callee
 sharing one copy of code with its caller, as `cargo fv`'s alias of a recursive function), stated
 per call site (`raCall`, `raBlr`); a function with indirect calls (`call_indirect`, `try_call_indirect`) has no link-time
-address itself, the names of `P` and of the base environment have distinct addresses, the base
-externs keep the symbols (`indScope`, `indNoSym`), its indirect-call signatures and the
+address itself, the functions of `P` have distinct addresses, names sharing an address of no
+function of `P` are one base extern, the base externs keep the symbols (`indScope`,
+`indNoSym`), its indirect-call signatures and the
 functions it may call (`MayCall`: declared, or any other function of `P` with an address) with
 the parameter types of one of them (`IndSigMatch`) pass no `sret` and at most 8 register
 parameters (`indSig`),
@@ -862,7 +864,8 @@ bytes. It is vacuous without program callees with slots (`NeedSlots`).
    * CLIF linking: `Clif.linkEnvN P base M` has `names := P.names ++ base.names`, so the
      per-function program resolves an address to any function of `P` (or extern of `P`/`base`)
      whatever `f` declares; `Clif.IndScope P base syms` is the symbol keeping of `base` and the
-     injectivity of the addresses of `P.names ++ base.names` (`IndDecl` is gone).
+     injectivity of the addresses of `P.names ++ base.names` (`IndDecl` is gone; weakened by
+     Widening 10).
    * Arm: `LinkSys.MayCall g n` (`DeclN g n`, or `g` has indirect calls, `n ≠ g.name` and `n` has
      a link-time address) replaces `DeclN` in `X`'s `blr` branch, `envOf` (its `names` are
      `linkEnvN`'s), `blrRegs`, `blrTry`, `raBlr`, `indSig`; `Callee` gains the functions of `P`
@@ -931,11 +934,45 @@ bytes. It is vacuous without program callees with slots (`NeedSlots`).
      `sigChainB_true`).
    Not covered: a reachable callee (matching types) with an `sret` parameter or stack-passed
    arguments; `blrRegs`/`blrTry` at a genuine indirect call still quantify over every function of
-   the site's register arity the caller may reach.
+   the site's register arity the caller may reach (Widening 10).
+10. *`blr` callees restricted by signature; aliases* (agent/crate-check3). Two blockers of
+   `fv-demo` once its checker followed Widening 9:
+   * `blrRegs`/`blrTry` quantified over every function the caller may reach (`MayCall`) with the
+     site's register arity. A run entering a function `h` of `P` from an indirect call with
+     signature `sig` has `IndSigMatch sig h` and returns as many results as `sig` has
+     (`Clif.callExternAt` checks the results' types against `sig`, `h`'s run returns values of its
+     own result types). `LinkSys.IndTo g h` (`MayCall g h.name`, and `DeclN g h.name` or
+     `∃ sig ∈ indSigs g, IndSigMatch sig h ∧ h.sig.returns.length = sig.returns.length`)
+     replaces `MayCall` in `BlrTo` (so in `Ok.blrRegs`/`Ok.blrTry`: one more hypothesis, weaker)
+     and in `X`'s `blr` branch (`X` is undefined for the other functions: the contract at a `blr`
+     entering them is vacuous). `xCallsIndOk` gets the match from the callee's entry and the
+     returned values (`hretlen`), `xCallsOk` (a declared callee through the GOT) from `DeclN`.
+     `indSig` keeps its hypothesis (`xni` has no result count).
+   * `Clif.IndScope` required distinct addresses for all names of `P` and of the base
+     environment, but a linker folds identical functions: `core`'s `<u64 as Display>::fmt` and
+     `<usize as Display>::fmt` share one address in `fv-demo` (both declared by `fv-demo`
+     functions, `func_addr` for `fmt::Argument`). `IndScope.inj` is now about the functions of `P`
+     only, and `IndScope.alias`: names of `P` and of `base` sharing an address of no function of
+     `P` are the same extern of `base` (true of one copy of code). `runLoop_linkN`'s per-function
+     program resolves such an address to another alias than the whole program
+     (`callExternAt_alias`: the same result up to the stuck messages, which name the extern; a
+     stuck whole-program step contradicts the run's hypothesis); an address of a function of `P`
+     resolves to the first function of `P` with it in both (`linkEnvN`'s names start with `P`'s
+     functions). Weaker: the former `IndScope` implies the new one. `LinkCheck` derives
+     `IndScope.inj` from `symInj`/`symOk` (the global `SymInj` check is gone) and `alias` is a
+     base premise (`BaseOk.aliasSyms`, satisfied by `closedBase`).
+   * Witness: `y(p, x, z)` calls the pointer `p` (`call_indirect`, signature `(i64, i32) -> i32`,
+     arguments in x0/x1); `s(i64 sret, i64)` (x8, x0) gets an address, so `y` may reach it; no
+     indirect call of `y` has `s`'s parameter types, so `¬ IndTo fY fS` and the former
+     `blrRegs` failed (`blrChainB_true`; `y` is not called by `f`, so `f 41 = 802` is unchanged).
+   Not covered: an indirect call whose signature equals the CLIF types of a reachable function
+   with an `sret` parameter (CLIF's `call_indirect` checks types, not purposes: `(i64, i64)`
+   admits `(i64 sret, i64)`), unless the callee value is known (below, "Crate-level instance").
 
 **Non-vacuity** (`FV/E2E/NonVacuityLink.lean`, namespace `E2E.LinkWitness`): the closed program
-`P = {f, g, h, s, k, r, r__fvself, q, v, a2, w, t, u, m, d, e}` (`m`, `d`: the vtable dispatch of
-Widening 7; `e`: the GOT call of a base extern of Widening 8, not called by `f`) — the entry `f` (a stack slot, a 16-byte
+`P = {f, g, h, s, k, r, r__fvself, q, v, a2, w, t, u, m, d, e, y}` (`m`, `d`: the vtable dispatch of
+Widening 7; `e`: the GOT call of a base extern of Widening 8, not called by `f`; `y`: the indirect
+caller of Widening 10, not called by `f`) — the entry `f` (a stack slot, a 16-byte
 outgoing area)
 passes an `sret` pointer to its slot to `s` (which stores through it and returns the pointer),
 calls `k` with 9 arguments (the 9th on the stack), calls `g` by a `try_call` with a result
@@ -1034,7 +1071,7 @@ slot at its frame address), `native_decide`: `entryFactsB_true`, `callChainB_tru
 caller's own) unsatisfiable for every program with a call; it is now stated for the callees of
 the caller's call sites (`LinkSys.ProgSite`).
 
-### Crate-level instance (2026-10-04, `agent/crate-check`)
+### Crate-level instance (2026-10-04, `agent/crate-check`; `agent/crate-check3`)
 
 `backend_correct_program` for a real crate built by `cargo fv`: `LinkSys.Ok` is decided per
 crate on the build's own data, by a general checker with a soundness proof
@@ -1096,23 +1133,27 @@ by the premise it discharges): the pipeline succeeds, `lowerCheck`, `prepCheck`,
 (`compiled`), `FormsCovered`, `tryRets`/`blrTry`, `sretRets`, `outFits`, `argRegs`,
 `calleeFrame`/`slotFits`, `callRegs`/`blrRegs` (per call site: a `bl` of a function of `P`
 passes its ABI registers; a `bl` of an extern outside `P` needs nothing; a `blr` site, `blrOk`,
-for every function it may enter, `LinkSys.BlrTo`: at a call through the GOT, `gotOf`/`gotOf_sound`
-of agent/link-scope2's `GotFlow`, only the GOT symbol's), `declSig`, `entryRegs`, `fits`,
+for every function it may enter, `LinkSys.BlrTo`: one it declares or that one of its indirect
+calls admits, `indToB` for `IndTo`; at a call through the GOT, `gotOf`/`gotOf_sound` of
+agent/link-scope2's `GotFlow`, only the GOT symbol's), `declSig`, `entryRegs`, `fits`,
 `raCall`/`raBlr` (`raOkB`: the return address of every call is outside every other function's
 code, an interval check, or after a call of that function's own code), `depth`, `free`, `subset`
 (clif-subset-v2 E, no direct self-call, ABI and indirect-call signatures),
-`indScope`/`indNoSym`/`indSig`; for the program (`globalChks`, `globalB`): distinct names, the
-image reads back word by word (`imgB`, which also rejects overlapping or misaligned code),
-`raStar`, `symInj` (every function's link-map address is nonzero and no other map entry's),
-`symOk` (the CLIF image's symbols are at their link-map addresses), `Clif.SymInj` of the names
-with an address (when some function has an indirect call), `addrSlots`. `okB_sound` builds every
+`indScope`/`indNoSym`/`indSig` (`indSig` for the functions matching one of the caller's
+indirect-call signatures, `IndSigMatch`); for the program (`globalChks`, `globalB`): distinct
+names, the image reads back word by word (`imgB`, which also rejects overlapping or misaligned
+code), `raStar`, `symInj` (every function's link-map address is nonzero and no other map
+entry's), `symOk` (the CLIF image's symbols are at their link-map addresses; with `symInj` they
+give `Clif.IndScope.inj`, distinct addresses of the functions of `P`), `addrSlots`. `okB_sound` builds every
 field of `LinkSys.Ok` from them (`Facts`, `facts`, the soundness lemmas of the witness's checks,
 generalised), except `imgF` (`hF`) and the base fields. `diag`/`diagR` is the diagnostic version
 (the failing checks by function; `diagR_nil`: empty implies `okR`). Only standard axioms
 (`#print axioms E2E.LinkCheck.okB_sound`, `okB_of`).
 
 **What stays a premise** (`BaseOk`), exactly the fields of `LinkSys.Ok` about the base
-environment, gated as there: `baseNoAlloc`, `keepSyms` (`Clif.IndScope.keep`), `baseOs`,
+environment, gated as there: `baseNoAlloc`, `keepSyms` (`Clif.IndScope.keep`), `aliasSyms`
+(`Clif.IndScope.alias`: names sharing an address of no function of `P`, as `core`'s folded
+`Display::fmt` of `u64` and `usize`, are one base extern), `baseOs`,
 `basePc`, `baseExt`, `baseX`, `baseXI`, `baseTls`, `baseTry`, `baseNI`, `baseTlsNI`,
 `baseKeepsPlace`, `baseKeepsAllocs`: the contracts of std (panics, the allocator, formatting),
 of other crates' code and cg_clif fallbacks, of the runtime (`memcpy`, …), and of TLS. With `hF`
@@ -1166,11 +1207,12 @@ build` of `crate-proofs` from a clean `Crates` build, the FV oleans present):
 | | before | after |
 | --- | --- | --- |
 | `link-check --prune`, nine survey crates | 0.5–17 s each | 0.2–1.1 s each |
-| `link-check --prune`, `fv-demo` (550 functions) | 21 min | 7.4 s |
+| `link-check --prune`, `fv-demo` (550 functions) | 21 min | 7.4 s (crate-check3: 4.8 s) |
 | `GU128` proof (19 functions, one file), one `lean` | 17.4 s (interpreted) | 1.6 s |
 | one slice of `fv-demo` (32 functions), one `lean` | 60.5 s (interpreted) | 4.2 s |
 | `fv-demo` proof (496 functions) | 379 functions did not finish in 40 min (interpreted, one `native_decide`) | 16 slices and the main module, 6–11 s each |
-| all ten proofs, `lake build` in `crate-proofs` | — | 18.7 s wall |
+| `fv-demo` proof (545 functions, crate-check3) | — | 18 slices and the main module, 3.0–4.6 s each |
+| all ten proofs, `lake build` in `crate-proofs` | — | 18.7 s wall (crate-check3, `fv-demo` with 545 functions: 12.9 s) |
 
 Most of the old checker time was not the validators: `memT` (a `let` before a `fun`) compiles to
 a function of the address that rebuilt the word map on every byte read, so `imgB` was quadratic in
@@ -1182,8 +1224,8 @@ and `examples/fv-demo`'s binary): every Lean-compiled function of the nine surve
 `AArith` (58), `BSlices` (59), `CStructsEnums` (27), `DLoopsIters` (117), `EOptionResult` (48),
 `FCrypto` (40), `GU128` (19; its `i128` functions are the `Opt.Legalize128` legalisations, so the
 theorem is about the legalised program, as in "Widening" 6), `HDynGeneric` (43: `dyn` dispatch
-through vtables, `fn` pointers, closures), `IAlloc` (49) — and `FvDemo`: 495 of `fv-demo`'s 550
-functions plus its recursive function's alias (496), closed under calls. Axioms of `link_ok`:
+through vtables, `fn` pointers, closures), `IAlloc` (49) — and `FvDemo`: 544 of `fv-demo`'s 550
+functions plus its recursive function's alias (545), closed under calls. Axioms of `link_ok`:
 standard plus `globalB_input._native.native_decide.ax_1_1` and one `sliceK_ok._native…` per
 slice; of `correct_i`: those and the backend's existing `bv_decide`/`native_decide` ones
 (`dbm_sxtb`, `dbm_sxth`, the `decode_armBits_*`); `okB_sound`, `okB_of`: standard.
@@ -1191,36 +1233,45 @@ slice; of `correct_i`: those and the backend's existing `bv_decide`/`native_deci
 **Survey** (`link-check --prune`, each crate's codegen unit in its `values` test executable;
 `fv-demo`: its binary, two units), after agent/link-scope (`MayCall`, program-wide indirect
 resolution, call-result clauses restricted to the site's defs) and after agent/link-scope2
-(`BlrTo`: a call through the GOT constrains only its symbol's function; one-copy recursion):
+(`BlrTo`: a call through the GOT constrains only its symbol's function; one-copy recursion), and
+after agent/crate-check3 (`indSig` and `blrRegs`/`blrTry` for the callees an indirect call's
+signature admits, `IndSigMatch`/`IndTo`; aliases outside `P`, Widening 10):
 
-| crate | functions | pass (link-scope) | pass (link-scope2) | failing (functions) |
-| --- | --- | --- | --- | --- |
-| a_arith | 58 | 58 | 58 | — |
-| b_slices | 59 | 59 | 59 | — |
-| c_structs_enums | 27 | 27 | 27 | — |
-| d_loops_iters | 117 | 117 | 117 | — |
-| e_option_result | 48 | 48 | 48 | — |
-| f_crypto | 40 | 40 | 40 | — |
-| g_u128 | 19 | 19 | 19 | — |
-| h_dyn_generic | 43 | 43 | 43 | — |
-| i_alloc | 49 | 48 | 49 | — |
-| fv-demo | 550 | 482 | 495 (+ the alias) | `indSig` 13, `blrRegs` 3, `blrTry` 3 (+42 callers) |
+| crate | functions | pass (link-scope) | pass (link-scope2) | pass (crate-check3) | failing (functions) |
+| --- | --- | --- | --- | --- | --- |
+| a_arith | 58 | 58 | 58 | 58 | — |
+| b_slices | 59 | 59 | 59 | 59 | — |
+| c_structs_enums | 27 | 27 | 27 | 27 | — |
+| d_loops_iters | 117 | 117 | 117 | 117 | — |
+| e_option_result | 48 | 48 | 48 | 48 | — |
+| f_crypto | 40 | 40 | 40 | 40 | — |
+| g_u128 | 19 | 19 | 19 | 19 | — |
+| h_dyn_generic | 43 | 43 | 43 | 43 | — |
+| i_alloc | 49 | 48 | 49 | 49 | — |
+| fv-demo | 550 | 482 | 495 (+ the alias) | 544 (+ the alias) | `indSig` and `blrRegs` 2 (+4 callers) |
 
-**Blockers on real code** (after agent/link-scope2), all at genuine indirect calls
-(`call_indirect` of a `fn` pointer or a vtable slot, not through the GOT):
+With agent/link-scope2's checker, `fv-demo` failed `indSig` 13, `blrRegs` 3, `blrTry` 3 (+42
+callers). Once `indSig` checked only the callees matching a signature, its indirect callers
+stayed in the program and the program check `Clif.SymInj` of every name with an address failed
+(`core`'s `<u64 as Display>::fmt` and `<usize as Display>::fmt`, folded to one address, both
+declared by `fv-demo` functions; vacuous before, every indirect caller having been dropped), and
+`blrRegs`/`blrTry` still failed at 6 sites; Widening 10 removes both.
 
-1. *`indSig` with `MayCall`* (`fv-demo` 13): a function with indirect calls may call every
-   function with a link-time address (`MayCall`), so every such function must be register-only
-   and without `sret`; `fv-demo` has address-taken functions (vtable methods) with an `sret` or
-   stack-passed parameter, so every indirect caller fails, whatever its call signatures. Needs
-   `MayCall` restricted by the call's signature (`indSigs`), or `indSig` stated per signature.
-2. *`blrRegs`/`blrTry` at `call_indirect`* (`fv-demo` 3 + 3, all also failing `indSig`): the
-   `call_indirect`/`try_call_indirect` sites of these functions may enter two address-taken
-   functions with as many register parameters but an `sret` or stack-passed parameter (other
-   argument registers, fewer results); the same restriction by signature would exclude them.
-   With link-scope, `i_alloc` 1 and `fv-demo` 10 (`blrRegs` 6, `blrTry` 4) failed; the GOT sites
-   among them pass with `BlrTo`, the 6 left are at `call_indirect`.
-3. *Callers of failing functions*: dropped by `--prune` so that the rest is closed under calls.
+**Blockers on real code** (after agent/crate-check3):
+
+1. *An indirect call whose signature admits an `sret` callee* (`fv-demo` 2: `Hct6dxdt7Dqo`,
+   `HgJo4HgiHAMF`, `catch_unwind` shims). Each has `try_call_indirect` of `func_addr fn0` and, in
+   the landing pad, `call_indirect` with signature `(i64, i64)` of `func_addr fn1`. The vtable
+   methods `H17D8ApAaVlK` and `H9ubzNsn65EQ` (`(i64 sret, i64)`) have an address (`data_syms`),
+   and CLIF's `call_indirect` checks types, not purposes, so `IndSigMatch` admits them: `indSig`
+   (an `sret` parameter) and `blrRegs` (x8, x0 against the site's x0, x1) fail. The callee values
+   are constants: `func_addr` of a declared function, defined in `block1`, which dominates the
+   landing pad. Fix: a CLIF value-flow fact (an SSA invariant of the activation's run: the result
+   of `func_addr fnN` holds `fnN`'s address at every use it dominates) restricting `MayCall` at
+   such sites to the declared function, with the machine-side counterpart for the vreg's origin
+   (as `GotV` does for GOT loads); or CLIF semantics checking the `sret` purpose at
+   `call_indirect` (a trusted-semantics change).
+2. *Callers of failing functions* (4): dropped by `--prune` so that the rest is closed under calls.
 
 Before agent/link-scope, `blrRegs` at GOT calls of base externs (panics without results next to
 a declared program function of the same arity with results) failed in 8 of the 9 survey crates,
@@ -1229,7 +1280,9 @@ were not CLIF image symbols; `cargo fv link-proof` now adds the program function
 data objects the program reaches, `data_syms`).
 
 Not blocking: `try_call` between program functions and to base externs (95 `fv-demo` functions
-and every survey crate's landing-pad code pass), `sret` (121 `fv-demo` functions), data objects
+and every survey crate's landing-pad code pass), `sret` (121 `fv-demo` functions), indirect calls
+of `fn` pointers and vtable slots whose signature admits only register-only, non-`sret` callees,
+folded aliases outside the program (`BaseOk.aliasSyms`), data objects
 (`symbol_value`: in `syms`, their contents are entry premises: the CLIF entry memory), std calls
 (base premises), stack-passed and `i128` arguments, direct recursion (one copy, above).
 
@@ -1298,7 +1351,7 @@ body's `sp`"):
 | `backend_correct_opt_proven` | `hC`, `hTls`, `hX`, `hsym` (for the optimised function; `try_call` and `call_indirect` excluded by premises) | `final_contracts_witness` at `f := Opt.optimize f cfg` |
 | `backend_correct_legal` | `hC`, `hCT`, `hTls`, `hX`, `hXI`, `hsym` (for the legalised `g`, environment `Clif.Rust.env`) | `final_contracts_witness` at `f := g`, `env := Clif.Rust.env`, for functions without indirect calls whose externs are the diverging panic entry points (they never return, so `hnoop` holds) |
 | `backend_correct_linked` | `hC`, `hCT`, `hTls`, `hX` (environment `Clif.linkEnv P base`); `hXI` discharged by `Linkable` | `final_contracts_witness` at `env := Clif.linkEnv P base`, when the program callees and the base externs return nothing and keep the memory |
-| `backend_correct_program` | `L.Ok` (program, compilation, layout, base environment) and the entry premises | `E2E.LinkWitness.backend_correct_program_witness` (`FV/E2E/NonVacuityLink.lean`): `P = {f, g, h, s, k, r, r__fvself, q, v, a2, w, t, u, m, d}` (`m`, `d`: the vtable dispatch of Widening 7) compiled by the pipeline (a `try_call` f→g, an `sret` call f→s into `f`'s stack slot, a stack-passed argument f→k, a non-leaf callee g→h, recursion r↔r__fvself, `call_indirect` of `func_addr` and a GOT call v→q, `i128` pairs w→a2 of the legalised `i128` functions, a called function with a stack slot f→t placed by the slot-placement oracle, a called function passing a stack argument f→u→k), all premises discharged (`NeedSlots` and `NeedNI` hold, their premises proven), `f 41` returns `802` |
+| `backend_correct_program` | `L.Ok` (program, compilation, layout, base environment) and the entry premises | `E2E.LinkWitness.backend_correct_program_witness` (`FV/E2E/NonVacuityLink.lean`): `P = {f, g, h, s, k, r, r__fvself, q, v, a2, w, t, u, m, d, e, y}` (`m`, `d`: the vtable dispatch of Widening 7; `e`: the GOT call of Widening 8; `y`: the indirect caller of Widening 10) compiled by the pipeline (a `try_call` f→g, an `sret` call f→s into `f`'s stack slot, a stack-passed argument f→k, a non-leaf callee g→h, recursion r↔r__fvself, `call_indirect` of `func_addr` and a GOT call v→q, `i128` pairs w→a2 of the legalised `i128` functions, a called function with a stack slot f→t placed by the slot-placement oracle, a called function passing a stack argument f→u→k), all premises discharged (`NeedSlots` and `NeedNI` hold, their premises proven), `f 41` returns `802` |
 
 **Callees that return values** (`idX sym tp idf`: a callee `n` with `idf n` returns its first
 argument — a `bl n` or a `blr` to `sym n 0` —, every other callee returns nothing; the hooks are

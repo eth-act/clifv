@@ -146,17 +146,20 @@ premises. Deferred, in order:
     callee runs, `EnvKeepsAllocs` of the linked environment).
   - recursion through a pointer (the caller's own address); reachable indirect callees (whose
     parameter types match an indirect call of the caller, `IndSigMatch`; agent/link-scope2
-    restricted `indSig` to those) with stack-passed or `sret` parameters; at a genuine indirect
-    call (`call_indirect`) `blrRegs`/`blrTry` still quantify over every function the caller may
-    reach with the site's arity (`MayCall`), not only the ones its signature admits.
+    restricted `indSig` to those, agent/crate-check3 `blrRegs`/`blrTry` to `IndTo`: declared, or
+    matching the parameter types and number of results of one of the caller's indirect calls)
+    with stack-passed or `sret` parameters.
   - a function calling itself under its own name (excluded at the CLIF level by `InSubset (P.only f)`; `cargo fv`'s alias covers it), float parameters; a
     depth-free machine (monotonicity of `linkedCall` in the depth, needs base hooks preserving
     errors).
-  - **`indSig` under `MayCall`** (agent/crate-check, `fv-demo` 13 functions): a function with
-    indirect calls may call every function with an address, so all of them must be
-    register-only without `sret`; restrict `MayCall` (or `indSig`) by the call's signature (it
-    would also pass `blrRegs`/`blrTry` at the `call_indirect` sites of 3 + 3 of them, which may
-    enter address-taken functions of the same arity with an `sret` or stack-passed parameter).
+  - **Indirect calls of a known function admitting an `sret` callee** (agent/crate-check3,
+    `fv-demo` 2 functions + 4 callers, e2e.md "Crate-level instance"): two `catch_unwind` shims
+    `call_indirect` with signature `(i64, i64)` the value of `func_addr fn1` (defined in a block
+    dominating the call); CLIF's `call_indirect` checks types, not purposes, so the address-taken
+    vtable methods `(i64 sret, i64)` match (`IndSigMatch`) and `indSig`/`blrRegs` fail. Needs a
+    CLIF value-flow invariant (a `func_addr` result holds its symbol's address at the uses it
+    dominates) restricting `MayCall` at such sites, with the machine-side origin of the vreg (as
+    `GotV`), or CLIF semantics checking the `sret` purpose at `call_indirect`.
   - **Crate-level instance** (agent/crate-check, `FV/E2E/LinkCheck.lean`, `cargo fv
     link-proof`, e2e.md "Crate-level instance"): an entry-level instance for a crate function
     (the entry premises of `ProgStmt` for concrete arguments and a CLIF entry memory holding the

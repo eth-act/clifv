@@ -517,17 +517,30 @@ parameters, so a run entering `h` with other types is stuck). -/
 def IndSigMatch (sig : Clif.Signature) (h : Clif.Function) : Prop :=
   Clif.AbiParam.tys h.sig.params = Clif.AbiParam.tys sig.params
 
+instance (sig : Clif.Signature) (h : Clif.Function) : Decidable (IndSigMatch sig h) :=
+  inferInstanceAs (Decidable (_ = _))
+
 /-- `h` is a callee of `g`: a call site of `g`'s compiled code calls it, `g` declares it, or `g`
 may reach it (`MayCall`: through a pointer). -/
 def Callee (g h : Clif.Function) : Prop :=
   (∃ info, L.ProgSite g info h) ∨ (∃ e ∈ g.externs.map (·.2), L.P.func? e.name = some h) ∨
     (h ∈ L.P.funcs ∧ L.MayCall g h.name)
 
-/-- The functions of `P` a `blr` of `g` through the vreg `t` may enter: those `g` may call
-(`MayCall`), and at a call through the GOT (`GotV`: `t` holds the GOT entry of `n` at every call
-through it, the VCode's `loadExtNameGot t n` before the call) only the one named `n`. -/
+/-- The functions of `P` an activation of `g` may enter through an address (`blr`): those it may
+call (`MayCall`) that it declares (`DeclN`: a call through the GOT) or that one of its indirect
+calls can enter, `h`'s parameter types and number of results being the call's (`IndSigMatch`:
+`Clif.callExternAt` checks the arguments and the results' types against the call-site
+signature, a function of `P` checks its arguments and its returns against its own signature). -/
+def IndTo (g h : Clif.Function) : Prop :=
+  L.MayCall g h.name ∧ (DeclN g h.name ∨
+    ∃ sig ∈ indSigs g, IndSigMatch sig h ∧ h.sig.returns.length = sig.returns.length)
+
+/-- The functions of `P` a `blr` of `g` through the vreg `t` may enter: those `g` may enter
+through an address (`IndTo`), and at a call through the GOT (`GotV`: `t` holds the GOT entry of
+`n` at every call through it, the VCode's `loadExtNameGot t n` before the call) only the one
+named `n`. -/
 def BlrTo (g : Clif.Function) (t : Nat) (h : Clif.Function) : Prop :=
-  L.MayCall g h.name ∧ ∀ n, GotV (L.A g).vcp t n → n = h.name
+  L.IndTo g h ∧ ∀ n, GotV (L.A g).vcp t n → n = h.name
 
 /-- Some program callee has an outgoing-argument area or a slot region: its activations from the
 canonical and the actual caller state differ there, so the linking needs non-interference. -/
@@ -579,9 +592,10 @@ noncomputable def progX (M : Nat) (F : BitVec 64 → Prop) (g : Clif.Function) (
 open Classical in
 /-- **The external semantics of an activation of `g` at depth `M`**: a call (`bl`) of a function
 of `P` is `progX`, as is an indirect call (`blr`) whose target is the address of a function of
-`P` that `g` may reach (`MayCall`: declared, or with a link-time address when `g` has indirect
-calls; other than `g`) with as many register parameters as the call has arguments (otherwise
-undefined); the rest is the base's. -/
+`P` that `g` may enter through an address (`IndTo`: declared, or with a link-time address and the
+parameter types and number of results of one of `g`'s indirect calls; other than `g`) with as
+many register parameters as the call has arguments (otherwise undefined); the rest is the
+base's. -/
 noncomputable def X (M : Nat) (g : Clif.Function) (F : BitVec 64 → Prop) : ExtSem where
   call d uses w := match d with
     | some n => (match L.P.func? n with
@@ -589,7 +603,7 @@ noncomputable def X (M : Nat) (g : Clif.Function) (F : BitVec 64 → Prop) : Ext
       | none => L.Xb.call d uses w)
     | none => (match uses with
       | u :: args => (match symCallee L.Xb L.P (lo64 u) with
-        | some h => if L.MayCall g h.name ∧ args.length = (regLocs h.sig).length then
+        | some h => if L.IndTo g h ∧ args.length = (regLocs h.sig).length then
             L.progX M F h args w else none
         | none => L.Xb.call none uses w)
       | [] => L.Xb.call none uses w)
@@ -2375,7 +2389,7 @@ open Classical in
 theorem X_ind {M : Nat} {g : Clif.Function} {F : BitVec 64 → Prop} {u : CV} {args : List CV}
     {w : Arm.ArmState}
     {h : Clif.Function} (hs : symCallee L.Xb L.P (lo64 u) = some h) :
-    (L.X M g F).call none (u :: args) w = if L.MayCall g h.name ∧ args.length = (regLocs h.sig).length
+    (L.X M g F).call none (u :: args) w = if L.IndTo g h ∧ args.length = (regLocs h.sig).length
       then L.progX M F h args w else none := by
   simp only [X, hs]
 
@@ -2766,9 +2780,9 @@ theorem progOsReg (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g : Clif
       obtain ⟨hLu, hLd⟩ := hregs h hh ⟨hdecl.1, hgot⟩ (by rw [← hdecl.2, List.length_map])
       have hb : (blrTarget t).bind (symCallee L.Xb L.P) = some h := by rw [htgt]; exact hs
       exact ⟨L.pcall M h t, by simp only [callExec, hal, ↓reduceIte, L.hooks_none hb],
-        L.progOsCore hL ih hg hh (.inr (.inr ⟨hh, hdecl.1⟩)) himgF himgG himgS hLu hLd rfl
+        L.progOsCore hL ih hg hh (.inr (.inr ⟨hh, hdecl.1.1⟩)) himgF himgG himgS hLu hLd rfl
           (call_defs_reg hregs0) hK hG
-          (hL.raBlr g hg _ hsite hreg h hh hdecl.1 _ hP.callPc) hsw hx⟩
+          (hL.raBlr g hg _ hsite hreg h hh hdecl.1.1 _ hP.callPc) hsw hx⟩
     · cases hx
 
 end LinkSys
@@ -3229,7 +3243,15 @@ theorem xCallsOk (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g : Clif.
     · have hs : symCallee L.Xb L.P (lo64 (ofX ((L.X M g F).sym ext.name 0))) = some h := by
         show L.P.funcs.find? (fun h' => L.Xb.sym h'.name 0 == lo64 (ofX (L.Xb.sym ext.name 0))) = some h
         rw [lo64_ofX]; exact (L.find_sym hL ext.name).1 h hpf
-      rw [L.X_ind hs, if_pos ⟨by rw [hname]; exact hdecl, argsAt_regLocs hargs⟩]
+      have hdn : DeclN g ext.name := by
+        refine ⟨?_, ?_⟩
+        · obtain ⟨e, he, rfl⟩ := List.mem_map.1 hin
+          exact List.mem_map_of_mem (f := (·.2.name)) he
+        · rcases hdecl with h' | ⟨-, h', -⟩
+          · exact h'.2
+          · exact h'
+      rw [L.X_ind hs, if_pos ⟨⟨by rw [hname]; exact hdecl, .inl (by rw [hname]; exact hdn)⟩,
+        argsAt_regLocs hargs⟩]
       exact hx
 
 /-- **The indirect-call contract of an activation of `g` at depth `M`** under its environment: an
@@ -3282,19 +3304,23 @@ theorem xCallsIndOk (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g : Cl
       rw [locsOf_of_regs hb hb8] at hm
       obtain ⟨i, hi⟩ := List.mem_iff_getElem?.mp hm
       simp [List.getElem?_zip_eq_some] at hi
-    obtain ⟨outs, w', hx, hol, hho, hmr'⟩ :=
-      L.progResult hL ih hg hh (.inr (.inr ⟨hh, hdecl⟩)) himgF hroom hdead halign hargs hsav
-        hmr hpl hinit hret
-    refine ⟨outs, w', ?_, ?_, hho, hmr'⟩
-    · rw [L.X_ind hs, if_pos ⟨hdecl, argsAt_regLocs hargs⟩]
-      exact hx
-    · rw [hol, sigRets_of_noSret hnsr, sigRets_of_noSret (hsigNS sig hsig)]
+    -- and returned as many results as the call's signature has
+    have hretlen : h.sig.returns.length = sig.returns.length := by
       have hrt := Clif.runLoop_returned_tys hL.free M cs rvals cm' (runInv_entry hh hce) hret
       have hbot : cs.bottom = h := by simp [Clif.State.bottom, hce.callers, hce.func]
       rw [hbot] at hrt
       have := congrArg List.length hrt
       simp only [List.length_map, Clif.AbiParam.tys] at this
       rw [← this, hrl]
+    obtain ⟨outs, w', hx, hol, hho, hmr'⟩ :=
+      L.progResult hL ih hg hh (.inr (.inr ⟨hh, hdecl⟩)) himgF hroom hdead halign hargs hsav
+        hmr hpl hinit hret
+    refine ⟨outs, w', ?_, ?_, hho, hmr'⟩
+    · rw [L.X_ind hs, if_pos ⟨⟨hdecl, .inr ⟨sig, hsig, hce.sig.symm.trans hty, hretlen⟩⟩,
+        argsAt_regLocs hargs⟩]
+      exact hx
+    · rw [hol, sigRets_of_noSret hnsr, sigRets_of_noSret (hsigNS sig hsig)]
+      exact hretlen
 
 /-! ## Non-interference of the linked calls -/
 
