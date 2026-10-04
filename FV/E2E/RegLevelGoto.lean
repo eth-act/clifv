@@ -177,14 +177,16 @@ theorem reach_b {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {x : Lbl} {Z 
     (hdrop : R.L.drop j0 = ftList (.ins (.b x) none :: Z) ++ T)
     (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j0)
     (herr : Arm.r .ERR s = .None) :
-    ∃ n jl, iterN R.step n s = Arm.w .PC (R.pcOf jl) s ∧ R.L[jl]? = some (.label x) := by
+    ∃ n jl, iterN R.step n s = Arm.w .PC (R.pcOf jl) s ∧ R.L[jl]? = some (.label x) ∧
+      ∀ i < n, spOf (iterN R.step i s) = spOf s := by
   rcases ft_b x Z with ⟨Z', rfl, he⟩ | he
   · rw [he, ft_label] at hdrop
-    refine ⟨0, j0, ?_, drop_get hdrop⟩
+    refine ⟨0, j0, ?_, drop_get hdrop, fun i hi => by omega⟩
     simp only [iterN]; rw [← hpc, Arm.w_irrelevant]
   · rw [he] at hdrop
     obtain ⟨a, jl, ha, hjl, hstep⟩ := step_branch hR (drop_get hdrop) (.inl rfl) hprog hpc herr
-    refine ⟨1, jl, ?_, hjl⟩
+    refine ⟨1, jl, ?_, hjl, fun i hi => by obtain rfl : i = 0 := by omega
+                                           rfl⟩
     simp only [iterN]; rw [hstep, brCond_b ha]; rfl
 
 theorem invertTo_form {bc : Insn} {t e : Lbl}
@@ -207,7 +209,11 @@ theorem reach_cb {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {bc : Insn} 
     (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j0)
     (herr : Arm.r .ERR s = .None) :
     ∃ n jl, iterN R.step n s = Arm.w .PC (R.pcOf jl) s ∧
-      R.L[jl]? = some (.label (if cond then t else e)) := by
+      R.L[jl]? = some (.label (if cond then t else e)) ∧
+      ∀ i < n, spOf (iterN R.step i s) = spOf s := by
+  have h1 : ∀ i < 1, spOf (iterN R.step i s) = spOf s := fun i hi => by
+    obtain rfl : i = 0 := by omega
+    rfl
   have hnb : ∀ x, bc ≠ .b x := by
     rcases hbc with ⟨c, rfl⟩ | ⟨nz, w, r, rfl⟩ | ⟨nz, r, bit, rfl⟩ <;> intro x h <;> cases h
   rcases ft_cb bc e Z hnb with ⟨L, Z', rfl, hct, he⟩ | he
@@ -229,8 +235,8 @@ theorem reach_cb {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {bc : Insn} 
           · exact .inr (.inr (.inr h))) hprog hpc herr
     rw [hc' hct _ _ ha] at hstep
     cases cond
-    · exact ⟨1, jl, by simp only [iterN]; rw [hstep]; rfl, hjl⟩
-    · exact ⟨1, j0 + 1, by simp only [iterN]; rw [hstep]; rfl, hj1⟩
+    · exact ⟨1, jl, by simp only [iterN]; rw [hstep]; rfl, hjl, h1⟩
+    · exact ⟨1, j0 + 1, by simp only [iterN]; rw [hstep]; rfl, hj1, h1⟩
   · rw [he] at hdrop
     obtain ⟨a, jl, ha, hjl, hstep⟩ := step_branch hR (drop_get hdrop)
       (by rcases hbc with h | h | h
@@ -241,12 +247,18 @@ theorem reach_cb {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {bc : Insn} 
     cases cond
     · simp only [Bool.false_eq_true, ite_false] at hstep
       have hd1 := drop_succ hdrop
-      obtain ⟨n, jl', hn, hjl'⟩ := reach_b hR (s := Arm.w .PC (R.pcOf (j0 + 1)) s) hd1
+      obtain ⟨n, jl', hn, hjl', hsp⟩ := reach_b hR (s := Arm.w .PC (R.pcOf (j0 + 1)) s) hd1
         (by rw [Arm.w_program, hprog]) (Arm.r_of_w_same ..) (by rw [Arm.r_of_w_different (by simp), herr])
-      refine ⟨n + 1, jl', ?_, hjl'⟩
-      simp only [iterN]
-      rw [hstep, hn, Arm.w_of_w_shadow]
-    · exact ⟨1, jl, by simp only [iterN]; rw [hstep]; rfl, hjl⟩
+      refine ⟨n + 1, jl', ?_, hjl', fun i hi => ?_⟩
+      · simp only [iterN]
+        rw [hstep, hn, Arm.w_of_w_shadow]
+      · cases i with
+        | zero => rfl
+        | succ i =>
+          simp only [iterN]
+          rw [hstep, hsp i (by omega)]
+          exact Arm.r_of_w_different (by simp)
+    · exact ⟨1, jl, by simp only [iterN]; rw [hstep]; rfl, hjl, h1⟩
 
 
 /-! ## Conditions -/
@@ -456,7 +468,7 @@ theorem realizes_goto {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {alloc
     (hbr : (∃ l, i = .jump l) ∨ (∃ t e kk, i = .condBr t e kk) ∨
       (∃ kd t e rn bit, i = .testBitAndBranch kd t e rn bit))
     (h : MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c') :
-    ∃ n, Q R (iterN R.step n s) c' := by
+    ∃ n, Q R (iterN R.step n s) c' ∧ ∀ i < n, R.Good (iterN R.step i s) := by
   have hck := (lowerRFunc_ok hR.alloc).2.2.2
   obtain ⟨j0, vb0, items, pre, code, ls, ps1, ps2, T, hvb0, hit, hsplit, hchk, hcode, hls, htr, hdrop,
     hpc, hst⟩ := hq
@@ -531,7 +543,7 @@ theorem realizes_goto {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {alloc
   have hst0 : st ≠ 0 := ctlCheck_succ hck hsucc
   -- the machine reaches the successor's label
   have hreach : ∃ n jl, iterN R.step n s = Arm.w .PC (R.pcOf jl) s ∧
-      R.L[jl]? = some (.label (.block vs.label)) := by
+      R.L[jl]? = some (.label (.block vs.label)) ∧ ∀ i < n, spOf (iterN R.step i s) = spOf s := by
     have hZ : ∀ (Z : List Line), R.L.drop j0 = ftList (ls1 ++ (ls2 ++ nxtOf R.af b)) ++ T →
         R.L.drop j0 = ftList (ls1 ++ (ls2 ++ nxtOf R.af b)) ++ T := fun _ h => h
     rw [List.append_assoc] at hdrop
@@ -567,11 +579,11 @@ theorem realizes_goto {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {alloc
           (∃ nz w r, k'.insn (.block t) = .cbz nz w r (.block t)) ∨
           (∃ nz r bit, k'.insn (.block t) = .tbz nz r bit (.block t)) := by
         cases k' <;> simp [CondBrKind.insn]
-      obtain ⟨n, jl, hn, hjl⟩ := reach_cb hR (by simpa using hdrop) hbc (kk.holds _ w)
+      obtain ⟨n, jl, hn, hjl, hsp⟩ := reach_cb hR (by simpa using hdrop) hbc (kk.holds _ w)
         (fun env a ha => kind_brCond hst hkr _ ha)
         (fun hct env a ha => kind_brCond_inv hst hkr _ _ hct ha)
         (by rw [hst.prog]) hpc hst.err
-      refine ⟨n, jl, hn, ?_⟩
+      refine ⟨n, jl, hn, ?_, hsp⟩
       rw [hjl, hU]
       rw [hjc t e kk rfl] at hlj
       simp only [MInst.targets] at hlj
@@ -601,7 +613,7 @@ theorem realizes_goto {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {alloc
       simp only [CheckCtx.locOk, Bool.and_eq_true] at hal
       have hm : m (.reg (.x n')) = (Arm.r (.GPR (rnum n')) s).setWidth 128 := by
         rw [hst.store (.reg (.x n')) (fun r e => by cases e; exact hal.2) trivial]; rfl
-      obtain ⟨n, jl, hn, hjl⟩ := reach_cb hR (by simpa using hdrop)
+      obtain ⟨n, jl, hn, hjl, hsp⟩ := reach_cb hR (by simpa using hdrop)
         (bc := .tbz (kd == .nz) (.x n') bit (.block t)) (.inr (.inr ⟨_, _, _, rfl⟩))
         ((Arm.r (.GPR (rnum n')) s).getLsbD bit == (kd == .nz))
         (fun env a ha => brCond_tbz (by omega) ha s)
@@ -609,7 +621,7 @@ theorem realizes_goto {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {alloc
           simp only [Insn.invertTo] at ha
           rw [brCond_tbz (by omega) ha s, beq_not_right])
         (by rw [hst.prog]) hpc hst.err
-      refine ⟨n, jl, hn, ?_⟩
+      refine ⟨n, jl, hn, ?_, hsp⟩
       rw [hjl]
       obtain ⟨a, hUa, hja⟩ := hjt kd t e _ bit rfl
       have ha : a = m (.reg (.x n')) := by
@@ -621,8 +633,8 @@ theorem realizes_goto {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {alloc
       simp only [MInst.targets, hm, lo64_regX] at hlj
       cases hcond : ((Arm.r (.GPR (rnum n')) s).getLsbD bit == (kd == .nz)) <;>
         simp only [hcond] at hlj ⊢ <;> simp at hlj <;> rw [hlj] <;> simp
-  obtain ⟨n, jl, hn, hjl⟩ := hreach
-  refine ⟨n, ?_⟩
+  obtain ⟨n, jl, hn, hjl, hsp⟩ := hreach
+  refine ⟨n, ?_, fun i hi => RL.good_of_sp ((hsp i hi).trans hst.sp)⟩
   rw [hn]
   exact q_entry hR hst0 hvs hitems hjl (Arm.r_of_w_same ..) (hst.pc _)
 

@@ -128,7 +128,7 @@ theorem realizes_trapIf_next {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat}
     (hi : vb.insts[k]? = some (.trapIf kk code))
     (h : MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c')
     (hnh : ∀ w', c' ≠ .halt w') :
-    ∃ n, Q R (iterN R.step n s) c' := by
+    ∃ n, Q R (iterN R.step n s) c' ∧ ∀ i < n, R.Good (iterN R.step i s) := by
   have hck := (lowerRFunc_ok hR.alloc).2.2.2
   obtain ⟨j0, items, pre, regs, i', c1, c2, ls1, ls2, ps1, psm, ps2, T, cc, wh, ops, rfl, hit, hsplit,
     hasg, hc1', hops, hstat, hchk', hc2, h1, h2, htr, hdrop, hpc, hst⟩ := q_op hq hvb hi
@@ -189,7 +189,9 @@ theorem realizes_trapIf_next {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat}
         · exact .inr (.inl h)
         · exact .inr (.inr (.inl h))) (by rw [hst.prog]) hpc hst.err
   rw [kind_brCond hst hkr _ ha, hnot] at hstep
-  refine ⟨1, ?_⟩
+  refine ⟨1, ?_, fun i hi => by
+    obtain rfl : i = 0 := by omega
+    exact RL.good_of_sp hst.sp⟩
   simp only [iterN]
   rw [hstep]
   exact q_next hvb hit hsplit hchk' hc2 h2 htr hdrop
