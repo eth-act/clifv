@@ -1,4 +1,5 @@
 import FV.E2E.BinCheck
+import FV.E2E.StackBound
 
 /-! # Crate-level instance of `backend_correct_program` (generated)
 
@@ -12,10 +13,14 @@ link's symbol names, and `lean-regalloc`'s output), loaded at their addresses in
 executable's link map (`addrs`). `okB_input` decides every premise of `LinkSys.Ok` about the
 program and its layout by `native_decide` (`okB_of`: the program's checks, `globalB_input`, and
 the per-function checks by slices of 32 functions, `sliceK_ok`), run as compiled
-code (the package `crate-proofs` loads the shared library of `FV.E2E.BinCheck`); `link_ok` is
+code (the package `crate-proofs` loads the shared library of `FV.E2E.StackBound` and
+`FV.E2E.BinCheck`); `link_ok` is
 `LinkSys.Ok` of the crate's linked system for every base environment satisfying the base
 premises (`BaseOk`: the contracts of std, other crates' code and the runtime, which stay
-premises), and the `correct_*` theorems are `backend_correct_program` for the entries.
+premises), and the `correct_*` theorems are `backend_correct_program` for the entries;
+`stack_ok` decides the stack bound (`FV/E2E/StackBound.lean`: the call graph has no cycle), and
+the `correct_stack_*` theorems are `backend_correct_program_stack` for the entries (at every
+fuel).
 
 **The executable** (docs/contracts/e2e.md, "Binary level (M9)"): `bin_ok` states `BinOk input
 dataObjs file` for every file whose bytes agree with the excerpts `exAll` of this executable
@@ -510,5 +515,86 @@ theorem correct_17 : CrateStmt input "widening_mul" :=
 /-- **`backend_correct_program` for `wmul_u128`** -/
 theorem correct_18 : CrateStmt input "wmul_u128" :=
   crate_correct okB_input _
+
+/-- **The stack bound** (`FV/E2E/StackBound.lean`): the program's call graph has no cycle, and an
+activation of any of its functions uses at most 160 bytes of stack with its callees
+(`StackBound.stackFn_le`). -/
+theorem stack_ok : StackBound.stackB input = some 160 := by native_decide
+
+/-- **`backend_correct_program_stack` for `__fv_6e0b8597584e__RNvMs7_NtCsazjiGSRkgVH_4core3numy12wrapping_add`**: at every fuel, with the stack bound. -/
+theorem correct_stack_0 : StackBound.StackStmt input "__fv_6e0b8597584e__RNvMs7_NtCsazjiGSRkgVH_4core3numy12wrapping_add" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_6e0b8597584e__RNvMs8_NtCsazjiGSRkgVH_4core3numo10count_ones`**: at every fuel, with the stack bound. -/
+theorem correct_stack_1 : StackBound.StackStmt input "__fv_6e0b8597584e__RNvMs8_NtCsazjiGSRkgVH_4core3numo10count_ones" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_6e0b8597584e__RNvMs8_NtCsazjiGSRkgVH_4core3numo12wrapping_mul`**: at every fuel, with the stack bound. -/
+theorem correct_stack_2 : StackBound.StackStmt input "__fv_6e0b8597584e__RNvMs8_NtCsazjiGSRkgVH_4core3numo12wrapping_mul" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_6e0b8597584e__RNvMs8_NtCsazjiGSRkgVH_4core3numo13leading_zeros`**: at every fuel, with the stack bound. -/
+theorem correct_stack_3 : StackBound.StackStmt input "__fv_6e0b8597584e__RNvMs8_NtCsazjiGSRkgVH_4core3numo13leading_zeros" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_6e0b8597584e__RNxC6g_u12812HbzwN4kM9erI`**: at every fuel, with the stack bound. -/
+theorem correct_stack_4 : StackBound.StackStmt input "__fv_6e0b8597584e__RNxC6g_u12812HbzwN4kM9erI" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_6e0b8597584e__RNxC6g_u12812Hdl4JcbzftSW`**: at every fuel, with the stack bound. -/
+theorem correct_stack_5 : StackBound.StackStmt input "__fv_6e0b8597584e__RNxC6g_u12812Hdl4JcbzftSW" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `__fv_6e0b8597584e__RNxC6g_u12812HfWgscKzAbwN`**: at every fuel, with the stack bound. -/
+theorem correct_stack_6 : StackBound.StackStmt input "__fv_6e0b8597584e__RNxC6g_u12812HfWgscKzAbwN" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `add_u128`**: at every fuel, with the stack bound. -/
+theorem correct_stack_7 : StackBound.StackStmt input "add_u128" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `checked_mul_u128`**: at every fuel, with the stack bound. -/
+theorem correct_stack_8 : StackBound.StackStmt input "checked_mul_u128" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `clz_u128`**: at every fuel, with the stack bound. -/
+theorem correct_stack_9 : StackBound.StackStmt input "clz_u128" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `cmp_i128`**: at every fuel, with the stack bound. -/
+theorem correct_stack_10 : StackBound.StackStmt input "cmp_i128" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `div_u128`**: at every fuel, with the stack bound. -/
+theorem correct_stack_11 : StackBound.StackStmt input "div_u128" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `from_le`**: at every fuel, with the stack bound. -/
+theorem correct_stack_12 : StackBound.StackStmt input "from_le" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `mac_limbs`**: at every fuel, with the stack bound. -/
+theorem correct_stack_13 : StackBound.StackStmt input "mac_limbs" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `rem_i128`**: at every fuel, with the stack bound. -/
+theorem correct_stack_14 : StackBound.StackStmt input "rem_i128" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `sar_i128`**: at every fuel, with the stack bound. -/
+theorem correct_stack_15 : StackBound.StackStmt input "sar_i128" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `shl_u128`**: at every fuel, with the stack bound. -/
+theorem correct_stack_16 : StackBound.StackStmt input "shl_u128" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `widening_mul`**: at every fuel, with the stack bound. -/
+theorem correct_stack_17 : StackBound.StackStmt input "widening_mul" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
+
+/-- **`backend_correct_program_stack` for `wmul_u128`**: at every fuel, with the stack bound. -/
+theorem correct_stack_18 : StackBound.StackStmt input "wmul_u128" :=
+  StackBound.crate_correct_stack okB_input stack_ok _
 
 end Crates.GU128

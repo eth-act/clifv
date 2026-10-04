@@ -444,7 +444,7 @@ $ cd ../../crate-proofs && lake build Crates.GU128
    evaluates `okB` and the binary checks again, and `okB_sound`, `binOk_of` are theorems.
 5. Build it in the package `crate-proofs/` (`FILE` under `crate-proofs/Crates/`, `lake build`
    there, or `lake build Crates.NAME`): it loads the compiled code of `FV.E2E.LinkCheck`,
-   `FV.E2E.BinCheck` and their imports as a shared library (`fvcheck`, built by Lake from the
+   `FV.E2E.StackBound`, `FV.E2E.BinCheck` and their imports as a shared library (`fvcheck`, built by Lake from the
    same sources), so `native_decide` runs the checker natively instead of in Lean's interpreter
    (about 15× faster).
 
