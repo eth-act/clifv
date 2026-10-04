@@ -1228,19 +1228,19 @@ the `lean-regalloc` of `lean-backend` and keeps a copy, `cargo_fv::linkproof::re
 and the merge's names (each CLIF name → the symbol it is linked as); and per executable the lld
 link map (`link-<tag>.map`, `link-<tag>.json`). `cargo fv link-proof` writes the input
 directory: the CLIF renamed to the linked symbols (local symbols renamed by the merge,
-`c_LdataN` → `__fv_<tag>_LdataN`), the functions at their `__fvlean$` marker in the map, the
-other referenced names at their address in the executable's symbol table, and each function's
-bytes from the executable. `lake exe link-check` completes the input (`syms`: every `symbol`
-global value and `func_addr` target; `D`: the largest frame; `raStar = 8`; the self-call
-aliases), prints the failing checks per function and premise with details, prunes (`--prune`:
-the failing functions and, transitively, their callers, so the rest is closed under calls and no
-function of the crate becomes a base extern), compares the executable's bytes with the compiled
-words (outside relocated fields) and every `bl` target with the link map (an untrusted check of
-the object writer, the merge and the linker: no difference on any surveyed crate), and with
-`--lean` writes the proof: the input as string literals (`fnK`, `sliceK`: 32 functions each,
-`input`), `sliceK_ok : fnsB input sliceK = true` and `globalB_input` by `native_decide`,
-`okB_input` from them (`okB_of`, `fnsB_append`), `link_ok`, `noTls`/`base_closed` (without
-`tls_value`), `entries_present`, and `correct_i : CrateStmt input "<name>"` per entry. Up to 32
+`c_LdataN` → `__fv_<tag>_LdataN`, self-call aliases with their functions), the functions at
+their `__fvlean$` marker in the map, the data objects they reach (since M9), the other
+referenced names at their address in the executable's symbol table. `lake exe link-check`
+completes the input (`syms`: every `symbol` global value and `func_addr` target; `D`: the
+largest frame; `raStar = 8`; the self-call aliases), prints the failing checks per function and
+premise with details, prunes (`--prune`: the failing functions and, transitively, their
+callers, so the rest is closed under calls and no function of the crate becomes a base extern),
+runs the binary checks on the executable ("Binary level (M9)": they replace the former
+comparison of each function's bytes outside relocated fields), and with `--lean` writes the
+proof: the input as string literals (`fnK`, `sliceK`: 32 functions each, `input`),
+`sliceK_ok : fnsB input sliceK = true` and `globalB_input` by `native_decide`, `okB_input` from
+them (`okB_of`, `fnsB_append`), `link_ok`, `noTls`/`base_closed` (without `tls_value`),
+`entries_present`, `correct_i : CrateStmt input "<name>"` per entry, and `bin_ok`. Up to 32
 functions it is one file, beyond that `NAME/Input.lean`, one module per slice
 (`NAME/SliceK.lean`) and `NAME.lean` importing them.
 
@@ -1252,8 +1252,9 @@ the crate library would load the shared library of the whole `FV` library, which
 Clang accepts), and Lake's per-module shared libraries are not linked against their imports
 on Linux, so loading `FV.E2E.LinkCheck`'s alone fails. So the proofs live in a separate Lake
 package, `crate-proofs/` (`require fv from ".."`), whose custom target `fvcheck` links the
-object files of `FV.E2E.LinkCheck` and of the 292 modules it imports (151 MB of C, already
-compiled for `link-check`) into one shared library, and whose library `Crates` loads it while
+object files of the checker modules (`checkRoots`: `FV.E2E.StackBound`, which imports `FV.E2E.LinkCheck`, and `FV.E2E.BinCheck`) and
+of the modules they import (about 300; 151 MB of C, already compiled for `link-check`) into one
+shared library, and whose library `Crates` loads it while
 elaborating (`dynlibs`); Lake rebuilds it when any of those modules changes. Within one file the
 `native_decide` theorems run one after another (`nativeEqTrue` compiles and evaluates with
 `Elab.async` off), so a large crate's checks are split into slice modules that Lake builds in
@@ -1354,18 +1355,142 @@ folded aliases outside the program (`BaseOk.aliasSyms`), data objects
 
 **Trusted** in addition to `backend_correct_program`'s: that `cargo fv` records the file it
 passed to `lean-backend` and the output of the `lean-regalloc` run it made (a different
-allocation would only make `checkAlloc` or the image comparison fail), the merge's renaming,
-and the link map's addresses; `imgMem` is the unrelocated encoding (`bl`, `adrp`, GOT and `lo12`
-fields are zero), while the process image has the relocated words (`link-check` compares the
-rest and the `bl` targets: no difference in the 44000 words of the ten crates); `native_decide`
-(Lean's compiler, now also its C backend and the `fvcheck` shared library Lake links from the
-same sources, instead of the IR interpreter).
+allocation would only make `checkAlloc` or the binary check fail), the merge's renaming;
+`imgMem` is the unrelocated encoding (`bl`, `adrp`, GOT and `lo12` fields are zero), while the
+process image has the relocated words: since M9 the crate proofs also prove the executable's
+bytes, relocations resolved, and its symbol table against the link map (`bin_ok`, "Binary
+level (M9)" below); `native_decide` (Lean's compiler, now also its C backend and the `fvcheck`
+shared library Lake links from the same sources, instead of the IR interpreter).
 
 Not done: an entry-level instance for a crate function (the entry premises of `ProgStmt` for
 concrete arguments, as `backend_correct_program_witness` does for `f 41`); the witness
 (`NonVacuityLink.lean`) keeps its own copy of the checks.
 
 ### Binary level (M9)
+
+PLAN.md §4 "M9": a guarantee about the executable file `cargo fv` produces. Each item has its
+subsection.
+
+#### Code bytes, data objects, GOT and symbols (items 1–2; 2026-10-05, `agent/bin-bytes`)
+
+**The ELF reader** (`FV/E2E/Elf.lean`, namespace `E2E.Elf`). `cargo fv`'s executables are
+static, non-PIE little-endian AArch64 ELF64 files linked by lld against musl (`ET_EXEC`, no
+`PT_DYNAMIC`/`PT_INTERP`, no dynamic relocations, a statically filled `.got`). The reader parses
+the ELF header (`ehdr`: magic, class, data encoding and entry sizes checked), the program
+headers (`phdrs`), section headers (`shdr`) and symbol-table entries (`symEntry`: defined
+symbols, name offset in `sh_link`'s string table, value). `loadMem file : BitVec 64 → Option
+(BitVec 8)` is the loaded image: the byte of the first `PT_LOAD` segment containing the address
+(`p_offset + (a − p_vaddr)` inside `p_filesz`, `0` up to `p_memsz`); `ro file a` (in a segment
+without `PF_W`), `relro file a` (in `PT_GNU_RELRO`), `Static file` (`ET_EXEC`, `EM_AARCH64`, no
+`PT_DYNAMIC`/`PT_INTERP`, `PT_LOAD` segments in disjoint 64 KiB pages, `p_filesz ≤ p_memsz`),
+`SymHas file n v`. Every reader works on a byte source `Rd` and is monotone in it (`*_ext`): a
+check evaluated on an **excerpt** `ex` (file ranges; `exRd`) holds for every file with `Agrees
+file ex` (its bytes there are the excerpt's), so a proof embeds only the ranges it reads.
+
+**The statements** (`FV/E2E/BinCheck.lean`, namespace `E2E.BinCheck`), for a crate's input `I`,
+its data objects `D` and a file:
+
+* `ArtOk I file a`, per compiled function `a` of `tabOf I.results`: every byte of its code is
+  `ro`; every word without a relocation is the compiled word (`plain`, as `Arm.read_mem_bytes`
+  reads it: `readN (loadMem file) 4`); every relocation is resolved (`RelocOk`): a `bl` is
+  `blW (T − P)` (in range) with `T = I.baseOf sym` (an alias's function); an
+  `adrp`/`add :lo12:` pair and an `adrp :got:`/`ldr :got_lo12:` pair (consecutive words, the
+  compiled words `adrp rd, 0` and `add rd, rd, 0` / `ldr rd, [rd, 0]`) put `T = I.symAddr sym
+  addend` into `rd` in one of the forms lld leaves (`PairOk`): `adrp`+`add`, `nop`+`adr`
+  (relaxed), or for the GOT `adrp`+`ldr` of a slot `G` whose 8 bytes in `loadMem` are `T`; a
+  TLSDESC sequence (`adrp`, `ldr`, `add`, `blr`) is lld's local-exec relaxation `movz x0, #hi,
+  lsl 16`, `movk x0, #lo`, `nop`, `nop` of the symbol's thread-pointer offset (`TpOff`: its
+  `st_value` after the 16-byte TCB aligned to `PT_TLS`'s alignment);
+* `DataOk I file o`, per data object: it has a link-map address, `loadMem` holds its resolved
+  bytes there (`objBytes`: `%sym+off` items as the 8 little-endian bytes of `I.addrOf sym +
+  off`, as `Clif.Image.writeItems` writes them), and a read-only object is `ro` or `relro`;
+* `SymsOk I file`: every link-map entry `(n, v)` but the self-call aliases' fresh addresses is a
+  defined symbol `symName n` of value `v` (a data object the merge left local, the assembler's
+  `.LdataN`, which repeats across codegen units, is named `.LdataN@<unit>`);
+* **`BinOk I D file`**: `Static`, `ArtOk` for every function, `DataOk` for every object,
+  `SymsOk`.
+
+Consequences for the boundary theorem: `img_bytes` (with `okB I`: every code address of the
+image, `ImgT`, is `ro` and holds the image's byte `memT (tabOf I.results) a` unless it is a byte
+of a relocated word, `RelocAt I a`, whose form `RelocOk` gives), `roByte_sound`/`dataByte_sound`
+(the resolved byte of a read-only / any data object, `roByte I D a` / `dataByte I D a`, is the
+loaded byte; read-only ones are `ro` or `relro`). The GOT and symbol-address facts the per-run
+premises use (`hsym`, `symOk`: `I.symAddr`) are the link map, which `SymsOk` ties to the file's
+symbol table and `PairOk` to what the code computes.
+
+**Checkers** (on an excerpt): `hdrB` (`Static`), `codeB I ex fs` (`ArtOk` for the functions
+`fs`, one slice), `dataB`, `symsB I ex cert` (`cert`: each name's symbol-table section and
+entry); soundness `hdrB_sound`, `codeB_sound`, `dataB_sound`, `symsB_sound`, assembled by
+`binOk_of` (`artsOk_append` over the slices).
+
+**Tooling.** `cargo fv link-proof` writes into `link.json` the data objects the functions reach
+(`data`: `clif-data-export`'s `; data:` lines renamed to the linked symbols, local ones as
+`.LdataN@<unit>` with their address from the link map's entry under the unit's object file) and
+the addresses of every name they refer to; it renames a function's self-call alias with the
+function. `lake exe link-check` reads the executable (`exe`), evaluates the binary checks on the
+(pruned) program and the data objects its functions reach, prints what differs (`BIN code`: the
+word, the executable's and compiled words, the target; `BIN data`: the byte; `BIN symbol`), the
+relocation forms found and a verdict `binary: ok (…)` / `binary: FAIL code=… data=… syms=…
+hdr=…`; exit status 0 iff `okB` and the binary checks pass. With `--lean` the generated proof
+embeds the excerpts (hexadecimal; ranges within 64 bytes merged): the headers (`exHdr`), per
+slice the code and the GOT slots its pairs load (`exK`, `sliceK_bin : codeB input (exHdr ++ exK)
+sliceK = true` in the slice's module), the data objects (`exData`), the symbol entries and
+names (`exSyms`, `symCert`), and proves `hdr_bin`, `data_bin`, `syms_bin` by `native_decide` and
+**`bin_ok (file) (h : Elf.Agrees file exAll) : BinOk input dataObjs file`**. The proof files
+state no file name: `link-check` cut the excerpts from the executable named in the header
+comment.
+
+**Results** (the ten crates of `crate-proofs/`, rebuilt: survey `cargo fv test --keep-temps`,
+`fv-demo` `cargo fv build --keep-temps`; all pass, no difference):
+
+| crate | functions | words | data objects | symbols | `bl` | address pairs | TLSDESC |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| AArith | 58 | 1375 | 54 | 126 | 31 | 71 | 0 |
+| BSlices | 59 | 2551 | 65 | 137 | 55 | 112 | 0 |
+| CStructsEnums | 27 | 854 | 14 | 45 | 17 | 17 | 0 |
+| DLoopsIters | 117 | 4424 | 83 | 211 | 130 | 119 | 0 |
+| EOptionResult | 48 | 2236 | 26 | 85 | 48 | 32 | 0 |
+| FCrypto | 40 | 3509 | 123 | 176 | 80 | 225 | 0 |
+| GU128 | 19 | 865 | 38 | 68 | 6 | 68 | 0 |
+| HDynGeneric | 43 | 1104 | 21 | 71 | 37 | 32 | 0 |
+| IAlloc | 49 | 3082 | 57 | 123 | 56 | 96 | 0 |
+| FvDemo | 551 | 24063 | 376 | 996 | 651 | 653 | 2 |
+
+`lake build` of all ten proofs: about 12 s. With `--panic-abort` (the v1 configuration;
+`cargo fv link-proof --mode plain-abort`) `g_u128` and `a_arith` pass as well (865 and 1351
+words, 38 and 54 data objects). Findings:
+
+1. **lld relaxes every address pair**: all 1425 `adrp`/`add` and GOT `adrp`/`ldr` pairs of
+   the ten executables are `nop` + `adr` (target within ±1 MiB), and the two TLSDESC sequences
+   are local-exec `movz`/`movk`/`nop`/`nop`. No Lean code reads a GOT slot, so the GOT form of
+   `PairOk` has no instance in these executables; it was exercised on a patched copy of
+   GU128's executable (one pair rewritten as `adrp`+`add`, one as `adrp`+`ldr` of the `.got`
+   slot holding the target: accepted, `bin_ok` builds; the slot altered: rejected). For the
+   boundary: the model's hooks put the address in `rd` at the first word of a pair
+   (`ArmStepX`), the executable at the second.
+2. **Data objects without a symbol of their own**: the file-name strings the panic `Location`s
+   point to are left local by the merge (`.LdataN`, the same names in every codegen unit; 8
+   unresolved names in GU128 alone); now named `.LdataN@<unit>` and resolved per object file.
+3. **Self-call alias of a renamed function**: in `fv-demo`'s test executable a recursive
+   closure renamed by the merge (`__fv_<tag>_…`) called its alias under the old name
+   (`…__fvself`), so `link-check` did not pair them and the self-call was a base call to a
+   name without an address (allowed by `okB`; the former image comparison skipped `bl`s to names
+   without an address). The binary check reported `bl` to `0x0`; `cargo fv link-proof` now
+   renames the alias with its function (0 differences after).
+4. Otherwise no mismatch: every word, data byte and symbol agrees; the read-only data objects
+   are in `.rodata` (`ro`) or `.data.rel.ro` (`relro`: a `PF_W` segment under `PT_GNU_RELRO`,
+   which static musl does not `mprotect`, so "read-only" there is the CLIF semantics', not the
+   MMU's).
+
+**Trusted** (here): the OS loads a `Static` file as `loadMem` describes (each `PT_LOAD` at
+`p_vaddr`, zero fill), and the excerpts embedded in a proof are the executable's bytes (cut by
+`link-check`; a proof about another file needs that file to agree with them); `native_decide`.
+The linker, `cargo fv`'s object merge and the link map are no longer trusted for the program's
+code, its data objects and symbol addresses.
+
+**Not done here**: the boundary statement that consumes `BinOk` (item 3); data reachable only
+from outside code (std's own data) is not checked; the executable's entry point and startup
+code are std/musl's.
 
 #### Stack bound (item 4; 2026-10-05, `agent/bin-stack`, `FV/E2E/StackBound.lean`)
 
@@ -1416,7 +1541,7 @@ theorem stackFn_le (hS : stackB I = some S) (hf : f ∈ (progOf I.results).funcs
 program calls; or the functions whose calls reach a cycle) and the generated crate proofs decide
 it (`stack_ok : stackB input = some S`, or for a recursive program `stack_entriesK`) and state
 `correct_stack_i : StackStmt input "…"` for the entries (the shared library `fvcheck` of
-`crate-proofs` is now built from `FV.E2E.StackBound`). The ten crates:
+`crate-proofs` is now built from `FV.E2E.StackBound` and `FV.E2E.BinCheck`, `checkRoots`). The ten crates:
 
 | crate | functions | stack bound (bytes) | largest entries |
 | --- | --- | --- | --- |
@@ -1905,7 +2030,10 @@ extrt and runtests (445 files): no function rejected.
   register but x0, x30 and the temporary (Cranelift's TLSDESC convention) and may change the
   flags (`docs/decisions/arm-model.md`, "Thread-local storage").
 * **Object writing, linking and loading** (`elfObject`, rust-lld, the loader): the words of `fb`
-  at `base`, relocations resolved to `syms`/callee addresses (M6's hooks), GOT contents.
+  at `base`, relocations resolved to `syms`/callee addresses (M6's hooks), GOT contents. For a
+  crate's executable (M9, "Binary level (M9)") the code, relocations, GOT slots used, data
+  objects and symbol addresses are proven from the file (`bin_ok`); the loader (each `PT_LOAD`
+  at `p_vaddr`) stays trusted.
 * **Runtime/callee contracts**: externs implement `Clif.Env.extern` under AAPCS64
   (`CalleeSound`, stack use); OS behaviour at `udf` (SIGILL reported as the trap-table code).
 * **Rust route (trusted contracts, rust-route)**: the `core` panic entry points the corpus
@@ -1940,6 +2068,12 @@ E2E.calleeOk_witness, E2E.final_contracts_witness, E2E.witness_saves_lr, E2E.cal
 E2E.final_contracts_id:
   [propext, Classical.choice, Quot.sound, Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9]
 E2E.backend_correct_final_witness, E2E.backend_correct_final_id: those of `backend_correct_final`
+E2E.BinCheck.img_bytes, E2E.BinCheck.codeB_sound, E2E.BinCheck.symsB_sound,
+E2E.BinCheck.binOk_of: [propext, Classical.choice, Quot.sound]
+E2E.BinCheck.dataB_sound, E2E.BinCheck.hdrB_sound, E2E.BinCheck.roByte_sound,
+E2E.BinCheck.dataByte_sound, E2E.Elf.agrees_ext: [propext, Quot.sound]
+Crates.NAME.bin_ok: [propext, Classical.choice, Quot.sound] + `Crates.NAME.{hdr_bin, data_bin,
+  syms_bin, sliceK_bin}._native.native_decide.ax_1_1`
 ```
 
 **Status (M6Insts2, 2026-09-28)**: `hRef`/`hmem` of `backend_correct_m4` are not yet discharged.
