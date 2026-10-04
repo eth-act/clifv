@@ -453,6 +453,12 @@ def Callee (g h : Clif.Function) : Prop :=
   (∃ info, L.ProgSite g info h) ∨ (∃ e ∈ g.externs.map (·.2), L.P.func? e.name = some h) ∨
     (h ∈ L.P.funcs ∧ L.MayCall g h.name)
 
+/-- The functions of `P` a `blr` of `g` through the vreg `t` may enter: those `g` may call
+(`MayCall`), and at a call through the GOT (`GotV`: `t` holds the GOT entry of `n` at every call
+through it, the VCode's `loadExtNameGot t n` before the call) only the one named `n`. -/
+def BlrTo (g : Clif.Function) (t : Nat) (h : Clif.Function) : Prop :=
+  L.MayCall g h.name ∧ ∀ n, GotV (L.A g).vcp t n → n = h.name
+
 /-- Some program callee has an outgoing-argument area or a slot region: its activations from the
 canonical and the actual caller state differ there, so the linking needs non-interference. -/
 def NeedNI : Prop :=
@@ -1398,19 +1404,20 @@ structure Ok : Prop where
   tryRets : ∀ g ∈ L.P.funcs, ∀ info ti h, (L.A g).vcp.TrySite info ti → L.ProgSite g info h →
     ti.rets ≤ (sigRets h.sig).length
   /-- scope: a `blr` call site (an indirect call, or a call through the GOT) passes integer
-  arguments in the parameter registers of every function of `P` its function may reach (`MayCall`)
-  that has as many register parameters, and takes the results its defs hold from x0.. (a site
-  with fewer defs than that function's results, e.g. a GOT call of a base extern without
-  results, constrains nothing more; checked per site; vacuous without `blr` sites) -/
+  arguments in the parameter registers of every function of `P` it may enter (`BlrTo`: one its
+  function may reach, `MayCall`; at a call through the GOT only the GOT symbol's function, none
+  for a base extern) that has as many register parameters, and takes the results its defs hold
+  from x0.. (a site with fewer defs than that function's results constrains nothing more; checked
+  per site; vacuous without `blr` sites) -/
   blrRegs : ∀ g ∈ L.P.funcs, ∀ info, (L.A g).vcp.CallSite info → (∀ n, info.dest ≠ .sym n) →
     ∃ t Lu Ld, info = ⟨.reg (.vreg t .int), retPairs Lu, callDefs Ld⟩ ∧
-      ∀ h ∈ L.P.funcs, L.MayCall g h.name → (regLocs h.sig).length = Lu.length →
+      ∀ h ∈ L.P.funcs, L.BlrTo g t h → (regLocs h.sig).length = Lu.length →
         Lu.map (·.2) = regLocs h.sig ∧
         (Ld.map (·.1)).take (sigRets h.sig).length =
           (List.range (min (sigRets h.sig).length Ld.length)).map Reg.x
-  /-- a `blr` `try_call` takes at most the results of the functions it may call -/
+  /-- a `blr` `try_call` takes at most the results of the functions it may enter (`BlrTo`) -/
   blrTry : ∀ g ∈ L.P.funcs, ∀ info ti, (L.A g).vcp.TrySite info ti → ∀ t Lu Ld,
-    info = ⟨.reg (.vreg t .int), retPairs Lu, callDefs Ld⟩ → ∀ h ∈ L.P.funcs, L.MayCall g h.name →
+    info = ⟨.reg (.vreg t .int), retPairs Lu, callDefs Ld⟩ → ∀ h ∈ L.P.funcs, L.BlrTo g t h →
       (regLocs h.sig).length = Lu.length → ti.rets ≤ (sigRets h.sig).length
   /-- layout: the return address of a `blr` is not in the code of a function of `P` it may call
   (`MayCall`: other than the caller) -/
@@ -2559,6 +2566,15 @@ theorem progOsCore (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g h : C
         r_enterAt _ _ (by simp) (by simp)]
 
 
+/-- A `blr` target that is the address of the function `h` of `P` and of the symbol `n` (a call
+through `n`'s GOT entry) is `h` named `n`. -/
+theorem got_target (hL : L.Ok) {a : BitVec 64} {h : Clif.Function} {n : String}
+    (hs : symCallee L.Xb L.P a = some h) (e : a = L.Xb.sym n 0) : n = h.name := by
+  have hh : h ∈ L.P.funcs := List.mem_of_find?_eq_some hs
+  have := List.find?_some hs
+  simp only [beq_iff_eq] at this
+  exact hL.symInj h hh n (this.trans e)
+
 /-- **The operand-view obligation of a call (`bl`) of a function of `P`** in the linked machine at
 depth `M` (from the linking statement at depth `M - 1`). -/
 theorem progOs (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g : Clif.Function}
@@ -2566,7 +2582,7 @@ theorem progOs (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g : Clif.Fu
     (himgG : ∀ a, L.Img a → G a) (himgS : ∀ a, L.Img a → s0.mem a = L.imgMem a)
     {info : CallInfo} {h : Clif.Function} (hsite : L.ProgSite g info h) (ctx : FnCtx) :
     CallSoundCtlG F (L.K M) G s0 (CallAt (L.A g).fa (L.A g).base) (callExec (L.hooks M))
-      (csem F ctx (L.X M g F)) (.call info) .next := by
+      (csemV (GotV (L.A g).vcp) F ctx (L.X M g F)) (.call info) .next := by
   have ⟨_, n, hdest, hpf⟩ := hsite
   obtain ⟨hh, hname⟩ := Clif.Program.func?_some hpf
   subst hname
@@ -2574,6 +2590,7 @@ theorem progOs (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g : Clif.Fu
   subst hinfo
   cases hdest
   intro t hK hD hG c wh ops regs i' w outs w' hops hst hasg hP hsw hal herr hsem
+  replace hsem := csemV_sub hsem
   rw [operands_call_sym] at hops
   cases hops
   obtain ⟨hsz', hloc, -, -⟩ := checkStatic_facts hst
@@ -2600,9 +2617,11 @@ theorem progOsReg (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g : Clif
     {info : CallInfo} (hsite : (L.A g).vcp.CallSite info) (hreg : ∀ n, info.dest ≠ .sym n)
     (ctx : FnCtx) :
     CallSoundCtlG F (L.K M) G s0 (CallAt (L.A g).fa (L.A g).base) (callExec (L.hooks M))
-      (csem F ctx (L.X M g F)) (.call info) .next := by
+      (csemV (GotV (L.A g).vcp) F ctx (L.X M g F)) (.call info) .next := by
   obtain ⟨tv, Lu, Ld, rfl, hregs⟩ := hL.blrRegs g hg info hsite hreg
   intro t hK hD hG c wh ops regs i' w outs w' hops hst hasg hP hsw hal herr hsem
+  have hguard := csemV_guard hsem
+  replace hsem := csemV_sub hsem
   have hops0 := hops
   rw [operands_call_reg] at hops
   cases hops
@@ -2661,7 +2680,13 @@ theorem progOsReg (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g : Clif
     split at hx
     · rename_i hdecl
       have hh : h ∈ L.P.funcs := List.mem_of_find?_eq_some hs
-      obtain ⟨hLu, hLd⟩ := hregs h hh hdecl.1 (by rw [← hdecl.2, List.length_map])
+      have hgot : ∀ n, GotV (L.A g).vcp tv n → n = h.name := by
+        intro n hn
+        have e := hguard tv n _ rfl hn (operands_call_reg tv Lu Ld) (by simp [tgtOp, Operand.isUse])
+        rw [call_useVals_reg hregs0] at e
+        simp only [List.head?_cons, Option.map_some, Option.some.injEq] at e
+        exact L.got_target hL hs e
+      obtain ⟨hLu, hLd⟩ := hregs h hh ⟨hdecl.1, hgot⟩ (by rw [← hdecl.2, List.length_map])
       have hb : (blrTarget t).bind (symCallee L.Xb L.P) = some h := by rw [htgt]; exact hs
       exact ⟨L.pcall M h t, by simp only [callExec, hal, ↓reduceIte, L.hooks_none hb],
         L.progOsCore hL ih hg hh (.inr (.inr ⟨hh, hdecl.1⟩)) himgF himgG himgS hLu hLd rfl
@@ -2685,7 +2710,7 @@ theorem calleeOk (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g : Clif.
     (hg : g ∈ L.P.funcs) {F G : BitVec 64 → Prop} {ra : BitVec 64} {s w₀ : Arm.ArmState}
     (he : L.MachEntry M g F G ra s w₀) :
     CalleeOkG F (L.K M) G s (CallAt (L.A g).fa (L.A g).base) (L.X M g F) (L.hooks M)
-      (L.A g).vcp.CallSite where
+      (L.A g).vcp.CallSite (GotV (L.A g).vcp) where
   os ctx info hsite := by
     cases hd : info.dest with
     | reg r =>
@@ -2703,7 +2728,7 @@ theorem calleeOk (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g : Clif.
       subst hdest
       have hsem' : csem F ctx L.Xb (.call ⟨.sym n, us, ds⟩) (useVals ops regs t) w =
           some (outs, w', .next) := by
-        rw [← hsem]; simp [csem, L.X_base hpf _ _ F]
+        rw [← csemV_sub hsem]; simp [csem, L.X_base hpf _ _ F]
       obtain ⟨s', hex, rest⟩ :=
         h0 t h1 h2 h3 c wh ops regs i' w outs w' hops hst hasg h4 hsw hal herr hsem'
       refine ⟨s', ?_, rest⟩
@@ -2734,7 +2759,7 @@ theorem calleeTryOk (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g : Cl
     (hg : g ∈ L.P.funcs) {F G : BitVec 64 → Prop} {ra : BitVec 64} {s w₀ : Arm.ArmState}
     (he : L.MachEntry M g F G ra s w₀) :
     CalleeTryOkG F (L.K M) G s (CallAt (L.A g).fa (L.A g).base) (L.X M g F) (L.hooks M)
-      (L.A g).vcp.TrySite := by
+      (L.A g).vcp.TrySite (GotV (L.A g).vcp) := by
   intro ctx info ti hsite
   cases hd : info.dest with
   | sym n =>
@@ -2765,7 +2790,7 @@ theorem calleeTryOk (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g : Cl
       subst hdest
       have hsem' : csem F ctx L.Xb (.tryCall ⟨.sym n, us, ds⟩ ti) (useVals ops regs t) w =
           some (outs, w', .goto ti.handlers.length) := by
-        rw [← hsem]; simp [csem, L.X_base hpf _ _ F]
+        rw [← csemV_sub hsem]; simp [csem, L.X_base hpf _ _ F]
       obtain ⟨ic, rfl, hasg'⟩ := (assign_call_tryCall _ regs).2 ti i' hasg
       obtain ⟨us', ds', hic⟩ := assign_call_sym hasg'
       cases hic
@@ -2819,7 +2844,7 @@ theorem calleeTryOk (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g : Cl
       have hsem' : csem F ctx L.Xb (.tryCall ⟨.reg (.vreg tv .int), retPairs Lu, callDefs Ld⟩ ti)
           (useVals (tgtOp tv :: (retOps Lu ++ callDefOps Ld)).toArray regs t) w =
           some (outs, w', .goto ti.handlers.length) := by
-        rw [← hsem, huv]; simp [csem, L.X_none hs]
+        rw [← csemV_sub hsem, huv]; simp [csem, L.X_none hs]
       have hex' : callExec L.Hb (.tryCall ⟨.reg (.x n0), us', ds'⟩ ti) t = some s' := by
         simp only [callExec] at hex ⊢
         rw [← L.hooks_base (M := M) (.inl rfl) t (fun _ => hb)]
@@ -2835,7 +2860,14 @@ theorem calleeTryOk (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g : Cl
       split at hx
       · rename_i hdecl
         have hh : h ∈ L.P.funcs := List.mem_of_find?_eq_some hs
-        have hr := hL.blrTry g hg _ ti hsite tv Lu Ld rfl h hh hdecl.1
+        have hgot : ∀ n, GotV (L.A g).vcp tv n → n = h.name := by
+          intro n hn
+          have e := csemV_guard_try hsem tv n _ rfl hn (operands_call_reg tv Lu Ld)
+            (by simp [tgtOp, Operand.isUse])
+          rw [huv] at e
+          simp only [List.head?_cons, Option.map_some, Option.some.injEq] at e
+          exact L.got_target hL hs e
+        have hr := hL.blrTry g hg _ ti hsite tv Lu Ld rfl h hh ⟨hdecl.1, hgot⟩
           (by rw [← hdecl.2, List.length_map])
         unfold progX at hx
         split at hx

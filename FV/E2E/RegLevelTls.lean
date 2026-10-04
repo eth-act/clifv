@@ -251,12 +251,13 @@ theorem realizes_tls {R : RL} (hR : R.Wf) (hT : TlsOk R.F R.K R.X R.H) {s : Arm.
     have herr : Arm.r .ERR w = .None := by
       have hst := q_stRel hq
       rw [← hst.world.1 .ERR (by simp [Masked]), hst.err]
-    simp only [RL.sem, csem, Option.some.injEq, Prod.mk.injEq] at hsem
+    have hsem := R.sem_csem hsem
+    simp only [csem, Option.some.injEq, Prod.mk.injEq] at hsem
     obtain ⟨-, rfl, -⟩ := hsem
     exact ⟨by rw [r_write_pstate_other (fun fl => by simp)]; exact herr,
       by simp [Arm.write_pstate, Arm.w_program]⟩
   refine realizes_op_core hR hq hvb hi hops hsz hsem hlen hk (exec := fun _ => tlsExec R.H)
-    (fun _ => (RL.callAt hR (os_tls hT n d t) (q_stRel hq).sp).toI _) (fun regs i' _ hex => ?_) hW'
+    (fun _ => ((RL.callAt hR (os_tls hT n d t) (q_stRel hq).sp).toI _).v R.gv) (fun regs i' _ hex => ?_) hW'
   obtain ⟨_, s0, _, hex⟩ := hex
   cases i' with
   | elfTlsGetAddr n' rd tmp =>

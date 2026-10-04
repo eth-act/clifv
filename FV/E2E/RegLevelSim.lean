@@ -246,6 +246,76 @@ theorem _root_.E2E.BodyEntry.w {af : AFunc} {s w₀ : Arm.ArmState} (h : BodyEnt
     exact h.argsV n this
   | _ => simp [Reg.isArgReg] at this
 
+/-! ## Calls through the GOT: the target the VCode run gives them -/
+
+/-- The guard of a call of `csemV gv`: when the call's target is the vreg `t` (its first use
+operand), and `gv t n` (`t` holds the GOT entry of `n` at every call through it: `E2E.GotV`),
+the target value (the first use) is `n`'s link-time address. -/
+def gotGuard (gv : Nat → String → Prop) (X : ExtSem) (info : CallInfo) (uses : List CV) : Prop :=
+  ∀ t n ops, info.dest = .reg (.vreg t .int) → gv t n → (MInst.call info).operands = .ok ops →
+    ((ops.toList.filter Operand.isUse).head?).map Operand.vreg = some t →
+    uses.head?.map lo64 = some (X.sym n 0)
+
+open Classical in
+/-- **`csem` with the calls through the GOT pinned to their symbol** (`gv`): a `call`/`try_call`
+whose target vreg `t` has `gv t n` is defined only when the target value is `n`'s address
+(`gotGuard`); everything else is `csem`. The VCode run reaches only such calls when `gv` is the
+static GOT analysis of the code (`E2E.GotV`, `E2E.vReturns_gotV`), so the callee contract at a
+GOT site needs to hold only for the GOT symbol's callee. `gv := fun _ _ => False` is `csem`. -/
+noncomputable def csemV (gv : Nat → String → Prop) (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) :
+    ISem CV Arm.ArmState := fun i uses w =>
+  match i with
+  | .call info | .tryCall info _ => if gotGuard gv X info uses then csem F ctx X i uses w else none
+  | _ => csem F ctx X i uses w
+
+theorem csemV_sub {gv : Nat → String → Prop} {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem}
+    {i : MInst} {uses : List CV} {w : Arm.ArmState} {r : List CV × Arm.ArmState × Ctl}
+    (h : csemV gv F ctx X i uses w = some r) : csem F ctx X i uses w = some r := by
+  unfold csemV at h
+  split at h
+  all_goals first | exact h | (split at h; exact h; cases h)
+
+theorem csemV_guard {gv : Nat → String → Prop} {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem}
+    {info : CallInfo} {uses : List CV} {w : Arm.ArmState} {r : List CV × Arm.ArmState × Ctl}
+    (h : csemV gv F ctx X (.call info) uses w = some r) : gotGuard gv X info uses := by
+  simp only [csemV] at h
+  split at h
+  · assumption
+  · cases h
+
+theorem csemV_guard_try {gv : Nat → String → Prop} {F : BitVec 64 → Prop} {ctx : FnCtx}
+    {X : ExtSem} {info : CallInfo} {ti : TryInfo} {uses : List CV} {w : Arm.ArmState}
+    {r : List CV × Arm.ArmState × Ctl}
+    (h : csemV gv F ctx X (.tryCall info ti) uses w = some r) : gotGuard gv X info uses := by
+  simp only [csemV] at h
+  split at h
+  · assumption
+  · cases h
+
+/-- `csemV` is `csem` where the guard of the calls holds. -/
+theorem csemV_eq {gv : Nat → String → Prop} {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem}
+    {i : MInst} {uses : List CV} {w : Arm.ArmState}
+    (h : ∀ info, (i = .call info ∨ ∃ ti, i = .tryCall info ti) → gotGuard gv X info uses) :
+    csemV gv F ctx X i uses w = csem F ctx X i uses w := by
+  unfold csemV
+  split
+  · simp only [h _ (.inl rfl), ↓reduceIte]
+  · simp only [h _ (.inr ⟨_, rfl⟩), ↓reduceIte]
+  · rfl
+
+theorem csemV_bot (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) :
+    csemV (fun _ _ => False) F ctx X = csem F ctx X := by
+  funext i uses w
+  exact csemV_eq fun _ _ _ _ _ _ h => h.elim
+
+/-- The operand-view obligation of `csem` gives that of `csemV gv` (a guarded semantics). -/
+theorem OperandsSoundCtlAtI.v {F F' FK : BitVec 64 → Prop} {P : MInst → Prop}
+    {exec : MInst → Arm.ArmState → Option Arm.ArmState} {ctx : FnCtx} {X : ExtSem} {i : MInst}
+    {ctl : Ctl} {s : Arm.ArmState} (h : OperandsSoundCtlAtI F FK P exec (csem F' ctx X) i ctl s)
+    (gv : Nat → String → Prop) : OperandsSoundCtlAtI F FK P exec (csemV gv F' ctx X) i ctl s :=
+  fun c wh ops regs i' w outs w' hops hst hasg hp hw hal herr hsem =>
+    h c wh ops regs i' w outs w' hops hst hasg hp hw hal herr (csemV_sub hsem)
+
 /-- The fixed data of one activation. -/
 structure RL where
   vc : VCode
@@ -266,6 +336,9 @@ structure RL where
   /-- addresses the activation keeps and leaves outside its world (its callers' frames, the
   program's code; `fun _ => False` for the per-function theorems) -/
   G : BitVec 64 → Prop
+  /-- the calls through the GOT: the target vreg `t` holds `n`'s address at every call through
+  it (`csemV`; `fun _ _ => False` for the per-function theorems) -/
+  gv : Nat → String → Prop
 
 namespace RL
 variable (R : RL)
@@ -283,8 +356,20 @@ def F : BitVec 64 → Prop := frameWG R.K R.fr.intBase R.fr.size R.af R.G R.s0
 def pcOf (j : Nat) : BitVec 64 := R.base + BitVec.ofNat 64 (lineOffset R.L j)
 /-- The encoder's environment at line `j`. -/
 def envOf (j : Nat) : Env := ⟨lineOffset R.L j, (R.lm[·]?)⟩
-/-- The instruction semantics of the activation. -/
-noncomputable def sem : ISem CV Arm.ArmState := csem R.F R.ctx R.X
+/-- The instruction semantics of the activation (`csem`, the calls through the GOT pinned). -/
+noncomputable def sem : ISem CV Arm.ArmState := csemV R.gv R.F R.ctx R.X
+
+theorem sem_csem {i : MInst} {uses : List CV} {w : Arm.ArmState} {r : List CV × Arm.ArmState × Ctl}
+    (h : R.sem i uses w = some r) : csem R.F R.ctx R.X i uses w = some r := csemV_sub h
+
+/-- Off the calls, `sem` is `csem`. -/
+theorem sem_eq {i : MInst} (hc : ∀ info, i ≠ .call info) (ht : ∀ info ti, i ≠ .tryCall info ti)
+    (uses : List CV) (w : Arm.ArmState) : R.sem i uses w = csem R.F R.ctx R.X i uses w :=
+  csemV_eq fun info h => by
+    rcases h with rfl | ⟨ti, rfl⟩
+    · exact absurd rfl (hc info)
+    · exact absurd rfl (ht info ti)
+
 /-- The machine. -/
 noncomputable def step : Arm.ArmState → Arm.ArmState := ArmStepX R.X R.H R.fa
 

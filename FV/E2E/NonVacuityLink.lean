@@ -5,12 +5,13 @@ import FV.E2E.Legal
 /-! # Non-vacuity of `backend_correct_program` (docs/contracts/e2e.md, "Non-vacuity")
 
 A concrete linked program for which every premise of `E2E.backend_correct_program` holds:
-`P = {f, g, h, s, k, r, r__fvself, q, v, a2, w, t, u, m, d}`, parsed from the embedded source
+`P = {f, g, h, s, k, r, r__fvself, q, v, a2, w, t, u, m, d, e}`, parsed from the embedded source
 `src`, legalised (`Opt.Legalize128.parsedFile128`), compiled by the
 backend's pipeline (`lowerFunction`, `prepare`, regalloc2's allocation `raOut` — the output of
 `lean-regalloc` on the pipeline's input for this file, rebuilt by `buildRFunc` and accepted by
 `checkAlloc` —, `lowerRFunc`, `emitFunc`, `layout`), loaded at `0x70000` (`f`), `0x20000`,
-`0x10000`, `0x30000`, `0x40000`, `0x50000`, `0x60000`, `0x80000`…`0xF0000`. The entry `f` has a
+`0x10000`, `0x30000`, `0x40000`, `0x50000`, `0x60000`, `0x80000`…`0xF0000`, `0xF4000` (`e`). The
+entry `f` has a
 stack slot and an outgoing-argument area; it calls
 
 * `s` with an `sret` pointer to its slot (`s` stores through it, returns the pointer in x0),
@@ -30,6 +31,12 @@ stack slot and an outgoing-argument area; it calls
   vtable, a read-only data object whose second word is a relocation to the method `m`
   (`m n = n + 11`); `d` loads the method from the vtable and calls it (`call_indirect`) without
   declaring `m` — the linked environment resolves the address program-wide.
+
+`P` also contains `e` (not called by `f`): it calls the base extern `pz` through the GOT (`blr`,
+arguments in x0/x1) next to the declared program function `s` of the same register arity (its
+`sret` pointer in x8, its argument in x0; one ABI result). The `blr` site's target is `pz`'s GOT
+entry (`GotV`), so it constrains no function of `P` (`LinkSys.BlrTo`); the former `blrRegs`,
+which quantified over every declared function of that arity, failed on it.
 
 * The per-function premises of `LinkSys.Ok` are executable checks (`chks`, `okB`, each with a
   soundness lemma: `siteOk_sound`, `tryB_sound`, `retsB_sound`, `outFitsB_sound`,
@@ -214,9 +221,22 @@ block0(v0: i64, v1: i64):
     v3 = call_indirect sig0, v2(v1)
     return v3
 }
+
+function %e(i64, i64) -> i64 system_v {
+    fn0 = colocated %s(i64 sret, i64) system_v
+    fn1 = %pz(i64, i64) system_v
+block0(v0: i64, v1: i64):
+    brif v1, block1, block2
+block1:
+    call fn1(v1, v0)
+    return v1
+block2:
+    call fn0(v0, v1)
+    return v1
+}
 "
 
-def raOut : String := "{\"functions\":[{\"allocs\":[[\"x0\"],[\"x2\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"h\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x0\",\"x19\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x0\",\"inst\":1,\"pos\":\"before\",\"to\":\"x19\"}],\"name\":\"g\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x8\",\"x0\"],[\"x3\"],[\"x5\",\"x0\"],[\"x5\",\"x8\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x8\",\"inst\":4,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"s\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\",\"x2\",\"x3\",\"x4\",\"x5\",\"x6\",\"x7\"],[\"x9\"],[\"x0\",\"x0\",\"x9\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"k\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x0\"],[\"x0\"],[\"x0\"],[\"x5\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x11\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"r\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x0\"],[\"x0\"],[\"x0\"],[\"x5\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x11\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"r__fvself\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x8\"],[\"x8\",\"x0\",\"x0\"],[\"x0\"],[\"x7\"],[\"x21\"],[\"x0\",\"x1\",\"x2\",\"x3\",\"x4\",\"x5\",\"x6\",\"x7\",\"x0\"],[\"x0\",\"x0\",\"x1\"],[],[\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x1\",\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x0\"],[\"x0\",\"x1\",\"x0\"],[\"x0\"],[],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x0\",\"inst\":2,\"pos\":\"before\",\"to\":\"x21\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x2\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x3\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x4\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x5\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x6\"},{\"from\":\"x0\",\"inst\":8,\"pos\":\"before\",\"to\":\"x25\"},{\"from\":\"x25\",\"inst\":11,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x0\",\"inst\":16,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x0\",\"inst\":19,\"pos\":\"before\",\"to\":\"x25\"},{\"from\":\"x25\",\"inst\":20,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"f\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"q\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x2\",\"x0\",\"x0\"],[\"x7\"],[\"x7\",\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"v\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\",\"x2\",\"x3\"],[\"x5\"],[\"x7\",\"x0\",\"x2\"],[\"x7\",\"x0\"],[\"x10\"],[\"x7\",\"x0\"],[\"x13\"],[\"x15\",\"x1\",\"x3\"],[\"x1\",\"x15\",\"x10\"],[\"x0\",\"x1\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x7\",\"inst\":9,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"a2\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x2\",\"x0\",\"x0\"],[\"x3\"],[\"x0\",\"x1\",\"x2\",\"x3\",\"x0\",\"x1\"],[\"x11\",\"x0\",\"x0\"],[\"x13\",\"x1\",\"x1\"],[\"x0\",\"x11\",\"x13\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x2\",\"inst\":4,\"pos\":\"before\",\"to\":\"x0\"},{\"from\":\"x3\",\"inst\":4,\"pos\":\"before\",\"to\":\"x1\"}],\"name\":\"w\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x4\"],[\"x6\",\"x0\"],[\"x6\"],[\"x9\"],[\"x0\",\"x9\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"t\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x7\"],[\"x0\"],[\"x0\",\"x1\",\"x2\",\"x3\",\"x4\",\"x5\",\"x6\",\"x7\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x0\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x2\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x3\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x4\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x5\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x6\"}],\"name\":\"u\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"m\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\"],[\"x3\",\"x0\"],[\"x3\",\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x1\",\"inst\":2,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"d\",\"num_spillslots\":0,\"ok\":true}]}"
+def raOut : String := "{\"functions\":[{\"allocs\":[[\"x0\"],[\"x2\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"h\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x0\",\"x19\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x0\",\"inst\":1,\"pos\":\"before\",\"to\":\"x19\"}],\"name\":\"g\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x8\",\"x0\"],[\"x3\"],[\"x5\",\"x0\"],[\"x5\",\"x8\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x8\",\"inst\":4,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"s\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\",\"x2\",\"x3\",\"x4\",\"x5\",\"x6\",\"x7\"],[\"x9\"],[\"x0\",\"x0\",\"x9\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"k\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x0\"],[\"x0\"],[\"x0\"],[\"x5\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x11\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"r\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x0\"],[\"x0\"],[\"x0\"],[\"x5\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x11\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"r__fvself\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x8\"],[\"x8\",\"x0\",\"x0\"],[\"x0\"],[\"x7\"],[\"x21\"],[\"x0\",\"x1\",\"x2\",\"x3\",\"x4\",\"x5\",\"x6\",\"x7\",\"x0\"],[\"x0\",\"x0\",\"x1\"],[],[\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x1\",\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x0\"],[\"x0\",\"x1\",\"x0\"],[\"x0\"],[],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x0\",\"inst\":2,\"pos\":\"before\",\"to\":\"x21\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x2\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x3\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x4\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x5\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x6\"},{\"from\":\"x0\",\"inst\":8,\"pos\":\"before\",\"to\":\"x25\"},{\"from\":\"x25\",\"inst\":11,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x0\",\"inst\":16,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x0\",\"inst\":19,\"pos\":\"before\",\"to\":\"x25\"},{\"from\":\"x25\",\"inst\":20,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"f\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"q\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x2\",\"x0\",\"x0\"],[\"x7\"],[\"x7\",\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"v\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\",\"x2\",\"x3\"],[\"x5\"],[\"x7\",\"x0\",\"x2\"],[\"x7\",\"x0\"],[\"x10\"],[\"x7\",\"x0\"],[\"x13\"],[\"x15\",\"x1\",\"x3\"],[\"x1\",\"x15\",\"x10\"],[\"x0\",\"x1\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x7\",\"inst\":9,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"a2\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x2\",\"x0\",\"x0\"],[\"x3\"],[\"x0\",\"x1\",\"x2\",\"x3\",\"x0\",\"x1\"],[\"x11\",\"x0\",\"x0\"],[\"x13\",\"x1\",\"x1\"],[\"x0\",\"x11\",\"x13\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x2\",\"inst\":4,\"pos\":\"before\",\"to\":\"x0\"},{\"from\":\"x3\",\"inst\":4,\"pos\":\"before\",\"to\":\"x1\"}],\"name\":\"w\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x4\"],[\"x6\",\"x0\"],[\"x6\"],[\"x9\"],[\"x0\",\"x9\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"t\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x7\"],[\"x0\"],[\"x0\",\"x1\",\"x2\",\"x3\",\"x4\",\"x5\",\"x6\",\"x7\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x0\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x2\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x3\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x4\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x5\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x6\"}],\"name\":\"u\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"m\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\"],[\"x3\",\"x0\"],[\"x3\",\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x1\",\"inst\":2,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"d\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\"],[\"x1\"],[\"x8\",\"x0\",\"x0\"],[\"x0\"],[\"x6\"],[\"x6\",\"x0\",\"x1\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x0\",\"inst\":1,\"pos\":\"before\",\"to\":\"x8\"},{\"from\":\"x1\",\"inst\":2,\"pos\":\"before\",\"to\":\"x19\"},{\"from\":\"x19\",\"inst\":2,\"pos\":\"before\",\"to\":\"x0\"},{\"from\":\"x19\",\"inst\":3,\"pos\":\"before\",\"to\":\"x0\"},{\"from\":\"x1\",\"inst\":4,\"pos\":\"before\",\"to\":\"x19\"},{\"from\":\"x8\",\"inst\":5,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x19\",\"inst\":5,\"pos\":\"before\",\"to\":\"x0\"},{\"from\":\"x19\",\"inst\":6,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"e\",\"num_spillslots\":0,\"ok\":true}]}"
 
 deriving instance Inhabited for Art
 
@@ -259,6 +279,10 @@ def fM : Clif.Function := fn 13
 /-- The `dyn` dispatcher `d`: it loads the method from the vtable and calls it
 (`call_indirect`); it declares nothing. -/
 def fD : Clif.Function := fn 14
+/-- `e` calls the base extern `pz` through the GOT (`blr`, two register arguments in x0/x1) next
+to the declared program function `s` of the same arity with a result (its `sret` pointer in x8,
+returned in x0): the GOT site's target is `pz`, not `s` (`GotV`). -/
+def fE : Clif.Function := fn 15
 
 /-- Function `i` of the file as written (before legalisation). -/
 def srcFn (i : Nat) : Clif.Function := match (Clif.parseFile src).funcs[i]? with
@@ -286,20 +310,21 @@ def pipe (f : Clif.Function) (k : Nat) (base : BitVec 64) : Except String Art :=
 
 /-! ## The program and its compiled image -/
 
-/-- The program `{f, g, h, s, k, r, r__fvself, q, v, a2, w, t, u, m, d}`. -/
+/-- The program `{f, g, h, s, k, r, r__fvself, q, v, a2, w, t, u, m, d, e}`. -/
 def P : Clif.Program :=
-  { funcs := [fF, fG, fH, fS, fK, fR, fRS, fQ, fV, fA2, fW, fT, fU, fM, fD] }
+  { funcs := [fF, fG, fH, fS, fK, fR, fRS, fQ, fV, fA2, fW, fT, fU, fM, fD, fE] }
 
 /-- The file index of a function of `P` (the regalloc2 output and the local labels). -/
 def idx (g : Clif.Function) : Nat :=
   if g = fF then 6 else if g = fG then 1 else if g = fS then 2 else if g = fK then 3
   else if g = fR then 4 else if g = fRS then 5 else if g = fQ then 7 else if g = fV then 8
   else if g = fA2 then 9 else if g = fW then 10 else if g = fT then 11 else if g = fU then 12
-  else if g = fM then 13 else if g = fD then 14
+  else if g = fM then 13 else if g = fD then 14 else if g = fE then 15
   else 0
 
-/-- The load address of a function of `P`. -/
-def baseOf (g : Clif.Function) : BitVec 64 := 0x10000 * BitVec.ofNat 64 (idx g + 1)
+/-- The load address of a function of `P` (`e` between `d` and the vtable). -/
+def baseOf (g : Clif.Function) : BitVec 64 :=
+  if idx g = 15 then 0xF4000 else 0x10000 * BitVec.ofNat 64 (idx g + 1)
 
 /-- The compiled image of every function. -/
 def A (g : Clif.Function) : Art := getOk (pipe g (idx g) (baseOf g))
@@ -369,25 +394,28 @@ theorem declB_of {g : Clif.Function} {n : String} (h : DeclN g n) : declB g n = 
   simp only [declB, Bool.and_eq_true, List.any_eq_true, beq_iff_eq, bne_iff_ne, ne_eq]
   exact ⟨⟨e, he, hen⟩, hne⟩
 
-/-- A `blr` site: arguments in the parameter registers, of every function of `P` the caller may
-call (`may`: `LinkSys.MayCall`) with as many register parameters, and the results its defs hold
-from x0... -/
-def blrOk (P : Clif.Program) (may : String → Bool) (info : CallInfo) : Bool :=
+/-- A `blr` site: arguments in the parameter registers, of every function of `P` it may enter
+(`LinkSys.BlrTo`: one the caller may call, `may`, and at a call through the GOT, `got`, the GOT
+symbol's) with as many register parameters, and the results its defs hold from x0... -/
+def blrOk (P : Clif.Program) (may : String → Bool) (got : Nat → Option String) (info : CallInfo) :
+    Bool :=
   match info.dest with
-  | .reg (.vreg _ .int) =>
+  | .reg (.vreg t .int) =>
     decide (info.uses = retPairs (decU info.uses)) &&
     decide (info.defs = callDefs (decD info.defs)) &&
     P.funcs.all fun h => !may h.name ||
+      (match got t with | some n => h.name != n | none => false) ||
       decide ((regLocs h.sig).length ≠ (decU info.uses).length) ||
       (decide ((decU info.uses).map (·.2) = regLocs h.sig) &&
         decide (((decD info.defs).map (·.1)).take (sigRets h.sig).length =
           (List.range (min (sigRets h.sig).length (decD info.defs).length)).map Reg.x))
   | _ => false
 
-theorem blrOk_sound {P : Clif.Program} {may : String → Bool} {info : CallInfo}
-    (h : blrOk P may info = true) :
+theorem blrOk_sound {P : Clif.Program} {may : String → Bool} {got : Nat → Option String}
+    {info : CallInfo} (h : blrOk P may got info = true) :
     ∃ t Lu Ld, info = ⟨.reg (.vreg t .int), retPairs Lu, callDefs Ld⟩ ∧
-      ∀ h ∈ P.funcs, may h.name = true → (regLocs h.sig).length = Lu.length →
+      ∀ h ∈ P.funcs, may h.name = true → (∀ n, got t = some n → h.name = n) →
+        (regLocs h.sig).length = Lu.length →
         Lu.map (·.2) = regLocs h.sig ∧
         (Ld.map (·.1)).take (sigRets h.sig).length =
           (List.range (min (sigRets h.sig).length Ld.length)).map Reg.x := by
@@ -400,9 +428,13 @@ theorem blrOk_sound {P : Clif.Program} {may : String → Bool} {info : CallInfo}
     simp only [Bool.and_eq_true, decide_eq_true_eq, List.all_eq_true, Bool.or_eq_true,
       Bool.not_eq_true'] at h
     obtain ⟨⟨hu, hd⟩, hall⟩ := h
-    refine ⟨t, decU us, decD ds, by rw [← hu, ← hd], fun h' hh hmay hl => ?_⟩
-    rcases hall h' hh with (h1 | h1) | h1
+    refine ⟨t, decU us, decD ds, by rw [← hu, ← hd], fun h' hh hmay hgot hl => ?_⟩
+    rcases hall h' hh with ((h1 | h1) | h1) | h1
     · rw [hmay] at h1; cases h1
+    · revert h1
+      cases hg : got t with
+      | none => simp
+      | some n => simp [hgot n hg]
     · exact absurd hl h1
     · exact h1
   · cases h
@@ -410,7 +442,8 @@ theorem blrOk_sound {P : Clif.Program} {may : String → Bool} {info : CallInfo}
 /-- A call site: a `bl` of a function `h` of `P` that `g` declares, arguments in `h`'s parameter
 registers, results from x0.. (then, at a `try_call`, the exception payload registers); or a
 `blr` site (`blrOk`). -/
-def siteOk (P : Clif.Program) (g : Clif.Function) (may : String → Bool) (info : CallInfo) : Bool :=
+def siteOk (P : Clif.Program) (g : Clif.Function) (may : String → Bool) (vc : VCode)
+    (info : CallInfo) : Bool :=
   match info.dest with
   | .sym n => match P.func? n with
     | some h => decide (h ≠ g) && g.externs.any (fun e => e.2.name == n) &&
@@ -420,18 +453,19 @@ def siteOk (P : Clif.Program) (g : Clif.Function) (may : String → Bool) (info 
         decide (((decD info.defs).map (·.1)).take (sigRets h.sig).length =
           (List.range (min (sigRets h.sig).length (decD info.defs).length)).map Reg.x)
     | none => false
-  | .reg _ => blrOk P may info
+  | .reg _ => blrOk P may (gotOf vc) info
 
-theorem siteOk_reg {P : Clif.Program} {g : Clif.Function} {may : String → Bool} {info : CallInfo}
-    (h : siteOk P g may info = true) (hd : ∀ n, info.dest ≠ .sym n) : blrOk P may info = true := by
+theorem siteOk_reg {P : Clif.Program} {g : Clif.Function} {may : String → Bool} {vc : VCode}
+    {info : CallInfo} (h : siteOk P g may vc info = true) (hd : ∀ n, info.dest ≠ .sym n) :
+    blrOk P may (gotOf vc) info = true := by
   obtain ⟨d, us, ds⟩ := info
   unfold siteOk at h
   cases d with
   | reg r => exact h
   | sym n => exact absurd rfl (hd n)
 
-theorem siteOk_sound {P : Clif.Program} {g : Clif.Function} {may : String → Bool} {info : CallInfo}
-    (h : siteOk P g may info = true) {n0 : String} (hd0 : info.dest = .sym n0) :
+theorem siteOk_sound {P : Clif.Program} {g : Clif.Function} {may : String → Bool} {vc : VCode}
+    {info : CallInfo} (h : siteOk P g may vc info = true) {n0 : String} (hd0 : info.dest = .sym n0) :
     ∃ n h', info.dest = .sym n ∧ P.func? n = some h' ∧ h' ≠ g ∧
       (∃ e ∈ g.externs, e.2.name = n) ∧ ∃ Lu Ld,
       info = ⟨.sym n, retPairs Lu, callDefs Ld⟩ ∧ Lu.map (·.2) = regLocs h'.sig ∧
@@ -450,22 +484,26 @@ theorem siteOk_sound {P : Clif.Program} {g : Clif.Function} {may : String → Bo
       exact ⟨n, h', rfl, hf, hne, hd, _, _, by rw [← hu, ← hdd], h1, h2⟩
 
 /-- A `try_call` of a function `h` of `P` takes at most `h`'s results (at a `blr`: of every
-function the caller may call with as many register parameters). -/
-def tryB (P : Clif.Program) (may : String → Bool) : MInst → Bool
+function it may enter, `LinkSys.BlrTo`, with as many register parameters). -/
+def tryB (P : Clif.Program) (may : String → Bool) (vc : VCode) : MInst → Bool
   | .tryCall info ti => match info.dest with
     | .sym n => match P.func? n with
       | some h => decide (ti.rets ≤ (sigRets h.sig).length)
       | none => true
-    | .reg _ => P.funcs.all fun h => !may h.name ||
+    | .reg r => P.funcs.all fun h => !may h.name ||
+      (match r with
+        | .vreg t .int => (match gotOf vc t with | some n => h.name != n | none => false)
+        | _ => false) ||
       decide ((regLocs h.sig).length ≠ (decU info.uses).length) ||
       decide (ti.rets ≤ (sigRets h.sig).length)
   | _ => true
 
 theorem tryB_reg {P : Clif.Program} {may : String → Bool} {vc : VCode}
-    (h : allInsts vc (tryB P may) = true) {info : CallInfo} {ti : TryInfo} (hs : vc.TrySite info ti)
-    {t : Nat} {Lu : List (Nat × Reg)} {Ld : List (Reg × Nat)}
+    (h : allInsts vc (tryB P may vc) = true) {info : CallInfo} {ti : TryInfo}
+    (hs : vc.TrySite info ti) {t : Nat} {Lu : List (Nat × Reg)} {Ld : List (Reg × Nat)}
     (hi : info = ⟨.reg (.vreg t .int), retPairs Lu, callDefs Ld⟩) {h' : Clif.Function}
-    (hh : h' ∈ P.funcs) (hmay : may h'.name = true) (hl : (regLocs h'.sig).length = Lu.length) :
+    (hh : h' ∈ P.funcs) (hmay : may h'.name = true) (hgot : ∀ n, gotOf vc t = some n → h'.name = n)
+    (hl : (regLocs h'.sig).length = Lu.length) :
     ti.rets ≤ (sigRets h'.sig).length := by
   obtain ⟨b, vb, k, hb, hk⟩ := hs
   have := allInsts_sound h hb hk
@@ -473,13 +511,17 @@ theorem tryB_reg {P : Clif.Program} {may : String → Bool} {vc : VCode}
   simp only [tryB, List.all_eq_true, Bool.or_eq_true, Bool.not_eq_true', decide_eq_true_eq] at this
   have hdu : decU (retPairs Lu) = Lu := by
     simp [decU, retPairs, Function.comp_def]
-  rcases this h' hh with (h1 | h1) | h1
+  rcases this h' hh with ((h1 | h1) | h1) | h1
   · rw [hmay] at h1; cases h1
+  · revert h1
+    cases hg : gotOf vc t with
+    | none => simp
+    | some n => simp [hgot n hg]
   · rw [hdu] at h1; exact absurd hl h1
   · exact h1
 
 theorem tryB_sound {P : Clif.Program} {may : String → Bool} {vc : VCode}
-    (h : allInsts vc (tryB P may) = true)
+    (h : allInsts vc (tryB P may vc) = true)
     {info : CallInfo} {ti : TryInfo} (hs : vc.TrySite info ti) {n : String} {h' : Clif.Function}
     (hd : info.dest = .sym n) (hf : P.func? n = some h') : ti.rets ≤ (sigRets h'.sig).length := by
   obtain ⟨b, vb, k, hb, hk⟩ := hs
@@ -668,7 +710,7 @@ def symTab : List (String × BitVec 64) :=
   [("f", 0x70000), ("g", 0x20000), ("h", 0x10000), ("s", 0x30000), ("k", 0x40000),
     ("r", 0x50000), ("r__fvself", 0x60000), ("q", 0x80000), ("v", 0x90000), ("a2", 0xA0000),
     ("w", 0xB0000), ("t", 0xC0000), ("u", 0xD0000), ("m", 0xE0000), ("d", 0xF0000),
-    ("vt", BitVec.ofNat 64 vtAddr)]
+    ("e", 0xF4000), ("vt", BitVec.ofNat 64 vtAddr)]
 
 def symOf (n : String) : BitVec 64 := (symTab.lookup n).getD 0
 
@@ -694,15 +736,15 @@ def chks (g : Clif.Function) : List Bool :=
   let fr := RAFrame.compute a.vcp a.rf
   [(pipe g (idx g) (baseOf g)).toBool, lowerCheck g a.vc, prepCheck a.vc a.vcp,
     (checkAlloc a.vcp a.rf).toBool, formsCoveredB ⟨a.fa.k, a.af.slotBase⟩ a.vcp,
-    allInsts a.vcp (tryB P (mayB g)), allInsts a.vc (retsB g),
+    allInsts a.vcp (tryB P (mayB g) a.vcp), allInsts a.vc (retsB g),
     g.externs.all (fun e => !(P.func? e.2.name).isSome || outFitsB e.2.sig fr.intBase),
     decide (regLocs g.sig).Nodup, (regLocs g.sig).all (·.isArgReg),
     g.sig.params.all (fun p => decide (p.ty.width ≤ 64)),
     !calleeB g || ((!g.slots.isEmpty || fr.size == a.af.frameSize) && slotFitsB g a),
-    allInsts a.vcp (siteB (siteOk P g (mayB g))),
+    allInsts a.vcp (siteB (siteOk P g (mayB g) a.vcp)),
     g.externs.all (fun e => match P.func? e.2.name with
       | some h => decide (e.2.sig = h.sig)
-      | none => false),
+      | none => true),
     entryB g a.vcp, decide (a.base.toNat + 4 * a.fb.words.size ≤ 2 ^ 64), raCallB P A g a,
     decide (frameDrop a.af ≤ 64), !hasTls g, linkFreeB g, Compile.functionE g,
     g.externs.all (fun e => e.2.name != g.name), sigAbiOk g.sig,
@@ -781,7 +823,7 @@ structure Facts (g : Clif.Function) : Prop where
   prepOk : prepCheck (A g).vc (A g).vcp = true
   check : checkAlloc (A g).vcp (A g).rf = .ok ()
   covered : FormsCovered ⟨(A g).fa.k, (A g).af.slotBase⟩ (A g).vcp
-  tries : allInsts (A g).vcp (tryB P (mayB g)) = true
+  tries : allInsts (A g).vcp (tryB P (mayB g) (A g).vcp) = true
   rets : allInsts (A g).vc (retsB g) = true
   outFits : ∀ e ∈ g.externs, (P.func? e.2.name).isSome = true →
     outFitsB e.2.sig (RAFrame.compute (A g).vcp (A g).rf).intBase = true
@@ -790,8 +832,8 @@ structure Facts (g : Clif.Function) : Prop where
   width : ∀ p ∈ g.sig.params, p.ty.width ≤ 64
   callee : calleeB g = true → (g.slots = [] →
     (RAFrame.compute (A g).vcp (A g).rf).size = (A g).af.frameSize) ∧ slotFitsB g (A g) = true
-  sites : allInsts (A g).vcp (siteB (siteOk P g (mayB g))) = true
-  externs : ∀ e ∈ g.externs.map (·.2), ∃ h, P.func? e.name = some h ∧ e.sig = h.sig
+  sites : allInsts (A g).vcp (siteB (siteOk P g (mayB g) (A g).vcp)) = true
+  externs : ∀ e ∈ g.externs.map (·.2), ∀ h, P.func? e.name = some h → e.sig = h.sig
   entry : entryB g (A g).vcp = true
   fits : (A g).base.toNat + 4 * (A g).fb.words.size ≤ 2 ^ 64
   ra : raCallB P A g (A g) = true
@@ -827,12 +869,11 @@ theorem chk_sound {g : Clif.Function} (h : chk g = true) : Facts g := by
       rcases h' with h | h
       · simp [hs] at h
       · exact h
-  · obtain ⟨⟨fn, e'⟩, hm, rfl⟩ := List.mem_map.1 he
+  · intro h hf
+    obtain ⟨⟨fn, e'⟩, hm, rfl⟩ := List.mem_map.1 he
     have := h14 _ hm
-    revert this
-    cases hf : P.func? e'.name with
-    | none => simp
-    | some h => simp only [decide_eq_true_eq]; exact fun hs => ⟨h, rfl, hs⟩
+    simp only [hf, decide_eq_true_eq] at this
+    exact this
   · simpa using h19
   · obtain ⟨⟨fn, e'⟩, hm, rfl⟩ := List.mem_map.1 he
     simpa using h22 _ hm
@@ -855,7 +896,7 @@ def Xb : ExtSem where
 /-- The base hooks: a call outside `P` continues at the next instruction; TLS keeps the state. -/
 def Hb : ArmHooks := ⟨fun _ s => Arm.w .PC (Arm.r .PC s + 4) s, fun _ _ s => s⟩
 
-/-- **The linked program** `{f, g, h, s, k, r, r__fvself, q, v, a2, w, t, u, m, d}` with the
+/-- **The linked program** `{f, g, h, s, k, r, r__fvself, q, v, a2, w, t, u, m, d, e}` with the
 addresses `F` outside the world. -/
 def L (F : BitVec 64 → Prop) : LinkSys where
   P := P
@@ -872,12 +913,13 @@ def L (F : BitVec 64 → Prop) : LinkSys where
 
 theorem names : fF.name = "f" ∧ fG.name = "g" ∧ fH.name = "h" ∧ fS.name = "s" ∧ fK.name = "k" ∧
     fR.name = "r" ∧ fRS.name = "r__fvself" ∧ fQ.name = "q" ∧ fV.name = "v" ∧ fA2.name = "a2" ∧
-    fW.name = "w" ∧ fT.name = "t" ∧ fU.name = "u" ∧ fM.name = "m" ∧ fD.name = "d" := by
+    fW.name = "w" ∧ fT.name = "t" ∧ fU.name = "u" ∧ fM.name = "m" ∧ fD.name = "d" ∧
+    fE.name = "e" := by
   native_decide
 
 theorem mem_P {g : Clif.Function} :
     g ∈ P.funcs ↔ g = fF ∨ g = fG ∨ g = fH ∨ g = fS ∨ g = fK ∨ g = fR ∨ g = fRS ∨ g = fQ ∨
-      g = fV ∨ g = fA2 ∨ g = fW ∨ g = fT ∨ g = fU ∨ g = fM ∨ g = fD := by
+      g = fV ∨ g = fA2 ∨ g = fW ∨ g = fT ∨ g = fU ∨ g = fM ∨ g = fD ∨ g = fE := by
   simp [P]
 
 theorem lookup_pair {α β : Type} [BEq α] [LawfulBEq α] :
@@ -1030,9 +1072,10 @@ theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
       callRegs := fun g hg info h hs => (site g hg info h hs).2.2.2
       blrRegs := fun g hg info hs hreg => by
         obtain ⟨t, Lu, Ld, hi, hall⟩ := blrOk_sound (siteOk_reg (site_sound (facts hg).sites hs) hreg)
-        exact ⟨t, Lu, Ld, hi, fun h hh hm => hall h hh (mayB_of hm)⟩
-      blrTry := fun g hg info ti hs t Lu Ld hi h hh hdecl hl =>
-        tryB_reg (facts hg).tries hs hi hh (mayB_of hdecl) hl
+        exact ⟨t, Lu, Ld, hi, fun h hh hb =>
+          hall h hh (mayB_of hb.1) fun n hn => (hb.2 n (gotOf_sound hn)).symm⟩
+      blrTry := fun g hg info ti hs t Lu Ld hi h hh hb hl =>
+        tryB_reg (facts hg).tries hs hi hh (mayB_of hb.1) (fun n hn => (hb.2 n (gotOf_sound hn)).symm) hl
       raBlr := fun g hg info hs hreg h hh hdecl pc hpc k hk =>
         raCallB_sound (facts hg).ra hpc h hh (mayCall_ne hdecl) k hk
       indScope := fun g hg hnf => ⟨fun n f h => by simp [L, Clif.Env.empty] at h,
@@ -1067,7 +1110,8 @@ theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
         _ hsem => by simp [csem, L, Xb] at hsem
       basePc := fun d s _ _ _ => by simp [L, Hb, Arm.r_of_w_same]
       baseExt := fun d uses w outs w' _ hx => by simp [L, Xb] at hx
-      baseX := fun g hg F' slotOff out c => ?_
+      baseX := fun g hg F' slotOff out c ext _ gsem sl cm w d uses args vals rvals cm' hgs => by
+        simp [L, Clif.Env.empty] at hgs
       baseXI := fun g hg F' slotOff out c sig _ n gsem sl cm w u args vals rvals cm' hgs => by
         simp [L, Clif.Env.empty] at hgs
       baseTls := fun g hg ht => absurd ht (by simp [L, (facts hg).tls])
@@ -1092,18 +1136,12 @@ theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
     exact ⟨hl, (facts hg).lowerOk, hp, (facts hg).prepOk, (facts hg).check, ha, he, hla⟩
   · obtain ⟨⟨fn, e'⟩, hm, rfl⟩ := List.mem_map.1 he
     exact outFitsB_sound ((facts hg).outFits _ hm hs) hl hp
-  · obtain ⟨h', hf', hs⟩ := (facts hg).externs e he
-    simp only [L] at hf
-    rw [hf] at hf'; cases hf'; exact hs
+  · simp only [L] at hf
+    exact (facts hg).externs e he h hf
   · obtain ⟨hh, hne, -⟩ := site g hg info h hs
     exact raCallB_sound (facts hg).ra hpc h hh hne
   · simp only [raStarB, List.all_eq_true, List.mem_range, bne_iff_ne] at hstar
     exact hstar h hh k hk
-  · intro ext hext
-    simp only [L, List.mem_filter, Option.isNone_iff_eq_none] at hext
-    obtain ⟨hm, hnone⟩ := hext
-    obtain ⟨h', hf', -⟩ := (facts hg).externs ext hm
-    rw [hf'] at hnone; cases hnone
 
 /-! ## A concrete entry of `f` -/
 
@@ -1470,15 +1508,51 @@ def vtChainB : Bool :=
 
 theorem vtChainB_true : vtChainB = true := by native_decide
 
+/-- A call of `vc` through the GOT entry of `n` (`gotOf`) whose register arguments are as many as
+the registers `rl` but not those registers. -/
+def gotCallB (vc : VCode) (n : String) (rl : List Reg) : Bool :=
+  vc.blocks.any fun vb => vb.insts.any fun i => match i with
+    | .call ⟨.reg (.vreg t .int), us, ds⟩ =>
+      decide (us = retPairs (decU us)) && decide (ds = callDefs (decD ds)) &&
+        decide (gotOf vc t = some n) && decide (rl.length = (decU us).length) &&
+        decide ((decU us).map (·.2) ≠ rl)
+    | _ => false
+
+theorem gotCallB_sound {vc : VCode} {n : String} {rl : List Reg} (h : gotCallB vc n rl = true) :
+    ∃ info t Lu Ld, vc.CallSite info ∧ info = ⟨.reg (.vreg t .int), retPairs Lu, callDefs Ld⟩ ∧
+      GotV vc t n ∧ rl.length = Lu.length ∧ Lu.map (·.2) ≠ rl := by
+  simp only [gotCallB, Array.any_eq_true] at h
+  obtain ⟨b, hb, k, hk, hi⟩ := h
+  revert hi
+  split
+  · rename_i t us ds e
+    simp only [Bool.and_eq_true, decide_eq_true_eq]
+    intro ⟨⟨⟨⟨hu, hd⟩, hg⟩, hl⟩, hne⟩
+    refine ⟨_, t, decU us, decD ds,
+      ⟨b, _, k, Array.getElem?_eq_getElem hb, .inl (by rw [Array.getElem?_eq_getElem hk, e])⟩,
+      by rw [← hu, ← hd], gotOf_sound hg, hl, hne⟩
+  · simp
+
+/-- `e` declares the program function `s` (`sret`: arguments in x8, x0; one ABI result) and calls
+the base extern `pz` (not in `P`) through the GOT with two register arguments in other registers
+than `s`'s. -/
+def gotChainB : Bool :=
+  decide (P.func? "e" = some fE) && decide (P.func? "pz" = none) && declB fE "s" && indFreeB fE &&
+  gotCallB (A fE).vcp "pz" (regLocs fS.sig) && decide ((sigRets fS.sig).length = 1)
+
+theorem gotChainB_true : gotChainB = true := by native_decide
+
 /-- **Non-vacuity of `backend_correct_program`**: for the program
-`P = {f, g, h, s, k, r, r__fvself, q, v, a2, w, t, u, m, d}` — `f` passes an `sret` pointer to
+`P = {f, g, h, s, k, r, r__fvself, q, v, a2, w, t, u, m, d, e}` — `f` passes an `sret` pointer to
 its stack slot to `s`, a stack-passed argument to `k`, calls `g` by a `try_call` with a result,
 the recursive `r`, `v`, `t` (a callee with a stack slot), `u` (a callee passing a stack argument
 to `k`) and `d` with the address of the vtable `vt`; `g` calls `h` (a non-leaf callee); `r`
 recurses through its alias `r__fvself` (same body and signature); `v` calls `q` through a pointer
 (`call_indirect` of `func_addr`) and through the GOT; `w` passes `i128` pairs to `a2` (both
 legalised by `Opt.Legalize128`); `d` calls the method `m` it loads from the vtable (a read-only
-data object holding `m`'s address, written by the loader) without declaring it —, compiled by
+data object holding `m`'s address, written by the loader) without declaring it; `e` calls the
+base extern `pz` through the GOT next to the declared `s` of the same arity, whose argument
+registers differ —, compiled by
 the backend's pipeline (regalloc2's allocation, accepted by `checkAlloc`), every premise of the
 theorem holds — `L.Ok` (with `NeedSlots` and `NeedNI`: its non-interference and placement
 premises are discharged, not vacuous) and the entry premises of `f` on the argument `41`
@@ -1516,6 +1590,10 @@ theorem backend_correct_program_witness :
     (∃ info, (A fD).vcp.CallSite info ∧ ∀ n, info.dest ≠ .sym n) ∧
     (L F0).syms fM.name = some 0xE0000 ∧ cs0.mem.symbols "vt" = some vtAddr ∧
     vtObj.items.drop 8 = [.addr "m" 0] ∧ (∃ m, vtWrite = .ok m ∧ cs0.mem.bytes = m.bytes) ∧
+    fE ∈ (L F0).P.funcs ∧ Clif.IndFree fE ∧ DeclN fE fS.name ∧ (L F0).P.func? "pz" = none ∧
+    (sigRets fS.sig).length = 1 ∧
+    (∃ info t Lu Ld, (A fE).vcp.CallSite info ∧ info = ⟨.reg (.vreg t .int), retPairs Lu, callDefs Ld⟩ ∧
+      GotV (A fE).vcp t "pz" ∧ (regLocs fS.sig).length = Lu.length ∧ Lu.map (·.2) ≠ regLocs fS.sig) ∧
     run0 = .returned [⟨.i64, 802#64⟩] (retMem run0) ∧
     ArmRefines (A fF).fb (A fF).base 8 ((L F0).mach M0 fF) s0 run0 := by
   have hF : ∀ a, Img P A a → F0 a := fun a ha => .inr ha
@@ -1538,7 +1616,10 @@ theorem backend_correct_program_witness :
     · assumption
     · cases hloc
   have hbF : (A fF).base.toNat + 4 * (A fF).fb.words.size + 4 ≤ 0xF8000 := bound_of (by simp [P])
-  obtain ⟨-, -, -, -, -, -, -, hnq, hnv, -, -, -, -, hnm', hnd⟩ := names
+  obtain ⟨-, -, -, hns, -, -, -, hnq, hnv, -, -, -, -, hnm', hnd, -⟩ := names
+  have hgc := gotChainB_true
+  simp only [gotChainB, Bool.and_eq_true, decide_eq_true_eq] at hgc
+  obtain ⟨⟨⟨⟨⟨-, hpz⟩, hde⟩, hie⟩, hgc'⟩, hsr⟩ := hgc
   have hvt := vtChainB_true
   simp only [vtChainB, Bool.and_eq_true, decide_eq_true_eq] at hvt
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨hcd, hpd⟩, hpm⟩, hregD⟩, hindD⟩, hextD⟩, hsm⟩, hsvt⟩, hdrop8⟩ := hvt
@@ -1577,7 +1658,8 @@ theorem backend_correct_program_witness :
     fun h => (by rw [indFreeB_of h] at hindD; cases hindD), hextD',
     (fun h => by have h1 := h.1; rw [hextD'] at h1; simp at h1), regCallsB_sound hregD,
     (by simp only [L, hnm']; exact hsm), (by show symsW "vt" = some vtAddr; exact hsvt), hdrop8,
-    ?_, hrun, ?_⟩
+    ?_, by simp [L, P], indFreeB_sound hie, (by rw [hns]; exact declB_sound hde), hpz, hsr,
+    gotCallB_sound hgc', hrun, ?_⟩
   · obtain ⟨info, hs, hd⟩ := callsB_sound hcv
     exact ⟨info, hs, "v", hd, hpv⟩
   · exact regCallsB_sound hreg

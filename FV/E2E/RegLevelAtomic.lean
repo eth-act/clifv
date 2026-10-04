@@ -321,7 +321,7 @@ theorem realizes_rmwLoop {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
   rw [hU] at hsem
   have herrw : Arm.r .ERR w = .None := by
     rw [← hst.world.1 .ERR (by simp [Masked]), hst.err]
-  simp only [RL.sem, csem, herrw, ite_true] at hsem
+  simp only [RL.sem, csemV, csem, herrw, ite_true] at hsem
   obtain ⟨hty, hav, hrunw, rfl, rfl⟩ := loopSem_inv hsem
   simp only [List.zip_cons_cons, List.zip_nil_right, List.foldl_cons, List.foldl_nil, setReg_x,
     lo64_regVal_x, rnum] at hrunw hav
@@ -497,7 +497,7 @@ theorem realizes_casLoop {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
   rw [hU] at hsem
   have herrw : Arm.r .ERR w = .None := by
     rw [← hst.world.1 .ERR (by simp [Masked]), hst.err]
-  simp only [RL.sem, csem, herrw, ite_true] at hsem
+  simp only [RL.sem, csemV, csem, herrw, ite_true] at hsem
   obtain ⟨outs1, t1, c1, hhead, hsem⟩ : ∃ outs1 t1 c1,
       loopSem R.F ty (regVal s (.x 25)) (casLoopHead ty.bits fl) [.x 25, .x 26, .x 28]
         [regVal s (.x 25), regVal s (.x 26), regVal s (.x 28)] [.x 27, .x 24] w = some (outs1, t1, c1) ∧
