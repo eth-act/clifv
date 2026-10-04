@@ -337,7 +337,7 @@ The goal "a real crate is covered by one theorem" is reached (all example crates
    - **unwinding**: prove the emitted landing pads, LSDA and `.eh_frame` correct, extending the try_call results beyond normal returns;
    - **std**: compile it through `cargo fv` (`-Zbuild-std`), so its functions are proven instead of assumed. It needs floats, SIMD and inline asm, so it depends partly on item 2;
    - the frontend (rustc / cg_clif → CLIF) stays trusted. Removing it would be a separate, much larger project.
-4. **Deferred proofs** (coverage of the guarantee, not of what's usable): the remaining ~180 `simplify` rules and 18 skeleton rules (constant-divisor and power-of-two division need specs for Cranelift's magic-number helpers); `lowerCheck` completeness (6–10k lines; see the feasibility note in DEFERRED); the optimised and i128 variants inside the linking theorem; the declared-callee case of the `call_indirect` purpose check (DEFERRED, "Linking").
+4. **Deferred proofs and the fully verified compiler:** everything that still needs proving, to make the compiler itself verified with no per-program certificates, is in `docs/TO-PROVE.md`, split into work packages (validator completeness, a Lean fallback allocator, linking/binary/stack without per-crate proofs, the remaining `simplify` rules, scope extensions).
 5. **Engineering and outreach**:
    - CI running the gates (today they run by hand on one machine, about 1.5 h);
    - `cargo fv` installable outside this repository;

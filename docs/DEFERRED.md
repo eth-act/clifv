@@ -3,6 +3,10 @@
 Work that is deliberately postponed. Each item says what exists already, what remains and how to
 pick it up.
 
+For the work towards a compiler verified once with no per-program certificates, see
+`docs/TO-PROVE.md` (work packages, dependencies, how to take one). The sections below remain the
+detailed background for several of its packages.
+
 ## Mid-end `simplify` rule proofs (decided 2026-09-28)
 
 **Decision (owner):** don't block the end-to-end theorem on proving every mid-end rule. The
