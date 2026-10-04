@@ -1,6 +1,6 @@
 # Plan: a verified compiler for a Lean-embedded DSL, via CLIF to AArch64
 
-*Status: design plan, September 2026. Hand-off document for an engineer or AI picking up the work.*
+*Status: design plan, September 2026, updated with progress through 2026-10-04 (see "Current status" below, the per-milestone status notes, and M8). Hand-off document for an engineer or AI picking up the work.*
 
 ## 0. How to use this document
 
@@ -10,6 +10,24 @@
   - No `sorry` in merged proofs. Every milestone that claims a theorem must show `#print axioms <thm>` listing only `propext`, `Classical.choice`, `Quot.sound` (plus `Lean.ofReduceBool` where `bv_decide` is used).
   - Never add an `axiom` to stand in for a spec. Model things with `def`s; if a model can be wrong, it should be *checkable* (tested or proven against an external source), not assumed.
   - Pin external dependencies (Cranelift version, Lean toolchain, Arm model) and treat upgrades as explicit migrations.
+
+## Current status (2026-10-04)
+
+The FV compiler is all-Lean and proven end to end, from in-subset CLIF to AArch64 machine code. It compiles real Rust through rustc_codegen_cranelift and `cargo fv`. Whole crates are covered by one linking theorem. Details per component are in `docs/contracts/*.md` (the theorem and its hypotheses: `docs/contracts/e2e.md`). Deferred work is in `docs/DEFERRED.md`. Usage is in `docs/USAGE.md`.
+
+| Piece | State |
+| --- | --- |
+| M0 CLIF semantics, M3 Arm model (LNSym port), M4 isel, M5 encoder, M6 regalloc checker | done and proven |
+| M7 per-function theorem `E2E.backend_correct_final` | proven. Covers `sret`, `try_call` (normal returns; unwinding trusted), indirect calls and `func_addr`, atomics/`bmask`/`fence` (single-core Arm model), TLS (trusted TLSDESC hook), and stack-passed parameters/arguments. lean-e2e-check: 1148 functions in scope, 0 rejected |
+| i128 | `Opt.Legalize128` (CLIF → CLIF) validated by `Opt.Legal.check`. `E2E.backend_correct_legal`, and `E2E.backend_correct_legal_direct` without the validator premise (checker completeness, `check_complete`) |
+| Mid-end | `E2E.backend_correct_opt_proven` for the proven-rules configuration: 1012 `simplify` and 19 `simplify_skeleton` rules proven. Proven-only corpus 4668 → 2289 instructions (all rules: 2287) |
+| Validator completeness | `prepare` proven correct outright (`prepCheck_complete`, `prepare_correct`). `lowerCheck` stays a runtime validator (feasibility note in DEFERRED) |
+| Non-vacuity | every top-level theorem has a witness that its contract premises can hold (`FV/E2E/NonVacuity.lean`, `NonVacuityLink.lean`). Building the witnesses exposed six unsatisfiable premises, all fixed (e2e.md, "Non-vacuity") |
+| Linking (M8) | `E2E.backend_correct_program`: the linked machine code of a program of Lean-compiled functions refines the whole-program CLIF run. Program callees' contracts are discharged from their own theorems by induction on call depth; only the contracts of code outside the program (std etc.) remain |
+| Crate-level instances (M8) | `cargo fv link-proof` generates a proof per crate (`crate-proofs/`). All 9 survey crates proven whole; fv-demo 545/551 |
+| Rust route (M8) | `cargo fv build/run/test/report/link-proof`: cg_clif frontend, Lean backend per function (dependencies too), cg_clif fallback per function. Real crates give the same test results as LLVM; panic=unwind with Lean-emitted landing pads/LSDA |
+
+Not started or paused: M2 (DSL `compile_correct`, branch `agent/m2proof`), the M3 validator (branch `agent/validator`), M3b, floats/SIMD in the backend, std compiled by us, RISC-V.
 
 ## 1. Goal and scope
 
@@ -25,15 +43,15 @@ The path is DSL → CLIF (Cranelift IR) → AArch64. Cranelift is used as the wo
 - Cranelift as the interim backend, with per-function validation
 - a Lean AArch64 backend built incrementally
 
-**Deferred (do not start until M7):**
+**Deferred (do not start until M7):** *(M7 is done; status of each item as of 2026-10-04)*
 
-- **DSL → Rust emission** (a fast path through rustc/LLVM, checked by a Charon/Aeneas round trip).
-- **Mid-end CLIF → CLIF optimisations.**
-- **SIMD variants.**
-- **x86-64.** It lacks an authoritative formal ISA source; AArch64 has Arm's ASL.
-- **A RISC-V target for a zkVM guest.**
+- **DSL → Rust emission** (a fast path through rustc/LLVM, checked by a Charon/Aeneas round trip). *Not started. The Rust route taken instead is Rust → CLIF via rustc_codegen_cranelift, compiled by the Lean backend (M8).*
+- **Mid-end CLIF → CLIF optimisations.** *Done for the proven-rules configuration (see "Lean mid-end" under M7).*
+- **SIMD variants.** *Not started; vector code falls back to cg_clif.*
+- **x86-64.** It lacks an authoritative formal ISA source; AArch64 has Arm's ASL. *Not started.*
+- **A RISC-V target for a zkVM guest.** *Not started.*
 
-**Single target triple:** `aarch64-unknown-linux-gnu`. Do not model Apple's AArch64 ABI; it differs, for example x18 is reserved there.
+**Single target triple:** `aarch64-unknown-linux-gnu`. Do not model Apple's AArch64 ABI; it differs, for example x18 is reserved there. *(2026-10-01: `cargo fv` builds `aarch64-unknown-linux-musl` executables, for static linking under qemu on the x86_64 host; the backend and ABI are the same AAPCS64.)*
 
 ## 2. Architecture
 
@@ -112,6 +130,8 @@ Each milestone leaves a working toolchain. Components are replaced one at a time
 
 ### M0: CLIF semantics in Lean
 
+*Status: done.* `Clif.run` passes the upstream runtests it supports (6072 run lines as of 2026-10-04; the 7 failures and 13 interpreter disagreements are a recorded baseline). It is cross-checked against Cranelift's interpreter (`clif-oracle`) and against VeriISLE's CLIF specs. The subset is versioned in `docs/contracts/clif-subset.md`; it has grown since (sret, `call_indirect`/`func_addr`, `try_call`, atomics, TLS, i128 via legalisation), each growth recorded there.
+
 **Deliverables**
 
 - `Clif` syntax as a Lean `inductive`.
@@ -128,6 +148,8 @@ Each milestone leaves a working toolchain. Components are replaced one at a time
 **References:** CLIF IR docs; Cranelift filetests; `cranelift-reader`; the Cranelift interpreter; VeriISLE CLIF specs `cranelift/codegen/src/spec/inst_specs.isle` (see §7).
 
 ### M1: DSL → CLIF, compiled by Cranelift
+
+*Status: done* (four-way differential corpus, 114/114). The DSL path is paused in favour of the Rust route (M8).
 
 **Deliverables**
 
@@ -153,6 +175,8 @@ Each milestone leaves a working toolchain. Components are replaced one at a time
 **Known result:** at `opt_level=none`, checked adds lower to `adds` / `cset` / `uxtb` / `cbnz` rather than `b.hs`. This is expected, and it is slow.
 
 ### M2: Prove the emitter
+
+*Status: paused* (partial work on branch `agent/m2proof`). The theorems are stated over in-subset CLIF instead (M7 restated), with the frontend trusted.
 
 **Deliverables**
 
@@ -201,6 +225,8 @@ proven equivalent to the input, a successful check shows Cranelift's is too.
 
 ### M4: Own AArch64 backend, simplest version
 
+*Status: done.* `isle2lean` exports Cranelift's ISLE program. The Lean isel interprets it; every lowering root rule in the emitter-subset closure is proven (`lowerRulesCorrect_program`, the call, memory, terminator, branch, try_call, indirect, atomic and TLS rule sets). Byte-identical to llvm-mc on 1291 functions.
+
 **Deliverables**
 
 - An ISLE → Lean exporter, built on the `cranelift-isle` crate's parser and AST.
@@ -216,6 +242,8 @@ proven equivalent to the input, a successful check shows Cranelift's is too.
 
 ### M5: Proven encoder
 
+*Status: done* (`Insn.decode_encode`, branch range checked; the assembler is removed).
+
 **Deliverables**
 
 - Lean encoding for the emitted instructions.
@@ -227,6 +255,8 @@ proven equivalent to the input, a successful check shows Cranelift's is too.
 - The assembler is removed.
 
 ### M6: Real register allocation
+
+*Status: done* (`checkAlloc_sound`; regalloc2 accepted by the Lean checker on 1056/1056 test functions).
 
 **Deliverables**
 
@@ -247,11 +277,13 @@ returns agree, traps agree, and there is no claim on stuck or out-of-fuel runs. 
 `propext`, `Classical.choice`, `Quot.sound` plus `bv_decide` certificates only; no `sorry` and no
 hand-written axioms.
 
-Remaining hypotheses are assumptions, not open proofs:
-- `FormsCovered`, decided per function by `formsCoveredB` (913/913 in the test suites);
-- the callee contracts `CalleeOk` and `XCallsOk`;
+Remaining hypotheses are assumptions, not open proofs (current forms, 2026-10-04; `docs/contracts/e2e.md` has the exact statement):
+- `FormsCovered`, decided per function by `formsCoveredB` (1148/1148 in the test suites);
+- the callee contracts: `CalleeOk F K X H vcp.CallSite` (dead stack below `sp` unspecified, required only at the compiled call sites), `CalleeTryOk … vcp.TrySite` (results only), `TlsOk` (trusted TLSDESC hook), `XCallsOk`/`XCallsIndOk`. Each has a non-vacuity witness;
 - link-time facts (`hsym`, `hslot`);
-- per-run entry conditions (`AbiEntry`, `StackAvail`, `BodyEntry`, `ArgsIn`, `ClifEntry`, `Rel.holds`, `TrapsExplicit`).
+- per-run entry conditions (`AbiEntry`, `StackAvail K`, `BodyEntry`, `ArgsIn` with stack-passed arguments, `ClifEntry`, `Rel.holds`, `TrapsExplicit`).
+
+*Scope growth since 2026-09-28:* `sret` and `sret` callees, `try_call` normal returns, `call_indirect`/`func_addr`/`try_call_indirect`, atomics/`bmask`/`fence` (single-core Arm-model assumption, `docs/decisions/arm-model.md`), `tls_value`, stack-passed parameters and arguments. For functions without these features, the new statements imply the old ones (specialisation lemmas). Two contract flaws that made the theorem vacuous for functions with calls were found and fixed on 2026-10-02 (e2e.md, "Callee contract with a dead stack").
 
 The compiler enforces the side conditions with proven-sound validators: `lowerCheck`, `prepCheck`, `checkAlloc`, `ctlCheck`, `FormOk` and the branch-range check. The exact list is in `docs/contracts/e2e.md`.
 
@@ -270,7 +302,7 @@ same axioms as `backend_correct_final`.
   - the passes: unreachable-block removal, and GVN/DCE/LICM through the `editOk` validator;
   - the simplify driver through the `simpOk` certificate validator (`simpOk_sim`, `simplify_facts`);
   - pipeline refinement;
-  - 224 of Cranelift's `simplify` rules (arithmetic 172/258, cprop 52/68).
+  - 1012 of Cranelift's `simplify` roots and 19 `simplify_skeleton` rules (2026-10-04; per family and the excluded rules with reasons: `docs/contracts/midend.md`). Proven-only corpus: 4668 → 2289 instructions (all rules: 2287). `shifts.isle` rules 84/88 are false (an upstream Cranelift bug, `docs/research/upstream-bugs.md`).
 - With the full rule set (`--opt`) the optimiser is differentially tested, not proven.
 - The remaining rules are deferred: see `docs/DEFERRED.md`. Proving more rules and adding them to
   the allow-list extends the theorem without changing it.
@@ -280,7 +312,19 @@ same axioms as `backend_correct_final`.
 - The end-to-end theorem then covers the mid-end too:
   `Arm.run (emit (regalloc (isel (opt p)))) ≈ Clif.run p`.
 
-**Then:** SIMD, RISC-V, and a verified frontend (the DSL's `compile_correct`, or a Rust path).
+**Then (as planned in September):** SIMD, RISC-V, and a verified frontend (the DSL's `compile_correct`, or a Rust path). What was done instead is M8.
+
+### M8 (added after M7): Rust route, `cargo fv`, linking, crate-level theorems
+
+*Status (2026-10-04): done, with the gaps listed below.*
+
+- **Rust route.** rustc_codegen_cranelift (cg_clif) is the frontend (trusted). The 933-function Rust survey compiles 933/933 with the Lean backend and runs natively with 0 disagreements against Cranelift (≥50 random input vectors per function, memory and traps compared). `docs/research/rust-route.md`, `docs/research/rust-clif-survey.md`.
+- **`cargo fv`** (`docs/USAGE.md`): `build`/`run`/`test`/`report`/`link-proof`. Each function is compiled by the Lean backend, dependencies included (build scripts and proc-macros stay on the host), with per-function fallback to cg_clif. The report splits verified / unverified / fallback per crate. panic=unwind works, with Lean-emitted `.eh_frame`, landing pads and LSDA. Examples (fv-demo, survey, vendor, deps with 42 crates.io dependencies) give the same test results as LLVM.
+- **i128.** `Opt.Legalize128` plus the validator `Opt.Legal.check`, which is proven complete for the legaliser's output: `E2E.backend_correct_legal_direct`.
+- **Linking.** `Clif.runLoop_link` (CLIF level) and `E2E.backend_correct_program` (Arm level): the linked image of a program of Lean-compiled functions refines the whole-program CLIF run. Covered between program functions: try_call, CLIF stack slots (non-interference and a slot-placement oracle), sret, stack arguments, one-copy self-recursion, indirect calls including undeclared vtable targets restricted by signature, GOT calls pinned to their symbol, and legalised i128 pairs. Witness: a 17-function program compiled by the real pipeline (`FV/E2E/NonVacuityLink.lean`).
+- **Crate-level instances.** `E2E.LinkCheck.okB` (proven sound) decides `LinkSys.Ok` for a real `cargo fv` build. `cargo fv link-proof` generates a Lean file per crate, checked by native_decide run as compiled code (`crate-proofs/`, about 11 s for all ten crates). Proven whole: the 9 survey crates. fv-demo: 545/551, the 6 left being two `catch_unwind` shims whose `call_indirect` the CLIF semantics would let reach sret vtable methods, plus their callers.
+- **Remaining** (`docs/DEFERRED.md`, "Linking"): the catch_unwind shim case (needs a value-flow fact or an sret-purpose check in CLIF), whole-program refinement of the original i128 source program, the opt/legal variants inside the linking theorem, floats/SIMD (the main fallback reason), std compiled by us.
+- **Upstream findings:** two Cranelift bugs (`atomic_cas.i32` 64-bit compare, a fix PR prepared; `shifts.isle` rules building ill-typed IR), in `docs/research/upstream-bugs.md`.
 
 ## 5. Trusted base by milestone
 
@@ -289,7 +333,8 @@ same axioms as `backend_correct_final`.
 | M1 | Everything: the emitter, Cranelift, the driver, the runtime |
 | M2 | Cranelift (all stages), the CLIF printer and parser, the runtime |
 | M3 | The Arm model, the validator, the CLIF semantics' fidelity, the linker/loader, the runtime. Cranelift is **untrusted**: a bug in it now shows up as a validation failure, not as a silently wrong binary. |
-| M7 | Lean kernel; `bv_decide`'s compiled LRAT checker; Lean's compiler and C compiler (they run the compiler); Arm model fidelity; object writing, linking and loading; the runtime/allocator shim; OS and hardware |
+| M7 | Lean kernel; `bv_decide`'s compiled LRAT checker; Lean's compiler and C compiler (they run the compiler and its validators); Arm model fidelity; object writing, linking and loading; the runtime/allocator shim; OS and hardware |
+| M8 (now) | M7's list, plus: the frontend (rustc, rustc_codegen_cranelift), `normalize.py` and `clif-data-export`, `cargo fv`'s object merge and the linker (checked against the compiled words by `link-check`); the contracts of code outside the program (std, other crates' cg_clif code, the runtime); unwinding (landing pads, LSDA, `.eh_frame`); the single-core Arm-model assumption for atomics and the TLSDESC hook (`docs/decisions/arm-model.md`); `native_decide` (compiled evaluation) for the crate-level and witness checks. The exact list: `docs/contracts/e2e.md`, "Trusted (not proven)" |
 
 **Never covered:**
 
@@ -324,6 +369,7 @@ This is much stronger than a prototype. It is still not an end-to-end theorem, b
 - **M0:** cross-check `Clif.run` against VeriISLE's CLIF specs (`cranelift/codegen/src/spec/inst_specs.isle`).
 - **M4:** reuse VeriISLE's ASL-derived aarch64 specs and its expansion results as a cross-check for the Lean rule proofs. The Lean versions add kernel-checked proofs tied to the *same* `Clif.run` used by `compile_correct`, so the theorems compose.
 - **The emitter's opcode subset:** prefer opcodes whose expansions VeriISLE verifies by default.
+- *Finding (2026-10-03):* the merged verifier (wasmtime #13550) excludes atomics in its aarch64 and mid-end configurations (`--filter exclude:tag:atomics`), and it checks lowering rules, not emission (`emit.rs`). The `atomic_cas.i32` bug found here is in the emission of the `AtomicCASLoop` pseudo-instruction. The ISLE side explicitly delegates narrow-value masking to that sequence ("the AtomicCASLoop sequence does its own masking"), and the sequence masks i8/i16 but not i32. Our atomics proof covers the emitted instructions against the Arm model, so it caught the bug (`docs/research/upstream-bugs.md`).
 
 **`if` clauses.** A May 2025 Zulip thread reported that the then-upstream verifier ignored ISLE `if` conditions. The verifier has since been reworked \[verify whether this still applies\]. The Lean port models conditions as hypotheses either way.
 
