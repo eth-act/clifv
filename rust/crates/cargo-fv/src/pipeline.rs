@@ -433,7 +433,7 @@ fn compile_one(
         // `--keep-temps`: keep lean-regalloc's output next to the object (`cargo fv
         // link-proof` rebuilds the allocation from it in Lean): this process (fv-rustc) runs
         // lean-regalloc and copies its output (`crate::linkproof::regalloc_tee`)
-        if cfg.keep_temps {
+        if cfg.keep_link() {
             if let Ok(me) = std::env::current_exe() {
                 cmd.env("LEAN_REGALLOC", me)
                     .env(crate::linkproof::RA_REAL, cfg.lean_regalloc())
@@ -498,11 +498,30 @@ fn process_selected(
     let _ = fs::remove_dir_all(&work);
     let r = process_in(cfg, index, obj, syms, all, &funcs, &tag, &work);
     if !cfg.keep_temps {
-        let _ = fs::remove_dir_all(&work);
+        if cfg.bin_check {
+            remove_objects(&work);
+        } else {
+            let _ = fs::remove_dir_all(&work);
+        }
     }
     match r {
         Ok((functions, changed)) => CguResult { functions, changed, error: None },
         Err(e) => CguResult { functions: fallback_all(&funcs, &e), changed: false, error: Some(e) },
+    }
+}
+
+/// Remove the object files of a codegen unit's work directory (recursively), keeping the text
+/// files the binary check reads (`fv-link.json`, the compiled CLIF, the regalloc outputs, the
+/// data objects).
+fn remove_objects(dir: &Path) {
+    let Ok(rd) = fs::read_dir(dir) else { return };
+    for e in rd.flatten() {
+        let p = e.path();
+        if p.is_dir() {
+            remove_objects(&p);
+        } else if p.extension().is_some_and(|x| x == "o") {
+            let _ = fs::remove_file(&p);
+        }
     }
 }
 
@@ -932,7 +951,7 @@ fn process_in(
     write_list(&loc, renames.values().cloned().chain(ours.iter().map(|(s, _)| format!("{MARKER}{}", final_name(s)))))?;
     objcopy(&[format!("--localize-symbols={}", loc.display())], &merged)?;
     fs::copy(&merged, obj).map_err(|e| format!("{}: {e}", obj.display()))?;
-    if cfg.keep_temps {
+    if cfg.keep_link() {
         for f in &mut link_fns {
             let s = f["symbol"].as_str().unwrap_or_default().to_string();
             f["final"] = serde_json::Value::String(final_name(&s));

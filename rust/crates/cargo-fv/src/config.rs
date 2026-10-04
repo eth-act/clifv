@@ -75,6 +75,10 @@ pub struct Config {
     /// `lean-backend` processes at a time, across all fv-rustc processes of the build.
     pub jobs: usize,
     pub keep_temps: bool,
+    /// Keep what the per-executable binary check needs (`cargo fv link-proof`'s inputs: the
+    /// compiled CLIF, the regalloc outputs, the link maps), without the objects; off with
+    /// `--no-binary-check`.
+    pub bin_check: bool,
     /// Overwrite cg_clif's replaced function bodies with traps (`--trap-replaced`).
     pub trap_replaced: bool,
     /// `[package.metadata.fv] skip = [...]` of the members: (manifest dir, pattern); matching
@@ -100,6 +104,11 @@ impl Config {
         self.root.join("scripts/rust-clif/normalize.py")
     }
 
+    /// Whether the inputs of `cargo fv link-proof` (and of the binary check) are kept.
+    pub fn keep_link(&self) -> bool {
+        self.keep_temps || self.bin_check
+    }
+
     /// The environment `fv-rustc` reads.
     pub fn to_env(&self) -> Vec<(String, String)> {
         let members = self.members.iter().map(|p| p.display().to_string()).collect::<Vec<_>>().join("\n");
@@ -117,6 +126,7 @@ impl Config {
             ("FV_PYTHON".into(), self.python.clone()),
             ("FV_JOBS".into(), self.jobs.to_string()),
             ("FV_KEEP_TEMPS".into(), if self.keep_temps { "1" } else { "0" }.into()),
+            ("FV_BIN_CHECK".into(), if self.bin_check { "1" } else { "0" }.into()),
             ("FV_TRAP_REPLACED".into(), if self.trap_replaced { "1" } else { "0" }.into()),
             (
                 "FV_PKG_SKIP".into(),
@@ -144,6 +154,7 @@ impl Config {
                 python: var("FV_PYTHON")?,
                 jobs: var("FV_JOBS")?.parse().map_err(|_| "FV_JOBS: not a number".to_string())?,
                 keep_temps: var("FV_KEEP_TEMPS")? == "1",
+                bin_check: var("FV_BIN_CHECK")? == "1",
                 trap_replaced: var("FV_TRAP_REPLACED")? == "1",
                 pkg_skip: var("FV_PKG_SKIP")?
                     .lines()

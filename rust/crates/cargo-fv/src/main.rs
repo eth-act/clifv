@@ -9,7 +9,7 @@ use std::process::{Command, Stdio};
 
 const USAGE: &str = "\
 usage: cargo fv <build|run|test> [--opt | --opt-proven-only] [--no-fallback] [--trap-replaced] [--keep-temps]
-                                [--panic-abort] [--members-only] [cargo options] [-- args]
+                                [--panic-abort] [--members-only] [--no-binary-check] [cargo options] [-- args]
        cargo fv report [--functions] [--json] [--manifest-path PATH]
        cargo fv link-proof [--exe SUBSTR]… [--crate NAME] [--out DIR] [--lean FILE --module NAME]
                            [--entries a,b] [--prune] [--manifest-path PATH]
@@ -32,6 +32,8 @@ report` prints it).
                       dependencies) with traps (proof that the tests run the Lean code; separate
                       target dir)
   --keep-temps        keep the per-codegen-unit work directories (target/fv/<mode>/tmp)
+  --no-binary-check   skip the per-executable binary check (E2E.Binary.binary_correct: the
+                      executable's code, data and symbols checked against the proven program)
   --panic-abort       build with -Cpanic=abort -Zpanic-abort-tests (default: panic=unwind, as cargo;
                       separate target dir)
   --functions         (report) list every function with its status and reason
@@ -246,6 +248,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
     let mut trap_replaced = false;
     let mut panic_abort = false;
     let mut members_only = false;
+    let mut bin_check = true;
     let mut cargo_args = Vec::new();
     for a in before {
         match a.as_str() {
@@ -256,6 +259,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
             "--trap-replaced" => trap_replaced = true,
             "--panic-abort" => panic_abort = true,
             "--members-only" => members_only = true,
+            "--no-binary-check" => bin_check = false,
             _ => cargo_args.push(a),
         }
     }
@@ -335,6 +339,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
             .and_then(|j| j.parse().ok())
             .unwrap_or_else(|| std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4)),
         keep_temps,
+        bin_check,
         trap_replaced,
         pkg_skip,
     };
@@ -474,6 +479,23 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
             exes.len(),
             exes.iter().sum::<usize>()
         );
+    }
+    if bin_check {
+        // the binary-level theorem's checks, per linked executable with Lean-compiled code
+        let manifest = value_of(&cargo_args, "--manifest-path");
+        let (mut checked, mut verified) = (0, 0);
+        for b in report.units.iter().filter_map(|u| u.unit.binary.as_ref()) {
+            if b.note.is_some() || b.lean_functions_linked == 0 {
+                continue;
+            }
+            let v = cargo_fv::bincheck::check(&fv_dir, &b.path, manifest.as_deref());
+            eprintln!("cargo fv: binary {}: {}", b.path, v.summary);
+            checked += 1;
+            verified += usize::from(v.verified);
+        }
+        if checked > 0 {
+            eprintln!("cargo fv: binary check: {verified} of {checked} executable(s) verified (docs/contracts/e2e.md, \"Binary level (M9)\")");
+        }
     }
     let mism = report.binary_mismatches();
     if !mism.is_empty() {

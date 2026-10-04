@@ -96,7 +96,8 @@ Options of `cargo fv` (all other options go to cargo unchanged):
 | `--trap-replaced` | overwrite cg_clif's code of every Lean-compiled function (members and dependencies) with `udf` traps (see *Checking that the Lean code runs*) |
 | `--members-only` | only the workspace members go through the Lean backend; dependencies are plain cg_clif (the behaviour before agent/fv-deps; own target directory) |
 | `--keep-temps` | keep the per-codegen-unit work directories (`target/fv/<mode>/tmp/`), with what `cargo fv link-proof` needs: per function the CLIF file `lean-backend` compiled, `lean-regalloc`'s output for it and the linked symbol names (`fv-link.json`), per executable the link map |
-| `--panic-abort` | build with `-Cpanic=abort -Zpanic-abort-tests` (the pre-unwinding behaviour; the shipped cg_clif; own target directory) |
+| `--panic-abort` | build with `-Cpanic=abort -Zpanic-abort-tests` (the pre-unwinding behaviour; the shipped cg_clif; own target directory; the configuration of the binary-level theorem: no unwinding through Lean frames) |
+| `--no-binary-check` | skip the per-executable binary check (see *The executable as a whole*); without it the build keeps what the check reads (the per-function CLIF and `lean-regalloc` output, `fv-link.json`, the link maps; not the objects) in `target/fv/<mode>/tmp/` |
 
 `cargo fv report` prints the summary of the last build again. `--functions` lists every
 function with its status and reason, and `--json` prints `target/fv-report.json`.
@@ -373,15 +374,44 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   the `sha2` dependency (`sha2::sha{256,512}::soft::unroll::compress_block`, 52–604 M) reach
   it (examples/deps).
 * Not verified (trusted): rustc and cg_clif (Rust → CLIF), `normalize.py`,
-  `clif-data-export`, the object surgery above, the linker, std (the prebuilt standard
+  `clif-data-export`, the object surgery above and the linker (both checked, for the
+  program's code, data objects and symbols, by the binary check), std (the prebuilt standard
   library: std/core/alloc, compiler_builtins, musl libc; LLVM code), dependencies excluded by
   `--members-only`/skip-deps (cg_clif code), and everything the report lists as unverified
   or fallback (cg_clif code). `--opt` runs unproven rules. Build scripts and proc macros
   (e.g. `serde_derive`) run on the host at build time and are plain rustc: they are not part
   of the target program, but the code they generate is, and it is compiled like any other
   code of the crate that uses it. The executable's `exe` line counts the prebuilt functions.
-* The report is per function and per build; it does not cover the executable as a whole. For
-  that, see *Proving a crate*: one theorem for the crate's functions linked together.
+* The report is per function and per build. For the executable as a whole see below, and
+  *Proving a crate* for a standalone Lean-checked certificate.
+
+### The executable as a whole (binary check)
+
+After the build, `cargo fv build`/`test`/`run` checks every linked executable with
+Lean-compiled code against the binary-level theorem `E2E.Binary.binary_correct_of_checks`
+(docs/contracts/e2e.md, "Binary level (M9)"): it runs `cargo fv link-proof` on the executable
+(into `target/fv/<mode>/bin-check/<tag>/`) and `link-check --prune`, which decide the crate
+checker (`LinkSys.Ok`), the binary checks (the executable's code is the compiled code with
+resolved relocations — `cargo fv` links with lld's `--no-relax` so the address pairs stay as
+emitted —, its data objects and symbols are the program's) and the stack bound, and prints one
+verdict per executable:
+
+```
+cargo fv: binary …/values-5203fc787ef73bb4: verified: E2E.Binary.binary_correct holds for its 493 Lean-compiled functions; stack: 3008 bytes at most (no call cycle)
+cargo fv: binary …/fv_demo: verified: E2E.Binary.binary_correct (binary_correct_depth for the functions whose calls reach a call cycle: their stack stays a premise) holds for its 551 Lean-compiled functions; stack: recursive: the calls of 26 function(s) reach a call cycle (their stack stays a premise); the other 525: 1744 bytes at most
+cargo fv: binary check: 18 of 18 executable(s) verified (docs/contracts/e2e.md, "Binary level (M9)")
+```
+
+or `not verified: …` with the failing check (`binary check failed: FAIL code=… — BIN …`, or the
+first function failing `LinkSys.Ok`, the others still covered). *Verified* means: whenever code
+outside the program calls one of these functions per AAPCS64 and its contract (`OutsideCall`:
+arguments, free stack of the printed size, its CLIF-visible memory related to the machine's), in
+a machine state holding the executable's read-only bytes, the machine refines the
+whole-program CLIF run; the premises left are the contracts of the code outside the program
+(std, musl, fallback functions) and that CLIF traps only explicitly. The verdict is computed by
+`link-check` (compiled Lean); for a kernel-checked certificate generate the proof with `cargo fv
+link-proof --lean` (below). `--no-binary-check` skips it (its cost grows with the number of
+Lean-compiled functions of each executable: under a second per survey executable).
 
 ## Proving a crate (`cargo fv link-proof`)
 
@@ -402,7 +432,7 @@ link-check: …/values-b9a5804fcd4b2231
   19 functions, 68 link-map addresses, 30 CLIF image symbols, D = 144; checked in 100 ms
   --prune: 19 of 19 functions pass (0 dropped)
   okB: true
-  relocations: 6 bl, address pairs 68 nop+adr, 0 adrp+add, 0 adrp+ldr (GOT), 0 TLSDESC sequences
+  relocations: 6 bl, address pairs 0 nop+adr, 0 adrp+add, 68 adrp+ldr (GOT), 0 TLSDESC sequences
   binary checks done in 22 ms
   binary: ok (19 functions, 865 words, 38 data objects, 68 symbols)
   wrote ../../crate-proofs/Crates/GU128.lean
@@ -410,7 +440,8 @@ link-check: …/values-b9a5804fcd4b2231
 $ cd ../../crate-proofs && lake build Crates.GU128
 ```
 
-1. Build with `--keep-temps` (`cargo fv build` or `test`).
+1. Build with `cargo fv build` or `test` (the inputs are kept unless `--no-binary-check`;
+   `--keep-temps` keeps the whole work directories).
 2. `cargo fv link-proof` picks the executable whose path contains every `--exe` (default: the
    only one linked) and the Lean-compiled, **verified** functions of its codegen units (`--crate NAME`:
    only the crate's own units, `NAME-<hash>`), and writes `--out` (default
@@ -427,7 +458,7 @@ $ cd ../../crate-proofs && lake build Crates.GU128
    the program at `f`'s address (one copy of the code). Then the **binary checks**
    (`FV/E2E/BinCheck.lean`, e2e.md "Binary level (M9)") read the executable: every compiled word
    of the (pruned) program at its address, every relocation resolved (`bl` targets, address
-   pairs in the forms lld leaves, GOT slots, TLSDESC), the data objects the program reaches and
+   pairs as emitted with resolved immediates, GOT slots, TLSDESC in lld's local-exec form), the data objects the program reaches and
    the symbol table against the link map; `BIN …` lines say what differs, `binary: ok` /
    `binary: FAIL …` is the verdict. `--profile` times the slowest functions. Exit status 0
    iff the (pruned) set passes both.
