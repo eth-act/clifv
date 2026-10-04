@@ -344,6 +344,30 @@ The goal "a real crate is covered by one theorem" is reached (all example crates
    - upstream: file the `shifts.isle` bug, and turn the `atomic_cas.i32` fix (PR on the owner's fork) into an upstream PR once reviewed;
    - performance: optimised output is about 1.4× Cranelift's size at `speed`.
 
+
+### M9 (started 2026-10-05): binary in, binary out
+
+**Goal.** A guarantee about the executable file `cargo fv` produces, not about a Lean reconstruction of it: *for this executable, every machine run of a Lean-compiled function, entered per the ABI by code that meets its contract, refines the whole-program CLIF run, provided the stack bound holds.* The remaining assumptions are the contracts of std/musl and of cg_clif-fallback functions, and the frontend (the theorem is relative to the CLIF rustc/cg_clif produced).
+
+**What stands between today's crate theorem (`crate_correct`, M8) and that statement:**
+
+| # | Gap | Today | Needed | Size | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Code bytes | the theorem covers the image the Lean pipeline rebuilds; `link-check` compares it with the ELF outside the proof, skipping relocated fields | parse the ELF in Lean; inside the checker, check the executable's bytes at each function's address, including resolved relocations (`bl`/`adrp`/`add`/`ldr` fields computed from the link map) | small–medium | in progress |
+| 2 | Data and GOT | the CLIF initial memory (data objects: vtables, constants, panic locations) and the symbol addresses (`hsym`: what a GOT load yields) are premises | check that the executable's data sections hold exactly the CLIF data objects with resolved relocations, and that each GOT slot holds its symbol's address; discharge the corresponding premises | medium | in progress |
+| 3 | Entry from the rest of the binary | each theorem starts at "an AAPCS64 call into f" with per-run premises (memory relation, CLIF entry state, …) | a boundary statement: whenever non-Lean code (std's `lang_start`, a fallback function, a callback) calls a Lean function respecting the ABI and its contract, the premises hold; the per-run premises become conditions on the outside code | medium | in progress |
+| 4 | Stack bound | `StackAvail K` for call depth `M` is a premise | compute a stack bound from the call graph and frame sizes, checked in the checker for non-recursive programs; with recursion it stays a premise ("the stack does not overflow"), as in CompCert | medium | in progress |
+| 5 | Fallback functions (floats, SIMD) | outside code, contracts only | floats (Next steps item 2), SIMD later | large | not started |
+| 6 | Unwinding | landing pads, LSDA, `.eh_frame` trusted; try_call covered for normal returns | prove unwinding, or build with `--panic-abort` (a panic becomes an abort, covered by the trap semantics) | large / free with panic-abort | v1 uses `--panic-abort` |
+| 7 | std and musl | contracts (allocator, I/O, panics, startup) | compile std through `cargo fv` (needs 5), or keep it as an explicitly trusted library with stated contracts | large | not started |
+
+**Trusted regardless:** the frontend (rustc, cg_clif); Lean's kernel, compiler and runtime (they build the compiler and evaluate `native_decide`); our CLIF and Arm models (single core, the TLSDESC hook); the OS loading the ELF segments at their link addresses. Runs where the CLIF program gets stuck (undefined behaviour) carry no claim, as usual for refinement.
+
+**v1 = items 1–4, with `--panic-abort` for item 6.** Deliverables:
+- an ELF reader in Lean, and checkers for code bytes, data/GOT and the stack bound, each with a soundness theorem;
+- a top-level binary-level theorem (`E2E.binary_correct` or similar) combining them with `crate_correct` and the boundary statement;
+- `cargo fv build` running the binary check on every executable and printing a per-executable verdict next to the per-function report (`cargo fv link-proof` stays, for a standalone Lean-checked certificate);
+- a non-vacuity witness for the binary-level theorem on a real executable.
 ## 5. Trusted base by milestone
 
 | After | Trusted |
