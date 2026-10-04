@@ -1794,7 +1794,7 @@ structure Ok : Prop where
   baseKeepsAllocs : L.NeedSlots → Clif.EnvKeepsAllocs L.base
 
 /-- **The machine side of an activation of `g` at depth `M`** entered in `s` with body-entry
-world `w₀`: the ABI entry of a call (the return address may be in `g`'s code), the stack (frame and the callees' budget `K M`), the addresses `G` it
+world `w₀`: the ABI entry of a call (the return address may be in `g`'s code), the stack (frame and the callees' budget `κ M g`, `Budget`), the addresses `G` it
 keeps (outside its stack; containing the code image, which `s` holds), the addresses outside
 its world are `F`, and `w₀` agrees with `s`. -/
 structure MachEntry (κ : Nat → Clif.Function → Nat) (M : Nat) (g : Clif.Function) (F G : BitVec 64 → Prop) (ra : BitVec 64)
