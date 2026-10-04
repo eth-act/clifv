@@ -1365,6 +1365,75 @@ Not done: an entry-level instance for a crate function (the entry premises of `P
 concrete arguments, as `backend_correct_program_witness` does for `f 41`); the witness
 (`NonVacuityLink.lean`) keeps its own copy of the checks.
 
+### Binary level (M9)
+
+#### Stack bound (item 4; 2026-10-05, `agent/bin-stack`, `FV/E2E/StackBound.lean`)
+
+`backend_correct_program` gives the entry activation the callees' stack `L.K M = L.D * M`, with
+`M` the fuel of the whole-program run, i.e. its **step count**: no fixed stack satisfies
+`StackAvail (L.K M)` for every `M`, so at the binary level that premise was unusable. Fix, in two
+layers:
+
+1. **The linking induction with a per-function budget** (`FV/E2E/LinkArm.lean`, mechanical): the
+   callees' stack of an activation of `g` at depth `M` is `κ M g` for any `κ` with
+
+   ```lean
+   def LinkSys.Budget (κ : Nat → Clif.Function → Nat) : Prop :=
+     ∀ M, ∀ g ∈ L.P.funcs, ∀ h, L.Callee g h → frameDrop (L.A h).af + κ M h ≤ κ (M + 1) g
+   ```
+
+   (the internal `Cond`/`progX`/`X`/`MachEntry`/`WorldEntry`/`Thm` take `κ`; the two uses of
+   `K_succ` + `Ok.depth` became `budget_step`). `backend_correct_program_budget` is
+   `backend_correct_program` with `κ M f` for `L.K M`; `backend_correct_program` and `_returned`
+   are unchanged (`κ := fun M _ => L.K M`, `budget_K`).
+2. **A fixed bound where the call graph allows one**: `LinkSys.hybrid c C` (a depth-independent
+   budget `c g = some b` for the functions whose calls never reach a call cycle, `L.K M + C` for
+   the others) is a budget when the bounded functions call only bounded functions that fit
+   (`budget_hybrid`). `backend_correct_program_stack`: for an entry `f` whose budget is `b` at
+   every depth, the stack premises become `frameDrop f + b ≤ sp` and "none of those bytes is
+   code" (`StackRoom` follows, via `AbiEntry.program` and `Ok.imgAddr`), with `F = frameWG b …`,
+   **for every fuel `M`**.
+
+**The checker** (crate level, namespace `E2E.StackBound`): the call graph `edgeB` over-approximates
+`LinkSys.Callee` under `okB` (`edgeB_of_callee`: the functions `g` declares, and when `g` has
+indirect calls every function with a CLIF-image address whose signature one of them matches).
+`budMap` iterates `B(g) = max over callees h of frameDrop h + B(h)` (untrusted);
+`budOkW` checks the inequality on every edge leaving a function with a budget (only this enters the
+proof, `budget_of`). On a cycle no assignment passes (frames are ≥ 16 bytes), so the functions
+whose calls reach a cycle have none (`budBad`) and keep the depth premise.
+
+```lean
+def stackFn (I : LinkInput) (f : Clif.Function) : Nat   -- frameDrop f + bud I f
+def stackB (I : LinkInput) : Option Nat                  -- max stackFn; none if recursive
+def StackStmt (I : LinkInput) (n : String) : Prop        -- ProgStmt with: stackFn I f ≤ sp, no
+                                                          -- code in those bytes, F = frameWG (bud I f) …
+theorem crate_correct_stack (hI : okB I = true) (hS : stackB I = some S) (n : String) : StackStmt I n
+theorem crate_correct_stackN (hI : okB I = true) (hn : goodN I n = true) : StackStmt I n
+theorem stackFn_le (hS : stackB I = some S) (hf : f ∈ (progOf I.results).funcs) : stackFn I f ≤ S
+```
+
+`lake exe link-check` prints the bound (the largest, per entry: the functions no function of the
+program calls; or the functions whose calls reach a cycle) and the generated crate proofs decide
+it (`stack_ok : stackB input = some S`, or for a recursive program `stack_entriesK`) and state
+`correct_stack_i : StackStmt input "…"` for the entries (the shared library `fvcheck` of
+`crate-proofs` is now built from `FV.E2E.StackBound`). The ten crates:
+
+| crate | functions | stack bound (bytes) | largest entries |
+| --- | --- | --- | --- |
+| AArith | 58 | 224 | `pow_u32` 224, `minmax` 80 |
+| BSlices | 59 | 480 | `split_sum` 480, `insertion_sort` 432 |
+| CStructsEnums | 27 | 80 | `point_add` 80, `big_make` 64 |
+| DLoopsIters | 117 | 576 | `chunks_xor` 576, `dot` 544 |
+| EOptionResult | 48 | 352 | `parse_u32` 352, `opt_and_then` 272 |
+| FCrypto | 40 | 1120 | `sha256_compress` 1120, `chacha20_block` 592 |
+| FvDemo | 551 | recursive (a self-recursive function, `cargo fv`'s `__fvself` alias): the calls of 26 functions reach a cycle; the other 525 have a bound (`correct_stack_*` for them) | |
+| GU128 | 19 | 160 | `mac_limbs` 160, `checked_mul_u128` 80 |
+| HDynGeneric | 43 | 336 | `total_area` 336, `dyn_pick` 192 |
+| IAlloc | 49 | 1696 | `vec_squares` 1696, `boxed` 480 |
+
+The bound is the program's own stack (frames, fp/lr, outgoing areas); calls of code outside the
+program (std, the runtime) use stack by their contracts (`BaseOk`), not counted here.
+
 ### Non-vacuity (2026-10-02, `agent/callee-fix`, `FV/E2E/NonVacuity.lean`)
 
 A premise set that cannot hold makes a theorem say nothing. The contract premises on the
