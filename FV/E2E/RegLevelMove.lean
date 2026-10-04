@@ -500,12 +500,86 @@ theorem code_frameKeep {R : RL} (hR : R.Wf) {s s' : Arm.ArmState}
     ∀ k w, R.fb.words[k]? = some w → Arm.read_mem_bytes 4 (R.base + BitVec.ofNat 64 (4 * k)) s' = w :=
   code_keep hR.prog0 hc fun a ha => hm a (code_outside hR ha)
 
+/-- **After a line that is no call, no return into the code**: a state at the line after an
+instruction line other than `bl`/`blr` satisfies `RL.Good`. -/
+theorem RL.good_succ {R : RL} (hR : R.Wf) {j : Nat} {x : Insn} {t : Option Clif.TrapCode}
+    (hj : R.L[j]? = some (.ins x t)) (hx : ∀ n, x ≠ .bl n) (hx' : ∀ r, x ≠ .blr r)
+    {u : Arm.ArmState} (hpc : Arm.r .PC u = R.pcOf (j + 1)) : R.Good u := by
+  left
+  rintro ⟨q, ⟨j', i', t', hj', hcall, rfl⟩, he⟩
+  rw [hpc] at he
+  simp only [RL.pcOf, RL.L] at he hj
+  have hsz : (R.fa.lines.toList.map Line.size).sum ≤ 2 ^ 64 := by
+    rw [layout_sum hR.layout]; exact hR.fit
+  have hl1 := lineOffset_le_size R.fa.lines.toList (j + 1)
+  have hl2 := lineOffset_le_size R.fa.lines.toList (j' + 1)
+  have hs1 := lineOffset_succ R.fa.lines.toList j _ hj
+  have hs2 := lineOffset_succ R.fa.lines.toList j' _ hj'
+  simp only [Line.size] at hs1 hs2
+  rw [BitVec.add_assoc] at he
+  have he2 := congrArg BitVec.toNat ((BitVec.add_right_inj _).mp he)
+  have h4 : (4 : BitVec 64).toNat = 4 := rfl
+  simp only [BitVec.toNat_add, BitVec.toNat_ofNat, h4] at he2
+  have he3 : lineOffset R.fa.lines.toList j = lineOffset R.fa.lines.toList j' := by
+    rw [hs1] at he2 hl1
+    omega
+  have := lineOffset_inj hj hj' he3
+  subst this
+  rw [hj] at hj'
+  cases hj'
+  rcases hcall with ⟨n, rfl⟩ | ⟨r, rfl⟩
+  · exact hx n rfl
+  · exact hx' r rfl
+
+/-- A state with the body's `sp` satisfies `RL.Good`. -/
+theorem RL.good_of_sp {R : RL} {u : Arm.ArmState} (h : spOf u = R.spB) : R.Good u := .inr h
+
+theorem Insn.not_call_of_hooked {x : Insn} (h : x.hooked = false) :
+    (∀ n, x ≠ .bl n) ∧ (∀ r, x ≠ .blr r) :=
+  ⟨fun n e => by subst e; simp [Insn.hooked] at h, fun r e => by subst e; simp [Insn.hooked] at h⟩
+
+theorem execLines_ins : ∀ {env : Env} {ls : List Line} {s s' : Arm.ArmState},
+    execLines env ls s = some s' → ∀ ln ∈ ls, ∃ x t, ln = .ins x t
+  | _, [], _, _, _, _, h => by simp at h
+  | _, .label _ :: _, _, _, h, _, _ => by simp [execLines] at h
+  | _, .word _ _ :: _, _, _, h, _, _ => by simp [execLines] at h
+  | env, .ins i t :: ls, s, s', h, ln, hm => by
+    rcases List.mem_cons.mp hm with rfl | hm
+    · exact ⟨i, t, rfl⟩
+    · simp only [execLines] at h
+      split at h
+      · split at h
+        · exact execLines_ins h ln hm
+        · cases h
+      · cases h
+
+/-- **The states of a straight-line run** (unhooked instruction lines) after its first are no
+return into the code. -/
+theorem RL.good_execLines {R : RL} (hR : R.Wf) {ls : List Line} {j : Nat} {s s' : Arm.ArmState}
+    (hat : ∀ k ln, ls[k]? = some ln → R.fa.lines.toList[j + k]? = some ln)
+    (hhook : ∀ i t, Line.ins i t ∈ ls → i.hooked = false)
+    (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j)
+    (herr : Arm.r .ERR s = .None) (hinter : InterOk (R.envOf j) ls s)
+    (hrun : execLines (R.envOf j) ls s = some s') :
+    ∀ i, 0 < i → i ≤ ls.length → R.Good (iterN R.step i s) := by
+  intro i hi0 hi
+  have hpcs := iterN_execLines_pc (X := R.X) (H := R.H) hR.layout hR.lm hR.fit ls j s s' hat hhook
+    hprog hpc herr hinter hrun i hi
+  obtain ⟨i', rfl⟩ : ∃ i', i = i' + 1 := ⟨i - 1, by omega⟩
+  obtain ⟨ln, hln⟩ : ∃ ln, ls[i']? = some ln := ⟨ls[i'], List.getElem?_eq_getElem (by omega)⟩
+  have hj := hat i' ln hln
+  obtain ⟨x, t, rfl⟩ := execLines_ins hrun ln (List.mem_of_getElem? hln)
+  obtain ⟨hx, hx'⟩ := Insn.not_call_of_hooked (hhook x t (List.mem_of_getElem? hln))
+  have hpcs' : Arm.r .PC (iterN R.step (i' + 1) s) = R.pcOf (j + i' + 1) := hpcs
+  exact R.good_succ hR (j := j + i') hj hx hx' hpcs'
+
 /-- **A move on the machine**: from `Q` at a move item, the machine runs the move's lines and
 reaches `Q` at the next item with `MStep.move`'s store. -/
 theorem realizes_move {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b : Nat} {src dst : Loc}
     {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
     (hq : Q R s (.run ⟨b, .move src dst :: its, m, w⟩)) :
-    ∃ n, Q R (iterN R.step n s) (.run ⟨b, its, upd m dst (m src), w⟩) := by
+    ∃ n, Q R (iterN R.step n s) (.run ⟨b, its, upd m dst (m src), w⟩) ∧
+      ∀ i < n, R.Good (iterN R.step i s) := by
   obtain ⟨j, vb, items, pre, code, ls, ps1, ps2, T, hvb, hit, hsplit, hchk, hcode, hls, htr, hdrop,
     hpc, hst⟩ := hq
   obtain ⟨⟨c, wh, hcm⟩, hLs, hLd, hT, hchk'⟩ := move_facts hit hsplit hchk
@@ -541,8 +615,14 @@ theorem realizes_move {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b : Nat} {src dst
     iterN_execLines hR.layout hR.lm hR.fit ls1' j s s' hat
       (fun i t h => by obtain ⟨i', t', e, hh⟩ := hins _ h; cases e; exact hh)
       (by rw [hst.prog]) (by rw [hpc]; rfl) hst.err (hint _) (hrun _)
-  refine ⟨ls1'.length, j + ls1'.length, vb, items, pre ++ [.move src dst], c2, ls2, ps1, ps2, T, hvb,
-    hit, by rw [hsplit]; simp, hchk', hc2, h2, htr, ?_, ?_, ?_⟩
+  refine ⟨ls1'.length, ⟨j + ls1'.length, vb, items, pre ++ [.move src dst], c2, ls2, ps1, ps2, T, hvb,
+    hit, by rw [hsplit]; simp, hchk', hc2, h2, htr, ?_, ?_, ?_⟩, fun i hi => ?_⟩
+  rotate_right
+  · rcases Nat.eq_zero_or_pos i with rfl | hi0
+    · exact RL.good_of_sp hst.sp
+    · exact R.good_execLines hR hat
+        (fun i t h => by obtain ⟨i', t', e, hh⟩ := hins _ h; cases e; exact hh)
+        (by rw [hst.prog]) hpc hst.err (hint _) (hrun _) i hi0 (by omega)
   · rw [← List.drop_drop, hdrop', List.drop_left]
   · rw [hiter, execLines_pc (hrun ⟨lineOffset R.fa.lines.toList j, (R.lm[·]?)⟩), hpc]
     simp only [RL.pcOf, RL.L]

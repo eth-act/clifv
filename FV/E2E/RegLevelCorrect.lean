@@ -192,7 +192,7 @@ theorem realizes_all {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (Call
   have hck := (lowerRFunc_ok hR.alloc).2.2.2
   cases h with
   | move =>
-    obtain ⟨n, hn⟩ := realizes_move hR hq
+    obtain ⟨n, hn, -⟩ := realizes_move hR hq
     exact fin n _ MStep.move hn
   | @op b k allocs its m w vb i ops outs outs' w' ctl m2 c' hvb hi hops hsz hsem hlen hho hcl hn =>
     have hstep : MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c' :=
