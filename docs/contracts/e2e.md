@@ -213,7 +213,8 @@ value, run as `env.extern` with the argument and result types checked against th
   `TrapsExplicit.tryCallInd`: a `try_call_indirect` does not trap (the callee returns normally).
 * **Contract** `XCallsIndOk env (indSigs f) MR X` (`FV/E2E/RegLevelDriverSem.lean`): for each
   call-site signature, a `blr` (`X.call none (u :: args)`) whose target's low 64 bits are
-  `X.sym n 0` of an extern `n` of `env` returns what `env.extern n` returns (one output per
+  `X.sym n 0` of an extern `n` of `env`, on arguments of the call site's parameter types (as
+  `Clif.callExternAt` checks them), returns what `env.extern n` returns (one output per
   `sigRets`, the results first, the memory relation kept) — the clause `XCallsOk` states for a
   GOT call of a declared extern, for every extern of `env`. With `hsym` (the external
   semantics' symbol addresses are the linked ones) and `MemRel.symbols` it gives the M4
@@ -607,8 +608,9 @@ sharing one copy of code with its caller, as `cargo fv`'s alias of a recursive f
 per call site (`raCall`, `raBlr`); a function with indirect calls (`call_indirect`, `try_call_indirect`) has no link-time
 address itself, the names of `P` and of the base environment have distinct addresses, the base
 externs keep the symbols (`indScope`, `indNoSym`), its indirect-call signatures and the
-functions it may call (`MayCall`: declared, or any other function of `P` with an address) pass
-no `sret` and at most 8 register parameters (`indSig`),
+functions it may call (`MayCall`: declared, or any other function of `P` with an address) with
+the parameter types of one of them (`IndSigMatch`) pass no `sret` and at most 8 register
+parameters (`indSig`),
 and with an outgoing-argument area in `P` the functions with an address have no slots
 (`addrSlots`).
 **Trusted / premises**: the
@@ -907,6 +909,29 @@ bytes. It is vacuous without program callees with slots (`NeedSlots`).
      program function `s(i64 sret, i64)` (x8, x0; one ABI result); the former `blrRegs` failed
      on it (`backend_correct_program_witness`: `GotV (A fE).vcp t "pz"`, `Lu.map (·.2) ≠ regLocs
      fS.sig`).
+9. *Indirect callees restricted by the call-site signature* (agent/link-scope2). `indSig`
+   required every function a function with indirect calls may reach (`MayCall`: every other
+   function with an address) to take register arguments and no `sret`, so one vtable method with
+   an `sret` or stack-passed parameter failed every indirect caller (13 fv-demo functions,
+   CrateCheck). CLIF's `call_indirect` checks the arguments against the call site's `sigN`
+   (`Clif.callExternAt`'s `checkTys`), and the callee's entry checks them against its own
+   parameters (`initState`), so a run reaching `h` from an indirect call with signature `sig` has
+   `AbiParam.tys h.sig.params = AbiParam.tys sig.params` (`LinkSys.IndSigMatch sig h`).
+   * Contracts: `IndCallsRefine`/`IndCallsRefineP` (M4) and `XCallsIndOk` (M6) also assume
+     `vals.map (·.ty) = AbiParam.tys sig.params` (the M4 rules have it from
+     `instOutcome_callIndirect_ok`); `CallPin`'s indirect clause and `CallLg`'s indirect case carry
+     it (`StepPin`). The contracts are premises of `backend_correct_final` (`hXI`) and of
+     `LinkSys.Ok` (`baseXI`, `baseNI`): one more hypothesis each, so weaker.
+   * `Ok.indSig`'s second clause holds only for the `h` with `∃ sig ∈ indSigs g, IndSigMatch sig h`
+     (weaker); `xCallsIndOk` and `xni` derive the match from the callee's `ClifEntry.sig` and the
+     new hypothesis (or, at a declared callee, from `declSig`).
+   * Witness: `k` (9 parameters, the 9th on the stack) gets an address (`symsW`), so the indirect
+     caller `v` may reach it (`MayCall fV fK.name`); no indirect call of `v` has `k`'s parameter
+     types, and `k` needs more than 8 argument registers (the former `indSig` failed;
+     `sigChainB_true`).
+   Not covered: a reachable callee (matching types) with an `sret` parameter or stack-passed
+   arguments; `blrRegs`/`blrTry` at a genuine indirect call still quantify over every function of
+   the site's register arity the caller may reach.
 
 **Non-vacuity** (`FV/E2E/NonVacuityLink.lean`, namespace `E2E.LinkWitness`): the closed program
 `P = {f, g, h, s, k, r, r__fvself, q, v, a2, w, t, u, m, d, e}` (`m`, `d`: the vtable dispatch of
@@ -943,6 +968,8 @@ theorem backend_correct_program_witness :
     fQ ∈ (L F0).P.funcs ∧ fV ∈ (L F0).P.funcs ∧ (∃ info, (L F0).ProgSite fF info fV) ∧
     ¬ Clif.IndFree fV ∧ (∃ info, (A fV).vcp.CallSite info ∧ ∀ n, info.dest ≠ .sym n) ∧
     DeclN fV fQ.name ∧ (L F0).syms fQ.name = some 0x80000 ∧
+    (L F0).MayCall fV fK.name ∧ (∀ sig ∈ indSigs fV, ¬ LinkSys.IndSigMatch sig fK) ∧
+    ¬ (∃ bytes, sigParamBytes fK.sig = .ok bytes ∧ bytes.length ≤ 8) ∧
     fA2 ∈ (L F0).P.funcs ∧ fW ∈ (L F0).P.funcs ∧ (∃ info, (L F0).ProgSite fF info fW) ∧
     (∃ info, (L F0).ProgSite fW info fA2) ∧
     Opt.Legalize128.function128Cert (srcFn 9) = .ok (fA2, certOf 9) ∧
@@ -998,10 +1025,10 @@ environment). The second theorem discharges the entry premises too (`AbiEntry`, 
 `sp0 - 32`, `StackArgsAvoid`, `Rel.holds` (the slot's allocation outside `F0`, `SlotRel`,
 `OutRel` of the 16-byte outgoing area), `hpl`, the returning CLIF run (with the oracle: `t`'s
 slot at its frame address), `native_decide`: `entryFactsB_true`, `callChainB_true`,
-`slotChainB_true`, `vtChainB_true`, `gotChainB_true`, `oneCopyB_true`) for `f` on `41` at depth `M0 = 100` and applies
+`slotChainB_true`, `vtChainB_true`, `gotChainB_true`, `oneCopyB_true`, `sigChainB_true`) for `f` on `41` at depth `M0 = 100` and applies
 `backend_correct_program_returned`. Axioms: standard plus the `_native` axioms of `names`,
 `okB_true`, `entryFactsB_true`, `callChainB_true`, `slotChainB_true`, `vtChainB_true`,
-`gotChainB_true`, `oneCopyB_true` (and the existing
+`gotChainB_true`, `oneCopyB_true`, `sigChainB_true` (and the existing
 `bv_decide`/`native_decide` ones of the backend proofs). The witness found the former `raCall`
 (the return address of every call outside the code of **every** function of `P`, including the
 caller's own) unsatisfiable for every program with a call; it is now stated for the callees of

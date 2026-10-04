@@ -466,7 +466,7 @@ theorem xCallsIndOk_witness {env : Clif.Env} {sigs : List Clif.Signature} (MR : 
     (hnoop : ∀ sig ∈ sigs, ∀ n g, env.extern n = some g → ∀ vals cm rvals cm',
       g vals cm = .returned rvals cm' → cm' = cm) :
     XCallsIndOk env sigs MR (witnessX sym tp) := by
-  intro sig hin n g sl cm w u args vals rvals cm' hg _ _ _ hmr hret hrl
+  intro sig hin n g sl cm w u args vals rvals cm' hg _ _ _ hmr hret hrl _
   have h0 : rvals = [] := List.eq_nil_of_length_eq_zero (by rw [hrl, (hsig sig hin).2]; rfl)
   subst h0
   rw [hnoop sig hin n g hg _ _ _ _ hret]

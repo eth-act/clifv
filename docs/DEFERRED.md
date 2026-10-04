@@ -144,10 +144,11 @@ premises. Deferred, in order:
     program-level legalisation refinement (`Opt.Legal.check_refines` per function under a
     linked environment satisfying `ExtLegal`, by induction on the call depth; `NoMemTrap` of
     callee runs, `EnvKeepsAllocs` of the linked environment).
-  - recursion through a pointer (the caller's own address), indirect callees with stack-passed
-    or `sret` parameters; at a genuine indirect call (`call_indirect`) `blrRegs`/`blrTry` still
-    quantify over every function the caller may reach with the site's arity (`MayCall`), not
-    only the ones its signature admits.
+  - recursion through a pointer (the caller's own address); reachable indirect callees (whose
+    parameter types match an indirect call of the caller, `IndSigMatch`; agent/link-scope2
+    restricted `indSig` to those) with stack-passed or `sret` parameters; at a genuine indirect
+    call (`call_indirect`) `blrRegs`/`blrTry` still quantify over every function the caller may
+    reach with the site's arity (`MayCall`), not only the ones its signature admits.
   - a function calling itself under its own name (excluded at the CLIF level by `InSubset (P.only f)`; `cargo fv`'s alias covers it), float parameters; a
     depth-free machine (monotonicity of `linkedCall` in the depth, needs base hooks preserving
     errors).

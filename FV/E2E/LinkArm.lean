@@ -511,6 +511,12 @@ resolves it program-wide). -/
 def MayCall (g : Clif.Function) (n : String) : Prop :=
   DeclN g n ∨ (¬ Clif.IndFree g ∧ n ≠ g.name ∧ L.syms n ≠ none)
 
+/-- An indirect call with the call-site signature `sig` can enter `h`: `h`'s parameter types are
+`sig`'s (`Clif.callExternAt` checks the arguments against `sig`, and `h`'s entry against its own
+parameters, so a run entering `h` with other types is stuck). -/
+def IndSigMatch (sig : Clif.Signature) (h : Clif.Function) : Prop :=
+  Clif.AbiParam.tys h.sig.params = Clif.AbiParam.tys sig.params
+
 /-- `h` is a callee of `g`: a call site of `g`'s compiled code calls it, `g` declares it, or `g`
 may reach it (`MayCall`: through a pointer). -/
 def Callee (g h : Clif.Function) : Prop :=
@@ -1495,11 +1501,13 @@ structure Ok : Prop where
   calls no pointer to itself) -/
   indScope : ∀ g ∈ L.P.funcs, ¬ Clif.IndFree g → Clif.IndScope L.P L.base L.syms
   indNoSym : ∀ g ∈ L.P.funcs, ¬ Clif.IndFree g → L.syms g.name = none
-  /-- the indirect calls of `g` and the functions it may reach pass their arguments in registers
-  and return no `sret` pointer -/
+  /-- the indirect calls of `g` and the functions it may reach with the parameter types of one of
+  them (`IndSigMatch`: the others are unreachable, the CLIF semantics checks the types) pass
+  their arguments in registers and return no `sret` pointer -/
   indSig : ∀ g ∈ L.P.funcs, ¬ Clif.IndFree g →
     (∀ sig ∈ indSigs g, sig.params.any (·.purpose == .sret) = false) ∧
-    ∀ h ∈ L.P.funcs, L.MayCall g h.name → h.sig.params.any (·.purpose == .sret) = false ∧
+    ∀ h ∈ L.P.funcs, L.MayCall g h.name → (∃ sig ∈ indSigs g, IndSigMatch sig h) →
+      h.sig.params.any (·.purpose == .sret) = false ∧
       ∃ bytes, sigParamBytes h.sig = .ok bytes ∧ bytes.length ≤ 8
   /-- when a function of `P` has an outgoing-argument area and one has indirect calls, the
   functions with an address have no stack slots (an indirect call enters no slotted function) -/
@@ -3235,21 +3243,20 @@ theorem xCallsIndOk (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g : Cl
     XCallsIndOk (L.envOf M g c) (indSigs g)
       (RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩
         g c) (L.X M g F) := by
-  intro sig hsig n gsem sl cm w u args vals rvals cm' hgs hu hl8 hall hmr hret hrl
+  intro sig hsig n gsem sl cm w u args vals rvals cm' hgs hu hl8 hall hmr hret hrl hty
   rcases L.envOf_some hgs with ⟨hpf, hgs⟩ | ⟨h, hpf, hdecl, G0, hgs, hG0⟩
   · have hs : symCallee L.Xb L.P (lo64 u) = none := by
       show L.P.funcs.find? (fun h' => L.Xb.sym h'.name 0 == lo64 u) = none
       rw [hu]; exact (L.find_sym hL n).2 hpf
     obtain ⟨outs, w', hx, h1, h2, h3⟩ := hL.baseXI g hg F (L.A g).af.slotBase
       (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase c sig hsig n gsem sl cm w u args vals rvals
-      cm' hgs hu hl8 hall hmr hret hrl
+      cm' hgs hu hl8 hall hmr hret hrl hty
     exact ⟨outs, w', by rw [L.X_none hs]; exact hx, h1, h2, h3⟩
   · obtain ⟨hh, hname⟩ := Clif.Program.func?_some hpf
     subst hname
     have hnf : ¬ Clif.IndFree g := fun hif => by
       rw [indSigs_nil_of_indFree hif] at hsig; cases hsig
     obtain ⟨hsigNS, hdeclS⟩ := hL.indSig g hg hnf
-    obtain ⟨hnsr, bytes, hb, hb8⟩ := hdeclS h hh hdecl
     have hs : symCallee L.Xb L.P (lo64 u) = some h := by
       show L.P.funcs.find? (fun h' => L.Xb.sym h'.name 0 == lo64 u) = some h
       rw [hu]; exact (L.find_sym hL h.name).1 h hpf
@@ -3267,6 +3274,8 @@ theorem xCallsIndOk (hL : L.Ok) {M : Nat} (ih : 0 < M → L.Thm (M - 1)) {g : Cl
     have hvl : vals.length = h.sig.params.length := by
       have := congrArg List.length hce.sig
       simpa using this
+    -- the call entered `h`: its parameter types are the call site's
+    obtain ⟨hnsr, bytes, hb, hb8⟩ := hdeclS h hh hdecl ⟨sig, hsig, hce.sig.symm.trans hty⟩
     have hargs : ArgsAt h.sig vals args w := (argsAt_iff_of_regs hb hb8 hvl).mpr hall
     have hsav : StackArgsAvoid F h.sig vals w := by
       intro off v hm
@@ -3502,7 +3511,14 @@ theorem xni (hL : L.Ok) (hN : L.NeedNI) {M : Nat} (ih : 0 < M → L.Thm (M - 1))
       · have hnf : ¬ Clif.IndFree g := fun hif => by
           rw [indSigs_nil_of_indFree hif] at hsig; cases hsig
         obtain ⟨-, hdeclS⟩ := hL.indSig g hg hnf
-        obtain ⟨-, bytes, hb, hb8⟩ := hdeclS h hh hdecl
+        -- the call entered `h`: its parameter types are the call's signature's
+        have hmatch : IndSigMatch sig h := by
+          rcases hkind with ⟨e', he', hen', hes⟩ | ⟨-, hty⟩
+          · have := hL.declSig g hg e' he' h (by rw [hen']; exact hpf)
+            rw [← hes, this]
+            rfl
+          · exact hce.sig.symm.trans hty
+        obtain ⟨-, bytes, hb, hb8⟩ := hdeclS h hh hdecl ⟨sig, hsig, hmatch⟩
         exact ⟨(argsAt_iff_of_regs hb hb8 hvl).mpr hall, (argsAt_iff_of_regs hb hb8 hvl).mpr hall⟩
     rcases hd with ⟨rfl, rfl⟩ | ⟨rfl, u, rfl, hu⟩
     · rw [L.X_prog hpf] at hx hx'

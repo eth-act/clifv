@@ -115,7 +115,7 @@ theorem call_ind_lowerInstOk {Rd : BitVec 64 → Prop}
       have hd0 := hd
       rw [hfr, hctx.func, hs] at hd
       cases hd
-      have hpc := hpin.2 sig callee args s x vals name g rvals cm' rfl hd0 hcv hvals hsym hg hgo
+      have hpc := hpin.2 sig callee args s x vals name g rvals cm' rfl hd0 hcv hvals hsym hg hgo hty
       have hvl : vals.length = s.params.length := by
         have := congrArg List.length hty; simpa [Clif.AbiParam.tys] using this
       have hal : args.length = s.params.length := (getMany_ok hvals).1 ▸ hvl
@@ -135,7 +135,7 @@ theorem call_ind_lowerInstOk {Rd : BitVec 64 → Prop}
       obtain ⟨outs, w', hi, hol, hro, hmr'⟩ := hcall s hin name g fr.slots cm w x.toNat
         (.vreg callee .int) (retPairs (args.zip ((abiArgIdx s.params 0).map Reg.x)))
         (callDefs (outDefs st.nextVreg (sigRets s).length)) (ρ callee) (args.map ρ) vals rvals cm'
-        hg hsym hlo hdl (by omega) (allHold_args hvh hvals) hmr hpc hgo hrN
+        hg hsym hlo hdl (by omega) (allHold_args hvh hvals) hmr hpc hgo hrN hty
       have hol' : outs.length = (outDefs st.nextVreg (sigRets s).length).length := by
         rw [hol]; simp [callDefs, outDefs]
       rw [← huses] at hi

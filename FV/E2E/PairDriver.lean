@@ -76,10 +76,12 @@ theorem initIn_zof {Γ : Rel} {f : Clif.Function} {c : BitVec 64} {sl : List (Cl
 /-! ## The premises on the external semantics -/
 
 /-- A call of a function, as its CLIF call pins it: a declared extern (`exts`) or an indirect
-call (signature in `sigs`) of `n`, whose CLIF semantics in `env` returns on `vals` from `cm`. -/
+call (signature in `sigs`, `vals` of its parameter types: `Clif.callExternAt` checks them) of
+`n`, whose CLIF semantics in `env` returns on `vals` from `cm`. -/
 def CallLg (env : Clif.Env) (exts : List Clif.ExtFunc) (sigs : List Clif.Signature) (n : String)
     (sig : Clif.Signature) (vals : List Clif.Val) (cm : Clif.Mem) : Prop :=
-  ((∃ e ∈ exts, e.name = n ∧ e.sig = sig) ∨ sig ∈ sigs) ∧
+  ((∃ e ∈ exts, e.name = n ∧ e.sig = sig) ∨
+      sig ∈ sigs ∧ vals.map (·.ty) = Clif.AbiParam.tys sig.params) ∧
     ∃ g rv cm', env.extern n = some g ∧ g vals cm = .returned rv cm'
 
 /-- **Non-interference of the external semantics** at the calls `Lg` admits (extern `n`,
@@ -144,10 +146,10 @@ theorem callPin_stepPin {env : Clif.Env} {f : Clif.Function} {inst : Clif.Inst} 
     {cm : Clif.Mem} (hf : fr.func = f) (hsig : IndSigOk f (indSigs f) inst) :
     CallPin (StepPin env (f.externs.map (·.2)) (indSigs f) inst fr cm) env inst fr cm := by
   refine ⟨fun fn args e vals g rvals cm' hi he hv hg hgo => ?_,
-    fun sg callee args s x vals n g rvals cm' hi hs hc hv hsym hg hgo => ?_⟩
+    fun sg callee args s x vals n g rvals cm' hi hs hc hv hsym hg hgo hty => ?_⟩
   · refine ⟨rfl, ⟨.inl ⟨e, externsIn_self f fn e (hf ▸ he), rfl, rfl⟩, g, rvals, cm', hg, hgo⟩,
       .inl ⟨fn, args, e, hi, he, rfl, hv⟩⟩
-  · refine ⟨rfl, ⟨.inr (hsig sg callee args s hi (hf ▸ hs)).1, g, rvals, cm', hg, hgo⟩,
+  · refine ⟨rfl, ⟨.inr ⟨(hsig sg callee args s hi (hf ▸ hs)).1, hty⟩, g, rvals, cm', hg, hgo⟩,
       .inr ⟨sg, callee, args, hi, hs, hv⟩⟩
 
 /-- **The callee lockstep of a pinned step**, from `XNI`: two pinned calls (`CallG`) of the
@@ -511,11 +513,11 @@ theorem tryIndCalls_pair (hc : Compiled f k vc vcp rf af fa fb)
   have hII : InitIn (fun b => ¬ Zof F D cm b) cm := initIn_zof (Γ := Γ) hm1 D
   have hpin : CallPin Pc env (.callIndirect et.sig callee args) fr cm := by
     refine ⟨(fun _ _ _ _ _ _ _ h => by cases h), fun sg cl ar s x vals n gg rvals cm' hi' hs hc' hv
-      hsy hg hgo => ?_⟩
+      hsy hg hgo hty => ?_⟩
     cases hi'
     rw [hfg, hsd] at hs
     cases hs
-    exact ⟨rfl, ⟨.inr hsig, gg, rvals, cm', hg, hgo⟩, .inr ⟨_, _, _, rfl, hfg ▸ hsd, hv⟩⟩
+    exact ⟨rfl, ⟨.inr ⟨hsig, hty⟩, gg, rvals, cm', hg, hgo⟩, .inr ⟨_, _, _, rfl, hfg ▸ hsd, hv⟩⟩
   have r1 := L.run fr cm ρ q.1 hfr hvh hdfg hm1 hII hpin
   have r2 := L.run fr cm ρ q.2 hfr hvh hdfg hm2 hII hpin
   have hstep := guardedStep (D := D) hNI hTls ⟨fa.k, af.slotBase⟩

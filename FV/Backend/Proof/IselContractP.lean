@@ -41,7 +41,8 @@ def CallPin (Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → P
   (∀ sig callee args s x vals n g rvals cm', inst = .callIndirect sig callee args →
     fr.func.sigDecls.lookup sig = some s → fr.get callee = .ok ⟨.i64, x⟩ →
     fr.getMany args = .ok vals → cm.symbols n = some x.toNat → env.extern n = some g →
-    g vals cm = .returned rvals cm' → Pc n s vals cm)
+    g vals cm = .returned rvals cm' → vals.map (·.ty) = Clif.AbiParam.tys s.params →
+    Pc n s vals cm)
 
 /-- **`lower` on a non-terminator, pinned** (`LowerInstOkR` whose run also assumes the pinned
 CLIF call `CallPin Pc`). -/
@@ -81,7 +82,7 @@ theorem LowerInstOkP.toOk
     LowerInstOk isem MR env p ctx inst results st rss st' ms :=
   ⟨h.mono, h.defs, fun fr cm ρ w hf hv hd hmr =>
     h.run fr cm ρ w hf hv hd hmr (fun _ _ _ => trivial) ⟨fun _ _ _ _ _ _ _ _ _ _ _ _ => trivial,
-      fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ => trivial⟩⟩
+      fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ => trivial⟩⟩
 
 end
 
@@ -134,6 +135,7 @@ def IndCallsRefineP (Pc : String → Clif.Signature → List Clif.Val → Clif.M
     ds.length = (sigRets sig).length → vals.length ≤ 8 → AllHold vals args → MR sl cm w →
     Pc n sig vals cm →
     g vals cm = .returned rvals cm' → rvals.length = sig.returns.length →
+    vals.map (·.ty) = Clif.AbiParam.tys sig.params →
     ∃ outs w', isem (.call ⟨.reg r, us, ds⟩) (u :: args) w = some (outs, w', .next) ∧
       outs.length = ds.length ∧ PrefixHold rvals outs ∧ MR sl cm' w') ∧
   (∀ sig ∈ sigs, ∀ (n : String) g (sl : List (Clif.SlotId × Nat)) (cm : Clif.Mem)
@@ -143,6 +145,7 @@ def IndCallsRefineP (Pc : String → Clif.Signature → List Clif.Val → Clif.M
     (sigRets sig).length ≤ ds.length → vals.length ≤ 8 → AllHold vals args → MR sl cm w →
     Pc n sig vals cm →
     g vals cm = .returned rvals cm' → rvals.length = sig.returns.length →
+    vals.map (·.ty) = Clif.AbiParam.tys sig.params →
     ∃ outs w', isem (.tryCall ⟨.reg r, us, ds⟩ ti) (u :: args) w =
         some (outs, w', .goto ti.handlers.length) ∧
       outs.length = ds.length ∧ PrefixHold rvals outs ∧ MR sl cm' w')
@@ -151,10 +154,10 @@ theorem IndCallsRefine.toP {env : Clif.Env} {sigs : List Clif.Signature} {MR : M
     {isem : Sem} (h : IndCallsRefine env sigs MR isem)
     (Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop) :
     IndCallsRefineP Pc env sigs MR isem :=
-  ⟨fun sig hin n g sl cm w a r us ds u args vals rvals cm' a1 a2 a3 a4 a5 a6 a7 _ a9 a10 =>
-    h.1 sig hin n g sl cm w a r us ds u args vals rvals cm' a1 a2 a3 a4 a5 a6 a7 a9 a10,
-   fun sig hin n g sl cm w a r us ds ti u args vals rvals cm' a1 a2 a3 a4 a5 a6 a7 _ a9 a10 =>
-    h.2 sig hin n g sl cm w a r us ds ti u args vals rvals cm' a1 a2 a3 a4 a5 a6 a7 a9 a10⟩
+  ⟨fun sig hin n g sl cm w a r us ds u args vals rvals cm' a1 a2 a3 a4 a5 a6 a7 _ a9 a10 a11 =>
+    h.1 sig hin n g sl cm w a r us ds u args vals rvals cm' a1 a2 a3 a4 a5 a6 a7 a9 a10 a11,
+   fun sig hin n g sl cm w a r us ds ti u args vals rvals cm' a1 a2 a3 a4 a5 a6 a7 _ a9 a10 a11 =>
+    h.2 sig hin n g sl cm w a r us ds ti u args vals rvals cm' a1 a2 a3 a4 a5 a6 a7 a9 a10 a11⟩
 
 /-- `CallRuleOk` with the pinned obligation. -/
 def CallRuleOkP (Rd : BitVec 64 → Prop)
@@ -358,7 +361,7 @@ theorem LowerTryOkP.toOk {isem : Sem} {MR : MemRelT} {env : Clif.Env} {p : Clif.
     LowerTryOk isem MR env p ctx ci info st st' ms :=
   ⟨h.mono, h.shape, fun fr cm ρ w hf hv hd hmr =>
     h.run fr cm ρ w hf hv hd hmr (fun _ _ _ => trivial) ⟨fun _ _ _ _ _ _ _ _ _ _ _ _ => trivial,
-      fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ => trivial⟩⟩
+      fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ => trivial⟩⟩
 
 /-- `TryRuleOk` with the pinned obligation. -/
 def TryRuleOkP (Rd : BitVec 64 → Prop)
