@@ -429,6 +429,30 @@ theorem OutsideCall.mono {I : LinkInput} {roB : BitVec 64 → Option (BitVec 8)}
     fun hb => ((h.valid a n hv).2 k hk).2 ⟨hb.1, by have := hb.2; omega⟩⟩⟩
   symbols := h.symbols
 
+/-- A returning whole-program CLIF run of `f` satisfies `TrapsExplicit` (as in
+`backend_correct_program_returned`): the premise is needed only for trapping runs. -/
+theorem trapsExplicit_of_run {L : LinkSys} (hL : L.Ok) {f : Clif.Function} (hf : f ∈ L.P.funcs)
+    {M : Nat} {args : List Clif.Val} {cs : Clif.State} {vals : List Clif.Val} {cm : Clif.Mem}
+    (hcs : ClifEntry f args cs) (hsym : cs.mem.symbols = L.syms)
+    (hrun : Clif.runLoop L.base L.P (M + 1) cs = .returned vals cm) :
+    TrapsExplicit (Clif.linkEnvN L.P L.base M) (L.P.only f) cs := by
+  have hIf : Clif.LInv (L.P.only f) cs := runInv_entry (by simp [Clif.Program.only]) hcs
+  obtain ⟨m, hm⟩ := Clif.runLoop_linkN (base := L.base) (syms := L.syms) M hL.names hf hL.free
+    (hL.indScope f hf) (E := Clif.linkEnvN L.P L.base M) rfl (fun _ _ => rfl) (fun _ _ _ _ => rfl)
+    (M + 1) cs (Nat.le_refl _) (runInv_entry hf hcs) hIf
+    (fun _ => hsym) (by rw [hrun]; exact fun _ h => nomatch h)
+    (by rw [hrun]; exact fun h => nomatch h)
+  rw [hrun] at hm
+  refine trapsExplicit_of_returned (fun hnf s hr g' hg' => ?_) hm
+  rw [hcs.func] at hnf
+  simp only [Clif.Program.only, List.mem_cons, List.not_mem_nil, or_false] at hg'
+  subst hg'
+  have hPf : ∀ g ∈ (L.P.only g').funcs, Clif.LinkFree g := fun g hg => by
+    simp only [Clif.Program.only, List.mem_cons, List.not_mem_nil, or_false] at hg
+    subst hg; exact hL.free g hf
+  rw [(reach_symbols hPf (Clif.linkEnvN_keeps hL.free (hL.indScope g' hf hnf).keep) hr hIf).1, hsym]
+  exact hL.indNoSym g' hf hnf
+
 /-! ## The binary facts -/
 
 /-- **`backend_correct_program` for `n` with a depth-independent callees' budget** `bud f` (the
