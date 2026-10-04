@@ -10,11 +10,16 @@
 //!
 //! * `fns/<i>.clif`: the compiled CLIF with every name replaced by the symbol it is linked as
 //!   (local symbols renamed by the merge, `c_LdataN` → the data symbol); `fns/<i>.ra.json`;
-//! * `link.json`: the functions, and the link map's address of every function (its Lean code:
-//!   the `__fvlean$` marker) and of every name the functions refer to.
+//! * `link.json`: the functions; the data objects they reach (`data`: `clif-data-export`'s
+//!   `; data:` lines, renamed likewise; an object the merge left local, the assembler's
+//!   `.LdataN`, is named `.LdataN@<unit tag>` and found in the link map under its object file);
+//!   and the link map's address of every function (its Lean code: the `__fvlean$` marker) and
+//!   of every name the functions and data objects refer to.
 //!
-//! `link-check` then evaluates the checker `E2E.LinkCheck.okB` on it and (with `--lean`) writes
-//! the Lean file that proves `LinkSys.Ok` for the crate by `native_decide`.
+//! `link-check` then evaluates the checker `E2E.LinkCheck.okB` and the binary checks of
+//! `E2E.BinCheck` (the executable's code, data objects and symbol table against the program) on
+//! it and (with `--lean`) writes the Lean file that proves `LinkSys.Ok` and `BinOk` for the crate
+//! by `native_decide`.
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::ffi::OsString;
 use std::fs;
@@ -88,25 +93,37 @@ fn input_object(text: &str) -> String {
 struct LinkMap {
     /// symbol → its addresses (a local name may occur in several objects)
     syms: HashMap<String, BTreeSet<u64>>,
+    /// (object file name, symbol) → its addresses
+    local: HashMap<(String, String), BTreeSet<u64>>,
     /// the object file names linked
     objects: BTreeSet<String>,
 }
 
 fn read_map(p: &Path) -> Result<LinkMap, String> {
     let text = fs::read_to_string(p).map_err(|e| format!("{}: {e}", p.display()))?;
-    let mut m = LinkMap { syms: HashMap::new(), objects: BTreeSet::new() };
+    let mut m = LinkMap { syms: HashMap::new(), local: HashMap::new(), objects: BTreeSet::new() };
+    let mut cur = String::new();
     for l in text.lines() {
         match parse_map_line(l) {
             Some(MapLine::Input(t)) => {
-                m.objects.insert(input_object(&t));
+                cur = input_object(&t);
+                m.objects.insert(cur.clone());
             }
             Some(MapLine::Symbol(s, a)) => {
+                m.local.entry((cur.clone(), s.clone())).or_default().insert(a);
                 m.syms.entry(s).or_default().insert(a);
             }
             _ => {}
         }
     }
     Ok(m)
+}
+
+/// The CLIF name of a data object the merge left local (`c_LdataN`, the assembler's `.LdataN`,
+/// which repeats across codegen units) as its symbol `.LdataN` qualified by the unit's tag:
+/// `.LdataN@<tag>` (the binary checks look up `.LdataN` in the executable's symbol table).
+fn local_data_name(clif: &str, tag: &str) -> Option<String> {
+    clif.strip_prefix("c_").filter(|n| n.starts_with("Ldata")).map(|n| format!(".{n}@{tag}"))
 }
 /// The data objects of a codegen unit (`clif-data-export`'s `; data: %name [writable] = …`
 /// lines) with the names their contents refer to.
@@ -130,11 +147,15 @@ fn read_data_refs(p: &Path) -> HashMap<String, Vec<String>> {
     m
 }
 
-/// The bytes of the function `name` at `addr` in the executable (its symbol's size).
-fn exe_code(file: &object::File, addr: u64, name: &str) -> Option<Vec<u8>> {
-    use object::{Object, ObjectSection, ObjectSymbol};
-    let sym = file.symbols().find(|s| s.address() == addr && s.name() == Ok(name) && s.size() > 0)?;
-    file.sections().find_map(|sec| sec.data_range(addr, sym.size()).ok().flatten()).map(<[u8]>::to_vec)
+/// The `; data:` lines of a codegen unit's data objects, by object name.
+fn read_data_lines(p: &Path) -> HashMap<String, String> {
+    let mut m = HashMap::new();
+    for l in fs::read_to_string(p).unwrap_or_default().lines() {
+        let Some(rest) = l.strip_prefix("; data: %") else { continue };
+        let name: String = rest.chars().take_while(|c| is_name_char(*c)).collect();
+        m.insert(name, l.to_string());
+    }
+    m
 }
 
 /// The defined symbols of an executable: name → addresses.
@@ -300,8 +321,6 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
         return Err(format!("no Lean-compiled codegen unit of {exe}{} was kept", o.krate.as_deref().map(|k| format!(" of crate {k}")).unwrap_or_default()));
     }
     let _ = fs::remove_dir_all(&o.out);
-    let exe_data = fs::read(&exe).map_err(|e| format!("{exe}: {e}"))?;
-    let exe_file = object::File::parse(&*exe_data).map_err(|e| format!("{exe}: {e}"))?;
     let fns_dir = o.out.join("fns");
     fs::create_dir_all(&fns_dir).map_err(|e| format!("{}: {e}", fns_dir.display()))?;
     let mut funcs = Vec::new();
@@ -311,13 +330,27 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
     // functions whose address is in a data object the functions reach (vtables): CLIF image
     // symbols, so that an indirect call through them resolves
     let mut data_fns: BTreeSet<String> = BTreeSet::new();
+    // the reachable data objects (`; data:` lines renamed to the linked symbols; the binary
+    // checks compare them with the executable's bytes)
+    let mut data_lines: Vec<String> = Vec::new();
+    // the addresses of the data objects the merge left local (`local_data_name`)
+    let mut local_addr: BTreeMap<String, u64> = BTreeMap::new();
     for (obj, j) in &cgus {
-        let data = cgu_dir.get(obj).map(|d| read_data_refs(&d.join("data-unopt.clif"))).unwrap_or_default();
+        let unopt = cgu_dir.get(obj).map(|d| d.join("data-unopt.clif"));
+        let data = unopt.as_deref().map(read_data_refs).unwrap_or_default();
+        let lines = unopt.as_deref().map(read_data_lines).unwrap_or_default();
         let mut start: Vec<String> = Vec::new();
-        let names: BTreeMap<String, String> = j["names"]
+        let mut names: BTreeMap<String, String> = j["names"]
             .as_object()
             .map(|m| m.iter().filter_map(|(k, v)| v.as_str().map(|v| (k.clone(), v.to_string()))).collect())
             .unwrap_or_default();
+        // a renamed function's self-call alias `f__fvself` (`link-check` pairs it with `f` by
+        // name) is renamed with it
+        let aliases: Vec<(String, String)> =
+            names.iter().map(|(k, v)| (format!("{k}__fvself"), format!("{v}__fvself"))).collect();
+        for (k, v) in aliases {
+            names.entry(k).or_insert(v);
+        }
         for f in j["functions"].as_array().into_iter().flatten() {
             let fin = f["final"].as_str().unwrap_or_default().to_string();
             if !f["verified"].as_bool().unwrap_or(false) {
@@ -341,31 +374,39 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
             fs::copy(&ra, &rp).map_err(|e| format!("{}: {e} (rebuild with --keep-temps)", ra.display()))?;
             referenced.extend(seen);
             fn_addr.insert(fin.clone(), addr);
-            // the function's bytes in the executable (link-check compares them with the words
-            // it compiles, outside relocated fields)
-            let bin = exe_code(&exe_file, addr, &fin).map(|b| {
-                let bp = fns_dir.join(format!("{i}.bin"));
-                fs::write(&bp, b).map(|_| format!("fns/{i}.bin")).map_err(|e| format!("{}: {e}", bp.display()))
-            });
-            let bin = match bin {
-                Some(r) => Some(r?),
-                None => None,
-            };
             funcs.push(serde_json::json!({
                 "name": fin,
                 "clif": format!("fns/{i}.clif"),
                 "ra": format!("fns/{i}.ra.json"),
-                "bin": bin,
                 "object": obj,
                 "symbol": f["symbol"],
             }));
         }
         // the data objects reachable from the functions' names, and the functions they hold
+        let tag = cgu_dir.get(obj).and_then(|d| d.file_name()).map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+        let mut dnames = names.clone();
+        for d in data.keys() {
+            if dnames.contains_key(d) {
+                continue;
+            }
+            if let Some(l) = local_data_name(d, &tag) {
+                let sym = l.split('@').next().unwrap_or_default().to_string();
+                if let Some(a) = map.local.get(&(obj.clone(), sym)).filter(|a| a.len() == 1).and_then(|a| a.iter().next()) {
+                    local_addr.insert(l.clone(), *a);
+                }
+                dnames.insert(d.clone(), l);
+            }
+        }
         let mut seen: BTreeSet<String> = BTreeSet::new();
         let mut todo: Vec<String> = start.into_iter().filter(|n| data.contains_key(n)).collect();
         while let Some(d) = todo.pop() {
             if !seen.insert(d.clone()) {
                 continue;
+            }
+            if let Some(l) = lines.get(&d) {
+                let (renamed, names_in) = rename_clif(l, &dnames);
+                data_lines.push(renamed);
+                referenced.extend(names_in);
             }
             for r in data.get(&d).into_iter().flatten() {
                 if data.contains_key(r) {
@@ -386,6 +427,10 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
         if fn_addr.contains_key(n) {
             continue;
         }
+        if let Some(a) = local_addr.get(n) {
+            addrs.push((n.clone(), *a));
+            continue;
+        }
         match exe_syms.get(n) {
             Some(a) if a.len() == 1 => addrs.push((n.clone(), *a.iter().next().unwrap_or(&0))),
             Some(a) => unresolved.push(format!("{n} (defined {} times)", a.len())),
@@ -399,6 +444,7 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
         "addrs": addrs,
         "unresolved": unresolved,
         "data_syms": data_fns,
+        "data": data_lines,
         "skipped": skipped,
     });
     let lp = o.out.join("link.json");

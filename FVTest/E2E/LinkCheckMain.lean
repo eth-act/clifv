@@ -1,3 +1,4 @@
+import FV.E2E.BinCheck
 import FV.E2E.StackBound
 
 /-!
@@ -78,28 +79,139 @@ def detail (I : LinkInput) (P : Clif.Program) (g : Clif.Function) (a : Art) (che
     (if S g.name == none then [] else ["indNoSym: the function's own address is taken"])
   else []
 
-/-- The compiled words of `a` against the executable's bytes `b` at its address: equal outside
-relocated fields; a `bl` (`call26`) reaches its symbol's link-map address. -/
-def imageDiff (I : LinkInput) (a : Art) (b : ByteArray) : List String := Id.run do
-  let ws := a.fb.words
+/-! ## The binary checks (`FV/E2E/BinCheck.lean`) on the executable -/
+
+open E2E.Elf E2E.BinCheck
+
+/-- `0x…` -/
+def hexN (n : Nat) : String := "0x" ++ String.ofList (Nat.toDigits 16 n)
+
+/-- The bytes of the image range `[a, a + n)` as file chunks (inside `p_filesz`). -/
+def fileChunks (file : ByteArray) (phs : List Phdr) (a n : Nat) : Excerpt :=
+  phs.filterMap fun p =>
+    if p.type != 1 then none else
+    let lo := max a p.vaddr
+    let hi := min (a + n) (p.vaddr + p.filesz)
+    if lo < hi then
+      let off := p.offset + (lo - p.vaddr)
+      some (off, file.extract off (off + (hi - lo)))
+    else none
+
+/-- The word at `x` of the loaded image of `r`. -/
+def wordIn (r : Rd) (phs : List Phdr) (x : BitVec 64) : Option (BitVec 32) :=
+  readN (memIn r phs) 4 x
+
+/-- The image ranges `ArtOk`'s check of `a` reads: its code, and the GOT slots of its
+`adrp`/`ldr` pairs. -/
+def artRanges (r : Rd) (phs : List Phdr) (a : Art) : List (Nat × Nat) :=
+  (a.base.toNat, 4 * a.fb.words.size) :: a.fb.relocs.filterMap fun rl =>
+    if rl.type == .adrGotPage then
+      match wordIn r phs (wAt a rl.offset), wordIn r phs (wAt a (rl.offset + 4)) with
+      | some x0, some x1 =>
+        if x0 != nopW && x1.toNat / 2 ^ 22 == 0x3e5 then
+          some (gotOf (wAt a rl.offset).toNat x0 x1, 8)
+        else none
+      | _, _ => none
+    else none
+
+/-- What differs between the compiled function `a` and the executable (`artB`'s failures). -/
+def artDiag (I : LinkInput) (r : Rd) (phs : List Phdr) (a : Art) : List String := Id.run do
+  let m := memIn r phs
   let mut out : List String := []
-  if b.size != 4 * ws.size then
-    out := out ++ [s!"{b.size} bytes in the executable, {4 * ws.size} compiled"]
-  for k in [0:min ws.size (b.size / 4)] do
-    let x : BitVec 32 := BitVec.ofNat 32 (b[4*k]!.toNat + 256 * b[4*k+1]!.toNat +
-      65536 * b[4*k+2]!.toNat + 16777216 * b[4*k+3]!.toNat)
-    match a.fb.relocs.find? (·.offset == 4 * k) with
-    | none =>
-      if x != ws[k]! then out := out ++ [s!"word {k}: executable {x.toHex}, compiled {ws[k]!.toHex}"]
-    | some r =>
-      if r.type == .call26 then
-        let imm : Nat := x.toNat % (2 ^ 26 : Nat)
-        let off : Int := if imm < 2 ^ 25 then (imm : Int) else (imm : Int) - (2 ^ 26 : Int)
-        let tgt : Int := (a.base.toNat : Int) + 4 * (k : Int) + 4 * off
-        match I.addrs.lookup ((I.aliases.lookup r.sym).getD r.sym) with
-        | some t => if tgt != (t : Int) then out := out ++ [s!"word {k}: bl {r.sym} reaches {tgt}, its address is {t}"]
-        | none => pure ()
+  let w (x : Option (BitVec 32)) : String := match x with | some v => v.toHex | none => "(none)"
+  for k in [0:a.fb.words.size] do
+    if !(List.range 4).all (fun i => roB phs (wAt a (4 * k + i))) then
+      out := out ++ [s!"word {k} at {hexN (wAt a (4 * k)).toNat}: not in a read-only segment"]
+    if !a.fb.relocs.any (·.offset == 4 * k) then
+      let x := wordIn r phs (wAt a (4 * k))
+      if x != some (a.fb.words[k]?.getD 0) then
+        out := out ++ [s!"word {k} at {hexN (wAt a (4 * k)).toNat}: executable {w x}, compiled {(a.fb.words[k]?.getD 0).toHex}"]
+  for rl in a.fb.relocs do
+    if !relocB I m phs a rl then
+      let o := rl.offset
+      let tgt := match rl.type with
+        | .call26 => hexN (I.baseOf rl.sym)
+        | .tlsDescAdrPage21 | .tlsDescLd64Lo12 | .tlsDescAddLo12 | .tlsDescCall =>
+          s!"tp+{(tpOff phs (I.addrOf rl.sym)).map hexN}"
+        | _ => hexN (I.symAddr rl.sym rl.addend).toNat
+      out := out ++ [s!"{rl.type.elfName} {rl.sym}{if rl.addend == 0 then "" else s!"+{rl.addend}"} at word {o / 4} ({hexN (wAt a o).toNat}): executable {w (wordIn r phs (wAt a o))} {w (wordIn r phs (wAt a (o + 4)))}, compiled {(a.fb.words[o / 4]?.getD 0).toHex} {(a.fb.words[o / 4 + 1]?.getD 0).toHex}, target {tgt}"]
   return out
+
+/-- What differs between a data object and the executable (`objB`'s failures). -/
+def objDiag (I : LinkInput) (r : Rd) (phs : List Phdr) (o : Clif.DataObject) : List String := Id.run do
+  if !(I.addrs.lookup o.name).isSome then return ["no link-map address"]
+  let bs := objBytes I o
+  let mut out : List String := []
+  for i in [0:bs.length] do
+    let x := objAt I o + BitVec.ofNat 64 i
+    let e := loadIn r phs x.toNat
+    if e != some (bs[i]?.getD 0) then
+      out := out ++ [s!"byte {i} at {hexN x.toNat}: executable {e.map (·.toHex)}, CLIF {(bs[i]?.getD 0).toHex}"]
+    if !(o.writable || roB phs x || relroB phs x) then
+      out := out ++ [s!"byte {i} at {hexN x.toNat}: read-only object in a writable segment"]
+  return out
+
+/-- The defined symbols of a file: `(name, value) → (section, entry)`. -/
+def symIndex (file : ByteArray) : Std.HashMap (String × Nat) (Nat × Nat) := Id.run do
+  let r := fileRd file
+  let some e := ehdr r | return {}
+  let mut out : Std.HashMap (String × Nat) (Nat × Nat) := {}
+  for s in [0:e.shnum] do
+    let some sh := shdr r e s | continue
+    if sh.type != 2 || sh.entsize != 24 then continue
+    for i in [0:sh.size / 24] do
+      let some (o, v) := symEntry r s i | continue
+      let mut j := o
+      while j < file.size && file[j]! != 0 do j := j + 1
+      match String.fromUTF8? (file.extract o j) with
+      | some n => if !out.contains (n, v) then out := out.insert (n, v) (s, i)
+      | none => pure ()
+  return out
+
+/-- The excerpt `symsB` reads for the certificate `cert`: the symbol entries and their names. -/
+def symChunks (file : ByteArray) (cert : List (String × Nat × Nat)) : Excerpt := Id.run do
+  let r := fileRd file
+  let some e := ehdr r | return []
+  let mut out : Excerpt := []
+  for (n, s, i) in cert do
+    let some sh := shdr r e s | continue
+    let off := sh.offset + 24 * i
+    out := out ++ [(off, file.extract off (off + 24))]
+    if let some (o, _) := symEntry r s i then
+      let len := (symName n).utf8ByteSize + 1
+      out := out ++ [(o, file.extract o (o + len))]
+  return out
+
+/-- A list literal of Lean terms, as `[…] ++ […] ++ …` of at most 200 items each (a single long
+literal exceeds the elaborator's recursion depth). -/
+def listLean (items : List String) : String :=
+  if items.isEmpty then "[]" else
+  " ++\n  ".intercalate ((List.range ((items.length + 199) / 200)).map fun k =>
+    "[" ++ ",\n  ".intercalate ((items.drop (200 * k)).take 200) ++ "]")
+
+/-- An excerpt as Lean source. -/
+def exLean (ex : Excerpt) : String :=
+  listLean (ex.map fun c => s!"({c.1}, Elf.ofHex \"{toHex c.2}\")")
+
+/-- The ranges of an excerpt of `file`, sorted, with ranges at most 64 bytes apart merged. -/
+def coalesce (file : ByteArray) (ex : Excerpt) : Excerpt := Id.run do
+  let rs := (ex.map fun c => (c.1, c.1 + c.2.size)).mergeSort (fun a b => a.1 ≤ b.1)
+  let mut out : List (Nat × Nat) := []
+  for (lo, hi) in rs do
+    match out with
+    | (lo', hi') :: rest =>
+      if lo ≤ hi' + 64 then out := (lo', max hi hi') :: rest else out := (lo, hi) :: out
+    | [] => out := [(lo, hi)]
+  return out.reverse.map fun (lo, hi) => (lo, file.extract lo hi)
+
+/-- The excerpts and certificate of a crate's binary checks (`leanFiles`). -/
+structure BinGen where
+  hdr : Excerpt
+  slices : List Excerpt
+  data : Excerpt
+  syms : Excerpt
+  cert : List (String × Nat × Nat)
+  dataLines : List String
 
 def usage : String :=
   "usage: link-check <dir> [--lean FILE.lean --module NAME] [--entries a,b,…] [--prune] [--profile]"
@@ -126,13 +238,20 @@ def parseOpts : List String → Option Opts → Option Opts
 /-- The number of functions per slice of a crate's proof (`fnsB`, one `native_decide` each). -/
 def sliceSize : Nat := 32
 
+/-- `a ++ (b ++ (… ++ z))` -/
+def nestApp : List String → String
+  | [] => "[]"
+  | [x] => x
+  | x :: xs => s!"{x} ++ ({nestApp xs})"
+
 /-- **The generated Lean files** `(path, text)` for `out` (`…/Crates/NAME.lean`, module
 `Crates.NAME`): with at most `sliceSize` functions one file; otherwise the input
-(`Crates.NAME.Input`), one module per slice of `sliceSize` functions deciding their checks
-(`Crates.NAME.SliceK`; Lake builds them in parallel, `native_decide` theorems of one file run one
-after the other), and `out`, which combines them. -/
+(`Crates.NAME.Input`, with the headers' excerpt, the data objects and the symbol
+certificate), one module per slice of `sliceSize` functions deciding their checks and their
+binary check on the slice's excerpt (`Crates.NAME.SliceK`; Lake builds them in parallel,
+`native_decide` theorems of one file run one after the other), and `out`, which combines them. -/
 def leanFiles (I : LinkInput) (names : List String) (entries : List String) (out module exe : String)
-    (noTls : Bool) (stack : Option Nat) (stackEntries : List String) :
+    (noTls : Bool) (stack : Option Nat) (stackEntries : List String) (bg : BinGen) :
     List (String × String) := Id.run do
   let ns := s!"Crates.{module}"
   let n := I.funcs.length
@@ -146,7 +265,7 @@ def leanFiles (I : LinkInput) (names : List String) (entries : List String) (out
 
 namespace {ns}
 
-open E2E E2E.LinkCheck
+open E2E E2E.LinkCheck E2E.BinCheck
 
 "
   -- the input: the functions, the slices, `input`
@@ -168,9 +287,31 @@ def input : LinkInput where
   raStar := {I.raStar}
   D := {I.D}{aliases}
 
+/-- The data objects the program reaches (`cargo fv link-proof`'s `; data:` lines). -/
+def dataObjs : List Clif.DataObject := parseData ({listLean (bg.dataLines.map leanStr)})
+
+/-- The executable's ELF header, program headers and section headers. -/
+def exHdr : Elf.Excerpt := {exLean bg.hdr}
+
+/-- The executable's bytes of the data objects. -/
+def exData : Elf.Excerpt := {exLean bg.data}
+
+/-- The executable's symbol entries and names of the link map's names. -/
+def exSyms : Elf.Excerpt := {exLean bg.syms}
+
+/-- Where the link map's names are in the executable's symbol table (section, entry). -/
+def symCert : List (String × Nat × Nat) :=
+  {listLean (bg.cert.map fun c => s!"({leanStr c.1}, {c.2.1}, {c.2.2})")}
+
 "
   let sliceThm (k : Nat) := s!"/-- The checks of the functions of slice {k} (`staticChks`, the validators, and `linkChks`). -/
 theorem slice{k}_ok : fnsB input slice{k} = true := by native_decide
+
+/-- The executable's bytes of the code of slice {k} (and of the GOT slots it loads). -/
+def ex{k} : Elf.Excerpt := {exLean (bg.slices.getD k [])}
+
+/-- The binary check of the functions of slice {k} (`ArtOk`: their code in the executable). -/
+theorem slice{k}_bin : codeB input (exHdr ++ ex{k}) slice{k} = true := by native_decide
 
 "
   let closedText := "/-- No function has a `tls_value`. -/
@@ -196,7 +337,8 @@ link's symbol names, and `lean-regalloc`'s output), loaded at their addresses in
 executable's link map (`addrs`). `okB_input` decides every premise of `LinkSys.Ok` about the
 program and its layout by `native_decide` (`okB_of`: the program's checks, `globalB_input`, and
 the per-function checks by slices of {sliceSize} functions, `sliceK_ok`{if split then ", each in its own module" else ""}), run as compiled
-code (the package `crate-proofs` loads the shared library of `FV.E2E.StackBound`); `link_ok` is
+code (the package `crate-proofs` loads the shared library of `FV.E2E.StackBound` and
+`FV.E2E.BinCheck`); `link_ok` is
 `LinkSys.Ok` of the crate's linked system for every base environment satisfying the base
 premises (`BaseOk`: the contracts of std, other crates' code and the runtime, which stay
 premises), and the `correct_*` theorems are `backend_correct_program` for the entries{if stack.isSome then ";
@@ -206,6 +348,14 @@ fuel)" else if !stackEntries.isEmpty then ";
 `stack_entriesK` decide that the calls of the entries in `stackEntriesK` never reach a cycle of
 the call graph (`FV/E2E/StackBound.lean`), and the `correct_stack_*` theorems are
 `backend_correct_program_stack` for them (at every fuel)" else ""}.
+
+**The executable** (docs/contracts/e2e.md, \"Binary level (M9)\"): `bin_ok` states `BinOk input
+dataObjs file` for every file whose bytes agree with the excerpts `exAll` of this executable
+(its headers, the code of the functions and the GOT slots they load, the {bg.dataLines.length} data objects the
+program reaches, its symbol entries): a static AArch64 executable whose loaded image holds every
+function's compiled words with its relocations resolved (`ArtOk`), the data objects with theirs
+(`DataOk`), and whose symbol table is the link map (`SymsOk`); by `native_decide` on the
+excerpts (`hdr_bin`, `sliceK_bin`, `data_bin`, `syms_bin`).
 -/
 
 "
@@ -228,6 +378,34 @@ theorem link_ok (B : BaseEnv) (F : BitVec 64 → Prop) (hB : BaseOk (LinkSys.ofI
 theorem entries_present :
     [{", ".intercalate (entries.map leanStr)}].all
       (fun n => ((progOf input.results).func? n).isSome) = true := by native_decide
+
+"
+  let parts := ["exHdr"] ++ sl.map (s!"ex{·}") ++ ["exData", "exSyms"]
+  let hs := ["hH"] ++ sl.map (s!"h{·}") ++ ["hD", "hS"]
+  let codeOf (k : Nat) := s!"(codeB_sound slice{k}_bin (Elf.agrees_append.2 ⟨hH, h{k}⟩))"
+  let code := (sl.drop 1).foldl (fun acc k => s!"(artsOk_append {acc}\n      {codeOf k})") (codeOf 0)
+  main := main ++ s!"/-- The executable's headers: a static AArch64 executable. -/
+theorem hdr_bin : hdrB exHdr = true := by native_decide
+
+/-- The data objects in the executable (`DataOk`). -/
+theorem data_bin : dataB input dataObjs (exHdr ++ exData) = true := by native_decide
+
+/-- The link map is the executable's symbol table (`SymsOk`). -/
+theorem syms_bin : symsB input (exHdr ++ exSyms) symCert = true := by native_decide
+
+/-- The excerpts of the executable the binary checks read. -/
+def exAll : Elf.Excerpt := {nestApp parts}
+
+/-- **The executable is the crate's linked program**: every file whose bytes agree with the
+excerpts is a static AArch64 executable holding the program's code with its relocations
+resolved, the data objects, and the link map as its symbol table (`BinOk`). -/
+theorem bin_ok (file : ByteArray) (h : Elf.Agrees file exAll) : BinOk input dataObjs file := by
+  simp only [exAll, Elf.agrees_append] at h
+  obtain ⟨{", ".intercalate hs}⟩ := h
+  exact binOk_of (hdrB_sound hdr_bin hH)
+    {code}
+    (dataB_sound data_bin (Elf.agrees_append.2 ⟨hH, hD⟩))
+    (symsB_sound syms_bin (Elf.agrees_append.2 ⟨hH, hS⟩))
 
 "
   for (e, i) in entries.zipIdx do
@@ -259,10 +437,10 @@ theorem stack_entries{c} : StackBound.goodAll input stackEntries{c} = true := by
         main := main ++ s!"/-- **`backend_correct_program_stack` for `{e}`**: at every fuel, with its stack bound. -/\ntheorem correct_stack_{i} : StackBound.StackStmt input {leanStr e} :=\n  StackBound.crate_correct_stackN okB_input\n    (StackBound.goodN_of_idx stack_entries{k / sliceSize} {k % sliceSize} (by decide))\n\n"
   let footer := s!"end {ns}\n"
   if !split then
-    return [(out, header ("import FV.E2E.StackBound\n\n" ++ doc.trimAsciiEnd.toString) ++ inp ++ sliceThm 0 ++ main ++ footer)]
+    return [(out, header ("import FV.E2E.BinCheck\nimport FV.E2E.StackBound\n\n" ++ doc.trimAsciiEnd.toString) ++ inp ++ sliceThm 0 ++ main ++ footer)]
   let dir := out.dropRight ".lean".length
   let mut files := [(s!"{dir}/Input.lean",
-    header s!"import FV.E2E.LinkCheck\n\n/-! The input of `{ns}` (generated; see there). -/" ++ inp ++ footer)]
+    header s!"import FV.E2E.BinCheck\n\n/-! The input of `{ns}` (generated; see there). -/" ++ inp ++ footer)]
   for k in sl do
     files := files ++ [(s!"{dir}/Slice{k}.lean",
       header s!"import {ns}.Input\n\n/-! Slice {k} of `{ns}`'s checks (generated; see there). -/" ++ sliceThm k ++ footer)]
@@ -279,14 +457,15 @@ def main (args : List String) : IO UInt32 := do
   IO.println s!"link-check: {exe}"
   let fjs := ((j.getObjVal? "functions").bind (·.getArr?)).toOption.getD #[]
   let mut fis : Array FnInput := #[]
-  let mut bins : Array (Option ByteArray) := #[]
   for fj in fjs do
     let clif := (fj.getObjValAs? String "clif").toOption.getD ""
     let ra := (fj.getObjValAs? String "ra").toOption.getD ""
     fis := fis.push { clif := ← IO.FS.readFile (dir / clif), ra := ← IO.FS.readFile (dir / ra) }
-    bins := bins.push (← match (fj.getObjValAs? String "bin").toOption with
-      | some b => do pure (some (← IO.FS.readBinFile (dir / b)))
-      | none => pure none)
+  -- the executable and the data objects the functions reach (`; data:` lines, renamed to the
+  -- linked symbols)
+  let file ← IO.FS.readBinFile exe
+  let dataLines : List String := (((j.getObjVal? "data").bind (·.getArr?)).toOption.getD #[]).toList.filterMap
+    (·.getStr?.toOption)
   let ajs := ((j.getObjVal? "addrs").bind (·.getArr?)).toOption.getD #[]
   let addrs0 : List (String × Nat) := ajs.toList.filterMap fun a => do
     let arr ← a.getArr?.toOption
@@ -305,7 +484,6 @@ def main (args : List String) : IO UInt32 := do
     if fi.func.externs.any (·.2.name == a) && !(addrs0.lookup a).isSome then
       let clif := (fi.clif.replace s!"%{a}(" s!"%{n}(").replace s!"function %{n}(" s!"function %{a}("
       fis := fis.push { fi with clif }
-      bins := bins.push none
       aliases := aliases ++ [(a, n)]
       aliasAddrs := aliasAddrs ++ [(a, top + 16 * (aliases.length))]
   let addrs := addrs0 ++ aliasAddrs
@@ -394,22 +572,87 @@ def main (args : List String) : IO UInt32 := do
       IO.println s!"    {c}  {b}"
   if o.prune then
     IO.println s!"  --prune: {keep.length} of {R0.length} functions pass ({dropped.length} dropped)"
-  -- the executable's bytes against the compiled words (not a premise: a check of the trusted
-  -- object writer and linker)
-  let mut imgBad := 0
-  let mut imgWords := 0
-  for (e, b) in R0.zip bins.toList do
-    if let some b := b then
-      let a := getOk e.2
-      let msgs := imageDiff I0 a b
-      imgWords := imgWords + a.fb.words.size
-      if !msgs.isEmpty then
-        imgBad := imgBad + 1
-        IO.println s!"  IMAGE {e.1.name}:"
-        for m in msgs.take 5 do IO.println s!"      {m}"
-  IO.println s!"  image: {imgWords} words of {(bins.filter (·.isSome)).size} functions compared with the executable, {imgBad} function(s) differ"
   let ok := d.isEmpty
   IO.println (if ok then "  okB: true" else "  okB: false")
+  -- the (pruned) program
+  let keepNames := keep.map (·.1.name)
+  let funcs := (I0.funcs.zip (R0.map (·.1.name))).filter (keepNames.contains ·.2)
+  let kAliases := I.aliases.filter fun p => keepNames.contains p.1
+  let kAddrs := I.addrs.filter fun p => !(I0.aliases.any (·.1 == p.1)) || kAliases.any (·.1 == p.1)
+  let I' : LinkInput := { I with funcs := funcs.map (·.1), aliases := kAliases, addrs := kAddrs }
+  -- the binary checks (`FV/E2E/BinCheck.lean`) on the executable: its code, data objects and
+  -- symbols against the program
+  let tb ← IO.monoMsNow
+  let r := fileRd file
+  let phs := (phdrs r).getD []
+  let hdrOk := match ehdr r with
+    | some e => staticB e phs
+    | none => false
+  let arts := keep.map fun e => (e.1.name, getOk e.2)
+  let mut codeBad := 0
+  let mut words := 0
+  for (n, a) in arts do
+    words := words + a.fb.words.size
+    if !artB I' r phs a then
+      codeBad := codeBad + 1
+      IO.println s!"  BIN code {n}:"
+      for m in (artDiag I' r phs a).take 8 do IO.println s!"      {m}"
+  -- the forms the linker left the relocated words in
+  let mut nBl := 0
+  let mut nNopAdr := 0
+  let mut nAdrpAdd := 0
+  let mut nGot := 0
+  let mut nTls := 0
+  for (_, a) in arts do
+    for rl in a.fb.relocs do
+      match rl.type with
+      | .call26 => nBl := nBl + 1
+      | .adrGotPage | .adrPrelPgHi21 =>
+        match wordIn r phs (wAt a rl.offset), wordIn r phs (wAt a (rl.offset + 4)) with
+        | some x0, some x1 =>
+          if x0 == nopW then nNopAdr := nNopAdr + 1
+          else if x1.toNat / 2 ^ 22 == 0x3e5 then nGot := nGot + 1
+          else nAdrpAdd := nAdrpAdd + 1
+        | _, _ => pure ()
+      | .tlsDescAdrPage21 => nTls := nTls + 1
+      | _ => pure ()
+  IO.println s!"  relocations: {nBl} bl, address pairs {nNopAdr} nop+adr, {nAdrpAdd} adrp+add, {nGot} adrp+ldr (GOT), {nTls} TLSDESC sequences"
+  -- the data objects the kept functions reach
+  let allData := parseData dataLines
+  let mut reach : List String := (keep.flatMap fun e => addrNames e.1).eraseDups
+  let mut todo := reach
+  repeat
+    match todo with
+    | [] => break
+    | n :: rest =>
+      todo := rest
+      if let some o := allData.find? (·.name == n) then
+        for it in o.items do
+          if let .addr m _ := it then
+            if !reach.contains m then
+              reach := reach ++ [m]
+              todo := todo ++ [m]
+  let D := allData.filter (reach.contains ·.name)
+  let mut dataBad := 0
+  for o in D do
+    if !objB I' r phs o then
+      dataBad := dataBad + 1
+      IO.println s!"  BIN data {o.name}:"
+      for m in (objDiag I' r phs o).take 8 do IO.println s!"      {m}"
+  -- the symbol table against the link map
+  let idx := symIndex file
+  let cert : List (String × Nat × Nat) := I'.addrs.filterMap fun p =>
+    (idx.get? (symName p.1, p.2)).map (p.1, ·)
+  let ex : Excerpt := [(0, file)]
+  let symsBad := I'.addrs.filter fun p => !(I'.aliases.lookup p.1).isSome && !(cert.lookup p.1).isSome
+  for p in symsBad do
+    IO.println s!"  BIN symbol {p.1}: no defined symbol {symName p.1} = {hexN p.2} in the executable's symbol table"
+  let symsOk := symsB I' ex cert
+  let binOk := hdrOk && codeBad == 0 && dataBad == 0 && symsOk
+  IO.println s!"  binary checks done in {(← IO.monoMsNow) - tb} ms"
+  IO.println (if binOk then
+      s!"  binary: ok ({arts.length} functions, {words} words, {D.length} data objects, {I'.addrs.length - I'.aliases.length} symbols)"
+    else s!"  binary: FAIL code={codeBad} data={dataBad} syms={symsBad.length} hdr={if hdrOk then 0 else 1}")
   -- the stack bound (`stackR`) of the (pruned) program
   let Pk := progOf keep
   let Sk := fun n => I.syms.lookup n
@@ -435,19 +678,29 @@ def main (args : List String) : IO UInt32 := do
     IO.println s!"  stack: the budget check fails (budMap's budgets are wrong)"
   -- the Lean file
   if let some out := o.lean then
-    if !ok then
+    if !ok || !binOk then
       IO.eprintln "link-check: the checks fail; no Lean file written"
       return 1
-    let keepNames := keep.map (·.1.name)
-    let funcs := (I0.funcs.zip (R0.map (·.1.name))).filter (keepNames.contains ·.2)
-    let kAliases := I.aliases.filter fun p => keepNames.contains p.1
-    let I' : LinkInput := { I with funcs := funcs.map (·.1), aliases := kAliases }
     let entries := o.entries.getD keepNames
     let missing := entries.filter (!keepNames.contains ·)
     if !missing.isEmpty then
       IO.eprintln s!"link-check: entries not in the program: {missing}"
       return 1
     let noTls := keep.all fun e => !Backend.hasTls e.1
+    -- the excerpts the binary checks read: the headers; per slice, the functions' code and GOT
+    -- slots; the data objects; the symbol entries and names
+    let some e := ehdr r | return 1
+    let hdr : Excerpt := [(0, file.extract 0 64), (e.phoff, file.extract e.phoff (e.phoff + 56 * e.phnum)),
+      (e.shoff, file.extract e.shoff (e.shoff + 64 * e.shnum))]
+    let nSl := max ((funcs.length + sliceSize - 1) / sliceSize) 1
+    let slices : List Excerpt := (List.range nSl).map fun k =>
+      coalesce file (((funcs.drop (k * sliceSize)).take sliceSize).flatMap fun p =>
+        let a := (arts.lookup p.2).getD default
+        (artRanges r phs a).flatMap fun rg => fileChunks file phs rg.1 rg.2)
+    let dataEx : Excerpt := coalesce file (D.flatMap fun o =>
+      fileChunks file phs (objAt I' o).toNat (objBytes I' o).length)
+    let dLines := dataLines.filter fun l => D.any fun o => parseData [l] == [o]
+    let bg : BinGen := ⟨hdr, slices, dataEx, coalesce file (symChunks file cert), cert, dLines⟩
     -- the modules of an earlier split of this crate's proof (`leanFiles`)
     let dir : System.FilePath := out.dropRight ".lean".length
     if ← dir.isDir then
@@ -460,9 +713,9 @@ def main (args : List String) : IO UInt32 := do
     let stackAll := stackC.isSome && Pk.funcs.all fun g => (stackOf g).isSome
     let stackS := if stackAll then some (Pk.funcs.foldl (fun x g => max x ((stackOf g).getD 0)) 0)
       else none
-    for (p, t) in leanFiles I' (funcs.map (·.2)) entries out o.module exe noTls stackS stackGood do
+    for (p, t) in leanFiles I' (funcs.map (·.2)) entries out o.module exe noTls stackS stackGood bg do
       if let some pd := (p : System.FilePath).parent then IO.FS.createDirAll pd
       IO.FS.writeFile p t
       IO.println s!"  wrote {p}"
     IO.println s!"  {funcs.length} functions, {entries.length} entries"
-  return (if ok then 0 else 1)
+  return (if ok && binOk then 0 else 1)
