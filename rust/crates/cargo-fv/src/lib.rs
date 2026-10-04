@@ -7,9 +7,12 @@
 //!   (workspace members and dependencies; not host crates) it makes cg_clif dump its CLIF, and
 //!   recompiles every function of every codegen unit with the Lean backend ([`pipeline`]); for
 //!   executables it is also the linker rustc runs ([`wrapper`]).
+//! * `cargo fv link-proof` ([`linkproof`]): the input of the crate-level linking theorem from a
+//!   `--keep-temps` build.
 //!
 //! See docs/USAGE.md.
 pub mod config;
+pub mod linkproof;
 pub mod pipeline;
 pub mod report;
 pub mod wrapper;

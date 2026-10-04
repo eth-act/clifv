@@ -636,6 +636,17 @@ pub fn linker_main(meta_json: &str, argv: Vec<OsString>) -> i32 {
     }
     if !cfg.keep_temps {
         let _ = fs::remove_file(&map);
+    } else {
+        // `cargo fv link-proof`: which executable this map is of
+        let rec = serde_json::json!({
+            "output": output,
+            "map": map,
+            "unit": meta.unit,
+            "package": meta.package,
+            "crate_name": meta.crate_name,
+            "kind": meta.kind,
+        });
+        let _ = fs::write(map.with_extension("json"), serde_json::to_string_pretty(&rec).unwrap_or_default());
     }
     code
 }

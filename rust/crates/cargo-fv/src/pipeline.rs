@@ -420,20 +420,30 @@ fn compile_one(
             Ok(a) => a,
             Err(e) => return Compiled::Fallback(e),
         };
+        let compiled = aliased.as_deref().unwrap_or(input);
         // `--personality`: functions with landing pads (`try_call`) get cg_clif's LSDA and
         // personality (`rust_eh_personality`, which cg_clif hard-codes too)
         let slot = backend_slot(cfg);
-        let c = match Command::new(cfg.lean_backend())
-            .arg(aliased.as_deref().unwrap_or(input))
+        let mut cmd = Command::new(cfg.lean_backend());
+        cmd.arg(compiled)
             .arg(out)
             .args(cfg.mode.backend_args())
             .args(["--personality", "rust_eh_personality"])
-            .env("LEAN_REGALLOC", cfg.lean_regalloc())
-            .output()
-        {
+            .env("LEAN_REGALLOC", cfg.lean_regalloc());
+        // `--keep-temps`: keep lean-regalloc's output next to the object (`cargo fv
+        // link-proof` rebuilds the allocation from it in Lean): this process (fv-rustc) runs
+        // lean-regalloc and copies its output (`crate::linkproof::regalloc_tee`)
+        if cfg.keep_temps {
+            if let Ok(me) = std::env::current_exe() {
+                cmd.env("LEAN_REGALLOC", me)
+                    .env(crate::linkproof::RA_REAL, cfg.lean_regalloc())
+                    .env(crate::linkproof::RA_OUT, out.with_extension("ra.json"));
+            }
+        }
+        let c = match cmd.output() {
             Ok(o) => {
                 drop(slot);
-                classify(cfg, &String::from_utf8_lossy(&o.stderr), o.status.success(), out, sym)
+                classify(cfg, &String::from_utf8_lossy(&o.stderr), o.status.success(), out, sym, compiled)
             }
             Err(e) => Compiled::Fallback(format!("cannot run lean-backend: {e}")),
         };
@@ -458,9 +468,9 @@ fn compile_one(
             if why.contains("does not contain") && opt.exists() {
                 let out_opt = outdir.join(format!("f{i}.opt.o"));
                 let c2 = run_backend(&opt, &out_opt);
-                if let Compiled::Ok { obj, unverified, normal_returns } = c2 {
+                if let Compiled::Ok { obj, unverified, normal_returns, clif } = c2 {
                     if missing_ref(&obj, syms).is_none() {
-                        return Compiled::Ok { obj, unverified, normal_returns };
+                        return Compiled::Ok { obj, unverified, normal_returns, clif };
                     }
                 }
             }
@@ -565,13 +575,13 @@ fn trap_bodies(obj: &Path, names: &[String]) -> Result<(), String> {
 }
 
 /// How lean-backend classified one function (`normal_returns`: a `try_call` function the
-/// theorem covers for its normal returns only).
+/// theorem covers for its normal returns only; `clif`: the file it compiled).
 enum Compiled {
-    Ok { obj: PathBuf, unverified: Option<String>, normal_returns: bool },
+    Ok { obj: PathBuf, unverified: Option<String>, normal_returns: bool, clif: PathBuf },
     Fallback(String),
 }
 
-fn classify(cfg: &Config, stderr: &str, ok: bool, out: &Path, symbol: &str) -> Compiled {
+fn classify(cfg: &Config, stderr: &str, ok: bool, out: &Path, symbol: &str, input: &Path) -> Compiled {
     let strip = |l: &str| -> String {
         // `lean-backend: <input>: %name: …` / `lean-backend: <input>: …`
         let l = l.strip_prefix("lean-backend: ").unwrap_or(l);
@@ -618,7 +628,7 @@ fn classify(cfg: &Config, stderr: &str, ok: bool, out: &Path, symbol: &str) -> C
             None => why.into(),
         });
     }
-    Compiled::Ok { obj: out.to_path_buf(), unverified, normal_returns }
+    Compiled::Ok { obj: out.to_path_buf(), unverified, normal_returns, clif: input.to_path_buf() }
 }
 
 fn write_list(path: &Path, items: impl IntoIterator<Item = String>) -> Result<(), String> {
@@ -771,6 +781,8 @@ fn process_in(
     // 4. every reference of our code must be one the object already makes
     let mut reports = Vec::new();
     let mut ours: Vec<(String, PathBuf)> = Vec::new();
+    // `--keep-temps`: per Lean-compiled function, what `cargo fv link-proof` needs
+    let mut link_fns: Vec<serde_json::Value> = Vec::new();
     let mut referenced_locals: BTreeSet<String> = BTreeSet::new();
     for ((sym, d), c) in funcs.iter().zip(results) {
         let mut report = |status, reason: Option<String>, normal_returns: bool| {
@@ -784,7 +796,7 @@ fn process_in(
         };
         match c {
             Compiled::Fallback(why) => report(Status::Fallback, Some(why), false),
-            Compiled::Ok { obj: o, unverified, normal_returns } => {
+            Compiled::Ok { obj: o, unverified, normal_returns, clif } => {
                 let f = read_syms(&o)?;
                 let (mut bad, locals) = ref_problem(&o, syms)?;
                 let extra: Vec<&String> = f.text.iter().filter(|(n, g)| **g && *n != sym).map(|(n, _)| n).collect();
@@ -798,6 +810,13 @@ fn process_in(
                     Some(b) => report(Status::Fallback, Some(b), false),
                     None => {
                         referenced_locals.extend(locals);
+                        link_fns.push(serde_json::json!({
+                            "symbol": sym,
+                            "clif": clif,
+                            "ra": o.with_extension("ra.json"),
+                            "verified": unverified.is_none(),
+                            "reason": unverified,
+                        }));
                         ours.push((sym.clone(), o));
                         match unverified {
                             Some(u) => report(Status::Unverified, Some(u), false),
@@ -857,8 +876,12 @@ fn process_in(
         .args(ours.iter().map(|(_, o)| o)))?;
     let lean_syms = read_syms(&lean)?;
     let mut ours_redef: Vec<String> = renames.iter().map(|(a, b)| format!("{a} {b}")).collect();
+    // the CLIF names of our code → the final symbol names (`cargo fv link-proof`)
+    let mut clif_names: BTreeMap<String, String> =
+        ours.iter().map(|(s, _)| (s.clone(), final_name(s))).collect();
     for u in &lean_syms.undefined {
         let n = obj_name_of(u);
+        clif_names.insert(u.clone(), final_name(&n));
         if n != *u {
             ours_redef.push(format!("{u} {}", final_name(&n)));
         }
@@ -909,5 +932,20 @@ fn process_in(
     write_list(&loc, renames.values().cloned().chain(ours.iter().map(|(s, _)| format!("{MARKER}{}", final_name(s)))))?;
     objcopy(&[format!("--localize-symbols={}", loc.display())], &merged)?;
     fs::copy(&merged, obj).map_err(|e| format!("{}: {e}", obj.display()))?;
+    if cfg.keep_temps {
+        for f in &mut link_fns {
+            let s = f["symbol"].as_str().unwrap_or_default().to_string();
+            f["final"] = serde_json::Value::String(final_name(&s));
+        }
+        let j = serde_json::json!({
+            "tag": tag,
+            "object": obj.file_name().map(|n| n.to_string_lossy().into_owned()),
+            "functions": link_fns,
+            "names": clif_names,
+        });
+        let p = work.join(crate::linkproof::CGU_FILE);
+        fs::write(&p, serde_json::to_string_pretty(&j).unwrap_or_default())
+            .map_err(|e| format!("{}: {e}", p.display()))?;
+    }
     Ok((reports, true))
 }

@@ -151,6 +151,18 @@ premises. Deferred, in order:
   - a function calling itself under its own name (excluded at the CLIF level by `InSubset (P.only f)`; `cargo fv`'s alias covers it), float parameters; a
     depth-free machine (monotonicity of `linkedCall` in the depth, needs base hooks preserving
     errors).
+  - **`indSig` under `MayCall`** (agent/crate-check, `fv-demo` 13 functions): a function with
+    indirect calls may call every function with an address, so all of them must be
+    register-only without `sret`; restrict `MayCall` (or `indSig`) by the call's signature (it
+    would also pass `blrRegs`/`blrTry` at the `call_indirect` sites of 3 + 3 of them, which may
+    enter address-taken functions of the same arity with an `sret` or stack-passed parameter).
+  - **Crate-level instance** (agent/crate-check, `FV/E2E/LinkCheck.lean`, `cargo fv
+    link-proof`, e2e.md "Crate-level instance"): an entry-level instance for a crate function
+    (the entry premises of `ProgStmt` for concrete arguments and a CLIF entry memory holding the
+    crate's data objects, as `backend_correct_program_witness` does for its `f 41`); the image
+    premise `himg` with the relocated words of the process image (`imgMem` is the unrelocated
+    encoding; relocation in Lean, or relocation-independence of the machine); moving
+    `NonVacuityLink.lean` onto `LinkCheck` (it keeps its own copy of the checks).
 - **Exact world of a call.** (superseded for program callees by agent/arm-link) `X.call` is a function of the arguments and the world and must give
   the exact def registers and world of the hooked callee; a compiled callee's theorem fixes only
   the low bits of its results and the live CLIF bytes. Either make `csem`'s call clause
