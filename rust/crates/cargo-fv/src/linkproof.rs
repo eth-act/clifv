@@ -207,9 +207,10 @@ NAME (its units `NAME-<hash>`), as the input of the crate-level linking theorem
 (docs/contracts/e2e.md, \"Crate-level instance\"): DIR (default target/fv/link-proof) gets the
 renamed CLIF files, the regalloc outputs and link.json. Then `lake exe link-check DIR` reports
 which premises of LinkSys.Ok fail (per function), and with --lean writes the Lean file proving
-LinkSys.Ok by native_decide and the theorem for the entries (default: every function).
---prune drops the failing functions until the rest passes. --mode: the build's directory under
-target/fv (default plain).";
+LinkSys.Ok by native_decide and the theorem for the entries (default: every function); put it in
+the repository's crate-proofs/Crates/ and build it there with `lake build Crates.NAME` (the checker
+then runs as compiled code). --prune drops the failing functions until the rest passes. --mode:
+the build's directory under target/fv (default plain).";
 
 fn parse_opts(args: &[String], target: &Path) -> Result<Opts, String> {
     let mut o = Opts {

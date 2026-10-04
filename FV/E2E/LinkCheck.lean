@@ -293,24 +293,28 @@ theorem mayCall_ne {L : LinkSys} {g : Clif.Function} {n : String} (h : L.MayCall
   · exact hd.2
   · exact hne
 
-/-- A `blr` site: arguments in the parameter registers, of every function of `P` the caller may
-call (`may`) with as many register parameters, and the results its defs hold from x0... -/
-def blrOk (P : Clif.Program) (may : String → Bool) (info : CallInfo) : Bool :=
+/-- A `blr` site: arguments in the parameter registers, of every function of `P` it may enter
+(`LinkSys.BlrTo`: one the caller may call, `may`, and at a call through the GOT, `got`, the GOT
+symbol's) with as many register parameters, and the results its defs hold from x0... -/
+def blrOk (P : Clif.Program) (may : String → Bool) (got : Nat → Option String) (info : CallInfo) :
+    Bool :=
   match info.dest with
-  | .reg (.vreg _ .int) =>
+  | .reg (.vreg t .int) =>
     decide (info.uses = retPairs (decU info.uses)) &&
     decide (info.defs = callDefs (decD info.defs)) &&
     P.funcs.all fun h => !may h.name ||
+      (match got t with | some n => h.name != n | none => false) ||
       decide ((regLocs h.sig).length ≠ (decU info.uses).length) ||
       (decide ((decU info.uses).map (·.2) = regLocs h.sig) &&
         decide (((decD info.defs).map (·.1)).take (sigRets h.sig).length =
           (List.range (min (sigRets h.sig).length (decD info.defs).length)).map Reg.x))
   | _ => false
 
-theorem blrOk_sound {P : Clif.Program} {may : String → Bool} {info : CallInfo}
-    (h : blrOk P may info = true) :
+theorem blrOk_sound {P : Clif.Program} {may : String → Bool} {got : Nat → Option String}
+    {info : CallInfo} (h : blrOk P may got info = true) :
     ∃ t Lu Ld, info = ⟨.reg (.vreg t .int), retPairs Lu, callDefs Ld⟩ ∧
-      ∀ h ∈ P.funcs, may h.name = true → (regLocs h.sig).length = Lu.length →
+      ∀ h ∈ P.funcs, may h.name = true → (∀ n, got t = some n → h.name = n) →
+        (regLocs h.sig).length = Lu.length →
         Lu.map (·.2) = regLocs h.sig ∧
         (Ld.map (·.1)).take (sigRets h.sig).length =
           (List.range (min (sigRets h.sig).length Ld.length)).map Reg.x := by
@@ -323,9 +327,13 @@ theorem blrOk_sound {P : Clif.Program} {may : String → Bool} {info : CallInfo}
     simp only [Bool.and_eq_true, decide_eq_true_eq, List.all_eq_true, Bool.or_eq_true,
       Bool.not_eq_true'] at h
     obtain ⟨⟨hu, hd⟩, hall⟩ := h
-    refine ⟨t, decU us, decD ds, by rw [← hu, ← hd], fun h' hh hmay hl => ?_⟩
-    rcases hall h' hh with (h1 | h1) | h1
+    refine ⟨t, decU us, decD ds, by rw [← hu, ← hd], fun h' hh hmay hgot hl => ?_⟩
+    rcases hall h' hh with ((h1 | h1) | h1) | h1
     · rw [hmay] at h1; cases h1
+    · revert h1
+      cases hg : got t with
+      | none => simp
+      | some n => simp [hgot n hg]
     · exact absurd hl h1
     · exact h1
   · cases h
@@ -333,8 +341,9 @@ theorem blrOk_sound {P : Clif.Program} {may : String → Bool} {info : CallInfo}
 /-- A call site: a `bl` of a function `h` of `P` (other than `g`) that `g` declares, arguments in
 `h`'s parameter registers, the results its defs hold from x0.. (then, at a `try_call`, the
 exception payload registers); a `bl` of an extern outside `P` (the base's contract); or a `blr`
-site (`blrOk`). -/
-def siteOk (P : Clif.Program) (g : Clif.Function) (may : String → Bool) (info : CallInfo) : Bool :=
+site (`blrOk`, with the GOT symbols of `vc`). -/
+def siteOk (P : Clif.Program) (g : Clif.Function) (may : String → Bool) (vc : VCode)
+    (info : CallInfo) : Bool :=
   match info.dest with
   | .sym n => match P.func? n with
     | some h => (h.name != g.name) && g.externs.any (fun e => e.2.name == n) &&
@@ -344,18 +353,19 @@ def siteOk (P : Clif.Program) (g : Clif.Function) (may : String → Bool) (info 
         decide (((decD info.defs).map (·.1)).take (sigRets h.sig).length =
           (List.range (min (sigRets h.sig).length (decD info.defs).length)).map Reg.x)
     | none => true
-  | .reg _ => blrOk P may info
+  | .reg _ => blrOk P may (gotOf vc) info
 
-theorem siteOk_reg {P : Clif.Program} {g : Clif.Function} {may : String → Bool} {info : CallInfo}
-    (h : siteOk P g may info = true) (hd : ∀ n, info.dest ≠ .sym n) : blrOk P may info = true := by
+theorem siteOk_reg {P : Clif.Program} {g : Clif.Function} {may : String → Bool} {vc : VCode}
+    {info : CallInfo} (h : siteOk P g may vc info = true) (hd : ∀ n, info.dest ≠ .sym n) :
+    blrOk P may (gotOf vc) info = true := by
   obtain ⟨d, us, ds⟩ := info
   unfold siteOk at h
   cases d with
   | reg r => exact h
   | sym n => exact absurd rfl (hd n)
 
-theorem siteOk_sound {P : Clif.Program} {g : Clif.Function} {may : String → Bool} {info : CallInfo}
-    (h : siteOk P g may info = true) {n : String} {h' : Clif.Function} (hd : info.dest = .sym n)
+theorem siteOk_sound {P : Clif.Program} {g : Clif.Function} {may : String → Bool} {vc : VCode}
+    {info : CallInfo} (h : siteOk P g may vc info = true) {n : String} {h' : Clif.Function} (hd : info.dest = .sym n)
     (hf : P.func? n = some h') :
     h'.name ≠ g.name ∧ (∃ e ∈ g.externs, e.2.name = n) ∧ ∃ Lu Ld,
       info = ⟨.sym n, retPairs Lu, callDefs Ld⟩ ∧ Lu.map (·.2) = regLocs h'.sig ∧
@@ -371,22 +381,26 @@ theorem siteOk_sound {P : Clif.Program} {g : Clif.Function} {may : String → Bo
   exact ⟨hne, hd, _, _, by rw [← hu, ← hdd], h1, h2⟩
 
 /-- A `try_call` of a function `h` of `P` takes at most `h`'s results (at a `blr`: of every
-function the caller may call with as many register parameters). -/
-def tryB (P : Clif.Program) (may : String → Bool) : MInst → Bool
+function it may enter, `LinkSys.BlrTo`, with as many register parameters). -/
+def tryB (P : Clif.Program) (may : String → Bool) (vc : VCode) : MInst → Bool
   | .tryCall info ti => match info.dest with
     | .sym n => match P.func? n with
       | some h => decide (ti.rets ≤ (sigRets h.sig).length)
       | none => true
-    | .reg _ => P.funcs.all fun h => !may h.name ||
+    | .reg r => P.funcs.all fun h => !may h.name ||
+      (match r with
+        | .vreg t .int => (match gotOf vc t with | some n => h.name != n | none => false)
+        | _ => false) ||
       decide ((regLocs h.sig).length ≠ (decU info.uses).length) ||
       decide (ti.rets ≤ (sigRets h.sig).length)
   | _ => true
 
 theorem tryB_reg {P : Clif.Program} {may : String → Bool} {vc : VCode}
-    (h : allInsts vc (tryB P may) = true) {info : CallInfo} {ti : TryInfo} (hs : vc.TrySite info ti)
-    {t : Nat} {Lu : List (Nat × Reg)} {Ld : List (Reg × Nat)}
+    (h : allInsts vc (tryB P may vc) = true) {info : CallInfo} {ti : TryInfo}
+    (hs : vc.TrySite info ti) {t : Nat} {Lu : List (Nat × Reg)} {Ld : List (Reg × Nat)}
     (hi : info = ⟨.reg (.vreg t .int), retPairs Lu, callDefs Ld⟩) {h' : Clif.Function}
-    (hh : h' ∈ P.funcs) (hmay : may h'.name = true) (hl : (regLocs h'.sig).length = Lu.length) :
+    (hh : h' ∈ P.funcs) (hmay : may h'.name = true) (hgot : ∀ n, gotOf vc t = some n → h'.name = n)
+    (hl : (regLocs h'.sig).length = Lu.length) :
     ti.rets ≤ (sigRets h'.sig).length := by
   obtain ⟨b, vb, k, hb, hk⟩ := hs
   have := allInsts_sound h hb hk
@@ -394,13 +408,17 @@ theorem tryB_reg {P : Clif.Program} {may : String → Bool} {vc : VCode}
   simp only [tryB, List.all_eq_true, Bool.or_eq_true, Bool.not_eq_true', decide_eq_true_eq] at this
   have hdu : decU (retPairs Lu) = Lu := by
     simp [decU, retPairs, Function.comp_def]
-  rcases this h' hh with (h1 | h1) | h1
+  rcases this h' hh with ((h1 | h1) | h1) | h1
   · rw [hmay] at h1; cases h1
+  · revert h1
+    cases hg : gotOf vc t with
+    | none => simp
+    | some n => simp [hgot n hg]
   · rw [hdu] at h1; exact absurd hl h1
   · exact h1
 
 theorem tryB_sound {P : Clif.Program} {may : String → Bool} {vc : VCode}
-    (h : allInsts vc (tryB P may) = true)
+    (h : allInsts vc (tryB P may vc) = true)
     {info : CallInfo} {ti : TryInfo} (hs : vc.TrySite info ti) {n : String} {h' : Clif.Function}
     (hd : info.dest = .sym n) (hf : P.func? n = some h') : ti.rets ≤ (sigRets h'.sig).length := by
   obtain ⟨b, vb, k, hb, hk⟩ := hs
@@ -657,11 +675,11 @@ def linkChks (I : LinkInput) (P : Clif.Program) (T : List (Clif.Function × Art)
   let a := getOk r
   let fr := RAFrame.compute a.vcp a.rf
   let may := mayB (fun n => I.syms.lookup n) g
-  [("tryRets/blrTry", allInsts a.vcp (tryB P may)),
+  [("tryRets/blrTry", allInsts a.vcp (tryB P may a.vcp)),
    ("outFits", g.externs.all (fun e => !(P.func? e.2.name).isSome || outFitsB e.2.sig fr.intBase)),
    ("calleeFrame/slotFits",
      !calleeB P (fun n => I.syms.lookup n) g || ((!g.slots.isEmpty || fr.size == a.af.frameSize) && slotFitsB g a)),
-   ("callRegs/blrRegs", allInsts a.vcp (siteB (siteOk P g may))),
+   ("callRegs/blrRegs", allInsts a.vcp (siteB (siteOk P g may a.vcp))),
    ("declSig", g.externs.all fun e => match P.func? e.2.name with
       | some h => decide (e.2.sig = h.sig)
       | none => true),
@@ -692,6 +710,31 @@ def okR (I : LinkInput) (R : Res) : Bool :=
 
 /-- **The checker**: every premise of `LinkSys.Ok` about the program and its layout. -/
 def okB (I : LinkInput) : Bool := okR I I.results
+
+/-- The checks of one input function that do not depend on the rest of the program
+(`staticChks` of its pipeline result; the validators): a crate's file decides them by one
+`native_decide` per function, so they run in parallel (`okB_of`). -/
+def staticFnB (I : LinkInput) (fi : FnInput) : Bool :=
+  let f := fi.func
+  (staticChks I f (pipe f fi.k (BitVec.ofNat 64 (I.addrOf f.name)) (raJ fi.ra fi.j))).all (·.2)
+
+/-- The rest of `okB`: the program's checks and every function's `linkChks`. -/
+def linkB (I : LinkInput) : Bool :=
+  let R := I.results
+  let P := progOf R
+  let T := tabOf R
+  (globalChks I P T).all (·.2) && R.all fun e => (linkChks I P T e.1 e.2).all (·.2)
+
+/-- `okB` from its parts: `linkB` and `staticFnB` of every function. -/
+theorem okB_of {I : LinkInput} (hl : linkB I = true) (hs : I.funcs.all (staticFnB I) = true) :
+    okB I = true := by
+  simp only [linkB, Bool.and_eq_true, List.all_eq_true] at hl
+  simp only [okB, okR, chks, Bool.and_eq_true, List.all_eq_true]
+  refine ⟨hl.1, fun e he c hc => ?_⟩
+  rcases List.mem_append.1 hc with hc | hc
+  · obtain ⟨fi, hfi, rfl⟩ := List.mem_map.1 he
+    exact List.all_eq_true.1 (List.all_eq_true.1 hs fi hfi) c hc
+  · exact hl.2 e he c hc
 
 /-- The names of the failing checks. -/
 def bad (cs : List (String × Bool)) : List String := (cs.filter (!·.2)).map (·.1)
@@ -756,7 +799,7 @@ structure Facts (I : LinkInput) (g : Clif.Function) (a : Art) : Prop where
   check : checkAlloc a.vcp a.rf = .ok ()
   covered : FormsCovered ⟨a.fa.k, a.af.slotBase⟩
     a.vcp
-  tries : allInsts a.vcp (tryB (progOf I.results) (mayB (fun n => I.syms.lookup n) g)) = true
+  tries : allInsts a.vcp (tryB (progOf I.results) (mayB (fun n => I.syms.lookup n) g) a.vcp) = true
   rets : allInsts a.vc (retsB g) = true
   outFits : ∀ e ∈ g.externs, ((progOf I.results).func? e.2.name).isSome = true →
     outFitsB e.2.sig (RAFrame.compute a.vcp a.rf).intBase = true
@@ -767,7 +810,7 @@ structure Facts (I : LinkInput) (g : Clif.Function) (a : Art) : Prop where
     (RAFrame.compute a.vcp a.rf).size =
       a.af.frameSize) ∧ slotFitsB g a = true
   sites : allInsts a.vcp (siteB (siteOk (progOf I.results) g
-    (mayB (fun n => I.syms.lookup n) g))) = true
+    (mayB (fun n => I.syms.lookup n) g) a.vcp)) = true
   declSig : ∀ e ∈ g.externs.map (·.2), ∀ h, (progOf I.results).func? e.name = some h → e.sig = h.sig
   entry : entryB g a.vcp = true
   fits : a.base.toNat + 4 * a.fb.words.size ≤ 2 ^ 64
@@ -782,7 +825,7 @@ structure Facts (I : LinkInput) (g : Clif.Function) (a : Art) : Prop where
 
 theorem okB_global {I : LinkInput} (h : okB I = true) :
     ∀ c ∈ globalChks I (progOf I.results) (tabOf I.results), c.2 = true := by
-  simp only [okB, okR, Bool.and_eq_true, List.all_eq_true] at h
+  simp only [okB, okR, chks, Bool.and_eq_true, List.all_eq_true] at h
   exact h.1
 
 theorem okB_names {I : LinkInput} (h : okB I = true) :
@@ -795,7 +838,7 @@ theorem facts {I : LinkInput} (h : okB I = true) {g : Clif.Function}
   have hn := okB_names h
   obtain ⟨e, he, rfl, hart⟩ := artOf_spec hn hg
   have hall : ∀ c ∈ chks I (progOf I.results) (tabOf I.results) e.1 e.2, c.2 = true := by
-    simp only [okB, okR, Bool.and_eq_true, List.all_eq_true] at h
+    simp only [okB, okR, chks, Bool.and_eq_true, List.all_eq_true] at h
     exact h.2 e he
   rw [hart]
   simp only [chks, staticChks, linkChks, List.cons_append, List.nil_append, List.mem_cons,
@@ -944,9 +987,10 @@ theorem okB_sound {I : LinkInput} (hI : okB I = true) {B : BaseEnv} {F : BitVec 
       callRegs := fun g hg info h hs => (site g hg info h hs).2.2.2
       blrRegs := fun g hg info hs hreg => by
         obtain ⟨t, Lu, Ld, heq, hall⟩ := blrOk_sound (siteOk_reg (site_sound (fa hg).sites hs) hreg)
-        exact ⟨t, Lu, Ld, heq, fun h hh hmay hl => hall h hh (mayB_of hmay) hl⟩
-      blrTry := fun g hg info ti hs t Lu Ld hi h hh hmay hl =>
-        tryB_reg (fa hg).tries hs hi hh (mayB_of hmay) hl
+        exact ⟨t, Lu, Ld, heq, fun h hh hb hl =>
+          hall h hh (mayB_of hb.1) (fun n hn => (hb.2 n (gotOf_sound hn)).symm) hl⟩
+      blrTry := fun g hg info ti hs t Lu Ld hi h hh hb hl =>
+        tryB_reg (fa hg).tries hs hi hh (mayB_of hb.1) (fun n hn => (hb.2 n (gotOf_sound hn)).symm) hl
       raBlr := fun g hg info hs hreg h hh hmay pc hpc k hk =>
         raCallB_sound (fa hg).ra hpc _ (tab_mem hn hh) (mayCall_ne hmay) k hk
       indScope := fun g hg hnf => ⟨hB.keepSyms ⟨g, hg, hnf⟩, ?_⟩

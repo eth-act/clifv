@@ -180,8 +180,8 @@ end
 /-! ## `Realizes` by cases -/
 
 /-- **The machine realises the allocated code** under `Q ∧ AInv`: every item case. -/
-theorem realizes_all {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.CallSite)
-    (hT : R.vc.hasTryCall = true → CalleeTryOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.TrySite)
+theorem realizes_all {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.CallSite R.gv)
+    (hT : R.vc.hasTryCall = true → CalleeTryOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.TrySite R.gv)
     (hTls : R.vc.hasTls = true → TlsOk R.F R.K R.X R.H)
     (hcov : FormsCovered R.ctx R.vc) :
     Realizes R.vc R.rf R.sem ckeep R.step (fun s c => Q R s c ∧ AInv R c) := by
@@ -204,17 +204,18 @@ theorem realizes_all {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (Call
     · -- a covered straight-line form
       have hfo := (hcov b vb k i hvb hi).resolve_left (by simp [hct])
       obtain ⟨hOS, hL⟩ := formOk_sound (F := R.F) (X := R.X) hfo
-      obtain rfl := csem_ctl hct hsem
+      obtain rfl := csem_ctl hct (R.sem_csem hsem)
       cases hn with
       | next hk =>
         have hnc : ∀ info, i ≠ .call info := by rintro info rfl; simp [MInst.isCtl] at hct
         obtain ⟨n, c'', hm, hq'⟩ := realizes_op_next hR hq hvb hi hops hsz hsem hlen hk hOS hL
-          (csem_next_world' hsem hnc herrw)
+          (csem_next_world' (R.sem_csem hsem) hnc herrw)
         exact fin n c'' hm hq'
     · cases i <;> simp only [MInst.isCtl, reduceCtorEq] at hct
       case call info =>
         have hc : ctl = .next := by
-          simp only [RL.sem, csem, Option.map_eq_some_iff, Prod.mk.injEq] at hsem
+          have hsem := R.sem_csem hsem
+          simp only [csem, Option.map_eq_some_iff, Prod.mk.injEq] at hsem
           obtain ⟨_, -, -, -, h⟩ := hsem; exact h.symm
         subst hc
         cases hn with
@@ -223,14 +224,14 @@ theorem realizes_all {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (Call
           exact fin n c'' hm hq'
       case args ds => exact fin 0 c' hstep (realizes_args hR hq hA hvb hi hstep)
       case rets us =>
-        simp only [RL.sem, csem, Option.some.injEq, Prod.mk.injEq] at hsem
+        simp only [RL.sem, csemV, csem, Option.some.injEq, Prod.mk.injEq] at hsem
         obtain ⟨rfl, rfl, rfl⟩ := hsem
         cases hn with
         | ret _ => exact fin 0 _ hstep trivial
       case loadExtNameGot rd nm =>
         obtain ⟨d, rfl⟩ := isVregInt_iff (by simpa [ctlInstOk] using ctlCheck_inst hck hvb hi)
         have hsem' := hsem
-        simp only [RL.sem, csem, Option.some.injEq, Prod.mk.injEq] at hsem'
+        simp only [RL.sem, csemV, csem, Option.some.injEq, Prod.mk.injEq] at hsem'
         obtain ⟨-, -, rfl⟩ := hsem'
         cases hn with
         | next hk =>
@@ -240,7 +241,7 @@ theorem realizes_all {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (Call
       case loadExtNameNear rd nm off =>
         obtain ⟨d, rfl⟩ := isVregInt_iff (by simpa [ctlInstOk] using ctlCheck_inst hck hvb hi)
         have hsem' := hsem
-        simp only [RL.sem, csem, Option.some.injEq, Prod.mk.injEq] at hsem'
+        simp only [RL.sem, csemV, csem, Option.some.injEq, Prod.mk.injEq] at hsem'
         obtain ⟨-, -, rfl⟩ := hsem'
         cases hn with
         | next hk =>
@@ -264,7 +265,7 @@ theorem realizes_all {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (Call
             (fun w'' e => hh ⟨w'', e⟩)
           exact fin n c' hstep hq'
       case udf code =>
-        simp only [RL.sem, csem, Option.some.injEq, Prod.mk.injEq] at hsem
+        simp only [RL.sem, csemV, csem, Option.some.injEq, Prod.mk.injEq] at hsem
         obtain ⟨rfl, rfl, rfl⟩ := hsem
         cases hn with
         | halt => exact fin 0 _ hstep trivial
@@ -280,7 +281,8 @@ theorem realizes_all {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (Call
         exact fin n c'' hm hq'
       case tryCall info ti =>
         have hc : ctl = .goto ti.handlers.length := by
-          simp only [RL.sem, csem, Option.map_eq_some_iff, Prod.mk.injEq] at hsem
+          have hsem := R.sem_csem hsem
+          simp only [csem, Option.map_eq_some_iff, Prod.mk.injEq] at hsem
           obtain ⟨_, -, -, -, h⟩ := hsem; exact h.symm
         subst hc
         cases hn with
@@ -294,7 +296,7 @@ theorem realizes_all {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (Call
         obtain ⟨d, rfl⟩ := isVregInt_iff hv.1
         obtain ⟨t, rfl⟩ := isVregInt_iff hv.2
         have hsem' := hsem
-        simp only [RL.sem, csem, Option.some.injEq, Prod.mk.injEq] at hsem'
+        simp only [RL.sem, csemV, csem, Option.some.injEq, Prod.mk.injEq] at hsem'
         obtain ⟨-, -, rfl⟩ := hsem'
         cases hn with
         | next hk =>
@@ -360,16 +362,17 @@ the memory at `G` as at entry and the program unchanged. -/
 theorem regLevelCorrect_world {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
     {fb : FnBin} {k : Nat} (hcheck : checkAlloc vcp rf = .ok ()) (halloc : lowerRFunc vcp rf = .ok af)
     (hemit : emitFunc k af = .ok fa) (hlayout : fa.layout = .ok fb) {X : ExtSem} {H : ArmHooks}
-    {K : Nat} {G : BitVec 64 → Prop} (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
+    {K : Nat} {G : BitVec 64 → Prop} {gv : Nat → String → Prop}
+    (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
     {base ra : BitVec 64} {s : Arm.ArmState} (hent : AbiEntry fb base ra s)
     (hres : StackAvail K af s) (hG : ∀ a, G a → ¬ StackBelow (frameDrop af + K) (spv s) a)
     (hC : CalleeOkG (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) K G s
-      (CallAt fa base) X H vcp.CallSite)
+      (CallAt fa base) X H vcp.CallSite gv)
     (hCT : vcp.hasTryCall = true → CalleeTryOkG (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) K G s
-      (CallAt fa base) X H vcp.TrySite)
+      (CallAt fa base) X H vcp.TrySite gv)
     (hTls : vcp.hasTls = true → TlsOk (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) K X H)
     {w₀ : Arm.ArmState} (hbe : BodyEntryW (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) vcp.EntryArg af s w₀) (ρ₀ : Nat → CV) :
-    (∀ us vals w, VReturns vcp (csem (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ us vals w →
+    (∀ us vals w, VReturns vcp (csemV gv (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ us vals w →
       ∃ n, ArmRet ra s (E2E.runX (ArmStepX X H fa) n s) ∧
         (∀ (j : Nat) v p x, us[j]? = some (v, p) → vals[j]? = some x →
           regVal (E2E.runX (ArmStepX X H fa) n s) p = x) ∧
@@ -378,12 +381,12 @@ theorem regLevelCorrect_world {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAs
           Arm.r f (E2E.runX (ArmStepX X H fa) n s) = Arm.r f w) ∧
         (∀ a, G a → (E2E.runX (ArmStepX X H fa) n s).mem a = s.mem a) ∧
         (E2E.runX (ArmStepX X H fa) n s).program = s.program) ∧
-    (∀ c, VTraps vcp (csem (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ c →
+    (∀ c, VTraps vcp (csemV gv (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ c →
       ∃ n, TrapAt fb base c (E2E.runX (ArmStepX X H fa) n s)) := by
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hlayout
   obtain ⟨body, psF, hb, -, hk⟩ := emitFunc_ok hemit
   subst hk
-  let R : RL := ⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, G⟩
+  let R : RL := ⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, G, gv⟩
   have hR : R.Wf := ⟨hcheck, halloc, hemit, hlayout, hlm, by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres,
     ⟨body, hb⟩, hent.program, hG⟩
   have hck := (lowerRFunc_ok hR.alloc).2.2.2
@@ -399,7 +402,7 @@ theorem regLevelCorrect_world {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAs
     rw [operands_rets] at hops
     cases hops
     have hsem' := hsem
-    simp only [csem, Option.some.injEq, Prod.mk.injEq] at hsem'
+    simp only [csemV, csem, Option.some.injEq, Prod.mk.injEq] at hsem'
     obtain ⟨rfl, rfl, -⟩ := hsem'
     have h1 : VStep R.vc R.sem (.run ⟨b, k, ρ, w₁⟩) (.ret vals w₁) := by
       rw [hvals]
@@ -424,7 +427,7 @@ theorem regLevelCorrect_world {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAs
         rw [hi] at hi'; cases hi'
         rw [operands_rets] at hops'; cases hops'
         have hsem3 := hsem2
-        simp only [RL.sem, csem, Option.some.injEq, Prod.mk.injEq] at hsem3
+        simp only [RL.sem, csemV, csem, Option.some.injEq, Prod.mk.injEq] at hsem3
         obtain ⟨rfl, rfl, rfl⟩ := hsem3
         cases hn with
         | ret _ =>
@@ -488,7 +491,7 @@ theorem regLevelCorrect_world {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAs
   · -- a trap
     obtain ⟨b, k, ρ, w, vb, i, ops, outs, w', hstar, hvb, hi, hops, hsem, htc⟩ := htr
     obtain ⟨n1, c1, ⟨hq1, hA1⟩, hr1⟩ := forward hSim hRz hstar hinit ⟨hq0, hA0⟩
-    obtain ⟨hnil, hform⟩ := csem_halt hsem
+    obtain ⟨hnil, hform⟩ := csem_halt (csemV_sub hsem)
     subst hnil
     have hdefs : ops.toList.filter Operand.isDef = [] := by
       rcases hform with ⟨cd, rfl⟩ | ⟨kk, cd, rfl, -⟩
@@ -518,7 +521,7 @@ theorem regLevelCorrect_world {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAs
           exact ⟨n0 + n1 + n2 + 0, by rw [hfin]; exact trap_udf hR hq2 hvb hi⟩
         · cases hn with
           | halt =>
-          obtain ⟨-, hform2⟩ := csem_halt hsem2
+          obtain ⟨-, hform2⟩ := csem_halt (csemV_sub hsem2)
           rcases hform2 with ⟨_, e⟩ | ⟨kk', cd', e, hholds⟩
           · cases e
           · cases e
@@ -552,12 +555,13 @@ theorem regLevelCorrect_backend {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : Fn
       (ArmStepX X H fa) vcp af fb := by
   intro base ra s hent hres w₀ hbe ρ₀
   have e := frameWG_false K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s
-  have h := regLevelCorrect_world (G := fun _ => False) hcheck halloc hemit hlayout hcov hent hres
-    (fun _ h => h.elim) (by rw [e]; exact (hC s).g _ s _) (by rw [e]; exact fun h => (hCT h s).g _ _ s _)
+  have h := regLevelCorrect_world (G := fun _ => False) (gv := fun _ _ => False) hcheck halloc hemit
+    hlayout hcov hent hres
+    (fun _ h => h.elim) (by rw [e]; exact (hC s).g _ s _ _) (by rw [e]; exact fun h => (hCT h s).g _ _ s _ _)
     (by rw [e]; exact fun h => hTls h s)
     (by rw [e]; exact hbe.w _ fun r ⟨_, _, hvb, hi, _, hv⟩ =>
       ((ctlCheck_args (lowerRFunc_ok halloc).2.2.2 hvb hi).2.2 _ hv).2) ρ₀
-  rw [e] at h
+  rw [e, csemV_bot] at h
   exact ⟨fun us vals w hret => by
     obtain ⟨n, h1, h2, h3, -⟩ := h.1 us vals w hret
     exact ⟨n, h1, h2, h3⟩, h.2⟩

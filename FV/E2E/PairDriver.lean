@@ -780,7 +780,7 @@ theorem backend_correct_world_ni {p : Clif.Program} {f : Clif.Function} {k : Nat
       (s : Arm.ArmState), ActEntry vcp rf af fa fb K F G X H base ra s w₀ → _ :=
     fun w₀ H G base ra s he => by
       have h := regLevelCorrect_world hc.check hc.alloc hc.emit hc.layout (X := X) (H := H)
-        (K := K) (G := G) hcov he.abi he.stack he.gfree (by rw [he.hF]; exact he.calls)
+        (K := K) (G := G) (gv := GotV vcp) hcov he.abi he.stack he.gfree (by rw [he.hF]; exact he.calls)
         (by rw [he.hF]; exact he.tries) (by rw [he.hF]; exact he.tls) (by rw [he.hF]; exact he.body)
         (fun _ => 0)
       rw [he.hF] at h
@@ -793,7 +793,8 @@ theorem backend_correct_world_ni {p : Clif.Program} {f : Clif.Function} {k : Nat
     fun hNI hTls D w₀' hrel' hsw hreg hstk H G base ra s he => ?_⟩
   · have hP := prepareCorrect_of_check (driverSem_csem F ⟨fa.k, af.slotBase⟩ X) hc.prepOk
       (fun _ => 0) w₀
-    obtain ⟨n, h1, h2, h3, h4, h5, h6⟩ := (hM6 w₀ H G base ra s he).1 us outs w (hP.1 _ _ _ hv)
+    obtain ⟨n, h1, h2, h3, h4, h5, h6⟩ := (hM6 w₀ H G base ra s he).1 us outs w
+      (vReturns_gotV (hP.1 _ _ _ hv))
     exact ⟨n, ⟨h1, h2, h3, h4, h5, h6⟩⟩
   · obtain ⟨us', outs', w1, w2, hv1, hv2, hsw12⟩ := vcode_ni hsub hc hX hXI hsym hslot hNI hTls
       (fun _ => 0) hcs hrel hrel' hargs hsw hreg hstk htr fuel vals cm hrun
@@ -801,7 +802,7 @@ theorem backend_correct_world_ni {p : Clif.Program} {f : Clif.Function} {k : Nat
     have hP := prepareCorrect_of_check (driverSem_csem F ⟨fa.k, af.slotBase⟩ X) hc.prepOk
       (fun _ => 0) w₀'
     obtain ⟨n, h1, h2, h3, h4, h5, h6⟩ := (hM6 w₀' H G base ra s he).1 us' outs' w2
-      (hP.1 _ _ _ hv2)
+      (vReturns_gotV (hP.1 _ _ _ hv2))
     refine ⟨n, ⟨h1, h2, fun a ha => ?_, fun g hg h29 h31 => ?_, h5, h6⟩⟩
     · rw [h3 a (fun hf => ha (.inl hf))]
       exact (hsw12.2.1 a ha).symm

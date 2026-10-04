@@ -1,4 +1,4 @@
-import FV.E2E.Final
+import FV.E2E.GotFlow
 
 /-! # The per-function theorem with the final world (for linking)
 
@@ -34,8 +34,8 @@ structure ActEntry (vcp : VCode) (rf : RFunc) (af : AFunc) (fa : FnAsm) (fb : Fn
   stack : StackAvail K af s
   gfree : ∀ a, G a → ¬ StackBelow (frameDrop af + K) (spv s) a
   hF : frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s = F
-  calls : CalleeOkG F K G s (CallAt fa base) X H vcp.CallSite
-  tries : vcp.hasTryCall = true → CalleeTryOkG F K G s (CallAt fa base) X H vcp.TrySite
+  calls : CalleeOkG F K G s (CallAt fa base) X H vcp.CallSite (GotV vcp)
+  tries : vcp.hasTryCall = true → CalleeTryOkG F K G s (CallAt fa base) X H vcp.TrySite (GotV vcp)
   tls : vcp.hasTls = true → TlsOk F K X H
   body : BodyEntryW F vcp.EntryArg af s w₀
 
@@ -206,7 +206,7 @@ theorem backend_correct_world {p : Clif.Program} {f : Clif.Function} {k : Nat} {
   have hM6 : ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
       ActEntry vcp rf af fa fb K F G X H base ra s w₀ → _ := fun H G base ra s he => by
     have h := regLevelCorrect_world hc.check hc.alloc hc.emit hc.layout (X := X) (H := H)
-      (K := K) (G := G) hcov he.abi he.stack he.gfree (by rw [he.hF]; exact he.calls)
+      (K := K) (G := G) (gv := GotV vcp) hcov he.abi he.stack he.gfree (by rw [he.hF]; exact he.calls)
       (by rw [he.hF]; exact he.tries) (by rw [he.hF]; exact he.tls) (by rw [he.hF]; exact he.body)
       (fun _ => 0)
     rw [he.hF] at h
@@ -217,9 +217,10 @@ theorem backend_correct_world {p : Clif.Program} {f : Clif.Function} {k : Nat} {
       obtain ⟨b, k, ρ, w₁, vb, ops, outs', -, hvb, hk, -⟩ := hv
       exact ⟨b, vb, k, hvb, hk⟩
     refine ⟨us, outs, w, hus, hlen, hhold, hmemR, hrs, fun H G base ra s he => ?_⟩
-    obtain ⟨n, h1, h2, h3, h4, h5, h6⟩ := (hM6 H G base ra s he).1 us outs w (hP.1 _ _ _ hv)
+    obtain ⟨n, h1, h2, h3, h4, h5, h6⟩ :=
+      (hM6 H G base ra s he).1 us outs w (vReturns_gotV (hP.1 _ _ _ hv))
     exact ⟨n, ⟨h1, h2, h3, h4, h5, h6⟩⟩
-  · exact (hM6 H G base ra s he).2 c' (hP.2 c' (hI.2 c' hrun))
+  · exact (hM6 H G base ra s he).2 c' (vTraps_gotV (hP.2 c' (hI.2 c' hrun)))
 
 /-- An `ActRet` return is an `ArmRefines` return: the results' low bits and the live CLIF bytes
 (for a VCode outcome related to the CLIF one as `backend_correct_world` gives it). -/

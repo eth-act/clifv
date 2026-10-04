@@ -324,14 +324,14 @@ theorem realizes_op_next {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
       some (outs, w', .next))
     (hlen : outs.length = ((ops.zip allocs).toList.filter (·.1.isDef)).length)
     (hk : k + 1 < vb.insts.size)
-    (hOS : ∀ env, OperandsSound R.F (execMInst R.ctx env) R.sem i)
+    (hOS : ∀ env, OperandsSound R.F (execMInst R.ctx env) (csem R.F R.ctx R.X) i)
     (hL : ∀ regs i', i.assign regs = .ok i' →
       LinesOk R.ctx i' ∧ (∀ ds, i' ≠ .args ds) ∧ (∀ us, i' ≠ .rets us))
     (hW' : Arm.r .ERR w' = .None ∧ w'.program = w.program) :
     ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
       Q R (iterN R.step n s) c'' :=
   realizes_op_core hR hq hvb hi hops hsz hsem hlen hk (exec := fun env => execMInst R.ctx env)
-    (fun env => ((hOS env).at (fun _ => RL.FK_F) s).toI _)
+    (fun env => (((hOS env).at (fun _ => RL.FK_F) s).toI _).v R.gv)
     (fun regs i' hasg _ => by
       obtain ⟨⟨ls1, hl1, hins, hpl, hint⟩, hna, hnr⟩ := hL regs i' hasg
       exact ⟨ls1, hl1, hpl, hna, hnr, runsAs_of_linesOk hR hl1 hins hint⟩) hW'

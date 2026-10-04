@@ -595,7 +595,8 @@ the outgoing area of a function holds the stack-passed arguments of the program 
 declares (`outFits`); program call sites pass integer
 register arguments in the callee's parameter registers and take results from x0.. (checked per
 site; the result clause constrains only the defs the site has; for a `blr` site, for every
-function it may call (`MayCall`) with as many register parameters, `blrRegs`); declarations
+function it may enter (`BlrTo`: one it may call, `MayCall`; at a call through the GOT only the
+GOT symbol's function) with as many register parameters, `blrRegs`); declarations
 equal definitions; no function calls itself directly (`raCall`, `raBlr`:
 the return address of a call is outside the code of the function it calls, stated per call
 site); a function with indirect calls (`call_indirect`, `try_call_indirect`) has no link-time
@@ -848,18 +849,45 @@ bytes. It is vacuous without program callees with slots (`NeedSlots`).
      declared function of the `blr`'s arity in the site's defs, failing for a GOT call of a base
      extern without results (`panic_const_*`) next to a declared program function with one.
      `callRegs`/`blrRegs` now constrain only the defs the site has
-     (`take (sigRets) (defs) = range (min (sigRets) (defs.length))`); weaker than before. Not
-     addressed: the argument registers (`Lu`) and `blrTry` are still required for every
-     `MayCall` function of the site's arity, not only the GOT site's symbol (that needs the
-     target register's value, which M6's callee contract does not carry).
+     (`take (sigRets) (defs) = range (min (sigRets) (defs.length))`); weaker than before. The
+     argument registers (`Lu`) and `blrTry` at GOT sites: Widening 8.
    * Witness: `d(vt, x)` loads `m`'s address from the vtable `vt` (`vtObj`: 8 zero bytes and a
      relocation to `m`, written into the entry memory by `Clif.Image.writeItems`; read-only
      allocation at `0xF8000`) and calls it by `call_indirect`, declaring nothing; `f` passes
      `symbol_value vt` to `d` (`f 41 = 802`). `backend_correct_program_witness` states
      `¬ DeclN fD fM.name`, `fD.externs = []`, the `blr` site, `m`'s address and the vtable bytes.
 
+8. *Calls through the GOT pinned to their symbol* (agent/link-scope2). `blrRegs` (argument
+   registers, results) and `blrTry` quantified over every function of `P` a `blr` site's caller
+   may call with the site's arity, because M6's callee contract holds at every value of the
+   target register. That rejected real crates: a GOT call of a base extern (`panic_const_*`,
+   `try_call`s of std functions) next to a declared program function of the same register arity
+   with other argument registers (an `sret` pointer in x8) or fewer results. The site's target is
+   known statically: the lowering emits `loadExtNameGot t n; call (reg t)`.
+   * VCode analysis (`FV/E2E/GotFlow.lean`): `GotV vc t n` (every def of `t` is
+     `loadExtNameGot t n`, every call through `t` follows one in its block), decided by `gotB`
+     (`gotB_sound`; `gotOf vc t` finds the symbol, `gotOf_sound`). Every returning or trapping
+     VCode run of `csem` is one of `csemV (GotV vc)` (`vReturns_gotV`, `vTraps_gotV`: the
+     invariant `GotInv`, a vreg set by a GOT load earlier in the block holds the symbol's address).
+   * M6 (`RegLevelSim`): `csemV gv` is `csem` whose `call`/`try_call` through a vreg `t` with
+     `gv t n` is defined only when the target value is `n`'s address (`gotGuard`). `RL.sem` is
+     `csemV R.gv`; `CalleeOkG`/`CalleeTryOkG` and `regLevelCorrect_world` take `gv` (the contract
+     is required only at the calls the VCode run reaches: weaker). `regLevelCorrect_backend` and
+     `backend_correct_final` are unchanged (`gv := ⊥`, `csemV_bot`, `CalleeOk.g`).
+     `ActEntry`/`backend_correct_world(_ni)` use `gv := GotV vcp`.
+   * Arm: `LinkSys.BlrTo g t h` (`MayCall g h.name` and `h.name = n` for every `GotV vcp t n`)
+     replaces `MayCall` in `Ok.blrRegs`/`Ok.blrTry` (weaker: one more hypothesis). `progOsReg`
+     and `calleeTryOk` get the target value from the guard (`got_target`, by `symInj`).
+     `LinkSys.Ok` changes only there; a checker following the former form adapts with `hb.1`
+     (`BlrTo → MayCall`) or checks GOT sites against `gotOf` only.
+   * Witness: `e` calls the base extern `pz(i64, i64)` through the GOT (x0, x1) and declares the
+     program function `s(i64 sret, i64)` (x8, x0; one ABI result); the former `blrRegs` failed
+     on it (`backend_correct_program_witness`: `GotV (A fE).vcp t "pz"`, `Lu.map (·.2) ≠ regLocs
+     fS.sig`).
+
 **Non-vacuity** (`FV/E2E/NonVacuityLink.lean`, namespace `E2E.LinkWitness`): the closed program
-`P = {f, g, h, s, k, r, r__fvself, q, v, a2, w, t, u, m, d}` (`m`, `d`: the vtable dispatch of Widening 7) — the entry `f` (a stack slot, a 16-byte
+`P = {f, g, h, s, k, r, r__fvself, q, v, a2, w, t, u, m, d, e}` (`m`, `d`: the vtable dispatch of
+Widening 7; `e`: the GOT call of a base extern of Widening 8, not called by `f`) — the entry `f` (a stack slot, a 16-byte
 outgoing area)
 passes an `sret` pointer to its slot to `s` (which stores through it and returns the pointer),
 calls `k` with 9 arguments (the 9th on the stack), calls `g` by a `try_call` with a result
@@ -872,13 +900,14 @@ its result (`a2` and `w` are the `Opt.Legalize128` outputs the validator accepts
 the result in x0/x1); `t` has a stack slot (it stores `n + 10` through `stack_addr` and loads it
 back: `t n = 2 n + 10`; a 16-byte slot region, `size ≠ frameSize`), placed by the slot-placement
 oracle at its compiled frame address; `u` has an outgoing-argument area (it calls `k` with 9
-arguments, `n` on the stack: `u n = 1 + n`); `system_v` — parsed from an embedded source,
+arguments, `n` on the stack: `u n = 1 + n`); `f` passes the address of the vtable `vt` to `d`,
+which calls the method `m` it loads from it (`f 41 = 802`); `system_v` — parsed from an embedded source,
 legalised and
 compiled by the pipeline (`lowerFunction`, `prepare`, the `lean-regalloc` output for this file
 embedded as JSON and rebuilt by `parseRAOut`/`buildRFunc`, `checkAlloc`, `lowerRFunc`,
-`emitFunc`, `layout`), loaded at `0x70000` (`f`) and `0x10000`…`0xD0000`, closed base
-environment (no extern outside `P`, no TLS), the CLIF image's symbols: `q` at its base
-`0x80000` (`symsW`), depth `M0 = 100`. `t` and `u` make `NeedSlots` and `NeedNI` hold, so the
+`emitFunc`, `layout`), loaded at `0x70000` (`f`), `0x10000`…`0xF0000` and `0xF4000` (`e`),
+closed base environment (no extern outside `P` is defined, no TLS), the CLIF image's symbols: `q`
+and `m` at their bases and the vtable `vt` at `0xF8000` (`symsW`), depth `M0 = 100`. `t` and `u` make `NeedSlots` and `NeedNI` hold, so the
 premises they gate are discharged rather than vacuous (`baseNI`: `Xb.call` is undefined;
 `baseTlsNI`: the TLSDESC flags are the world's `pstate`, unmasked; `baseKeepsPlace`/
 `baseKeepsAllocs`: no base extern; `calleeFrame`/`slotFits`: checked per function; `hpl`: `cs0`'s
@@ -913,6 +942,15 @@ theorem backend_correct_program_witness :
     fT.slots ≠ [] ∧ (∃ info, (L F0).ProgSite fF info fU) ∧ (∃ info, (L F0).ProgSite fU info fK) ∧
     (RAFrame.compute (A fU).vcp (A fU).rf).intBase ≠ 0 ∧ (L F0).NeedSlots ∧ (L F0).NeedNI ∧
     (L F0).PlaceAt cs0.mem (spv w0) ∧
+    fM ∈ (L F0).P.funcs ∧ fD ∈ (L F0).P.funcs ∧ (∃ info, (L F0).ProgSite fF info fD) ∧
+    ¬ Clif.IndFree fD ∧ fD.externs = [] ∧ ¬ DeclN fD fM.name ∧
+    (∃ info, (A fD).vcp.CallSite info ∧ ∀ n, info.dest ≠ .sym n) ∧
+    (L F0).syms fM.name = some 0xE0000 ∧ cs0.mem.symbols "vt" = some vtAddr ∧
+    vtObj.items.drop 8 = [.addr "m" 0] ∧ (∃ m, vtWrite = .ok m ∧ cs0.mem.bytes = m.bytes) ∧
+    fE ∈ (L F0).P.funcs ∧ Clif.IndFree fE ∧ DeclN fE fS.name ∧ (L F0).P.func? "pz" = none ∧
+    (sigRets fS.sig).length = 1 ∧
+    (∃ info t Lu Ld, (A fE).vcp.CallSite info ∧ info = ⟨.reg (.vreg t .int), retPairs Lu, callDefs Ld⟩ ∧
+      GotV (A fE).vcp t "pz" ∧ (regLocs fS.sig).length = Lu.length ∧ Lu.map (·.2) ≠ regLocs fS.sig) ∧
     run0 = .returned [⟨.i64, 802#64⟩] (retMem run0) ∧
     ArmRefines (A fF).fb (A fF).base 8 ((L F0).mach M0 fF) s0 run0
 ```
@@ -932,9 +970,10 @@ environment). The second theorem discharges the entry premises too (`AbiEntry`, 
 `sp0 - 32`, `StackArgsAvoid`, `Rel.holds` (the slot's allocation outside `F0`, `SlotRel`,
 `OutRel` of the 16-byte outgoing area), `hpl`, the returning CLIF run (with the oracle: `t`'s
 slot at its frame address), `native_decide`: `entryFactsB_true`, `callChainB_true`,
-`slotChainB_true`) for `f` on `41` at depth `M0 = 100` and applies
+`slotChainB_true`, `vtChainB_true`, `gotChainB_true`) for `f` on `41` at depth `M0 = 100` and applies
 `backend_correct_program_returned`. Axioms: standard plus the `_native` axioms of `names`,
-`okB_true`, `entryFactsB_true`, `callChainB_true`, `slotChainB_true`, `vtChainB_true` (and the existing
+`okB_true`, `entryFactsB_true`, `callChainB_true`, `slotChainB_true`, `vtChainB_true`,
+`gotChainB_true` (and the existing
 `bv_decide`/`native_decide` ones of the backend proofs). The witness found the former `raCall`
 (the return address of every call outside the code of **every** function of `P`, including the
 caller's own) unsatisfiable for every program with a call; it is now stated for the callees of
