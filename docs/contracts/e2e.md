@@ -1396,8 +1396,10 @@ its data objects `D` and a file:
   `blW (T − P)` (in range) with `T = I.baseOf sym` (an alias's function); an
   `adrp`/`add :lo12:` pair and an `adrp :got:`/`ldr :got_lo12:` pair (consecutive words, the
   compiled words `adrp rd, 0` and `add rd, rd, 0` / `ldr rd, [rd, 0]`) put `T = I.symAddr sym
-  addend` into `rd` in one of the forms lld leaves (`PairOk`): `adrp`+`add`, `nop`+`adr`
-  (relaxed), or for the GOT `adrp`+`ldr` of a slot `G` whose 8 bytes in `loadMem` are `T`; a
+  addend` into `rd` as the compiled pair with resolved immediates (`PairOk`): `adrp`+`add`, or
+  for the GOT `adrp`+`ldr` of a slot `G` whose 8 bytes in `loadMem` are `T` (since
+  agent/bin-boundary `cargo fv` links with `--no-relax`, and lld's relaxed `nop`+`adr` is no
+  longer accepted: the executable's code is the compiled words); a
   TLSDESC sequence (`adrp`, `ldr`, `add`, `blr`) is lld's local-exec relaxation `movz x0, #hi,
   lsl 16`, `movk x0, #lo`, `nop`, `nop` of the symbol's thread-pointer offset (`TpOff`: its
   `st_value` after the 16-byte TCB aligned to `PT_TLS`'s alignment);
@@ -1460,14 +1462,17 @@ comment.
 `cargo fv link-proof --mode plain-abort`) `g_u128` and `a_arith` pass as well (865 and 1351
 words, 38 and 54 data objects). Findings:
 
-1. **lld relaxes every address pair**: all 1425 `adrp`/`add` and GOT `adrp`/`ldr` pairs of
-   the ten executables are `nop` + `adr` (target within ±1 MiB), and the two TLSDESC sequences
-   are local-exec `movz`/`movk`/`nop`/`nop`. No Lean code reads a GOT slot, so the GOT form of
-   `PairOk` has no instance in these executables; it was exercised on a patched copy of
-   GU128's executable (one pair rewritten as `adrp`+`add`, one as `adrp`+`ldr` of the `.got`
-   slot holding the target: accepted, `bin_ok` builds; the slot altered: rejected). For the
-   boundary: the model's hooks put the address in `rd` at the first word of a pair
-   (`ArmStepX`), the executable at the second.
+1. **lld relaxes every address pair** (without `--no-relax`): all 1425 `adrp`/`add` and GOT
+   `adrp`/`ldr` pairs of the ten executables were `nop` + `adr` (target within ±1 MiB), and the
+   two TLSDESC sequences are local-exec `movz`/`movk`/`nop`/`nop`. *Since agent/bin-boundary*
+   `cargo fv` links with `--no-relax`: every pair is then the compiled GOT `adrp`+`ldr` with
+   resolved immediates (1425 pairs, all GOT loads: the backend addresses symbols through the
+   GOT), the TLSDESC sequences stay lld's local-exec form (a static executable needs it), and
+   `PairOk` accepts only the unrelaxed forms. (Before, with every pair relaxed, the GOT form
+   was exercised on a patched copy of GU128's executable: the `.got` slot holding the target
+   accepted, the slot altered rejected.) The model's hooks (`ArmStepX`) give `rd` the address at
+   the pair's first word, the executable's `adrp`+`ldr` at its second (the boundary's trusted
+   hook semantics, "Entry boundary" below).
 2. **Data objects without a symbol of their own**: the file-name strings the panic `Location`s
    point to are left local by the merge (`.LdataN`, the same names in every codegen unit; 8
    unresolved names in GU128 alone); now named `.LdataN@<unit>` and resolved per object file.
@@ -1559,15 +1564,16 @@ it (`stack_ok : stackB input = some S`, or for a recursive program `stack_entrie
 The bound is the program's own stack (frames, fp/lr, outgoing areas); calls of code outside the
 program (std, the runtime) use stack by their contracts (`BaseOk`), not counted here.
 
-#### Entry boundary (2026-10-05, `agent/bin-boundary`, `FV/E2E/Binary.lean`)
+#### Entry boundary (item 3; 2026-10-05, `agent/bin-boundary`, `FV/E2E/Binary.lean`)
 
 The per-run premises of `crate_correct` are restated as a contract on the **real machine state**
 `r` in which code outside the program (std's `lang_start`, a fallback function, a callback)
 enters a function `f` of the program, plus the choice of the reference CLIF run; every premise the
-binary determines is discharged.
+binary determines is discharged, from the checks of items 1, 2 and 4.
 
 ```lean
--- E2E.Binary; prog I / art I f / img I / imgMem I: LinkSys.ofInput's P / A f / Img / imgMem
+-- E2E.Binary; prog I / art I f / img I / imgMem I: LinkSys.ofInput's P / A f / Img / imgMem;
+-- sys I B := LinkSys.ofInput I B (fun _ => False) (its machine and `P` do not depend on `F`)
 noncomputable def modelOf (I) (f) (r) : Arm.ArmState  -- r, program := f's compiled words,
                                                       -- mem on img I := imgMem I
 structure OutsideCall (I) (roB : BitVec 64 → Option (BitVec 8)) (f) (N : Nat) (r) (args) (cm) where
@@ -1588,50 +1594,64 @@ structure ClifRun (I) (B) (f) (r) (args) (cs) where    -- the reference CLIF run
   slots : SlotRel f ((spBody af r).toNat + af.slotBase) cs.frame.slots
   place : (sys I B).NeedSlots → (sys I B).PlaceAt cs.mem (spBody af r)
 
-theorem binary_correct_depth (hI : okB I = true) (B) (hB : BaseOk (sys I B))
-    (hf : (prog I).func? n = some f) (M : Nat)
-    (ho : OutsideCall I (fun _ => none) f (frameDrop (art I f).af + I.D * M) r args cs.mem)
-    (hr : ClifRun I B f r args cs)
-    (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) ((prog I).only f) cs) :
-    ArmRefines (art I f).fb (art I f).base (xreg 30 r) ((sys I B).mach M f) (modelOf I f r)
-      (Clif.runLoop B.env (prog I) (M + 1) cs)
-
 structure Image where mem : BitVec 64 → Option (BitVec 8); kept : BitVec 64 → Prop
-def Image.Intact (X : Image) (r) : Prop := ∀ a, X.kept a → X.mem a = some (r.mem a)
+def Image.Intact (X : Image) (r) : Prop := ∀ a b, X.kept a → X.mem a = some b → r.mem a = b
+def imageOf (file : ByteArray) : Image := ⟨Elf.loadMem file, fun a => Elf.ro file a ∨ Elf.relro file a⟩
 structure BinFacts (I) (X : Image) (R : BitVec 64 → Prop) (roB) where
   ok : okB I = true
   code : ∀ a, img I a → X.kept a ∧ (X.mem a = some (imgMem I a) ∨ R a)
   data : ∀ a b, roB a = some b → X.kept a ∧ X.mem a = some b
+theorem binFacts_of_checks (hI : okB I = true) (hB : BinCheck.BinOk I D file) :
+    BinFacts I (imageOf file) (BinCheck.RelocAt I) (BinCheck.roByte I D)
 
-theorem binary_correct (hbin : BinFacts I X R roB) (B) (hB : BaseOk (sys I B))
-    (hn : StackBound.goodN I n = true) (hf : (prog I).func? n = some f) (M : Nat)
-    (hX : X.Intact r)
-    (ho : OutsideCall I roB f (StackBound.stackFn I f) r args cs.mem)
+theorem binary_correct_of_checks (hI : okB I = true) (hbin : BinCheck.BinOk I D file)
+    (B) (hB : BaseOk (sys I B)) (hn : StackBound.goodN I n = true)
+    (hf : (prog I).func? n = some f) (M : Nat) (hX : (imageOf file).Intact r)
+    (ho : OutsideCall I (BinCheck.roByte I D) f (StackBound.stackFn I f) r args cs.mem)
     (hr : ClifRun I B f r args cs)
     (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) ((prog I).only f) cs) :
     ArmRefines (art I f).fb (art I f).base (xreg 30 r) ((sys I B).mach M f) (modelOf I f r)
       (Clif.runLoop B.env (prog I) (M + 1) cs) ∧
-    ∀ a, (modelOf I f r).mem a ≠ r.mem a → R a
+    ∀ a, (modelOf I f r).mem a ≠ r.mem a → BinCheck.RelocAt I a
+-- the same over abstract facts, and its variants:
+theorem binary_correct (hbin : BinFacts I X R roB) (B) (hB) (hn : StackBound.goodN I n = true)
+    (hf) (M) (hX : X.Intact r) (ho : OutsideCall I roB f (StackBound.stackFn I f) r args cs.mem)
+    (hr) (htr) : ArmRefines … (modelOf I f r) (Clif.runLoop B.env (prog I) (M + 1) cs) ∧
+      ∀ a, (modelOf I f r).mem a ≠ r.mem a → R a
 theorem binary_correct_bound (hbin : BinFacts I X R roB) (hS : StackBound.stackB I = some S) …
-    (ho : OutsideCall I roB f S r args cs.mem) … -- every function of a non-recursive program
+    (ho : OutsideCall I roB f S r args cs.mem) …     -- every function of a non-recursive program
+theorem binary_correct_depth (hI : okB I = true) (B) (hB) (hf) (M : Nat)
+    (ho : OutsideCall I (fun _ => none) f (frameDrop (art I f).af + I.D * M) r args cs.mem)
+    (hr) (htr) : ArmRefines … (modelOf I f r) (Clif.runLoop B.env (prog I) (M + 1) cs)
 theorem trapsExplicit_of_run (hL : L.Ok) (hf : f ∈ L.P.funcs) (hcs : ClifEntry f args cs)
     (hsym : cs.mem.symbols = L.syms)
     (hrun : Clif.runLoop L.base L.P (M + 1) cs = .returned vals cm) :
     TrapsExplicit (Clif.linkEnvN L.P L.base M) (L.P.only f) cs
 ```
 
-`binary_correct` goes through `StackBound.crate_correct_stackN` (the stack bound `stackFn I f`
-of a function whose calls reach no call cycle, every fuel `M`); `binary_correct_depth` through
-`crate_correct` (the stack grows with the depth: the statement for functions on call cycles, as
-in CompCert). A returning run needs no `TrapsExplicit` (`trapsExplicit_of_run`).
+In words: for an executable file that passes the binary checks against a crate input that passes
+the crate checker, whenever outside code calls a Lean-compiled function `f` of it whose calls
+reach no call cycle, meeting the boundary contract with `stackFn I f` bytes of stack, in a machine
+state that holds the file's read-only bytes, the linked machine (at every depth `M`) from that
+state refines the whole-program CLIF run of at most `M + 1` steps — returning to the caller's
+return address with the CLIF results and memory, or stopping at the CLIF trap's site — and the
+state the machine runs from differs from the real one only at the bytes of relocated
+instructions. `binary_correct` goes through `StackBound.crate_correct_stackN`;
+`binary_correct_depth` through `crate_correct` (the stack grows with the depth: the statement for
+functions on call cycles, as in CompCert). A returning run needs no `TrapsExplicit`
+(`trapsExplicit_of_run`).
 
 **The model state.** The model machine (`L.mach M f`, `ArmStepX`) fetches instructions from
-`s.program` and runs relocated instructions (`bl`, `adrp`/`add`, `adrp`/`ldr` through the GOT)
-by their link-map semantics; the compiled image (`imgMem`, `fb.words`) holds those instructions
-with zero relocation fields. `modelOf I f r` is `r` with the program `f`'s words and the program's
-code bytes the compiled image; `binary_correct`'s second conjunct shows it differs from `r` only at
-the relocated instruction bytes `R`, where the executable holds the resolved encodings
-(`FV/E2E/BinCheck.lean`).
+`s.program` and runs `bl`, `blr`, the address pairs (`adrp`+`add`, the GOT `adrp`+`ldr`) and the
+TLSDESC sequence through hooks: a pair puts the symbol's link-map address (`Xb.sym`) into `rd`.
+The compiled image (`imgMem`, `fb.words`) holds those instructions with zero relocation fields.
+`modelOf I f r` is `r` with the program `f`'s words and the program's code bytes the compiled
+image. The second conjunct: it differs from `r` only at the relocated instruction bytes
+(`RelocAt`), and there the executable holds the compiled instruction with its immediates resolved
+(`BinCheck.RelocOk`: `bl` to the callee's address; `adrp`+`ldr` of a GOT slot holding the symbol's
+address, `adrp`+`add` of the address; `cargo fv` links with lld's `--no-relax`, which keeps the
+pairs as emitted, and `PairOk` accepts no other form) — except TLSDESC sequences, which lld
+rewrites to local-exec `movz`/`movk`/`nop`/`nop` in a static executable.
 
 **Each premise of `backend_correct_program`:**
 
@@ -1639,29 +1659,60 @@ the relocated instruction bytes `R`, where the executable holds the resolved enc
 | --- | --- | --- |
 | `L.Ok` | discharged | `okB I = true` (`okB_sound`) except `BaseOk` |
 | `BaseOk` (contracts of std, other crates, the runtime) | **premise** | not about the program |
-| `AbiEntry.program`, `.code`, `.fits` | discharged | `modelOf` (program, code bytes), `Ok.imgCode`, `Ok.fits` |
+| `AbiEntry.program`, `.code`, `.fits` | discharged | `modelOf` (program, code bytes), `Ok.imgCode`, `Ok.fits`; the file's code bytes: `BinFacts.code` |
 | `AbiEntry.pc`, `.err`, `.spAligned` | `OutsideCall` | the call (AAPCS64) |
 | `AbiEntry.lr` | discharged | `ra := xreg 30 r` |
 | `AbiEntry.raOutside` | `OutsideCall.ra` (weaker form) | the return address is outside the program's code |
-| `StackAvail`, `hgfree` | `OutsideCall.stack`/`stackFree` with `N` | `N = stackFn I f` (`binary_correct`), `S` (`binary_correct_bound`), `frameDrop + D·M` (`binary_correct_depth`) |
-| `hF` (addresses outside the world) | discharged | `F := worldF I f K r` |
-| `himg` | discharged | `modelOf`; `R` relates it to the file |
+| `StackAvail`, `hgfree` | `OutsideCall.stack`/`stackFree` with `N` | `N = stackFn I f` (`binary_correct`, the stack check `goodN`), `S` (`binary_correct_bound`), `frameDrop + D·M` (`binary_correct_depth`) |
+| `hF` (addresses outside the world) | discharged | `F := worldF I f K r` (`K = bud I f` / `D·M`) |
+| `himg` | discharged | `modelOf`; `RelocAt` relates it to the file |
 | `BodyEntry` | discharged | the body-entry world is `bodyOf af s` |
 | `ArgsIn`, `StackArgsAvoid` | `OutsideCall.args` | stated on `r`; `noCode` from "not program code" |
 | `ClifEntry` | `ClifRun.entry` | the reference run |
-| `Rel.holds`: `MemRel.bytes` | `OutsideCall.bytes` + `.image` | read-only CLIF data: `BinFacts.data` + `Image.Intact` |
+| `Rel.holds`: `MemRel.bytes` | `OutsideCall.bytes` + `.image` | the read-only CLIF data objects' bytes: `BinFacts.data` + `Image.Intact` (the caller only states that its CLIF memory holds the image there, a CLIF-level fact) |
 | `Rel.holds`: `MemRel.valid` | `OutsideCall.valid` | live CLIF bytes not code, in the free stack only in `f`'s slot region |
-| `Rel.holds`: `MemRel.symbols` | `OutsideCall.symbols` | the CLIF image's symbol table |
+| `Rel.holds`: `MemRel.symbols` | `OutsideCall.symbols` | the CLIF image's symbol table (`SymsOk` ties the link map to the file's symbols) |
 | `Rel.holds`: `SlotRel` | `ClifRun.slots` | CLIF leaves slot addresses unspecified |
 | `Rel.holds`: `OutRel` | discharged | the outgoing area is free stack below the slot region |
 | `hpl` | `ClifRun.place` | as `SlotRel` (vacuous without slotted program callees) |
-| `TrapsExplicit` | **premise** | about the CLIF run (no memory-access traps) |
+| `TrapsExplicit` | **premise** | about the CLIF run (no memory-access traps); none for returning runs |
 
-**Trusted for the binary statement** (besides the M8 list): the loader premise `Image.Intact`
-(the OS maps the segments at their link addresses and read-only segments are never written; the
-relocation-read-only data is not written by outside code), and the model's semantics of the
-relocated instructions (`ArmStepX`: the resolved encodings the binary checks find compute the
-link-map addresses the model uses).
+**Trusted for the binary statement** (besides the M8 list and items 1–2's ELF loading):
+
+* the loader premise `Image.Intact`: the machine state holds the file's bytes at the read-only
+  segments and the relocation-read-only data (`PT_GNU_RELRO`, which static musl does not
+  `mprotect`: outside code must not write it);
+* the hook semantics of the model machine (`ArmStepX`), now applied to checked inputs: a GOT
+  `adrp`+`ldr` pair with resolved immediates loads the symbol's address, provided the GOT slot
+  (checked in the file: `PairOk`) is unchanged during the run — Lean code stores only into
+  writable CLIF allocations and its frames, so no writable CLIF allocation may contain a GOT slot
+  and outside code must not write one; the address is in `rd` one instruction later than in the
+  model, and no branch target lies between a pair's words (the compiled code branches to labels
+  only, and the emitter puts each pair in two consecutive instruction lines, which `PairOk` reads
+  at `P` and `P + 4`); the TLSDESC hook (`TlsOk`, a `BaseOk` contract) covers lld's local-exec
+  rewrite;
+* `--panic-abort` for the v1 configuration (no unwinding through Lean frames).
+
+**Non-vacuity** (`crate-proofs/Crates/BinaryWitness.lean`): on the `a_arith` test executable
+built with `cargo fv test -p a_arith --panic-abort` (proof `Crates.AArithAbort`, 58 functions,
+binary ok, stack 224 bytes), `binary_witness`: some file holds the proof's excerpts
+(`agrees_fileOf`), and for every such file (the executable is one) the machine state whose
+memory is the file's loaded image, in which outside code calls the Lean-compiled
+`core::num::<i32>::wrapping_add` with `2`, `3` and `stackFn` bytes of stack, meets every premise
+of `binary_correct_of_checks` (`bin_ok`, `okB_input`, `goodN`, `Image.Intact`, `OutsideCall`,
+`ClifRun`, `BaseOk` of the closed base, `TrapsExplicit` from the returning run); the CLIF run
+returns `5` and the theorem gives the machine's return to the caller with `5` in x0.
+`binary_depth_witness`: the same for `binary_correct_depth`.
+
+**`cargo fv build`/`test`** (`rust/crates/cargo-fv/src/bincheck.rs`): after the build, every
+linked executable with Lean-compiled code goes through `cargo fv link-proof` (into
+`target/fv/<mode>/bin-check/`) and `link-check --prune`, and the verdict is printed: `verified:
+E2E.Binary.binary_correct holds for its N Lean-compiled functions; stack: …` (with
+`binary_correct_depth` for functions on call cycles), or `not verified: …` with the failing check
+(the binary check's `FAIL` line and first detail, or the first function failing `LinkSys.Ok`).
+The build keeps link-proof's inputs for it (objects removed); `--no-binary-check` turns it off.
+The 18 executables of `examples/survey` and `fv-demo`'s are verified (fv-demo: 26 functions on
+call cycles).
 
 ### Non-vacuity (2026-10-02, `agent/callee-fix`, `FV/E2E/NonVacuity.lean`)
 
