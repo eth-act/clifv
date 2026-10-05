@@ -1,0 +1,3 @@
+# Unified-diff context represents an empty source line with one literal space.
+# Source whitespace is checked in the instrumented upstream tree instead.
+scripts/patches/*.patch -whitespace

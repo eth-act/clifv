@@ -1,6 +1,7 @@
 import FV.Backend
 import FV.Opt.Legalize128Pass
 import FVTest.Opt.Common
+import FVTest.Backend.StockConfig
 
 /-!
 `lake exe lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>]
@@ -41,7 +42,7 @@ validator and listed as `compiled, unverified (validation budget)`.
 open Backend
 
 def usage : String :=
-  "usage: lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>] [--dump <dir>] [--regalloc regalloc2|stack|regalloc2-small] [--personality <sym>] [--opt]"
+  "usage: lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>] [--dump <dir>] [--regalloc regalloc2|stack|regalloc2-small] [--personality <sym>] [--opt] [--stock-config <request.json> --config-receipt <receipt.json>]"
 
 /-- The rules the end-to-end theorem covers: the emitter-subset closure, and the `try_call`
 rules of `lower_branch` (ids 1034 `bl`, 1035 GOT + `blr`: `Backend.Proof.tryRootRule`, proven by
@@ -59,9 +60,29 @@ structure Opts where
   regalloc : String := "regalloc2"
   opt : Option Opt.Config := none
   personality : Option String := none
+  stockConfig : Option String := none
+  configReceipt : Option String := none
 
 def run (input output : String) (o : Opts) : IO UInt32 := do
   let src ← IO.FS.readFile input
+  if o.configReceipt.isSome != o.stockConfig.isSome then
+    IO.eprintln "lean-backend: --stock-config and --config-receipt must be supplied together"
+    return 2
+  if o.stockConfig.isSome && (o.opt.isSome || o.regalloc != "regalloc2" || o.personality.isSome) then
+    IO.eprintln "lean-backend: stock configuration forbids independent opt/regalloc/personality overrides"
+    return 2
+  let mut stock : Option StockConfig.Config := none
+  if let some path := o.stockConfig then
+    let request ← match Lean.Json.parse (← IO.FS.readFile path) with
+      | .ok j => pure j
+      | .error e => do IO.eprintln s!"lean-backend: invalid configuration JSON: {e}"; return 2
+    let checked := StockConfig.parse request
+    let error := match checked with | .ok _ => none | .error e => some e
+    if let some receipt := o.configReceipt then
+      IO.FS.writeFile receipt ((StockConfig.receipt request error).pretty ++ "\n")
+    match checked with
+    | .error e => IO.eprintln s!"lean-backend: unsupported stock configuration: {e}"; return 3
+    | .ok c => stock := some c
   let some alloc ← Allocator.ofName? o.regalloc
     | do IO.eprintln s!"lean-backend: unknown allocator {o.regalloc}"; return 2
   let pf := Clif.parseFile src
@@ -83,7 +104,13 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
         some (p.name, "call_indirect (outside backend_correct_opt_proven: functions without indirect calls only)")
       else none
     | .error _ => none
-  let fa ← compileFileIO alloc pf (unv128 ++ unvTry)
+  let fa ← match stock with
+    | none => compileFileIO alloc pf (unv128 ++ unvTry)
+    | some c => (compileFileWith (StockConfig.allocate c alloc) pf
+        (unv128 ++ unvTry ++ pf.funcs.map (fun p => (p.name, "experimental stock-configured driver (outside backend_correct)"))))
+  let fa := match stock with
+    | some c => if c.unwind then fa else { fa with unwind := [] }
+    | none => fa
   if output.endsWith ".o" || o.dump.isSome then
     match fa.layout with
     | .error e =>
@@ -97,6 +124,13 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
           IO.FS.writeBinFile (System.FilePath.mk d / s!"{fb.name}.bin") (wordsBytes fb.words)
           IO.FS.writeFile (System.FilePath.mk d / s!"{fb.name}.relocs.json") fb.relocsJson
           IO.FS.writeFile (System.FilePath.mk d / s!"{fb.name}.traps.json") fb.trapsJson
+          if let some c := stock then
+            let metadata := Lean.Json.mkObj [
+              ("name", Lean.toJson fb.name), ("alignment", Lean.toJson (4 : Nat)),
+              ("unwind_disabled", Lean.toJson (!c.unwind)),
+              ("stack_maps", Lean.toJson ([] : List String)),
+              ("exception_metadata_comparison_supported", Lean.toJson false)]
+            IO.FS.writeFile (System.FilePath.mk d / s!"{fb.name}.metadata.json") (metadata.pretty ++ "\n")
   if !output.endsWith ".o" then IO.FS.writeFile output fa.text
   if let some t := o.traps then IO.FS.writeFile t fa.tableJson
   let names := Isle.Aarch64.program.ruleNames fa.rules
@@ -128,6 +162,8 @@ def main (args : List String) : IO UInt32 := do
     | "--dump" :: d :: rest => opts { o with dump := some d } rest
     | "--regalloc" :: a :: rest => opts { o with regalloc := a } rest
     | "--personality" :: p :: rest => opts { o with personality := some p } rest
+    | "--stock-config" :: c :: rest => opts { o with stockConfig := some c } rest
+    | "--config-receipt" :: c :: rest => opts { o with configReceipt := some c } rest
     | _ => none
   let (optCfg, args) ← match Opt.parseOptArgs args with
     | .ok r => pure r
