@@ -85,8 +85,9 @@ result.
 Same-repository PRs publish in a separate job after the measurement succeeds.
 Fork builds use read-only permissions. A separate `workflow_run` publisher reads
 the small data artifact and posts their comments, also when only the lost-match
-job failed. It checks out only the default branch and never executes fork code. GitHub activates that publisher only after
-its workflow and script are merged into the default branch.
+job failed. It checks out only the default branch and never executes fork code.
+GitHub activates that publisher only after its workflow and script are merged
+into the default branch.
 
 ### Daily change reports
 
