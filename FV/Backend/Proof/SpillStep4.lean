@@ -1,4 +1,6 @@
 import FV.Backend.Proof.SpillStep4Args
+import FV.Backend.Proof.SpillEdges
+import FV.Backend.Proof.SpillLocalPipe
 
 /-!
 # The spill allocation's dataflow invariant (V4 (a), step 4): `spillStep4`
@@ -246,5 +248,106 @@ theorem spillStep4 : SpillStep4 := by
     inState vc succs preds D 0, ⟨rfl, rfl, ⟨preds, hcfg⟩, spillAlloc_size vc, hE.entry.1,
       insOf_get (Nat.pos_of_ne_zero hE.entry.1), fun b hb => verify_block hcfg hloc hav hb⟩,
     inState_entryOk hE.entry.2.1⟩
+
+/-! ## Non-vacuity -/
+
+/-- `edgesEx` with the classes of its vregs: a `jump` passing `v5` to a block with parameter `v7`,
+which returns. -/
+def step4Ex : VCode := { edgesEx with classes := Array.replicate 8 .int }
+
+theorem step4Ex_cfg : step4Ex.cfg = .ok (#[#[1], #[]], #[#[], #[0]]) := edgesEx_cfg
+
+theorem step4Ex_local : SpillLocalOk step4Ex := by
+  refine ⟨fun b vb k i hb hi => ?_, ⟨fun b vb k i ops hb hi hops o ho => ?_, fun b vb hb r hr => ?_⟩,
+    fun succs preds h => ?_⟩
+  · match b, hb with
+    | 0, hb =>
+      cases hb
+      match k, hi with
+      | 0, hi => cases hi; exact spillInstOk_jump 1
+    | 1, hb =>
+      cases hb
+      match k, hi with
+      | 0, hi =>
+        cases hi
+        exact ⟨#[], rfl, opsOk_simple (by simp) (by simp) (by simp) (by simp),
+          fun _ _ o ho => by simp at ho⟩
+  · match b, hb with
+    | 0, hb =>
+      cases hb
+      match k, hi with
+      | 0, hi => cases hi; cases hops; simp at ho
+    | 1, hb =>
+      cases hb
+      match k, hi with
+      | 0, hi => cases hi; cases hops; simp at ho
+  · match b, hb with
+    | 0, hb => cases hb; simp [step4Ex, edgesEx] at hr; subst hr; exact ⟨5, .int, rfl, rfl⟩
+    | 1, hb => cases hb; simp [step4Ex, edgesEx] at hr; subst hr; exact ⟨7, .int, rfl, rfl⟩
+  · rw [step4Ex_cfg] at h
+    cases h
+    refine ⟨⟨by decide, rfl, rfl⟩, ?_, ?_, ?_⟩
+    · intro b vb hb hne
+      match b, hb with
+      | 0, hb =>
+        cases hb
+        refine ⟨⟨.jump 1, rfl, rfl⟩, 1, _, rfl, rfl, rfl, fun k a p ha hp => ?_, by decide⟩
+        match k, ha, hp with
+        | 0, ha, hp => cases ha; cases hp; exact ⟨5, 7, .int, rfl, rfl⟩
+      | 1, hb => cases hb; exact absurd rfl hne
+    · intro b vb ss s sb hb hba hss hs hsb
+      match b, hb, hss with
+      | 0, hb, _ => cases hb; cases hba
+      | 1, _, hss => cases hss; simp at hs
+    · intro b vb info ti ss s hb hback
+      match b, hb with
+      | 0, hb => cases hb; cases hback
+      | 1, hb => cases hb; cases hback
+
+theorem step4Ex_avail : SpillAvail step4Ex fun _ _ => true := by
+  refine ⟨fun _ => rfl, fun succs preds h b vb k i ops hb hi hops o ho _ => ?_,
+    fun succs preds h b vb ss s sb hb hss hs hsb v _ => ?_⟩
+  · match b, hb with
+    | 0, hb =>
+      cases hb
+      match k, hi with
+      | 0, hi => cases hi; cases hops; simp at ho
+    | 1, hb =>
+      cases hb
+      match k, hi with
+      | 0, hi => cases hi; cases hops; simp at ho
+  · rw [step4Ex_cfg] at h
+    cases h
+    match b, hb, hss with
+    | 0, hb, hss =>
+      cases hb
+      cases hss
+      simp at hs
+      subst hs
+      cases hsb
+      have hA : ∀ w, availAt #[MInst.jump 1]
+          (availStart step4Ex #[#[1], #[]] #[#[], #[0]] (fun _ _ => true) 0) 1 w = true := by
+        intro w
+        rw [availAt_succ (i := .jump 1) rfl, availInst_eq (ops := #[]) rfl]
+        simp [isDefOf, availAt_zero, availStart]
+      unfold edgeAvail
+      split
+      · rename_i k hk
+        have : k = 0 := by
+          have := (List.idxOf?_eq_some_iff.mp hk).1
+          simp [step4Ex, edgesEx] at this
+          omega
+        subst this
+        exact hA _
+      · exact hA _
+    | 1, hb, hss => cases hb; cases hss; simp at hs
+
+/-- **Non-vacuity of `spillStep4`**: its premises hold together on a VCode with a block argument. -/
+theorem spillStep4_witness : ∃ vc D, (∃ succs preds, vc.cfg = .ok (succs, preds)) ∧
+    SpillLocalOk vc ∧ SpillAvail vc D ∧ (∃ vb ∈ vc.blocks.toList, vb.branchArgs ≠ #[]) ∧
+    AllocChecked vc (spillAlloc vc) :=
+  ⟨step4Ex, _, ⟨_, _, step4Ex_cfg⟩, step4Ex_local, step4Ex_avail,
+    ⟨_, List.mem_cons_self, by decide⟩,
+    spillStep4 step4Ex _ ⟨_, _, step4Ex_cfg⟩ step4Ex_local step4Ex_avail⟩
 
 end Backend.Proof.Spill

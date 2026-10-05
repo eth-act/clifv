@@ -1,5 +1,6 @@
 import FV.E2E.FinalDirect
 import FV.Backend.Proof.SpillInvariant
+import FV.Backend.Proof.SpillStep4
 import FV.Backend.Proof.SpillArity
 import FV.Backend.Proof.SpillEdges
 import FV.Backend.Proof.SpillClasses
@@ -16,10 +17,10 @@ regalloc2's output is no longer a premise: whatever regalloc2 returns (or if it 
 absent), the allocation that is lowered is `AllocChecked`, provided the spill allocation is
 (`SpillAccepted`).
 
-`SpillAccepted` is reduced to the step-4 facts (`spillAccepted_of_step4`: `Spill.SpillStep4` and
-`SpillAvailable`, open, explicit hypotheses, not axioms); the step-3 local facts are proven
-(`spillLocalAll`). `lean-e2e-check` decides `checkAlloc`'s acceptance of the spill allocation on every
-in-scope function of the corpus and the runtests ("spill fallback" line). What remains is listed in
+`SpillAccepted` is reduced to the availability sets of the pipeline's output
+(`spillAccepted_of_avail`: `SpillAvailable`, open, an explicit hypothesis, not an axiom); the step-3
+local facts (`spillLocalAll`) and the step-4 invariant proof (`Spill.spillStep4`) are proven.
+`lean-e2e-check` decides `checkAlloc`'s acceptance of the spill allocation on every in-scope function of the corpus and the runtests ("spill fallback" line). What remains is listed in
 `docs/TO-PROVE.md` (V4).
 
 An earlier statement (PR #54) asked for `checkAlloc vcp (spillAlloc vcp) = .ok ()` under
@@ -39,7 +40,7 @@ path. The downstream proofs need less: `AllocChecked` (verified in-states with a
 `EntryOk` entry state; `CompiledA`, `RegLevelCorrectEx`, `backend_correct_final_ex`). For the spill
 allocation that is `SpillAccepted`, which follows from the local facts (`SpillLocalAll`, step 3),
 the availability sets of the pipeline's output (`SpillAvailable`) and the step-4 invariant proof
-(`Spill.SpillStep4`): `spillAccepted_of`. -/
+(`Spill.SpillStep4`, proven: `Spill.spillStep4`): `spillAccepted_of`, `spillAccepted_of_avail`. -/
 
 /-- **The spill allocation is `AllocChecked`** (V4, restated; an explicit hypothesis, not an axiom):
 for every prepared VCode `vcp` the pipeline produces from in-scope input, the spill allocation has
@@ -85,12 +86,18 @@ theorem spillAccepted_of (h4 : Spill.SpillStep4) (hloc : SpillLocalAll) (hav : S
     SpillAccepted :=
   fun p f vc vcp hsub har hd hs hl hp =>
     let ⟨D, hD⟩ := hav p f vc vcp hsub har hd hs hl hp
-    h4 vcp D (hloc p f vc vcp hsub har hd hs hl hp) hD
+    h4 vcp D (Spill.cfg_ok_of_prepare hp (prepDomain_of_lower hs hl hs.nonempty))
+      (hloc p f vc vcp hsub har hd hs hl hp) hD
 
 /-- **The assembly with step 3 proven**: the step-4 invariant proof and the availability sets give
 `SpillAccepted`. -/
 theorem spillAccepted_of_step4 (h4 : Spill.SpillStep4) (hav : SpillAvailable) : SpillAccepted :=
   spillAccepted_of h4 spillLocalAll hav
+
+/-- **The assembly with steps 3 and 4 proven** (`spillLocalAll`, `Spill.spillStep4`): the
+availability sets of the pipeline's output give `SpillAccepted`. -/
+theorem spillAccepted_of_avail (hav : SpillAvailable) : SpillAccepted :=
+  spillAccepted_of_step4 Spill.spillStep4 hav
 
 /-- The allocation the backend lowers is `AllocChecked`, whatever regalloc2 answered. -/
 theorem allocChecked_allocResult (hsa : SpillAccepted) {p : Clif.Program} {f : Clif.Function}
@@ -111,8 +118,8 @@ theorem allocChecked_allocResult (hsa : SpillAccepted) {p : Clif.Program} {f : C
 
 /-- **The backend's end-to-end theorem for the fallback-composed allocation, V4 restated**:
 `backend_correct_final_of_lower` with `rf := allocResult vcp ra` for any answer `ra` of the
-untrusted allocator and no `checkAlloc` premise, under `SpillAccepted` (`spillAccepted_of` reduces it
-to the step-3/4 facts), with the input condition `arityOkB` (every
+untrusted allocator and no `checkAlloc` premise, under `SpillAccepted` (`spillAccepted_of_avail`
+reduces it to `SpillAvailable`), with the input condition `arityOkB` (every
 branch passes as many arguments as its target has parameters; `lowerFunction` does not check it,
 and the spill allocation's parameter copies need it). -/
 theorem backend_correct_final_alloc (hsa : SpillAccepted) {p : Clif.Program}

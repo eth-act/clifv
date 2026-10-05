@@ -201,18 +201,27 @@ author's estimate, not measured), **Risk**.
      to `f`'s terminators: for an arbitrary `try_call_indirect` on an unused signature declaration with
      two `sret` parameters it is false (rule 1036). So step 3 is **done**: `E2E.spillLocalAll`
      (`InSubset`, `Dominated`, `LowerScope`, `ArityOk` give `SpillLocalOk` of the prepared VCode).
-  4. *The dataflow invariant* — **stated** (`FV/Backend/Proof/SpillInvariant.lean`). What remains is
+  4. *The dataflow invariant* — **stated** (`FV/Backend/Proof/SpillInvariant.lean`), the invariant
+     proof done. What remains is
      availability, not definedness: `SpillAvail vc D` (sets `D b` of vregs whose home holds them on
      entry to block `b`: all at the entry; every use available where it is read, `availAt`; every edge
      delivers its target's set, `edgeAvail`), a VCode-level must-analysis killed only by unstored
-     terminator defs, scratch defs past `keptDefs` and parameters with unavailable arguments. Open, as
-     explicit hypotheses: `Spill.SpillStep4` (with `SpillLocalOk` and `SpillAvail`, the in-states
-     "homes of `D b` hold their vregs, save slots their entry values (block 0: the registers), a
-     `try_call` successor's live def registers their defs" verify, i.e. `AllocChecked vc (spillAlloc
-     vc)`) and `SpillAvailable` (`∃ D, SpillAvail vcp D` for the pipeline's output). Assembly:
-     `spillAccepted_of : SpillStep4 → SpillLocalAll → SpillAvailable → SpillAccepted`,
-     `spillAccepted_of_step4 : SpillStep4 → SpillAvailable → SpillAccepted`, then
-     `backend_correct_final_alloc` (premise `arityOkB f = true`).
+     terminator defs, scratch defs past `keptDefs` and parameters with unavailable arguments.
+     **`Spill.SpillStep4` proven** (`Spill.spillStep4`, `FV/Backend/Proof/SpillStep4*.lean`, 2026-10-05):
+     with a CFG, `SpillLocalOk` and `SpillAvail`, the in-states `inState` ("homes of `D b` hold their
+     vregs, save slots their entry values (block 0: the registers), a `try_call` successor's live def
+     registers their defs") verify, i.e. `AllocChecked vc (spillAlloc vc)`: per instruction
+     `inst_runs` (restores, loads, the instruction, stores), `pre_runs` (saves, entry stores),
+     `argMoves_runs` (the two-phase copy), `edge_noargs`/`edge_args` (the checker's `edge` feeds the
+     successor's in-state; a `try_call` successor's single predecessor pins its successor number,
+     `preds_single`). The statement gained the premise `∃ succs preds, vc.cfg = .ok (succs, preds)`:
+     without it, it is false (a block not ending in a terminator meets `SpillLocalOk` and `SpillAvail`
+     vacuously, but `CheckedAt` needs a CFG); the pipeline's output has one (`cfg_ok_of_prepare`).
+     Open, as an explicit hypothesis: `SpillAvailable` (`∃ D, SpillAvail vcp D` for the pipeline's
+     output). Assembly: `spillAccepted_of : SpillStep4 → SpillLocalAll → SpillAvailable →
+     SpillAccepted`, `spillAccepted_of_step4 : SpillStep4 → SpillAvailable → SpillAccepted`,
+     `spillAccepted_of_avail : SpillAvailable → SpillAccepted`, then `backend_correct_final_alloc`
+     (premise `arityOkB f = true`).
 - **Option (b), later:** a real allocator (linear scan) written in Lean, proven directly or with
   `checkAlloc` completeness for its output. Removes the Rust tool entirely. Large `[est]`.
 

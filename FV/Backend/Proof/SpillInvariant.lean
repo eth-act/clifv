@@ -23,8 +23,8 @@ The in-states of the spill allocation are then: the home of every vreg in `D b` 
 slot of every callee-saved register holds its entry value (on entry to block 0: the register
 itself), and on entry to a successor of a `try_call` the registers of the defs live on that edge
 (`termEdgeDefs`) hold them. `SpillStep4` — each `spillInst` group, the argument copies, the saves,
-restores and entry stores re-establish them — is the remaining obligation of step 4, stated as an
-explicit hypothesis (not an axiom). `SpillAvailable` (`FV/E2E/AllocDirect.lean`) asks for the sets
+restores and entry stores re-establish them — is proven (`spillStep4`,
+`FV/Backend/Proof/SpillStep4.lean`). `SpillAvailable` (`FV/E2E/AllocDirect.lean`) asks for the sets
 `D` of the pipeline's output.
 -/
 

@@ -75,7 +75,7 @@ theorem Runs.op {k : Nat} {a a' : AState} {allocs : Array Loc} {i : MInst} {ops 
   have he' : ensure (k == k) (fun _ => s!"block {vb.label}: instruction {k} where {k} is due") =
       .ok () := ensure_true (by simp)
   simp only [List.cons_append, List.nil_append, CheckCtx.runItems, he, he', hi, hops, hs,
-    bind, Except.bind, pure, Except.pure]
+    bind, Except.bind]
   exact ho
 
 theorem Runs.run {its : List RItem} {a : AState} {P : AState → Prop}
@@ -320,7 +320,7 @@ theorem mem_parCopy_add {a : AState} {ps xs : List Nat} {l : Loc} {p y : Nat}
   · exact List.mem_append_left _ hk
   · refine List.mem_append_right _ (List.mem_filter.mpr ⟨?_, ?_⟩)
     · exact List.mem_filterMap.mpr ⟨(p, y), hpy, by simp [hy]⟩
-    · simp [List.contains_iff_mem] at hk ⊢
+    · simp at hk ⊢
       by_cases h : Sym.vreg p ∈ a.get l
       · exact .inr (hk h)
       · exact .inl h

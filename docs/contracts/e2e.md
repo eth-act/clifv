@@ -2219,6 +2219,8 @@ theorem E2E.backend_correct_final_ex (hc : CompiledA f k vc vcp rf af fa fb) …
 def E2E.SpillAccepted : Prop := ∀ p f vc vcp, InSubset p f → Spill.ArityOk f → Dominated f →
     LowerScope f → lowerFunction f = .ok vc → Backend.prepare vc = .ok vcp → AllocChecked vcp (spillAlloc vcp)
 theorem E2E.spillAccepted_of_step4 (h4 : Spill.SpillStep4) (hav : SpillAvailable) : SpillAccepted
+theorem Spill.spillStep4 : Spill.SpillStep4  -- ∀ vc D, (∃ succs preds, vc.cfg = .ok (succs, preds)) → SpillLocalOk vc → SpillAvail vc D → AllocChecked vc (spillAlloc vc)
+theorem E2E.spillAccepted_of_avail (hav : SpillAvailable) : SpillAccepted
 theorem E2E.backend_correct_final_alloc (hsa : SpillAccepted) (hsub : InSubset p f)
     (hd : dominatedB f = true) (hs : lowerScopeB f = true) (har : Spill.arityOkB f = true) (hl …) (hp …) (hrf : rf = allocResult vcp ra) (ha …) (he …) (hla …)
     -- backend_correct_final's contract, link-time and run premises (hC … htr), unchanged
@@ -2232,9 +2234,10 @@ vreg in). The spill allocation may therefore start with every home holding its v
 is availability (`Spill.SpillAvail`), not definedness. The old statements (`checkAlloc_sound`,
 `regLevelCorrect_world`, `backend_correct_of_layers`, `backend_correct`, `backend_correct_of_rules`)
 are corollaries; `Compiled` keeps `checkAlloc` because the link-level theorems (`LinkWorld`,
-`PairDriver`) fix one VCode outcome for all activations, which needs every `ρ₀`. Open, as explicit
-hypotheses: `Spill.SpillStep4` and `E2E.SpillAvailable` (`docs/TO-PROVE.md` V4 step 4); step 3 is
-`E2E.spillLocalAll`. Non-vacuity: `E2E.backend_correct_final_alloc_witness`.
+`PairDriver`) fix one VCode outcome for all activations, which needs every `ρ₀`. Open, as an explicit
+hypothesis: `E2E.SpillAvailable` (`docs/TO-PROVE.md` V4 step 4); step 3 is `E2E.spillLocalAll`, the
+step-4 invariant proof `Spill.spillStep4` (2026-10-05; `SpillStep4` takes a CFG premise, which the
+pipeline's output meets, `Spill.cfg_ok_of_prepare`). Non-vacuity: `E2E.backend_correct_final_alloc_witness`.
 
 **Validator completeness: `Opt.Legalize128` is correct without `Opt.Legal.check`** (2026-10-02,
 `FV/Opt/Proof/LegalComplete.lean`, `FV/Opt/Proof/LegalDirect.lean`, `FV/E2E/LegalDirect.lean`;
