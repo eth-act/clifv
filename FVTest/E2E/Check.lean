@@ -3,6 +3,7 @@ import FV.Backend.Proof.DriverCheck
 import FV.Backend.Proof.LowerDecide
 import FV.Backend.Proof.PrepareCheck
 import FV.Backend.Proof.RegallocCover
+import FV.Backend.Proof.SpillArity
 import FV.Opt.Legalize128Pass
 import FVTest.Opt.Common
 
@@ -166,6 +167,7 @@ def main (args : List String) : IO UInt32 := do
   let mut spillLow := 0
   let mut spillBig := 0
   let mut tSpill := 0
+  let mut arity := 0
   for file in files do
     let lg := Opt.Legalize128.parsedFile128 (Clif.parseFile (← IO.FS.readFile file))
     let pf := match optCfg with | some c => Opt.optimizeParsedFile c lg.file | none => lg.file
@@ -201,6 +203,8 @@ def main (args : List String) : IO UInt32 := do
       if sc then scope := scope + 1
       if d && sc then both := both + 1
       else IO.println s!"{file}: %{f.name}: outside lowerCheck_complete's conditions (dominatedB {d}, lowerScopeB {sc})"
+      if Backend.Proof.Spill.arityOkB f then arity := arity + 1
+      else IO.println s!"{file}: %{f.name}: arityOkB fails (a branch argument count differs from its target's parameter count)"
       let r ← IO.lazyPure (fun _ => lowerCheck f vc)
       let t2 ← IO.monoMsNow
       if t2 - t0 > 2000 then IO.println s!"{file}: %{f.name}: lowerFunction {t1 - t0} ms, lowerCheck {t2 - t1} ms"
@@ -251,6 +255,7 @@ def main (args : List String) : IO UInt32 := do
   IO.println s!"legalised i128 functions: {legal} in scope (Opt.Legal.check accepts; counted above), {legalOut} out of scope (validator rejects, extern named like a function of the file, a call_indirect whose file's externs do not extend, or --opt)"
   IO.println s!"prepCheck: {pok} accepted, {pbad} rejected"
   IO.println s!"lowerCheck_complete conditions: dominatedB {dom}, lowerScopeB {scope}, both {both} (of {ok + bad} checked)"
+  IO.println s!"arityOkB {arity} of {ok + bad}"
   IO.println s!"formsCoveredB: {cov} covered, {uncov} not covered"
   for (k, n) in forms.toList.mergeSort (fun a b => a.2 ≥ b.2) do
     IO.println s!"  uncovered form {k}: {n} instructions"
