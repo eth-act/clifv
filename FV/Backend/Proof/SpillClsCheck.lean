@@ -15,6 +15,11 @@ namespace Backend.Proof.Flow
 
 open Backend Isle Isle.Interp Isle.Aarch64
 
+/-- The first table row of term `t` whose inputs are above `as` (several rows per term: a call
+with arguments outside one row's inputs may use another). -/
+def tabFind (tab : Tab) (t : TermId) (as : List FA) : Option (List FA × FA) :=
+  (tab.find? fun e => e.1 == t && leAll as e.2.1).map (·.2)
+
 /-- The precondition of an extern constructor call: the constructors that emit instructions
 holding registers of their arguments (`emit`, `gen_return`, `gen_call_args`) get arguments of
 flow level `≤ 1`. -/
@@ -36,8 +41,8 @@ def aApplyC (ty : TypeId) (t : TermId) (as : List FA) : Option FA :=
     | .decl _ (some (.external _)) _ =>
       if apreC strict term.id as then some (actor term.id as) else none
     | .decl _ (some .internal) _ =>
-      match tabGet tab t with
-      | some (ins, out) => if leAll as ins then some out else none
+      match tabFind tab t as with
+      | some (_, out) => some out
       | none => none
     | _ => some FA.top
   | .error _ => some FA.top
@@ -153,20 +158,24 @@ theorem aRule_invC {ins : List FA} {out : FA} {r : Rule} (h : aRuleC p tab stric
     · cases h
   · cases h
 
-theorem chkTab_getC (h : chkTabC p tab strict = true) {t : TermId} {ins : List FA} {out : FA}
-    (hg : tabGet tab t = some (ins, out)) : ∀ r ∈ p.rulesOf t, aRuleC p tab strict ins out r = true := by
-  unfold tabGet at hg
-  cases hf : tab.find? (·.1 == t) with
+theorem chkTab_getC (h : chkTabC p tab strict = true) {t : TermId} {as ins : List FA} {out : FA}
+    (hg : tabFind tab t as = some (ins, out)) :
+    (∀ r ∈ p.rulesOf t, aRuleC p tab strict ins out r = true) ∧ leAll as ins = true := by
+  unfold tabFind at hg
+  cases hf : tab.find? (fun e => e.1 == t && leAll as e.2.1) with
   | none => rw [hf] at hg; cases hg
   | some e =>
     rw [hf] at hg
     simp only [Option.map_some, Option.some.injEq] at hg
     have hm := List.mem_of_find?_eq_some hf
     have he := List.find?_some hf
-    simp only [beq_iff_eq] at he
+    simp only [Bool.and_eq_true, beq_iff_eq] at he
     have := List.all_eq_true.mp h e hm
-    rw [he, hg] at this
-    exact List.all_eq_true.mp this
+    rw [he.1, hg] at this
+    refine ⟨List.all_eq_true.mp this, ?_⟩
+    have := he.2
+    rw [hg] at this
+    exact this
 
 end Inv
 
@@ -689,18 +698,16 @@ theorem soundAtC (hc : cfg.checkOverlap = false) (htab : chkTabC p tab strict = 
           cases c with
           | internal =>
             simp only at ha
-            cases hg : tabGet tab t with
+            cases hg : tabFind tab t as with
             | none => rw [hg] at ha; cases ha
             | some e =>
               obtain ⟨ins, out⟩ := e
               rw [hg] at ha
               simp only at ha
-              split at ha
-              · rename_i hle
-                cases ha
-                exact hroot ty t term flags ex ins _ vs s tr r s' tr' ht hk
-                  (fun rl hrl => .inl (chkTab_getC htab hg rl hrl)) (holds2_leC md hle hvs) hIs h
-              · cases ha
+              cases ha
+              obtain ⟨hchk, hle⟩ := chkTab_getC htab hg
+              exact hroot ty t term flags ex ins _ vs s tr r s' tr' ht hk
+                (fun rl hrl => .inl (hchk rl hrl)) (holds2_leC md hle hvs) hIs h
           | external fn =>
             simp only at ha
             split at ha
