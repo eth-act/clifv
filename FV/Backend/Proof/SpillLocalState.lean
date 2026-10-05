@@ -239,6 +239,15 @@ theorem clobberAll_get_other : ∀ (clob : List Reg) (a : AState) (l : Loc), (�
     simp only [clobberAll, List.foldl_cons] at this ⊢
     rw [this, get_put_ne (h r List.mem_cons_self)]
 
+theorem size_clobberAll : ∀ (b : AState) (clob : List Reg), (clobberAll b clob).size = b.size := by
+  intro b clob
+  induction clob generalizing b with
+  | nil => rfl
+  | cons r rs ih =>
+    have := ih (b.put (.reg r) ((b.get (.reg r)).filter (· == .entry r)))
+    simp only [clobberAll, List.foldl_cons] at this ⊢
+    rw [this, size_put]
+
 theorem forgetDefs_get (a : AState) (ps : List (Operand × Loc)) (l : Loc) :
     (forgetDefs a ps).get l =
       (a.get l).filter fun s => !(ps.any fun p => p.1.kind == .def && s == .vreg p.1.vreg) := by
@@ -246,5 +255,140 @@ theorem forgetDefs_get (a : AState) (ps : List (Operand × Loc)) (l : Loc) :
   split
   · simp [Array.getD_eq_getD_getElem?]; cases a[‹Nat›]? <;> rfl
   · rfl
+
+theorem mem_atPos {ps : List (Operand × Loc)} {k : OpKind} {p : OpPos} {x : Operand × Loc} :
+    x ∈ atPos ps k p ↔ x ∈ ps ∧ x.1.kind = k ∧ x.1.pos = p := by
+  rcases x with ⟨o, l⟩
+  simp [atPos]
+
+theorem atPos_sublist (ps : List (Operand × Loc)) (p : OpPos) :
+    (atPos ps .def p).Sublist (ps.filter (·.1.kind == .def)) := by
+  have : atPos ps .def p = (ps.filter (·.1.kind == .def)).filter (·.1.pos == p) := by
+    rw [List.filter_filter]
+    unfold atPos
+    congr 1
+    funext x; rcases x with ⟨o, l⟩; simp [Bool.and_comm]
+  rw [this]
+  exact List.filter_sublist
+
+variable {ops : Array Operand} {clob : List Reg}
+
+/-- The defs' locations are pairwise distinct. -/
+theorem spill_defLocs_nodup (h : OpsOk ops clob) :
+    ((((ops.zip (spillLocs ops clob)).toList.filter (·.1.kind == .def))).map (·.2)).Nodup := by
+  rw [pairs_eq, List.filter_map, List.map_map, List.Nodup, List.pairwise_map]
+  refine ((zipIdx_lt ops.toList 0).filter _).imp_of_mem fun {a b} ha hb hlt he => ?_
+  rcases a with ⟨o, j⟩
+  rcases b with ⟨o', j'⟩
+  rw [List.mem_filter] at ha hb
+  have hj := mem_zipIdx_get ha.1
+  have hj' := mem_zipIdx_get hb.1
+  have hd : o.kind = .def := by simpa using ha.2
+  have hd' : o'.kind = .def := by simpa using hb.2
+  simp only [Function.comp] at he
+  rcases loc_eq_cases h hj hj' (Nat.ne_of_lt hlt) he with ⟨p, hp, hp'⟩ | hr | hr
+  · exact absurd (h.fixedDefs j j' o o' p hj hj' hd hd' hp hp') (Nat.ne_of_lt hlt)
+  · obtain ⟨-, -, oi, hi, hk, -⟩ := h.reuse j o j' hj hr
+    rw [hj'] at hi; injection hi with hi; rw [← hi, hd'] at hk; cases hk
+  · obtain ⟨-, -, oi, hi, hk, -⟩ := h.reuse j' o' j hj' hr
+    rw [hj] at hi; injection hi with hi; rw [← hi, hd] at hk; cases hk
+
+/-- The defs' vregs are pairwise distinct. -/
+theorem spill_defVregs_nodup (h : OpsOk ops clob) :
+    ((((ops.zip (spillLocs ops clob)).toList.filter (·.1.kind == .def))).map (·.1.vreg)).Nodup := by
+  have hfst : (ops.zip (spillLocs ops clob)).toList.map Prod.fst = ops.toList := by
+    rw [pairs_eq, List.map_map]; exact List.zipIdx_map_fst 0 _
+  have : (((ops.zip (spillLocs ops clob)).toList.filter (·.1.kind == .def))).map (·.1.vreg) =
+      (ops.toList.filter (·.kind == .def)).map (·.vreg) := by
+    rw [← hfst, List.filter_map, List.map_map]; rfl
+  rw [this]; exact h.defsNodup
+
+/-- **A kept def's location holds exactly its vreg after the instruction's transfer.** -/
+theorem transferOp_kept {i : MInst} (h : OpsOk ops i.clobbers) {a : AState} (hsz : 64 ≤ a.size)
+    {o : Operand} {l : Loc} (hk : (o, l) ∈ keptPairs i (ops.zip (spillLocs ops i.clobbers)).toList) :
+    (transferOp i (ops.zip (spillLocs ops i.clobbers)).toList a).get l = [.vreg o.vreg] := by
+  generalize hP : (ops.zip (spillLocs ops i.clobbers)).toList = P at hk
+  have hDl := spill_defLocs_nodup h
+  have hDv := spill_defVregs_nodup h
+  rw [hP] at hDl hDv
+  set_option linter.unusedVariables false in
+  have hD : (o, l) ∈ P.filter (·.1.kind == .def) := by
+    unfold keptPairs at hk
+    split at hk
+    · exact hk
+    · exact List.mem_of_mem_take hk
+  have hDP := (List.mem_filter.mp hD)
+  have hreg : ∀ x ∈ P, ∃ i, x.2.index = some i ∧ i < 64 := by
+    intro x hx
+    rw [← hP] at hx
+    obtain ⟨r, hr, ha, -⟩ := spill_reg h hx
+    rw [hr]; exact reg_index ha
+  -- locations and vregs distinct among the defs
+  have injL : ∀ x ∈ P.filter (·.1.kind == .def), x.2 = l → x = (o, l) :=
+    fun x hx he => inj_of_nodup_map hDl hx hD he
+  have injV : ∀ x ∈ P.filter (·.1.kind == .def), x.1.vreg = o.vreg → x = (o, l) :=
+    fun x hx he => inj_of_nodup_map hDv hx hD he
+  have subE := atPos_sublist P .early
+  have subL := atPos_sublist P .late
+  have hnotclob : ∀ r ∈ i.clobbers, Loc.reg r ≠ l := by
+    intro r hr he
+    rw [← hP] at hDP
+    obtain ⟨j, hj, hl⟩ := mem_spillPairs hDP.1
+    exact def_not_clob h hj (by simpa using hDP.2) (hl ▸ he ▸ List.mem_map_of_mem hr)
+  -- after the defines and the clobbers
+  have hA3 : (defineAll (clobberAll (defineAll a (atPos P .def .early)) i.clobbers)
+      (atPos P .def .late)).get l = [.vreg o.vreg] := by
+    have bnd : ∀ (b : AState), 64 ≤ b.size → ∀ ds : List (Operand × Loc), ds.Sublist P →
+        ∀ x ∈ ds, ∃ i, x.2.index = some i ∧ i < b.size := by
+      intro b hb ds hs x hx
+      obtain ⟨i, h1, h2⟩ := hreg x (hs.subset hx)
+      exact ⟨i, h1, by omega⟩
+    rcases hpos : o.pos
+    · -- early: defined first, then kept
+      have hE : (o, l) ∈ atPos P .def .early := mem_atPos.mpr ⟨hDP.1, by simpa using hDP.2, hpos⟩
+      have h1 := defineAll_get_mem (atPos P .def .early) a ((subE.map _).nodup hDl)
+        ((subE.map _).nodup hDv) (bnd a hsz _ (subE.trans List.filter_sublist)) (o, l) hE
+      have h2 := clobberAll_get_other i.clobbers (defineAll a (atPos P .def .early)) l hnotclob
+      rw [defineAll_get_other, h2, h1]
+      · simp only [List.filter_cons, List.filter_nil]
+        have : ((atPos P .def .late).any fun x => Sym.vreg o.vreg == .vreg x.1.vreg) = false := by
+          rw [Bool.eq_false_iff]
+          intro hany
+          obtain ⟨x, hx, hxe⟩ := List.any_eq_true.mp hany
+          simp at hxe
+          have := injV x (subL.subset hx) hxe.symm
+          rw [this] at hx
+          rw [(mem_atPos.mp hx).2.2] at hpos; cases hpos
+        simp [this]
+      · intro x hx he
+        have := injL x (subL.subset hx) he
+        rw [this] at hx
+        rw [(mem_atPos.mp hx).2.2] at hpos; cases hpos
+    · -- late
+      have hLt : (o, l) ∈ atPos P .def .late := mem_atPos.mpr ⟨hDP.1, by simpa using hDP.2, hpos⟩
+      have hb : 64 ≤ (clobberAll (defineAll a (atPos P .def .early)) i.clobbers).size := by
+        rw [size_clobberAll, size_defineAll]; exact hsz
+      exact defineAll_get_mem _ _ ((subL.map _).nodup hDl) ((subL.map _).nodup hDv)
+        (bnd _ hb _ (subL.trans List.filter_sublist)) (o, l) hLt
+  unfold transferOp
+  split
+  · exact hA3
+  · rename_i n hn
+    rw [forgetDefs_get, hA3]
+    simp only [List.filter_cons, List.filter_nil]
+    have : (((P.filter (·.1.kind == .def)).drop n).any fun p =>
+        p.1.kind == .def && Sym.vreg o.vreg == .vreg p.1.vreg) = false := by
+      rw [Bool.eq_false_iff]; intro hany
+      obtain ⟨x, hx, hxe⟩ := List.any_eq_true.mp hany
+      simp at hxe
+      have := injV x (List.mem_of_mem_drop hx) hxe.2.symm
+      have hnd : (P.filter (·.1.kind == .def)).Nodup :=
+        List.Pairwise.of_map _ (fun a b h e => h (e ▸ rfl)) hDv
+      have hk' : (o, l) ∈ (P.filter (·.1.kind == .def)).take n := by
+        unfold keptPairs at hk; rw [hn] at hk; exact hk
+      rw [← List.take_append_drop n (P.filter (·.1.kind == .def))] at hnd
+      rw [this] at hx
+      exact (List.nodup_append.mp hnd).2.2 _ hk' _ hx rfl
+    simp [this]
 
 end Backend.Proof.Spill
