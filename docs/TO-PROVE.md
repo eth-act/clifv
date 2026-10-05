@@ -62,9 +62,9 @@ and, on rejection, replaced by a directly proven Lean path (kind 2). Correctness
 | mid-end passes (GVN, DCE, LICM, simplify driver, unreachable, `Opt.check`) | Lean | `editOk`, `simpOk`, `wfCert`, `unreachableOk`, `keepsBackendSubset` + soundness | fallback | M1 (quality only) |
 | i128 legalisation | Lean | `Opt.Legal.check` + `check_complete` on `Pre f` (`FV/Opt/Proof/LegalComplete.lean:1718`) | validator, complete on `Pre` | S6 |
 | instruction selection | Lean (ISLE data) | `LowerRulesCorrect` etc., proven once | proven | — |
-| lowering driver | Lean `lowerFunction` | **`lowerCheck`** (`FV/Backend/Proof/DriverCheck.lean:729-744`) | **validator premise** | V1 |
+| lowering driver | Lean `lowerFunction` | `lowerCheck`, complete on `Dominated`/`LowerScope` (`lowerCheck_complete`) | validator, complete on decidable input conditions | V1 done |
 | form coverage | — | **`formsCoveredB`** (`FV/Backend/Proof/RegallocCover.lean`) | **validator premise** | V3 |
-| `prepare` | Lean | `prepCheck`, complete on `PrepDomain` (`FV/Backend/Proof/PrepareComplete.lean:1700`) | validator, complete on a domain not yet derived | V2 |
+| `prepare` | Lean | `prepCheck`, complete on `PrepDomain`, which `lowerFunction` always produces (`prepDomain_of_lower`) | validator, complete | V2 done |
 | register allocation | **external Rust** (regalloc2 0.15.2 via `lean-regalloc`) | **`checkAlloc`** (`FV/Backend/RegallocCheck.lean:423-441`) | **validator premise + oracle** | V4 |
 | frame, control lowering | Lean `lowerRFunc` | internal rejections (frame ≥ 32 KiB, `ctlCheck`) | rejection | V5 |
 | emission, layout | Lean | branch range check, no relaxation | rejection | V6 |
@@ -81,7 +81,13 @@ Mid-end note: the mid-end is already certificate-free in the sense of §1.2, so 
 Each WP lists: **Now**, **Deliver**, **Depends**, **Size** (from the cited feasibility notes; `[est]` = the
 author's estimate, not measured), **Risk**.
 
-### V1. `lowerCheck` completeness
+### V1. `lowerCheck` completeness — **done** (agent/lower-complete)
+
+- **Done:** `lowerCheck_complete : Dominated f → LowerScope f → lowerFunction f = .ok vc → lowerCheck f vc = true`
+  (`FV/Backend/Proof/LowerComplete.lean`), `E2E.Compiled.of_lower` (`FV/E2E/LowerDirect.lean`);
+  `Dominated`/`LowerScope` decided by `dominatedB`/`lowerScopeB` (all 1148 in-scope functions). V1a changed `inFix`
+  to a fuel-bounded worklist and made `lowerFunction`'s alias resolution class-preserving (identical output).
+  Details: `docs/contracts/e2e.md` "Validator completeness".
 
 - **Claimed (2026-10-05):** in progress, https://github.com/eth-act/clifv/issues/4, branch `agent/lower-complete`.
 - **Now:** `lowerCheck f vc = true` is `Compiled.lowerOk`. Not attempted; feasibility note in
@@ -103,7 +109,7 @@ author's estimate, not measured), **Risk**.
     `entryOkB`): 0.5k lines.
 - **Risk:** V1b and V1c (DEFERRED says so).
 
-### V2. `PrepDomain` of the lowering output
+### V2. `PrepDomain` of the lowering output — **done** (agent/lower-complete: `prepDomain_of_lower`)
 
 - **Claimed (2026-10-05):** together with V1, https://github.com/eth-act/clifv/issues/4.
 - **Now:** `prepCheck_complete` needs `PrepDomain vc`; `prepDomainB` holds on all 1067 corpus/runtest

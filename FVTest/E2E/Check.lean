@@ -1,5 +1,6 @@
 import FV.Backend
 import FV.Backend.Proof.DriverCheck
+import FV.Backend.Proof.LowerDecide
 import FV.Backend.Proof.PrepareCheck
 import FV.Backend.Proof.RegallocCover
 import FV.Opt.Legalize128Pass
@@ -18,6 +19,10 @@ It also decides `formsCoveredB` (the `FormsCovered` premise of `E2E.backend_corr
 every prepared VCode and reports the number of covered functions and, for the others, the
 uncovered instruction forms (constructor and operation) with their counts. An uncovered
 function is not rejected: it is compiled but outside the end-to-end theorem.
+
+It reports how many in-scope functions satisfy the input conditions of `lowerCheck_complete`
+(`dominatedB`, `lowerScopeB`: on these the lowering validator is a theorem, `Compiled.of_lower`),
+and names the others.
 
 Every file is first legalised (`Opt.Legalize128.parsedFile128`, as `lean-backend` does): a
 legalised `i128` function the validator `Opt.Legal.check` accepts is in scope (covered by
@@ -148,6 +153,9 @@ def main (args : List String) : IO UInt32 := do
   let mut forms : Std.HashMap String Nat := {}
   let mut legal := 0
   let mut legalOut := 0
+  let mut dom := 0
+  let mut scope := 0
+  let mut both := 0
   for file in files do
     let lg := Opt.Legalize128.parsedFile128 (Clif.parseFile (← IO.FS.readFile file))
     let pf := match optCfg with | some c => Opt.optimizeParsedFile c lg.file | none => lg.file
@@ -177,6 +185,12 @@ def main (args : List String) : IO UInt32 := do
         skipped := skipped + 1
         continue
       if lg.accepted.contains p.name then legal := legal + 1
+      let d := dominatedB f
+      let sc := lowerScopeB f
+      if d then dom := dom + 1
+      if sc then scope := scope + 1
+      if d && sc then both := both + 1
+      else IO.println s!"{file}: %{f.name}: outside lowerCheck_complete's conditions (dominatedB {d}, lowerScopeB {sc})"
       let r ← IO.lazyPure (fun _ => lowerCheck f vc)
       let t2 ← IO.monoMsNow
       if t2 - t0 > 2000 then IO.println s!"{file}: %{f.name}: lowerFunction {t1 - t0} ms, lowerCheck {t2 - t1} ms"
@@ -212,6 +226,7 @@ def main (args : List String) : IO UInt32 := do
   IO.println s!"lowerCheck: {ok} accepted, {bad} rejected, {skipped} out of scope (stack-passed arguments of an indirect call, special-purpose parameters other than one sret, outside clif-subset-v2 E, or a try_call/call_indirect under --opt)"
   IO.println s!"legalised i128 functions: {legal} in scope (Opt.Legal.check accepts; counted above), {legalOut} out of scope (validator rejects, extern named like a function of the file, a call_indirect whose file's externs do not extend, or --opt)"
   IO.println s!"prepCheck: {pok} accepted, {pbad} rejected"
+  IO.println s!"lowerCheck_complete conditions: dominatedB {dom}, lowerScopeB {scope}, both {both} (of {ok + bad} checked)"
   IO.println s!"formsCoveredB: {cov} covered, {uncov} not covered"
   for (k, n) in forms.toList.mergeSort (fun a b => a.2 ≥ b.2) do
     IO.println s!"  uncovered form {k}: {n} instructions"

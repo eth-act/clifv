@@ -196,53 +196,16 @@ premises. Deferred, in order:
   `stepCallIndirect` resolves addresses among all functions and externs of `P`), `return_call`,
   and traps inside program callees.
 
-## Completeness of the lowering validator `lowerCheck` (feasibility, 2026-10-02)
+## Completeness of the lowering validator `lowerCheck` (done, 2026-10-05)
 
-`prepCheck` is now proven complete (`Prep.prepCheck_complete`, `docs/contracts/e2e.md`
-"Validator completeness"), which makes `prepare` correct outright. The same for `lowerCheck`
-(`lowerFunction f = .ok vc → lowerCheck f vc = true`) was assessed, not attempted. Verdict: keep
-`lowerCheck` as a validator; a completeness proof is a project of its own (estimate 6-10k lines,
-against 1.7k for `prepCheck`), and two of its parts need code changes first.
-
-What `lowerCheck` checks, and what completeness would need for each part:
-
-- **The re-run of the ISLE calls** (`lowBlocks` against `lowerFunction`'s per-block loop):
-  a simulation of `lowerFunction`'s imperative loop (statement loop, terminator, `try_call`
-  edge blocks, label counter) by the recursive `lowBlocks`. The calls are the same deterministic
-  `runTerm` calls, so this is bookkeeping, about 1-1.5k lines in the style of
-  `PrepareComplete.prepare_facts`.
-- **The shape** (`shapeOk`): labels are block indices, parameters, branch arguments, edge
-  blocks (direct from the loop invariant), and `vb.insts = pre ++ segments ++ tseg` after alias
-  resolution. `lowerFunction` resolves aliases with a fuel-bounded array chase (`resolve`);
-  the check with `gnTable`/`chase` over a `HashMap`. Showing both agree needs acyclic alias chains
-  (an alias target is defined by the instruction defining the aliased value, which only reads
-  earlier values) and enough fuel. That is a well-foundedness argument over the recorded results,
-  about 0.5-1k lines.
-- **The SSA availability certificate** (`certOk`, `inFix`). This is the main obstacle:
-  1. `lowerFunction` does not check dominance, so completeness needs a precondition on `f`
-     (every use dominated by its definition, Cranelift's verifier), stated in the form the
-     certificate uses (`availOf`).
-  2. `inFix` computes the must-availability fixpoint with a `while true` worklist loop
-     (`Loop`, implemented by `partial`), and proofs cannot unfold it. It would first have to be
-     rewritten with fuel (as `reachable`/`rpo` are) and proven to reach a fixpoint that
-     contains the dominating definitions, for any CFG. That is a dataflow-completeness proof,
-     about 1.5-2k lines.
-  3. "No available value's register is written by a statement's lowering" (`certBlockOk`'s
-     clobber and freshness conditions) is a property of the ISLE rules: every rule's emitted
-     code defines only fresh vregs (at or above `nextVreg`) or the statement's result vregs.
-     It needs a lemma per root rule over the ~1000 `lower` rules. M4's rule theorems
-     (`LowerRulesCorrect`) state semantics, not this syntactic def-set property, so it could be
-     discharged generically (an `emitted` def-set analysis decided over the rule data, like
-     `excludedUnmatchable`) or rule family by rule family. About 2-4k lines, or a decided
-     property over the exported rule data.
-- **The remaining conjuncts** (`ctxOk`, `brIdxOk`, the `hasTryCall`/`hasTls` flags,
-  `callsStackOkB`: `outgoing` is the maximum over the calls, `entryOkB`) follow from
-  `buildCtx`'s own checks and the loop invariant. About 0.5k lines.
-
-Suggested order, if picked up: (a) make `inFix` fuel-bounded (no behaviour change, check the
-filetests and `lean-e2e-check` counts); (b) define the dominance precondition and prove the
-dataflow complete; (c) decide the def-set property over the rule data; (d) the loop
-simulation and alias chase. Steps (b) and (c) carry the risk.
+Done on agent/lower-complete (TO-PROVE V1/V2): `lowerCheck_complete` on `Dominated`/`LowerScope`
+input, `E2E.Compiled.of_lower` (see `docs/contracts/e2e.md`, "Validator completeness"). The
+feasibility note's two code changes were made (V1a: `inFix` fuel-bounded; additionally
+`lowerFunction`'s alias resolution keeps the referencing register's class, since otherwise
+completeness would need a per-rule register-class property). The def-set property became
+`stmt_flow`, decided over the rule data by an abstract interpretation (`IselFlowCheck`) rather
+than per-rule lemmas. Remaining: the input conditions join `InScope` for the totality work
+(TO-PROVE L1/L2); `lowerCheck` still runs as a double-check.
 
 ## Other deferred items
 
