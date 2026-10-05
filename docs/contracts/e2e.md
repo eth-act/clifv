@@ -2162,24 +2162,27 @@ alias renaming keeps register classes (`resolve_vrenaming`, `covered_mapRegs`), 
 Non-vacuity: `E2E.formsCovered_complete_witness` (`lowerWitness`). The compiler keeps running
 `formsCoveredB` (`lean-e2e-check`) as a double check.
 
+**The control shapes of the ISLE runs (V4 (a), `IselCtlHyp`)** (2026-10-05,
+`FV/Backend/Proof/IselShp{Fns,Base,Root,Tab,Total,Ctor,Oracle,Call,Try,BrTable,Driver}.lean`,
+generator `FVTest/Backend/IselShpGen.lean`): `Backend.Proof.Driver.iselCtlHyp : IselCtlHyp`
+(SpillCtlPipe.lean; its `try_call` clause takes `∃ B ∈ f.blocks, B.term = t`). V3's
+`CovModel`/`soundAt` are parametric in `actor`/`apre`/`aOracle`; the control-shape model
+`shpModel` uses `apreS` (an `emit`ted control form is a `CondBr`/`TrapIf` on a condition or an
+int vreg, a `TestBitAndBranch` on an int vreg, `Udf`/`EmitIsland`/`Jump`; `gen_return` returns
+int vregs) and `aOracleS` (the helpers emitting `loadExtNameGot/Near`, the LL/SC loops and
+`ElfTlsGetAddr` with fresh distinct defs, `oracle_ctl`), state invariant `ShpIs N s0`
+(`CtlSince N s0 ∧ N ≤ nextVreg`). Table `shpTab`: 641 entries, 8 chunks + 3 roots by
+`native_decide` (≈13 s, 2 GB). Hand-checked root rules (`root_hand`, `HandOk`): calls 1031–1033
+(`handOk_call`), `try_call`s 1034–1036 (`handOk_try`), `br_table` 1140 (`handOk_brTable`, its
+`imm`/`put_in_reg_zext32` sub-runs from the table via `SubOk`). `totality`: a non-`partial` term
+never returns `none` (`totalProg_program`). Corollary `E2E.ctlSpillHyp` (under `InSubset`);
+witness `E2E.ctlSpillHyp_of_witness`.
+
 **Register allocation without the `checkAlloc` premise: the spill fallback (V4 (a))** (2026-10-05,
 `FV/Backend/SpillAlloc.lean`, `FV/Backend/Regalloc.lean` `lowerAlloc`, `FV/E2E/AllocDirect.lean`):
 
 ```lean
 def Backend.allocResult (vc : VCode) (ra : Except String RFunc) : RFunc  -- ra if checkAlloc accepts it, else spillAlloc vc
-def E2E.SpillAccepted : Prop :=
-  ∀ (f : Clif.Function) (vc vcp : VCode), Dominated f → LowerScope f →
-    lowerFunction f = .ok vc → Backend.prepare vc = .ok vcp →
-      checkAlloc vcp (spillAlloc vcp) = .ok ()
-theorem E2E.checkAlloc_allocResult (hsa : SpillAccepted) (hd : Dominated f) (hs : LowerScope f)
-    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare vc = .ok vcp) (ra : Except String RFunc) :
-    checkAlloc vcp (allocResult vcp ra) = .ok ()
-theorem E2E.backend_correct_final_alloc (hsa : SpillAccepted) (hsub : InSubset p f)
-    (hd : dominatedB f = true) (hs : lowerScopeB f = true) (hl : lowerFunction f = .ok vc)
-    (hp : prepare vc = .ok vcp) (hrf : rf = allocResult vcp ra) (ha : lowerRFunc vcp rf = .ok af)
-    (he : emitFunc k af = .ok fa) (hla : fa.layout = .ok fb)
-    -- backend_correct_final's contract, link-time and run premises (hC … htr), unchanged
-    : ArmRefines fb base ra' (ArmStepX X H fa) s (Clif.runLoop env p fuel cs)
 theorem Backend.lowerAlloc_eq (h : lowerAlloc vcp ra = .ok af) :
     lowerRFunc vcp (allocResult vcp ra) = .ok af
 ```
@@ -2187,17 +2190,51 @@ theorem Backend.lowerAlloc_eq (h : lowerAlloc vcp ra = .ok af) :
 The backend lowers `allocResult vcp ra` (`lowerAlloc`, `lowerAlloc_eq`): regalloc2's answer if
 `checkAlloc` accepts it, else the spill allocation `spillAlloc` (a total Lean function; every
 value in its own stack slot, `docs/contracts/regalloc.md` "Fallback"). A rejection or a missing
-answer of regalloc2 is no longer a compile error, and `backend_correct_final_alloc` holds for
-every answer `ra` of the untrusted allocator: its correctness never depends on regalloc2. It is
-`backend_correct_final_of_lower` with the `checkAlloc` premise replaced by the hypothesis
-`SpillAccepted`, which does **not** mention the program: the checker accepts the spill
-allocation of every function the pipeline produces from in-scope input. `SpillAccepted` is not
-proven yet (stated as an explicit hypothesis, as `LogicImmComplete` was); `lean-e2e-check` decides
-its conclusion on every in-scope function (**1148 of 1148** accepted, "spill fallback" line) and
-the compiler runs `checkAlloc` on every spill allocation it lowers as a double-check (`lowerSpill`).
-What a proof needs is in `docs/TO-PROVE.md` (V4). Non-vacuity:
-`E2E.backend_correct_final_alloc_witness` (`lowerWitness` with regalloc2 absent: the pipeline
-lowers the spill allocation, which `checkAlloc` accepts).
+answer of regalloc2 is no longer a compile error, and `backend_correct_final_alloc` (below) holds
+for every answer `ra` of the untrusted allocator: its correctness never depends on regalloc2. The
+compiler runs `checkAlloc` on every spill allocation it lowers as a double-check (`lowerSpill`);
+`lean-e2e-check` decides its acceptance on every in-scope function (**1148 of 1148**, "spill
+fallback" line).
+
+**V4 restated: verified in-states, `ρ₀` chosen by the register-level theorem** (2026-10-05,
+`FV/Backend/Proof/RegallocSound.lean`, `FV/Backend/Proof/SpillInvariant.lean`,
+`FV/E2E/AllocDirect.lean`). The first statement (PR #54: `checkAlloc vcp (spillAlloc vcp) = .ok ()`
+under `Dominated`/`LowerScope` only) was false (`E2E.not_ctlSpillHyp`: two `sret` parameters) and
+asked more than the proofs use (the checker's fixpoint iteration; an entry state without vregs,
+i.e. every use defined on every path); it has been replaced by:
+
+```lean
+structure Backend.Proof.CheckedAt (vc rf c ins) (a0 : AState) : Prop  -- `Checked`, entry in-state a0 unconstrained
+def Backend.Proof.EntryOk (a0 : AState) : Prop    -- entry r only in reg r (callee-saved); each vreg in ≤ 1 location
+def Backend.Proof.AllocChecked (vc : VCode) (rf : RFunc) : Prop :=
+  ∃ c ins a0, CheckedAt vc rf c ins a0 ∧ EntryOk a0
+theorem Backend.Proof.allocChecked_of_checkAlloc : checkAlloc vc rf = .ok () → AllocChecked vc rf
+theorem Backend.Proof.checkedAt_sound (hc : CheckedAt vc rf c ins a0) (m₀ ρ₀ w₀)
+    (hinv0 : Inv keep a0 m₀ ρ₀ (fun r => m₀ (.reg r))) : ∃ R, IsSimulation vc rf sem keep R ∧ …
+theorem Backend.Proof.allocChecked_sound (h : AllocChecked vc rf) (m₀ w₀) : ∃ ρ₀ R, …  -- ρ₀ := entryRho a0 m₀
+def E2E.RegLevelCorrectEx … := ∀ base ra s, AbiEntry … → StackAvail … → ∀ w₀, BodyEntry af s w₀ →
+    ∃ ρ₀ : Nat → CV, (returns as in RegLevelCorrect) ∧ (traps as in RegLevelCorrect)
+theorem Backend.Proof.regLevelCorrect_backend_ex (hcheck : AllocChecked vcp rf) … : RegLevelCorrectEx …
+theorem E2E.backend_correct_final_ex (hc : CompiledA f k vc vcp rf af fa fb) …  -- CompiledA: check : AllocChecked
+def E2E.SpillAccepted : Prop := ∀ p f vc vcp, InSubset p f → Spill.ArityOk f → Dominated f →
+    LowerScope f → lowerFunction f = .ok vc → Backend.prepare vc = .ok vcp → AllocChecked vcp (spillAlloc vcp)
+theorem E2E.spillAccepted_of_step4 (h4 : Spill.SpillStep4) (hav : SpillAvailable) : SpillAccepted
+theorem E2E.backend_correct_final_alloc (hsa : SpillAccepted) (hsub : InSubset p f)
+    (hd : dominatedB f = true) (hs : lowerScopeB f = true) (har : Spill.arityOkB f = true) (hl …) (hp …) (hrf : rf = allocResult vcp ra) (ha …) (he …) (hla …)
+    -- backend_correct_final's contract, link-time and run premises (hC … htr), unchanged
+    : ArmRefines fb base ra' (ArmStepX X H fa) s (Clif.runLoop env p fuel cs)
+```
+
+`IselSim` and `PrepareCorrect` hold for every initial vreg file, so the composition
+(`backend_correct_of_layers_ex`) instantiates them with the one the register-level theorem picks
+from the activation's initial frame (`entryRho`: the value of the location the entry state places a
+vreg in). The spill allocation may therefore start with every home holding its vreg; what remains
+is availability (`Spill.SpillAvail`), not definedness. The old statements (`checkAlloc_sound`,
+`regLevelCorrect_world`, `backend_correct_of_layers`, `backend_correct`, `backend_correct_of_rules`)
+are corollaries; `Compiled` keeps `checkAlloc` because the link-level theorems (`LinkWorld`,
+`PairDriver`) fix one VCode outcome for all activations, which needs every `ρ₀`. Open, as explicit
+hypotheses: `Spill.SpillStep4` and `E2E.SpillAvailable` (`docs/TO-PROVE.md` V4 step 4); step 3 is
+`E2E.spillLocalAll`. Non-vacuity: `E2E.backend_correct_final_alloc_witness`.
 
 **Validator completeness: `Opt.Legalize128` is correct without `Opt.Legal.check`** (2026-10-02,
 `FV/Opt/Proof/LegalComplete.lean`, `FV/Opt/Proof/LegalDirect.lean`, `FV/E2E/LegalDirect.lean`;

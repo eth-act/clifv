@@ -184,7 +184,7 @@ theorem oracle_sound (s0 : LState) (cfg : Config) (hc : cfg.checkOverlap = false
 
 /-- **The coverage model** of the driver's semantics: state invariant `CovSince s0`. -/
 def covModel (hLI : LogicImmComplete) {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx)
-    (hcl : Clean ctx) (s0 : LState) : CovModel program f ctx where
+    (hcl : Clean ctx) (s0 : LState) : CovModel actor apre aOracle program f ctx where
   Is := CovSince s0
   ext := fun a term v st fs hv h => ext_sound hctx hcl a term v st fs hv h
   ctor := fun as vs term v st st' hvs hIs hpre h =>

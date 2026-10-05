@@ -244,7 +244,7 @@ theorem codeLinesE_noTrap {c : FnCtx} {af : AFunc} :
 
 /-- What the pipeline and the ABI entry give an activation. -/
 structure RL.Wf (R : RL) : Prop where
-  check : checkAlloc R.vc R.rf = .ok ()
+  check : AllocChecked R.vc R.rf
   alloc : lowerRFunc R.vc R.rf = .ok R.af
   emit : emitFunc R.fa.k R.af = .ok R.fa
   layout : R.fa.layout = .ok R.fb
