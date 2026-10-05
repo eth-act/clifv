@@ -1100,8 +1100,10 @@ def termData (t : Clif.Terminator) : Except String V :=
 /-- Lowering state of the driver. -/
 structure DState where
   st : LState
-  /-- Alias of each vreg (`set_vreg_alias`). -/
-  alias : Array (Option Reg)
+  /-- Alias of each vreg (`set_vreg_alias`): the number of the vreg the rules returned for it.
+  A reference keeps its own register class when resolved (the rules return a vreg of the
+  value's class). -/
+  alias : Array (Option Nat)
   blocks : Array VBlock := #[]
   /-- Edge blocks to append after the function's blocks. -/
   edges : Array VBlock := #[]
@@ -1161,11 +1163,11 @@ def lowerFunction (f : Clif.Function) : Except String VCode := do
       for (r, rs) in info.results.zip rss do
         let some vr := ctx.valueReg? r | throw s!"unknown value v{r}"
         match rs with
-        | [out@(.vreg ..)] =>
+        | [.vreg o _] =>
           let (.vreg n _) := vr | throw "value register is not virtual"
           let alias := if d.alias.size ≤ n then d.alias ++ Array.replicate (n + 1 - d.alias.size) none
             else d.alias
-          d := { d with alias := alias.set! n (some out) }
+          d := { d with alias := alias.set! n (some o) }
         | [out] => extra := extra.push (.mov .size64 vr out)
         | _ => throw "multi-register result"
       code := code ++ st.emitted ++ extra
@@ -1269,8 +1271,8 @@ def lowerFunction (f : Clif.Function) : Except String VCode := do
   let rec resolve (fuel : Nat) (r : Reg) : Reg :=
     match fuel, r with
     | 0, _ => r
-    | fuel + 1, .vreg n _ => match (alias[n]?).join with
-      | some r' => resolve fuel r'
+    | fuel + 1, .vreg n c => match (alias[n]?).join with
+      | some o => resolve fuel (.vreg o c)
       | none => r
     | _, _ => r
   let fuel := alias.size + 1

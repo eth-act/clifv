@@ -375,15 +375,45 @@ def defArgs (ctx : Ctx) (x : Clif.ValueId) : List Clif.ValueId :=
     | none => []
   | none => []
 
+/-- `x` is (still) available at the entry of block `tl` in `inB` (`nv` values per block). -/
+def fixHas (nv : Nat) (inB : ByteArray) (tl x : Nat) : Bool := x < nv && inB.get! (tl * nv + x) != 0
+
+/-- The worklist loop of `inFix`: pop a pair `(tl, x)`; if `x` is still available at `tl`'s entry,
+remove it, and if it is neither a parameter nor a result of `tl` (so it also leaves the end of
+`tl`), push the pairs it may now violate: `x` at the entries of `tl`'s successors, and the users
+of `x` (the values whose definition reads it) at `tl`'s entry. Every pushed pair violates a
+constraint when pushed, so each iteration removes a pair or pops one; `fixFuel` bounds the
+iterations (`inFix_spec`). -/
+def fixLoop (nv : Nat) (pars defs : Array (Std.HashSet Nat)) (succs users : Array (List Nat)) :
+    Nat → ByteArray → List (Nat × Nat) → ByteArray
+  | 0, inB, _ => inB
+  | _ + 1, inB, [] => inB
+  | fuel + 1, inB, (tl, x) :: rest =>
+    if fixHas nv inB tl x then
+      let inB := inB.set! (tl * nv + x) 0
+      if !pars[tl]!.contains x && !defs[tl]!.contains x then
+        let rest := succs[tl]!.foldl (fun w s => if fixHas nv inB s x then (s, x) :: w else w) rest
+        let rest := users[x]!.foldl (fun w z => if fixHas nv inB tl z then (tl, z) :: w else w) rest
+        fixLoop nv pars defs succs users fuel inB rest
+      else fixLoop nv pars defs succs users fuel inB rest
+    else fixLoop nv pars defs succs users fuel inB rest
+
+/-- Enough iterations for `fixLoop` from `work` (`nb * nv` pairs, each removed at most once,
+each removal pushing at most `maxPush` pairs). -/
+def fixFuel (nb nv : Nat) (succs users : Array (List Nat)) (work : List (Nat × Nat)) : Nat :=
+  let maxPush := succs.foldl (fun m s => max m s.length) 0 + users.foldl (fun m u => max m u.length) 0
+  work.length + nb * nv * (maxPush + 1) + 1
+
 /-- The values available at the block entries: the greatest solution, below the candidates
 (the values of `f` that are not a parameter of the block and not renamed onto one; nothing at
 the entry block), of the must-dataflow — a value is available at a block entry if it is available at the end of every
 predecessor (a `try_call`'s edges to its handlers included) and so are the operands of its
 definition (the closure condition of `Cert`; on unreachable blocks, whose entry no predecessor
 constrains, it removes the values computed from the block's own results, e.g. cg_clif's dead
-cleanup blocks). Computed by a worklist over (block, value) pairs, each removed at most once.
+cleanup blocks). Computed by a worklist over (block, value) pairs, each removed at most once
+(`fixLoop`, with enough fuel: `fixFuel`).
 Untrusted: `certOk` checks the certificate it induces. -/
-def inFix (f : Clif.Function) (ctx : Ctx) (gn : Nat → Nat) : Array (List Clif.ValueId) := Id.run do
+def inFix (f : Clif.Function) (ctx : Ctx) (gn : Nat → Nat) : Array (List Clif.ValueId) :=
   let fb := f.blocks.toArray
   let nb := fb.size
   let nv := ctx.valDef.size
@@ -404,39 +434,24 @@ def inFix (f : Clif.Function) (ctx : Ctx) (gn : Nat → Nat) : Array (List Clif.
   -- users[y]: the values whose definition reads `y`
   let users : Array (List Nat) := (List.range nv).foldl (fun us z =>
     (defArgs ctx z).foldl (fun us y => us.modify y (z :: ·)) us) (Array.replicate nv [])
-  -- `inB[tl * nv + x]`: `x` is (still) available at the entry of block `tl`
-  let mut inB : ByteArray := ByteArray.mk (Array.replicate (nb * nv) 0)
-  for tl in [1:nb] do
-    let P := pars[tl]!
-    for x in [0:nv] do
-      if isVal[x]! && !P.contains x && !P.contains (gn x) then
-        inB := inB.set! (tl * nv + x) 1
-  let has (inB : ByteArray) (tl x : Nat) : Bool := x < nv && inB.get! (tl * nv + x) != 0
+  -- `inB[tl * nv + x]`: `x` is (still) available at the entry of block `tl`; initially the
+  -- candidates
+  let inB : ByteArray := ByteArray.mk (Array.ofFn (n := nb * nv) fun i =>
+    let tl := i.1 / nv
+    let x := i.1 % nv
+    if 1 ≤ tl && isVal[x]! && !pars[tl]!.contains x && !pars[tl]!.contains (gn x) then 1 else 0)
   -- the pairs violating a constraint in the start state
-  let mut work : List (Nat × Nat) := []
-  for tl in [1:nb] do
-    for x in [0:nv] do
-      if has inB tl x then
+  let work : List (Nat × Nat) := (List.range' 1 (nb - 1)).foldl (fun work tl =>
+    (List.range nv).foldl (fun work x =>
+      if fixHas nv inB tl x then
         let outOk := preds[tl]!.all fun p =>
-          pars[p]!.contains x || defs[p]!.contains x || has inB p x
+          pars[p]!.contains x || defs[p]!.contains x || fixHas nv inB p x
         let a0Ok := (defArgs ctx x).all fun y =>
-          (pars[tl]!.contains y || has inB tl y) && !defs[tl]!.contains y
-        if !(outOk && a0Ok) then work := (tl, x) :: work
-  -- remove them; a removed value that is neither a parameter nor a result of block `tl` leaves
-  -- the end of `tl` (so the entries of its successors) and `tl`'s entry (so its users there)
-  while true do
-    match work with
-    | [] => break
-    | (tl, x) :: rest =>
-      work := rest
-      if has inB tl x then
-        inB := inB.set! (tl * nv + x) 0
-        if !pars[tl]!.contains x && !defs[tl]!.contains x then
-          for s in succs[tl]! do
-            if has inB s x then work := (s, x) :: work
-          for z in users[x]! do
-            if has inB tl z then work := (tl, z) :: work
-  return (Array.range nb).map fun tl => (List.range nv).filter (has inB tl)
+          (pars[tl]!.contains y || fixHas nv inB tl y) && !defs[tl]!.contains y
+        if !(outOk && a0Ok) then (tl, x) :: work else work
+      else work) work) []
+  let inB := fixLoop nv pars defs succs users (fixFuel nb nv succs users work) inB work
+  (Array.range nb).map fun tl => (List.range nv).filter (fixHas nv inB tl)
 
 /-! ## The checks -/
 
