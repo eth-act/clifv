@@ -4,8 +4,8 @@ All human contributors (GitHub accounts), including new collaborators, and their
 agents must follow this discipline.
 
 - Each contributor has one status issue: reuse theirs or create
-  `<github-login>: current work and intentions`. Cody: [#44](https://github.com/eth-act/clifv/issues/44).
-  Kev's agent creates Kev's issue; do not create one on another contributor's behalf.
+  `<github-login>: current work and intentions`. [codygunton #44](https://github.com/eth-act/clifv/issues/44).
+  Contributors or their agents create their own issue, never another contributor's.
   Edit only your contributor's issue body; keep it open.
 - Before starting work, read all contributor statuses and relevant task claims; update yours.
   After each commit, scope change, or stop, update it again: current goal, task/PR,
