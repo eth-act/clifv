@@ -103,11 +103,14 @@ structure SpillAvail (vc : VCode) (D : Nat → Nat → Bool) : Prop where
       ∀ v, D s v = true →
         edgeAvail vb sb (availAt vb.insts (availStart vc succs preds D b) vb.insts.size) v = true
 
-/-- **Step 4 of V4 (a)** (open; an explicit hypothesis, not an axiom): given the local facts
-(`SpillLocalOk`, step 3) and availability sets (`SpillAvail`), the in-states described in the
-module docstring verify, so the spill allocation is `AllocChecked`. -/
+/-- **Step 4 of V4 (a)** (proven: `spillStep4`, `FV/Backend/Proof/SpillStep4.lean`): given a CFG,
+the local facts (`SpillLocalOk`, step 3) and availability sets (`SpillAvail`), the in-states
+described in the module docstring verify, so the spill allocation is `AllocChecked`. The CFG
+premise is needed: `CheckedAt` asks for `vc.cfg = .ok _`, which `SpillLocalOk` and `SpillAvail`
+(both quantified over the CFG) do not give (a block not ending in a terminator meets both
+vacuously); the pipeline's output has a CFG (`cfg_ok_of_prepare`). -/
 def SpillStep4 : Prop :=
-  ∀ (vc : VCode) (D : Nat → Nat → Bool), SpillLocalOk vc → SpillAvail vc D →
-    AllocChecked vc (spillAlloc vc)
+  ∀ (vc : VCode) (D : Nat → Nat → Bool), (∃ succs preds, vc.cfg = .ok (succs, preds)) →
+    SpillLocalOk vc → SpillAvail vc D → AllocChecked vc (spillAlloc vc)
 
 end Backend.Proof.Spill
