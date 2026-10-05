@@ -23,7 +23,7 @@ contract `IselContract.lean`), `regalloc-proof.md` (M6), `encoder.md` (M5), `cli
 | M4 terminator calls `TermCalls` from M4's terminator rule statements (`termCalls_of_rules`, via `lowerTermOk_runTerm`/`branchOk_runTerm`) | **proven** |
 | `MRStable` of the CLIF ↔ VCode relation (`mrStable_holds`) | **proven** |
 | `Clif.run`'s initial state is a `ClifEntry` (`clifEntry_initState`) | **proven** |
-| `LoweringObligations f vc` (`LowerShape` incl. `CtxInv`, `ValsBelow`, types; SSA certificate `Cert`) | **discharged**: `lowerCheck f vc = true` ⇒ it (`loweringObligations_of_check`) |
+| `LoweringObligations f vc` (`LowerShape` incl. `CtxInv`, `ValsBelow`, types; SSA certificate `Cert`) | **discharged**: `lowerCheck f vc = true` ⇒ it (`loweringObligations_of_check`); and without the validator on `Dominated`/`LowerScope` input (`lowerCheck_complete`, `Compiled.of_lower`; see "Validator completeness") |
 | `PrepareCorrect sem vc vcp` (unreachable blocks, critical-edge splitting, RPO) | **discharged**: `prepCheck vc vcp = true` ⇒ it (`prepareCorrect_of_check`); and without the validator on `PrepDomain` VCode (`prepareCorrect_of_domain`, from `prepCheck_complete`; see "Validator completeness") |
 | Validators run by the compiler (`FV/Backend.lean` `lowerChecked`, `FV/Backend/Regalloc.lean` `allocateRegalloc2`: a rejection is a compile error) | done |
 | **`backend_correct`**, **`backend_correct_of_rules`** from the hypotheses below | **proven**, sorry-free |
@@ -2072,6 +2072,54 @@ theorems are unchanged. `PrepDomain` is what `lowerFunction` produces: labels ar
 `lowerFunction` result (1067 functions) is in `PrepDomain`, and `prepCheck` accepts every
 `prepare` output. The compiler keeps running `prepCheck` (`allocateRegalloc2`) as a runtime
 double-check.
+
+**Validator completeness: the lowering validator `lowerCheck` (V1, V2)** (2026-10-05,
+`FV/Backend/Proof/Lower{Spec,Fix,Loop*,Alias,ShapeOk*,Cert*,Decide,Complete}.lean`,
+`IselFlow*.lean`, `IselTermFacts*.lean`, `FV/E2E/LowerDirect.lean`):
+
+```lean
+theorem Backend.Proof.Driver.lowerCheck_complete {f : Clif.Function} {vc : VCode}
+    (hd : Dominated f) (hs : LowerScope f) (h : lowerFunction f = .ok vc) : lowerCheck f vc = true
+theorem Backend.Proof.Driver.prepDomain_of_lower (hs : LowerScope f) (h : lowerFunction f = .ok vc)
+    (hne : f.blocks ≠ []) : Prep.PrepDomain vc
+theorem E2E.Compiled.of_lower (hd : Dominated f) (hs : LowerScope f) (hl : lowerFunction f = .ok vc)
+    (hp : prepare vc = .ok vcp) (hch : checkAlloc vcp rf = .ok ()) (ha : lowerRFunc vcp rf = .ok af)
+    (he : emitFunc k af = .ok fa) (hla : fa.layout = .ok fb) : Compiled f k vc vcp rf af fa fb
+theorem dominated_of (h : dominatedB f = true) : Dominated f
+theorem lowerScope_of (h : lowerScopeB f = true) : LowerScope f
+```
+
+Every end-to-end theorem taking `hc : Compiled …` holds with `Compiled.of_lower …` in place of
+`hc`: neither `lowerCheck` nor `prepCheck` is a premise any more. Both premises are decidable
+conditions on the CLIF input alone (`dominatedB`, `lowerScopeB` run `buildCtx` and the
+input-only availability `availIn f ctx = inFix f ctx id`, never the lowering):
+
+* `Dominated f`: SSA (`valueDefs f` pairwise distinct), every operand of a statement or
+  terminator (`abiTerm`) available at its position (`availOf f (availIn f ctx)`, Cranelift's
+  dominance in the certificate's form; unreachable blocks are constrained by the same
+  must-dataflow), and no value available at a block's entry and not redefined there computed
+  directly from that block's parameters (true on reachable blocks of SSA input).
+* `LowerScope f`: subset E (`functionE`), at least one block, no branch to the entry block,
+  `br_table` indices of at most 32 bits (`brIdxOk`), atomic accesses at `i64` addresses, a
+  `try_call`'s normal-return `retN` below the callee's declared returns, well-formed
+  stack-argument layouts of the callees (`stackLayoutOk`).
+
+`lean-e2e-check` reports them: all 1148 in-scope corpus/runtest functions satisfy both. Proof
+structure: `inFix` is the greatest solution of its constraints (`inFix_fixOk`, `inFix_greatest`;
+V1a made it a fuel-bounded worklist); the rules' facts are decided once over the exported rule
+data (`IselFlow*`: `runTerm_mono`, `stmt_flow` — a statement's result registers are fresh vregs
+of the call or registers of values its instruction reaches through its operands (`Prov`) —,
+`stmt_noTls`/`termCall_noTls`/`tryCall_noTls`; `IselTermFacts*`: `term_emits`, `branch_last`,
+`call_outgoing`, `try_outgoing`); `lowerFunction`'s loop computes `vcBlocksOf f bl` for the
+recorded lowering `lowBlocks` (`lowerFunction_run`, V1d) and its VCode is in `PrepDomain` (V2);
+the alias chains are well founded (`alias_facts`), so `lowerFunction`'s array chase is the
+validator's `renOf gn` (`resolve_eq`) and `shapeOk` holds (`shapeOk_complete`); the
+renaming-dependent `inFix` agrees with `availIn` outside each block's own definitions and the
+certificate holds (`certOk_complete`). Non-vacuity: `E2E.lowerCheck_complete_witness` (a loop
+with block parameters and an edge block). A branch without arguments to a block with
+parameters is accepted by `lowerFunction` and `lowerCheck` alike; CLIF is stuck there
+(`enterBlock`: "block arity"), so the theorems claim nothing about such a run. The compiler
+keeps running `lowerCheck` as a runtime double-check.
 
 **Validator completeness: `Opt.Legalize128` is correct without `Opt.Legal.check`** (2026-10-02,
 `FV/Opt/Proof/LegalComplete.lean`, `FV/Opt/Proof/LegalDirect.lean`, `FV/E2E/LegalDirect.lean`;
