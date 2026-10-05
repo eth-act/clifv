@@ -23,8 +23,8 @@ The in-states of the spill allocation are then: the home of every vreg in `D b` 
 slot of every callee-saved register holds its entry value (on entry to block 0: the register
 itself), and on entry to a successor of a `try_call` the registers of the defs live on that edge
 (`termEdgeDefs`) hold them. `SpillStep4` — each `spillInst` group, the argument copies, the saves,
-restores and entry stores re-establish them — is the remaining obligation of step 4, stated as an
-explicit hypothesis (not an axiom). `SpillAvailable` (`FV/E2E/AllocDirect.lean`) asks for the sets
+restores and entry stores re-establish them — is proven (`spillStep4`,
+`FV/Backend/Proof/SpillStep4.lean`). `SpillAvailable` (`FV/E2E/AllocDirect.lean`) asks for the sets
 `D` of the pipeline's output.
 -/
 
@@ -103,11 +103,14 @@ structure SpillAvail (vc : VCode) (D : Nat → Nat → Bool) : Prop where
       ∀ v, D s v = true →
         edgeAvail vb sb (availAt vb.insts (availStart vc succs preds D b) vb.insts.size) v = true
 
-/-- **Step 4 of V4 (a)** (open; an explicit hypothesis, not an axiom): given the local facts
-(`SpillLocalOk`, step 3) and availability sets (`SpillAvail`), the in-states described in the
-module docstring verify, so the spill allocation is `AllocChecked`. -/
+/-- **Step 4 of V4 (a)** (proven: `spillStep4`, `FV/Backend/Proof/SpillStep4.lean`): given a CFG,
+the local facts (`SpillLocalOk`, step 3) and availability sets (`SpillAvail`), the in-states
+described in the module docstring verify, so the spill allocation is `AllocChecked`. The CFG
+premise is needed: `CheckedAt` asks for `vc.cfg = .ok _`, which `SpillLocalOk` and `SpillAvail`
+(both quantified over the CFG) do not give (a block not ending in a terminator meets both
+vacuously); the pipeline's output has a CFG (`cfg_ok_of_prepare`). -/
 def SpillStep4 : Prop :=
-  ∀ (vc : VCode) (D : Nat → Nat → Bool), SpillLocalOk vc → SpillAvail vc D →
-    AllocChecked vc (spillAlloc vc)
+  ∀ (vc : VCode) (D : Nat → Nat → Bool), (∃ succs preds, vc.cfg = .ok (succs, preds)) →
+    SpillLocalOk vc → SpillAvail vc D → AllocChecked vc (spillAlloc vc)
 
 end Backend.Proof.Spill

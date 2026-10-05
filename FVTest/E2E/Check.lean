@@ -4,6 +4,7 @@ import FV.Backend.Proof.LowerDecide
 import FV.Backend.Proof.PrepareCheck
 import FV.Backend.Proof.RegallocCover
 import FV.Backend.Proof.SpillArity
+import FV.Backend.Proof.SpillAvail
 import FV.Opt.Legalize128Pass
 import FVTest.Opt.Common
 
@@ -24,7 +25,9 @@ function is not rejected: it is compiled but outside the end-to-end theorem.
 It runs the checker on the spill allocation (`spillAlloc`, the fallback when `checkAlloc`
 rejects regalloc2's allocation) of every prepared VCode — the conclusion of the hypothesis
 `E2E.SpillAccepted` of `E2E.backend_correct_final_alloc` — and reports how many are accepted (a
-rejection fails the run) and how many `lowerRFunc` lowers (its 32 KiB frame limit, V5).
+rejection fails the run) and how many `lowerRFunc` lowers (its 32 KiB frame limit, V5); and
+`Spill.killFreeB` on every prepared VCode (the conclusion of the hypothesis `E2E.SpillKillFree`,
+which gives `E2E.SpillAvailable`; a rejection fails the run).
 
 It reports how many in-scope functions satisfy the input conditions of `lowerCheck_complete`
 (`dominatedB`, `lowerScopeB`: on these the lowering validator is a theorem, `Compiled.of_lower`),
@@ -164,6 +167,9 @@ def main (args : List String) : IO UInt32 := do
   let mut both := 0
   let mut spillOk := 0
   let mut spillBad := 0
+  let mut kfOk := 0
+  let mut kfBad := 0
+  let mut kfKilled := 0
   let mut spillLow := 0
   let mut spillBig := 0
   let mut tSpill := 0
@@ -236,6 +242,12 @@ def main (args : List String) : IO UInt32 := do
         | .error e =>
           spillBig := spillBig + 1
           IO.println s!"{file}: %{f.name}: lowerRFunc rejects the spill allocation: {e}"
+        -- the syntactic availability facts (`Spill.killFreeB`, `E2E.SpillKillFree`)
+        if !(Backend.Proof.Spill.killedOf vcp).isEmpty then kfKilled := kfKilled + 1
+        if ← IO.lazyPure (fun _ => Backend.Proof.Spill.killFreeB vcp) then kfOk := kfOk + 1
+        else
+          kfBad := kfBad + 1
+          IO.println s!"{file}: %{f.name}: killFreeB rejects (a killed vreg is read, or a killed branch argument is not stored on entry)"
         tSpill := tSpill + ((← IO.monoMsNow) - ts0)
         let t5 ← IO.monoMsNow
         let pc ← IO.lazyPure (fun _ => prepCheck vc vcp)
@@ -260,5 +272,6 @@ def main (args : List String) : IO UInt32 := do
   for (k, n) in forms.toList.mergeSort (fun a b => a.2 ≥ b.2) do
     IO.println s!"  uncovered form {k}: {n} instructions"
   IO.println s!"spill fallback (SpillAccepted): checkAlloc accepts {spillOk}, rejects {spillBad}; lowerRFunc lowers {spillLow}, rejects {spillBig} (allocator frame ≥ 32 KiB or ctlCheck)"
+  IO.println s!"killFreeB (SpillKillFree, gives SpillAvailable): {kfOk} accepted ({kfKilled} with killed vregs: scratch or terminator defs), {kfBad} rejected"
   IO.println s!"time (ms): lowerFunction {tLower}, lowerCheck {tCheck}, prepare {tPrep}, prepCheck {tPCheck}, spill fallback {tSpill}"
-  return if bad == 0 && pbad == 0 && spillBad == 0 then 0 else 1
+  return if bad == 0 && pbad == 0 && spillBad == 0 && kfBad == 0 then 0 else 1
