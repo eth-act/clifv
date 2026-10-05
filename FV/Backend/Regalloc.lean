@@ -25,7 +25,8 @@ Cranelift 0.136.1's options):
 
 Frame (grows down; `sp` is 16-byte aligned everywhere; all offsets are from `sp`). The
 allocator's slots sit right above the outgoing area, below the explicit CLIF slots, so their
-offsets stay small (`size < 32 KiB`, checked by `lowerRFunc`) however large the CLIF slots are:
+offsets stay small however large the CLIF slots are (slots at 32 KiB or more are addressed
+through x16, `slotStoreAt`):
 
 ```
 fp + 16 + off     incoming stack arguments
@@ -347,7 +348,7 @@ def ctlCheck (vc : VCode) (rf : RFunc) : Bool :=
 def lowerRFunc (vc : VCode) (rf : RFunc) : Except String AFunc := do
   let fr := RAFrame.compute vc rf
   -- Allocator slots are addressed `[sp, #off]` below 32 KiB, beyond through `x16 = sp + off`
-  -- (`slotStoreAt`/`slotLoadAt`; proof: `RegallocSlots`), so the frame has no size limit. The
+  -- (`slotStoreAt`/`slotLoadAt`; proof: `RegallocSlotsFar`), so the frame has no size limit. The
   -- CLIF slots above them are addressed by `stack_addr` arithmetic.
   if !ctlCheck vc rf then throw "control-form check (ctlCheck) failed"
   let blocks ← (vc.blocks.zip rf.blocks).mapIdxM fun bi (vb, items) => do
