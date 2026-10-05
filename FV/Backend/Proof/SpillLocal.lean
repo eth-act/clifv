@@ -19,9 +19,10 @@ All of this is state-independent; the dataflow invariant that the homes hold the
 -/
 
 namespace Backend.Proof.Spill
-
 open Backend
 
+deriving instance ReflBEq, LawfulBEq for RegClass
+deriving instance ReflBEq, LawfulBEq for Reg
 /-! ## The facts -/
 
 /-- A constraint the spill allocator meets with a fresh scratch register (`spillLocs`'s
