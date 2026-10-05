@@ -1,12 +1,14 @@
 import FV.Backend.Proof.IselShpFns
 
 /-!
-# Generator of the V3 coverage summary table (`FV/Backend/Proof/IselShpTab.lean`)
+# Generator of the V4 control-shape summary table (`FV/Backend/Proof/IselShpTab.lean`)
 
-Untrusted: computes, by a fixpoint of the disjunctive abstract interpreter (`aRule`, `AW`) over
-the exported ISLE rules, a summary table for every internal term reachable from the closure roots
-of `lower` and from `lower_branch`, and writes `IselShpTab.lean`: the table as Lean literals and
-the `native_decide` checks (`chkTab` and the root checks) the proofs rely on.
+Untrusted: computes, by a fixpoint of V3's disjunctive abstract interpreter (`aRule`, `AW`) with
+the control-shape precondition `apreS` and oracles `aOracleS` over the exported ISLE rules, a
+summary table for every internal term reachable from the closure roots of `lower` and from
+`lower_branch` (without the hand-checked rules `shpHandIds`), and writes `IselShpTab.lean`: the
+table as Lean literals and the `native_decide` checks (`chkTab` and the root checks) the proofs
+rely on. Prints the failing entries/roots/`emit`s if any.
 
 Regenerate (from the repository root, after `lake build FV.Backend.Proof.IselShpFns`):
 

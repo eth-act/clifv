@@ -180,11 +180,18 @@ author's estimate, not measured), **Risk**.
      blocks and `prepare`'s splitting).
      **`CtlSpillHyp` is false as stated** (`E2E.not_ctlSpillHyp`: two `sret` parameters are both fixed
      to x8); with the ABI condition of `InSubset` (`AbiSigsOk`: `abiSigs`/`indSigs`, at most one `sret`)
-     it holds modulo the ISLE inversion (`FV/Backend/Proof/SpillCtl*.lean`, `ctlSpillHyp_of`,
-     `E2E.spillLocalOk_of_ctl`): every `CtlShape` meets `SpillInstOk`; the driver's `Args`, the `tryCall`
-     (`clobberAll` unreachable: a `try_call` signature is `system_v`), edge `jump`s and the alias renaming
-     are proven. Open: `IselCtlHyp` (the control forms the driver's ISLE runs emit are `CtlShape`s:
-     ABI register lists, fresh distinct defs).
+     it holds: `E2E.ctlSpillHyp` (`FV/Backend/Proof/SpillCtl*.lean`, `ctlSpillHyp_of`): every `CtlShape`
+     meets `SpillInstOk`; the driver's `Args`, the `tryCall` (`clobberAll` unreachable: a `try_call`
+     signature is `system_v`), edge `jump`s and the alias renaming are proven, and the ISLE inversion
+     `IselCtlHyp` is `Driver.iselCtlHyp` (`FV/Backend/Proof/IselShp*.lean`, 2026-10-05): V3's abstract
+     interpreter, parametric in its transfer functions, re-run with an `emit` precondition checking the
+     shapes of `CondBr`/`TrapIf`/`TestBitAndBranch` (`apreS`), oracles for the helpers with fresh defs
+     (`load_ext_name_got/near`, `atomic_rmw/cas_loop`, `elf_tls_get_addr`), table `shpTab` (641 entries,
+     `FVTest/Backend/IselShpGen.lean`, 11 `native_decide` checks); the call, `try_call` and `br_table`
+     root rules (1031–1036, 1140) by hand (`root_hand`). `IselCtlHyp`'s `try_call` clause is restricted
+     to `f`'s terminators: for an arbitrary `try_call_indirect` on an unused signature declaration with
+     two `sret` parameters it is false (rule 1036). `E2E.spillLocalOk_of_ctl` now needs only
+     `ClassesHyp`/`EdgesHyp`.
   4. *The dataflow invariant*: with in-state "save slots hold the entry values, the home of every
      defined vreg holds it", each `spillInst` group, the argument copies and the entry stores
      re-establish it; `retCheck` from the restores.
