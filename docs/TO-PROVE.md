@@ -63,7 +63,7 @@ and, on rejection, replaced by a directly proven Lean path (kind 2). Correctness
 | i128 legalisation | Lean | `Opt.Legal.check` + `check_complete` on `Pre f` (`FV/Opt/Proof/LegalComplete.lean:1718`) | validator, complete on `Pre` | S6 |
 | instruction selection | Lean (ISLE data) | `LowerRulesCorrect` etc., proven once | proven | — |
 | lowering driver | Lean `lowerFunction` | `lowerCheck`, complete on `Dominated`/`LowerScope` (`lowerCheck_complete`) | validator, complete on decidable input conditions | V1 done |
-| form coverage | — | **`formsCoveredB`** (`FV/Backend/Proof/RegallocCover.lean`) | **validator premise** | V3 |
+| form coverage | Lean (ISLE data) | `formsCoveredB`, complete on `LowerScope` (`formsCovered_complete`, given `hLI : LogicImmComplete`, discharged by `logicImmComplete` once merged) | validator, complete on decidable input conditions | V3 done (hLI pending) |
 | `prepare` | Lean | `prepCheck`, complete on `PrepDomain`, which `lowerFunction` always produces (`prepDomain_of_lower`) | validator, complete | V2 done |
 | register allocation | **external Rust** (regalloc2 0.15.2 via `lean-regalloc`) | **`checkAlloc`** (`FV/Backend/RegallocCheck.lean:423-441`) | **validator premise + oracle** | V4 |
 | frame, control lowering | Lean `lowerRFunc` | internal rejections (frame ≥ 32 KiB, `ctlCheck`) | rejection | V5 |
@@ -113,15 +113,17 @@ author's estimate, not measured), **Risk**.
   arguments only on `jump`/edge blocks). Removes the `prepCheck` premise everywhere.
 - **Depends:** shares the loop invariant with V1d; do it inside V1d or right after. **Size:** small–medium `[est]`.
 
-### V3. Form coverage (`formsCoveredB`)
+### V3. Form coverage (`formsCoveredB`) — **done** (agent/forms-cover; `hLI` pending)
 
-- **Now:** `FormsCovered` (every VCode instruction is a control form or a proven straight-line `FormOk`
-  form) is a separate premise `hcov`; `formsCoveredB_iff` only decides it.
-- **Deliver:** for in-scope input, every instruction `lowerFunction` + `prepare` + `lowerRFunc` can emit is
-  covered. Either decide "every emitted form of every closure rule is covered" over the rule data, or
-  extend `FormOk` to the missing forms (regalloc-proof.md "Status update (M6Insts2)" notes the
-  xzr-destination imm/extended add/sub problem).
-- **Depends:** the def-set analysis of V1c can share the traversal of the rule data. **Size:** medium `[est]`.
+- **Done:** `formsCovered_complete (hLI : LogicImmComplete) : LowerScope f → lowerFunction f = .ok vc →
+  prepare vc = .ok vcp → FormsCovered cx vcp` (`FV/Backend/Proof/FormsCoverComplete.lean`) and
+  `E2E.backend_correct_final_of_lower` (`FV/E2E/FinalDirect.lean`): `backend_correct_final` from the
+  pipeline's results and `dominatedB`/`lowerScopeB`, without `Compiled` and `hcov`; only `checkAlloc`
+  remains. Decided once over the rule data: an abstract interpretation of the ISLE rules (`IselCov*.lean`,
+  summary table `covTab` from `FVTest/Backend/IselCovGen.lean`, 12 `native_decide` checks).
+- **Remaining:** `hLI : LogicImmComplete` (the emitter encodes every logical immediate `ImmLogic.ofNat?`
+  accepts) is discharged by `logicImmComplete` (`FV/Backend/Proof/LogicImmComplete.lean`, agent/logic-imm)
+  once merged: one line at the top of `formsCovered_complete`/`backend_correct_final_of_lower`.
 
 ### V4. Register allocation without trusting regalloc2
 
@@ -337,7 +339,7 @@ label**; list the free ones with
 | WP | Issue | Status |
 | --- | --- | --- |
 | V1+V2 | [#4](https://github.com/eth-act/clifv/issues/4) `lowerCheck` completeness (+ V2, `PrepDomain` of the lowering output) | **done** (`6db15bd`) |
-| V3 | [#5](https://github.com/eth-act/clifv/issues/5) Form coverage (`formsCoveredB`) | open |
+| V3 | [#5](https://github.com/eth-act/clifv/issues/5) Form coverage (`formsCoveredB`) | **done** on agent/forms-cover (`hLI` discharged by `logicImmComplete`, agent/logic-imm, once merged) |
 | V4 | [#6](https://github.com/eth-act/clifv/issues/6) Register allocation without trusting regalloc2 | open |
 | V5 | [#7](https://github.com/eth-act/clifv/issues/7) Frame and control-lowering rejections (totality) | open |
 | V6 | [#8](https://github.com/eth-act/clifv/issues/8) Branch range (totality) | open |
