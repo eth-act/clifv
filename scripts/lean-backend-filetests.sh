@@ -9,7 +9,7 @@
 # The same file is also run through plain `clif-native` (Cranelift's own aarch64 code), and
 # the two record streams are compared (`clif-results compare`).
 #
-# usage: scripts/lean-backend-filetests.sh [-v] [--asm] [--regalloc regalloc2|stack]
+# usage: scripts/lean-backend-filetests.sh [-v] [--asm] [--regalloc regalloc2|spill|stack]
 #                                          [--corpus | --runtests | FILE.clif...]
 #   default: --corpus and --runtests
 #   --corpus:   corpus/clif/*.clif, and corpus/clif/extrt/*.clif linked with the Rust
@@ -19,7 +19,8 @@
 #   -v: per-file lines for every file, and every non-passing run
 #   --asm: assemble the Lean backend's assembly with llvm-mc instead of using its object
 #   --regalloc: register allocator of the Lean backend (default regalloc2, validated by the
-#               Lean checker; `stack` = the stack-slot baseline), docs/contracts/regalloc.md
+#               Lean checker, with the spill allocator as fallback; `spill` = the fallback for
+#               every function; `stack` = the stack-slot baseline), docs/contracts/regalloc.md
 #   --opt [--opt-* ...]: run the Lean mid-end (Opt.optimize) before the Lean backend
 #               (lean-backend --opt, docs/contracts/midend.md); Cranelift-native is unchanged
 #

@@ -153,6 +153,9 @@ structure Tally where
   errors : Nat := 0
   withSpills : Nat := 0
   withSaves : Nat := 0
+  /-- rejected mutants lowered through the spill fallback (`RAResult.finish`), and failures -/
+  fallback : Nat := 0
+  fallbackBad : Nat := 0
   /-- `(kind, mutants, rejected)` -/
   muts : Array (String × Nat × Nat) := #[("swap", 0, 0), ("drop-reload", 0, 0),
     ("drop-restore", 0, 0), ("call-clobber", 0, 0)]
@@ -235,9 +238,22 @@ def main (args : List String) : IO UInt32 := do
             if !rejected then
               IO.println s!"{file}: %{vc.name}: mutant ACCEPTED: {what}"
               t := { t with bad := t.bad + 1 }
+            else
+              -- the backend lowers the spill allocation instead (`allocResult`)
+              match ({ res with rf := m } : RAResult).finish, lowerRFunc res.prepared (spillAlloc res.prepared) with
+              | .ok af, .ok af' =>
+                if af.blocks == af'.blocks && af.frameSize == af'.frameSize then
+                  t := { t with fallback := t.fallback + 1 }
+                else
+                  IO.println s!"{file}: %{vc.name}: fallback for {what} is not the spill allocation"
+                  t := { t with fallbackBad := t.fallbackBad + 1, bad := t.bad + 1 }
+              | _, _ =>
+                IO.println s!"{file}: %{vc.name}: no fallback for rejected mutant {what}"
+                t := { t with fallbackBad := t.fallbackBad + 1, bad := t.bad + 1 }
   IO.println s!"functions {t.funcs}: Lean checker accepts {t.leanOk}, regalloc2 checker accepts {t.rustOk}, allocation errors {t.errors}"
   IO.println s!"functions with spill slots {t.withSpills}, with callee-saved registers {t.withSaves}"
   IO.println s!"items: instructions {t.insts} (results all unused: {t.deadInsts}), register moves {t.regMoves}, spills {t.spills}, reloads {t.reloads}, callee-saved saves/restores {t.saveRestores}"
   for (k, n, rj) in t.muts do
     IO.println s!"mutation {k}: {n} mutants, {rj} rejected"
+  IO.println s!"fallback: {t.fallback} rejected mutants lowered through the spill allocation, {t.fallbackBad} failures"
   return if t.bad == 0 then 0 else 1

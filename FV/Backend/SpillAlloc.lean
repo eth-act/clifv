@@ -1,4 +1,5 @@
 import FV.Backend.RegallocCheck
+import Std.Data.HashMap
 
 /-!
 # The spill allocator: register allocation without regalloc2 (V4)
@@ -18,9 +19,11 @@ unchanged; only the checker's acceptance of this particular allocation has to be
 VCode to an `AFunc` with its own frame layout, `Args`/`Rets`/call conventions and none of the
 existing M6 machinery; `StackAlloc` also rejects the LL/SC loops, `try_call` and `tls_value`.)
 
-* **Homes.** Every vreg `v` of class `c` lives in spill slot `v` of class `c`
-  (`Loc.stack v c`). The slots past `spillTmpBase vc` hold the branch arguments of a `jump`
-  during the parallel copy into the target's parameters.
+* **Homes.** Every vreg `v` of class `c` the code mentions lives in its own spill slot of class
+  `c` (`spillHome`): the vregs are numbered densely in order of first occurrence
+  (`spillHomes`), so the frame grows with the vregs left after `prepare`, not with the lowering's
+  vreg counter. The slots past them hold the branch arguments of a `jump` during the parallel
+  copy into the target's parameters.
 * **Callee-saved registers.** All of them (`calleeSaved`) get a save slot: the entry block
   starts with `reg r → save r`, every `Rets` is preceded by `save r → reg r`. So the scratch
   registers may include x19–x28, and the fixed x24–x28 of the LL/SC loops need no special
@@ -35,7 +38,7 @@ existing M6 machinery; `StackAlloc` also rejects the LL/SC loops, `try_call` and
   that are live on an edge are stored at the start of the successor (`spillEntryStores`), which
   is its only predecessor's edge block (`prepare` splits critical edges).
 * **Block arguments** (`spillArgMoves`): before the `jump` of a block with branch arguments,
-  every argument is copied into a temporary slot (`spillTmpBase + i`), then every temporary into
+  every argument is copied into a temporary slot (the slots past the homes), then every temporary into
   the target parameter's home: a parallel copy, safe when arguments and parameters overlap.
   Each copy goes through register x9 (int) or v16 (float) (`spillScratch`): memory-to-memory
   moves do not exist.
@@ -53,8 +56,12 @@ decides it on every in-scope function of the corpus and the runtests ("spill fal
 
 namespace Backend
 
+/-- Home slot numbers: every vreg (number and class) the code mentions, numbered in order of
+first occurrence. -/
+abbrev Homes := Std.HashMap (Nat × RegClass) Nat
+
 /-- The home of vreg `v` of class `c`. -/
-def spillHome (v : Nat) (c : RegClass) : Loc := .stack v c
+def spillHome (h : Homes) (v : Nat) (c : RegClass) : Loc := .stack (h.getD (v, c) 0) c
 
 /-- Scratch registers of a class, in allocation order: the caller-saved registers first, then
 the callee-saved ones (all of which the spill allocation saves). -/
@@ -113,15 +120,15 @@ def spillRestores : List RItem := calleeSaved.map fun r => .move (.save r) (.reg
 
 /-- The items of instruction `k` (`i`): loads of its uses, the instruction, stores of its kept
 defs (none after a terminator); restores before a `Rets`. -/
-def spillInst (k : Nat) (i : MInst) : List RItem :=
+def spillInst (h : Homes) (k : Nat) (i : MInst) : List RItem :=
   match i.operands with
   | .error _ => [.op k #[]]
   | .ok ops =>
     let locs := spillLocs ops i.clobbers
     let pairs := (ops.zip locs).toList
-    let loads := (pairs.filter (·.1.kind == .use)).map fun (o, l) => RItem.move (spillHome o.vreg o.cls) l
+    let loads := (pairs.filter (·.1.kind == .use)).map fun (o, l) => RItem.move (spillHome h o.vreg o.cls) l
     let stores := if i.isTerminator then [] else
-      (keptPairs i pairs).map fun (o, l) => RItem.move l (spillHome o.vreg o.cls)
+      (keptPairs i pairs).map fun (o, l) => RItem.move l (spillHome h o.vreg o.cls)
     let restores := match i with
       | .rets _ => spillRestores
       | _ => []
@@ -138,28 +145,33 @@ def Reg.homeNum : Reg → Nat
   | .vreg n _ => n
   | _ => 0
 
-/-- The first slot past every vreg home: the largest vreg number of operands, parameters and
-branch arguments, plus one (at least the class table's size). -/
-def spillTmpBase (vc : VCode) : Nat :=
-  let regs (b : VBlock) : List Reg :=
-    b.params.toList ++ b.branchArgs.toList ++ b.insts.toList.flatMap fun i =>
-      match i.operands with
-      | .ok ops => ops.toList.map fun o => Reg.vreg o.vreg o.cls
-      | .error _ => []
-  vc.blocks.foldl (fun m b => (regs b).foldl (fun m r => max m (r.homeNum + 1)) m) vc.classes.size
+/-- The vregs of a block: parameters, branch arguments, operands. -/
+def blockVregs (b : VBlock) : List (Nat × RegClass) :=
+  (b.params.toList ++ b.branchArgs.toList).filterMap (fun
+    | .vreg n c => some (n, c)
+    | _ => none) ++
+  b.insts.toList.flatMap fun i => match i.operands with
+    | .ok ops => ops.toList.map fun o => (o.vreg, o.cls)
+    | .error _ => []
+
+/-- The homes of a VCode's vregs (`Homes`). -/
+def spillHomes (vc : VCode) : Homes :=
+  vc.blocks.foldl (fun h b => (blockVregs b).foldl
+    (fun h k => if h.contains k then h else h.insert k h.size) h) {}
 
 /-- The parallel copy of block `b`'s branch arguments into the parameters of its target `t`:
 arguments into temporaries, then temporaries into the parameters' homes. -/
-def spillArgMoves (tmp : Nat) (vb tb : VBlock) : List RItem :=
+def spillArgMoves (h : Homes) (vb tb : VBlock) : List RItem :=
+  let tmp := h.size
   let ps := (vb.branchArgs.toList.zip tb.params.toList).zipIdx
   let phase1 := ps.flatMap fun ((a, _), i) =>
     let c := a.homeCls
-    [RItem.move (spillHome a.homeNum c) (.reg (spillScratch c)),
-     .move (.reg (spillScratch c)) (spillHome (tmp + i) c)]
+    [RItem.move (spillHome h a.homeNum c) (.reg (spillScratch c)),
+     .move (.reg (spillScratch c)) (Loc.stack (tmp + i) c)]
   let phase2 := ps.flatMap fun ((_, p), i) =>
     let c := p.homeCls
-    [RItem.move (spillHome (tmp + i) c) (.reg (spillScratch c)),
-     .move (.reg (spillScratch c)) (spillHome p.homeNum c)]
+    [RItem.move (Loc.stack (tmp + i) c) (.reg (spillScratch c)),
+     .move (.reg (spillScratch c)) (spillHome h p.homeNum c)]
   phase1 ++ phase2
 
 /-- The defs (with their locations) of block `b`'s terminator that are live on the edge to
@@ -180,13 +192,13 @@ def termEdgeDefs (vb : VBlock) (j : Nat) : List (Operand × Loc) :=
 
 /-- Stores at the start of block `s` of the terminator defs live on the edge from its only
 predecessor (none if `s` has several predecessors or none). -/
-def spillEntryStores (vc : VCode) (succs preds : Array (Array Nat)) (s : Nat) : List RItem :=
+def spillEntryStores (h : Homes) (vc : VCode) (succs preds : Array (Array Nat)) (s : Nat) : List RItem :=
   match preds[s]? with
   | some #[b] =>
     match vc.blocks[b]?, succs[b]? with
     | some vb, some ss =>
       match ss.toList.idxOf? s with
-      | some j => (termEdgeDefs vb j).map fun (o, l) => RItem.move l (spillHome o.vreg o.cls)
+      | some j => (termEdgeDefs vb j).map fun (o, l) => RItem.move l (spillHome h o.vreg o.cls)
       | none => []
     | _, _ => []
   | _ => []
@@ -196,7 +208,7 @@ def spillAlloc (vc : VCode) : RFunc :=
   let (succs, preds) := match vc.cfg with
     | .ok sp => sp
     | .error _ => (#[], #[])
-  let tmp := spillTmpBase vc
+  let h := spillHomes vc
   let maxArgs := vc.blocks.foldl (fun m b => max m b.branchArgs.size) 0
   let blocks := vc.blocks.mapIdx fun bi vb =>
     let n := vb.insts.size
@@ -204,14 +216,14 @@ def spillAlloc (vc : VCode) : RFunc :=
       let moves := if k + 1 == n && !vb.branchArgs.isEmpty then
         match succs[bi]? with
         | some #[t] => match vc.blocks[t]? with
-          | some tb => spillArgMoves tmp vb tb
+          | some tb => spillArgMoves h vb tb
           | none => []
         | _ => []
       else []
-      moves ++ spillInst k i
-    let pre := (if bi == 0 then spillSaves else []) ++ spillEntryStores vc succs preds bi
+      moves ++ spillInst h k i
+    let pre := (if bi == 0 then spillSaves else []) ++ spillEntryStores h vc succs preds bi
     (pre ++ body).toArray
-  { blocks, spillSlots := tmp + maxArgs, saved := calleeSaved }
+  { blocks, spillSlots := h.size + maxArgs, saved := calleeSaved }
 
 /-- The allocation the backend lowers: regalloc2's (`ra`) if `checkAlloc` accepts it, else the
 spill allocation. -/
