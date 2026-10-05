@@ -302,17 +302,20 @@ theorem tryInfo_clobberAll {f : Clif.Function} {et : Clif.ExnTable} {sig : Clif.
   · cases hi
     rcases hcc with h | h <;> simp [h]
 
-/-! ## The ISLE runs (open) -/
+/-! ## The ISLE runs -/
 
 /-- The instructions emitted from `s` to `s'` have, where they are control forms, the control
 shapes with defs `≥ N`. -/
 def CtlSince (N : Nat) (s s' : LState) : Prop :=
   ∃ ms : List MInst, s'.emitted = s.emitted ++ ms.toArray ∧ ∀ m ∈ ms, m.isCtl = true → CtlShape N m
 
-/-- **The ISLE inversion (open)**: on input in scope, every ISLE run of the driver (a
+/-- **The ISLE inversion**: on input in scope, every ISLE run of the driver (a
 statement's `lower`, a terminator's `lower`/`lower_branch`, a `try_call`'s `lower_branch`) from
 a state above every value's vreg emits only control forms of the shapes `CtlShape`, with defs
-above every value's vreg. -/
+above every value's vreg. The `try_call` is a terminator of `f` (`∃ B ∈ f.blocks, B.term = t`):
+without it the statement is false (an unused signature declaration with two `sret` parameters
+on a `try_call_indirect` gives a call with `x8` twice, rule 1036), and the driver only lowers
+`f`'s own terminators. Proven: `iselCtlHyp` (`IselShpDriver`). -/
 def IselCtlHyp : Prop :=
   ∀ (f : Clif.Function) (ctx : Ctx) (ranges : Array (Nat × Nat)) (st0 : LState),
     Dominated f → LowerScope f → AbiSigsOk f → buildCtx f = .ok (ctx, ranges, st0) →
@@ -324,7 +327,7 @@ def IselCtlHyp : Prop :=
       termData (abiTerm f t) = .ok data → ctx.valDef.size ≤ s.nextVreg →
       termCallF ctx ti data t targets s = .ok (out, s', tr) → CtlSince ctx.valDef.size s s') ∧
     (∀ ti t et data sig items lo trs st1 targets out s' tr, ti < ctx.insts.size →
-      ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩ → IsTryWith t et →
+      ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩ → IsTryWith t et → (∃ B ∈ f.blocks, B.term = t) →
       tryCallData f t = .ok data → exnTableOpnd f et = .ok (sig, items) →
       ctx.valDef.size ≤ lo.nextVreg → tryRegsOf sig lo = some (trs, st1) →
       tryCallF ctx ti data trs targets { st1 with emitted := #[] } = .ok (out, s', tr) →
@@ -470,7 +473,7 @@ theorem ctlSpillHyp_of (hI : IselCtlHyp) {f : Clif.Function} {vc : VCode}
       | true =>
         obtain ⟨et, het⟩ : ∃ et, IsTryWith B.term et := isTry_with ht
         obtain ⟨T, hT', hdat, hex, -, hreg, hinfo, out, tr, hc⟩ := hy et het
-        obtain ⟨ms, hms, hsh⟩ := hY _ _ _ _ _ _ _ _ _ _ _ _ _ hti hph het hdat hex hge hreg hc
+        obtain ⟨ms, hms, hsh⟩ := hY _ _ _ _ _ _ _ _ _ _ _ _ _ hti hph het ⟨B, List.mem_of_getElem? hB, rfl⟩ hdat hex hge hreg hc
         simp only [Array.empty_append] at hms
         rw [hT'] at hm
         simp only [fixTry, tryFix, hms, List.toList_toArray] at hm

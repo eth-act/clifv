@@ -18,12 +18,12 @@ namespace Backend.Proof.Cov
 open Backend Backend.Proof Backend.Proof.Spill Isle Isle.Interp Isle.Aarch64
 
 section Generic
-variable {V σ : Type} (p : Program) (sm : Isle.Interp.Sem V σ) (cfg : Config)
+variable {V σ : Type} (p : Program) (sm : Isle.Sem V σ) (cfg : Config)
 
 /-- A selected rule is one of the candidates (for any configuration). -/
 theorem selectRule_mem :
     ∀ {n : Nat} {term : Term} {rs : List Rule} {vs : List V} {s s' : σ × Array RuleId}
-      {r : Rule} {env : Env V},
+      {r : Rule} {env : Isle.Interp.Env V},
       (selectRule p sm cfg n term rs vs).run s = .ok (some (r, env), s') → r ∈ rs
   | 0, _, _, _, _, _, _, _, h => by rw [selectRule.eq_1] at h; cases h
   | n + 1, _, [], _, _, _, _, _, h => by rw [selectRule.eq_2] at h; cases h
@@ -170,8 +170,7 @@ theorem totAt (htp : totalProg p = true) : ∀ n, TotAt p sm cfg n := by
           split at h2
           · exact (throw_ok h2).elim
           · obtain ⟨g, s2, h3, h4⟩ := bind_ok h2
-            cases get_ok h3
-            simp only at h4
+            cases Isle.Interp.get_ok h3
             split at h4
             · obtain ⟨u, s3, h5, h6⟩ := bind_ok h4
               cases pure_ok h6; rfl
