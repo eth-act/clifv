@@ -200,8 +200,7 @@ setting (was 1,176) and 2,388 for an operation Lean does not support (was 1,871)
 Compared outputs now come from 149 files (was 116). Every output that matched
 before still matches. The remaining setting rejections are mostly
 `opt_level=speed` or `speed_and_size` (243), `has_lse` atomics (114), `use_csdb`
-(51) and
-`is_pic=false` far symbols (40).
+(51) and `is_pic=false` far symbols (40).
 
 Next, implement a comparable exception/unwind metadata export, capture the exact
 target/CPU eligibility of a selected real CI host, and feed matched Lean artifacts
