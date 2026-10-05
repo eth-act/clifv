@@ -174,8 +174,8 @@ requests for 483 files; 118 produced test functions that could be compared.
 451 function outputs match code bytes, relocations, alignment and traps; all
 declared AArch64 test-function code artifacts match in 19 files. (The first
 published count, 425, compared every function of a repeated name with one of
-them.) None is credited
-as full execution-metadata equivalence. Stock compile assertions all pass.
+them.) None is credited as full execution-metadata equivalence. Stock compile
+assertions all pass.
 `runtests/throw.clif` has nonrepeatable reference artifacts because stock preparation
 substitutes a process-local host function address; it is not credited as agreement.
 
