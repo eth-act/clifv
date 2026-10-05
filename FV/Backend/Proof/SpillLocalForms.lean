@@ -90,4 +90,48 @@ theorem spillInstOk_of_formOk {ctx : FnCtx} {i : MInst} (h : FormOk ctx i = true
     | exact spillInstOk_load (Bool.and_eq_true _ _ ▸ h).2 _ _ _
     | exact spillInstOk_store (Bool.and_eq_true _ _ ▸ h).2 _ _ _
 
+/-! ## Control forms with fixed registers -/
+
+/-- `OpsOk` of a concrete operand array (fields by cases on its elements and indices). -/
+syntax "opsok_concrete" : tactic
+set_option hygiene false in
+macro_rules
+  | `(tactic| opsok_concrete) => `(tactic| (
+    try simp only [OpSpec.fixedUse, OpSpec.fixedDef, OpSpec.earlyDef, OpSpec.use, OpSpec.def_]
+    refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · intro o ho h; simp at ho; rcases ho with rfl | rfl | rfl | rfl | rfl <;> cases h
+    · intro o ho h; simp at ho; rcases ho with rfl | rfl | rfl | rfl | rfl <;> simp_all
+    · intro o ho p h; simp at ho; rcases ho with rfl | rfl | rfl | rfl | rfl <;> cases h <;> exact ⟨by decide, rfl⟩
+    · intro o ho o' ho' p hu hu' h h'; simp at ho ho'
+      rcases ho with rfl | rfl | rfl | rfl | rfl <;> rcases ho' with rfl | rfl | rfl | rfl | rfl <;>
+        (try simp_all) <;> (try subst_vars) <;> simp_all
+    · intro j j' o o' p hj hj' hd hd' h h'
+      rcases j with _ | _ | _ | _ | _ | j <;> rcases j' with _ | _ | _ | _ | _ | j' <;>
+        (try simp at hj hj') <;> (try subst_vars) <;> (try simp_all) <;> (try subst_vars) <;> simp_all
+    · intro o ho p hd h; simp at ho; rcases ho with rfl | rfl | rfl | rfl | rfl <;> simp_all [MInst.clobbers]
+    · intro o ho hd hp; simp at ho; rcases ho with rfl | rfl | rfl | rfl | rfl <;> simp_all <;> rfl
+    · intro j o i hj h
+      rcases j with _ | _ | _ | _ | _ | j <;> simp at hj <;> subst hj <;> cases h
+    · intro c; cases c <;> simp [nScratch, scratch, freeRegs, fixedRegs, spillPool, MInst.clobbers]
+    · simp_all))
+
+theorem spillInstOk_rmwLoop (t : CTy) (op : AtomicRmwLoopOp) (fl : Clif.MemFlags) {p x d d1 d2 : Nat}
+    (h1 : d ≠ d1) (h2 : d ≠ d2) (h3 : d1 ≠ d2) :
+    SpillInstOk (.atomicRmwLoop t op fl (.vreg p .int) (.vreg x .int) (.vreg d .int) (.vreg d1 .int)
+      (.vreg d2 .int)) :=
+  ⟨_, rfl, by opsok_concrete, fun _ h => by cases h⟩
+
+theorem spillInstOk_casLoop (t : CTy) (fl : Clif.MemFlags) {p e x d d1 : Nat} (h1 : d ≠ d1) :
+    SpillInstOk (.atomicCasLoop t fl (.vreg p .int) (.vreg e .int) (.vreg x .int) (.vreg d .int)
+      (.vreg d1 .int)) :=
+  ⟨_, rfl, by opsok_concrete, fun _ h => by cases h⟩
+
+theorem spillInstOk_elfTls (nm : String) {d t : Nat} (h : d ≠ t) :
+    SpillInstOk (.elfTlsGetAddr nm (.vreg d .int) (.vreg t .int)) :=
+  ⟨_, rfl, by opsok_concrete, fun _ h => by cases h⟩
+
+theorem spillInstOk_jtSequence (dflt : Label) (ts : List Label) {r t1 t2 : Nat} (h : t1 ≠ t2) :
+    SpillInstOk (.jtSequence dflt ts (.vreg r .int) (.vreg t1 .int) (.vreg t2 .int)) :=
+  ⟨_, rfl, by opsok_concrete, fun _ h => by cases h⟩
+
 end Backend.Proof.Spill
