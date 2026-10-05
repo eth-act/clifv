@@ -391,4 +391,40 @@ theorem transferOp_kept {i : MInst} (h : OpsOk ops i.clobbers) {a : AState} (hsz
       exact (List.nodup_append.mp hnd).2.2 _ hk' _ hx rfl
     simp [this]
 
+/-- **A location that is not a register only loses the defs' vregs in the instruction's
+transfer.** -/
+theorem transferOp_nonReg {i : MInst} (h : OpsOk ops i.clobbers) {a : AState} {l : Loc}
+    (hl : l.isReg = false) {s : Sym}
+    (hs : s ∈ (transferOp i (ops.zip (spillLocs ops i.clobbers)).toList a).get l) :
+    s ∈ a.get l ∧ ∀ o ∈ ops.toList, o.kind = .def → s ≠ .vreg o.vreg := by
+  generalize hP : (ops.zip (spillLocs ops i.clobbers)).toList = P at hs
+  have hne : ∀ x ∈ P, x.2 ≠ l := by
+    intro x hx he
+    rw [← hP] at hx
+    obtain ⟨r, hr, -, -⟩ := spill_reg h hx
+    rw [← he, hr] at hl; cases hl
+  have hE := defineAll_get_other (atPos P .def .early) a l
+    (fun x hx => hne x (mem_atPos.mp hx).1)
+  have hC := clobberAll_get_other i.clobbers (defineAll a (atPos P .def .early)) l
+    (fun r _ he => by rw [← he] at hl; cases hl)
+  have hL := defineAll_get_other (atPos P .def .late)
+    (clobberAll (defineAll a (atPos P .def .early)) i.clobbers) l
+    (fun x hx => hne x (mem_atPos.mp hx).1)
+  have hmid : s ∈ (defineAll (clobberAll (defineAll a (atPos P .def .early)) i.clobbers)
+      (atPos P .def .late)).get l := by
+    unfold transferOp at hs
+    split at hs
+    · exact hs
+    · rw [forgetDefs_get] at hs; exact (List.mem_filter.mp hs).1
+  rw [hL, hC, hE] at hmid
+  simp only [List.mem_filter, Bool.not_eq_true', List.any_eq_false, beq_iff_eq] at hmid
+  refine ⟨hmid.1.1, fun o ho hd he => ?_⟩
+  have hfst : (ops.zip (spillLocs ops i.clobbers)).toList.map Prod.fst = ops.toList := by
+    rw [pairs_eq, List.map_map]; exact List.zipIdx_map_fst 0 _
+  rw [← hfst, hP, List.mem_map] at ho
+  obtain ⟨x, hx, rfl⟩ := ho
+  rcases hpos : x.1.pos
+  · exact hmid.1.2 x (mem_atPos.mpr ⟨hx, hd, hpos⟩) he
+  · exact hmid.2 x (mem_atPos.mpr ⟨hx, hd, hpos⟩) he
+
 end Backend.Proof.Spill
