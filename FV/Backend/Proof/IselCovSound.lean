@@ -190,7 +190,14 @@ theorem aunS_sound {a : AW} {t k : Nat} {vs : List V} (h : γ f ctx a (.data t k
   | scale b => obtain ⟨_, he, _⟩ := h; cases he
   | simm9 => obtain ⟨_, he, _⟩ := h; cases he
 
-/-! ## The model -/
+/-! ## The model
+
+The transfer functions of the extern constructors and the oracles (`actor`, `apre`, `aOracle`)
+are parameters: V3's (`IselCovFns`) and V4's control-shape analysis (`IselShpFns`). -/
+
+section Params
+variable (actor : TermId → List AW → AW) (apre : TermId → List AW → Bool)
+  (aOracle : TermId → List AW → Option AW)
 
 /-- The facts about the extern helpers the soundness proof needs, and a state invariant. -/
 structure CovModel (p : Program) (f : Clif.Function) (ctx : Ctx) where
@@ -206,10 +213,12 @@ structure CovModel (p : Program) (f : Clif.Function) (ctx : Ctx) where
     (applyTerm p (sem ctx) cfg n ty t vs).run (s, tr) = .ok (r, (s', tr')) →
     Is s' ∧ ∀ v, r = some v → γ f ctx a v
 
+variable {actor apre aOracle}
+
 /-! ## Patterns -/
 
 section Pat
-variable {p : Program} (hctx : CtxInv f ctx) (md : CovModel p f ctx)
+variable {p : Program} (hctx : CtxInv f ctx) (md : CovModel actor apre aOracle p f ctx)
 
 theorem unData_eq {ty : TypeId} {v : V} {k : Nat} {fs : List V}
     (h : (sem ctx).unData ty v = some (k, fs)) : v = .data ty k fs := by
@@ -572,7 +581,8 @@ theorem holds2_le {as bs : List AW} {vs : List V} (h : AW.leAll as bs = true)
 /-! ## Soundness of the abstract interpretation -/
 
 section Sound
-variable {p : Program} (hctx : CtxInv f ctx) (md : CovModel p f ctx) (cfg : Config) (tab : Tab)
+variable {p : Program} (hctx : CtxInv f ctx) (md : CovModel actor apre aOracle p f ctx) (cfg : Config)
+  (tab : Tab)
 
 /-- The soundness statements at fuel `n`. -/
 structure SoundAt (n : Nat) : Prop where
@@ -929,5 +939,7 @@ theorem soundAt (hc : cfg.checkOverlap = false) (htab : chkTab p tab aext actor 
             exact ⟨hIs2, aenv2, flat_mapM_mem hails hm1 hif hm2, he2⟩
 
 end Sound
+
+end Params
 
 end Backend.Proof.Cov

@@ -2162,6 +2162,22 @@ alias renaming keeps register classes (`resolve_vrenaming`, `covered_mapRegs`), 
 Non-vacuity: `E2E.formsCovered_complete_witness` (`lowerWitness`). The compiler keeps running
 `formsCoveredB` (`lean-e2e-check`) as a double check.
 
+**The control shapes of the ISLE runs (V4 (a), `IselCtlHyp`)** (2026-10-05,
+`FV/Backend/Proof/IselShp{Fns,Base,Root,Tab,Total,Ctor,Oracle,Call,Try,BrTable,Driver}.lean`,
+generator `FVTest/Backend/IselShpGen.lean`): `Backend.Proof.Driver.iselCtlHyp : IselCtlHyp`
+(SpillCtlPipe.lean; its `try_call` clause takes `∃ B ∈ f.blocks, B.term = t`). V3's
+`CovModel`/`soundAt` are parametric in `actor`/`apre`/`aOracle`; the control-shape model
+`shpModel` uses `apreS` (an `emit`ted control form is a `CondBr`/`TrapIf` on a condition or an
+int vreg, a `TestBitAndBranch` on an int vreg, `Udf`/`EmitIsland`/`Jump`; `gen_return` returns
+int vregs) and `aOracleS` (the helpers emitting `loadExtNameGot/Near`, the LL/SC loops and
+`ElfTlsGetAddr` with fresh distinct defs, `oracle_ctl`), state invariant `ShpIs N s0`
+(`CtlSince N s0 ∧ N ≤ nextVreg`). Table `shpTab`: 641 entries, 8 chunks + 3 roots by
+`native_decide` (≈13 s, 2 GB). Hand-checked root rules (`root_hand`, `HandOk`): calls 1031–1033
+(`handOk_call`), `try_call`s 1034–1036 (`handOk_try`), `br_table` 1140 (`handOk_brTable`, its
+`imm`/`put_in_reg_zext32` sub-runs from the table via `SubOk`). `totality`: a non-`partial` term
+never returns `none` (`totalProg_program`). Corollary `E2E.ctlSpillHyp` (under `InSubset`);
+witness `E2E.ctlSpillHyp_of_witness`.
+
 **Register allocation without the `checkAlloc` premise: the spill fallback (V4 (a))** (2026-10-05,
 `FV/Backend/SpillAlloc.lean`, `FV/Backend/Regalloc.lean` `lowerAlloc`, `FV/E2E/AllocDirect.lean`):
 

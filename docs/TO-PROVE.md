@@ -186,7 +186,21 @@ author's estimate, not measured), **Risk**.
      **`EdgesHyp` proven under the new decidable input condition `ArityOk`** (`edgesHyp_of`,
      `SpillEdges*.lean`; `SpillArity.lean`: every branch destination passes as many arguments as its target
      has parameters, which `lowerFunction` does not check for argument-less `brif`/`br_table` edges;
-     `lean-e2e-check`: `arityOkB` 1148/1148). Only `CtlSpillHyp` remains open.
+     `lean-e2e-check`: `arityOkB` 1148/1148).
+     **`CtlSpillHyp` is false as stated** (`E2E.not_ctlSpillHyp`: two `sret` parameters are both fixed
+     to x8); with the ABI condition of `InSubset` (`AbiSigsOk`: `abiSigs`/`indSigs`, at most one `sret`)
+     it holds: `E2E.ctlSpillHyp` (`FV/Backend/Proof/SpillCtl*.lean`, `ctlSpillHyp_of`): every `CtlShape`
+     meets `SpillInstOk`; the driver's `Args`, the `tryCall` (`clobberAll` unreachable: a `try_call`
+     signature is `system_v`), edge `jump`s and the alias renaming are proven, and the ISLE inversion
+     `IselCtlHyp` is `Driver.iselCtlHyp` (`FV/Backend/Proof/IselShp*.lean`, 2026-10-05): V3's abstract
+     interpreter, parametric in its transfer functions, re-run with an `emit` precondition checking the
+     shapes of `CondBr`/`TrapIf`/`TestBitAndBranch` (`apreS`), oracles for the helpers with fresh defs
+     (`load_ext_name_got/near`, `atomic_rmw/cas_loop`, `elf_tls_get_addr`), table `shpTab` (641 entries,
+     `FVTest/Backend/IselShpGen.lean`, 11 `native_decide` checks); the call, `try_call` and `br_table`
+     root rules (1031–1036, 1140) by hand (`root_hand`). `IselCtlHyp`'s `try_call` clause is restricted
+     to `f`'s terminators: for an arbitrary `try_call_indirect` on an unused signature declaration with
+     two `sret` parameters it is false (rule 1036). So step 3 is **done**: `E2E.spillLocalAll`
+     (`InSubset`, `Dominated`, `LowerScope`, `ArityOk` give `SpillLocalOk` of the prepared VCode).
   4. *The dataflow invariant* — **stated** (`FV/Backend/Proof/SpillInvariant.lean`). What remains is
      availability, not definedness: `SpillAvail vc D` (sets `D b` of vregs whose home holds them on
      entry to block `b`: all at the entry; every use available where it is read, `availAt`; every edge
@@ -196,7 +210,8 @@ author's estimate, not measured), **Risk**.
      "homes of `D b` hold their vregs, save slots their entry values (block 0: the registers), a
      `try_call` successor's live def registers their defs" verify, i.e. `AllocChecked vc (spillAlloc
      vc)`) and `SpillAvailable` (`∃ D, SpillAvail vcp D` for the pipeline's output). Assembly:
-     `spillAccepted'_of : SpillStep4 → SpillLocalAll → SpillAvailable → SpillAccepted'`, then
+     `spillAccepted'_of : SpillStep4 → SpillLocalAll → SpillAvailable → SpillAccepted'`,
+     `spillAccepted'_of_step4 : SpillStep4 → SpillAvailable → SpillAccepted'`, then
      `backend_correct_final_alloc'` (premise `arityOkB f = true`).
 - **Option (b), later:** a real allocator (linear scan) written in Lean, proven directly or with
   `checkAlloc` completeness for its output. Removes the Rust tool entirely. Large `[est]`.
