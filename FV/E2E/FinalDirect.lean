@@ -9,8 +9,7 @@ import FV.Backend.Proof.FormsCoverComplete
 acceptance) and `FormsCovered` (decided per function by `formsCoveredB`). On `Dominated` input in
 `LowerScope` (decided by `dominatedB`/`lowerScopeB` on the CLIF function alone) both are theorems:
 `Compiled.of_lowerB` (V1, V2) and `formsCovered_completeB` (V3). What remains of the compiler's
-checks is the register-allocation checker `checkAlloc` (V4), and the hypothesis
-`hLI : LogicImmComplete`, discharged by `logicImmComplete`.
+checks is the register-allocation checker `checkAlloc` (V4).
 -/
 
 namespace E2E
@@ -21,7 +20,7 @@ open Backend Backend.Proof Backend.Proof.Driver Backend.Proof.Cov
 with `Compiled` and `FormsCovered` replaced by the results of `lowerFunction`, `prepare`,
 `checkAlloc`, `lowerRFunc`, `emitFunc` and the layout, on input with `dominatedB`/`lowerScopeB`.
 The run and contract premises are `backend_correct_final`'s. -/
-theorem backend_correct_final_of_lower (hLI : LogicImmComplete) {p : Clif.Program}
+theorem backend_correct_final_of_lower {p : Clif.Program}
     {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
     {fb : FnBin} (hsub : InSubset p f) (hd : dominatedB f = true) (hs : lowerScopeB f = true)
     (hl : lowerFunction f = .ok vc) (hp : Backend.prepare vc = .ok vcp)
@@ -51,7 +50,7 @@ theorem backend_correct_final_of_lower (hLI : LogicImmComplete) {p : Clif.Progra
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ArmRefines fb base ra (ArmStepX X H fa) s (Clif.runLoop env p fuel cs) :=
   backend_correct_final hsub (Compiled.of_lowerB hd hs hl hp hch ha he hla)
-    (formsCovered_completeB hLI hs hl hp _) hC hCT hTls hX hXI hsym hslot hent hres hbe hargs hcs
+    (formsCovered_completeB hs hl hp _) hC hCT hTls hX hXI hsym hslot hent hres hbe hargs hcs
     hrel htr fuel
 
 /-! ## Non-vacuity
@@ -68,7 +67,7 @@ theorem lowerWitness_prepares :
 
 /-- **Non-vacuity of `formsCovered_complete`**: its premises hold for `lowerWitness`, so the
 prepared code is covered without `formsCoveredB` being run. -/
-theorem formsCovered_complete_witness (hLI : LogicImmComplete) (cx : FnCtx) :
+theorem formsCovered_complete_witness (cx : FnCtx) :
     Dominated lowerWitness ∧ LowerScope lowerWitness ∧
       ∃ vc vcp, lowerFunction lowerWitness = .ok vc ∧ Backend.prepare vc = .ok vcp ∧
         FormsCovered cx vcp := by
@@ -83,6 +82,6 @@ theorem formsCovered_complete_witness (hLI : LogicImmComplete) (cx : FnCtx) :
     | error e => rw [hp] at hpr; cases hpr
     | ok vcp =>
       exact ⟨dominated_of hd, lowerScope_of hs, vc, vcp, rfl, hp,
-        formsCovered_complete hLI (lowerScope_of hs) h hp cx⟩
+        formsCovered_complete (lowerScope_of hs) h hp cx⟩
 
 end E2E

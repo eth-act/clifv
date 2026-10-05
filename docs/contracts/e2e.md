@@ -54,7 +54,7 @@ callees' stack budget), `cx := ⟨fa.k, af.slotBase⟩`.
 | Hypothesis | Kind / owner |
 | --- | --- |
 | `InSubset p f`, `Compiled f k vc vcp rf af fa fb` | the compiler ran (pipeline + validators) |
-| `FormsCovered cx vcp` | per-function decidable premise (`formsCoveredB`, the covered straight-line forms `FormOk`, including the per-instruction bitmask check `logicImmOk`; control forms are handled by the proof); decided by `lean-e2e-check` (corpus + extrt + runtests: 913 of 913 checked functions covered, M6Refines); a theorem on `LowerScope` input given `hLI : LogicImmComplete` (V3: `formsCovered_complete`, `E2E.backend_correct_final_of_lower`; see "Validator completeness") |
+| `FormsCovered cx vcp` | per-function decidable premise (`formsCoveredB`, the covered straight-line forms `FormOk`, including the per-instruction bitmask check `logicImmOk`; control forms are handled by the proof); decided by `lean-e2e-check` (corpus + extrt + runtests: 913 of 913 checked functions covered, M6Refines); a theorem on `LowerScope` input (V3: `formsCovered_complete`, `E2E.backend_correct_final_of_lower`; see "Validator completeness") |
 | `∀ s, CalleeOk (FF s) K X H vcp.CallSite` | callee contract of the machine's call hook `H` at the call sites of the compiled code (AAPCS64: `CallSoundCtl` of every call — from a state whose `K` bytes below `sp` fit and lie in `FF s`, the callee leaves the world `X.call` computes outside `FF s`, keeps `sp` and the frame outside that dead stack, the callee-saved registers, and puts the results in the def registers —, return to pc+4 from an aligned `sp`, `X.call` error-free and program-preserving; see "Callee contract with a dead stack") — environment |
 | `(∃ B ∈ f.blocks, B.term.isTry = true) → ∀ s, CalleeTryOk (FF s) X H vcp.TrySite` (`hCT`) | only for a function with a `try_call`, at its `try_call` sites: on a normal return the result registers of the call (its first `ti.rets` defs) hold what `csem` gives them; the exception payload registers past them are unconstrained (havocked on that edge, see "`try_call` payload registers") — environment; vacuous for a function without `try_call`, and for sites whose callee returns nothing (`calleeTryOk_of_rets0`) |
 | `hasTls f = true → ∀ s, TlsOk (FF s) K X H` (`hTls`) | only for a function with a `tls_value`: the machine's TLSDESC hook `H.tls` ends after the sequence, puts the variable's address `X.sym n 0` in x0 and the thread pointer `X.tp` in the temporary, keeps every other register but x30, the memory outside the `K` bytes below `sp` (a resolver may save registers there) and the program, and leaves the flags `X.tlsFlags n w` — trusted (`docs/decisions/arm-model.md`, "Thread-local storage"); vacuous for a function without `tls_value` |
@@ -2127,10 +2127,10 @@ keeps running `lowerCheck` as a runtime double-check.
 `FVTest/Backend/IselCovGen.lean`):
 
 ```lean
-theorem Backend.Proof.Driver.formsCovered_complete (hLI : LogicImmComplete) {f : Clif.Function}
+theorem Backend.Proof.Driver.formsCovered_complete {f : Clif.Function}
     {vc vcp : VCode} (hs : LowerScope f) (hl : lowerFunction f = .ok vc)
     (hp : prepare vc = .ok vcp) (cx : FnCtx) : FormsCovered cx vcp
-theorem E2E.backend_correct_final_of_lower (hLI : LogicImmComplete) (hsub : InSubset p f)
+theorem E2E.backend_correct_final_of_lower (hsub : InSubset p f)
     (hd : dominatedB f = true) (hs : lowerScopeB f = true) (hl : lowerFunction f = .ok vc)
     (hp : prepare vc = .ok vcp) (hch : checkAlloc vcp rf = .ok ()) (ha : lowerRFunc vcp rf = .ok af)
     (he : emitFunc k af = .ok fa) (hla : fa.layout = .ok fb)
@@ -2140,9 +2140,9 @@ theorem E2E.backend_correct_final_of_lower (hLI : LogicImmComplete) (hsub : InSu
 
 `backend_correct_final_of_lower` is `backend_correct_final` without `hc : Compiled …` and
 `hcov : FormsCovered …`: of the compiler's checks only `checkAlloc` (V4) remains a premise.
-`hLI : LogicImmComplete` (`IselCovSem.lean`: every logical immediate `ImmLogic.ofNat?` accepts is
-encoded, `logicImmOk`) is discharged by `logicImmComplete` (`LogicImmComplete.lean`, branch
-agent/logic-imm) once merged. Proof: an abstract interpretation of the exported ISLE rules,
+`LogicImmComplete` (`IselCovSem.lean`: every logical immediate `ImmLogic.ofNat?` accepts is
+encoded, `logicImmOk`), used by the ISLE-level lemmas, is proven by `logicImmComplete`
+(`LogicImmComplete.lean`: kernel `decide` over the 5334 (e, c, r) triples, 16 chunks). Proof: an abstract interpretation of the exported ISLE rules,
 decided once (no per-program check). Abstract values `AW` (`γ`: register kinds, enum variants,
 types, immediates with their range facts, "every `MInst` inside is covered") and the abstract
 `FormOk` `covOk` (`covOk_sound`); `aRule` evaluates a rule disjunctively (patterns split

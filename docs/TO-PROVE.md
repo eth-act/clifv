@@ -63,7 +63,7 @@ and, on rejection, replaced by a directly proven Lean path (kind 2). Correctness
 | i128 legalisation | Lean | `Opt.Legal.check` + `check_complete` on `Pre f` (`FV/Opt/Proof/LegalComplete.lean:1718`) | validator, complete on `Pre` | S6 |
 | instruction selection | Lean (ISLE data) | `LowerRulesCorrect` etc., proven once | proven | — |
 | lowering driver | Lean `lowerFunction` | `lowerCheck`, complete on `Dominated`/`LowerScope` (`lowerCheck_complete`) | validator, complete on decidable input conditions | V1 done |
-| form coverage | Lean (ISLE data) | `formsCoveredB`, complete on `LowerScope` (`formsCovered_complete`, given `hLI : LogicImmComplete`, discharged by `logicImmComplete` once merged) | validator, complete on decidable input conditions | V3 done (hLI pending) |
+| form coverage | Lean (ISLE data) | `formsCoveredB`, complete on `LowerScope` (`formsCovered_complete`) | validator, complete on decidable input conditions | V3 done |
 | `prepare` | Lean | `prepCheck`, complete on `PrepDomain`, which `lowerFunction` always produces (`prepDomain_of_lower`) | validator, complete | V2 done |
 | register allocation | **external Rust** (regalloc2 0.15.2 via `lean-regalloc`) | **`checkAlloc`** (`FV/Backend/RegallocCheck.lean:423-441`) | **validator premise + oracle** | V4 |
 | frame, control lowering | Lean `lowerRFunc` | internal rejections (frame ≥ 32 KiB, `ctlCheck`) | rejection | V5 |
@@ -113,17 +113,18 @@ author's estimate, not measured), **Risk**.
   arguments only on `jump`/edge blocks). Removes the `prepCheck` premise everywhere.
 - **Depends:** shares the loop invariant with V1d; do it inside V1d or right after. **Size:** small–medium `[est]`.
 
-### V3. Form coverage (`formsCoveredB`) — **done** (agent/forms-cover; `hLI` pending)
+### V3. Form coverage (`formsCoveredB`) — **done** (#5)
 
-- **Done:** `formsCovered_complete (hLI : LogicImmComplete) : LowerScope f → lowerFunction f = .ok vc →
+- **Done:** `formsCovered_complete : LowerScope f → lowerFunction f = .ok vc →
   prepare vc = .ok vcp → FormsCovered cx vcp` (`FV/Backend/Proof/FormsCoverComplete.lean`) and
   `E2E.backend_correct_final_of_lower` (`FV/E2E/FinalDirect.lean`): `backend_correct_final` from the
   pipeline's results and `dominatedB`/`lowerScopeB`, without `Compiled` and `hcov`; only `checkAlloc`
   remains. Decided once over the rule data: an abstract interpretation of the ISLE rules (`IselCov*.lean`,
   summary table `covTab` from `FVTest/Backend/IselCovGen.lean`, 12 `native_decide` checks).
-- **Remaining:** `hLI : LogicImmComplete` (the emitter encodes every logical immediate `ImmLogic.ofNat?`
-  accepts) is discharged by `logicImmComplete` (`FV/Backend/Proof/LogicImmComplete.lean`, agent/logic-imm)
-  once merged: one line at the top of `formsCovered_complete`/`backend_correct_final_of_lower`.
+  The ISLE-level lemmas use `LogicImmComplete` (every logical immediate `ImmLogic.ofNat?` accepts is
+  encodable), proven by `logicImmComplete` (`FV/Backend/Proof/LogicImmComplete.lean`, kernel `decide` over
+  the 5334 (element size, run, rotation) triples).
+- **Remaining:** the compiler still runs `formsCoveredB` in `lean-e2e-check` as a double-check.
 
 ### V4. Register allocation without trusting regalloc2
 
