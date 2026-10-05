@@ -1,4 +1,4 @@
-import FV.Backend.RegallocCheck
+import FV.Backend.SpillAlloc
 import Lean.Data.Json
 import FV.Backend.Proof.PrepareCheck
 
@@ -353,14 +353,50 @@ structure RAResult where
   rustChecker : String
   deriving Inhabited
 
-/-- Check, then lower. A rejection by either checker is an error. -/
-def RAResult.finish (r : RAResult) : Except String AFunc := do
-  match checkAlloc r.prepared r.rf with
+/-- regalloc2's allocation as `allocResult` sees it: rejected by regalloc2's own checker (an
+extra cross-check) counts as no allocation. -/
+def RAResult.oracle (r : RAResult) : Except String RFunc :=
+  if r.rustChecker == "ok" then .ok r.rf
+  else .error s!"register allocation rejected by regalloc2's checker: {r.rustChecker}"
+
+/-- Lower a spill allocation, after running `checkAlloc` on it as a double-check (it accepts
+every in-scope function of the corpus; `SpillAccepted`). -/
+def lowerSpill (vcp : VCode) : Except String AFunc := do
+  let rf := spillAlloc vcp
+  match checkAlloc vcp rf with
   | .ok () => pure ()
-  | .error e => throw s!"register allocation rejected by the Lean checker: {e}"
-  if r.rustChecker != "ok" then
-    throw s!"register allocation rejected by regalloc2's checker: {r.rustChecker}"
-  lowerRFunc r.prepared r.rf
+  | .error e => throw s!"spill allocation rejected by the Lean checker: {e}"
+  lowerRFunc vcp rf
+
+/-- Lower `allocResult`: regalloc2's allocation if `checkAlloc` accepts it, else the spill
+allocation (`lowerSpill`). -/
+def lowerAlloc (vcp : VCode) (ra : Except String RFunc) : Except String AFunc :=
+  match ra with
+  | .ok rf => if (checkAlloc vcp rf).isOk then lowerRFunc vcp rf else lowerSpill vcp
+  | .error _ => lowerSpill vcp
+
+theorem lowerAlloc_eq {vcp : VCode} {ra : Except String RFunc} {af : AFunc}
+    (h : lowerAlloc vcp ra = .ok af) : lowerRFunc vcp (allocResult vcp ra) = .ok af := by
+  unfold lowerAlloc at h
+  unfold allocResult
+  have hs : lowerSpill vcp = .ok af → lowerRFunc vcp (spillAlloc vcp) = .ok af := fun h => by
+    unfold lowerSpill at h
+    simp only at h
+    split at h
+    · exact h
+    · cases h
+  cases ra with
+  | error e => exact hs h
+  | ok rf =>
+    simp only at h ⊢
+    by_cases hc : (checkAlloc vcp rf).isOk = true
+    · rw [if_pos hc] at h ⊢; exact h
+    · rw [if_neg hc] at h ⊢; exact hs h
+
+/-- Check, then lower (`lowerAlloc`): a rejection by either checker falls back to the spill
+allocation. -/
+def RAResult.finish (r : RAResult) : Except String AFunc :=
+  lowerAlloc r.prepared r.oracle
 
 /-- Run `lean-regalloc` on prepared functions. -/
 def runLeanRegalloc (bin : String) (env : MachineEnv) (vcs : Array VCode) : IO (Except String (Array (Except String RAResult))) := do
@@ -390,27 +426,39 @@ def runLeanRegalloc (bin : String) (env : MachineEnv) (vcs : Array VCode) : IO (
       let rf ← buildRFunc vc o
       pure { prepared := vc, rf, rustChecker := o.checker }
 
+/-- `prepare`, then M7's `prepare` validator (`prepCheck`, a runtime double-check:
+`prepCheck_complete`). -/
+def prepareChecked (vc : VCode) : Except String VCode := do
+  let vcp ← prepare vc
+  if !Proof.Driver.prepCheck vc vcp then
+    throw "prepare rejected by the M7 prepare validator (prepCheck)"
+  pure vcp
+
 /-- Allocate a batch of functions with regalloc2 (one `lean-regalloc` run); every result is
-checked by `checkAlloc`. -/
+checked by `checkAlloc`, and a rejected or missing allocation (regalloc2 failed, or is absent)
+is replaced by the spill allocation (`lowerAlloc`). -/
 def allocateRegalloc2 (bin : String) (env : MachineEnv) (vcs : Array VCode) : IO (Array (Except String AFunc)) := do
-  -- `prepare`, then M7's `prepare` validator (`prepCheck`, assumed by the end-to-end theorem)
-  let prepared := vcs.map fun vc => do
-    let vcp ← prepare vc
-    if !Proof.Driver.prepCheck vc vcp then
-      throw "prepare rejected by the M7 prepare validator (prepCheck)"
-    pure vcp
+  let prepared := vcs.map prepareChecked
   let ok := prepared.filterMap (·.toOption)
-  match ← runLeanRegalloc bin env ok with
-  | .error e => pure (vcs.map fun _ => .error e)
-  | .ok rs =>
-    let mut out : Array (Except String AFunc) := #[]
-    let mut j := 0
-    for p in prepared do
-      match p with
-      | .error e => out := out.push (.error e)
-      | .ok _ =>
-        out := out.push (rs[j]!.bind RAResult.finish)
-        j := j + 1
-    pure out
+  let rs : Array (Except String RFunc) ← do
+    try
+      match ← runLeanRegalloc bin env ok with
+      | .error e => pure (ok.map fun _ => .error e)
+      | .ok rs => pure (rs.map (·.bind RAResult.oracle))
+    catch e => pure (ok.map fun _ => .error (toString e))
+  let mut out : Array (Except String AFunc) := #[]
+  let mut j := 0
+  for p in prepared do
+    match p with
+    | .error e => out := out.push (.error e)
+    | .ok vcp =>
+      out := out.push (lowerAlloc vcp (rs[j]?.getD (.error "lean-regalloc: missing result")))
+      j := j + 1
+  pure out
+
+/-- Allocate with the spill allocator only (`lean-backend --regalloc spill`; testing the
+fallback). -/
+def allocateSpill (vcs : Array VCode) : Array (Except String AFunc) :=
+  vcs.map fun vc => prepareChecked vc >>= lowerSpill
 
 end Backend

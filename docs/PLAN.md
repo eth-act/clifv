@@ -256,7 +256,7 @@ proven equivalent to the input, a successful check shows Cranelift's is too.
 
 ### M6: Real register allocation
 
-*Status: done* (`checkAlloc_sound`; regalloc2 accepted by the Lean checker on 1056/1056 test functions).
+*Status: done* (`checkAlloc_sound`; regalloc2 accepted by the Lean checker on 1056/1056 test functions). Since V4 (2026-10-05) a rejected or missing regalloc2 allocation falls back to the Lean spill allocator `spillAlloc` (`allocResult`; `--regalloc spill` forces it), so compilation and the final theorem no longer depend on regalloc2.
 
 **Deliverables**
 
@@ -279,6 +279,7 @@ hand-written axioms.
 
 Remaining hypotheses are assumptions, not open proofs (current forms, 2026-10-04; `docs/contracts/e2e.md` has the exact statement):
 - `FormsCovered`, decided per function by `formsCoveredB` (1148/1148 in the test suites); since V3 a theorem on `LowerScope` input (`formsCovered_complete`, `E2E.backend_correct_final_of_lower`: no `Compiled`/`hcov` premise, only `checkAlloc`);
+- `checkAlloc` on the allocation: since V4 (a) not a premise for the allocation the backend lowers (`allocResult`: regalloc2's if accepted, else `spillAlloc`; `E2E.backend_correct_final_alloc`), under the program-independent hypothesis `SpillAccepted` (the checker accepts the spill allocation of every in-scope function; decided 1148/1148 by `lean-e2e-check`, proof open);
 - the callee contracts: `CalleeOk F K X H vcp.CallSite` (dead stack below `sp` unspecified, required only at the compiled call sites), `CalleeTryOk … vcp.TrySite` (results only), `TlsOk` (trusted TLSDESC hook), `XCallsOk`/`XCallsIndOk`. Each has a non-vacuity witness;
 - link-time facts (`hsym`, `hslot`);
 - per-run entry conditions (`AbiEntry`, `StackAvail K`, `BodyEntry`, `ArgsIn` with stack-passed arguments, `ClifEntry`, `Rel.holds`, `TrapsExplicit`).

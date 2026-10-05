@@ -25,7 +25,7 @@ contract `IselContract.lean`), `regalloc-proof.md` (M6), `encoder.md` (M5), `cli
 | `Clif.run`'s initial state is a `ClifEntry` (`clifEntry_initState`) | **proven** |
 | `LoweringObligations f vc` (`LowerShape` incl. `CtxInv`, `ValsBelow`, types; SSA certificate `Cert`) | **discharged**: `lowerCheck f vc = true` ⇒ it (`loweringObligations_of_check`); and without the validator on `Dominated`/`LowerScope` input (`lowerCheck_complete`, `Compiled.of_lower`; see "Validator completeness") |
 | `PrepareCorrect sem vc vcp` (unreachable blocks, critical-edge splitting, RPO) | **discharged**: `prepCheck vc vcp = true` ⇒ it (`prepareCorrect_of_check`); and without the validator on `PrepDomain` VCode (`prepareCorrect_of_domain`, from `prepCheck_complete`; see "Validator completeness") |
-| Validators run by the compiler (`FV/Backend.lean` `lowerChecked`, `FV/Backend/Regalloc.lean` `allocateRegalloc2`: a rejection is a compile error) | done |
+| Validators run by the compiler (`FV/Backend.lean` `lowerChecked`, `FV/Backend/Regalloc.lean` `allocateRegalloc2`: a rejection is a compile error, except `checkAlloc`'s rejection of regalloc2's allocation, which falls back to the spill allocation, V4) | done |
 | **`backend_correct`**, **`backend_correct_of_rules`** from the hypotheses below | **proven**, sorry-free |
 | **`backend_correct_m4`** (`FV/E2E/Final.lean`): `backend_correct_of_rules` with all M4 predicates discharged (`lowerRulesCorrect_program`, `excludedUnmatchable`, `callRulesCorrect`, `indRulesCorrect`, `memRulesCorrect_program`, `lowerTermRulesCorrect`, `termUnmatchable`, `branchRulesCorrect`, `branchExcludedUnmatchable`, `tryRulesCorrect`, `tryUnmatchable`, `tryIndRulesCorrect`, `tryIndUnmatchable`) and `sem s := csem (F s) (ctx s) (X s)` (discharges `DriverSem` by `driverSem_csem`, `CallsRefine` by `callsRefine_csem` from `XCallsOk`, `IndCallsRefine` by `indCallsRefine_csem` from `XCallsIndOk`) | **proven**; axioms: `propext`, `Classical.choice`, `Quot.sound` + 130 `_native.bv_decide` certificates |
 | **`RegLevelCorrect`** for the backend's code (`regLevelCorrect_backend`, `FV/E2E/RegLevelCorrect.lean`, M6Ctl3): addresses outside the world `frameW K` (frame addresses `frameF` and, since agent/callee-fix, the callees' dead stack), context `⟨fa.k, af.slotBase⟩`, one external semantics `X`, machine `ArmStepX X H fa`; from `FormsCovered` and `CalleeOk` | **proven** |
@@ -2161,6 +2161,43 @@ alias renaming keeps register classes (`resolve_vrenaming`, `covered_mapRegs`), 
 `tryCall`, and `prepare` only retargets control instructions (`formsCovered_of_prepare`).
 Non-vacuity: `E2E.formsCovered_complete_witness` (`lowerWitness`). The compiler keeps running
 `formsCoveredB` (`lean-e2e-check`) as a double check.
+
+**Register allocation without the `checkAlloc` premise: the spill fallback (V4 (a))** (2026-10-05,
+`FV/Backend/SpillAlloc.lean`, `FV/Backend/Regalloc.lean` `lowerAlloc`, `FV/E2E/AllocDirect.lean`):
+
+```lean
+def Backend.allocResult (vc : VCode) (ra : Except String RFunc) : RFunc  -- ra if checkAlloc accepts it, else spillAlloc vc
+def E2E.SpillAccepted : Prop :=
+  ∀ (f : Clif.Function) (vc vcp : VCode), Dominated f → LowerScope f →
+    lowerFunction f = .ok vc → Backend.prepare vc = .ok vcp →
+      checkAlloc vcp (spillAlloc vcp) = .ok ()
+theorem E2E.checkAlloc_allocResult (hsa : SpillAccepted) (hd : Dominated f) (hs : LowerScope f)
+    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare vc = .ok vcp) (ra : Except String RFunc) :
+    checkAlloc vcp (allocResult vcp ra) = .ok ()
+theorem E2E.backend_correct_final_alloc (hsa : SpillAccepted) (hsub : InSubset p f)
+    (hd : dominatedB f = true) (hs : lowerScopeB f = true) (hl : lowerFunction f = .ok vc)
+    (hp : prepare vc = .ok vcp) (hrf : rf = allocResult vcp ra) (ha : lowerRFunc vcp rf = .ok af)
+    (he : emitFunc k af = .ok fa) (hla : fa.layout = .ok fb)
+    -- backend_correct_final's contract, link-time and run premises (hC … htr), unchanged
+    : ArmRefines fb base ra' (ArmStepX X H fa) s (Clif.runLoop env p fuel cs)
+theorem Backend.lowerAlloc_eq (h : lowerAlloc vcp ra = .ok af) :
+    lowerRFunc vcp (allocResult vcp ra) = .ok af
+```
+
+The backend lowers `allocResult vcp ra` (`lowerAlloc`, `lowerAlloc_eq`): regalloc2's answer if
+`checkAlloc` accepts it, else the spill allocation `spillAlloc` (a total Lean function; every
+value in its own stack slot, `docs/contracts/regalloc.md` "Fallback"). A rejection or a missing
+answer of regalloc2 is no longer a compile error, and `backend_correct_final_alloc` holds for
+every answer `ra` of the untrusted allocator: its correctness never depends on regalloc2. It is
+`backend_correct_final_of_lower` with the `checkAlloc` premise replaced by the hypothesis
+`SpillAccepted`, which does **not** mention the program: the checker accepts the spill
+allocation of every function the pipeline produces from in-scope input. `SpillAccepted` is not
+proven yet (stated as an explicit hypothesis, as `LogicImmComplete` was); `lean-e2e-check` decides
+its conclusion on every in-scope function (**1148 of 1148** accepted, "spill fallback" line) and
+the compiler runs `checkAlloc` on every spill allocation it lowers as a double-check (`lowerSpill`).
+What a proof needs is in `docs/TO-PROVE.md` (V4). Non-vacuity:
+`E2E.backend_correct_final_alloc_witness` (`lowerWitness` with regalloc2 absent: the pipeline
+lowers the spill allocation, which `checkAlloc` accepts).
 
 **Validator completeness: `Opt.Legalize128` is correct without `Opt.Legal.check`** (2026-10-02,
 `FV/Opt/Proof/LegalComplete.lean`, `FV/Opt/Proof/LegalDirect.lean`, `FV/E2E/LegalDirect.lean`;

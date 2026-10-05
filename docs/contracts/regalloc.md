@@ -1,7 +1,8 @@
 # Register allocation: regalloc2 + Lean checker (M6)
 
 Modules: `FV/Backend/RegallocOps.lean` (operands, clobbers, machine environment, CFG
-preparation), `FV/Backend/RegallocCheck.lean` (the checker), `FV/Backend/Regalloc.lean`
+preparation), `FV/Backend/RegallocCheck.lean` (the checker), `FV/Backend/SpillAlloc.lean` (the
+spill fallback, V4), `FV/Backend/Regalloc.lean`
 (JSON glue, `RFunc` construction, frame, lowering to `AFunc`); oracle
 `rust/crates/lean-regalloc`; tests `FVTest/Backend/Regalloc/Test.lean`
 (`lake exe lean-backend-regalloc-test`); metrics `scripts/lean-backend-metrics.sh`.
@@ -13,11 +14,13 @@ preparation), `FV/Backend/RegallocCheck.lean` (the checker), `FV/Backend/Regallo
       `cargo build -p lean-regalloc` warning-free
 - [x] regalloc2 is the **default** allocator of `lean-backend`, `lean-backend-armrun`,
       `scripts/lean-backend-filetests.sh`, `scripts/lean-backend-encode-check.sh`
-      (`--regalloc regalloc2|stack|regalloc2-small`); the stack-slot allocator is kept as
-      `--regalloc stack`
-- [x] every allocation is validated by the executable Lean checker `checkAlloc`; a rejection
-      (by it, or by regalloc2's checker) is a compile error for that function
-- [x] results (a)–(f) below
+      (`--regalloc regalloc2|spill|stack|regalloc2-small`); the stack-slot allocator is kept as
+      `--regalloc stack`; `--regalloc spill` forces the V4 fallback
+- [x] every allocation is validated by the executable Lean checker `checkAlloc`; since V4
+      (2026-10-05) a rejection (by it, or by regalloc2's checker), a failure of `lean-regalloc`
+      or its absence is **no longer a compile error**: the function gets the spill allocation
+      (`spillAlloc`, section "Fallback" below); `--regalloc spill` forces it for every function
+- [x] results (a)–(g) below
 - [x] soundness proof of `checkAlloc` for the abstract semantics (`checkAlloc_sound`,
       `docs/contracts/regalloc-proof.md`); operand-view and frame-lowering obligations proven for
       a representative set, the rest listed there
@@ -32,7 +35,8 @@ flowchart LR
   D -- "allocs, edits,<br/>num_spillslots" --> E["buildRFunc<br/>(+ callee-saved saves/restores)"]
   E --> F{"checkAlloc<br/>(Lean)"}
   F -- ok --> G["RAFrame + lowerRFunc<br/>→ AFunc"]
-  F -- reject --> X["compile error"]
+  F -- "reject / no answer" --> S["spillAlloc (Lean)<br/>+ checkAlloc double-check"]
+  S --> G
   G --> H["Asm / Encode / Obj"]
 ```
 
@@ -133,6 +137,50 @@ Moves lower to `mov` (int reg→reg), `str`/`ldr` to/from frame slots, float reg
 `fmoveTmp` (store+load). `Args` disappears; `Rets` becomes the epilogue. A leaf function with
 an empty frame that never addresses `fp` has no prologue/epilogue (frameless). Only the low
 64 bits of v8–v15 are callee-saved; the frame saves all 128.
+
+## Fallback: the spill allocator (`spillAlloc`, V4)
+
+`allocResult vcp ra` (`FV/Backend/SpillAlloc.lean`) is the allocation the backend lowers:
+regalloc2's answer `ra` if `checkAlloc` accepts it, else `spillAlloc vcp`. The compiler's
+`lowerAlloc` (used by `allocateRegalloc2`) computes `lowerRFunc vcp (allocResult vcp ra)`
+(`lowerAlloc_eq`); it also runs `checkAlloc` on the spill allocation as a runtime double-check
+(`lowerSpill`: a rejection would be a compile error; it never happens on the test suites).
+`lean-backend --regalloc spill` (and `scripts/lean-backend-filetests.sh --regalloc spill`) uses
+the spill allocation for every function (`allocateSpill`).
+
+`spillAlloc` is a total Lean function producing an ordinary `RFunc`, so the checker, its
+soundness proof and the whole downstream proof apply unchanged:
+
+- **homes**: every vreg (number, class) the prepared code mentions gets its own spill slot,
+  numbered densely in order of first occurrence (`spillHomes`); the slots past them are the
+  temporaries of block-argument copies;
+- **callee-saved registers**: all 18 are saved at the entry (`reg r → save r`) and restored
+  before every `Rets`;
+- **one instruction** (`spillInst`, `spillLocs`): fixed operands in their register, reuse
+  operands in the reused operand's register, every other operand in the next free register of
+  its class (`spillPool`: x0–x15, x19–x28; v0–v31), avoiding the instruction's fixed registers
+  and clobbers; a load from the home before the instruction for every use, a store to the home
+  after it for every def the checker keeps (`keptDefs`); none after a terminator: a
+  `try_call`'s results live on an edge are stored at the start of the successor
+  (`spillEntryStores`, its only predecessor's edge block);
+- **block arguments** (`spillArgMoves`): before a `jump` with arguments, every argument is copied
+  (through x9/v16) into a temporary slot, then every temporary into the parameter's home (a
+  parallel copy).
+
+Proof status: `E2E.backend_correct_final_alloc` (`FV/E2E/AllocDirect.lean`) is the final
+theorem for `rf := allocResult vcp ra`, for any answer `ra`, with no premise about `checkAlloc`.
+It assumes the explicit hypothesis `SpillAccepted` (`checkAlloc vcp (spillAlloc vcp) = .ok ()`
+for every `vcp` that `lowerFunction` and `prepare` produce from `Dominated`/`LowerScope` input),
+which is not proven yet (`docs/TO-PROVE.md` V4). `lean-e2e-check` decides its conclusion on
+every in-scope function: **1148 of 1148 accepted**; `lowerRFunc` lowers 1148 of 1148 spill
+allocations (the 32 KiB allocator-frame limit, V5, does not bite since the dense home numbering;
+with one home per vreg number, `Corpus__chacha20Block` needed 37840 bytes). The limit can still
+reject the spill allocation of a function with more than about 4000 vregs (the int and float
+spill areas both have `spillSlots` entries: 8 bytes each, plus 16 each when a float value is
+homed, so about 1300 vregs then): such a function then fails to compile (V5).
+
+Filetests with the fallback forced (`scripts/lean-backend-filetests.sh --regalloc spill`): see
+"Results" (g).
 
 ## Checker (`checkAlloc`, executable)
 
@@ -329,10 +377,25 @@ instructions.
 backend lowers top-down without sinking or dead-code skipping (2820 of 14 889 instructions
 have only unused results), and float reg→reg moves go through memory.
 
+(g) The spill fallback (V4, 2026-10-05). `scripts/lean-backend-filetests.sh --regalloc spill`
+(every function allocated by `spillAlloc`): `corpus/clif` 114 pass / 0 fail (114 agree with
+Cranelift-native), `corpus/clif/extrt` 22 / 0, runtests 4672 pass / 0 fail / 0 error (7
+not-runnable, 9054 unsupported: the same counts as with regalloc2). `lean-e2e-check`:
+`checkAlloc` accepts the spill allocation of 1148 / 1148 in-scope functions and `lowerRFunc`
+lowers all of them (one home per vreg *number* instead of the dense numbering made
+`Corpus__chacha20Block`'s allocator frame 37840 bytes, over the 32 KiB limit; dense: 2778 slots).
+`lake exe lean-backend-regalloc-test`: each of the 3913 mutants `checkAlloc` rejects is lowered
+through the spill allocation by `RAResult.finish` ("fallback" line). With `LEAN_REGALLOC`
+pointing to a missing binary, `lean-backend` compiles every function with the fallback.
+
 ## Gaps
 
 - No proof yet (theorem above is the M6 target); `MInst.visitOperands`/`clobbers`,
   `prepare`, the frame layout and move lowering are trusted.
+- The spill fallback's acceptance by `checkAlloc` (`E2E.SpillAccepted`) is a hypothesis of
+  `E2E.backend_correct_final_alloc`, decided on the test suites, not proven (`docs/TO-PROVE.md` V4).
+  The fallback saves all 18 callee-saved registers and keeps nothing in registers across
+  instructions (code quality only matters when regalloc2 is rejected or absent).
 - Float register-to-register moves go through a stack temporary (`fmoveTmp`: store + load)
   instead of a register move instruction.
 - All 128 bits of v8–v15 are saved although only the low 64 must be.
