@@ -1,0 +1,506 @@
+diff --git a/cranelift/filetests/Cargo.toml b/cranelift/filetests/Cargo.toml
+index 92118fd..baa6c38 100644
+--- a/cranelift/filetests/Cargo.toml
++++ b/cranelift/filetests/Cargo.toml
+@@ -36,6 +36,7 @@ wat.workspace = true
+ toml = { workspace = true }
+ serde = { workspace = true }
+ serde_derive = { workspace = true }
++serde_json = { workspace = true }
+ cranelift.workspace = true
+ smallvec = { workspace = true }
+ pulley-interpreter = { workspace = true, features = ["disas", "std", "interp"] }
+diff --git a/cranelift/filetests/src/function_runner.rs b/cranelift/filetests/src/function_runner.rs
+index f671c84..0c10d1b 100644
+--- a/cranelift/filetests/src/function_runner.rs
++++ b/cranelift/filetests/src/function_runner.rs
+@@ -27,6 +27,26 @@ use thiserror::Error;
+ 
+ const TESTFILE_NAMESPACE: u32 = 0;
+ 
++// Enforce the export boundary: allocating or finalizing JIT memory is a bug.
++struct NoJitAllocation;
++impl cranelift_jit::JITMemoryProvider for NoJitAllocation {
++    fn allocate(
++        &mut self,
++        _: usize,
++        _: u64,
++        _: cranelift_jit::JITMemoryKind,
++    ) -> std::io::Result<*mut u8> {
++        panic!("pre-JIT export attempted a JIT allocation")
++    }
++    unsafe fn free_memory(&mut self) {}
++    fn finalize(
++        &mut self,
++        _: cranelift_jit::BranchProtection,
++    ) -> cranelift_module::ModuleResult<()> {
++        panic!("pre-JIT export attempted memory finalization")
++    }
++}
++
+ /// Holds information about a previously defined function.
+ #[derive(Debug)]
+ struct DefinedFunction {
+@@ -79,6 +99,8 @@ struct DefinedFunction {
+ pub struct TestFileCompiler {
+     module: JITModule,
+     ctx: Context,
++    // Local investigation hook: None leaves the stock execution path unchanged.
++    prejit_export: Option<(std::path::PathBuf, bool)>,
+ 
+     /// Holds info about the functions that have already been defined.
+     /// Use look them up by their original [UserFuncName] since that's how the caller
+@@ -98,8 +120,15 @@ impl TestFileCompiler {
+     /// host machine, this [TargetIsa] must match the host machine's ISA (see
+     /// [TestFileCompiler::with_host_isa]).
+     pub fn new(isa: OwnedTargetIsa) -> Self {
++        Self::new_with_export_guard(isa, false)
++    }
++
++    fn new_with_export_guard(isa: OwnedTargetIsa, deny_allocation: bool) -> Self {
+         let mut builder = JITBuilder::with_isa(isa, cranelift_module::default_libcall_names());
+         builder.symbol_lookup_fn(Box::new(lookup_libcall));
++        if deny_allocation {
++            builder.memory_provider(Box::new(NoJitAllocation));
++        }
+ 
+         // On Unix platforms force `libm` to get linked into this executable
+         // because tests that use libcalls rely on this library being present.
+@@ -120,6 +149,7 @@ impl TestFileCompiler {
+         Self {
+             module,
+             ctx,
++            prejit_export: None,
+             defined_functions: HashMap::new(),
+             trampolines: HashMap::new(),
+         }
+@@ -258,6 +288,7 @@ impl TestFileCompiler {
+         ctrl_plane: &mut ControlPlane,
+     ) -> Result<()> {
+         Self::replace_hostcall_references(&mut func);
++        let effective_input = func.to_string();
+ 
+         let defined_func = self
+             .defined_functions
+@@ -265,6 +296,134 @@ impl TestFileCompiler {
+             .ok_or(anyhow!("Undeclared function {} found!", &func.name))?;
+ 
+         self.ctx.func = self.apply_func_rename(func, defined_func)?;
++        if let Some((directory, stock_load)) = &self.prejit_export {
++            let directory = directory.clone();
++            let id = defined_func.func_id;
++            let original_name = self
++                .module
++                .declarations()
++                .get_function_decl(id)
++                .name
++                .clone();
++            std::fs::write(
++                directory.join(format!("{}.clif", id.as_u32())),
++                &effective_input,
++            )?;
++            // Lean currently accepts inline fn signatures, not the equivalent
++            // sigN references emitted by Cranelift's printer. Expand references
++            // without changing IR, then round-trip through the stock reader.
++            let signatures: HashMap<_, _> = effective_input
++                .lines()
++                .filter_map(|line| {
++                    let (name, sig) = line.trim().split_once(" = ")?;
++                    name.starts_with("sig").then_some((name, sig))
++                })
++                .collect();
++            let lean_input = effective_input
++                .lines()
++                .map(|line| {
++                    if line.trim_start().starts_with("fn") {
++                        if let Some((prefix, reference)) = line.rsplit_once(' ') {
++                            if let Some(signature) = signatures.get(reference) {
++                                return format!("{prefix} {signature}");
++                            }
++                        }
++                    }
++                    line.to_string()
++                })
++                .collect::<Vec<_>>()
++                .join("\n")
++                + "\n";
++            if lean_input != effective_input {
++                let mut roundtrip =
++                    cranelift_reader::parse_functions(&lean_input).map_err(|e| anyhow!("{e}"))?;
++                let original = cranelift_reader::parse_functions(&effective_input)
++                    .map_err(|e| anyhow!("{e}"))?
++                    .remove(0);
++                if roundtrip.len() != 1
++                    || roundtrip[0].dfg.ext_funcs.len() != original.dfg.ext_funcs.len()
++                {
++                    return Err(anyhow!(
++                        "inline signature adaptation changed external declarations"
++                    ));
++                }
++                // The reader adds duplicate signature-table entries for inline
++                // declarations. Check equality before restoring their original IDs.
++                let adapted = &mut roundtrip[0];
++                for (ext_id, expected) in &original.dfg.ext_funcs {
++                    let actual_sig = adapted.dfg.ext_funcs[ext_id].signature;
++                    if adapted.dfg.signatures[actual_sig]
++                        != original.dfg.signatures[expected.signature]
++                    {
++                        return Err(anyhow!("inline signature adaptation changed a signature"));
++                    }
++                    adapted.dfg.ext_funcs[ext_id].signature = expected.signature;
++                }
++                adapted.dfg.signatures = original.dfg.signatures.clone();
++                if adapted.to_string() != effective_input {
++                    return Err(anyhow!("inline signature adaptation changed stock IR"));
++                }
++            }
++            std::fs::write(
++                directory.join(format!("{}.lean.clif", id.as_u32())),
++                &lean_input,
++            )?;
++            if *stock_load {
++                self.module
++                    .define_function_with_control_plane(id, &mut self.ctx, ctrl_plane)?;
++            } else {
++                // Same compile call as JITModule::define_function_with_control_plane,
++                // but no CompiledBlob, executable allocation, or relocation.
++                self.ctx
++                    .compile(self.module.isa(), ctrl_plane)
++                    .map_err(|e| anyhow!("{e:?}"))?;
++            }
++            let code = self.ctx.compiled_code().unwrap();
++            std::fs::write(
++                directory.join(format!("{}.bin", id.as_u32())),
++                code.code_buffer(),
++            )?;
++            let relocs: Vec<_> = code.buffer.relocs().iter().map(|r| {
++                let r = cranelift_module::ModuleReloc::from_mach_reloc(r, &self.ctx.func, id);
++                use cranelift_module::ModuleRelocTarget;
++                let (target, addend) = match &r.name {
++                    ModuleRelocTarget::User { namespace: 0, index } => (
++                        self.module.declarations().get_function_decl(FuncId::from_u32(*index)).name.clone().unwrap(), r.addend),
++                    ModuleRelocTarget::FunctionOffset(fid, offset) => (
++                        self.module.declarations().get_function_decl(*fid).name.clone().unwrap(), r.addend + i64::from(*offset)),
++                    ModuleRelocTarget::LibCall(lc) => ((cranelift_module::default_libcall_names())(*lc), r.addend),
++                    other => (format!("{other:?}"), r.addend),
++                };
++                serde_json::json!({"offset": r.offset, "kind": format!("{:?}", r.kind), "target": target.trim_start_matches('%'), "addend": addend})
++            }).collect();
++            let traps: Vec<_> = code
++                .buffer
++                .traps()
++                .iter()
++                .map(|t| serde_json::json!({"offset": t.offset, "code": t.code.to_string()}))
++                .collect();
++            let unwind = code.create_unwind_info(self.module.isa())?;
++            let mut exceptions = wasmtime_unwinder::ExceptionTableBuilder::default();
++            exceptions
++                .add_func(0, code.buffer.call_sites())
++                .map_err(|e| anyhow!("{e:?}"))?;
++            let metadata = serde_json::json!({
++                "name": original_name, "id": id.as_u32(),
++                "alignment": code.buffer.alignment.max(self.module.isa().function_alignment().minimum).max(self.module.isa().symbol_alignment() as u32),
++                "relocations": relocs, "traps": traps,
++                "exception_call_sites": format!("{:?}", code.buffer.call_sites().collect::<Vec<_>>()),
++                "exception_table_bytes": exceptions.to_vec(),
++                "unwind": format!("{unwind:?}"),
++                "stack_maps": format!("{:?}", code.buffer.user_stack_maps()),
++                "jit_allocation_performed": stock_load,
++            });
++            std::fs::write(
++                directory.join(format!("{}.json", id.as_u32())),
++                serde_json::to_vec_pretty(&metadata)?,
++            )?;
++            self.module.clear_context(&mut self.ctx);
++            return Ok(());
++        }
+         self.module.define_function_with_control_plane(
+             defined_func.func_id,
+             &mut self.ctx,
+@@ -357,6 +516,20 @@ impl TestFileCompiler {
+     }
+ }
+ 
++/// Export stock-prepared compilation artifacts without loading or finalizing code.
++/// `stock_load` exists only to validate export against the ordinary host JIT path.
++pub fn export_prejit(
++    testfile: &TestFile,
++    isa: OwnedTargetIsa,
++    directory: &std::path::Path,
++    stock_load: bool,
++) -> Result<()> {
++    std::fs::create_dir_all(directory)?;
++    let mut compiler = TestFileCompiler::new_with_export_guard(isa, !stock_load);
++    compiler.prejit_export = Some((directory.to_path_buf(), stock_load));
++    compiler.add_testfile(testfile)
++}
++
+ /// A finalized Test File
+ pub struct CompiledTestFile {
+     /// We need to store [JITModule] since it contains the underlying memory for the functions.
+diff --git a/cranelift/filetests/src/lib.rs b/cranelift/filetests/src/lib.rs
+index f124830..b690d5f 100644
+--- a/cranelift/filetests/src/lib.rs
++++ b/cranelift/filetests/src/lib.rs
+@@ -17,6 +17,8 @@ mod runner;
+ mod runone;
+ mod subtest;
+ 
++/// Opt-in, read-only capture of the stock compile subtest.
++pub mod artifact_export;
+ mod test_alias_analysis;
+ mod test_cat;
+ mod test_compile;
+diff --git a/cranelift/filetests/src/runone.rs b/cranelift/filetests/src/runone.rs
+index d99a7ff..af1d044 100644
+--- a/cranelift/filetests/src/runone.rs
++++ b/cranelift/filetests/src/runone.rs
+@@ -152,7 +152,7 @@ pub struct FileUpdate {
+ }
+ 
+ impl FileUpdate {
+-    fn new(path: &Path) -> FileUpdate {
++    pub(crate) fn new(path: &Path) -> FileUpdate {
+         FileUpdate {
+             path: path.to_path_buf(),
+             line_diff: Cell::new(0),
+diff --git a/cranelift/filetests/src/test_compile.rs b/cranelift/filetests/src/test_compile.rs
+index d04f1c9..b380d90 100644
+--- a/cranelift/filetests/src/test_compile.rs
++++ b/cranelift/filetests/src/test_compile.rs
+@@ -17,13 +17,19 @@ struct TestCompile {
+     precise_output: bool,
+     /// Flag indicating that we expect compilation to fail, not succeed.
+     expect_fail: bool,
++    export: Option<std::path::PathBuf>,
+ }
+ 
+ pub fn subtest(parsed: &TestCommand) -> Result<Box<dyn SubTest>> {
++    Ok(Box::new(make_test(parsed, None)?))
++}
++
++fn make_test(parsed: &TestCommand, export: Option<std::path::PathBuf>) -> Result<TestCompile> {
+     assert_eq!(parsed.command, "compile");
+     let mut test = TestCompile {
+         precise_output: false,
+         expect_fail: false,
++        export,
+     };
+     for option in parsed.options.iter() {
+         match option {
+@@ -32,7 +38,14 @@ pub fn subtest(parsed: &TestCommand) -> Result<Box<dyn SubTest>> {
+             _ => anyhow::bail!("unknown option on {parsed}"),
+         }
+     }
+-    Ok(Box::new(test))
++    Ok(test)
++}
++
++pub(crate) fn exporting_subtest(
++    parsed: &TestCommand,
++    directory: &std::path::Path,
++) -> Result<Box<dyn SubTest>> {
++    Ok(Box::new(make_test(parsed, Some(directory.to_path_buf()))?))
+ }
+ 
+ impl SubTest for TestCompile {
+@@ -51,6 +64,10 @@ impl SubTest for TestCompile {
+     fn run(&self, func: Cow<ir::Function>, context: &Context) -> Result<()> {
+         let isa = context.isa.expect("compile needs an ISA");
+         let params = func.params.clone();
++        let original = func.clone().into_owned();
++        if let Some(dir) = &self.export {
++            crate::artifact_export::write_input(dir, &original)?;
++        }
+         let mut comp_ctx = cranelift_codegen::Context::for_function(func.into_owned());
+ 
+         // With `MachBackend`s, we need to explicitly request disassembly results.
+@@ -59,6 +76,13 @@ impl SubTest for TestCompile {
+         let compiled_code = comp_ctx.compile(isa, &mut Default::default());
+ 
+         let compiled_code = if self.expect_fail {
++            if let Some(dir) = &self.export {
++                crate::artifact_export::write_rejection(
++                    dir,
++                    &original,
++                    compiled_code.as_ref().err().map(|e| format!("{e:?}")),
++                )?;
++            }
+             if compiled_code.is_ok() {
+                 anyhow::bail!("Expected compilation failure but compilation succeeded");
+             }
+@@ -67,6 +91,9 @@ impl SubTest for TestCompile {
+             compiled_code.map_err(|e| crate::pretty_anyhow_error(&e.func, e.inner))?
+         };
+         let total_size = compiled_code.code_info().total_size;
++        if let Some(dir) = &self.export {
++            crate::artifact_export::write_code(dir, &original, compiled_code, isa)?;
++        }
+ 
+         let vcode = compiled_code.vcode.as_ref().unwrap();
+ 
+diff --git a/cranelift/filetests/src/artifact_export.rs b/cranelift/filetests/src/artifact_export.rs
+new file mode 100644
+index 0000000..11f40f9
+--- /dev/null
++++ b/cranelift/filetests/src/artifact_export.rs
+@@ -0,0 +1,159 @@
++//! Capture artifacts in the actual stock `compile` subtest, before its text assertions.
++//! No JIT, no compiler-setting overrides, and no test expectation updates.
++use anyhow::{Result, anyhow, bail};
++use cranelift_codegen::{CompiledCode, FinalizedRelocTarget, ir::Function, isa::TargetIsa};
++use cranelift_reader::{TestCommand, TestFile};
++use serde_json::json;
++use std::{borrow::Cow, collections::HashMap, path::Path};
++
++/// Export every independent function and retain the stock subtest's assertion result.
++pub fn export_compile(
++    test: &TestFile,
++    command: &TestCommand,
++    isa: &dyn TargetIsa,
++    directory: &Path,
++    input: &str,
++) -> Result<()> {
++    if std::env::var_os("BLESS").is_some() {
++        bail!("BLESS is forbidden during artifact export");
++    }
++    std::fs::create_dir_all(directory)?;
++    // As runone does, verify the entire file before running a verifier-requiring subtest.
++    for (func, _) in &test.functions {
++        cranelift_codegen::verify_function(func, isa)
++            .map_err(|e| anyhow!("stock verifier: {e}"))?;
++    }
++    let subtest = crate::test_compile::exporting_subtest(command, directory)?;
++    let update = crate::runone::FileUpdate::new(Path::new(input));
++    let mut assertions = Vec::new();
++    for (func, details) in &test.functions {
++        let context = crate::subtest::Context {
++            preamble_comments: &test.preamble_comments,
++            details,
++            flags: isa.flags(),
++            isa: Some(isa),
++            file_path: input,
++            file_update: &update,
++        };
++        let result = subtest.run(Cow::Borrowed(func), &context);
++        assertions.push(json!({"name":func.name.to_string(), "passed":result.is_ok(), "error":result.err().map(|e|format!("{e:#}"))}));
++    }
++    std::fs::write(
++        directory.join("assertions.json"),
++        serde_json::to_vec_pretty(&assertions)?,
++    )?;
++    Ok(())
++}
++
++fn stem(func: &Function) -> String {
++    // Numeric hex encoding is injective and cannot escape the artifact directory.
++    func.name
++        .to_string()
++        .bytes()
++        .map(|b| format!("{b:02x}"))
++        .collect()
++}
++
++pub(crate) fn write_input(directory: &Path, func: &Function) -> Result<()> {
++    let original = func.to_string();
++    std::fs::write(directory.join(format!("{}.clif", stem(func))), &original)?;
++    let signatures: HashMap<_, _> = original
++        .lines()
++        .filter_map(|line| {
++            let (name, signature) = line.trim().split_once(" = ")?;
++            name.starts_with("sig").then_some((name, signature))
++        })
++        .collect();
++    let adapted = original
++        .lines()
++        .map(|line| {
++            if line.trim_start().starts_with("fn") {
++                if let Some((prefix, reference)) = line.rsplit_once(' ') {
++                    if let Some(signature) = signatures.get(reference) {
++                        return format!("{prefix} {signature}");
++                    }
++                }
++            }
++            line.to_string()
++        })
++        .collect::<Vec<_>>()
++        .join("\n")
++        + "\n";
++    if adapted != original {
++        let mut parsed = cranelift_reader::parse_functions(&adapted).map_err(|e| anyhow!("{e}"))?;
++        let original_func = cranelift_reader::parse_functions(&original)
++            .map_err(|e| anyhow!("{e}"))?
++            .remove(0);
++        if parsed.len() != 1 || parsed[0].dfg.ext_funcs.len() != original_func.dfg.ext_funcs.len() {
++            bail!("signature adaptation changed declarations");
++        }
++        for (id, expected) in &original_func.dfg.ext_funcs {
++            let actual = parsed[0].dfg.ext_funcs[id].signature;
++            if parsed[0].dfg.signatures[actual] != original_func.dfg.signatures[expected.signature]
++            {
++                bail!("signature adaptation changed signature");
++            }
++            parsed[0].dfg.ext_funcs[id].signature = expected.signature;
++        }
++        parsed[0].dfg.signatures = original_func.dfg.signatures.clone();
++        if parsed[0].to_string() != original {
++            bail!("signature adaptation changed IR");
++        }
++    }
++    std::fs::write(directory.join(format!("{}.lean.clif", stem(func))), adapted)?;
++    Ok(())
++}
++
++pub(crate) fn write_rejection(
++    directory: &Path,
++    func: &Function,
++    error: Option<String>,
++) -> Result<()> {
++    std::fs::write(
++        directory.join(format!("{}.rejection.json", stem(func))),
++        serde_json::to_vec_pretty(
++            &json!({"name":func.name.to_string(),"rejected":error.is_some(),"error":error}),
++        )?,
++    )?;
++    Ok(())
++}
++
++pub(crate) fn write_code(
++    directory: &Path,
++    func: &Function,
++    code: &CompiledCode,
++    isa: &dyn TargetIsa,
++) -> Result<()> {
++    std::fs::write(
++        directory.join(format!("{}.bin", stem(func))),
++        code.code_buffer(),
++    )?;
++    let relocs: Vec<_> = code.buffer.relocs().iter().map(|r| {
++        let (name, addend) = match &r.target {
++            FinalizedRelocTarget::ExternalName(name) => (name.display(Some(&func.params)).to_string(), r.addend),
++            FinalizedRelocTarget::Func(offset) => (func.name.to_string(), r.addend + i64::from(*offset)),
++        };
++        json!({"offset":r.offset,"kind":format!("{:?}",r.kind),"target":name.trim_start_matches('%'),"addend":addend})
++    }).collect();
++    let traps: Vec<_> = code
++        .buffer
++        .traps()
++        .iter()
++        .map(|t| json!({"offset":t.offset,"code":t.code.to_string()}))
++        .collect();
++    let unwind = code.create_unwind_info(isa)?;
++    let mut exceptions = wasmtime_unwinder::ExceptionTableBuilder::default();
++    exceptions
++        .add_func(0, code.buffer.call_sites())
++        .map_err(|e| anyhow!("{e:?}"))?;
++    let metadata = json!({"name":func.name.to_string(),"alignment":code.buffer.alignment.max(isa.function_alignment().minimum).max(isa.symbol_alignment() as u32),
++        "relocations":relocs,"traps":traps,"unwind":format!("{unwind:?}"),
++        "exception_call_sites":format!("{:?}",code.buffer.call_sites().collect::<Vec<_>>()),
++        "exception_table_bytes":exceptions.to_vec(),"stack_maps":format!("{:?}",code.buffer.user_stack_maps()),
++        "jit_allocation_performed":false,"boundary":"stock-compile-subtest"});
++    std::fs::write(
++        directory.join(format!("{}.json", stem(func))),
++        serde_json::to_vec_pretty(&metadata)?,
++    )?;
++    Ok(())
++}

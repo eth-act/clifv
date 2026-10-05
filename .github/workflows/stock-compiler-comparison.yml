@@ -1,0 +1,126 @@
+name: Stock compiler comparison
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  # Direct commits to main are measured too. They publish a job summary and
+  # artifacts, not a PR comment.
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# A newer PR commit replaces an older PR measurement. Main pushes finish in order;
+# GitHub keeps only the newest pending run.
+concurrency:
+  group: stock-comparison-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  measure:
+    name: Build and compare
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      FV_COMPARE_MEMCAP: '0'
+      CI_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Configure Lean path
+        run: echo "LEAN_BIN_DIR=$RUNNER_TOOL_CACHE/lean-4.34.1-linux/bin" >> "$GITHUB_ENV"
+      - name: Cache Lean toolchain
+        id: lean-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.tool_cache }}/lean-4.34.1-linux
+          key: lean-4.34.1-linux-47bf4bbd78f70c2e
+      - name: Install pinned Lean
+        if: steps.lean-cache.outputs.cache-hit != 'true'
+        env:
+          LEAN_ARCHIVE: ${{ runner.temp }}/lean.tar.zst
+          LEAN_TOOL_CACHE: ${{ runner.tool_cache }}
+        run: |
+          curl --fail --location --retry 3 \
+            https://github.com/leanprover/lean4/releases/download/v4.34.1/lean-4.34.1-linux.tar.zst \
+            --output "$LEAN_ARCHIVE"
+          echo "47bf4bbd78f70c2e9670598ab7124d92b6efb7330ff33e5fbb4030f6fd72e4e4  $LEAN_ARCHIVE" | sha256sum --check
+          tar --zstd -xf "$LEAN_ARCHIVE" -C "$LEAN_TOOL_CACHE"
+      - name: Cache compiler builds and Rust downloads
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            rust/target
+            tools/prejit-export/target
+            .lake/build
+          key: stock-build-${{ runner.os }}-${{ hashFiles('lean-toolchain', 'lakefile.toml', 'lake-manifest.json', 'FV/**/*.lean', 'FVTest/**/*.lean', 'rust/**/Cargo.*', 'rust/**/*.rs', 'rust/rust-toolchain.toml', 'tools/prejit-export/**/Cargo.*', 'tools/prejit-export/src/**', 'scripts/patches/prejit-export.patch') }}
+          restore-keys: stock-build-${{ runner.os }}-
+      - name: Test CI reporting
+        run: |
+          python3 -m unittest discover -s scripts -p test_stock_comparison_ci.py -v
+          node --test .github/scripts/stock-comparison-comment.test.cjs
+      - name: Build, generate artifacts, and compare
+        run: python3 scripts/stock-comparison-ci.py --out target/ci-comparison --jobs 2
+      - name: Write job summary
+        run: node .github/scripts/stock-comparison-comment.cjs target/ci-comparison.ci-summary.json >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload comment data
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stock-comparison-summary-${{ github.run_attempt }}
+          path: target/ci-comparison.ci-summary.json
+          archive: true
+          retention-days: 7
+          if-no-files-found: error
+      - name: Pack artifacts and logs
+        if: always()
+        run: |
+          files=()
+          for path in target/ci-comparison target/ci-comparison.build-logs target/ci-comparison.ci-summary.json; do
+            if [[ -e "$path" ]]; then files+=("$path"); fi
+          done
+          if (( ${#files[@]} )); then
+            tar -czf target/stock-comparison-artifacts.tar.gz "${files[@]}"
+          fi
+      - name: Upload artifacts and logs
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stock-comparison-artifacts-${{ github.run_attempt }}
+          path: target/stock-comparison-artifacts.tar.gz
+          archive: true
+          compression-level: 0
+          retention-days: 7
+
+  comment:
+    name: Publish PR result
+    needs: measure
+    # Forks cannot obtain a write token here. The trusted workflow_run publisher
+    # handles them after these workflows reach the default branch.
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: stock-comparison-summary-${{ github.run_attempt }}
+          path: report
+          skip-decompress: true
+      - uses: actions/github-script@d746ffe35508b1917358783b479e04febd2b8f71 # v9.0.0
+        with:
+          script: |
+            await require('./.github/scripts/stock-comparison-comment.cjs').post({
+              github, context, core
+            });

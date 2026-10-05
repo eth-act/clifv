@@ -5,3 +5,5 @@
 /third_party/lnsym-upstream
 /rust/target/
 /rust/crates/isle2lean/oracle/target/
+/scripts/__pycache__/
+/tools/prejit-export/target/

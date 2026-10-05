@@ -1,0 +1,15 @@
+[package]
+name = "prejit-export"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[dependencies]
+anyhow = "1"
+serde_json = "1"
+cranelift-filetests = { path = "../../third_party/wasmtime/cranelift/filetests" }
+cranelift-codegen = { path = "../../third_party/wasmtime/cranelift/codegen", features = ["all-arch"] }
+cranelift-reader = { path = "../../third_party/wasmtime/cranelift/reader" }
+target-lexicon = "0.13"

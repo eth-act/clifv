@@ -1,0 +1,55 @@
+name: Publish fork compiler comparison
+
+on:
+  workflow_run:
+    workflows: [Stock compiler comparison]
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stock-fork-comment-${{ github.event.workflow_run.head_repository.id }}-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: false
+
+jobs:
+  comment:
+    if: >-
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.full_name != github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+    steps:
+      # This event uses the default branch. Never check out or execute fork code.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - name: Select current successful result
+        id: prepare
+        uses: actions/github-script@d746ffe35508b1917358783b479e04febd2b8f71 # v9.0.0
+        with:
+          script: |
+            const ready = await require('./.github/scripts/stock-comparison-comment.cjs').prepare({github, context});
+            core.setOutput('publish', Boolean(ready));
+            if (ready) core.setOutput('artifact-id', ready.artifactId);
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        if: steps.prepare.outputs.publish == 'true'
+        with:
+          artifact-ids: ${{ steps.prepare.outputs.artifact-id }}
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: report
+          skip-decompress: true
+      - uses: actions/github-script@d746ffe35508b1917358783b479e04febd2b8f71 # v9.0.0
+        if: steps.prepare.outputs.publish == 'true'
+        with:
+          script: |
+            await require('./.github/scripts/stock-comparison-comment.cjs').post({
+              github, context, core
+            });
