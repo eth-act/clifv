@@ -111,11 +111,14 @@ theorem allocChecked_allocResult (hsa : SpillAccepted) {p : Clif.Program} {f : C
   | ok rf =>
     simp only
     by_cases hc : (checkAlloc vcp rf).isOk = true
-    · rw [ite_eq_left_iff.mpr (fun h => absurd hc h)]
-      cases h : checkAlloc vcp rf with
-      | ok u => exact allocChecked_of_checkAlloc h
-      | error e => rw [h] at hc; cases hc
-    · rw [ite_eq_right_iff.mpr (fun h => absurd h hc)]; exact hsa p f vc vcp hsub har hd hs hl hp
+    · simp only [hc, ite_true]
+      cases hlr : lowerRFunc vcp rf with
+      | ok af =>
+        cases h : checkAlloc vcp rf with
+        | ok u => exact allocChecked_of_checkAlloc h
+        | error e => rw [h] at hc; cases hc
+      | error e => exact hsa p f vc vcp hsub har hd hs hl hp
+    · simp only [hc]; exact hsa p f vc vcp hsub har hd hs hl hp
 
 /-- **The backend's end-to-end theorem for the fallback-composed allocation, V4 restated**:
 `backend_correct_final_of_lower` with `rf := allocResult vcp ra` for any answer `ra` of the

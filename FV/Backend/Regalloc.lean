@@ -343,6 +343,19 @@ def lowerRFunc (vc : VCode) (rf : RFunc) : Except String AFunc := do
   -- (`docs/contracts/regalloc-proof.md`, M6Ctl2).
   pure { name := vc.name, frameSize := fr.total, blocks, slotBase := fr.size, frame := true }
 
+/-- The allocation the backend lowers: regalloc2's (`ra`) if `checkAlloc` accepts it and
+`lowerRFunc` lowers it, else the spill allocation, which `lowerRFunc` lowers for every in-scope
+function (`E2E.lowerRFunc_spillAlloc`; so the backend is total on that input). -/
+def allocResult (vc : VCode) (ra : Except String RFunc) : RFunc :=
+  match ra with
+  | .ok rf =>
+    if (checkAlloc vc rf).isOk then
+      match lowerRFunc vc rf with
+      | .ok _ => rf
+      | .error _ => spillAlloc vc
+    else spillAlloc vc
+  | .error _ => spillAlloc vc
+
 /-! ## The allocator -/
 
 /-- Everything about one allocated function (for tests: `RFunc` can be mutated and rechecked). -/
@@ -359,42 +372,41 @@ def RAResult.oracle (r : RAResult) : Except String RFunc :=
   if r.rustChecker == "ok" then .ok r.rf
   else .error s!"register allocation rejected by regalloc2's checker: {r.rustChecker}"
 
-/-- Lower a spill allocation, after running `checkAlloc` on it as a double-check (it accepts
-every in-scope function of the corpus; `SpillAccepted`). -/
-def lowerSpill (vcp : VCode) : Except String AFunc := do
-  let rf := spillAlloc vcp
-  match checkAlloc vcp rf with
-  | .ok () => pure ()
-  | .error e => throw s!"spill allocation rejected by the Lean checker: {e}"
-  lowerRFunc vcp rf
-
-/-- Lower `allocResult`: regalloc2's allocation if `checkAlloc` accepts it, else the spill
-allocation (`lowerSpill`). -/
+/-- Lower `allocResult`: regalloc2's allocation if `checkAlloc` accepts it and `lowerRFunc`
+lowers it, else the spill allocation. -/
 def lowerAlloc (vcp : VCode) (ra : Except String RFunc) : Except String AFunc :=
   match ra with
-  | .ok rf => if (checkAlloc vcp rf).isOk then lowerRFunc vcp rf else lowerSpill vcp
-  | .error _ => lowerSpill vcp
+  | .ok rf =>
+    if (checkAlloc vcp rf).isOk then
+      match lowerRFunc vcp rf with
+      | .ok af => .ok af
+      | .error _ => lowerRFunc vcp (spillAlloc vcp)
+    else lowerRFunc vcp (spillAlloc vcp)
+  | .error _ => lowerRFunc vcp (spillAlloc vcp)
+
+/-- The compiler's `lowerAlloc` lowers `allocResult` (without lowering regalloc2's allocation
+twice). -/
+theorem lowerAlloc_eq_lowerRFunc (vcp : VCode) (ra : Except String RFunc) :
+    lowerAlloc vcp ra = lowerRFunc vcp (allocResult vcp ra) := by
+  unfold lowerAlloc allocResult
+  cases ra with
+  | error e => rfl
+  | ok rf =>
+    simp only
+    by_cases hc : (checkAlloc vcp rf).isOk = true
+    · simp only [hc, ite_true]
+      cases hl : lowerRFunc vcp rf with
+      | ok af => exact hl.symm
+      | error e => rfl
+    · simp only [hc]
+      rfl
 
 theorem lowerAlloc_eq {vcp : VCode} {ra : Except String RFunc} {af : AFunc}
-    (h : lowerAlloc vcp ra = .ok af) : lowerRFunc vcp (allocResult vcp ra) = .ok af := by
-  unfold lowerAlloc at h
-  unfold allocResult
-  have hs : lowerSpill vcp = .ok af → lowerRFunc vcp (spillAlloc vcp) = .ok af := fun h => by
-    unfold lowerSpill at h
-    simp only at h
-    split at h
-    · exact h
-    · cases h
-  cases ra with
-  | error e => exact hs h
-  | ok rf =>
-    simp only at h ⊢
-    by_cases hc : (checkAlloc vcp rf).isOk = true
-    · rw [if_pos hc] at h ⊢; exact h
-    · rw [if_neg hc] at h ⊢; exact hs h
+    (h : lowerAlloc vcp ra = .ok af) : lowerRFunc vcp (allocResult vcp ra) = .ok af :=
+  (lowerAlloc_eq_lowerRFunc vcp ra) ▸ h
 
-/-- Check, then lower (`lowerAlloc`): a rejection by either checker falls back to the spill
-allocation. -/
+/-- Check, then lower (`lowerAlloc`): a rejection by either checker, or by `lowerRFunc`, falls
+back to the spill allocation. -/
 def RAResult.finish (r : RAResult) : Except String AFunc :=
   lowerAlloc r.prepared r.oracle
 
@@ -435,8 +447,8 @@ def prepareChecked (vc : VCode) : Except String VCode := do
   pure vcp
 
 /-- Allocate a batch of functions with regalloc2 (one `lean-regalloc` run); every result is
-checked by `checkAlloc`, and a rejected or missing allocation (regalloc2 failed, or is absent)
-is replaced by the spill allocation (`lowerAlloc`). -/
+checked by `checkAlloc`, and a rejected, unlowerable or missing allocation (regalloc2 failed, or
+is absent) is replaced by the spill allocation (`lowerAlloc`). -/
 def allocateRegalloc2 (bin : String) (env : MachineEnv) (vcs : Array VCode) : IO (Array (Except String AFunc)) := do
   let prepared := vcs.map prepareChecked
   let ok := prepared.filterMap (·.toOption)
@@ -459,6 +471,6 @@ def allocateRegalloc2 (bin : String) (env : MachineEnv) (vcs : Array VCode) : IO
 /-- Allocate with the spill allocator only (`lean-backend --regalloc spill`; testing the
 fallback). -/
 def allocateSpill (vcs : Array VCode) : Array (Except String AFunc) :=
-  vcs.map fun vc => prepareChecked vc >>= lowerSpill
+  vcs.map fun vc => prepareChecked vc >>= fun vcp => lowerRFunc vcp (spillAlloc vcp)
 
 end Backend
