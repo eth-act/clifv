@@ -70,7 +70,7 @@ def main():
         parser.error("--jobs must be positive")
     head = os.environ.get("CI_HEAD_SHA", "")
     if not re.fullmatch(r"[0-9a-f]{40}", head):
-        parser.error("CI_HEAD_SHA must identify the tested PR commit")
+        parser.error("CI_HEAD_SHA must identify the tested commit")
     out = args.out.resolve()
     summary = out.with_name(out.name + ".ci-summary.json")
     if summary.exists():

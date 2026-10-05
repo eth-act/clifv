@@ -30,8 +30,9 @@ are not used to build the comparison infrastructure.
 
 ## GitHub Actions
 
-Every pull request runs the full pipeline on `ubuntu-24.04`, with two comparison
-workers. CI uses `FV_COMPARE_MEMCAP=0`, because a systemd user session is not
+Every pull request and every push to `main` runs the full pipeline on
+`ubuntu-24.04`, with two comparison workers. A push to `main` writes the job
+summary and saves the artifacts; it posts no comment. CI uses `FV_COMPARE_MEMCAP=0`, because a systemd user session is not
 required on the hosted runner. The workflow installs the checksum-pinned Lean
 toolchain and caches toolchains, Rust downloads, and compiler build outputs.
 

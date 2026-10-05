@@ -3,13 +3,19 @@ name: Stock compiler comparison
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
+  # Direct commits to main are measured too. They publish a job summary and
+  # artifacts, not a PR comment.
+  push:
+    branches: [main]
 
 permissions:
   contents: read
 
+# A newer PR commit replaces an older PR measurement. Main pushes finish in order;
+# GitHub keeps only the newest pending run.
 concurrency:
-  group: stock-comparison-pr-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  group: stock-comparison-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   measure:
@@ -18,11 +24,11 @@ jobs:
     timeout-minutes: 30
     env:
       FV_COMPARE_MEMCAP: '0'
-      CI_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      CI_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
       - name: Configure Lean path
         run: echo "LEAN_BIN_DIR=$RUNNER_TOOL_CACHE/lean-4.34.1-linux/bin" >> "$GITHUB_ENV"
@@ -95,7 +101,7 @@ jobs:
     needs: measure
     # Forks cannot obtain a write token here. The trusted workflow_run publisher
     # handles them after these workflows reach the default branch.
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
