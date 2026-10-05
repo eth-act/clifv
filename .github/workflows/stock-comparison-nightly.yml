@@ -1,0 +1,112 @@
+name: Compiler agreement daily digest
+
+on:
+  schedule:
+    - cron: '23 6 * * *'
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish to the reporting issue (otherwise preview only)
+        type: boolean
+        default: false
+  pull_request:
+    paths:
+      - '.github/scripts/stock-comparison-nightly*'
+      - '.github/scripts/stock-comparison-read-archive.py'
+      - '.github/scripts/test_stock_comparison_archive.py'
+      - '.github/workflows/stock-comparison-nightly.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stock-nightly-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'main' }}
+  cancel-in-progress: false
+
+env:
+  REPORT_ISSUE: '46'
+  PYTHONDONTWRITEBYTECODE: '1'
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: node --test .github/scripts/stock-comparison-nightly.test.cjs
+      - run: python3 -m unittest discover -s .github/scripts -p test_stock_comparison_archive.py -v
+
+  preview:
+    if: github.event_name == 'pull_request'
+    needs: test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+      issues: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/github-script@d746ffe35508b1917358783b479e04febd2b8f71 # v9.0.0
+        with:
+          script: |
+            await require('./.github/scripts/stock-comparison-nightly.cjs').prepareFiles({
+              github, context, issueNumber: Number(process.env.REPORT_ISSUE)
+            });
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stock-nightly-preview-${{ github.run_attempt }}
+          path: nightly/
+          retention-days: 7
+          if-no-files-found: error
+
+  digest:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/github-script@d746ffe35508b1917358783b479e04febd2b8f71 # v9.0.0
+        with:
+          script: |
+            await require('./.github/scripts/stock-comparison-nightly.cjs').prepareFiles({
+              github, context, issueNumber: Number(process.env.REPORT_ISSUE)
+            });
+      # Save the baseline before advancing the issue cursor. It is refreshed on
+      # quiet nights too, so a source measurement's 7-day expiry does not lose it.
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stock-nightly-state-${{ github.run_attempt }}
+          path: nightly/state.json
+          archive: true
+          retention-days: 90
+          if-no-files-found: error
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stock-nightly-report-${{ github.run_attempt }}
+          path: |
+            nightly/report.md
+            nightly/plan.json
+          retention-days: 90
+          if-no-files-found: error
+      - name: Publish and compact
+        if: github.event_name == 'schedule' || inputs.publish
+        uses: actions/github-script@d746ffe35508b1917358783b479e04febd2b8f71 # v9.0.0
+        with:
+          script: |
+            const fs = require('node:fs');
+            await require('./.github/scripts/stock-comparison-nightly.cjs').publish({
+              github, context, core, issueNumber: Number(process.env.REPORT_ISSUE),
+              plan: JSON.parse(fs.readFileSync('nightly/plan.json', 'utf8'))
+            });

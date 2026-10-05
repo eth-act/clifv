@@ -88,6 +88,42 @@ the small data artifact and posts their comments, also when only the lost-match
 job failed. It checks out only the default branch and never executes fork code. GitHub activates that publisher only after
 its workflow and script are merged into the default branch.
 
+### Daily change reports
+
+`stock-comparison-nightly.yml` runs at 06:23 UTC and summarizes existing `main`
+push measurements in the pinned [daily reports issue](https://github.com/eth-act/clifv/issues/46).
+It does not build the compiler again. Collection starts at the last published
+digest, or the preceding 24 hours on first setup. Completed failures and
+cancellations are reported as measurement gaps; late completions enter the next
+digest. Intermediate pushes can be skipped by the measurement workflow's queue,
+so reports attribute changes to measured commit ranges, not proven culprits.
+
+The digest compares individual reported function occurrences under the same
+input and stock settings. It shows gained/lost exact matches and supported
+outputs, added/removed identities, and commit titles and GitHub authors. Changes
+to the pinned reference or recorded harness provenance are not directly
+comparable. Changed input/settings and nonrepeatable reference stages are
+reported separately, not called compiler regressions. Counts measure artifact
+agreement, not execution or proof coverage.
+
+Each nightly saves a compact baseline snapshot and detailed report as Actions
+artifacts for 90 days, including on quiet nights. The snapshot is uploaded before
+the issue cursor advances. Missing/corrupt saved state fails the digest instead
+of silently resetting the baseline. Initial measurements whose artifacts have
+expired are explicit gaps. Source measurements retain their existing seven-day
+artifact retention.
+
+The bot keeps 30 recent digest comments. Before deleting older marked comments
+owned by `github-actions[bot]`, it stores their counts, regressions, removed
+identities, and attribution links in the issue body and verifies the update.
+Human comments and unrelated bot comments are never deleted. If the compacted
+body reaches its size limit, deletion stops rather than dropping findings.
+
+The schedule activates only after this workflow is merged into `main`. A
+read-only PR job tests collection against real `main` artifacts and uploads a
+preview. After merge, `workflow_dispatch` can preview the digest or publish it
+with the `publish` input; only runs from `main` can write to the reporting issue.
+
 Use a fresh output directory; if `--out` is omitted a timestamped directory is
 chosen. `--input <official-file.clif>` selects a pilot;
 the report still retains the complete official inventory and says how many files
