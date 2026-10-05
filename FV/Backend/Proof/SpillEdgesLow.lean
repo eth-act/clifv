@@ -105,6 +105,22 @@ theorem raw_back_of {f : Clif.Function} {bl : List BLow} {RR : Reg → Reg} {x :
   rw [Array.back?_map, List.back?_toArray, List.getLast?_append, hi]
   rfl
 
+theorem succIds_of {t : Clif.Terminator} (ht : t.isTry = false) : succIds t = (dests t).map (·.block) := by
+  cases t <;> first | rfl | (simp [Clif.Terminator.isTry] at ht)
+
+theorem succIds_try {t : Clif.Terminator} {et : Clif.ExnTable} (h : IsTryWith t et) :
+    succIds t = et.dests.map (·.block) := by
+  rcases h with ⟨_, _, rfl⟩ | ⟨_, _, rfl⟩ <;> rfl
+
+theorem nodup_flatMap_mem {α β : Type} (g : α → List β) : ∀ {l : List α}, (l.flatMap g).Nodup →
+    ∀ {x : α}, x ∈ l → (g x).Nodup
+  | [], _, _, hx => by simp at hx
+  | a :: l, hn, x, hx => by
+    rw [List.flatMap_cons, List.nodup_append] at hn
+    rcases List.mem_cons.mp hx with rfl | hx
+    · exact hn.1
+    · exact nodup_flatMap_mem g hn.2.1 hx
+
 section
 variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {bl : List BLow} {RR : Reg → Reg}
   (H : Low f vc ctx st0 bl RR)
@@ -308,6 +324,129 @@ theorem Low.raw_back (hs : LowerScope f) (hbt : ∀ B ∈ f.blocks, BrIdxTyped c
     refine ⟨_, raw_back_of hL hfix, fun bc h => ?_, fun h => absurd (isTry_of het) (by rw [h]; simp),
       fun et' _ => ⟨_, T.info, rfl, by rw [targets_mapRegs]; exact tryInfo_targets hinfo c⟩⟩
     rcases het with ⟨_, _, h'⟩ | ⟨_, _, h'⟩ <;> rw [h'] at h <;> cases h
+
+/-- **The targets of CLIF block `x`'s terminator**: a block (without arguments, or of a
+`jump`), or an edge block of `x`; a `try_call`'s: its edge blocks, distinct. -/
+theorem Low.raw_tgt {x : Nat} {B : Clif.Block} {L : BLow} (hB : f.blocks[x]? = some B)
+    (hL : bl[x]? = some L) :
+    (B.term.isTry = false → ∀ l ∈ L.targets,
+      (∃ bc ∈ dests B.term, blockIdx? f bc.block = some l ∧ (bc.args = [] ∨ B.term = .jump bc)) ∨
+      (∃ e ∈ edgeBlocks f B L, e.label = l)) ∧
+    (∀ et, IsTryWith B.term et → L.targets.Nodup ∧ ∀ l ∈ L.targets, ∃ e ∈ edgeBlocks f B L, e.label = l) := by
+  obtain ⟨-, -, -, nl0, nl1, hlt⟩ := (lowBlocks_spec H.hbl).2 x B L hB hL
+  constructor
+  · intro ht l hl
+    have htg := lowTerm_targets ht hlt
+    by_cases hj : ∃ bc, B.term = .jump bc
+    · obtain ⟨bc, hj⟩ := hj
+      rw [hj] at htg
+      simp only [targetsOf, Option.map_eq_some_iff, Prod.mk.injEq] at htg
+      obtain ⟨tl, htl, h1, -⟩ := htg
+      rw [← h1] at hl
+      simp only [List.mem_singleton] at hl
+      subst hl
+      exact .inl ⟨bc, by rw [hj]; simp [dests], htl, .inr hj⟩
+    · have hj' : ∀ bc, B.term ≠ .jump bc := fun bc e => hj ⟨bc, e⟩
+      rw [shape_targetsOf_other hj'] at htg
+      obtain ⟨hlen, -, hp, -⟩ := edgeTargets_spec htg
+      obtain ⟨k, hk, rfl⟩ := List.getElem_of_mem hl
+      have hk' : k < (dests B.term).length := by omega
+      have hpz : ((dests B.term)[k], L.targets[k]) ∈ (dests B.term).zip L.targets :=
+        List.mem_of_getElem? (List.getElem?_zip_eq_some.mpr
+          ⟨List.getElem?_eq_getElem hk', List.getElem?_eq_getElem hk⟩)
+      obtain ⟨tl, htl, hargs⟩ := hp _ hpz
+      by_cases ha : ((dests B.term)[k]).args = []
+      · have e := hargs ha
+        simp only at e
+        exact .inl ⟨_, List.getElem_mem hk', by rw [e]; exact htl, .inl ha⟩
+      · right
+        refine ⟨⟨L.targets[k], #[.jump tl], #[],
+          (((dests B.term)[k]).args.map (fun a => Reg.vreg a .int)).toArray⟩, ?_, rfl⟩
+        rw [shape_edgeBlocks_other ht hj']
+        exact List.mem_filterMap.mpr ⟨_, hpz, by simp [edgeOfBc, ha, htl]⟩
+  · intro et het
+    obtain ⟨T, hT, -, -, htt, -⟩ := (lowTerm_spec hlt).2 et het
+    obtain ⟨hts, -, hall⟩ := tryTargets_spec htt
+    refine ⟨by rw [hts]; exact List.nodup_range', fun l hl => ?_⟩
+    have hlabs := edgeOfTry_labels (f := f) (T := T) (ds := et.dests) (ls := L.targets)
+      (by rw [hts]; simp) hall
+    rw [← shape_edgeBlocks_try het hT] at hlabs
+    rw [← hlabs] at hl
+    obtain ⟨e, he, rfl⟩ := List.mem_map.mp hl
+    exact ⟨e, he, rfl⟩
+
+/-- **An edge block** jumps to a non-entry block whose parameters its arguments (integer vregs)
+match. -/
+theorem Low.edge_facts (hs : LowerScope f) {bi : Nat} {B : Clif.Block} {L : BLow}
+    (hB : f.blocks[bi]? = some B) (hL : bl[bi]? = some L) {e : VBlock} (he : e ∈ edgeBlocks f B L) :
+    ∃ tl TB, e.insts = #[.jump tl] ∧ e.params = #[] ∧ f.blocks[tl]? = some TB ∧ tl ≠ 0 ∧
+      TB.params.length = e.branchArgs.size ∧ ∀ a ∈ e.branchArgs.toList, ∃ v, a = .vreg v .int := by
+  have hBm : B ∈ f.blocks := List.mem_of_getElem? hB
+  obtain ⟨-, -, -, nl0, nl1, hlt⟩ := (lowBlocks_spec H.hbl).2 bi B L hB hL
+  rcases try_or B.term with ht | ⟨et, het⟩
+  · by_cases hj : ∃ bc, B.term = .jump bc
+    · obtain ⟨bc, hj⟩ := hj
+      rw [shape_edgeBlocks_jump hj] at he
+      simp at he
+    · have hj' : ∀ bc, B.term ≠ .jump bc := fun bc e => hj ⟨bc, e⟩
+      rw [shape_edgeBlocks_other ht hj'] at he
+      obtain ⟨p, hp, hpe⟩ := List.mem_filterMap.mp he
+      simp only [edgeOfBc] at hpe
+      split at hpe
+      · cases hpe
+      rename_i ha
+      obtain ⟨tl, htl, rfl⟩ := Option.map_eq_some_iff.mp hpe
+      have hbc : p.1 ∈ dests B.term := (List.of_mem_zip hp).1
+      obtain ⟨TB, hTB, hTBi⟩ := block?_of_idx htl
+      obtain ⟨tb, htb, hlen, -⟩ := H.lf.args B hBm p.1 hbc
+      obtain rfl : tb = TB := Option.some.inj (htb.symm.trans hTB)
+      refine ⟨tl, tb, rfl, rfl, hTBi, fun h0 => ?_, by simp [hlen (by simpa using ha)], ?_⟩
+      · subst h0
+        exact hs.noEntryPred B hBm p.1.block (by rw [succIds_of ht]; exact List.mem_map_of_mem hbc) htl
+      · intro a hm
+        simp only [List.toList_toArray, List.mem_map] at hm
+        obtain ⟨v, -, rfl⟩ := hm
+        exact ⟨v, rfl⟩
+  · obtain ⟨T, hT, -, hexn, -, hregs, -, -⟩ := (lowTerm_spec hlt).2 et het
+    rw [shape_edgeBlocks_try het hT] at he
+    obtain ⟨p, hp, hpe⟩ := List.mem_filterMap.mp he
+    simp only [edgeOfTry] at hpe
+    obtain ⟨tl, htl, rfl⟩ := Option.map_eq_some_iff.mp hpe
+    obtain ⟨k, hk, hpk⟩ := List.getElem_of_mem hp
+    have hdk : et.dests[k]? = some p.1 := by
+      have := (List.getElem?_zip_eq_some.mp (by rw [List.getElem?_eq_getElem hk, hpk])).1
+      exact this
+    obtain ⟨T', hT', hargs⟩ := H.lf.tryArgs bi B L et hB hL het
+    rw [hT] at hT'
+    cases hT'
+    obtain ⟨⟨tb, htb, hlen⟩, hai⟩ := hargs k p.1 hdk
+    obtain ⟨TB, hTB, hTBi⟩ := block?_of_idx htl
+    obtain rfl : tb = TB := Option.some.inj (htb.symm.trans hTB)
+    obtain ⟨-, hregs', -⟩ := tryRegsOf_spec (exnTableOpnd_cc hexn) hregs
+    refine ⟨tl, tb, rfl, rfl, hTBi, fun h0 => ?_, by simp [hlen], ?_⟩
+    · subst h0
+      exact hs.noEntryPred B hBm p.1.block
+        (by rw [succIds_try het]; exact List.mem_map_of_mem (List.mem_of_getElem? hdk)) htl
+    · intro a hm
+      simp only [List.toList_toArray, List.mem_map] at hm
+      obtain ⟨ta, hta, rfl⟩ := hm
+      have hok := hai ta hta
+      rw [hregs']
+      cases ta with
+      | val v => exact ⟨v, rfl⟩
+      | ret i =>
+        simp only at hok
+        rw [hregs'] at hok
+        simp only [List.length_map, List.length_range] at hok
+        exact ⟨L.tst.nextVreg + i, by simp [tryEdgeArg, hok.2]⟩
+      | exn i =>
+        simp only at hok
+        rw [hregs'] at hok
+        simp only [List.length_cons, List.length_nil] at hok
+        have : i = 0 ∨ i = 1 := by omega
+        rcases this with rfl | rfl
+        · exact ⟨_, rfl⟩
+        · exact ⟨_, rfl⟩
 
 end
 
