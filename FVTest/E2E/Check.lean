@@ -20,6 +20,11 @@ every prepared VCode and reports the number of covered functions and, for the ot
 uncovered instruction forms (constructor and operation) with their counts. An uncovered
 function is not rejected: it is compiled but outside the end-to-end theorem.
 
+It runs the checker on the spill allocation (`spillAlloc`, the fallback when `checkAlloc`
+rejects regalloc2's allocation) of every prepared VCode — the conclusion of the hypothesis
+`E2E.SpillAccepted` of `E2E.backend_correct_final_alloc` — and reports how many are accepted (a
+rejection fails the run) and how many `lowerRFunc` lowers (its 32 KiB frame limit, V5).
+
 It reports how many in-scope functions satisfy the input conditions of `lowerCheck_complete`
 (`dominatedB`, `lowerScopeB`: on these the lowering validator is a theorem, `Compiled.of_lower`),
 and names the others.
@@ -156,6 +161,11 @@ def main (args : List String) : IO UInt32 := do
   let mut dom := 0
   let mut scope := 0
   let mut both := 0
+  let mut spillOk := 0
+  let mut spillBad := 0
+  let mut spillLow := 0
+  let mut spillBig := 0
+  let mut tSpill := 0
   for file in files do
     let lg := Opt.Legalize128.parsedFile128 (Clif.parseFile (← IO.FS.readFile file))
     let pf := match optCfg with | some c => Opt.optimizeParsedFile c lg.file | none => lg.file
@@ -209,6 +219,20 @@ def main (args : List String) : IO UInt32 := do
           IO.println s!"{file}: %{f.name}: not covered: {us.map oneLine}"
           for i in us do
             forms := forms.insert (formKey i) (forms.getD (formKey i) 0 + 1)
+        -- the spill fallback (`spillAlloc`, `E2E.SpillAccepted`) and its lowering
+        let ts0 ← IO.monoMsNow
+        let rf := spillAlloc vcp
+        match ← IO.lazyPure (fun _ => checkAlloc vcp rf) with
+        | .ok () => spillOk := spillOk + 1
+        | .error e =>
+          spillBad := spillBad + 1
+          IO.println s!"{file}: %{f.name}: checkAlloc rejects the spill allocation: {e}"
+        match ← IO.lazyPure (fun _ => lowerRFunc vcp rf) with
+        | .ok _ => spillLow := spillLow + 1
+        | .error e =>
+          spillBig := spillBig + 1
+          IO.println s!"{file}: %{f.name}: lowerRFunc rejects the spill allocation: {e}"
+        tSpill := tSpill + ((← IO.monoMsNow) - ts0)
         let t5 ← IO.monoMsNow
         let pc ← IO.lazyPure (fun _ => prepCheck vc vcp)
         let t6 ← IO.monoMsNow
@@ -230,5 +254,6 @@ def main (args : List String) : IO UInt32 := do
   IO.println s!"formsCoveredB: {cov} covered, {uncov} not covered"
   for (k, n) in forms.toList.mergeSort (fun a b => a.2 ≥ b.2) do
     IO.println s!"  uncovered form {k}: {n} instructions"
-  IO.println s!"time (ms): lowerFunction {tLower}, lowerCheck {tCheck}, prepare {tPrep}, prepCheck {tPCheck}"
-  return if bad == 0 && pbad == 0 then 0 else 1
+  IO.println s!"spill fallback (SpillAccepted): checkAlloc accepts {spillOk}, rejects {spillBad}; lowerRFunc lowers {spillLow}, rejects {spillBig} (allocator frame ≥ 32 KiB or ctlCheck)"
+  IO.println s!"time (ms): lowerFunction {tLower}, lowerCheck {tCheck}, prepare {tPrep}, prepCheck {tPCheck}, spill fallback {tSpill}"
+  return if bad == 0 && pbad == 0 && spillBad == 0 then 0 else 1
