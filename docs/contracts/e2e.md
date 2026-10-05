@@ -2215,6 +2215,43 @@ What a proof needs is in `docs/TO-PROVE.md` (V4). Non-vacuity:
 `E2E.backend_correct_final_alloc_witness` (`lowerWitness` with regalloc2 absent: the pipeline
 lowers the spill allocation, which `checkAlloc` accepts).
 
+**V4 restated: verified in-states, `ρ₀` chosen by the register-level theorem** (2026-10-05,
+`FV/Backend/Proof/RegallocSound.lean`, `FV/Backend/Proof/SpillInvariant.lean`,
+`FV/E2E/AllocDirect.lean`). `SpillAccepted` is false as stated (`E2E.not_ctlSpillHyp`: two `sret`
+parameters) and asks more than the proofs use (the checker's fixpoint iteration; an entry state
+without vregs, i.e. every use defined on every path). The restated chain:
+
+```lean
+structure Backend.Proof.CheckedAt (vc rf c ins) (a0 : AState) : Prop  -- `Checked`, entry in-state a0 unconstrained
+def Backend.Proof.EntryOk (a0 : AState) : Prop    -- entry r only in reg r (callee-saved); each vreg in ≤ 1 location
+def Backend.Proof.AllocChecked (vc : VCode) (rf : RFunc) : Prop :=
+  ∃ c ins a0, CheckedAt vc rf c ins a0 ∧ EntryOk a0
+theorem Backend.Proof.allocChecked_of_checkAlloc : checkAlloc vc rf = .ok () → AllocChecked vc rf
+theorem Backend.Proof.checkedAt_sound (hc : CheckedAt vc rf c ins a0) (m₀ ρ₀ w₀)
+    (hinv0 : Inv keep a0 m₀ ρ₀ (fun r => m₀ (.reg r))) : ∃ R, IsSimulation vc rf sem keep R ∧ …
+theorem Backend.Proof.allocChecked_sound (h : AllocChecked vc rf) (m₀ w₀) : ∃ ρ₀ R, …  -- ρ₀ := entryRho a0 m₀
+def E2E.RegLevelCorrectEx … := ∀ base ra s, AbiEntry … → StackAvail … → ∀ w₀, BodyEntry af s w₀ →
+    ∃ ρ₀ : Nat → CV, (returns as in RegLevelCorrect) ∧ (traps as in RegLevelCorrect)
+theorem Backend.Proof.regLevelCorrect_backend_ex (hcheck : AllocChecked vcp rf) … : RegLevelCorrectEx …
+theorem E2E.backend_correct_final_ex (hc : CompiledA f k vc vcp rf af fa fb) …  -- CompiledA: check : AllocChecked
+def E2E.SpillAccepted' : Prop := ∀ p f vc vcp, InSubset p f → Spill.ArityOk f → Dominated f →
+    LowerScope f → lowerFunction f = .ok vc → Backend.prepare vc = .ok vcp → AllocChecked vcp (spillAlloc vcp)
+theorem E2E.spillAccepted'_of_step4 (h4 : Spill.SpillStep4) (hav : SpillAvailable) : SpillAccepted'
+theorem E2E.backend_correct_final_alloc' (hsa : SpillAccepted') (hsub : InSubset p f)
+    (hd : dominatedB f = true) (hs : lowerScopeB f = true) (har : Spill.arityOkB f = true) …  -- as backend_correct_final_alloc
+```
+
+`IselSim` and `PrepareCorrect` hold for every initial vreg file, so the composition
+(`backend_correct_of_layers_ex`) instantiates them with the one the register-level theorem picks
+from the activation's initial frame (`entryRho`: the value of the location the entry state places a
+vreg in). The spill allocation may therefore start with every home holding its vreg; what remains
+is availability (`Spill.SpillAvail`), not definedness. The old statements (`checkAlloc_sound`,
+`regLevelCorrect_world`, `backend_correct_of_layers`, `backend_correct`, `backend_correct_of_rules`)
+are corollaries; `Compiled` keeps `checkAlloc` because the link-level theorems (`LinkWorld`,
+`PairDriver`) fix one VCode outcome for all activations, which needs every `ρ₀`. Open, as explicit
+hypotheses: `Spill.SpillStep4` and `E2E.SpillAvailable` (`docs/TO-PROVE.md` V4 step 4); step 3 is
+`E2E.spillLocalAll`. Non-vacuity: `E2E.backend_correct_final_alloc'_witness`.
+
 **Validator completeness: `Opt.Legalize128` is correct without `Opt.Legal.check`** (2026-10-02,
 `FV/Opt/Proof/LegalComplete.lean`, `FV/Opt/Proof/LegalDirect.lean`, `FV/E2E/LegalDirect.lean`;
 `docs/contracts/legalize128.md` "Completeness"): `Opt.Legal.Complete.check_complete` (`Pre f` and
