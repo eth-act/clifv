@@ -217,11 +217,22 @@ author's estimate, not measured), **Risk**.
      `preds_single`). The statement gained the premise `∃ succs preds, vc.cfg = .ok (succs, preds)`:
      without it, it is false (a block not ending in a terminator meets `SpillLocalOk` and `SpillAvail`
      vacuously, but `CheckedAt` needs a CFG); the pipeline's output has one (`cfg_ok_of_prepare`).
-     Open, as an explicit hypothesis: `SpillAvailable` (`∃ D, SpillAvail vcp D` for the pipeline's
-     output). Assembly: `spillAccepted_of : SpillStep4 → SpillLocalAll → SpillAvailable →
+     Assembly: `spillAccepted_of : SpillStep4 → SpillLocalAll → SpillAvailable →
      SpillAccepted`, `spillAccepted_of_step4 : SpillStep4 → SpillAvailable → SpillAccepted`,
      `spillAccepted_of_avail : SpillAvailable → SpillAccepted`, then `backend_correct_final_alloc`
      (premise `arityOkB f = true`).
+     **`SpillAvailable` reduced to a syntactic fact** (`FV/Backend/Proof/SpillAvail.lean`,
+     `FV/E2E/SpillAvail.lean`): with `D := Spill.killD` (everything at the entry block, elsewhere the
+     vregs no instruction kills), `spillAvail_of_killFree` gives `SpillAvail` from `EdgesOk` and
+     `Spill.killFreeB` (no instruction reads a killed vreg — the LL/SC scratch defs past `keptDefs`,
+     `JTSequence`'s temporaries, a `try_call`'s results — and a killed branch argument is stored by its
+     block's entry stores, `entryStored`); `spillAvailable_of_killFree : SpillKillFree → SpillAvailable`,
+     `spillAccepted_of_killFree`, witness `spillKillFree_witness` (an LL/SC loop). Open: `SpillKillFree`
+     (`killFreeB` of the pipeline's output), the SSA discipline of the ISLE lowering (a statement's code
+     reads only vregs of available values and its own earlier kept defs, returns no scratch vreg; a
+     `try_call` edge block passes only results live on its edge), carried through `prepare`.
+     `lowerCheck`'s certificate does not give it: it is about CLIF values, not the vregs the ISLE code
+     reads. `lean-e2e-check`: `killFreeB` 1148/1148 (19 with killed vregs).
 - **Option (b), later:** a real allocator (linear scan) written in Lean, proven directly or with
   `checkAlloc` completeness for its output. Removes the Rust tool entirely. Large `[est]`.
 
