@@ -51,3 +51,10 @@ Task issues retain completion criteria and claim/release/close tracking. Status
 issues stay open. The worktree, proof, resource, and verification rules in
 `docs/TO-PROVE.md` §7 still apply to proof work packages. Status updates do not
 authorize a Git push or merge.
+
+## Merging
+
+All merges must be squash merges. For GitHub pull requests, use the squash merge
+option (`gh pr merge --squash`); do not use merge commits or rebase-and-merge.
+This sets the merge method, not permission to merge: existing restrictions on
+agent pushes and merges still apply.
