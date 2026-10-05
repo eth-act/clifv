@@ -1,12 +1,14 @@
 import FV.E2E.SpillLocalWitness
 import FV.Backend.Proof.SpillCtlPipe
+import FV.Backend.Proof.IselShpDriver
 
 /-!
 # The control part of the spill allocator's local facts: assembly, witness, counterexample
 
-`spillLocalOk_of_ctl`: `spillLocalOk_of_pipeline` with its control part `CtlSpillHyp` replaced
-by `ctlSpillHyp_of` (open: the ISLE inversion `IselCtlHyp`), under the end-to-end subset
-`InSubset` (whose `abiSigs`/`indSigs` fields are `AbiSigsOk`, `abiSigsOk_of_inSubset`).
+`ctlSpillHyp`: the control part `CtlSpillHyp` on the end-to-end subset `InSubset` (whose
+`abiSigs`/`indSigs` fields are `AbiSigsOk`, `abiSigsOk_of_inSubset`), by `ctlSpillHyp_of` and the
+ISLE inversion `iselCtlHyp` (`IselShpDriver`). `spillLocalOk_of_ctl`: `spillLocalOk_of_pipeline`
+with its control part discharged.
 `not_ctlSpillHyp`: without the ABI condition the statement is false: two `sret` parameters are
 both fixed to x8 (`sretWitness`), so the entry block's `Args` has two fixed defs in one register.
 -/
@@ -19,8 +21,15 @@ theorem abiSigsOk_of_inSubset {p : Clif.Program} {f : Clif.Function} (h : InSubs
     AbiSigsOk f :=
   ⟨h.abiSigs, h.indSigs⟩
 
-/-- **The local facts on the pipeline's output**, the control part by `ctlSpillHyp_of`. -/
-theorem spillLocalOk_of_ctl (hI : IselCtlHyp) (hC : ClassesHyp) (hE : EdgesHyp)
+/-- **`CtlSpillHyp` on the end-to-end subset**: the control forms the lowering emits meet
+`SpillInstOk`. -/
+theorem ctlSpillHyp {p : Clif.Program} {f : Clif.Function} {vc : VCode} (hsub : InSubset p f)
+    (hd : Dominated f) (hs : LowerScope f) (hl : lowerFunction f = .ok vc) :
+    ∀ vb ∈ vc.blocks.toList, ∀ i ∈ vb.insts.toList, i.isCtl = true → SpillInstOk i :=
+  ctlSpillHyp_of iselCtlHyp hd hs (abiSigsOk_of_inSubset hsub) hl
+
+/-- **The local facts on the pipeline's output**, the control part by `ctlSpillHyp`. -/
+theorem spillLocalOk_of_ctl (hC : ClassesHyp) (hE : EdgesHyp)
     {p : Clif.Program} {f : Clif.Function} {vc vcp : VCode} (hsub : InSubset p f)
     (hd : Dominated f) (hs : LowerScope f) (hl : lowerFunction f = .ok vc)
     (hp : Backend.prepare vc = .ok vcp) : SpillLocalOk vcp := by
@@ -30,7 +39,7 @@ theorem spillLocalOk_of_ctl (hI : IselCtlHyp) (hC : ClassesHyp) (hE : EdgesHyp)
     rw [hct] at hcov
     exact spillInstOk_of_formOk (hcov.resolve_left (by simp))
   · exact spillCtl_of_prepare hp (prepDomain_of_lower hs hl hs.nonempty)
-      (ctlSpillHyp_of hI hd hs (abiSigsOk_of_inSubset hsub) hl) b vb k i hvb hi hct
+      (ctlSpillHyp hsub hd hs hl) b vb k i hvb hi hct
 
 /-! ## Non-vacuity -/
 
@@ -44,13 +53,13 @@ theorem abiSigsOk_lowerWitness : AbiSigsOk lowerWitness := by
   simp only [Bool.and_eq_true, List.all_eq_true, decide_eq_true_eq] at h
   exact ⟨⟨h.1.1, h.1.2⟩, h.2⟩
 
-/-- **Non-vacuity of `ctlSpillHyp_of`**: its input premises hold for `lowerWitness`. -/
+/-- **Non-vacuity of `ctlSpillHyp_of iselCtlHyp`**: its input premises hold for `lowerWitness`. -/
 theorem ctlSpillHyp_of_witness :
     Dominated lowerWitness ∧ LowerScope lowerWitness ∧ AbiSigsOk lowerWitness ∧
       ∃ vc, lowerFunction lowerWitness = .ok vc ∧
-        (IselCtlHyp → ∀ vb ∈ vc.blocks.toList, ∀ i ∈ vb.insts.toList, i.isCtl = true → SpillInstOk i) := by
+        ∀ vb ∈ vc.blocks.toList, ∀ i ∈ vb.insts.toList, i.isCtl = true → SpillInstOk i := by
   obtain ⟨hd, hs, vc, -, hl, -, -⟩ := formsCovered_complete_witness default
-  exact ⟨hd, hs, abiSigsOk_lowerWitness, vc, hl, fun hI => ctlSpillHyp_of hI hd hs abiSigsOk_lowerWitness hl⟩
+  exact ⟨hd, hs, abiSigsOk_lowerWitness, vc, hl, ctlSpillHyp_of iselCtlHyp hd hs abiSigsOk_lowerWitness hl⟩
 
 /-- **Non-vacuity of `CallOk`/`spillInstOk_callReg`**: an indirect call with two arguments and
 one result meets `SpillInstOk`. -/
