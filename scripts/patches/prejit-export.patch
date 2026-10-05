@@ -265,21 +265,25 @@ index d99a7ff..af1d044 100644
              path: path.to_path_buf(),
              line_diff: Cell::new(0),
 diff --git a/cranelift/filetests/src/test_compile.rs b/cranelift/filetests/src/test_compile.rs
-index d04f1c9..b380d90 100644
+index d04f1c9..348f8b8 100644
 --- a/cranelift/filetests/src/test_compile.rs
 +++ b/cranelift/filetests/src/test_compile.rs
-@@ -17,13 +17,19 @@ struct TestCompile {
+@@ -17,13 +17,23 @@ struct TestCompile {
      precise_output: bool,
      /// Flag indicating that we expect compilation to fail, not succeed.
      expect_fail: bool,
-+    export: Option<std::path::PathBuf>,
++    /// Artifact export: directory and the function's position in the test file.
++    export: Option<(std::path::PathBuf, usize)>,
  }
  
  pub fn subtest(parsed: &TestCommand) -> Result<Box<dyn SubTest>> {
 +    Ok(Box::new(make_test(parsed, None)?))
 +}
 +
-+fn make_test(parsed: &TestCommand, export: Option<std::path::PathBuf>) -> Result<TestCompile> {
++fn make_test(
++    parsed: &TestCommand,
++    export: Option<(std::path::PathBuf, usize)>,
++) -> Result<TestCompile> {
      assert_eq!(parsed.command, "compile");
      let mut test = TestCompile {
          precise_output: false,
@@ -288,7 +292,7 @@ index d04f1c9..b380d90 100644
      };
      for option in parsed.options.iter() {
          match option {
-@@ -32,7 +38,14 @@ pub fn subtest(parsed: &TestCommand) -> Result<Box<dyn SubTest>> {
+@@ -32,7 +42,18 @@ pub fn subtest(parsed: &TestCommand) -> Result<Box<dyn SubTest>> {
              _ => anyhow::bail!("unknown option on {parsed}"),
          }
      }
@@ -299,29 +303,34 @@ index d04f1c9..b380d90 100644
 +pub(crate) fn exporting_subtest(
 +    parsed: &TestCommand,
 +    directory: &std::path::Path,
++    index: usize,
 +) -> Result<Box<dyn SubTest>> {
-+    Ok(Box::new(make_test(parsed, Some(directory.to_path_buf()))?))
++    Ok(Box::new(make_test(
++        parsed,
++        Some((directory.to_path_buf(), index)),
++    )?))
  }
  
  impl SubTest for TestCompile {
-@@ -51,6 +64,10 @@ impl SubTest for TestCompile {
+@@ -51,6 +72,10 @@ impl SubTest for TestCompile {
      fn run(&self, func: Cow<ir::Function>, context: &Context) -> Result<()> {
          let isa = context.isa.expect("compile needs an ISA");
          let params = func.params.clone();
 +        let original = func.clone().into_owned();
-+        if let Some(dir) = &self.export {
-+            crate::artifact_export::write_input(dir, &original)?;
++        if let Some((dir, index)) = &self.export {
++            crate::artifact_export::write_input(dir, *index, &original)?;
 +        }
          let mut comp_ctx = cranelift_codegen::Context::for_function(func.into_owned());
  
          // With `MachBackend`s, we need to explicitly request disassembly results.
-@@ -59,6 +76,13 @@ impl SubTest for TestCompile {
+@@ -59,6 +84,14 @@ impl SubTest for TestCompile {
          let compiled_code = comp_ctx.compile(isa, &mut Default::default());
  
          let compiled_code = if self.expect_fail {
-+            if let Some(dir) = &self.export {
++            if let Some((dir, index)) = &self.export {
 +                crate::artifact_export::write_rejection(
 +                    dir,
++                    *index,
 +                    &original,
 +                    compiled_code.as_ref().err().map(|e| format!("{e:?}")),
 +                )?;
@@ -329,22 +338,22 @@ index d04f1c9..b380d90 100644
              if compiled_code.is_ok() {
                  anyhow::bail!("Expected compilation failure but compilation succeeded");
              }
-@@ -67,6 +91,9 @@ impl SubTest for TestCompile {
+@@ -67,6 +100,9 @@ impl SubTest for TestCompile {
              compiled_code.map_err(|e| crate::pretty_anyhow_error(&e.func, e.inner))?
          };
          let total_size = compiled_code.code_info().total_size;
-+        if let Some(dir) = &self.export {
-+            crate::artifact_export::write_code(dir, &original, compiled_code, isa)?;
++        if let Some((dir, index)) = &self.export {
++            crate::artifact_export::write_code(dir, *index, &original, compiled_code, isa)?;
 +        }
  
          let vcode = compiled_code.vcode.as_ref().unwrap();
  
 diff --git a/cranelift/filetests/src/artifact_export.rs b/cranelift/filetests/src/artifact_export.rs
 new file mode 100644
-index 0000000..11f40f9
+index 0000000..3861c6f
 --- /dev/null
 +++ b/cranelift/filetests/src/artifact_export.rs
-@@ -0,0 +1,159 @@
+@@ -0,0 +1,163 @@
 +//! Capture artifacts in the actual stock `compile` subtest, before its text assertions.
 +//! No JIT, no compiler-setting overrides, and no test expectation updates.
 +use anyhow::{Result, anyhow, bail};
@@ -370,10 +379,12 @@ index 0000000..11f40f9
 +        cranelift_codegen::verify_function(func, isa)
 +            .map_err(|e| anyhow!("stock verifier: {e}"))?;
 +    }
-+    let subtest = crate::test_compile::exporting_subtest(command, directory)?;
 +    let update = crate::runone::FileUpdate::new(Path::new(input));
 +    let mut assertions = Vec::new();
-+    for (func, details) in &test.functions {
++    for (index, (func, details)) in test.functions.iter().enumerate() {
++        // A subtest per function (TestCompile keeps no state between functions); artifacts are
++        // named by the function's position in the file, because a compile test may repeat a name.
++        let subtest = crate::test_compile::exporting_subtest(command, directory, index)?;
 +        let context = crate::subtest::Context {
 +            preamble_comments: &test.preamble_comments,
 +            details,
@@ -383,7 +394,7 @@ index 0000000..11f40f9
 +            file_update: &update,
 +        };
 +        let result = subtest.run(Cow::Borrowed(func), &context);
-+        assertions.push(json!({"name":func.name.to_string(), "passed":result.is_ok(), "error":result.err().map(|e|format!("{e:#}"))}));
++        assertions.push(json!({"index":index, "name":func.name.to_string(), "passed":result.is_ok(), "error":result.err().map(|e|format!("{e:#}"))}));
 +    }
 +    std::fs::write(
 +        directory.join("assertions.json"),
@@ -392,18 +403,15 @@ index 0000000..11f40f9
 +    Ok(())
 +}
 +
-+fn stem(func: &Function) -> String {
-+    // Numeric hex encoding is injective and cannot escape the artifact directory.
-+    func.name
-+        .to_string()
-+        .bytes()
-+        .map(|b| format!("{b:02x}"))
-+        .collect()
++/// Artifact file stem: the function's position in the test file. Names are not unique in a
++/// compile test, positions are; a number cannot escape the artifact directory.
++fn stem(index: usize) -> String {
++    index.to_string()
 +}
 +
-+pub(crate) fn write_input(directory: &Path, func: &Function) -> Result<()> {
++pub(crate) fn write_input(directory: &Path, index: usize, func: &Function) -> Result<()> {
 +    let original = func.to_string();
-+    std::fs::write(directory.join(format!("{}.clif", stem(func))), &original)?;
++    std::fs::write(directory.join(format!("{}.clif", stem(index))), &original)?;
 +    let signatures: HashMap<_, _> = original
 +        .lines()
 +        .filter_map(|line| {
@@ -447,19 +455,23 @@ index 0000000..11f40f9
 +            bail!("signature adaptation changed IR");
 +        }
 +    }
-+    std::fs::write(directory.join(format!("{}.lean.clif", stem(func))), adapted)?;
++    std::fs::write(
++        directory.join(format!("{}.lean.clif", stem(index))),
++        adapted,
++    )?;
 +    Ok(())
 +}
 +
 +pub(crate) fn write_rejection(
 +    directory: &Path,
++    index: usize,
 +    func: &Function,
 +    error: Option<String>,
 +) -> Result<()> {
 +    std::fs::write(
-+        directory.join(format!("{}.rejection.json", stem(func))),
++        directory.join(format!("{}.rejection.json", stem(index))),
 +        serde_json::to_vec_pretty(
-+            &json!({"name":func.name.to_string(),"rejected":error.is_some(),"error":error}),
++            &json!({"index":index,"name":func.name.to_string(),"rejected":error.is_some(),"error":error}),
 +        )?,
 +    )?;
 +    Ok(())
@@ -467,12 +479,13 @@ index 0000000..11f40f9
 +
 +pub(crate) fn write_code(
 +    directory: &Path,
++    index: usize,
 +    func: &Function,
 +    code: &CompiledCode,
 +    isa: &dyn TargetIsa,
 +) -> Result<()> {
 +    std::fs::write(
-+        directory.join(format!("{}.bin", stem(func))),
++        directory.join(format!("{}.bin", stem(index))),
 +        code.code_buffer(),
 +    )?;
 +    let relocs: Vec<_> = code.buffer.relocs().iter().map(|r| {
@@ -493,13 +506,13 @@ index 0000000..11f40f9
 +    exceptions
 +        .add_func(0, code.buffer.call_sites())
 +        .map_err(|e| anyhow!("{e:?}"))?;
-+    let metadata = json!({"name":func.name.to_string(),"alignment":code.buffer.alignment.max(isa.function_alignment().minimum).max(isa.symbol_alignment() as u32),
++    let metadata = json!({"index":index,"name":func.name.to_string(),"alignment":code.buffer.alignment.max(isa.function_alignment().minimum).max(isa.symbol_alignment() as u32),
 +        "relocations":relocs,"traps":traps,"unwind":format!("{unwind:?}"),
 +        "exception_call_sites":format!("{:?}",code.buffer.call_sites().collect::<Vec<_>>()),
 +        "exception_table_bytes":exceptions.to_vec(),"stack_maps":format!("{:?}",code.buffer.user_stack_maps()),
 +        "jit_allocation_performed":false,"boundary":"stock-compile-subtest"});
 +    std::fs::write(
-+        directory.join(format!("{}.json", stem(func))),
++        directory.join(format!("{}.json", stem(index))),
 +        serde_json::to_vec_pretty(&metadata)?,
 +    )?;
 +    Ok(())
