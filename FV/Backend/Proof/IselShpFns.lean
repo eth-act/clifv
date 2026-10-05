@@ -98,4 +98,8 @@ def aOracleS (t : TermId) (as : List AW) : Option AW :=
   | some a => some a
   | none => if ctlOracle t as then some (.reg 1) else none
 
+/-- The root rules checked by hand, not by the abstract interpreter: the calls (`lower` rules
+1031–1033) and `try_call`s (`lower_branch` rules 1034–1036), and `br_table` (1140). -/
+def shpHandIds : List Nat := [1031, 1032, 1033, 1034, 1035, 1036, 1140]
+
 end Backend.Proof.Cov
