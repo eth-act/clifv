@@ -121,8 +121,29 @@ original test files, compilation commands, stdout/stderr and artifacts are retai
 `lean-backend --stock-config request.json --config-receipt receipt.json` is an
 experimental, fail-closed adapter. Unknown, missing, duplicate and unimplemented
 settings are rejected explicitly. Supported targets are generic/ELF AArch64 and
-AArch64 Linux; optimization is `none`, with no extra enabled ISA features. The
-complete policy table lives in `FVTest/Backend/StockConfig.lean`.
+AArch64 Linux; optimization is `none`. The complete policy lives in
+`FVTest/Backend/StockConfig.lean`.
+
+Some settings change stock's code only for some functions. Lean accepts such a
+setting for a function only if the setting cannot change that function's code.
+Each other function is rejected for that setting. Lean records it in the receipt's
+`function_rejections`, and the report counts it as `unsupported_configuration`.
+References are to `cranelift/codegen/src` at the pinned commit.
+
+| Setting (when `true`) | What it changes in stock code | Lean accepts it for |
+| --- | --- | --- |
+| `enable_llvm_abi_extensions` | `f128` parameters of `apple_aarch64` signatures (`isa/aarch64/abi.rs:231`) | Every function: Lean has no float types and does not lower `apple_aarch64` |
+| `enable_multi_ret_implicit_sret` | Returns that do not fit in registers (`isa/aarch64/abi.rs:382`, `machinst/abi.rs:936`) | Every function: Lean rejects more than 8 returns |
+| `has_fp16`, `has_dotprod`, `has_i8mm` | Float and vector lowering rules only (`isa/aarch64/inst.isle`, `isa/aarch64/lower.isle`) | Every function: Lean's CLIF has integer types only |
+| `has_lse` | `atomic_cas`, and `atomic_rmw` except `nand`/`xchg` (`isa/aarch64/lower.isle:2328-2388`) | Functions without those instructions |
+| `use_csdb` | `select_spectre_guard` and the `br_table` sequence (`isa/aarch64/lower.isle:2274`, `isa/aarch64/inst/emit.rs:3276`) | Functions without those instructions |
+| `sign_return_address`, with `sign_return_address_with_bkey` and `has_pauth` | Signs the return address of each function with a frame (`isa/aarch64/abi.rs:1365`) | Functions without a frame; none if `sign_return_address_all` is also set |
+| `use_bti` | Adds `bti c` to every function (`isa/aarch64/abi.rs:638`) | No function: the whole request is rejected |
+
+If a function is not signed, `sign_return_address_all`, `sign_return_address_with_bkey`
+and `has_pauth` have no effect on it. Lean's frame decision is used to decide
+whether stock signs. If stock keeps a frame where Lean omits one, the outputs
+already differ, and the comparison reports them as different.
 
 `preserve_frame_pointers=false` omits an optional empty leaf frame **before
 emission**, checking calls, frame-register usage, incoming stack-argument loads,
@@ -172,6 +193,15 @@ declared AArch64 test-function code artifacts match in 19 files. None is credite
 as full execution-metadata equivalence. Stock compile assertions all pass.
 `runtests/throw.clif` has nonrepeatable reference artifacts because stock preparation
 substitutes a process-local host function address; it is not credited as agreement.
+
+The per-function settings policy above changes these counts. Of the 4,455 stock
+outputs, 438 match (was 425) and 1,152 differ (was 983). 477 are rejected for a
+setting (was 1,176) and 2,388 for an operation Lean does not support (was 1,871).
+Compared outputs now come from 149 files (was 116). Every output that matched
+before still matches. The remaining setting rejections are mostly
+`opt_level=speed` or `speed_and_size` (243), `has_lse` atomics (114), `use_csdb`
+(51) and
+`is_pic=false` far symbols (40).
 
 Next, implement a comparable exception/unwind metadata export, capture the exact
 target/CPU eligibility of a selected real CI host, and feed matched Lean artifacts

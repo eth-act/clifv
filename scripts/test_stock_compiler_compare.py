@@ -13,6 +13,12 @@ COMPARE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(COMPARE)
 
 
+def with_flag(request, key, name, value):
+    changed = copy.deepcopy(request)
+    next(f for f in changed[key] if f["name"] == name)["value"] = value
+    return changed
+
+
 class ContractTests(unittest.TestCase):
     def test_receipt_requires_exact_settings_and_input(self):
         request = {"schema":1,"input_sha256":COMPARE.digest(b"input"),"flags":[]}
@@ -26,6 +32,11 @@ class ContractTests(unittest.TestCase):
         request = {"schema":1,"input_sha256":COMPARE.digest(b"input")}
         for receipt in ({},{"schema":1,"request":request,"configuration_accepted":False,"error":"unsupported"}):
             self.assertIsNotNone(COMPARE.verify_receipt(request,receipt,b"input"))
+
+    def test_function_rejections_must_be_a_name_to_reason_map(self):
+        self.assertEqual(COMPARE.function_rejections({"function_rejections":{"f":"has_lse=true"}}),{"f":"has_lse=true"})
+        for receipt in ({},{"function_rejections":None},{"function_rejections":["f"]},{"function_rejections":{"f":1}}):
+            self.assertIsNone(COMPARE.function_rejections(receipt))
 
     def test_all_encoder_relocation_types_are_known(self):
         self.assertEqual(COMPARE.ELF_RELOC_TYPES["Aarch64AdrGotPage21"],311)
@@ -90,7 +101,7 @@ class StockIntegrationTests(unittest.TestCase):
                 request = copy.deepcopy(base)
                 next(f for f in request["flags"] if f["name"]==name)["value"]=value
                 requests.append(request)
-            isa = copy.deepcopy(base);isa["isa_flags"][0]["value"]="true";requests.append(isa)
+            requests.append(with_flag(base,"isa_flags","use_bti","true"))
             for index, request in enumerate(requests):
                 result, receipt = self.compile(root/f"case-{index}",request)
                 self.assertEqual(result.returncode,3,result.stderr)
@@ -112,7 +123,47 @@ class StockIntegrationTests(unittest.TestCase):
             self.assertEqual(result.returncode,0,result.stderr)
             self.assertTrue(receipt["configuration_accepted"])
             self.assertIn(b"is_pic=false",result.stderr)
+            self.assertIn("is_pic=false",receipt["function_rejections"]["far"])
             self.assertFalse((root/"far/dump/far.bin").exists())
+
+    def test_settings_accepted_only_for_functions_they_cannot_change(self):
+        source=(b"function %leaf(i64) -> i64 {\nblock0(v0: i64):\nreturn v0\n}\n\n"
+                b"function %rmw_add(i64, i64) -> i64 {\nblock0(v0: i64, v1: i64):\n"
+                b"v2 = atomic_rmw.i64 add v0, v1\nreturn v2\n}\n\n"
+                b"function %rmw_xchg(i64, i64) -> i64 {\nblock0(v0: i64, v1: i64):\n"
+                b"v2 = atomic_rmw.i64 xchg v0, v1\nreturn v2\n}\n\n"
+                b"function %cas(i64, i64, i64) -> i64 {\nblock0(v0: i64, v1: i64, v2: i64):\n"
+                b"v3 = atomic_cas.i64 v0, v1, v2\nreturn v3\n}\n\n"
+                b"function %table(i32) -> i32 {\nblock0(v0: i32):\nbr_table v0, block1, [block2]\n"
+                b"block1:\nv1 = iconst.i32 1\nreturn v1\nblock2:\nv2 = iconst.i32 2\nreturn v2\n}\n")
+        names=("leaf","rmw_add","rmw_xchg","cas","table")
+        with tempfile.TemporaryDirectory(prefix="stock-config-test-") as temp:
+            root=Path(temp);base=self.seed(root/"stock")
+            cases={
+                # Accepted for every function Lean compiles.
+                "inert":(with_flag(with_flag(with_flag(with_flag(base,"flags","enable_llvm_abi_extensions","true"),
+                    "flags","enable_multi_ret_implicit_sret","true"),"isa_flags","has_fp16","true"),
+                    "isa_flags","has_dotprod","true"),set()),
+                "lse":(with_flag(base,"isa_flags","has_lse","true"),{"rmw_add","cas"}),
+                "csdb":(with_flag(base,"isa_flags","use_csdb","true"),{"table"}),
+                # The atomic loops save x24-x28, so those functions need a frame and are signed.
+                "sign":(with_flag(with_flag(with_flag(base,"isa_flags","sign_return_address","true"),
+                    "isa_flags","sign_return_address_with_bkey","true"),"isa_flags","has_pauth","true"),
+                    {"rmw_add","rmw_xchg","cas"}),
+            }
+            for label,(request,rejected) in cases.items():
+                result,receipt=self.compile(root/label,request,source)
+                self.assertEqual(result.returncode,0,result.stderr)
+                self.assertTrue(receipt["configuration_accepted"],label)
+                self.assertEqual(set(receipt["function_rejections"]),rejected,label)
+                for name in names:
+                    self.assertEqual((root/label/"dump"/f"{name}.bin").exists(),name not in rejected,(label,name))
+            framed=with_flag(with_flag(base,"isa_flags","sign_return_address","true"),"flags","preserve_frame_pointers","true")
+            signed_all=with_flag(with_flag(base,"isa_flags","sign_return_address","true"),"isa_flags","sign_return_address_all","true")
+            for label,request in (("framed",framed),("signed-all",signed_all)):
+                result,receipt=self.compile(root/label,request,source)
+                self.assertEqual(result.returncode,0,result.stderr)
+                self.assertEqual(set(receipt["function_rejections"]),set(names),label)
 
     def test_stock_compile_assertions_and_exact_outputs(self):
         with tempfile.TemporaryDirectory(prefix="stock-compare-test-") as temp:

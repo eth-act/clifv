@@ -85,8 +85,8 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
     | .ok c => stock := some c
   let some alloc ← Allocator.ofName? o.regalloc
     | do IO.eprintln s!"lean-backend: unknown allocator {o.regalloc}"; return 2
-  let pf := Clif.parseFile src
-  let lg := Opt.Legalize128.parsedFile128 pf
+  let source := Clif.parseFile src
+  let lg := Opt.Legalize128.parsedFile128 source
   let pf := match o.opt with | some c => Opt.optimizeParsedFile c lg.file | none => lg.file
   let unv128 := match o.opt with
     | some _ => lg.unverified ++ lg.accepted.map
@@ -104,10 +104,17 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
         some (p.name, "call_indirect (outside backend_correct_opt_proven: functions without indirect calls only)")
       else none
     | .error _ => none
+  -- The settings checks see each function before and after `i128` legalisation.
+  let clif (name : String) : List Clif.Function :=
+    (source.funcs ++ pf.funcs).filterMap fun p => if p.name == name then p.func.toOption else none
+  let rejected ← IO.mkRef (#[] : Array (String × String))
   let fa ← match stock with
     | none => compileFileIO alloc pf (unv128 ++ unvTry)
-    | some c => (compileFileWith (StockConfig.allocate c alloc) pf
+    | some c => (compileFileWith (StockConfig.allocate c clif rejected alloc) pf
         (unv128 ++ unvTry ++ pf.funcs.map (fun p => (p.name, "experimental stock-configured driver (outside backend_correct)"))))
+  if let (some request, some receipt) := (stock.map (·.request), o.configReceipt) then
+    IO.FS.writeFile receipt
+      ((StockConfig.receipt request none (some (← rejected.get).toList)).pretty ++ "\n")
   let fa := match stock with
     | some c => if c.unwind then fa else { fa with unwind := [] }
     | none => fa

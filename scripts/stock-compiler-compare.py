@@ -23,7 +23,8 @@ SPEC = importlib.util.spec_from_file_location("prejit", Path(__file__).with_name
 PREJIT = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(PREJIT)
 ROOT, PIN, TARGET = PREJIT.ROOT, PREJIT.PIN, PREJIT.TARGET
-SUITE = ROOT / "third_party/wasmtime/cranelift/filetests/filetests"
+# Resolved: agent worktrees link third_party/wasmtime (scripts/agent-worktree.sh).
+SUITE = (ROOT / "third_party/wasmtime/cranelift/filetests/filetests").resolve()
 write, command, comparison = PREJIT.write, PREJIT.command, PREJIT.comparison
 
 ELF_RELOC_TYPES = {"Arm64Call":283,"Aarch64AdrPrelPgHi21":275,"Aarch64AddAbsLo12Nc":277,
@@ -47,6 +48,14 @@ def verify_receipt(request, receipt, source):
     if not receipt.get("configuration_accepted"):
         return receipt.get("error") or "unsupported stock configuration"
     return None
+
+
+def function_rejections(receipt):
+    """Functions that lean-backend rejected for a setting, written after compilation."""
+    rejections = receipt.get("function_rejections")
+    if not isinstance(rejections, dict) or not all(isinstance(v, str) for v in rejections.values()):
+        return None
+    return rejections
 
 
 def artifacts(directory):
@@ -148,8 +157,11 @@ def compile_lean(variant, source, dest, env):
         "--dump", lean / "dump", "--traps", lean / "traps.json"], dest, "lean", env)
     receipt = json.loads(receipt_path.read_text()) if receipt_path.exists() else {}
     error = verify_receipt(request, receipt, input_path.read_bytes())
+    rejections = function_rejections(receipt)
+    # A finished compilation without the per-function list is a harness failure, not a gap.
     return lean, {"command":run,"request":request,"receipt":receipt,"contract_error":error,
-                  "contract_verified":error is None and run["exit"] == 0}
+                  "function_rejections":rejections or {},
+                  "contract_verified":error is None and run["exit"] == 0 and rejections is not None}
 
 
 def one(path, out, env, binary, repeat):
@@ -234,6 +246,9 @@ def one(path, out, env, binary, repeat):
                     r = {"name":name,"status":"unsupported_configuration","reason":contract["contract_error"]}
                 elif not contract["contract_verified"]:
                     r = {"name":name,"status":"lean_compilation_failed","reason":contract["command"]["exit"]}
+                elif name.removeprefix("%") in contract["function_rejections"]:
+                    r = {"name":name,"status":"unsupported_configuration",
+                         "reason":contract["function_rejections"][name.removeprefix("%")]}
                 else:
                     r = compare_function(name, metas[name], lean, True, v["reference_repeat_verified"])
             v["functions_compared"].append(r)
