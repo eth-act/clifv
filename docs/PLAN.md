@@ -21,7 +21,7 @@ The FV compiler is all-Lean and proven end to end, from in-subset CLIF to AArch6
 | M7 per-function theorem `E2E.backend_correct_final` | proven. Covers `sret`, `try_call` (normal returns; unwinding trusted), indirect calls and `func_addr`, atomics/`bmask`/`fence` (single-core Arm model), TLS (trusted TLSDESC hook), and stack-passed parameters/arguments. lean-e2e-check: 1148 functions in scope, 0 rejected |
 | i128 | `Opt.Legalize128` (CLIF → CLIF) validated by `Opt.Legal.check`. `E2E.backend_correct_legal`, and `E2E.backend_correct_legal_direct` without the validator premise (checker completeness, `check_complete`) |
 | Mid-end | `E2E.backend_correct_opt_proven` for the proven-rules configuration: 1012 `simplify` and 19 `simplify_skeleton` rules proven. Proven-only corpus 4668 → 2289 instructions (all rules: 2287) |
-| Validator completeness | `prepare` proven correct outright (`prepCheck_complete`, `prepare_correct`). `lowerCheck` proven complete on `Dominated`/`LowerScope` input (`lowerCheck_complete`, `E2E.Compiled.of_lower`: no `lowerCheck`/`prepCheck` premise; TO-PROVE V1/V2 done) |
+| Validator completeness | `prepare` proven correct outright (`prepCheck_complete`, `prepare_correct`). `lowerCheck` proven complete on `Dominated`/`LowerScope` input (`lowerCheck_complete`, `E2E.Compiled.of_lower`: no `lowerCheck`/`prepCheck` premise; TO-PROVE V1/V2 done). `formsCoveredB` proven complete on `LowerScope` input (`formsCovered_complete`, `E2E.backend_correct_final_of_lower`: no `FormsCovered` premise; TO-PROVE V3 done) |
 | Non-vacuity | every top-level theorem has a witness that its contract premises can hold (`FV/E2E/NonVacuity.lean`, `NonVacuityLink.lean`). Building the witnesses exposed six unsatisfiable premises, all fixed (e2e.md, "Non-vacuity") |
 | Linking (M8) | `E2E.backend_correct_program`: the linked machine code of a program of Lean-compiled functions refines the whole-program CLIF run. Program callees' contracts are discharged from their own theorems by induction on call depth; only the contracts of code outside the program (std etc.) remain |
 | Crate-level instances (M8) | `cargo fv link-proof` generates a proof per crate (`crate-proofs/`). All 9 survey crates and fv-demo (551/551) proven whole |
@@ -278,7 +278,7 @@ returns agree, traps agree, and there is no claim on stuck or out-of-fuel runs. 
 hand-written axioms.
 
 Remaining hypotheses are assumptions, not open proofs (current forms, 2026-10-04; `docs/contracts/e2e.md` has the exact statement):
-- `FormsCovered`, decided per function by `formsCoveredB` (1148/1148 in the test suites);
+- `FormsCovered`, decided per function by `formsCoveredB` (1148/1148 in the test suites); since V3 a theorem on `LowerScope` input (`formsCovered_complete`, `E2E.backend_correct_final_of_lower`: no `Compiled`/`hcov` premise, only `checkAlloc`);
 - the callee contracts: `CalleeOk F K X H vcp.CallSite` (dead stack below `sp` unspecified, required only at the compiled call sites), `CalleeTryOk … vcp.TrySite` (results only), `TlsOk` (trusted TLSDESC hook), `XCallsOk`/`XCallsIndOk`. Each has a non-vacuity witness;
 - link-time facts (`hsym`, `hslot`);
 - per-run entry conditions (`AbiEntry`, `StackAvail K`, `BodyEntry`, `ArgsIn` with stack-passed arguments, `ClifEntry`, `Rel.holds`, `TrapsExplicit`).
