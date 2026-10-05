@@ -389,6 +389,16 @@ lowers all of them (one home per vreg *number* instead of the dense numbering ma
 through the spill allocation by `RAResult.finish` ("fallback" line). With `LEAN_REGALLOC`
 pointing to a missing binary, `lean-backend` compiles every function with the fallback.
 
+(h) Large frames (V5, 2026-10-05). `corpus/clif-regress/large_frame.clif` (4500 values live at
+once, plus a `popcnt` for float-class vregs): allocator frame 35888 bytes with regalloc2, 216336
+with the spill allocation (float slots beyond 64 KiB). Before V5 `lean-backend` rejected both
+("allocator frame area of … bytes is too large"); now 4/4 runs pass and agree with
+Cranelift-native with `--regalloc regalloc2` and `spill` (780 resp. 10259 x16 address
+sequences). Filetests, both allocators: `corpus/clif` 114/114, extrt 22/22, runtests 4672 pass /
+0 fail / 0 error. `lean-backend-encode-check.sh`: 1292 functions identical, 0 differ (with the new
+forms of `large_frame`). `lean-e2e-check`: 1149 in scope; `lowerRFunc` lowers all 1149 spill
+allocations.
+
 ## Gaps
 
 - No proof yet (theorem above is the M6 target); `MInst.visitOperands`/`clobbers`,

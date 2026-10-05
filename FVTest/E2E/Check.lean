@@ -25,7 +25,7 @@ function is not rejected: it is compiled but outside the end-to-end theorem.
 It runs the checker on the spill allocation (`spillAlloc`, the fallback when `checkAlloc`
 rejects regalloc2's allocation) of every prepared VCode — the conclusion of the hypothesis
 `E2E.SpillAccepted` of `E2E.backend_correct_final_alloc` — and reports how many are accepted (a
-rejection fails the run) and how many `lowerRFunc` lowers (its 32 KiB frame limit, V5); and
+rejection fails the run) and how many `lowerRFunc` lowers (it rejects only on `ctlCheck`, V5); and
 `Spill.killFreeB` on every prepared VCode (the conclusion of the hypothesis `E2E.SpillKillFree`,
 which gives `E2E.SpillAvailable`; a rejection fails the run).
 
@@ -271,7 +271,7 @@ def main (args : List String) : IO UInt32 := do
   IO.println s!"formsCoveredB: {cov} covered, {uncov} not covered"
   for (k, n) in forms.toList.mergeSort (fun a b => a.2 ≥ b.2) do
     IO.println s!"  uncovered form {k}: {n} instructions"
-  IO.println s!"spill fallback (SpillAccepted): checkAlloc accepts {spillOk}, rejects {spillBad}; lowerRFunc lowers {spillLow}, rejects {spillBig} (allocator frame ≥ 32 KiB or ctlCheck)"
+  IO.println s!"spill fallback (SpillAccepted): checkAlloc accepts {spillOk}, rejects {spillBad}; lowerRFunc lowers {spillLow}, rejects {spillBig} (ctlCheck)"
   IO.println s!"killFreeB (SpillKillFree, gives SpillAvailable): {kfOk} accepted ({kfKilled} with killed vregs: scratch or terminator defs), {kfBad} rejected"
   IO.println s!"time (ms): lowerFunction {tLower}, lowerCheck {tCheck}, prepare {tPrep}, prepCheck {tPCheck}, spill fallback {tSpill}"
   return if bad == 0 && pbad == 0 && spillBad == 0 && kfBad == 0 then 0 else 1
