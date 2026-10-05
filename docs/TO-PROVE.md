@@ -81,7 +81,7 @@ Mid-end note: the mid-end is already certificate-free in the sense of §1.2, so 
 Each WP lists: **Now**, **Deliver**, **Depends**, **Size** (from the cited feasibility notes; `[est]` = the
 author's estimate, not measured), **Risk**.
 
-### V1. `lowerCheck` completeness — **done** (agent/lower-complete)
+### V1. `lowerCheck` completeness — **done** (`6db15bd`, #4)
 
 - **Done:** `lowerCheck_complete : Dominated f → LowerScope f → lowerFunction f = .ok vc → lowerCheck f vc = true`
   (`FV/Backend/Proof/LowerComplete.lean`), `E2E.Compiled.of_lower` (`FV/E2E/LowerDirect.lean`);
@@ -89,12 +89,9 @@ author's estimate, not measured), **Risk**.
   to a fuel-bounded worklist and made `lowerFunction`'s alias resolution class-preserving (identical output).
   Details: `docs/contracts/e2e.md` "Validator completeness".
 
-- **Claimed (2026-10-05):** in progress, https://github.com/eth-act/clifv/issues/4, branch `agent/lower-complete`.
-- **Now:** `lowerCheck f vc = true` is `Compiled.lowerOk`. Not attempted; feasibility note in
-  `docs/DEFERRED.md` "Completeness of the lowering validator `lowerCheck`", estimate 6–10k lines.
-- **Deliver:** `lowerCheck_complete : Dominated f → InScope f → lowerFunction f = .ok vc → lowerCheck f vc = true`,
-  where `Dominated` (every use dominated by its definition) is a decidable input condition joining
-  `InScope`. Then `Compiled.of_lower…` without the `lowerCheck` premise, like `Compiled.of_prepDomain`.
+- **Remaining from V1:** `Dominated` and `LowerScope` should join `InScope` (L1/L2a); not proven to follow
+  from Cranelift's verifier rules. The compiler still runs `lowerCheck` as a runtime double-check.
+- **Original plan (kept for reference):**
 - **Sub-packages (can run in parallel after V1a):**
   - **V1a.** Rewrite `inFix` (the must-availability worklist, `partial` today) with fuel, as `reachable`/`rpo` are.
     No behaviour change: check the filetests and `lean-e2e-check` counts. Small.
@@ -107,11 +104,9 @@ author's estimate, not measured), **Risk**.
   - **V1e.** Alias chase: `resolve` (fuel-bounded array chase) agrees with `gnTable`/`chase` (acyclic alias
     chains). 0.5–1k lines. Plus the remaining conjuncts (`ctxOk`, `brIdxOk`, flags, `callsStackOkB`,
     `entryOkB`): 0.5k lines.
-- **Risk:** V1b and V1c (DEFERRED says so).
 
-### V2. `PrepDomain` of the lowering output — **done** (agent/lower-complete: `prepDomain_of_lower`)
+### V2. `PrepDomain` of the lowering output — **done** (`6db15bd`, #4: `prepDomain_of_lower`)
 
-- **Claimed (2026-10-05):** together with V1, https://github.com/eth-act/clifv/issues/4.
 - **Now:** `prepCheck_complete` needs `PrepDomain vc`; `prepDomainB` holds on all 1067 corpus/runtest
   functions, but nobody proved `lowerFunction` always produces it.
 - **Deliver:** `lowerFunction f = .ok vc → PrepDomain vc` (non-empty, labels = block indices, branch
@@ -341,7 +336,7 @@ label**; list the free ones with
 
 | WP | Issue | Status |
 | --- | --- | --- |
-| V1+V2 | [#4](https://github.com/eth-act/clifv/issues/4) `lowerCheck` completeness (+ V2, `PrepDomain` of the lowering output) | claimed (`agent/lower-complete`) |
+| V1+V2 | [#4](https://github.com/eth-act/clifv/issues/4) `lowerCheck` completeness (+ V2, `PrepDomain` of the lowering output) | **done** (`6db15bd`) |
 | V3 | [#5](https://github.com/eth-act/clifv/issues/5) Form coverage (`formsCoveredB`) | open |
 | V4 | [#6](https://github.com/eth-act/clifv/issues/6) Register allocation without trusting regalloc2 | open |
 | V5 | [#7](https://github.com/eth-act/clifv/issues/7) Frame and control-lowering rejections (totality) | open |
