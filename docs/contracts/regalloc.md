@@ -173,11 +173,12 @@ It assumes the explicit hypothesis `SpillAccepted` (`checkAlloc vcp (spillAlloc 
 for every `vcp` that `lowerFunction` and `prepare` produce from `Dominated`/`LowerScope` input),
 which is not proven yet (`docs/TO-PROVE.md` V4). `lean-e2e-check` decides its conclusion on
 every in-scope function: **1148 of 1148 accepted**; `lowerRFunc` lowers 1148 of 1148 spill
-allocations (the 32 KiB allocator-frame limit, V5, does not bite since the dense home numbering;
-with one home per vreg number, `Corpus__chacha20Block` needed 37840 bytes). The limit can still
-reject the spill allocation of a function with more than about 4000 vregs (the int and float
-spill areas both have `spillSlots` entries: 8 bytes each, plus 16 each when a float value is
-homed, so about 1300 vregs then): such a function then fails to compile (V5).
+allocations. There is no frame-size limit (V5, 2026-10-05): a slot at offset 32 KiB or more is
+addressed through x16 (`slotStoreAt`/`slotLoadAt`: `movz`/`movk x16, #off`, `add x16, sp, x16,
+sxtx`, then `str`/`ldr` at `[x16]`; below 32 KiB the single `[sp, #off]` access as before). x16
+is in neither regalloc2's `MachineEnv` nor `spillPool`, and outside the world of the proof
+(`Masked`), so a move may clobber it. `corpus/clif-regress/large_frame.clif` (4500 values live at
+once) exercises it with both allocators.
 
 Filetests with the fallback forced (`scripts/lean-backend-filetests.sh --regalloc spill`): see
 "Results" (g).

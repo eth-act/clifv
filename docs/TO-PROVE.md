@@ -40,7 +40,7 @@ Every check the compiler runs today falls in one of five kinds. The goal admits 
 | **Proven pass:** the pass is proven correct directly | encoder (`Insn.decode_encode`), `prepare` on `PrepDomain` (`Prep.prepare_correct`) | yes |
 | **Internal check with a proven fallback:** the compiler runs a check and on rejection uses a path that's proven directly; the theorem has no premise about the check | mid-end: every validator failure keeps the last accepted function (`FV/Opt/Optimize.lean:150-156`), so `optimize_sim_proven` has no checker premise | yes; rejections cost only code quality |
 | **Validator as a premise:** the theorem assumes the check returned `true` for this program | `lowerCheck`, `prepCheck`, `checkAlloc`, `formsCoveredB` (`Compiled`/`FormsCovered`, `FV/E2E/Statement.lean:144-153`, `FV/E2E/Final.lean:162`); `okB`, `BinOk`, `goodN` | **no**: needs a completeness proof (the check never fails on what the compiler produces for in-scope input), a direct proof of the pass, or a fallback |
-| **Internal rejection without fallback:** compilation fails | branch out of range (`FV/Backend/Encode.lean:315-327`), allocator frame ≥ 32 KiB (`FV/Backend/Regalloc.lean:325`), `ctlCheck` | allowed for correctness, but **violates totality**: each must be removed, proven unreachable, or moved into `InScope` as a condition on the input |
+| **Internal rejection without fallback:** compilation fails | branch out of range (`FV/Backend/Encode.lean:315-327`), `ctlCheck` (the allocator-frame limit is gone, V5) | allowed for correctness, but **violates totality**: each must be removed, proven unreachable, or moved into `InScope` as a condition on the input |
 | **Per-program proof via `native_decide`** | `crate-proofs/Crates/*.lean`: `link_ok`, `bin_ok`, `stack_ok` (`FVTest/E2E/LinkCheckMain.lean:307-432`) | **no**: disappears once linking, binary and stack checks are proven complete or replaced (WPs L1–L4) |
 
 An external program (regalloc2, rust-lld) may stay in the loop only as an oracle whose result is checked
@@ -66,7 +66,7 @@ and, on rejection, replaced by a directly proven Lean path (kind 2). Correctness
 | form coverage | Lean (ISLE data) | `formsCoveredB`, complete on `LowerScope` (`formsCovered_complete`) | validator, complete on decidable input conditions | V3 done |
 | `prepare` | Lean | `prepCheck`, complete on `PrepDomain`, which `lowerFunction` always produces (`prepDomain_of_lower`) | validator, complete | V2 done |
 | register allocation | **external Rust** (regalloc2 0.15.2 via `lean-regalloc`), Lean fallback `spillAlloc` | `checkAlloc` (`FV/Backend/RegallocCheck.lean:423-441`) on regalloc2's output; on rejection `spillAlloc` (`allocResult`, `E2E.backend_correct_final_alloc`), accepted by `checkAlloc` for every in-scope function (`E2E.spillAccepted`, proven) | fallback; its acceptance proven | V4 (a) done; (b) open |
-| frame, control lowering | Lean `lowerRFunc` | internal rejections (frame ≥ 32 KiB, `ctlCheck`) | rejection | V5 |
+| frame, control lowering | Lean `lowerRFunc` | internal rejection (`ctlCheck`; no frame-size limit since V5) | rejection | V5 |
 | emission, layout | Lean | branch range check, no relaxation | rejection | V6 |
 | encoder | Lean | `Insn.decode_encode` (`FV/Backend/Proof/Encode.lean:57-60`) | proven | — |
 | linking (program level) | `cargo fv` object merge + **rust-lld** | **`okB`** (`FV/E2E/LinkCheck.lean:716-777`) per crate by `native_decide` | **validator premise + oracle + per-program proof** | L1, L2 |
@@ -143,7 +143,7 @@ author's estimate, not measured), **Risk**.
   would need a second VCode→`AFunc` simulation with its own frame and call conventions, and which rejects
   the LL/SC loops, `try_call` and `tls_value`).
 - **Evidence:** `lean-e2e-check`: `checkAlloc` accepts the spill allocation of 1148/1148 in-scope
-  functions; `lowerRFunc` lowers 1148/1148 (dense home numbering keeps the allocator frame under 32 KiB).
+  functions; `lowerRFunc` lowers 1148/1148 (since V5 for any frame size).
   Filetests with the fallback forced: `docs/contracts/regalloc.md` "Results" (g).
 - **(a) done: `SpillAccepted` proven** (`E2E.spillAccepted`, `FV/E2E/SpillKillFree.lean`, 2026-10-05;
   the first statement, PR #54, was false: `E2E.not_ctlSpillHyp`, two `sret` parameters; the proven one
@@ -257,12 +257,20 @@ author's estimate, not measured), **Risk**.
 
 ### V5. Frame and control-lowering rejections (totality)
 
-- **Now:** `lowerRFunc` rejects allocator frames ≥ 32 KiB (no SIMD&FP register-offset form in the model)
-  and runs `ctlCheck` (`FV/Backend/Regalloc.lean:284-339`).
+- **Large frames: done (2026-10-05).** `lowerRFunc` no longer rejects allocator frames of 32 KiB or
+  more. A slot at offset `off ≥ 32768` is addressed through x16 (`slotStoreAt`/`slotLoadAt`,
+  `FV/Backend/Regalloc.lean`): `movz`/`movk x16` (the chunks of `loadConst64`), `add x16, sp, x16, sxtx`,
+  then `str`/`ldr` (x or q) at `[x16]` — every instruction one line, all forms already in the Arm model
+  (no model change; x16 is not allocatable and outside the world). Below 32 KiB the code is unchanged
+  (encode-check 0 differ). Proofs: `FV/Backend/Proof/RegallocSlotsFar.lean` (`execAll_spAddrX16`,
+  `exec_*_x16`, `exec_slotStoreAt_*`/`exec_slotLoadAt_*`), `RegallocMoves.lean` (`lower_move` for any
+  offset, `MoveOk.pcx`), `RegLevelMove.lean` (`OneLine` of the new forms); `lowerRFunc_ok` lost its
+  `size < 32768` conjunct. No frame-size condition remains (offsets are taken mod 2^64, and a frame that
+  runs fits below `sp` by `StackAvail`). Test: `corpus/clif-regress/large_frame.clif` (4500 values live
+  at once).
+- **Now:** `lowerRFunc` runs `ctlCheck` (`FV/Backend/Regalloc.lean`).
 - **Deliver:** prove `ctlCheck` passes on `prepare` output (its shapes hold by construction, per the comment
-  at `Regalloc.lean:299-308`); remove the frame limit by materialising large offsets (add the needed
-  address forms to the model and their rules/proofs), or make it an `InScope` condition computable from
-  the input. **Size:** small (`ctlCheck`) + medium (large frames) `[est]`.
+  above `ctlCheck`). **Size:** small `[est]`.
 
 ### V6. Branch range (totality)
 

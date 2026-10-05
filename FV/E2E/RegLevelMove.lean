@@ -281,7 +281,7 @@ theorem RL.frameOkF {R : RL} (hR : R.Wf) :
     FrameOk R.fr (Live R.rf) (R.rf.floatMove = true) R.spB
       (frameF R.fr.intBase R.fr.size R.af R.s0) := by
   obtain ⟨⟨hfs, -⟩, hfr, -⟩ := lowerRFunc_ok hR.alloc
-  have hlt' := (spv R.s0).isLt
+  have hlt' : (spv R.s0).toNat < 18446744073709551616 := (spv R.s0).isLt
   have hle : R.fr.size ≤ R.fr.total := compute_size_le_total R.vc R.rf
   have hst := hR.stack.frame.1
   have hst' : R.fr.total + 16 ≤ (spv R.s0).toNat := by rw [hfs] at hst; exact hst
@@ -299,6 +299,7 @@ theorem RL.frameOkF {R : RL} (hR : R.Wf) :
     refine frameOk_compute R.vc R.rf R.spB _ (by simp only [RL.fr] at hsp hle ⊢; omega) ?_
     intro o hlo hhi
     simp only [frameF, ← RL.spB.eq_def]
+    have h1 : o < R.fr.total := Nat.lt_of_lt_of_le hhi (compute_size_le_total R.vc R.rf)
     have : (R.spB + BitVec.ofNat 64 o - R.spB).toNat = o := by
       rw [BitVec.add_comm, BitVec.add_sub_cancel]; simp; omega
     simp only [RL.spB] at this ⊢
@@ -471,7 +472,7 @@ theorem itemCode_move (fr : RAFrame) (vb : VBlock) (src dst : Loc) :
 theorem fplr_outside {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) :
     ∀ k < 16, ∀ o, o < R.fr.size → spv R.s0 - 16#64 + BitVec.ofNat 64 k ≠ R.spB + BitVec.ofNat 64 o := by
   obtain ⟨⟨hfs, -⟩, -⟩ := lowerRFunc_ok hR.alloc
-  have hlt' := (spv R.s0).isLt
+  have hlt' : (spv R.s0).toNat < 18446744073709551616 := (spv R.s0).isLt
   have hle : R.fr.size ≤ R.fr.total := compute_size_le_total R.vc R.rf
   have hst := hR.stack.frame.1
   have hst' : R.fr.total + 16 ≤ (spv R.s0).toNat := by rw [hfs] at hst; exact hst
@@ -496,7 +497,7 @@ theorem fplr_outside {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) :
 theorem code_outside {R : RL} (hR : R.Wf) {a : BitVec 64} (ha : CodeAddr R.s0 a) :
     ∀ o, o < R.fr.size → a ≠ R.spB + BitVec.ofNat 64 o := by
   obtain ⟨⟨hfs, -⟩, hfr, -⟩ := lowerRFunc_ok hR.alloc
-  have hlt' := (spv R.s0).isLt
+  have hlt' : (spv R.s0).toNat < 18446744073709551616 := (spv R.s0).isLt
   have hle : R.fr.size ≤ R.fr.total := compute_size_le_total R.vc R.rf
   have hst := hR.stack.frame.1
   have hap := hR.stack.frame.2 a ha
