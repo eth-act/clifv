@@ -12,10 +12,9 @@ reads a vreg some instruction kills without storing it: the scratch defs past
 is stored by the edge block's entry stores) — with the sets `Spill.killD` and the CFG facts of
 step 3 (`Spill.edgesHyp_of`).
 
-`SpillKillFree` is open (an explicit hypothesis, not an axiom): it is the SSA discipline of the
-ISLE lowering (a statement's lowering reads only vregs of available values and its own earlier
-kept defs, and returns no scratch vreg). `lean-e2e-check` decides `killFreeB` on every in-scope
-function of the corpus and the runtests ("killFreeB" line).
+`SpillKillFree` is proven: `E2E.spillKillFree` (`FV/E2E/SpillKillFree.lean`). `lean-e2e-check`
+still decides `killFreeB` on every in-scope function of the corpus and the runtests ("killFreeB"
+line) as a double-check.
 
 `spillKillFree_witness`: on a function with an LL/SC loop (`rmwWitness`, so `killedOf` is
 non-empty and `killD` excludes the loop's scratch vregs outside the entry block), the input
@@ -26,9 +25,9 @@ namespace E2E
 
 open Backend Backend.Proof Backend.Proof.Driver
 
-/-- **The syntactic availability facts of the pipeline's output** (V4 step 4; open, an explicit
-hypothesis, not an axiom): for every prepared VCode `vcp` the pipeline produces from in-scope
-input, `Spill.killFreeB vcp` holds. -/
+/-- **The syntactic availability facts of the pipeline's output** (V4 step 4; proven:
+`E2E.spillKillFree`): for every prepared VCode `vcp` the pipeline produces from in-scope input,
+`Spill.killFreeB vcp` holds. -/
 def SpillKillFree : Prop :=
   ∀ (p : Clif.Program) (f : Clif.Function) (vc vcp : VCode), InSubset p f → Spill.ArityOk f →
     Dominated f → LowerScope f → lowerFunction f = .ok vc → Backend.prepare vc = .ok vcp →
