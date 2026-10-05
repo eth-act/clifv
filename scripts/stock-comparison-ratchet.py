@@ -10,21 +10,21 @@ import argparse
 import json
 import os
 from pathlib import Path
-import re
 import subprocess
 
 LABEL = "stock-comparison-accept-losses"
-PREFIX = "stock-comparison-summary-"
+MEMBER = "ci-comparison.ci-summary.json"
 SHOWN = 50
 
 
 def newest_summary(directory):
-    """The summary of the newest attempt among downloaded `stock-comparison-summary-N` artifacts."""
-    found = [(int(d.name.removeprefix(PREFIX)), d / "ci-comparison.ci-summary.json")
-             for d in directory.iterdir() if re.fullmatch(re.escape(PREFIX) + r"[1-9][0-9]*", d.name)]
+    """The newest attempt's summary among the downloaded `stock-comparison-summary-N` artifacts.
+    download-artifact extracts a single match into the directory itself and several into
+    subdirectories, so search both."""
+    found = [json.loads(path.read_text()) for path in sorted(directory.rglob(MEMBER))]
     if not found:
         raise SystemExit("no summary artifact")
-    return json.loads(max(found)[1].read_text())
+    return max(found, key=lambda summary: summary.get("run_attempt", 0))
 
 
 def pr_labels(repo, number):

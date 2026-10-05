@@ -50,11 +50,17 @@ class CheckTests(unittest.TestCase):
 
     def test_newest_attempt_is_used(self):
         with tempfile.TemporaryDirectory() as temp:
-            for attempt, run_id in ((1, 1), (2, 2), (10, 10)):
-                d = Path(temp) / f"{RATCHET.PREFIX}{attempt}"; d.mkdir()
-                (d / "ci-comparison.ci-summary.json").write_text(json.dumps({"run_id": run_id}))
+            for attempt in (1, 2, 10):
+                d = Path(temp) / f"stock-comparison-summary-{attempt}"; d.mkdir()
+                (d / RATCHET.MEMBER).write_text(json.dumps({"run_attempt": attempt}))
             (Path(temp) / "unrelated").mkdir()
-            self.assertEqual(RATCHET.newest_summary(Path(temp))["run_id"], 10)
+            self.assertEqual(RATCHET.newest_summary(Path(temp))["run_attempt"], 10)
+
+    def test_single_artifact_extracted_in_place(self):
+        with tempfile.TemporaryDirectory() as temp:
+            (Path(temp) / RATCHET.MEMBER).write_text(json.dumps({"run_attempt": 1}))
+            self.assertEqual(RATCHET.newest_summary(Path(temp))["run_attempt"], 1)
+            with self.assertRaises(SystemExit): RATCHET.newest_summary(Path(temp) / "missing")
 
 
 if __name__ == "__main__":
