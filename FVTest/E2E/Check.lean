@@ -23,11 +23,13 @@ uncovered instruction forms (constructor and operation) with their counts. An un
 function is not rejected: it is compiled but outside the end-to-end theorem.
 
 It runs the checker on the spill allocation (`spillAlloc`, the fallback when `checkAlloc`
-rejects regalloc2's allocation) of every prepared VCode — the conclusion of the hypothesis
-`E2E.SpillAccepted` of `E2E.backend_correct_final_alloc` — and reports how many are accepted (a
-rejection fails the run) and how many `lowerRFunc` lowers (its 32 KiB frame limit, V5); and
-`Spill.killFreeB` on every prepared VCode (the conclusion of the hypothesis `E2E.SpillKillFree`,
-which gives `E2E.SpillAvailable`; a rejection fails the run).
+rejects regalloc2's allocation or `lowerRFunc` cannot lower it) of every prepared VCode — the
+conclusion of the hypothesis `E2E.SpillAccepted` of `E2E.backend_correct_final_alloc` — and
+reports how many are accepted (a rejection fails the run), how many meet the frame premise
+`E2E.SpillFrameOk` of `E2E.lowerRFunc_spillAlloc` (allocator frame below 32 KiB) and how many
+`lowerRFunc` lowers (a rejection of one meeting `SpillFrameOk` contradicts that theorem and fails
+the run); and `Spill.killFreeB` on every prepared VCode (the conclusion of the hypothesis
+`E2E.SpillKillFree`, which gives `E2E.SpillAvailable`; a rejection fails the run).
 
 It reports how many in-scope functions satisfy the input conditions of `lowerCheck_complete`
 (`dominatedB`, `lowerScopeB`: on these the lowering validator is a theorem, `Compiled.of_lower`),
@@ -172,6 +174,8 @@ def main (args : List String) : IO UInt32 := do
   let mut kfKilled := 0
   let mut spillLow := 0
   let mut spillBig := 0
+  let mut frameOk := 0
+  let mut frameBad := 0
   let mut tSpill := 0
   let mut arity := 0
   for file in files do
@@ -237,10 +241,13 @@ def main (args : List String) : IO UInt32 := do
         | .error e =>
           spillBad := spillBad + 1
           IO.println s!"{file}: %{f.name}: checkAlloc rejects the spill allocation: {e}"
+        let small := decide ((RAFrame.compute vcp rf).size < 32768)
+        if small then frameOk := frameOk + 1
         match ← IO.lazyPure (fun _ => lowerRFunc vcp rf) with
         | .ok _ => spillLow := spillLow + 1
         | .error e =>
           spillBig := spillBig + 1
+          if small then frameBad := frameBad + 1
           IO.println s!"{file}: %{f.name}: lowerRFunc rejects the spill allocation: {e}"
         -- the syntactic availability facts (`Spill.killFreeB`, `E2E.SpillKillFree`)
         if !(Backend.Proof.Spill.killedOf vcp).isEmpty then kfKilled := kfKilled + 1
@@ -271,7 +278,8 @@ def main (args : List String) : IO UInt32 := do
   IO.println s!"formsCoveredB: {cov} covered, {uncov} not covered"
   for (k, n) in forms.toList.mergeSort (fun a b => a.2 ≥ b.2) do
     IO.println s!"  uncovered form {k}: {n} instructions"
-  IO.println s!"spill fallback (SpillAccepted): checkAlloc accepts {spillOk}, rejects {spillBad}; lowerRFunc lowers {spillLow}, rejects {spillBig} (allocator frame ≥ 32 KiB or ctlCheck)"
+  IO.println s!"spill fallback (SpillAccepted): checkAlloc accepts {spillOk}, rejects {spillBad}"
+  IO.println s!"spill lowering (lowerRFunc_spillAlloc): SpillFrameOk {frameOk} of {ok + bad}; lowerRFunc lowers {spillLow}, rejects {spillBig} ({frameBad} with SpillFrameOk)"
   IO.println s!"killFreeB (SpillKillFree, gives SpillAvailable): {kfOk} accepted ({kfKilled} with killed vregs: scratch or terminator defs), {kfBad} rejected"
   IO.println s!"time (ms): lowerFunction {tLower}, lowerCheck {tCheck}, prepare {tPrep}, prepCheck {tPCheck}, spill fallback {tSpill}"
-  return if bad == 0 && pbad == 0 && spillBad == 0 && kfBad == 0 then 0 else 1
+  return if bad == 0 && pbad == 0 && spillBad == 0 && kfBad == 0 && frameBad == 0 then 0 else 1

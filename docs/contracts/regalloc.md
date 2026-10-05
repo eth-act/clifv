@@ -140,13 +140,15 @@ an empty frame that never addresses `fp` has no prologue/epilogue (frameless). O
 
 ## Fallback: the spill allocator (`spillAlloc`, V4)
 
-`allocResult vcp ra` (`FV/Backend/SpillAlloc.lean`) is the allocation the backend lowers:
-regalloc2's answer `ra` if `checkAlloc` accepts it, else `spillAlloc vcp`. The compiler's
-`lowerAlloc` (used by `allocateRegalloc2`) computes `lowerRFunc vcp (allocResult vcp ra)`
-(`lowerAlloc_eq`); it also runs `checkAlloc` on the spill allocation as a runtime double-check
-(`lowerSpill`: a rejection would be a compile error; it never happens on the test suites).
-`lean-backend --regalloc spill` (and `scripts/lean-backend-filetests.sh --regalloc spill`) uses
-the spill allocation for every function (`allocateSpill`).
+`allocResult vcp ra` (`FV/Backend/Regalloc.lean`) is the allocation the backend lowers:
+regalloc2's answer `ra` if `checkAlloc` accepts it and `lowerRFunc` lowers it, else
+`spillAlloc vcp` (V5: a `lowerRFunc` rejection of regalloc2's allocation — e.g. its frame — is no
+longer a compile error). The compiler's `lowerAlloc` (used by `allocateRegalloc2`) computes
+`lowerRFunc vcp (allocResult vcp ra)` without lowering regalloc2's allocation twice
+(`lowerAlloc_eq_lowerRFunc`). The spill allocation is lowered without a runtime `checkAlloc`
+double-check (its acceptance is proven, `E2E.spillAccepted`; `lean-e2e-check` still decides
+it). `lean-backend --regalloc spill` (and `scripts/lean-backend-filetests.sh --regalloc spill`)
+uses the spill allocation for every function (`allocateSpill`).
 
 `spillAlloc` is a total Lean function producing an ordinary `RFunc`, so the checker, its
 soundness proof and the whole downstream proof apply unchanged:
@@ -168,16 +170,19 @@ soundness proof and the whole downstream proof apply unchanged:
   parallel copy).
 
 Proof status: `E2E.backend_correct_final_alloc` (`FV/E2E/AllocDirect.lean`) is the final
-theorem for `rf := allocResult vcp ra`, for any answer `ra`, with no premise about `checkAlloc`.
-It assumes the explicit hypothesis `SpillAccepted` (`checkAlloc vcp (spillAlloc vcp) = .ok ()`
-for every `vcp` that `lowerFunction` and `prepare` produce from `Dominated`/`LowerScope` input),
-which is not proven yet (`docs/TO-PROVE.md` V4). `lean-e2e-check` decides its conclusion on
-every in-scope function: **1148 of 1148 accepted**; `lowerRFunc` lowers 1148 of 1148 spill
-allocations (the 32 KiB allocator-frame limit, V5, does not bite since the dense home numbering;
-with one home per vreg number, `Corpus__chacha20Block` needed 37840 bytes). The limit can still
-reject the spill allocation of a function with more than about 4000 vregs (the int and float
-spill areas both have `spillSlots` entries: 8 bytes each, plus 16 each when a float value is
-homed, so about 1300 vregs then): such a function then fails to compile (V5).
+theorem for `rf := allocResult vcp ra`, for any answer `ra`, with no premise about `checkAlloc`;
+its hypothesis `SpillAccepted` is proven (`E2E.spillAccepted`,
+`E2E.backend_correct_final_alloc_proven`). `lowerRFunc` provably lowers the spill allocation of
+every in-scope function whose allocator area is below 32 KiB (`E2E.lowerRFunc_spillAlloc`,
+premise `SpillFrameOk`), so `lowerAlloc` succeeds for every answer `ra`
+(`E2E.lowerAlloc_total`, `E2E.backend_correct_final_total`, V5). `lean-e2e-check` decides
+`checkAlloc`'s acceptance on every in-scope function (**1148 of 1148 accepted**) and
+`SpillFrameOk` and the lowering ("spill lowering" line; the dense home numbering keeps the
+corpus far below the limit; with one home per vreg number, `Corpus__chacha20Block` needed 37840
+bytes). The 32 KiB limit can still reject the spill allocation of a function with more than
+about 4000 vregs (the int and float spill areas both have `spillSlots` entries: 8 bytes each,
+plus 16 each when a float value is homed, so about 1300 vregs then): such a function then
+fails to compile; lifting the limit is the open part of V5.
 
 Filetests with the fallback forced (`scripts/lean-backend-filetests.sh --regalloc spill`): see
 "Results" (g).
@@ -392,10 +397,8 @@ pointing to a missing binary, `lean-backend` compiles every function with the fa
 
 - No proof yet (theorem above is the M6 target); `MInst.visitOperands`/`clobbers`,
   `prepare`, the frame layout and move lowering are trusted.
-- The spill fallback's acceptance by `checkAlloc` (`E2E.SpillAccepted`) is a hypothesis of
-  `E2E.backend_correct_final_alloc`, decided on the test suites, not proven (`docs/TO-PROVE.md` V4).
-  The fallback saves all 18 callee-saved registers and keeps nothing in registers across
-  instructions (code quality only matters when regalloc2 is rejected or absent).
+- The spill fallback saves all 18 callee-saved registers and keeps nothing in registers across
+  instructions (code quality only matters when regalloc2 is rejected, unlowerable or absent).
 - Float register-to-register moves go through a stack temporary (`fmoveTmp`: store + load)
   instead of a register move instruction.
 - All 128 bits of v8–v15 are saved although only the low 64 must be.

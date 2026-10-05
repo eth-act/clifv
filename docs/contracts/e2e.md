@@ -2182,19 +2182,22 @@ witness `E2E.ctlSpillHyp_of_witness`.
 `FV/Backend/SpillAlloc.lean`, `FV/Backend/Regalloc.lean` `lowerAlloc`, `FV/E2E/AllocDirect.lean`):
 
 ```lean
-def Backend.allocResult (vc : VCode) (ra : Except String RFunc) : RFunc  -- ra if checkAlloc accepts it, else spillAlloc vc
+def Backend.allocResult (vc : VCode) (ra : Except String RFunc) : RFunc  -- ra if checkAlloc accepts it and lowerRFunc lowers it, else spillAlloc vc (V5)
+theorem Backend.lowerAlloc_eq_lowerRFunc (vcp : VCode) (ra : Except String RFunc) :
+    lowerAlloc vcp ra = lowerRFunc vcp (allocResult vcp ra)
 theorem Backend.lowerAlloc_eq (h : lowerAlloc vcp ra = .ok af) :
     lowerRFunc vcp (allocResult vcp ra) = .ok af
 ```
 
 The backend lowers `allocResult vcp ra` (`lowerAlloc`, `lowerAlloc_eq`): regalloc2's answer if
-`checkAlloc` accepts it, else the spill allocation `spillAlloc` (a total Lean function; every
-value in its own stack slot, `docs/contracts/regalloc.md` "Fallback"). A rejection or a missing
-answer of regalloc2 is no longer a compile error, and `backend_correct_final_alloc` (below) holds
-for every answer `ra` of the untrusted allocator: its correctness never depends on regalloc2. The
-compiler runs `checkAlloc` on every spill allocation it lowers as a double-check (`lowerSpill`);
-`lean-e2e-check` decides its acceptance on every in-scope function (**1148 of 1148**, "spill
-fallback" line).
+`checkAlloc` accepts it (and, since V5, `lowerRFunc` lowers it), else the spill allocation
+`spillAlloc` (a total Lean function; every value in its own stack slot,
+`docs/contracts/regalloc.md` "Fallback"). A rejection or a missing answer of regalloc2 is no
+longer a compile error, and `backend_correct_final_alloc` (below) holds for every answer `ra` of
+the untrusted allocator: its correctness never depends on regalloc2. `lean-e2e-check` decides
+`checkAlloc`'s acceptance of the spill allocation on every in-scope function (**1148 of 1148**,
+"spill fallback" line; the compiler's runtime double-check `lowerSpill` was removed with V5, since
+the acceptance is proven).
 
 **V4 restated: verified in-states, `ρ₀` chosen by the register-level theorem** (2026-10-05,
 `FV/Backend/Proof/RegallocSound.lean`, `FV/Backend/Proof/SpillInvariant.lean`,
@@ -2277,6 +2280,51 @@ the alias resolution (`gn x` is `x` or a statement's result register) and the `t
 edges, `tryDefsExact`); `prepare` keeps `killFreeB` (`KillPrep.lean`). Non-vacuity:
 `E2E.backend_correct_final_alloc_proven_witness` (`backend_correct_final_alloc_witness` and
 `spillKillFree_witness`, an LL/SC loop with killed vregs).
+
+**Totality of allocation and lowering (V5)** (2026-10-05, `FV/E2E/SpillLower.lean`,
+`FV/E2E/SpillCtlCheck.lean`, `FV/Backend/Proof/AssignOk.lean`, `FV/E2E/AllocTotal.lean`):
+
+```lean
+theorem E2E.lowerRFunc_of (hsz : (RAFrame.compute vc rf).size < 32768) (hck : ctlCheck vc rf = true)
+    (hit : ∀ b vb items, vc.blocks[b]? = some vb → rf.blocks[b]? = some items →
+      ∀ it ∈ items.toList, ∃ c, itemCode (RAFrame.compute vc rf) vb it = .ok c) :
+    ∃ af, lowerRFunc vc rf = .ok af               -- the converse of lowerRFunc_ok
+theorem Backend.Proof.assign_ok_of_operands (h : i.operands = .ok ops) (hs : regs.size = ops.size) :
+    ∃ i', i.assign regs = .ok i'
+theorem E2E.ctlInsts_pipeline (hsub : InSubset p f) (hd : Dominated f) (hs : LowerScope f) (hl …) (hp …) :
+    (∀ b vb k i, vcp.blocks[b]? = some vb → vb.insts[k]? = some i → ctlInstOk b k i = true) ∧
+    ∃ vb0 ds, vcp.blocks[0]? = some vb0 ∧ vb0.insts[0]? = some (.args ds) ∧ 1 < vb0.insts.size
+theorem E2E.ctlCheck_spill (hcfg : vc.cfg = .ok (ss, ps)) (hloc : SpillLocalOk vc) (hins …) (h0 …) :
+    ctlCheck vc (spillAlloc vc) = true
+theorem E2E.lowerRFunc_spill_of (hcfg …) (hloc : SpillLocalOk vc) (hins …) (h0 …)
+    (hsz : (RAFrame.compute vc (spillAlloc vc)).size < 32768) : ∃ af, lowerRFunc vc (spillAlloc vc) = .ok af
+def E2E.SpillFrameOk (vcp : VCode) : Prop := (RAFrame.compute vcp (spillAlloc vcp)).size < 32768
+theorem E2E.lowerRFunc_spillAlloc (hsub : InSubset p f) (har : Spill.ArityOk f) (hd : Dominated f)
+    (hs : LowerScope f) (hl …) (hp …) (hsz : SpillFrameOk vcp) : ∃ af, lowerRFunc vcp (spillAlloc vcp) = .ok af
+theorem E2E.lowerAlloc_total (…same…) (ra : Except String RFunc) : ∃ af, lowerAlloc vcp ra = .ok af
+theorem E2E.backend_correct_final_total (hsub : InSubset p f) (hd : dominatedB f = true)
+    (hs : lowerScopeB f = true) (har : Spill.arityOkB f = true) (hl …) (hp …) (hsz : SpillFrameOk vcp)
+    (ra : Except String RFunc) :
+    ∃ af, lowerAlloc vcp ra = .ok af ∧ ∀ {fa fb}, emitFunc k af = .ok fa → fa.layout = .ok fb →
+      -- backend_correct_final's contract, link-time and run premises (hC … htr) with rf := allocResult vcp ra
+      ArmRefines fb base ra' (ArmStepX X H fa) s (Clif.runLoop env p fuel cs)
+```
+
+`lowerRFunc` could reject an allocation (allocator frame ≥ 32 KiB, `ctlCheck`, an operand not in
+a register, a missing instruction, `MInst.assign` or `RAFrame.moveInsts` failing), so
+`backend_correct_final_alloc_proven` took `ha : lowerRFunc vcp rf = .ok af` as a premise. Now
+`allocResult` also falls back to the spill allocation when `lowerRFunc` rejects regalloc2's, and
+the spill allocation is proven lowerable: every item is a move between a register and a register,
+a spill slot or a callee-save slot (all laid out by `RAFrame.compute`: `saveOff_spill`), or an
+instruction whose locations are `spillLocs` (registers, one per operand); `ctlCheck`'s block-0
+part holds by construction (the saves, then `Args`, which has only defs so no loads precede it,
+then no `op 0`; `EdgesOk.entry`: no edge enters block 0), and its instruction part on the
+pipeline's output (`ctlInsts_pipeline`). `backend_correct_final_total` thus has no allocation or
+lowering premise; the compile-success premises left are emission/layout (`emitFunc`, `layout`:
+branch ranges, V6) and `SpillFrameOk` (the spill allocation's allocator area below 32 KiB, which
+lifting the limit removes). `lean-e2e-check` decides `SpillFrameOk` and the spill lowering ("spill
+lowering" line; a rejection under `SpillFrameOk` fails the run). Non-vacuity:
+`E2E.backend_correct_final_total_witness`.
 
 **Validator completeness: `Opt.Legalize128` is correct without `Opt.Legal.check`** (2026-10-02,
 `FV/Opt/Proof/LegalComplete.lean`, `FV/Opt/Proof/LegalDirect.lean`, `FV/E2E/LegalDirect.lean`;

@@ -66,7 +66,7 @@ and, on rejection, replaced by a directly proven Lean path (kind 2). Correctness
 | form coverage | Lean (ISLE data) | `formsCoveredB`, complete on `LowerScope` (`formsCovered_complete`) | validator, complete on decidable input conditions | V3 done |
 | `prepare` | Lean | `prepCheck`, complete on `PrepDomain`, which `lowerFunction` always produces (`prepDomain_of_lower`) | validator, complete | V2 done |
 | register allocation | **external Rust** (regalloc2 0.15.2 via `lean-regalloc`), Lean fallback `spillAlloc` | `checkAlloc` (`FV/Backend/RegallocCheck.lean:423-441`) on regalloc2's output; on rejection `spillAlloc` (`allocResult`, `E2E.backend_correct_final_alloc`), accepted by `checkAlloc` for every in-scope function (`E2E.spillAccepted`, proven) | fallback; its acceptance proven | V4 (a) done; (b) open |
-| frame, control lowering | Lean `lowerRFunc` | internal rejections (frame ≥ 32 KiB, `ctlCheck`) | rejection | V5 |
+| frame, control lowering | Lean `lowerRFunc` | internal rejections (allocator frame ≥ 32 KiB, `ctlCheck`, operand/move shapes); a rejection of regalloc2's allocation falls back to `spillAlloc`, which `lowerRFunc` provably lowers (`E2E.lowerRFunc_spillAlloc`) | fallback; its lowering proven (frame premise `SpillFrameOk`) | V5 done (frame limit: `SpillFrameOk`) |
 | emission, layout | Lean | branch range check, no relaxation | rejection | V6 |
 | encoder | Lean | `Insn.decode_encode` (`FV/Backend/Proof/Encode.lean:57-60`) | proven | — |
 | linking (program level) | `cargo fv` object merge + **rust-lld** | **`okB`** (`FV/E2E/LinkCheck.lean:716-777`) per crate by `native_decide` | **validator premise + oracle + per-program proof** | L1, L2 |
@@ -255,14 +255,34 @@ author's estimate, not measured), **Risk**.
 - **Option (b), later:** a real allocator (linear scan) written in Lean, proven directly or with
   `checkAlloc` completeness for its output. Removes the Rust tool entirely. Large `[est]`.
 
-### V5. Frame and control-lowering rejections (totality)
+### V5. Frame and control-lowering rejections (totality) — **done** (frame premise `SpillFrameOk` until the 32 KiB limit is lifted)
 
-- **Now:** `lowerRFunc` rejects allocator frames ≥ 32 KiB (no SIMD&FP register-offset form in the model)
-  and runs `ctlCheck` (`FV/Backend/Regalloc.lean:284-339`).
-- **Deliver:** prove `ctlCheck` passes on `prepare` output (its shapes hold by construction, per the comment
-  at `Regalloc.lean:299-308`); remove the frame limit by materialising large offsets (add the needed
-  address forms to the model and their rules/proofs), or make it an `InScope` condition computable from
-  the input. **Size:** small (`ctlCheck`) + medium (large frames) `[est]`.
+- **Before:** `lowerRFunc` rejected allocator frames ≥ 32 KiB (no SIMD&FP register-offset form in the model),
+  ran `ctlCheck`, and failed on operands outside registers, a missing instruction, `MInst.assign` or
+  `RAFrame.moveInsts` failures; the final theorem took `ha : lowerRFunc vcp rf = .ok af` as a premise.
+- **Done (2026-10-05):**
+  - *Fallback composition* (`FV/Backend/Regalloc.lean`): `allocResult vcp ra` is regalloc2's allocation only
+    if `checkAlloc` accepts it **and** `lowerRFunc` lowers it, else `spillAlloc vcp`; `lowerAlloc` computes
+    `lowerRFunc vcp (allocResult vcp ra)` without lowering twice (`lowerAlloc_eq_lowerRFunc`). The compiler's
+    runtime `checkAlloc` double-check of the spill allocation (`lowerSpill`) is gone: its acceptance is
+    proven (`AllocChecked`, `E2E.spillAccepted`), and a rejection would have broken totality;
+    `lean-e2e-check` still decides it. Default output unchanged (regalloc2 is accepted and lowered on the
+    whole corpus).
+  - *`lowerRFunc` lowers the spill allocation* (`FV/E2E/SpillLower.lean`, `FV/E2E/SpillCtlCheck.lean`,
+    `FV/Backend/Proof/AssignOk.lean`): `lowerRFunc_of` (the converse of `lowerRFunc_ok`); every item of
+    `spillAlloc` is a move between a register and a register/spill slot/callee-save slot the frame lays out,
+    or an instruction whose operand locations are `spillLocs` (all registers, one per operand:
+    `assign_ok_of_operands`); `ctlCheck_spill` (block 0: the saves, then `Args`, which has no uses, then no
+    `op 0`; no edge into block 0 from `EdgesOk.entry`); `ctlInsts_pipeline` (`ctlInstOk` on every
+    instruction of the pipeline's output, `Args` first in block 0, from the ISLE shapes `CtlShape` and the
+    driver's walk). Assembly: `E2E.lowerRFunc_spillAlloc`, `E2E.lowerAlloc_total`.
+  - *Final theorem* (`FV/E2E/AllocTotal.lean`): `E2E.backend_correct_final_total` — for in-scope input
+    and every answer `ra` of regalloc2, `∃ af, lowerAlloc vcp ra = .ok af ∧` (emission and layout succeed →
+    refinement). Remaining compile-success premises: `emitFunc`/`layout` (V6) and `SpillFrameOk vcp`
+    (the spill allocation's allocator area below 32 KiB; `lean-e2e-check` "spill lowering" line).
+    Non-vacuity: `E2E.backend_correct_final_total_witness`.
+- **Open:** lift the 32 KiB allocator-frame limit (materialise large slot offsets), which removes
+  `SpillFrameOk` (parallel branch). **Size:** medium `[est]`.
 
 ### V6. Branch range (totality)
 
@@ -458,7 +478,7 @@ label**; list the free ones with
 | V3 | [#5](https://github.com/eth-act/clifv/issues/5) Form coverage (`formsCoveredB`) | **done** (#5) |
 | V4 | [#6](https://github.com/eth-act/clifv/issues/6) Register allocation without trusting regalloc2 | (a) **done** (#56): `backend_correct_final_alloc_proven`, no allocation premise |
 | V4b | [#57](https://github.com/eth-act/clifv/issues/57) A real register allocator in Lean (removes regalloc2) | open |
-| V5 | [#7](https://github.com/eth-act/clifv/issues/7) Frame and control-lowering rejections (totality) | open |
+| V5 | [#7](https://github.com/eth-act/clifv/issues/7) Frame and control-lowering rejections (totality) | **done**: `backend_correct_final_total` (frame premise `SpillFrameOk` until the 32 KiB limit is lifted) |
 | V6 | [#8](https://github.com/eth-act/clifv/issues/8) Branch range (totality) | open |
 | L2a | [#9](https://github.com/eth-act/clifv/issues/9) Linking without validators: split `okB` into input conditions + properties proven by construction | open |
 | L2b | [#10](https://github.com/eth-act/clifv/issues/10) Static linker in Lean for the executable (BinOk by construction) | open |

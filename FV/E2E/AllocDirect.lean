@@ -10,9 +10,10 @@ import FV.E2E.SpillCtlWitness
 # The final theorem without the register-allocation checker premise (V4)
 
 `backend_correct_final_of_lower` still assumed `checkAlloc vcp rf = .ok ()` for the allocation
-`rf` regalloc2 computed. The backend now lowers `allocResult vcp ra` (`FV/Backend/SpillAlloc.lean`;
+`rf` regalloc2 computed. The backend now lowers `allocResult vcp ra` (`FV/Backend/Regalloc.lean`;
 `lowerAlloc_eq` relates it to the compiler's `lowerAlloc`): regalloc2's answer `ra` if
-`checkAlloc` accepts it, else the spill allocation `spillAlloc vcp`. So the checker's verdict on
+`checkAlloc` accepts it and `lowerRFunc` lowers it (V5), else the spill allocation
+`spillAlloc vcp`. So the checker's verdict on
 regalloc2's output is no longer a premise: whatever regalloc2 returns (or if it fails or is
 absent), the allocation that is lowered is `AllocChecked`, provided the spill allocation is
 (`SpillAccepted`).
