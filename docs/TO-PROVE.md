@@ -178,6 +178,13 @@ author's estimate, not measured), **Risk**.
      runs emit, with fresh distinct defs), vreg classes are consistent (`ClassesHyp`: needs the
      lowering's `classes` bookkeeping), and the CFG facts (`EdgesHyp`: from `LowerShape`'s edge
      blocks and `prepare`'s splitting).
+     **`CtlSpillHyp` is false as stated** (`E2E.not_ctlSpillHyp`: two `sret` parameters are both fixed
+     to x8); with the ABI condition of `InSubset` (`AbiSigsOk`: `abiSigs`/`indSigs`, at most one `sret`)
+     it holds modulo the ISLE inversion (`FV/Backend/Proof/SpillCtl*.lean`, `ctlSpillHyp_of`,
+     `E2E.spillLocalOk_of_ctl`): every `CtlShape` meets `SpillInstOk`; the driver's `Args`, the `tryCall`
+     (`clobberAll` unreachable: a `try_call` signature is `system_v`), edge `jump`s and the alias renaming
+     are proven. Open: `IselCtlHyp` (the control forms the driver's ISLE runs emit are `CtlShape`s:
+     ABI register lists, fresh distinct defs).
   4. *The dataflow invariant*: with in-state "save slots hold the entry values, the home of every
      defined vreg holds it", each `spillInst` group, the argument copies and the entry stores
      re-establish it; `retCheck` from the restores.
