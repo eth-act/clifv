@@ -18,10 +18,11 @@ absent), the allocation that is lowered is `AllocChecked`, provided the spill al
 (`SpillAccepted`).
 
 `SpillAccepted` is reduced to the availability sets of the pipeline's output
-(`spillAccepted_of_avail`: `SpillAvailable`, open, an explicit hypothesis, not an axiom); the step-3
-local facts (`spillLocalAll`) and the step-4 invariant proof (`Spill.spillStep4`) are proven.
-`lean-e2e-check` decides `checkAlloc`'s acceptance of the spill allocation on every in-scope function of the corpus and the runtests ("spill fallback" line). What remains is listed in
-`docs/TO-PROVE.md` (V4).
+(`spillAccepted_of_avail`: `SpillAvailable`); the step-3 local facts (`spillLocalAll`) and the
+step-4 invariant proof (`Spill.spillStep4`) are proven, and `SpillAccepted` itself is proven in
+`FV/E2E/SpillKillFree.lean` (`E2E.spillAccepted`; `E2E.backend_correct_final_alloc_proven` is this
+file's theorem without the premise). `lean-e2e-check` still decides `checkAlloc`'s acceptance of the
+spill allocation on every in-scope function of the corpus and the runtests ("spill fallback" line).
 
 An earlier statement (PR #54) asked for `checkAlloc vcp (spillAlloc vcp) = .ok ()` under
 `Dominated`/`LowerScope` only; that is false (`E2E.not_ctlSpillHyp`: two `sret` parameters), and was
