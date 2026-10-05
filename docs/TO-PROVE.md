@@ -337,7 +337,7 @@ label**; list the free ones with
 | WP | Issue | Status |
 | --- | --- | --- |
 | V1+V2 | [#4](https://github.com/eth-act/clifv/issues/4) `lowerCheck` completeness (+ V2, `PrepDomain` of the lowering output) | **done** (`6db15bd`) |
-| V3 | [#5](https://github.com/eth-act/clifv/issues/5) Form coverage (`formsCoveredB`) | open |
+| V3 | [#5](https://github.com/eth-act/clifv/issues/5) Form coverage (`formsCoveredB`) | claimed (`agent/forms-cover`) |
 | V4 | [#6](https://github.com/eth-act/clifv/issues/6) Register allocation without trusting regalloc2 | open |
 | V5 | [#7](https://github.com/eth-act/clifv/issues/7) Frame and control-lowering rejections (totality) | open |
 | V6 | [#8](https://github.com/eth-act/clifv/issues/8) Branch range (totality) | open |
