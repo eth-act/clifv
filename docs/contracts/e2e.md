@@ -2219,6 +2219,8 @@ theorem E2E.backend_correct_final_ex (hc : CompiledA f k vc vcp rf af fa fb) …
 def E2E.SpillAccepted : Prop := ∀ p f vc vcp, InSubset p f → Spill.ArityOk f → Dominated f →
     LowerScope f → lowerFunction f = .ok vc → Backend.prepare vc = .ok vcp → AllocChecked vcp (spillAlloc vcp)
 theorem E2E.spillAccepted_of_step4 (h4 : Spill.SpillStep4) (hav : SpillAvailable) : SpillAccepted
+theorem Spill.spillStep4 : Spill.SpillStep4  -- ∀ vc D, (∃ succs preds, vc.cfg = .ok (succs, preds)) → SpillLocalOk vc → SpillAvail vc D → AllocChecked vc (spillAlloc vc)
+theorem E2E.spillAccepted_of_avail (hav : SpillAvailable) : SpillAccepted
 theorem E2E.backend_correct_final_alloc (hsa : SpillAccepted) (hsub : InSubset p f)
     (hd : dominatedB f = true) (hs : lowerScopeB f = true) (har : Spill.arityOkB f = true) (hl …) (hp …) (hrf : rf = allocResult vcp ra) (ha …) (he …) (hla …)
     -- backend_correct_final's contract, link-time and run premises (hC … htr), unchanged
@@ -2232,9 +2234,49 @@ vreg in). The spill allocation may therefore start with every home holding its v
 is availability (`Spill.SpillAvail`), not definedness. The old statements (`checkAlloc_sound`,
 `regLevelCorrect_world`, `backend_correct_of_layers`, `backend_correct`, `backend_correct_of_rules`)
 are corollaries; `Compiled` keeps `checkAlloc` because the link-level theorems (`LinkWorld`,
-`PairDriver`) fix one VCode outcome for all activations, which needs every `ρ₀`. Open, as explicit
-hypotheses: `Spill.SpillStep4` and `E2E.SpillAvailable` (`docs/TO-PROVE.md` V4 step 4); step 3 is
-`E2E.spillLocalAll`. Non-vacuity: `E2E.backend_correct_final_alloc_witness`.
+`PairDriver`) fix one VCode outcome for all activations, which needs every `ρ₀`. Open, as an explicit
+hypothesis: `E2E.SpillAvailable` (`docs/TO-PROVE.md` V4 step 4); step 3 is `E2E.spillLocalAll`, the
+step-4 invariant proof `Spill.spillStep4` (2026-10-05; `SpillStep4` takes a CFG premise, which the
+pipeline's output meets, `Spill.cfg_ok_of_prepare`). Non-vacuity: `E2E.backend_correct_final_alloc_witness`.
+
+**`SpillKillFree` and `SpillAccepted` proven; the allocation is no longer a premise (V4 (a))**
+(2026-10-05, `FV/Backend/Proof/Kill{Base,Gen,OfV,Ctor,Tab,Oracle,Driver,TryDefs,Assemble,Prep}.lean`,
+`FV/E2E/SpillKillFree.lean`):
+
+```lean
+def Backend.Proof.Kill.KillRunsHyp : Prop  -- every ISLE run of the driver: RunKill (+ OutKill, try defs)
+theorem Backend.Proof.Kill.killRunsHyp : KillRunsHyp
+theorem Backend.Proof.Kill.tryDefsExact : TryDefsExact  -- a try_call's call defs = its result vregs, in order
+theorem Backend.Proof.Kill.killFreeB_lower (hK : KillRunsHyp) (hX : TryDefsExact) (hd : Dominated f)
+    (hs : LowerScope f) (ha : AbiSigsOk f) (har : ArityOk f) (hl : lowerFunction f = .ok vc) : killFreeB vc = true
+theorem Backend.Proof.Spill.killFreeB_prepare (hv : LowOk vc) (hk : killFreeB vc = true)
+    (hp : prepare vc = .ok vcp) : killFreeB vcp = true
+theorem E2E.spillKillFree : SpillKillFree
+theorem E2E.spillAccepted : SpillAccepted := spillAccepted_of_killFree Spill.spillStep4 spillKillFree
+theorem E2E.backend_correct_final_alloc_proven (hsub : InSubset p f) (hd : dominatedB f = true)
+    (hs : lowerScopeB f = true) (har : Spill.arityOkB f = true) (hl …) (hp …) (hrf : rf = allocResult vcp ra) (ha …) (he …) (hla …)
+    -- backend_correct_final's contract, link-time and run premises (hC … htr), unchanged
+    : ArmRefines fb base ra' (ArmStepX X H fa) s (Clif.runLoop env p fuel cs)
+```
+
+The ISLE part is a uniform invariant of the interpreter, with no abstract domain
+(`Isle.Interp.UModel`, `uSound`, `uRoot`, `KillGen.lean`): in a run started at `s0` with fresh vregs
+from `lo`, every value holds no `AtomicRMWLoop`/`AtomicCASLoop`/`JTSequence` data and its registers
+outside a call's defs are CLIF values' vregs or vregs of the run not killed so far (`KP`,
+state-dependent, monotone along the run relation `RsK`: what a sub-run kills is fresh); in a
+`try_call`'s context the vregs of call defs are its result vregs; every emitted use is allowed
+(`IsK`). The killing forms are built only inside `atomic_rmw_loop`, `atomic_cas_loop` and
+`br_table_impl` (oracles, `KillOracle.lean`); the term tables `killTabS` (from `lower`'s rules but
+587, 636, 637) and `killTabB` (from `lower_branch`'s) are closed and contain no killing variant and
+no `invalid_reg` (`KillTab.lean`, `native_decide`); `nop` (587) is a hand rule with no results,
+the I128 rules 636/637 never match. `kp_ctor` (`KillCtor.lean`): every extern constructor but
+`invalid_reg` keeps the invariant (`MInst.ofV`'s uses are among the value's registers outside call
+defs, `ofV_kill`). The driver assembly (`KillAssemble.lean`) uses the runs' disjoint vreg ranges,
+the alias resolution (`gn x` is `x` or a statement's result register) and the `try_call` edge blocks
+(single predecessor; `termEdgeDefs` keeps the result vregs on the normal edge, all defs on handler
+edges, `tryDefsExact`); `prepare` keeps `killFreeB` (`KillPrep.lean`). Non-vacuity:
+`E2E.backend_correct_final_alloc_proven_witness` (`backend_correct_final_alloc_witness` and
+`spillKillFree_witness`, an LL/SC loop with killed vregs).
 
 **Validator completeness: `Opt.Legalize128` is correct without `Opt.Legal.check`** (2026-10-02,
 `FV/Opt/Proof/LegalComplete.lean`, `FV/Opt/Proof/LegalDirect.lean`, `FV/E2E/LegalDirect.lean`;
