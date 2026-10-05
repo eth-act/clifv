@@ -53,8 +53,10 @@ function validateBaseline(b, matched) {
   }
 }
 
-function validate(data, run) {
-  if (data.schema !== 2 || data.measurement_complete !== true || data.target !== 'aarch64-unknown-linux-gnu') {
+// The measurement: complete, consistent totals for this run and commit. The nightly digest
+// checks full reports with it; `validate` adds the CI summary's own fields.
+function validateMeasurement(data, run) {
+  if (data.measurement_complete !== true || data.target !== 'aarch64-unknown-linux-gnu') {
     throw new Error('Invalid or incomplete measurement');
   }
   if (data.run_id !== run.id || data.run_attempt !== run.run_attempt || data.head_sha !== run.head_sha) {
@@ -84,9 +86,14 @@ function validate(data, run) {
   for (const key of ['elapsed_seconds', 'cpu_seconds', 'peak_runner_memory_used_bytes']) {
     if (!Number.isFinite(data[key]) || data[key] < 0 || data[key] > 2 ** 40) throw new Error(`Invalid ${key}`);
   }
-  if (typeof data.full_artifact_equivalence_verified !== 'boolean' || data.pipeline_exit_code !== 10) {
-    throw new Error('Invalid completion state');
-  }
+  if (typeof data.full_artifact_equivalence_verified !== 'boolean') throw new Error('Invalid completion state');
+  return data;
+}
+
+function validate(data, run) {
+  if (data.schema !== 2) throw new Error('Invalid or incomplete measurement');
+  const t = validateMeasurement(data, run).totals;
+  if (data.pipeline_exit_code !== 10) throw new Error('Invalid completion state');
   if (entries(data.matched, 'matched', 1e5).length !== t.exact_code_artifacts) throw new Error('Inconsistent matched outputs');
   const harness = data.harness_sha256;
   if (harness === null || typeof harness !== 'object' || Array.isArray(harness)) throw new Error('Invalid harness hashes');
@@ -246,7 +253,7 @@ async function post({ github, context, core, summaryPath = 'report' }) {
   return current.data;
 }
 
-module.exports = { validate, render, prepare, post, readSummary };
+module.exports = { validate, validateMeasurement, render, prepare, post, readSummary };
 if (require.main === module) {
   const data = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
   const [owner, repo] = process.env.GITHUB_REPOSITORY.split('/');

@@ -71,6 +71,8 @@ jobs:
         run: |
           python3 -m unittest discover -s scripts -p 'test_stock_comparison_*.py' -v
           node --test .github/scripts/stock-comparison-comment.test.cjs
+          # The nightly digest shares the comment script's measurement checks.
+          node --test .github/scripts/stock-comparison-nightly.test.cjs
       - name: Find main baseline
         env:
           GH_TOKEN: ${{ github.token }}
