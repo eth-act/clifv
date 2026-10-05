@@ -1,4 +1,6 @@
 import FV.E2E.FinalDirect
+import FV.Backend.Proof.SpillInvariant
+import FV.Backend.Proof.SpillArity
 
 /-!
 # The final theorem without the register-allocation checker premise (V4)
@@ -87,6 +89,109 @@ theorem backend_correct_final_alloc (hsa : SpillAccepted) {p : Clif.Program}
     (hrf ▸ checkAlloc_allocResult hsa (dominated_of hd) (lowerScope_of hs) hl hp ra) ha he hla
     hC hCT hTls hX hXI hsym hslot hent hres hbe hargs hcs hrel htr fuel
 
+
+/-! ## V4 restated: verified in-states, the initial vreg file chosen by the theorem
+
+`SpillAccepted` asks `checkAlloc` (its untrusted fixpoint iteration and `verify`, from an entry
+state without vregs) to accept the spill allocation, which implies that every use of the VCode is
+defined on every path. The downstream proofs need less: `AllocChecked` (verified in-states with an
+`EntryOk` entry state; `CompiledA`, `RegLevelCorrectEx`, `backend_correct_final_ex`). For the spill
+allocation that is `SpillAccepted'`, which follows from the local facts (`SpillLocalAll`, step 3),
+the availability sets of the pipeline's output (`SpillAvailable`) and the step-4 invariant proof
+(`Spill.SpillStep4`): `spillAccepted'_of`. -/
+
+/-- **The spill allocation is `AllocChecked`** (V4, restated; an explicit hypothesis, not an axiom):
+for every prepared VCode `vcp` the pipeline produces from in-scope input, the spill allocation has
+verified in-states with an `EntryOk` entry state. Implied by `SpillAccepted`
+(`SpillAccepted.toChecked`) and by `spillAccepted'_of`. -/
+def SpillAccepted' : Prop :=
+  ∀ (p : Clif.Program) (f : Clif.Function) (vc vcp : VCode), InSubset p f → Spill.ArityOk f → Dominated f →
+    LowerScope f → lowerFunction f = .ok vc → Backend.prepare vc = .ok vcp →
+      AllocChecked vcp (spillAlloc vcp)
+
+theorem SpillAccepted.toChecked (h : SpillAccepted) : SpillAccepted' :=
+  fun _ f vc vcp _ _ hd hs hl hp => allocChecked_of_checkAlloc (h f vc vcp hd hs hl hp)
+
+/-- The instruction-local and CFG facts (V4 step 3, `Spill.SpillLocalOk`) of the pipeline's
+output. -/
+def SpillLocalAll : Prop :=
+  ∀ (p : Clif.Program) (f : Clif.Function) (vc vcp : VCode), InSubset p f → Spill.ArityOk f → Dominated f →
+    LowerScope f → lowerFunction f = .ok vc → Backend.prepare vc = .ok vcp → Spill.SpillLocalOk vcp
+
+/-- **The availability sets of the pipeline's output exist** (V4 step 4, its VCode part; open, an
+explicit hypothesis, not an axiom): the in-state facts the spill allocation satisfies
+(`Spill.SpillAvail`: every vreg available at the entry, every use available where it is read, every
+edge delivering its target's set). -/
+def SpillAvailable : Prop :=
+  ∀ (p : Clif.Program) (f : Clif.Function) (vc vcp : VCode), InSubset p f → Spill.ArityOk f → Dominated f →
+    LowerScope f → lowerFunction f = .ok vc → Backend.prepare vc = .ok vcp →
+      ∃ D, Spill.SpillAvail vcp D
+
+/-- **The assembly**: the step-4 invariant proof, the local facts and the availability sets give
+`SpillAccepted'`. -/
+theorem spillAccepted'_of (h4 : Spill.SpillStep4) (hloc : SpillLocalAll) (hav : SpillAvailable) :
+    SpillAccepted' :=
+  fun p f vc vcp hsub har hd hs hl hp =>
+    let ⟨D, hD⟩ := hav p f vc vcp hsub har hd hs hl hp
+    h4 vcp D (hloc p f vc vcp hsub har hd hs hl hp) hD
+
+/-- The allocation the backend lowers is `AllocChecked`, whatever regalloc2 answered. -/
+theorem allocChecked_allocResult (hsa : SpillAccepted') {p : Clif.Program} {f : Clif.Function}
+    {vc vcp : VCode} (hsub : InSubset p f) (har : Spill.ArityOk f) (hd : Dominated f)
+    (hs : LowerScope f) (hl : lowerFunction f = .ok vc) (hp : Backend.prepare vc = .ok vcp)
+    (ra : Except String RFunc) : AllocChecked vcp (allocResult vcp ra) := by
+  unfold allocResult
+  cases ra with
+  | error _ => exact hsa p f vc vcp hsub har hd hs hl hp
+  | ok rf =>
+    simp only
+    by_cases hc : (checkAlloc vcp rf).isOk = true
+    · rw [ite_eq_left_iff.mpr (fun h => absurd hc h)]
+      cases h : checkAlloc vcp rf with
+      | ok u => exact allocChecked_of_checkAlloc h
+      | error e => rw [h] at hc; cases hc
+    · rw [ite_eq_right_iff.mpr (fun h => absurd h hc)]; exact hsa p f vc vcp hsub har hd hs hl hp
+
+/-- **The backend's end-to-end theorem for the fallback-composed allocation, V4 restated**:
+`backend_correct_final_alloc` under `SpillAccepted'` (implied by `SpillAccepted`;
+`spillAccepted'_of` reduces it to the step-3/4 facts), with the input condition `arityOkB` (every
+branch passes as many arguments as its target has parameters; `lowerFunction` does not check it,
+and the spill allocation's parameter copies need it). -/
+theorem backend_correct_final_alloc' (hsa : SpillAccepted') {p : Clif.Program}
+    {f : Clif.Function} {k : Nat} {vc vcp : VCode} {ra : Except String RFunc} {rf : RFunc}
+    {af : AFunc} {fa : FnAsm}
+    {fb : FnBin} (hsub : InSubset p f) (hd : dominatedB f = true) (hs : lowerScopeB f = true)
+    (har : Spill.arityOkB f = true)
+    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare vc = .ok vcp)
+    (hrf : rf = allocResult vcp ra) (ha : lowerRFunc vcp rf = .ok af)
+    (he : emitFunc k af = .ok fa) (hla : fa.layout = .ok fb)
+    {X : ExtSem} {H : ArmHooks} {syms : String → Option Nat} {slotOff : Nat} {env : Clif.Env}
+    {K : Nat}
+    (hC : ∀ s, CalleeOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H vcp.CallSite)
+    (hCT : (∃ B ∈ f.blocks, B.term.isTry = true) → ∀ s, CalleeTryOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H vcp.TrySite)
+    (hTls : hasTls f = true → ∀ s, TlsOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H)
+    (hX : ∀ s, XCallsOk env (f.externs.map (·.2)) (fun sl cm w =>
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+        slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X)
+    (hXI : ∀ s, XCallsIndOk env (indSigs f) (fun sl cm w =>
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+        slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X)
+    (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
+    (hslot : af.slotBase = slotOff)
+    {base ra' : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
+    (hent : AbiEntry fb base ra' s) (hres : StackAvail K af s) (hbe : BodyEntry af s w₀)
+    (hargs : ArgsIn f.sig args s) (hcs : ClifEntry f args cs)
+    (hrel : Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s,
+      syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f cs.frame.slots cs.mem w₀)
+    (htr : TrapsExplicit env p cs) (fuel : Nat) :
+    ArmRefines fb base ra' (ArmStepX X H fa) s (Clif.runLoop env p fuel cs) :=
+  backend_correct_final_of_lower_ex hsub hd hs hl hp
+    (hrf ▸ allocChecked_allocResult hsa hsub (Spill.arityOk_of har) (dominated_of hd) (lowerScope_of hs) hl hp ra) ha he hla
+    hC hCT hTls hX hXI hsym hslot hent hres hbe hargs hcs hrel htr fuel
+
 /-! ## Non-vacuity
 
 `lowerWitness` (a loop with block parameters, `LowerDirect.lean`) meets the input conditions, and
@@ -131,5 +236,15 @@ theorem backend_correct_final_alloc_witness :
         cases hr : lowerRFunc vcp (allocResult vcp (.error "regalloc2 absent")) with
         | error e => rw [hr] at h2; cases h2
         | ok af => exact ⟨vc, vcp, af, rfl, hp, hc, hr⟩
+
+/-- **Non-vacuity of `backend_correct_final_alloc'`**: on `lowerWitness`, with regalloc2 absent,
+the pipeline's premises hold together, and the conclusion of `SpillAccepted'` holds for it. -/
+theorem backend_correct_final_alloc'_witness :
+    Dominated lowerWitness ∧ LowerScope lowerWitness ∧ Spill.arityOkB lowerWitness = true ∧
+      ∃ vc vcp af, lowerFunction lowerWitness = .ok vc ∧ Backend.prepare vc = .ok vcp ∧
+        AllocChecked vcp (spillAlloc vcp) ∧
+        lowerRFunc vcp (allocResult vcp (.error "regalloc2 absent")) = .ok af :=
+  let ⟨hd, hs, vc, vcp, af, hl, hp, hc, hr⟩ := backend_correct_final_alloc_witness
+  ⟨hd, hs, by native_decide, vc, vcp, af, hl, hp, allocChecked_of_checkAlloc hc, hr⟩
 
 end E2E

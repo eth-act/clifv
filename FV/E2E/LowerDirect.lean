@@ -38,6 +38,18 @@ theorem Compiled.of_lowerB {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : 
     Compiled f k vc vcp rf af fa fb :=
   Compiled.of_lower (dominated_of hd) (lowerScope_of hs) hl hp hch ha he hla
 
+/-- `Compiled.of_lowerB` for an `AllocChecked` allocation (V4): `CompiledA` from the pipeline's
+results and the decided input conditions. -/
+theorem CompiledA.of_lowerB {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc}
+    {af : AFunc} {fa : FnAsm} {fb : FnBin} (hd : dominatedB f = true)
+    (hs : lowerScopeB f = true) (hl : lowerFunction f = .ok vc)
+    (hp : Backend.prepare vc = .ok vcp) (hch : AllocChecked vcp rf)
+    (ha : lowerRFunc vcp rf = .ok af) (he : emitFunc k af = .ok fa) (hla : fa.layout = .ok fb) :
+    CompiledA f k vc vcp rf af fa fb :=
+  ⟨hl, lowerCheck_complete (dominated_of hd) (lowerScope_of hs) hl, hp,
+    prepCheck_complete hp (prepDomain_of_lower (lowerScope_of hs) hl (lowerScope_of hs).nonempty),
+    hch, ha, he, hla⟩
+
 /-! ## Non-vacuity
 
 A function with a loop (block parameters, a back edge with arguments through an edge block, a

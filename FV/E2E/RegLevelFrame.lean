@@ -366,7 +366,7 @@ theorem entry_block {R : RL} (hR : R.Wf) :
       ps2.traps.toList <+: R.psF.traps.toList ∧
       R.L[0]? = some (.label (.block vb.label)) ∧
       R.L.drop 1 = prologueLines R.af.frameSize ++ (ftList (ls ++ nxtOf R.af 0) ++ T) := by
-  obtain ⟨c, ins, hc⟩ := checked_of_checkAlloc hR.check
+  obtain ⟨c, ins, _, hc, -⟩ := hR.check
   have h0 : 0 < R.vc.blocks.size := Nat.pos_of_ne_zero hc.nonempty
   obtain ⟨vb, hvb⟩ : ∃ vb, R.vc.blocks[0]? = some vb := ⟨_, Array.getElem?_eq_getElem h0⟩
   obtain ⟨items, hit⟩ : ∃ items, R.rf.blocks[0]? = some items :=

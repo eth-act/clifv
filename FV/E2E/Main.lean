@@ -250,6 +250,75 @@ theorem tryStack_mono {f : Clif.Function} {a b : Nat} (h : TryStack f a) (hab : 
     TryStack f b := fun B hB fn args et hi e he =>
   ⟨Nat.le_trans (h B hB fn args et hi e he).1 hab, (h B hB fn args et hi e he).2⟩
 
+/-- `backend_correct` with `CompiledA` (an `AllocChecked` allocation) and `RegLevelCorrectEx` (V4). -/
+theorem backend_correct_ex {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}
+    {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
+    (hsub : InSubset p f) (hc : CompiledA f k vc vcp rf af fa fb)
+    {sem : Arm.ArmState → Sem} {F : Arm.ArmState → BitVec 64 → Prop}
+    {syms : String → Option Nat} {slotOff out K : Nat} {astep : Arm.ArmState → Arm.ArmState}
+    {env : Clif.Env}
+    -- M4
+    (hrules : LowerRulesCorrect Isle.Aarch64.program)
+    (hex : ExcludedUnmatchable Isle.Aarch64.program)
+    (hcallRules : CallRulesCorrect Isle.Aarch64.program)
+    (hindRules : IndRulesCorrect Isle.Aarch64.program)
+    (hmemRules : MemRulesCorrect Isle.Aarch64.program)
+    (hterms : ∀ s, TermCalls (sem s) (fun sl cm w => Rel.holds ⟨F s, syms, slotOff, out⟩ f sl cm w))
+    (htries : ∀ s, TryCalls f (sem s) (fun sl cm w => Rel.holds ⟨F s, syms, slotOff, out⟩ f sl cm w)
+      env p out)
+    (htryInds : ∀ s, TryIndCalls (sem s) (fun sl cm w => Rel.holds ⟨F s, syms, slotOff, out⟩ f sl cm w)
+      env p (indSigs f))
+    -- M6 + M5
+    (hM6 : RegLevelCorrectEx sem F K astep vcp af fb)
+    -- the shared VCode semantics (M6's `csem`)
+    (hRef : ∀ s, Refines (F s) (sem s)) (hds : ∀ s, DriverSem (sem s))
+    -- the callee contract (M6, from `CalleeSound`)
+    (hcalls : ∀ s, CallsRefine (F s) env (f.externs.map (·.2))
+      (fun sl cm w => Rel.holds ⟨F s, syms, slotOff, out⟩ f sl cm w) (sem s))
+    -- the indirect-call contract (M6, from `XCallsIndOk`)
+    (hicalls : ∀ s, IndCallsRefine env (indSigs f)
+      (fun sl cm w => Rel.holds ⟨F s, syms, slotOff, out⟩ f sl cm w) (sem s))
+    -- the memory forms (M6: loads/stores/`loadAddr`/GOT loads of `csem` with slot base `slotOff`
+    -- and the link-time symbol addresses `syms`)
+    (hmem : ∀ s, MemRefines (F s) slotOff syms (sem s))
+    -- the outgoing stack-argument area of the relation holds every call's stack arguments
+    (houtB : vc.outgoing ≤ out)
+    -- the run
+    {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
+    (hent : AbiEntry fb base ra s) (hres : StackAvail K af s) (hbe : BodyEntry af s w₀)
+    (hargs : ArgsIn f.sig args s) (hargF : StackArgsAvoid (F s) f.sig args s)
+    (hcs : ClifEntry f args cs)
+    (hrel : Rel.holds ⟨F s, syms, slotOff, out⟩ f cs.frame.slots cs.mem w₀)
+    (htr : TrapsExplicit env p cs) (fuel : Nat) :
+    ArmRefines fb base ra astep s (Clif.runLoop env p fuel cs) := by
+  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr⟩ := loweringObligations_of_check hc.lowerOk
+  refine backend_correct_of_layers_ex (fun s' => iselSim_of_driver (ctx := ctx) (st0 := st0) (R := R)
+    (gn := gn) (bl := bl) (A := A) ?_ (hds s') (hmem s')) (fun s' => prepareCorrect_of_check (hds s') hc.prepOk)
+    hM6 hent hres hbe
+    (argsAtEntry_body (lowerRFunc_frame hc.alloc) (entryRegs_of_check hc.lowerOk) hbe hargs hargF)
+    hcs hrel htr fuel
+  exact {
+    shape := hshape
+    cert := hcert
+    dsem := (hds s').toDriverSemG
+    insts := instCalls_of_rules hrules hex hcallRules hindRules hmemRules (hRef s')
+      (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hcalls s') (hicalls s') (hmem s')
+      (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f)
+      (callsStack_mono (callsStack_of_check hc.lowerOk) houtB)
+      (memRelOk_holds ⟨F s', syms, slotOff, out⟩ f)
+    terms := hterms s'
+    ext := fun B hB st hst fn args hi e he => hsub.externCalls B hB st hst fn args hi e he
+    indSig := indSig_of_subset hsub
+    subE := hsub.subsetE
+    entryLocs := entryOk_of_check hc.lowerOk
+    brIdx := hbr
+    noTail := noTail_of_subset hsub
+    tries := ⟨out, htries s', tryStack_mono (tryStack_of_check hc.lowerOk) houtB⟩
+    tryExt := hsub.tryExterns
+    tryInd := htryInds s'
+    tryIndSig := tryIndSig_of_subset hsub
+    cfg := cfg_of_prepare hc.prepare }
+
 /-- **`backend_correct` (M7).** For an in-subset CLIF function `f` of `p`, compiled by the
 Lean backend (`Compiled`, including M7's validators) and loaded at `base`, an Arm execution
 from an ABI entry state `s` with enough stack, whose CLIF counterpart `cs` has its stack slots at
@@ -297,34 +366,62 @@ theorem backend_correct {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp
     (hcs : ClifEntry f args cs)
     (hrel : Rel.holds ⟨F s, syms, slotOff, out⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
-    ArmRefines fb base ra astep s (Clif.runLoop env p fuel cs) := by
-  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr⟩ := loweringObligations_of_check hc.lowerOk
-  refine backend_correct_of_layers (fun s' => iselSim_of_driver (ctx := ctx) (st0 := st0) (R := R)
-    (gn := gn) (bl := bl) (A := A) ?_ (hds s') (hmem s')) (fun s' => prepareCorrect_of_check (hds s') hc.prepOk)
-    hM6 hent hres hbe
-    (argsAtEntry_body (lowerRFunc_frame hc.alloc) (entryRegs_of_check hc.lowerOk) hbe hargs hargF)
-    hcs hrel htr fuel
-  exact {
-    shape := hshape
-    cert := hcert
-    dsem := (hds s').toDriverSemG
-    insts := instCalls_of_rules hrules hex hcallRules hindRules hmemRules (hRef s')
-      (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hcalls s') (hicalls s') (hmem s')
-      (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f)
-      (callsStack_mono (callsStack_of_check hc.lowerOk) houtB)
-      (memRelOk_holds ⟨F s', syms, slotOff, out⟩ f)
-    terms := hterms s'
-    ext := fun B hB st hst fn args hi e he => hsub.externCalls B hB st hst fn args hi e he
-    indSig := indSig_of_subset hsub
-    subE := hsub.subsetE
-    entryLocs := entryOk_of_check hc.lowerOk
-    brIdx := hbr
-    noTail := noTail_of_subset hsub
-    tries := ⟨out, htries s', tryStack_mono (tryStack_of_check hc.lowerOk) houtB⟩
-    tryExt := hsub.tryExterns
-    tryInd := htryInds s'
-    tryIndSig := tryIndSig_of_subset hsub
-    cfg := cfg_of_prepare hc.prepare }
+    ArmRefines fb base ra astep s (Clif.runLoop env p fuel cs) :=
+  backend_correct_ex hsub hc.toA hrules hex hcallRules hindRules hmemRules hterms htries htryInds hM6.ex hRef hds hcalls hicalls hmem houtB hent hres hbe hargs hargF hcs hrel htr fuel
+
+/-- `backend_correct_of_rules` with `CompiledA` (an `AllocChecked` allocation) and `RegLevelCorrectEx` (V4). -/
+theorem backend_correct_of_rules_ex {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}
+    {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
+    (hsub : InSubset p f) (hc : CompiledA f k vc vcp rf af fa fb)
+    {sem : Arm.ArmState → Sem} {F : Arm.ArmState → BitVec 64 → Prop}
+    {syms : String → Option Nat} {slotOff out K : Nat} {astep : Arm.ArmState → Arm.ArmState}
+    {env : Clif.Env}
+    -- M4
+    (hrules : LowerRulesCorrect Isle.Aarch64.program)
+    (hex : ExcludedUnmatchable Isle.Aarch64.program)
+    (hcallRules : CallRulesCorrect Isle.Aarch64.program)
+    (hindRules : IndRulesCorrect Isle.Aarch64.program)
+    (hmemRules : MemRulesCorrect Isle.Aarch64.program)
+    (htermRules : LowerTermRulesCorrect Isle.Aarch64.program)
+    (htermUn : TermUnmatchable Isle.Aarch64.program)
+    (hbranch : BranchRulesCorrect Isle.Aarch64.program)
+    (hbranchEx : BranchExcludedUnmatchable Isle.Aarch64.program)
+    (htryRules : TryRulesCorrect Isle.Aarch64.program)
+    (htryUn : TryUnmatchable Isle.Aarch64.program)
+    (htryIndRules : TryIndRulesCorrect Isle.Aarch64.program)
+    (htryIndUn : TryIndUnmatchable Isle.Aarch64.program)
+    -- M6 + M5
+    (hM6 : RegLevelCorrectEx sem F K astep vcp af fb)
+    -- the shared VCode semantics (M6's `csem`)
+    (hRef : ∀ s, Refines (F s) (sem s)) (hds : ∀ s, DriverSem (sem s))
+    -- the callee contract (M6, from `CalleeSound`)
+    (hcalls : ∀ s, CallsRefine (F s) env (f.externs.map (·.2))
+      (fun sl cm w => Rel.holds ⟨F s, syms, slotOff, out⟩ f sl cm w) (sem s))
+    -- the indirect-call contract (M6, from `XCallsIndOk`)
+    (hicalls : ∀ s, IndCallsRefine env (indSigs f)
+      (fun sl cm w => Rel.holds ⟨F s, syms, slotOff, out⟩ f sl cm w) (sem s))
+    -- the memory forms (M6: loads/stores/`loadAddr`/GOT loads of `csem` with slot base `slotOff`
+    -- and the link-time symbol addresses `syms`)
+    (hmem : ∀ s, MemRefines (F s) slotOff syms (sem s))
+    -- the outgoing stack-argument area of the relation holds every call's stack arguments
+    (houtB : vc.outgoing ≤ out)
+    -- the run
+    {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
+    (hent : AbiEntry fb base ra s) (hres : StackAvail K af s) (hbe : BodyEntry af s w₀)
+    (hargs : ArgsIn f.sig args s) (hargF : StackArgsAvoid (F s) f.sig args s)
+    (hcs : ClifEntry f args cs)
+    (hrel : Rel.holds ⟨F s, syms, slotOff, out⟩ f cs.frame.slots cs.mem w₀)
+    (htr : TrapsExplicit env p cs) (fuel : Nat) :
+    ArmRefines fb base ra astep s (Clif.runLoop env p fuel cs) :=
+  backend_correct_ex hsub hc hrules hex hcallRules hindRules hmemRules
+    (fun s' => termCalls_of_rules htermRules htermUn hbranch hbranchEx (hRef s')
+      (mrStable_holds ⟨F s', syms, slotOff, out⟩ f))
+    (fun s' => tryCalls_of_rules htryRules htryUn (hRef s')
+      (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hmem s')
+      (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f) (hcalls s'))
+    (fun s' => tryIndCalls_of_rules htryIndRules htryIndUn (hRef s')
+      (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hicalls s'))
+    hM6 hRef hds hcalls hicalls hmem houtB hent hres hbe hargs hargF hcs hrel htr fuel
 
 /-- **`backend_correct` from M4's rule statements only**: the terminator calls (`TermCalls`)
 from M4's terminator rules (`termCalls_of_rules`), the `try_call` calls (`TryCalls`) from M4's
@@ -372,15 +469,7 @@ theorem backend_correct_of_rules {p : Clif.Program} {f : Clif.Function} {k : Nat
     (hrel : Rel.holds ⟨F s, syms, slotOff, out⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ArmRefines fb base ra astep s (Clif.runLoop env p fuel cs) :=
-  backend_correct hsub hc hrules hex hcallRules hindRules hmemRules
-    (fun s' => termCalls_of_rules htermRules htermUn hbranch hbranchEx (hRef s')
-      (mrStable_holds ⟨F s', syms, slotOff, out⟩ f))
-    (fun s' => tryCalls_of_rules htryRules htryUn (hRef s')
-      (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hmem s')
-      (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f) (hcalls s'))
-    (fun s' => tryIndCalls_of_rules htryIndRules htryIndUn (hRef s')
-      (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hicalls s'))
-    hM6 hRef hds hcalls hicalls hmem houtB hent hres hbe hargs hargF hcs hrel htr fuel
+  backend_correct_of_rules_ex hsub hc.toA hrules hex hcallRules hindRules hmemRules htermRules htermUn hbranch hbranchEx htryRules htryUn htryIndRules htryIndUn hM6.ex hRef hds hcalls hicalls hmem houtB hent hres hbe hargs hargF hcs hrel htr fuel
 
 end E2E
 
