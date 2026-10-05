@@ -1,9 +1,13 @@
 # Agent coordination
 
-- Status issues: [Cody #44](https://github.com/eth-act/clifv/issues/44);
-  Kev's agent must find or create `Kev: current work and intentions`.
+All human contributors (GitHub accounts), including new collaborators, and their
+agents must follow this discipline.
+
+- Each contributor has one status issue: reuse theirs or create
+  `<github-login>: current work and intentions`. Cody: [#44](https://github.com/eth-act/clifv/issues/44).
+  Kev's agent creates Kev's issue; do not create one on another contributor's behalf.
   Edit only your contributor's issue body; keep it open.
-- Before starting work, read both statuses and relevant task claims; update yours.
+- Before starting work, read all contributor statuses and relevant task claims; update yours.
   After each commit, scope change, or stop, update it again: current goal, task/PR,
   branch/commit (mark local if unpublished), likely modules, tentative next task,
   active/waiting/idle, UTC timestamp. Next is not a reservation; stale status is uncertain.
