@@ -5,7 +5,8 @@ import FV.Backend.Proof.RegallocMoves
 # Moves on the machine (M6)
 
 The code of a move (`RAFrame.moveInsts`) consists of one-line instructions (`OneLine`: `mov`,
-slot stores and loads of a frame below 32 KiB); `run_oneLines` turns their `ExecAll` run into
+slot stores and loads below 32 KiB, and beyond it x16's `movz`/`movk`/`add` and the accesses at
+`[x16]`); `run_oneLines` turns their `ExecAll` run into
 the lines `codeLinesE` produces, run by `execLines` with the intermediate states error-free
 (`InterOk`), ready for `iterN_execLines`.
 -/
@@ -56,6 +57,23 @@ theorem oneLine_slotLoad (ctx : FnCtx) (cls : RegClass) (r : Reg) {off : Nat}
         simp [MInst.lines, slotLoad, memFinalize, simm9?, uimm12Scaled?, show ¬ (off : Int) ≤ 255 by omega,
           this, LoadOp.bytes, show (off : Int) ≤ 65520 by omega]; exact ⟨rfl, rfl⟩, rfl, rfl⟩
 
+
+theorem oneLine_movz (ctx : FnCtx) (c : MoveWideConst) :
+    OneLine ctx (.movWide .movZ (.x 16) c .size64) := ⟨_, _, fun _ => rfl, rfl, rfl⟩
+
+theorem oneLine_movk (ctx : FnCtx) (c : MoveWideConst) :
+    OneLine ctx (.movK (.x 16) (.x 16) c .size64) := ⟨_, _, fun _ => rfl, rfl, rfl⟩
+
+theorem oneLine_add_sp_x16 (ctx : FnCtx) :
+    OneLine ctx (.aluRRRExtend .add .size64 (.x 16) .sp (.x 16) .sxtx) := ⟨_, _, fun _ => rfl, rfl, rfl⟩
+
+theorem oneLine_store_x16 (ctx : FnCtx) (op : StoreOp) (r : Reg) :
+    OneLine ctx (.store op r (.unsignedOffset (.x 16) 0) trustedFlags) :=
+  ⟨_, _, fun ps => by simp [MInst.lines, memFinalize]; exact ⟨rfl, rfl⟩, rfl, rfl⟩
+
+theorem oneLine_load_x16 (ctx : FnCtx) (op : LoadOp) (r : Reg) :
+    OneLine ctx (.load op r (.unsignedOffset (.x 16) 0) trustedFlags) :=
+  ⟨_, _, fun ps => by simp [MInst.lines, memFinalize]; exact ⟨rfl, rfl⟩, rfl, rfl⟩
 
 /-- Running one line that `execMInst` runs to `t`: the step and the rest. -/
 theorem execLines_cons_of {env : Env} {x : Insn} {t : Option Clif.TrapCode} {s t0 : Arm.ArmState}
@@ -258,15 +276,12 @@ structure RL.Wf (R : RL) : Prop where
   /-- the kept addresses are not in the frame or the callees' dead stack -/
   gfree : ∀ a, R.G a → ¬ StackBelow (frameDrop R.af + R.K) (spv R.s0) a
 
-theorem RL.size_lt {R : RL} (hR : R.Wf) : R.fr.size < 32768 :=
-  (lowerRFunc_ok hR.alloc).2.1
-
 /-- The activation's frame is laid out correctly (its slots in the frame addresses `frameF`). -/
 theorem RL.frameOkF {R : RL} (hR : R.Wf) :
     FrameOk R.fr (Live R.rf) (R.rf.floatMove = true) R.spB
       (frameF R.fr.intBase R.fr.size R.af R.s0) := by
-  obtain ⟨⟨hfs, -⟩, hlt, hfr, -⟩ := lowerRFunc_ok hR.alloc
-  have hlt' : R.fr.size < 32768 := hlt
+  obtain ⟨⟨hfs, -⟩, hfr, -⟩ := lowerRFunc_ok hR.alloc
+  have hlt' := (spv R.s0).isLt
   have hle : R.fr.size ≤ R.fr.total := compute_size_le_total R.vc R.rf
   have hst := hR.stack.frame.1
   have hst' : R.fr.total + 16 ≤ (spv R.s0).toNat := by rw [hfs] at hst; exact hst
@@ -315,7 +330,7 @@ theorem RL.frameOk {R : RL} (hR : R.Wf) :
 
 /-- The allocator's slots lie inside the dropped frame. -/
 theorem RL.size_le_drop {R : RL} (hR : R.Wf) : R.fr.size ≤ frameDrop R.af := by
-  obtain ⟨⟨hfs, -⟩, -, hfr, -⟩ := lowerRFunc_ok hR.alloc
+  obtain ⟨⟨hfs, -⟩, hfr, -⟩ := lowerRFunc_ok hR.alloc
   have hle : R.fr.size ≤ R.fr.total := compute_size_le_total R.vc R.rf
   by_cases h0 : R.fr.total = 0
   · simp only [RL.fr] at h0 hle ⊢; omega
@@ -434,10 +449,16 @@ theorem move_facts {R : RL} {b : Nat} {vb : VBlock} {items : Array RItem} {pre i
 
 
 theorem oneLine_of_moveInst (ctx : FnCtx) {i : MInst} (h : MoveInst i) : OneLine ctx i := by
-  rcases h with ⟨a, b, rfl⟩ | ⟨cls, r, off, h8, h16, hoff, rfl | rfl⟩
+  rcases h with ⟨a, b, rfl⟩ | ⟨cls, r, off, h8, h16, hoff, rfl | rfl⟩ | ⟨c, rfl⟩ | ⟨c, rfl⟩ | rfl |
+    ⟨op, r, rfl⟩ | ⟨op, r, rfl⟩
   · exact oneLine_mov ctx a b
   · exact oneLine_slotStore ctx cls r h8 h16 hoff
   · exact oneLine_slotLoad ctx cls r h8 h16 hoff
+  · exact oneLine_movz ctx c
+  · exact oneLine_movk ctx c
+  · exact oneLine_add_sp_x16 ctx
+  · exact oneLine_store_x16 ctx op r
+  · exact oneLine_load_x16 ctx op r
 
 theorem itemCode_move (fr : RAFrame) (vb : VBlock) (src dst : Loc) :
     itemCode fr vb (.move src dst) = fr.moveInsts src dst := by
@@ -449,8 +470,8 @@ theorem itemCode_move (fr : RAFrame) (vb : VBlock) (src dst : Loc) :
 /-- The fp/lr slot lies above the frame's slot area. -/
 theorem fplr_outside {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) :
     ∀ k < 16, ∀ o, o < R.fr.size → spv R.s0 - 16#64 + BitVec.ofNat 64 k ≠ R.spB + BitVec.ofNat 64 o := by
-  obtain ⟨⟨hfs, -⟩, hlt, -⟩ := lowerRFunc_ok hR.alloc
-  have hlt' : R.fr.size < 32768 := hlt
+  obtain ⟨⟨hfs, -⟩, -⟩ := lowerRFunc_ok hR.alloc
+  have hlt' := (spv R.s0).isLt
   have hle : R.fr.size ≤ R.fr.total := compute_size_le_total R.vc R.rf
   have hst := hR.stack.frame.1
   have hst' : R.fr.total + 16 ≤ (spv R.s0).toNat := by rw [hfs] at hst; exact hst
@@ -474,8 +495,8 @@ theorem fplr_outside {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) :
 /-- The code lies outside the frame's slot area. -/
 theorem code_outside {R : RL} (hR : R.Wf) {a : BitVec 64} (ha : CodeAddr R.s0 a) :
     ∀ o, o < R.fr.size → a ≠ R.spB + BitVec.ofNat 64 o := by
-  obtain ⟨⟨hfs, -⟩, hlt, hfr, -⟩ := lowerRFunc_ok hR.alloc
-  have hlt' : R.fr.size < 32768 := hlt
+  obtain ⟨⟨hfs, -⟩, hfr, -⟩ := lowerRFunc_ok hR.alloc
+  have hlt' := (spv R.s0).isLt
   have hle : R.fr.size ≤ R.fr.total := compute_size_le_total R.vc R.rf
   have hst := hR.stack.frame.1
   have hap := hR.stack.frame.2 a ha
@@ -586,7 +607,7 @@ theorem realizes_move {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b : Nat} {src dst
   obtain ⟨c1, c2, hc1, hc2, rfl⟩ := itemsCode_cons hcode
   rw [itemCode_move] at hc1
   obtain ⟨ls1, ls2, psm, h1, h2, rfl⟩ := codeLinesE_append _ _ _ _ _ hls
-  obtain ⟨hvs, -, is, s', rfl, hmi, hex, hmo⟩ := lower_move (R.frameOk hR) (R.size_lt hR) R.ctx hcm
+  obtain ⟨hvs, -, is, s', rfl, hmi, hex, hmo⟩ := lower_move (R.frameOk hR) R.ctx hcm
     hLs hLd hT hc1 hst.world hst.sp hst.align
   obtain ⟨ls1', hcl, hlen, hins, hpl, hrun, hint, hprog, herr⟩ :=
     run_oneLines R.ctx R.af is s s' (fun i hi => oneLine_of_moveInst R.ctx (hmi i hi)) hex hst.err

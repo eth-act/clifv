@@ -604,6 +604,23 @@ theorem mask64_lt (v : Nat) : mask64 v < 2 ^ 64 := Nat.mod_lt _ (by decide)
 
 theorem chunk16_lt (V i : Nat) : chunk16 V i < 2 ^ 16 := Nat.mod_lt _ (by decide)
 
+/-- The `movk` chunks of `loadConst64` installed over its `movz` chunk give the constant. -/
+theorem loadConst64_fold (v : Nat) :
+    ((([1, 2, 3].map fun i => (chunk16 (mask64 v) i, i)).filter (·.1 != 0)).foldl
+      (fun X p => Arm.BitVec.partInstall (16 * p.2) 16 (BitVec.ofNat 16 p.1) X)
+      (BitVec.ofNat 64 (chunk16 (mask64 v) 0))) = BitVec.ofNat 64 v := by
+  rw [foldl_filter]
+  have c0 : BitVec.ofNat 64 (chunk16 (mask64 v) 0) = BitVec.ofNat 64 (mask64 v % 2 ^ (16 * 1)) := by
+    simp [chunk16]
+  have c1 := chunk_step (mask64 v) 1 (by omega)
+  have c2 := chunk_step (mask64 v) 2 (by omega)
+  have c3 := chunk_step (mask64 v) 3 (by omega)
+  simp only [List.map_cons, List.map_nil, List.foldl_cons, List.foldl_nil, bne_iff_ne, ne_eq,
+    decide_eq_true_eq] at c1 c2 c3 ⊢
+  rw [c0, c1, show 16 * 1 + 16 = 16 * 2 by rfl, c2, show 16 * 2 + 16 = 16 * 3 by rfl, c3]
+  apply BitVec.eq_of_toNat_eq
+  simp [mask64]
+
 /-- **The constant load** `loadConst64 (x n) v`: `movz`, then `movk` of the non-zero chunks;
 `x n` ends as `v` (mod 2^64), the pc advances by 4 per line, nothing else changes. -/
 theorem steps_loadConst64 (env : Env) {n : Nat} (hn : n ≤ 30) (v : Nat) (s : Arm.ArmState) :
@@ -622,20 +639,7 @@ theorem steps_loadConst64 (env : Env) {n : Nat} (hn : n ≤ 30) (v : Nat) (s : A
       obtain ⟨⟨i, hi, rfl⟩, -⟩ := hp
       simp at hi
       exact ⟨chunk16_lt _ _, by omega⟩)
-  have hv : ((([1, 2, 3].map fun i => (chunk16 (mask64 v) i, i)).filter (·.1 != 0)).foldl
-      (fun X p => Arm.BitVec.partInstall (16 * p.2) 16 (BitVec.ofNat 16 p.1) X)
-      (BitVec.ofNat 64 (chunk16 (mask64 v) 0))) = BitVec.ofNat 64 v := by
-    rw [foldl_filter]
-    have c0 : BitVec.ofNat 64 (chunk16 (mask64 v) 0) = BitVec.ofNat 64 (mask64 v % 2 ^ (16 * 1)) := by
-      simp [chunk16]
-    have c1 := chunk_step (mask64 v) 1 (by omega)
-    have c2 := chunk_step (mask64 v) 2 (by omega)
-    have c3 := chunk_step (mask64 v) 3 (by omega)
-    simp only [List.map_cons, List.map_nil, List.foldl_cons, List.foldl_nil, bne_iff_ne, ne_eq,
-      decide_eq_true_eq] at c1 c2 c3 ⊢
-    rw [c0, c1, show 16 * 1 + 16 = 16 * 2 by rfl, c2, show 16 * 2 + 16 = 16 * 3 by rfl, c3]
-    apply BitVec.eq_of_toNat_eq
-    simp [mask64]
+  have hv := loadConst64_fold v
   rw [hv] at hk
   have e : Arm.r .PC s + 4#64 + BitVec.ofNat 64 (4 * (([1, 2, 3].map fun i => (chunk16 (mask64 v) i, i)).filter (·.1 != 0)).length) =
       Arm.r .PC s + BitVec.ofNat 64 (4 * (Line.ins (.movWide .movZ true (.x n) ⟨chunk16 (mask64 v) 0, 0⟩) none ::

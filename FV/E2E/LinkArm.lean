@@ -4150,7 +4150,7 @@ theorem backend_correct_program_budget (L : LinkSys) (hL : L.Ok)
   have hME : L.MachEntry κ M f L.F L.Img ra s w₀ :=
     ⟨hent.toCall, hres, hgfree, hF.symm, fun _ h => h, himg,
       hbe.w L.F fun r ⟨_, _, hvb, hi, _, hv⟩ =>
-        ((ctlCheck_args (lowerRFunc_ok hc.alloc).2.2.2 hvb hi).2.2 _ hv).2⟩
+        ((ctlCheck_args (lowerRFunc_ok hc.alloc).2.2 hvb hi).2.2 _ hv).2⟩
   -- the whole-program run is a per-function run
   have hIf : Clif.LInv (L.P.only f) cs := runInv_entry (by simp [Clif.Program.only]) hcs
   have hlink := Clif.runLoop_linkN (base := L.base) (syms := L.syms) M hL.names hf hL.free
