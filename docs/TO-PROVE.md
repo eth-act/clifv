@@ -178,6 +178,13 @@ author's estimate, not measured), **Risk**.
      runs emit, with fresh distinct defs), vreg classes are consistent (`ClassesHyp`: needs the
      lowering's `classes` bookkeeping), and the CFG facts (`EdgesHyp`: from `LowerShape`'s edge
      blocks and `prepare`'s splitting).
+     **`ClassesHyp` proven** (`classesHyp`, `FV/Backend/Proof/SpillClasses.lean`, `SpillCls*.lean`: a
+     flow-level abstract interpretation over the exported rules with checked `emit`s, `clsTab`, shows every
+     emitted register has the class the lowering state records; alias resolution keeps classes).
+     **`EdgesHyp` proven under the new decidable input condition `ArityOk`** (`edgesHyp_of`,
+     `SpillEdges*.lean`; `SpillArity.lean`: every branch destination passes as many arguments as its target
+     has parameters, which `lowerFunction` does not check for argument-less `brif`/`br_table` edges;
+     `lean-e2e-check`: `arityOkB` 1148/1148). Only `CtlSpillHyp` remains open.
   4. *The dataflow invariant*: with in-state "save slots hold the entry values, the home of every
      defined vreg holds it", each `spillInst` group, the argument copies and the entry stores
      re-establish it; `retCheck` from the restores.
