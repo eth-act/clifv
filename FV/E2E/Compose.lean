@@ -24,22 +24,23 @@ theorem memAgree_of {F : BitVec 64 → Prop} {syms} {cm : Clif.Mem} {w s : Arm.A
   simp only [Arm.read_mem, Arm.read_store]
   rw [he _ hF]
 
-/-- **Composition.** -/
-theorem backend_correct_of_layers {p : Clif.Program} {f : Clif.Function} {vc vcp : VCode}
+/-- **Composition**, with the register-level theorem's choice of the initial vreg file
+(`RegLevelCorrectEx`): `IselSim` and `PrepareCorrect` are instantiated with it. -/
+theorem backend_correct_of_layers_ex {p : Clif.Program} {f : Clif.Function} {vc vcp : VCode}
     {af : AFunc} {fb : FnBin} {sem : Arm.ArmState → Sem} {F : Arm.ArmState → BitVec 64 → Prop}
     {syms : String → Option Nat} {slotOff out K : Nat}
     {astep : Arm.ArmState → Arm.ArmState} {env : Clif.Env}
     (hIsel : ∀ s, IselSim (sem s) ⟨F s, syms, slotOff, out⟩ env p f vc)
     (hPrep : ∀ s, PrepareCorrect (sem s) vc vcp)
-    (hReg : RegLevelCorrect sem F K astep vcp af fb)
+    (hReg : RegLevelCorrectEx sem F K astep vcp af fb)
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hent : AbiEntry fb base ra s) (hres : StackAvail K af s) (hbe : BodyEntry af s w₀)
     (hargs : ArgsAtEntry (F s) f.sig args w₀)
     (hcs : ClifEntry f args cs) (hrel : Rel.holds ⟨F s, syms, slotOff, out⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ArmRefines fb base ra astep s (Clif.runLoop env p fuel cs) := by
-  have hI := hIsel s args cs w₀ (fun _ => 0) hcs hrel hargs htr fuel
-  have hR := hReg base ra s hent hres w₀ hbe (fun _ => 0)
+  obtain ⟨ρ₀, hR⟩ := hReg base ra s hent hres w₀ hbe
+  have hI := hIsel s args cs w₀ ρ₀ hcs hrel hargs htr fuel
   cases hrun : Clif.runLoop env p fuel cs with
   | returned vals cm =>
     obtain ⟨us, outs, w, hv, hus, hlen, hhold, hmem⟩ := hI.1 vals cm hrun
@@ -64,5 +65,21 @@ theorem backend_correct_of_layers {p : Clif.Program} {f : Clif.Function} {vc vcp
     exact hR.2 c ((hPrep s _ _).2 c (hI.2 c hrun))
   | stuck _ => trivial
   | outOfFuel => trivial
+
+/-- **Composition.** -/
+theorem backend_correct_of_layers {p : Clif.Program} {f : Clif.Function} {vc vcp : VCode}
+    {af : AFunc} {fb : FnBin} {sem : Arm.ArmState → Sem} {F : Arm.ArmState → BitVec 64 → Prop}
+    {syms : String → Option Nat} {slotOff out K : Nat}
+    {astep : Arm.ArmState → Arm.ArmState} {env : Clif.Env}
+    (hIsel : ∀ s, IselSim (sem s) ⟨F s, syms, slotOff, out⟩ env p f vc)
+    (hPrep : ∀ s, PrepareCorrect (sem s) vc vcp)
+    (hReg : RegLevelCorrect sem F K astep vcp af fb)
+    {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
+    (hent : AbiEntry fb base ra s) (hres : StackAvail K af s) (hbe : BodyEntry af s w₀)
+    (hargs : ArgsAtEntry (F s) f.sig args w₀)
+    (hcs : ClifEntry f args cs) (hrel : Rel.holds ⟨F s, syms, slotOff, out⟩ f cs.frame.slots cs.mem w₀)
+    (htr : TrapsExplicit env p cs) (fuel : Nat) :
+    ArmRefines fb base ra astep s (Clif.runLoop env p fuel cs) :=
+  backend_correct_of_layers_ex hIsel hPrep hReg.ex hent hres hbe hargs hcs hrel htr fuel
 
 end E2E

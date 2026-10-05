@@ -448,7 +448,7 @@ theorem realizes_jt {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs 
       ts.map (fun l => Line.word (.block l) (.jt ps1.jt)) = jtBody d ts (.x nr) (.x na) (.x nb) (.jt ps1.jt)
       from rfl, ftList_jt, List.append_assoc]
   obtain ⟨hmTaken, hmNot⟩ := jt_machine hR hnr hna hnb hab hdrop' hst.prog hpc hst.err hst.code
-  obtain ⟨c, ins, hc⟩ := checked_of_checkAlloc hR.check
+  obtain ⟨c, ins, _, hc, -⟩ := hR.check
   obtain ⟨preds, hcfg⟩ := hc.cfg
   obtain ⟨t0, tss, hback, hss, hlab⟩ := cfg_block hcfg hvb
   cases h with

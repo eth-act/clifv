@@ -145,31 +145,74 @@ author's estimate, not measured), **Risk**.
 - **Evidence:** `lean-e2e-check`: `checkAlloc` accepts the spill allocation of 1148/1148 in-scope
   functions; `lowerRFunc` lowers 1148/1148 (dense home numbering keeps the allocator frame under 32 KiB).
   Filetests with the fallback forced: `docs/contracts/regalloc.md` "Results" (g).
-- **Remaining for (a): prove `SpillAccepted`.** Plan (none of it started):
-  1. *Avoid the checker's fixpoint.* `checkAlloc` runs an untrusted round-robin iteration before `verify`;
-     only `verify` matters for soundness. Either prove the iteration complete (it reaches a state
-     ⊇ any verifying in-states within its fuel: monotone transfer functions, `Nodup` symbol lists,
-     symbols bounded by `classes.size`), or generalise the downstream premise from
-     `checkAlloc vcp rf = .ok ()` to `∃ c ins, Checked vcp rf c ins` (`RegallocSound.lean`; used by
-     `Compiled.check`, `RL.Wf.check`, `regLevelCorrect_world` and five `checked_of_checkAlloc` call
-     sites) and give the in-states explicitly.
-  2. *Definedness of the VCode.* `checkAlloc_sound` holds for every initial vreg file `ρ₀`, so any
-     allocation it accepts implies that every use is defined on every CFG path (a must-analysis
-     with the checker's kills: `keptDefs`, `normalDead`). For `lowerFunction` + `prepare` output this
-     follows from `Dominated` only through the ISLE rules (every emitted use is an operand's register or
-     a temporary defined earlier in the same rule's code), a rule-data property like V1c/V3: an abstract
-     interpretation over the exported rules. Alternative that avoids it: let the register-level
-     theorem choose `ρ₀` (`RegLevelCorrect` with `∃ ρ₀`; `IselSim` and `PrepareCorrect` hold for every
-     `ρ₀`, `Compose.lean` instantiates it), start the checker with every home holding its vreg
-     (`ρ₀ v :=` the slot's initial content), and generalise `Checked.entry`.
+- **Remaining for (a): prove `SpillAccepted`** (`FV/E2E/AllocDirect.lean`; the first statement, PR #54,
+  was false: `E2E.not_ctlSpillHyp`, two `sret` parameters; the current one takes `InSubset` and `ArityOk`).
+  1. *Avoid the checker's fixpoint* — **done**. The downstream premise is `AllocChecked vcp rf`
+     (`RegallocSound.lean`: verified in-states `CheckedAt` — `Checked` with the entry in-state named and
+     unconstrained — whose entry state is `EntryOk`), not `checkAlloc vcp rf = .ok ()`
+     (`allocChecked_of_checkAlloc`); `RL.Wf.check` is `AllocChecked`, `CompiledA` is `Compiled` with
+     it (`Compiled.toA`), and the chain has `_ex` variants (`regLevelCorrect_world_ex`,
+     `regLevelCorrect_backend_ex`, `backend_correct_of_layers_ex`, `backend_correct_ex`,
+     `backend_correct_of_rules_ex`, `backend_correct_m4_ex`, `backend_correct_final_ex`,
+     `backend_correct_final_of_lower_ex`); the old statements are corollaries. Proving the iteration
+     complete was not needed: the spill allocation's in-states are given explicitly.
+  2. *Definedness* — **avoided**. The register-level theorem chooses `ρ₀` (`RegLevelCorrectEx`,
+     `RegLevelCorrect.ex`; `backend_correct_of_layers_ex` instantiates `IselSim`/`PrepareCorrect`
+     with it): `checkedAt_sound` needs only that the initial store and `ρ₀` satisfy the entry in-state,
+     and for an `EntryOk` state (callee-saved registers hold their entry values, each vreg in at most
+     one location) `entryRho` picks such a `ρ₀` from the initial frame (`Inv_entryRho`,
+     `allocChecked_sound`). So the spill allocation may start with every home holding its vreg. Not
+     covered: the link-level theorems (`LinkWorld`, `PairDriver`) fix one VCode outcome for all
+     activations and keep `checkAlloc` (a choice of `ρ₀` per activation would need definedness).
   3. *Instruction-local facts* for `spillLocs`: `operands` succeeds; two fixed uses of one register
      carry one vreg; fixed defs are pairwise distinct; enough scratch registers; no late uses; branch
      arguments and parameters have equal counts and classes, distinct parameters; a `try_call`'s
      successors have one predecessor and no parameters. Per `MInst` constructor, plus facts about the
-     call ABI register lists produced by the lowering.
-  4. *The dataflow invariant*: with in-state "save slots hold the entry values, the home of every
-     defined vreg holds it", each `spillInst` group, the argument copies and the entry stores
-     re-establish it; `retCheck` from the restores.
+     call ABI register lists produced by the lowering. **Partly done** (`FV/Backend/Proof/SpillLocal*.lean`):
+     the facts are `OpsOk`/`SpillInstOk`/`EdgesOk`/`ClassesOk` (`SpillLocalOk`); under `OpsOk` the
+     checker's static checks accept `spillLocs` (`checkStatic_spill`), the loads leave every use's home
+     value in its register (`loads_run`), a kept def's register holds exactly its vreg after
+     `transferOp` (`transferOp_kept`, `transferOp_nonReg`). Every covered straight-line form meets
+     `SpillInstOk` (`spillInstOk_of_formOk`), as do the LL/SC loops, `ElfTlsGetAddr`, `JTSequence` and
+     `Rets` on x0..x7 with distinct defs/registers; `prepare` keeps it. `spillLocalOk_of_pipeline` holds
+     under the open, program-independent `SpillLocalHyp`: the lowering's control forms meet
+     `SpillInstOk` (`CtlSpillHyp`: needs which call/`Args`/`Rets`/branch shapes the ISLE and driver
+     runs emit, with fresh distinct defs), vreg classes are consistent (`ClassesHyp`: needs the
+     lowering's `classes` bookkeeping), and the CFG facts (`EdgesHyp`: from `LowerShape`'s edge
+     blocks and `prepare`'s splitting).
+     **`ClassesHyp` proven** (`classesHyp`, `FV/Backend/Proof/SpillClasses.lean`, `SpillCls*.lean`: a
+     flow-level abstract interpretation over the exported rules with checked `emit`s, `clsTab`, shows every
+     emitted register has the class the lowering state records; alias resolution keeps classes).
+     **`EdgesHyp` proven under the new decidable input condition `ArityOk`** (`edgesHyp_of`,
+     `SpillEdges*.lean`; `SpillArity.lean`: every branch destination passes as many arguments as its target
+     has parameters, which `lowerFunction` does not check for argument-less `brif`/`br_table` edges;
+     `lean-e2e-check`: `arityOkB` 1148/1148).
+     **`CtlSpillHyp` is false as stated** (`E2E.not_ctlSpillHyp`: two `sret` parameters are both fixed
+     to x8); with the ABI condition of `InSubset` (`AbiSigsOk`: `abiSigs`/`indSigs`, at most one `sret`)
+     it holds: `E2E.ctlSpillHyp` (`FV/Backend/Proof/SpillCtl*.lean`, `ctlSpillHyp_of`): every `CtlShape`
+     meets `SpillInstOk`; the driver's `Args`, the `tryCall` (`clobberAll` unreachable: a `try_call`
+     signature is `system_v`), edge `jump`s and the alias renaming are proven, and the ISLE inversion
+     `IselCtlHyp` is `Driver.iselCtlHyp` (`FV/Backend/Proof/IselShp*.lean`, 2026-10-05): V3's abstract
+     interpreter, parametric in its transfer functions, re-run with an `emit` precondition checking the
+     shapes of `CondBr`/`TrapIf`/`TestBitAndBranch` (`apreS`), oracles for the helpers with fresh defs
+     (`load_ext_name_got/near`, `atomic_rmw/cas_loop`, `elf_tls_get_addr`), table `shpTab` (641 entries,
+     `FVTest/Backend/IselShpGen.lean`, 11 `native_decide` checks); the call, `try_call` and `br_table`
+     root rules (1031–1036, 1140) by hand (`root_hand`). `IselCtlHyp`'s `try_call` clause is restricted
+     to `f`'s terminators: for an arbitrary `try_call_indirect` on an unused signature declaration with
+     two `sret` parameters it is false (rule 1036). So step 3 is **done**: `E2E.spillLocalAll`
+     (`InSubset`, `Dominated`, `LowerScope`, `ArityOk` give `SpillLocalOk` of the prepared VCode).
+  4. *The dataflow invariant* — **stated** (`FV/Backend/Proof/SpillInvariant.lean`). What remains is
+     availability, not definedness: `SpillAvail vc D` (sets `D b` of vregs whose home holds them on
+     entry to block `b`: all at the entry; every use available where it is read, `availAt`; every edge
+     delivers its target's set, `edgeAvail`), a VCode-level must-analysis killed only by unstored
+     terminator defs, scratch defs past `keptDefs` and parameters with unavailable arguments. Open, as
+     explicit hypotheses: `Spill.SpillStep4` (with `SpillLocalOk` and `SpillAvail`, the in-states
+     "homes of `D b` hold their vregs, save slots their entry values (block 0: the registers), a
+     `try_call` successor's live def registers their defs" verify, i.e. `AllocChecked vc (spillAlloc
+     vc)`) and `SpillAvailable` (`∃ D, SpillAvail vcp D` for the pipeline's output). Assembly:
+     `spillAccepted_of : SpillStep4 → SpillLocalAll → SpillAvailable → SpillAccepted`,
+     `spillAccepted_of_step4 : SpillStep4 → SpillAvailable → SpillAccepted`, then
+     `backend_correct_final_alloc` (premise `arityOkB f = true`).
 - **Option (b), later:** a real allocator (linear scan) written in Lean, proven directly or with
   `checkAlloc` completeness for its output. Removes the Rust tool entirely. Large `[est]`.
 

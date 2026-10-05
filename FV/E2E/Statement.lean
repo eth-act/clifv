@@ -152,6 +152,27 @@ structure Compiled (f : Clif.Function) (k : Nat) (vc vcp : VCode) (rf : RFunc) (
   emit : emitFunc k af = .ok fa
   layout : fa.layout = .ok fb
 
+/-- `Compiled` with the allocation premise `AllocChecked` (verified in-states, `CheckedAt`, with an
+`EntryOk` entry state) in place of `checkAlloc`'s verdict (V4): the allocation need not come from
+regalloc2 and be accepted by the checker's own fixpoint iteration (the spill allocation,
+`FV/E2E/AllocDirect.lean`). `Compiled.toA`: every `Compiled` is one. -/
+structure CompiledA (f : Clif.Function) (k : Nat) (vc vcp : VCode) (rf : RFunc) (af : AFunc)
+    (fa : FnAsm) (fb : FnBin) : Prop where
+  lower : lowerFunction f = .ok vc
+  lowerOk : lowerCheck f vc = true
+  prepare : prepare vc = .ok vcp
+  prepOk : prepCheck vc vcp = true
+  check : AllocChecked vcp rf
+  alloc : lowerRFunc vcp rf = .ok af
+  emit : emitFunc k af = .ok fa
+  layout : fa.layout = .ok fb
+
+theorem Compiled.toA {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc} {af : AFunc}
+    {fa : FnAsm} {fb : FnBin} (hc : Compiled f k vc vcp rf af fa fb) :
+    CompiledA f k vc vcp rf af fa fb :=
+  ⟨hc.lower, hc.lowerOk, hc.prepare, hc.prepOk, allocChecked_of_checkAlloc hc.check, hc.alloc, hc.emit,
+    hc.layout⟩
+
 /-! ## CLIF side: entry state and memory relation -/
 
 /-- `cs` is an initial CLIF state of `f` on `args`: `Clif.initState` except that the stack
@@ -462,6 +483,26 @@ def RegLevelCorrect (sem : Arm.ArmState → Sem) (F : Arm.ArmState → BitVec 64
         (∀ (j : Nat) v p x, us[j]? = some (v, p) → vals[j]? = some x → regVal (runX astep n s) p = x) ∧
         ∀ a, ¬ F s a → (runX astep n s).mem a = w.mem a) ∧
     (∀ c, VTraps vcp (sem s) ρ₀ w₀ c → ∃ n, TrapAt fb base c (runX astep n s))
+
+/-- **`RegLevelCorrect` for one initial vreg file of the theorem's choice** (V4): the
+register-level theorem chooses `ρ₀` (from the activation's initial frame: `AllocChecked`'s entry state
+may place vregs, `regLevelCorrect_backend_ex`); `IselSim` and `PrepareCorrect` hold for every
+`ρ₀`, so the composition (`backend_correct_of_layers_ex`) instantiates them with it.
+`RegLevelCorrect.ex`: implied by `RegLevelCorrect`. -/
+def RegLevelCorrectEx (sem : Arm.ArmState → Sem) (F : Arm.ArmState → BitVec 64 → Prop) (K : Nat)
+    (astep : Arm.ArmState → Arm.ArmState) (vcp : VCode) (af : AFunc) (fb : FnBin) : Prop :=
+  ∀ base ra s, AbiEntry fb base ra s → StackAvail K af s → ∀ w₀, BodyEntry af s w₀ →
+    ∃ ρ₀ : Nat → CV,
+    (∀ us vals w, VReturns vcp (sem s) ρ₀ w₀ us vals w →
+      ∃ n, ArmRet ra s (runX astep n s) ∧
+        (∀ (j : Nat) v p x, us[j]? = some (v, p) → vals[j]? = some x → regVal (runX astep n s) p = x) ∧
+        ∀ a, ¬ F s a → (runX astep n s).mem a = w.mem a) ∧
+    (∀ c, VTraps vcp (sem s) ρ₀ w₀ c → ∃ n, TrapAt fb base c (runX astep n s))
+
+theorem RegLevelCorrect.ex {sem : Arm.ArmState → Sem} {F : Arm.ArmState → BitVec 64 → Prop}
+    {K : Nat} {astep : Arm.ArmState → Arm.ArmState} {vcp : VCode} {af : AFunc} {fb : FnBin}
+    (h : RegLevelCorrect sem F K astep vcp af fb) : RegLevelCorrectEx sem F K astep vcp af fb :=
+  fun base ra s he hs w₀ hb => ⟨fun _ => 0, h base ra s he hs w₀ hb _⟩
 
 /-- **M7's lowering obligations**: the VCode has the structure `lowerFunction` builds
 (`LowerShape`, incl. `CtxInv`), and an SSA availability certificate exists (`Cert`).
