@@ -1,6 +1,9 @@
 import FV.E2E.FinalDirect
 import FV.Backend.Proof.SpillInvariant
 import FV.Backend.Proof.SpillArity
+import FV.Backend.Proof.SpillEdges
+import FV.Backend.Proof.SpillClasses
+import FV.E2E.SpillCtlWitness
 
 /-!
 # The final theorem without the register-allocation checker premise (V4)
@@ -118,6 +121,20 @@ def SpillLocalAll : Prop :=
   ∀ (p : Clif.Program) (f : Clif.Function) (vc vcp : VCode), InSubset p f → Spill.ArityOk f → Dominated f →
     LowerScope f → lowerFunction f = .ok vc → Backend.prepare vc = .ok vcp → Spill.SpillLocalOk vcp
 
+/-- **The local facts of the pipeline's output** (V4 step 3): the straight-line forms by
+`formsCovered_complete`, the control forms by `ctlSpillHyp` (`InSubset`'s ABI conditions), the
+classes by `classesHyp`, the CFG by `edgesHyp_of` (`ArityOk`), all kept by `prepare`. -/
+theorem spillLocalAll : SpillLocalAll := by
+  intro p f vc vcp hsub har hd hs hl hp
+  refine ⟨fun b vb k i hvb hi => ?_, Spill.classesHyp f vc vcp hd hs hl hp,
+    Spill.edgesHyp_of hd hs har hl hp⟩
+  cases hct : i.isCtl
+  · have hcov := formsCovered_complete hs hl hp default b vb k i hvb hi
+    rw [hct] at hcov
+    exact Spill.spillInstOk_of_formOk (hcov.resolve_left (by simp))
+  · exact Spill.spillCtl_of_prepare hp (prepDomain_of_lower hs hl hs.nonempty)
+      (ctlSpillHyp hsub hd hs hl) b vb k i hvb hi hct
+
 /-- **The availability sets of the pipeline's output exist** (V4 step 4, its VCode part; open, an
 explicit hypothesis, not an axiom): the in-state facts the spill allocation satisfies
 (`Spill.SpillAvail`: every vreg available at the entry, every use available where it is read, every
@@ -134,6 +151,11 @@ theorem spillAccepted'_of (h4 : Spill.SpillStep4) (hloc : SpillLocalAll) (hav : 
   fun p f vc vcp hsub har hd hs hl hp =>
     let ⟨D, hD⟩ := hav p f vc vcp hsub har hd hs hl hp
     h4 vcp D (hloc p f vc vcp hsub har hd hs hl hp) hD
+
+/-- **The assembly with step 3 proven**: the step-4 invariant proof and the availability sets give
+`SpillAccepted'`. -/
+theorem spillAccepted'_of_step4 (h4 : Spill.SpillStep4) (hav : SpillAvailable) : SpillAccepted' :=
+  spillAccepted'_of h4 spillLocalAll hav
 
 /-- The allocation the backend lowers is `AllocChecked`, whatever regalloc2 answered. -/
 theorem allocChecked_allocResult (hsa : SpillAccepted') {p : Clif.Program} {f : Clif.Function}
