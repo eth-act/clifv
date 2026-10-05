@@ -11,7 +11,7 @@
 # and per file the mapping symbols ($x/$d kind and value) and the set of undefined symbols
 # (name and type).
 #
-# usage: scripts/lean-backend-encode-check.sh [-v] [--regalloc regalloc2|stack]
+# usage: scripts/lean-backend-encode-check.sh [-v] [--regalloc regalloc2|spill|stack]
 #                                             [--corpus | --runtests | --random |
 #                                             --n N | --seed S | FILE.clif...]
 #   default: --corpus (corpus/clif/*.clif, corpus/clif/extrt/*.clif, corpus/clif-regress/*.clif), --runtests

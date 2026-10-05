@@ -65,7 +65,7 @@ and, on rejection, replaced by a directly proven Lean path (kind 2). Correctness
 | lowering driver | Lean `lowerFunction` | `lowerCheck`, complete on `Dominated`/`LowerScope` (`lowerCheck_complete`) | validator, complete on decidable input conditions | V1 done |
 | form coverage | Lean (ISLE data) | `formsCoveredB`, complete on `LowerScope` (`formsCovered_complete`) | validator, complete on decidable input conditions | V3 done |
 | `prepare` | Lean | `prepCheck`, complete on `PrepDomain`, which `lowerFunction` always produces (`prepDomain_of_lower`) | validator, complete | V2 done |
-| register allocation | **external Rust** (regalloc2 0.15.2 via `lean-regalloc`) | **`checkAlloc`** (`FV/Backend/RegallocCheck.lean:423-441`) | **validator premise + oracle** | V4 |
+| register allocation | **external Rust** (regalloc2 0.15.2 via `lean-regalloc`), Lean fallback `spillAlloc` | `checkAlloc` (`FV/Backend/RegallocCheck.lean:423-441`) on regalloc2's output; on rejection `spillAlloc` (`allocResult`, `E2E.backend_correct_final_alloc`), accepted by `checkAlloc` under the open hypothesis `SpillAccepted` (1148/1148 decided) | fallback; its acceptance a hypothesis | V4 (a) wired; `SpillAccepted` open; (b) open |
 | frame, control lowering | Lean `lowerRFunc` | internal rejections (frame ≥ 32 KiB, `ctlCheck`) | rejection | V5 |
 | emission, layout | Lean | branch range check, no relaxation | rejection | V6 |
 | encoder | Lean | `Insn.decode_encode` (`FV/Backend/Proof/Encode.lean:57-60`) | proven | — |
@@ -126,19 +126,52 @@ author's estimate, not measured), **Risk**.
   the 5334 (element size, run, rotation) triples).
 - **Remaining:** the compiler still runs `formsCoveredB` in `lean-e2e-check` as a double-check.
 
-### V4. Register allocation without trusting regalloc2
+### V4. Register allocation without trusting regalloc2 — (a) wired, `SpillAccepted` open
 
-- **Now:** regalloc2 (Rust) is an untrusted oracle and `checkAlloc_sound` validates its output; acceptance
-  is the premise `Compiled.check`. A completeness proof is impossible for an external tool.
-- **Deliver, option (a), recommended first:** a fallback allocator in Lean, proven directly, used when
-  `checkAlloc` rejects (or when the oracle is absent). `FV/Backend/StackAlloc.lean` (every value in a
-  stack slot) is the starting point; it's not covered by any theorem today. Theorem: `allocate vc = .ok af
-  → <af refines vc>` without `checkAlloc`. Then the pipeline is "regalloc2 if `checkAlloc` accepts, else
-  `StackAlloc`", and the theorem has no premise. The fallback also gives totality.
+- **Done (a), 2026-10-05:** the fallback `spillAlloc : VCode → RFunc` (`FV/Backend/SpillAlloc.lean`: every
+  vreg in its own stack slot, operands moved into registers that meet their constraints around each
+  instruction, all callee-saved registers saved, block arguments as a two-phase parallel copy through
+  temporary slots, a `try_call`'s results stored at the start of its successors). The backend lowers
+  `allocResult vcp ra` (regalloc2's answer if `checkAlloc` accepts it, else `spillAlloc`; `lowerAlloc`,
+  `lowerAlloc_eq`); a rejection, a failure or the absence of regalloc2 is no longer a compile error;
+  `lean-backend --regalloc spill` forces the fallback. `E2E.backend_correct_final_alloc`
+  (`FV/E2E/AllocDirect.lean`) is `backend_correct_final_of_lower` with `rf := allocResult vcp ra` for any
+  answer `ra` and no `checkAlloc` premise, under the explicit, program-independent hypothesis
+  `SpillAccepted` (`checkAlloc vcp (spillAlloc vcp) = .ok ()` for every `vcp` that `lowerFunction` and
+  `prepare` produce from `Dominated`/`LowerScope` input). Route (a1) (an `RFunc`, reusing the checker's
+  soundness and the whole M6/M5 proof) rather than (a2) (a direct proof of `StackAlloc.allocate`, which
+  would need a second VCode→`AFunc` simulation with its own frame and call conventions, and which rejects
+  the LL/SC loops, `try_call` and `tls_value`).
+- **Evidence:** `lean-e2e-check`: `checkAlloc` accepts the spill allocation of 1148/1148 in-scope
+  functions; `lowerRFunc` lowers 1148/1148 (dense home numbering keeps the allocator frame under 32 KiB).
+  Filetests with the fallback forced: `docs/contracts/regalloc.md` "Results" (g).
+- **Remaining for (a): prove `SpillAccepted`.** Plan (none of it started):
+  1. *Avoid the checker's fixpoint.* `checkAlloc` runs an untrusted round-robin iteration before `verify`;
+     only `verify` matters for soundness. Either prove the iteration complete (it reaches a state
+     ⊇ any verifying in-states within its fuel: monotone transfer functions, `Nodup` symbol lists,
+     symbols bounded by `classes.size`), or generalise the downstream premise from
+     `checkAlloc vcp rf = .ok ()` to `∃ c ins, Checked vcp rf c ins` (`RegallocSound.lean`; used by
+     `Compiled.check`, `RL.Wf.check`, `regLevelCorrect_world` and five `checked_of_checkAlloc` call
+     sites) and give the in-states explicitly.
+  2. *Definedness of the VCode.* `checkAlloc_sound` holds for every initial vreg file `ρ₀`, so any
+     allocation it accepts implies that every use is defined on every CFG path (a must-analysis
+     with the checker's kills: `keptDefs`, `normalDead`). For `lowerFunction` + `prepare` output this
+     follows from `Dominated` only through the ISLE rules (every emitted use is an operand's register or
+     a temporary defined earlier in the same rule's code), a rule-data property like V1c/V3: an abstract
+     interpretation over the exported rules. Alternative that avoids it: let the register-level
+     theorem choose `ρ₀` (`RegLevelCorrect` with `∃ ρ₀`; `IselSim` and `PrepareCorrect` hold for every
+     `ρ₀`, `Compose.lean` instantiates it), start the checker with every home holding its vreg
+     (`ρ₀ v :=` the slot's initial content), and generalise `Checked.entry`.
+  3. *Instruction-local facts* for `spillLocs`: `operands` succeeds; two fixed uses of one register
+     carry one vreg; fixed defs are pairwise distinct; enough scratch registers; no late uses; branch
+     arguments and parameters have equal counts and classes, distinct parameters; a `try_call`'s
+     successors have one predecessor and no parameters. Per `MInst` constructor, plus facts about the
+     call ABI register lists produced by the lowering.
+  4. *The dataflow invariant*: with in-state "save slots hold the entry values, the home of every
+     defined vreg holds it", each `spillInst` group, the argument copies and the entry stores
+     re-establish it; `retCheck` from the restores.
 - **Option (b), later:** a real allocator (linear scan) written in Lean, proven directly or with
   `checkAlloc` completeness for its output. Removes the Rust tool entirely. Large `[est]`.
-- **Depends:** none for (a). **Size:** (a) medium `[est]`. **Risk:** (a) the StackAlloc frame may hit the
-  32 KiB limit on big functions (V5).
 
 ### V5. Frame and control-lowering rejections (totality)
 
@@ -341,7 +374,7 @@ label**; list the free ones with
 | --- | --- | --- |
 | V1+V2 | [#4](https://github.com/eth-act/clifv/issues/4) `lowerCheck` completeness (+ V2, `PrepDomain` of the lowering output) | **done** (`6db15bd`) |
 | V3 | [#5](https://github.com/eth-act/clifv/issues/5) Form coverage (`formsCoveredB`) | **done** (#5) |
-| V4 | [#6](https://github.com/eth-act/clifv/issues/6) Register allocation without trusting regalloc2 | open |
+| V4 | [#6](https://github.com/eth-act/clifv/issues/6) Register allocation without trusting regalloc2 | (a) fallback wired, `backend_correct_final_alloc` under the open hypothesis `SpillAccepted`; (b) open |
 | V5 | [#7](https://github.com/eth-act/clifv/issues/7) Frame and control-lowering rejections (totality) | open |
 | V6 | [#8](https://github.com/eth-act/clifv/issues/8) Branch range (totality) | open |
 | L2a | [#9](https://github.com/eth-act/clifv/issues/9) Linking without validators: split `okB` into input conditions + properties proven by construction | open |

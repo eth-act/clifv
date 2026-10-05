@@ -415,13 +415,13 @@ Traps are `udf #0xc11f` (Cranelift's `TRAP_OPCODE`); the trap table maps the off
 
 ```sh
 lake build FV.Backend lean-backend lean-backend-armrun lean-backend-encode-test FVTest.Backend.Names
-.lake/build/bin/lean-backend IN.clif OUT.o [--traps OUT.json] [--rules RULES.txt] [--dump DIR] [--regalloc regalloc2|stack|regalloc2-small] [--opt [--opt-* ...]]   # --opt: Lean mid-end first (midend.md)
+.lake/build/bin/lean-backend IN.clif OUT.o [--traps OUT.json] [--rules RULES.txt] [--dump DIR] [--regalloc regalloc2|spill|stack|regalloc2-small] [--opt [--opt-* ...]]   # spill: V4 fallback forced; --opt: Lean mid-end first (midend.md)
 .lake/build/bin/lean-backend IN.clif OUT.s ...        # assembly instead (for llvm-mc, test oracle)
 rust/target/release/clif-native IN.clif --functions-obj OUT.o --functions-table OUT.json [--link LIB]
-scripts/lean-backend-filetests.sh [-v] [--asm] [--regalloc regalloc2|stack] [--opt [--opt-* ...]] [--corpus | --runtests | FILE.clif...]   # default: both sets
-scripts/lean-backend-encode-check.sh [-v] [--regalloc regalloc2|stack] [--corpus | --runtests | --random | FILE.clif...]
-.lake/build/bin/lean-backend-armrun [--regalloc regalloc2|stack] [--bins DIR] [--opt [--opt-* ...]] [FILE.clif...]   # default: corpus/clif
-.lake/build/bin/lean-backend-regalloc-test [--small] [FILE.clif...]              # checker acceptance + mutations
+scripts/lean-backend-filetests.sh [-v] [--asm] [--regalloc regalloc2|spill|stack] [--opt [--opt-* ...]] [--corpus | --runtests | FILE.clif...]   # default: both sets
+scripts/lean-backend-encode-check.sh [-v] [--regalloc regalloc2|spill|stack] [--corpus | --runtests | --random | FILE.clif...]
+.lake/build/bin/lean-backend-armrun [--regalloc regalloc2|spill|stack] [--bins DIR] [--opt [--opt-* ...]] [FILE.clif...]   # default: corpus/clif
+.lake/build/bin/lean-backend-regalloc-test [--small] [FILE.clif...]              # checker acceptance + mutations + spill fallback
 scripts/lean-backend-metrics.sh [FILE.clif...]                                    # code size, dynamic counts (incl. --opt and Cranelift opt_level=speed)
 ```
 
