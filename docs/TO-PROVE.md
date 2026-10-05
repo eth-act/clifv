@@ -166,7 +166,18 @@ author's estimate, not measured), **Risk**.
      carry one vreg; fixed defs are pairwise distinct; enough scratch registers; no late uses; branch
      arguments and parameters have equal counts and classes, distinct parameters; a `try_call`'s
      successors have one predecessor and no parameters. Per `MInst` constructor, plus facts about the
-     call ABI register lists produced by the lowering.
+     call ABI register lists produced by the lowering. **Partly done** (`FV/Backend/Proof/SpillLocal*.lean`):
+     the facts are `OpsOk`/`SpillInstOk`/`EdgesOk`/`ClassesOk` (`SpillLocalOk`); under `OpsOk` the
+     checker's static checks accept `spillLocs` (`checkStatic_spill`), the loads leave every use's home
+     value in its register (`loads_run`), a kept def's register holds exactly its vreg after
+     `transferOp` (`transferOp_kept`, `transferOp_nonReg`). Every covered straight-line form meets
+     `SpillInstOk` (`spillInstOk_of_formOk`), as do the LL/SC loops, `ElfTlsGetAddr`, `JTSequence` and
+     `Rets` on x0..x7 with distinct defs/registers; `prepare` keeps it. `spillLocalOk_of_pipeline` holds
+     under the open, program-independent `SpillLocalHyp`: the lowering's control forms meet
+     `SpillInstOk` (`CtlSpillHyp`: needs which call/`Args`/`Rets`/branch shapes the ISLE and driver
+     runs emit, with fresh distinct defs), vreg classes are consistent (`ClassesHyp`: needs the
+     lowering's `classes` bookkeeping), and the CFG facts (`EdgesHyp`: from `LowerShape`'s edge
+     blocks and `prepare`'s splitting).
   4. *The dataflow invariant*: with in-state "save slots hold the entry values, the home of every
      defined vreg holds it", each `spillInst` group, the argument copies and the entry stores
      re-establish it; `retCheck` from the restores.

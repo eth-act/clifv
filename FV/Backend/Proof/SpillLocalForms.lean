@@ -1,6 +1,8 @@
 import FV.Backend.Proof.SpillLocalCheck
 import FV.Backend.Proof.RegallocCover
 import FV.Backend.Proof.LowerRename
+import FV.Backend.Proof.SpillLocalState
+import FV.Backend.Proof.IselCtlTerm
 
 /-!
 # The instruction facts of the instruction forms the lowering emits (V4 (a), step 3)
@@ -133,5 +135,50 @@ theorem spillInstOk_elfTls (nm : String) {d t : Nat} (h : d ≠ t) :
 theorem spillInstOk_jtSequence (dflt : Label) (ts : List Label) {r t1 t2 : Nat} (h : t1 ≠ t2) :
     SpillInstOk (.jtSequence dflt ts (.vreg r .int) (.vreg t1 .int) (.vreg t2 .int)) :=
   ⟨_, rfl, by opsok_concrete, fun _ h => by cases h⟩
+
+theorem x_alloc : ∀ k < 8, (Reg.x k).allocatable = true ∧ Reg.x k ∉ calleeSaved := by decide
+
+/-- `Rets` of distinct registers among x0..x7 (`gen_return`'s `retRegs`) meets `SpillInstOk`. -/
+theorem spillInstOk_rets {ns : List (Nat × Reg)} (hr : ∀ q ∈ ns, ∃ k, k < 8 ∧ q.2 = .x k)
+    (hnd : (ns.map (·.2)).Nodup) : SpillInstOk (.rets (retPairs ns)) := by
+  have mem : ∀ o ∈ (retOps ns).toArray.toList, ∃ q ∈ ns, o = ⟨q.1, .int, .use, .early, .fixed q.2⟩ := by
+    intro o ho
+    simp only [retOps, List.mem_map] at ho
+    obtain ⟨q, hq, rfl⟩ := ho
+    exact ⟨q, hq, rfl⟩
+  have memj : ∀ (j : Nat) (o : Operand), (retOps ns).toArray.toList[j]? = some o → ∃ q ∈ ns,
+      o = ⟨q.1, .int, .use, .early, .fixed q.2⟩ := fun j o hj => mem o (List.mem_of_getElem? hj)
+  have nodef : ∀ o ∈ (retOps ns).toArray.toList, o.kind = .use := by
+    intro o ho; obtain ⟨q, -, rfl⟩ := mem o ho; rfl
+  refine ⟨_, operands_rets ns, ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
+  · intro o ho h; obtain ⟨q, -, rfl⟩ := mem o ho; cases h
+  · intro o ho _; obtain ⟨q, -, rfl⟩ := mem o ho; rfl
+  · intro o ho p h; obtain ⟨q, hq, rfl⟩ := mem o ho
+    cases h
+    obtain ⟨k, hk, he⟩ := hr q hq
+    rw [he]; exact ⟨(x_alloc k hk).1, rfl⟩
+  · intro o ho o' ho' p _ _ h h'
+    obtain ⟨q, hq, rfl⟩ := mem o ho
+    obtain ⟨q', hq', rfl⟩ := mem o' ho'
+    injection h with h; injection h' with h'
+    rw [inj_of_nodup_map hnd hq hq' (h.trans h'.symm)]
+  · intro j j' o o' p hj _ hd
+    obtain ⟨q, -, rfl⟩ := memj j o hj; cases hd
+  · intro o ho p hd; rw [nodef o ho] at hd; cases hd
+  · intro o ho hd; rw [nodef o ho] at hd; cases hd
+  · intro j o i hj h; obtain ⟨q, -, rfl⟩ := memj j o hj; cases h
+  · intro c
+    have : nScratch c (retOps ns).toArray.toList = 0 := by
+      unfold nScratch
+      rw [List.length_eq_zero_iff, List.filter_eq_nil_iff]
+      intro o ho; obtain ⟨q, -, rfl⟩ := mem o ho; simp [scratch]
+    omega
+  · have : (retOps ns).toArray.toList.filter (·.kind == .def) = [] := by
+      rw [List.filter_eq_nil_iff]; intro o ho; simp [nodef o ho]
+    rw [this]; exact List.nodup_nil
+  · intro us _ o ho
+    obtain ⟨q, hq, rfl⟩ := mem o ho
+    obtain ⟨k, hk, he⟩ := hr q hq
+    exact ⟨q.2, rfl, he ▸ (x_alloc k hk).2⟩
 
 end Backend.Proof.Spill
