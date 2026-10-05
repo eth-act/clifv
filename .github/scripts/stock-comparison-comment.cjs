@@ -10,8 +10,51 @@ function count(value, label) {
   return value;
 }
 
+// Entries name stock tests and functions; anything else (markdown, mentions) is rejected.
+const TEST = /^[A-Za-z0-9_][A-Za-z0-9_.\/-]{0,200}\.clif$/;
+const FUNCTION = /^%?[A-Za-z0-9_.$:-]{1,200}$/;
+const PATH = /^[A-Za-z0-9_.][A-Za-z0-9_.\/-]{0,200}$/;
+const SHA = /^[0-9a-f]{40}$/;
+const LISTED = 200;
+
+function entries(value, label, max) {
+  if (!Array.isArray(value) || value.length > max) throw new Error(`Invalid ${label}`);
+  for (const e of value) {
+    if (!Array.isArray(e) || e.length !== 5 || typeof e[0] !== 'string' || !TEST.test(e[0]) ||
+        !['compile', 'run'].includes(e[2]) || typeof e[4] !== 'string' || !FUNCTION.test(e[4])) {
+      throw new Error(`Invalid ${label} entry`);
+    }
+    count(e[1], `${label} variant`); count(e[3], `${label} position`);
+  }
+  return value;
+}
+
+function paths(value, label) {
+  if (!Array.isArray(value) || value.length > 200 || value.some(p => typeof p !== 'string' || !PATH.test(p))) {
+    throw new Error(`Invalid ${label}`);
+  }
+  return value;
+}
+
+function validateBaseline(b, matched) {
+  if (b === null || typeof b !== 'object' || typeof b.available !== 'boolean') throw new Error('Invalid baseline comparison');
+  if (!b.available) {
+    if (typeof b.reason !== 'string' || b.reason.length > 300) throw new Error('Invalid baseline reason');
+    return;
+  }
+  if (!Number.isSafeInteger(b.run_id) || b.run_id <= 0) throw new Error('Invalid baseline run');
+  for (const key of ['run_attempt', 'baseline_exact_code_artifacts', 'gained_count', 'lost_count']) count(b[key], key);
+  if (typeof b.head_sha !== 'string' || !SHA.test(b.head_sha)) throw new Error('Invalid baseline commit');
+  entries(b.gained, 'gained', LISTED); entries(b.lost, 'lost', LISTED);
+  paths(b.harness_changed, 'harness_changed');
+  if (b.gained.length !== Math.min(b.gained_count, LISTED) || b.lost.length !== Math.min(b.lost_count, LISTED) ||
+      b.baseline_exact_code_artifacts - b.lost_count + b.gained_count !== matched) {
+    throw new Error('Inconsistent baseline comparison');
+  }
+}
+
 function validate(data, run) {
-  if (data.schema !== 1 || data.measurement_complete !== true || data.target !== 'aarch64-unknown-linux-gnu') {
+  if (data.schema !== 2 || data.measurement_complete !== true || data.target !== 'aarch64-unknown-linux-gnu') {
     throw new Error('Invalid or incomplete measurement');
   }
   if (data.run_id !== run.id || data.run_attempt !== run.run_attempt || data.head_sha !== run.head_sha) {
@@ -41,10 +84,45 @@ function validate(data, run) {
   for (const key of ['elapsed_seconds', 'cpu_seconds', 'peak_runner_memory_used_bytes']) {
     if (!Number.isFinite(data[key]) || data[key] < 0 || data[key] > 2 ** 40) throw new Error(`Invalid ${key}`);
   }
-  if (typeof data.full_artifact_equivalence_verified !== 'boolean' || ![0, 1].includes(data.pipeline_exit_code)) {
+  if (typeof data.full_artifact_equivalence_verified !== 'boolean' || data.pipeline_exit_code !== 10) {
     throw new Error('Invalid completion state');
   }
+  if (entries(data.matched, 'matched', 1e5).length !== t.exact_code_artifacts) throw new Error('Inconsistent matched outputs');
+  const harness = data.harness_sha256;
+  if (harness === null || typeof harness !== 'object' || Array.isArray(harness)) throw new Error('Invalid harness hashes');
+  paths(Object.keys(harness), 'harness files');
+  if (Object.values(harness).some(h => typeof h !== 'string' || !/^[0-9a-f]{64}$/.test(h))) throw new Error('Invalid harness hashes');
+  validateBaseline(data.baseline_comparison, t.exact_code_artifacts);
   return data;
+}
+
+function entry(e) {
+  return `\`${e[0]}\` \`${e[4]}\` (${e[2]}, variant ${e[1]}, function ${e[3]})`;
+}
+
+function listed(items, total, shown) {
+  const lines = items.slice(0, shown).map(e => `- ${entry(e)}`);
+  if (total > lines.length) lines.push(`- ... and ${(total - lines.length).toLocaleString('en-US')} more (summary artifact)`);
+  return lines.join('\n');
+}
+
+function baselineSection(b, repo) {
+  if (!b.available) {
+    // The reason is plain text from the CI scripts; keep it inert.
+    return `No \`main\` baseline to compare with: ${b.reason.replace(/[^A-Za-z0-9 .,:;()/_=+-]/g, '?')}.\n`;
+  }
+  const url = `https://github.com/${repo.owner}/${repo.repo}/actions/runs/${b.run_id}/attempts/${b.run_attempt}`;
+  const now = b.baseline_exact_code_artifacts - b.lost_count + b.gained_count;
+  let text = `Compared with \`main\` at \`${b.head_sha.slice(0, 12)}\` ([run](${url})): ` +
+    `**+${b.gained_count.toLocaleString('en-US')} / \u2212${b.lost_count.toLocaleString('en-US')}** exact outputs ` +
+    `(${b.baseline_exact_code_artifacts.toLocaleString('en-US')} \u2192 ${now.toLocaleString('en-US')}).\n`;
+  if (b.harness_changed.length) {
+    text += `\nThe measuring code changed since then: ${b.harness_changed.map(p => `\`${p}\``).join(', ')}. ` +
+      'Changed numbers may come from the measurement, not the compiler.\n';
+  }
+  if (b.lost_count) text += `\n**Lost matches** (${b.lost_count.toLocaleString('en-US')}):\n${listed(b.lost, b.lost_count, 30)}\n`;
+  if (b.gained_count) text += `\nNew matches (${b.gained_count.toLocaleString('en-US')}):\n${listed(b.gained, b.gained_count, 10)}\n`;
+  return text;
 }
 
 function fraction(numerator, denominator) {
@@ -57,7 +135,6 @@ function render(data, repo, run) {
   const t = data.totals, f = t.function_statuses;
   const scope = t.file_statuses.binary_test ?? 0;
   const stockOutputs = t.test_function_compilations - (f.expected_stock_rejection_no_binary ?? 0);
-  const unsupported = (f.unsupported_configuration ?? 0) + (f.lean_unsupported ?? 0);
   const url = `https://github.com/${repo.owner}/${repo.repo}/actions/runs/${run.id}/attempts/${run.run_attempt}`;
   return `${MARKER} run=${run.id} attempt=${run.run_attempt} -->
 ### Stock Cranelift / Lean comparison
@@ -71,19 +148,23 @@ Commit: \`${run.head_sha.slice(0, 12)}\`. [Run and artifacts](${url}).
 | Exact function outputs | ${fraction(t.exact_code_artifacts, stockOutputs)} |
 | Files with every AArch64 output matching | ${fraction(t.files_all_aarch64_code_artifacts_identical, scope)} |
 | Different function outputs | ${(f.different_code_artifact ?? 0).toLocaleString('en-US')} |
-| Unsupported function outputs | ${unsupported.toLocaleString('en-US')} |
+| Rejected for a setting | ${(f.unsupported_configuration ?? 0).toLocaleString('en-US')} |
+| Rejected for an unsupported operation | ${(f.lean_unsupported ?? 0).toLocaleString('en-US')} |
 | Complete compiler metadata agreement | ${data.full_artifact_equivalence_verified ? 'Established' : 'Not established'} |
 | Compiled test functions executed | No |
 
 Exact matches require identical bytes, relocations, alignment, and trap records.
-Unsupported outputs do not pass. Expected stock failures without code are excluded from the output total.
+Rejected outputs do not pass. Expected stock failures without code are excluded from the output total.
 
+${baselineSection(data.baseline_comparison, repo)}
 Pipeline time: **${data.elapsed_seconds.toFixed(1)} seconds** (build, validation, artifact generation, and comparison).
 Peak runner memory used: **${(data.peak_runner_memory_used_bytes / 2 ** 30).toFixed(2)} GiB**, sampled every 0.1 seconds, including the OS.
 This job uses two comparison workers. Rust toolchain setup is included in the pipeline time.
 Lean installation and cache transfers are outside the pipeline time.
 
-A successful job means the measurement completed, not that both compilers fully agree.
+A successful measurement job means the measurement completed, not that both compilers fully agree.
+The "Check lost matches" job fails when an output that matched on that \`main\` commit no longer matches.
+The label \`stock-comparison-accept-losses\` accepts intended losses on a pull request.
 `;
 }
 
@@ -97,7 +178,8 @@ async function prepare({ github, context }) {
   if (run.event !== 'pull_request' || run.path.split('@')[0] !== WORKFLOW || !/^[0-9a-f]{40}$/.test(run.head_sha)) {
     throw new Error('Unexpected source workflow');
   }
-  if (event && (run.status !== 'completed' || run.conclusion !== 'success')) return null;
+  // A run whose lost-match job failed still has a valid measurement (checked below).
+  if (event && (run.status !== 'completed' || !['success', 'failure'].includes(run.conclusion))) return null;
   const jobs = await github.paginate(github.rest.actions.listJobsForWorkflowRun,
     { owner, repo, run_id: id, filter: 'latest', per_page: 100 });
   if (!jobs.some(job => job.name === 'Build and compare' && job.conclusion === 'success')) {

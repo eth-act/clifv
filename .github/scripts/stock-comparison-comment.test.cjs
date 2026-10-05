@@ -10,10 +10,16 @@ const sha = 'a'.repeat(40);
 const run = { id: 123, run_attempt: 2, head_sha: sha, head_repository: { id: 10 },
   event: 'pull_request', path: '.github/workflows/stock-compiler-comparison.yml', status: 'completed', conclusion: 'success' };
 const repo = { owner: 'eth-act', repo: 'clifv' };
+const entry = (position, name = '%f', test = 'isa/aarch64/a.clif') => [test, 0, 'compile', position, name];
 function data() {
-  return { schema: 1, measurement_complete: true, head_sha: sha, run_id: 123, run_attempt: 2,
+  return { schema: 2, measurement_complete: true, head_sha: sha, run_id: 123, run_attempt: 2,
     target: 'aarch64-unknown-linux-gnu', elapsed_seconds: 42, cpu_seconds: 70,
-    peak_runner_memory_used_bytes: 2 ** 30, pipeline_exit_code: 1, full_artifact_equivalence_verified: false,
+    peak_runner_memory_used_bytes: 2 ** 30, pipeline_exit_code: 10, full_artifact_equivalence_verified: false,
+    matched: Array.from({ length: 425 }, (_, i) => entry(i)),
+    harness_sha256: { 'scripts/stock-compiler-compare.py': 'c'.repeat(64) },
+    baseline_comparison: { available: true, run_id: 37262606411, run_attempt: 1, head_sha: 'b'.repeat(40),
+      baseline_exact_code_artifacts: 424, gained_count: 2, lost_count: 1,
+      gained: [entry(1), entry(2)], lost: [entry(500, '%g')], harness_changed: [] },
     totals: { official_test_files: 1302, inventoried_test_files: 1302,
       files_with_compared_function_outputs: 116, files_all_aarch64_code_artifacts_identical: 19,
       test_function_compilations: 4501, exact_code_artifacts: 425, failed_stock_compile_assertions: 0,
@@ -53,15 +59,44 @@ async function publish(f, summary = data()) {
 
 test('render distinguishes coverage, output agreement, and complete-file agreement', () => {
   const body = render(data(), repo, run);
-  for (const expected of ['116 / 484 (24.0%)', '425 / 4,455 (9.5%)', '19 / 484 (3.9%)', '3,047', 'including the OS',
+  for (const expected of ['116 / 484 (24.0%)', '425 / 4,455 (9.5%)', '19 / 484 (3.9%)', 'Rejected for a setting | 1,176',
+    'Rejected for an unsupported operation | 1,871', 'including the OS',
     'Rust toolchain setup is included', 'Lean installation and cache transfers are outside']) assert.ok(body.includes(expected), expected);
+});
+test('render compares with the main baseline and lists lost matches first', () => {
+  const body = render(data(), repo, run);
+  for (const expected of ['`main` at `bbbbbbbbbbbb`', 'actions/runs/37262606411/attempts/1', '**+2 / \u22121**',
+    '(424 \u2192 425)', '**Lost matches** (1):\n- `isa/aarch64/a.clif` `%g` (compile, variant 0, function 500)',
+    'New matches (2):']) assert.ok(body.includes(expected), expected);
+  assert.ok(body.indexOf('Lost matches') < body.indexOf('New matches'));
+  assert.ok(!body.includes('measuring code changed'));
+});
+test('render flags harness changes and bounds long lists', () => {
+  const summary = data(); const b = summary.baseline_comparison;
+  b.harness_changed = ['FVTest/Backend/StockConfig.lean'];
+  b.gained_count = 300; b.gained = Array.from({ length: 200 }, (_, i) => entry(1000 + i));
+  b.baseline_exact_code_artifacts = 126; summary.totals.exact_code_artifacts = 425;
+  const body = render(summary, repo, run);
+  assert.ok(body.includes('measuring code changed since then: `FVTest/Backend/StockConfig.lean`'));
+  assert.ok(body.includes('... and 290 more'));
+});
+test('render explains a missing baseline without trusting its text', () => {
+  const summary = data();
+  summary.baseline_comparison = { available: false, reason: 'no run @someone [x](http://e) `code`' };
+  const body = render(summary, repo, run);
+  assert.ok(body.includes('No `main` baseline to compare with: no run ?someone ?x?(http://e) ?code?.'));
 });
 test('invalid, partial, or mismatched reports cannot publish', () => {
   for (const edit of [d => d.measurement_complete = false, d => d.head_sha = 'b'.repeat(40),
     d => d.run_attempt = 1, d => d.totals.exact_code_artifacts = -1,
     d => d.totals.function_statuses.lean_unsupported = '<script>',
     d => d.totals.file_statuses.harness_error = 1,
-    d => d.totals.source_files_modified = 1]) {
+    d => d.totals.source_files_modified = 1, d => d.schema = 1, d => d.pipeline_exit_code = 1,
+    d => d.matched.pop(), d => d.matched[0][4] = '%f @someone', d => d.matched[0][0] = '[x](http://e).clif',
+    d => d.matched[0][2] = 'test', d => d.harness_sha256 = ['c'.repeat(64)],
+    d => d.baseline_comparison.lost_count = 2, d => d.baseline_comparison.lost[0][4] = '`%g`',
+    d => d.baseline_comparison.head_sha = 'main', d => d.baseline_comparison.harness_changed = ['../x\n'],
+    d => d.baseline_comparison = { available: false, reason: 'x'.repeat(301) }, d => delete d.baseline_comparison]) {
     const summary = data(); edit(summary); assert.throws(() => validate(summary, run));
   }
 });

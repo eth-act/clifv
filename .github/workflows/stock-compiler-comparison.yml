@@ -22,6 +22,10 @@ jobs:
     name: Build and compare
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    # actions: read finds and downloads the main baseline summary.
+    permissions:
+      actions: read
+      contents: read
     env:
       FV_COMPARE_MEMCAP: '0'
       CI_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -30,6 +34,9 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
+          # Full history: the baseline is the newest measured main commit that is an
+          # ancestor of the tested commit.
+          fetch-depth: 0
       - name: Configure Lean path
         run: echo "LEAN_BIN_DIR=$RUNNER_TOOL_CACHE/lean-4.34.1-linux/bin" >> "$GITHUB_ENV"
       - name: Cache Lean toolchain
@@ -62,10 +69,14 @@ jobs:
           restore-keys: stock-build-${{ runner.os }}-
       - name: Test CI reporting
         run: |
-          python3 -m unittest discover -s scripts -p test_stock_comparison_ci.py -v
+          python3 -m unittest discover -s scripts -p 'test_stock_comparison_*.py' -v
           node --test .github/scripts/stock-comparison-comment.test.cjs
+      - name: Find main baseline
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/stock-comparison-baseline.py --head "$CI_HEAD_SHA" --out target/ci-baseline.json
       - name: Build, generate artifacts, and compare
-        run: python3 scripts/stock-comparison-ci.py --out target/ci-comparison --jobs 2
+        run: python3 scripts/stock-comparison-ci.py --out target/ci-comparison --jobs 2 --baseline target/ci-baseline.json
       - name: Write job summary
         run: node .github/scripts/stock-comparison-comment.cjs target/ci-comparison.ci-summary.json >> "$GITHUB_STEP_SUMMARY"
       - name: Upload comment data
@@ -74,7 +85,8 @@ jobs:
           name: stock-comparison-summary-${{ github.run_attempt }}
           path: target/ci-comparison.ci-summary.json
           archive: true
-          retention-days: 7
+          # Main summaries are the baselines of later runs.
+          retention-days: ${{ github.event_name == 'push' && 90 || 7 }}
           if-no-files-found: error
       - name: Pack artifacts and logs
         if: always()
@@ -95,6 +107,33 @@ jobs:
           archive: true
           compression-level: 0
           retention-days: 7
+
+  ratchet:
+    name: Check lost matches
+    needs: measure
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    # pull-requests: read reads the override label when this job runs.
+    permissions:
+      contents: read
+      pull-requests: read
+    env:
+      CI_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      # Every attempt's summary: re-running only this job keeps the measurement's attempt.
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: stock-comparison-summary-*
+          path: report
+      - name: Fail on lost matches
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: python3 scripts/stock-comparison-ratchet.py report
 
   comment:
     name: Publish PR result

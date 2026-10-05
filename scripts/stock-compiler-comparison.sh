@@ -13,7 +13,7 @@ usage() {
     'Requires git, rustup, Python >=3.11, a C/C++ toolchain, and Lean from lean-toolchain.' \
     'Put Lean/lake on PATH, or set LEAN_BIN_DIR to their directory.' \
     'FV_MEMCAP defaults to 16G. FV_COMPARE_MEMCAP=0 explicitly disables systemd memory caps.' \
-    'Exit 1 with a finished results.json is a completed measurement, not suite equivalence.'
+    'Exit 10 with a finished results.json is a completed measurement, not suite equivalence.'
 }
 
 OUT="target/stock-compiler-comparison-$(date -u +%Y%m%dT%H%M%SZ)-$$"
@@ -89,7 +89,7 @@ step lean-backend guard lake build lean-backend
 step stock-exporter bash scripts/prejit-export-build.sh
 step validation guard python3 -m unittest discover -s scripts -p test_stock_compiler_compare.py -v
 step pipeline-validation guard python3 -m unittest discover -s scripts -p test_stock_pipeline.py -v
-step exporter-validation guard python3 -m unittest discover -s scripts -p test_prejit_baseline.py -v
+step exporter-validation guard python3 -m unittest discover -s scripts -p test_stock_exporter.py -v
 
 set +e
 guard python3 scripts/stock-compiler-compare.py --out "$OUT" --jobs "$JOBS" "${INPUTS[@]}" 2>&1 | tee "$BUILD_LOGS/comparison.log"
