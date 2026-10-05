@@ -420,4 +420,29 @@ theorem classesHyp : ClassesHyp := by
   intro f vc vcp _hd hs hl hp
   exact classesOk_of (classesOkM_prepare hp (prepDomain_of_lower hs hl hs.nonempty) (classesOkM_lower hs hl))
 
+/-! ## Non-vacuity -/
+
+/-- A one-block VCode with an int parameter. -/
+def witnessVC (cls : Array RegClass) : VCode :=
+  { name := "w", blocks := #[{ label := 0, insts := #[.jump 0], params := #[.vreg 0 .int] }],
+    classes := cls, slotBytes := 0, outgoing := 0, rulesFired := #[] }
+
+/-- `ClassesOk` holds when the parameter's class is recorded … -/
+example : ClassesOk (witnessVC #[.int]) := classesOk_of ⟨by
+    intro vb hvb m hm ops hops o ho
+    simp [witnessVC] at hvb; subst hvb
+    simp at hm; subst hm
+    cases hops; simp at ho,
+  by
+    intro vb hvb r hr
+    simp [witnessVC] at hvb; subst hvb
+    simp at hr; subst hr
+    exact ⟨0, .int, rfl, rfl⟩⟩
+
+/-- … and fails when it is not (so `classesHyp` is not vacuously true of its conclusion). -/
+example : ¬ ClassesOk (witnessVC #[]) := fun h => by
+  obtain ⟨n, c, he, hc⟩ := h.2 0 _ rfl (.vreg 0 .int) (by simp [witnessVC])
+  cases he
+  simp [witnessVC] at hc
+
 end Backend.Proof.Spill
