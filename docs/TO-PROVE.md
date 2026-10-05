@@ -145,8 +145,8 @@ author's estimate, not measured), **Risk**.
 - **Evidence:** `lean-e2e-check`: `checkAlloc` accepts the spill allocation of 1148/1148 in-scope
   functions; `lowerRFunc` lowers 1148/1148 (dense home numbering keeps the allocator frame under 32 KiB).
   Filetests with the fallback forced: `docs/contracts/regalloc.md` "Results" (g).
-- **Remaining for (a): prove `SpillAccepted'`** (`FV/E2E/AllocDirect.lean`; `SpillAccepted` as first
-  stated is false: `E2E.not_ctlSpillHyp`, two `sret` parameters; it needs `InSubset` and `arityOkB`).
+- **Remaining for (a): prove `SpillAccepted`** (`FV/E2E/AllocDirect.lean`; the first statement, PR #54,
+  was false: `E2E.not_ctlSpillHyp`, two `sret` parameters; the current one takes `InSubset` and `ArityOk`).
   1. *Avoid the checker's fixpoint* — **done**. The downstream premise is `AllocChecked vcp rf`
      (`RegallocSound.lean`: verified in-states `CheckedAt` — `Checked` with the entry in-state named and
      unconstrained — whose entry state is `EntryOk`), not `checkAlloc vcp rf = .ok ()`
@@ -210,9 +210,9 @@ author's estimate, not measured), **Risk**.
      "homes of `D b` hold their vregs, save slots their entry values (block 0: the registers), a
      `try_call` successor's live def registers their defs" verify, i.e. `AllocChecked vc (spillAlloc
      vc)`) and `SpillAvailable` (`∃ D, SpillAvail vcp D` for the pipeline's output). Assembly:
-     `spillAccepted'_of : SpillStep4 → SpillLocalAll → SpillAvailable → SpillAccepted'`,
-     `spillAccepted'_of_step4 : SpillStep4 → SpillAvailable → SpillAccepted'`, then
-     `backend_correct_final_alloc'` (premise `arityOkB f = true`).
+     `spillAccepted_of : SpillStep4 → SpillLocalAll → SpillAvailable → SpillAccepted`,
+     `spillAccepted_of_step4 : SpillStep4 → SpillAvailable → SpillAccepted`, then
+     `backend_correct_final_alloc` (premise `arityOkB f = true`).
 - **Option (b), later:** a real allocator (linear scan) written in Lean, proven directly or with
   `checkAlloc` completeness for its output. Removes the Rust tool entirely. Large `[est]`.
 

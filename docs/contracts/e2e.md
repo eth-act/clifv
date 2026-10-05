@@ -2183,19 +2183,6 @@ witness `E2E.ctlSpillHyp_of_witness`.
 
 ```lean
 def Backend.allocResult (vc : VCode) (ra : Except String RFunc) : RFunc  -- ra if checkAlloc accepts it, else spillAlloc vc
-def E2E.SpillAccepted : Prop :=
-  ∀ (f : Clif.Function) (vc vcp : VCode), Dominated f → LowerScope f →
-    lowerFunction f = .ok vc → Backend.prepare vc = .ok vcp →
-      checkAlloc vcp (spillAlloc vcp) = .ok ()
-theorem E2E.checkAlloc_allocResult (hsa : SpillAccepted) (hd : Dominated f) (hs : LowerScope f)
-    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare vc = .ok vcp) (ra : Except String RFunc) :
-    checkAlloc vcp (allocResult vcp ra) = .ok ()
-theorem E2E.backend_correct_final_alloc (hsa : SpillAccepted) (hsub : InSubset p f)
-    (hd : dominatedB f = true) (hs : lowerScopeB f = true) (hl : lowerFunction f = .ok vc)
-    (hp : prepare vc = .ok vcp) (hrf : rf = allocResult vcp ra) (ha : lowerRFunc vcp rf = .ok af)
-    (he : emitFunc k af = .ok fa) (hla : fa.layout = .ok fb)
-    -- backend_correct_final's contract, link-time and run premises (hC … htr), unchanged
-    : ArmRefines fb base ra' (ArmStepX X H fa) s (Clif.runLoop env p fuel cs)
 theorem Backend.lowerAlloc_eq (h : lowerAlloc vcp ra = .ok af) :
     lowerRFunc vcp (allocResult vcp ra) = .ok af
 ```
@@ -2203,23 +2190,18 @@ theorem Backend.lowerAlloc_eq (h : lowerAlloc vcp ra = .ok af) :
 The backend lowers `allocResult vcp ra` (`lowerAlloc`, `lowerAlloc_eq`): regalloc2's answer if
 `checkAlloc` accepts it, else the spill allocation `spillAlloc` (a total Lean function; every
 value in its own stack slot, `docs/contracts/regalloc.md` "Fallback"). A rejection or a missing
-answer of regalloc2 is no longer a compile error, and `backend_correct_final_alloc` holds for
-every answer `ra` of the untrusted allocator: its correctness never depends on regalloc2. It is
-`backend_correct_final_of_lower` with the `checkAlloc` premise replaced by the hypothesis
-`SpillAccepted`, which does **not** mention the program: the checker accepts the spill
-allocation of every function the pipeline produces from in-scope input. `SpillAccepted` is not
-proven yet (stated as an explicit hypothesis, as `LogicImmComplete` was); `lean-e2e-check` decides
-its conclusion on every in-scope function (**1148 of 1148** accepted, "spill fallback" line) and
-the compiler runs `checkAlloc` on every spill allocation it lowers as a double-check (`lowerSpill`).
-What a proof needs is in `docs/TO-PROVE.md` (V4). Non-vacuity:
-`E2E.backend_correct_final_alloc_witness` (`lowerWitness` with regalloc2 absent: the pipeline
-lowers the spill allocation, which `checkAlloc` accepts).
+answer of regalloc2 is no longer a compile error, and `backend_correct_final_alloc` (below) holds
+for every answer `ra` of the untrusted allocator: its correctness never depends on regalloc2. The
+compiler runs `checkAlloc` on every spill allocation it lowers as a double-check (`lowerSpill`);
+`lean-e2e-check` decides its acceptance on every in-scope function (**1148 of 1148**, "spill
+fallback" line).
 
 **V4 restated: verified in-states, `ρ₀` chosen by the register-level theorem** (2026-10-05,
 `FV/Backend/Proof/RegallocSound.lean`, `FV/Backend/Proof/SpillInvariant.lean`,
-`FV/E2E/AllocDirect.lean`). `SpillAccepted` is false as stated (`E2E.not_ctlSpillHyp`: two `sret`
-parameters) and asks more than the proofs use (the checker's fixpoint iteration; an entry state
-without vregs, i.e. every use defined on every path). The restated chain:
+`FV/E2E/AllocDirect.lean`). The first statement (PR #54: `checkAlloc vcp (spillAlloc vcp) = .ok ()`
+under `Dominated`/`LowerScope` only) was false (`E2E.not_ctlSpillHyp`: two `sret` parameters) and
+asked more than the proofs use (the checker's fixpoint iteration; an entry state without vregs,
+i.e. every use defined on every path); it has been replaced by:
 
 ```lean
 structure Backend.Proof.CheckedAt (vc rf c ins) (a0 : AState) : Prop  -- `Checked`, entry in-state a0 unconstrained
@@ -2234,11 +2216,13 @@ def E2E.RegLevelCorrectEx … := ∀ base ra s, AbiEntry … → StackAvail … 
     ∃ ρ₀ : Nat → CV, (returns as in RegLevelCorrect) ∧ (traps as in RegLevelCorrect)
 theorem Backend.Proof.regLevelCorrect_backend_ex (hcheck : AllocChecked vcp rf) … : RegLevelCorrectEx …
 theorem E2E.backend_correct_final_ex (hc : CompiledA f k vc vcp rf af fa fb) …  -- CompiledA: check : AllocChecked
-def E2E.SpillAccepted' : Prop := ∀ p f vc vcp, InSubset p f → Spill.ArityOk f → Dominated f →
+def E2E.SpillAccepted : Prop := ∀ p f vc vcp, InSubset p f → Spill.ArityOk f → Dominated f →
     LowerScope f → lowerFunction f = .ok vc → Backend.prepare vc = .ok vcp → AllocChecked vcp (spillAlloc vcp)
-theorem E2E.spillAccepted'_of_step4 (h4 : Spill.SpillStep4) (hav : SpillAvailable) : SpillAccepted'
-theorem E2E.backend_correct_final_alloc' (hsa : SpillAccepted') (hsub : InSubset p f)
-    (hd : dominatedB f = true) (hs : lowerScopeB f = true) (har : Spill.arityOkB f = true) …  -- as backend_correct_final_alloc
+theorem E2E.spillAccepted_of_step4 (h4 : Spill.SpillStep4) (hav : SpillAvailable) : SpillAccepted
+theorem E2E.backend_correct_final_alloc (hsa : SpillAccepted) (hsub : InSubset p f)
+    (hd : dominatedB f = true) (hs : lowerScopeB f = true) (har : Spill.arityOkB f = true) (hl …) (hp …) (hrf : rf = allocResult vcp ra) (ha …) (he …) (hla …)
+    -- backend_correct_final's contract, link-time and run premises (hC … htr), unchanged
+    : ArmRefines fb base ra' (ArmStepX X H fa) s (Clif.runLoop env p fuel cs)
 ```
 
 `IselSim` and `PrepareCorrect` hold for every initial vreg file, so the composition
@@ -2250,7 +2234,7 @@ is availability (`Spill.SpillAvail`), not definedness. The old statements (`chec
 are corollaries; `Compiled` keeps `checkAlloc` because the link-level theorems (`LinkWorld`,
 `PairDriver`) fix one VCode outcome for all activations, which needs every `ρ₀`. Open, as explicit
 hypotheses: `Spill.SpillStep4` and `E2E.SpillAvailable` (`docs/TO-PROVE.md` V4 step 4); step 3 is
-`E2E.spillLocalAll`. Non-vacuity: `E2E.backend_correct_final_alloc'_witness`.
+`E2E.spillLocalAll`. Non-vacuity: `E2E.backend_correct_final_alloc_witness`.
 
 **Validator completeness: `Opt.Legalize128` is correct without `Opt.Legal.check`** (2026-10-02,
 `FV/Opt/Proof/LegalComplete.lean`, `FV/Opt/Proof/LegalDirect.lean`, `FV/E2E/LegalDirect.lean`;
