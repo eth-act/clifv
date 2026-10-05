@@ -167,4 +167,84 @@ theorem loads_run (c : CheckCtx) (w : String) {hm : Homes} {ops : Array Operand}
     rw [← he, hr] at hl
     cases hl
 
+/-! ## The instruction's transfer -/
+
+theorem inj_of_nodup_map {α β : Type} {f : α → β} : ∀ {l : List α}, (l.map f).Nodup →
+    ∀ {x y : α}, x ∈ l → y ∈ l → f x = f y → x = y
+  | [], _, _, _, hx, _, _ => by cases hx
+  | a :: l, h, x, y, hx, hy, he => by
+    rw [List.map_cons, List.nodup_cons] at h
+    rcases List.mem_cons.mp hx with h1 | h1 <;> rcases List.mem_cons.mp hy with h2 | h2
+    · exact h1.trans h2.symm
+    · subst h1; exact absurd (he ▸ List.mem_map_of_mem h2) h.1
+    · subst h2; exact absurd (he.symm ▸ List.mem_map_of_mem h1) h.1
+    · exact inj_of_nodup_map h.2 h1 h2 he
+
+/-- `defineAll` at a location none of the defs writes: the defs' vregs leave it. -/
+theorem defineAll_get_other : ∀ (ds : List (Operand × Loc)) (a : AState) (l : Loc),
+    (∀ x ∈ ds, x.2 ≠ l) →
+    (defineAll a ds).get l = (a.get l).filter fun s => !(ds.any fun x => s == .vreg x.1.vreg)
+  | [], a, l, _ => by simp only [defineAll, List.foldl_nil, List.any_nil, Bool.not_false]; exact (List.filter_eq_self.mpr fun _ _ => rfl).symm
+  | x :: ds, a, l, h => by
+    have ih := defineAll_get_other ds (a.define x.2 (.vreg x.1.vreg)) l
+      (fun y hy => h y (List.mem_cons_of_mem _ hy))
+    simp only [defineAll, List.foldl_cons] at ih ⊢
+    rw [ih, AState.define, get_put_ne (h x List.mem_cons_self), get_remove, List.filter_filter]
+    congr 1; funext s
+    first | rfl | simp [bne, Bool.and_comm]
+
+theorem size_defineAll : ∀ (ds : List (Operand × Loc)) (a : AState), (defineAll a ds).size = a.size
+  | [], _ => rfl
+  | x :: ds, a => by
+    have := size_defineAll ds (a.define x.2 (.vreg x.1.vreg))
+    simp only [defineAll, List.foldl_cons] at this ⊢
+    rw [this, AState.define, size_put, size_remove]
+
+/-- `defineAll` with distinct register locations and distinct vregs: each def's location holds
+exactly its vreg. -/
+theorem defineAll_get_mem : ∀ (ds : List (Operand × Loc)) (a : AState),
+    (ds.map (·.2)).Nodup → (ds.map (·.1.vreg)).Nodup →
+    (∀ x ∈ ds, ∃ i, x.2.index = some i ∧ i < a.size) →
+    ∀ x ∈ ds, (defineAll a ds).get x.2 = [.vreg x.1.vreg]
+  | [], _, _, _, _, x, hx => by cases hx
+  | y :: ds, a, hl, hv, hi, x, hx => by
+    rw [List.map_cons, List.nodup_cons] at hl hv
+    simp only [defineAll, List.foldl_cons]
+    rcases List.mem_cons.mp hx with rfl | hx
+    · have := defineAll_get_other ds (a.define x.2 (.vreg x.1.vreg)) x.2
+        (fun z hz he => hl.1 (he ▸ List.mem_map_of_mem hz))
+      simp only [defineAll] at this
+      obtain ⟨i, hi1, hi2⟩ := hi x List.mem_cons_self
+      rw [this, AState.define, get_put_self hi1 (by rw [size_remove]; exact hi2)]
+      simp only [List.filter_cons, List.filter_nil]
+      have : (ds.any fun z => Sym.vreg x.1.vreg == .vreg z.1.vreg) = false := by
+        rw [Bool.eq_false_iff]
+        intro hany
+        obtain ⟨z, hz, hze⟩ := List.any_eq_true.mp hany
+        simp at hze
+        exact hv.1 (hze ▸ List.mem_map_of_mem hz)
+      simp [this]
+    · have := defineAll_get_mem ds (a.define y.2 (.vreg y.1.vreg)) hl.2 hv.2
+        (fun z hz => by
+          obtain ⟨i, h1, h2⟩ := hi z (List.mem_cons_of_mem _ hz)
+          exact ⟨i, h1, by rw [AState.define, size_put, size_remove]; exact h2⟩) x hx
+      simpa [defineAll] using this
+
+theorem clobberAll_get_other : ∀ (clob : List Reg) (a : AState) (l : Loc), (∀ r ∈ clob, Loc.reg r ≠ l) →
+    (clobberAll a clob).get l = a.get l
+  | [], _, _, _ => rfl
+  | r :: clob, a, l, h => by
+    have := clobberAll_get_other clob (a.put (.reg r) ((a.get (.reg r)).filter (· == .entry r))) l
+      (fun r' hr' => h r' (List.mem_cons_of_mem _ hr'))
+    simp only [clobberAll, List.foldl_cons] at this ⊢
+    rw [this, get_put_ne (h r List.mem_cons_self)]
+
+theorem forgetDefs_get (a : AState) (ps : List (Operand × Loc)) (l : Loc) :
+    (forgetDefs a ps).get l =
+      (a.get l).filter fun s => !(ps.any fun p => p.1.kind == .def && s == .vreg p.1.vreg) := by
+  unfold AState.get forgetDefs
+  split
+  · simp [Array.getD_eq_getD_getElem?]; cases a[‹Nat›]? <;> rfl
+  · rfl
+
 end Backend.Proof.Spill
