@@ -39,9 +39,10 @@ Every check the compiler runs today falls in one of five kinds. The goal admits 
 | --- | --- | --- |
 | **Proven pass:** the pass is proven correct directly | encoder (`Insn.decode_encode`), `prepare` on `PrepDomain` (`Prep.prepare_correct`) | yes |
 | **Internal check with a proven fallback:** the compiler runs a check and on rejection uses a path that's proven directly; the theorem has no premise about the check | mid-end: every validator failure keeps the last accepted function (`FV/Opt/Optimize.lean:150-156`), so `optimize_sim_proven` has no checker premise | yes; rejections cost only code quality |
-| **Validator as a premise:** the theorem assumes the check returned `true` for this program | `lowerCheck`, `prepCheck`, `checkAlloc`, `formsCoveredB` (`Compiled`/`FormsCovered`, `FV/E2E/Statement.lean:144-153`, `FV/E2E/Final.lean:162`); `okB`, `BinOk`, `goodN` | **no**: needs a completeness proof (the check never fails on what the compiler produces for in-scope input), a direct proof of the pass, or a fallback |
+| **Validator as a premise:** the theorem assumes the check returned `true` for this program | `lowerCheck`, `prepCheck`, `checkAlloc`, `formsCoveredB` (`Compiled`/`FormsCovered`, `FV/E2E/Statement.lean:144-153`, `FV/E2E/Final.lean:162`); `okB`, `BinOk` (`goodN` was one until L4: now `goodN_iff`, the input condition "no call cycle reachable") | **no**: needs a completeness proof (the check never fails on what the compiler produces for in-scope input), a direct proof of the pass, or a fallback |
 | **Internal rejection without fallback:** compilation fails | function ≥ 128 MiB (`b` out of range after relaxation, `FV/Backend/Encode.lean` `Env.pcRel`), `ctlCheck` (the allocator-frame limit is gone, V5) | allowed for correctness, but **violates totality**: each must be removed, proven unreachable, or moved into `InScope` as a condition on the input |
 | **Per-program proof via `native_decide`** | `crate-proofs/Crates/*.lean`: `link_ok`, `bin_ok`, `stack_ok` (`FVTest/E2E/LinkCheckMain.lean:307-432`) | **no**: disappears once linking, binary and stack checks are proven complete or replaced (WPs L1–L4) |
+| **Per-program proof via `native_decide`** | `crate-proofs/Crates/*.lean`: `link_ok`, `bin_ok`, `stack_ok` (`FVTest/E2E/LinkCheckMain.lean:307-432`; since L4 `stack_ok` evaluates an input condition and the bound, `stackB_isSome_iff`) | **no**: disappears once linking, binary and stack checks are proven complete or replaced (WPs L1–L4) |
 
 An external program (regalloc2, rust-lld) may stay in the loop only as an oracle whose result is checked
 and, on rejection, replaced by a directly proven Lean path (kind 2). Correctness then never depends on it.
@@ -71,8 +72,8 @@ and, on rejection, replaced by a directly proven Lean path (kind 2). Correctness
 | encoder | Lean | `Insn.decode_encode` (`FV/Backend/Proof/Encode.lean:57-60`) | proven | — |
 | linking (program level) | `cargo fv` object merge + **rust-lld** | **`okB`** (`FV/E2E/LinkCheck.lean:716-777`) per crate by `native_decide` | **validator premise + oracle + per-program proof** | L1, L2 |
 | executable bytes | **rust-lld** | **`BinOk`** (`FV/E2E/BinCheck.lean:539-543`) per crate by `native_decide` | **validator premise + oracle + per-program proof** | L2 |
-| executable semantics | — | theorem is about the hooked model machine `modelOf r` (`FV/E2E/Binary.lean:565-578`) | gap | L3 |
-| stack bound | Lean `budMap` | **`budOkW`/`goodN`** (`FV/E2E/StackBound.lean:145-214`) per crate by `native_decide` | **validator premise + per-program proof** | L4 |
+| executable semantics | — | `E2E.ExecBytes.binary_correct_exec`: the executable's own words (outside calls and TLS by hooks), under `RunOk` (per-state facts of the model's run, not yet exported by M6; witnessed jointly with the other premises, `binary_correct_exec_witness`) | partial | L3 |
+| stack bound | Lean `budMap` | `budOkW` proven for `budMap`'s budgets (`budOkW_budMap`), no run-time check; `goodN`/`stackB` characterised as "no call cycle reachable" (`goodN_iff`, `stackB_isSome_iff`); per crate the input condition and the bound still by `native_decide` (`stack_ok`) | input condition + per-program evaluation (until L1) | L4 done |
 
 Mid-end note: the mid-end is already certificate-free in the sense of §1.2, so M1 is optional.
 
@@ -353,14 +354,54 @@ author's estimate, not measured), **Risk**.
   sequence) refines the hooked model machine, per pair and through `linkedCall` by induction on the depth.
   Removes the four trusted hook items listed in PLAN.md M9.
 - **Depends:** none (L2b changes which forms occur; agree the forms first). **Size:** medium–large.
+- **Partly done** (2026-10-06, `agent/exec-bytes`; `FV/E2E/ExecBytes.lean`, `FV/E2E/ExecWords.lean`; e2e.md
+  "The executable's own words"): `E2E.ExecBytes.binary_correct_exec` (`_of_good`): the executable machine
+  `step I B file` (fetch from the file, decode, `exec_inst`; outside calls and the TLS site by the base
+  hooks) run from `r` refines the CLIF run (`ExecRefines`: `ArmRefines` with the CLIF bytes compared outside
+  `RelocAt I`), by simulation of the model through the linked calls (`act_sim`), word semantics proven
+  against the decoder, static control flow proven for every input. Trusted items (1) and (2) are gone;
+  (3) and the GOT slot's value are in the explicit hypothesis `RunOk` (per-state facts of the model's run:
+  D1 `cf`, D2 `insn`/`call`/`tls`, D4 `got`, plus `err`, `program`, `site`, `blr`, `plain`); (4) TLS stays
+  trusted (T1).
+- **Remaining: discharge `RunOk` from the M6 proof.** Plan:
+  1. Extend `RL.Good` (`FV/E2E/RegLevelSim.lean`, now `¬ PostCall ∨ sp = spB`) to the `StepOk` facts of an
+     intermediate state `u`: no error and the program (as `StRel`/`InterOk`), the pc at an instruction line
+     (not past a TLSDESC `ldr`), `cf` as "`pc (step u) = pc u + 4` or no second word", D2 as "the step at `u`
+     reads only world, frame and jump-table bytes", D4 at a GOT `ldr`. Every `realizes_*` case already proves
+     `∀ i < n, R.Good (iterN R.step i s)` for its segment (RegLevelOp/Move/Branch/Goto/JT/Call/Tls/Try/
+     Atomic/Frame/Next/Args, about 13 files): straight-line segments from `iterN_execLines_pc` (pc + 4),
+     jumps land on labels (never second words, as `first_not_second`), returns after calls
+     (`ret_not_second`), D2 from the address facts each case has (world addresses are not code; jump-table
+     words carry no relocation, `FnAsm.layout_relocs`). About 1–1.5k lines.
+  2. Export it: `regLevelCorrect_world` (`RegLevelCorrect.lean`, exports only the `PostCall` part today) →
+     `LinkWorld`/`PairDriver` → `LinkArm` (the depth induction gives `Reach.nest`) → `crate_correct` →
+     `StackBound` → `binary_correct`, as a variant of `ArmRefines` carrying "every state before the return
+     is `Good`", from which `RunOk` follows. About 0.5–0.8k lines.
+  3. D4: GOT slots in the kept set `G` (`StRel.gkeep`): an input field with the slots, a `BinCheck` check
+     that the slot's 8 bytes are `ro`/`relro`, and the outside-code contract (`BaseOk`/`CalleeOk`) keeping
+     `G` ("outside code does not write the program's code or GOT"). About 0.3k lines.
+  4. Non-vacuity: **done for the hypothesis form** (`crate-proofs/Crates/BinaryExecWitness.lean`,
+     `binary_correct_exec_witness`): every premise of `binary_correct_exec`, `RunOk` included, on the
+     a_arith executable's `wrapping_add` (the model's five-step run computed, `StepOk` at each state;
+     `stepOk_plain` is the generic `StepOk` of an unhooked instruction of a function without
+     relocations given the instruction's `Sim` preservation). With the exported invariant, the
+     witness of the discharged theorem takes `RunOk` from it instead.
 
 ### L4. Stack bound without a per-program check
 
-- **Now:** `budMap` computes per-function budgets (untrusted), `budOkW`/`goodN` check them, per crate by
-  `native_decide` (`FV/E2E/StackBound.lean:145-214`).
-- **Deliver:** `budOkW_complete`: on a call graph with no cycle reachable from `f`, `budMap`'s result passes,
-  so `goodN I f = true` follows from an input condition. Recursive functions keep the depth-indexed
-  theorem (`binary_correct_depth`); state that explicitly as the scope. **Size:** small–medium `[est]`.
+- **Done** (2026-10-06, `agent/stack-complete`; `FV/E2E/StackBound.lean`, "Completeness"; e2e.md "Stack
+  bound"): `budOkW_budMap`: with distinct names (part of `okB`) `budMap`'s budgets meet `budOkW`, so
+  `stackR`'s run-time check is gone and `budget_of` takes only `okB`; `budC_isSome_iff`/`goodN_iff`/
+  `stackB_isSome_iff`: a function has a budget iff no call cycle of the call graph (`Calls`,
+  `CycleFrom`) is reachable from it. Users from the input condition: `crate_correct_stack_acyclic`,
+  `crate_correct_stack_all`, `E2E.Binary.binary_correct_of_checks_acyclic` (non-vacuity:
+  `Crates.BinaryWitness.acyclic`, `binary_witness`). Recursive functions keep the depth-indexed theorem
+  (`binary_correct_depth`): that is the scope.
+- **Per crate, still `native_decide`:** `stack_ok : stackB input = some S` (or `stack_entriesK`
+  for a recursive program), now the evaluation of the input condition "no reachable call cycle"
+  plus the number `S`, not a check of untrusted output; it disappears with the crate-proof files
+  (L1). `decide` cannot replace it (kernel evaluation of the crate's call graph and, for `S`, of
+  the pipeline's frame sizes).
 
 ### Result of the critical path
 
@@ -447,7 +488,7 @@ Large, low priority.
 
 | WP | Item | Notes |
 | --- | --- | --- |
-| T1 | TLS: TLSDESC hook vs lld's local-exec rewrite | overlaps L3 |
+| T1 | TLS: TLSDESC hook vs lld's local-exec rewrite | overlaps L3; `binary_correct_exec` still runs the TLS site by `Hb.tls` (no `tpidr_el0` in the Arm model) |
 | T2 | Atomics on a single-core model (`ldar`/`stlr` plain, exclusive store always succeeds, `dmb` no-op) | `docs/decisions/arm-model.md` "Atomics"; a multi-core memory model is a project of its own |
 | T3 | std/musl contracts: compile std through `cargo fv` (`-Zbuild-std`) | needs S11, S12, inline asm |
 | T4 | Arm model fidelity (ASL-derived, qemu co-simulation) | testing, not proof |
@@ -506,7 +547,7 @@ label**; list the free ones with
 | L2a | [#9](https://github.com/eth-act/clifv/issues/9) Linking without validators: split `okB` into input conditions + properties proven by construction | open |
 | L2b | [#10](https://github.com/eth-act/clifv/issues/10) Static linker in Lean for the executable (BinOk by construction) | open |
 | L3 | [#11](https://github.com/eth-act/clifv/issues/11) Executable-bytes simulation (M9 item 1b) | open |
-| L4 | [#12](https://github.com/eth-act/clifv/issues/12) Stack bound without a per-program check | open |
+| L4 | [#12](https://github.com/eth-act/clifv/issues/12) Stack bound without a per-program check | **done** (`agent/stack-complete`): `budOkW_budMap`, `goodN_iff`, `stackB_isSome_iff`, `binary_correct_of_checks_acyclic` |
 | L1 | [#13](https://github.com/eth-act/clifv/issues/13) The executable compiler as one Lean function | open |
 | R0 | [#14](https://github.com/eth-act/clifv/issues/14) Mid-end rule proofs: shared infrastructure (iabs normal form, makeInst for type-variable constants, helper specs, module splitting) | open |
 | R1 | [#15](https://github.com/eth-act/clifv/issues/15) Mid-end rule proofs: arithmetic (42 rules left) | open |

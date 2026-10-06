@@ -3,6 +3,8 @@
 ; the tbnz (bit test, +-32 KiB), the b.eq of a brif and the cbz of a udiv's zero check (+-1 MiB) and the
 ; jump table's default b.hs (+-1 MiB) are out of range and emitFunc relaxes them to the
 ; inverted branch over a `b` (block3 repeated 270000 times).
+; In corpus/clif-large (not scanned by the default gates): the Lean backend takes ~20 min on it
+; (270000 split jump-table edges); run with scripts/lean-backend-filetests.sh corpus/clif-large/far_branches.clif.
 test interpret
 test run
 target aarch64
