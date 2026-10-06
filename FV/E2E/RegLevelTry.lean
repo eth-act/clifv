@@ -279,11 +279,11 @@ theorem realizes_tryCall {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (
     · simp only [nxtOf] at hm
       split at hm <;> simp at hm
   have hdrop' : R.L.drop j0 = Line.ins x none ::
-      (ftList (.ins (.b (.block ti.continuation)) none :: (ls2 ++ nxtOf R.af b)) ++ T) := by
+      (relaxLines R.far (ftList (.ins (.b (.block ti.continuation)) none :: (ls2 ++ nxtOf R.af b))) ++ T) := by
     rw [hdrop, List.append_assoc]
     rw [show [Line.ins x, .ins (.b (.block ti.continuation))] ++ (ls2 ++ nxtOf R.af b) =
       [Line.ins x none] ++ (.ins (.b (.block ti.continuation)) none :: (ls2 ++ nxtOf R.af b)) from rfl,
-      ftList_plain_append _ _ (by simpa using hplain) hZ]
+      ftR_plain_append _ _ _ (by simpa using hplain) hZ]
     rfl
   have hj0 : R.L[j0]? = some (.ins x none) := drop_get (Z := []) hdrop'
   -- the machine: the callee, then `b continuation`
@@ -297,9 +297,9 @@ theorem realizes_tryCall {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (
   have hpc1 : Arm.r .PC s' = R.pcOf (j0 + 1) := by
     rw [← hs1, hxs s j0 hj0 hst.prog hpc, hC.pc _ _ hst.err hst.align, hpc, pcOf_succ hj0]
   have hdrop1 : R.L.drop (j0 + 1) =
-      ftList (.ins (.b (.block ti.continuation)) none :: (ls2 ++ nxtOf R.af b)) ++ T := by
+      relaxLines R.far (ftList (.ins (.b (.block ti.continuation)) none :: (ls2 ++ nxtOf R.af b))) ++ T := by
     rw [← List.drop_drop, hdrop']; rfl
-  obtain ⟨n, jl, hn, hjl, hspn⟩ := reach_b hR hdrop1 hprog' hpc1 herr'
+  obtain ⟨n, jl, hn, hjl, hspn⟩ := reach_b hR hdrop1 (by simp) hprog' hpc1 herr'
   have hsp' : spOf s' = R.spB := hK.1.trans hst.sp
   refine ⟨n + 1, _, MStep.op hvb hi hops hsz hsem hlen hho hc2'
     (MNext.goto hk1 hsucc hitems), ?_, fun i hi => ?_⟩

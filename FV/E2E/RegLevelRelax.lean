@@ -85,6 +85,28 @@ theorem relaxTarget_condTarget {c : Insn} {t : Lbl} (h : c.relaxTarget? = some t
   unfold Insn.relaxTarget? at h
   split at h <;> simp_all
 
+theorem relaxable_none {ln : Line} (h : ∀ c, ln = .ins c none → c.condTarget? = none) :
+    ln.relaxable? = none := by
+  cases ln with
+  | ins c t =>
+    cases t with
+    | none => exact relaxable_of_condTarget (h c rfl)
+    | some _ => rfl
+  | _ => rfl
+
+/-- Lines whose conditional branches (if any) go to atomic-loop labels are not relaxed. -/
+theorem relaxLines_loop {f : Lbl → Bool} {A : List Line}
+    (h : ∀ ln ∈ A, ∀ c, ln = .ins c none → c.condTarget? = none ∨ ∃ n, c.condTarget? = some (.loop n)) :
+    relaxLines f A = A :=
+  relaxLines_of_none fun ln hln => by
+    cases ln with
+    | ins c t =>
+      cases t with
+      | none =>
+        rcases h _ hln c rfl with h' | ⟨n, h'⟩ <;> simp [Line.relaxable?, Insn.relaxTarget?, h']
+      | some _ => rfl
+    | _ => rfl
+
 theorem relaxLines_trapLines (f : Lbl → Bool) (ts : List (Lbl × Clif.TrapCode)) :
     relaxLines f (trapLines ts) = trapLines ts :=
   relaxLines_of_none fun ln hln => by

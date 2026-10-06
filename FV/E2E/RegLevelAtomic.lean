@@ -81,9 +81,9 @@ theorem label_once {R : RL} (hR : R.Wf) {j0 : Nat} {l : Lbl} {P T : List Line}
 
 /-- The lines of an `atomic_rmw` loop pass `fallthrough` unchanged. -/
 theorem ftList_rmw {R : RL} (hR : R.Wf) {j0 : Nat} {ty : CTy} (hty : AtomTy ty)
-    {op : AtomicRmwLoopOp} {fl : Clif.MemFlags} {l : Lbl} {Z T : List Line}
-    (hd : R.L.drop j0 = ftList (rmwLoopLines ty.bits op fl l ++ Z) ++ T) :
-    R.L.drop j0 = rmwLoopLines ty.bits op fl l ++ (ftList Z ++ T) := by
+    {op : AtomicRmwLoopOp} {fl : Clif.MemFlags} {l : Lbl} (hl : ∃ n, l = .loop n) {Z T : List Line}
+    (hd : R.L.drop j0 = relaxLines R.far (ftList (rmwLoopLines ty.bits op fl l ++ Z)) ++ T) :
+    R.L.drop j0 = rmwLoopLines ty.bits op fl l ++ (relaxLines R.far (ftList Z) ++ T) := by
   have hb : rmwLoopLines ty.bits op fl l ++ Z =
       (.label l :: rmwLoopBody ty.bits op fl) ++ (.ins (.cbz true true (.x 24) l) none :: Z) := by
     simp [rmwLoopLines]
@@ -92,10 +92,16 @@ theorem ftList_rmw {R : RL} (hR : R.Wf) {j0 : Nat} {ty : CTy} (hty : AtomTy ty)
     rcases hty with rfl | rfl | rfl | rfl <;> cases op <;>
       simp (config := {decide := true}) [rmwLoopBody, rmwLoopMid, rmwLoopStored, rmwLoopSext,
         rmwLoopCmp, CTy.bits, Insn.condTarget?]
-  rw [hb, ftList_prefix _ _ hP] at hd
+  have hPn : relaxLines R.far (Line.label l :: rmwLoopBody ty.bits op fl) =
+      Line.label l :: rmwLoopBody ty.bits op fl :=
+    relaxLines_of_none fun ln h => relaxable_none (hP ln h).2
+  have hcb : ∀ f : Lbl → Bool, relaxLine f (.ins (.cbz true true (.x 24) l) none) =
+      [.ins (.cbz true true (.x 24) l) none] := by
+    obtain ⟨n, rfl⟩ := hl; intro f; rfl
+  rw [hb, ftList_prefix _ _ hP, relaxLines_append, hPn] at hd
   rcases ftStep_ins_cases (.cbz true true (.x 24) l) (fun x h => by cases h) Z[0]? Z[1]? with
     hk | ⟨e, l', h0, h1, hct, hk⟩
-  · rw [ftList_pass hk] at hd
+  · rw [ftList_pass hk, relaxLines_cons, hcb] at hd
     rw [hd]; simp [rmwLoopLines]
   · exfalso
     simp only [Insn.condTarget?, Option.some.injEq] at hct
@@ -105,12 +111,14 @@ theorem ftList_rmw {R : RL} (hR : R.Wf) {j0 : Nat} {ty : CTy} (hty : AtomTy ty)
       subst h0 h1; exact ⟨Z', rfl⟩
     rw [ftList_cons, hk] at hd
     simp only [List.drop, List.singleton_append] at hd
-    rw [ftList_pass (ftStep_keep (fun x t h => by cases h) (fun c h => by cases h))] at hd
+    rw [ftList_pass (ftStep_keep (fun x t h => by cases h) (fun c h => by cases h)), relaxLines_cons,
+      relaxLines_cons, relaxLine_label] at hd
     have hbody : ∃ i t, (rmwLoopBody ty.bits op fl)[0]? = some (.ins i t) :=
       ⟨.ldaxr ty.bits (.x 27) (.x 25), fl.trapCode, by simp [rmwLoopBody]⟩
     obtain ⟨i, t, hi⟩ := hbody
     refine label_once hR (j0 := j0) (l := l) (P := rmwLoopBody ty.bits op fl ++
-      [.ins ((Insn.cbz true true (.x 24) l).invertTo e) none]) (T := ftList Z' ++ T)
+      relaxLine R.far (.ins ((Insn.cbz true true (.x 24) l).invertTo e) none))
+      (T := relaxLines R.far (ftList Z') ++ T)
       (q := 0) (i := i) (t := t) ?_ ?_
     · rw [hd]; simp
     · rw [List.getElem?_append_left (by simp [rmwLoopBody])]; exact hi
@@ -342,12 +350,12 @@ theorem realizes_rmwLoop {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
     rmwBody_spec hty op fl (R.envOf (j0 + 1)) s hst.err
   obtain ⟨hsw1, h27⟩ := rmwBody_congr hty op fl (R.envOf (j0 + 1)) env0 hsw0 h25 h26 hav' hrun1 hrunw
   -- the lines
-  have hdrop' := ftList_rmw hR hty hdrop
+  have hdrop' := ftList_rmw hR hty ⟨_, rfl⟩ hdrop
   have hL0 : R.L[j0]? = some (.label (.loop ps1.aloop)) := by
     have := congrArg (·[0]?) hdrop'
     simpa [List.getElem?_drop, rmwLoopLines] using this
   have hd1 : R.L.drop (j0 + 1) = rmwLoopBody ty.bits op fl ++
-      (.ins (.cbz true true (.x 24) (.loop ps1.aloop)) none :: (ftList (ls2 ++ nxtOf R.af b) ++ T)) := by
+      (.ins (.cbz true true (.x 24) (.loop ps1.aloop)) none :: (relaxLines R.far (ftList (ls2 ++ nxtOf R.af b)) ++ T)) := by
     rw [← List.drop_drop, hdrop']; simp [rmwLoopLines]
   have hpc1 : Arm.r .PC s = R.pcOf (j0 + 1) := by rw [hpc, RL.pcOf_succ_label hL0]
   obtain ⟨hit1, hpcs1, hgood1⟩ := run_ins hR hd1 (rmwBody_ins hty op fl) hst.prog hpc1 hst.err hint1 hrun1
@@ -359,7 +367,7 @@ theorem realizes_rmwLoop {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
     have := congrArg (·[(rmwLoopBody ty.bits op fl).length]?) hd1
     simp only [List.getElem?_drop] at this
     rw [this]; simp
-  obtain ⟨a, jl, ha, -, hstep⟩ := step_branch hR hLc (.inr (.inr (.inl ⟨true, true, .x 24, rfl⟩)))
+  obtain ⟨a, jl, ha, -, hstep⟩ := step_branch hR hLc (.inr (.inr (.inl ⟨true, true, .x 24, rfl⟩))) (by simp)
     hprog1' hpcs1 herr1
   have hbr : brCond a s1 = false := by
     rw [brCond_cbz (by decide) ha]; simp [rnum, h24]
@@ -543,8 +551,11 @@ theorem realizes_casLoop {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
     ConditionHolds_sameWorld hsw1 _
   -- the lines
   have hdrop' : R.L.drop j0 = casLoopLines ty.bits fl (.loop ps1.aloop) (.loop (ps1.aloop + 1)) ++
-      (ftList (ls2 ++ nxtOf R.af b) ++ T) := by
-    rw [hdrop, ftList_cas hty, List.append_assoc]
+      (relaxLines R.far (ftList (ls2 ++ nxtOf R.af b)) ++ T) := by
+    rw [hdrop, ftList_cas hty, relaxLines_append, relaxLines_loop (by
+      rcases hty with rfl | rfl | rfl | rfl <;>
+        simp (config := {decide := true}) [casLoopLines, casLoopHead, casLoopCmp, Insn.condTarget?,
+          CTy.bits]), List.append_assoc]
   have hat : ∀ q ln, (casLoopLines ty.bits fl (.loop ps1.aloop) (.loop (ps1.aloop + 1)))[q]? = some ln →
       R.L[j0 + q]? = some ln := by
     intro q ln hq
@@ -561,7 +572,7 @@ theorem realizes_casLoop {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
       (.ins (.bcond .ne (.loop (ps1.aloop + 1))) none ::
         .ins (.stlxr ty.bits (.x 24) (.x 28) (.x 25)) fl.trapCode ::
         .ins (.cbz true true (.x 24) (.loop ps1.aloop)) none :: .label (.loop (ps1.aloop + 1)) ::
-        (ftList (ls2 ++ nxtOf R.af b) ++ T)) := by
+        (relaxLines R.far (ftList (ls2 ++ nxtOf R.af b)) ++ T)) := by
     rw [← List.drop_drop, hdrop']; simp [casLoopLines, casLoopHead]
   have hpc1 : Arm.r .PC s = R.pcOf (j0 + 1) := by rw [hpc, RL.pcOf_succ_label hL0]
   obtain ⟨hit1, hpcs1, hgood1⟩ := run_ins hR hd1 (casHead_ins _ fl) hst.prog hpc1 hst.err hint1 hrun1
@@ -569,7 +580,7 @@ theorem realizes_casLoop {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
   have herr1 : Arm.r .ERR s1 = .None := by
     rw [hfr1 .ERR (by simp) (by simp) (by simp)]; exact hst.err
   have hprog1' : s1.program = R.fb.program R.base := by rw [hprog1]; exact hst.prog
-  obtain ⟨a, jl, ha, hjl, hstep⟩ := step_branch hR hL3 (.inr (.inl ⟨.ne, rfl⟩)) hprog1'
+  obtain ⟨a, jl, ha, hjl, hstep⟩ := step_branch hR hL3 (.inr (.inl ⟨.ne, rfl⟩)) (by simp) hprog1'
     (by rw [hpcs1]) herr1
   rw [brCond_bcond ha] at hstep
   have hpc7 : R.pcOf (j0 + 7) = R.pcOf (j0 + 6) := RL.pcOf_succ_label hL6
@@ -655,7 +666,7 @@ theorem realizes_casLoop {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
       (Arm.w .PC (R.pcOf (j0 + 3 + 1)) s1) herr2
     have hd4 : R.L.drop (j0 + 4) = [.ins (.stlxr ty.bits (.x 24) (.x 28) (.x 25)) fl.trapCode] ++
         (.ins (.cbz true true (.x 24) (.loop ps1.aloop)) none :: .label (.loop (ps1.aloop + 1)) ::
-          (ftList (ls2 ++ nxtOf R.af b) ++ T)) := by
+          (relaxLines R.far (ftList (ls2 ++ nxtOf R.af b)) ++ T)) := by
       rw [← List.drop_drop, hdrop']; simp [casLoopLines, casLoopHead]
     obtain ⟨hit3, hpcs3, -⟩ := run_ins hR hd4 (by simp [Insn.hooked])
       (by simp [Arm.w_program, hprog1']) (by simp) herr2
@@ -664,7 +675,7 @@ theorem realizes_casLoop {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
       rw [hfr3 .ERR (by simp) (by simp)]; exact herr2
     have hprog3' : s3.program = R.fb.program R.base := by
       rw [hprog3]; simp [Arm.w_program, hprog1']
-    obtain ⟨a5, jl5, ha5, -, hstep5⟩ := step_branch hR hL5 (.inr (.inr (.inl ⟨true, true, .x 24, rfl⟩)))
+    obtain ⟨a5, jl5, ha5, -, hstep5⟩ := step_branch hR hL5 (.inr (.inr (.inl ⟨true, true, .x 24, rfl⟩))) (by simp)
       hprog3' hpcs3 herr3
     have hbr : brCond a5 s3 = false := by
       rw [brCond_cbz (by decide) ha5]; simp [rnum, h24]
