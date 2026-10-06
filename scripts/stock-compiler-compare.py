@@ -8,7 +8,6 @@ import argparse
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 import hashlib
-import importlib.util
 import json
 import os
 from pathlib import Path
@@ -18,14 +17,13 @@ import traceback
 import tomllib
 
 from byte_compare import ELF, digest
+from stock_common import ROOT, PIN, TARGET, write, command, comparison
 
-SPEC = importlib.util.spec_from_file_location("prejit", Path(__file__).with_name("prejit-baseline.py"))
-PREJIT = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(PREJIT)
-ROOT, PIN, TARGET = PREJIT.ROOT, PREJIT.PIN, PREJIT.TARGET
 # Resolved: agent worktrees link third_party/wasmtime (scripts/agent-worktree.sh).
 SUITE = (ROOT / "third_party/wasmtime/cranelift/filetests/filetests").resolve()
-write, command, comparison = PREJIT.write, PREJIT.command, PREJIT.comparison
+# A finished measurement exits with this code: coverage gaps and unknown metadata remain, so the
+# suite is never reported as equivalent. Crashes exit 1 (Python) or another code.
+FINISHED_WITH_GAPS = 10
 
 ELF_RELOC_TYPES = {"Arm64Call":283,"Aarch64AdrPrelPgHi21":275,"Aarch64AddAbsLo12Nc":277,
     "Aarch64AdrGotPage21":311,"Aarch64Ld64GotLo12Nc":312,
@@ -414,7 +412,7 @@ def main():
         "Non-binary tests, foreign architectures, unsupported settings and missing outputs are explicit coverage categories.\n")
     print(json.dumps(report["totals"],indent=2))
     # Strict mode cannot report suite success with coverage gaps or unknown metadata.
-    return 1
+    return FINISHED_WITH_GAPS
 
 
 if __name__ == "__main__":

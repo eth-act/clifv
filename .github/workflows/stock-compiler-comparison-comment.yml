@@ -14,9 +14,11 @@ concurrency:
 
 jobs:
   comment:
+    # The lost-match job can fail a run whose measurement succeeded; prepare() checks
+    # that the measurement job itself succeeded.
     if: >-
       github.event.workflow_run.event == 'pull_request' &&
-      github.event.workflow_run.conclusion == 'success' &&
+      (github.event.workflow_run.conclusion == 'success' || github.event.workflow_run.conclusion == 'failure') &&
       github.event.workflow_run.head_repository.full_name != github.repository
     runs-on: ubuntu-24.04
     timeout-minutes: 5

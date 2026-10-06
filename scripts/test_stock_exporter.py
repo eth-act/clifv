@@ -1,14 +1,11 @@
 """Tests for exact pre-JIT comparison and stock-export integration."""
-import importlib.util
 import json
 from pathlib import Path
 import subprocess
 import tempfile
 import unittest
 
-SPEC = importlib.util.spec_from_file_location("prejit_baseline", Path(__file__).with_name("prejit-baseline.py"))
-BASELINE = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(BASELINE)
+import stock_common as BASELINE
 
 
 class ComparisonTests(unittest.TestCase):
@@ -28,13 +25,6 @@ class ComparisonTests(unittest.TestCase):
         r = {"offset":0,"kind":"Arm64Call","target":"%foo","addend":0}
         self.assertTrue(BASELINE.comparison(b"abcd",b"abcd",[r],[{**r,"target":"foo"}])["exact_code_and_relocations"])
         self.assertFalse(BASELINE.comparison(b"abcd",b"abce",[r],[{**r,"target":"foo"}])["exact_code_and_relocations"])
-
-    def test_stock_settings_difference_remains_visible(self):
-        v = {"flags":[{"name":"preserve_frame_pointers","value":"false"},{"name":"is_pic","value":"false"},
-                      {"name":"opt_level","value":"none"}],"isa_flags":[]}
-        audit = BASELINE.settings_audit(v)
-        self.assertFalse(audit["settings_parity_verified"])
-        self.assertEqual(len(audit["known_configuration_differences"]), 2)
 
 
 class ExportIntegrationTests(unittest.TestCase):

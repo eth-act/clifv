@@ -37,14 +37,45 @@ required on the hosted runner. The workflow installs the checksum-pinned Lean
 toolchain and caches toolchains, Rust downloads, and compiler build outputs.
 
 A green measurement job means that the full inventory was processed and the
-report is valid. It does **not** mean compiler equivalence. The CI adapter accepts
-the pipeline's expected exit code 1 only with a complete report. Crashes, partial
-inventories, missing reference outputs, changed test sources, and failed stock
-assertions fail CI. Unsupported Lean settings or operations remain coverage gaps.
+report is valid. It does **not** mean compiler equivalence. The pipeline exits
+with 10 when a measurement finished; the CI adapter accepts only that code, and
+only with a complete report. Crashes, partial inventories, missing reference
+outputs, changed test sources, and failed stock assertions fail CI. Unsupported
+Lean settings or operations remain coverage gaps.
+
+### Lost matches
+
+The run summary lists every exact output as (test, variant, stage, position of
+the function in the variant, function name). The position matters: a test file
+can repeat a function name. Before measuring, CI finds a baseline: the newest
+push run on `main` whose commit is an ancestor of the tested commit and that
+saved a summary (`scripts/stock-comparison-baseline.py`). A pull request is thus
+compared with the `main` commit it is based on, not with a newer `main`. The
+summary records the outputs gained and lost since that baseline.
+
+The **Check lost matches** job (`scripts/stock-comparison-ratchet.py`) fails
+when an output that matched on the baseline no longer matches. If the loss is
+intended, add the label `stock-comparison-accept-losses` to the pull request and
+re-run that job; the label is read when the job runs. A push to `main` has no
+override: the commit is marked failed, and the next push compares with it. A
+missing baseline (no measured ancestor yet, or one whose summary has another
+format) is reported, not failed. A baseline that exists but could not be
+retrieved or read (an API error, a damaged or malformed summary, a shallow
+checkout) fails the job, and the label does not override that: without the
+baseline, lost matches cannot be ruled out. Re-run all jobs of the workflow run.
+
+The summary also hashes the files that do the measuring (the comparison
+scripts, the stock exporter and its patch, `FVTest/Backend/StockConfig.lean`,
+`FVTest/Backend/Main.lean` and this workflow; `HARNESS` in
+`scripts/stock-comparison-ci.py`). The comment names the ones that changed
+since the baseline, because a gain there can come from the measurement rather
+than the compiler. Summary artifacts from `main` are kept for 90 days, so that
+later runs can use them as baselines.
 
 The workflow saves the full artifacts and logs for seven days. It writes a job
 summary and posts a PR comment with coverage, exact output matches, complete-file
-matches, elapsed pipeline time, and sampled runner memory use. Memory includes
+matches, setting and operation rejections, the gains and losses since the `main`
+baseline, elapsed pipeline time, and sampled runner memory use. Memory includes
 the OS and is measured as `MemTotal - MemAvailable` every 0.1 seconds. Pipeline
 time includes Rust toolchain setup. It excludes Lean installation and cache
 transfers.
@@ -57,9 +88,10 @@ result.
 
 Same-repository PRs publish in a separate job after the measurement succeeds.
 Fork builds use read-only permissions. A separate `workflow_run` publisher reads
-the small data artifact and posts their comments. It checks out only the default
-branch and never executes fork code. GitHub activates that publisher only after
-its workflow and script are merged into the default branch.
+the small data artifact and posts their comments, also when only the lost-match
+job failed. It checks out only the default branch and never executes fork code.
+GitHub activates that publisher only after its workflow and script are merged
+into the default branch.
 
 ### Daily change reports
 
@@ -102,8 +134,9 @@ chosen. `--input <official-file.clif>` selects a pilot;
 the report still retains the complete official inventory and says how many files
 were actually processed. `progress.json` records completed files. Each processed
 file has a retained `files/<official-path>/result.json` even before the final
-`results.json` and `summary.md` are produced. Exit 1 means suite-wide equivalence
-has **not** been established, including when code matches but metadata is unknown.
+`results.json` and `summary.md` are produced. Exit 10 means the measurement
+finished and suite-wide equivalence has **not** been established, including when
+code matches but metadata is unknown. Any other nonzero exit is a failure.
 
 The pinned reference is Wasmtime commit
 `46c23a87dac1465986a8ad53ba6a7ae49372857b` (Cranelift 0.136.1).
@@ -249,7 +282,3 @@ Next, implement a comparable exception/unwind metadata export, capture the exact
 target/CPU eligibility of a selected real CI host, and feed matched Lean artifacts
 to the stock loader/trampolines. Add backend functionality for the explicitly
 rejected settings/functions without substituting easier configurations.
-
-`prejit-baseline.py` is retained for stock-exporter validation and historical
-diagnostics; it does not give Lean a stock-settings contract. Use the single
-pipeline above, not that diagnostic script, for the settings-matched baseline.

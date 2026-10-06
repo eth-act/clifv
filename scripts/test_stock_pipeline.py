@@ -27,7 +27,7 @@ class PipelineTests(unittest.TestCase):
             path=binaries/name;path.write_text(source);path.chmod(0o755)
         (scripts/"prejit-export-build.sh").write_text("#!/usr/bin/env bash\nexit 0\n")
         (scripts/"test_stock_compiler_compare.py").write_text("import unittest\nclass Fixture(unittest.TestCase):\n def test_fixture(self): self.assertTrue(True)\n")
-        (scripts/"test_prejit_baseline.py").write_text("import unittest\nclass Fixture(unittest.TestCase):\n def test_fixture(self): self.assertTrue(True)\n")
+        (scripts/"test_stock_exporter.py").write_text("import unittest\nclass Fixture(unittest.TestCase):\n def test_fixture(self): self.assertTrue(True)\n")
         (scripts/"test_stock_pipeline.py").write_text("import unittest\nclass Fixture(unittest.TestCase):\n def test_fixture(self): self.assertTrue(True)\n")
         (scripts/"stock-compiler-compare.py").write_text('''import argparse,json,os
 from pathlib import Path
@@ -37,7 +37,7 @@ out=Path(a.out);out.mkdir()
 result={'progress':'finished','jobs':a.jobs,'allocator':os.environ.get('LEAN_REGALLOC'),
  'rustflags':os.environ.get('RUSTFLAGS'),'target_dir':os.environ.get('CARGO_TARGET_DIR')}
 (out/'results.json').write_text(json.dumps(result));(out/'summary.md').write_text('fixture')
-raise SystemExit(1)
+raise SystemExit(10)
 ''')
         env=os.environ.copy()
         env.pop("BLESS",None)
@@ -50,7 +50,7 @@ raise SystemExit(1)
     def test_complete_measurement_preserves_nonagreement_exit_and_pins_tools(self):
         with tempfile.TemporaryDirectory(prefix="stock-pipeline-test-") as temp:
             root=Path(temp);result=self.run_fixture(root)
-            self.assertEqual(result.returncode,1,result.stderr)
+            self.assertEqual(result.returncode,10,result.stderr)
             self.assertIn("Measurement complete",result.stdout)
             data=json.loads((root/"target/result/results.json").read_text())
             self.assertEqual(data["allocator"],str(root/"rust/target/release/lean-regalloc"))
