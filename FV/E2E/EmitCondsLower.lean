@@ -153,11 +153,10 @@ theorem vc_emit {f : Clif.Function} {vc : VCode} (hI : IselEmit f)
         · exact ⟨_, .inl ⟨_, _, rfl⟩⟩
         · exact ⟨_, .inr ⟨_, _, rfl⟩⟩
       obtain ⟨T, -, hd, -, -, -, -, out, tr, hc⟩ := hy et het
-      obtain ⟨ms, hms, hok⟩ := hY _ _ _ _ _ _ _ _ _ hti hph hd hc
+      obtain ⟨ms, hms, hok, htg⟩ := hY _ _ _ _ _ _ _ _ _ hti hph hd hc
       have he : L.tst'.emitted.toList = ms := by rw [hms]; simp
       rw [he]
-      exact ⟨fixTry_emitOk (fun m h => (hok m h).1),
-        fixTry_targets (fun m h => (hok m (List.dropLast_subset _ h)).2)⟩
+      exact ⟨fixTry_emitOk hok, fixTry_targets htg⟩
   rw [hvb]
   intro vb hvb'
   refine ⟨vcBlocks_all (fun m => m.emitOk = true)

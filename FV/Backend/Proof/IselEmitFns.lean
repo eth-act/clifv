@@ -302,6 +302,12 @@ def internalOne (p : Program) (t : TermId) : Bool :=
     | _ => false
   | .error _ => false
 
+/-- The root rules of `lower` checked by hand (`IselEmitHand`): `uextend` (808) and `sextend`
+(819), whose extension widths are related only by the input condition `ExtendsWiden`, and the
+`extr` rules (862, 863), whose shift amount is below the type's width only by the rule's
+guards. -/
+def emitHandIds : List Nat := [808, 819, 862, 863]
+
 section Last
 variable (p : Program) (tab : Tab) (aext : TermId → AW → List AW) (actor : TermId → List AW → AW)
   (apre : TermId → List AW → Bool) (aOracle : TermId → List AW → Option AW)
