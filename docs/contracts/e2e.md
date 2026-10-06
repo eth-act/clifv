@@ -1837,6 +1837,23 @@ machine state `r` itself:
   relocated byte of the program is below it and away from the entry's code: `codeB`, decided on the
   executable's data like the other per-crate facts). Axioms: the three and generated `_native`
   certificates (the crate's `native_decide` evaluations, as `binary_witness`).
+* **The static part of `RunOk`** (`FV/E2E/ExecStatic.lean`, `binary_correct_exec_static`): the
+  facts of `StepOk` that do not depend on the run are proven for every input: the site lookup's
+  agreement (`siteAt_static`) and `plain` (`plain_static`) from the per-program check `codeMapB`
+  (`codeMap_sound`: disjoint code ranges, link-map address = load address; a premise, not part of
+  `okB`: `fv-demo`'s `…__fvself` aliases share their function's code with lines naming other
+  callees, and have another link-map address, so `StepOk.site` cannot hold at both activations'
+  self-call lines there) and the layout (a relocation sits at its own instruction line); the
+  callee's link-map address at a `blr` (`codeMap_sound`); `call` and `tls` from the **outside-code contract
+  `HooksSim I B`** (next to `BaseOk`: the hooks for calls outside the program and for the TLS
+  sequence give `Sim`-related results on `Sim`-related states, i.e. they read no relocated
+  instruction byte and not the program field; `hooksSim_closed`). What remains per state is
+  `RunOkD`/`StepOkD`: no error, the program field, the pc at an instruction (not past a TLSDESC
+  `ldr`), D1 `cf`, D2 `insn`, D4 `got`, and at a `blr` to the program the register (not `xzr`) and
+  the model's read of its word (`StepOk.d`: `StepOk` gives it). `binary_correct_exec_static` is
+  `binary_correct_exec` under `codeMapB`, `HooksSim` and `RunOkD`; non-vacuity (`codeMap_ok` by
+  `native_decide`):
+  `Crates.BinaryExecWitness.binary_correct_exec_static_witness`.
 
 
 ### Non-vacuity (2026-10-02, `agent/callee-fix`, `FV/E2E/NonVacuity.lean`)
