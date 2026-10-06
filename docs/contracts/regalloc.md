@@ -173,16 +173,17 @@ Proof status: `E2E.backend_correct_final_alloc` (`FV/E2E/AllocDirect.lean`) is t
 theorem for `rf := allocResult vcp ra`, for any answer `ra`, with no premise about `checkAlloc`;
 its hypothesis `SpillAccepted` is proven (`E2E.spillAccepted`,
 `E2E.backend_correct_final_alloc_proven`). `lowerRFunc` provably lowers the spill allocation of
-every in-scope function whose allocator area is below 32 KiB (`E2E.lowerRFunc_spillAlloc`,
-premise `SpillFrameOk`), so `lowerAlloc` succeeds for every answer `ra`
-(`E2E.lowerAlloc_total`, `E2E.backend_correct_final_total`, V5). `lean-e2e-check` decides
-`checkAlloc`'s acceptance on every in-scope function (**1148 of 1148 accepted**) and
-`SpillFrameOk` and the lowering ("spill lowering" line; the dense home numbering keeps the
-corpus far below the limit; with one home per vreg number, `Corpus__chacha20Block` needed 37840
-bytes). The 32 KiB limit can still reject the spill allocation of a function with more than
-about 4000 vregs (the int and float spill areas both have `spillSlots` entries: 8 bytes each,
-plus 16 each when a float value is homed, so about 1300 vregs then): such a function then
-fails to compile; lifting the limit is the open part of V5.
+every in-scope function (`E2E.lowerRFunc_spillAlloc`), so `lowerAlloc` succeeds for every answer
+`ra` (`E2E.lowerAlloc_total`, `E2E.backend_correct_final_total`, V5). `lean-e2e-check` decides
+`checkAlloc`'s acceptance on every in-scope function (**1149 of 1149 accepted**) and the lowering
+("spill lowering" line: `lowerRFunc` lowers 1149 of 1149; a rejection contradicts
+`E2E.lowerRFunc_spillAlloc` and fails the run). There is no frame-size limit (V5, 2026-10-05): a
+slot at offset 32 KiB or more is addressed through x16 (`slotStoreAt`/`slotLoadAt`:
+`movz`/`movk x16, #off`, `add x16, sp, x16, sxtx`, then `str`/`ldr` at `[x16]`; below 32 KiB the
+single `[sp, #off]` access as before). x16 is in neither regalloc2's `MachineEnv` nor `spillPool`,
+and outside the world of the proof (`Masked`), so a move may clobber it.
+`corpus/clif-regress/large_frame.clif` (4500 values live at once) exercises it with both
+allocators.
 
 Filetests with the fallback forced (`scripts/lean-backend-filetests.sh --regalloc spill`): see
 "Results" (g).
@@ -392,6 +393,16 @@ lowers all of them (one home per vreg *number* instead of the dense numbering ma
 `lake exe lean-backend-regalloc-test`: each of the 3913 mutants `checkAlloc` rejects is lowered
 through the spill allocation by `RAResult.finish` ("fallback" line). With `LEAN_REGALLOC`
 pointing to a missing binary, `lean-backend` compiles every function with the fallback.
+
+(h) Large frames (V5, 2026-10-05). `corpus/clif-regress/large_frame.clif` (4500 values live at
+once, plus a `popcnt` for float-class vregs): allocator frame 35888 bytes with regalloc2, 216336
+with the spill allocation (float slots beyond 64 KiB). Before V5 `lean-backend` rejected both
+("allocator frame area of … bytes is too large"); now 4/4 runs pass and agree with
+Cranelift-native with `--regalloc regalloc2` and `spill` (780 resp. 10259 x16 address
+sequences). Filetests, both allocators: `corpus/clif` 114/114, extrt 22/22, runtests 4672 pass /
+0 fail / 0 error. `lean-backend-encode-check.sh`: 1292 functions identical, 0 differ (with the new
+forms of `large_frame`). `lean-e2e-check`: 1149 in scope; `lowerRFunc` lowers all 1149 spill
+allocations.
 
 ## Gaps
 

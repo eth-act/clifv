@@ -10,11 +10,11 @@ import FV.Backend.Proof.KillOfV
 
 `lowerRFunc_spill_of`: `lowerRFunc vc (spillAlloc vc)` succeeds when the VCode meets the spill
 allocator's local facts (`Spill.SpillLocalOk`), every instruction meets `ctlInstOk` at its place,
-block 0 starts with `Args` followed by more instructions, and the allocator frame is below
-32 KiB. The parts:
+and block 0 starts with `Args` followed by more instructions (the frame has no size limit: slots
+beyond 32 KiB are addressed through x16). The parts:
 
-* `lowerRFunc_of`: the converse of `lowerRFunc_ok` — `lowerRFunc` succeeds when the frame is
-  small enough, `ctlCheck` accepts, and every item of every block has code (`itemCode`);
+* `lowerRFunc_of`: the converse of `lowerRFunc_ok` — `lowerRFunc` succeeds when `ctlCheck`
+  accepts and every item of every block has code (`itemCode`);
 * every item the spill allocation emits is a move between a register and a register or a frame
   slot the frame has an offset for (`MoveOk`: spill homes, temporaries, the callee-save slots of
   `calleeSaved`, all of which `RAFrame.compute` lays out), or an instruction whose operand
@@ -69,10 +69,9 @@ theorem array_mapIdxM_ne_error {α β ε : Type} {f : Nat → α → Except ε �
   obtain ⟨bs, hbs⟩ := array_mapIdxM_ok_of h
   rw [hbs]; intro c; cases c
 
-/-- **`lowerRFunc` succeeds** when the allocator frame is below 32 KiB, `ctlCheck` accepts and
-every item has code (the converse of `lowerRFunc_ok`). -/
-theorem lowerRFunc_of {vc : VCode} {rf : RFunc}
-    (hsz : (RAFrame.compute vc rf).size < 32768) (hck : ctlCheck vc rf = true)
+/-- **`lowerRFunc` succeeds** when `ctlCheck` accepts and every item has code (the converse of
+`lowerRFunc_ok`). -/
+theorem lowerRFunc_of {vc : VCode} {rf : RFunc} (hck : ctlCheck vc rf = true)
     (hit : ∀ (b : Nat) (vb : VBlock) (items : Array RItem), vc.blocks[b]? = some vb →
       rf.blocks[b]? = some items →
       ∀ it ∈ items.toList, ∃ c, itemCode (RAFrame.compute vc rf) vb it = .ok c) :
@@ -83,8 +82,7 @@ theorem lowerRFunc_of {vc : VCode} {rf : RFunc}
   exfalso
   unfold lowerRFunc at hl
   simp only [bind, Except.bind] at hl
-  -- the allocator-frame check (absent once the 32 KiB limit is lifted), then `ctlCheck`
-  try rw [ite_eq_right (show ¬(RAFrame.compute vc rf).size ≥ 32768 by omega)] at hl
+  -- `ctlCheck`
   rw [ite_eq_right (by simp [hck])] at hl
   split at hl
   · rename_i e hm
@@ -546,16 +544,14 @@ theorem ctlCheck_spill {vc : VCode} {ss ps : Array (Array Nat)} (hcfg : vc.cfg =
 /-! ## The assembly -/
 
 /-- **`lowerRFunc` lowers the spill allocation** of a VCode with a CFG that meets the local
-facts, `ctlInstOk` at every instruction, `Args` first in block 0, and an allocator frame below
-32 KiB. -/
+facts, `ctlInstOk` at every instruction, and `Args` first in block 0. -/
 theorem lowerRFunc_spill_of {vc : VCode} {ss ps : Array (Array Nat)} (hcfg : vc.cfg = .ok (ss, ps))
     (hloc : SpillLocalOk vc)
     (hins : ∀ (b : Nat) (vb : VBlock) (k : Nat) (i : MInst), vc.blocks[b]? = some vb →
       vb.insts[k]? = some i → ctlInstOk b k i = true)
-    (h0 : ∃ vb0 ds, vc.blocks[0]? = some vb0 ∧ vb0.insts[0]? = some (.args ds) ∧ 1 < vb0.insts.size)
-    (hsz : (RAFrame.compute vc (spillAlloc vc)).size < 32768) :
+    (h0 : ∃ vb0 ds, vc.blocks[0]? = some vb0 ∧ vb0.insts[0]? = some (.args ds) ∧ 1 < vb0.insts.size) :
     ∃ af, lowerRFunc vc (spillAlloc vc) = .ok af :=
-  lowerRFunc_of hsz (ctlCheck_spill hcfg hloc hins h0) fun b vb _ hvb hit it hm =>
+  lowerRFunc_of (ctlCheck_spill hcfg hloc hins h0) fun b vb _ hvb hit it hm =>
     itemCode_spill vc (itemOk_spillAlloc hcfg hvb hit it hm) fun k i hi =>
       let ⟨ops, hops, _⟩ := hloc.1 b vb k i hvb hi
       ⟨ops, hops⟩

@@ -2285,7 +2285,7 @@ edges, `tryDefsExact`); `prepare` keeps `killFreeB` (`KillPrep.lean`). Non-vacui
 `FV/E2E/SpillCtlCheck.lean`, `FV/Backend/Proof/AssignOk.lean`, `FV/E2E/AllocTotal.lean`):
 
 ```lean
-theorem E2E.lowerRFunc_of (hsz : (RAFrame.compute vc rf).size < 32768) (hck : ctlCheck vc rf = true)
+theorem E2E.lowerRFunc_of (hck : ctlCheck vc rf = true)
     (hit : ∀ b vb items, vc.blocks[b]? = some vb → rf.blocks[b]? = some items →
       ∀ it ∈ items.toList, ∃ c, itemCode (RAFrame.compute vc rf) vb it = .ok c) :
     ∃ af, lowerRFunc vc rf = .ok af               -- the converse of lowerRFunc_ok
@@ -2296,14 +2296,13 @@ theorem E2E.ctlInsts_pipeline (hsub : InSubset p f) (hd : Dominated f) (hs : Low
     ∃ vb0 ds, vcp.blocks[0]? = some vb0 ∧ vb0.insts[0]? = some (.args ds) ∧ 1 < vb0.insts.size
 theorem E2E.ctlCheck_spill (hcfg : vc.cfg = .ok (ss, ps)) (hloc : SpillLocalOk vc) (hins …) (h0 …) :
     ctlCheck vc (spillAlloc vc) = true
-theorem E2E.lowerRFunc_spill_of (hcfg …) (hloc : SpillLocalOk vc) (hins …) (h0 …)
-    (hsz : (RAFrame.compute vc (spillAlloc vc)).size < 32768) : ∃ af, lowerRFunc vc (spillAlloc vc) = .ok af
-def E2E.SpillFrameOk (vcp : VCode) : Prop := (RAFrame.compute vcp (spillAlloc vcp)).size < 32768
+theorem E2E.lowerRFunc_spill_of (hcfg …) (hloc : SpillLocalOk vc) (hins …) (h0 …) :
+    ∃ af, lowerRFunc vc (spillAlloc vc) = .ok af
 theorem E2E.lowerRFunc_spillAlloc (hsub : InSubset p f) (har : Spill.ArityOk f) (hd : Dominated f)
-    (hs : LowerScope f) (hl …) (hp …) (hsz : SpillFrameOk vcp) : ∃ af, lowerRFunc vcp (spillAlloc vcp) = .ok af
+    (hs : LowerScope f) (hl …) (hp …) : ∃ af, lowerRFunc vcp (spillAlloc vcp) = .ok af
 theorem E2E.lowerAlloc_total (…same…) (ra : Except String RFunc) : ∃ af, lowerAlloc vcp ra = .ok af
 theorem E2E.backend_correct_final_total (hsub : InSubset p f) (hd : dominatedB f = true)
-    (hs : lowerScopeB f = true) (har : Spill.arityOkB f = true) (hl …) (hp …) (hsz : SpillFrameOk vcp)
+    (hs : lowerScopeB f = true) (har : Spill.arityOkB f = true) (hl …) (hp …)
     (ra : Except String RFunc) :
     ∃ af, lowerAlloc vcp ra = .ok af ∧ ∀ {fa fb}, emitFunc k af = .ok fa → fa.layout = .ok fb →
       -- backend_correct_final's contract, link-time and run premises (hC … htr) with rf := allocResult vcp ra
@@ -2313,6 +2312,8 @@ theorem E2E.backend_correct_final_total (hsub : InSubset p f) (hd : dominatedB f
 `lowerRFunc` could reject an allocation (allocator frame ≥ 32 KiB, `ctlCheck`, an operand not in
 a register, a missing instruction, `MInst.assign` or `RAFrame.moveInsts` failing), so
 `backend_correct_final_alloc_proven` took `ha : lowerRFunc vcp rf = .ok af` as a premise. Now
+there is no frame-size limit (slots at 32 KiB or more are addressed through x16:
+`slotStoreAt`/`slotLoadAt`, `RegallocSlotsFar.lean`; `lowerRFunc_ok` has no size conjunct), and
 `allocResult` also falls back to the spill allocation when `lowerRFunc` rejects regalloc2's, and
 the spill allocation is proven lowerable: every item is a move between a register and a register,
 a spill slot or a callee-save slot (all laid out by `RAFrame.compute`: `saveOff_spill`), or an
@@ -2320,11 +2321,10 @@ instruction whose locations are `spillLocs` (registers, one per operand); `ctlCh
 part holds by construction (the saves, then `Args`, which has only defs so no loads precede it,
 then no `op 0`; `EdgesOk.entry`: no edge enters block 0), and its instruction part on the
 pipeline's output (`ctlInsts_pipeline`). `backend_correct_final_total` thus has no allocation or
-lowering premise; the compile-success premises left are emission/layout (`emitFunc`, `layout`:
-branch ranges, V6) and `SpillFrameOk` (the spill allocation's allocator area below 32 KiB, which
-lifting the limit removes). `lean-e2e-check` decides `SpillFrameOk` and the spill lowering ("spill
-lowering" line: `SpillFrameOk` 1148 of 1148, `lowerRFunc` lowers 1148, rejects 0; a rejection under
-`SpillFrameOk` fails the run). Non-vacuity:
+lowering premise: lowering after allocation is total for in-scope input; the compile-success
+premises left are emission/layout (`emitFunc`, `layout`: branch ranges, V6). `lean-e2e-check`
+decides the spill lowering ("spill lowering" line: `lowerRFunc` lowers 1149, rejects 0; a
+rejection contradicts `lowerRFunc_spillAlloc` and fails the run). Non-vacuity:
 `E2E.backend_correct_final_total_witness`.
 
 **Validator completeness: `Opt.Legalize128` is correct without `Opt.Legal.check`** (2026-10-02,

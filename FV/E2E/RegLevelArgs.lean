@@ -111,7 +111,7 @@ theorem upd_other {α β : Type} [DecidableEq α] {f : α → β} {a b : α} {x 
 /-- `AInv` is kept by every step of the allocated code from a `Q` state. -/
 theorem aInv_step {R : RL} (hR : R.Wf) {s : Arm.ArmState} {c c' : MConf CV Arm.ArmState}
     (hq : Q R s c) (hA : AInv R c) (h : MStep R.vc R.sem ckeep R.rf c c') : AInv R c' := by
-  have hck := (lowerRFunc_ok hR.alloc).2.2.2
+  have hck := (lowerRFunc_ok hR.alloc).2.2
   cases h with
   | @move b src dst its m w =>
     intro hb hop
@@ -213,7 +213,7 @@ theorem realizes_args {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {alloc
     (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some (.args ds))
     (h : MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c') :
     Q R s c' := by
-  have hck := (lowerRFunc_ok hR.alloc).2.2.2
+  have hck := (lowerRFunc_ok hR.alloc).2.2
   obtain ⟨rfl, rfl, hds⟩ := ctlCheck_args hck hvb hi
   obtain ⟨ns, rfl, hns⟩ := argPairs_of (fun p hp => (hds p hp).1)
   have hops := operands_args ns
