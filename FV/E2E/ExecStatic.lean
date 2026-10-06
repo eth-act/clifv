@@ -1,4 +1,5 @@
 import FV.E2E.ExecBytes
+import FV.E2E.CodeMap
 
 /-! # The static part of `RunOk` (L3)
 
@@ -8,10 +9,9 @@ every input, from the checks and one contract on the base environment, leaving t
 hypothesis `RunOkD` (`StepOkD`):
 
 * `site`'s agreement of the site lookup (`siteAt_static`) and `plain` (`plain_static`): from the
-  per-program code map check `codeMapB` (`codeMap_sound`: two functions' code ranges are
-  disjoint) and the layout (a relocation is at its own instruction line);
-* `blr`'s link-map address of a callee of the program (`codeMap_sound`: a function's link-map
-  address is its load address);
+  per-program code map check `codeMapB` (`FV/E2E/CodeMap.lean`; `codeMap_sound`, `line_overlap`:
+  two functions' overlapping words are alike lines, so one kind of site and one relocation
+  status) and the layout (a relocation is at its own instruction line);
 * `call` and `tls`: the **outside-code contract `HooksSim`** on the base environment (next to
   `BaseOk`): the hooks for calls outside the program and for the TLS sequence do not read the
   program's relocated instruction bytes nor the machine's program field. `closedBase` meets it
@@ -19,7 +19,8 @@ hypothesis `RunOkD` (`StepOkD`):
 
 `StepOkD` keeps what depends on the run: no error, the program field, the pc at an instruction of
 the function (not past a TLSDESC `ldr`), D1 (`cf`), D2 (`insn`), D4 (`got`) and, at a `blr` to the
-program, the register (not `xzr`) and the model's read of the `blr` word. Discharging it from the
+program, the register (not `xzr`), the model's read of the `blr` word and the callee's link-map
+address (from the M6 proof's `BlrAt` and `codeMapB`: `symAddr_of_blrTo`). Discharging it from the
 M6 proof is TO-PROVE L3 (c). `binary_correct_exec_static` is `binary_correct_exec` under
 `HooksSim` and `RunOkD`.
 -/
@@ -77,10 +78,12 @@ structure StepOkD (M : Nat) (g : Clif.Function) (m : Arm.ArmState) : Prop where
     ¬ RelocAt I (BitVec.ofNat 64 G + BitVec.ofNat 64 i) ∧
     m.mem (BitVec.ofNat 64 G + BitVec.ofNat 64 i) =
       (Elf.loadMem file (BitVec.ofNat 64 G + BitVec.ofNat 64 i)).getD 0
-  /-- a `blr` to the program: through a register (not `xzr`), the model reads the file's word -/
+  /-- a `blr` to the program: through a register (not `xzr`), the model reads the file's word,
+  and the callee's link-map address is its load address -/
   blr : ∀ x h, insnAt (art I g).fa (art I g).base (Arm.r .PC m) = some (.blr x) →
     (blrTarget m).bind (symCallee (sys I B).Xb (prog I)) = some h →
-    x ≠ .xzr ∧ fileWord file (Arm.r .PC m) = some (Arm.read_mem_bytes 4 (Arm.r .PC m) m)
+    x ≠ .xzr ∧ fileWord file (Arm.r .PC m) = some (Arm.read_mem_bytes 4 (Arm.r .PC m) m) ∧
+    I.symAddr h.name 0 = (art I h).base
 
 /-- **The per-state hypothesis on the model's runs**: `StepOkD` at every state of the activation
 of `f` at depth `M` entered at `c` (and of the activations it calls) before its return. -/
@@ -93,28 +96,103 @@ end Defs
 
 /-! ## The code map check -/
 
-/-- **The code map** of a program's compiled images `T` (a per-program check, a premise of
-`binary_correct_exec_static`): every function's link-map address is its load address, and the
-code ranges of two functions are disjoint. (Not part of `okB`: a program with an alias of a
-function, like `fv-demo`'s `…__fvself`, has two images on the same code, whose lines name
-different callees, and another link-map address for the alias.) -/
-def codeMapB (I : LinkInput) (T : List (Clif.Function × Art)) : Bool :=
-  T.all fun e => I.symAddr e.1.name 0 == e.2.base &&
-    T.all fun e' => e.1.name == e'.1.name ||
-      decide (e.2.base.toNat + 4 * e.2.fb.words.size ≤ e'.2.base.toNat ∨
-        e'.2.base.toNat + 4 * e'.2.fb.words.size ≤ e.2.base.toNat)
-
 theorem codeMap_sound {I : LinkInput} (hI : okB I = true) (hc : codeMapB I (tabOf I.results) = true)
     {g : Clif.Function} (hg : g ∈ (prog I).funcs) :
-    I.symAddr g.name 0 = (art I g).base ∧
+    (I.symAddr g.name 0 = (art I g).base ∨ noBlrB I (tabOf I.results) g.name = true) ∧
     ∀ g' ∈ (prog I).funcs, g.name ≠ g'.name →
-      (art I g).base.toNat + 4 * (art I g).fb.words.size ≤ (art I g').base.toNat ∨
-        (art I g').base.toNat + 4 * (art I g').fb.words.size ≤ (art I g).base.toNat := by
-  simp only [codeMapB, List.all_eq_true, Bool.and_eq_true, beq_iff_eq, Bool.or_eq_true,
-    decide_eq_true_eq] at hc
+      ((art I g).base.toNat + 4 * (art I g).fb.words.size ≤ (art I g').base.toNat ∨
+        (art I g').base.toNat + 4 * (art I g').fb.words.size ≤ (art I g).base.toNat) ∨
+      ((art I g).base = (art I g').base ∧
+        linesAlikeB (prog I) (art I g).fa.lines.toList (art I g').fa.lines.toList = true) := by
+  simp only [codeMapB, progT_tabOf, List.all_eq_true, Bool.and_eq_true, beq_iff_eq,
+    Bool.or_eq_true, decide_eq_true_eq] at hc
   have hn := okB_names hI
   have hgt := hc _ (tab_mem hn hg)
-  exact ⟨hgt.1, fun g' hg' hne => (hgt.2 _ (tab_mem hn hg')).resolve_left hne⟩
+  refine ⟨hgt.1, fun g' hg' hne => ?_⟩
+  rcases hgt.2 _ (tab_mem hn hg') with (h | h) | h
+  · exact absurd h hne
+  · exact .inl h
+  · exact .inr h
+
+theorem insnAlikeB_site {P : Clif.Program} {i i' : Insn} (h : insnAlikeB P i i' = true) :
+    siteOf P i = siteOf P i' := by
+  simp only [insnAlikeB, Bool.or_eq_true, decide_eq_true_eq] at h
+  rcases h with rfl | h
+  · rfl
+  · cases i <;> cases i' <;> simp_all [siteOf]
+
+theorem insnAlikeB_reloc {P : Clif.Program} {i i' : Insn} (h : insnAlikeB P i i' = true)
+    (hr : i.reloc? = none) : i'.reloc? = none := by
+  simp only [insnAlikeB, Bool.or_eq_true, decide_eq_true_eq] at h
+  rcases h with rfl | h
+  · exact hr
+  · cases i <;> cases i' <;> simp_all [Insn.reloc?]
+
+theorem lineAlikeB_refl (P : Clif.Program) (l : Line) : lineAlikeB P l l = true := by
+  cases l <;> simp [lineAlikeB, insnAlikeB]
+
+theorem lineAlikeB_size {P : Clif.Program} {l l' : Line} (h : lineAlikeB P l l' = true) :
+    l.size = l'.size := by
+  cases l <;> cases l' <;> simp_all [lineAlikeB, Line.size]
+
+theorem linesAlikeB_get {P : Clif.Program} :
+    ∀ {L L' : List Line}, linesAlikeB P L L' = true → ∀ {j : Nat} {l : Line}, L[j]? = some l →
+      ∃ l', L'[j]? = some l' ∧ lineAlikeB P l l' = true
+  | [], _, _, _, _, hj => by simp at hj
+  | _ :: _, [], h, _, _, _ => by simp [linesAlikeB] at h
+  | l0 :: L, l0' :: L', h, j, l, hj => by
+    simp only [linesAlikeB, Bool.and_eq_true] at h
+    cases j with
+    | zero => simp only [List.getElem?_cons_zero, Option.some.injEq] at hj; subst hj; exact ⟨l0', rfl, h.1⟩
+    | succ j => simpa using linesAlikeB_get h.2 (by simpa using hj)
+
+theorem linesAlikeB_offset {P : Clif.Program} :
+    ∀ {L L' : List Line}, linesAlikeB P L L' = true → ∀ j, lineOffset L j = lineOffset L' j
+  | [], [], _, _ => rfl
+  | [], _ :: _, h, _ => by simp [linesAlikeB] at h
+  | _ :: _, [], h, _ => by simp [linesAlikeB] at h
+  | l0 :: L, l0' :: L', h, j => by
+    simp only [linesAlikeB, Bool.and_eq_true] at h
+    cases j with
+    | zero => rfl
+    | succ j =>
+      have := linesAlikeB_offset h.2 j
+      simp only [lineOffset, List.take_succ_cons, List.map_cons, List.sum_cons] at this ⊢
+      rw [lineAlikeB_size h.1, this]
+
+theorem blrGotB_sound {vc : VCode} {n : String} (h : blrGotB vc n = true) {info : CallInfo}
+    (hs : vc.CallSite info) {t : Nat} (hd : info.dest = .reg (.vreg t .int)) :
+    ∃ n', GotV vc t n' ∧ n' ≠ n := by
+  obtain ⟨b, vb, k, hb, hi⟩ := hs
+  have hvb := (array_all_iff _ _).1 h b vb hb
+  have hg : (gotOf vc t).any (· != n) = true := by
+    rcases hi with hi | ⟨ti, hi⟩ <;> simpa [hd] using (array_all_iff _ _).1 hvb k _ hi
+  cases ho : gotOf vc t with
+  | none => simp [ho] at hg
+  | some n' =>
+    simp only [ho, Option.any_some, bne_iff_ne, ne_eq] at hg
+    exact ⟨n', gotOf_sound ho, hg⟩
+
+/-- **The callee of a `blr` of the program has its link-map address at its load address**: a
+`blr` of `g` through `t` may enter `h` (`BlrTo`) only if `h`'s link-map address is its load
+address (`codeMapB`). -/
+theorem symAddr_of_blrTo {I : LinkInput} {B : BaseEnv} (hI : okB I = true)
+    (hc : codeMapB I (tabOf I.results) = true) {g h : Clif.Function} (hg : g ∈ (prog I).funcs)
+    (hh : h ∈ (prog I).funcs) {info : CallInfo} {t : Nat} (hs : (art I g).vcp.CallSite info)
+    (hd : info.dest = .reg (.vreg t .int)) (hb : (sys I B).BlrTo g t h) :
+    I.symAddr h.name 0 = (art I h).base := by
+  refine ((codeMap_sound hI hc hh).1).resolve_right fun hn => ?_
+  simp only [noBlrB, Bool.and_eq_true, Option.isNone_iff_eq_none, List.all_eq_true,
+    Bool.or_eq_true, Bool.not_eq_true', List.any_eq_false, beq_iff_eq] at hn
+  obtain ⟨⟨hmay, -⟩, hgot⟩ := hb
+  rcases hmay with ⟨hdecl, hne⟩ | ⟨-, -, hsym, -⟩
+  · rcases hn.2 _ (tab_mem (okB_names hI) hg) with (hx | hx) | hx
+    · obtain ⟨x, hx', he⟩ := List.mem_map.1 hdecl
+      exact hx x hx' he
+    · exact hne hx.symm
+    · obtain ⟨n', hv, hn'⟩ := blrGotB_sound hx hs hd
+      exact hn' (hgot n' hv)
+  · exact hsym hn.1
 
 section Static
 
@@ -159,26 +237,83 @@ theorem insn_range {g : Clif.Function} (hF : FnOk I file g) {a : BitVec 64} {i :
 theorem art_of_name {g h : Clif.Function} (he : g.name = h.name) : art I g = art I h := by
   simp only [art, artOf, he]
 
-/-- **The site lookup finds the function's instruction** (no other function's code is there). -/
+/-- Lines of size 4 at the same offset are the same line. -/
+theorem lineOffset_inj4 {L : List Line} {j j' : Nat} {ln ln' : Line} (hj : L[j]? = some ln)
+    (hj' : L[j']? = some ln') (hs : ln.size = 4) (hs' : ln'.size = 4)
+    (he : lineOffset L j = lineOffset L j') : j = j' := by
+  rcases Nat.lt_trichotomy j j' with h | h | h
+  · have h1 := lineOffset_succ L j _ hj
+    have h2 := lineOffset_mono L (show j + 1 ≤ j' by omega)
+    omega
+  · exact h
+  · have h1 := lineOffset_succ L j' _ hj'
+    have h2 := lineOffset_mono L (show j' + 1 ≤ j by omega)
+    omega
+
+/-- A line of `g` (not a label) is a word inside `g`'s code, at an offset that is a multiple
+of 4. -/
+theorem line_word {g : Clif.Function} (hF : FnOk I file g) {j : Nat} {l : Line}
+    (hj : (art I g).fa.lines.toList[j]? = some l) (hl : l.isLabel = false) :
+    l.size = 4 ∧ lineOffset (art I g).fa.lines.toList j % 4 = 0 ∧
+      lineOffset (art I g).fa.lines.toList j + 4 ≤ 4 * (art I g).fb.words.size := by
+  have hs : l.size = 4 := by cases l <;> simp_all [Line.size, Line.isLabel]
+  obtain ⟨lm, hm⟩ := FnAsm.layout_labelOffsets hF.layout
+  have h1 := lineOffset_succ _ j _ hj
+  have h2 := lineOffset_le_size (art I g).fa.lines.toList (j + 1)
+  rw [layout_sum hF.layout] at h2
+  exact ⟨hs, (FnAsm.layout_word hF.layout hm hj hl).1, by omega⟩
+
+/-- **Overlapping words of two functions are alike lines** (`codeMapB`): the same function's
+same line, or the lines at the same offset of two functions sharing their code. -/
+theorem line_overlap (hI : okB I = true) (hc : codeMapB I (tabOf I.results) = true)
+    (hF : ∀ g ∈ (prog I).funcs, FnOk I file g) {g h : Clif.Function} (hg : g ∈ (prog I).funcs)
+    (hh : h ∈ (prog I).funcs) {j j' : Nat} {l l' : Line}
+    (hj : (art I g).fa.lines.toList[j]? = some l) (hj' : (art I h).fa.lines.toList[j']? = some l')
+    (hl : l.isLabel = false) (hl' : l'.isLabel = false) {k k' : Nat} (hk : k < 4) (hk' : k' < 4)
+    (he : (art I g).base.toNat + lineOffset (art I g).fa.lines.toList j + k =
+      (art I h).base.toNat + lineOffset (art I h).fa.lines.toList j' + k') :
+    lineAlikeB (prog I) l l' = true := by
+  obtain ⟨hs, h4, hlt⟩ := line_word (hF g hg) hj hl
+  obtain ⟨hs', h4', hlt'⟩ := line_word (hF h hh) hj' hl'
+  by_cases hn : g.name = h.name
+  · have hart := art_of_name (I := I) hn
+    rw [← hart] at hj' he h4'
+    obtain rfl := lineOffset_inj4 hj hj' hs hs' (by omega)
+    rw [hj] at hj'; cases hj'
+    exact lineAlikeB_refl _ _
+  · rcases (codeMap_sound hI hc hg).2 h hh hn with hd | ⟨hb, ha⟩
+    · exfalso
+      have hfit := (hF g hg).fits
+      have hfit' := (hF h hh).fits
+      omega
+    · rw [hb] at he
+      have hoff := linesAlikeB_offset ha j
+      obtain ⟨l'', hj'', hal⟩ := linesAlikeB_get ha hj
+      have hs'' : l''.size = 4 := by rw [← lineAlikeB_size hal]; exact hs
+      obtain rfl := lineOffset_inj4 hj'' hj' hs'' hs' (by omega)
+      rw [hj''] at hj'; cases hj'
+      exact hal
+
+/-- **The site lookup finds the kind of site of the function's instruction** (the code of
+another function there has an alike instruction). -/
 theorem siteAt_static (hI : okB I = true) (hc : codeMapB I (tabOf I.results) = true) (hF : ∀ g ∈ (prog I).funcs, FnOk I file g)
     {g : Clif.Function} (hg : g ∈ (prog I).funcs) {a : BitVec 64} {i : Insn}
-    (hi : insnAt (art I g).fa (art I g).base a = some i) : siteAt I a = some i := by
+    (hi : insnAt (art I g).fa (art I g).base a = some i) :
+    siteAt I a = some (siteOf (prog I) i) := by
   unfold siteAt
   split
   · rename_i hex
     have hs := hex.choose_spec
     generalize hex.choose = g0 at hs ⊢
     obtain ⟨hg0, hsome⟩ := hs
-    suffices art I g0 = art I g by rw [this]; exact hi
-    by_cases hn : g0.name = g.name
-    · exact art_of_name hn
-    · exfalso
-      obtain ⟨i', hi'⟩ := Option.isSome_iff_exists.mp hsome
-      obtain ⟨j, -, -, ha, hl⟩ := insn_range (hF g hg) hi
-      obtain ⟨j', -, -, ha', hl'⟩ := insn_range (hF g0 hg0) hi'
-      have hd := (codeMap_sound hI hc hg0).2 g hg hn
-      simp only [art] at ha ha' hl hl' hd
-      omega
+    obtain ⟨i0, hi0⟩ := Option.isSome_iff_exists.mp hsome
+    rw [hi0, Option.map_some]
+    obtain ⟨j, t, hj, ha, -⟩ := insn_range (hF g hg) hi
+    obtain ⟨j0, t0, hj0, ha0, -⟩ := insn_range (hF g0 hg0) hi0
+    have hal := line_overlap hI hc hF hg0 hg hj0 hj rfl rfl (k := 0) (k' := 0) (by omega)
+      (by omega) (by omega)
+    simp only [lineAlikeB] at hal
+    rw [insnAlikeB_site hal]
   · rename_i hne
     exact absurd ⟨g, hg, by rw [hi]; rfl⟩ hne
 
@@ -198,18 +333,10 @@ theorem plain_static (hI : okB I = true) (hc : codeMapB I (tabOf I.results) = tr
   rw [BitVec.toNat_add, ha, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : k < 2 ^ 64),
     Nat.mod_eq_of_lt (by omega), wAt, BitVec.toNat_add, BitVec.toNat_ofNat,
     Nat.mod_eq_of_lt (by omega : rl.offset + i' < 2 ^ 64), Nat.mod_eq_of_lt (by omega)] at he'
-  by_cases hn : h.name = g.name
-  · have hart := art_of_name (I := I) hn
-    rw [hart] at hj' he' ho hl'
-    obtain ⟨lm, hm⟩ := FnAsm.layout_labelOffsets (hF g hg).layout
-    obtain ⟨h4, -⟩ := FnAsm.layout_word (hF g hg).layout hm hj rfl
-    obtain ⟨h4', -⟩ := FnAsm.layout_word (hF g hg).layout hm hj' rfl
-    have := line_unique hj hj' (by omega)
-    subst this
-    rw [hr] at hri; cases hri
-  · have hd := (codeMap_sound hI hc hh).2 g hg hn
-    simp only [art] at ha hl hl' he' hfit hfit' ho hd
-    omega
+  have hal := line_overlap hI hc hF hg hh hj hj' rfl rfl hk hi' (by rw [ho]; omega)
+  simp only [lineAlikeB] at hal
+  rw [insnAlikeB_reloc hal hr] at hri
+  cases hri
 
 /-- The states of the run are of functions of the program. -/
 theorem reach_mem {M : Nat} {f : Clif.Function} {c : Arm.ArmState} {M' : Nat} {g : Clif.Function}
@@ -233,17 +360,14 @@ theorem stepOk_of_d (hI : okB I = true) (hc : codeMapB I (tabOf I.results) = tru
   call d e _ hs := hH.call d m e hs
   tls tmp _ n e _ hs := hH.tls n tmp m e hs
   got := h.got
-  blr x h' hx ht := by
-    obtain ⟨a, -, ha⟩ := Option.bind_eq_some_iff.1 ht
-    have hh' : h' ∈ (prog I).funcs := List.mem_of_find?_eq_some ha
-    exact ⟨(h.blr x h' hx ht).1, (h.blr x h' hx ht).2, (codeMap_sound hI hc hh').1⟩
+  blr := h.blr
   plain i hi hr := plain_static hI hc hF hg hi hr
 
 /-- `StepOk` gives `StepOkD` (the per-state hypothesis is weaker). -/
 theorem StepOk.d {M : Nat} {g : Clif.Function} {m : Arm.ArmState} (h : StepOk I B file M g m) :
     StepOkD I B file M g m :=
   ⟨h.err, h.program, let ⟨i, hi, _, hr⟩ := h.site; ⟨i, hi, hr⟩, h.cf, h.insn, h.got,
-    fun x h' hx ht => ⟨(h.blr x h' hx ht).1, (h.blr x h' hx ht).2.1⟩⟩
+    h.blr⟩
 
 theorem RunOk.d {M : Nat} {f : Clif.Function} {c : Arm.ArmState} (h : RunOk I B file M f c) :
     RunOkD I B file M f c :=

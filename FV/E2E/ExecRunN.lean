@@ -117,7 +117,7 @@ theorem ret_not_secondN (hF : ∀ g ∈ (prog I).funcs, FnOk I file g) {M M' : N
   obtain ⟨j, i1, t, hj, hi, ho⟩ := (FnAsm.layout_relocs hFh.layout rl).1 hrl
   have hins1 : insnAt (art I h).fa (art I h).base (wAt (art I h) rl.offset) = some i1 := by
     rw [← ho]; exact insnAt_of_line hFh hj
-  have hs1 : siteAt I (wAt (art I h) rl.offset) = some i1 := by
+  have hs1 : siteAt I (wAt (art I h) rl.offset) = some (siteOf (prog I) i1) := by
     rw [← hpc1] at hins1 ⊢; exact siteAt_of hokc hins1
   -- the call's word is there
   have hpcm : Arm.r .PC m = wAt (art I h) rl.offset := by
@@ -128,10 +128,10 @@ theorem ret_not_secondN (hF : ∀ g ∈ (prog I).funcs, FnOk I file g) {M M' : N
   obtain ⟨j0, t0, hj0, -⟩ := insnAt_spec hi0
   have hb := progBase_of (hF g hg) hm hok0.program hj0
   simp only [CallsAt, hb] at hc
-  rw [hpcm, hs1] at hs0
-  cases hs0
-  rcases hc with ⟨n, hins, -⟩ | ⟨⟨x, hins⟩, -⟩ <;> rw [hins] at hi0 <;> cases hi0 <;>
-    rcases ht with h' | h' <;> simp [Insn.reloc?, h'] at hi
+  rw [hpcm, hs1, siteOf_pairFirst hi ht] at hs0
+  rcases hc with ⟨n, hins, hn⟩ | ⟨⟨x, hins⟩, -⟩ <;> rw [hins] at hi0 <;> cases hi0
+  · simp [siteOf, hn] at hs0
+  · simp [siteOf] at hs0
 
 end Lemmas
 

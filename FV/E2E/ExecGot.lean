@@ -319,7 +319,7 @@ theorem got_of_good {D : List Clif.DataObject} (hI : okB I = true) (hbin : BinOk
     t.mem (BitVec.ofNat 64 G + BitVec.ofNat 64 i) =
       (Elf.loadMem file (BitVec.ofNat 64 G + BitVec.ofNat 64 i)).getD 0 := by
   intro rl hrl ht hpc rd G hrd h8 hin hw0 hw1 i hi
-  obtain ⟨X, K, G', gv, -, hG, himgG, himgS⟩ := hgood
+  obtain ⟨X, K, G', gv, -, hG, himgG, himgS, -⟩ := hgood
   unfold actGoodX at hG
   have hS : GotSlot I file (BitVec.ofNat 64 G + BitVec.ofNat 64 i) :=
     ⟨_, tab_mem (okB_names hI) hg, rl, hrl, ht, rd, G, hrd, h8, hin, hw0, hw1, i, hi, rfl⟩

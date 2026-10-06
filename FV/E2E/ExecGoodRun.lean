@@ -89,21 +89,18 @@ theorem raNotSecond_enter (hI : okB I = true) (hc : codeMapB I (tabOf I.results)
     exact (BitVec.add_left_inj _).mp h2
   obtain ⟨lm, hm⟩ := FnAsm.layout_labelOffsets (hF g hg).layout
   have hins0 : ∃ i0, insnAt (art I g).fa (progBase u) (Arm.r .PC u) = some i0 ∧
-      i0.reloc? ≠ some (rl.type, rl.sym, rl.addend) := by
-    rcases hcall with ⟨n, hins, -⟩ | ⟨⟨x, hins⟩, -⟩
-    · refine ⟨_, hins, fun e => ?_⟩
-      simp only [Insn.reloc?, Option.some.injEq, Prod.mk.injEq] at e
-      rcases ht with h' | h' <;> rw [h'] at e <;> cases e.1
-    · exact ⟨_, hins, fun e => by simp [Insn.reloc?] at e⟩
+      siteOf (prog I) i0 ≠ .real := by
+    rcases hcall with ⟨n, hins, hn⟩ | ⟨⟨x, hins⟩, -⟩
+    · exact ⟨_, hins, by simp [siteOf, hn]⟩
+    · exact ⟨_, hins, by simp [siteOf]⟩
   obtain ⟨i0, hi0, hr0⟩ := hins0
   obtain ⟨j0, t0, hj0, -⟩ := insnAt_spec hi0
   rw [progBase_of (hF g hg) hm hp hj0] at hi0
   have hs0 := siteAt_static hI hc hF hg hi0
   obtain ⟨j, i1, t1, hj, hi1, ho⟩ := (FnAsm.layout_relocs (hF h hh).layout rl).1 hrl
   have hs1 := siteAt_static hI hc hF hh (insnAt_of_line (hF h hh) hj)
-  rw [ho, ← hpcu, hs0] at hs1
-  cases hs1
-  exact hr0 hi1
+  rw [ho, ← hpcu, hs0, siteOf_pairFirst hi1 ht] at hs1
+  exact hr0 (Option.some.inj hs1)
 
 /-- **The states of `ReachN` are states of `ReachL`**, of an activation entered at an entry whose
 return address is no second word. -/
@@ -135,13 +132,14 @@ theorem destsInt_of_ok {L : LinkSys} (hL : L.Ok) {g : Clif.Function} (hg : g ∈
   exact ⟨t, hd.symm⟩
 
 /-- **`StepOkD` from the register-level per-state facts** and the memory-read facts. -/
-theorem stepOkD_of_good (hI : okB I = true) (hF : ∀ g ∈ (prog I).funcs, FnOk I file g)
+theorem stepOkD_of_good (hI : okB I = true) (hc : codeMapB I (tabOf I.results) = true)
+    (hF : ∀ g ∈ (prog I).funcs, FnOk I file g)
     (hD : ∀ g ∈ (prog I).funcs, (art I g).vcp.DestsInt)
     {M : Nat} {g : Clif.Function} (hg : g ∈ (prog I).funcs) {c t : Arm.ArmState}
     (hgood : (sys I B).GoodAt M g c t) (hs : ¬ Second I g (xreg 30 c))
     (he : Arm.r .ERR ((sys I B).mach M g t) = .None) (hr : StepOkR I B file M g t) :
     StepOkD I B file M g t := by
-  obtain ⟨X, K, G, gv, heq, hG, -⟩ := hgood
+  obtain ⟨X, K, G, gv, heq, hG, -, -, hba⟩ := hgood
   unfold actGoodX at hG
   have hFg := hF g hg
   have hfit := hFg.fits
@@ -203,7 +201,7 @@ theorem stepOkD_of_good (hI : okB I = true) (hF : ∀ g ∈ (prog I).funcs, FnOk
           rw [hx'] at hoff'
           simp at hoff'
   · -- blr
-    intro x h' hx _
+    intro x h' hx ht
     obtain ⟨j, tt, hj, hpc⟩ := insnAt_spec hx
     obtain ⟨hxz, hcode⟩ := hG.blr x ⟨j, tt, hj, hpc.symm⟩
     replace hxz := hxz (hD g hg)
@@ -216,7 +214,11 @@ theorem stepOkD_of_good (hI : okB I = true) (hF : ∀ g ∈ (prog I).funcs, FnOk
     have hrd := hcode _ w hk
     rw [show 4 * (lineOffset (art I g).fa.lines.toList j / 4) =
       lineOffset (art I g).fa.lines.toList j by omega] at hfw hrd
-    refine ⟨hxz, ?_⟩
+    obtain ⟨info, tv, hsi, hd, hbt⟩ := hba x h' hx ht
+    have hh' : h' ∈ (prog I).funcs := by
+      obtain ⟨a, -, ha⟩ := Option.bind_eq_some_iff.1 ht
+      exact List.mem_of_find?_eq_some ha
+    refine ⟨hxz, ?_, symAddr_of_blrTo hI hc hg hh' hsi hd hbt⟩
     rw [← hpc]
     exact hfw.trans (congrArg some hrd.symm)
 
@@ -230,7 +232,7 @@ theorem runOkN_of_good (hI : okB I = true) (hc : codeMapB I (tabOf I.results) = 
     (hgood : (sys I B).RunGoodL M f c) (hreads : RunReadsN I B file M f c) :
     RunOkN I B file M f c := fun M' g t hR he => by
   obtain ⟨c', hRL, hs⟩ := reachL_of_reachN hI hc hF hR hf hgood (raNotSecond_top (hF f hf) hra)
-  exact stepOkD_of_good hI hF hD (reachN_mem hR hf) (hgood _ _ _ _ hRL he) hs he
+  exact stepOkD_of_good hI hc hF hD (reachN_mem hR hf) (hgood _ _ _ _ hRL he) hs he
     (hreads _ _ _ hR he)
 
 end Conv
