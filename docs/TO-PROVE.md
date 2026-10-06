@@ -40,7 +40,8 @@ Every check the compiler runs today falls in one of five kinds. The goal admits 
 | **Proven pass:** the pass is proven correct directly | encoder (`Insn.decode_encode`), `prepare` on `PrepDomain` (`Prep.prepare_correct`) | yes |
 | **Internal check with a proven fallback:** the compiler runs a check and on rejection uses a path that's proven directly; the theorem has no premise about the check | mid-end: every validator failure keeps the last accepted function (`FV/Opt/Optimize.lean:150-156`), so `optimize_sim_proven` has no checker premise | yes; rejections cost only code quality |
 | **Validator as a premise:** the theorem assumes the check returned `true` for this program | `lowerCheck`, `prepCheck`, `checkAlloc`, `formsCoveredB` (`Compiled`/`FormsCovered`, `FV/E2E/Statement.lean:144-153`, `FV/E2E/Final.lean:162`); `okB`, `BinOk` (`goodN` was one until L4: now `goodN_iff`, the input condition "no call cycle reachable") | **no**: needs a completeness proof (the check never fails on what the compiler produces for in-scope input), a direct proof of the pass, or a fallback |
-| **Internal rejection without fallback:** compilation fails | branch out of range (`FV/Backend/Encode.lean:315-327`), `ctlCheck` (the allocator-frame limit is gone, V5) | allowed for correctness, but **violates totality**: each must be removed, proven unreachable, or moved into `InScope` as a condition on the input |
+| **Internal rejection without fallback:** compilation fails | function ≥ 128 MiB (`b` out of range after relaxation, `FV/Backend/Encode.lean` `Env.pcRel`), `ctlCheck` (the allocator-frame limit is gone, V5) | allowed for correctness, but **violates totality**: each must be removed, proven unreachable, or moved into `InScope` as a condition on the input |
+| **Per-program proof via `native_decide`** | `crate-proofs/Crates/*.lean`: `link_ok`, `bin_ok`, `stack_ok` (`FVTest/E2E/LinkCheckMain.lean:307-432`) | **no**: disappears once linking, binary and stack checks are proven complete or replaced (WPs L1–L4) |
 | **Per-program proof via `native_decide`** | `crate-proofs/Crates/*.lean`: `link_ok`, `bin_ok`, `stack_ok` (`FVTest/E2E/LinkCheckMain.lean:307-432`; since L4 `stack_ok` evaluates an input condition and the bound, `stackB_isSome_iff`) | **no**: disappears once linking, binary and stack checks are proven complete or replaced (WPs L1–L4) |
 
 An external program (regalloc2, rust-lld) may stay in the loop only as an oracle whose result is checked
@@ -67,7 +68,7 @@ and, on rejection, replaced by a directly proven Lean path (kind 2). Correctness
 | `prepare` | Lean | `prepCheck`, complete on `PrepDomain`, which `lowerFunction` always produces (`prepDomain_of_lower`) | validator, complete | V2 done |
 | register allocation | **external Rust** (regalloc2 0.15.2 via `lean-regalloc`), Lean fallback `spillAlloc` | `checkAlloc` (`FV/Backend/RegallocCheck.lean:423-441`) on regalloc2's output; on rejection `spillAlloc` (`allocResult`, `E2E.backend_correct_final_alloc`), accepted by `checkAlloc` for every in-scope function (`E2E.spillAccepted`, proven) | fallback; its acceptance proven | V4 (a) done; (b) open |
 | frame, control lowering | Lean `lowerRFunc` | internal rejections (`ctlCheck`, operand/move shapes; no frame-size limit since V5); a rejection of regalloc2's allocation falls back to `spillAlloc`, which `lowerRFunc` provably lowers (`E2E.lowerRFunc_spillAlloc`) | fallback; its lowering proven | V5 done |
-| emission, layout | Lean | branch range check, no relaxation | rejection | V6 |
+| emission, layout | Lean | branch relaxation; `emitFunc_layout_total` from `layoutReadyB` (decidable on the emitted code) | proven modulo `hpre`/`layoutReadyB` premises | V6 |
 | encoder | Lean | `Insn.decode_encode` (`FV/Backend/Proof/Encode.lean:57-60`) | proven | — |
 | linking (program level) | `cargo fv` object merge + **rust-lld** | **`okB`** (`FV/E2E/LinkCheck.lean:716-777`) per crate by `native_decide` | **validator premise + oracle + per-program proof** | L1, L2 |
 | executable bytes | **rust-lld** | **`BinOk`** (`FV/E2E/BinCheck.lean:539-543`) per crate by `native_decide` | **validator premise + oracle + per-program proof** | L2 |
@@ -296,10 +297,23 @@ author's estimate, not measured), **Risk**.
 
 ### V6. Branch range (totality)
 
-- **Now:** no branch relaxation; out-of-range branches reject the function (`PLAN.md` §3.4).
-- **Deliver:** branch relaxation (inverted conditional branch over an unconditional `b`, as Cranelift's
-  `MachBuffer` veneers do) with its layout proof, or an input-side size bound in `InScope` that implies
-  every branch is in range. **Size:** medium `[est]`.
+- **Done (2026-10-06):** branch relaxation in `emitFunc` (`b.c T` ⟶ `b.!c .+8; b T` for conditional
+  branches to block/trap labels out of reach, `relaxOf` fixpoint; byte-identical when nothing is far);
+  the simulation runs both forms (`reach_rcb`); `Backend.emitFunc_layout_total` /
+  `emitFunc_layout_ready` prove layout succeeds; `E2E.backend_correct_final_total_relaxed` has no `he`/`hla`
+  premise (witness `backend_correct_final_total_relaxed_witness`). Test: `corpus/clif-large/far_branches.clif`
+  (tbnz, the b.eq of a brif, the cbz of a udiv zero check and a jump table's b.hs, each over > 1 MiB).
+  Details: `docs/contracts/e2e.md` "Emission and layout: branch relaxation (V6)".
+- **Remaining (premises of `backend_correct_final_total_relaxed`):**
+  - `hpre : ∃ pre, emitPre k af = .ok pre` — `MInst.lines`' rejections (an `AluRRImmLogic`/
+    `AluRRImmShift` op outside the encoded set, `args`/`rets` after allocation, atomic loops' fixed
+    registers, `LoadAddr` amode, `memFinalize`, TLS registers): to prove from isel/`lowerRFunc` output.
+  - `layoutReadyB`: (a) labels defined once and every used label defined (block labels distinct in the
+    VCode, `trap`/`jt`/`loop` counters fresh); (b) `Insn.encodable` of every instruction (register
+    numbers, immediates, shift amounts, bitmask immediates: from isel's operand forms); (c) `NearOk`: the
+    unrelaxed PC-relative forms (atomic loops' `cbnz`/`b.ne`, the jump table's `adr`) are ≤ 40 bytes
+    from their labels by construction; (d) size < 128 MiB (`b` range): an input-side bound
+    (`emitFunc_size_le`: at most twice the unrelaxed size) or veneer islands for `b`.
 
 ### L1. The executable compiler as one Lean function
 
@@ -560,7 +574,7 @@ label**; list the free ones with
 | V4 | [#6](https://github.com/eth-act/clifv/issues/6) Register allocation without trusting regalloc2 | (a) **done** (#56): `backend_correct_final_alloc_proven`, no allocation premise |
 | V4b | [#57](https://github.com/eth-act/clifv/issues/57) A real register allocator in Lean (removes regalloc2) | open |
 | V5 | [#7](https://github.com/eth-act/clifv/issues/7) Frame and control-lowering rejections (totality) | **done**: `backend_correct_final_total` (no allocation/lowering premise, no frame-size limit) |
-| V6 | [#8](https://github.com/eth-act/clifv/issues/8) Branch range (totality) | open |
+| V6 | [#8](https://github.com/eth-act/clifv/issues/8) Branch range (totality) | done (premises `hpre`, `layoutReadyB` remain) |
 | L2a | [#9](https://github.com/eth-act/clifv/issues/9) Linking without validators: split `okB` into input conditions + properties proven by construction | open |
 | L2b | [#10](https://github.com/eth-act/clifv/issues/10) Static linker in Lean for the executable (BinOk by construction) | open |
 | L3 | [#11](https://github.com/eth-act/clifv/issues/11) Executable-bytes simulation (M9 item 1b) | open |

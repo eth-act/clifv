@@ -224,6 +224,8 @@ theorem callAt_of_q {R : RL} {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc}
     obtain ⟨rfl, -⟩ := h1'
     rw [List.cons_append, ftList_cons, ftStep_call hx] at hdrop
     simp only [List.drop_one, List.tail_cons, List.singleton_append, List.cons_append] at hdrop
+    rw [relaxLines_cons, relaxLine_of_none (by rcases hx with ⟨_, rfl⟩ | ⟨_, rfl⟩ <;> rfl),
+      List.singleton_append, List.cons_append] at hdrop
     have hj : R.L[j0]? = some (.ins x none) := drop_get (Z := []) (by rw [hdrop]; rfl)
     exact ⟨j0, x, none, hj, hxi, hpc⟩
   · exact absurd rfl (hna ds)

@@ -309,11 +309,11 @@ theorem traps_foldl (ts : List (Lbl × Clif.TrapCode)) (acc : Array Line) :
     simp
 
 set_option pp.proofs false in
-theorem emitFunc_ok {k : Nat} {af : AFunc} {fa : FnAsm} (h : emitFunc k af = .ok fa) :
+theorem emitPre_ok {k : Nat} {af : AFunc} {pre : Array Line} (h : emitPre k af = .ok pre) :
     ∃ body ps, blocksLinesE ⟨k, af.slotBase⟩ af af.blocks.toList {} = .ok (body, ps) ∧
-      fa.lines = (ftList body ++ ps.traps.toList.flatMap
-        (fun p => [Line.label p.1, Line.ins (.udf 0xc11f) (some p.2)])).toArray ∧ fa.k = k := by
-  unfold emitFunc at h
+      pre = (ftList body ++ ps.traps.toList.flatMap
+        (fun p => [Line.label p.1, Line.ins (.udf 0xc11f) (some p.2)])).toArray := by
+  unfold emitPre at h
   simp only [← Array.forIn_toList] at h
   rw [forIn_except_yield _ _ _ (fun (x : Label × Array AInst) (s : PState × Array Line) =>
     (fun r : List Line × PState => (r.2, s.2.push (.label (.block x.1)) ++ r.1.toArray)) <$>
@@ -327,13 +327,9 @@ theorem emitFunc_ok {k : Nat} {af : AFunc} {fa : FnAsm} (h : emitFunc k af = .ok
       refine ⟨body, ps, rfl, ?_⟩
       simp only [Functor.map, Except.map, bind, Except.bind, pure, Except.pure] at h
       rw [traps_foldl] at h
-      simp only at h
-      split at h
-      · cases h
-      · rename_i v hv
-        simp only [Except.ok.injEq] at h
-        subst h
-        simp [fallthrough_eq]
+      simp only [Except.ok.injEq] at h
+      subst h
+      simp [fallthrough_eq]
   · intro x s
     obtain ⟨l, code⟩ := x
     simp only
@@ -645,19 +641,45 @@ def nxtOf (af : AFunc) (b : Nat) : List Line :=
 def trapLines (ts : List (Lbl × Clif.TrapCode)) : List Line :=
   ts.flatMap (fun p => [Line.label p.1, Line.ins (.udf 0xc11f) (some p.2)])
 
+/-- The far labels `emitFunc` relaxes the branches to (`relaxOf` of the lines before relaxation). -/
+def emitFar (c : FnCtx) (af : AFunc) : Lbl → Bool :=
+  match blocksLinesE c af af.blocks.toList {} with
+  | .ok (body, ps) => relaxOf (ftList body ++ trapLines ps.traps.toList)
+  | .error _ => fun _ => false
+
+set_option pp.proofs false in
+theorem emitFunc_ok {k : Nat} {af : AFunc} {fa : FnAsm} (h : emitFunc k af = .ok fa) :
+    ∃ body ps, blocksLinesE ⟨k, af.slotBase⟩ af af.blocks.toList {} = .ok (body, ps) ∧
+      fa.lines.toList = relaxLines (emitFar ⟨k, af.slotBase⟩ af)
+        (ftList body ++ trapLines ps.traps.toList) ∧ fa.k = k := by
+  unfold emitFunc at h
+  cases hp : emitPre k af with
+  | error e => rw [hp] at h; cases h
+  | ok pre =>
+    rw [hp] at h
+    obtain ⟨body, ps, hb, rfl⟩ := emitPre_ok hp
+    simp only [bind, Except.bind, pure, Except.pure] at h
+    split at h
+    · cases h
+    · simp only [Except.ok.injEq] at h
+      subst h
+      refine ⟨body, ps, hb, ?_, rfl⟩
+      simp [emitFar, hb, trapLines]
+
 /-- **Block `b` in the final lines**: its label at line `j`, then the `fallthrough` of its code's
 lines followed by the next block's label. -/
 theorem emit_block {k : Nat} {af : AFunc} {fa : FnAsm} (h : emitFunc k af = .ok fa) :
     ∃ body psF, blocksLinesE ⟨k, af.slotBase⟩ af af.blocks.toList {} = .ok (body, psF) ∧
-      fa.lines.toList = ftList body ++ trapLines psF.traps.toList ∧
+      fa.lines.toList = relaxLines (emitFar ⟨k, af.slotBase⟩ af)
+        (ftList body ++ trapLines psF.traps.toList) ∧
       ∀ b l code, af.blocks[b]? = some (l, code) →
         ∃ j ls ps1 ps2 R, fa.lines.toList[j]? = some (.label (.block l)) ∧
-          fa.lines.toList.drop (j + 1) = ftList (ls ++ nxtOf af b) ++ R ∧
+          fa.lines.toList.drop (j + 1) =
+            relaxLines (emitFar ⟨k, af.slotBase⟩ af) (ftList (ls ++ nxtOf af b)) ++ R ∧
           codeLinesE ⟨k, af.slotBase⟩ af code.toList ps1 = .ok (ls, ps2) ∧
           ps2.traps.toList <+: psF.traps.toList ∧ (b = 0 → j = 0) := by
-  obtain ⟨body, psF, hb, hL, -⟩ := emitFunc_ok h
-  have hL' : fa.lines.toList = ftList body ++ trapLines psF.traps.toList := by
-    rw [hL]; simp [trapLines]
+  obtain ⟨body, psF, hb, hL', -⟩ := emitFunc_ok h
+  generalize emitFar ⟨k, af.slotBase⟩ af = F at hL' ⊢
   refine ⟨body, psF, hb, hL', fun b l code hbc => ?_⟩
   obtain ⟨pre, ls, ps1, ps2, post, hbody, hc, -, hp2, hn, hn', hpre0⟩ :=
     blocksLinesE_block hb (by simpa using hbc)
@@ -674,28 +696,29 @@ theorem emit_block {k : Nat} {af : AFunc} {fa : FnAsm} (h : emitFunc k af = .ok 
       obtain ⟨post', rfl⟩ := hn p (by simpa using hb1)
       exact ⟨ftList post', ftList_label_split _ post' ls⟩
   obtain ⟨R0, hR0⟩ := hpost
-  refine ⟨Z.length, ls, ps1, ps2, R0 ++ trapLines psF.traps.toList, ?_, ?_, hc, hp2, fun h0 => ?_⟩
-  · rw [hL', hsplit]; simp
+  refine ⟨(relaxLines F Z).length, ls, ps1, ps2,
+    relaxLines F R0 ++ relaxLines F (trapLines psF.traps.toList), ?_, ?_, hc, hp2, fun h0 => ?_⟩
+  · rw [hL', hsplit]; simp [relaxLines, relaxLine, Line.relaxable?]
   · rw [hL', hsplit, hR0]
-    simp [List.drop_append]
+    simp [relaxLines, relaxLine, Line.relaxable?, List.drop_append]
   · subst h0
     rw [hpre0 rfl, List.nil_append, ftList_cons] at hZ
     have := congrArg List.length hZ
     simp [ftStep, ftList] at this
-    simp [this]
+    simp [this, relaxLines]
 
 /-! ## Lines `fallthrough` leaves alone -/
 
-/-- A line `fallthrough` never rewrites when it is followed by code without trap labels: an
-instruction that is not `b`, whose conditional target (if any) is a trap label. -/
+/-- A line neither `fallthrough` nor branch relaxation (`relaxLine`) rewrites: an instruction
+that is neither `b` nor a conditional branch. -/
 def Line.plain : Line → Bool
   | .ins (.b _) none => false
-  | .ins c none => match c.condTarget? with
-    | none => true
-    | some (.trap _) => true
-    | some _ => false
+  | .ins c none => c.condTarget?.isNone
   | .ins _ (some _) => true
   | _ => false
+
+theorem Line.plain_ins {c : Insn} (h : (Line.ins c none).plain = true) : c.condTarget? = none := by
+  cases c <;> simp_all [Line.plain, Insn.condTarget?]
 
 theorem ftStep_plain {ln : Line} {n1 n2 : Option Line} (hp : ln.plain = true)
     (h : ∀ c e l, ln = .ins c none → n1 = some (.ins (.b e) none) → n2 = some (.label l) →
@@ -721,19 +744,7 @@ theorem ftList_plain_append :
     · intro c e l hc h1 h2 htgt
       subst hc
       cases P with
-      | nil =>
-        simp only [List.nil_append] at h1 h2
-        have hl : ∃ n, l = .trap n := by
-          simp only [Line.plain] at hln
-          revert hln
-          cases hct : c.condTarget? with
-          | none => simp [hct] at htgt
-          | some t =>
-            rw [hct] at htgt
-            cases htgt
-            cases c <;> simp_all <;> (split <;> simp_all)
-        obtain ⟨n, rfl⟩ := hl
-        exact hZ n h2
+      | nil => exact absurd htgt (by rw [Line.plain_ins hln]; simp)
       | cons x P =>
         simp only [List.cons_append, List.getElem?_cons_zero, Option.some.injEq] at h1
         subst h1

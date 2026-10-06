@@ -346,6 +346,8 @@ variable (R : RL)
 def fr : RAFrame := RAFrame.compute R.vc R.rf
 def L : List Line := R.fa.lines.toList
 def ctx : FnCtx := ⟨R.fa.k, R.af.slotBase⟩
+/-- The far labels the emitter relaxed the branches to (`emitFar`). -/
+def far : Lbl → Bool := emitFar R.ctx R.af
 /-- `sp` in the body. -/
 def spB : BitVec 64 := spv R.s0 - BitVec.ofNat 64 (frameDrop R.af)
 /-- The frame addresses and the kept addresses `G` (kept by every step of the body). -/
@@ -416,7 +418,7 @@ def Q (R : RL) (s : Arm.ArmState) : MConf CV Arm.ArmState → Prop
       itemsCode R.fr vb its = .ok code ∧
       codeLinesE R.ctx R.af code ps1 = .ok (ls, ps2) ∧
       ps2.traps.toList <+: R.psF.traps.toList ∧
-      R.L.drop j = ftList (ls ++ nxtOf R.af b) ++ T ∧
+      R.L.drop j = relaxLines R.far (ftList (ls ++ nxtOf R.af b)) ++ T ∧
       Arm.r .PC s = R.pcOf j ∧ StRel R s m w
   | _ => True
 

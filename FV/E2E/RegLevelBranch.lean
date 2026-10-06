@@ -134,7 +134,7 @@ the decoded branch's condition holds, else to the next line; nothing else change
 theorem step_branch {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j : Nat} {i : Insn} {l : Lbl}
     (hj : R.L[j]? = some (.ins i none))
     (hi : i = .b l ∨ (∃ c, i = .bcond c l) ∨ (∃ nz w r, i = .cbz nz w r l) ∨
-      (∃ nz r bit, i = .tbz nz r bit l))
+      (∃ nz r bit, i = .tbz nz r bit l)) (hl : l ≠ .skip)
     (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j)
     (herr : Arm.r .ERR s = .None) :
     ∃ a jl, i.toArmInst (R.envOf j) = .ok a ∧ R.L[jl]? = some (.label l) ∧
@@ -147,6 +147,7 @@ theorem step_branch {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j : Nat} {i : Insn}
     rcases hi with rfl | ⟨_, rfl⟩ | ⟨_, _, _, rfl⟩ | ⟨_, _, _, rfl⟩ <;> exact ⟨_, _, rfl⟩
   obtain ⟨reach, align, hs⟩ := hspec
   obtain ⟨o, hlo, hoff, -⟩ := Insn.toArmInst_pcRel ha hs
+  rw [Env.target_of_ne hl] at hlo
   obtain ⟨jl, hjl, hoj⟩ := (labelOffsets_spec hR.lm l o).mp hlo
   obtain ⟨d, hd, hex⟩ := exec_brInsn hi ha s
   rw [hoff] at hd
@@ -157,6 +158,40 @@ theorem step_branch {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j : Nat} {i : Insn}
   congr 2
   simp only [RL.pcOf, RL.L, BitVec.add_assoc]
   rw [ofNat_add_ofInt_sub, hoj]
+
+/-- **The inverted short branch of a relaxed branch** (target `.+8`, over the `b` at line
+`j + 1`): the machine goes to line `j + 2` if the decoded branch's condition holds, else to
+line `j + 1`; nothing else changes. -/
+theorem step_skip {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j : Nat} {i x : Insn}
+    (hj : R.L[j]? = some (.ins i none)) (hj1 : R.L[j + 1]? = some (.ins x none))
+    (hi : (∃ c, i = .bcond c .skip) ∨ (∃ nz w r, i = .cbz nz w r .skip) ∨
+      (∃ nz r bit, i = .tbz nz r bit .skip))
+    (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j)
+    (herr : Arm.r .ERR s = .None) :
+    ∃ a, i.toArmInst (R.envOf j) = .ok a ∧
+      R.step s = Arm.w .PC (if brCond a s then R.pcOf (j + 2) else R.pcOf (j + 1)) s := by
+  have hhook : i.hooked = false := by
+    rcases hi with ⟨_, rfl⟩ | ⟨_, _, _, rfl⟩ | ⟨_, _, _, rfl⟩ <;> rfl
+  obtain ⟨a, ha, hstep⟩ := armStepX_ins (X := R.X) (H := R.H) hR.layout hR.lm hR.fit hj hhook hprog
+    hpc herr
+  have hspec : ∃ reach align, i.pcRelSpec? = some (.skip, reach, align) := by
+    rcases hi with ⟨_, rfl⟩ | ⟨_, _, _, rfl⟩ | ⟨_, _, _, rfl⟩ <;> exact ⟨_, _, rfl⟩
+  obtain ⟨reach, align, hs⟩ := hspec
+  obtain ⟨o, hlo, hoff, -⟩ := Insn.toArmInst_pcRel ha hs
+  simp only [Env.target, Option.some.injEq] at hlo
+  obtain ⟨d, hd, hex⟩ := exec_brInsn (.inr hi) ha s
+  rw [hoff] at hd
+  cases hd
+  refine ⟨a, ha, ?_⟩
+  simp only [RL.step]
+  rw [hstep, hex, hpc, RL.pcOf_succ_ins hj]
+  congr 2
+  rw [show j + 2 = j + 1 + 1 from rfl, RL.pcOf_succ_ins hj1, RL.pcOf_succ_ins hj, ← hlo]
+  simp only [RL.envOf, RL.pcOf, RL.L, BitVec.add_assoc]
+  congr 1
+  rw [show ((lineOffset R.fa.lines.toList j + 8 : Nat) : Int) - (lineOffset R.fa.lines.toList j : Nat) = 8
+    by omega]
+  rfl
 
 /-! ## States differing only in the pc -/
 

@@ -70,6 +70,23 @@ def jtBody (d : Label) (ts : List Label) (r a b : Reg) (jt : Lbl) : List Line :=
    .ins (.load .sload32 b (.regScaledExtended a b .uxtw)), .ins (.aluRRR .add true a a b),
    .ins (.br a), .label jt] ++ ts.map fun l => .word (.block l) jt
 
+/-- The lines of a `jtSequence` after its default branch (which relaxation may rewrite). -/
+def jtTail (ts : List Label) (r a b : Reg) (jt : Lbl) : List Line :=
+  [.ins (.csel b .xzr r .hs), .ins (.adr a jt),
+   .ins (.load .sload32 b (.regScaledExtended a b .uxtw)), .ins (.aluRRR .add true a a b),
+   .ins (.br a), .label jt] ++ ts.map fun l => .word (.block l) jt
+
+theorem relaxLines_jtBody (f : Lbl → Bool) (d : Label) (ts : List Label) (r a b : Reg) (jt : Lbl) :
+    relaxLines f (jtBody d ts r a b jt) =
+      relaxLine f (.ins (.bcond .hs (.block d)) none) ++ jtTail ts r a b jt := by
+  show relaxLines f (.ins (.bcond .hs (.block d)) none :: jtTail ts r a b jt) = _
+  rw [relaxLines_cons]
+  congr 1
+  apply relaxLines_of_none
+  intro ln hln
+  simp only [jtTail, List.cons_append, List.nil_append, List.mem_cons, List.mem_map] at hln
+  rcases hln with rfl | rfl | rfl | rfl | rfl | rfl | ⟨l, -, rfl⟩ <;> rfl
+
 theorem ftStep_nob {ln : Line} {n1 n2 : Option Line} (h1 : ∀ x, ln ≠ .ins (.b x) none)
     (h2 : ∀ c e, ln = .ins c none → n1 ≠ some (.ins (.b e) none)) :
     ftStep ln n1 n2 = ([ln], 1) := by
@@ -128,11 +145,12 @@ theorem extend_uxtw2 (x : BitVec 64) :
   simp [BitVec.toNat_shiftLeft, BitVec.toNat_setWidth, Nat.shiftLeft_eq]
   omega
 
-/-- **The machine runs a jump table.** -/
+/-- **The machine runs a jump table** (its default branch possibly relaxed). -/
 theorem jt_machine {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {d : Label}
     {ts : List Label} {nr na nb : Nat} (hr : nr < 29) (ha : na < 29) (hb : nb < 29)
-    (hab : na ≠ nb) {jt : Lbl} {T : List Line}
-    (hdrop : R.L.drop j0 = jtBody d ts (.x nr) (.x na) (.x nb) jt ++ T)
+    (hab : na ≠ nb) {jt : Lbl} (hjt : jt ≠ .skip) {T : List Line}
+    (hdrop : R.L.drop j0 = relaxLine R.far (.ins (.bcond .hs (.block d)) none) ++
+      (jtTail ts (.x nr) (.x na) (.x nb) jt ++ T))
     (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j0)
     (herr : Arm.r .ERR s = .None)
     (hcode : ∀ k w, R.fb.words[k]? = some w →
@@ -146,47 +164,50 @@ theorem jt_machine {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {d : Label
         (∀ f, f ≠ .PC → f ≠ .GPR (rnum na) → f ≠ .GPR (rnum nb) → Arm.r f s' = Arm.r f s) ∧
         s'.mem = s.mem ∧ s'.program = s.program ∧
         ∀ i < n, spOf (iterN R.step i s) = spOf s) := by
-  have hL : ∀ t ln, (jtBody d ts (.x nr) (.x na) (.x nb) jt)[t]? = some ln → R.L[j0 + t]? = some ln := by
+  obtain ⟨n0, j1, hn0, hj1t, hj1f, hsp0, hn1⟩ := reach_rcb hR hdrop (.inl ⟨.hs, rfl⟩) (by simp)
+    (Arm.ConditionHolds Cond.hs.bits s) (fun env a ha => brCond_bcond ha s)
+    (fun _ env a ha => by
+      simp only [Insn.invertTo] at ha
+      rw [brCond_bcond ha s, condHolds_invert _ (by decide) (by decide)])
+    hprog hpc herr
+  refine ⟨fun hhs => ⟨n0, j1, hn0, hj1t hhs, hsp0⟩, fun hhs i l hi hl => ?_⟩
+  have hdrop1 : R.L.drop j1 = jtTail ts (.x nr) (.x na) (.x nb) jt ++ T := by
+    rw [hj1f hhs, ← List.drop_drop, hdrop, List.drop_left]
+  have hL : ∀ t ln, (jtTail ts (.x nr) (.x na) (.x nb) jt)[t]? = some ln → R.L[j1 + t]? = some ln := by
     intro t ln ht
-    have := congrArg (·[t]?) hdrop
+    have := congrArg (·[t]?) hdrop1
     simp only [List.getElem?_drop] at this
     rw [this, List.getElem?_append_left (List.getElem?_eq_some_iff.1 ht).1]
     exact ht
-  have h0 : R.L[j0]? = some (.ins (.bcond .hs (.block d))) := hL 0 _ rfl
-  have h1 : R.L[j0 + 1]? = some (.ins (.csel (.x nb) .xzr (.x nr) .hs)) := hL 1 _ rfl
-  have h2 : R.L[j0 + 2]? = some (.ins (.adr (.x na) jt)) := hL 2 _ rfl
-  have h3 : R.L[j0 + 3]? = some (.ins (.load .sload32 (.x nb) (.regScaledExtended (.x na) (.x nb) .uxtw))) :=
-    hL 3 _ rfl
-  have h4 : R.L[j0 + 4]? = some (.ins (.aluRRR .add true (.x na) (.x na) (.x nb))) := hL 4 _ rfl
-  have h5 : R.L[j0 + 5]? = some (.ins (.br (.x na))) := hL 5 _ rfl
-  have h6 : R.L[j0 + 6]? = some (.label jt) := hL 6 _ rfl
-  obtain ⟨a0, jl0, ha0, hjl0, hstep0⟩ := step_branch hR h0 (.inr (.inl ⟨_, rfl⟩)) hprog hpc herr
-  rw [brCond_bcond ha0] at hstep0
-  refine ⟨fun hhs => ⟨1, jl0, by simp only [iterN, hstep0, hhs, ite_true], hjl0, fun i hi => by
-    obtain rfl : i = 0 := by omega
-    rfl⟩, fun hhs i l hi hl => ?_⟩
+  have h1 : R.L[j1]? = some (.ins (.csel (.x nb) .xzr (.x nr) .hs)) := hL 0 _ rfl
+  have h2 : R.L[j1 + 1]? = some (.ins (.adr (.x na) jt)) := hL 1 _ rfl
+  have h3 : R.L[j1 + 2]? = some (.ins (.load .sload32 (.x nb) (.regScaledExtended (.x na) (.x nb) .uxtw))) :=
+    hL 2 _ rfl
+  have h4 : R.L[j1 + 3]? = some (.ins (.aluRRR .add true (.x na) (.x na) (.x nb))) := hL 3 _ rfl
+  have h5 : R.L[j1 + 4]? = some (.ins (.br (.x na))) := hL 4 _ rfl
+  have h6 : R.L[j1 + 5]? = some (.label jt) := hL 5 _ rfl
   -- not taken: five more steps
   have hne : ∀ {x y : Nat}, x < 29 → y < 29 → x ≠ y → Arm.StateField.GPR (rnum x) ≠ .GPR (rnum y) :=
     fun hx hy hxy e => by injection e with e; exact rnum_ne (by omega) (by omega) hxy e
   have hnp : ∀ {x : Nat}, Arm.StateField.GPR (rnum x) ≠ .PC := fun e => by cases e
   have hpe : Arm.StateField.PC ≠ .ERR := by simp
   have hge : ∀ {x : Nat}, Arm.StateField.GPR (rnum x) ≠ .ERR := fun e => by cases e
-  have env := fun (t : Nat) => (⟨lineOffset R.fa.lines.toList (j0 + t), (R.lm[·]?)⟩ : Env)
   let X := Arm.r (.GPR (rnum nr)) s
   -- step 1: `b.hs` not taken
-  have e1 : R.step s = Arm.w .PC (R.pcOf (j0 + 1)) s := by rw [hstep0, hhs]; rfl
+  have e1 : R.step s = Arm.w .PC (R.pcOf j1) s := by
+    rw [hn1 hhs] at hn0; exact hn0
   -- step 2: csel
-  let s1 := Arm.w .PC (R.pcOf (j0 + 1)) s
+  let s1 := Arm.w .PC (R.pcOf (j1)) s
   have hp1 : s1.program = R.fb.program R.base := by simp [s1, Arm.w_program, hprog]
   have hr1 : Arm.r .ERR s1 = .None := by simp only [s1]; rw [Arm.r_of_w_different (Ne.symm hpe)]; exact herr
   obtain ⟨b1, hb1, hst1⟩ := armStepX_ins (X := R.X) (H := R.H) hR.layout hR.lm hR.fit h1 rfl hp1
     (by simp only [s1, Arm.r_of_w_same]; rfl) hr1
-  obtain ⟨b1', hb1', hx1⟩ := exec_csel_hs (⟨lineOffset R.fa.lines.toList (j0 + 1), (R.lm[·]?)⟩) hb hr s1
+  obtain ⟨b1', hb1', hx1⟩ := exec_csel_hs (⟨lineOffset R.fa.lines.toList (j1), (R.lm[·]?)⟩) hb hr s1
   rw [hb1'] at hb1; cases hb1
   have hc1 : Arm.ConditionHolds Cond.hs.bits s1 = false := by
     rw [← hhs]; exact ConditionHolds_sameWorld (F := fun _ => True)
       (SameWorld.w_left (by simp [Masked]) (SameWorld.refl _ s)) _
-  let s2 := Arm.w (.GPR (rnum nb)) X (Arm.w .PC (R.pcOf (j0 + 2)) s1)
+  let s2 := Arm.w (.GPR (rnum nb)) X (Arm.w .PC (R.pcOf (j1 + 1)) s1)
   have e2 : R.step s1 = s2 := by
     simp only [RL.step]
     rw [hst1, hx1, hc1]
@@ -195,7 +216,7 @@ theorem jt_machine {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {d : Label
   have hp2 : s2.program = R.fb.program R.base := by simp [s2, Arm.w_program, hp1]
   have hr2 : Arm.r .ERR s2 = .None := by
     simp only [s2]; rw [Arm.r_of_w_different (Ne.symm hge), Arm.r_of_w_different (Ne.symm hpe)]; exact hr1
-  have hpc2 : Arm.r .PC s2 = R.pcOf (j0 + 2) := by
+  have hpc2 : Arm.r .PC s2 = R.pcOf (j1 + 1) := by
     simp only [s2]; rw [Arm.r_of_w_different (Ne.symm hnp), Arm.r_of_w_same]
   -- step 3: adr
   obtain ⟨b2, hb2, hst2⟩ := armStepX_ins (X := R.X) (H := R.H) hR.layout hR.lm hR.fit h2 rfl hp2
@@ -203,26 +224,27 @@ theorem jt_machine {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {d : Label
   obtain ⟨o, ho, hx2⟩ := exec_adr ha hb2 s2
   obtain ⟨ojt, hojt, hoff, -⟩ := Insn.toArmInst_pcRel hb2 (t := jt) (reach := 2 ^ 20) (align := 1) rfl
   rw [hoff] at ho; cases ho
-  have hojt' : ojt = lineOffset R.L (j0 + 6) := by
+  have hojt' : ojt = lineOffset R.L (j1 + 5) := by
     have := labelOffsets_label hR.lm h6
     simp only [RL.L] at this ⊢
+    rw [Env.target_of_ne hjt] at hojt
     simp only at hojt
     rw [hojt] at this; exact Option.some.inj this
   let A := R.base + BitVec.ofNat 64 ojt
-  have hjtaddr : Arm.r .PC s2 + BitVec.ofInt 64 ((ojt : Int) - lineOffset R.fa.lines.toList (j0 + 2)) = A := by
+  have hjtaddr : Arm.r .PC s2 + BitVec.ofInt 64 ((ojt : Int) - lineOffset R.fa.lines.toList (j1 + 1)) = A := by
     rw [hpc2]; simp only [RL.pcOf, RL.L, A]; rw [BitVec.add_assoc, ofNat_add_ofInt_sub]
-  let s3 := Arm.w .PC (R.pcOf (j0 + 3)) (Arm.w (.GPR (rnum na)) A s2)
+  let s3 := Arm.w .PC (R.pcOf (j1 + 2)) (Arm.w (.GPR (rnum na)) A s2)
   have e3 : R.step s2 = s3 := by
     simp only [RL.step]
     rw [hst2, hx2, hjtaddr, hpc2, ← RL.pcOf_succ_ins h2]
   have hp3 : s3.program = R.fb.program R.base := by simp [s3, Arm.w_program, hp2]
   have hr3 : Arm.r .ERR s3 = .None := by
     simp only [s3]; rw [Arm.r_of_w_different (Ne.symm hpe), Arm.r_of_w_different (Ne.symm hge)]; exact hr2
-  have hpc3 : Arm.r .PC s3 = R.pcOf (j0 + 3) := by simp only [s3, Arm.r_of_w_same]
+  have hpc3 : Arm.r .PC s3 = R.pcOf (j1 + 2) := by simp only [s3, Arm.r_of_w_same]
   -- step 4: ldrsw
   obtain ⟨b3, hb3, hst3⟩ := armStepX_ins (X := R.X) (H := R.H) hR.layout hR.lm hR.fit h3 rfl hp3
     hpc3 hr3
-  obtain ⟨b3', hb3', hx3⟩ := exec_load_line (⟨lineOffset R.fa.lines.toList (j0 + 3), (R.lm[·]?)⟩)
+  obtain ⟨b3', hb3', hx3⟩ := exec_load_line (⟨lineOffset R.fa.lines.toList (j1 + 2), (R.lm[·]?)⟩)
     R.ctx .sload32 (by simp) nb (by omega) (.regScaledExtended (.x na) (.x nb) .uxtw)
     ⟨show na ≤ 30 by omega, show nb ≤ 30 by omega, .inl rfl⟩ s3 (fun h => by cases h)
   rw [hb3'] at hb3; cases hb3
@@ -237,21 +259,21 @@ theorem jt_machine {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {d : Label
     simp only [AMode.addr, hXa3, hXb3, LoadOp.bytes]
     rw [extend_uxtw2, hi]
   -- the table word
-  have hws : R.L.drop (j0 + 7) = ts.map (fun l => Line.word (.block l) jt) ++ T := by
-    rw [← List.drop_drop, hdrop]; simp [jtBody]
+  have hws : R.L.drop (j1 + 6) = ts.map (fun l => Line.word (.block l) jt) ++ T := by
+    rw [← List.drop_drop, hdrop1]; simp [jtTail]
   have hil : i < ts.length := (List.getElem?_eq_some_iff.1 hl).1
   have hwo := lineOffset_words hws (by simp) i (by simp; omega)
-  have h7 : lineOffset R.L (j0 + 7) = lineOffset R.L (j0 + 6) := by
+  have h7 : lineOffset R.L (j1 + 6) = lineOffset R.L (j1 + 5) := by
     rw [lineOffset_succ _ _ _ h6]; simp [Line.size]
-  have hwi : R.L[j0 + 7 + i]? = some (.word (.block l) jt) := by
+  have hwi : R.L[j1 + 6 + i]? = some (.word (.block l) jt) := by
     have := congrArg (·[i]?) hws
     simp only [List.getElem?_drop] at this
     rw [this, List.getElem?_append_left (by simpa using hil)]
     simp [hl]
   obtain ⟨wd, hwd, ⟨jtl, jbl, hjtl, -⟩, hwv⟩ := FnAsm.layout_jumpTable hR.layout hR.lm hwi
-  have hwv' := hwv jtl (j0 + 6) hjtl h6
+  have hwv' := hwv jtl (j1 + 5) hjtl h6
   have hal4 := (FnAsm.layout_word hR.layout hR.lm hwi rfl).1
-  have hofs : lineOffset R.L (j0 + 7 + i) = ojt + 4 * i := by rw [hwo, h7, hojt']
+  have hofs : lineOffset R.L (j1 + 6 + i) = ojt + 4 * i := by rw [hwo, h7, hojt']
   have hmem : Arm.read_mem_bytes 4 (A + BitVec.ofNat 64 (4 * i)) s3 = wd := by
     rw [read_mem_bytes_congr (t := s) 4 _ (fun k _ => by rw [hmem3])]
     have := hcode _ wd hwd
@@ -264,7 +286,7 @@ theorem jt_machine {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {d : Label
     simp only [RL.L] at hojt'
     rw [show wd.signExtend 64 = BitVec.ofInt 64 wd.toInt by simp [BitVec.signExtend], hwv',
       ← hojt', BitVec.add_assoc, ofNat_add_ofInt_sub]
-  let s4 := Arm.w .PC (R.pcOf (j0 + 4)) (Arm.w (.GPR (rnum nb)) V s3)
+  let s4 := Arm.w .PC (R.pcOf (j1 + 3)) (Arm.w (.GPR (rnum nb)) V s3)
   have e4 : R.step s3 = s4 := by
     simp only [RL.step]
     rw [hst3, hx3, haddr, hpc3, ← RL.pcOf_succ_ins h3]
@@ -272,11 +294,11 @@ theorem jt_machine {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {d : Label
   have hp4 : s4.program = R.fb.program R.base := by simp [s4, Arm.w_program, hp3]
   have hr4 : Arm.r .ERR s4 = .None := by
     simp only [s4]; rw [Arm.r_of_w_different (Ne.symm hpe), Arm.r_of_w_different (Ne.symm hge)]; exact hr3
-  have hpc4 : Arm.r .PC s4 = R.pcOf (j0 + 4) := by simp only [s4, Arm.r_of_w_same]
+  have hpc4 : Arm.r .PC s4 = R.pcOf (j1 + 3) := by simp only [s4, Arm.r_of_w_same]
   -- step 5: add
   obtain ⟨b4, hb4, hst4⟩ := armStepX_ins (X := R.X) (H := R.H) hR.layout hR.lm hR.fit h4 rfl hp4
     hpc4 hr4
-  obtain ⟨b4', hb4', hx4⟩ := exec_add64 (⟨lineOffset R.fa.lines.toList (j0 + 4), (R.lm[·]?)⟩) ha ha hb s4
+  obtain ⟨b4', hb4', hx4⟩ := exec_add64 (⟨lineOffset R.fa.lines.toList (j1 + 3), (R.lm[·]?)⟩) ha ha hb s4
   rw [hb4'] at hb4; cases hb4
   have hXa4 : Arm.r (.GPR (rnum na)) s4 = A := by
     simp only [s4, s3]
@@ -284,19 +306,19 @@ theorem jt_machine {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {d : Label
       Arm.r_of_w_same]
   have hXb4 : Arm.r (.GPR (rnum nb)) s4 = V := by
     simp only [s4]; rw [Arm.r_of_w_different hnp, Arm.r_of_w_same]
-  let s5 := Arm.w (.GPR (rnum na)) (A + V) (Arm.w .PC (R.pcOf (j0 + 5)) s4)
+  let s5 := Arm.w (.GPR (rnum na)) (A + V) (Arm.w .PC (R.pcOf (j1 + 4)) s4)
   have e5 : R.step s4 = s5 := by
     simp only [RL.step]
     rw [hst4, hx4, hXa4, hXb4, hpc4, ← RL.pcOf_succ_ins h4]
   have hp5 : s5.program = R.fb.program R.base := by simp [s5, Arm.w_program, hp4]
   have hr5 : Arm.r .ERR s5 = .None := by
     simp only [s5]; rw [Arm.r_of_w_different (Ne.symm hge), Arm.r_of_w_different (Ne.symm hpe)]; exact hr4
-  have hpc5 : Arm.r .PC s5 = R.pcOf (j0 + 5) := by
+  have hpc5 : Arm.r .PC s5 = R.pcOf (j1 + 4) := by
     simp only [s5]; rw [Arm.r_of_w_different (Ne.symm hnp), Arm.r_of_w_same]
   -- step 6: br
   obtain ⟨b5, hb5, hst5⟩ := armStepX_ins (X := R.X) (H := R.H) hR.layout hR.lm hR.fit h5 rfl hp5
     hpc5 hr5
-  obtain ⟨b5', hb5', hx5⟩ := exec_br (⟨lineOffset R.fa.lines.toList (j0 + 5), (R.lm[·]?)⟩) ha s5
+  obtain ⟨b5', hb5', hx5⟩ := exec_br (⟨lineOffset R.fa.lines.toList (j1 + 4), (R.lm[·]?)⟩) ha s5
   rw [hb5'] at hb5; cases hb5
   let s6 := Arm.w .PC (A + V) s5
   have e6 : R.step s5 = s6 := by
@@ -439,15 +461,16 @@ theorem realizes_jt {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs 
   have hl1 := codeLinesE_single h1
   simp only [MInst.lines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hl1
   obtain ⟨hls1, -⟩ := hl1
-  have hdrop' : R.L.drop j0 = jtBody d ts (.x nr) (.x na) (.x nb) (.jt ps1.jt) ++
-      (ftList (ls2 ++ nxtOf R.af b) ++ T) := by
+  have hdrop' : R.L.drop j0 = relaxLine R.far (.ins (.bcond .hs (.block d)) none) ++
+      (jtTail ts (.x nr) (.x na) (.x nb) (.jt ps1.jt) ++
+        (relaxLines R.far (ftList (ls2 ++ nxtOf R.af b)) ++ T)) := by
     rw [hdrop, ← hls1, show [Line.ins (.bcond .hs (.block d)), .ins (.csel (.x nb) .xzr (.x nr) .hs),
       .ins (.adr (.x na) (.jt ps1.jt)),
       .ins (.load .sload32 (.x nb) (.regScaledExtended (.x na) (.x nb) .uxtw)),
       .ins (.aluRRR .add true (.x na) (.x na) (.x nb)), .ins (.br (.x na)), .label (.jt ps1.jt)] ++
       ts.map (fun l => Line.word (.block l) (.jt ps1.jt)) = jtBody d ts (.x nr) (.x na) (.x nb) (.jt ps1.jt)
-      from rfl, ftList_jt, List.append_assoc]
-  obtain ⟨hmTaken, hmNot⟩ := jt_machine hR hnr hna hnb hab hdrop' hst.prog hpc hst.err hst.code
+      from rfl, ftList_jt, relaxLines_append, relaxLines_jtBody, List.append_assoc, List.append_assoc]
+  obtain ⟨hmTaken, hmNot⟩ := jt_machine hR hnr hna hnb hab (by simp) hdrop' hst.prog hpc hst.err hst.code
   obtain ⟨c, ins, _, hc, -⟩ := hR.check
   obtain ⟨preds, hcfg⟩ := hc.cfg
   obtain ⟨t0, tss, hback, hss, hlab⟩ := cfg_block hcfg hvb
