@@ -72,7 +72,7 @@ and, on rejection, replaced by a directly proven Lean path (kind 2). Correctness
 | encoder | Lean | `Insn.decode_encode` (`FV/Backend/Proof/Encode.lean:57-60`) | proven | — |
 | linking (program level) | `cargo fv` object merge + **rust-lld** | **`okB`** (`FV/E2E/LinkCheck.lean:716-777`) per crate by `native_decide` | **validator premise + oracle + per-program proof** | L1, L2 |
 | executable bytes | **rust-lld** | **`BinOk`** (`FV/E2E/BinCheck.lean:539-543`) per crate by `native_decide` | **validator premise + oracle + per-program proof** | L2 |
-| executable semantics | — | `E2E.ExecBytes.binary_correct_exec_proven`: the executable's own words (outside calls and TLS by hooks) refine the CLIF run, with **no per-state hypothesis**: the premises of `binary_correct_of_checks_acyclic`, the per-program checks `codeMapB` and `gotB` (`GotOk`), the outside-code contracts `HooksSim` and `OutsideAvoids`; the run's facts come from the M6 proof (`RL.GoodX`, exported through `LinkSys.RunGoodL`); `codeMapB` fails for aliases | partial (aliases) | L3 |
+| executable semantics | — | `E2E.ExecBytes.binary_correct_exec_proven`: the executable's own words (outside calls and TLS by hooks) refine the CLIF run, with **no per-state hypothesis**: the premises of `binary_correct_of_checks_acyclic`, the per-program checks `codeMapB` and `gotB` (`GotOk`), the outside-code contracts `HooksSim` and `OutsideAvoids`; the run's facts come from the M6 proof (`RL.GoodX`, exported through `LinkSys.RunGoodL`); `codeMapB` holds on `fv-demo` (self-call aliases: shared code with alike lines, `FvDemoExec.lean`) | proven modulo per-program checks (`codeMapB`, `gotB`) and the TLS hook (T1) | L3 done |
 | stack bound | Lean `budMap` | `budOkW` proven for `budMap`'s budgets (`budOkW_budMap`), no run-time check; `goodN`/`stackB` characterised as "no call cycle reachable" (`goodN_iff`, `stackB_isSome_iff`); per crate the input condition and the bound still by `native_decide` (`stack_ok`) | input condition + per-program evaluation (until L1) | L4 done |
 
 Mid-end note: the mid-end is already certificate-free in the sense of §1.2, so M1 is optional.
@@ -374,14 +374,12 @@ author's estimate, not measured), **Risk**.
   each state). **(b) the static part of `RunOk`** (`FV/E2E/ExecStatic.lean`, `binary_correct_exec_static`,
   witness `binary_correct_exec_static_witness`): the site lookup's agreement, `plain` and the `blr`
   callee's link-map address are proven for every input from a per-program check `codeMapB`
-  (`codeMap_sound`: link-map address = load address, disjoint code ranges; a premise, not in `okB`,
-  since `fv-demo`'s `…__fvself` aliases overlap their function with different lines and have their own
-  link-map address — for such a program `StepOk.site` fails at the self-call lines, so `RunOk` needs a
-  site lookup up to aliases before it can cover them); `call`/`tls` come
+  (`codeMap_sound`: link-map address = load address, disjoint code ranges; a premise, not in `okB`;
+  since item 6 it also accepts `fv-demo`'s `…__fvself` aliases, below); `call`/`tls` come
   from the outside-code contract `HooksSim I B` (next to `BaseOk`; `hooksSim_closed`). The remaining
   hypothesis is `RunOkD` (`StepOkD`): `err`, `program`, pc at an instruction (not past a TLSDESC `ldr`),
   D1 `cf`, D2 `insn`, D4 `got`, `blr` (register not `xzr`, the model reads the `blr` word).
-- **(c): discharge `RunOkD` from the M6 proof — done** (stages 3a, 3b); only the aliases remain.
+- **(c): discharge `RunOkD` from the M6 proof — done** (stages 3a, 3b); aliases done (item 6, below).
   - **Done, stage 3a** (`agent/exec-frame`; `FV/E2E/ExecFrame.lean`, `FV/E2E/ExecFrameSim.lean`): the frame
     property for D2 (`insn`: `Sim m e → Sim (exec_inst a m) (exec_inst a e)` for the decoded word).
     `E2E.ExecBytes.exec_sim`: for **every** decoded `ArmInst` `a` (so every `Insn` the backend emits,
@@ -453,10 +451,17 @@ author's estimate, not measured), **Risk**.
       `Classical.choice`, `Quot.sound` and the project's existing `bv_decide`/`native_decide`
       certificates. Non-vacuity: `Crates.BinaryExecWitness.binary_correct_exec_proven_witness`
       (`a_arith`'s `wrapping_add`; no GOT pair, `noGotPair`).
-  - **Remaining: aliases** (`fv-demo`'s `…__fvself`): `codeMapB` is a premise and fails for them;
-    `siteAt` must classify the site (outside call / TLS / real word) instead of returning one image's
-    instruction, so that `codeMapB` can allow identical-word overlaps. About 0.2k lines in `ExecBytes`
-    (`siteAt_of` users).
+  - **Done: aliases** (item 6; 2026-10-06, `agent/exec-alias`; e2e.md "The executable's own words",
+    "Aliases"): `siteAt` returns the kind of site (`Site`, `siteOf`: real word, call of the
+    program, outside call, `blr`, TLSDESC `adrp`/`ldr`); `step` runs `stepAt` on it (`stepAt_site`:
+    the step at an instruction's kind is the step at the instruction). `codeMapB` (now in
+    `FV/E2E/CodeMap.lean`, compiled into `fvcheck`, printed by `link-check`) accepts code shared by
+    two functions with lines alike line by line (`linesAlikeB`; `line_overlap`) and a link-map
+    address other than the load address when no `blr` of the program enters the function
+    (`noBlrB`; `LinkSys.GoodAt.BlrAt` from `blrTo_of_pre`, `symAddr_of_blrTo`; the address fact
+    moved into `StepOkD.blr`). `binary_correct_exec_proven` is unchanged; `fv-demo` meets both
+    per-program checks (`crate-proofs/Crates/FvDemoExec.lean`: `codeMap_ok`, `gotB_ok`, and
+    `Crates.FvDemo.binary_correct_exec`, the theorem for every file agreeing with the excerpts).
 
 ### L4. Stack bound without a per-program check
 
@@ -619,7 +624,7 @@ label**; list the free ones with
 | V6b | [#66](https://github.com/eth-act/clifv/issues/66) `emitPre` and `layoutReadyB` always hold (per-function totality) | **done**: `backend_correct_final_total_emit`, premises replaced by the decidable `emitCondsB` (V6c) |
 | L2a | [#9](https://github.com/eth-act/clifv/issues/9) Linking without validators: split `okB` into input conditions + properties proven by construction | open |
 | L2b | [#10](https://github.com/eth-act/clifv/issues/10) Static linker in Lean for the executable (BinOk by construction) | open |
-| L3 | [#11](https://github.com/eth-act/clifv/issues/11) Executable-bytes simulation (M9 item 1b) | stages 1–2 done (#63, #64); stage 3 done (3a frame property, `agent/exec-frame`; 3b `RunOkD` from the M6 proof incl. D2/D4: `binary_correct_exec_proven`, `agent/exec-good`); remaining: aliases (`codeMapB`) |
+| L3 | [#11](https://github.com/eth-act/clifv/issues/11) Executable-bytes simulation (M9 item 1b) | stages 1–2 done (#63, #64); stage 3 done (3a frame property, `agent/exec-frame`; 3b `RunOkD` from the M6 proof incl. D2/D4: `binary_correct_exec_proven`, `agent/exec-good`); aliases done (`agent/exec-alias`: site kinds, `codeMapB` holds on `fv-demo`) |
 | L4 | [#12](https://github.com/eth-act/clifv/issues/12) Stack bound without a per-program check | **done** (`agent/stack-complete`): `budOkW_budMap`, `goodN_iff`, `stackB_isSome_iff`, `binary_correct_of_checks_acyclic` |
 | L1 | [#13](https://github.com/eth-act/clifv/issues/13) The executable compiler as one Lean function | open |
 | R0 | [#14](https://github.com/eth-act/clifv/issues/14) Mid-end rule proofs: shared infrastructure (iabs normal form, makeInst for type-variable constants, helper specs, module splitting) | open |

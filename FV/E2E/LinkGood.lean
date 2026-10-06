@@ -45,13 +45,21 @@ inductive ReachL (L : LinkSys) :
       L.ReachL M h (enterAt (L.A h) (runX (L.mach (M + 1) g) k c)) M' g' c' t →
       L.ReachL (M + 1) g c M' g' c' t
 
+/-- At a `blr` of `g` at `t` whose target is the function `h` of `P`, the call is one through a
+register `tv` of `g`'s VCode by which `g` may enter `h` (`BlrTo`). -/
+def BlrAt (g : Clif.Function) (t : Arm.ArmState) : Prop :=
+  ∀ x h, insnAt (L.A g).fa (L.A g).base (Arm.r .PC t) = some (.blr x) →
+    (blrTarget t).bind (symCallee L.Xb L.P) = some h →
+    ∃ info tv, (L.A g).vcp.CallSite info ∧ info.dest = .reg (.vreg tv .int) ∧ L.BlrTo g tv h
+
 /-- The per-state facts at a state `t` of the activation of `g` at depth `M` entered at `c`, with
-the code image `Img` among the kept addresses `G`, holding `imgMem` at the entry. -/
+the code image `Img` among the kept addresses `G`, holding `imgMem` at the entry, and the callee
+of a `blr` one `g` may enter through the call's register (`BlrAt`). -/
 def GoodAt (M : Nat) (g : Clif.Function) (c t : Arm.ArmState) : Prop :=
   ∃ X K G gv, ArmStepX X (L.hooks M) (L.A g).fa = L.mach M g ∧
     actGoodX (L.A g).vcp (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb (L.A g).base c X
       (L.hooks M) K G gv t ∧
-    (∀ a, L.Img a → G a) ∧ (∀ a, L.Img a → c.mem a = L.imgMem a)
+    (∀ a, L.Img a → G a) ∧ (∀ a, L.Img a → c.mem a = L.imgMem a) ∧ L.BlrAt g t
 
 /-- **Every state of the run whose step ends without error has the per-state facts.** -/
 def RunGoodL (M : Nat) (f : Clif.Function) (c : Arm.ArmState) : Prop :=
@@ -472,6 +480,107 @@ theorem progGoodCore (hL : L.Ok) {M : Nat} (ihG : 0 < M → L.ThmG κ (M - 1))
   exact L.progCallG hL hM (ihG hM) hpf ⟨g, hg, hcallee⟩ hib himgF herrw halw hroom hdead hmr
     hargs hsav hpl hinit hrun t hcOk
 
+/-- **The callee of a `blr` at a call state is one `g` may enter through the call's register**
+(`BlrTo`): the callee contract's premise (`RL.CallPre`) is a call through `L.X`, which enters a
+function of `P` only when `g` may enter it (`IndTo`), and pins a call through the GOT to its
+symbol (`gotGuard`). -/
+theorem blrTo_of_pre (hL : L.Ok) {M : Nat} {g : Clif.Function}
+    (hg : g ∈ L.P.funcs) {F G : BitVec 64 → Prop} {ra : BitVec 64} {s w₀ : Arm.ArmState}
+    (he : L.MachEntry κ M g F G ra s w₀) {u : Arm.ArmState} {h : Clif.Function}
+    (hpre : (L.actRL κ M g F G s).CallPre u) (hprog : u.program = (L.A g).fb.program (L.A g).base)
+    {xr : Reg} (hx0 : insnAt (L.A g).fa (progBase u) (Arm.r .PC u) = some (.blr xr))
+    (hb : (blrTarget u).bind (symCallee L.Xb L.P) = some h) :
+    ∃ info tv, (L.A g).vcp.CallSite info ∧ info.dest = .reg (.vreg tv .int) ∧ L.BlrTo g tv h := by
+  obtain ⟨ctx, i, ctl, ⟨info, hsite, hi⟩, -, -, hGk, c, wh, ops, regs, i', w, outs, w', hops, hst,
+    hasg, hP, -, -, -, hsem⟩ := hpre
+  have hsite : (L.A g).vcp.CallSite info := hsite
+  have hGk : ∀ a, G a → u.mem a = s.mem a := hGk
+  have hFe : (L.actRL κ M g F G s).F = F := he.hF
+  have hP : CallAt (L.A g).fa (L.A g).base (Arm.r .PC u) i' := hP
+  have hsem : csemV (GotV (L.A g).vcp) F ctx (L.X κ M g F) i (useVals ops regs u) w =
+      some (outs, w', ctl) := hFe ▸ hsem
+  -- the plain call of the instruction
+  obtain ⟨ic, hasgC, hPC, hopsC, hst', hx, hguard⟩ : ∃ ic,
+      (MInst.call info).assign regs = .ok (.call ic) ∧
+      CallAt (L.A g).fa (L.A g).base (Arm.r .PC u) (.call ic) ∧
+      (MInst.call info).operands = .ok ops ∧
+      (∃ clob, c.checkStatic wh ops (regs.map .reg) clob = .ok ()) ∧
+      (∃ o w2, (L.X κ M g F).call (match info.dest with | .sym n => some n | .reg _ => none)
+        (useVals ops regs u) w = some (o, w2)) ∧
+      gotGuard (GotV (L.A g).vcp) (L.X κ M g F) info (useVals ops regs u) := by
+    rcases hi with rfl | ⟨ti, rfl⟩
+    · obtain ⟨ic, rfl⟩ := (assign_call_tryCall info regs).1 i' hasg
+      have h0 := csemV_sub hsem
+      simp only [csem, Option.map_eq_some_iff] at h0
+      obtain ⟨⟨o, w2⟩, hx, -⟩ := h0
+      exact ⟨ic, hasg, hP, hops, ⟨_, hst⟩, ⟨o, w2, hx⟩, csemV_guard hsem⟩
+    · obtain ⟨ic, rfl, hasg'⟩ := (assign_call_tryCall info regs).2 ti i' hasg
+      have h0 := csemV_sub hsem
+      simp only [csem, Option.map_eq_some_iff] at h0
+      obtain ⟨⟨o, w2⟩, hx, -⟩ := h0
+      exact ⟨ic, hasg', callAt_tryCall_call hP,
+        by rw [← operands_tryCall_call info ti]; exact hops, ⟨_, hst⟩, ⟨o, w2, hx⟩,
+        csemV_guard_try hsem⟩
+  obtain ⟨j, x, tt, hj, hx', hpc⟩ := hPC
+  have hc := hL.compiled g hg
+  obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
+  have hins : insnAt (L.A g).fa (progBase u) (Arm.r .PC u) = some x := by
+    rw [hpc]; exact insnAt_ofLine hc.layout hlm (by have := hL.fits g hg; omega) hprog hj
+  obtain ⟨o, w2, hx⟩ := hx
+  obtain ⟨clob, hst'⟩ := hst'
+  cases hd : info.dest with
+  | sym n =>
+    obtain ⟨d0, us0, ds0⟩ := info
+    simp only at hd
+    subst hd
+    obtain ⟨us', ds', hic⟩ := assign_call_sym hasgC
+    cases hic
+    simp only [MInst.callInsn?, Option.some.injEq] at hx'
+    subst hx'
+    rw [hins] at hx0; cases hx0
+  | reg r =>
+    have hreg : ∀ n, info.dest ≠ .sym n := fun n => by rw [hd]; simp
+    obtain ⟨tv, Lu, Ld, rfl, hregs⟩ := hL.blrRegs g hg info hsite hreg
+    rw [operands_call_reg] at hopsC
+    cases hopsC
+    obtain ⟨hsz', hloc, -, -⟩ := checkStatic_facts hst'
+    obtain ⟨r0, hregs0⟩ := callRegs_eq_reg (regs := regs) (by simpa using hsz')
+      (fun p hp r hr => (hloc p hp).2 r hr)
+    obtain ⟨n0, rfl, hn0, -⟩ : ∃ n, r0 = .x n ∧ n < 29 ∧ n ≠ 16 := by
+      have hmem : (tgtOp tv, Loc.reg r0) ∈
+          (((tgtOp tv :: (retOps Lu ++ callDefOps Ld)).toArray).zip (regs.map Loc.reg)).toList := by
+        simp [Array.toList_zip, Array.toList_map, hregs0]
+      obtain ⟨n, hn, h29, h16, -⟩ := locOk_int (hloc _ hmem).1
+      exact ⟨n, hn, h29, h16⟩
+    obtain ⟨r1, us', ds', hr1, hic⟩ := assign_call_reg hasgC
+    have h0 : regs[0]? = some (.x n0) := by
+      rw [← Array.getElem?_toList, hregs0]; rfl
+    rw [h0] at hr1
+    cases hr1
+    cases hic
+    simp only [MInst.callInsn?, Option.some.injEq] at hx'
+    subst hx'
+    have htgt : blrTarget u = some (lo64 (regVal u (.x n0))) := by
+      rw [lo64_regVal_x]
+      exact blrTarget_of hc.layout hlm hj hn0 hpc
+        (fun k wd hk => hL.imgCode g hg u (fun a ha => (hGk a (he.imgG a ha)).trans (he.imgS a ha)) k wd hk)
+    have hs : symCallee L.Xb L.P (lo64 (regVal u (.x n0))) = some h := by
+      rw [htgt] at hb; exact hb
+    have hx2 : (L.X κ M g F).call none (regVal u (.x n0) :: Lu.map (fun q => regVal u q.2)) w =
+        some (o, w2) := by
+      rw [← call_useVals_reg hregs0]; exact hx
+    rw [L.X_ind hs] at hx2
+    split at hx2
+    · rename_i hdecl
+      have hgot : ∀ n, GotV (L.A g).vcp tv n → n = h.name := by
+        intro n hn
+        have e := hguard tv n _ rfl hn (operands_call_reg tv Lu Ld) (by simp [tgtOp, Operand.isUse])
+        rw [call_useVals_reg hregs0] at e
+        simp only [List.head?_cons, Option.map_some, Option.some.injEq] at e
+        exact L.got_target hL hs e
+      exact ⟨_, tv, hsite, rfl, hdecl.1, hgot⟩
+    · cases hx2
+
 /-- **The crux: the callee's states at a call state.** At a state `u` of the activation of `g`
 at depth `M` where the callee contract's premise holds (`RL.CallPre`, which `RL.GoodX.call` gives
 at a `bl`/`blr` line) and the machine calls `h` (`CallsAtL`), every state of `h`'s run entered
@@ -615,9 +724,23 @@ theorem runGood_of_trace (hL : L.Ok) {M : Nat} (ihG : 0 < M → L.ThmG κ (M - 1
   cases hR with
   | act hno =>
     rename_i k
-    refine ⟨L.X κ M g F, κ M g, G, GotV (L.A g).vcp, rfl, hgood k (hbound k hno ?_), he.imgG,
-      he.imgS⟩
-    rw [runX_add]; exact herrt
+    have hG : (L.actRL κ M g F G s).GoodX (runX (L.mach M g) k s) :=
+      hgood k (hbound k hno (by rw [runX_add]; exact herrt))
+    refine ⟨L.X κ M g F, κ M g, G, GotV (L.A g).vcp, rfl, hG, he.imgG, he.imgS, ?_⟩
+    intro xr h hx hb
+    obtain ⟨x, ⟨j, tt, hj, hpc⟩, -⟩ := hG.line
+    have hj' : (L.A g).fa.lines.toList[j]? = some (.ins x tt) := hj
+    have hc := hL.compiled g hg
+    obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
+    have hsz : ((L.A g).fa.lines.toList.map Line.size).sum ≤ 2 ^ 64 := by
+      rw [layout_sum hc.layout]; have := hL.fits g hg; omega
+    have hx' : insnAt (L.A g).fa (L.A g).base (Arm.r .PC (runX (L.mach M g) k s)) = some x := by
+      rw [hpc]; exact insnAt_line hsz hj'
+    rw [hx'] at hx; cases hx
+    have hins : insnAt (L.A g).fa (progBase (runX (L.mach M g) k s))
+        (Arm.r .PC (runX (L.mach M g) k s)) = some (.blr xr) := by
+      rw [hpc]; exact insnAt_ofLine hc.layout hlm (by have := hL.fits g hg; omega) hG.prog hj'
+    exact L.blrTo_of_pre hL hg he (hG.call _ ⟨j, tt, hj, hpc⟩ (.inr ⟨xr, rfl⟩)) hG.prog hins hb
   | nest hno hcall herr1 hR' =>
     rename_i M0 k h
     have hG : (L.actRL κ (M0 + 1) g F G s).GoodX (runX (L.mach (M0 + 1) g) k s) :=

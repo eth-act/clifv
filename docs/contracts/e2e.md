@@ -1775,8 +1775,10 @@ machine state `r` itself:
   run in the same machine. Calls of code **outside the program** (`bl` of a name that is no function
   of the program, `blr` whose target is none) and the TLSDESC site (its `adrp`, then `Hb.tls` at its
   `ldr`) use the base environment's hooks, as in the model: code outside the program is given by
-  its contract. `siteAt` (the program's instruction at the pc) only decides these cases. `step`
-  never reads the state's program field.
+  its contract. `siteAt` only decides these cases: the kind of site at the pc (`Site`, `siteOf`
+  of the program's instruction there: a real word, a call of the program, a call outside it, a
+  `blr`, the TLSDESC `adrp` or `ldr`), so that code two functions share (`cargo fv`'s self-call
+  alias) has one kind at each word. `step` never reads the state's program field.
 * Conclusion `ExecRefines … (step I B file) r (RelocAt I)`: `ArmRefines` (return to `x30` with
   `ArmRet`, results in their registers; or `TrapAt` the trap site), with the live CLIF bytes
   compared outside the relocated instruction bytes `RelocAt I` (code bytes).
@@ -1803,7 +1805,7 @@ machine state `r` itself:
 * **The hypothesis `RunOk I B file M f (modelOf I f r)`**: `StepOk` at every state of the model's
   run before its return, nested into the linked calls (`Reach`). `StepOk M g m` holds per state:
   `err` (no error), `program` (the program field is `g`'s), `site` (the pc is at an instruction of
-  `g`, `siteAt` agrees, not inside the TLS sequence past its `ldr`), `cf` (D1: a step landing on a
+  `g`, `siteAt` gives its kind, not inside the TLS sequence past its `ldr`), `cf` (D1: a step landing on a
   pair's second word starts at its first word), `insn`/`call`/`tls` (D2: the instruction, outside
   call or TLS hook at `m` reads no relocated instruction byte and not the program field: `Sim`
   before gives `Sim` after), `got` (D4: at the `ldr` of a GOT pair the slot's 8 bytes are the
@@ -1842,17 +1844,16 @@ machine state `r` itself:
 * **The static part of `RunOk`** (`FV/E2E/ExecStatic.lean`, `binary_correct_exec_static`): the
   facts of `StepOk` that do not depend on the run are proven for every input: the site lookup's
   agreement (`siteAt_static`) and `plain` (`plain_static`) from the per-program check `codeMapB`
-  (`codeMap_sound`: disjoint code ranges, link-map address = load address; a premise, not part of
-  `okB`: `fv-demo`'s `…__fvself` aliases share their function's code with lines naming other
-  callees, and have another link-map address, so `StepOk.site` cannot hold at both activations'
-  self-call lines there) and the layout (a relocation sits at its own instruction line); the
-  callee's link-map address at a `blr` (`codeMap_sound`); `call` and `tls` from the **outside-code contract
+  (`FV/E2E/CodeMap.lean`; a premise, not part of `okB`; `codeMap_sound`, `line_overlap`: two
+  functions' overlapping words are alike lines, so they have one kind of site and the same
+  relocation status) and the layout (a relocation sits at its own instruction line); `call` and
+  `tls` from the **outside-code contract
   `HooksSim I B`** (next to `BaseOk`: the hooks for calls outside the program and for the TLS
   sequence give `Sim`-related results on `Sim`-related states, i.e. they read no relocated
   instruction byte and not the program field; `hooksSim_closed`). What remains per state is
   `RunOkD`/`StepOkD`: no error, the program field, the pc at an instruction (not past a TLSDESC
-  `ldr`), D1 `cf`, D2 `insn`, D4 `got`, and at a `blr` to the program the register (not `xzr`) and
-  the model's read of its word (`StepOk.d`: `StepOk` gives it). `binary_correct_exec_static` is
+  `ldr`), D1 `cf`, D2 `insn`, D4 `got`, and at a `blr` to the program the register (not `xzr`),
+  the model's read of its word and the callee's link-map address (`StepOk.d`: `StepOk` gives it). `binary_correct_exec_static` is
   `binary_correct_exec` under `codeMapB`, `HooksSim` and `RunOkD`; non-vacuity (`codeMap_ok` by
   `native_decide`):
   `Crates.BinaryExecWitness.binary_correct_exec_static_witness`.
@@ -1901,7 +1902,8 @@ machine state `r` itself:
     states of `ReachN` whose step ends without error. `runOkN_of_good`: `RunGoodL` +
     `RunReadsN` + the checks + `codeMapB` + `x30` outside the code ⇒ `RunOkN` (the site from `line`; `cf`
     from `next`, `PairsClosed` and the entry's `x30` being no second word: `raOutside` at the
-    top, the call's address when nested; `blr` from `GoodX` and `LinkSys.Ok.blrRegs`).
+    top, the call's address when nested; `blr` from `GoodX`, `LinkSys.Ok.blrRegs` and, for the
+    callee's link-map address, `GoodAt`'s `BlrAt` with `codeMapB`).
   - Intermediate: **`E2E.ExecBytes.binary_correct_exec_of_reads`**: `binary_correct_exec_static`'s
     premises (those of `binary_correct_of_checks_acyclic`, `codeMapB`, `HooksSim`) with only
     `RunReadsN` in place of `RunOkD`; witness
@@ -1931,8 +1933,26 @@ machine state `r` itself:
     `Quot.sound` and the existing `bv_decide`/`native_decide` certificates. Non-vacuity:
     `Crates.BinaryExecWitness.binary_correct_exec_proven_witness` (`a_arith`'s `wrapping_add`;
     no GOT pair, `noGotPair`, so no slot).
-  - Remaining (TO-PROVE L3): aliases (`…__fvself`): `codeMapB` is a premise and fails for them;
-    `siteAt` must classify sites so that `codeMapB` can allow identical-word overlaps.
+  - **Aliases** (TO-PROVE L3 item 6; 2026-10-06, `agent/exec-alias`): `cargo fv`'s self-call
+    alias `f__fvself` is a function of the program on `f`'s code (the same load address; `f`'s
+    self-call is `bl f__fvself`, the alias's `bl f`) with a fresh link-map address. `codeMapB`
+    (`FV/E2E/CodeMap.lean`) now accepts it: (i) two functions' code ranges are disjoint **or** they
+    have the same load address and lines alike line by line (`linesAlikeB`: equal instructions,
+    or `bl`s of functions of the program; data words; labels), so at every word of code the kind
+    of site (`siteOf`) and the relocation status are those of every function there
+    (`line_overlap`); (ii) a function's link-map address is its load address **or** no `blr` of
+    the program enters it (`noBlrB`: the name is no CLIF image symbol, and every function
+    declaring it calls through registers only through the GOT entries of other symbols,
+    `blrGotB`/`gotOf`). For (ii) `LinkSys.GoodAt` carries `BlrAt` (at a `blr` the callee is one
+    `g` may enter through the call's register, `BlrTo`; `blrTo_of_pre`, from `RL.CallPre`'s call
+    through `L.X`), and `symAddr_of_blrTo` gives the callee's link-map address = load address;
+    that fact moved from `codeMap_sound` into `StepOkD.blr` (`stepOkD_of_good`).
+    `ret_not_second(N)`/`raNotSecond_enter` compare kinds of site (a call is `progCall`/`blr`, a
+    pair's first word `real`, `siteOf_pairFirst`). `binary_correct_exec_proven` is unchanged.
+    `fv-demo` (`crate-proofs/Crates/FvDemoExec.lean`): `codeMap_ok`, `gotB_ok` by `native_decide`
+    (`codeMapB` in `fvcheck`), and `Crates.FvDemo.binary_correct_exec`: the theorem for every
+    file agreeing with the excerpts, only the base environment's and the outside caller's
+    premises left. `link-check` prints the code map check (`code map: ok`).
 
 
 ### Non-vacuity (2026-10-02, `agent/callee-fix`, `FV/E2E/NonVacuity.lean`)

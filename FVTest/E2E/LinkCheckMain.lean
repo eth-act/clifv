@@ -1,4 +1,5 @@
 import FV.E2E.BinCheck
+import FV.E2E.CodeMap
 import FV.E2E.StackBound
 
 /-!
@@ -18,7 +19,8 @@ diagnostic version of `okB`), then a count per premise, then the stack bound
 (`E2E.StackBound.budMap`, `FV/E2E/StackBound.lean`: the largest stack an activation of a function
 of the program uses with its callees, and the bound of each entry, a function no other function
 of the program calls; the functions whose calls reach a cycle of the call graph are `recursive`
-and have none). With `--prune` it drops
+and have none), the binary checks (`FV/E2E/BinCheck.lean`) and the code map (`codeMapB`,
+`FV/E2E/CodeMap.lean`). With `--prune` it drops
 the failing functions (they become externs of the base environment) until the rest passes. With `--lean` it
 writes, when the checks pass, the Lean file that proves `LinkSys.Ok` of the crate by
 `native_decide` on `okB` and states `backend_correct_program` for the entries (default: every
@@ -653,6 +655,9 @@ def main (args : List String) : IO UInt32 := do
   IO.println (if binOk then
       s!"  binary: ok ({arts.length} functions, {words} words, {D.length} data objects, {I'.addrs.length - I'.aliases.length} symbols)"
     else s!"  binary: FAIL code={codeBad} data={dataBad} syms={symsBad.length} hdr={if hdrOk then 0 else 1}")
+  -- the code map of the executable machine (`codeMapB`, `FV/E2E/CodeMap.lean`: a premise of the
+  -- theorem about the executable's own words, not of `okB`)
+  IO.println (if codeMapB I' (tabOf keep) then "  code map: ok" else "  code map: FAIL (codeMapB)")
   -- the stack bound (`budMap`) of the (pruned) program: a function has a budget iff no call
   -- cycle is reachable from it (`StackBound.budC_isSome_iff`)
   let Pk := progOf keep

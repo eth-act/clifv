@@ -109,7 +109,7 @@ theorem stepOk_plain {Mx : Nat} {g : Clif.Function} (hF : FnOk J file g)
     (hh : i0.hooked = false) {m : Arm.ArmState} (herr : Arm.r .ERR m = .None)
     (hprog : m.program = (art J g).fb.program (art J g).base)
     (hpc : Arm.r .PC m = wAt (art J g) (lineOffset (art J g).fa.lines.toList j))
-    (hsite : siteAt J (Arm.r .PC m) = some i0)
+    (hsite : siteAt J (Arm.r .PC m) = some (siteOf (prog J) i0))
     (hP : ∀ env a, i0.toArmInst env = .ok a → ∀ e, Sim J m e →
       Sim J (Arm.exec_inst a m) (Arm.exec_inst a e))
     (hplain : ∀ k < 4, ¬ RelocAt J (Arm.r .PC m + BitVec.ofNat 64 k)) :
@@ -240,11 +240,11 @@ theorem plain_f {o : Nat} (ho : o ≤ 16) : ∀ k < 4, ¬ RelocAt I (wAt (art I 
     Nat.mod_eq_of_lt (by omega)] at this
   omega
 
-/-- The site lookup at the entry's code finds the entry's instruction (no other function's code
-is there). -/
+/-- The site lookup at the entry's code finds the kind of site of the entry's instruction (no
+other function's code is there). -/
 theorem siteAt_f {file : ByteArray} (hF : ∀ g ∈ (prog I).funcs, FnOk I file g) {o : Nat} (ho : o < 20)
     {i : Insn} (hi : insnAt (art I f).fa (art I f).base (wAt (art I f) o) = some i) :
-    siteAt I (wAt (art I f) o) = some i := by
+    siteAt I (wAt (art I f) o) = some (siteOf (prog I) i) := by
   have hfm := (Clif.Program.func?_some facts.1).1
   have hfn := code.2.2.2.2.2.2.2.2.2.2.2.1
   have ha := toNat_wAt (o := o) (by omega)
@@ -254,7 +254,7 @@ theorem siteAt_f {file : ByteArray} (hF : ∀ g ∈ (prog I).funcs, FnOk I file 
     have hs := hex.choose_spec
     generalize hex.choose = g at hs ⊢
     obtain ⟨hg, hsome⟩ := hs
-    suffices art I g = art I f by rw [this]; exact hi
+    suffices art I g = art I f by rw [this, hi]; rfl
     by_cases hgn : g.name = n
     · simp only [art, artOf, hgn, ← hfn]
     · exfalso
