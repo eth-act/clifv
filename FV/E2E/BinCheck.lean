@@ -17,7 +17,7 @@ executable file, read by the ELF reader `FV/E2E/Elf.lean`:
     without a relocation is the compiled word (`plain`); every relocation is resolved
     (`RelocOk`): `bl` → `blW (T - P)` with `T = I.baseOf sym`; an `adrp`/`add` or GOT
     `adrp`/`ldr` pair → `PairOk` (the executable's two words put `T = I.symAddr sym addend`
-    into the compiled `adrp`'s register `rd`: `adrp`+`add` (the compiled pair with its
+    into the compiled `adrp`'s register `rd`, not 31: `adrp`+`add` (the compiled pair with its
     immediates resolved; `cargo fv` links with `--no-relax`, so lld's `nop`+`adr` relaxation
     is not accepted), or, for the GOT, `adrp`+`ldr` of a GOT slot `G` with `readN (loadMem file) 8 G = T`); a
     TLSDESC sequence → lld's local-exec relaxation `movz x0`/`movk x0`/`nop`/`nop` of the
@@ -222,7 +222,7 @@ def RelocOk (I : LinkInput) (file : ByteArray) (a : Art) (r : Reloc) : Prop :=
       readN m 4 (wAt a o) = some (blW ((I.baseOf r.sym : Int) - (wAt a o).toNat))
   | .adrGotPage | .adrPrelPgHi21 =>
     let got := decide (r.type = .adrGotPage)
-    ∃ rd x0 x1, a.fb.words[o / 4]? = some (adrpW rd 0) ∧
+    ∃ rd x0 x1, rd < 31 ∧ a.fb.words[o / 4]? = some (adrpW rd 0) ∧
       a.fb.words[o / 4 + 1]? = some (if got then ldrW rd rd 0 else addW rd rd 0) ∧
       (∃ r' ∈ a.fb.relocs, r'.offset = o + 4 ∧ r'.type = loOf r.type ∧ r'.sym = r.sym ∧
         r'.addend = r.addend) ∧
@@ -249,7 +249,7 @@ def relocB (I : LinkInput) (m : PMem) (phs : List Phdr) (a : Art) (r : Reloc) : 
   | .adrGotPage | .adrPrelPgHi21 =>
     let got := decide (r.type = .adrGotPage)
     let rd := rd5 (a.fb.words[o / 4]?.getD 0)
-    a.fb.words[o / 4]? == some (adrpW rd 0) &&
+    decide (rd < 31) && a.fb.words[o / 4]? == some (adrpW rd 0) &&
       a.fb.words[o / 4 + 1]? == some (if got then ldrW rd rd 0 else addW rd rd 0) &&
       a.fb.relocs.any (fun r' => r'.offset == o + 4 && decide (r'.type = loOf r.type) &&
         r'.sym == r.sym && r'.addend == r.addend) &&
@@ -284,11 +284,11 @@ theorem relocB_sound {I : LinkInput} {file : ByteArray} {ex : Excerpt} (hA : Agr
     exact ⟨h.1, h.2.1.1, h.2.1.2, readN_ext hm h.2.2⟩
   | adrGotPage | adrPrelPgHi21 =>
     simp only [relocB, Bool.and_eq_true, beq_iff_eq, List.any_eq_true, decide_eq_true_eq] at h
-    obtain ⟨ho, ⟨⟨h1, h2⟩, ⟨r', hr', hr'2⟩⟩, h4⟩ := h
+    obtain ⟨ho, ⟨⟨⟨h0, h1⟩, h2⟩, ⟨r', hr', hr'2⟩⟩, h4⟩ := h
     refine ⟨by simpa using ho, ?_⟩
     split at h4
     · rename_i x0 x1 e0 e1
-      exact ⟨_, x0, x1, h1, h2, ⟨r', hr', hr'2.1.1.1, hr'2.1.1.2, hr'2.1.2, hr'2.2⟩,
+      exact ⟨_, x0, x1, h0, h1, h2, ⟨r', hr', hr'2.1.1.1, hr'2.1.1.2, hr'2.1.2, hr'2.2⟩,
         readN_ext hm e0, readN_ext hm e1, pairB_sound hm h4⟩
     · cases h4
   | ld64GotLo12Nc | addAbsLo12Nc =>
