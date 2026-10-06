@@ -199,11 +199,6 @@ they meet `budOkW` (`budOkW_budMap`), and a function has one exactly when its ca
 cycle (`budC_isSome_iff`). Not checked at run time. -/
 def budC (I : LinkInput) (R : Res) (g : Clif.Function) : Option Nat := (budMap I R).get? g.name
 
-/-- The functions without a budget: their calls reach a call cycle (diagnostic). -/
-def budBad (I : LinkInput) (R : Res) : List String :=
-  let m := budMap I R
-  ((progOf R).funcs.filter fun g => (m.get? g.name).isNone).map (·.name)
-
 /-- The callees' stack budget of `g`, when its calls never reach a call cycle. -/
 def budO (I : LinkInput) (g : Clif.Function) : Option Nat := budC I I.results g
 
