@@ -5,6 +5,9 @@
 ; inverted branch over a `b` (block3 repeated 270000 times).
 ; In corpus/clif-large (not scanned by the default gates): the Lean backend takes ~20 min on it
 ; (270000 split jump-table edges); run with scripts/lean-backend-filetests.sh corpus/clif-large/far_branches.clif.
+; Cranelift-native (0.136.1 and wasmtime main 3be934572b) miscompiles the default edge of br_table
+; tables with >= 262137 entries (docs/research/upstream-bugs.md; kevaundray/wasmtime#3), so native
+; errors on %far(270000) and %far(300001) are expected; the Lean runs are checked.
 test interpret
 test run
 target aarch64
