@@ -10,9 +10,10 @@ import FV.E2E.SpillCtlWitness
 # The final theorem without the register-allocation checker premise (V4)
 
 `backend_correct_final_of_lower` still assumed `checkAlloc vcp rf = .ok ()` for the allocation
-`rf` regalloc2 computed. The backend now lowers `allocResult vcp ra` (`FV/Backend/SpillAlloc.lean`;
+`rf` regalloc2 computed. The backend now lowers `allocResult vcp ra` (`FV/Backend/Regalloc.lean`;
 `lowerAlloc_eq` relates it to the compiler's `lowerAlloc`): regalloc2's answer `ra` if
-`checkAlloc` accepts it, else the spill allocation `spillAlloc vcp`. So the checker's verdict on
+`checkAlloc` accepts it and `lowerRFunc` lowers it (V5), else the spill allocation
+`spillAlloc vcp`. So the checker's verdict on
 regalloc2's output is no longer a premise: whatever regalloc2 returns (or if it fails or is
 absent), the allocation that is lowered is `AllocChecked`, provided the spill allocation is
 (`SpillAccepted`).
@@ -111,11 +112,14 @@ theorem allocChecked_allocResult (hsa : SpillAccepted) {p : Clif.Program} {f : C
   | ok rf =>
     simp only
     by_cases hc : (checkAlloc vcp rf).isOk = true
-    · rw [ite_eq_left_iff.mpr (fun h => absurd hc h)]
-      cases h : checkAlloc vcp rf with
-      | ok u => exact allocChecked_of_checkAlloc h
-      | error e => rw [h] at hc; cases hc
-    · rw [ite_eq_right_iff.mpr (fun h => absurd h hc)]; exact hsa p f vc vcp hsub har hd hs hl hp
+    · simp only [hc, ite_true]
+      cases hlr : lowerRFunc vcp rf with
+      | ok af =>
+        cases h : checkAlloc vcp rf with
+        | ok u => exact allocChecked_of_checkAlloc h
+        | error e => rw [h] at hc; cases hc
+      | error e => exact hsa p f vc vcp hsub har hd hs hl hp
+    · simp only [hc]; exact hsa p f vc vcp hsub har hd hs hl hp
 
 /-- **The backend's end-to-end theorem for the fallback-composed allocation, V4 restated**:
 `backend_correct_final_of_lower` with `rf := allocResult vcp ra` for any answer `ra` of the

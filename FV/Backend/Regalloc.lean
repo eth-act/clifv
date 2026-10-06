@@ -25,7 +25,8 @@ Cranelift 0.136.1's options):
 
 Frame (grows down; `sp` is 16-byte aligned everywhere; all offsets are from `sp`). The
 allocator's slots sit right above the outgoing area, below the explicit CLIF slots, so their
-offsets stay small (`size < 32 KiB`, checked by `lowerRFunc`) however large the CLIF slots are:
+offsets stay small however large the CLIF slots are (slots at 32 KiB or more are addressed
+through x16, `slotStoreAt`):
 
 ```
 fp + 16 + off     incoming stack arguments
@@ -246,14 +247,41 @@ def RAFrame.offset (fr : RAFrame) : Loc → Except String Nat
     | none => throw s!"no save slot for {repr r}"
   | l => throw s!"{repr l} is not a frame slot"
 
+/-- `x16 := sp + off`, one instruction per line: `movz` of `off`'s low 16-bit chunk, `movk` of
+its other non-zero chunks (the chunks of `loadConst64`), `add x16, sp, x16`. x16 is not
+allocatable (`aarch64Env`; regalloc2's `MachineEnv` and `spillPool` leave out x16–x18), and it
+is outside the world (`Masked`): a move may clobber it. -/
+def spAddrX16 (off : Nat) : List MInst :=
+  let v := mask64 off
+  let chunk (i : Nat) := (v / 2 ^ (16 * i)) % 2 ^ 16
+  .movWide .movZ (.x 16) ⟨chunk 0, 0⟩ .size64 ::
+    ((([1, 2, 3].map fun i => (chunk i, i)).filter (·.1 != 0)).map fun p =>
+      .movK (.x 16) (.x 16) ⟨p.1, p.2⟩ .size64) ++
+    [.aluRRRExtend .add .size64 (.x 16) .sp (.x 16) .sxtx]
+
+/-- A slot store at `sp + off`: `[sp, #off]` (`stur` or scaled `str`, `slotStore`) below
+32 KiB, else through `x16 = sp + off` (`spAddrX16`, then `str` at `[x16]`). -/
+def slotStoreAt (cls : RegClass) (r : Reg) (off : Nat) : List MInst :=
+  if off < 32768 then [slotStore cls r off]
+  else spAddrX16 off ++ [match cls with
+    | .int => .store .store64 r (.unsignedOffset (.x 16) 0) trustedFlags
+    | .float => .store .fpuStore128 r (.unsignedOffset (.x 16) 0) trustedFlags]
+
+/-- A slot load at `sp + off` (as `slotStoreAt`). -/
+def slotLoadAt (cls : RegClass) (r : Reg) (off : Nat) : List MInst :=
+  if off < 32768 then [slotLoad cls r off]
+  else spAddrX16 off ++ [match cls with
+    | .int => .load .uload64 r (.unsignedOffset (.x 16) 0) trustedFlags
+    | .float => .load .fpuLoad128 r (.unsignedOffset (.x 16) 0) trustedFlags]
+
 /-- Machine code of a move. -/
 def RAFrame.moveInsts (fr : RAFrame) (src dst : Loc) : Except String (List AInst) := do
   match src, dst with
   | .reg a, .reg b => match a.realClass? with
     | some .int => pure [.inst (.mov .size64 b a)]
-    | _ => pure [.inst (slotStore .float a fr.fmoveTmp), .inst (slotLoad .float b fr.fmoveTmp)]
-  | .reg a, m => pure [.inst (slotStore ((a.realClass?).getD .int) a (← fr.offset m))]
-  | m, .reg b => pure [.inst (slotLoad ((b.realClass?).getD .int) b (← fr.offset m))]
+    | _ => pure ((slotStoreAt .float a fr.fmoveTmp ++ slotLoadAt .float b fr.fmoveTmp).map .inst)
+  | .reg a, m => pure ((slotStoreAt ((a.realClass?).getD .int) a (← fr.offset m)).map .inst)
+  | m, .reg b => pure ((slotLoadAt ((b.realClass?).getD .int) b (← fr.offset m)).map .inst)
   | _, _ => throw "memory-to-memory move"
 
 /-- Registers of incoming arguments (AAPCS64): x0–x7, v0–v7 — and x8, the hidden
@@ -319,10 +347,9 @@ def ctlCheck (vc : VCode) (rf : RFunc) : Bool :=
 /-- Lower a checked allocated function to `AFunc`. -/
 def lowerRFunc (vc : VCode) (rf : RFunc) : Except String AFunc := do
   let fr := RAFrame.compute vc rf
-  -- Allocator slots are addressed `[sp, #off]` (`ldur`/`stur` or scaled `ldr`/`str`); the model
-  -- has no SIMD&FP register-offset form, so an allocator area of 32 KiB or more is rejected
-  -- (proof: `RegallocSlots`). The CLIF slots above it are addressed by `stack_addr` arithmetic.
-  if fr.size ≥ 32768 then throw s!"allocator frame area of {fr.size} bytes is too large"
+  -- Allocator slots are addressed `[sp, #off]` below 32 KiB, beyond through `x16 = sp + off`
+  -- (`slotStoreAt`/`slotLoadAt`; proof: `RegallocSlotsFar`), so the frame has no size limit. The
+  -- CLIF slots above them are addressed by `stack_addr` arithmetic.
   if !ctlCheck vc rf then throw "control-form check (ctlCheck) failed"
   let blocks ← (vc.blocks.zip rf.blocks).mapIdxM fun bi (vb, items) => do
     let mut code : Array AInst := if bi == 0 then #[.prologue] else #[]
@@ -343,6 +370,19 @@ def lowerRFunc (vc : VCode) (rf : RFunc) : Except String AFunc := do
   -- (`docs/contracts/regalloc-proof.md`, M6Ctl2).
   pure { name := vc.name, frameSize := fr.total, blocks, slotBase := fr.size, frame := true }
 
+/-- The allocation the backend lowers: regalloc2's (`ra`) if `checkAlloc` accepts it and
+`lowerRFunc` lowers it, else the spill allocation, which `lowerRFunc` lowers for every in-scope
+function (`E2E.lowerRFunc_spillAlloc`; so the backend is total on that input). -/
+def allocResult (vc : VCode) (ra : Except String RFunc) : RFunc :=
+  match ra with
+  | .ok rf =>
+    if (checkAlloc vc rf).isOk then
+      match lowerRFunc vc rf with
+      | .ok _ => rf
+      | .error _ => spillAlloc vc
+    else spillAlloc vc
+  | .error _ => spillAlloc vc
+
 /-! ## The allocator -/
 
 /-- Everything about one allocated function (for tests: `RFunc` can be mutated and rechecked). -/
@@ -359,42 +399,41 @@ def RAResult.oracle (r : RAResult) : Except String RFunc :=
   if r.rustChecker == "ok" then .ok r.rf
   else .error s!"register allocation rejected by regalloc2's checker: {r.rustChecker}"
 
-/-- Lower a spill allocation, after running `checkAlloc` on it as a double-check (it accepts
-every in-scope function of the corpus; `SpillAccepted`). -/
-def lowerSpill (vcp : VCode) : Except String AFunc := do
-  let rf := spillAlloc vcp
-  match checkAlloc vcp rf with
-  | .ok () => pure ()
-  | .error e => throw s!"spill allocation rejected by the Lean checker: {e}"
-  lowerRFunc vcp rf
-
-/-- Lower `allocResult`: regalloc2's allocation if `checkAlloc` accepts it, else the spill
-allocation (`lowerSpill`). -/
+/-- Lower `allocResult`: regalloc2's allocation if `checkAlloc` accepts it and `lowerRFunc`
+lowers it, else the spill allocation. -/
 def lowerAlloc (vcp : VCode) (ra : Except String RFunc) : Except String AFunc :=
   match ra with
-  | .ok rf => if (checkAlloc vcp rf).isOk then lowerRFunc vcp rf else lowerSpill vcp
-  | .error _ => lowerSpill vcp
+  | .ok rf =>
+    if (checkAlloc vcp rf).isOk then
+      match lowerRFunc vcp rf with
+      | .ok af => .ok af
+      | .error _ => lowerRFunc vcp (spillAlloc vcp)
+    else lowerRFunc vcp (spillAlloc vcp)
+  | .error _ => lowerRFunc vcp (spillAlloc vcp)
+
+/-- The compiler's `lowerAlloc` lowers `allocResult` (without lowering regalloc2's allocation
+twice). -/
+theorem lowerAlloc_eq_lowerRFunc (vcp : VCode) (ra : Except String RFunc) :
+    lowerAlloc vcp ra = lowerRFunc vcp (allocResult vcp ra) := by
+  unfold lowerAlloc allocResult
+  cases ra with
+  | error e => rfl
+  | ok rf =>
+    simp only
+    by_cases hc : (checkAlloc vcp rf).isOk = true
+    · simp only [hc, ite_true]
+      cases hl : lowerRFunc vcp rf with
+      | ok af => exact hl.symm
+      | error e => rfl
+    · simp only [hc]
+      rfl
 
 theorem lowerAlloc_eq {vcp : VCode} {ra : Except String RFunc} {af : AFunc}
-    (h : lowerAlloc vcp ra = .ok af) : lowerRFunc vcp (allocResult vcp ra) = .ok af := by
-  unfold lowerAlloc at h
-  unfold allocResult
-  have hs : lowerSpill vcp = .ok af → lowerRFunc vcp (spillAlloc vcp) = .ok af := fun h => by
-    unfold lowerSpill at h
-    simp only at h
-    split at h
-    · exact h
-    · cases h
-  cases ra with
-  | error e => exact hs h
-  | ok rf =>
-    simp only at h ⊢
-    by_cases hc : (checkAlloc vcp rf).isOk = true
-    · rw [if_pos hc] at h ⊢; exact h
-    · rw [if_neg hc] at h ⊢; exact hs h
+    (h : lowerAlloc vcp ra = .ok af) : lowerRFunc vcp (allocResult vcp ra) = .ok af :=
+  (lowerAlloc_eq_lowerRFunc vcp ra) ▸ h
 
-/-- Check, then lower (`lowerAlloc`): a rejection by either checker falls back to the spill
-allocation. -/
+/-- Check, then lower (`lowerAlloc`): a rejection by either checker, or by `lowerRFunc`, falls
+back to the spill allocation. -/
 def RAResult.finish (r : RAResult) : Except String AFunc :=
   lowerAlloc r.prepared r.oracle
 
@@ -435,8 +474,8 @@ def prepareChecked (vc : VCode) : Except String VCode := do
   pure vcp
 
 /-- Allocate a batch of functions with regalloc2 (one `lean-regalloc` run); every result is
-checked by `checkAlloc`, and a rejected or missing allocation (regalloc2 failed, or is absent)
-is replaced by the spill allocation (`lowerAlloc`). -/
+checked by `checkAlloc`, and a rejected, unlowerable or missing allocation (regalloc2 failed, or
+is absent) is replaced by the spill allocation (`lowerAlloc`). -/
 def allocateRegalloc2 (bin : String) (env : MachineEnv) (vcs : Array VCode) : IO (Array (Except String AFunc)) := do
   let prepared := vcs.map prepareChecked
   let ok := prepared.filterMap (·.toOption)
@@ -459,6 +498,6 @@ def allocateRegalloc2 (bin : String) (env : MachineEnv) (vcs : Array VCode) : IO
 /-- Allocate with the spill allocator only (`lean-backend --regalloc spill`; testing the
 fallback). -/
 def allocateSpill (vcs : Array VCode) : Array (Except String AFunc) :=
-  vcs.map fun vc => prepareChecked vc >>= lowerSpill
+  vcs.map fun vc => prepareChecked vc >>= fun vcp => lowerRFunc vcp (spillAlloc vcp)
 
 end Backend

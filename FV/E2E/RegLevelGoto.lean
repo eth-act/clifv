@@ -469,7 +469,7 @@ theorem realizes_goto {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {alloc
       (∃ kd t e rn bit, i = .testBitAndBranch kd t e rn bit))
     (h : MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c') :
     ∃ n, Q R (iterN R.step n s) c' ∧ ∀ i < n, R.Good (iterN R.step i s) := by
-  have hck := (lowerRFunc_ok hR.alloc).2.2.2
+  have hck := (lowerRFunc_ok hR.alloc).2.2
   obtain ⟨j0, vb0, items, pre, code, ls, ps1, ps2, T, hvb0, hit, hsplit, hchk, hcode, hls, htr, hdrop,
     hpc, hst⟩ := hq
   rw [hvb] at hvb0; cases hvb0
