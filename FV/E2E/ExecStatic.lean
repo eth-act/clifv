@@ -69,7 +69,8 @@ structure StepOkD (M : Nat) (g : Clif.Function) (m : Arm.ArmState) : Prop where
     ∀ e, Sim I m e → Sim I (Arm.exec_inst a m) (Arm.exec_inst a e)
   /-- D4 -/
   got : ∀ rl ∈ (art I g).fb.relocs, rl.type = .adrGotPage →
-    Arm.r .PC m = wAt (art I g) (rl.offset + 4) → ∀ (rd G : Nat),
+    Arm.r .PC m = wAt (art I g) (rl.offset + 4) → ∀ (rd G : Nat), rd < 31 → G % 8 = 0 →
+    inR (-2 ^ 20) (2 ^ 20) (pageOf G - pageOf (wAt (art I g) rl.offset).toNat) = true →
     fileWord file (wAt (art I g) rl.offset) =
       some (adrpW rd (pageOf G - pageOf (wAt (art I g) rl.offset).toNat)) →
     fileWord file (wAt (art I g) (rl.offset + 4)) = some (ldrW rd rd (G % 4096 / 8)) → ∀ i < 8,

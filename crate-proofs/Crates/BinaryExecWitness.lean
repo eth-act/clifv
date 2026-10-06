@@ -1,5 +1,7 @@
 import Crates.BinaryWitness
 import FV.E2E.ExecFrameSim
+import FV.E2E.ExecGoodRun
+import FV.E2E.ExecProven
 
 /-! # Non-vacuity of the theorem about the executable's own words
 
@@ -507,5 +509,82 @@ theorem binary_correct_exec_static_witness :
   rw [show Clif.runLoop closedBase.env (prog I) (M + 1) cs = run from rfl, run_eq, x30_r] at h
   obtain ⟨k, hret, hx, -⟩ := h
   exact ⟨hooksSim_closed I, hrun.d, k, hret, hx 0 _ rfl⟩
+
+/-- **Non-vacuity of `binary_correct_exec_of_reads`** (L3 (c)) on the same call: the premises of
+`binary_correct_exec_static_witness` with only the memory-read facts `RunReadsN` (D2 `insn`, D4
+`got`, at the states of the model's run whose step ends without error) in place of `RunOkD` (the
+rest of `RunOkD` is proven from the M6 proof's per-state facts, `runOkN_of_good`), and the
+theorem gives the executable machine's return with `5` in x0. -/
+theorem binary_correct_exec_of_reads_witness :
+    (∃ file, Elf.Agrees file Crates.AArithAbort.exAll) ∧
+    ∀ file, Elf.Agrees file Crates.AArithAbort.exAll →
+      RunReadsN I closedBase file M f (modelOf I f (r (memOf file))) ∧
+      ∃ k, ArmRet ra0 (r (memOf file)) (runX (step I closedBase file) k (r (memOf file))) ∧
+        XHolds ⟨.i32, 5#32⟩ (xreg 0 (runX (step I closedBase file) k (r (memOf file)))) := by
+  refine ⟨⟨_, agrees_fileOf⟩, fun file hfile => ?_⟩
+  obtain ⟨hX, hoc, hcr, htr, hrun, -⟩ := binary_correct_exec_witness.2 file hfile
+  have hreads : RunReadsN I closedBase file M f (modelOf I f (r (memOf file))) :=
+    fun M' g t hR he => let d := hrun.d.n M' g t hR he; ⟨d.insn, d.got⟩
+  have h := binary_correct_exec_of_reads Crates.AArithAbort.okB_input codeMap_ok
+    (Crates.AArithAbort.bin_ok file hfile) closedBase (Crates.AArithAbort.base_closed _)
+    (hooksSim_closed I) facts.1 acyclic M hX hoc hcr htr hreads
+  rw [show Clif.runLoop closedBase.env (prog I) (M + 1) cs = run from rfl, run_eq, x30_r] at h
+  obtain ⟨k, hret, hx, -⟩ := h
+  exact ⟨hreads, k, hret, hx 0 _ rfl⟩
+
+/-- The GOT check of the executable's program on the proof's excerpts (`gotB`): every GOT pair's
+slot is loaded, `ro`/`relro` and no relocated instruction byte. -/
+theorem gotB_true : gotB I Crates.AArithAbort.exAll = true := by native_decide
+
+/-- Every GOT slot byte is below `2^33`: the slot's page is within `2^20` pages of its `adrp`'s
+address, which (a relocated byte) is below `2^32`. -/
+theorem gotSlot_lt (file : ByteArray) {a : BitVec 64} (ha : GotSlot I file a) :
+    a.toNat < 2 ^ 33 := by
+  obtain ⟨e, he, rl, hrl, -, rd, G, -, -, hin, -, -, i, hi, rfl⟩ := ha
+  have hP := (code.2.2.2.2.2.2.2.2.2.2.2.2.2.2 _ ⟨e, he, rl, hrl, 0, by omega, rfl⟩).1
+  rw [Nat.add_zero] at hP
+  simp only [BinCheck.inR, BinCheck.pageOf, Bool.and_eq_true] at hin
+  have hlt := of_decide_eq_true hin.2
+  have hG : G < 2 ^ 33 - 8 := by omega
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+    Nat.mod_eq_of_lt (by omega : G < 2 ^ 64), Nat.mod_eq_of_lt (by omega : i < 2 ^ 64),
+    Nat.mod_eq_of_lt (by omega)]
+  omega
+
+/-- The outside caller keeps the GOT slots: they are below its stack (at `2^40`, of at most `2^20`
+bytes), it passes no stack argument, and its CLIF memory has no live allocation. -/
+theorem outsideAvoids (file : ByteArray) :
+    OutsideAvoids (GotSlot I file) f (StackBound.stackFn I f) (r (memOf file)) args cs.mem where
+  stack := fun a ha hb => by
+    have h1 := gotSlot_lt file ha
+    have h2 := facts.2.2.2.2.2.2.2.2.2.2.2.2
+    rw [spv_r] at hb
+    obtain ⟨-, hb⟩ := hb
+    rw [sp0_toNat] at hb
+    omega
+  args := fun off v hm => by
+    rw [locs] at hm
+    simp [args] at hm
+  valid := fun _ _ hv => by simp [cs, cm, Clif.Mem.valid] at hv
+
+/-- **Non-vacuity of `binary_correct_exec_proven`** (L3, no per-state hypothesis) on the same
+call: the premises of `binary_correct_of_checks_acyclic`, the code map check, the closed base's
+outside-code contract, the GOT check (`gotB_true`, on the proof's excerpts) and the outside
+caller's GOT premise (`outsideAvoids`: every slot byte is below `2^33`, the stack above), and the
+theorem gives the executable machine's return with `5` in x0. -/
+theorem binary_correct_exec_proven_witness :
+    (∃ file, Elf.Agrees file Crates.AArithAbort.exAll) ∧
+    ∀ file, Elf.Agrees file Crates.AArithAbort.exAll →
+      ∃ k, ArmRet ra0 (r (memOf file)) (runX (step I closedBase file) k (r (memOf file))) ∧
+        XHolds ⟨.i32, 5#32⟩ (xreg 0 (runX (step I closedBase file) k (r (memOf file)))) := by
+  refine ⟨⟨_, agrees_fileOf⟩, fun file hfile => ?_⟩
+  obtain ⟨hX, hoc, hcr, htr, -, -⟩ := binary_correct_exec_witness.2 file hfile
+  have h := binary_correct_exec_proven Crates.AArithAbort.okB_input codeMap_ok
+    (Crates.AArithAbort.bin_ok file hfile) (gotB_sound gotB_true hfile) closedBase
+    (Crates.AArithAbort.base_closed _) (hooksSim_closed I) facts.1 acyclic M hX hoc
+    (outsideAvoids file) hcr htr
+  rw [show Clif.runLoop closedBase.env (prog I) (M + 1) cs = run from rfl, run_eq, x30_r] at h
+  obtain ⟨k, hret, hx, -⟩ := h
+  exact ⟨k, hret, hx 0 _ rfl⟩
 
 end Crates.BinaryExecWitness
