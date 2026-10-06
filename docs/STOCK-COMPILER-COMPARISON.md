@@ -126,7 +126,11 @@ original test files, compilation commands, stdout/stderr and artifacts are retai
    disassembly/filecheck/precise-output assertions and expected-failure handling.
    Each independent function's assertion result is retained; capture continues
    after failures to inventory the remaining functions. Normal stock execution
-   would stop that stage at its first failure.
+   would stop that stage at its first failure. A compile test may repeat a
+   function name (`isa/aarch64/condops.clif` has 50 functions named `%f`), so
+   each function's artifacts are named by its position in the file, and each
+   function is compared with its own stock artifact. A run test cannot repeat a
+   name: stock `TestFileCompiler` rejects it.
 4. For `run`, use the actual `TestFileCompiler` preparation: declarations, hostcall
    substitutions, function renaming and signature trampolines. Compile-only mode
    uses the same compile call as the JIT module, with a memory provider that panics
@@ -202,10 +206,12 @@ commands; they are not additional official test files or runtime assertions.
 The first settings-matched baseline inventoried all 1,302 files: 484 have an
 AArch64 binary-producing stage, 630 have no supported Lean target, 180 are
 non-binary, and 8 are stock parser-warning skips. Lean received compilation
-requests for 483 files; 116 produced test functions that could be compared.
-425 function outputs match code bytes, relocations, alignment and traps; all
-declared AArch64 test-function code artifacts match in 19 files. None is credited
-as full execution-metadata equivalence. Stock compile assertions all pass.
+requests for 483 files; 118 produced test functions that could be compared.
+451 function outputs match code bytes, relocations, alignment and traps; all
+declared AArch64 test-function code artifacts match in 19 files. (The first
+published count, 425, compared every function of a repeated name with one of
+them.) None is credited as full execution-metadata equivalence. Stock compile
+assertions all pass.
 `runtests/throw.clif` has nonrepeatable reference artifacts because stock preparation
 substitutes a process-local host function address; it is not credited as agreement.
 

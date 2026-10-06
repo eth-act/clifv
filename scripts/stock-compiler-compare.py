@@ -23,7 +23,8 @@ SPEC = importlib.util.spec_from_file_location("prejit", Path(__file__).with_name
 PREJIT = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(PREJIT)
 ROOT, PIN, TARGET = PREJIT.ROOT, PREJIT.PIN, PREJIT.TARGET
-SUITE = ROOT / "third_party/wasmtime/cranelift/filetests/filetests"
+# Resolved: agent worktrees link third_party/wasmtime (scripts/agent-worktree.sh).
+SUITE = (ROOT / "third_party/wasmtime/cranelift/filetests/filetests").resolve()
 write, command, comparison = PREJIT.write, PREJIT.command, PREJIT.comparison
 
 ELF_RELOC_TYPES = {"Arm64Call":283,"Aarch64AdrPrelPgHi21":275,"Aarch64AddAbsLo12Nc":277,
@@ -49,20 +50,39 @@ def verify_receipt(request, receipt, source):
     return None
 
 
-def artifacts(directory):
+def position(variant, path, name, index=None):
+    """The function's position in variant["functions"]. A compile test may repeat a function
+    name, so its artifacts carry their position (file stem and "index"). A run test cannot
+    (stock rejects duplicate names); its artifacts are matched by name. None: not a test
+    function (run preparation also compiles helpers)."""
+    functions = variant["functions"]
+    if variant["stage"] == "compile":
+        if not isinstance(index, int) or path.name.split(".")[0] != str(index) or not 0 <= index < len(functions) or functions[index] != name:
+            raise ValueError(f"stock artifact {path.name} does not identify a test function")
+        return index
+    if len(set(functions)) != len(functions):
+        raise ValueError("stock run stage with a repeated function name")
+    return functions.index(name) if name in functions else None
+
+
+def artifacts(directory, variant):
+    """Stock code artifacts by function position."""
     result = {}
     for path in directory.glob("*.json"):
         value = json.loads(path.read_text())
         if isinstance(value, dict) and "relocations" in value and "name" in value:
-            if value["name"] in result:
+            key = position(variant, path, value["name"], value.get("index"))
+            if key is None:
+                continue
+            if key in result:
                 raise ValueError("duplicate stock function identity")
-            result[value["name"]] = (path, value)
+            result[key] = (path, value)
     return result
 
 
-def repeat_check(first, second):
+def repeat_check(first, second, variant):
     """Compare raw stock payloads/metadata, not output paths or timestamps."""
-    a, b = artifacts(first), artifacts(second)
+    a, b = artifacts(first, variant), artifacts(second, variant)
     if a.keys() != b.keys():
         return False
     return all(meta == b[name][1] and path.with_suffix(".bin").read_bytes() ==
@@ -186,31 +206,40 @@ def one(path, out, env, binary, repeat):
         v = {**variant, "functions_compared":[], "lean_compilations":[]}
         stock_dir = reference / f"variant-{variant['index']}"
         v["reference_repeat_verified"] = bool(repeat and row.get("repeat_command",{}).get("exit") == 0
-            and repeat_check(stock_dir, second / stock_dir.name))
+            and repeat_check(stock_dir, second / stock_dir.name, variant))
         if (stock_dir / "assertions.json").exists():
             v["stock_compile_assertions"] = json.loads((stock_dir / "assertions.json").read_text())
         v["stock_runtime_assertions_executed"] = False
-        metas = artifacts(stock_dir)
+        # Keyed by position in variant["functions"]: names repeat in some compile tests.
+        functions = variant["functions"]
+        metas = artifacts(stock_dir, variant)
         sources = {}
         for source in stock_dir.glob("*.clif"):
             if source.name.endswith(".lean.clif"): continue
             name = re.search(r"^function\s+(\S+)\(", source.read_text(),re.M)
-            if name and name[1] in variant["functions"]:
-                sources[name[1]] = source
-        v["prepared_functions"] = list(sources)
+            if name:
+                stem = source.name.removesuffix(".clif")
+                key = position(variant, source, name[1], int(stem) if stem.isdigit() and variant["stage"] == "compile" else None)
+                if key is not None:
+                    if key in sources: raise ValueError("duplicate stock function input")
+                    sources[key] = source
+        v["prepared_functions"] = [functions[k] for k in sorted(sources)]
         rejected = {}
         for rejection in stock_dir.glob("*.rejection.json"):
             data = json.loads(rejection.read_text())
-            rejected[data["name"]] = data
-        v["expected_stock_rejections"] = list(rejected.values())
+            key = position(variant, rejection, data["name"], data.get("index"))
+            if key is None or key in rejected: raise ValueError("unexpected stock rejection record")
+            rejected[key] = data
+        v["expected_stock_rejections"] = [rejected[k] for k in sorted(rejected)]
         # compile: independent functions, just like TestCompile::run; run:
         # compile the whole prepared module, just like TestFileCompiler.
-        groups = [[n] for n in variant["functions"] if n in sources and n in metas] if variant["stage"] == "compile" else [list(sources)]
+        groups = [[k] for k in range(len(functions)) if k in sources and k in metas] if variant["stage"] == "compile" else [sorted(sources)]
         compiled = {}
-        for index, names in enumerate(groups):
-            if not names: continue
-            effective = b"\n\n".join(sources[n].read_bytes() for n in names)
-            adapted = b"\n\n".join(sources[n].with_name(sources[n].stem + ".lean.clif").read_bytes() for n in names)
+        for index, keys in enumerate(groups):
+            if not keys: continue
+            names = [functions[k] for k in keys]
+            effective = b"\n\n".join(sources[k].read_bytes() for k in keys)
+            adapted = b"\n\n".join(sources[k].with_name(sources[k].name.removesuffix(".clif") + ".lean.clif").read_bytes() for k in keys)
             group_dir = dest / f"variant-{variant['index']}" / f"compilation-{index}"
             lean, contract = compile_lean(variant, adapted, group_dir, env)
             (group_dir / "stock-effective.clif").write_bytes(effective)
@@ -218,24 +247,25 @@ def one(path, out, env, binary, repeat):
             contract["input_adaptation"] = "inline signature references only; stock-reader IR identity checked by exporter"
             contract["functions"] = names
             v["lean_compilations"].append(contract)
-            for name in names: compiled[name] = (lean, contract)
-        for name in variant["functions"]:
-            if name in rejected:
+            for k in keys: compiled[k] = (lean, contract)
+        for k, name in enumerate(functions):
+            if k in rejected:
                 r = {"name":name,"status":"expected_stock_rejection_no_binary","lean_rejection_compared":False}
             elif not variant["eligible"]:
                 r = {"name":name,"status":"stock_excluded", "reason":variant["error"]}
-            elif name not in metas:
+            elif k not in metas:
                 r = {"name":name,"status":"reference_missing", "reason":variant["error"]}
-            elif name not in compiled:
+            elif k not in compiled:
                 r = {"name":name,"status":"shared_input_missing"}
             else:
-                lean, contract = compiled[name]
+                lean, contract = compiled[k]
                 if contract["contract_error"]:
                     r = {"name":name,"status":"unsupported_configuration","reason":contract["contract_error"]}
                 elif not contract["contract_verified"]:
                     r = {"name":name,"status":"lean_compilation_failed","reason":contract["command"]["exit"]}
                 else:
-                    r = compare_function(name, metas[name], lean, True, v["reference_repeat_verified"])
+                    r = compare_function(name, metas[k], lean, True, v["reference_repeat_verified"])
+            r["index"] = k
             v["functions_compared"].append(r)
         v["all_test_function_code_artifacts_identical"] = bool(v["functions_compared"]) and all(
             r["status"] == "identical_code_artifact" for r in v["functions_compared"])
@@ -263,6 +293,7 @@ def summarize(report):
         "unsupported_configuration_reasons":dict(Counter(r["reason"] for r in rows if r["status"]=="unsupported_configuration")),
         "test_function_compilations":len(rows),"function_statuses":dict(Counter(r["status"] for r in rows)),
         "distinct_test_function_names":len({(c["test"],r["name"]) for c in cases for v in c["variants"] for r in v["functions_compared"]}),
+        "distinct_test_functions":len({(c["test"],r["index"]) for c in cases for v in c["variants"] for r in v["functions_compared"]}),
         "byte_and_relocation_matches_under_accepted_settings":sum(r.get("exact_code_and_relocations",False) for r in rows),
         "exact_code_artifacts":sum(r.get("exact_code_artifact",False) for r in rows),
         "full_artifact_equivalence_verified":False,
