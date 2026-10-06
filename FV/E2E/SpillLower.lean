@@ -83,7 +83,9 @@ theorem lowerRFunc_of {vc : VCode} {rf : RFunc}
   exfalso
   unfold lowerRFunc at hl
   simp only [bind, Except.bind] at hl
-  rw [ite_eq_right (by omega), ite_eq_right (by simp [hck])] at hl
+  -- the allocator-frame check (absent once the 32 KiB limit is lifted), then `ctlCheck`
+  try rw [ite_eq_right (show ¬(RAFrame.compute vc rf).size ≥ 32768 by omega)] at hl
+  rw [ite_eq_right (by simp [hck])] at hl
   split at hl
   · rename_i e hm
     refine array_mapIdxM_ne_error (fun bi x hx => ?_) hm
