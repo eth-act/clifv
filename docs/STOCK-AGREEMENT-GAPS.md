@@ -74,9 +74,21 @@ save slots inside it. The saves and restores are allocator moves (`RAFrame.compu
 rely on that shape.
 
 134 of these 139 are in the atomics tests, whose LL/SC loops use the fixed
-registers x24–x28.
-Their bodies are identical, for example `isa/aarch64/atomic-rmw.clif`
-`%atomic_rmw_add_i64`:
+registers x24–x28. Without the frame setup and the saves, 40 of the 134 bodies
+are identical, for example `isa/aarch64/atomic-rmw.clif` `%atomic_rmw_add_i64`
+below. Changing how callee saves are stored is not enough for the rest:
+
+- In 92, the CLIF stack slot is at a different address (stock: `sp`; Lean:
+  above its save slots; see the frame layout below). In 48 of these, a
+  temporary register also differs (cause 3).
+- The other 2 are in `runtests/atomic-cas.clif`. Both have dead `stack_addr`
+  results in Lean (cause 1). In `%atomic_cas_i32` the comparison also differs,
+  on purpose: stock compares all 64 bits (`cmp x27, x26`), Lean only the low 32
+  (`cmp x27, w26, uxtw`). Cranelift 0.136.1 fails the compare-and-swap when the
+  upper bits of the register holding the expected value are nonzero; Lean fixes
+  this upstream bug (commit `482ed62`). This output cannot match without the bug.
+
+`isa/aarch64/atomic-rmw.clif` `%atomic_rmw_add_i64`:
 
 ```text
 stock                              Lean
