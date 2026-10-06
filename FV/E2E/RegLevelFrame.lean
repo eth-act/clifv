@@ -509,7 +509,7 @@ theorem q_init {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base
     show regVal s' r = regVal w₀ r
     rw [hbe.args r hr]
     obtain ⟨vb', ds, hvb', hi', v, hv⟩ := hr
-    have hr := ((ctlCheck_args (lowerRFunc_ok hR.alloc).2.2.2 hvb' hi').2.2 _ hv).2
+    have hr := ((ctlCheck_args (lowerRFunc_ok hR.alloc).2.2 hvb' hi').2.2 _ hv).2
     cases r with
     | x n =>
       simp only [Reg.isArgReg, decide_eq_true_eq] at hr
@@ -600,7 +600,7 @@ theorem ret_machine {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R
         ((((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)))[j]? = some x →
         regVal (iterN R.step n s) p = x := by
   have hframe := lowerRFunc_frame hR.alloc
-  have hck := (lowerRFunc_ok hR.alloc).2.2.2
+  have hck := (lowerRFunc_ok hR.alloc).2.2
   have hst0 := hR.stack.frame
   have hsp0 := (spv R.s0).isLt
   have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; omega

@@ -320,13 +320,17 @@ Done (sorry-free):
   `frameOk_compute`: `RAFrame.compute` satisfies it for any non-wrapping `sp0` and `F ⊇ [sp0 +
   intBase, sp0 + size)`; `live_align` (slots aligned to their size, below `size`).
   `RAFrame.compute` names its two flags (`RFunc.floatStack`, `RFunc.floatMove`; same values).
-- **Frame-size check** (compiler change, conservative): `lowerRFunc` rejects frames of 32 KiB or
-  more. Reason: the model has no SIMD&FP register-offset load/store, so a float slot beyond the
-  scaled-immediate range could not be proven; below 32 KiB every slot access is `stur`/`ldur`
-  (offset ≤ 255) or the scaled `str`/`ldr`, so the x16 sequence never occurs for slots.
-  `lean-e2e-check` unchanged (913 accepted).
+- **Frame size** (V5, 2026-10-05; until then `lowerRFunc` rejected frames of 32 KiB or more,
+  since the model has no SIMD&FP register-offset load/store for `mem_finalize`'s x16 sequence):
+  below 32 KiB every slot access is `stur`/`ldur` (offset ≤ 255) or the scaled `str`/`ldr`; at
+  32 KiB or more `slotStoreAt`/`slotLoadAt` emit one-line instructions `movz`/`movk x16`,
+  `add x16, sp, x16, sxtx`, and `str`/`ldr` at `[x16]` (`RegallocSlotsFar.lean`:
+  `execAll_spAddrX16`, `exec_store_int_x16` …, `exec_slotStoreAt_int` …). The address sequence
+  changes only the pc and x16 (`pcx s 16`), outside the world and no location, so the move's
+  `MoveOk` from that state is one from its start (`MoveOk.pcx`). No size limit remains.
 - **Slot accesses** (`RegallocSlots.lean`): `exec_store_int`, `exec_load_int`,
-  `exec_store_float`, `exec_load_float` for every aligned offset below 32 KiB (both encodings);
+  `exec_store_float`, `exec_load_float` for every aligned offset below 32 KiB (both encodings;
+  beyond: `RegallocSlotsFar.lean`, above);
   their effect on `locVal` (`store_effect`, `store_dst8/16`, `loadInt_effect`, `loadFloat_effect`).
 - **Every checked move** (`RegallocMoves.lean`): `lower_move` — for `checkMove`-accepted moves
   between live locations, `moveInsts` is a list of `MoveInst`s that runs (`ExecAll`, each step
@@ -380,7 +384,7 @@ move_agree: [propext, Quot.sound]
 
 - **Regression fix (compiler change)**: the allocator's slots now sit right above the outgoing
   area and *below* the explicit CLIF slots. `RAFrame.size` = end of the allocator area (bounded
-  `< 32 KiB` by `lowerRFunc`), `RAFrame.total` = whole frame (`AFunc.frameSize`), CLIF slots at
+  `< 32 KiB` by `lowerRFunc` until V5), `RAFrame.total` = whole frame (`AFunc.frameSize`), CLIF slots at
   `slotBase = size`. 64 KiB CLIF slots compile again (corpus 114/114, extrt 22/22, runtests
   3085/0/0, encode-check 971 identical, lean-e2e-check 913/0, regalloc-test 932/932 + all
   mutants rejected). `frameF lo hi` is now `[sp_body+intBase, sp_body+size) ∪ [sp_body+frameSize,
