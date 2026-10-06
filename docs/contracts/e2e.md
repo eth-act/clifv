@@ -1854,6 +1854,15 @@ machine state `r` itself:
   `binary_correct_exec` under `codeMapB`, `HooksSim` and `RunOkD`; non-vacuity (`codeMap_ok` by
   `native_decide`):
   `Crates.BinaryExecWitness.binary_correct_exec_static_witness`.
+* **D2 from the memory reads** (`FV/E2E/ExecFrame.lean`, `FV/E2E/ExecFrameSim.lean`,
+  `agent/exec-frame`): `exec_sim a h hR : Sim I (exec_inst a m) (exec_inst a e)` for every decoded
+  instruction `a`, given `Sim I m e` and that the byte ranges `MemReads a m` avoid `RelocAt I`.
+  `MemReads` lists the bytes a load reads (single-register loads in every addressing mode, GPR and
+  SIMD&FP, `ldp`, the exclusive / acquire loads); it is empty for every other instruction, stores
+  included. Proven over any byte set (`ExecFrame.exec_simR`) from the semantics alone, so it
+  covers every `Insn` the backend emits and the relocated words. `insn_of_memReads` gives
+  `StepOkD.insn` from "the reads of the word at the pc avoid `RelocAt I`", the per-state fact the
+  M6 export is to provide (TO-PROVE L3 (c)).
 
 
 ### Non-vacuity (2026-10-02, `agent/callee-fix`, `FV/E2E/NonVacuity.lean`)
