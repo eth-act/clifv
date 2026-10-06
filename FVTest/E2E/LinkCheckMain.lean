@@ -15,7 +15,7 @@ It completes the input (the CLIF image's symbols `syms`: every `symbol` global v
 reach (vtables, `data_syms` of `link.json`), at its link-map address; `D`: the largest frame of a
 function; `raStar = 8`) and prints the failing checks per function and premise (`diagR`, the
 diagnostic version of `okB`), then a count per premise, then the stack bound
-(`E2E.StackBound.stackR`, `FV/E2E/StackBound.lean`: the largest stack an activation of a function
+(`E2E.StackBound.budMap`, `FV/E2E/StackBound.lean`: the largest stack an activation of a function
 of the program uses with its callees, and the bound of each entry, a function no other function
 of the program calls; the functions whose calls reach a cycle of the call graph are `recursive`
 and have none). With `--prune` it drops
@@ -653,29 +653,26 @@ def main (args : List String) : IO UInt32 := do
   IO.println (if binOk then
       s!"  binary: ok ({arts.length} functions, {words} words, {D.length} data objects, {I'.addrs.length - I'.aliases.length} symbols)"
     else s!"  binary: FAIL code={codeBad} data={dataBad} syms={symsBad.length} hdr={if hdrOk then 0 else 1}")
-  -- the stack bound (`stackR`) of the (pruned) program
+  -- the stack bound (`budMap`) of the (pruned) program: a function has a budget iff no call
+  -- cycle is reachable from it (`StackBound.budC_isSome_iff`)
   let Pk := progOf keep
   let Sk := fun n => I.syms.lookup n
-  let stackC := stackR I keep
+  let stackM := budMap I keep
   let stackOf (g : Clif.Function) : Option Nat :=
-    (stackC.bind (· g)).map (frameDrop (artOf keep g).af + ·)
-  match stackC with
-  | some _ =>
-    let bad := Pk.funcs.filter fun g => (stackOf g).isNone
-    let s := Pk.funcs.foldl (fun x g => max x ((stackOf g).getD 0)) 0
-    if bad.isEmpty then
-      IO.println s!"  stack: {s} bytes at most (no call cycle)"
-    else
-      IO.println s!"  stack: recursive: the calls of {bad.length} function(s) reach a call cycle (their stack stays a premise): {(bad.map (·.name)).take 10}{if bad.length > 10 then " …" else ""}; the other {Pk.funcs.length - bad.length}: {s} bytes at most"
-    let es := (Pk.funcs.filter fun h => !Pk.funcs.any fun g => edgeB Sk g h).map fun g =>
-      (g.name, stackOf g)
-    let es := es.mergeSort fun x y => x.2.getD (2 ^ 64) ≥ y.2.getD (2 ^ 64)
-    IO.println s!"  stack: {es.length} entries (no caller in the program):"
-    for (n, v) in es.take 10 do
-      IO.println s!"      {match v with | some v => toString v | none => "recursive"}  {n}"
-    if es.length > 10 then IO.println s!"      … {es.length - 10} more"
-  | none =>
-    IO.println s!"  stack: the budget check fails (budMap's budgets are wrong)"
+    (stackM.get? g.name).map (frameDrop (artOf keep g).af + ·)
+  let bad := Pk.funcs.filter fun g => (stackOf g).isNone
+  let s := Pk.funcs.foldl (fun x g => max x ((stackOf g).getD 0)) 0
+  if bad.isEmpty then
+    IO.println s!"  stack: {s} bytes at most (no call cycle)"
+  else
+    IO.println s!"  stack: recursive: the calls of {bad.length} function(s) reach a call cycle (their stack stays a premise): {(bad.map (·.name)).take 10}{if bad.length > 10 then " …" else ""}; the other {Pk.funcs.length - bad.length}: {s} bytes at most"
+  let es := (Pk.funcs.filter fun h => !Pk.funcs.any fun g => edgeB Sk g h).map fun g =>
+    (g.name, stackOf g)
+  let es := es.mergeSort fun x y => x.2.getD (2 ^ 64) ≥ y.2.getD (2 ^ 64)
+  IO.println s!"  stack: {es.length} entries (no caller in the program):"
+  for (n, v) in es.take 10 do
+    IO.println s!"      {match v with | some v => toString v | none => "recursive"}  {n}"
+  if es.length > 10 then IO.println s!"      … {es.length - 10} more"
   -- the Lean file
   if let some out := o.lean then
     if !ok || !binOk then
@@ -710,7 +707,7 @@ def main (args : List String) : IO UInt32 := do
     let stackGood := entries.filter fun e => match Pk.func? e with
       | some f => (stackOf f).isSome
       | none => false
-    let stackAll := stackC.isSome && Pk.funcs.all fun g => (stackOf g).isSome
+    let stackAll := Pk.funcs.all fun g => (stackOf g).isSome
     let stackS := if stackAll then some (Pk.funcs.foldl (fun x g => max x ((stackOf g).getD 0)) 0)
       else none
     for (p, t) in leanFiles I' (funcs.map (·.2)) entries out o.module exe noTls stackS stackGood bg do
