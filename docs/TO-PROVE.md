@@ -303,7 +303,7 @@ Large, low priority.
 ## 7. How to take a WP
 
 - One agent per WP or sub-package, in its own worktree: `scripts/agent-worktree.sh <name> [base]` →
-  `/home/kev/work/clifv-wt/<name>`, branch `agent/<name>`. Absolute paths under the worktree. Never push,
+  `~/clifv/.worktrees/<name>`, branch `agent/<name>`. Absolute paths under the worktree. Never push,
   merge, rebase, `git stash`, or pattern-kill processes. Temp files in `/tmp/<name>_*`.
 - Every lake/cargo command through `FV_MEMCAP=<N>G scripts/memcap.sh`; full FV build
   `LEAN_NUM_THREADS=2 FV_MEMCAP=22G`; check the log for "Build completed successfully".

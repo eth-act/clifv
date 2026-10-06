@@ -1,13 +1,17 @@
 #!/usr/bin/env bash
 # Create an isolated git worktree for an agent: branch agent/<name> off main, at
-# ../clifv-wt/<name>, with warm build caches copied from the integrator checkout and the pinned
+# <primary-checkout>/.worktrees/<name>, with warm build caches copied from the integrator checkout and the pinned
 # third_party sources symlinked. Prints the worktree path.
 #
 # usage: scripts/agent-worktree.sh <name> [base-ref]
 set -euo pipefail
 name=$1; base=${2:-main}
-root=$(cd "$(dirname "$0")/.." && pwd)
-wt=$(dirname "$root")/clifv-wt/$name
+checkout=$(cd "$(dirname "$0")/.." && pwd)
+# Always use the primary checkout, even when invoked from a linked worktree.
+common=$(git -C "$checkout" rev-parse --path-format=absolute --git-common-dir)
+root=$(cd "$common/.." && pwd)
+wt=$root/.worktrees/$name
+mkdir -p "$root/.worktrees"
 # Idempotent: an existing branch agent/<name> is reused, an existing worktree is completed
 # (missing third_party links and caches are added), so a half-created worktree never remains.
 if [ ! -d "$wt" ]; then

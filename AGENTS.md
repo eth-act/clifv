@@ -15,5 +15,11 @@ agents must follow this discipline.
   conflict in a task/status issue, mention the other contributor, and propose a
   boundary. Pause only conflicting work until resolved.
 - Follow `docs/TO-PROVE.md` §§7–8 for proof-work rules and task claims.
+- Keep all linked worktrees under `~/clifv/.worktrees/<name>` (the primary
+  checkout's `.worktrees/` directory), including worktrees for pinned upstream
+  sources. Create agent worktrees with the primary checkout's
+  `scripts/agent-worktree.sh <name> [base]`;
+  do not create sibling `clifv-wt` directories or nested worktree roots. Keep
+  `.worktrees/` ignored by Git.
 - All merges must be squash merges (`gh pr merge --squash`). This grants no
   permission to push or merge.

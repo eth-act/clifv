@@ -96,7 +96,7 @@ for `Opt.Legalize128`'s output on functions satisfying `Opt.Legal.Complete.Pre`
 ## Workflow: one git worktree per agent
 
 - The main checkout belongs to the integrator. Every agent works in its own worktree,
-  created by `scripts/agent-worktree.sh <name>`, at `../clifv-wt/<name>` on branch
+  created by `scripts/agent-worktree.sh <name>`, at `~/clifv/.worktrees/<name>` on branch
   `agent/<name>`. The script copies warm `.lake`/`rust/target` caches and symlinks the pinned
   `third_party` sources.
 - Agents commit on their own branch after every meaningful step. They never push, merge,
@@ -107,7 +107,8 @@ for `Opt.Legalize128`'s output on functions satisfying `Opt.Legal.Complete.Pre`
   own location.
 - The agent file tools (read/edit/write/grep) resolve relative paths against the integrator's
   checkout, not the agent's worktree. Every tool path an agent uses must therefore be absolute,
-  under `/home/kev/work/clifv-wt/<name>/`. In bash, `cd` into the worktree in the same command.
+  under `~/clifv/.worktrees/<name>/` (expand `~` before calling file tools). In bash,
+  `cd` into the worktree in the same command.
 - Every Lean/lake, cargo, or test command an agent runs must go through `scripts/memcap.sh`
   (a per-command cgroup memory cap, `FV_MEMCAP`, default 16G), e.g.
   `cd <worktree> && scripts/memcap.sh lake build FV.Backend`. A runaway `lean` process then
