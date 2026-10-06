@@ -2588,6 +2588,49 @@ size < 128 MiB), all decidable on the emitted code but not yet proven from the e
 `lowerAlloc` succeeds, `emitPre` succeeds and the code passes `layoutReadyB`, `native_decide`) with
 `backend_correct_final_total_witness` for the input conditions.
 
+**Emission totality (V6b)** (2026-10-06, `FV/Backend/AllocReady.lean`, `FV/E2E/EmitTotal.lean`,
+`EmitPreOk.lean`, `EmitEnc.lean`, `EmitLabels.lean`, `EmitNear.lean`, `EmitSize.lean`, `EmitReady.lean`).
+The two premises of `backend_correct_final_total_relaxed` cannot be proven for every allocator
+answer `ra`: `checkAlloc` accepts any number of redundant moves (on `lowerWitness`, the spill
+allocation padded with `n` copies of `move x19 → save(x19)` is accepted and kept by `lowerAlloc`;
+the code is 296 + 4n bytes, so for n = 2^25 it fails `layoutReadyB`). **Compiler change:** the
+backend now lowers `lowerAllocReady vcp ra` — `lowerAlloc vcp ra` if its code is `emitReady`
+(`emitFunc 0` + `layoutReadyB`; the function index only names labels, `emitFunc_index`), else
+the spill allocation (`allocateRegalloc2` moved to `AllocReady.lean`).
+`lowerAllocReady_eq : lowerAllocReady vcp ra = lowerAlloc vcp (readyAnswer vcp ra)`, so every
+`lowerAlloc` theorem applies. Encoded output is unchanged on the corpus (encode-check: 0 differ).
+
+For the spill allocation's code (`lowerRFunc vcp (spillAlloc vcp) = .ok af`):
+`emitPre_spill_ok` (`emitPre` succeeds: covered forms by `formOk_sound`, control forms by
+`ctlInstOk` + `spillLocs`: the LL/SC loops get x24–x28, TLS gets x0/x1), `emitFunc_spill_labels`
+(labels defined once — block labels distinct from `prepare`, trap/jt/loop counters — and every
+used label defined), `emitFunc_spill_encodable` (registers from `spillAccepted`'s checker facts;
+immediates from `immsOkB`), `emitFunc_spill_near` (`NearOk`: the atomic loops and jump tables are
+blocks of ≤ 8 lines that `fallthrough` and relaxation keep together), `emitFunc_spill_size`
+(`fa.size ≤ 8 · rfWords`), combined by `FnAsm.layoutReadyB_of` (the converse of
+`layoutReadyB_sound`) into `emitReady_spill`.
+
+```lean
+def E2E.emitCondsB (vcp : VCode) : Bool :=
+  spillSizeOkB vcp && immsOkB vcp && vcp.noAlwaysB && branchTargetsOkB vcp
+theorem E2E.backend_correct_final_total_emit (hsub : InSubset p f) (hd : dominatedB f = true)
+    (hs : lowerScopeB f = true) (har : Spill.arityOkB f = true) (hl …) (hp …)
+    (hem : emitCondsB vcp = true) (ra : Except String RFunc) :
+    ∃ af, lowerAllocReady vcp ra = .ok af ∧ ∃ fa fb, emitFunc k af = .ok fa ∧ fa.layout = .ok fb ∧
+      ∀ … (hC … htr) fuel, ArmRefines fb base ra' (ArmStepX X H fa) s (Clif.runLoop env p fuel cs)
+```
+
+(frame of `allocResult vcp (readyAnswer vcp ra)`). New conditions, all decidable on the prepared
+VCode and counted by `lean-e2e-check` (1149 of 1149 pass each): `spillSizeOkB` (the size input
+condition, genuinely needed: a big enough function exceeds `b`'s 128 MiB; word bound < 2^24,
+largest corpus bound 279479), and three facts about instruction selection's output that are not
+yet proven from the ISLE rule data: `immsOkB` (immediates in the encoder's ranges; an indirect
+call target is an int vreg), `noAlwaysB` (no `condBr`/`trapIf` on `al`/`nv`, which relaxation
+does not handle), `branchTargetsOkB` (every branch target is a block label; `VCode.cfg` checks
+only block-final instructions). `lean-e2e-check` also emits the spill code of every in-scope
+function and decides `layoutReadyB` ("spill emission" line). Non-vacuity:
+`E2E.backend_correct_final_total_emit_witness`.
+
 **Validator completeness: `Opt.Legalize128` is correct without `Opt.Legal.check`** (2026-10-02,
 `FV/Opt/Proof/LegalComplete.lean`, `FV/Opt/Proof/LegalDirect.lean`, `FV/E2E/LegalDirect.lean`;
 `docs/contracts/legalize128.md` "Completeness"): `Opt.Legal.Complete.check_complete` (`Pre f` and

@@ -2,6 +2,7 @@ import FV.Backend.MInst
 import FV.Backend.Isel
 import FV.Backend.StackAlloc
 import FV.Backend.Regalloc
+import FV.Backend.AllocReady
 import FV.Backend.Asm
 import FV.Backend.Encode
 import FV.Backend.Obj
