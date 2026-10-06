@@ -1,5 +1,5 @@
 import Crates.BinaryWitness
-import FV.E2E.ExecStatic
+import FV.E2E.ExecFrameSim
 
 /-! # Non-vacuity of the theorem about the executable's own words
 
@@ -19,29 +19,14 @@ namespace Crates.BinaryExecWitness
 open E2E E2E.LinkCheck E2E.Binary E2E.BinCheck E2E.ExecBytes Backend Backend.Proof
 open Crates.BinaryWitness
 
-/-! ## Simulation facts of single instructions (any input) -/
+/-! ## Simulation facts of single instructions (any input)
+
+Instances of the frame property `exec_sim`: the instruction's memory reads (`MemReads`) avoid
+the relocated bytes; none but `ldp`'s 16 stack bytes. -/
 
 section SimLemmas
 
 variable {J : LinkInput}
-
-theorem sim_write_mem {m e : Arm.ArmState} (h : Sim J m e) (a : BitVec 64) (b : BitVec 8) :
-    Sim J (Arm.write_mem a b m) (Arm.write_mem a b e) := by
-  refine ⟨fun fld => by rw [Arm.r_of_write_mem, Arm.r_of_write_mem]; exact h.1 fld, fun x hx => ?_⟩
-  simp only [Arm.write_mem, Arm.write_store]
-  split
-  · rfl
-  · exact h.2 x hx
-
-theorem sim_write_mem_bytes : ∀ (k : Nat) (a : BitVec 64) (v : BitVec (k * 8)) {m e : Arm.ArmState},
-    Sim J m e → Sim J (Arm.write_mem_bytes k a v m) (Arm.write_mem_bytes k a v e)
-  | 0, _, _, _, _, h => h
-  | k + 1, _, _, _, _, h => by
-    simp only [Arm.write_mem_bytes]
-    exact sim_write_mem_bytes k _ _ (sim_write_mem h _ _)
-
-theorem sim_r {m e : Arm.ArmState} (h : Sim J m e) (fld : Arm.StateField) :
-    Arm.r fld e = Arm.r fld m := h.1 fld
 
 /-- `add w0, w0, w1` on the machine. -/
 theorem exec_add_w0 (env : Env) (s : Arm.ArmState) :
@@ -55,60 +40,40 @@ theorem exec_add_w0 (env : Env) (s : Arm.ArmState) :
 
 theorem sim_stp {env : Env} {a : Arm.ArmInst}
     (ha : (Insn.stp Reg.fp Reg.lr (.spPreIndexed (-16))).toArmInst env = .ok a)
-    {m e : Arm.ArmState} (hal : (spOf m).toNat % 16 = 0) (h : Sim J m e) :
-    Sim J (Arm.exec_inst a m) (Arm.exec_inst a e) := by
-  have hal' : (spOf e).toNat % 16 = 0 := by rw [spOf, sim_r h]; exact hal
-  obtain ⟨a1, h1, e1⟩ := exec_stp_fplr env m ((checkSP_iff m).2 hal)
-  obtain ⟨a2, h2, e2⟩ := exec_stp_fplr env e ((checkSP_iff e).2 hal')
-  rw [ha] at h1 h2; cases h1; cases h2
-  rw [e1, e2]
-  simp only [spOf, xreg, sim_r h]
-  exact sim_w (sim_w (sim_write_mem_bytes _ _ _ h) _ _) _ _
+    {m e : Arm.ArmState} (h : Sim J m e) : Sim J (Arm.exec_inst a m) (Arm.exec_inst a e) := by
+  simp [csimp_rules, Reg.fp, Reg.lr, pure, Except.pure] at ha
+  subst ha
+  exact exec_sim _ h (by simp [MemReads, ExecFrame.RegPair.reads, ExecFrame.RegPair.mk])
 
 theorem sim_mov {env : Env} {a : Arm.ArmInst}
     (ha : (Insn.mov true Reg.fp .sp).toArmInst env = .ok a) {m e : Arm.ArmState} (h : Sim J m e) :
     Sim J (Arm.exec_inst a m) (Arm.exec_inst a e) := by
-  obtain ⟨a1, h1, e1⟩ := exec_mov_fp_sp env m
-  obtain ⟨a2, h2, e2⟩ := exec_mov_fp_sp env e
-  rw [ha] at h1 h2; cases h1; cases h2
-  rw [e1, e2]
-  simp only [spOf, sim_r h]
-  exact sim_w (sim_w h _ _) _ _
+  simp [csimp_rules, Reg.fp, pure, Except.pure] at ha
+  subst ha
+  exact exec_sim _ h (by simp [MemReads])
 
 theorem sim_add {env : Env} {a : Arm.ArmInst}
     (ha : (Insn.aluRRR .add false (.x 0) (.x 0) (.x 1)).toArmInst env = .ok a) {m e : Arm.ArmState}
     (h : Sim J m e) : Sim J (Arm.exec_inst a m) (Arm.exec_inst a e) := by
-  obtain ⟨a1, h1, e1⟩ := exec_add_w0 env m
-  obtain ⟨a2, h2, e2⟩ := exec_add_w0 env e
-  rw [ha] at h1 h2; cases h1; cases h2
-  rw [e1, e2]
-  simp only [sim_r h]
-  exact sim_w (sim_w h _ _) _ _
+  simp [csimp_rules, pure, Except.pure] at ha
+  subst ha
+  exact exec_sim _ h (by simp [MemReads])
 
 theorem sim_ldp {env : Env} {a : Arm.ArmInst}
     (ha : (Insn.ldp Reg.fp Reg.lr (.spPostIndexed 16)).toArmInst env = .ok a)
-    {m e : Arm.ArmState} (hal : (spOf m).toNat % 16 = 0)
-    (hR : ∀ k < 16, ¬ RelocAt J (spOf m + BitVec.ofNat 64 k)) (h : Sim J m e) :
-    Sim J (Arm.exec_inst a m) (Arm.exec_inst a e) := by
-  have hal' : (spOf e).toNat % 16 = 0 := by rw [spOf, sim_r h]; exact hal
-  obtain ⟨a1, h1, e1⟩ := exec_ldp_fplr env m ((checkSP_iff m).2 hal)
-  obtain ⟨a2, h2, e2⟩ := exec_ldp_fplr env e ((checkSP_iff e).2 hal')
-  rw [ha] at h1 h2; cases h1; cases h2
-  rw [e1, e2]
-  have hrd : Arm.read_mem_bytes 16 (spOf m) e = Arm.read_mem_bytes 16 (spOf m) m :=
-    rmb_congr 16 _ fun k hk => h.2 _ (hR k hk)
-  simp only [spOf, sim_r h] at hrd ⊢
-  rw [hrd]
-  exact sim_w (sim_w (sim_w (sim_w h _ _) _ _) _ _) _ _
+    {m e : Arm.ArmState} (hR : ∀ k < 16, ¬ RelocAt J (spOf m + BitVec.ofNat 64 k))
+    (h : Sim J m e) : Sim J (Arm.exec_inst a m) (Arm.exec_inst a e) := by
+  simp [csimp_rules, Reg.fp, Reg.lr, pure, Except.pure] at ha
+  subst ha
+  refine exec_sim _ h ?_
+  simpa [MemReads, ExecFrame.RegPair.reads, ExecFrame.RegPair.mk, ExecFrame.RegPair.addr,
+    ExecFrame.RegPair.scale, spOf, Arm.read_gpr] using hR
 
 theorem sim_ret {env : Env} {a : Arm.ArmInst} (ha : Insn.ret.toArmInst env = .ok a)
     {m e : Arm.ArmState} (h : Sim J m e) : Sim J (Arm.exec_inst a m) (Arm.exec_inst a e) := by
-  obtain ⟨a1, h1, e1⟩ := exec_ret env m
-  obtain ⟨a2, h2, e2⟩ := exec_ret env e
-  rw [ha] at h1 h2; cases h1; cases h2
-  rw [e1, e2]
-  simp only [xreg, sim_r h]
-  exact sim_w h _ _
+  simp [csimp_rules, pure, Except.pure] at ha
+  subst ha
+  exact exec_sim _ h (by simp [MemReads])
 
 end SimLemmas
 
@@ -440,7 +405,7 @@ theorem run_facts (hc : Entry c) (B : BaseEnv) (Mx : Nat) :
   refine ⟨fun k hk => ?_, by rw [runX_succ', r4]; exact step5⟩
   rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 by omega) with rfl | rfl | rfl | rfl | rfl
   · exact ⟨stepOk_at hF hj1 ho1 (by omega) rfl rfl hc.err hc.prog pc0
-      (fun _ _ ha e hs => sim_stp ha al0 hs),
+      (fun _ _ ha e hs => sim_stp ha hs),
       noCall_plain hFf hj1 rfl hc.prog (by rw [ho1]; exact pc0)⟩
   · rw [r1]
     exact ⟨stepOk_at hF hj2 ho2 (by omega) rfl rfl e1 (p1.trans hc.prog) pc1
@@ -452,7 +417,7 @@ theorem run_facts (hc : Entry c) (B : BaseEnv) (Mx : Nat) :
       noCall_plain hFf hj4 rfl (p2.trans hc.prog) (by rw [ho4]; exact pc2)⟩
   · rw [r3]
     exact ⟨stepOk_at hF hj5 ho5 (by omega) rfl rfl e3 (p3.trans hc.prog) pc3
-      (fun _ _ ha e hs => sim_ldp ha al3 (by rw [sp3, hc.sp]; exact stack_notReloc) hs),
+      (fun _ _ ha e hs => sim_ldp ha (by rw [sp3, hc.sp]; exact stack_notReloc) hs),
       noCall_plain hFf hj5 rfl (p3.trans hc.prog) (by rw [ho5]; exact pc3)⟩
   · rw [r4]
     exact ⟨stepOk_at hF hj6 ho6 (by omega) rfl rfl e4 (p4.trans hc.prog) pc4
