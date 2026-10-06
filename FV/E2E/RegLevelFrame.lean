@@ -326,7 +326,7 @@ theorem iterN_steps {R : RL} (hR : R.Wf) {ls T : List Line} {j : Nat} {s s' : Ar
     iterN R.step ls.length s = s' ∧ Arm.r .PC s' = R.pcOf (j + ls.length) ∧
       (∀ i, 0 < i → i ≤ ls.length → R.Good (iterN R.step i s)) ∧
       ((∀ i t, Line.ins i t ∈ ls → i.tlsTail = false) → R.Good s →
-        ∀ i < ls.length, R.GoodX (iterN R.step i s)) := by
+        LinesReads (R.envOf j) ls s R.ReadOk → ∀ i < ls.length, R.GoodX (iterN R.step i s)) := by
   have hat : ∀ k ln, ls[k]? = some ln → R.fa.lines.toList[j + k]? = some ln := by
     intro k ln hk
     have := congrArg (·[k]?) hdrop
@@ -341,8 +341,8 @@ theorem iterN_steps {R : RL} (hR : R.Wf) {ls T : List Line} {j : Nat} {s s' : Ar
   refine ⟨iterN_execLines hR.layout hR.lm hR.fit ls j s s' hat hhook
       hprog (by rw [hpc]; rfl) herr (stepsOk_interOk h herr) hrun, ?_,
     R.good_execLines hR hat hhook hprog hpc herr (stepsOk_interOk h herr) hrun,
-    fun htail h0 => R.goodX_execLinesG hR hat hhook htail hprog hpc herr h0
-      (stepsOk_interOk h herr) hrun⟩
+    fun htail h0 hrd => R.goodX_execLinesG hR hat hhook htail hprog hpc herr h0
+      (stepsOk_interOk h herr) hrun (.inl hrd)⟩
   rw [execLines_pc hrun, hpc]
   simp only [RL.pcOf, RL.L]
   rw [lineOffset_drop_ins (by simpa [RL.L] using hdrop) hins', BitVec.add_assoc]
@@ -365,6 +365,30 @@ theorem spAdjLines_tail (sub : Bool) (size : Nat) :
       · simpa [Line.tailFree] using loadConst64_tailFree _ _ _ hln
       · simp only [List.mem_singleton, Line.ins.injEq] at hln
         obtain ⟨rfl, -⟩ := hln; cases sub <;> rfl
+
+theorem spAdjLines_noLoads (sub : Bool) (size : Nat) :
+    ∀ i t, Line.ins i t ∈ spAdjLines sub size → i.loads = false := by
+  intro i t hln
+  unfold spAdjLines at hln
+  split at hln
+  · simp at hln
+  · split at hln
+    · simp only [List.mem_singleton, Line.ins.injEq] at hln
+      obtain ⟨rfl, -⟩ := hln; rfl
+    · rw [List.mem_append] at hln
+      rcases hln with hln | hln
+      · exact loadConst64_noLoads _ _ _ _ hln
+      · simp only [List.mem_singleton, Line.ins.injEq] at hln
+        obtain ⟨rfl, -⟩ := hln; rfl
+
+theorem prologueLines_noLoads (size : Nat) :
+    ∀ i t, Line.ins i t ∈ prologueLines size → i.loads = false := by
+  intro i t hln
+  rw [prologueLines_eq, List.mem_append] at hln
+  rcases hln with hln | hln
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, Line.ins.injEq] at hln
+    rcases hln with ⟨rfl, -⟩ | ⟨rfl, -⟩ <;> rfl
+  · exact spAdjLines_noLoads true size i t hln
 
 theorem prologueLines_tail (size : Nat) :
     ∀ i t, Line.ins i t ∈ prologueLines size → i.tlsTail = false := by
@@ -497,7 +521,8 @@ theorem q_init {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base
     hent.program hpc1 hent.err hsteps
   obtain ⟨herr', hprog'⟩ := hsteps.err
   refine ⟨(prologueLines R.af.frameSize).length,
-    hgx (prologueLines_tail _) (.inl (by rw [hent.pc]; exact RL.not_postCall_base hR hent.fits)), ?_⟩
+    hgx (prologueLines_tail _) (.inl (by rw [hent.pc]; exact RL.not_postCall_base hR hent.fits))
+      (linesReads_noLoads (prologueLines_noLoads _)), ?_⟩
   rw [hiter]
   have hdrop0 : frameDrop R.af = R.af.frameSize + 16 := by simp [frameDrop, hframe]
   have hspB : spOf s' = R.spB := by
@@ -713,6 +738,30 @@ theorem ret_machine {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R
     have := hent.spAligned
     simp; omega
   obtain ⟨s1, hsteps, hsp1, hx29, hx30, ho1, hm1⟩ := epilogue_ok (R.envOf j0) hs s hal
+  -- the reads: the `ldp` reads the fp/lr slot, which is not kept
+  have hrdE : LinesReads (R.envOf j0) (spAdjLines false R.af.frameSize ++
+      [Line.ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16)) none]) s R.ReadOk := by
+    refine linesReads_append_last (spAdjLines_noLoads false _) fun s1' hs1' env' a ha p hp k hk => ?_
+    obtain ⟨s2, h2, hsp2, -, -⟩ := spAdj_ok (R.envOf j0) false hs s
+    rw [h2.exec] at hs1'
+    cases hs1'
+    rw [memReads_ldp_fplr ha] at hp
+    simp only [List.mem_singleton] at hp
+    subst hp
+    simp only [Bool.false_eq_true, ite_false] at hsp2
+    simp only at hk ⊢
+    rw [hsp2, hslot]
+    refine .inl fun hG => hR.gfree _ hG ?_
+    rw [hdrop0]
+    have := hst0.1
+    have hk64 : (spv R.s0 - 16#64 + BitVec.ofNat 64 k).toNat = (spv R.s0).toNat - 16 + k := by
+      simp only [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat]
+      have := (spv R.s0).isLt
+      rw [Nat.mod_eq_of_lt (a := k) (by omega)]
+      simp only [spv] at *
+      omega
+    simp only [StackBelow, hk64]
+    constructor <;> omega
   obtain ⟨hiter, hpc1, hgood, hgx⟩ := iterN_steps hR hdrop'
     (fun ln h => by
       rcases List.mem_append.1 h with h | h
@@ -752,7 +801,7 @@ theorem ret_machine {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R
     fun i hi => ?_, ?_⟩
   · rcases Nat.lt_or_ge i (spAdjLines false R.af.frameSize ++
         [Line.ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16)) none]).length with hi1 | hi1
-    · refine hgx (fun x t h => ?_) (RL.good_of_sp hst.sp) i hi1
+    · refine hgx (fun x t h => ?_) (RL.good_of_sp hst.sp) hrdE i hi1
       rcases List.mem_append.1 h with h | h
       · exact spAdjLines_tail false _ x t h
       · simp only [List.mem_singleton, Line.ins.injEq] at h
@@ -765,6 +814,7 @@ theorem ret_machine {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R
           rw [show R.step s1 = Arm.w .PC (xreg 30 s1) s1 from hstep.trans he']
           exact RL.nextOk_ret (by
             rw [Arm.r_of_w_same, hx30, hfplr, BitVec.extractLsb'_append_eq_left]))
+        (RL.readsAt_noLoad hR hj hpc1 rfl)
       rw [← hiter]
       exact hgood _ (by simp) (Nat.le_refl _)
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> rw [hfin]

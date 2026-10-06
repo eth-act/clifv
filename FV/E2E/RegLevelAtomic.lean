@@ -145,7 +145,7 @@ theorem run_ins {R : RL} (hR : R.Wf) {j : Nat} {ls T : List Line} {s s' : Arm.Ar
     iterN R.step ls.length s = s' ∧ Arm.r .PC s' = R.pcOf (j + ls.length) ∧
       (∀ i, 0 < i → i ≤ ls.length → R.Good (iterN R.step i s)) ∧
       ((∀ i t, Line.ins i t ∈ ls → i.tlsTail = false) → R.Good s →
-        ∀ i < ls.length, R.GoodX (iterN R.step i s)) := by
+        LinesReads (R.envOf j) ls s R.ReadOk → ∀ i < ls.length, R.GoodX (iterN R.step i s)) := by
   have hat : ∀ k ln, ls[k]? = some ln → R.fa.lines.toList[j + k]? = some ln := by
     intro k ln hk
     have := congrArg (·[k]?) hd
@@ -159,7 +159,7 @@ theorem run_ins {R : RL} (hR : R.Wf) {j : Nat} {ls T : List Line} {s s' : Arm.Ar
   refine ⟨iterN_execLines hR.layout hR.lm hR.fit ls j s s' hat hhook
       hprog (by rw [hpc]; rfl) herr hint hrun, ?_,
     R.good_execLines hR hat hhook hprog hpc herr hint hrun,
-    fun htail h0 => R.goodX_execLinesG hR hat hhook htail hprog hpc herr h0 hint hrun⟩
+    fun htail h0 hrd => R.goodX_execLinesG hR hat hhook htail hprog hpc herr h0 hint hrun (.inl hrd)⟩
   rw [execLines_pc hrun, hpc]
   simp only [RL.pcOf, RL.L]
   rw [lineOffset_drop_ins (by simpa [RL.L] using hd) hins', BitVec.add_assoc]
@@ -268,6 +268,37 @@ theorem rmwBody_tail {ty : CTy} (hty : AtomTy ty) (op : AtomicRmwLoopOp) (fl : C
   rcases hty with rfl | rfl | rfl | rfl <;> cases op <;>
     simp (config := {decide := true}) [rmwLoopBody, rmwLoopMid, rmwLoopStored, rmwLoopSext,
       rmwLoopCmp, CTy.bits, Insn.tlsTail]
+
+/-- The reads of the `atomic_rmw` loop body: its `ldaxr` at `x25`. -/
+theorem rmwBody_reads {ty : CTy} (hty : AtomTy ty) (op : AtomicRmwLoopOp) (fl : Clif.MemFlags)
+    (env : Env) (s : Arm.ArmState) {P : BitVec 64 → Prop}
+    (h : ∀ k < ty.bytes, P (Arm.r (.GPR 25#5) s + BitVec.ofNat 64 k)) :
+    LinesReads env (rmwLoopBody ty.bits op fl) s P := by
+  refine linesReads_cons ?_ fun env' a ha p hp i hi => ?_
+  · suffices h : ∀ ln ∈ (rmwLoopMid op ty.bits).map (fun i => Line.ins i) ++
+        [.ins (.stlxr ty.bits (.x 24) (rmwLoopStored op) (.x 25)) fl.trapCode],
+        ∀ i t, ln = .ins i t → i.loads = false from fun i t hm => h _ hm i t rfl
+    rcases hty with rfl | rfl | rfl | rfl <;> cases op <;>
+      simp (config := {decide := true}) [rmwLoopMid, rmwLoopStored, rmwLoopSext,
+        rmwLoopCmp, CTy.bits, Insn.loads]
+  · rw [memReads_excl (by simp [BaseOk]) (.inr ha)] at hp
+    simp only [List.mem_singleton] at hp
+    subst hp
+    exact h i hi
+
+/-- The reads of the head of the `atomic_cas` loop: its `ldaxr` at `x25`. -/
+theorem casHead_reads (bits : Nat) (fl : Clif.MemFlags) (env : Env) (s : Arm.ArmState)
+    {P : BitVec 64 → Prop} (h : ∀ k < bits / 8, P (Arm.r (.GPR 25#5) s + BitVec.ofNat 64 k)) :
+    LinesReads env (casLoopHead bits fl) s P := by
+  refine linesReads_cons ?_ fun env' a ha p hp i hi => ?_
+  · intro y t hy
+    simp only [List.mem_singleton, Line.ins.injEq] at hy
+    obtain ⟨rfl, -⟩ := hy
+    unfold casLoopCmp; split <;> rfl
+  · rw [memReads_excl (by simp [BaseOk]) (.inr ha)] at hp
+    simp only [List.mem_singleton] at hp
+    subst hp
+    exact h i hi
 
 /-! ## `atomic_rmw` -/
 
@@ -410,14 +441,16 @@ theorem realizes_rmwLoop {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
     simp [regVal, rnum, h27]
   rotate_right
   · rcases Nat.lt_or_ge i (rmwLoopBody ty.bits op fl).length with hi1 | hi1
-    · exact hgx1 (rmwBody_tail hty op fl) (RL.good_of_sp hst.sp) i hi1
+    · exact hgx1 (rmwBody_tail hty op fl) (RL.good_of_sp hst.sp)
+        (rmwBody_reads hty op fl _ s fun q hq => .inl fun hG => hav q hq (RL.FK_F (.inr hG))) i hi1
     · obtain rfl : i = (rmwLoopBody ty.bits op fl).length := by omega
       rw [hit1]
-      refine RL.goodX_ofIns hR hLc hpcs1 rfl rfl ?_ herr1 hprog1' ?_
+      refine RL.goodX_ofIns hR hLc hpcs1 rfl rfl ?_ herr1 hprog1' ?_ ?_
       · rcases Nat.eq_zero_or_pos (rmwLoopBody ty.bits op fl).length with h0 | h0
         · rw [← hit1, h0]; exact RL.good_of_sp hst.sp
         · rw [← hit1]; exact hgood1 _ h0 (Nat.le_refl _)
       · rw [hstep]; exact RL.nextOk_succ hLc rfl (Arm.r_of_w_same ..)
+      · exact RL.readsAt_noLoad hR hLc hpcs1 rfl
   · refine ⟨fun l _ => ?_, fun c hc => by simp [MInst.clobbers] at hc⟩
     simp [writeM, Operand.isDef, Operand.isEarly]
   rw [hiter]
@@ -603,7 +636,9 @@ theorem realizes_casLoop {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
   have hpc1 : Arm.r .PC s = R.pcOf (j0 + 1) := by rw [hpc, RL.pcOf_succ_label hL0]
   obtain ⟨hit1, hpcs1, hgood1, hgx1⟩ := run_ins hR hd1 (casHead_ins _ fl) hst.prog hpc1 hst.err hint1 hrun1
   have hgx01 : ∀ i < 2, R.GoodX (iterN R.step i s) := fun i hi =>
-    hgx1 (casHead_tail _ fl) (RL.good_of_sp hst.sp) i (by simp [casLoopHead]; omega)
+    hgx1 (casHead_tail _ fl) (RL.good_of_sp hst.sp)
+      (casHead_reads _ fl _ s fun q hq => .inl fun hG => hav q hq (RL.FK_F (.inr hG))) i
+      (by simp [casLoopHead]; omega)
   simp only [casLoopHead, List.length_cons, List.length_nil] at hit1 hpcs1 hgood1
   have herr1 : Arm.r .ERR s1 = .None := by
     rw [hfr1 .ERR (by simp) (by simp) (by simp)]; exact hst.err
@@ -667,7 +702,7 @@ theorem realizes_casLoop {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
   have hgx2 : R.NextOk s1 (R.step s1) → R.GoodX (iterN R.step 2 s) := fun hnx => by
     rw [hit1]
     exact RL.goodX_ofIns hR hL3 hpc3 rfl rfl (by rw [← hit1]; exact hgood1 2 (by omega) (by omega))
-      herr1 hprog1' hnx
+      herr1 hprog1' hnx (RL.readsAt_noLoad hR hL3 hpc3 rfl)
   by_cases hc : Arm.ConditionHolds Cond.ne.bits t1 = true
   · -- the values differ: `b.ne` to the exit
     rw [if_pos hc] at hsem
@@ -737,13 +772,16 @@ theorem realizes_casLoop {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
             simp only [List.mem_singleton, Line.ins.injEq] at h
             obtain ⟨rfl, -⟩ := h; rfl)
           (R.good_succ hR hL3 (fun _ h => Insn.noConfusion h) (fun _ h => Insn.noConfusion h)
-            (Arm.r_of_w_same ..)) 0 (by simp)
+            (Arm.r_of_w_same ..)) (linesReads_noLoads fun y t h => by
+              simp only [List.mem_singleton, Line.ins.injEq] at h
+              obtain ⟨rfl, -⟩ := h; rfl) 0 (by simp)
       · rw [show 4 = 2 + 1 + 1 from rfl, iterN_add, iterN_add, hit1]
         simp only [iterN]
         rw [hstep, hit3]
         exact RL.goodX_ofIns hR hL5 hpcs3 rfl rfl
           (R.good_succ hR hL4 (fun _ h => Insn.noConfusion h) (fun _ h => Insn.noConfusion h) hpcs3)
           herr3 hprog3' (by rw [hstep5]; exact RL.nextOk_succ hL5 rfl (Arm.r_of_w_same ..))
+          (RL.readsAt_noLoad hR hL5 hpcs3 rfl)
     · rw [show 5 = 2 + 1 + 1 + 1 from rfl, iterN_add, iterN_add, iterN_add, hit1]
       simp only [iterN]
       rw [hstep, hit3, hstep5, hpc7]

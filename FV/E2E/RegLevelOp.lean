@@ -163,11 +163,11 @@ theorem RL.goodX_line {R : RL} (hR : R.Wf) {u : Arm.ArmState} {j : Nat} {x : Ins
     (hgot : ∀ rd rn n, x = .ldrGotLo12 rd rn n → ∀ a, R.G a → u.mem a = R.s0.mem a)
     (hblr : ∀ r, x = .blr r → (R.vc.DestsInt → r ≠ .xzr) ∧ ∀ k w, R.fb.words[k]? = some w →
       Arm.read_mem_bytes 4 (R.base + BitVec.ofNat 64 (4 * k)) u = w)
-    (hcall : ((∃ n, x = .bl n) ∨ ∃ r, x = .blr r) → R.CallPre u) : R.GoodX u :=
+    (hcall : ((∃ n, x = .bl n) ∨ ∃ r, x = .blr r) → R.CallPre u) (hrd : R.ReadsAt u) : R.GoodX u :=
   ⟨hgood, herr, hprog, ⟨x, ⟨j, t, hj, hpc⟩, hx⟩, hnext,
     fun rd rn n h => hgot rd rn n ((RL.atLine_iff hR hj hpc).1 h).symm,
     fun r h => hblr r ((RL.atLine_iff hR hj hpc).1 h).symm,
-    fun x' h hc => hcall (((RL.atLine_iff hR hj hpc).1 h) ▸ hc)⟩
+    fun x' h hc => hcall (((RL.atLine_iff hR hj hpc).1 h) ▸ hc), .inl hrd⟩
 
 /-- `RL.goodX_line`'s `call` obligation at a line that is no call. -/
 theorem not_call_insn {x : Insn} (hx : ∀ n, x ≠ .bl n) (hx' : ∀ r, x ≠ .blr r) {P : Prop} :
@@ -202,6 +202,11 @@ def RunsAs (R : RL) (exec : Env → MInst → Arm.ArmState → Option Arm.ArmSta
     exec (R.envOf j) i' s = some s' →
     ∃ n, iterN R.step n s = s' ∧ Arm.r .PC s' = R.pcOf (j + ls1.length) ∧
       ∀ i < n, R.GoodX (iterN R.step i s)
+
+theorem RunsAs.mono {R : RL} {exec : Env → MInst → Arm.ArmState → Option Arm.ArmState} {i' : MInst}
+    {ls1 : List Line} {P Q : Arm.ArmState → Prop} (h : RunsAs R exec i' ls1 Q)
+    (hPQ : ∀ u, P u → Q u) : RunsAs R exec i' ls1 P :=
+  fun j T s m w s' hd hst hpc hp hex => h j T s m w s' hd hst hpc (hPQ s hp) hex
 
 /-- `operandsSound_step` for the obligation at the allocated instructions `P` (`P i'`). -/
 theorem operandsSound_stepI {F FK : BitVec 64 → Prop} {P : MInst → Prop}
@@ -252,7 +257,8 @@ theorem realizes_op_coreX {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {a
     (hOS : ∀ env, OperandsSoundCtlAtI R.F R.FK
       (fun i' => ∃ regs, allocs = regs.map Loc.reg ∧ i.assign regs = .ok i') (exec env) R.sem i .next s)
     {Pre : Arm.ArmState → Prop} (hpre : Pre s)
-    (hL : ∀ regs i', i.assign regs = .ok i' → (∃ env s s', exec env i' s = some s') →
+    (hL : ∀ regs i', i.assign regs = .ok i' → allocs = regs.map Loc.reg →
+      (∃ env s s', exec env i' s = some s') →
       (∃ (c : CheckCtx) (wh : String), c.checkStatic wh ops (regs.map Loc.reg) i.clobbers = .ok ()) →
       ∃ ls1, (∀ ps, i'.lines R.ctx ps = .ok (ls1, ps)) ∧
       (∀ ln ∈ ls1, ln.plain = true) ∧ (∀ ds, i' ≠ .args ds) ∧ (∀ us, i' ≠ .rets us) ∧
@@ -278,7 +284,7 @@ theorem realizes_op_coreX {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {a
     hst.store (.reg r) (fun r' e => by cases e; exact hr) trivial
   obtain ⟨s', m2, hex, hW, hK, hc2', hr2, hl2⟩ := operandsSound_stepI (hOS (R.envOf j)) hops hstat
     hasg ⟨regs, rfl, hasg⟩ hm hst.world hst.align hst.err hsem hlen
-  obtain ⟨ls1, hl1, hpl, hna, hnr, hruns⟩ := hL regs i' hasg ⟨_, _, _, hex⟩ ⟨c, wh, hstat⟩
+  obtain ⟨ls1, hl1, hpl, hna, hnr, hruns⟩ := hL regs i' hasg rfl ⟨_, _, _, hex⟩ ⟨c, wh, hstat⟩
   rcases hc1' with ⟨rfl, -, -⟩ | ⟨ds, rfl, -⟩ | ⟨us, rfl, -⟩
   rotate_left
   · exact absurd rfl (hna ds)
@@ -331,8 +337,8 @@ theorem runsAs_of_linesOk {R : RL} (hR : R.Wf) {i' : MInst} {ls1 : List Line}
     (hl1 : ∀ ps, i'.lines R.ctx ps = .ok (ls1, ps))
     (hins : ∀ ln ∈ ls1, ∃ x t, ln = .ins x t ∧ x.hooked = false)
     (hint : ∀ env s s', Arm.r .ERR s = .None → execLines env ls1 s = some s' → InterOk env ls1 s) :
-    RunsAs R (fun env => execMInst R.ctx env) i' ls1 fun _ => True := by
-  intro j T s _ _ s' hdrop' hst hpc _ hex
+    RunsAs R (fun env => execMInst R.ctx env) i' ls1 fun u => ∀ env, LinesReads env ls1 u R.ReadOk := by
+  intro j T s _ _ s' hdrop' hst hpc hrd hex
   have hprog := hst.prog
   have herr := hst.err
   have hat : ∀ k ln, ls1[k]? = some ln → R.fa.lines.toList[j + k]? = some ln := by
@@ -350,7 +356,7 @@ theorem runsAs_of_linesOk {R : RL} (hR : R.Wf) {i' : MInst} {ls1 : List Line}
   refine ⟨ls1.length, iterN_execLines hR.layout hR.lm hR.fit ls1 j s s' hat hhook
       hprog (by rw [hpc]; rfl) herr (hint _ _ _ herr hrun) hrun, ?_,
     R.goodX_execLines hR hat hhook (noTlsTail_of_unhooked (hl1 {}) hhook) hprog hpc herr hst.sp
-      (hint _ _ _ herr hrun) hrun⟩
+      (hint _ _ _ herr hrun) hrun (.inl (hrd _))⟩
   rw [execLines_pc hrun, hpc]
   simp only [RL.pcOf, RL.L]
   rw [lineOffset_drop_ins (by simpa [RL.L] using hdrop') hins', BitVec.add_assoc]
@@ -359,8 +365,9 @@ theorem runsAs_of_linesOk {R : RL} (hR : R.Wf) {i' : MInst} {ls1 : List Line}
   simp [BitVec.toNat_add]
 
 /-- **A straight-line instruction on the machine** (`MStep.op` with control `next`): given
-`OperandsSound` for the instruction and `LinesOk` for its allocated form, the machine runs its
-lines and reaches `Q` at the next item, every state before it satisfying `GoodX`. -/
+`OperandsSound` for the instruction, `LinesOk` for its allocated form and the reads of its
+allocated lines (outside the frame addresses whenever `csem` gives a result, `formOk_reads`), the
+machine runs its lines and reaches `Q` at the next item, every state before it satisfying `GoodX`. -/
 theorem realizes_op_next {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc}
     {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
     (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩))
@@ -374,13 +381,44 @@ theorem realizes_op_next {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
     (hOS : ∀ env, OperandsSound R.F (execMInst R.ctx env) (csem R.F R.ctx R.X) i)
     (hL : ∀ regs i', i.assign regs = .ok i' →
       LinesOk R.ctx i' ∧ (∀ ds, i' ≠ .args ds) ∧ (∀ us, i' ≠ .rets us))
+    (hRd : ∀ {regs : Array Reg} {i' : MInst} {ls : List Line} {ps ps' : PState} {u v : Arm.ArmState}
+      {r : List CV × Arm.ArmState × Ctl}, AllocOk ops regs → i.assign regs = .ok i' →
+      i'.lines R.ctx ps = .ok (ls, ps') → SameWorld R.F u v → Arm.r .ERR v = .None →
+      Arm.CheckSPAlignment v → csem R.F R.ctx R.X i (useVals ops regs u) v = some r → ∀ env,
+      LinesReads env ls u (fun a => ¬ R.F a))
     (hW' : Arm.r .ERR w' = .None ∧ w'.program = w.program) :
     ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
-      Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.GoodX (iterN R.step i s) :=
-  realizes_op_coreX hR hq hvb hi hops hsz hsem hlen hk (exec := fun env => execMInst R.ctx env)
-    (fun env => (((hOS env).at (fun _ => RL.FK_F) s).toI _).v R.gv) trivial
-    (fun regs i' hasg _ _ => by
+      Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.GoodX (iterN R.step i s) := by
+  have hpre : ∀ regs i' ls1, allocs = regs.map Loc.reg → i.assign regs = .ok i' →
+      (∀ ps, i'.lines R.ctx ps = .ok (ls1, ps)) → ∀ env, LinesReads env ls1 s R.ReadOk := by
+    intro regs i' ls1 hal' hasg hl1 env
+    obtain ⟨j, vb0, items, pre, code, ls, ps1, ps2, T, hvb0, hit, hsplit, hchk, hcode, hls, htr, hdrop,
+      hpc, hst⟩ := hq
+    rw [hvb] at hvb0
+    cases hvb0
+    obtain ⟨c, wh, i2, ops2, hi2, hops2, hstat, -⟩ := op_checked hchk
+    rw [hi] at hi2
+    cases hi2
+    rw [hops] at hops2
+    cases hops2
+    subst hal'
+    have hm : ∀ r, r.allocatable = true → m (.reg r) = regVal s r := fun r hr =>
+      hst.store (.reg r) (fun r' e => by cases e; exact hr) trivial
+    rw [useVals_of_store hstat hm] at hsem
+    have herrw : Arm.r .ERR w = .None := by
+      rw [← hst.world.1 .ERR (by simp [Masked]), hst.err]
+    have halw : Arm.CheckSPAlignment w := by
+      simpa [Arm.CheckSPAlignment, Arm.read_gpr, (hst.world.1 (.GPR 31#5) (by simp [Masked])).symm]
+        using hst.align
+    exact (hRd (allocOk_of_checkStatic hstat) hasg (hl1 {}) hst.world herrw halw (R.sem_csem hsem)
+      env).mono fun a ha => .inl fun hG => ha (RL.FK_F (.inr hG))
+  exact realizes_op_coreX hR hq hvb hi hops hsz hsem hlen hk (exec := fun env => execMInst R.ctx env)
+    (fun env => (((hOS env).at (fun _ => RL.FK_F) s).toI _).v R.gv) (Pre := fun u =>
+      ∀ regs i' ls1, allocs = regs.map Loc.reg → i.assign regs = .ok i' →
+        (∀ ps, i'.lines R.ctx ps = .ok (ls1, ps)) → ∀ env, LinesReads env ls1 u R.ReadOk) hpre
+    (fun regs i' hasg hal' _ _ => by
       obtain ⟨⟨ls1, hl1, hins, hpl, hint⟩, hna, hnr⟩ := hL regs i' hasg
-      exact ⟨ls1, hl1, hpl, hna, hnr, runsAs_of_linesOk hR hl1 hins hint⟩) hW'
+      exact ⟨ls1, hl1, hpl, hna, hnr, (runsAs_of_linesOk hR hl1 hins hint).mono
+        fun u hu env => hu regs i' ls1 hal' hasg hl1 env⟩) hW'
 
 end Backend.Proof

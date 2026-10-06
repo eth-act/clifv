@@ -1,4 +1,6 @@
 import FV.E2E.RegLevelMove
+import FV.E2E.ExecReads
+import FV.E2E.MoveReads
 
 /-!
 # The per-state facts of the M6 runs that the executable machine needs (L3 (c))
@@ -17,7 +19,10 @@ state of an activation's run before its return. The executable machine of `E2E.E
   second word of a pair only after its first word;
 * `got` (D4): at the `ldr` of a GOT pair the kept addresses `R.G` hold their entry bytes;
 * `blr`: a `blr` reads its target from a register other than `xzr`, and the code words are
-  readable as data.
+  readable as data;
+* `reads` (D2): the memory reads (`MemReads`) of the unhooked instruction at the pc are outside
+  the kept addresses `R.G` or bytes of the function's jump tables (`RL.ReadOk`), except at the
+  loads of move code (`RL.SlotLoadAt`: spill reloads `[sp, #off]`, `[x16]`).
 -/
 
 namespace Backend.Proof
@@ -70,6 +75,21 @@ def RL.CallPre (R : RL) (u : Arm.ArmState) : Prop :=
       SameWorld R.F u w ∧ Arm.CheckSPAlignment u ∧ Arm.r .ERR u = .None ∧
       csemV R.gv R.F ctx R.X i (useVals ops regs u) w = some (outs, w', ctl)
 
+/-- **A byte the activation's run may read** (D2): outside the kept addresses `G`, or a byte of
+one of its data (`.word`) lines, the jump tables. -/
+def RL.ReadOk (R : RL) (a : BitVec 64) : Prop :=
+  ¬ R.G a ∨ ∃ j tg bs, R.L[j]? = some (.word tg bs) ∧ ∃ i < 4, a = R.pcOf j + BitVec.ofNat 64 i
+
+/-- **D2 at `u`**: the memory reads of the unhooked instruction at the pc are `ReadOk`. -/
+def RL.ReadsAt (R : RL) (u : Arm.ArmState) : Prop :=
+  ∀ j x t, R.L[j]? = some (.ins x t) → Arm.r .PC u = R.pcOf j → x.hooked = false →
+    ∀ env a, x.toArmInst env = .ok a → ∀ p ∈ E2E.ExecBytes.MemReads a u, ∀ k < p.2,
+      R.ReadOk (p.1 + BitVec.ofNat 64 k)
+
+/-- The pc of `u` is at a load of move code (`Insn.slotLoad`), whose reads stay a hypothesis. -/
+def RL.SlotLoadAt (R : RL) (u : Arm.ArmState) : Prop :=
+  ∃ j x t, R.L[j]? = some (.ins x t) ∧ Arm.r .PC u = R.pcOf j ∧ x.slotLoad = true
+
 /-- **The per-state facts of the activation's run** that the executable machine needs (module
 doc). -/
 structure RL.GoodX (R : RL) (u : Arm.ArmState) : Prop where
@@ -88,6 +108,8 @@ structure RL.GoodX (R : RL) (u : Arm.ArmState) : Prop where
     Arm.read_mem_bytes 4 (R.base + BitVec.ofNat 64 (4 * k)) u = w
   /-- a call (`bl`, `blr`): the callee contract's premise holds -/
   call : ∀ x, R.AtLine u x → ((∃ n, x = .bl n) ∨ ∃ r, x = .blr r) → R.CallPre u
+  /-- D2 (but at the loads of move code) -/
+  reads : R.ReadsAt u ∨ R.SlotLoadAt u
 
 /-! ## Basic facts -/
 
@@ -123,6 +145,31 @@ theorem RL.atLine_iff {R : RL} (hR : R.Wf) {u : Arm.ArmState} {j : Nat} {x : Ins
     {t : Option Clif.TrapCode} (hj : R.L[j]? = some (.ins x t)) (hpc : Arm.r .PC u = R.pcOf j)
     {x' : Insn} : R.AtLine u x' ↔ x' = x :=
   ⟨fun h => RL.atLine_unique hR h ⟨j, t, hj, hpc⟩, fun e => e ▸ ⟨j, t, hj, hpc⟩⟩
+
+/-- `ReadsAt` at an instruction line from the reads of its instruction. -/
+theorem RL.readsAt_of_line {R : RL} (hR : R.Wf) {u : Arm.ArmState} {j : Nat} {x : Insn}
+    {t : Option Clif.TrapCode} (hj : R.L[j]? = some (.ins x t)) (hpc : Arm.r .PC u = R.pcOf j)
+    (h : x.hooked = false → ∀ env a, x.toArmInst env = .ok a →
+      ∀ p ∈ E2E.ExecBytes.MemReads a u, ∀ k < p.2, R.ReadOk (p.1 + BitVec.ofNat 64 k)) :
+    R.ReadsAt u := by
+  intro j' x' t' hj' hpc' hh
+  obtain rfl := RL.pcOf_inj hR hj hj' (hpc.symm.trans hpc')
+  rw [hj] at hj'
+  cases hj'
+  exact h hh
+
+/-- `ReadsAt` at a line whose instruction is no load. -/
+theorem RL.readsAt_noLoad {R : RL} (hR : R.Wf) {u : Arm.ArmState} {j : Nat} {x : Insn}
+    {t : Option Clif.TrapCode} (hj : R.L[j]? = some (.ins x t)) (hpc : Arm.r .PC u = R.pcOf j)
+    (hx : x.loads = false) : R.ReadsAt u :=
+  RL.readsAt_of_line hR hj hpc fun _ _ a ha p hp => by
+    rw [Insn.memReads_nil hx ha] at hp; cases hp
+
+/-- `ReadsAt` at a hooked line (the hooks are not the instruction's semantics). -/
+theorem RL.readsAt_hooked {R : RL} (hR : R.Wf) {u : Arm.ArmState} {j : Nat} {x : Insn}
+    {t : Option Clif.TrapCode} (hj : R.L[j]? = some (.ins x t)) (hpc : Arm.r .PC u = R.pcOf j)
+    (hx : x.hooked = true) : R.ReadsAt u :=
+  RL.readsAt_of_line hR hj hpc fun h => by rw [hx] at h; cases h
 
 /-- A line without an instruction of the TLS sequence past its `ldr`. -/
 def _root_.Backend.Line.tailFree : Line → Bool
@@ -237,12 +284,12 @@ theorem RL.nextOk_label {R : RL} {u v : Arm.ArmState} {j : Nat} {l : Lbl}
   rw [lineOffset_succ _ _ _ hj]
   rfl
 
-/-- **`GoodX` at an unhooked instruction line** outside the TLS tail: `got`/`blr` are vacuous. -/
-theorem RL.goodX_ofIns {R : RL} (hR : R.Wf) {u : Arm.ArmState} {j : Nat} {x : Insn}
+/-- **`GoodX` at an unhooked instruction line** outside the TLS tail (D2 or a move-code load). -/
+theorem RL.goodX_ofInsD {R : RL} (hR : R.Wf) {u : Arm.ArmState} {j : Nat} {x : Insn}
     {t : Option Clif.TrapCode} (hj : R.L[j]? = some (.ins x t)) (hpc : Arm.r .PC u = R.pcOf j)
     (hx : x.hooked = false) (htl : x.tlsTail = false) (hgood : R.Good u)
     (herr : Arm.r .ERR u = .None) (hprog : u.program = R.fb.program R.base)
-    (hnext : R.NextOk u (R.step u)) : R.GoodX u where
+    (hnext : R.NextOk u (R.step u)) (hrd : R.ReadsAt u ∨ R.SlotLoadAt u) : R.GoodX u where
   good := hgood
   err := herr
   prog := hprog
@@ -255,6 +302,27 @@ theorem RL.goodX_ofIns {R : RL} (hR : R.Wf) {u : Arm.ArmState} {j : Nat} {x : In
   call := fun x' h hc => by
     rw [RL.atLine_iff hR hj hpc] at h; subst h
     rcases hc with ⟨n, rfl⟩ | ⟨r, rfl⟩ <;> simp [Insn.hooked] at hx
+  reads := hrd
+
+/-- **`GoodX` at an unhooked instruction line** outside the TLS tail: `got`/`blr` are vacuous. -/
+theorem RL.goodX_ofIns {R : RL} (hR : R.Wf) {u : Arm.ArmState} {j : Nat} {x : Insn}
+    {t : Option Clif.TrapCode} (hj : R.L[j]? = some (.ins x t)) (hpc : Arm.r .PC u = R.pcOf j)
+    (hx : x.hooked = false) (htl : x.tlsTail = false) (hgood : R.Good u)
+    (herr : Arm.r .ERR u = .None) (hprog : u.program = R.fb.program R.base)
+    (hnext : R.NextOk u (R.step u)) (hrd : R.ReadsAt u) : R.GoodX u where
+  good := hgood
+  err := herr
+  prog := hprog
+  line := ⟨x, ⟨j, t, hj, hpc⟩, htl⟩
+  next := hnext
+  got := fun rd rn n h => by
+    rw [RL.atLine_iff hR hj hpc] at h; subst h; simp [Insn.hooked] at hx
+  blr := fun r h => by
+    rw [RL.atLine_iff hR hj hpc] at h; subst h; simp [Insn.hooked] at hx
+  call := fun x' h hc => by
+    rw [RL.atLine_iff hR hj hpc] at h; subst h
+    rcases hc with ⟨n, rfl⟩ | ⟨r, rfl⟩ <;> simp [Insn.hooked] at hx
+  reads := .inl hrd
 
 /-- A prefix of a successful straight-line run succeeds. -/
 theorem execLines_take : ∀ {env : Env} {ls : List Line} {s s' : Arm.ArmState} (k : Nat),
@@ -282,7 +350,9 @@ theorem RL.goodX_execLinesG {R : RL} (hR : R.Wf) {ls : List Line} {j : Nat} {s s
     (htail : ∀ i t, Line.ins i t ∈ ls → i.tlsTail = false)
     (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j)
     (herr : Arm.r .ERR s = .None) (h0 : R.Good s) (hinter : InterOk (R.envOf j) ls s)
-    (hrun : execLines (R.envOf j) ls s = some s') :
+    (hrun : execLines (R.envOf j) ls s = some s')
+    (hrd : LinesReads (R.envOf j) ls s R.ReadOk ∨
+      ∀ x t, Line.ins x t ∈ ls → x.loads = true → x.slotLoad = true) :
     ∀ i < ls.length, R.GoodX (iterN R.step i s) := by
   intro i hi
   have hpcs := iterN_execLines_pc (X := R.X) (H := R.H) hR.layout hR.lm hR.fit ls j s s' hat hhook
@@ -293,9 +363,9 @@ theorem RL.goodX_execLinesG {R : RL} (hR : R.Wf) {ls : List Line} {j : Nat} {s s
   have hj : R.L[j + i]? = some (.ins x t) := hat i _ hln
   have hx := hhook x t hmem
   have hpci : Arm.r .PC (iterN R.step i s) = R.pcOf (j + i) := hpcs i (by omega)
-  have hep : Arm.r .ERR (iterN R.step i s) = .None ∧ (iterN R.step i s).program = s.program := by
+  have hst : ∃ s1, execLines (R.envOf j) (ls.take i) s = some s1 ∧ iterN R.step i s = s1 := by
     rcases Nat.eq_zero_or_pos i with rfl | hi0
-    · exact ⟨herr, rfl⟩
+    · exact ⟨s, by simp [execLines], rfl⟩
     · obtain ⟨s1, hs1⟩ := execLines_take i hrun
       have hlen : (ls.take i).length = i := by simp; omega
       have hit := iterN_execLines (X := R.X) (H := R.H) hR.layout hR.lm hR.fit (ls.take i) j s s1
@@ -308,17 +378,30 @@ theorem RL.goodX_execLinesG {R : RL} (hR : R.Wf) {ls : List Line} {j : Nat} {s s
         (fun k hk0 hk s2 hs2 => hinter k hk0 (by omega) s2 (by
           rwa [List.take_take, Nat.min_eq_left (by omega)] at hs2)) hs1
       rw [hlen] at hit
-      have : iterN R.step i s = s1 := hit
-      rw [this]
+      exact ⟨s1, hs1, hit⟩
+  obtain ⟨s1, hs1, hit1⟩ := hst
+  have hep : Arm.r .ERR (iterN R.step i s) = .None ∧ (iterN R.step i s).program = s.program := by
+    rcases Nat.eq_zero_or_pos i with rfl | hi0
+    · exact ⟨herr, rfl⟩
+    · rw [hit1]
       exact hinter i hi0 hi s1 hs1
-  refine RL.goodX_ofIns hR hj hpci hx (htail x t hmem) ?_ hep.1 (hep.2.trans hprog) ?_
-  · rcases Nat.eq_zero_or_pos i with rfl | hi0
-    · exact h0
-    · exact R.good_execLines hR hat hhook hprog hpc herr hinter hrun i hi0 (by omega)
-  · refine RL.nextOk_succ hj (Insn.pairFirst_of_hooked hx) ?_
-    have := hpcs (i + 1) (by omega)
-    rw [iterN_add] at this
-    exact this
+  have hgx := fun hrd' => RL.goodX_ofInsD hR hj hpci hx (htail x t hmem) (u := iterN R.step i s)
+    (by
+      rcases Nat.eq_zero_or_pos i with rfl | hi0
+      · exact h0
+      · exact R.good_execLines hR hat hhook hprog hpc herr hinter hrun i hi0 (by omega))
+    hep.1 (hep.2.trans hprog)
+    (by
+      refine RL.nextOk_succ hj (Insn.pairFirst_of_hooked hx) ?_
+      have := hpcs (i + 1) (by omega)
+      rw [iterN_add] at this
+      exact this) hrd'
+  rcases hrd with hrd | hsl
+  · exact hgx (.inl (RL.readsAt_of_line hR hj hpci fun _ env a ha => by
+      rw [hit1]; exact hrd i x t hln s1 hs1 env a ha))
+  · cases hl : x.loads
+    · exact hgx (.inl (RL.readsAt_noLoad hR hj hpci hl))
+    · exact hgx (.inr ⟨j + i, x, t, hj, hpci, hsl x t hmem hl⟩)
 
 /-- **The states of a straight-line run** (unhooked instruction lines without the TLS tail),
 from a state with the body's `sp`, before its last line's step: `GoodX`. -/
@@ -328,9 +411,11 @@ theorem RL.goodX_execLines {R : RL} (hR : R.Wf) {ls : List Line} {j : Nat} {s s'
     (htail : ∀ i t, Line.ins i t ∈ ls → i.tlsTail = false)
     (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j)
     (herr : Arm.r .ERR s = .None) (hsp : spOf s = R.spB) (hinter : InterOk (R.envOf j) ls s)
-    (hrun : execLines (R.envOf j) ls s = some s') :
+    (hrun : execLines (R.envOf j) ls s = some s')
+    (hrd : LinesReads (R.envOf j) ls s R.ReadOk ∨
+      ∀ x t, Line.ins x t ∈ ls → x.loads = true → x.slotLoad = true) :
     ∀ i < ls.length, R.GoodX (iterN R.step i s) :=
-  RL.goodX_execLinesG hR hat hhook htail hprog hpc herr (.inr hsp) hinter hrun
+  RL.goodX_execLinesG hR hat hhook htail hprog hpc herr (.inr hsp) hinter hrun hrd
 
 theorem prologueLines_tailFree (n : Nat) : ∀ ln ∈ prologueLines n, ln.tailFree = true := by
   intro ln h
@@ -464,7 +549,10 @@ theorem realizes_move {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b : Nat} {src dst
         obtain ⟨a, ha, e⟩ := h
         cases e
         exact (oneLine_of_moveInst R.ctx (hmi _ ha)).not_tls n rd tmp rfl) (hcl ps1))
-      (by rw [hst.prog]) hpc hst.err hst.sp (hint _) (hrun _) i hi
+      (by rw [hst.prog]) hpc hst.err hst.sp (hint _) (hrun _) (.inr fun x t hx hl => by
+        obtain ⟨i', hi', ps0, hc⟩ := moveLines_mem (fun i hi => oneLine_of_moveInst R.ctx (hmi i hi))
+          (hcl ps1) hx
+        exact moveInst_slotLoad R.ctx (hmi i' hi') hc hl) i hi
   · rw [← List.drop_drop, hdrop', List.drop_left]
   · rw [hiter, execLines_pc (hrun ⟨lineOffset R.fa.lines.toList j, (R.lm[·]?)⟩), hpc]
     simp only [RL.pcOf, RL.L]
@@ -496,6 +584,6 @@ def actGoodX (vc : VCode) (rf : RFunc) (af : AFunc) (fa : FnAsm) (fb : FnBin) (b
 
 theorem RL.GoodX.act {R : RL} {u : Arm.ArmState} (h : R.GoodX u) :
     actGoodX R.vc R.rf R.af R.fa R.fb R.base R.s0 R.X R.H R.K R.G R.gv u :=
-  ⟨h.good, h.err, h.prog, h.line, h.next, h.got, h.blr, h.call⟩
+  ⟨h.good, h.err, h.prog, h.line, h.next, h.got, h.blr, h.call, h.reads⟩
 
 end Backend.Proof

@@ -341,27 +341,40 @@ theorem jt_machine {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {d : Label
       rw [e]
       exact RL.goodX_ofIns hR h1 (by simp only [s1, Arm.r_of_w_same]) rfl rfl
         (hg (Arm.r_of_w_different hsp)) hr1 hp1 (by rw [e2]; exact RL.nextOk_succ h1 rfl hpc2)
+        (RL.readsAt_noLoad hR h1 (by simp only [s1, Arm.r_of_w_same]) rfl)
     · have e : iterN R.step 2 s = s2 := by simp only [iterN]; rw [e1, e2]
       rw [e]
       exact RL.goodX_ofIns hR h2 hpc2 rfl rfl
         (hg (by simp only [spOf, s2, s1, Arm.r_of_w_different hsb, Arm.r_of_w_different hsp]))
-        hr2 hp2 (by rw [e3]; exact RL.nextOk_succ h2 rfl hpc3)
+        hr2 hp2 (by rw [e3]; exact RL.nextOk_succ h2 rfl hpc3) (RL.readsAt_noLoad hR h2 hpc2 rfl)
     · have e : iterN R.step 3 s = s3 := by simp only [iterN]; rw [e1, e2, e3]
       rw [e]
       exact RL.goodX_ofIns hR h3 hpc3 rfl rfl
         (hg (by simp only [spOf, s3, s2, s1, Arm.r_of_w_different hsa, Arm.r_of_w_different hsb,
           Arm.r_of_w_different hsp])) hr3 hp3 (by rw [e4]; exact RL.nextOk_succ h3 rfl hpc4)
+        (RL.readsAt_of_line hR h3 hpc3 fun _ env a hab3 p hp q hq => by
+          rw [memReads_load R.ctx (show FinalAM LoadOp.sload32.bytes
+              (.regScaledExtended (.x na) (.x nb) .uxtw) from
+              ⟨show na ≤ 30 by omega, show nb ≤ 30 by omega, .inl rfl⟩)
+            (fun h => by cases h) hab3, List.mem_singleton] at hp
+          subst hp
+          simp only [LoadOp.bytes] at hq
+          refine .inr ⟨j1 + 6 + i, _, _, hwi, q, hq, ?_⟩
+          simp only [RL.pcOf]
+          rw [haddr, hofs, BitVec.ofNat_add]
+          simp only [A, BitVec.add_assoc])
     · have e : iterN R.step 4 s = s4 := by simp only [iterN]; rw [e1, e2, e3, e4]
       rw [e]
       exact RL.goodX_ofIns hR h4 hpc4 rfl rfl
         (hg (by simp only [spOf, s4, s3, s2, s1, Arm.r_of_w_different hsa, Arm.r_of_w_different hsb,
-          Arm.r_of_w_different hsp])) hr4 hp4 (by rw [e5]; exact RL.nextOk_succ h4 rfl hpc5)
+          Arm.r_of_w_different hsp])) hr4 hp4 (by rw [e5]; exact RL.nextOk_succ h4 rfl hpc5) (RL.readsAt_noLoad hR h4 hpc4 rfl)
     · have e : iterN R.step 5 s = s5 := by simp only [iterN]; rw [e1, e2, e3, e4, e5]
       rw [e]
       exact RL.goodX_ofIns hR h5 hpc5 rfl rfl
         (hg (by simp only [spOf, s5, s4, s3, s2, s1, Arm.r_of_w_different hsa,
           Arm.r_of_w_different hsb, Arm.r_of_w_different hsp])) hr5 hp5
         (by rw [e6]; exact RL.nextOk_label hjtl (by simp only [s6, Arm.r_of_w_same, hV]))
+        (RL.readsAt_noLoad hR h5 hpc5 rfl)
   · intro f hfp hfa hfb
     simp only [s6, s5, s4, s3, s2, s1]
     rw [Arm.r_of_w_different hfp, Arm.r_of_w_different hfa, Arm.r_of_w_different hfp,

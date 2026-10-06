@@ -202,13 +202,14 @@ theorem step_branchX {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j : Nat} {i : Insn
     (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j)
     (herr : Arm.r .ERR s = .None) (hsp : spOf s = R.spB) : R.GoodX s := by
   obtain ⟨a, jl, -, hjl, hstep⟩ := step_branch hR hj hi hl hprog hpc herr
-  have hh : i.hooked = false ∧ i.tlsTail = false ∧ i.pairFirst = false := by
-    rcases hi with rfl | ⟨_, rfl⟩ | ⟨_, _, _, rfl⟩ | ⟨_, _, _, rfl⟩ <;> exact ⟨rfl, rfl, rfl⟩
+  have hh : i.hooked = false ∧ i.tlsTail = false ∧ i.pairFirst = false ∧ i.loads = false := by
+    rcases hi with rfl | ⟨_, rfl⟩ | ⟨_, _, _, rfl⟩ | ⟨_, _, _, rfl⟩ <;> exact ⟨rfl, rfl, rfl, rfl⟩
   refine RL.goodX_ofIns hR hj hpc hh.1 hh.2.1 (.inr hsp) herr hprog ?_
+    (RL.readsAt_noLoad hR hj hpc hh.2.2.2)
   rw [hstep]
   split
   · exact RL.nextOk_label hjl (Arm.r_of_w_same ..)
-  · exact RL.nextOk_succ hj hh.2.2 (Arm.r_of_w_same ..)
+  · exact RL.nextOk_succ hj hh.2.2.1 (Arm.r_of_w_same ..)
 
 /-- **The inverted short branch of a relaxed branch** with the body's `sp`: `GoodX` (the step
 goes past the next line, which is not the first word of an `adrp` pair, or to it). -/
@@ -219,13 +220,14 @@ theorem step_skipX {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j : Nat} {i x : Insn
     (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j)
     (herr : Arm.r .ERR s = .None) (hsp : spOf s = R.spB) : R.GoodX s := by
   obtain ⟨a, -, hstep⟩ := step_skip hR hj hj1 hi hprog hpc herr
-  have hh : i.hooked = false ∧ i.tlsTail = false ∧ i.pairFirst = false := by
-    rcases hi with ⟨_, rfl⟩ | ⟨_, _, _, rfl⟩ | ⟨_, _, _, rfl⟩ <;> exact ⟨rfl, rfl, rfl⟩
+  have hh : i.hooked = false ∧ i.tlsTail = false ∧ i.pairFirst = false ∧ i.loads = false := by
+    rcases hi with ⟨_, rfl⟩ | ⟨_, _, _, rfl⟩ | ⟨_, _, _, rfl⟩ <;> exact ⟨rfl, rfl, rfl, rfl⟩
   refine RL.goodX_ofIns hR hj hpc hh.1 hh.2.1 (.inr hsp) herr hprog ?_
+    (RL.readsAt_noLoad hR hj hpc hh.2.2.2)
   rw [hstep]
   split
   · exact RL.nextOk_succ hj1 hx (Arm.r_of_w_same ..)
-  · exact RL.nextOk_succ hj hh.2.2 (Arm.r_of_w_same ..)
+  · exact RL.nextOk_succ hj hh.2.2.1 (Arm.r_of_w_same ..)
 
 /-! ## States differing only in the pc -/
 

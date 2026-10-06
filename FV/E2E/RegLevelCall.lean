@@ -380,11 +380,11 @@ theorem realizes_call {R : RL} (hR : R.Wf)
   refine realizes_op_coreX hR hq hvb hi hops hsz hsem hlen hk (exec := fun _ => callExec R.H)
     (fun _ => RL.callAtG hR (hC.os R.ctx info ⟨b, vb, k, hvb, .inl hi⟩) (q_stRel hq).sp
       (q_stRel hq).gkeep fun i' ⟨regs, hal, hasg⟩ => callAt_of_q hq hvb hi call_hcall regs i' hal hasg)
-    hpre (fun regs i' hasg _ hcs => ?_) hW'
+    hpre (fun regs i' hasg _ _ hcs => ?_) hW'
   obtain ⟨info', rfl⟩ := assign_call_form hasg
   have hgen : ∀ x, (∀ ps, (MInst.call info').lines R.ctx ps = .ok ([.ins x], ps)) →
       (Line.ins x).plain = true → x.tlsTail = false → (∀ rd rn n, x ≠ .ldrGotLo12 rd rn n) →
-      (∀ r, x = .blr r → R.vc.DestsInt → r ≠ .xzr) →
+      (∀ r, x = .blr r → R.vc.DestsInt → r ≠ .xzr) → x.hooked = true →
       (∀ s j, R.L[j]? = some (.ins x) → s.program = R.fb.program R.base →
         Arm.r .PC s = R.pcOf j → R.step s = R.H.call
           (match info'.dest with | .sym n => some n | .reg _ => none) s) →
@@ -392,7 +392,7 @@ theorem realizes_call {R : RL} (hR : R.Wf)
         (∀ ln ∈ ls1, ln.plain = true) ∧ (∀ ds, MInst.call info' ≠ .args ds) ∧
         (∀ us, MInst.call info' ≠ .rets us) ∧
         RunsAs R (fun _ => callExec R.H) (.call info') ls1 R.CallPre := by
-    intro x hl1 hpl hxt hxg hxz hstep
+    intro x hl1 hpl hxt hxg hxz hxh hstep
     refine ⟨[.ins x], hl1, fun ln hln => by simp only [List.mem_singleton] at hln; subst hln; exact hpl,
       fun _ h => MInst.noConfusion h, fun _ h => MInst.noConfusion h,
       fun j T s _ _ s' hd hst hpc hpre' hex => ?_⟩
@@ -409,13 +409,14 @@ theorem realizes_call {R : RL} (hR : R.Wf)
         show R.GoodX s
         exact RL.goodX_line hR hj hpc hxt (RL.good_of_sp hst.sp) hst.err hst.prog
           (RL.nextOk_pc4 (by rw [hs, hC.pc _ _ hst.err hal]))
-          (fun rd rn n e => absurd e (hxg rd rn n)) (fun r e => ⟨hxz r e, hst.code⟩) fun _ => hpre'
+          (fun rd rn n e => absurd e (hxg rd rn n)) (fun r e => ⟨hxz r e, hst.code⟩) (fun _ => hpre')
+          (RL.readsAt_hooked hR hj hpc hxh)
     · cases hex
   cases hd : info'.dest with
   | sym n =>
     refine hgen (.bl n) (fun ps => by simp [MInst.lines, hd, pure, Except.pure])
       (by simp [Line.plain, Insn.condTarget?]) rfl (fun _ _ _ h => by cases h)
-      (fun _ h => by cases h) fun s j hj hprog hpc => ?_
+      (fun _ h => by cases h) rfl fun s j hj hprog hpc => ?_
     rw [step_bl (off := 0) (r := .xzr) (rd := .xzr) (rn := .xzr) hR hj hprog hpc, hd]
   | reg r =>
     obtain ⟨c, wh, hcs⟩ := hcs
@@ -423,7 +424,7 @@ theorem realizes_call {R : RL} (hR : R.Wf)
       callDest_ne_xzr (hD b vb k info hvb (.inl hi)) hcs hasg hd
     refine hgen (.blr r) (fun ps => by simp [MInst.lines, hd, pure, Except.pure])
       (by simp [Line.plain, Insn.condTarget?]) rfl (fun _ _ _ h => by cases h)
-      (fun _ h => by cases h; exact hne) fun s j hj hprog hpc => ?_
+      (fun _ h => by cases h; exact hne) rfl fun s j hj hprog hpc => ?_
     rw [step_blr (off := 0) (n := "") (rd := .xzr) (rn := .xzr) hR hj hprog hpc, hd]
 
 /-! ## Symbol addresses -/
@@ -514,7 +515,7 @@ theorem runsAs_symAddr {R : RL} (hR : R.Wf) {i' : MInst} {x1 x2 : Insn}
       s.program = R.fb.program R.base → Arm.r .PC s = R.pcOf j →
       R.step (R.step s) = match symExec R.X i' s with | some s' => s' | none => s)
     (hx1 : (∀ n, x1 ≠ .bl n) ∧ (∀ r, x1 ≠ .blr r)) (hx2 : (∀ n, x2 ≠ .bl n) ∧ (∀ r, x2 ≠ .blr r))
-    (ht : x1.tlsTail = false ∧ x2.tlsTail = false)
+    (ht : x1.tlsTail = false ∧ x2.tlsTail = false) (hhk : x1.hooked = true ∧ x2.hooked = true)
     (hmid : ∀ s j, R.L[j]? = some (.ins x1) → s.program = R.fb.program R.base →
       Arm.r .PC s = R.pcOf j → Arm.r .PC (R.step s) = R.pcOf (j + 1) ∧
         Arm.r .ERR (R.step s) = Arm.r .ERR s ∧ (R.step s).program = s.program ∧
@@ -538,13 +539,13 @@ theorem runsAs_symAddr {R : RL} (hR : R.Wf) {i' : MInst} {x1 x2 : Insn}
     · show R.GoodX s
       exact RL.goodX_line hR hj hpc ht.1 (RL.good_of_sp hst.sp) hst.err hprog
         (RL.nextOk_pc4 (by rw [hm1, pcOf_succ hj, hpc])) (fun _ _ _ _ a ha => hst.gkeep a ha)
-        (fun r e => absurd e (hx1.2 r)) (not_call_insn hx1.1 hx1.2)
+        (fun r e => absurd e (hx1.2 r)) (not_call_insn hx1.1 hx1.2) (RL.readsAt_hooked hR hj hpc hhk.1)
     · show R.GoodX (R.step s)
       exact RL.goodX_line hR hj1 hm1 ht.2 (R.good_succ hR hj hx1.1 hx1.2 hm1)
         (by rw [hm2]; exact hst.err) (by rw [hm3, hprog])
         (RL.nextOk_pc4 (by rw [e, hpc8, hm1, pcOf_succ hj, hpc]; bv_omega))
         (fun _ _ _ _ a ha => by rw [hm4]; exact hst.gkeep a ha) (fun r e => absurd e (hx2.2 r))
-        (not_call_insn hx2.1 hx2.2)
+        (not_call_insn hx2.1 hx2.2) (RL.readsAt_hooked hR hj1 hm1 hhk.2)
   simp only [List.length_cons, List.length_nil, Nat.zero_add]
   rw [hpc8, hpc, ← Nat.add_assoc, pcOf_succ hj1, pcOf_succ hj, BitVec.add_assoc]
   rfl
@@ -575,7 +576,7 @@ theorem realizes_symAddr {R : RL} (hR : R.Wf) {s : Arm.ArmState}
       exact ⟨herr, rfl⟩
   refine realizes_op_coreX hR hq hvb hi hops hsz hsem hlen hk (exec := fun _ => symExec R.X)
     (fun _ => (((os_symAddr hform).at (fun _ => RL.FK_F) s).toI _).v R.gv) (Pre := fun _ => True) trivial
-    (fun regs i' _ hex _ => ?_) hW'
+    (fun regs i' _ _ hex _ => ?_) hW'
   obtain ⟨_, s0, _, hex⟩ := hex
   cases i' with
   | loadExtNameGot rd n =>
@@ -583,7 +584,7 @@ theorem realizes_symAddr {R : RL} (hR : R.Wf) {s : Arm.ArmState}
       fun ps => by simp [MInst.lines, pure, Except.pure], ?_, fun _ h => MInst.noConfusion h,
       fun _ h => MInst.noConfusion h, runsAs_symAddr hR (fun ps => by simp [MInst.lines, pure,
         Except.pure]) (fun s j hj hj1 hprog hpc => ?_) ⟨fun _ h => Insn.noConfusion h, fun _ h => Insn.noConfusion h⟩
-        ⟨fun _ h => Insn.noConfusion h, fun _ h => Insn.noConfusion h⟩ ⟨rfl, rfl⟩
+        ⟨fun _ h => Insn.noConfusion h, fun _ h => Insn.noConfusion h⟩ ⟨rfl, rfl⟩ ⟨rfl, rfl⟩
         (fun s j hj hprog hpc => ?_)⟩
     · intro ln hln; simp at hln; rcases hln with rfl | rfl <;> simp [Line.plain, Insn.condTarget?]
     · rw [step_adrpGot (off := 0) (r := .xzr) (rn := .xzr) hR hj hprog hpc]
@@ -601,7 +602,7 @@ theorem realizes_symAddr {R : RL} (hR : R.Wf) {s : Arm.ArmState}
       fun ps => by simp [MInst.lines, pure, Except.pure], ?_, fun _ h => MInst.noConfusion h,
       fun _ h => MInst.noConfusion h, runsAs_symAddr hR (fun ps => by simp [MInst.lines, pure,
         Except.pure]) (fun s j hj hj1 hprog hpc => ?_) ⟨fun _ h => Insn.noConfusion h, fun _ h => Insn.noConfusion h⟩
-        ⟨fun _ h => Insn.noConfusion h, fun _ h => Insn.noConfusion h⟩ ⟨rfl, rfl⟩
+        ⟨fun _ h => Insn.noConfusion h, fun _ h => Insn.noConfusion h⟩ ⟨rfl, rfl⟩ ⟨rfl, rfl⟩
         (fun s j hj hprog hpc => ?_)⟩
     · intro ln hln; simp at hln; rcases hln with rfl | rfl <;> simp [Line.plain, Insn.condTarget?]
     · rw [step_adrp (r := .xzr) (rn := .xzr) hR hj hprog hpc]

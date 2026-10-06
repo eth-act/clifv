@@ -4,6 +4,7 @@ import FV.E2E.RegLevelTry
 import FV.Backend.Proof.RegallocCover
 import FV.Backend.Proof.RegallocCSemWorld
 import FV.E2E.RegLevelAtomic
+import FV.E2E.RegLevelOpReads
 
 /-!
 # The register-level theorem (M6): `RegLevelCorrect` for the backend's code
@@ -213,6 +214,7 @@ theorem realizes_all {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (Call
       | next hk =>
         have hnc : ∀ info, i ≠ .call info := by rintro info rfl; simp [MInst.isCtl] at hct
         obtain ⟨n, c'', hm, hq', ht⟩ := realizes_op_next hR hq hvb hi hops hsz hsem hlen hk hOS hL
+          (fun ha hasg hl hw he hal hs env => formOk_reads hfo hops ha hasg hl hw he hal hs env)
           (csem_next_world' (R.sem_csem hsem) hnc herrw)
         exact fin n c'' hm hq' ht
     · cases i <;> simp only [MInst.isCtl, reduceCtorEq] at hct

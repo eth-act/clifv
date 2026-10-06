@@ -166,6 +166,7 @@ theorem reach_b_goodX {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {x : Lb
     exact RL.goodX_line hR hj hpc rfl (RL.good_of_sp hsp) herr hprog
       (RL.nextOk_label hjl (by rw [hstep]; simp [Arm.r_of_w_same])) (fun _ _ _ h => by cases h)
       (fun _ h => by cases h) (not_call_insn (fun _ h => by cases h) fun _ h => by cases h)
+      (RL.readsAt_noLoad hR hj hpc rfl)
 
 /-- **The call of a `try_call` on the machine**: from `Q` at a `tryCall` item, the machine runs
 the hooked callee and the branch to the normal-return successor, reaching `Q` at that
@@ -345,7 +346,8 @@ theorem realizes_tryCall {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (
           rcases hxk with ⟨_, rfl⟩ | ⟨_, rfl, hr⟩
           · cases e
           · cases e; exact ⟨hr, hst.code⟩)
-        fun _ => hpre
+        (fun _ => hpre)
+        (RL.readsAt_hooked hR hj0 hpc (by rcases hxk with ⟨_, rfl⟩ | ⟨_, rfl, _⟩ <;> rfl))
     | succ i =>
       simp only [iterN]; rw [hs1]
       exact hgx i (by omega)
