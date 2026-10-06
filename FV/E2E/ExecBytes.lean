@@ -181,7 +181,8 @@ structure StepOk (M : Nat) (g : Clif.Function) (m : Arm.ArmState) : Prop where
   /-- D4: at the `ldr` of a GOT pair (`P`, register `rd`) loading the slot `G`, the slot holds
   the file's bytes, which are not relocated instruction bytes -/
   got : ∀ rl ∈ (art I g).fb.relocs, rl.type = .adrGotPage →
-    Arm.r .PC m = wAt (art I g) (rl.offset + 4) → ∀ (rd G : Nat),
+    Arm.r .PC m = wAt (art I g) (rl.offset + 4) → ∀ (rd G : Nat), rd < 31 → G % 8 = 0 →
+    inR (-2 ^ 20) (2 ^ 20) (pageOf G - pageOf (wAt (art I g) rl.offset).toNat) = true →
     fileWord file (wAt (art I g) rl.offset) =
       some (adrpW rd (pageOf G - pageOf (wAt (art I g) rl.offset).toNat)) →
     fileWord file (wAt (art I g) (rl.offset + 4)) = some (ldrW rd rd (G % 4096 / 8)) → ∀ i < 8,
@@ -601,7 +602,7 @@ theorem pair_step {M : Nat} {g : Clif.Function} (hF : FnOk I file g) {rl : Reloc
     have hs0 := hstep0 _ (by rw [hpe, hpc, hx0, Option.bind_some]; exact ha0)
     rw [hx0e, hP] at hs0
     obtain ⟨ha1, hx1e⟩ := ExecWords.ldrW_exec (imm := G % 4096 / 8) hlt hlt (by omega)
-    have hgot' := h1.got rl hrl hgt hpc1 rdN G hx0 hx1
+    have hgot' := h1.got rl hrl hgt hpc1 rdN G hlt h8 hr hx0 hx1
     have hval : Arm.read_mem_bytes 8 (BitVec.ofNat 64 G) e =
         BitVec.ofNat 64 (I.symAddr rl.sym rl.addend).toNat := by
       obtain ⟨hrb, -⟩ := readN_bytes hG

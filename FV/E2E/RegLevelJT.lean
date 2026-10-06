@@ -152,25 +152,25 @@ theorem jt_machine {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {d : Label
     (hdrop : R.L.drop j0 = relaxLine R.far (.ins (.bcond .hs (.block d)) none) ++
       (jtTail ts (.x nr) (.x na) (.x nb) jt ++ T))
     (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j0)
-    (herr : Arm.r .ERR s = .None)
+    (herr : Arm.r .ERR s = .None) (hspB : spOf s = R.spB)
     (hcode : ∀ k w, R.fb.words[k]? = some w →
       Arm.read_mem_bytes 4 (R.base + BitVec.ofNat 64 (4 * k)) s = w) :
     (Arm.ConditionHolds Cond.hs.bits s = true → ∃ n jl, iterN R.step n s = Arm.w .PC (R.pcOf jl) s ∧
-      R.L[jl]? = some (.label (.block d)) ∧ ∀ i < n, spOf (iterN R.step i s) = spOf s) ∧
+      R.L[jl]? = some (.label (.block d)) ∧ ∀ i < n, R.GoodX (iterN R.step i s)) ∧
     (Arm.ConditionHolds Cond.hs.bits s = false → ∀ i l,
       (Arm.r (.GPR (rnum nr)) s).toNat % 2 ^ 32 = i → ts[i]? = some l →
       ∃ n jl s', iterN R.step n s = s' ∧ Arm.r .PC s' = R.pcOf jl ∧
         R.L[jl]? = some (.label (.block l)) ∧
         (∀ f, f ≠ .PC → f ≠ .GPR (rnum na) → f ≠ .GPR (rnum nb) → Arm.r f s' = Arm.r f s) ∧
         s'.mem = s.mem ∧ s'.program = s.program ∧
-        ∀ i < n, spOf (iterN R.step i s) = spOf s) := by
-  obtain ⟨n0, j1, hn0, hj1t, hj1f, hsp0, hn1⟩ := reach_rcb hR hdrop (.inl ⟨.hs, rfl⟩) (by simp)
+        ∀ i < n, R.GoodX (iterN R.step i s)) := by
+  obtain ⟨n0, j1, hn0, hj1t, hj1f, -, hn1, hgx0⟩ := reach_rcbX hR hdrop (.inl ⟨.hs, rfl⟩) (by simp)
     (Arm.ConditionHolds Cond.hs.bits s) (fun env a ha => brCond_bcond ha s)
     (fun _ env a ha => by
       simp only [Insn.invertTo] at ha
       rw [brCond_bcond ha s, condHolds_invert _ (by decide) (by decide)])
-    hprog hpc herr
-  refine ⟨fun hhs => ⟨n0, j1, hn0, hj1t hhs, hsp0⟩, fun hhs i l hi hl => ?_⟩
+    hprog hpc herr hspB
+  refine ⟨fun hhs => ⟨n0, j1, hn0, hj1t hhs, hgx0⟩, fun hhs i l hi hl => ?_⟩
   have hdrop1 : R.L.drop j1 = jtTail ts (.x nr) (.x na) (.x nb) jt ++ T := by
     rw [hj1f hhs, ← List.drop_drop, hdrop, List.drop_left]
   have hL : ∀ t ln, (jtTail ts (.x nr) (.x na) (.x nb) jt)[t]? = some ln → R.L[j1 + t]? = some ln := by
@@ -333,21 +333,48 @@ theorem jt_machine {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {d : Label
   refine ⟨6, jtl, s6, ?_, by simp only [s6, Arm.r_of_w_same, hV], hjtl, ?_, ?_, ?_, fun k hk => ?_⟩
   · simp only [iterN]; rw [e1]; exact (by rw [e2, e3, e4, e5, e6])
   rotate_left 3
-  · have : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 := by omega
+  · have hg : ∀ {u : Arm.ArmState}, spOf u = spOf s → R.Good u := fun h => .inr (h.trans hspB)
+    have : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 := by omega
     rcases this with rfl | rfl | rfl | rfl | rfl | rfl
-    · rfl
-    · simp only [iterN]; rw [e1]; exact Arm.r_of_w_different hsp
-    · simp only [iterN]; rw [e1, e2]
-      simp only [spOf, s2, s1, Arm.r_of_w_different hsb, Arm.r_of_w_different hsp]
-    · simp only [iterN]; rw [e1, e2, e3]
-      simp only [spOf, s3, s2, s1, Arm.r_of_w_different hsa, Arm.r_of_w_different hsb,
-        Arm.r_of_w_different hsp]
-    · simp only [iterN]; rw [e1, e2, e3, e4]
-      simp only [spOf, s4, s3, s2, s1, Arm.r_of_w_different hsa, Arm.r_of_w_different hsb,
-        Arm.r_of_w_different hsp]
-    · simp only [iterN]; rw [e1, e2, e3, e4, e5]
-      simp only [spOf, s5, s4, s3, s2, s1, Arm.r_of_w_different hsa, Arm.r_of_w_different hsb,
-        Arm.r_of_w_different hsp]
+    · exact hgx0 0 (by rw [hn1 hhs]; omega)
+    · have e : iterN R.step 1 s = s1 := by simp only [iterN]; rw [e1]
+      rw [e]
+      exact RL.goodX_ofIns hR h1 (by simp only [s1, Arm.r_of_w_same]) rfl rfl
+        (hg (Arm.r_of_w_different hsp)) hr1 hp1 (by rw [e2]; exact RL.nextOk_succ h1 rfl hpc2)
+        (RL.readsAt_noLoad hR h1 (by simp only [s1, Arm.r_of_w_same]) rfl)
+    · have e : iterN R.step 2 s = s2 := by simp only [iterN]; rw [e1, e2]
+      rw [e]
+      exact RL.goodX_ofIns hR h2 hpc2 rfl rfl
+        (hg (by simp only [spOf, s2, s1, Arm.r_of_w_different hsb, Arm.r_of_w_different hsp]))
+        hr2 hp2 (by rw [e3]; exact RL.nextOk_succ h2 rfl hpc3) (RL.readsAt_noLoad hR h2 hpc2 rfl)
+    · have e : iterN R.step 3 s = s3 := by simp only [iterN]; rw [e1, e2, e3]
+      rw [e]
+      exact RL.goodX_ofIns hR h3 hpc3 rfl rfl
+        (hg (by simp only [spOf, s3, s2, s1, Arm.r_of_w_different hsa, Arm.r_of_w_different hsb,
+          Arm.r_of_w_different hsp])) hr3 hp3 (by rw [e4]; exact RL.nextOk_succ h3 rfl hpc4)
+        (RL.readsAt_of_line hR h3 hpc3 fun _ env a hab3 p hp q hq => by
+          rw [memReads_load R.ctx (show FinalAM LoadOp.sload32.bytes
+              (.regScaledExtended (.x na) (.x nb) .uxtw) from
+              ⟨show na ≤ 30 by omega, show nb ≤ 30 by omega, .inl rfl⟩)
+            (fun h => by cases h) hab3, List.mem_singleton] at hp
+          subst hp
+          simp only [LoadOp.bytes] at hq
+          refine .inr ⟨j1 + 6 + i, _, _, hwi, q, hq, ?_⟩
+          simp only [RL.pcOf]
+          rw [haddr, hofs, BitVec.ofNat_add]
+          simp only [A, BitVec.add_assoc])
+    · have e : iterN R.step 4 s = s4 := by simp only [iterN]; rw [e1, e2, e3, e4]
+      rw [e]
+      exact RL.goodX_ofIns hR h4 hpc4 rfl rfl
+        (hg (by simp only [spOf, s4, s3, s2, s1, Arm.r_of_w_different hsa, Arm.r_of_w_different hsb,
+          Arm.r_of_w_different hsp])) hr4 hp4 (by rw [e5]; exact RL.nextOk_succ h4 rfl hpc5) (RL.readsAt_noLoad hR h4 hpc4 rfl)
+    · have e : iterN R.step 5 s = s5 := by simp only [iterN]; rw [e1, e2, e3, e4, e5]
+      rw [e]
+      exact RL.goodX_ofIns hR h5 hpc5 rfl rfl
+        (hg (by simp only [spOf, s5, s4, s3, s2, s1, Arm.r_of_w_different hsa,
+          Arm.r_of_w_different hsb, Arm.r_of_w_different hsp])) hr5 hp5
+        (by rw [e6]; exact RL.nextOk_label hjtl (by simp only [s6, Arm.r_of_w_same, hV]))
+        (RL.readsAt_noLoad hR h5 hpc5 rfl)
   · intro f hfp hfa hfb
     simp only [s6, s5, s4, s3, s2, s1]
     rw [Arm.r_of_w_different hfp, Arm.r_of_w_different hfa, Arm.r_of_w_different hfp,
@@ -422,7 +449,7 @@ theorem realizes_jt {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs 
     (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some (.jtSequence d ts ridx t1 t2))
     (h : MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c') :
     ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
-      Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.Good (iterN R.step i s) := by
+      Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.GoodX (iterN R.step i s) := by
   have hck := (lowerRFunc_ok hR.alloc).2.2
   have hok := ctlCheck_inst hck hvb hi
   simp only [ctlInstOk, Bool.and_eq_true] at hok
@@ -470,7 +497,8 @@ theorem realizes_jt {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs 
       .ins (.aluRRR .add true (.x na) (.x na) (.x nb)), .ins (.br (.x na)), .label (.jt ps1.jt)] ++
       ts.map (fun l => Line.word (.block l) (.jt ps1.jt)) = jtBody d ts (.x nr) (.x na) (.x nb) (.jt ps1.jt)
       from rfl, ftList_jt, relaxLines_append, relaxLines_jtBody, List.append_assoc, List.append_assoc]
-  obtain ⟨hmTaken, hmNot⟩ := jt_machine hR hnr hna hnb hab (by simp) hdrop' hst.prog hpc hst.err hst.code
+  obtain ⟨hmTaken, hmNot⟩ := jt_machine hR hnr hna hnb hab (by simp) hdrop' hst.prog hpc hst.err hst.sp
+    hst.code
   obtain ⟨c, ins, _, hc, -⟩ := hR.check
   obtain ⟨preds, hcfg⟩ := hc.cfg
   obtain ⟨t0, tss, hback, hss, hlab⟩ := cfg_block hcfg hvb
@@ -535,9 +563,9 @@ theorem realizes_jt {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs 
   have fin : ∀ (s' : Arm.ArmState) (n jl : Nat), iterN R.step n s = s' →
       Arm.r .PC s' = R.pcOf jl → R.L[jl]? = some (.label (.block vs.label)) →
       (∀ f, f ≠ .PC → f ≠ .GPR (rnum na) → f ≠ .GPR (rnum nb) → Arm.r f s' = Arm.r f s) →
-      s'.mem = s.mem → s'.program = s.program → (∀ i < n, spOf (iterN R.step i s) = spOf s) →
+      s'.mem = s.mem → s'.program = s.program → (∀ i < n, R.GoodX (iterN R.step i s)) →
       ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k (#[Reg.x nr, .x na, .x nb].map Loc.reg) :: its, m, w⟩) c'' ∧
-        Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.Good (iterN R.step i s) := by
+        Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.GoodX (iterN R.step i s) := by
     intro s' n jl hn hpc' hjl hf hmem hprog hsp
     have hsem' : R.sem (.jtSequence d ts (.vreg vr .int) (.vreg va .int) (.vreg vb' .int))
         (((#[(⟨vr, .int, .use, .early, .reg⟩ : Operand), ⟨va, .int, .def, .early, .reg⟩,
@@ -548,7 +576,7 @@ theorem realizes_jt {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs 
       hsem' hlen ⟨by rw [hout2]; rfl,
         fun h => by simp [havocFrom, MInst.keptDefs, MInst.isBranch] at h,
         fun n h => by simp [havocFrom, MInst.keptDefs, MInst.isBranch] at h; subst h; rfl⟩
-      (hcl0 _) (MNext.goto hk1 hsucc hitems), ?_, fun i hi => RL.good_of_sp ((hsp i hi).trans hst.sp)⟩
+      (hcl0 _) (MNext.goto hk1 hsucc hitems), ?_, hsp⟩
     rw [hstore, hn]
     exact q_entry hR hst0 hvs hitems hjl hpc' (stRel_regs hst hna hnb hna18 hnb18 hf hmem hprog)
   -- which successor
