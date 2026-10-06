@@ -141,9 +141,10 @@ References are to `cranelift/codegen/src` at the pinned commit.
 | `use_bti` | Adds `bti c` to every function (`isa/aarch64/abi.rs:638`) | No function: the whole request is rejected |
 
 If a function is not signed, `sign_return_address_all`, `sign_return_address_with_bkey`
-and `has_pauth` have no effect on it. Lean's frame decision is used to decide
-whether stock signs. If stock keeps a frame where Lean omits one, the outputs
-already differ, and the comparison reports them as different.
+and `has_pauth` have no effect on it. Lean's frame decision stands in for
+stock's, and the comparison checks it against stock's code: if stock signed a
+function that Lean accepted (stock sets up a frame where Lean has none), the
+function is counted as `unsupported_configuration`, not as a difference.
 
 `preserve_frame_pointers=false` omits an optional empty leaf frame **before
 emission**, checking calls, frame-register usage, incoming stack-argument loads,

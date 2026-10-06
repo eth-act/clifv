@@ -38,6 +38,16 @@ class ContractTests(unittest.TestCase):
         for receipt in ({},{"function_rejections":None},{"function_rejections":["f"]},{"function_rejections":{"f":1}}):
             self.assertIsNone(COMPARE.function_rejections(receipt))
 
+    def test_function_stock_signed_is_a_setting_gap(self):
+        words = lambda *ws: b"".join(w.to_bytes(4, "little") for w in ws)
+        signs = {"isa_flags":[{"name":"sign_return_address","value":"true"}]}
+        unsigned = {"isa_flags":[{"name":"sign_return_address","value":"false"}]}
+        # paciasp ... autiasp; ret, pacibsp ... retab, and an unsigned leaf.
+        for code in (words(0xd503233f, 0xa9bf7bfd, 0xd50323bf, 0xd65f03c0), words(0xd503237f, 0xd65f0fff)):
+            self.assertTrue(COMPARE.signing_gap(signs, code))
+            self.assertFalse(COMPARE.signing_gap(unsigned, code))
+        self.assertFalse(COMPARE.signing_gap(signs, words(0x8b010000, 0xd65f03c0)))
+
     def test_all_encoder_relocation_types_are_known(self):
         self.assertEqual(COMPARE.ELF_RELOC_TYPES["Aarch64AdrGotPage21"],311)
         self.assertEqual(len(COMPARE.ELF_RELOC_TYPES),9)

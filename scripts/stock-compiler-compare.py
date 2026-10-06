@@ -58,6 +58,23 @@ def function_rejections(receipt):
     return rejections
 
 
+# Return-address signing words Cranelift emits (`isa/aarch64/inst/emit.rs`: `Inst::Paci`,
+# `Inst::AuthenticatedRet`; `APIKey::enc_auti_hint`): paci{a,b}{sp,z}, auti{a,b}{sp,z}, reta{a,b}.
+SIGNING_WORDS = {0xd503231f, 0xd503233f, 0xd503235f, 0xd503237f, 0xd503239f, 0xd50323bf,
+                 0xd50323df, 0xd50323ff, 0xd65f0bff, 0xd65f0fff}
+SIGNING_GAP = ("sign_return_address=true signs this function's return address in stock, which sets up "
+               "a frame where Lean has none; Lean does not implement pointer authentication")
+
+
+def signing_gap(variant, stock_code):
+    """lean-backend accepts `sign_return_address` for a function it compiles without a frame,
+    standing in for stock's frame decision. Check that against stock's code: a function that
+    stock signed is a setting gap, not a code difference."""
+    requested = {"name": "sign_return_address", "value": "true"} in variant["isa_flags"]
+    return requested and any(int.from_bytes(stock_code[i:i + 4], "little") in SIGNING_WORDS
+                             for i in range(0, len(stock_code) - 3, 4))
+
+
 def artifacts(directory):
     result = {}
     for path in directory.glob("*.json"):
@@ -249,6 +266,8 @@ def one(path, out, env, binary, repeat):
                 elif name.removeprefix("%") in contract["function_rejections"]:
                     r = {"name":name,"status":"unsupported_configuration",
                          "reason":contract["function_rejections"][name.removeprefix("%")]}
+                elif signing_gap(variant, metas[name][0].with_suffix(".bin").read_bytes()):
+                    r = {"name":name,"status":"unsupported_configuration","reason":SIGNING_GAP}
                 else:
                     r = compare_function(name, metas[name], lean, True, v["reference_repeat_verified"])
             v["functions_compared"].append(r)
