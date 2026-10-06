@@ -9,10 +9,9 @@ every input, from the checks and one contract on the base environment, leaving t
 hypothesis `RunOkD` (`StepOkD`):
 
 * `site`'s agreement of the site lookup (`siteAt_static`) and `plain` (`plain_static`): from the
-  per-program code map check `codeMapB` (`codeMap_sound`: two functions' code ranges are
-  disjoint) and the layout (a relocation is at its own instruction line);
-* `blr`'s link-map address of a callee of the program (`codeMap_sound`: a function's link-map
-  address is its load address);
+  per-program code map check `codeMapB` (`FV/E2E/CodeMap.lean`; `codeMap_sound`, `line_overlap`:
+  two functions' overlapping words are alike lines, so one kind of site and one relocation
+  status) and the layout (a relocation is at its own instruction line);
 * `call` and `tls`: the **outside-code contract `HooksSim`** on the base environment (next to
   `BaseOk`): the hooks for calls outside the program and for the TLS sequence do not read the
   program's relocated instruction bytes nor the machine's program field. `closedBase` meets it
@@ -20,7 +19,8 @@ hypothesis `RunOkD` (`StepOkD`):
 
 `StepOkD` keeps what depends on the run: no error, the program field, the pc at an instruction of
 the function (not past a TLSDESC `ldr`), D1 (`cf`), D2 (`insn`), D4 (`got`) and, at a `blr` to the
-program, the register (not `xzr`) and the model's read of the `blr` word. Discharging it from the
+program, the register (not `xzr`), the model's read of the `blr` word and the callee's link-map
+address (from the M6 proof's `BlrAt` and `codeMapB`: `symAddr_of_blrTo`). Discharging it from the
 M6 proof is TO-PROVE L3 (c). `binary_correct_exec_static` is `binary_correct_exec` under
 `HooksSim` and `RunOkD`.
 -/

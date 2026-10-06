@@ -53,7 +53,7 @@ The model's ArmRefines does not expose its intermediate states, so the per-state
 lockstep needs are one explicit hypothesis, `RunOk`: `StepOk` at every state of the model's run
 before its return (`Reach`, nested into the linked calls). `StepOk M g m` (`m` a state of an
 activation of `g` at depth `M`): no error, the program field is `g`'s, the pc is at an
-instruction of `g` (with the site lookup agreeing, `siteAt`), and
+instruction of `g` (the site lookup, `siteAt`, giving its kind of site), and
 * `cf`  (D1): a step that lands on the second word of a pair starts at its first word;
 * `insn` / `call` / `tls` (D2): the instruction (resp. outside call, TLS hook) at `m` reads no
   relocated instruction byte (`Sim` before ⇒ `Sim` after);
