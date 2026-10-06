@@ -238,12 +238,12 @@ assertions all pass.
 substitutes a process-local host function address; it is not credited as agreement.
 
 The per-function settings policy above changes these counts. Of the 4,455 stock
-outputs, 438 match (was 425) and 1,152 differ (was 983). 477 are rejected for a
-setting (was 1,176) and 2,388 for an operation Lean does not support (was 1,871).
-Compared outputs now come from 149 files (was 116). Every output that matched
+outputs, 465 match (was 451) and 1,145 differ (was 952). 432 are rejected for a
+setting (was 1,176) and 2,413 for an operation Lean does not support (was 1,876).
+Compared outputs now come from 151 files (was 118). Every output that matched
 before still matches. The remaining setting rejections are mostly
-`opt_level=speed` or `speed_and_size` (243), `has_lse` atomics (114), `use_csdb`
-(51) and `is_pic=false` far symbols (40).
+`opt_level=speed` or `speed_and_size` (243), `has_lse` atomics (114),
+`is_pic=false` far symbols (40) and `use_bti` (11).
 
 Next, implement a comparable exception/unwind metadata export, capture the exact
 target/CPU eligibility of a selected real CI host, and feed matched Lean artifacts

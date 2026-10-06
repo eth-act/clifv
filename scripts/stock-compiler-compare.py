@@ -67,12 +67,21 @@ SIGNING_GAP = ("sign_return_address=true signs this function's return address in
 
 
 def signing_gap(variant, stock_code):
-    """lean-backend accepts `sign_return_address` for a function it compiles without a frame,
-    standing in for stock's frame decision. Check that against stock's code: a function that
-    stock signed is a setting gap, not a code difference."""
+    """Whether `sign_return_address` is requested and stock's code signs the return address."""
     requested = {"name": "sign_return_address", "value": "true"} in variant["isa_flags"]
     return requested and any(int.from_bytes(stock_code[i:i + 4], "little") in SIGNING_WORDS
                              for i in range(0, len(stock_code) - 3, 4))
+
+
+def check_signing(row, variant, stock_code):
+    """lean-backend accepts `sign_return_address` for a function it compiles without a frame,
+    standing in for stock's frame decision. Check that against stock's code: a compiled function
+    that stock signed is a setting gap, not a code difference. A function Lean could not compile
+    stays an operation gap."""
+    compared = row["status"] in ("identical_code_artifact", "different_code_artifact")
+    if compared and signing_gap(variant, stock_code):
+        return {"name": row["name"], "status": "unsupported_configuration", "reason": SIGNING_GAP}
+    return row
 
 
 def position(variant, path, name, index=None):
@@ -294,10 +303,9 @@ def one(path, out, env, binary, repeat):
                 elif name.removeprefix("%") in contract["function_rejections"]:
                     r = {"name":name,"status":"unsupported_configuration",
                          "reason":contract["function_rejections"][name.removeprefix("%")]}
-                elif signing_gap(variant, metas[k][0].with_suffix(".bin").read_bytes()):
-                    r = {"name":name,"status":"unsupported_configuration","reason":SIGNING_GAP}
                 else:
                     r = compare_function(name, metas[k], lean, True, v["reference_repeat_verified"])
+                    r = check_signing(r, variant, metas[k][0].with_suffix(".bin").read_bytes())
             r["index"] = k
             v["functions_compared"].append(r)
         v["all_test_function_code_artifacts_identical"] = bool(v["functions_compared"]) and all(

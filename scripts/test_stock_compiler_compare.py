@@ -47,6 +47,13 @@ class ContractTests(unittest.TestCase):
             self.assertTrue(COMPARE.signing_gap(signs, code))
             self.assertFalse(COMPARE.signing_gap(unsigned, code))
         self.assertFalse(COMPARE.signing_gap(signs, words(0x8b010000, 0xd65f03c0)))
+        signed = words(0xd503233f, 0xd50323bf, 0xd65f03c0)
+        for status in ("identical_code_artifact", "different_code_artifact"):
+            row = COMPARE.check_signing({"name":"%f","status":status}, signs, signed)
+            self.assertEqual((row["status"], row["reason"]), ("unsupported_configuration", COMPARE.SIGNING_GAP))
+        # Lean did not compile it: an operation gap, whatever stock does.
+        uncompiled = {"name":"%f","status":"lean_unsupported","reason":"see lean.stderr and traps.json"}
+        self.assertIs(COMPARE.check_signing(uncompiled, signs, signed), uncompiled)
 
     def test_all_encoder_relocation_types_are_known(self):
         self.assertEqual(COMPARE.ELF_RELOC_TYPES["Aarch64AdrGotPage21"],311)
