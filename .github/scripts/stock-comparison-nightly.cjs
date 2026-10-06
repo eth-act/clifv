@@ -4,7 +4,7 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const zlib = require('node:zlib');
 const { execFileSync } = require('node:child_process');
-const { validateMeasurement } = require('./stock-comparison-comment.cjs');
+const { validateMeasurement, totalsRows } = require('./stock-comparison-comment.cjs');
 
 const WORKFLOW = '.github/workflows/stock-compiler-comparison.yml';
 const NIGHTLY = '.github/workflows/stock-comparison-nightly.yml';
@@ -178,6 +178,13 @@ async function attribution(github, repo, before, after) {
     commits: commits.map(c => ({ sha: c.sha, title: text(c.commit.message.split('\n')[0]) })) };
 }
 
+function measured(snapshot) {
+  if (!snapshot) return null;
+  const t = snapshot.totals;
+  return { exact: t.exact_code_artifacts, sha: snapshot.run.head_sha, totals: t,
+    outputs: t.test_function_compilations - (t.function_statuses.expected_stock_rejection_no_binary ?? 0) };
+}
+
 async function collect({ github, context, issueNumber, now = new Date(), loadReport, loadState }) {
   const repo = context.repo;
   const issue = (await github.rest.issues.get({ ...repo, issue_number: issueNumber })).data;
@@ -217,7 +224,7 @@ async function collect({ github, context, issueNumber, now = new Date(), loadRep
   for (const run of completed.filter(r => Date.parse(r.updated_at) > Date.parse(since))) {
     checkedRun(run);
     const row = { run, url: runUrl(repo, run) };
-    if (run.conclusion !== 'success') { row.problem = `Measurement ${run.conclusion}; no compiler-regression claim`; rows.push(row); continue; }
+    if (run.conclusion !== 'success') { row.problem = `measurement ${run.conclusion}`; rows.push(row); continue; }
     let next;
     try { next = await load(run); } catch (error) {
       if (!error.message.startsWith('Missing or expired artifact:')) throw error;
@@ -228,7 +235,7 @@ async function collect({ github, context, issueNumber, now = new Date(), loadRep
     if (baseline) {
       row.range = await attribution(github, repo, baseline.run.head_sha, run.head_sha);
       if (!['ahead', 'identical'].includes(row.range.status)) {
-        row.problem = `History ${row.range.status}: not a forward comparison; baseline unchanged`;
+        row.problem = `history ${row.range.status}, not a forward comparison`;
         rows.push(row); continue;
       }
       row.delta = difference(baseline, next);
@@ -238,9 +245,9 @@ async function collect({ github, context, issueNumber, now = new Date(), loadRep
   }
   const plan = { schema: 1, since, through: now.toISOString(), previous,
     snapshot_run_id: context.runId, snapshot_attempt: Number(process.env.GITHUB_RUN_ATTEMPT || 1),
-    initial: initial ? { exact: initial.totals.exact_code_artifacts, sha: initial.run.head_sha } : null,
-    latest: baseline ? { exact: baseline.totals.exact_code_artifacts, sha: baseline.run.head_sha,
-      outputs: baseline.totals.test_function_compilations - (baseline.totals.function_statuses.expected_stock_rejection_no_binary ?? 0) } : null,
+    initial: measured(initial), latest: measured(baseline),
+    compare: initial && baseline && initial.run.head_sha !== baseline.run.head_sha ?
+      `https://github.com/${repo.owner}/${repo.repo}/compare/${initial.run.head_sha}...${baseline.run.head_sha}` : null,
     rows };
   return { plan, saved: { schema: 1, through: plan.through, baseline } };
 }
@@ -249,45 +256,67 @@ function label(key) {
   const [file, stage, isa, command, fn, occurrence] = JSON.parse(key);
   return `${text(file)} ${text(fn)} (${stage}, ISA ${isa}, command ${command}, occurrence ${occurrence + 1})`;
 }
-function render(plan) {
-  let body = `### Compiler agreement: ${plan.through.slice(0, 10)}\n\n`;
-  body += `Window: ${plan.since} → ${plan.through}.\n`;
-  body += plan.latest ? `Latest: **${plan.latest.exact} / ${plan.latest.outputs} exact outputs** at \`${plan.latest.sha.slice(0, 12)}\`.\n` : 'No valid baseline available.\n';
-  let gained = 0, lost = 0;
-  const archived = [];
-  for (const row of plan.rows) {
-    const reference = `[${row.run.head_sha.slice(0, 12)}](${row.url})`;
-    body += `\n#### ${reference}\n\n`;
-    if (row.problem) { body += `${text(row.problem)}.\n`; archived.push(`${reference}: ${text(row.problem)}.`); continue; }
-    if (row.initial) { body += `Initial baseline: ${row.exact}/${row.outputs}; no earlier valid measurement.\n`; archived.push(`${reference}: initial baseline ${row.exact}/${row.outputs}.`); continue; }
-    const attribution = row.range.url ? `[Measured commit range](${row.range.url}); authors: ${row.range.authors.map(text).join(', ') || 'unavailable'}.` : 'Same-commit rerun; changes are not attributed to an author.';
-    body += `${attribution}\n`;
-    for (const commit of row.range.commits.slice(0, 20)) body += `- \`${commit.sha.slice(0, 12)}\`: ${commit.title}\n`;
-    if (row.range.commits.length > 20) body += `- ${row.range.commits.length - 20} more commits in the linked range.\n`;
-    if (!row.delta.comparable) {
-      body += `\nReference or harness changed: **not directly comparable**. New baseline: ${row.exact}/${row.outputs}.\n`;
-      archived.push(`${reference}: reference/harness changed; baseline ${row.exact}/${row.outputs}. ${attribution}`); continue;
+function signed(value) {
+  if (!value) return '0';
+  return (value > 0 ? '+' : '−') + Math.abs(value).toLocaleString('en-US');
+}
+// The PR comment's table, with the change since the previous report in each row.
+function table(before, after) {
+  const old = before && totalsRows(before);
+  return '| Check | Result | Change |\n| --- | --- | --- |\n' + totalsRows(after).map((row, i) => {
+    let change = '—';
+    if (old) {
+      change = signed(row.value - old[i].value);
+      if (row.total !== old[i].total) change += ` (of ${signed(row.total - old[i].total)})`;
     }
-    const d = row.delta;
-    gained += d.gained.length; lost += d.lost.length;
-    const counts = `Exact outputs +${d.gained.length} / -${d.lost.length}; supported outputs +${d.supportGained.length} / -${d.supportLost.length}; identities added ${d.added.length}, removed ${d.removed.length}, input/settings changed ${d.changedInput.length}, unstable-reference outputs excluded ${d.unstableReference.length}.`;
-    body += `\n${counts}\n`;
-    const regressions = [...new Set([...d.lost, ...d.supportLost])];
-    if (regressions.length) body += '\nFirst-observed regressions (not proven causes):\n' + regressions.map(key => `- ${label(key)}`).join('\n') + '\n';
-    if (d.removed.length) body += '\nRemoved output identities (coverage losses, not byte regressions):\n' + d.removed.map(key => `- ${label(key)}`).join('\n') + '\n';
-    archived.push(`${reference}: ${counts} ${attribution}` +
-      (regressions.length ? ` Regressions: ${regressions.map(label).join('; ')}.` : '') +
-      (d.removed.length ? ` Removed: ${d.removed.map(label).join('; ')}.` : ''));
+    return `| ${row.label} | ${row.text} | ${change} |\n`;
+  }).join('');
+}
+function render(plan) {
+  const sha = value => `\`${value.slice(0, 12)}\``;
+  const link = row => `[${sha(row.run.head_sha)}](${row.url})`;
+  let body = `### Compiler agreement: ${plan.through.slice(0, 10)}\n\n`;
+  let compact = `${plan.through.slice(0, 10)}: `;
+  if (!plan.latest) {
+    body += 'No valid measurement yet.\n';
+    compact += 'no valid measurement.';
+  } else {
+    const change = plan.initial ? plan.latest.exact - plan.initial.exact : null;
+    if (plan.compare) body += `Main ${sha(plan.initial.sha)} → ${sha(plan.latest.sha)} ([commits](${plan.compare})).\n\n`;
+    else if (plan.initial) body += `Main at ${sha(plan.latest.sha)}, as in the previous report.\n\n`;
+    else body += `Main at ${sha(plan.latest.sha)}. No earlier measurement to compare with.\n\n`;
+    body += table(plan.initial?.totals, plan.latest.totals);
+    compact += `${plan.latest.exact}/${plan.latest.outputs} exact` + (change === null ? '' : ` (${signed(change)})`) +
+      ` at ${plan.latest.sha.slice(0, 12)}.`;
   }
-  if (!plan.rows.length) body += '\nNo newly completed main measurements.\n';
-  body += '\nRanges show where a change was first observed, not proof of a specific culprit. Failed/cancelled runs are measurement gaps. This measures artifact equality, not execution or formal proof coverage.\n';
-  const compact = `${plan.through.slice(0, 10)}: ${plan.rows.length} measurements, exact gains ${gained}, losses ${lost}. ` +
-    (plan.latest ? `Latest ${plan.latest.exact}/${plan.latest.outputs}. ` : '') + archived.join(' ');
-  // The compact record retains every regression and attribution, not expiring artifact links alone.
+  const problems = plan.rows.filter(row => row.problem);
+  if (problems.length) {
+    body += `\nNot compared: ${problems.map(row => `${link(row)} (${text(row.problem)})`).join(', ')}.\n`;
+    compact += ` Not compared: ${problems.map(row => `${row.run.head_sha.slice(0, 12)} (${text(row.problem)})`).join(', ')}.`;
+  }
+  const changed = plan.rows.filter(row => row.delta && !row.delta.comparable);
+  if (changed.length) {
+    body += `\nThe stock reference or the measuring code changed at ${changed.map(link).join(', ')}: ` +
+      'part of the change may come from the measurement, not the compiler.\n';
+    compact += ` Reference or harness changed at ${changed.map(row => row.run.head_sha.slice(0, 12)).join(', ')}.`;
+  }
+  // Lost matches are named, with the measured commit range where they were first seen.
+  const losses = plan.rows.filter(row => row.delta?.comparable && row.delta.lost.length);
+  const lost = losses.reduce((sum, row) => sum + row.delta.lost.length, 0);
+  if (lost) {
+    const lines = losses.flatMap(row => row.delta.lost.map(key => `- ${label(key)}, first seen at ${link(row)}` +
+      (row.range.url ? ` ([commits](${row.range.url}))` : '')));
+    body += `\n**Lost exact matches** (${lost.toLocaleString('en-US')}):\n${lines.slice(0, 30).join('\n')}\n` +
+      (lines.length > 30 ? `- ... and ${(lines.length - 30).toLocaleString('en-US')} more (report artifact)\n` : '');
+    compact += ' ' + losses.map(row => `Lost at ${row.run.head_sha.slice(0, 12)}` +
+      (row.range.url ? ` (${row.range.url}; ${row.range.authors.map(text).join(', ') || 'authors unavailable'})` : '') +
+      `: ${row.delta.lost.map(label).join('; ')}.`).join(' ');
+  }
+  // The compact record keeps lost matches and their attribution after the comment is deleted.
   body = `${COMMENT}${JSON.stringify({ run: plan.snapshot_run_id, attempt: plan.snapshot_attempt })} -->\n` + body +
     `\n${COMPACT}${JSON.stringify(zlib.deflateSync(Buffer.from(compact)).toString('base64'))} -->`;
   if (body.length > LIMIT) throw new Error('Digest exceeds comment limit; do not advance the cursor');
-  return { body, compact, gained, lost };
+  return { body, compact, lost };
 }
 
 function botComments(comments) {

@@ -143,11 +143,25 @@ function fraction(numerator, denominator) {
     (denominator ? ` (${(100 * numerator / denominator).toFixed(1)}%)` : '');
 }
 
-function render(data, repo, run) {
-  validate(data, run);
-  const t = data.totals, f = t.function_statuses;
+// The rows of the results table. The nightly digest shows the same rows with a change column.
+function totalsRows(t) {
+  const f = t.function_statuses;
   const scope = t.file_statuses.binary_test ?? 0;
   const stockOutputs = t.test_function_compilations - (f.expected_stock_rejection_no_binary ?? 0);
+  return [
+    ['Official CLIF test inventory', t.inventoried_test_files, t.official_test_files, ' files'],
+    ['AArch64 files with outputs compared', t.files_with_compared_function_outputs, scope],
+    ['Exact function outputs', t.exact_code_artifacts, stockOutputs],
+    ['Files with every AArch64 output matching', t.files_all_aarch64_code_artifacts_identical, scope],
+    ['Different function outputs', f.different_code_artifact ?? 0],
+    ['Rejected for a setting', f.unsupported_configuration ?? 0],
+    ['Rejected for an unsupported operation', f.lean_unsupported ?? 0],
+  ].map(([label, value, total, unit = '']) => ({ label, value, total,
+    text: (total === undefined ? value.toLocaleString('en-US') : fraction(value, total)) + unit }));
+}
+
+function render(data, repo, run) {
+  validate(data, run);
   const url = `https://github.com/${repo.owner}/${repo.repo}/actions/runs/${run.id}/attempts/${run.run_attempt}`;
   return `${MARKER} run=${run.id} attempt=${run.run_attempt} -->
 ### Stock Cranelift / Lean comparison
@@ -156,13 +170,7 @@ Commit: \`${run.head_sha.slice(0, 12)}\`. [Run and artifacts](${url}).
 
 | Check | Result |
 | --- | --- |
-| Official CLIF test inventory | ${fraction(t.inventoried_test_files, t.official_test_files)} files |
-| AArch64 files with outputs compared | ${fraction(t.files_with_compared_function_outputs, scope)} |
-| Exact function outputs | ${fraction(t.exact_code_artifacts, stockOutputs)} |
-| Files with every AArch64 output matching | ${fraction(t.files_all_aarch64_code_artifacts_identical, scope)} |
-| Different function outputs | ${(f.different_code_artifact ?? 0).toLocaleString('en-US')} |
-| Rejected for a setting | ${(f.unsupported_configuration ?? 0).toLocaleString('en-US')} |
-| Rejected for an unsupported operation | ${(f.lean_unsupported ?? 0).toLocaleString('en-US')} |
+${totalsRows(data.totals).map(row => `| ${row.label} | ${row.text} |`).join('\n')}
 | Complete compiler metadata agreement | ${data.full_artifact_equivalence_verified ? 'Established' : 'Not established'} |
 | Compiled test functions executed | No |
 
@@ -259,7 +267,7 @@ async function post({ github, context, core, summaryPath = 'report' }) {
   return current.data;
 }
 
-module.exports = { validate, validateMeasurement, render, prepare, post, readSummary };
+module.exports = { validate, validateMeasurement, totalsRows, render, prepare, post, readSummary };
 if (require.main === module) {
   const data = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
   const [owner, repo] = process.env.GITHUB_REPOSITORY.split('/');

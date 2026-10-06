@@ -103,13 +103,17 @@ cancellations are reported as measurement gaps; late completions enter the next
 digest. Intermediate pushes can be skipped by the measurement workflow's queue,
 so reports attribute changes to measured commit ranges, not proven culprits.
 
-The digest compares individual reported function occurrences under the same
-input and stock settings. It shows gained/lost exact matches and supported
-outputs, added/removed identities, and commit titles and GitHub authors. Changes
-to the pinned reference or recorded harness provenance are not directly
-comparable. Changed input/settings and nonrepeatable reference stages are
-reported separately, not called compiler regressions. Counts measure artifact
-agreement, not execution or proof coverage.
+Each digest is one table: the rows of the PR comment, with the change since the
+previous digest in each row. Below it, the digest names lost exact matches with
+the measured commit range where each was first seen. Matches are compared per
+reported function occurrence under the same input and stock settings; changed
+input/settings and nonrepeatable reference stages are not called losses. The
+digest also names `main` commits whose measurement could not be compared, and
+measurements where the pinned reference or recorded harness changed, which are
+not directly comparable. The report artifact keeps the per-measurement detail:
+gained and lost matches and supported outputs, added/removed identities, commit
+titles and GitHub authors. Counts measure artifact agreement, not execution or
+proof coverage.
 
 Each nightly saves a compact baseline snapshot and detailed report as Actions
 artifacts for 90 days, including on quiet nights. The snapshot is uploaded before
@@ -119,8 +123,8 @@ expired are explicit gaps. Source measurements retain their existing seven-day
 artifact retention.
 
 The bot keeps 30 recent digest comments. Before deleting older marked comments
-owned by `github-actions[bot]`, it stores their counts, regressions, removed
-identities, and attribution links in the issue body and verifies the update.
+owned by `github-actions[bot]`, it stores their counts, lost matches and their
+attribution links in the issue body and verifies the update.
 Human comments and unrelated bot comments are never deleted. If the compacted
 body reaches its size limit, deletion stops rather than dropping findings.
 

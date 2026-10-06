@@ -38,7 +38,7 @@ function report(statuses = [EXACT, DIFFERENT, UNSUPPORTED, 'expected_stock_rejec
 function plan(changes = {}) {
   return { schema: 1, since: '2026-10-04T08:00:00.000Z', through: '2026-10-05T08:00:00.000Z',
     previous: null, snapshot_run_id: 900, snapshot_attempt: 1, initial: null,
-    latest: { exact: 1, outputs: 3, sha: run().head_sha }, rows: [], ...changes };
+    latest: { exact: 1, outputs: 3, sha: run().head_sha, totals: report().totals }, rows: [], ...changes };
 }
 function zipState(saved) {
   return execFileSync('python3', ['-c', 'import io,sys,zipfile\nb=io.BytesIO()\nwith zipfile.ZipFile(b,"w") as z: z.writestr("state.json",sys.stdin.buffer.read())\nsys.stdout.buffer.write(b.getvalue())'],
@@ -172,15 +172,41 @@ test('quiet nights carry the snapshot forward; invalid snapshots do not advance 
   assert.deepEqual(result.saved.baseline, baseline); assert.equal(result.plan.rows.length, 0);
   await assert.rejects(n.collect({ ...options, loadState: async () => ({ schema: 1, through: 'wrong', baseline }) }));
 });
-test('render retains regression identities, commit range and author, without claiming causation', () => {
+test('render is one table with the change since the previous report in each row', () => {
+  const before = report([EXACT, DIFFERENT, UNSUPPORTED, UNSUPPORTED]).totals;
+  const after = report([EXACT, EXACT, DIFFERENT, UNSUPPORTED]).totals;
+  const { body, compact } = n.render(plan({ initial: { exact: 1, outputs: 4, sha: run().head_sha, totals: before },
+    latest: { exact: 2, outputs: 4, sha: run(11).head_sha, totals: after }, compare: 'https://example.com/compare' }));
+  assert.ok(body.includes('| Check | Result | Change |'));
+  assert.ok(body.includes('| Exact function outputs | 2 / 4 (50.0%) | +1 |'));
+  assert.ok(body.includes('| Different function outputs | 1 | 0 |'));
+  assert.ok(body.includes('| Rejected for an unsupported operation | 1 | \u22121 |'));
+  assert.ok(body.includes('https://example.com/compare'));
+  assert.equal(body.match(/^\| Check/gm).length, 1);
+  assert.ok(compact.includes('2/4 exact (+1)'));
+});
+test('render marks a changed total and a first measurement', () => {
+  const before = report([EXACT, DIFFERENT]).totals;
+  const after = report([EXACT, DIFFERENT, DIFFERENT]).totals;
+  let { body } = n.render(plan({ initial: { exact: 1, outputs: 2, sha: run().head_sha, totals: before },
+    latest: { exact: 1, outputs: 3, sha: run(11).head_sha, totals: after } }));
+  assert.ok(body.includes('| Exact function outputs | 1 / 3 (33.3%) | 0 (of +1) |'));
+  ({ body } = n.render(plan()));
+  assert.ok(body.includes('No earlier measurement'));
+  assert.ok(body.includes('| Exact function outputs | 1 / 3 (33.3%) | \u2014 |'));
+});
+test('render names lost matches with their commit range and author, and unmeasured commits', () => {
   const row = { run: run(11), url: 'https://example.com/run', exact: 0, outputs: 1,
     range: { authors: ['@contributor'], commits: [{ sha: run(11).head_sha, title: 'Change lowering' }], url: 'https://example.com/range' },
     delta: n.difference(n.snapshot(report([EXACT]), run()), n.snapshot(report([UNSUPPORTED]), run(11))) };
-  const rendered = n.render(plan({ rows: [row] }));
-  for (const value of ['@contributor', 'not proven causes', 'a.clif %f0', 'Change lowering', 'https://example.com/range']) {
-    assert.ok(rendered.body.includes(value), value);
+  const failed = { run: run(12), url: 'https://example.com/failed', problem: 'measurement failure' };
+  const { body, compact } = n.render(plan({ rows: [row, failed] }));
+  for (const value of ['**Lost exact matches** (1)', 'a.clif %f0', 'https://example.com/range', 'Not compared:', 'measurement failure']) {
+    assert.ok(body.includes(value), value);
   }
-  assert.ok(rendered.compact.includes('Regressions: a.clif %f0'));
+  assert.ok(compact.includes('Lost at'));
+  assert.ok(compact.includes('@contributor'));
+  assert.ok(compact.includes('a.clif %f0'));
 });
 test('compaction archives before deletion and preserves humans and unrelated bots', async () => {
   const f = fixture({ comments: [oldComment(10), oldComment(11),
@@ -190,7 +216,7 @@ test('compaction archives before deletion and preserves humans and unrelated bot
   assert.deepEqual(f.calls.map(c => c[0]), ['create', 'update', 'delete', 'delete']);
   assert.deepEqual(f.calls.filter(c => c[0] === 'delete').map(c => c[1].comment_id), [10, 11]);
   assert.ok(f.issue.body.includes('Human introduction.'));
-  assert.ok(f.issue.body.includes('exact gains 0, losses 0'));
+  assert.ok(f.issue.body.includes('2026-10-05: 1/3 exact at'));
   assert.equal(n.marker(f.issue.body, n.STATE).archived_through, 11);
 });
 test('regressions and attribution survive comment compaction', async () => {
@@ -200,7 +226,7 @@ test('regressions and attribution survive comment compaction', async () => {
     range: { url: 'https://example.com/commits', authors: ['@contributor'], commits: [] }, delta: n.difference(before, after) }] });
   const f = fixture({ comments: [old] });
   await n.publish({ ...f, plan: plan(), keep: 1 });
-  assert.ok(f.issue.body.includes('Regressions: a.clif %f0')); assert.ok(f.issue.body.includes('@contributor'));
+  assert.ok(f.issue.body.includes('a.clif %f0')); assert.ok(f.issue.body.includes('@contributor'));
 });
 test('publication failure cannot erase comments or advance an unconfirmed archive', async () => {
   for (const failure of ['failCreate', 'failUpdate']) {
@@ -239,7 +265,7 @@ test('already archived comments are deleted without duplicating compacted histor
   const f = fixture({ body, comments: [oldComment(10)] });
   await n.publish({ ...f, plan: plan({ previous }), keep: 1 });
   assert.equal(f.issue.body.includes('Retained finding.'), true);
-  assert.equal(f.issue.body.includes('exact gains 0, losses 0'), false);
+  assert.equal(f.issue.body.includes('2026-10-05: 1/3 exact at'), false);
   assert.equal(f.calls.filter(c => c[0] === 'delete').length, 1);
 });
 test('full archive preserves comments instead of losing evidence', async () => {
