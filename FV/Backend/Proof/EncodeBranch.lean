@@ -40,10 +40,10 @@ theorem bmod_ofInt_toInt (n : Nat) (q : Int) (h1 : -(2 ^ n : Int) ≤ q) (h2 : q
 field is the offset divided by `scale`. -/
 theorem Env.pcRel_ok {env : Env} {what : String} {n scale : Nat} {l : Lbl}
     {v : BitVec (n + 1)} (h : env.pcRel what (n + 1) scale l = .ok v) :
-    ∃ o q, env.lbl l = some o ∧ (o : Int) - env.pc = scale * q ∧ v.toInt = q ∧
+    ∃ o q, env.target l = some o ∧ (o : Int) - env.pc = scale * q ∧ v.toInt = q ∧
       -(2 ^ n : Int) ≤ q ∧ q < 2 ^ n := by
   unfold Env.pcRel Env.rel at h
-  cases hl : env.lbl l with
+  cases hl : env.target l with
   | none => simp [hl, bind, Except.bind, throw, throwThe, MonadExceptOf.throw] at h
   | some o =>
     simp only [hl, Nat.add_sub_cancel] at h
@@ -59,15 +59,8 @@ theorem Env.pcRel_ok {env : Env} {what : String} {n scale : Nat} {l : Lbl}
           MonadExceptOf.throw] at h
     · simp [ha, pure, bind, Except.bind, Except.pure, throw, throwThe, MonadExceptOf.throw] at h
 
-/-- The label operand of a PC-relative form, its reach in bytes (`-reach ≤ target - pc <
-reach`) and its alignment (Arm ARM C6.2: B `imm26:'00'`, B.cond/CBZ/CBNZ `imm19:'00'`,
-TBZ/TBNZ `imm14:'00'`, ADR `immhi:immlo`). -/
-def Insn.pcRelSpec? : Insn → Option (Lbl × Int × Int)
-  | .b t => some (t, 128 * 2 ^ 20, 4)
-  | .bcond _ t | .cbz _ _ _ t => some (t, 2 ^ 20, 4)
-  | .tbz _ _ _ t => some (t, 32 * 2 ^ 10, 4)
-  | .adr _ t => some (t, 2 ^ 20, 1)
-  | _ => none
+theorem Env.target_of_ne {env : Env} {l : Lbl} (h : l ≠ .skip) : env.target l = env.lbl l := by
+  cases l <;> first | rfl | exact absurd rfl h
 
 /-- The byte offset a decoded PC-relative instruction adds to its own address (the model's
 `branch_taken_pc` / ADR result is `PC + SignExtend(…)`, `signExtend_append_zero`). -/
@@ -86,7 +79,7 @@ theorem signExtend_append_zero {n : Nat} (x : BitVec (n + 1)) :
 
 theorem Env.pcRel_ok' {env : Env} {what : String} {n scale : Nat} {l : Lbl}
     {v : BitVec (n + 1)} (hs : 0 < scale) (h : env.pcRel what (n + 1) scale l = .ok v) :
-    ∃ o, env.lbl l = some o ∧ (scale : Int) * v.toInt = (o : Int) - env.pc ∧
+    ∃ o, env.target l = some o ∧ (scale : Int) * v.toInt = (o : Int) - env.pc ∧
       -((scale : Int) * 2 ^ n) ≤ (o : Int) - env.pc ∧ (o : Int) - env.pc < (scale : Int) * 2 ^ n ∧
       (scale : Int) ∣ (o : Int) - env.pc := by
   obtain ⟨o, q, hl, ho, rfl, h1, h2⟩ := Env.pcRel_ok h
@@ -99,7 +92,7 @@ to its address is `target - pc` for the target's offset `o`, and `o - pc` is wit
 form's reach and aligned. -/
 theorem Insn.toArmInst_pcRel {env : Env} {i : Insn} {a : ArmInst} {t : Lbl} {reach align : Int}
     (h : i.toArmInst env = .ok a) (hs : i.pcRelSpec? = some (t, reach, align)) :
-    ∃ o, env.lbl t = some o ∧ a.pcRelOffset? = some ((o : Int) - env.pc) ∧
+    ∃ o, env.target t = some o ∧ a.pcRelOffset? = some ((o : Int) - env.pc) ∧
       -reach ≤ (o : Int) - env.pc ∧ (o : Int) - env.pc < reach ∧ align ∣ (o : Int) - env.pc := by
   simp only [Insn.toArmInst, map_eq_ok] at h
   obtain ⟨b, hb, rfl⟩ := h
@@ -142,7 +135,7 @@ theorem Insn.toArmInst_pcRel {env : Env} {i : Insn} {a : ArmInst} {t : Lbl} {rea
 defined, aligned and within the form's reach. -/
 theorem Insn.encode_inRange {env : Env} {i : Insn} {w : BitVec 32} {t : Lbl} {reach align : Int}
     (h : i.encode env = .ok w) (hs : i.pcRelSpec? = some (t, reach, align)) :
-    ∃ o, env.lbl t = some o ∧ -reach ≤ (o : Int) - env.pc ∧ (o : Int) - env.pc < reach ∧
+    ∃ o, env.target t = some o ∧ -reach ≤ (o : Int) - env.pc ∧ (o : Int) - env.pc < reach ∧
       align ∣ (o : Int) - env.pc := by
   obtain ⟨a, ha, _⟩ := Insn.encode_eq_ok.mp h
   obtain ⟨o, hl, _, h1, h2, h3⟩ := Insn.toArmInst_pcRel ha hs
@@ -151,7 +144,7 @@ theorem Insn.encode_inRange {env : Env} {i : Insn} {w : BitVec 32} {t : Lbl} {re
 /-- The same policy, stated as "never silently emit": a label operand out of reach is an
 encoding error. -/
 theorem Insn.encode_error_of_out_of_range {env : Env} {i : Insn} {t : Lbl} {reach align : Int}
-    (hs : i.pcRelSpec? = some (t, reach, align)) (o : Nat) (hl : env.lbl t = some o)
+    (hs : i.pcRelSpec? = some (t, reach, align)) (o : Nat) (hl : env.target t = some o)
     (hout : ¬ (-reach ≤ (o : Int) - env.pc ∧ (o : Int) - env.pc < reach)) :
     ∃ e, i.encode env = .error e := by
   cases h : i.encode env with

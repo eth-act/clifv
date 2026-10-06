@@ -171,20 +171,20 @@ theorem drop_succ {L T : List Line} {j : Nat} {ln : Line} {Z : List Line}
     (h : L.drop j = ln :: Z ++ T) : L.drop (j + 1) = Z ++ T := by
   rw [← List.drop_drop, h]; rfl
 
-/-- **`b x` after `fallthrough`**: the machine reaches a line defining `x` (0 steps when the
-branch was dropped, 1 otherwise), changing only the pc. -/
+/-- **`b x` after `fallthrough` and relaxation**: the machine reaches a line defining `x` (0 steps
+when the branch was dropped, 1 otherwise), changing only the pc. -/
 theorem reach_b {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {x : Lbl} {Z T : List Line}
-    (hdrop : R.L.drop j0 = ftList (.ins (.b x) none :: Z) ++ T)
+    (hdrop : R.L.drop j0 = relaxLines R.far (ftList (.ins (.b x) none :: Z)) ++ T) (hx : x ≠ .skip)
     (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j0)
     (herr : Arm.r .ERR s = .None) :
     ∃ n jl, iterN R.step n s = Arm.w .PC (R.pcOf jl) s ∧ R.L[jl]? = some (.label x) ∧
       ∀ i < n, spOf (iterN R.step i s) = spOf s := by
   rcases ft_b x Z with ⟨Z', rfl, he⟩ | he
-  · rw [he, ft_label] at hdrop
+  · rw [he, ft_label, relaxLines_cons, relaxLine_label, List.singleton_append] at hdrop
     refine ⟨0, j0, ?_, drop_get hdrop, fun i hi => by omega⟩
     simp only [iterN]; rw [← hpc, Arm.w_irrelevant]
-  · rw [he] at hdrop
-    obtain ⟨a, jl, ha, hjl, hstep⟩ := step_branch hR (drop_get hdrop) (.inl rfl) hprog hpc herr
+  · rw [he, relaxLines_cons, relaxLine_of_none rfl, List.singleton_append] at hdrop
+    obtain ⟨a, jl, ha, hjl, hstep⟩ := step_branch hR (drop_get hdrop) (.inl rfl) hx hprog hpc herr
     refine ⟨1, jl, ?_, hjl, fun i hi => by obtain rfl : i = 0 := by omega
                                            rfl⟩
     simp only [iterN]; rw [hstep, brCond_b ha]; rfl
@@ -198,25 +198,97 @@ theorem invertTo_form {bc : Insn} {t e : Lbl}
   · exact .inr (.inl ⟨_, _, _, rfl⟩)
   · exact .inr (.inr ⟨_, _, _, rfl⟩)
 
-/-- **`b.c T; b E` after `fallthrough`**: the machine reaches a line defining `T` if the
-condition holds, else one defining `E`, changing only the pc. -/
-theorem reach_cb {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {bc : Insn} {t e : Lbl}
-    {Z T : List Line} (hdrop : R.L.drop j0 = ftList (.ins bc none :: .ins (.b e) none :: Z) ++ T)
+theorem Cond.invert_invert (c : Cond) : c.invert.invert = c := by cases c <;> rfl
+
+/-- Inverting a kind's branch twice retargets it. -/
+theorem CondBrKind.insn_invertTo_invertTo (k : CondBrKind) (t e l : Lbl) :
+    ((k.insn t).invertTo e).invertTo l = k.insn l := by
+  cases k <;> simp [CondBrKind.insn, Insn.invertTo, Cond.invert_invert]
+
+theorem drop_succ2 {L T : List Line} {j : Nat} {a b : Line} (h : L.drop j = [a, b] ++ T) :
+    L[j + 1]? = some b := by
+  have := congrArg (·[1]?) h
+  simpa [List.getElem?_drop] using this
+
+/-- **A conditional branch after relaxation** (`relaxLine`: the branch, or `b.!c .+8; b t`): the
+machine reaches a line defining `t` if the condition holds, else the line after the relaxed
+lines, changing only the pc. -/
+theorem reach_rcb {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {bc : Insn} {t : Lbl}
+    {T : List Line} (hdrop : R.L.drop j0 = relaxLine R.far (.ins bc none) ++ T)
     (hbc : (∃ c, bc = .bcond c t) ∨ (∃ nz w r, bc = .cbz nz w r t) ∨ (∃ nz r bit, bc = .tbz nz r bit t))
-    (cond : Bool) (hc : ∀ env a, bc.toArmInst env = .ok a → brCond a s = cond)
-    (hc' : bc.condTarget? = some t → ∀ env a, (bc.invertTo e).toArmInst env = .ok a →
+    (ht : t ≠ .skip) (cond : Bool) (hc : ∀ env a, bc.toArmInst env = .ok a → brCond a s = cond)
+    (hcs : bc.condTarget? = some t → ∀ env a, (bc.invertTo .skip).toArmInst env = .ok a →
       brCond a s = !cond)
+    (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j0)
+    (herr : Arm.r .ERR s = .None) :
+    ∃ n jl, iterN R.step n s = Arm.w .PC (R.pcOf jl) s ∧
+      (cond = true → R.L[jl]? = some (.label t)) ∧
+      (cond = false → jl = j0 + (relaxLine R.far (.ins bc none)).length) ∧
+      (∀ i < n, spOf (iterN R.step i s) = spOf s) ∧ (cond = false → n = 1) := by
+  have h1 : ∀ i < 1, spOf (iterN R.step i s) = spOf s := fun i hi => by
+    obtain rfl : i = 0 := by omega
+    rfl
+  have hform : bc = .b t ∨ (∃ c, bc = .bcond c t) ∨ (∃ nz w r, bc = .cbz nz w r t) ∨
+      (∃ nz r bit, bc = .tbz nz r bit t) := .inr hbc
+  rcases relaxLine_cases R.far bc with h | ⟨t', ht', h⟩
+  · rw [h] at hdrop
+    obtain ⟨a, jl, ha, hjl, hstep⟩ := step_branch hR (drop_get (Z := []) (by simpa using hdrop))
+      hform ht hprog hpc herr
+    rw [hc _ _ ha] at hstep
+    cases cond
+    · exact ⟨1, j0 + 1, by simp only [iterN]; rw [hstep]; rfl, by simp, by simp [h], h1, fun _ => rfl⟩
+    · exact ⟨1, jl, by simp only [iterN]; rw [hstep]; rfl, fun _ => hjl, by simp, h1, by simp⟩
+  · have hct := relaxTarget_condTarget ht'
+    obtain rfl : t' = t := by
+      rcases hbc with ⟨c, rfl⟩ | ⟨nz, w, r, rfl⟩ | ⟨nz, r, bit, rfl⟩ <;>
+        simp only [Insn.condTarget?] at hct
+      · split at hct <;> simp_all
+      · simp_all
+      · simp_all
+    rw [h] at hdrop
+    have hj0 := drop_get (Z := [_]) (by simpa using hdrop)
+    have hj1 := drop_succ2 hdrop
+    obtain ⟨a, ha, hstep⟩ := step_skip hR hj0 hj1 (invertTo_form hbc) hprog hpc herr
+    rw [hcs hct _ _ ha] at hstep
+    cases cond
+    · exact ⟨1, j0 + 2, by simp only [iterN]; rw [hstep]; rfl, by simp, by simp [h], h1, fun _ => rfl⟩
+    · have hprog1 : (Arm.w .PC (R.pcOf (j0 + 1)) s).program = R.fb.program R.base := by
+        rw [Arm.w_program, hprog]
+      obtain ⟨a', jl, ha', hjl, hstep'⟩ := step_branch hR hj1 (.inl rfl) ht hprog1
+        (Arm.r_of_w_same ..) (by rw [Arm.r_of_w_different (by simp), herr])
+      rw [brCond_b ha'] at hstep'
+      refine ⟨2, jl, ?_, fun _ => hjl, by simp, fun i hi => ?_, by simp⟩
+      · simp only [iterN]
+        rw [hstep]
+        simp only [Bool.not_true, Bool.false_eq_true, ite_false]
+        rw [hstep', Arm.w_of_w_shadow]
+        rfl
+      · rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl
+        · rfl
+        · simp only [iterN]
+          rw [hstep]
+          exact Arm.r_of_w_different (by simp)
+
+/-- **`b.c T; b E` after `fallthrough` and relaxation**: the machine reaches a line defining `T`
+if the condition holds, else one defining `E`, changing only the pc. -/
+theorem reach_cb {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {bc : Insn} {t e : Lbl}
+    {Z T : List Line}
+    (hdrop : R.L.drop j0 = relaxLines R.far (ftList (.ins bc none :: .ins (.b e) none :: Z)) ++ T)
+    (hbc : (∃ c, bc = .bcond c t) ∨ (∃ nz w r, bc = .cbz nz w r t) ∨ (∃ nz r bit, bc = .tbz nz r bit t))
+    (ht : t ≠ .skip) (he : e ≠ .skip)
+    (cond : Bool) (hc : ∀ env a, bc.toArmInst env = .ok a → brCond a s = cond)
+    (hc' : bc.condTarget? = some t → ∀ e' env a, (bc.invertTo e').toArmInst env = .ok a →
+      brCond a s = !cond)
+    (hcc : bc.condTarget? = some t → ∀ env a, ((bc.invertTo e).invertTo .skip).toArmInst env = .ok a →
+      brCond a s = cond)
     (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j0)
     (herr : Arm.r .ERR s = .None) :
     ∃ n jl, iterN R.step n s = Arm.w .PC (R.pcOf jl) s ∧
       R.L[jl]? = some (.label (if cond then t else e)) ∧
       ∀ i < n, spOf (iterN R.step i s) = spOf s := by
-  have h1 : ∀ i < 1, spOf (iterN R.step i s) = spOf s := fun i hi => by
-    obtain rfl : i = 0 := by omega
-    rfl
   have hnb : ∀ x, bc ≠ .b x := by
     rcases hbc with ⟨c, rfl⟩ | ⟨nz, w, r, rfl⟩ | ⟨nz, r, bit, rfl⟩ <;> intro x h <;> cases h
-  rcases ft_cb bc e Z hnb with ⟨L, Z', rfl, hct, he⟩ | he
+  rcases ft_cb bc e Z hnb with ⟨L, Z', rfl, hct, hft⟩ | hft
   · have hLt : L = t := by
       rcases hbc with ⟨c, rfl⟩ | ⟨nz, w, r, rfl⟩ | ⟨nz, r, bit, rfl⟩ <;>
         simp only [Insn.condTarget?] at hct
@@ -224,41 +296,43 @@ theorem reach_cb {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {bc : Insn} 
       · simp_all
       · simp_all
     subst hLt
-    rw [he, ft_label] at hdrop
-    have hj0 := drop_get hdrop
-    have hj1 := drop_get (drop_succ hdrop)
+    rw [hft, ft_label, relaxLines_cons, relaxLines_cons, relaxLine_label, List.append_assoc] at hdrop
     have hform := invertTo_form (e := e) hbc
-    obtain ⟨a, jl, ha, hjl, hstep⟩ := step_branch hR hj0
-      (by rcases hform with h | h | h
-          · exact .inr (.inl h)
-          · exact .inr (.inr (.inl h))
-          · exact .inr (.inr (.inr h))) hprog hpc herr
-    rw [hc' hct _ _ ha] at hstep
+    have hct' : (bc.invertTo e).condTarget? = some e := by
+      rcases hbc with ⟨c, rfl⟩ | ⟨nz, w, r, rfl⟩ | ⟨nz, r, bit, rfl⟩ <;>
+        simp only [Insn.condTarget?] at hct ⊢
+      · split at hct
+        · cases hct
+        · rename_i hc0
+          simp only [Insn.invertTo, Insn.condTarget?]
+          rcases c <;> simp_all [Cond.invert]
+      · simp [Insn.invertTo, Insn.condTarget?]
+      · simp [Insn.invertTo, Insn.condTarget?]
+    obtain ⟨n, jl, hn, hjt, hjf, hsp, -⟩ := reach_rcb hR hdrop hform he (!cond) (hc' hct e)
+      (fun _ env a ha => by rw [hcc hct env a ha, Bool.not_not]) hprog hpc herr
+    refine ⟨n, jl, hn, ?_, hsp⟩
     cases cond
-    · exact ⟨1, jl, by simp only [iterN]; rw [hstep]; rfl, hjl, h1⟩
-    · exact ⟨1, j0 + 1, by simp only [iterN]; rw [hstep]; rfl, hj1, h1⟩
-  · rw [he] at hdrop
-    obtain ⟨a, jl, ha, hjl, hstep⟩ := step_branch hR (drop_get hdrop)
-      (by rcases hbc with h | h | h
-          · exact .inr (.inl h)
-          · exact .inr (.inr (.inl h))
-          · exact .inr (.inr (.inr h))) hprog hpc herr
-    rw [hc _ _ ha] at hstep
+    · simpa using hjt rfl
+    · have hd' : R.L.drop jl = [Line.label L] ++ relaxLines R.far (ftList Z') ++ T := by
+        rw [hjf rfl, ← List.drop_drop, hdrop, List.drop_left, List.append_assoc]
+      simpa using drop_get (by simpa using hd')
+  · rw [hft, relaxLines_cons, List.append_assoc] at hdrop
+    obtain ⟨n, jl, hn, hjt, hjf, hsp, -⟩ := reach_rcb hR hdrop hbc ht cond hc
+      (fun hct' => hc' hct' .skip) hprog hpc herr
     cases cond
-    · simp only [Bool.false_eq_true, ite_false] at hstep
-      have hd1 := drop_succ hdrop
-      obtain ⟨n, jl', hn, hjl', hsp⟩ := reach_b hR (s := Arm.w .PC (R.pcOf (j0 + 1)) s) hd1
-        (by rw [Arm.w_program, hprog]) (Arm.r_of_w_same ..) (by rw [Arm.r_of_w_different (by simp), herr])
-      refine ⟨n + 1, jl', ?_, hjl', fun i hi => ?_⟩
-      · simp only [iterN]
-        rw [hstep, hn, Arm.w_of_w_shadow]
-      · cases i with
-        | zero => rfl
-        | succ i =>
-          simp only [iterN]
-          rw [hstep, hsp i (by omega)]
+    · have hd1 : R.L.drop jl = relaxLines R.far (ftList (.ins (.b e) none :: Z)) ++ T := by
+        rw [hjf rfl, ← List.drop_drop, hdrop, List.drop_left]
+      have hs1 : (iterN R.step n s).program = R.fb.program R.base := by rw [hn, Arm.w_program, hprog]
+      obtain ⟨n', jl', hn', hjl', hsp'⟩ := reach_b hR hd1 he hs1 (by rw [hn]; exact Arm.r_of_w_same ..)
+        (by rw [hn, Arm.r_of_w_different (by simp), herr])
+      refine ⟨n + n', jl', ?_, by simpa using hjl', fun i hi => ?_⟩
+      · rw [iterN_add, hn', hn, Arm.w_of_w_shadow]
+      · rcases Nat.lt_or_ge i n with h | h
+        · exact hsp i h
+        · obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
+          rw [iterN_add, hsp' k (by omega), hn]
           exact Arm.r_of_w_different (by simp)
-    · exact ⟨1, jl, by simp only [iterN]; rw [hstep]; rfl, hjl, h1⟩
+    · exact ⟨n, jl, hn, by simpa using hjt rfl, hsp⟩
 
 
 /-! ## Conditions -/
@@ -544,8 +618,6 @@ theorem realizes_goto {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {alloc
   -- the machine reaches the successor's label
   have hreach : ∃ n jl, iterN R.step n s = Arm.w .PC (R.pcOf jl) s ∧
       R.L[jl]? = some (.label (.block vs.label)) ∧ ∀ i < n, spOf (iterN R.step i s) = spOf s := by
-    have hZ : ∀ (Z : List Line), R.L.drop j0 = ftList (ls1 ++ (ls2 ++ nxtOf R.af b)) ++ T →
-        R.L.drop j0 = ftList (ls1 ++ (ls2 ++ nxtOf R.af b)) ++ T := fun _ h => h
     rw [List.append_assoc] at hdrop
     rcases hbr with ⟨l, rfl⟩ | ⟨t, e, kk, rfl⟩ | ⟨kd, t, e, rn, bit, rfl⟩
     · obtain ⟨rfl, rfl⟩ := assign_none (fun f => rfl) hasg
@@ -560,7 +632,7 @@ theorem realizes_goto {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {alloc
       rw [hj0 l rfl] at hlj
       simp only [MInst.targets, List.getElem?_cons_zero, Option.some.injEq] at hlj
       rw [← hlj]
-      exact reach_b hR (by simpa using hdrop) (by rw [hst.prog]) hpc hst.err
+      exact reach_b hR (by simpa using hdrop) (by simp) (by rw [hst.prog]) hpc hst.err
     · have hkk : ∀ r sz, kk = .zero r sz ∨ kk = .notZero r sz → r.isVregInt = true := by
         intro r sz hr
         have := ctlCheck_inst hck hvb hi
@@ -579,9 +651,10 @@ theorem realizes_goto {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {alloc
           (∃ nz w r, k'.insn (.block t) = .cbz nz w r (.block t)) ∨
           (∃ nz r bit, k'.insn (.block t) = .tbz nz r bit (.block t)) := by
         cases k' <;> simp [CondBrKind.insn]
-      obtain ⟨n, jl, hn, hjl, hsp⟩ := reach_cb hR (by simpa using hdrop) hbc (kk.holds _ w)
+      obtain ⟨n, jl, hn, hjl, hsp⟩ := reach_cb hR (by simpa using hdrop) hbc (by simp) (by simp) (kk.holds _ w)
         (fun env a ha => kind_brCond hst hkr _ ha)
-        (fun hct env a ha => kind_brCond_inv hst hkr _ _ hct ha)
+        (fun hct e' env a ha => kind_brCond_inv hst hkr _ _ hct ha)
+        (fun _ env a ha => kind_brCond hst hkr _ (by rwa [CondBrKind.insn_invertTo_invertTo] at ha))
         (by rw [hst.prog]) hpc hst.err
       refine ⟨n, jl, hn, ?_, hsp⟩
       rw [hjl, hU]
@@ -614,12 +687,15 @@ theorem realizes_goto {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {alloc
       have hm : m (.reg (.x n')) = (Arm.r (.GPR (rnum n')) s).setWidth 128 := by
         rw [hst.store (.reg (.x n')) (fun r e => by cases e; exact hal.2) trivial]; rfl
       obtain ⟨n, jl, hn, hjl, hsp⟩ := reach_cb hR (by simpa using hdrop)
-        (bc := .tbz (kd == .nz) (.x n') bit (.block t)) (.inr (.inr ⟨_, _, _, rfl⟩))
+        (bc := .tbz (kd == .nz) (.x n') bit (.block t)) (.inr (.inr ⟨_, _, _, rfl⟩)) (by simp) (by simp)
         ((Arm.r (.GPR (rnum n')) s).getLsbD bit == (kd == .nz))
         (fun env a ha => brCond_tbz (by omega) ha s)
-        (fun _ env a ha => by
+        (fun _ e' env a ha => by
           simp only [Insn.invertTo] at ha
           rw [brCond_tbz (by omega) ha s, beq_not_right])
+        (fun _ env a ha => by
+          simp only [Insn.invertTo, Bool.not_not] at ha
+          exact brCond_tbz (by omega) ha s)
         (by rw [hst.prog]) hpc hst.err
       refine ⟨n, jl, hn, ?_, hsp⟩
       rw [hjl]

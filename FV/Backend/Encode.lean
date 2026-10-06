@@ -297,9 +297,15 @@ structure Env where
   pc : Nat
   lbl : Lbl → Option Nat
 
+/-- Where a label operand points: `Lbl.skip` is the instruction after the next one (`pc + 8`,
+the inverted short branch of a relaxed branch); other labels are the function's labels. -/
+def Env.target (env : Env) : Lbl → Option Nat
+  | .skip => some (env.pc + 8)
+  | l => env.lbl l
+
 /-- Byte offset from the instruction to `l`. -/
 def Env.rel (env : Env) (l : Lbl) : Except String Int :=
-  match env.lbl l with
+  match env.target l with
   | some t => pure ((t : Int) - env.pc)
   | none => throw s!"undefined label {repr l}"
 
@@ -312,10 +318,12 @@ def byteSizeText (n : Nat) : String :=
 as a `bits`-bit signed field (C6.2 B: 26 bits, B.cond/CBZ/CBNZ: 19, TBZ/TBNZ: 14, all
 `scale` 4; ADR: 21 bits, `scale` 1).
 
-**Branch-range policy** (PLAN.md §3.4: bounded function sizes, no relaxation): a target
-outside the field's range (±128 MiB, ±1 MiB, ±32 KiB, ±1 MiB) is a compile error naming the
-instruction and the distance; the word is never truncated. `Insn.encode_inRange`
-(`FV/Backend/Proof/EncodeBranch.lean`) proves every encoded label operand is in range. -/
+**Branch-range policy** (PLAN.md §3.4): `emitFunc` relaxes every conditional branch to a block or
+trap label that would be out of range (`relaxLine`), so the encoder sees short branches only
+where they reach. A target that is still outside the field's range (±128 MiB, ±1 MiB, ±32 KiB,
+±1 MiB) is a compile error naming the instruction and the distance; the word is never
+truncated. `Insn.encode_inRange` (`FV/Backend/Proof/EncodeBranch.lean`) proves every encoded
+label operand is in range. -/
 def Env.pcRel (env : Env) (what : String) (bits scale : Nat) (l : Lbl) :
     Except String (BitVec bits) := do
   let off ← env.rel l
@@ -323,8 +331,7 @@ def Env.pcRel (env : Env) (what : String) (bits scale : Nat) (l : Lbl) :
   let q := off / scale
   if -(2 ^ (bits - 1) : Int) ≤ q ∧ q < 2 ^ (bits - 1) then pure (BitVec.ofInt bits q)
   else throw s!"branch out of range: {what} to {repr l} is {off} bytes away, beyond the \
-    ±{byteSizeText (2 ^ (bits - 1) * scale)} of {what} (no branch relaxation, PLAN.md §3.4: \
-    the function is too large)"
+    ±{byteSizeText (2 ^ (bits - 1) * scale)} of {what} (PLAN.md §3.4: the function is too large)"
 
 /-- `sf`, `opc`, `N` of the logical (shifted register / immediate) instructions
 (C6.2 AND, BIC, ORR, ORN, EOR, EON, ANDS, BICS: `opc` 00 and, 01 orr, 10 eor, 11 ands). -/
@@ -800,20 +807,6 @@ def Line.isLabel : Line → Bool
 /-- The code lines (instructions and jump-table words, 4 bytes each): the `k`-th one is at
 byte offset `4 * k`, and is word `k` of the function. -/
 def codeLines (lines : List Line) : List Line := lines.filter (!·.isLabel)
-
-/-- `labelOffsets` from byte offset `off` with the labels found so far in `m`. -/
-def labelOffsets.go : List Line → Nat → Std.HashMap Lbl Nat → Except String (Std.HashMap Lbl Nat)
-  | [], _, m => pure m
-  | ln :: rest, off, m =>
-    match ln with
-    | .label l =>
-      if m.contains l then throw s!"label {repr l} is defined twice"
-      else go rest off (m.insert l off)
-    | _ => go rest (off + ln.size) m
-
-/-- Byte offsets of the labels of a line list (every label defined once, else an error). -/
-def labelOffsets (lines : Array Line) : Except String (Std.HashMap Lbl Nat) :=
-  labelOffsets.go lines.toList 0 {}
 
 /-- The word of a code line at byte offset `pc`; jump-table words are `target - base`
 (signed 32-bit). -/

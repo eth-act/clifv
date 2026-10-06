@@ -24,7 +24,7 @@ theorem q_op {R : RL} {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc} {its :
       ItemsChecked R vb its ∧ itemsCode R.fr vb its = .ok c2 ∧
       codeLinesE R.ctx R.af c1 ps1 = .ok (ls1, psm) ∧ codeLinesE R.ctx R.af c2 psm = .ok (ls2, ps2) ∧
       ps2.traps.toList <+: R.psF.traps.toList ∧
-      R.L.drop j0 = ftList (ls1 ++ (ls2 ++ nxtOf R.af b)) ++ T ∧
+      R.L.drop j0 = relaxLines R.far (ftList (ls1 ++ (ls2 ++ nxtOf R.af b))) ++ T ∧
       Arm.r .PC s = R.pcOf j0 ∧ StRel R s m w := by
   obtain ⟨j0, vb0, items, pre, code, ls, ps1, ps2, T, hvb0, hit, hsplit, hchk, hcode, hls, htr, hdrop,
     hpc, hst⟩ := hq
@@ -38,7 +38,7 @@ theorem q_op {R : RL} {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc} {its :
   exact ⟨j0, items, pre, regs, i', c1, c2, ls1, ls2, ps1, psm, ps2, T, cc, wh, ops, rfl, hit, hsplit,
     hasg, hc1', hops, hstat, hchk', hc2, h1, h2, htr, by rw [hdrop, List.append_assoc], hpc, hst⟩
 
-/-- `Q` at the next item, after the item's plain instruction lines `ls1` ran. -/
+/-- `Q` at the next item, after the item's lines `ls1` (which `fallthrough` keeps) ran. -/
 theorem q_next {R : RL} {s : Arm.ArmState} {b : Nat} {it : RItem} {its : List RItem}
     {m : Loc → CV} {w : Arm.ArmState} {vb : VBlock} {items : Array RItem} {pre : List RItem}
     {c2 : List AInst} {ls1 ls2 : List Line} {psm ps2 : PState} {T : List Line} {j0 : Nat}
@@ -46,35 +46,41 @@ theorem q_next {R : RL} {s : Arm.ArmState} {b : Nat} {it : RItem} {its : List RI
     (hsplit : items.toList = pre ++ it :: its) (hchk : ItemsChecked R vb its)
     (hc2 : itemsCode R.fr vb its = .ok c2) (h2 : codeLinesE R.ctx R.af c2 psm = .ok (ls2, ps2))
     (htr : ps2.traps.toList <+: R.psF.traps.toList)
-    (hdrop : R.L.drop j0 = ftList (ls1 ++ (ls2 ++ nxtOf R.af b)) ++ T)
-    (hpl : ∀ ln ∈ ls1, ln.plain = true)
-    (hpc : Arm.r .PC s = R.pcOf (j0 + ls1.length)) (hst : StRel R s m w) :
+    (hdrop : R.L.drop j0 = relaxLines R.far (ftList (ls1 ++ (ls2 ++ nxtOf R.af b))) ++ T)
+    (hft : ftList (ls1 ++ (ls2 ++ nxtOf R.af b)) = ls1 ++ ftList (ls2 ++ nxtOf R.af b))
+    (hpc : Arm.r .PC s = R.pcOf (j0 + (relaxLines R.far ls1).length)) (hst : StRel R s m w) :
     Q R s (.run ⟨b, its, m, w⟩) := by
-  have hZ : ∀ n, (ls2 ++ nxtOf R.af b)[1]? ≠ some (.label (.trap n)) := by
-    intro n e
-    have hm := List.mem_of_getElem? e
-    rcases List.mem_append.1 hm with hm | hm
-    · exact codeLinesE_noTrap _ _ _ _ h2 _ hm n rfl
-    · simp only [nxtOf] at hm
-      split at hm <;> simp at hm
-  have hdrop' : R.L.drop j0 = ls1 ++ (ftList (ls2 ++ nxtOf R.af b) ++ T) := by
-    rw [hdrop, ftList_plain_append _ _ hpl hZ, List.append_assoc]
-  refine ⟨j0 + ls1.length, vb, items, pre ++ [it], c2, ls2, psm, ps2, T, hvb, hit,
+  have hdrop' : R.L.drop j0 =
+      relaxLines R.far ls1 ++ (relaxLines R.far (ftList (ls2 ++ nxtOf R.af b)) ++ T) := by
+    rw [hdrop, hft, relaxLines_append, List.append_assoc]
+  refine ⟨j0 + (relaxLines R.far ls1).length, vb, items, pre ++ [it], c2, ls2, psm, ps2, T, hvb, hit,
     by rw [hsplit]; simp, hchk, hc2, h2, htr, ?_, ?_, hst⟩
   · rw [← List.drop_drop, hdrop', List.drop_left]
   · exact hpc
 
-theorem plain_kind_trap (k' : CondBrKind) (n : Nat) :
-    (Line.ins (k'.insn (.trap n)) none).plain = true := by
-  cases k' <;> simp [Line.plain, CondBrKind.insn, Insn.condTarget?]
-  split
-  · rfl
-  · rfl
-  · rename_i hn heq
-    exfalso
-    split at heq
-    · cases heq
-    · simp only [Option.some.injEq] at heq; exact hn _ heq.symm
+/-- A `trapIf` branch passes `fallthrough` unchanged (no trap label follows it in second
+position). -/
+theorem ftList_kind_trap (k' : CondBrKind) (n : Nat) (Z : List Line)
+    (hZ : ∀ n, Z[1]? ≠ some (.label (.trap n))) :
+    ftList (.ins (k'.insn (.trap n)) none :: Z) = .ins (k'.insn (.trap n)) none :: ftList Z := by
+  have hnb : ∀ x, k'.insn (.trap n) ≠ .b x := by cases k' <;> simp [CondBrKind.insn]
+  have hct : ∀ l, (k'.insn (.trap n)).condTarget? = some l → l = .trap n := by
+    intro l h
+    cases k' <;> simp only [CondBrKind.insn, Insn.condTarget?] at h
+    · simp_all
+    · simp_all
+    · split at h <;> simp_all
+  have hs : ftStep (.ins (k'.insn (.trap n)) none) Z[0]? Z[1]? =
+      ([.ins (k'.insn (.trap n)) none], 1) := by
+    unfold ftStep
+    repeat' split
+    all_goals first
+      | rfl
+      | (rename_i h0 h1 h2 h3; simp only [Line.ins.injEq] at h0 h1; simp_all)
+      | simp_all
+      | (exfalso; simp_all)
+  rw [ftList_cons, hs]
+  rfl
 
 /-- An instruction without defs and clobbers leaves the store unchanged (`MStep.op`). -/
 theorem store_nodefs {m m2 : Loc → CV} {L : List (Operand × Loc)} {cl : List Reg} (hcl0 : cl = [])
@@ -166,36 +172,28 @@ theorem realizes_trapIf_next {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat}
       simpa using hh
   rw [store_nodefs rfl hcl]
   -- the branch to the trap label is not taken
-  have hj0 : R.L[j0]? = some (.ins (k'.insn (.trap ps1.traps.size)) none) := by
-    have hpl := plain_kind_trap k' ps1.traps.size
-    have hZ : ∀ n, (ls2 ++ nxtOf R.af b)[1]? ≠ some (.label (.trap n)) := by
-      intro n e
-      have hm := List.mem_of_getElem? e
-      rcases List.mem_append.1 hm with hm | hm
-      · exact codeLinesE_noTrap _ _ _ _ h2 _ hm n rfl
-      · simp only [nxtOf] at hm
-        split at hm <;> simp at hm
-    rw [show [Line.ins (k'.insn (.trap ps1.traps.size)) none] ++ (ls2 ++ nxtOf R.af b) =
-      Line.ins (k'.insn (.trap ps1.traps.size)) none :: (ls2 ++ nxtOf R.af b) from rfl,
-      show Line.ins (k'.insn (.trap ps1.traps.size)) none :: (ls2 ++ nxtOf R.af b) =
-        [Line.ins (k'.insn (.trap ps1.traps.size)) none] ++ (ls2 ++ nxtOf R.af b) from rfl,
-      ftList_plain_append _ _ (by simpa using hpl) hZ] at hdrop
-    exact drop_get (by simpa using hdrop)
+  have hZ : ∀ n, (ls2 ++ nxtOf R.af b)[1]? ≠ some (.label (.trap n)) := by
+    intro n e
+    have hm := List.mem_of_getElem? e
+    rcases List.mem_append.1 hm with hm | hm
+    · exact codeLinesE_noTrap _ _ _ _ h2 _ hm n rfl
+    · simp only [nxtOf] at hm
+      split at hm <;> simp at hm
+  have hft := ftList_kind_trap k' ps1.traps.size (ls2 ++ nxtOf R.af b) hZ
+  have hdrop' : R.L.drop j0 = relaxLine R.far (.ins (k'.insn (.trap ps1.traps.size)) none) ++
+      (relaxLines R.far (ftList (ls2 ++ nxtOf R.af b)) ++ T) := by
+    rw [hdrop, List.singleton_append, hft, relaxLines_cons, List.append_assoc]
   have hform : (∃ c, k'.insn (.trap ps1.traps.size) = .bcond c (.trap ps1.traps.size)) ∨
-      (∃ nz w r, k'.insn (.trap ps1.traps.size) = .cbz nz w r (.trap ps1.traps.size)) := by
+      (∃ nz w r, k'.insn (.trap ps1.traps.size) = .cbz nz w r (.trap ps1.traps.size)) ∨
+      (∃ nz r bit, k'.insn (.trap ps1.traps.size) = .tbz nz r bit (.trap ps1.traps.size)) := by
     cases k' <;> simp [CondBrKind.insn]
-  obtain ⟨a, jl, ha, -, hstep⟩ := step_branch hR hj0
-    (by rcases hform with h | h
-        · exact .inr (.inl h)
-        · exact .inr (.inr (.inl h))) (by rw [hst.prog]) hpc hst.err
-  rw [kind_brCond hst hkr _ ha, hnot] at hstep
-  refine ⟨1, ?_, fun i hi => by
-    obtain rfl : i = 0 := by omega
-    exact RL.good_of_sp hst.sp⟩
-  simp only [iterN]
-  rw [hstep]
-  exact q_next hvb hit hsplit hchk' hc2 h2 htr hdrop
-    (by intro ln hln; simp at hln; subst hln; exact plain_kind_trap k' _)
-    (by simp [Arm.r_of_w_same]) (hst.pc _)
+  obtain ⟨n, jl, hn, -, hjf, hsp, -⟩ := reach_rcb hR hdrop' hform (by simp) false
+    (fun env a ha => by rw [kind_brCond hst hkr _ ha, hnot])
+    (fun hct env a ha => by rw [kind_brCond_inv hst hkr _ _ hct ha, hnot])
+    (by rw [hst.prog]) hpc hst.err
+  refine ⟨n, ?_, fun i hi => RL.good_of_sp ((hsp i hi).trans hst.sp)⟩
+  rw [hn]
+  exact q_next hvb hit hsplit hchk' hc2 h2 htr hdrop (by rw [List.singleton_append, hft]; rfl)
+    (by rw [Arm.r_of_w_same, hjf rfl]; simp [relaxLines]) (hst.pc _)
 
 end Backend.Proof
