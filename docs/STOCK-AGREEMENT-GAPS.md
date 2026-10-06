@@ -3,10 +3,12 @@
 This explains the stock comparison's numbers (`docs/STOCK-COMPILER-COMPARISON.md`):
 why outputs differ or are rejected, and where a fix would go. The counts come from
 the `main` push run 37250037579 (`5863d3a`): of 4,455 stock outputs, 425 match, 983
-differ, 1,176 are rejected for a setting and 1,871 for an operation. Pull requests
-#47 (settings) and #50 (repeated function names) change these counts. To see the
-current numbers, run the breakdown on a comparison output, either local or from a
-CI artifact (`stock-comparison-artifacts-N`, directory `target/ci-comparison`):
+differ, 1,176 are rejected for a setting and 1,871 for an operation. #50 (repeated
+function names) and #47 (settings) have since changed these counts: 465 match,
+1,145 differ, 432 are rejected for a setting and 2,413 for an operation. The
+analysis below uses the earlier run. To see the current numbers, run the
+breakdown on a comparison output, either local or from a CI artifact
+(`stock-comparison-artifacts-N`, directory `target/ci-comparison`):
 
 ```sh
 python3 scripts/stock-comparison-breakdown.py target/ci-comparison
@@ -140,9 +142,9 @@ The adapter rejects a request with a setting Lean does not implement. The receip
 names only the first such setting, so a test may need several. On `main` the
 largest are `enable_llvm_abi_extensions` (299), `enable_multi_ret_implicit_sret`
 (298), `opt_level=speed`/`speed_and_size` (243) and `has_lse` (136). #47 accepts
-settings that cannot change a function, which leaves 477. Most of the rest are
-`opt_level=speed`, which needs Cranelift's e-graph mid-end, and functions with LSE
-atomics, `use_csdb`, or `is_pic=false` far symbols.
+settings that cannot change a function, which leaves 432 (with #50). Most of the
+rest are `opt_level=speed`, which needs Cranelift's e-graph mid-end (243), and
+functions with LSE atomics (114), `is_pic=false` far symbols (40) or `use_bti` (11).
 
 ## Rejected for an operation (1,871)
 
