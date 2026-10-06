@@ -63,9 +63,9 @@ and, on rejection, replaced by a directly proven Lean path (kind 2). Correctness
 | i128 legalisation | Lean | `Opt.Legal.check` + `check_complete` on `Pre f` (`FV/Opt/Proof/LegalComplete.lean:1718`) | validator, complete on `Pre` | S6 |
 | instruction selection | Lean (ISLE data) | `LowerRulesCorrect` etc., proven once | proven | — |
 | lowering driver | Lean `lowerFunction` | `lowerCheck`, complete on `Dominated`/`LowerScope` (`lowerCheck_complete`) | validator, complete on decidable input conditions | V1 done |
-| form coverage | — | **`formsCoveredB`** (`FV/Backend/Proof/RegallocCover.lean`) | **validator premise** | V3 |
+| form coverage | Lean (ISLE data) | `formsCoveredB`, complete on `LowerScope` (`formsCovered_complete`) | validator, complete on decidable input conditions | V3 done |
 | `prepare` | Lean | `prepCheck`, complete on `PrepDomain`, which `lowerFunction` always produces (`prepDomain_of_lower`) | validator, complete | V2 done |
-| register allocation | **external Rust** (regalloc2 0.15.2 via `lean-regalloc`) | **`checkAlloc`** (`FV/Backend/RegallocCheck.lean:423-441`) | **validator premise + oracle** | V4 |
+| register allocation | **external Rust** (regalloc2 0.15.2 via `lean-regalloc`), Lean fallback `spillAlloc` | `checkAlloc` (`FV/Backend/RegallocCheck.lean:423-441`) on regalloc2's output; on rejection `spillAlloc` (`allocResult`, `E2E.backend_correct_final_alloc`), accepted by `checkAlloc` for every in-scope function (`E2E.spillAccepted`, proven) | fallback; its acceptance proven | V4 (a) done; (b) open |
 | frame, control lowering | Lean `lowerRFunc` | internal rejections (frame ≥ 32 KiB, `ctlCheck`) | rejection | V5 |
 | emission, layout | Lean | branch range check, no relaxation | rejection | V6 |
 | encoder | Lean | `Insn.decode_encode` (`FV/Backend/Proof/Encode.lean:57-60`) | proven | — |
@@ -113,29 +113,147 @@ author's estimate, not measured), **Risk**.
   arguments only on `jump`/edge blocks). Removes the `prepCheck` premise everywhere.
 - **Depends:** shares the loop invariant with V1d; do it inside V1d or right after. **Size:** small–medium `[est]`.
 
-### V3. Form coverage (`formsCoveredB`)
+### V3. Form coverage (`formsCoveredB`) — **done** (#5)
 
-- **Now:** `FormsCovered` (every VCode instruction is a control form or a proven straight-line `FormOk`
-  form) is a separate premise `hcov`; `formsCoveredB_iff` only decides it.
-- **Deliver:** for in-scope input, every instruction `lowerFunction` + `prepare` + `lowerRFunc` can emit is
-  covered. Either decide "every emitted form of every closure rule is covered" over the rule data, or
-  extend `FormOk` to the missing forms (regalloc-proof.md "Status update (M6Insts2)" notes the
-  xzr-destination imm/extended add/sub problem).
-- **Depends:** the def-set analysis of V1c can share the traversal of the rule data. **Size:** medium `[est]`.
+- **Done:** `formsCovered_complete : LowerScope f → lowerFunction f = .ok vc →
+  prepare vc = .ok vcp → FormsCovered cx vcp` (`FV/Backend/Proof/FormsCoverComplete.lean`) and
+  `E2E.backend_correct_final_of_lower` (`FV/E2E/FinalDirect.lean`): `backend_correct_final` from the
+  pipeline's results and `dominatedB`/`lowerScopeB`, without `Compiled` and `hcov`; only `checkAlloc`
+  remains. Decided once over the rule data: an abstract interpretation of the ISLE rules (`IselCov*.lean`,
+  summary table `covTab` from `FVTest/Backend/IselCovGen.lean`, 12 `native_decide` checks).
+  The ISLE-level lemmas use `LogicImmComplete` (every logical immediate `ImmLogic.ofNat?` accepts is
+  encodable), proven by `logicImmComplete` (`FV/Backend/Proof/LogicImmComplete.lean`, kernel `decide` over
+  the 5334 (element size, run, rotation) triples).
+- **Remaining:** the compiler still runs `formsCoveredB` in `lean-e2e-check` as a double-check.
 
-### V4. Register allocation without trusting regalloc2
+### V4. Register allocation without trusting regalloc2 — (a) **done** (#56, allocation no longer a premise); (b) open as #57
 
-- **Now:** regalloc2 (Rust) is an untrusted oracle and `checkAlloc_sound` validates its output; acceptance
-  is the premise `Compiled.check`. A completeness proof is impossible for an external tool.
-- **Deliver, option (a), recommended first:** a fallback allocator in Lean, proven directly, used when
-  `checkAlloc` rejects (or when the oracle is absent). `FV/Backend/StackAlloc.lean` (every value in a
-  stack slot) is the starting point; it's not covered by any theorem today. Theorem: `allocate vc = .ok af
-  → <af refines vc>` without `checkAlloc`. Then the pipeline is "regalloc2 if `checkAlloc` accepts, else
-  `StackAlloc`", and the theorem has no premise. The fallback also gives totality.
+- **Done (a), 2026-10-05:** the fallback `spillAlloc : VCode → RFunc` (`FV/Backend/SpillAlloc.lean`: every
+  vreg in its own stack slot, operands moved into registers that meet their constraints around each
+  instruction, all callee-saved registers saved, block arguments as a two-phase parallel copy through
+  temporary slots, a `try_call`'s results stored at the start of its successors). The backend lowers
+  `allocResult vcp ra` (regalloc2's answer if `checkAlloc` accepts it, else `spillAlloc`; `lowerAlloc`,
+  `lowerAlloc_eq`); a rejection, a failure or the absence of regalloc2 is no longer a compile error;
+  `lean-backend --regalloc spill` forces the fallback. `E2E.backend_correct_final_alloc`
+  (`FV/E2E/AllocDirect.lean`) is `backend_correct_final_of_lower` with `rf := allocResult vcp ra` for any
+  answer `ra` and no `checkAlloc` premise, under the explicit, program-independent hypothesis
+  `SpillAccepted` (`checkAlloc vcp (spillAlloc vcp) = .ok ()` for every `vcp` that `lowerFunction` and
+  `prepare` produce from `Dominated`/`LowerScope` input). Route (a1) (an `RFunc`, reusing the checker's
+  soundness and the whole M6/M5 proof) rather than (a2) (a direct proof of `StackAlloc.allocate`, which
+  would need a second VCode→`AFunc` simulation with its own frame and call conventions, and which rejects
+  the LL/SC loops, `try_call` and `tls_value`).
+- **Evidence:** `lean-e2e-check`: `checkAlloc` accepts the spill allocation of 1148/1148 in-scope
+  functions; `lowerRFunc` lowers 1148/1148 (dense home numbering keeps the allocator frame under 32 KiB).
+  Filetests with the fallback forced: `docs/contracts/regalloc.md` "Results" (g).
+- **(a) done: `SpillAccepted` proven** (`E2E.spillAccepted`, `FV/E2E/SpillKillFree.lean`, 2026-10-05;
+  the first statement, PR #54, was false: `E2E.not_ctlSpillHyp`, two `sret` parameters; the proven one
+  takes `InSubset` and `ArityOk`). `E2E.backend_correct_final_alloc_proven` is the backend's final
+  theorem for the allocation it lowers (regalloc2's if `checkAlloc` accepts it, else `spillAlloc`)
+  with neither a `SpillAccepted` nor a `checkAlloc` premise. The steps:
+  1. *Avoid the checker's fixpoint* — **done**. The downstream premise is `AllocChecked vcp rf`
+     (`RegallocSound.lean`: verified in-states `CheckedAt` — `Checked` with the entry in-state named and
+     unconstrained — whose entry state is `EntryOk`), not `checkAlloc vcp rf = .ok ()`
+     (`allocChecked_of_checkAlloc`); `RL.Wf.check` is `AllocChecked`, `CompiledA` is `Compiled` with
+     it (`Compiled.toA`), and the chain has `_ex` variants (`regLevelCorrect_world_ex`,
+     `regLevelCorrect_backend_ex`, `backend_correct_of_layers_ex`, `backend_correct_ex`,
+     `backend_correct_of_rules_ex`, `backend_correct_m4_ex`, `backend_correct_final_ex`,
+     `backend_correct_final_of_lower_ex`); the old statements are corollaries. Proving the iteration
+     complete was not needed: the spill allocation's in-states are given explicitly.
+  2. *Definedness* — **avoided**. The register-level theorem chooses `ρ₀` (`RegLevelCorrectEx`,
+     `RegLevelCorrect.ex`; `backend_correct_of_layers_ex` instantiates `IselSim`/`PrepareCorrect`
+     with it): `checkedAt_sound` needs only that the initial store and `ρ₀` satisfy the entry in-state,
+     and for an `EntryOk` state (callee-saved registers hold their entry values, each vreg in at most
+     one location) `entryRho` picks such a `ρ₀` from the initial frame (`Inv_entryRho`,
+     `allocChecked_sound`). So the spill allocation may start with every home holding its vreg. Not
+     covered: the link-level theorems (`LinkWorld`, `PairDriver`) fix one VCode outcome for all
+     activations and keep `checkAlloc` (a choice of `ρ₀` per activation would need definedness).
+  3. *Instruction-local facts* for `spillLocs`: `operands` succeeds; two fixed uses of one register
+     carry one vreg; fixed defs are pairwise distinct; enough scratch registers; no late uses; branch
+     arguments and parameters have equal counts and classes, distinct parameters; a `try_call`'s
+     successors have one predecessor and no parameters. Per `MInst` constructor, plus facts about the
+     call ABI register lists produced by the lowering. **Partly done** (`FV/Backend/Proof/SpillLocal*.lean`):
+     the facts are `OpsOk`/`SpillInstOk`/`EdgesOk`/`ClassesOk` (`SpillLocalOk`); under `OpsOk` the
+     checker's static checks accept `spillLocs` (`checkStatic_spill`), the loads leave every use's home
+     value in its register (`loads_run`), a kept def's register holds exactly its vreg after
+     `transferOp` (`transferOp_kept`, `transferOp_nonReg`). Every covered straight-line form meets
+     `SpillInstOk` (`spillInstOk_of_formOk`), as do the LL/SC loops, `ElfTlsGetAddr`, `JTSequence` and
+     `Rets` on x0..x7 with distinct defs/registers; `prepare` keeps it. `spillLocalOk_of_pipeline` holds
+     under the open, program-independent `SpillLocalHyp`: the lowering's control forms meet
+     `SpillInstOk` (`CtlSpillHyp`: needs which call/`Args`/`Rets`/branch shapes the ISLE and driver
+     runs emit, with fresh distinct defs), vreg classes are consistent (`ClassesHyp`: needs the
+     lowering's `classes` bookkeeping), and the CFG facts (`EdgesHyp`: from `LowerShape`'s edge
+     blocks and `prepare`'s splitting).
+     **`ClassesHyp` proven** (`classesHyp`, `FV/Backend/Proof/SpillClasses.lean`, `SpillCls*.lean`: a
+     flow-level abstract interpretation over the exported rules with checked `emit`s, `clsTab`, shows every
+     emitted register has the class the lowering state records; alias resolution keeps classes).
+     **`EdgesHyp` proven under the new decidable input condition `ArityOk`** (`edgesHyp_of`,
+     `SpillEdges*.lean`; `SpillArity.lean`: every branch destination passes as many arguments as its target
+     has parameters, which `lowerFunction` does not check for argument-less `brif`/`br_table` edges;
+     `lean-e2e-check`: `arityOkB` 1148/1148).
+     **`CtlSpillHyp` is false as stated** (`E2E.not_ctlSpillHyp`: two `sret` parameters are both fixed
+     to x8); with the ABI condition of `InSubset` (`AbiSigsOk`: `abiSigs`/`indSigs`, at most one `sret`)
+     it holds: `E2E.ctlSpillHyp` (`FV/Backend/Proof/SpillCtl*.lean`, `ctlSpillHyp_of`): every `CtlShape`
+     meets `SpillInstOk`; the driver's `Args`, the `tryCall` (`clobberAll` unreachable: a `try_call`
+     signature is `system_v`), edge `jump`s and the alias renaming are proven, and the ISLE inversion
+     `IselCtlHyp` is `Driver.iselCtlHyp` (`FV/Backend/Proof/IselShp*.lean`, 2026-10-05): V3's abstract
+     interpreter, parametric in its transfer functions, re-run with an `emit` precondition checking the
+     shapes of `CondBr`/`TrapIf`/`TestBitAndBranch` (`apreS`), oracles for the helpers with fresh defs
+     (`load_ext_name_got/near`, `atomic_rmw/cas_loop`, `elf_tls_get_addr`), table `shpTab` (641 entries,
+     `FVTest/Backend/IselShpGen.lean`, 11 `native_decide` checks); the call, `try_call` and `br_table`
+     root rules (1031–1036, 1140) by hand (`root_hand`). `IselCtlHyp`'s `try_call` clause is restricted
+     to `f`'s terminators: for an arbitrary `try_call_indirect` on an unused signature declaration with
+     two `sret` parameters it is false (rule 1036). So step 3 is **done**: `E2E.spillLocalAll`
+     (`InSubset`, `Dominated`, `LowerScope`, `ArityOk` give `SpillLocalOk` of the prepared VCode).
+  4. *The dataflow invariant* — **stated** (`FV/Backend/Proof/SpillInvariant.lean`), the invariant
+     proof done. What remains is
+     availability, not definedness: `SpillAvail vc D` (sets `D b` of vregs whose home holds them on
+     entry to block `b`: all at the entry; every use available where it is read, `availAt`; every edge
+     delivers its target's set, `edgeAvail`), a VCode-level must-analysis killed only by unstored
+     terminator defs, scratch defs past `keptDefs` and parameters with unavailable arguments.
+     **`Spill.SpillStep4` proven** (`Spill.spillStep4`, `FV/Backend/Proof/SpillStep4*.lean`, 2026-10-05):
+     with a CFG, `SpillLocalOk` and `SpillAvail`, the in-states `inState` ("homes of `D b` hold their
+     vregs, save slots their entry values (block 0: the registers), a `try_call` successor's live def
+     registers their defs") verify, i.e. `AllocChecked vc (spillAlloc vc)`: per instruction
+     `inst_runs` (restores, loads, the instruction, stores), `pre_runs` (saves, entry stores),
+     `argMoves_runs` (the two-phase copy), `edge_noargs`/`edge_args` (the checker's `edge` feeds the
+     successor's in-state; a `try_call` successor's single predecessor pins its successor number,
+     `preds_single`). The statement gained the premise `∃ succs preds, vc.cfg = .ok (succs, preds)`:
+     without it, it is false (a block not ending in a terminator meets `SpillLocalOk` and `SpillAvail`
+     vacuously, but `CheckedAt` needs a CFG); the pipeline's output has one (`cfg_ok_of_prepare`).
+     Assembly: `spillAccepted_of : SpillStep4 → SpillLocalAll → SpillAvailable →
+     SpillAccepted`, `spillAccepted_of_step4 : SpillStep4 → SpillAvailable → SpillAccepted`,
+     `spillAccepted_of_avail : SpillAvailable → SpillAccepted`, then `backend_correct_final_alloc`
+     (premise `arityOkB f = true`).
+     **`SpillAvailable` reduced to a syntactic fact** (`FV/Backend/Proof/SpillAvail.lean`,
+     `FV/E2E/SpillAvail.lean`): with `D := Spill.killD` (everything at the entry block, elsewhere the
+     vregs no instruction kills), `spillAvail_of_killFree` gives `SpillAvail` from `EdgesOk` and
+     `Spill.killFreeB` (no instruction reads a killed vreg — the LL/SC scratch defs past `keptDefs`,
+     `JTSequence`'s temporaries, a `try_call`'s results — and a killed branch argument is stored by its
+     block's entry stores, `entryStored`); `spillAvailable_of_killFree : SpillKillFree → SpillAvailable`,
+     `spillAccepted_of_killFree`, witness `spillKillFree_witness` (an LL/SC loop).
+     **`SpillKillFree` proven** (`E2E.spillKillFree`, 2026-10-05): (a) the ISLE runs
+     (`Kill.KillRunsHyp`, `Kill.killRunsHyp`, `FV/Backend/Proof/Kill*.lean`): a *uniform* invariant of
+     the ISLE interpreter, no abstract domain (`Isle.Interp.uSound`/`uRoot`, `KillGen.lean`): every
+     value of a run holds no `AtomicRMWLoop`/`AtomicCASLoop`/`JTSequence` data and its registers outside
+     a call's defs are CLIF values' vregs or vregs of the run not killed so far (`KP`, state-dependent,
+     monotone under the run relation `RsK`: new kills are fresh); emitted uses likewise (`IsK`). The
+     killing forms are built only inside `atomic_rmw_loop`, `atomic_cas_loop`, `br_table_impl`
+     (oracles, run inversions in `KillOracle.lean`); the reachable term tables `killTabS`/`killTabB`
+     (`KillTab.lean`, `native_decide`) contain no killing variant and no `invalid_reg` (only the `nop`
+     rule 587, a hand rule with no results, and the I128 rules 636/637, which never match, apply it);
+     every extern constructor but `invalid_reg` keeps the invariant (`kp_ctor`, `KillCtor.lean`;
+     `MInst.ofV`'s uses are among the value's registers, `ofV_kill`); a `try_call`'s results live only
+     in call defs (`V.regsD`), so its code never reads them, and its call defines exactly them in
+     order (`Kill.tryDefsExact`). Route chosen over register-identity tracking (≈8k lines estimated):
+     the property is uniform over values once the three killing forms are oracles. (b) the driver
+     (`Kill.killFreeB_lower`, `KillAssemble.lean`): disjoint vreg ranges of the runs, alias resolution
+     (`gn x` is `x` or a statement's result register), `try_call` edge blocks (single predecessor,
+     `termEdgeDefs` keeps the result vregs on the normal edge and all defs on handler edges);
+     (c) `prepare` keeps `killFreeB` (`Spill.killFreeB_prepare`, `KillPrep.lean`: retargeting keeps
+     operands, a single-predecessor target is never split). `lean-e2e-check`: `killFreeB` 1148/1148
+     (19 with killed vregs) remains as a double-check.
 - **Option (b), later:** a real allocator (linear scan) written in Lean, proven directly or with
   `checkAlloc` completeness for its output. Removes the Rust tool entirely. Large `[est]`.
-- **Depends:** none for (a). **Size:** (a) medium `[est]`. **Risk:** (a) the StackAlloc frame may hit the
-  32 KiB limit on big functions (V5).
 
 ### V5. Frame and control-lowering rejections (totality)
 
@@ -337,8 +455,9 @@ label**; list the free ones with
 | WP | Issue | Status |
 | --- | --- | --- |
 | V1+V2 | [#4](https://github.com/eth-act/clifv/issues/4) `lowerCheck` completeness (+ V2, `PrepDomain` of the lowering output) | **done** (`6db15bd`) |
-| V3 | [#5](https://github.com/eth-act/clifv/issues/5) Form coverage (`formsCoveredB`) | claimed (`agent/forms-cover`) |
-| V4 | [#6](https://github.com/eth-act/clifv/issues/6) Register allocation without trusting regalloc2 | open |
+| V3 | [#5](https://github.com/eth-act/clifv/issues/5) Form coverage (`formsCoveredB`) | **done** (#5) |
+| V4 | [#6](https://github.com/eth-act/clifv/issues/6) Register allocation without trusting regalloc2 | (a) **done** (#56): `backend_correct_final_alloc_proven`, no allocation premise |
+| V4b | [#57](https://github.com/eth-act/clifv/issues/57) A real register allocator in Lean (removes regalloc2) | open |
 | V5 | [#7](https://github.com/eth-act/clifv/issues/7) Frame and control-lowering rejections (totality) | open |
 | V6 | [#8](https://github.com/eth-act/clifv/issues/8) Branch range (totality) | open |
 | L2a | [#9](https://github.com/eth-act/clifv/issues/9) Linking without validators: split `okB` into input conditions + properties proven by construction | open |

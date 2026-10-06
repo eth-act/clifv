@@ -61,6 +61,42 @@ the small data artifact and posts their comments. It checks out only the default
 branch and never executes fork code. GitHub activates that publisher only after
 its workflow and script are merged into the default branch.
 
+### Daily change reports
+
+`stock-comparison-nightly.yml` runs at 06:23 UTC and summarizes existing `main`
+push measurements in the pinned [daily reports issue](https://github.com/eth-act/clifv/issues/46).
+It does not build the compiler again. Collection starts at the last published
+digest, or the preceding 24 hours on first setup. Completed failures and
+cancellations are reported as measurement gaps; late completions enter the next
+digest. Intermediate pushes can be skipped by the measurement workflow's queue,
+so reports attribute changes to measured commit ranges, not proven culprits.
+
+The digest compares individual reported function occurrences under the same
+input and stock settings. It shows gained/lost exact matches and supported
+outputs, added/removed identities, and commit titles and GitHub authors. Changes
+to the pinned reference or recorded harness provenance are not directly
+comparable. Changed input/settings and nonrepeatable reference stages are
+reported separately, not called compiler regressions. Counts measure artifact
+agreement, not execution or proof coverage.
+
+Each nightly saves a compact baseline snapshot and detailed report as Actions
+artifacts for 90 days, including on quiet nights. The snapshot is uploaded before
+the issue cursor advances. Missing/corrupt saved state fails the digest instead
+of silently resetting the baseline. Initial measurements whose artifacts have
+expired are explicit gaps. Source measurements retain their existing seven-day
+artifact retention.
+
+The bot keeps 30 recent digest comments. Before deleting older marked comments
+owned by `github-actions[bot]`, it stores their counts, regressions, removed
+identities, and attribution links in the issue body and verifies the update.
+Human comments and unrelated bot comments are never deleted. If the compacted
+body reaches its size limit, deletion stops rather than dropping findings.
+
+The schedule activates only after this workflow is merged into `main`. A
+read-only PR job tests collection against real `main` artifacts and uploads a
+preview. After merge, `workflow_dispatch` can preview the digest or publish it
+with the `publish` input; only runs from `main` can write to the reporting issue.
+
 Use a fresh output directory; if `--out` is omitted a timestamped directory is
 chosen. `--input <official-file.clif>` selects a pilot;
 the report still retains the complete official inventory and says how many files
@@ -90,7 +126,11 @@ original test files, compilation commands, stdout/stderr and artifacts are retai
    disassembly/filecheck/precise-output assertions and expected-failure handling.
    Each independent function's assertion result is retained; capture continues
    after failures to inventory the remaining functions. Normal stock execution
-   would stop that stage at its first failure.
+   would stop that stage at its first failure. A compile test may repeat a
+   function name (`isa/aarch64/condops.clif` has 50 functions named `%f`), so
+   each function's artifacts are named by its position in the file, and each
+   function is compared with its own stock artifact. A run test cannot repeat a
+   name: stock `TestFileCompiler` rejects it.
 4. For `run`, use the actual `TestFileCompiler` preparation: declarations, hostcall
    substitutions, function renaming and signature trampolines. Compile-only mode
    uses the same compile call as the JIT module, with a memory provider that panics
@@ -188,10 +228,12 @@ commands; they are not additional official test files or runtime assertions.
 The first settings-matched baseline inventoried all 1,302 files: 484 have an
 AArch64 binary-producing stage, 630 have no supported Lean target, 180 are
 non-binary, and 8 are stock parser-warning skips. Lean received compilation
-requests for 483 files; 116 produced test functions that could be compared.
-425 function outputs match code bytes, relocations, alignment and traps; all
-declared AArch64 test-function code artifacts match in 19 files. None is credited
-as full execution-metadata equivalence. Stock compile assertions all pass.
+requests for 483 files; 118 produced test functions that could be compared.
+451 function outputs match code bytes, relocations, alignment and traps; all
+declared AArch64 test-function code artifacts match in 19 files. (The first
+published count, 425, compared every function of a repeated name with one of
+them.) None is credited as full execution-metadata equivalence. Stock compile
+assertions all pass.
 `runtests/throw.clif` has nonrepeatable reference artifacts because stock preparation
 substitutes a process-local host function address; it is not credited as agreement.
 

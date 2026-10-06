@@ -198,9 +198,9 @@ class StockIntegrationTests(unittest.TestCase):
     def test_metadata_mutation_and_nonrepeatability_cannot_pass(self):
         with tempfile.TemporaryDirectory(prefix="stock-compare-test-") as temp:
             root=Path(temp)
-            COMPARE.one(COMPARE.SUITE/"isa/aarch64/bswap.clif",root,self.env,self.exporter,True)
+            variant=COMPARE.one(COMPARE.SUITE/"isa/aarch64/bswap.clif",root,self.env,self.exporter,True)["variants"][0]
             stage=root/"files/isa/aarch64/bswap/stock/variant-0"
-            meta=COMPARE.artifacts(stage)["%f0"]
+            meta=COMPARE.artifacts(stage,variant)[variant["functions"].index("%f0")]
             lean=root/"files/isa/aarch64/bswap/variant-0/compilation-0/lean"
             self.assertTrue(COMPARE.compare_function("%f0",meta,lean,True,True)["exact_code_artifact"])
             self.assertFalse(COMPARE.compare_function("%f0",meta,lean,True,False)["exact_code_artifact"])
@@ -213,9 +213,9 @@ class StockIntegrationTests(unittest.TestCase):
     def test_relocation_dump_disagreement_with_object_cannot_pass(self):
         with tempfile.TemporaryDirectory(prefix="stock-compare-test-") as temp:
             root=Path(temp)
-            COMPARE.one(COMPARE.SUITE/"runtests/call.clif",root,self.env,self.exporter,True)
+            variant=COMPARE.one(COMPARE.SUITE/"runtests/call.clif",root,self.env,self.exporter,True)["variants"][0]
             stage=root/"files/runtests/call/stock/variant-0"
-            meta=COMPARE.artifacts(stage)["%colocated_i64"]
+            meta=COMPARE.artifacts(stage,variant)[variant["functions"].index("%colocated_i64")]
             lean=root/"files/runtests/call/variant-0/compilation-0/lean"
             path=lean/"dump/colocated_i64.relocs.json"
             relocs=json.loads(path.read_text());relocs[0]["addend"]=4
@@ -225,6 +225,47 @@ class StockIntegrationTests(unittest.TestCase):
             self.assertTrue(compared["exact_code_and_relocations"])
             self.assertFalse(compared["lean_dump_matches_object_relocations"])
             self.assertFalse(compared["exact_code_artifact"])
+
+    def test_repeated_function_names_are_compared_separately(self):
+        # shift-op.clif has two compile-test functions named %f, of different types.
+        with tempfile.TemporaryDirectory(prefix="stock-compare-test-") as temp:
+            root=Path(temp)
+            variant=COMPARE.one(COMPARE.SUITE/"isa/aarch64/shift-op.clif",root,self.env,self.exporter,True)["variants"][0]
+            self.assertEqual(variant["functions"],["%f","%f"])
+            stage=root/"files/isa/aarch64/shift-op/stock/variant-0"
+            metas=COMPARE.artifacts(stage,variant)
+            self.assertEqual(sorted(metas),[0,1])
+            self.assertNotEqual((stage/"0.bin").read_bytes(),(stage/"1.bin").read_bytes())
+            self.assertEqual([r["index"] for r in variant["functions_compared"]],[0,1])
+            self.assertEqual([c["functions"] for c in variant["lean_compilations"]],[["%f"],["%f"]])
+            inputs=[(root/f"files/isa/aarch64/shift-op/variant-0/compilation-{i}/input.clif").read_text() for i in (0,1)]
+            self.assertIn("%f(i64) -> i64",inputs[0])
+            self.assertIn("%f(i32) -> i32",inputs[1])
+            # Each function is compared with its own stock artifact.
+            rows=variant["functions_compared"]
+            for k, r in enumerate(rows):
+                self.assertEqual(r["bytes"]["left_sha256"],COMPARE.digest((stage/f"{k}.bin").read_bytes()))
+            self.assertNotEqual(rows[0]["bytes"]["left_sha256"],rows[1]["bytes"]["left_sha256"])
+            self.assertNotEqual(rows[0]["bytes"]["right_sha256"],rows[1]["bytes"]["right_sha256"])
+
+    def test_exporter_names_compile_artifacts_by_position(self):
+        with tempfile.TemporaryDirectory(prefix="stock-compare-test-") as temp:
+            root=Path(temp)
+            source=root/"repeated.clif"
+            source.write_text("test compile\ntarget aarch64\n"
+                "function %f() -> i64 {\nblock0:\nv0 = iconst.i64 1\nreturn v0\n}\n"
+                "function %f() -> i64 {\nblock0:\nv0 = iconst.i64 2\nreturn v0\n}\n")
+            subprocess.run([self.exporter,source,root/"out",COMPARE.TARGET,"--all-stages"],check=True,capture_output=True)
+            stage=root/"out/variant-0"
+            self.assertEqual([json.loads((stage/f"{k}.json").read_text())["index"] for k in (0,1)],[0,1])
+            self.assertNotEqual((stage/"0.bin").read_bytes(),(stage/"1.bin").read_bytes())
+            self.assertEqual([a["index"] for a in json.loads((stage/"assertions.json").read_text())],[0,1])
+            variant=json.loads((root/"out/manifest.json").read_text())["variants"][0]
+            self.assertEqual(sorted(COMPARE.artifacts(stage,variant)),[0,1])
+            # A file stem that disagrees with the recorded position is not accepted.
+            (stage/"1.json").rename(stage/"7.json")
+            with self.assertRaises(ValueError):
+                COMPARE.artifacts(stage,variant)
 
     def test_non_binary_and_foreign_files_remain_inventory_gaps(self):
         with tempfile.TemporaryDirectory(prefix="stock-compare-test-") as temp:

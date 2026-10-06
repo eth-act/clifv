@@ -25,7 +25,7 @@ contract `IselContract.lean`), `regalloc-proof.md` (M6), `encoder.md` (M5), `cli
 | `Clif.run`'s initial state is a `ClifEntry` (`clifEntry_initState`) | **proven** |
 | `LoweringObligations f vc` (`LowerShape` incl. `CtxInv`, `ValsBelow`, types; SSA certificate `Cert`) | **discharged**: `lowerCheck f vc = true` ⇒ it (`loweringObligations_of_check`); and without the validator on `Dominated`/`LowerScope` input (`lowerCheck_complete`, `Compiled.of_lower`; see "Validator completeness") |
 | `PrepareCorrect sem vc vcp` (unreachable blocks, critical-edge splitting, RPO) | **discharged**: `prepCheck vc vcp = true` ⇒ it (`prepareCorrect_of_check`); and without the validator on `PrepDomain` VCode (`prepareCorrect_of_domain`, from `prepCheck_complete`; see "Validator completeness") |
-| Validators run by the compiler (`FV/Backend.lean` `lowerChecked`, `FV/Backend/Regalloc.lean` `allocateRegalloc2`: a rejection is a compile error) | done |
+| Validators run by the compiler (`FV/Backend.lean` `lowerChecked`, `FV/Backend/Regalloc.lean` `allocateRegalloc2`: a rejection is a compile error, except `checkAlloc`'s rejection of regalloc2's allocation, which falls back to the spill allocation, V4) | done |
 | **`backend_correct`**, **`backend_correct_of_rules`** from the hypotheses below | **proven**, sorry-free |
 | **`backend_correct_m4`** (`FV/E2E/Final.lean`): `backend_correct_of_rules` with all M4 predicates discharged (`lowerRulesCorrect_program`, `excludedUnmatchable`, `callRulesCorrect`, `indRulesCorrect`, `memRulesCorrect_program`, `lowerTermRulesCorrect`, `termUnmatchable`, `branchRulesCorrect`, `branchExcludedUnmatchable`, `tryRulesCorrect`, `tryUnmatchable`, `tryIndRulesCorrect`, `tryIndUnmatchable`) and `sem s := csem (F s) (ctx s) (X s)` (discharges `DriverSem` by `driverSem_csem`, `CallsRefine` by `callsRefine_csem` from `XCallsOk`, `IndCallsRefine` by `indCallsRefine_csem` from `XCallsIndOk`) | **proven**; axioms: `propext`, `Classical.choice`, `Quot.sound` + 130 `_native.bv_decide` certificates |
 | **`RegLevelCorrect`** for the backend's code (`regLevelCorrect_backend`, `FV/E2E/RegLevelCorrect.lean`, M6Ctl3): addresses outside the world `frameW K` (frame addresses `frameF` and, since agent/callee-fix, the callees' dead stack), context `⟨fa.k, af.slotBase⟩`, one external semantics `X`, machine `ArmStepX X H fa`; from `FormsCovered` and `CalleeOk` | **proven** |
@@ -54,7 +54,7 @@ callees' stack budget), `cx := ⟨fa.k, af.slotBase⟩`.
 | Hypothesis | Kind / owner |
 | --- | --- |
 | `InSubset p f`, `Compiled f k vc vcp rf af fa fb` | the compiler ran (pipeline + validators) |
-| `FormsCovered cx vcp` | per-function decidable premise (`formsCoveredB`, the covered straight-line forms `FormOk`, including the per-instruction bitmask check `logicImmOk`; control forms are handled by the proof); decided by `lean-e2e-check` (corpus + extrt + runtests: 913 of 913 checked functions covered, M6Refines) |
+| `FormsCovered cx vcp` | per-function decidable premise (`formsCoveredB`, the covered straight-line forms `FormOk`, including the per-instruction bitmask check `logicImmOk`; control forms are handled by the proof); decided by `lean-e2e-check` (corpus + extrt + runtests: 913 of 913 checked functions covered, M6Refines); a theorem on `LowerScope` input (V3: `formsCovered_complete`, `E2E.backend_correct_final_of_lower`; see "Validator completeness") |
 | `∀ s, CalleeOk (FF s) K X H vcp.CallSite` | callee contract of the machine's call hook `H` at the call sites of the compiled code (AAPCS64: `CallSoundCtl` of every call — from a state whose `K` bytes below `sp` fit and lie in `FF s`, the callee leaves the world `X.call` computes outside `FF s`, keeps `sp` and the frame outside that dead stack, the callee-saved registers, and puts the results in the def registers —, return to pc+4 from an aligned `sp`, `X.call` error-free and program-preserving; see "Callee contract with a dead stack") — environment |
 | `(∃ B ∈ f.blocks, B.term.isTry = true) → ∀ s, CalleeTryOk (FF s) X H vcp.TrySite` (`hCT`) | only for a function with a `try_call`, at its `try_call` sites: on a normal return the result registers of the call (its first `ti.rets` defs) hold what `csem` gives them; the exception payload registers past them are unconstrained (havocked on that edge, see "`try_call` payload registers") — environment; vacuous for a function without `try_call`, and for sites whose callee returns nothing (`calleeTryOk_of_rets0`) |
 | `hasTls f = true → ∀ s, TlsOk (FF s) K X H` (`hTls`) | only for a function with a `tls_value`: the machine's TLSDESC hook `H.tls` ends after the sequence, puts the variable's address `X.sym n 0` in x0 and the thread pointer `X.tp` in the temporary, keeps every other register but x30, the memory outside the `K` bytes below `sp` (a resolver may save registers there) and the program, and leaves the flags `X.tlsFlags n w` — trusted (`docs/decisions/arm-model.md`, "Thread-local storage"); vacuous for a function without `tls_value` |
@@ -2120,6 +2120,163 @@ with block parameters and an edge block). A branch without arguments to a block 
 parameters is accepted by `lowerFunction` and `lowerCheck` alike; CLIF is stuck there
 (`enterBlock`: "block arity"), so the theorems claim nothing about such a run. The compiler
 keeps running `lowerCheck` as a runtime double-check.
+
+**Validator completeness: form coverage `formsCoveredB` (V3)** (2026-10-05,
+`FV/Backend/Proof/IselCov{Dom,Sem,Form,Le,Check,Fns,Sound,Data,Ext,Ctor,Model,Clean,Tab,Driver}.lean`,
+`LowerCover.lean`, `FormsCoverComplete.lean`, `FV/E2E/FinalDirect.lean`; generator
+`FVTest/Backend/IselCovGen.lean`):
+
+```lean
+theorem Backend.Proof.Driver.formsCovered_complete {f : Clif.Function}
+    {vc vcp : VCode} (hs : LowerScope f) (hl : lowerFunction f = .ok vc)
+    (hp : prepare vc = .ok vcp) (cx : FnCtx) : FormsCovered cx vcp
+theorem E2E.backend_correct_final_of_lower (hsub : InSubset p f)
+    (hd : dominatedB f = true) (hs : lowerScopeB f = true) (hl : lowerFunction f = .ok vc)
+    (hp : prepare vc = .ok vcp) (hch : checkAlloc vcp rf = .ok ()) (ha : lowerRFunc vcp rf = .ok af)
+    (he : emitFunc k af = .ok fa) (hla : fa.layout = .ok fb)
+    -- backend_correct_final's contract, link-time and run premises (hC … htr), unchanged
+    : ArmRefines fb base ra (ArmStepX X H fa) s (Clif.runLoop env p fuel cs)
+```
+
+`backend_correct_final_of_lower` is `backend_correct_final` without `hc : Compiled …` and
+`hcov : FormsCovered …`: of the compiler's checks only `checkAlloc` (V4) remains a premise.
+`LogicImmComplete` (`IselCovSem.lean`: every logical immediate `ImmLogic.ofNat?` accepts is
+encoded, `logicImmOk`), used by the ISLE-level lemmas, is proven by `logicImmComplete`
+(`LogicImmComplete.lean`: kernel `decide` over the 5334 (e, c, r) triples, 16 chunks). Proof: an abstract interpretation of the exported ISLE rules,
+decided once (no per-program check). Abstract values `AW` (`γ`: register kinds, enum variants,
+types, immediates with their range facts, "every `MInst` inside is covered") and the abstract
+`FormOk` `covOk` (`covOk_sound`); `aRule` evaluates a rule disjunctively (patterns split
+abstract values, prune impossible variants/constants and the exclusion checker's `fails`),
+internal calls go to the summary table `covTab` (704 entries over the terms reachable from the
+closure roots of `lower` and from `lower_branch`, computed by the untrusted generator) or the
+`operand_size` oracle, extern helpers to transfer functions whose soundness is `ext_sound`
+(`Clean ctx`: the context's instruction data hold no registers or instructions) and
+`ctor_sound` (every `emit`ted instruction covered: `CovSince`); `soundAt` (induction on the
+interpreter's fuel) makes every run of a checked term land in its abstract output. `chkTab`
+and the root checks are `native_decide` (8 table chunks + 4 roots, IselCovTab.lean). Driver:
+`stmt_cov` (emitted code covered; result registers of an instruction with results are int
+vregs, so `lowerFunction` adds no result `mov`), `termCall_cov`, `tryCall_cov`; the final
+alias renaming keeps register classes (`resolve_vrenaming`, `covered_mapRegs`), the entry's
+`Args`/parameter loads and the edge `jump`s are covered, a `try_call`'s fixup only inserts a
+`tryCall`, and `prepare` only retargets control instructions (`formsCovered_of_prepare`).
+Non-vacuity: `E2E.formsCovered_complete_witness` (`lowerWitness`). The compiler keeps running
+`formsCoveredB` (`lean-e2e-check`) as a double check.
+
+**The control shapes of the ISLE runs (V4 (a), `IselCtlHyp`)** (2026-10-05,
+`FV/Backend/Proof/IselShp{Fns,Base,Root,Tab,Total,Ctor,Oracle,Call,Try,BrTable,Driver}.lean`,
+generator `FVTest/Backend/IselShpGen.lean`): `Backend.Proof.Driver.iselCtlHyp : IselCtlHyp`
+(SpillCtlPipe.lean; its `try_call` clause takes `∃ B ∈ f.blocks, B.term = t`). V3's
+`CovModel`/`soundAt` are parametric in `actor`/`apre`/`aOracle`; the control-shape model
+`shpModel` uses `apreS` (an `emit`ted control form is a `CondBr`/`TrapIf` on a condition or an
+int vreg, a `TestBitAndBranch` on an int vreg, `Udf`/`EmitIsland`/`Jump`; `gen_return` returns
+int vregs) and `aOracleS` (the helpers emitting `loadExtNameGot/Near`, the LL/SC loops and
+`ElfTlsGetAddr` with fresh distinct defs, `oracle_ctl`), state invariant `ShpIs N s0`
+(`CtlSince N s0 ∧ N ≤ nextVreg`). Table `shpTab`: 641 entries, 8 chunks + 3 roots by
+`native_decide` (≈13 s, 2 GB). Hand-checked root rules (`root_hand`, `HandOk`): calls 1031–1033
+(`handOk_call`), `try_call`s 1034–1036 (`handOk_try`), `br_table` 1140 (`handOk_brTable`, its
+`imm`/`put_in_reg_zext32` sub-runs from the table via `SubOk`). `totality`: a non-`partial` term
+never returns `none` (`totalProg_program`). Corollary `E2E.ctlSpillHyp` (under `InSubset`);
+witness `E2E.ctlSpillHyp_of_witness`.
+
+**Register allocation without the `checkAlloc` premise: the spill fallback (V4 (a))** (2026-10-05,
+`FV/Backend/SpillAlloc.lean`, `FV/Backend/Regalloc.lean` `lowerAlloc`, `FV/E2E/AllocDirect.lean`):
+
+```lean
+def Backend.allocResult (vc : VCode) (ra : Except String RFunc) : RFunc  -- ra if checkAlloc accepts it, else spillAlloc vc
+theorem Backend.lowerAlloc_eq (h : lowerAlloc vcp ra = .ok af) :
+    lowerRFunc vcp (allocResult vcp ra) = .ok af
+```
+
+The backend lowers `allocResult vcp ra` (`lowerAlloc`, `lowerAlloc_eq`): regalloc2's answer if
+`checkAlloc` accepts it, else the spill allocation `spillAlloc` (a total Lean function; every
+value in its own stack slot, `docs/contracts/regalloc.md` "Fallback"). A rejection or a missing
+answer of regalloc2 is no longer a compile error, and `backend_correct_final_alloc` (below) holds
+for every answer `ra` of the untrusted allocator: its correctness never depends on regalloc2. The
+compiler runs `checkAlloc` on every spill allocation it lowers as a double-check (`lowerSpill`);
+`lean-e2e-check` decides its acceptance on every in-scope function (**1148 of 1148**, "spill
+fallback" line).
+
+**V4 restated: verified in-states, `ρ₀` chosen by the register-level theorem** (2026-10-05,
+`FV/Backend/Proof/RegallocSound.lean`, `FV/Backend/Proof/SpillInvariant.lean`,
+`FV/E2E/AllocDirect.lean`). The first statement (PR #54: `checkAlloc vcp (spillAlloc vcp) = .ok ()`
+under `Dominated`/`LowerScope` only) was false (`E2E.not_ctlSpillHyp`: two `sret` parameters) and
+asked more than the proofs use (the checker's fixpoint iteration; an entry state without vregs,
+i.e. every use defined on every path); it has been replaced by:
+
+```lean
+structure Backend.Proof.CheckedAt (vc rf c ins) (a0 : AState) : Prop  -- `Checked`, entry in-state a0 unconstrained
+def Backend.Proof.EntryOk (a0 : AState) : Prop    -- entry r only in reg r (callee-saved); each vreg in ≤ 1 location
+def Backend.Proof.AllocChecked (vc : VCode) (rf : RFunc) : Prop :=
+  ∃ c ins a0, CheckedAt vc rf c ins a0 ∧ EntryOk a0
+theorem Backend.Proof.allocChecked_of_checkAlloc : checkAlloc vc rf = .ok () → AllocChecked vc rf
+theorem Backend.Proof.checkedAt_sound (hc : CheckedAt vc rf c ins a0) (m₀ ρ₀ w₀)
+    (hinv0 : Inv keep a0 m₀ ρ₀ (fun r => m₀ (.reg r))) : ∃ R, IsSimulation vc rf sem keep R ∧ …
+theorem Backend.Proof.allocChecked_sound (h : AllocChecked vc rf) (m₀ w₀) : ∃ ρ₀ R, …  -- ρ₀ := entryRho a0 m₀
+def E2E.RegLevelCorrectEx … := ∀ base ra s, AbiEntry … → StackAvail … → ∀ w₀, BodyEntry af s w₀ →
+    ∃ ρ₀ : Nat → CV, (returns as in RegLevelCorrect) ∧ (traps as in RegLevelCorrect)
+theorem Backend.Proof.regLevelCorrect_backend_ex (hcheck : AllocChecked vcp rf) … : RegLevelCorrectEx …
+theorem E2E.backend_correct_final_ex (hc : CompiledA f k vc vcp rf af fa fb) …  -- CompiledA: check : AllocChecked
+def E2E.SpillAccepted : Prop := ∀ p f vc vcp, InSubset p f → Spill.ArityOk f → Dominated f →
+    LowerScope f → lowerFunction f = .ok vc → Backend.prepare vc = .ok vcp → AllocChecked vcp (spillAlloc vcp)
+theorem E2E.spillAccepted_of_step4 (h4 : Spill.SpillStep4) (hav : SpillAvailable) : SpillAccepted
+theorem Spill.spillStep4 : Spill.SpillStep4  -- ∀ vc D, (∃ succs preds, vc.cfg = .ok (succs, preds)) → SpillLocalOk vc → SpillAvail vc D → AllocChecked vc (spillAlloc vc)
+theorem E2E.spillAccepted_of_avail (hav : SpillAvailable) : SpillAccepted
+theorem E2E.backend_correct_final_alloc (hsa : SpillAccepted) (hsub : InSubset p f)
+    (hd : dominatedB f = true) (hs : lowerScopeB f = true) (har : Spill.arityOkB f = true) (hl …) (hp …) (hrf : rf = allocResult vcp ra) (ha …) (he …) (hla …)
+    -- backend_correct_final's contract, link-time and run premises (hC … htr), unchanged
+    : ArmRefines fb base ra' (ArmStepX X H fa) s (Clif.runLoop env p fuel cs)
+```
+
+`IselSim` and `PrepareCorrect` hold for every initial vreg file, so the composition
+(`backend_correct_of_layers_ex`) instantiates them with the one the register-level theorem picks
+from the activation's initial frame (`entryRho`: the value of the location the entry state places a
+vreg in). The spill allocation may therefore start with every home holding its vreg; what remains
+is availability (`Spill.SpillAvail`), not definedness. The old statements (`checkAlloc_sound`,
+`regLevelCorrect_world`, `backend_correct_of_layers`, `backend_correct`, `backend_correct_of_rules`)
+are corollaries; `Compiled` keeps `checkAlloc` because the link-level theorems (`LinkWorld`,
+`PairDriver`) fix one VCode outcome for all activations, which needs every `ρ₀`. Open, as an explicit
+hypothesis: `E2E.SpillAvailable` (`docs/TO-PROVE.md` V4 step 4); step 3 is `E2E.spillLocalAll`, the
+step-4 invariant proof `Spill.spillStep4` (2026-10-05; `SpillStep4` takes a CFG premise, which the
+pipeline's output meets, `Spill.cfg_ok_of_prepare`). Non-vacuity: `E2E.backend_correct_final_alloc_witness`.
+
+**`SpillKillFree` and `SpillAccepted` proven; the allocation is no longer a premise (V4 (a))**
+(2026-10-05, `FV/Backend/Proof/Kill{Base,Gen,OfV,Ctor,Tab,Oracle,Driver,TryDefs,Assemble,Prep}.lean`,
+`FV/E2E/SpillKillFree.lean`):
+
+```lean
+def Backend.Proof.Kill.KillRunsHyp : Prop  -- every ISLE run of the driver: RunKill (+ OutKill, try defs)
+theorem Backend.Proof.Kill.killRunsHyp : KillRunsHyp
+theorem Backend.Proof.Kill.tryDefsExact : TryDefsExact  -- a try_call's call defs = its result vregs, in order
+theorem Backend.Proof.Kill.killFreeB_lower (hK : KillRunsHyp) (hX : TryDefsExact) (hd : Dominated f)
+    (hs : LowerScope f) (ha : AbiSigsOk f) (har : ArityOk f) (hl : lowerFunction f = .ok vc) : killFreeB vc = true
+theorem Backend.Proof.Spill.killFreeB_prepare (hv : LowOk vc) (hk : killFreeB vc = true)
+    (hp : prepare vc = .ok vcp) : killFreeB vcp = true
+theorem E2E.spillKillFree : SpillKillFree
+theorem E2E.spillAccepted : SpillAccepted := spillAccepted_of_killFree Spill.spillStep4 spillKillFree
+theorem E2E.backend_correct_final_alloc_proven (hsub : InSubset p f) (hd : dominatedB f = true)
+    (hs : lowerScopeB f = true) (har : Spill.arityOkB f = true) (hl …) (hp …) (hrf : rf = allocResult vcp ra) (ha …) (he …) (hla …)
+    -- backend_correct_final's contract, link-time and run premises (hC … htr), unchanged
+    : ArmRefines fb base ra' (ArmStepX X H fa) s (Clif.runLoop env p fuel cs)
+```
+
+The ISLE part is a uniform invariant of the interpreter, with no abstract domain
+(`Isle.Interp.UModel`, `uSound`, `uRoot`, `KillGen.lean`): in a run started at `s0` with fresh vregs
+from `lo`, every value holds no `AtomicRMWLoop`/`AtomicCASLoop`/`JTSequence` data and its registers
+outside a call's defs are CLIF values' vregs or vregs of the run not killed so far (`KP`,
+state-dependent, monotone along the run relation `RsK`: what a sub-run kills is fresh); in a
+`try_call`'s context the vregs of call defs are its result vregs; every emitted use is allowed
+(`IsK`). The killing forms are built only inside `atomic_rmw_loop`, `atomic_cas_loop` and
+`br_table_impl` (oracles, `KillOracle.lean`); the term tables `killTabS` (from `lower`'s rules but
+587, 636, 637) and `killTabB` (from `lower_branch`'s) are closed and contain no killing variant and
+no `invalid_reg` (`KillTab.lean`, `native_decide`); `nop` (587) is a hand rule with no results,
+the I128 rules 636/637 never match. `kp_ctor` (`KillCtor.lean`): every extern constructor but
+`invalid_reg` keeps the invariant (`MInst.ofV`'s uses are among the value's registers outside call
+defs, `ofV_kill`). The driver assembly (`KillAssemble.lean`) uses the runs' disjoint vreg ranges,
+the alias resolution (`gn x` is `x` or a statement's result register) and the `try_call` edge blocks
+(single predecessor; `termEdgeDefs` keeps the result vregs on the normal edge, all defs on handler
+edges, `tryDefsExact`); `prepare` keeps `killFreeB` (`KillPrep.lean`). Non-vacuity:
+`E2E.backend_correct_final_alloc_proven_witness` (`backend_correct_final_alloc_witness` and
+`spillKillFree_witness`, an LL/SC loop with killed vregs).
 
 **Validator completeness: `Opt.Legalize128` is correct without `Opt.Legal.check`** (2026-10-02,
 `FV/Opt/Proof/LegalComplete.lean`, `FV/Opt/Proof/LegalDirect.lean`, `FV/E2E/LegalDirect.lean`;

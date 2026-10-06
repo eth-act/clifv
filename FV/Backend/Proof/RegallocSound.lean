@@ -58,11 +58,79 @@ theorem checked_of_checkAlloc {vc : VCode} {rf : RFunc} (h : checkAlloc vc rf = 
   obtain ⟨he, hb⟩ := verify_ok hv
   exact ⟨_, ins, ⟨rfl, rfl, ⟨preds, hcfg⟩, hsz, hne, he, hb⟩⟩
 
+/-- `Checked` with the entry block's in-state named `a0` and no condition on it: the proposed
+in-states verify (`verifyBlock`). The entry condition is separate: `a0.le (entryState c.size)`
+(what `checkAlloc` checks, `Checked.at`) or `EntryOk a0` (`AllocChecked`, `checkedAt_sound`). -/
+structure CheckedAt (vc : VCode) (rf : RFunc) (c : CheckCtx) (ins : Array (Option AState))
+    (a0 : AState) : Prop where
+  vc_eq : c.vc = vc
+  rf_eq : c.rf = rf
+  cfg : ∃ preds, vc.cfg = .ok (c.succs, preds)
+  size : rf.blocks.size = vc.blocks.size
+  nonempty : vc.blocks.size ≠ 0
+  entry : ins[0]? = some (some a0)
+  blocks : ∀ b < vc.blocks.size, c.verifyBlock ins b = .ok ()
+
+theorem Checked.at {vc : VCode} {rf : RFunc} {c : CheckCtx} {ins : Array (Option AState)}
+    (hc : Checked vc rf c ins) :
+    ∃ a0, CheckedAt vc rf c ins a0 ∧ a0.le (entryState c.size) = true := by
+  obtain ⟨a0, h0, hle⟩ := hc.entry
+  exact ⟨a0, ⟨hc.vc_eq, hc.rf_eq, hc.cfg, hc.size, hc.nonempty, h0, hc.blocks⟩, hle⟩
+
+/-- An entry in-state the register-level proof can start from with a vreg file of its choice
+(`entryRho`, `Inv_entryRho`): only a callee-saved register holds an entry value (its own), and
+each vreg is held by at most one location. (`entryState`'s sub-states are `EntryOk`,
+`entryOk_of_le`; the spill allocation's entry state also has every home holding its vreg.) -/
+def EntryOk (a0 : AState) : Prop :=
+  (∀ l r, Sym.entry r ∈ a0.get l → r ∈ calleeSaved ∧ l = .reg r) ∧
+  ∀ l l' v, Sym.vreg v ∈ a0.get l → Sym.vreg v ∈ a0.get l' → l = l'
+
+/-- **What the downstream proofs need from a register allocation** (V4): verified in-states
+(`CheckedAt`) with an `EntryOk` entry state. `checkAlloc vc rf = .ok ()` gives it
+(`allocChecked_of_checkAlloc`); for the spill allocation the in-states are given explicitly instead of
+computed by the checker's (untrusted) fixpoint iteration. Unlike `checkAlloc`, `AllocChecked` gives the
+simulation only from initial vreg files that agree with the initial store at the vregs the entry
+state places (`checkedAt_sound`): the register-level theorem chooses its `ρ₀`. -/
+def AllocChecked (vc : VCode) (rf : RFunc) : Prop :=
+  ∃ c ins a0, CheckedAt vc rf c ins a0 ∧ EntryOk a0
+
+theorem entryOk_of_le {n : Nat} {a0 : AState} (h : a0.le (entryState n) = true) : EntryOk a0 := by
+  refine ⟨fun l r hs => ?_, fun l l' v hs _ => ?_⟩
+  · obtain ⟨r', hr', rfl, he⟩ := mem_get_entryState (AState.mem_get_le h hs)
+    cases he
+    exact ⟨hr', rfl⟩
+  · obtain ⟨_, _, _, he⟩ := mem_get_entryState (AState.mem_get_le h hs)
+    cases he
+
+theorem allocChecked_of_checkAlloc {vc : VCode} {rf : RFunc} (h : checkAlloc vc rf = .ok ()) :
+    AllocChecked vc rf := by
+  obtain ⟨c, ins, hc⟩ := checked_of_checkAlloc h
+  obtain ⟨a0, hat, hle⟩ := hc.at
+  exact ⟨c, ins, a0, hat, entryOk_of_le hle⟩
+
+open Classical in
+/-- The vreg file the entry state `a0` describes in the initial store `m₀`: vreg `v` has the
+value of the location holding it (the value of x0 if none does). -/
+noncomputable def entryRho {V : Type} (a0 : AState) (m₀ : Loc → V) (v : Nat) : V :=
+  if h : ∃ l, Sym.vreg v ∈ a0.get l then m₀ (Classical.choose h) else m₀ (.reg (.x 0))
+
+theorem Inv_entryRho {V : Type} (keep : Reg → V → V) {a0 : AState} (h : EntryOk a0)
+    (m₀ : Loc → V) : Inv keep a0 m₀ (entryRho a0 m₀) (fun r => m₀ (.reg r)) := by
+  intro l s hs
+  cases s with
+  | vreg v =>
+    have hex : ∃ l, Sym.vreg v ∈ a0.get l := ⟨l, hs⟩
+    show m₀ l = entryRho a0 m₀ v
+    rw [entryRho, dif_pos hex, h.2 l _ v hs (Classical.choose_spec hex)]
+  | entry r =>
+    obtain ⟨hr, rfl⟩ := h.1 l r hs
+    exact ⟨hr, rfl⟩
+
 variable {vc : VCode} {rf : RFunc} {c : CheckCtx} {ins : Array (Option AState)}
   (sem : ISem V W) (keep : Reg → V → V) {r₀ : Reg → V}
 
 /-- Entering block `s` with an environment satisfying the (verified) in-state of `s`. -/
-theorem enter_block (hc : Checked vc rf c ins) {s : Nat} {e a' : AState} {m : Loc → V}
+theorem enter_block_at {a0 : AState} (hc : CheckedAt vc rf c ins a0) {s : Nat} {e a' : AState} {m : Loc → V}
     {ρ : Nat → V} {w : W} (hs : s < vc.blocks.size) (hins : ins[s]? = some (some a'))
     (hle : a'.le e = true) (hinv : Inv keep e m ρ r₀) :
     ∃ items, rf.blocks[s]? = some items ∧
@@ -81,7 +149,7 @@ theorem edgeEnv_lt {b s : Nat} {ρ ρ' : Nat → V} (h : edgeEnv vc b s ρ = som
   | none => cases hb : vc.blocks[b]? <;> simp [hs, hb] at h
   | some sb => exact (Array.getElem?_eq_some_iff.mp hs).1
 
-theorem sim_step (hc : Checked vc rf c ins) {ms : MState V W} {vs : VState V W} {c' : MConf V W}
+theorem sim_step_at {a0 : AState} (hc : CheckedAt vc rf c ins a0) {ms : MState V W} {vs : VState V W} {c' : MConf V W}
     (hm : MatchRun c ins keep r₀ ms vs) (hs : MStep vc sem keep rf (.run ms) c') :
     (∃ ms', c' = .run ms' ∧ MatchRun c ins keep r₀ ms' vs ∧ ms'.its.length < ms.its.length) ∨
     (∃ v', VStep vc sem (.run vs) v' ∧ Match c ins keep r₀ c' v') := by
@@ -138,12 +206,12 @@ theorem sim_step (hc : Checked vc rf c ins) {ms : MState V W} {vs : VState V W} 
       have hinvF := edgeForget_inv hcfg' hvbc hi hk1 hops (by rw [hc.vc_eq]; exact hsucc) hinv'
       obtain ⟨ρ', henv, hinve⟩ := edge_ok hedge hinvF
       rw [hc.vc_eq] at henv
-      obtain ⟨items', hitems', hmr⟩ := enter_block keep hc (w := w') (edgeEnv_lt henv) hins hle hinve
+      obtain ⟨items', hitems', hmr⟩ := enter_block_at keep hc (w := w') (edgeEnv_lt henv) hins hle hinve
       rw [hitems] at hitems'
       cases hitems'
       exact ⟨_, VStep.step hvb hi hops hsem hlen' (VNext.goto hk1 hsucc henv), hmr⟩
 
-theorem sim_progress (hc : Checked vc rf c ins) {ms : MState V W} {vs : VState V W}
+theorem sim_progress_at {a0 : AState} (hc : CheckedAt vc rf c ins a0) {ms : MState V W} {vs : VState V W}
     {v' : VConf V W} (hm : MatchRun c ins keep r₀ ms vs) (hv : VStep vc sem (.run vs) v') :
     ∃ c', MStep vc sem keep rf (.run ms) c' := by
   obtain ⟨b, its, m, w⟩ := ms
@@ -192,6 +260,27 @@ theorem sim_progress (hc : Checked vc rf c ins) {ms : MState V W} {vs : VState V
         exact ⟨_, MStep.op hvb hi hops hsz.symm hsem hlen' hho hclob
           (MNext.goto h hsucc (Array.getElem?_eq_getElem hs))⟩
 
+theorem enter_block (hc : Checked vc rf c ins) {s : Nat} {e a' : AState} {m : Loc → V}
+    {ρ : Nat → V} {w : W} (hs : s < vc.blocks.size) (hins : ins[s]? = some (some a'))
+    (hle : a'.le e = true) (hinv : Inv keep e m ρ r₀) :
+    ∃ items, rf.blocks[s]? = some items ∧
+      MatchRun c ins keep r₀ ⟨s, items.toList, m, w⟩ ⟨s, 0, ρ, w⟩ :=
+  let ⟨_, hat, _⟩ := hc.at
+  enter_block_at keep hat hs hins hle hinv
+
+theorem sim_step (hc : Checked vc rf c ins) {ms : MState V W} {vs : VState V W} {c' : MConf V W}
+    (hm : MatchRun c ins keep r₀ ms vs) (hs : MStep vc sem keep rf (.run ms) c') :
+    (∃ ms', c' = .run ms' ∧ MatchRun c ins keep r₀ ms' vs ∧ ms'.its.length < ms.its.length) ∨
+    (∃ v', VStep vc sem (.run vs) v' ∧ Match c ins keep r₀ c' v') :=
+  let ⟨_, hat, _⟩ := hc.at
+  sim_step_at sem keep hat hm hs
+
+theorem sim_progress (hc : Checked vc rf c ins) {ms : MState V W} {vs : VState V W}
+    {v' : VConf V W} (hm : MatchRun c ins keep r₀ ms vs) (hv : VStep vc sem (.run vs) v') :
+    ∃ c', MStep vc sem keep rf (.run ms) c' :=
+  let ⟨_, hat, _⟩ := hc.at
+  sim_progress_at sem keep hat hm hv
+
 
 end
 
@@ -230,23 +319,24 @@ def MConf.init (m₀ : Loc → V) (w₀ : W) : MConf V W := .run ⟨0, rf.blocks
 /-- The initial configuration of the VCode: block 0, vreg file `ρ₀`, world `w₀`. -/
 def VConf.init (ρ₀ : Nat → V) (w₀ : W) : VConf V W := .run ⟨0, 0, ρ₀, w₀⟩
 
-/-- **Soundness of the register-allocation checker.** If `checkAlloc vc rf` accepts, then for
-every instruction semantics `sem`, every notion `keep` of the callee-preserved part of a
-register, every initial store `m₀` (its registers are the entry register file), vreg file `ρ₀`
-and world `w₀`, the allocated code simulates the VCode from the initial configurations, and
-whenever it returns, every callee-saved register holds its entry value (`keep`-part). -/
-theorem checkAlloc_sound (h : checkAlloc vc rf = .ok ()) (m₀ : Loc → V) (ρ₀ : Nat → V) (w₀ : W) :
+/-- **Soundness of the register-allocation checker, from verified in-states** (`CheckedAt`): for
+every instruction semantics `sem`, every `keep`, every initial store `m₀`, vreg file `ρ₀` and world
+`w₀` such that the store and the vreg file satisfy the entry in-state `a0` (`Inv`), the allocated
+code simulates the VCode from the initial configurations, and whenever it returns, every
+callee-saved register holds its entry value (`keep`-part). -/
+theorem checkedAt_sound {c : CheckCtx} {ins : Array (Option AState)} {a0 : AState}
+    (hc : CheckedAt vc rf c ins a0) (m₀ : Loc → V) (ρ₀ : Nat → V) (w₀ : W)
+    (hinv0 : Inv keep a0 m₀ ρ₀ (fun r => m₀ (.reg r))) :
     ∃ R, IsSimulation vc rf sem keep R ∧ R (MConf.init rf m₀ w₀) (VConf.init ρ₀ w₀) ∧
       ∀ {vals m w v}, R (.ret vals m w) v →
         ∀ r ∈ calleeSaved, keep r (m (.reg r)) = keep r (m₀ (.reg r)) := by
-  obtain ⟨c, ins, hc⟩ := checked_of_checkAlloc h
   refine ⟨Match c ins keep (fun r => m₀ (.reg r)), ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩
   · intro cf v c' hR hs
     cases cf with
     | run ms =>
       cases v with
       | run vs =>
-        rcases sim_step sem keep hc hR hs with ⟨ms', rfl, hmr, hlt⟩ | hr
+        rcases sim_step_at sem keep hc hR hs with ⟨ms', rfl, hmr, hlt⟩ | hr
         · exact .inl ⟨hmr, hlt⟩
         · exact .inr hr
       | ret => exact hR.elim
@@ -257,7 +347,7 @@ theorem checkAlloc_sound (h : checkAlloc vc rf = .ok ()) (m₀ : Loc → V) (ρ�
     cases cf with
     | run ms =>
       cases v with
-      | run vs => exact sim_progress sem keep hc hR hv
+      | run vs => exact sim_progress_at sem keep hc hR hv
       | ret => exact hR.elim
       | halt => exact hR.elim
     | ret => cases v <;> first | exact hR.elim | cases hv
@@ -285,20 +375,41 @@ theorem checkAlloc_sound (h : checkAlloc vc rf = .ok ()) (m₀ : Loc → V) (ρ�
     obtain ⟨hb, hw, vb, a, out, hvb, hrun, -⟩ := hR
     obtain ⟨-, hk, -⟩ := runItems_op hrun
     exact ⟨hb.symm, hk.symm, hw.symm⟩
-  · obtain ⟨a0, h0, hle⟩ := hc.entry
-    obtain ⟨a, out, ha, hrb, hedges⟩ :=
+  · obtain ⟨a, out, ha, hrb, hedges⟩ :=
       verifyBlock_ok (hc.blocks 0 (Nat.pos_of_ne_zero hc.nonempty))
-    rw [h0] at ha
+    rw [hc.entry] at ha
     cases ha
     obtain ⟨vb, items, hvb, hitems, hrun⟩ := runBlock_ok hrb
     rw [hc.rf_eq] at hitems
     have : rf.blocks[0]! = items := by simp [getElem!_def, hitems]
     simp only [MConf.init, VConf.init, this]
-    exact ⟨rfl, rfl, vb, a0, out, hvb, hrun, Inv_mono hle Inv_entryState, hedges⟩
+    exact ⟨rfl, rfl, vb, a0, out, hvb, hrun, hinv0, hedges⟩
   · intro vals m w v hR
     cases v with
     | ret => exact hR.2.2
     | _ => exact hR.elim
+
+/-- **Soundness of the register-allocation checker.** If `checkAlloc vc rf` accepts, then for
+every instruction semantics `sem`, every notion `keep` of the callee-preserved part of a
+register, every initial store `m₀` (its registers are the entry register file), vreg file `ρ₀`
+and world `w₀`, the allocated code simulates the VCode from the initial configurations, and
+whenever it returns, every callee-saved register holds its entry value (`keep`-part). -/
+theorem checkAlloc_sound (h : checkAlloc vc rf = .ok ()) (m₀ : Loc → V) (ρ₀ : Nat → V) (w₀ : W) :
+    ∃ R, IsSimulation vc rf sem keep R ∧ R (MConf.init rf m₀ w₀) (VConf.init ρ₀ w₀) ∧
+      ∀ {vals m w v}, R (.ret vals m w) v →
+        ∀ r ∈ calleeSaved, keep r (m (.reg r)) = keep r (m₀ (.reg r)) := by
+  obtain ⟨c, ins, hc⟩ := checked_of_checkAlloc h
+  obtain ⟨a0, hat, hle⟩ := hc.at
+  exact checkedAt_sound vc rf sem keep hat m₀ ρ₀ w₀ (Inv_mono hle Inv_entryState)
+
+/-- `checkedAt_sound` from `AllocChecked`, with the initial vreg file chosen from the initial store
+(`entryRho`). -/
+theorem allocChecked_sound (h : AllocChecked vc rf) (m₀ : Loc → V) (w₀ : W) :
+    ∃ ρ₀ R, IsSimulation vc rf sem keep R ∧ R (MConf.init rf m₀ w₀) (VConf.init ρ₀ w₀) ∧
+      ∀ {vals m w v}, R (.ret vals m w) v →
+        ∀ r ∈ calleeSaved, keep r (m (.reg r)) = keep r (m₀ (.reg r)) := by
+  obtain ⟨c, ins, a0, hat, hok⟩ := h
+  exact ⟨_, checkedAt_sound vc rf sem keep hat m₀ _ w₀ (Inv_entryRho keep hok m₀)⟩
 
 variable {vc rf sem keep}
 

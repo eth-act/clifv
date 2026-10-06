@@ -193,7 +193,7 @@ theorem StRel.pc {R : RL} {s : Arm.ArmState} {m : Loc → CV} {w : Arm.ArmState}
 theorem itemsChecked_block {R : RL} (hR : R.Wf) {t : Nat} {vb : VBlock} {items : Array RItem}
     (hvb : R.vc.blocks[t]? = some vb) (hit : R.rf.blocks[t]? = some items) :
     ItemsChecked R vb items.toList := by
-  obtain ⟨c, ins, hc⟩ := checked_of_checkAlloc hR.check
+  obtain ⟨c, ins, _, hc, -⟩ := hR.check
   obtain ⟨a, out, -, hrb, -⟩ := verifyBlock_ok (hc.blocks t (Array.getElem?_eq_some_iff.mp hvb).1)
   obtain ⟨vb', items', hvb', hit', hrun⟩ := runBlock_ok hrb
   rw [hc.vc_eq, hvb] at hvb'

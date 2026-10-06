@@ -31,11 +31,14 @@ machine environment `env` (`aarch64Env`, or `smallEnv` for stress tests). -/
 inductive Allocator where
   | stack
   | regalloc2 (bin : String) (env : MachineEnv := aarch64Env)
+  /-- The spill allocator alone (`spillAlloc`; regalloc2's fallback, forced for testing). -/
+  | spill
 
 /-- Allocate a batch of functions (one file). -/
 def Allocator.run : Allocator → Array VCode → IO (Array (Except String AFunc))
   | .stack, vcs => pure (vcs.map allocate)
   | .regalloc2 bin env, vcs => allocateRegalloc2 bin env vcs
+  | .spill, vcs => pure (allocateSpill vcs)
 
 /-- `lean-regalloc`: `$LEAN_REGALLOC`, else `rust/target/release/lean-regalloc` of the
 checkout that holds this executable (`.lake/build/bin/…`). -/
@@ -45,11 +48,14 @@ def defaultRegallocBin : IO String := do
   let root := ((app.parent.bind (·.parent)).bind (·.parent)).bind (·.parent)
   pure ((root.getD ".") / "rust" / "target" / "release" / "lean-regalloc").toString
 
-/-- The allocator named on the command line: `regalloc2` (Cranelift's environment), `stack`,
-or `regalloc2-small` (`smallEnv`, testing only). -/
+/-- The allocator named on the command line: `regalloc2` (Cranelift's environment; the spill
+allocator replaces every allocation `checkAlloc` rejects), `stack`, `spill` (the spill
+allocator for every function: testing the fallback), or `regalloc2-small` (`smallEnv`, testing
+only). -/
 def Allocator.ofName? (n : String) : IO (Option Allocator) := do
   match n with
   | "stack" => pure (some .stack)
+  | "spill" => pure (some .spill)
   | "regalloc2" => pure (some (.regalloc2 (← defaultRegallocBin)))
   | "regalloc2-small" => pure (some (.regalloc2 (← defaultRegallocBin) smallEnv))
   | _ => pure none
