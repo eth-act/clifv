@@ -33,7 +33,7 @@ M5 proven (2026-09-27); no `sorry`, no hand-written `axiom`, no warnings in the 
       truncated word), proved (`Insn.encode_inRange`, `Insn.encode_error_of_out_of_range`,
       `FV/Backend/Proof/EncodeBranch.lean`; `emitFunc_layout_total`,
       `FV/Backend/Proof/RelaxLayout.lean`) and tested (`lean-backend-encode-test range`,
-      `corpus/clif-regress/far_branches.clif`)
+      `corpus/clif-large/far_branches.clif`)
 - [x] byte-for-byte check against `llvm-mc`: **971/971** functions identical; decode check
       61 133 instructions (74 mnemonics); backend filetests corpus **114/114**, extrt 22/22,
       runtests **3085 pass / 0 fail / 0 disagree** (section "Tests and results")

@@ -13,6 +13,12 @@ COMPARE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(COMPARE)
 
 
+def with_flag(request, key, name, value):
+    changed = copy.deepcopy(request)
+    next(f for f in changed[key] if f["name"] == name)["value"] = value
+    return changed
+
+
 class ContractTests(unittest.TestCase):
     def test_receipt_requires_exact_settings_and_input(self):
         request = {"schema":1,"input_sha256":COMPARE.digest(b"input"),"flags":[]}
@@ -26,6 +32,28 @@ class ContractTests(unittest.TestCase):
         request = {"schema":1,"input_sha256":COMPARE.digest(b"input")}
         for receipt in ({},{"schema":1,"request":request,"configuration_accepted":False,"error":"unsupported"}):
             self.assertIsNotNone(COMPARE.verify_receipt(request,receipt,b"input"))
+
+    def test_function_rejections_must_be_a_name_to_reason_map(self):
+        self.assertEqual(COMPARE.function_rejections({"function_rejections":{"f":"has_lse=true"}}),{"f":"has_lse=true"})
+        for receipt in ({},{"function_rejections":None},{"function_rejections":["f"]},{"function_rejections":{"f":1}}):
+            self.assertIsNone(COMPARE.function_rejections(receipt))
+
+    def test_function_stock_signed_is_a_setting_gap(self):
+        words = lambda *ws: b"".join(w.to_bytes(4, "little") for w in ws)
+        signs = {"isa_flags":[{"name":"sign_return_address","value":"true"}]}
+        unsigned = {"isa_flags":[{"name":"sign_return_address","value":"false"}]}
+        # paciasp ... autiasp; ret, pacibsp ... retab, and an unsigned leaf.
+        for code in (words(0xd503233f, 0xa9bf7bfd, 0xd50323bf, 0xd65f03c0), words(0xd503237f, 0xd65f0fff)):
+            self.assertTrue(COMPARE.signing_gap(signs, code))
+            self.assertFalse(COMPARE.signing_gap(unsigned, code))
+        self.assertFalse(COMPARE.signing_gap(signs, words(0x8b010000, 0xd65f03c0)))
+        signed = words(0xd503233f, 0xd50323bf, 0xd65f03c0)
+        for status in ("identical_code_artifact", "different_code_artifact"):
+            row = COMPARE.check_signing({"name":"%f","status":status}, signs, signed)
+            self.assertEqual((row["status"], row["reason"]), ("unsupported_configuration", COMPARE.SIGNING_GAP))
+        # Lean did not compile it: an operation gap, whatever stock does.
+        uncompiled = {"name":"%f","status":"lean_unsupported","reason":"see lean.stderr and traps.json"}
+        self.assertIs(COMPARE.check_signing(uncompiled, signs, signed), uncompiled)
 
     def test_all_encoder_relocation_types_are_known(self):
         self.assertEqual(COMPARE.ELF_RELOC_TYPES["Aarch64AdrGotPage21"],311)
@@ -90,7 +118,7 @@ class StockIntegrationTests(unittest.TestCase):
                 request = copy.deepcopy(base)
                 next(f for f in request["flags"] if f["name"]==name)["value"]=value
                 requests.append(request)
-            isa = copy.deepcopy(base);isa["isa_flags"][0]["value"]="true";requests.append(isa)
+            requests.append(with_flag(base,"isa_flags","use_bti","true"))
             for index, request in enumerate(requests):
                 result, receipt = self.compile(root/f"case-{index}",request)
                 self.assertEqual(result.returncode,3,result.stderr)
@@ -112,7 +140,47 @@ class StockIntegrationTests(unittest.TestCase):
             self.assertEqual(result.returncode,0,result.stderr)
             self.assertTrue(receipt["configuration_accepted"])
             self.assertIn(b"is_pic=false",result.stderr)
+            self.assertIn("is_pic=false",receipt["function_rejections"]["far"])
             self.assertFalse((root/"far/dump/far.bin").exists())
+
+    def test_settings_accepted_only_for_functions_they_cannot_change(self):
+        source=(b"function %leaf(i64) -> i64 {\nblock0(v0: i64):\nreturn v0\n}\n\n"
+                b"function %rmw_add(i64, i64) -> i64 {\nblock0(v0: i64, v1: i64):\n"
+                b"v2 = atomic_rmw.i64 add v0, v1\nreturn v2\n}\n\n"
+                b"function %rmw_xchg(i64, i64) -> i64 {\nblock0(v0: i64, v1: i64):\n"
+                b"v2 = atomic_rmw.i64 xchg v0, v1\nreturn v2\n}\n\n"
+                b"function %cas(i64, i64, i64) -> i64 {\nblock0(v0: i64, v1: i64, v2: i64):\n"
+                b"v3 = atomic_cas.i64 v0, v1, v2\nreturn v3\n}\n\n"
+                b"function %table(i32) -> i32 {\nblock0(v0: i32):\nbr_table v0, block1, [block2]\n"
+                b"block1:\nv1 = iconst.i32 1\nreturn v1\nblock2:\nv2 = iconst.i32 2\nreturn v2\n}\n")
+        names=("leaf","rmw_add","rmw_xchg","cas","table")
+        with tempfile.TemporaryDirectory(prefix="stock-config-test-") as temp:
+            root=Path(temp);base=self.seed(root/"stock")
+            cases={
+                # Accepted for every function Lean compiles.
+                "inert":(with_flag(with_flag(with_flag(with_flag(base,"flags","enable_llvm_abi_extensions","true"),
+                    "flags","enable_multi_ret_implicit_sret","true"),"isa_flags","has_fp16","true"),
+                    "isa_flags","has_dotprod","true"),set()),
+                "lse":(with_flag(base,"isa_flags","has_lse","true"),{"rmw_add","cas"}),
+                "csdb":(with_flag(base,"isa_flags","use_csdb","true"),{"table"}),
+                # The atomic loops save x24-x28, so those functions need a frame and are signed.
+                "sign":(with_flag(with_flag(with_flag(base,"isa_flags","sign_return_address","true"),
+                    "isa_flags","sign_return_address_with_bkey","true"),"isa_flags","has_pauth","true"),
+                    {"rmw_add","rmw_xchg","cas"}),
+            }
+            for label,(request,rejected) in cases.items():
+                result,receipt=self.compile(root/label,request,source)
+                self.assertEqual(result.returncode,0,result.stderr)
+                self.assertTrue(receipt["configuration_accepted"],label)
+                self.assertEqual(set(receipt["function_rejections"]),rejected,label)
+                for name in names:
+                    self.assertEqual((root/label/"dump"/f"{name}.bin").exists(),name not in rejected,(label,name))
+            framed=with_flag(with_flag(base,"isa_flags","sign_return_address","true"),"flags","preserve_frame_pointers","true")
+            signed_all=with_flag(with_flag(base,"isa_flags","sign_return_address","true"),"isa_flags","sign_return_address_all","true")
+            for label,request in (("framed",framed),("signed-all",signed_all)):
+                result,receipt=self.compile(root/label,request,source)
+                self.assertEqual(result.returncode,0,result.stderr)
+                self.assertEqual(set(receipt["function_rejections"]),set(names),label)
 
     def test_stock_compile_assertions_and_exact_outputs(self):
         with tempfile.TemporaryDirectory(prefix="stock-compare-test-") as temp:
@@ -137,9 +205,9 @@ class StockIntegrationTests(unittest.TestCase):
     def test_metadata_mutation_and_nonrepeatability_cannot_pass(self):
         with tempfile.TemporaryDirectory(prefix="stock-compare-test-") as temp:
             root=Path(temp)
-            COMPARE.one(COMPARE.SUITE/"isa/aarch64/bswap.clif",root,self.env,self.exporter,True)
+            variant=COMPARE.one(COMPARE.SUITE/"isa/aarch64/bswap.clif",root,self.env,self.exporter,True)["variants"][0]
             stage=root/"files/isa/aarch64/bswap/stock/variant-0"
-            meta=COMPARE.artifacts(stage)["%f0"]
+            meta=COMPARE.artifacts(stage,variant)[variant["functions"].index("%f0")]
             lean=root/"files/isa/aarch64/bswap/variant-0/compilation-0/lean"
             self.assertTrue(COMPARE.compare_function("%f0",meta,lean,True,True)["exact_code_artifact"])
             self.assertFalse(COMPARE.compare_function("%f0",meta,lean,True,False)["exact_code_artifact"])
@@ -152,9 +220,9 @@ class StockIntegrationTests(unittest.TestCase):
     def test_relocation_dump_disagreement_with_object_cannot_pass(self):
         with tempfile.TemporaryDirectory(prefix="stock-compare-test-") as temp:
             root=Path(temp)
-            COMPARE.one(COMPARE.SUITE/"runtests/call.clif",root,self.env,self.exporter,True)
+            variant=COMPARE.one(COMPARE.SUITE/"runtests/call.clif",root,self.env,self.exporter,True)["variants"][0]
             stage=root/"files/runtests/call/stock/variant-0"
-            meta=COMPARE.artifacts(stage)["%colocated_i64"]
+            meta=COMPARE.artifacts(stage,variant)[variant["functions"].index("%colocated_i64")]
             lean=root/"files/runtests/call/variant-0/compilation-0/lean"
             path=lean/"dump/colocated_i64.relocs.json"
             relocs=json.loads(path.read_text());relocs[0]["addend"]=4
@@ -164,6 +232,47 @@ class StockIntegrationTests(unittest.TestCase):
             self.assertTrue(compared["exact_code_and_relocations"])
             self.assertFalse(compared["lean_dump_matches_object_relocations"])
             self.assertFalse(compared["exact_code_artifact"])
+
+    def test_repeated_function_names_are_compared_separately(self):
+        # shift-op.clif has two compile-test functions named %f, of different types.
+        with tempfile.TemporaryDirectory(prefix="stock-compare-test-") as temp:
+            root=Path(temp)
+            variant=COMPARE.one(COMPARE.SUITE/"isa/aarch64/shift-op.clif",root,self.env,self.exporter,True)["variants"][0]
+            self.assertEqual(variant["functions"],["%f","%f"])
+            stage=root/"files/isa/aarch64/shift-op/stock/variant-0"
+            metas=COMPARE.artifacts(stage,variant)
+            self.assertEqual(sorted(metas),[0,1])
+            self.assertNotEqual((stage/"0.bin").read_bytes(),(stage/"1.bin").read_bytes())
+            self.assertEqual([r["index"] for r in variant["functions_compared"]],[0,1])
+            self.assertEqual([c["functions"] for c in variant["lean_compilations"]],[["%f"],["%f"]])
+            inputs=[(root/f"files/isa/aarch64/shift-op/variant-0/compilation-{i}/input.clif").read_text() for i in (0,1)]
+            self.assertIn("%f(i64) -> i64",inputs[0])
+            self.assertIn("%f(i32) -> i32",inputs[1])
+            # Each function is compared with its own stock artifact.
+            rows=variant["functions_compared"]
+            for k, r in enumerate(rows):
+                self.assertEqual(r["bytes"]["left_sha256"],COMPARE.digest((stage/f"{k}.bin").read_bytes()))
+            self.assertNotEqual(rows[0]["bytes"]["left_sha256"],rows[1]["bytes"]["left_sha256"])
+            self.assertNotEqual(rows[0]["bytes"]["right_sha256"],rows[1]["bytes"]["right_sha256"])
+
+    def test_exporter_names_compile_artifacts_by_position(self):
+        with tempfile.TemporaryDirectory(prefix="stock-compare-test-") as temp:
+            root=Path(temp)
+            source=root/"repeated.clif"
+            source.write_text("test compile\ntarget aarch64\n"
+                "function %f() -> i64 {\nblock0:\nv0 = iconst.i64 1\nreturn v0\n}\n"
+                "function %f() -> i64 {\nblock0:\nv0 = iconst.i64 2\nreturn v0\n}\n")
+            subprocess.run([self.exporter,source,root/"out",COMPARE.TARGET,"--all-stages"],check=True,capture_output=True)
+            stage=root/"out/variant-0"
+            self.assertEqual([json.loads((stage/f"{k}.json").read_text())["index"] for k in (0,1)],[0,1])
+            self.assertNotEqual((stage/"0.bin").read_bytes(),(stage/"1.bin").read_bytes())
+            self.assertEqual([a["index"] for a in json.loads((stage/"assertions.json").read_text())],[0,1])
+            variant=json.loads((root/"out/manifest.json").read_text())["variants"][0]
+            self.assertEqual(sorted(COMPARE.artifacts(stage,variant)),[0,1])
+            # A file stem that disagrees with the recorded position is not accepted.
+            (stage/"1.json").rename(stage/"7.json")
+            with self.assertRaises(ValueError):
+                COMPARE.artifacts(stage,variant)
 
     def test_non_binary_and_foreign_files_remain_inventory_gaps(self):
         with tempfile.TemporaryDirectory(prefix="stock-compare-test-") as temp:

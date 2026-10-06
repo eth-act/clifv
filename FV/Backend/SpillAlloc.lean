@@ -5,10 +5,12 @@ import Std.Data.HashMap
 # The spill allocator: register allocation without regalloc2 (V4)
 
 `spillAlloc vc` is the allocation of last resort: the backend uses it when the checker
-`checkAlloc` rejects regalloc2's allocation (`allocResult`, `allocateRegalloc2`) or when it is
-forced (`lean-backend --regalloc spill`). It is a total Lean function `VCode → RFunc`, so the
-end-to-end theorem never depends on regalloc2: every allocation the backend lowers is either
-regalloc2's, accepted by `checkAlloc`, or this one (`E2E.backend_correct_final_alloc`).
+`checkAlloc` rejects regalloc2's allocation, when `lowerRFunc` cannot lower it (`allocResult`,
+`allocateRegalloc2`), or when it is forced (`lean-backend --regalloc spill`). It is a total Lean
+function `VCode → RFunc`, so the end-to-end theorem never depends on regalloc2: every allocation
+the backend lowers is either regalloc2's, accepted by `checkAlloc`, or this one
+(`E2E.backend_correct_final_alloc`), and `lowerRFunc` lowers this one on every in-scope function
+(`E2E.lowerRFunc_spillAlloc`).
 
 ## Design (route (a1) of `docs/TO-PROVE.md` V4)
 
@@ -49,9 +51,11 @@ successor's first items store them.
 ## What is proven
 
 `E2E.backend_correct_final_alloc` (`FV/E2E/AllocDirect.lean`) composes this fallback with
-regalloc2. The spill allocation's acceptance by `checkAlloc` on every function the pipeline
-produces from in-scope input (`SpillAccepted`) is an explicit hypothesis there; `lean-e2e-check`
-decides it on every in-scope function of the corpus and the runtests ("spill fallback" line).
+regalloc2. The spill allocation's acceptance (`AllocChecked`) on every function the pipeline
+produces from in-scope input is proven (`E2E.spillAccepted`), and so is its lowering
+(`E2E.lowerRFunc_spillAlloc`, under the allocator-frame size condition); `lean-e2e-check`
+decides `checkAlloc`'s acceptance on every in-scope function of the corpus and the runtests
+("spill fallback" line).
 -/
 
 namespace Backend
@@ -224,12 +228,5 @@ def spillAlloc (vc : VCode) : RFunc :=
     let pre := (if bi == 0 then spillSaves else []) ++ spillEntryStores h vc succs preds bi
     (pre ++ body).toArray
   { blocks, spillSlots := h.size + maxArgs, saved := calleeSaved }
-
-/-- The allocation the backend lowers: regalloc2's (`ra`) if `checkAlloc` accepts it, else the
-spill allocation. -/
-def allocResult (vc : VCode) (ra : Except String RFunc) : RFunc :=
-  match ra with
-  | .ok rf => if (checkAlloc vc rf).isOk then rf else spillAlloc vc
-  | .error _ => spillAlloc vc
 
 end Backend

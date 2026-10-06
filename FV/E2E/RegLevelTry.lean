@@ -165,7 +165,7 @@ theorem realizes_tryCall {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (
     (hctl : ctl = .goto j) :
     ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
       Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.Good (iterN R.step i s) := by
-  have hck := (lowerRFunc_ok hR.alloc).2.2.2
+  have hck := (lowerRFunc_ok hR.alloc).2.2
   have hcpc := callAt_of_q hq hvb hi tryCall_hcall
   obtain ⟨j0, vb0, items0, pre, code, ls, ps1, ps2, T, hvb0, hit, hsplit, hchk, hcode, hls, htr,
     hdrop, hpc, hst⟩ := hq
@@ -335,7 +335,7 @@ theorem realizes_tryCall {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (
 theorem trySite_clobberAll {vc : VCode} {rf : RFunc} {af : AFunc} (halloc : lowerRFunc vc rf = .ok af)
     {info : CallInfo} {ti : TryInfo} (h : vc.TrySite info ti) : ti.clobberAll = false := by
   obtain ⟨b, vb, k, hvb, hi⟩ := h
-  have := ctlCheck_inst (lowerRFunc_ok halloc).2.2.2 hvb hi
+  have := ctlCheck_inst (lowerRFunc_ok halloc).2.2 hvb hi
   simpa [ctlInstOk] using this
 
 /-- A `try_call` site is a call site. -/

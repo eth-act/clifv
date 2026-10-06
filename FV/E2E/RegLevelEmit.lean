@@ -457,13 +457,9 @@ theorem lowerRFunc_ok {vc : VCode} {rf : RFunc} {af : AFunc} (h : lowerRFunc vc 
       ∀ b vb items, vc.blocks[b]? = some vb → rf.blocks[b]? = some items →
         ∃ code, itemsCode (RAFrame.compute vc rf) vb items.toList = .ok code ∧
           af.blocks[b]? = some (vb.label, ((if b = 0 then [AInst.prologue] else []) ++ code).toArray)) ∧
-      (RAFrame.compute vc rf).size < 32768 ∧ ((RAFrame.compute vc rf).total ≠ 0 → af.frame = true) ∧
-      ctlCheck vc rf = true := by
+      ((RAFrame.compute vc rf).total ≠ 0 → af.frame = true) ∧ ctlCheck vc rf = true := by
   unfold lowerRFunc at h
   simp only [bind, Except.bind] at h
-  split at h
-  · simp [throw, throwThe, MonadExceptOf.throw] at h
-  rename_i hsz0
   split at h
   · simp [throw, throwThe, MonadExceptOf.throw] at h
   rename_i harg
@@ -472,7 +468,7 @@ theorem lowerRFunc_ok {vc : VCode} {rf : RFunc} {af : AFunc} (h : lowerRFunc vc 
   · rename_i blocks hb
     simp only [pure, Except.pure, Except.ok.injEq] at h
     subst h
-    refine And.intro ?_ ⟨by omega, fun _ => rfl, by simpa using harg⟩
+    refine And.intro ?_ ⟨fun _ => rfl, by simpa using harg⟩
     obtain ⟨hsz, hel⟩ := array_mapIdxM_ok hb
     refine ⟨rfl, rfl, hsz, fun b vb items hvb hit => ?_⟩
     have hz : (vc.blocks.zip rf.blocks)[b]? = some (vb, items) := by
@@ -518,8 +514,6 @@ theorem lowerRFunc_frame {vc : VCode} {rf : RFunc} {af : AFunc} (h : lowerRFunc 
     af.frame = true := by
   unfold lowerRFunc at h
   simp only [bind, Except.bind] at h
-  split at h
-  · simp [throw, throwThe, MonadExceptOf.throw] at h
   split at h
   · simp [throw, throwThe, MonadExceptOf.throw] at h
   split at h

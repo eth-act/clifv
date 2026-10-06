@@ -72,7 +72,7 @@ theorem trap_trapIf {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs 
     (hops : (MInst.trapIf kk code).operands = .ok ops)
     (hholds : kk.holds (((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)) w = true) :
     ∃ n, TrapAt R.fb R.base code (iterN R.step n s) := by
-  have hck := (lowerRFunc_ok hR.alloc).2.2.2
+  have hck := (lowerRFunc_ok hR.alloc).2.2
   obtain ⟨j0, items, pre, regs, i', c1, c2, ls1, ls2, ps1, psm, ps2, T, cc, wh, ops', rfl, hit, hsplit,
     hasg, hc1', hops', hstat, hchk', hc2, h1, h2, htr, hdrop, hpc, hst⟩ := q_op hq hvb hi
   rw [hops] at hops'; cases hops'

@@ -193,7 +193,7 @@ theorem realizes_all {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (Call
         ∀ i < n, R.Good (iterN R.step i s) :=
     fun n c'' hm hq' ht => ⟨n, c'', hm, ⟨hq', aInv_step hR hq hA hm⟩, ht⟩
   have nil : ∀ i < 0, R.Good (iterN R.step i s) := fun _ h => absurd h (Nat.not_lt_zero _)
-  have hck := (lowerRFunc_ok hR.alloc).2.2.2
+  have hck := (lowerRFunc_ok hR.alloc).2.2
   cases h with
   | move =>
     obtain ⟨n, hn, ht⟩ := realizes_move hR hq
@@ -394,7 +394,7 @@ theorem regLevelCorrect_world_at {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : F
   let R : RL := ⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, G, gv⟩
   have hR : R.Wf := ⟨⟨cc, ins, a0, hcheck, hok⟩, halloc, hemit, hlayout, hlm, by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres,
     ⟨body, hb⟩, hent.program, hG⟩
-  have hck := (lowerRFunc_ok hR.alloc).2.2.2
+  have hck := (lowerRFunc_ok hR.alloc).2.2
   obtain ⟨n0, ht0, hq0, hA0, hf0⟩ := q_init hR hent hbe
   obtain ⟨Rl, hSim, hinit, hkeep⟩ :=
     checkedAt_sound R.vc R.rf R.sem ckeep hcheck (locVal R.fr (iterN R.step n0 s))
@@ -652,7 +652,7 @@ theorem regLevelCorrect_backend {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : Fn
     (fun _ h => h.elim) (by rw [e]; exact (hC s).g _ s _ _) (by rw [e]; exact fun h => (hCT h s).g _ _ s _ _)
     (by rw [e]; exact fun h => hTls h s)
     (by rw [e]; exact hbe.w _ fun r ⟨_, _, hvb, hi, _, hv⟩ =>
-      ((ctlCheck_args (lowerRFunc_ok halloc).2.2.2 hvb hi).2.2 _ hv).2) ρ₀
+      ((ctlCheck_args (lowerRFunc_ok halloc).2.2 hvb hi).2.2 _ hv).2) ρ₀
   rw [e, csemV_bot] at h
   exact ⟨fun us vals w hret => by
     obtain ⟨n, h1, h2, h3, -⟩ := h.1 us vals w hret
@@ -681,7 +681,7 @@ theorem regLevelCorrect_backend_ex {vcp : VCode} {rf : RFunc} {af : AFunc} {fa :
     (fun _ h => h.elim) (by rw [e]; exact (hC s).g _ s _ _) (by rw [e]; exact fun h => (hCT h s).g _ _ s _ _)
     (by rw [e]; exact fun h => hTls h s)
     (by rw [e]; exact hbe.w _ fun r ⟨_, _, hvb, hi, _, hv⟩ =>
-      ((ctlCheck_args (lowerRFunc_ok halloc).2.2.2 hvb hi).2.2 _ hv).2)
+      ((ctlCheck_args (lowerRFunc_ok halloc).2.2 hvb hi).2.2 _ hv).2)
   rw [e, csemV_bot] at h
   exact ⟨ρ₀, fun us vals w hret => by
     obtain ⟨n, h1, h2, h3, -⟩ := h.1 us vals w hret

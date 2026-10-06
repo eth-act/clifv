@@ -4,7 +4,7 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const zlib = require('node:zlib');
 const { execFileSync } = require('node:child_process');
-const { validate } = require('./stock-comparison-comment.cjs');
+const { validateMeasurement } = require('./stock-comparison-comment.cjs');
 
 const WORKFLOW = '.github/workflows/stock-compiler-comparison.yml';
 const NIGHTLY = '.github/workflows/stock-comparison-nightly.yml';
@@ -50,9 +50,9 @@ function snapshot(report, run) {
       report.binary_normalization || report.actual_ci_execution || report.configuration_overrides?.length) {
     throw new Error('Incomplete or changed measurement');
   }
-  validate({ schema: 1, measurement_complete: true, target: report.target, totals: report.totals,
+  validateMeasurement({ measurement_complete: true, target: report.target, totals: report.totals,
     head_sha: run.head_sha, run_id: run.id, run_attempt: run.run_attempt,
-    elapsed_seconds: 0, cpu_seconds: 0, peak_runner_memory_used_bytes: 0, pipeline_exit_code: 1,
+    elapsed_seconds: 0, cpu_seconds: 0, peak_runner_memory_used_bytes: 0,
     full_artifact_equivalence_verified: report.full_artifact_equivalence_verified }, run);
   if (report.tests.length !== report.official_test_files || report.inventory.length !== report.official_test_files ||
       new Set(report.tests.map(t => t.test)).size !== report.official_test_files ||
@@ -118,9 +118,9 @@ function validateSnapshot(data) {
     }
     keys.add(entry[0]); counts[entry[2]] = (counts[entry[2]] ?? 0) + 1;
   }
-  validate({ schema: 1, measurement_complete: true, target: 'aarch64-unknown-linux-gnu', totals: data.totals,
+  validateMeasurement({ measurement_complete: true, target: 'aarch64-unknown-linux-gnu', totals: data.totals,
     head_sha: data.run.head_sha, run_id: data.run.id, run_attempt: data.run.run_attempt,
-    elapsed_seconds: 0, cpu_seconds: 0, peak_runner_memory_used_bytes: 0, pipeline_exit_code: 1,
+    elapsed_seconds: 0, cpu_seconds: 0, peak_runner_memory_used_bytes: 0,
     full_artifact_equivalence_verified: false }, data.run);
   if (JSON.stringify(stable(counts)) !== JSON.stringify(stable(data.totals.function_statuses))) {
     throw new Error('Saved baseline counts disagree');

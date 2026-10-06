@@ -496,7 +496,7 @@ results/traps compared with `Clif.run`:
    inverted branch over a `b` (`relaxLine`, encoder.md "Branch-range policy"); functions must
    stay below 128 MiB (`b` range). Anything still out of range is a compile error naming the
    function, the instruction and the distance (proved: `Insn.encode_error_of_out_of_range`;
-   tested: `lean-backend-encode-test range`, `corpus/clif-regress/far_branches.clif`).
+   tested: `lean-backend-encode-test range`, `corpus/clif-large/far_branches.clif`).
 9. **Traps**: `udf #0xc11f` + the trap table; `TrapIf` branches to out-of-line `udf`s.
 10. **Register allocation**: regalloc2 is untrusted; `checkAlloc`'s soundness theorem
    (`docs/contracts/regalloc.md`) is the proof obligation, with the operand view, `prepare`,

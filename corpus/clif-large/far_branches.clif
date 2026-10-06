@@ -1,6 +1,6 @@
 ; V6 branch relaxation regression (docs/contracts/encoder.md, branch-range policy): a jump
 ; table of 270000 words (> 1 MiB) between the short conditional branches and their targets, so
-; the tbnz (bit test, +-32 KiB), the b.eq of a brif and of a trapnz (+-1 MiB) and the
+; the tbnz (bit test, +-32 KiB), the b.eq of a brif and the cbz of a udiv's zero check (+-1 MiB) and the
 ; jump table's default b.hs (+-1 MiB) are out of range and emitFunc relaxes them to the
 ; inverted branch over a `b` (block3 repeated 270000 times).
 test interpret
@@ -14,9 +14,11 @@ block0(v0: i64):
     brif v2, block4, block1
 
 block1:
-    v3 = icmp_imm eq v0, 77
-    trapnz v3, user1
-    v4 = icmp_imm eq v0, 1
+    v9 = iconst.i64 3
+    v3 = iadd v0, v9
+    v11 = udiv v0, v3
+    v10 = iconst.i64 1
+    v4 = icmp eq v0, v10
     brif v4, block4, block2
 
 block2:

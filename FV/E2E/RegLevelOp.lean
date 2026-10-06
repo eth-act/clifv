@@ -106,7 +106,7 @@ theorem locVal_frame_keep {fr : RAFrame} {D : Loc → Prop} {T : Prop} {sp0 : Bi
 /-- The fp/lr slot lies in the frame addresses. -/
 theorem fplr_inF {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) :
     ∀ k < 16, R.FK (spv R.s0 - 16#64 + BitVec.ofNat 64 k) := by
-  obtain ⟨⟨hfs, -⟩, hlt, -⟩ := lowerRFunc_ok hR.alloc
+  obtain ⟨⟨hfs, -⟩, -⟩ := lowerRFunc_ok hR.alloc
   have hst := hR.stack.frame.1
   have hd : frameDrop R.af = R.fr.total + 16 := by
     simp only [frameDrop, hframe, ite_true, hfs, RL.fr]

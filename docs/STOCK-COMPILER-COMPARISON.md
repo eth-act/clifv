@@ -37,14 +37,45 @@ required on the hosted runner. The workflow installs the checksum-pinned Lean
 toolchain and caches toolchains, Rust downloads, and compiler build outputs.
 
 A green measurement job means that the full inventory was processed and the
-report is valid. It does **not** mean compiler equivalence. The CI adapter accepts
-the pipeline's expected exit code 1 only with a complete report. Crashes, partial
-inventories, missing reference outputs, changed test sources, and failed stock
-assertions fail CI. Unsupported Lean settings or operations remain coverage gaps.
+report is valid. It does **not** mean compiler equivalence. The pipeline exits
+with 10 when a measurement finished; the CI adapter accepts only that code, and
+only with a complete report. Crashes, partial inventories, missing reference
+outputs, changed test sources, and failed stock assertions fail CI. Unsupported
+Lean settings or operations remain coverage gaps.
+
+### Lost matches
+
+The run summary lists every exact output as (test, variant, stage, position of
+the function in the variant, function name). The position matters: a test file
+can repeat a function name. Before measuring, CI finds a baseline: the newest
+push run on `main` whose commit is an ancestor of the tested commit and that
+saved a summary (`scripts/stock-comparison-baseline.py`). A pull request is thus
+compared with the `main` commit it is based on, not with a newer `main`. The
+summary records the outputs gained and lost since that baseline.
+
+The **Check lost matches** job (`scripts/stock-comparison-ratchet.py`) fails
+when an output that matched on the baseline no longer matches. If the loss is
+intended, add the label `stock-comparison-accept-losses` to the pull request and
+re-run that job; the label is read when the job runs. A push to `main` has no
+override: the commit is marked failed, and the next push compares with it. A
+missing baseline (no measured ancestor yet, or one whose summary has another
+format) is reported, not failed. A baseline that exists but could not be
+retrieved or read (an API error, a damaged or malformed summary, a shallow
+checkout) fails the job, and the label does not override that: without the
+baseline, lost matches cannot be ruled out. Re-run all jobs of the workflow run.
+
+The summary also hashes the files that do the measuring (the comparison
+scripts, the stock exporter and its patch, `FVTest/Backend/StockConfig.lean`,
+`FVTest/Backend/Main.lean` and this workflow; `HARNESS` in
+`scripts/stock-comparison-ci.py`). The comment names the ones that changed
+since the baseline, because a gain there can come from the measurement rather
+than the compiler. Summary artifacts from `main` are kept for 90 days, so that
+later runs can use them as baselines.
 
 The workflow saves the full artifacts and logs for seven days. It writes a job
 summary and posts a PR comment with coverage, exact output matches, complete-file
-matches, elapsed pipeline time, and sampled runner memory use. Memory includes
+matches, setting and operation rejections, the gains and losses since the `main`
+baseline, elapsed pipeline time, and sampled runner memory use. Memory includes
 the OS and is measured as `MemTotal - MemAvailable` every 0.1 seconds. Pipeline
 time includes Rust toolchain setup. It excludes Lean installation and cache
 transfers.
@@ -57,9 +88,10 @@ result.
 
 Same-repository PRs publish in a separate job after the measurement succeeds.
 Fork builds use read-only permissions. A separate `workflow_run` publisher reads
-the small data artifact and posts their comments. It checks out only the default
-branch and never executes fork code. GitHub activates that publisher only after
-its workflow and script are merged into the default branch.
+the small data artifact and posts their comments, also when only the lost-match
+job failed. It checks out only the default branch and never executes fork code.
+GitHub activates that publisher only after its workflow and script are merged
+into the default branch.
 
 ### Daily change reports
 
@@ -102,8 +134,9 @@ chosen. `--input <official-file.clif>` selects a pilot;
 the report still retains the complete official inventory and says how many files
 were actually processed. `progress.json` records completed files. Each processed
 file has a retained `files/<official-path>/result.json` even before the final
-`results.json` and `summary.md` are produced. Exit 1 means suite-wide equivalence
-has **not** been established, including when code matches but metadata is unknown.
+`results.json` and `summary.md` are produced. Exit 10 means the measurement
+finished and suite-wide equivalence has **not** been established, including when
+code matches but metadata is unknown. Any other nonzero exit is a failure.
 
 The pinned reference is Wasmtime commit
 `46c23a87dac1465986a8ad53ba6a7ae49372857b` (Cranelift 0.136.1).
@@ -126,7 +159,11 @@ original test files, compilation commands, stdout/stderr and artifacts are retai
    disassembly/filecheck/precise-output assertions and expected-failure handling.
    Each independent function's assertion result is retained; capture continues
    after failures to inventory the remaining functions. Normal stock execution
-   would stop that stage at its first failure.
+   would stop that stage at its first failure. A compile test may repeat a
+   function name (`isa/aarch64/condops.clif` has 50 functions named `%f`), so
+   each function's artifacts are named by its position in the file, and each
+   function is compared with its own stock artifact. A run test cannot repeat a
+   name: stock `TestFileCompiler` rejects it.
 4. For `run`, use the actual `TestFileCompiler` preparation: declarations, hostcall
    substitutions, function renaming and signature trampolines. Compile-only mode
    uses the same compile call as the JIT module, with a memory provider that panics
@@ -157,8 +194,30 @@ original test files, compilation commands, stdout/stderr and artifacts are retai
 `lean-backend --stock-config request.json --config-receipt receipt.json` is an
 experimental, fail-closed adapter. Unknown, missing, duplicate and unimplemented
 settings are rejected explicitly. Supported targets are generic/ELF AArch64 and
-AArch64 Linux; optimization is `none`, with no extra enabled ISA features. The
-complete policy table lives in `FVTest/Backend/StockConfig.lean`.
+AArch64 Linux; optimization is `none`. The complete policy lives in
+`FVTest/Backend/StockConfig.lean`.
+
+Some settings change stock's code only for some functions. Lean accepts such a
+setting for a function only if the setting cannot change that function's code.
+Each other function is rejected for that setting. Lean records it in the receipt's
+`function_rejections`, and the report counts it as `unsupported_configuration`.
+References are to `cranelift/codegen/src` at the pinned commit.
+
+| Setting (when `true`) | What it changes in stock code | Lean accepts it for |
+| --- | --- | --- |
+| `enable_llvm_abi_extensions` | `f128` parameters of `apple_aarch64` signatures (`isa/aarch64/abi.rs:231`) | Every function: Lean has no float types and does not lower `apple_aarch64` |
+| `enable_multi_ret_implicit_sret` | Returns that do not fit in registers (`isa/aarch64/abi.rs:382`, `machinst/abi.rs:936`) | Every function: Lean rejects more than 8 returns |
+| `has_fp16`, `has_dotprod`, `has_i8mm` | Float and vector lowering rules only (`isa/aarch64/inst.isle`, `isa/aarch64/lower.isle`) | Every function: Lean's CLIF has integer types only |
+| `has_lse` | `atomic_cas`, and `atomic_rmw` except `nand`/`xchg` (`isa/aarch64/lower.isle:2328-2388`) | Functions without those instructions |
+| `use_csdb` | `select_spectre_guard` and the `br_table` sequence (`isa/aarch64/lower.isle:2274`, `isa/aarch64/inst/emit.rs:3276`) | Functions without those instructions |
+| `sign_return_address`, with `sign_return_address_with_bkey` and `has_pauth` | Signs the return address of each function with a frame (`isa/aarch64/abi.rs:1365`) | Functions without a frame; none if `sign_return_address_all` is also set |
+| `use_bti` | Adds `bti c` to every function (`isa/aarch64/abi.rs:638`) | No function: the whole request is rejected |
+
+If a function is not signed, `sign_return_address_all`, `sign_return_address_with_bkey`
+and `has_pauth` have no effect on it. Lean's frame decision stands in for
+stock's, and the comparison checks it against stock's code: if stock signed a
+function that Lean accepted (stock sets up a frame where Lean has none), the
+function is counted as `unsupported_configuration`, not as a difference.
 
 `preserve_frame_pointers=false` omits an optional empty leaf frame **before
 emission**, checking calls, frame-register usage, incoming stack-argument loads,
@@ -202,18 +261,24 @@ commands; they are not additional official test files or runtime assertions.
 The first settings-matched baseline inventoried all 1,302 files: 484 have an
 AArch64 binary-producing stage, 630 have no supported Lean target, 180 are
 non-binary, and 8 are stock parser-warning skips. Lean received compilation
-requests for 483 files; 116 produced test functions that could be compared.
-425 function outputs match code bytes, relocations, alignment and traps; all
-declared AArch64 test-function code artifacts match in 19 files. None is credited
-as full execution-metadata equivalence. Stock compile assertions all pass.
+requests for 483 files; 118 produced test functions that could be compared.
+451 function outputs match code bytes, relocations, alignment and traps; all
+declared AArch64 test-function code artifacts match in 19 files. (The first
+published count, 425, compared every function of a repeated name with one of
+them.) None is credited as full execution-metadata equivalence. Stock compile
+assertions all pass.
 `runtests/throw.clif` has nonrepeatable reference artifacts because stock preparation
 substitutes a process-local host function address; it is not credited as agreement.
+
+The per-function settings policy above changes these counts. Of the 4,455 stock
+outputs, 465 match (was 451) and 1,145 differ (was 952). 432 are rejected for a
+setting (was 1,176) and 2,413 for an operation Lean does not support (was 1,876).
+Compared outputs now come from 151 files (was 118). Every output that matched
+before still matches. The remaining setting rejections are mostly
+`opt_level=speed` or `speed_and_size` (243), `has_lse` atomics (114),
+`is_pic=false` far symbols (40) and `use_bti` (11).
 
 Next, implement a comparable exception/unwind metadata export, capture the exact
 target/CPU eligibility of a selected real CI host, and feed matched Lean artifacts
 to the stock loader/trampolines. Add backend functionality for the explicitly
 rejected settings/functions without substituting easier configurations.
-
-`prejit-baseline.py` is retained for stock-exporter validation and historical
-diagnostics; it does not give Lean a stock-settings contract. Use the single
-pipeline above, not that diagnostic script, for the settings-matched baseline.
