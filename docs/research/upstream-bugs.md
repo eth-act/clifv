@@ -90,3 +90,31 @@ been reported to bytecodealliance yet.
 - **Effect here:** none. Neither rule is in the proven allow-list, and the Lean mid-end with all
   rules (`clif-opt`) doesn't apply it to the repro: the rewrite is dropped and the `ushr` variant
   folds to `v0`, which is correct.
+
+## Cranelift aarch64: `br_table` default edge miscompiled for jump tables over 1 MiB
+
+Found by V6 (#65; investigation #67): `corpus/clif-large/far_branches.clif` runs correctly with the Lean
+backend; Cranelift-native segfaults on the runs that take the default target of its 270000-entry
+`br_table`.
+- **Bug:** `Inst::JTSequence` (`cranelift/codegen/src/isa/aarch64/inst/emit.rs`, JTSequence arm) emits
+  `b.hs default` as a `Branch19` (±1 MiB) and then the whole jump table inline, within one VCode
+  instruction, so no island can be placed before the table. With N ≥ 262137 entries (one fewer when
+  `csdb` is emitted), the veneer placed after the table is beyond 1 MiB. `MachBuffer::emit_veneer`
+  (`machinst/buffer.rs`) patches the branch anyway; the range checks in `LabelUse::patch`
+  (`aarch64/inst/mod.rs`) are only `debug_assert!` and the offset is masked with `& 0x7ffff`, so a
+  release build silently emits a branch that wraps backwards out of the function. Same in 0.136.1
+  (our pin) and wasmtime main (3be934572b).
+- **Repro:** `function %f(i32) -> i32 { block0(v0): br_table v0, block2, [block1 × 262137] … }`,
+  `%f(262137) == 2` segfaults under `clif-util run` (aarch64, qemu); 262136 entries pass.
+- **Fix:** for tables whose size can push the default's veneer out of range, emit
+  `b.lo +8; b default` (`Branch26`, ±128 MiB); small tables are unchanged (no golden changes). Hardening:
+  `emit_veneer` asserts the veneer is in range, so any remaining out-of-range case panics instead of
+  miscompiling (tables ≥ 128 MiB would hit the `Branch26` limit).
+- **PR (owner's fork, for review):** https://github.com/kevaundray/wasmtime/pull/3, branch
+  `fix-aarch64-br-table-far-default`. Commit 1 adds `machinst::buffer::test::test_jt_sequence_far_default`
+  (fails before the fix: debug panic, release "default edge leaves the code"); commit 2 is the fix plus
+  the assert. All aarch64 filetests (134) and the whole filetests directory (1321) pass with no golden
+  changes; 398 runtests pass under qemu.
+- **Effect here:** none on the Lean backend (its relaxation handles the far default, V6). The native
+  side of the filetests harness reports these runs as one-side errors.
+
