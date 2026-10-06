@@ -50,6 +50,40 @@ def verify_receipt(request, receipt, source):
     return None
 
 
+def function_rejections(receipt):
+    """Functions that lean-backend rejected for a setting, written after compilation."""
+    rejections = receipt.get("function_rejections")
+    if not isinstance(rejections, dict) or not all(isinstance(v, str) for v in rejections.values()):
+        return None
+    return rejections
+
+
+# Return-address signing words Cranelift emits (`isa/aarch64/inst/emit.rs`: `Inst::Paci`,
+# `Inst::AuthenticatedRet`; `APIKey::enc_auti_hint`): paci{a,b}{sp,z}, auti{a,b}{sp,z}, reta{a,b}.
+SIGNING_WORDS = {0xd503231f, 0xd503233f, 0xd503235f, 0xd503237f, 0xd503239f, 0xd50323bf,
+                 0xd50323df, 0xd50323ff, 0xd65f0bff, 0xd65f0fff}
+SIGNING_GAP = ("sign_return_address=true signs this function's return address in stock, which sets up "
+               "a frame where Lean has none; Lean does not implement pointer authentication")
+
+
+def signing_gap(variant, stock_code):
+    """Whether `sign_return_address` is requested and stock's code signs the return address."""
+    requested = {"name": "sign_return_address", "value": "true"} in variant["isa_flags"]
+    return requested and any(int.from_bytes(stock_code[i:i + 4], "little") in SIGNING_WORDS
+                             for i in range(0, len(stock_code) - 3, 4))
+
+
+def check_signing(row, variant, stock_code):
+    """lean-backend accepts `sign_return_address` for a function it compiles without a frame,
+    standing in for stock's frame decision. Check that against stock's code: a compiled function
+    that stock signed is a setting gap, not a code difference. A function Lean could not compile
+    stays an operation gap."""
+    compared = row["status"] in ("identical_code_artifact", "different_code_artifact")
+    if compared and signing_gap(variant, stock_code):
+        return {"name": row["name"], "status": "unsupported_configuration", "reason": SIGNING_GAP}
+    return row
+
+
 def position(variant, path, name, index=None):
     """The function's position in variant["functions"]. A compile test may repeat a function
     name, so its artifacts carry their position (file stem and "index"). A run test cannot
@@ -168,8 +202,11 @@ def compile_lean(variant, source, dest, env):
         "--dump", lean / "dump", "--traps", lean / "traps.json"], dest, "lean", env)
     receipt = json.loads(receipt_path.read_text()) if receipt_path.exists() else {}
     error = verify_receipt(request, receipt, input_path.read_bytes())
+    rejections = function_rejections(receipt)
+    # A finished compilation without the per-function list is a harness failure, not a gap.
     return lean, {"command":run,"request":request,"receipt":receipt,"contract_error":error,
-                  "contract_verified":error is None and run["exit"] == 0}
+                  "function_rejections":rejections or {},
+                  "contract_verified":error is None and run["exit"] == 0 and rejections is not None}
 
 
 def one(path, out, env, binary, repeat):
@@ -263,8 +300,12 @@ def one(path, out, env, binary, repeat):
                     r = {"name":name,"status":"unsupported_configuration","reason":contract["contract_error"]}
                 elif not contract["contract_verified"]:
                     r = {"name":name,"status":"lean_compilation_failed","reason":contract["command"]["exit"]}
+                elif name.removeprefix("%") in contract["function_rejections"]:
+                    r = {"name":name,"status":"unsupported_configuration",
+                         "reason":contract["function_rejections"][name.removeprefix("%")]}
                 else:
                     r = compare_function(name, metas[k], lean, True, v["reference_repeat_verified"])
+                    r = check_signing(r, variant, metas[k][0].with_suffix(".bin").read_bytes())
             r["index"] = k
             v["functions_compared"].append(r)
         v["all_test_function_code_artifacts_identical"] = bool(v["functions_compared"]) and all(
