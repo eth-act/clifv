@@ -358,7 +358,7 @@ instruction's PC offset is `off j' - off j`, within the form's reach and aligned
 theorem FnAsm.layout_branch {f : FnAsm} {b : FnBin} {m : Std.HashMap Lbl Nat}
     (h : f.layout = .ok b) (hm : labelOffsets f.lines = .ok m) {j : Nat} {i : Insn}
     {t : Option Clif.TrapCode} (hj : f.lines.toList[j]? = some (.ins i t)) {l : Lbl}
-    {reach align : Int} (hs : i.pcRelSpec? = some (l, reach, align)) :
+    {reach align : Int} (hs : i.pcRelSpec? = some (l, reach, align)) (hsk : l ≠ .skip) :
     ∃ w a, b.words[lineOffset f.lines.toList j / 4]? = some w ∧ decode_raw_inst w = some a ∧
       (∃ j' : Nat, f.lines.toList[j']? = some (Line.label l)) ∧
       ∀ j' : Nat, f.lines.toList[j']? = some (.label l) →
@@ -366,6 +366,7 @@ theorem FnAsm.layout_branch {f : FnAsm} {b : FnBin} {m : Std.HashMap Lbl Nat}
         a.pcRelOffset? = some d ∧ -reach ≤ d ∧ d < reach ∧ align ∣ d := by
   obtain ⟨_, w, a, hk, ha, hd⟩ := FnAsm.layout_insn h hm hj
   obtain ⟨o, hl, hoff, h1, h2, h3⟩ := Insn.toArmInst_pcRel ha hs
+  rw [Env.target_of_ne hsk] at hl
   obtain ⟨j', hj', ho⟩ := (labelOffsets_spec hm l o).mp hl
   refine ⟨w, a, hk, hd, ⟨j', hj'⟩, fun j'' hj'' => ?_⟩
   have := labelOffsets_label hm hj''

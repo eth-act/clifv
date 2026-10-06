@@ -1,4 +1,6 @@
 import FV.Backend.StackAlloc
+import Std.Data.HashMap
+import Std.Data.HashSet
 
 /-!
 # Final instruction list and assembly text
@@ -35,6 +37,9 @@ inductive Lbl where
   | jt (n : Nat)
   /-- An emit-time label of an atomic LL/SC loop expansion (not a block label). -/
   | loop (n : Nat)
+  /-- The instruction after the next one (`pc + 8`): the target of the inverted short branch of
+  a relaxed branch (`relaxLine`); never defined by a label line. -/
+  | skip
   -- `BEq` is the lawful one from `DecidableEq` (the layout proof uses `Std.HashMap` lemmas)
   deriving DecidableEq, Repr, Inhabited, Hashable
 
@@ -44,6 +49,7 @@ def Lbl.name (k : Nat) : Lbl → String
   | .trap n => s!".L{k}_t{n}"
   | .jt n => s!".L{k}_jt{n}"
   | .loop n => s!".L{k}_a{n}"
+  | .skip => ".+8"
 
 /-- One AArch64 instruction over real registers: one line of assembly, one 4-byte word.
 Constructors follow the assembly the backend prints (including the aliases `mov`, `cset`,
@@ -497,9 +503,9 @@ def fallthrough (lines : Array Line) : Array Line := Id.run do
     i := i + 1
   return out
 
-/-- Expand an allocated function (`k` = its index in the file) into its final line list,
-with byte offsets of the trap sites. -/
-def emitFunc (k : Nat) (af : AFunc) : Except String FnAsm := do
+/-- The lines of an allocated function (`k` = its index in the file) before branch relaxation:
+the blocks' lines after `fallthrough`, then the deferred traps. -/
+def emitPre (k : Nat) (af : AFunc) : Except String (Array Line) := do
   let c : FnCtx := { k, slotBase := af.slotBase }
   let mut ps : PState := {}
   let mut lines : Array Line := #[]
@@ -519,6 +525,102 @@ def emitFunc (k : Nat) (af : AFunc) : Except String FnAsm := do
   for (l, code) in ps.traps do
     lines := lines.push (.label l)
     lines := lines.push (.ins (.udf 0xc11f) (some code))
+  pure lines
+
+/-! ## Branch relaxation
+
+A short conditional branch (`b.cond`, `cbz`/`cbnz`: ±1 MiB; `tbz`/`tbnz`: ±32 KiB) whose label is
+out of reach becomes the inverted branch over an unconditional `b` (±128 MiB):
+`b.c T` ⟶ `b.!c .+8; b T` (`cbz`↔`cbnz`, `tbz`↔`tbnz`), as Cranelift's `MachBuffer` does with
+veneers. The decision is per target label (`far`): every relaxable branch to a far label is
+relaxed. `relaxOf` iterates layout to a fixpoint: relaxing only lengthens the code, so the set
+of far labels only grows; when the fuel (more than the number of lines, hence of labels) runs
+out, every relaxable branch is relaxed. With no far label the lines are unchanged. -/
+
+/-- Byte offsets of the labels from byte offset `off` with the labels found so far in `m`. -/
+def labelOffsets.go : List Line → Nat → Std.HashMap Lbl Nat → Except String (Std.HashMap Lbl Nat)
+  | [], _, m => pure m
+  | ln :: rest, off, m =>
+    match ln with
+    | .label l =>
+      if m.contains l then throw s!"label {repr l} is defined twice"
+      else go rest off (m.insert l off)
+    | _ => go rest (off + ln.size) m
+
+/-- Byte offsets of the labels of a line list (every label defined once, else an error). -/
+def labelOffsets (lines : Array Line) : Except String (Std.HashMap Lbl Nat) :=
+  labelOffsets.go lines.toList 0 {}
+
+/-- The label operand of a PC-relative form, its reach in bytes (`-reach ≤ target - pc <
+reach`) and its alignment (Arm ARM C6.2: B `imm26:'00'`, B.cond/CBZ/CBNZ `imm19:'00'`,
+TBZ/TBNZ `imm14:'00'`, ADR `immhi:immlo`). -/
+def Insn.pcRelSpec? : Insn → Option (Lbl × Int × Int)
+  | .b t => some (t, 128 * 2 ^ 20, 4)
+  | .bcond _ t | .cbz _ _ _ t => some (t, 2 ^ 20, 4)
+  | .tbz _ _ _ t => some (t, 32 * 2 ^ 10, 4)
+  | .adr _ t => some (t, 2 ^ 20, 1)
+  | _ => none
+
+/-- Whether the PC-relative operand of `i` at byte offset `pc` reaches byte offset `o`. -/
+def Insn.reaches (i : Insn) (pc o : Nat) : Bool :=
+  match i.pcRelSpec? with
+  | some (_, reach, _) => decide (-reach ≤ (o : Int) - pc ∧ (o : Int) - pc < reach)
+  | none => true
+
+/-- The target of a conditional branch relaxation may rewrite: a block or trap label (the
+atomic loops' and jump tables' labels are a few instructions away). -/
+def Insn.relaxTarget? (i : Insn) : Option Lbl :=
+  match i.condTarget? with
+  | some (.block l) => some (.block l)
+  | some (.trap n) => some (.trap n)
+  | _ => none
+
+/-- A relaxable line: a conditional branch (no trap code) with its relaxable target. -/
+def Line.relaxable? : Line → Option (Insn × Lbl)
+  | .ins c none => c.relaxTarget?.map (c, ·)
+  | _ => none
+
+/-- Relax one line: a relaxable branch to a far label becomes `b.!c .+8; b T`. -/
+def relaxLine (far : Lbl → Bool) (ln : Line) : List Line :=
+  match ln.relaxable? with
+  | some (c, t) => if far t then [.ins (c.invertTo .skip) none, .ins (.b t) none] else [ln]
+  | none => [ln]
+
+def relaxLines (far : Lbl → Bool) (ls : List Line) : List Line := ls.flatMap (relaxLine far)
+
+/-- `farTargets` at byte offset `pc` with the far labels found so far in `acc`. -/
+def farTargets.go (m : Std.HashMap Lbl Nat) : List Line → Nat → List Lbl → List Lbl
+  | [], _, acc => acc
+  | ln :: rest, pc, acc =>
+    let acc := match ln.relaxable? with
+      | some (c, t) => match m[t]? with
+        | some o => if c.reaches pc o then acc else t :: acc
+        | none => acc
+      | none => acc
+    go m rest (pc + ln.size) acc
+
+/-- The targets of the relaxable branches of `lines` that do not reach their label at the
+offsets `lines` is laid out at (none if a label is defined twice: `layout` rejects that). -/
+def farTargets (lines : List Line) : List Lbl :=
+  match labelOffsets.go lines 0 {} with
+  | .ok m => farTargets.go m lines 0 []
+  | .error _ => []
+
+/-- The far labels: iterate until every relaxable branch that is left reaches its label. -/
+def relaxFar (pre : List Line) : Nat → Std.HashSet Lbl → Lbl → Bool
+  | 0, _ => fun _ => true
+  | n + 1, far =>
+    match farTargets (relaxLines (far.contains ·) pre) with
+    | [] => (far.contains ·)
+    | ts => relaxFar pre n (far.insertMany ts)
+
+def relaxOf (pre : List Line) : Lbl → Bool := relaxFar pre (pre.length + 1) {}
+
+/-- Expand an allocated function (`k` = its index in the file) into its final line list
+(`emitPre`, then branch relaxation), with byte offsets of the trap sites. -/
+def emitFunc (k : Nat) (af : AFunc) : Except String FnAsm := do
+  let pre := (← emitPre k af).toList
+  let lines := (relaxLines (relaxOf pre) pre).toArray
   let mut off := 0
   let mut traps : Array TrapSite := #[]
   for ln in lines do

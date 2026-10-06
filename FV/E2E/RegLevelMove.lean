@@ -623,8 +623,8 @@ theorem realizes_move {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b : Nat} {src dst
     · exact codeLinesE_noTrap _ _ _ _ h2 _ hm n rfl
     · simp only [nxtOf] at hm
       split at hm <;> simp at hm
-  have hdrop' : R.L.drop j = ls1' ++ (ftList (ls2 ++ nxtOf R.af b) ++ T) := by
-    rw [hdrop, List.append_assoc, ftList_plain_append _ _ hpl hZ, List.append_assoc]
+  have hdrop' : R.L.drop j = ls1' ++ (relaxLines R.far (ftList (ls2 ++ nxtOf R.af b)) ++ T) := by
+    rw [hdrop, List.append_assoc, ftR_plain_append _ _ _ hpl hZ, List.append_assoc]
   have hat : ∀ k ln, ls1'[k]? = some ln → R.fa.lines.toList[j + k]? = some ln := by
     intro k ln hk
     have := congrArg (·[k]?) hdrop'

@@ -6,16 +6,18 @@ import FV.Backend.Proof.EncodeBranch
 
 The branch-range policy (`Env.pcRel`, `docs/contracts/encoder.md`): a label operand beyond
 its form's reach is a compile error, never a truncated word (proved:
-`Insn.encode_error_of_out_of_range`). Checked here at the three levels:
+`Insn.encode_error_of_out_of_range`); `emitFunc` relaxes the conditional branches to block and
+trap labels that would be out of range (`relaxLine`, `relaxOf`). Checked here at four levels:
 
 1. **Encoder**, every label-relative form (b, b.cond, cbz/cbnz, tbz/tbnz, adr): the extreme
    in-range offsets (`reach - align`, `-reach`) encode, decode and resolve to the offset; one
    step beyond (`reach`, `-reach - align`) and a misaligned offset are errors.
 2. **Layout**, large functions of filler instructions: forward `tbz` (±32 KiB), backward
    `b.cond` and forward `cbz` (±1 MiB), each at the last fitting size and one instruction more.
-3. **Whole backend** (stack-slot allocator), a generated CLIF function whose `brif` becomes a
-   `tbz`/`tbnz` over > 32 KiB of code: layout fails naming the function and the branch; a
-   small one lays out.
+3. **Relaxation**, the same line lists through `relaxLines (relaxOf ·)`: the fitting ones are
+   unchanged, the others become `b.!c .+8; b T` and lay out.
+4. **Whole backend** (stack-slot allocator), a generated CLIF function whose `brif` becomes a
+   `tbz`/`tbnz` over > 32 KiB of code: it is relaxed and lays out; a small one is not relaxed.
 -/
 
 namespace Backend.RangeTest
@@ -84,22 +86,41 @@ def layoutCase (name : String) (f : FnAsm) (brPc : Nat) (d : Int) (fits : Bool) 
     if fits then check false s!"{name}: {e}"
     else check (hasSub e "branch out of range" && hasSub e s!"{f.name}+{brPc}") s!"{name}: message {e}"
 
+/-- `relaxOf` on a case: unchanged if it fits, else the branch at line `j` is relaxed and the
+function lays out. -/
+def relaxCase (name : String) (lines : Array Line) (j : Nat) (fits : Bool) : M Unit := do
+  let pre := lines.toList
+  let out := relaxLines (relaxOf pre) pre
+  if fits then check (out.length == pre.length) s!"{name}: relaxed although it fits"
+  else
+    check (out.length == pre.length + 1) s!"{name}: not relaxed ({out.length} lines)"
+    match out[j]?, out[j + 1]? with
+    | some (.ins i none), some (.ins (.b _) none) =>
+      check (i.condTarget? == some .skip) s!"{name}: relaxed branch {i.asm 0}"
+    | _, _ => check false s!"{name}: relaxed lines"
+  match (mkFn name out.toArray).layout with
+  | .ok _ => check true name
+  | .error e => check false s!"{name} relaxed: {e}"
+
 def layoutLevel : M Unit := do
   -- forward tbz over n fillers: offset 4 (n + 1); reach 32 KiB
   for (n, fits) in [(8190, true), (8191, false)] do
     let lines := #[.ins (.tbz false (.x 0) 3 (.block 1))] ++ Array.replicate n filler ++
       #[.label (.block 1), .ins .ret]
     layoutCase s!"tbz over {n}" (mkFn "big_tbz" lines) 0 (4 * (n + 1)) fits
+    relaxCase s!"relaxed tbz over {n}" lines 0 fits
   -- backward b.cond over n fillers: offset -4 n; reach 1 MiB
   for (n, fits) in [(262144, true), (262145, false)] do
     let lines := #[.label (.block 1)] ++ Array.replicate n filler ++
       #[.ins (.bcond .eq (.block 1)), .ins .ret]
     layoutCase s!"b.eq back over {n}" (mkFn "big_bcond" lines) (4 * n) (-4 * n) fits
+    relaxCase s!"relaxed b.eq back over {n}" lines (n + 1) fits
   -- forward cbz over n fillers: offset 4 (n + 1)
   for (n, fits) in [(262142, true), (262143, false)] do
     let lines := #[.ins (.cbz false true (.x 0) (.block 1))] ++ Array.replicate n filler ++
       #[.label (.block 1), .ins .ret]
     layoutCase s!"cbz over {n}" (mkFn "big_cbz" lines) 0 (4 * (n + 1)) fits
+    relaxCase s!"relaxed cbz over {n}" lines 0 fits
 
 /-- `brif (band v0, 4), block1, block2` where both successors are `n` chained `iadd`s: whichever
 block is placed second, the `tbz`/`tbnz x, #2` to it crosses the first. -/
@@ -123,12 +144,10 @@ def backendLevel : M Unit := do
     let fa := compileFile (Clif.parseFile (clifFn name n))
     check (fa.unsupported.isEmpty && fa.funcs.length == 1) s!"{name}: not compiled"
     check (hasSub fa.text "  tbz x" || hasSub fa.text "  tbnz x") s!"{name}: no tbz in the output"
-    match fa.layout, fits with
-    | .ok _, true => check true name
-    | .error e, false =>
-      check (hasSub e "branch out of range" && hasSub e s!"{name}+" && hasSub e "tb") s!"{name}: message {e}"
-    | .ok _, false => check false s!"{name}: out of range but laid out"
-    | .error e, true => check false s!"{name}: {e}"
+    check (hasSub fa.text ", .+8" != fits) s!"{name}: relaxed = {hasSub fa.text ", .+8"}"
+    match fa.layout with
+    | .ok _ => check true name
+    | .error e => check false s!"{name}: {e}"
 
 def rangeMain : IO UInt32 := do
   let ((), r) ← (do encoderLevel; layoutLevel; backendLevel : M Unit).run {}

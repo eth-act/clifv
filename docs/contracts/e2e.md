@@ -2469,6 +2469,46 @@ decides the spill lowering ("spill lowering" line: `lowerRFunc` lowers 1149, rej
 rejection contradicts `lowerRFunc_spillAlloc` and fails the run). Non-vacuity:
 `E2E.backend_correct_final_total_witness`.
 
+**Emission and layout: branch relaxation (V6)** (2026-10-06, `FV/Backend/Asm.lean` `relaxLine`/
+`relaxOf`/`emitFunc`, `FV/Backend/Proof/RelaxLayout.lean`, `RelaxReady.lean`, `FV/E2E/RegLevelRelax.lean`,
+`FV/E2E/RelaxTotal.lean`; policy: `docs/contracts/encoder.md` "Branch-range policy"). `emitFunc` is
+`emitPre` (blocks, `fallthrough`, trap section) followed by branch relaxation: a conditional branch
+to a far block/trap label becomes `b.!c .+8; b T` (`Lbl.skip` = `pc + 8`). The simulation relation
+`Q` now places the remaining items' lines as `relaxLines R.far (ftList …)` (`RL.far = emitFar`);
+`reach_rcb` runs a conditional branch in either form (1 or 2 steps), `step_skip` the inverted
+branch, `reach_cb`/`reach_b`/`jt_machine`/the `trapIf` proofs are restated on it; `Line.plain`
+now excludes every conditional branch (so plain lines are not relaxed, `relaxLines_plain`).
+
+```lean
+theorem Backend.relaxOf_fixpoint (pre : List Line) : farTargets (relaxLines (relaxOf pre) pre) = []
+theorem Backend.emitFunc_layout_total (he : emitFunc k af = .ok fa)
+    (hlab : ∃ m, labelOffsets fa.lines = .ok m)
+    (hdef : ∀ ln ∈ fa.lines.toList, ∀ l ∈ ln.labelsUsed, Line.label l ∈ fa.lines.toList)
+    (henc : ∀ i t, Line.ins i t ∈ fa.lines.toList → i.encodable = true)
+    (hnear : NearOk fa.lines.toList) (hsz : fa.size < 2 ^ 27) : ∃ fb, fa.layout = .ok fb
+theorem Backend.emitFunc_layout_ready (he : emitFunc k af = .ok fa) (h : fa.layoutReadyB = true) :
+    ∃ fb, fa.layout = .ok fb
+theorem Backend.emitFunc_of_emitPre (h : emitPre k af = .ok pre) : ∃ fa, emitFunc k af = .ok fa
+theorem Backend.emitFunc_size_le (he : emitFunc k af = .ok fa) (hp : emitPre k af = .ok pre) :
+    fa.size ≤ 2 * (pre.toList.map Line.size).sum
+theorem E2E.backend_correct_final_total_relaxed (hsub : InSubset p f) (hd : dominatedB f = true)
+    (hs : lowerScopeB f = true) (har : Spill.arityOkB f = true) (hl …) (hp …) (ra : Except String RFunc) :
+    ∃ af, lowerAlloc vcp ra = .ok af ∧
+      ((∃ pre, emitPre k af = .ok pre) → (∀ fa, emitFunc k af = .ok fa → fa.layoutReadyB = true) →
+        ∃ fa fb, emitFunc k af = .ok fa ∧ fa.layout = .ok fb ∧
+          ∀ … (hC … htr) fuel, ArmRefines fb base ra' (ArmStepX X H fa) s (Clif.runLoop env p fuel cs))
+```
+
+`backend_correct_final_total_relaxed` is V5's `backend_correct_final_total` without its emission and
+layout premises (`emitFunc k af = .ok fa`, `fa.layout = .ok fb`; `fa`, `fb` are now existential): branch
+range is discharged (relaxable branches by the fixpoint, `b` by the size bound, `.+8` trivially).
+Left: `hpre` (instruction expansion, `MInst.lines`' rejections) and `layoutReadyB`'s conditions
+(labels unique and defined, operand encodability, the local atomic-loop/jump-table forms in reach,
+size < 128 MiB), all decidable on the emitted code but not yet proven from the emitter
+(`docs/TO-PROVE.md` V6). Non-vacuity: `E2E.backend_correct_final_total_relaxed_witness` (`lowerWitness`:
+`lowerAlloc` succeeds, `emitPre` succeeds and the code passes `layoutReadyB`, `native_decide`) with
+`backend_correct_final_total_witness` for the input conditions.
+
 **Validator completeness: `Opt.Legalize128` is correct without `Opt.Legal.check`** (2026-10-02,
 `FV/Opt/Proof/LegalComplete.lean`, `FV/Opt/Proof/LegalDirect.lean`, `FV/E2E/LegalDirect.lean`;
 `docs/contracts/legalize128.md` "Completeness"): `Opt.Legal.Complete.check_complete` (`Pre f` and

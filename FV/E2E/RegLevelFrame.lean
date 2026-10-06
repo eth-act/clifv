@@ -365,7 +365,7 @@ theorem entry_block {R : RL} (hR : R.Wf) :
       itemsCode R.fr vb items.toList = .ok code ∧ codeLinesE R.ctx R.af code ps1 = .ok (ls, ps2) ∧
       ps2.traps.toList <+: R.psF.traps.toList ∧
       R.L[0]? = some (.label (.block vb.label)) ∧
-      R.L.drop 1 = prologueLines R.af.frameSize ++ (ftList (ls ++ nxtOf R.af 0) ++ T) := by
+      R.L.drop 1 = prologueLines R.af.frameSize ++ (relaxLines R.far (ftList (ls ++ nxtOf R.af 0)) ++ T) := by
   obtain ⟨c, ins, _, hc, -⟩ := hR.check
   have h0 : 0 < R.vc.blocks.size := Nat.pos_of_ne_zero hc.nonempty
   obtain ⟨vb, hvb⟩ : ∃ vb, R.vc.blocks[0]? = some vb := ⟨_, Array.getElem?_eq_getElem h0⟩
@@ -381,6 +381,7 @@ theorem entry_block {R : RL} (hR : R.Wf) :
   simp only [Except.ok.injEq, Prod.mk.injEq] at hb'
   obtain ⟨-, rfl⟩ := hb'
   obtain ⟨j0, lsA, ps1, ps2, T, hj0, hdrop, hls, htr, hj⟩ := hblk 0 _ _ haf
+  rw [show emitFar ⟨R.fa.k, R.af.slotBase⟩ R.af = R.far from rfl] at hdrop
   obtain rfl := hj rfl
   simp only [ite_true] at hls
   obtain ⟨ls1, ls2, psm, h1, h2, rfl⟩ := codeLinesE_append _ _ _ _ _ hls
@@ -389,7 +390,7 @@ theorem entry_block {R : RL} (hR : R.Wf) :
   obtain ⟨rfl, rfl⟩ := h1
   refine ⟨vb, items, code, ls2, ps1, ps2, T, hvb, hit, hcode, h2, htr, hj0, ?_⟩
   show List.drop (0 + 1) R.fa.lines.toList = _
-  rw [hdrop, List.append_assoc, ftList_plain_append _ _
+  rw [hdrop, List.append_assoc, ftR_plain_append _ _ _
     (fun ln h => by obtain ⟨_, _, _, hp⟩ := prologueLines_ins _ ln h; exact hp) (noTrap_next h2), List.append_assoc]
 
 theorem sp_sub16 (x : BitVec 64) (n : Nat) :
@@ -623,10 +624,10 @@ theorem ret_machine {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R
     · obtain ⟨_, _, _, hp⟩ := spAdjLines_ins false _ ln hln; exact hp
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hln
       rcases hln with rfl | rfl <;> rfl
-  rw [ftList_plain_append _ _ hpl (noTrap_next h2)] at hdrop
+  rw [ftR_plain_append _ _ _ hpl (noTrap_next h2)] at hdrop
   have hdrop' : R.L.drop j0 = (spAdjLines false R.af.frameSize ++
       [Line.ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16)) none]) ++
-      (.ins .ret none :: (ftList (ls2 ++ nxtOf R.af b) ++ T)) := by
+      (.ins .ret none :: (relaxLines R.far (ftList (ls2 ++ nxtOf R.af b)) ++ T)) := by
     rw [hdrop]; simp
   -- alignment of `sp + size` (= the fp/lr slot)
   have hdrop0 : frameDrop R.af = R.af.frameSize + 16 := by simp [frameDrop, hframe]
