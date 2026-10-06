@@ -16,20 +16,24 @@ has a budget that does not depend on the depth: the largest frame chain below it
 * `LinkSys.hybrid`, `LinkSys.budget_hybrid`: partial depth-independent budgets (for the
   functions whose calls never reach a cycle), completed by the depth budget `K M` plus a constant
   for the others, are a budget.
-* The checker: `stackR` (the checked partial budgets), `budO`/`bud I g`, `stackFn I f` (frame
-  plus budget), `stackB I` (the largest `stackFn`, when every function has a budget: `none` for
-  a recursive program), `goodN I n`/`goodAll` (the function named `n` has a budget). The budgets
-  are computed by iterating `B(g) = max over the callees h of g of frameDrop h + B(h)` on the
+* The budgets: `budMap` iterates `B(g) = max over the callees h of g of frameDrop h + B(h)` on the
   call graph `edgeB` (an over-approximation of `LinkSys.Callee` under `okB`, `edgeB_of_callee`:
   the functions `g` declares, and with indirect calls every function with a CLIF-image address
-  whose signature one of them matches; `budMap`, not trusted); `budOkW` checks that a function
-  with a budget calls only functions with a budget that fit in it, and only this check enters the
-  proof (`budget_of`). On a cycle no assignment passes (every compiled frame is at least 16
-  bytes), so the functions that reach one have none (`budBad`) and keep
-  `backend_correct_program`'s depth premise.
+  whose signature one of them matches), as many rounds as there are functions (`budArr`); by
+  name `budC`/`budO`/`bud I g`, `stackFn I f` (frame plus budget), `stackB I` (the largest
+  `stackFn`, when every function has a budget: `none` for a recursive program), `goodN I n`/
+  `goodAll` (the function named `n` has a budget).
+* Completeness (no per-program check): with distinct names (part of `okB`) the budgets meet the
+  budget condition `budOkW` (a function with a budget calls only functions with a budget that
+  fit in it; `budOkW_budMap`: every round of the iteration does), which is all the soundness
+  proof needs (`budget_of`); and a function has a budget exactly when no call cycle of the call
+  graph (`Calls`, `CycleFrom`) is reachable from it (`budC_isSome_iff`, `goodN_iff`,
+  `stackB_isSome_iff`: after as many rounds as there are functions, a walk that long repeats a
+  function). The functions that reach a cycle keep `backend_correct_program`'s depth premise.
 * `StackStmt`, `crate_correct_stackN` (`goodN I n = true`), `crate_correct_stack`
   (`stackB I = some S`, every function): the crate's theorem with the fixed bound, and
-  `stackFn_le`: every function's bound is at most `S`.
+  `stackFn_le`: every function's bound is at most `S`; `crate_correct_stack_acyclic`,
+  `crate_correct_stack_all`: the same from the input condition (no call cycle reachable).
 -/
 
 namespace E2E

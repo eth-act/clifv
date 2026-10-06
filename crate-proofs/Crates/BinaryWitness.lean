@@ -102,6 +102,15 @@ theorem facts :
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩, h7⟩, h8⟩, h9⟩, h10⟩, h11⟩, h12⟩, h13⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩
 
+/-- **The stack premise holds as the input condition** (`StackBound.goodN_iff`): no call cycle of
+the program's call graph is reachable from the entry. -/
+theorem acyclic : ¬ StackBound.CycleFrom (StackBound.Calls I I.results) f := by
+  obtain ⟨f', hf', hc⟩ :=
+    (StackBound.goodN_iff Crates.AArithAbort.okB_input).1 facts.2.2.2.2.2.2.2.2.2.2.2.1
+  rw [facts.1] at hf'
+  cases hf'
+  exact hc
+
 /-- Every code address of the program is below `2^32`. -/
 theorem img_lt {x : BitVec 64} (h : img I x) : x.toNat < 2 ^ 32 := by
   obtain ⟨e, he, p, hp, hx⟩ := h
@@ -235,15 +244,16 @@ theorem agrees_fileOf : Elf.Agrees (fileOf Crates.AArithAbort.exAll) Crates.AAri
   unfold Elf.Agrees; native_decide
 
 omit m in
-/-- **Non-vacuity of `binary_correct_of_checks`** on the `a_arith` executable (panic=abort,
-linked with `--no-relax`): for every file holding the proof's excerpts of the executable (one
-exists, `agrees_fileOf`; the executable is one), the machine state whose memory is the file's
-loaded image, in which outside code calls its Lean-compiled `core::num::<i32>::wrapping_add`
-with `2` and `3` and `stackFn` bytes of stack, meets every premise — the binary checks
-(`bin_ok`, `okB_input`), the loader premise, the stack check (`goodN`), the boundary contract,
-the reference CLIF run (which returns `5`) — and the theorem gives the machine's return to the
-caller with `5` in x0, the model state differing from the machine state only at relocated
-instruction bytes. -/
+/-- **Non-vacuity of `binary_correct_of_checks`**, in its form from the input condition
+(`binary_correct_of_checks_acyclic`), on the `a_arith` executable (panic=abort, linked with
+`--no-relax`): for every file holding the proof's excerpts of the executable (one exists,
+`agrees_fileOf`; the executable is one), the machine state whose memory is the file's loaded
+image, in which outside code calls its Lean-compiled `core::num::<i32>::wrapping_add` with `2`
+and `3` and `stackFn` bytes of stack, meets every premise — the binary checks (`bin_ok`,
+`okB_input`), the loader premise, the stack condition (no call cycle reachable from the entry,
+`acyclic`), the boundary contract, the reference CLIF run (which returns `5`) — and the theorem
+gives the machine's return to the caller with `5` in x0, the model state differing from the
+machine state only at relocated instruction bytes. -/
 theorem binary_witness :
     (∃ file, Elf.Agrees file Crates.AArithAbort.exAll) ∧
     ∀ file, Elf.Agrees file Crates.AArithAbort.exAll →
@@ -269,9 +279,9 @@ theorem binary_witness :
   have hL := okB_sound Crates.AArithAbort.okB_input (Crates.AArithAbort.base_closed (img I))
     (fun _ h => h)
   have htr := trapsExplicit_of_run hL hfm clifEntry rfl run_eq
-  obtain ⟨h1, h2⟩ := binary_correct_of_checks Crates.AArithAbort.okB_input
-    (Crates.AArithAbort.bin_ok file hfile) closedBase (Crates.AArithAbort.base_closed _)
-    facts.2.2.2.2.2.2.2.2.2.2.2.1 hf M hX hoc (clifRun _) htr
+  obtain ⟨h1, h2⟩ := binary_correct_of_checks_acyclic Crates.AArithAbort.okB_input
+    (Crates.AArithAbort.bin_ok file hfile) closedBase (Crates.AArithAbort.base_closed _) hf acyclic
+    M hX hoc (clifRun _) htr
   rw [show Clif.runLoop closedBase.env (prog I) (M + 1) cs = run from rfl, run_eq, x30_r] at h1
   obtain ⟨k, hret, hx, -⟩ := h1
   exact ⟨hX, hoc, clifRun _, run_eq, ⟨k, hret, hx 0 _ rfl⟩, h2⟩
