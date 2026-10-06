@@ -1,5 +1,9 @@
 import FV.E2E.LinkScopeDefs
 import FV.E2E.EmitTotal
+import FV.E2E.LinkOwnCalls
+import FV.E2E.LinkOwnFrames
+import FV.E2E.LinkOwnRets
+import FV.E2E.SpillCheckAlloc
 
 /-! # Linking without the checker's verdict: input conditions + own outputs + linker (L2a)
 
@@ -9,27 +13,32 @@ into
 
 * **input conditions** (`InScopeP`, `FV/E2E/LinkScopeDefs.lean`): decidable on the CLIF program
   alone — the subset, signatures, no `return_call`, distinct names, declared signatures, the
-  scope of indirect calls, the conditions of the backend's totality theorems (`dominatedB`,
-  `lowerScopeB`, `arityOkB`), `lowerFunction`/`prepare` acceptance and the spill-code size bound
+  scope of indirect calls, the call sites' registers (`callScopeB`), the callees' stack
+  arguments (`outScopeB`), the conditions of the backend's totality theorems (`dominatedB`,
+  `lowerScopeB`, `arityOkB`), `lowerFunction`/`prepare` acceptance and V6b's `emitCondsB`
   (`lowersB`);
 * **properties of the compiler's own outputs**, proven here for the compiler's pipeline `pipeT`
   (`lowerAllocReady`): pipeline success (V5/V6b), the validators (`lowerCheck_complete`,
-  `prepCheck_complete`, `formsCovered_complete`), `checkAlloc` of regalloc2's answer (kept only if
-  accepted), the depth (by construction, `withDepth`), and the facts of the families below;
+  `prepCheck_complete`, `formsCovered_complete`), `checkAlloc` of the allocation lowered
+  (regalloc2's only if accepted, the spill allocation's by `spillCheckAlloc`), the depth (by
+  construction, `withDepth`), the call sites (`sites_of_lower`), the returns and the entry
+  (`retsB_of_lower`, `entryB_of_lower`), the frames (`outFits_of_lower`, `frame_of_lower`);
 * **the linker's facts** (`linkerOkB`): the checks about the addresses rust-lld chose — what the
   Lean static linker (L2b) must provide.
 
-`okT_of_inScope : InScopeP I → linkerOkB I → … → okR (I.withDepth I.resultsT) I.resultsT`, then
-`okT_sound` (`LinkSys.Ok` of the compiler's linked system `LinkSys.ofInputT`) and
+`okT_of_inScope : OwnHyps → InScopeP I → linkerOkB I → okR (I.withDepth I.resultsT) I.resultsT`,
+then `okT_sound` (`LinkSys.Ok` of the compiler's linked system `LinkSys.ofInputT`) and
 `crate_correct_inScope` (`backend_correct_program` for every function, no `okB` premise).
 
-The facts still taken as explicit, program-independent hypotheses (`OwnHyps`; none mentions
-the crate):
-* `SpillCheckAllocHyp`: `checkAlloc` accepts the spill allocation (V4 proved `AllocChecked`;
-  the link-level theorem's `Compiled` asks the checker's verdict);
-* `EmitCondsHyp`: `immsOkB`, `noAlwaysB`, `branchTargetsOkB` of the prepared VCode (V6c);
-* `RetsFact`, `EntryFact`, `SitesFact`, `OutFitsFact`, `FrameFact`: the families of own-output
-  facts about call sites, returns, the entry and frames.
+The facts still taken as explicit, program-independent hypotheses (`OwnHyps`; none mentions the
+crate):
+* `SpillDefinedHyp` (`FV/E2E/SpillCheckAlloc.lean`): definite assignment of the prepared VCode
+  (availability sets holding nothing on entry), from which `checkAlloc` accepts the spill
+  allocation (the link-level `Compiled` keeps `checkAlloc`'s verdict);
+* `CallShapeHyp` (`FV/E2E/LinkOwnCalls.lean`): the ISLE call inversion (every call of the VCode
+  is the call of a CLIF call site, with its registers and results);
+* `IselNoRetsHyp` (`FV/E2E/LinkOwnRets.lean`): the ISLE runs of statements and branches emit no
+  `Rets`.
 -/
 
 namespace E2E.LinkCheck
@@ -76,7 +85,7 @@ theorem resultsT_ok (I : LinkInput) (R : Res) : ResOk (I.withDepth R) I.resultsT
   rw [h1]
   exact ⟨hl, hp, hlr, hem, hla, hb⟩
 
-/-! ## The per-function input conditions -/
+/-! ## The input conditions -/
 
 theorem fnScope_parts {g : Clif.Function} (h : fnScopeB g = true) :
     Compile.functionE g = true ∧ (∀ e ∈ g.externs, e.2.name ≠ g.name) ∧
@@ -85,8 +94,8 @@ theorem fnScope_parts {g : Clif.Function} (h : fnScopeB g = true) :
     (∀ p ∈ g.sig.params, p.ty.width ≤ 64) ∧ linkFreeB g = true ∧ dominatedB g = true ∧
     lowerScopeB g = true ∧ Spill.arityOkB g = true ∧ lowersB g = true := by
   simp only [fnScopeB, Bool.and_eq_true, List.all_eq_true, bne_iff_ne, ne_eq,
-    decide_eq_true_eq] at h
-  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h1, h2⟩, h3, h3'⟩, h4⟩, h5⟩, h6⟩, h7⟩, h8⟩, h9⟩, h10⟩, h11⟩, h12⟩ := h
+    decide_eq_true_eq, and_assoc] at h
+  obtain ⟨h1, h2, h3, h3', h4, h5, h6, h7, h8, h9, h10, h11, h12⟩ := h
   exact ⟨h1, h2, ⟨h3, h3'⟩, h4, h5, h6, h7, h8, h9, h10, h11, h12⟩
 
 /-- The subset of the per-function programs (`LinkSys.Ok.subset`) from `fnScopeB`. -/
@@ -106,7 +115,7 @@ theorem inSubset_of_fnScope {g : Clif.Function} (h : fnScopeB g = true) (p : Cli
     simpa [Bool.and_eq_true, decide_eq_true_eq] using this
 
 theorem lowersB_spec {f : Clif.Function} (h : lowersB f = true) :
-    ∃ vc vcp, lowerFunction f = .ok vc ∧ prepare vc = .ok vcp ∧ spillSizeOkB vcp = true := by
+    ∃ vc vcp, lowerFunction f = .ok vc ∧ prepare vc = .ok vcp ∧ emitCondsB vcp = true := by
   unfold lowersB at h
   split at h
   · rename_i vc hl
@@ -116,69 +125,51 @@ theorem lowersB_spec {f : Clif.Function} (h : lowersB f = true) :
     · cases h
   · cases h
 
+theorem progScope_parts {P : Clif.Program} {S : String → Option Nat} (h : progScopeB P S = true) :
+    (P.funcs.map (·.name)).Nodup ∧
+      (∀ g ∈ P.funcs, declSigB P g = true ∧ indB P S g = true ∧ callScopeB P S g = true ∧
+        outScopeB P g = true) ∧
+      addrSlotsInB P S = true := by
+  simp only [progScopeB, Bool.and_eq_true, List.all_eq_true, decide_eq_true_eq, and_assoc] at h
+  exact h
+
+theorem declSig_of {P : Clif.Program} {g : Clif.Function} (h : declSigB P g = true) :
+    ∀ e ∈ g.externs.map (·.2), ∀ h', P.func? e.name = some h' → e.sig = h'.sig := by
+  intro e he h' hf
+  obtain ⟨⟨fn, e'⟩, hm, rfl⟩ := List.mem_map.1 he
+  have := List.all_eq_true.1 h _ hm
+  dsimp only at hf this
+  rw [hf] at this
+  simpa using this
+
+theorem linker_parts {I : LinkInput} {R : Res} (h : linkerOkR I R = true) :
+    imgB (tabOf R) = true ∧ raStarB (tabOf R) (BitVec.ofNat 64 I.raStar) = true ∧
+      symInjB I (progOf R) = true ∧ symOkB I = true ∧
+      ∀ e ∈ R, (getOk e.2).base.toNat + 4 * (getOk e.2).fb.words.size ≤ 2 ^ 64 ∧
+        raCallB (tabOf R) e.1 (getOk e.2) = true := by
+  simp only [linkerOkR, Bool.and_eq_true, List.all_eq_true, decide_eq_true_eq] at h
+  exact ⟨h.1.1.1.1, h.1.1.1.2, h.1.1.2, h.1.2, h.2⟩
+
+theorem addrSlotsB_of_in {P : Clif.Program} {T : List (Clif.Function × Art)}
+    {S : String → Option Nat} (h : addrSlotsInB P S = true) : addrSlotsB P T S = true := by
+  simp only [addrSlotsInB, Bool.or_eq_true] at h
+  simp only [addrSlotsB, Bool.or_eq_true]
+  rcases h with h | h
+  · left
+    simp only [Bool.not_eq_true'] at h
+    simp [h]
+  · exact .inr h
+
 /-! ## The open, program-independent hypotheses -/
 
-/-- **`checkAlloc` accepts the spill allocation** of every in-scope function. V4 proved
-`AllocChecked vcp (spillAlloc vcp)` (`spillAccepted`: verified in-states); the link-level
-theorem's `Compiled` asks for the checker's own verdict (one VCode outcome for all
-activations). `lean-e2e-check` counts it (1149 of 1149). -/
-def SpillCheckAllocHyp : Prop :=
-  ∀ (p : Clif.Program) (f : Clif.Function) (vc vcp : VCode), InSubset p f → Spill.ArityOk f →
-    Dominated f → LowerScope f → lowerFunction f = .ok vc → prepare vc = .ok vcp →
-    checkAlloc vcp (spillAlloc vcp) = .ok ()
-
-/-- **V6c**: instruction selection's immediates are encodable, no `al`/`nv` conditional branch,
-every branch target is a block label (`emitCondsB` without its size part, which `lowersB`
-decides on the input). -/
-def EmitCondsHyp : Prop :=
-  ∀ (p : Clif.Program) (f : Clif.Function) (vc vcp : VCode), InSubset p f → dominatedB f = true →
-    lowerScopeB f = true → lowerFunction f = .ok vc → prepare vc = .ok vcp →
-    immsOkB vcp = true ∧ vcp.noAlwaysB = true ∧ branchTargetsOkB vcp = true
-
-/-- The returns of an `sret` function carry its ABI results (`sretRets`). -/
-def RetsFact : Prop :=
-  ∀ (g : Clif.Function) (vc : VCode), fnScopeB g = true → lowerFunction g = .ok vc →
-    allInsts vc (retsB g) = true
-
-/-- The entry `Args` reads parameter registers (`entryRegs`). -/
-def EntryFact : Prop :=
-  ∀ (g : Clif.Function) (vc vcp : VCode), fnScopeB g = true → lowerFunction g = .ok vc →
-    prepare vc = .ok vcp → entryB g vcp = true
-
-/-- The call sites' registers and results (`callRegs`, `blrRegs`, `tryRets`, `blrTry`). -/
-def SitesFact : Prop :=
-  ∀ (P : Clif.Program) (S : String → Option Nat) (g : Clif.Function) (vc vcp : VCode),
-    progScopeB P S = true → P.funcs.all fnScopeB = true → g ∈ P.funcs →
-    lowerFunction g = .ok vc → prepare vc = .ok vcp →
-    allInsts vcp (siteB (siteOk P g (indToB S g) vcp)) = true ∧
-      allInsts vcp (tryB P (indToB S g) vcp) = true
-
-/-- The outgoing argument area holds the stack arguments of the declared program callees
-(`outFits`). -/
-def OutFitsFact : Prop :=
-  ∀ (P : Clif.Program) (S : String → Option Nat) (g : Clif.Function) (vc vcp : VCode) (rf : RFunc),
-    progScopeB P S = true → P.funcs.all fnScopeB = true → g ∈ P.funcs →
-    lowerFunction g = .ok vc → prepare vc = .ok vcp →
-    g.externs.all (fun e => !(P.func? e.2.name).isSome ||
-      outFitsB e.2.sig (RAFrame.compute vcp rf).intBase) = true
-
-/-- The frame of a callee: no slot region without slots, the slots fit (`calleeFrame`,
-`slotFits`). -/
-def FrameFact : Prop :=
-  ∀ (g : Clif.Function) (a : Art), fnScopeB g = true → lowerFunction g = .ok a.vc →
-    prepare a.vc = .ok a.vcp → lowerRFunc a.vcp a.rf = .ok a.af →
-    ((!g.slots.isEmpty || (RAFrame.compute a.vcp a.rf).size == a.af.frameSize) &&
-      slotFitsB g a) = true
-
-/-- **The open own-output facts**, all program-independent. -/
+/-- **The open own-output facts**, all program-independent (none mentions a crate). -/
 structure OwnHyps : Prop where
-  spill : SpillCheckAllocHyp
-  emit : EmitCondsHyp
-  rets : RetsFact
-  entry : EntryFact
-  sites : SitesFact
-  outFits : OutFitsFact
-  frame : FrameFact
+  /-- Definite assignment of the prepared VCode (`checkAlloc` accepts the spill allocation). -/
+  defined : SpillDefinedHyp
+  /-- The ISLE call inversion (`callRegs/blrRegs`, `tryRets/blrTry`). -/
+  calls : CallShapeHyp
+  /-- No `Rets` from the ISLE runs of statements and branches (`sretRets`). -/
+  isel : IselNoRetsHyp
 
 /-! ## Pipeline success and the validators -/
 
@@ -202,26 +193,21 @@ theorem checkAlloc_allocResult {vcp : VCode} (hsp : checkAlloc vcp (spillAlloc v
 
 /-- **The compiler's pipeline succeeds on an in-scope function**, and its artifact passes the
 validators. -/
-theorem pipeT_ok {g : Clif.Function} (hsc : fnScopeB g = true) (hca : SpillCheckAllocHyp)
-    (hem : EmitCondsHyp) (k : Nat) (base : BitVec 64) (o : Lean.Json) :
+theorem pipeT_ok {g : Clif.Function} (hsc : fnScopeB g = true) (hD : SpillDefinedHyp)
+    (k : Nat) (base : BitVec 64) (o : Lean.Json) :
     ∃ a, pipeT g k base o = .ok a ∧ lowerCheck g a.vc = true ∧ prepCheck a.vc a.vcp = true ∧
       checkAlloc a.vcp a.rf = .ok () ∧ FormsCovered ⟨a.fa.k, a.af.slotBase⟩ a.vcp := by
   obtain ⟨-, -, -, -, -, -, -, -, hd, hs, har, hlw⟩ := fnScope_parts hsc
-  obtain ⟨vc, vcp, hl, hp, hsz⟩ := lowersB_spec hlw
-  have hsub := inSubset_of_fnScope hsc ⟨[]⟩
-  have hD := dominated_of hd
+  obtain ⟨vc, vcp, hl, hp, hem⟩ := lowersB_spec hlw
+  have hsub := inSubset_of_fnScope hsc { funcs := [] }
+  have hD' := dominated_of hd
   have hS := lowerScope_of hs
-  have hne : g.blocks ≠ [] := by
-    simp only [lowerScopeB, Bool.and_eq_true, Bool.not_eq_true', List.isEmpty_eq_false_iff] at hs
-    exact hs.1.1.1.1.1.1.2
-  obtain ⟨himm, hna, htg⟩ := hem _ _ _ _ hsub hd hs hl hp
-  have hemc : emitCondsB vcp = true := by
-    simp [emitCondsB, hsz, himm, hna, htg]
   obtain ⟨af, ha, fa, fb, he, hla, -⟩ :=
-    backend_correct_final_total_emit (k := k) hsub hd hs har hl hp hemc (raAnswer vcp o)
+    backend_correct_final_total_emit (k := k) hsub hd hs har hl hp hem (raAnswer vcp o)
   refine ⟨⟨k, vc, vcp, allocResult vcp (readyAnswer vcp (raAnswer vcp o)), af, fa, fb, base⟩,
-    ?_, lowerCheck_complete hD hS hl, prepCheck_complete hp (prepDomain_of_lower hS hl hne),
-    checkAlloc_allocResult (hca _ _ _ _ hsub (Spill.arityOk_of har) hD hS hl hp) _,
+    ?_, lowerCheck_complete hD' hS hl,
+    Prep.prepCheck_complete hp (prepDomain_of_lower hS hl hS.nonempty),
+    checkAlloc_allocResult (spillCheckAlloc hD hsub (Spill.arityOk_of har) hD' hS hl hp) _,
     formsCovered_complete hS hl hp _⟩
   simp [pipeT, hl, hp, ha, he, hla, bind, Except.bind, pure, Except.pure]
 
@@ -245,71 +231,41 @@ theorem le_depthOf {R : Res} {e : Clif.Function × Except String Art} (he : e �
     frameDrop (getOk e.2).af ≤ depthOf R :=
   le_foldl_max _ 0 _ (.inl (List.mem_map_of_mem he))
 
-theorem progScope_parts {P : Clif.Program} {S : String → Option Nat} (h : progScopeB P S = true) :
-    (P.funcs.map (·.name)).Nodup ∧ (∀ g ∈ P.funcs, declSigB P g = true ∧ indB P S g = true) ∧
-      addrSlotsInB P S = true := by
-  simp only [progScopeB, Bool.and_eq_true, List.all_eq_true, decide_eq_true_eq] at h
-  exact ⟨h.1.1, h.1.2, h.2⟩
-
-theorem linker_parts {I : LinkInput} {R : Res} (h : linkerOkR I R = true) :
-    imgB (tabOf R) = true ∧ raStarB (tabOf R) (BitVec.ofNat 64 I.raStar) = true ∧
-      symInjB I (progOf R) = true ∧ symOkB I = true ∧
-      ∀ e ∈ R, (getOk e.2).base.toNat + 4 * (getOk e.2).fb.words.size ≤ 2 ^ 64 ∧
-        raCallB (tabOf R) e.1 (getOk e.2) = true := by
-  simp only [linkerOkR, Bool.and_eq_true, List.all_eq_true, decide_eq_true_eq] at h
-  exact ⟨h.1.1.1.1, h.1.1.1.2, h.1.1.2, h.1.2, h.2⟩
-
-theorem addrSlotsB_of_in {P : Clif.Program} {T : List (Clif.Function × Art)}
-    {S : String → Option Nat} (h : addrSlotsInB P S = true) : addrSlotsB P T S = true := by
-  simp only [addrSlotsInB, Bool.or_eq_true] at h
-  simp only [addrSlotsB, Bool.or_eq_true]
-  rcases h with h | h
-  · left
-    simp only [Bool.not_eq_true'] at h
-    simp [h]
-  · exact .inr h
-
 /-- **The per-function checks hold** for the compiler's results of an in-scope input. -/
-theorem chks_resultsT {I : LinkInput} (hin : InScopeP I = true) (hlk : linkerOkB I = true)
-    (hO : OwnHyps) {e : Clif.Function × Except String Art} (he : e ∈ I.resultsT) :
+theorem chks_resultsT (hO : OwnHyps) {I : LinkInput} (hin : InScopeP I = true)
+    (hlk : linkerOkB I = true) {e : Clif.Function × Except String Art} (he : e ∈ I.resultsT) :
     (chks (I.withDepth I.resultsT) (progOf I.resultsT) (tabOf I.resultsT) e.1 e.2).all
       (·.2) = true := by
   simp only [InScopeP, Bool.and_eq_true] at hin
   obtain ⟨hps, hfs⟩ := hin
-  obtain ⟨-, hpg, -⟩ := progScope_parts hps
+  obtain ⟨hnd, hpg, -⟩ := progScope_parts hps
   obtain ⟨-, -, -, -, hlf⟩ := linker_parts hlk
-  obtain ⟨fi, hfi, h1, h2⟩ := mem_resultsT he
-  have hgP : e.1 ∈ I.prog.funcs := by
-    rw [h1]; exact List.mem_map_of_mem hfi
-  have hsc : fnScopeB e.1 = true := List.all_eq_true.1 hfs _ hgP
-  obtain ⟨hE, hne, habi, hind, hnd, harg, hw, hfree, -, -, -, -⟩ := fnScope_parts hsc
-  obtain ⟨a, ha, hlc, hpc, hca, hcov⟩ := pipeT_ok (k := fi.k)
-    (base := BitVec.ofNat 64 (I.baseOf fi.func.name)) (o := raJ fi.ra fi.j)
-    (h1 ▸ hsc) hO.spill hO.emit
-  rw [← h1] at ha hlc
-  rw [h2, ← h1] at *
-  have hR := ha
-  rw [← h2] at hR
-  obtain ⟨hl, hp, -, hlr, -, -, -, -⟩ := pipeT_spec ha
-  have hga : getOk e.2 = a := by rw [hR]; rfl
   obtain ⟨hfit, hra⟩ := hlf e he
-  rw [hga] at hfit hra
   have hdep := le_depthOf he
-  rw [hga] at hdep
-  obtain ⟨hdecl, hindB⟩ := hpg _ hgP
-  have hPs : progScopeB (progOf I.resultsT) (fun n => I.syms.lookup n) = true := by
-    rw [progOf_resultsT]; exact hps
-  have hPf : (progOf I.resultsT).funcs.all fnScopeB = true := by
-    rw [progOf_resultsT]; exact hfs
-  have hgR : e.1 ∈ (progOf I.resultsT).funcs := by rw [progOf_resultsT]; exact hgP
-  obtain ⟨hsite, htry⟩ := hO.sites _ _ _ _ _ hPs hPf hgR hl hp
-  have hout := hO.outFits _ _ _ _ _ a.rf hPs hPf hgR hl hp
-  have hfr := hO.frame _ a hsc hl hp hlr
+  obtain ⟨fi, hfi, h1, h2⟩ := mem_resultsT he
+  obtain ⟨g, r⟩ := e
+  dsimp only at h1 h2 hfit hra hdep ⊢
+  subst h1 h2
+  have hgP : fi.func ∈ I.prog.funcs := List.mem_map_of_mem hfi
+  have hsc : fnScopeB fi.func = true := List.all_eq_true.1 hfs _ hgP
+  obtain ⟨hE, hne, habi, hind, hnd', harg, hw, hfree, hd, hs, -, -⟩ := fnScope_parts hsc
+  obtain ⟨a, ha, hlc, hpc, hca, hcov⟩ := pipeT_ok hsc hO.defined fi.k
+    (BitVec.ofNat 64 (I.baseOf fi.func.name)) (raJ fi.ra fi.j)
+  obtain ⟨hl, hp, -, hlr, -, -, -, -⟩ := pipeT_spec ha
+  have hga : getOk (pipeT fi.func fi.k (BitVec.ofNat 64 (I.baseOf fi.func.name))
+      (raJ fi.ra fi.j)) = a := by rw [ha]; rfl
+  rw [hga] at hfit hra hdep
+  obtain ⟨hdecl, hindB, hcall, hos⟩ := hpg _ hgP
+  obtain ⟨hsite, htry⟩ := sites_of_lower hO.calls (inSubset_of_fnScope hsc I.prog) hd hs hnd
+    (declSig_of hdecl) hcall hl hp
+  have hout := outFits_of_lower hd hs hos hl hp a.rf
+  have hfr := frame_of_lower hl hp hlr
+  have hrets := retsB_of_lower hO.isel hs hl
+  have hent := entryB_of_lower hs hl hp
   rw [List.all_eq_true]
   intro c hc
   simp only [chks, staticChks, linkChks, List.cons_append, List.nil_append, List.mem_cons,
-    List.not_mem_nil, or_false] at hc
-  rw [hR, progOf_resultsT] at hc
+    List.not_mem_nil, or_false, ha, progOf_resultsT] at hc
   rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · rfl
@@ -317,11 +273,11 @@ theorem chks_resultsT {I : LinkInput} (hin : InScopeP I = true) (hlk : linkerOkB
   · exact hpc
   · simp [getOk, hca, Except.toBool]
   · exact (formsCoveredB_iff _ _).2 hcov
-  · exact hO.rets _ _ hsc hl
-  · exact decide_eq_true hnd
+  · exact hrets
+  · exact decide_eq_true hnd'
   · exact List.all_eq_true.2 harg
   · simpa using hw
-  · exact hO.entry _ _ _ hsc hl hp
+  · exact hent
   · exact decide_eq_true hfit
   · exact decide_eq_true hdep
   · exact hfree
@@ -329,14 +285,75 @@ theorem chks_resultsT {I : LinkInput} (hin : InScopeP I = true) (hlk : linkerOkB
   · simpa using hne
   · simpa [Bool.and_eq_true, List.all_eq_true] using habi
   · exact hind
-  · rw [progOf_resultsT] at htry; exact htry
-  · rw [progOf_resultsT] at hout; exact hout
-  · simp only [getOk] at hfr ⊢
-    simp only [Bool.or_eq_true]
-    exact .inr (by rw [progOf_resultsT] at *; simpa using hfr)
-  · rw [progOf_resultsT] at hsite; exact hsite
+  · exact htry
+  · exact hout
+  · simp only [Bool.or_eq_true]
+    exact .inr hfr
+  · exact hsite
   · exact hdecl
   · exact hra
   · exact hindB
+
+/-- **The program's checks hold** for the compiler's results of an in-scope input. -/
+theorem global_resultsT {I : LinkInput} (hin : InScopeP I = true) (hlk : linkerOkB I = true) :
+    (globalChks (I.withDepth I.resultsT) (progOf I.resultsT) (tabOf I.resultsT)).all (·.2) =
+      true := by
+  simp only [InScopeP, Bool.and_eq_true] at hin
+  obtain ⟨hnd, -, has⟩ := progScope_parts hin.1
+  obtain ⟨himg, hstar, hinj, hsym, -⟩ := linker_parts hlk
+  rw [List.all_eq_true]
+  intro c hc
+  simp only [globalChks, List.mem_cons, List.not_mem_nil, or_false, progOf_resultsT] at hc
+  rcases hc with rfl | rfl | rfl | rfl | rfl | rfl
+  · exact decide_eq_true hnd
+  · exact himg
+  · exact hstar
+  · rw [progOf_resultsT] at hinj; exact hinj
+  · exact hsym
+  · exact addrSlotsB_of_in has
+
+/-- **`okB`'s checks hold on the compiler's results of every in-scope input** whose link the
+linker's facts describe: `InScopeP` (the input) and `linkerOkB` (the linker), no check of the
+compiler's own output. -/
+theorem okT_of_inScope (hO : OwnHyps) {I : LinkInput} (hin : InScopeP I = true)
+    (hlk : linkerOkB I = true) : okR (I.withDepth I.resultsT) I.resultsT = true := by
+  simp only [okR, Bool.and_eq_true]
+  exact ⟨global_resultsT hin hlk, List.all_eq_true.2 fun e he => chks_resultsT hO hin hlk he⟩
+
+/-! ## The linked system of the compiler's results -/
+
+/-- **`LinkSys.ofInputT`**: the linked system of a crate's input compiled by the compiler's
+pipeline (`resultsT`), with the stack of one call level by construction (`withDepth`). -/
+def _root_.E2E.LinkSys.ofInputT (I : LinkInput) (B : BaseEnv) (F : BitVec 64 → Prop) : LinkSys :=
+  ofRes (I.withDepth I.resultsT) I.resultsT B F
+
+/-- **`LinkSys.Ok` of the compiler's linked system** of an in-scope input whose link satisfies
+the linker's facts. -/
+theorem okT_sound (hO : OwnHyps) {I : LinkInput} (hin : InScopeP I = true)
+    (hlk : linkerOkB I = true) {B : BaseEnv} {F : BitVec 64 → Prop}
+    (hB : BaseOk (LinkSys.ofInputT I B F)) (hF : ∀ a, (LinkSys.ofInputT I B F).Img a → F a) :
+    (LinkSys.ofInputT I B F).Ok :=
+  okR_sound (resultsT_ok I I.resultsT) (okT_of_inScope hO hin hlk) hB hF
+
+/-- The crate's theorem (`CrateStmt`) for the compiler's linked system `LinkSys.ofInputT`. -/
+def CrateStmtT (I : LinkInput) (n : String) : Prop :=
+  ∀ (B : BaseEnv) (F : BitVec 64 → Prop), BaseOk (LinkSys.ofInputT I B F) →
+    (∀ a, (LinkSys.ofInputT I B F).Img a → F a) → ProgStmt (LinkSys.ofInputT I B F) n
+
+/-- **`backend_correct_program` for every function of an in-scope input** (L2a): no `okB`
+premise; the input conditions `InScopeP`, the linker's facts `linkerOkB` (what L2b must provide)
+and the program-independent open facts `OwnHyps`. -/
+theorem crate_correct_inScope (hO : OwnHyps) {I : LinkInput} (hin : InScopeP I = true)
+    (hlk : linkerOkB I = true) (n : String) : CrateStmtT I n :=
+  fun _ _ hB hF _ hf M _ _ _ _ _ hent hres hFeq hgfree himg hbe hargs hcs hsav hrel hpl htr =>
+    backend_correct_program _ (okT_sound hO hin hlk hB hF) (Clif.Program.func?_some hf).1 M hent
+      hres hFeq hgfree himg hbe hargs hcs hsav hrel hpl htr
+
+/-- **Non-vacuity of `BaseOk`** for the compiler's linked system: the closed base environment
+satisfies the base premises of every input without `tls_value`. -/
+theorem baseOk_closedT {I : LinkInput} {F : BitVec 64 → Prop}
+    (htls : ∀ g ∈ I.prog.funcs, hasTls g = false) :
+    BaseOk (LinkSys.ofInputT I closedBase F) :=
+  baseOk_closedR (fun g hg => htls g (progOf_resultsT I ▸ hg))
 
 end E2E.LinkCheck

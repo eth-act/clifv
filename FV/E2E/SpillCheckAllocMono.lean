@@ -103,8 +103,9 @@ theorem get_meet (x y : AState) (l : Loc) :
   unfold AState.get AState.meet
   split
   · rename_i i _
-    rw [Array.getD_eq_getD_getElem?, Array.getElem?_mapIdx, Array.getD_eq_getD_getElem?]
-    cases x[i]? <;> simp [Array.getD_eq_getD_getElem?]
+    rw [Array.getD_eq_getD_getElem?, Array.getElem?_mapIdx, Array.getD_eq_getD_getElem?,
+      Array.getD_eq_getD_getElem?]
+    cases x[i]? <;> simp
   · rfl
 
 theorem size_meet (x y : AState) : (x.meet y).size = x.size := by simp [AState.meet]
@@ -115,7 +116,7 @@ theorem sub_meet {z x y : AState} (h1 : Sub z x) (h2 : Sub z y) : Sub z (x.meet 
   exact ⟨h1.2 l s hs, List.contains_iff_mem.mpr (h2.2 l s hs)⟩
 
 theorem sub_meet_left (x y : AState) : Sub (x.meet y) x :=
-  ⟨by rw [size_meet], fun _ _ hs => (AState.mem_get_meet hs).1⟩
+  ⟨by rw [size_meet]; exact Nat.le_refl _, fun _ _ hs => (AState.mem_get_meet hs).1⟩
 
 theorem sub_trans {x y z : AState} (h1 : Sub x y) (h2 : Sub y z) : Sub x z :=
   ⟨Nat.le_trans h1.1 h2.1, fun l s hs => h2.2 l s (h1.2 l s hs)⟩
@@ -157,7 +158,6 @@ theorem stepOp_mono {w : String} {i : MInst} {ops : Array Operand} {allocs : Arr
   refine ⟨_, ?_, hT⟩
   unfold CheckCtx.stepOp
   simp only [hst, h1, h2, h3, bind, Except.bind, pure, Except.pure]
-  rfl
 
 theorem runItems_mono (vb : VBlock) : ∀ (its : List RItem) (next : Nat) (x x' y : AState),
     c.runItems vb next its x = .ok x' → Sub x y →
@@ -175,7 +175,7 @@ theorem runItems_mono (vb : VBlock) : ∀ (its : List RItem) (next : Nat) (x x' 
     obtain ⟨x1, hm, -⟩ := Except.bind_ok hm
     obtain ⟨hcm, -⟩ := Except.seq_ok hm
     obtain ⟨hn, hr⟩ := runItems_move h
-    obtain ⟨y', hy, hs'⟩ := runItems_mono its next _ x' (y.put dst (y.get src)) hr
+    obtain ⟨y', hy, hs'⟩ := runItems_mono vb its next _ x' (y.put dst (y.get src)) hr
       (sub_put hs dst (hs.2 src))
     refine ⟨y', ?_, hs'⟩
     unfold CheckCtx.runItems
@@ -185,7 +185,7 @@ theorem runItems_mono (vb : VBlock) : ∀ (its : List RItem) (next : Nat) (x x' 
   | .op k allocs :: its, next, x, x', y, h, hs => by
     obtain ⟨hn, rfl, i, ops, x1, hi, hops, hst, hr⟩ := runItems_op h
     obtain ⟨y1, hy1, hs1⟩ := stepOp_mono c hst hs
-    obtain ⟨y', hy, hs'⟩ := runItems_mono its (k + 1) x1 x' y1 hr hs1
+    obtain ⟨y', hy, hs'⟩ := runItems_mono vb its (k + 1) x1 x' y1 hr hs1
     refine ⟨y', ?_, hs'⟩
     unfold CheckCtx.runItems
     simp only [ensure_true (show (k != vb.insts.size) = true by simpa using hn),
@@ -203,7 +203,8 @@ theorem runBlock_mono {b : Nat} {x x' y : AState} (h : c.runBlock b x = .ok x') 
 
 theorem forgetOps_nil (a : AState) : forgetOps a [] = a := by
   unfold forgetOps
-  simp
+  simp only [List.any_nil, Bool.not_false]
+  exact Array.map_id'' (fun L => List.filter_eq_self.mpr fun _ _ => rfl) a
 
 /-- The dead-def forgetting of an edge is a `forgetOps` of operands independent of the state. -/
 theorem edgeForget_eq (b s : Nat) : ∃ os, ∀ a, c.edgeForget b s a = forgetOps a os := by
@@ -234,24 +235,27 @@ theorem sub_edgeForget {b s : Nat} {x y : AState} (h : Sub x y) :
 theorem edgeCopy_mono {b s : Nat} {x x' y : AState} (h : c.edgeCopy b s x = .ok x')
     (hs : Sub x y) : ∃ y', c.edgeCopy b s y = .ok y' ∧ Sub x' y' := by
   unfold CheckCtx.edgeCopy at h ⊢
+  cases hb : c.vc.blocks[b]? with
+  | none => rw [hb] at h; cases h
+  | some vb =>
+  cases hsb : c.vc.blocks[s]? with
+  | none => rw [hb, hsb] at h; cases h
+  | some sb =>
+  rw [hb, hsb] at h
+  dsimp only at h ⊢
+  obtain ⟨h1, h⟩ := Except.seq_ok h
+  simp only [h1, bind, Except.bind]
   split at h
-  · rename_i vb sb hb hsb
-    simp only [hb, hsb]
-    obtain ⟨h1, h⟩ := Except.seq_ok h
-    simp only [h1, bind, Except.bind]
-    split at h
-    · rename_i he
-      simp only [he, ↓reduceIte]
-      exact ⟨y, rfl, by rw [← Except.ok.inj h]; exact hs⟩
-    · rename_i he
-      simp only [he, Bool.false_eq_true, ↓reduceIte]
-      obtain ⟨ps, hps, h⟩ := Except.bind_ok h
-      obtain ⟨xs, hxs, h⟩ := Except.bind_ok h
-      obtain ⟨h3, h⟩ := Except.seq_ok h
-      simp only [hps, hxs, h3, pure, Except.pure]
-      exact ⟨_, rfl, by rw [← Except.ok.inj h]; exact sub_parCopy hs ps xs⟩
-  · cases h
-  · cases h
+  · rename_i he
+    simp only [he, ↓reduceIte]
+    exact ⟨y, rfl, by rw [← Except.ok.inj h]; exact hs⟩
+  · rename_i he
+    simp only [he, Bool.false_eq_true, ↓reduceIte]
+    obtain ⟨ps, hps, h⟩ := Except.bind_ok h
+    obtain ⟨xs, hxs, h⟩ := Except.bind_ok h
+    obtain ⟨h3, h⟩ := Except.seq_ok h
+    simp only [hps, hxs, h3, pure, Except.pure]
+    exact ⟨_, rfl, by rw [← Except.ok.inj h]; exact sub_parCopy hs ps xs⟩
 
 theorem edge_mono {b s : Nat} {x x' y : AState} (h : c.edge b s x = .ok x') (hs : Sub x y) :
     ∃ y', c.edge b s y = .ok y' ∧ Sub x' y' :=
@@ -308,7 +312,7 @@ theorem good_filter {K N : Nat} {a : AState} (h : Good K N a) (p : Sym → Bool)
 
 theorem good_define {K N : Nat} {a : AState} (h : Good K N a) (l : Loc) {s : Sym}
     (hs : SymIn K s) : Good K N (a.define l s) :=
-  good_put (good_filter h _) l ⟨List.nodup_singleton s, fun t ht => by
+  good_put (good_filter h _) l ⟨List.pairwise_singleton _ s, fun t ht => by
     rw [List.mem_singleton.mp ht]; exact hs⟩
 
 theorem good_defineAll {K N : Nat} : ∀ (ds : List (Operand × Loc)) {a : AState}, Good K N a →
@@ -336,33 +340,45 @@ theorem good_transferOp {K N : Nat} {a : AState} (h : Good K N a) (i : MInst)
   · exact h1
   · exact good_filter h1 _
 
-/-- The vregs a parallel copy adds to a location are distinct parameters. -/
-theorem adds_facts (L : List Sym) : ∀ (ps xs : List Nat), ps.Nodup →
-    (((ps.zip xs).filterMap fun (p, x) =>
-      if L.contains (Sym.vreg x) then some (Sym.vreg p) else none)).Nodup ∧
-    ∀ s ∈ ((ps.zip xs).filterMap fun (p, x) =>
-      if L.contains (Sym.vreg x) then some (Sym.vreg p) else none), ∃ p ∈ ps, s = .vreg p
+/-- A `filterMap` over `ps.zip xs` producing only `.vreg p` from a pair `(p, x)` produces
+distinct parameters. -/
+theorem adds_facts_gen (f : Nat × Nat → Option Sym) (hf : ∀ q s, f q = some s → s = .vreg q.1) :
+    ∀ (ps xs : List Nat), ps.Nodup →
+    ((ps.zip xs).filterMap f).Nodup ∧ ∀ s ∈ (ps.zip xs).filterMap f, ∃ p ∈ ps, s = .vreg p
   | [], _, _ => by simp
   | _ :: _, [], _ => by simp
   | p :: ps, x :: xs, hn => by
     rw [List.nodup_cons] at hn
-    obtain ⟨ih1, ih2⟩ := adds_facts L ps xs hn.2
+    obtain ⟨ih1, ih2⟩ := adds_facts_gen f hf ps xs hn.2
     rw [List.zip_cons_cons, List.filterMap_cons]
-    have hrest : ∀ s ∈ ((ps.zip xs).filterMap fun (p, x) =>
-        if L.contains (Sym.vreg x) then some (Sym.vreg p) else none), ∃ q ∈ p :: ps, s = .vreg q :=
+    have hrest : ∀ s ∈ (ps.zip xs).filterMap f, ∃ q ∈ p :: ps, s = .vreg q :=
       fun s hs => by
         obtain ⟨q, hq, e⟩ := ih2 s hs
         exact ⟨q, List.mem_cons_of_mem _ hq, e⟩
-    dsimp only
-    split
-    · refine ⟨List.nodup_cons.mpr ⟨fun hm => ?_, ih1⟩, fun s hs => ?_⟩
+    cases hfx : f (p, x) with
+    | none => exact ⟨ih1, hrest⟩
+    | some s =>
+      have e := hf _ _ hfx
+      subst e
+      refine ⟨List.nodup_cons.mpr ⟨fun hm => ?_, ih1⟩, fun s hs => ?_⟩
       · obtain ⟨q, hq, e⟩ := ih2 _ hm
         cases e
         exact hn.1 hq
       · rcases List.mem_cons.mp hs with rfl | hs
         · exact ⟨p, List.mem_cons_self, rfl⟩
         · exact hrest s hs
-    · exact ⟨ih1, hrest⟩
+
+/-- The vregs a parallel copy adds to a location are distinct parameters. -/
+theorem adds_facts (L : List Sym) (ps xs : List Nat) (hn : ps.Nodup) :
+    (((ps.zip xs).filterMap fun (p, x) =>
+      if L.contains (Sym.vreg x) then some (Sym.vreg p) else none)).Nodup ∧
+    ∀ s ∈ ((ps.zip xs).filterMap fun (p, x) =>
+      if L.contains (Sym.vreg x) then some (Sym.vreg p) else none), ∃ p ∈ ps, s = .vreg p :=
+  adds_facts_gen _ (fun ⟨p, x⟩ s h => by
+    dsimp only at h
+    split at h
+    · cases h; rfl
+    · cases h) ps xs hn
 
 theorem good_parCopy {K N : Nat} {a : AState} (h : Good K N a) {ps xs : List Nat}
     (hn : ps.Nodup) (hK : ∀ p ∈ ps, p < K) : Good K N (a.parCopy ps xs) := by
@@ -373,10 +389,9 @@ theorem good_parCopy {K N : Nat} {a : AState} (h : Good K N a) {ps xs : List Nat
   refine ⟨?_, fun s hs => ?_⟩
   · refine List.nodup_append.mpr ⟨hk.1, hA1.filter _, fun s hs t ht e => ?_⟩
     subst e
-    have := (List.mem_filter.mp ht).2
-    simp only [Bool.not_eq_true', List.contains_eq_false] at this
-    -- `this : s ∉ kept`
-    exact (by simpa using this : s ∉ _) hs
+    have h2 := (List.mem_filter.mp ht).2
+    rw [Bool.not_eq_true', List.contains_iff_mem.mpr hs] at h2
+    cases h2
   · rcases List.mem_append.mp hs with hs | hs
     · exact hk.2 s hs
     · obtain ⟨p, hp, rfl⟩ := hA2 s (List.mem_filter.mp hs).1
@@ -521,7 +536,7 @@ theorem wt_mapIdx_filter : ∀ (L : List (List Sym)) (p : Nat → Sym → Bool),
     · have : (x.filter (p 0)).length < x.length := by
         apply Classical.byContradiction
         intro hc
-        exact hx' (List.filter_eq_self.mpr (List.filter_length_eq_length.mp (by omega)))
+        exact hx' (List.filter_eq_self.mpr (List.length_filter_eq_length_iff.mp (by omega)))
       omega
 
 theorem wt_meet (x y : AState) : wt (x.meet y) ≤ wt x ∧ (x.meet y ≠ x → wt (x.meet y) < wt x) := by

@@ -1,5 +1,6 @@
 import FV.E2E.EmitPreOk
 import FV.Backend.Proof.RelaxLayout
+import FV.E2E.EmitCondsDefs
 import FV.Backend.Proof.AssignOk
 
 /-!
@@ -48,20 +49,11 @@ def Line.bOk : Line → Bool
   | .ins (.b _) _ => false
   | _ => true
 
-def MInst.noAlways : MInst → Bool
-  | .condBr _ _ (.cond c) => !(c == .al || c == .nv)
-  | .trapIf (.cond c) _ => !(c == .al || c == .nv)
-  | _ => true
-
 def Line.nearOkB (ln : Line) : Bool := ln.nearTgt.isNone && ln.bOk
 
 /-- Every instruction of the allocated function has no `al`/`nv` branch condition. -/
 def AFunc.NoAlways (af : AFunc) : Prop :=
   ∀ p ∈ af.blocks.toList, ∀ m, AInst.inst m ∈ p.2.toList → m.noAlways = true
-
-/-- No `condBr`/`trapIf` of the VCode has an `al`/`nv` condition. -/
-def VCode.noAlwaysB (vc : VCode) : Bool :=
-  vc.blocks.toList.all fun vb => vb.insts.toList.all MInst.noAlways
 
 end Backend
 

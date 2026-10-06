@@ -21,12 +21,13 @@ once for every in-scope function:
   `regLocs g.sig` (check "entryRegs"): it is `lowerFunction`'s entry `Args`
   (`prep_entry_args`), the pairs `entryRegs` of the register locations of `locsOf g.sig`.
 
-`IselNoRetsHyp` is the one ISLE fact taken as a hypothesis: `lower` on a statement and
-`lower_branch` emit no `Rets`. Only the extern constructor `gen_return` emits a `Rets`
-(`externCtor_shp`: `MInst.ofV` decodes no `Rets`), `gen_return` is applied only by rule
-`rule_prelude_lower_1493` (term `lower_return`), and `lower_return` only by `rule_lower_2574`,
-which matches only a `return`'s data; neither term is reachable from the rules of
-`lower_branch` nor from the other rules of `lower` (a syntactic closure over `program`'s rules).
+`IselNoRetsHyp` is the one ISLE fact taken here as a hypothesis (proven as `iselNoRets` in
+`LinkOwnRetsIsel.lean`): `lower` on a statement of an in-scope function and `lower_branch` emit
+no `Rets`. Only the extern constructor `gen_return` emits a `Rets` (`externCtor_shp`:
+`MInst.ofV` decodes no `Rets`), `gen_return` is applied only by rule `rule_prelude_lower_1493`
+(term `lower_return`), and `lower_return` only by `rule_lower_2574`, which matches only a
+`return`'s data; neither term is reachable from the rules of `lower_branch` nor from the other
+rules of `lower` (a syntactic closure over `program`'s rules).
 -/
 
 namespace E2E.LinkCheck
@@ -39,12 +40,13 @@ open Backend Backend.Proof Backend.Proof.Driver
 def NoRetsSince (s s' : LState) : Prop :=
   ∃ ms : List MInst, s'.emitted = s.emitted ++ ms.toArray ∧ ∀ m ∈ ms, ∀ us, m ≠ .rets us
 
-/-- **The ISLE inversion for `Rets`**: `lower` on a statement of a function (in `buildCtx`'s
-context) and `lower_branch` (in any context: a branch's or a `try_call`'s) emit no `Rets`.
-Only `gen_return` emits a `Rets`; it is reachable only through `lower_return` from
-`rule_lower_2574`, the `lower` rule of a `return` (whose data no statement has). -/
+/-- **The ISLE inversion for `Rets`**: `lower` on a statement of an in-scope function (in
+`buildCtx`'s context) and `lower_branch` (in any context: a branch's or a `try_call`'s) emit no
+`Rets`. Only `gen_return` emits a `Rets`; it is reachable only through `lower_return` from
+`rule_lower_2574`, the `lower` rule of a `return` (whose data no statement has). Proven as
+`iselNoRets` (`LinkOwnRetsIsel.lean`). -/
 def IselNoRetsHyp : Prop :=
-  (∀ (f : Clif.Function) (ctx : Ctx) (ranges : Array (Nat × Nat)) (st0 : LState),
+  (∀ (f : Clif.Function), LowerScope f → ∀ (ctx : Ctx) (ranges : Array (Nat × Nat)) (st0 : LState),
     buildCtx f = .ok (ctx, ranges, st0) →
     ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst) (s : LState) (out : Option V) (s' : LState)
       (tr : List Isle.RuleId), ctx.insts[ii]? = some info → info.clif = some inst →
@@ -142,13 +144,13 @@ theorem ret_retShape {p : Program} (hp : Data p) : LowerRetShapeOk p rule_lower_
     isel_destruct; subst_vars
     repeat (isel_inv_simp [ext_value_list_slice_iff] at * <;> isel_destruct <;> subst_vars)
     have h294 := ‹ApplyInternal _ _ _ _ 25 294 _ _ _ _›
-    obtain ⟨rs, ps, hrs, hps, hs, -⟩ := kR _ (by omega) _ _ _ _ h294
+    obtain ⟨rs, hrs, ps, hps, hs, -⟩ := kR _ (by omega) _ _ _ _ h294
     simp only at hs
     subst hs
     have hrs' := mapM_valueReg hctx hrs
     subst hrs'
     obtain ⟨-, rfl⟩ := retRegs_eq hps
-    refine ⟨[.rets _], by simp [LState.emit], fun m hm us hus => ?_⟩
+    refine ⟨[.rets _], by simp [LState.emit]; rfl, fun m hm us hus => ?_⟩
     simp only [List.mem_singleton] at hm
     subst hm; cases hus
     exact ⟨_, rfl, by simp⟩
@@ -198,7 +200,7 @@ theorem vc_rets (hI : IselNoRetsHyp) {f : Clif.Function} {vc : VCode} (hs : Lowe
   obtain ⟨-, hspec⟩ := lowBlocks_spec hlb
   have hemp := lowBlocks_emptied hlb
   obtain ⟨hS, hY⟩ := hI
-  have hS := hS f ctx ranges st0 hbc
+  have hS := hS f hs ctx ranges st0 hbc
   rw [hvb] at hb
   rcases vcBlocksOf_get hb with ⟨B, L, hB, hL, rfl⟩ | ⟨-, B, L, e, he, rfl⟩
   · have hl' := hk
@@ -276,7 +278,7 @@ theorem vc_rets (hI : IselNoRetsHyp) {f : Clif.Function} {vc : VCode} (hs : Lowe
           obtain ⟨xs', hx, hl2⟩ := hr _ (by simpa using hm) us0 rfl
           simp only [abiTerm, Clif.Terminator.ret.injEq] at hx
           subst hx
-          exact ⟨B, List.mem_of_getElem? hB, xs, rfl, by omega⟩
+          exact ⟨B, List.mem_of_getElem? hB, xs, hT, by omega⟩
         | trap c =>
           intro hdat hc
           obtain ⟨ms, hms, hr⟩ := retShape_runTerm (t := abiTerm f (.trap c)) hctx' rfl hdat hi' hc
@@ -346,7 +348,7 @@ its ABI results. -/
 theorem retsB_of_lower (hI : IselNoRetsHyp) {g : Clif.Function} {vc : VCode}
     (hs : lowerScopeB g = true) (hl : lowerFunction g = .ok vc) : allInsts vc (retsB g) = true := by
   have hS := lowerScope_of hs
-  obtain ⟨-, -, -, -, -, -, hlf⟩ := lowerFunction_run hl
+  obtain ⟨_, _, _, _, -, -, -, -, hlf⟩ := lowerFunction_run hl
   unfold allInsts
   rw [Array.all_eq_true_iff_forall_mem]
   intro vb hvb
@@ -368,7 +370,7 @@ theorem retsB_of_lower (hI : IselNoRetsHyp) {g : Clif.Function} {vc : VCode}
         have := hlf.sret B hB xs hT h0
         rw [hr] at this
         rw [this] at h1
-        cases h1
+        simp at h1
       have : 1 ≤ (sretRet g).length := List.length_pos_iff.mpr hne
       simp only [List.length_append] at hlen
       omega
@@ -403,7 +405,8 @@ theorem vc_entry {f : Clif.Function} {vc : VCode} (hs : LowerScope f)
   have hvb0' := hvb0
   rw [hvb] at hvb0'
   rcases vcBlocksOf_get hvb0' with ⟨B, L, hB, hL, rfl⟩ | ⟨h0, -⟩
-  · refine ⟨_, _, hvb0, ?_, entryRegs_regLocs f _ B⟩
+  · refine ⟨_, entryRegs f (lowerFunction.resolve (aliasArr (aliasOf f bl))
+      ((aliasArr (aliasOf f bl)).size + 1)) B, hvb0, ?_, entryRegs_regLocs f _ B⟩
     rw [fixBlock, ← Array.getElem?_toList, rawBlock_insts]
     simp only [pre, hB]
     rfl

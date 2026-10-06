@@ -22,7 +22,7 @@ block of `prepare`'s output (`prepare_reach`).
 
 namespace E2E
 
-open Backend Backend.Proof
+open Backend Backend.Proof Backend.Proof.Driver
 
 /-- **Definite assignment of the pipeline's output** (the remaining hypothesis of
 `spillCheckAlloc`): the prepared VCode of an in-scope function has availability sets
@@ -57,7 +57,7 @@ theorem prepare_reach {vc vcp : VCode} (hp : prepare vc = .ok vcp) (hd : Prep.Pr
       obtain ⟨q', hq', hq's, hlab3⟩ := Prep.lab3 hR hn2 hRn (hRre s (.step hri hs))
       rw [getElem!_pos (B ++ E) s hs2, hls] at hlab3
       have hq3 : q < ((rpo ss2).map fun i => (B ++ E)[i]!).size := by simpa using hq
-      obtain ⟨-, e3⟩ := Prep.v3_get hR hq
+      obtain ⟨_, e3⟩ := Prep.v3_get hR hq
       have hV3 : ((rpo ss2).map fun i => (B ++ E)[i]!)[q] = (B ++ E)[(rpo ss2)[q]] :=
         Option.some.inj ((Array.getElem?_eq_getElem hq3).symm.trans e3)
       exact ⟨q', hq', hq's, .step hrq (Prep.succ_mem cs3 hq3 (t := t) (by rw [hV3]; exact ht) hl hlab3)⟩
@@ -123,7 +123,7 @@ theorem spillCheckAlloc (hD : SpillDefinedHyp) {p : Clif.Program} {f : Clif.Func
     exact ⟨ops, hops⟩
   · -- successors are blocks
     intro b s hs'
-    obtain ⟨hb, -, -, -, -, -, hlab⟩ := Prep.succ_of (Prep.cfg_spec hcfg) hs'
+    obtain ⟨hb, _, _, _, -, -, hlab⟩ := Prep.succ_of (Prep.cfg_spec hcfg) hs'
     exact ⟨hb, (Prep.lab_some hlab).1⟩
   · -- operand vregs have a class
     intro b vb hvb i hi ops hops o ho
@@ -138,7 +138,7 @@ theorem spillCheckAlloc (hD : SpillDefinedHyp) {p : Clif.Program} {f : Clif.Func
     exact (Array.getElem?_eq_some_iff.mp hm).1
   · -- the witness in-states
     intro b hb
-    exact ⟨_, Spill.insOf_get hb, by rw [Spill.size_mkState, hN]⟩
+    exact ⟨_, Spill.insOf_get hb, by unfold Spill.inState; rw [Spill.size_mkState, hN]⟩
   · intro b hb
     have := Spill.verify_block hcfg hloc hav hb
     rwa [hctx] at this

@@ -1,8 +1,10 @@
 import FV.E2E.LinkCheck
+import FV.E2E.LinkOwnCallsDefs
+import FV.E2E.LinkOwnFramesDefs
+import FV.E2E.EmitCondsDefs
 import FV.Backend.AllocReady
 import FV.Backend.Proof.LowerDecide
 import FV.Backend.Proof.SpillArity
-import FV.E2E.EmitSize
 
 /-! # `okB` split: the compiler's pipeline, the input conditions, the linker's facts (L2a)
 
@@ -66,12 +68,15 @@ def LinkInput.withDepth (I : LinkInput) (R : Res) : LinkInput := { I with D := d
 /-! ## The input conditions -/
 
 /-- `lowerFunction` and `prepare` accept `f` (internal rejections without a fallback:
-docs/TO-PROVE.md §1.2, kind 4), and the spill code's word bound is below `2 ^ 24` (the size
-input condition `spillSizeOkB` of V6b, needed: a large enough function exceeds `b`'s reach). -/
+docs/TO-PROVE.md §1.2, kind 4), and the prepared VCode satisfies `emitCondsB`, the decidable
+condition of V6b's emission totality (`backend_correct_final_total_emit`): the spill code's word
+bound is below `2 ^ 24` (needed: a large enough function exceeds `b`'s reach) and the three
+instruction-selection facts `immsOkB`, `noAlwaysB`, `branchTargetsOkB` (V6c, open: to be proven
+from the ISLE rules, then dropped from here). -/
 def lowersB (f : Clif.Function) : Bool :=
   match lowerFunction f with
   | .ok vc => match prepare vc with
-    | .ok vcp => spillSizeOkB vcp
+    | .ok vcp => emitCondsB vcp
     | .error _ => false
   | .error _ => false
 
@@ -100,10 +105,11 @@ def addrSlotsInB (P : Clif.Program) (S : String → Option Nat) : Bool :=
 
 /-- **The program-level input conditions** (`S`: the CLIF image's symbols; only which names
 have one matters): distinct names, declared signatures, the scope of the indirect calls
-(`indB`), `addrSlotsInB`. -/
+(`indB`), the call sites' registers and results (`callScopeB`), the stack arguments of the
+declared program callees (`outScopeB`), `addrSlotsInB`. -/
 def progScopeB (P : Clif.Program) (S : String → Option Nat) : Bool :=
   decide (P.funcs.map (·.name)).Nodup &&
-  P.funcs.all (fun g => declSigB P g && indB P S g) &&
+  P.funcs.all (fun g => declSigB P g && indB P S g && callScopeB P S g && outScopeB P g) &&
   addrSlotsInB P S
 
 /-- **`InScopeP`: the input conditions of a crate** — decidable on the input program alone (its

@@ -278,6 +278,7 @@ theorem frame_of_lower {g : Clif.Function} {a : Art} (hl : lowerFunction g = .ok
     ((!g.slots.isEmpty || (RAFrame.compute a.vcp a.rf).size == a.af.frameSize) &&
       slotFitsB g a) = true := by
   obtain ⟨hfs, hsb, -⟩ := lowerRFunc_ok hr
+  obtain ⟨hfs, hsb, -⟩ := hfs
   have hsl := slotBytes_of_lower hl hp
   have htot : (RAFrame.compute a.vcp a.rf).total =
       alignTo ((RAFrame.compute a.vcp a.rf).size + a.vcp.slotBytes) 16 := rfl

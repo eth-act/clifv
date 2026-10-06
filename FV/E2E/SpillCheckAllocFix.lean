@@ -117,10 +117,10 @@ bound `K` of the vregs, the state size `N`, and verified in-states `W` with an e
 structure Setting (c : CheckCtx) (K N : Nat) (W : Array (Option AState)) : Prop where
   size_eq : c.size = N
   nonempty : c.vc.blocks.size ≠ 0
-  succ_lt : ∀ b s, s ∈ (c.succs[b]!).toList → b < c.vc.blocks.size ∧ s < c.vc.blocks.size
-  ops : ∀ b vb, c.vc.blocks[b]? = some vb → OpsBelow K vb
-  params : ∀ s sb, c.vc.blocks[s]? = some sb → ParamsBelow K sb
-  wit : ∀ b < c.vc.blocks.size, ∃ w, W[b]? = some (some w) ∧ w.size ≤ N
+  succ_lt : ∀ b s : Nat, s ∈ (c.succs[b]!).toList → b < c.vc.blocks.size ∧ s < c.vc.blocks.size
+  ops : ∀ (b : Nat) vb, c.vc.blocks[b]? = some vb → OpsBelow K vb
+  params : ∀ (s : Nat) sb, c.vc.blocks[s]? = some sb → ParamsBelow K sb
+  wit : ∀ b < c.vc.blocks.size, ∃ w, W[b]? = some (some w) ∧ w.size = N
   ver : ∀ b < c.vc.blocks.size, c.verifyBlock W b = .ok ()
   entry : ∃ w0, W[0]? = some (some w0) ∧ w0.le (entryState N) = true
 
@@ -130,8 +130,8 @@ variable (c : CheckCtx) (K N : Nat) (W : Array (Option AState))
 /-- The invariant of the iteration's in-states. -/
 structure Inv (ins : Array (Option AState)) : Prop where
   size : ins.size = c.vc.blocks.size
-  good : ∀ b a, ins[b]! = some a → Good K N a
-  wit : ∀ b a w, ins[b]! = some a → W[b]? = some (some w) → Sub w a
+  good : ∀ (b : Nat) a, ins[b]! = some a → Good K N a
+  wit : ∀ (b : Nat) a w, ins[b]! = some a → W[b]? = some (some w) → Sub w a
   entry : ∃ a0, ins[0]! = some a0 ∧ Sub a0 (entryState N)
 
 /-- Block `b` is stable in `ins`: its run and edges pass, and meeting its edges into its
@@ -154,6 +154,44 @@ theorem wit_block (hS : Setting c K N W) {b : Nat} (hb : b < c.vc.blocks.size) :
   refine ⟨w, out, hw, hr, fun s hs => he s ?_⟩
   rw [succs!_eq] at hs
   exact hs
+
+/-! ## Runs and edges keep the size of a state -/
+
+theorem runItems_size (vb : VBlock) : ∀ (its : List RItem) (next : Nat) (y y' : AState),
+    c.runItems vb next its y = .ok y' → y'.size = y.size
+  | [], _, _, _, h => by
+    obtain ⟨-, rfl⟩ := runItems_nil h
+    rfl
+  | .move src dst :: its, next, y, y', h => by
+    obtain ⟨-, hr⟩ := runItems_move h
+    rw [runItems_size vb its next _ y' hr, size_put]
+  | .op k allocs :: its, _, y, y', h => by
+    obtain ⟨-, rfl, i, ops, y1, -, -, hst, hr⟩ := runItems_op h
+    obtain ⟨-, -, -, rfl, -⟩ := stepOp_ok hst
+    rw [runItems_size vb its (k + 1) _ y' hr, size_transferOp]
+
+theorem runBlock_size {b : Nat} {y y' : AState} (h : c.runBlock b y = .ok y') :
+    y'.size = y.size := by
+  obtain ⟨vb, items, -, -, hr⟩ := runBlock_ok h
+  exact runItems_size vb items.toList 0 y y' hr
+
+theorem edge_size {b s : Nat} {y y' : AState} (h : c.edge b s y = .ok y') : y'.size = y.size := by
+  obtain ⟨os, hos⟩ := edgeForget_eq c b s
+  have hz : (c.edgeForget b s y).size = y.size := by rw [hos]; simp [forgetOps]
+  unfold CheckCtx.edge CheckCtx.edgeCopy at h
+  rw [← hz]
+  generalize c.edgeForget b s y = z at h
+  split at h
+  · obtain ⟨-, h⟩ := Except.seq_ok h
+    split at h
+    · rw [← Except.ok.inj h]
+    · obtain ⟨ps, -, h⟩ := Except.bind_ok h
+      obtain ⟨xs, -, h⟩ := Except.bind_ok h
+      obtain ⟨-, h⟩ := Except.seq_ok h
+      rw [← Except.ok.inj h]
+      simp [AState.parCopy]
+  · cases h
+  · cases h
 
 /-! ## One edge (the inner loop's body) -/
 
@@ -183,7 +221,6 @@ theorem inner_step (hS : Setting c K N W) {ins₀ : Array (Option AState)} {b : 
       else pure (ForInStep.yield (st.1, st.2)) : Except String (ForInStep _)) = .ok (.yield st') ∧
       InnerInv c K N W ins₀ b out ch₀ (j + 1) st' := by
   obtain ⟨hInv, hPhi, hch, hst⟩ := hI
-  set M := N * (K + calleeSaved.length)
   have hsL : s ∈ (c.succs[b]!).toList := List.mem_of_getElem? hj
   have hsn : s < c.vc.blocks.size := (hS.succ_lt b s hsL).2
   -- the witness edge
@@ -196,9 +233,16 @@ theorem inner_step (hS : Setting c K N W) {ins₀ : Array (Option AState)} {b : 
   obtain ⟨ew, ws, hew, hws, hwle⟩ := hwe s hsL
   obtain ⟨e, he, hse⟩ := edge_mono c hew hout
   have hge : Good K N e := edge_good c he (hS.params s) hgo
-  have hwse : Sub ws e :=
-    sub_trans (sub_of_le (by obtain ⟨w', hw', hsz⟩ := hS.wit s hsn; rw [hws] at hw'; cases hw'
-      rw [hge.1]; exact hsz) hwle) hse
+  have hwse : Sub ws e := by
+    obtain ⟨w', hw', hsz⟩ := hS.wit s hsn
+    rw [hws] at hw'
+    cases hw'
+    obtain ⟨w'', hw'', hsz'⟩ := hS.wit b hb
+    rw [hw] at hw''
+    cases hw''
+    refine sub_trans (sub_of_le ?_ hwle) hse
+    rw [edge_size hew, runBlock_size hwr', hsz, hsz']
+    exact Nat.le_refl _
   simp only [he, bind, Except.bind]
   -- the new in-state of `s`
   generalize hnew : (match st.1[s]! with
@@ -235,20 +279,23 @@ theorem inner_step (hS : Setting c K N W) {ins₀ : Array (Option AState)} {b : 
         exact sub_trans (sub_meet_left a0 e) hs0
       · exact ⟨a0, by rw [get!_set_ne (Ne.symm e')]; exact h0, hs0⟩
     · -- the potential drops
-      have hset := Phi_set M (ins := st.1) (by rw [hInv.size]; exact hsn) (some new)
-      have hlt : phi M (some new) < phi M st.1[s]! := by
+      have hset := Phi_set (N * (K + calleeSaved.length)) (ins := st.1)
+        (by rw [hInv.size]; exact hsn) (some new)
+      have hlt : phi (N * (K + calleeSaved.length)) (some new) <
+          phi (N * (K + calleeSaved.length)) st.1[s]! := by
         have hwn' := wt_le hgn
         rw [← hnew] at hc ⊢
         revert hc
         cases hold : st.1[s]! with
-        | none => intro _; simp only [phi]; omega
+        | none => intro _; have := wt_le hge; simp only [phi]; omega
         | some old =>
           intro hc
           simp only [phi]
           refine (wt_meet old e).2 fun eq => ?_
           simp [eq] at hc
       simp only [↓reduceIte]
-      have : Phi M st.1 + (if st.2 then 1 else 0) ≤ Phi M ins₀ := hPhi
+      have : Phi (N * (K + calleeSaved.length)) st.1 + (if st.2 then 1 else 0) ≤
+          Phi (N * (K + calleeSaved.length)) ins₀ := hPhi
       split at this <;> omega
   · simp only [Bool.not_eq_true] at hc
     simp only [hc, Bool.false_eq_true, ↓reduceIte, pure, Except.pure]
@@ -264,7 +311,7 @@ theorem inner_step (hS : Setting c K N W) {ins₀ : Array (Option AState)} {b : 
       intro hnew
       have : st.1[s]! = ins₀[s]! := by rw [heq]
       refine ⟨e, new, he, by rw [← this, hsome], ?_⟩
-      exact hnew.symm
+      exact hnew
     · exact hprev j' (by omega) s' hs'
 
 /-! ## One round -/
@@ -298,12 +345,12 @@ theorem round_ok (hS : Setting c K N W) {ins₀ : Array (Option AState)} (hI : I
     subst hxk
     obtain ⟨hInv, hPhi, hst⟩ := hP
     rcases hka : st.fst[x]! with _ | a
-    · simp only [hka]
+    · simp only
       refine ⟨_, rfl, hInv, hPhi, fun h2 => ⟨(hst h2).1, fun b hb a' ha' => ?_⟩⟩
       by_cases e : b = x
       · subst e; rw [← (hst h2).1, hka] at ha'; cases ha'
       · exact (hst h2).2 b (by omega) a' ha'
-    · simp only [hka]
+    · simp only
       obtain ⟨w, wout, hw, hwr, -⟩ := wit_block hS hk
       obtain ⟨out, hrun, hout⟩ := runBlock_mono c hwr (hInv.wit x a w hka hw)
       have hgo : Good K N out := runBlock_good c hrun (hS.ops x) (hInv.good x a hka)
@@ -317,7 +364,9 @@ theorem round_ok (hS : Setting c K N W) {ins₀ : Array (Option AState)} (hI : I
       have h1 : st.2 = false := by
         cases e : st.2
         · rfl
-        · exact absurd (hch' e) (by simp [h2])
+        · have h2' : r.2 = false := h2
+          rw [hch' e] at h2'
+          cases h2'
       obtain ⟨heq, hprev⟩ := hst h1
       obtain ⟨heq', hedges⟩ := hst' h2
       refine ⟨heq', fun b hb a' ha' => ?_⟩
@@ -332,7 +381,9 @@ theorem round_ok (hS : Setting c K N W) {ins₀ : Array (Option AState)} (hI : I
   · intro r hr
     obtain ⟨hInv', hPhi', hst'⟩ := hr
     refine ⟨(r.1, r.2), rfl, hInv', fun h => ?_, fun h => ?_⟩
-    · simp only [h, ↓reduceIte] at hPhi'; exact hPhi'
+    · have h' : r.2 = true := h
+      rw [h'] at hPhi'
+      exact hPhi'
     · obtain ⟨e, hs⟩ := hst' h
       exact ⟨e, fun b hb => hs b (by simpa [Std.Legacy.Range.size] using hb)⟩
 
@@ -349,7 +400,8 @@ theorem fixpoint_ok (hS : Setting c K N W) : ∀ (fuel : Nat) (ins : Array (Opti
     rw [hr, ok_bind]
     cases ch with
     | true =>
-      obtain ⟨ins', h', hI', hst'⟩ := fixpoint_ok hS fuel ins1 hI1 (by have := hdec rfl; omega)
+      obtain ⟨ins', h', hI', hst'⟩ := fixpoint_ok hS fuel ins1 hI1
+        (by have : Phi _ ins1 + 1 ≤ Phi _ ins := hdec rfl; omega)
       exact ⟨ins', h', hI', hst'⟩
     | false =>
       obtain ⟨e, hst⟩ := hfix rfl
@@ -394,7 +446,7 @@ theorem verify_stable (hS : Setting c K N W) {ins : Array (Option AState)} (hI :
 
 theorem good_replicate (K N : Nat) : Good K N (Array.replicate N []) := by
   refine ⟨by simp, fun l => ?_⟩
-  have : (Array.replicate N ([] : List Sym)).get l = [] := by
+  have : AState.get (Array.replicate N ([] : List Sym)) l = [] := by
     unfold AState.get
     split
     · simp [Array.getD_eq_getD_getElem?, Array.getElem?_replicate]
@@ -415,7 +467,7 @@ theorem good_entryState (K N : Nat) : Good K N (entryState N) := by
     intro a hr h
     simp only [List.foldl_cons]
     refine ih _ (fun r' h' => hr r' (List.mem_cons_of_mem _ h')) (good_put h _ ?_)
-    exact ⟨List.nodup_singleton _, fun s hs => by
+    exact ⟨List.pairwise_singleton _ _, fun s hs => by
       rw [List.mem_singleton.mp hs]; exact hr r List.mem_cons_self⟩
 
 theorem inv_init (hS : Setting c K N W) :
@@ -430,19 +482,19 @@ theorem inv_init (hS : Setting c K N W) :
     split <;> rfl
   refine ⟨by simp, fun b a h => ?_, fun b a w h hw => ?_, ⟨_, get!_set_self h0 _, sub_refl _⟩⟩
   · by_cases hb : b = 0
-    · subst hb; rw [get!_set_self h0] at h; cases h; exact good_entryState K N
+    · subst hb; rw [get!_set_self h0] at h; rw [← Option.some.inj h]; exact good_entryState K N
     · rw [hrest b hb] at h; cases h
   · by_cases hb : b = 0
     · subst hb
       rw [get!_set_self h0] at h
-      cases h
+      rw [← Option.some.inj h]
       obtain ⟨w0, hw0, hle⟩ := hS.entry
       rw [hw0] at hw
       cases hw
       obtain ⟨w', hw', hsz⟩ := hS.wit 0 (Nat.pos_of_ne_zero hS.nonempty)
       rw [hw0] at hw'
       cases hw'
-      exact sub_of_le (by rw [(good_entryState K N).1]; exact hsz) hle
+      exact sub_of_le (by rw [(good_entryState K N).1]; exact Nat.le_of_eq hsz) hle
     · rw [hrest b hb] at h; cases h
 
 theorem Phi_init (hS : Setting c K N W) :
@@ -454,7 +506,7 @@ theorem Phi_init (hS : Setting c K N W) :
   have hset := Phi_set (N * (K + calleeSaved.length)) h0 (some (entryState N))
   have hrep : Phi (N * (K + calleeSaved.length)) (Array.replicate c.vc.blocks.size none) =
       c.vc.blocks.size * (N * (K + calleeSaved.length) + 1) := by
-    simp [Phi, phi, List.sum_replicate]
+    simp [Phi, phi, List.sum_replicate_nat]
   have h0' : (Array.replicate c.vc.blocks.size (none : Option AState))[0]! = none := by
     rw [get!_eq]; simp [Array.getElem?_replicate]; split <;> rfl
   rw [hrep, h0'] at hset
@@ -493,7 +545,7 @@ theorem checkAlloc_complete {vc : VCode} {rf : RFunc} {succs preds : Array (Arra
   have hne : vc.blocks.size ≠ 0 := hS.nonempty
   obtain ⟨ins, hfix, hI, hst⟩ := fixpoint_ok hS _ _ (inv_init hS) (Phi_init hS)
   obtain ⟨hver, hall⟩ := verify_stable hS hI hst hreach
-  obtain ⟨-, hmap⟩ := mapM_okA vc.blocks (fun b => b.insts.mapM MInst.operands) fun vb hvb =>
+  obtain ⟨_, hmap⟩ := mapM_okA vc.blocks (fun b => b.insts.mapM MInst.operands) fun vb hvb =>
     mapM_okA vb.insts MInst.operands fun i hi => hops vb hvb i hi
   have hsome : (ins.zipIdx.toList.forM fun x =>
       ensure x.fst.isSome fun _ =>
@@ -512,7 +564,7 @@ theorem checkAlloc_complete {vc : VCode} {rf : RFunc} {succs preds : Array (Arra
   rw [hcfg]
   simp only [bind, Except.bind]
   rw [ensure_true (by simpa using hne), ensure_true (by simpa using hsz),
-    ensure_true (by rw [succs!_eq] at *; simp [getElem!_def, hp0]),
+    ensure_true (by rw [succs!_eq, hp0]; rfl),
     ensure_true (by simp [hpar0]),
     ensure_true (by simpa using hsaved), hmap]
   simp only

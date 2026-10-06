@@ -86,7 +86,7 @@ block's `jump`. -/
 theorem prep_src {vc vcp : VCode} (hp : prepare vc = .ok vcp) (hd : Prep.PrepDomain vc)
     {q : Nat} {vb : VBlock} {k : Nat} {i : MInst} (hvb : vcp.blocks[q]? = some vb)
     (hi : vb.insts[k]? = some i) :
-    (∃ b vb0 i0, vc.blocks[b]? = some vb0 ∧ vb0.insts[k]? = some i0 ∧
+    (∃ (b : Nat) (vb0 : VBlock) (i0 : MInst), vc.blocks[b]? = some vb0 ∧ vb0.insts[k]? = some i0 ∧
       (i0 = i ∨ ∃ ls, i0.setTargets ls = some i) ∧ ∀ j < k, vb.insts[j]? = vb0.insts[j]?) ∨
     ∃ l, i = .jump l := by
   obtain ⟨ss0, ps0, ss1, ps1, ss2, ps2, next, B, E, hc0, hc1, hS, hc2, rfl⟩ := Prep.prepare_facts hp
@@ -109,18 +109,18 @@ theorem prep_src {vc vcp : VCode} (hp : prepare vc = .ok vcp) (hd : Prep.PrepDom
       exact ⟨b, _, i, Array.getElem?_eq_getElem hb, hi, .inl rfl, fun _ _ => rfl⟩
     · rw [h4, eb] at hi ⊢
       rw [eb, Array.back?_eq_getElem?] at h1
-      refine ⟨b, _, ?_⟩
+      refine ⟨b, vc.blocks[b], ?_⟩
       simp only [Array.getElem?_push, Array.size_pop] at hi ⊢
       split at hi
       · rename_i hk
         cases hi
         refine ⟨t, Array.getElem?_eq_getElem hb, ?_, .inr ⟨ls, h3⟩, fun j hj => ?_⟩
         · rw [hk]; exact h1
-        · rw [if_neg (by omega), Array.getElem?_pop, if_pos (by omega)]
+        · rw [ite_eq_right (by omega), Array.getElem?_pop, ite_eq_left (by omega)]
       · rw [Array.getElem?_pop] at hi
         split at hi
         · refine ⟨i, Array.getElem?_eq_getElem hb, hi, .inl rfl, fun j hj => ?_⟩
-          rw [if_neg (by omega), Array.getElem?_pop, if_pos (by omega)]
+          rw [ite_eq_right (by omega), Array.getElem?_pop, ite_eq_left (by omega)]
         · cases hi
   · right
     have he : (rpo ss2)[q] - B.size < E.size := by simp at hj; omega
@@ -157,10 +157,10 @@ theorem setTargets_got {r : Reg} {n : String} {ls : List Label} {i : MInst}
 theorem prep_site {vc vcp : VCode} (hp : prepare vc = .ok vcp) (hd : Prep.PrepDomain vc)
     {q : Nat} {vb : VBlock} {k : Nat} {i : MInst} (hvb : vcp.blocks[q]? = some vb)
     (hi : vb.insts[k]? = some i) :
-    (∀ c, i = .call c → ∃ b vb0, vc.blocks[b]? = some vb0 ∧ vb0.insts[k]? = some (.call c) ∧
-      ∀ j < k, vb.insts[j]? = vb0.insts[j]?) ∧
-    (∀ c ti, i = .tryCall c ti → ∃ b vb0 ti0, vc.blocks[b]? = some vb0 ∧
-      vb0.insts[k]? = some (.tryCall c ti0) ∧ ti0.rets = ti.rets ∧
+    (∀ c, i = .call c → ∃ (b : Nat) (vb0 : VBlock), vc.blocks[b]? = some vb0 ∧
+      vb0.insts[k]? = some (MInst.call c) ∧ ∀ j < k, vb.insts[j]? = vb0.insts[j]?) ∧
+    (∀ c ti, i = .tryCall c ti → ∃ (b : Nat) (vb0 : VBlock) (ti0 : TryInfo),
+      vc.blocks[b]? = some vb0 ∧ vb0.insts[k]? = some (MInst.tryCall c ti0) ∧ ti0.rets = ti.rets ∧
       ∀ j < k, vb.insts[j]? = vb0.insts[j]?) := by
   rcases prep_src hp hd hvb hi with ⟨b, vb0, i0, hb, hi0, hs, hpre⟩ | ⟨l, rfl⟩
   · refine ⟨fun c hc => ?_, fun c ti hc => ?_⟩
@@ -173,7 +173,7 @@ theorem prep_site {vc vcp : VCode} (hp : prepare vc = .ok vcp) (hd : Prep.PrepDo
       · exact ⟨b, vb0, ti, hb, hi0, rfl, hpre⟩
       · obtain ⟨ti0, rfl, hr⟩ := setTargets_eq_tryCall hls
         exact ⟨b, vb0, ti0, hb, hi0, hr, hpre⟩
-  · exact ⟨fun c h => by cases h, fun c ti h => by cases h⟩
+  · refine ⟨fun c h => ?_, fun c ti h => ?_⟩ <;> cases h
 
 /-! ## `prepare` keeps the GOT symbols -/
 
@@ -195,10 +195,11 @@ theorem findSome_eq {α β : Type} {F : α → Option β} {n : β} :
 theorem gotBefore_congr {t : Nat} {n : String} {vb vb0 : VBlock} {k : Nat}
     (h : ∀ j < k, vb.insts[j]? = vb0.insts[j]?) : gotBefore t n vb k = gotBefore t n vb0 k := by
   unfold gotBefore
-  apply List.any_congr ?_
-  · rfl
-  · intro j hj
-    rw [h j (List.mem_range.mp hj)]
+  apply Bool.eq_iff_iff.2
+  simp only [List.any_eq_true, List.mem_range, decide_eq_true_eq]
+  constructor
+  · rintro ⟨j, hj, h'⟩; exact ⟨j, hj, by rw [← h j hj]; exact h'⟩
+  · rintro ⟨j, hj, h'⟩; exact ⟨j, hj, by rw [h j hj]; exact h'⟩
 
 theorem operands_got (t : Nat) (n : String) :
     ∃ ops, (MInst.loadExtNameGot (.vreg t .int) n).operands = .ok ops ∧
@@ -225,8 +226,8 @@ theorem gotOf_prep {vc vcp : VCode} (hp : prepare vc = .ok vcp) (hd : Prep.PrepD
       (List.range vb.insts.size).all (gotSiteB t n vb) = true := fun b vb hvb => by
     simpa only [Bool.and_eq_true] using (array_all_iff _ _).1 hb b vb hvb
   -- every instruction of `vcp` defining `t` is the GOT load
-  have hdef : ∀ q vb k i, vcp.blocks[q]? = some vb → vb.insts[k]? = some i →
-      gotDefB t n i = true := by
+  have hdef : ∀ (q : Nat) (vb : VBlock) (k : Nat) (i : MInst), vcp.blocks[q]? = some vb →
+      vb.insts[k]? = some i → gotDefB t n i = true := by
     intro q vb k i hq hi
     rcases prep_src hp hd hq hi with ⟨b, vb0, i0, hb0, hi0, hs, -⟩ | ⟨l, rfl⟩
     · have h0 := (array_all_iff _ _).1 (hB b vb0 hb0).1 k i0 hi0
@@ -243,9 +244,11 @@ theorem gotOf_prep {vc vcp : VCode} (hp : prepare vc = .ok vcp) (hd : Prep.PrepD
           · simp [h0]
           · subst h0; exact (setTargets_got hls).elim
         · intro _; rfl
-    · rfl
+    · simp [gotDefB, MInst.operands, MInst.visitOperands, StateT.run, bind, pure, StateT.pure,
+        Except.pure, Except.bind]
   -- every call through `t` in `vcp` follows the GOT load in its block
-  have hsite : ∀ q vb, vcp.blocks[q]? = some vb → ∀ k, gotSiteB t n vb k = true := by
+  have hsite : ∀ (q : Nat) (vb : VBlock), vcp.blocks[q]? = some vb →
+      ∀ k, gotSiteB t n vb k = true := by
     intro q vb hq k
     unfold gotSiteB
     cases hi : vb.insts[k]? with
@@ -282,7 +285,8 @@ theorem gotOf_prep {vc vcp : VCode} (hp : prepare vc = .ok vcp) (hd : Prep.PrepD
   obtain ⟨j, -, hj⟩ := hbef
   have hsym : gotSym vcp t = some n := by
     unfold gotSym
-    refine findSome_eq (fun x hx m hm => ?_) ⟨_, ?_, ?_⟩
+    refine findSome_eq (fun x hx m hm => ?_)
+      ⟨MInst.loadExtNameGot (.vreg t .int) n, ?_, ?_⟩
     · simp only [List.mem_flatMap, Array.mem_toList_iff] at hx
       obtain ⟨vb', hvb', hx⟩ := hx
       obtain ⟨q', hq'⟩ := Array.getElem?_of_mem hvb'
@@ -300,12 +304,13 @@ theorem gotOf_prep {vc vcp : VCode} (hp : prepare vc = .ok vcp) (hd : Prep.PrepD
           · obtain ⟨o, hom, hod, hov⟩ := ho
             obtain ⟨i', hi', rfl⟩ := List.getElem_of_mem hom
             have := Array.any_eq_false.mp hd i' (by simpa using hi')
-            simp [hod, hov] at this
+            simp only [Array.getElem_toList] at hod hov
+            exact absurd this (by simp [hod, hov])
           · cases hd; rfl
         · cases hm
       · cases hm
     · simp only [List.mem_flatMap, Array.mem_toList_iff]
-      exact ⟨vb, Array.mem_of_getElem? hvb, Array.mem_toList_iff.mpr (Array.mem_of_getElem? hj)⟩
+      exact ⟨vb, Array.mem_of_getElem? hvb, Array.mem_of_getElem? hj⟩
     · simp
   unfold gotOf
   rw [hsym]
@@ -419,8 +424,8 @@ theorem siteOk_of {P : Clif.Program} {S : String → Option Nat} {g : Clif.Funct
       | some h =>
         obtain ⟨-, hhn⟩ := Clif.Program.func?_some hf
         simp only [dirSiteB, hf, decide_eq_true_eq] at hdir
-        simp only [hdecl, decU_retPairs, decD_callDefs, hL, hdir, take_xs hD, hhn, bne_iff_ne,
-          ne_eq, hne, not_false_eq_true, decide_true, Bool.and_self]
+        simp only [hdecl, decU_retPairs, decD_callDefs, hL, hdir, take_xs hD, hhn]
+        simpa using hne
     · unfold siteOk blrOk
       simp only [decU_retPairs, decD_callDefs, decide_true, Bool.true_and, List.all_eq_true,
         Bool.or_eq_true, Bool.not_eq_true', hgot, bne_iff_ne, ne_eq, decide_eq_true_eq,
@@ -463,13 +468,13 @@ theorem tryB_of {P : Clif.Program} {S : String → Option Nat} {g : Clif.Functio
       | none => rfl
       | some h =>
         simp only [decide_eq_true_eq]
-        rw [hr, hdecl e hmem h hf]
+        rw [hr, hdecl e hmem h hf]; exact Nat.le_refl _
     · simp only [tryB, hdest, List.all_eq_true, Bool.or_eq_true, Bool.not_eq_true', hgot,
         bne_iff_ne, ne_eq, decide_eq_true_eq]
       intro h hh
       by_cases hn : h.name = e.name
       · have hf : P.func? e.name = some h := hn ▸ func?_of_mem hnd hh
-        exact .inr (by rw [hr, hdecl e hmem h hf])
+        exact .inr (by rw [hr, hdecl e hmem h hf]; exact Nat.le_refl _)
       · exact .inl (.inl (.inr hn))
   · have hr := hr rfl
     have hind := indSiteB_of hc his

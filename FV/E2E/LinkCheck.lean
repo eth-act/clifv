@@ -1203,34 +1203,41 @@ theorem closedBase_tlsNI {I : LinkInput} {R : Res} {F' : BitVec 64 → Prop}
   apply Arm.PState.ext <;> simp only [Arm.read_pstate] <;> assumption
 
 /-- **Non-vacuity of `BaseOk`**: the closed base environment satisfies every base premise of
-every input without `tls_value` (decidable: `hasTls`). With it the crate's theorem covers the
-runs that call nothing outside the program (a call outside it is stuck in CLIF). -/
-theorem baseOk_closed {I : LinkInput} {F : BitVec 64 → Prop}
-    (htls : ∀ g ∈ (progOf I.results).funcs, hasTls g = false) :
-    BaseOk (LinkSys.ofInput I closedBase F) where
+the linked system of any results `R` without `tls_value` (decidable: `hasTls`). With it the
+crate's theorem covers the runs that call nothing outside the program (a call outside it is
+stuck in CLIF). -/
+theorem baseOk_closedR {I : LinkInput} {R : Res} {F : BitVec 64 → Prop}
+    (htls : ∀ g ∈ (progOf R).funcs, hasTls g = false) :
+    BaseOk (ofRes I R closedBase F) where
   baseNoAlloc := fun _ n gsem hn => by
-    simp [LinkSys.ofInput, ofRes, closedBase, Clif.Env.empty] at hn
-  keepSyms := fun _ n f h => by simp [LinkSys.ofInput, ofRes, closedBase, Clif.Env.empty] at h
-  aliasSyms := fun _ _ _ _ _ _ _ _ _ _ => by simp [LinkSys.ofInput, ofRes, closedBase, Clif.Env.empty]
+    simp [ofRes, closedBase, Clif.Env.empty] at hn
+  keepSyms := fun _ n f h => by simp [ofRes, closedBase, Clif.Env.empty] at h
+  aliasSyms := fun _ _ _ _ _ _ _ _ _ _ => by simp [ofRes, closedBase, Clif.Env.empty]
   baseOs := fun g hg info hs hb F' K G s0 Pc ctx s _ _ _ c wh ops regs i' w outs w' _ _ _ _ _ _
-      _ hsem => by simp [csem, LinkSys.ofInput, ofRes, closedBase] at hsem
-  basePc := fun d s _ _ _ => by simp [LinkSys.ofInput, ofRes, closedBase, Arm.r_of_w_same]
-  baseExt := fun d uses w outs w' _ hx => by simp [LinkSys.ofInput, ofRes, closedBase] at hx
+      _ hsem => by simp [csem, ofRes, closedBase] at hsem
+  basePc := fun d s _ _ _ => by simp [ofRes, closedBase, Arm.r_of_w_same]
+  baseExt := fun d uses w outs w' _ hx => by simp [ofRes, closedBase] at hx
   baseX := fun g hg F' slotOff out c => by
     intro ext _ gs sl cm w d uses args vals rvals cm' he
-    simp [LinkSys.ofInput, ofRes, closedBase, Clif.Env.empty] at he
+    simp [ofRes, closedBase, Clif.Env.empty] at he
   baseXI := fun g hg F' slotOff out c sig _ n gsem sl cm w u args vals rvals cm' hgs => by
-    simp [LinkSys.ofInput, ofRes, closedBase, Clif.Env.empty] at hgs
+    simp [ofRes, closedBase, Clif.Env.empty] at hgs
   baseTls := fun g hg ht => absurd ht (by simp [htls g hg])
   baseTry := fun g hg F' ctx info ti _ c wh ops regs i' s w outs w' s' _ _ _ _ _ _ hsem => by
-    simp [csem, LinkSys.ofInput, ofRes, closedBase] at hsem
+    simp [csem, ofRes, closedBase] at hsem
   baseNI := fun _ g hg F' c n sig vals cm args d uses Z w w' o x o' x' _ _ _ _ _ _ _ _ _ hx _ => by
-    simp [LinkSys.ofInput, ofRes, closedBase] at hx
+    simp [ofRes, closedBase] at hx
   baseTlsNI := fun _ F' => closedBase_tlsNI F'
   baseKeepsPlace := fun _ n gsem hn => by
-    simp [LinkSys.ofInput, ofRes, closedBase, Clif.Env.empty] at hn
+    simp [ofRes, closedBase, Clif.Env.empty] at hn
   baseKeepsAllocs := fun _ n gsem hn => by
-    simp [LinkSys.ofInput, ofRes, closedBase, Clif.Env.empty] at hn
+    simp [ofRes, closedBase, Clif.Env.empty] at hn
+
+/-- **Non-vacuity of `BaseOk`** for the linked system of an input (`baseOk_closedR`). -/
+theorem baseOk_closed {I : LinkInput} {F : BitVec 64 → Prop}
+    (htls : ∀ g ∈ (progOf I.results).funcs, hasTls g = false) :
+    BaseOk (LinkSys.ofInput I closedBase F) :=
+  baseOk_closedR htls
 
 /-! ## The crate's theorem -/
 
