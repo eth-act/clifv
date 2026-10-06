@@ -13,8 +13,7 @@ the instruction's `toArmInst`. So the reads of the decoded word avoid `RelocAt I
 `exec_sim` gives `StepOkR.insn` (`insn_of_good`).
 
 `binary_correct_exec_of_got`: `binary_correct_exec_of_reads` with only the GOT fact (D4,
-`RunGotN`) and D2 at the loads of move code (`RunSlotReadsN`: spill reloads `[sp, #off]`,
-`[x16]`, whose frame addresses the move proofs do not yet export) as hypotheses.
+`RunGotN`) as hypothesis.
 -/
 
 namespace E2E.ExecBytes
@@ -98,26 +97,11 @@ theorem word_static (hI : okB I = true) (hc : codeMapB I (tabOf I.results) = tru
     simp only [art] at hl' he' hfit hfit' ho hd hlw
     omega
 
-/-- **D2 at the loads of move code** (spill reloads `[sp, #off]`, `[x16]`, `Insn.slotLoad`): the
-reads of the decoded word at such a pc avoid the relocated bytes. The one D2 fact not proven from
-the register-level proof. -/
-def SlotReads (I : LinkInput) (file : ByteArray) (g : Clif.Function) (t : Arm.ArmState) : Prop :=
-  ∀ i, insnAt (art I g).fa (art I g).base (Arm.r .PC t) = some i → i.slotLoad = true →
-    ∀ a, (fileWord file (Arm.r .PC t)).bind Arm.decode_raw_inst = some a →
-    ∀ p ∈ MemReads a t, ∀ k < p.2, ¬ RelocAt I (p.1 + BitVec.ofNat 64 k)
-
-/-- `SlotReads` at the states of `ReachN` whose step ends without error. -/
-def RunSlotReadsN (I : LinkInput) (B : BaseEnv) (file : ByteArray) (M : Nat) (f : Clif.Function)
-    (c : Arm.ArmState) : Prop :=
-  ∀ M' g t, ReachN I B M f c M' g t → Arm.r .ERR ((sys I B).mach M' g t) = .None →
-    SlotReads I file g t
-
 /-- **`StepOkR.insn` (D2) from the per-state facts**: the reads of the decoded word at the pc
 avoid the relocated bytes. -/
 theorem insn_of_good (hI : okB I = true) (hc : codeMapB I (tabOf I.results) = true)
     (hF : ∀ g ∈ (prog I).funcs, FnOk I file g) {M : Nat} {g : Clif.Function}
-    (hg : g ∈ (prog I).funcs) {c t : Arm.ArmState} (hgood : (sys I B).GoodAt M g c t)
-    (hsl : SlotReads I file g t) :
+    (hg : g ∈ (prog I).funcs) {c t : Arm.ArmState} (hgood : (sys I B).GoodAt M g c t) :
     ∀ i, insnAt (art I g).fa (art I g).base (Arm.r .PC t) = some i → i.hooked = false →
       ∀ a, (fileWord file (Arm.r .PC t)).bind Arm.decode_raw_inst = some a →
       ∀ e, Sim I t e → Sim I (Arm.exec_inst a t) (Arm.exec_inst a e) := by
@@ -127,13 +111,7 @@ theorem insn_of_good (hI : okB I = true) (hc : codeMapB I (tabOf I.results) = tr
   obtain ⟨lm, hm⟩ := FnAsm.layout_labelOffsets hFg.layout
   intro i hi hh a ha e hsim
   refine exec_sim a hsim fun p hp k hk hR => ?_
-  rcases hG.reads with hrdA | ⟨j', y, ty, hj', hpcy, hsly⟩
-  rotate_left
-  · have hy : insnAt (art I g).fa (art I g).base (Arm.r .PC t) = some y := by
-      rw [hpcy]; exact insnAt_of_line hFg hj'
-    rw [hi] at hy
-    cases hy
-    exact hsl i hi hsly a ha p hp k hk hR
+  have hrdA := hG.reads
   obtain ⟨j, tt, hj, hpc⟩ := insnAt_spec hi
   -- the line at the pc is outside the TLS tail, so it carries no relocation
   obtain ⟨x, ⟨jx, tx, hjx, hpcx⟩, htl⟩ := hG.line
@@ -178,17 +156,15 @@ theorem runReadsN_of_good (hI : okB I = true) (hc : codeMapB I (tabOf I.results)
     (hF : ∀ g ∈ (prog I).funcs, FnOk I file g) {M : Nat} {f : Clif.Function}
     (hf : f ∈ (prog I).funcs) {c : Arm.ArmState}
     (hra : ∀ k < (art I f).fb.words.size, xreg 30 c ≠ (art I f).base + BitVec.ofNat 64 (4 * k))
-    (hgood : (sys I B).RunGoodL M f c) (hslot : RunSlotReadsN I B file M f c)
-    (hgot : RunGotN I B file M f c) :
+    (hgood : (sys I B).RunGoodL M f c) (hgot : RunGotN I B file M f c) :
     RunReadsN I B file M f c := fun M' g t hR he => by
   obtain ⟨c', hRL, -⟩ := reachL_of_reachN hI hc hF hR hf hgood (raNotSecond_top (hF f hf) hra)
-  exact ⟨insn_of_good hI hc hF (reachN_mem hR hf) (hgood _ _ _ _ hRL he) (hslot M' g t hR he),
-    hgot M' g t hR he⟩
+  exact ⟨insn_of_good hI hc hF (reachN_mem hR hf) (hgood _ _ _ _ hRL he), hgot M' g t hR he⟩
 
 /-- **`binary_correct_exec_static` with the per-state facts of the register-level proof and only
 the GOT hypothesis**: under the premises of `binary_correct_of_checks_acyclic`, the outside-code
-contract `HooksSim`, the code map check `codeMapB`, the GOT fact `RunGotN` (D4) and D2 at the
-loads of move code (`RunSlotReadsN`) of the model's run, the executable machine run from `r` refines the whole-program CLIF run. -/
+contract `HooksSim`, the code map check `codeMapB` and the GOT fact `RunGotN` (D4) of the model's
+run, the executable machine run from `r` refines the whole-program CLIF run. -/
 theorem binary_correct_exec_of_got {I : LinkInput} {D : List Clif.DataObject}
     {file : ByteArray} (hI : okB I = true) (hcm : codeMapB I (tabOf I.results) = true)
     (hbin : BinCheck.BinOk I D file) (B : BaseEnv) (hB : BaseOk (sys I B)) (hH : HooksSim I B)
@@ -198,7 +174,7 @@ theorem binary_correct_exec_of_got {I : LinkInput} {D : List Clif.DataObject}
     (ho : OutsideCall I (BinCheck.roByte I D) f (StackBound.stackFn I f) r args cs.mem)
     (hr : ClifRun I B f r args cs)
     (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) ((prog I).only f) cs)
-    (hslot : RunSlotReadsN I B file M f (modelOf I f r)) (hgot : RunGotN I B file M f (modelOf I f r)) :
+    (hgot : RunGotN I B file M f (modelOf I f r)) :
     ExecRefines (art I f).fb (art I f).base (xreg 30 r) (step I B file) r (RelocAt I)
       (Clif.runLoop B.env (prog I) (M + 1) cs) := by
   have hn := (StackBound.goodN_iff hI).2 ⟨f, hf, hc⟩
@@ -219,7 +195,7 @@ theorem binary_correct_exec_of_got {I : LinkInput} {D : List Clif.DataObject}
       simp only [xreg, r_modelOf]; exact hent.raOutside
     exact binary_correct_exec_staticN hI hcm hbin B hB hH hf hc M hX ho hr htr
       (runOkN_of_good hI hcm hF (fun g hg => destsInt_of_ok hL' hg) hfm hra (hG hout)
-        (runReadsN_of_good hI hcm hF hfm hra (hG hout) hslot hgot))
+        (runReadsN_of_good hI hcm hF hfm hra (hG hout) hgot))
   · cases h : Clif.runLoop B.env (prog I) (M + 1) cs with
     | returned vals cm => exact absurd (.inl ⟨vals, cm, h⟩) hout
     | trapped c => exact absurd (.inr ⟨c, h⟩) hout

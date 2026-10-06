@@ -342,7 +342,7 @@ theorem iterN_steps {R : RL} (hR : R.Wf) {ls T : List Line} {j : Nat} {s s' : Ar
       hprog (by rw [hpc]; rfl) herr (stepsOk_interOk h herr) hrun, ?_,
     R.good_execLines hR hat hhook hprog hpc herr (stepsOk_interOk h herr) hrun,
     fun htail h0 hrd => R.goodX_execLinesG hR hat hhook htail hprog hpc herr h0
-      (stepsOk_interOk h herr) hrun (.inl hrd)⟩
+      (stepsOk_interOk h herr) hrun hrd⟩
   rw [execLines_pc hrun, hpc]
   simp only [RL.pcOf, RL.L]
   rw [lineOffset_drop_ins (by simpa [RL.L] using hdrop) hins', BitVec.add_assoc]

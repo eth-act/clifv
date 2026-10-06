@@ -159,7 +159,7 @@ theorem run_ins {R : RL} (hR : R.Wf) {j : Nat} {ls T : List Line} {s s' : Arm.Ar
   refine ⟨iterN_execLines hR.layout hR.lm hR.fit ls j s s' hat hhook
       hprog (by rw [hpc]; rfl) herr hint hrun, ?_,
     R.good_execLines hR hat hhook hprog hpc herr hint hrun,
-    fun htail h0 hrd => R.goodX_execLinesG hR hat hhook htail hprog hpc herr h0 hint hrun (.inl hrd)⟩
+    fun htail h0 hrd => R.goodX_execLinesG hR hat hhook htail hprog hpc herr h0 hint hrun hrd⟩
   rw [execLines_pc hrun, hpc]
   simp only [RL.pcOf, RL.L]
   rw [lineOffset_drop_ins (by simpa [RL.L] using hd) hins', BitVec.add_assoc]

@@ -4,11 +4,11 @@ import FV.E2E.ExecReads
 /-!
 # The memory reads of move code (L3 (c), D2)
 
-`moveInsts_reads`: the lines of a checked move (`RAFrame.moveInsts`), run from a state at the
-frame's `sp`, read only the bytes of the slots of its locations (and of the float-move scratch
-slot): a slot load `[sp, #off]` or, beyond 32 KiB, `[x16]` after `x16 = sp + off`
-(`spAddrX16`). With the frame laid out in the slot area (`FrameOk`), these bytes lie in the
-activation's frame.
+`moveInsts_reads`: the code of a checked move (`RAFrame.moveInsts`), run from `s`, reads only
+bytes of the frame's slot area at `spOf s` (`SlotArea`): its slot loads read `[sp, #off]` or,
+beyond 32 KiB, `[x16]` after `x16 = sp + off` (`spAddrX16`), at a live slot or the float-move
+scratch slot (`slotLoadAt_reads`); its slot stores read nothing (`slotStoreAt_noLoads`).
+`linesReads_of_insts` turns this into the reads of the move's lines.
 -/
 
 namespace Backend.Proof
@@ -166,53 +166,157 @@ theorem slotLoadAt_reads (ctx : FnCtx) (cls : RegClass) (r : Reg) {off : Nat}
           refine ⟨k, hk, ?_⟩
           simp [AMode.addr, regX, pcx, rnum, Arm.r_of_w_different, Arm.r_of_w_same]
 
-/-- The loads of move code (spill reloads): `[sp, #off]` (`ldur`/`ldr`) and `[x16]`. -/
-def _root_.Backend.Insn.slotLoad : Insn → Bool
-  | .load _ _ (.unscaled .sp _) | .load _ _ (.unsignedOffset .sp _)
-  | .load _ _ (.unsignedOffset (.x 16) 0) => true
-  | _ => false
+/-- The 128-bit slot store at `[sp, #off]` is at an immediate offset. -/
+theorem memFinalize_sp16 (ctx : FnCtx) {off : Nat} (h16 : off % 16 = 0) (hoff : off < 32768)
+    {pre : List Line} {m' : AMode}
+    (hf : memFinalize ctx (.spOffset off) StoreOp.fpuStore128.bytes = .ok (pre, m')) :
+    pre = [] ∧ ((∃ k, m' = .unscaled .sp k) ∨ ∃ k, m' = .unsignedOffset .sp k) := by
+  simp only [memFinalize, pure, Except.pure, Except.ok.injEq] at hf
+  by_cases h9 : (off : Int) ≤ 255
+  · rw [show simm9? (off : Int) = some off by simp [simm9?]; omega] at hf
+    simp at hf
+    exact ⟨hf.1, .inl ⟨_, hf.2.symm⟩⟩
+  · rw [show simm9? (off : Int) = none by simp [simm9?]; omega,
+      show uimm12Scaled? (off : Int) StoreOp.fpuStore128.bytes = some off by
+        simp [uimm12Scaled?, StoreOp.bytes]; omega] at hf
+    simp at hf
+    exact ⟨hf.1, .inr ⟨_, hf.2.symm⟩⟩
 
-/-- A line of one-line instructions' code is the line of one of them. -/
-theorem moveLines_mem {ctx : FnCtx} {af : AFunc} {x : Insn} {t : Option Clif.TrapCode} :
-    ∀ {is : List MInst} {ps ps' : PState} {ls : List Line}, (∀ i ∈ is, OneLine ctx i) →
-      codeLinesE ctx af (is.map .inst) ps = .ok (ls, ps') → Line.ins x t ∈ ls →
-      ∃ i ∈ is, ∃ ps0, i.lines ctx ps0 = .ok ([.ins x t], ps0)
-  | [], _, _, _, _, hc, hx => by
-    simp only [List.map_nil, codeLinesE, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hc
-    obtain ⟨rfl, -⟩ := hc
-    simp at hx
-  | i :: is, ps, ps', ls, hone, hc, hx => by
-    obtain ⟨y, u, hl, -, -⟩ := hone i (by simp)
-    simp only [List.map_cons, codeLinesE, ainstLines, hl, bind, Except.bind] at hc
-    split at hc
-    · cases hc
-    rename_i r hr
-    obtain ⟨ls2, ps2⟩ := r
-    simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq, List.singleton_append] at hc
-    obtain ⟨rfl, -⟩ := hc
-    rcases List.mem_cons.1 hx with h | h
-    · simp only [Line.ins.injEq] at h
-      obtain ⟨rfl, rfl⟩ := h
-      exact ⟨i, by simp, ps, hl ps⟩
-    · obtain ⟨j, hj, ps0, h0⟩ := moveLines_mem (fun j hj => hone j (by simp [hj])) hr h
-      exact ⟨j, by simp [hj], ps0, h0⟩
+/-- **The lines of a slot store hold no load** (the 128-bit store, which the model's
+register-offset class reads, is at an immediate offset or at `[x16]`). -/
+theorem slotStoreAt_noLoads (ctx : FnCtx) {cls : RegClass} {r : Reg} {off : Nat}
+    (h16 : cls = .float → off % 16 = 0) {i : MInst} (hi : i ∈ slotStoreAt cls r off)
+    {ps ps' : PState} {ls : List Line} (hl : i.lines ctx ps = .ok (ls, ps')) :
+    ∀ x t, Line.ins x t ∈ ls → x.loads = false := by
+  unfold slotStoreAt at hi
+  split at hi
+  · rename_i hlt
+    simp only [List.mem_singleton] at hi
+    subst hi
+    cases cls
+    · exact lines_noLoads hl rfl
+    · simp only [slotStore, MInst.lines, bind, Except.bind] at hl
+      split at hl
+      · cases hl
+      rename_i v hf
+      obtain ⟨pre, m'⟩ := v
+      obtain ⟨rfl, hm⟩ := memFinalize_sp16 ctx (h16 rfl) hlt hf
+      simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq, List.nil_append] at hl
+      obtain ⟨rfl, -⟩ := hl
+      intro x t hx
+      simp only [List.mem_singleton, Line.ins.injEq] at hx
+      obtain ⟨rfl, -⟩ := hx
+      rcases hm with ⟨k, rfl⟩ | ⟨k, rfl⟩ <;> rfl
+  · rcases List.mem_append.1 hi with hi | hi
+    · refine lines_noLoads hl ?_
+      simp only [spAddrX16, List.mem_cons, List.mem_append, List.mem_map, List.not_mem_nil,
+        or_false] at hi
+      rcases hi with (rfl | ⟨p, -, rfl⟩) | rfl <;> rfl
+    · simp only [List.mem_singleton] at hi
+      subst hi
+      have hfin : ∀ b, FinalAM b (.unsignedOffset (.x 16) 0) := fun b =>
+        ⟨by simp [BaseOk], by simp, by simp⟩
+      cases cls <;>
+      · simp only [MInst.lines, memFinalize_final ctx _ (hfin _), bind, Except.bind, pure,
+          Except.pure, Except.ok.injEq, Prod.mk.injEq, List.nil_append] at hl
+        obtain ⟨rfl, -⟩ := hl
+        intro x t hx
+        simp only [List.mem_singleton, Line.ins.injEq] at hx
+        obtain ⟨rfl, -⟩ := hx
+        rfl
 
-/-- **The loads of move code** are slot loads. -/
-theorem moveInst_slotLoad (ctx : FnCtx) {i : MInst} (h : MoveInst i) {ps : PState} {x : Insn}
-    {t : Option Clif.TrapCode} (hl : i.lines ctx ps = .ok ([.ins x t], ps)) (hx : x.loads = true) :
-    x.slotLoad = true := by
-  rcases h with ⟨a, b, rfl⟩ | ⟨cls, r, off, h8, h16, hoff, rfl | rfl⟩ | ⟨c, rfl⟩ | ⟨c, rfl⟩ | rfl |
-    ⟨op, r, rfl⟩ | ⟨op, r, rfl⟩
-  all_goals (try (cases cls))
-  all_goals simp [MInst.lines, slotLoad, slotStore, memFinalize, pure, Except.pure,
-    bind, Except.bind] at hl
-  all_goals (repeat' split at hl)
-  all_goals first
-    | (obtain ⟨rfl, -⟩ := hl; simp_all [Insn.loads, Insn.slotLoad]; done)
-    | (simp_all [Insn.loads, Insn.slotLoad]; done)
-    | (have hu := ‹uimm12Scaled? _ _ = none›
-       simp [uimm12Scaled?, StoreOp.bytes, LoadOp.bytes] at hu
-       (try have := h16 rfl)
-       omega)
+theorem instsReads_slotStoreAt (ctx : FnCtx) {cls : RegClass} {r : Reg} {off : Nat}
+    (h16 : cls = .float → off % 16 = 0) (s : Arm.ArmState) (P : BitVec 64 → Prop) :
+    InstsReads ctx (slotStoreAt cls r off) s P :=
+  fun _ _ _ hk _ _ _ _ hl _ =>
+    linesReads_noLoads (slotStoreAt_noLoads ctx h16 (List.mem_of_getElem? hk) hl)
+
+/-- The slot area of a frame of `size` bytes at `sp`. -/
+def SlotArea (size : Nat) (sp a : BitVec 64) : Prop :=
+  ∃ o < size, a = sp + BitVec.ofNat 64 o
+
+theorem slotLoadAt_area (ctx : FnCtx) (cls : RegClass) (r : Reg) {off size : Nat}
+    (h16 : cls = .float → off % 16 = 0) (hle : off + slotLoadBytes cls ≤ size) (s : Arm.ArmState) :
+    InstsReads ctx (slotLoadAt cls r off) s (SlotArea size (spOf s)) :=
+  (slotLoadAt_reads ctx cls r h16 s).mono fun _ ⟨k, hk, e⟩ =>
+    ⟨off + k, by omega, by rw [e, BitVec.add_assoc, ← BitVec.ofNat_add]⟩
+
+/-- **The reads of move code** (`RAFrame.moveInsts` of a checked move between live locations),
+run from `s`: bytes of the frame's slot area at `spOf s`. -/
+theorem moveInsts_reads {vc : VCode} {rf : RFunc} (ctx : FnCtx) {c : CheckCtx} {wh : String}
+    {src dst : Loc} (hchk : c.checkMove wh src dst = .ok ()) (hLs : Live rf src)
+    (hLd : Live rf dst) (hT : ∀ a b, src = .reg (.v a) → dst = .reg (.v b) → rf.floatMove = true)
+    {code : List AInst} (hmi : (RAFrame.compute vc rf).moveInsts src dst = .ok code)
+    {s : Arm.ArmState} (halign : Arm.CheckSPAlignment s) :
+    ∃ is, code = is.map AInst.inst ∧
+      InstsReads ctx is s (SlotArea (RAFrame.compute vc rf).size (spOf s)) := by
+  obtain ⟨cls, hcls, hs, hd, hreg⟩ := checkMove_facts hchk
+  have hdcls := locOk_cls hd
+  cases src with
+  | reg a =>
+    obtain ⟨hac, haa⟩ := locOk_reg hs
+    cases dst with
+    | reg b =>
+      obtain ⟨hbc, hba⟩ := locOk_reg hd
+      cases cls with
+      | int =>
+        obtain ⟨a', rfl⟩ := reg_int hac
+        obtain ⟨b', rfl⟩ := reg_int hbc
+        simp only [RAFrame.moveInsts, hac, pure, Except.pure, Except.ok.injEq] at hmi
+        subst hmi
+        exact ⟨[.mov .size64 (.x b') (.x a')], rfl, instsReads_noLoads fun i hi => by
+          simp only [List.mem_singleton] at hi; subst hi; rfl⟩
+      | float =>
+        obtain ⟨a', rfl⟩ := reg_float hac
+        obtain ⟨b', rfl⟩ := reg_float hbc
+        simp only [RAFrame.moveInsts, hac, pure, Except.pure, Except.ok.injEq] at hmi
+        subst hmi
+        have hfm := hT a' b' rfl rfl
+        rcases allocatable_cases haa with ⟨_, e, _⟩ | ⟨_, e, ha⟩ <;> cases e
+        have htmp := (compute_facts vc rf).2.2.2 hfm
+        have hal := (compute_align vc rf).2.2
+        obtain ⟨P, X, hx1⟩ := exec_slotStoreAt_float ctx ha hal halign
+        refine ⟨_, rfl, instsReads_append (instsReads_slotStoreAt ctx (fun _ => hal) s _) hx1 ?_⟩
+        have hsp : spOf (stSt (pcx s 16 P X) (RAFrame.compute vc rf).fmoveTmp 16
+            (Arm.r (.SFP (rnum a')) (pcx s 16 P X))) = spOf s := by
+          simp only [stSt, spOf_write, pcx_sp]
+        rw [← hsp]
+        exact slotLoadAt_area ctx .float _ (fun _ => hal) htmp _
+    | stack k cl | save r =>
+      all_goals
+        simp only [RAFrame.moveInsts, bind, Except.bind] at hmi
+        split at hmi
+        · cases hmi
+        rename_i o hoff
+        simp only [pure, Except.pure, Except.ok.injEq] at hmi
+        subst hmi
+        simp only [hac, Option.getD_some]
+        refine ⟨_, rfl, instsReads_slotStoreAt ctx (fun e => ?_) s _⟩
+        subst e
+        have hal := live_align hLd hoff
+        rw [slotBytes_float (fun _ h => by cases h) hdcls] at hal
+        exact hal.1
+  | stack k cl | save r =>
+    all_goals
+      cases dst with
+      | stack _ _ | save _ => simp [Loc.isReg] at hreg
+      | reg b =>
+        obtain ⟨hbc, hba⟩ := locOk_reg hd
+        simp only [RAFrame.moveInsts, bind, Except.bind] at hmi
+        split at hmi
+        · cases hmi
+        rename_i o hoff
+        simp only [pure, Except.pure, Except.ok.injEq] at hmi
+        subst hmi
+        refine ⟨_, rfl, ?_⟩
+        have hal := live_align hLs hoff
+        simp only [hbc, Option.getD_some]
+        cases cls with
+        | int =>
+          rw [slotBytes_int (fun _ h => by cases h) hcls] at hal
+          exact slotLoadAt_area ctx .int _ nofun hal.2 s
+        | float =>
+          rw [slotBytes_float (fun _ h => by cases h) hcls] at hal
+          exact slotLoadAt_area ctx .float _ (fun _ => hal.1) hal.2 s
 
 end Backend.Proof

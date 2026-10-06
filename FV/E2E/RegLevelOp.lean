@@ -167,7 +167,7 @@ theorem RL.goodX_line {R : RL} (hR : R.Wf) {u : Arm.ArmState} {j : Nat} {x : Ins
   ⟨hgood, herr, hprog, ⟨x, ⟨j, t, hj, hpc⟩, hx⟩, hnext,
     fun rd rn n h => hgot rd rn n ((RL.atLine_iff hR hj hpc).1 h).symm,
     fun r h => hblr r ((RL.atLine_iff hR hj hpc).1 h).symm,
-    fun x' h hc => hcall (((RL.atLine_iff hR hj hpc).1 h) ▸ hc), .inl hrd⟩
+    fun x' h hc => hcall (((RL.atLine_iff hR hj hpc).1 h) ▸ hc), hrd⟩
 
 /-- `RL.goodX_line`'s `call` obligation at a line that is no call. -/
 theorem not_call_insn {x : Insn} (hx : ∀ n, x ≠ .bl n) (hx' : ∀ r, x ≠ .blr r) {P : Prop} :
@@ -356,7 +356,7 @@ theorem runsAs_of_linesOk {R : RL} (hR : R.Wf) {i' : MInst} {ls1 : List Line}
   refine ⟨ls1.length, iterN_execLines hR.layout hR.lm hR.fit ls1 j s s' hat hhook
       hprog (by rw [hpc]; rfl) herr (hint _ _ _ herr hrun) hrun, ?_,
     R.goodX_execLines hR hat hhook (noTlsTail_of_unhooked (hl1 {}) hhook) hprog hpc herr hst.sp
-      (hint _ _ _ herr hrun) hrun (.inl (hrd _))⟩
+      (hint _ _ _ herr hrun) hrun (hrd _)⟩
   rw [execLines_pc hrun, hpc]
   simp only [RL.pcOf, RL.L]
   rw [lineOffset_drop_ins (by simpa [RL.L] using hdrop') hins', BitVec.add_assoc]

@@ -5,21 +5,20 @@ import FV.E2E.ExecGoodReads
 
 `binary_correct_exec_of_insn` (`ExecGot.lean`, D4 proven) assumes D2 (`RunInsnN`) at every state
 of the model's run whose step ends without error; `insn_of_good` (`ExecGoodReads.lean`) proves it
-from the register-level per-state facts (`GoodAt`, `RL.GoodX.reads`) except at the loads of move
-code (`SlotReads`). `binary_correct_exec_of_slots` composes the two: the only per-state hypothesis
-left is `RunSlotReadsN` (the spill reloads' reads avoid the relocated bytes).
+from the register-level per-state facts (`GoodAt`, `RL.GoodX.reads`).
+`binary_correct_exec_proven` composes the two: no per-state hypothesis is left — `RunOkD` of
+`binary_correct_exec_static` is proven from the M6 proof.
 -/
 
 namespace E2E.ExecBytes
 
 open Backend Backend.Proof E2E.LinkCheck E2E.Binary E2E.BinCheck
 
-/-- **The binary theorem about the executable's own words with only the spill reloads' reads as
-per-state hypothesis**: under the premises of `binary_correct_of_checks_acyclic`, the outside-code
+/-- **The binary theorem about the executable's own words** (L3; `docs/contracts/e2e.md`): under the premises of `binary_correct_of_checks_acyclic`, the outside-code
 contract `HooksSim`, the code map check `codeMapB`, the GOT check (`GotOk`, from `gotB`) and the
 outside caller keeping the GOT slots off its stack, arguments and live memory (`OutsideAvoids`),
-and `RunSlotReadsN`, the executable machine run from `r` refines the whole-program CLIF run. -/
-theorem binary_correct_exec_of_slots {I : LinkInput} {D : List Clif.DataObject}
+the executable machine run from `r` refines the whole-program CLIF run. -/
+theorem binary_correct_exec_proven {I : LinkInput} {D : List Clif.DataObject}
     {file : ByteArray} (hI : okB I = true) (hcm : codeMapB I (tabOf I.results) = true)
     (hbin : BinCheck.BinOk I D file) (hgot : GotOk I file) (B : BaseEnv) (hB : BaseOk (sys I B))
     (hH : HooksSim I B) {n : String} {f : Clif.Function} (hf : (prog I).func? n = some f)
@@ -28,8 +27,7 @@ theorem binary_correct_exec_of_slots {I : LinkInput} {D : List Clif.DataObject}
     (ho : OutsideCall I (BinCheck.roByte I D) f (StackBound.stackFn I f) r args cs.mem)
     (hav : OutsideAvoids (GotSlot I file) f (StackBound.stackFn I f) r args cs.mem)
     (hr : ClifRun I B f r args cs)
-    (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) ((prog I).only f) cs)
-    (hslot : RunSlotReadsN I B file M f (modelOf I f r)) :
+    (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) ((prog I).only f) cs) :
     ExecRefines (art I f).fb (art I f).base (xreg 30 r) (step I B file) r (RelocAt I)
       (Clif.runLoop B.env (prog I) (M + 1) cs) := by
   have hn := (StackBound.goodN_iff hI).2 ⟨f, hf, hc⟩
@@ -51,7 +49,7 @@ theorem binary_correct_exec_of_slots {I : LinkInput} {D : List Clif.DataObject}
     refine binary_correct_exec_of_insn hI hcm hbin hgot B hB hH hf hc M hX ho hav hr htr
       fun M' g t hR he => ?_
     obtain ⟨c', hRL, -⟩ := reachL_of_reachN hI hcm hF hR hfm (hG hout) (raNotSecond_top (hF f hfm) hra)
-    exact insn_of_good hI hcm hF (reachN_mem hR hfm) (hG hout _ _ _ _ hRL he) (hslot M' g t hR he)
+    exact insn_of_good hI hcm hF (reachN_mem hR hfm) (hG hout _ _ _ _ hRL he)
   · cases h : Clif.runLoop B.env (prog I) (M + 1) cs with
     | returned vals cm => exact absurd (.inl ⟨vals, cm, h⟩) hout
     | trapped c => exact absurd (.inr ⟨c, h⟩) hout

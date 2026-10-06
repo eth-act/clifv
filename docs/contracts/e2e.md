@@ -1811,13 +1811,14 @@ machine state `r` itself:
   file's word, the callee's link-map address is its load address), `plain` (an instruction word
   without relocation is no relocated byte of another function). The M6 proof establishes these
   of its runs (`RL.Good` for every intermediate state, `StRel.code`, `StRel.gkeep`, `StRel.prog`);
-  `binary_correct_exec_of_reads` (below) exports them, all but D2 `insn` and D4 `got` (TO-PROVE L3).
+  `binary_correct_exec_proven` (below) exports them: no per-state hypothesis remains (TO-PROVE L3).
 * Trusted-hook items of PLAN.md M9 "One gap remains": (1) the hooked GOT pair computes what the
-  real words compute — **proven** (`pair_step`; the slot's value at the `ldr` is `RunOk.got`, D4,
-  still a premise: `StepOkR.got`); (2) the register written one word later — **proven** (`Sim`
-  after the pair, the intermediate state is never compared); (3) no branch between a pair's words
-  — reduced to the per-state `RunOk.cf` (D1; entries and return addresses are proven), **proven**
-  in `binary_correct_exec_of_reads` (`GoodX.next`, `emitFunc_pairsClosed`); (4) the TLS local-exec
+  real words compute — **proven** (`pair_step`; the slot's value at the `ldr`, `RunOk.got`, D4,
+  is proven in `binary_correct_exec_proven` from the check `gotB` and the contract
+  `OutsideAvoids`); (2) the register written one word later — **proven** (`Sim` after the pair,
+  the intermediate state is never compared); (3) no branch between a pair's words — reduced to
+  the per-state `RunOk.cf` (D1; entries and return addresses are proven), **proven** in
+  `binary_correct_exec_of_reads` (`GoodX.next`, `emitFunc_pairsClosed`); (4) the TLS local-exec
   rewrite — still the hook (`step` runs the TLS site by `Hb.tls`; the Arm model has no
   `tpidr_el0`; `BinCheck` checks the `movz`/`movk`/`nop`/`nop` words).
 * Axioms (`#print axioms E2E.ExecBytes.binary_correct_exec`): `propext`, `Classical.choice`,
@@ -1862,19 +1863,23 @@ machine state `r` itself:
   SIMD&FP, `ldp`, the exclusive / acquire loads); it is empty for every other instruction, stores
   included. Proven over any byte set (`ExecFrame.exec_simR`) from the semantics alone, so it
   covers every `Insn` the backend emits and the relocated words. `insn_of_memReads` gives
-  `StepOkD.insn` from "the reads of the word at the pc avoid `RelocAt I`"; that fact is still a
-  premise (`StepOkR.insn` in `RunReadsN`, below; TO-PROVE L3 (c), remaining 1).
+  `StepOkD.insn` from "the reads of the word at the pc avoid `RelocAt I`"; the M6 export proves
+  that fact (`insn_of_good`, below).
 * **`RunOkD` from the M6 proof** (TO-PROVE L3 (c) stage 3b; 2026-10-06, `agent/exec-good`;
   `FV/E2E/RegLevelGoodX.lean`, `FV/E2E/PairLines.lean`, `FV/E2E/LinkWorldX.lean`,
   `FV/E2E/LinkGood.lean`, `FV/E2E/BinaryGood.lean`, `FV/E2E/ExecRunN.lean`,
-  `FV/E2E/ExecGoodRun.lean`):
+  `FV/E2E/ExecGoodRun.lean`, `FV/E2E/ExecReads.lean`, `FV/E2E/RegLevelOpReads.lean`,
+  `FV/E2E/MoveReads.lean`, `FV/E2E/ExecGoodReads.lean`, `FV/E2E/ExecGot.lean`,
+  `FV/E2E/ExecProven.lean`):
   - `RL.GoodX R u`, proven at every state of an activation's run before its return: `Good`, no
     error, the program, the pc at an instruction line not past a TLSDESC `ldr` (`Insn.tlsTail`),
     D1 `next` (`RL.NextOk`: the next state errs, or its pc is the entry's `x30`, or pc + 4, or a
     line not after an `adrp` pair's first word), `got` (at a GOT `ldr` the kept addresses `R.G`
     hold the entry's bytes), `blr` (not `xzr` when the VCode's register calls are through int
     vregs, `VCode.DestsInt`; the code words readable), `call` (`RL.CallPre`: the callee
-    contract's premise at a `bl`/`blr`). Every `realizes_*` case proves it for its segment
+    contract's premise at a `bl`/`blr`), `reads` (D2, `RL.ReadsAt`: every `MemReads` byte of the
+    line's instruction at `u` is outside `R.G` or in a `.word` line of the function, `RL.ReadOk`).
+    Every `realizes_*` case proves it for its segment
     (`RegLevelMove` via the `GoodX` file, Op, Branch, Goto, Next, Call, Tls, Try, JT, Atomic,
     Trap, Frame); the entry state in `q_init`, the `ret` state in `ret_machine`; at a trap the
     trace, and the machine errs for ever after the `udf`. `regLevelCorrect_world_atX` /
@@ -1897,16 +1902,37 @@ machine state `r` itself:
     `RunReadsN` + the checks + `codeMapB` + `x30` outside the code ⇒ `RunOkN` (the site from `line`; `cf`
     from `next`, `PairsClosed` and the entry's `x30` being no second word: `raOutside` at the
     top, the call's address when nested; `blr` from `GoodX` and `LinkSys.Ok.blrRegs`).
-  - **`E2E.ExecBytes.binary_correct_exec_of_reads`**: `binary_correct_exec_static`'s premises
-    (those of `binary_correct_of_checks_acyclic`, `codeMapB`, `HooksSim`) with only `RunReadsN`
-    in place of `RunOkD`. Axioms: `propext`, `Classical.choice`, `Quot.sound` and the existing
-    `bv_decide`/`native_decide` certificates. Non-vacuity:
-    `Crates.BinaryExecWitness.binary_correct_exec_of_reads_witness` (`RunReadsN` from the
-    computed run's `RunOkD`).
-  - Remaining (TO-PROVE L3 (c)): D2 `StepOkR.insn` (a `GoodX` field for the `MemReads` of the
-    line's instruction), D4 `StepOkR.got` (the GOT slots in the kept set `G`: input field,
-    `BinCheck` check, outside-code contract), and `codeMapB` for aliases (`…__fvself`); then
-    `binary_correct_exec_proven` without `RunReadsN`.
+  - Intermediate: **`E2E.ExecBytes.binary_correct_exec_of_reads`**: `binary_correct_exec_static`'s
+    premises (those of `binary_correct_of_checks_acyclic`, `codeMapB`, `HooksSim`) with only
+    `RunReadsN` in place of `RunOkD`; witness
+    `Crates.BinaryExecWitness.binary_correct_exec_of_reads_witness`.
+  - **D2** (`StepOkR.insn`): `GoodX.reads` in every case: Op loads via `formOk_reads` (csem's
+    `AccessOk`, per addressing mode, through `memFinalize`'s x16), spill moves via
+    `moveInsts_reads` (the frame's slot area, which `G` avoids: `RL.G_not_slot`), the JT `ldrsw`
+    (data words), atomics (`Avoids F`), the epilogue `ldp` (fp/lr slot, `gfree`);
+    `Insn.memReads_nil` for the non-loads. At the link level `insn_of_good`: `RelocAt ⊆ Img ⊆ G`
+    (`relocAt_img`) and data words carry no relocation (`word_static`), so `insn_of_memReads`
+    applies. `binary_correct_exec_of_got`: only the D4 hypothesis `RunGotN` left.
+  - **D4** (`StepOkR.got`): `GotSlot I file` (the 8 bytes of the slot each GOT pair's file words
+    address, in the checked pair form: `rd < 31`, `G` aligned, the page in range), checked by
+    `gotB` (on an excerpt; `gotB_sound` → `GotOk`: loaded, `ro`/`relro`, not `RelocAt`). Every
+    activation keeps the slots: `LinkSys.extImg` extends the code image by them (the same
+    machine); `GoodAt` carries `Img ⊆ G` and the entry's image bytes. The outside caller's
+    premise **`OutsideAvoids`**: the slots are outside its free stack, the stack arguments and
+    the live CLIF memory (what `OutsideCall` states for the code image). `got_of_good` gives the
+    clause (`GoodX.got`, `GotOk`, `img_bytes`, `Image.Intact`). `StepOk`/`StepOkD`/`StepOkR.got`
+    now assume the checked pair form: for every `G` the clause was unprovable (the `adrp`
+    immediate aliases `G + k·2^33`). `binary_correct_exec_of_insn`: only the D2 hypothesis
+    `RunInsnN` left.
+  - **`E2E.ExecBytes.binary_correct_exec_proven`** (`FV/E2E/ExecProven.lean`): under the premises
+    of `binary_correct_of_checks_acyclic`, `codeMapB`, `HooksSim`, `GotOk I file` (decidable:
+    `gotB`) and `OutsideAvoids (GotSlot I file) …`, with **no per-state hypothesis**, `ExecRefines
+    … (step I B file) r (RelocAt I) (Clif.runLoop …)`. Axioms: `propext`, `Classical.choice`,
+    `Quot.sound` and the existing `bv_decide`/`native_decide` certificates. Non-vacuity:
+    `Crates.BinaryExecWitness.binary_correct_exec_proven_witness` (`a_arith`'s `wrapping_add`;
+    no GOT pair, `noGotPair`, so no slot).
+  - Remaining (TO-PROVE L3): aliases (`…__fvself`): `codeMapB` is a premise and fails for them;
+    `siteAt` must classify sites so that `codeMapB` can allow identical-word overlaps.
 
 
 ### Non-vacuity (2026-10-02, `agent/callee-fix`, `FV/E2E/NonVacuity.lean`)
@@ -2677,12 +2703,15 @@ extrt and runtests (445 files): no function rejected.
   at `base`, relocations resolved to `syms`/callee addresses (M6's hooks), GOT contents. For a
   crate's executable (M9, "Binary level (M9)") the code, relocations, GOT slots used, data
   objects and symbol addresses are proven from the file (`bin_ok`); the loader (each `PT_LOAD`
-  at `p_vaddr`) stays trusted. On the executable machine (`binary_correct_exec_of_reads`) the
-  hooked GOT pair and the "no branch between a pair's words" item are proven; the GOT slot's
-  value and the reads avoiding relocated bytes are the premise `RunReadsN` (not trusted, open:
-  TO-PROVE L3), the TLS local-exec rewrite stays the TLSDESC hook.
+  at `p_vaddr`) stays trusted. On the executable machine (`binary_correct_exec_proven`) the
+  hooked GOT pair, the slot's value at its `ldr` (check `gotB`) and the "no branch between a
+  pair's words" item are proven; the TLS local-exec rewrite stays the TLSDESC hook.
 * **Runtime/callee contracts**: externs implement `Clif.Env.extern` under AAPCS64
   (`CalleeSound`, stack use); OS behaviour at `udf` (SIGILL reported as the trap-table code).
+  For the executable machine (`binary_correct_exec_proven`) also `HooksSim` (the outside-call
+  and TLS hooks read no relocated instruction byte and not the program field) and
+  `OutsideAvoids` (the outside caller keeps the GOT slots out of its free stack, stack arguments
+  and live CLIF memory).
 * **Rust route (trusted contracts, rust-route)**: the `core` panic entry points the corpus
   references (`panic*`, `*_fail`, `handle_*`, `fmt` — mangled symbols) and the libcalls
   `memcpy`/`memset`/`memmove`/`memcmp`. They fit the existing `XCallsOk`/`CalleeOk` contract

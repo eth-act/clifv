@@ -72,7 +72,7 @@ and, on rejection, replaced by a directly proven Lean path (kind 2). Correctness
 | encoder | Lean | `Insn.decode_encode` (`FV/Backend/Proof/Encode.lean:57-60`) | proven | — |
 | linking (program level) | `cargo fv` object merge + **rust-lld** | **`okB`** (`FV/E2E/LinkCheck.lean:716-777`) per crate by `native_decide` | **validator premise + oracle + per-program proof** | L1, L2 |
 | executable bytes | **rust-lld** | **`BinOk`** (`FV/E2E/BinCheck.lean:539-543`) per crate by `native_decide` | **validator premise + oracle + per-program proof** | L2 |
-| executable semantics | — | `E2E.ExecBytes.binary_correct_exec`: the executable's own words (outside calls and TLS by hooks), under `RunOk` (per-state facts of the model's run; witnessed jointly with the other premises, `binary_correct_exec_witness`); `binary_correct_exec_static`: the run-independent facts proven (per-program check `codeMapB`), under the outside-code contract `HooksSim` and the smaller `RunOkD`; `binary_correct_exec_of_reads`: `RunOkD` proven from the M6 proof's per-state facts (`RL.GoodX`, exported through `LinkSys.RunGoodL`) except the memory-read facts `RunReadsN` (D2 `insn`, D4 `got`) | partial | L3 |
+| executable semantics | — | `E2E.ExecBytes.binary_correct_exec_proven`: the executable's own words (outside calls and TLS by hooks) refine the CLIF run, with **no per-state hypothesis**: the premises of `binary_correct_of_checks_acyclic`, the per-program checks `codeMapB` and `gotB` (`GotOk`), the outside-code contracts `HooksSim` and `OutsideAvoids`; the run's facts come from the M6 proof (`RL.GoodX`, exported through `LinkSys.RunGoodL`); `codeMapB` fails for aliases | partial (aliases) | L3 |
 | stack bound | Lean `budMap` | `budOkW` proven for `budMap`'s budgets (`budOkW_budMap`), no run-time check; `goodN`/`stackB` characterised as "no call cycle reachable" (`goodN_iff`, `stackB_isSome_iff`); per crate the input condition and the bound still by `native_decide` (`stack_ok`) | input condition + per-program evaluation (until L1) | L4 done |
 
 Mid-end note: the mid-end is already certificate-free in the sense of §1.2, so M1 is optional.
@@ -376,8 +376,7 @@ author's estimate, not measured), **Risk**.
   from the outside-code contract `HooksSim I B` (next to `BaseOk`; `hooksSim_closed`). The remaining
   hypothesis is `RunOkD` (`StepOkD`): `err`, `program`, pc at an instruction (not past a TLSDESC `ldr`),
   D1 `cf`, D2 `insn`, D4 `got`, `blr` (register not `xzr`, the model reads the `blr` word).
-- **Remaining (c): discharge `RunOkD` from the M6 proof.** Stages 3a and 3b are done; D2, D4 and the
-  aliases remain.
+- **(c): discharge `RunOkD` from the M6 proof — done** (stages 3a, 3b); only the aliases remain.
   - **Done, stage 3a** (`agent/exec-frame`; `FV/E2E/ExecFrame.lean`, `FV/E2E/ExecFrameSim.lean`): the frame
     property for D2 (`insn`: `Sim m e → Sim (exec_inst a m) (exec_inst a e)` for the decoded word).
     `E2E.ExecBytes.exec_sim`: for **every** decoded `ArmInst` `a` (so every `Insn` the backend emits,
@@ -391,7 +390,7 @@ author's estimate, not measured), **Risk**.
     witness's `sim_stp`/`sim_mov`/`sim_add`/`sim_ldp`/`sim_ret` are instances of `exec_sim` (no
     alignment premise).
   - **Done, stage 3b** (2026-10-06, `agent/exec-good`; e2e.md "The executable's own words"): every
-    field of `RunOkD` but D2 and D4 from the M6 proof.
+    field of `RunOkD` from the M6 proof.
     - `RL.GoodX` (`FV/E2E/RegLevelGoodX.lean`): the per-state facts of every state of an activation's
       run before its return: `Good`, no error, the program, the pc at an instruction line not past a
       TLSDESC `ldr` (`Insn.tlsTail`), D1 `next` (`RL.NextOk`: the next state errs, or its pc is the
@@ -421,31 +420,38 @@ author's estimate, not measured), **Risk**.
       `RunOkN`: the site from `line`; `cf` from `next`, `PairsClosed` and the entry's `x30` being no
       second word (top level: `raOutside`; nested: the call's address); `blr` from `GoodX` and
       `LinkSys.Ok.blrRegs`).
-    - Result: **`E2E.ExecBytes.binary_correct_exec_of_reads`**: the premises of
+    - Intermediate: **`E2E.ExecBytes.binary_correct_exec_of_reads`**: the premises of
       `binary_correct_exec_static` (those of `binary_correct_of_checks_acyclic`, `codeMapB`, `HooksSim`)
-      with only `RunReadsN` in place of `RunOkD`. Axioms: `propext`, `Classical.choice`, `Quot.sound`
-      and the project's existing `bv_decide`/`native_decide` certificates. Non-vacuity:
-      `Crates.BinaryExecWitness.binary_correct_exec_of_reads_witness` (`RunReadsN` from the computed
-      run's `RunOkD`).
-  - **Remaining 1. D2 (`StepOkR.insn`)**: at each guarded state the `MemReads` of the instruction at
-    the pc avoid `RelocAt I` (then `insn_of_memReads`). Plan: a `GoodX` field `reads` (every `MemReads`
-    byte of the line's `toArmInst` at `u` is outside `R.G` or in one of the function's data words),
-    trivial off the load forms (a lemma `MemReads (toArmInst x) = []` for the non-load `Insn`s), proven
-    in Op (csem's `AccessOk`: the accesses avoid `R.F ⊇ R.G`; relate `MInst.accesses` on the canonical
-    placed world to the emitted `ldr` lines' `MemReads`, incl. `memFinalize`'s x16 materialization),
-    Move/Frame (the spill/restore and fp/lr slots are outside `R.G` by `R.Wf.gfree`), JT (the `ldrsw` of
-    the table reads data words), Atomic (`ldaxr`/`ldar`: `Avoids F`); at the link level
-    `RelocAt ⊆ Img ⊆ G` (`MachEntry.imgG`) and relocations are on instruction lines.
-  - **Remaining 2. D4 (`StepOkR.got`)**: the GOT slots in the kept set `G`: an input field with the
-    slots, a `BinCheck` check that the 8 bytes of each slot a GOT pair's words address are `ro`/`relro`
-    and outside `RelocAt`, an outside-code contract keeping them (a `BaseOk`/`CalleeOk` field), `G` at
-    the top level = `Img` ∪ the slots; then `GoodX.got` and `Intact` give the clause. About 0.3k lines.
-  - **Remaining 3. Aliases** (`fv-demo`'s `…__fvself`): `codeMapB` is still a premise; `siteAt` must
-    classify the site (outside call / TLS / real word) instead of returning one image's instruction, so
-    that `codeMapB` can allow identical-word overlaps. About 0.2k lines in `ExecBytes` (`siteAt_of`
-    users).
-  - Then `binary_correct_exec_proven` = `binary_correct_exec_of_reads` without `RunReadsN` (and its
-    witness without it).
+      with only `RunReadsN` in place of `RunOkD`; witness
+      `Crates.BinaryExecWitness.binary_correct_exec_of_reads_witness`.
+    - **D2 (`StepOkR.insn`)**: the `GoodX` field `reads : R.ReadsAt u` (every `MemReads` byte of the
+      line's instruction at `u` is outside `R.G` or in a `.word` line of the function: `RL.ReadOk`),
+      proven in every case: Op loads via `formOk_reads` (`FV/E2E/RegLevelOpReads.lean`: csem's
+      `AccessOk`, per addressing mode, through `memFinalize`'s x16), spill moves via `moveInsts_reads`
+      (`FV/E2E/MoveReads.lean`: the frame's slot area, `RL.G_not_slot`), the JT `ldrsw` (data words),
+      atomics (`Avoids F`), the epilogue `ldp` (fp/lr slot, `gfree`); `Insn.memReads_nil` for the
+      non-loads (`FV/E2E/ExecReads.lean`). Link level (`FV/E2E/ExecGoodReads.lean`): `insn_of_good`
+      from `RelocAt ⊆ Img ⊆ G` (`relocAt_img`) and data words not relocated (`word_static`), via
+      `insn_of_memReads`; `binary_correct_exec_of_got` (only `RunGotN`).
+    - **D4 (`StepOkR.got`)** (`FV/E2E/ExecGot.lean`): `GotSlot` (the 8 bytes of the slot each GOT
+      pair's file words address), checked by `gotB` (`gotB_sound` → `GotOk`: loaded, `ro`/`relro`, not
+      `RelocAt`); kept by every activation via `LinkSys.extImg` (the code image extended by the slots;
+      the same machine); `GoodAt` carries `Img ⊆ G` and the entry's image bytes; the outside caller's
+      new premise `OutsideAvoids` (the slots are outside its free stack, the stack arguments and the
+      live CLIF memory); `got_of_good`. `StepOk`/`StepOkD`/`StepOkR.got` now assume the checked pair
+      form (`rd < 31`, `G` aligned, page in range): for every `G` the clause was unprovable (the
+      `adrp` immediate aliases `G + k·2^33`). `binary_correct_exec_of_insn` (only `RunInsnN`).
+    - Result: **`E2E.ExecBytes.binary_correct_exec_proven`** (`FV/E2E/ExecProven.lean`): the premises
+      of `binary_correct_of_checks_acyclic` + `codeMapB` + `HooksSim` + `GotOk I file` (decidable,
+      `gotB`) + `OutsideAvoids (GotSlot I file) …`, no per-state hypothesis; conclusion
+      `ExecRefines … (step I B file) r (RelocAt I) (Clif.runLoop …)`. Axioms: `propext`,
+      `Classical.choice`, `Quot.sound` and the project's existing `bv_decide`/`native_decide`
+      certificates. Non-vacuity: `Crates.BinaryExecWitness.binary_correct_exec_proven_witness`
+      (`a_arith`'s `wrapping_add`; no GOT pair, `noGotPair`).
+  - **Remaining: aliases** (`fv-demo`'s `…__fvself`): `codeMapB` is a premise and fails for them;
+    `siteAt` must classify the site (outside call / TLS / real word) instead of returning one image's
+    instruction, so that `codeMapB` can allow identical-word overlaps. About 0.2k lines in `ExecBytes`
+    (`siteAt_of` users).
 
 ### L4. Stack bound without a per-program check
 
@@ -549,7 +555,7 @@ Large, low priority.
 | WP | Item | Notes |
 | --- | --- | --- |
 | T1 | TLS: TLSDESC hook vs lld's local-exec rewrite | overlaps L3; `binary_correct_exec` still runs the TLS site by `Hb.tls` (no `tpidr_el0` in the Arm model) |
-| T1b | Outside-code contract `HooksSim` (L3, `FV/E2E/ExecStatic.lean`) | the base hooks (outside calls, TLS) read no relocated instruction byte of the program and not the model's program field; a premise of `binary_correct_exec_static` and `binary_correct_exec_of_reads` next to `BaseOk`, met by `closedBase` (`hooksSim_closed`); L3's D4 needs one more `BaseOk`/`CalleeOk` field (outside code keeps the GOT slots) |
+| T1b | Outside-code contracts `HooksSim` (L3, `FV/E2E/ExecStatic.lean`) and `OutsideAvoids` (`FV/E2E/ExecGot.lean`) | `HooksSim`: the base hooks (outside calls, TLS) read no relocated instruction byte of the program and not the model's program field, met by `closedBase` (`hooksSim_closed`); `OutsideAvoids`: the outside caller keeps the GOT slots out of its free stack, stack arguments and live CLIF memory (as `OutsideCall` for the code image); premises of `binary_correct_exec_proven` next to `BaseOk`/`OutsideCall` |
 | T2 | Atomics on a single-core model (`ldar`/`stlr` plain, exclusive store always succeeds, `dmb` no-op) | `docs/decisions/arm-model.md` "Atomics"; a multi-core memory model is a project of its own |
 | T3 | std/musl contracts: compile std through `cargo fv` (`-Zbuild-std`) | needs S11, S12, inline asm |
 | T4 | Arm model fidelity (ASL-derived, qemu co-simulation) | testing, not proof |
@@ -608,7 +614,7 @@ label**; list the free ones with
 | V6b | [#66](https://github.com/eth-act/clifv/issues/66) `emitPre` and `layoutReadyB` always hold (per-function totality) | claimed (`agent/emit-total`) |
 | L2a | [#9](https://github.com/eth-act/clifv/issues/9) Linking without validators: split `okB` into input conditions + properties proven by construction | open |
 | L2b | [#10](https://github.com/eth-act/clifv/issues/10) Static linker in Lean for the executable (BinOk by construction) | open |
-| L3 | [#11](https://github.com/eth-act/clifv/issues/11) Executable-bytes simulation (M9 item 1b) | stages 1–2 done (#63, #64); stage 3a (frame property, `agent/exec-frame`) and 3b (`RunOkD` from the M6 proof but D2/D4: `binary_correct_exec_of_reads`, `agent/exec-good`) done; remaining D2 `insn`, D4 `got` (`RunReadsN`), aliases |
+| L3 | [#11](https://github.com/eth-act/clifv/issues/11) Executable-bytes simulation (M9 item 1b) | stages 1–2 done (#63, #64); stage 3 done (3a frame property, `agent/exec-frame`; 3b `RunOkD` from the M6 proof incl. D2/D4: `binary_correct_exec_proven`, `agent/exec-good`); remaining: aliases (`codeMapB`) |
 | L4 | [#12](https://github.com/eth-act/clifv/issues/12) Stack bound without a per-program check | **done** (`agent/stack-complete`): `budOkW_budMap`, `goodN_iff`, `stackB_isSome_iff`, `binary_correct_of_checks_acyclic` |
 | L1 | [#13](https://github.com/eth-act/clifv/issues/13) The executable compiler as one Lean function | open |
 | R0 | [#14](https://github.com/eth-act/clifv/issues/14) Mid-end rule proofs: shared infrastructure (iabs normal form, makeInst for type-variable constants, helper specs, module splitting) | open |
