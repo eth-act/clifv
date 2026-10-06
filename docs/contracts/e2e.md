@@ -1524,13 +1524,40 @@ layers:
    code" (`StackRoom` follows, via `AbiEntry.program` and `Ok.imgAddr`), with `F = frameWG b …`,
    **for every fuel `M`**.
 
-**The checker** (crate level, namespace `E2E.StackBound`): the call graph `edgeB` over-approximates
+**The budgets** (crate level, namespace `E2E.StackBound`): the call graph `edgeB` over-approximates
 `LinkSys.Callee` under `okB` (`edgeB_of_callee`: the functions `g` declares, and when `g` has
 indirect calls every function with a CLIF-image address whose signature one of them matches).
-`budMap` iterates `B(g) = max over callees h of frameDrop h + B(h)` (untrusted);
-`budOkW` checks the inequality on every edge leaving a function with a budget (only this enters the
-proof, `budget_of`). On a cycle no assignment passes (frames are ≥ 16 bytes), so the functions
-whose calls reach a cycle have none (`budBad`) and keep the depth premise.
+`budMap` iterates `B(g) = max over callees h of frameDrop h + B(h)` from "no budget" for as many
+rounds as there are functions (`budArr`, stopping early at a fixed point). The proof uses the
+budget condition `budOkW` (a function with a budget calls only functions with a budget, whose
+frame and budget fit in its own; `budget_of`), which is **proven** for `budMap`'s output, not
+checked (L4, 2026-10-06, `agent/stack-complete`; `FV/E2E/StackBound.lean`, "Completeness"):
+
+```lean
+def Calls (I : LinkInput) (R : Res) (g h : Clif.Function) : Prop :=   -- the call graph
+  h ∈ (progOf R).funcs ∧ edgeB (fun n => I.syms.lookup n) g h = true
+def CycleFrom (E : α → α → Prop) (x : α) : Prop :=   -- a cycle is reachable from x
+  ∃ h, (h = x ∨ Relation.TransGen E x h) ∧ Relation.TransGen E h h
+def budC (I : LinkInput) (R : Res) (g : Clif.Function) : Option Nat := (budMap I R).get? g.name
+
+theorem budOkW_budMap (hn : ((progOf R).funcs.map (·.name)).Nodup) : budOkW I R (budC I R) = true
+theorem budC_isSome_iff (hn : …Nodup) (hg : g ∈ (progOf R).funcs) :
+    (budC I R g).isSome = true ↔ ¬ CycleFrom (Calls I R) g
+theorem goodN_iff (hI : okB I = true) :
+    goodN I n = true ↔ ∃ f, (progOf I.results).func? n = some f ∧ ¬ CycleFrom (Calls I I.results) f
+theorem stackB_isSome_iff (hI : okB I = true) :
+    (stackB I).isSome = true ↔ ∀ f ∈ (progOf I.results).funcs, ¬ CycleFrom (Calls I I.results) f
+```
+
+The proof: every round `budPow k` of the iteration meets `budOkW` (a budget computed in round `k`
+stays in every later round, `budPow_mono`, and comes from callees that had theirs, `budPow_ok`),
+so the early stop does not matter; position `i` has a budget after `k` rounds iff no walk of `k`
+calls starts at `i` (`budPow_walk`, `budPow_of_walk`); a reachable cycle gives walks of every
+length (`walkN_of_cycle`), and a walk of as many calls as there are functions repeats one
+(`cycle_of_walkN`, by `pigeon`). Distinct names (a global check of `okB`, `okB_names`) make the
+by-name map agree with the positions (`budC_get`). Frames need not be positive: a function on a
+cycle never gets a budget, even when the cycle's frames are 0. `stackR` (the budgets behind a
+run-time `budOkW` check) is gone: `budO I g = budC I I.results g`.
 
 ```lean
 def stackFn (I : LinkInput) (f : Clif.Function) : Nat   -- frameDrop f + bud I f
@@ -1540,13 +1567,32 @@ def StackStmt (I : LinkInput) (n : String) : Prop        -- ProgStmt with: stack
 theorem crate_correct_stack (hI : okB I = true) (hS : stackB I = some S) (n : String) : StackStmt I n
 theorem crate_correct_stackN (hI : okB I = true) (hn : goodN I n = true) : StackStmt I n
 theorem stackFn_le (hS : stackB I = some S) (hf : f ∈ (progOf I.results).funcs) : stackFn I f ≤ S
+-- from the input condition
+theorem crate_correct_stack_acyclic (hI : okB I = true) (hf : (progOf I.results).func? n = some f)
+    (hc : ¬ CycleFrom (Calls I I.results) f) : StackStmt I n
+theorem crate_correct_stack_all (hI : okB I = true)
+    (hc : ∀ f ∈ (progOf I.results).funcs, ¬ CycleFrom (Calls I I.results) f) :
+    ∃ S, stackB I = some S ∧ ∀ n, StackStmt I n
 ```
 
+So the stack premise of the crate and binary theorems is an input condition, not a validator:
+the program reaches no call cycle from the entry (`E2E.Binary.binary_correct_of_checks_acyclic`
+takes it in place of `goodN`). Recursive functions (a cycle reachable) keep the depth-indexed
+theorems (`binary_correct_depth`); that is the scope.
+
 `lake exe link-check` prints the bound (the largest, per entry: the functions no function of the
-program calls; or the functions whose calls reach a cycle) and the generated crate proofs decide
+program calls; or the functions whose calls reach a cycle) and the generated crate proofs evaluate
 it (`stack_ok : stackB input = some S`, or for a recursive program `stack_entriesK`) and state
 `correct_stack_i : StackStmt input "…"` for the entries (the shared library `fvcheck` of
-`crate-proofs` is now built from `FV.E2E.StackBound` and `FV.E2E.BinCheck`, `checkRoots`). The ten crates:
+`crate-proofs` is now built from `FV.E2E.StackBound` and `FV.E2E.BinCheck`, `checkRoots`). Since
+L4 these `native_decide` facts check no untrusted output: `stack_ok` holds iff the program has no
+reachable call cycle (`stackB_isSome_iff`) and states the number `S`; `stack_entriesK` holds iff no
+cycle is reachable from those entries (`goodN_iff`). Both are input conditions that only a
+recursive program fails; `decide` cannot replace them (the kernel would have to evaluate the
+crate's call graph over its CLIF and, for `S`, the compiler pipeline for the frame sizes).
+`link-check` and the generator are unchanged apart from reading `budMap` directly (no "budget
+check fails" outcome); the generated files are unchanged (`link-check` on `g_u128` and `a_arith`
+reports 160 and 224 bytes as before). The ten crates:
 
 | crate | functions | stack bound (bytes) | largest entries |
 | --- | --- | --- | --- |
@@ -1663,7 +1709,7 @@ rewrites to local-exec `movz`/`movk`/`nop`/`nop` in a static executable.
 | `AbiEntry.pc`, `.err`, `.spAligned` | `OutsideCall` | the call (AAPCS64) |
 | `AbiEntry.lr` | discharged | `ra := xreg 30 r` |
 | `AbiEntry.raOutside` | `OutsideCall.ra` (weaker form) | the return address is outside the program's code |
-| `StackAvail`, `hgfree` | `OutsideCall.stack`/`stackFree` with `N` | `N = stackFn I f` (`binary_correct`, the stack check `goodN`), `S` (`binary_correct_bound`), `frameDrop + D·M` (`binary_correct_depth`) |
+| `StackAvail`, `hgfree` | `OutsideCall.stack`/`stackFree` with `N` | `N = stackFn I f` (`binary_correct`, `goodN`; `binary_correct_of_checks_acyclic`: the input condition "no call cycle reachable from `f`", `StackBound.goodN_iff`), `S` (`binary_correct_bound`), `frameDrop + D·M` (`binary_correct_depth`) |
 | `hF` (addresses outside the world) | discharged | `F := worldF I f K r` (`K = bud I f` / `D·M`) |
 | `himg` | discharged | `modelOf`; `RelocAt` relates it to the file |
 | `BodyEntry` | discharged | the body-entry world is `bodyOf af s` |
@@ -1699,7 +1745,8 @@ binary ok, stack 224 bytes), `binary_witness`: some file holds the proof's excer
 (`agrees_fileOf`), and for every such file (the executable is one) the machine state whose
 memory is the file's loaded image, in which outside code calls the Lean-compiled
 `core::num::<i32>::wrapping_add` with `2`, `3` and `stackFn` bytes of stack, meets every premise
-of `binary_correct_of_checks` (`bin_ok`, `okB_input`, `goodN`, `Image.Intact`, `OutsideCall`,
+of `binary_correct_of_checks_acyclic` (`bin_ok`, `okB_input`, the stack condition `acyclic`: no
+call cycle reachable from the entry, from `goodN` by `goodN_iff`; `Image.Intact`, `OutsideCall`,
 `ClifRun`, `BaseOk` of the closed base, `TrapsExplicit` from the returning run); the CLIF run
 returns `5` and the theorem gives the machine's return to the caller with `5` in x0.
 `binary_depth_witness`: the same for `binary_correct_depth`.

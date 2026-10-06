@@ -575,4 +575,21 @@ theorem binary_correct_of_checks {I : LinkInput} {D : List Clif.DataObject} {fil
     ∀ a, (modelOf I f r).mem a ≠ r.mem a → BinCheck.RelocAt I a :=
   binary_correct (binFacts_of_checks hI hbin) B hB hn hf M hX ho hr htr
 
+/-- **`binary_correct_of_checks` from the input condition**: the stack premise `goodN` replaced by
+what it decides (`StackBound.goodN_iff`): no call cycle of the program's call graph
+(`StackBound.Calls`) is reachable from `f`. Recursive functions (a cycle reachable) keep the
+depth-indexed theorem. -/
+theorem binary_correct_of_checks_acyclic {I : LinkInput} {D : List Clif.DataObject}
+    {file : ByteArray} (hI : okB I = true) (hbin : BinCheck.BinOk I D file) (B : BaseEnv)
+    (hB : BaseOk (sys I B)) {n : String} {f : Clif.Function} (hf : (prog I).func? n = some f)
+    (hc : ¬ StackBound.CycleFrom (StackBound.Calls I I.results) f) (M : Nat) {r : Arm.ArmState}
+    {args : List Clif.Val} {cs : Clif.State} (hX : (imageOf file).Intact r)
+    (ho : OutsideCall I (BinCheck.roByte I D) f (StackBound.stackFn I f) r args cs.mem)
+    (hr : ClifRun I B f r args cs)
+    (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) ((prog I).only f) cs) :
+    ArmRefines (art I f).fb (art I f).base (xreg 30 r) ((sys I B).mach M f) (modelOf I f r)
+      (Clif.runLoop B.env (prog I) (M + 1) cs) ∧
+    ∀ a, (modelOf I f r).mem a ≠ r.mem a → BinCheck.RelocAt I a :=
+  binary_correct_of_checks hI hbin B hB ((StackBound.goodN_iff hI).2 ⟨f, hf, hc⟩) hf M hX ho hr htr
+
 end E2E.Binary
