@@ -1,5 +1,5 @@
 import Crates.BinaryWitness
-import FV.E2E.ExecBytes
+import FV.E2E.ExecStatic
 
 /-! # Non-vacuity of the theorem about the executable's own words
 
@@ -519,5 +519,28 @@ theorem binary_correct_exec_witness :
   rw [show Clif.runLoop closedBase.env (prog I) (M + 1) cs = run from rfl, run_eq, x30_r] at h
   obtain ⟨k, hret, hx, -⟩ := h
   exact ⟨hX, hoc, clifRun _, htr, hrun, run_eq, k, hret, hx 0 _ rfl⟩
+
+/-- The code map check of the executable's program (`codeMapB`, a premise of
+`binary_correct_exec_static`). -/
+theorem codeMap_ok : codeMapB I (tabOf I.results) = true := by native_decide
+
+/-- **Non-vacuity of `binary_correct_exec_static`** on the same call: the premises of
+`binary_correct_exec_witness` with the code map check (`codeMap_ok`), the closed base's outside-code contract (`hooksSim_closed`)
+and the per-state facts `RunOkD` (from `RunOk`), and the theorem gives the executable machine's
+return with `5` in x0. -/
+theorem binary_correct_exec_static_witness :
+    (∃ file, Elf.Agrees file Crates.AArithAbort.exAll) ∧
+    ∀ file, Elf.Agrees file Crates.AArithAbort.exAll →
+      HooksSim I closedBase ∧ RunOkD I closedBase file M f (modelOf I f (r (memOf file))) ∧
+      ∃ k, ArmRet ra0 (r (memOf file)) (runX (step I closedBase file) k (r (memOf file))) ∧
+        XHolds ⟨.i32, 5#32⟩ (xreg 0 (runX (step I closedBase file) k (r (memOf file)))) := by
+  refine ⟨⟨_, agrees_fileOf⟩, fun file hfile => ?_⟩
+  obtain ⟨hX, hoc, hcr, htr, hrun, -⟩ := binary_correct_exec_witness.2 file hfile
+  have h := binary_correct_exec_static Crates.AArithAbort.okB_input codeMap_ok
+    (Crates.AArithAbort.bin_ok file hfile) closedBase (Crates.AArithAbort.base_closed _)
+    (hooksSim_closed I) facts.1 acyclic M hX hoc hcr htr hrun.d
+  rw [show Clif.runLoop closedBase.env (prog I) (M + 1) cs = run from rfl, run_eq, x30_r] at h
+  obtain ⟨k, hret, hx, -⟩ := h
+  exact ⟨hooksSim_closed I, hrun.d, k, hret, hx 0 _ rfl⟩
 
 end Crates.BinaryExecWitness
