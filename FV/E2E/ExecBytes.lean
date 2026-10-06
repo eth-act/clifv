@@ -14,8 +14,9 @@ words.
 
 ## The executable machine (`step`)
 
-At the pc it looks up the program's instruction there (`siteAt`, from the compiled functions'
-layouts: only to decide which words are outside code) and
+At the pc it looks up the kind of site there (`siteAt`: the kind, `siteOf`, of the program's
+instruction there, from the compiled functions' layouts; only to decide which words are outside
+code; two functions sharing code, a self-call alias, have the same kind at each word) and
 
 * a `bl n` / `blr` whose callee is **outside the program**, the TLSDESC `adrp`, and its `ldr`
   (which in the model runs the rest of the sequence, `Hb.tls`): the base environment's hooks, as
@@ -92,16 +93,53 @@ def realStep (s : Arm.ArmState) : Arm.ArmState :=
     | none => Arm.w .ERR (.Other "no instruction word") s
   | _ => s
 
+/-- **The kind of a site** of the program's code: what the executable machine does there. Code
+shared by two functions of the program (`cargo fv`'s self-call alias `f__fvself` is `f`'s code)
+has one kind at each word even where the functions' lines differ (`f`'s `bl f__fvself`,
+`f__fvself`'s `bl f`: both a call of a function of the program, `progCall`). -/
+inductive Site where
+  /-- the processor on the file's word -/
+  | real
+  /-- a `bl` of a function of the program: the processor on the file's word -/
+  | progCall
+  /-- a `bl n` of code outside the program: the base environment's hook -/
+  | extCall (n : String)
+  /-- a `blr`: the processor when its target is a function of the program, else the hook -/
+  | blr
+  /-- the TLSDESC `adrp`: skipped, as in the model -/
+  | tlsAdrp
+  /-- the TLSDESC `ldr`: the TLS hook -/
+  | tls (tmp : Reg) (n : String)
+
+/-- The kind of the site of the instruction `i` of the program `P`. -/
+def siteOf (P : Clif.Program) : Insn → Site
+  | .bl n => if (P.func? n).isSome then .progCall else .extCall n
+  | .blr _ => .blr
+  | .adrpTlsDesc _ _ => .tlsAdrp
+  | .ldrTlsDescLo12 tmp _ n => .tls tmp n
+  | _ => .real
+
 open Classical in
-/-- The program's instruction at the address `a` (of some function of the program whose code
-has one there). -/
-noncomputable def siteAt (a : BitVec 64) : Option Insn :=
+/-- **The kind of site at the address `a`**: that of the instruction there of some function of
+the program whose code has one there (`siteOf`). -/
+noncomputable def siteAt (a : BitVec 64) : Option Site :=
   if h : ∃ g ∈ (prog I).funcs, (insnAt (art I g).fa (art I g).base a).isSome then
-    insnAt (art I h.choose).fa (art I h.choose).base a
+    (insnAt (art I h.choose).fa (art I h.choose).base a).map (siteOf (prog I))
   else none
 
 /-- The step at a site. -/
-noncomputable def stepAt (site : Option Insn) (s : Arm.ArmState) : Arm.ArmState :=
+noncomputable def stepAt (site : Option Site) (s : Arm.ArmState) : Arm.ArmState :=
+  match site with
+  | some (.extCall n) => B.hooks.call (some n) s
+  | some .blr =>
+    if ((blrTarget s).bind (symCallee (sys I B).Xb (prog I))).isSome then realStep file s
+    else B.hooks.call none s
+  | some .tlsAdrp => Arm.w .PC (Arm.r .PC s + 4) s
+  | some (.tls tmp n) => B.hooks.tls n tmp s
+  | _ => realStep file s
+
+/-- The step at an instruction of the program (`stepAt` of its kind of site, `stepAt_site`). -/
+noncomputable def stepIns (site : Option Insn) (s : Arm.ArmState) : Arm.ArmState :=
   match site with
   | some (.bl n) => if ((prog I).func? n).isSome then realStep file s else B.hooks.call (some n) s
   | some (.blr _) =>
@@ -159,7 +197,7 @@ structure StepOk (M : Nat) (g : Clif.Function) (m : Arm.ArmState) : Prop where
   /-- the pc is at an instruction of `g` (the site the executable machine looks up), not inside
   the TLS sequence past its `ldr` -/
   site : ∃ i, insnAt (art I g).fa (art I g).base (Arm.r .PC m) = some i ∧
-    siteAt I (Arm.r .PC m) = some i ∧ (i.reloc? = none ∨ i.hooked = true)
+    siteAt I (Arm.r .PC m) = some (siteOf (prog I) i) ∧ (i.reloc? = none ∨ i.hooked = true)
   /-- D1: only the first word of a pair steps to its second -/
   cf : ∀ rl ∈ (art I g).fb.relocs, (rl.type = .adrGotPage ∨ rl.type = .adrPrelPgHi21) →
     Arm.r .PC ((sys I B).mach M g m) = wAt (art I g) (rl.offset + 4) →
@@ -242,8 +280,8 @@ theorem insnAt_spec {fa : FnAsm} {base pc : BitVec 64} {i : Insn} (h : insnAt fa
 theorem stepAt_real {site : Option Insn} (s : Arm.ArmState) (h1 : ∀ n, site ≠ some (.bl n))
     (h2 : ∀ x, site ≠ some (.blr x)) (h3 : ∀ a b, site ≠ some (.adrpTlsDesc a b))
     (h4 : ∀ a b c, site ≠ some (.ldrTlsDescLo12 a b c)) :
-    stepAt I B file site s = realStep file s := by
-  unfold stepAt
+    stepIns I B file site s = realStep file s := by
+  unfold stepIns
   split
   · exact absurd rfl (h1 _)
   · exact absurd rfl (h2 _)
@@ -397,11 +435,30 @@ theorem sim_pair_end {m e : Arm.ArmState} (h : Sim I m e) (v : BitVec 5) (x y : 
     Arm.w_of_w_shadow, Arm.w_of_w_shadow]
   exact sim_w (sim_w h _ _) _ _
 
+/-- The step at an instruction's kind of site is the step at the instruction. -/
+theorem stepAt_site (i : Insn) (s : Arm.ArmState) :
+    stepAt I B file (some (siteOf (prog I) i)) s = stepIns I B file (some i) s := by
+  cases i
+  case bl n => by_cases h : ((prog I).func? n).isSome <;> simp [siteOf, stepAt, stepIns, h]
+  all_goals rfl
+
+theorem step_site {s : Arm.ArmState} {i : Insn}
+    (h : siteAt I (Arm.r .PC s) = some (siteOf (prog I) i)) :
+    step I B file s = stepIns I B file (some i) s := by
+  unfold step; rw [h, stepAt_site]
+
 theorem siteAt_of {M : Nat} {g : Clif.Function} {m : Arm.ArmState} (h : StepOk I B file M g m)
     {i : Insn} (hi : insnAt (art I g).fa (art I g).base (Arm.r .PC m) = some i) :
-    siteAt I (Arm.r .PC m) = some i := by
+    siteAt I (Arm.r .PC m) = some (siteOf (prog I) i) := by
   obtain ⟨i', h1, h2, -⟩ := h.site
   rw [hi] at h1; cases h1; exact h2
+
+/-- The first word of an `adrp` pair is a real site. -/
+theorem siteOf_pairFirst {P : Clif.Program} {i : Insn} {ty : RelocType} {s : String} {a : Int}
+    (h : i.reloc? = some (ty, s, a)) (ht : ty = .adrGotPage ∨ ty = .adrPrelPgHi21) :
+    siteOf P i = .real := by
+  cases i <;> simp only [Insn.reloc?, reduceCtorEq, Option.some.injEq, Prod.mk.injEq] at h <;>
+    first | rfl | (obtain ⟨rfl, -⟩ := h; rcases ht with h' | h' <;> cases h')
 
 theorem pair_first_pc {M : Nat} {g : Clif.Function} (hF : FnOk I file g) {rl : Reloc}
     (hrl : rl ∈ (art I g).fb.relocs) (ht : rl.type = .adrGotPage ∨ rl.type = .adrPrelPgHi21)
@@ -457,11 +514,11 @@ theorem pair_first_pc {M : Nat} {g : Clif.Function} (hF : FnOk I file g) {rl : R
   have hpe : Arm.r .PC e = Arm.r .PC m := hs.1 .PC
   have hee : Arm.r .ERR e = .None := (hs.1 .ERR).trans h0.err
   have hP : (Arm.r .PC e).toNat = (wAt (art I g) rl.offset).toNat := by rw [hpe, hpc]
-  have hsite0 : siteAt I (Arm.r .PC e) = some i := by rw [hpe]; exact siteAt_of h0 hins
+  have hsite0 : siteAt I (Arm.r .PC e) = some (siteOf (prog I) i) := by
+    rw [hpe]; exact siteAt_of h0 hins
   have hstep0 : ∀ a, (fileWord file (Arm.r .PC e)).bind Arm.decode_raw_inst = some a →
       step I B file e = Arm.exec_inst a e := fun a ha => by
-    unfold step
-    rw [hsite0, stepAt_real _ (by rcases hrd with ⟨-, rfl, -⟩ | ⟨-, rfl⟩ <;> simp)
+    rw [step_site hsite0, stepAt_real _ (by rcases hrd with ⟨-, rfl, -⟩ | ⟨-, rfl⟩ <;> simp)
       (by rcases hrd with ⟨-, rfl, -⟩ | ⟨-, rfl⟩ <;> simp)
       (by rcases hrd with ⟨-, rfl, -⟩ | ⟨-, rfl⟩ <;> simp)
       (by rcases hrd with ⟨-, rfl, -⟩ | ⟨-, rfl⟩ <;> simp), realStep_eq hee ha]
@@ -559,21 +616,21 @@ theorem pair_step {M : Nat} {g : Clif.Function} (hF : FnOk I file g) {rl : Reloc
   have hpe : Arm.r .PC e = Arm.r .PC m := hs.1 .PC
   have hee : Arm.r .ERR e = .None := (hs.1 .ERR).trans h0.err
   have hP : (Arm.r .PC e).toNat = (wAt (art I g) rl.offset).toNat := by rw [hpe, hpc]
-  have hsite0 : siteAt I (Arm.r .PC e) = some i := by rw [hpe]; exact siteAt_of h0 hins
+  have hsite0 : siteAt I (Arm.r .PC e) = some (siteOf (prog I) i) := by
+    rw [hpe]; exact siteAt_of h0 hins
   have hsite1 : ∀ e1 : Arm.ArmState, Arm.r .PC e1 = Arm.r .PC ((sys I B).mach M g m) →
-      siteAt I (Arm.r .PC e1) = some i' := fun e1 h => by rw [h]; exact siteAt_of h1 hins'
+      siteAt I (Arm.r .PC e1) = some (siteOf (prog I) i') := fun e1 h => by
+        rw [h]; exact siteAt_of h1 hins'
   have hstep0 : ∀ a, (fileWord file (Arm.r .PC e)).bind Arm.decode_raw_inst = some a →
       step I B file e = Arm.exec_inst a e := fun a ha => by
-    unfold step
-    rw [hsite0, stepAt_real _ (by rcases hrd with ⟨-, rfl, -⟩ | ⟨-, rfl⟩ <;> simp)
+    rw [step_site hsite0, stepAt_real _ (by rcases hrd with ⟨-, rfl, -⟩ | ⟨-, rfl⟩ <;> simp)
       (by rcases hrd with ⟨-, rfl, -⟩ | ⟨-, rfl⟩ <;> simp)
       (by rcases hrd with ⟨-, rfl, -⟩ | ⟨-, rfl⟩ <;> simp)
       (by rcases hrd with ⟨-, rfl, -⟩ | ⟨-, rfl⟩ <;> simp), realStep_eq hee ha]
   have hstep1 : ∀ e1 a, Arm.r .PC e1 = Arm.r .PC ((sys I B).mach M g m) → Arm.r .ERR e1 = .None →
       (fileWord file (Arm.r .PC e1)).bind Arm.decode_raw_inst = some a →
       step I B file e1 = Arm.exec_inst a e1 := fun e1 a h he ha => by
-    unfold step
-    rw [hsite1 e1 h, stepAt_real _ (by rcases hi'' with ⟨_, _, _, rfl⟩ | ⟨_, _, _, _, rfl⟩ <;> simp)
+    rw [step_site (hsite1 e1 h), stepAt_real _ (by rcases hi'' with ⟨_, _, _, rfl⟩ | ⟨_, _, _, _, rfl⟩ <;> simp)
       (by rcases hi'' with ⟨_, _, _, rfl⟩ | ⟨_, _, _, _, rfl⟩ <;> simp)
       (by rcases hi'' with ⟨_, _, _, rfl⟩ | ⟨_, _, _, _, rfl⟩ <;> simp)
       (by rcases hi'' with ⟨_, _, _, rfl⟩ | ⟨_, _, _, _, rfl⟩ <;> simp), realStep_eq he ha]
@@ -645,8 +702,7 @@ theorem plain_step {M : Nat} {g : Clif.Function} (hF : FnOk I file g) {m e : Arm
   have hfa : (fileWord file (Arm.r .PC m)).bind Arm.decode_raw_inst = some a := by
     rw [← hpc]; show (fileWord file (wAt _ _)).bind _ = _; rw [hf, Option.bind_some]; exact hd
   have hex : step I B file e = Arm.exec_inst a e := by
-    unfold step
-    rw [hpe, siteAt_of h0 hins,
+    rw [step_site (by rw [hpe]; exact siteAt_of h0 hins),
       stepAt_real _ (fun n h => by cases h; simp [Insn.hooked] at hh)
         (fun n h => by cases h; simp [Insn.hooked] at hh)
         (fun _ _ h => by cases h; simp [Insn.hooked] at hh)
@@ -680,23 +736,23 @@ theorem hook_step {M : Nat} {g : Clif.Function} (hF : FnOk I file g) {m e : Arm.
   obtain ⟨j, t, hj, hpc⟩ := insnAt_spec hins
   have hb : progBase m = (art I g).base := progBase_of hF hm h0.program hj
   have hpe : Arm.r .PC e = Arm.r .PC m := hs.1 .PC
-  have hse : step I B file e = stepAt I B file (some i) e := by
-    unfold step; rw [hpe, siteAt_of h0 hins]
+  have hse : step I B file e = stepIns I B file (some i) e :=
+    step_site (by rw [hpe]; exact siteAt_of h0 hins)
   show Sim I (ArmStepX (sys I B).Xb ((sys I B).hooks M) (art I g).fa m) _
   rw [hse]
   rcases hk with ⟨n, rfl, hn⟩ | ⟨x, rfl, hn⟩ | ⟨a, b, rfl⟩ | ⟨a, b, c, rfl⟩
-  · simp only [ArmStepX, hb, hins, LinkSys.hooks_call, LinkSys.callHook, stepAt]
+  · simp only [ArmStepX, hb, hins, LinkSys.hooks_call, LinkSys.callHook, stepIns]
     rw [show (sys I B).P.func? n = none from hn, show (prog I).func? n = none from hn]
     exact h0.call _ e (.inl ⟨n, hins, hn, rfl⟩) hs
   · have hpl := h0.plain _ hins rfl
-    simp only [ArmStepX, hb, hins, LinkSys.hooks_call, LinkSys.callHook, stepAt,
+    simp only [ArmStepX, hb, hins, LinkSys.hooks_call, LinkSys.callHook, stepIns,
       blrTarget_sim hs hpl]
     rw [show ((blrTarget m).bind (symCallee (sys I B).Xb (sys I B).P)) = none from hn,
       show ((blrTarget m).bind (symCallee (sys I B).Xb (prog I))) = none from hn]
     exact h0.call _ e (.inr ⟨⟨x, hins⟩, hn, rfl⟩) hs
-  · simp only [ArmStepX, hb, hins, stepAt, hpe]
+  · simp only [ArmStepX, hb, hins, stepIns, hpe]
     exact sim_w hs _ _
-  · simp only [ArmStepX, hb, hins, stepAt, hooks_tls]
+  · simp only [ArmStepX, hb, hins, stepIns, hooks_tls]
     exact h0.tls a b c e hins hs
 
 theorem add_ofInt_sub (x : BitVec 64) (N : Nat) :
@@ -733,9 +789,8 @@ theorem call_enter {M : Nat} {g h : Clif.Function} (hF : FnOk I file g) (hFh : F
     obtain ⟨hd, hx⟩ := ExecWords.blW_exec hrange
     have hst : step I B file e = Arm.exec_inst (ExecWords.blI ((I.baseOf n : Int) -
         (wAt (art I g) (lineOffset (art I g).fa.lines.toList j)).toNat)) e := by
-      unfold step
-      rw [hpe, siteAt_of h0 hins]
-      simp only [stepAt, hn, Option.isSome_some, ↓reduceIte]
+      rw [step_site (by rw [hpe]; exact siteAt_of h0 hins)]
+      simp only [stepIns, hn, Option.isSome_some, ↓reduceIte]
       exact realStep_eq hee (by rw [hpe, ← hpc]; show (readN _ 4 (wAt _ _)).bind _ = _; rw [hword, Option.bind_some]; exact hd)
     rw [hst, hx]
     refine hen _ ?_
@@ -755,10 +810,9 @@ theorem call_enter {M : Nat} {g h : Clif.Function} (hF : FnOk I file g) (hFh : F
     simp only [beq_iff_eq] at hcal'
     have hst : step I B file e = Arm.exec_inst
         (.BR (.Uncond_branch_reg { opc := 1, op2 := 31, op3 := 0, Rn := rn, op4 := 0 })) e := by
-      unfold step
-      rw [hpe, siteAt_of h0 hins]
+      rw [step_site (by rw [hpe]; exact siteAt_of h0 hins)]
       have hpl := h0.plain _ hins rfl
-      simp only [stepAt, blrTarget_sim hs hpl, htgt]
+      simp only [stepIns, blrTarget_sim hs hpl, htgt]
       rw [show (Option.some (Arm.r (.GPR rn) m)).bind (symCallee (sys I B).Xb (prog I)) = some h
         from hcal]
       simp only [Option.isSome_some, ↓reduceIte]
@@ -889,7 +943,7 @@ theorem ret_not_second (hF : ∀ g ∈ (prog I).funcs, FnOk I file g) {M M' : Na
   obtain ⟨j, i1, t, hj, hi, ho⟩ := (FnAsm.layout_relocs hFh.layout rl).1 hrl
   have hins1 : insnAt (art I h).fa (art I h).base (wAt (art I h) rl.offset) = some i1 := by
     rw [← ho]; exact insnAt_of_line hFh hj
-  have hs1 : siteAt I (wAt (art I h) rl.offset) = some i1 := by
+  have hs1 : siteAt I (wAt (art I h) rl.offset) = some (siteOf (prog I) i1) := by
     rw [← hpc1] at hins1 ⊢; exact siteAt_of hokc hins1
   -- the call's word is there
   have hpcm : Arm.r .PC m = wAt (art I h) rl.offset := by
@@ -900,10 +954,10 @@ theorem ret_not_second (hF : ∀ g ∈ (prog I).funcs, FnOk I file g) {M M' : Na
   obtain ⟨j0, t0, hj0, -⟩ := insnAt_spec hi0
   have hb := progBase_of (hF g hg) hm hok0.program hj0
   simp only [CallsAt, hb] at hc
-  rw [hpcm, hs1] at hs0
-  cases hs0
-  rcases hc with ⟨n, hins, -⟩ | ⟨⟨x, hins⟩, -⟩ <;> rw [hins] at hi0 <;> cases hi0 <;>
-    rcases ht with h' | h' <;> simp [Insn.reloc?, h'] at hi
+  rw [hpcm, hs1, siteOf_pairFirst hi ht] at hs0
+  rcases hc with ⟨n, hins, hn⟩ | ⟨⟨x, hins⟩, -⟩ <;> rw [hins] at hi0 <;> cases hi0
+  · simp [siteOf, hn] at hs0
+  · simp [siteOf] at hs0
 
 end Lemmas
 

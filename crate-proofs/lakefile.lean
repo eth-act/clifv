@@ -5,9 +5,10 @@ open Lake DSL System
 
 The proof files `cargo fv link-proof` / `lake exe link-check --lean` generate (`Crates/*.lean`,
 docs/USAGE.md "Proving a crate"). Their `native_decide` proofs evaluate the checker
-`E2E.LinkCheck.okB`, the stack bound of `E2E.StackBound` and the binary checks of
-`E2E.BinCheck`; Lean's interpreter runs a compiled definition natively when its module's code
-is in a loaded shared library, so the library `Crates` loads `fvcheck`: the compiled code of the
+`E2E.LinkCheck.okB`, the stack bound of `E2E.StackBound`, the binary checks of `E2E.BinCheck`
+and the code map check `E2E.LinkCheck.codeMapB`; Lean's interpreter runs a compiled definition
+natively when its module's code is in a loaded shared library, so the library `Crates` loads
+`fvcheck`: the compiled code of the
 checker modules (`checkRoots`) and of every module they import, linked into one shared library
 (a separate package because the shared library of `FV` itself cannot be built: the C of some
 `bv_decide` proof modules is too large for Clang). -/
@@ -16,9 +17,9 @@ package crateProofs
 
 require fv from ".."
 
-/-- The checker modules whose compiled code `fvcheck` holds (`FV.E2E.StackBound` imports
-`FV.E2E.LinkCheck`). -/
-def checkRoots : Array Lean.Name := #[`FV.E2E.StackBound, `FV.E2E.BinCheck]
+/-- The checker modules whose compiled code `fvcheck` holds (`FV.E2E.StackBound` and
+`FV.E2E.CodeMap` import `FV.E2E.LinkCheck`). -/
+def checkRoots : Array Lean.Name := #[`FV.E2E.StackBound, `FV.E2E.BinCheck, `FV.E2E.CodeMap]
 
 /-- The compiled code of the checker modules and of the modules they import, as one shared
 library (Lake rebuilds it when any of them changes). -/

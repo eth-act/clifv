@@ -22,19 +22,6 @@ open Backend Backend.Proof E2E.LinkCheck E2E.Binary E2E.BinCheck
 
 variable {I : LinkInput} {B : BaseEnv} {file : ByteArray}
 
-/-- Lines of size 4 at the same offset are the same line. -/
-theorem lineOffset_inj4 {L : List Line} {j j' : Nat} {ln ln' : Line} (hj : L[j]? = some ln)
-    (hj' : L[j']? = some ln') (hs : ln.size = 4) (hs' : ln'.size = 4)
-    (he : lineOffset L j = lineOffset L j') : j = j' := by
-  rcases Nat.lt_trichotomy j j' with h | h | h
-  · have h1 := lineOffset_succ L j _ hj
-    have h2 := lineOffset_mono L (show j + 1 ≤ j' by omega)
-    omega
-  · exact h
-  · have h1 := lineOffset_succ L j' _ hj'
-    have h2 := lineOffset_mono L (show j' + 1 ≤ j by omega)
-    omega
-
 /-- **A relocated byte is a code byte of the image.** -/
 theorem relocAt_img (hI : okB I = true) (hF : ∀ g ∈ (prog I).funcs, FnOk I file g)
     {a : BitVec 64} (h : RelocAt I a) : ImgT (tabOf I.results) a := by
@@ -83,19 +70,8 @@ theorem word_static (hI : okB I = true) (hc : codeMapB I (tabOf I.results) = tru
     Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega), wAt, BitVec.toNat_add,
     BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : rl.offset + i' < 2 ^ 64),
     Nat.mod_eq_of_lt (by omega)] at he'
-  by_cases hn : h.name = g.name
-  · have hart := art_of_name (I := I) hn
-    rw [hart] at hj' he' ho hl'
-    obtain ⟨lm, hm⟩ := FnAsm.layout_labelOffsets (hF g hg).layout
-    have h4 := (FnAsm.layout_word (hF g hg).layout hm hj rfl).1
-    have h4' := (FnAsm.layout_word (hF g hg).layout hm hj' rfl).1
-    have := lineOffset_inj4 hj hj' rfl rfl (by omega)
-    subst this
-    rw [hj] at hj'
-    cases hj'
-  · have hd := (codeMap_sound hI hc hh).2 g hg hn
-    simp only [art] at hl' he' hfit hfit' ho hd hlw
-    omega
+  have hal := line_overlap hI hc hF hg hh hj hj' rfl rfl hk hi' (by rw [ho]; omega)
+  simp [lineAlikeB] at hal
 
 /-- **`StepOkR.insn` (D2) from the per-state facts**: the reads of the decoded word at the pc
 avoid the relocated bytes. -/
