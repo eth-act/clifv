@@ -28,7 +28,7 @@ open Arm
 
 /-! ## Relaxation on line lists -/
 
-private theorem relaxLines_cons' (f : Lbl → Bool) (ln : Line) (A : List Line) :
+theorem relaxLines_cons' (f : Lbl → Bool) (ln : Line) (A : List Line) :
     relaxLines f (ln :: A) = relaxLine f ln ++ relaxLines f A := by
   simp [relaxLines]
 
@@ -37,7 +37,7 @@ theorem Insn.relaxTarget_invertTo_skip (c : Insn) : (c.invertTo .skip).relaxTarg
   all_goals split <;> simp
 
 /-- With every label far, no relaxable branch is left. -/
-private theorem relaxable_relaxLines_true {pre : List Line} :
+theorem relaxable_relaxLines_true {pre : List Line} :
     ∀ ln ∈ relaxLines (fun _ => true) pre, ln.relaxable? = none := by
   intro ln hln
   simp only [relaxLines, List.mem_flatMap] at hln
@@ -53,7 +53,7 @@ private theorem relaxable_relaxLines_true {pre : List Line} :
     subst hln
     exact h
 
-private theorem farTargets_go_of_none (m : Std.HashMap Lbl Nat) :
+theorem farTargets_go_of_none (m : Std.HashMap Lbl Nat) :
     ∀ {L : List Line} (pc : Nat) (acc : List Lbl), (∀ ln ∈ L, ln.relaxable? = none) →
       farTargets.go m L pc acc = acc
   | [], _, _, _ => rfl
@@ -61,14 +61,14 @@ private theorem farTargets_go_of_none (m : Std.HashMap Lbl Nat) :
     simp only [farTargets.go, h ln (by simp)]
     exact farTargets_go_of_none m _ _ fun x hx => h x (by simp [hx])
 
-private theorem farTargets_of_none {L : List Line} (h : ∀ ln ∈ L, ln.relaxable? = none) :
+theorem farTargets_of_none {L : List Line} (h : ∀ ln ∈ L, ln.relaxable? = none) :
     farTargets L = [] := by
   unfold farTargets
   split
   · exact farTargets_go_of_none _ _ _ h
   · rfl
 
-private theorem relaxFar_fixpoint (pre : List Line) :
+theorem relaxFar_fixpoint (pre : List Line) :
     ∀ n far, farTargets (relaxLines (relaxFar pre n far) pre) = []
   | 0, _ => farTargets_of_none relaxable_relaxLines_true
   | n + 1, far => by
@@ -81,7 +81,7 @@ private theorem relaxFar_fixpoint (pre : List Line) :
 theorem relaxOf_fixpoint (pre : List Line) : farTargets (relaxLines (relaxOf pre) pre) = [] :=
   relaxFar_fixpoint pre _ _
 
-private theorem farTargets_go_nil {m : Std.HashMap Lbl Nat} :
+theorem farTargets_go_nil {m : Std.HashMap Lbl Nat} :
     ∀ {L : List Line} {pc : Nat} {acc : List Lbl}, farTargets.go m L pc acc = [] →
       acc = [] ∧ ∀ (j : Nat) (ln : Line) (c : Insn) (t : Lbl) (o : Nat), L[j]? = some ln →
         ln.relaxable? = some (c, t) → m[t]? = some o →
@@ -131,11 +131,11 @@ def Insn.encodable (i : Insn) : Bool :=
 /-- The environment `Insn.encodable` checks against. -/
 private abbrev env0 : Env := ⟨0, fun _ => some 0⟩
 
-private theorem Insn.armFields_env_indep {i : Insn} (h : i.pcRelSpec? = none) (env env' : Env) :
+theorem Insn.armFields_env_indep {i : Insn} (h : i.pcRelSpec? = none) (env env' : Env) :
     i.armFields env = i.armFields env' := by
   cases i <;> first | rfl | simp [Insn.pcRelSpec?] at h
 
-private theorem Env.pcRel_of_range {env : Env} {what : String} {n scale : Nat} {l : Lbl}
+theorem Env.pcRel_of_range {env : Env} {what : String} {n scale : Nat} {l : Lbl}
     {o : Nat} {reach align : Int} (hl : env.target l = some o) (hs : 0 < scale)
     (hreach : (scale : Int) * 2 ^ n = reach) (halign : align = scale)
     (h1 : -reach ≤ (o : Int) - env.pc) (h2 : (o : Int) - env.pc < reach)
@@ -256,20 +256,20 @@ theorem Insn.encodable_invertTo_skip {c : Insn} {t : Lbl} (hc : c.relaxTarget? =
 /-! ## `emitFunc`'s size and trap table -/
 
 /-- One step of `emitFunc`'s loop over the lines: running offset and trap sites. -/
-private def trapStep (ln : Line) (s : Nat × Array TrapSite) : Nat × Array TrapSite :=
+def trapStep (ln : Line) (s : Nat × Array TrapSite) : Nat × Array TrapSite :=
   match ln with
   | .ins _ (some code) => (s.1 + ln.size, s.2.push ⟨s.1, code⟩)
   | _ => (s.1 + ln.size, s.2)
 
 /-- The trap sites of a line list laid out from byte offset `off`. -/
-private def trapsFrom : List Line → Nat → List TrapSite
+def trapsFrom : List Line → Nat → List TrapSite
   | [], _ => []
   | ln :: L, off =>
     (match ln with
      | .ins _ (some c) => [⟨off, c⟩]
      | _ => []) ++ trapsFrom L (off + ln.size)
 
-private theorem forIn_trapStep
+theorem forIn_trapStep
     {f : Line → Nat × Array TrapSite → Except String (ForInStep (Nat × Array TrapSite))}
     (hf : ∀ ln s, f ln s = pure (.yield (trapStep ln s))) :
     ∀ (L : List Line) s, forIn L s f = pure (L.foldl (fun s ln => trapStep ln s) s)
@@ -278,7 +278,7 @@ private theorem forIn_trapStep
     simp only [List.forIn_cons, hf, pure_bind, List.foldl_cons]
     exact forIn_trapStep hf L _
 
-private theorem foldl_trapStep : ∀ (L : List Line) (s : Nat × Array TrapSite),
+theorem foldl_trapStep : ∀ (L : List Line) (s : Nat × Array TrapSite),
     (L.foldl (fun s ln => trapStep ln s) s).1 = s.1 + (L.map Line.size).sum ∧
       (L.foldl (fun s ln => trapStep ln s) s).2.toList = s.2.toList ++ trapsFrom L s.1
   | [], s => by simp [trapsFrom]
@@ -291,7 +291,7 @@ private theorem foldl_trapStep : ∀ (L : List Line) (s : Nat × Array TrapSite)
     | word => simp [trapStep, Nat.add_assoc]
     | label => simp [trapStep, Nat.add_assoc]
 
-private theorem emitFunc_unfold {k : Nat} {af : AFunc} {fa : FnAsm} (he : emitFunc k af = .ok fa) :
+theorem emitFunc_unfold {k : Nat} {af : AFunc} {fa : FnAsm} (he : emitFunc k af = .ok fa) :
     ∃ pre, emitPre k af = .ok pre ∧
       fa.lines = (relaxLines (relaxOf pre.toList) pre.toList).toArray ∧
       fa.size = (fa.lines.toList.map Line.size).sum ∧ fa.traps = trapsFrom fa.lines.toList 0 := by
@@ -310,7 +310,7 @@ private theorem emitFunc_unfold {k : Nat} {af : AFunc} {fa : FnAsm} (he : emitFu
     subst he
     exact ⟨pre, rfl, rfl, by simpa using h1, by simpa using h2⟩
 
-private theorem sizes_codeLines : ∀ L : List Line, (L.map Line.size).sum = 4 * (codeLines L).length
+theorem sizes_codeLines : ∀ L : List Line, (L.map Line.size).sum = 4 * (codeLines L).length
   | [] => rfl
   | ln :: L => by
     have := sizes_codeLines L
@@ -325,7 +325,7 @@ theorem emitFunc_size {k : Nat} {af : AFunc} {fa : FnAsm} (he : emitFunc k af = 
   obtain ⟨_, _, _, hs, _⟩ := emitFunc_unfold he
   rw [hs, sizes_codeLines]
 
-private theorem codeTraps_trapsFrom : ∀ (L : List Line) (n : Nat),
+theorem codeTraps_trapsFrom : ∀ (L : List Line) (n : Nat),
     ((codeLines L).zipIdx n).filterMap (fun (p : Line × Nat) => match p with
       | (ln, k) => match ln with
         | .ins _ (some c) => some (⟨4 * k, c⟩ : TrapSite)
@@ -375,14 +375,14 @@ def NearOk (L : List Line) : Prop :=
     (∀ x, i ≠ .b x) → (tr = none → i.relaxTarget? = none) → m[t]? = some o →
     -reach ≤ (o : Int) - lineOffset L j ∧ (o : Int) - lineOffset L j < reach
 
-private theorem lineOffset_le_sum (L : List Line) (j : Nat) :
+theorem lineOffset_le_sum (L : List Line) (j : Nat) :
     lineOffset L j ≤ (L.map Line.size).sum := by
   have := congrArg (fun l => (l.map Line.size).sum) (List.take_append_drop j L)
   simp only [List.map_append, List.sum_append] at this
   unfold lineOffset
   omega
 
-private theorem lineOffset_mod4 : ∀ (L : List Line) (j : Nat), lineOffset L j % 4 = 0
+theorem lineOffset_mod4 : ∀ (L : List Line) (j : Nat), lineOffset L j % 4 = 0
   | [], _ => by simp
   | _ :: _, 0 => by simp
   | ln :: L, j + 1 => by
@@ -390,14 +390,14 @@ private theorem lineOffset_mod4 : ∀ (L : List Line) (j : Nat), lineOffset L j 
     have := lineOffset_mod4 L j
     cases ln <;> simp [Line.size] <;> omega
 
-private theorem Insn.pcRelSpec_bounds {i : Insn} {t : Lbl} {reach align : Int}
+theorem Insn.pcRelSpec_bounds {i : Insn} {t : Lbl} {reach align : Int}
     (h : i.pcRelSpec? = some (t, reach, align)) :
     32768 ≤ reach ∧ reach ≤ 134217728 ∧ (align = 4 ∨ align = 1) := by
   cases i <;> simp only [Insn.pcRelSpec?, Option.some.injEq, Prod.mk.injEq, reduceCtorEq] at h
   all_goals obtain ⟨rfl, rfl, rfl⟩ := h
   all_goals decide
 
-private theorem Insn.relaxTarget_pcRelSpec {i : Insn} {t t' : Lbl} {reach align : Int}
+theorem Insn.relaxTarget_pcRelSpec {i : Insn} {t t' : Lbl} {reach align : Int}
     (h : i.relaxTarget? = some t') (hs : i.pcRelSpec? = some (t, reach, align)) : t' = t := by
   have hc : i.condTarget? = some t' := by
     unfold Insn.relaxTarget? at h
@@ -408,7 +408,7 @@ private theorem Insn.relaxTarget_pcRelSpec {i : Insn} {t t' : Lbl} {reach align 
   case bcond => split at hc <;> simp_all
   all_goals simp_all
 
-private theorem encodeCode_ne_error {lbl : Lbl → Option Nat} :
+theorem encodeCode_ne_error {lbl : Lbl → Option Nat} :
     ∀ {code : List Line} {acc : Array (BitVec 32)},
       (∀ (k : Nat) (ln : Line), code[k]? = some ln →
         ∃ w, ln.encodeAt lbl (4 * (acc.size + k)) = .ok w) →
@@ -522,7 +522,7 @@ theorem emitFunc_layout_total {k : Nat} {af : AFunc} {fa : FnAsm} (he : emitFunc
 
 /-! ## Code size -/
 
-private theorem relaxLine_size_le (f : Lbl → Bool) (ln : Line) :
+theorem relaxLine_size_le (f : Lbl → Bool) (ln : Line) :
     ((relaxLine f ln).map Line.size).sum ≤ 2 * ln.size := by
   unfold relaxLine
   split

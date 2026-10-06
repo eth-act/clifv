@@ -44,7 +44,7 @@ def nearB (L : List Line) : Bool :=
   | .ok m => nearB.go m L 0
   | .error _ => true
 
-private theorem nearB.go_sound {m : Std.HashMap Lbl Nat} :
+theorem nearB.go_sound {m : Std.HashMap Lbl Nat} :
     ∀ (L : List Line) (pc : Nat), nearB.go m L pc = true →
     ∀ (j : Nat) (i : Insn) (tr : Option Clif.TrapCode) (t : Lbl) (reach align : Int) (o : Nat),
     L[j]? = some (.ins i tr) → i.pcRelSpec? = some (t, reach, align) → t ≠ .skip →
@@ -125,7 +125,7 @@ theorem emitFunc_layout_ready {k : Nat} {af : AFunc} {fa : FnAsm} (he : emitFunc
   obtain ⟨hlab, hdef, henc, hnear, hsz⟩ := FnAsm.layoutReadyB_sound h
   exact emitFunc_layout_total he hlab hdef henc hnear hsz
 
-private theorem forIn_except_ne {α β : Type} {f : α → β → Except String (ForInStep β)}
+theorem forIn_except_ne {α β : Type} {f : α → β → Except String (ForInStep β)}
     (hf : ∀ a b, ∃ b', f a b = .ok (.yield b')) :
     ∀ (L : List α) (b : β) (e : String), forIn L b f ≠ .error e
   | [], _, _ => nofun
