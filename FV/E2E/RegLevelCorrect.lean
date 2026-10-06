@@ -355,16 +355,12 @@ theorem rets_store {us : List (Reg × Reg)} {ops : Array Operand} {allocs : Arra
   funext l
   exact hcl.1 l (by simp [MInst.clobbers])
 
-/-- **The register-level theorem with kept addresses and the final world** (M6 + M5, for
-linking): `RegLevelCorrect`'s simulation for the activation entered in `s` whose addresses
-outside the world are `frameWG K … G s` (the frame, the callees' dead stack and addresses `G`
-it keeps: its callers' frames, the program's code), from a body-entry world `w₀` that agrees
-with `s` only outside them and on the registers the entry `Args` reads (`BodyEntryW`), with the
-callee contract required only at the states that keep `G` (`CalleeOkG`). A return additionally
-leaves every unmasked field but x29/`sp` as the VCode run's final world `w` (the flags, x18, …),
-the memory at `G` as at entry and the program unchanged. -/
-theorem regLevelCorrect_world {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
-    {fb : FnBin} {k : Nat} (hcheck : checkAlloc vcp rf = .ok ()) (halloc : lowerRFunc vcp rf = .ok af)
+/-- `regLevelCorrect_world` from verified in-states (`CheckedAt`) with an `EntryOk` entry state
+`a0`, for the initial vreg file `ρsel m₀` chosen from the allocated code's initial store `m₀`
+(any choice satisfying the entry state). -/
+theorem regLevelCorrect_world_at {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
+    {fb : FnBin} {k : Nat} {cc : CheckCtx} {ins : Array (Option AState)}
+    {a0 : AState} (hcheck : CheckedAt vcp rf cc ins a0) (hok : EntryOk a0) (halloc : lowerRFunc vcp rf = .ok af)
     (hemit : emitFunc k af = .ok fa) (hlayout : fa.layout = .ok fb) {X : ExtSem} {H : ArmHooks}
     {K : Nat} {G : BitVec 64 → Prop} {gv : Nat → String → Prop}
     (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
@@ -375,8 +371,11 @@ theorem regLevelCorrect_world {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAs
     (hCT : vcp.hasTryCall = true → CalleeTryOkG (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) K G s
       (CallAt fa base) X H vcp.TrySite gv)
     (hTls : vcp.hasTls = true → TlsOk (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) K X H)
-    {w₀ : Arm.ArmState} (hbe : BodyEntryW (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) vcp.EntryArg af s w₀) (ρ₀ : Nat → CV) :
-    (∀ us vals w, VReturns vcp (csemV gv (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ us vals w →
+    {w₀ : Arm.ArmState} (hbe : BodyEntryW (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) vcp.EntryArg af s w₀)
+    (ρsel : (Loc → CV) → Nat → CV)
+    (hsel : ∀ m₀ : Loc → CV, Inv ckeep a0 m₀ (ρsel m₀) (fun r => m₀ (.reg r))) :
+    ∃ m₀ : Loc → CV,
+    (∀ us vals w, VReturns vcp (csemV gv (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) ⟨fa.k, af.slotBase⟩ X) (ρsel m₀) w₀ us vals w →
       ∃ n, ArmRet ra s (E2E.runX (ArmStepX X H fa) n s) ∧
         (∀ (j : Nat) v p x, us[j]? = some (v, p) → vals[j]? = some x →
           regVal (E2E.runX (ArmStepX X H fa) n s) p = x) ∧
@@ -387,20 +386,21 @@ theorem regLevelCorrect_world {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAs
         (E2E.runX (ArmStepX X H fa) n s).program = s.program ∧
         ∀ i, 0 < i → i < n → PostCall fa base (Arm.r .PC (E2E.runX (ArmStepX X H fa) i s)) →
           spv (E2E.runX (ArmStepX X H fa) i s) = spv s - BitVec.ofNat 64 (frameDrop af)) ∧
-    (∀ c, VTraps vcp (csemV gv (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ c →
+    (∀ c, VTraps vcp (csemV gv (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) ⟨fa.k, af.slotBase⟩ X) (ρsel m₀) w₀ c →
       ∃ n, TrapAt fb base c (E2E.runX (ArmStepX X H fa) n s)) := by
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hlayout
   obtain ⟨body, psF, hb, -, hk⟩ := emitFunc_ok hemit
   subst hk
   let R : RL := ⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, G, gv⟩
-  have hR : R.Wf := ⟨hcheck, halloc, hemit, hlayout, hlm, by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres,
+  have hR : R.Wf := ⟨⟨cc, ins, a0, hcheck, hok⟩, halloc, hemit, hlayout, hlm, by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres,
     ⟨body, hb⟩, hent.program, hG⟩
   have hck := (lowerRFunc_ok hR.alloc).2.2.2
   obtain ⟨n0, ht0, hq0, hA0, hf0⟩ := q_init hR hent hbe
   obtain ⟨Rl, hSim, hinit, hkeep⟩ :=
-    checkAlloc_sound R.vc R.rf R.sem ckeep hcheck (locVal R.fr (iterN R.step n0 s)) ρ₀ w₀
+    checkedAt_sound R.vc R.rf R.sem ckeep hcheck (locVal R.fr (iterN R.step n0 s))
+      (ρsel (locVal R.fr (iterN R.step n0 s))) w₀ (hsel _)
   have hRz := realizes_all hR hC hCT hTls hcov
-  refine ⟨fun us vals w hret => ?_, fun c htr => ?_⟩
+  refine ⟨locVal R.fr (iterN R.step n0 s), fun us vals w hret => ?_, fun c htr => ?_⟩
   · -- a return
     obtain ⟨b, k, ρ, w₁, vb, ops, outs, hstar, hvb, hi, hops, hvals, hsem⟩ := hret
     obtain ⟨n1, c1, ⟨hq1, hA1⟩, hr1, ht1⟩ := forward hSim hRz hstar hinit ⟨hq0, hA0⟩
@@ -549,6 +549,79 @@ theorem regLevelCorrect_world {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAs
             obtain ⟨n3, htrap⟩ := trap_trapIf hR hq2 hvb hi hops' hholds
             exact ⟨n0 + n1 + n2 + n3, by rw [hfin]; exact htrap⟩
 
+/-- **The register-level theorem with kept addresses and the final world** (M6 + M5, for
+linking): `RegLevelCorrect`'s simulation for the activation entered in `s` whose addresses
+outside the world are `frameWG K … G s` (the frame, the callees' dead stack and addresses `G`
+it keeps: its callers' frames, the program's code), from a body-entry world `w₀` that agrees
+with `s` only outside them and on the registers the entry `Args` reads (`BodyEntryW`), with the
+callee contract required only at the states that keep `G` (`CalleeOkG`). A return additionally
+leaves every unmasked field but x29/`sp` as the VCode run's final world `w` (the flags, x18, …),
+the memory at `G` as at entry and the program unchanged. -/
+theorem regLevelCorrect_world {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
+    {fb : FnBin} {k : Nat} (hcheck : checkAlloc vcp rf = .ok ()) (halloc : lowerRFunc vcp rf = .ok af)
+    (hemit : emitFunc k af = .ok fa) (hlayout : fa.layout = .ok fb) {X : ExtSem} {H : ArmHooks}
+    {K : Nat} {G : BitVec 64 → Prop} {gv : Nat → String → Prop}
+    (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
+    {base ra : BitVec 64} {s : Arm.ArmState} (hent : AbiCall fb base ra s)
+    (hres : StackAvail K af s) (hG : ∀ a, G a → ¬ StackBelow (frameDrop af + K) (spv s) a)
+    (hC : CalleeOkG (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) K G s
+      (CallAt fa base) X H vcp.CallSite gv)
+    (hCT : vcp.hasTryCall = true → CalleeTryOkG (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) K G s
+      (CallAt fa base) X H vcp.TrySite gv)
+    (hTls : vcp.hasTls = true → TlsOk (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) K X H)
+    {w₀ : Arm.ArmState} (hbe : BodyEntryW (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) vcp.EntryArg af s w₀) (ρ₀ : Nat → CV) :
+    (∀ us vals w, VReturns vcp (csemV gv (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ us vals w →
+      ∃ n, ArmRet ra s (E2E.runX (ArmStepX X H fa) n s) ∧
+        (∀ (j : Nat) v p x, us[j]? = some (v, p) → vals[j]? = some x →
+          regVal (E2E.runX (ArmStepX X H fa) n s) p = x) ∧
+        (∀ a, ¬ (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) a → (E2E.runX (ArmStepX X H fa) n s).mem a = w.mem a) ∧
+        (∀ f, ¬ Masked f → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 →
+          Arm.r f (E2E.runX (ArmStepX X H fa) n s) = Arm.r f w) ∧
+        (∀ a, G a → (E2E.runX (ArmStepX X H fa) n s).mem a = s.mem a) ∧
+        (E2E.runX (ArmStepX X H fa) n s).program = s.program ∧
+        ∀ i, 0 < i → i < n → PostCall fa base (Arm.r .PC (E2E.runX (ArmStepX X H fa) i s)) →
+          spv (E2E.runX (ArmStepX X H fa) i s) = spv s - BitVec.ofNat 64 (frameDrop af)) ∧
+    (∀ c, VTraps vcp (csemV gv (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ c →
+      ∃ n, TrapAt fb base c (E2E.runX (ArmStepX X H fa) n s)) := by
+  obtain ⟨cc, ins, hc⟩ := checked_of_checkAlloc hcheck
+  obtain ⟨a0, hat, hle⟩ := hc.at
+  obtain ⟨_, h⟩ := regLevelCorrect_world_at hat (entryOk_of_le hle) halloc hemit hlayout hcov hent
+    hres hG hC hCT hTls hbe (fun _ => ρ₀) (fun _ => Inv_mono hle Inv_entryState)
+  exact h
+
+/-- `regLevelCorrect_world` for an `AllocChecked` allocation (V4), for one initial vreg file of the
+theorem's choice (`entryRho`: the values the entry state places in the initial store). -/
+theorem regLevelCorrect_world_ex {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
+    {fb : FnBin} {k : Nat} (hcheck : AllocChecked vcp rf) (halloc : lowerRFunc vcp rf = .ok af)
+    (hemit : emitFunc k af = .ok fa) (hlayout : fa.layout = .ok fb) {X : ExtSem} {H : ArmHooks}
+    {K : Nat} {G : BitVec 64 → Prop} {gv : Nat → String → Prop}
+    (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
+    {base ra : BitVec 64} {s : Arm.ArmState} (hent : AbiCall fb base ra s)
+    (hres : StackAvail K af s) (hG : ∀ a, G a → ¬ StackBelow (frameDrop af + K) (spv s) a)
+    (hC : CalleeOkG (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) K G s
+      (CallAt fa base) X H vcp.CallSite gv)
+    (hCT : vcp.hasTryCall = true → CalleeTryOkG (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) K G s
+      (CallAt fa base) X H vcp.TrySite gv)
+    (hTls : vcp.hasTls = true → TlsOk (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) K X H)
+    {w₀ : Arm.ArmState} (hbe : BodyEntryW (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) vcp.EntryArg af s w₀) :
+    ∃ ρ₀ : Nat → CV,
+    (∀ us vals w, VReturns vcp (csemV gv (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ us vals w →
+      ∃ n, ArmRet ra s (E2E.runX (ArmStepX X H fa) n s) ∧
+        (∀ (j : Nat) v p x, us[j]? = some (v, p) → vals[j]? = some x →
+          regVal (E2E.runX (ArmStepX X H fa) n s) p = x) ∧
+        (∀ a, ¬ (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) a → (E2E.runX (ArmStepX X H fa) n s).mem a = w.mem a) ∧
+        (∀ f, ¬ Masked f → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 →
+          Arm.r f (E2E.runX (ArmStepX X H fa) n s) = Arm.r f w) ∧
+        (∀ a, G a → (E2E.runX (ArmStepX X H fa) n s).mem a = s.mem a) ∧
+        (E2E.runX (ArmStepX X H fa) n s).program = s.program ∧
+        ∀ i, 0 < i → i < n → PostCall fa base (Arm.r .PC (E2E.runX (ArmStepX X H fa) i s)) →
+          spv (E2E.runX (ArmStepX X H fa) i s) = spv s - BitVec.ofNat 64 (frameDrop af)) ∧
+    (∀ c, VTraps vcp (csemV gv (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ c →
+      ∃ n, TrapAt fb base c (E2E.runX (ArmStepX X H fa) n s)) := by
+  obtain ⟨cc, ins, a0, hat, hok⟩ := hcheck
+  obtain ⟨_, h⟩ := regLevelCorrect_world_at hat hok halloc hemit hlayout hcov hent hres hG hC hCT
+    hTls hbe (entryRho a0) (Inv_entryRho ckeep hok)
+  exact ⟨_, h⟩
 
 /-- **`RegLevelCorrect` for the backend's code** (M6 + M5): for the allocated, lowered, emitted
 and laid-out function, the machine `ArmStepX X H fa` realises every return and every trap of
@@ -582,6 +655,35 @@ theorem regLevelCorrect_backend {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : Fn
       ((ctlCheck_args (lowerRFunc_ok halloc).2.2.2 hvb hi).2.2 _ hv).2) ρ₀
   rw [e, csemV_bot] at h
   exact ⟨fun us vals w hret => by
+    obtain ⟨n, h1, h2, h3, -⟩ := h.1 us vals w hret
+    exact ⟨n, h1, h2, h3⟩, h.2⟩
+
+/-- `regLevelCorrect_backend` for an `AllocChecked` allocation (V4): `RegLevelCorrectEx`. -/
+theorem regLevelCorrect_backend_ex {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
+    {fb : FnBin} {k : Nat} (hcheck : AllocChecked vcp rf) (halloc : lowerRFunc vcp rf = .ok af)
+    (hemit : emitFunc k af = .ok fa) (hlayout : fa.layout = .ok fb) {X : ExtSem} {H : ArmHooks}
+    {K : Nat} (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
+    (hC : ∀ s, CalleeOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H vcp.CallSite)
+    (hCT : vcp.hasTryCall = true → ∀ s, CalleeTryOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H vcp.TrySite)
+    (hTls : vcp.hasTls = true → ∀ s, TlsOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H) :
+    RegLevelCorrectEx
+      (fun s => csem (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s)
+        ⟨fa.k, af.slotBase⟩ X)
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af) K
+      (ArmStepX X H fa) vcp af fb := by
+  intro base ra s hent hres w₀ hbe
+  have e := frameWG_false K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s
+  obtain ⟨ρ₀, h⟩ := regLevelCorrect_world_ex (G := fun _ => False) (gv := fun _ _ => False) hcheck halloc hemit
+    hlayout hcov hent.toCall hres
+    (fun _ h => h.elim) (by rw [e]; exact (hC s).g _ s _ _) (by rw [e]; exact fun h => (hCT h s).g _ _ s _ _)
+    (by rw [e]; exact fun h => hTls h s)
+    (by rw [e]; exact hbe.w _ fun r ⟨_, _, hvb, hi, _, hv⟩ =>
+      ((ctlCheck_args (lowerRFunc_ok halloc).2.2.2 hvb hi).2.2 _ hv).2)
+  rw [e, csemV_bot] at h
+  exact ⟨ρ₀, fun us vals w hret => by
     obtain ⟨n, h1, h2, h3, -⟩ := h.1 us vals w hret
     exact ⟨n, h1, h2, h3⟩, h.2⟩
 

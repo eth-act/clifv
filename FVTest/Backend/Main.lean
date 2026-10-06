@@ -5,7 +5,7 @@ import FVTest.Backend.StockConfig
 
 /-!
 `lake exe lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>]
-[--dump <dir>] [--regalloc regalloc2|stack|regalloc2-small] [--personality <sym>]
+[--dump <dir>] [--regalloc regalloc2|spill|stack|regalloc2-small] [--personality <sym>]
 [--opt [--opt-* options]]`: compile every function of a `.clif` file with the
 Lean backend (`FV/Backend.lean`). Register allocation: `regalloc2` (default; the
 `lean-regalloc` oracle, `$LEAN_REGALLOC` or `rust/target/release/lean-regalloc`, every
@@ -42,7 +42,7 @@ validator and listed as `compiled, unverified (validation budget)`.
 open Backend
 
 def usage : String :=
-  "usage: lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>] [--dump <dir>] [--regalloc regalloc2|stack|regalloc2-small] [--personality <sym>] [--opt] [--stock-config <request.json> --config-receipt <receipt.json>]"
+  "usage: lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>] [--dump <dir>] [--regalloc regalloc2|spill|stack|regalloc2-small] [--personality <sym>] [--opt] [--stock-config <request.json> --config-receipt <receipt.json>]"
 
 /-- The rules the end-to-end theorem covers: the emitter-subset closure, and the `try_call`
 rules of `lower_branch` (ids 1034 `bl`, 1035 GOT + `blr`: `Backend.Proof.tryRootRule`, proven by

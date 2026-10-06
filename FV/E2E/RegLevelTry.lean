@@ -230,7 +230,7 @@ theorem realizes_tryCall {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (
     (fun r ha hnd hnc => hoth r ha hnd (by rw [← clobbers_tryCall hcl]; exact hnc))
     (fun r hr hcs => hkeep r (by rw [clobbers_tryCall hcl] at hr; exact hr) hcs)
   -- the successor's label
-  obtain ⟨c, ins, hc⟩ := checked_of_checkAlloc hR.check
+  obtain ⟨c, ins, _, hc, -⟩ := hR.check
   obtain ⟨preds, hcfg⟩ := hc.cfg
   obtain ⟨t0, ts, hback, hss, hlab⟩ := cfg_block hcfg hvb
   have hti : t0 = .tryCall info ti := by
