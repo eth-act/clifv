@@ -71,7 +71,7 @@ and, on rejection, replaced by a directly proven Lean path (kind 2). Correctness
 | encoder | Lean | `Insn.decode_encode` (`FV/Backend/Proof/Encode.lean:57-60`) | proven | — |
 | linking (program level) | `cargo fv` object merge + **rust-lld** | **`okB`** (`FV/E2E/LinkCheck.lean:716-777`) per crate by `native_decide` | **validator premise + oracle + per-program proof** | L1, L2 |
 | executable bytes | **rust-lld** | **`BinOk`** (`FV/E2E/BinCheck.lean:539-543`) per crate by `native_decide` | **validator premise + oracle + per-program proof** | L2 |
-| executable semantics | — | theorem is about the hooked model machine `modelOf r` (`FV/E2E/Binary.lean:565-578`) | gap | L3 |
+| executable semantics | — | `E2E.ExecBytes.binary_correct_exec`: the executable's own words (outside calls and TLS by hooks), under `RunOk` (per-state facts of the model's run, not yet exported by M6) | partial | L3 |
 | stack bound | Lean `budMap` | `budOkW` proven for `budMap`'s budgets (`budOkW_budMap`), no run-time check; `goodN`/`stackB` characterised as "no call cycle reachable" (`goodN_iff`, `stackB_isSome_iff`); per crate the input condition and the bound still by `native_decide` (`stack_ok`) | input condition + per-program evaluation (until L1) | L4 done |
 
 Mid-end note: the mid-end is already certificate-free in the sense of §1.2, so M1 is optional.
@@ -340,6 +340,35 @@ author's estimate, not measured), **Risk**.
   sequence) refines the hooked model machine, per pair and through `linkedCall` by induction on the depth.
   Removes the four trusted hook items listed in PLAN.md M9.
 - **Depends:** none (L2b changes which forms occur; agree the forms first). **Size:** medium–large.
+- **Partly done** (2026-10-06, `agent/exec-bytes`; `FV/E2E/ExecBytes.lean`, `FV/E2E/ExecWords.lean`; e2e.md
+  "The executable's own words"): `E2E.ExecBytes.binary_correct_exec` (`_of_good`): the executable machine
+  `step I B file` (fetch from the file, decode, `exec_inst`; outside calls and the TLS site by the base
+  hooks) run from `r` refines the CLIF run (`ExecRefines`: `ArmRefines` with the CLIF bytes compared outside
+  `RelocAt I`), by simulation of the model through the linked calls (`act_sim`), word semantics proven
+  against the decoder, static control flow proven for every input. Trusted items (1) and (2) are gone;
+  (3) and the GOT slot's value are in the explicit hypothesis `RunOk` (per-state facts of the model's run:
+  D1 `cf`, D2 `insn`/`call`/`tls`, D4 `got`, plus `err`, `program`, `site`, `blr`, `plain`); (4) TLS stays
+  trusted (T1).
+- **Remaining: discharge `RunOk` from the M6 proof.** Plan:
+  1. Extend `RL.Good` (`FV/E2E/RegLevelSim.lean`, now `¬ PostCall ∨ sp = spB`) to the `StepOk` facts of an
+     intermediate state `u`: no error and the program (as `StRel`/`InterOk`), the pc at an instruction line
+     (not past a TLSDESC `ldr`), `cf` as "`pc (step u) = pc u + 4` or no second word", D2 as "the step at `u`
+     reads only world, frame and jump-table bytes", D4 at a GOT `ldr`. Every `realizes_*` case already proves
+     `∀ i < n, R.Good (iterN R.step i s)` for its segment (RegLevelOp/Move/Branch/Goto/JT/Call/Tls/Try/
+     Atomic/Frame/Next/Args, about 13 files): straight-line segments from `iterN_execLines_pc` (pc + 4),
+     jumps land on labels (never second words, as `first_not_second`), returns after calls
+     (`ret_not_second`), D2 from the address facts each case has (world addresses are not code; jump-table
+     words carry no relocation, `FnAsm.layout_relocs`). About 1–1.5k lines.
+  2. Export it: `regLevelCorrect_world` (`RegLevelCorrect.lean`, exports only the `PostCall` part today) →
+     `LinkWorld`/`PairDriver` → `LinkArm` (the depth induction gives `Reach.nest`) → `crate_correct` →
+     `StackBound` → `binary_correct`, as a variant of `ArmRefines` carrying "every state before the return
+     is `Good`", from which `RunOk` follows. About 0.5–0.8k lines.
+  3. D4: GOT slots in the kept set `G` (`StRel.gkeep`): an input field with the slots, a `BinCheck` check
+     that the slot's 8 bytes are `ro`/`relro`, and the outside-code contract (`BaseOk`/`CalleeOk`) keeping
+     `G` ("outside code does not write the program's code or GOT"). About 0.3k lines.
+  4. Non-vacuity: the a_arith witness (`Crates.BinaryWitness`) then gets `RunOk` from the exported
+     invariant (today `binary_correct_exec` has no witness: `RunOk` is about the model's intermediate
+     states, which the existing witness does not compute).
 
 ### L4. Stack bound without a per-program check
 
@@ -442,7 +471,7 @@ Large, low priority.
 
 | WP | Item | Notes |
 | --- | --- | --- |
-| T1 | TLS: TLSDESC hook vs lld's local-exec rewrite | overlaps L3 |
+| T1 | TLS: TLSDESC hook vs lld's local-exec rewrite | overlaps L3; `binary_correct_exec` still runs the TLS site by `Hb.tls` (no `tpidr_el0` in the Arm model) |
 | T2 | Atomics on a single-core model (`ldar`/`stlr` plain, exclusive store always succeeds, `dmb` no-op) | `docs/decisions/arm-model.md` "Atomics"; a multi-core memory model is a project of its own |
 | T3 | std/musl contracts: compile std through `cargo fv` (`-Zbuild-std`) | needs S11, S12, inline asm |
 | T4 | Arm model fidelity (ASL-derived, qemu co-simulation) | testing, not proof |

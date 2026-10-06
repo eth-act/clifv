@@ -17,7 +17,7 @@ executable file, read by the ELF reader `FV/E2E/Elf.lean`:
     without a relocation is the compiled word (`plain`); every relocation is resolved
     (`RelocOk`): `bl` → `blW (T - P)` with `T = I.baseOf sym`; an `adrp`/`add` or GOT
     `adrp`/`ldr` pair → `PairOk` (the executable's two words put `T = I.symAddr sym addend`
-    into the compiled `adrp`'s register `rd`: `adrp`+`add` (the compiled pair with its
+    into the compiled `adrp`'s register `rd`, not 31: `adrp`+`add` (the compiled pair with its
     immediates resolved; `cargo fv` links with `--no-relax`, so lld's `nop`+`adr` relaxation
     is not accepted), or, for the GOT, `adrp`+`ldr` of a GOT slot `G` with `readN (loadMem file) 8 G = T`); a
     TLSDESC sequence → lld's local-exec relaxation `movz x0`/`movk x0`/`nop`/`nop` of the
