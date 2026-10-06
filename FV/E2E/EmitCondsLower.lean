@@ -36,21 +36,29 @@ def TargetsLast (vb : VBlock) : Prop := ∀ m ∈ vb.insts.toList.dropLast, m.ta
 theorem isVregInt_vrenaming {R : Reg → Reg} {gn : Nat → Nat} (hg : VRenaming R gn) (r : Reg) :
     (R r).isVregInt = r.isVregInt := by
   cases r with
-  | vreg n c => rw [hg.vreg]; rfl
+  | vreg n c => rw [hg.vreg]; cases c <;> rfl
   | _ => rw [hg.real _ (fun _ _ h => by cases h)]
 
 theorem emitOk_mapRegs {R : Reg → Reg} {gn : Nat → Nat} (hg : VRenaming R gn) (m : MInst) :
     (m.mapRegs R).emitOk = m.emitOk := by
   cases m
   all_goals try rfl
-  all_goals sorry
+  case condBr a b k => cases k <;> rfl
+  case trapIf k c => cases k <;> rfl
+  case call info =>
+    obtain ⟨dest, _⟩ := info
+    cases dest <;> simp [MInst.mapRegs, MInst.emitOk, immOkB, MInst.noAlways, isVregInt_vrenaming hg]
+  case tryCall info ti =>
+    obtain ⟨dest, _⟩ := info
+    cases dest <;> simp [MInst.mapRegs, MInst.emitOk, immOkB, MInst.noAlways, isVregInt_vrenaming hg]
 
 theorem emitOk_setTargets {i i' : MInst} {ls : List Label} (h : i.setTargets ls = some i') :
     i'.emitOk = i.emitOk := by
   unfold MInst.setTargets at h
   split at h
   all_goals (try split at h)
-  all_goals (cases h; rfl)
+  all_goals (cases h; try simp [MInst.emitOk, immOkB, MInst.noAlways])
+  all_goals (rename_i k _ _; cases k <;> rfl)
 
 /-! ## The terminator's segment -/
 
