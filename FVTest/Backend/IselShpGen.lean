@@ -38,6 +38,7 @@ partial def join : AW → AW → AW
   | a, .bot => a
   | .reg m, .reg n => .reg (m ||| n)
   | .ty a, .ty b => .ty (a ++ b.filter (!a.contains ·))
+  | .num k b, .num k' b' => if k == k' then .num k (max b b') else .flat (if k == .callInfo || k' == .callInfo then 15 else 0) true
   | .data t k fs, .data t' k' gs =>
     if t == t' && k == k' && fs.length == gs.length then .data t k ((fs.zip gs).map fun (x, y) => join x y)
     else .alts [.data t k fs, .data t' k' gs]
@@ -71,7 +72,7 @@ mutual
 partial def iExpr : Isle.Expr → List AW → StateM St AW
   | .var _ x, env => pure (env.getD x .top)
   | .constBool _ b, _ => pure (.bool b)
-  | .constInt .., _ => pure .c0
+  | .constInt _ n, _ => pure (aint n)
   | .constPrim tyv n, _ => pure (aprim tyv n)
   | .let _ bs body, env => do let env' ← iBinds bs env; iExpr body env'
   | .term tyv t args, env => do
@@ -168,6 +169,10 @@ def ctyLit : CTy → String
 
 def szLit : OperandSize → String | .size32 => ".size32" | .size64 => ".size64"
 
+def nkLit : NK → String
+  | .int => "int" | .imm12 => "imm12" | .immShift => "immShift" | .uimm5 => "uimm5"
+  | .uimm6 => "uimm6" | .shiftAmt => "shiftAmt" | .mwc => "mwc" | .callInfo => "callInfo"
+
 partial def awLit : AW → String
   | .bot => ".bot" | .flat m c => s!"(.flat {m} {c})" | .reg m => s!"(.reg {m})"
   | .ty ts => s!"(.ty [{", ".intercalate (ts.map ctyLit)}])"
@@ -176,6 +181,7 @@ partial def awLit : AW → String
   | .xv e => match e with | .inst => "(.xv .inst)" | .data => "(.xv .data)" | .value => "(.xv .value)"
   | .alts as => s!"(.alts [{", ".intercalate (as.map awLit)}])"
   | .data t k fs => s!"(.data {t} {k} [{", ".intercalate (fs.map awLit)}])"
+  | .num k b => s!"(.num .{nkLit k} {b})"
 
 def entryLit (e : TermId × List AW × AW) : String :=
   s!"({e.1}, [{", ".intercalate (e.2.1.map awLit)}], {awLit e.2.2})"

@@ -1,6 +1,7 @@
 import FV.E2E.EmitPreOk
 import FV.Backend.Proof.RelaxLayout
 import FV.Backend.Proof.AssignOk
+import FV.Backend.EmitOk
 
 /-!
 # The near PC-relative lines of the spill path reach their labels (V6b)
@@ -46,11 +47,6 @@ def Line.isBLine : Line → Bool
 def Line.bOk : Line → Bool
   | .ins (.b (.block _)) _ => true
   | .ins (.b _) _ => false
-  | _ => true
-
-def MInst.noAlways : MInst → Bool
-  | .condBr _ _ (.cond c) => !(c == .al || c == .nv)
-  | .trapIf (.cond c) _ => !(c == .al || c == .nv)
   | _ => true
 
 def Line.nearOkB (ln : Line) : Bool := ln.nearTgt.isNone && ln.bOk

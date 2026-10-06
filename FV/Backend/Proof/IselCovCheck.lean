@@ -45,6 +45,9 @@ def boolOk (a : AW) (b : Bool) : Bool :=
   | .bool b' => b == b'
   | _ => true
 
+/-- The value of an integer constant: a small non-negative one exactly (`normInt` keeps it). -/
+def aint (n : Int) : AW := if 0 ≤ n ∧ n < 128 then .num .int (n.toNat + 1) else .c0
+
 /-- The fields of a value matched against variant `k` with `n` field patterns (`none`: it
 cannot be variant `k`). -/
 def aun (a : AW) (k : Nat) (n : Nat) : Option (List AW) :=
@@ -149,7 +152,7 @@ mutual
 def aExpr : Isle.Expr → List AW → Option AW
   | .var _ x, env => some (env.getD x .top)
   | .constBool _ b, _ => some (.bool b)
-  | .constInt .., _ => some .c0
+  | .constInt _ n, _ => some (aint n)
   | .constPrim ty n, _ => some (aprim ty n)
   | .let _ bs body, env =>
     match aBinds bs env with
