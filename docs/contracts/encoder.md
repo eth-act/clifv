@@ -29,9 +29,11 @@ M5 proven (2026-09-27); no `sorry`, no hand-written `axiom`, no warnings in the 
       `FV/Backend/Proof/Encode.lean`, `EncodeStep.lean`
 - [x] layout correctness (placement, labels, branches, jump tables, relocations, trap sites) —
       `FV/Backend/Proof/EncodeLayout.lean`
-- [x] branch-range policy (bound + compile error), proved (`Insn.encode_inRange`,
-      `Insn.encode_error_of_out_of_range`, `FV/Backend/Proof/EncodeBranch.lean`) and tested
-      (`lean-backend-encode-test range`, including large functions)
+- [x] branch-range policy (relaxation of conditional branches + range check, never a
+      truncated word), proved (`Insn.encode_inRange`, `Insn.encode_error_of_out_of_range`,
+      `FV/Backend/Proof/EncodeBranch.lean`; `emitFunc_layout_total`,
+      `FV/Backend/Proof/RelaxLayout.lean`) and tested (`lean-backend-encode-test range`,
+      `corpus/clif-regress/far_branches.clif`)
 - [x] byte-for-byte check against `llvm-mc`: **971/971** functions identical; decode check
       61 133 instructions (74 mnemonics); backend filetests corpus **114/114**, extrt 22/22,
       runtests **3085 pass / 0 fail / 0 disagree** (section "Tests and results")
@@ -345,35 +347,54 @@ def Arm.ArmInst.pcRelOffset? : ArmInst → Option Int   -- 4 * imm.toInt, or (im
 
 theorem Backend.Insn.toArmInst_pcRel (h : i.toArmInst env = .ok a)
     (hs : i.pcRelSpec? = some (t, reach, align)) :
-    ∃ o, env.lbl t = some o ∧ a.pcRelOffset? = some ((o : Int) - env.pc) ∧
+    ∃ o, env.target t = some o ∧ a.pcRelOffset? = some ((o : Int) - env.pc) ∧
       -reach ≤ (o : Int) - env.pc ∧ (o : Int) - env.pc < reach ∧ align ∣ (o : Int) - env.pc
 theorem Backend.Insn.encode_inRange (h : i.encode env = .ok w)
     (hs : i.pcRelSpec? = some (t, reach, align)) :
-    ∃ o, env.lbl t = some o ∧ -reach ≤ (o : Int) - env.pc ∧ (o : Int) - env.pc < reach ∧
+    ∃ o, env.target t = some o ∧ -reach ≤ (o : Int) - env.pc ∧ (o : Int) - env.pc < reach ∧
       align ∣ (o : Int) - env.pc
 theorem Backend.Insn.encode_error_of_out_of_range (hs : i.pcRelSpec? = some (t, reach, align))
-    (o : Nat) (hl : env.lbl t = some o)
+    (o : Nat) (hl : env.target t = some o)
     (hout : ¬ (-reach ≤ (o : Int) - env.pc ∧ (o : Int) - env.pc < reach)) :
     ∃ e, i.encode env = .error e
 theorem Backend.signExtend_append_zero (x : BitVec (n + 1)) :
     BitVec.signExtend 64 (x ++ 0#2) = BitVec.ofInt 64 (4 * x.toInt)   -- the model's branch offset
 ```
 
-**Branch-range policy** (PLAN.md §3.4 "only long-range branches, or bounded function sizes, so
-branch relaxation never arises"): bound + compile error, no relaxation. `Env.pcRel` rejects a
-target beyond the form's reach; `FnAsm.layout` then fails and `lean-backend` exits 1 with, e.g.,
+`Env.target` resolves a label operand: `Lbl.skip` is `pc + 8` (the instruction after the next,
+printed `.+8`), every other label is the function's label map.
 
-```
-lean-backend: big.clif: encoding failed: big+8: `tbnz x0, #2, .L0_b1`: branch out of range:
-tbz to Backend.Lbl.block 1 is 36008 bytes away, beyond the ±32 KiB of tbz (no branch
-relaxation, PLAN.md §3.4: the function is too large)
-```
+**Branch-range policy** (PLAN.md §3.4, V6): conditional branches are relaxed, everything is
+range-checked, no word is ever truncated.
 
-A successful layout therefore implies every label operand is in range (`FnAsm.layout_branch`
-takes no range hypothesis and concludes the range). Cranelift relaxes such branches with
-veneers, so a function above the bound compiles with Cranelift but not with this backend. No
-survey file hits it: 0 encoding failures over the 7 067 `.clif` files of the rust-clif survey
-(`/tmp/rust-clif-survey`, 2026-09-27).
+* **Relaxation** (`emitFunc`, `FV/Backend/Asm.lean`): after `fallthrough` and the trap section
+  (`emitPre`), a short conditional branch to a block or trap label whose target is out of reach
+  (`b.cond`/`cbz`/`cbnz` ±1 MiB, `tbz`/`tbnz` ±32 KiB) becomes the inverted branch over an
+  unconditional `b` (±128 MiB): `b.c T` ⟶ `b.!c .+8; b T`, `cbz`↔`cbnz`, `tbz`↔`tbnz`
+  (`relaxLine`; Cranelift's `MachBuffer` uses veneers/islands instead). The decision is per
+  target label (`far : Lbl → Bool`): every relaxable branch to a far label is relaxed, also the
+  ones that would reach. `relaxOf` iterates to a fixpoint: `farTargets` lays the current lines
+  out (`labelOffsets.go`) and collects the targets of the remaining short branches that do not
+  reach; they join `far`. Relaxing only lengthens code, so `far` only grows; the fuel (lines + 1)
+  exceeds the number of labels, and on running out every relaxable branch is relaxed. With no
+  far label the lines are unchanged, so functions that fit produce byte-identical code.
+  Branches to atomic-loop and jump-table labels (a few instructions away), `adr`, `b.al`/`b.nv`
+  and `b` itself are not relaxed.
+* **Range check** (`Env.pcRel`): a target beyond the form's reach is an encoding error;
+  `FnAsm.layout` then fails and `lean-backend` exits 1 naming the function, the instruction and
+  the distance. After relaxation this can only be a `b` beyond ±128 MiB (function size ≥ 128 MiB),
+  or one of the unrelaxed local forms (never: their labels are ≤ 40 bytes away).
+
+A successful layout implies every label operand is in range (`FnAsm.layout_branch` takes no
+range hypothesis and concludes the range). Conversely `emitFunc_layout_total`
+(`FV/Backend/Proof/RelaxLayout.lean`) proves layout succeeds for every emitted function whose
+lines pass the checks that are not about branch range (`FnAsm.layoutReadyB`,
+`RelaxReady.lean`: labels defined once and every used label defined, every instruction
+`Insn.encodable` (encodes with its label operand in range), `NearOk` (the unrelaxed local
+PC-relative forms reach), size < 128 MiB); `relaxOf_fixpoint` and `farTargets_reaches` supply
+the range of every remaining relaxable branch, the size bound the range of `b`, and `.+8` that
+of the inverted branches. The simulation proofs (`reach_rcb`, `step_skip`, `FV/E2E/RegLevelGoto.lean`,
+`RegLevelBranch.lean`) run either form of each conditional branch.
 
 ### Layout (`EncodeLayout.lean`)
 
@@ -471,8 +492,9 @@ axioms, allowed by `docs/ARCHITECTURE.md`). `toArmInst_pcRel`, `encode_inRange`,
 
 ## Gaps
 
-- Branch relaxation is not implemented (policy above): functions whose `tbz` spans more than
-  ±32 KiB or whose conditional branches span more than ±1 MiB do not compile.
+- Functions of 128 MiB or more do not compile (`b` range; no veneer islands). `layoutReadyB`'s
+  conditions other than the size are proven only as runtime-checked facts of the emitted code,
+  not from the emitter's structure (`docs/TO-PROVE.md` V6, "Remaining").
 - M7 still has to relate `Insn.sem` (= `exec_inst` of `toArmInst`) to each form's intended
   effect (the M4 ISLE-rule semantics); M5 gives only the decode and placement facts.
 - `FnAsm.stepi_eq_sem` is per function; linking several functions (calls through `bl`
