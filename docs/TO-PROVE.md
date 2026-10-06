@@ -362,18 +362,20 @@ author's estimate, not measured), **Risk**.
   from the outside-code contract `HooksSim I B` (next to `BaseOk`; `hooksSim_closed`). The remaining
   hypothesis is `RunOkD` (`StepOkD`): `err`, `program`, pc at an instruction (not past a TLSDESC `ldr`),
   D1 `cf`, D2 `insn`, D4 `got`, `blr` (register not `xzr`, the model reads the `blr` word).
-- **Remaining (c): discharge `RunOkD` from the M6 proof** (≈3k lines; after BranchRelax, it edits every
+- **Remaining (c): discharge `RunOkD` from the M6 proof** (≈2k lines; after BranchRelax, it edits every
   `RegLevel*` file). Findings that size it:
-  - D2 (`insn`: `Sim m e → Sim (exec_inst a m) (exec_inst a e)` for the decoded word) is about
-    `exec_inst` on an arbitrary `e`. The `realizes_*` cases reason through an abstract `exec`
-    (`RunsAs`, `OperandsSoundCtlAtI`) about the one machine state `s`, so they give no such frame
-    property. It needs **per-`Insn` frame lemmas** (51 `Insn` constructors plus addressing modes; the
-    pattern is `Crates.BinaryExecWitness.sim_stp`/`sim_ldp`/…: an exec lemma `exec_inst a s = F s` with
-    `F` built from `Arm.r`/`Arm.w`/`read_mem_bytes`/`write_mem_bytes`, then `sim_w`,
-    `sim_write_mem_bytes`, `rmb_congr`), stated as "`Sim` is preserved when the instruction's memory
-    reads (`MemReads i s`: the byte ranges a load/`ldp`/atomic/jump-table read at `s`) avoid
-    `RelocAt I`". Non-memory forms need no side condition. About 1–1.5k lines (`FV/E2E/ExecFrame.lean`,
-    no RegLevel edits; can start before BranchRelax lands).
+  - **Done** (`agent/exec-frame`; `FV/E2E/ExecFrame.lean`, `FV/E2E/ExecFrameSim.lean`): the frame
+    property for D2 (`insn`: `Sim m e → Sim (exec_inst a m) (exec_inst a e)` for the decoded word).
+    `E2E.ExecBytes.exec_sim`: for **every** decoded `ArmInst` `a` (so every `Insn` the backend emits,
+    and the relocated words of the `adrp` pairs), `Sim` is preserved when the instruction's memory
+    reads `MemReads a m` (byte ranges `(address, length)`: single-register loads in every addressing
+    mode incl. register offset (the jump-table `ldrsw`), `ldp`, `ldar`/`ldaxr`; empty for every other
+    form, stores included) avoid `RelocAt I`. Proven once over any byte set (`ExecFrame.exec_simR`
+    for `SimR R`) by unfolding the semantics into `r`/`w`/`read_mem_bytes`/`write_mem_bytes` and
+    walking both state terms (`sim_norm`/`sim_struct`), not per `Insn`. `insn_of_memReads` turns the
+    per-state fact "the reads of the word at the pc avoid `RelocAt I`" into `StepOkD.insn`; the
+    witness's `sim_stp`/`sim_mov`/`sim_add`/`sim_ldp`/`sim_ret` are instances of `exec_sim` (no
+    alignment premise).
   - Then D2 becomes the per-state fact "`MemReads` of the instruction at `u` avoid `RelocAt I`". Extend
     `RL.Good` (`FV/E2E/RegLevelSim.lean`, now `¬ PostCall ∨ sp = spB`) additively to `GoodX`: `Good`,
     no error and the program (from `StRel`/`InterOk`), the pc at an instruction line not past a
