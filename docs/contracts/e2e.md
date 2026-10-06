@@ -2631,6 +2631,39 @@ only block-final instructions). `lean-e2e-check` also emits the spill code of ev
 function and decides `layoutReadyB` ("spill emission" line). Non-vacuity:
 `E2E.backend_correct_final_total_emit_witness`.
 
+**Emission conditions from the input (V6c)** (2026-10-06, `FV/Backend/EmitOk.lean`,
+`FV/Backend/Proof/IselEmit*.lean`, `FV/E2E/EmitCondsLower.lean`, `FV/E2E/EmitTotalIn.lean`). The
+three isel facts of `emitCondsB` are proven from the ISLE rule data. `MInst.emitOk` (`immOkB` and
+`noAlways`) is the per-instruction condition. `Driver.iselEmit : LowerScope f → extendsWidenB f =
+true → IselEmit f`: every statement's `lower` run emits only `emitOk` instructions without branch
+targets (`EmSince`), every terminator's (and `try_call`'s) run only `emitOk` instructions with
+branch targets only on the last (`EmLast`). Method: V3's abstract interpreter with emission
+transfer functions (`aextE`/`actorE`: numeric leaves `AW.num k b` for immediates, shift amounts,
+move-wide constants, call infos; `apreE`: an `emit`ted instruction passes `emChk`), table
+`emitTab` (740 entries, 13 `native_decide` chunks, `FVTest/Backend/IselEmitGen.lean`); branch
+rules end in their branch (`aRuleLast`/`aLast_sound`, `root_last`: the final `emit_side_effect`'s
+last instruction may be a branch); the `uextend`/`sextend` rules (808, 819) and the `extr` rules
+(862, 863) by hand (`hand_emit`). `emitConds_lower` follows `lowerFunction`'s assembly and
+`prepare` (renaming keeps `emitOk`; branch targets only on block-final instructions, which
+`VCode.cfg` resolves to block labels) to `immsOkB ∧ noAlwaysB ∧ branchTargetsOkB` of the
+prepared VCode.
+
+New input condition `extendsWidenB f` (`Driver.ExtendsWiden`, decided on `buildCtx f`): every
+`uextend`/`sextend` widens. It is CLIF's verifier rule (the run semantics checks it only at run
+time) and genuinely needed: `uextend.i32` of an `i64` value selects `Extend` from 64 bits, which
+has no encoding. `lean-e2e-check` counts it ("extendsWidenB" line).
+
+```lean
+theorem E2E.backend_correct_final_total_emit_in (hsub : InSubset p f) (hd : dominatedB f = true)
+    (hs : lowerScopeB f = true) (har : Spill.arityOkB f = true) (hw : extendsWidenB f = true)
+    (hl …) (hp …) (hsz : spillSizeOkB vcp = true) (ra : Except String RFunc) :
+    -- the conclusion of backend_correct_final_total_emit
+```
+
+Non-vacuity: `E2E.backend_correct_final_total_emit_in_witness`. Remaining: the size bound
+`spillSizeOkB` is still decided on the prepared VCode (an input-side bound needs a bound on the
+instructions each ISLE run emits).
+
 **Validator completeness: `Opt.Legalize128` is correct without `Opt.Legal.check`** (2026-10-02,
 `FV/Opt/Proof/LegalComplete.lean`, `FV/Opt/Proof/LegalDirect.lean`, `FV/E2E/LegalDirect.lean`;
 `docs/contracts/legalize128.md` "Completeness"): `Opt.Legal.Complete.check_complete` (`Pre f` and
