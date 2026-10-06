@@ -79,23 +79,42 @@ def harness_hashes(root=ROOT):
 
 
 def baseline_summary(found):
-    """The baseline summary from `stock-comparison-baseline.py` output, or why there is none."""
-    if not found.get("available"):
-        return None, found.get("reason") or "no baseline"
-    summary = found["summary"]
-    if summary.get("schema") != SCHEMA:
-        return None, f"the main run has summary schema {summary.get('schema')}, without a list of exact outputs"
+    """(summary, None, False) for the baseline from `stock-comparison-baseline.py`, or
+    (None, why there is none, whether that is a failure). There is no baseline when none exists
+    or main's summary has another schema (made before or after this one's format). Anything
+    else that is not a valid baseline is a failure, which fails the lost-match check."""
+    if not isinstance(found, dict) or not isinstance(found.get("available"), bool):
+        return None, "the baseline lookup result is malformed", True
+    if not found["available"]:
+        return None, str(found.get("reason") or "no baseline")[:200], found.get("failed") is not False
+    summary = found.get("summary")
+    schema = summary.get("schema") if isinstance(summary, dict) else None
+    if not isinstance(schema, int):
+        return None, "the baseline summary is malformed", True
+    if schema != SCHEMA:
+        return None, f"the main run has summary schema {schema}, not {SCHEMA}", False
     if (summary.get("run_id"), summary.get("run_attempt"), summary.get("head_sha")) != (
-            found["run_id"], found["run_attempt"], found["head_sha"]):
-        return None, "the baseline summary does not belong to its run"
-    return summary, None
+            found.get("run_id"), found.get("run_attempt"), found.get("head_sha")):
+        return None, "the baseline summary does not belong to its run", True
+    if not well_formed(summary):
+        return None, "the baseline summary is malformed", True
+    return summary, None, False
+
+
+def well_formed(summary):
+    """The baseline fields this comparison reads: matched entries and harness hashes."""
+    entries, hashes = summary.get("matched"), summary.get("harness_sha256")
+    return (isinstance(entries, list)
+            and all(isinstance(e, list) and len(e) == 5 and all(isinstance(x, (str, int)) for x in e)
+                    for e in entries)
+            and isinstance(hashes, dict) and all(isinstance(v, str) for v in hashes.values()))
 
 
 def compare_with_baseline(matched, harness, found):
     """Exact outputs gained and lost since the baseline, and the measuring files that changed."""
-    base, reason = baseline_summary(found)
+    base, reason, failed = baseline_summary(found)
     if base is None:
-        return {"available": False, "reason": reason}
+        return {"available": False, "failed": failed, "reason": reason}
     now, before = {tuple(e) for e in matched}, {tuple(e) for e in base["matched"]}
     gained, lost = sorted(now - before), sorted(before - now)
     old = base["harness_sha256"]
@@ -156,10 +175,15 @@ def main():
     report = json.loads((out / "results.json").read_text())
     totals = validate_report(report)
     matched, harness = matched_entries(report), harness_hashes()
-    if args.baseline is None or not args.baseline.exists():
-        found = {"available": False, "reason": "no baseline lookup"}
+    if args.baseline is None:
+        found = {"available": False, "failed": False, "reason": "no baseline lookup"}
+    elif not args.baseline.exists():
+        found = {"available": False, "failed": True, "reason": "the baseline lookup wrote no result"}
     else:
-        found = json.loads(args.baseline.read_text())
+        try:
+            found = json.loads(args.baseline.read_text())
+        except ValueError:
+            found = None  # reported as malformed
     after = resource.getrusage(resource.RUSAGE_CHILDREN)
     data = {"schema": SCHEMA, "measurement_complete": True, "head_sha": head,
             "run_id": int(os.environ["GITHUB_RUN_ID"]),

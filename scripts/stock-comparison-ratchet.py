@@ -4,7 +4,8 @@
 Reads the run's CI summary (`stock-comparison-ci.py`). On a pull request, the label LABEL
 accepts the losses; it is read when this job runs, so re-running the job after labelling
 passes. On `main` there is no override: the commit is marked, and the next push compares
-with it.
+with it. When no baseline exists there is nothing to compare, and the check passes; when one
+exists but could not be retrieved or read, the check fails (the label does not override that).
 """
 import argparse
 import json
@@ -43,6 +44,9 @@ def check(summary, run_id, head, labels):
     if summary.get("run_id") != run_id or summary.get("head_sha") != head:
         raise SystemExit("summary does not belong to this run and commit")
     b = summary["baseline_comparison"]
+    if not b["available"] and b.get("failed") is not False:
+        return 1, [f"The main baseline could not be retrieved or read: {b['reason']}.",
+                   "Without it, lost matches cannot be ruled out. Re-run all jobs of this workflow run."]
     if not b["available"]:
         return 0, [f"No main baseline to compare with: {b['reason']}."]
     lines = [f"Compared with main {b['head_sha'][:12]} (run {b['run_id']}): "

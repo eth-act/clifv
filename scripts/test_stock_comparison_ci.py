@@ -33,8 +33,12 @@ def fixture():
     }
 
 
+MISSING = object()
+
+
 def invoke(case, temp, status, report, baseline=None):
-    """Run main() with a mocked pipeline that exits with `status` after writing `report`."""
+    """Run main() with a mocked pipeline that exits with `status` after writing `report`.
+    `baseline` is the lookup result: an object, raw text, or MISSING (a path that was never written)."""
     out = Path(temp) / "result"
     def pipeline(argv, **kwargs):
         case.assertEqual(argv[-1], "2")
@@ -43,7 +47,9 @@ def invoke(case, temp, status, report, baseline=None):
         return SimpleNamespace(returncode=status)
     argv = ["ci", "--out", str(out)]
     if baseline is not None:
-        path = Path(temp) / "baseline.json"; path.write_text(json.dumps(baseline))
+        path = Path(temp) / "baseline.json"
+        if baseline is not MISSING:
+            path.write_text(baseline if isinstance(baseline, str) else json.dumps(baseline))
         argv += ["--baseline", str(path)]
     env = {"CI_HEAD_SHA": "a" * 40, "GITHUB_RUN_ID": "123", "GITHUB_RUN_ATTEMPT": "2"}
     with patch.object(sys, "argv", argv), patch.dict(os.environ, env), \
@@ -90,7 +96,8 @@ class CIReportTests(unittest.TestCase):
             self.assertGreater(summary["peak_runner_memory_used_bytes"], 0)
             self.assertEqual(summary["matched"], [["a.clif", 0, "compile", 0, "%f"]])
             self.assertIn("scripts/stock-compiler-compare.py", summary["harness_sha256"])
-            self.assertEqual(summary["baseline_comparison"], {"available": False, "reason": "no baseline lookup"})
+            self.assertEqual(summary["baseline_comparison"],
+                             {"available": False, "failed": False, "reason": "no baseline lookup"})
 
     def test_pipeline_failure_or_missing_report_cannot_publish(self):
         # 1 is a Python crash, 0 is never a finished measurement.
@@ -129,12 +136,31 @@ class BaselineTests(unittest.TestCase):
         result = CI.compare_with_baseline([], {}, baseline(many, {}))
         self.assertEqual((len(result["lost"]), result["lost_count"]), (CI.LISTED, CI.LISTED + 5))
 
-    def test_missing_old_or_foreign_baseline_is_unavailable(self):
-        for found, reason in (({"available": False, "reason": "none found"}, "none found"),
-                              (baseline([], {}, schema=1), "schema 1"),
-                              (baseline([], {}, run_id=78), "does not belong")):
+    def test_missing_or_other_schema_baseline_is_not_a_failure(self):
+        for found, reason in (({"available": False, "failed": False, "reason": "none found"}, "none found"),
+                              (baseline([], {}, schema=1), "schema 1"), (baseline([], {}, schema=3), "schema 3")):
             result = CI.compare_with_baseline([self.A], {}, found)
-            self.assertFalse(result["available"]); self.assertIn(reason, result["reason"])
+            self.assertEqual((result["available"], result["failed"]), (False, False)); self.assertIn(reason, result["reason"])
+
+    def test_unreadable_or_invalid_baseline_is_a_failure(self):
+        bad_entry = baseline([["a.clif", 0, "compile", [0], "%f"]], {})
+        no_hashes = baseline([], {}); del no_hashes["summary"]["harness_sha256"]
+        no_schema = baseline([], {}); del no_schema["summary"]["schema"]
+        for found, reason in (({"available": False, "failed": True, "reason": "baseline lookup failed: X"}, "lookup failed"),
+                              ({"available": False, "reason": "no flag"}, "no flag"),
+                              ([], "lookup result is malformed"), (None, "lookup result is malformed"),
+                              (baseline([], {}, run_id=78), "does not belong"),
+                              (dict(baseline([], {}), summary=[]), "malformed"), (no_schema, "malformed"),
+                              (bad_entry, "malformed"), (no_hashes, "malformed")):
+            result = CI.compare_with_baseline([self.A], {}, found)
+            self.assertEqual((result["available"], result["failed"]), (False, True)); self.assertIn(reason, result["reason"])
+
+    def test_lookup_without_a_usable_result_is_a_failure(self):
+        for found in (MISSING, "{not json"):
+            with tempfile.TemporaryDirectory() as temp:
+                self.assertEqual(invoke(self, temp, 10, fixture(), found), 0)
+                result = json.loads((Path(temp) / "result.ci-summary.json").read_text())["baseline_comparison"]
+                self.assertEqual((result["available"], result["failed"]), (False, True))
 
     def test_summary_records_the_comparison(self):
         with tempfile.TemporaryDirectory() as temp:

@@ -12,8 +12,8 @@ HEAD = "a" * 40
 LOST = ["a.clif", 0, "compile", 3, "%f"]
 
 
-def summary(lost=(), gained=(), available=True, harness_changed=()):
-    comparison = {"available": False, "reason": "none found"}
+def summary(lost=(), gained=(), available=True, harness_changed=(), failed=False):
+    comparison = {"available": False, "failed": failed, "reason": "lookup failed" if failed else "none found"}
     if available:
         comparison = {"available": True, "run_id": 77, "run_attempt": 1, "head_sha": "b" * 40,
                       "baseline_exact_code_artifacts": 10, "gained_count": len(gained), "lost_count": len(lost),
@@ -29,6 +29,13 @@ class CheckTests(unittest.TestCase):
     def test_missing_baseline_passes_and_says_why(self):
         status, lines = RATCHET.check(summary(available=False), 123, HEAD, [])
         self.assertEqual(status, 0); self.assertIn("none found", lines[0])
+
+    def test_failed_lookup_fails_even_with_the_label(self):
+        for labels in ([], [RATCHET.LABEL], None):
+            status, lines = RATCHET.check(summary(available=False, failed=True), 123, HEAD, labels)
+            self.assertEqual(status, 1); self.assertIn("could not be retrieved", lines[0])
+        unflagged = summary(available=False); del unflagged["baseline_comparison"]["failed"]
+        self.assertEqual(RATCHET.check(unflagged, 123, HEAD, None)[0], 1)
 
     def test_losses_fail_on_pull_requests_and_main(self):
         for labels in ([], ["other"], None):

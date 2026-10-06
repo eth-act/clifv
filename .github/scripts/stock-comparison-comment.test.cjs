@@ -82,9 +82,15 @@ test('render flags harness changes and bounds long lists', () => {
 });
 test('render explains a missing baseline without trusting its text', () => {
   const summary = data();
-  summary.baseline_comparison = { available: false, reason: 'no run @someone [x](http://e) `code`' };
+  summary.baseline_comparison = { available: false, failed: false, reason: 'no run @someone [x](http://e) `code`' };
   const body = render(summary, repo, run);
   assert.ok(body.includes('No `main` baseline to compare with: no run ?someone ?x?(http://e) ?code?.'));
+});
+test('render says when the baseline could not be retrieved', () => {
+  const summary = data();
+  summary.baseline_comparison = { available: false, failed: true, reason: 'baseline lookup failed: CalledProcessError' };
+  const body = render(summary, repo, run);
+  assert.ok(body.includes('could not be retrieved or read:** baseline lookup failed: CalledProcessError. The lost-match check fails'));
 });
 test('invalid, partial, or mismatched reports cannot publish', () => {
   for (const edit of [d => d.measurement_complete = false, d => d.head_sha = 'b'.repeat(40),
@@ -96,7 +102,8 @@ test('invalid, partial, or mismatched reports cannot publish', () => {
     d => d.matched[0][2] = 'test', d => d.harness_sha256 = ['c'.repeat(64)],
     d => d.baseline_comparison.lost_count = 2, d => d.baseline_comparison.lost[0][4] = '`%g`',
     d => d.baseline_comparison.head_sha = 'main', d => d.baseline_comparison.harness_changed = ['../x\n'],
-    d => d.baseline_comparison = { available: false, reason: 'x'.repeat(301) }, d => delete d.baseline_comparison]) {
+    d => d.baseline_comparison = { available: false, failed: false, reason: 'x'.repeat(301) },
+    d => d.baseline_comparison = { available: false, reason: 'no failure flag' }, d => delete d.baseline_comparison]) {
     const summary = data(); edit(summary); assert.throws(() => validate(summary, run));
   }
 });

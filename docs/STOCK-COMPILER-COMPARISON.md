@@ -58,7 +58,11 @@ when an output that matched on the baseline no longer matches. If the loss is
 intended, add the label `stock-comparison-accept-losses` to the pull request and
 re-run that job; the label is read when the job runs. A push to `main` has no
 override: the commit is marked failed, and the next push compares with it. A
-missing baseline (for example, no measured ancestor yet) is reported, not failed.
+missing baseline (no measured ancestor yet, or one whose summary has another
+format) is reported, not failed. A baseline that exists but could not be
+retrieved or read (an API error, a damaged or malformed summary, a shallow
+checkout) fails the job, and the label does not override that: without the
+baseline, lost matches cannot be ruled out. Re-run all jobs of the workflow run.
 
 The summary also hashes the files that do the measuring (the comparison
 scripts, the stock exporter and its patch, `FVTest/Backend/StockConfig.lean`,

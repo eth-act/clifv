@@ -39,6 +39,7 @@ function paths(value, label) {
 function validateBaseline(b, matched) {
   if (b === null || typeof b !== 'object' || typeof b.available !== 'boolean') throw new Error('Invalid baseline comparison');
   if (!b.available) {
+    if (typeof b.failed !== 'boolean') throw new Error('Invalid baseline failure flag');
     if (typeof b.reason !== 'string' || b.reason.length > 300) throw new Error('Invalid baseline reason');
     return;
   }
@@ -116,7 +117,12 @@ function listed(items, total, shown) {
 function baselineSection(b, repo) {
   if (!b.available) {
     // The reason is plain text from the CI scripts; keep it inert.
-    return `No \`main\` baseline to compare with: ${b.reason.replace(/[^A-Za-z0-9 .,:;()/_=+-]/g, '?')}.\n`;
+    const reason = b.reason.replace(/[^A-Za-z0-9 .,:;()/_=+-]/g, '?');
+    if (b.failed) {
+      return `**The \`main\` baseline could not be retrieved or read:** ${reason}. ` +
+        'The lost-match check fails until a re-run retrieves it.\n';
+    }
+    return `No \`main\` baseline to compare with: ${reason}.\n`;
   }
   const url = `https://github.com/${repo.owner}/${repo.repo}/actions/runs/${b.run_id}/attempts/${b.run_attempt}`;
   const now = b.baseline_exact_code_artifacts - b.lost_count + b.gained_count;

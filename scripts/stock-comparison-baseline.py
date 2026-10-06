@@ -7,7 +7,10 @@ the first whose commit is an ancestor of the tested commit and that saved a summ
 commit it branched from (or last merged), not with a newer `main` it does not contain.
 
 Writes `--out`: {"available": true, "run_id", "run_attempt", "head_sha", "summary"}, or
-{"available": false, "reason"}. A missing baseline is not an error: there is nothing to compare.
+{"available": false, "failed", "reason"}. A missing baseline (`failed: false`) is not an error:
+there is nothing to compare. A baseline that exists but could not be retrieved or read
+(`failed: true`) fails the lost-match check, since a lost match cannot be ruled out without it.
+The script itself always exits 0, so the measurement still runs and is published.
 Needs `gh` with GH_TOKEN (actions: read) and the full git history of the tested commit and main.
 """
 import argparse
@@ -32,9 +35,14 @@ def gh_api(path):
 
 def is_ancestor(sha, head):
     status = subprocess.run(["git", "merge-base", "--is-ancestor", sha, head], capture_output=True).returncode
-    if status not in (0, 1):
-        return False  # unknown commit, e.g. history not fetched
-    return status == 0
+    if status in (0, 1):
+        return status == 0
+    # An unknown commit: main was rewritten since that run, or the history was not fetched.
+    shallow = subprocess.run(["git", "rev-parse", "--is-shallow-repository"],
+                             check=True, capture_output=True, text=True).stdout.strip()
+    if shallow != "false":
+        raise ValueError("the checkout is shallow, so ancestry cannot be decided")
+    return False
 
 
 def read_summary(archive):
@@ -56,14 +64,16 @@ def find(repo, head, current_run, api=gh_api, ancestor=is_ancestor):
             continue
         listed = json.loads(api(f"repos/{repo}/actions/runs/{run['id']}/artifacts?per_page=100"))["artifacts"]
         summaries = [a for a in listed if re.fullmatch(re.escape(PREFIX) + r"[1-9][0-9]*", a["name"])
-                     and not a["expired"] and a["size_in_bytes"] <= LIMIT]
+                     and not a["expired"]]
         if not summaries:
             continue  # this run did not complete a measurement; an older ancestor may have
         artifact = max(summaries, key=lambda a: int(a["name"].removeprefix(PREFIX)))
+        if artifact["size_in_bytes"] > LIMIT:
+            raise ValueError(f"summary artifact {artifact['id']} is larger than {LIMIT} bytes")
         summary = read_summary(api(f"repos/{repo}/actions/artifacts/{artifact['id']}/zip"))
         return {"available": True, "run_id": run["id"], "run_attempt": int(artifact["name"].removeprefix(PREFIX)),
                 "head_sha": run["head_sha"], "summary": summary}
-    return {"available": False,
+    return {"available": False, "failed": False,
             "reason": f"none of the last {RUNS} main push runs is an ancestor of this commit with an unexpired summary"}
 
 
@@ -74,14 +84,18 @@ def main():
     args = parser.parse_args()
     try:
         found = find(os.environ["GITHUB_REPOSITORY"], args.head, int(os.environ["GITHUB_RUN_ID"]))
-    except (subprocess.CalledProcessError, ValueError, KeyError, zipfile.BadZipFile) as error:
-        found = {"available": False, "reason": f"baseline lookup failed: {type(error).__name__}"}
+    except Exception as error:  # any failure to retrieve or read the baseline, reported below
+        detail = str(error)
+        if isinstance(error, subprocess.CalledProcessError):
+            print(error.stderr.decode(errors="replace") if isinstance(error.stderr, bytes) else error.stderr)
+            detail = f"{' '.join(error.cmd[:2])} exited with status {error.returncode}"
+        found = {"available": False, "failed": True, "reason": f"{type(error).__name__}: {detail}"[:200]}
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(found) + "\n")
     if found["available"]:
         print(f"Baseline: main {found['head_sha'][:12]}, run {found['run_id']} attempt {found['run_attempt']}")
     else:
-        print("No baseline:", found["reason"])
+        print("Baseline lookup failed:" if found["failed"] else "No baseline:", found["reason"])
     return 0
 
 

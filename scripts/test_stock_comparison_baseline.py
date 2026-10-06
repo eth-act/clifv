@@ -1,8 +1,13 @@
+import contextlib
 import importlib.util
 import io
 import json
+import os
 from pathlib import Path
+import subprocess
+import tempfile
 import unittest
+from unittest import mock
 import zipfile
 
 SPEC = importlib.util.spec_from_file_location("stock_baseline", Path(__file__).with_name("stock-comparison-baseline.py"))
@@ -68,9 +73,10 @@ class FindTests(unittest.TestCase):
         found = self.find(github, {"1" * 40, "2" * 40, "3" * 40, "4" * 40})
         self.assertEqual(found["run_id"], 1)
 
-    def test_no_ancestor_is_unavailable(self):
+    def test_no_ancestor_is_a_missing_baseline_not_a_failure(self):
         found = self.find(FakeGitHub([run(1, "1" * 40)], {1: [artifact(11, 1, {})]}), set())
-        self.assertFalse(found["available"]); self.assertIn("ancestor", found["reason"])
+        self.assertFalse(found["available"]); self.assertFalse(found["failed"])
+        self.assertIn("ancestor", found["reason"])
 
     def test_unexpected_archives_are_rejected(self):
         with self.assertRaises(ValueError): BASELINE.read_summary(archive({}, name="../evil.json"))
@@ -79,10 +85,56 @@ class FindTests(unittest.TestCase):
             zf.writestr(BASELINE.MEMBER, "{}"); zf.writestr("other.json", "{}")
         with self.assertRaises(ValueError): BASELINE.read_summary(data.getvalue())
 
-    def test_oversized_and_misnamed_artifacts_are_ignored(self):
-        github = FakeGitHub([run(1, "1" * 40)], {1: [artifact(11, 1, {}, size=BASELINE.LIMIT + 1),
-            {**artifact(12, 1, {}), "name": "stock-comparison-summary-1-evil"}]})
-        self.assertFalse(self.find(github, {"1" * 40})["available"])
+    def test_misnamed_artifacts_are_ignored(self):
+        github = FakeGitHub([run(1, "1" * 40)], {1: [{**artifact(12, 1, {}), "name": "stock-comparison-summary-1-evil"}]})
+        self.assertFalse(self.find(github, {"1" * 40})["failed"])
+
+    def test_unreadable_baselines_raise(self):
+        oversized = FakeGitHub([run(1, "1" * 40)], {1: [artifact(11, 1, {}, size=BASELINE.LIMIT + 1)]})
+        with self.assertRaises(ValueError): self.find(oversized, {"1" * 40})
+        damaged = FakeGitHub([run(1, "1" * 40)], {1: [{**artifact(11, 1, {}), "_zip": b"not a zip"}]})
+        with self.assertRaises(zipfile.BadZipFile): self.find(damaged, {"1" * 40})
+
+
+class MainTests(unittest.TestCase):
+    """A lookup that fails is recorded as failed, and the script still exits 0."""
+    def lookup(self, error):
+        with tempfile.TemporaryDirectory() as temp, \
+                mock.patch.dict(os.environ, {"GITHUB_REPOSITORY": REPO, "GITHUB_RUN_ID": "5"}), \
+                mock.patch.object(BASELINE, "find", side_effect=error), \
+                mock.patch("sys.argv", ["baseline", "--head", HEAD, "--out", f"{temp}/b.json"]), \
+                contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(BASELINE.main(), 0)
+            return json.loads(Path(temp, "b.json").read_text())
+
+    def test_api_and_archive_failures_are_failed_lookups(self):
+        for error in (subprocess.CalledProcessError(1, ["gh", "api", "x"], stderr=b"HTTP 502"),
+                      zipfile.BadZipFile("File is not a zip file"), KeyError("workflow_runs")):
+            found = self.lookup(error)
+            self.assertEqual((found["available"], found["failed"]), (False, True))
+            self.assertIn(type(error).__name__, found["reason"])
+
+
+class AncestorTests(unittest.TestCase):
+    def test_unknown_commit_is_not_an_ancestor_unless_the_clone_is_shallow(self):
+        with tempfile.TemporaryDirectory() as temp:
+            git = lambda *a, cwd=temp: subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", *a],
+                                                      cwd=cwd, check=True, capture_output=True, text=True).stdout
+            source = Path(temp, "source"); source.mkdir()
+            git("init", "-q", cwd=source)
+            for n in (1, 2):
+                git("commit", "-q", "--allow-empty", "-m", str(n), cwd=source)
+            git("clone", "-q", "--depth", "1", source.as_uri(), "clone")
+            head = git("rev-parse", "HEAD", cwd=Path(temp, "clone")).strip()
+            cwd = os.getcwd()
+            try:
+                os.chdir(source)  # full history: a rewritten main's old commit is simply not an ancestor
+                self.assertFalse(BASELINE.is_ancestor("1" * 40, head))
+                os.chdir(Path(temp, "clone"))
+                self.assertTrue(BASELINE.is_ancestor(head, head))
+                with self.assertRaises(ValueError): BASELINE.is_ancestor("1" * 40, head)
+            finally:
+                os.chdir(cwd)
 
 
 if __name__ == "__main__":
