@@ -14,7 +14,8 @@ defs of a terminator (a `try_call`'s live ones are stored at the start of its su
 is unavailable.
 
 `SpillAvail vc D` is that must-analysis on the VCode, with explicit sets `D b` (availability on
-entry to block `b`, before its entry stores): every vreg is available on entry to the entry block;
+entry to block `b`, before its entry stores; `D 0` is free: the register-level theorem may choose
+the initial vreg file so that every home holds its vreg, `checkAlloc`'s entry state holds none):
 every use is available where it is read (`availAt`, from `D b` and the entry stores through the
 block's instructions, `availInst`); every edge `b → s` delivers `D s` (`edgeAvail`: a parameter of
 `s` is available iff its argument is, by the two-phase copy and the checker's parallel copy).
@@ -87,9 +88,6 @@ def edgeAvail (vb sb : VBlock) (A : Nat → Bool) (v : Nat) : Bool :=
 /-- **The availability facts of the spill allocation** (V4 step 4, the dataflow invariant's VCode
 part) for availability sets `D` (`D b v`: on entry to block `b`, the home of vreg `v` holds it). -/
 structure SpillAvail (vc : VCode) (D : Nat → Nat → Bool) : Prop where
-  /-- Every home holds its vreg on entry to the function (the register-level theorem chooses the
-  initial vreg file accordingly). -/
-  entry : ∀ v, D 0 v = true
   /-- Every use is available where it is read. -/
   uses : ∀ succs preds, vc.cfg = .ok (succs, preds) →
     ∀ (b : Nat) (vb : VBlock) (k : Nat) (i : MInst) (ops : Array Operand),

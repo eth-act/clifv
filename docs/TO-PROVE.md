@@ -347,6 +347,40 @@ author's estimate, not measured), **Risk**.
     ELF ABI. Prove that its output satisfies `BinOk` for the program part by construction (no check). The
     outside part's correctness is only that its bytes are the relocated input bytes (their behaviour stays
     under the contracts). Large `[est]`; the relocation types LLVM's std objects use need surveying first.
+- **L2a classification of `okB`'s conjuncts** (`FV/E2E/LinkCheck.lean` `staticChks`/`linkChks`/`globalChks`;
+  `FV/E2E/LinkScope.lean`). *Input*: decidable on the CLIF functions, their signatures and the set of names
+  the program's CLIF takes the address of (`syms`'s domain), collected in `InScopeP`. *Own output*: about
+  the compiler's results, to be proven from the input conditions. *Linker output*: about the addresses
+  rust-lld chose (link map, image, return address `raStar`), collected in `LinkerOk`: what L2b must provide.
+
+  | `okB` check | `LinkSys.Ok` premise | kind | discharged by |
+  | --- | --- | --- | --- |
+  | compiled: pipeline | `compiled` | own output | `lowerFunction`/`prepare` success: input condition (an internal rejection, §1.2 kind 4); allocation, lowering, emission, layout: total (V4–V6b, `lowerAllocReady`) under `emitCondsB` (size part: input; `immsOkB`/`noAlwaysB`/`branchTargetsOkB`: V6c) — for the compiler's pipeline `pipeT`, not the checker's `pipe` (which lowers regalloc2's raw answer, an oracle) |
+  | compiled: lowerCheck | `compiled` | own output | `lowerCheck_complete` (V1) from `dominatedB`/`lowerScopeB` |
+  | compiled: prepCheck | `compiled` | own output | `prepCheck_complete`, `prepDomain_of_lower` (V2) |
+  | compiled: checkAlloc | `compiled` | own output | regalloc2's answer: kept only if accepted (`allocResult`); spill allocation: `checkAlloc` (not just `AllocChecked`, V4) — open at the link level |
+  | covered | `covered` | own output | `formsCovered_complete` (V3) |
+  | sretRets | `sretRets` | own output | the lowering of `return` |
+  | argRegs (distinct, argument registers, width ≤ 64) | `argRegs` | input | `regLocs` of the signature |
+  | entryRegs | `entryRegs` | own output | the lowering's entry `Args` |
+  | fits | `fits` | linker output | the link map's base addresses |
+  | depth | `depth` | own output | by construction: `D` := the largest `frameDrop` |
+  | free (no `return_call`) | `free` | input | |
+  | subset: E, no direct self-call, ABI signatures, indirect-call signatures | `subset` | input | |
+  | tryRets/blrTry | `tryRets`, `blrTry` | own output + input | the call lowering's results vs the callee's signature |
+  | outFits | `outFits` | own output + input | the outgoing area holds the stack arguments of every call (`CallsStack`); input: a declared program callee with stack parameters is called |
+  | calleeFrame/slotFits | `calleeFrame`, `slotFits` | own output | `lowerRFunc`'s frame, `lowerFunction`'s slot layout |
+  | callRegs/blrRegs | `callRegs`, `blrRegs` | own output + input | the call lowering's argument/result registers vs the callee's signature |
+  | declSig | `declSig` | input | |
+  | raCall/raBlr | `raCall`, `raBlr` | linker output | the code ranges of the link map |
+  | indScope/indNoSym/indSig | `indScope`, `indNoSym`, `indSig` | input | |
+  | names: distinct | `names` | input | |
+  | imgCode: the image reads back | `imgAddr`, `imgCode` | linker output | non-overlapping, aligned placement |
+  | raStar | `raStar` | linker output | |
+  | symInj | `symInj` | linker output | |
+  | symOk | `symOk` | linker output | the CLIF image's symbols at their link-map addresses |
+  | addrSlots | `addrSlots` | input (strengthened) | no indirect call, or the address-taken functions have no stack slots |
+
 - **Depends:** L2a on V1–V6; L2b independent of them. **Risk:** L2b scope (archive handling, all
   relocation types std uses, TLS layout, `.eh_frame`).
 

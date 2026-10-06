@@ -147,7 +147,7 @@ theorem spillAvail_of_killFree {vc : VCode} (hk : killFreeB vc = true)
     have := List.all_eq_true.mp hU vb (Array.mem_toList_iff.mpr (Array.mem_of_getElem? hb))
     have := List.all_eq_true.mp this i hi
     simpa using List.all_eq_true.mp this v hv
-  refine ⟨fun v => by simp [killD], ?_, ?_⟩
+  refine ⟨?_, ?_⟩
   · intro succs preds _ b vb k i ops hb hi hops o ho hou
     have hi' : i ∈ vb.insts.toList := Array.mem_toList_iff.mpr (Array.mem_of_getElem? hi)
     have hnk := hU' b vb hb i hi' o.vreg (by
