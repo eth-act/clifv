@@ -381,7 +381,7 @@ Parallel from day one: V1a, V1c, V1e, V3, V4, V5, V6, L2b, L3, L4.
 ## 4. Work packages: widening what the theorems cover (scope)
 
 These don't remove certificates; they shrink the set of functions reported "unverified" (today
-`lean-e2e-check`: 1148 accepted, 97 out of scope) and the cg_clif fallbacks. Independent of §3 unless noted.
+`lean-e2e-check`: 1149 accepted, 97 out of scope) and the cg_clif fallbacks. Independent of §3 unless noted.
 
 ### R1–R9. Mid-end rule proofs (the deferred `simplify` rules)
 
@@ -463,7 +463,7 @@ Large, low priority.
 - Gates before "merge-ready: …": `lake build FV FVTest lean-backend lean-e2e-check link-check`;
   `lake build` in `crate-proofs/`; `#print axioms` of the E2E theorems; `scripts/lean-backend-filetests.sh`
   (corpus 114/114, runtests ≥ 4672/0/0); `scripts/lean-backend-encode-check.sh` (0 differ);
-  `lean-e2e-check` (≥ 1148 accepted, 0 rejected); if CLIF semantics change, `scripts/clif-filetests.sh` at
+  `lean-e2e-check` (≥ 1149 accepted, 0 rejected); if CLIF semantics change, `scripts/clif-filetests.sh` at
   its baseline and `scripts/opt-difftest.sh` with 0 failures.
 - When a WP lands, mark it here (`**done** (commit)`) and update §2.
 

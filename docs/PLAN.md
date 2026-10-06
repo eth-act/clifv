@@ -18,7 +18,7 @@ The FV compiler is all-Lean and proven end to end, from in-subset CLIF to AArch6
 | Piece | State |
 | --- | --- |
 | M0 CLIF semantics, M3 Arm model (LNSym port), M4 isel, M5 encoder, M6 regalloc checker | done and proven |
-| M7 per-function theorem `E2E.backend_correct_final` | proven. Covers `sret`, `try_call` (normal returns; unwinding trusted), indirect calls and `func_addr`, atomics/`bmask`/`fence` (single-core Arm model), TLS (trusted TLSDESC hook), and stack-passed parameters/arguments. lean-e2e-check: 1148 functions in scope, 0 rejected |
+| M7 per-function theorem `E2E.backend_correct_final` | proven. Covers `sret`, `try_call` (normal returns; unwinding trusted), indirect calls and `func_addr`, atomics/`bmask`/`fence` (single-core Arm model), TLS (trusted TLSDESC hook), and stack-passed parameters/arguments. lean-e2e-check: 1149 functions in scope, 0 rejected |
 | i128 | `Opt.Legalize128` (CLIF → CLIF) validated by `Opt.Legal.check`. `E2E.backend_correct_legal`, and `E2E.backend_correct_legal_direct` without the validator premise (checker completeness, `check_complete`) |
 | Mid-end | `E2E.backend_correct_opt_proven` for the proven-rules configuration: 1012 `simplify` and 19 `simplify_skeleton` rules proven. Proven-only corpus 4668 → 2289 instructions (all rules: 2287) |
 | Validator completeness | `prepare` proven correct outright (`prepCheck_complete`, `prepare_correct`). `lowerCheck` proven complete on `Dominated`/`LowerScope` input (`lowerCheck_complete`, `E2E.Compiled.of_lower`: no `lowerCheck`/`prepCheck` premise; TO-PROVE V1/V2 done). `formsCoveredB` proven complete on `LowerScope` input (`formsCovered_complete`, `E2E.backend_correct_final_of_lower`: no `FormsCovered` premise; TO-PROVE V3 done) |
