@@ -108,10 +108,10 @@ theorem reachL_F {I : LinkInput} {B : BaseEnv} {F F' : BitVec 64 → Prop} {M : 
 theorem goodAt_F {I : LinkInput} {B : BaseEnv} {F F' : BitVec 64 → Prop} {M : Nat}
     {g : Clif.Function} {c t : Arm.ArmState} (h : (LinkSys.ofInput I B F).GoodAt M g c t) :
     (LinkSys.ofInput I B F').GoodAt M g c t := by
-  obtain ⟨X, K, G, gv, heq, hg⟩ := h
+  obtain ⟨X, K, G, gv, heq, hg, hi⟩ := h
   rw [hooks_F I B F F' M, mach_F I B F F' M] at heq
   rw [hooks_F I B F F' M] at hg
-  exact ⟨X, K, G, gv, heq, hg⟩
+  exact ⟨X, K, G, gv, heq, hg, hi⟩
 
 /-- **`RunGoodL` does not depend on the exterior `F`** of the linked system. -/
 theorem runGoodL_F {I : LinkInput} {B : BaseEnv} {F F' : BitVec 64 → Prop} {M : Nat}

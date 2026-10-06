@@ -45,11 +45,13 @@ inductive ReachL (L : LinkSys) :
       L.ReachL M h (enterAt (L.A h) (runX (L.mach (M + 1) g) k c)) M' g' c' t →
       L.ReachL (M + 1) g c M' g' c' t
 
-/-- The per-state facts at a state `t` of the activation of `g` at depth `M` entered at `c`. -/
+/-- The per-state facts at a state `t` of the activation of `g` at depth `M` entered at `c`, with
+the code image `Img` among the kept addresses `G`, holding `imgMem` at the entry. -/
 def GoodAt (M : Nat) (g : Clif.Function) (c t : Arm.ArmState) : Prop :=
   ∃ X K G gv, ArmStepX X (L.hooks M) (L.A g).fa = L.mach M g ∧
     actGoodX (L.A g).vcp (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb (L.A g).base c X
-      (L.hooks M) K G gv t
+      (L.hooks M) K G gv t ∧
+    (∀ a, L.Img a → G a) ∧ (∀ a, L.Img a → c.mem a = L.imgMem a)
 
 /-- **Every state of the run whose step ends without error has the per-state facts.** -/
 def RunGoodL (M : Nat) (f : Clif.Function) (c : Arm.ArmState) : Prop :=
@@ -613,7 +615,8 @@ theorem runGood_of_trace (hL : L.Ok) {M : Nat} (ihG : 0 < M → L.ThmG κ (M - 1
   cases hR with
   | act hno =>
     rename_i k
-    refine ⟨L.X κ M g F, κ M g, G, GotV (L.A g).vcp, rfl, hgood k (hbound k hno ?_)⟩
+    refine ⟨L.X κ M g F, κ M g, G, GotV (L.A g).vcp, rfl, hgood k (hbound k hno ?_), he.imgG,
+      he.imgS⟩
     rw [runX_add]; exact herrt
   | nest hno hcall herr1 hR' =>
     rename_i M0 k h

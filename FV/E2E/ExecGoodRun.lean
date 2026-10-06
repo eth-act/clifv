@@ -32,7 +32,8 @@ structure StepOkR (I : LinkInput) (B : BaseEnv) (file : ByteArray) (M : Nat) (g 
     ∀ e, Sim I m e → Sim I (Arm.exec_inst a m) (Arm.exec_inst a e)
   /-- D4 -/
   got : ∀ rl ∈ (art I g).fb.relocs, rl.type = .adrGotPage →
-    Arm.r .PC m = wAt (art I g) (rl.offset + 4) → ∀ (rd G : Nat),
+    Arm.r .PC m = wAt (art I g) (rl.offset + 4) → ∀ (rd G : Nat), rd < 31 → G % 8 = 0 →
+    inR (-2 ^ 20) (2 ^ 20) (pageOf G - pageOf (wAt (art I g) rl.offset).toNat) = true →
     fileWord file (wAt (art I g) rl.offset) =
       some (adrpW rd (pageOf G - pageOf (wAt (art I g) rl.offset).toNat)) →
     fileWord file (wAt (art I g) (rl.offset + 4)) = some (ldrW rd rd (G % 4096 / 8)) → ∀ i < 8,
@@ -116,7 +117,7 @@ theorem reachL_of_reachN (hI : okB I = true) (hc : codeMapB I (tabOf I.results) 
   | nest hj hcall herr _ ih =>
     intro hf hrun _
     have hu := hrun _ _ _ _ (.act hj) (by rw [runX_succ'] at herr; exact herr)
-    obtain ⟨X, K, G, gv, -, hG⟩ := hu
+    obtain ⟨X, K, G, gv, -, hG, -⟩ := hu
     unfold actGoodX at hG
     obtain ⟨c', hR', hs'⟩ := ih (callee_mem hcall)
       (fun _ _ _ _ hr he => hrun _ _ _ _ (.nest hj hcall herr hr) he)
@@ -140,7 +141,7 @@ theorem stepOkD_of_good (hI : okB I = true) (hF : ∀ g ∈ (prog I).funcs, FnOk
     (hgood : (sys I B).GoodAt M g c t) (hs : ¬ Second I g (xreg 30 c))
     (he : Arm.r .ERR ((sys I B).mach M g t) = .None) (hr : StepOkR I B file M g t) :
     StepOkD I B file M g t := by
-  obtain ⟨X, K, G, gv, heq, hG⟩ := hgood
+  obtain ⟨X, K, G, gv, heq, hG, -⟩ := hgood
   unfold actGoodX at hG
   have hFg := hF g hg
   have hfit := hFg.fits
