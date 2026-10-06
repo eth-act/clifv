@@ -5,7 +5,7 @@ import FV.Backend.Proof.PrepareCheck
 /-!
 # regalloc2 as the backend's register allocator (M6)
 
-`allocateRegalloc2 bin env vcs` allocates a batch of functions (one `.clif` file) with the
+`allocateRegalloc2 bin env vcs` (`FV/Backend/AllocReady.lean`) allocates a batch of functions (one `.clif` file) with the
 external, untrusted `lean-regalloc` (`rust/crates/lean-regalloc`, regalloc2 0.15.2 with
 Cranelift 0.136.1's options):
 
@@ -472,28 +472,6 @@ def prepareChecked (vc : VCode) : Except String VCode := do
   if !Proof.Driver.prepCheck vc vcp then
     throw "prepare rejected by the M7 prepare validator (prepCheck)"
   pure vcp
-
-/-- Allocate a batch of functions with regalloc2 (one `lean-regalloc` run); every result is
-checked by `checkAlloc`, and a rejected, unlowerable or missing allocation (regalloc2 failed, or
-is absent) is replaced by the spill allocation (`lowerAlloc`). -/
-def allocateRegalloc2 (bin : String) (env : MachineEnv) (vcs : Array VCode) : IO (Array (Except String AFunc)) := do
-  let prepared := vcs.map prepareChecked
-  let ok := prepared.filterMap (·.toOption)
-  let rs : Array (Except String RFunc) ← do
-    try
-      match ← runLeanRegalloc bin env ok with
-      | .error e => pure (ok.map fun _ => .error e)
-      | .ok rs => pure (rs.map (·.bind RAResult.oracle))
-    catch e => pure (ok.map fun _ => .error (toString e))
-  let mut out : Array (Except String AFunc) := #[]
-  let mut j := 0
-  for p in prepared do
-    match p with
-    | .error e => out := out.push (.error e)
-    | .ok vcp =>
-      out := out.push (lowerAlloc vcp (rs[j]?.getD (.error "lean-regalloc: missing result")))
-      j := j + 1
-  pure out
 
 /-- Allocate with the spill allocator only (`lean-backend --regalloc spill`; testing the
 fallback). -/

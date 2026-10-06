@@ -5,6 +5,11 @@ import FV.Backend.Proof.PrepareCheck
 import FV.Backend.Proof.RegallocCover
 import FV.Backend.Proof.SpillArity
 import FV.Backend.Proof.SpillAvail
+import FV.Backend.Proof.RelaxReady
+import FV.E2E.EmitSize
+import FV.E2E.EmitNear
+import FV.E2E.EmitLabels
+import FV.E2E.EmitEnc
 import FV.Opt.Legalize128Pass
 import FVTest.Opt.Common
 
@@ -175,6 +180,20 @@ def main (args : List String) : IO UInt32 := do
   let mut spillRej := 0
   let mut tSpill := 0
   let mut arity := 0
+  let mut emitOk := 0
+  let mut emitBad := 0
+  let mut readyOk := 0
+  let mut readyBad := 0
+  let mut emitMax := 0
+  let mut sizeOk := 0
+  let mut sizeBad := 0
+  let mut sizeMax := 0
+  let mut naOk := 0
+  let mut naBad := 0
+  let mut tgtOk := 0
+  let mut tgtBad := 0
+  let mut immOk := 0
+  let mut immBad := 0
   for file in files do
     let lg := Opt.Legalize128.parsedFile128 (Clif.parseFile (← IO.FS.readFile file))
     let pf := match optCfg with | some c => Opt.optimizeParsedFile c lg.file | none => lg.file
@@ -233,13 +252,44 @@ def main (args : List String) : IO UInt32 := do
         -- the spill fallback (`spillAlloc`, `E2E.SpillAccepted`) and its lowering
         let ts0 ← IO.monoMsNow
         let rf := spillAlloc vcp
+        -- the size bound (`E2E.spillSizeOkB`, input condition of `backend_correct_final_total_emit`)
+        let w := E2E.rfWords vcp rf
+        if w > sizeMax then sizeMax := w
+        if w < 2 ^ 24 then sizeOk := sizeOk + 1
+        else
+          sizeBad := sizeBad + 1
+          IO.println s!"{file}: %{f.name}: spillSizeOkB fails ({w} words, need < 2^24): out of scope"
+        if Backend.VCode.noAlwaysB vcp then naOk := naOk + 1
+        else
+          naBad := naBad + 1
+          IO.println s!"{file}: %{f.name}: noAlwaysB fails (a condBr/trapIf with an al/nv condition)"
+        if E2E.branchTargetsOkB vcp then tgtOk := tgtOk + 1
+        else
+          tgtBad := tgtBad + 1
+          IO.println s!"{file}: %{f.name}: branchTargetsOkB fails (a branch target is not a block label)"
+        if E2E.immsOkB vcp then immOk := immOk + 1
+        else
+          immBad := immBad + 1
+          IO.println s!"{file}: %{f.name}: immsOkB fails (an immediate outside the encoder's range)"
         match ← IO.lazyPure (fun _ => checkAlloc vcp rf) with
         | .ok () => spillOk := spillOk + 1
         | .error e =>
           spillBad := spillBad + 1
           IO.println s!"{file}: %{f.name}: checkAlloc rejects the spill allocation: {e}"
         match ← IO.lazyPure (fun _ => lowerRFunc vcp rf) with
-        | .ok _ => spillLow := spillLow + 1
+        | .ok af =>
+          spillLow := spillLow + 1
+          match ← IO.lazyPure (fun _ => emitFunc 0 af) with
+          | .ok fa =>
+            emitOk := emitOk + 1
+            if fa.size > emitMax then emitMax := fa.size
+            if ← IO.lazyPure (fun _ => fa.layoutReadyB) then readyOk := readyOk + 1
+            else
+              readyBad := readyBad + 1
+              IO.println s!"{file}: %{f.name}: layoutReadyB fails on the spill allocation's code"
+          | .error e =>
+            emitBad := emitBad + 1
+            IO.println s!"{file}: %{f.name}: emitPre rejects the spill allocation's code: {e}"
         | .error e =>
           spillRej := spillRej + 1
           IO.println s!"{file}: %{f.name}: lowerRFunc rejects the spill allocation: {e}"
@@ -274,6 +324,11 @@ def main (args : List String) : IO UInt32 := do
     IO.println s!"  uncovered form {k}: {n} instructions"
   IO.println s!"spill fallback (SpillAccepted): checkAlloc accepts {spillOk}, rejects {spillBad}"
   IO.println s!"spill lowering (lowerRFunc_spillAlloc): lowerRFunc lowers {spillLow}, rejects {spillRej}"
+  IO.println s!"spill emission: emitPre succeeds {emitOk}, rejects {emitBad}; layoutReadyB {readyOk} pass, {readyBad} fail; largest function {emitMax} bytes"
+  IO.println s!"spillSizeOkB (EmitSize, size input condition): {sizeOk} pass, {sizeBad} fail; largest bound {sizeMax} words (limit 2^24)"
+  IO.println s!"noAlwaysB (EmitNear, no al/nv branch condition): {naOk} pass, {naBad} fail"
+  IO.println s!"branchTargetsOkB (EmitLabels, every branch target a block label): {tgtOk} pass, {tgtBad} fail"
+  IO.println s!"immsOkB (EmitEnc, encodable immediates): {immOk} pass, {immBad} fail"
   IO.println s!"killFreeB (SpillKillFree, gives SpillAvailable): {kfOk} accepted ({kfKilled} with killed vregs: scratch or terminator defs), {kfBad} rejected"
   IO.println s!"time (ms): lowerFunction {tLower}, lowerCheck {tCheck}, prepare {tPrep}, prepCheck {tPCheck}, spill fallback {tSpill}"
-  return if bad == 0 && pbad == 0 && spillBad == 0 && kfBad == 0 && spillRej == 0 then 0 else 1
+  return if bad == 0 && pbad == 0 && spillBad == 0 && kfBad == 0 && spillRej == 0 && emitBad == 0 && readyBad == 0 && naBad == 0 && tgtBad == 0 && immBad == 0 then 0 else 1

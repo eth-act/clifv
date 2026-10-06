@@ -68,7 +68,7 @@ and, on rejection, replaced by a directly proven Lean path (kind 2). Correctness
 | `prepare` | Lean | `prepCheck`, complete on `PrepDomain`, which `lowerFunction` always produces (`prepDomain_of_lower`) | validator, complete | V2 done |
 | register allocation | **external Rust** (regalloc2 0.15.2 via `lean-regalloc`), Lean fallback `spillAlloc` | `checkAlloc` (`FV/Backend/RegallocCheck.lean:423-441`) on regalloc2's output; on rejection `spillAlloc` (`allocResult`, `E2E.backend_correct_final_alloc`), accepted by `checkAlloc` for every in-scope function (`E2E.spillAccepted`, proven) | fallback; its acceptance proven | V4 (a) done; (b) open |
 | frame, control lowering | Lean `lowerRFunc` | internal rejections (`ctlCheck`, operand/move shapes; no frame-size limit since V5); a rejection of regalloc2's allocation falls back to `spillAlloc`, which `lowerRFunc` provably lowers (`E2E.lowerRFunc_spillAlloc`) | fallback; its lowering proven | V5 done |
-| emission, layout | Lean | branch relaxation; `emitFunc_layout_total` from `layoutReadyB` (decidable on the emitted code) | proven modulo `hpre`/`layoutReadyB` premises | V6 |
+| emission, layout | Lean | branch relaxation; `emitFunc_layout_total` from `layoutReadyB`; regalloc2's code kept only if `emitReady` (`lowerAllocReady`), the spill code proven ready (`E2E.emitReady_spill`) under `emitCondsB` (size bound + three isel facts, decidable on the VCode) | proven modulo decidable conditions on the VCode | V6 done; V6c open |
 | encoder | Lean | `Insn.decode_encode` (`FV/Backend/Proof/Encode.lean:57-60`) | proven | — |
 | linking (program level) | `cargo fv` object merge + **rust-lld** | **`okB`** (`FV/E2E/LinkCheck.lean:716-777`) per crate by `native_decide` | **validator premise + oracle + per-program proof** | L1, L2 |
 | executable bytes | **rust-lld** | **`BinOk`** (`FV/E2E/BinCheck.lean:539-543`) per crate by `native_decide` | **validator premise + oracle + per-program proof** | L2 |
@@ -304,16 +304,21 @@ author's estimate, not measured), **Risk**.
   premise (witness `backend_correct_final_total_relaxed_witness`). Test: `corpus/clif-large/far_branches.clif`
   (tbnz, the b.eq of a brif, the cbz of a udiv zero check and a jump table's b.hs, each over > 1 MiB).
   Details: `docs/contracts/e2e.md` "Emission and layout: branch relaxation (V6)".
-- **Remaining (premises of `backend_correct_final_total_relaxed`):**
-  - `hpre : ∃ pre, emitPre k af = .ok pre` — `MInst.lines`' rejections (an `AluRRImmLogic`/
-    `AluRRImmShift` op outside the encoded set, `args`/`rets` after allocation, atomic loops' fixed
-    registers, `LoadAddr` amode, `memFinalize`, TLS registers): to prove from isel/`lowerRFunc` output.
-  - `layoutReadyB`: (a) labels defined once and every used label defined (block labels distinct in the
-    VCode, `trap`/`jt`/`loop` counters fresh); (b) `Insn.encodable` of every instruction (register
-    numbers, immediates, shift amounts, bitmask immediates: from isel's operand forms); (c) `NearOk`: the
-    unrelaxed PC-relative forms (atomic loops' `cbnz`/`b.ne`, the jump table's `adr`) are ≤ 40 bytes
-    from their labels by construction; (d) size < 128 MiB (`b` range): an input-side bound
-    (`emitFunc_size_le`: at most twice the unrelaxed size) or veneer islands for `b`.
+- **V6b done (2026-10-06): emission totality.** `E2E.backend_correct_final_total_emit`
+  (`FV/E2E/EmitTotal.lean`): no `hpre`/`layoutReadyB` premise. The old premises were false for some
+  allocator answers (`checkAlloc` accepts arbitrarily many redundant moves, so the code can exceed
+  128 MiB), so the compiler now keeps regalloc2's code only if `emitReady` (`lowerAllocReady`,
+  `FV/Backend/AllocReady.lean`; byte-identical output on the corpus). For the spill code:
+  `emitPre_spill_ok`, `emitFunc_spill_labels`, `emitFunc_spill_encodable`, `emitFunc_spill_near`,
+  `emitFunc_spill_size`, combined by `FnAsm.layoutReadyB_of` into `emitReady_spill`. New condition
+  `emitCondsB vcp` (each part counted by `lean-e2e-check`, 1149/1149):
+  - `spillSizeOkB` — the size input condition (needed: large functions exceed `b`'s reach);
+  - `immsOkB`, `noAlwaysB`, `branchTargetsOkB` — facts about `lowerFunction`'s output.
+- **Remaining (V6c):** prove `immsOkB` (immediate ranges; extend the `IselCov` abstract domain with
+  `imm12`/move-wide/shift-amount values, plus indirect call targets being int vregs), `noAlwaysB`
+  (`CtlShape`'s `KindOk` excluding `al`/`nv`) and `branchTargetsOkB` (branch-target instructions only
+  block-final, or their targets block labels) from the ISLE rule data; make the size bound
+  input-side (a per-CLIF-instruction bound on emitted VCode instructions).
 
 ### L1. The executable compiler as one Lean function
 
@@ -574,7 +579,7 @@ label**; list the free ones with
 | V4 | [#6](https://github.com/eth-act/clifv/issues/6) Register allocation without trusting regalloc2 | (a) **done** (#56): `backend_correct_final_alloc_proven`, no allocation premise |
 | V4b | [#57](https://github.com/eth-act/clifv/issues/57) A real register allocator in Lean (removes regalloc2) | open |
 | V5 | [#7](https://github.com/eth-act/clifv/issues/7) Frame and control-lowering rejections (totality) | **done**: `backend_correct_final_total` (no allocation/lowering premise, no frame-size limit) |
-| V6 | [#8](https://github.com/eth-act/clifv/issues/8) Branch range (totality) | done (premises `hpre`, `layoutReadyB` remain) |
+| V6 | [#8](https://github.com/eth-act/clifv/issues/8) Branch range (totality) | done; V6b (#66) done: `backend_correct_final_total_emit`, premises replaced by `emitCondsB` (decidable on the VCode); V6c open (prove `immsOkB`/`noAlwaysB`/`branchTargetsOkB` from isel, input-side size bound) |
 | L2a | [#9](https://github.com/eth-act/clifv/issues/9) Linking without validators: split `okB` into input conditions + properties proven by construction | open |
 | L2b | [#10](https://github.com/eth-act/clifv/issues/10) Static linker in Lean for the executable (BinOk by construction) | open |
 | L3 | [#11](https://github.com/eth-act/clifv/issues/11) Executable-bytes simulation (M9 item 1b) | open |
