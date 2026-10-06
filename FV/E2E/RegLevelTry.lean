@@ -145,10 +145,32 @@ theorem take_machine_defs {ops : Array Operand} {regs : Array Reg} {outs : List 
 theorem callAt_tryCall_call {fa : FnAsm} {base pc : BitVec 64} {ic : CallInfo} {ti : TryInfo}
     (h : CallAt fa base pc (.tryCall ic ti)) : CallAt fa base pc (.call ic) := h
 
+/-- `reach_b` from a state with the body's `sp`: the states before the label satisfy `GoodX`. -/
+theorem reach_b_goodX {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {x : Lbl} {Z T : List Line}
+    (hdrop : R.L.drop j0 = relaxLines R.far (ftList (.ins (.b x) none :: Z)) ++ T) (hx : x ≠ .skip)
+    (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j0)
+    (herr : Arm.r .ERR s = .None) (hsp : spOf s = R.spB) :
+    ∃ n jl, iterN R.step n s = Arm.w .PC (R.pcOf jl) s ∧ R.L[jl]? = some (.label x) ∧
+      ∀ i < n, R.GoodX (iterN R.step i s) := by
+  rcases ft_b x Z with ⟨Z', rfl, he⟩ | he
+  · rw [he, ft_label, relaxLines_cons, relaxLine_label, List.singleton_append] at hdrop
+    refine ⟨0, j0, ?_, drop_get hdrop, fun i hi => by omega⟩
+    simp only [iterN]; rw [← hpc, Arm.w_irrelevant]
+  · rw [he, relaxLines_cons, relaxLine_of_none rfl, List.singleton_append] at hdrop
+    have hj := drop_get hdrop
+    obtain ⟨a, jl, ha, hjl, hstep⟩ := step_branch hR hj (.inl rfl) hx hprog hpc herr
+    rw [brCond_b ha] at hstep
+    refine ⟨1, jl, by simp only [iterN]; rw [hstep]; rfl, hjl, fun i hi => ?_⟩
+    obtain rfl : i = 0 := by omega
+    show R.GoodX s
+    exact RL.goodX_line hR hj hpc rfl (RL.good_of_sp hsp) herr hprog
+      (RL.nextOk_label hjl (by rw [hstep]; simp [Arm.r_of_w_same])) (fun _ _ _ h => by cases h)
+      (fun _ h => by cases h) (not_call_insn (fun _ h => by cases h) fun _ h => by cases h)
+
 /-- **The call of a `try_call` on the machine**: from `Q` at a `tryCall` item, the machine runs
 the hooked callee and the branch to the normal-return successor, reaching `Q` at that
 successor's items (an `MStep` of the allocated code, whose exception payload defs take the
-values the callee left in their registers). -/
+values the callee left in their registers), every state before it satisfying `GoodX`. -/
 theorem realizes_tryCall {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.CallSite R.gv)
     (hT : CalleeTryOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.TrySite R.gv) {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc}
     {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
@@ -164,7 +186,7 @@ theorem realizes_tryCall {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (
     (hsucc : succOf R.vc b j = some st) (hitems : R.rf.blocks[st]? = some items)
     (hctl : ctl = .goto j) :
     ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
-      Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.Good (iterN R.step i s) := by
+      Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.GoodX (iterN R.step i s) := by
   have hck := (lowerRFunc_ok hR.alloc).2.2
   have hcpc := callAt_of_q hq hvb hi tryCall_hcall
   obtain ⟨j0, vb0, items0, pre, code, ls, ps1, ps2, T, hvb0, hit, hsplit, hchk, hcode, hls, htr,
@@ -180,6 +202,12 @@ theorem realizes_tryCall {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (
     hst.store (.reg r) (fun r' e => by cases e; exact hr) trivial
   have hsemU := hsem
   rw [useVals_of_store hstat hm] at hsemU
+  -- the callee contract's premise at the call state
+  have hpre : R.CallPre s := ⟨R.ctx, .tryCall info ti, ctl,
+    ⟨info, ⟨b, vb, k, hvb, .inr ⟨ti, hi⟩⟩, .inr ⟨ti, rfl⟩⟩,
+    by rw [hst.sp]; exact RL.K_le hR, fun a ha => by rw [hst.sp] at ha; exact RL.below_F ha,
+    hst.gkeep, cc, wh, ops, regs, i', w, outs, w', hops, hstat, hasg, hcpc regs i' rfl hasg,
+    hst.world, hst.align, hst.err, hsemU⟩
   -- the control outcome and the callee's world
   have hsem0 := hsemU
   replace hsem0 := R.sem_csem hsem0
@@ -254,19 +282,21 @@ theorem realizes_tryCall {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (
     · cases h
   obtain ⟨ls1, ls2, psm, h1, h2, rfl⟩ := codeLinesE_append _ _ _ _ _ hls
   have hl1 := codeLinesE_single h1
-  obtain ⟨x, hxl, hxs, hplain⟩ : ∃ x : Insn, ls1 = [.ins x, .ins (.b (.block ti.continuation))] ∧
+  obtain ⟨x, hxl, hxs, hplain, hxk⟩ : ∃ x : Insn, ls1 = [.ins x, .ins (.b (.block ti.continuation))] ∧
       (∀ s0 : Arm.ArmState, ∀ jj, R.L[jj]? = some (.ins x) → s0.program = R.fb.program R.base →
         Arm.r .PC s0 = R.pcOf jj → R.step s0 = R.H.call
           (match ic.dest with | .sym n => some n | .reg _ => none) s0) ∧
-      (Line.ins x none).plain = true := by
+      (Line.ins x none).plain = true ∧ ((∃ n, x = .bl n) ∨ ∃ r, x = .blr r ∧ (R.vc.DestsInt → r ≠ .xzr)) := by
     cases hd : ic.dest with
     | sym n =>
       simp only [MInst.lines, hd, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hl1
-      refine ⟨.bl n, hl1.1.symm, fun s0 jj hj hprog hpc0 => ?_, by simp [Line.plain, Insn.condTarget?]⟩
+      refine ⟨.bl n, hl1.1.symm, fun s0 jj hj hprog hpc0 => ?_, by simp [Line.plain, Insn.condTarget?],
+        .inl ⟨n, rfl⟩⟩
       exact step_bl (off := 0) (r := .xzr) (rd := .xzr) (rn := .xzr) hR hj hprog hpc0
     | reg r =>
       simp only [MInst.lines, hd, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hl1
-      refine ⟨.blr r, hl1.1.symm, fun s0 jj hj hprog hpc0 => ?_, by simp [Line.plain, Insn.condTarget?]⟩
+      refine ⟨.blr r, hl1.1.symm, fun s0 jj hj hprog hpc0 => ?_, by simp [Line.plain, Insn.condTarget?],
+        .inr ⟨r, rfl, fun hD => callDest_ne_xzr (hD b vb k info hvb (.inr ⟨ti, hi⟩)) hstat hasg' hd⟩⟩
       exact step_blr (off := 0) (n := "") (rd := .xzr) (rn := .xzr) hR hj hprog hpc0
   subst hxl
   have hZ : ∀ n, (Line.ins (.b (.block ti.continuation)) none :: (ls2 ++ nxtOf R.af b))[1]? ≠
@@ -299,16 +329,26 @@ theorem realizes_tryCall {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (
   have hdrop1 : R.L.drop (j0 + 1) =
       relaxLines R.far (ftList (.ins (.b (.block ti.continuation)) none :: (ls2 ++ nxtOf R.af b))) ++ T := by
     rw [← List.drop_drop, hdrop']; rfl
-  obtain ⟨n, jl, hn, hjl, hspn⟩ := reach_b hR hdrop1 (by simp) hprog' hpc1 herr'
   have hsp' : spOf s' = R.spB := hK.1.trans hst.sp
+  obtain ⟨n, jl, hn, hjl, hgx⟩ := reach_b_goodX hR hdrop1 (by simp) hprog' hpc1 herr' hsp'
   refine ⟨n + 1, _, MStep.op hvb hi hops hsz hsem hlen hho hc2'
     (MNext.goto hk1 hsucc hitems), ?_, fun i hi => ?_⟩
   rotate_right
   · cases i with
-    | zero => exact RL.good_of_sp hst.sp
+    | zero =>
+      show R.GoodX s
+      exact RL.goodX_line hR hj0 hpc (by rcases hxk with ⟨_, rfl⟩ | ⟨_, rfl, _⟩ <;> rfl)
+        (RL.good_of_sp hst.sp) hst.err hst.prog
+        (RL.nextOk_pc4 (by rw [hs1, hpc1, pcOf_succ hj0, hpc]))
+        (fun _ _ _ e => by rcases hxk with ⟨_, rfl⟩ | ⟨_, rfl, _⟩ <;> cases e)
+        (fun r e => by
+          rcases hxk with ⟨_, rfl⟩ | ⟨_, rfl, hr⟩
+          · cases e
+          · cases e; exact ⟨hr, hst.code⟩)
+        fun _ => hpre
     | succ i =>
       simp only [iterN]; rw [hs1]
-      exact RL.good_of_sp ((hspn i (by omega)).trans hsp')
+      exact hgx i (by omega)
   have hiter : iterN R.step (n + 1) s = Arm.w .PC (R.pcOf jl) s' := by
     simp only [iterN]; rw [hs1, hn]
   rw [hiter]

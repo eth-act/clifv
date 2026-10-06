@@ -193,6 +193,40 @@ theorem step_skip {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j : Nat} {i x : Insn}
     by omega]
   rfl
 
+/-- **A branch line's state** with the body's `sp`: `GoodX` (the step goes to the target label or
+the next line). -/
+theorem step_branchX {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j : Nat} {i : Insn} {l : Lbl}
+    (hj : R.L[j]? = some (.ins i none))
+    (hi : i = .b l ∨ (∃ c, i = .bcond c l) ∨ (∃ nz w r, i = .cbz nz w r l) ∨
+      (∃ nz r bit, i = .tbz nz r bit l)) (hl : l ≠ .skip)
+    (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j)
+    (herr : Arm.r .ERR s = .None) (hsp : spOf s = R.spB) : R.GoodX s := by
+  obtain ⟨a, jl, -, hjl, hstep⟩ := step_branch hR hj hi hl hprog hpc herr
+  have hh : i.hooked = false ∧ i.tlsTail = false ∧ i.pairFirst = false := by
+    rcases hi with rfl | ⟨_, rfl⟩ | ⟨_, _, _, rfl⟩ | ⟨_, _, _, rfl⟩ <;> exact ⟨rfl, rfl, rfl⟩
+  refine RL.goodX_ofIns hR hj hpc hh.1 hh.2.1 (.inr hsp) herr hprog ?_
+  rw [hstep]
+  split
+  · exact RL.nextOk_label hjl (Arm.r_of_w_same ..)
+  · exact RL.nextOk_succ hj hh.2.2 (Arm.r_of_w_same ..)
+
+/-- **The inverted short branch of a relaxed branch** with the body's `sp`: `GoodX` (the step
+goes past the next line, which is not the first word of an `adrp` pair, or to it). -/
+theorem step_skipX {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j : Nat} {i x : Insn}
+    (hj : R.L[j]? = some (.ins i none)) (hj1 : R.L[j + 1]? = some (.ins x none))
+    (hi : (∃ c, i = .bcond c .skip) ∨ (∃ nz w r, i = .cbz nz w r .skip) ∨
+      (∃ nz r bit, i = .tbz nz r bit .skip)) (hx : x.pairFirst = false)
+    (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j)
+    (herr : Arm.r .ERR s = .None) (hsp : spOf s = R.spB) : R.GoodX s := by
+  obtain ⟨a, -, hstep⟩ := step_skip hR hj hj1 hi hprog hpc herr
+  have hh : i.hooked = false ∧ i.tlsTail = false ∧ i.pairFirst = false := by
+    rcases hi with ⟨_, rfl⟩ | ⟨_, _, _, rfl⟩ | ⟨_, _, _, rfl⟩ <;> exact ⟨rfl, rfl, rfl⟩
+  refine RL.goodX_ofIns hR hj hpc hh.1 hh.2.1 (.inr hsp) herr hprog ?_
+  rw [hstep]
+  split
+  · exact RL.nextOk_succ hj1 hx (Arm.r_of_w_same ..)
+  · exact RL.nextOk_succ hj hh.2.2 (Arm.r_of_w_same ..)
+
 /-! ## States differing only in the pc -/
 
 theorem locVal_w_pc (fr : RAFrame) (s : Arm.ArmState) (v : BitVec 64) (l : Loc) :
