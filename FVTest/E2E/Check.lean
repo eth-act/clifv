@@ -3,6 +3,8 @@ import FV.Backend.Proof.DriverCheck
 import FV.Backend.Proof.LowerDecide
 import FV.Backend.Proof.PrepareCheck
 import FV.Backend.Proof.RegallocCover
+import FV.Backend.Proof.SpillArity
+import FV.Backend.Proof.SpillAvail
 import FV.Opt.Legalize128Pass
 import FVTest.Opt.Common
 
@@ -19,6 +21,13 @@ It also decides `formsCoveredB` (the `FormsCovered` premise of `E2E.backend_corr
 every prepared VCode and reports the number of covered functions and, for the others, the
 uncovered instruction forms (constructor and operation) with their counts. An uncovered
 function is not rejected: it is compiled but outside the end-to-end theorem.
+
+It runs the checker on the spill allocation (`spillAlloc`, the fallback when `checkAlloc`
+rejects regalloc2's allocation) of every prepared VCode — the conclusion of the hypothesis
+`E2E.SpillAccepted` of `E2E.backend_correct_final_alloc` — and reports how many are accepted (a
+rejection fails the run) and how many `lowerRFunc` lowers (its 32 KiB frame limit, V5); and
+`Spill.killFreeB` on every prepared VCode (the conclusion of the hypothesis `E2E.SpillKillFree`,
+which gives `E2E.SpillAvailable`; a rejection fails the run).
 
 It reports how many in-scope functions satisfy the input conditions of `lowerCheck_complete`
 (`dominatedB`, `lowerScopeB`: on these the lowering validator is a theorem, `Compiled.of_lower`),
@@ -156,6 +165,15 @@ def main (args : List String) : IO UInt32 := do
   let mut dom := 0
   let mut scope := 0
   let mut both := 0
+  let mut spillOk := 0
+  let mut spillBad := 0
+  let mut kfOk := 0
+  let mut kfBad := 0
+  let mut kfKilled := 0
+  let mut spillLow := 0
+  let mut spillBig := 0
+  let mut tSpill := 0
+  let mut arity := 0
   for file in files do
     let lg := Opt.Legalize128.parsedFile128 (Clif.parseFile (← IO.FS.readFile file))
     let pf := match optCfg with | some c => Opt.optimizeParsedFile c lg.file | none => lg.file
@@ -191,6 +209,8 @@ def main (args : List String) : IO UInt32 := do
       if sc then scope := scope + 1
       if d && sc then both := both + 1
       else IO.println s!"{file}: %{f.name}: outside lowerCheck_complete's conditions (dominatedB {d}, lowerScopeB {sc})"
+      if Backend.Proof.Spill.arityOkB f then arity := arity + 1
+      else IO.println s!"{file}: %{f.name}: arityOkB fails (a branch argument count differs from its target's parameter count)"
       let r ← IO.lazyPure (fun _ => lowerCheck f vc)
       let t2 ← IO.monoMsNow
       if t2 - t0 > 2000 then IO.println s!"{file}: %{f.name}: lowerFunction {t1 - t0} ms, lowerCheck {t2 - t1} ms"
@@ -209,6 +229,26 @@ def main (args : List String) : IO UInt32 := do
           IO.println s!"{file}: %{f.name}: not covered: {us.map oneLine}"
           for i in us do
             forms := forms.insert (formKey i) (forms.getD (formKey i) 0 + 1)
+        -- the spill fallback (`spillAlloc`, `E2E.SpillAccepted`) and its lowering
+        let ts0 ← IO.monoMsNow
+        let rf := spillAlloc vcp
+        match ← IO.lazyPure (fun _ => checkAlloc vcp rf) with
+        | .ok () => spillOk := spillOk + 1
+        | .error e =>
+          spillBad := spillBad + 1
+          IO.println s!"{file}: %{f.name}: checkAlloc rejects the spill allocation: {e}"
+        match ← IO.lazyPure (fun _ => lowerRFunc vcp rf) with
+        | .ok _ => spillLow := spillLow + 1
+        | .error e =>
+          spillBig := spillBig + 1
+          IO.println s!"{file}: %{f.name}: lowerRFunc rejects the spill allocation: {e}"
+        -- the syntactic availability facts (`Spill.killFreeB`, `E2E.SpillKillFree`)
+        if !(Backend.Proof.Spill.killedOf vcp).isEmpty then kfKilled := kfKilled + 1
+        if ← IO.lazyPure (fun _ => Backend.Proof.Spill.killFreeB vcp) then kfOk := kfOk + 1
+        else
+          kfBad := kfBad + 1
+          IO.println s!"{file}: %{f.name}: killFreeB rejects (a killed vreg is read, or a killed branch argument is not stored on entry)"
+        tSpill := tSpill + ((← IO.monoMsNow) - ts0)
         let t5 ← IO.monoMsNow
         let pc ← IO.lazyPure (fun _ => prepCheck vc vcp)
         let t6 ← IO.monoMsNow
@@ -227,8 +267,11 @@ def main (args : List String) : IO UInt32 := do
   IO.println s!"legalised i128 functions: {legal} in scope (Opt.Legal.check accepts; counted above), {legalOut} out of scope (validator rejects, extern named like a function of the file, a call_indirect whose file's externs do not extend, or --opt)"
   IO.println s!"prepCheck: {pok} accepted, {pbad} rejected"
   IO.println s!"lowerCheck_complete conditions: dominatedB {dom}, lowerScopeB {scope}, both {both} (of {ok + bad} checked)"
+  IO.println s!"arityOkB {arity} of {ok + bad}"
   IO.println s!"formsCoveredB: {cov} covered, {uncov} not covered"
   for (k, n) in forms.toList.mergeSort (fun a b => a.2 ≥ b.2) do
     IO.println s!"  uncovered form {k}: {n} instructions"
-  IO.println s!"time (ms): lowerFunction {tLower}, lowerCheck {tCheck}, prepare {tPrep}, prepCheck {tPCheck}"
-  return if bad == 0 && pbad == 0 then 0 else 1
+  IO.println s!"spill fallback (SpillAccepted): checkAlloc accepts {spillOk}, rejects {spillBad}; lowerRFunc lowers {spillLow}, rejects {spillBig} (allocator frame ≥ 32 KiB or ctlCheck)"
+  IO.println s!"killFreeB (SpillKillFree, gives SpillAvailable): {kfOk} accepted ({kfKilled} with killed vregs: scratch or terminator defs), {kfBad} rejected"
+  IO.println s!"time (ms): lowerFunction {tLower}, lowerCheck {tCheck}, prepare {tPrep}, prepCheck {tPCheck}, spill fallback {tSpill}"
+  return if bad == 0 && pbad == 0 && spillBad == 0 && kfBad == 0 then 0 else 1

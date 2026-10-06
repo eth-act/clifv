@@ -156,19 +156,51 @@ theorem lowStmts_emptied {call : StmtCall} :
       · cases h
     · cases h
 
+/-- `lowerFunction`'s alias resolution renames vregs (class kept) and fixes real registers. -/
+theorem resolve_vrenaming (a : Array (Option Nat)) (fuel : Nat) :
+    ∃ gn, VRenaming (lowerFunction.resolve a fuel) gn :=
+  ⟨chaseF (fun n => (a[n]?).join) fuel, ⟨resolve_vreg a fuel, fun r hr => by
+    cases r with
+    | vreg n c => exact absurd rfl (hr n c)
+    | _ => cases fuel <;> rfl⟩⟩
+
+theorem vrenaming_id : VRenaming id id := ⟨fun _ _ => rfl, fun _ _ => rfl⟩
+
 /-- The blocks of `vcBlocksOf`: a renamed raw block or a renamed edge block. -/
 theorem mem_vcBlocksOf {f : Clif.Function} {bl : List BLow} {vb : VBlock}
     (h : vb ∈ (vcBlocksOf f bl).toList) :
-    ∃ R, (∃ bi B L, f.blocks[bi]? = some B ∧ bl[bi]? = some L ∧ vb = fixBlock R (rawBlock f bl bi B)) ∨
-      (∃ B L e, B ∈ f.blocks ∧ e ∈ edgeBlocks f B L ∧ vb = fixBlock R e) := by
+    ∃ R, (∃ gn, VRenaming R gn) ∧
+      ((∃ bi B L, f.blocks[bi]? = some B ∧ bl[bi]? = some L ∧ vb = fixBlock R (rawBlock f bl bi B)) ∨
+      (∃ B L e, B ∈ f.blocks ∧ e ∈ edgeBlocks f B L ∧ vb = fixBlock R e)) := by
   simp only [vcBlocksOf, List.toList_toArray, List.mem_map, List.mem_append, List.mem_flatMap] at h
   obtain ⟨vb0, h1, rfl⟩ := h
-  refine ⟨lowerFunction.resolve (aliasArr (aliasOf f bl)) ((aliasArr (aliasOf f bl)).size + 1), ?_⟩
+  refine ⟨lowerFunction.resolve (aliasArr (aliasOf f bl)) ((aliasArr (aliasOf f bl)).size + 1),
+    resolve_vrenaming _ _, ?_⟩
   rcases h1 with ⟨p, hp, rfl⟩ | ⟨p, hp, he⟩
   · have := List.mem_zipIdx_iff_getElem?.mp hp
     rw [List.getElem?_zip_eq_some] at this
     exact .inl ⟨p.2, p.1.1, p.1.2, this.1, this.2, rfl⟩
   · exact .inr ⟨p.1, p.2, vb0, (List.of_mem_zip hp).1, he, rfl⟩
+
+/-- `extraOf`'s instructions are `mov`s. -/
+theorem mem_extraOf {results : List Nat} {rss : List (List Reg)} {m : MInst}
+    (h : m ∈ extraOf results rss) : ∃ s a b, m = .mov s a b := by
+  simp only [extraOf, List.mem_filterMap] at h
+  obtain ⟨q, -, hq⟩ := h
+  split at hq
+  · cases hq
+  · cases hq; exact ⟨_, _, _, rfl⟩
+  · cases hq
+
+/-- A property of `mov`s holding of a statement's emitted code holds of its segment. -/
+theorem all_extraOf {P : MInst → Prop} (hmov : ∀ s a b, P (.mov s a b)) {ms : List MInst}
+    (h : ∀ m ∈ ms, P m) (results : List Nat) (rss : List (List Reg)) :
+    ∀ m ∈ ms ++ extraOf results rss, P m := by
+  intro m hm
+  rcases List.mem_append.mp hm with hm | hm
+  · exact h m hm
+  · obtain ⟨s, a, b, rfl⟩ := mem_extraOf hm
+    exact hmov s a b
 
 /-- An edge block is a single `jump`. -/
 theorem edgeBlocks_insts {f : Clif.Function} {B : Clif.Block} {L : BLow} {e : VBlock}
@@ -187,25 +219,27 @@ theorem edgeBlocks_insts {f : Clif.Function} {B : Clif.Block} {L : BLow} {e : VB
     · simp only [Option.map_eq_some_iff] at h
       obtain ⟨tl, -, rfl⟩ := h; exact ⟨tl, rfl⟩
 
-/-- A property of instructions that every renaming keeps and the driver's own instructions
-(`args`, the parameter loads, result `mov`s, `jump`s) have, holds of every instruction of
-`vcBlocksOf f bl` if it holds of every statement's and terminator's emitted code. -/
-theorem vcBlocks_all (P : MInst → Prop) (hR : ∀ R m, P m → P (m.mapRegs R))
-    (hargs : ∀ ds, P (.args ds)) (hload : ∀ op r a fl, P (.load op r a fl))
-    (hmov : ∀ s a b, P (.mov s a b)) (hjump : ∀ l, P (.jump l))
+/-- A property of instructions that every vreg renaming keeps and the driver's own instructions
+(`args`, the parameter loads, `jump`s) have, holds of every instruction of `vcBlocksOf f bl` if
+it holds of every statement's segment (emitted code and result `mov`s) and terminator's emitted
+code. -/
+theorem vcBlocks_all (P : MInst → Prop) (hR : ∀ R gn, VRenaming R gn → ∀ m, P m → P (m.mapRegs R))
+    (hargs : ∀ ds, P (.args ds))
+    (hload : ∀ b n off, P (.load (loadOpOfBytes b) (.vreg n .int) (.fpOffset off) trustedFlags))
+    (hjump : ∀ l, P (.jump l))
     {f : Clif.Function} {bl : List BLow}
     (hs : ∀ (bi : Nat) (B : Clif.Block) (L : BLow) (j : Nat) (stm : Clif.Stmt) (sl : SLow),
       f.blocks[bi]? = some B → bl[bi]? = some L → B.body[j]? = some stm →
-      L.sl[j]? = some sl → ∀ m ∈ sl.st'.emitted.toList, P m)
+      L.sl[j]? = some sl → ∀ m ∈ sl.st'.emitted.toList ++ extraOf stm.results sl.rss, P m)
     (ht : ∀ (bi : Nat) (B : Clif.Block) (L : BLow), f.blocks[bi]? = some B → bl[bi]? = some L →
       ∀ m ∈ fixTry L.tl L.tst'.emitted.toList, P m) :
     ∀ vb ∈ (vcBlocksOf f bl).toList, ∀ m ∈ vb.insts.toList, P m := by
   intro vb hvb m hm
-  obtain ⟨R, ⟨bi, B, L, hB, hL, rfl⟩ | ⟨B, L, e, -, he, rfl⟩⟩ := mem_vcBlocksOf hvb
+  obtain ⟨R, ⟨gn, hRg⟩, ⟨bi, B, L, hB, hL, rfl⟩ | ⟨B, L, e, -, he, rfl⟩⟩ := mem_vcBlocksOf hvb
   · simp only [fixBlock, rawBlock, Array.toList_map, List.mem_map, List.mem_append,
       List.mem_flatten] at hm
     obtain ⟨m0, hm0, rfl⟩ := hm
-    apply hR
+    apply hR R gn hRg
     rcases hm0 with (hpre | ⟨sg, hsg, hm0⟩) | htseg
     · unfold pre at hpre
       split at hpre
@@ -217,7 +251,7 @@ theorem vcBlocks_all (P : MInst → Prop) (hR : ∀ R m, P m → P (m.mapRegs R)
           obtain ⟨q, -, hq⟩ := hpre
           unfold entryLoadOf at hq
           split at hq
-          · cases hq; exact hload _ _ _ _
+          · cases hq; exact hload _ _ _
           · cases hq
       · simp at hpre
     · simp only [List.mem_range] at hsg
@@ -227,29 +261,21 @@ theorem vcBlocks_all (P : MInst → Prop) (hR : ∀ R m, P m → P (m.mapRegs R)
       simp only at hm0
       split at hm0
       · rename_i stm sl hstm hsl
-        simp only [List.mem_map, List.mem_append] at hm0
+        simp only [List.mem_map] at hm0
         obtain ⟨m1, hm1, rfl⟩ := hm0
-        apply hR
-        rcases hm1 with hm1 | hm1
-        · exact hs bi B L j stm sl hB hL hstm hsl m1 hm1
-        · simp only [extraOf, List.mem_filterMap] at hm1
-          obtain ⟨q, -, hq⟩ := hm1
-          split at hq
-          · cases hq
-          · cases hq; exact hmov _ _ _
-          · cases hq
+        exact hR id id vrenaming_id _ (hs bi B L j stm sl hB hL hstm hsl m1 hm1)
       · simp at hm0
     · unfold tseg at htseg
       rw [hL] at htseg
       simp only [List.mem_map] at htseg
       obtain ⟨m1, hm1, rfl⟩ := htseg
-      exact hR _ _ (ht bi B L hB hL m1 hm1)
+      exact hR id id vrenaming_id _ (ht bi B L hB hL m1 hm1)
   · obtain ⟨tl, hi⟩ := edgeBlocks_insts he
     simp only [fixBlock, hi, Array.toList_map, List.mem_map] at hm
     obtain ⟨m0, hm0, rfl⟩ := hm
     simp at hm0
     subst hm0
-    exact hR _ _ (hjump tl)
+    exact hR R gn hRg _ (hjump tl)
 
 /-! ## The outgoing area along the recorded lowering -/
 
@@ -485,12 +511,15 @@ theorem lowerCheck_complete {f : Clif.Function} {vc : VCode} (hd : Dominated f)
         intro B hB
         simp only [List.any_eq_true, not_exists, not_and, Bool.not_eq_true] at hT
         exact hT B hB
-      have hall := vcBlocks_all (fun m => ∀ c ti, m ≠ .tryCall c ti) notTry_mapRegs
-        (fun _ _ _ h => nomatch h) (fun _ _ _ _ _ _ h => nomatch h)
-        (fun _ _ _ _ _ h => nomatch h) (fun _ _ _ h => nomatch h) (f := f) (bl := bl)
+      have hall := vcBlocks_all (fun m => ∀ c ti, m ≠ .tryCall c ti)
+        (fun R _ _ => notTry_mapRegs R)
+        (fun _ _ _ h => nomatch h) (fun _ _ _ _ _ h => nomatch h)
+        (fun _ _ _ h => nomatch h) (f := f) (bl := bl)
         (fun bi B L j stm sl hB hL hj hsl => by
           obtain ⟨-, tr, hrun⟩ := hstm bi B L j stm sl hB hL hj hsl
-          exact emitted_of_run hrun (hemp L (List.mem_of_getElem? hL) sl (List.mem_of_getElem? hsl)))
+          exact all_extraOf (fun _ _ _ _ _ h => nomatch h)
+            (emitted_of_run hrun (hemp L (List.mem_of_getElem? hL) sl (List.mem_of_getElem? hsl)))
+            _ _)
         (fun bi B L hB hL => by
           obtain ⟨-, -, htst, nl0, nl', hterm⟩ := hspec bi B L hB hL
           obtain ⟨hn, -⟩ := lowTerm_spec hterm
@@ -515,15 +544,16 @@ theorem lowerCheck_complete {f : Clif.Function} {vc : VCode} (hd : Dominated f)
         apply hT
         simp only [hasTls, List.any_eq_true]
         exact ⟨B, hB, st, hst, by rw [he]⟩
-      have hall := vcBlocks_all (fun m => ∀ s rd tmp, m ≠ .elfTlsGetAddr s rd tmp) notTls_mapRegs
-        (fun _ _ _ _ h => nomatch h) (fun _ _ _ _ _ _ _ h => nomatch h)
-        (fun _ _ _ _ _ _ h => nomatch h) (fun _ _ _ _ h => nomatch h) (f := f) (bl := bl)
+      have hall := vcBlocks_all (fun m => ∀ s rd tmp, m ≠ .elfTlsGetAddr s rd tmp)
+        (fun R _ _ => notTls_mapRegs R)
+        (fun _ _ _ _ h => nomatch h) (fun _ _ _ _ _ _ h => nomatch h)
+        (fun _ _ _ _ h => nomatch h) (f := f) (bl := bl)
         (fun bi B L j stm sl hB hL hj hsl => by
           obtain ⟨⟨info, hi, hic⟩, tr, hrun⟩ := hstm bi B L j stm sl hB hL hj hsl
           obtain ⟨ms, hms, hno⟩ := stmt_noTls hctx hi hic
             (hnt B (List.mem_of_getElem? hB) stm (List.mem_of_getElem? hj)) hrun
           rw [hms, hemp L (List.mem_of_getElem? hL) sl (List.mem_of_getElem? hsl)]
-          simpa using hno)
+          exact all_extraOf (fun _ _ _ _ _ _ h => nomatch h) (by simpa using hno) _ _)
         (fun bi B L hB hL => by
           obtain ⟨-, -, htst, nl0, nl', hterm⟩ := hspec bi B L hB hL
           obtain ⟨hn, hy⟩ := lowTerm_spec hterm

@@ -479,7 +479,7 @@ theorem realizes_goto {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {alloc
   obtain ⟨cc, wh, i2, ops2, hi2, hops2, hstat, -⟩ := op_checked hchk
   rw [hi] at hi2; cases hi2
   obtain ⟨ls1, ls2, psm, h1, h2, rfl⟩ := codeLinesE_append _ _ _ _ _ hls
-  obtain ⟨c, ins, hc⟩ := checked_of_checkAlloc hR.check
+  obtain ⟨c, ins, _, hc, -⟩ := hR.check
   obtain ⟨preds, hcfg⟩ := hc.cfg
   obtain ⟨t0, ts, hback, hss, hlab⟩ := cfg_block hcfg hvb
   cases h with
