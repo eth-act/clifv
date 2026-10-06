@@ -1822,6 +1822,21 @@ machine state `r` itself:
 * Axioms (`#print axioms E2E.ExecBytes.binary_correct_exec`): `propext`, `Classical.choice`,
   `Quot.sound` and the `_native` certificates `binary_correct_of_checks` already has (M5's decoder,
   M4); `act_sim` and the `ExecWords` lemmas: only the first three.
+* **Non-vacuity** (`crate-proofs/Crates/BinaryExecWitness.lean`,
+  `Crates.BinaryExecWitness.binary_correct_exec_witness`): on the `a_arith` executable of
+  `binary_witness`, for every file holding the proof's excerpts (one exists), the call of the
+  Lean-compiled `core::num::<i32>::wrapping_add` with `2` and `3` meets every premise of
+  `binary_correct_exec`, **`RunOk` included**, and the executable machine returns to the caller
+  with `5` in x0. `RunOk` is proven by computing the model's run (`stp x29, x30, [sp, #-16]!`;
+  `mov x29, sp`; `add w0, w0, w1`; `ldp x29, x30, [sp], #16`; `ret`: states `S1`…`S5`, the
+  activation returns at `S5`, `returned_S5`) and `StepOk` at each state before the return
+  (`run_facts`, `runOk_entry`, at every depth and base environment): no call, no relocation in
+  the entry, the word at the pc is the encoded word (`stepOk_plain`, any input: an unhooked
+  instruction of a function without relocations), and each instruction preserves `Sim`
+  (`sim_stp`/`sim_mov`/`sim_add`/`sim_ldp`/`sim_ret`; the `ldp` reads the stack above `2^32`, every
+  relocated byte of the program is below it and away from the entry's code: `codeB`, decided on the
+  executable's data like the other per-crate facts). Axioms: the three and generated `_native`
+  certificates (the crate's `native_decide` evaluations, as `binary_witness`).
 
 
 ### Non-vacuity (2026-10-02, `agent/callee-fix`, `FV/E2E/NonVacuity.lean`)

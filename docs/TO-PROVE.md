@@ -71,7 +71,7 @@ and, on rejection, replaced by a directly proven Lean path (kind 2). Correctness
 | encoder | Lean | `Insn.decode_encode` (`FV/Backend/Proof/Encode.lean:57-60`) | proven | — |
 | linking (program level) | `cargo fv` object merge + **rust-lld** | **`okB`** (`FV/E2E/LinkCheck.lean:716-777`) per crate by `native_decide` | **validator premise + oracle + per-program proof** | L1, L2 |
 | executable bytes | **rust-lld** | **`BinOk`** (`FV/E2E/BinCheck.lean:539-543`) per crate by `native_decide` | **validator premise + oracle + per-program proof** | L2 |
-| executable semantics | — | `E2E.ExecBytes.binary_correct_exec`: the executable's own words (outside calls and TLS by hooks), under `RunOk` (per-state facts of the model's run, not yet exported by M6) | partial | L3 |
+| executable semantics | — | `E2E.ExecBytes.binary_correct_exec`: the executable's own words (outside calls and TLS by hooks), under `RunOk` (per-state facts of the model's run, not yet exported by M6; witnessed jointly with the other premises, `binary_correct_exec_witness`) | partial | L3 |
 | stack bound | Lean `budMap` | `budOkW` proven for `budMap`'s budgets (`budOkW_budMap`), no run-time check; `goodN`/`stackB` characterised as "no call cycle reachable" (`goodN_iff`, `stackB_isSome_iff`); per crate the input condition and the bound still by `native_decide` (`stack_ok`) | input condition + per-program evaluation (until L1) | L4 done |
 
 Mid-end note: the mid-end is already certificate-free in the sense of §1.2, so M1 is optional.
@@ -366,9 +366,12 @@ author's estimate, not measured), **Risk**.
   3. D4: GOT slots in the kept set `G` (`StRel.gkeep`): an input field with the slots, a `BinCheck` check
      that the slot's 8 bytes are `ro`/`relro`, and the outside-code contract (`BaseOk`/`CalleeOk`) keeping
      `G` ("outside code does not write the program's code or GOT"). About 0.3k lines.
-  4. Non-vacuity: the a_arith witness (`Crates.BinaryWitness`) then gets `RunOk` from the exported
-     invariant (today `binary_correct_exec` has no witness: `RunOk` is about the model's intermediate
-     states, which the existing witness does not compute).
+  4. Non-vacuity: **done for the hypothesis form** (`crate-proofs/Crates/BinaryExecWitness.lean`,
+     `binary_correct_exec_witness`): every premise of `binary_correct_exec`, `RunOk` included, on the
+     a_arith executable's `wrapping_add` (the model's five-step run computed, `StepOk` at each state;
+     `stepOk_plain` is the generic `StepOk` of an unhooked instruction of a function without
+     relocations given the instruction's `Sim` preservation). With the exported invariant, the
+     witness of the discharged theorem takes `RunOk` from it instead.
 
 ### L4. Stack bound without a per-program check
 
