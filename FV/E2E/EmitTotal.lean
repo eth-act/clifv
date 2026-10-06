@@ -25,9 +25,10 @@ VCode (`emitCondsB`), each counted by `lean-e2e-check` (1149 of 1149):
   not relaxed);
 * `branchTargetsOkB` (`FV/E2E/EmitLabels.lean`): every branch target is a block label.
 
-The last three are facts about `lowerFunction`'s output not yet proven from the ISLE rule data
-(`docs/TO-PROVE.md` V6, "Remaining"); everything else (`emitPre` success, labels distinct and
-defined, register encodability, the atomic-loop/jump-table forms in reach) is proven.
+The last three are facts about `lowerFunction`'s output, proven from the ISLE rule data in
+`FV/E2E/EmitTotalIn.lean` (V6c: `backend_correct_final_total_emit_in`, under the input condition
+`extendsWidenB`); everything else (`emitPre` success, labels distinct and defined, register
+encodability, the atomic-loop/jump-table forms in reach) is proven.
 
 * `emitPre_index`, `emitFunc_index`: the function index only names labels in the text.
 * `emit_of_emitReady`: an `emitReady` function emits and lays out at every index.
