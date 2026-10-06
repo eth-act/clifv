@@ -2323,7 +2323,8 @@ pipeline's output (`ctlInsts_pipeline`). `backend_correct_final_total` thus has 
 lowering premise; the compile-success premises left are emission/layout (`emitFunc`, `layout`:
 branch ranges, V6) and `SpillFrameOk` (the spill allocation's allocator area below 32 KiB, which
 lifting the limit removes). `lean-e2e-check` decides `SpillFrameOk` and the spill lowering ("spill
-lowering" line; a rejection under `SpillFrameOk` fails the run). Non-vacuity:
+lowering" line: `SpillFrameOk` 1148 of 1148, `lowerRFunc` lowers 1148, rejects 0; a rejection under
+`SpillFrameOk` fails the run). Non-vacuity:
 `E2E.backend_correct_final_total_witness`.
 
 **Validator completeness: `Opt.Legalize128` is correct without `Opt.Legal.check`** (2026-10-02,

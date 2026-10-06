@@ -279,7 +279,8 @@ author's estimate, not measured), **Risk**.
   - *Final theorem* (`FV/E2E/AllocTotal.lean`): `E2E.backend_correct_final_total` — for in-scope input
     and every answer `ra` of regalloc2, `∃ af, lowerAlloc vcp ra = .ok af ∧` (emission and layout succeed →
     refinement). Remaining compile-success premises: `emitFunc`/`layout` (V6) and `SpillFrameOk vcp`
-    (the spill allocation's allocator area below 32 KiB; `lean-e2e-check` "spill lowering" line).
+    (the spill allocation's allocator area below 32 KiB; `lean-e2e-check` "spill lowering" line: 1148 of
+    1148, all lowered).
     Non-vacuity: `E2E.backend_correct_final_total_witness`.
 - **Open:** lift the 32 KiB allocator-frame limit (materialise large slot offsets), which removes
   `SpillFrameOk` (parallel branch). **Size:** medium `[est]`.
