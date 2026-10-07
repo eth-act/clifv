@@ -1304,6 +1304,12 @@ theorem E2E.LinkCheck.crate_correct_inScope_lower (hM : LowerDefinedHyp) (hin : 
     (hlk : linkerOkB I = true) (n : String) : CrateStmtT I n
 def DefRun.DefRunsHyp : Prop   -- per ISLE run: uses are reached CLIF values' vregs or fresh vregs
                                -- defined earlier in the run; results likewise (open)
+theorem DefRun.lower_defined (hR : DefRunsHyp) (hd : Dominated f) (hs : LowerScope f)
+    (ha : AbiSigsOk f) (har : Spill.ArityOk f) (hen : Spill.entryParamsB f = true)
+    (hl : lowerFunction f = .ok vc) : ∃ M, Spill.DefAvail vc M ∧ ∀ v, M 0 v = false
+theorem E2E.lowerDefinedHyp_of_runs (hR : DefRun.DefRunsHyp) : LowerDefinedHyp
+theorem E2E.LinkCheck.crate_correct_inScope_runs (hR : DefRun.DefRunsHyp) (hin : InScopeP I = true)
+    (hlk : linkerOkB I = true) (n : String) : CrateStmtT I n
 ```
 
 Availability (no use reads a vreg killed without a store) is proven (`spillKillFree`); what is
@@ -1314,12 +1320,19 @@ that reaches it). Neither route avoids it: it does not follow from the semantic 
 whose value does not matter is consistent with it), and the link-level theorems cannot use
 `AllocChecked` instead of `checkAlloc` without the same fact (two activations with the same
 body-entry world must give one VCode outcome, so the initial vreg file must not matter; the
-spill allocation's homes are frame slots, garbage at entry). What remains: the ISLE run facts
-`DefRunsHyp` — a flow-sensitive invariant (`writable_reg_to_reg` is the identity on ISLE values,
-so the uniform invariants of `KillGen`/`IselFlowCheck` cannot tell a temporary before its def
-from one after) — and the driver's assembly of the runs into `UsesDefined` (CLIF availability
-`availIn`/`FixOk` of `Dominated`, the segments of `Low`, alias resolution). Non-vacuity:
-`E2E.spillAvail_defined_witness`. Witness of the crate theorem:
+spill allocation's homes are frame slots, garbage at entry). The driver's assembly of the runs
+into `UsesDefined` is proven (`DefRun.lower_defined`, `FV/Backend/Proof/DefAssemble.lean`): along
+every CFG path, on entry to CLIF block `bi`'s code the renamed values of `availIn` (and, but for
+the entry block, the parameters) are defined, and on entry to an edge block of `bi` what its code
+defines at the end (the renamed values available there, a `try_call`'s result vregs); inside a
+block, the entry parameters are defined by the argument setup (`entryParamsB`), a statement's
+results by its run (`OutDef`, through the alias renaming), and a run's uses are available reached
+values or fresh vregs an earlier instruction of the run defines (`RunDef`; the `try_call`'s call
+replaced by the `tryCall` keeps it). What remains: the ISLE run facts `DefRunsHyp` — a
+flow-sensitive invariant (`writable_reg_to_reg` is the identity on ISLE values, so the uniform
+invariants of `KillGen`/`IselFlowCheck` cannot tell a temporary before its def from one after).
+Non-vacuity: `E2E.spillAvail_defined_witness`; `crate_correct_runs`/`crate_correct_fvDemo_runs`
+(`InScopeWitness`) instantiate `crate_correct_inScope_runs`. Witness of the crate theorem:
 `crate-proofs/Crates/InScopeWitness.lean` decides `InScopeP` (with `entryParamsB`) and
 `linkerOkB` of `a_arith` (58 functions) and `fv-demo` (551) by `native_decide`.
 
