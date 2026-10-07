@@ -379,15 +379,22 @@ author's estimate, not measured), **Risk**.
   as `LinkOwnCalls*`, est. 800–1500 lines); (C) `blrGotB` for functions declaring the alias (needs
   `RunCall` of the GOT call rule 2518 to record a non-colocated extern).
 - **Open:** (A)–(C) above; recursive programs (`CycleFrom`); inputs outside `InScopeP` (`lean-link` then
-  falls back to `leanLink`, not covered by `compileExe_correct`). Remaining failures are proof limits
-  (each protects a `LinkSys.Ok` premise `okB` checks the same way): fv-demo's test harness 4 functions
-  (`indB`: 3 indirect-call signatures with `sret` — generalise `argsAt_iff_of_regs`/the result count in
-  `LinkArm.xCallsIndOk` to `sret` in x8; 1 function with indirect calls whose own address is taken
-  (`indNoSym`) — a pointer to `g` must resolve through the environment in the per-function run), and
-  `examples/deps` 23 (`indB` 20: the same two plus 5 declared callees matched by types but not purposes —
-  `Clif.callExternAt` must reject an `abiMatch` failure as `stepCallIndirect` does; `callScopeB` 7: those
-  `blrRegs` cases and 3 `blrTry` result counts — carry the CLIF result-count fact into the try-site
-  contract); the outside part's bytes stay rust-lld's (design (b), L2b).
+  falls back to `leanLink`, not covered by `compileExe_correct`, and prints the failing conditions per
+  cause). Remaining failures are proof limits (each protects a `LinkSys.Ok` premise `okB` checks the same
+  way). `sret` at indirect calls is done (#89 (a), `agent/scope-widen`: `Ok.indSig` asks for equal
+  `sigRets` counts, `LinkCheck.indRetsB`; e2e.md "Widening 12"): fv-demo's test harness 4 → 1,
+  `examples/deps` 23 → 15. Left: fv-demo 1 and deps 8 functions with indirect calls whose own address
+  is taken (`indNoSym`) — a pointer to `g` must resolve through the environment in the per-function
+  run, or the backend theorem must cover self-entry; deps 4 `blrRegs` (a declared callee matched by
+  types but not purposes, e.g. `(i64 sret, i64)` at a `(i64, i64) -> i8` site) — `Clif.callExternAt`
+  must reject an `abiMatch` failure as `stepCallIndirect` does, and the machine-level `blr` contract
+  needs that CLIF fact at the site; deps 3 `blrTry` (a declared callee with as many register
+  parameters and fewer results than a `try_call_indirect` site) — carry the CLIF result-count fact
+  into the try-site contract. Both last two are machine-level contracts (`CalleeOkG`,
+  `CalleeTryOkG`) quantified over every state where `csemV` is defined, while the needed fact holds
+  only along the VCode run that simulates the CLIF run (as the GOT guard `gotGuard` of `csemV`, but
+  established by the lowering simulation, not a static analysis). The outside part's bytes stay
+  rust-lld's (design (b), L2b).
 
 ### L2. Linking without validators
 

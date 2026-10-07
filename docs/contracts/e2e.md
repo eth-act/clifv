@@ -1014,6 +1014,23 @@ bytes. It is vacuous without program callees with slots (`NeedSlots`).
      (`zChainB_true`); with the type-only relation, `indSig` (`s`'s `sret`) and `blrRegs` (this
      `blr` site) failed on it. `v` no longer reaches `k` and `y` no longer reaches `s`
      (`¬ MayCall`): no indirect call of theirs matches.
+12. *`sret` at indirect calls* (2026-10-07, agent/scope-widen, #89 (a)). `Ok.indSig` required
+   every indirect-call signature of `g` and every function of `P` one of them can enter to have
+   no `sret` parameter; `xCallsIndOk` used it only for the result count (`sigRets_of_noSret` on
+   both sides) — the arguments are in registers either way (`argsAt_iff_of_regs` with at most 8
+   parameters places an `sret` pointer in x8, `abiArgIdx`). Now `indSig` asks of such a callee
+   `h` its register parameters (`sigParamBytes`, at most 8) and, for every indirect-call
+   signature `sig` of `g` with `h`'s parameter types (`IndTyMatch`) and as many declared
+   returns, `(sigRets h.sig).length = (sigRets sig).length` (both or neither pass an `sret`
+   pointer). The returns are equal in number at a call that returns (`runLoop_returned_tys`, as
+   before), so `xCallsIndOk`'s result count follows; `xni` uses only the register parameters.
+   `LinkSys.Ok` changes only by weakening (the former field implies the new one: the witness
+   derives it, `sigRets_of_noSret`). Checker: `LinkCheck.indRetsB` in `indB` (no `sret`
+   condition on the call-site signatures). Effect on `InScopeP` (`lean-link`'s per-cause
+   diagnostic): `fv-demo`'s test executable 4 → 1 failing function (the 3 `sret` callers pass),
+   the `examples/deps` executable 23 → 15: no function fails `indB`'s `sret` conditions any more
+   (also not those with a declared callee matched by types but not purposes: their `sigRets`
+   agree, or a call reaching them cannot return); left: `indNoSym` 8, `blrRegs` 4, `blrTry` 3.
 
 **Non-vacuity** (`FV/E2E/NonVacuityLink.lean`, namespace `E2E.LinkWitness`): the closed program
 `P = {f, g, h, s, k, r, r__fvself, q, v, a2, w, t, u, m, d, e, y, z}` (`m`, `d`: the vtable dispatch of

@@ -29,6 +29,42 @@ def addrNamesOf (f : Clif.Function) : List String :=
 
 def hex (n : Nat) : String := "0x" ++ String.ofList (Nat.toDigits 16 n)
 
+open Backend in
+/-- The program-level per-function input conditions `g` fails (`progScopeB`'s conjuncts, the
+indirect-call scope `indB` and the call sites `callScopeB` split by cause). -/
+def scopeFails (P : Clif.Program) (S : String → Option Nat) (g : Clif.Function) : List String :=
+  let ind := !indFreeB g
+  let site (s : Clif.Signature) (args : List Nat) (isTry : Bool) : List String :=
+    P.funcs.flatMap fun h =>
+      if !indToB S g h || (regLocs h.sig).length != (callRegs s args).length then [] else
+      (if regLocs h.sig = callRegs s args then [] else ["callScopeB:blrRegs"]) ++
+      (if isTry && (sigRets s).length > (sigRets h.sig).length then ["callScopeB:blrTry"] else [])
+  let sites := g.blocks.flatMap fun B =>
+    (B.body.flatMap fun st => match st.inst with
+      | .call fn args => match g.extern? fn with
+        | some e => if dirSiteB P e args then [] else ["callScopeB:dirSite"]
+        | none => []
+      | .callIndirect sg _ args => match g.sigDecls.lookup sg with
+        | some s => site s args false
+        | none => []
+      | _ => []) ++
+    match B.term with
+    | .tryCall fn args _ => match g.extern? fn with
+      | some e => if dirSiteB P e args then [] else ["callScopeB:dirSite"]
+      | none => []
+    | .tryCallIndirect _ args et => match g.sigDecls.lookup et.sig with
+      | some s => site s args true
+      | none => []
+    | _ => []
+  ((if declSigB P g then [] else ["declSigB"]) ++
+    (if ind && P.funcs.any (fun h => mayB S g h.name && indSigB g h &&
+        (match sigParamBytes h.sig with | .ok b => decide (b.length > 8) | .error _ => true))
+      then ["indB:calleeStack"] else []) ++
+    (if ind && P.funcs.any (fun h => mayB S g h.name && indSigB g h && !indRetsB g h)
+      then ["indB:sretRets"] else []) ++
+    (if ind && S g.name != none then ["indB:indNoSym"] else []) ++
+    sites ++ (if outScopeB P g then [] else ["outScopeB"])).eraseDups
+
 /-- The strings of a JSON array field. -/
 def strs (j : Json) (k : String) : List String :=
   (((j.getObjVal? k).bind (·.getArr?)).toOption.getD #[]).toList.filterMap (·.getStr?.toOption)
@@ -120,9 +156,13 @@ def main (args : List String) : IO UInt32 := do
     let I := S.input0
     let P := I.prog
     let syms := fun n => I.syms.lookup n
-    let badP := P.funcs.filter (fun g => !(declSigB P g && indB P syms g && callScopeB P syms g &&
-      outScopeB P g)) |>.map (·.name)
-    IO.eprintln s!"lean-link: {exe}: outside compileExe's input conditions (InScopeP): {badP.length} function(s) failing the program-level per-function conditions {badP.take 3}, distinct names {decide (P.funcs.map (·.name)).Nodup}, addrSlotsInB {addrSlotsInB P syms} (else fnScopeB); linking with Link.leanLink (not covered by compileExe_correct)"
+    let bad := P.funcs.filterMap fun g => match scopeFails P syms g with
+      | [] => none
+      | fs => some (g.name, fs)
+    let causes := (bad.flatMap (·.2)).eraseDups.map fun c => s!"{c} {(bad.filter (·.2.contains c)).length}"
+    IO.eprintln s!"lean-link: {exe}: outside compileExe's input conditions (InScopeP): {bad.length} function(s) failing the program-level per-function conditions (by cause: {causes}) {(bad.take 3).map (·.1)}, distinct names {decide (P.funcs.map (·.name)).Nodup}, addrSlotsInB {addrSlotsInB P syms} (else fnScopeB); linking with Link.leanLink (not covered by compileExe_correct)"
+    for (n, fs) in bad do
+      IO.eprintln s!"lean-link:   {n}: {fs}"
     match leanLink S file0 with
     | .error e => do IO.eprintln s!"lean-link: {exe}: {e}"; return 1
     | .ok file =>
