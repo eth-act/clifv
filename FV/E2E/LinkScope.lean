@@ -92,11 +92,12 @@ theorem fnScope_parts {g : Clif.Function} (h : fnScopeB g = true) :
     (sigAbiOk g.sig = true ∧ ∀ e ∈ g.externs, sigAbiOk e.2.sig = true) ∧ indSigsOk g = true ∧
     (regLocs g.sig).Nodup ∧ (∀ r ∈ regLocs g.sig, r.isArgReg = true) ∧
     (∀ p ∈ g.sig.params, p.ty.width ≤ 64) ∧ linkFreeB g = true ∧ dominatedB g = true ∧
-    lowerScopeB g = true ∧ Spill.arityOkB g = true ∧ lowersB g = true := by
+    lowerScopeB g = true ∧ Spill.arityOkB g = true ∧ lowersB g = true ∧
+    Spill.entryParamsB g = true := by
   simp only [fnScopeB, Bool.and_eq_true, List.all_eq_true, bne_iff_ne, ne_eq,
     decide_eq_true_eq, and_assoc] at h
-  obtain ⟨h1, h2, h3, h3', h4, h5, h6, h7, h8, h9, h10, h11, h12⟩ := h
-  exact ⟨h1, h2, ⟨h3, h3'⟩, h4, h5, h6, h7, h8, h9, h10, h11, h12⟩
+  obtain ⟨h1, h2, h3, h3', h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩ := h
+  exact ⟨h1, h2, ⟨h3, h3'⟩, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩
 
 /-- The subset of the per-function programs (`LinkSys.Ok.subset`) from `fnScopeB`. -/
 theorem inSubset_of_fnScope {g : Clif.Function} (h : fnScopeB g = true) (p : Clif.Program) :
@@ -220,7 +221,7 @@ theorem pipeT_ok {g : Clif.Function} (hsc : fnScopeB g = true) (hD : SpillDefine
     (k : Nat) (base : BitVec 64) (o : Lean.Json) :
     ∃ a, pipeT g k base o = .ok a ∧ lowerCheck g a.vc = true ∧ prepCheck a.vc a.vcp = true ∧
       checkAlloc a.vcp a.rf = .ok () ∧ FormsCovered ⟨a.fa.k, a.af.slotBase⟩ a.vcp := by
-  obtain ⟨-, -, -, -, -, -, -, -, hd, hs, har, hlw⟩ := fnScope_parts hsc
+  obtain ⟨-, -, -, -, -, -, -, -, hd, hs, har, hlw, hen⟩ := fnScope_parts hsc
   obtain ⟨hw, vc, vcp, hl, hp, hsz⟩ := lowersB_spec hlw
   have hem := emitCondsB_of_input hs hw hl hp hsz
   have hsub := inSubset_of_fnScope hsc { funcs := [] }
@@ -231,7 +232,7 @@ theorem pipeT_ok {g : Clif.Function} (hsc : fnScopeB g = true) (hD : SpillDefine
   refine ⟨⟨k, vc, vcp, allocResult vcp (readyAnswer vcp (raAnswer vcp o)), af, fa, fb, base⟩,
     ?_, lowerCheck_complete hD' hS hl,
     Prep.prepCheck_complete hp (prepDomain_of_lower hS hl hS.nonempty),
-    checkAlloc_allocResult (spillCheckAlloc hD hsub (Spill.arityOk_of har) hD' hS hl hp) _,
+    checkAlloc_allocResult (spillCheckAlloc hD hsub (Spill.arityOk_of har) hD' hS hen hl hp) _,
     formsCovered_complete hS hl hp _⟩
   simp [pipeT, hl, hp, ha, he, hla, bind, Except.bind, pure, Except.pure]
 

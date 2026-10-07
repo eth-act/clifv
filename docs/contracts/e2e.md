@@ -1268,9 +1268,60 @@ construction). The ISLE facts use `native_decide` table checks over the exported
 Kill and Cov tables do. One program-independent fact remains a hypothesis: `SpillDefinedHyp`
 (definite assignment of the prepared VCode: availability sets with nothing available on entry,
 from which `checkAlloc`'s fixpoint, started from no vreg in its home, accepts the spill
-allocation). Witness: `crate-proofs/Crates/InScopeWitness.lean` decides `InScopeP` and
-`linkerOkB` of `a_arith` (58 functions) and `fv-demo` (551) by `native_decide`; both hold for all
-nine survey/demo crates with inputs in `crate-proofs/` (1023 functions).
+allocation), for input whose entry block has the signature's parameters.
+
+**The input condition `entryParamsB`; definite assignment reduced to definedness** (2026-10-07,
+`FV/E2E/SpillDefined*.lean`, `FV/Backend/Proof/SpillDefined*.lean`,
+`FV/Backend/Proof/DefRuns.lean`, `FV/Backend/Proof/EntryParams.lean`). The first statement of
+`SpillDefinedHyp` (without `entryParamsB`) was false, so the first `crate_correct_inScope` was
+vacuous: `lowerFunction` defines the entry block's parameters from the signature's locations
+(`entryParams` zips them), so an entry-block parameter beyond the signature's is never defined,
+and nothing in `InSubset`, `Dominated`, `LowerScope`, `ArityOk` or `fnScopeB` excluded it
+(Cranelift's verifier does). `function %f() -> i64 { block0(v0: i64): return v0 }` met all of
+them and its `return` reads the undefined `v0` (`not_spillDefinedHyp`,
+`FV/E2E/SpillDefinedFalse.lean`). `fnScopeB` (so `InScopeP`) now includes `Spill.entryParamsB`
+(entry block parameters = signature parameters), and `SpillDefinedHyp` assumes it; `InScopeP`
+with it still holds for `a_arith` and `fv-demo` (`InScopeWitness`), and `lean-e2e-check` counts it.
+
+```lean
+theorem E2E.not_spillDefinedHyp : ¬ ∀ p f vc vcp, InSubset p f → Spill.ArityOk f → Dominated f →
+    LowerScope f → lowerFunction f = .ok vc → prepare vc = .ok vcp →
+    ∃ D, Spill.SpillAvail vcp D ∧ ∀ v, D 0 v = false
+def Spill.entryParamsB (f : Clif.Function) : Bool   -- entry block params = signature params
+structure Spill.DefAvail (vc : VCode) (M : Nat → Nat → Bool) : Prop  -- SpillAvail's shape; every def defines
+theorem Spill.spillAvail_and (hK : SpillAvail vc K) (hM : DefAvail vc M) :
+    SpillAvail vc (fun b v => K b v && M b v)
+theorem Spill.defAvail_prepare (hv : LowOk vc) (hp : prepare vc = .ok vcp) (hM : DefAvail vc M)
+    (h0 : ∀ v, M 0 v = false) : ∃ M', DefAvail vcp M' ∧ ∀ v, M' 0 v = false
+theorem Spill.defined_of_paths' (hU : UsesDefined vc) (hP : ParamArgs vc) :
+    ∃ M, DefAvail vc M ∧ ∀ v, M 0 v = false    -- M := the meet over the CFG paths (pathSets)
+theorem Spill.paramArgs_of_lowOk (hv : LowOk vc) : ParamArgs vc
+def E2E.LowerDefinedHyp : Prop := ∀ p f vc, InSubset p f → Spill.ArityOk f → Dominated f →
+    LowerScope f → Spill.entryParamsB f = true → lowerFunction f = .ok vc →
+    ∃ M, Spill.DefAvail vc M ∧ ∀ v, M 0 v = false
+theorem E2E.spillDefinedHyp_of_lower (h : LowerDefinedHyp) : SpillDefinedHyp
+theorem E2E.LinkCheck.crate_correct_inScope_lower (hM : LowerDefinedHyp) (hin : InScopeP I = true)
+    (hlk : linkerOkB I = true) (n : String) : CrateStmtT I n
+def DefRun.DefRunsHyp : Prop   -- per ISLE run: uses are reached CLIF values' vregs or fresh vregs
+                               -- defined earlier in the run; results likewise (open)
+```
+
+Availability (no use reads a vreg killed without a store) is proven (`spillKillFree`); what is
+open is definedness of `lowerFunction`'s VCode (`LowerDefinedHyp`; by `defined_of_paths'` and
+`paramArgs_of_lowOk` it is `UsesDefined`: every use is defined on every CFG path from the entry
+that reaches it). Neither route avoids it: it does not follow from the semantic contracts
+(`LowerInstOk.run` holds for every initial vreg file, and a read of a temporary before its def
+whose value does not matter is consistent with it), and the link-level theorems cannot use
+`AllocChecked` instead of `checkAlloc` without the same fact (two activations with the same
+body-entry world must give one VCode outcome, so the initial vreg file must not matter; the
+spill allocation's homes are frame slots, garbage at entry). What remains: the ISLE run facts
+`DefRunsHyp` — a flow-sensitive invariant (`writable_reg_to_reg` is the identity on ISLE values,
+so the uniform invariants of `KillGen`/`IselFlowCheck` cannot tell a temporary before its def
+from one after) — and the driver's assembly of the runs into `UsesDefined` (CLIF availability
+`availIn`/`FixOk` of `Dominated`, the segments of `Low`, alias resolution). Non-vacuity:
+`E2E.spillAvail_defined_witness`. Witness of the crate theorem:
+`crate-proofs/Crates/InScopeWitness.lean` decides `InScopeP` (with `entryParamsB`) and
+`linkerOkB` of `a_arith` (58 functions) and `fv-demo` (551) by `native_decide`.
 
 **The Lean linker (L2b stage 1, `FV/Link/`, docs/research/lean-linker.md).** The program part
 (the Lean-compiled functions) is placed, relocated and written by Lean; rust-lld links the
@@ -2769,9 +2820,58 @@ theorem E2E.backend_correct_final_total_emit_in (hsub : InSubset p f) (hd : domi
     -- the conclusion of backend_correct_final_total_emit
 ```
 
-Non-vacuity: `E2E.backend_correct_final_total_emit_in_witness`. Remaining: the size bound
-`spillSizeOkB` is still decided on the prepared VCode (an input-side bound needs a bound on the
-instructions each ISLE run emits).
+Non-vacuity: `E2E.backend_correct_final_total_emit_in_witness`.
+
+**The size bound from the input (V6c)** (2026-10-07, `FV/Backend/Proof/IselSz*.lean`,
+`FV/E2E/SizeDefs.lean`, `FV/E2E/SizeVC.lean`, `FV/E2E/SizeLower.lean`, `FV/E2E/SizeIn.lean`).
+`spillSizeOkB vcp` is proven from the decidable input condition `sizeOkB f`: a word bound
+`sizeBoundIn f` (`SizeDefs`) below `2 ^ 24`. The route:
+
+* **Weights.** `szInstW m = szWords m + 20 · regCount m + |m.targets|` (+ the callee-saved restores
+  of a `Rets`): `szWords` is `instWords`, `regCount` bounds `MInst.operands` (5, or the list
+  lengths of `call`/`tryCall`/`args`/`rets`), so `szInstW` covers the instruction's spill-allocated
+  code (a slot load/store of at most 20 words per operand) and the edge block `prepare` may create
+  per target. `wtA`/`tgA`: weight and targets of an instruction array.
+* **ISLE runs (`Driver.iselSz : LowerScope f → IselSz f`).** A cost analysis on V3's abstract
+  interpreter (value table `covTab`): `cExpr`/`cIfLets`/`cRule` (`IselSzDefs`) bound the growth of
+  any measure `W` of the lowering state, with a cost table per internal term and abstract inputs
+  and extern costs `aw`; `costAt` (`IselSzSound`, by induction on the fuel; failed match phases
+  restore the state) is sound given `ExtW` (extern constructors) and `OracleW`. Two
+  instantiations (`IselSzExt`, tables `szCTab`/`tgCTab` in `IselSzTab`, 699/701 entries, generated
+  by `FVTest/Backend/IselSzGen.lean`, checked by `native_decide`): weights (`actorW`: an `emit`ted
+  instruction of a variant other than `Call`/`CallInd`/`JTSequence` weighs at most `emitK = 107`,
+  `load_constant_full` 4 of them, `gen_return` a `Rets` of at most 8 registers) and branch targets
+  (`actorT`: per variant, none for `JTSequence`). By hand (`IselSzCall`, `IselSzBrTable`): the call
+  rules 1031–1033 and `try_call` rules 1034–1036 (stores of the stack arguments, a GOT load, the
+  call: at most `323 + 125 n` for `n` arguments, `szCallB n = 1200 + 125 n`) and `br_table` 1140
+  (`JTSequence`: a word and a target per entry; sub-runs from the table). Contract: a statement's
+  run at most `stmtSzB` (`szStmtK = 1200`; the table's maximum is 1070), a terminator's at most
+  `termSzB` (`szTermK = 600`, a `br_table` `1500 + 2 (1 + |table|)`) and `termTgB` targets (2, a
+  `br_table` `2 + |table|`); rule 1140 never matches another terminator (`br1140_unmatch`, its root
+  format).
+* **`lowerFunction` (`size_lower`).** Summing the runs over the blocks, with the entry `Args` and
+  parameter loads, the result `mov`s, the `tryCall` replacing a `try_call`'s call (one word more,
+  a target per successor) and the edge blocks: `maxRC vc ≤ mIn f`, `vcW (mIn f) vc ≤ vcIn (mIn f) f`,
+  `vcTg vc ≤ tgIn f`. `vcW M` charges per block a prologue, the callee-saved saves, `10 M` entry
+  stores and 40 words per branch argument.
+* **`prepare` and the spill allocation (`SizeVC`).** `vcW_prepare`: at most one edge block
+  (`jumpBW M`) per branch target; `spillWordBound_le`: `spillWordBound vcp ≤ vcW (maxRC vcp) vcp`.
+
+```lean
+theorem E2E.spillSizeOkB_of_sizeOkB (hs : lowerScopeB f = true) (hsz : sizeOkB f = true)
+    (hl : lowerFunction f = .ok vc) (hp : prepare vc = .ok vcp) :
+    spillSizeOkB vcp = true
+theorem E2E.backend_correct_final_total_emit_input (hsub : InSubset p f) (hd : dominatedB f = true)
+    (hs : lowerScopeB f = true) (har : Spill.arityOkB f = true) (hw : extendsWidenB f = true)
+    (hsz : sizeOkB f = true) (hl …) (hp …) (ra : Except String RFunc) :
+    -- the conclusion of backend_correct_final_total_emit
+```
+
+Every premise on the code is now an input condition. Non-vacuity:
+`E2E.backend_correct_final_total_emit_input_witness`. `lean-e2e-check` counts `sizeOkB` ("sizeOkB"
+line: 1149 of 1149; the largest bound, 11.7 M words for the 9001-statement `large_frame`, against
+279 k words of the actual spill code). The bound is linear in the statements (about 1300 words
+each), so a function of more than about 12 000 statements is out of scope.
 
 **Validator completeness: `Opt.Legalize128` is correct without `Opt.Legal.check`** (2026-10-02,
 `FV/Opt/Proof/LegalComplete.lean`, `FV/Opt/Proof/LegalDirect.lean`, `FV/E2E/LegalDirect.lean`;

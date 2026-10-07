@@ -6,6 +6,7 @@ import FV.Backend.Proof.IselEmitDefs
 import FV.Backend.AllocReady
 import FV.Backend.Proof.LowerDecide
 import FV.Backend.Proof.SpillArity
+import FV.Backend.Proof.EntryParams
 
 /-! # `okB` split: the compiler's pipeline, the input conditions, the linker's facts (L2a)
 
@@ -84,13 +85,15 @@ def lowersB (f : Clif.Function) : Bool :=
 /-- **The per-function input conditions** of `g`: the subset (`InSubset (P.only g) g`: subset
 E, no direct self-call, `sigAbiOk` signatures, indirect-call signatures), the register
 parameters (distinct argument registers, at most 64 bits), no `return_call`, the conditions of
-the backend's totality theorems (`dominatedB`, `lowerScopeB`, `arityOkB`) and `lowersB`. -/
+the backend's totality theorems (`dominatedB`, `lowerScopeB`, `arityOkB`), `lowersB`, and the
+entry block's parameters are the signature's (`entryParamsB`, Cranelift's verifier rule; without
+it an entry parameter is never defined: `E2E.not_spillDefinedHyp`). -/
 def fnScopeB (g : Clif.Function) : Bool :=
   Compile.functionE g && g.externs.all (fun e => e.2.name != g.name) &&
   (sigAbiOk g.sig && g.externs.all (fun e => sigAbiOk e.2.sig)) && indSigsOk g &&
   decide (regLocs g.sig).Nodup && (regLocs g.sig).all (·.isArgReg) &&
   g.sig.params.all (fun p => decide (p.ty.width ≤ 64)) && linkFreeB g &&
-  dominatedB g && lowerScopeB g && Spill.arityOkB g && lowersB g
+  dominatedB g && lowerScopeB g && Spill.arityOkB g && lowersB g && Spill.entryParamsB g
 
 /-- A declaration of a function of `P` has its signature. -/
 def declSigB (P : Clif.Program) (g : Clif.Function) : Bool :=
