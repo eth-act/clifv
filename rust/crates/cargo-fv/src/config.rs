@@ -81,6 +81,10 @@ pub struct Config {
     pub bin_check: bool,
     /// Overwrite cg_clif's replaced function bodies with traps (`--trap-replaced`).
     pub trap_replaced: bool,
+    /// `--lean-link`: the Lean linker (`lake exe lean-link`, `Link.leanLink`) writes the
+    /// program part of every executable: the Lean-compiled code is not merged into the codegen
+    /// units but linked as one region (`.text.fvlean`), whose bytes the Lean linker computes.
+    pub lean_link: bool,
     /// `[package.metadata.fv] skip = [...]` of the members: (manifest dir, pattern); matching
     /// functions keep cg_clif's code.
     pub pkg_skip: Vec<(PathBuf, String)>,
@@ -128,6 +132,7 @@ impl Config {
             ("FV_KEEP_TEMPS".into(), if self.keep_temps { "1" } else { "0" }.into()),
             ("FV_BIN_CHECK".into(), if self.bin_check { "1" } else { "0" }.into()),
             ("FV_TRAP_REPLACED".into(), if self.trap_replaced { "1" } else { "0" }.into()),
+            ("FV_LEAN_LINK".into(), if self.lean_link { "1" } else { "0" }.into()),
             (
                 "FV_PKG_SKIP".into(),
                 self.pkg_skip.iter().map(|(d, p)| format!("{}\t{p}", d.display())).collect::<Vec<_>>().join("\n"),
@@ -156,6 +161,7 @@ impl Config {
                 keep_temps: var("FV_KEEP_TEMPS")? == "1",
                 bin_check: var("FV_BIN_CHECK")? == "1",
                 trap_replaced: var("FV_TRAP_REPLACED")? == "1",
+                lean_link: var("FV_LEAN_LINK")? == "1",
                 pkg_skip: var("FV_PKG_SKIP")?
                     .lines()
                     .filter_map(|l| l.split_once('\t').map(|(d, p)| (PathBuf::from(d), p.to_string())))

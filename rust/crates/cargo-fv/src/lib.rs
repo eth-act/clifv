@@ -11,10 +11,13 @@
 //!   `--keep-temps` build.
 //! * the per-executable binary check of `cargo fv build` ([`bincheck`]): `link-proof` and
 //!   `link-check` on every linked executable (`E2E.Binary.binary_correct`).
+//! * `--lean-link` ([`leanlink`]): the Lean linker (`lake exe lean-link`) writes the program
+//!   part of every executable.
 //!
 //! See docs/USAGE.md.
 pub mod bincheck;
 pub mod config;
+pub mod leanlink;
 pub mod linkproof;
 pub mod pipeline;
 pub mod report;
