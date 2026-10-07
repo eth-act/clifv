@@ -201,6 +201,11 @@ fn run() -> Result<()> {
     Ok(())
 }
 fn main() -> std::process::ExitCode {
+    // The stock compiler already has lowering traces; enabling its logger only
+    // exposes them on stderr. Keep diagnostics disabled unless RUST_LOG is set.
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("off"))
+        .format_timestamp(None)
+        .init();
     match run() {
         Ok(()) => std::process::ExitCode::SUCCESS,
         Err(e) => {

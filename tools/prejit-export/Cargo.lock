@@ -597,6 +597,7 @@ dependencies = [
  "cranelift-codegen",
  "cranelift-filetests",
  "cranelift-reader",
+ "env_logger",
  "serde_json",
  "target-lexicon",
 ]
