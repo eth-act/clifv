@@ -4,17 +4,17 @@ import FV.Backend.Proof.SpillDefinedPrep
 import FV.Backend.Proof.SpillEdgesLow
 
 /-!
-# `SpillDefinedHypE` from definite assignment of `lowerFunction`'s VCode
+# `SpillDefinedHyp` from definite assignment of `lowerFunction`'s VCode
 
-`SpillDefinedHypE` (`FV/E2E/SpillCheckAlloc.lean`; `SpillDefinedHyp` with the input condition
-`entryParamsB`, without which it is false: `not_spillDefinedHyp`) asks for availability sets of
+`SpillDefinedHyp` (`FV/E2E/SpillCheckAlloc.lean`, on input with the signature's entry
+parameters, `entryParamsB`, without which it is false: `not_spillDefinedHyp`) asks for availability sets of
 the prepared VCode that hold nothing on entry. Availability is proven (`spillAvailable_of_killFree
 spillKillFree`: no use reads a vreg an instruction kills without storing it), so what remains is
 definedness alone: `LowerDefinedHyp`, definedness sets (`Spill.DefAvail`: every use defined on
 every path from the entry, a parameter defined iff its branch argument is) of `lowerFunction`'s
 VCode with nothing defined on entry. `prepare` keeps them (`Spill.defAvail_prepare`), and the
 conjunction of availability and definedness sets is availability sets (`Spill.spillAvail_and`):
-`spillDefinedHypE_of_lower`. `crate_correct_inScope_lower` is `crate_correct_inScopeE` under
+`spillDefinedHyp_of_lower`. `crate_correct_inScope_lower` is `crate_correct_inScope` under
 `LowerDefinedHyp`.
 -/
 
@@ -31,8 +31,8 @@ def LowerDefinedHyp : Prop :=
     Dominated f → LowerScope f → Spill.entryParamsB f = true → lowerFunction f = .ok vc →
       ∃ M, Spill.DefAvail vc M ∧ ∀ v, M 0 v = false
 
-/-- **`SpillDefinedHypE` from definite assignment of `lowerFunction`'s VCode.** -/
-theorem spillDefinedHypE_of_lower (h : LowerDefinedHyp) : SpillDefinedHypE :=
+/-- **`SpillDefinedHyp` from definite assignment of `lowerFunction`'s VCode.** -/
+theorem spillDefinedHyp_of_lower (h : LowerDefinedHyp) : SpillDefinedHyp :=
   fun p f vc vcp hsub har hd hs hen hl hp => by
     obtain ⟨K, hK⟩ := spillAvailable_of_killFree spillKillFree p f vc vcp hsub har hd hs hl hp
     obtain ⟨M, hM, h0⟩ := h p f vc hsub har hd hs hen hl
@@ -61,13 +61,10 @@ end E2E
 
 namespace E2E.LinkCheck
 
-open Backend Backend.Proof
-
-/-- **`crate_correct_inScopeE` under definite assignment of `lowerFunction`'s VCode**
-(`LowerDefinedHyp`, which gives `SpillDefinedHypE`: `spillDefinedHypE_of_lower`). -/
+/-- **`crate_correct_inScope` under definite assignment of `lowerFunction`'s VCode**
+(`LowerDefinedHyp`, which gives `SpillDefinedHyp`: `spillDefinedHyp_of_lower`). -/
 theorem crate_correct_inScope_lower (hM : LowerDefinedHyp) {I : LinkInput}
-    (hin : InScopeP I = true) (hen : I.prog.funcs.all Spill.entryParamsB = true)
-    (hlk : linkerOkB I = true) (n : String) : CrateStmtT I n :=
-  crate_correct_inScopeE (spillDefinedHypE_of_lower hM) hin hen hlk n
+    (hin : InScopeP I = true) (hlk : linkerOkB I = true) (n : String) : CrateStmtT I n :=
+  crate_correct_inScope (spillDefinedHyp_of_lower hM) hin hlk n
 
 end E2E.LinkCheck

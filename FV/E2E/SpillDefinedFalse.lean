@@ -1,18 +1,18 @@
 import FV.E2E.SpillDefined
 
 /-!
-# `SpillDefinedHyp` is false: entry-block parameters beyond the signature
+# Definite assignment fails without `entryParamsB`
 
 `lowerFunction` defines the entry block's parameters from the signature's parameter locations
 (`entryParams`: `B0.params` zipped with `locsOf f.sig`), so a parameter of the entry block beyond
 the signature's is never defined. Cranelift's verifier rejects such a function ("entry block
 parameters must match the function signature"), but none of `InSubset`, `Dominated`,
-`LowerScope`, `ArityOk` — nor the crate theorem's per-function input condition `fnScopeB` —
-does. `entryWitness` (`function %f() -> i64 { block0(v0: i64): return v0 }`) passes `fnScopeB`,
-and its prepared VCode's `return` reads the never-defined `v0`: `not_spillDefinedHyp`. Hence
-`crate_correct_inScope` is vacuous as stated. The variants with the input condition
-`Spill.entryParamsB` (`SpillDefinedHypE`, `crate_correct_inScopeE`) exclude it
-(`entryWitness_entryParams`).
+`LowerScope`, `ArityOk` does, nor did the crate theorem's per-function input condition
+`fnScopeB` before it included `Spill.entryParamsB`. `entryWitness`
+(`function %f() -> i64 { block0(v0: i64): return v0 }`) meets all of them, and its prepared
+VCode's `return` reads the never-defined `v0`: `not_spillDefinedHyp` (the statement of
+`SpillDefinedHyp` without `entryParamsB` is false, which made the first `crate_correct_inScope`
+vacuous). `entryWitness` fails `entryParamsB` (`entryWitness_checks`).
 -/
 
 namespace E2E
@@ -31,11 +31,24 @@ def entryWitness : Clif.Function :=
     | .error _ => default
   | none => default
 
+/-- `entryWitness` meets every per-function input condition but `entryParamsB` (the conjuncts of
+`fnScopeB`), and its pipeline's prepared VCode is one block `args []; rets [(v0, x0)]`. -/
 theorem entryWitness_checks :
-    fnScopeB entryWitness = true ∧ Spill.entryParamsB entryWitness = false ∧
-      ((lowerFunction entryWitness).toOption.bind fun vc => (prepare vc).toOption.map fun vcp =>
-        (vcp.cfg.toOption, vcp.blocks[0]?.map (·.insts))) =
-        some (some (#[#[]], #[#[]]), some #[.args [], .rets [(.vreg 0 .int, .x 0)]]) := by
+    (Compile.functionE entryWitness &&
+      entryWitness.externs.all (fun e => e.2.name != entryWitness.name) &&
+      (sigAbiOk entryWitness.sig && entryWitness.externs.all (fun e => sigAbiOk e.2.sig)) &&
+      indSigsOk entryWitness && decide (regLocs entryWitness.sig).Nodup &&
+      (regLocs entryWitness.sig).all (·.isArgReg) &&
+      entryWitness.sig.params.all (fun p => decide (p.ty.width ≤ 64)) && linkFreeB entryWitness &&
+      dominatedB entryWitness && lowerScopeB entryWitness && arityOkB entryWitness &&
+      lowersB entryWitness) = true ∧
+    entryParamsB entryWitness = false ∧
+    ({ funcs := [entryWitness] } : Clif.Program).func? entryWitness.name = some entryWitness ∧
+    entryWitness.externs.isEmpty = true ∧ (indSigs entryWitness).isEmpty = true ∧
+    entryWitness.blocks.all (fun b => b.body.isEmpty && !b.term.isTry) = true ∧
+    ((lowerFunction entryWitness).toOption.bind fun vc => (prepare vc).toOption.map fun vcp =>
+      (vcp.cfg.toOption, vcp.blocks[0]?.map (·.insts))) =
+      some (some (#[#[]], #[#[]]), some #[.args [], .rets [(.vreg 0 .int, .x 0)]]) := by
   native_decide
 
 /-- The entry block of `entryWitness`'s prepared VCode reads `v0`, defined nowhere. -/
@@ -44,9 +57,26 @@ theorem entryWitness_pipe : ∃ (p : Clif.Program) (vc vcp : VCode) (vb : VBlock
     LowerScope entryWitness ∧ lowerFunction entryWitness = .ok vc ∧ prepare vc = .ok vcp ∧
     vcp.cfg = .ok (#[#[]], #[#[]]) ∧ vcp.blocks[0]? = some vb ∧
     vb.insts = #[.args [], .rets [(.vreg 0 .int, .x 0)]] := by
-  obtain ⟨hsc, -, hpipe⟩ := entryWitness_checks
-  obtain ⟨-, -, -, -, -, -, -, -, hd, hs, har, hlw⟩ := fnScope_parts hsc
+  obtain ⟨hsc, -, hfunc, hext, hind, hblk, hpipe⟩ := entryWitness_checks
+  simp only [Bool.and_eq_true] at hsc
+  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨hE, -⟩, ⟨habi, -⟩⟩, -⟩, -⟩, -⟩, -⟩, -⟩, hd⟩, hs⟩, har⟩, hlw⟩ := hsc
   obtain ⟨-, vc, vcp, hl, hp, -⟩ := lowersB_spec hlw
+  have hsub : InSubset { funcs := [entryWitness] } entryWitness := by
+    refine ⟨hfunc, hE, fun b hb st hst _ _ _ => ?_, fun b hb fn args et ht => ?_, ⟨habi, ?_⟩, ?_⟩
+    · have := List.all_eq_true.1 hblk b hb
+      simp only [Bool.and_eq_true, List.isEmpty_iff] at this
+      rw [this.1] at hst
+      cases hst
+    · have := List.all_eq_true.1 hblk b hb
+      simp [ht, Clif.Terminator.isTry] at this
+    · intro e he
+      simp only [List.isEmpty_iff] at hext
+      rw [hext] at he
+      cases he
+    · intro s hs
+      simp only [List.isEmpty_iff] at hind
+      rw [hind] at hs
+      cases hs
   simp only [hl, hp, Except.toOption, Option.bind_some, Option.map_some, Option.some.injEq,
     Prod.mk.injEq] at hpipe
   obtain ⟨hcfg, hb⟩ := hpipe
@@ -60,8 +90,8 @@ theorem entryWitness_pipe : ∃ (p : Clif.Program) (vc vcp : VCode) (vb : VBlock
     | some vb =>
       rw [hb0] at hb
       simp only [Option.map_some, Option.some.injEq] at hb
-      exact ⟨_, vc, vcp, vb, inSubset_of_fnScope hsc { funcs := [] }, arityOk_of har,
-        dominated_of hd, lowerScope_of hs, hl, hp, hc, hb0, hb⟩
+      exact ⟨_, vc, vcp, vb, hsub, arityOk_of har, dominated_of hd, lowerScope_of hs, hl, hp, hc,
+        hb0, hb⟩
 
 /-- No definedness or availability sets with nothing on entry exist for `entryWitness`. -/
 theorem entryWitness_no_sets {vcp : VCode} {vb : VBlock} (hc : vcp.cfg = .ok (#[#[]], #[#[]]))
@@ -83,16 +113,15 @@ theorem entryWitness_no_sets {vcp : VCode} {vb : VBlock} (hc : vcp.cfg = .ok (#[
     rw [hi] at h
     simp [defAt, defInst, defStart, hes, hD0, hargs] at h
 
-/-- **`SpillDefinedHyp` is false** (`entryWitness`: an entry-block parameter beyond the
-signature's, read by the `return`). -/
-theorem not_spillDefinedHyp : ¬ SpillDefinedHyp := by
+/-- **Definite assignment without `entryParamsB` is false** (the first statement of
+`SpillDefinedHyp`): `entryWitness` has an entry-block parameter beyond the signature's, read by
+the `return`. -/
+theorem not_spillDefinedHyp : ¬ ∀ (p : Clif.Program) (f : Clif.Function) (vc vcp : VCode),
+    InSubset p f → Spill.ArityOk f → Dominated f → LowerScope f → lowerFunction f = .ok vc →
+      Backend.prepare vc = .ok vcp → ∃ D, Spill.SpillAvail vcp D ∧ ∀ v, D 0 v = false := by
   intro h
   obtain ⟨p, vc, vcp, vb, hsub, har, hd, hs, hl, hp, hc, hb, hi⟩ := entryWitness_pipe
   obtain ⟨D, hav, hD0⟩ := h p entryWitness vc vcp hsub har hd hs hl hp
   exact (entryWitness_no_sets hc hb hi hD0).1 hav
-
-/-- `entryWitness` fails the input condition of `SpillDefinedHypE`. -/
-theorem entryWitness_entryParams : Spill.entryParamsB entryWitness = false :=
-  entryWitness_checks.2.1
 
 end E2E

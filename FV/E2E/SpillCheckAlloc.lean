@@ -15,7 +15,9 @@ The proof is the completeness of `checkAlloc` (`CheckComplete.checkAlloc_complet
 (`Spill.verify_block`). `checkAlloc`'s iteration starts from `entryState`, where no home holds its
 vreg, so the in-states have to be those of availability sets that hold nothing on entry to the
 function: `SpillDefinedHyp`, definite assignment of the pipeline's output (every vreg a use reads
-is stored in its home on every path from the function entry). That is the one fact not proven
+is stored in its home on every path from the function entry), on input whose entry block has the
+signature's parameters (`Spill.entryParamsB`; without it the statement is false,
+`E2E.not_spillDefinedHyp`). That is the one fact not proven
 here. The remaining premises of the completeness theorem are proven: the CFG and local facts
 (`spillLocalAll`), the class table bounding every vreg (`ClassesOk`), and the reachability of every
 block of `prepare`'s output (`prepare_reach`).
@@ -26,20 +28,13 @@ namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver
 
 /-- **Definite assignment of the pipeline's output** (the remaining hypothesis of
-`spillCheckAlloc`): the prepared VCode of an in-scope function has availability sets
-(`Spill.SpillAvail`: every use available where it is read, every edge delivering its target's
-set) in which no vreg is available on entry to the function. False as stated
-(`E2E.not_spillDefinedHyp`); `SpillDefinedHypE` adds the missing input condition. -/
-def SpillDefinedHyp : Prop :=
-  ∀ (p : Clif.Program) (f : Clif.Function) (vc vcp : VCode), InSubset p f → Spill.ArityOk f →
-    Dominated f → LowerScope f → lowerFunction f = .ok vc → Backend.prepare vc = .ok vcp →
-      ∃ D, Spill.SpillAvail vcp D ∧ ∀ v, D 0 v = false
-
-/-- `SpillDefinedHyp` with the input condition `Spill.entryParamsB` (the entry block has as many
-parameters as the signature). Without it the statement is false (`E2E.not_spillDefinedHyp`,
+`spillCheckAlloc`): the prepared VCode of an in-scope function whose entry block has the
+signature's parameters has availability sets (`Spill.SpillAvail`: every use available where it
+is read, every edge delivering its target's set) in which no vreg is available on entry to the
+function. Without `entryParamsB` it is false (`E2E.not_spillDefinedHyp`,
 `FV/E2E/SpillDefinedFalse.lean`: an entry-block parameter beyond the signature's is never
 defined). -/
-def SpillDefinedHypE : Prop :=
+def SpillDefinedHyp : Prop :=
   ∀ (p : Clif.Program) (f : Clif.Function) (vc vcp : VCode), InSubset p f → Spill.ArityOk f →
     Dominated f → LowerScope f → Spill.entryParamsB f = true → lowerFunction f = .ok vc →
       Backend.prepare vc = .ok vcp → ∃ D, Spill.SpillAvail vcp D ∧ ∀ v, D 0 v = false
@@ -171,13 +166,6 @@ theorem spillCheckAlloc_sets {p : Clif.Program} {f : Clif.Function}
 /-- **`checkAlloc` accepts the spill allocation** of every in-scope function's prepared VCode,
 given definite assignment of the pipeline's output (`SpillDefinedHyp`). -/
 theorem spillCheckAlloc (hD : SpillDefinedHyp) {p : Clif.Program} {f : Clif.Function}
-    {vc vcp : VCode} (hsub : InSubset p f) (har : Spill.ArityOk f) (hd : Dominated f)
-    (hs : LowerScope f) (hl : lowerFunction f = .ok vc) (hp : Backend.prepare vc = .ok vcp) :
-    checkAlloc vcp (spillAlloc vcp) = .ok () :=
-  spillCheckAlloc_sets hsub har hd hs hl hp (hD p f vc vcp hsub har hd hs hl hp)
-
-/-- `spillCheckAlloc` under `SpillDefinedHypE`, for input with `entryParamsB`. -/
-theorem spillCheckAllocE (hD : SpillDefinedHypE) {p : Clif.Program} {f : Clif.Function}
     {vc vcp : VCode} (hsub : InSubset p f) (har : Spill.ArityOk f) (hd : Dominated f)
     (hs : LowerScope f) (hen : Spill.entryParamsB f = true) (hl : lowerFunction f = .ok vc)
     (hp : Backend.prepare vc = .ok vcp) : checkAlloc vcp (spillAlloc vcp) = .ok () :=
