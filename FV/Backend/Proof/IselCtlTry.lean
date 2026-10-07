@@ -194,7 +194,7 @@ theorem try_sym_lowerTryOk {Rd F : BitVec 64 → Prop}
     {ext : Clif.ExtFunc} (hext : f.extern? fn = some ext) (hin : ext ∈ exts)
     (hso : SigStackOk ext.sig outB) {bytes : List Nat} (hb : sigParamBytes ext.sig = .ok bytes)
     {locs : List ArgLoc} {S : Nat} (hl : sigArgLocs ext.sig = .ok (locs, S)) {info : TryInfo}
-    {b : Nat}
+    (hrets : info.rets ≤ (sigRets ext.sig).length) {b : Nat}
     (htr : ctx.tryRegs = ((List.range (sigRets ext.sig).length).map fun j => Reg.vreg (b + j) .int,
       [.vreg b .int, .vreg (b + 1) .int]))
     {st st' : LState} (hst' : st'.nextVreg = st.nextVreg) :
@@ -229,7 +229,7 @@ theorem try_sym_lowerTryOk {Rd F : BitVec 64 → Prop}
       obtain ⟨outs, w', hi, hol, hro, hmr'⟩ := htry ext hin g fr.slots cm w1 (.sym ext.name)
         (retPairs (regPairsOf ((locs.zip args).zip bytes)))
         (callDefs (outDefs b (max (sigRets ext.sig).length 2))) info
-        _ _ vals rvals cm' hg (.inl ⟨rfl, rfl⟩) (by rw [hdl]; exact Nat.le_max_left _ _)
+        _ _ vals rvals cm' hg (.inl ⟨rfl, rfl⟩) (by rw [hdl]; exact Nat.le_max_left _ _) hrets
         (hargsAt w1 (SameWorldNF.refl F w1)) hmr1 hpc hgo hrN
       have hol' : outs.length = (outDefs b (max (sigRets ext.sig).length 2)).length := by
         rw [hol, hdl]; simp [outDefs]
@@ -318,7 +318,7 @@ theorem try_bl_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) {Rd F : BitV
   rw [hcd] at hs2
   simp only at hs1 hs2
   refine ⟨_, ?_, try_sym_lowerTryOk hMR hMem hout hCR hctx hext (hexts fn _ hext) (hreg _ hext)
-    hb hl htrs (by rw [hs2, hs1]; simp [LState.emit, freshN_nextVreg])⟩
+    hb hl (Nat.le_of_eq (tryInfoOf_rets hinfo)) htrs (by rw [hs2, hs1]; simp [LState.emit, freshN_nextVreg])⟩
   rw [hs2, hs1]; simp [LState.emit, freshN_emitted]
 
 theorem try_got_lowerTryOk {Rd F : BitVec 64 → Prop}
@@ -329,7 +329,8 @@ theorem try_got_lowerTryOk {Rd F : BitVec 64 → Prop}
     {ctx : Ctx} (hctx : CtxInv f ctx) {fn : Clif.FnRef} {args : List Nat} {ext : Clif.ExtFunc}
     (hext : f.extern? fn = some ext) (hin : ext ∈ exts) (hso : SigStackOk ext.sig outB)
     {bytes : List Nat} (hb : sigParamBytes ext.sig = .ok bytes) {locs : List ArgLoc} {S : Nat}
-    (hl : sigArgLocs ext.sig = .ok (locs, S)) {info : TryInfo} {b : Nat}
+    (hl : sigArgLocs ext.sig = .ok (locs, S)) {info : TryInfo}
+    (hrets : info.rets ≤ (sigRets ext.sig).length) {b : Nat}
     (htr : ctx.tryRegs = ((List.range (sigRets ext.sig).length).map fun j => Reg.vreg (b + j) .int,
       [.vreg b .int, .vreg (b + 1) .int]))
     {st st' : LState} (hargs : ∀ x ∈ args, x < st.nextVreg)
@@ -393,7 +394,7 @@ theorem try_got_lowerTryOk {Rd F : BitVec 64 → Prop}
         (upd ρ t (ofX (sym ext.name)) t ::
           (regPairsOf ((locs.zip args).zip bytes)).map (upd ρ t (ofX (sym ext.name)) ·.1))
         ((regPairsOf ((locs.zip args).zip bytes)).map (ρ ·.1)) vals rvals cm' hg
-        (.inr ⟨_, rfl, by rw [ht1, huses]⟩) (by rw [hdl]; exact Nat.le_max_left _ _)
+        (.inr ⟨_, rfl, by rw [ht1, huses]⟩) (by rw [hdl]; exact Nat.le_max_left _ _) hrets
         (hargsAt w2 hsw) hmr2 hpc hgo hrN
       have hol' : outs.length = (outDefs b (max (sigRets ext.sig).length 2)).length := by
         rw [hol, hdl]; simp [outDefs]
@@ -496,7 +497,7 @@ theorem try_got_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) {Rd F : Bit
   rw [hcd] at hs2
   simp only at hs0 hs1 hs2
   refine ⟨_, ?_, try_got_lowerTryOk hMR hMem hout hCR hctx hext (hexts fn _ hext) (hreg _ hext)
-    hb hl htrs (fun x hx => by have := hbelow x hx; omega)
+    hb hl (Nat.le_of_eq (tryInfoOf_rets hinfo)) htrs (fun x hx => by have := hbelow x hx; omega)
     (by rw [hs2, hs1, hs0]; simp [LState.emit, LState.fresh])⟩
   rw [hs2, hs1, hs0]
   simp only [LState.emit, LState.fresh]

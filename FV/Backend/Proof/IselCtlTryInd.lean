@@ -55,7 +55,8 @@ theorem try_ind_lowerTryOk {Rd : BitVec 64 → Prop}
     {sigs : List Clif.Signature} (hCR : IndCallsRefineP Pc env sigs MR isem)
     {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) {callee : Nat} {args : List Nat}
     {et : Clif.ExnTable} {sig : Clif.Signature} (hsd : f.sigDecls.lookup et.sig = some sig)
-    (hin : sig ∈ sigs) (h8 : sig.params.length ≤ 8) {info : TryInfo} {b : Nat}
+    (hin : sig ∈ sigs) (h8 : sig.params.length ≤ 8) {info : TryInfo}
+    (hrets : info.rets ≤ (sigRets sig).length) {b : Nat}
     (htr : ctx.tryRegs = ((List.range (sigRets sig).length).map fun j => Reg.vreg (b + j) .int,
       [.vreg b .int, .vreg (b + 1) .int]))
     {st st' : LState} (hst' : st'.nextVreg = st.nextVreg) :
@@ -94,7 +95,7 @@ theorem try_ind_lowerTryOk {Rd : BitVec 64 → Prop}
       obtain ⟨outs, w', hi, hol, hro, hmr'⟩ := htry sig hin name g fr.slots cm w x.toNat
         (.vreg callee .int) (retPairs (args.zip ((abiArgIdx sig.params 0).map Reg.x)))
         (callDefs (outDefs b (max (sigRets sig).length 2))) info (ρ callee) (args.map ρ) vals
-        rvals cm' hg hsym hlo (by rw [hdl]; exact Nat.le_max_left _ _) (by omega)
+        rvals cm' hg hsym hlo (by rw [hdl]; exact Nat.le_max_left _ _) hrets (by omega)
         (allHold_args hvh hvals) hmr hpc hgo hrN hty
       have hol' : outs.length = (outDefs b (max (sigRets sig).length 2)).length := by
         rw [hol, hdl]; simp [outDefs]
@@ -175,7 +176,8 @@ theorem try_ind_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) (hpI : IndD
     simp [callDefs, outDefs, List.map_map, Function.comp_def]
   rw [hcd] at hs2
   simp only at hs1 hs2
-  refine ⟨_, ?_, try_ind_lowerTryOk hCR hctx (exnTableOpnd_sig he) hsig h8' htrs
+  refine ⟨_, ?_, try_ind_lowerTryOk hCR hctx (exnTableOpnd_sig he) hsig h8'
+    (Nat.le_of_eq (tryInfoOf_rets hinfo)) htrs
     (by rw [hs2, hs1]; simp [LState.emit])⟩
   rw [hs2, hs1]; simp [LState.emit]
 

@@ -589,9 +589,14 @@ noncomputable def csem (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) : ISe
   -- exception payload registers x0/x1 that are not return registers, unconstrained on a normal
   -- return: the allocated-code semantics havocs them there, `havocFrom`, so these values are
   -- never compared with the machine's; constants, so that they do not depend on the callee's
-  -- world), and the normal-return successor (the last, number `ti.handlers.length`)
+  -- world), and the normal-return successor (the last, number `ti.handlers.length`); defined
+  -- only when the callee returns at least the call's `ti.rets` results (the lowering's
+  -- `tryInfoOf`: the call-site signature's ABI returns, which a call that returns in the CLIF
+  -- run gives, `CallsRefine`/`IndCallsRefine`), so that the results the continuation reads are
+  -- the callee's
   | .tryCall info ti =>
-    (X.call (match info.dest with | .sym n => some n | .reg _ => none) uses w).map
+    ((X.call (match info.dest with | .sym n => some n | .reg _ => none) uses w).filter
+      fun p => decide (ti.rets ≤ p.1.length)).map
       fun p => (p.1 ++ (info.defs.drop p.1.length).map (fun _ => ofX 0), p.2,
         .goto ti.handlers.length)
   | .args ds => some (ds.map (fun p => regVal w p.2), w, .next)

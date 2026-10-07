@@ -383,17 +383,17 @@ author's estimate, not measured), **Risk**.
   cause). Remaining failures are proof limits (each protects a `LinkSys.Ok` premise `okB` checks the same
   way). `sret` at indirect calls is done (#89 (a), `agent/scope-widen`: `Ok.indSig` asks for equal
   `sigRets` counts, `LinkCheck.indRetsB`; e2e.md "Widening 12"): fv-demo's test harness 4 → 1,
-  `examples/deps` 23 → 15. Left: fv-demo 1 and deps 8 functions with indirect calls whose own address
-  is taken (`indNoSym`) — a pointer to `g` must resolve through the environment in the per-function
-  run, or the backend theorem must cover self-entry; deps 4 `blrRegs` (a declared callee matched by
-  types but not purposes, e.g. `(i64 sret, i64)` at a `(i64, i64) -> i8` site) — `Clif.callExternAt`
-  must reject an `abiMatch` failure as `stepCallIndirect` does, and the machine-level `blr` contract
-  needs that CLIF fact at the site; deps 3 `blrTry` (a declared callee with as many register
-  parameters and fewer results than a `try_call_indirect` site) — carry the CLIF result-count fact
-  into the try-site contract. Both last two are machine-level contracts (`CalleeOkG`,
-  `CalleeTryOkG`) quantified over every state where `csemV` is defined, while the needed fact holds
-  only along the VCode run that simulates the CLIF run (as the GOT guard `gotGuard` of `csemV`, but
-  established by the lowering simulation, not a static analysis). The outside part's bytes stay
+  `examples/deps` 23 → 15. `try_call` result counts are done (#89 (d): `csem` defines a `try_call`'s
+  call only where the callee returns at least `ti.rets` results, the lowering supplies
+  `ti.rets ≤ sigRets` to `CallsRefine`/`IndCallsRefine`; `Ok.tryRets`/`Ok.blrTry` gone; e2e.md
+  "Widening 13"): deps 15 → 12. Left: fv-demo 1 and deps 8 functions with indirect calls whose own
+  address is taken (`indNoSym`) — a pointer to `g` must resolve through the environment in the
+  per-function run, or the backend theorem must cover self-entry; deps 4 `blrRegs` (a declared
+  callee matched by types but not purposes, e.g. `(i64, i64, i64, i64)` at a
+  `(i64 sret, i64, i64, i64)` site) — `Clif.callExternAt` must reject an `abiMatch` failure as
+  `stepCallIndirect` does. The `blrRegs` contract is machine-level (`CalleeOkG`) and quantified over
+  every state where `csemV` is defined, while `X`'s `blr` branch is site-independent (`IndTo`), so
+  the CLIF fact has to narrow `IndTo` itself. The outside part's bytes stay
   rust-lld's (design (b), L2b).
 
 ### L2. Linking without validators
@@ -434,10 +434,9 @@ author's estimate, not measured), **Risk**.
   | depth | `depth` | own output | by construction: `withDepth`, `D` := the largest `frameDrop` (`le_depthOf`) |
   | free (no `return_call`) | `free` | input | `fnScopeB` |
   | subset: E, no direct self-call, ABI signatures, indirect-call signatures | `subset` | input | `fnScopeB` |
-  | tryRets/blrTry | `tryRets`, `blrTry` | own output + input | `sites_of_lower` (`FV/E2E/LinkOwnCalls.lean`) from `callScopeB` (input) and the call inversion `CallShapeHyp` (`callShapeHyp_of`, `LinkOwnCallsShape.lean`) of the per-run facts `callStmtRunHyp`, `tryRunHyp`, `stmt_noCalls`, `term_noCalls` (`LinkOwnCallsRun/Stmt/Try*.lean`) and the GOT facts `segRangeHyp`, `gotLocalHyp` (`gotRunHyp_of`, `LinkOwnGotRun/SegRange/GotLocal.lean`). A first statement of the GOT fact for every GOT-loaded vreg was false (a `func_addr` value renamed to its GOT vreg and called in another block); the proven one is about a direct call's GOT vreg |
+  | callRegs/blrRegs | `callRegs`, `blrRegs` | own output + input | `sites_of_lower` (`FV/E2E/LinkOwnCalls.lean`) from `callScopeB` (input) and the call inversion `CallShapeHyp` (`callShapeHyp_of`, `LinkOwnCallsShape.lean`) of the per-run facts `callStmtRunHyp`, `tryRunHyp`, `stmt_noCalls`, `term_noCalls` (`LinkOwnCallsRun/Stmt/Try*.lean`) and the GOT facts `segRangeHyp`, `gotLocalHyp` (`gotRunHyp_of`, `LinkOwnGotRun/SegRange/GotLocal.lean`). A first statement of the GOT fact for every GOT-loaded vreg was false (a `func_addr` value renamed to its GOT vreg and called in another block); the proven one is about a direct call's GOT vreg |
   | outFits | `outFits` | own output + input | `outFits_of_lower` from `outScopeB` (input: a declared program callee's stack parameters fit the stack area of the calls made) |
   | calleeFrame/slotFits | `calleeFrame`, `slotFits` | own output | `frame_of_lower` (`FV/E2E/LinkOwnFrames.lean`) |
-  | callRegs/blrRegs | `callRegs`, `blrRegs` | own output + input | `sites_of_lower`, as tryRets |
   | declSig | `declSig` | input | `progScopeB` (`declSigB`) |
   | raCall/raBlr | `raCall`, `raBlr` | linker output | `linkerOkB` |
   | indScope/indNoSym/indSig | `indScope`, `indNoSym`, `indSig` | input | `progScopeB` (`indB`) |

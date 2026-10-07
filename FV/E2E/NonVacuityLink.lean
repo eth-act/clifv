@@ -53,7 +53,7 @@ constrains `s` at `z`'s calls. With the former type-only matching, `indSig` (`s`
 `sret` pointer) and `blrRegs` (x8/x0 against the call's x0/x1) both failed on it.
 
 * The per-function premises of `LinkSys.Ok` are executable checks (`chks`, `okB`, each with a
-  soundness lemma: `siteOk_sound`, `tryB_sound`, `retsB_sound`, `outFitsB_sound`,
+  soundness lemma: `siteOk_sound`, `retsB_sound`, `outFitsB_sound`,
   `entryB_sound`, `raCallB_sound`, `linkFreeB_sound`, `imgCode_of`, …), decided by
   `native_decide` (`okB_true`; the project's axiom policy allows `_native.native_decide` axioms).
 * The base environment is closed: no extern outside `P` (`Xb.call` undefined, so `baseNI` holds
@@ -522,51 +522,6 @@ theorem siteOk_sound {P : Clif.Program} {g : Clif.Function} {may : Clif.Function
       obtain ⟨⟨⟨⟨⟨hne, hd⟩, hu⟩, hdd⟩, h1⟩, h2⟩ := h
       exact ⟨n, h', rfl, hf, hne, hd, _, _, by rw [← hu, ← hdd], h1, h2⟩
 
-/-- A `try_call` of a function `h` of `P` takes at most `h`'s results (at a `blr`: of every
-function it may enter, `LinkSys.BlrTo`, with as many register parameters). -/
-def tryB (P : Clif.Program) (may : Clif.Function → Bool) (vc : VCode) : MInst → Bool
-  | .tryCall info ti => match info.dest with
-    | .sym n => match P.func? n with
-      | some h => decide (ti.rets ≤ (sigRets h.sig).length)
-      | none => true
-    | .reg r => P.funcs.all fun h => !may h ||
-      (match r with
-        | .vreg t .int => (match gotOf vc t with | some n => h.name != n | none => false)
-        | _ => false) ||
-      decide ((regLocs h.sig).length ≠ (decU info.uses).length) ||
-      decide (ti.rets ≤ (sigRets h.sig).length)
-  | _ => true
-
-theorem tryB_reg {P : Clif.Program} {may : Clif.Function → Bool} {vc : VCode}
-    (h : allInsts vc (tryB P may vc) = true) {info : CallInfo} {ti : TryInfo}
-    (hs : vc.TrySite info ti) {t : Nat} {Lu : List (Nat × Reg)} {Ld : List (Reg × Nat)}
-    (hi : info = ⟨.reg (.vreg t .int), retPairs Lu, callDefs Ld⟩) {h' : Clif.Function}
-    (hh : h' ∈ P.funcs) (hmay : may h' = true) (hgot : ∀ n, gotOf vc t = some n → h'.name = n)
-    (hl : (regLocs h'.sig).length = Lu.length) :
-    ti.rets ≤ (sigRets h'.sig).length := by
-  obtain ⟨b, vb, k, hb, hk⟩ := hs
-  have := allInsts_sound h hb hk
-  subst hi
-  simp only [tryB, List.all_eq_true, Bool.or_eq_true, Bool.not_eq_true', decide_eq_true_eq] at this
-  have hdu : decU (retPairs Lu) = Lu := by
-    simp [decU, retPairs, Function.comp_def]
-  rcases this h' hh with ((h1 | h1) | h1) | h1
-  · rw [hmay] at h1; cases h1
-  · revert h1
-    cases hg : gotOf vc t with
-    | none => simp
-    | some n => simp [hgot n hg]
-  · rw [hdu] at h1; exact absurd hl h1
-  · exact h1
-
-theorem tryB_sound {P : Clif.Program} {may : Clif.Function → Bool} {vc : VCode}
-    (h : allInsts vc (tryB P may vc) = true)
-    {info : CallInfo} {ti : TryInfo} (hs : vc.TrySite info ti) {n : String} {h' : Clif.Function}
-    (hd : info.dest = .sym n) (hf : P.func? n = some h') : ti.rets ≤ (sigRets h'.sig).length := by
-  obtain ⟨b, vb, k, hb, hk⟩ := hs
-  have := allInsts_sound h hb hk
-  simpa [tryB, hd, hf] using this
-
 /-- The returns of an `sret` function carry its ABI results. -/
 def retsB (g : Clif.Function) : MInst → Bool
   | .rets us => !(g.sig.params.any (·.purpose == .sret)) || decide ((sigRets g.sig).length ≤ us.length)
@@ -817,7 +772,7 @@ def chks (g : Clif.Function) : List Bool :=
   let fr := RAFrame.compute a.vcp a.rf
   [(pipe g (idx g) (baseOf g)).toBool, lowerCheck g a.vc, prepCheck a.vc a.vcp,
     (checkAlloc a.vcp a.rf).toBool, formsCoveredB ⟨a.fa.k, a.af.slotBase⟩ a.vcp,
-    allInsts a.vcp (tryB P (indToB g) a.vcp), allInsts a.vc (retsB g),
+    allInsts a.vc (retsB g),
     g.externs.all (fun e => !(P.func? e.2.name).isSome || outFitsB e.2.sig fr.intBase),
     decide (regLocs g.sig).Nodup, (regLocs g.sig).all (·.isArgReg),
     g.sig.params.all (fun p => decide (p.ty.width ≤ 64)),
@@ -904,7 +859,6 @@ structure Facts (g : Clif.Function) : Prop where
   prepOk : prepCheck (A g).vc (A g).vcp = true
   check : checkAlloc (A g).vcp (A g).rf = .ok ()
   covered : FormsCovered ⟨(A g).fa.k, (A g).af.slotBase⟩ (A g).vcp
-  tries : allInsts (A g).vcp (tryB P (indToB g) (A g).vcp) = true
   rets : allInsts (A g).vc (retsB g) = true
   outFits : ∀ e ∈ g.externs, (P.func? e.2.name).isSome = true →
     outFitsB e.2.sig (RAFrame.compute (A g).vcp (A g).rf).intBase = true
@@ -934,11 +888,11 @@ theorem chk_sound {g : Clif.Function} (h : chk g = true) : Facts g := by
   have hall : ∀ b ∈ chks g, b = true := by
     simpa [chk, List.all_eq_true] using h
   simp only [chks, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hall
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19,
+  obtain ⟨h1, h2, h3, h4, h5, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19,
     h20, h21, h22, h23, h24, h25, h26⟩ := hall
   simp only [List.all_eq_true, decide_eq_true_eq, Bool.or_eq_true, Bool.not_eq_true',
     Bool.and_eq_true, beq_iff_eq, bne_iff_ne, ne_eq] at h8 h9 h10 h11 h12 h14 h16 h18 h19 h22 h24
-  refine ⟨getOk_eq h1, h2, h3, toBool_unit h4, (formsCoveredB_iff _ _).1 h5, h6, h7,
+  refine ⟨getOk_eq h1, h2, h3, toBool_unit h4, (formsCoveredB_iff _ _).1 h5, h7,
     fun e he hs => ?_, h9, h10, h11, fun hc => ?_, h13, fun e he => ?_, h15, h16, h17, h18, ?_,
     linkFreeB_sound h20, h21, fun e he => ?_, ⟨h23, h24⟩, h25, h26⟩
   · rcases h8 e he with h | h
@@ -1168,7 +1122,6 @@ theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
       covered := fun g hg => (facts hg).covered
       outFits := fun g hg e he hs i off p hl hp => ?_
       baseNoAlloc := fun _ n gsem hn => by simp [L, Clif.Env.empty] at hn
-      tryRets := fun g hg info ti h hs ⟨_, n, hd, hf⟩ => tryB_sound (facts hg).tries hs hd hf
       argRegs := fun g hg => ⟨(facts hg).nodup, (facts hg).argReg, (facts hg).width⟩
       sretRets := fun g hg hs us hr => retsB_sound (facts hg).rets hs hr
       calleeFrame := fun g hg h hh hs => (hcal g hg h hh).1 hs
@@ -1178,8 +1131,6 @@ theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
         obtain ⟨t, Lu, Ld, hi, hall⟩ := blrOk_sound (siteOk_reg (site_sound (facts hg).sites hs) hreg)
         exact ⟨t, Lu, Ld, hi, fun h hh hb =>
           hall h hh (indToB_of hb.1) fun n hn => (hb.2 n (gotOf_sound hn)).symm⟩
-      blrTry := fun g hg info ti hs t Lu Ld hi h hh hb hl =>
-        tryB_reg (facts hg).tries hs hi hh (indToB_of hb.1) (fun n hn => (hb.2 n (gotOf_sound hn)).symm) hl
       raBlr := fun g hg info hs hreg h hh hdecl pc hpc =>
         raCallB_sound (facts hg).ra hpc h hh (mayCall_ne hdecl)
       indScope := fun g hg hnf => ⟨fun n f h => by simp [L, Clif.Env.empty] at h,

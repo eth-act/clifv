@@ -215,7 +215,7 @@ theorem callsRefineP_csemG {env : Clif.Env} {exts : List Clif.ExtFunc} {MR : Mem
     CallsRefineP Pc F env exts MR (csemG F ctx X Rd syms exts sigs sp0 Pc) := by
   refine ⟨fun n => X.sym n 0, fun rd n w => ?_, fun ext hin g sl cm w dest us ds uses args vals
     rvals cm' a1 a2 a3 a4 a5 hpc a7 a8 => ?_, fun ext hin g sl cm w dest us ds ti uses args vals
-    rvals cm' a1 a2 a3 a4 a5 hpc a7 a8 => ?_⟩
+    rvals cm' a1 a2 a3 a0 a4 a5 hpc a7 a8 => ?_⟩
   · have hg : GuardR F Rd ctx.slotBase (.loadExtNameGot rd n) [] w := by
       unfold GuardR; split <;> simp_all
     have hc : GuardC F syms X exts sigs sp0 Pc (.loadExtNameGot rd n) [] w := trivial
@@ -245,12 +245,14 @@ theorem callsRefineP_csemG {env : Clif.Env} {exts : List Clif.ExtFunc} {MR : Mem
     rcases a2 with ⟨rfl, rfl⟩ | ⟨r, rfl, rfl⟩
     · obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX ext hin g sl cm w (some ext.name) uses uses vals
         rvals cm' a1 (.inl ⟨rfl, rfl⟩) a4 a5 a7 a8
-      refine ⟨_, w', by simp only [csem, hc, Option.map_some]; rfl, ?_, ho.append _, hm⟩
+      refine ⟨_, w', by simp only [csem, hc, Option.filter_some, hol, a0, decide_true, ↓reduceIte,
+        Option.map_some]; rfl, ?_, ho.append _, hm⟩
       simp only [List.length_append, List.length_map, List.length_drop]
       omega
     · obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX ext hin g sl cm w none _ args vals rvals cm' a1
         (.inr ⟨rfl, rfl⟩) a4 a5 a7 a8
-      refine ⟨_, w', by simp only [csem, hc, Option.map_some]; rfl, ?_, ho.append _, hm⟩
+      refine ⟨_, w', by simp only [csem, hc, Option.filter_some, hol, a0, decide_true, ↓reduceIte,
+        Option.map_some]; rfl, ?_, ho.append _, hm⟩
       simp only [List.length_append, List.length_map, List.length_drop]
       omega
 
@@ -264,7 +266,7 @@ theorem indCallsRefineP_csemG {env : Clif.Env} {sigs : List Clif.Signature} {MR 
   obtain ⟨h1, h2⟩ := indCallsRefine_csem (F := F) (ctx := ctx) hX hsym
     (fun sl cm w h => (hMRm sl cm w h).symbols)
   refine ⟨fun sig hin n g sl cm w a r us ds u args vals rvals cm' a1 a2 a3 a4 a5 a6 a7 hpc a9 a10
-    a11 => ?_, fun sig hin n g sl cm w a r us ds ti u args vals rvals cm' a1 a2 a3 a4 a5 a6 a7 hpc
+    a11 => ?_, fun sig hin n g sl cm w a r us ds ti u args vals rvals cm' a1 a2 a3 a4 a0 a5 a6 a7 hpc
     a9 a10 a11 => ?_⟩
   · have hm := hMRm sl cm w a7
     have hu : lo64 u = X.sym n 0 := by
@@ -281,7 +283,7 @@ theorem indCallsRefineP_csemG {env : Clif.Env} {sigs : List Clif.Signature} {MR 
       ⟨n, sig, vals, cm, args, hpc, ⟨hm, hMRc sl cm w a7⟩, (.inr ⟨hin, a5, a6⟩), .inr ⟨⟨r, rfl⟩, u, rfl, hu⟩⟩
     have hr : GuardR F Rd ctx.slotBase (.tryCall ⟨.reg r, us, ds⟩ ti) (u :: args) w := trivial
     rw [csemG_of hr hg]
-    exact h2 sig hin n g sl cm w a r us ds ti u args vals rvals cm' a1 a2 a3 a4 a5 a6 a7 a9 a10 a11
+    exact h2 sig hin n g sl cm w a r us ds ti u args vals rvals cm' a1 a2 a3 a4 a0 a5 a6 a7 a9 a10 a11
 
 theorem minst_cases (i : MInst) :
     (∃ info, i = .call info) ∨ (∃ info ti, i = .tryCall info ti) ∨ (∃ ds, i = .args ds) ∨
@@ -325,9 +327,9 @@ theorem csemG_lockstep2 {Z : BitVec 64 → Prop} (hFZ : ∀ a, F a → Z a) {i :
     obtain ⟨⟨o2, x2⟩, hp', rfl, rfl, rfl⟩ := hs'
     obtain ⟨ho, hx⟩ := hX info.dest hgc hgc' _ _ _ _ (hdest _ hp) (hdest' _ hp')
     exact ⟨ho, rfl, hx⟩
-  · simp only [csem, Option.map_eq_some_iff, Prod.mk.injEq] at hs hs'
-    obtain ⟨⟨o1, x1⟩, hp, rfl, rfl, rfl⟩ := hs
-    obtain ⟨⟨o2, x2⟩, hp', rfl, rfl, rfl⟩ := hs'
+  · simp only [csem, Option.map_eq_some_iff, Option.filter_eq_some_iff, Prod.mk.injEq] at hs hs'
+    obtain ⟨⟨o1, x1⟩, ⟨hp, -⟩, rfl, rfl, rfl⟩ := hs
+    obtain ⟨⟨o2, x2⟩, ⟨hp', -⟩, rfl, rfl, rfl⟩ := hs'
     obtain ⟨ho, hx⟩ := hX info.dest hgc hgc' _ _ _ _ (hdest _ hp) (hdest' _ hp')
     subst ho
     exact ⟨rfl, rfl, hx⟩
