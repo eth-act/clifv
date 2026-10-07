@@ -838,6 +838,13 @@ fn process_in(
                 if bad.is_none() && syms.local_count.get(sym).copied().unwrap_or(0) > 1 {
                     bad = Some("the function's name is defined locally more than once in cg_clif's object".into());
                 }
+                // `--lean-link`: the region holds verified code only; an unverified function
+                // keeps cg_clif's code (the outside part)
+                if bad.is_none() && cfg.lean_link {
+                    if let Some(u) = &unverified {
+                        bad = Some(format!("unverified ({u}): cg_clif's code kept under --lean-link"));
+                    }
+                }
                 match bad {
                     Some(b) => report(Status::Fallback, Some(b), false),
                     None => {
