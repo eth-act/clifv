@@ -52,9 +52,10 @@ def OutDef (ctx : Ctx) (S : List Nat) (s s' : LState) (out : Option V) : Prop :=
     ((n < ctx.valDef.size ∧ Reach ctx S n) ∨
       (s.nextVreg ≤ n ∧ ∃ m ∈ emittedSince s s', n ∈ defVregs m))
 
-/-- **The definedness facts of the ISLE runs** (open): on input in scope, a statement's `lower`
-run, a terminator's run and a `try_call`'s `lower_branch` run meet `RunDef` (reaching from the
-instruction's operands, resp. the terminator's arguments), and a statement's results `OutDef`. -/
+/-- **The definedness facts of the ISLE runs** (proven: `defRunsHyp`, `DefRunsProof.lean`): on
+input in scope, a statement's `lower` run, a terminator's run and a `try_call`'s `lower_branch` run
+meet `RunDef` (reaching from the instruction's operands, resp. the terminator's arguments), and a
+statement's results `OutDef`. -/
 def DefRunsHyp : Prop :=
   ∀ (f : Clif.Function) (ctx : Ctx) (ranges : Array (Nat × Nat)) (st0 : LState),
     Dominated f → LowerScope f → AbiSigsOk f → buildCtx f = .ok (ctx, ranges, st0) →
