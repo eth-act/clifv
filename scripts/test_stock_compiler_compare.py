@@ -295,10 +295,6 @@ class StockIntegrationTests(unittest.TestCase):
             self.assertEqual(manifest["variants"],[])
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class StockDevelopmentIntegrationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -356,7 +352,7 @@ class StockDevelopmentIntegrationTests(unittest.TestCase):
 
     def test_extended_demand_recovers_all_twenty_allocator_failures(self):
         investigation = json.loads((COMPARE.ROOT /
-            "docs/research/stock-lowering-failures/results.json").read_text())
+            "scripts/fixtures/stock-extended-demand.json").read_text())
         cases = investigation["allocator_cases"]
         self.assertEqual(len(cases), 20)
         with tempfile.TemporaryDirectory(prefix="stock-lowering_demand-regression-") as tmp:
@@ -377,3 +373,7 @@ class StockDevelopmentIntegrationTests(unittest.TestCase):
                     self.assertTrue(function["settings_contract_verified"])
                     self.assertTrue(function["lean_dump_matches_object_bytes"])
                     self.assertTrue(function["lean_dump_matches_object_relocations"])
+
+
+if __name__ == "__main__":
+    unittest.main()

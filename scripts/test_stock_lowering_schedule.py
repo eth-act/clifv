@@ -102,7 +102,7 @@ block0(v0: i64):
 """)
 
     def test_extended_register_demands_its_computed_source(self):
-        source = (ROOT / "docs/research/stock-lowering-failures/extended-demand.clif").read_text()
+        source = (ROOT / "scripts/fixtures/stock-extended-demand.clif").read_text()
         # The source of the extended ALU operand is a shift, not a parameter.
         # This checks replay, actual allocation and exact emitted stock bytes.
         self.compare(source)
