@@ -1268,28 +1268,26 @@ construction). The ISLE facts use `native_decide` table checks over the exported
 Kill and Cov tables do. One program-independent fact remains a hypothesis: `SpillDefinedHyp`
 (definite assignment of the prepared VCode: availability sets with nothing available on entry,
 from which `checkAlloc`'s fixpoint, started from no vreg in its home, accepts the spill
-allocation).
+allocation), for input whose entry block has the signature's parameters.
 
-**`SpillDefinedHyp` is false; `SpillDefinedHypE` and the reduction to definedness**
-(2026-10-07, `FV/E2E/SpillDefined*.lean`, `FV/Backend/Proof/SpillDefined*.lean`,
-`FV/Backend/Proof/DefRuns.lean`, `FV/Backend/Proof/EntryParams.lean`). `lowerFunction` defines
-the entry block's parameters from the signature's locations (`entryParams` zips them), so an
-entry-block parameter beyond the signature's is never defined; nothing in `InSubset`,
-`Dominated`, `LowerScope`, `ArityOk` or `fnScopeB` excludes it (Cranelift's verifier does).
-`function %f() -> i64 { block0(v0: i64): return v0 }` passes `fnScopeB` and its `return` reads
-the undefined `v0`: `not_spillDefinedHyp`, so `crate_correct_inScope` is vacuous. The input
-condition `Spill.entryParamsB` (entry block parameters = signature parameters) repairs it; it
-holds for `a_arith` and `fv-demo` (`entryParams_input`, `entryParams_fvDemo`, `native_decide`).
+**The input condition `entryParamsB`; definite assignment reduced to definedness** (2026-10-07,
+`FV/E2E/SpillDefined*.lean`, `FV/Backend/Proof/SpillDefined*.lean`,
+`FV/Backend/Proof/DefRuns.lean`, `FV/Backend/Proof/EntryParams.lean`). The first statement of
+`SpillDefinedHyp` (without `entryParamsB`) was false, so the first `crate_correct_inScope` was
+vacuous: `lowerFunction` defines the entry block's parameters from the signature's locations
+(`entryParams` zips them), so an entry-block parameter beyond the signature's is never defined,
+and nothing in `InSubset`, `Dominated`, `LowerScope`, `ArityOk` or `fnScopeB` excluded it
+(Cranelift's verifier does). `function %f() -> i64 { block0(v0: i64): return v0 }` met all of
+them and its `return` reads the undefined `v0` (`not_spillDefinedHyp`,
+`FV/E2E/SpillDefinedFalse.lean`). `fnScopeB` (so `InScopeP`) now includes `Spill.entryParamsB`
+(entry block parameters = signature parameters), and `SpillDefinedHyp` assumes it; `InScopeP`
+with it still holds for `a_arith` and `fv-demo` (`InScopeWitness`), and `lean-e2e-check` counts it.
 
 ```lean
-theorem E2E.not_spillDefinedHyp : ¬ SpillDefinedHyp
+theorem E2E.not_spillDefinedHyp : ¬ ∀ p f vc vcp, InSubset p f → Spill.ArityOk f → Dominated f →
+    LowerScope f → lowerFunction f = .ok vc → prepare vc = .ok vcp →
+    ∃ D, Spill.SpillAvail vcp D ∧ ∀ v, D 0 v = false
 def Spill.entryParamsB (f : Clif.Function) : Bool   -- entry block params = signature params
-def E2E.SpillDefinedHypE : Prop  -- SpillDefinedHyp with entryParamsB f = true
-theorem E2E.LinkCheck.crate_correct_inScope_of (hck : ∀ g ∈ I.prog.funcs, SpillOkFn g)
-    (hin : InScopeP I = true) (hlk : linkerOkB I = true) (n : String) : CrateStmtT I n
-theorem E2E.LinkCheck.crate_correct_inScopeE (hD : SpillDefinedHypE) (hin : InScopeP I = true)
-    (hen : I.prog.funcs.all Spill.entryParamsB = true) (hlk : linkerOkB I = true) (n : String) :
-    CrateStmtT I n
 structure Spill.DefAvail (vc : VCode) (M : Nat → Nat → Bool) : Prop  -- SpillAvail's shape; every def defines
 theorem Spill.spillAvail_and (hK : SpillAvail vc K) (hM : DefAvail vc M) :
     SpillAvail vc (fun b v => K b v && M b v)
@@ -1301,10 +1299,9 @@ theorem Spill.paramArgs_of_lowOk (hv : LowOk vc) : ParamArgs vc
 def E2E.LowerDefinedHyp : Prop := ∀ p f vc, InSubset p f → Spill.ArityOk f → Dominated f →
     LowerScope f → Spill.entryParamsB f = true → lowerFunction f = .ok vc →
     ∃ M, Spill.DefAvail vc M ∧ ∀ v, M 0 v = false
-theorem E2E.spillDefinedHypE_of_lower (h : LowerDefinedHyp) : SpillDefinedHypE
+theorem E2E.spillDefinedHyp_of_lower (h : LowerDefinedHyp) : SpillDefinedHyp
 theorem E2E.LinkCheck.crate_correct_inScope_lower (hM : LowerDefinedHyp) (hin : InScopeP I = true)
-    (hen : I.prog.funcs.all Spill.entryParamsB = true) (hlk : linkerOkB I = true) (n : String) :
-    CrateStmtT I n
+    (hlk : linkerOkB I = true) (n : String) : CrateStmtT I n
 def DefRun.DefRunsHyp : Prop   -- per ISLE run: uses are reached CLIF values' vregs or fresh vregs
                                -- defined earlier in the run; results likewise (open)
 ```
@@ -1323,9 +1320,8 @@ so the uniform invariants of `KillGen`/`IselFlowCheck` cannot tell a temporary b
 from one after) — and the driver's assembly of the runs into `UsesDefined` (CLIF availability
 `availIn`/`FixOk` of `Dominated`, the segments of `Low`, alias resolution). Non-vacuity:
 `E2E.spillAvail_defined_witness`. Witness of the crate theorem:
-`crate-proofs/Crates/InScopeWitness.lean` decides `InScopeP`, `entryParamsB` and `linkerOkB` of
-`a_arith` (58 functions) and `fv-demo` (551) by `native_decide`; `InScopeP` and `linkerOkB`
-hold for all nine survey/demo crates with inputs in `crate-proofs/` (1023 functions).
+`crate-proofs/Crates/InScopeWitness.lean` decides `InScopeP` (with `entryParamsB`) and
+`linkerOkB` of `a_arith` (58 functions) and `fv-demo` (551) by `native_decide`.
 
 **Tooling.** `cargo fv build|test --keep-temps` keeps per codegen unit `fv-link.json`: per
 Lean-compiled function the CLIF file `lean-backend` compiled (with the self-call alias, or the

@@ -394,14 +394,13 @@ author's estimate, not measured), **Risk**.
   **Status (L2a):** `crate_correct_inScope (hD : SpillDefinedHyp) (hin : InScopeP I = true)
   (hlk : linkerOkB I = true) : CrateStmtT I n` (`FV/E2E/LinkScope.lean`; `okT_of_inScope`, `okT_sound`;
   docs/contracts/e2e.md "Without the checker (L2a)"): no `okB` premise; every own-output fact proven except
-  `SpillDefinedHyp`, which is false (`not_spillDefinedHyp`), so the statement is vacuous. The repaired
-  statement is `crate_correct_inScopeE (hD : SpillDefinedHypE) (hin) (hen : I.prog.funcs.all
-  Spill.entryParamsB = true) (hlk)`, and `crate_correct_inScope_lower` under `LowerDefinedHyp` (definite
-  assignment of `lowerFunction`'s VCode, program-independent, open). Neither route avoids definedness:
-  `AllocChecked` at the link level would need one VCode outcome for every initial vreg file, i.e. the same
-  fact. Witness: `crate-proofs/Crates/InScopeWitness.lean`
-  (`InScopeP`, `linkerOkB` of `a_arith` and `fv-demo` by `native_decide`; `base_closedT`); `InScopeP` and
-  `linkerOkB` hold for all nine crates with inputs in `crate-proofs/` (1023 functions).
+  `SpillDefinedHyp` (program-independent, open). Its first statement was false (`not_spillDefinedHyp`: an
+  entry-block parameter beyond the signature's is never defined), so `InScopeP` now includes
+  `entryParamsB` and `SpillDefinedHyp` assumes it. `SpillDefinedHyp` follows from `LowerDefinedHyp`
+  (definite assignment of `lowerFunction`'s VCode; `crate_correct_inScope_lower`). Neither route avoids
+  definedness: `AllocChecked` at the link level would need one VCode outcome for every initial vreg file,
+  i.e. the same fact. Witness: `crate-proofs/Crates/InScopeWitness.lean` (`InScopeP`, `linkerOkB` of
+  `a_arith` and `fv-demo` by `native_decide`; `base_closedT`).
 
 - **Depends:** L2a on V1–V6; L2b independent of them. **Risk:** L2b scope (archive handling, all
   relocation types std uses, TLS layout, `.eh_frame`).
