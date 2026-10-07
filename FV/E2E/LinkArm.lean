@@ -1714,17 +1714,19 @@ structure Ok : Prop where
   calls no pointer to itself) -/
   indScope : ∀ g ∈ L.P.funcs, ¬ Clif.IndFree g → Clif.IndScope L.P L.base L.syms
   indNoSym : ∀ g ∈ L.P.funcs, ¬ Clif.IndFree g → L.syms g.name = none
-  /-- the indirect calls of `g` and the functions it may reach whose signature one of them
-  matches (`IndSigMatch`: parameter types and purposes, return types; the whole-program run
-  enters no other, `Clif.stepCallIndirect`), or, for a function `g` declares (which the
-  per-function run may enter through any pointer to it), whose parameter types one of them has
-  (`IndTyMatch`), pass their arguments in registers and return no `sret` pointer -/
+  /-- the functions `g` may reach whose signature one of its indirect calls matches
+  (`IndSigMatch`: parameter types and purposes, return types; the whole-program run enters no
+  other, `Clif.stepCallIndirect`), or, for a function `g` declares (which the per-function run
+  may enter through any pointer to it), whose parameter types one of them has (`IndTyMatch`),
+  take their arguments in registers (an `sret` pointer in x8), and an indirect call of `g` with
+  their parameter types and as many declared returns has as many ABI returns (`sigRets`: both
+  or neither pass an `sret` pointer) -/
   indSig : ∀ g ∈ L.P.funcs, ¬ Clif.IndFree g →
-    (∀ sig ∈ indSigs g, sig.params.any (·.purpose == .sret) = false) ∧
     ∀ h ∈ L.P.funcs, L.MayCall g h.name → ((∃ sig ∈ indSigs g, IndSigMatch sig h) ∨
       (DeclN g h.name ∧ ∃ sig ∈ indSigs g, IndTyMatch sig h)) →
-      h.sig.params.any (·.purpose == .sret) = false ∧
-      ∃ bytes, sigParamBytes h.sig = .ok bytes ∧ bytes.length ≤ 8
+      (∃ bytes, sigParamBytes h.sig = .ok bytes ∧ bytes.length ≤ 8) ∧
+      ∀ sig ∈ indSigs g, IndTyMatch sig h → h.sig.returns.length = sig.returns.length →
+        (sigRets h.sig).length = (sigRets sig).length
   /-- when no program callee has stack slots (`NeedSlots` fails: the slot-placement oracle is
   not in play), a function of `P` has an outgoing-argument area and one has indirect calls, the
   functions with an address have no stack slots (an indirect call enters no slotted function);
@@ -3494,7 +3496,7 @@ theorem xCallsIndOk (hL : L.Ok) (hκ : L.Budget κ) {M : Nat} (ih : 0 < M → L.
     subst hname
     have hnf : ¬ Clif.IndFree g := fun hif => by
       rw [indSigs_nil_of_indFree hif] at hsig; cases hsig
-    obtain ⟨hsigNS, hdeclS⟩ := hL.indSig g hg hnf
+    have hdeclS := hL.indSig g hg hnf
     have hs : symCallee L.Xb L.P (lo64 u) = some h := by
       show L.P.funcs.find? (fun h' => L.Xb.sym h'.name 0 == lo64 u) = some h
       rw [hu]; exact (L.find_sym hL h.name).1 h hpf
@@ -3513,8 +3515,8 @@ theorem xCallsIndOk (hL : L.Ok) (hκ : L.Budget κ) {M : Nat} (ih : 0 < M → L.
       have := congrArg List.length hce.sig
       simpa using this
     -- the call entered `h`: its parameter types are the call site's
-    obtain ⟨hnsr, bytes, hb, hb8⟩ :=
-      hdeclS h hh hdecl (L.indReach hpf hdecl hsig (hce.sig.symm.trans hty))
+    have hmty : IndTyMatch sig h := hce.sig.symm.trans hty
+    obtain ⟨⟨bytes, hb, hb8⟩, hsr⟩ := hdeclS h hh hdecl (L.indReach hpf hdecl hsig hmty)
     have hargs : ArgsAt h.sig vals args w := (argsAt_iff_of_regs hb hb8 hvl).mpr hall
     have hsav : StackArgsAvoid F h.sig vals w := by
       intro off v hm
@@ -3535,8 +3537,8 @@ theorem xCallsIndOk (hL : L.Ok) (hκ : L.Budget κ) {M : Nat} (ih : 0 < M → L.
     refine ⟨outs, w', ?_, ?_, hho, hmr'⟩
     · rw [L.X_ind hs, if_pos ⟨L.indTo_of hpf hdecl, argsAt_regLocs hargs⟩]
       exact hx
-    · rw [hol, sigRets_of_noSret hnsr, sigRets_of_noSret (hsigNS sig hsig)]
-      exact hretlen
+    · rw [hol]
+      exact hsr sig hsig hmty hretlen
 
 /-! ## Non-interference of the linked calls -/
 
@@ -3752,7 +3754,7 @@ theorem xni (hL : L.Ok) (hN : L.NeedNI) {M : Nat} (ih : 0 < M → L.Thm κ (M - 
         exact ⟨h1, h2⟩
       · have hnf : ¬ Clif.IndFree g := fun hif => by
           rw [indSigs_nil_of_indFree hif] at hsig; cases hsig
-        obtain ⟨-, hdeclS⟩ := hL.indSig g hg hnf
+        have hdeclS := hL.indSig g hg hnf
         -- the call entered `h`: its parameter types are the call's signature's
         have hmatch : IndTyMatch sig h := by
           rcases hkind with ⟨e', he', hen', hes⟩ | ⟨-, hty⟩
@@ -3760,7 +3762,7 @@ theorem xni (hL : L.Ok) (hN : L.NeedNI) {M : Nat} (ih : 0 < M → L.Thm κ (M - 
             rw [← hes, this]
             rfl
           · exact hce.sig.symm.trans hty
-        obtain ⟨-, bytes, hb, hb8⟩ := hdeclS h hh hdecl (L.indReach hpf hdecl hsig hmatch)
+        obtain ⟨⟨bytes, hb, hb8⟩, -⟩ := hdeclS h hh hdecl (L.indReach hpf hdecl hsig hmatch)
         exact ⟨(argsAt_iff_of_regs hb hb8 hvl).mpr hall, (argsAt_iff_of_regs hb hb8 hvl).mpr hall⟩
     rcases hd with ⟨rfl, rfl⟩ | ⟨rfl, u, rfl, hu⟩
     · rw [L.X_prog hpf] at hx hx'

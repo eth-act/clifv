@@ -763,14 +763,20 @@ def indSigB (g h : Clif.Function) : Bool :=
   (indSigs g).any (fun s => decide (LinkSys.IndSigMatch s h)) ||
     (declB g h.name && (indSigs g).any (fun s => decide (LinkSys.IndTyMatch s h)))
 
+/-- An indirect call of `g` with `h`'s parameter types and as many declared returns has as many
+ABI returns (`sigRets`; `LinkSys.Ok.indSig`). -/
+def indRetsB (g h : Clif.Function) : Bool :=
+  (indSigs g).all fun s => !decide (LinkSys.IndTyMatch s h) ||
+    h.sig.returns.length != s.returns.length || (sigRets h.sig).length == (sigRets s).length
+
 /-- The scope of the indirect calls of `g` (`indScope`'s declarations, `indNoSym`, `indSig`),
 with the CLIF image's symbols `S`: the functions `g` may call that one of its indirect calls can
-enter (`indSigB`) take register arguments and no `sret`. -/
+enter (`indSigB`) take register arguments (an `sret` pointer in x8) and have as many ABI returns
+as the indirect calls of their parameter types (`indRetsB`). -/
 def indB (P : Clif.Program) (S : String → Option Nat) (g : Clif.Function) : Bool :=
-  indFreeB g || ((indSigs g).all (fun s => !s.params.any (·.purpose == .sret)) &&
-    P.funcs.all (fun h => !mayB S g h.name || !indSigB g h ||
-      (!h.sig.params.any (·.purpose == .sret) &&
-      (match sigParamBytes h.sig with | .ok b => decide (b.length ≤ 8) | .error _ => false))) &&
+  indFreeB g || (P.funcs.all (fun h => !mayB S g h.name || !indSigB g h ||
+      ((match sigParamBytes h.sig with | .ok b => decide (b.length ≤ 8) | .error _ => false) &&
+        indRetsB g h)) &&
     S g.name == none)
 
 /-- The machine's address of every function of `P` is no other symbol's (`Ok.symInj`): it is
@@ -1062,20 +1068,32 @@ theorem facts {I : LinkInput} (h : okB I = true) {g : Clif.Function}
     (hg : g ∈ (progOf I.results).funcs) : Facts I I.results g (artOf I.results g) :=
   factsR (results_ok I) h hg
 
+theorem indRetsB_sound {g h : Clif.Function} (hr : indRetsB g h = true) :
+    ∀ sig ∈ indSigs g, LinkSys.IndTyMatch sig h → h.sig.returns.length = sig.returns.length →
+      (sigRets h.sig).length = (sigRets sig).length := by
+  intro sig hs hm hl
+  have := List.all_eq_true.mp hr sig hs
+  simp only [Bool.or_eq_true, Bool.not_eq_true', decide_eq_false_iff_not, bne_iff_ne, ne_eq,
+    beq_iff_eq] at this
+  rcases this with (h1 | h1) | h1
+  · exact absurd hm h1
+  · exact absurd hl h1
+  · exact h1
+
 theorem indFactsR {I : LinkInput} {R : Res} (hR : ResOk I R) (h : okR I R = true) {g : Clif.Function}
     (hg : g ∈ (progOf R).funcs) (hnf : ¬ Clif.IndFree g) :
-    (∀ sig ∈ indSigs g, sig.params.any (·.purpose == .sret) = false) ∧
     (∀ h ∈ (progOf R).funcs, mayB (fun n => I.syms.lookup n) g h.name = true →
       ((∃ sig ∈ indSigs g, LinkSys.IndSigMatch sig h) ∨
         (DeclN g h.name ∧ ∃ sig ∈ indSigs g, LinkSys.IndTyMatch sig h)) →
-      h.sig.params.any (·.purpose == .sret) = false ∧
-      ∃ bytes, sigParamBytes h.sig = .ok bytes ∧ bytes.length ≤ 8) ∧
+      (∃ bytes, sigParamBytes h.sig = .ok bytes ∧ bytes.length ≤ 8) ∧
+      ∀ sig ∈ indSigs g, LinkSys.IndTyMatch sig h → h.sig.returns.length = sig.returns.length →
+        (sigRets h.sig).length = (sigRets sig).length) ∧
     I.syms.lookup g.name = none := by
   have h := (factsR hR h hg).ind
   simp only [indB, Bool.or_eq_true, Bool.and_eq_true, List.all_eq_true] at h
-  rcases h with h | ⟨⟨h1, h2⟩, h3⟩
+  rcases h with h | ⟨h2, h3⟩
   · exact absurd (indFreeB_sound h) hnf
-  refine ⟨fun sig hs => by simpa using h1 sig hs, fun h' hh hd hm => ?_, by simpa using h3⟩
+  refine ⟨fun h' hh hd hm => ?_, by simpa using h3⟩
   have hany : indSigB g h' = true := by
     simp only [indSigB, Bool.or_eq_true, Bool.and_eq_true, List.any_eq_true, decide_eq_true_eq]
     rcases hm with ⟨sig, hs, hm⟩ | ⟨hdn, sig, hs, hm⟩
@@ -1083,9 +1101,12 @@ theorem indFactsR {I : LinkInput} {R : Res} (hR : ResOk I R) (h : okR I R = true
     · exact .inr ⟨declB_of hdn, sig, hs, hm⟩
   have h2' := h2 h' hh
   rw [hd, hany] at h2'
-  revert h2'
-  cases hs : h'.sig.params.any (·.purpose == .sret) <;>
-    cases hb : sigParamBytes h'.sig <;> simp_all
+  rcases h2' with (e | e) | ⟨hb8, hr⟩
+  · cases e
+  · cases e
+  refine ⟨?_, indRetsB_sound hr⟩
+  revert hb8
+  cases hb : sigParamBytes h'.sig <;> simp
 
 theorem addrOf_of_lookup {I : LinkInput} {n : String} {b : Nat} (h : I.addrs.lookup n = some b) :
     I.addrOf n = b := by
@@ -1186,9 +1207,8 @@ theorem okR_sound {I : LinkInput} {R : Res} (hR : ResOk I R) (hI : okR I R = tru
       raBlr := fun g hg info hs hreg h hh hmay pc hpc =>
         raCallB_sound (fa hg).ra hpc _ (tab_mem hn hh) (mayCall_ne hmay)
       indScope := fun g hg hnf => ⟨hB.keepSyms ⟨g, hg, hnf⟩, ?_, hB.aliasSyms ⟨g, hg, hnf⟩⟩
-      indNoSym := fun g hg hnf => (indFactsR hR hI hg hnf).2.2
-      indSig := fun g hg hnf => ⟨(indFactsR hR hI hg hnf).1,
-        fun h hh hmay hm => (indFactsR hR hI hg hnf).2.1 h hh (mayB_of hmay) hm⟩
+      indNoSym := fun g hg hnf => (indFactsR hR hI hg hnf).2
+      indSig := fun g hg hnf h hh hmay hm => (indFactsR hR hI hg hnf).1 h hh (mayB_of hmay) hm
       addrSlots := fun hN ⟨g, hg, hout⟩ ⟨g', hg', hind⟩ h hh hs => ?_
       symInj := fun h hh n hn => ?_
       declSig := fun g hg e he h hf => (fa hg).declSig e he h hf
