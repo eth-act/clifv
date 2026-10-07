@@ -7,6 +7,7 @@ import FV.Backend.Proof.SpillArity
 import FV.Backend.Proof.SpillAvail
 import FV.Backend.Proof.RelaxReady
 import FV.E2E.EmitSize
+import FV.E2E.SizeDefs
 import FV.E2E.EmitNear
 import FV.E2E.EmitLabels
 import FV.E2E.EmitEnc
@@ -182,6 +183,8 @@ def main (args : List String) : IO UInt32 := do
   let mut tSpill := 0
   let mut arity := 0
   let mut extW := 0
+  let mut szIn := 0
+  let mut szInMax := 0
   let mut emitOk := 0
   let mut emitBad := 0
   let mut readyOk := 0
@@ -235,6 +238,10 @@ def main (args : List String) : IO UInt32 := do
       else IO.println s!"{file}: %{f.name}: arityOkB fails (a branch argument count differs from its target's parameter count)"
       if Backend.Proof.Driver.extendsWidenB f then extW := extW + 1
       else IO.println s!"{file}: %{f.name}: extendsWidenB fails (a uextend/sextend that does not widen)"
+      let bIn := E2E.sizeBoundIn f
+      if bIn > szInMax then szInMax := bIn
+      if E2E.sizeOkB f then szIn := szIn + 1
+      else IO.println s!"{file}: %{f.name}: sizeOkB fails ({bIn} words, need < 2^24): out of scope"
       let r ← IO.lazyPure (fun _ => lowerCheck f vc)
       let t2 ← IO.monoMsNow
       if t2 - t0 > 2000 then IO.println s!"{file}: %{f.name}: lowerFunction {t1 - t0} ms, lowerCheck {t2 - t1} ms"
@@ -324,6 +331,7 @@ def main (args : List String) : IO UInt32 := do
   IO.println s!"lowerCheck_complete conditions: dominatedB {dom}, lowerScopeB {scope}, both {both} (of {ok + bad} checked)"
   IO.println s!"arityOkB {arity} of {ok + bad}"
   IO.println s!"extendsWidenB (IselEmitDefs, every uextend/sextend widens; input condition of backend_correct_final_total_emit_in) {extW} of {ok + bad}"
+  IO.println s!"sizeOkB (SizeDefs, input-side size bound; input condition of backend_correct_final_total_emit_input) {szIn} of {ok + bad}; largest bound {szInMax} words (limit 2^24)"
   IO.println s!"formsCoveredB: {cov} covered, {uncov} not covered"
   for (k, n) in forms.toList.mergeSort (fun a b => a.2 ≥ b.2) do
     IO.println s!"  uncovered form {k}: {n} instructions"
