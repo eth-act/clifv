@@ -1,4 +1,5 @@
 import FV.Backend.Proof.DefGenSoundAt
+import FV.Backend.Proof.DefGenModel
 import FV.Backend.Proof.DefGenTab
 import FV.Backend.Proof.KillDriver
 
@@ -415,5 +416,9 @@ theorem tabHyp : TabHyp := ⟨tabOK, rootLower, rootBranch⟩
 /-- **`DefRunsHyp`** from the model. -/
 theorem defRunsHyp_of_model (hmod : DModelHyp) : DefRunsHyp :=
   defRunsHyp_of dRootHyp tabHyp hmod
+
+/-- **`DefRunsHyp`**: the definedness facts of the ISLE runs. -/
+theorem defRunsHyp : DefRunsHyp :=
+  defRunsHyp_of_model fun _ _ _ h => dModel h.reg h.regLt h.root h.inst h.defI h.args h.tryR
 
 end Backend.Proof.DefRun
