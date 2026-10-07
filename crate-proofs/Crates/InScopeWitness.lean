@@ -6,7 +6,8 @@ import FV.E2E.SpillDefined
 
 `E2E.LinkCheck.crate_correct_inScope` (`FV/E2E/LinkScope.lean`) needs of a crate only the input
 conditions `InScopeP` and the linker's facts `linkerOkB` (besides the program-independent open
-fact `SpillDefinedHyp`, which follows from `LowerDefinedHyp`: `crate_correct_lower`). Both hold
+fact `SpillDefinedHyp`, which follows from `LowerDefinedHyp`: `crate_correct_lower`, which follows
+from the facts of the ISLE runs `DefRunsHyp`: `crate_correct_runs`). Both hold
 for the survey crate `a_arith` (`Crates.AArith.input`, 58
 functions) and for `fv-demo` (`Crates.FvDemo.input`, 551 functions): decided by
 `native_decide` (`fvcheck` holds the compiled code of `FV.E2E.LinkScopeDefs`). The closed
@@ -36,6 +37,11 @@ theorem crate_correct (hD : SpillDefinedHyp) (n : String) : CrateStmtT Crates.AA
 theorem crate_correct_lower (hM : LowerDefinedHyp) (n : String) : CrateStmtT Crates.AArith.input n :=
   crate_correct_inScope_lower hM inScope_input linker_input n
 
+/-- `crate_correct` under the facts of the ISLE runs (`DefRunsHyp`, which give `LowerDefinedHyp`). -/
+theorem crate_correct_runs (hR : Backend.Proof.DefRun.DefRunsHyp) (n : String) :
+    CrateStmtT Crates.AArith.input n :=
+  crate_correct_inScope_runs hR inScope_input linker_input n
+
 /-- The closed base environment satisfies the base premises of `a_arith`'s linked system. -/
 theorem base_closedT (F : BitVec 64 → Prop) :
     BaseOk (LinkSys.ofInputT Crates.AArith.input closedBase F) :=
@@ -55,5 +61,10 @@ theorem crate_correct_fvDemo (hD : SpillDefinedHyp) (n : String) : CrateStmtT Cr
 theorem crate_correct_fvDemo_lower (hM : LowerDefinedHyp) (n : String) :
     CrateStmtT Crates.FvDemo.input n :=
   crate_correct_inScope_lower hM inScope_fvDemo linker_fvDemo n
+
+/-- `crate_correct_fvDemo` under the facts of the ISLE runs. -/
+theorem crate_correct_fvDemo_runs (hR : Backend.Proof.DefRun.DefRunsHyp) (n : String) :
+    CrateStmtT Crates.FvDemo.input n :=
+  crate_correct_inScope_runs hR inScope_fvDemo linker_fvDemo n
 
 end Crates.InScopeWitness

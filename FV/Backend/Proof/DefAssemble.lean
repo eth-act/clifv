@@ -3,15 +3,16 @@ import FV.Backend.Proof.KillTryDefs
 import FV.Backend.Proof.KillDriver
 import FV.Backend.Proof.SpillCtlPipe
 import FV.Backend.Proof.EntryParams
+import FV.Backend.Proof.SpillDefinedArgs
 
 /-!
 # Definite assignment of `lowerFunction`'s VCode from the run facts
 
-`lowerDefined_of_runs`: under the run facts `DefRunsHyp`, `lowerFunction`'s VCode on in-scope
+`lower_defined`: under the run facts `DefRunsHyp`, `lowerFunction`'s VCode on in-scope
 input with the signature's entry parameters (`entryParamsB`) has definedness sets with nothing
-defined on entry. By `Spill.defined_of_paths` it suffices that every use is defined on every path
-of the CFG that reaches it (`UsesDefined`) and that every edge into a block with parameters
-passes an argument for each (`ParamArgs`, from `LowOk`).
+defined on entry. By `Spill.defined_of_paths'` it suffices that every use is defined on every
+path of the CFG that reaches it (`UsesDefined`, `usesDefined_lower`) and that every edge into a
+block with parameters passes an argument for each (`ParamArgs`, `Spill.paramArgs_of_lowOk`).
 
 The path invariant (`Inv`): on entry to the code of CLIF block `bi`, the vregs of the values
 available there (`availIn`, renamed) and, but for the entry block, its parameters are defined
@@ -528,23 +529,6 @@ theorem edgeAvail_nil {vb sb : VBlock} {X : Nat → Bool} {v : Nat} (h : sb.para
     edgeAvail vb sb X v = X v := by
   unfold edgeAvail; rw [h]; rfl
 
-/-- **Every edge into a block with parameters passes an argument for each** (`LowOk`). -/
-theorem paramArgs_low {vc : VCode} (hv : LowOk vc) : ParamArgs vc := by
-  intro succs preds hc b vb ss s sb hvbb hss hs' hsb k p hp
-  obtain ⟨t, ts, ht, -, -, -⟩ := (Prep.cfg_spec hc).blk b vb hvbb
-  have hst := asm_succs hv hc hvbb ht hss
-  rw [hst] at hs'
-  by_cases hba : vb.branchArgs = #[]
-  · have := hv.noArgs b vb t s sb hvbb hba ht hs' hsb
-    rw [this] at hp; simp at hp
-  · obtain ⟨l, tb, hj, htb, hsz, -, -⟩ := hv.args b vb hvbb hba
-    rw [ht] at hj; cases hj
-    simp only [MInst.targets, List.mem_singleton] at hs'
-    subst hs'
-    rw [hsb] at htb; cases htb
-    have hk : k < sb.params.size := (Array.getElem?_eq_some_iff.mp hp).1
-    exact ⟨_, Array.getElem?_eq_getElem (by omega)⟩
-
 /-- **The path invariant**: on entry to CLIF block `b`'s code, `GoodC b` is defined; on entry to
 an edge block of CLIF block `bi`, `EndDef bi`. -/
 def Inv (f : Clif.Function) (ctx : Ctx) (bl : List BLow) (b : Nat) (A : Nat → Bool) : Prop :=
@@ -869,11 +853,7 @@ theorem lower_defined (hR : DefRunsHyp) {f : Clif.Function} {vc : VCode} (hd : D
     rw [hb] at hb'
     cases hb'
     exact hbt'
-  by_cases hc : ∃ succs preds, vc.cfg = .ok (succs, preds)
-  · exact defined_of_paths hc (usesDefined_lower hb hd hs ha hlb hlf hR hen hE hl H hv hbt)
-      (paramArgs_low hv)
-  · exact ⟨fun _ _ => false,
-      ⟨fun succs preds h => absurd ⟨succs, preds, h⟩ hc,
-       fun succs preds h => absurd ⟨succs, preds, h⟩ hc⟩, fun _ => rfl⟩
+  exact defined_of_paths' (usesDefined_lower hb hd hs ha hlb hlf hR hen hE hl H hv hbt)
+    (paramArgs_of_lowOk hv)
 
 end Backend.Proof.DefRun
