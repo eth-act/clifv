@@ -160,10 +160,11 @@ outside part. What stays checked is about the outside file only.
 * `Link.leanLink_linkerOk (h : leanLink S file0 = .ok file) : linkerOkB S.input = true`.
 * `Link.artOk_of_image` (`RelocProof.lean`): resolved words in the file ⇒ `ArtOk`.
 * `Link.leanLink_code (h) : ∀ e ∈ tabOf S.input.resultsT, ArtOk S.input file e.2`,
-  `Link.leanLink_static'` (no premise), `Link.BinOkT` (`BinOk` with the code of the compiler's
-  pipeline, `resultsT`, which the executable runs) and **`Link.binOk_leanLink (h) : BinOkT
-  S.input S.data file`** (no premise; `OutsideProof.lean`, `Correct.lean`); stage 1's
-  `leanLink_static`, `binOkT_leanLink` (with the outside facts as premises) are kept.
+  `Link.leanLink_static'` (no premise) and **`Link.binOk_leanLink (h) : BinOk S.input S.data
+  file`** (no premise; `OutsideProof.lean`, `Correct.lean`): `S.input`'s pipeline is the
+  compiler's (`LinkInput.fallback`, so `S.input.results = S.input.resultsT`, the code the
+  executable runs); stage 1's `leanLink_static`, `binOkT_leanLink` (with the outside facts as
+  premises) are kept.
 * `Link.crate_correct_leanLink (hD : SpillDefinedHyp) (hin : InScopeP S.input) (h : leanLink S
   file0 = .ok file) : CrateStmtT S.input n` — the crate theorem without `linkerOkB` (its axioms
   are `crate_correct_inScope`'s; `InScopeP` includes `entryParamsB` since #82, without which
@@ -228,7 +229,7 @@ those bytes too (design (b)).
 2. **Self-calling functions that take their own address**: outside the region (fallback); the
    theorem's alias model gives the alias a fresh address. Covering them needs the alias at the
    function's address in `LinkSys` (`symInj` would have to allow it).
-3. **The binary theorem on the Lean linker's output**: `binary_correct_*` take `BinOk` of the
-   checker's pipeline `pipe` and `okB`; a variant from `BinOkT` (the compiler's `resultsT`) and
-   `crate_correct_leanLink` would make `cargo fv --lean-link`'s executables covered without any
-   per-crate check of the program part (L1).
+3. **The binary theorem on the Lean linker's output**: done (L1, `Link.compileExe_correct`,
+   `FV/Link/Exe.lean`; docs/contracts/e2e.md "The executable compiler"): the binary chain is
+   stated for `I.results`, which with `fallback` are the compiler's; `leanLink` also checks the
+   code map `codeMapB`, and its output has no GOT slot (`leanLink_gotSlot`).

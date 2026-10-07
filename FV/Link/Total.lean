@@ -8,7 +8,7 @@ import FV.E2E.SpillDefined
 
 `leanLink_total_of`: `leanLink` succeeds when its checks hold, each from a stated cause:
 
-* the pipeline (`pipeT_ok` under `InScopeP` and `SpillDefinedHyp`);
+* the pipeline (`pipeT_ok` under `InScopeP`, definite assignment proven: `spillDefinedHyp`);
 * the names and sizes: the driver's (`S.names`, `S.sizes`) are the CLIF functions' names and the
   compiled code's sizes (`pipeT_fb`: the code does not depend on the load address);
 * the relocations: their shapes (`relocShapesB`, a property of the compiler's output) and their
@@ -69,20 +69,20 @@ theorem sizes_of {S : LinkSpec} (hal : S.aliasFns = []) (hs : S.sizes = S.sizesO
   rw [pipeT_fb]
 
 /-- The compiler's pipeline accepts every function of an in-scope input. -/
-theorem results_of (hD : SpillDefinedHyp) {S : LinkSpec} (hin : InScopeP S.input0 = true) :
+theorem results_of {S : LinkSpec} (hin : InScopeP S.input0 = true) :
     S.input.resultsT.all (·.2.toBool) = true := by
   simp only [InScopeP, Bool.and_eq_true, List.all_eq_true] at hin
   rw [List.all_eq_true]
   intro e he
   obtain ⟨fi, hfi, rfl⟩ := List.mem_map.1 he
   have hsc := hin.2 fi.func (List.mem_map_of_mem hfi)
-  obtain ⟨a, ha, -⟩ := pipeT_ok hsc hD fi.k (BitVec.ofNat 64 (S.input.baseOf fi.func.name))
+  obtain ⟨a, ha, -⟩ := pipeT_ok hsc spillDefinedHyp fi.k (BitVec.ofNat 64 (S.input.baseOf fi.func.name))
     (raJ fi.ra fi.j)
   simp only [ha]
   rfl
 
 /-- **`leanLink` succeeds** when its checks hold, from their causes (module doc). -/
-theorem leanLink_total_of (hD : SpillDefinedHyp) {S : LinkSpec} {file0 : ByteArray}
+theorem leanLink_total_of {S : LinkSpec} {file0 : ByteArray}
     {phs : List Phdr} (hph : phdrs (fileRd file0) = some phs) (hin : InScopeP S.input0 = true)
     (hp : S.placeOkB = true) (hal : S.aliasFns = [])
     (hn : S.names = S.funcs.map (·.func.name)) (hs : S.sizes = S.sizesOf)
@@ -98,7 +98,7 @@ theorem leanLink_total_of (hD : SpillDefinedHyp) {S : LinkSpec} {file0 : ByteArr
     have := hP.aliasFns
     rw [hal] at this
     exact List.map_eq_nil_iff.1 this.symm
-  have hr := results_of hD hin
+  have hr := results_of hin
   have hnm := names_of hal hn
   have hsz := sizes_of hal hs
   have hv : (tabOf S.input0.resultsT).all (fun e => relocsOkB S.input (tpOff phs) e.2) = true :=

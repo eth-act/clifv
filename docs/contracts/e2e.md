@@ -1382,19 +1382,21 @@ theorem Link.linkerOkB_place_alias (hp : S.placeOkB = true)
 theorem Link.leanLink_linkerOk (h : leanLink S file0 = .ok file) : linkerOkB S.input = true
 theorem Link.leanLink_code (h : leanLink S file0 = .ok file) :
     ∀ e ∈ tabOf S.input.resultsT, ArtOk S.input file e.2
-structure Link.BinOkT (I) (D) (file) : Prop   -- BinOk with the code of `resultsT`
-theorem Link.binOk_leanLink (h : leanLink S file0 = .ok file) : BinOkT S.input S.data file
+theorem LinkSpec.input_results : S.input.results = S.input.resultsT  -- `fallback := true`
+theorem Link.binOk_leanLink (h : leanLink S file0 = .ok file) : BinOk S.input S.data file
 theorem Link.leanLink_static' (h : leanLink S file0 = .ok file) : Static file
 theorem Link.binOkT_leanLink (h) (hs : Static file0) (hd : ∀ o ∈ D, DataOk S.input file o)
-    (hy : SymsOk S.input file) : BinOkT S.input D file        -- stage 1, kept
+    (hy : SymsOk S.input file) : BinOk S.input D file        -- stage 1, kept
 theorem Link.crate_correct_leanLink (hD : SpillDefinedHyp) (hin : InScopeP S.input = true)
     (h : leanLink S file0 = .ok file) (n : String) : CrateStmtT S.input n
 theorem Link.crate_correct_leanLink_lower (hM : LowerDefinedHyp) (hin : InScopeP S.input = true)
     (h : leanLink S file0 = .ok file) (n : String) : CrateStmtT S.input n
+theorem Link.crate_correct_leanLink_proven (hin : InScopeP S.input = true)
+    (h : leanLink S file0 = .ok file) (n : String) : CrateStmtT S.input n
 ```
 
 So with the Lean linker the crate theorem has no `linkerOkB` premise (self-call aliases
-included) and `BinOkT` has no premise: `linkerOkB` and the code are proven by construction; the
+included) and `BinOk` has no premise: `linkerOkB` and the code are proven by construction; the
 facts about the bytes rust-lld wrote — the headers (`Static`), cg_clif's data objects
 (`DataOk`), the symbol table (`SymsOk`, which for the program's functions is that rust-lld put
 them at their placement) and the region's segment (`regionOkB`) — are `leanLink`'s checks of
@@ -1404,6 +1406,56 @@ rust-lld's output (`regionOkB`, `outsideOkB`), so a failure is a link error. Wit
 survey crates (18 executables), `fv-demo` (self-call aliases) and `examples/deps`' `deps-demo`
 (17,090 functions) link and run; unverified functions and self-calling functions that take
 their own address keep cg_clif's code.
+
+**The executable compiler (L1, `FV/Link/Compile.lean`, `Exe.lean`, `ExeTotal.lean`).** The
+binary chain (`okB`, `BinOk`, `binary_correct_*`, `binary_correct_exec_proven`) is stated for
+`LinkInput.results`; the input's `fallback` field selects its pipeline: `false` (the default,
+every generated crate input and `link-check`) the checker's `pipe` (regalloc2's answer as given),
+`true` the compiler's `pipeT` (`LinkInput.results_fallback : I.fallback = true → I.results =
+I.resultsT`, `okB_fallback : okB I = okR I I.resultsT`: the same checks on the compiler's own
+output). `LinkSpec.input0` sets it, so every theorem of the chain applies to `leanLink`'s input.
+
+```lean
+def Link.compileExe (S : LinkSpec) (file0 : ByteArray) : Except String ByteArray :=
+  if InScopeP S.input0 then leanLink S file0 else .error "…"
+-- leanLink also checks `codeMapB S.input (tabOf S.input.resultsT)` (cheap; alias-free: proven)
+theorem Link.okB_leanLink (hin : InScopeP S.input = true) (h : leanLink S file0 = .ok file) :
+    okB S.input = true                                  -- okT_of_inScope, spillDefinedHyp
+theorem Link.leanLink_gotSlot (h : leanLink S file0 = .ok file) (a) : ¬ GotSlot S.input file a
+theorem Link.gotOk_leanLink (h) : GotOk S.input file        -- no GOT slot: adrp+add
+theorem Link.compileExe_correct (h : compileExe S file0 = .ok file) (B : BaseEnv)
+    (hB : BaseOk (sys S.input B)) (hH : HooksSim S.input B) (hf : (prog S.input).func? n = some f)
+    (hc : ¬ StackBound.CycleFrom (StackBound.Calls S.input S.input.results) f) (M : Nat)
+    (hX : (imageOf file).Intact r)
+    (ho : OutsideCall S.input (roByte S.input S.data) f (StackBound.stackFn S.input f) r args cs.mem)
+    (hr : ClifRun S.input B f r args cs)
+    (htr : TrapsExplicit (Clif.linkEnvN (prog S.input) B.env M) ((prog S.input).only f) cs) :
+    ExecRefines (art S.input f).fb (art S.input f).base (xreg 30 r) (step S.input B file) r
+      (RelocAt S.input) (Clif.runLoop B.env (prog S.input) (M + 1) cs)
+def Link.relocShapeB (a : Art) (r : Reloc) / relocRangeB (I) (tp) (a) (r) : Bool
+                                   -- relocOkB = shape (code) ∧ range (addresses): relocOkB_of
+theorem Link.relocShapes_of_pipeT (ha : pipeT g k base o = .ok a) : relocShapesB a = true
+theorem Link.codeMap_place (hp) (hr) (hn) (hs) (hal : S.aliasFns = []) :
+    codeMapB S.input (tabOf S.input.resultsT) = true
+theorem Link.compileExe_total (hin : InScopeP S.input0 = true) (hal : S.aliasFns = [])
+    (hp : S.placeOkB = true) (hn : S.names = S.funcs.map (·.func.name)) (hs : S.sizes = S.sizesOf)
+    (hrange : ∀ e ∈ tabOf S.input.resultsT, ∀ r ∈ e.2.fb.relocs,
+      relocRangeB S.input (tpOff phs) e.2 r = true)
+    (hph : phdrs (fileRd file0) = some phs) (hreg : regionOkB file0 S.R (regionOf S (tpOff phs)).size
+      (offsetOf phs S.R) = true)
+    (hout : outsideOkB S.input S.data (patch file0 (offsetOf phs S.R) (regionOf S (tpOff phs))) = true) :
+    compileExe S file0 = .ok (patch file0 (offsetOf phs S.R) (regionOf S (tpOff phs)))
+```
+
+`compileExe_correct` has no per-program premise and no open hypothesis about the compiler; its
+premises are the outside code's contracts and the CLIF-level condition that no call cycle is
+reachable from the entered function. `compileExe_total`'s hypotheses are the input conditions,
+the scope limit "no self-call alias" (with aliases, `aliasOkB`/`aliasShapeB`/`codeMapB` stay
+`leanLink`'s checks), the driver's data, the addresses (the relocations' reach) and rust-lld's
+output. Witness: `crate-proofs/Crates/CompileExeWitness.lean` (`a_arith`: `compile_eq`,
+`correct_closed`, `total_witness`). `lake exe lean-link` runs `compileExe`; on an input outside
+`InScopeP` it prints the failing conditions and links with `leanLink` (not covered by
+`compileExe_correct`).
 
 **Tooling.** `cargo fv build|test --keep-temps` keeps per codegen unit `fv-link.json`: per
 Lean-compiled function the CLIF file `lean-backend` compiled (with the self-call alias, or the

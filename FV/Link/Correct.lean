@@ -160,4 +160,11 @@ theorem crate_correct_leanLink_lower (hM : LowerDefinedHyp) {S : LinkSpec}
     (n : String) : CrateStmtT S.input n :=
   crate_correct_inScope_lower hM hin (leanLink_linkerOk h) n
 
+/-- **The crate statement of an in-scope input linked by `leanLink`**, no open hypothesis
+(`crate_correct_inScope_proven`: definite assignment proven). -/
+theorem crate_correct_leanLink_proven {S : LinkSpec} {file0 file : ByteArray}
+    (hin : InScopeP S.input = true) (h : leanLink S file0 = .ok file) (n : String) :
+    CrateStmtT S.input n :=
+  crate_correct_inScope_proven hin (leanLink_linkerOk h) n
+
 end Link

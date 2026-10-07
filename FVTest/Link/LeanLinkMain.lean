@@ -105,14 +105,27 @@ def main (args : List String) : IO UInt32 := do
     symNames := symNames
     R := R }
   let file0 ← IO.FS.readBinFile exe
+  let summary := s!"{names.length} function(s) ({aliases.size} self-call alias(es)), {S.data.length} data object(s), region {hex R}..{hex (R + S.size)} ({S.size} bytes)"
   match compileExe S file0 with
-  | .error e => do
-    IO.eprintln s!"lean-link: {exe}: {e}"
-    if !InScopeP S.input0 then
-      let bad := S.input0.prog.funcs.filter (!fnScopeB ·) |>.map (·.name)
-      IO.eprintln s!"lean-link: out of scope: {if bad.isEmpty then "the program-level conditions (progScopeB)" else s!"{bad.length} function(s) failing fnScopeB, first {bad.take 5}"}"
-    return 1
   | .ok file =>
     IO.FS.writeBinFile exe file
-    IO.println s!"lean-link: {exe}: {names.length} function(s) ({aliases.size} self-call alias(es)), {S.data.length} data object(s), region {hex R}..{hex (R + S.size)} ({S.size} bytes) written by Link.compileExe"
+    IO.println s!"lean-link: {exe}: {summary} written by Link.compileExe (Link.compileExe_correct)"
     return 0
+  | .error e =>
+    if e != outOfScopeMsg then
+      IO.eprintln s!"lean-link: {exe}: {e}"
+      return 1
+    -- outside `compileExe`'s input conditions: the executable is not covered by
+    -- `compileExe_correct`; `Link.leanLink` still links it (its checks, the per-crate proof)
+    let I := S.input0
+    let P := I.prog
+    let syms := fun n => I.syms.lookup n
+    let badP := P.funcs.filter (fun g => !(declSigB P g && indB P syms g && callScopeB P syms g &&
+      outScopeB P g)) |>.map (·.name)
+    IO.eprintln s!"lean-link: {exe}: outside compileExe's input conditions (InScopeP): {badP.length} function(s) failing the program-level per-function conditions {badP.take 3}, distinct names {decide (P.funcs.map (·.name)).Nodup}, addrSlotsInB {addrSlotsInB P syms} (else fnScopeB); linking with Link.leanLink (not covered by compileExe_correct)"
+    match leanLink S file0 with
+    | .error e => do IO.eprintln s!"lean-link: {exe}: {e}"; return 1
+    | .ok file =>
+      IO.FS.writeBinFile exe file
+      IO.println s!"lean-link: {exe}: {summary} written by Link.leanLink"
+      return 0
