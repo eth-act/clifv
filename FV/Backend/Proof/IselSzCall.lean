@@ -6,7 +6,7 @@ import FV.Backend.Proof.IselShpTotal
 /-!
 # The size of the ISLE lowering's output (V6c): the `call` and `try_call` rules
 
-The hand-checked call rules emit at most `szCallB n = 400 + 125 n` (`HandW` with `wtA`), for a
+The hand-checked call rules emit at most `323 + 125 n ≤ szCallB n` (`HandW` with `wtA`), for a
 call with `n` arguments:
 
 * `handW_call`: the root rules of `lower` on a `call`/`call_indirect` (`rule_lower_2508`, `bl`,

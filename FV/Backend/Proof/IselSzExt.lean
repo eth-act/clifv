@@ -138,15 +138,15 @@ theorem varT_sound {k : Nat} {vs : List V} {m : MInst} {n : Nat} (hk : varT k = 
   rw [hk] at h
   exact of_decide_eq_true h
 
-theorem le_foldl_max : ∀ (l : List Nat) (m : Nat), m ≤ l.foldl max m
+theorem foldl_max_ge_start : ∀ (l : List Nat) (m : Nat), m ≤ l.foldl max m
   | [], _ => Nat.le_refl _
-  | a :: l, m => Nat.le_trans (Nat.le_max_left m a) (le_foldl_max l (max m a))
+  | a :: l, m => Nat.le_trans (Nat.le_max_left m a) (foldl_max_ge_start l (max m a))
 
 theorem mem_le_foldl_max : ∀ (l : List Nat) (m x : Nat), x ∈ l → x ≤ l.foldl max m
   | [], _, _, h => by cases h
   | a :: l, m, x, h => by
     rcases List.mem_cons.mp h with rfl | h
-    · exact Nat.le_trans (Nat.le_max_right m x) (le_foldl_max l _)
+    · exact Nat.le_trans (Nat.le_max_right m x) (foldl_max_ge_start l _)
     · exact mem_le_foldl_max l _ x h
 
 /-- **`emitT`**: an instruction `emit` builds from a value `a` describes has at most `emitT a`

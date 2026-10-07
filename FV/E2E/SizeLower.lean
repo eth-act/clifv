@@ -236,6 +236,61 @@ theorem extraOf_length (results : List Nat) (rss : List (List Reg)) :
     (extraOf results rss).length ≤ results.length :=
   Nat.le_trans (List.length_filterMap_le _ _) (by simp [List.length_zip, Nat.min_le_left])
 
+/-- `edgeTargets` gives a label per successor. -/
+theorem edgeTargets_length {f : Clif.Function} :
+    ∀ {bcs : List Clif.BlockCall} {nl : Nat} {ts : List Label} {nl' : Nat},
+      edgeTargets f bcs nl = some (ts, nl') → ts.length = bcs.length
+  | [], nl, ts, nl', h => by simp [edgeTargets] at h; simp [h.1]
+  | bc :: bcs, nl, ts, nl', h => by
+    simp only [edgeTargets] at h
+    split at h
+    · cases h
+    · split at h
+      · cases he : edgeTargets f bcs nl with
+        | none => rw [he] at h; cases h
+        | some r =>
+          rw [he] at h
+          simp only [Option.map_some, Option.some.injEq, Prod.mk.injEq] at h
+          obtain ⟨rfl, -⟩ := h
+          simp [edgeTargets_length he]
+      · cases he : edgeTargets f bcs (nl + 1) with
+        | none => rw [he] at h; cases h
+        | some r =>
+          rw [he] at h
+          simp only [Option.map_some, Option.some.injEq, Prod.mk.injEq] at h
+          obtain ⟨rfl, -⟩ := h
+          simp [edgeTargets_length he]
+
+/-- A non-`try_call` terminator's lowering has a label per successor. -/
+theorem lowTerm_targets_le {f : Clif.Function} {tcall : TermCallF} {ycall : TryCallF} {ti : Nat}
+    {t : Clif.Terminator} {tst : LState} {nl : Nat} {data : V} {targets : List Label}
+    {tl : Option TryLow} {tst' : LState} {nl' : Nat}
+    (h : lowTerm f tcall ycall ti t tst nl = some (data, targets, tl, tst', nl'))
+    (ht : t.isTry = false) : targets.length ≤ (dests t).length := by
+  have hto : ∃ nl'', targetsOf f t nl = some (targets, nl'') := by
+    cases t with
+    | tryCall => simp [Clif.Terminator.isTry] at ht
+    | tryCallIndirect => simp [Clif.Terminator.isTry] at ht
+    | _ =>
+      simp only [lowTerm] at h
+      split at h
+      · split at h
+        · simp only [Option.some.injEq, Prod.mk.injEq] at h
+          obtain ⟨-, rfl, -⟩ := h
+          exact ⟨_, ‹_›⟩
+        · cases h
+      · cases h
+  obtain ⟨nl'', hto⟩ := hto
+  cases t with
+  | jump bc =>
+    simp only [targetsOf, Option.map_eq_some_iff] at hto
+    obtain ⟨tl, -, he⟩ := hto
+    simp only [Prod.mk.injEq] at he
+    rw [← he.1]; simp [dests]
+  | _ =>
+    simp only [targetsOf] at hto
+    exact Nat.le_of_eq (edgeTargets_length hto)
+
 /-- The entry block's code before its statements: `Args` and parameter loads. -/
 theorem pre_facts (f : Clif.Function) (R : Reg → Reg) {bi : Nat} {B : Clif.Block}
     (hB : f.blocks[bi]? = some B) :
@@ -451,7 +506,7 @@ theorem size_lower {f : Clif.Function} {vc : VCode} (hI : IselSz f)
     cases ht : B.term.isTry with
     | false =>
       obtain ⟨htl, hd, out, tr, hc⟩ := hn ht
-      obtain ⟨hw, htg⟩ := hT _ _ _ _ _ _ _ _ hti hph ht hd hc
+      obtain ⟨hw, htg⟩ := hT _ _ _ _ _ _ _ _ hti hph ht hd (lowTerm_targets_le hlt ht) hc
       rw [htst] at hw htg
       have hw' : wtL L.tst'.emitted.toList ≤ termSzB B.term :=
         Nat.le_trans hw (Nat.le_of_eq (Nat.zero_add _))
@@ -466,8 +521,8 @@ theorem size_lower {f : Clif.Function} {vc : VCode} (hI : IselSz f)
         cases hB' : B.term <;> rw [hB'] at ht <;> simp [Clif.Terminator.isTry] at ht
         · exact ⟨_, .inl ⟨_, _, rfl⟩⟩
         · exact ⟨_, .inr ⟨_, _, rfl⟩⟩
-      obtain ⟨T, hT', hd, -, htt, -, hi, out, tr, hc⟩ := hy et het
-      obtain ⟨hw, htg⟩ := hY _ _ _ _ _ _ _ _ _ hti hph hd hc
+      obtain ⟨T, hT', hd, he, htt, hr, hi, out, tr, hc⟩ := hy et het
+      obtain ⟨hw, htg⟩ := hY _ _ _ _ _ _ _ _ _ _ _ _ _ _ hti hph het hd he hr hc
       have hw' : wtL L.tst'.emitted.toList ≤ termSzB B.term :=
         Nat.le_trans hw (Nat.le_of_eq (Nat.zero_add _))
       have htg' : tgL L.tst'.emitted.toList ≤ termTgB B.term :=

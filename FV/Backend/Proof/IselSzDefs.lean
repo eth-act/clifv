@@ -1,5 +1,6 @@
 import FV.Backend.Proof.IselCovFns
 import FV.Backend.Proof.DriverCheck
+import FV.Backend.Proof.LowerShape
 
 /-!
 # The size of the ISLE lowering's output (V6c): weights and the cost analysis
@@ -150,7 +151,7 @@ variable (p : Program) (tab : Tab) (aw : TermId → List AW → Option Nat) (cta
 
 /-- The weight an application of term `t` to values `as` describes emits (mirrors `aApply`:
 `some` only where `aApply` is). -/
-def cApply (ty : TypeId) (t : TermId) (as : List AW) : Option Nat :=
+def cApply (_ty : TypeId) (t : TermId) (as : List AW) : Option Nat :=
   if as.any AW.isBot then some 0 else
   match termOf p t with
   | .ok term =>
@@ -288,8 +289,9 @@ open Backend Backend.Proof Backend.Proof.Cov Isle
 def szStmtK : Nat := 1200
 
 /-- The weight bound of a call's run with `n` arguments: the stores of the stack-passed ones,
-the call with its argument and result registers, a GOT load (the hand-checked call rules). -/
-def szCallB (n : Nat) : Nat := 400 + 125 * n
+the call with its argument and result registers, a GOT load (the hand-checked call rules emit at
+most `323 + 125 n`); at least `szStmtK`/`szTermK`, the other rules' bound. -/
+def szCallB (n : Nat) : Nat := 1200 + 125 * n
 
 /-- The weight bound of a `return`/`trap`/`jump`/`brif` run. -/
 def szTermK : Nat := 600
@@ -315,9 +317,10 @@ def termSzB : Clif.Terminator → Nat
   | .tryCall _ args _ | .tryCallIndirect _ args _ => szCallB args.length
   | _ => szTermK
 
-/-- The branch-target bound of a terminator's run (a `br_table`'s: its default and table). -/
+/-- The branch-target bound of a terminator's run (a `br_table`'s: its default and table, at
+least `tgTermK`). -/
 def termTgB : Clif.Terminator → Nat
-  | .brTable _ _ tbl => 1 + tbl.length
+  | .brTable _ _ tbl => tgTermK + tbl.length
   | _ => tgTermK
 
 /-- Every statement's `lower` run emits at most `stmtSzB` of its instruction and `tgStmtK`
@@ -327,18 +330,21 @@ def StmtSz (ctx : Ctx) : Prop :=
     runTerm ctx "lower" [.inst ii] s = .ok (out, s', tr) →
     wtA s'.emitted ≤ wtA s.emitted + stmtSzB inst ∧ tgA s'.emitted ≤ tgA s.emitted + tgStmtK
 
-/-- Every non-`try_call` terminator's run emits at most `termSzB` and `termTgB`. -/
+/-- Every non-`try_call` terminator's run (with at most a label per successor) emits at most
+`termSzB` and `termTgB`. -/
 def TermSz (f : Clif.Function) (ctx : Ctx) : Prop :=
   ∀ ti t data targets s out s' tr, ti < ctx.insts.size →
     ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩ → t.isTry = false →
-    termData (abiTerm f t) = .ok data →
+    termData (abiTerm f t) = .ok data → targets.length ≤ (dests t).length →
     termCallF ctx ti data t targets s = .ok (out, s', tr) →
     wtA s'.emitted ≤ wtA s.emitted + termSzB t ∧ tgA s'.emitted ≤ tgA s.emitted + termTgB t
 
-/-- Every `try_call` terminator's run emits at most `termSzB` and `termTgB`. -/
+/-- Every `try_call` terminator's run (with the return and payload vregs `tryRegsOf` allocates)
+emits at most `termSzB` and `termTgB`. -/
 def TrySz (f : Clif.Function) (ctx : Ctx) : Prop :=
-  ∀ ti t data trs targets s out s' tr, ti < ctx.insts.size →
-    ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩ → tryCallData f t = .ok data →
+  ∀ ti t et data sig items lo st1 trs targets s out s' tr, ti < ctx.insts.size →
+    ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩ → IsTryWith t et → tryCallData f t = .ok data →
+    exnTableOpnd f et = .ok (sig, items) → tryRegsOf sig lo = some (trs, st1) →
     tryCallF ctx ti data trs targets s = .ok (out, s', tr) →
     wtA s'.emitted ≤ wtA s.emitted + termSzB t ∧ tgA s'.emitted ≤ tgA s.emitted + termTgB t
 
