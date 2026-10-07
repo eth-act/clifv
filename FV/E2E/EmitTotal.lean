@@ -146,11 +146,6 @@ theorem backend_correct_final_total_ready {p : Clif.Program} {f : Clif.Function}
   obtain ⟨fa, fb, he, hla⟩ := emit_of_emitReady (emitReady_lowerAllocReady hspill ha) k
   exact ⟨af, (lowerAllocReady_eq vcp ra).trans ha, fa, fb, he, hla, hcor he hla⟩
 
-/-- The decidable conditions on the prepared VCode under which the spill allocation's code is
-ready (`emitReady_spill`). -/
-def emitCondsB (vcp : VCode) : Bool :=
-  spillSizeOkB vcp && immsOkB vcp && vcp.noAlwaysB && branchTargetsOkB vcp
-
 /-- **The spill allocation's code is ready** for in-scope input under `emitCondsB`. -/
 theorem emitReady_spill {p : Clif.Program} {f : Clif.Function} {vc vcp : VCode} {af : AFunc}
     (hsub : InSubset p f) (hd : dominatedB f = true) (hs : lowerScopeB f = true)

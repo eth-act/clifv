@@ -305,7 +305,7 @@ theorem step4Ex_local : SpillLocalOk step4Ex := by
       | 1, hb => cases hb; cases hback
 
 theorem step4Ex_avail : SpillAvail step4Ex fun _ _ => true := by
-  refine ⟨fun _ => rfl, fun succs preds h b vb k i ops hb hi hops o ho _ => ?_,
+  refine ⟨fun succs preds h b vb k i ops hb hi hops o ho _ => ?_,
     fun succs preds h b vb ss s sb hb hss hs hsb v _ => ?_⟩
   · match b, hb with
     | 0, hb =>

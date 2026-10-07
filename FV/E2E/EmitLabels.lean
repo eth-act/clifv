@@ -1,4 +1,5 @@
 import FV.Backend.Proof.RelaxLayout
+import FV.E2E.EmitCondsDefs
 import FV.E2E.RegLevelEmit
 import FV.Backend.Proof.AssignOk
 import FV.E2E.AllocTotal
@@ -772,11 +773,6 @@ end E2E.EmitLabels
 namespace E2E
 
 open Backend Backend.Proof Backend.Proof.Driver EmitLabels
-
-/-- Every branch target of every instruction of `vc` is the label of one of its blocks
-(`VCode.cfg` checks this for the blocks' last instructions only). -/
-def branchTargetsOkB (vc : VCode) : Bool :=
-  vc.blocks.all fun vb => vb.insts.all fun i => i.targets.all fun l => vc.blocks.any (·.label == l)
 
 /-- `prepare`'s output has distinct block labels (on `PrepDomain` input). -/
 theorem prepare_labels_nodup {vc vcp : VCode} (hp : prepare vc = .ok vcp) (hd : Prep.PrepDomain vc) :
