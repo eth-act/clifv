@@ -1,5 +1,6 @@
 import FV.E2E.SpillCheckAllocFix
 import FV.E2E.AllocDirect
+import FV.Backend.Proof.EntryParams
 
 /-!
 # `checkAlloc` accepts the spill allocation (L2a, family "compiled: checkAlloc")
@@ -14,7 +15,9 @@ The proof is the completeness of `checkAlloc` (`CheckComplete.checkAlloc_complet
 (`Spill.verify_block`). `checkAlloc`'s iteration starts from `entryState`, where no home holds its
 vreg, so the in-states have to be those of availability sets that hold nothing on entry to the
 function: `SpillDefinedHyp`, definite assignment of the pipeline's output (every vreg a use reads
-is stored in its home on every path from the function entry). That is the one fact not proven
+is stored in its home on every path from the function entry), on input whose entry block has the
+signature's parameters (`Spill.entryParamsB`; without it the statement is false,
+`E2E.not_spillDefinedHyp`). That is the one fact not proven
 here. The remaining premises of the completeness theorem are proven: the CFG and local facts
 (`spillLocalAll`), the class table bounding every vreg (`ClassesOk`), and the reachability of every
 block of `prepare`'s output (`prepare_reach`).
@@ -25,13 +28,16 @@ namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver
 
 /-- **Definite assignment of the pipeline's output** (the remaining hypothesis of
-`spillCheckAlloc`): the prepared VCode of an in-scope function has availability sets
-(`Spill.SpillAvail`: every use available where it is read, every edge delivering its target's
-set) in which no vreg is available on entry to the function. -/
+`spillCheckAlloc`): the prepared VCode of an in-scope function whose entry block has the
+signature's parameters has availability sets (`Spill.SpillAvail`: every use available where it
+is read, every edge delivering its target's set) in which no vreg is available on entry to the
+function. Without `entryParamsB` it is false (`E2E.not_spillDefinedHyp`,
+`FV/E2E/SpillDefinedFalse.lean`: an entry-block parameter beyond the signature's is never
+defined). -/
 def SpillDefinedHyp : Prop :=
   ∀ (p : Clif.Program) (f : Clif.Function) (vc vcp : VCode), InSubset p f → Spill.ArityOk f →
-    Dominated f → LowerScope f → lowerFunction f = .ok vc → Backend.prepare vc = .ok vcp →
-      ∃ D, Spill.SpillAvail vcp D ∧ ∀ v, D 0 v = false
+    Dominated f → LowerScope f → Spill.entryParamsB f = true → lowerFunction f = .ok vc →
+      Backend.prepare vc = .ok vcp → ∃ D, Spill.SpillAvail vcp D ∧ ∀ v, D 0 v = false
 
 /-- **Every block of `prepare`'s output is reachable** from the entry along its CFG. -/
 theorem prepare_reach {vc vcp : VCode} (hp : prepare vc = .ok vcp) (hd : Prep.PrepDomain vc)
@@ -94,13 +100,14 @@ theorem entry_mem_entryState {N : Nat} {r : Reg} {i : Nat} (hr : r ∈ calleeSav
         rw [Spill.get_put_ne (by intro h'; cases h'; exact e rfl)]
         exact h
 
-/-- **`checkAlloc` accepts the spill allocation** of every in-scope function's prepared VCode,
-given definite assignment of the pipeline's output (`SpillDefinedHyp`). -/
-theorem spillCheckAlloc (hD : SpillDefinedHyp) {p : Clif.Program} {f : Clif.Function}
+/-- **`checkAlloc` accepts the spill allocation** of every in-scope function's prepared VCode
+that has availability sets holding nothing on entry. -/
+theorem spillCheckAlloc_sets {p : Clif.Program} {f : Clif.Function}
     {vc vcp : VCode} (hsub : InSubset p f) (har : Spill.ArityOk f) (hd : Dominated f)
-    (hs : LowerScope f) (hl : lowerFunction f = .ok vc) (hp : Backend.prepare vc = .ok vcp) :
+    (hs : LowerScope f) (hl : lowerFunction f = .ok vc) (hp : Backend.prepare vc = .ok vcp)
+    (hDs : ∃ D, Spill.SpillAvail vcp D ∧ ∀ v, D 0 v = false) :
     checkAlloc vcp (spillAlloc vcp) = .ok () := by
-  obtain ⟨D, hav, hD0⟩ := hD p f vc vcp hsub har hd hs hl hp
+  obtain ⟨D, hav, hD0⟩ := hDs
   have hloc := spillLocalAll p f vc vcp hsub har hd hs hl hp
   have hdom := prepDomain_of_lower hs hl hs.nonempty
   obtain ⟨succs, preds, hcfg⟩ := Spill.cfg_ok_of_prepare hp hdom
@@ -155,5 +162,13 @@ theorem spillCheckAlloc (hD : SpillDefinedHyp) {p : Clif.Program} {f : Clif.Func
       obtain ⟨v, -, -, -, hv⟩ := Spill.inStack_mem hm
       rw [hD0 v] at hv
       cases hv
+
+/-- **`checkAlloc` accepts the spill allocation** of every in-scope function's prepared VCode,
+given definite assignment of the pipeline's output (`SpillDefinedHyp`). -/
+theorem spillCheckAlloc (hD : SpillDefinedHyp) {p : Clif.Program} {f : Clif.Function}
+    {vc vcp : VCode} (hsub : InSubset p f) (har : Spill.ArityOk f) (hd : Dominated f)
+    (hs : LowerScope f) (hen : Spill.entryParamsB f = true) (hl : lowerFunction f = .ok vc)
+    (hp : Backend.prepare vc = .ok vcp) : checkAlloc vcp (spillAlloc vcp) = .ok () :=
+  spillCheckAlloc_sets hsub har hd hs hl hp (hD p f vc vcp hsub har hd hs hen hl hp)
 
 end E2E
