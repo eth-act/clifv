@@ -544,4 +544,3 @@ instruction colors, demanded values, opportunistic definitions, and sinking.
 `scripts/test_lowering_trace.py` checks the Lean snapshot against the compiler's
 actual allocator request, repeated object bytes, and identical stock artifacts with
 and without logging.
-
