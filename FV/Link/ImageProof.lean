@@ -323,52 +323,65 @@ theorem regionBytes_getElem? (I : LinkInput) (tp : Nat → Option Nat) {T : List
 
 /-! ## The placed functions -/
 
-/-- **A placed function is in the patched file**: the region `B` (the `regionBytes` of the
-placed functions `T`) written at `off` over the outside part's placeholder (`regionOkB`), the
-function `j` at `R` plus its offset, its relocations passing the checks. -/
+/-- **A placed function's words are in the patched file**: the region `B` (the `regionBytes` of
+the placed functions `T`) written at `off` over the outside part's placeholder (`regionOkB`),
+function `j` at `R` plus its offset: its code is read-only and holds its resolved words. -/
+theorem region_words {I : LinkInput} {tp : Nat → Option Nat} {file0 : ByteArray} {R off : Nat}
+    {T : List Art}
+    (hok : regionOkB file0 R (ByteArray.mk (regionBytes I tp T).toArray).size off = true)
+    (hR : R + span (T.map (·.fb.words.size)) ≤ 2 ^ 64)
+    {j : Nat} {a : Art} (ha : T[j]? = some a)
+    (hbase : a.base = BitVec.ofNat 64 (R + (offs (T.map (·.fb.words.size)) 0)[j]!)) :
+    (∀ k < a.fb.words.size, ∀ i < 4,
+      Elf.ro (patch file0 off (ByteArray.mk (regionBytes I tp T).toArray)) (wAt a (4 * k + i))) ∧
+    (∀ k < a.fb.words.size,
+      readN (loadMem (patch file0 off (ByteArray.mk (regionBytes I tp T).toArray))) 4
+        (wAt a (4 * k)) = some (resolveWord I tp a k)) := by
+  have hj : j < T.length := (List.getElem?_eq_some_iff.1 ha).1
+  have hBs : (ByteArray.mk (regionBytes I tp T).toArray).size =
+      span (T.map (·.fb.words.size)) := by
+    show (regionBytes I tp T).toArray.size = _
+    rw [List.size_toArray, regionBytes_length]
+  rw [offs_getElem! (by simpa using hj), Nat.zero_add] at hbase
+  -- the byte at `4k + i` of `a` is the region's byte at its offset plus `4k + i`
+  have hbyte : ∀ k < a.fb.words.size, ∀ i < 4,
+      ∃ jb, jb < (ByteArray.mk (regionBytes I tp T).toArray).size ∧
+        wAt a (4 * k + i) = BitVec.ofNat 64 (R + jb) ∧
+        (ByteArray.mk (regionBytes I tp T).toArray)[jb]? = (wordBytes (resolveWord I tp a k))[i]? := by
+    intro k hk i hi
+    have hm : 4 * k + i < (artImage I tp a).length := by
+      rw [artImage_length]; omega
+    have hr := regionBytes_getElem? I tp ha hm
+    rw [artImage_getElem? I tp a hk hi] at hr
+    have hw4 : (wordBytes (resolveWord I tp a k))[i]? = some (wordBytes (resolveWord I tp a k))[i] :=
+      List.getElem?_eq_getElem (by rw [wordBytes_length]; exact hi)
+    have hlt : span ((T.map (·.fb.words.size)).take j) + (4 * k + i) <
+        (regionBytes I tp T).length :=
+      (List.getElem?_eq_some_iff.1 (hr.trans hw4)).1
+    refine ⟨_, by rw [hBs, ← regionBytes_length]; exact hlt, ?_, ?_⟩
+    · rw [wAt, hbase, ← BitVec.ofNat_add, Nat.add_assoc]
+    · rw [byteArray_getElem?]
+      show (regionBytes I tp T).toArray[_]? = _
+      rw [List.getElem?_toArray, hr]
+  refine ⟨fun k hk i hi => ?_, fun k hk => readN_wordBytes fun i hi => ?_⟩
+  · obtain ⟨jb, hjb, hw, -⟩ := hbyte k hk i hi
+    rw [hw]
+    exact ro_patch hok (by rw [hBs]; exact hR) hjb
+  · obtain ⟨jb, hjb, hw, hb⟩ := hbyte k hk i hi
+    rw [show wAt a (4 * k) + BitVec.ofNat 64 i = wAt a (4 * k + i) by
+      rw [wAt, wAt, BitVec.add_assoc, BitVec.ofNat_add], hw,
+      loadMem_patch hok (by rw [hBs]; exact hR) hjb, hb]
+
+/-- **A placed function is in the patched file** (`ArtOk`): its words are (`region_words`), its
+relocations pass the checks, the thread-pointer offsets are the file's. -/
 theorem artOk_region {I : LinkInput} {file0 : ByteArray} {phs : List Phdr}
     (hph : phdrs (fileRd file0) = some phs) {R off : Nat} {T : List Art}
     (hok : regionOkB file0 R (ByteArray.mk (regionBytes I (tpOff phs) T).toArray).size off = true)
     (hR : R + span (T.map (·.fb.words.size)) ≤ 2 ^ 64)
     {j : Nat} {a : Art} (ha : T[j]? = some a) (hv : relocsOkB I (tpOff phs) a = true)
     (hbase : a.base = BitVec.ofNat 64 (R + (offs (T.map (·.fb.words.size)) 0)[j]!)) :
-    ArtOk I (patch file0 off (ByteArray.mk (regionBytes I (tpOff phs) T).toArray)) a := by
-  have hj : j < T.length := (List.getElem?_eq_some_iff.1 ha).1
-  have hBs : (ByteArray.mk (regionBytes I (tpOff phs) T).toArray).size =
-      span (T.map (·.fb.words.size)) := by
-    show (regionBytes I (tpOff phs) T).toArray.size = _
-    rw [List.size_toArray, regionBytes_length]
-  rw [offs_getElem! (by simpa using hj), Nat.zero_add] at hbase
-  -- the byte at `4k + i` of `a` is the region's byte at its offset plus `4k + i`
-  have hbyte : ∀ k < a.fb.words.size, ∀ i < 4,
-      ∃ jb, jb < (ByteArray.mk (regionBytes I (tpOff phs) T).toArray).size ∧
-        wAt a (4 * k + i) = BitVec.ofNat 64 (R + jb) ∧
-        (ByteArray.mk (regionBytes I (tpOff phs) T).toArray)[jb]? =
-          (wordBytes (resolveWord I (tpOff phs) a k))[i]? := by
-    intro k hk i hi
-    have hm : 4 * k + i < (artImage I (tpOff phs) a).length := by
-      rw [artImage_length]; omega
-    have hr := regionBytes_getElem? I (tpOff phs) ha hm
-    rw [artImage_getElem? I (tpOff phs) a hk hi] at hr
-    have hw4 : (wordBytes (resolveWord I (tpOff phs) a k))[i]? =
-        some (wordBytes (resolveWord I (tpOff phs) a k))[i] :=
-      List.getElem?_eq_getElem (by rw [wordBytes_length]; exact hi)
-    have hlt : span ((T.map (·.fb.words.size)).take j) + (4 * k + i) <
-        (regionBytes I (tpOff phs) T).length :=
-      (List.getElem?_eq_some_iff.1 (hr.trans hw4)).1
-    refine ⟨_, by rw [hBs, ← regionBytes_length]; exact hlt, ?_, ?_⟩
-    · rw [wAt, hbase, ← BitVec.ofNat_add, Nat.add_assoc]
-    · rw [byteArray_getElem?]
-      show (regionBytes I (tpOff phs) T).toArray[_]? = _
-      rw [List.getElem?_toArray, hr]
-  refine artOk_of_image (hv) (tpOff_patch hok hph) (fun k hk i hi => ?_) (fun k hk => ?_)
-  · obtain ⟨jb, hjb, hw, -⟩ := hbyte k hk i hi
-    rw [hw]
-    exact ro_patch hok (by rw [hBs]; exact hR) hjb
-  · refine readN_wordBytes fun i hi => ?_
-    obtain ⟨jb, hjb, hw, hb⟩ := hbyte k hk i hi
-    rw [show wAt a (4 * k) + BitVec.ofNat 64 i = wAt a (4 * k + i) by
-      rw [wAt, wAt, BitVec.add_assoc, BitVec.ofNat_add], hw,
-      loadMem_patch hok (by rw [hBs]; exact hR) hjb, hb]
+    ArtOk I (patch file0 off (ByteArray.mk (regionBytes I (tpOff phs) T).toArray)) a :=
+  have hw := region_words hok hR ha hbase
+  artOk_of_image hv (tpOff_patch hok hph) hw.1 hw.2
 
 end Link
