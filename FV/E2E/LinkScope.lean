@@ -214,9 +214,25 @@ theorem checkAlloc_allocResult {vcp : VCode} (hsp : checkAlloc vcp (spillAlloc v
       · exact hsp
     · exact hsp
 
-/-- **The compiler's pipeline succeeds on an in-scope function**, and its artifact passes the
-validators. -/
-theorem pipeT_ok {g : Clif.Function} (hsc : fnScopeB g = true) (hD : SpillDefinedHyp)
+/-- `checkAlloc` accepts the spill allocation of `g`'s prepared VCode. -/
+def SpillOkFn (g : Clif.Function) : Prop :=
+  ∀ vc vcp, lowerFunction g = .ok vc → prepare vc = .ok vcp → checkAlloc vcp (spillAlloc vcp) = .ok ()
+
+theorem spillOkFn_of (hD : SpillDefinedHyp) {g : Clif.Function} (hsc : fnScopeB g = true) :
+    SpillOkFn g := fun _ _ hl hp => by
+  obtain ⟨-, -, -, -, -, -, -, -, hd, hs, har, -⟩ := fnScope_parts hsc
+  exact spillCheckAlloc hD (inSubset_of_fnScope hsc { funcs := [] }) (Spill.arityOk_of har)
+    (dominated_of hd) (lowerScope_of hs) hl hp
+
+theorem spillOkFn_ofE (hD : SpillDefinedHypE) {g : Clif.Function} (hsc : fnScopeB g = true)
+    (hen : Spill.entryParamsB g = true) : SpillOkFn g := fun _ _ hl hp => by
+  obtain ⟨-, -, -, -, -, -, -, -, hd, hs, har, -⟩ := fnScope_parts hsc
+  exact spillCheckAllocE hD (inSubset_of_fnScope hsc { funcs := [] }) (Spill.arityOk_of har)
+    (dominated_of hd) (lowerScope_of hs) hen hl hp
+
+/-- **The compiler's pipeline succeeds on an in-scope function** whose spill allocation
+`checkAlloc` accepts, and its artifact passes the validators. -/
+theorem pipeT_ok_of {g : Clif.Function} (hsc : fnScopeB g = true) (hck : SpillOkFn g)
     (k : Nat) (base : BitVec 64) (o : Lean.Json) :
     ∃ a, pipeT g k base o = .ok a ∧ lowerCheck g a.vc = true ∧ prepCheck a.vc a.vcp = true ∧
       checkAlloc a.vcp a.rf = .ok () ∧ FormsCovered ⟨a.fa.k, a.af.slotBase⟩ a.vcp := by
@@ -231,9 +247,17 @@ theorem pipeT_ok {g : Clif.Function} (hsc : fnScopeB g = true) (hD : SpillDefine
   refine ⟨⟨k, vc, vcp, allocResult vcp (readyAnswer vcp (raAnswer vcp o)), af, fa, fb, base⟩,
     ?_, lowerCheck_complete hD' hS hl,
     Prep.prepCheck_complete hp (prepDomain_of_lower hS hl hS.nonempty),
-    checkAlloc_allocResult (spillCheckAlloc hD hsub (Spill.arityOk_of har) hD' hS hl hp) _,
+    checkAlloc_allocResult (hck vc vcp hl hp) _,
     formsCovered_complete hS hl hp _⟩
   simp [pipeT, hl, hp, ha, he, hla, bind, Except.bind, pure, Except.pure]
+
+/-- **The compiler's pipeline succeeds on an in-scope function**, and its artifact passes the
+validators. -/
+theorem pipeT_ok {g : Clif.Function} (hsc : fnScopeB g = true) (hD : SpillDefinedHyp)
+    (k : Nat) (base : BitVec 64) (o : Lean.Json) :
+    ∃ a, pipeT g k base o = .ok a ∧ lowerCheck g a.vc = true ∧ prepCheck a.vc a.vcp = true ∧
+      checkAlloc a.vcp a.rf = .ok () ∧ FormsCovered ⟨a.fa.k, a.af.slotBase⟩ a.vcp :=
+  pipeT_ok_of hsc (spillOkFn_of hD hsc) k base o
 
 /-! ## The checks hold -/
 
@@ -255,8 +279,16 @@ theorem le_depthOf {R : Res} {e : Clif.Function × Except String Art} (he : e �
     frameDrop (getOk e.2).af ≤ depthOf R :=
   le_foldl_max _ 0 _ (.inl (List.mem_map_of_mem he))
 
-/-- **The per-function checks hold** for the compiler's results of an in-scope input. -/
-theorem chks_resultsT (hD : SpillDefinedHyp) {I : LinkInput} (hin : InScopeP I = true)
+/-- A function of an in-scope input meets `fnScopeB`. -/
+theorem fnScope_of_inScope {I : LinkInput} (hin : InScopeP I = true) {g : Clif.Function}
+    (hg : g ∈ I.prog.funcs) : fnScopeB g = true := by
+  simp only [InScopeP, Bool.and_eq_true] at hin
+  exact List.all_eq_true.1 hin.2 _ hg
+
+/-- **The per-function checks hold** for the compiler's results of an in-scope input whose
+spill allocations `checkAlloc` accepts. -/
+theorem chks_resultsT_of {I : LinkInput} (hck : ∀ g ∈ I.prog.funcs, SpillOkFn g)
+    (hin : InScopeP I = true)
     (hlk : linkerOkB I = true) {e : Clif.Function × Except String Art} (he : e ∈ I.resultsT) :
     (chks (I.withDepth I.resultsT) (progOf I.resultsT) (tabOf I.resultsT) e.1 e.2).all
       (·.2) = true := by
@@ -273,7 +305,7 @@ theorem chks_resultsT (hD : SpillDefinedHyp) {I : LinkInput} (hin : InScopeP I =
   have hgP : fi.func ∈ I.prog.funcs := List.mem_map_of_mem hfi
   have hsc : fnScopeB fi.func = true := List.all_eq_true.1 hfs _ hgP
   obtain ⟨hE, hne, habi, hind, hnd', harg, hw, hfree, hd, hs, -, -⟩ := fnScope_parts hsc
-  obtain ⟨a, ha, hlc, hpc, hca, hcov⟩ := pipeT_ok hsc hD fi.k
+  obtain ⟨a, ha, hlc, hpc, hca, hcov⟩ := pipeT_ok_of hsc (hck _ hgP) fi.k
     (BitVec.ofNat 64 (I.baseOf fi.func.name)) (raJ fi.ra fi.j)
   obtain ⟨hl, hp, -, hlr, -, -, -, -⟩ := pipeT_spec ha
   have hga : getOk (pipeT fi.func fi.k (BitVec.ofNat 64 (I.baseOf fi.func.name))
@@ -321,6 +353,13 @@ theorem chks_resultsT (hD : SpillDefinedHyp) {I : LinkInput} (hin : InScopeP I =
   · exact hra
   · exact hindB
 
+/-- **The per-function checks hold** for the compiler's results of an in-scope input. -/
+theorem chks_resultsT (hD : SpillDefinedHyp) {I : LinkInput} (hin : InScopeP I = true)
+    (hlk : linkerOkB I = true) {e : Clif.Function × Except String Art} (he : e ∈ I.resultsT) :
+    (chks (I.withDepth I.resultsT) (progOf I.resultsT) (tabOf I.resultsT) e.1 e.2).all
+      (·.2) = true :=
+  chks_resultsT_of (fun _ hg => spillOkFn_of hD (fnScope_of_inScope hin hg)) hin hlk he
+
 /-- **The program's checks hold** for the compiler's results of an in-scope input. -/
 theorem global_resultsT {I : LinkInput} (hin : InScopeP I = true) (hlk : linkerOkB I = true) :
     (globalChks (I.withDepth I.resultsT) (progOf I.resultsT) (tabOf I.resultsT)).all (·.2) =
@@ -339,13 +378,20 @@ theorem global_resultsT {I : LinkInput} (hin : InScopeP I = true) (hlk : linkerO
   · exact hsym
   · exact addrSlotsB_of_in has
 
+/-- **`okB`'s checks hold on the compiler's results of every in-scope input** whose spill
+allocations `checkAlloc` accepts and whose link the linker's facts describe. -/
+theorem okT_of_inScope_of {I : LinkInput} (hck : ∀ g ∈ I.prog.funcs, SpillOkFn g)
+    (hin : InScopeP I = true) (hlk : linkerOkB I = true) :
+    okR (I.withDepth I.resultsT) I.resultsT = true := by
+  simp only [okR, Bool.and_eq_true]
+  exact ⟨global_resultsT hin hlk, List.all_eq_true.2 fun e he => chks_resultsT_of hck hin hlk he⟩
+
 /-- **`okB`'s checks hold on the compiler's results of every in-scope input** whose link the
 linker's facts describe: `InScopeP` (the input) and `linkerOkB` (the linker), no check of the
 compiler's own output. -/
 theorem okT_of_inScope (hD : SpillDefinedHyp) {I : LinkInput} (hin : InScopeP I = true)
-    (hlk : linkerOkB I = true) : okR (I.withDepth I.resultsT) I.resultsT = true := by
-  simp only [okR, Bool.and_eq_true]
-  exact ⟨global_resultsT hin hlk, List.all_eq_true.2 fun e he => chks_resultsT hD hin hlk he⟩
+    (hlk : linkerOkB I = true) : okR (I.withDepth I.resultsT) I.resultsT = true :=
+  okT_of_inScope_of (fun _ hg => spillOkFn_of hD (fnScope_of_inScope hin hg)) hin hlk
 
 /-! ## The linked system of the compiler's results -/
 
@@ -354,27 +400,52 @@ pipeline (`resultsT`), with the stack of one call level by construction (`withDe
 def _root_.E2E.LinkSys.ofInputT (I : LinkInput) (B : BaseEnv) (F : BitVec 64 → Prop) : LinkSys :=
   ofRes (I.withDepth I.resultsT) I.resultsT B F
 
+/-- **`LinkSys.Ok` of the compiler's linked system** of an in-scope input whose spill
+allocations `checkAlloc` accepts and whose link satisfies the linker's facts. -/
+theorem okT_sound_of {I : LinkInput} (hck : ∀ g ∈ I.prog.funcs, SpillOkFn g)
+    (hin : InScopeP I = true)
+    (hlk : linkerOkB I = true) {B : BaseEnv} {F : BitVec 64 → Prop}
+    (hB : BaseOk (LinkSys.ofInputT I B F)) (hF : ∀ a, (LinkSys.ofInputT I B F).Img a → F a) :
+    (LinkSys.ofInputT I B F).Ok :=
+  okR_sound (resultsT_ok I I.resultsT) (okT_of_inScope_of hck hin hlk) hB hF
+
 /-- **`LinkSys.Ok` of the compiler's linked system** of an in-scope input whose link satisfies
 the linker's facts. -/
 theorem okT_sound (hD : SpillDefinedHyp) {I : LinkInput} (hin : InScopeP I = true)
     (hlk : linkerOkB I = true) {B : BaseEnv} {F : BitVec 64 → Prop}
     (hB : BaseOk (LinkSys.ofInputT I B F)) (hF : ∀ a, (LinkSys.ofInputT I B F).Img a → F a) :
     (LinkSys.ofInputT I B F).Ok :=
-  okR_sound (resultsT_ok I I.resultsT) (okT_of_inScope hD hin hlk) hB hF
+  okT_sound_of (fun _ hg => spillOkFn_of hD (fnScope_of_inScope hin hg)) hin hlk hB hF
 
 /-- The crate's theorem (`CrateStmt`) for the compiler's linked system `LinkSys.ofInputT`. -/
 def CrateStmtT (I : LinkInput) (n : String) : Prop :=
   ∀ (B : BaseEnv) (F : BitVec 64 → Prop), BaseOk (LinkSys.ofInputT I B F) →
     (∀ a, (LinkSys.ofInputT I B F).Img a → F a) → ProgStmt (LinkSys.ofInputT I B F) n
 
+/-- `crate_correct_inScope` for an input whose spill allocations `checkAlloc` accepts. -/
+theorem crate_correct_inScope_of {I : LinkInput} (hck : ∀ g ∈ I.prog.funcs, SpillOkFn g)
+    (hin : InScopeP I = true) (hlk : linkerOkB I = true) (n : String) : CrateStmtT I n :=
+  fun _ _ hB hF _ hf M _ _ _ _ _ hent hres hFeq hgfree himg hbe hargs hcs hsav hrel hpl htr =>
+    backend_correct_program _ (okT_sound_of hck hin hlk hB hF) (Clif.Program.func?_some hf).1 M
+      hent hres hFeq hgfree himg hbe hargs hcs hsav hrel hpl htr
+
 /-- **`backend_correct_program` for every function of an in-scope input** (L2a): no `okB`
 premise; the input conditions `InScopeP`, the linker's facts `linkerOkB` (what L2b must provide)
-and the program-independent open facts `OwnHyps`. -/
+and the program-independent open fact `SpillDefinedHyp` — which is false
+(`E2E.not_spillDefinedHyp`), so this statement is vacuous; `crate_correct_inScopeE` is the one
+with the missing input condition. -/
 theorem crate_correct_inScope (hD : SpillDefinedHyp) {I : LinkInput} (hin : InScopeP I = true)
     (hlk : linkerOkB I = true) (n : String) : CrateStmtT I n :=
-  fun _ _ hB hF _ hf M _ _ _ _ _ hent hres hFeq hgfree himg hbe hargs hcs hsav hrel hpl htr =>
-    backend_correct_program _ (okT_sound hD hin hlk hB hF) (Clif.Program.func?_some hf).1 M hent
-      hres hFeq hgfree himg hbe hargs hcs hsav hrel hpl htr
+  crate_correct_inScope_of (fun _ hg => spillOkFn_of hD (fnScope_of_inScope hin hg)) hin hlk n
+
+/-- **`backend_correct_program` for every function of an in-scope input** (L2a) whose entry
+blocks have the signature's parameters (`entryParamsB`, Cranelift's verifier rule), under
+`SpillDefinedHypE`. -/
+theorem crate_correct_inScopeE (hD : SpillDefinedHypE) {I : LinkInput} (hin : InScopeP I = true)
+    (hen : I.prog.funcs.all Spill.entryParamsB = true) (hlk : linkerOkB I = true) (n : String) :
+    CrateStmtT I n :=
+  crate_correct_inScope_of (fun _ hg => spillOkFn_ofE hD (fnScope_of_inScope hin hg)
+    (List.all_eq_true.1 hen _ hg)) hin hlk n
 
 /-- **Non-vacuity of `BaseOk`** for the compiler's linked system: the closed base environment
 satisfies the base premises of every input without `tls_value`. -/
