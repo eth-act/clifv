@@ -47,42 +47,6 @@ namespace Link
 
 open E2E E2E.LinkCheck E2E.BinCheck E2E.Elf Backend LinkSpec
 
-/-- An association list's entry. -/
-theorem mem_of_lookup {α β : Type} [BEq α] [LawfulBEq α] :
-    ∀ {l : List (α × β)} {a : α} {b : β}, l.lookup a = some b → (a, b) ∈ l
-  | [], _, _, h => by cases h
-  | (k, v) :: l, a, b, h => by
-    rw [List.lookup_cons] at h
-    split at h
-    · rename_i hk
-      cases h
-      rw [beq_iff_eq.1 hk]
-      exact .head _
-    · exact .tail _ (mem_of_lookup h)
-
-/-- With distinct keys, `find?` by key finds the element. -/
-theorem find?_key {α β : Type} [BEq β] [LawfulBEq β] {f : α → β} {l : List α}
-    (hnd : (l.map f).Nodup) {x : α} (hx : x ∈ l) : l.find? (fun y => f y == f x) = some x := by
-  induction l with
-  | nil => cases hx
-  | cons y l ih =>
-    rw [List.map_cons, List.nodup_cons] at hnd
-    rw [List.find?_cons]
-    rcases List.mem_cons.1 hx with rfl | hx'
-    · simp
-    · have hne : f y ≠ f x := fun e => hnd.1 (e ▸ List.mem_map.2 ⟨x, hx', rfl⟩)
-      simp only [beq_eq_false_iff_ne.2 hne]
-      exact ih hnd.2 hx'
-
-/-- The compiler's table's names are the placed functions' and the aliases'. -/
-theorem tab_names (S : LinkSpec) (hP : PlaceOk S) :
-    ((tabOf S.input.resultsT).map (·.1.name)).Nodup := by
-  have : (tabOf S.input.resultsT).map (·.1.name) = S.names ++ S.aliases.map (·.1) := by
-    rw [← hP.aliasFns]
-    simp [tabOf, LinkInput.resultsT, names, Function.comp_def]
-  rw [this]
-  exact hP.nodup
-
 /-- The placed functions' sizes are the placement's (`sizesOkB`). -/
 theorem placedArts_sizes {S : LinkSpec} (hs : S.sizesOkB (tabOf S.input.resultsT) = true) :
     (placedArts S).map (·.fb.words.size) = S.sizes := by
