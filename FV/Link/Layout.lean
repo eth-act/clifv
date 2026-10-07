@@ -93,7 +93,8 @@ def aliasAddrs : List (String × Nat) := let t := S.gapTab; S.aliases.map fun p 
 /-- **The link map**: the placement, the aliases, then the outside part's symbols. -/
 def addrs : List (String × Nat) := S.progAddrs ++ S.aliasAddrs ++ S.outside
 
-/-- The input before the call-level stack is known. -/
+/-- The input before the call-level stack is known: the compiler's pipeline (`fallback`), so
+its results are the compiler's (`input_results`). -/
 def input0 : LinkInput where
   funcs := S.funcs ++ S.aliasFns
   addrs := S.addrs
@@ -101,11 +102,18 @@ def input0 : LinkInput where
   raStar := S.R + S.size
   D := 0
   aliases := S.aliases
+  fallback := true
 
 /-- **The crate-level input of the placed program**: its link map is the placement, the CLIF
 image's symbols are read from it, the return address `raStar` is the end of the region, the
 stack of one call level is the largest frame (`depthOf`). -/
 def input : LinkInput := S.input0.withDepth S.input0.resultsT
+
+/-- **The placed program's results are the compiler's** (`fallback`): every theorem about
+`S.input.results` (`okB`, `BinOk`, the binary theorems) is about the code the compiler emits and
+`leanLink` writes. -/
+theorem input_results : S.input.results = S.input.resultsT :=
+  LinkInput.results_fallback rfl
 
 /-- **The placement's conditions**: distinct function and alias names (an alias is no placed
 function), one alias per function, every alias of a placed function; one size per function,

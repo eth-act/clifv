@@ -78,8 +78,9 @@ theorem crate_correct (hD : SpillDefinedHyp) (n : String) : CrateStmtT spec.inpu
 theorem code : ∀ e ∈ tabOf spec.input.resultsT, BinCheck.ArtOk spec.input file e.2 :=
   leanLink_code link_eq
 
-/-- The binary facts of the linked file (`BinOk` with the compiler's code), no premise. -/
-theorem binOk : BinOkT spec.input spec.data file := binOk_leanLink link_eq
+/-- The binary facts of the linked file (`BinOk` of `spec.input`, whose results are the
+compiler's), no premise. -/
+theorem binOk : BinCheck.BinOk spec.input spec.data file := binOk_leanLink link_eq
 
 /-- `crate_correct` under definite assignment of `lowerFunction`'s VCode. -/
 theorem crate_correct_lower (hM : LowerDefinedHyp) (n : String) : CrateStmtT spec.input n :=
