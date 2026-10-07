@@ -54,8 +54,7 @@ def OutDef (ctx : Ctx) (S : List Nat) (s s' : LState) (out : Option V) : Prop :=
 
 /-- **The definedness facts of the ISLE runs** (open): on input in scope, a statement's `lower`
 run, a terminator's run and a `try_call`'s `lower_branch` run meet `RunDef` (reaching from the
-instruction's operands, resp. the terminator's arguments), a statement's results `OutDef`, and a
-`try_call`'s emitted call has operands (so its defs, the result vregs, are defined). -/
+instruction's operands, resp. the terminator's arguments), and a statement's results `OutDef`. -/
 def DefRunsHyp : Prop :=
   ∀ (f : Clif.Function) (ctx : Ctx) (ranges : Array (Nat × Nat)) (st0 : LState),
     Dominated f → LowerScope f → AbiSigsOk f → buildCtx f = .ok (ctx, ranges, st0) →
@@ -75,7 +74,6 @@ def DefRunsHyp : Prop :=
       tryCallData f t = .ok data → exnTableOpnd f et = .ok (sig, items) →
       ctx.valDef.size ≤ lo.nextVreg → tryRegsOf sig lo = some (trs, st1) →
       tryCallF ctx ti data trs targets { st1 with emitted := #[] } = .ok (out, s', tr) →
-      RunDef ctx (termArgs t) { st1 with emitted := #[] } s' ∧
-        ∀ m ∈ s'.emitted.toList, ∀ c, m = .call c → ∃ ops, (MInst.call c).operands = .ok ops)
+      RunDef ctx (termArgs t) { st1 with emitted := #[] } s')
 
 end Backend.Proof.DefRun
