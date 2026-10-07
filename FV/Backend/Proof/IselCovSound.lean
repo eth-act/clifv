@@ -143,6 +143,7 @@ theorem aun_sound {a : AW} {t k : Nat} {vs : List V} (h : γ f ctx a (.data t k 
         | [.scale _], hm => simp at hm
         | [.simm9], hm => simp at hm
         | [.xv _], hm => simp at hm
+        | [.num _ _], hm => simp at hm
         | [.alts _], hm => simp at hm
       | _ => simp at hxd
     · exact ⟨_, rfl, holdsP_replicate (fun w hw => deepOk_fields (deepAny_sound as _ h) w hw) n⟩
@@ -162,6 +163,7 @@ theorem aun_sound {a : AW} {t k : Nat} {vs : List V} (h : γ f ctx a (.data t k 
   | logic sz => obtain ⟨_, he, _⟩ := h; cases he
   | scale b => obtain ⟨_, he, _⟩ := h; cases he
   | simm9 => obtain ⟨_, he, _⟩ := h; cases he
+  | num k b => rcases numOk_shape h with ⟨_, he⟩ | ⟨_, he⟩ <;> cases he
 
 /-- **Fields of a struct value** (`aunS`). -/
 theorem aunS_sound {a : AW} {t k : Nat} {vs : List V} (h : γ f ctx a (.data t k vs)) (n : Nat) :
@@ -189,15 +191,36 @@ theorem aunS_sound {a : AW} {t k : Nat} {vs : List V} (h : γ f ctx a (.data t k
   | logic sz => obtain ⟨_, he, _⟩ := h; cases he
   | scale b => obtain ⟨_, he, _⟩ := h; cases he
   | simm9 => obtain ⟨_, he, _⟩ := h; cases he
+  | num k b => rcases numOk_shape h with ⟨_, he⟩ | ⟨_, he⟩ <;> cases he
+
+/-! ## Integer constants -/
+
+theorem normInt_small (ty : TypeId) {i : Int} (h0 : 0 ≤ i) (h1 : i < 128) : normInt ty i = i := by
+  unfold normInt
+  split
+  · rename_i t _
+    cases t <;> dsimp only <;> rw [Int.emod_eq_of_lt h0 (by simp; omega)] <;> simp <;> omega
+  · rfl
+
+/-- A constant's value is described by `aint`. -/
+theorem aint_sound (ty : TypeId) (i : Int) : γ f ctx (aint i) ((sem ctx).int ty i) := by
+  unfold aint
+  split
+  · rename_i h
+    show NumOk .int _ (.int (normInt ty i))
+    rw [normInt_small ty h.1 h.2]
+    exact ⟨i, rfl, h.1, by omega⟩
+  · exact ⟨fun r hr => by simp [sem, V.regsIn] at hr, fun _ => rfl⟩
 
 /-! ## The model
 
-The transfer functions of the extern constructors and the oracles (`actor`, `apre`, `aOracle`)
-are parameters: V3's (`IselCovFns`) and V4's control-shape analysis (`IselShpFns`). -/
+The transfer functions of the extern helpers and the oracles (`aext`, `actor`, `apre`,
+`aOracle`) are parameters: V3's (`IselCovFns`), V4's control-shape analysis (`IselShpFns`), V6c's
+emission analysis (`IselEmitFns`). -/
 
 section Params
-variable (actor : TermId → List AW → AW) (apre : TermId → List AW → Bool)
-  (aOracle : TermId → List AW → Option AW)
+variable (aext : TermId → AW → List AW) (actor : TermId → List AW → AW)
+  (apre : TermId → List AW → Bool) (aOracle : TermId → List AW → Option AW)
 
 /-- The facts about the extern helpers the soundness proof needs, and a state invariant. -/
 structure CovModel (p : Program) (f : Clif.Function) (ctx : Ctx) where
@@ -213,12 +236,12 @@ structure CovModel (p : Program) (f : Clif.Function) (ctx : Ctx) where
     (applyTerm p (sem ctx) cfg n ty t vs).run (s, tr) = .ok (r, (s', tr')) →
     Is s' ∧ ∀ v, r = some v → γ f ctx a v
 
-variable {actor apre aOracle}
+variable {aext actor apre aOracle}
 
 /-! ## Patterns -/
 
 section Pat
-variable {p : Program} (hctx : CtxInv f ctx) (md : CovModel actor apre aOracle p f ctx)
+variable {p : Program} (hctx : CtxInv f ctx) (md : CovModel aext actor apre aOracle p f ctx)
 
 theorem unData_eq {ty : TypeId} {v : V} {k : Nat} {fs : List V}
     (h : (sem ctx).unData ty v = some (k, fs)) : v = .data ty k fs := by
@@ -581,7 +604,7 @@ theorem holds2_le {as bs : List AW} {vs : List V} (h : AW.leAll as bs = true)
 /-! ## Soundness of the abstract interpretation -/
 
 section Sound
-variable {p : Program} (hctx : CtxInv f ctx) (md : CovModel actor apre aOracle p f ctx) (cfg : Config)
+variable {p : Program} (hctx : CtxInv f ctx) (md : CovModel aext actor apre aOracle p f ctx) (cfg : Config)
   (tab : Tab)
 
 /-- The soundness statements at fuel `n`. -/
@@ -718,8 +741,7 @@ theorem soundAt (hc : cfg.checkOverlap = false) (htab : chkTab p tab aext actor 
     | constInt ty i =>
       rw [evalExpr.eq_4] at h; rw [aExpr.eq_3] at ha; cases ha
       cases pure_ok h
-      exact ⟨hIs, fun v hv => by
-        cases hv; exact ⟨fun r hr => by simp [sem, V.regsIn] at hr, fun _ => rfl⟩⟩
+      exact ⟨hIs, fun v hv => by cases hv; exact aint_sound ty i⟩
     | constPrim ty nm =>
       rw [evalExpr.eq_5] at h; rw [aExpr.eq_4] at ha; cases ha
       split at h

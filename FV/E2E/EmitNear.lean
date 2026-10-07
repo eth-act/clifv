@@ -2,6 +2,7 @@ import FV.E2E.EmitPreOk
 import FV.Backend.Proof.RelaxLayout
 import FV.E2E.EmitCondsDefs
 import FV.Backend.Proof.AssignOk
+import FV.Backend.EmitOk
 
 /-!
 # The near PC-relative lines of the spill path reach their labels (V6b)

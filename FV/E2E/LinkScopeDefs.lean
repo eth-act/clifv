@@ -1,7 +1,8 @@
 import FV.E2E.LinkCheck
 import FV.E2E.LinkOwnCallsDefs
 import FV.E2E.LinkOwnFramesDefs
-import FV.E2E.EmitCondsDefs
+import FV.E2E.EmitSize
+import FV.Backend.Proof.IselEmitDefs
 import FV.Backend.AllocReady
 import FV.Backend.Proof.LowerDecide
 import FV.Backend.Proof.SpillArity
@@ -68,15 +69,15 @@ def LinkInput.withDepth (I : LinkInput) (R : Res) : LinkInput := { I with D := d
 /-! ## The input conditions -/
 
 /-- `lowerFunction` and `prepare` accept `f` (internal rejections without a fallback:
-docs/TO-PROVE.md §1.2, kind 4), and the prepared VCode satisfies `emitCondsB`, the decidable
-condition of V6b's emission totality (`backend_correct_final_total_emit`): the spill code's word
-bound is below `2 ^ 24` (needed: a large enough function exceeds `b`'s reach) and the three
-instruction-selection facts `immsOkB`, `noAlwaysB`, `branchTargetsOkB` (V6c, open: to be proven
-from the ISLE rules, then dropped from here). -/
+docs/TO-PROVE.md §1.2, kind 4), every `uextend`/`sextend` widens (`extendsWidenB`, V6c's input
+condition, from which instruction selection's emission facts follow: `emitCondsB_of_input`),
+and the spill code's word bound is below `2 ^ 24` (`spillSizeOkB`, V6b's size condition, needed:
+a large enough function exceeds `b`'s reach). -/
 def lowersB (f : Clif.Function) : Bool :=
+  extendsWidenB f &&
   match lowerFunction f with
   | .ok vc => match prepare vc with
-    | .ok vcp => emitCondsB vcp
+    | .ok vcp => spillSizeOkB vcp
     | .error _ => false
   | .error _ => false
 

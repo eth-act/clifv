@@ -12,9 +12,10 @@ namespace Backend.Proof.Cov
 
 open Backend Backend.Proof Backend.Proof.Flow Isle Isle.Interp Isle.Aarch64
 
-variable {f : Clif.Function} {ctx : Ctx} {p : Program} {actor : TermId → List AW → AW}
+variable {f : Clif.Function} {ctx : Ctx} {p : Program} {aext : TermId → AW → List AW}
+  {actor : TermId → List AW → AW}
   {apre : TermId → List AW → Bool} {aOracle : TermId → List AW → Option AW}
-  {md : CovModel actor apre aOracle p f ctx} {cfg : Config} {tab : Tab}
+  {md : CovModel aext actor apre aOracle p f ctx} {cfg : Config} {tab : Tab}
 
 /-- **A root term whose rules pass `aRule`, never match, or are checked by hand** keeps the
 invariant (at a fuel leaving every hand-checked match and right-hand side 1000 steps). -/

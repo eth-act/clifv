@@ -2,6 +2,7 @@ import Lean
 import FV.E2E.EmitPreOk
 import FV.E2E.EmitCondsDefs
 import FV.Backend.Proof.RelaxLayout
+import FV.Backend.EmitOk
 
 /-!
 # Every instruction of the emitted spill allocation is encodable (V6b)

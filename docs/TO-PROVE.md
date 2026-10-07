@@ -68,7 +68,7 @@ and, on rejection, replaced by a directly proven Lean path (kind 2). Correctness
 | `prepare` | Lean | `prepCheck`, complete on `PrepDomain`, which `lowerFunction` always produces (`prepDomain_of_lower`) | validator, complete | V2 done |
 | register allocation | **external Rust** (regalloc2 0.15.2 via `lean-regalloc`), Lean fallback `spillAlloc` | `checkAlloc` (`FV/Backend/RegallocCheck.lean:423-441`) on regalloc2's output; on rejection `spillAlloc` (`allocResult`, `E2E.backend_correct_final_alloc`), accepted by `checkAlloc` for every in-scope function (`E2E.spillAccepted`, proven) | fallback; its acceptance proven | V4 (a) done; (b) open |
 | frame, control lowering | Lean `lowerRFunc` | internal rejections (`ctlCheck`, operand/move shapes; no frame-size limit since V5); a rejection of regalloc2's allocation falls back to `spillAlloc`, which `lowerRFunc` provably lowers (`E2E.lowerRFunc_spillAlloc`) | fallback; its lowering proven | V5 done |
-| emission, layout | Lean | branch relaxation; `emitFunc_layout_total` from `layoutReadyB`; regalloc2's code kept only if `emitReady` (`lowerAllocReady`), the spill code proven ready (`E2E.emitReady_spill`) under `emitCondsB` (size bound + three isel facts, decidable on the VCode) | proven modulo decidable conditions on the VCode | V6 done; V6c open |
+| emission, layout | Lean | branch relaxation; `emitFunc_layout_total` from `layoutReadyB`; regalloc2's code kept only if `emitReady` (`lowerAllocReady`), the spill code proven ready (`E2E.emitReady_spill`) under `emitCondsB`; its three isel facts proven from the ISLE data (`E2E.backend_correct_final_total_emit_in`, input condition `extendsWidenB`) | proven modulo the size bound `spillSizeOkB` (decidable on the VCode) | V6c: size bound input-side open |
 | encoder | Lean | `Insn.decode_encode` (`FV/Backend/Proof/Encode.lean:57-60`) | proven | — |
 | linking (program level) | `cargo fv` object merge + **rust-lld** | **`okB`** (`FV/E2E/LinkCheck.lean:716-777`) per crate by `native_decide` | **validator premise + oracle + per-program proof** | L1, L2 |
 | executable bytes | **rust-lld** | **`BinOk`** (`FV/E2E/BinCheck.lean:539-543`) per crate by `native_decide` | **validator premise + oracle + per-program proof** | L2 |
@@ -314,11 +314,19 @@ author's estimate, not measured), **Risk**.
   `emitCondsB vcp` (each part counted by `lean-e2e-check`, 1149/1149):
   - `spillSizeOkB` — the size input condition (needed: large functions exceed `b`'s reach);
   - `immsOkB`, `noAlwaysB`, `branchTargetsOkB` — facts about `lowerFunction`'s output.
-- **Remaining (V6c):** prove `immsOkB` (immediate ranges; extend the `IselCov` abstract domain with
-  `imm12`/move-wide/shift-amount values, plus indirect call targets being int vregs), `noAlwaysB`
-  (`CtlShape`'s `KindOk` excluding `al`/`nv`) and `branchTargetsOkB` (branch-target instructions only
-  block-final, or their targets block labels) from the ISLE rule data; make the size bound
-  input-side (a per-CLIF-instruction bound on emitted VCode instructions).
+- **V6c (2026-10-06): the isel facts proven.** `E2E.backend_correct_final_total_emit_in`
+  (`FV/E2E/EmitTotalIn.lean`): `emitCondsB` replaced by the input condition `extendsWidenB f` (every
+  `uextend`/`sextend` widens; CLIF's verifier rule, needed: a non-widening `uextend.i32` of an `i64`
+  selects an unencodable `Extend` from 64 bits) and `spillSizeOkB vcp`. `immsOkB`, `noAlwaysB`,
+  `branchTargetsOkB` follow from `Driver.iselEmit` (`FV/Backend/Proof/IselEmit*.lean`: V3's abstract
+  interpreter with numeric leaves `AW.num` and the emission check `emChk`, table `emitTab`, 740
+  entries; branch rules end in their branch, `aLast_sound`; rules 808, 819, 862, 863 by hand) through
+  `emitConds_lower` (`FV/E2E/EmitCondsLower.lean`). Witness:
+  `backend_correct_final_total_emit_in_witness`.
+- **Remaining (V6c):** make the size bound input-side: a bound on the VCode instructions (and
+  their spill moves) each ISLE run emits — a cost analysis of the rules (per-term emission bound
+  table, sound over the interpreter including failed match phases; `gen_call_args` grows with the
+  argument count) — summed through `lowerFunction`, `prepare` and `spillAlloc`.
 
 ### L1. The executable compiler as one Lean function
 
@@ -357,7 +365,7 @@ author's estimate, not measured), **Risk**.
 
   | `okB` check | `LinkSys.Ok` premise | kind | discharged by |
   | --- | --- | --- | --- |
-  | compiled: pipeline | `compiled` | own output | `pipeT_ok`: `backend_correct_final_total_emit` (V4–V6b, `lowerAllocReady`) under `lowersB` (input: `lowerFunction`/`prepare` accept, an internal rejection, §1.2 kind 4; `emitCondsB` of the prepared VCode, V6b's condition: size bound + `immsOkB`/`noAlwaysB`/`branchTargetsOkB` until V6c) — for the compiler's pipeline `pipeT`, not the checker's `pipe` (which lowers regalloc2's raw answer, an oracle) |
+  | compiled: pipeline | `compiled` | own output | `pipeT_ok`: `backend_correct_final_total_emit` (V4–V6b, `lowerAllocReady`) under `lowersB` (input: `lowerFunction`/`prepare` accept, an internal rejection, §1.2 kind 4; `extendsWidenB` and the size bound `spillSizeOkB`, from which `emitCondsB` follows, `emitCondsB_of_input`, V6c) — for the compiler's pipeline `pipeT`, not the checker's `pipe` (which lowers regalloc2's raw answer, an oracle) |
   | compiled: lowerCheck | `compiled` | own output | `lowerCheck_complete` (V1) from `dominatedB`/`lowerScopeB` |
   | compiled: prepCheck | `compiled` | own output | `prepCheck_complete`, `prepDomain_of_lower` (V2) |
   | compiled: checkAlloc | `compiled` | own output | regalloc2's answer: kept only if accepted (`checkAlloc_allocResult`); spill allocation: `spillCheckAlloc` (completeness of `checkAlloc`'s fixpoint, `FV/E2E/SpillCheckAlloc*.lean`) under **`SpillDefinedHyp`** (open: definite assignment of the prepared VCode; needs a must-def invariant over ISLE runs, ~6–8k lines `[est]`) |
@@ -664,7 +672,8 @@ label**; list the free ones with
 | V4b | [#57](https://github.com/eth-act/clifv/issues/57) A real register allocator in Lean (removes regalloc2) | open |
 | V5 | [#7](https://github.com/eth-act/clifv/issues/7) Frame and control-lowering rejections (totality) | **done**: `backend_correct_final_total` (no allocation/lowering premise, no frame-size limit) |
 | V6 | [#8](https://github.com/eth-act/clifv/issues/8) Branch range (totality) | **done** (#65) |
-| V6b | [#66](https://github.com/eth-act/clifv/issues/66) `emitPre` and `layoutReadyB` always hold (per-function totality) | **done**: `backend_correct_final_total_emit`, premises replaced by the decidable `emitCondsB` (V6c) |
+| V6b | [#66](https://github.com/eth-act/clifv/issues/66) `emitPre` and `layoutReadyB` always hold (per-function totality) | **done**: `backend_correct_final_total_emit`, premises replaced by the decidable `emitCondsB` |
+| V6c | [#76](https://github.com/eth-act/clifv/issues/76) `emitCondsB` from the input | isel facts **done** (`backend_correct_final_total_emit_in`, input condition `extendsWidenB`); size bound input-side open |
 | L2a | [#9](https://github.com/eth-act/clifv/issues/9) Linking without validators: split `okB` into input conditions + properties proven by construction | in progress: `crate_correct_inScope` (no `okB`: `InScopeP` + `linkerOkB`); open: `SpillDefinedHyp` (definite assignment, `checkAlloc` of the spill allocation) |
 | L2b | [#10](https://github.com/eth-act/clifv/issues/10) Static linker in Lean for the executable (BinOk by construction) | open |
 | L3 | [#11](https://github.com/eth-act/clifv/issues/11) Executable-bytes simulation (M9 item 1b) | stages 1–2 done (#63, #64); stage 3 done (3a frame property, `agent/exec-frame`; 3b `RunOkD` from the M6 proof incl. D2/D4: `binary_correct_exec_proven`, `agent/exec-good`); aliases done (`agent/exec-alias`: site kinds, `codeMapB` holds on `fv-demo`) |

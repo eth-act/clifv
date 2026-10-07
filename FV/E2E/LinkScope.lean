@@ -1,5 +1,5 @@
 import FV.E2E.LinkScopeDefs
-import FV.E2E.EmitTotal
+import FV.E2E.EmitTotalIn
 import FV.E2E.LinkOwnGotLocal
 import FV.E2E.LinkOwnSegRange
 import FV.E2E.LinkOwnFrames
@@ -16,8 +16,8 @@ into
   alone — the subset, signatures, no `return_call`, distinct names, declared signatures, the
   scope of indirect calls, the call sites' registers (`callScopeB`), the callees' stack
   arguments (`outScopeB`), the conditions of the backend's totality theorems (`dominatedB`,
-  `lowerScopeB`, `arityOkB`), `lowerFunction`/`prepare` acceptance and V6b's `emitCondsB`
-  (`lowersB`);
+  `lowerScopeB`, `arityOkB`), `lowerFunction`/`prepare` acceptance, V6c's `extendsWidenB` and
+  V6b's size bound `spillSizeOkB` (`lowersB`; `emitCondsB` follows: `emitCondsB_of_input`);
 * **properties of the compiler's own outputs**, proven here for the compiler's pipeline `pipeT`
   (`lowerAllocReady`): pipeline success (V5/V6b), the validators (`lowerCheck_complete`,
   `prepCheck_complete`, `formsCovered_complete`), `checkAlloc` of the allocation lowered
@@ -115,8 +115,12 @@ theorem inSubset_of_fnScope {g : Clif.Function} (h : fnScopeB g = true) (p : Cli
     simpa [Bool.and_eq_true, decide_eq_true_eq] using this
 
 theorem lowersB_spec {f : Clif.Function} (h : lowersB f = true) :
-    ∃ vc vcp, lowerFunction f = .ok vc ∧ prepare vc = .ok vcp ∧ emitCondsB vcp = true := by
+    extendsWidenB f = true ∧ ∃ vc vcp, lowerFunction f = .ok vc ∧ prepare vc = .ok vcp ∧
+      spillSizeOkB vcp = true := by
   unfold lowersB at h
+  rw [Bool.and_eq_true] at h
+  obtain ⟨hw, h⟩ := h
+  refine ⟨hw, ?_⟩
   split at h
   · rename_i vc hl
     split at h
@@ -217,7 +221,8 @@ theorem pipeT_ok {g : Clif.Function} (hsc : fnScopeB g = true) (hD : SpillDefine
     ∃ a, pipeT g k base o = .ok a ∧ lowerCheck g a.vc = true ∧ prepCheck a.vc a.vcp = true ∧
       checkAlloc a.vcp a.rf = .ok () ∧ FormsCovered ⟨a.fa.k, a.af.slotBase⟩ a.vcp := by
   obtain ⟨-, -, -, -, -, -, -, -, hd, hs, har, hlw⟩ := fnScope_parts hsc
-  obtain ⟨vc, vcp, hl, hp, hem⟩ := lowersB_spec hlw
+  obtain ⟨hw, vc, vcp, hl, hp, hsz⟩ := lowersB_spec hlw
+  have hem := emitCondsB_of_input hs hw hl hp hsz
   have hsub := inSubset_of_fnScope hsc { funcs := [] }
   have hD' := dominated_of hd
   have hS := lowerScope_of hs

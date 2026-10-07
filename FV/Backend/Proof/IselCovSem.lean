@@ -39,6 +39,37 @@ def LogicImmComplete : Prop :=
 /-- Every register inside `v` has a kind of the mask `m`. -/
 def DeepRegs (m : Nat) (v : V) : Prop := ∀ r ∈ v.regsIn, r.kind &&& m ≠ 0
 
+/-- **The meaning of a numeric/operand leaf** `AW.num k b`. -/
+def NumOk : NK → Nat → V → Prop
+  | .int, b, v => ∃ i : Int, v = .int i ∧ 0 ≤ i ∧ i < b
+  | .imm12, b, v => ∃ i : Imm12, v = .op (.imm12 i) ∧ i.bits < b
+  | .immShift, b, v => ∃ n, v = .op (.immShift n) ∧ n < b
+  | .uimm5, b, v => ∃ n, v = .op (.uimm5 n) ∧ n < b
+  | .uimm6, b, v => ∃ n, v = .op (.uimm6 n) ∧ n < b
+  | .shiftAmt, b, v => ∃ s : ShiftOpAndAmt, v = .op (.shiftOpAndAmt s) ∧ s.amt < b ∧ s.op ≠ .ror
+  | .mwc, b, v => ∃ m : MoveWideConst, v = .op (.moveWideConst m) ∧ m.bits < 2 ^ 16 ∧ m.shift < b
+  | .callInfo, _, v => ∃ c : CallInfo, v = .op (.callInfo c) ∧
+      ∀ r, c.dest = .reg r → ∃ n, r = .vreg n .int
+
+/-- A leaf describes an integer or an operand. -/
+theorem numOk_shape {k : NK} {b : Nat} {v : V} (h : NumOk k b v) :
+    (∃ i, v = .int i) ∨ ∃ o, v = .op o := by
+  cases k <;> simp only [NumOk] at h
+  · obtain ⟨i, rfl, -⟩ := h; exact .inl ⟨i, rfl⟩
+  all_goals obtain ⟨_, rfl, -⟩ := h; exact .inr ⟨_, rfl⟩
+
+/-- A larger bound describes more. -/
+theorem numOk_mono {k : NK} {b b' : Nat} (hb : b ≤ b') {v : V} (h : NumOk k b v) : NumOk k b' v := by
+  cases k <;> simp only [NumOk] at h ⊢
+  · obtain ⟨i, rfl, h0, h1⟩ := h; exact ⟨i, rfl, h0, by omega⟩
+  · obtain ⟨i, rfl, h1⟩ := h; exact ⟨i, rfl, by omega⟩
+  · obtain ⟨i, rfl, h1⟩ := h; exact ⟨i, rfl, by omega⟩
+  · obtain ⟨i, rfl, h1⟩ := h; exact ⟨i, rfl, by omega⟩
+  · obtain ⟨i, rfl, h1⟩ := h; exact ⟨i, rfl, by omega⟩
+  · obtain ⟨i, rfl, h1, h2⟩ := h; exact ⟨i, rfl, by omega, h2⟩
+  · obtain ⟨i, rfl, h1, h2⟩ := h; exact ⟨i, rfl, h1, by omega⟩
+  · exact h
+
 section
 variable (f : Clif.Function) (ctx : Ctx)
 
@@ -57,6 +88,7 @@ def γ : AW → V → Prop
   | .xv e, v => e.toAV.Holds f ctx v ∧ v.regsIn = [] ∧ covV v = true
   | .alts as, v => γAny as v
   | .data t k fs, v => ∃ vs, v = .data t k vs ∧ γL fs vs
+  | .num k b, v => NumOk k b v
 /-- Some abstract value of the list describes `v`. -/
 def γAny : List AW → V → Prop
   | [], _ => False
@@ -117,6 +149,7 @@ theorem mask_sound {a : AW} {r : Reg} (h : γ f ctx a (.reg r)) : r.kind &&& a.m
   | xv e => simp [γ, regsIn_reg] at h
   | alts as => simp only [AW.mask]; rcases kind_cases r with h | h | h | h <;> rw [h] <;> decide
   | data t k fs => obtain ⟨vs, he, -⟩ := h; cases he
+  | num k b => rcases numOk_shape h with ⟨_, he⟩ | ⟨_, he⟩ <;> cases he
 
 theorem kind_int {r : Reg} (h : r.kind = 1) : ∃ n, r = .vreg n .int := by
   unfold Reg.kind at h; split at h <;> simp_all
