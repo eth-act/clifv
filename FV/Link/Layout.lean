@@ -66,14 +66,22 @@ def size : Nat := span S.sizes
 /-- **The placement**: every function at its offset from `R`. -/
 def progAddrs : List (String × Nat) := S.names.zip ((offs S.sizes 0).map (S.R + ·))
 
-/-- The address of the gap word after the function `f` (`R` when `f` is not placed). -/
-def gapOf (f : String) : Nat :=
-  match ((S.names.zip ((offs S.sizes 0).zip S.sizes)).lookup f) with
-  | some (o, n) => S.R + o + 4 * n
-  | none => S.R
+/-- The functions' offsets and sizes by name. -/
+def gapTab : List (String × Nat × Nat) := S.names.zip ((offs S.sizes 0).zip S.sizes)
 
-/-- A self-call alias's fresh address: the gap word after its function (no symbol is there). -/
-def aliasAddrs : List (String × Nat) := S.aliases.map fun p => (p.1, S.gapOf p.2)
+/-- The address of the gap word after the function `f` in the region at `R` with the offsets
+and sizes `t` (`R` when `f` is not there). -/
+def gapIn (R : Nat) (t : List (String × Nat × Nat)) (f : String) : Nat :=
+  match t.lookup f with
+  | some (o, n) => R + o + 4 * n
+  | none => R
+
+/-- The address of the gap word after the function `f` (`R` when `f` is not placed). -/
+def gapOf (f : String) : Nat := gapIn S.R S.gapTab f
+
+/-- A self-call alias's fresh address: the gap word after its function (no symbol is there).
+(The table is computed once: every evaluation of `S.sizes` compiles the program.) -/
+def aliasAddrs : List (String × Nat) := let t := S.gapTab; S.aliases.map fun p => (p.1, gapIn S.R t p.2)
 
 /-- **The link map**: the placement, the aliases, then the outside part's symbols. -/
 def addrs : List (String × Nat) := S.progAddrs ++ S.aliasAddrs ++ S.outside
@@ -82,7 +90,7 @@ def addrs : List (String × Nat) := S.progAddrs ++ S.aliasAddrs ++ S.outside
 def input0 : LinkInput where
   funcs := S.funcs ++ S.aliasFns
   addrs := S.addrs
-  syms := S.symNames.filterMap fun n => (S.addrs.lookup n).map (n, ·)
+  syms := let a := S.addrs; S.symNames.filterMap fun n => (a.lookup n).map (n, ·)
   raStar := S.R + S.size
   D := 0
   aliases := S.aliases
@@ -100,7 +108,9 @@ def placeOkB : Bool :=
   S.aliases.all (fun p => S.names.contains p.2) &&
   decide (S.aliasFns.map (·.func.name) = S.aliases.map (·.1)) &&
   decide (0 < S.R) && S.R % 4 == 0 && decide (S.R + S.size < 2 ^ 64) &&
-  S.outside.all fun e => decide (e.2 % 2 ^ 64 < S.R) || decide (S.R + S.size ≤ e.2 % 2 ^ 64)
+  -- the size once (every evaluation of `S.size` compiles the program)
+  (let n := S.size
+   S.outside.all fun e => decide (e.2 % 2 ^ 64 < S.R) || decide (S.R + n ≤ e.2 % 2 ^ 64))
 
 end LinkSpec
 
