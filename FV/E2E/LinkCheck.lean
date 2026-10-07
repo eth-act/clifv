@@ -1,5 +1,6 @@
 import FV.E2E.LinkArm
 import FV.Opt.Legalize128Pass
+import FV.Backend.AllocReady
 
 /-! # A decidable checker for `LinkSys.Ok` (docs/contracts/e2e.md, "Crate-level instance")
 
@@ -50,7 +51,11 @@ every symbol's address, `Xb.sym`); the CLIF image's symbol table (`syms`: `L.sym
 outside all code (`raStar`); the stack of one call level (`D`); `cargo fv`'s self-call aliases
 (`aliases`: `(f__fvself, f)`, a function of the program with `f`'s body, its self-call naming
 `f`, loaded at `f`'s address — one copy of the code, as the linker resolves the alias; the alias
-has no symbol in the executable, so `addrs` gives it a fresh address no other symbol has). -/
+has no symbol in the executable, so `addrs` gives it a fresh address no other symbol has); the
+pipeline that compiles the functions (`fallback`: `false`, the checker's `pipe`, regalloc2's
+allocation as given, which the checks then validate; `true`, the compiler's `pipeT`, which falls
+back to the spill allocation when regalloc2's is rejected or not emittable — what `lean-backend`
+and the Lean linker run, `LinkInput.results_fallback`). -/
 structure LinkInput where
   funcs : List FnInput
   addrs : List (String × Nat)
@@ -58,6 +63,7 @@ structure LinkInput where
   raStar : Nat
   D : Nat
   aliases : List (String × String) := []
+  fallback : Bool := false
   deriving Inhabited
 
 deriving instance Inhabited for Art
@@ -128,9 +134,48 @@ theorem pipe_spec {f : Clif.Function} {k : Nat} {base : BitVec 64} {o : Lean.Jso
   cases h
   exact ⟨rfl, h2, h5, h6, h7, rfl, rfl⟩
 
+/-- regalloc2's answer for the prepared VCode `vcp`, read from `lean-regalloc`'s output (an
+oracle: an error or a rejected allocation selects the spill allocation). -/
+def raAnswer (vcp : VCode) (o : Lean.Json) : Except String RFunc := do
+  let o ← parseRAOut o
+  buildRFunc vcp o
+
+/-- **The compiler's pipeline** on `f` (index `k` in its file, `lean-regalloc`'s output `o`)
+loaded at `base`: `lowerFunction`, `prepare`, `lowerAllocReady` (regalloc2's allocation if
+accepted and emittable, else the spill allocation), `emitFunc`, `layout`. The artifact's
+allocation is the one lowered, `allocResult vcp (readyAnswer vcp ra)` (`lowerAllocReady_eq`). -/
+def pipeT (f : Clif.Function) (k : Nat) (base : BitVec 64) (o : Lean.Json) : Except String Art := do
+  let vc ← lowerFunction f
+  let vcp ← prepare vc
+  let ra := raAnswer vcp o
+  let af ← lowerAllocReady vcp ra
+  let fa ← emitFunc k af
+  let fb ← fa.layout
+  pure ⟨k, vc, vcp, allocResult vcp (readyAnswer vcp ra), af, fa, fb, base⟩
+
+theorem pipeT_spec {f : Clif.Function} {k : Nat} {base : BitVec 64} {o : Lean.Json} {a : Art}
+    (h : pipeT f k base o = .ok a) :
+    lowerFunction f = .ok a.vc ∧ prepare a.vc = .ok a.vcp ∧
+      a.rf = allocResult a.vcp (readyAnswer a.vcp (raAnswer a.vcp o)) ∧
+      lowerRFunc a.vcp a.rf = .ok a.af ∧ emitFunc a.k a.af = .ok a.fa ∧ a.fa.layout = .ok a.fb ∧
+      a.k = k ∧ a.base = base := by
+  unfold pipeT at h
+  rcases h1 : lowerFunction f with _ | vc <;> simp only [h1, bind, Except.bind] at h
+  · cases h
+  rcases h2 : prepare vc with _ | vcp <;> simp only [h2] at h
+  · cases h
+  rcases h3 : lowerAllocReady vcp (raAnswer vcp o) with _ | af <;> simp only [h3] at h
+  · cases h
+  rcases h4 : emitFunc k af with _ | fa <;> simp only [h4] at h
+  · cases h
+  rcases h5 : fa.layout with _ | fb <;> simp only [h5] at h
+  · cases h
+  cases h
+  exact ⟨rfl, h2, rfl, lowerAlloc_eq ((lowerAllocReady_eq _ _).symm.trans h3), h4, h5, rfl, rfl⟩
+
 /-- **The entries of `R` are the pipeline's outputs**, loaded at their load addresses: what the
 soundness of the checks (`okR_sound`) needs of the results, whichever allocator answer the
-pipeline lowered (`results_ok`: the checker's `pipe`; `FV/E2E/LinkScope.lean`: the compiler's). -/
+pipeline lowered (`results_ok`: the input's pipeline, `pipe` or `pipeT`). -/
 def ResOk (I : LinkInput) (R : List (Clif.Function × Except String Art)) : Prop :=
   ∀ e ∈ R, ∀ a, e.2 = .ok a → lowerFunction e.1 = .ok a.vc ∧ prepare a.vc = .ok a.vcp ∧
     lowerRFunc a.vcp a.rf = .ok a.af ∧ emitFunc a.k a.af = .ok a.fa ∧ a.fa.layout = .ok a.fb ∧
@@ -139,10 +184,34 @@ def ResOk (I : LinkInput) (R : List (Clif.Function × Except String Art)) : Prop
 /-- The program's functions with their pipeline results (computed once by the checker). -/
 abbrev Res := List (Clif.Function × Except String Art)
 
-/-- Every function of the input, compiled and loaded at its link-map address. -/
+/-- The input's pipeline on `fi` (`fallback`: the compiler's `pipeT`, else the checker's
+`pipe`), loaded at its load address. -/
+def LinkInput.pipeOf (I : LinkInput) (fi : FnInput) : Except String Art :=
+  cond I.fallback pipeT pipe fi.func fi.k (BitVec.ofNat 64 (I.baseOf fi.func.name)) (raJ fi.ra fi.j)
+
+/-- Every function of the input, compiled by the input's pipeline and loaded at its link-map
+address. -/
 def LinkInput.results (I : LinkInput) : Res :=
+  I.funcs.map fun fi => (fi.func, I.pipeOf fi)
+
+/-- Every function of the input, compiled by the compiler's pipeline and loaded at its link-map
+address. -/
+def LinkInput.resultsT (I : LinkInput) : Res :=
   I.funcs.map fun fi => let f := fi.func
-    (f, pipe f fi.k (BitVec.ofNat 64 (I.baseOf f.name)) (raJ fi.ra fi.j))
+    (f, pipeT f fi.k (BitVec.ofNat 64 (I.baseOf f.name)) (raJ fi.ra fi.j))
+
+/-- **With `fallback`, the input's results are the compiler's** (`resultsT`): every theorem
+stated for `I.results` (`okB`, `okB_sound`, `BinOk`, the binary theorems) is then about the code
+the compiler emits. -/
+theorem LinkInput.results_fallback {I : LinkInput} (h : I.fallback = true) :
+    I.results = I.resultsT := by
+  simp only [LinkInput.results, LinkInput.resultsT, LinkInput.pipeOf, h, Bool.cond_true]
+
+/-- Without `fallback`, the input's results are the checker's pipeline `pipe`'s. -/
+theorem LinkInput.results_raw {I : LinkInput} (h : I.fallback = false) :
+    I.results = I.funcs.map fun fi => let f := fi.func
+      (f, pipe f fi.k (BitVec.ofNat 64 (I.baseOf f.name)) (raJ fi.ra fi.j)) := by
+  simp only [LinkInput.results, LinkInput.pipeOf, h, Bool.cond_false]
 
 def progOf (R : Res) : Clif.Program := { funcs := R.map (·.1) }
 
@@ -781,8 +850,14 @@ def okR (I : LinkInput) (R : Res) : Bool :=
   let T := tabOf R
   (globalChks I P T).all (·.2) && R.all fun e => (chks I P T e.1 e.2).all (·.2)
 
-/-- **The checker**: every premise of `LinkSys.Ok` about the program and its layout. -/
+/-- **The checker**: every premise of `LinkSys.Ok` about the program and its layout, checked on
+the input's results (`okB_fallback`: with `fallback`, on the compiler's own output). -/
 def okB (I : LinkInput) : Bool := okR I I.results
+
+/-- With `fallback`, `okB` is `okR` of the compiler's results `resultsT`: the same checks, on the
+code the compiler emits. -/
+theorem okB_fallback {I : LinkInput} (h : I.fallback = true) : okB I = okR I I.resultsT := by
+  rw [okB, LinkInput.results_fallback h]
 
 /-- The checks of the program (`globalChks`). -/
 def globalB (I : LinkInput) : Bool :=
@@ -796,8 +871,7 @@ def fnsB (I : LinkInput) (fs : List FnInput) : Bool :=
   let R := I.results
   let P := progOf R
   let T := tabOf R
-  fs.all fun fi => let f := fi.func
-    (chks I P T f (pipe f fi.k (BitVec.ofNat 64 (I.baseOf f.name)) (raJ fi.ra fi.j))).all (·.2)
+  fs.all fun fi => (chks I P T fi.func (I.pipeOf fi)).all (·.2)
 
 theorem fnsB_append (I : LinkInput) (l₁ l₂ : List FnInput) :
     fnsB I (l₁ ++ l₂) = (fnsB I l₁ && fnsB I l₂) := by
@@ -844,16 +918,20 @@ theorem name_inj : ∀ {l : List Clif.Function}, (l.map (·.name)).Nodup →
     · exact name_inj hn.2 ha' hb' he
 
 theorem results_spec {I : LinkInput} {e : Clif.Function × Except String Art}
-    (he : e ∈ I.results) : ∃ k j, e.2 = pipe e.1 k (BitVec.ofNat 64 (I.baseOf e.1.name)) j := by
+    (he : e ∈ I.results) :
+    ∃ k j, e.2 = cond I.fallback pipeT pipe e.1 k (BitVec.ofNat 64 (I.baseOf e.1.name)) j := by
   obtain ⟨fi, -, rfl⟩ := List.mem_map.1 he
   exact ⟨_, _, rfl⟩
 
-/-- The checker's results are the pipeline's outputs (`ResOk`). -/
+/-- The input's results are the pipeline's outputs (`ResOk`). -/
 theorem results_ok (I : LinkInput) : ResOk I I.results := by
   intro e he a ha
   obtain ⟨k, j, hp⟩ := results_spec he
-  obtain ⟨hl, hpr, hlr, hem, hla, -, hb⟩ := pipe_spec (hp ▸ ha)
-  exact ⟨hl, hpr, hlr, hem, hla, hb⟩
+  cases hfb : I.fallback <;> rw [hfb] at hp <;> rw [hp] at ha
+  · obtain ⟨hl, hpr, hlr, hem, hla, -, hb⟩ := pipe_spec ha
+    exact ⟨hl, hpr, hlr, hem, hla, hb⟩
+  · obtain ⟨hl, hpr, -, hlr, hem, hla, -, hb⟩ := pipeT_spec ha
+    exact ⟨hl, hpr, hlr, hem, hla, hb⟩
 
 theorem artOf_spec {R : Res} (hn : ((progOf R).funcs.map (·.name)).Nodup) {g : Clif.Function}
     (hg : g ∈ (progOf R).funcs) : ∃ e ∈ R, e.1 = g ∧ artOf R g = getOk e.2 := by
