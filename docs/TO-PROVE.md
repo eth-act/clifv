@@ -364,11 +364,30 @@ author's estimate, not measured), **Risk**.
     nothing: `pipeT_ok`, `relocShapes_of_pipeT` (`FV/Link/RelocShapeProof.lean`: every relocated
     instruction is emitted with its partners, `emitFunc_seqOk`), `codeMap_place`.
   - Non-vacuity: `crate-proofs/Crates/CompileExeWitness.lean` (`a_arith`: `compile_eq`, `correct_closed`,
-    `total_witness`).
-- **Open:** self-call aliases in the totality theorem (`aliasOkB`/`aliasShapeB`/`codeMapB` stay checks:
-  renaming invariance of the pipeline is not proven); recursive programs (`CycleFrom`); inputs outside
-  `InScopeP` (`lean-link` then falls back to `leanLink`, not covered by `compileExe_correct`: e.g. the
-  `fv-demo` test harness, `examples/deps`); the outside part's bytes stay rust-lld's (design (b), L2b).
+    `total_witness`); per run: `crate-proofs/Crates/CompileExeRunWitness.lean`
+    (`compileExe_run_witness`: the panic=abort `a_arith` compiled by `compileExe`, every premise of
+    `compileExe_correct` for one outside call of `wrapping_add(2, 3)`, and the executable machine returns
+    with `5` in x0).
+- **L1b (`agent/compile-exe`):** `addrSlotsInB`/`addrSlotsB` relaxed (`|| declSlotsB P`: with a declared
+  program callee with slots the run has `NeedSlots`, where `LinkSys.Ok.addrSlots` is not used; the premise
+  now takes `¬ NeedSlots`). Self-call aliases: `Link.compileExe_total_alias` (`FV/Link/AliasOut.lean`)
+  proves every `leanLink` check with aliases from the input conditions `aliasInB` (the alias has its
+  function's oracle answer) and `aliasSymsB` (no function takes an alias's address) and the **unproven**
+  output facts `AliasOut`: (A) the pipeline commutes with swapping the names `f`/`f__fvself` (`pipeT`
+  equivariance through the ISLE interpreter, the isel hooks, allocation, emission; est. 3000–5000 lines);
+  (B) neither name occurs in a non-`bl` reference (`adrp`/GOT/TLS) of `f`'s code (an ISLE rule analysis
+  as `LinkOwnCalls*`, est. 800–1500 lines); (C) `blrGotB` for functions declaring the alias (needs
+  `RunCall` of the GOT call rule 2518 to record a non-colocated extern).
+- **Open:** (A)–(C) above; recursive programs (`CycleFrom`); inputs outside `InScopeP` (`lean-link` then
+  falls back to `leanLink`, not covered by `compileExe_correct`). Remaining failures are proof limits
+  (each protects a `LinkSys.Ok` premise `okB` checks the same way): fv-demo's test harness 4 functions
+  (`indB`: 3 indirect-call signatures with `sret` — generalise `argsAt_iff_of_regs`/the result count in
+  `LinkArm.xCallsIndOk` to `sret` in x8; 1 function with indirect calls whose own address is taken
+  (`indNoSym`) — a pointer to `g` must resolve through the environment in the per-function run), and
+  `examples/deps` 23 (`indB` 20: the same two plus 5 declared callees matched by types but not purposes —
+  `Clif.callExternAt` must reject an `abiMatch` failure as `stepCallIndirect` does; `callScopeB` 7: those
+  `blrRegs` cases and 3 `blrTry` result counts — carry the CLIF result-count fact into the try-site
+  contract); the outside part's bytes stay rust-lld's (design (b), L2b).
 
 ### L2. Linking without validators
 
@@ -420,7 +439,7 @@ author's estimate, not measured), **Risk**.
   | raStar | `raStar` | linker output | `linkerOkB` |
   | symInj | `symInj` | linker output | `linkerOkB` |
   | symOk | `symOk` | linker output | `linkerOkB` |
-  | addrSlots | `addrSlots` | input | `progScopeB` (`addrSlotsInB`: no outgoing area in `lowerFunction`'s VCode (`outAreaB`) or no indirect call, or the address-taken functions have no stack slots; `addrSlotsB_of_in`) |
+  | addrSlots | `addrSlots` (only under `¬ NeedSlots`) | input | `progScopeB` (`addrSlotsInB`: no outgoing area in `lowerFunction`'s VCode (`outAreaB`) or no indirect call, or the address-taken functions have no stack slots, or a function declares a slotted function of `P` (`declSlotsB`: `NeedSlots`, the premise vacuous; `examples/deps` is in this case); `addrSlotsB_of_in`) |
 
   **Status (L2a):** `crate_correct_inScope (hD : SpillDefinedHyp) (hin : InScopeP I = true)
   (hlk : linkerOkB I = true) : CrateStmtT I n` (`FV/E2E/LinkScope.lean`; `okT_of_inScope`, `okT_sound`;
