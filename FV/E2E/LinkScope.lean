@@ -166,12 +166,13 @@ theorem addrSlotsB_of_in {I : LinkInput} {S : String → Option Nat}
     (h : addrSlotsInB I.prog S = true) : addrSlotsB I.prog (tabOf I.resultsT) S = true := by
   simp only [addrSlotsInB, Bool.or_eq_true, Bool.not_eq_true', Bool.and_eq_false_iff] at h
   simp only [addrSlotsB, Bool.or_eq_true, Bool.not_eq_true', Bool.and_eq_false_iff]
-  rcases h with (h | h) | h
-  · refine .inl (.inl ?_)
+  rcases h with ((h | h) | h) | h
+  · refine .inl (.inl (.inl ?_))
     rw [List.any_eq_false] at h ⊢
     intro x hx hne
     obtain ⟨hm, ho⟩ := outArea_of_intBase hx (by simpa using hne)
     exact h x.1 hm ho
+  · exact .inl (.inl (.inr h))
   · exact .inl (.inr h)
   · exact .inr h
 

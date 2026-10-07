@@ -782,12 +782,30 @@ def symInjB (I : LinkInput) (P : Clif.Program) : Bool :=
 /-- The CLIF image's symbols are at their link-map addresses (`Ok.symOk`). -/
 def symOkB (I : LinkInput) : Bool := I.syms.all fun e => I.addrOf e.1 == e.2
 
+/-- A function of `P` declares a function of `P` with stack slots: a program callee has slots
+(`LinkSys.NeedSlots`, `declSlotsB_sound`). -/
+def declSlotsB (P : Clif.Program) : Bool :=
+  P.funcs.any fun g => g.externs.any fun e => match P.func? e.2.name with
+    | some h => !h.slots.isEmpty
+    | none => false
+
+theorem declSlotsB_sound {P : Clif.Program} (h : declSlotsB P = true) :
+    ∃ g ∈ P.funcs, ∃ e ∈ g.externs.map (·.2), ∃ h', P.func? e.name = some h' ∧ h'.slots ≠ [] := by
+  simp only [declSlotsB, List.any_eq_true] at h
+  obtain ⟨g, hg, e, he, hs⟩ := h
+  refine ⟨g, hg, e.2, List.mem_map_of_mem he, ?_⟩
+  revert hs
+  cases P.func? e.2.name with
+  | none => simp
+  | some h' => exact fun hs => ⟨h', rfl, by simpa using hs⟩
+
 /-- With an outgoing-argument area and an indirect call in `P`, the functions with an address
-have no stack slots (`Ok.addrSlots`). -/
+have no stack slots (`Ok.addrSlots`), unless a program callee has slots (`declSlotsB`: then
+`NeedSlots` holds and `Ok.addrSlots` is vacuous). -/
 def addrSlotsB (P : Clif.Program) (T : List (Clif.Function × Art)) (S : String → Option Nat) :
     Bool :=
   !(T.any (fun e => (RAFrame.compute e.2.vcp e.2.rf).intBase != 0) && P.funcs.any (!indFreeB ·)) ||
-    P.funcs.all fun h => (S h.name).isNone || h.slots.isEmpty
+    P.funcs.all (fun h => (S h.name).isNone || h.slots.isEmpty) || declSlotsB P
 
 /-- **The per-function checks of `g` that do not depend on the rest of the program** (pipeline
 result `r`), named by the premise of `LinkSys.Ok` (or of `Compiled`/`InSubset`) they discharge.
@@ -1171,7 +1189,7 @@ theorem okR_sound {I : LinkInput} {R : Res} (hR : ResOk I R) (hI : okR I R = tru
       indNoSym := fun g hg hnf => (indFactsR hR hI hg hnf).2.2
       indSig := fun g hg hnf => ⟨(indFactsR hR hI hg hnf).1,
         fun h hh hmay hm => (indFactsR hR hI hg hnf).2.1 h hh (mayB_of hmay) hm⟩
-      addrSlots := fun ⟨g, hg, hout⟩ ⟨g', hg', hind⟩ h hh hs => ?_
+      addrSlots := fun hN ⟨g, hg, hout⟩ ⟨g', hg', hind⟩ h hh hs => ?_
       symInj := fun h hh n hn => ?_
       declSig := fun g hg e he h hf => (fa hg).declSig e he h hf
       entryRegs := fun g hg r hr => entryB_sound (fa hg).entry hr
@@ -1225,10 +1243,12 @@ theorem okR_sound {I : LinkInput} {R : Res} (hR : ResOk I R) (hI : okR I R = tru
   · simp only [addrSlotsB, Bool.or_eq_true, Bool.not_eq_true', Bool.and_eq_false_iff,
       List.any_eq_false, List.all_eq_true, Bool.not_eq_true, bne_iff_ne, ne_eq,
       Decidable.not_not, Bool.or_eq_true, Option.isNone_iff_eq_none, List.isEmpty_iff] at haddr
-    rcases haddr with (h1 | h1) | h1
+    rcases haddr with ((h1 | h1) | h1) | h1
     · exact absurd (h1 _ (tab_mem hn hg)) hout
     · exact absurd (indFreeB_sound (by simpa using h1 g' hg')) hind
     · exact (h1 h hh).resolve_left hs
+    · obtain ⟨g0, hg0, e, he, h0, hf, hs0⟩ := declSlotsB_sound h1
+      exact absurd ⟨g0, hg0, h0, .inr (.inl ⟨e, he, hf⟩), hs0⟩ hN
   · simp only [symInjB, List.all_eq_true, Bool.and_eq_true, decide_eq_true_eq, bne_iff_ne,
       ne_eq, Bool.or_eq_true, beq_iff_eq] at hinj
     obtain ⟨⟨hlt, h0⟩, hall⟩ := hinj h hh

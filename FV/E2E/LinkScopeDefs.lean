@@ -86,10 +86,11 @@ def outAreaB (f : Clif.Function) : Bool :=
 
 /-- `addrSlots` on the input: no outgoing argument area or no indirect call in `P`, or the
 functions with an address have no stack slots (the check `addrSlotsB` reads the outgoing area
-from the allocated frames, `intBase`). -/
+from the allocated frames, `intBase`), or a function of `P` declares one with stack slots
+(`declSlotsB`: `LinkSys.NeedSlots` holds, `Ok.addrSlots` is vacuous). -/
 def addrSlotsInB (P : Clif.Program) (S : String → Option Nat) : Bool :=
   !(P.funcs.any outAreaB && P.funcs.any (!indFreeB ·)) ||
-    P.funcs.all fun h => (S h.name).isNone || h.slots.isEmpty
+    P.funcs.all (fun h => (S h.name).isNone || h.slots.isEmpty) || declSlotsB P
 
 /-- **The program-level input conditions** (`S`: the CLIF image's symbols; only which names
 have one matters): distinct names, declared signatures, the scope of the indirect calls
