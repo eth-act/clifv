@@ -10,6 +10,7 @@ import FV.E2E.EmitSize
 import FV.E2E.EmitNear
 import FV.E2E.EmitLabels
 import FV.E2E.EmitEnc
+import FV.Backend.Proof.IselEmitDefs
 import FV.Opt.Legalize128Pass
 import FVTest.Opt.Common
 
@@ -180,6 +181,7 @@ def main (args : List String) : IO UInt32 := do
   let mut spillRej := 0
   let mut tSpill := 0
   let mut arity := 0
+  let mut extW := 0
   let mut emitOk := 0
   let mut emitBad := 0
   let mut readyOk := 0
@@ -231,6 +233,8 @@ def main (args : List String) : IO UInt32 := do
       else IO.println s!"{file}: %{f.name}: outside lowerCheck_complete's conditions (dominatedB {d}, lowerScopeB {sc})"
       if Backend.Proof.Spill.arityOkB f then arity := arity + 1
       else IO.println s!"{file}: %{f.name}: arityOkB fails (a branch argument count differs from its target's parameter count)"
+      if Backend.Proof.Driver.extendsWidenB f then extW := extW + 1
+      else IO.println s!"{file}: %{f.name}: extendsWidenB fails (a uextend/sextend that does not widen)"
       let r ← IO.lazyPure (fun _ => lowerCheck f vc)
       let t2 ← IO.monoMsNow
       if t2 - t0 > 2000 then IO.println s!"{file}: %{f.name}: lowerFunction {t1 - t0} ms, lowerCheck {t2 - t1} ms"
@@ -319,6 +323,7 @@ def main (args : List String) : IO UInt32 := do
   IO.println s!"prepCheck: {pok} accepted, {pbad} rejected"
   IO.println s!"lowerCheck_complete conditions: dominatedB {dom}, lowerScopeB {scope}, both {both} (of {ok + bad} checked)"
   IO.println s!"arityOkB {arity} of {ok + bad}"
+  IO.println s!"extendsWidenB (IselEmitDefs, every uextend/sextend widens; input condition of backend_correct_final_total_emit_in) {extW} of {ok + bad}"
   IO.println s!"formsCoveredB: {cov} covered, {uncov} not covered"
   for (k, n) in forms.toList.mergeSort (fun a b => a.2 ≥ b.2) do
     IO.println s!"  uncovered form {k}: {n} instructions"

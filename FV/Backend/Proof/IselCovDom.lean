@@ -16,7 +16,8 @@ whose abstract values `AW` describe ISLE values (`γ`):
   scaled by `b`, a 9-bit signed offset (as the extern constructors build them);
 * `xv e`: a value the exclusion checker describes (`AV.Holds`: an instruction of the context,
   the `InstructionData` of an E instruction, a CLIF value), without registers or `MInst`s;
-* `data t k fs`: variant `k` of type `t` with fields described by `fs`; `alts as`: one of `as`.
+* `data t k fs`: variant `k` of type `t` with fields described by `fs`; `alts as`: one of `as`;
+* `num k b`: a numeric or operand leaf of kind `k` with bound `b` (`NK`; V6c's emission check).
 
 `covOk k fs` is the coverage of an `MInst` of variant `k` built from fields `fs`: the
 abstract counterpart of `FormOk` (`covOk_sound`, `IselCovForm`). `le` is the order (`le_sound`).
@@ -39,6 +40,14 @@ def XK.toAV : XK → AV
   | .data => .data
   | .value => .value
 
+/-- The kinds of numeric/operand leaves (`AW.num k b`; meaning in `IselCovSem`): an integer in
+`[0, b)`, an `Imm12` with `bits < b`, an `ImmShift`/`UImm5`/`UImm6` below `b`, a
+`ShiftOpAndAmt` with amount below `b` and no `ror`, a `MoveWideConst` of 16 bits with shift below
+`b`, a `CallInfo` whose target is a symbol or an int vreg (any registers inside). -/
+inductive NK where
+  | int | imm12 | immShift | uimm5 | uimm6 | shiftAmt | mwc | callInfo
+  deriving DecidableEq, Repr, Inhabited, BEq, Hashable
+
 /-- Abstract ISLE values. -/
 inductive AW where
   | bot
@@ -52,6 +61,7 @@ inductive AW where
   | xv (e : XK)
   | alts (as : List AW)
   | data (t : TypeId) (k : Nat) (fs : List AW)
+  | num (k : NK) (b : Nat)
   deriving Repr, Inhabited, BEq
 
 namespace AW
@@ -276,6 +286,7 @@ def deep : AW → Nat × Bool
   | .reg m => (m, true)
   | .alts as => deepL as
   | .data t k fs => ((deepL fs).1, (deepL fs).2 && (t != tyMInst || covOk k fs))
+  | .num k _ => (if k = .callInfo then 15 else 0, true)
   | _ => (0, true)
 /-- `deep` of a list (the union of masks, the conjunction of flags). -/
 def deepL : List AW → Nat × Bool
@@ -312,6 +323,7 @@ def leBase : AW → AW → Bool
   | .scale b, .scale b' => b == b'
   | .simm9, .simm9 => true
   | .xv e, .xv e' => decide (e = e')
+  | .num k b, .num k' b' => decide (k = k') && decide (b ≤ b')
   | _, _ => false
 
 mutual
