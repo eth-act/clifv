@@ -1,4 +1,5 @@
 import FV.Backend
+import FV.Backend.Lowering.StockReplay
 import FV.Opt.Legalize128Pass
 
 /-!
@@ -58,6 +59,54 @@ def replayJson (f : Clif.Function) (ctx : Ctx) (initial : LState) : Except Strin
       ("instructions", toJson (b.tst'.emitted.map fun i => (repr i).pretty))])
   pure (Json.arr calls)
 
+/-- Diagnostic request with stock's per-successor arguments. The production
+allocator adapter is unchanged until the corresponding proofs are migrated. -/
+def stockAllocatorJson (r : Stock.Result) : Except String Json := do
+  let j ← Json.parse (← vcodeJson r.code)
+  let mut insts ← (← j.getObjVal? "insts").getArr?
+  let mut start := 0
+  for (b, bi) in r.code.blocks.zipIdx do
+    let last := start + b.insts.size - 1
+    if b.insts.back!.isTerminator && !b.insts.back!.isRet then
+      let args ← r.edgeArgs[bi]!.mapM fun rs => rs.mapM vregNum
+      insts := insts.modify last (fun i => i.setObjVal! "args" (toJson args))
+    start := start + b.insts.size
+  return j.setObjVal! "insts" (Json.arr insts)
+
+def stockSnapshot (f : Clif.Function) : Except String Json := do
+  let r ← Stock.lower f
+  let allocator ← stockAllocatorJson r
+  let values := r.ctx.valReg.toList.zipIdx |>.filterMap fun (reg, v) =>
+    reg.map fun reg => Json.mkObj [
+      ("value", toJson v), ("reg", regJson reg),
+      ("ir_uses", toJson ((repr r.initial.uses[v]!).pretty)),
+      ("register_demands", toJson r.final.demand[v]!)]
+  let steps := r.schedule.map fun s => Json.mkObj [
+    ("block_index", toJson s.block), ("inst_index", toJson s.inst),
+    ("decision", toJson ((repr s.decision).pretty)),
+    ("first_temp", toJson s.before.base.nextVreg),
+    ("next_temp", toJson s.after.base.nextVreg),
+    ("color_before", toJson s.before.color), ("color_after", toJson s.after.color),
+    ("result_regs", toJson (s.results.map fun rs => rs.map regJson)),
+    ("rule_ids", toJson s.rules),
+    ("chunk", toJson (s.emitted.map fun i => (repr i).pretty)),
+    ("instructions", toJson (s.after.base.emitted.map fun i => (repr i).pretty))]
+  return Json.mkObj [
+    ("status", toJson "lowered"), ("initial_next_vreg", toJson r.initial.base.nextVreg),
+    ("value_regs", toJson values),
+    ("block_order", toJson (r.order.nodes.map fun n => (repr n).pretty)),
+    ("aliases", toJson r.final.alias), ("sunk", toJson r.final.sunk),
+    ("schedule", Json.arr steps), ("selected", codeJson r.code),
+    ("scan_replay", Json.mkObj [
+      ("checked", toJson r.scans.size),
+      ("accepted", toJson (r.scans.all Stock.ScanEvent.check))]),
+    ("block_scan_replay", Json.mkObj [
+      ("checked", toJson r.blockScans.size),
+      ("records", toJson (r.blockScans.foldl (fun n b => n + b.output.records.length) 0)),
+      ("accepted", toJson (r.blockScans.all Stock.BlockScanEvent.check))]),
+    ("edge_args", toJson (r.edgeArgs.map fun args => args.map fun rs => rs.map regJson)),
+    ("allocator_input", allocator)]
+
 def snapshot (f : Clif.Function) : Except String Json := do
   let (ctx, ranges, initial) ← buildCtx f
   let selected ← lowerFunction f
@@ -77,7 +126,10 @@ def snapshot (f : Clif.Function) : Except String Json := do
     ("instruction_ranges", toJson (ranges.map fun (start, stop) => #[start, stop])),
     ("checker_replay", replay),
     ("selected", codeJson selected), ("prepared", codeJson prepared),
-    ("allocator_input", allocator)])
+    ("allocator_input", allocator),
+    ("stock_schedule", match stockSnapshot f with
+      | .ok j => j
+      | .error e => Json.mkObj [("status", toJson "unsupported"), ("reason", toJson e)])])
 
 def run (input output : String) : IO UInt32 := do
   let source ← IO.FS.readFile input

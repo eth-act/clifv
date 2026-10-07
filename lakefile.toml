@@ -76,3 +76,11 @@ root = "FVTest.Link.LeanLinkMain"
 [[lean_exe]]
 name = "lean-backend-lowering-trace"
 root = "FVTest.Backend.Lowering.Trace"
+
+[[lean_exe]]
+name = "lean-stock-lowering-test"
+root = "FVTest.Backend.Lowering.StockTest"
+
+[[lean_exe]]
+name = "lean-stock-lowering-compare"
+root = "FVTest.Backend.Lowering.StockComparison"

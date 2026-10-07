@@ -7,6 +7,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 
 SPEC = importlib.util.spec_from_file_location("stock_compare",Path(__file__).with_name("stock-compiler-compare.py"))
 COMPARE = importlib.util.module_from_spec(SPEC)
@@ -296,3 +297,83 @@ class StockIntegrationTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class StockDevelopmentIntegrationTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.compiler = COMPARE.ROOT / ".lake/build/bin/lean-stock-lowering-compare"
+        cls.exporter = COMPARE.ROOT / "tools/prejit-export/target/debug/prejit-export"
+        if not cls.compiler.exists() or not cls.exporter.exists():
+            raise unittest.SkipTest("build the development comparison compiler and exporter")
+        cls.env = dict(os.environ, LEAN_REGALLOC=str(COMPARE.ROOT / "rust/target/release/lean-regalloc"))
+
+    def seed(self, root):
+        subprocess.run([self.exporter, COMPARE.SUITE / "runtests/alias.clif", root / "stock",
+                        COMPARE.TARGET, "--all-stages"], check=True, capture_output=True)
+        return json.loads((root / "stock/manifest.json").read_text())["variants"][0]
+
+    def test_mixed_supported_and_unsupported_functions_keep_exact_receipt_and_object(self):
+        source = (b"function %good(i64) -> i64 {\nblock0(v0: i64):\nreturn v0\n}\n"
+                  b"function %bad(f32) -> f32 {\nblock0(v0: f32):\nreturn v0\n}\n")
+        with tempfile.TemporaryDirectory(prefix="stock-lowering_comparison-test-") as tmp:
+            root = Path(tmp)
+            variant = self.seed(root)
+            with patch.object(COMPARE, "LEAN_BINARY", self.compiler):
+                lean, contract = COMPARE.compile_lean(variant, source, root / "compilation", self.env)
+            self.assertTrue(contract["contract_verified"], contract)
+            self.assertEqual(contract["command"]["argv"][0], str(self.compiler))
+            self.assertEqual(contract["request"]["input_sha256"], COMPARE.digest(source))
+            self.assertTrue((lean / "dump/good.bin").exists())
+            self.assertFalse((lean / "dump/bad.bin").exists())
+            _, code = COMPARE.ELF(lean / "program.o").function("good")
+            self.assertEqual(code, (lean / "dump/good.bin").read_bytes())
+            self.assertIn("unsupported", (root / "compilation/lean.stderr").read_text())
+
+    def test_repeated_names_retain_compilation_occurrence_indices(self):
+        with tempfile.TemporaryDirectory(prefix="stock-lowering_occurrence-test-") as tmp:
+            with patch.object(COMPARE, "LEAN_BINARY", self.compiler):
+                report = COMPARE.one(COMPARE.SUITE / "isa/aarch64/iabs.clif", Path(tmp),
+                                     self.env, self.exporter, True)
+            variant = report["variants"][0]
+            repeated = [c for c in variant["lean_compilations"] if c["functions"] == ["%f11"]]
+            self.assertEqual([c["function_indices"] for c in repeated], [[10], [11]])
+            self.assertNotEqual(repeated[0]["request"]["input_sha256"],
+                                repeated[1]["request"]["input_sha256"])
+
+    def test_development_compiler_rejects_unsupported_settings_with_receipt(self):
+        with tempfile.TemporaryDirectory(prefix="stock-lowering_comparison-test-") as tmp:
+            root = Path(tmp)
+            variant = copy.deepcopy(self.seed(root))
+            next(f for f in variant["flags"] if f["name"] == "opt_level")["value"] = "speed"
+            with patch.object(COMPARE, "LEAN_BINARY", self.compiler):
+                lean, contract = COMPARE.compile_lean(variant, b"", root / "compilation", self.env)
+            self.assertFalse(contract["contract_verified"])
+            self.assertEqual(contract["command"]["exit"], 3)
+            self.assertEqual(contract["receipt"]["request"], contract["request"])
+            self.assertFalse(contract["receipt"]["configuration_accepted"])
+            self.assertFalse((lean / "program.o").exists())
+
+    def test_extended_demand_recovers_all_twenty_allocator_failures(self):
+        investigation = json.loads((COMPARE.ROOT /
+            "docs/research/stock-lowering-failures/results.json").read_text())
+        cases = investigation["allocator_cases"]
+        self.assertEqual(len(cases), 20)
+        with tempfile.TemporaryDirectory(prefix="stock-lowering_demand-regression-") as tmp:
+            reports = {}
+            with patch.object(COMPARE, "LEAN_BINARY", self.compiler):
+                for source in sorted({c["test"] for c in cases}):
+                    reports[source] = COMPARE.one(COMPARE.SUITE / source,
+                        Path(tmp), self.env, self.exporter, True)
+            for case in cases:
+                with self.subTest(source=case["test"], variant=case["variant"],
+                                  index=case["index"], name=case["name"]):
+                    variant = next(v for v in reports[case["test"]]["variants"]
+                                   if v["index"] == case["variant"])
+                    function = next(f for f in variant["functions_compared"]
+                                    if f["index"] == case["index"])
+                    self.assertEqual(function["name"], case["name"])
+                    self.assertEqual(function["status"], case["candidate_status"])
+                    self.assertTrue(function["settings_contract_verified"])
+                    self.assertTrue(function["lean_dump_matches_object_bytes"])
+                    self.assertTrue(function["lean_dump_matches_object_relocations"])

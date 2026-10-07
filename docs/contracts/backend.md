@@ -544,3 +544,37 @@ instruction colors, demanded values, opportunistic definitions, and sinking.
 `scripts/test_lowering_trace.py` checks the Lean snapshot against the compiler's
 actual allocator request, repeated object bytes, and identical stock artifacts with
 and without logging.
+
+The `stock_schedule` diagnostic records the stock-order driver under development
+in `FV/Backend/Lowering/Stock.lean`: dense layout-order registers (after stock's
+192 reserved numbers), source use multiplicity, lowered register demands,
+instruction colors, aliases, and emitted/omitted/sunk/opportunistic schedule
+entries. Each entry's `chunk` is the forward-ordered instruction prefix before
+final alias resolution. `scan_replay` reports the number of backward-scan
+transitions checked and whether every transition replays exactly, including its
+state, decision, results, rule ids and code. `block_scan_replay` additionally
+checks the complete scan against the source block's instruction range and
+terminator metadata, continuity between transition states, and assembly of the
+raw emitted chunks. It reports the number of checked blocks and records.
+`Proof/StockBlockScan.lean` proves replay soundness/completeness, scan order,
+state continuity and chunk assembly, and refinement of the producer/replayer's
+tail recursion to their structural references. Concrete witnesses reject
+missing/reordered records, changed state/code and forged source metadata.
+These checks do not yet validate the supplied context, inter-block traversal,
+branch setup, edges or the final alias-resolved VCode.
+Its allocator request retains stock's per-successor arguments. The
+production compiler still uses the proved layout-order driver while the
+replacement simulation is developed.
+
+`lean-stock-lowering-test INPUT.clif OUTPUT_DIRECTORY [STOCK_CONFIG.json]` is a
+development differential harness. It requires local and complete block-scan replay and
+exports selected code through the existing checked allocator and encoder, with
+the optional fail-closed settings adapter.
+It rejects per-successor arguments that the production VCode adapter cannot yet
+represent. Its lowering is not yet covered by the end-to-end theorem. The tests
+in `scripts/test_stock_lowering_schedule.py` compare raw bytes, relocations, and
+traps against the pinned compiler and check native per-edge requests with
+regalloc2's symbolic checker.
+`FVTest/Backend/Lowering/ScanReplay.lean` stress-tests native scan/replay with
+100,000 linked transitions and checks rejection of five changed certificates,
+including a broken state link.
