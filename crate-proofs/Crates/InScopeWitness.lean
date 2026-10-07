@@ -32,9 +32,19 @@ theorem noTls : Crates.AArith.input.prog.funcs.all (fun g => !Backend.hasTls g) 
 theorem crate_correct (hD : SpillDefinedHyp) (n : String) : CrateStmtT Crates.AArith.input n :=
   crate_correct_inScope hD inScope_input linker_input n
 
+/-- The entry blocks of `a_arith`'s functions have their signatures' parameters. -/
+theorem entryParams_input :
+    Crates.AArith.input.prog.funcs.all Backend.Proof.Spill.entryParamsB = true := by
+  native_decide
+
+/-- `crate_correct` under `SpillDefinedHypE` (`SpillDefinedHyp` is false:
+`E2E.not_spillDefinedHyp`). -/
+theorem crate_correctE (hD : SpillDefinedHypE) (n : String) : CrateStmtT Crates.AArith.input n :=
+  crate_correct_inScopeE hD inScope_input entryParams_input linker_input n
+
 /-- `crate_correct` under definite assignment of `lowerFunction`'s VCode (`LowerDefinedHyp`). -/
 theorem crate_correct_lower (hM : LowerDefinedHyp) (n : String) : CrateStmtT Crates.AArith.input n :=
-  crate_correct_inScope_lower hM inScope_input linker_input n
+  crate_correct_inScope_lower hM inScope_input entryParams_input linker_input n
 
 /-- The closed base environment satisfies the base premises of `a_arith`'s linked system. -/
 theorem base_closedT (F : BitVec 64 → Prop) :
@@ -51,9 +61,19 @@ theorem linker_fvDemo : linkerOkB Crates.FvDemo.input = true := by native_decide
 theorem crate_correct_fvDemo (hD : SpillDefinedHyp) (n : String) : CrateStmtT Crates.FvDemo.input n :=
   crate_correct_inScope hD inScope_fvDemo linker_fvDemo n
 
+/-- The entry blocks of `fv-demo`'s functions have their signatures' parameters. -/
+theorem entryParams_fvDemo :
+    Crates.FvDemo.input.prog.funcs.all Backend.Proof.Spill.entryParamsB = true := by
+  native_decide
+
+/-- `crate_correct_fvDemo` under `SpillDefinedHypE`. -/
+theorem crate_correct_fvDemoE (hD : SpillDefinedHypE) (n : String) :
+    CrateStmtT Crates.FvDemo.input n :=
+  crate_correct_inScopeE hD inScope_fvDemo entryParams_fvDemo linker_fvDemo n
+
 /-- `crate_correct_fvDemo` under definite assignment of `lowerFunction`'s VCode. -/
 theorem crate_correct_fvDemo_lower (hM : LowerDefinedHyp) (n : String) :
     CrateStmtT Crates.FvDemo.input n :=
-  crate_correct_inScope_lower hM inScope_fvDemo linker_fvDemo n
+  crate_correct_inScope_lower hM inScope_fvDemo entryParams_fvDemo linker_fvDemo n
 
 end Crates.InScopeWitness
