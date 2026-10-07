@@ -65,9 +65,8 @@ theorem inSubset_opt (cfg : Opt.Config) {p : Clif.Program} {f : Clif.Function}
     rw [show ((fun x : Clif.Function => x.name == n) ∘ fun x => Opt.optimize x cfg) =
       (fun x => x.name == n) from by funext g; simp [hname]]
   have hnci := hF.noCI (noCI_of f hci hnt)
-  refine ⟨?_, hF.subsetE hsub.subsetE, ?_, ?_, ?_,
+  refine ⟨hF.subsetE hsub.subsetE, ?_, ?_, ?_,
     by rw [indSigs_nil_of_noCI hnci]; simp⟩
-  · rw [hfind, hF.name, hsub.func]; rfl
   · intro b hb st hst fn args hc e he
     obtain ⟨b0, hb0, st0, hst0, args0, hc0⟩ :=
       Opt.mem_callees.1 (hF.callees fn (Opt.mem_callees.2 ⟨b, hb, st, hst, args, hc⟩))

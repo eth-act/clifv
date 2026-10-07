@@ -185,7 +185,7 @@ theorem symAddr_of_blrTo {I : LinkInput} {B : BaseEnv} (hI : okB I = true)
   simp only [noBlrB, Bool.and_eq_true, Option.isNone_iff_eq_none, List.all_eq_true,
     Bool.or_eq_true, Bool.not_eq_true', List.any_eq_false, beq_iff_eq] at hn
   obtain ⟨⟨hmay, -⟩, hgot⟩ := hb
-  rcases hmay with ⟨hdecl, hne⟩ | ⟨-, -, hsym, -⟩
+  rcases hmay with ⟨hdecl, hne⟩ | ⟨-, hsym, -⟩
   · rcases hn.2 _ (tab_mem (okB_names hI) hg) with (hx | hx) | hx
     · obtain ⟨x, hx', he⟩ := List.mem_map.1 hdecl
       exact hx x hx' he
@@ -391,7 +391,7 @@ theorem binary_correct_exec_static {I : LinkInput} {D : List Clif.DataObject} {f
     {args : List Clif.Val} {cs : Clif.State} (hX : (imageOf file).Intact r)
     (ho : OutsideCall I (BinCheck.roByte I D) f (StackBound.stackFn I f) r args cs.mem)
     (hr : ClifRun I B f r args cs)
-    (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) ((prog I).only f) cs)
+    (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) (prog I).bare cs)
     (hrun : RunOkD I B file M f (modelOf I f r)) :
     ExecRefines (art I f).fb (art I f).base (xreg 30 r) (step I B file) r (RelocAt I)
       (Clif.runLoop B.env (prog I) (M + 1) cs) := by

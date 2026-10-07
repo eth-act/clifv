@@ -43,7 +43,6 @@ theorem entryWitness_checks :
       dominatedB entryWitness && lowerScopeB entryWitness && arityOkB entryWitness &&
       lowersB entryWitness) = true ∧
     entryParamsB entryWitness = false ∧
-    ({ funcs := [entryWitness] } : Clif.Program).func? entryWitness.name = some entryWitness ∧
     entryWitness.externs.isEmpty = true ∧ (indSigs entryWitness).isEmpty = true ∧
     entryWitness.blocks.all (fun b => b.body.isEmpty && !b.term.isTry) = true ∧
     ((lowerFunction entryWitness).toOption.bind fun vc => (prepare vc).toOption.map fun vcp =>
@@ -57,12 +56,12 @@ theorem entryWitness_pipe : ∃ (p : Clif.Program) (vc vcp : VCode) (vb : VBlock
     LowerScope entryWitness ∧ lowerFunction entryWitness = .ok vc ∧ prepare vc = .ok vcp ∧
     vcp.cfg = .ok (#[#[]], #[#[]]) ∧ vcp.blocks[0]? = some vb ∧
     vb.insts = #[.args [], .rets [(.vreg 0 .int, .x 0)]] := by
-  obtain ⟨hsc, -, hfunc, hext, hind, hblk, hpipe⟩ := entryWitness_checks
+  obtain ⟨hsc, -, hext, hind, hblk, hpipe⟩ := entryWitness_checks
   simp only [Bool.and_eq_true] at hsc
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨hE, -⟩, ⟨habi, -⟩⟩, -⟩, -⟩, -⟩, -⟩, -⟩, hd⟩, hs⟩, har⟩, hlw⟩ := hsc
   obtain ⟨-, vc, vcp, hl, hp, -⟩ := lowersB_spec hlw
   have hsub : InSubset { funcs := [entryWitness] } entryWitness := by
-    refine ⟨hfunc, hE, fun b hb st hst _ _ _ => ?_, fun b hb fn args et ht => ?_, ⟨habi, ?_⟩, ?_⟩
+    refine ⟨hE, fun b hb st hst _ _ _ => ?_, fun b hb fn args et ht => ?_, ⟨habi, ?_⟩, ?_⟩
     · have := List.all_eq_true.1 hblk b hb
       simp only [Bool.and_eq_true, List.isEmpty_iff] at this
       rw [this.1] at hst

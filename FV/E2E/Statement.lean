@@ -74,7 +74,6 @@ other special-purpose parameters are compiled and flagged unverified. Parameters
 (the function's own, and the arguments of a `call` or a `try_call`) are passed on the stack
 (agent/stack-tls-proof, agent/last-unverified: `ArgsIn`, `Backend.Proof.ArgsAt`). -/
 structure InSubset (p : Clif.Program) (f : Clif.Function) : Prop where
-  func : p.func? f.name = some f
   subsetE : Compile.functionE f = true
   externCalls : ∀ b ∈ f.blocks, ∀ st ∈ b.body, ∀ fn args, st.inst = .call fn args →
     ∀ e, f.extern? fn = some e → p.func? e.name = none
@@ -103,11 +102,18 @@ theorem indSigs_eq_nil {f : Clif.Function}
     | tryCallIndirect callee args et => exact absurd h (htci B hB callee args et)
     | _ => rfl
 
+/-- `f`'s calls of externs no function of `q` is named: in the subset for `q` when it is for `p`
+(e.g. `q` the program without functions, whose calls are all external). -/
+theorem InSubset.retarget {p q : Clif.Program} {f : Clif.Function} (h : InSubset p f)
+    (hq : ∀ n, q.func? n = none) : InSubset q f :=
+  ⟨h.subsetE, fun _ _ _ _ _ _ _ e _ => hq e.name, fun _ _ _ _ _ _ e _ => hq e.name, h.abiSigs,
+    h.indSigs⟩
+
 /-- **Specialisation**: the former subset (with at most 8 parameters for `f` and every
 extern, `regParams`/`callRegArgs`, and the indirect-call signature condition) is inside the
 new one; for a function without indirect calls `indSigs` is vacuous (`indSigs_eq_nil`). -/
 theorem InSubset.of_regArgs {p : Clif.Program} {f : Clif.Function}
-    (hfunc : p.func? f.name = some f) (hE : Compile.functionE f = true)
+    (hE : Compile.functionE f = true)
     (_hreg : f.sig.params.length ≤ 8)
     (hext : ∀ b ∈ f.blocks, ∀ st ∈ b.body, ∀ fn args, st.inst = .call fn args →
       ∀ e, f.extern? fn = some e → p.func? e.name = none)
@@ -117,12 +123,12 @@ theorem InSubset.of_regArgs {p : Clif.Program} {f : Clif.Function}
     (habi : sigAbiOk f.sig = true ∧ ∀ e ∈ f.externs, sigAbiOk e.2.sig = true)
     (hind : ∀ s ∈ _root_.Backend.indSigs f, s.params.length ≤ 8 ∧ sigAbiOk s = true) :
     InSubset p f :=
-  ⟨hfunc, hE, hext, htry, habi, hind⟩
+  ⟨hE, hext, htry, habi, hind⟩
 
 /-- **Specialisation**: for a function without indirect calls, the former subset (without
 `indSigs`, which is vacuous: `indSigs_eq_nil`). -/
 theorem InSubset.of_indirectFree {p : Clif.Program} {f : Clif.Function}
-    (hfunc : p.func? f.name = some f) (hE : Compile.functionE f = true)
+    (hE : Compile.functionE f = true)
     (hreg : f.sig.params.length ≤ 8)
     (hext : ∀ b ∈ f.blocks, ∀ st ∈ b.body, ∀ fn args, st.inst = .call fn args →
       ∀ e, f.extern? fn = some e → p.func? e.name = none)
@@ -133,7 +139,7 @@ theorem InSubset.of_indirectFree {p : Clif.Program} {f : Clif.Function}
     (hci : ∀ B ∈ f.blocks, ∀ st ∈ B.body, ∀ sig callee args, st.inst ≠ .callIndirect sig callee args)
     (htci : ∀ B ∈ f.blocks, ∀ callee args et, B.term ≠ .tryCallIndirect callee args et) :
     InSubset p f :=
-  .of_regArgs hfunc hE hreg hext htry hcra habi (by rw [indSigs_eq_nil hci htci]; simp)
+  .of_regArgs hE hreg hext htry hcra habi (by rw [indSigs_eq_nil hci htci]; simp)
 
 /-! ## The compiled code -/
 

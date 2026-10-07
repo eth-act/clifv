@@ -466,7 +466,7 @@ theorem xCallsIndOk_witness {env : Clif.Env} {sigs : List Clif.Signature} (MR : 
     (hnoop : ∀ sig ∈ sigs, ∀ n g, env.extern n = some g → ∀ vals cm rvals cm',
       g vals cm = .returned rvals cm' → cm' = cm) :
     XCallsIndOk env sigs MR (witnessX sym tp) := by
-  intro sig hin n g sl cm w u args vals rvals cm' hg _ _ _ hmr hret hrl _
+  intro sig hin n g sl cm w u args vals rvals cm' hg _ _ _ _ hmr hret hrl _
   have h0 : rvals = [] := List.eq_nil_of_length_eq_zero (by rw [hrl, (hsig sig hin).2]; rfl)
   subst h0
   rw [hnoop sig hin n g hg _ _ _ _ hret]
@@ -700,7 +700,7 @@ theorem xCallsOk_id {env : Clif.Env} {exts : List Clif.ExtFunc} (MR : MemRelT)
       (argsAt_iff_of_regs hb h8 (hargs.1)).mp hargs
     have hl1 : args.length = 1 := by rw [← hall.1, hargs.1, hp1]
     have hx : (idX sym tp idf).call d uses w = some (args, w) := by
-      rcases hd with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+      rcases hd with ⟨rfl, rfl⟩ | ⟨rfl, -, rfl⟩
       · simp only [idX, hi, ↓reduceIte, Option.some.injEq, Prod.mk.injEq, and_true]
         exact List.take_of_length_le (by omega)
       · have hc : ∃ n, idf n ∧ lo64 ((ofX (sym ext.name 0) :: args).headD 0) = sym n 0 :=
@@ -714,7 +714,7 @@ theorem xCallsOk_id {env : Clif.Env} {exts : List Clif.ExtFunc} (MR : MemRelT)
     subst h0
     rw [hG g hg _ _ _ _ hret]
     have hx : (idX sym tp idf).call d uses w = some ([], w) := by
-      rcases hd with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+      rcases hd with ⟨rfl, rfl⟩ | ⟨rfl, -, rfl⟩
       · simp [idX, hi]
       · have hc : ¬ ∃ n, idf n ∧ lo64 ((ofX (sym ext.name 0) :: args).headD 0) = sym n 0 := by
           rintro ⟨n, hn, e⟩

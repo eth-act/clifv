@@ -213,18 +213,18 @@ def StepShape (env : Env) (s s1 : State) : Prop :=
     (∃ c, s.callers = c :: s1.callers ∧ s1.frame.slots = c.1.slots ∧
       s1.mem = (s.mem.free (s.frame.slots.map (·.2))).leave)
 
-theorem step_next_cases {P : Program} (hP : ∀ g ∈ P.funcs, LinkFree g) {env : Env} {s s1 : State}
-    (hI : LInv P s) (h : step env P s = .next s1) : StepShape env s s1 := by
+theorem step_next_cases {P p : Program} (hP : ∀ g ∈ P.funcs, LinkFree g) {env : Env} {s s1 : State}
+    (hI : LInv P s) (h : step env p s = .next s1) : StepShape env s s1 := by
   have hcall : ∀ (t : State) rest rs ext vals, t.callers = s.callers →
       t.frame.slots = s.frame.slots → t.mem = s.mem →
-      Opt.callCont env P t rest rs ext vals = .next s1 → StepShape env s s1 := by
+      Opt.callCont env p t rest rs ext vals = .next s1 → StepShape env s s1 := by
     intro t rest rs ext vals htc hts htm hc
     rcases callCont_cases hc with ⟨hc1, g, he⟩ | ⟨hc1, ⟨regs, hf1⟩, n, g, rv, hg, hr⟩
     · exact .inr (.inl ⟨_, by rw [hc1, htc], hts, g, vals, htm ▸ he⟩)
     · exact .inl ⟨hc1.trans htc, by rw [hf1]; exact hts, .inr ⟨n, g, vals, rv, hg, htm ▸ hr⟩⟩
   have hind : ∀ (t : State) rest rs sig d a v, t.callers = s.callers →
       t.frame.slots = s.frame.slots → t.mem = s.mem →
-      indCont env P t rest rs sig d a v = .next s1 → StepShape env s s1 := by
+      indCont env p t rest rs sig d a v = .next s1 → StepShape env s s1 := by
     intro t rest rs sig d a v htc hts htm hc
     rcases indCont_next hc with ⟨hc1, g, mem', -, he, hm, -⟩ | ⟨hc1, ⟨regs, hf1⟩, n, g, rv, hg, hr⟩
     · subst hm
@@ -232,18 +232,18 @@ theorem step_next_cases {P : Program} (hP : ∀ g ∈ P.funcs, LinkFree g) {env 
     · exact .inl ⟨hc1.trans htc, by rw [hf1]; exact hts, .inr ⟨n, g, v, rv, hg, htm ▸ hr⟩⟩
   rcases step_shape s with ⟨fn, args, et, hb, ht⟩ | ⟨callee, args, et, hb, ht⟩ |
     ⟨st, rest, sig, callee, args, hb, hi⟩ | hci
-  · rw [step_try env P s hb ht] at h
+  · rw [step_try env p s hb ht] at h
     obtain ⟨⟨n, b, bc⟩, -, h⟩ := Opt.StepResult.ofRes_eq_next h
     obtain ⟨⟨ext, vals⟩, -, h⟩ := Opt.StepResult.ofRes_eq_next h
     exact hcall (tryState s bc) [] _ ext vals rfl rfl rfl h
-  · rw [step_tryInd env P s hb ht] at h
+  · rw [step_tryInd env p s hb ht] at h
     obtain ⟨⟨n, b, bc⟩, -, h⟩ := Opt.StepResult.ofRes_eq_next h
     obtain ⟨⟨d, a, v⟩, -, h⟩ := Opt.StepResult.ofRes_eq_next h
     exact hind (tryState s bc) [] _ _ d a v rfl rfl rfl h
-  · rw [step_ind env P s hb hi] at h
+  · rw [step_ind env p s hb hi] at h
     obtain ⟨⟨d, a, v⟩, -, h⟩ := Opt.StepResult.ofRes_eq_next h
     exact hind s rest st.results sig d a v rfl rfl rfl h
-  · rw [Opt.step_eq_lift env P s hci] at h
+  · rw [Opt.step_eq_lift env p s hci] at h
     cases hl : Opt.lstep s.frame s.mem with
     | next fr1 m1 =>
       rw [hl] at h; cases h

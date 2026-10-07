@@ -246,7 +246,7 @@ theorem runGood_sysS {D : List Clif.DataObject} (hI : okB I = true) (hbin : BinO
     (ho : OutsideCall I (BinCheck.roByte I D) f (StackBound.stackFn I f) r args cs.mem)
     {S : BitVec 64 → Prop} (hav : OutsideAvoids S f (StackBound.stackFn I f) r args cs.mem)
     (hr : ClifRun I B f r args cs)
-    (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) ((prog I).only f) cs)
+    (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) (prog I).bare cs)
     (hout : (∃ vals cm, Clif.runLoop B.env (prog I) (M + 1) cs = .returned vals cm) ∨
       (∃ c, Clif.runLoop B.env (prog I) (M + 1) cs = .trapped c)) :
     (sysS I B f r S).RunGoodL M f (modelOf I f r) := by
@@ -374,7 +374,7 @@ theorem binary_correct_exec_of_insn {I : LinkInput} {D : List Clif.DataObject}
     (ho : OutsideCall I (BinCheck.roByte I D) f (StackBound.stackFn I f) r args cs.mem)
     (hav : OutsideAvoids (GotSlot I file) f (StackBound.stackFn I f) r args cs.mem)
     (hr : ClifRun I B f r args cs)
-    (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) ((prog I).only f) cs)
+    (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) (prog I).bare cs)
     (hins : RunInsnN I B file M f (modelOf I f r)) :
     ExecRefines (art I f).fb (art I f).base (xreg 30 r) (step I B file) r (RelocAt I)
       (Clif.runLoop B.env (prog I) (M + 1) cs) := by

@@ -98,7 +98,8 @@ def CallsRefineP (Pc : String → Clif.Signature → List Clif.Val → Clif.Mem 
       (dest : CallDest) (us ds : List (Reg × Reg)) (uses args : List CV)
       (vals rvals : List Clif.Val) (cm' : Clif.Mem),
       env.extern ext.name = some g →
-      (dest = .sym ext.name ∧ uses = args ∨ ∃ r, dest = .reg r ∧ uses = ofX (sym ext.name) :: args) →
+      (dest = .sym ext.name ∧ uses = args ∨
+        ∃ r, dest = .reg r ∧ ext.colocated = false ∧ uses = ofX (sym ext.name) :: args) →
       ds.length = (sigRets ext.sig).length →
       ArgsAt ext.sig vals args w → MR sl cm w → Pc ext.name ext.sig vals cm →
       g vals cm = .returned rvals cm' → rvals.length = ext.sig.returns.length →
@@ -108,7 +109,8 @@ def CallsRefineP (Pc : String → Clif.Signature → List Clif.Val → Clif.Mem 
       (dest : CallDest) (us ds : List (Reg × Reg)) (ti : TryInfo) (uses args : List CV)
       (vals rvals : List Clif.Val) (cm' : Clif.Mem),
       env.extern ext.name = some g →
-      (dest = .sym ext.name ∧ uses = args ∨ ∃ r, dest = .reg r ∧ uses = ofX (sym ext.name) :: args) →
+      (dest = .sym ext.name ∧ uses = args ∨
+        ∃ r, dest = .reg r ∧ ext.colocated = false ∧ uses = ofX (sym ext.name) :: args) →
       (sigRets ext.sig).length ≤ ds.length → ti.rets ≤ (sigRets ext.sig).length →
       ArgsAt ext.sig vals args w → MR sl cm w → Pc ext.name ext.sig vals cm →
       g vals cm = .returned rvals cm' → rvals.length = ext.sig.returns.length →
@@ -131,7 +133,8 @@ def IndCallsRefineP (Pc : String → Clif.Signature → List Clif.Val → Clif.M
   (∀ sig ∈ sigs, ∀ (n : String) g (sl : List (Clif.SlotId × Nat)) (cm : Clif.Mem)
       (w : Arm.ArmState) (a : Nat) (r : Reg) (us ds : List (Reg × Reg)) (u : CV) (args : List CV)
       (vals rvals : List Clif.Val) (cm' : Clif.Mem),
-    env.extern n = some g → cm.symbols n = some a → lo64 u = BitVec.ofNat 64 a →
+    env.extern n = some g → (∀ s, env.sigOf n = some s → sig.abiMatch s = true) →
+    cm.symbols n = some a → lo64 u = BitVec.ofNat 64 a →
     ds.length = (sigRets sig).length → vals.length ≤ 8 → AllHold vals args → MR sl cm w →
     Pc n sig vals cm →
     g vals cm = .returned rvals cm' → rvals.length = sig.returns.length →
@@ -141,7 +144,8 @@ def IndCallsRefineP (Pc : String → Clif.Signature → List Clif.Val → Clif.M
   (∀ sig ∈ sigs, ∀ (n : String) g (sl : List (Clif.SlotId × Nat)) (cm : Clif.Mem)
       (w : Arm.ArmState) (a : Nat) (r : Reg) (us ds : List (Reg × Reg)) (ti : TryInfo) (u : CV)
       (args : List CV) (vals rvals : List Clif.Val) (cm' : Clif.Mem),
-    env.extern n = some g → cm.symbols n = some a → lo64 u = BitVec.ofNat 64 a →
+    env.extern n = some g → (∀ s, env.sigOf n = some s → sig.abiMatch s = true) →
+    cm.symbols n = some a → lo64 u = BitVec.ofNat 64 a →
     (sigRets sig).length ≤ ds.length → ti.rets ≤ (sigRets sig).length → vals.length ≤ 8 →
     AllHold vals args → MR sl cm w →
     Pc n sig vals cm →
@@ -155,10 +159,12 @@ theorem IndCallsRefine.toP {env : Clif.Env} {sigs : List Clif.Signature} {MR : M
     {isem : Sem} (h : IndCallsRefine env sigs MR isem)
     (Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop) :
     IndCallsRefineP Pc env sigs MR isem :=
-  ⟨fun sig hin n g sl cm w a r us ds u args vals rvals cm' a1 a2 a3 a4 a5 a6 a7 _ a9 a10 a11 =>
-    h.1 sig hin n g sl cm w a r us ds u args vals rvals cm' a1 a2 a3 a4 a5 a6 a7 a9 a10 a11,
-   fun sig hin n g sl cm w a r us ds ti u args vals rvals cm' a1 a2 a3 a4 a0 a5 a6 a7 _ a9 a10 a11 =>
-    h.2 sig hin n g sl cm w a r us ds ti u args vals rvals cm' a1 a2 a3 a4 a0 a5 a6 a7 a9 a10 a11⟩
+  ⟨fun sig hin n g sl cm w a r us ds u args vals rvals cm' a1 a1' a2 a3 a4 a5 a6 a7 _ a9 a10 a11 =>
+    h.1 sig hin n g sl cm w a r us ds u args vals rvals cm' a1 a1' a2 a3 a4 a5 a6 a7 a9 a10 a11,
+   fun sig hin n g sl cm w a r us ds ti u args vals rvals cm' a1 a1' a2 a3 a4 a0 a5 a6 a7 _ a9 a10
+      a11 =>
+    h.2 sig hin n g sl cm w a r us ds ti u args vals rvals cm' a1 a1' a2 a3 a4 a0 a5 a6 a7 a9 a10
+      a11⟩
 
 /-- `CallRuleOk` with the pinned obligation. -/
 def CallRuleOkP (Rd : BitVec 64 → Prop)

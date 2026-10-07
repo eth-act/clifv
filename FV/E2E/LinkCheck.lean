@@ -296,7 +296,8 @@ structure BaseOk (L : LinkSys) : Prop where
   baseX : ∀ g ∈ L.P.funcs, ∀ F slotOff out c, XCallsOk L.base
     ((g.externs.map (·.2)).filter fun e => (L.P.func? e.name).isNone)
     (RelW ⟨F, L.syms, slotOff, out⟩ g c) L.Xb
-  baseXI : ∀ g ∈ L.P.funcs, ∀ F slotOff out c, XCallsIndOk L.base (indSigs g)
+  baseXI : ∀ g ∈ L.P.funcs, ∀ F slotOff out c,
+    XCallsIndOk { L.base with sigOf := fun _ => none } (indSigs g)
     (RelW ⟨F, L.syms, slotOff, out⟩ g c) L.Xb
   baseTls : ∀ g ∈ L.P.funcs, hasTls g = true → ∀ F K, TlsOk F K L.Xb L.Hb
   baseTry : ∀ g ∈ L.P.funcs, ∀ F, CalleeTryOk F L.Xb L.Hb
@@ -363,7 +364,7 @@ theorem indFreeB_sound {g : Clif.Function} (h : indFreeB g = true) : Clif.IndFre
 /-- `g` may call `n` (an over-approximation of `LinkSys.MayCall`, with the CLIF image's symbols
 `S`): declared, or with an address when `g` has indirect calls. -/
 def mayB (S : String → Option Nat) (g : Clif.Function) (n : String) : Bool :=
-  declB g n || (!indFreeB g && n != g.name && (S n).isSome)
+  declB g n || (!indFreeB g && (S n).isSome)
 
 theorem indFreeB_false {g : Clif.Function} (h : ¬ Clif.IndFree g) : indFreeB g = false := by
   cases hb : indFreeB g
@@ -372,31 +373,34 @@ theorem indFreeB_false {g : Clif.Function} (h : ¬ Clif.IndFree g) : indFreeB g 
 
 theorem mayB_of {L : LinkSys} {g : Clif.Function} {n : String} (h : L.MayCall g n) :
     mayB L.syms g n = true := by
-  rcases h with hd | ⟨hnf, hne, hs, -⟩
+  rcases h with hd | ⟨hnf, hs, -⟩
   · simp [mayB, declB_of hd]
-  · simp only [mayB, indFreeB_false hnf, Bool.or_eq_true, Bool.and_eq_true, Bool.not_false,
-      bne_iff_ne, ne_eq, true_and]
-    exact .inr ⟨hne, by cases h' : L.syms n <;> simp_all⟩
-
-theorem mayCall_ne {L : LinkSys} {g : Clif.Function} {n : String} (h : L.MayCall g n) :
-    n ≠ g.name := by
-  rcases h with hd | ⟨-, hne, -⟩
-  · exact hd.2
-  · exact hne
+  · simp only [mayB, indFreeB_false hnf, Bool.or_eq_true, Bool.not_false, Bool.true_and]
+    exact .inr (by cases h' : L.syms n <;> simp_all)
 
 /-- One of `g`'s indirect calls can enter `h` (`LinkSys.IndSigMatch`: its call-site signature
 matches `h`'s, and as many results). -/
 def indMatchB (g h : Clif.Function) : Bool :=
   (indSigs g).any fun s => decide (LinkSys.IndSigMatch s h) && h.sig.returns.length == s.returns.length
 
+/-- `g` declares `n` non-colocated (`GotDecl`: a direct call of it goes through the GOT). -/
+def gotDeclB (g : Clif.Function) (n : String) : Bool :=
+  g.externs.any fun e => e.2.name == n && !e.2.colocated
+
+theorem gotDeclB_of {g : Clif.Function} {n : String} (h : GotDecl g n) : gotDeclB g n = true := by
+  obtain ⟨e, he, hn, hc⟩ := h
+  obtain ⟨x, hx, rfl⟩ := List.mem_map.mp he
+  simp only [gotDeclB, List.any_eq_true, Bool.and_eq_true, beq_iff_eq, Bool.not_eq_true']
+  exact ⟨x, hx, hn, hc⟩
+
 /-- `g` may enter `h` through an address (`LinkSys.IndTo`, with the CLIF image's symbols `S`). -/
 def indToB (S : String → Option Nat) (g h : Clif.Function) : Bool :=
-  mayB S g h.name && (declB g h.name || indMatchB g h)
+  mayB S g h.name && ((declB g h.name && gotDeclB g h.name) || indMatchB g h)
 
 theorem indToB_of {L : LinkSys} {g h : Clif.Function} (hi : L.IndTo g h) :
     indToB L.syms g h = true := by
-  obtain ⟨hmay, hd | ⟨sig, hs, hm, hl⟩⟩ := hi
-  · simp [indToB, mayB_of hmay, declB_of hd]
+  obtain ⟨hmay, ⟨hd, hg⟩ | ⟨sig, hs, hm, hl⟩⟩ := hi
+  · simp [indToB, mayB_of hmay, declB_of hd, gotDeclB_of hg]
   · simp only [indToB, mayB_of hmay, indMatchB, Bool.true_and, Bool.or_eq_true, List.any_eq_true,
       Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq]
     exact .inr ⟨sig, hs, hm, hl⟩
@@ -637,6 +641,25 @@ theorem raCallB_sound {T : List (Clif.Function × Art)} {g : Clif.Function} {a :
     beq_iff_eq] at this
   exact raOkB_sound ((this e he).resolve_left hne)
 
+/-- **A call of a function's own code returns after the call** (`RaOk`, for a function calling
+itself through a pointer): its return address is within the laid-out words, which fit the address
+space with an address outside them (`outside ra a`), so it is not the entry. -/
+theorem raOk_self {a : Art} (hl : a.fa.layout = .ok a.fb) {ra : BitVec 64}
+    (ho : outside ra a = true) {pc : BitVec 64} (hpc : CallPc a.fa a.base pc) : RaOk a pc := by
+  refine .inr ⟨hpc, ?_⟩
+  obtain ⟨j, i, t, hj, -, rfl⟩ := hpc
+  obtain ⟨m, hm⟩ := FnAsm.layout_labelOffsets hl
+  obtain ⟨hmod, w, -, hw⟩ := FnAsm.layout_word hl hm hj rfl
+  have hwl := (Array.getElem?_eq_some_iff.1 hw).1
+  simp only [outside, Bool.and_eq_true, decide_eq_true_eq, Bool.or_eq_true] at ho
+  have hb := a.base.isLt
+  have hr := ra.isLt
+  intro h
+  have h' := congrArg BitVec.toNat h
+  rw [BitVec.toNat_add, BitVec.toNat_add, BitVec.toNat_ofNat,
+    show (4 : BitVec 64).toNat = 4 from rfl] at h'
+  omega
+
 def raStarB (T : List (Clif.Function × Art)) (ra : BitVec 64) : Bool := T.all (outside ra ·.2)
 
 /-- The image read back word by word. -/
@@ -724,15 +747,14 @@ def indRetsB (g h : Clif.Function) : Bool :=
   (indSigs g).all fun s => !decide (LinkSys.IndTyMatch s h) ||
     h.sig.returns.length != s.returns.length || (sigRets h.sig).length == (sigRets s).length
 
-/-- The scope of the indirect calls of `g` (`indScope`'s declarations, `indNoSym`, `indSig`),
-with the CLIF image's symbols `S`: the functions `g` may call that one of its indirect calls can
-enter (`indSigB`) take register arguments (an `sret` pointer in x8) and have as many ABI returns
-as the indirect calls of their parameter types (`indRetsB`). -/
+/-- The scope of the indirect calls of `g` (`indScope`'s declarations, `indSig`), with the CLIF
+image's symbols `S`: the functions `g` may call that one of its indirect calls can enter
+(`indSigB`) take register arguments (an `sret` pointer in x8) and have as many ABI returns as the
+indirect calls of their parameter types (`indRetsB`). -/
 def indB (P : Clif.Program) (S : String → Option Nat) (g : Clif.Function) : Bool :=
-  indFreeB g || (P.funcs.all (fun h => !mayB S g h.name || !indSigB g h ||
+  indFreeB g || P.funcs.all (fun h => !mayB S g h.name || !indSigB g h ||
       ((match sigParamBytes h.sig with | .ok b => decide (b.length ≤ 8) | .error _ => false) &&
-        indRetsB g h)) &&
-    S g.name == none)
+        indRetsB g h))
 
 /-- The machine's address of every function of `P` is no other symbol's (`Ok.symInj`): it is
 a nonzero 64-bit address (names without one resolve to `0`) that no other link-map entry has. -/
@@ -805,7 +827,7 @@ def linkChks (I : LinkInput) (P : Clif.Program) (T : List (Clif.Function × Art)
       | some h => decide (e.2.sig = h.sig)
       | none => true),
    ("raCall/raBlr", raCallB T g a),
-   ("indScope/indNoSym/indSig", indB P (fun n => I.syms.lookup n) g)]
+   ("indScope/indSig", indB P (fun n => I.syms.lookup n) g)]
 
 /-- **The per-function checks** of `g`. -/
 def chks (I : LinkInput) (P : Clif.Program) (T : List (Clif.Function × Art)) (g : Clif.Function)
@@ -1035,24 +1057,24 @@ theorem indRetsB_sound {g h : Clif.Function} (hr : indRetsB g h = true) :
 
 theorem indFactsR {I : LinkInput} {R : Res} (hR : ResOk I R) (h : okR I R = true) {g : Clif.Function}
     (hg : g ∈ (progOf R).funcs) (hnf : ¬ Clif.IndFree g) :
-    (∀ h ∈ (progOf R).funcs, mayB (fun n => I.syms.lookup n) g h.name = true →
+    ∀ h ∈ (progOf R).funcs, mayB (fun n => I.syms.lookup n) g h.name = true →
       ((∃ sig ∈ indSigs g, LinkSys.IndSigMatch sig h) ∨
         (DeclN g h.name ∧ ∃ sig ∈ indSigs g, LinkSys.IndTyMatch sig h)) →
       (∃ bytes, sigParamBytes h.sig = .ok bytes ∧ bytes.length ≤ 8) ∧
       ∀ sig ∈ indSigs g, LinkSys.IndTyMatch sig h → h.sig.returns.length = sig.returns.length →
-        (sigRets h.sig).length = (sigRets sig).length) ∧
-    I.syms.lookup g.name = none := by
+        (sigRets h.sig).length = (sigRets sig).length := by
   have h := (factsR hR h hg).ind
-  simp only [indB, Bool.or_eq_true, Bool.and_eq_true, List.all_eq_true] at h
-  rcases h with h | ⟨h2, h3⟩
+  simp only [indB, Bool.or_eq_true, List.all_eq_true] at h
+  rcases h with h | h2
   · exact absurd (indFreeB_sound h) hnf
-  refine ⟨fun h' hh hd hm => ?_, by simpa using h3⟩
+  intro h' hh hd hm
   have hany : indSigB g h' = true := by
     simp only [indSigB, Bool.or_eq_true, Bool.and_eq_true, List.any_eq_true, decide_eq_true_eq]
     rcases hm with ⟨sig, hs, hm⟩ | ⟨hdn, sig, hs, hm⟩
     · exact .inl ⟨sig, hs, hm⟩
     · exact .inr ⟨declB_of hdn, sig, hs, hm⟩
   have h2' := h2 h' hh
+  simp only [Bool.and_eq_true] at h2'
   rw [hd, hany] at h2'
   rcases h2' with (e | e) | ⟨hb8, hr⟩
   · cases e
@@ -1121,7 +1143,7 @@ theorem okR_sound {I : LinkInput} {R : Res} (hR : ResOk I R) (hI : okR I R = tru
       · refine ⟨?_, hh'⟩
         simp only [calleeB, Bool.or_eq_true, List.any_eq_true, beq_iff_eq, Bool.and_eq_true,
           Bool.not_eq_true']
-        rcases hmay with ⟨hm, -⟩ | ⟨hnf, -, hs, -⟩
+        rcases hmay with ⟨hm, -⟩ | ⟨hnf, hs, -⟩
         · obtain ⟨⟨fn, e'⟩, he, hen⟩ := List.mem_map.1 hm
           exact .inl ⟨g, hg, (fn, e'), he, hen⟩
         · refine .inr ⟨?_, g, hg, indFreeB_false hnf⟩
@@ -1140,7 +1162,7 @@ theorem okR_sound {I : LinkInput} {R : Res} (hR : ResOk I R) (hI : okR I R = tru
   refine
     { names := hn
       free := fun g hg => (fa hg).free
-      subset := fun g hg => ⟨?_, (fa hg).subsetE, ?_, ?_, (fa hg).abi, ?_⟩
+      subset := fun g hg => ⟨(fa hg).subsetE, ?_, ?_, (fa hg).abi, ?_⟩
       compiled := fun g hg => (hpipe g hg).1
       covered := fun g hg => (fa hg).covered
       outFits := fun g hg e he hs i off p hl hp => ?_
@@ -1154,11 +1176,13 @@ theorem okR_sound {I : LinkInput} {R : Res} (hR : ResOk I R) (hI : okR I R = tru
         obtain ⟨t, Lu, Ld, heq, hall⟩ := blrOk_sound (siteOk_reg (site_sound (fa hg).sites hs) hreg)
         exact ⟨t, Lu, Ld, heq, fun h hh hb hl =>
           hall h hh (indToB_of hb.1) (fun n hn => (hb.2 n (gotOf_sound hn)).symm) hl⟩
-      raBlr := fun g hg info hs hreg h hh hmay pc hpc =>
-        raCallB_sound (fa hg).ra hpc _ (tab_mem hn hh) (mayCall_ne hmay)
+      raBlr := fun g hg info hs hreg h hh hmay pc hpc => by
+        by_cases hhg : h.name = g.name
+        · rw [Clif.name_inj hn hh hg hhg]
+          exact raOk_self (hpipe g hg).1.layout (List.all_eq_true.1 hstar _ (tab_mem hn hg)) hpc
+        · exact raCallB_sound (fa hg).ra hpc _ (tab_mem hn hh) hhg
       indScope := fun g hg hnf => ⟨hB.keepSyms ⟨g, hg, hnf⟩, ?_, hB.aliasSyms ⟨g, hg, hnf⟩⟩
-      indNoSym := fun g hg hnf => (indFactsR hR hI hg hnf).2
-      indSig := fun g hg hnf h hh hmay hm => (indFactsR hR hI hg hnf).1 h hh (mayB_of hmay) hm
+      indSig := fun g hg hnf h hh hmay hm => indFactsR hR hI hg hnf h hh (mayB_of hmay) hm
       addrSlots := fun hN ⟨g, hg, hout⟩ ⟨g', hg', hind⟩ h hh hs => ?_
       symInj := fun h hh n hn => ?_
       declSig := fun g hg e he h hf => (fa hg).declSig e he h hf
@@ -1182,7 +1206,6 @@ theorem okR_sound {I : LinkInput} {R : Res} (hR : ResOk I R) (hI : okR I R = tru
       baseTlsNI := hB.baseTlsNI
       baseKeepsPlace := hB.baseKeepsPlace
       baseKeepsAllocs := hB.baseKeepsAllocs }
-  · simp [ofRes, Clif.Program.only, Clif.Program.func?]
   · intro b _ st _ fn args _ e he
     have hne := (fa hg).extName e (lookup_mem he)
     simp [ofRes, Clif.Program.only, Clif.Program.func?, Ne.symm hne]
@@ -1358,7 +1381,7 @@ def ProgStmt (L : LinkSys) (n : String) : Prop :=
     Rel.holds ⟨L.F, L.syms, (L.A f).af.slotBase,
       (RAFrame.compute (L.A f).vcp (L.A f).rf).intBase⟩ f cs.frame.slots cs.mem w₀ →
     (L.NeedSlots → L.PlaceAt cs.mem (spv w₀)) →
-    TrapsExplicit (Clif.linkEnvN L.P L.base M) (L.P.only f) cs →
+    TrapsExplicit (Clif.linkEnvN L.P L.base M) L.P.bare cs →
     ArmRefines (L.A f).fb (L.A f).base ra (L.mach M f) s (Clif.runLoop L.base L.P (M + 1) cs)
 
 /-- **The crate's theorem for its function named `n`**: for every base environment `B` that

@@ -61,7 +61,7 @@ theorem backend_correct_program_stack (L : LinkSys) (hL : L.Ok) {κ : Nat → Cl
     (hrel : Rel.holds ⟨L.F, L.syms, (L.A f).af.slotBase,
       (RAFrame.compute (L.A f).vcp (L.A f).rf).intBase⟩ f cs.frame.slots cs.mem w₀)
     (hpl : L.NeedSlots → L.PlaceAt cs.mem (spv w₀))
-    (htr : TrapsExplicit (Clif.linkEnvN L.P L.base M) (L.P.only f) cs) :
+    (htr : TrapsExplicit (Clif.linkEnvN L.P L.base M) L.P.bare cs) :
     ArmRefines (L.A f).fb (L.A f).base ra (L.mach M f) s (Clif.runLoop L.base L.P (M + 1) cs) := by
   have hd := L.frameDrop_eq hL hf
   have hres : StackAvail b (L.A f).af s := by
@@ -290,7 +290,7 @@ theorem edgeB_of_callee {I : LinkInput} (hI : okB I = true) {B : BaseEnv}
   · obtain ⟨e', he', rfl⟩ := List.mem_map.1 he
     exact hdecl e' he' (Clif.Program.func?_some (p := progOf I.results) hpf).2.symm
   · obtain ⟨hh, hmay⟩ := hc
-    rcases hmay with ⟨hm, -⟩ | ⟨hnf, -, hsy, hsig⟩
+    rcases hmay with ⟨hm, -⟩ | ⟨hnf, hsy, hsig⟩
     · obtain ⟨e, he, hen⟩ := List.mem_map.1 hm
       exact hdecl e he hen
     · obtain ⟨sig, hsm, hm⟩ := hsig h (func?_of_mem (okB_names hI) hh)
@@ -804,7 +804,7 @@ def ProgStmtS (L : LinkSys) (I : LinkInput) (n : String) : Prop :=
     Rel.holds ⟨L.F, L.syms, (L.A f).af.slotBase,
       (RAFrame.compute (L.A f).vcp (L.A f).rf).intBase⟩ f cs.frame.slots cs.mem w₀ →
     (L.NeedSlots → L.PlaceAt cs.mem (spv w₀)) →
-    TrapsExplicit (Clif.linkEnvN L.P L.base M) (L.P.only f) cs →
+    TrapsExplicit (Clif.linkEnvN L.P L.base M) L.P.bare cs →
     ArmRefines (L.A f).fb (L.A f).base ra (L.mach M f) s (Clif.runLoop L.base L.P (M + 1) cs)
 
 /-- **The crate's theorem with the stack bound** for its function named `n` (`CrateStmt` with

@@ -71,12 +71,11 @@ def detail (I : LinkInput) (P : Clif.Program) (g : Clif.Function) (a : Art) (che
                   (List.range (min (sigRets h.sig).length (decD info.defs).length)).map Reg.x))
             s!"blr with {nu} register argument(s), {info.defs.length} def(s): not the ABI registers of the program function(s) it may enter (BlrTo) with {nu} register parameter(s): {hs.map (·.name)}")
       | _ => none
-  else if check == "indScope/indNoSym/indSig" then
+  else if check == "indScope/indSig" then
     (P.funcs.filter (fun h => mayB S g h.name && indSigB g h &&
       (!indRetsB g h ||
       (match sigParamBytes h.sig with | .ok b => decide (b.length > 8) | .error _ => true)))).map
-      (fun h => s!"indSig: program function {h.name} one of its indirect calls may enter (matching signature, or declared with matching parameter types) has a stack-passed parameter, or an sret pointer where an indirect call of its parameter types has none (or the reverse)") ++
-    (if S g.name == none then [] else ["indNoSym: the function's own address is taken"])
+      (fun h => s!"indSig: program function {h.name} one of its indirect calls may enter (matching signature, or declared with matching parameter types) has a stack-passed parameter, or an sret pointer where an indirect call of its parameter types has none (or the reverse)")
   else []
 
 /-! ## The binary checks (`FV/E2E/BinCheck.lean`) on the executable -/

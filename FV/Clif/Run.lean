@@ -40,10 +40,13 @@ def Outcome.returnedVals? : Outcome → Option (List Val)
 /-- Semantics of extern callees, by name (without the leading `%`). An extern returning
 `outOfFuel` is treated as `stuck`. `names`: further link-time names an indirect call may reach
 (`callExternAt`), besides the externs the program declares — the rest of the image's code
-symbols (empty by default). -/
+symbols (empty by default). `sigOf`: the signature of an extern that is a function with a known
+definition (the linker's environment, `Clif.linkEnvN`, gives each function of the linked
+program its own; none by default), which an indirect call must match (`callExternAt`). -/
 structure Env where
   extern : String → Option (List Val → Mem → Outcome) := fun _ => none
   names : List String := []
+  sigOf : String → Option Signature := fun _ => none
 
 def Env.empty : Env := {}
 
@@ -434,16 +437,21 @@ def Program.externNames (p : Program) : List String :=
 environment's further code symbols, then the externs of `p`, `Program.externNames`) whose
 link-time address (`mem.symbols`) is the callee address `addr`, called as `env.extern` on
 `vals` with the call site's signature `declared` (argument and result types checked against
-it, as `stepCall` checks the declaration's). There is no callee signature to match purposes
-against (unlike a function of the program, `Signature.abiMatch`): an extern's semantics is an
-untyped `List Val → Mem → Outcome`, the names of `env.names` have no declaration, and the
-functions of `p` may declare one extern with different signatures; the extern's semantics
-receives the call's values, whatever the convention. -/
+it, as `stepCall` checks the declaration's). An extern whose signature the environment knows
+(`env.sigOf`: a function of a linked program) is called only when `declared` matches it
+(`Signature.abiMatch`, as for a function of the program; `stuck` otherwise, Cranelift's "the
+called function must match the specified signature"). Otherwise there is no callee signature to
+match purposes against: an extern's semantics is an untyped `List Val → Mem → Outcome`, the
+names of `env.names` have no declaration, and the functions of `p` may declare one extern with
+different signatures; the extern's semantics receives the call's values, whatever the
+convention. -/
 def callExternAt (env : Env) (p : Program) (mem : Mem) (declared : Signature) (addr : Nat)
     (vals : List Val) : Res (List Val × Mem) := do
   let name ← Res.ofOption "call_indirect: no function at the callee address"
     ((env.names ++ p.externNames).find? fun n => mem.symbols n == some addr)
   let g ← Res.ofOption s!"unknown callee %{name}" (env.extern name)
+  Res.check ((env.sigOf name).all declared.abiMatch)
+    s!"call_indirect: signature does not match %{name}"
   checkTys s!"arguments of call_indirect to %{name}" vals (AbiParam.tys declared.params)
   match g vals mem with
   | .returned rvals mem' =>
