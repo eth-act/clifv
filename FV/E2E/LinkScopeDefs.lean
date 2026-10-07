@@ -97,11 +97,19 @@ def declSigB (P : Clif.Program) (g : Clif.Function) : Bool :=
     | some h => decide (e.2.sig = h.sig)
     | none => true
 
-/-- `addrSlots` on the input: no indirect call in `P`, or the functions with an address have no
-stack slots (stronger than the check, which also passes when no function of `P` has an outgoing
-argument area). -/
+/-- `lowerFunction`'s VCode of `f` has an outgoing argument area (the stack arguments of its
+calls; `prepare` keeps it, and the allocator's frame places it at `intBase`). -/
+def outAreaB (f : Clif.Function) : Bool :=
+  match lowerFunction f with
+  | .ok vc => vc.outgoing != 0
+  | .error _ => false
+
+/-- `addrSlots` on the input: no outgoing argument area or no indirect call in `P`, or the
+functions with an address have no stack slots (the check `addrSlotsB` reads the outgoing area
+from the allocated frames, `intBase`). -/
 def addrSlotsInB (P : Clif.Program) (S : String → Option Nat) : Bool :=
-  !P.funcs.any (!indFreeB ·) || P.funcs.all fun h => (S h.name).isNone || h.slots.isEmpty
+  !(P.funcs.any outAreaB && P.funcs.any (!indFreeB ·)) ||
+    P.funcs.all fun h => (S h.name).isNone || h.slots.isEmpty
 
 /-- **The program-level input conditions** (`S`: the CLIF image's symbols; only which names
 have one matters): distinct names, declared signatures, the scope of the indirect calls

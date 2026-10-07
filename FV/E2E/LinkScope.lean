@@ -158,14 +158,44 @@ theorem linker_parts {I : LinkInput} {R : Res} (h : linkerOkR I R = true) :
   simp only [linkerOkR, Bool.and_eq_true, List.all_eq_true, decide_eq_true_eq] at h
   exact ⟨h.1.1.1.1, h.1.1.1.2, h.1.1.2, h.1.2, h.2⟩
 
-theorem addrSlotsB_of_in {P : Clif.Program} {T : List (Clif.Function × Art)}
-    {S : String → Option Nat} (h : addrSlotsInB P S = true) : addrSlotsB P T S = true := by
-  simp only [addrSlotsInB, Bool.or_eq_true] at h
-  simp only [addrSlotsB, Bool.or_eq_true]
-  rcases h with h | h
-  · left
-    simp only [Bool.not_eq_true'] at h
-    simp [h]
+/-- A compiled function with an outgoing area in its frame (`intBase`) has one in
+`lowerFunction`'s VCode (`prepare` keeps it; an error's default image has none). -/
+theorem outArea_of_intBase {I : LinkInput} {x : Clif.Function × Art}
+    (hx : x ∈ tabOf I.resultsT) (h : (RAFrame.compute x.2.vcp x.2.rf).intBase ≠ 0) :
+    x.1 ∈ I.prog.funcs ∧ outAreaB x.1 = true := by
+  obtain ⟨e, he, rfl⟩ := List.mem_map.1 hx
+  obtain ⟨fi, hfi, h1, h2⟩ := mem_resultsT he
+  dsimp only at h ⊢
+  rw [h1]
+  refine ⟨List.mem_map_of_mem hfi, ?_⟩
+  rw [h2] at h
+  cases hp : pipeT fi.func fi.k (BitVec.ofNat 64 (I.baseOf fi.func.name)) (raJ fi.ra fi.j) with
+  | error m =>
+    rw [hp] at h
+    exact (h (show alignTo (default : Art).vcp.outgoing 16 = 0 from rfl)).elim
+  | ok a =>
+    rw [hp] at h
+    obtain ⟨hl, hpr, -⟩ := pipeT_spec hp
+    unfold outAreaB
+    rw [hl]
+    simp only [bne_iff_ne, ne_eq]
+    intro h0
+    apply h
+    show alignTo a.vcp.outgoing 16 = 0
+    rw [outgoing_of_prepare hpr, h0]
+    rfl
+
+theorem addrSlotsB_of_in {I : LinkInput} {S : String → Option Nat}
+    (h : addrSlotsInB I.prog S = true) : addrSlotsB I.prog (tabOf I.resultsT) S = true := by
+  simp only [addrSlotsInB, Bool.or_eq_true, Bool.not_eq_true', Bool.and_eq_false_iff] at h
+  simp only [addrSlotsB, Bool.or_eq_true, Bool.not_eq_true', Bool.and_eq_false_iff]
+  rcases h with (h | h) | h
+  · refine .inl (.inl ?_)
+    rw [List.any_eq_false] at h ⊢
+    intro x hx hne
+    obtain ⟨hm, ho⟩ := outArea_of_intBase hx (by simpa using hne)
+    exact h x.1 hm ho
+  · exact .inl (.inr h)
   · exact .inr h
 
 /-! ## The open, program-independent hypotheses -/

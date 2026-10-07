@@ -1,14 +1,16 @@
 import Crates.AArith.Input
+import Crates.FvDemo.Input
 import FV.E2E.LinkScope
 
-/-! # Non-vacuity of `crate_correct_inScope` (L2a) on a survey crate
+/-! # Non-vacuity of `crate_correct_inScope` (L2a) on survey crates
 
 `E2E.LinkCheck.crate_correct_inScope` (`FV/E2E/LinkScope.lean`) needs of a crate only the input
 conditions `InScopeP` and the linker's facts `linkerOkB` (besides the program-independent open
-facts `OwnHyps`). Both hold for the survey crate `a_arith` (`Crates.AArith.input`, 58 functions):
-decided by `native_decide` (`fvcheck` holds the compiled code of `FV.E2E.LinkScopeDefs`). The
-closed base environment satisfies the base premises of its linked system (`base_closedT`), so the
-theorem is not vacuous in them either. -/
+facts `OwnHyps`). Both hold for the survey crate `a_arith` (`Crates.AArith.input`, 58 functions)
+and for `fv-demo` (`Crates.FvDemo.input`, 551 functions): decided by `native_decide` (`fvcheck`
+holds the compiled code of `FV.E2E.LinkScopeDefs`). The closed base environment satisfies the
+base premises of `a_arith`'s linked system (`base_closedT`), so the theorem is not vacuous in them
+either. -/
 
 namespace Crates.InScopeWitness
 
@@ -32,5 +34,15 @@ theorem crate_correct (hO : OwnHyps) (n : String) : CrateStmtT Crates.AArith.inp
 theorem base_closedT (F : BitVec 64 → Prop) :
     BaseOk (LinkSys.ofInputT Crates.AArith.input closedBase F) :=
   baseOk_closedT fun g hg => by simpa using List.all_eq_true.1 noTls g hg
+
+/-- The input conditions of `fv-demo`. -/
+theorem inScope_fvDemo : InScopeP Crates.FvDemo.input = true := by native_decide
+
+/-- The linker's facts of `fv-demo`'s executable for the compiler's results. -/
+theorem linker_fvDemo : linkerOkB Crates.FvDemo.input = true := by native_decide
+
+/-- **`backend_correct_program` for every function of `fv-demo`**, without `okB`. -/
+theorem crate_correct_fvDemo (hO : OwnHyps) (n : String) : CrateStmtT Crates.FvDemo.input n :=
+  crate_correct_inScope hO inScope_fvDemo linker_fvDemo n
 
 end Crates.InScopeWitness
