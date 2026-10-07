@@ -22,7 +22,7 @@ sizes, the other names at rust-lld's addresses. -/
 def spec : LinkSpec :=
   let I := Crates.AArith.input
   let names := I.funcs.map (·.func.name)
-  { funcs := I.funcs,
+  { funcs := I.funcs, names,
     sizes := I.funcs.map fun fi => (getOk (pipeT fi.func fi.k 0 (raJ fi.ra fi.j))).fb.words.size,
     outside := I.addrs.filter (fun p => !names.contains p.1),
     symNames := I.syms.map (·.1), R := 0x1000000 }
