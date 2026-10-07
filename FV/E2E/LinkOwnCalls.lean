@@ -1,12 +1,12 @@
 import FV.E2E.LinkOwnCallsDefs
 import FV.E2E.SpillCtlCheck
 
-/-! # The call sites of the compiler's own output (`callRegs/blrRegs`, `tryRets/blrTry`; L2a)
+/-! # The call sites of the compiler's own output (`callRegs/blrRegs`; L2a)
 
 `sites_of_lower`: for an in-scope function `g` of `P` whose call sites pass the input condition
 `callScopeB P S g` (`LinkOwnCallsDefs`), every call site of the prepared VCode passes `siteOk`
-(registers of the callee's parameters, results from x0) and every `tryCall` passes `tryB` (at
-most the callee's results), against every program function the site may enter.
+(registers of the callee's parameters, results from x0), against every program function the
+site may enter.
 
 The lowering's call sites are stated relative to the CLIF call site's signature
 (`CallShapeHyp`, program-independent): each `call`/`tryCall` of `lowerFunction`'s VCode is the
@@ -361,7 +361,7 @@ theorem dirSiteB_of {P : Clif.Program} {S : String → Option Nat} {g : Clif.Fun
 
 theorem indSiteB_of {P : Clif.Program} {S : String → Option Nat} {g : Clif.Function}
     (hc : callScopeB P S g = true) {isTry : Bool} {args : List Nat} {s : Clif.Signature}
-    (h : IndSite g isTry args s) : indSiteB P S g s args isTry = true := by
+    (h : IndSite g isTry args s) : indSiteB P S g s args = true := by
   obtain ⟨B, hB, ⟨rfl, st, hst, sg, callee, hi, hs⟩ | ⟨rfl, callee, et, ht, hs⟩⟩ := h
   · have := (Bool.and_eq_true _ _).mp (List.all_eq_true.mp hc B hB)
     have := List.all_eq_true.mp this.1 st hst
@@ -399,7 +399,7 @@ theorem take_xs {D : List (Reg × Nat)} (hD : D.map (·.1) = (List.range D.lengt
     (m : Nat) : (D.map (·.1)).take m = (List.range (min m D.length)).map Reg.x := by
   rw [hD, ← List.map_take, List.take_range]
 
-/-! ## `siteOk` and `tryB` -/
+/-! ## `siteOk` -/
 
 /-- **A call site of `g`'s call `c` passes `siteOk`.** -/
 theorem siteOk_of {P : Clif.Program} {S : String → Option Nat} {g : Clif.Function}
@@ -447,74 +447,29 @@ theorem siteOk_of {P : Clif.Program} {S : String → Option Nat} {g : Clif.Funct
     have := List.all_eq_true.mp hind h hh
     simp only [Bool.or_eq_true, Bool.not_eq_true', decide_eq_true_eq, Bool.and_eq_true] at this
     have hlen : (callRegs s args).length = L.length := by rw [← hL, List.length_map]
-    rcases this with (h1 | h1) | ⟨h1, -⟩
+    rcases this with (h1 | h1) | h1
     · exact .inl (.inl (.inl h1))
     · exact .inl (.inr (by rwa [← hlen]))
     · exact .inr ⟨by rw [hL, h1], take_xs hD _⟩
 
-/-- **A `try_call` site of `g` passes `tryB`.** -/
-theorem tryB_of {P : Clif.Program} {S : String → Option Nat} {g : Clif.Function}
-    (hnd : (P.funcs.map (·.name)).Nodup)
-    (hdecl : ∀ e ∈ g.externs.map (·.2), ∀ h, P.func? e.name = some h → e.sig = h.sig)
-    (hc : callScopeB P S g = true) {vc : VCode} {c : CallInfo} {ti : TryInfo}
-    (h : SiteCall g vc true ti.rets c) : tryB P (indToB S g) vc (.tryCall c ti) = true := by
-  obtain ⟨args, ⟨e, hds, ⟨L, D, hu, hdf, hL, hD⟩, hr, hdest⟩ |
-    ⟨s, his, ⟨L, D, hu, hdf, hL, hD⟩, hr, t, hdest⟩⟩ := h
-  · have hr := hr rfl
-    have hmem := dirSite_decl hds
-    rcases hdest with hdest | ⟨t, hdest, hgot⟩
-    · simp only [tryB, hdest]
-      cases hf : P.func? e.name with
-      | none => rfl
-      | some h =>
-        simp only [decide_eq_true_eq]
-        rw [hr, hdecl e hmem h hf]; exact Nat.le_refl _
-    · simp only [tryB, hdest, List.all_eq_true, Bool.or_eq_true, Bool.not_eq_true', hgot,
-        bne_iff_ne, ne_eq, decide_eq_true_eq]
-      intro h hh
-      by_cases hn : h.name = e.name
-      · have hf : P.func? e.name = some h := hn ▸ func?_of_mem hnd hh
-        exact .inr (by rw [hr, hdecl e hmem h hf]; exact Nat.le_refl _)
-      · exact .inl (.inl (.inr hn))
-  · have hr := hr rfl
-    have hind := indSiteB_of hc his
-    simp only [tryB, hdest, List.all_eq_true, Bool.or_eq_true, Bool.not_eq_true',
-      decide_eq_true_eq]
-    intro h hh
-    have := List.all_eq_true.mp hind h hh
-    simp only [Bool.or_eq_true, Bool.not_eq_true', decide_eq_true_eq, Bool.and_eq_true,
-      Bool.not_true, Bool.false_or] at this
-    have hlen : (callRegs s args).length = L.length := by rw [← hL, List.length_map]
-    rw [hu, decU_retPairs]
-    rcases this with (h1 | h1) | ⟨-, h1⟩
-    · exact .inl (.inl (.inl h1))
-    · exact .inl (.inr (by rwa [← hlen]))
-    · exact .inr (by rw [hr]; exact h1)
-
 /-! ## The theorem -/
 
-/-- **The call sites of the compiler's own output** (`callRegs/blrRegs`, `tryRets/blrTry`): for
-an in-scope function `g` of `P` passing the input condition `callScopeB P S g`, given the ISLE
-call inversion `CallShapeHyp`. -/
+/-- **The call sites of the compiler's own output** (`callRegs/blrRegs`): for an in-scope
+function `g` of `P` passing the input condition `callScopeB P S g`, given the ISLE call
+inversion `CallShapeHyp`. -/
 theorem sites_of_lower (hH : CallShapeHyp) {P : Clif.Program} {S : String → Option Nat}
     {g : Clif.Function} {vc vcp : VCode}
     (hsub : InSubset (P.only g) g) (hd : dominatedB g = true) (hs : lowerScopeB g = true)
     (hnd : (P.funcs.map (·.name)).Nodup)
-    (hdecl : ∀ e ∈ g.externs.map (·.2), ∀ h, P.func? e.name = some h → e.sig = h.sig)
     (hc : callScopeB P S g = true)
     (hl : lowerFunction g = .ok vc) (hp : Backend.prepare vc = .ok vcp) :
-    allInsts vcp (siteB (siteOk P g (indToB S g) vcp)) = true ∧
-    allInsts vcp (tryB P (indToB S g) vcp) = true := by
+    allInsts vcp (siteB (siteOk P g (indToB S g) vcp)) = true := by
   have hsc := fun {q vb k} (hq : vcp.blocks[q]? = some vb) =>
     siteCalls_of_lower (k := k) hH hsub (dominated_of hd) (lowerScope_of hs) hl hp hq
-  refine ⟨(array_all_iff _ _).2 fun q vb hq => (array_all_iff _ _).2 fun k i hi => ?_,
-    (array_all_iff _ _).2 fun q vb hq => (array_all_iff _ _).2 fun k i hi => ?_⟩
-  · cases i with
-    | call c => exact siteOk_of hsub hnd hc ((hsc hq).1 c hi)
-    | tryCall c ti => exact siteOk_of hsub hnd hc ((hsc hq).2 c ti hi)
-    | _ => rfl
-  · cases i with
-    | tryCall c ti => exact tryB_of hnd hdecl hc ((hsc hq).2 c ti hi)
-    | _ => rfl
+  refine (array_all_iff _ _).2 fun q vb hq => (array_all_iff _ _).2 fun k i hi => ?_
+  cases i with
+  | call c => exact siteOk_of hsub hnd hc ((hsc hq).1 c hi)
+  | tryCall c ti => exact siteOk_of hsub hnd hc ((hsc hq).2 c ti hi)
+  | _ => rfl
 
 end E2E.LinkCheck

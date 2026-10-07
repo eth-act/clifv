@@ -140,6 +140,14 @@ theorem tryInfoOf_spec {sig : Clif.Signature} {items : List (Option Nat)} {ls : 
     simp only [List.length_map, List.length_zip]
     omega
 
+theorem tryInfoOf_rets {sig : Clif.Signature} {items : List (Option Nat)} {ls : List Label}
+    {info : TryInfo} (h : tryInfoOf sig items ls = some info) :
+    info.rets = (sigRets sig).length := by
+  unfold tryInfoOf at h
+  split at h
+  · cases h
+  · cases h; rfl
+
 theorem exnTableOpnd_cc {f : Clif.Function} {et : Clif.ExnTable} {sig : Clif.Signature}
     {items : List (Option Nat)} (h : exnTableOpnd f et = .ok (sig, items)) :
     payloadRegs sig.callConv = [.x 0, .x 1] := by

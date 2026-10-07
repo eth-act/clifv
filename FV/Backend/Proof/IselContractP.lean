@@ -109,7 +109,7 @@ def CallsRefineP (Pc : String → Clif.Signature → List Clif.Val → Clif.Mem 
       (vals rvals : List Clif.Val) (cm' : Clif.Mem),
       env.extern ext.name = some g →
       (dest = .sym ext.name ∧ uses = args ∨ ∃ r, dest = .reg r ∧ uses = ofX (sym ext.name) :: args) →
-      (sigRets ext.sig).length ≤ ds.length →
+      (sigRets ext.sig).length ≤ ds.length → ti.rets ≤ (sigRets ext.sig).length →
       ArgsAt ext.sig vals args w → MR sl cm w → Pc ext.name ext.sig vals cm →
       g vals cm = .returned rvals cm' → rvals.length = ext.sig.returns.length →
       ∃ outs w', isem (.tryCall ⟨dest, us, ds⟩ ti) uses w = some (outs, w', .goto ti.handlers.length) ∧
@@ -122,8 +122,8 @@ theorem CallsRefine.toP {F : BitVec 64 → Prop} {env : Clif.Env} {exts : List C
   obtain ⟨sym, h1, h2, h3⟩ := h
   exact ⟨sym, h1, fun ext hin g sl cm w dest us ds uses args vals rvals cm' a1 a2 a3 a4 a5 _ a7 a8 =>
     h2 ext hin g sl cm w dest us ds uses args vals rvals cm' a1 a2 a3 a4 a5 a7 a8,
-    fun ext hin g sl cm w dest us ds ti uses args vals rvals cm' a1 a2 a3 a4 a5 _ a7 a8 =>
-    h3 ext hin g sl cm w dest us ds ti uses args vals rvals cm' a1 a2 a3 a4 a5 a7 a8⟩
+    fun ext hin g sl cm w dest us ds ti uses args vals rvals cm' a1 a2 a3 a0 a4 a5 _ a7 a8 =>
+    h3 ext hin g sl cm w dest us ds ti uses args vals rvals cm' a1 a2 a3 a0 a4 a5 a7 a8⟩
 
 /-- **`IndCallsRefine` with pinned calls** (premise `Pc n sig vals cm`). -/
 def IndCallsRefineP (Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop)
@@ -142,7 +142,8 @@ def IndCallsRefineP (Pc : String → Clif.Signature → List Clif.Val → Clif.M
       (w : Arm.ArmState) (a : Nat) (r : Reg) (us ds : List (Reg × Reg)) (ti : TryInfo) (u : CV)
       (args : List CV) (vals rvals : List Clif.Val) (cm' : Clif.Mem),
     env.extern n = some g → cm.symbols n = some a → lo64 u = BitVec.ofNat 64 a →
-    (sigRets sig).length ≤ ds.length → vals.length ≤ 8 → AllHold vals args → MR sl cm w →
+    (sigRets sig).length ≤ ds.length → ti.rets ≤ (sigRets sig).length → vals.length ≤ 8 →
+    AllHold vals args → MR sl cm w →
     Pc n sig vals cm →
     g vals cm = .returned rvals cm' → rvals.length = sig.returns.length →
     vals.map (·.ty) = Clif.AbiParam.tys sig.params →
@@ -156,8 +157,8 @@ theorem IndCallsRefine.toP {env : Clif.Env} {sigs : List Clif.Signature} {MR : M
     IndCallsRefineP Pc env sigs MR isem :=
   ⟨fun sig hin n g sl cm w a r us ds u args vals rvals cm' a1 a2 a3 a4 a5 a6 a7 _ a9 a10 a11 =>
     h.1 sig hin n g sl cm w a r us ds u args vals rvals cm' a1 a2 a3 a4 a5 a6 a7 a9 a10 a11,
-   fun sig hin n g sl cm w a r us ds ti u args vals rvals cm' a1 a2 a3 a4 a5 a6 a7 _ a9 a10 a11 =>
-    h.2 sig hin n g sl cm w a r us ds ti u args vals rvals cm' a1 a2 a3 a4 a5 a6 a7 a9 a10 a11⟩
+   fun sig hin n g sl cm w a r us ds ti u args vals rvals cm' a1 a2 a3 a4 a0 a5 a6 a7 _ a9 a10 a11 =>
+    h.2 sig hin n g sl cm w a r us ds ti u args vals rvals cm' a1 a2 a3 a4 a0 a5 a6 a7 a9 a10 a11⟩
 
 /-- `CallRuleOk` with the pinned obligation. -/
 def CallRuleOkP (Rd : BitVec 64 → Prop)

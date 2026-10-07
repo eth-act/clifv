@@ -516,8 +516,8 @@ theorem blrTo_of_pre (hL : L.Ok) {M : Nat} {g : Clif.Function}
       exact ⟨ic, hasg, hP, hops, ⟨_, hst⟩, ⟨o, w2, hx⟩, csemV_guard hsem⟩
     · obtain ⟨ic, rfl, hasg'⟩ := (assign_call_tryCall info regs).2 ti i' hasg
       have h0 := csemV_sub hsem
-      simp only [csem, Option.map_eq_some_iff] at h0
-      obtain ⟨⟨o, w2⟩, hx, -⟩ := h0
+      simp only [csem, Option.map_eq_some_iff, Option.filter_eq_some_iff] at h0
+      obtain ⟨⟨o, w2⟩, ⟨hx, -⟩, -⟩ := h0
       exact ⟨ic, hasg', callAt_tryCall_call hP,
         by rw [← operands_tryCall_call info ti]; exact hops, ⟨_, hst⟩, ⟨o, w2, hx⟩,
         csemV_guard_try hsem⟩
@@ -618,8 +618,8 @@ theorem callGood (hL : L.Ok) {M : Nat} (ihG : 0 < M → L.ThmG κ (M - 1)) {g : 
       exact ⟨ic, hasg, hP, hops, ⟨_, hst⟩, ⟨o, w2, hx⟩, csemV_guard hsem⟩
     · obtain ⟨ic, rfl, hasg'⟩ := (assign_call_tryCall info regs).2 ti i' hasg
       have h0 := csemV_sub hsem
-      simp only [csem, Option.map_eq_some_iff] at h0
-      obtain ⟨⟨o, w2⟩, hx, -⟩ := h0
+      simp only [csem, Option.map_eq_some_iff, Option.filter_eq_some_iff] at h0
+      obtain ⟨⟨o, w2⟩, ⟨hx, -⟩, -⟩ := h0
       exact ⟨ic, hasg', callAt_tryCall_call hP,
         by rw [← operands_tryCall_call info ti]; exact hops, ⟨_, hst⟩, ⟨o, w2, hx⟩,
         csemV_guard_try hsem⟩
