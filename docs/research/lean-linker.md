@@ -160,10 +160,12 @@ outside part. What stays checked is about the outside file only.
   (SymsOk…)` (`ImageProof.lean`, `Correct.lean`).
 * `Link.crate_correct_leanLink (hD : SpillDefinedHyp) (hin : InScopeP S.input) (h : leanLink S
   file0 = .ok file) : CrateStmtT S.input n` — the crate theorem without `linkerOkB` (its axioms
-  are `crate_correct_inScope`'s).
+  are `crate_correct_inScope`'s; `InScopeP` includes `entryParamsB` since #82, without which
+  `SpillDefinedHyp` was false), and `Link.crate_correct_leanLink_lower (hM : LowerDefinedHyp)`
+  (`crate_correct_inScope_lower`).
 * Non-vacuity: `crate-proofs/Crates/LeanLinkWitness.lean` — `leanLink` succeeds on `a_arith`'s
   58 functions with a placeholder executable (`native_decide`), `InScopeP` of the placed input,
-  instances of `crate_correct_leanLink` and `leanLink_code`.
+  instances of `crate_correct_leanLink`, `crate_correct_leanLink_lower` and `leanLink_code`.
 
 Sizes: definitions 300 lines, proofs 1,430 lines (`LayoutFacts` 351, `LayoutProof` 362,
 `RelocProof` 132, `ImageProof` 387, `Correct` 200).

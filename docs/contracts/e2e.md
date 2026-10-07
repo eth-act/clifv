@@ -1350,6 +1350,8 @@ theorem Link.binOkT_leanLink (h) (hs : Static file0) (hd : ∀ o ∈ D, DataOk S
     (hy : SymsOk S.input file) : BinOkT S.input D file
 theorem Link.crate_correct_leanLink (hD : SpillDefinedHyp) (hin : InScopeP S.input = true)
     (h : leanLink S file0 = .ok file) (n : String) : CrateStmtT S.input n
+theorem Link.crate_correct_leanLink_lower (hM : LowerDefinedHyp) (hin : InScopeP S.input = true)
+    (h : leanLink S file0 = .ok file) (n : String) : CrateStmtT S.input n
 ```
 
 So with the Lean linker the crate theorem has no `linkerOkB` premise and the code part of the

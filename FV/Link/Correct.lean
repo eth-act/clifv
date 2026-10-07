@@ -1,6 +1,6 @@
 import FV.Link.ImageProof
 import FV.Link.LayoutProof
-import FV.E2E.LinkScope
+import FV.E2E.SpillDefined
 
 /-! # The Lean linker's output is correct by construction (L2b)
 
@@ -14,7 +14,9 @@ For `leanLink S file0 = .ok file`:
 * **`binOkT_leanLink`**: `BinOkT` (`BinOk` with the code of the compiler's table), given the
   outside part's data objects and symbol table (`DataOk`, `SymsOk`);
 * **`crate_correct_leanLink`**: the crate statement of an in-scope input linked by `leanLink`
-  (`crate_correct_inScope` with the linker's facts `leanLink_linkerOk`).
+  (`crate_correct_inScope` with the linker's facts `leanLink_linkerOk`; `InScopeP` includes
+  `entryParamsB`); `crate_correct_leanLink_lower` under `LowerDefinedHyp`
+  (`crate_correct_inScope_lower`).
 -/
 
 namespace Link
@@ -196,5 +198,12 @@ theorem crate_correct_leanLink (hD : SpillDefinedHyp) {S : LinkSpec} {file0 file
     (hin : InScopeP S.input = true) (h : leanLink S file0 = .ok file) (n : String) :
     CrateStmtT S.input n :=
   crate_correct_inScope hD hin (leanLink_linkerOk h) n
+
+/-- `crate_correct_leanLink` under definite assignment of `lowerFunction`'s VCode
+(`LowerDefinedHyp`, from which `SpillDefinedHyp` follows: `crate_correct_inScope_lower`). -/
+theorem crate_correct_leanLink_lower (hM : LowerDefinedHyp) {S : LinkSpec}
+    {file0 file : ByteArray} (hin : InScopeP S.input = true) (h : leanLink S file0 = .ok file)
+    (n : String) : CrateStmtT S.input n :=
+  crate_correct_inScope_lower hM hin (leanLink_linkerOk h) n
 
 end Link

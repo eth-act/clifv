@@ -414,7 +414,7 @@ author's estimate, not measured), **Risk**.
   `leanLink`), the outside part linked by rust-lld around a placeholder. Proven: `Link.leanLink_linkerOk`
   (`linkerOkB` by construction; `linkerOkB_place` for alias-free programs, `leanLink` decides it
   with self-call aliases), `Link.leanLink_code` (`ArtOk` of every function in the written file),
-  `Link.binOkT_leanLink`, `Link.crate_correct_leanLink` (no `linkerOkB` premise); witness
+  `Link.binOkT_leanLink`, `Link.crate_correct_leanLink` / `_lower` (no `linkerOkB` premise); witness
   `crate-proofs/Crates/LeanLinkWitness.lean`. Executable path `cargo fv --lean-link` (`lake exe
   lean-link`): all nine survey crates, 18 executables, binary check 18/18, all tests pass. Still
   decided per executable: the outside part's `regionOkB`, `Static`, `DataOk`, `SymsOk` and that

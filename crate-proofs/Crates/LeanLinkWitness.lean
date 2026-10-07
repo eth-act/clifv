@@ -59,4 +59,8 @@ theorem crate_correct (hD : SpillDefinedHyp) (n : String) : CrateStmtT spec.inpu
 theorem code : ∀ e ∈ tabOf spec.input.resultsT, BinCheck.ArtOk spec.input file e.2 :=
   leanLink_code link_eq
 
+/-- `crate_correct` under definite assignment of `lowerFunction`'s VCode. -/
+theorem crate_correct_lower (hM : LowerDefinedHyp) (n : String) : CrateStmtT spec.input n :=
+  crate_correct_leanLink_lower hM inScope link_eq n
+
 end Crates.LeanLinkWitness
