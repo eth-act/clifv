@@ -1323,45 +1323,56 @@ from one after) — and the driver's assembly of the runs into `UsesDefined` (CL
 `crate-proofs/Crates/InScopeWitness.lean` decides `InScopeP` (with `entryParamsB`) and
 `linkerOkB` of `a_arith` (58 functions) and `fv-demo` (551) by `native_decide`.
 
-**The Lean linker (L2b stage 1, `FV/Link/`, docs/research/lean-linker.md).** The program part
-(the Lean-compiled functions) is placed, relocated and written by Lean; rust-lld links the
+**The Lean linker (L2b stages 1–2, `FV/Link/`, docs/research/lean-linker.md).** The program
+part (the Lean-compiled functions) is placed, relocated and written by Lean; rust-lld links the
 outside part around a placeholder of the region:
 
 ```lean
-structure Link.LinkSpec   -- funcs (placement order), aliases/aliasFns, outside, symNames, R
+structure Link.LinkSpec   -- funcs (placement order), names, sizes, aliases/aliasFns, outside,
+                          -- data, symNames, R
 def LinkSpec.input (S : LinkSpec) : LinkInput   -- link map = the placement (`offs`: each
-                                                -- function, then one zero gap word)
-def LinkSpec.placeOkB (S : LinkSpec) : Bool      -- distinct names, region in range, no outside
-                                                -- symbol in it
+                                                -- function, then one zero gap word; an alias
+                                                -- at the gap word after its function)
+def LinkSpec.placeOkB (S : LinkSpec) : Bool      -- distinct names, positive sizes, region in
+                                                -- range, no outside symbol in it
+def LinkSpec.namesOkB/sizesOkB (S) (T) : Bool    -- the compiled code has the given names, sizes
 def Link.resolveWord (I) (tp) (a : Art) (k : Nat) : BitVec 32   -- bl; adrp+add for both page
                                                 -- pairs (the GOT pair too: PairOk.adrpAdd);
                                                 -- TLSDESC → movz/movk/nop/nop of tpOff
 def Link.relocsOkB (I) (tp) (a : Art) : Bool     -- the linker's shape/range checks
-def Link.regionOkB (file : ByteArray) (R n off : Nat) : Bool   -- the outside file's facts
+def Link.aliasOkB/aliasShapeB                     -- an alias's words and call lines are its function's
+def Link.regionOkB (file : ByteArray) (R n off : Nat) : Bool   -- rust-lld's output: the region
+def Link.outsideOkB (I) (D) (file) : Bool         -- rust-lld's output: hdrB, data, symbols
 def Link.leanLink (S : LinkSpec) (file0 : ByteArray) : Except String ByteArray
-theorem Link.linkerOkB_place (hp : S.placeOkB = true)
-    (hr : S.input.resultsT.all (·.2.toBool) = true) (hal : S.aliases = []) :
-    linkerOkB S.input = true
+theorem Link.linkerOkB_place_alias (hp : S.placeOkB = true)
+    (hr : S.input.resultsT.all (·.2.toBool) = true) (hn : S.namesOkB (tabOf S.input.resultsT))
+    (hs : S.sizesOkB (tabOf S.input.resultsT)) (ha : aliasShapeB S.input (tabOf S.input.resultsT)) :
+    linkerOkB S.input = true          -- `linkerOkB_place`: the alias-free corollary
 theorem Link.leanLink_linkerOk (h : leanLink S file0 = .ok file) : linkerOkB S.input = true
 theorem Link.leanLink_code (h : leanLink S file0 = .ok file) :
     ∀ e ∈ tabOf S.input.resultsT, ArtOk S.input file e.2
 structure Link.BinOkT (I) (D) (file) : Prop   -- BinOk with the code of `resultsT`
+theorem Link.binOk_leanLink (h : leanLink S file0 = .ok file) : BinOkT S.input S.data file
+theorem Link.leanLink_static' (h : leanLink S file0 = .ok file) : Static file
 theorem Link.binOkT_leanLink (h) (hs : Static file0) (hd : ∀ o ∈ D, DataOk S.input file o)
-    (hy : SymsOk S.input file) : BinOkT S.input D file
+    (hy : SymsOk S.input file) : BinOkT S.input D file        -- stage 1, kept
 theorem Link.crate_correct_leanLink (hD : SpillDefinedHyp) (hin : InScopeP S.input = true)
     (h : leanLink S file0 = .ok file) (n : String) : CrateStmtT S.input n
 theorem Link.crate_correct_leanLink_lower (hM : LowerDefinedHyp) (hin : InScopeP S.input = true)
     (h : leanLink S file0 = .ok file) (n : String) : CrateStmtT S.input n
 ```
 
-So with the Lean linker the crate theorem has no `linkerOkB` premise and the code part of the
-binary facts is proven; what stays decided on the executable is about the outside part
-(`regionOkB` inside `leanLink`, `Static`, `DataOk` of cg_clif's data objects, `SymsOk`).
-`leanLink_linkerOk` covers self-call aliases by `leanLink`'s own `linkerOkR` check (the proof
-`linkerOkB_place` is for alias-free programs). Witness: `crate-proofs/Crates/LeanLinkWitness.lean`
-(`a_arith`'s 58 functions, `native_decide`). Tooling: `cargo fv --lean-link`
-(`rust/crates/cargo-fv/src/leanlink.rs`, `lake exe lean-link`); all nine survey crates' 18
-executables link, pass the binary check and their tests.
+So with the Lean linker the crate theorem has no `linkerOkB` premise (self-call aliases
+included) and `BinOkT` has no premise: `linkerOkB` and the code are proven by construction; the
+facts about the bytes rust-lld wrote — the headers (`Static`), cg_clif's data objects
+(`DataOk`), the symbol table (`SymsOk`, which for the program's functions is that rust-lld put
+them at their placement) and the region's segment (`regionOkB`) — are `leanLink`'s checks of
+rust-lld's output (`regionOkB`, `outsideOkB`), so a failure is a link error. Witness:
+`crate-proofs/Crates/LeanLinkWitness.lean` (`a_arith`'s 58 functions, `native_decide`). Tooling:
+`cargo fv --lean-link` (`rust/crates/cargo-fv/src/leanlink.rs`, `lake exe lean-link`): the
+survey crates (18 executables), `fv-demo` (self-call aliases) and `examples/deps`' `deps-demo`
+(17,090 functions) link and run; unverified functions and self-calling functions that take
+their own address keep cg_clif's code.
 
 **Tooling.** `cargo fv build|test --keep-temps` keeps per codegen unit `fv-link.json`: per
 Lean-compiled function the CLIF file `lean-backend` compiled (with the self-call alias, or the

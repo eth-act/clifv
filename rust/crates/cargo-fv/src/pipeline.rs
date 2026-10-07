@@ -342,13 +342,7 @@ const SELF_ALIAS: &str = "__fvself";
 /// recursive call through the callee contract, like any other call. `None`: no self-call.
 fn self_call_alias(input: &Path, sym: &str, alias: &str, out: &Path) -> Result<Option<PathBuf>, String> {
     let text = fs::read_to_string(input).map_err(|e| format!("{}: {e}", input.display()))?;
-    let decl = |t: &str| {
-        let t = t.trim_start();
-        let Some((lhs, rhs)) = t.split_once(" = ") else { return false };
-        lhs.starts_with("fn")
-            && lhs[2..].chars().all(|c| c.is_ascii_digit())
-            && rhs.trim_start_matches("colocated ").starts_with(&format!("%{sym}("))
-    };
+    let decl = |t: &str| self_decl(t, sym).is_some();
     if !text.lines().any(decl) {
         return Ok(None);
     }
@@ -367,6 +361,26 @@ fn self_call_alias(input: &Path, sym: &str, alias: &str, out: &Path) -> Result<O
     let p = out.with_extension("self.clif");
     fs::write(&p, s).map_err(|e| format!("{}: {e}", p.display()))?;
     Ok(Some(p))
+}
+
+/// The name `fnK` of a declaration line `fnK = [colocated] %sym(…)` of the function itself.
+fn self_decl(t: &str, sym: &str) -> Option<String> {
+    let (lhs, rhs) = t.trim_start().split_once(" = ")?;
+    let ok = lhs.len() > 2
+        && lhs.starts_with("fn")
+        && lhs[2..].chars().all(|c| c.is_ascii_digit())
+        && rhs.trim_start_matches("colocated ").starts_with(&format!("%{sym}("));
+    ok.then(|| lhs.to_string())
+}
+
+/// Whether the function takes its own address (`func_addr` of a declaration of itself). With a
+/// self-call alias the address is the alias's, which the theorem's link map gives a fresh
+/// address (no symbol) while the executable has the function's: such a function is outside
+/// what `--lean-link` links.
+fn takes_own_address(input: &Path, sym: &str) -> bool {
+    let Ok(text) = fs::read_to_string(input) else { return false };
+    let names: Vec<String> = text.lines().filter_map(|l| self_decl(l, sym)).collect();
+    text.lines().any(|l| l.contains("func_addr") && l.split_whitespace().any(|w| names.iter().any(|n| n == w)))
 }
 
 /// Hold one of the build's `cfg.jobs` lean-backend slots (`<tmp>/slots/<k>.lock`, an advisory
@@ -420,6 +434,11 @@ fn compile_one(
             Ok(a) => a,
             Err(e) => return Compiled::Fallback(e),
         };
+        if aliased.is_some() && cfg.lean_link && takes_own_address(input, sym) {
+            return Compiled::Fallback(
+                "takes its own address and calls itself (the self-call alias's address is not the function's): cg_clif's code kept under --lean-link".into(),
+            );
+        }
         let compiled = aliased.as_deref().unwrap_or(input);
         // `--personality`: functions with landing pads (`try_call`) get cg_clif's LSDA and
         // personality (`rust_eh_personality`, which cg_clif hard-codes too)
@@ -837,6 +856,13 @@ fn process_in(
                 }
                 if bad.is_none() && syms.local_count.get(sym).copied().unwrap_or(0) > 1 {
                     bad = Some("the function's name is defined locally more than once in cg_clif's object".into());
+                }
+                // `--lean-link`: the region holds verified code only; an unverified function
+                // keeps cg_clif's code (the outside part)
+                if bad.is_none() && cfg.lean_link {
+                    if let Some(u) = &unverified {
+                        bad = Some(format!("unverified ({u}): cg_clif's code kept under --lean-link"));
+                    }
                 }
                 match bad {
                     Some(b) => report(Status::Fallback, Some(b), false),
