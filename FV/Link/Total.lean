@@ -6,7 +6,8 @@ import FV.E2E.SpillDefined
 
 /-! # The executable compiler succeeds on in-scope input (L1): `leanLink`'s side
 
-`leanLink_total_of`: `leanLink` succeeds when its checks hold, each from a stated cause:
+`leanLink_total_checks`: `leanLink` succeeds when its checks hold. `leanLink_total_of`: each
+check from a stated cause:
 
 * the pipeline (`pipeT_ok` under `InScopeP`, definite assignment proven: `spillDefinedHyp`);
 * the names and sizes: the driver's (`S.names`, `S.sizes`) are the CLIF functions' names and the
@@ -15,7 +16,8 @@ import FV.E2E.SpillDefined
   ranges (`relocRangeB`: the addresses chosen by the placement and by rust-lld are within the
   relocations' reach);
 * aliases (`aliasOkB`, `aliasShapeB`) and the code map (`codeMap_place`): by construction for an
-  alias-free spec (the scope limit: `S.aliasFns = []`);
+  alias-free spec (the scope limit: `S.aliasFns = []`; with aliases: `leanLink_total_alias`,
+  `FV/Link/AliasOut.lean`, under the unproven output facts `AliasOut`);
 * rust-lld's output: `regionOkB`, `outsideOkB` (checks of the bytes rust-lld wrote).
 -/
 
@@ -51,17 +53,16 @@ theorem pipeT_fb (f : Clif.Function) (k : Nat) (b b' : BitVec 64) (o : Lean.Json
 def LinkSpec.sizesOf (S : LinkSpec) : List Nat :=
   S.funcs.map fun fi => (getOk (pipeT fi.func fi.k 0 (raJ fi.ra fi.j))).fb.words.size
 
-theorem names_of {S : LinkSpec} (hal : S.aliasFns = [])
-    (hn : S.names = S.funcs.map (·.func.name)) : S.namesOkB (tabOf S.input.resultsT) = true := by
-  simp only [namesOkB, tabOf, LinkInput.resultsT, input_funcs, hal, List.append_nil, List.map_map,
-    List.take_of_length_le (by simp : (S.funcs.map _).length ≤ S.funcs.length), hn,
-    Function.comp_def]
+theorem names_of {S : LinkSpec} (hn : S.names = S.funcs.map (·.func.name)) :
+    S.namesOkB (tabOf S.input.resultsT) = true := by
+  simp only [namesOkB, tabOf, LinkInput.resultsT, input_funcs, List.map_append, List.map_map,
+    List.take_left' (List.length_map _), hn, Function.comp_def]
   exact decide_eq_true trivial
 
-theorem sizes_of {S : LinkSpec} (hal : S.aliasFns = []) (hs : S.sizes = S.sizesOf) :
+theorem sizes_of {S : LinkSpec} (hs : S.sizes = S.sizesOf) :
     S.sizesOkB (tabOf S.input.resultsT) = true := by
-  simp only [sizesOkB, tabOf, LinkInput.resultsT, input_funcs, hal, List.append_nil, List.map_map,
-    List.take_of_length_le (by simp : (S.funcs.map _).length ≤ S.funcs.length), hs, sizesOf]
+  simp only [sizesOkB, tabOf, LinkInput.resultsT, input_funcs, List.map_append, List.map_map,
+    List.take_left' (List.length_map _), hs, sizesOf]
   apply decide_eq_true
   apply List.map_congr_left
   intro fi _
@@ -81,33 +82,20 @@ theorem results_of {S : LinkSpec} (hin : InScopeP S.input0 = true) :
   simp only [ha]
   rfl
 
-/-- **`leanLink` succeeds** when its checks hold, from their causes (module doc). -/
-theorem leanLink_total_of {S : LinkSpec} {file0 : ByteArray}
-    {phs : List Phdr} (hph : phdrs (fileRd file0) = some phs) (hin : InScopeP S.input0 = true)
-    (hp : S.placeOkB = true) (hal : S.aliasFns = [])
-    (hn : S.names = S.funcs.map (·.func.name)) (hs : S.sizes = S.sizesOf)
-    (hshape : ∀ e ∈ tabOf S.input.resultsT, relocShapesB e.2 = true)
-    (hrange : ∀ e ∈ tabOf S.input.resultsT, ∀ r ∈ e.2.fb.relocs,
-      relocRangeB S.input (tpOff phs) e.2 r = true)
+/-- **`leanLink` succeeds** when its checks hold (each passed in). -/
+theorem leanLink_total_checks {S : LinkSpec} {file0 : ByteArray}
+    {phs : List Phdr} (hph : phdrs (fileRd file0) = some phs) (hp : S.placeOkB = true)
+    (hr : S.input.resultsT.all (·.2.toBool) = true)
+    (hnm : S.namesOkB (tabOf S.input.resultsT) = true)
+    (hsz : S.sizesOkB (tabOf S.input.resultsT) = true)
+    (hv : (tabOf S.input0.resultsT).all (fun e => relocsOkB S.input (tpOff phs) e.2) = true)
+    (hao : aliasOkB S.input (tpOff phs) (tabOf S.input0.resultsT) = true)
+    (has : aliasShapeB S.input (tabOf S.input0.resultsT) = true)
+    (hcm : codeMapB S.input (tabOf S.input0.resultsT) = true)
     (hreg : regionOkB file0 S.R (regionOf S (tpOff phs)).size (offsetOf phs S.R) = true)
     (hout : outsideOkB S.input S.data (patch file0 (offsetOf phs S.R) (regionOf S (tpOff phs))) =
       true) :
     leanLink S file0 = .ok (patch file0 (offsetOf phs S.R) (regionOf S (tpOff phs))) := by
-  have hP := placeOk_of hp
-  have haliases : S.aliases = [] := by
-    have := hP.aliasFns
-    rw [hal] at this
-    exact List.map_eq_nil_iff.1 this.symm
-  have hr := results_of hin
-  have hnm := names_of hal hn
-  have hsz := sizes_of hal hs
-  have hv : (tabOf S.input0.resultsT).all (fun e => relocsOkB S.input (tpOff phs) e.2) = true :=
-    List.all_eq_true.2 fun e he => relocsOkB_of (hshape e he) (hrange e he)
-  have hao : aliasOkB S.input (tpOff phs) (tabOf S.input0.resultsT) = true := by
-    simp [aliasOkB, haliases]
-  have has : aliasShapeB S.input (tabOf S.input0.resultsT) = true := by
-    simp [aliasShapeB, haliases]
-  have hcm : codeMapB S.input (tabOf S.input0.resultsT) = true := codeMap_place hp hr hnm hsz hal
   unfold leanLink
   rw [hph]
   dsimp only
@@ -134,5 +122,34 @@ theorem leanLink_total_of {S : LinkSpec} {file0 : ByteArray}
       false := by simp only [Bool.not_eq_false']; exact hout
   simp only [e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, Bool.false_eq_true, ↓reduceIte]
   rfl
+
+/-- **`leanLink` succeeds** when its checks hold, from their causes (module doc). -/
+theorem leanLink_total_of {S : LinkSpec} {file0 : ByteArray}
+    {phs : List Phdr} (hph : phdrs (fileRd file0) = some phs) (hin : InScopeP S.input0 = true)
+    (hp : S.placeOkB = true) (hal : S.aliasFns = [])
+    (hn : S.names = S.funcs.map (·.func.name)) (hs : S.sizes = S.sizesOf)
+    (hshape : ∀ e ∈ tabOf S.input.resultsT, relocShapesB e.2 = true)
+    (hrange : ∀ e ∈ tabOf S.input.resultsT, ∀ r ∈ e.2.fb.relocs,
+      relocRangeB S.input (tpOff phs) e.2 r = true)
+    (hreg : regionOkB file0 S.R (regionOf S (tpOff phs)).size (offsetOf phs S.R) = true)
+    (hout : outsideOkB S.input S.data (patch file0 (offsetOf phs S.R) (regionOf S (tpOff phs))) =
+      true) :
+    leanLink S file0 = .ok (patch file0 (offsetOf phs S.R) (regionOf S (tpOff phs))) := by
+  have hP := placeOk_of hp
+  have haliases : S.aliases = [] := by
+    have := hP.aliasFns
+    rw [hal] at this
+    exact List.map_eq_nil_iff.1 this.symm
+  have hr := results_of hin
+  have hnm := names_of hn
+  have hsz := sizes_of hs
+  have hv : (tabOf S.input0.resultsT).all (fun e => relocsOkB S.input (tpOff phs) e.2) = true :=
+    List.all_eq_true.2 fun e he => relocsOkB_of (hshape e he) (hrange e he)
+  have hao : aliasOkB S.input (tpOff phs) (tabOf S.input0.resultsT) = true := by
+    simp [aliasOkB, haliases]
+  have has : aliasShapeB S.input (tabOf S.input0.resultsT) = true := by
+    simp [aliasShapeB, haliases]
+  have hcm : codeMapB S.input (tabOf S.input0.resultsT) = true := codeMap_place hp hr hnm hsz hal
+  exact leanLink_total_checks hph hp hr hnm hsz hv hao has hcm hreg hout
 
 end Link

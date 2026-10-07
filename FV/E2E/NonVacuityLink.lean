@@ -1193,7 +1193,7 @@ theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
         fun _ _ _ _ _ _ _ _ _ => by simp [L, Clif.Env.empty]⟩
       indNoSym := fun g hg hnf => (indFacts (F := F) hg hnf).2.2
       indSig := fun g hg hnf => ⟨(indFacts (F := F) hg hnf).1, (indFacts hg hnf).2.1⟩
-      addrSlots := fun _ _ h hh hs => by
+      addrSlots := fun _ _ _ h hh hs => by
         have := haddr h hh
         simp only [Bool.or_eq_true, Option.isNone_iff_eq_none, List.isEmpty_iff] at this
         exact this.resolve_left hs

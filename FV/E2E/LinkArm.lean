@@ -1725,9 +1725,11 @@ structure Ok : Prop where
       (DeclN g h.name ∧ ∃ sig ∈ indSigs g, IndTyMatch sig h)) →
       h.sig.params.any (·.purpose == .sret) = false ∧
       ∃ bytes, sigParamBytes h.sig = .ok bytes ∧ bytes.length ≤ 8
-  /-- when a function of `P` has an outgoing-argument area and one has indirect calls, the
-  functions with an address have no stack slots (an indirect call enters no slotted function) -/
-  addrSlots : (∃ g ∈ L.P.funcs, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase ≠ 0) →
+  /-- when no program callee has stack slots (`NeedSlots` fails: the slot-placement oracle is
+  not in play), a function of `P` has an outgoing-argument area and one has indirect calls, the
+  functions with an address have no stack slots (an indirect call enters no slotted function);
+  with `NeedSlots` the runs' allocations are the base's to keep (`baseKeepsAllocs`) -/
+  addrSlots : ¬ L.NeedSlots → (∃ g ∈ L.P.funcs, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase ≠ 0) →
     (∃ g ∈ L.P.funcs, ¬ Clif.IndFree g) → ∀ h ∈ L.P.funcs, L.syms h.name ≠ none → h.slots = []
   /-- the link-time address of a function of `P` is no other symbol's -/
   symInj : ∀ h ∈ L.P.funcs, ∀ n, L.Xb.sym h.name 0 = L.Xb.sym n 0 → n = h.name
@@ -2371,7 +2373,7 @@ theorem progCall (hL : L.Ok) {M : Nat} (hM : 0 < M) (ih : L.Thm κ (M - 1)) {n :
         (fun hkk => by
           have ⟨k0, hk0, hnk⟩ := hkk
           refine ⟨(hL.indScope k0 hk0 hnk).keep, fun h' hh' hs' =>
-            hL.addrSlots ⟨h, hh, hib0⟩ hkk h' hh' ?_⟩
+            hL.addrSlots hN ⟨h, hh, hib0⟩ hkk h' hh' ?_⟩
           rw [hcm] at hs'; rwa [← hmr.symbols]) hrun a n hv
       rw [hcm] at hv0
       exact hmr.valid a n hv0
@@ -3323,7 +3325,7 @@ theorem progResult (hL : L.Ok) (hκ : L.Budget κ) {M : Nat} (ih : 0 < M → L.T
         cs rvals cm' (runInv_entry hh hce)
         (fun hkk => by
           have ⟨k0, hk0, hnk⟩ := hkk
-          refine ⟨(hL.indScope k0 hk0 hnk).keep, fun h' hh' hs' => hL.addrSlots ⟨g, hg, hib0⟩ hkk h' hh' ?_⟩
+          refine ⟨(hL.indScope k0 hk0 hnk).keep, fun h' hh' hs' => hL.addrSlots hN ⟨g, hg, hib0⟩ hkk h' hh' ?_⟩
           rw [hcs] at hs'; simpa [hmemR0.symbols] using hs') hret a n hv
       rw [hcs] at hv0
       exact hout.2.2 a n hv0 k hk j hj

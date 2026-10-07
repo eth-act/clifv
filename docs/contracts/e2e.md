@@ -613,8 +613,9 @@ function of `P` are one base extern, the base externs keep the symbols (`indScop
 functions it may call (`MayCall`: declared, or any other function of `P` with an address) with
 the parameter types of one of them (`IndSigMatch`) pass no `sret` and at most 8 register
 parameters (`indSig`),
-and with an outgoing-argument area in `P` the functions with an address have no slots
-(`addrSlots`).
+and, when no program callee has stack slots (`¬ NeedSlots`), with an outgoing-argument area in
+`P` the functions with an address have no slots (`addrSlots`; with `NeedSlots` the base keeps the
+runs' allocations, `baseKeepsAllocs`, and the premise is vacuous).
 **Trusted / premises**: the
 link layout (bases, the code image `Img`/`imgMem`, return addresses outside callees' code or
 after their calls,
@@ -1450,12 +1451,18 @@ theorem Link.compileExe_total (hin : InScopeP S.input0 = true) (hal : S.aliasFns
 `compileExe_correct` has no per-program premise and no open hypothesis about the compiler; its
 premises are the outside code's contracts and the CLIF-level condition that no call cycle is
 reachable from the entered function. `compileExe_total`'s hypotheses are the input conditions,
-the scope limit "no self-call alias" (with aliases, `aliasOkB`/`aliasShapeB`/`codeMapB` stay
-`leanLink`'s checks), the driver's data, the addresses (the relocations' reach) and rust-lld's
-output. Witness: `crate-proofs/Crates/CompileExeWitness.lean` (`a_arith`: `compile_eq`,
-`correct_closed`, `total_witness`). `lake exe lean-link` runs `compileExe`; on an input outside
-`InScopeP` it prints the failing conditions and links with `leanLink` (not covered by
-`compileExe_correct`).
+the scope limit "no self-call alias", the driver's data, the addresses (the relocations' reach)
+and rust-lld's output. With aliases, `compileExe_total_alias` (`FV/Link/AliasOut.lean`) replaces
+the scope limit by the input conditions `aliasInB`, `aliasSymsB` and the **unproven** output
+facts `AliasOut` (the alias's compiled code is its function's up to the `bl` symbols `f` /
+`f__fvself`; functions declaring the alias call through registers only via other symbols' GOT
+entries); docs/TO-PROVE.md L1b lists the proofs that would discharge them. Witnesses:
+`crate-proofs/Crates/CompileExeWitness.lean` (`a_arith`: `compile_eq`, `correct_closed`,
+`total_witness`) and `CompileExeRunWitness.lean` (`compileExe_run_witness`: every premise of
+`compileExe_correct` for one concrete outside call into the panic=abort `a_arith` compiled by
+`compileExe`; the executable machine returns `5`). `lake exe lean-link` runs `compileExe`; on an
+input outside `InScopeP` it prints the failing conditions and links with `leanLink` (not covered
+by `compileExe_correct`).
 
 **Tooling.** `cargo fv build|test --keep-temps` keeps per codegen unit `fv-link.json`: per
 Lean-compiled function the CLIF file `lean-backend` compiled (with the self-call alias, or the
