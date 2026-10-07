@@ -245,6 +245,37 @@ def chkCost : Bool :=
 
 end Eval
 
+/-! ## The facts the soundness of the cost analysis assumes -/
+
+section Facts
+
+/-- **Extern constructors** emit at most their cost: `aw` bounds the growth of the measure `W`
+of the lowering state for arguments the abstract values describe. -/
+def ExtW (f : Clif.Function) (ctx : Ctx) (apre : TermId → List AW → Bool)
+    (aw : TermId → List AW → Option Nat) (W : LState → Nat) : Prop :=
+  ∀ (as : List AW) (vs : List V) (term : Term) (v : V) (st st' : LState) (c : Nat),
+    γL f ctx as vs → apre term.id as = true → aw term.id as = some c →
+    (sem ctx).ctor term vs st = .ok (v, st') → W st' ≤ W st + c
+
+/-- **The oracle's runs** do not grow the measure `W`. -/
+def OracleW (p : Program) (f : Clif.Function) (ctx : Ctx) (aOracle : TermId → List AW → Option AW)
+    (W : LState → Nat) : Prop :=
+  ∀ (cfg : Config), cfg.checkOverlap = false → ∀ (n : Nat) (ty : TypeId) (t : TermId)
+    (as : List AW) (vs : List V) (a : AW) (s : LState) (tr : Array RuleId) (r : Option V)
+    (s' : LState) (tr' : Array RuleId), aOracle t as = some a → γL f ctx as vs →
+    (applyTerm p (sem ctx) cfg n ty t vs).run (s, tr) = .ok (r, (s', tr')) → W s' ≤ W s
+
+/-- **A hand-checked rule** `rl` on arguments `vs` emits at most `c`: every run of it (its match,
+then its right-hand side, at the fuel a root's rule selection leaves) grows `W` by at most `c`. -/
+def HandW (p : Program) (ctx : Ctx) (vs : List V) (rl : Rule) (W : LState → Nat) (c : Nat) : Prop :=
+  ∀ (cfg : Config), cfg.checkOverlap = false → ∀ (m n : Nat) (s : LState) (tr : Array RuleId)
+    (env : Isle.Interp.Env V) (s1 : LState × Array RuleId) (r : Option V) (s2 : LState)
+    (tr2 : Array RuleId), 1000 ≤ m → 1000 ≤ n →
+    (matchRule p (sem ctx) cfg m rl vs).run (s, tr) = .ok (some env, s1) →
+    (evalExpr p (sem ctx) cfg n rl.rhs env).run s1 = .ok (r, (s2, tr2)) → W s2 ≤ W s + c
+
+end Facts
+
 end Backend.Proof.Cov
 
 namespace Backend.Proof.Driver
@@ -279,7 +310,7 @@ def stmtSzB : Clif.Inst → Nat
 
 /-- The weight bound of a terminator's run (a `try_call`'s: its call). -/
 def termSzB : Clif.Terminator → Nat
-  | .brTable _ _ tbl => szBrK + tbl.length
+  | .brTable _ _ tbl => szBrK + (1 + tbl.length)
   | .tryCall _ args _ | .tryCallIndirect _ args _ => szCallB args.length
   | _ => szTermK
 
