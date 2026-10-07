@@ -554,8 +554,10 @@ def actor (e : AEnv) (id : TermId) (as : List A) : Option (A × AEnv) :=
         | _ => if fitsCl e F true true r then some (.ty TyId.«BoxCallInfo» false, e) else none
       else none
     | _ => none
-  else if id == TId.gen_return || id == TId.gen_call_args then
+  else if id == TId.gen_return then
     if fitsCl.fitsClL e F true true as then some (.cl false false, e) else none
+  else if id == TId.gen_call_args then
+    if fitsCl.fitsClL e F true true as then some (.cl false true, e) else none
   else some (genericCl e as, e)
 
 /-- The transfer of an oracle term (`emit_side_effect`, `side_effect`): emit the instructions

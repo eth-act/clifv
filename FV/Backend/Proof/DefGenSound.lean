@@ -146,15 +146,15 @@ structure SoundAt (n : Nat) : Prop where
     (∀ u ∈ exprTerms x, T u) → aExpr p x e = some (a, e') →
     EnvOK c (Dn ctx c s0 s) env e → IsD ctx c s0 s →
     (evalExpr p (sem ctx) cfg n x env).run (s, tr) = .ok (r, (s', tr')) →
-    IsD ctx c s0 s' ∧ RsD s s' ∧ EnvOK c (Dn ctx c s0 s') env e' ∧
-      ∀ v, r = some v → γ c a (Dn ctx c s0 s') env v
+    IsD ctx c s0 s' ∧ RsD s s' ∧
+      ∀ v, r = some v → EnvOK c (Dn ctx c s0 s') env e' ∧ γ c a (Dn ctx c s0 s') env v
   args : ∀ (xs : List Isle.Expr) (e e' : AEnv) (as : List A) (env : Isle.Interp.Env V)
     (s : LState) (tr : Array RuleId) (r : Option (List V)) (s' : LState) (tr' : Array RuleId),
     (∀ u ∈ exprTermsL xs, T u) → aArgs p xs e = some (as, e') →
     EnvOK c (Dn ctx c s0 s) env e → IsD ctx c s0 s →
     (evalArgs p (sem ctx) cfg n xs env).run (s, tr) = .ok (r, (s', tr')) →
-    IsD ctx c s0 s' ∧ RsD s s' ∧ EnvOK c (Dn ctx c s0 s') env e' ∧
-      ∀ vs, r = some vs → γL c as (Dn ctx c s0 s') env vs
+    IsD ctx c s0 s' ∧ RsD s s' ∧
+      ∀ vs, r = some vs → EnvOK c (Dn ctx c s0 s') env e' ∧ γL c as (Dn ctx c s0 s') env vs
   binds : ∀ (bs : List (VarId × TypeId × Isle.Expr)) (e e' : AEnv) (env : Isle.Interp.Env V)
     (s : LState) (tr : Array RuleId) (r : Option (Isle.Interp.Env V)) (s' : LState)
     (tr' : Array RuleId),
