@@ -294,7 +294,8 @@ def szCallB (n : Nat) : Nat := 400 + 125 * n
 /-- The weight bound of a `return`/`trap`/`jump`/`brif` run. -/
 def szTermK : Nat := 600
 
-/-- The weight bound of a `br_table` run, without the table's targets. -/
+/-- The weight bound of a `br_table` run, without its targets (the `JTSequence` has a word and a
+target per entry). -/
 def szBrK : Nat := 1500
 
 /-- The branch-target bound of a statement's run. -/
@@ -310,7 +311,7 @@ def stmtSzB : Clif.Inst → Nat
 
 /-- The weight bound of a terminator's run (a `try_call`'s: its call). -/
 def termSzB : Clif.Terminator → Nat
-  | .brTable _ _ tbl => szBrK + (1 + tbl.length)
+  | .brTable _ _ tbl => szBrK + 2 * (1 + tbl.length)
   | .tryCall _ args _ | .tryCallIndirect _ args _ => szCallB args.length
   | _ => szTermK
 
