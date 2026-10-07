@@ -488,51 +488,6 @@ theorem siteOk_sound {P : Clif.Program} {g : Clif.Function} {may : Clif.Function
   obtain ⟨⟨⟨⟨⟨hne, hd⟩, hu⟩, hdd⟩, h1⟩, h2⟩ := h
   exact ⟨hne, hd, _, _, by rw [← hu, ← hdd], h1, h2⟩
 
-/-- A `try_call` of a function `h` of `P` takes at most `h`'s results (at a `blr`: of every
-function it may enter, `LinkSys.BlrTo`, with as many register parameters). -/
-def tryB (P : Clif.Program) (may : Clif.Function → Bool) (vc : VCode) : MInst → Bool
-  | .tryCall info ti => match info.dest with
-    | .sym n => match P.func? n with
-      | some h => decide (ti.rets ≤ (sigRets h.sig).length)
-      | none => true
-    | .reg r => P.funcs.all fun h => !may h ||
-      (match r with
-        | .vreg t .int => (match gotOf vc t with | some n => h.name != n | none => false)
-        | _ => false) ||
-      decide ((regLocs h.sig).length ≠ (decU info.uses).length) ||
-      decide (ti.rets ≤ (sigRets h.sig).length)
-  | _ => true
-
-theorem tryB_reg {P : Clif.Program} {may : Clif.Function → Bool} {vc : VCode}
-    (h : allInsts vc (tryB P may vc) = true) {info : CallInfo} {ti : TryInfo}
-    (hs : vc.TrySite info ti) {t : Nat} {Lu : List (Nat × Reg)} {Ld : List (Reg × Nat)}
-    (hi : info = ⟨.reg (.vreg t .int), retPairs Lu, callDefs Ld⟩) {h' : Clif.Function}
-    (hh : h' ∈ P.funcs) (hmay : may h' = true) (hgot : ∀ n, gotOf vc t = some n → h'.name = n)
-    (hl : (regLocs h'.sig).length = Lu.length) :
-    ti.rets ≤ (sigRets h'.sig).length := by
-  obtain ⟨b, vb, k, hb, hk⟩ := hs
-  have := allInsts_sound h hb hk
-  subst hi
-  simp only [tryB, List.all_eq_true, Bool.or_eq_true, Bool.not_eq_true', decide_eq_true_eq] at this
-  have hdu : decU (retPairs Lu) = Lu := by
-    simp [decU, retPairs, Function.comp_def]
-  rcases this h' hh with ((h1 | h1) | h1) | h1
-  · rw [hmay] at h1; cases h1
-  · revert h1
-    cases hg : gotOf vc t with
-    | none => simp
-    | some n => simp [hgot n hg]
-  · rw [hdu] at h1; exact absurd hl h1
-  · exact h1
-
-theorem tryB_sound {P : Clif.Program} {may : Clif.Function → Bool} {vc : VCode}
-    (h : allInsts vc (tryB P may vc) = true)
-    {info : CallInfo} {ti : TryInfo} (hs : vc.TrySite info ti) {n : String} {h' : Clif.Function}
-    (hd : info.dest = .sym n) (hf : P.func? n = some h') : ti.rets ≤ (sigRets h'.sig).length := by
-  obtain ⟨b, vb, k, hb, hk⟩ := hs
-  have := allInsts_sound h hb hk
-  simpa [tryB, hd, hf] using this
-
 /-- The returns of an `sret` function carry its ABI results. -/
 def retsB (g : Clif.Function) : MInst → Bool
   | .rets us => !(g.sig.params.any (·.purpose == .sret)) || decide ((sigRets g.sig).length ≤ us.length)
@@ -842,8 +797,7 @@ def linkChks (I : LinkInput) (P : Clif.Program) (T : List (Clif.Function × Art)
   let a := getOk r
   let fr := RAFrame.compute a.vcp a.rf
   let may := indToB (fun n => I.syms.lookup n) g
-  [("tryRets/blrTry", allInsts a.vcp (tryB P may a.vcp)),
-   ("outFits", g.externs.all (fun e => !(P.func? e.2.name).isSome || outFitsB e.2.sig fr.intBase)),
+  [("outFits", g.externs.all (fun e => !(P.func? e.2.name).isSome || outFitsB e.2.sig fr.intBase)),
    ("calleeFrame/slotFits",
      !calleeB P (fun n => I.syms.lookup n) g || ((!g.slots.isEmpty || fr.size == a.af.frameSize) && slotFitsB g a)),
    ("callRegs/blrRegs", allInsts a.vcp (siteB (siteOk P g may a.vcp))),
@@ -986,7 +940,6 @@ structure Facts (I : LinkInput) (R : Res) (g : Clif.Function) (a : Art) : Prop w
   check : checkAlloc a.vcp a.rf = .ok ()
   covered : FormsCovered ⟨a.fa.k, a.af.slotBase⟩
     a.vcp
-  tries : allInsts a.vcp (tryB (progOf R) (indToB (fun n => I.syms.lookup n) g) a.vcp) = true
   rets : allInsts a.vc (retsB g) = true
   outFits : ∀ e ∈ g.externs, ((progOf R).func? e.2.name).isSome = true →
     outFitsB e.2.sig (RAFrame.compute a.vcp a.rf).intBase = true
@@ -1038,12 +991,12 @@ theorem factsR {I : LinkInput} {R : Res} (hR : ResOk I R) (h : okR I R = true) {
   rw [hart]
   simp only [chks, staticChks, linkChks, List.cons_append, List.nil_append, List.mem_cons,
     List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hall
-  obtain ⟨h1, h2, h3, h4, h5, h7, h9, h10, h11, h15, h16, h18, h19, h20, h21, h22, h23, h6, h8,
+  obtain ⟨h1, h2, h3, h4, h5, h7, h9, h10, h11, h15, h16, h18, h19, h20, h21, h22, h23, h8,
     h12, h13, h14, h17, h24⟩ := hall
   simp only [List.all_eq_true, decide_eq_true_eq, Bool.or_eq_true, Bool.not_eq_true',
     Bool.and_eq_true, beq_iff_eq, bne_iff_ne, ne_eq] at h8 h9 h10 h11 h12 h14 h16 h18 h21 h22
   refine ⟨hR e he _ (getOk_eq h1), h2, h3, toBool_unit h4,
-    (formsCoveredB_iff _ _).1 h5, h6, h7, fun x hx hs => ?_, h9, h10, h11, fun hc => ?_, h13,
+    (formsCoveredB_iff _ _).1 h5, h7, fun x hx hs => ?_, h9, h10, h11, fun hc => ?_, h13,
     fun x hx h' hf => ?_, h15, h16, h17, h18, linkFreeB_sound h19, h20, fun x hx => ?_,
     ⟨h22.1, h22.2⟩, h23, h24⟩
   · rcases h8 x hx with h | h
@@ -1192,7 +1145,6 @@ theorem okR_sound {I : LinkInput} {R : Res} (hR : ResOk I R) (hI : okR I R = tru
       covered := fun g hg => (fa hg).covered
       outFits := fun g hg e he hs i off p hl hp => ?_
       baseNoAlloc := hB.baseNoAlloc
-      tryRets := fun g hg info ti h hs ⟨_, n, hd, hf⟩ => tryB_sound (fa hg).tries hs hd hf
       argRegs := fun g hg => ⟨(fa hg).nodup, (fa hg).argReg, (fa hg).width⟩
       sretRets := fun g hg hs us hr => retsB_sound (fa hg).rets hs hr
       calleeFrame := fun g hg h hh hs => (hcal g hg h hh).1 hs
@@ -1202,8 +1154,6 @@ theorem okR_sound {I : LinkInput} {R : Res} (hR : ResOk I R) (hI : okR I R = tru
         obtain ⟨t, Lu, Ld, heq, hall⟩ := blrOk_sound (siteOk_reg (site_sound (fa hg).sites hs) hreg)
         exact ⟨t, Lu, Ld, heq, fun h hh hb hl =>
           hall h hh (indToB_of hb.1) (fun n hn => (hb.2 n (gotOf_sound hn)).symm) hl⟩
-      blrTry := fun g hg info ti hs t Lu Ld hi h hh hb hl =>
-        tryB_reg (fa hg).tries hs hi hh (indToB_of hb.1) (fun n hn => (hb.2 n (gotOf_sound hn)).symm) hl
       raBlr := fun g hg info hs hreg h hh hmay pc hpc =>
         raCallB_sound (fa hg).ra hpc _ (tab_mem hn hh) (mayCall_ne hmay)
       indScope := fun g hg hnf => ⟨hB.keepSyms ⟨g, hg, hnf⟩, ?_, hB.aliasSyms ⟨g, hg, hnf⟩⟩

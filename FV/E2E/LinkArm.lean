@@ -1682,10 +1682,6 @@ structure Ok : Prop where
     ∃ n Lu Ld, info = ⟨.sym n, retPairs Lu, callDefs Ld⟩ ∧ Lu.map (·.2) = regLocs h.sig ∧
       (Ld.map (·.1)).take (sigRets h.sig).length =
         (List.range (min (sigRets h.sig).length Ld.length)).map Reg.x
-  /-- a `try_call` of a function `h` of `P` takes at most `h`'s results (the compiler's
-  `ti.rets` is their number) -/
-  tryRets : ∀ g ∈ L.P.funcs, ∀ info ti h, (L.A g).vcp.TrySite info ti → L.ProgSite g info h →
-    ti.rets ≤ (sigRets h.sig).length
   /-- scope: a `blr` call site (an indirect call, or a call through the GOT) passes integer
   arguments in the parameter registers of every function of `P` it may enter (`BlrTo`: one its
   function may reach, `MayCall`; at a call through the GOT only the GOT symbol's function, none
@@ -1698,10 +1694,6 @@ structure Ok : Prop where
         Lu.map (·.2) = regLocs h.sig ∧
         (Ld.map (·.1)).take (sigRets h.sig).length =
           (List.range (min (sigRets h.sig).length Ld.length)).map Reg.x
-  /-- a `blr` `try_call` takes at most the results of the functions it may enter (`BlrTo`) -/
-  blrTry : ∀ g ∈ L.P.funcs, ∀ info ti, (L.A g).vcp.TrySite info ti → ∀ t Lu Ld,
-    info = ⟨.reg (.vreg t .int), retPairs Lu, callDefs Ld⟩ → ∀ h ∈ L.P.funcs, L.BlrTo g t h →
-      (regLocs h.sig).length = Lu.length → ti.rets ≤ (sigRets h.sig).length
   /-- layout: the return address of a `blr` is not in the code of a function of `P` it may call
   (`MayCall`), or is after a call instruction of that function's code, not at its entry
   (`RaOk`: functions sharing one copy of code) -/
@@ -3069,8 +3061,8 @@ theorem calleeOk (hL : L.Ok) (hκ : L.Budget κ) {M : Nat} (ih : 0 < M → L.Thm
 
 /-- **The `try_call` contract of the linked machine at depth `M`** for an activation of `g`: at
 a `try_call` of a function of `P` (`bl`, or `blr` of the address of a declared one) the plain
-call's contract (`calleeOk`) with the results `progX` returns (`tryRets`, `blrTry`); at a
-`try_call` of an extern outside `P` the base's. -/
+call's contract (`calleeOk`; `csem` defines a `try_call` only where the callee returns at least
+its results); at a `try_call` of an extern outside `P` the base's. -/
 theorem calleeTryOk (hL : L.Ok) (hκ : L.Budget κ) {M : Nat} (ih : 0 < M → L.Thm κ (M - 1)) {g : Clif.Function}
     (hg : g ∈ L.P.funcs) {F G : BitVec 64 → Prop} {ra : BitVec 64} {s w₀ : Arm.ArmState}
     (he : L.MachEntry κ M g F G ra s w₀) :
@@ -3082,22 +3074,11 @@ theorem calleeTryOk (hL : L.Ok) (hκ : L.Budget κ) {M : Nat} (ih : 0 < M → L.
     have hdest := hd
     cases hpf : L.P.func? n with
     | some h =>
-      refine calleeTryOkG_of_call (S := fun i t => i = info ∧ t = ti)
+      exact calleeTryOkG_of_call (S := fun i t => i = info ∧ t = ti)
         (fun ctx' i t ⟨e1, _⟩ => e1 ▸ (L.calleeOk hL hκ ih hg he).os ctx' info hsite.callSite)
         (fun _ _ _ h => callAt_tryCall_call h)
         (fun i t ⟨_, e2⟩ => e2 ▸ trySite_clobberAll (hL.compiled g hg).alloc hsite)
-        (fun i t ⟨e1, e2⟩ uses w outs w' hx => ?_) ctx info ti ⟨rfl, rfl⟩
-      subst e1 e2
-      rw [hdest] at hx
-      simp only at hx
-      rw [L.X_prog hpf] at hx
-      have hr := hL.tryRets g hg i t h hsite ⟨hsite.callSite, n, hdest, hpf⟩
-      unfold progX at hx
-      split at hx
-      · simp only [Option.some.injEq, Prod.mk.injEq] at hx
-        obtain ⟨rfl, -⟩ := hx
-        simpa using hr
-      · cases hx
+        ctx info ti ⟨rfl, rfl⟩
     | none =>
       have hb : L.BaseDest (destOf info) := .inr ⟨n, by simp [destOf, hdest], hpf⟩
       intro c wh ops regs i' t w outs w' s' _ _ _ hops hst hasg _ hsw hal herr hsem hex
@@ -3168,30 +3149,8 @@ theorem calleeTryOk (hL : L.Ok) (hκ : L.Budget κ) {M : Nat} (ih : 0 < M → L.
       exact hL.baseTry g hg F ctx _ ti ⟨hsite, .inl rfl⟩ c wh _ regs _ t w outs w' s' hops hst
         hasg hsw hal herr hsem' hex'
     | some h =>
-      refine calleeTry_at ((L.calleeOk hL hκ ih hg he).os ctx _ hsite.callSite)
+      exact calleeTry_at ((L.calleeOk hL hκ ih hg he).os ctx _ hsite.callSite)
         (fun _ _ h => callAt_tryCall_call h) hcl hK hD hG hops hst hasg hP hsw hal herr hsem hex
-        fun outs0 w0 hx => ?_
-      simp only at hx
-      rw [huv, L.X_ind hs] at hx
-      split at hx
-      · rename_i hdecl
-        have hh : h ∈ L.P.funcs := List.mem_of_find?_eq_some hs
-        have hgot : ∀ n, GotV (L.A g).vcp tv n → n = h.name := by
-          intro n hn
-          have e := csemV_guard_try hsem tv n _ rfl hn (operands_call_reg tv Lu Ld)
-            (by simp [tgtOp, Operand.isUse])
-          rw [huv] at e
-          simp only [List.head?_cons, Option.map_some, Option.some.injEq] at e
-          exact L.got_target hL hs e
-        have hr := hL.blrTry g hg _ ti hsite tv Lu Ld rfl h hh ⟨hdecl.1, hgot⟩
-          (by rw [← hdecl.2, List.length_map])
-        unfold progX at hx
-        split at hx
-        · simp only [Option.some.injEq, Prod.mk.injEq] at hx
-          obtain ⟨rfl, -⟩ := hx
-          simpa using hr
-        · cases hx
-      · cases hx
 
 theorem find_sym (hL : L.Ok) (n : String) :
     (∀ h, L.P.func? n = some h → L.P.funcs.find? (fun h' => L.Xb.sym h'.name 0 == L.Xb.sym n 0) = some h) ∧

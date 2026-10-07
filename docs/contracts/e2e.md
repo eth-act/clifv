@@ -1031,6 +1031,18 @@ bytes. It is vacuous without program callees with slots (`NeedSlots`).
    the `examples/deps` executable 23 → 15: no function fails `indB`'s `sret` conditions any more
    (also not those with a declared callee matched by types but not purposes: their `sigRets`
    agree, or a call reaching them cannot return); left: `indNoSym` 8, `blrRegs` 4, `blrTry` 3.
+13. *`try_call` result counts* (2026-10-07, agent/scope-widen, #89 (d)). `Ok.tryRets` (a
+   `try_call` of `h ∈ P` takes at most `h`'s results) and `Ok.blrTry` (the same for every
+   function a `blr` `try_call` may enter) are gone, with their checks (`LinkCheck.tryB`,
+   `indSiteB`'s `isTry` clause). `csem` now defines the call of a `try_call` only where the
+   callee returns at least `ti.rets` results (`Option.filter`), so the continuation reads the
+   callee's results; the try clauses of `CallsRefine`/`IndCallsRefine` (and the `P` variants)
+   take `ti.rets ≤ (sigRets sig).length`, which the lowering supplies (`tryInfoOf` sets `rets`
+   to the call-site signature's ABI returns, `TryRegs.tryInfoOf_rets`), and a call that returns
+   in the CLIF run gives `(sigRets sig).length` results. `calleeTry_at`/`calleeTryOkG_of_call`
+   lose their result-count hypothesis. `LinkSys.Ok` changes only by weakening. Effect on
+   `InScopeP`: `examples/deps` 15 → 12 (`indNoSym` 8, `blrRegs` 4), `fv-demo`'s test
+   executable 1 → 1 (`indNoSym`).
 
 **Non-vacuity** (`FV/E2E/NonVacuityLink.lean`, namespace `E2E.LinkWitness`): the closed program
 `P = {f, g, h, s, k, r, r__fvself, q, v, a2, w, t, u, m, d, e, y, z}` (`m`, `d`: the vtable dispatch of
@@ -1121,11 +1133,11 @@ theorem backend_correct_program_witness :
     ArmRefines (A fF).fb (A fF).base 8 ((L F0).mach M0 fF) s0 run0
 ```
 
-Every per-function premise of `LinkSys.Ok` (`compiled`, `covered`, `tryRets`, `outFits`,
-`argRegs`, `sretRets`, `calleeFrame`, `slotFits`, `callRegs`, `blrRegs`, `blrTry`, `raBlr`,
+Every per-function premise of `LinkSys.Ok` (`compiled`, `covered`, `outFits`,
+`argRegs`, `sretRets`, `calleeFrame`, `slotFits`, `callRegs`, `blrRegs`, `raBlr`,
 `indSig`, `indScope`'s declarations, `indNoSym`, `addrSlots`, `declSig`, `entryRegs`, `fits`,
 `raCall`, `depth`, `subset`, `free`, the image `imgCode`) is an executable check with a
-soundness lemma (`chks`/`Facts`, `siteOk_sound`, `blrOk_sound`, `tryB_sound`, `tryB_reg`,
+soundness lemma (`chks`/`Facts`, `siteOk_sound`, `blrOk_sound`,
 `retsB_sound`, `outFitsB_sound`, `slotFitsB_sound`, `entryB_sound`, `raCallB_sound`,
 `linkFreeB_sound`, `indFacts`, `imgCode_of`), decided by `native_decide` (`okB_true`); `symInj`,
 `symOk` and the base contracts (`baseOs`, `basePc`, `baseExt`, `baseX`, `baseXI`, `baseTls`,
@@ -1205,7 +1217,7 @@ no other symbol has (only `symInj` reads it). `fv-demo`'s recursive function is 
 
 **The checker** (`okB`, `okR`): per function (`chks = staticChks ++ linkChks`, each check named
 by the premise it discharges): the pipeline succeeds, `lowerCheck`, `prepCheck`, `checkAlloc`
-(`compiled`), `FormsCovered`, `tryRets`/`blrTry`, `sretRets`, `outFits`, `argRegs`,
+(`compiled`), `FormsCovered`, `sretRets`, `outFits`, `argRegs`,
 `calleeFrame`/`slotFits`, `callRegs`/`blrRegs` (per call site: a `bl` of a function of `P`
 passes its ABI registers; a `bl` of an extern outside `P` needs nothing; a `blr` site, `blrOk`,
 for every function it may enter, `LinkSys.BlrTo`: one it declares or that one of its indirect
@@ -1274,8 +1286,8 @@ and the validators (`pipeT_ok`: `backend_correct_final_total_emit`, `lowerCheck_
 `prepCheck_complete`, `formsCovered_complete`, `checkAlloc` of the spill allocation by
 `spillCheckAlloc` (`FV/E2E/SpillCheckAlloc*.lean`, completeness of `checkAlloc`'s fixpoint
 iteration)), `sretRets` (`retsB_of_lower` with the ISLE inversion `iselNoRets`,
-`FV/E2E/LinkOwnRetsIsel.lean`), `entryRegs` (`entryB_of_lower`), `callRegs/blrRegs` and
-`tryRets/blrTry` (`sites_of_lower`, `FV/E2E/LinkOwnCalls.lean`, from the call inversion
+`FV/E2E/LinkOwnRetsIsel.lean`), `entryRegs` (`entryB_of_lower`), `callRegs/blrRegs`
+(`sites_of_lower`, `FV/E2E/LinkOwnCalls.lean`, from the call inversion
 `CallShapeHyp`: `callShapeHyp_of` (`FV/E2E/LinkOwnCallsShape.lean`, the driver part) of
 `CallRunHyp` — `callRunHyp_of` of `stmt_noCalls`/`term_noCalls` (`LinkOwnCallsRun.lean`),
 `callStmtRunHyp` (`LinkOwnCallsStmt*.lean`), `tryRunHyp` (`LinkOwnCallsTry*.lean`) — and

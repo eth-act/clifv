@@ -1,6 +1,6 @@
 import FV.E2E.LinkCheck
 
-/-! # The input condition of the call sites (`callRegs/blrRegs`, `tryRets/blrTry`; L2a)
+/-! # The input condition of the call sites (`callRegs/blrRegs`; L2a)
 
 `callScopeB P S g`: decidable on the CLIF program alone (the signatures, the call sites'
 arguments, which names have a symbol in `S`). A call passes its register arguments in
@@ -12,9 +12,13 @@ arguments, which names have a symbol in `S`). A call passes its register argumen
   only the arity of the call: one argument per parameter);
 * an indirect call (`call_indirect`, `try_call_indirect`) of signature `s`: every function `h`
   of `P` that `g` may enter through an address (`indToB`) with as many register parameters as
-  the call passes takes them in the call's registers, and at a `try_call_indirect` has at least
-  as many results as `s` (`tryB`). The checker restricts this to the GOT symbol of the target
-  where it knows one (`gotOf`); an input condition cannot, so it covers every such `h`.
+  the call passes takes them in the call's registers. The checker restricts this to the GOT
+  symbol of the target where it knows one (`gotOf`); an input condition cannot, so it covers
+  every such `h`.
+
+A `try_call`'s results need no condition: `csem` defines a `try_call` only where the callee
+returns at least the call's results, which a call that returns in the CLIF run does
+(`CallsRefine`/`IndCallsRefine`).
 -/
 
 namespace E2E.LinkCheck
@@ -36,16 +40,14 @@ def dirSiteB (P : Clif.Program) (e : Clif.ExtFunc) (args : List Nat) : Bool :=
   | some h => decide (callRegs e.sig args = regLocs h.sig)
   | none => true
 
-/-- An indirect call of signature `s` with arguments `args` (`isTry`: a `try_call_indirect`):
-every function `h` of `P` that `g` may enter through an address (`indToB`) with as many
-register parameters as the call passes takes them in the call's registers (and has at least
-the call's ABI results, at a `try_call_indirect`). -/
+/-- An indirect call of signature `s` with arguments `args`: every function `h` of `P` that `g`
+may enter through an address (`indToB`) with as many register parameters as the call passes
+takes them in the call's registers. -/
 def indSiteB (P : Clif.Program) (S : String → Option Nat) (g : Clif.Function)
-    (s : Clif.Signature) (args : List Nat) (isTry : Bool) : Bool :=
+    (s : Clif.Signature) (args : List Nat) : Bool :=
   P.funcs.all fun h => !indToB S g h ||
     decide ((regLocs h.sig).length ≠ (callRegs s args).length) ||
-    (decide (regLocs h.sig = callRegs s args) &&
-      (!isTry || decide ((sigRets s).length ≤ (sigRets h.sig).length)))
+    decide (regLocs h.sig = callRegs s args)
 
 /-- **The input condition of `g`'s call sites** (`dirSiteB` at every direct call, `indSiteB`
 at every indirect call). -/
@@ -56,7 +58,7 @@ def callScopeB (P : Clif.Program) (S : String → Option Nat) (g : Clif.Function
         | some e => dirSiteB P e args
         | none => true
       | .callIndirect sg _ args => match g.sigDecls.lookup sg with
-        | some s => indSiteB P S g s args false
+        | some s => indSiteB P S g s args
         | none => true
       | _ => true) &&
     match B.term with
@@ -64,7 +66,7 @@ def callScopeB (P : Clif.Program) (S : String → Option Nat) (g : Clif.Function
       | some e => dirSiteB P e args
       | none => true
     | .tryCallIndirect _ args et => match g.sigDecls.lookup et.sig with
-      | some s => indSiteB P S g s args true
+      | some s => indSiteB P S g s args
       | none => true
     | _ => true
 

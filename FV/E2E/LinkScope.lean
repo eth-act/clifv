@@ -262,11 +262,10 @@ theorem chks_resultsT (hD : SpillDefinedHyp) {I : LinkInput} (hin : InScopeP I =
       (raJ fi.ra fi.j)) = a := by rw [ha]; rfl
   rw [hga] at hfit hra hdep
   obtain ⟨hdecl, hindB, hcall, hos⟩ := hpg _ hgP
-  obtain ⟨hsite, htry⟩ := sites_of_lower
+  have hsite := sites_of_lower
     (callShapeHyp_of (callRunHyp_of callStmtRunHyp tryRunHyp)
       (gotRunHyp_of segRangeHyp gotLocalHyp))
-    (inSubset_of_fnScope hsc I.prog) hd hs hnd
-    (declSig_of hdecl) hcall hl hp
+    (inSubset_of_fnScope hsc I.prog) hd hs hnd hcall hl hp
   have hout := outFits_of_lower hd hs hos hl hp a.rf
   have hfr := frame_of_lower hl hp hlr
   have hrets := retsB_of_lower iselNoRets hs hl
@@ -276,7 +275,7 @@ theorem chks_resultsT (hD : SpillDefinedHyp) {I : LinkInput} (hin : InScopeP I =
   simp only [chks, staticChks, linkChks, List.cons_append, List.nil_append, List.mem_cons,
     List.not_mem_nil, or_false, ha, progOf_resultsT] at hc
   rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
-    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · rfl
   · exact hlc
   · exact hpc
@@ -294,7 +293,6 @@ theorem chks_resultsT (hD : SpillDefinedHyp) {I : LinkInput} (hin : InScopeP I =
   · simpa using hne
   · simpa [Bool.and_eq_true, List.all_eq_true] using habi
   · exact hind
-  · exact htry
   · exact hout
   · simp only [Bool.or_eq_true]
     exact .inr hfr

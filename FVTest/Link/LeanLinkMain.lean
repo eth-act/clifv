@@ -34,18 +34,15 @@ open Backend in
 indirect-call scope `indB` and the call sites `callScopeB` split by cause). -/
 def scopeFails (P : Clif.Program) (S : String → Option Nat) (g : Clif.Function) : List String :=
   let ind := !indFreeB g
-  let site (s : Clif.Signature) (args : List Nat) (isTry : Bool) : List String :=
-    P.funcs.flatMap fun h =>
-      if !indToB S g h || (regLocs h.sig).length != (callRegs s args).length then [] else
-      (if regLocs h.sig = callRegs s args then [] else ["callScopeB:blrRegs"]) ++
-      (if isTry && (sigRets s).length > (sigRets h.sig).length then ["callScopeB:blrTry"] else [])
+  let site (s : Clif.Signature) (args : List Nat) : List String :=
+    if indSiteB P S g s args then [] else ["callScopeB:blrRegs"]
   let sites := g.blocks.flatMap fun B =>
     (B.body.flatMap fun st => match st.inst with
       | .call fn args => match g.extern? fn with
         | some e => if dirSiteB P e args then [] else ["callScopeB:dirSite"]
         | none => []
       | .callIndirect sg _ args => match g.sigDecls.lookup sg with
-        | some s => site s args false
+        | some s => site s args
         | none => []
       | _ => []) ++
     match B.term with
@@ -53,7 +50,7 @@ def scopeFails (P : Clif.Program) (S : String → Option Nat) (g : Clif.Function
       | some e => if dirSiteB P e args then [] else ["callScopeB:dirSite"]
       | none => []
     | .tryCallIndirect _ args et => match g.sigDecls.lookup et.sig with
-      | some s => site s args true
+      | some s => site s args
       | none => []
     | _ => []
   ((if declSigB P g then [] else ["declSigB"]) ++
