@@ -68,3 +68,7 @@ root = "FVTest.Opt.Fuzz"
 [[lean_exe]]
 name = "link-check"
 root = "FVTest.E2E.LinkCheckMain"
+
+[[lean_exe]]
+name = "lean-link"
+root = "FVTest.Link.LeanLinkMain"

@@ -19,6 +19,6 @@ name = "fv-rustc"
 path = "src/bin/fv-rustc.rs"
 
 [dependencies]
-object = { version = "0.40", default-features = false, features = ["read_core", "elf", "std"] }
+object = { version = "0.40", default-features = false, features = ["read_core", "elf", "archive", "std"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
