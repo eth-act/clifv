@@ -1265,10 +1265,11 @@ iteration)), `sretRets` (`retsB_of_lower` with the ISLE inversion `iselNoRets`,
 and `gotLocalHyp` (`LinkOwnGotLocal.lean`)), `outFits` (`outFits_of_lower`),
 `calleeFrame/slotFits` (`frame_of_lower`, `FV/E2E/LinkOwnFrames.lean`), `depth` (by
 construction). The ISLE facts use `native_decide` table checks over the exported rules, as the
-Kill and Cov tables do. One program-independent fact remains a hypothesis: `SpillDefinedHyp`
-(definite assignment of the prepared VCode: availability sets with nothing available on entry,
-from which `checkAlloc`'s fixpoint, started from no vreg in its home, accepts the spill
-allocation), for input whose entry block has the signature's parameters.
+Kill and Cov tables do. Its one program-independent hypothesis, `SpillDefinedHyp` (definite
+assignment of the prepared VCode: availability sets with nothing available on entry, from which
+`checkAlloc`'s fixpoint, started from no vreg in its home, accepts the spill allocation), for
+input whose entry block has the signature's parameters, is proven (`E2E.spillDefinedHyp`, below),
+so `crate_correct_inScope_proven` has no open hypothesis.
 
 **The input condition `entryParamsB`; definite assignment reduced to definedness** (2026-10-07,
 `FV/E2E/SpillDefined*.lean`, `FV/Backend/Proof/SpillDefined*.lean`,
@@ -1310,10 +1311,15 @@ theorem DefRun.lower_defined (hR : DefRunsHyp) (hd : Dominated f) (hs : LowerSco
 theorem E2E.lowerDefinedHyp_of_runs (hR : DefRun.DefRunsHyp) : LowerDefinedHyp
 theorem E2E.LinkCheck.crate_correct_inScope_runs (hR : DefRun.DefRunsHyp) (hin : InScopeP I = true)
     (hlk : linkerOkB I = true) (n : String) : CrateStmtT I n
+theorem DefRun.defRunsHyp : DefRunsHyp
+theorem E2E.lowerDefinedHyp : LowerDefinedHyp
+theorem E2E.spillDefinedHyp : SpillDefinedHyp
+theorem E2E.LinkCheck.crate_correct_inScope_proven (hin : InScopeP I = true)
+    (hlk : linkerOkB I = true) (n : String) : CrateStmtT I n
 ```
 
-Availability (no use reads a vreg killed without a store) is proven (`spillKillFree`); what is
-open is definedness of `lowerFunction`'s VCode (`LowerDefinedHyp`; by `defined_of_paths'` and
+Availability (no use reads a vreg killed without a store) is proven (`spillKillFree`); what
+remained was definedness of `lowerFunction`'s VCode (`LowerDefinedHyp`; by `defined_of_paths'` and
 `paramArgs_of_lowOk` it is `UsesDefined`: every use is defined on every CFG path from the entry
 that reaches it). Neither route avoids it: it does not follow from the semantic contracts
 (`LowerInstOk.run` holds for every initial vreg file, and a read of a temporary before its def
@@ -1328,11 +1334,23 @@ defines at the end (the renamed values available there, a `try_call`'s result vr
 block, the entry parameters are defined by the argument setup (`entryParamsB`), a statement's
 results by its run (`OutDef`, through the alias renaming), and a run's uses are available reached
 values or fresh vregs an earlier instruction of the run defines (`RunDef`; the `try_call`'s call
-replaced by the `tryCall` keeps it). What remains: the ISLE run facts `DefRunsHyp` — a
-flow-sensitive invariant (`writable_reg_to_reg` is the identity on ISLE values, so the uniform
-invariants of `KillGen`/`IselFlowCheck` cannot tell a temporary before its def from one after).
-Non-vacuity: `E2E.spillAvail_defined_witness`; `crate_correct_runs`/`crate_correct_fvDemo_runs`
-(`InScopeWitness`) instantiate `crate_correct_inScope_runs`. Witness of the crate theorem:
+replaced by the `tryCall` keeps it). The ISLE run facts `DefRunsHyp` are proven
+(`DefRun.defRunsHyp`, `FV/Backend/Proof/DefRunsProof.lean`). They are a flow-sensitive invariant
+(`writable_reg_to_reg` is the identity on ISLE values, so the uniform invariants of
+`KillGen`/`IselFlowCheck` cannot tell a temporary before its def from one after), proven by an
+abstract interpretation of the rules (`FV/Backend/Proof/DefGen*.lean`): symbolic abstract values
+whose meaning depends on the defined vregs `D` (the reached CLIF values' vregs and the defs of the
+instructions emitted since the run started) and on the rule's environment — clean values,
+pending temporaries, the identity of a let-variable, values that hold once given instructions are
+emitted (`ProducesFlags`/`ConsumesFlags`/side effects carry instructions emitted later), call
+infos and return lists whose defs cover given variables. `emit` checks the instruction's uses are
+defined and marks the variables in its def fields defined. Soundness by fuel induction
+(`DefGen.soundAt`, `dRoot`); the extern constructors/extractors, the oracles and the
+constructor-tree terms meet their transfers (`DefGen.dModel`, `dOracle`, `dWrap`); every rule of
+the 1149 terms the roots reach and every root rule of `lower`/`lower_branch` check
+(`DefGen.tabOK`, `rootLower`, `rootBranch`, `native_decide`), but `nop`'s rule 587 (by hand) and
+636/637 (never match). Non-vacuity: `E2E.spillAvail_defined_witness`; `crate_correct_proven`/
+`crate_correct_fvDemo_proven` (`InScopeWitness`) instantiate `crate_correct_inScope_proven`. Witness of the crate theorem:
 `crate-proofs/Crates/InScopeWitness.lean` decides `InScopeP` (with `entryParamsB`) and
 `linkerOkB` of `a_arith` (58 functions) and `fv-demo` (551) by `native_decide`.
 
