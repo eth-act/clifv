@@ -117,6 +117,19 @@ theorem deep_sound : ∀ (a : AW) (v : V), γ f ctx a v → DeepOk (AW.deep a) v
           · rename_i i hi; exact covOk_sound h1 hl hi
           · rfl
       · exact .inl ht
+  | .num k b, v, h => by
+    cases k
+    case callInfo =>
+      obtain ⟨c, rfl, -⟩ := h
+      show DeepOk (15, true) _
+      refine ⟨fun r _ => ?_, fun _ => rfl⟩
+      rcases kind_cases r with h1 | h1 | h1 | h1 <;> rw [h1] <;> decide
+    case int =>
+      obtain ⟨i, rfl, -⟩ := h
+      exact ⟨fun r hr => by simp [V.regsIn] at hr, fun _ => rfl⟩
+    all_goals
+      obtain ⟨_, rfl, -⟩ := h
+      exact ⟨fun r hr => by simp [V.regsIn, opRegs] at hr, fun _ => rfl⟩
 /-- `deepL` of a list holds of every value of a pointwise-described list. -/
 theorem deepL_sound : ∀ (as : List AW) (vs : List V), γL f ctx as vs →
     ∀ w ∈ vs, DeepOk (AW.deepL as) w
@@ -192,6 +205,11 @@ theorem leBase_sound {a b : AW} (hle : AW.leBase a b = true) {v : V} (h : γ f c
   | xv e' =>
     cases a <;> simp only [AW.leBase, decide_eq_true_eq, reduceCtorEq] at hle
     subst hle; exact h
+  | num k' b' =>
+    cases a <;> simp only [AW.leBase, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq,
+      reduceCtorEq] at hle
+    obtain ⟨rfl, hb⟩ := hle
+    exact numOk_mono hb h
   | _ => cases a <;> simp [AW.leBase] at hle
 
 mutual
@@ -222,6 +240,7 @@ theorem le_sound : ∀ (a b : AW), AW.le a b = true → ∀ v, γ f ctx a v → 
   | .data _ _ _, .scale _, hle, _, _ => by simp [AW.le] at hle
   | .data _ _ _, .simm9, hle, _, _ => by simp [AW.le] at hle
   | .data _ _ _, .xv _, hle, _, _ => by simp [AW.le] at hle
+  | .data _ _ _, .num _ _, hle, _, _ => by simp [AW.le] at hle
   | .flat m c, b, hle, v, h => leBase_sound (by simpa [AW.le] using hle) h
   | .reg m, b, hle, v, h => leBase_sound (by simpa [AW.le] using hle) h
   | .ty ts, b, hle, v, h => leBase_sound (by simpa [AW.le] using hle) h
@@ -230,6 +249,7 @@ theorem le_sound : ∀ (a b : AW), AW.le a b = true → ∀ v, γ f ctx a v → 
   | .scale s, b, hle, v, h => leBase_sound (by simpa [AW.le] using hle) h
   | .simm9, b, hle, v, h => leBase_sound (by simpa [AW.le] using hle) h
   | .xv e, b, hle, v, h => leBase_sound (by simpa [AW.le] using hle) h
+  | .num k b', b, hle, v, h => leBase_sound (by simpa [AW.le] using hle) h
   termination_by a b => sizeOf a + sizeOf b
   decreasing_by all_goals simp_wf <;> omega
 theorem leAlts_sound : ∀ (as : List AW) (b : AW), AW.leAlts as b = true →

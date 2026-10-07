@@ -1,23 +1,26 @@
-import FV.Backend.Proof.IselShpFns
+import FV.Backend.Proof.IselEmitFns
 
 /-!
-# Generator of the V4 control-shape summary table (`FV/Backend/Proof/IselShpTab.lean`)
+# Generator of the V6c emission summary table (`FV/Backend/Proof/IselEmitTab.lean`)
 
 Untrusted: computes, by a fixpoint of V3's disjunctive abstract interpreter (`aRule`, `AW`) with
-the control-shape precondition `apreS` and oracles `aOracleS` over the exported ISLE rules, a
-summary table for every internal term reachable from the closure roots of `lower` and from
-`lower_branch` (without the hand-checked rules `shpHandIds`), and writes `IselShpTab.lean`: the
+the emission transfer functions (`aextE`, `actorE`, precondition `apreE`, V3's oracle `aOracle`)
+over the exported ISLE rules, a summary table for every internal term reachable from the closure
+roots of `lower` (without the hand-checked rules `emitHandIds`), the terminator rules of `lower`
+and the rules of `lower_branch` (those ending in a branch, `aRuleLast`, without their final
+`emit_side_effect`), and writes `IselEmitTab.lean`: the
 table as Lean literals and the `native_decide` checks (`chkTab` and the root checks) the proofs
 rely on. Prints the failing entries/roots/`emit`s if any.
 
-Regenerate (from the repository root, after `lake build FV.Backend.Proof.IselShpFns`):
+Regenerate (from the repository root, after `lake build FV.Backend.Proof.IselEmitFns`):
 
-    lake env lean --run FVTest/Backend/IselShpGen.lean FV/Backend/Proof/IselShpTab.lean
+    lake env lean --run FVTest/Backend/IselEmitGen.lean FV/Backend/Proof/IselEmitTab.lean
 -/
 
 open Isle Isle.Aarch64 Isle.Interp Backend Backend.Proof Backend.Proof.Cov
 
 deriving instance Hashable for Backend.OperandSize
+deriving instance Hashable for Backend.Proof.Cov.NK
 deriving instance Hashable for Backend.Proof.Cov.AW
 
 namespace Gen
@@ -85,11 +88,11 @@ partial def iExpr : Isle.Expr → List AW → StateM St AW
       | .enumVariant k => pure (.data tyv k as)
       | .struct => pure (.data tyv 0 as)
       | .decl _ (some (.external _)) _ =>
-        if !apreS term.id as then
+        if !apreE term.id as then
           modify fun s => { s with bad := (s.cur, s!"{term.name} {repr as}") :: s.bad }
-        pure (actor term.id as)
+        pure (actorE term.id as)
       | .decl _ (some .internal) _ =>
-        match aOracleS t as with
+        match aOracle t as with
         | some a => pure a
         | none => demand t as
       | _ => pure .top
@@ -106,22 +109,60 @@ partial def iIfLets : List IfLet → List AW → StateM St (List (List AW))
   | il :: ils, env => do
     let a ← iExpr p il.rhs env
     let mut out := []
-    for e in aPat p aext a il.lhs env do
+    for e in aPat p aextE a il.lhs env do
       out := out ++ (← iIfLets ils e)
     pure out
 
 def iRule (ins : List AW) (r : Rule) : StateM St AW := do
   modify fun s => { s with cur := r.id }
   let mut o := AW.bot
-  for env0 in aPatArgs p aext ins r.args (List.replicate r.vars.length .top) do
+  for env0 in aPatArgs p aextE ins r.args (List.replicate r.vars.length .top) do
     for env1 in ← iIfLets p r.iflets env0 do
       o := join o (← iExpr p r.rhs env1)
   pure o
 
-def round (roots : List (List AW × List Rule)) : StateM St Unit := do
-  for (ins, rs) in roots do
+/-- The demands of `aLast`: everything but the final `emit_side_effect`. -/
+partial def iLast : Nat → Isle.Expr → List AW → StateM St Unit
+  | 0, _, _ => pure ()
+  | n + 1, .term _ t args, env => do
+    if t == TId.emit_side_effect then
+      match args with
+      | [e] => let _ ← iExpr p e env
+      | _ => pure ()
+    else
+      let as ← iArgs p args env
+      for r in p.rulesOf t do
+        for env0 in aPatArgs p aextE as r.args (List.replicate r.vars.length .top) do
+          for env1 in ← iIfLets p r.iflets env0 do
+            iLast n r.rhs env1
+  | n + 1, .let _ bs body, env => do
+    let env' ← iBinds p bs env
+    iLast n body env'
+  | _ + 1, _, _ => pure ()
+
+def lastFuel : Nat := 10
+
+def iRuleLast (ins : List AW) (r : Rule) : StateM St Unit := do
+  modify fun s => { s with cur := r.id }
+  for env0 in aPatArgs p aextE ins r.args (List.replicate r.vars.length .top) do
+    for env1 in ← iIfLets p r.iflets env0 do
+      iLast p lastFuel r.rhs env1
+
+/-- Roots: plain rules (`aRule`) and rules ending in a branch (`aRuleLast`). -/
+structure Roots where
+  plain : List (List AW × List Rule)
+  last : List (List AW × List Rule)
+
+def runRoots (roots : Roots) : StateM St Unit := do
+  for (ins, rs) in roots.plain do
     for r in rs do
       let _ ← iRule p ins r
+  for (ins, rs) in roots.last do
+    for r in rs do
+      iRuleLast p ins r
+
+def round (roots : Roots) : StateM St Unit := do
+  runRoots p roots
   let s ← get
   for ((t, ins), out) in s.tab.toList do
     let mut o := out
@@ -130,16 +171,14 @@ def round (roots : List (List AW × List Rule)) : StateM St Unit := do
     let s ← get
     if o != out then set { s with tab := s.tab.insert (t, ins) o, changed := true }
 
-def fix (roots : List (List AW × List Rule)) : Nat → St → St
+def fix (roots : Roots) : Nat → St → St
   | 0, s => s
   | n + 1, s =>
     let ((), s') := (round p roots).run { s with changed := false, bad := [] }
     if s'.changed then fix roots n s' else s'
 
-def gcRound (roots : List (List AW × List Rule)) : StateM St Unit := do
-  for (ins, rs) in roots do
-    for r in rs do
-      let _ ← iRule p ins r
+def gcRound (roots : Roots) : StateM St Unit := do
+  runRoots p roots
   let mut done : Std.HashSet Key := {}
   repeat
     let s ← get
@@ -150,13 +189,21 @@ def gcRound (roots : List (List AW × List Rule)) : StateM St Unit := do
       for r in p.rulesOf k.1 do
         let _ ← iRule p k.2 r
 
-def fixGC (roots : List (List AW × List Rule)) : Nat → St → St
+def fixGC (roots : Roots) : Nat → St → St
   | 0, s => s
   | n + 1, s =>
     let s1 := fix p roots 100 s
     let ((), s2) := (gcRound p roots).run { tab := {}, old := s1.tab }
     let s3 := fix p roots 100 { tab := s2.tab }
     if s3.tab.size == s1.tab.size then s3 else fixGC roots n s3
+
+/-- Syntactically, the expression ends in `emit_side_effect` (through `let`s and internal terms). -/
+partial def endsLast : Nat → Isle.Expr → Bool
+  | 0, _ => false
+  | n + 1, .term _ t _ =>
+    t == TId.emit_side_effect || (internalOne p t && (p.rulesOf t).all fun r => endsLast n r.rhs)
+  | n + 1, .let _ _ body => endsLast n body
+  | _, _ => false
 
 end Gen
 
@@ -187,15 +234,17 @@ def entryLit (e : TermId × List AW × AW) : String :=
   s!"({e.1}, [{", ".intercalate (e.2.1.map awLit)}], {awLit e.2.2})"
 
 def stmtRules : List Rule := (program.rulesOf TId.lower).filter fun r =>
-  closureRootIds.contains r.id && !shpHandIds.contains r.id
+  closureRootIds.contains r.id && !emitHandIds.contains r.id
 def termRules : List Rule := (program.rulesOf TId.lower).filter fun r => r.id == 964 || r.id == 1037
-def branchRules : List Rule := (program.rulesOf TId.lower_branch).filter fun r => !shpHandIds.contains r.id
+def lastRules : List Rule := (program.rulesOf TId.lower_branch).filter fun r => endsLast program lastFuel r.rhs
+def plainBranchRules : List Rule :=
+  (program.rulesOf TId.lower_branch).filter fun r => !endsLast program lastFuel r.rhs
 
-def roots : List (List AW × List Rule) :=
-  [([.xv .inst], stmtRules), ([.c0], termRules), ([.c0, .c0], branchRules)]
+def roots : Roots :=
+  { plain := [([.xv .inst], stmtRules), ([.c0], termRules), ([.c0, .c0], plainBranchRules)]
+    last := [([.c0, .c0], lastRules)] }
 
-def mkTab : Tab :=
-  let s := fixGC program roots 10 {}
+def mkTab (s : St) : Tab :=
   (s.tab.toList.toArray.qsort (fun a b => a.1.1 < b.1.1 || (a.1.1 == b.1.1 && toString (repr a.1.2) < toString (repr b.1.2)))).toList.map
     fun ((t, ins), o) => (t, ins, o)
 
@@ -205,22 +254,23 @@ namespace Gen
 open Backend.Proof.Cov
 
 /-- Entries per chunk of the table (one definition and one `native_decide` per chunk). -/
-def chunk : Nat := 88
+def chunk : Nat := 60
 
-def header : String := "import FV.Backend.Proof.IselShpFns
+def header : String := "import FV.Backend.Proof.IselEmitFns
 
 /-!
-# Control shapes of the ISLE lowering (V4): the summary table
+# Emission conditions of the ISLE lowering (V6c): the summary table
 
-GENERATED by `FVTest/Backend/IselShpGen.lean` (untrusted; regenerate with
-`lake env lean --run FVTest/Backend/IselShpGen.lean FV/Backend/Proof/IselShpTab.lean`).
+GENERATED by `FVTest/Backend/IselEmitGen.lean` (untrusted; regenerate with
+`lake env lean --run FVTest/Backend/IselEmitGen.lean FV/Backend/Proof/IselEmitTab.lean`).
 Do not edit by hand.
 
-`shpTab`: per entry an internal term, abstract inputs and an abstract output, closed under the
-calls of the closure roots of `lower` and of `lower_branch` other than the hand-checked rules
-`shpHandIds`. `shpTab_ok`: every rule of every entry checks (`chkTab` with `apreS`,
-`aOracleS`); `shpStmt_ok`/`shpTerm_ok`/`shpBranch_ok`: the roots check (`aRule`). All are
-decided once over the exported rule data.
+`emitTab`: per entry an internal term, abstract inputs and an abstract output, closed under the
+calls of the closure roots of `lower` other than the hand-checked rules `emitHandIds`, of its
+terminator rules and of the rules of `lower_branch`. `emitTab_ok`: every rule of every entry checks (`chkTab` with `aextE`, `actorE`,
+`apreE`, `aOracle`); `emitStmt_ok`/`emitTerm_ok`/`emitBranch_ok`: the roots check (`aRule`, or
+`aRuleLast` for a branch rule ending in a branch). All are decided once over the exported rule
+data.
 -/
 
 namespace Backend.Proof.Cov
@@ -234,27 +284,27 @@ def render (tab : Tab) : String := Id.run do
   let mut out := header
   for k in [0:n] do
     let es := (tab.drop (k * chunk)).take chunk
-    out := out ++ s!"/-- Chunk {k} of the table. -/\ndef shpTab{k} : Tab := [\n  " ++
+    out := out ++ s!"/-- Chunk {k} of the table. -/\ndef emitTab{k} : Tab := [\n  " ++
       ",\n  ".intercalate (es.map entryLit) ++ "]\n\n"
-  out := out ++ "/-- **The summary table.** -/\ndef shpTab : Tab :=\n  " ++
-    " ++ ".intercalate ((List.range n).map (s!"shpTab{·}")) ++ "\n\n"
-  out := out ++ "/-- `chkTab`'s test of one entry. -/\nabbrev shpEntryOk (e : TermId × List AW × AW) : Bool :=\n  (program.rulesOf e.1).all (aRule program shpTab aext actor apreS aOracleS e.2.1 e.2.2)\n\n"
+  out := out ++ "/-- **The summary table.** -/\ndef emitTab : Tab :=\n  " ++
+    " ++ ".intercalate ((List.range n).map (s!"emitTab{·}")) ++ "\n\n"
+  out := out ++ "/-- `chkTab`'s test of one entry. -/\nabbrev emitEntryOk (e : TermId × List AW × AW) : Bool :=\n  (program.rulesOf e.1).all (aRule program emitTab aextE actorE apreE aOracle e.2.1 e.2.2)\n\n"
   for k in [0:n] do
-    out := out ++ s!"theorem shpTab{k}_ok : (shpTab{k}).all shpEntryOk = true := by native_decide\n\n"
-  out := out ++ "/-- **Every rule of every entry checks.** -/\ntheorem shpTab_ok : chkTab program shpTab aext actor apreS aOracleS = true := by\n  unfold chkTab\n  show (shpTab).all shpEntryOk = true\n  simp only [shpTab, List.all_append, " ++
-    ", ".intercalate ((List.range n).map (s!"shpTab{·}_ok")) ++ ", Bool.and_self]\n\n"
+    out := out ++ s!"theorem emitTab{k}_ok : (emitTab{k}).all emitEntryOk = true := by native_decide\n\n"
+  out := out ++ "/-- **Every rule of every entry checks.** -/\ntheorem emitTab_ok : chkTab program emitTab aextE actorE apreE aOracle = true := by\n  unfold chkTab\n  show (emitTab).all emitEntryOk = true\n  simp only [emitTab, List.all_append, " ++
+    ", ".intercalate ((List.range n).map (s!"emitTab{·}_ok")) ++ ", Bool.and_self]\n\n"
   out := out ++ "/-- The closure roots of `lower` other than the hand-checked ones check. -/
-theorem shpStmt_ok : (program.rulesOf TId.lower).all (fun r => !closureRootIds.contains r.id ||
-    shpHandIds.contains r.id || aRule program shpTab aext actor apreS aOracleS [.xv .inst] AW.top r) = true := by
-  native_decide
+theorem emitStmt_ok : (program.rulesOf TId.lower).all (fun r => !closureRootIds.contains r.id ||
+    emitHandIds.contains r.id || aRule program emitTab aextE actorE apreE aOracle [.xv .inst] AW.top r) = true := by native_decide
 
 /-- The terminator rules of `lower` (964 `return`, 1037 `trap`) check. -/
-theorem shpTerm_ok : (program.rulesOf TId.lower).all (fun r => !(r.id == 964 || r.id == 1037) ||
-    aRule program shpTab aext actor apreS aOracleS [.c0] AW.top r) = true := by native_decide
+theorem emitTerm_ok : (program.rulesOf TId.lower).all (fun r => !(r.id == 964 || r.id == 1037) ||
+    aRule program emitTab aextE actorE apreE aOracle [.c0] AW.top r) = true := by native_decide
 
-/-- The rules of `lower_branch` other than the hand-checked ones check. -/
-theorem shpBranch_ok : (program.rulesOf TId.lower_branch).all (fun r => shpHandIds.contains r.id ||
-    aRule program shpTab aext actor apreS aOracleS [.c0, .c0] AW.top r) = true := by native_decide
+/-- Every rule of `lower_branch` checks: without branches, or ending in one. -/
+theorem emitBranch_ok : (program.rulesOf TId.lower_branch).all (fun r =>
+    aRule program emitTab aextE actorE apreE aOracle [.c0, .c0] AW.top r ||
+    aRuleLast program emitTab aextE actorE apreE aOracle 10 [.c0, .c0] r) = true := by native_decide
 
 end Backend.Proof.Cov
 "
@@ -264,19 +314,21 @@ end Gen
 
 open Gen in
 def main (args : List String) : IO UInt32 := do
-  let some path := args.head? | IO.eprintln "usage: IselShpGen <out.lean>"; return 1
+  let some path := args.head? | IO.eprintln "usage: IselEmitGen <out.lean>"; return 1
   let s := fixGC program roots 10 {}
-  let tab := mkTab
-  let ok := chkTab program tab aext actor apreS aOracleS
+  let tab := mkTab s
+  let ok := chkTab program tab aextE actorE apreE aOracle
   let failR (ins : List AW) (out : AW) (rs : List Rule) : List Nat :=
-    (rs.filter fun r => !aRule program tab aext actor apreS aOracleS ins out r).map (·.id)
+    (rs.filter fun r => !aRule program tab aextE actorE apreE aOracle ins out r).map (·.id)
   for e in tab do
     let bad := failR e.2.1 e.2.2 (program.rulesOf e.1)
-    if !bad.isEmpty then IO.println s!"entry {e.1} {(", ".intercalate (e.2.1.map awLit)).take 200} fails rules {bad}"
-  let stmtTop := failR [.xv .inst] AW.top stmtRules
+    if !bad.isEmpty then IO.println s!"entry {e.1} {(", ".intercalate (e.2.1.map awLit)).take 300} fails rules {bad}"
+  let stmt := failR [.xv .inst] AW.top stmtRules
   let term := failR [.c0] AW.top termRules
-  let br := failR [.c0, .c0] AW.top branchRules
-  IO.println s!"entries {tab.length} chkTab {ok} stmtTop {stmtTop} term {term} branch {br}"
-  for (rid, msg) in s.bad.eraseDups do IO.println s!"bad rule {rid}: {msg.take 300}"
+  let okBr (r : Rule) : Bool := aRule program tab aextE actorE apreE aOracle [.c0, .c0] AW.top r ||
+    aRuleLast program tab aextE actorE apreE aOracle lastFuel [.c0, .c0] r
+  let br := ((program.rulesOf TId.lower_branch).filter fun r => okBr r == false).map (·.id)
+  IO.println s!"entries {tab.length} chkTab {ok} stmt {stmt} term {term} branch {br} last {lastRules.map (·.id)}"
+  for (rid, msg) in s.bad.eraseDups do IO.println s!"bad rule {rid}: {msg.take 400}"
   IO.FS.writeFile path (render tab)
-  return (if ok && stmtTop.isEmpty && term.isEmpty && br.isEmpty then 0 else 1)
+  return (if ok && stmt.isEmpty && term.isEmpty && br.isEmpty then 0 else 1)

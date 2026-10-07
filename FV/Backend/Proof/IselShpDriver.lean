@@ -62,7 +62,7 @@ theorem oracleS_sound (hctx : CtxInv f ctx) (N : Nat) (s0 : LState) (cfg : Confi
 
 /-- **The control-shape model** of the driver's semantics: state invariant `ShpIs N s0`. -/
 def shpModel (hctx : CtxInv f ctx) (hcl : Cov.Clean ctx) (N : Nat) (s0 : LState) :
-    CovModel actor apreS aOracleS program f ctx where
+    CovModel aext actor apreS aOracleS program f ctx where
   Is := ShpIs N s0
   ext := fun a term v st fs hv h => ext_sound hctx hcl a term v st fs hv h
   ctor := fun as vs term v st st' hvs hIs hpre h =>
