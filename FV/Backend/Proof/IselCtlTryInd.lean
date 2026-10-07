@@ -69,7 +69,7 @@ theorem try_ind_lowerTryOk {Rd : BitVec 64 → Prop}
   · intro fr cm ρ w hfr hvh _ hmr _ hpin
     split
     · rename_i rvals cm' hO
-      obtain ⟨declared, x, vals, name, g, hd, hcv, hvals, hsym, hg, hty, hgo, hrty⟩ :=
+      obtain ⟨declared, x, vals, name, g, hd, hcv, hvals, hsym, hg, hsg, hty, hgo, hrty⟩ :=
         Driver.instOutcome_callIndirect_ok hO
       have hd0 := hd
       rw [hfr, hctx.func, hsd] at hd
@@ -95,7 +95,7 @@ theorem try_ind_lowerTryOk {Rd : BitVec 64 → Prop}
       obtain ⟨outs, w', hi, hol, hro, hmr'⟩ := htry sig hin name g fr.slots cm w x.toNat
         (.vreg callee .int) (retPairs (args.zip ((abiArgIdx sig.params 0).map Reg.x)))
         (callDefs (outDefs b (max (sigRets sig).length 2))) info (ρ callee) (args.map ρ) vals
-        rvals cm' hg hsym hlo (by rw [hdl]; exact Nat.le_max_left _ _) hrets (by omega)
+        rvals cm' hg hsg hsym hlo (by rw [hdl]; exact Nat.le_max_left _ _) hrets (by omega)
         (allHold_args hvh hvals) hmr hpc hgo hrN hty
       have hol' : outs.length = (outDefs b (max (sigRets sig).length 2)).length := by
         rw [hol, hdl]; simp [outDefs]

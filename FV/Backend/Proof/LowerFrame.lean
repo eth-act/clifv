@@ -137,7 +137,8 @@ theorem res_ofOption_eq_ok {α : Type} {m : String} {o : Option α} {a : α} :
   cases o <;> simp [Clif.Res.ofOption]
 
 /-- The CLIF outcome of an indirect call that returns: the call site's signature, the callee
-address (an `i64` value), the extern at that address, and its results. -/
+address (an `i64` value), the extern at that address (whose signature, if the environment knows
+it, the call site's matches), and its results. -/
 theorem instOutcome_callIndirect_ok {env : Clif.Env} {cp : Clif.Program} {fr : Clif.Frame}
     {cm : Clif.Mem} {sig callee : Nat} {args : List Clif.ValueId} {rvals : List Clif.Val}
     {cm' : Clif.Mem}
@@ -146,6 +147,7 @@ theorem instOutcome_callIndirect_ok {env : Clif.Env} {cp : Clif.Program} {fr : C
       (g : List Clif.Val → Clif.Mem → Clif.Outcome), fr.func.sigDecls.lookup sig = some declared ∧
       fr.get callee = .ok ⟨.i64, x⟩ ∧ fr.getMany args = .ok vals ∧
       cm.symbols name = some x.toNat ∧ env.extern name = some g ∧
+      (∀ s, env.sigOf name = some s → declared.abiMatch s = true) ∧
       vals.map (·.ty) = Clif.AbiParam.tys declared.params ∧ g vals cm = .returned rvals cm' ∧
       rvals.map (·.ty) = Clif.AbiParam.tys declared.returns := by
   simp only [instOutcome] at h
@@ -165,10 +167,18 @@ theorem instOutcome_callIndirect_ok {env : Clif.Env} {cp : Clif.Program} {fr : C
   · simp only [Clif.callExternAt] at h2
     obtain ⟨name, hname, h2⟩ := res_bind_eq_ok.mp h2
     obtain ⟨g, hg, h2⟩ := res_bind_eq_ok.mp h2
+    obtain ⟨u0, hso, h2⟩ := res_bind_eq_ok.mp h2
     obtain ⟨u, hck, h2⟩ := res_bind_eq_ok.mp h2
     rw [res_ofOption_eq_ok] at hname hg
     have hsym := List.find?_some hname
     simp only [beq_iff_eq] at hsym
+    have hsg : ∀ s, env.sigOf name = some s → d'.abiMatch s = true := by
+      intro s hs
+      rw [hs] at hso
+      unfold Clif.Res.check at hso
+      split at hso
+      · rename_i hc; simpa using hc
+      · cases hso
     have hty : vs.map (·.ty) = Clif.AbiParam.tys d'.params := by
       unfold Clif.checkTys Clif.Res.check at hck
       split at hck
@@ -180,7 +190,7 @@ theorem instOutcome_callIndirect_ok {env : Clif.Env} {cp : Clif.Program} {fr : C
       · rename_i hrt
         simp only [Clif.Res.pure_eq, Clif.Res.ok.injEq, Prod.mk.injEq] at h2
         obtain ⟨rfl, rfl⟩ := h2
-        exact ⟨d', cv64, vs, name, g, hd, hcv, hvs, hsym, hg, hty, hgo, by simpa using hrt⟩
+        exact ⟨d', cv64, vs, name, g, hd, hcv, hvs, hsym, hg, hsg, hty, hgo, by simpa using hrt⟩
       · cases h2
     all_goals cases h2
 
@@ -225,7 +235,7 @@ theorem instOutcome_types {env : Clif.Env} {p : Clif.Program} {fr : Clif.Frame}
     obtain ⟨rfl, rfl⟩ := h
     simpa [Clif.AbiParam.tys] using heq
   | callIndirect sig callee args =>
-    obtain ⟨declared, x, vs, name, g, hd, -, -, -, -, -, -, hrty⟩ := instOutcome_callIndirect_ok h
+    obtain ⟨declared, x, vs, name, g, hd, -, -, -, -, -, -, -, hrty⟩ := instOutcome_callIndirect_ok h
     simp only [Clif.Inst.resultTypes, hd, Option.map_some, Option.some.injEq] at ht
     subst ht
     simpa [Clif.AbiParam.tys] using hrty

@@ -327,7 +327,8 @@ theorem try_got_lowerTryOk {Rd F : BitVec 64 → Prop}
     (hMR : MRStable F MR) (hMem : MemRefinesR Rd F sb syms isem) {outB : Nat}
     (hout : OutArgsOk F outB MR) {exts : List Clif.ExtFunc} (hCR : CallsRefineP Pc F env exts MR isem) {f : Clif.Function}
     {ctx : Ctx} (hctx : CtxInv f ctx) {fn : Clif.FnRef} {args : List Nat} {ext : Clif.ExtFunc}
-    (hext : f.extern? fn = some ext) (hin : ext ∈ exts) (hso : SigStackOk ext.sig outB)
+    (hext : f.extern? fn = some ext) (hin : ext ∈ exts) (hcol : ext.colocated = false)
+    (hso : SigStackOk ext.sig outB)
     {bytes : List Nat} (hb : sigParamBytes ext.sig = .ok bytes) {locs : List ArgLoc} {S : Nat}
     (hl : sigArgLocs ext.sig = .ok (locs, S)) {info : TryInfo}
     (hrets : info.rets ≤ (sigRets ext.sig).length) {b : Nat}
@@ -394,7 +395,7 @@ theorem try_got_lowerTryOk {Rd F : BitVec 64 → Prop}
         (upd ρ t (ofX (sym ext.name)) t ::
           (regPairsOf ((locs.zip args).zip bytes)).map (upd ρ t (ofX (sym ext.name)) ·.1))
         ((regPairsOf ((locs.zip args).zip bytes)).map (ρ ·.1)) vals rvals cm' hg
-        (.inr ⟨_, rfl, by rw [ht1, huses]⟩) (by rw [hdl]; exact Nat.le_max_left _ _) hrets
+        (.inr ⟨_, rfl, hcol, by rw [ht1, huses]⟩) (by rw [hdl]; exact Nat.le_max_left _ _) hrets
         (hargsAt w2 hsw) hmr2 hpc hgo hrN
       have hol' : outs.length = (outDefs b (max (sigRets ext.sig).length 2)).length := by
         rw [hol, hdl]; simp [outDefs]
@@ -426,6 +427,58 @@ theorem try_got_lowerTryOk {Rd F : BitVec 64 → Prop}
         exact retsHeld_try (by rw [hol', outDefs, List.length_map, List.length_range]) hro hv
     · trivial
 
+/-- In `lower_branch`, `rule_lower_2542` (`bl`, colocated callee) is tried before
+`rule_lower_2551` (GOT and `blr`). -/
+theorem lower_branch_2542_before_2551 {p : Program} (hp : Data p) :
+    ∃ pre post, p.rulesOf TId.lower_branch = pre ++ rule_lower_2551 :: post ∧
+      rule_lower_2542 ∈ pre :=
+  ⟨[rule_lower_2542, rule_lower_3251, rule_lower_3257],
+    [rule_lower_2561, rule_lower_3231, rule_lower_3270, rule_lower_3277],
+    by rw [show TId.lower_branch = 687 from rfl, hp.r687]; rfl, by simp⟩
+
+section
+variable {p : Program} (hp : Data p) (hpT : TryData p) {ctx : Ctx} {cfg : Config}
+
+include hp hpT in
+/-- `rule_lower_2542` (`bl`) matches a `try_call` of a colocated extern (a near relocation). -/
+theorem match_2542_colocated {ti fn : Nat} {args : List Nat} {sig : Clif.Signature}
+    {items : List (Option Nat)} {ext : Clif.ExtFunc}
+    (hi : ctx.insts[ti]? = some ⟨.data 152 27 [.data 151 13 [], .values args, .op (.funcRef fn),
+      .op (.exnTable sig items)], [], [], none⟩)
+    (hext : ctx.func.extern? fn = some ext) (hco : ext.colocated = true) (targets : List Label)
+    (st : LState) (tr : Array RuleId) (k : Nat) (s' : LState × Array RuleId) :
+    (matchRule p (sem ctx) cfg (k + 1000) rule_lower_2542 [.inst ti, .labels targets]).run
+      (st, tr) ≠ .ok (none, s') := by
+  have h1 := ext_inst_data_value ctx st hi
+  have hv : externExtract ctx T.value_list_slice (.values args) st = .ok [.values args] := rfl
+  have hf := (ext_func_ref_data_iff (ctx := ctx) st fn _).mpr ⟨ext, hext, rfl⟩
+  rw [hco, if_pos rfl] at hf
+  cases hp
+  obtain ⟨t300, t302, t2297, t2474⟩ := hpT
+  isel_eval [*, rule_lower_2542, sem_eq]
+  simp
+
+include hp hpT in
+/-- A `try_call` that `rule_lower_2551` (GOT and `blr`) lowers, the rules before it having
+failed, is of a non-colocated extern: `rule_lower_2542` lowers the colocated ones. -/
+theorem try_got_not_colocated {ti fn : Nat} {args : List Nat} {sig : Clif.Signature}
+    {items : List (Option Nat)} {targets : List Label} {st : LState} {tr : Array RuleId}
+    (hi : ctx.insts[ti]? = some ⟨.data 152 27 [.data 151 13 [], .values args, .op (.funcRef fn),
+      .op (.exnTable sig items)], [], [], none⟩)
+    (hfirst : ∀ pre post, p.rulesOf TId.lower_branch = pre ++ rule_lower_2551 :: post →
+      ∀ r' ∈ pre, ∃ m', 1000 ≤ m' ∧ ∃ s',
+        (matchRule p (sem ctx) cfg m' r' [.inst ti, .labels targets]).run (st, tr) =
+          .ok (none, s'))
+    {ext : Clif.ExtFunc} (hext : ctx.func.extern? fn = some ext) : ext.colocated = false := by
+  cases hco : ext.colocated
+  · rfl
+  · obtain ⟨pre, post, hdec, hmem⟩ := lower_branch_2542_before_2551 hp
+    obtain ⟨m', hm', s', hf⟩ := hfirst pre post hdec _ hmem
+    obtain ⟨k, rfl⟩ : ∃ k, m' = k + 1000 := ⟨m' - 1000, by omega⟩
+    exact absurd hf (match_2542_colocated hp hpT hi hext hco targets st tr k s')
+
+end
+
 set_option maxHeartbeats 20000000 in
 theorem try_got_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) {Rd F : BitVec 64 → Prop}
     {Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop}
@@ -436,7 +489,7 @@ theorem try_got_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) {Rd F : Bit
     (hCR : CallsRefineP Pc F env exts MR isem) :
     TryRuleOkP Rd Pc isem MR env cp exts outB p rule_lower_2551 := by
   intro f ctx hctx hexts ti fn args et data sig items targets info lo st1 hreg hd he hi hinfo htr
-    hvb cfg hc m n st tr env' s1 out st' tr' hm hn hst _ hmatch heval
+    hvb cfg hc m n st tr env' s1 out st' tr' hm hn hst hfirst hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
   obtain ⟨n, rfl⟩ : ∃ n', n = n' + 100 := ⟨n - 100, by omega⟩
   have kC := fun n (hn : 30 ≤ n) i s v s' h => call_ind_impl_ok hp (ctx := ctx) hc (n := n) (i := i)
@@ -452,6 +505,8 @@ theorem try_got_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) {Rd F : Bit
   rw [tryCallData_eq he hext hsig] at hd
   cases hd
   have hfn : ctx.func.extern? fn = some ext := by rw [hctx.func]; exact hext
+  have hcol : ext.colocated = false := try_got_not_colocated hp hpT hi hfirst hfn
+  clear hfirst
   cases hp
   obtain ⟨t300, t302, t2297, t2474⟩ := hpT
   ctl_inv [*, rule_lower_2551, ext_func_ref_data_iff, ctor_abi_sig_iff, ctor_try_call_info_iff,
@@ -496,7 +551,7 @@ theorem try_got_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) {Rd F : Bit
     simp [callDefs, outDefs, List.map_map, Function.comp_def]
   rw [hcd] at hs2
   simp only at hs0 hs1 hs2
-  refine ⟨_, ?_, try_got_lowerTryOk hMR hMem hout hCR hctx hext (hexts fn _ hext) (hreg _ hext)
+  refine ⟨_, ?_, try_got_lowerTryOk hMR hMem hout hCR hctx hext (hexts fn _ hext) hcol (hreg _ hext)
     hb hl (Nat.le_of_eq (tryInfoOf_rets hinfo)) htrs (fun x hx => by have := hbelow x hx; omega)
     (by rw [hs2, hs1, hs0]; simp [LState.emit, LState.fresh])⟩
   rw [hs2, hs1, hs0]

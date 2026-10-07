@@ -712,8 +712,9 @@ with an address when `g` has indirect calls. -/
 def mayB (g : Clif.Function) (n : String) : Bool :=
   declB g n || (!indFreeB g && n != g.name && (symsW n).isSome)
 
-/-- `g` may enter `h` through an address (`LinkSys.IndTo` of the witness): it may call it, and
-declares it or one of its indirect calls matches `h`'s signature, with as many results. -/
+/-- `g` may enter `h` through an address (an over-approximation of `LinkSys.IndTo` of the
+witness): it may call it, and declares it or one of its indirect calls matches `h`'s signature,
+with as many results. -/
 def indToB (g h : Clif.Function) : Bool :=
   mayB g h.name && (declB g h.name || (indSigs g).any fun s =>
     decide (LinkSys.IndSigMatch s h) && h.sig.returns.length == s.returns.length)
@@ -1021,7 +1022,7 @@ theorem mayB_of {F : BitVec 64 → Prop} {g : Clif.Function} {n : String}
 
 theorem indToB_of {F : BitVec 64 → Prop} {g h : Clif.Function} (hi : (L F).IndTo g h) :
     indToB g h = true := by
-  obtain ⟨hmay, hd | ⟨sig, hs, hm, hl⟩⟩ := hi
+  obtain ⟨hmay, ⟨hd, -⟩ | ⟨sig, hs, hm, hl⟩⟩ := hi
   · simp [indToB, mayB_of hmay, declB_of hd]
   · simp only [indToB, mayB_of hmay, Bool.true_and, Bool.or_eq_true, List.any_eq_true,
       Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq]

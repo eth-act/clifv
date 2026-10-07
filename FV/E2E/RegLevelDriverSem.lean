@@ -199,7 +199,8 @@ theorem driverSem_csem (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) :
 
 /-- **The contract of the external semantics** (the callees and the linker, outside the
 function), for the externs `exts` a function declares: a call of the extern `ext ∈ exts` —
-`bl name` (`some name`, uses = the register arguments) or `blr` of its address (`none`, first
+`bl name` (`some name`, uses = the register arguments) or, for a non-colocated declaration
+(which the lowering calls through the GOT), `blr` of its address (`none`, first
 use = `X.sym name 0`) — whose arguments, related to CLIF values `vals`, are where AAPCS64 puts
 them (`ArgsAt`: the register-passed ones in the argument values `args`, low bits; the
 stack-passed ones in the outgoing area at `sp` of the world, agent/stack-tls-proof), from a world
@@ -212,7 +213,8 @@ def XCallsOk (env : Clif.Env) (exts : List Clif.ExtFunc) (MR : MemRelT) (X : Ext
   ∀ ext ∈ exts, ∀ g (sl : List (Clif.SlotId × Nat)) (cm : Clif.Mem) (w : Arm.ArmState)
     (d : Option String) (uses args : List CV) (vals rvals : List Clif.Val) (cm' : Clif.Mem),
     env.extern ext.name = some g →
-    (d = some ext.name ∧ uses = args ∨ d = none ∧ uses = ofX (X.sym ext.name 0) :: args) →
+    (d = some ext.name ∧ uses = args ∨
+      d = none ∧ ext.colocated = false ∧ uses = ofX (X.sym ext.name 0) :: args) →
     ArgsAt ext.sig vals args w → MR sl cm w →
     g vals cm = .returned rvals cm' → rvals.length = ext.sig.returns.length →
     ∃ outs w', X.call d uses w = some (outs, w') ∧ outs.length = (sigRets ext.sig).length ∧
@@ -224,7 +226,8 @@ def XCallsOkRegs (env : Clif.Env) (exts : List Clif.ExtFunc) (MR : MemRelT) (X :
   ∀ ext ∈ exts, ∀ g (sl : List (Clif.SlotId × Nat)) (cm : Clif.Mem) (w : Arm.ArmState)
     (d : Option String) (uses args : List CV) (vals rvals : List Clif.Val) (cm' : Clif.Mem),
     env.extern ext.name = some g →
-    (d = some ext.name ∧ uses = args ∨ d = none ∧ uses = ofX (X.sym ext.name 0) :: args) →
+    (d = some ext.name ∧ uses = args ∨
+      d = none ∧ ext.colocated = false ∧ uses = ofX (X.sym ext.name 0) :: args) →
     vals.length ≤ 8 → AllHold vals args → MR sl cm w →
     g vals cm = .returned rvals cm' → rvals.length = ext.sig.returns.length →
     ∃ outs w', X.call d uses w = some (outs, w') ∧ outs.length = (sigRets ext.sig).length ∧
@@ -272,7 +275,8 @@ theorem xCallsOk_of_results {env : Clif.Env} {exts : List Clif.ExtFunc} {MR : Me
   refine xCallsOk_of_regArgs h8 ?_
   intro ext hin g sl cm w d uses args vals rvals cm' hg hd hlen hall hmr hret hrl
   obtain ⟨outs, w', hc, ho, hm⟩ :=
-    h ext.name g sl cm w d uses args vals rvals cm' rvals.length hg hd hlen hall hmr hret rfl
+    h ext.name g sl cm w d uses args vals rvals cm' rvals.length hg
+      (hd.imp id fun ⟨h1, _, h2⟩ => ⟨h1, h2⟩) hlen hall hmr hret rfl
   exact ⟨outs, w', hc, by rw [sigRets_of_noSret (hns ext hin), ← hrl, ho.1], ho.prefixHold, hm⟩
 
 /-- **`CallsRefine` for `csem`**, from the external contract. -/
@@ -281,15 +285,15 @@ theorem callsRefine_csem {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {en
     CallsRefine F env exts MR (csem F ctx X) := by
   refine ⟨fun n => X.sym n 0, fun rd n w => ⟨w, rfl, fun _ _ _ => rfl, fun _ _ => rfl, rfl⟩, ?_, ?_⟩
   · intro ext hin g sl cm w dest us ds uses args vals rvals cm' hg hd hds hargs hmr hret hrl
-    rcases hd with ⟨rfl, rfl⟩ | ⟨r, rfl, rfl⟩
+    rcases hd with ⟨rfl, rfl⟩ | ⟨r, rfl, hcol, rfl⟩
     · obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX ext hin g sl cm w (some ext.name) uses uses vals rvals
         cm' hg (.inl ⟨rfl, rfl⟩) hargs hmr hret hrl
       exact ⟨outs, w', by simp [csem, hc], by rw [hol, hds], ho, hm⟩
     · obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX ext hin g sl cm w none _ args vals rvals cm'
-        hg (.inr ⟨rfl, rfl⟩) hargs hmr hret hrl
+        hg (.inr ⟨rfl, hcol, rfl⟩) hargs hmr hret hrl
       exact ⟨outs, w', by simp [csem, hc], by rw [hol, hds], ho, hm⟩
   · intro ext hin g sl cm w dest us ds ti uses args vals rvals cm' hg hd hds hti hargs hmr hret hrl
-    rcases hd with ⟨rfl, rfl⟩ | ⟨r, rfl, rfl⟩
+    rcases hd with ⟨rfl, rfl⟩ | ⟨r, rfl, hcol, rfl⟩
     · obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX ext hin g sl cm w (some ext.name) uses uses vals
         rvals cm' hg (.inl ⟨rfl, rfl⟩) hargs hmr hret hrl
       refine ⟨_, w', by simp only [csem, hc, Option.filter_some, hol, hti, decide_true,
@@ -297,7 +301,7 @@ theorem callsRefine_csem {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {en
       simp only [List.length_append, List.length_map, List.length_drop]
       omega
     · obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX ext hin g sl cm w none _ args vals rvals cm' hg
-        (.inr ⟨rfl, rfl⟩) hargs hmr hret hrl
+        (.inr ⟨rfl, hcol, rfl⟩) hargs hmr hret hrl
       refine ⟨_, w', by simp only [csem, hc, Option.filter_some, hol, hti, decide_true,
         ↓reduceIte, Option.map_some]; rfl, ?_, ho.append _, hm⟩
       simp only [List.length_append, List.length_map, List.length_drop]
@@ -308,17 +312,20 @@ theorem callsRefine_csem {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {en
 /-- **The contract of the external semantics for indirect calls**, for the call-site signatures
 `sigs` of a function's `call_indirect`s and `try_call_indirect`s: a `blr` (`X.call none`) whose
 target (the first use) holds, in its low 64 bits, the link-time address `X.sym n 0` of an extern
-`n` of `env`, with at most 8 arguments related to CLIF values `vals` (in the registers of the
-call site's signature, of its parameter types: `Clif.callExternAt` checks them), from a world related (`MR`) to CLIF memory `cm`, where the extern returns
-`rvals` (one value per return of the call site's signature) with memory `cm'`, returns one value
-per ABI return of the call site's signature (`sigRets`), the first ones related to `rvals`, and
-a world related to `cm'`. It is `XCallsOk`'s `blr` clause for every extern of `env` at its
-address, with the call site's signature. -/
+`n` of `env` whose signature, if `env` knows it (`env.sigOf`), the call site's matches, with at
+most 8 arguments related to CLIF values `vals` (in the registers of the call site's signature,
+of its parameter types: `Clif.callExternAt` checks both), from a world related (`MR`) to CLIF
+memory `cm`, where the extern returns `rvals` (one value per return of the call site's
+signature) with memory `cm'`, returns one value per ABI return of the call site's signature
+(`sigRets`), the first ones related to `rvals`, and a world related to `cm'`. It is
+`XCallsOk`'s `blr` clause for every extern of `env` at its address, with the call site's
+signature. -/
 def XCallsIndOk (env : Clif.Env) (sigs : List Clif.Signature) (MR : MemRelT) (X : ExtSem) :
     Prop :=
   ∀ sig ∈ sigs, ∀ (n : String) g (sl : List (Clif.SlotId × Nat)) (cm : Clif.Mem)
     (w : Arm.ArmState) (u : CV) (args : List CV) (vals rvals : List Clif.Val) (cm' : Clif.Mem),
-    env.extern n = some g → lo64 u = X.sym n 0 →
+    env.extern n = some g → (∀ s, env.sigOf n = some s → sig.abiMatch s = true) →
+    lo64 u = X.sym n 0 →
     vals.length ≤ 8 → AllHold vals args → MR sl cm w →
     g vals cm = .returned rvals cm' → rvals.length = sig.returns.length →
     vals.map (·.ty) = Clif.AbiParam.tys sig.params →
@@ -338,15 +345,16 @@ theorem indCallsRefine_csem {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} 
     (hMRs : ∀ sl cm w, MR sl cm w → cm.symbols = syms) :
     IndCallsRefine env sigs MR (csem F ctx X) := by
   refine ⟨?_, ?_⟩
-  · intro sig hin n g sl cm w a r us ds u args vals rvals cm' hg ha hu hds hlen hall hmr hret hrl hty
-    have hs : X.sym n 0 = BitVec.ofNat 64 a := hsym n a (by rw [← hMRs sl cm w hmr]; exact ha)
-    obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX sig hin n g sl cm w u args vals rvals cm' hg
-      (by rw [hu, hs]) hlen hall hmr hret hrl hty
-    exact ⟨outs, w', by simp [csem, hc], by rw [hol, hds], ho, hm⟩
-  · intro sig hin n g sl cm w a r us ds ti u args vals rvals cm' hg ha hu hds hti hlen hall hmr hret
+  · intro sig hin n g sl cm w a r us ds u args vals rvals cm' hg hsg ha hu hds hlen hall hmr hret
       hrl hty
     have hs : X.sym n 0 = BitVec.ofNat 64 a := hsym n a (by rw [← hMRs sl cm w hmr]; exact ha)
-    obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX sig hin n g sl cm w u args vals rvals cm' hg
+    obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX sig hin n g sl cm w u args vals rvals cm' hg hsg
+      (by rw [hu, hs]) hlen hall hmr hret hrl hty
+    exact ⟨outs, w', by simp [csem, hc], by rw [hol, hds], ho, hm⟩
+  · intro sig hin n g sl cm w a r us ds ti u args vals rvals cm' hg hsg ha hu hds hti hlen hall
+      hmr hret hrl hty
+    have hs : X.sym n 0 = BitVec.ofNat 64 a := hsym n a (by rw [← hMRs sl cm w hmr]; exact ha)
+    obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX sig hin n g sl cm w u args vals rvals cm' hg hsg
       (by rw [hu, hs]) hlen hall hmr hret hrl hty
     refine ⟨_, w', by simp only [csem, hc, Option.filter_some, hol, hti, decide_true,
       ↓reduceIte, Option.map_some]; rfl, ?_, ho.append _, hm⟩

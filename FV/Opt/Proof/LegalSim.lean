@@ -1761,6 +1761,12 @@ theorem callExternAt_ok {env : Env} {p : Program} {mem : Mem} {d : Signature} {a
     | none => simp [hf, hg, Res.ofOption, bind, Res.bind] at h
     | some g =>
       simp only [hf, hg, Res.ofOption, bind, Res.bind] at h
+      generalize Res.check (Option.all d.abiMatch (env.sigOf n)) _ = c0 at h
+      cases c0 with
+      | trap c => cases h
+      | stuck m => cases h
+      | ok u0 =>
+      simp only at h
       generalize checkTys _ vals (AbiParam.tys d.params) = c at h
       cases c with
       | trap c => cases h

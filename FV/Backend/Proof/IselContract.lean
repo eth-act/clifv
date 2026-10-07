@@ -1115,7 +1115,8 @@ def ArgsAt (s : Clif.Signature) (vals : List Clif.Val) (args : List CV) (w : Arm
 /-- **The callee contract at the VCode level** (M6 discharges it for `csem` from `CalleeSound`
 and `ExtSem.sym`), for the externs `exts` (the call sites' declarations): there is a link-time
 address `sym n` for every symbol such that `loadExtNameGot rd n` loads it (changing nothing else
-the memory relation sees), and a call of the extern `ext ∈ exts` (`bl name`, or `blr` of a
+the memory relation sees), and a call of the extern `ext ∈ exts` (`bl name`, or — for a
+non-colocated declaration, which the lowering calls through the GOT — `blr` of a
 register holding `sym name`, whose value is then the first use) whose arguments are where the
 ABI puts them (`ArgsAt`: the register-passed ones held by the argument values, low bits; the
 others in the outgoing stack area of the world) and with one def per ABI return (`sigRets`: an
@@ -1133,7 +1134,8 @@ def CallsRefine (F : BitVec 64 → Prop) (env : Clif.Env) (exts : List Clif.ExtF
       (dest : CallDest) (us ds : List (Reg × Reg)) (uses args : List CV)
       (vals rvals : List Clif.Val) (cm' : Clif.Mem),
       env.extern ext.name = some g →
-      (dest = .sym ext.name ∧ uses = args ∨ ∃ r, dest = .reg r ∧ uses = ofX (sym ext.name) :: args) →
+      (dest = .sym ext.name ∧ uses = args ∨
+        ∃ r, dest = .reg r ∧ ext.colocated = false ∧ uses = ofX (sym ext.name) :: args) →
       ds.length = (sigRets ext.sig).length →
       ArgsAt ext.sig vals args w → MR sl cm w →
       g vals cm = .returned rvals cm' → rvals.length = ext.sig.returns.length →
@@ -1143,7 +1145,8 @@ def CallsRefine (F : BitVec 64 → Prop) (env : Clif.Env) (exts : List Clif.ExtF
       (dest : CallDest) (us ds : List (Reg × Reg)) (ti : TryInfo) (uses args : List CV)
       (vals rvals : List Clif.Val) (cm' : Clif.Mem),
       env.extern ext.name = some g →
-      (dest = .sym ext.name ∧ uses = args ∨ ∃ r, dest = .reg r ∧ uses = ofX (sym ext.name) :: args) →
+      (dest = .sym ext.name ∧ uses = args ∨
+        ∃ r, dest = .reg r ∧ ext.colocated = false ∧ uses = ofX (sym ext.name) :: args) →
       (sigRets ext.sig).length ≤ ds.length → ti.rets ≤ (sigRets ext.sig).length →
       ArgsAt ext.sig vals args w → MR sl cm w →
       g vals cm = .returned rvals cm' → rvals.length = ext.sig.returns.length →
@@ -1231,8 +1234,9 @@ the call site's signature (`sigN`) as the ABI. -/
 /-- **The indirect-call contract at the VCode level** (M6 discharges it for `csem` from the
 external contract `XCallsIndOk` and the link-time symbol addresses), for the call-site
 signatures `sigs`: a `blr` whose target register holds (low 64 bits) the link-time address `a`
-of an extern `n` (`cm.symbols n = some a`), with at most 8 argument values (`AllHold`) of the
-call site's parameter types (as `Clif.callExternAt` checks them) and one
+of an extern `n` (`cm.symbols n = some a`) whose signature, if the environment knows it
+(`env.sigOf`), the call site's matches, with at most 8 argument values (`AllHold`) of the
+call site's parameter types (as `Clif.callExternAt` checks both) and one
 def per ABI return of the call site's signature (`sigRets`), returns one value per def, the
 first ones the extern's results (`PrefixHold`), and a world related to the extern's memory;
 the same of the `tryCall` of a `try_call_indirect`, which continues at its normal-return
@@ -1242,7 +1246,8 @@ def IndCallsRefine (env : Clif.Env) (sigs : List Clif.Signature) (MR : MemRelT) 
   (∀ sig ∈ sigs, ∀ (n : String) g (sl : List (Clif.SlotId × Nat)) (cm : Clif.Mem)
       (w : Arm.ArmState) (a : Nat) (r : Reg) (us ds : List (Reg × Reg)) (u : CV) (args : List CV)
       (vals rvals : List Clif.Val) (cm' : Clif.Mem),
-    env.extern n = some g → cm.symbols n = some a → lo64 u = BitVec.ofNat 64 a →
+    env.extern n = some g → (∀ s, env.sigOf n = some s → sig.abiMatch s = true) →
+    cm.symbols n = some a → lo64 u = BitVec.ofNat 64 a →
     ds.length = (sigRets sig).length → vals.length ≤ 8 → AllHold vals args → MR sl cm w →
     g vals cm = .returned rvals cm' → rvals.length = sig.returns.length →
     vals.map (·.ty) = Clif.AbiParam.tys sig.params →
@@ -1251,7 +1256,8 @@ def IndCallsRefine (env : Clif.Env) (sigs : List Clif.Signature) (MR : MemRelT) 
   (∀ sig ∈ sigs, ∀ (n : String) g (sl : List (Clif.SlotId × Nat)) (cm : Clif.Mem)
       (w : Arm.ArmState) (a : Nat) (r : Reg) (us ds : List (Reg × Reg)) (ti : TryInfo) (u : CV)
       (args : List CV) (vals rvals : List Clif.Val) (cm' : Clif.Mem),
-    env.extern n = some g → cm.symbols n = some a → lo64 u = BitVec.ofNat 64 a →
+    env.extern n = some g → (∀ s, env.sigOf n = some s → sig.abiMatch s = true) →
+    cm.symbols n = some a → lo64 u = BitVec.ofNat 64 a →
     (sigRets sig).length ≤ ds.length → ti.rets ≤ (sigRets sig).length → vals.length ≤ 8 →
     AllHold vals args → MR sl cm w →
     g vals cm = .returned rvals cm' → rvals.length = sig.returns.length →

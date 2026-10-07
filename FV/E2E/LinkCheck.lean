@@ -296,7 +296,8 @@ structure BaseOk (L : LinkSys) : Prop where
   baseX : ∀ g ∈ L.P.funcs, ∀ F slotOff out c, XCallsOk L.base
     ((g.externs.map (·.2)).filter fun e => (L.P.func? e.name).isNone)
     (RelW ⟨F, L.syms, slotOff, out⟩ g c) L.Xb
-  baseXI : ∀ g ∈ L.P.funcs, ∀ F slotOff out c, XCallsIndOk L.base (indSigs g)
+  baseXI : ∀ g ∈ L.P.funcs, ∀ F slotOff out c,
+    XCallsIndOk { L.base with sigOf := fun _ => none } (indSigs g)
     (RelW ⟨F, L.syms, slotOff, out⟩ g c) L.Xb
   baseTls : ∀ g ∈ L.P.funcs, hasTls g = true → ∀ F K, TlsOk F K L.Xb L.Hb
   baseTry : ∀ g ∈ L.P.funcs, ∀ F, CalleeTryOk F L.Xb L.Hb
@@ -389,14 +390,24 @@ matches `h`'s, and as many results). -/
 def indMatchB (g h : Clif.Function) : Bool :=
   (indSigs g).any fun s => decide (LinkSys.IndSigMatch s h) && h.sig.returns.length == s.returns.length
 
+/-- `g` declares `n` non-colocated (`GotDecl`: a direct call of it goes through the GOT). -/
+def gotDeclB (g : Clif.Function) (n : String) : Bool :=
+  g.externs.any fun e => e.2.name == n && !e.2.colocated
+
+theorem gotDeclB_of {g : Clif.Function} {n : String} (h : GotDecl g n) : gotDeclB g n = true := by
+  obtain ⟨e, he, hn, hc⟩ := h
+  obtain ⟨x, hx, rfl⟩ := List.mem_map.mp he
+  simp only [gotDeclB, List.any_eq_true, Bool.and_eq_true, beq_iff_eq, Bool.not_eq_true']
+  exact ⟨x, hx, hn, hc⟩
+
 /-- `g` may enter `h` through an address (`LinkSys.IndTo`, with the CLIF image's symbols `S`). -/
 def indToB (S : String → Option Nat) (g h : Clif.Function) : Bool :=
-  mayB S g h.name && (declB g h.name || indMatchB g h)
+  mayB S g h.name && ((declB g h.name && gotDeclB g h.name) || indMatchB g h)
 
 theorem indToB_of {L : LinkSys} {g h : Clif.Function} (hi : L.IndTo g h) :
     indToB L.syms g h = true := by
-  obtain ⟨hmay, hd | ⟨sig, hs, hm, hl⟩⟩ := hi
-  · simp [indToB, mayB_of hmay, declB_of hd]
+  obtain ⟨hmay, ⟨hd, hg⟩ | ⟨sig, hs, hm, hl⟩⟩ := hi
+  · simp [indToB, mayB_of hmay, declB_of hd, gotDeclB_of hg]
   · simp only [indToB, mayB_of hmay, indMatchB, Bool.true_and, Bool.or_eq_true, List.any_eq_true,
       Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq]
     exact .inr ⟨sig, hs, hm, hl⟩

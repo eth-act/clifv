@@ -71,7 +71,7 @@ theorem callsRefine_none (env : Clif.Env) (exts : List Clif.ExtFunc) :
 theorem indCallsRefine_none (env : Clif.Env) (sigs : List Clif.Signature) :
     IndCallsRefine env sigs mrNone semNone :=
   indCallsRefine_csem (syms := fun _ => none) (by
-    intro sig _ n g sl cm w u args vals rvals cm' _ _ _ _ hmr
+    intro sig _ n g sl cm w u args vals rvals cm' _ _ _ _ _ hmr
     exact hmr.elim) (fun _ _ h => by cases h) (fun _ _ _ h => h.elim)
 
 theorem memRelOk_none (f : Clif.Function) :

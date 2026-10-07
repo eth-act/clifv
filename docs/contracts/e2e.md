@@ -197,7 +197,10 @@ before. Otherwise it now calls the extern at that address
 further code symbols — empty by default, agent/link-scope —, then the externs the functions of
 `p` declare, which `Program.initMem` gives link-time `symbols`) whose address is the callee
 value, run as `env.extern` with the argument and result types checked against the call site's
-`sigN`, like `Clif.stepCall`. Before this change such calls were stuck.
+`sigN`, like `Clif.stepCall`; an extern whose signature the environment knows (`env.sigOf`,
+none by default; `Clif.linkEnvN` gives each function of the linked program its own) is called
+only when `sigN` matches it (`Signature.abiMatch`, agent/scope-widen, "Widening 14"). Before
+this change such calls were stuck.
 `Clif.stepTryCallIndirect` inherits it. `docs/contracts/clif-subset.md` records the change;
 `scripts/clif-filetests.sh` and the differential tools are unchanged by it (see there).
 
@@ -213,10 +216,11 @@ value, run as `env.extern` with the argument and result types checked against th
   `TrapsExplicit.tryCallInd`: a `try_call_indirect` does not trap (the callee returns normally).
 * **Contract** `XCallsIndOk env (indSigs f) MR X` (`FV/E2E/RegLevelDriverSem.lean`): for each
   call-site signature, a `blr` (`X.call none (u :: args)`) whose target's low 64 bits are
-  `X.sym n 0` of an extern `n` of `env`, on arguments of the call site's parameter types (as
-  `Clif.callExternAt` checks them), returns what `env.extern n` returns (one output per
+  `X.sym n 0` of an extern `n` of `env` whose known signature (`env.sigOf n`, if any) the call
+  site's matches, on arguments of the call site's parameter types (as `Clif.callExternAt`
+  checks both), returns what `env.extern n` returns (one output per
   `sigRets`, the results first, the memory relation kept) — the clause `XCallsOk` states for a
-  GOT call of a declared extern, for every extern of `env`. With `hsym` (the external
+  GOT call of a declared non-colocated extern, for every extern of `env`. With `hsym` (the external
   semantics' symbol addresses are the linked ones) and `MemRel.symbols` it gives the M4
   contract `IndCallsRefine` for `csem` (`indCallsRefine_csem`).
 * **Rules** (M4): `rule_lower_2529` (`call_indirect`, id 1033: `blr` of the callee value's vreg
@@ -1043,6 +1047,47 @@ bytes. It is vacuous without program callees with slots (`NeedSlots`).
    lose their result-count hypothesis. `LinkSys.Ok` changes only by weakening. Effect on
    `InScopeP`: `examples/deps` 15 → 12 (`indNoSym` 8, `blrRegs` 4), `fv-demo`'s test
    executable 1 → 1 (`indNoSym`).
+14. *Declared callees at indirect calls* (2026-10-07, agent/scope-widen, #89 (c)). `LinkSys.IndTo
+   g h` (the functions of `P` a `blr` of `g` may enter: `X`'s `blr` branch, `BlrTo`, so
+   `Ok.blrRegs`) held for every declared `h` (`DeclN`): for the GOT call of a declared
+   non-colocated function, and because the per-function run's `Clif.callExternAt` checked only
+   the argument/result types, so an indirect call could enter a declared `h` of the same types
+   but other purposes (deps: `fn0 = colocated %h(i64, i64, i64, i64)` next to a `call_indirect`
+   of `(i64 sret, i64, i64, i64)`: x0..x3 against x8, x0..x2, so `blrRegs` failed). Now:
+   * Semantics (trusted, default unchanged): `Clif.Env` gains `sigOf : String → Option
+     Signature := fun _ => none`, the known signature of an extern; `Clif.callExternAt` is
+     stuck unless `(env.sigOf name).all declared.abiMatch` (as `Clif.stepCallIndirect` for a
+     function of the program; Cranelift's "the called function must match the specified
+     signature"). `Clif.linkEnvN P base M` sets `sigOf n := (P.func? n).map (·.sig)`, so the
+     per-function run checks exactly what the whole-program run checks for a function of `P`
+     (`runLoop_linkN` takes `E.sigOf = (linkEnvN …).sigOf`; `callExternAt_alias`/`_eq`: a name
+     outside `P` has no signature in `linkEnvN`, and the per-function call is the
+     whole-program one unless that one is stuck). No environment the tools build sets `sigOf`.
+     Checking the caller's colocated declarations instead (the first design) breaks
+     `backend_correct_legal_env`: its validator relates no declaration of the legalised `g` to
+     `f`'s, so a target run could get stuck where the source run does not.
+   * Contracts (weaker): the `IndCallsRefine`/`IndCallsRefineP`/`XCallsIndOk` clauses assume
+     `∀ s, env.sigOf n = some s → sig.abiMatch s = true` (from `callExternAt`'s success,
+     `instOutcome_callIndirect_ok`); the GOT forms of `CallsRefine`/`CallsRefineP`
+     (`dest = .reg r`) and of `XCallsOk`/`XCallsOkRegs` (`d = none`) assume
+     `ext.colocated = false`. The lowering supplies it: `rule_lower_2518` (GOT call) runs only
+     after `rule_lower_2508` (`bl`, near relocation) failed, and that one matches every call of
+     a colocated extern (`match_2508_colocated`, `call_got_not_colocated`, from `CallRuleOk`'s
+     earlier-rules hypothesis); the same for `try_call` (`rule_lower_2551` after
+     `rule_lower_2542`: `try_got_not_colocated`).
+   * Link layer: `GotDecl g n` (`g` declares `n` non-colocated); `IndTo g h := MayCall g h.name ∧
+     ((DeclN g h.name ∧ GotDecl g h.name) ∨ ∃ sig ∈ indSigs g, IndSigMatch sig h ∧
+     h.sig.returns.length = sig.returns.length)`. `xCallsOk`'s GOT case gets `GotDecl` from the
+     contract's `colocated = false`; `xCallsIndOk` gets `IndSigMatch sig h` from `envOf`'s
+     `sigOf` (`indTo_of` is gone). `Ok.baseXI` and `LinkCheck.BaseOk.baseXI` state the base's
+     contract for `{ L.base with sigOf := fun _ => none }` — the former statement (the linked
+     environment ignores `base.sigOf`). `LinkSys.Ok` changes only by weakening (`blrRegs`:
+     `BlrTo` is narrower). `Ok.indSig` keeps its `DeclN`/`IndTyMatch` disjunct: `xni`'s pinned
+     indirect call (`CallLg`) records only the parameter types.
+   * Checker: `LinkCheck.indToB` asks `declB && gotDeclB` (`gotDeclB_of`); `indSiteB`
+     (`callScopeB`), `lean-link`'s per-cause diagnostic and `link-check` follow.
+   * Effect on `InScopeP`: `examples/deps` 12 → 8 (`indNoSym` 8; `blrRegs` 4 → 0),
+     `fv-demo`'s test executable 1 → 1 (`indNoSym`).
 
 **Non-vacuity** (`FV/E2E/NonVacuityLink.lean`, namespace `E2E.LinkWitness`): the closed program
 `P = {f, g, h, s, k, r, r__fvself, q, v, a2, w, t, u, m, d, e, y, z}` (`m`, `d`: the vtable dispatch of

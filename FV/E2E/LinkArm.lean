@@ -349,6 +349,11 @@ theorem blrTarget_of {fa : FnAsm} {fb : FnBin} {base : BitVec 64} {lm : Std.Hash
 `g` calls directly (and, through a pointer, at least those: `LinkSys.MayCall`). -/
 def DeclN (g : Clif.Function) (n : String) : Prop := n ∈ g.externs.map (·.2.name) ∧ n ≠ g.name
 
+/-- `g` declares `n` as a non-colocated function: a direct call of it is lowered through the GOT
+(`loadExtNameGot t n` and a `blr` of `t`; a colocated one is a `bl n`). -/
+def GotDecl (g : Clif.Function) (n : String) : Prop :=
+  ∃ e ∈ g.externs.map (·.2), e.name = n ∧ e.colocated = false
+
 /-- **A linked program**: the functions `P` with their compiled images `A`; the base
 environment (`base`: the CLIF semantics of the externs outside `P`; `Xb`, `Hb`: their machine
 semantics and hooks, the link-time symbols and TLS); the link-time symbol addresses `syms`; the
@@ -564,11 +569,12 @@ theorem budget_step {κ : Nat → Clif.Function → Nat} (hκ : L.Budget κ) {M 
   rwa [Nat.sub_add_cancel hM] at this
 
 /-- The functions of `P` an activation of `g` may enter through an address (`blr`): those it may
-call (`MayCall`) that it declares (`DeclN`: a call through the GOT) or that one of its indirect
-calls can enter, the call-site signature matching `h`'s (`IndSigMatch`: `Clif.stepCallIndirect`
-checks it) and as many results. -/
+call (`MayCall`) that it declares non-colocated (`DeclN`, `GotDecl`: a direct call through the
+GOT) or that one of its indirect calls can enter, the call-site signature matching `h`'s
+(`IndSigMatch`: `Clif.stepCallIndirect` checks it in the whole-program run, `Clif.callExternAt`
+through the linked environment's `sigOf` in the per-function one) and as many results. -/
 def IndTo (g h : Clif.Function) : Prop :=
-  L.MayCall g h.name ∧ (DeclN g h.name ∨
+  L.MayCall g h.name ∧ ((DeclN g h.name ∧ GotDecl g h.name) ∨
     ∃ sig ∈ indSigs g, IndSigMatch sig h ∧ h.sig.returns.length = sig.returns.length)
 
 /-- The functions of `P` a `blr` of `g` through the vreg `t` may enter: those `g` may enter
@@ -628,9 +634,9 @@ noncomputable def progX (κ : Nat → Clif.Function → Nat) (M : Nat) (F : BitV
 open Classical in
 /-- **The external semantics of an activation of `g` at depth `M`**: a call (`bl`) of a function
 of `P` is `progX`, as is an indirect call (`blr`) whose target is the address of a function of
-`P` that `g` may enter through an address (`IndTo`: declared, or with a link-time address and a
-signature one of `g`'s indirect calls matches; other than `g`) with as many register parameters
-as the call has arguments (otherwise undefined); the rest is the base's. -/
+`P` that `g` may enter through an address (`IndTo`: declared non-colocated, or with a link-time
+address and a signature one of `g`'s indirect calls matches; other than `g`) with as many
+register parameters as the call has arguments (otherwise undefined); the rest is the base's. -/
 noncomputable def X (κ : Nat → Clif.Function → Nat) (M : Nat) (g : Clif.Function) (F : BitVec 64 → Prop) : ExtSem where
   call d uses w := match d with
     | some n => (match L.P.func? n with
@@ -656,6 +662,7 @@ noncomputable def envR (M : Nat) (g : Clif.Function) : Clif.Env where
   extern n := if (L.P.func? n).isSome ∧ ¬ L.MayCall g n then none
     else (Clif.linkEnvN L.P L.base M).extern n
   names := (Clif.linkEnvN L.P L.base M).names
+  sigOf := (Clif.linkEnvN L.P L.base M).sigOf
 
 open Classical in
 /-- **The CLIF environment of an activation of `g` at depth `M`** with stack pointer `c`:
@@ -669,6 +676,7 @@ noncomputable def envOf (M : Nat) (g : Clif.Function) (c : BitVec 64) : Clif.Env
       fun G vals cm => if L.NeedSlots → L.PlaceAt cm c then G vals cm else .stuck "slot placement"
     else (Clif.linkEnvN L.P L.base M).extern n
   names := (Clif.linkEnvN L.P L.base M).names
+  sigOf := (Clif.linkEnvN L.P L.base M).sigOf
 
 end LinkSys
 
@@ -681,9 +689,11 @@ theorem indSig_mem {g : Clif.Function} {d : Clif.Signature} (h : Clif.IndSig g d
   · simp only [indSigs, List.mem_flatMap, List.mem_append]
     exact ⟨b, hb, .inr (by simp [ht, hl])⟩
 
-/-- `E₁` is `E₂` without some externs: the same names, and each extern is `E₂`'s or none. -/
+/-- `E₁` is `E₂` without some externs: the same names and signatures, and each extern is `E₂`'s
+or none. -/
 def EnvRestricts (E₁ E₂ : Clif.Env) : Prop :=
-  E₁.names = E₂.names ∧ ∀ n, E₁.extern n = none ∨ E₁.extern n = E₂.extern n
+  E₁.names = E₂.names ∧ (∀ n, E₁.extern n = none ∨ E₁.extern n = E₂.extern n) ∧
+    E₁.sigOf = E₂.sigOf
 
 theorem ofRes_restrict {α : Type} {X : Clif.Res α} {k₁ k₂ : α → Clif.StepResult}
     (h : ∀ a, X = .ok a → k₁ a = k₂ a ∨ ∃ m, k₁ a = .stuck m) :
@@ -701,7 +711,7 @@ theorem callCont_restrict {E₁ E₂ : Clif.Env} (hE : EnvRestricts E₁ E₂) {
   cases hp : p.func? ext.name with
   | some _ => left; simp only [Opt.callCont, hp]
   | none =>
-    rcases hE.2 ext.name with h | h
+    rcases hE.2.1 ext.name with h | h
     · right
       refine ⟨s!"unknown callee %{ext.name}", ?_⟩
       simp only [Opt.callCont, hp, h]
@@ -712,12 +722,12 @@ theorem callExternAt_restrict {E₁ E₂ : Clif.Env} (hE : EnvRestricts E₁ E�
     Clif.callExternAt E₁ p mem d a vals = Clif.callExternAt E₂ p mem d a vals ∨
       ∃ m, Clif.callExternAt E₁ p mem d a vals = .stuck m := by
   unfold Clif.callExternAt
-  rw [hE.1]
+  rw [hE.1, hE.2.2]
   cases (E₂.names ++ p.externNames).find? (fun n => mem.symbols n == some a) with
   | none => exact .inl rfl
   | some n =>
     simp only [Clif.Res.ofOption_some, Clif.Res.ok_bind]
-    rcases hE.2 n with h | h
+    rcases hE.2.1 n with h | h
     · rw [h]; exact .inr ⟨_, rfl⟩
     · rw [h]; exact .inl rfl
 
@@ -770,7 +780,7 @@ variable {κ : Nat → Clif.Function → Nat}
 /-- `envR` is `linkEnvN` without some externs. -/
 theorem envR_restricts {M : Nat} {g : Clif.Function} :
     EnvRestricts (L.envR M g) (Clif.linkEnvN L.P L.base M) := by
-  refine ⟨rfl, fun n => ?_⟩
+  refine ⟨rfl, fun n => ?_, rfl⟩
   simp only [envR]
   split
   · exact .inl rfl
@@ -812,15 +822,6 @@ theorem indReach {g h : Clif.Function} (hpf : L.P.func? h.name = some h)
   rcases hm with hd | ⟨-, -, -, hall⟩
   · exact .inr ⟨hd, sig, hsig, hty⟩
   · exact .inl (hall h hpf)
-
-/-- `g` may enter a function of `P` it may reach through an address (`IndTo`). -/
-theorem indTo_of {g h : Clif.Function} (hpf : L.P.func? h.name = some h)
-    (hm : L.MayCall g h.name) : L.IndTo g h := by
-  refine ⟨hm, ?_⟩
-  rcases hm with hd | ⟨-, -, -, hall⟩
-  · exact .inl hd
-  · obtain ⟨sig, hsig, hmatch⟩ := hall h hpf
-    exact .inr ⟨sig, hsig, hmatch, hmatch.returns_length⟩
 
 end LinkSys
 
@@ -1764,10 +1765,11 @@ structure Ok : Prop where
   baseX : ∀ g ∈ L.P.funcs, ∀ F slotOff out c, XCallsOk L.base
     ((g.externs.map (·.2)).filter fun e => (L.P.func? e.name).isNone)
     (RelW ⟨F, L.syms, slotOff, out⟩ g c) L.Xb
-  /-- the indirect calls of `g` that reach an extern outside `P` (vacuous without indirect
-  calls) -/
-  baseXI : ∀ g ∈ L.P.funcs, ∀ F slotOff out c, XCallsIndOk L.base (indSigs g)
-    (RelW ⟨F, L.syms, slotOff, out⟩ g c) L.Xb
+  /-- the indirect calls of `g` that reach an extern outside `P`, whatever the call-site
+  signature (`sigOf` erased: the linked environment knows only the signatures of `P`'s
+  functions, `Clif.linkEnvN`; vacuous without indirect calls) -/
+  baseXI : ∀ g ∈ L.P.funcs, ∀ F slotOff out c, XCallsIndOk { L.base with sigOf := fun _ => none }
+    (indSigs g) (RelW ⟨F, L.syms, slotOff, out⟩ g c) L.Xb
   baseTls : ∀ g ∈ L.P.funcs, hasTls g = true → ∀ F K, TlsOk F K L.Xb L.Hb
   /-- the results of a `try_call` of an extern outside `P` (normal return; vacuous without such
   `try_call`s) -/
@@ -2192,7 +2194,7 @@ theorem progCall (hL : L.Ok) {M : Nat} (hM : 0 < M) (ih : L.Thm κ (M - 1)) {n :
   have hce : ClifEntry h vals cs := clifEntry_initState hpf hinit
   -- the per-function run (program callees at most `M - 1` steps)
   obtain ⟨m, hm⟩ := Clif.runLoop_linkN (base := L.base) (syms := L.syms) (M - 1) hL.names hh
-    hL.free (hL.indScope h hh) (E := L.envR (M - 1) h) rfl (fun _ hn => L.envR_of (.inl hn))
+    hL.free (hL.indScope h hh) (E := L.envR (M - 1) h) rfl rfl (fun _ hn => L.envR_of (.inl hn))
     (L.envR_link hL.names) M cs (by omega) (runInv_entry hh hce)
     (runInv_entry (by simp [Clif.Program.only]) hce) (fun _ => hsym'.trans hmr.symbols)
     (by rw [hrun]; intro _ e; cases e) (by rw [hrun]; intro e; cases e)
@@ -3364,7 +3366,7 @@ theorem xCallsOk (hL : L.Ok) (hκ : L.Budget κ) {M : Nat} (ih : 0 < M → L.Thm
       (List.mem_filter.mpr ⟨hin, by simp [hpf]⟩) gsem sl cm w d uses args vals rvals cm' hgs hd
       hargs hmr hret hrl
     refine ⟨outs, w', ?_, h1, h2, h3⟩
-    rcases hd with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+    rcases hd with ⟨rfl, rfl⟩ | ⟨rfl, -, rfl⟩
     · rw [L.X_base hpf _ _ F]; exact hx
     · rw [L.X_none (by
         show L.P.funcs.find? (fun h' => L.Xb.sym h'.name 0 == lo64 (ofX (L.Xb.sym ext.name 0))) = none
@@ -3415,7 +3417,7 @@ theorem xCallsOk (hL : L.Ok) (hκ : L.Budget κ) {M : Nat} (ih : 0 < M → L.Thm
       L.progResult hL hκ ih hg hh (.inr (.inl ⟨ext, hin, hpf⟩)) himgF hroom hdead halign hargs hsav
         hmr hpl hinit hret
     refine ⟨outs, w', ?_, by rw [hol, hsig], hho, hmr'⟩
-    rcases hd with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+    rcases hd with ⟨rfl, rfl⟩ | ⟨rfl, hcol, rfl⟩
     · rw [L.X_prog hpf]; exact hx
     · have hs : symCallee L.Xb L.P (lo64 (ofX ((L.X κ M g F).sym ext.name 0))) = some h := by
         show L.P.funcs.find? (fun h' => L.Xb.sym h'.name 0 == lo64 (ofX (L.Xb.sym ext.name 0))) = some h
@@ -3427,14 +3429,15 @@ theorem xCallsOk (hL : L.Ok) (hκ : L.Budget κ) {M : Nat} (ih : 0 < M → L.Thm
         · rcases hdecl with h' | ⟨-, h', -⟩
           · exact h'.2
           · exact h'
-      rw [L.X_ind hs, if_pos ⟨⟨by rw [hname]; exact hdecl, .inl (by rw [hname]; exact hdn)⟩,
-        argsAt_regLocs hargs⟩]
+      rw [L.X_ind hs, if_pos ⟨⟨by rw [hname]; exact hdecl,
+        .inl ⟨by rw [hname]; exact hdn, ext, hin, hname.symm, hcol⟩⟩, argsAt_regLocs hargs⟩]
       exact hx
 
 /-- **The indirect-call contract of an activation of `g` at depth `M`** under its environment: an
 indirect call reaching an extern outside `P` is the base's; one reaching a function of `P` that
-`g` may reach (`MayCall`: declared or not) is the linked machine's call from the canonical state
-(its parameters are in registers, `indSig`). -/
+`g` may reach (`MayCall`: declared or not) is, the call-site signature matching the callee's
+(`envOf`'s `sigOf`), the linked machine's call from the canonical state (its parameters are in
+registers, `indSig`). -/
 theorem xCallsIndOk (hL : L.Ok) (hκ : L.Budget κ) {M : Nat} (ih : 0 < M → L.Thm κ (M - 1)) {g : Clif.Function}
     (hg : g ∈ L.P.funcs) {F : BitVec 64 → Prop} (himgF : ∀ a, L.Img a → F a) {c : BitVec 64}
     (hroom : κ M g ≤ c.toNat)
@@ -3442,14 +3445,14 @@ theorem xCallsIndOk (hL : L.Ok) (hκ : L.Budget κ) {M : Nat} (ih : 0 < M → L.
     XCallsIndOk (L.envOf M g c) (indSigs g)
       (RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩
         g c) (L.X κ M g F) := by
-  intro sig hsig n gsem sl cm w u args vals rvals cm' hgs hu hl8 hall hmr hret hrl hty
+  intro sig hsig n gsem sl cm w u args vals rvals cm' hgs hsg hu hl8 hall hmr hret hrl hty
   rcases L.envOf_some hgs with ⟨hpf, hgs⟩ | ⟨h, hpf, hdecl, G0, hgs, hG0⟩
   · have hs : symCallee L.Xb L.P (lo64 u) = none := by
       show L.P.funcs.find? (fun h' => L.Xb.sym h'.name 0 == lo64 u) = none
       rw [hu]; exact (L.find_sym hL n).2 hpf
     obtain ⟨outs, w', hx, h1, h2, h3⟩ := hL.baseXI g hg F (L.A g).af.slotBase
       (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase c sig hsig n gsem sl cm w u args vals rvals
-      cm' hgs hu hl8 hall hmr hret hrl hty
+      cm' hgs (fun _ h => nomatch h) hu hl8 hall hmr hret hrl hty
     exact ⟨outs, w', by rw [L.X_none hs]; exact hx, h1, h2, h3⟩
   · obtain ⟨hh, hname⟩ := Clif.Program.func?_some hpf
     subst hname
@@ -3473,31 +3476,25 @@ theorem xCallsIndOk (hL : L.Ok) (hκ : L.Budget κ) {M : Nat} (ih : 0 < M → L.
     have hvl : vals.length = h.sig.params.length := by
       have := congrArg List.length hce.sig
       simpa using this
-    -- the call entered `h`: its parameter types are the call site's
-    have hmty : IndTyMatch sig h := hce.sig.symm.trans hty
-    obtain ⟨⟨bytes, hb, hb8⟩, hsr⟩ := hdeclS h hh hdecl (L.indReach hpf hdecl hsig hmty)
+    -- the call site's signature matches `h`'s (`Clif.callExternAt` checks it against `sigOf`)
+    have hm : IndSigMatch sig h :=
+      hsg h.sig (by simp only [envOf, Clif.linkEnvN_sigOf, hpf, Option.map_some])
+    obtain ⟨⟨bytes, hb, hb8⟩, hsr⟩ := hdeclS h hh hdecl (.inl ⟨sig, hsig, hm⟩)
     have hargs : ArgsAt h.sig vals args w := (argsAt_iff_of_regs hb hb8 hvl).mpr hall
     have hsav : StackArgsAvoid F h.sig vals w := by
       intro off v hm
       rw [locsOf_of_regs hb hb8] at hm
       obtain ⟨i, hi⟩ := List.mem_iff_getElem?.mp hm
       simp [List.getElem?_zip_eq_some] at hi
-    -- and returned as many results as the call's signature has
-    have hretlen : h.sig.returns.length = sig.returns.length := by
-      have hrt := Clif.runLoop_returned_tys hL.free M cs rvals cm' (runInv_entry hh hce) hret
-      have hbot : cs.bottom = h := by simp [Clif.State.bottom, hce.callers, hce.func]
-      rw [hbot] at hrt
-      have := congrArg List.length hrt
-      simp only [List.length_map, Clif.AbiParam.tys] at this
-      rw [← this, hrl]
     obtain ⟨outs, w', hx, hol, hho, hmr'⟩ :=
       L.progResult hL hκ ih hg hh (.inr (.inr ⟨hh, hdecl⟩)) himgF hroom hdead halign hargs hsav
         hmr hpl hinit hret
     refine ⟨outs, w', ?_, ?_, hho, hmr'⟩
-    · rw [L.X_ind hs, if_pos ⟨L.indTo_of hpf hdecl, argsAt_regLocs hargs⟩]
+    · rw [L.X_ind hs, if_pos ⟨⟨hdecl, .inr ⟨sig, hsig, hm, hm.returns_length⟩⟩,
+        argsAt_regLocs hargs⟩]
       exact hx
     · rw [hol]
-      exact hsr sig hsig hmty hretlen
+      exact hsr sig hsig hm.ty hm.returns_length
 
 /-! ## Non-interference of the linked calls -/
 
@@ -3768,7 +3765,7 @@ theorem callCont_envEq {E₁ E₂ : Clif.Env} {p : Clif.Program} {t : Clif.State
 
 theorem indCont_envEq {E₁ E₂ : Clif.Env} {p : Clif.Program} {t : Clif.State}
     {rest : List Clif.Stmt} {rs : List Clif.ValueId} {sig : Nat} {d : Clif.Signature} {a : Nat}
-    {v : List Clif.Val} (hnames : E₁.names = E₂.names)
+    {v : List Clif.Val} (hnames : E₁.names = E₂.names) (hsig : E₁.sigOf = E₂.sigOf)
     (h : p.funcs.find? (fun f => t.mem.symbols f.name == some a) = none →
       ∀ n ∈ E₁.names ++ p.externNames, t.mem.symbols n = some a →
         (E₁.extern n).map (· v t.mem) = (E₂.extern n).map (· v t.mem)) :
@@ -3780,7 +3777,7 @@ theorem indCont_envEq {E₁ E₂ : Clif.Env} {p : Clif.Program} {t : Clif.State}
     simp only
     congr 1
     unfold Clif.callExternAt
-    rw [← hnames]
+    rw [← hnames, hsig]
     cases hn : (E₁.names ++ p.externNames).find? (fun n => t.mem.symbols n == some a) with
     | none => rfl
     | some n =>
@@ -3827,7 +3824,7 @@ theorem step_envOf {M : Nat} {g : Clif.Function} {c : BitVec 64} {s : Clif.State
   have hind : ∀ (t : Clif.State) rest rs sig d a v, t.mem = s.mem →
       Clif.indCont (L.envOf M g c) (L.P.only g) t rest rs sig d a v =
         Clif.indCont (L.envR M g) (L.P.only g) t rest rs sig d a v :=
-    fun t rest rs sig d a v htm => indCont_envEq rfl fun _ n _ _ => hx t n v htm
+    fun t rest rs sig d a v htm => indCont_envEq rfl rfl fun _ n _ _ => hx t n v htm
   rcases Clif.step_shape s with ⟨fn, args, et, hb, ht⟩ | ⟨callee, args, et, hb, ht⟩ |
     ⟨st, rest, sig, callee, args, hb, hi⟩ | hci
   · rw [Clif.step_try _ _ s hb ht, Clif.step_try _ _ s hb ht]
@@ -4117,7 +4114,7 @@ theorem backend_correct_program_budget (L : LinkSys) (hL : L.Ok)
   -- the whole-program run is a per-function run
   have hIf : Clif.LInv (L.P.only f) cs := runInv_entry (by simp [Clif.Program.only]) hcs
   have hlink := Clif.runLoop_linkN (base := L.base) (syms := L.syms) M hL.names hf hL.free
-    (hL.indScope f hf) (E := L.envR M f) rfl (fun _ hn => L.envR_of (.inl hn))
+    (hL.indScope f hf) (E := L.envR M f) rfl rfl (fun _ hn => L.envR_of (.inl hn))
     (L.envR_link hL.names) (M + 1) cs (Nat.le_refl _) (runInv_entry hf hcs) hIf
     (fun _ => hrel.1.symbols)
   cases ho : Clif.runLoop L.base L.P (M + 1) cs with
@@ -4200,7 +4197,8 @@ theorem backend_correct_program_returned_budget (L : LinkSys) (hL : L.Ok)
     ArmRefines (L.A f).fb (L.A f).base ra (L.mach M f) s (.returned vals cm) := by
   have hIf : Clif.LInv (L.P.only f) cs := runInv_entry (by simp [Clif.Program.only]) hcs
   obtain ⟨m, hm⟩ := Clif.runLoop_linkN (base := L.base) (syms := L.syms) M hL.names hf hL.free
-    (hL.indScope f hf) (E := Clif.linkEnvN L.P L.base M) rfl (fun _ _ => rfl) (fun _ _ _ _ => rfl)
+    (hL.indScope f hf) (E := Clif.linkEnvN L.P L.base M) rfl rfl (fun _ _ => rfl)
+    (fun _ _ _ _ => rfl)
     (M + 1) cs (Nat.le_refl _) (runInv_entry hf hcs) hIf
     (fun _ => hrel.1.symbols) (by rw [hrun]; exact fun _ h => nomatch h)
     (by rw [hrun]; exact fun h => nomatch h)

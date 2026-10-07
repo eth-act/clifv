@@ -153,9 +153,10 @@ premises. Deferred, in order:
     purposes, return types since agent/sret-purpose; agent/link-scope2 restricted `indSig` to
     those, agent/crate-check3 `blrRegs`/`blrTry` to `IndTo`) with stack-passed or `sret`
     parameters; a declared function entered through a pointer whose call-site signature has its
-    parameter types but not its purposes (`indSig` still constrains it: the per-function run's
-    `callExternAt` sees no purposes, and `envOf` keeps declared functions for their direct
-    calls).
+    parameter types but not its purposes (`indSig` still constrains it: since agent/scope-widen
+    (#89 (c)) the per-function run's `callExternAt` checks the purposes against the linked
+    environment's `sigOf`, but the non-interference contract's pinned indirect call (`CallLg`,
+    `xni`) records only the parameter types, so `indSig`'s `DeclN`/`IndTyMatch` disjunct stays).
   - a function calling itself under its own name (excluded at the CLIF level by `InSubset (P.only f)`; `cargo fv`'s alias covers it), float parameters; a
     depth-free machine (monotonicity of `linkedCall` in the depth, needs base hooks preserving
     errors).

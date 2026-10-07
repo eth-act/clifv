@@ -27,7 +27,7 @@ def Program.names (P : Program) : List String := P.funcs.map (·.name) ++ P.exte
 a call of a function `g` of `P` runs `g`'s whole-program run for at most `M` steps; every other
 extern is `base`'s. An indirect call resolves its address among every name of `P` and of `base`
 (`names`): a function of `P` is reached through a pointer whether or not the caller declares
-it. -/
+it, and only with its own signature (`sigOf`, as the whole-program run's `Signature.abiMatch`). -/
 def linkEnvN (P : Program) (base : Env) (M : Nat) : Env where
   extern n := match P.func? n with
     | some _ => some fun vals mem =>
@@ -37,6 +37,7 @@ def linkEnvN (P : Program) (base : Env) (M : Nat) : Env where
       | .stuck m => .stuck m
     | none => base.extern n
   names := P.names ++ base.names
+  sigOf n := (P.func? n).map (·.sig)
 
 theorem linkEnvN_none {P : Program} {base : Env} {M : Nat} {n : String} (h : P.func? n = none) :
     (linkEnvN P base M).extern n = base.extern n := by
@@ -53,6 +54,9 @@ theorem linkEnvN_some {P : Program} {base : Env} {M : Nat} {n : String} {g : Fun
 
 @[simp] theorem linkEnvN_names {P : Program} {base : Env} {M : Nat} :
     (linkEnvN P base M).names = P.names ++ base.names := rfl
+
+@[simp] theorem linkEnvN_sigOf {P : Program} {base : Env} {M : Nat} {n : String} :
+    (linkEnvN P base M).sigOf n = (P.func? n).map (·.sig) := rfl
 
 /-! ## The link-time symbols -/
 
@@ -252,49 +256,53 @@ theorem linkNames_sub {P : Program} {base : Env} {f : Function} {M : Nat} (hf : 
   · exact hn
   · exact List.mem_append_left _ (names_extern (externs_sub hf n hn))
 
-/-- `callExternAt` resolving the callee address to names with the same extern gives the same
-result, up to the messages of a stuck call (they name the extern). -/
+/-- `callExternAt` resolving the callee address to names with the same extern, the first one's
+signature unknown (`sigOf`), gives the second's result, unless the second is stuck (the stuck
+messages name the extern, and the second's signature check may fail). -/
 theorem callExternAt_alias {E₁ E₂ : Env} {p₁ p₂ : Program} {mem : Mem} {d : Signature} {a : Nat}
     {vals : List Val} {n₁ n₂ : String}
     (h₁ : (E₁.names ++ p₁.externNames).find? (fun n => mem.symbols n == some a) = some n₁)
     (h₂ : (E₂.names ++ p₂.externNames).find? (fun n => mem.symbols n == some a) = some n₂)
-    (he : E₁.extern n₁ = E₂.extern n₂) :
+    (he : E₁.extern n₁ = E₂.extern n₂) (hs : E₁.sigOf n₁ = none) :
     callExternAt E₁ p₁ mem d a vals = callExternAt E₂ p₂ mem d a vals ∨
-      ((∃ m, callExternAt E₁ p₁ mem d a vals = .stuck m) ∧
-        ∃ m, callExternAt E₂ p₂ mem d a vals = .stuck m) := by
+      ∃ m, callExternAt E₂ p₂ mem d a vals = .stuck m := by
   unfold callExternAt
   rw [h₁, h₂]
   simp only [Res.ofOption_some, Res.ok_bind]
-  rw [← he]
+  rw [← he, hs]
   cases E₁.extern n₁ with
-  | none => exact .inr ⟨⟨_, rfl⟩, _, rfl⟩
+  | none => exact .inr ⟨_, rfl⟩
   | some g =>
-    simp only [Res.ofOption_some, Res.ok_bind, checkTys]
-    cases (vals.map (·.ty) == AbiParam.tys d.params) with
-    | false => exact .inr ⟨⟨_, rfl⟩, _, rfl⟩
+    simp only [Res.ofOption_some, Res.ok_bind, Option.all_none, Res.check_true]
+    cases hc : Option.all d.abiMatch (E₂.sigOf n₂) with
+    | false => exact .inr ⟨_, rfl⟩
     | true =>
-      simp only [Res.check_true, Res.ok_bind]
-      cases g vals mem with
-      | returned rvals mem' =>
-        dsimp only
-        cases (List.map (fun x => x.ty) rvals == AbiParam.tys d.returns) with
-        | false => exact .inr ⟨⟨_, rfl⟩, _, rfl⟩
-        | true => exact .inl rfl
-      | trapped c => exact .inl rfl
-      | stuck m => exact .inl rfl
-      | outOfFuel => exact .inr ⟨⟨_, rfl⟩, _, rfl⟩
+      simp only [Res.check_true, Res.ok_bind, checkTys]
+      cases (vals.map (·.ty) == AbiParam.tys d.params) with
+      | false => exact .inr ⟨_, rfl⟩
+      | true =>
+        simp only [Res.check_true, Res.ok_bind]
+        cases g vals mem with
+        | returned rvals mem' =>
+          dsimp only
+          cases (List.map (fun x => x.ty) rvals == AbiParam.tys d.returns) with
+          | false => exact .inr ⟨_, rfl⟩
+          | true => exact .inl rfl
+        | trapped c => exact .inl rfl
+        | stuck m => exact .inl rfl
+        | outOfFuel => exact .inr ⟨_, rfl⟩
 
 /-- An indirect call to no function of `P` resolves, in the per-function program of `f`, to an
 extern of `base` (the linked environment's names hold every name of `P` and of `base`) with the
-whole program's semantics (`IndScope.alias`): the same result, up to the messages of a stuck
-call. -/
+whole program's semantics (`IndScope.alias`): the same result, unless the whole-program call is
+stuck (the stuck messages name the extern; the linked environment knows no signature outside
+`P`, `base` may). -/
 theorem callExternAt_eq {P : Program} {base : Env} {f : Function} {syms : String → Option Nat}
     {M : Nat} (hf : f ∈ P.funcs) (hS : IndScope P base syms) {mem : Mem} (hm : mem.symbols = syms)
     {d : Signature} {a : Nat} {vals : List Val}
     (hnone : P.funcs.find? (fun g => mem.symbols g.name == some a) = none) :
     callExternAt (linkEnvN P base M) (P.only f) mem d a vals = callExternAt base P mem d a vals ∨
-      ((∃ m, callExternAt (linkEnvN P base M) (P.only f) mem d a vals = .stuck m) ∧
-        ∃ m, callExternAt base P mem d a vals = .stuck m) := by
+      ∃ m, callExternAt base P mem d a vals = .stuck m := by
   have hno : ∀ g ∈ P.funcs, mem.symbols g.name ≠ some a := fun g hg e => by
     have := List.find?_eq_none.mp hnone g hg
     simp [e] at this
@@ -341,7 +349,7 @@ theorem callExternAt_eq {P : Program} {base : Env} {f : Function} {syms : String
       have hm₁ := List.mem_of_find?_eq_some h₁
       have hp₁ := hnp n₁ hq₁
       have hp₂ := hnp n₂ hq₂
-      refine callExternAt_alias h₁ h₂ ?_
+      refine callExternAt_alias h₁ h₂ ?_ (by simp [hp₁])
       rw [linkEnvN_none hp₁]
       have hn₂ : n₂ ∈ P.names ++ base.names := by
         rcases List.mem_append.mp hm₂ with h | h
@@ -360,11 +368,12 @@ theorem lookup_name_mem : ∀ {l : List (FnRef × ExtFunc)} {fn : FnRef} {e : Ex
     · cases h; simp
     · exact List.mem_cons_of_mem _ (lookup_name_mem h)
 
-/-- `callExternAt` under environments with the same names and the same externs at the names
-with the callee address. -/
+/-- `callExternAt` under environments with the same names and the same externs and signatures
+at the names with the callee address. -/
 theorem callExternAt_congr {E₁ E₂ : Env} {p : Program} {mem : Mem} {d : Signature} {a : Nat}
     {vals : List Val} (hn : E₁.names = E₂.names)
-    (hx : ∀ n, mem.symbols n = some a → E₁.extern n = E₂.extern n) :
+    (hx : ∀ n, mem.symbols n = some a → E₁.extern n = E₂.extern n)
+    (hs : ∀ n, mem.symbols n = some a → E₁.sigOf n = E₂.sigOf n) :
     callExternAt E₁ p mem d a vals = callExternAt E₂ p mem d a vals := by
   unfold callExternAt
   rw [hn]
@@ -372,7 +381,7 @@ theorem callExternAt_congr {E₁ E₂ : Env} {p : Program} {mem : Mem} {d : Sign
   | none => rfl
   | some n =>
     have hq : mem.symbols n = some a := by simpa using List.find?_some hf
-    simp only [Res.ofOption_some, Res.ok_bind, hx n hq]
+    simp only [Res.ofOption_some, Res.ok_bind, hx n hq, hs n hq]
 
 /-- **Linking at the CLIF level with bounded callee runs** (`runLoop_link` with
 `linkEnvN P base M`): a complete whole-program run of at most `M + 1` steps is a complete
@@ -380,14 +389,15 @@ per-function run whose program callees run at most `M` steps. The run's frames a
 per-function program (`LInv (P.only f)`); an indirect call of `f` (`call_indirect`,
 `try_call_indirect`) resolves, in the per-function program, through the linked environment's
 names (`IndScope`, with the memory's symbols `syms`), whatever `f` declares. The per-function
-environment `E` may be `linkEnvN P base M` without the functions of `P` that the whole-program
+environment `E` (with the linked environment's names and signatures) may be `linkEnvN P base M`
+without the functions of `P` that the whole-program
 run of `f` cannot call (`hEp`): those `f` neither declares nor can enter through one of its
 indirect calls, whose call-site signature (`IndSig`) must match the callee's
 (`Signature.abiMatch`, checked by `Clif.stepCallIndirect`). -/
 theorem runLoop_linkN {P : Program} {base : Env} {f : Function} {syms : String → Option Nat}
     (M : Nat) (hnd : (P.funcs.map (·.name)).Nodup) (hf : f ∈ P.funcs)
     (hP : ∀ g ∈ P.funcs, LinkFree g) (hio : ¬ IndFree f → IndScope P base syms) {E : Env}
-    (hEn : E.names = (linkEnvN P base M).names)
+    (hEn : E.names = (linkEnvN P base M).names) (hEs : E.sigOf = (linkEnvN P base M).sigOf)
     (hEb : ∀ n, P.func? n = none → E.extern n = (linkEnvN P base M).extern n)
     (hEp : ∀ h ∈ P.funcs, h.name ≠ f.name → (h.name ∈ f.externs.map (·.2.name) ∨
       (syms h.name ≠ none ∧ ∃ d, IndSig f d ∧ d.abiMatch h.sig = true)) →
@@ -586,14 +596,14 @@ theorem runLoop_linkN {P : Program} {base : Env} {f : Function} {syms : String �
         simp only [this]
       have hcg : callExternAt E (P.only f) t.mem d a v =
           callExternAt (linkEnvN P base M) (P.only f) t.mem d a v := by
-        refine callExternAt_congr hEn fun n hq => hEb n ?_
+        refine callExternAt_congr hEn (fun n hq => hEb n ?_) fun n _ => by rw [hEs]
         cases e : P.func? n with
         | none => rfl
         | some g =>
           obtain ⟨hg, rfl⟩ := Program.func?_some e
           have := List.find?_eq_none.mp hfind g hg
           simp [hq] at this
-      rcases callExternAt_eq (M := M) (d := d) (vals := v) hf hS hm hfind with he | ⟨-, m₂, h₂⟩
+      rcases callExternAt_eq (M := M) (d := d) (vals := v) hf hS hm hfind with he | ⟨m₂, h₂⟩
       · apply same
         rw [e1, e2]
         simp only [indCont, hfind, h1, hcg, he]
@@ -653,11 +663,13 @@ theorem runLoop_linkN {P : Program} {base : Env} {f : Function} {syms : String �
         refine ⟨fun rvals mem2 hlim hty => ?_, fun c hlim => ?_⟩
         · rw [e2]
           simp only [indCont, h1, callExternAt, hname, Res.ofOption_some, Res.ok_bind, hEh,
-            linkEnvN_some hpf, checkTys, hvt, beq_self_eq_true, Res.check_true, hinit, hlim, hty,
+            linkEnvN_some hpf, hEs, linkEnvN_sigOf, hpf, Option.map_some, Option.all_some, hsig,
+            checkTys, hvt, beq_self_eq_true, Res.check_true, hinit, hlim, hty,
             hsig'.2.2, ↓reduceIte, Res.pure_eq, StepResult.ofRes_ok]
         · rw [e2]
           simp only [indCont, h1, callExternAt, hname, Res.ofOption_some, Res.ok_bind, hEh,
-            linkEnvN_some hpf, checkTys, hvt, beq_self_eq_true, Res.check_true, hinit, hlim,
+            linkEnvN_some hpf, hEs, linkEnvN_sigOf, hpf, Option.map_some, Option.all_some, hsig,
+            checkTys, hvt, beq_self_eq_true, Res.check_true, hinit, hlim,
             StepResult.ofRes_trap]
   have hff : s.frame.func = f := by
     have := hIf.1.1

@@ -139,6 +139,8 @@ inductive Outcome | returned (vals : List Val) (mem : Mem) | trapped (code : Tra
                   | stuck (msg : String) | outOfFuel
 def Outcome.returnedVals? : Outcome → Option (List Val)
 structure Env where extern : String → Option (List Val → Mem → Outcome) := fun _ => none
+                    names : List String := []     -- further code symbols (callExternAt)
+                    sigOf : String → Option Signature := fun _ => none  -- known extern signatures
 def Env.empty : Env
 abbrev Regs := ValueId → Option Val        -- Regs.empty, Regs.set, Regs.setMany (+ simp lemmas)
 structure Frame where func : Function; regs : Regs; slots : List (SlotId × Nat);

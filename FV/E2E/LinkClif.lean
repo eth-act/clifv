@@ -676,7 +676,7 @@ theorem callExternAt_ok {env : Env} {p : Program} {mem : Mem} {d : Signature} {a
     {vals rvals : List Val} {mem' : Mem} (h : callExternAt env p mem d a vals = .ok (rvals, mem')) :
     ∃ n g, env.extern n = some g ∧ g vals mem = .returned rvals mem' := by
   simp only [callExternAt, Opt.Res.bind_eq_ok, Opt.Res.ofOption_eq_ok] at h
-  obtain ⟨n, -, g, hg, -, -, h⟩ := h
+  obtain ⟨n, -, g, hg, -, -, -, -, h⟩ := h
   refine ⟨n, g, hg, ?_⟩
   revert h
   cases g vals mem with
