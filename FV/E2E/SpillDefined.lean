@@ -2,6 +2,7 @@ import FV.E2E.LinkScope
 import FV.E2E.SpillKillFree
 import FV.Backend.Proof.SpillDefinedPrep
 import FV.Backend.Proof.SpillEdgesLow
+import FV.Backend.Proof.DefAssemble
 
 /-!
 # `SpillDefinedHyp` from definite assignment of `lowerFunction`'s VCode
@@ -15,7 +16,9 @@ every path from the entry, a parameter defined iff its branch argument is) of `l
 VCode with nothing defined on entry. `prepare` keeps them (`Spill.defAvail_prepare`), and the
 conjunction of availability and definedness sets is availability sets (`Spill.spillAvail_and`):
 `spillDefinedHyp_of_lower`. `crate_correct_inScope_lower` is `crate_correct_inScope` under
-`LowerDefinedHyp`.
+`LowerDefinedHyp`. The driver's assembly (`DefRun.lower_defined`, `DefAssemble.lean`) reduces
+`LowerDefinedHyp` to the facts of the ISLE runs, `DefRun.DefRunsHyp`
+(`lowerDefinedHyp_of_runs`, `crate_correct_inScope_runs`).
 -/
 
 namespace E2E
@@ -38,6 +41,12 @@ theorem spillDefinedHyp_of_lower (h : LowerDefinedHyp) : SpillDefinedHyp :=
     obtain ⟨M, hM, h0⟩ := h p f vc hsub har hd hs hen hl
     obtain ⟨M', hM', h0'⟩ := Spill.defAvail_prepare (Spill.lowOk_of hd hs har hl) hp hM h0
     exact Spill.spillAvail_defined hK hM' h0'
+
+/-- **`LowerDefinedHyp` from the facts of the ISLE runs** (`DefRun.DefRunsHyp`): the driver's
+assembly, `DefRun.lower_defined`. -/
+theorem lowerDefinedHyp_of_runs (hR : DefRun.DefRunsHyp) : LowerDefinedHyp :=
+  fun _ _ _ hsub har hd hs hen hl =>
+    DefRun.lower_defined hR hd hs (abiSigsOk_of_inSubset hsub) har hen hl
 
 /-- **Non-vacuity of `spillAvail_and`**: on a VCode with a block argument, availability sets and
 definedness sets holding nothing on entry exist together. -/
@@ -66,5 +75,11 @@ namespace E2E.LinkCheck
 theorem crate_correct_inScope_lower (hM : LowerDefinedHyp) {I : LinkInput}
     (hin : InScopeP I = true) (hlk : linkerOkB I = true) (n : String) : CrateStmtT I n :=
   crate_correct_inScope (spillDefinedHyp_of_lower hM) hin hlk n
+
+/-- **`crate_correct_inScope` under the facts of the ISLE runs** (`DefRun.DefRunsHyp`, which
+give `LowerDefinedHyp`: `lowerDefinedHyp_of_runs`). -/
+theorem crate_correct_inScope_runs (hR : Backend.Proof.DefRun.DefRunsHyp) {I : LinkInput}
+    (hin : InScopeP I = true) (hlk : linkerOkB I = true) (n : String) : CrateStmtT I n :=
+  crate_correct_inScope_lower (lowerDefinedHyp_of_runs hR) hin hlk n
 
 end E2E.LinkCheck
