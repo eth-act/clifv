@@ -13,10 +13,11 @@ import FV.Backend.Proof.EntryParams
 The executable definitions of `FV/E2E/LinkScope.lean` (docs/TO-PROVE.md §3 "L2", L2a), kept free
 of proofs so that a crate's proof file can decide them by `native_decide`:
 
-* `pipeT`, `LinkInput.resultsT`: **the compiler's pipeline** — `lean-backend`'s
-  (`allocateRegalloc2`): regalloc2's answer is only an oracle, lowered if `checkAlloc` accepts it
-  and its code is `emitReady`, else the spill allocation (`lowerAllocReady`). The checker's `pipe`
-  lowers regalloc2's answer as it is (no fallback), so its success is a property of the oracle.
+* `pipeT`, `LinkInput.resultsT` (`FV/E2E/LinkCheck.lean`, the pipeline of an input with
+  `fallback`): **the compiler's pipeline** — `lean-backend`'s (`allocateRegalloc2`): regalloc2's
+  answer is only an oracle, lowered if `checkAlloc` accepts it and its code is `emitReady`, else
+  the spill allocation (`lowerAllocReady`). The checker's `pipe` lowers regalloc2's answer as it
+  is (no fallback), so its success is a property of the oracle.
 * `depthOf`, `LinkInput.withDepth`: the stack of one call level by construction (the largest
   `frameDrop`, as `cargo fv link-proof` chooses it).
 * `InScopeP I`: **the input conditions** — decidable on the program's CLIF functions, their
@@ -31,32 +32,7 @@ namespace E2E.LinkCheck
 
 open Backend Backend.Proof Backend.Proof.Driver
 
-/-! ## The compiler's pipeline -/
-
-/-- regalloc2's answer for the prepared VCode `vcp`, read from `lean-regalloc`'s output (an
-oracle: an error or a rejected allocation selects the spill allocation). -/
-def raAnswer (vcp : VCode) (o : Lean.Json) : Except String RFunc := do
-  let o ← parseRAOut o
-  buildRFunc vcp o
-
-/-- **The compiler's pipeline** on `f` (index `k` in its file, `lean-regalloc`'s output `o`)
-loaded at `base`: `lowerFunction`, `prepare`, `lowerAllocReady` (regalloc2's allocation if
-accepted and emittable, else the spill allocation), `emitFunc`, `layout`. The artifact's
-allocation is the one lowered, `allocResult vcp (readyAnswer vcp ra)` (`lowerAllocReady_eq`). -/
-def pipeT (f : Clif.Function) (k : Nat) (base : BitVec 64) (o : Lean.Json) : Except String Art := do
-  let vc ← lowerFunction f
-  let vcp ← prepare vc
-  let ra := raAnswer vcp o
-  let af ← lowerAllocReady vcp ra
-  let fa ← emitFunc k af
-  let fb ← fa.layout
-  pure ⟨k, vc, vcp, allocResult vcp (readyAnswer vcp ra), af, fa, fb, base⟩
-
-/-- Every function of the input, compiled by the compiler's pipeline and loaded at its link-map
-address. -/
-def LinkInput.resultsT (I : LinkInput) : Res :=
-  I.funcs.map fun fi => let f := fi.func
-    (f, pipeT f fi.k (BitVec.ofNat 64 (I.baseOf f.name)) (raJ fi.ra fi.j))
+/-! ## The program and the stack of one call level -/
 
 /-- The program of the input: its parsed (and `i128`-legalised) functions (`progOf_resultsT`). -/
 def LinkInput.prog (I : LinkInput) : Clif.Program := { funcs := I.funcs.map (·.func) }

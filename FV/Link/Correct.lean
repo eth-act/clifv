@@ -5,8 +5,9 @@ import FV.E2E.SpillDefined
 
 /-! # The Lean linker's output is correct (L2b)
 
-For `leanLink S file0 = .ok file`, the facts the crate statement and `BinOkT` need come in two
-kinds.
+For `leanLink S file0 = .ok file`, the facts the crate statement and `BinOk` need come in two
+kinds. `S.input`'s pipeline is the compiler's (`fallback`), so its results are `resultsT`
+(`LinkSpec.input_results`) and `BinOk S.input` is about the code the compiler emits.
 
 **By construction** (proven from the placement and the compiler's output, nothing read back):
 
@@ -35,8 +36,8 @@ Theorems:
 
 * **`leanLink_static'`** (`OutsideProof`): `file` is static, no premise; `leanLink_static`: from
   `Static file0` (the headers are `file0`'s);
-* **`binOk_leanLink`**: `BinOkT S.input S.data file`, no premise (the code by construction, the
-  rest from `outsideOkB`); `binOkT_leanLink`: `BinOkT` for any `D` given `Static file0`,
+* **`binOk_leanLink`**: `BinOk S.input S.data file`, no premise (the code by construction, the
+  rest from `outsideOkB`); `binOkT_leanLink`: `BinOk` for any `D` given `Static file0`,
   `DataOk`, `SymsOk`;
 * **`crate_correct_leanLink`**: the crate statement of an in-scope input linked by `leanLink`
   (`crate_correct_inScope` with the linker's facts `leanLink_linkerOk`; `InScopeP` includes
@@ -81,21 +82,23 @@ theorem leanLink_placed {S : LinkSpec} {file0 : ByteArray} {phs : List Phdr}
   · rw [hsz]
     exact hb
 
-/-- **Every function of the compiler's table is in `leanLink`'s output** (`ArtOk`). -/
-theorem leanLink_code {S : LinkSpec} {file0 file : ByteArray} (h : leanLink S file0 = .ok file) :
-    ∀ e ∈ tabOf S.input.resultsT, ArtOk S.input file e.2 := by
-  obtain ⟨phs, hph, hp, hr, hn, hs, hv, hal, -, hok, -, rfl⟩ := leanLink_spec h
+/-- **Every function of the compiler's table is in `leanLink`'s output**, read-only, as its
+resolved words (`resolveWord` with the file's thread-pointer offsets `tp`), its relocations
+passing the linker's checks. -/
+theorem leanLink_words {S : LinkSpec} {file0 file : ByteArray} (h : leanLink S file0 = .ok file) :
+    ∃ tp : Nat → Option Nat, (∀ v, TpOff file v = tp v) ∧ ∀ e ∈ tabOf S.input.resultsT,
+      relocsOkB S.input tp e.2 = true ∧
+      (∀ k < e.2.fb.words.size, ∀ j < 4, Elf.ro file (wAt e.2 (4 * k + j))) ∧
+      (∀ k < e.2.fb.words.size,
+        readN (loadMem file) 4 (wAt e.2 (4 * k)) = some (resolveWord S.input tp e.2 k)) := by
+  obtain ⟨phs, hph, hp, hr, hn, hs, hv, hal, -, -, hok, -, rfl⟩ := leanLink_spec h
   have hP := placeOk_of hp
-  have hv' : ∀ e ∈ tabOf S.input.resultsT, relocsOkB S.input (tpOff phs) e.2 = true :=
-    fun e he => List.all_eq_true.1 hv e he
-  have htp := tpOff_patch hok hph
-  intro e he
+  refine ⟨tpOff phs, tpOff_patch hok hph, fun e he => ⟨List.all_eq_true.1 hv e he, ?_⟩⟩
   obtain ⟨i, hi⟩ := List.mem_iff_getElem?.1 he
   have hil : i < (tabOf S.input.resultsT).length := (List.getElem?_eq_some_iff.1 hi).1
   rw [tab_length] at hil
   by_cases hin : i < S.funcs.length
-  · have hw := leanLink_placed hp hr hn hs hok hin hi
-    exact artOk_of_image (hv' e he) htp hw.1 hw.2
+  · exact leanLink_placed hp hr hn hs hok hin hi
   · -- an alias: its function's words at its function's base
     obtain ⟨e', ef, he', ⟨i', hi', hef⟩, hb, hl⟩ :=
       tab_alias hp hr hn hs (i - S.funcs.length) (by omega)
@@ -109,38 +112,39 @@ theorem leanLink_code {S : LinkSpec} {file0 file : ByteArray} (h : leanLink S fi
       beq_iff_eq, List.all_eq_true, List.mem_range] at hal'
     obtain ⟨hsz, hres⟩ := hal'
     have hwAt : ∀ o, wAt e.2 o = wAt ef.2 o := fun o => by simp only [wAt, hb]
-    refine artOk_of_image (hv' e he) htp (fun k hk j hj => ?_) (fun k hk => ?_)
+    refine ⟨fun k hk j hj => ?_, fun k hk => ?_⟩
     · rw [hwAt]; exact hw.1 k (hsz ▸ hk) j hj
     · rw [hwAt, hres k hk]; exact hw.2 k (hsz ▸ hk)
+
+/-- **Every function of the compiler's table is in `leanLink`'s output** (`ArtOk`). -/
+theorem leanLink_code {S : LinkSpec} {file0 file : ByteArray} (h : leanLink S file0 = .ok file) :
+    ∀ e ∈ tabOf S.input.resultsT, ArtOk S.input file e.2 := by
+  obtain ⟨tp, htp, hw⟩ := leanLink_words h
+  intro e he
+  obtain ⟨hv, hro, himg⟩ := hw e he
+  exact artOk_of_image hv htp hro himg
 
 /-- **`leanLink`'s output is a static executable** when the outside part is. -/
 theorem leanLink_static {S : LinkSpec} {file0 file : ByteArray} (h : leanLink S file0 = .ok file)
     (hs : Static file0) : Static file := by
-  obtain ⟨phs, -, -, -, -, -, -, -, -, hok, -, rfl⟩ := leanLink_spec h
+  obtain ⟨phs, -, -, -, -, -, -, -, -, -, hok, -, rfl⟩ := leanLink_spec h
   exact static_patch hok hs
 
-/-- **The file is the linked program `I` with data objects `D`**, the code being the compiler's
-table (`tabOf I.resultsT`, the functions the executable runs): `BinOk` over `resultsT`. -/
-structure BinOkT (I : LinkInput) (D : List Clif.DataObject) (file : ByteArray) : Prop where
-  static : Static file
-  code : ∀ e ∈ tabOf I.resultsT, ArtOk I file e.2
-  data : ∀ o ∈ D, DataOk I file o
-  syms : SymsOk I file
-
-/-- **`BinOkT` of `leanLink`'s output**: the code by construction; the outside part's headers
+/-- **`BinOk` of `leanLink`'s output**: the code by construction; the outside part's headers
 (`Static file0`), data objects and symbols (`DataOk`, `SymsOk`) as hypotheses. -/
 theorem binOkT_leanLink {S : LinkSpec} {D : List Clif.DataObject} {file0 file : ByteArray}
     (h : leanLink S file0 = .ok file) (hs : Static file0) (hd : ∀ o ∈ D, DataOk S.input file o)
-    (hy : SymsOk S.input file) : BinOkT S.input D file :=
-  ⟨leanLink_static h hs, leanLink_code h, hd, hy⟩
+    (hy : SymsOk S.input file) : BinOk S.input D file :=
+  ⟨leanLink_static h hs, S.input_results ▸ leanLink_code h, hd, hy⟩
 
-/-- **`BinOkT` of `leanLink`'s output**, no premise: the code by construction (`leanLink_code`),
+/-- **`BinOk` of `leanLink`'s output**, no premise: the code by construction (`leanLink_code`),
 the headers, data objects and symbols by `leanLink`'s checks of rust-lld's output
 (`outsideOkB`). -/
 theorem binOk_leanLink {S : LinkSpec} {file0 file : ByteArray} (h : leanLink S file0 = .ok file) :
-    BinOkT S.input S.data file := by
-  obtain ⟨-, -, -, -, -, -, -, -, -, -, hout, -⟩ := leanLink_spec h
-  exact ⟨leanLink_static' h, leanLink_code h, outsideOkB_data hout, outsideOkB_syms hout⟩
+    BinOk S.input S.data file := by
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, hout, -⟩ := leanLink_spec h
+  exact ⟨leanLink_static' h, S.input_results ▸ leanLink_code h, outsideOkB_data hout,
+    outsideOkB_syms hout⟩
 
 /-- **The crate statement of an in-scope input linked by `leanLink`**: `crate_correct_inScope`
 with the linker's facts of `leanLink`'s output (`leanLink_linkerOk`). -/
@@ -155,5 +159,12 @@ theorem crate_correct_leanLink_lower (hM : LowerDefinedHyp) {S : LinkSpec}
     {file0 file : ByteArray} (hin : InScopeP S.input = true) (h : leanLink S file0 = .ok file)
     (n : String) : CrateStmtT S.input n :=
   crate_correct_inScope_lower hM hin (leanLink_linkerOk h) n
+
+/-- **The crate statement of an in-scope input linked by `leanLink`**, no open hypothesis
+(`crate_correct_inScope_proven`: definite assignment proven). -/
+theorem crate_correct_leanLink_proven {S : LinkSpec} {file0 file : ByteArray}
+    (hin : InScopeP S.input = true) (h : leanLink S file0 = .ok file) (n : String) :
+    CrateStmtT S.input n :=
+  crate_correct_inScope_proven hin (leanLink_linkerOk h) n
 
 end Link

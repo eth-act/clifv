@@ -1,5 +1,6 @@
 import FV.Link.Reloc
 import FV.E2E.Elf
+import FV.E2E.CodeMap
 
 /-! # Writing the program part into the executable (L2b)
 
@@ -12,9 +13,10 @@ section `.text.fvlean`); `leanLink S file0` writes the program part's bytes over
   linker's checks of its own output — the placement's conditions (`placeOkB`), the code has the
   placement's sizes (`sizesOkB`), the relocation shapes (`relocsOkB`), each self-call alias's
   resolved words are its function's (`aliasOkB`) and its raw words and call lines too
-  (`aliasShapeB`) — then the region's bytes (`regionBytes`) written at the region's file
-  offset, and the checks of rust-lld's output (`outsideOkB`, below). Every check failing is a
-  link error.
+  (`aliasShapeB`), the code map (`codeMapB`: a function's link-map address is its load address,
+  or no `blr` enters it; code ranges disjoint or shared by an alias with lines alike) — then the
+  region's bytes (`regionBytes`) written at the region's file offset, and the checks of
+  rust-lld's output (`outsideOkB`, below). Every check failing is a link error.
 * **The outside part's facts**, decided on rust-lld's output because rust-lld wrote those bytes
   (the headers, cg_clif's data objects, the symbol table): `regionOkB file0 R n off` (the ELF and
   program headers lie before the region's file bytes; the first `PT_LOAD` segment containing
@@ -171,6 +173,7 @@ def leanLink (S : LinkSpec) (file0 : ByteArray) : Except String ByteArray :=
     else if !(T.all fun e => relocsOkB I tp e.2) then .error "a relocation fails the checks (relocsOkB)"
     else if !(aliasOkB I tp T) then .error "an alias's resolved words differ from its function's"
     else if !(aliasShapeB I T) then .error "an alias's code differs from its function's (aliasShapeB)"
+    else if !(codeMapB I T) then .error "the code map check fails (codeMapB)"
     else
       let B := ByteArray.mk (regionBytes I tp ((T.take S.funcs.length).map (·.2))).toArray
       let off := offsetOf phs S.R

@@ -343,8 +343,7 @@ theorem artB_sound {I : LinkInput} {file : ByteArray} {ex : Excerpt} (hA : Agree
   · exact readN_ext (memIn_ext hA hp) h
 
 /-- The compiled image of a function of the input (`I.results`' entry for it). -/
-def artIn (I : LinkInput) (fi : FnInput) : Art :=
-  getOk (pipe fi.func fi.k (BitVec.ofNat 64 (I.baseOf fi.func.name)) (raJ fi.ra fi.j))
+def artIn (I : LinkInput) (fi : FnInput) : Art := getOk (I.pipeOf fi)
 
 /-- **The code check of the functions `fs`** (a slice of the input's) on an excerpt. -/
 def codeB (I : LinkInput) (ex : Excerpt) (fs : List FnInput) : Bool :=

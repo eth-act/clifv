@@ -1,7 +1,7 @@
-import FV.Link.Image
+import FV.Link.Compile
 import Lean.Data.Json
 
-/-! # `lake exe lean-link DIR SIZES`: the Lean linker on an executable (L2b)
+/-! # `lake exe lean-link DIR SIZES`: the executable compiler on an executable (L1, L2b)
 
 `DIR` is `cargo fv link-proof --cgus … --no-check`'s output for an executable linked by
 `cargo fv --lean-link` (docs/research/lean-linker.md): the program's functions in placement
@@ -11,10 +11,11 @@ executable, and the functions' own, where rust-lld put the region), the function
 is in a data object (`data_syms`), the CLIF data objects they reach (`data`). `SIZES` has one
 line `NAME WORDS` per function: its size in the region object (`cargo fv`'s `leanlink.rs`;
 `Link.leanLink` checks it against the compiled code, `sizesOkB`). The tool builds the
-`Link.LinkSpec` (the region's base `R`: the first function's address), runs `Link.leanLink`
-(placement, the compiler's pipeline, the linker's checks, the checks of rust-lld's output —
-among them that rust-lld put every function at its placement, `symsOkB`) and writes the result
-over the executable.
+`Link.LinkSpec` (the region's base `R`: the first function's address), runs
+`Link.compileExe` (the input conditions `InScopeP`, then `Link.leanLink`: placement, the
+compiler's pipeline, the linker's checks, the checks of rust-lld's output — among them that
+rust-lld put every function at its placement, `symsOkB`) and writes the result over the
+executable: `Link.compileExe_correct` is its theorem, no per-crate proof needed.
 -/
 
 open Lean E2E E2E.LinkCheck E2E.Elf Link
@@ -104,9 +105,27 @@ def main (args : List String) : IO UInt32 := do
     symNames := symNames
     R := R }
   let file0 ← IO.FS.readBinFile exe
-  match leanLink S file0 with
-  | .error e => do IO.eprintln s!"lean-link: {exe}: {e}"; return 1
+  let summary := s!"{names.length} function(s) ({aliases.size} self-call alias(es)), {S.data.length} data object(s), region {hex R}..{hex (R + S.size)} ({S.size} bytes)"
+  match compileExe S file0 with
   | .ok file =>
     IO.FS.writeBinFile exe file
-    IO.println s!"lean-link: {exe}: {names.length} function(s) ({aliases.size} self-call alias(es)), {S.data.length} data object(s), region {hex R}..{hex (R + S.size)} ({S.size} bytes) written by Link.leanLink"
+    IO.println s!"lean-link: {exe}: {summary} written by Link.compileExe (Link.compileExe_correct)"
     return 0
+  | .error e =>
+    if e != outOfScopeMsg then
+      IO.eprintln s!"lean-link: {exe}: {e}"
+      return 1
+    -- outside `compileExe`'s input conditions: the executable is not covered by
+    -- `compileExe_correct`; `Link.leanLink` still links it (its checks, the per-crate proof)
+    let I := S.input0
+    let P := I.prog
+    let syms := fun n => I.syms.lookup n
+    let badP := P.funcs.filter (fun g => !(declSigB P g && indB P syms g && callScopeB P syms g &&
+      outScopeB P g)) |>.map (·.name)
+    IO.eprintln s!"lean-link: {exe}: outside compileExe's input conditions (InScopeP): {badP.length} function(s) failing the program-level per-function conditions {badP.take 3}, distinct names {decide (P.funcs.map (·.name)).Nodup}, addrSlotsInB {addrSlotsInB P syms} (else fnScopeB); linking with Link.leanLink (not covered by compileExe_correct)"
+    match leanLink S file0 with
+    | .error e => do IO.eprintln s!"lean-link: {exe}: {e}"; return 1
+    | .ok file =>
+      IO.FS.writeBinFile exe file
+      IO.println s!"lean-link: {exe}: {summary} written by Link.leanLink"
+      return 0

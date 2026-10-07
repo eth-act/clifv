@@ -47,26 +47,6 @@ open Backend Backend.Proof Backend.Proof.Driver
 
 /-! ## The pipeline -/
 
-theorem pipeT_spec {f : Clif.Function} {k : Nat} {base : BitVec 64} {o : Lean.Json} {a : Art}
-    (h : pipeT f k base o = .ok a) :
-    lowerFunction f = .ok a.vc ∧ prepare a.vc = .ok a.vcp ∧
-      a.rf = allocResult a.vcp (readyAnswer a.vcp (raAnswer a.vcp o)) ∧
-      lowerRFunc a.vcp a.rf = .ok a.af ∧ emitFunc a.k a.af = .ok a.fa ∧ a.fa.layout = .ok a.fb ∧
-      a.k = k ∧ a.base = base := by
-  unfold pipeT at h
-  rcases h1 : lowerFunction f with _ | vc <;> simp only [h1, bind, Except.bind] at h
-  · cases h
-  rcases h2 : prepare vc with _ | vcp <;> simp only [h2] at h
-  · cases h
-  rcases h3 : lowerAllocReady vcp (raAnswer vcp o) with _ | af <;> simp only [h3] at h
-  · cases h
-  rcases h4 : emitFunc k af with _ | fa <;> simp only [h4] at h
-  · cases h
-  rcases h5 : fa.layout with _ | fb <;> simp only [h5] at h
-  · cases h
-  cases h
-  exact ⟨rfl, h2, rfl, lowerAlloc_eq ((lowerAllocReady_eq _ _).symm.trans h3), h4, h5, rfl, rfl⟩
-
 theorem mem_resultsT {I : LinkInput} {e : Clif.Function × Except String Art}
     (he : e ∈ I.resultsT) : ∃ fi ∈ I.funcs, e.1 = fi.func ∧
       e.2 = pipeT fi.func fi.k (BitVec.ofNat 64 (I.baseOf fi.func.name)) (raJ fi.ra fi.j) := by
