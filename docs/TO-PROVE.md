@@ -374,7 +374,7 @@ author's estimate, not measured), **Risk**.
   | compiled: pipeline | `compiled` | own output | `pipeT_ok`: `backend_correct_final_total_emit` (V4–V6b, `lowerAllocReady`) under `lowersB` (input: `lowerFunction`/`prepare` accept, an internal rejection, §1.2 kind 4; `extendsWidenB` and the size bound `spillSizeOkB`, from which `emitCondsB` follows, `emitCondsB_of_input`, V6c) — for the compiler's pipeline `pipeT`, not the checker's `pipe` (which lowers regalloc2's raw answer, an oracle) |
   | compiled: lowerCheck | `compiled` | own output | `lowerCheck_complete` (V1) from `dominatedB`/`lowerScopeB` |
   | compiled: prepCheck | `compiled` | own output | `prepCheck_complete`, `prepDomain_of_lower` (V2) |
-  | compiled: checkAlloc | `compiled` | own output | regalloc2's answer: kept only if accepted (`checkAlloc_allocResult`); spill allocation: `spillCheckAlloc` (completeness of `checkAlloc`'s fixpoint, `FV/E2E/SpillCheckAlloc*.lean`) under **`SpillDefinedHyp`** (open: definite assignment of the prepared VCode; needs a must-def invariant over ISLE runs, ~6–8k lines `[est]`) |
+  | compiled: checkAlloc | `compiled` | own output | regalloc2's answer: kept only if accepted (`checkAlloc_allocResult`); spill allocation: `spillCheckAlloc` (completeness of `checkAlloc`'s fixpoint, `FV/E2E/SpillCheckAlloc*.lean`) under **`SpillDefinedHyp`** (on input with `entryParamsB`, now in `fnScopeB`: without it the statement is false, `not_spillDefinedHyp`, `FV/E2E/SpillDefinedFalse.lean`), which follows from **`LowerDefinedHyp`** (`spillDefinedHyp_of_lower`, `FV/E2E/SpillDefined.lean`: availability proven, `prepare` keeps definedness sets, `Spill.defAvail_prepare`; definedness sets from paths, `Spill.defined_of_paths'`). Open: `UsesDefined` of `lowerFunction`'s VCode, from the ISLE run facts `DefRun.DefRunsHyp` (`FV/Backend/Proof/DefRuns.lean`, a flow-sensitive def-before-use invariant) and the driver's assembly, ~4–6k lines `[est]` |
   | covered | `covered` | own output | `formsCovered_complete` (V3) |
   | sretRets | `sretRets` | own output | `retsB_of_lower` with `iselNoRets` (`FV/E2E/LinkOwnRets*.lean`; `native_decide` table checks over the ISLE rules, as the Kill tables) |
   | argRegs (distinct, argument registers, width ≤ 64) | `argRegs` | input | `fnScopeB` |
@@ -400,9 +400,13 @@ author's estimate, not measured), **Risk**.
   **Status (L2a):** `crate_correct_inScope (hD : SpillDefinedHyp) (hin : InScopeP I = true)
   (hlk : linkerOkB I = true) : CrateStmtT I n` (`FV/E2E/LinkScope.lean`; `okT_of_inScope`, `okT_sound`;
   docs/contracts/e2e.md "Without the checker (L2a)"): no `okB` premise; every own-output fact proven except
-  `SpillDefinedHyp` (program-independent, open). Witness: `crate-proofs/Crates/InScopeWitness.lean`
-  (`InScopeP`, `linkerOkB` of `a_arith` and `fv-demo` by `native_decide`; `base_closedT`); `InScopeP` and
-  `linkerOkB` hold for all nine crates with inputs in `crate-proofs/` (1023 functions).
+  `SpillDefinedHyp` (program-independent, open). Its first statement was false (`not_spillDefinedHyp`: an
+  entry-block parameter beyond the signature's is never defined), so `InScopeP` now includes
+  `entryParamsB` and `SpillDefinedHyp` assumes it. `SpillDefinedHyp` follows from `LowerDefinedHyp`
+  (definite assignment of `lowerFunction`'s VCode; `crate_correct_inScope_lower`). Neither route avoids
+  definedness: `AllocChecked` at the link level would need one VCode outcome for every initial vreg file,
+  i.e. the same fact. Witness: `crate-proofs/Crates/InScopeWitness.lean` (`InScopeP`, `linkerOkB` of
+  `a_arith` and `fv-demo` by `native_decide`; `base_closedT`).
 
 - **Depends:** L2a on V1–V6; L2b independent of them. **Risk:** L2b scope (archive handling, all
   relocation types std uses, TLS layout, `.eh_frame`).
@@ -680,7 +684,7 @@ label**; list the free ones with
 | V6 | [#8](https://github.com/eth-act/clifv/issues/8) Branch range (totality) | **done** (#65) |
 | V6b | [#66](https://github.com/eth-act/clifv/issues/66) `emitPre` and `layoutReadyB` always hold (per-function totality) | **done**: `backend_correct_final_total_emit`, premises replaced by the decidable `emitCondsB` |
 | V6c | [#76](https://github.com/eth-act/clifv/issues/76) `emitCondsB` from the input | **done**: isel facts (`backend_correct_final_total_emit_in`, input condition `extendsWidenB`), size bound (`backend_correct_final_total_emit_input`, input condition `sizeOkB`) |
-| L2a | [#9](https://github.com/eth-act/clifv/issues/9) Linking without validators: split `okB` into input conditions + properties proven by construction | in progress: `crate_correct_inScope` (no `okB`: `InScopeP` + `linkerOkB`); open: `SpillDefinedHyp` (definite assignment, `checkAlloc` of the spill allocation) |
+| L2a | [#9](https://github.com/eth-act/clifv/issues/9) Linking without validators: split `okB` into input conditions + properties proven by construction | in progress: `crate_correct_inScope` (no `okB`: `InScopeP` + `linkerOkB`); open: `SpillDefinedHyp` (its first statement was false, `not_spillDefinedHyp`; `InScopeP` now has `entryParamsB`), reduced to `LowerDefinedHyp` (definite assignment of `lowerFunction`'s VCode, `crate_correct_inScope_lower`), i.e. the ISLE run facts `DefRunsHyp` and the driver's assembly |
 | L2b | [#10](https://github.com/eth-act/clifv/issues/10) Static linker in Lean for the executable (BinOk by construction) | open |
 | L3 | [#11](https://github.com/eth-act/clifv/issues/11) Executable-bytes simulation (M9 item 1b) | stages 1–2 done (#63, #64); stage 3 done (3a frame property, `agent/exec-frame`; 3b `RunOkD` from the M6 proof incl. D2/D4: `binary_correct_exec_proven`, `agent/exec-good`); aliases done (`agent/exec-alias`: site kinds, `codeMapB` holds on `fv-demo`) |
 | L4 | [#12](https://github.com/eth-act/clifv/issues/12) Stack bound without a per-program check | **done** (`agent/stack-complete`): `budOkW_budMap`, `goodN_iff`, `stackB_isSome_iff`, `binary_correct_of_checks_acyclic` |
