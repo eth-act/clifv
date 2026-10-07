@@ -17,6 +17,7 @@
 //! a file cg_clif never writes; that copy error (and only it) makes fv-rustc create the empty
 //! file and run rustc again.
 use crate::config::Config;
+use crate::leanlink;
 use crate::pipeline::{self, read_syms, DumpIndex, MARKER};
 use crate::report::{BinaryCheck, ExeOrigin, FnReport, Status, UnitReport};
 use object::read::{Object, ObjectSymbol};
@@ -612,24 +613,59 @@ pub fn linker_main(meta_json: &str, argv: Vec<OsString>) -> i32 {
     let mut r = new_report(&cfg, &meta, &output);
     process_objects(&cfg, &meta, &objs, &mut r);
     write_report(&cfg, &r);
+    // `--lean-link`: the program part, one region the Lean linker writes after the link
+    let part = if cfg.lean_link {
+        match leanlink::program_part(&cfg, &meta.unit, &args) {
+            Ok(p) => p,
+            Err(e) => {
+                eprint_fv(&format!("--lean-link: {e}"));
+                return 1;
+            }
+        }
+    } else {
+        None
+    };
     // the link map attributes every function of the executable to its input object
     let _ = fs::create_dir_all(&cfg.tmp_dir);
     let map = cfg.tmp_dir.join(format!("link-{}.map", pipeline::tag_of(&output.display().to_string())));
     // `--no-relax`: lld keeps the address pairs as emitted (`adrp; add`, the GOT `adrp; ldr`),
     // resolving only their immediates, so the executable's code is the compiled words (the
     // binary check, `E2E.BinCheck`); relaxed, they would become `nop; adr`
-    let status = Command::new(&cfg.rust_lld)
-        .args(&argv)
-        .arg("--no-relax")
-        .arg(format!("-Map={}", map.display()))
-        .status();
-    let code = match status {
+    let mut lld = Command::new(&cfg.rust_lld);
+    lld.args(&argv).arg("--no-relax").arg(format!("-Map={}", map.display()));
+    if let Some((obj, _)) = &part {
+        lld.arg(obj).arg("-u").arg(leanlink::START);
+    }
+    let mut code = match lld.status() {
         Ok(s) => s.code().unwrap_or(1),
         Err(e) => {
             eprint_fv(&format!("cannot run {}: {e}", cfg.rust_lld.display()));
             return 1;
         }
     };
+    if cfg.keep_link() {
+        // `cargo fv link-proof`: which executable this map is of
+        let rec = serde_json::json!({
+            "output": output,
+            "map": map,
+            "unit": meta.unit,
+            "package": meta.package,
+            "crate_name": meta.crate_name,
+            "kind": meta.kind,
+        });
+        let _ = fs::write(map.with_extension("json"), serde_json::to_string_pretty(&rec).unwrap_or_default());
+    }
+    if code == 0 {
+        if let Some((_, list)) = &part {
+            match leanlink::patch(&cfg, &output, list) {
+                Ok(text) => eprint!("{text}"),
+                Err(e) => {
+                    eprint_fv(&format!("--lean-link: {e}"));
+                    code = 1;
+                }
+            }
+        }
+    }
     if code == 0 {
         let mut b = check_binary(&output);
         if b.note.is_none() {
@@ -643,17 +679,6 @@ pub fn linker_main(meta_json: &str, argv: Vec<OsString>) -> i32 {
     }
     if !cfg.keep_link() {
         let _ = fs::remove_file(&map);
-    } else {
-        // `cargo fv link-proof`: which executable this map is of
-        let rec = serde_json::json!({
-            "output": output,
-            "map": map,
-            "unit": meta.unit,
-            "package": meta.package,
-            "crate_name": meta.crate_name,
-            "kind": meta.kind,
-        });
-        let _ = fs::write(map.with_extension("json"), serde_json::to_string_pretty(&rec).unwrap_or_default());
     }
     code
 }

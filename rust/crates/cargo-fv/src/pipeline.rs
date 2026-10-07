@@ -196,7 +196,7 @@ pub(crate) fn read_syms(path: &Path) -> Result<ObjSyms, String> {
     Ok(s)
 }
 
-fn run(cmd: &mut Command) -> Result<String, String> {
+pub(crate) fn run(cmd: &mut Command) -> Result<String, String> {
     let out = cmd.output().map_err(|e| format!("{:?}: {e}", cmd.get_program()))?;
     if out.status.success() {
         Ok(String::from_utf8_lossy(&out.stderr).into_owned())
@@ -659,6 +659,19 @@ fn write_list(path: &Path, items: impl IntoIterator<Item = String>) -> Result<()
     fs::write(path, s).map_err(|e| format!("{}: {e}", path.display()))
 }
 
+/// A relocatable object whose `.text` is one zero word (`udf #0`), without symbols: the gap
+/// word after each Lean-compiled function under `--lean-link`.
+fn gap_object(cfg: &Config, work: &Path) -> Result<PathBuf, String> {
+    let bin = work.join("gap.bin");
+    let o = work.join("gap.o");
+    fs::write(&bin, [0u8; 4]).map_err(|e| format!("{}: {e}", bin.display()))?;
+    run(Command::new(&cfg.objcopy)
+        .args(["-I", "binary", "-O", "elf64-littleaarch64", "--rename-section", ".data=.text,alloc,load,readonly,code,contents", "--strip-all"])
+        .arg(&bin)
+        .arg(&o))?;
+    Ok(o)
+}
+
 fn process_in(
     cfg: &Config,
     index: &DumpIndex,
@@ -887,12 +900,21 @@ fn process_in(
         trap_bodies(&cg, &ours.iter().map(|(s, _)| final_name(s)).collect::<Vec<_>>())?;
     }
 
-    // our functions: one relocatable object, same renaming (data names too), markers
+    // our functions: one relocatable object, same renaming (data names too), markers. With
+    // `--lean-link` every function is followed by a zero word (the Lean linker's placement,
+    // `Link.offs`: the gap word), so that `ld -r` lays the code out as the Lean linker places it.
     let lean = work.join("lean.o");
-    run(Command::new(&cfg.rust_lld)
-        .args(["-flavor", "gnu", "-r", "-o"])
-        .arg(&lean)
-        .args(ours.iter().map(|(_, o)| o)))?;
+    let mut inputs: Vec<PathBuf> = Vec::new();
+    if cfg.lean_link {
+        let pad = gap_object(cfg, work)?;
+        for (_, o) in &ours {
+            inputs.push(o.clone());
+            inputs.push(pad.clone());
+        }
+    } else {
+        inputs.extend(ours.iter().map(|(_, o)| o.clone()));
+    }
+    run(Command::new(&cfg.rust_lld).args(["-flavor", "gnu", "-r", "-o"]).arg(&lean).args(&inputs))?;
     let lean_syms = read_syms(&lean)?;
     let mut ours_redef: Vec<String> = renames.iter().map(|(a, b)| format!("{a} {b}")).collect();
     // the CLIF names of our code → the final symbol names (`cargo fv link-proof`)
@@ -931,26 +953,33 @@ fn process_in(
     write_list(&rsp, markers)?;
     run(Command::new(&cfg.objcopy).arg(format!("@{}", rsp.display())).arg(&lean))?;
 
-    // merge: our strong definitions win over cg_clif's weakened ones
-    let merged = work.join("merged.o");
-    run(Command::new(&cfg.rust_lld)
-        .args(["-flavor", "gnu", "-r", "--unique", "-o"])
-        .arg(&merged)
-        .arg(&cg)
-        .arg(&lean))?;
-    // 6. check before localising: each compiled symbol is at its marker
-    let m = read_syms(&merged)?;
-    for (s, _) in &ours {
-        let n = final_name(s);
-        let (a, b) = (m.at.get(&n), m.at.get(&format!("{MARKER}{n}")));
-        if a.is_none() || a != b {
-            return Err(format!("internal: after the merge `{n}` does not resolve to the Lean code"));
+    if cfg.lean_link {
+        // the Lean linker links our code at the executable's link (`leanlink`): the codegen
+        // unit is cg_clif's object with the renamed symbols global (our code binds to them
+        // there) and its copies of our functions weak
+        fs::copy(&cg, obj).map_err(|e| format!("{}: {e}", obj.display()))?;
+    } else {
+        // merge: our strong definitions win over cg_clif's weakened ones
+        let merged = work.join("merged.o");
+        run(Command::new(&cfg.rust_lld)
+            .args(["-flavor", "gnu", "-r", "--unique", "-o"])
+            .arg(&merged)
+            .arg(&cg)
+            .arg(&lean))?;
+        // 6. check before localising: each compiled symbol is at its marker
+        let m = read_syms(&merged)?;
+        for (s, _) in &ours {
+            let n = final_name(s);
+            let (a, b) = (m.at.get(&n), m.at.get(&format!("{MARKER}{n}")));
+            if a.is_none() || a != b {
+                return Err(format!("internal: after the merge `{n}` does not resolve to the Lean code"));
+            }
         }
+        let loc = work.join("localize.txt");
+        write_list(&loc, renames.values().cloned().chain(ours.iter().map(|(s, _)| format!("{MARKER}{}", final_name(s)))))?;
+        objcopy(&[format!("--localize-symbols={}", loc.display())], &merged)?;
+        fs::copy(&merged, obj).map_err(|e| format!("{}: {e}", obj.display()))?;
     }
-    let loc = work.join("localize.txt");
-    write_list(&loc, renames.values().cloned().chain(ours.iter().map(|(s, _)| format!("{MARKER}{}", final_name(s)))))?;
-    objcopy(&[format!("--localize-symbols={}", loc.display())], &merged)?;
-    fs::copy(&merged, obj).map_err(|e| format!("{}: {e}", obj.display()))?;
     if cfg.keep_link() {
         for f in &mut link_fns {
             let s = f["symbol"].as_str().unwrap_or_default().to_string();

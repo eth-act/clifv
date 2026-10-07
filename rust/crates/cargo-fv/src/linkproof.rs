@@ -216,11 +216,17 @@ struct Opts {
     entries: Option<String>,
     prune: bool,
     mode: String,
+    /// `--cgus FILE`: the codegen units' work directories, in this order (the Lean linker's
+    /// placement order), instead of the units the link map names
+    cgus: Option<PathBuf>,
+    /// `--no-check`: write the directory only (no `link-check`)
+    no_check: bool,
 }
 
 const LP_USAGE: &str = "\
 usage: cargo fv link-proof [--exe SUBSTR]… [--crate NAME] [--out DIR] [--lean FILE.lean --module NAME]
                            [--entries a,b,…] [--prune] [--mode DIR] [--manifest-path PATH]
+                           [--cgus FILE] [--no-check]
 
 After `cargo fv build|test --keep-temps`: the Lean-compiled, verified functions of the executable
 whose path contains every SUBSTR (default: the only one), restricted to the codegen units of the crate
@@ -231,7 +237,9 @@ which premises of LinkSys.Ok fail (per function), and with --lean writes the Lea
 LinkSys.Ok by native_decide and the theorem for the entries (default: every function); put it in
 the repository's crate-proofs/Crates/ and build it there with `lake build Crates.NAME` (the checker
 then runs as compiled code). --prune drops the failing functions until the rest passes. --mode:
-the build's directory under target/fv (default plain).";
+the build's directory under target/fv (default plain). --cgus FILE: the codegen units' work
+directories, one per line, in this order (the Lean linker's placement order, `--lean-link`)
+instead of those the link map names; --no-check: write DIR only.";
 
 fn parse_opts(args: &[String], target: &Path) -> Result<Opts, String> {
     let mut o = Opts {
@@ -243,6 +251,8 @@ fn parse_opts(args: &[String], target: &Path) -> Result<Opts, String> {
         entries: None,
         prune: false,
         mode: "plain".into(),
+        cgus: None,
+        no_check: false,
     };
     let mut it = args.iter();
     while let Some(a) = it.next() {
@@ -259,6 +269,8 @@ fn parse_opts(args: &[String], target: &Path) -> Result<Opts, String> {
                 val()?;
             }
             "--prune" => o.prune = true,
+            "--cgus" => o.cgus = Some(PathBuf::from(val()?)),
+            "--no-check" => o.no_check = true,
             "-h" | "--help" => return Err(LP_USAGE.into()),
             _ => return Err(format!("unknown option {a}\n{LP_USAGE}")),
         }
@@ -298,14 +310,23 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
     // the codegen units linked into it
     let mut cgus = Vec::new();
     let mut cgu_dir: HashMap<String, PathBuf> = HashMap::new();
-    for e in fs::read_dir(&tmp).map_err(|e| format!("{}: {e}", tmp.display()))?.flatten() {
-        let p = e.path().join(CGU_FILE);
+    let dirs: Vec<PathBuf> = match &o.cgus {
+        Some(f) => fs::read_to_string(f)
+            .map_err(|e| format!("{}: {e}", f.display()))?
+            .lines()
+            .filter(|l| !l.is_empty())
+            .map(PathBuf::from)
+            .collect(),
+        None => fs::read_dir(&tmp).map_err(|e| format!("{}: {e}", tmp.display()))?.flatten().map(|e| e.path()).collect(),
+    };
+    for d in dirs {
+        let p = d.join(CGU_FILE);
         if !p.exists() {
             continue;
         }
         let j = read_json(&p)?;
         let obj = j["object"].as_str().unwrap_or_default().to_string();
-        if !map.objects.contains(&obj) {
+        if o.cgus.is_none() && !map.objects.contains(&obj) {
             continue;
         }
         if let Some(k) = &o.krate {
@@ -313,10 +334,12 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
                 continue;
             }
         }
-        cgu_dir.insert(obj.clone(), e.path());
+        cgu_dir.insert(obj.clone(), d);
         cgus.push((obj, j));
     }
-    cgus.sort_by(|a, b| a.0.cmp(&b.0));
+    if o.cgus.is_none() {
+        cgus.sort_by(|a, b| a.0.cmp(&b.0));
+    }
     if cgus.is_empty() {
         return Err(format!("no Lean-compiled codegen unit of {exe}{} was kept", o.krate.as_deref().map(|k| format!(" of crate {k}")).unwrap_or_default()));
     }
@@ -458,6 +481,9 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
         unresolved.len(),
         o.out.display()
     );
+    if o.no_check {
+        return Ok(0);
+    }
     // the checker (and the Lean file)
     let checker = root.join(".lake/build/bin/link-check");
     if !checker.exists() {

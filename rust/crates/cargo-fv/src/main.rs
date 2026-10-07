@@ -9,7 +9,8 @@ use std::process::{Command, Stdio};
 
 const USAGE: &str = "\
 usage: cargo fv <build|run|test> [--opt | --opt-proven-only] [--no-fallback] [--trap-replaced] [--keep-temps]
-                                [--panic-abort] [--members-only] [--no-binary-check] [cargo options] [-- args]
+                                [--panic-abort] [--members-only] [--no-binary-check] [--lean-link]
+                                [cargo options] [-- args]
        cargo fv report [--functions] [--json] [--manifest-path PATH]
        cargo fv link-proof [--exe SUBSTR]… [--crate NAME] [--out DIR] [--lean FILE --module NAME]
                            [--entries a,b] [--prune] [--manifest-path PATH]
@@ -34,6 +35,10 @@ report` prints it).
   --keep-temps        keep the per-codegen-unit work directories (target/fv/<mode>/tmp)
   --no-binary-check   skip the per-executable binary check (E2E.Binary.binary_correct: the
                       executable's code, data and symbols checked against the proven program)
+  --lean-link         the Lean linker writes the Lean-compiled code of every executable (L2b,
+                      docs/research/lean-linker.md): placed as one region (`.text.fvlean`) and
+                      relocated by `lake exe lean-link` (Link.leanLink); implies --keep-temps;
+                      separate target dir
   --panic-abort       build with -Cpanic=abort -Zpanic-abort-tests (default: panic=unwind, as cargo;
                       separate target dir)
   --functions         (report) list every function with its status and reason
@@ -249,6 +254,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
     let mut panic_abort = false;
     let mut members_only = false;
     let mut bin_check = true;
+    let mut lean_link = false;
     let mut cargo_args = Vec::new();
     for a in before {
         match a.as_str() {
@@ -260,6 +266,10 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
             "--panic-abort" => panic_abort = true,
             "--members-only" => members_only = true,
             "--no-binary-check" => bin_check = false,
+            "--lean-link" => {
+                lean_link = true;
+                keep_temps = true;
+            }
             _ => cargo_args.push(a),
         }
     }
@@ -316,11 +326,12 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
     skip_deps.dedup();
     // one target dir per configuration that changes the objects (cargo does not see FV_*)
     let fv_dir = target.join("fv").join(format!(
-        "{}{}{}{}",
+        "{}{}{}{}{}",
         mode.name(),
         if members_only { "-members" } else { "" },
         if trap_replaced { "-trap" } else { "" },
-        if panic_abort { "-abort" } else { "" }
+        if panic_abort { "-abort" } else { "" },
+        if lean_link { "-leanlink" } else { "" }
     ));
     let cfg = Config {
         root,
@@ -341,6 +352,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
         keep_temps,
         bin_check,
         trap_replaced,
+        lean_link,
         pkg_skip,
     };
     let wrapper = std::env::current_exe()

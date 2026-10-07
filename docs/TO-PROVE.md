@@ -70,8 +70,8 @@ and, on rejection, replaced by a directly proven Lean path (kind 2). Correctness
 | frame, control lowering | Lean `lowerRFunc` | internal rejections (`ctlCheck`, operand/move shapes; no frame-size limit since V5); a rejection of regalloc2's allocation falls back to `spillAlloc`, which `lowerRFunc` provably lowers (`E2E.lowerRFunc_spillAlloc`) | fallback; its lowering proven | V5 done |
 | emission, layout | Lean | branch relaxation; `emitFunc_layout_total` from `layoutReadyB`; regalloc2's code kept only if `emitReady` (`lowerAllocReady`), the spill code proven ready (`E2E.emitReady_spill`) under `emitCondsB`; its three isel facts proven from the ISLE data (`E2E.backend_correct_final_total_emit_in`, input condition `extendsWidenB`); the size bound from the input condition `sizeOkB f` (`E2E.backend_correct_final_total_emit_input`) | proven | — |
 | encoder | Lean | `Insn.decode_encode` (`FV/Backend/Proof/Encode.lean:57-60`) | proven | — |
-| linking (program level) | `cargo fv` object merge + **rust-lld** | **`okB`** (`FV/E2E/LinkCheck.lean:716-777`) per crate by `native_decide` | **validator premise + oracle + per-program proof** | L1, L2 |
-| executable bytes | **rust-lld** | **`BinOk`** (`FV/E2E/BinCheck.lean:539-543`) per crate by `native_decide` | **validator premise + oracle + per-program proof** | L2 |
+| linking (program level) | `cargo fv` object merge + **rust-lld**; with `--lean-link` the program part's placement is Lean's (`Link.leanLink`) | **`okB`** (`FV/E2E/LinkCheck.lean:716-777`) per crate by `native_decide`; with `--lean-link` `linkerOkB` is proven (`Link.leanLink_linkerOk`) | **validator premise + oracle + per-program proof**; L2b stage 1: linker facts proven | L1, L2 |
+| executable bytes | **rust-lld**; with `--lean-link` the program part's bytes are `Link.leanLink`'s | **`BinOk`** (`FV/E2E/BinCheck.lean:539-543`) per crate by `native_decide`; with `--lean-link` its code part is proven (`Link.leanLink_code`), the outside part's facts (`regionOkB`, `Static`, `DataOk`, `SymsOk`) still decided | **validator premise + oracle + per-program proof**; L2b stage 1: code proven | L2 |
 | executable semantics | — | `E2E.ExecBytes.binary_correct_exec_proven`: the executable's own words (outside calls and TLS by hooks) refine the CLIF run, with **no per-state hypothesis**: the premises of `binary_correct_of_checks_acyclic`, the per-program checks `codeMapB` and `gotB` (`GotOk`), the outside-code contracts `HooksSim` and `OutsideAvoids`; the run's facts come from the M6 proof (`RL.GoodX`, exported through `LinkSys.RunGoodL`); `codeMapB` holds on `fv-demo` (self-call aliases: shared code with alike lines, `FvDemoExec.lean`) | proven modulo per-program checks (`codeMapB`, `gotB`) and the TLS hook (T1) | L3 done |
 | stack bound | Lean `budMap` | `budOkW` proven for `budMap`'s budgets (`budOkW_budMap`), no run-time check; `goodN`/`stackB` characterised as "no call cycle reachable" (`goodN_iff`, `stackB_isSome_iff`); per crate the input condition and the bound still by `native_decide` (`stack_ok`) | input condition + per-program evaluation (until L1) | L4 done |
 
@@ -408,6 +408,18 @@ author's estimate, not measured), **Risk**.
   i.e. the same fact. Witness: `crate-proofs/Crates/InScopeWitness.lean` (`InScopeP`, `linkerOkB` of
   `a_arith` and `fv-demo` by `native_decide`; `base_closedT`).
 
+  **Status (L2b stage 1, `agent/lean-linker`; docs/research/lean-linker.md):** survey of what rust-lld
+  links (346 inputs, 18 allocated relocation types; the Lean code uses only `CALL26` and the GOT pair);
+  design (a): the program part placed, relocated and written by Lean (`FV/Link/`: `LinkSpec`,
+  `leanLink`), the outside part linked by rust-lld around a placeholder. Proven: `Link.leanLink_linkerOk`
+  (`linkerOkB` by construction; `linkerOkB_place` for alias-free programs, `leanLink` decides it
+  with self-call aliases), `Link.leanLink_code` (`ArtOk` of every function in the written file),
+  `Link.binOkT_leanLink`, `Link.crate_correct_leanLink` / `_lower` (no `linkerOkB` premise); witness
+  `crate-proofs/Crates/LeanLinkWitness.lean`. Executable path `cargo fv --lean-link` (`lake exe
+  lean-link`): all nine survey crates, 18 executables, binary check 18/18, all tests pass. Still
+  decided per executable: the outside part's `regionOkB`, `Static`, `DataOk`, `SymsOk` and that
+  rust-lld left the functions at their placement.
+
 - **Depends:** L2a on V1–V6; L2b independent of them. **Risk:** L2b scope (archive handling, all
   relocation types std uses, TLS layout, `.eh_frame`).
 
@@ -685,7 +697,7 @@ label**; list the free ones with
 | V6b | [#66](https://github.com/eth-act/clifv/issues/66) `emitPre` and `layoutReadyB` always hold (per-function totality) | **done**: `backend_correct_final_total_emit`, premises replaced by the decidable `emitCondsB` |
 | V6c | [#76](https://github.com/eth-act/clifv/issues/76) `emitCondsB` from the input | **done**: isel facts (`backend_correct_final_total_emit_in`, input condition `extendsWidenB`), size bound (`backend_correct_final_total_emit_input`, input condition `sizeOkB`) |
 | L2a | [#9](https://github.com/eth-act/clifv/issues/9) Linking without validators: split `okB` into input conditions + properties proven by construction | in progress: `crate_correct_inScope` (no `okB`: `InScopeP` + `linkerOkB`); open: `SpillDefinedHyp` (its first statement was false, `not_spillDefinedHyp`; `InScopeP` now has `entryParamsB`), reduced to `LowerDefinedHyp` (definite assignment of `lowerFunction`'s VCode, `crate_correct_inScope_lower`), i.e. the ISLE run facts `DefRunsHyp` and the driver's assembly |
-| L2b | [#10](https://github.com/eth-act/clifv/issues/10) Static linker in Lean for the executable (BinOk by construction) | open |
+| L2b | [#10](https://github.com/eth-act/clifv/issues/10) Static linker in Lean for the executable (BinOk by construction) | stage 1 (`agent/lean-linker`): program part placed/relocated/written by `Link.leanLink`, `linkerOkB` and `ArtOk` proven, `cargo fv --lean-link`; open: outside part (`Static`, `DataOk`, `SymsOk`, region), aliases in `linkerOkB_place` |
 | L3 | [#11](https://github.com/eth-act/clifv/issues/11) Executable-bytes simulation (M9 item 1b) | stages 1–2 done (#63, #64); stage 3 done (3a frame property, `agent/exec-frame`; 3b `RunOkD` from the M6 proof incl. D2/D4: `binary_correct_exec_proven`, `agent/exec-good`); aliases done (`agent/exec-alias`: site kinds, `codeMapB` holds on `fv-demo`) |
 | L4 | [#12](https://github.com/eth-act/clifv/issues/12) Stack bound without a per-program check | **done** (`agent/stack-complete`): `budOkW_budMap`, `goodN_iff`, `stackB_isSome_iff`, `binary_correct_of_checks_acyclic` |
 | L1 | [#13](https://github.com/eth-act/clifv/issues/13) The executable compiler as one Lean function | open |
