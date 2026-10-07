@@ -643,30 +643,35 @@ theorem raOkB_sound {ah : Art} {pc : BitVec 64} (h : raOkB ah pc = true) : RaOk 
         · exact ⟨j, _, t, e, .inr ⟨_, rfl⟩, rfl⟩
       | _ => simp [callLine] at hc
 
-/-- The return address of every call of `a` (the code of `g`) is outside the code of every other
-function of `P`, or after a call of that function's code (`raOkB`). -/
+/-- The return address of every call of `a` (the code of `g`) is not `a`'s entry, and is outside
+the code of every other function of `P`, or after a call of that function's code (`raOkB`). -/
 def raCallB (P : Clif.Program) (A : Clif.Function → Art) (g : Clif.Function) (a : Art) : Bool :=
   let ls := a.fa.lines.toList
   (List.range ls.length).all fun j =>
     match ls[j]? with
-    | some l => !callLine l || P.funcs.all fun h => decide (h = g) ||
-        raOkB (A h) (a.base + BitVec.ofNat 64 (lineOffset ls j))
+    | some l => !callLine l || (a.base + BitVec.ofNat 64 (lineOffset ls j) + 4 != a.base &&
+        P.funcs.all fun h => decide (h = g) ||
+          raOkB (A h) (a.base + BitVec.ofNat 64 (lineOffset ls j)))
     | none => true
 
-theorem raCallB_sound {P : Clif.Program} {A : Clif.Function → Art} {g : Clif.Function} {a : Art}
+theorem raCallB_parts {P : Clif.Program} {A : Clif.Function → Art} {g : Clif.Function} {a : Art}
     (h : raCallB P A g a = true) {pc : BitVec 64} (hpc : CallPc a.fa a.base pc) :
-    ∀ h' ∈ P.funcs, h' ≠ g → RaOk (A h') pc := by
+    pc + 4 ≠ a.base ∧ ∀ h' ∈ P.funcs, h' ≠ g → RaOk (A h') pc := by
   obtain ⟨j, i, t, hj, hi, rfl⟩ := hpc
-  intro h' hh hne
   have hjl : j < a.fa.lines.toList.length := (List.getElem?_eq_some_iff.1 hj).1
   simp only [raCallB, List.all_eq_true, List.mem_range] at h
   have := h j hjl
   rw [hj] at this
   have hc : callLine (.ins i t) = true := by
     rcases hi with ⟨n, rfl⟩ | ⟨r, rfl⟩ <;> rfl
-  simp only [hc, Bool.not_true, Bool.false_or, List.all_eq_true, Bool.or_eq_true,
-    decide_eq_true_eq] at this
-  exact raOkB_sound ((this h' hh).resolve_left hne)
+  simp only [hc, Bool.not_true, Bool.false_or, Bool.and_eq_true, bne_iff_ne, ne_eq,
+    List.all_eq_true, Bool.or_eq_true, decide_eq_true_eq] at this
+  exact ⟨this.1, fun h' hh hne => raOkB_sound ((this.2 h' hh).resolve_left hne)⟩
+
+theorem raCallB_sound {P : Clif.Program} {A : Clif.Function → Art} {g : Clif.Function} {a : Art}
+    (h : raCallB P A g a = true) {pc : BitVec 64} (hpc : CallPc a.fa a.base pc) :
+    ∀ h' ∈ P.funcs, h' ≠ g → RaOk (A h') pc :=
+  (raCallB_parts h hpc).2
 
 def raStarB (P : Clif.Program) (A : Clif.Function → Art) (ra : BitVec 64) : Bool :=
   P.funcs.all fun h => let ah := A h
@@ -710,7 +715,7 @@ def symsW (n : String) : Option Nat :=
 /-- `g` may call `n` (an over-approximation of `LinkSys.MayCall` of the witness): declared, or
 with an address when `g` has indirect calls. -/
 def mayB (g : Clif.Function) (n : String) : Bool :=
-  declB g n || (!indFreeB g && n != g.name && (symsW n).isSome)
+  declB g n || (!indFreeB g && (symsW n).isSome)
 
 /-- `g` may enter `h` through an address (an over-approximation of `LinkSys.IndTo` of the
 witness): it may call it, and declares it or one of its indirect calls matches `h`'s signature,
@@ -719,17 +724,16 @@ def indToB (g h : Clif.Function) : Bool :=
   mayB g h.name && (declB g h.name || (indSigs g).any fun s =>
     decide (LinkSys.IndSigMatch s h) && h.sig.returns.length == s.returns.length)
 
-/-- The scope of the indirect calls of `g` (`indNoSym`, `indSig`: the functions `g` may reach
-whose signature one of its indirect calls matches, or that it declares and one of its indirect
-calls has the parameter types of). -/
+/-- The scope of the indirect calls of `g` (`indSig`: the functions `g` may reach whose signature
+one of its indirect calls matches, or that it declares and one of its indirect calls has the
+parameter types of). -/
 def indB (g : Clif.Function) : Bool :=
   indFreeB g || ((indSigs g).all (fun s => !s.params.any (·.purpose == .sret)) &&
     P.funcs.all (fun h => !mayB g h.name ||
       !((indSigs g).any (fun s => decide (LinkSys.IndSigMatch s h)) ||
         (declB g h.name && (indSigs g).any (fun s => decide (LinkSys.IndTyMatch s h)))) ||
       (!h.sig.params.any (·.purpose == .sret) &&
-      (match sigParamBytes h.sig with | .ok b => decide (b.length ≤ 8) | .error _ => false))) &&
-    symsW g.name == none)
+      (match sigParamBytes h.sig with | .ok b => decide (b.length ≤ 8) | .error _ => false))))
 
 /-- Distinct names have distinct addresses; the functions with an address have no slots. -/
 def symB : Bool :=
@@ -1010,7 +1014,7 @@ theorem symsW_some {n : String} {b : Nat} (h : symsW n = some b) :
 /-- `MayCall` of the witness is decided by `mayB`. -/
 theorem mayB_of {F : BitVec 64 → Prop} {g : Clif.Function} {n : String}
     (h : (L F).MayCall g n) : mayB g n = true := by
-  rcases h with h | ⟨hnf, hne, hs, -⟩
+  rcases h with h | ⟨hnf, hs, -⟩
   · simp [mayB, declB_of h]
   · have hi : indFreeB g = false := by
       cases e : indFreeB g
@@ -1018,7 +1022,7 @@ theorem mayB_of {F : BitVec 64 → Prop} {g : Clif.Function} {n : String}
       · exact absurd (indFreeB_sound e) hnf
     have hs' : (symsW n).isSome = true := by
       simpa [L, Option.isSome_iff_ne_none] using hs
-    simp [mayB, hi, hne, hs']
+    simp [mayB, hi, hs']
 
 theorem indToB_of {F : BitVec 64 → Prop} {g h : Clif.Function} (hi : (L F).IndTo g h) :
     indToB g h = true := by
@@ -1028,11 +1032,6 @@ theorem indToB_of {F : BitVec 64 → Prop} {g h : Clif.Function} (hi : (L F).Ind
       Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq]
     exact .inr ⟨sig, hs, hm, hl⟩
 
-theorem mayCall_ne {F : BitVec 64 → Prop} {g h : Clif.Function} (hm : (L F).MayCall g h.name) :
-    h ≠ g := by
-  rintro rfl
-  rcases hm with ⟨-, hne⟩ | ⟨-, hne, -⟩ <;> exact hne rfl
-
 /-- What `indB` says of a function with indirect calls. -/
 theorem indFacts {F : BitVec 64 → Prop} {g : Clif.Function} (hg : g ∈ P.funcs)
     (hnf : ¬ Clif.IndFree g) :
@@ -1040,13 +1039,12 @@ theorem indFacts {F : BitVec 64 → Prop} {g : Clif.Function} (hg : g ∈ P.func
     (∀ h ∈ P.funcs, (L F).MayCall g h.name → ((∃ sig ∈ indSigs g, LinkSys.IndSigMatch sig h) ∨
       (DeclN g h.name ∧ ∃ sig ∈ indSigs g, LinkSys.IndTyMatch sig h)) →
       h.sig.params.any (·.purpose == .sret) = false ∧
-      ∃ bytes, sigParamBytes h.sig = .ok bytes ∧ bytes.length ≤ 8) ∧
-    symsW g.name = none := by
+      ∃ bytes, sigParamBytes h.sig = .ok bytes ∧ bytes.length ≤ 8) := by
   have h := (facts hg).ind
   simp only [indB, Bool.or_eq_true, Bool.and_eq_true, List.all_eq_true] at h
-  rcases h with h | ⟨⟨h1, h2⟩, h3⟩
+  rcases h with h | ⟨h1, h2⟩
   · exact absurd (indFreeB_sound h) hnf
-  refine ⟨fun sig hs => by simpa using h1 sig hs, fun h' hh hd hm => ?_, by simpa using h3⟩
+  refine ⟨fun sig hs => by simpa using h1 sig hs, fun h' hh hd hm => ?_⟩
   have h2' := h2 h' hh
   rw [mayB_of hd] at h2'
   have hany : ((indSigs g).any (fun s => decide (LinkSys.IndSigMatch s h')) ||
@@ -1110,7 +1108,7 @@ theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
         exact .inl ⟨g, hg, (fn, e'), hm, hname.symm⟩
       · refine ⟨?_, hh'⟩
         simp only [calleeB, Bool.or_eq_true, List.any_eq_true, beq_iff_eq]
-        rcases hm with ⟨hd, -⟩ | ⟨-, -, hs, -⟩
+        rcases hm with ⟨hd, -⟩ | ⟨-, hs, -⟩
         · obtain ⟨⟨fn, e'⟩, hm, hen⟩ := List.mem_map.1 hd
           exact .inl ⟨g, hg, (fn, e'), hm, hen⟩
         · exact .inr (by simpa [L, Option.isSome_iff_ne_none] using hs)
@@ -1118,7 +1116,7 @@ theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
   refine
     { names := hnames
       free := fun g hg => (facts hg).free
-      subset := fun g hg => ⟨?_, (facts hg).subsetE, ?_, ?_, (facts hg).abi, ?_⟩
+      subset := fun g hg => ⟨(facts hg).subsetE, ?_, ?_, (facts hg).abi, ?_⟩
       compiled := fun g hg => ?_
       covered := fun g hg => (facts hg).covered
       outFits := fun g hg e he hs i off p hl hp => ?_
@@ -1132,8 +1130,11 @@ theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
         obtain ⟨t, Lu, Ld, hi, hall⟩ := blrOk_sound (siteOk_reg (site_sound (facts hg).sites hs) hreg)
         exact ⟨t, Lu, Ld, hi, fun h hh hb =>
           hall h hh (indToB_of hb.1) fun n hn => (hb.2 n (gotOf_sound hn)).symm⟩
-      raBlr := fun g hg info hs hreg h hh hdecl pc hpc =>
-        raCallB_sound (facts hg).ra hpc h hh (mayCall_ne hdecl)
+      raBlr := fun g hg info hs hreg h hh hdecl pc hpc => by
+        by_cases hhg : h = g
+        · subst hhg
+          exact .inr ⟨hpc, (raCallB_parts (facts hh).ra hpc).1⟩
+        · exact raCallB_sound (facts hg).ra hpc h hh hhg
       indScope := fun g hg hnf => ⟨fun n f h => by simp [L, Clif.Env.empty] at h,
         fun a ha b hb x hxa hxb => by
           obtain ⟨ga, hga, rfl⟩ := List.mem_map.1 ha
@@ -1143,9 +1144,8 @@ theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
           rw [hxa, hxb] at this
           simpa using this,
         fun _ _ _ _ _ _ _ _ _ => by simp [L, Clif.Env.empty]⟩
-      indNoSym := fun g hg hnf => (indFacts (F := F) hg hnf).2.2
       indSig := fun g hg hnf h hh hmay hm => by
-        obtain ⟨hns, hb⟩ := (indFacts (F := F) hg hnf).2.1 h hh hmay hm
+        obtain ⟨hns, hb⟩ := (indFacts (F := F) hg hnf).2 h hh hmay hm
         refine ⟨hb, fun sig hs _ hl => ?_⟩
         rw [sigRets_of_noSret hns, sigRets_of_noSret ((indFacts (F := F) hg hnf).1 sig hs), hl]
       addrSlots := fun _ _ _ h hh hs => by
@@ -1185,7 +1185,6 @@ theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
       baseTlsNI := fun _ F' => xbTls F'
       baseKeepsPlace := fun _ n gsem hn => by simp [L, Clif.Env.empty] at hn
       baseKeepsAllocs := fun _ n gsem hn => by simp [L, Clif.Env.empty] at hn }
-  · simp [L, Clif.Program.only, Clif.Program.func?]
   · intro b _ st _ fn args _ e he
     have hne := (facts hg).extName e (lookup_mem he)
     simp [L, Clif.Program.only, Clif.Program.func?, Ne.symm hne]
@@ -1819,17 +1818,17 @@ theorem backend_correct_program_witness :
   have hniZ : ¬ Clif.IndFree fZ := fun h => by rw [indFreeB_of h] at hiz; cases hiz
   have hpS : (L F0).P.func? fS.name = some fS := by show P.func? fS.name = some fS; rw [hns]; exact hps
   have hnmY : ¬ (L F0).MayCall fY fS.name := by
-    rintro (hd | ⟨-, -, -, hall⟩)
+    rintro (hd | ⟨-, -, hall⟩)
     · have h1 := hd.1; rw [hexty] at h1; simp at h1
     · obtain ⟨sig, hs, hm⟩ := hall fS hpS
       exact hnomatchY sig hs hm
   have hnmZ : ¬ (L F0).MayCall fZ fS.name := by
-    rintro (hd | ⟨-, -, -, hall⟩)
+    rintro (hd | ⟨-, -, hall⟩)
     · have h1 := hd.1; rw [hextz] at h1; simp at h1
     · obtain ⟨sig, hs, hm⟩ := hall fS hpS
       exact hnoZ sig hs hm
   have hnmV : ¬ (L F0).MayCall fV fK.name := by
-    rintro (hd | ⟨-, -, -, hall⟩)
+    rintro (hd | ⟨-, -, hall⟩)
     · have := declB_of hd; rw [hnk, hndk] at this; cases this
     · obtain ⟨sig, hs, hm⟩ := hall fK (by show P.func? fK.name = some fK; rw [hnk]; exact hpk)
       exact hnomatch sig hs hm.ty

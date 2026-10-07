@@ -49,7 +49,7 @@ theorem correct_closed : ∃ f, (prog spec.input).func? n = some f ∧
         (StackBound.stackFn spec.input f) r args cs.mem →
       ClifRun spec.input closedBase f r args cs →
       TrapsExplicit (Clif.linkEnvN (prog spec.input) closedBase.env M)
-        ((prog spec.input).only f) cs →
+        (prog spec.input).bare cs →
       ExecRefines (art spec.input f).fb (art spec.input f).base (xreg 30 r)
         (step spec.input closedBase file) r (BinCheck.RelocAt spec.input)
         (Clif.runLoop closedBase.env (prog spec.input) (M + 1) cs) := by

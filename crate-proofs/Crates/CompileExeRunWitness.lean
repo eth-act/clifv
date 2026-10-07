@@ -231,7 +231,7 @@ theorem compileExe_run_witness :
     OutsideCall J (BinCheck.roByte J spec.data) f (StackBound.stackFn J f) (r (memOf file))
       args cs.mem ∧
     ClifRun J closedBase f (r (memOf file)) args cs ∧
-    TrapsExplicit (Clif.linkEnvN (prog J) closedBase.env M) ((prog J).only f) cs ∧
+    TrapsExplicit (Clif.linkEnvN (prog J) closedBase.env M) (prog J).bare cs ∧
     Clif.runLoop closedBase.env (prog J) (M + 1) cs =
       .returned [⟨.i32, 5#32⟩] (LinkWitness.retMem run) ∧
     ∃ k, ArmRet ra0 (r (memOf file)) (runX (step J closedBase file) k (r (memOf file))) ∧

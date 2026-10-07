@@ -30,7 +30,7 @@ theorem backend_correct_program_stackX (L : LinkSys) (hL : L.Ok) {κ : Nat → C
     (hrel : Rel.holds ⟨L.F, L.syms, (L.A f).af.slotBase,
       (RAFrame.compute (L.A f).vcp (L.A f).rf).intBase⟩ f cs.frame.slots cs.mem w₀)
     (hpl : L.NeedSlots → L.PlaceAt cs.mem (spv w₀))
-    (htr : TrapsExplicit (Clif.linkEnvN L.P L.base M) (L.P.only f) cs) :
+    (htr : TrapsExplicit (Clif.linkEnvN L.P L.base M) L.P.bare cs) :
     ArmRefines (L.A f).fb (L.A f).base ra (L.mach M f) s (Clif.runLoop L.base L.P (M + 1) cs) ∧
       ((∃ vals cm, Clif.runLoop L.base L.P (M + 1) cs = .returned vals cm) ∨
         (∃ c, Clif.runLoop L.base L.P (M + 1) cs = .trapped c) → L.RunGoodL M f s) := by
@@ -62,7 +62,7 @@ def ProgStmtSX (L : LinkSys) (I : LinkInput) (n : String) : Prop :=
     Rel.holds ⟨L.F, L.syms, (L.A f).af.slotBase,
       (RAFrame.compute (L.A f).vcp (L.A f).rf).intBase⟩ f cs.frame.slots cs.mem w₀ →
     (L.NeedSlots → L.PlaceAt cs.mem (spv w₀)) →
-    TrapsExplicit (Clif.linkEnvN L.P L.base M) (L.P.only f) cs →
+    TrapsExplicit (Clif.linkEnvN L.P L.base M) L.P.bare cs →
     ArmRefines (L.A f).fb (L.A f).base ra (L.mach M f) s (Clif.runLoop L.base L.P (M + 1) cs) ∧
       ((∃ vals cm, Clif.runLoop L.base L.P (M + 1) cs = .returned vals cm) ∨
         (∃ c, Clif.runLoop L.base L.P (M + 1) cs = .trapped c) → L.RunGoodL M f s)
@@ -129,7 +129,7 @@ theorem binary_correctX {I : LinkInput} {X : Image} {R : BitVec 64 → Prop}
     {args : List Clif.Val} {cs : Clif.State} (hX : X.Intact r)
     (ho : OutsideCall I roB f (StackBound.stackFn I f) r args cs.mem)
     (hr : ClifRun I B f r args cs)
-    (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) ((prog I).only f) cs) :
+    (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) (prog I).bare cs) :
     ArmRefines (art I f).fb (art I f).base (xreg 30 r) ((sys I B).mach M f) (modelOf I f r)
       (Clif.runLoop B.env (prog I) (M + 1) cs) ∧
     (∀ a, (modelOf I f r).mem a ≠ r.mem a → R a) ∧
@@ -160,7 +160,7 @@ theorem binary_correct_of_checksX {I : LinkInput} {D : List Clif.DataObject} {fi
     {cs : Clif.State} (hX : (imageOf file).Intact r)
     (ho : OutsideCall I (BinCheck.roByte I D) f (StackBound.stackFn I f) r args cs.mem)
     (hr : ClifRun I B f r args cs)
-    (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) ((prog I).only f) cs) :
+    (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) (prog I).bare cs) :
     ArmRefines (art I f).fb (art I f).base (xreg 30 r) ((sys I B).mach M f) (modelOf I f r)
       (Clif.runLoop B.env (prog I) (M + 1) cs) ∧
     (∀ a, (modelOf I f r).mem a ≠ r.mem a → BinCheck.RelocAt I a) ∧

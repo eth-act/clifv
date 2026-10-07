@@ -1194,7 +1194,7 @@ theorem binary_correct_exec_of_good {I : LinkInput} {D : List Clif.DataObject} {
     {cs : Clif.State} (hX : (imageOf file).Intact r)
     (ho : OutsideCall I (BinCheck.roByte I D) f (StackBound.stackFn I f) r args cs.mem)
     (hr : ClifRun I B f r args cs)
-    (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) ((prog I).only f) cs)
+    (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) (prog I).bare cs)
     (hrun : RunOk I B file M f (modelOf I f r)) :
     ExecRefines (art I f).fb (art I f).base (xreg 30 r) (step I B file) r (RelocAt I)
       (Clif.runLoop B.env (prog I) (M + 1) cs) := by
@@ -1218,7 +1218,7 @@ theorem binary_correct_exec {I : LinkInput} {D : List Clif.DataObject} {file : B
     {args : List Clif.Val} {cs : Clif.State} (hX : (imageOf file).Intact r)
     (ho : OutsideCall I (BinCheck.roByte I D) f (StackBound.stackFn I f) r args cs.mem)
     (hr : ClifRun I B f r args cs)
-    (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) ((prog I).only f) cs)
+    (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) (prog I).bare cs)
     (hrun : RunOk I B file M f (modelOf I f r)) :
     ExecRefines (art I f).fb (art I f).base (xreg 30 r) (step I B file) r (RelocAt I)
       (Clif.runLoop B.env (prog I) (M + 1) cs) :=

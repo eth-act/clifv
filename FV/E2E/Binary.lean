@@ -400,7 +400,7 @@ theorem binary_correct_depth {I : LinkInput} (hI : okB I = true) (B : BaseEnv)
     (M : Nat) {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (ho : OutsideCall I (fun _ => none) f (frameDrop (art I f).af + I.D * M) r args cs.mem)
     (hr : ClifRun I B f r args cs)
-    (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) ((prog I).only f) cs) :
+    (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) (prog I).bare cs) :
     ArmRefines (art I f).fb (art I f).base (xreg 30 r) ((sys I B).mach M f) (modelOf I f r)
       (Clif.runLoop B.env (prog I) (M + 1) cs) := by
   have hB' : BaseOk (LinkSys.ofInput I B (worldF I f (I.D * M) r)) := baseOk_F hB
@@ -436,24 +436,16 @@ theorem trapsExplicit_of_run {L : LinkSys} (hL : L.Ok) {f : Clif.Function} (hf :
     {M : Nat} {args : List Clif.Val} {cs : Clif.State} {vals : List Clif.Val} {cm : Clif.Mem}
     (hcs : ClifEntry f args cs) (hsym : cs.mem.symbols = L.syms)
     (hrun : Clif.runLoop L.base L.P (M + 1) cs = .returned vals cm) :
-    TrapsExplicit (Clif.linkEnvN L.P L.base M) (L.P.only f) cs := by
+    TrapsExplicit (Clif.linkEnvN L.P L.base M) L.P.bare cs := by
   have hIf : Clif.LInv (L.P.only f) cs := runInv_entry (by simp [Clif.Program.only]) hcs
   obtain ⟨m, hm⟩ := Clif.runLoop_linkN (base := L.base) (syms := L.syms) M hL.names hf hL.free
-    (hL.indScope f hf) (E := Clif.linkEnvN L.P L.base M) rfl rfl (fun _ _ => rfl)
-    (fun _ _ _ _ => rfl)
+    (hL.indScope f hf) (hL.subset f hf).externCalls (hL.subset f hf).tryExterns
+    (E := Clif.linkEnvN L.P L.base M) rfl rfl (fun _ _ => rfl) (fun _ _ _ => rfl)
     (M + 1) cs (Nat.le_refl _) (runInv_entry hf hcs) hIf
     (fun _ => hsym) (by rw [hrun]; exact fun _ h => nomatch h)
     (by rw [hrun]; exact fun h => nomatch h)
   rw [hrun] at hm
-  refine trapsExplicit_of_returned (fun hnf s hr g' hg' => ?_) hm
-  rw [hcs.func] at hnf
-  simp only [Clif.Program.only, List.mem_cons, List.not_mem_nil, or_false] at hg'
-  subst hg'
-  have hPf : ∀ g ∈ (L.P.only g').funcs, Clif.LinkFree g := fun g hg => by
-    simp only [Clif.Program.only, List.mem_cons, List.not_mem_nil, or_false] at hg
-    subst hg; exact hL.free g hf
-  rw [(reach_symbols hPf (Clif.linkEnvN_keeps hL.free (hL.indScope g' hf hnf).keep) hr hIf).1, hsym]
-  exact hL.indNoSym g' hf hnf
+  exact trapsExplicit_of_returned hm
 
 /-! ## The binary facts -/
 
@@ -498,7 +490,7 @@ theorem binary_correct {I : LinkInput} {X : Image} {R : BitVec 64 → Prop}
     {args : List Clif.Val} {cs : Clif.State} (hX : X.Intact r)
     (ho : OutsideCall I roB f (StackBound.stackFn I f) r args cs.mem)
     (hr : ClifRun I B f r args cs)
-    (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) ((prog I).only f) cs) :
+    (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) (prog I).bare cs) :
     ArmRefines (art I f).fb (art I f).base (xreg 30 r) ((sys I B).mach M f) (modelOf I f r)
       (Clif.runLoop B.env (prog I) (M + 1) cs) ∧
     ∀ a, (modelOf I f r).mem a ≠ r.mem a → R a := by
@@ -529,7 +521,7 @@ theorem binary_correct_bound {I : LinkInput} {X : Image} {R : BitVec 64 → Prop
     {f : Clif.Function} (hf : (prog I).func? n = some f) (M : Nat) {r : Arm.ArmState}
     {args : List Clif.Val} {cs : Clif.State} (hX : X.Intact r)
     (ho : OutsideCall I roB f S r args cs.mem) (hr : ClifRun I B f r args cs)
-    (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) ((prog I).only f) cs) :
+    (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) (prog I).bare cs) :
     ArmRefines (art I f).fb (art I f).base (xreg 30 r) ((sys I B).mach M f) (modelOf I f r)
       (Clif.runLoop B.env (prog I) (M + 1) cs) ∧
     ∀ a, (modelOf I f r).mem a ≠ r.mem a → R a := by
@@ -570,7 +562,7 @@ theorem binary_correct_of_checks {I : LinkInput} {D : List Clif.DataObject} {fil
     {cs : Clif.State} (hX : (imageOf file).Intact r)
     (ho : OutsideCall I (BinCheck.roByte I D) f (StackBound.stackFn I f) r args cs.mem)
     (hr : ClifRun I B f r args cs)
-    (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) ((prog I).only f) cs) :
+    (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) (prog I).bare cs) :
     ArmRefines (art I f).fb (art I f).base (xreg 30 r) ((sys I B).mach M f) (modelOf I f r)
       (Clif.runLoop B.env (prog I) (M + 1) cs) ∧
     ∀ a, (modelOf I f r).mem a ≠ r.mem a → BinCheck.RelocAt I a :=
@@ -587,7 +579,7 @@ theorem binary_correct_of_checks_acyclic {I : LinkInput} {D : List Clif.DataObje
     {args : List Clif.Val} {cs : Clif.State} (hX : (imageOf file).Intact r)
     (ho : OutsideCall I (BinCheck.roByte I D) f (StackBound.stackFn I f) r args cs.mem)
     (hr : ClifRun I B f r args cs)
-    (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) ((prog I).only f) cs) :
+    (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) (prog I).bare cs) :
     ArmRefines (art I f).fb (art I f).base (xreg 30 r) ((sys I B).mach M f) (modelOf I f r)
       (Clif.runLoop B.env (prog I) (M + 1) cs) ∧
     ∀ a, (modelOf I f r).mem a ≠ r.mem a → BinCheck.RelocAt I a :=

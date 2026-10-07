@@ -148,7 +148,7 @@ premises. Deferred, in order:
     program-level legalisation refinement (`Opt.Legal.check_refines` per function under a
     linked environment satisfying `ExtLegal`, by induction on the call depth; `NoMemTrap` of
     callee runs, `EnvKeepsAllocs` of the linked environment).
-  - recursion through a pointer (the caller's own address); reachable indirect callees (whose
+  - reachable indirect callees (whose
     signature matches an indirect call of the caller, `IndSigMatch`: parameter types and
     purposes, return types since agent/sret-purpose; agent/link-scope2 restricted `indSig` to
     those, agent/crate-check3 `blrRegs`/`blrTry` to `IndTo`) with stack-passed or `sret`

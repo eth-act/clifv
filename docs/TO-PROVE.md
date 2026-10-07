@@ -389,9 +389,10 @@ author's estimate, not measured), **Risk**.
   "Widening 13"): deps 15 → 12. Declared callees at indirect calls are done (#89 (c): `Clif.Env.sigOf`,
   `callExternAt` checks `abiMatch` against the linked environment's signatures; GOT calls only of
   non-colocated declarations; `IndTo` narrowed to `DeclN ∧ GotDecl` or a matching indirect call;
-  e2e.md "Widening 14"): deps 12 → 8, `blrRegs` 0. Left: fv-demo 1 and deps 8 functions with
-  indirect calls whose own address is taken (`indNoSym`) — a pointer to `g` must resolve through
-  the environment in the per-function run, or the backend theorem must cover self-entry. The
+  e2e.md "Widening 14"): deps 12 → 8, `blrRegs` 0. Indirect self-calls are done (#89 (b):
+  `Ok.indNoSym` gone; the activation runs in `P.bare`, the program without functions, so a pointer to
+  `g` resolves through the linked environment to `g`'s whole-program run; `MayCall` includes `g`
+  itself; e2e.md "Widening 15"): deps 8 → 0, fv-demo 1 → 0, both written by `Link.compileExe`. The
   outside part's bytes stay rust-lld's (design (b), L2b).
 
 ### L2. Linking without validators
@@ -437,7 +438,7 @@ author's estimate, not measured), **Risk**.
   | calleeFrame/slotFits | `calleeFrame`, `slotFits` | own output | `frame_of_lower` (`FV/E2E/LinkOwnFrames.lean`) |
   | declSig | `declSig` | input | `progScopeB` (`declSigB`) |
   | raCall/raBlr | `raCall`, `raBlr` | linker output | `linkerOkB` |
-  | indScope/indNoSym/indSig | `indScope`, `indNoSym`, `indSig` | input | `progScopeB` (`indB`) |
+  | indScope/indSig | `indScope`, `indSig` | input | `progScopeB` (`indB`) |
   | names: distinct | `names` | input | `progScopeB` |
   | imgCode: the image reads back | `imgAddr`, `imgCode` | linker output | `linkerOkB` (`imgB`) |
   | raStar | `raStar` | linker output | `linkerOkB` |

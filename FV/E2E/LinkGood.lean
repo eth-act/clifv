@@ -72,7 +72,7 @@ def ThmG (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
   ∀ g ∈ L.P.funcs, ∀ (F : BitVec 64 → Prop) (vals : List Clif.Val) (cs : Clif.State)
     (w₀ : Arm.ArmState) (fuel : Nat)
     (rvals : List Clif.Val) (cm' : Clif.Mem), L.WorldEntry κ M g F vals cs w₀ →
-    Clif.runLoop (L.envR M g) (L.P.only g) fuel cs = .returned rvals cm' →
+    Clif.runLoop (L.envR M g) L.P.bare fuel cs = .returned rvals cm' →
       (∀ G ra s, L.MachEntry κ M g F G ra s w₀ → L.RunGoodL M g s) ∧
       (L.NeedNI → ∀ (D : BitVec 64 → Prop) (w₀' : Arm.ArmState),
         RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩
@@ -155,9 +155,10 @@ theorem progCallG (hL : L.Ok) {M : Nat} (hM : 0 < M) (ihG : L.ThmG κ (M - 1)) {
     obtain ⟨g, hg, hcg⟩ := hcal
     exact hL.slotFits g hg h hcg
   have hce : ClifEntry h vals cs := clifEntry_initState hpf hinit
-  -- the per-function run (program callees at most `M - 1` steps)
+  -- the run of the program without functions (program callees at most `M - 1` steps)
   obtain ⟨m, hm⟩ := Clif.runLoop_linkN (base := L.base) (syms := L.syms) (M - 1) hL.names hh
-    hL.free (hL.indScope h hh) (E := L.envR (M - 1) h) rfl rfl (fun _ hn => L.envR_of (.inl hn))
+    hL.free (hL.indScope h hh) (hL.subset h hh).externCalls (hL.subset h hh).tryExterns
+    (E := L.envR (M - 1) h) rfl rfl (fun _ hn => L.envR_of (.inl hn))
     (L.envR_link hL.names) M cs (by omega) (runInv_entry hh hce)
     (runInv_entry (by simp [Clif.Program.only]) hce) (fun _ => hsym'.trans hmr.symbols)
     (by rw [hrun]; intro _ e; cases e) (by rw [hrun]; intro e; cases e)
@@ -771,27 +772,16 @@ theorem thmG_of (hL : L.Ok) (hκ : L.Budget κ) {M : Nat} (ih : 0 < M → L.Thm 
   intro g hg F vals cs w₀ fuel rvals cm' hWE hrun
   have hc := hL.compiled g hg
   have hI : Clif.LInv (L.P.only g) cs := runInv_entry (by simp [Clif.Program.only]) hWE.clif
-  have hJ : L.ActInv g (spv w₀) cs :=
-    ⟨hI, hWE.clif.callers, fun _ => hWE.rel.1.1.symbols, hWE.place⟩
-  have hrun' : Clif.runLoop (L.envOf M g (spv w₀)) (L.P.only g) fuel cs = .returned rvals cm' := by
+  have hJ : L.ActInv g (spv w₀) cs := ⟨hI, hWE.clif.callers, hWE.place⟩
+  have hrun' : Clif.runLoop (L.envOf M g (spv w₀)) L.P.bare fuel cs = .returned rvals cm' := by
     rw [L.runLoop_envOf hL hg fuel cs hJ]; exact hrun
-  -- the indirect calls of `g` reach no function of the program: `g` has no address
-  have htr : TrapsExplicit (L.envOf M g (spv w₀)) (L.P.only g) cs := by
-    refine trapsExplicit_of_returned (fun hnf s hr g' hg' => ?_) hrun'
-    rw [hWE.clif.func] at hnf
-    simp only [Clif.Program.only, List.mem_cons, List.not_mem_nil, or_false] at hg'
-    subst hg'
-    have hk := L.envOf_keeps hL (M := M) (g := g') (c := spv w₀) (hL.indScope g' hg hnf).keep
-    have hPf : ∀ f ∈ (L.P.only g').funcs, Clif.LinkFree f := fun f hf => by
-      simp only [Clif.Program.only, List.mem_cons, List.not_mem_nil, or_false] at hf
-      subst hf; exact hL.free f hg
-    rw [(reach_symbols hPf hk hr hI).1, hWE.rel.1.1.symbols]
-    exact hL.indNoSym g' hg hnf
-  have h := backend_correct_world_niX (hL.subset g hg) hc (X := L.X κ M g F) (syms := L.syms)
+  have h := backend_correct_world_niX ((hL.subset g hg).retarget (Clif.Program.bare_func? L.P)) hc
+    (X := L.X κ M g F) (syms := L.syms)
     (env := L.envOf M g (spv w₀)) (K := κ M g) (F := F) (c := spv w₀) (hL.covered g hg)
     (L.xCallsOk hL hκ ih hg hWE.img hWE.room hWE.dead hWE.align)
     (L.xCallsIndOk hL hκ ih hg hWE.img hWE.room hWE.dead hWE.align)
-    (fun n b hn => hL.symOk n b hn) rfl hWE.clif hWE.rel hWE.args htr fuel
+    (fun n b hn => hL.symOk n b hn) rfl hWE.clif hWE.rel hWE.args
+    (trapsExplicit_of_returned hrun') fuel
   obtain ⟨_us, _outs, _wf, -, -, -, -, -, hall, hni⟩ := h rvals cm' hrun'
   have hAE : ∀ G ra s w₀', L.MachEntry κ M g F G ra s w₀' →
       ActEntry (L.A g).vcp (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb (κ M g) F G (L.X κ M g F)
@@ -841,7 +831,7 @@ theorem backend_correct_program_budgetX (L : LinkSys) (hL : L.Ok)
     (hrel : Rel.holds ⟨L.F, L.syms, (L.A f).af.slotBase,
       (RAFrame.compute (L.A f).vcp (L.A f).rf).intBase⟩ f cs.frame.slots cs.mem w₀)
     (hpl : L.NeedSlots → L.PlaceAt cs.mem (spv w₀))
-    (htr : TrapsExplicit (Clif.linkEnvN L.P L.base M) (L.P.only f) cs) :
+    (htr : TrapsExplicit (Clif.linkEnvN L.P L.base M) L.P.bare cs) :
     ArmRefines (L.A f).fb (L.A f).base ra (L.mach M f) s (Clif.runLoop L.base L.P (M + 1) cs) ∧
       ((∃ vals cm, Clif.runLoop L.base L.P (M + 1) cs = .returned vals cm) ∨
         (∃ c, Clif.runLoop L.base L.P (M + 1) cs = .trapped c) → L.RunGoodL M f s) := by
@@ -877,10 +867,11 @@ theorem backend_correct_program_budgetX (L : LinkSys) (hL : L.Ok)
     ⟨hent.toCall, hres, hgfree, hF.symm, fun _ h => h, himg,
       hbe.w L.F fun r ⟨_, _, hvb, hi, _, hv⟩ =>
         ((ctlCheck_args (lowerRFunc_ok hc.alloc).2.2 hvb hi).2.2 _ hv).2⟩
-  -- the whole-program run is a per-function run
+  -- the whole-program run is a run of the program without functions
   have hIf : Clif.LInv (L.P.only f) cs := runInv_entry (by simp [Clif.Program.only]) hcs
   have hlink := Clif.runLoop_linkN (base := L.base) (syms := L.syms) M hL.names hf hL.free
-    (hL.indScope f hf) (E := L.envR M f) rfl rfl (fun _ hn => L.envR_of (.inl hn))
+    (hL.indScope f hf) (hL.subset f hf).externCalls (hL.subset f hf).tryExterns (E := L.envR M f)
+    rfl rfl (fun _ hn => L.envR_of (.inl hn))
     (L.envR_link hL.names) (M + 1) cs (Nat.le_refl _) (runInv_entry hf hcs) hIf
     (fun _ => hrel.1.symbols)
   cases ho : Clif.runLoop L.base L.P (M + 1) cs with
@@ -894,10 +885,11 @@ theorem backend_correct_program_budgetX (L : LinkSys) (hL : L.Ok)
     obtain ⟨m, hm⟩ := hlink (by rw [ho]; exact fun _ h => nomatch h) (by rw [ho]; exact fun h => nomatch h)
     rw [ho] at hm
     have ih : 0 < M → L.Thm κ (M - 1) := fun _ => L.thm hL hκ (M - 1)
-    have hJ : L.ActInv f (spv w₀) cs := ⟨hIf, hcs.callers, fun _ => hrel.1.symbols, hpl⟩
-    have hm' : Clif.runLoop (L.envOf M f (spv w₀)) (L.P.only f) m cs = .trapped c := by
+    have hJ : L.ActInv f (spv w₀) cs := ⟨hIf, hcs.callers, hpl⟩
+    have hm' : Clif.runLoop (L.envOf M f (spv w₀)) L.P.bare m cs = .trapped c := by
       rw [L.runLoop_envOf hL hf m cs hJ]; exact hm
-    have h := backend_correct_worldX (hL.subset f hf) hc (X := L.X κ M f L.F) (syms := L.syms)
+    have h := backend_correct_worldX ((hL.subset f hf).retarget (Clif.Program.bare_func? L.P)) hc
+      (X := L.X κ M f L.F) (syms := L.syms)
       (env := L.envOf M f (spv w₀)) (K := κ M f) (F := L.F) (c := spv w₀) (hL.covered f hf)
       (L.xCallsOk hL hκ ih hf hL.imgF hWE.room hWE.dead hWE.align)
       (L.xCallsIndOk hL hκ ih hf hL.imgF hWE.room hWE.dead hWE.align)
