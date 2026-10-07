@@ -79,7 +79,7 @@ def CallRunHyp : Prop :=
       (∃ B ∈ f.blocks, B.term = t) →
       tryCallData f t = .ok data → exnTableOpnd f et = .ok (sig, items) →
       ctx.valDef.size ≤ lo.nextVreg → tryRegsOf sig lo = some (trs, st1) →
-      tryCallF ctx ti data trs targets { st1 with emitted := #[] } = .ok (out, s', tr) →
+      tryCallF ctx ti data trs targets { st1 with emitted := #[] } = .ok (some out, s', tr) →
       ∃ (ms : List MInst) (c : CallInfo), s'.emitted = (ms ++ [MInst.call c]).toArray ∧
         NoTry ms ∧ NoCalls ms ∧ TryRunCall f t ctx.valDef.size (ms ++ [MInst.call c]) c)
 

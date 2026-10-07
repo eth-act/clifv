@@ -564,16 +564,18 @@ def CallStmtRunHyp : Prop :=
         ∀ c, MInst.call c ∈ ms → RunCall f inst ctx.valDef.size ms c
 
 /-- **The `try_call` part of `CallRunHyp`** (its third conjunct): a `try_call`'s
-`lower_branch` emits the call of that terminator last (`TryRunCall`) and no other call. -/
+`lower_branch` run that returns a value (the driver's: `lowTerm_spec`; `lower_branch` is
+partial, and a run committing to no rule emits nothing) emits the call of that terminator last
+(`TryRunCall`) and no other call. -/
 def TryRunHyp : Prop :=
   ∀ (f : Clif.Function) (ctx : Ctx) (ranges : Array (Nat × Nat)) (st0 : LState),
     Dominated f → LowerScope f → Spill.AbiSigsOk f → buildCtx f = .ok (ctx, ranges, st0) →
-    ∀ ti t et data sig items lo trs st1 targets out s' tr, ti < ctx.insts.size →
+    ∀ ti t et data sig items lo trs st1 targets (out : V) s' tr, ti < ctx.insts.size →
       ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩ → IsTryWith t et →
       (∃ B ∈ f.blocks, B.term = t) →
       tryCallData f t = .ok data → exnTableOpnd f et = .ok (sig, items) →
       ctx.valDef.size ≤ lo.nextVreg → tryRegsOf sig lo = some (trs, st1) →
-      tryCallF ctx ti data trs targets { st1 with emitted := #[] } = .ok (out, s', tr) →
+      tryCallF ctx ti data trs targets { st1 with emitted := #[] } = .ok (some out, s', tr) →
       ∃ (ms : List MInst) (c : CallInfo), s'.emitted = (ms ++ [MInst.call c]).toArray ∧
         NoTry ms ∧ NoCalls ms ∧ TryRunCall f t ctx.valDef.size (ms ++ [MInst.call c]) c
 

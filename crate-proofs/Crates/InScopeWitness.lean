@@ -6,9 +6,10 @@ import FV.E2E.LinkScope
 
 `E2E.LinkCheck.crate_correct_inScope` (`FV/E2E/LinkScope.lean`) needs of a crate only the input
 conditions `InScopeP` and the linker's facts `linkerOkB` (besides the program-independent open
-facts `OwnHyps`). Both hold for the survey crate `a_arith` (`Crates.AArith.input`, 58 functions)
-and for `fv-demo` (`Crates.FvDemo.input`, 551 functions): decided by `native_decide` (`fvcheck`
-holds the compiled code of `FV.E2E.LinkScopeDefs`). The closed base environment satisfies the
+fact `SpillDefinedHyp`). Both hold for the survey crate `a_arith` (`Crates.AArith.input`, 58
+functions) and for `fv-demo` (`Crates.FvDemo.input`, 551 functions): decided by
+`native_decide` (`fvcheck` holds the compiled code of `FV.E2E.LinkScopeDefs`). The closed
+base environment satisfies the
 base premises of `a_arith`'s linked system (`base_closedT`), so the theorem is not vacuous in them
 either. -/
 
@@ -27,8 +28,8 @@ theorem noTls : Crates.AArith.input.prog.funcs.all (fun g => !Backend.hasTls g) 
   native_decide
 
 /-- **`backend_correct_program` for every function of `a_arith`**, without `okB`. -/
-theorem crate_correct (hO : OwnHyps) (n : String) : CrateStmtT Crates.AArith.input n :=
-  crate_correct_inScope hO inScope_input linker_input n
+theorem crate_correct (hD : SpillDefinedHyp) (n : String) : CrateStmtT Crates.AArith.input n :=
+  crate_correct_inScope hD inScope_input linker_input n
 
 /-- The closed base environment satisfies the base premises of `a_arith`'s linked system. -/
 theorem base_closedT (F : BitVec 64 → Prop) :
@@ -42,7 +43,7 @@ theorem inScope_fvDemo : InScopeP Crates.FvDemo.input = true := by native_decide
 theorem linker_fvDemo : linkerOkB Crates.FvDemo.input = true := by native_decide
 
 /-- **`backend_correct_program` for every function of `fv-demo`**, without `okB`. -/
-theorem crate_correct_fvDemo (hO : OwnHyps) (n : String) : CrateStmtT Crates.FvDemo.input n :=
-  crate_correct_inScope hO inScope_fvDemo linker_fvDemo n
+theorem crate_correct_fvDemo (hD : SpillDefinedHyp) (n : String) : CrateStmtT Crates.FvDemo.input n :=
+  crate_correct_inScope hD inScope_fvDemo linker_fvDemo n
 
 end Crates.InScopeWitness

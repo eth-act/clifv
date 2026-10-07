@@ -1,6 +1,6 @@
 import FV.E2E.LinkScopeDefs
 import FV.E2E.EmitTotal
-import FV.E2E.LinkOwnCallsRun
+import FV.E2E.LinkOwnGotLocal
 import FV.E2E.LinkOwnSegRange
 import FV.E2E.LinkOwnFrames
 import FV.E2E.LinkOwnRetsIsel
@@ -22,31 +22,23 @@ into
   (`lowerAllocReady`): pipeline success (V5/V6b), the validators (`lowerCheck_complete`,
   `prepCheck_complete`, `formsCovered_complete`), `checkAlloc` of the allocation lowered
   (regalloc2's only if accepted, the spill allocation's by `spillCheckAlloc`), the depth (by
-  construction, `withDepth`), the call sites (`sites_of_lower`), the returns (`retsB_of_lower`
-  with the ISLE inversion `iselNoRets`) and the entry (`entryB_of_lower`), the frames
-  (`outFits_of_lower`, `frame_of_lower`);
+  construction, `withDepth`), the call sites (`sites_of_lower` from the call inversion
+  `CallShapeHyp`: `callShapeHyp_of` of the per-run facts `callStmtRunHyp`, `tryRunHyp`
+  (`callRunHyp_of`), `segRangeHyp`, `gotLocalHyp` (`gotRunHyp_of`)), the returns
+  (`retsB_of_lower` with the ISLE inversion `iselNoRets`) and the entry (`entryB_of_lower`), the
+  frames (`outFits_of_lower`, `frame_of_lower`);
 * **the linker's facts** (`linkerOkB`): the checks about the addresses rust-lld chose — what the
   Lean static linker (L2b) must provide.
 
-`okT_of_inScope : OwnHyps → InScopeP I → linkerOkB I → okR (I.withDepth I.resultsT) I.resultsT`,
-then `okT_sound` (`LinkSys.Ok` of the compiler's linked system `LinkSys.ofInputT`) and
-`crate_correct_inScope` (`backend_correct_program` for every function, no `okB` premise).
+`okT_of_inScope : SpillDefinedHyp → InScopeP I → linkerOkB I →
+okR (I.withDepth I.resultsT) I.resultsT`, then `okT_sound` (`LinkSys.Ok` of the compiler's linked
+system `LinkSys.ofInputT`) and `crate_correct_inScope` (`backend_correct_program` for every
+function, no `okB` premise).
 
-The facts still taken as explicit, program-independent hypotheses (`OwnHyps`; none mentions the
-crate):
-* `SpillDefinedHyp` (`FV/E2E/SpillCheckAlloc.lean`): definite assignment of the prepared VCode
-  (availability sets holding nothing on entry), from which `checkAlloc` accepts the spill
-  allocation (the link-level `Compiled` keeps `checkAlloc`'s verdict);
-* `CallStmtRunHyp`, `TryRunHyp` (`FV/E2E/LinkOwnCallsRun.lean`): the ISLE runs of a
-  `call`/`call_indirect` statement and of a `try_call` emit only the call of that CLIF call site,
-  with its signature's registers and results (the other runs emit no call: `stmt_noCalls`,
-  `term_noCalls`; together `CallRunHyp`, `callRunHyp_of`);
-* `GotLocalHyp` (`FV/E2E/LinkOwnGotRun.lean`): in a direct call's run, the GOT vreg `t` is
-  defined only by its GOT load, which precedes every call through it, and is no statement
-  result. With `segRangeHyp` (`FV/E2E/LinkOwnSegRange.lean`: every def of a run is in its fresh
-  range) it gives `GotRunHyp` (`gotRunHyp_of`: the GOT symbol of `t` is the name its run loads),
-  which with `CallRunHyp` gives the call inversion `CallShapeHyp` (`callShapeHyp_of`) that
-  `sites_of_lower` uses.
+The one fact still taken as an explicit, program-independent hypothesis: `SpillDefinedHyp`
+(`FV/E2E/SpillCheckAlloc.lean`), definite assignment of the prepared VCode (availability sets
+holding nothing on entry), from which `checkAlloc` accepts the spill allocation (the link-level
+`Compiled` keeps `checkAlloc`'s verdict, whose fixpoint starts from no vreg in its home).
 -/
 
 namespace E2E.LinkCheck
@@ -198,19 +190,6 @@ theorem addrSlotsB_of_in {I : LinkInput} {S : String → Option Nat}
   · exact .inl (.inr h)
   · exact .inr h
 
-/-! ## The open, program-independent hypotheses -/
-
-/-- **The open own-output facts**, all program-independent (none mentions a crate). -/
-structure OwnHyps : Prop where
-  /-- Definite assignment of the prepared VCode (`checkAlloc` accepts the spill allocation). -/
-  defined : SpillDefinedHyp
-  /-- The ISLE run of a `call`/`call_indirect` statement emits only that call. -/
-  callStmt : CallStmtRunHyp
-  /-- The ISLE run of a `try_call` ends with its call and emits no other. -/
-  tryRun : TryRunHyp
-  /-- The GOT vreg of a direct call's run is defined only by its GOT load, which comes first. -/
-  gotLocal : GotLocalHyp
-
 /-! ## Pipeline success and the validators -/
 
 theorem isOk_unit {ε : Type} {x : Except ε Unit} (h : x.isOk = true) : x = .ok () := by
@@ -272,7 +251,7 @@ theorem le_depthOf {R : Res} {e : Clif.Function × Except String Art} (he : e �
   le_foldl_max _ 0 _ (.inl (List.mem_map_of_mem he))
 
 /-- **The per-function checks hold** for the compiler's results of an in-scope input. -/
-theorem chks_resultsT (hO : OwnHyps) {I : LinkInput} (hin : InScopeP I = true)
+theorem chks_resultsT (hD : SpillDefinedHyp) {I : LinkInput} (hin : InScopeP I = true)
     (hlk : linkerOkB I = true) {e : Clif.Function × Except String Art} (he : e ∈ I.resultsT) :
     (chks (I.withDepth I.resultsT) (progOf I.resultsT) (tabOf I.resultsT) e.1 e.2).all
       (·.2) = true := by
@@ -289,7 +268,7 @@ theorem chks_resultsT (hO : OwnHyps) {I : LinkInput} (hin : InScopeP I = true)
   have hgP : fi.func ∈ I.prog.funcs := List.mem_map_of_mem hfi
   have hsc : fnScopeB fi.func = true := List.all_eq_true.1 hfs _ hgP
   obtain ⟨hE, hne, habi, hind, hnd', harg, hw, hfree, hd, hs, -, -⟩ := fnScope_parts hsc
-  obtain ⟨a, ha, hlc, hpc, hca, hcov⟩ := pipeT_ok hsc hO.defined fi.k
+  obtain ⟨a, ha, hlc, hpc, hca, hcov⟩ := pipeT_ok hsc hD fi.k
     (BitVec.ofNat 64 (I.baseOf fi.func.name)) (raJ fi.ra fi.j)
   obtain ⟨hl, hp, -, hlr, -, -, -, -⟩ := pipeT_spec ha
   have hga : getOk (pipeT fi.func fi.k (BitVec.ofNat 64 (I.baseOf fi.func.name))
@@ -297,8 +276,8 @@ theorem chks_resultsT (hO : OwnHyps) {I : LinkInput} (hin : InScopeP I = true)
   rw [hga] at hfit hra hdep
   obtain ⟨hdecl, hindB, hcall, hos⟩ := hpg _ hgP
   obtain ⟨hsite, htry⟩ := sites_of_lower
-    (callShapeHyp_of (callRunHyp_of hO.callStmt hO.tryRun)
-      (gotRunHyp_of segRangeHyp hO.gotLocal))
+    (callShapeHyp_of (callRunHyp_of callStmtRunHyp tryRunHyp)
+      (gotRunHyp_of segRangeHyp gotLocalHyp))
     (inSubset_of_fnScope hsc I.prog) hd hs hnd
     (declSig_of hdecl) hcall hl hp
   have hout := outFits_of_lower hd hs hos hl hp a.rf
@@ -358,10 +337,10 @@ theorem global_resultsT {I : LinkInput} (hin : InScopeP I = true) (hlk : linkerO
 /-- **`okB`'s checks hold on the compiler's results of every in-scope input** whose link the
 linker's facts describe: `InScopeP` (the input) and `linkerOkB` (the linker), no check of the
 compiler's own output. -/
-theorem okT_of_inScope (hO : OwnHyps) {I : LinkInput} (hin : InScopeP I = true)
+theorem okT_of_inScope (hD : SpillDefinedHyp) {I : LinkInput} (hin : InScopeP I = true)
     (hlk : linkerOkB I = true) : okR (I.withDepth I.resultsT) I.resultsT = true := by
   simp only [okR, Bool.and_eq_true]
-  exact ⟨global_resultsT hin hlk, List.all_eq_true.2 fun e he => chks_resultsT hO hin hlk he⟩
+  exact ⟨global_resultsT hin hlk, List.all_eq_true.2 fun e he => chks_resultsT hD hin hlk he⟩
 
 /-! ## The linked system of the compiler's results -/
 
@@ -372,11 +351,11 @@ def _root_.E2E.LinkSys.ofInputT (I : LinkInput) (B : BaseEnv) (F : BitVec 64 →
 
 /-- **`LinkSys.Ok` of the compiler's linked system** of an in-scope input whose link satisfies
 the linker's facts. -/
-theorem okT_sound (hO : OwnHyps) {I : LinkInput} (hin : InScopeP I = true)
+theorem okT_sound (hD : SpillDefinedHyp) {I : LinkInput} (hin : InScopeP I = true)
     (hlk : linkerOkB I = true) {B : BaseEnv} {F : BitVec 64 → Prop}
     (hB : BaseOk (LinkSys.ofInputT I B F)) (hF : ∀ a, (LinkSys.ofInputT I B F).Img a → F a) :
     (LinkSys.ofInputT I B F).Ok :=
-  okR_sound (resultsT_ok I I.resultsT) (okT_of_inScope hO hin hlk) hB hF
+  okR_sound (resultsT_ok I I.resultsT) (okT_of_inScope hD hin hlk) hB hF
 
 /-- The crate's theorem (`CrateStmt`) for the compiler's linked system `LinkSys.ofInputT`. -/
 def CrateStmtT (I : LinkInput) (n : String) : Prop :=
@@ -386,10 +365,10 @@ def CrateStmtT (I : LinkInput) (n : String) : Prop :=
 /-- **`backend_correct_program` for every function of an in-scope input** (L2a): no `okB`
 premise; the input conditions `InScopeP`, the linker's facts `linkerOkB` (what L2b must provide)
 and the program-independent open facts `OwnHyps`. -/
-theorem crate_correct_inScope (hO : OwnHyps) {I : LinkInput} (hin : InScopeP I = true)
+theorem crate_correct_inScope (hD : SpillDefinedHyp) {I : LinkInput} (hin : InScopeP I = true)
     (hlk : linkerOkB I = true) (n : String) : CrateStmtT I n :=
   fun _ _ hB hF _ hf M _ _ _ _ _ hent hres hFeq hgfree himg hbe hargs hcs hsav hrel hpl htr =>
-    backend_correct_program _ (okT_sound hO hin hlk hB hF) (Clif.Program.func?_some hf).1 M hent
+    backend_correct_program _ (okT_sound hD hin hlk hB hF) (Clif.Program.func?_some hf).1 M hent
       hres hFeq hgfree himg hbe hargs hcs hsav hrel hpl htr
 
 /-- **Non-vacuity of `BaseOk`** for the compiler's linked system: the closed base environment

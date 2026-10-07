@@ -1233,16 +1233,16 @@ def fnScopeB (g : Clif.Function) : Bool               -- subset, ABI, dominatedB
                                                        -- arityOkB, lowersB (incl. emitCondsB)
 def progScopeB (P : Clif.Program) (S : String → Option Nat) : Bool  -- names, declSig, indB,
                                                        -- callScopeB, outScopeB, addrSlotsInB
+                                                       -- (outAreaB: lowerFunction's outgoing area)
 def InScopeP (I : LinkInput) : Bool                    -- the input conditions
 def linkerOkB (I : LinkInput) : Bool                   -- fits, imgB, raCallB, raStarB, symInjB, symOkB
-structure OwnHyps : Prop where defined : SpillDefinedHyp; callRun : CallRunHyp; got : GotHyp
-theorem okT_of_inScope (hO : OwnHyps) (hin : InScopeP I = true) (hlk : linkerOkB I = true) :
-    okR (I.withDepth I.resultsT) I.resultsT = true
+theorem okT_of_inScope (hD : SpillDefinedHyp) (hin : InScopeP I = true)
+    (hlk : linkerOkB I = true) : okR (I.withDepth I.resultsT) I.resultsT = true
 def LinkSys.ofInputT (I : LinkInput) (B : BaseEnv) (F : BitVec 64 → Prop) : LinkSys :=
   ofRes (I.withDepth I.resultsT) I.resultsT B F
-theorem okT_sound (hO) (hin) (hlk) (hB : BaseOk (LinkSys.ofInputT I B F))
+theorem okT_sound (hD) (hin) (hlk) (hB : BaseOk (LinkSys.ofInputT I B F))
     (hF : ∀ a, (LinkSys.ofInputT I B F).Img a → F a) : (LinkSys.ofInputT I B F).Ok
-theorem crate_correct_inScope (hO : OwnHyps) (hin : InScopeP I = true)
+theorem crate_correct_inScope (hD : SpillDefinedHyp) (hin : InScopeP I = true)
     (hlk : linkerOkB I = true) (n : String) : CrateStmtT I n
 theorem baseOk_closedT (htls : ∀ g ∈ I.prog.funcs, hasTls g = false) :
     BaseOk (LinkSys.ofInputT I closedBase F)
@@ -1258,18 +1258,19 @@ and the validators (`pipeT_ok`: `backend_correct_final_total_emit`, `lowerCheck_
 iteration)), `sretRets` (`retsB_of_lower` with the ISLE inversion `iselNoRets`,
 `FV/E2E/LinkOwnRetsIsel.lean`), `entryRegs` (`entryB_of_lower`), `callRegs/blrRegs` and
 `tryRets/blrTry` (`sites_of_lower`, `FV/E2E/LinkOwnCalls.lean`, from the call inversion
-`CallShapeHyp`, proven from `CallRunHyp` and `GotHyp` by `callShapeHyp_of`,
-`FV/E2E/LinkOwnCallsShape.lean`), `outFits` (`outFits_of_lower`), `calleeFrame/slotFits`
-(`frame_of_lower`, `FV/E2E/LinkOwnFrames.lean`), `depth` (by construction). Three
-program-independent facts remain hypotheses (`OwnHyps`): `SpillDefinedHyp` (definite assignment
-of the prepared VCode: availability sets with nothing available on entry, from which
-`checkAlloc`'s fixpoint accepts the spill allocation), `CallRunHyp` (per ISLE run: a statement
-run emits only the call of its CLIF `call`/`call_indirect`, with the signature's registers and,
-for a GOT call, the load of the callee's GOT slot; a `try_call` run ends with its call; other
-terminator runs emit no call) and `GotHyp` (a fresh vreg loaded from the GOT slot of `n` has GOT
-symbol `n`, `gotOf`). Witness:
-`crate-proofs/Crates/InScopeWitness.lean` decides `InScopeP` and `linkerOkB` of the survey crate
-`a_arith` (58 functions) by `native_decide`.
+`CallShapeHyp`: `callShapeHyp_of` (`FV/E2E/LinkOwnCallsShape.lean`, the driver part) of
+`CallRunHyp` — `callRunHyp_of` of `stmt_noCalls`/`term_noCalls` (`LinkOwnCallsRun.lean`),
+`callStmtRunHyp` (`LinkOwnCallsStmt*.lean`), `tryRunHyp` (`LinkOwnCallsTry*.lean`) — and
+`GotRunHyp` — `gotRunHyp_of` (`LinkOwnGotRun.lean`) of `segRangeHyp` (`LinkOwnSegRange.lean`)
+and `gotLocalHyp` (`LinkOwnGotLocal.lean`)), `outFits` (`outFits_of_lower`),
+`calleeFrame/slotFits` (`frame_of_lower`, `FV/E2E/LinkOwnFrames.lean`), `depth` (by
+construction). The ISLE facts use `native_decide` table checks over the exported rules, as the
+Kill and Cov tables do. One program-independent fact remains a hypothesis: `SpillDefinedHyp`
+(definite assignment of the prepared VCode: availability sets with nothing available on entry,
+from which `checkAlloc`'s fixpoint, started from no vreg in its home, accepts the spill
+allocation). Witness: `crate-proofs/Crates/InScopeWitness.lean` decides `InScopeP` and
+`linkerOkB` of `a_arith` (58 functions) and `fv-demo` (551) by `native_decide`; both hold for all
+nine survey/demo crates with inputs in `crate-proofs/` (1023 functions).
 
 **Tooling.** `cargo fv build|test --keep-temps` keeps per codegen unit `fv-link.json`: per
 Lean-compiled function the CLIF file `lean-backend` compiled (with the self-call alias, or the
