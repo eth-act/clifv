@@ -35,6 +35,12 @@ import FV.Opt.Proof.RuleArith4
 import FV.Opt.Proof.RuleArith5
 import FV.Opt.Proof.RuleCprop2
 import FV.Opt.Proof.RuleRemat
+import FV.Opt.Proof.RuleArith6
+import FV.Opt.Proof.RuleArith7
+import FV.Opt.Proof.RuleSelects7
+import FV.Opt.Proof.RuleBitops8
+import FV.Opt.Proof.RuleCprop3
+import FV.Opt.Proof.RuleCprop4
 import FV.Opt.Proof.RuleSkeleton
 import FV.Opt.Optimize
 
