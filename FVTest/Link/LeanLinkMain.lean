@@ -1,18 +1,20 @@
 import FV.Link.Image
 import Lean.Data.Json
 
-/-! # `lake exe lean-link DIR`: the Lean linker on an executable (L2b)
+/-! # `lake exe lean-link DIR SIZES`: the Lean linker on an executable (L2b)
 
 `DIR` is `cargo fv link-proof --cgus … --no-check`'s output for an executable linked by
 `cargo fv --lean-link` (docs/research/lean-linker.md): the program's functions in placement
 order (`functions`: their CLIF with the linked names and `lean-regalloc`'s output), the link
 map's addresses of the names they use (`addrs`: the outside part's symbols, read from the
 executable, and the functions' own, where rust-lld put the region), the functions whose address
-is in a data object (`data_syms`). The tool builds the `Link.LinkSpec` (the region's base `R`:
-the first function's address), checks that rust-lld put every function where the placement
-does (the outside part's calls and data reach the program through those symbols), runs
-`Link.leanLink` (placement, the compiler's pipeline, the relocation checks, the region check)
-and writes the result over the executable.
+is in a data object (`data_syms`), the CLIF data objects they reach (`data`). `SIZES` has one
+line `NAME WORDS` per function: its size in the region object (`cargo fv`'s `leanlink.rs`;
+`Link.leanLink` checks it against the compiled code, `sizesOkB`). The tool builds the
+`Link.LinkSpec` (the region's base `R`: the first function's address), runs `Link.leanLink`
+(placement, the compiler's pipeline, the linker's checks, the checks of rust-lld's output —
+among them that rust-lld put every function at its placement, `symsOkB`) and writes the result
+over the executable.
 -/
 
 open Lean E2E E2E.LinkCheck E2E.Elf Link
@@ -26,8 +28,12 @@ def addrNamesOf (f : Clif.Function) : List String :=
 
 def hex (n : Nat) : String := "0x" ++ String.ofList (Nat.toDigits 16 n)
 
+/-- The strings of a JSON array field. -/
+def strs (j : Json) (k : String) : List String :=
+  (((j.getObjVal? k).bind (·.getArr?)).toOption.getD #[]).toList.filterMap (·.getStr?.toOption)
+
 def main (args : List String) : IO UInt32 := do
-  let [d] := args | do IO.eprintln "usage: lean-link DIR (cargo fv link-proof's output)"; return 2
+  let [d, sz] := args | do IO.eprintln "usage: lean-link DIR SIZES (cargo fv link-proof's output, the region's sizes)"; return 2
   let dir : System.FilePath := d
   let j ← match Json.parse (← IO.FS.readFile (dir / "link.json")) with
     | .ok j => pure j
@@ -49,39 +55,58 @@ def main (args : List String) : IO UInt32 := do
     let n ← (arr[0]?.bind (·.getStr?.toOption))
     let v ← (arr[1]?.bind (·.getNat?.toOption))
     pure (n, v)
-  let names := fis.toList.map (·.func.name)
+  let addrMap : Std.HashMap String Nat := addrs0.foldl (fun m p => if m.contains p.1 then m else m.insert p.1 p.2) {}
+  let mut sizeMap : Std.HashMap String Nat := {}
+  for l in (← IO.FS.readFile sz).splitOn "\n" do
+    match l.splitOn " " with
+    | [n, w] => sizeMap := sizeMap.insert n w.toNat!
+    | _ => pure ()
+  -- each CLIF file parsed once here (`FnInput.func` parses)
+  let fns := fis.map (·.func)
+  let names := fns.toList.map (·.name)
+  let nameSet : Std.HashSet String := names.foldl (·.insert ·) {}
+  let mut sizes : Array Nat := #[]
+  for n in names do
+    let some w := sizeMap[n]? | do IO.eprintln s!"lean-link: {n}: no size in {sz}"; return 1
+    sizes := sizes.push w
   -- `cargo fv`'s self-call aliases (as `link-check` builds them): `f__fvself`, `f`'s body with
   -- its self-call naming `f`, at `f`'s address
-  let mut aliases : List (String × String) := []
-  let mut aliasFns : List FnInput := []
-  for fi in fis do
-    let n := fi.func.name
+  let mut aliases : Array (String × String) := #[]
+  let mut aliasFns : Array FnInput := #[]
+  for (fi, f) in fis.zip fns do
+    let n := f.name
     let a := n ++ "__fvself"
-    if fi.func.externs.any (·.2.name == a) && !(addrs0.lookup a).isSome then
+    if f.externs.any (·.2.name == a) && !addrMap.contains a then
       let clif := (fi.clif.replace s!"%{a}(" s!"%{n}(").replace s!"function %{n}(" s!"function %{a}("
-      aliasFns := aliasFns ++ [{ fi with clif }]
-      aliases := aliases ++ [(a, n)]
-  let progNames := names ++ aliases.map (·.1)
-  let outside := addrs0.filter fun p => !progNames.contains p.1
-  let dataSyms : List String := (((j.getObjVal? "data_syms").bind (·.getArr?)).toOption.getD #[]).toList.filterMap
-    (·.getStr?.toOption)
-  let symNames := (((fis.toList ++ aliasFns).flatMap fun fi => addrNamesOf fi.func) ++
-    dataSyms.filter names.contains).eraseDups
-  let some R := names.head?.bind (addrs0.lookup ·)
+      aliasFns := aliasFns.push { fi with clif }
+      aliases := aliases.push (a, n)
+  let progSet := aliases.foldl (fun s p => s.insert p.1) nameSet
+  let outside := addrs0.filter fun p => !progSet.contains p.1
+  let symNames := Id.run do
+    let mut seen : Std.HashSet String := {}
+    let mut out : Array String := #[]
+    for n in fns.toList.flatMap addrNamesOf ++ aliasFns.toList.flatMap (addrNamesOf ·.func) ++
+        (strs j "data_syms").filter nameSet.contains do
+      if !seen.contains n then
+        seen := seen.insert n
+        out := out.push n
+    return out.toList
+  let some R := names.head?.bind (addrMap[·]?)
     | do IO.eprintln "lean-link: no function, or the first has no address"; return 1
-  let S : LinkSpec := { funcs := fis.toList, aliases, aliasFns, outside, symNames, R }
-  -- rust-lld put the region's functions where the placement does
-  let mut moved : List String := []
-  for (n, a) in S.progAddrs do
-    if addrs0.lookup n != some a then
-      moved := moved ++ [s!"{n}: placed at {hex a}, linked at {(addrs0.lookup n).map hex}"]
-  if !moved.isEmpty then
-    IO.eprintln s!"lean-link: rust-lld did not link {moved.length} function(s) at their placement, e.g. {moved.head!}"
-    return 1
+  let S : LinkSpec := {
+    funcs := fis.toList
+    names := names
+    sizes := sizes.toList
+    aliases := aliases.toList
+    aliasFns := aliasFns.toList
+    outside := outside
+    data := BinCheck.parseData (strs j "data")
+    symNames := symNames
+    R := R }
   let file0 ← IO.FS.readBinFile exe
   match leanLink S file0 with
   | .error e => do IO.eprintln s!"lean-link: {exe}: {e}"; return 1
   | .ok file =>
     IO.FS.writeBinFile exe file
-    IO.println s!"lean-link: {exe}: {names.length} function(s) ({aliases.length} self-call alias(es)), region {hex R}..{hex (R + S.size)} ({S.size} bytes) written by Link.leanLink"
+    IO.println s!"lean-link: {exe}: {names.length} function(s) ({aliases.size} self-call alias(es)), {S.data.length} data object(s), region {hex R}..{hex (R + S.size)} ({S.size} bytes) written by Link.leanLink"
     return 0

@@ -6,33 +6,25 @@ import FV.Backend.Proof.EncodeLayout
 What the placement gives, for the proofs that the Lean linker's output satisfies the linker's
 facts (`FV/Link/LayoutProof.lean`) and the code part of `BinOk` (`FV/Link/ImageProof.lean`):
 
-* `pipeT_base`: the compiler's pipeline does not depend on the load address (it is only
-  recorded), so `wordsOf` is the size of the code at any base (`wordsOf_eq`).
+* `pipeT_layout`: a successful pipeline's artifact is the layout of its assembly, at its base.
 * `offs_getElem!`, `offs_sep`, `offs_end`: the offsets are the spans of the preceding functions;
   each function's words and its gap word end before the next function and within the region.
+* `nodupB_sound`: the hash-set duplicate check decides `Nodup`.
 * `PlaceOk`, `placeOk_of`: `placeOkB` unfolded.
-* `baseOf_name`, `baseOf_alias`: with `placeOkB`, the load address (`LinkInput.baseOf`) of the
-  `i`-th placed function is `R + offs_i`; an alias's is its function's.
-* `tab_length`, `tab_placed`, `tab_alias`: the compiled table (`tabOf S.input.resultsT`): the
-  placed functions first, each at its placed address with `sizes[i]` words, then the aliases,
-  each at its function's address.
+* `baseOf_name`, `baseOf_alias`, `addrs_alias`: with `placeOkB`, the load address
+  (`LinkInput.baseOf`) of the `i`-th placed function is `R + offs_i`; an alias's is its
+  function's, and its link-map address the gap word after its function (`gapIn_name`).
+* `tab_length`, `names_getElem!`, `tab_names`, `tab_placed`, `tab_alias`: the compiled table
+  (`tabOf S.input.resultsT`): the placed functions first, each with the placement's name
+  (`namesOkB`), at its placed address with `sizes[i]` words (`sizesOkB`), then the aliases, each
+  at its function's address; all names distinct.
 -/
 
 namespace Link
 
 open E2E E2E.LinkCheck Backend
 
-/-! ## The pipeline and the load address -/
-
-/-- **The pipeline does not depend on the load address**: it is only recorded (`Art.base`). -/
-theorem pipeT_base (f : Clif.Function) (k : Nat) (b : BitVec 64) (o : Lean.Json) :
-    pipeT f k b o = (pipeT f k 0 o).map (fun a => { a with base := b }) := by
-  unfold pipeT
-  rcases lowerFunction f with _ | vc <;> simp only [bind, Except.bind, Except.map]
-  rcases prepare vc with _ | vcp <;> simp only
-  rcases lowerAllocReady vcp (raAnswer vcp o) with _ | af <;> simp only
-  rcases emitFunc k af with _ | fa <;> simp only
-  rcases fa.layout with _ | fb <;> simp only [pure, Except.pure]
+/-! ## The pipeline -/
 
 /-- A successful pipeline's artifact: the layout of its assembly and its load address. -/
 theorem pipeT_layout {f : Clif.Function} {k : Nat} {b : BitVec 64} {o : Lean.Json} {a : Art}
@@ -50,16 +42,6 @@ theorem pipeT_layout {f : Clif.Function} {k : Nat} {b : BitVec 64} {o : Lean.Jso
   · cases h
   cases h
   exact ⟨h5, rfl⟩
-
-/-- `wordsOf fi` is the size of `fi`'s code compiled at any load address. -/
-theorem wordsOf_eq {fi : FnInput} {b : BitVec 64} {a : Art}
-    (h : pipeT fi.func fi.k b (raJ fi.ra fi.j) = .ok a) : wordsOf fi = a.fb.words.size := by
-  rw [pipeT_base] at h
-  unfold wordsOf compile0
-  rcases h0 : pipeT fi.func fi.k 0 (raJ fi.ra fi.j) with _ | a0 <;> rw [h0] at h
-  · cases h
-  · cases h
-    rfl
 
 /-! ## Offsets -/
 
@@ -165,7 +147,53 @@ theorem lookup_append_none {α β : Type} [BEq α] {l₁ l₂ : List (α × β)}
   rw [List.lookup_append, h]
   rfl
 
+/-- An association list's entry. -/
+theorem mem_of_lookup {α β : Type} [BEq α] [LawfulBEq α] :
+    ∀ {l : List (α × β)} {a : α} {b : β}, l.lookup a = some b → (a, b) ∈ l
+  | [], _, _, h => by cases h
+  | (k, v) :: l, a, b, h => by
+    rw [List.lookup_cons] at h
+    split at h
+    · rename_i hk
+      cases h
+      rw [beq_iff_eq.1 hk]
+      exact .head _
+    · exact .tail _ (mem_of_lookup h)
+
+/-- With distinct keys, `find?` by key finds the element. -/
+theorem find?_key {α β : Type} [BEq β] [LawfulBEq β] {f : α → β} {l : List α}
+    (hnd : (l.map f).Nodup) {x : α} (hx : x ∈ l) : l.find? (fun y => f y == f x) = some x := by
+  induction l with
+  | nil => cases hx
+  | cons y l ih =>
+    rw [List.map_cons, List.nodup_cons] at hnd
+    rw [List.find?_cons]
+    rcases List.mem_cons.1 hx with rfl | hx'
+    · simp
+    · have hne : f y ≠ f x := fun e => hnd.1 (e ▸ List.mem_map.2 ⟨x, hx', rfl⟩)
+      simp only [beq_eq_false_iff_ne.2 hne]
+      exact ih hnd.2 hx'
+
 /-! ## The placement's conditions -/
+
+/-- `nodupGo` decides `Nodup`, of elements none of which is in the set. -/
+theorem nodupGo_sound : ∀ {l : List String} {s : Std.HashSet String}, nodupGo l s = true →
+    l.Nodup ∧ ∀ x ∈ l, s.contains x = false
+  | [], _, _ => ⟨List.nodup_nil, fun _ hx => absurd hx List.not_mem_nil⟩
+  | x :: xs, s, h => by
+    simp only [nodupGo, Bool.and_eq_true, Bool.not_eq_true'] at h
+    obtain ⟨ih1, ih2⟩ := nodupGo_sound h.2
+    have hin : ∀ y ∈ xs, (x == y) = false ∧ s.contains y = false := fun y hy => by
+      have := ih2 y hy
+      rw [Std.HashSet.contains_insert, Bool.or_eq_false_iff] at this
+      exact this
+    refine ⟨List.nodup_cons.2 ⟨fun hx => ?_, ih1⟩, fun y hy => ?_⟩
+    · simpa using (hin x hx).1
+    · rcases List.mem_cons.1 hy with rfl | hy
+      · exact h.1
+      · exact (hin y hy).2
+
+theorem nodupB_sound {l : List String} (h : nodupB l = true) : l.Nodup := (nodupGo_sound h).1
 
 /-- `placeOkB` unfolded. -/
 structure PlaceOk (S : LinkSpec) : Prop where
@@ -173,16 +201,19 @@ structure PlaceOk (S : LinkSpec) : Prop where
   nodupFns : (S.aliases.map (·.2)).Nodup
   aliasFn : ∀ p ∈ S.aliases, p.2 ∈ S.names
   aliasFns : S.aliasFns.map (·.func.name) = S.aliases.map (·.1)
+  namesLen : S.names.length = S.funcs.length
+  sizesLen : S.sizes.length = S.funcs.length
+  sizesPos : ∀ n ∈ S.sizes, 0 < n
   pos : 0 < S.R
   align : S.R % 4 = 0
   fits : S.R + S.size < 2 ^ 64
   outside : ∀ e ∈ S.outside, e.2 % 2 ^ 64 < S.R ∨ S.R + S.size ≤ e.2 % 2 ^ 64
 
 theorem placeOk_of {S : LinkSpec} (hp : S.placeOkB = true) : PlaceOk S := by
-  simp only [LinkSpec.placeOkB, Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq,
+  simp only [LinkSpec.placeOkB, clearOfB, Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq,
     List.all_eq_true, Bool.or_eq_true, List.contains_iff_mem] at hp
-  obtain ⟨⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩, h7⟩, h8⟩ := hp
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8⟩
+  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩, h7⟩, h8⟩, h9⟩, h10⟩, h11⟩ := hp
+  exact ⟨nodupB_sound h1, nodupB_sound h2, h3, h4, h5, h6, h7, h8, h9, h10, h11⟩
 
 namespace LinkSpec
 
@@ -195,51 +226,45 @@ variable {S : LinkSpec}
 @[simp] theorem input_syms :
     S.input.syms = S.symNames.filterMap fun n => (S.addrs.lookup n).map (n, ·) := rfl
 
-@[simp] theorem sizes_length : S.sizes.length = S.funcs.length := List.length_map ..
-@[simp] theorem names_length : S.names.length = S.funcs.length := List.length_map ..
-
-theorem sizes_getElem! {i : Nat} (hi : i < S.funcs.length) : S.sizes[i]! = wordsOf S.funcs[i] := by
-  rw [getElem!_pos S.sizes i (by simpa using hi)]
-  simp [sizes]
-
-theorem names_getElem! {i : Nat} (hi : i < S.funcs.length) :
-    S.names[i]! = S.funcs[i].func.name := by
-  rw [getElem!_pos S.names i (by simpa using hi)]
-  simp [names]
+/-- A placed function's size is positive. -/
+theorem sizes_pos (hP : PlaceOk S) {i : Nat} (hi : i < S.funcs.length) : 0 < S.sizes[i]! := by
+  have hi' : i < S.sizes.length := by rw [hP.sizesLen]; exact hi
+  rw [getElem!_pos S.sizes i hi']
+  exact hP.sizesPos _ (List.getElem_mem hi')
 
 /-- The `i`-th placed function's offset, gap word included, ends within the region. -/
-theorem off_end {i : Nat} (hi : i < S.funcs.length) :
+theorem off_end (hP : PlaceOk S) {i : Nat} (hi : i < S.funcs.length) :
     (offs S.sizes 0)[i]! + 4 * S.sizes[i]! + 4 ≤ S.size := by
-  have := offs_end (o := 0) (ns := S.sizes) (by simpa using hi)
+  have := offs_end (o := 0) (ns := S.sizes) (by rw [hP.sizesLen]; exact hi)
   simpa [LinkSpec.size] using this
 
 /-- The `i`-th and `i'`-th placed functions (`i < i'`) do not overlap. -/
-theorem off_sep {i i' : Nat} (hi : i < i') (hi' : i' < S.funcs.length) :
+theorem off_sep (hP : PlaceOk S) {i i' : Nat} (hi : i < i') (hi' : i' < S.funcs.length) :
     (offs S.sizes 0)[i]! + 4 * S.sizes[i]! + 4 ≤ (offs S.sizes 0)[i']! :=
-  offs_sep hi (by simpa using hi')
+  offs_sep hi (by rw [hP.sizesLen]; exact hi')
 
 theorem names_nodup (hP : PlaceOk S) : S.names.Nodup := (List.nodup_append.1 hP.nodup).1
 
 /-- Distinct placed functions have distinct names. -/
 theorem names_inj (hP : PlaceOk S) {i i' : Nat} (hi : i < S.funcs.length)
     (hi' : i' < S.funcs.length) (h : S.names[i]! = S.names[i']!) : i = i' := by
-  rw [getElem!_pos S.names i (by simpa using hi), getElem!_pos S.names i' (by simpa using hi')]
-    at h
+  rw [getElem!_pos S.names i (by rw [hP.namesLen]; exact hi),
+    getElem!_pos S.names i' (by rw [hP.namesLen]; exact hi')] at h
   exact (names_nodup hP).getElem_inj.1 h
 
 /-- **The link map of a placed function**: its placed address. -/
 theorem addrs_name (hP : PlaceOk S) {i : Nat} (hi : i < S.funcs.length) :
     S.addrs.lookup S.names[i]! = some (S.R + (offs S.sizes 0)[i]!) := by
   have hl : i < S.progAddrs.length := by
-    simp [progAddrs, offs_length, hi]
+    simp [progAddrs, offs_length, hi, hP.sizesLen, hP.namesLen]
   have hm : S.progAddrs.map (·.1) = S.names := by
     rw [progAddrs]
-    exact List.map_fst_zip (by simp [offs_length])
+    exact List.map_fst_zip (by simp [offs_length, hP.sizesLen, hP.namesLen])
   have := lookup_getElem hl (hm ▸ names_nodup hP)
   have e1 : S.progAddrs[i].1 = S.names[i]! := by
-    simp [progAddrs, getElem!_pos S.names i (by simpa using hi)]
+    simp [progAddrs, getElem!_pos S.names i (by rw [hP.namesLen]; exact hi)]
   have e2 : S.progAddrs[i].2 = S.R + (offs S.sizes 0)[i]! := by
-    simp [progAddrs, getElem!_pos (offs S.sizes 0) i (by simpa [offs_length] using hi)]
+    simp [progAddrs, getElem!_pos (offs S.sizes 0) i (by simpa [offs_length, hP.sizesLen] using hi)]
   rw [e1, e2] at this
   exact lookup_append_some (lookup_append_some this)
 
@@ -248,8 +273,8 @@ theorem aliases_name (hP : PlaceOk S) {i : Nat} (hi : i < S.funcs.length) :
     S.aliases.lookup S.names[i]! = none := by
   refine lookup_none fun hm => ?_
   have hn := (List.nodup_append.1 hP.nodup).2.2
-  exact hn _ (by rw [getElem!_pos S.names i (by simpa using hi)]; exact List.getElem_mem _) _ hm
-    rfl
+  have hi' : i < S.names.length := by rw [hP.namesLen]; exact hi
+  exact hn _ (by rw [getElem!_pos S.names i hi']; exact List.getElem_mem _) _ hm rfl
 
 /-- **The load address of a placed function** is its placed address. -/
 theorem baseOf_name (hP : PlaceOk S) {i : Nat} (hi : i < S.funcs.length) :
@@ -262,7 +287,7 @@ theorem baseOf_name (hP : PlaceOk S) {i : Nat} (hi : i < S.funcs.length) :
 theorem alias_index (hP : PlaceOk S) {j : Nat} (hj : j < S.aliases.length) :
     ∃ i < S.funcs.length, S.names[i]! = S.aliases[j].2 := by
   obtain ⟨i, hi, e⟩ := List.mem_iff_getElem.1 (hP.aliasFn _ (List.getElem_mem hj))
-  exact ⟨i, by simpa using hi, by rw [getElem!_pos S.names i hi]; exact e⟩
+  exact ⟨i, by rw [← hP.namesLen]; exact hi, by rw [getElem!_pos S.names i hi]; exact e⟩
 
 /-- **The load address of an alias** is its function's placed address. -/
 theorem baseOf_alias (hP : PlaceOk S) {j : Nat} (hj : j < S.aliases.length) {i : Nat}
@@ -273,6 +298,64 @@ theorem baseOf_alias (hP : PlaceOk S) {j : Nat} (hj : j < S.aliases.length) {i :
   simp only [LinkInput.baseOf, LinkInput.addrOf, input_aliases, input_addrs, hl,
     Option.getD_some, ← he, addrs_name hP hi]
 
+/-- An alias's function is a placed function. -/
+theorem alias_mem_index (hP : PlaceOk S) {q : String × String} (hq : q ∈ S.aliases) :
+    ∃ i < S.funcs.length, S.names[i]! = q.2 := by
+  obtain ⟨i, hi, e⟩ := List.mem_iff_getElem.1 (hP.aliasFn _ hq)
+  exact ⟨i, by rw [← hP.namesLen]; exact hi, by rw [getElem!_pos S.names i hi]; exact e⟩
+
+/-- Distinct aliases have distinct functions. -/
+theorem alias_fn_inj (hP : PlaceOk S) {q q' : String × String} (hq : q ∈ S.aliases)
+    (hq' : q' ∈ S.aliases) (h : q.2 = q'.2) : q = q' := by
+  obtain ⟨j, hj, rfl⟩ := List.getElem_of_mem hq
+  obtain ⟨j', hj', rfl⟩ := List.getElem_of_mem hq'
+  have hl : (S.aliases.map (·.2))[j]'(by simpa using hj) =
+      (S.aliases.map (·.2))[j']'(by simpa using hj') := by
+    simpa using h
+  have : j = j' := hP.nodupFns.getElem_inj.1 hl
+  subst this
+  rfl
+
+/-- The offset and size of a placed function in the gap table. -/
+theorem gapTab_lookup (hP : PlaceOk S) {i : Nat} (hi : i < S.funcs.length) :
+    S.gapTab.lookup S.names[i]! = some ((offs S.sizes 0)[i]!, S.sizes[i]!) := by
+  have hi' : i < S.sizes.length := by rw [hP.sizesLen]; exact hi
+  have hl : i < S.gapTab.length := by simp [gapTab, offs_length, hi, hP.sizesLen, hP.namesLen]
+  have hm : S.gapTab.map (·.1) = S.names := by
+    rw [gapTab]
+    exact List.map_fst_zip (by simp [offs_length, hP.sizesLen, hP.namesLen])
+  have := lookup_getElem hl (hm ▸ names_nodup hP)
+  have e1 : S.gapTab[i].1 = S.names[i]! := by
+    simp [gapTab, getElem!_pos S.names i (by rw [hP.namesLen]; exact hi)]
+  have e2 : S.gapTab[i].2 = ((offs S.sizes 0)[i]!, S.sizes[i]!) := by
+    simp [gapTab, getElem!_pos (offs S.sizes 0) i (by simpa [offs_length] using hi'),
+      getElem!_pos S.sizes i hi']
+  rw [e1, e2] at this
+  exact this
+
+/-- **The gap word after a placed function**: `R + offs_i + 4 * sizes_i`. -/
+theorem gapIn_name (hP : PlaceOk S) {i : Nat} (hi : i < S.funcs.length) :
+    gapIn S.R S.gapTab S.names[i]! = S.R + (offs S.sizes 0)[i]! + 4 * S.sizes[i]! := by
+  simp only [gapIn, gapTab_lookup hP hi]
+
+/-- **The link map of an alias**: the gap word after its function. -/
+theorem addrs_alias (hP : PlaceOk S) {q : String × String} (hq : q ∈ S.aliases) :
+    S.addrs.lookup q.1 = some (gapIn S.R S.gapTab q.2) := by
+  obtain ⟨j, hj, rfl⟩ := List.getElem_of_mem hq
+  have hn : (S.aliases.map (·.1)).Nodup := (List.nodup_append.1 hP.nodup).2.1
+  have hpa : S.progAddrs.lookup S.aliases[j].1 = none := by
+    refine lookup_none fun hm => ?_
+    rw [progAddrs, List.map_fst_zip (by simp [offs_length, hP.sizesLen, hP.namesLen])] at hm
+    exact (List.nodup_append.1 hP.nodup).2.2 _ hm _
+      (List.mem_map_of_mem (f := (·.1)) (List.getElem_mem hj)) rfl
+  have hl : j < S.aliasAddrs.length := by simp [aliasAddrs, hj]
+  have hm : S.aliasAddrs.map (·.1) = S.aliases.map (·.1) := by
+    simp [aliasAddrs, Function.comp_def]
+  have := lookup_getElem hl (hm ▸ hn)
+  simp only [aliasAddrs, List.getElem_map] at this
+  unfold addrs
+  exact lookup_append_some (by rw [lookup_append_none hpa]; exact this)
+
 end LinkSpec
 
 /-! ## The compiled table -/
@@ -282,6 +365,28 @@ open LinkSpec
 theorem tab_length (S : LinkSpec) :
     (tabOf S.input.resultsT).length = S.funcs.length + S.aliasFns.length := by
   simp [tabOf, LinkInput.resultsT]
+
+/-- The `i`-th placed function's name is the placement's (`namesOkB`). -/
+theorem names_getElem! {S : LinkSpec} (hn : S.namesOkB (tabOf S.input.resultsT) = true) {i : Nat}
+    (hi : i < S.funcs.length) : S.names[i]! = S.funcs[i].func.name := by
+  have hs' := congrArg (·[i]?) (of_decide_eq_true hn)
+  simp only [tabOf, LinkInput.resultsT, input_funcs, List.map_map, List.getElem?_map,
+    List.getElem?_take, hi, ite_true, List.getElem?_append_left hi, List.getElem?_eq_getElem hi,
+    Option.map_some, Function.comp_def] at hs'
+  rw [getElem!_pos S.names i (List.getElem?_eq_some_iff.1 hs'.symm).1]
+  exact Option.some.inj ((List.getElem?_eq_getElem _).symm.trans hs'.symm)
+
+/-- The compiler's table's names are the placed functions' and the aliases'. -/
+theorem tab_names (S : LinkSpec) (hP : PlaceOk S) (hn : S.namesOkB (tabOf S.input.resultsT) = true) :
+    ((tabOf S.input.resultsT).map (·.1.name)).Nodup := by
+  have hd : ((tabOf S.input.resultsT).drop S.funcs.length).map (·.1.name) =
+      S.aliasFns.map (·.func.name) := by
+    simp [tabOf, LinkInput.resultsT, Function.comp_def]
+  have : (tabOf S.input.resultsT).map (·.1.name) = S.names ++ S.aliases.map (·.1) := by
+    rw [← List.take_append_drop S.funcs.length (tabOf S.input.resultsT), List.map_append,
+      of_decide_eq_true hn, hd, hP.aliasFns]
+  rw [this]
+  exact hP.nodup
 
 /-- The `i`-th entry of the compiled table: the `i`-th function of the input, compiled at its
 load address (`hr`: the pipeline accepts every function). -/
@@ -302,10 +407,13 @@ theorem tab_entry {S : LinkSpec} (hr : S.input.resultsT.all (·.2.toBool) = true
       List.getElem?_eq_getElem hl]
     rfl
 
-/-- **A placed function's entry**: the `i`-th function, at its placed address, with
-`sizes[i]` words, compiled by the pipeline (its layout). -/
+/-- **A placed function's entry**: the `i`-th function, at its placed address, with the
+placement's name (`namesOkB`) and `sizes[i]` words (`sizesOkB`), compiled by the pipeline (its
+layout). -/
 theorem tab_placed {S : LinkSpec} (hp : S.placeOkB = true)
-    (hr : S.input.resultsT.all (·.2.toBool) = true) :
+    (hr : S.input.resultsT.all (·.2.toBool) = true)
+    (hn : S.namesOkB (tabOf S.input.resultsT) = true)
+    (hs : S.sizesOkB (tabOf S.input.resultsT) = true) :
     ∀ i < S.funcs.length, ∃ e, (tabOf S.input.resultsT)[i]? = some e ∧
       e.2.base = BitVec.ofNat 64 (S.R + (offs S.sizes 0)[i]!) ∧
       e.2.fb.words.size = S.sizes[i]! ∧ e.1.name = S.names[i]! ∧
@@ -315,16 +423,21 @@ theorem tab_placed {S : LinkSpec} (hp : S.placeOkB = true)
   obtain ⟨fi, a, hfi, ha, ht⟩ := tab_entry hr (i := i) (by omega)
   rw [List.getElem?_append_left hi, List.getElem?_eq_getElem hi, Option.some.injEq] at hfi
   subst hfi
-  have hn := names_getElem! hi
+  have hn := names_getElem! hn hi
   obtain ⟨hl, hb⟩ := pipeT_layout ha
   refine ⟨_, ht, ?_, ?_, hn.symm, hl⟩
   · rw [hb, ← hn, baseOf_name hP hi]
-  · rw [sizes_getElem! hi, wordsOf_eq ha]
+  · have hs' := congrArg (·[i]?) (of_decide_eq_true hs)
+    simp only [List.getElem?_map, List.getElem?_take, hi, ite_true, ht, Option.map_some] at hs'
+    have hi' : i < S.sizes.length := by rw [hP.sizesLen]; exact hi
+    rw [getElem!_pos S.sizes i hi', ← Option.some.inj (hs'.trans (List.getElem?_eq_getElem hi'))]
 
 /-- **An alias's entry** sits at its function's address: the `j`-th alias (entry
 `funcs.length + j`) is the alias of the `i`-th placed function, at the same base. -/
 theorem tab_alias {S : LinkSpec} (hp : S.placeOkB = true)
-    (hr : S.input.resultsT.all (·.2.toBool) = true) :
+    (hr : S.input.resultsT.all (·.2.toBool) = true)
+    (hn : S.namesOkB (tabOf S.input.resultsT) = true)
+    (hs : S.sizesOkB (tabOf S.input.resultsT) = true) :
     ∀ j < S.aliasFns.length, ∃ e ef, (tabOf S.input.resultsT)[S.funcs.length + j]? = some e ∧
       (∃ i < S.funcs.length, (tabOf S.input.resultsT)[i]? = some ef) ∧
       e.2.base = ef.2.base ∧ S.input.aliases.lookup e.1.name = some ef.1.name := by
@@ -342,10 +455,10 @@ theorem tab_alias {S : LinkSpec} (hp : S.placeOkB = true)
     have := congrArg (·[j]?) hP.aliasFns
     simpa [List.getElem?_eq_getElem hj, List.getElem?_eq_getElem hjl] using this
   obtain ⟨i, hi, hni⟩ := alias_index hP hjl
-  obtain ⟨ef, htf, hbf, -, hnf, -⟩ := tab_placed hp hr i hi
+  obtain ⟨ef, htf, hbf, -, hnf, -⟩ := tab_placed hp hr hn hs i hi
   refine ⟨_, ef, ht, ⟨i, hi, htf⟩, ?_, ?_⟩
   · rw [hbf, (pipeT_layout ha).2, hname, baseOf_alias hP hjl hi hni]
-  · have hn : (S.aliases.map (·.1)).Nodup := (List.nodup_append.1 hP.nodup).2.1
-    simp only [input_aliases, hname, lookup_getElem hjl hn, hnf, hni]
+  · have hnd : (S.aliases.map (·.1)).Nodup := (List.nodup_append.1 hP.nodup).2.1
+    simp only [input_aliases, hname, lookup_getElem hjl hnd, hnf, hni]
 
 end Link

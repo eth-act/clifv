@@ -61,15 +61,6 @@ pub fn program_part(cfg: &Config, unit: &str, args: &[String]) -> Result<Option<
         if !objs.contains(&obj) {
             continue;
         }
-        for f in j["functions"].as_array().into_iter().flatten() {
-            if !f["verified"].as_bool().unwrap_or(false) {
-                return Err(format!(
-                    "{obj}: `{}` is Lean-compiled but unverified ({}); --lean-link links verified functions only",
-                    f["symbol"].as_str().unwrap_or("?"),
-                    f["reason"].as_str().unwrap_or("?")
-                ));
-            }
-        }
         let t = fs::metadata(&p).and_then(|m| m.modified()).map_err(|e| format!("{}: {e}", p.display()))?;
         if dirs.get(&obj).is_none_or(|(t0, _)| *t0 < t) {
             dirs.insert(obj, (t, e.path()));
@@ -90,7 +81,42 @@ pub fn program_part(cfg: &Config, unit: &str, args: &[String]) -> Result<Option<
     let list = work.join("cgus.txt");
     let text: String = dirs.values().map(|(_, d)| format!("{}\n", d.display())).collect();
     fs::write(&list, text).map_err(|e| format!("{}: {e}", list.display()))?;
+    write_sizes(&obj, &work.join(SIZES))?;
     Ok(Some((obj, list)))
+}
+
+/// The region's sizes file (in the work directory, next to `cgus.txt`).
+const SIZES: &str = "sizes.txt";
+
+/// One line `NAME WORDS` per function of the region object `obj`: its words up to the next
+/// function, the gap word excluded (`Link.offs`; `Link.leanLink` checks them, `sizesOkB`).
+fn write_sizes(obj: &Path, out: &Path) -> Result<(), String> {
+    use object::read::{Object, ObjectSection, ObjectSymbol};
+    let data = fs::read(obj).map_err(|e| format!("{}: {e}", obj.display()))?;
+    let file = object::File::parse(&*data).map_err(|e| format!("{}: {e}", obj.display()))?;
+    let sec = file.section_by_name(".text.fvlean").ok_or_else(|| format!("{}: no .text.fvlean", obj.display()))?;
+    let mut fns: Vec<(u64, String)> = Vec::new();
+    for s in file.symbols() {
+        let Ok(n) = s.name() else { continue };
+        if s.section_index() == Some(sec.index())
+            && s.kind() == object::SymbolKind::Text
+            && s.is_global()
+            && !n.starts_with(crate::pipeline::MARKER)
+            && n != START
+        {
+            fns.push((s.address(), n.to_string()));
+        }
+    }
+    fns.sort();
+    let mut text = String::new();
+    for (k, (a, n)) in fns.iter().enumerate() {
+        let end = fns.get(k + 1).map_or(sec.size(), |x| x.0);
+        if end < a + 4 {
+            return Err(format!("{}: `{n}` has no gap word", obj.display()));
+        }
+        text.push_str(&format!("{n} {}\n", (end - a - 4) / 4));
+    }
+    fs::write(out, text).map_err(|e| format!("{}: {e}", out.display()))
 }
 
 /// Write the program part into the linked executable `exe` (its link map recorded by the
@@ -113,8 +139,10 @@ pub fn patch(cfg: &Config, exe: &Path, list: &Path) -> Result<String, String> {
     ];
     crate::linkproof::run(target, &cfg.root, &args)?;
     let tool = cfg.root.join(".lake/build/bin/lean-link");
+    let sizes = list.parent().ok_or("no work directory")?.join(SIZES);
     let out = Command::new(&tool)
         .arg(&dir)
+        .arg(&sizes)
         .output()
         .map_err(|e| format!("{}: {e} (lake build lean-link)", tool.display()))?;
     let text = String::from_utf8_lossy(&out.stdout).into_owned() + &String::from_utf8_lossy(&out.stderr);

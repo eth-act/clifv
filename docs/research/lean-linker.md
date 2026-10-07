@@ -1,9 +1,9 @@
-# A static linker in Lean (L2b, issue #10): survey, design, stage 1
+# A static linker in Lean (L2b, issue #10): survey, design, stages 1–2
 
 docs/TO-PROVE.md §3 L2b. Today rust-lld links every executable; the crate theorem takes the
 linker's facts `linkerOkB I` (`FV/E2E/LinkScopeDefs.lean`) and the binary theorems take `BinOk`
 (`FV/E2E/BinCheck.lean`), both decided per crate by `native_decide`. This note surveys what
-rust-lld links, chooses a design, and records stage 1 (implemented, proven, tested).
+rust-lld links, chooses a design, and records stages 1 and 2 (implemented, proven, tested).
 
 ## 1. How `cargo fv` links today
 
@@ -126,86 +126,109 @@ not describe (std/musl/cg_clif code, unwind tables), and is a strict prefix of (
 placement, the relocation function and the region writer are reused when Lean also writes the
 outside part. What stays checked is about the outside file only.
 
-## 4. Stage 1 (implemented)
+## 4. Stages 1 and 2 (implemented)
 
 ### Definitions (`FV/Link/`)
 
 * `Layout.lean`: `offs`/`span` (functions consecutive, each followed by one zero gap word, so a
   call in a function's last word does not return into the next function); `LinkSpec` (the
-  functions in placement order, self-call aliases, the outside part's addresses `outside`, the
-  CLIF image's symbol names, the region's base `R`); `LinkSpec.input` (the crate-level
-  `LinkInput` whose link map **is** the placement, with `syms` read from it and `raStar` the end
-  of the region); `placeOkB` (distinct names, region nonzero, aligned, in the address space, no
-  outside symbol in it).
+  functions in placement order and their sizes in words, self-call aliases, the outside part's
+  addresses `outside` and CLIF data objects `data`, the CLIF image's symbol names, the region's
+  base `R`); `LinkSpec.input` (the crate-level `LinkInput` whose link map **is** the
+  placement, with `syms` read from it and `raStar` the end of the region; a self-call alias's
+  address is the gap word after its function); `placeOkB` (distinct names, one positive size
+  per function, region nonzero, aligned, in the address space, no outside symbol in it);
+  `sizesOkB` (the compiled code has the placement's sizes).
 * `Reloc.lean`: `resolveWord` (each word from its own relocation: `bl` with the offset to
   `baseOf sym`; both page pairs as `adrp`+`add` of the target — the GOT pair too, which
   `PairOk.adrpAdd` accepts, so the program part needs no GOT; TLSDESC as
   `movz`/`movk`/`nop`/`nop` of `tpOff`), `relocsOkB` (the linker's check of the relocation
   shapes, partners and ranges), `regionBytes`.
-* `Image.lean`: `regionOkB` (the outside file's facts), `patch`, **`leanLink S file0`**: the
-  placement, the compiler's pipeline (`resultsT`), the checks, the region's bytes written over
-  the placeholder. A failing check is a link error, never a wrong executable.
+* `Image.lean`: `patch`, `aliasOkB`/`aliasShapeB` (an alias's resolved words, raw words and call
+  lines are its function's), **`leanLink S file0`**: the compiler's pipeline once, the linker's
+  checks of its own output, the region's bytes written over the placeholder, then the checks of
+  rust-lld's output (`regionOkB` on `file0`; `outsideOkB` on the written file: `hdrB`, `dataB`,
+  `symsOkB`). A failing check is a link error, never a wrong executable.
 
 ### Theorems (no `sorry`; axioms `propext`, `Classical.choice`, `Quot.sound`)
 
-* `Link.linkerOkB_place (hp : S.placeOkB) (hr : pipeline ok) (hal : S.aliases = [])` :
-  `linkerOkB S.input = true` — every conjunct by construction (`FV/Link/LayoutProof.lean`;
-  `imgB_of`: no two words at one address, `call_ret_le` from `FnAsm.layout_word`).
-* `Link.leanLink_linkerOk (h : leanLink S file0 = .ok file) : linkerOkB S.input = true`
-  (with self-call aliases `leanLink` decides `linkerOkR` itself: the open case).
+* `Link.linkerOkB_place_alias (hp : S.placeOkB) (hr : pipeline ok) (hn : S.namesOkB …)
+  (hs : S.sizesOkB …) (ha : aliasShapeB …) : linkerOkB S.input = true` — every conjunct by construction, self-call
+  aliases included (`FV/Link/LayoutProof.lean`: `imgB_of`, the alias at its function's base with
+  the same words; `raCallB` through `raOkB`'s shared-code case, `lineOffset_callShape`;
+  `symInjB` with the alias at the gap word). `Link.linkerOkB_place` (no aliases) is a corollary.
+* `Link.leanLink_linkerOk (h : leanLink S file0 = .ok file) : linkerOkB S.input = true`.
 * `Link.artOk_of_image` (`RelocProof.lean`): resolved words in the file ⇒ `ArtOk`.
 * `Link.leanLink_code (h) : ∀ e ∈ tabOf S.input.resultsT, ArtOk S.input file e.2`,
-  `Link.leanLink_static`, `Link.BinOkT` (`BinOk` with the code of the compiler's pipeline,
-  `resultsT`, which the executable runs) and `Link.binOkT_leanLink (h) (Static file0) (DataOk…)
-  (SymsOk…)` (`ImageProof.lean`, `Correct.lean`).
+  `Link.leanLink_static'` (no premise), `Link.BinOkT` (`BinOk` with the code of the compiler's
+  pipeline, `resultsT`, which the executable runs) and **`Link.binOk_leanLink (h) : BinOkT
+  S.input S.data file`** (no premise; `OutsideProof.lean`, `Correct.lean`); stage 1's
+  `leanLink_static`, `binOkT_leanLink` (with the outside facts as premises) are kept.
 * `Link.crate_correct_leanLink (hD : SpillDefinedHyp) (hin : InScopeP S.input) (h : leanLink S
   file0 = .ok file) : CrateStmtT S.input n` — the crate theorem without `linkerOkB` (its axioms
   are `crate_correct_inScope`'s; `InScopeP` includes `entryParamsB` since #82, without which
   `SpillDefinedHyp` was false), and `Link.crate_correct_leanLink_lower (hM : LowerDefinedHyp)`
   (`crate_correct_inScope_lower`).
 * Non-vacuity: `crate-proofs/Crates/LeanLinkWitness.lean` — `leanLink` succeeds on `a_arith`'s
-  58 functions with a placeholder executable (`native_decide`), `InScopeP` of the placed input,
-  instances of `crate_correct_leanLink`, `crate_correct_leanLink_lower` and `leanLink_code`.
+  58 functions with a placeholder executable (one segment and a symbol table, `native_decide`),
+  `InScopeP` of the placed input, instances of `crate_correct_leanLink`,
+  `crate_correct_leanLink_lower`, `leanLink_code` and `binOk_leanLink`.
 
-Sizes: definitions 300 lines, proofs 1,430 lines (`LayoutFacts` 351, `LayoutProof` 362,
-`RelocProof` 132, `ImageProof` 387, `Correct` 200).
+**Which facts are proven and which are checks of rust-lld's output.** Proven by construction
+for every successful `leanLink`: `linkerOkB` (all of it) and the code part of `BinOk`
+(`ArtOk`). Decided by `leanLink` on the file rust-lld wrote (`regionOkB`, `outsideOkB`; one
+named check, no hypothesis left in `binOk_leanLink`): the headers (`Static`), cg_clif's data
+objects (`DataOk`: the data belongs to cg_clif's code and is shared with it, laid out and
+relocated by rust-lld), the symbol table (`SymsOk`, which for the program's functions is that
+rust-lld put them at their placement: the outside part calls them through those symbols), and
+that the region is a read-only part of one segment. They become theorems only when Lean writes
+those bytes too (design (b)).
 
 ### The executable path: `cargo fv --lean-link`
 
 * Codegen units: cg_clif's object with our functions weak and the renamed symbols global (no
   merge); `lean.o` stays in the work directory, each function followed by a zero gap word
-  (`gap_object`), so `ld -r` lays it out as `Link.offs` does.
+  (`gap_object`), so `ld -r` lays it out as `Link.offs` does. Only verified functions enter the
+  region: an unverified one keeps cg_clif's code (fallback, reason "unverified (…): cg_clif's
+  code kept under --lean-link"), as does a self-calling function that takes its own address (the
+  self-call alias's address in the theorem's link map is fresh, the executable's is the
+  function's; one function of `examples/deps`, `foldhash`'s seed).
 * At the executable's link (`leanlink.rs`): the work directories of the linked units (own
   objects, rlib members), by object name; `ld -r` of their `lean.o` → one object with section
-  `.text.fvlean` (the region, `__fvlean_start`, strong definitions, the FDEs); rust-lld links
-  everything with it (`-u __fvlean_start`); `cargo fv link-proof --cgus … --no-check` writes the
-  Lean linker's input; `lake exe lean-link` (`FVTest/Link/LeanLinkMain.lean`) checks that rust-lld
-  put every function at its placement (the outside part reaches the program through those
-  symbols), runs `Link.leanLink` and writes the result over the executable.
+  `.text.fvlean` (the region, `__fvlean_start`, strong definitions, the FDEs), and its functions'
+  sizes (`sizes.txt`, from the object's symbols); rust-lld links everything with it
+  (`-u __fvlean_start`); `cargo fv link-proof --cgus … --no-check` writes the Lean linker's
+  input; `lake exe lean-link DIR SIZES` (`FVTest/Link/LeanLinkMain.lean`) builds the
+  `LinkSpec`, runs `Link.leanLink` and writes the result over the executable.
 * The usual binary check then runs on the patched executable (an independent check).
-* Result (`a_arith`): both executables linked by `Link.leanLink` (66 and 493 functions, regions
-  of 6,080 and 113,400 bytes); the binary check verifies both; all 17 tests pass (the
-  `should_panic` ones unwind through the region's code). The GOT pairs are `adrp`+`add` in the
-  executable. `lean-link` takes 18 s for the 493 functions (the pipeline runs several times).
-* All nine survey crates (`cd examples/survey && cargo fv test --lean-link`): 18 executables,
-  27 to 493 functions each (3,179 in all, no self-call alias), every region written by
-  `Link.leanLink`, the binary check verifies 18 of 18, every test passes (the same counts as
-  without `--lean-link`).
+* Results:
+  - all nine survey crates (`cd examples/survey && cargo fv test --lean-link`): 18 executables,
+    27 to 493 functions each, every region written by `Link.leanLink`, the binary check verifies
+    18 of 18, all 53 tests pass (as without `--lean-link`); the GOT pairs are `adrp`+`add`;
+  - `examples/fv-demo` (with the unwinding cg_clif, `FV_CG_CLIF`): 458 and 882 functions with one
+    self-call alias each, all 19 tests pass (unwinding through the region's code); the binary
+    check's result is the one without `--lean-link` (1 of 2: 72 functions of the test harness
+    fail `indScope`, as in the default build);
+  - `examples/deps` (`cargo fv build --bin deps-demo --lean-link`): 17,090 functions (21 self-call
+    aliases, 23,945 data objects), region 3.9 MB, written by `Link.leanLink`; the program runs.
+* Cost of `lean-link` on `deps-demo` (41,300 link-map names, 19.8 MB executable): 232 s at
+  first, 16 s (1.3 GB) after: names given by the driver and checked (`namesOkB`: `S.names`
+  re-parsed every function's CLIF at each use), a hash-set `nodupB`, one address map for the
+  data check (`dataFastB`: `objB` looked the object's address up per byte), the pipeline in
+  parallel tasks (`parResultsT`). The rest is the compiler's pipeline (one run per function)
+  and the list lookups of `relocsOkB` (≈6 s).
 
 ## 5. What remains
 
-1. **Outside-part facts still decided per executable**: `regionOkB` (inside `leanLink`),
-   `Static`, `DataOk` (the data objects are cg_clif's), `SymsOk` (rust-lld's symbol table), and
-   that rust-lld put the functions at their placement (`lean-link`'s check). Next: move the
-   program's CLIF data objects into the program part (Lean lays out `; data:` objects and
-   resolves their `%sym+off` items, `ABS64` only) so `DataOk` is by construction; then (b) for
-   the headers and the symbol table.
-2. **Self-call aliases**: `linkerOkB_place` assumes none; `leanLink` decides `linkerOkR` when
-   there are some (prove `raOkB`'s alias case and `imgB` with equal raw words).
-3. **Unverified Lean-compiled functions**: `--lean-link` refuses them (they would be in the
-   region without a theorem); place them after the verified ones or exclude them from the
-   region.
-4. **Input plumbing**: `lean-link` reads `link-proof`'s directory (link map, executable symbol
-   table); give it the work directories directly and compute the pipeline once.
-5. **(b)**: the outside part (§3), starting with the ELF writer and the relocation types of
-   §2's table, `.eh_frame_hdr`, TLS.
+1. **The outside part's facts** (`regionOkB`, `outsideOkB`: headers, cg_clif's data objects,
+   the symbol table) are checks of rust-lld's output inside `leanLink`. They become theorems
+   only with design (b): the ELF writer, the relocation types of §2's table, `.eh_frame_hdr`,
+   TLS. Moving the program's data into the region does not help: the data objects are cg_clif's,
+   shared with its code.
+2. **Self-calling functions that take their own address**: outside the region (fallback); the
+   theorem's alias model gives the alias a fresh address. Covering them needs the alias at the
+   function's address in `LinkSys` (`symInj` would have to allow it).
+3. **The binary theorem on the Lean linker's output**: `binary_correct_*` take `BinOk` of the
+   checker's pipeline `pipe` and `okB`; a variant from `BinOkT` (the compiler's `resultsT`) and
+   `crate_correct_leanLink` would make `cargo fv --lean-link`'s executables covered without any
+   per-crate check of the program part (L1).
