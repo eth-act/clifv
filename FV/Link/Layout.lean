@@ -33,14 +33,16 @@ def offs : List Nat → Nat → List Nat
 /-- The bytes the functions of `ns` words take, gap words included. -/
 def span (ns : List Nat) : Nat := (ns.map fun n => 4 * n + 4).sum
 
-/-- **What the Lean linker links**: the program's functions in placement order (`funcs`) and
-their sizes in words (`sizes`), the self-call aliases (`aliases`: `(f__fvself, f)`,
-`aliasFns`: their functions, as `link-check` builds them; an alias's address is the gap word
-after its function, which no symbol has), the outside part's symbol addresses (`outside`) and
-the CLIF data objects the program reaches (`data`, laid out by rust-lld), the names the CLIF
-image needs a symbol for (`symNames`), and the region's base address `R`. -/
+/-- **What the Lean linker links**: the program's functions in placement order (`funcs`), their
+names and sizes in words (`names`, `sizes`: the driver's, checked against the compiled code,
+`namesOkB`/`sizesOkB`), the self-call aliases (`aliases`: `(f__fvself, f)`, `aliasFns`: their
+functions, as `link-check` builds them; an alias's address is the gap word after its function,
+which no symbol has), the outside part's symbol addresses (`outside`) and the CLIF data objects
+the program reaches (`data`, laid out by rust-lld), the names the CLIF image needs a symbol for
+(`symNames`), and the region's base address `R`. -/
 structure LinkSpec where
   funcs : List FnInput
+  names : List String
   sizes : List Nat
   aliases : List (String × String) := []
   aliasFns : List FnInput := []
@@ -50,12 +52,21 @@ structure LinkSpec where
   R : Nat
   deriving Inhabited
 
+/-- `l` has no duplicates (decided with a hash set: linear; `decide l.Nodup` is quadratic). -/
+def nodupGo : List String → Std.HashSet String → Bool
+  | [], _ => true
+  | x :: xs, s => !s.contains x && nodupGo xs (s.insert x)
+
+/-- `l` has no duplicates. -/
+def nodupB (l : List String) : Bool := nodupGo l {}
+
+/-- No address of `l` (modulo `2 ^ 64`) is in `[R, R + n)`. -/
+def clearOfB (R n : Nat) (l : List (String × Nat)) : Bool :=
+  l.all fun e => decide (e.2 % 2 ^ 64 < R) || decide (R + n ≤ e.2 % 2 ^ 64)
+
 namespace LinkSpec
 
 variable (S : LinkSpec)
-
-/-- The functions' names. -/
-def names : List String := S.funcs.map (·.func.name)
 
 /-- The region's size in bytes. -/
 def size : Nat := span S.sizes
@@ -102,15 +113,21 @@ each positive (so the gap word after a function, an alias's address, is no funct
 the region is nonzero, word-aligned and in the address space; no outside symbol has an address
 in the region. -/
 def placeOkB : Bool :=
-  decide (S.names ++ S.aliases.map (·.1)).Nodup && decide (S.aliases.map (·.2)).Nodup &&
+  nodupB (S.names ++ S.aliases.map (·.1)) && nodupB (S.aliases.map (·.2)) &&
   S.aliases.all (fun p => S.names.contains p.2) &&
   decide (S.aliasFns.map (·.func.name) = S.aliases.map (·.1)) &&
+  decide (S.names.length = S.funcs.length) &&
   decide (S.sizes.length = S.funcs.length) && S.sizes.all (0 < ·) &&
   decide (0 < S.R) && S.R % 4 == 0 && decide (S.R + S.size < 2 ^ 64) &&
-  S.outside.all fun e => decide (e.2 % 2 ^ 64 < S.R) || decide (S.R + S.size ≤ e.2 % 2 ^ 64)
+  clearOfB S.R S.size S.outside
 
-/-- **The compiled code has the placement's sizes**: the first `S.funcs.length` entries of the
-compiled table `T` (the placed functions) have `S.sizes` words. -/
+/-- **The compiled code has the placement's names and sizes**: the first `S.funcs.length`
+entries of the compiled table `T` (the placed functions) are named `S.names` and have
+`S.sizes` words. -/
+def namesOkB (T : List (Clif.Function × Art)) : Bool :=
+  decide ((T.take S.funcs.length).map (·.1.name) = S.names)
+
+/-- See `namesOkB`. -/
 def sizesOkB (T : List (Clif.Function × Art)) : Bool :=
   decide ((T.take S.funcs.length).map (·.2.fb.words.size) = S.sizes)
 

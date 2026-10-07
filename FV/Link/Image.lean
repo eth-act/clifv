@@ -106,11 +106,50 @@ def symsOkB (I : LinkInput) (file : ByteArray) : Bool :=
       | none => false
     | none => false
 
+/-- The first address of every name of a link map (`addrMap_get`: the map's lookup is the
+list's, `List.lookup`). -/
+def addrMap (l : List (String × Nat)) : Std.HashMap String Nat :=
+  l.foldl (fun m p => m.insertIfNew p.1 p.2) {}
+
+/-- `objB` with the object's address looked up once in `am` (the link map's `addrMap`) and its
+bytes indexed in an array (`objB` looks the address up and indexes the list per byte). -/
+def objFastB (am : Std.HashMap String Nat) (I : LinkInput) (r : Rd) (phs : List Phdr)
+    (o : Clif.DataObject) : Bool :=
+  match am[o.name]? with
+  | none => false
+  | some a =>
+    let bs := (objBytes I o).toArray
+    let at0 := BitVec.ofNat 64 a
+    (List.range bs.size).all fun i =>
+      let x := at0 + BitVec.ofNat 64 i
+      loadIn r phs x.toNat == some (bs[i]?.getD 0) && (o.writable || roB phs x || relroB phs x)
+
+/-- `dataB` with `objFastB`. -/
+def dataFastB (I : LinkInput) (D : List Clif.DataObject) (ex : Excerpt) : Bool :=
+  match phdrs (exRd ex) with
+  | some phs => let am := addrMap I.addrs; D.all (objFastB am I (exRd ex) phs)
+  | none => false
+
 /-- **The checks of rust-lld's output** on the written file: static (`hdrB`), the CLIF data
-objects `D` in place (`dataB`), the symbol table (`symsOkB`). -/
+objects `D` in place (`dataFastB`, i.e. `dataB`), the symbol table (`symsOkB`). -/
 def outsideOkB (I : LinkInput) (D : List Clif.DataObject) (file : ByteArray) : Bool :=
   let ex : Excerpt := [(0, file)]
-  hdrB ex && dataB I D ex && symsOkB I file
+  hdrB ex && dataFastB I D ex && symsOkB I file
+
+/-- `l.map f`, each element in its own task (`parMap_eq`). -/
+def parMap {α β : Type} (f : α → β) (l : List α) : List β :=
+  (l.map fun x => Task.spawn fun _ => f x).map Task.get
+
+theorem parMap_eq {α β : Type} (f : α → β) (l : List α) : parMap f l = l.map f := by
+  simp only [parMap, List.map_map]; rfl
+
+/-- `LinkInput.resultsT`, the functions compiled in parallel (`parResultsT_eq`). -/
+def parResultsT (I : LinkInput) : Res :=
+  parMap (fun fi => let f := fi.func
+    (f, pipeT f fi.k (BitVec.ofNat 64 (I.baseOf f.name)) (raJ fi.ra fi.j))) I.funcs
+
+theorem parResultsT_eq (I : LinkInput) : parResultsT I = I.resultsT := by
+  simp only [parResultsT, parMap_eq]; rfl
 
 /-- **The Lean linker**: the executable `file0` (the outside part, linked around a placeholder
 of the region) with the program part written into the region. -/
@@ -118,14 +157,16 @@ def leanLink (S : LinkSpec) (file0 : ByteArray) : Except String ByteArray :=
   match phdrs (fileRd file0) with
   | none => .error "no program headers"
   | some phs =>
-    -- the pipeline once: `S.input` is `S.input0.withDepth S.input0.resultsT`, and `resultsT`
-    -- does not read the depth
-    let Rs := S.input0.resultsT
-    let I := S.input0.withDepth Rs
+    -- the pipeline once, in parallel: `S.input` is `S.input0.withDepth S.input0.resultsT`, and
+    -- `resultsT` does not read the depth
+    let I0 := S.input0
+    let Rs := parResultsT I0
+    let I := I0.withDepth Rs
     let T := tabOf Rs
     let tp := tpOff phs
     if !S.placeOkB then .error "the placement's conditions fail (placeOkB)"
     else if !(Rs.all (·.2.toBool)) then .error "the compiler's pipeline rejects a function"
+    else if !(S.namesOkB T) then .error "the compiled functions' names are not the placement's (namesOkB)"
     else if !(S.sizesOkB T) then .error "the compiled code's sizes are not the placement's (sizesOkB)"
     else if !(T.all fun e => relocsOkB I tp e.2) then .error "a relocation fails the checks (relocsOkB)"
     else if !(aliasOkB I tp T) then .error "an alias's resolved words differ from its function's"

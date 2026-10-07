@@ -95,6 +95,7 @@ def main (args : List String) : IO UInt32 := do
     | do IO.eprintln "lean-link: no function, or the first has no address"; return 1
   let S : LinkSpec := {
     funcs := fis.toList
+    names := names
     sizes := sizes.toList
     aliases := aliases.toList
     aliasFns := aliasFns.toList
