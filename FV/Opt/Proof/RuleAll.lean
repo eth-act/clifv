@@ -41,6 +41,10 @@ import FV.Opt.Proof.RuleSelects7
 import FV.Opt.Proof.RuleBitops8
 import FV.Opt.Proof.RuleCprop3
 import FV.Opt.Proof.RuleCprop4
+import FV.Opt.Proof.RuleSelects8
+import FV.Opt.Proof.RuleIcmp10
+import FV.Opt.Proof.RuleIcmp12
+import FV.Opt.Proof.RuleIcmp13
 import FV.Opt.Proof.RuleSkeleton
 import FV.Opt.Optimize
 
