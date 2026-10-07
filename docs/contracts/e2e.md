@@ -1268,9 +1268,38 @@ construction). The ISLE facts use `native_decide` table checks over the exported
 Kill and Cov tables do. One program-independent fact remains a hypothesis: `SpillDefinedHyp`
 (definite assignment of the prepared VCode: availability sets with nothing available on entry,
 from which `checkAlloc`'s fixpoint, started from no vreg in its home, accepts the spill
-allocation). Witness: `crate-proofs/Crates/InScopeWitness.lean` decides `InScopeP` and
-`linkerOkB` of `a_arith` (58 functions) and `fv-demo` (551) by `native_decide`; both hold for all
-nine survey/demo crates with inputs in `crate-proofs/` (1023 functions).
+allocation). It is reduced to definedness alone, before `prepare` (`FV/E2E/SpillDefined.lean`,
+`FV/Backend/Proof/SpillDefined*.lean`):
+
+```lean
+structure Spill.DefAvail (vc : VCode) (M : Nat → Nat → Bool) : Prop  -- SpillAvail's shape; every def defines
+theorem Spill.spillAvail_and (hK : SpillAvail vc K) (hM : DefAvail vc M) :
+    SpillAvail vc (fun b v => K b v && M b v)
+theorem Spill.defAvail_prepare (hv : LowOk vc) (hp : prepare vc = .ok vcp) (hM : DefAvail vc M)
+    (h0 : ∀ v, M 0 v = false) : ∃ M', DefAvail vcp M' ∧ ∀ v, M' 0 v = false
+def E2E.LowerDefinedHyp : Prop := ∀ p f vc, InSubset p f → Spill.ArityOk f → Dominated f →
+    LowerScope f → lowerFunction f = .ok vc → ∃ M, Spill.DefAvail vc M ∧ ∀ v, M 0 v = false
+theorem E2E.spillDefinedHyp_of_lower (h : LowerDefinedHyp) : SpillDefinedHyp
+theorem E2E.LinkCheck.crate_correct_inScope_lower (hM : LowerDefinedHyp) (hin : InScopeP I = true)
+    (hlk : linkerOkB I = true) (n : String) : CrateStmtT I n
+```
+
+Availability (no use reads a vreg killed without a store) is proven (`spillKillFree`); what is
+open is definedness of `lowerFunction`'s VCode: every use, and every branch argument a defined
+parameter needs, is defined on every path from the entry. It does not follow from the semantic
+contracts: `LowerInstOk.run` holds for every initial vreg file, and a read of a temporary before
+its def whose value does not matter is consistent with it; and the link-level theorems cannot use
+`AllocChecked` instead of `checkAlloc` without the same fact (two activations with the same
+body-entry world must give one VCode outcome, so the initial vreg file must not matter). What
+remains: per ISLE run of the driver, every use of a fresh vreg follows its def in the run, a
+non-fresh use is the vreg of a value the certificate tracks (`Cert`), and a fresh result vreg is
+defined by the run — a flow-sensitive invariant (`writable_reg_to_reg` is the identity on ISLE
+values, so the uniform invariants of `KillGen`/`IselFlowCheck` cannot tell a temporary before
+its def from one after) — and the driver's assembly of the runs into `DefAvail` with the sets of
+`Cert`. Non-vacuity: `E2E.spillAvail_defined_witness`. Witness of the crate theorem:
+`crate-proofs/Crates/InScopeWitness.lean` decides `InScopeP` and `linkerOkB` of `a_arith` (58
+functions) and `fv-demo` (551) by `native_decide`; both hold for all nine survey/demo crates
+with inputs in `crate-proofs/` (1023 functions).
 
 **Tooling.** `cargo fv build|test --keep-temps` keeps per codegen unit `fv-link.json`: per
 Lean-compiled function the CLIF file `lean-backend` compiled (with the self-call alias, or the
