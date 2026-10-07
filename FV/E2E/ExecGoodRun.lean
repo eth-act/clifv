@@ -65,8 +65,7 @@ theorem Insn.pairSecond_of_reloc {i : Insn} {ty : RelocType} {s : String} {a : I
 /-- The lines of a function of the program keep `adrp` pairs adjacent. -/
 theorem pairsClosed_art (hI : okB I = true) {g : Clif.Function} (hg : g ∈ (prog I).funcs) :
     PairsClosed (art I g).fa.lines.toList := by
-  obtain ⟨k, j, hp⟩ := (facts hI hg).pipe
-  exact emitFunc_pairsClosed (pipe_spec hp).2.2.2.1
+  exact emitFunc_pairsClosed (facts hI hg).pipe.2.2.2.1
 
 /-- The top entry's return address, outside the code, is no second word. -/
 theorem raNotSecond_top {f : Clif.Function} (hF : FnOk I file f) {c : Arm.ArmState}

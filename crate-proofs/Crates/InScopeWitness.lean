@@ -1,0 +1,36 @@
+import Crates.AArith.Input
+import FV.E2E.LinkScope
+
+/-! # Non-vacuity of `crate_correct_inScope` (L2a) on a survey crate
+
+`E2E.LinkCheck.crate_correct_inScope` (`FV/E2E/LinkScope.lean`) needs of a crate only the input
+conditions `InScopeP` and the linker's facts `linkerOkB` (besides the program-independent open
+facts `OwnHyps`). Both hold for the survey crate `a_arith` (`Crates.AArith.input`, 58 functions):
+decided by `native_decide` (`fvcheck` holds the compiled code of `FV.E2E.LinkScopeDefs`). The
+closed base environment satisfies the base premises of its linked system (`base_closedT`), so the
+theorem is not vacuous in them either. -/
+
+namespace Crates.InScopeWitness
+
+open E2E E2E.LinkCheck
+
+/-- The input conditions of `a_arith`. -/
+theorem inScope_input : InScopeP Crates.AArith.input = true := by native_decide
+
+/-- The linker's facts of `a_arith`'s executable for the compiler's results. -/
+theorem linker_input : linkerOkB Crates.AArith.input = true := by native_decide
+
+/-- No function of `a_arith` has a `tls_value`. -/
+theorem noTls : Crates.AArith.input.prog.funcs.all (fun g => !Backend.hasTls g) = true := by
+  native_decide
+
+/-- **`backend_correct_program` for every function of `a_arith`**, without `okB`. -/
+theorem crate_correct (hO : OwnHyps) (n : String) : CrateStmtT Crates.AArith.input n :=
+  crate_correct_inScope hO inScope_input linker_input n
+
+/-- The closed base environment satisfies the base premises of `a_arith`'s linked system. -/
+theorem base_closedT (F : BitVec 64 → Prop) :
+    BaseOk (LinkSys.ofInputT Crates.AArith.input closedBase F) :=
+  baseOk_closedT fun g hg => by simpa using List.all_eq_true.1 noTls g hg
+
+end Crates.InScopeWitness

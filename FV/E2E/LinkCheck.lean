@@ -926,7 +926,7 @@ theorem okB_names {I : LinkInput} (h : okB I = true) :
     ((progOf I.results).funcs.map (·.name)).Nodup :=
   okR_names h
 
-theorem facts {I : LinkInput} {R : Res} (hR : ResOk I R) (h : okR I R = true) {g : Clif.Function}
+theorem factsR {I : LinkInput} {R : Res} (hR : ResOk I R) (h : okR I R = true) {g : Clif.Function}
     (hg : g ∈ (progOf R).funcs) : Facts I R g (artOf R g) := by
   have hn := okR_names h
   obtain ⟨e, he, rfl, hart⟩ := artOf_spec hn hg
@@ -960,7 +960,13 @@ theorem facts {I : LinkInput} {R : Res} (hR : ResOk I R) (h : okR I R = true) {g
   · obtain ⟨⟨fn, e'⟩, hm, rfl⟩ := List.mem_map.1 hx
     simpa using h21 _ hm
 
-theorem indFacts {I : LinkInput} {R : Res} (hR : ResOk I R) (h : okR I R = true) {g : Clif.Function}
+/-- What `okB` gives for a function `g` of the input's program (`factsR` of the checker's
+results). -/
+theorem facts {I : LinkInput} (h : okB I = true) {g : Clif.Function}
+    (hg : g ∈ (progOf I.results).funcs) : Facts I I.results g (artOf I.results g) :=
+  factsR (results_ok I) h hg
+
+theorem indFactsR {I : LinkInput} {R : Res} (hR : ResOk I R) (h : okR I R = true) {g : Clif.Function}
     (hg : g ∈ (progOf R).funcs) (hnf : ¬ Clif.IndFree g) :
     (∀ sig ∈ indSigs g, sig.params.any (·.purpose == .sret) = false) ∧
     (∀ h ∈ (progOf R).funcs, mayB (fun n => I.syms.lookup n) g h.name = true →
@@ -969,7 +975,7 @@ theorem indFacts {I : LinkInput} {R : Res} (hR : ResOk I R) (h : okR I R = true)
       h.sig.params.any (·.purpose == .sret) = false ∧
       ∃ bytes, sigParamBytes h.sig = .ok bytes ∧ bytes.length ≤ 8) ∧
     I.syms.lookup g.name = none := by
-  have h := (facts hR h hg).ind
+  have h := (factsR hR h hg).ind
   simp only [indB, Bool.or_eq_true, Bool.and_eq_true, List.all_eq_true] at h
   rcases h with h | ⟨⟨h1, h2⟩, h3⟩
   · exact absurd (indFreeB_sound h) hnf
@@ -1011,7 +1017,7 @@ theorem okR_sound {I : LinkInput} {R : Res} (hR : ResOk I R) (hI : okR I R = tru
   simp only [globalChks, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq] at hgl
   obtain ⟨-, himg, hstar, hinj, hsymok, haddr⟩ := hgl
-  have fa := fun {g} (hg : g ∈ (progOf R).funcs) => facts hR hI hg
+  have fa := fun {g} (hg : g ∈ (progOf R).funcs) => factsR hR hI hg
   have site : ∀ g ∈ (progOf R).funcs, ∀ info h,
       (ofRes I R B F).ProgSite g info h →
       h ∈ (progOf R).funcs ∧ h.name ≠ g.name ∧
@@ -1084,9 +1090,9 @@ theorem okR_sound {I : LinkInput} {R : Res} (hR : ResOk I R) (hI : okR I R = tru
       raBlr := fun g hg info hs hreg h hh hmay pc hpc =>
         raCallB_sound (fa hg).ra hpc _ (tab_mem hn hh) (mayCall_ne hmay)
       indScope := fun g hg hnf => ⟨hB.keepSyms ⟨g, hg, hnf⟩, ?_, hB.aliasSyms ⟨g, hg, hnf⟩⟩
-      indNoSym := fun g hg hnf => (indFacts hR hI hg hnf).2.2
-      indSig := fun g hg hnf => ⟨(indFacts hR hI hg hnf).1,
-        fun h hh hmay hm => (indFacts hR hI hg hnf).2.1 h hh (mayB_of hmay) hm⟩
+      indNoSym := fun g hg hnf => (indFactsR hR hI hg hnf).2.2
+      indSig := fun g hg hnf => ⟨(indFactsR hR hI hg hnf).1,
+        fun h hh hmay hm => (indFactsR hR hI hg hnf).2.1 h hh (mayB_of hmay) hm⟩
       addrSlots := fun ⟨g, hg, hout⟩ ⟨g', hg', hind⟩ h hh hs => ?_
       symInj := fun h hh n hn => ?_
       declSig := fun g hg e he h hf => (fa hg).declSig e he h hf

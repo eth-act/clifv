@@ -1,8 +1,9 @@
 import FV.E2E.LinkScopeDefs
 import FV.E2E.EmitTotal
-import FV.E2E.LinkOwnCalls
+import FV.E2E.LinkOwnCallsRun
+import FV.E2E.LinkOwnSegRange
 import FV.E2E.LinkOwnFrames
-import FV.E2E.LinkOwnRets
+import FV.E2E.LinkOwnRetsIsel
 import FV.E2E.SpillCheckAlloc
 
 /-! # Linking without the checker's verdict: input conditions + own outputs + linker (L2a)
@@ -21,8 +22,9 @@ into
   (`lowerAllocReady`): pipeline success (V5/V6b), the validators (`lowerCheck_complete`,
   `prepCheck_complete`, `formsCovered_complete`), `checkAlloc` of the allocation lowered
   (regalloc2's only if accepted, the spill allocation's by `spillCheckAlloc`), the depth (by
-  construction, `withDepth`), the call sites (`sites_of_lower`), the returns and the entry
-  (`retsB_of_lower`, `entryB_of_lower`), the frames (`outFits_of_lower`, `frame_of_lower`);
+  construction, `withDepth`), the call sites (`sites_of_lower`), the returns (`retsB_of_lower`
+  with the ISLE inversion `iselNoRets`) and the entry (`entryB_of_lower`), the frames
+  (`outFits_of_lower`, `frame_of_lower`);
 * **the linker's facts** (`linkerOkB`): the checks about the addresses rust-lld chose — what the
   Lean static linker (L2b) must provide.
 
@@ -35,10 +37,16 @@ crate):
 * `SpillDefinedHyp` (`FV/E2E/SpillCheckAlloc.lean`): definite assignment of the prepared VCode
   (availability sets holding nothing on entry), from which `checkAlloc` accepts the spill
   allocation (the link-level `Compiled` keeps `checkAlloc`'s verdict);
-* `CallShapeHyp` (`FV/E2E/LinkOwnCalls.lean`): the ISLE call inversion (every call of the VCode
-  is the call of a CLIF call site, with its registers and results);
-* `IselNoRetsHyp` (`FV/E2E/LinkOwnRets.lean`): the ISLE runs of statements and branches emit no
-  `Rets`.
+* `CallStmtRunHyp`, `TryRunHyp` (`FV/E2E/LinkOwnCallsRun.lean`): the ISLE runs of a
+  `call`/`call_indirect` statement and of a `try_call` emit only the call of that CLIF call site,
+  with its signature's registers and results (the other runs emit no call: `stmt_noCalls`,
+  `term_noCalls`; together `CallRunHyp`, `callRunHyp_of`);
+* `GotLocalHyp` (`FV/E2E/LinkOwnGotRun.lean`): in a direct call's run, the GOT vreg `t` is
+  defined only by its GOT load, which precedes every call through it, and is no statement
+  result. With `segRangeHyp` (`FV/E2E/LinkOwnSegRange.lean`: every def of a run is in its fresh
+  range) it gives `GotRunHyp` (`gotRunHyp_of`: the GOT symbol of `t` is the name its run loads),
+  which with `CallRunHyp` gives the call inversion `CallShapeHyp` (`callShapeHyp_of`) that
+  `sites_of_lower` uses.
 -/
 
 namespace E2E.LinkCheck
@@ -166,10 +174,12 @@ theorem addrSlotsB_of_in {P : Clif.Program} {T : List (Clif.Function × Art)}
 structure OwnHyps : Prop where
   /-- Definite assignment of the prepared VCode (`checkAlloc` accepts the spill allocation). -/
   defined : SpillDefinedHyp
-  /-- The ISLE call inversion (`callRegs/blrRegs`, `tryRets/blrTry`). -/
-  calls : CallShapeHyp
-  /-- No `Rets` from the ISLE runs of statements and branches (`sretRets`). -/
-  isel : IselNoRetsHyp
+  /-- The ISLE run of a `call`/`call_indirect` statement emits only that call. -/
+  callStmt : CallStmtRunHyp
+  /-- The ISLE run of a `try_call` ends with its call and emits no other. -/
+  tryRun : TryRunHyp
+  /-- The GOT vreg of a direct call's run is defined only by its GOT load, which comes first. -/
+  gotLocal : GotLocalHyp
 
 /-! ## Pipeline success and the validators -/
 
@@ -256,11 +266,14 @@ theorem chks_resultsT (hO : OwnHyps) {I : LinkInput} (hin : InScopeP I = true)
       (raJ fi.ra fi.j)) = a := by rw [ha]; rfl
   rw [hga] at hfit hra hdep
   obtain ⟨hdecl, hindB, hcall, hos⟩ := hpg _ hgP
-  obtain ⟨hsite, htry⟩ := sites_of_lower hO.calls (inSubset_of_fnScope hsc I.prog) hd hs hnd
+  obtain ⟨hsite, htry⟩ := sites_of_lower
+    (callShapeHyp_of (callRunHyp_of hO.callStmt hO.tryRun)
+      (gotRunHyp_of segRangeHyp hO.gotLocal))
+    (inSubset_of_fnScope hsc I.prog) hd hs hnd
     (declSig_of hdecl) hcall hl hp
   have hout := outFits_of_lower hd hs hos hl hp a.rf
   have hfr := frame_of_lower hl hp hlr
-  have hrets := retsB_of_lower hO.isel hs hl
+  have hrets := retsB_of_lower iselNoRets hs hl
   have hent := entryB_of_lower hs hl hp
   rw [List.all_eq_true]
   intro c hc
