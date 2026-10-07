@@ -383,8 +383,32 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   (e.g. `serde_derive`) run on the host at build time and are plain rustc: they are not part
   of the target program, but the code they generate is, and it is compiled like any other
   code of the crate that uses it. The executable's `exe` line counts the prebuilt functions.
-* The report is per function and per build. For the executable as a whole see below, and
-  *Proving a crate* for a standalone Lean-checked certificate.
+* The report is per function and per build. For the executable as a whole see below:
+  *The executable compiler* (`--lean-link`: the guarantee is the general theorem
+  `Link.compileExe_correct`, no per-executable proof) and the binary check; *Proving a crate*
+  gives an optional, independent Lean-checked certificate.
+
+### The executable compiler (`--lean-link`, L1)
+
+With `--lean-link`, the Lean-compiled code of every executable is written by the executable
+compiler `Link.compileExe` (`lake exe lean-link`: the input conditions `InScopeP`, then the Lean
+linker `Link.leanLink`). When `lean-link` prints `written by Link.compileExe`, the executable is
+covered by `Link.compileExe_correct` (docs/contracts/e2e.md, "The executable compiler"), proven
+once for every input: whenever code outside the program calls one of its Lean-compiled
+functions from which no call cycle is reachable, per AAPCS64 and its contract, the
+executable's own instructions refine the whole-program CLIF run. Nothing is generated or
+checked per executable for that guarantee: the facts about the compiled code are theorems, and
+the facts about the bytes rust-lld wrote (headers, cg_clif's data objects, the symbol table,
+the region's segment) are checks inside `leanLink`, so a failure is a link error, not a weaker
+guarantee. The remaining premises are the contracts of the code outside the program and that
+the CLIF run traps only explicitly. When `lean-link` prints `written by Link.leanLink` (the
+program fails an input condition, which it names), the executable is linked the same way but
+not covered by `compileExe_correct`; the binary check and `link-proof` below still apply.
+
+The binary check (below) and `cargo fv link-proof`/`crate-proofs/` (*Proving a crate*) stay
+available as an **independent certificate**: they re-decide the checks on the linked file and
+for the regalloc2 allocation as given, by compiled evaluation (`native_decide`). They are not
+needed for the guarantee of `--lean-link` executables.
 
 ### The executable as a whole (binary check)
 
@@ -414,12 +438,16 @@ whole-program CLIF run; the premises left are the contracts of the code outside 
 link-proof --lean` (below). `--no-binary-check` skips it (its cost grows with the number of
 Lean-compiled functions of each executable: under a second per survey executable).
 
-## Proving a crate (`cargo fv link-proof`)
+## Proving a crate (`cargo fv link-proof`, optional)
+
+Optional: an independent, standalone certificate per crate. For executables linked with
+`--lean-link` by `Link.compileExe` the guarantee is the general theorem
+`Link.compileExe_correct` (*The executable compiler* above); no per-crate proof is needed.
 
 `E2E.backend_correct_program` covers a whole program: the linked code of a set of functions,
 each calling the others' compiled code, refines the program's CLIF run; only calls outside the
 set go to a base environment whose contracts stay premises (std, other crates, the runtime).
-For a crate built by `cargo fv`, its premise `LinkSys.Ok` is checked and proven per crate
+For a crate built by `cargo fv`, its premise `LinkSys.Ok` can be checked and proven per crate
 (docs/contracts/e2e.md, "Crate-level instance"):
 
 ```
