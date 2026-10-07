@@ -591,6 +591,9 @@ def externExtract (ctx : Ctx) (t : Term) (v : V) (_st : LState) : ExtResult (Lis
   | some _, _ => .unmodeled s!"{t.name} on a non-type"
   | none, _ =>
   match t.id, v with
+  -- Offset32 is represented by its signed raw integer, like the two conversions.
+  -- The stock infallible extractor returns that raw i32 (isle_prelude.rs).
+  | TId.offset32, .int i => .ok [.int i]
   | TId.def_inst, .value n => match ctx.defInst? n with
     | some i => .ok [.inst i]
     | none => .fail
