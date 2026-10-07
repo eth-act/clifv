@@ -9,6 +9,7 @@ import FV.Opt.Proof.RuleRestEmbed
 -/
 
 set_option linter.unusedSimpArgs false
+set_option Elab.async false
 
 namespace Opt.Proof
 
