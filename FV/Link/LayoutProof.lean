@@ -5,8 +5,8 @@ import FV.Link.OutsideProof
 
 `linkerOkB S.input` (`FV/E2E/LinkScopeDefs.lean`), the checks about the addresses of the linked
 program, holds for every placement that passes `placeOkB`, the pipeline accepting every
-function, the compiled code having the placement's sizes (`sizesOkB`) and every self-call
-alias having its function's words and call shape (`aliasShapeB`):
+function, the compiled code having the placement's names and sizes (`namesOkB`, `sizesOkB`)
+and every self-call alias having its function's words and call shape (`aliasShapeB`):
 
 * `imgB_of` (any table): aligned code where every address holds one word reads back word by
   word from the image's map (`wordMap_get`, `memOfMap_word`).
@@ -23,7 +23,7 @@ alias having its function's words and call shape (`aliasShapeB`):
   shares (`symInjB`); the CLIF image's symbols read from the link map (`symOkB`).
   `linkerOkB_place`: the alias-free corollary.
 * `leanLink_linkerOk`: the Lean linker's output satisfies `linkerOkB S.input` (its checks
-  `placeOkB`, the pipeline, `sizesOkB`, `aliasShapeB`: `leanLink_spec`).
+  `placeOkB`, the pipeline, `namesOkB`, `sizesOkB`, `aliasShapeB`: `leanLink_spec`).
 -/
 
 namespace Link
@@ -182,9 +182,10 @@ theorem addr_inj {S : LinkSpec} (hP : PlaceOk S) {i i' c c' : Nat} (hi : i < S.f
 /-- The `i`-th entry of the placement: the `i`-th function at its placed address. -/
 theorem progAddrs_getElem {S : LinkSpec} (hP : PlaceOk S) {i : Nat} (h : i < S.progAddrs.length) :
     i < S.funcs.length ∧ S.progAddrs[i] = (S.names[i]!, S.R + (offs S.sizes 0)[i]!) := by
-  have hi : i < S.funcs.length := by simpa [progAddrs, offs_length, hP.sizesLen] using h
+  have hi : i < S.funcs.length := by
+    simpa [progAddrs, offs_length, hP.sizesLen, hP.namesLen] using h
   refine ⟨hi, ?_⟩
-  simp [progAddrs, getElem!_pos S.names i (by simpa using hi),
+  simp [progAddrs, getElem!_pos S.names i (by rw [hP.namesLen]; exact hi),
     getElem!_pos (offs S.sizes 0) i (by simpa [offs_length, hP.sizesLen] using hi)]
 
 /-- The placed address of a call line's return address: within the caller's words and gap
@@ -223,6 +224,7 @@ base, words and call shape it has — it is `ef` itself or `ef`'s self-call alia
 (`tab_alias`, `aliasShapeB`). -/
 theorem tab_home {S : LinkSpec} (hp : S.placeOkB = true)
     (hr : S.input.resultsT.all (·.2.toBool) = true)
+    (hn : S.namesOkB (tabOf S.input.resultsT) = true)
     (hs : S.sizesOkB (tabOf S.input.resultsT) = true)
     (ha : aliasShapeB S.input (tabOf S.input.resultsT) = true)
     {e : Clif.Function × Art} (he : e ∈ tabOf S.input.resultsT) :
@@ -237,19 +239,19 @@ theorem tab_home {S : LinkSpec} (hp : S.placeOkB = true)
     have := (List.getElem?_eq_some_iff.1 hk).1
     rwa [tab_length] at this
   by_cases hkn : k < S.funcs.length
-  · obtain ⟨ef, hef, hb, hsz, hn, -⟩ := tab_placed hp hr hs k hkn
+  · obtain ⟨ef, hef, hb, hsz, hnm, -⟩ := tab_placed hp hr hn hs k hkn
     rw [hk, Option.some.injEq] at hef
     subst hef
-    exact ⟨k, hkn, e, hk, hb, hsz, hn, rfl, rfl, rfl, .inl hn⟩
+    exact ⟨k, hkn, e, hk, hb, hsz, hnm, rfl, rfl, rfl, .inl hnm⟩
   · obtain ⟨e', ef, he', ⟨i, hi, hef⟩, hb, hl⟩ :=
-      tab_alias hp hr hs (k - S.funcs.length) (by omega)
+      tab_alias hp hr hn hs (k - S.funcs.length) (by omega)
     rw [show S.funcs.length + (k - S.funcs.length) = k by omega, hk, Option.some.injEq] at he'
     subst he'
-    obtain ⟨ef', hef', hbf, hszf, hnf, -⟩ := tab_placed hp hr hs i hi
+    obtain ⟨ef', hef', hbf, hszf, hnf, -⟩ := tab_placed hp hr hn hs i hi
     rw [hef, Option.some.injEq] at hef'
     subst hef'
     have hq : (e.1.name, ef.1.name) ∈ S.aliases := mem_of_lookup hl
-    have hnd := tab_names S hP
+    have hnd := tab_names S hP hn
     have hsh := List.all_eq_true.1 ha _ hq
     have hfe : (tabOf S.input.resultsT).find? (fun y => y.1.name == e.1.name) = some e :=
       find?_key hnd he
@@ -263,6 +265,7 @@ accepting every function, the compiled code of the placement's sizes (`sizesOkB`
 self-call alias with its function's words and call shape (`aliasShapeB`). -/
 theorem linkerOkB_place_alias {S : LinkSpec} (hp : S.placeOkB = true)
     (hr : S.input.resultsT.all (·.2.toBool) = true)
+    (hn : S.namesOkB (tabOf S.input.resultsT) = true)
     (hs : S.sizesOkB (tabOf S.input.resultsT) = true)
     (ha : aliasShapeB S.input (tabOf S.input.resultsT) = true) :
     linkerOkB S.input = true := by
@@ -277,7 +280,7 @@ theorem linkerOkB_place_alias {S : LinkSpec} (hp : S.placeOkB = true)
   have hbase : ∀ i < S.funcs.length,
       (BitVec.ofNat 64 (S.R + (offs S.sizes 0)[i]!)).toNat = S.R + (offs S.sizes 0)[i]! :=
     fun i hi => by have := hend i hi 0 (Nat.zero_le _); rw [BitVec.toNat_ofNat]; omega
-  have home := fun {e} (he : e ∈ tabOf S.input.resultsT) => tab_home hp hr hs ha he
+  have home := fun {e} (he : e ∈ tabOf S.input.resultsT) => tab_home hp hr hn hs ha he
   unfold linkerOkB linkerOkR
   simp only [Bool.and_eq_true, List.all_eq_true]
   refine ⟨⟨⟨⟨?img, ?raStar⟩, ?symInj⟩, ?symOk⟩, ?fns⟩
@@ -435,15 +438,16 @@ theorem linkerOkB_place_alias {S : LinkSpec} (hp : S.placeOkB = true)
 vacuous). -/
 theorem linkerOkB_place {S : LinkSpec} (hp : S.placeOkB = true)
     (hr : S.input.resultsT.all (·.2.toBool) = true)
+    (hn : S.namesOkB (tabOf S.input.resultsT) = true)
     (hs : S.sizesOkB (tabOf S.input.resultsT) = true) (hal : S.aliases = []) :
     linkerOkB S.input = true :=
-  linkerOkB_place_alias hp hr hs (by simp [aliasShapeB, hal])
+  linkerOkB_place_alias hp hr hn hs (by simp [aliasShapeB, hal])
 
 /-- **The Lean linker's output satisfies the linker's facts** (`linkerOkB_place_alias`, from
-`leanLink`'s checks `placeOkB`, the pipeline, `sizesOkB` and `aliasShapeB`). -/
+`leanLink`'s checks `placeOkB`, the pipeline, `namesOkB`, `sizesOkB` and `aliasShapeB`). -/
 theorem leanLink_linkerOk {S : LinkSpec} {file0 file : ByteArray}
     (h : leanLink S file0 = .ok file) : linkerOkB S.input = true := by
-  obtain ⟨-, -, hp, hr, hs, -, -, ha, -⟩ := leanLink_spec h
-  exact linkerOkB_place_alias hp hr hs ha
+  obtain ⟨-, -, hp, hr, hn, hs, -, -, ha, -⟩ := leanLink_spec h
+  exact linkerOkB_place_alias hp hr hn hs ha
 
 end Link
