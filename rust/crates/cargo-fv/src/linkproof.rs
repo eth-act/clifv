@@ -226,6 +226,7 @@ struct Opts {
 const LP_USAGE: &str = "\
 usage: cargo fv link-proof [--exe SUBSTR]… [--crate NAME] [--out DIR] [--lean FILE.lean --module NAME]
                            [--entries a,b,…] [--prune] [--mode DIR] [--manifest-path PATH]
+                           [--cgus FILE] [--no-check]
 
 After `cargo fv build|test --keep-temps`: the Lean-compiled, verified functions of the executable
 whose path contains every SUBSTR (default: the only one), restricted to the codegen units of the crate
@@ -236,7 +237,9 @@ which premises of LinkSys.Ok fail (per function), and with --lean writes the Lea
 LinkSys.Ok by native_decide and the theorem for the entries (default: every function); put it in
 the repository's crate-proofs/Crates/ and build it there with `lake build Crates.NAME` (the checker
 then runs as compiled code). --prune drops the failing functions until the rest passes. --mode:
-the build's directory under target/fv (default plain).";
+the build's directory under target/fv (default plain). --cgus FILE: the codegen units' work
+directories, one per line, in this order (the Lean linker's placement order, `--lean-link`)
+instead of those the link map names; --no-check: write DIR only.";
 
 fn parse_opts(args: &[String], target: &Path) -> Result<Opts, String> {
     let mut o = Opts {
