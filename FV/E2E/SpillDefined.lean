@@ -3,6 +3,7 @@ import FV.E2E.SpillKillFree
 import FV.Backend.Proof.SpillDefinedPrep
 import FV.Backend.Proof.SpillEdgesLow
 import FV.Backend.Proof.DefAssemble
+import FV.Backend.Proof.DefRunsProof
 
 /-!
 # `SpillDefinedHyp` from definite assignment of `lowerFunction`'s VCode
@@ -18,7 +19,10 @@ conjunction of availability and definedness sets is availability sets (`Spill.sp
 `spillDefinedHyp_of_lower`. `crate_correct_inScope_lower` is `crate_correct_inScope` under
 `LowerDefinedHyp`. The driver's assembly (`DefRun.lower_defined`, `DefAssemble.lean`) reduces
 `LowerDefinedHyp` to the facts of the ISLE runs, `DefRun.DefRunsHyp`
-(`lowerDefinedHyp_of_runs`, `crate_correct_inScope_runs`).
+(`lowerDefinedHyp_of_runs`, `crate_correct_inScope_runs`), which are proven (`DefRun.defRunsHyp`,
+`DefRunsProof.lean`: an abstract interpretation of the ISLE rules, `DefGen*.lean`). So
+`LowerDefinedHyp` and `SpillDefinedHyp` hold (`lowerDefinedHyp`, `spillDefinedHyp`) and the crate
+theorem has no open hypothesis (`crate_correct_inScope_proven`).
 -/
 
 namespace E2E
@@ -47,6 +51,12 @@ assembly, `DefRun.lower_defined`. -/
 theorem lowerDefinedHyp_of_runs (hR : DefRun.DefRunsHyp) : LowerDefinedHyp :=
   fun _ _ _ hsub har hd hs hen hl =>
     DefRun.lower_defined hR hd hs (abiSigsOk_of_inSubset hsub) har hen hl
+
+/-- **`LowerDefinedHyp`, proven** (`DefRun.defRunsHyp`). -/
+theorem lowerDefinedHyp : LowerDefinedHyp := lowerDefinedHyp_of_runs DefRun.defRunsHyp
+
+/-- **`SpillDefinedHyp`, proven.** -/
+theorem spillDefinedHyp : SpillDefinedHyp := spillDefinedHyp_of_lower lowerDefinedHyp
 
 /-- **Non-vacuity of `spillAvail_and`**: on a VCode with a block argument, availability sets and
 definedness sets holding nothing on entry exist together. -/
@@ -81,5 +91,11 @@ give `LowerDefinedHyp`: `lowerDefinedHyp_of_runs`). -/
 theorem crate_correct_inScope_runs (hR : Backend.Proof.DefRun.DefRunsHyp) {I : LinkInput}
     (hin : InScopeP I = true) (hlk : linkerOkB I = true) (n : String) : CrateStmtT I n :=
   crate_correct_inScope_lower (lowerDefinedHyp_of_runs hR) hin hlk n
+
+/-- **`crate_correct_inScope` without open hypotheses**: the crate's theorem for the compiler's
+own pipeline from the input conditions `InScopeP` and the linker's facts `linkerOkB` alone. -/
+theorem crate_correct_inScope_proven {I : LinkInput} (hin : InScopeP I = true)
+    (hlk : linkerOkB I = true) (n : String) : CrateStmtT I n :=
+  crate_correct_inScope spillDefinedHyp hin hlk n
 
 end E2E.LinkCheck
