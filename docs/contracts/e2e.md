@@ -2782,9 +2782,58 @@ theorem E2E.backend_correct_final_total_emit_in (hsub : InSubset p f) (hd : domi
     -- the conclusion of backend_correct_final_total_emit
 ```
 
-Non-vacuity: `E2E.backend_correct_final_total_emit_in_witness`. Remaining: the size bound
-`spillSizeOkB` is still decided on the prepared VCode (an input-side bound needs a bound on the
-instructions each ISLE run emits).
+Non-vacuity: `E2E.backend_correct_final_total_emit_in_witness`.
+
+**The size bound from the input (V6c)** (2026-10-07, `FV/Backend/Proof/IselSz*.lean`,
+`FV/E2E/SizeDefs.lean`, `FV/E2E/SizeVC.lean`, `FV/E2E/SizeLower.lean`, `FV/E2E/SizeIn.lean`).
+`spillSizeOkB vcp` is proven from the decidable input condition `sizeOkB f`: a word bound
+`sizeBoundIn f` (`SizeDefs`) below `2 ^ 24`. The route:
+
+* **Weights.** `szInstW m = szWords m + 20 · regCount m + |m.targets|` (+ the callee-saved restores
+  of a `Rets`): `szWords` is `instWords`, `regCount` bounds `MInst.operands` (5, or the list
+  lengths of `call`/`tryCall`/`args`/`rets`), so `szInstW` covers the instruction's spill-allocated
+  code (a slot load/store of at most 20 words per operand) and the edge block `prepare` may create
+  per target. `wtA`/`tgA`: weight and targets of an instruction array.
+* **ISLE runs (`Driver.iselSz : LowerScope f → IselSz f`).** A cost analysis on V3's abstract
+  interpreter (value table `covTab`): `cExpr`/`cIfLets`/`cRule` (`IselSzDefs`) bound the growth of
+  any measure `W` of the lowering state, with a cost table per internal term and abstract inputs
+  and extern costs `aw`; `costAt` (`IselSzSound`, by induction on the fuel; failed match phases
+  restore the state) is sound given `ExtW` (extern constructors) and `OracleW`. Two
+  instantiations (`IselSzExt`, tables `szCTab`/`tgCTab` in `IselSzTab`, 699/701 entries, generated
+  by `FVTest/Backend/IselSzGen.lean`, checked by `native_decide`): weights (`actorW`: an `emit`ted
+  instruction of a variant other than `Call`/`CallInd`/`JTSequence` weighs at most `emitK = 107`,
+  `load_constant_full` 4 of them, `gen_return` a `Rets` of at most 8 registers) and branch targets
+  (`actorT`: per variant, none for `JTSequence`). By hand (`IselSzCall`, `IselSzBrTable`): the call
+  rules 1031–1033 and `try_call` rules 1034–1036 (stores of the stack arguments, a GOT load, the
+  call: at most `323 + 125 n` for `n` arguments, `szCallB n = 1200 + 125 n`) and `br_table` 1140
+  (`JTSequence`: a word and a target per entry; sub-runs from the table). Contract: a statement's
+  run at most `stmtSzB` (`szStmtK = 1200`; the table's maximum is 1070), a terminator's at most
+  `termSzB` (`szTermK = 600`, a `br_table` `1500 + 2 (1 + |table|)`) and `termTgB` targets (2, a
+  `br_table` `2 + |table|`); rule 1140 never matches another terminator (`br1140_unmatch`, its root
+  format).
+* **`lowerFunction` (`size_lower`).** Summing the runs over the blocks, with the entry `Args` and
+  parameter loads, the result `mov`s, the `tryCall` replacing a `try_call`'s call (one word more,
+  a target per successor) and the edge blocks: `maxRC vc ≤ mIn f`, `vcW (mIn f) vc ≤ vcIn (mIn f) f`,
+  `vcTg vc ≤ tgIn f`. `vcW M` charges per block a prologue, the callee-saved saves, `10 M` entry
+  stores and 40 words per branch argument.
+* **`prepare` and the spill allocation (`SizeVC`).** `vcW_prepare`: at most one edge block
+  (`jumpBW M`) per branch target; `spillWordBound_le`: `spillWordBound vcp ≤ vcW (maxRC vcp) vcp`.
+
+```lean
+theorem E2E.spillSizeOkB_of_sizeOkB (hs : lowerScopeB f = true) (hsz : sizeOkB f = true)
+    (hl : lowerFunction f = .ok vc) (hp : prepare vc = .ok vcp) :
+    spillSizeOkB vcp = true
+theorem E2E.backend_correct_final_total_emit_input (hsub : InSubset p f) (hd : dominatedB f = true)
+    (hs : lowerScopeB f = true) (har : Spill.arityOkB f = true) (hw : extendsWidenB f = true)
+    (hsz : sizeOkB f = true) (hl …) (hp …) (ra : Except String RFunc) :
+    -- the conclusion of backend_correct_final_total_emit
+```
+
+Every premise on the code is now an input condition. Non-vacuity:
+`E2E.backend_correct_final_total_emit_input_witness`. `lean-e2e-check` counts `sizeOkB` ("sizeOkB"
+line: 1149 of 1149; the largest bound, 11.7 M words for the 9001-statement `large_frame`, against
+279 k words of the actual spill code). The bound is linear in the statements (about 1300 words
+each), so a function of more than about 12 000 statements is out of scope.
 
 **Validator completeness: `Opt.Legalize128` is correct without `Opt.Legal.check`** (2026-10-02,
 `FV/Opt/Proof/LegalComplete.lean`, `FV/Opt/Proof/LegalDirect.lean`, `FV/E2E/LegalDirect.lean`;
