@@ -310,8 +310,7 @@ structure FnOk (I : LinkInput) (file : ByteArray) (g : Clif.Function) : Prop whe
 theorem fnOk {D : List Clif.DataObject} (hI : okB I = true) (hbin : BinOk I D file)
     {F : BitVec 64 → Prop} (hL : (LinkSys.ofInput I B F).Ok) {g : Clif.Function}
     (hg : g ∈ (prog I).funcs) : FnOk I file g := by
-  obtain ⟨k, j, hp⟩ := (facts hI hg).pipe
-  obtain ⟨-, -, -, -, hla, -, hb⟩ := pipe_spec hp
+  obtain ⟨-, -, -, -, hla, hb⟩ := (facts hI hg).pipe
   exact ⟨hla, hL.fits g hg, hbin.code _ (tab_mem (okB_names hI) hg), hb⟩
 
 theorem wAt_inj {a : Art} {x y : Nat} (hx : x < 2 ^ 64) (hy : y < 2 ^ 64)

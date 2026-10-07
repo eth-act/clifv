@@ -128,6 +128,14 @@ theorem pipe_spec {f : Clif.Function} {k : Nat} {base : BitVec 64} {o : Lean.Jso
   cases h
   exact ⟨rfl, h2, h5, h6, h7, rfl, rfl⟩
 
+/-- **The entries of `R` are the pipeline's outputs**, loaded at their load addresses: what the
+soundness of the checks (`okR_sound`) needs of the results, whichever allocator answer the
+pipeline lowered (`results_ok`: the checker's `pipe`; `FV/E2E/LinkScope.lean`: the compiler's). -/
+def ResOk (I : LinkInput) (R : List (Clif.Function × Except String Art)) : Prop :=
+  ∀ e ∈ R, ∀ a, e.2 = .ok a → lowerFunction e.1 = .ok a.vc ∧ prepare a.vc = .ok a.vcp ∧
+    lowerRFunc a.vcp a.rf = .ok a.af ∧ emitFunc a.k a.af = .ok a.fa ∧ a.fa.layout = .ok a.fb ∧
+    a.base = BitVec.ofNat 64 (I.baseOf e.1.name)
+
 /-- The program's functions with their pipeline results (computed once by the checker). -/
 abbrev Res := List (Clif.Function × Except String Art)
 
@@ -840,6 +848,13 @@ theorem results_spec {I : LinkInput} {e : Clif.Function × Except String Art}
   obtain ⟨fi, -, rfl⟩ := List.mem_map.1 he
   exact ⟨_, _, rfl⟩
 
+/-- The checker's results are the pipeline's outputs (`ResOk`). -/
+theorem results_ok (I : LinkInput) : ResOk I I.results := by
+  intro e he a ha
+  obtain ⟨k, j, hp⟩ := results_spec he
+  obtain ⟨hl, hpr, hlr, hem, hla, -, hb⟩ := pipe_spec (hp ▸ ha)
+  exact ⟨hl, hpr, hlr, hem, hla, hb⟩
+
 theorem artOf_spec {R : Res} (hn : ((progOf R).funcs.map (·.name)).Nodup) {g : Clif.Function}
     (hg : g ∈ (progOf R).funcs) : ∃ e ∈ R, e.1 = g ∧ artOf R g = getOk e.2 := by
   obtain ⟨e0, he0, rfl⟩ := List.mem_map.1 hg
@@ -859,54 +874,64 @@ theorem tab_mem {R : Res} (hn : ((progOf R).funcs.map (·.name)).Nodup) {g : Cli
   rw [ha]
   exact List.mem_map.2 ⟨e, he, rfl⟩
 
-/-- What the checks give for a function `g` of `P` (`P`, `A`, `T` of the input's results). -/
-structure Facts (I : LinkInput) (g : Clif.Function) (a : Art) : Prop where
-  pipe : ∃ k j, pipe g k (BitVec.ofNat 64 (I.baseOf g.name)) j = .ok a
+/-- What the checks give for a function `g` of `P` (`P`, `A`, `T` of the results `R`). -/
+structure Facts (I : LinkInput) (R : Res) (g : Clif.Function) (a : Art) : Prop where
+  pipe : lowerFunction g = .ok a.vc ∧ prepare a.vc = .ok a.vcp ∧ lowerRFunc a.vcp a.rf = .ok a.af ∧
+    emitFunc a.k a.af = .ok a.fa ∧ a.fa.layout = .ok a.fb ∧
+    a.base = BitVec.ofNat 64 (I.baseOf g.name)
   lowerOk : lowerCheck g a.vc = true
   prepOk : prepCheck a.vc a.vcp = true
   check : checkAlloc a.vcp a.rf = .ok ()
   covered : FormsCovered ⟨a.fa.k, a.af.slotBase⟩
     a.vcp
-  tries : allInsts a.vcp (tryB (progOf I.results) (indToB (fun n => I.syms.lookup n) g) a.vcp) = true
+  tries : allInsts a.vcp (tryB (progOf R) (indToB (fun n => I.syms.lookup n) g) a.vcp) = true
   rets : allInsts a.vc (retsB g) = true
-  outFits : ∀ e ∈ g.externs, ((progOf I.results).func? e.2.name).isSome = true →
+  outFits : ∀ e ∈ g.externs, ((progOf R).func? e.2.name).isSome = true →
     outFitsB e.2.sig (RAFrame.compute a.vcp a.rf).intBase = true
   nodup : (regLocs g.sig).Nodup
   argReg : ∀ r ∈ regLocs g.sig, r.isArgReg = true
   width : ∀ p ∈ g.sig.params, p.ty.width ≤ 64
-  callee : calleeB (progOf I.results) (fun n => I.syms.lookup n) g = true → (g.slots = [] →
+  callee : calleeB (progOf R) (fun n => I.syms.lookup n) g = true → (g.slots = [] →
     (RAFrame.compute a.vcp a.rf).size =
       a.af.frameSize) ∧ slotFitsB g a = true
-  sites : allInsts a.vcp (siteB (siteOk (progOf I.results) g
+  sites : allInsts a.vcp (siteB (siteOk (progOf R) g
     (indToB (fun n => I.syms.lookup n) g) a.vcp)) = true
-  declSig : ∀ e ∈ g.externs.map (·.2), ∀ h, (progOf I.results).func? e.name = some h → e.sig = h.sig
+  declSig : ∀ e ∈ g.externs.map (·.2), ∀ h, (progOf R).func? e.name = some h → e.sig = h.sig
   entry : entryB g a.vcp = true
   fits : a.base.toNat + 4 * a.fb.words.size ≤ 2 ^ 64
-  ra : raCallB (tabOf I.results) g a = true
+  ra : raCallB (tabOf R) g a = true
   depth : frameDrop a.af ≤ I.D
   free : Clif.LinkFree g
   subsetE : Compile.functionE g = true
   extName : ∀ e ∈ g.externs.map (·.2), e.name ≠ g.name
   abi : sigAbiOk g.sig = true ∧ ∀ e ∈ g.externs, sigAbiOk e.2.sig = true
   indOk : indSigsOk g = true
-  ind : indB (progOf I.results) (fun n => I.syms.lookup n) g = true
+  ind : indB (progOf R) (fun n => I.syms.lookup n) g = true
 
-theorem okB_global {I : LinkInput} (h : okB I = true) :
-    ∀ c ∈ globalChks I (progOf I.results) (tabOf I.results), c.2 = true := by
-  simp only [okB, okR, chks, Bool.and_eq_true, List.all_eq_true] at h
+theorem okR_global {I : LinkInput} {R : Res} (h : okR I R = true) :
+    ∀ c ∈ globalChks I (progOf R) (tabOf R), c.2 = true := by
+  simp only [okR, chks, Bool.and_eq_true, List.all_eq_true] at h
   exact h.1
 
-theorem okB_names {I : LinkInput} (h : okB I = true) :
-    ((progOf I.results).funcs.map (·.name)).Nodup := by
-  have := okB_global h _ (by simp [globalChks]; exact Or.inl rfl)
+theorem okR_names {I : LinkInput} {R : Res} (h : okR I R = true) :
+    ((progOf R).funcs.map (·.name)).Nodup := by
+  have := okR_global h _ (by simp [globalChks]; exact Or.inl rfl)
   simpa using this
 
-theorem facts {I : LinkInput} (h : okB I = true) {g : Clif.Function}
-    (hg : g ∈ (progOf I.results).funcs) : Facts I g (artOf I.results g) := by
-  have hn := okB_names h
+theorem okB_global {I : LinkInput} (h : okB I = true) :
+    ∀ c ∈ globalChks I (progOf I.results) (tabOf I.results), c.2 = true :=
+  okR_global h
+
+theorem okB_names {I : LinkInput} (h : okB I = true) :
+    ((progOf I.results).funcs.map (·.name)).Nodup :=
+  okR_names h
+
+theorem factsR {I : LinkInput} {R : Res} (hR : ResOk I R) (h : okR I R = true) {g : Clif.Function}
+    (hg : g ∈ (progOf R).funcs) : Facts I R g (artOf R g) := by
+  have hn := okR_names h
   obtain ⟨e, he, rfl, hart⟩ := artOf_spec hn hg
-  have hall : ∀ c ∈ chks I (progOf I.results) (tabOf I.results) e.1 e.2, c.2 = true := by
-    simp only [okB, okR, chks, Bool.and_eq_true, List.all_eq_true] at h
+  have hall : ∀ c ∈ chks I (progOf R) (tabOf R) e.1 e.2, c.2 = true := by
+    simp only [okR, chks, Bool.and_eq_true, List.all_eq_true] at h
     exact h.2 e he
   rw [hart]
   simp only [chks, staticChks, linkChks, List.cons_append, List.nil_append, List.mem_cons,
@@ -915,8 +940,7 @@ theorem facts {I : LinkInput} (h : okB I = true) {g : Clif.Function}
     h12, h13, h14, h17, h24⟩ := hall
   simp only [List.all_eq_true, decide_eq_true_eq, Bool.or_eq_true, Bool.not_eq_true',
     Bool.and_eq_true, beq_iff_eq, bne_iff_ne, ne_eq] at h8 h9 h10 h11 h12 h14 h16 h18 h21 h22
-  obtain ⟨k, j, hp⟩ := results_spec he
-  refine ⟨⟨k, j, by rw [← hp]; exact getOk_eq h1⟩, h2, h3, toBool_unit h4,
+  refine ⟨hR e he _ (getOk_eq h1), h2, h3, toBool_unit h4,
     (formsCoveredB_iff _ _).1 h5, h6, h7, fun x hx hs => ?_, h9, h10, h11, fun hc => ?_, h13,
     fun x hx h' hf => ?_, h15, h16, h17, h18, linkFreeB_sound h19, h20, fun x hx => ?_,
     ⟨h22.1, h22.2⟩, h23, h24⟩
@@ -936,16 +960,22 @@ theorem facts {I : LinkInput} (h : okB I = true) {g : Clif.Function}
   · obtain ⟨⟨fn, e'⟩, hm, rfl⟩ := List.mem_map.1 hx
     simpa using h21 _ hm
 
-theorem indFacts {I : LinkInput} (h : okB I = true) {g : Clif.Function}
-    (hg : g ∈ (progOf I.results).funcs) (hnf : ¬ Clif.IndFree g) :
+/-- What `okB` gives for a function `g` of the input's program (`factsR` of the checker's
+results). -/
+theorem facts {I : LinkInput} (h : okB I = true) {g : Clif.Function}
+    (hg : g ∈ (progOf I.results).funcs) : Facts I I.results g (artOf I.results g) :=
+  factsR (results_ok I) h hg
+
+theorem indFactsR {I : LinkInput} {R : Res} (hR : ResOk I R) (h : okR I R = true) {g : Clif.Function}
+    (hg : g ∈ (progOf R).funcs) (hnf : ¬ Clif.IndFree g) :
     (∀ sig ∈ indSigs g, sig.params.any (·.purpose == .sret) = false) ∧
-    (∀ h ∈ (progOf I.results).funcs, mayB (fun n => I.syms.lookup n) g h.name = true →
+    (∀ h ∈ (progOf R).funcs, mayB (fun n => I.syms.lookup n) g h.name = true →
       ((∃ sig ∈ indSigs g, LinkSys.IndSigMatch sig h) ∨
         (DeclN g h.name ∧ ∃ sig ∈ indSigs g, LinkSys.IndTyMatch sig h)) →
       h.sig.params.any (·.purpose == .sret) = false ∧
       ∃ bytes, sigParamBytes h.sig = .ok bytes ∧ bytes.length ≤ 8) ∧
     I.syms.lookup g.name = none := by
-  have h := (facts h hg).ind
+  have h := (factsR hR h hg).ind
   simp only [indB, Bool.or_eq_true, Bool.and_eq_true, List.all_eq_true] at h
   rcases h with h | ⟨⟨h1, h2⟩, h3⟩
   · exact absurd (indFreeB_sound h) hnf
@@ -976,44 +1006,44 @@ theorem symAddr_zero (I : LinkInput) (n : String) :
     I.symAddr n 0 = BitVec.ofNat 64 (I.addrOf n) := by
   simp [LinkInput.symAddr]
 
-/-- **Soundness of the checker**: with the base environment's premises (`BaseOk`) and `F`
-containing the code, the linked system of an input that passes `okB` satisfies every premise of
-`backend_correct_program`'s `LinkSys.Ok`. -/
-theorem okB_sound {I : LinkInput} (hI : okB I = true) {B : BaseEnv} {F : BitVec 64 → Prop}
-    (hB : BaseOk (LinkSys.ofInput I B F)) (hF : ∀ a, (LinkSys.ofInput I B F).Img a → F a) :
-    (LinkSys.ofInput I B F).Ok := by
-  have hn := okB_names hI
-  have hgl := okB_global hI
+/-- **Soundness of the checks** for results `R` that are the pipeline's outputs (`ResOk`): with
+the base environment's premises (`BaseOk`) and `F` containing the code, the linked system of
+results that pass `okR` satisfies every premise of `backend_correct_program`'s `LinkSys.Ok`. -/
+theorem okR_sound {I : LinkInput} {R : Res} (hR : ResOk I R) (hI : okR I R = true) {B : BaseEnv}
+    {F : BitVec 64 → Prop} (hB : BaseOk (ofRes I R B F)) (hF : ∀ a, (ofRes I R B F).Img a → F a) :
+    (ofRes I R B F).Ok := by
+  have hn := okR_names hI
+  have hgl := okR_global hI
   simp only [globalChks, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq] at hgl
   obtain ⟨-, himg, hstar, hinj, hsymok, haddr⟩ := hgl
-  have fa := fun {g} (hg : g ∈ (progOf I.results).funcs) => facts hI hg
-  have site : ∀ g ∈ (progOf I.results).funcs, ∀ info h,
-      (LinkSys.ofInput I B F).ProgSite g info h →
-      h ∈ (progOf I.results).funcs ∧ h.name ≠ g.name ∧
-        calleeB (progOf I.results) (fun n => I.syms.lookup n) h = true ∧
+  have fa := fun {g} (hg : g ∈ (progOf R).funcs) => factsR hR hI hg
+  have site : ∀ g ∈ (progOf R).funcs, ∀ info h,
+      (ofRes I R B F).ProgSite g info h →
+      h ∈ (progOf R).funcs ∧ h.name ≠ g.name ∧
+        calleeB (progOf R) (fun n => I.syms.lookup n) h = true ∧
         ∃ n Lu Ld, info = ⟨.sym n, retPairs Lu, callDefs Ld⟩ ∧
         Lu.map (·.2) = regLocs h.sig ∧
         (Ld.map (·.1)).take (sigRets h.sig).length =
           (List.range (min (sigRets h.sig).length Ld.length)).map Reg.x := by
     intro g hg info h ⟨hs, n, hd, hf⟩
-    have hf' : (progOf I.results).func? n = some h := hf
+    have hf' : (progOf R).func? n = some h := hf
     obtain ⟨hne, ⟨e, he, hen⟩, Lu, Ld, heq, h1, h2⟩ :=
       siteOk_sound (site_sound (fa hg).sites hs) hd hf'
     obtain ⟨hh, hname⟩ := Clif.Program.func?_some hf'
     refine ⟨hh, hne, ?_, n, Lu, Ld, heq, h1, h2⟩
     simp only [calleeB, Bool.or_eq_true, List.any_eq_true, beq_iff_eq]
     exact .inl ⟨g, hg, e, he, by rw [hen, hname]⟩
-  have hcal : ∀ g ∈ (progOf I.results).funcs, ∀ h, (LinkSys.ofInput I B F).Callee g h →
-      (h.slots = [] → (RAFrame.compute (artOf I.results h).vcp (artOf I.results h).rf).size =
-        (artOf I.results h).af.frameSize) ∧ slotFitsB h (artOf I.results h) = true := by
+  have hcal : ∀ g ∈ (progOf R).funcs, ∀ h, (ofRes I R B F).Callee g h →
+      (h.slots = [] → (RAFrame.compute (artOf R h).vcp (artOf R h).rf).size =
+        (artOf R h).af.frameSize) ∧ slotFitsB h (artOf R h) = true := by
     intro g hg h hh
-    have hc : calleeB (progOf I.results) (fun n => I.syms.lookup n) h = true ∧
-        h ∈ (progOf I.results).funcs := by
+    have hc : calleeB (progOf R) (fun n => I.syms.lookup n) h = true ∧
+        h ∈ (progOf R).funcs := by
       rcases hh with ⟨info, hs⟩ | ⟨e, he, hf⟩ | ⟨hh', hmay⟩
       · obtain ⟨hh', -, hc, -⟩ := site g hg info h hs
         exact ⟨hc, hh'⟩
-      · obtain ⟨hh', hname⟩ := Clif.Program.func?_some (p := progOf I.results) hf
+      · obtain ⟨hh', hname⟩ := Clif.Program.func?_some (p := progOf R) hf
         refine ⟨?_, hh'⟩
         obtain ⟨⟨fn, e'⟩, hm, rfl⟩ := List.mem_map.1 he
         simp only [calleeB, Bool.or_eq_true, List.any_eq_true, beq_iff_eq]
@@ -1030,13 +1060,12 @@ theorem okB_sound {I : LinkInput} (hI : okB I = true) {B : BaseEnv} {F : BitVec 
           · exact absurd h' hs
           · rfl
     exact (fa hc.2).callee hc.1
-  have hpipe : ∀ g ∈ (progOf I.results).funcs,
-      Compiled g (artOf I.results g).k (artOf I.results g).vc (artOf I.results g).vcp
-        (artOf I.results g).rf (artOf I.results g).af (artOf I.results g).fa
-        (artOf I.results g).fb ∧ (artOf I.results g).base = BitVec.ofNat 64 (I.baseOf g.name) := by
+  have hpipe : ∀ g ∈ (progOf R).funcs,
+      Compiled g (artOf R g).k (artOf R g).vc (artOf R g).vcp
+        (artOf R g).rf (artOf R g).af (artOf R g).fa
+        (artOf R g).fb ∧ (artOf R g).base = BitVec.ofNat 64 (I.baseOf g.name) := by
     intro g hg
-    obtain ⟨k, j, hp⟩ := (fa hg).pipe
-    obtain ⟨hl, hpr, ha, he, hla, -, hb⟩ := pipe_spec hp
+    obtain ⟨hl, hpr, ha, he, hla, hb⟩ := (fa hg).pipe
     exact ⟨⟨hl, (fa hg).lowerOk, hpr, (fa hg).prepOk, (fa hg).check, ha, he, hla⟩, hb⟩
   refine
     { names := hn
@@ -1061,9 +1090,9 @@ theorem okB_sound {I : LinkInput} (hI : okB I = true) {B : BaseEnv} {F : BitVec 
       raBlr := fun g hg info hs hreg h hh hmay pc hpc =>
         raCallB_sound (fa hg).ra hpc _ (tab_mem hn hh) (mayCall_ne hmay)
       indScope := fun g hg hnf => ⟨hB.keepSyms ⟨g, hg, hnf⟩, ?_, hB.aliasSyms ⟨g, hg, hnf⟩⟩
-      indNoSym := fun g hg hnf => (indFacts hI hg hnf).2.2
-      indSig := fun g hg hnf => ⟨(indFacts hI hg hnf).1,
-        fun h hh hmay hm => (indFacts hI hg hnf).2.1 h hh (mayB_of hmay) hm⟩
+      indNoSym := fun g hg hnf => (indFactsR hR hI hg hnf).2.2
+      indSig := fun g hg hnf => ⟨(indFactsR hR hI hg hnf).1,
+        fun h hh hmay hm => (indFactsR hR hI hg hnf).2.1 h hh (mayB_of hmay) hm⟩
       addrSlots := fun ⟨g, hg, hout⟩ ⟨g', hg', hind⟩ h hh hs => ?_
       symInj := fun h hh n hn => ?_
       declSig := fun g hg e he h hf => (fa hg).declSig e he h hf
@@ -1087,13 +1116,13 @@ theorem okB_sound {I : LinkInput} (hI : okB I = true) {B : BaseEnv} {F : BitVec 
       baseTlsNI := hB.baseTlsNI
       baseKeepsPlace := hB.baseKeepsPlace
       baseKeepsAllocs := hB.baseKeepsAllocs }
-  · simp [LinkSys.ofInput, ofRes, Clif.Program.only, Clif.Program.func?]
+  · simp [ofRes, Clif.Program.only, Clif.Program.func?]
   · intro b _ st _ fn args _ e he
     have hne := (fa hg).extName e (lookup_mem he)
-    simp [LinkSys.ofInput, ofRes, Clif.Program.only, Clif.Program.func?, Ne.symm hne]
+    simp [ofRes, Clif.Program.only, Clif.Program.func?, Ne.symm hne]
   · intro b _ fn args et _ e he
     have hne := (fa hg).extName e (lookup_mem he)
-    simp [LinkSys.ofInput, ofRes, Clif.Program.only, Clif.Program.func?, Ne.symm hne]
+    simp [ofRes, Clif.Program.only, Clif.Program.func?, Ne.symm hne]
   · intro sig hs
     have := List.all_eq_true.mp (fa hg).indOk sig hs
     simpa [Bool.and_eq_true, decide_eq_true_eq] using this
@@ -1147,6 +1176,14 @@ theorem okB_sound {I : LinkInput} (hI : okB I = true) {B : BaseEnv} {F : BitVec 
     show I.symAddr n 0 = _
     rw [symAddr_zero, this]
 
+/-- **Soundness of the checker**: with the base environment's premises (`BaseOk`) and `F`
+containing the code, the linked system of an input that passes `okB` satisfies every premise of
+`backend_correct_program`'s `LinkSys.Ok`. -/
+theorem okB_sound {I : LinkInput} (hI : okB I = true) {B : BaseEnv} {F : BitVec 64 → Prop}
+    (hB : BaseOk (LinkSys.ofInput I B F)) (hF : ∀ a, (LinkSys.ofInput I B F).Img a → F a) :
+    (LinkSys.ofInput I B F).Ok :=
+  okR_sound (results_ok I) hI hB hF
+
 /-! ## The base premises are satisfiable -/
 
 /-- **The closed base environment**: no extern outside the program has a semantics (CLIF:
@@ -1172,34 +1209,41 @@ theorem closedBase_tlsNI {I : LinkInput} {R : Res} {F' : BitVec 64 → Prop}
   apply Arm.PState.ext <;> simp only [Arm.read_pstate] <;> assumption
 
 /-- **Non-vacuity of `BaseOk`**: the closed base environment satisfies every base premise of
-every input without `tls_value` (decidable: `hasTls`). With it the crate's theorem covers the
-runs that call nothing outside the program (a call outside it is stuck in CLIF). -/
-theorem baseOk_closed {I : LinkInput} {F : BitVec 64 → Prop}
-    (htls : ∀ g ∈ (progOf I.results).funcs, hasTls g = false) :
-    BaseOk (LinkSys.ofInput I closedBase F) where
+the linked system of any results `R` without `tls_value` (decidable: `hasTls`). With it the
+crate's theorem covers the runs that call nothing outside the program (a call outside it is
+stuck in CLIF). -/
+theorem baseOk_closedR {I : LinkInput} {R : Res} {F : BitVec 64 → Prop}
+    (htls : ∀ g ∈ (progOf R).funcs, hasTls g = false) :
+    BaseOk (ofRes I R closedBase F) where
   baseNoAlloc := fun _ n gsem hn => by
-    simp [LinkSys.ofInput, ofRes, closedBase, Clif.Env.empty] at hn
-  keepSyms := fun _ n f h => by simp [LinkSys.ofInput, ofRes, closedBase, Clif.Env.empty] at h
-  aliasSyms := fun _ _ _ _ _ _ _ _ _ _ => by simp [LinkSys.ofInput, ofRes, closedBase, Clif.Env.empty]
+    simp [ofRes, closedBase, Clif.Env.empty] at hn
+  keepSyms := fun _ n f h => by simp [ofRes, closedBase, Clif.Env.empty] at h
+  aliasSyms := fun _ _ _ _ _ _ _ _ _ _ => by simp [ofRes, closedBase, Clif.Env.empty]
   baseOs := fun g hg info hs hb F' K G s0 Pc ctx s _ _ _ c wh ops regs i' w outs w' _ _ _ _ _ _
-      _ hsem => by simp [csem, LinkSys.ofInput, ofRes, closedBase] at hsem
-  basePc := fun d s _ _ _ => by simp [LinkSys.ofInput, ofRes, closedBase, Arm.r_of_w_same]
-  baseExt := fun d uses w outs w' _ hx => by simp [LinkSys.ofInput, ofRes, closedBase] at hx
+      _ hsem => by simp [csem, ofRes, closedBase] at hsem
+  basePc := fun d s _ _ _ => by simp [ofRes, closedBase, Arm.r_of_w_same]
+  baseExt := fun d uses w outs w' _ hx => by simp [ofRes, closedBase] at hx
   baseX := fun g hg F' slotOff out c => by
     intro ext _ gs sl cm w d uses args vals rvals cm' he
-    simp [LinkSys.ofInput, ofRes, closedBase, Clif.Env.empty] at he
+    simp [ofRes, closedBase, Clif.Env.empty] at he
   baseXI := fun g hg F' slotOff out c sig _ n gsem sl cm w u args vals rvals cm' hgs => by
-    simp [LinkSys.ofInput, ofRes, closedBase, Clif.Env.empty] at hgs
+    simp [ofRes, closedBase, Clif.Env.empty] at hgs
   baseTls := fun g hg ht => absurd ht (by simp [htls g hg])
   baseTry := fun g hg F' ctx info ti _ c wh ops regs i' s w outs w' s' _ _ _ _ _ _ hsem => by
-    simp [csem, LinkSys.ofInput, ofRes, closedBase] at hsem
+    simp [csem, ofRes, closedBase] at hsem
   baseNI := fun _ g hg F' c n sig vals cm args d uses Z w w' o x o' x' _ _ _ _ _ _ _ _ _ hx _ => by
-    simp [LinkSys.ofInput, ofRes, closedBase] at hx
+    simp [ofRes, closedBase] at hx
   baseTlsNI := fun _ F' => closedBase_tlsNI F'
   baseKeepsPlace := fun _ n gsem hn => by
-    simp [LinkSys.ofInput, ofRes, closedBase, Clif.Env.empty] at hn
+    simp [ofRes, closedBase, Clif.Env.empty] at hn
   baseKeepsAllocs := fun _ n gsem hn => by
-    simp [LinkSys.ofInput, ofRes, closedBase, Clif.Env.empty] at hn
+    simp [ofRes, closedBase, Clif.Env.empty] at hn
+
+/-- **Non-vacuity of `BaseOk`** for the linked system of an input (`baseOk_closedR`). -/
+theorem baseOk_closed {I : LinkInput} {F : BitVec 64 → Prop}
+    (htls : ∀ g ∈ (progOf I.results).funcs, hasTls g = false) :
+    BaseOk (LinkSys.ofInput I closedBase F) :=
+  baseOk_closedR htls
 
 /-! ## The crate's theorem -/
 

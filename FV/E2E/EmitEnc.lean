@@ -1,5 +1,6 @@
 import Lean
 import FV.E2E.EmitPreOk
+import FV.E2E.EmitCondsDefs
 import FV.Backend.Proof.RelaxLayout
 import FV.Backend.EmitOk
 
@@ -119,11 +120,6 @@ macro "enc" : tactic => `(tactic| (
   (try simp_all [ALUOp.addSub?, ALUOp.logic?, OperandSize.is64, CTy.bits, immOkB]) <;>
   (repeat' split) <;>
   (try simp_all [ALUOp.addSub?, ALUOp.logic?, OperandSize.is64, CTy.bits, immOkB]) <;> (try omega)))
-
-/-! ## The immediate check (`immOkB`, `FV/Backend/EmitOk.lean`) -/
-
-/-- `immOkB` on every instruction of every block. -/
-def immsOkB (vc : VCode) : Bool := vc.blocks.all fun vb => vb.insts.all immOkB
 
 /-! ## Multi-line expansions -/
 
