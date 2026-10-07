@@ -12,10 +12,11 @@ The analogue of `Kill.KillRunsHyp` for definite assignment. A run of the driver 
 * fresh vregs of the run (`≥` the counter it starts from) defined by an earlier instruction of
   the run (`RunDef`);
 
-and a statement's result registers are such CLIF values' vregs or fresh vregs the run defines
-(`OutDef`). This is a flow-sensitive fact: an ISLE temporary (`temp_writable_reg`) is a value of
-the run before the instruction defining it is emitted, and `writable_reg_to_reg` is the identity
-on ISLE values, so the uniform value invariants of `KillGen`/`IselFlowCheck` cannot state it.
+and a statement's result registers are vregs: of such CLIF values or fresh vregs the run defines
+(`OutDef`; so `lowerFunction` adds no result `mov`s). This is a flow-sensitive fact: an ISLE
+temporary (`temp_writable_reg`) is a value of the run before the instruction defining it is
+emitted, and `writable_reg_to_reg` is the identity on ISLE values, so the uniform value
+invariants of `KillGen`/`IselFlowCheck` cannot state it.
 -/
 
 namespace Backend.Proof.DefRun
@@ -44,12 +45,12 @@ def RunDef (ctx : Ctx) (S : List Nat) (s s' : LState) : Prop :=
       (u < ctx.valDef.size ∧ Reach ctx S u) ∨
         (s.nextVreg ≤ u ∧ ∃ k' m', k' < k ∧ ms[k']? = some m' ∧ u ∈ defVregs m')
 
-/-- **A statement's result registers**: vregs of CLIF values reached from `S`, or fresh vregs the
+/-- **A statement's result registers**: vregs, of CLIF values reached from `S` or fresh vregs the
 run defines. -/
 def OutDef (ctx : Ctx) (S : List Nat) (s s' : LState) (out : Option V) : Prop :=
-  ∀ rss, out = some (.regsVec rss) → ∀ rs ∈ rss, ∀ n c, Reg.vreg n c ∈ rs →
-    (n < ctx.valDef.size ∧ Reach ctx S n) ∨
-      (s.nextVreg ≤ n ∧ ∃ m ∈ emittedSince s s', n ∈ defVregs m)
+  ∀ rss, out = some (.regsVec rss) → ∀ rs ∈ rss, ∀ r ∈ rs, ∃ n c, r = Reg.vreg n c ∧
+    ((n < ctx.valDef.size ∧ Reach ctx S n) ∨
+      (s.nextVreg ≤ n ∧ ∃ m ∈ emittedSince s s', n ∈ defVregs m))
 
 /-- **The definedness facts of the ISLE runs** (open): on input in scope, a statement's `lower`
 run, a terminator's run and a `try_call`'s `lower_branch` run meet `RunDef` (reaching from the
