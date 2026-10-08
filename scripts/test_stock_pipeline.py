@@ -27,6 +27,7 @@ class PipelineTests(unittest.TestCase):
             path=binaries/name;path.write_text(source);path.chmod(0o755)
         (scripts/"prejit-export-build.sh").write_text("#!/usr/bin/env bash\nexit 0\n")
         (scripts/"test_stock_compiler_compare.py").write_text("import unittest\nclass Fixture(unittest.TestCase):\n def test_fixture(self): self.assertTrue(True)\n")
+        (scripts/"test_lowering_trace.py").write_text("import unittest\nclass Fixture(unittest.TestCase):\n def test_fixture(self): self.assertTrue(True)\n")
         (scripts/"test_stock_exporter.py").write_text("import unittest\nclass Fixture(unittest.TestCase):\n def test_fixture(self): self.assertTrue(True)\n")
         (scripts/"test_stock_pipeline.py").write_text("import unittest\nclass Fixture(unittest.TestCase):\n def test_fixture(self): self.assertTrue(True)\n")
         (scripts/"stock-compiler-compare.py").write_text('''import argparse,json,os
@@ -57,8 +58,10 @@ raise SystemExit(10)
             self.assertEqual(data["jobs"],"3")
             self.assertIsNone(data["rustflags"]);self.assertIsNone(data["target_dir"])
             logs=root/"target/result.build-logs"
-            for name in ("versions.txt","allocator.log","lean-backend.log","stock-exporter.log","validation.log","exporter-validation.log","comparison.log"):
+            for name in ("versions.txt","allocator.log","lean-backend.log","stock-exporter.log","validation.log","exporter-validation.log","trace-validation.log","comparison.log"):
                 self.assertTrue((logs/name).exists(),name)
+            self.assertIn("lean-backend-lowering-trace",(logs/"lean-backend.command").read_text())
+            self.assertIn("test_lowering_trace.py",(logs/"trace-validation.command").read_text())
             self.assertIn("--locked",(logs/"allocator.command").read_text())
             self.assertIn("1.96.0",(logs/"allocator.command").read_text())
 

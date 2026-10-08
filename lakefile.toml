@@ -72,3 +72,7 @@ root = "FVTest.E2E.LinkCheckMain"
 [[lean_exe]]
 name = "lean-link"
 root = "FVTest.Link.LeanLinkMain"
+
+[[lean_exe]]
+name = "lean-backend-lowering-trace"
+root = "FVTest.Backend.Lowering.Trace"

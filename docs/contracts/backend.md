@@ -511,3 +511,36 @@ results/traps compared with `Clif.run`:
   model); memory-accessing and calling functions are covered by qemu only.
 - Functions of 128 MiB or more fail to compile (`b` range, see 8), where Cranelift would use
   veneer islands.
+
+## Lowering diagnostics
+
+Build `lean-backend-lowering-trace` through the usual memory cap, then pass it the
+`input.clif` retained for a compilation in a settings-matched stock comparison:
+
+```sh
+FV_MEMCAP=22G scripts/memcap.sh lake build lean-backend-lowering-trace
+.lake/build/bin/lean-backend-lowering-trace INPUT.clif lowering.json
+```
+
+The schema-1 report contains initial source-value registers, selected and prepared
+VCode, fired rules, the current checker's per-instruction replay (including temporary
+register ranges), and the prepared function JSON that is sent to regalloc2. It applies
+the same i128 legalization as `lean-backend` and records legalization acceptance or
+rejection. It does not allocate, emit, apply stock settings, or certify equivalence;
+retain the comparison's settings receipt with the report. Unsupported functions carry
+their reason in the report instead of a lowering snapshot.
+
+For stock, the exporter exposes Cranelift's existing logger without modifying its
+lowering code. Logging is off by default; enable it with `RUST_LOG`:
+
+```sh
+RUST_LOG=cranelift_codegen::machinst::lower=trace \
+  tools/prejit-export/target/debug/prejit-export OFFICIAL.clif stock-trace \
+  aarch64-unknown-linux-gnu --all-stages 2> stock-lowering.log
+```
+
+The debug exporter build includes the stock traces for source-value registers,
+instruction colors, demanded values, opportunistic definitions, and sinking.
+`scripts/test_lowering_trace.py` checks the Lean snapshot against the compiler's
+actual allocator request, repeated object bytes, and identical stock artifacts with
+and without logging.
