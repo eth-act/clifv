@@ -57,12 +57,12 @@ def leAll : List FA → List FA → Bool
 
 /-- Extern extractors whose outputs hold no register, value, instruction nor MInst data. -/
 def clean0Ext : List TermId :=
-  [TId.offset32, TId.value_type, TId.i64_from_iconst, TId.little_or_native_endian, TId.u64_from_imm64,
+  [TId.value_type, TId.i64_from_iconst, TId.little_or_native_endian, TId.u64_from_imm64,
    TId.nonzero_u64_from_imm64, TId.imm12_from_u64, TId.i32_from_i64, TId.u8_from_u64,
    TId.single_target, TId.two_targets, TId.jump_table_targets, TId.symbol_value_data,
    TId.block_array_2, TId.func_ref_data, TId.multi_lane, TId.dynamic_lane, TId.not_i64x2,
    TId.use_lse, TId.use_dotprod, TId.use_i8mm, TId.sign_return_address_disabled, TId.tls_model,
-   TId.exception_sig]
+   TId.exception_sig, TId.offset32]
 
 /-- Extern extractors whose outputs are CLIF values or instructions reached from input values. -/
 def valueExt : List TermId :=
