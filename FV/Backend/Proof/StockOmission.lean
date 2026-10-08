@@ -202,6 +202,7 @@ theorem scan_omitted_semantic_witness :
     omittedOutput.emitted = #[] := by
   have h := scan_omitted_semantic (step := omittedStep) (info := unusedCtx.insts[0]!)
     (ρ := omittedRF) (regs := omittedRegs) (env := Clif.Env.empty) (p := { funcs := [] })
+    (fr := omittedFrame) (cm := omittedMem) (vals := [.ofInt .i8 9])
     omitted_scan rfl rfl rfl rfl rfl
   exact ⟨omitted_scan, omitted_eval, h.2.2.1, h.2.2.2.1.mpr omitted_held, h.2.2.2.2⟩
 

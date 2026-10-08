@@ -104,10 +104,21 @@ theorem buildCtx_mappedInv {f : Clif.Function} (hs : LowerScope f) {ctx : Ctx}
   obtain ⟨original, st0, hold, _, view⟩ := buildCtx_source hb
   have old := ctxOk_sound (ctxOk_of hs hold)
   have allocated := buildCtx_allocated hb
-  refine { func := view.func.trans old.func, data := ?_, instE := ?_, resTys := ?_,
-    valueReg := ?_, typedReg := ?_, injective := allocated.2.1, defInst := ?_,
-    defClif := ?_, slotOff := view.slotOff.trans old.slotOff, resTysE := ?_,
-    valTyE := ?_, addr64 := ?_ }
+  refine {
+    func := view.func.trans old.func
+    data := ?_
+    instE := ?_
+    resTys := ?_
+    valueReg := ?_
+    typedReg := ?_
+    injective := allocated.2.1
+    defInst := ?_
+    defClif := ?_
+    slotOff := view.slotOff.trans old.slotOff
+    resTysE := ?_
+    valTyE := ?_
+    addr64 := ?_
+  }
   · intro ii info inst hi hc
     exact old.data ii info inst (by simpa only [view.insts] using hi) hc
   · intro ii info inst hi hc
@@ -156,9 +167,21 @@ private theorem definition_ne_term {f : Clif.Function} {ctx : Ctx}
 theorem MappedCtxInv.termCtx {f : Clif.Function} {ctx : Ctx} (h : MappedCtxInv f ctx)
     {ti : Nat} (hph : ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩) (data : Backend.V) :
     MappedCtxInv f (Driver.termCtx ctx ti data) := by
-  refine { func := h.func, data := ?_, instE := ?_, resTys := ?_, valueReg := h.valueReg,
-    typedReg := h.typedReg, injective := h.injective, defInst := ?_, defClif := ?_,
-    slotOff := h.slotOff, resTysE := ?_, valTyE := h.valTyE, addr64 := ?_ }
+  refine {
+    func := h.func
+    data := ?_
+    instE := ?_
+    resTys := ?_
+    valueReg := h.valueReg
+    typedReg := h.typedReg
+    injective := h.injective
+    defInst := ?_
+    defClif := ?_
+    slotOff := h.slotOff
+    resTysE := ?_
+    valTyE := h.valTyE
+    addr64 := ?_
+  }
   · intro ii info inst hi hc
     by_cases he : ii = ti
     · subst ii; rw [termCtx_insts_self hph] at hi; cases hi; cases hc
