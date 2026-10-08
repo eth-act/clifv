@@ -57,8 +57,10 @@ raise SystemExit(10)
             self.assertEqual(data["jobs"],"3")
             self.assertIsNone(data["rustflags"]);self.assertIsNone(data["target_dir"])
             logs=root/"target/result.build-logs"
-            for name in ("versions.txt","allocator.log","lean-backend.log","stock-exporter.log","validation.log","exporter-validation.log","comparison.log"):
+            for name in ("versions.txt","allocator.log","lean-backend.log","stock-exporter.log","validation.log","exporter-validation.log","trace-validation.log","comparison.log"):
                 self.assertTrue((logs/name).exists(),name)
+            self.assertIn("lean-backend-lowering-trace",(logs/"lean-backend.command").read_text())
+            self.assertIn("test_lowering_trace.py",(logs/"trace-validation.command").read_text())
             self.assertIn("--locked",(logs/"allocator.command").read_text())
             self.assertIn("1.96.0",(logs/"allocator.command").read_text())
 
