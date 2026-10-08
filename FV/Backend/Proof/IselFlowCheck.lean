@@ -62,7 +62,7 @@ def clean0Ext : List TermId :=
    TId.single_target, TId.two_targets, TId.jump_table_targets, TId.symbol_value_data,
    TId.block_array_2, TId.func_ref_data, TId.multi_lane, TId.dynamic_lane, TId.not_i64x2,
    TId.use_lse, TId.use_dotprod, TId.use_i8mm, TId.sign_return_address_disabled, TId.tls_model,
-   TId.exception_sig]
+   TId.exception_sig, TId.offset32]
 
 /-- Extern extractors whose outputs are CLIF values or instructions reached from input values. -/
 def valueExt : List TermId :=
