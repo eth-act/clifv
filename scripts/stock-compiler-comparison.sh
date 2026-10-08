@@ -85,9 +85,10 @@ step rust-toolchain rustup toolchain install "$RUST_VERSION" --profile minimal
   printf 'memory_cap=%s\n' "${FV_MEMCAP:-16G}"
 } > "$BUILD_LOGS/versions.txt"
 step allocator guard rustup run "$RUST_VERSION" cargo build --locked --release --manifest-path rust/Cargo.toml -p lean-regalloc
-step lean-backend guard lake build lean-backend lean-backend-lowering-trace
+step lean-backend guard lake build lean-backend lean-backend-lowering-trace lean-stock-lowering-compare lean-stock-lowering-test
 step stock-exporter bash scripts/prejit-export-build.sh
 step trace-validation guard python3 -m unittest discover -s scripts -p test_lowering_trace.py -v
+step schedule-validation guard python3 -m unittest discover -s scripts -p test_stock_lowering_schedule.py -v
 step validation guard python3 -m unittest discover -s scripts -p test_stock_compiler_compare.py -v
 step pipeline-validation guard python3 -m unittest discover -s scripts -p test_stock_pipeline.py -v
 step exporter-validation guard python3 -m unittest discover -s scripts -p test_stock_exporter.py -v

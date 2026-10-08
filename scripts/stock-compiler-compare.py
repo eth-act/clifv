@@ -24,6 +24,7 @@ SUITE = (ROOT / "third_party/wasmtime/cranelift/filetests/filetests").resolve()
 # A finished measurement exits with this code: coverage gaps and unknown metadata remain, so the
 # suite is never reported as equivalent. Crashes exit 1 (Python) or another code.
 FINISHED_WITH_GAPS = 10
+LEAN_BINARY = ROOT / ".lake/build/bin/lean-backend"
 
 ELF_RELOC_TYPES = {"Arm64Call":283,"Aarch64AdrPrelPgHi21":275,"Aarch64AddAbsLo12Nc":277,
     "Aarch64AdrGotPage21":311,"Aarch64Ld64GotLo12Nc":312,
@@ -195,7 +196,7 @@ def compile_lean(variant, source, dest, env):
     write(config, request)
     lean = dest / "lean"
     lean.mkdir()
-    run = command([ROOT / ".lake/build/bin/lean-backend", input_path, lean / "program.o",
+    run = command([LEAN_BINARY, input_path, lean / "program.o",
         "--stock-config", config, "--config-receipt", receipt_path,
         "--dump", lean / "dump", "--traps", lean / "traps.json"], dest, "lean", env)
     receipt = json.loads(receipt_path.read_text()) if receipt_path.exists() else {}
@@ -281,6 +282,7 @@ def one(path, out, env, binary, repeat):
             contract["stock_effective_input_sha256"] = digest(effective)
             contract["input_adaptation"] = "inline signature references only; stock-reader IR identity checked by exporter"
             contract["functions"] = names
+            contract["function_indices"] = keys
             v["lean_compilations"].append(contract)
             for k in keys: compiled[k] = (lean, contract)
         for k, name in enumerate(functions):
@@ -353,11 +355,15 @@ def safe_one(path, out, env, binary):
 
 
 def main():
+    global LEAN_BINARY
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out",type=Path,default=ROOT / "target/stock-compiler-comparison")
     parser.add_argument("--input",type=Path,action="append")
     parser.add_argument("--jobs",type=int,default=2)
+    parser.add_argument("--lean-compiler", type=Path, default=LEAN_BINARY,
+                        help="comparison-compatible compiler; default: lean-backend")
     args = parser.parse_args()
+    LEAN_BINARY = args.lean_compiler.resolve()
     if args.jobs < 1: parser.error("--jobs must be positive")
     if os.environ.get("BLESS") is not None: parser.error("BLESS must be unset")
     out = args.out.resolve()
@@ -382,6 +388,7 @@ def main():
         str(ROOT / "target/byte-agreement-tools/lean-4.34.1-linux/bin"),env.get("PATH","")])
     binary = ROOT / "tools/prejit-export/target/debug/prejit-export"
     sources = [ROOT / "FVTest/Backend/StockConfig.lean", ROOT / "FVTest/Backend/Main.lean",
+               ROOT / "FVTest/Backend/Lowering/StockComparison.lean",
                ROOT / "tools/prejit-export/src/main.rs", ROOT / "tools/prejit-export/Cargo.lock", checked_patch, Path(__file__)]
     dependencies = check_pinned_dependencies(upstream,ROOT/"tools/prejit-export/Cargo.lock")
     lean_sources = sorted([*ROOT.joinpath("FV").rglob("*.lean"),*ROOT.joinpath("FVTest").rglob("*.lean")])
@@ -391,8 +398,8 @@ def main():
     report = {"schema":1,"upstream_commit":commit,"official_test_files":len(all_inputs),"target":TARGET,
         "inventory":[{"test":str(p.relative_to(SUITE)),"sha256":digest(p.read_bytes())} for p in all_inputs],
         "source_hashes":{str(p.relative_to(ROOT)):digest(p.read_bytes()) for p in sources},
-        "lean_source_tree_sha256":lean_tree.hexdigest(),"dependency_provenance":dependencies,
-        "binary_hashes":{str(p.relative_to(ROOT)):digest(p.read_bytes()) for p in [binary, ROOT/".lake/build/bin/lean-backend",ROOT/"rust/target/release/lean-regalloc"]},
+        "lean_source_tree_sha256":lean_tree.hexdigest(),"lean_compiler":str(LEAN_BINARY),"dependency_provenance":dependencies,
+        "binary_hashes":{os.path.relpath(p, ROOT):digest(p.read_bytes()) for p in [binary, LEAN_BINARY,ROOT/"rust/target/release/lean-regalloc"]},
         "actual_ci_execution":False,"execution_performed":False,"configuration_overrides":[],"binary_normalization":False,
         "progress":"running","tests":[],"full_artifact_equivalence_verified":False}
     write(out / "progress.json", {"completed":0,"total":len(inputs)})
