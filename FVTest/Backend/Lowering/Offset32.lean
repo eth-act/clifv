@@ -28,10 +28,6 @@ private def matchOk (offset : Int) : Bool :=
     | _ => false
   | _ => false
 
-def main : IO UInt32 := do
-  for offset in ([0, -16, 8] : List Int) do
-    unless extractOk offset && matchOk offset do
-      IO.eprintln s!"Offset32 extraction/load matching failed for {offset}"
-      return 1
-  IO.println "Offset32: extraction and actual load matching passed at 0, -16, +8"
-  return 0
+#guard extractOk (0) && matchOk (0)
+#guard extractOk (-16) && matchOk (-16)
+#guard extractOk (8) && matchOk (8)

@@ -72,7 +72,3 @@ root = "FVTest.E2E.LinkCheckMain"
 [[lean_exe]]
 name = "lean-link"
 root = "FVTest.Link.LeanLinkMain"
-
-[[lean_exe]]
-name = "lean-offset32-test"
-root = "FVTest.Backend.Lowering.Offset32"
