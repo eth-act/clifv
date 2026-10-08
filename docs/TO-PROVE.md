@@ -65,7 +65,7 @@ and, on rejection, replaced by a directly proven Lean path (kind 2). Correctness
 
 | Stage | Implemented in | Verified today by | Kind (§1.2) | WP |
 | --- | --- | --- | --- | --- |
-| mid-end `simplify` rules | Lean (ISLE data) | 1012 + 19 rule theorems; unproven rules disabled (`ruleAllow := .proven`) | proven | R1–R9 (coverage) |
+| mid-end `simplify` rules | Lean (ISLE data) | 1055 + 29 rule theorems; unproven rules disabled (`ruleAllow := .proven`) | proven | R1–R9 (coverage) |
 | mid-end passes (GVN, DCE, LICM, simplify driver, unreachable, `Opt.check`) | Lean | `editOk`, `simpOk`, `wfCert`, `unreachableOk`, `keepsBackendSubset` + soundness | fallback | M1 (quality only) |
 | i128 legalisation | Lean | `Opt.Legal.check` + `check_complete` on `Pre f` (`FV/Opt/Proof/LegalComplete.lean:1718`) | validator, complete on `Pre` | S6 |
 | instruction selection | Lean (ISLE data) | `LowerRulesCorrect` etc., proven once | proven | — |
@@ -644,27 +644,28 @@ These don't remove certificates; they shrink the set of functions reported "unve
 
 ### R1–R9. Mid-end rule proofs (the deferred `simplify` rules)
 
-1031 of 1193 rule roots are proven; the rest are disabled in the proven configuration. Status and recipe:
+1084 of 1193 rule roots are proven; the rest are disabled in the proven configuration. Status and recipe:
 `docs/DEFERRED.md` "Mid-end `simplify` rule proofs", per-rule reasons in `docs/contracts/midend.md`
 "Rule proofs" (lines ~570-610). One agent per family; files `FV/Opt/Proof/Rule<Family>.lean`, allow-list in
 `FV/Opt/RuleAllow.lean`, import in `FV/Opt/Proof/RuleAll.lean`.
 
 | WP | Family | Left | Main obstacle |
 | --- | --- | --- | --- |
-| R1 | arithmetic | 42 | `iabs` has no `bv_decide` normal form (38–46); `iconst_u`/`iconst_s ty k` under a type variable leaves `makeInst` stuck (50, 333–349, 587–603); `imm64_power_of_two` has no spec (181); timeouts (200, 206, 251–288 `imul` by odd constants, 615–622 64-bit products); `simp` type mismatch (410–428) |
-| R2 | icmp | 29 | module builds out of memory at 16–24 GB although per-rule proofs pass (63, 70, 160, 175, 254–289, 365, 368): split modules; `GraphOk.make_val` unification (49, 77, 91); counterexample after timeouts (155–184, 386–402) |
-| R3 | selects | 18 | `iabs` again (97–100); literal-match facts lost under `simp_all` (188–202); timeouts (81, 85); 15 nondeterministic in the full build |
+| R1 | arithmetic | 28 | timeouts (200, 206, 251–288 `imul` by odd constants, 615–622 64-bit products); `simp` type mismatch (410–428) |
+| R2 | icmp | 15 | `GraphOk.make_val` unification (49, 77, 91); counterexample after timeouts (155–184, 386–410); 205, 295, 296 |
+| R3 | selects | 13 | literal-match facts lost under `simp_all` (188–202); timeouts (81, 85); 15 nondeterministic in the full build |
 | R4 | shifts | 19 | rotate regrouping through `iadd_uextend`/`isub_uextend` (239–266: ~50 of 125 per-type goals fail, 128-bit rotations); 161, 170, 184, 193, 315. **84 and 88 are false**: keep them disabled, or adopt the masked rules of kevaundray/wasmtime#2 in the exported data and prove those |
 | R5 | spaceship | 20 | the 20 `select` rules: two made `icmp`s under `sextend_maybe` blow up the term (>10 min/rule) |
-| R6 | cprop | 7 | 269 (`imm64_neg` of a sign-cast immediate, `makeInst` stuck); 320–379 never run with the current templates (cheapest first step) |
-| R7 | bitops | 6 | 79 (needs 64-bit and/not immediate specs), 157/170 (byte-swap timeouts), 126/127/129 (multi-result `truthy` needs a spec) |
+| R6 | cprop | 0 | **done** (R0) |
+| R7 | bitops | 3 | 79 (needs 64-bit and/not immediate specs), 157/170 (byte-swap timeouts) |
 | R8 | extends | 3 | 40, 42, 44 timeouts at 16M heartbeats |
-| R9 | skeleton | 18 | power-of-two and `div_const` division sequences need specs for Cranelift's magic-number helpers; `icmp.isle` 461–475; `skeleton.isle` 80 |
+| R9 | skeleton | 8 | signed `div_const` sequences (`arithmetic.isle` 122, 125, 165, 168: `magicS_spec` is proven, the rule wiring is not); `icmp.isle` 461–475 |
 
-Shared infrastructure that unblocks several families (do first or in a separate WP **R0**): a `bif` normal
-form or dedicated lemma for `Sem.iabs` (R1, R3); reduction of `makeInst` for type-variable constants
-(R1, R6); specs for `imm64_power_of_two`, `truthy` and the `div_const` helpers (R1, R7, R9); splitting the
-icmp/selects modules (R2, R3).
+**R0 (shared infrastructure) is done** (`agent/rule-infra`): `iabs` `bif` form, the finish for constants
+made under a type variable, the `truthy` if-let lemma, `u64_bswap*`, power-of-two and `div_const`
+magic-number specs (`magicU_spec`, `magicS_spec`), low-memory icmp/selects templates; 43 `simplify` and 10
+skeleton roots (midend.md "R0"). The R0 templates (`rule_auto_a`, `rule_auto_tv`, `rule_pre_k`,
+`rule_lhs_g` with `Elab.async false`) are the first thing to try on the rules left in R1–R3.
 
 ### M1. Mid-end validators: completeness (optional, quality only)
 
@@ -757,16 +758,16 @@ label**; list the free ones with
 | L3 | [#11](https://github.com/eth-act/clifv/issues/11) Executable-bytes simulation (M9 item 1b) | stages 1–2 done (#63, #64); stage 3 done (3a frame property, `agent/exec-frame`; 3b `RunOkD` from the M6 proof incl. D2/D4: `binary_correct_exec_proven`, `agent/exec-good`); aliases done (`agent/exec-alias`: site kinds, `codeMapB` holds on `fv-demo`) |
 | L4 | [#12](https://github.com/eth-act/clifv/issues/12) Stack bound without a per-program check | **done** (`agent/stack-complete`): `budOkW_budMap`, `goodN_iff`, `stackB_isSome_iff`, `binary_correct_of_checks_acyclic` |
 | L1 | [#13](https://github.com/eth-act/clifv/issues/13) The executable compiler as one Lean function | **done** (`agent/compile-exe`): `Link.compileExe`, `compileExe_correct` (no per-program premise, no open hypothesis), `compileExe_total` (scope limit: no self-call alias; address and rust-lld conditions); `lake exe lean-link` runs `compileExe` |
-| R0 | [#14](https://github.com/eth-act/clifv/issues/14) Mid-end rule proofs: shared infrastructure (iabs normal form, makeInst for type-variable constants, helper specs, module splitting) | open |
-| R1 | [#15](https://github.com/eth-act/clifv/issues/15) Mid-end rule proofs: arithmetic (42 rules left) | open |
-| R2 | [#16](https://github.com/eth-act/clifv/issues/16) Mid-end rule proofs: icmp (29 rules left) | open |
-| R3 | [#17](https://github.com/eth-act/clifv/issues/17) Mid-end rule proofs: selects (18 rules left) | open |
+| R0 | [#14](https://github.com/eth-act/clifv/issues/14) Mid-end rule proofs: shared infrastructure (iabs normal form, makeInst for type-variable constants, helper specs, module splitting) | **done** (`agent/rule-infra`; 43 + 10 roots) |
+| R1 | [#15](https://github.com/eth-act/clifv/issues/15) Mid-end rule proofs: arithmetic (28 rules left) | open |
+| R2 | [#16](https://github.com/eth-act/clifv/issues/16) Mid-end rule proofs: icmp (15 rules left) | open |
+| R3 | [#17](https://github.com/eth-act/clifv/issues/17) Mid-end rule proofs: selects (13 rules left) | open |
 | R4 | [#18](https://github.com/eth-act/clifv/issues/18) Mid-end rule proofs: shifts (19 rules left) | open |
 | R5 | [#19](https://github.com/eth-act/clifv/issues/19) Mid-end rule proofs: spaceship (20 rules left) | open |
-| R6 | [#20](https://github.com/eth-act/clifv/issues/20) Mid-end rule proofs: cprop (7 rules left) | open |
-| R7 | [#21](https://github.com/eth-act/clifv/issues/21) Mid-end rule proofs: bitops (6 rules left) | open |
+| R6 | [#20](https://github.com/eth-act/clifv/issues/20) Mid-end rule proofs: cprop (0 rules left) | **done** (by R0, `agent/rule-infra`) |
+| R7 | [#21](https://github.com/eth-act/clifv/issues/21) Mid-end rule proofs: bitops (3 rules left) | open |
 | R8 | [#22](https://github.com/eth-act/clifv/issues/22) Mid-end rule proofs: extends (3 rules left) | open |
-| R9 | [#23](https://github.com/eth-act/clifv/issues/23) Mid-end rule proofs: skeleton (18 rules left) | open |
+| R9 | [#23](https://github.com/eth-act/clifv/issues/23) Mid-end rule proofs: skeleton (8 rules left) | open |
 | M1 | [#24](https://github.com/eth-act/clifv/issues/24) Mid-end validators: completeness (optional, quality only) | open |
 | S1 | [#25](https://github.com/eth-act/clifv/issues/25) Optimiser with `call_indirect` and `try_call`/`try_call_indirect` | open |
 | S2 | [#26](https://github.com/eth-act/clifv/issues/26) Legalisation + optimisation composed; legalised functions in the linking theorem | open |
