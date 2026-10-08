@@ -27,6 +27,7 @@ class PipelineTests(unittest.TestCase):
             path=binaries/name;path.write_text(source);path.chmod(0o755)
         (scripts/"prejit-export-build.sh").write_text("#!/usr/bin/env bash\nexit 0\n")
         (scripts/"test_stock_compiler_compare.py").write_text("import unittest\nclass Fixture(unittest.TestCase):\n def test_fixture(self): self.assertTrue(True)\n")
+        (scripts/"test_lowering_trace.py").write_text("import unittest\nclass Fixture(unittest.TestCase):\n def test_fixture(self): self.assertTrue(True)\n")
         (scripts/"test_stock_exporter.py").write_text("import unittest\nclass Fixture(unittest.TestCase):\n def test_fixture(self): self.assertTrue(True)\n")
         (scripts/"test_stock_pipeline.py").write_text("import unittest\nclass Fixture(unittest.TestCase):\n def test_fixture(self): self.assertTrue(True)\n")
         (scripts/"stock-compiler-compare.py").write_text('''import argparse,json,os
