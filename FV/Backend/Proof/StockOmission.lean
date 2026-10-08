@@ -7,6 +7,8 @@ Semantic omission obligations. The actual stock guard permits nontrapping loads
 as well as memory-free arithmetic. Omitting their code preserves memory and
 traps, while ignoring their source results preserves demanded mapped values.
 This is a local simulation step, not yet the whole backward-schedule proof.
+The Opt.SemFacts dependency intentionally shares existing source-semantics
+lemmas; these facts do not depend on optimizing the input function.
 -/
 
 namespace Backend.Stock.Proof
@@ -97,14 +99,15 @@ bindings preserve all demanded values, successful evaluation preserves memory,
 traps cannot be lost, and no machine instruction is emitted. -/
 theorem scan_omitted_semantic {ctx : Ctx} {block i ti : Nat} {isBranch : Bool}
     {input : State} {output : Scan} {step : Step} {info : IInfo} {inst : Clif.Inst}
-    {fr : Clif.Frame} {cm cm' : Clif.Mem} {vals : List Clif.Val} {regs : Clif.Regs}
+    {fr : Clif.Frame} {cm : Clif.Mem} {vals : List Clif.Val} {regs : Clif.Regs}
     {env : Clif.Env} {p : Clif.Program} {ρ : Nat → CV}
     (hscan : scanInstruction ctx block i ti isBranch input = .ok output)
     (hstep : output.step = some step) (hd : step.decision = .omitted)
     (hi : ctx.insts[i]? = some info) (hcl : info.clif = some inst)
-    (heval : instOutcome env p fr cm inst = .ok (vals, cm'))
     (hset : fr.regs.setMany info.results vals = some regs) :
-    cm' = cm ∧ (∀ c, instOutcome env p fr cm inst ≠ .trap c) ∧
+    output.state = scanState input i ∧
+      (∀ vals mem', instOutcome env p fr cm inst = .ok (vals, mem') → mem' = cm) ∧
+      (∀ c, instOutcome env p fr cm inst ≠ .trap c) ∧
       (ValuesHeld (Demanded input) ctx { fr with regs := regs } ρ ↔
         ValuesHeld (Demanded input) ctx fr ρ) ∧ output.emitted = #[] := by
   have facts := scan_omitted hscan hstep hd
@@ -115,9 +118,9 @@ theorem scan_omitted_semantic {ctx : Ctx} {block i ti : Nat} {isBranch : Bool}
   have hm : mustLower inst = false := by
     simpa only [hinfo, hcl, Option.any_some] using facts.2.1
   have hquiet := mustLower_outcome_quiet (env := env) (p := p) (fr := fr) (mem := cm) hm
-  exact ⟨hquiet.1 vals cm' heval, hquiet.2,
+  exact ⟨facts.2.2.2.2.2.2.2.2, hquiet.1, hquiet.2,
     ValuesHeld.omittedResults (by simpa only [hinfo] using facts.2.2.1) hset,
-    facts.2.2.2.2.2.2.2⟩
+    facts.2.2.2.2.2.2.2.1⟩
 
 /-! The source executes a real nontrapping load, yielding 9. Its result v0 is
 ignored, while demanded pointer v1 remains held by vreg 193. The machine does
@@ -199,7 +202,7 @@ theorem scan_omitted_semantic_witness :
     omittedOutput.emitted = #[] := by
   have h := scan_omitted_semantic (step := omittedStep) (info := unusedCtx.insts[0]!)
     (ρ := omittedRF) (regs := omittedRegs) (env := Clif.Env.empty) (p := { funcs := [] })
-    omitted_scan rfl rfl rfl rfl omitted_eval rfl
-  exact ⟨omitted_scan, omitted_eval, h.2.1, h.2.2.1.mpr omitted_held, h.2.2.2⟩
+    omitted_scan rfl rfl rfl rfl rfl
+  exact ⟨omitted_scan, omitted_eval, h.2.2.1, h.2.2.2.1.mpr omitted_held, h.2.2.2.2⟩
 
 end Backend.Stock.Proof

@@ -198,7 +198,6 @@ theorem MappedCtxInv.dfgCons_termCtx_iff {f : Clif.Function} {ctx : Ctx}
 /-! Non-vacuity uses a successful sparse-ID context with a defined pure constant.
 Only its source context is evaluated; no ISLE interpreter program is run. -/
 
-set_option maxRecDepth 4096
 
 private def fixture : Clif.Function := {
   name := "mapped_dfg"
@@ -211,11 +210,14 @@ private def fixtureResult : Ctx × Array (Nat × Nat) × State :=
 private def originalResult : Ctx × Array (Nat × Nat) × LState :=
   (Backend.buildCtx fixture).toOption.getD (sinkCtx, #[], sinkState.base)
 
+set_option maxRecDepth 4096 in
 private theorem fixture_build : Stock.buildCtx fixture = .ok fixtureResult := rfl
 
+set_option maxRecDepth 4096 in
 private theorem fixture_original_build :
     Backend.buildCtx fixture = .ok (originalResult.1, originalResult.2.1, originalResult.2.2) := rfl
 
+set_option maxRecDepth 4096 in
 private theorem fixture_scope : LowerScope fixture := by
   refine ⟨by decide, by decide, ?_, ?_, ?_, ?_, ?_⟩
   · intro B hB b hb
@@ -253,6 +255,7 @@ private theorem fixture_scope : LowerScope fixture := by
     subst B
     cases ht
 
+set_option maxRecDepth 4096 in
 private theorem fixture_view : DFGViewEq fixtureResult.1 originalResult.1 :=
   ⟨rfl, rfl, rfl, rfl, rfl⟩
 
@@ -262,6 +265,7 @@ private def fixtureFrame : Clif.Frame := {
     if x = 7 then some (.ofInt .i64 4) else none
   slots := [], body := [], term := .ret [2] }
 
+set_option maxRecDepth 4096 in
 private theorem fixture_typed : FrameTyped fixtureResult.1 fixtureFrame := by
   intro x t v ht hv
   by_cases he : x = 2
@@ -280,6 +284,7 @@ private theorem fixture_typed : FrameTyped fixtureResult.1 fixtureFrame := by
       rfl
     · simp [fixtureFrame, he, he'] at hv
 
+set_option maxRecDepth 4096 in
 private theorem fixture_dfg : DFGCons fixtureResult.1 fixtureFrame := by
   refine ⟨?_, fixture_typed⟩
   intro x j info cl v hd hi hc _ hv
@@ -314,6 +319,7 @@ theorem DFGViewEq.dfgCons_iff_witness :
     fixtureResult.1.defInst? 2 = some 0 ∧ fixtureFrame.regs 2 = some (.ofInt .i8 9) :=
   ⟨fixture_view, fixture_dfg, (fixture_view.dfgCons_iff _).mp fixture_dfg, rfl, rfl⟩
 
+set_option maxRecDepth 4096 in
 theorem buildCtx_source_witness :
     Stock.buildCtx fixture = .ok fixtureResult ∧
     (∃ original st0, Backend.buildCtx fixture = .ok (original, fixtureResult.2.1, st0) ∧
@@ -327,6 +333,7 @@ theorem buildCtx_typedReg_witness :
     fixtureResult.1.valueReg? 2 = some (.vreg 193 .int) :=
   ⟨rfl, buildCtx_typedReg fixture_build (x := 2) rfl, rfl⟩
 
+set_option maxRecDepth 4096 in
 private theorem fixture_inv : MappedCtxInv fixture fixtureResult.1 :=
   buildCtx_mappedInv fixture_scope fixture_build
 
