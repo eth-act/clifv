@@ -617,6 +617,16 @@ imports, so the older modules did not rebuild.
   `x.tdiv d` for every signed `w`-bit `x`), by invariant proofs of the Rust loops
   (`loopU`/`loopS`, Granlund–Montgomery / Hacker's Delight 10-9 bounds). Proves the unsigned skeleton
   rules `arithmetic.isle` 114, 117, 157, 160 (`RuleSkeleton3.lean`, `skel_auto_dcu32/64`).
+
+Integration verification (2026-10-08): the full FV/FVTest/tool build and crate proofs pass.
+Proven-only differential tests have zero failures: corpus 4668 → 2289 instructions, runtests
+3389 → 3010, survey 355 → 190; the verifier rejects no optimized files. Direct CLI smoke on
+`runtests/urem.clif` replaces constant i32/i64 remainders with the proven multiply/shift
+sequence; the optimized file passes all 82 run expectations. The E2E and crate axiom checks
+contain only the permitted axioms; `magicU_spec` and `magicS_spec` use only `propext`,
+`Classical.choice` and `Quot.sound`. The four signed `div_const` rule applications remain
+disabled, as listed under "Skeleton rules".
+
 **False under the CLIF semantics (findings):** `shifts.isle` 84 and 88 (`sshr`/`ushr (ishl x k) k` to
 `s/uextend ty (ireduce ty_small x)`): `u64_wrapping_sub (ty_bits ty) shift_u64` wraps for shift
 constants above the type width, e.g. `ishl.i8 x, v` / `sshr.i8 _, v` with `v = iconst.i64 -8`
