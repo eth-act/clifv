@@ -107,7 +107,7 @@ def stockSnapshot (f : Clif.Function) : Except String Json := do
     ("edge_args", toJson (r.edgeArgs.map fun args => args.map fun rs => rs.map regJson)),
     ("allocator_input", allocator)]
 
-def snapshot (f : Clif.Function) : Except String Json := do
+def snapshot (f : Clif.Function) (stockSchedule : Bool) : Except String Json := do
   let (ctx, ranges, initial) ← buildCtx f
   let selected ← lowerFunction f
   let prepared ← prepare selected
@@ -119,24 +119,24 @@ def snapshot (f : Clif.Function) : Except String Json := do
     r.map fun reg => Json.mkObj [
       ("value", toJson value), ("reg", regJson reg),
       ("def_inst", toJson ((ctx.valDef[value]?).join))]
-  pure (Json.mkObj [
+  pure (Json.mkObj <| [
     ("initial_next_vreg", toJson initial.nextVreg),
     ("value_regs", toJson values),
     ("source_blocks", toJson (f.blocks.map (·.id))),
     ("instruction_ranges", toJson (ranges.map fun (start, stop) => #[start, stop])),
     ("checker_replay", replay),
     ("selected", codeJson selected), ("prepared", codeJson prepared),
-    ("allocator_input", allocator),
+    ("allocator_input", allocator)] ++ if stockSchedule then [
     ("stock_schedule", match stockSnapshot f with
       | .ok j => j
-      | .error e => Json.mkObj [("status", toJson "unsupported"), ("reason", toJson e)])])
+      | .error e => Json.mkObj [("status", toJson "unsupported"), ("reason", toJson e)])] else [])
 
-def run (input output : String) : IO UInt32 := do
+def run (input output : String) (stockSchedule : Bool := false) : IO UInt32 := do
   let source ← IO.FS.readFile input
   let legalized := Opt.Legalize128.parsedFile128 (Clif.parseFile source)
   let rows := legalized.file.funcs.map fun parsed =>
     let result := match parsed.func with
-      | .ok f => snapshot f
+      | .ok f => snapshot f stockSchedule
       | .error e => .error e.toString
     match result with
     | .ok report => Json.mkObj [
@@ -156,7 +156,8 @@ end LoweringTrace
 
 def main (args : List String) : IO UInt32 := do
   match args with
+  | [input, output, "--stock-schedule"] => LoweringTrace.run input output true
   | [input, output] => LoweringTrace.run input output
   | _ =>
-    IO.eprintln "usage: lean-backend-lowering-trace INPUT.clif OUTPUT.json"
+    IO.eprintln "usage: lean-backend-lowering-trace INPUT.clif OUTPUT.json [--stock-schedule]"
     return 2

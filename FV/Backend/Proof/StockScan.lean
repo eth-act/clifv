@@ -2,10 +2,10 @@ import FV.Backend.Lowering.StockReplay
 import FV.Backend.Proof.StockPolicy
 
 /-!
-Local replay and policy facts for backward scanning. Replay acceptance certifies
+Local replay and policy facts for backward scanning. Replay acceptance checks equality with reexecution of
 the complete transition, including emitted code and all scheduling state. These
 lemmas are ingredients of the replacement schedule proof; they do not assert
-whole-function semantic refinement.
+semantic correctness or whole-function refinement.
 -/
 
 namespace Backend.Stock.Proof
@@ -49,7 +49,7 @@ theorem scan_omitted {ctx : Ctx} {block i ti : Nat} {isBranch : Bool}
     i ≠ ti ∧ ctx.insts[i]!.clif.any mustLower = false ∧
     (∀ v ∈ ctx.insts[i]!.results, input.demand[v]! = 0) ∧
     step.before = scanState input i ∧ step.after = step.before ∧
-    step.results = [] ∧ step.rules = [] ∧ output.emitted = #[] := by
+    step.results = [] ∧ step.rules = [] ∧ output.emitted = #[] ∧ output.state = scanState input i := by
   have rejectEmission (before : State)
       (he : (emitInstruction ctx i before >>= fun e => pure (e.scan block i before)) =
         .ok output) : False := by
@@ -84,7 +84,7 @@ theorem scan_omitted {ctx : Ctx} {block i ti : Nat} {isBranch : Bool}
         cases h
         cases hs
         simp only [Bool.and_eq_true, Bool.not_eq_true', List.any_eq_false] at eligible
-        refine ⟨hti, eligible.1, ?_, rfl, rfl, rfl, rfl, rfl⟩
+        refine ⟨hti, eligible.1, ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩
         intro v hv
         have hv0 := eligible.2 v hv
         exact Classical.byContradiction fun hne =>
@@ -183,7 +183,8 @@ theorem scan_omitted_witness :
     (0 : Nat) ≠ 1 ∧ unusedCtx.insts[0]!.clif.any mustLower = false ∧
     (∀ v ∈ unusedCtx.insts[0]!.results, unusedInput.demand[v]! = 0) ∧
     unusedStep.before = scanState unusedInput 0 ∧ unusedStep.after = unusedStep.before ∧
-    unusedStep.results = [] ∧ unusedStep.rules = [] ∧ unusedOutput.emitted = #[] :=
+    unusedStep.results = [] ∧ unusedStep.rules = [] ∧ unusedOutput.emitted = #[] ∧
+    unusedOutput.state = scanState unusedInput 0 :=
   scan_omitted checkScan_complete_witness.1 (show unusedOutput.step = some unusedStep from rfl)
     (show unusedStep.decision = .omitted from rfl)
 

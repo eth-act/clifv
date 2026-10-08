@@ -53,11 +53,13 @@ inductive UseState where
 def UseState.inc : UseState → UseState
   | .unused => .once | _ => .multiple
 
-/-- Exact transitive multiplicity analysis: every value can become Multiple once;
+/-- Exact transitive multiplicity analysis: every value can become Multiple once; every producer is expanded once,
+including producers with multiple results;
 the work budget counts each dependency edge once, including duplicate operands. -/
 def useStates (ctx : Ctx) (args : Array (List Nat)) : Array UseState := Id.run do
   let mut uses := Array.replicate ctx.valTy.size UseState.unused
   for v in sretRet ctx.func do uses := uses.set! v .multiple
+  let mut expanded := Array.replicate args.size false
   let budget := args.foldl (fun n xs => n + xs.length) 1
   for xs in args do
     for v in xs do
@@ -65,7 +67,11 @@ def useStates (ctx : Ctx) (args : Array (List Nat)) : Array UseState := Id.run d
       let new := old.inc
       uses := uses.set! v new
       if old == .multiple || new != .multiple then continue
-      let mut work := (ctx.defInst? v).map (fun i => args[i]!) |>.getD []
+      let mut work := []
+      if let some i := ctx.defInst? v then
+        if !expanded[i]! then
+          expanded := expanded.set! i true
+          work := args[i]!
       for _ in [0:budget] do
         match work with
         | [] => break
@@ -73,7 +79,10 @@ def useStates (ctx : Ctx) (args : Array (List Nat)) : Array UseState := Id.run d
           work := rest
           if uses[x]! == .multiple then continue
           uses := uses.set! x .multiple
-          if let some i := ctx.defInst? x then work := args[i]! ++ work
+          if let some i := ctx.defInst? x then
+            if !expanded[i]! then
+              expanded := expanded.set! i true
+              work := args[i]! ++ work
   return uses
 
 structure Opportunistic where
@@ -572,7 +581,7 @@ def lowerBlockCore (ctx : Ctx) (order : Order) (f : Clif.Function)
   let termCtx := { ctx with
     insts := ctx.insts.set! ti ⟨data, [], [], none⟩
     tryRegs := input.tryRegs[ti]! }
-  let isBranch := match b.term with | .ret .. | .trap .. => false | _ => true
+  let isBranch := match b.term with | .ret .. | .trap .. | .returnCall .. => false | _ => true
   let branch ← if isBranch then
     some <$> emitBranch termCtx f b.term bi ti targets input else pure none
   let beforeEdges := branch.map (·.state) |>.getD input

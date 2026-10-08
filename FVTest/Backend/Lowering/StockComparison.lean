@@ -109,5 +109,6 @@ def main (argv : List String) : IO UInt32 := do
         ("exception_metadata_comparison_supported", Lean.toJson false)]
       IO.FS.writeFile (base.addExtension "metadata.json") (metadata.pretty ++ "\n")
   IO.FS.writeFile traps fa.tableJson
+  for (name, why) in fa.unverified do IO.eprintln s!"%{name}: compiled, unverified: {why}"
   for (name, why) in fa.unsupported do IO.eprintln s!"%{name}: unsupported: {why}"
   return 0

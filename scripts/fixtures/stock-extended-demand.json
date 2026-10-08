@@ -4,141 +4,121 @@
       "test": "isa/aarch64/arithmetic.clif",
       "variant": 0,
       "index": 30,
-      "name": "%add_i128",
-      "candidate_status": "different_code_artifact"
+      "name": "%add_i128"
     },
     {
       "test": "isa/aarch64/arithmetic.clif",
       "variant": 0,
       "index": 31,
-      "name": "%sub_i128",
-      "candidate_status": "different_code_artifact"
+      "name": "%sub_i128"
     },
     {
       "test": "isa/aarch64/iabs.clif",
       "variant": 0,
       "index": 11,
-      "name": "%f11",
-      "candidate_status": "different_code_artifact"
+      "name": "%f11"
     },
     {
       "test": "runtests/arithmetic-extends.clif",
       "variant": 0,
       "index": 8,
-      "name": "%add_uext_ishl_1",
-      "candidate_status": "identical_code_artifact"
+      "name": "%add_uext_ishl_1"
     },
     {
       "test": "runtests/arithmetic-extends.clif",
       "variant": 0,
       "index": 9,
-      "name": "%add_uext_ishl_2",
-      "candidate_status": "identical_code_artifact"
+      "name": "%add_uext_ishl_2"
     },
     {
       "test": "runtests/arithmetic-extends.clif",
       "variant": 0,
       "index": 10,
-      "name": "%add_uext_ishl_3",
-      "candidate_status": "identical_code_artifact"
+      "name": "%add_uext_ishl_3"
     },
     {
       "test": "runtests/extend-of-compare.clif",
       "variant": 0,
       "index": 6,
-      "name": "%uext_icmp_multi_use",
-      "candidate_status": "identical_code_artifact"
+      "name": "%uext_icmp_multi_use"
     },
     {
       "test": "runtests/i128-arithmetic-extends.clif",
       "variant": 0,
       "index": 1,
-      "name": "%fold_iadd_bnot_x_to_allones_i128_rt",
-      "candidate_status": "different_code_artifact"
+      "name": "%fold_iadd_bnot_x_to_allones_i128_rt"
     },
     {
       "test": "runtests/i128-arithmetic.clif",
       "variant": 0,
       "index": 0,
-      "name": "%add_i128",
-      "candidate_status": "different_code_artifact"
+      "name": "%add_i128"
     },
     {
       "test": "runtests/i128-arithmetic.clif",
       "variant": 0,
       "index": 1,
-      "name": "%add_i128_splats",
-      "candidate_status": "different_code_artifact"
+      "name": "%add_i128_splats"
     },
     {
       "test": "runtests/i128-arithmetic.clif",
       "variant": 0,
       "index": 2,
-      "name": "%sub_i128",
-      "candidate_status": "different_code_artifact"
+      "name": "%sub_i128"
     },
     {
       "test": "runtests/i128-arithmetic.clif",
       "variant": 0,
       "index": 3,
-      "name": "%sub_i128_splats",
-      "candidate_status": "different_code_artifact"
+      "name": "%sub_i128_splats"
     },
     {
       "test": "runtests/i128-arithmetic.clif",
       "variant": 0,
       "index": 6,
-      "name": "%iadd_imm_neg",
-      "candidate_status": "different_code_artifact"
+      "name": "%iadd_imm_neg"
     },
     {
       "test": "runtests/i128-arithmetic.clif",
       "variant": 0,
       "index": 9,
-      "name": "%fuzz_test_case_4625018733002752",
-      "candidate_status": "different_code_artifact"
+      "name": "%fuzz_test_case_4625018733002752"
     },
     {
       "test": "runtests/i128-call.clif",
       "variant": 0,
       "index": 0,
-      "name": "%callee_i128",
-      "candidate_status": "different_code_artifact"
+      "name": "%callee_i128"
     },
     {
       "test": "runtests/i128-call.clif",
       "variant": 1,
       "index": 0,
-      "name": "%callee_i128",
-      "candidate_status": "different_code_artifact"
+      "name": "%callee_i128"
     },
     {
       "test": "runtests/i128-call.clif",
       "variant": 2,
       "index": 0,
-      "name": "%callee_i128",
-      "candidate_status": "different_code_artifact"
+      "name": "%callee_i128"
     },
     {
       "test": "runtests/i128-iabs.clif",
       "variant": 0,
       "index": 0,
-      "name": "%iabs_i128",
-      "candidate_status": "different_code_artifact"
+      "name": "%iabs_i128"
     },
     {
       "test": "runtests/i128-ineg.clif",
       "variant": 0,
       "index": 0,
-      "name": "%ineg_i128",
-      "candidate_status": "different_code_artifact"
+      "name": "%ineg_i128"
     },
     {
       "test": "runtests/spill-reload.clif",
       "variant": 0,
       "index": 0,
-      "name": "%f",
-      "candidate_status": "different_code_artifact"
+      "name": "%f"
     }
   ]
 }

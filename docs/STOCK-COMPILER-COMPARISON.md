@@ -286,3 +286,5 @@ Next, implement a comparable exception/unwind metadata export, capture the exact
 target/CPU eligibility of a selected real CI host, and feed matched Lean artifacts
 to the stock loader/trampolines. Add backend functionality for the explicitly
 rejected settings/functions without substituting easier configurations.
+
+Experimental schedule diagnostics require `lean-backend-lowering-trace INPUT.clif OUTPUT.json --stock-schedule`. The ordinary diagnostic invocation avoids constructing the experimental schedule and its full-state snapshots. Replay checks equality with deterministic reexecution; it does not establish semantic correctness or equivalence to stock.

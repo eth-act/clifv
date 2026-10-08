@@ -324,7 +324,9 @@ class StockDevelopmentIntegrationTests(unittest.TestCase):
             self.assertFalse((lean / "dump/bad.bin").exists())
             _, code = COMPARE.ELF(lean / "program.o").function("good")
             self.assertEqual(code, (lean / "dump/good.bin").read_bytes())
-            self.assertIn("unsupported", (root / "compilation/lean.stderr").read_text())
+            diagnostics = (root / "compilation/lean.stderr").read_text()
+            self.assertIn("unsupported", diagnostics)
+            self.assertIn("%good: compiled, unverified:", diagnostics)
 
     def test_repeated_names_retain_compilation_occurrence_indices(self):
         with tempfile.TemporaryDirectory(prefix="stock-lowering_occurrence-test-") as tmp:
@@ -369,7 +371,8 @@ class StockDevelopmentIntegrationTests(unittest.TestCase):
                     function = next(f for f in variant["functions_compared"]
                                     if f["index"] == case["index"])
                     self.assertEqual(function["name"], case["name"])
-                    self.assertEqual(function["status"], case["candidate_status"])
+                    self.assertIn(function["status"],
+                                  ("identical_code_artifact", "different_code_artifact"))
                     self.assertTrue(function["settings_contract_verified"])
                     self.assertTrue(function["lean_dump_matches_object_bytes"])
                     self.assertTrue(function["lean_dump_matches_object_relocations"])

@@ -23,7 +23,7 @@ class StockScheduleTests(unittest.TestCase):
         if not all(p.exists() for p in (cls.trace, cls.compiler, cls.exporter, cls.allocator)):
             raise unittest.SkipTest("build the lowering trace, stock test harness, exporter and allocator")
 
-    def compare(self, source, *, compile_bytes=True):
+    def compare(self, source, *, compile_bytes=True, multiple_values=()):
         with tempfile.TemporaryDirectory(prefix="stock-lowering_schedule-") as tmp:
             root = Path(tmp)
             path = root / "input.clif"
@@ -31,11 +31,16 @@ class StockScheduleTests(unittest.TestCase):
                             "set preserve_frame_pointers=false\ntarget aarch64\n\n" + source)
             stock = root / "stock"
             env = dict(os.environ, LEAN_REGALLOC=str(self.allocator))
+            if multiple_values:
+                env["RUST_LOG"] = "cranelift_codegen::machinst::lower=trace"
             exported = subprocess.run(
                 [self.exporter, path, stock, "aarch64-unknown-linux-gnu", "--all-stages"],
                 cwd=ROOT, env=env, capture_output=True, text=True,
             )
             self.assertEqual(exported.returncode, 0, exported.stderr)
+            for value in multiple_values:
+                self.assertRegex(exported.stderr,
+                    rf"arg v{value} used[^\n]*new Multiple|DFS reaches v{value}\n[^\n]*became Multiple")
             manifest = json.loads((stock / "manifest.json").read_text())
             self.assertEqual(len(manifest["variants"]), 1, manifest)
             variant = manifest["variants"][0]
@@ -51,7 +56,7 @@ class StockScheduleTests(unittest.TestCase):
                 index = assertion["index"]
                 input_path = artifact / f"{index}.lean.clif"
                 report_path = root / f"{index}.trace.json"
-                subprocess.run([self.trace, input_path, report_path], cwd=ROOT,
+                subprocess.run([self.trace, input_path, report_path, "--stock-schedule"], cwd=ROOT,
                                env=env, check=True, capture_output=True)
                 report = json.loads(report_path.read_text())["functions"][0]["lowering"]["stock_schedule"]
                 self.assertEqual(report["status"], "lowered", report)
@@ -91,6 +96,42 @@ class StockScheduleTests(unittest.TestCase):
                     self.assertEqual(json.loads((out / f"{name}.traps.json").read_text()),
                                      metadata["traps"])
             return reports
+
+    def test_multi_result_propagation_matches_single_result_control(self):
+        reports = self.compare("""function %budget(i64, i64) -> i64 {
+    sig0 = (i64,i64,i64,i64,i64,i64,i64,i64) -> i64,i64,i64,i64,i64,i64,i64,i64 system_v
+    fn0 = colocated %g sig0
+block0(v0: i64, v1: i64):
+    v2,v3,v4,v5,v6,v7,v8,v9 = call fn0(v0,v0,v0,v0,v0,v0,v0,v0)
+    v10 = iadd v2, v3
+    v11 = iadd v10, v4
+    v12 = iadd v11, v5
+    v13 = iadd v12, v6
+    v14 = iadd v13, v7
+    v15 = iadd v14, v8
+    v16 = iadd v15, v9
+    v17 = load.i32 v1
+    v18 = uextend.i64 v17
+    v19 = imul v16, v18
+    v20 = iadd v19, v19
+    return v20
+}
+function %control(i64, i64) -> i64 {
+block0(v0: i64, v1: i64):
+    v16 = iadd v0, v0
+    v17 = load.i32 v1
+    v18 = uextend.i64 v17
+    v19 = imul v16, v18
+    v20 = iadd v19, v19
+    return v20
+}
+""", compile_bytes=False, multiple_values=(17,))
+        # The multi-result call has a separate frame-layout byte discrepancy;
+        # this regression checks the shared multiplicity/sinking obligation.
+        for report in reports:
+            value = next(v for v in report["value_regs"] if v["value"] == 17)
+            self.assertTrue(value["ir_uses"].endswith("multiple"), value)
+            self.assertFalse(any(report["sunk"]), report["sunk"])
 
     def test_dead_constants_and_comparisons(self):
         self.compare("""function %dead(i64) -> i64 {
