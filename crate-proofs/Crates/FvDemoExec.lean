@@ -43,7 +43,7 @@ theorem binary_correct_exec (file : ByteArray) (hfile : Elf.Agrees file exAll) (
       cs.mem)
     (hav : OutsideAvoids (GotSlot input file) f (StackBound.stackFn input f) r args cs.mem)
     (hr : ClifRun input B f r args cs)
-    (htr : TrapsExplicit (Clif.linkEnvN (prog input) B.env M) ((prog input).only f) cs) :
+    (htr : TrapsExplicit (Clif.linkEnvN (prog input) B.env M) (prog input).bare cs) :
     ExecRefines (art input f).fb (art input f).base (xreg 30 r) (step input B file) r
       (RelocAt input) (Clif.runLoop B.env (prog input) (M + 1) cs) :=
   binary_correct_exec_proven okB_input codeMap_ok (bin_ok file hfile) (gotB_sound gotB_ok hfile) B

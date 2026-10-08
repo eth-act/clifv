@@ -83,8 +83,7 @@ theorem fnScope_parts {g : Clif.Function} (h : fnScopeB g = true) :
 theorem inSubset_of_fnScope {g : Clif.Function} (h : fnScopeB g = true) (p : Clif.Program) :
     InSubset (p.only g) g := by
   obtain ⟨hE, hne, habi, hind, -⟩ := fnScope_parts h
-  refine ⟨?_, hE, ?_, ?_, habi, ?_⟩
-  · simp [Clif.Program.only, Clif.Program.func?]
+  refine ⟨hE, ?_, ?_, habi, ?_⟩
   · intro b _ st _ fn args _ e he
     have hne' := hne _ (lookup_pair he)
     simp [Clif.Program.only, Clif.Program.func?, Ne.symm hne']

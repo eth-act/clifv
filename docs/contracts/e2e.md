@@ -197,7 +197,10 @@ before. Otherwise it now calls the extern at that address
 further code symbols — empty by default, agent/link-scope —, then the externs the functions of
 `p` declare, which `Program.initMem` gives link-time `symbols`) whose address is the callee
 value, run as `env.extern` with the argument and result types checked against the call site's
-`sigN`, like `Clif.stepCall`. Before this change such calls were stuck.
+`sigN`, like `Clif.stepCall`; an extern whose signature the environment knows (`env.sigOf`,
+none by default; `Clif.linkEnvN` gives each function of the linked program its own) is called
+only when `sigN` matches it (`Signature.abiMatch`, agent/scope-widen, "Widening 14"). Before
+this change such calls were stuck.
 `Clif.stepTryCallIndirect` inherits it. `docs/contracts/clif-subset.md` records the change;
 `scripts/clif-filetests.sh` and the differential tools are unchanged by it (see there).
 
@@ -213,10 +216,11 @@ value, run as `env.extern` with the argument and result types checked against th
   `TrapsExplicit.tryCallInd`: a `try_call_indirect` does not trap (the callee returns normally).
 * **Contract** `XCallsIndOk env (indSigs f) MR X` (`FV/E2E/RegLevelDriverSem.lean`): for each
   call-site signature, a `blr` (`X.call none (u :: args)`) whose target's low 64 bits are
-  `X.sym n 0` of an extern `n` of `env`, on arguments of the call site's parameter types (as
-  `Clif.callExternAt` checks them), returns what `env.extern n` returns (one output per
+  `X.sym n 0` of an extern `n` of `env` whose known signature (`env.sigOf n`, if any) the call
+  site's matches, on arguments of the call site's parameter types (as `Clif.callExternAt`
+  checks both), returns what `env.extern n` returns (one output per
   `sigRets`, the results first, the memory relation kept) — the clause `XCallsOk` states for a
-  GOT call of a declared extern, for every extern of `env`. With `hsym` (the external
+  GOT call of a declared non-colocated extern, for every extern of `env`. With `hsym` (the external
   semantics' symbol addresses are the linked ones) and `MemRel.symbols` it gives the M4
   contract `IndCallsRefine` for `csem` (`indCallsRefine_csem`).
 * **Rules** (M4): `rule_lower_2529` (`call_indirect`, id 1033: `blr` of the callee value's vreg
@@ -552,7 +556,7 @@ theorem backend_correct_program (L : LinkSys) (hL : L.Ok) (hf : f ∈ L.P.funcs)
     (hsav : StackArgsAvoid L.Img f.sig args s)  -- agent/link-widen: stack-passed parameters
     (hrel : Rel.holds ⟨L.F, L.syms, slotBase, intBase⟩ f cs.frame.slots cs.mem w₀)
     (hpl : L.NeedSlots → L.PlaceAt cs.mem (spv w₀))  -- agent/link-widen: slot placement
-    (htr : TrapsExplicit (Clif.linkEnvN L.P L.base M) (L.P.only f) cs) :
+    (htr : TrapsExplicit (Clif.linkEnvN L.P L.base M) L.P.bare cs) :  -- Widening 15: `P.bare`
     ArmRefines (L.A f).fb (L.A f).base ra (L.mach M f) s (Clif.runLoop L.base L.P (M + 1) cs)
 ```
 
@@ -587,9 +591,10 @@ for it:
   `xCallsIndOk` discharge `CalleeOkG` and `XCallsOk`/`XCallsIndOk` of the activation's
   environment `envOf M g c` (`linkEnvN` without the functions of `P` that `g` does not declare,
   and with the declared ones returning only from a memory whose slot-placement oracle has the
-  activation's `sp` `c` when program callees have slots: the run of `P.only g` is the same,
-  `step_envOf`, `runLoop_envOf` under the activation invariant `ActInv`) at depth `M` from depth
-  `M - 1`.
+  activation's `sp` `c` when program callees have slots: the run of `P.bare` — the program
+  without functions, every program callee including `g` itself atomic, Widening 15 — is the
+  same, `step_envOf`, `runLoop_envOf` under the activation invariant `ActInv`) at depth `M`
+  from depth `M - 1`.
 
 **Scope** (`LinkSys.Ok`): no `return_call`; parameters in distinct argument registers
 (width ≤ 64) or on the stack;
@@ -606,11 +611,12 @@ many register parameters, `blrRegs`); declarations
 equal definitions; the return address of a call is outside the code of the function it calls,
 or after a call instruction of that function's code and not at its entry (`RaOk`: a callee
 sharing one copy of code with its caller, as `cargo fv`'s alias of a recursive function), stated
-per call site (`raCall`, `raBlr`); a function with indirect calls (`call_indirect`, `try_call_indirect`) has no link-time
-address itself, the functions of `P` have distinct addresses, names sharing an address of no
-function of `P` are one base extern, the base externs keep the symbols (`indScope`,
-`indNoSym`), its indirect-call signatures and the
-functions it may call (`MayCall`: declared, or any other function of `P` with an address) with
+per call site (`raCall`, `raBlr`; the return address of a call is never the caller's own entry,
+so a pointer call of a function to itself returns after the call); the functions of `P` have
+distinct addresses, names sharing an address of no function of `P` are one base extern, the base
+externs keep the symbols (`indScope`), a function's indirect-call signatures and the
+functions it may call (`MayCall`: declared, or any function of `P` with an address — itself
+included, Widening 15) with
 the parameter types of one of them (`IndSigMatch`) pass no `sret` and at most 8 register
 parameters (`indSig`),
 and, when no program callee has stack slots (`¬ NeedSlots`), with an outgoing-argument area in
@@ -1043,6 +1049,101 @@ bytes. It is vacuous without program callees with slots (`NeedSlots`).
    lose their result-count hypothesis. `LinkSys.Ok` changes only by weakening. Effect on
    `InScopeP`: `examples/deps` 15 → 12 (`indNoSym` 8, `blrRegs` 4), `fv-demo`'s test
    executable 1 → 1 (`indNoSym`).
+14. *Declared callees at indirect calls* (2026-10-07, agent/scope-widen, #89 (c)). `LinkSys.IndTo
+   g h` (the functions of `P` a `blr` of `g` may enter: `X`'s `blr` branch, `BlrTo`, so
+   `Ok.blrRegs`) held for every declared `h` (`DeclN`): for the GOT call of a declared
+   non-colocated function, and because the per-function run's `Clif.callExternAt` checked only
+   the argument/result types, so an indirect call could enter a declared `h` of the same types
+   but other purposes (deps: `fn0 = colocated %h(i64, i64, i64, i64)` next to a `call_indirect`
+   of `(i64 sret, i64, i64, i64)`: x0..x3 against x8, x0..x2, so `blrRegs` failed). Now:
+   * Semantics (trusted, default unchanged): `Clif.Env` gains `sigOf : String → Option
+     Signature := fun _ => none`, the known signature of an extern; `Clif.callExternAt` is
+     stuck unless `(env.sigOf name).all declared.abiMatch` (as `Clif.stepCallIndirect` for a
+     function of the program; Cranelift's "the called function must match the specified
+     signature"). `Clif.linkEnvN P base M` sets `sigOf n := (P.func? n).map (·.sig)`, so the
+     per-function run checks exactly what the whole-program run checks for a function of `P`
+     (`runLoop_linkN` takes `E.sigOf = (linkEnvN …).sigOf`; `callExternAt_alias`/`_eq`: a name
+     outside `P` has no signature in `linkEnvN`, and the per-function call is the
+     whole-program one unless that one is stuck). No environment the tools build sets `sigOf`.
+     Checking the caller's colocated declarations instead (the first design) breaks
+     `backend_correct_legal_env`: its validator relates no declaration of the legalised `g` to
+     `f`'s, so a target run could get stuck where the source run does not.
+   * Contracts (weaker): the `IndCallsRefine`/`IndCallsRefineP`/`XCallsIndOk` clauses assume
+     `∀ s, env.sigOf n = some s → sig.abiMatch s = true` (from `callExternAt`'s success,
+     `instOutcome_callIndirect_ok`); the GOT forms of `CallsRefine`/`CallsRefineP`
+     (`dest = .reg r`) and of `XCallsOk`/`XCallsOkRegs` (`d = none`) assume
+     `ext.colocated = false`. The lowering supplies it: `rule_lower_2518` (GOT call) runs only
+     after `rule_lower_2508` (`bl`, near relocation) failed, and that one matches every call of
+     a colocated extern (`match_2508_colocated`, `call_got_not_colocated`, from `CallRuleOk`'s
+     earlier-rules hypothesis); the same for `try_call` (`rule_lower_2551` after
+     `rule_lower_2542`: `try_got_not_colocated`).
+   * Link layer: `GotDecl g n` (`g` declares `n` non-colocated); `IndTo g h := MayCall g h.name ∧
+     ((DeclN g h.name ∧ GotDecl g h.name) ∨ ∃ sig ∈ indSigs g, IndSigMatch sig h ∧
+     h.sig.returns.length = sig.returns.length)`. `xCallsOk`'s GOT case gets `GotDecl` from the
+     contract's `colocated = false`; `xCallsIndOk` gets `IndSigMatch sig h` from `envOf`'s
+     `sigOf` (`indTo_of` is gone). `Ok.baseXI` and `LinkCheck.BaseOk.baseXI` state the base's
+     contract for `{ L.base with sigOf := fun _ => none }` — the former statement (the linked
+     environment ignores `base.sigOf`). `LinkSys.Ok` changes only by weakening (`blrRegs`:
+     `BlrTo` is narrower). `Ok.indSig` keeps its `DeclN`/`IndTyMatch` disjunct: `xni`'s pinned
+     indirect call (`CallLg`) records only the parameter types.
+   * Checker: `LinkCheck.indToB` asks `declB && gotDeclB` (`gotDeclB_of`); `indSiteB`
+     (`callScopeB`), `lean-link`'s per-cause diagnostic and `link-check` follow.
+   * Effect on `InScopeP`: `examples/deps` 12 → 8 (`indNoSym` 8; `blrRegs` 4 → 0),
+     `fv-demo`'s test executable 1 → 1 (`indNoSym`).
+15. *Indirect calls of a function to itself* (2026-10-07, agent/scope-widen, #89 (b)).
+   `LinkSys.Ok.indNoSym` (a function with indirect calls has no link-time address) is gone, with
+   `indB`'s `S g.name == none` and `indFactsR`'s second part. It discharged `TrapsExplicit`'s
+   indirect-call clauses for the activation's run of `P.only g`, in which a pointer to `g` would
+   enter `g` as a nested frame that no linked-call contract covers. Now:
+   * CLIF: after its entry an activation runs in `P.bare` (`Clif.Program.bare`: `P` without
+     functions; the frames' provenance stays `LInv (P.only g)`), so both call forms resolve every
+     function of `P`, `g` itself included, through the linked environment (`linkEnvN`: the
+     callee's whole-program run, atomic). `runLoop_linkN` concludes `runLoop E P.bare`; its
+     self-entry branches are gone (the atomic helper covers `f`), it takes `InSubset (P.only f)`'s
+     `externCalls`/`tryExterns` (no direct call of `f` itself), and `hEp` covers `f` for indirect
+     entry. `step_next_linv` (an auto-param `p.funcs ⊆ P.funcs`), `step_symbols`,
+     `step_next_cases`, `LinkSys`'s `step_restrict`/`step_of_restrict` take the stepping program
+     apart from the frames' program; `Clif.step_bare_callers`: a step of `P.bare` keeps no caller.
+     `callExternAt_eq` is about `P.bare` (`bareNames_iff`; `linkNames_sub`, `only_externNames`,
+     `externs_sub` are gone). No CLIF semantics change: since Widening 14 `linkEnvN.sigOf` makes
+     `callExternAt` check `abiMatch` against the program function at the address, exactly
+     `stepCallIndirect`'s check.
+   * Backend: `InSubset` drops `func` (`p.func? f.name = some f`, which no proof used;
+     `InSubset.of_regArgs`/`of_indirectFree` lose `hfunc`); `InSubset.retarget` gives
+     `InSubset P.bare g` from `Ok.subset`.
+   * Arm: `MayCall g n` drops `n ≠ g.name` from its indirect disjunct, so `IndTo`, `X`'s `blr`
+     branch, `envR`/`envOf` and `Callee` include `g` itself when `g` has an address and a
+     matching indirect call (`X`'s `progX κ M F g` is the induction hypothesis at depth `M - 1`;
+     `Budget` then needs `Callee g g`, which `budget_K` meets and `StackBound`'s `edgeB` already
+     had). `xCallsOk`'s GOT case gets `IndTo` from either disjunct of `MayCall`. `Thm`/`ThmG` are
+     about `runLoop (envR M g) P.bare`; `ActInv` drops its symbols conjunct (it fed only
+     `step_callers`, replaced by `Clif.step_bare_callers`); `trapsExplicit_of_returned` is for
+     `P.bare`, its indirect clauses vacuous (`reach_symbols` is gone). `LinkSys.Ok` loses
+     `indNoSym`; the fields with a `MayCall`/`Callee` antecedent (`raBlr`, `indSig`, `blrRegs`
+     through `IndTo`, `calleeFrame`, `slotFits`, `NeedNI`/`NeedSlots`) gain only instances
+     `h = g` with `syms g.name ≠ none`, which `indNoSym` excluded: the former `Ok` implies the new
+     one.
+   * Statements: `backend_correct_program(_budget)`, `backend_correct_program_budgetX`,
+     `backend_correct_program_stack(X)`, `LinkCheck.ProgStmt`, `ProgStmtS(X)`, the
+     `binary_correct*` theorems and `Link.compileExe_correct` take `TrapsExplicit (linkEnvN P
+     base M) P.bare cs` (the activation's run with every program callee atomic: no indirect
+     clause left) for `… (P.only f) cs`. The former premise implies the new one, proven:
+     `trapsExplicit_bare_of_only` (`FV/E2E/LinkArm.lean`; from `InSubset (P.only f) f`,
+     `LinkFree f`, `LInv (P.only f) cs` and the names of `f`'s declarations among the
+     environment's) — the two runs take the same steps (`step_bare_eq_only`) until a step entering
+     `f`, which no call of `f` is (`InSubset`) and no reached indirect call is (the former
+     premise's `indirect`/`tryIndirect` clauses); `LinkSys.trapsExplicit_bare_of_only` under
+     `L.Ok` and `ClifEntry` alone (no `indNoSym` needed); `Link.compileExe_trapsExplicit_bare`
+     from `compileExe_correct`'s own premises (`compileExe` succeeded, `BaseOk`, `f` in the
+     program, `ClifEntry` from `ClifRun`). So each changed theorem implies its former statement.
+   * Checker: `LinkCheck.mayB` drops `n != g.name`; `raBlr` for `h = g` follows from the layout
+     and `raStarB` (`raOk_self`: a call's return address is within the function's words, which
+     fit below an address outside them, so it is not the entry; `raCallB` is unchanged); `indB`
+     drops `S g.name == none`; `link-check`'s diagnostic and `lean-link`'s per-cause list lose
+     `indNoSym`. The non-vacuity witness follows (its own `raCallB` also checks the
+     not-the-entry condition, `raCallB_parts`).
+   * Effect on `InScopeP`: `examples/deps` 8 → 0, `fv-demo`'s test executable 1 → 0: `lean-link`
+     writes both with `Link.compileExe` (`Link.compileExe_correct`).
 
 **Non-vacuity** (`FV/E2E/NonVacuityLink.lean`, namespace `E2E.LinkWitness`): the closed program
 `P = {f, g, h, s, k, r, r__fvself, q, v, a2, w, t, u, m, d, e, y, z}` (`m`, `d`: the vtable dispatch of
@@ -1135,7 +1236,7 @@ theorem backend_correct_program_witness :
 
 Every per-function premise of `LinkSys.Ok` (`compiled`, `covered`, `outFits`,
 `argRegs`, `sretRets`, `calleeFrame`, `slotFits`, `callRegs`, `blrRegs`, `raBlr`,
-`indSig`, `indScope`'s declarations, `indNoSym`, `addrSlots`, `declSig`, `entryRegs`, `fits`,
+`indSig`, `indScope`'s declarations, `addrSlots`, `declSig`, `entryRegs`, `fits`,
 `raCall`, `depth`, `subset`, `free`, the image `imgCode`) is an executable check with a
 soundness lemma (`chks`/`Facts`, `siteOk_sound`, `blrOk_sound`,
 `retsB_sound`, `outFitsB_sound`, `slotFitsB_sound`, `entryB_sound`, `raCallB_sound`,
@@ -1226,7 +1327,7 @@ agent/link-scope2's `GotFlow`, only the GOT symbol's), `declSig`, `entryRegs`, `
 `raCall`/`raBlr` (`raOkB`: the return address of every call is outside every other function's
 code, an interval check, or after a call of that function's own code), `depth`, `free`, `subset`
 (clif-subset-v2 E, no direct self-call, ABI and indirect-call signatures),
-`indScope`/`indNoSym`/`indSig` (`indSig` for the functions one of the caller's indirect calls
+`indScope`/`indSig` (`indSig` for the functions one of the caller's indirect calls
 can enter, `indSigB`: a matching signature, `IndSigMatch`, or declared with the parameter types,
 `IndTyMatch`); for the program (`globalChks`, `globalB`): distinct
 names, the image reads back word by word (`imgB`, which also rejects overlapping or misaligned

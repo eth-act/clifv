@@ -386,15 +386,14 @@ author's estimate, not measured), **Risk**.
   `examples/deps` 23 → 15. `try_call` result counts are done (#89 (d): `csem` defines a `try_call`'s
   call only where the callee returns at least `ti.rets` results, the lowering supplies
   `ti.rets ≤ sigRets` to `CallsRefine`/`IndCallsRefine`; `Ok.tryRets`/`Ok.blrTry` gone; e2e.md
-  "Widening 13"): deps 15 → 12. Left: fv-demo 1 and deps 8 functions with indirect calls whose own
-  address is taken (`indNoSym`) — a pointer to `g` must resolve through the environment in the
-  per-function run, or the backend theorem must cover self-entry; deps 4 `blrRegs` (a declared
-  callee matched by types but not purposes, e.g. `(i64, i64, i64, i64)` at a
-  `(i64 sret, i64, i64, i64)` site) — `Clif.callExternAt` must reject an `abiMatch` failure as
-  `stepCallIndirect` does. The `blrRegs` contract is machine-level (`CalleeOkG`) and quantified over
-  every state where `csemV` is defined, while `X`'s `blr` branch is site-independent (`IndTo`), so
-  the CLIF fact has to narrow `IndTo` itself. The outside part's bytes stay
-  rust-lld's (design (b), L2b).
+  "Widening 13"): deps 15 → 12. Declared callees at indirect calls are done (#89 (c): `Clif.Env.sigOf`,
+  `callExternAt` checks `abiMatch` against the linked environment's signatures; GOT calls only of
+  non-colocated declarations; `IndTo` narrowed to `DeclN ∧ GotDecl` or a matching indirect call;
+  e2e.md "Widening 14"): deps 12 → 8, `blrRegs` 0. Indirect self-calls are done (#89 (b):
+  `Ok.indNoSym` gone; the activation runs in `P.bare`, the program without functions, so a pointer to
+  `g` resolves through the linked environment to `g`'s whole-program run; `MayCall` includes `g`
+  itself; e2e.md "Widening 15"): deps 8 → 0, fv-demo 1 → 0, both written by `Link.compileExe`. The
+  outside part's bytes stay rust-lld's (design (b), L2b).
 
 ### L2. Linking without validators
 
@@ -439,7 +438,7 @@ author's estimate, not measured), **Risk**.
   | calleeFrame/slotFits | `calleeFrame`, `slotFits` | own output | `frame_of_lower` (`FV/E2E/LinkOwnFrames.lean`) |
   | declSig | `declSig` | input | `progScopeB` (`declSigB`) |
   | raCall/raBlr | `raCall`, `raBlr` | linker output | `linkerOkB` |
-  | indScope/indNoSym/indSig | `indScope`, `indNoSym`, `indSig` | input | `progScopeB` (`indB`) |
+  | indScope/indSig | `indScope`, `indSig` | input | `progScopeB` (`indB`) |
   | names: distinct | `names` | input | `progScopeB` |
   | imgCode: the image reads back | `imgAddr`, `imgCode` | linker output | `linkerOkB` (`imgB`) |
   | raStar | `raStar` | linker output | `linkerOkB` |

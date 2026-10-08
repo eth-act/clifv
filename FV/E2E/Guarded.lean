@@ -224,25 +224,25 @@ theorem callsRefineP_csemG {env : Clif.Env} {exts : List Clif.ExtFunc} {MR : Mem
   · have hg : GuardR F Rd ctx.slotBase (.call ⟨dest, us, ds⟩) uses w := trivial
     have hc : GuardC F syms X exts sigs sp0 Pc (.call ⟨dest, us, ds⟩) uses w := by
       refine ⟨ext.name, ext.sig, vals, cm, args, hpc, ⟨hMRm sl cm w a5, hMRc sl cm w a5⟩, .inl ⟨⟨ext, hin, rfl, rfl⟩, a4⟩, ?_⟩
-      rcases a2 with ⟨rfl, rfl⟩ | ⟨r, rfl, rfl⟩
+      rcases a2 with ⟨rfl, rfl⟩ | ⟨r, rfl, -, rfl⟩
       · exact .inl ⟨rfl, rfl⟩
       · exact .inr ⟨⟨r, rfl⟩, _, rfl, lo64_ofX64 _⟩
     rw [csemG_of hg hc]
-    rcases a2 with ⟨rfl, rfl⟩ | ⟨r, rfl, rfl⟩
+    rcases a2 with ⟨rfl, rfl⟩ | ⟨r, rfl, hcol, rfl⟩
     · obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX ext hin g sl cm w (some ext.name) uses uses vals rvals
         cm' a1 (.inl ⟨rfl, rfl⟩) a4 a5 a7 a8
       exact ⟨outs, w', by simp [csem, hc], by rw [hol, a3], ho, hm⟩
     · obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX ext hin g sl cm w none _ args vals rvals cm'
-        a1 (.inr ⟨rfl, rfl⟩) a4 a5 a7 a8
+        a1 (.inr ⟨rfl, hcol, rfl⟩) a4 a5 a7 a8
       exact ⟨outs, w', by simp [csem, hc], by rw [hol, a3], ho, hm⟩
   · have hg : GuardR F Rd ctx.slotBase (.tryCall ⟨dest, us, ds⟩ ti) uses w := trivial
     have hc : GuardC F syms X exts sigs sp0 Pc (.tryCall ⟨dest, us, ds⟩ ti) uses w := by
       refine ⟨ext.name, ext.sig, vals, cm, args, hpc, ⟨hMRm sl cm w a5, hMRc sl cm w a5⟩, .inl ⟨⟨ext, hin, rfl, rfl⟩, a4⟩, ?_⟩
-      rcases a2 with ⟨rfl, rfl⟩ | ⟨r, rfl, rfl⟩
+      rcases a2 with ⟨rfl, rfl⟩ | ⟨r, rfl, -, rfl⟩
       · exact .inl ⟨rfl, rfl⟩
       · exact .inr ⟨⟨r, rfl⟩, _, rfl, lo64_ofX64 _⟩
     rw [csemG_of hg hc]
-    rcases a2 with ⟨rfl, rfl⟩ | ⟨r, rfl, rfl⟩
+    rcases a2 with ⟨rfl, rfl⟩ | ⟨r, rfl, hcol, rfl⟩
     · obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX ext hin g sl cm w (some ext.name) uses uses vals
         rvals cm' a1 (.inl ⟨rfl, rfl⟩) a4 a5 a7 a8
       refine ⟨_, w', by simp only [csem, hc, Option.filter_some, hol, a0, decide_true, ↓reduceIte,
@@ -250,7 +250,7 @@ theorem callsRefineP_csemG {env : Clif.Env} {exts : List Clif.ExtFunc} {MR : Mem
       simp only [List.length_append, List.length_map, List.length_drop]
       omega
     · obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX ext hin g sl cm w none _ args vals rvals cm' a1
-        (.inr ⟨rfl, rfl⟩) a4 a5 a7 a8
+        (.inr ⟨rfl, hcol, rfl⟩) a4 a5 a7 a8
       refine ⟨_, w', by simp only [csem, hc, Option.filter_some, hol, a0, decide_true, ↓reduceIte,
         Option.map_some]; rfl, ?_, ho.append _, hm⟩
       simp only [List.length_append, List.length_map, List.length_drop]
@@ -265,9 +265,9 @@ theorem indCallsRefineP_csemG {env : Clif.Env} {sigs : List Clif.Signature} {MR 
     IndCallsRefineP Pc env sigs MR (csemG F ctx X Rd syms exts sigs sp0 Pc) := by
   obtain ⟨h1, h2⟩ := indCallsRefine_csem (F := F) (ctx := ctx) hX hsym
     (fun sl cm w h => (hMRm sl cm w h).symbols)
-  refine ⟨fun sig hin n g sl cm w a r us ds u args vals rvals cm' a1 a2 a3 a4 a5 a6 a7 hpc a9 a10
-    a11 => ?_, fun sig hin n g sl cm w a r us ds ti u args vals rvals cm' a1 a2 a3 a4 a0 a5 a6 a7 hpc
-    a9 a10 a11 => ?_⟩
+  refine ⟨fun sig hin n g sl cm w a r us ds u args vals rvals cm' a1 a1' a2 a3 a4 a5 a6 a7 hpc a9
+    a10 a11 => ?_, fun sig hin n g sl cm w a r us ds ti u args vals rvals cm' a1 a1' a2 a3 a4 a0 a5
+    a6 a7 hpc a9 a10 a11 => ?_⟩
   · have hm := hMRm sl cm w a7
     have hu : lo64 u = X.sym n 0 := by
       rw [a3, hsym n a (by rw [← hm.symbols]; exact a2)]
@@ -275,7 +275,7 @@ theorem indCallsRefineP_csemG {env : Clif.Env} {sigs : List Clif.Signature} {MR 
       ⟨n, sig, vals, cm, args, hpc, ⟨hm, hMRc sl cm w a7⟩, (.inr ⟨hin, a5, a6⟩), .inr ⟨⟨r, rfl⟩, u, rfl, hu⟩⟩
     have hr : GuardR F Rd ctx.slotBase (.call ⟨.reg r, us, ds⟩) (u :: args) w := trivial
     rw [csemG_of hr hg]
-    exact h1 sig hin n g sl cm w a r us ds u args vals rvals cm' a1 a2 a3 a4 a5 a6 a7 a9 a10 a11
+    exact h1 sig hin n g sl cm w a r us ds u args vals rvals cm' a1 a1' a2 a3 a4 a5 a6 a7 a9 a10 a11
   · have hm := hMRm sl cm w a7
     have hu : lo64 u = X.sym n 0 := by
       rw [a3, hsym n a (by rw [← hm.symbols]; exact a2)]
@@ -283,7 +283,8 @@ theorem indCallsRefineP_csemG {env : Clif.Env} {sigs : List Clif.Signature} {MR 
       ⟨n, sig, vals, cm, args, hpc, ⟨hm, hMRc sl cm w a7⟩, (.inr ⟨hin, a5, a6⟩), .inr ⟨⟨r, rfl⟩, u, rfl, hu⟩⟩
     have hr : GuardR F Rd ctx.slotBase (.tryCall ⟨.reg r, us, ds⟩ ti) (u :: args) w := trivial
     rw [csemG_of hr hg]
-    exact h2 sig hin n g sl cm w a r us ds ti u args vals rvals cm' a1 a2 a3 a4 a0 a5 a6 a7 a9 a10 a11
+    exact h2 sig hin n g sl cm w a r us ds ti u args vals rvals cm' a1 a1' a2 a3 a4 a0 a5 a6 a7 a9 a10
+      a11
 
 theorem minst_cases (i : MInst) :
     (∃ info, i = .call info) ∨ (∃ info ti, i = .tryCall info ti) ∨ (∃ ds, i = .args ds) ∨

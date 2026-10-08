@@ -2,6 +2,19 @@
 
 ## Changelog / Status
 
+- **2026-10-07 (agent/scope-widen, #89 (c)), trusted-semantics change (default unchanged)**:
+  `Clif.Env` gains `sigOf : String → Option Signature := fun _ => none`, the known signature of
+  an extern (a function with a definition elsewhere); `Clif.callExternAt` (an indirect call of
+  an extern) is stuck unless the call site's `sigN` matches it (`(env.sigOf name).all
+  declared.abiMatch`, as `Clif.stepCallIndirect` for a function of the program: Cranelift's
+  "the called function must match the specified signature"). Only the linker's environment
+  `Clif.linkEnvN` sets it (each function of the linked program has its own signature), so the
+  per-function run of a linked function checks at an indirect call what the whole-program run
+  checks. Every environment the tools build has `sigOf = fun _ => none`, so every run is the
+  former one: `scripts/clif-filetests.sh` pass 6072 / fail 7 / agree 6036 / disagree 13,
+  printed files 154, 0 rejected (the baseline); `scripts/opt-difftest.sh` 0 fail. Used by the
+  linking proof (`docs/contracts/e2e.md`, "Widening" 14).
+
 - **2026-10-04 (agent/sret-purpose), trusted-semantics restriction of S**: `Clif.stepCallIndirect`
   (`call_indirect`, and `try_call_indirect` through it) enters a function of the program at the
   callee address only when the call site's `sigN` matches the function's signature
@@ -14,9 +27,10 @@
   call site's signature says and the callee reads them as its own says, so such a call breaks
   Cranelift's precondition and has no defined behaviour; the restriction only removes those runs
   (the theorems claim nothing about stuck runs). Extension flags and calling conventions are not
-  compared. An extern at the callee address (`Clif.callExternAt`) is unchanged: an extern's
-  semantics is an untyped `List Val → Mem → Outcome` and an environment name has no declaration,
-  so there is no callee signature to compare; it is called with the call site's signature, as
+  compared. An extern at the callee address (`Clif.callExternAt`) was unchanged then: an
+  extern's semantics is an untyped `List Val → Mem → Outcome` and an environment name has no
+  declaration, so there was no callee signature to compare (2026-10-07: the environment may now
+  give one, `Env.sigOf`); it is called with the call site's signature, as
   before. **Stricter than Cranelift's interpreter**, which checks only the value types
   (`validate_signature_params`, `cranelift/interpreter/src/step.rs`): on a call between program
   functions with equal types and different purposes the interpreter runs the callee, `Clif.run`

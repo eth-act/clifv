@@ -59,7 +59,6 @@ def scopeFails (P : Clif.Program) (S : String → Option Nat) (g : Clif.Function
       then ["indB:calleeStack"] else []) ++
     (if ind && P.funcs.any (fun h => mayB S g h.name && indSigB g h && !indRetsB g h)
       then ["indB:sretRets"] else []) ++
-    (if ind && S g.name != none then ["indB:indNoSym"] else []) ++
     sites ++ (if outScopeB P g then [] else ["outScopeB"])).eraseDups
 
 /-- The strings of a JSON array field. -/

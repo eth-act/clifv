@@ -148,14 +148,15 @@ premises. Deferred, in order:
     program-level legalisation refinement (`Opt.Legal.check_refines` per function under a
     linked environment satisfying `ExtLegal`, by induction on the call depth; `NoMemTrap` of
     callee runs, `EnvKeepsAllocs` of the linked environment).
-  - recursion through a pointer (the caller's own address); reachable indirect callees (whose
+  - reachable indirect callees (whose
     signature matches an indirect call of the caller, `IndSigMatch`: parameter types and
     purposes, return types since agent/sret-purpose; agent/link-scope2 restricted `indSig` to
     those, agent/crate-check3 `blrRegs`/`blrTry` to `IndTo`) with stack-passed or `sret`
     parameters; a declared function entered through a pointer whose call-site signature has its
-    parameter types but not its purposes (`indSig` still constrains it: the per-function run's
-    `callExternAt` sees no purposes, and `envOf` keeps declared functions for their direct
-    calls).
+    parameter types but not its purposes (`indSig` still constrains it: since agent/scope-widen
+    (#89 (c)) the per-function run's `callExternAt` checks the purposes against the linked
+    environment's `sigOf`, but the non-interference contract's pinned indirect call (`CallLg`,
+    `xni`) records only the parameter types, so `indSig`'s `DeclN`/`IndTyMatch` disjunct stays).
   - a function calling itself under its own name (excluded at the CLIF level by `InSubset (P.only f)`; `cargo fv`'s alias covers it), float parameters; a
     depth-free machine (monotonicity of `linkedCall` in the depth, needs base hooks preserving
     errors).

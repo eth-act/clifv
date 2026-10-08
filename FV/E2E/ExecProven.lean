@@ -27,7 +27,7 @@ theorem binary_correct_exec_proven {I : LinkInput} {D : List Clif.DataObject}
     (ho : OutsideCall I (BinCheck.roByte I D) f (StackBound.stackFn I f) r args cs.mem)
     (hav : OutsideAvoids (GotSlot I file) f (StackBound.stackFn I f) r args cs.mem)
     (hr : ClifRun I B f r args cs)
-    (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) ((prog I).only f) cs) :
+    (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) (prog I).bare cs) :
     ExecRefines (art I f).fb (art I f).base (xreg 30 r) (step I B file) r (RelocAt I)
       (Clif.runLoop B.env (prog I) (M + 1) cs) := by
   have hn := (StackBound.goodN_iff hI).2 ⟨f, hf, hc⟩

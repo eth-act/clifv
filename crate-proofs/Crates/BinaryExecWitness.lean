@@ -467,7 +467,7 @@ theorem binary_correct_exec_witness :
       OutsideCall I (BinCheck.roByte I Crates.AArithAbort.dataObjs) f (StackBound.stackFn I f)
         (r (memOf file)) args cs.mem ∧
       ClifRun I closedBase f (r (memOf file)) args cs ∧
-      TrapsExplicit (Clif.linkEnvN (prog I) closedBase.env M) ((prog I).only f) cs ∧
+      TrapsExplicit (Clif.linkEnvN (prog I) closedBase.env M) (prog I).bare cs ∧
       RunOk I closedBase file M f (modelOf I f (r (memOf file))) ∧
       Clif.runLoop closedBase.env (prog I) (M + 1) cs =
         .returned [⟨.i32, 5#32⟩] (LinkWitness.retMem run) ∧
