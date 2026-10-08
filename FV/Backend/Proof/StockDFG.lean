@@ -73,7 +73,9 @@ theorem buildCtx_typedReg {f : Clif.Function} {ctx : Ctx}
     exact ⟨n, rfl, hlo, allocated.1 x n hr⟩
 
 /-- Source and mapping assumptions for rule proofs, independent of identity
-register numbering. Bound preservation is carried separately by CtxAllocated. -/
+register numbering. Bound preservation is carried separately by CtxAllocated. These source fields
+are transported from CtxInv by name. Factoring the production CtxInv structure
+is deferred to avoid changing its existing proof interface in this slice. -/
 structure MappedCtxInv (f : Clif.Function) (ctx : Ctx) : Prop where
   func : ctx.func = f
   data : ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info → info.clif = some inst →
@@ -102,8 +104,10 @@ theorem buildCtx_mappedInv {f : Clif.Function} (hs : LowerScope f) {ctx : Ctx}
   obtain ⟨original, st0, hold, _, view⟩ := buildCtx_source hb
   have old := ctxOk_sound (ctxOk_of hs hold)
   have allocated := buildCtx_allocated hb
-  refine ⟨view.func.trans old.func, ?_, ?_, ?_, ?_, ?_, allocated.2.1,
-    ?_, ?_, view.slotOff.trans old.slotOff, ?_, ?_, ?_⟩
+  refine { func := view.func.trans old.func, data := ?_, instE := ?_, resTys := ?_,
+    valueReg := ?_, typedReg := ?_, injective := allocated.2.1, defInst := ?_,
+    defClif := ?_, slotOff := view.slotOff.trans old.slotOff, resTysE := ?_,
+    valTyE := ?_, addr64 := ?_ }
   · intro ii info inst hi hc
     exact old.data ii info inst (by simpa only [view.insts] using hi) hc
   · intro ii info inst hi hc
@@ -133,8 +137,10 @@ theorem buildCtx_mappedInv {f : Clif.Function} (hs : LowerScope f) {ctx : Ctx}
 
 theorem MappedCtxInv.withTryRegs {f : Clif.Function} {ctx : Ctx} (h : MappedCtxInv f ctx)
     (regs : List Reg × List Reg) : MappedCtxInv f { ctx with tryRegs := regs } :=
-  ⟨h.func, h.data, h.instE, h.resTys, h.valueReg, h.typedReg, h.injective,
-    h.defInst, h.defClif, h.slotOff, h.resTysE, h.valTyE, h.addr64⟩
+  { func := h.func, data := h.data, instE := h.instE, resTys := h.resTys,
+    valueReg := h.valueReg, typedReg := h.typedReg, injective := h.injective,
+    defInst := h.defInst, defClif := h.defClif, slotOff := h.slotOff,
+    resTysE := h.resTysE, valTyE := h.valTyE, addr64 := h.addr64 }
 
 private theorem definition_ne_term {f : Clif.Function} {ctx : Ctx}
     (h : MappedCtxInv f ctx) {ti : Nat}
@@ -150,8 +156,9 @@ private theorem definition_ne_term {f : Clif.Function} {ctx : Ctx}
 theorem MappedCtxInv.termCtx {f : Clif.Function} {ctx : Ctx} (h : MappedCtxInv f ctx)
     {ti : Nat} (hph : ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩) (data : Backend.V) :
     MappedCtxInv f (Driver.termCtx ctx ti data) := by
-  refine ⟨h.func, ?_, ?_, ?_, h.valueReg, h.typedReg, h.injective,
-    ?_, ?_, h.slotOff, ?_, h.valTyE, ?_⟩
+  refine { func := h.func, data := ?_, instE := ?_, resTys := ?_, valueReg := h.valueReg,
+    typedReg := h.typedReg, injective := h.injective, defInst := ?_, defClif := ?_,
+    slotOff := h.slotOff, resTysE := ?_, valTyE := h.valTyE, addr64 := ?_ }
   · intro ii info inst hi hc
     by_cases he : ii = ti
     · subst ii; rw [termCtx_insts_self hph] at hi; cases hi; cases hc

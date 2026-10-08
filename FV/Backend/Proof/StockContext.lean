@@ -275,6 +275,25 @@ theorem buildCtx_allocated {f : Clif.Function} {ctx : Ctx}
   rw [← hc, ← hs] at hf
   exact hf
 
+/-- Requests are indexed by source IDs, so the initial demand table has one
+entry for every source value, including holes in sparse source numbering. -/
+theorem buildCtx_demand_size {f : Clif.Function} {ctx : Ctx}
+    {ranges : Array (Nat × Nat)} {st : State}
+    (hb : Stock.buildCtx f = .ok (ctx, ranges, st)) :
+    st.demand.size = ctx.valTy.size := by
+  obtain ⟨original, _, requests, _, _, he⟩ := buildCtx_allocation hb
+  have hsize : ∀ (rs : List AllocationRequest) (a : Allocation),
+      (rs.foldl Allocation.step a).valReg.size = a.valReg.size := by
+    intro rs
+    induction rs with
+    | nil => intro a; rfl
+    | cons r rs ih => intro a; rw [List.foldl_cons, ih, step_size]
+  have hs := congrArg (fun q => q.2.2.demand.size) he
+  have hc := congrArg (fun q => q.1.valTy.size) he
+  rw [hs, hc]
+  simpa only [finishCtx, Array.size_replicate, allocateRequests,
+    Allocation.initial] using hsize requests (Allocation.initial original.valTy.size original.insts.size)
+
 /-- Within the validated source value table, the driver's map covers exactly
 the declared parameters/results. Sparse source IDs need no identity mapping. -/
 theorem buildCtx_value_domain {f : Clif.Function} {ctx : Ctx}
@@ -354,6 +373,12 @@ theorem buildCtx_allocated_witness :
     fixtureResult.2.2.base.nextVreg = 194 ∧
     fixtureResult.1.valueReg? 0 = none :=
   ⟨fixture_build, buildCtx_allocated fixture_build, rfl, rfl⟩
+
+theorem buildCtx_demand_size_witness :
+    Stock.buildCtx fixture = .ok fixtureResult ∧
+    fixtureResult.2.2.demand.size = fixtureResult.1.valTy.size ∧
+    fixtureResult.2.2.demand.size = 8 :=
+  ⟨fixture_build, buildCtx_demand_size fixture_build, rfl⟩
 
 theorem buildCtx_value_domain_witness :
     ((fixtureResult.1.valueReg? 2).isSome = true ↔
