@@ -96,8 +96,11 @@ set_option hygiene false in
 /-- Apply only the branch-condition outcome, then decide its count identity. -/
 macro "skel_count_finish" : tactic => `(tactic| (
   apply skel_brif_cond (hle4 _ _ (by opt_den_x)) (hle4 _ _ (by opt_den_x))
-  opt_cases_ty <;> opt_widths <;> (try sem_simp)
+  opt_cases_ty
   all_goals (
+    dsimp only [Ty.width] at *
+    simp only [Sem.truthy, Sem.icmp, Sem.unary, Sem.clz, Sem.ctz, Sem.ireduce,
+      Sem.uextend, Sem.binary, Sem.band, bool8_bif, intcc_eq', intcc_sge']
     rw [Bool.eq_iff_iff]
     simp (disch := decide) only [bne_iff_ne, ne_eq, BitVec.ctz_eq_reverse_clz,
       skel_count_clz_reduce_zero, skel_count_clz_zero, BitVec.msb_reverse]
