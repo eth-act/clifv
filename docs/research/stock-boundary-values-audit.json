@@ -1,0 +1,77 @@
+{
+  "modules": [
+    "FV.Backend.Proof.StockBoundaryValues"
+  ],
+  "method": "Complete clean canonical lean-lsp-mcp diagnostics; lean_verify4; capped targeted build and compiled-module CLI audits",
+  "results": [
+    {
+      "theorem": "Backend.Stock.Proof.stock_availOf_next_other",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_availOf_next_other_witness",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.ValuesHeld.resolvedResult_frame_between",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.ValuesHeld.resolvedResult_frame_between_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    }
+  ],
+  "source_sha256": {
+    "FV/Backend/Proof/StockBoundaryValues.lean": "3a9659d5fe4cbef87e03e45a82ec0af2d5c31c5ce2576c39378672cf3c8e8ef2"
+  },
+  "targeted_build_jobs": 164,
+  "scope": "Source availOf advances only current statement results; value transfer between different source-boundary need sets preserves other live values without requiring stale result agreement before overwrite. Actual constant-materialization/live-parameter witness proves the old post-boundary relation is false initially. No source-input change. Whole-driver availability transport and resolved noninterference remain incomplete.",
+  "required_full_and_execution_gates": "All required exact-source full/crate/runtime/encoder/E2E/final7/new4 gates passed on0609191, base dcc23a5. Latest-head CI/review check required before squash merge.",
+  "cli_audit_count": 4,
+  "cli_log_sha256": "98094c67f0a01e330a07af5e8d9f00fae7056cd0c454856a4a2d255160e71513",
+  "targeted_log_sha256": "65eced1690a0531d9ff4e3b2dec53aceea831e8bd96cfd71b354e8aaa1b081d6",
+  "fixture_scope": "Actual mapped context from Stock.buildCtx; source function returns both the constant and parameter, making the preserved parameter live. The incoming frame is chosen and retains a stale result; no whole-loop reachability claim.",
+  "validated_main_commit": "dcc23a54ada176ad1a6fe3fe3663ddf3ccfdcfe1",
+  "gates": {
+    "full_build_jobs": 1293,
+    "crate_build_jobs": 958,
+    "corpus_pass": 114,
+    "extrt_pass": 22,
+    "runtests_pass": 4672,
+    "runtests_fail": 0,
+    "runtime_disagreements": 0,
+    "encoder_identical": 1292,
+    "encoder_differ": 0,
+    "e2e_accepted": 1150,
+    "e2e_rejected": 0,
+    "final_theorem_axiom_audits": 7
+  },
+  "validated_source_commit": "0609191719f3b81de5dd4def4054a497aa4e0572",
+  "gate_log_sha256": {
+    "full": "6f2ce9129c75e661f33d1150a461e18110f80be71c2a68a17f914fc3a7333942",
+    "crates": "42726ff31ff1320598017cbe50943483060f76355f252d30101490e33d8d763e",
+    "runtime": "6fc44567e9cac0a4ed3fd2661b4aad44f7e6b43055d21fb3fe150c1a56303553",
+    "encode": "03615dfbca26e9d0ed30a780c66e8822602b1201d21afe9cd05e6af550e89919",
+    "e2e": "1d3f84013ebd1a195ad8ab540e9872a7d6690eacbb0f54f029d7022be34077ef",
+    "e2e-axioms": "620761c85c2e59b59c17136e0b0d2ca8efbe83934335f99704fdd30dbd91de6b",
+    "axioms": "98094c67f0a01e330a07af5e8d9f00fae7056cd0c454856a4a2d255160e71513"
+  },
+  "exact_pr_mcp_diagnostics": "Complete clean canonical module diagnostics on the actual PR path; four canonical MCP audits standard-only and matching exact PR CLI."
+}
