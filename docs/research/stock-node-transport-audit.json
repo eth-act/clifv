@@ -141,12 +141,37 @@
     }
   ],
   "validated_main_commit": "045c868e2b754886a8deae6ffc21db60ff2c2a2e",
-  "required_full_and_execution_gates": "Pending on exact PR branch; draft only.",
+  "required_full_and_execution_gates": "All required exact-source full/crate/runtime/encoder/E2E/final7/new16 axiom gates passed on08744e2, based on main045c868. Latest-head CI/review check required before squash merge.",
   "scope": "99 new allocation-bound lines plus three node/origin/traversal modules655 lines. Actual node/fold allocation bounds, branch/core/node alias frames, backward suffix transport and actual new block-record origin; eight results/eight inhabited witnesses. Complete whole-driver simulation and production cutover remain pending.",
   "source_sha256": {
     "FV/Backend/Proof/StockDriverBounds.lean": "bad1ccdd62564b371fdb71415e26e89693ae61b6aa5e33fdc691be5d872c0c8b",
     "FV/Backend/Proof/StockNodeAliasConnection.lean": "d1eae51d5aa54e8ec37ee91be7f9c257d695c3e7c4936ca6bf10a749b6607397",
     "FV/Backend/Proof/StockTraversalAliasConnection.lean": "0fd9519a3f086dd8697f22ad832d272c35c384f31bb15ea8f34621cf3fd05c39",
     "FV/Backend/Proof/StockNodeRecordOrigin.lean": "4a2d63c5d00b6a98dea5e378782f9c0cf0310b4abdf6c8e554f90018827b5890"
-  }
+  },
+  "gates": {
+    "full_build_jobs": 1288,
+    "crate_build_jobs": 958,
+    "corpus_pass": 114,
+    "extrt_pass": 22,
+    "runtests_pass": 4672,
+    "runtests_fail": 0,
+    "runtime_disagreements": 0,
+    "encoder_identical": 1292,
+    "encoder_differ": 0,
+    "e2e_accepted": 1150,
+    "e2e_rejected": 0,
+    "final_theorem_axiom_audits": 7
+  },
+  "validated_source_commit": "08744e270421c847c6f428b56249a1ff7581b174",
+  "gate_log_sha256": {
+    "full": "49912726c3ef926c095748380b045d72bdda3967b7cd33746c9dfbec6ee8e055",
+    "crates": "42726ff31ff1320598017cbe50943483060f76355f252d30101490e33d8d763e",
+    "runtime": "6fc44567e9cac0a4ed3fd2661b4aad44f7e6b43055d21fb3fe150c1a56303553",
+    "encode": "03615dfbca26e9d0ed30a780c66e8822602b1201d21afe9cd05e6af550e89919",
+    "e2e": "f5584c072915fa5768eeff6e91ef7d1b40a709b978a265cbf02fd6af56857c01",
+    "e2e-axioms": "620761c85c2e59b59c17136e0b0d2ca8efbe83934335f99704fdd30dbd91de6b",
+    "axioms": "ea3432ad4b0ca758102f07e56eb281d7d61b6bb953298815f90c8648537d2282"
+  },
+  "exact_pr_mcp_diagnostics": "StockNodeAliasConnection complete clean. All16 earlier canonical-module MCP/CLI audits match the exact PR CLI."
 }
