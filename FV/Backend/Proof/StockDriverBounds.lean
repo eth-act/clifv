@@ -469,6 +469,33 @@ private theorem traversal_blockFrontiers {f : Clif.Function} {ctx : Ctx}
     labels ⟨initial_within build, old⟩ h
   exact invariant.2
 
+/-- A successful actual node preserves the original allocation cap and
+exception reservations, including when entered after earlier node transitions. -/
+theorem stock_lowerNode_allocationBounds {f : Clif.Function} {ctx : Ctx}
+    {ranges : Array (Nat × Nat)} {initial : State}
+    (build : Stock.buildCtx f = .ok (ctx, ranges, initial))
+    {order : Order} {params : List Nat} {label : Nat} {input output : DriverState}
+    (bound : input.state.alias.size ≤ initial.base.nextVreg ∧
+      initial.base.nextVreg ≤ input.state.base.nextVreg ∧ input.state.tryRegs = initial.tryRegs)
+    (run : lowerNode ctx ranges order f params label input = .ok output) :
+    output.state.alias.size ≤ initial.base.nextVreg ∧
+      initial.base.nextVreg ≤ output.state.base.nextVreg ∧ output.state.tryRegs = initial.tryRegs :=
+  node_within (initial_maps build) (buildCtx_reservedBelow build) bound run
+
+/-- Any successful suffix of the actual node fold retains the build's allocation
+cap and reservations. This also applies after a protected definition was emitted. -/
+theorem stock_lowerNodes_allocationBounds {f : Clif.Function} {ctx : Ctx}
+    {ranges : Array (Nat × Nat)} {initial : State}
+    (build : Stock.buildCtx f = .ok (ctx, ranges, initial))
+    {order : Order} {params labels : List Nat} {input output : DriverState}
+    (bound : input.state.alias.size ≤ initial.base.nextVreg ∧
+      initial.base.nextVreg ≤ input.state.base.nextVreg ∧ input.state.tryRegs = initial.tryRegs)
+    (run : labels.foldlM (fun d label => lowerNode ctx ranges order f params label d) input = .ok output) :
+    output.state.alias.size ≤ initial.base.nextVreg ∧
+      initial.base.nextVreg ≤ output.state.base.nextVreg ∧ output.state.tryRegs = initial.tryRegs := by
+  exact fold_bound (fun d : DriverState => Within initial.base.nextVreg initial.tryRegs d.state)
+    _ (fun _ _ _ b h => stock_lowerNode_allocationBounds build b h) labels bound run
+
 /-- Every successful whole stock driver bounds its final aliases by the initial
 allocation frontier, grows the fresh frontier, and retains exception reservations.
 All premises are facts of the actual run; no additional acceptance check is needed. -/
@@ -583,5 +610,77 @@ theorem stock_lower_blockScanAliasBounds_witness :
         emptyResult.final.alias.size ≤ (scanState record.input record.inst).base.nextVreg) := by
   have run := stock_lower_allocationBounds_witness.1
   exact ⟨run, stock_lower_blockScanAliasBounds run⟩
+
+private def nodeBoundFunction : Clif.Function := {
+  name := "node_allocation_bounds"
+  sig := {}
+  blocks := [
+    { id := 7, params := [], body := [⟨[0], .iconst .i64 9⟩], term := .ret [] },
+    { id := 9, params := [], body := [], term := .jump ⟨7, []⟩ }] }
+private def nodeBoundBuilt : Ctx × Array (Nat × Nat) × State :=
+  (Stock.buildCtx nodeBoundFunction).toOption.getD (sinkCtx, #[], sinkState)
+private def nodeBoundInput : DriverState := {
+  state := { nodeBoundBuilt.2.2 with
+    base := (nodeBoundBuilt.2.2.base.fresh .int).2
+    alias := (Array.replicate 193 none).set! 192 (some 193) }
+  blocks := Array.replicate 2 default
+  edgeArgs := Array.replicate 2 #[]
+  schedule := #[]
+  scans := #[]
+  blockScans := #[]
+  rules := #[] }
+private def nodeBoundOrder : Order := ⟨#[.original 0, .original 1], #[#[], #[0]]⟩
+private def nodeBoundCall := lowerNode nodeBoundBuilt.1 nodeBoundBuilt.2.1
+  nodeBoundOrder nodeBoundFunction [] 1 nodeBoundInput
+private theorem nodeBound_build : Stock.buildCtx nodeBoundFunction = .ok nodeBoundBuilt := rfl
+private theorem nodeBound_input : Within nodeBoundBuilt.2.2.base.nextVreg
+    nodeBoundBuilt.2.2.tryRegs nodeBoundInput.state := by
+  unfold Within
+  decide
+set_option maxRecDepth 20000 in
+private theorem nodeBound_success : nodeBoundCall.isOk = true := by decide +kernel
+set_option maxRecDepth 20000 in
+private theorem nodeBound_observed : nodeBoundCall.toOption.map
+    (fun d => (d.blocks[1]!.insts, d.blockScans.size, (d.state.alias[192]?).join)) =
+    some (#[.jump 0], 1, some 193) := by decide +kernel
+
+/-- A real original-node jump emission and scan inhabit the bounds, with a
+nonempty incoming and outgoing alias array. The incoming state is chosen. -/
+theorem stock_lowerNode_allocationBounds_witness :
+    ∃ output, nodeBoundCall = .ok output ∧ output.blocks[1]!.insts = #[.jump 0] ∧
+      output.blockScans.size = 1 ∧ (output.state.alias[192]?).join = some 193 ∧
+      output.state.alias.size ≤ nodeBoundBuilt.2.2.base.nextVreg ∧
+      nodeBoundBuilt.2.2.base.nextVreg ≤ output.state.base.nextVreg ∧
+      output.state.tryRegs = nodeBoundBuilt.2.2.tryRegs := by
+  cases call : nodeBoundCall with
+  | error e => have success := nodeBound_success; simp only [call, Except.isOk] at success; cases success
+  | ok output =>
+    have observation := nodeBound_observed
+    simp only [call, Except.toOption, Option.map_some, Option.some.injEq, Prod.mk.injEq] at observation
+    exact ⟨output, rfl, observation.1, observation.2.1, observation.2.2,
+      stock_lowerNode_allocationBounds (ctx := nodeBoundBuilt.1) (ranges := nodeBoundBuilt.2.1)
+        (initial := nodeBoundBuilt.2.2) (order := nodeBoundOrder) (params := [])
+        (label := 1) (input := nodeBoundInput) (output := output) nodeBound_build nodeBound_input call⟩
+
+/-- A nonempty successful fold executes that original node and supplies all
+premises of the traversal result, including a retained nonempty alias. -/
+theorem stock_lowerNodes_allocationBounds_witness :
+    ∃ output, ([1] : List Nat).foldlM
+      (fun d label => lowerNode nodeBoundBuilt.1 nodeBoundBuilt.2.1
+        nodeBoundOrder nodeBoundFunction [] label d) nodeBoundInput = .ok output ∧
+      output.blocks[1]!.insts = #[.jump 0] ∧ (output.state.alias[192]?).join = some 193 ∧
+      output.state.alias.size ≤ nodeBoundBuilt.2.2.base.nextVreg ∧
+      nodeBoundBuilt.2.2.base.nextVreg ≤ output.state.base.nextVreg ∧
+      output.state.tryRegs = nodeBoundBuilt.2.2.tryRegs := by
+  obtain ⟨output, call, code, _, alias, _⟩ := stock_lowerNode_allocationBounds_witness
+  have folded : ([1] : List Nat).foldlM
+      (fun d label => lowerNode nodeBoundBuilt.1 nodeBoundBuilt.2.1
+        nodeBoundOrder nodeBoundFunction [] label d) nodeBoundInput = .ok output := by
+    simp only [List.foldlM_cons, List.foldlM_nil]
+    change (nodeBoundCall >>= fun d => pure d) = _
+    rw [call]
+    rfl
+  exact ⟨output, folded, code, alias,
+    stock_lowerNodes_allocationBounds nodeBound_build nodeBound_input folded⟩
 
 end Backend.Stock.Proof
