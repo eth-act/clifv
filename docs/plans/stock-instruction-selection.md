@@ -95,6 +95,28 @@ Next: prove final alias availability at each recorded scan input, then complete
 global SSA/window exclusions and source simulation. Whole-driver correctness,
 completeness and production cutover remain incomplete.
 
+## Final aliases at every actual scan input
+
+After #107 landed as024031f, the next slice proves the final alias array fits
+below every recorded instruction-scan input's fresh frontier. StockScanFrontiers
+covers each block record; StockDriverBounds carries this through original
+blocks, critical-edge nodes, diagnostic accumulation and complete reverse
+traversal. This removes the standalone alias-cap obligation for actual full
+runs; no compiler acceptance restriction or behavior changes.
+
+The new block witness records an actual opportunistic scan and nontrivial
+alias. The whole-driver witness inhabits its sole successful-run premise with
+an empty function; it does not claim a nonempty whole-driver execution witness.
+Six new/retained theorem/witness audits through MCP and exact-branch CLI checks
+use standard axioms only. Required gates pass: full1274, crate959, corpus114,
+extrt22, runtests4672/0 and zero disagreements, encoder1292 identical/0 differing,
+E2E1149/0 rejected, and seven final theorem axiom audits.
+
+Next: connect the derived alias availability to actual emitted-scan semantics,
+then global SSA/window exclusions, load-fusion/address composition and remaining
+selected-rule families. Whole-function simulation, completeness, E2E proof
+parity and production cutover remain incomplete.
+
 ## Summary
 
 Implement #60 by changing Lean's lowering driver to follow Cranelift 0.136.1 at
