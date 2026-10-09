@@ -19,6 +19,29 @@ namespace Opt.Proof
 
 open Isle Isle.Opt Isle.Interp Clif
 
+/-- A leading-zero count vanishes exactly when the high bit is set. -/
+theorem skel_count_clz_zero {w : Nat} (hw : 0 < w) (x : BitVec w) :
+    x.clz = 0#w ↔ x.msb = true := by
+  rw [← toNat_eq_zero_iff, BitVec.clz_eq_zero_iff hw]
+  simp only [BitVec.msb_eq_decide, decide_eq_true_eq]
+
+/-- A count cannot wrap when the destination can represent the source width. -/
+theorem skel_count_clz_reduce_zero {w v : Nat} (hv : w < 2 ^ v) (x : BitVec w) :
+    x.clz.setWidth v = 0#v ↔ x.clz = 0#w := by
+  have hle : x.clz.toNat ≤ w := by
+    have h := BitVec.le_def.mp (BitVec.clz_le (x := x))
+    simpa only [BitVec.natCast_eq_ofNat, BitVec.toNat_ofNat,
+      Nat.mod_eq_of_lt Nat.lt_two_pow_self] using h
+  simp only [BitVec.toNat_eq, BitVec.toNat_setWidth, BitVec.toNat_zero,
+    Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt hle hv)]
+
+-- Both hypotheses hold at the widest source and narrowest destination.
+example : 0 < 128 ∧ 128 < 2 ^ 8 := by decide
+example : (BitVec.intMin 128).clz = 0#128 ↔ (BitVec.intMin 128).msb = true :=
+  skel_count_clz_zero (by decide) _
+example : (0#128).clz.setWidth 8 = 0#8 ↔ (0#128).clz = 0#128 :=
+  skel_count_clz_reduce_zero (by decide) _
+
 open Lean Meta Elab Tactic in
 /-- Share one graph-constructor result by a definition, not a new premise. -/
 elab "skel_count_share_one " h:ident : tactic => withMainContext do
@@ -73,8 +96,12 @@ set_option hygiene false in
 /-- Apply only the branch-condition outcome, then decide its count identity. -/
 macro "skel_count_finish" : tactic => `(tactic| (
   apply skel_brif_cond (hle4 _ _ (by opt_den_x)) (hle4 _ _ (by opt_den_x))
-  opt_cases_ty <;> opt_widths <;> (try sem_simp) <;>
-    bv_decide (config := { timeout := 120 })))
+  opt_cases_ty <;> opt_widths <;> (try sem_simp)
+  all_goals (
+    rw [Bool.eq_iff_iff]
+    simp (disch := decide) only [bne_iff_ne, ne_eq, BitVec.ctz_eq_reverse_clz,
+      skel_count_clz_reduce_zero, skel_count_clz_zero, BitVec.msb_reverse]
+    bv_decide (config := { timeout := 120 }))))
 
 set_option hygiene false in
 /-- The ordinary skeleton RHS phase, sharing each made node between steps. -/
@@ -93,6 +120,14 @@ macro "skel_count_rhs" : tactic => `(tactic| (
   all_goals (try (exfalso; omega))))
 
 set_option hygiene false in
+/-- Discard unsuccessful constructor results before extracting the simplification. -/
+macro "skel_count_good" : tactic => `(tactic| (
+  intro c hc st hst hle4
+  simp (config := {decide := true}) only [skelSimp?, toSkel, ite_false,
+    Option.some.injEq, reduceCtorEq] at hc
+  all_goals subst hc))
+
+set_option hygiene false in
 macro "skel_count_rule " r:ident : tactic => `(tactic| (
   skel_intro $r
   rule_lhs hG
@@ -101,7 +136,8 @@ macro "skel_count_rule " r:ident : tactic => `(tactic| (
   all_goals rule_no_iflets
   all_goals opt_split_i128
   all_goals skel_count_rhs
-  all_goals (skel_good; skel_count_finish)))
+  all_goals skel_count_good
+  all_goals skel_count_finish))
 
 set_option maxHeartbeats 8000000 in
 set_option maxRecDepth 4096 in
