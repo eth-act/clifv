@@ -1,0 +1,67 @@
+{
+  "modules": [
+    "FV.Backend.Proof.StockReservedScanFlow"
+  ],
+  "source_sha256": {
+    "FV/Backend/Proof/StockReservedScanFlow.lean": "3e2024bb8a1c00c4e83346b26496054ce56fe4276d0df09e4d0871a81e854db7"
+  },
+  "results": [
+    {
+      "theorem": "Backend.Stock.Proof.stock_reservation_slot_facts",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_selected_allocated_root_flow",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_selected_allocated_root_available",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_reservation_slot_facts_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_selected_allocated_root_flow_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_selected_allocated_root_available_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    }
+  ],
+  "targeted_build_jobs": 247,
+  "method": "Complete clean canonical Lean MCP diagnostics; six matching permitted-only MCP/compiled Lean audits; capped targeted build includes existing binding-flow caller.",
+  "scope": "Actual allocator-slot bounds and source-map separation derived from successful Stock.buildCtx and AllocationLe. Selected root provenance/source-available mapped output classification carries exact slot membership, initial-frontier bound and source-register separation. Real successful try-call allocation nonempty slot193/194/195, source0\u2192192, parameters196/197; actual generated constant root from allocated frontier198 after successful tryCallData extraction returnsfresh198. Actual LowerScope/Dominated/post-body source0 availability witnesses. Result binding/final aliases, noninterference, whole simulation/completeness/baseline parity and production cutover remain.",
+  "required_full_and_execution_gates": "pending on publication source"
+}
