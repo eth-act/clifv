@@ -1,0 +1,80 @@
+{
+  "modules": [
+    "FV.Backend.Proof.StockAvailableProvenance"
+  ],
+  "source_sha256": {
+    "FV/Backend/Proof/StockAvailableProvenance.lean": "ef340026fdb6523bfbeb9dc6d60164d7fd98680b679df49badabb8f74791a910"
+  },
+  "results": [
+    {
+      "theorem": "Backend.Stock.Proof.stock_available_provenance",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_entry_available_provenance",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_available_provenance_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_entry_available_provenance_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    }
+  ],
+  "targeted_build_jobs": 224,
+  "method": "Complete clean canonical lean-mcp diagnostics; all4 theorem/witness MCP audits; capped targeted build and matching compiled-module CLI audits; standard axioms only.",
+  "scope": "Actual stock context source-availability and entry-provenance closure, using retained source DFG fields. Two-block dense-register witness has actual nonempty reduction provenance and excludes a future local result. Witness dominance/availability proved with greatest-fixpoint constraints, without native evaluation or new certificates. Whole alias-path noninterference and driver simulation remain unfinished.",
+  "log_sha256": {
+    "/tmp/stock-available-provenance-targeted.log": "c16922f7cf25500e74b18fe2d5c2ceabe62ddce76b1df8538af9a589e0b6b279",
+    "/tmp/stock-available-provenance-axioms.log": "4754578ca1791cc6d5471b98b186b8d0d16c4522f3455a009020d3436d70b999"
+  },
+  "required_full_and_execution_gates": "passed on exact isolated source6d2bc94",
+  "gates": {
+    "full_build_jobs": 1296,
+    "crate_build_jobs": 958,
+    "corpus_pass": 114,
+    "extrt_pass": 22,
+    "runtests_pass": 4672,
+    "runtests_fail": 0,
+    "runtime_disagreements": 0,
+    "encoder_identical": 1292,
+    "encoder_differ": 0,
+    "e2e_accepted": 1150,
+    "e2e_rejected": 0,
+    "final_theorem_axiom_audits": 7
+  },
+  "validated_source_commit": "6d2bc9461e4735f14d15dbf170f1b1479ecb7a36",
+  "validated_main_commit": "d8021ecbbd3852741a264b1d28f97cc97fdc4e17",
+  "gate_log_sha256": {
+    "full": "8836fb1c30f5782fd4ced41aeab5d11b8c0a7dec5b1fcf88ec31bf008a627da8",
+    "crates": "42726ff31ff1320598017cbe50943483060f76355f252d30101490e33d8d763e",
+    "runtime": "6fc44567e9cac0a4ed3fd2661b4aad44f7e6b43055d21fb3fe150c1a56303553",
+    "encode": "03615dfbca26e9d0ed30a780c66e8822602b1201d21afe9cd05e6af550e89919",
+    "e2e": "cb6854f5ca63031f1217390098f3f27a3aab271285408ab2238690226a8b5ad0",
+    "e2e-axioms": "620761c85c2e59b59c17136e0b0d2ca8efbe83934335f99704fdd30dbd91de6b",
+    "axioms": "4754578ca1791cc6d5471b98b186b8d0d16c4522f3455a009020d3436d70b999"
+  },
+  "exact_pr_mcp_diagnostics": "complete clean; all4 exact PR theorem/witness MCP audits standard-only and matching CLI"
+}
