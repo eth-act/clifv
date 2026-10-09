@@ -1,0 +1,187 @@
+{
+  "modules": [
+    "FV.Backend.Proof.StockAliasScanEntries",
+    "FV.Backend.Proof.StockSSAScanConnection"
+  ],
+  "method": "lean-lsp-mcp lean_verify; targeted lake build; exact-working-tree CLI audit",
+  "results": [
+    {
+      "theorem": "Backend.Stock.Proof.stock_scan_aliasEntry",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scanBlock_aliasEntry",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scan_sourceAliasEntry",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scanBlock_sourceAliasEntry",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scan_aliasEntry_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scanBlock_aliasEntry_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scan_sourceAliasEntry_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scanBlock_sourceAliasEntry_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scanBlock_ssa_aliasEntry",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scanBlock_ssa_aliasEntry_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scanBlock_record_aliasEntry",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scan_indices_nodup",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scanBlock_record_aliasEntry_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scan_indices_nodup_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scanBlock_backward_record_aliasEntry",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scanBlock_backward_record_aliasEntry_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    }
+  ],
+  "targeted_build_jobs": 155,
+  "cli_audit_count": 16,
+  "required_full_and_execution_gates": "All required exact-source full/crate/runtime/encoder/E2E/final7/new16 axiom gates passed on306e204, based on main95538ba. Latest-head comparison CI and review check required before squash merge.",
+  "scope": "Actual instruction/block alias entry frames and actual backward recorded-definition alias transport to block exit; four results/four inhabited witnesses per module. Remaining whole-driver record/node/final resolver composition and production cutover are not claimed.",
+  "validated_main_commit": "95538ba8861e9b04466758951b283928e0d13bd9",
+  "source_sha256": {
+    "FV/Backend/Proof/StockAliasScanEntries.lean": "a7c30f6c7ea16cbb39d9a47d2270403e64b85532ff6ae1c98779db1abcb44048",
+    "FV/Backend/Proof/StockSSAScanConnection.lean": "1ef3ea2b907d5fbd8b98f9e3639f28d16b2306ae6dc5c4c73195cc6951bd06a4"
+  },
+  "gates": {
+    "full_build_jobs": 1285,
+    "crate_build_jobs": 958,
+    "corpus_pass": 114,
+    "extrt_pass": 22,
+    "runtests_pass": 4672,
+    "runtests_fail": 0,
+    "runtime_disagreements": 0,
+    "encoder_identical": 1292,
+    "encoder_differ": 0,
+    "e2e_accepted": 1150,
+    "e2e_rejected": 0,
+    "final_theorem_axiom_audits": 7
+  },
+  "validated_source_commit": "306e2042a0a826c9e562f6bd32460c9e3a0d2553",
+  "gate_log_sha256": {
+    "full": "9308c1ccb641304214ddd9eeffba3de46e08104504b06cf2e529c3e2a661cd43",
+    "crates": "42726ff31ff1320598017cbe50943483060f76355f252d30101490e33d8d763e",
+    "runtime": "6fc44567e9cac0a4ed3fd2661b4aad44f7e6b43055d21fb3fe150c1a56303553",
+    "encode": "03615dfbca26e9d0ed30a780c66e8822602b1201d21afe9cd05e6af550e89919",
+    "e2e": "75b26e0a51a4bd6f3c4877fb1bbffbcbfdf1c2c7ccc86078484d295eff3c7675",
+    "e2e-axioms": "620761c85c2e59b59c17136e0b0d2ca8efbe83934335f99704fdd30dbd91de6b",
+    "axioms": "0f5fe4a59efb63be1ce695e90b10eb6e78ec79d00e2e4e562fcb7583960fd842"
+  },
+  "exact_pr_mcp_diagnostics": "Both modules complete, clean; repeated main backward-record and source-scan frame lean_verify checks standard axioms only, no warnings. All16 prior canonical MCP audits retained and matched against exact-branch CLI."
+}
