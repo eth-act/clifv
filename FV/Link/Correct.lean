@@ -12,13 +12,11 @@ kinds. `S.input`'s pipeline is the compiler's (`fallback`), so its results are `
 **By construction** (proven from the placement and the compiler's output, nothing read back):
 
 * the linker's facts `linkerOkB S.input` (`LayoutProof.leanLink_linkerOk`): the link map is the
-  placement, the functions do not overlap, the return addresses, the self-call aliases (whose
-  code is their function's: `aliasOkB`, `aliasShapeB`);
+  placement, the functions do not overlap, and the return addresses satisfy the call boundary;
 * **`leanLink_code`**: every function of the compiler's table `tabOf S.input.resultsT` is in
   `file` (`ArtOk`): a placed function from the region's bytes (`ImageProof.region_words`; its
-  name and size are the placement's by `namesOkB`, `sizesOkB`), an alias from its function's
-  words at the same base (`aliasOkB`), both with the relocation checks `relocsOkB`
-  (`RelocProof.artOk_of_image`).
+  name and size are the placement's by `namesOkB`, `sizesOkB`), with the relocation checks
+  `relocsOkB` (`RelocProof.artOk_of_image`).
 
 **Checked on rust-lld's output** (rust-lld wrote those bytes, so `leanLink` decides them on the
 file instead of proving them, and fails the link otherwise):
@@ -91,30 +89,12 @@ theorem leanLink_words {S : LinkSpec} {file0 file : ByteArray} (h : leanLink S f
       (∀ k < e.2.fb.words.size, ∀ j < 4, Elf.ro file (wAt e.2 (4 * k + j))) ∧
       (∀ k < e.2.fb.words.size,
         readN (loadMem file) 4 (wAt e.2 (4 * k)) = some (resolveWord S.input tp e.2 k)) := by
-  obtain ⟨phs, hph, hp, hr, hn, hs, hv, hal, -, -, hok, -, rfl⟩ := leanLink_spec h
-  have hP := placeOk_of hp
+  obtain ⟨phs, hph, hp, hr, hn, hs, hv, -, hok, -, rfl⟩ := leanLink_spec h
   refine ⟨tpOff phs, tpOff_patch hok hph, fun e he => ⟨List.all_eq_true.1 hv e he, ?_⟩⟩
   obtain ⟨i, hi⟩ := List.mem_iff_getElem?.1 he
   have hil : i < (tabOf S.input.resultsT).length := (List.getElem?_eq_some_iff.1 hi).1
   rw [tab_length] at hil
-  by_cases hin : i < S.funcs.length
-  · exact leanLink_placed hp hr hn hs hok hin hi
-  · -- an alias: its function's words at its function's base
-    obtain ⟨e', ef, he', ⟨i', hi', hef⟩, hb, hl⟩ :=
-      tab_alias hp hr hn hs (i - S.funcs.length) (by omega)
-    rw [show S.funcs.length + (i - S.funcs.length) = i by omega, hi, Option.some.injEq] at he'
-    subst he'
-    have hw := leanLink_placed hp hr hn hs hok hi' hef
-    have hefm : ef ∈ tabOf S.input.resultsT := List.mem_of_getElem? hef
-    have hpm := mem_of_lookup hl
-    have hal' := List.all_eq_true.1 hal _ hpm
-    simp only [find?_key (tab_names S hP hn) he, find?_key (tab_names S hP hn) hefm, Bool.and_eq_true,
-      beq_iff_eq, List.all_eq_true, List.mem_range] at hal'
-    obtain ⟨hsz, hres⟩ := hal'
-    have hwAt : ∀ o, wAt e.2 o = wAt ef.2 o := fun o => by simp only [wAt, hb]
-    refine ⟨fun k hk j hj => ?_, fun k hk => ?_⟩
-    · rw [hwAt]; exact hw.1 k (hsz ▸ hk) j hj
-    · rw [hwAt, hres k hk]; exact hw.2 k (hsz ▸ hk)
+  exact leanLink_placed hp hr hn hs hok hil hi
 
 /-- **Every function of the compiler's table is in `leanLink`'s output** (`ArtOk`). -/
 theorem leanLink_code {S : LinkSpec} {file0 file : ByteArray} (h : leanLink S file0 = .ok file) :
@@ -127,7 +107,7 @@ theorem leanLink_code {S : LinkSpec} {file0 file : ByteArray} (h : leanLink S fi
 /-- **`leanLink`'s output is a static executable** when the outside part is. -/
 theorem leanLink_static {S : LinkSpec} {file0 file : ByteArray} (h : leanLink S file0 = .ok file)
     (hs : Static file0) : Static file := by
-  obtain ⟨phs, -, -, -, -, -, -, -, -, -, hok, -, rfl⟩ := leanLink_spec h
+  obtain ⟨phs, -, -, -, -, -, -, -, hok, -, rfl⟩ := leanLink_spec h
   exact static_patch hok hs
 
 /-- **`BinOk` of `leanLink`'s output**: the code by construction; the outside part's headers
@@ -142,7 +122,7 @@ the headers, data objects and symbols by `leanLink`'s checks of rust-lld's outpu
 (`outsideOkB`). -/
 theorem binOk_leanLink {S : LinkSpec} {file0 file : ByteArray} (h : leanLink S file0 = .ok file) :
     BinOk S.input S.data file := by
-  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, hout, -⟩ := leanLink_spec h
+  obtain ⟨-, -, -, -, -, -, -, -, -, hout, -⟩ := leanLink_spec h
   exact ⟨leanLink_static' h, S.input_results ▸ leanLink_code h, outsideOkB_data hout,
     outsideOkB_syms hout⟩
 

@@ -363,17 +363,10 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
         let data = unopt.as_deref().map(read_data_refs).unwrap_or_default();
         let lines = unopt.as_deref().map(read_data_lines).unwrap_or_default();
         let mut start: Vec<String> = Vec::new();
-        let mut names: BTreeMap<String, String> = j["names"]
+        let names: BTreeMap<String, String> = j["names"]
             .as_object()
             .map(|m| m.iter().filter_map(|(k, v)| v.as_str().map(|v| (k.clone(), v.to_string()))).collect())
             .unwrap_or_default();
-        // a renamed function's self-call alias `f__fvself` (`link-check` pairs it with `f` by
-        // name) is renamed with it
-        let aliases: Vec<(String, String)> =
-            names.iter().map(|(k, v)| (format!("{k}__fvself"), format!("{v}__fvself"))).collect();
-        for (k, v) in aliases {
-            names.entry(k).or_insert(v);
-        }
         for f in j["functions"].as_array().into_iter().flatten() {
             let fin = f["final"].as_str().unwrap_or_default().to_string();
             if !f["verified"].as_bool().unwrap_or(false) {

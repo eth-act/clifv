@@ -15,9 +15,7 @@ check from a stated cause:
 * the relocations: their shapes (`relocShapesB`, a property of the compiler's output) and their
   ranges (`relocRangeB`: the addresses chosen by the placement and by rust-lld are within the
   relocations' reach);
-* aliases (`aliasOkB`, `aliasShapeB`) and the code map (`codeMap_place`): by construction for an
-  alias-free spec (the scope limit: `S.aliasFns = []`; with aliases: `leanLink_total_alias`,
-  `FV/Link/AliasOut.lean`, under the unproven output facts `AliasOut`);
+* the code map (`codeMap_place`): by construction;
 * rust-lld's output: `regionOkB`, `outsideOkB` (checks of the bytes rust-lld wrote).
 -/
 
@@ -55,14 +53,14 @@ def LinkSpec.sizesOf (S : LinkSpec) : List Nat :=
 
 theorem names_of {S : LinkSpec} (hn : S.names = S.funcs.map (·.func.name)) :
     S.namesOkB (tabOf S.input.resultsT) = true := by
-  simp only [namesOkB, tabOf, LinkInput.resultsT, input_funcs, List.map_append, List.map_map,
-    List.take_left' (List.length_map _), hn, Function.comp_def]
+  simp only [namesOkB, tabOf, LinkInput.resultsT, input_funcs, List.map_map,
+    ← List.map_take, List.take_length, hn, Function.comp_def]
   exact decide_eq_true trivial
 
 theorem sizes_of {S : LinkSpec} (hs : S.sizes = S.sizesOf) :
     S.sizesOkB (tabOf S.input.resultsT) = true := by
-  simp only [sizesOkB, tabOf, LinkInput.resultsT, input_funcs, List.map_append, List.map_map,
-    List.take_left' (List.length_map _), hs, sizesOf]
+  simp only [sizesOkB, tabOf, LinkInput.resultsT, input_funcs, List.map_map,
+    ← List.map_take, List.take_length, hs, sizesOf]
   apply decide_eq_true
   apply List.map_congr_left
   intro fi _
@@ -89,8 +87,6 @@ theorem leanLink_total_checks {S : LinkSpec} {file0 : ByteArray}
     (hnm : S.namesOkB (tabOf S.input.resultsT) = true)
     (hsz : S.sizesOkB (tabOf S.input.resultsT) = true)
     (hv : (tabOf S.input0.resultsT).all (fun e => relocsOkB S.input (tpOff phs) e.2) = true)
-    (hao : aliasOkB S.input (tpOff phs) (tabOf S.input0.resultsT) = true)
-    (has : aliasShapeB S.input (tabOf S.input0.resultsT) = true)
     (hcm : codeMapB S.input (tabOf S.input0.resultsT) = true)
     (hreg : regionOkB file0 S.R (regionOf S (tpOff phs)).size (offsetOf phs S.R) = true)
     (hout : outsideOkB S.input S.data (patch file0 (offsetOf phs S.R) (regionOf S (tpOff phs))) =
@@ -107,10 +103,6 @@ theorem leanLink_total_checks {S : LinkSpec} {file0 : ByteArray}
   have e5 : (!(tabOf S.input0.resultsT).all (fun e =>
       relocsOkB (S.input0.withDepth S.input0.resultsT) (tpOff phs) e.2)) = false := by
     simp only [Bool.not_eq_false']; exact hv
-  have e6 : (!aliasOkB (S.input0.withDepth S.input0.resultsT) (tpOff phs)
-      (tabOf S.input0.resultsT)) = false := by simp only [Bool.not_eq_false']; exact hao
-  have e7 : (!aliasShapeB (S.input0.withDepth S.input0.resultsT) (tabOf S.input0.resultsT)) =
-      false := by simp only [Bool.not_eq_false']; exact has
   have e8 : (!codeMapB (S.input0.withDepth S.input0.resultsT) (tabOf S.input0.resultsT)) =
       false := by simp only [Bool.not_eq_false']; exact hcm
   have e9 : (!regionOkB file0 S.R (ByteArray.mk (regionBytes (S.input0.withDepth S.input0.resultsT)
@@ -120,13 +112,13 @@ theorem leanLink_total_checks {S : LinkSpec} {file0 : ByteArray}
       (offsetOf phs S.R) (ByteArray.mk (regionBytes (S.input0.withDepth S.input0.resultsT)
       (tpOff phs) ((List.take S.funcs.length (tabOf S.input0.resultsT)).map (·.2))).toArray))) =
       false := by simp only [Bool.not_eq_false']; exact hout
-  simp only [e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, Bool.false_eq_true, ↓reduceIte]
+  simp only [e1, e2, e3, e4, e5, e8, e9, e10, Bool.false_eq_true, ↓reduceIte]
   rfl
 
 /-- **`leanLink` succeeds** when its checks hold, from their causes (module doc). -/
 theorem leanLink_total_of {S : LinkSpec} {file0 : ByteArray}
     {phs : List Phdr} (hph : phdrs (fileRd file0) = some phs) (hin : InScopeP S.input0 = true)
-    (hp : S.placeOkB = true) (hal : S.aliasFns = [])
+    (hp : S.placeOkB = true)
     (hn : S.names = S.funcs.map (·.func.name)) (hs : S.sizes = S.sizesOf)
     (hshape : ∀ e ∈ tabOf S.input.resultsT, relocShapesB e.2 = true)
     (hrange : ∀ e ∈ tabOf S.input.resultsT, ∀ r ∈ e.2.fb.relocs,
@@ -135,21 +127,12 @@ theorem leanLink_total_of {S : LinkSpec} {file0 : ByteArray}
     (hout : outsideOkB S.input S.data (patch file0 (offsetOf phs S.R) (regionOf S (tpOff phs))) =
       true) :
     leanLink S file0 = .ok (patch file0 (offsetOf phs S.R) (regionOf S (tpOff phs))) := by
-  have hP := placeOk_of hp
-  have haliases : S.aliases = [] := by
-    have := hP.aliasFns
-    rw [hal] at this
-    exact List.map_eq_nil_iff.1 this.symm
   have hr := results_of hin
   have hnm := names_of hn
   have hsz := sizes_of hs
   have hv : (tabOf S.input0.resultsT).all (fun e => relocsOkB S.input (tpOff phs) e.2) = true :=
     List.all_eq_true.2 fun e he => relocsOkB_of (hshape e he) (hrange e he)
-  have hao : aliasOkB S.input (tpOff phs) (tabOf S.input0.resultsT) = true := by
-    simp [aliasOkB, haliases]
-  have has : aliasShapeB S.input (tabOf S.input0.resultsT) = true := by
-    simp [aliasShapeB, haliases]
-  have hcm : codeMapB S.input (tabOf S.input0.resultsT) = true := codeMap_place hp hr hnm hsz hal
-  exact leanLink_total_checks hph hp hr hnm hsz hv hao has hcm hreg hout
+  have hcm : codeMapB S.input (tabOf S.input0.resultsT) = true := codeMap_place hp hr hnm hsz
+  exact leanLink_total_checks hph hp hr hnm hsz hv hcm hreg hout
 
 end Link
