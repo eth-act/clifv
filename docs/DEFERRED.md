@@ -21,6 +21,16 @@ available by proving them and adding them to the allow-list; the theorems don't 
 - Template tactics and the generated constructor lemmas.
 - The exact proven set and the per-family recipe are in `docs/contracts/midend.md`, section "Rule proofs".
 
+**Status (2026-10-09, R8):** 1095 of 1193 roots are proven: 1058 `simplify` and all 37
+`simplify_skeleton`. R8 completes all 29 extends roots by proving equality, inequality and
+signed comparisons of sign extensions against zero (40/42/44), without adding premises.
+The targeted 100-function CLI smoke exercises all three roots: 700/700 executions agree,
+instructions 340 → 268 (304 before enablement), no unsupported inputs or pass errors.
+All 700 optimized native executions agree with Cranelift. The full proven-only differential
+run retains corpus 4668 → 2289 and runtests 3389 → 3071 instructions, with no new failures
+or verifier rejections. Full compiler/crate builds, axiom audits, native filetests, encoding
+comparison and E2E lowering gates pass; see midend.md "R8" for their scope.
+
 **Status (2026-10-09, R9):** 1092 of 1193 roots are proven: 1055 `simplify` and all 37
 `simplify_skeleton`. R9 completes signed i32/i64 `div_const` division/remainder and the four
 leading/trailing-zero branch rules, including i128 and reduced counts. Proven-only differential
@@ -34,7 +44,7 @@ See midend.md "Skeleton rules" for the proofs, witnesses and verification scope.
 
 **Findings:** `shifts.isle` 84 and 88 are false under the CLIF semantics (shift constants above the type width make `shift_amt_to_type` pick a type wider than `ty`, so the rule builds an ill-typed `ireduce`/`sextend`; midend.md has the example). The skeleton framework gap (node facts of the start state vs. refinement in later valuations) is closed by a reads-defined premise: `SkeletonSound`/`SkelRuleOk` assume the instruction's reads (`Opt.skelReads`) are defined when the rules run, and `runSkel_spec` discharges the undefined case (known values never change, so the original is stuck); see midend.md "Skeleton rules".
 
-**Remaining:** arithmetic 28, bitops 3, icmp 15, selects 13, extends 3, shifts 19 (2 of them false), spaceship 20. Skeleton is complete. midend.md lists the remaining roots with reasons. Roots per family:
+**Remaining:** arithmetic 28, bitops 3, icmp 15, selects 13, shifts 19 (2 of them false), spaceship 20. Extends and skeleton are complete. midend.md lists the remaining roots with reasons. Roots per family:
 
 | Family | Roots |
 | --- | --- |

@@ -13,7 +13,8 @@ namespace Opt
 (`Opt.Proof.simplifyRulesCorrect_proven`, `FV/Opt/Proof/RuleAll.lean`): the rules proven in
 `FV/Opt/Proof/RuleArith.lean`, `RuleCprop.lean`, `RuleBitops1.lean`..`RuleBitops8.lean`,
 `RuleIcmp1.lean`..`RuleIcmp10.lean`, `RuleIcmp12.lean`, `RuleIcmp13.lean`,
-`RuleSelects1.lean`..`RuleSelects8.lean`, `RuleExtends.lean`, `RuleShifts1.lean`..`RuleShifts5.lean`,
+`RuleSelects1.lean`..`RuleSelects8.lean`, `RuleExtends.lean`, `RuleExtends2.lean`,
+`RuleShifts1.lean`..`RuleShifts5.lean`,
 `RuleSpaceship.lean`, `RuleArith2.lean`..`RuleArith8.lean`,
 `RuleCprop2.lean`..`RuleCprop4.lean` and `RuleRemat.lean`. -/
 def provenSimplifyRules : List Nat :=
@@ -56,7 +57,7 @@ def provenSimplifyRules : List Nat :=
    834, 835, 836, 837, 838, 839, 840, 841, 842, 843, 844, 845, 846, 847, 848, 849, 850, 851, 852,
    853, 854, 855, 856, 857, 858, 859, 860, 861, 862, 863, 864, 865, 866, 867, 868, 869, 870, 871,
    872, 873, 874, 875, 876, 877, 878, 892, 893, 894, 895, 896, 897, 898, 899, 904, 905, 906, 945,
-   946, 947, 948, 949, 950, 951, 952, 953, 957, 958, 959, 960, 961, 962, 963, 964, 965, 966, 967,
+   946, 947, 948, 949, 950, 951, 952, 953, 954, 955, 956, 957, 958, 959, 960, 961, 962, 963, 964, 965, 966, 967,
    968, 969, 970, 971, 972, 973, 976, 977, 978, 979, 980, 981, 982, 983, 984, 985, 986, 987, 988,
    989, 990, 991, 992, 993, 994, 995, 996, 999, 1000, 1002, 1004, 1005, 1006, 1007, 1008, 1009,
    1010, 1011, 1012, 1013, 1014, 1015, 1017, 1020, 1023, 1024, 1025, 1026, 1027, 1062, 1063, 1064,

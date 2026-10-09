@@ -217,7 +217,7 @@ def Isle.Opt.simplifySkeleton {σ} (enodes …) (typeOf …) (make …)
   `simplify` calls, 12 `simplify_skeleton` calls and 930 `simplify` calls over the CLIF corpus
   fire the same rules as a `trace-log` build at `opt_level=speed` (per call, on e-classes whose
   operands are single original nodes).
-  1055 `simplify` roots, all 37 `simplify_skeleton` roots and their helpers are proven (see "Rule
+  1058 `simplify` roots, all 37 `simplify_skeleton` roots and their helpers are proven (see "Rule
   proofs").
 
 ## Results (2026-09-28, default configuration: Cranelift rules, 1 round)
@@ -342,7 +342,7 @@ Goal: `Opt.optimize` refines `Clif.run`, and `E2E.backend_correct_final` extends
   rule sets (`E2E.backend_correct_opt_proven`); only the allow-listed rules are proven, so the
   default configuration (all rules) still rests on the differential tests for the rule
   obligations (`SimplifySound`/`SkeletonSound` of the full rule set).
-- Proven: the rule interpreter's soundness, 1055 `simplify` roots and all 37 `simplify_skeleton`
+- Proven: the rule interpreter's soundness, 1058 `simplify` roots and all 37 `simplify_skeleton`
   roots ("Rule proofs").
 - Missing Cranelift mid-end features: alias analysis (redundant-load elimination,
   store-to-load forwarding), merging of identical trapping instructions, elaboration-based
@@ -495,7 +495,7 @@ Design decisions (approved by the integrator):
 
 ## Rule proofs (MidRulesFoundation, branch `agent/mid-rules`)
 
-Status: the framework is complete and proven; **1055 `simplify` roots proven** (see below),
+Status: the framework is complete and proven; **1058 `simplify` roots proven** (see below),
 allow-list embedding done. Files `FV/Opt/Proof/{Sem,InterpMatch,InterpState,InterpEval,RuleBase,
 RuleData,RuleNode,RuleEmbed,RuleTactic,RuleImm,RuleCtor,RuleSkel,RuleAuto,RuleArith,RuleCprop,
 RuleAll}.lean`; generator
@@ -535,7 +535,7 @@ Driver: `Opt.RuleAllow` (`all` default | `proven` | `ids`), `RuleSetId.fnWith`/`
 the `simplify` call's arguments), option `--opt-proven-only`. Corpus difftest: default 114/114
 agree, 4321 → 2018 insts; `--opt-proven-only` 114/114, 4321 → 2475 (skeleton rules off).
 
-**Proven rules** (MidRulesInfra2, RulesBitops, RulesIcmpSel, RuleAllScale, RulesShiftsExt, RulesRest, R0): **1055 `simplify` roots** = `Opt.provenSimplifyRules` —
+**Proven rules** (MidRulesInfra2, RulesBitops, RulesIcmpSel, RuleAllScale, RulesShiftsExt, RulesRest, R0, R8): **1058 `simplify` roots** = `Opt.provenSimplifyRules` —
 `arithmetic.isle` 230 of 258 (`RuleArith.lean`, `RuleArith2..8.lean`), `cprop.isle` 68 of 68 (`RuleCprop.lean`, `RuleCprop2..4.lean`), `remat.isle` 12 of 12 (`RuleRemat.lean`),
 `bitops.isle` 447 of 450 (`RuleBitops1..8.lean`, tactics/lemmas in `RuleBitopsEmbed.lean`:
 `rule_auto` 393, `rule_auto_b` 18, `rule_auto_i` 2, `rule_auto_z` 31; R0: `rule_auto_t`/`_tt` 3). **All 37 `simplify_skeleton` roots**
@@ -549,7 +549,7 @@ signed immediates as sign-bit facts; `_f`/`_fi`/`_fz`/`_fiz`: the left-hand side
 `simp_all`, which rewrites a literal-match fact such as `asU64 imm = 0` away with a copy of itself;
 `_g`: `_f` plus the `P s0`-guarded model facts and `opt_den_merge`). Each theorem names the
 `first` chain it was checked with.
-`extends.isle` 26 of 29 (`RuleExtends.lean`), `shifts.isle` 56 of 75 (`RuleShifts1..5.lean`), `spaceship.isle` 20 of 40 (`RuleSpaceship.lean`), with the templates of
+`extends.isle` 29 of 29 (`RuleExtends.lean`, `RuleExtends2.lean`), `shifts.isle` 56 of 75 (`RuleShifts1..5.lean`), `spaceship.isle` 20 of 40 (`RuleSpaceship.lean`), with the templates of
 `RuleExtEmbed.lean` (`rule_auto_x`: width side conditions of made `ireduce`/extends, `Val` type
 equalities substituted, `int_bv` turning `Int` immediates/if-let conditions into `BitVec`;
 `_xr`: if-let results of internal constructors such as `iconst_u` split; `_xz`: `Val`s split and
@@ -639,8 +639,9 @@ Not proven after RulesRest (proof-tooling limits unless stated; R0 proved 38, 42
 427, 428 (`icmp` of `isub`/`iadd` with a variable bound twice: `simp` type mismatch at the icmp
 result width with every template), 615–622 (64-bit products: SAT timeout); `icmp.isle` 196, 199,
 202 are now proven (`rule_auto_v`). Skeleton rules: see "Skeleton rules" below.
-Still not proven from the RulesShiftsExt list: `extends.isle` 40, 42, 44 (`eq`/`ne`/signed
-`icmp` of a `sextend` against `iconst_s 0`: timeout also at 16M heartbeats); `shifts.isle` 161
+R8 proves the remaining `extends.isle` roots 40, 42, 44 (`eq`/`ne`/signed `icmp` of a
+`sextend` against `iconst_s 0`), completing that family. Still not proven from the
+RulesShiftsExt list: `shifts.isle` 161
 (killed after 5 min at 16M, twice), 170 (maximum recursion depth), 184, 193 (unsolved goals), 239–242,
 244–247, 259, 261, 264, 266 (rotate regrouping through `iadd_uextend`/`isub_uextend`: `rule_auto_w`
 now evaluates the right-hand side and closes most type combinations; about 50 of the 125 per-type
@@ -732,6 +733,32 @@ statements. `RuleBase`: `RuleSpecAt fm` / `applyMulti_genAt` (fuel-general lifti
   E2E lowering: 1150 accepted, zero rejected, 97 out of scope. Native filetests: corpus
   136 passed; runtests 4672 passed, zero failed and zero native disagreements (unsupported
   and out-of-scope cases remain reported separately).
+
+**R8 (2026-10-09, `agent/extends-r8`):**
+- `RuleExtends2.lean` proves roots 40, 42 and 44 with their original `RuleOk` statements
+  and premises. Masked zero and signed re-extension normalize before graph construction.
+  Early width specialization preserves the non-i128 facts needed by `fitsIn64_ofClif`.
+  Specializing the condition code before evaluating its if-let preserves the state identity
+  needed by the valuation chain; the existing graph-denotation and bitvector tactics finish.
+- Concrete witnesses cover zero, signed extrema and all four signed conditions. The matched
+  wide constant is non-i128, so the new roots cover the six widening pairs among i8/i16/i32/i64.
+- CLI smoke: all three roots fire in 100 functions spanning all ten comparisons and widening
+  pairs through i128 (the latter provides non-matching controls). All 700 executions agree,
+  with zero unsupported inputs, ill-formed functions, pass errors or rule errors. Instructions
+  fall from 340 to 268, versus 304 with the new roots disabled.
+- The optimized smoke passes all 700 exact interpreter expectations, the Cranelift verifier
+  accepts all 100 functions, and all 700 AArch64 executions agree with Cranelift-native.
+- Full compiler and crate-proofs builds completed successfully (1291 and 958 jobs).
+  All 11 audited helper/root/aggregate/E2E/crate theorems use only permitted axioms.
+  Encoding comparison: 1292/1292 identical functions, 54842 words and 1332 relocations.
+  E2E lowering: 1150 accepted, zero rejected, 97 out of scope. Native filetests: corpus
+  136 passed; runtests 4672 passed, zero failed and zero native disagreements; unsupported
+  and out-of-scope cases remain reported separately.
+- Proven-only differential run: corpus 4668 → 2289 instructions, runtests 3389 → 3071.
+  Zero refinement failures, pass errors or verifier rejections; all 445 file summaries are
+  no worse than their unoptimized baselines. Existing interpreter/oracle expectation failures
+  and unsupported cases remain reported, not counted as new regressions.
+  The optional `/tmp/rust-clif-survey` data was absent.
 
 **Proven rule lines** (`rule_<file>_<line>`, ISLE source lines):
 - `arithmetic.isle` (230): 8, 13, 18, 24, 26, 28, 31, 35, 38, 42, 46, 50, 53, 59, 65, 69, 73, 75,
