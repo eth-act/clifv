@@ -207,6 +207,8 @@ the pending constant PR and changes no compiler behavior.
 
 All ten public results and ten witnesses passed twenty Lean MCP axiom checks
 using standard axioms only. The full capped build passed1267 jobs.
-Required runtime, encoder, E2E, crate and final-axiom gates remain in progress
-before the slice is declared merge-ready. Whole-driver and production cutover
+Required local gates passed: crate959; corpus114/114, extrt22/22; runnable
+runtests4672/0/0; encoder1292identical/0differ; E2E1149accepted/0rejected.
+Seven final backend/executable theorem audits have only standard axioms and
+existing fixed native certificates. PR102 may merge after green CI. Whole-driver and production cutover
 remain incomplete.

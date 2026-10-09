@@ -192,5 +192,46 @@
     "jobs": 1267,
     "log": "/tmp/stock-sink-pr-full.log"
   },
-  "scope": "Actual stock match/iflet/RHS sink provenance and pattern preservation; whole-driver correctness and production cutover remain incomplete."
+  "scope": "Actual stock match/iflet/RHS sink provenance and pattern preservation; whole-driver correctness and production cutover remain incomplete.",
+  "gates": {
+    "crate_build": {
+      "result": "passed",
+      "jobs": 959,
+      "log": "/tmp/stock-sink-pr-crates.log"
+    },
+    "runtime": {
+      "corpus": 114,
+      "extrt": 22,
+      "runnable_runtests": 4672,
+      "failures": 0,
+      "errors": 0,
+      "disagreements": 0,
+      "not_runnable": 7,
+      "unsupported": 9054,
+      "log": "/tmp/stock-sink-pr-runtime.log"
+    },
+    "encoder": {
+      "identical": 1292,
+      "differing": 0,
+      "log": "/tmp/stock-sink-pr-encode.log"
+    },
+    "e2e": {
+      "accepted": 1149,
+      "rejected": 0,
+      "log": "/tmp/stock-sink-pr-e2e.log"
+    },
+    "final_axioms": {
+      "theorems": [
+        "E2E.backend_correct_final_total",
+        "E2E.backend_correct_final_total_emit_input",
+        "E2E.backend_correct_final_total_relaxed",
+        "E2E.LinkCheck.crate_correct_inScope_proven",
+        "Link.compileExe_correct",
+        "Link.compileExe_total",
+        "Link.compileExe_total_alias"
+      ],
+      "result": "standard axioms and existing fixed native certificates only",
+      "log": "/tmp/stock-sink-pr-e2e-axioms.log"
+    }
+  }
 }
