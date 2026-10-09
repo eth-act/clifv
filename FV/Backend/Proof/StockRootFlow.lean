@@ -1,6 +1,7 @@
 import FV.Backend.Proof.StockSourceView
 import FV.Backend.Proof.StockPatternSource
 import FV.Backend.Proof.StockMappedFlow
+import FV.Backend.Proof.StockReservedFlow
 import FV.Backend.Proof.StockConstantRoot
 import FV.Backend.Proof.IselFlow
 
@@ -89,22 +90,14 @@ private theorem stock_pinned_names {f : Clif.Function} {ctx original : Ctx}
   rw [hd] at this
   exact (instData_inv_names this).2
 
-/-- Actual stock root execution in a validated mapped source context returns
-either a fresh register or a mapped operand-provenance register. This also
-applies to validated terminator-overridden contexts with no exception reservations;
-the canonical identity context is only a proof view for pure source matching. -/
-theorem stock_root_mapped_context_flow {f : Clif.Function} {ctx : Ctx}
-    (mapped : MappedCtxInv f ctx) (empty : ctx.tryRegs = ([], []))
-    {ii : Nat} {info : IInfo} {inst : Clif.Inst}
+private theorem stock_root_flow_rules {f : Clif.Function} {ctx : Ctx}
+    (mapped : MappedCtxInv f ctx) {ii : Nat} {info : IInfo} {inst : Clif.Inst}
     (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
-    {fuel : Nat} {before after : State} {out : V} {trace finalTrace : Array RuleId}
-    (run : (applyTerm program (Stock.sem ctx) {} fuel T.lower.ret T.lower.id [.inst ii]).run
-      (before, trace) = .ok (some out, (after, finalTrace))) :
-    ∀ rss, out = .regsVec rss → info.results ≠ [] → ∀ rs ∈ rss, ∀ o cls,
-      rs = [.vreg o cls] →
-      (before.base.nextVreg ≤ o ∧ o < after.base.nextVreg) ∨
-        ∃ x, Prov ctx ii x ∧ ctx.valueReg? x = some (.vreg o cls) := by
-  intro rss hout hres rs hrs o cls hrso
+    (hres : info.results ≠ []) :
+    ∀ rl ∈ program.rulesOf T.lower.id,
+      aRule program flowTab false [⟨1, true⟩] ⟨1, false⟩ rl = true ∨
+        ∀ m s0 env s1, (matchRule program (Stock.sem ctx) {} m rl [.inst ii]).run s0 ≠
+          .ok (some env, s1) := by
   let original := sourceIdentityCtx ctx
   have view : DFGViewEq ctx original := ⟨rfl, rfl, rfl, rfl, rfl⟩
   have hctx : CtxInv f original := mapped.identityView
@@ -130,6 +123,25 @@ theorem stock_root_mapped_context_flow {f : Clif.Function} {ctx : Ctx}
       subst hty
       exact List.eq_nil_of_length_eq_zero hlen
     · exact .inl ha
+  exact hrules
+
+/-- Actual stock root execution in a validated mapped source context returns
+either a fresh register or a mapped operand-provenance register. This also
+applies to validated terminator-overridden contexts with no exception reservations;
+the canonical identity context is only a proof view for pure source matching. -/
+theorem stock_root_mapped_context_flow {f : Clif.Function} {ctx : Ctx}
+    (mapped : MappedCtxInv f ctx) (empty : ctx.tryRegs = ([], []))
+    {ii : Nat} {info : IInfo} {inst : Clif.Inst}
+    (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
+    {fuel : Nat} {before after : State} {out : V} {trace finalTrace : Array RuleId}
+    (run : (applyTerm program (Stock.sem ctx) {} fuel T.lower.ret T.lower.id [.inst ii]).run
+      (before, trace) = .ok (some out, (after, finalTrace))) :
+    ∀ rss, out = .regsVec rss → info.results ≠ [] → ∀ rs ∈ rss, ∀ o cls,
+      rs = [.vreg o cls] →
+      (before.base.nextVreg ≤ o ∧ o < after.base.nextVreg) ∨
+        ∃ x, Prov ctx ii x ∧ ctx.valueReg? x = some (.vreg o cls) := by
+  intro rss hout hres rs hrs o cls hrso
+  have hrules := stock_root_flow_rules mapped hi hc hres
   have hins : Holds2 (γF ctx ii before.base.nextVreg) before [⟨1, true⟩] [.inst ii] := by
     refine ⟨⟨?_, ?_⟩, trivial⟩
     · intro h; cases h
@@ -138,6 +150,38 @@ theorem stock_root_mapped_context_flow {f : Clif.Function} {ctx : Ctx}
         fun n hn => by simp [V.valsIn] at hn,
         fun j hj => .inl ⟨rfl, by simpa [V.instsIn] using hj⟩⟩
   obtain ⟨_, hv⟩ := (soundAt (flowModel mapped hi hc empty) (cfg := {}) rfl
+    flowTab_ok fuel).root T.lower.ret T.lower.id T.lower _ _ [⟨1, true⟩] ⟨1, false⟩
+      [.inst ii] before trace (some out) after finalTrace data_program.t686 term_686_kind
+      hrules hins (Nat.le_refl _) run
+  have hcl := (hv out rfl).2 rfl
+  subst hout
+  exact hcl.1 (.vreg o cls) (mem_regsVec hrs (by rw [hrso]; exact List.mem_singleton_self _)) o cls rfl
+
+/-- Whole-root flow in a validated mapped context with arbitrary exception
+reservations. Returned virtual registers are fresh, mapped source operands or
+members of the exact reserved return/payload lists. -/
+theorem stock_root_reserved_context_flow {f : Clif.Function} {ctx : Ctx}
+    (mapped : MappedCtxInv f ctx)
+    {ii : Nat} {info : IInfo} {inst : Clif.Inst}
+    (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
+    {fuel : Nat} {before after : State} {out : V} {trace finalTrace : Array RuleId}
+    (run : (applyTerm program (Stock.sem ctx) {} fuel T.lower.ret T.lower.id [.inst ii]).run
+      (before, trace) = .ok (some out, (after, finalTrace))) :
+    ∀ rss, out = .regsVec rss → info.results ≠ [] → ∀ rs ∈ rss, ∀ o cls,
+      rs = [.vreg o cls] →
+      (before.base.nextVreg ≤ o ∧ o < after.base.nextVreg) ∨
+        (∃ x, Prov ctx ii x ∧ ctx.valueReg? x = some (.vreg o cls)) ∨
+        (.vreg o cls) ∈ ctx.tryRegs.1 ∨ (.vreg o cls) ∈ ctx.tryRegs.2 := by
+  intro rss hout hres rs hrs o cls hrso
+  have hrules := stock_root_flow_rules mapped hi hc hres
+  have hins : Holds2 (ReservedFlow.γF ctx ii before.base.nextVreg) before [⟨1, true⟩] [.inst ii] := by
+    refine ⟨⟨?_, ?_⟩, trivial⟩
+    · intro h; cases h
+    · intro _
+      exact ⟨fun r hr => by simp [V.regsIn] at hr,
+        fun n hn => by simp [V.valsIn] at hn,
+        fun j hj => .inl ⟨rfl, by simpa [V.instsIn] using hj⟩⟩
+  obtain ⟨_, hv⟩ := (soundAt (ReservedFlow.flowModel mapped hi hc) (cfg := {}) rfl
     flowTab_ok fuel).root T.lower.ret T.lower.id T.lower _ _ [⟨1, true⟩] ⟨1, false⟩
       [.inst ii] before trace (some out) after finalTrace data_program.t686 term_686_kind
       hrules hins (Nat.le_refl _) run
@@ -205,6 +249,26 @@ theorem stock_root_mapped_context_flow_witness :
     dsimp only at h
     rw [h]
     exact (ctxSpec_of old).facts.tryRegs) hi hc run _ rfl
+    (by rw [results]; simp) _ (List.mem_singleton_self _) _ _ rfl
+
+/-- Actual generated constant lowering and its mapped source output inhabit the
+arbitrary-reservation root theorem. The reserved helper witness separately
+exercises nonempty reserved outputs. -/
+theorem stock_root_reserved_context_flow_witness :
+    ∃ (f : Clif.Function) (ctx : Ctx) (ranges : Array (Nat × Nat)) (initial : State)
+      (info : IInfo) (next : State) (trace : Array RuleId),
+      LowerScope f ∧ Stock.buildCtx f = .ok (ctx, ranges, initial) ∧
+      ctx.insts[0]? = some info ∧ info.clif = some (.iconst .i8 9) ∧
+      info.results = [2] ∧ ctx.valueReg? 2 = some (.vreg 193 .int) ∧
+      (applyTerm program (Stock.sem ctx) {} 1000000 T.lower.ret T.lower.id [.inst 0]).run
+        (sinkState, #[]) = .ok (some (.regsVec [[.vreg 194 .int]]), next, trace.push 582) ∧
+      ((sinkState.base.nextVreg ≤ 194 ∧ 194 < next.base.nextVreg) ∨
+        (∃ x, Prov ctx 0 x ∧ ctx.valueReg? x = some (.vreg 194 .int)) ∨
+        (.vreg 194 .int) ∈ ctx.tryRegs.1 ∨ (.vreg 194 .int) ∈ ctx.tryRegs.2) := by
+  obtain ⟨f, ctx, ranges, initial, info, next, trace, scope, built, hi, hc, results, mapped, run⟩ :=
+    stock_statement_selectedConstant_built_witness
+  refine ⟨f, ctx, ranges, initial, info, next, trace, scope, built, hi, hc, results, mapped, run, ?_⟩
+  exact stock_root_reserved_context_flow (buildCtx_mappedInv scope built) hi hc run _ rfl
     (by rw [results]; simp) _ (List.mem_singleton_self _) _ _ rfl
 
 end Backend.Stock.Proof.MappedFlow

@@ -1,0 +1,88 @@
+{
+  "modules": [
+    "FV.Backend.Proof.StockReservedFlow",
+    "FV.Backend.Proof.StockRootFlow"
+  ],
+  "source_sha256": {
+    "FV/Backend/Proof/StockReservedFlow.lean": "4e351b905c2b60af62074899db0866ab259fe96844d8337ef3a39f77640503cf",
+    "FV/Backend/Proof/StockRootFlow.lean": "eaffb8901f23122e0cd327c985e9a264439b90eb0391d9a1fa4c65a9b3e292a7"
+  },
+  "results": [
+    {
+      "theorem": "Backend.Stock.Proof.MappedFlow.stock_root_reserved_context_flow",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.MappedFlow.stock_root_reserved_context_flow_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.MappedFlow.stock_root_mapped_context_flow",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.MappedFlow.stock_root_mapped_context_flow_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.MappedFlow.stock_root_mapped_flow",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.MappedFlow.stock_root_mapped_flow_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.ReservedFlow.stock_apply_reserved_flow",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.ReservedFlow.stock_apply_reserved_flow_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    }
+  ],
+  "targeted_build_jobs": 242,
+  "method": "Complete clean canonical Lean MCP diagnostics for both modules; eight matching standard-only MCP/compiled Lean audits; capped targeted build of reserved flow, root flow and binding flow passes.",
+  "scope": "Actual whole-interpreter helper and whole-root register provenance with arbitrary exception reservations. Exact reserved return/payload alternatives; actual checked try-call helper installs195\u2192194, returns194/196 below unchanged frontier197. Actual generated full constant root inhabits whole-root theorem; original stronger empty-reservation interfaces retained. Actual selected-scan/allocator bounds, source-available final alias paths, noninterference and production cutover remain.",
+  "required_full_and_execution_gates": "pending on publication source"
+}
