@@ -232,3 +232,21 @@ runtests4672/0/0; encoder1292identical/0differ; E2E1149accepted/0rejected.
 Seven final backend/executable theorem audits have only standard axioms and
 existing fixed native certificates. PR102 may merge after green CI. Whole-driver and production cutover
 remain incomplete.
+
+
+### Independent alias-bound landing slice
+
+`StockAliasBounds` derives exception-register bounds from actual allocation
+requests and successful context construction. Every successful external helper
+and complete interpreter term evaluation keeps aliases below a fixed cap
+when the reserved payload destinations are below it. Actual result binding
+grows the array only at preallocated source-result destinations, even if the
+selected source register lies above the cap.
+
+Five public results/five witnesses pass all10 standard-only Lean MCP checks.
+Witnesses exercise nonempty exception reservations, actual try-call alias
+installation retaining an older alias, and result193→197 while array length195
+remains below cap196. Full main-based build1270 and crate959 pass; runtime
+corpus114/extrt22/runtests4672zero failures, encoder1292identical/0differing,
+E2E1149/0 and seven final theorem axiom audits pass. The slice may merge after
+green CI. Whole-scan alias preservation and production cutover remain open.
