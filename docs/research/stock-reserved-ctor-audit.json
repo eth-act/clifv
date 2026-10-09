@@ -1,0 +1,129 @@
+{
+  "modules": [
+    "FV.Backend.Proof.StockCtorFlow"
+  ],
+  "source_sha256": {
+    "FV/Backend/Proof/StockCtorFlow.lean": "d7877c2e4135f1d73e19847fa5823a9ec56e9e7fd2d5391dcab7751e06e499dd"
+  },
+  "results": [
+    {
+      "theorem": "Backend.Stock.Proof.stock_ctor_output_reserved_origin",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_ctor_output_reserved_origin_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_ctor_output_origin",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_ctor_output_origin_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_built_ctor_output_origin",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_built_ctor_output_origin_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_ctor_output_values",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_ctor_output_values_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_ctor_output_instructions",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_ctor_output_instructions_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    }
+  ],
+  "targeted_build_jobs": 241,
+  "method": "Complete clean exact-PR Lean MCP diagnostics and ten matching standard-only MCP/compiled Lean audits; required capped full/execution gates on sourcee6d6236.",
+  "scope": "Exact argument/fresh/mapped/physical/invalid or reserved return/payload constructor origins for arbitrary exception reservations. Successful try-call merge witness has payload194 aliasing return193 and retained payload195; old ordinary-origin interface preserved for empty reservations. Whole-interpreter/root reserved flow, actual scan/final alias availability and production cutover remain.",
+  "required_full_and_execution_gates": "passed on validated_source_commit; final PR commit changes receipt only",
+  "gates": {
+    "full_build_jobs": 1302,
+    "crate_build_jobs": 958,
+    "corpus_pass": 114,
+    "extrt_pass": 22,
+    "runtests_pass": 4672,
+    "runtests_fail": 0,
+    "runtime_disagreements": 0,
+    "encoder_identical": 1292,
+    "encoder_differ": 0,
+    "e2e_accepted": 1150,
+    "e2e_rejected": 0,
+    "final_theorem_axiom_audits": 7
+  },
+  "validated_source_commit": "e6d623672c9457856528c7615671ac50bd2cb76f",
+  "validated_main_commit": "5d2bb6be43e35a1b91d04e533ec6f58af78c359b",
+  "gate_log_sha256": {
+    "full": "662281aa229965768887447d18946b81f6cde891507b7c2e083122c3d7037af0",
+    "crates": "42726ff31ff1320598017cbe50943483060f76355f252d30101490e33d8d763e",
+    "runtime": "6fc44567e9cac0a4ed3fd2661b4aad44f7e6b43055d21fb3fe150c1a56303553",
+    "encode": "03615dfbca26e9d0ed30a780c66e8822602b1201d21afe9cd05e6af550e89919",
+    "e2e": "eb4af534d30631e07bfdd7491b18c65751e97c35a7043d15c5ae6dc76d1b69f3",
+    "e2e-axioms": "620761c85c2e59b59c17136e0b0d2ca8efbe83934335f99704fdd30dbd91de6b",
+    "axioms": "a6bfc12836b93af27fd355ae6f420be47bca53d362b1b351dcdc8084e4034d34"
+  }
+}
