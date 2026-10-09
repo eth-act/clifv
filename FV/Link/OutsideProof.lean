@@ -9,7 +9,7 @@ whole file as the excerpt (`agrees_self`):
 * `outsideOkB_data`: cg_clif's data objects are at their link-map addresses with their resolved
   bytes (`dataFastB_sound`: `dataFastB` is `dataB` with one address map, `addrMap_get`, so
   `dataB_sound`);
-* `symsOkB_sound`, `outsideOkB_syms`: every link-map name but the self-call aliases is a symbol
+* `symsOkB_sound`, `outsideOkB_syms`: every link-map name is a symbol
   of the file at its address (`SymsOk`; the index `symIndex` only names the entry, which
   `symsOkB` re-checks on the file's bytes);
 * `leanLink_spec`: `leanLink`'s checks and result, unfolded (its parallel pipeline is
@@ -131,8 +131,6 @@ theorem leanLink_spec {S : LinkSpec} {file0 file : ByteArray} (h : leanLink S fi
       S.namesOkB (tabOf S.input.resultsT) = true ∧
       S.sizesOkB (tabOf S.input.resultsT) = true ∧
       (tabOf S.input.resultsT).all (fun e => relocsOkB S.input (tpOff phs) e.2) = true ∧
-      aliasOkB S.input (tpOff phs) (tabOf S.input.resultsT) = true ∧
-      aliasShapeB S.input (tabOf S.input.resultsT) = true ∧
       codeMapB S.input (tabOf S.input.resultsT) = true ∧
       regionOkB file0 S.R (regionOf S (tpOff phs)).size (offsetOf phs S.R) = true ∧
       outsideOkB S.input S.data file = true ∧
@@ -159,19 +157,15 @@ theorem leanLink_spec {S : LinkSpec} {file0 file : ByteArray} (h : leanLink S fi
   · cases h
   split at h
   · cases h
-  split at h
-  · cases h
-  split at h
-  · cases h
-  rename_i hp hr hn hs hv hal hsh hcm hok hout
+  rename_i hp hr hn hs hv hcm hok hout
   cases h
-  exact ⟨phs, hph, of_not_not hp, of_not_not hr, of_not_not hn, of_not_not hs, of_not_not hv, of_not_not hal,
-    of_not_not hsh, of_not_not hcm, of_not_not hok, of_not_not hout, rfl⟩
+  exact ⟨phs, hph, of_not_not hp, of_not_not hr, of_not_not hn, of_not_not hs, of_not_not hv,
+    of_not_not hcm, of_not_not hok, of_not_not hout, rfl⟩
 
 /-- **`leanLink`'s output is a static executable** (its headers are checked: `outsideOkB`). -/
 theorem leanLink_static' {S : LinkSpec} {file0 file : ByteArray}
     (h : leanLink S file0 = .ok file) : Static file := by
-  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, hout, -⟩ := leanLink_spec h
+  obtain ⟨-, -, -, -, -, -, -, -, -, hout, -⟩ := leanLink_spec h
   exact outsideOkB_static hout
 
 end Link

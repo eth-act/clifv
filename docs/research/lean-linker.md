@@ -132,11 +132,11 @@ outside part. What stays checked is about the outside file only.
 
 * `Layout.lean`: `offs`/`span` (functions consecutive, each followed by one zero gap word, so a
   call in a function's last word does not return into the next function); `LinkSpec` (the
-  functions in placement order and their sizes in words, self-call aliases, the outside part's
+  functions in placement order and their sizes in words, the outside part's
   addresses `outside` and CLIF data objects `data`, the CLIF image's symbol names, the region's
   base `R`); `LinkSpec.input` (the crate-level `LinkInput` whose link map **is** the
-  placement, with `syms` read from it and `raStar` the end of the region; a self-call alias's
-  address is the gap word after its function); `placeOkB` (distinct names, one positive size
+  placement, with `syms` read from it and `raStar` the end of the region);
+  `placeOkB` (distinct names, one positive size
   per function, region nonzero, aligned, in the address space, no outside symbol in it);
   `sizesOkB` (the compiled code has the placement's sizes).
 * `Reloc.lean`: `resolveWord` (each word from its own relocation: `bl` with the offset to
@@ -144,19 +144,17 @@ outside part. What stays checked is about the outside file only.
   `PairOk.adrpAdd` accepts, so the program part needs no GOT; TLSDESC as
   `movz`/`movk`/`nop`/`nop` of `tpOff`), `relocsOkB` (the linker's check of the relocation
   shapes, partners and ranges), `regionBytes`.
-* `Image.lean`: `patch`, `aliasOkB`/`aliasShapeB` (an alias's resolved words, raw words and call
-  lines are its function's), **`leanLink S file0`**: the compiler's pipeline once, the linker's
+* `Image.lean`: `patch`, **`leanLink S file0`**: the compiler's pipeline once, the linker's
   checks of its own output, the region's bytes written over the placeholder, then the checks of
   rust-lld's output (`regionOkB` on `file0`; `outsideOkB` on the written file: `hdrB`, `dataB`,
   `symsOkB`). A failing check is a link error, never a wrong executable.
 
 ### Theorems (no `sorry`; axioms `propext`, `Classical.choice`, `Quot.sound`)
 
-* `Link.linkerOkB_place_alias (hp : S.placeOkB) (hr : pipeline ok) (hn : S.namesOkB …)
-  (hs : S.sizesOkB …) (ha : aliasShapeB …) : linkerOkB S.input = true` — every conjunct by construction, self-call
-  aliases included (`FV/Link/LayoutProof.lean`: `imgB_of`, the alias at its function's base with
-  the same words; `raCallB` through `raOkB`'s shared-code case, `lineOffset_callShape`;
-  `symInjB` with the alias at the gap word). `Link.linkerOkB_place` (no aliases) is a corollary.
+* `Link.linkerOkB_place (hp : S.placeOkB) (hr : pipeline ok) (hn : S.namesOkB …)
+  (hs : S.sizesOkB …) : linkerOkB S.input = true` — every conjunct by construction
+  (`FV/Link/LayoutProof.lean`: `imgB_of`, disjoint placed code; `raCallB` through `raOkB`'s
+  own-code case for native self-calls, `lineOffset_callShape`; `symInjB` on the placement).
 * `Link.leanLink_linkerOk (h : leanLink S file0 = .ok file) : linkerOkB S.input = true`.
 * `Link.artOk_of_image` (`RelocProof.lean`): resolved words in the file ⇒ `ArtOk`.
 * `Link.leanLink_code (h) : ∀ e ∈ tabOf S.input.resultsT, ArtOk S.input file e.2`,
@@ -191,9 +189,8 @@ those bytes too (design (b)).
   merge); `lean.o` stays in the work directory, each function followed by a zero gap word
   (`gap_object`), so `ld -r` lays it out as `Link.offs` does. Only verified functions enter the
   region: an unverified one keeps cg_clif's code (fallback, reason "unverified (…): cg_clif's
-  code kept under --lean-link"), as does a self-calling function that takes its own address (the
-  self-call alias's address in the theorem's link map is fresh, the executable's is the
-  function's; one function of `examples/deps`, `foldhash`'s seed).
+  code kept under --lean-link"). Self-calls retain the function's original symbol, including
+  when it takes its own address; the function-free activation contract needs no alias (#88).
 * At the executable's link (`leanlink.rs`): the work directories of the linked units (own
   objects, rlib members), by object name; `ld -r` of their `lean.o` → one object with section
   `.text.fvlean` (the region, `__fvlean_start`, strong definitions, the FDEs), and its functions'
@@ -202,7 +199,7 @@ those bytes too (design (b)).
   input; `lake exe lean-link DIR SIZES` (`FVTest/Link/LeanLinkMain.lean`) builds the
   `LinkSpec`, runs `Link.leanLink` and writes the result over the executable.
 * The usual binary check then runs on the patched executable (an independent check).
-* Results:
+* Historical stages 1–2 results (before `compileExe` and the alias-free #88 cutover):
   - all nine survey crates (`cd examples/survey && cargo fv test --lean-link`): 18 executables,
     27 to 493 functions each, every region written by `Link.leanLink`, the binary check verifies
     18 of 18, all 53 tests pass (as without `--lean-link`); the GOT pairs are `adrp`+`add`;

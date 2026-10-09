@@ -375,24 +375,18 @@ theorem callExternAt_congr {E₁ E₂ : Env} {p : Program} {mem : Mem} {d : Sign
 `linkEnvN P base M`): a complete whole-program run of at most `M + 1` steps (from a state of `f`'s
 frames, `LInv (P.only f)`) is a complete run of the program without functions (`P.bare`) whose
 calls of the program's functions — `f` itself included — are atomic: the callee's whole-program
-run of at most `M` steps (`linkEnvN`). An indirect call of `f` (`call_indirect`,
-`try_call_indirect`) resolves, in `P.bare`, through the linked environment's names (`IndScope`,
-with the memory's symbols `syms`), whatever `f` declares; `f` calls no extern named `f` (`hxc`,
-`hxt`: `InSubset (P.only f)`'s `externCalls`/`tryExterns`). The environment `E` (with the linked
-environment's names and signatures) may be `linkEnvN P base M` without the functions of `P` that
-the whole-program run of `f` cannot call (`hEp`): those `f` neither declares (but itself) nor can
-enter through one of its indirect calls, whose call-site signature (`IndSig`) must match the
-callee's (`Signature.abiMatch`, checked by `Clif.stepCallIndirect`). -/
+run of at most `M` steps (`linkEnvN`). Direct self calls are atomic too. An indirect call of `f`
+(`call_indirect`, `try_call_indirect`) resolves, in `P.bare`, through the linked environment's
+names (`IndScope`, with the memory's symbols `syms`), whatever `f` declares. The environment `E`
+(with the linked environment's names and signatures) may omit functions that `f` neither
+declares nor can enter through one of its indirect calls, whose call-site signature (`IndSig`)
+must match the callee's (`Signature.abiMatch`, checked by `Clif.stepCallIndirect`). -/
 theorem runLoop_linkN {P : Program} {base : Env} {f : Function} {syms : String → Option Nat}
     (M : Nat) (hnd : (P.funcs.map (·.name)).Nodup) (hf : f ∈ P.funcs)
-    (hP : ∀ g ∈ P.funcs, LinkFree g) (hio : ¬ IndFree f → IndScope P base syms)
-    (hxc : ∀ b ∈ f.blocks, ∀ st ∈ b.body, ∀ fn args, st.inst = .call fn args →
-      ∀ e, f.extern? fn = some e → (P.only f).func? e.name = none)
-    (hxt : ∀ b ∈ f.blocks, ∀ fn args et, b.term = .tryCall fn args et →
-      ∀ e, f.extern? fn = some e → (P.only f).func? e.name = none) {E : Env}
+    (hP : ∀ g ∈ P.funcs, LinkFree g) (hio : ¬ IndFree f → IndScope P base syms) {E : Env}
     (hEn : E.names = (linkEnvN P base M).names) (hEs : E.sigOf = (linkEnvN P base M).sigOf)
     (hEb : ∀ n, P.func? n = none → E.extern n = (linkEnvN P base M).extern n)
-    (hEp : ∀ h ∈ P.funcs, ((h.name ≠ f.name ∧ h.name ∈ f.externs.map (·.2.name)) ∨
+    (hEp : ∀ h ∈ P.funcs, (h.name ∈ f.externs.map (·.2.name) ∨
       (syms h.name ≠ none ∧ ∃ d, IndSig f d ∧ d.abiMatch h.sig = true)) →
       E.extern h.name = (linkEnvN P base M).extern h.name) :
     ∀ (N : Nat) (s : State), N ≤ M + 1 → LInv P s → LInv (P.only f) s →
@@ -402,16 +396,6 @@ theorem runLoop_linkN {P : Program} {base : Env} {f : Function} {syms : String �
   have hPf : ∀ g ∈ (P.only f).funcs, LinkFree g := fun g hg => by
     simp only [Program.only, List.mem_cons, List.not_mem_nil, or_false] at hg
     subst hg; exact hP g hf
-  -- `f` calls no extern named `f`
-  have hxn : ∀ b ∈ f.blocks, ∀ fn e, f.extern? fn = some e →
-      ((∃ st ∈ b.body, ∃ args, st.inst = .call fn args) ∨ ∃ args et, b.term = .tryCall fn args et) →
-      e.name ≠ f.name := by
-    intro b hb fn e he hc hn
-    have : (P.only f).func? e.name = none := by
-      rcases hc with ⟨st, hst, args, hi⟩ | ⟨args, et, ht⟩
-      · exact hxc b hb st hst fn args hi e he
-      · exact hxt b hb fn args et ht e he
-    simp [Program.only_func?, hn] at this
   intro N
   induction N using Nat.strongRecOn with
   | _ N ih =>
@@ -533,15 +517,15 @@ theorem runLoop_linkN {P : Program} {base : Env} {f : Function} {syms : String �
           rw [hsub]; exact fun _ _ h => by cases h
         rw [runLoop_below_of_not_returned base P K N _ hne, hsub] at hof
         exact absurd rfl hof
-  -- a call (`callCont`) from `t` of an extern other than `f`
+  -- a call (`callCont`) from `t`, including a direct self call
   have call : ∀ (t : State) rest rs ext vals, t.callers = s.callers → t.mem = s.mem →
       (∀ regs, LFrame P { t.frame with regs, body := rest } ∧
         LFrame (P.only f) { t.frame with regs, body := rest }) →
-      ext.name ∈ f.externs.map (·.2.name) → ext.name ≠ f.name →
+      ext.name ∈ f.externs.map (·.2.name) →
       step base P s = Opt.callCont base P t rest rs ext vals →
       step E P.bare s = Opt.callCont E P.bare t rest rs ext vals →
       ∃ m, runLoop E P.bare m s = runLoop base P (N + 1) s := by
-    intro t rest rs ext vals htc htm hfr hext hne e1 e2
+    intro t rest rs ext vals htc htm hfr hext e1 e2
     cases hpf : P.func? ext.name with
     | none =>
       apply same
@@ -551,7 +535,7 @@ theorem runLoop_linkN {P : Program} {base : Env} {f : Function} {syms : String �
       obtain ⟨hgP, hgn⟩ := Program.func?_some hpf
       have hEg : E.extern ext.name = (linkEnvN P base M).extern ext.name := by
         rw [← hgn]
-        exact hEp g hgP (.inl ⟨by rw [hgn]; exact hne, by rw [hgn]; exact hext⟩)
+        exact hEp g hgP (.inl (by rw [hgn]; exact hext))
       have e2' := e2
       simp only [Opt.callCont, Program.bare_func?, hEg, linkEnvN_some hpf] at e2'
       cases hsig : (AbiParam.tys g.sig.params == AbiParam.tys ext.sig.params &&
@@ -667,14 +651,9 @@ theorem runLoop_linkN {P : Program} {base : Env} {f : Function} {syms : String �
     dsimp only at e1 e2
     have hext : f.extern? fn = some ext := by
       have := Opt.callArgs_extern hX; rw [← hff]; exact this
-    have hne : ext.name ≠ f.name := by
-      rcases hIf.1 with ⟨-, ⟨B, hB, -, hBt⟩ | ⟨-, bc0, hj⟩⟩
-      · rw [hff] at hB
-        exact hxn B hB fn ext hext (.inr ⟨args, et, hBt.symm.trans ht⟩)
-      · rw [ht] at hj; cases hj
     exact call (tryState s bc) [] _ ext vals rfl rfl
       (fun regs => ⟨LFrame.jump hI.1.1 regs bc, LFrame.jump hIf.1.1 regs bc⟩)
-      (lookup_name_mem hext) hne e1 e2
+      (lookup_name_mem hext) e1 e2
   · -- a `try_call_indirect`
     have e1 := step_tryInd base P s hb ht
     have e2 := step_tryInd E P.bare s hb ht
@@ -727,14 +706,8 @@ theorem runLoop_linkN {P : Program} {base : Env} {f : Function} {syms : String �
       rw [hl] at e1 e2
       obtain ⟨st, fn, args, hb, hi, -, hca⟩ := Opt.lstep_call_inv hl
       have hext : f.extern? fn = some ext := by rw [← hff]; exact Opt.callArgs_extern hca
-      have hne : ext.name ≠ f.name := by
-        rcases hIf.1 with ⟨-, ⟨B, hB, hsuf, -⟩ | ⟨hnil, -⟩⟩
-        · rw [hff] at hB
-          exact hxn B hB fn ext hext
-            (.inl ⟨st, hsuf.subset (by rw [hb]; exact List.mem_cons_self ..), args, hi⟩)
-        · rw [hnil] at hb; cases hb
       exact call s rest rs ext vals rfl rfl (fun regs => ⟨hI.1.rest hb regs, hIf.1.rest hb regs⟩)
-        (lookup_name_mem hext) hne e1 e2
+        (lookup_name_mem hext) e1 e2
 
 
 end Clif

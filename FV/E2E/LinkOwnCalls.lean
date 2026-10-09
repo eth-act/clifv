@@ -16,8 +16,8 @@ vreg) — whose uses are `retPairs` of its argument vregs in the registers `call
 signature, whose defs are `callDefs` in x0, x1, …, and (a `tryCall`) whose `rets` is the
 signature's number of ABI results. The transfer to the callee `h` of `P`:
 
-* a `bl e.name` with `P.func? e.name = some h`: `h ≠ g` (`InSubset`: no direct self-call), `g`
-  declares it, and `callRegs e.sig args = regLocs h.sig` (`dirSiteB`); its `rets` are `h`'s
+* a `bl e.name` with `P.func? e.name = some h`: `g` declares it (possibly itself), and
+  `callRegs e.sig args = regLocs h.sig` (`dirSiteB`); its `rets` are `h`'s
   (the declared signature `e.sig = h.sig`);
 * a GOT `blr`: the GOT symbol restricts the callees to `h` named `e.name`, as for `bl`;
 * an indirect `blr`: every callee the site may enter (`indSiteB`).
@@ -369,21 +369,6 @@ theorem indSiteB_of {P : Clif.Program} {S : String → Option Nat} {g : Clif.Fun
   · have := ((Bool.and_eq_true _ _).mp (List.all_eq_true.mp hc B hB)).2
     simpa only [ht, hs] using this
 
-/-- A direct call's extern is not `g` itself (`InSubset`: calls only externs outside `g`'s
-per-function program). -/
-theorem dirSite_ne {P : Clif.Program} {g : Clif.Function} (hsub : InSubset (P.only g) g)
-    {isTry : Bool} {args : List Nat} {e : Clif.ExtFunc} (h : DirSite g isTry args e) :
-    e.name ≠ g.name := by
-  obtain ⟨fn, hfn, B, hB, ⟨-, st, hst, hi⟩ | ⟨-, et, ht⟩⟩ := h
-  · have := hsub.externCalls B hB st hst fn args hi e hfn
-    rw [Clif.Program.only_func?] at this
-    intro he
-    simp [he] at this
-  · have := hsub.tryExterns B hB fn args et ht e hfn
-    rw [Clif.Program.only_func?] at this
-    intro he
-    simp [he] at this
-
 theorem dirSite_decl {g : Clif.Function} {isTry : Bool} {args : List Nat} {e : Clif.ExtFunc}
     (h : DirSite g isTry args e) : e ∈ g.externs.map (·.2) := by
   obtain ⟨fn, hfn, -⟩ := h
@@ -403,13 +388,12 @@ theorem take_xs {D : List (Reg × Nat)} (hD : D.map (·.1) = (List.range D.lengt
 
 /-- **A call site of `g`'s call `c` passes `siteOk`.** -/
 theorem siteOk_of {P : Clif.Program} {S : String → Option Nat} {g : Clif.Function}
-    (hsub : InSubset (P.only g) g) (hnd : (P.funcs.map (·.name)).Nodup)
+    (hnd : (P.funcs.map (·.name)).Nodup)
     (hc : callScopeB P S g = true) {vc : VCode} {isTry : Bool} {rets : Nat} {c : CallInfo}
     (h : SiteCall g vc isTry rets c) : siteOk P g (indToB S g) vc c = true := by
   obtain ⟨args, ⟨e, hds, ⟨L, D, hu, hdf, hL, hD⟩, -, hdest⟩ |
     ⟨s, his, ⟨L, D, hu, hdf, hL, hD⟩, -, t, hdest⟩⟩ := h
   · have hdir := dirSiteB_of hc hds
-    have hne := dirSite_ne hsub hds
     have hdecl : g.externs.any (fun e' => e'.2.name == e.name) = true := by
       obtain ⟨p, hp, rfl⟩ := List.mem_map.mp (dirSite_decl hds)
       exact List.any_eq_true.mpr ⟨p, hp, by simp⟩
@@ -424,8 +408,7 @@ theorem siteOk_of {P : Clif.Program} {S : String → Option Nat} {g : Clif.Funct
       | some h =>
         obtain ⟨-, hhn⟩ := Clif.Program.func?_some hf
         simp only [dirSiteB, hf, decide_eq_true_eq] at hdir
-        simp only [hdecl, decU_retPairs, decD_callDefs, hL, hdir, take_xs hD, hhn]
-        simpa using hne
+        simp [hdecl, decU_retPairs, decD_callDefs, hL, hdir, take_xs hD]
     · unfold siteOk blrOk
       simp only [decU_retPairs, decD_callDefs, decide_true, Bool.true_and, List.all_eq_true,
         Bool.or_eq_true, Bool.not_eq_true', hgot, bne_iff_ne, ne_eq, decide_eq_true_eq,
@@ -459,7 +442,7 @@ function `g` of `P` passing the input condition `callScopeB P S g`, given the IS
 inversion `CallShapeHyp`. -/
 theorem sites_of_lower (hH : CallShapeHyp) {P : Clif.Program} {S : String → Option Nat}
     {g : Clif.Function} {vc vcp : VCode}
-    (hsub : InSubset (P.only g) g) (hd : dominatedB g = true) (hs : lowerScopeB g = true)
+    (hsub : InSubset P.bare g) (hd : dominatedB g = true) (hs : lowerScopeB g = true)
     (hnd : (P.funcs.map (·.name)).Nodup)
     (hc : callScopeB P S g = true)
     (hl : lowerFunction g = .ok vc) (hp : Backend.prepare vc = .ok vcp) :
@@ -468,8 +451,8 @@ theorem sites_of_lower (hH : CallShapeHyp) {P : Clif.Program} {S : String → Op
     siteCalls_of_lower (k := k) hH hsub (dominated_of hd) (lowerScope_of hs) hl hp hq
   refine (array_all_iff _ _).2 fun q vb hq => (array_all_iff _ _).2 fun k i hi => ?_
   cases i with
-  | call c => exact siteOk_of hsub hnd hc ((hsc hq).1 c hi)
-  | tryCall c ti => exact siteOk_of hsub hnd hc ((hsc hq).2 c ti hi)
+  | call c => exact siteOk_of hnd hc ((hsc hq).1 c hi)
+  | tryCall c ti => exact siteOk_of hnd hc ((hsc hq).2 c ti hi)
   | _ => rfl
 
 end E2E.LinkCheck

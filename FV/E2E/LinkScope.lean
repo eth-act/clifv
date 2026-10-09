@@ -68,7 +68,7 @@ theorem resultsT_ok (I : LinkInput) (R : Res) : ResOk (I.withDepth R) I.resultsT
 /-! ## The input conditions -/
 
 theorem fnScope_parts {g : Clif.Function} (h : fnScopeB g = true) :
-    Compile.functionE g = true ∧ (∀ e ∈ g.externs, e.2.name ≠ g.name) ∧
+    Compile.functionE g = true ∧
     (sigAbiOk g.sig = true ∧ ∀ e ∈ g.externs, sigAbiOk e.2.sig = true) ∧ indSigsOk g = true ∧
     (regLocs g.sig).Nodup ∧ (∀ r ∈ regLocs g.sig, r.isArgReg = true) ∧
     (∀ p ∈ g.sig.params, p.ty.width ≤ 64) ∧ linkFreeB g = true ∧ dominatedB g = true ∧
@@ -76,20 +76,18 @@ theorem fnScope_parts {g : Clif.Function} (h : fnScopeB g = true) :
     Spill.entryParamsB g = true := by
   simp only [fnScopeB, Bool.and_eq_true, List.all_eq_true, bne_iff_ne, ne_eq,
     decide_eq_true_eq, and_assoc] at h
-  obtain ⟨h1, h2, h3, h3', h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩ := h
-  exact ⟨h1, h2, ⟨h3, h3'⟩, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩
+  obtain ⟨h1, h3, h3', h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩ := h
+  exact ⟨h1, ⟨h3, h3'⟩, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩
 
 /-- The subset of the per-function programs (`LinkSys.Ok.subset`) from `fnScopeB`. -/
 theorem inSubset_of_fnScope {g : Clif.Function} (h : fnScopeB g = true) (p : Clif.Program) :
-    InSubset (p.only g) g := by
-  obtain ⟨hE, hne, habi, hind, -⟩ := fnScope_parts h
+    InSubset p.bare g := by
+  obtain ⟨hE, habi, hind, -⟩ := fnScope_parts h
   refine ⟨hE, ?_, ?_, habi, ?_⟩
   · intro b _ st _ fn args _ e he
-    have hne' := hne _ (lookup_pair he)
-    simp [Clif.Program.only, Clif.Program.func?, Ne.symm hne']
+    exact Clif.Program.bare_func? _ _
   · intro b _ fn args et _ e he
-    have hne' := hne _ (lookup_pair he)
-    simp [Clif.Program.only, Clif.Program.func?, Ne.symm hne']
+    exact Clif.Program.bare_func? _ _
   · intro sig hs
     have := List.all_eq_true.mp hind sig hs
     simpa [Bool.and_eq_true, decide_eq_true_eq] using this
@@ -201,7 +199,7 @@ theorem pipeT_ok {g : Clif.Function} (hsc : fnScopeB g = true) (hD : SpillDefine
     (k : Nat) (base : BitVec 64) (o : Lean.Json) :
     ∃ a, pipeT g k base o = .ok a ∧ lowerCheck g a.vc = true ∧ prepCheck a.vc a.vcp = true ∧
       checkAlloc a.vcp a.rf = .ok () ∧ FormsCovered ⟨a.fa.k, a.af.slotBase⟩ a.vcp := by
-  obtain ⟨-, -, -, -, -, -, -, -, hd, hs, har, hlw, hen⟩ := fnScope_parts hsc
+  obtain ⟨-, -, -, -, -, -, -, hd, hs, har, hlw, hen⟩ := fnScope_parts hsc
   obtain ⟨hw, vc, vcp, hl, hp, hsz⟩ := lowersB_spec hlw
   have hem := emitCondsB_of_input hs hw hl hp hsz
   have hsub := inSubset_of_fnScope hsc { funcs := [] }
@@ -253,7 +251,7 @@ theorem chks_resultsT (hD : SpillDefinedHyp) {I : LinkInput} (hin : InScopeP I =
   subst h1 h2
   have hgP : fi.func ∈ I.prog.funcs := List.mem_map_of_mem hfi
   have hsc : fnScopeB fi.func = true := List.all_eq_true.1 hfs _ hgP
-  obtain ⟨hE, hne, habi, hind, hnd', harg, hw, hfree, hd, hs, -, -⟩ := fnScope_parts hsc
+  obtain ⟨hE, habi, hind, hnd', harg, hw, hfree, hd, hs, -, -⟩ := fnScope_parts hsc
   obtain ⟨a, ha, hlc, hpc, hca, hcov⟩ := pipeT_ok hsc hD fi.k
     (BitVec.ofNat 64 (I.baseOf fi.func.name)) (raJ fi.ra fi.j)
   obtain ⟨hl, hp, -, hlr, -, -, -, -⟩ := pipeT_spec ha
@@ -274,7 +272,7 @@ theorem chks_resultsT (hD : SpillDefinedHyp) {I : LinkInput} (hin : InScopeP I =
   simp only [chks, staticChks, linkChks, List.cons_append, List.nil_append, List.mem_cons,
     List.not_mem_nil, or_false, ha, progOf_resultsT] at hc
   rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
-    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · rfl
   · exact hlc
   · exact hpc
@@ -289,7 +287,6 @@ theorem chks_resultsT (hD : SpillDefinedHyp) {I : LinkInput} (hin : InScopeP I =
   · exact decide_eq_true hdep
   · exact hfree
   · exact hE
-  · simpa using hne
   · simpa [Bool.and_eq_true, List.all_eq_true] using habi
   · exact hind
   · exact hout

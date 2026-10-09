@@ -325,64 +325,6 @@ fn missing_ref(o: &Path, syms: &ObjSyms) -> Option<String> {
     ref_problem(o, syms).ok().and_then(|(bad, _)| bad)
 }
 
-/// Suffix of the alias under which a function calls itself (`self_call_alias`).
-const SELF_ALIAS: &str = "__fvself";
-
-/// A recursive function: `lean-backend` compiles each function in its own file, where a call of
-/// the function itself is a call of a function of the file. `Clif.run` enters the callee for
-/// such a call, and the end-to-end theorem covers calls of externs only
-/// (`E2E.InSubset.externCalls`), so the function would be unverified. Every other call of a
-/// crate function is already a call of an extern here (the callee is in another file), under the
-/// theorem's callee contract (`XCallsOk`/`CalleeOk`: the environment's semantics of the symbol).
-/// The self-call is put under the same contract: its declarations `fnK = [colocated] %sym(…)`
-/// are renamed to `%sym__fvself(…)`, an extern of the file (written to `{out}.self.clif`), and
-/// after compiling, the alias's relocations are redirected to `sym` itself
-/// (`--redefine-sym`), so the object is the one of the original file (the linker resolves
-/// both names to the function's address). The theorem then covers the function's code with the
-/// recursive call through the callee contract, like any other call. `None`: no self-call.
-fn self_call_alias(input: &Path, sym: &str, alias: &str, out: &Path) -> Result<Option<PathBuf>, String> {
-    let text = fs::read_to_string(input).map_err(|e| format!("{}: {e}", input.display()))?;
-    let decl = |t: &str| self_decl(t, sym).is_some();
-    if !text.lines().any(decl) {
-        return Ok(None);
-    }
-    if text.contains(&format!("%{alias}(")) {
-        return Err(format!("self-call alias: `{alias}` is already declared"));
-    }
-    let mut s = String::with_capacity(text.len() + 64);
-    for l in text.lines() {
-        if decl(l) {
-            s.push_str(&l.replacen(&format!("%{sym}("), &format!("%{alias}("), 1));
-        } else {
-            s.push_str(l);
-        }
-        s.push('\n');
-    }
-    let p = out.with_extension("self.clif");
-    fs::write(&p, s).map_err(|e| format!("{}: {e}", p.display()))?;
-    Ok(Some(p))
-}
-
-/// The name `fnK` of a declaration line `fnK = [colocated] %sym(…)` of the function itself.
-fn self_decl(t: &str, sym: &str) -> Option<String> {
-    let (lhs, rhs) = t.trim_start().split_once(" = ")?;
-    let ok = lhs.len() > 2
-        && lhs.starts_with("fn")
-        && lhs[2..].chars().all(|c| c.is_ascii_digit())
-        && rhs.trim_start_matches("colocated ").starts_with(&format!("%{sym}("));
-    ok.then(|| lhs.to_string())
-}
-
-/// Whether the function takes its own address (`func_addr` of a declaration of itself). With a
-/// self-call alias the address is the alias's, which the theorem's link map gives a fresh
-/// address (no symbol) while the executable has the function's: such a function is outside
-/// what `--lean-link` links.
-fn takes_own_address(input: &Path, sym: &str) -> bool {
-    let Ok(text) = fs::read_to_string(input) else { return false };
-    let names: Vec<String> = text.lines().filter_map(|l| self_decl(l, sym)).collect();
-    text.lines().any(|l| l.contains("func_addr") && l.split_whitespace().any(|w| names.iter().any(|n| n == w)))
-}
-
 /// Hold one of the build's `cfg.jobs` lean-backend slots (`<tmp>/slots/<k>.lock`, an advisory
 /// file lock released when the file is dropped or the process dies). cargo runs many rustc
 /// processes at once once dependencies are compiled too, so the limit must hold across all
@@ -429,22 +371,11 @@ fn compile_one(
         if let Some(why) = abi_guard(input) {
             return Compiled::Fallback(why);
         }
-        let alias = format!("{sym}{SELF_ALIAS}");
-        let aliased = match self_call_alias(input, sym, &alias, out) {
-            Ok(a) => a,
-            Err(e) => return Compiled::Fallback(e),
-        };
-        if aliased.is_some() && cfg.lean_link && takes_own_address(input, sym) {
-            return Compiled::Fallback(
-                "takes its own address and calls itself (the self-call alias's address is not the function's): cg_clif's code kept under --lean-link".into(),
-            );
-        }
-        let compiled = aliased.as_deref().unwrap_or(input);
         // `--personality`: functions with landing pads (`try_call`) get cg_clif's LSDA and
         // personality (`rust_eh_personality`, which cg_clif hard-codes too)
         let slot = backend_slot(cfg);
         let mut cmd = Command::new(cfg.lean_backend());
-        cmd.arg(compiled)
+        cmd.arg(input)
             .arg(out)
             .args(cfg.mode.backend_args())
             .args(["--personality", "rust_eh_personality"])
@@ -459,25 +390,13 @@ fn compile_one(
                     .env(crate::linkproof::RA_OUT, out.with_extension("ra.json"));
             }
         }
-        let c = match cmd.output() {
+        match cmd.output() {
             Ok(o) => {
                 drop(slot);
-                classify(cfg, &String::from_utf8_lossy(&o.stderr), o.status.success(), out, sym, compiled)
+                classify(cfg, &String::from_utf8_lossy(&o.stderr), o.status.success(), out, sym, input)
             }
             Err(e) => Compiled::Fallback(format!("cannot run lean-backend: {e}")),
-        };
-        // the alias's relocations go to the function itself
-        if aliased.is_some() {
-            if let Compiled::Ok { .. } = &c {
-                if let Err(e) = run(Command::new(&cfg.objcopy)
-                    .arg(format!("--redefine-sym={alias}={sym}"))
-                    .arg(out))
-                {
-                    return Compiled::Fallback(format!("self-call alias: {e}"));
-                }
-            }
         }
-        c
     };
     let out = outdir.join(format!("f{i}.o"));
     let c = run_backend(&split.join(format!("{}.unopt.clif", d.stem)), &out);

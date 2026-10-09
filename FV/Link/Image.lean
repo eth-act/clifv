@@ -11,10 +11,8 @@ section `.text.fvlean`); `leanLink S file0` writes the program part's bytes over
 * `leanLink S file0`: the compiler's pipeline on every function, once (`resultsT` of
   `S.input0`, whose link map is the placement; `S.input` adds the stack depth), then the
   linker's checks of its own output — the placement's conditions (`placeOkB`), the code has the
-  placement's sizes (`sizesOkB`), the relocation shapes (`relocsOkB`), each self-call alias's
-  resolved words are its function's (`aliasOkB`) and its raw words and call lines too
-  (`aliasShapeB`), the code map (`codeMapB`: a function's link-map address is its load address,
-  or no `blr` enters it; code ranges disjoint or shared by an alias with lines alike) — then the
+  placement's sizes (`sizesOkB`), the relocation shapes (`relocsOkB`), and the code map
+  (`codeMapB`: link-map addresses are load addresses and distinct code ranges are disjoint) — then the
   region's bytes (`regionBytes`) written at the region's file offset, and the checks of
   rust-lld's output (`outsideOkB`, below). Every check failing is a link error.
 * **The outside part's facts**, decided on rust-lld's output because rust-lld wrote those bytes
@@ -57,26 +55,8 @@ def offsetOf (phs : List Phdr) (R : Nat) : Nat :=
   | some p => p.offset + (R - p.vaddr)
   | none => 0
 
-/-- Each alias's words, resolved, are its function's (one copy of the code at one address). -/
-def aliasOkB (I : LinkInput) (tp : Nat → Option Nat) (T : List (Clif.Function × Art)) : Bool :=
-  I.aliases.all fun p =>
-    match T.find? (·.1.name == p.1), T.find? (·.1.name == p.2) with
-    | some ea, some ef =>
-      ea.2.fb.words.size == ef.2.fb.words.size &&
-        (List.range ea.2.fb.words.size).all fun k =>
-          resolveWord I tp ea.2 k == resolveWord I tp ef.2 k
-    | _, _ => false
-
 /-- The call lines and sizes of a function's laid-out lines (what `raOkB` reads of them). -/
 def callShape (a : Art) : List (Bool × Nat) := a.fa.lines.toList.map fun l => (callLine l, l.size)
-
-/-- Each alias's compiled words and call lines are its function's (the image holds one word per
-address, `imgB`; a call of the shared code returns into it, `raOkB`). -/
-def aliasShapeB (I : LinkInput) (T : List (Clif.Function × Art)) : Bool :=
-  I.aliases.all fun p =>
-    match T.find? (·.1.name == p.1), T.find? (·.1.name == p.2) with
-    | some ea, some ef => ea.2.fb.words == ef.2.fb.words && callShape ea.2 == callShape ef.2
-    | _, _ => false
 
 /-- The defined symbols of a file: `(name, value) → (section, entry)` (an index only: `symsOkB`
 checks the entries it names). -/
@@ -171,8 +151,6 @@ def leanLink (S : LinkSpec) (file0 : ByteArray) : Except String ByteArray :=
     else if !(S.namesOkB T) then .error "the compiled functions' names are not the placement's (namesOkB)"
     else if !(S.sizesOkB T) then .error "the compiled code's sizes are not the placement's (sizesOkB)"
     else if !(T.all fun e => relocsOkB I tp e.2) then .error "a relocation fails the checks (relocsOkB)"
-    else if !(aliasOkB I tp T) then .error "an alias's resolved words differ from its function's"
-    else if !(aliasShapeB I T) then .error "an alias's code differs from its function's (aliasShapeB)"
     else if !(codeMapB I T) then .error "the code map check fails (codeMapB)"
     else
       let B := ByteArray.mk (regionBytes I tp ((T.take S.funcs.length).map (·.2))).toArray

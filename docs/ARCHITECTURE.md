@@ -69,8 +69,9 @@ trusted is that the native helpers implement it), the Arm model, the theorems' p
 (`XCallsOk`, `CalleeOk`, `TrapsExplicit`, …), and the unverified driver code that decides which
 premises hold per function: `Backend.unverifiedReason?`, `lowerChecked`, `formsCoveredB` and,
 for `i128` functions, the `Opt.Legalize128.parsedFile128` path (it runs `Opt.Legal.check` — the
-validator itself is inside the proof — and the extern-name condition; it keeps legalised
-functions unverified under `--opt`).
+validator itself is inside the proof — and keeps legalised functions unverified under
+`--opt`). Local verification implies `InSubset P.bare f` by `InSubset.of_verifiable`;
+self-calls need no symbol renaming because all calls in an activation use the environment.
 
 Validators and passes: the untrusted passes `lowerFunction`, `prepare`, the register allocator
 and `Opt.Legalize128` are covered through proven validators (`lowerCheck`, `prepCheck`,

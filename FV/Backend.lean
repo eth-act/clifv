@@ -157,28 +157,20 @@ def callees (f : Clif.Function) : List String :=
 def hasTryCall (f : Clif.Function) : Bool :=
   f.blocks.any (·.term.isTry)
 
-/-- Why a compiled function of `pf` is outside `E2E.backend_correct` (`E2E.InSubset`), if it is:
-outside clif-subset-v2 E, stack-passed arguments of an indirect call (more than 8 parameters),
-special-purpose parameters, or a call (also a `try_call`) of a function of the file.
-Stack-passed parameters and stack-passed arguments of a `call` (agent/stack-tls-proof) and of a
-`try_call` (agent/last-unverified) are inside the theorem. A `try_call`/`try_call_indirect` of an
-extern is inside the theorem for its normal return (`hasTryCall`: the landing pads and the LSDA
-are trusted); `call_indirect`, `try_call_indirect` and `func_addr` are inside it (an indirect
-call of a function of the file is excluded by the theorem's run premise
-`TrapsExplicit.indirect`); so are `bmask`, the atomics and `fence` (single-threaded semantics;
-the Arm model's exclusive store always succeeds, `docs/decisions/arm-model.md`), and
-`tls_value` (one thread; the TLSDESC resolver under the trusted hook contract `TlsOk`,
-agent/stack-tls-proof). -/
-def unverifiedReason? (pf : Clif.ParsedFile) (f : Clif.Function) : Option String :=
+/-- Why a compiled function is outside the per-activation theorem (`E2E.InSubset`): outside
+clif-subset-v2 E, stack-passed arguments of an indirect call, or unsupported signatures.
+The activation runs in a program without functions; every callee, including the function
+itself, is supplied by the environment's call contract. The linking theorem discharges
+contracts for compiled callees by induction on call depth.
+Stack-passed parameters and direct-call arguments are covered. `try_call` and
+`try_call_indirect` are covered for normal returns; unwinding remains trusted. Atomics use
+the single-threaded Arm model, and TLS uses the trusted resolver contract. -/
+def unverifiedReason? (f : Clif.Function) : Option String :=
   if !Compile.functionE f then some "outside clif-subset-v2 E"
   else if !abiSigs f then some "special-purpose parameter other than one sret pointer (outside backend_correct)"
   else if !indSigsOk f then
     some "indirect call with stack-passed arguments or a special-purpose parameter (outside backend_correct)"
-  else
-    let own := pf.funcs.map (·.name)
-    match (callees f).find? (own.contains ·) with
-    | some c => some s!"calls %{c}, a function of the file"
-    | none => none
+  else none
 
 /-- Compile every function of a parsed `.clif` file: lower each function, allocate all of
 them with `alloc` (one batch), emit. A function that calls a function of the file that is not
@@ -194,7 +186,7 @@ def compileFileWith {m : Type → Type} [Monad m]
     pf.funcs.toArray.map fun p => (p.name, match p.func with
       | .error e => .error e.toString
       | .ok f => (lowerChecked f
-          ((unverifiedReason? pf f).isSome || (preUnverified.lookup p.name).isSome ||
+          ((unverifiedReason? f).isSome || (preUnverified.lookup p.name).isSome ||
             (overBudget? f).isSome).not
           ).map (f, ·))
   let vcs := lowered.filterMap fun (_, r) => r.toOption.map (·.2)
@@ -232,7 +224,7 @@ def compileFileWith {m : Type → Type} [Monad m]
   let text := "  .text\n" ++ String.join (funcs.map (·.text ++ "\n"))
   let unverified := lowered.toList.filterMap fun (name, r) => match r with
     | .ok (f, _) => if funcs.any (·.name == name) then
-        ((preUnverified.lookup name).orElse (fun _ => unverifiedReason? pf f)).map (name, ·)
+        ((preUnverified.lookup name).orElse (fun _ => unverifiedReason? f)).map (name, ·)
       else none
     | .error _ => none
   let unvalidated := lowered.toList.filterMap fun (name, r) => match r with

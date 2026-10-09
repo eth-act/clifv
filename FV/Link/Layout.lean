@@ -10,9 +10,8 @@ musl, compiler-rt) is linked by rust-lld around the region; its addresses enter 
 
 * `offs`, `span`: the byte offsets of the functions in the region and the region's size.
 * `LinkSpec`: the program's functions in placement order with their sizes in words (the
-  driver's, checked against the compiled code: `sizesOkB`), `cargo fv`'s self-call aliases, the
-  outside part's symbol addresses and data objects, the names of the CLIF image's symbols, the
-  region's base.
+  driver's, checked against the compiled code: `sizesOkB`), the outside part's symbol addresses
+  and data objects, the names of the CLIF image's symbols, the region's base.
 * `LinkSpec.input`: the crate-level input (`E2E.LinkCheck.LinkInput`) of the placed program:
   its link map is the placement, by construction (no link map is read back).
 * `placeOkB`: the conditions on the placement (distinct names, one positive size per function,
@@ -35,17 +34,13 @@ def span (ns : List Nat) : Nat := (ns.map fun n => 4 * n + 4).sum
 
 /-- **What the Lean linker links**: the program's functions in placement order (`funcs`), their
 names and sizes in words (`names`, `sizes`: the driver's, checked against the compiled code,
-`namesOkB`/`sizesOkB`), the self-call aliases (`aliases`: `(f__fvself, f)`, `aliasFns`: their
-functions, as `link-check` builds them; an alias's address is the gap word after its function,
-which no symbol has), the outside part's symbol addresses (`outside`) and the CLIF data objects
+`namesOkB`/`sizesOkB`), the outside part's symbol addresses (`outside`) and the CLIF data objects
 the program reaches (`data`, laid out by rust-lld), the names the CLIF image needs a symbol for
 (`symNames`), and the region's base address `R`. -/
 structure LinkSpec where
   funcs : List FnInput
   names : List String
   sizes : List Nat
-  aliases : List (String × String) := []
-  aliasFns : List FnInput := []
   outside : List (String × Nat)
   data : List Clif.DataObject := []
   symNames : List String
@@ -74,34 +69,18 @@ def size : Nat := span S.sizes
 /-- **The placement**: every function at its offset from `R`. -/
 def progAddrs : List (String × Nat) := S.names.zip ((offs S.sizes 0).map (S.R + ·))
 
-/-- The functions' offsets and sizes by name. -/
-def gapTab : List (String × Nat × Nat) := S.names.zip ((offs S.sizes 0).zip S.sizes)
-
-/-- The address of the gap word after the function `f` in the region at `R` with the offsets
-and sizes `t` (`R` when `f` is not there). -/
-def gapIn (R : Nat) (t : List (String × Nat × Nat)) (f : String) : Nat :=
-  match t.lookup f with
-  | some (o, n) => R + o + 4 * n
-  | none => R
-
-/-- The address of the gap word after the function `f` (`R` when `f` is not placed). -/
-def gapOf (f : String) : Nat := gapIn S.R S.gapTab f
-
-/-- A self-call alias's fresh address: the gap word after its function (no symbol is there). -/
-def aliasAddrs : List (String × Nat) := let t := S.gapTab; S.aliases.map fun p => (p.1, gapIn S.R t p.2)
-
-/-- **The link map**: the placement, the aliases, then the outside part's symbols. -/
-def addrs : List (String × Nat) := S.progAddrs ++ S.aliasAddrs ++ S.outside
+/-- **The link map**: the placement, then the outside part's symbols. -/
+def addrs : List (String × Nat) := S.progAddrs ++ S.outside
 
 /-- The input before the call-level stack is known: the compiler's pipeline (`fallback`), so
 its results are the compiler's (`input_results`). -/
 def input0 : LinkInput where
-  funcs := S.funcs ++ S.aliasFns
+  funcs := S.funcs
   addrs := S.addrs
   syms := let a := S.addrs; S.symNames.filterMap fun n => (a.lookup n).map (n, ·)
   raStar := S.R + S.size
   D := 0
-  aliases := S.aliases
+  aliases := []
   fallback := true
 
 /-- **The crate-level input of the placed program**: its link map is the placement, the CLIF
@@ -115,15 +94,11 @@ def input : LinkInput := S.input0.withDepth S.input0.resultsT
 theorem input_results : S.input.results = S.input.resultsT :=
   LinkInput.results_fallback rfl
 
-/-- **The placement's conditions**: distinct function and alias names (an alias is no placed
-function), one alias per function, every alias of a placed function; one size per function,
-each positive (so the gap word after a function, an alias's address, is no function's entry);
+/-- **The placement's conditions**: distinct function names, one positive size per function;
 the region is nonzero, word-aligned and in the address space; no outside symbol has an address
 in the region. -/
 def placeOkB : Bool :=
-  nodupB (S.names ++ S.aliases.map (·.1)) && nodupB (S.aliases.map (·.2)) &&
-  S.aliases.all (fun p => S.names.contains p.2) &&
-  decide (S.aliasFns.map (·.func.name) = S.aliases.map (·.1)) &&
+  nodupB S.names &&
   decide (S.names.length = S.funcs.length) &&
   decide (S.sizes.length = S.funcs.length) && S.sizes.all (0 < ·) &&
   decide (0 < S.R) && S.R % 4 == 0 && decide (S.R + S.size < 2 ^ 64) &&

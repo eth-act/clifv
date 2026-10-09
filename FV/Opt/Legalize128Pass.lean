@@ -331,60 +331,22 @@ def function128 (f : Function) : Except String Function :=
 /-- The unverified reason of a legalised function the validator rejects. -/
 def rejectedReason : String := "i128 legalized (outside backend_correct: Opt.Legal.check rejects)"
 
-/-- The unverified reason of an accepted legalised function that declares an extern named
-like a function of the file (`E2E.backend_correct_legal`'s `hext`/`hext'`: calls go to the
-environment). -/
-def externClashReason : String :=
-  "i128 legalized (outside backend_correct_legal: an extern is named like a function of the file)"
-
-/-- The unverified reason of an accepted legalised function with a `call_indirect` when the
-legalised file's externs do not extend the original file's (`E2E.backend_correct_legal`'s
-`hind`: an indirect call resolves to the same extern in both programs). -/
-def indExternsReason : String :=
-  "i128 legalized (outside backend_correct_legal: call_indirect, and the legalised file's externs do not extend the original's)"
-
-/-- Does `f` have a `call_indirect`? -/
-def hasCallInd (f : Clif.Function) : Bool :=
-  f.blocks.any fun b => b.body.any fun st => match st.inst with
-    | .callIndirect .. => true
-    | _ => false
-
-/-- The names of the externs the parsed functions of a file declare (`Clif.Program.externNames`
-of the file's program). -/
-def externNamesOf (pf : Clif.ParsedFile) : List String :=
-  (pf.funcs.filterMap (·.func.toOption)).flatMap fun f => f.externs.map (·.2.name)
-
 /-- The result of `parsedFile128`. -/
 structure Legalized where
   /-- The file with every legalisable function replaced by its legalisation. -/
   file : Clif.ParsedFile
   /-- The legalised functions outside `E2E.backend_correct_legal`, with the reason. -/
   unverified : List (String × String)
-  /-- The legalised functions `Opt.Legal.check` accepts (without extern-name clash): inside
-  `E2E.backend_correct_legal` whenever the backend's own conditions (`InSubset` of the
-  legalised function, `lowerCheck`) hold, which `Backend.compileFileWith` decides. -/
+  /-- The legalised functions `Opt.Legal.check` accepts: inside the per-activation theorem
+  `E2E.backend_correct_legal` when the backend's local conditions hold. Source and target
+  programs have no functions, so all calls use the environment's contracts. -/
   accepted : List String
 
-/-- Legalise every parsed function of a file. A legalised function the validator
-`Opt.Legal.check` accepts, whose externs are not named like functions of the file, is covered
-by `E2E.backend_correct_legal` (the backend decides the remaining conditions on the
-legalised function like on any other); the others are flagged unverified. -/
+/-- Legalise every parsed function of a file. Accepted functions use
+`E2E.backend_correct_legal` with function-free source and target programs: its extern-call
+and indirect-resolution program conditions then hold independently of names in the file.
+The backend checks the remaining local conditions; rejected legalisations stay unverified. -/
 def parsedFile128 (pf : Clif.ParsedFile) : Legalized :=
-  let own := pf.funcs.map (·.name)
-  let clash (f : Clif.Function) : Bool := f.externs.any fun e => own.contains e.2.name
-  let lg := parsedFile128Fold pf own clash
-  -- `hind`: with an indirect call, the legalised file's externs must extend the original's
-  if (externNamesOf pf).isPrefixOf (externNamesOf lg.file) then lg
-  else
-    let ind := lg.accepted.filter fun n =>
-      pf.funcs.any fun p => p.name == n && match p.func with
-        | .ok f => hasCallInd f
-        | .error _ => false
-    { lg with accepted := lg.accepted.filter (!ind.contains ·),
-              unverified := lg.unverified ++ ind.map (·, indExternsReason) }
-where
-  parsedFile128Fold (pf : Clif.ParsedFile) (own : List String) (clash : Clif.Function → Bool) :
-      Legalized :=
   pf.funcs.foldl (fun (acc : Legalized) p =>
     let push (f : Clif.ParsedFunction) : Clif.ParsedFile :=
       { acc.file with funcs := acc.file.funcs ++ [f] }
@@ -397,8 +359,6 @@ where
           let acc := { acc with file := push { p with func := .ok f' } }
           if !Opt.Legal.check f f' cert then
             { acc with unverified := acc.unverified ++ [(p.name, rejectedReason)] }
-          else if clash f || clash f' then
-            { acc with unverified := acc.unverified ++ [(p.name, externClashReason)] }
           else { acc with accepted := acc.accepted ++ [p.name] }
       | .error _ => { acc with file := push p }
     | .error _ => { acc with file := push p }) ⟨{ pf with funcs := [] }, [], []⟩

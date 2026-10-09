@@ -466,30 +466,15 @@ def main (args : List String) : IO UInt32 := do
   let dataLines : List String := (((j.getObjVal? "data").bind (·.getArr?)).toOption.getD #[]).toList.filterMap
     (·.getStr?.toOption)
   let ajs := ((j.getObjVal? "addrs").bind (·.getArr?)).toOption.getD #[]
-  let addrs0 : List (String × Nat) := ajs.toList.filterMap fun a => do
+  let addrs : List (String × Nat) := ajs.toList.filterMap fun a => do
     let arr ← a.getArr?.toOption
     let n ← (arr[0]?.bind (·.getStr?.toOption))
     let v ← (arr[1]?.bind (·.getNat?.toOption))
     pure (n, v)
-  -- `cargo fv`'s self-call aliases: a recursive `f` calls itself as `f__fvself`, which the
-  -- linker resolves to `f`; the alias is a function of the program with `f`'s body, its
-  -- self-call naming `f`, at `f`'s address (one copy of the code), and a fresh symbol address
-  let top := (addrs0.map (·.2)).foldl max 0
-  let mut aliases : List (String × String) := []
-  let mut aliasAddrs : List (String × Nat) := []
-  for fi in fis do
-    let n := fi.func.name
-    let a := n ++ "__fvself"
-    if fi.func.externs.any (·.2.name == a) && !(addrs0.lookup a).isSome then
-      let clif := (fi.clif.replace s!"%{a}(" s!"%{n}(").replace s!"function %{n}(" s!"function %{a}("
-      fis := fis.push { fi with clif }
-      aliases := aliases ++ [(a, n)]
-      aliasAddrs := aliasAddrs ++ [(a, top + 16 * (aliases.length))]
-  let addrs := addrs0 ++ aliasAddrs
   -- functions whose address is in a data object the program reaches (vtable methods)
   let dataSyms : List String := (((j.getObjVal? "data_syms").bind (·.getArr?)).toOption.getD #[]).toList.filterMap
     (·.getStr?.toOption)
-  let I0 : LinkInput := { funcs := fis.toList, addrs, syms := [], raStar := 8, D := 0, aliases }
+  let I0 : LinkInput := { funcs := fis.toList, addrs, syms := [], raStar := 8, D := 0 }
   if o.profile then
     -- the slowest functions: the pipeline, the lowering validator, the allocation checker
     let mut tot : Array (Nat × String × Nat × Nat × Nat) := #[]

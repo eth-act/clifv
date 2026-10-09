@@ -248,18 +248,30 @@ this change such calls were stuck.
 
 ### Calls of the function itself (recursion, `cargo fv`)
 
-`InSubset.externCalls` excludes calls of functions of the program: `Clif.run` enters such a
-callee, while the Arm model abstracts every call through the callee contract. `cargo fv`
-compiles each function in its own file, so the only such call is a recursive one; every other
-call of a crate function is already an extern call under `XCallsOk`/`CalleeOk`. `cargo fv`
-(`self_call_alias`, `rust/crates/cargo-fv/src/pipeline.rs`) renames the self-call declarations
-`fnK = [colocated] %f(…)` to the extern `%f__fvself(…)`, compiles that file (inside the theorem,
-the recursive call under the callee contract like any other), and redirects the alias's
-relocations to `f` (`llvm-objcopy --redefine-sym`): the code is the same (disassembly identical
-to compiling the original file), the linker resolves both names to `f`. The claim is the modular
-one made for every call: the callee at `f`'s address behaves as the environment's `f__fvself`.
-`lean-backend` itself still reports a call of a function of the file unverified (multi-function
-files, runtests).
+`InSubset.externCalls` excludes calls of functions in the activation's program. The driver
+uses `P.bare`, whose function table is empty: every call, including a direct self-call, uses
+the environment's callee contract. `Backend.verifiable` checks the local subset and signature
+conditions; `InSubset.of_verifiable` proves these imply `InSubset P.bare f`.
+
+`cargo fv` compiles the original self-declaration and call without renaming symbols or
+creating an alias body. Linking supplies the whole-program contract for the callee at `f`'s
+own address; `DeclN` includes the caller's own name. Taking that address is also supported.
+This is a per-activation guarantee, not an assumption that recursion terminates or has a
+fixed stack bound. `compileExe_correct` still requires no reachable call cycle.
+`E2E.LinkWitness.DirectSelf` witnesses a native recursive CLIF function's `InScopeP`, local
+verification and self edge, and proves its depth-independent stack budget is `none`.
+
+**#88 integration verification:** full Lean/tool build and crate proofs pass; all 14 audited
+theorems use only permitted axioms. Filetests: corpus 114/114, extra 22/22, runtests 4672
+passed with no failures (existing 7 errors unchanged); encoding 1292 identical, 0 different;
+E2E checker 1150 accepted, 0 rejected. `cargo fv test --lean-link --keep-temps` passes all
+20 fv-demo tests, including recursive calls returning the function's own address; the report
+marks `recursive_address` verified in both compiled units, not fallback. Both executables
+are written by `Link.compileExe`, binary checks 2/2. Survey tests: 53 passed, binary checks
+18/18. `cargo fv run --lean-link --keep-temps` on deps compiles 17,091 functions, passes its
+binary check and runs the JSON/hash/word-count/factorial program. Unwinding is exercised,
+not newly proven; CLIF semantics are unchanged.
+
 * **Regression file**: `corpus/clif-regress/call_indirect.clif` (a vtable built with
   `func_addr` and dispatched through, a function address returned as a value, `try_call_indirect`).
 
@@ -507,9 +519,9 @@ whole-program CLIF semantics" — a CLIF-defined contract instead of an opaque e
 **Scope.** Programs without `call_indirect`/`try_call_indirect` (whole-program
 `stepCallIndirect` looks up the address among all functions and `p.externNames` of the whole
 program) and `return_call` (its slot freeing precedes the callee's allocation); distinct function
-names; `f` itself must be `InSubset (P.only f)`, so it calls itself only through `cargo fv`'s
-alias (`f__fvself`, a function of `P` with `f`'s body). Runs in which a program callee traps are
-excluded, as for any callee (`TrapsExplicit.stmt` of the per-function run).
+names; this older helper requires `InSubset (P.only f)`, excluding native direct self-calls.
+The current whole-program theorem instead uses `InSubset P.bare f`, so it needs no alias.
+Runs in which a program callee traps remain excluded (`TrapsExplicit.stmt`).
 
 **Trusted** (in addition to `backend_correct_final`'s): the object merge and the linker —
 every function's words at its own base (`AbiEntry` per activation), `syms`/`X.sym` the linked
@@ -785,8 +797,8 @@ bytes. It is vacuous without program callees with slots (`NeedSlots`).
    `OutRel` holds again because the callee's whole-program run creates no allocation outside its
    own slots (`runLoop_valid`: entered functions without slots, `baseNoAlloc`; with slots,
    `runLoop_allocs`). A program callee with an outgoing area of its own is covered by 2.
-4. *Direct self-recursion, one copy* (agent/link-scope2): `cargo fv`'s alias as a program call.
-   `P` contains `r` (its self-call renamed to `r__fvself`, as `cargo fv` emits) and `r__fvself`
+4. *Direct self-recursion, one copy* (agent/link-scope2): historical shared-code alias witness.
+   `P` contains `r` (its self-call renamed to `r__fvself`) and `r__fvself`
    (`r`'s body and signature under the alias name, its self-call naming `r`), compiled to the
    same words and loaded at `r`'s address (`A r__fvself` and `A r` share `base` and `fb.words`;
    one copy in the image, as the linker resolves `r__fvself` to `r`). Each call returns into the
@@ -808,9 +820,9 @@ bytes. It is vacuous without program callees with slots (`NeedSlots`).
      `MachEntry.abi`/`ActEntry.abi` are `AbiCall` (no return address outside the code).
    The witness checks it per call (`raOkB`, `raCallB_sound`) and states the shared base and words
    and that the calls of `r` and `r__fvself` return into each other's code (`oneCopyB`). For a
-   crate, `r__fvself` resolves to `r` as a program call (not a base extern). Not covered: a
-   function calling itself under its own name (excluded at the CLIF level, `InSubset (P.only f)`),
-   recursion through a pointer.
+   crate, `r__fvself` resolves to `r` as a program call (not a base extern). This historical
+   witness does not exercise native self-calls or recursion through a pointer; those are now
+   admitted by the function-free activation model described above.
 5. *Indirect calls between program functions* (`call_indirect`, `try_call_indirect`; and the
    `blr` of a call through the GOT). `Ok.noBlr` and `Linkable`'s indirect-call exclusion are
    gone (`Clif.LinkFree` excludes only `return_call`; `Clif.IndFree` is separate, still required
@@ -1275,7 +1287,7 @@ structure LinkInput where
   syms : List (String × Nat)      -- the CLIF image's symbols (`L.syms`)
   raStar : Nat
   D : Nat
-  aliases : List (String × String) := []   -- cargo fv's self-call aliases (f__fvself, f)
+  aliases : List (String × String) := []   -- historical shared-code aliases (f__fvself, f)
 structure BaseEnv where           -- everything outside the program
   env : Clif.Env; call : Option String → List CV → Arm.ArmState → Option (List CV × Arm.ArmState)
   tp : BitVec 64; tlsFlags : String → Arm.ArmState → Arm.PState; hooks : ArmHooks
@@ -1307,14 +1319,13 @@ link-map address plus `off` (`0` for a name outside the map); `L.syms` is `I.sym
 image `Img` is the compiled words' addresses and `imgMem` their bytes (`memT`); `raStar`, `D`
 from the input.
 
-**Recursion, one copy.** A directly recursive `f` calls itself through `cargo fv`'s alias
-`f__fvself`, which the linker resolves to `f`. Since agent/link-scope2's one-copy recursion
-(`RaOk`), the alias is a function of the program: `link-check` adds it to `P` with `f`'s body
-(its self-call naming `f`) at `f`'s address (`aliases`, `baseOf`): one copy of the code, the two
-calling each other, each call returning into the callee's own code (`raOkB`, the second case of
-`RaOk`). The recursive call is a program call, not a base extern, so its contract is no longer
-a base premise. The alias has no symbol in the executable; `addrs` gives it a fresh address that
-no other symbol has (only `symInj` reads it). `fv-demo`'s recursive function is covered this way.
+**Recursion, one copy.** A directly recursive `f` declares and calls `f` under its original
+name. Its per-function activation runs in `P.bare`; the linked environment interprets the
+self-call as another whole-program activation. `DeclN` and the call-site checks include self
+declarations. The return may lie in the callee's own code (`RaOk`); no duplicate function or
+fresh alias address is needed. Generic `LinkInput.aliases` remains for existing shared-code
+certificates, including the historical `r`/`r__fvself` non-vacuity witness; the compiler and
+certificate generator no longer synthesize such aliases.
 
 **The checker** (`okB`, `okR`): per function (`chks = staticChks ++ linkChks`, each check named
 by the premise it discharges): the pipeline succeeds, `lowerCheck`, `prepCheck`, `checkAlloc`
@@ -1326,7 +1337,7 @@ calls can enter, `indToB` for `IndTo`; at a call through the GOT, `gotOf`/`gotOf
 agent/link-scope2's `GotFlow`, only the GOT symbol's), `declSig`, `entryRegs`, `fits`,
 `raCall`/`raBlr` (`raOkB`: the return address of every call is outside every other function's
 code, an interval check, or after a call of that function's own code), `depth`, `free`, `subset`
-(clif-subset-v2 E, no direct self-call, ABI and indirect-call signatures),
+(clif-subset-v2 E, ABI and indirect-call signatures, in the function-free activation),
 `indScope`/`indSig` (`indSig` for the functions one of the caller's indirect calls
 can enter, `indSigB`: a matching signature, `IndSigMatch`, or declared with the parameter types,
 `IndTyMatch`); for the program (`globalChks`, `globalB`): distinct
@@ -1490,11 +1501,9 @@ part (the Lean-compiled functions) is placed, relocated and written by Lean; rus
 outside part around a placeholder of the region:
 
 ```lean
-structure Link.LinkSpec   -- funcs (placement order), names, sizes, aliases/aliasFns, outside,
-                          -- data, symNames, R
+structure Link.LinkSpec   -- funcs (placement order), names, sizes, outside, data, symNames, R
 def LinkSpec.input (S : LinkSpec) : LinkInput   -- link map = the placement (`offs`: each
-                                                -- function, then one zero gap word; an alias
-                                                -- at the gap word after its function)
+                                                -- function, then one zero gap word)
 def LinkSpec.placeOkB (S : LinkSpec) : Bool      -- distinct names, positive sizes, region in
                                                 -- range, no outside symbol in it
 def LinkSpec.namesOkB/sizesOkB (S) (T) : Bool    -- the compiled code has the given names, sizes
@@ -1502,14 +1511,14 @@ def Link.resolveWord (I) (tp) (a : Art) (k : Nat) : BitVec 32   -- bl; adrp+add 
                                                 -- pairs (the GOT pair too: PairOk.adrpAdd);
                                                 -- TLSDESC → movz/movk/nop/nop of tpOff
 def Link.relocsOkB (I) (tp) (a : Art) : Bool     -- the linker's shape/range checks
-def Link.aliasOkB/aliasShapeB                     -- an alias's words and call lines are its function's
 def Link.regionOkB (file : ByteArray) (R n off : Nat) : Bool   -- rust-lld's output: the region
 def Link.outsideOkB (I) (D) (file) : Bool         -- rust-lld's output: hdrB, data, symbols
 def Link.leanLink (S : LinkSpec) (file0 : ByteArray) : Except String ByteArray
-theorem Link.linkerOkB_place_alias (hp : S.placeOkB = true)
-    (hr : S.input.resultsT.all (·.2.toBool) = true) (hn : S.namesOkB (tabOf S.input.resultsT))
-    (hs : S.sizesOkB (tabOf S.input.resultsT)) (ha : aliasShapeB S.input (tabOf S.input.resultsT)) :
-    linkerOkB S.input = true          -- `linkerOkB_place`: the alias-free corollary
+theorem Link.linkerOkB_place (hp : S.placeOkB = true)
+    (hr : S.input.resultsT.all (·.2.toBool) = true)
+    (hn : S.namesOkB (tabOf S.input.resultsT) = true)
+    (hs : S.sizesOkB (tabOf S.input.resultsT) = true) :
+    linkerOkB S.input = true
 theorem Link.leanLink_linkerOk (h : leanLink S file0 = .ok file) : linkerOkB S.input = true
 theorem Link.leanLink_code (h : leanLink S file0 = .ok file) :
     ∀ e ∈ tabOf S.input.resultsT, ArtOk S.input file e.2
@@ -1526,17 +1535,17 @@ theorem Link.crate_correct_leanLink_proven (hin : InScopeP S.input = true)
     (h : leanLink S file0 = .ok file) (n : String) : CrateStmtT S.input n
 ```
 
-So with the Lean linker the crate theorem has no `linkerOkB` premise (self-call aliases
-included) and `BinOk` has no premise: `linkerOkB` and the code are proven by construction; the
+So with the Lean linker the crate theorem has no `linkerOkB` premise and `BinOk` has no
+premise: `linkerOkB` and the code are proven by construction; the
 facts about the bytes rust-lld wrote — the headers (`Static`), cg_clif's data objects
 (`DataOk`), the symbol table (`SymsOk`, which for the program's functions is that rust-lld put
 them at their placement) and the region's segment (`regionOkB`) — are `leanLink`'s checks of
 rust-lld's output (`regionOkB`, `outsideOkB`), so a failure is a link error. Witness:
 `crate-proofs/Crates/LeanLinkWitness.lean` (`a_arith`'s 58 functions, `native_decide`). Tooling:
 `cargo fv --lean-link` (`rust/crates/cargo-fv/src/leanlink.rs`, `lake exe lean-link`): the
-survey crates (18 executables), `fv-demo` (self-call aliases) and `examples/deps`' `deps-demo`
-(17,090 functions) link and run; unverified functions and self-calling functions that take
-their own address keep cg_clif's code.
+survey crates, `fv-demo` and `examples/deps`' `deps-demo` exercise this path. Unverified
+functions keep cg_clif's code; direct recursion and taking one's own function address are
+not fallback reasons.
 
 **The executable compiler (L1, `FV/Link/Compile.lean`, `Exe.lean`, `ExeTotal.lean`).** The
 binary chain (`okB`, `BinOk`, `binary_correct_*`, `binary_correct_exec_proven`) is stated for
@@ -1560,15 +1569,15 @@ theorem Link.compileExe_correct (h : compileExe S file0 = .ok file) (B : BaseEnv
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall S.input (roByte S.input S.data) f (StackBound.stackFn S.input f) r args cs.mem)
     (hr : ClifRun S.input B f r args cs)
-    (htr : TrapsExplicit (Clif.linkEnvN (prog S.input) B.env M) ((prog S.input).only f) cs) :
+    (htr : TrapsExplicit (Clif.linkEnvN (prog S.input) B.env M) (prog S.input).bare cs) :
     ExecRefines (art S.input f).fb (art S.input f).base (xreg 30 r) (step S.input B file) r
       (RelocAt S.input) (Clif.runLoop B.env (prog S.input) (M + 1) cs)
 def Link.relocShapeB (a : Art) (r : Reloc) / relocRangeB (I) (tp) (a) (r) : Bool
                                    -- relocOkB = shape (code) ∧ range (addresses): relocOkB_of
 theorem Link.relocShapes_of_pipeT (ha : pipeT g k base o = .ok a) : relocShapesB a = true
-theorem Link.codeMap_place (hp) (hr) (hn) (hs) (hal : S.aliasFns = []) :
+theorem Link.codeMap_place (hp) (hr) (hn) (hs) :
     codeMapB S.input (tabOf S.input.resultsT) = true
-theorem Link.compileExe_total (hin : InScopeP S.input0 = true) (hal : S.aliasFns = [])
+theorem Link.compileExe_total (hin : InScopeP S.input0 = true)
     (hp : S.placeOkB = true) (hn : S.names = S.funcs.map (·.func.name)) (hs : S.sizes = S.sizesOf)
     (hrange : ∀ e ∈ tabOf S.input.resultsT, ∀ r ∈ e.2.fb.relocs,
       relocRangeB S.input (tpOff phs) e.2 r = true)
@@ -1581,12 +1590,10 @@ theorem Link.compileExe_total (hin : InScopeP S.input0 = true) (hal : S.aliasFns
 `compileExe_correct` has no per-program premise and no open hypothesis about the compiler; its
 premises are the outside code's contracts and the CLIF-level condition that no call cycle is
 reachable from the entered function. `compileExe_total`'s hypotheses are the input conditions,
-the scope limit "no self-call alias", the driver's data, the addresses (the relocations' reach)
-and rust-lld's output. With aliases, `compileExe_total_alias` (`FV/Link/AliasOut.lean`) replaces
-the scope limit by the input conditions `aliasInB`, `aliasSymsB` and the **unproven** output
-facts `AliasOut` (the alias's compiled code is its function's up to the `bl` symbols `f` /
-`f__fvself`; functions declaring the alias call through registers only via other symbols' GOT
-entries); docs/TO-PROVE.md L1b lists the proofs that would discharge them. Witnesses:
+the driver's data, the addresses (the relocations' reach) and rust-lld's output.
+`LinkSpec` is alias-free by construction; #88 removes alias generation and `AliasOut` rather
+than assuming or proving renaming invariance of the compiler. Native recursion is admitted
+by totality; the separate acyclicity premise of executable correctness is unchanged. Witnesses:
 `crate-proofs/Crates/CompileExeWitness.lean` (`a_arith`: `compile_eq`, `correct_closed`,
 `total_witness`) and `CompileExeRunWitness.lean` (`compileExe_run_witness`: every premise of
 `compileExe_correct` for one concrete outside call into the panic=abort `a_arith` compiled by

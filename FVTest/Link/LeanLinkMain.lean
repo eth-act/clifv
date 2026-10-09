@@ -102,23 +102,11 @@ def main (args : List String) : IO UInt32 := do
   for n in names do
     let some w := sizeMap[n]? | do IO.eprintln s!"lean-link: {n}: no size in {sz}"; return 1
     sizes := sizes.push w
-  -- `cargo fv`'s self-call aliases (as `link-check` builds them): `f__fvself`, `f`'s body with
-  -- its self-call naming `f`, at `f`'s address
-  let mut aliases : Array (String × String) := #[]
-  let mut aliasFns : Array FnInput := #[]
-  for (fi, f) in fis.zip fns do
-    let n := f.name
-    let a := n ++ "__fvself"
-    if f.externs.any (·.2.name == a) && !addrMap.contains a then
-      let clif := (fi.clif.replace s!"%{a}(" s!"%{n}(").replace s!"function %{n}(" s!"function %{a}("
-      aliasFns := aliasFns.push { fi with clif }
-      aliases := aliases.push (a, n)
-  let progSet := aliases.foldl (fun s p => s.insert p.1) nameSet
-  let outside := addrs0.filter fun p => !progSet.contains p.1
+  let outside := addrs0.filter fun p => !nameSet.contains p.1
   let symNames := Id.run do
     let mut seen : Std.HashSet String := {}
     let mut out : Array String := #[]
-    for n in fns.toList.flatMap addrNamesOf ++ aliasFns.toList.flatMap (addrNamesOf ·.func) ++
+    for n in fns.toList.flatMap addrNamesOf ++
         (strs j "data_syms").filter nameSet.contains do
       if !seen.contains n then
         seen := seen.insert n
@@ -130,14 +118,12 @@ def main (args : List String) : IO UInt32 := do
     funcs := fis.toList
     names := names
     sizes := sizes.toList
-    aliases := aliases.toList
-    aliasFns := aliasFns.toList
     outside := outside
     data := BinCheck.parseData (strs j "data")
     symNames := symNames
     R := R }
   let file0 ← IO.FS.readBinFile exe
-  let summary := s!"{names.length} function(s) ({aliases.size} self-call alias(es)), {S.data.length} data object(s), region {hex R}..{hex (R + S.size)} ({S.size} bytes)"
+  let summary := s!"{names.length} function(s), {S.data.length} data object(s), region {hex R}..{hex (R + S.size)} ({S.size} bytes)"
   match compileExe S file0 with
   | .ok file =>
     IO.FS.writeBinFile exe file
