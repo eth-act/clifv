@@ -1,0 +1,79 @@
+{
+  "modules": [
+    "FV.Backend.Proof.StockScanFrontiers",
+    "FV.Backend.Proof.StockDriverBounds"
+  ],
+  "method": "lean-lsp-mcp lean_verify; exact-branch lake env lean",
+  "results": [
+    {
+      "theorem": "Backend.Stock.Proof.stock_scanBlock_frontiers",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scanBlock_frontiers_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_scanAliasBounds",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_scanAliasBounds_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    }
+  ],
+  "retained_results": [
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_allocationBounds",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_allocationBounds_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    }
+  ],
+  "gates": {
+    "full_build_jobs": 1274,
+    "crate_build_jobs": 959,
+    "corpus_pass": 114,
+    "extrt_pass": 22,
+    "runtests_pass": 4672,
+    "runtests_fail": 0,
+    "runtime_disagreements": 0,
+    "encoder_identical": 1292,
+    "encoder_differ": 0,
+    "e2e_accepted": 1149,
+    "e2e_rejected": 0,
+    "final_theorem_axiom_audits": 7
+  }
+}
