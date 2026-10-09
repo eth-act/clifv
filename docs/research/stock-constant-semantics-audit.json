@@ -1,0 +1,218 @@
+{
+  "modules": [
+    "FV.Backend.Proof.StockConstantRoot",
+    "FV.Backend.Proof.StockEmissionSemantics",
+    "FV.Backend.Proof.StockEmittedScan"
+  ],
+  "method": "lean-lsp-mcp lean_verify; exact-branch lake env lean",
+  "results": [
+    {
+      "theorem": "Backend.Stock.Proof.stock_statement_selectedConstant",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_statement_selectedConstant_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_iconst_emission_alias",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_iconst_emission_alias_fresh",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_iconst_emission_fall_refines",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_12",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_18",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_23",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_28",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_33",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_7"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_iconst_emission_alias_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_iconst_emission_alias_fresh_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_iconst_emission_fall_refines_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_12",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_18",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_23",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_28",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_33",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_7"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_emitted_scan",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_iconstScan_fall_refines",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_12",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_18",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_23",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_28",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_33",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_7"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_constantOmittedBlock_fall_refines",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_12",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_18",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_23",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_28",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_33",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_7"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_emitted_scan_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_12",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_18",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_23",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_28",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_33",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_7"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_iconstScan_fall_refines_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_12",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_18",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_23",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_28",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_33",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_7"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_constantOmittedBlock_fall_refines_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_12",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_18",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_23",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_28",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_33",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_7"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.constantScanInvOfRun",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    }
+  ],
+  "gates": {
+    "full_build_jobs": 1278,
+    "crate_build_jobs": 958,
+    "corpus_pass": 114,
+    "extrt_pass": 22,
+    "runtests_pass": 4672,
+    "runtests_fail": 0,
+    "runtime_disagreements": 0,
+    "encoder_identical": 1292,
+    "encoder_differ": 0,
+    "e2e_accepted": 1150,
+    "e2e_rejected": 0,
+    "final_theorem_axiom_audits": 7
+  },
+  "scope": "Conditional generic constant emission/scan transfer and actual nonempty source/machine witnesses. Whole-driver alias capacity is derived by constantScanInvOfRun; result alias transport and other-demanded-value noninterference remain caller facts. No whole-driver simulation or production cutover is claimed.",
+  "validated_source_commit": "1043fd89ef1e07ab7a8cf5f9889c3a436ece9fab",
+  "validated_main_commit": "dc279303a07731ed02481616cb28e3ec36de7ff4",
+  "source_sha256": {
+    "FV/Backend/Proof/StockConstantRoot.lean": "415364f58968e4e19a5eb77ccd149da56bdc554bbfda6ede31b768339d159bf8",
+    "FV/Backend/Proof/StockEmissionSemantics.lean": "f458133860bd7bae29b8db6a3d49ece6e5bd8809eb5b0bcacf8edb4be1e431c4",
+    "FV/Backend/Proof/StockEmittedScan.lean": "f6daef04a94f7d45211b72b1c2c6461ab76d149e4b762eae0f29bdae5be667bc"
+  },
+  "gate_log_sha256": {
+    "full": "2ec0286ff804a8ab8afd3aed1eda9e5cd0b6249f545f5fe0773d49b1f879cc2c",
+    "crates": "dad702c7ef24f8b02f79c96a8b8caa01e417c6ca8632e646cb00aabebb654d71",
+    "runtime": "6fc44567e9cac0a4ed3fd2661b4aad44f7e6b43055d21fb3fe150c1a56303553",
+    "encode": "03615dfbca26e9d0ed30a780c66e8822602b1201d21afe9cd05e6af550e89919",
+    "e2e": "50ec21b3f7b02ec1c31dc8af30d3dd791830b3e104b5e3512db9255c6bd4cce4",
+    "e2e-axioms": "620761c85c2e59b59c17136e0b0d2ca8efbe83934335f99704fdd30dbd91de6b",
+    "new-axioms": "fadbed7e9765adf9acadb7e1cb96ed5d7a8f46007d252d45ceef88c0d444533b"
+  }
+}
