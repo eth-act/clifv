@@ -58,14 +58,14 @@ def lowersB (f : Clif.Function) : Bool :=
     | .error _ => false
   | .error _ => false
 
-/-- **The per-function input conditions** of `g`: the subset (`InSubset (P.only g) g`: subset
-E, no direct self-call, `sigAbiOk` signatures, indirect-call signatures), the register
+/-- **The per-function input conditions** of `g`: the subset (`InSubset P.bare g`: subset
+E, `sigAbiOk` signatures, indirect-call signatures), the register
 parameters (distinct argument registers, at most 64 bits), no `return_call`, the conditions of
 the backend's totality theorems (`dominatedB`, `lowerScopeB`, `arityOkB`), `lowersB`, and the
 entry block's parameters are the signature's (`entryParamsB`, Cranelift's verifier rule; without
 it an entry parameter is never defined: `E2E.not_spillDefinedHyp`). -/
 def fnScopeB (g : Clif.Function) : Bool :=
-  Compile.functionE g && g.externs.all (fun e => e.2.name != g.name) &&
+  Compile.functionE g &&
   (sigAbiOk g.sig && g.externs.all (fun e => sigAbiOk e.2.sig)) && indSigsOk g &&
   decide (regLocs g.sig).Nodup && (regLocs g.sig).all (·.isArgReg) &&
   g.sig.params.all (fun p => decide (p.ty.width ≤ 64)) && linkFreeB g &&

@@ -23,12 +23,12 @@ value-id layout (values of `f` `< T0 = maxValueId f`; pair components and zero d
 a rejected function is flagged unverified (`i128 legalized (outside backend_correct:
 Opt.Legal.check rejects)`); an accepted one is compiled like any other function — the backend
 decides `InSubset` (`unverifiedReason?`) and `lowerCheck` on the legalised form, and a function
-passing both is reported verified (`E2E.backend_correct_legal`). Two extra conditions of the
-theorem are decided in `parsedFile128`: no extern of `f` or `g` is named like a function of the
-file (`hext`/`hext'`; otherwise `…outside backend_correct_legal: an extern is named like a
-function of the file`), and no `--opt` (no theorem composes the legalisation with the
-mid-end; under `--opt` every legalised function is flagged). `lean-e2e-check` legalises too
-and checks the accepted functions like any other.
+passing both is reported verified (`E2E.backend_correct_legal`). Source and target
+activations use programs with empty function tables, so the theorem's external-call and
+indirect-resolution program conditions hold even for self-calls. `parsedFile128` no longer
+rejects extern names matching functions in the file. Under `--opt` every legalised function
+is still flagged (no theorem composes legalisation with the mid-end). `lean-e2e-check`
+legalises too and checks the accepted functions like any other.
 
 Measured: the check accepts all legalised functions of the survey `g_u128` crates
 (debug/release/release-oc: 41) and the i128 Cranelift runtests (163), and rejects all 1197

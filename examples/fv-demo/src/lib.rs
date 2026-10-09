@@ -47,6 +47,15 @@ pub mod arith {
     pub fn saturating(a: u8, b: u8) -> (u8, u8) {
         (a.saturating_add(b), a.saturating_sub(b))
     }
+
+    #[inline(never)]
+    pub fn recursive_address(depth: u64) -> usize {
+        if depth == 0 {
+            recursive_address as *const () as usize
+        } else {
+            recursive_address(depth - 1)
+        }
+    }
 }
 
 pub mod slices {
@@ -510,6 +519,14 @@ mod tests {
         assert_eq!(arith::checked_ops(bb(i64::MIN), bb(-1)), (None, None, None));
         assert_eq!(arith::saturating(bb(200), bb(100)), (255, 100));
         assert_eq!(arith::saturating(bb(3), bb(9)), (12, 0));
+    }
+
+    #[test]
+    fn recursive_function_address() {
+        let f: fn(u64) -> usize = bb(arith::recursive_address);
+        let address = f as *const () as usize;
+        assert_eq!(f(bb(0)), address);
+        assert_eq!(f(bb(4)), address);
     }
 
     #[test]

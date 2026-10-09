@@ -64,10 +64,10 @@ def spv (s : Arm.ArmState) : BitVec 64 := Arm.r (.GPR 31#5) s
 /-! ## The subset -/
 
 /-- The CLIF functions the theorem covers: clif-subset-v2 E (`Compile.functionE`), plus the
-current restrictions of the proof (e2e.md, "Remaining"): calls only to externs (calls between
-compiled functions compose by induction on the call depth, not done yet; for indirect calls
-this is the run premise `TrapsExplicit.indirect`), indirect calls with at most 8 (register)
-parameters, and signatures (the
+current restrictions of the proof (e2e.md, "Remaining"): calls only to externs of this
+activation's program. Whole-program linking supplies a program without functions and
+discharges compiled callees' contracts by induction on call depth, including self-calls.
+Indirect calls have at most 8 register parameters, and signatures (the
 function's, its externs' and its indirect calls') with `normal` parameters and returns plus at
 most one `sret` struct-return pointer (`sigAbiOk`: in x8, returned in x0, no other returns);
 other special-purpose parameters are compiled and flagged unverified. Parameters beyond x0..x7
@@ -84,6 +84,16 @@ structure InSubset (p : Clif.Program) (f : Clif.Function) : Prop where
   /-- the signatures of the indirect calls (`call_indirect`, `try_call_indirect`) take at most
   8 (register) parameters and pass `sigAbiOk` (`Backend.indSigsOk`) -/
   indSigs : ∀ s ∈ indSigs f, s.params.length ≤ 8 ∧ sigAbiOk s = true
+
+/-- The driver's local verification conditions give the per-activation subset when every
+call is external to `p`; linking later supplies the compiled callees' contracts. -/
+theorem InSubset.of_verifiable {p : Clif.Program} {f : Clif.Function}
+    (h : Backend.verifiable f = true) (hp : ∀ n, p.func? n = none) : InSubset p f := by
+  simp only [Backend.verifiable, Backend.abiSigs, Backend.indSigsOk,
+    Bool.and_eq_true, List.all_eq_true, decide_eq_true_eq, and_assoc] at h
+  obtain ⟨hE, hf, hext, hind⟩ := h
+  exact ⟨hE, fun _ _ _ _ _ _ _ e _ => hp e.name,
+    fun _ _ _ _ _ _ e _ => hp e.name, ⟨hf, hext⟩, hind⟩
 
 /-- A function without indirect calls has no indirect-call signatures. -/
 theorem indSigs_eq_nil {f : Clif.Function}

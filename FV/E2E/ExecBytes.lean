@@ -94,7 +94,7 @@ def realStep (s : Arm.ArmState) : Arm.ArmState :=
   | _ => s
 
 /-- **The kind of a site** of the program's code: what the executable machine does there. Code
-shared by two functions of the program (`cargo fv`'s self-call alias `f__fvself` is `f`'s code)
+shared by two functions of the program (a historical self-call alias `f__fvself` on `f`'s code)
 has one kind at each word even where the functions' lines differ (`f`'s `bl f__fvself`,
 `f__fvself`'s `bl f`: both a call of a function of the program, `progCall`). -/
 inductive Site where

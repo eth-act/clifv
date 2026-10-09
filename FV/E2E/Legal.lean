@@ -21,12 +21,12 @@ source run whose traps are all explicit has no load/store trap).
 
 Remaining premises, beyond `backend_correct_final`'s about `g` (including its `try_call`
 callee contract `hCT` and its indirect-call contract `hXI`, both vacuous without such calls):
-calls of `f`/`g` go to the environment (`hext`/`hext'`: no function of the program has the name
-of a declared extern; `lean-backend` checks both), for a function with a `call_indirect` the
-two programs have the same functions and the source program's externs are a prefix of the
-target's (`hind`: an indirect call resolves to the same extern; `lean-backend` checks it), and
-`TrapsExplicit` of the source run (also: an indirect call of the source reaches no function of
-the program). The validator accepts `try_call` (its arguments, returns and normal-return
+calls of `f`/`g` go to the environment (`hext`/`hext'`), and for a `call_indirect` the programs
+have the same function names and the source program's externs are a prefix of the target's
+(`hind`). The driver's per-activation interpretation uses programs without functions, making
+these program conditions immediate, including for self-calls. `TrapsExplicit` of the source
+run also excludes indirect calls to a function of the activation's program.
+The validator accepts `try_call` (its arguments, returns and normal-return
 successor arguments split like a `call`'s and a branch's) and `call_indirect` without `i128`
 operands, and `func_addr` (the same symbol name in `g`); it rejects `try_call_indirect`. The backend's
 `TrapsExplicit` premise stays on the run of `g` (as for `backend_correct_opt_proven`, it is not

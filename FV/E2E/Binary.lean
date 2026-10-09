@@ -439,7 +439,7 @@ theorem trapsExplicit_of_run {L : LinkSys} (hL : L.Ok) {f : Clif.Function} (hf :
     TrapsExplicit (Clif.linkEnvN L.P L.base M) L.P.bare cs := by
   have hIf : Clif.LInv (L.P.only f) cs := runInv_entry (by simp [Clif.Program.only]) hcs
   obtain ⟨m, hm⟩ := Clif.runLoop_linkN (base := L.base) (syms := L.syms) M hL.names hf hL.free
-    (hL.indScope f hf) (hL.subset f hf).externCalls (hL.subset f hf).tryExterns
+    (hL.indScope f hf)
     (E := Clif.linkEnvN L.P L.base M) rfl rfl (fun _ _ => rfl) (fun _ _ _ => rfl)
     (M + 1) cs (Nat.le_refl _) (runInv_entry hf hcs) hIf
     (fun _ => hsym) (by rw [hrun]; exact fun _ h => nomatch h)

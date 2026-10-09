@@ -35,7 +35,6 @@ def entryWitness : Clif.Function :=
 `fnScopeB`), and its pipeline's prepared VCode is one block `args []; rets [(v0, x0)]`. -/
 theorem entryWitness_checks :
     (Compile.functionE entryWitness &&
-      entryWitness.externs.all (fun e => e.2.name != entryWitness.name) &&
       (sigAbiOk entryWitness.sig && entryWitness.externs.all (fun e => sigAbiOk e.2.sig)) &&
       indSigsOk entryWitness && decide (regLocs entryWitness.sig).Nodup &&
       (regLocs entryWitness.sig).all (·.isArgReg) &&
@@ -58,7 +57,7 @@ theorem entryWitness_pipe : ∃ (p : Clif.Program) (vc vcp : VCode) (vb : VBlock
     vb.insts = #[.args [], .rets [(.vreg 0 .int, .x 0)]] := by
   obtain ⟨hsc, -, hext, hind, hblk, hpipe⟩ := entryWitness_checks
   simp only [Bool.and_eq_true] at hsc
-  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨hE, -⟩, ⟨habi, -⟩⟩, -⟩, -⟩, -⟩, -⟩, -⟩, hd⟩, hs⟩, har⟩, hlw⟩ := hsc
+  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨hE, ⟨habi, -⟩⟩, -⟩, -⟩, -⟩, -⟩, -⟩, hd⟩, hs⟩, har⟩, hlw⟩ := hsc
   obtain ⟨-, vc, vcp, hl, hp, -⟩ := lowersB_spec hlw
   have hsub : InSubset { funcs := [entryWitness] } entryWitness := by
     refine ⟨hE, fun b hb st hst _ _ _ => ?_, fun b hb fn args et ht => ?_, ⟨habi, ?_⟩, ?_⟩

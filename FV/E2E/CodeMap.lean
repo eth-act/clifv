@@ -5,8 +5,8 @@ import FV.E2E.LinkCheck
 `codeMapB`: the per-program check that the executable machine's site lookup
 (`E2E.ExecBytes.siteAt`) and its `blr` agree with the model's: every function's link-map address is
 its load address, or no `blr` of the program enters it; two functions' code ranges are disjoint,
-or the two share their code with lines alike line by line (`cargo fv`'s self-call alias
-`f__fvself` is a function of the program on `f`'s code). Decided here, on the compiled images
+or the two share their code with lines alike line by line (historical shared-code certificates
+use a self-call alias `f__fvself` on `f`'s code). Decided here, on the compiled images
 (`tabOf`), so that `link-check` evaluates it and the crate proofs decide it by `native_decide`;
 its meaning is `E2E.ExecBytes.codeMap_sound`.
 -/
@@ -56,11 +56,11 @@ through a pointer), and every function of `T` declaring `n` calls through a regi
 through the GOT entries of other symbols. -/
 def noBlrB (I : LinkInput) (T : List (Clif.Function × Art)) (n : String) : Bool :=
   (I.syms.lookup n).isNone && T.all fun e =>
-    !(e.1.externs.any fun x => x.2.name == n) || e.1.name == n || blrGotB e.2.vcp n
+    !(e.1.externs.any fun x => x.2.name == n) || blrGotB e.2.vcp n
 
 /-- **The code map** of a program's compiled images `T` (a per-program check, a premise of
 `E2E.ExecBytes.binary_correct_exec_static`): every function's link-map address is its load address, or no
-`blr` of the program enters it (`noBlrB`; `cargo fv`'s self-call alias `f__fvself` has a fresh
+`blr` of the program enters it (`noBlrB`; a historical self-call alias `f__fvself` has a fresh
 link-map address, and only `f` declares it, calling it by `bl`); the code ranges of two
 functions are disjoint, or the two share their code (the same load address) with lines alike
 line by line (`linesAlikeB`: the alias, `f`'s body whose self-call `bl f__fvself` is `bl f`).

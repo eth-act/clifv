@@ -285,12 +285,12 @@ theorem edgeB_of_callee {I : LinkInput} (hI : okB I = true) {B : BaseEnv}
       exact .inl ⟨e, he, hn⟩
   rcases hc with ⟨info, hs, n, hd, hpf⟩ | ⟨e, he, hpf⟩ | hc
   · have hpf' : (progOf I.results).func? n = some h := hpf
-    obtain ⟨-, ⟨e, he, hen⟩, -⟩ := siteOk_sound (site_sound (facts hI hg).sites hs) hd hpf'
+    obtain ⟨⟨e, he, hen⟩, -⟩ := siteOk_sound (site_sound (facts hI hg).sites hs) hd hpf'
     exact hdecl e he (by rw [hen, (Clif.Program.func?_some hpf').2])
   · obtain ⟨e', he', rfl⟩ := List.mem_map.1 he
     exact hdecl e' he' (Clif.Program.func?_some (p := progOf I.results) hpf).2.symm
   · obtain ⟨hh, hmay⟩ := hc
-    rcases hmay with ⟨hm, -⟩ | ⟨hnf, hsy, hsig⟩
+    rcases hmay with hm | ⟨hnf, hsy, hsig⟩
     · obtain ⟨e, he, hen⟩ := List.mem_map.1 hm
       exact hdecl e he hen
     · obtain ⟨sig, hsm, hm⟩ := hsig h (func?_of_mem (okB_names hI) hh)

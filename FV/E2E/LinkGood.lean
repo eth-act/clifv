@@ -157,7 +157,7 @@ theorem progCallG (hL : L.Ok) {M : Nat} (hM : 0 < M) (ihG : L.ThmG κ (M - 1)) {
   have hce : ClifEntry h vals cs := clifEntry_initState hpf hinit
   -- the run of the program without functions (program callees at most `M - 1` steps)
   obtain ⟨m, hm⟩ := Clif.runLoop_linkN (base := L.base) (syms := L.syms) (M - 1) hL.names hh
-    hL.free (hL.indScope h hh) (hL.subset h hh).externCalls (hL.subset h hh).tryExterns
+    hL.free (hL.indScope h hh)
     (E := L.envR (M - 1) h) rfl rfl (fun _ hn => L.envR_of (.inl hn))
     (L.envR_link hL.names) M cs (by omega) (runInv_entry hh hce)
     (runInv_entry (by simp [Clif.Program.only]) hce) (fun _ => hsym'.trans hmr.symbols)
@@ -870,7 +870,7 @@ theorem backend_correct_program_budgetX (L : LinkSys) (hL : L.Ok)
   -- the whole-program run is a run of the program without functions
   have hIf : Clif.LInv (L.P.only f) cs := runInv_entry (by simp [Clif.Program.only]) hcs
   have hlink := Clif.runLoop_linkN (base := L.base) (syms := L.syms) M hL.names hf hL.free
-    (hL.indScope f hf) (hL.subset f hf).externCalls (hL.subset f hf).tryExterns (E := L.envR M f)
+    (hL.indScope f hf) (E := L.envR M f)
     rfl rfl (fun _ hn => L.envR_of (.inl hn))
     (L.envR_link hL.names) (M + 1) cs (Nat.le_refl _) (runInv_entry hf hcs) hIf
     (fun _ => hrel.1.symbols)

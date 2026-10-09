@@ -5,25 +5,14 @@ import FV.Link.OutsideProof
 
 `linkerOkB S.input` (`FV/E2E/LinkScopeDefs.lean`), the checks about the addresses of the linked
 program, holds for every placement that passes `placeOkB`, the pipeline accepting every
-function, the compiled code having the placement's names and sizes (`namesOkB`, `sizesOkB`)
-and every self-call alias having its function's words and call shape (`aliasShapeB`):
+function and the compiled code having the placement's names and sizes (`namesOkB`, `sizesOkB`):
 
-* `imgB_of` (any table): aligned code where every address holds one word reads back word by
-  word from the image's map (`wordMap_get`, `memOfMap_word`).
-* `tab_home`: every entry of the compiled table is a placed function or its alias, at the
-  function's base with its words and call shape (`tab_placed`, `tab_alias`, `aliasShapeB`).
-* `linkerOkB_place_alias`: consecutive functions separated by a gap word (`offs_sep`,
-  `addr_inj`), in the region `[R, R + size)` (`off_end`, `R + size < 2 ^ 64`): one word at each
-  address (`imgB`; an alias's words are its function's), `raStar = R + size` past every
-  function (`raStarB`), every call's return address within the caller's words or its gap word,
-  so outside every function at another base, and a return into the shared code of a function
-  and its alias, at the same call line, not at its entry (`raCallB`); distinct nonzero
-  addresses — an alias's is the gap word after its function, which no function starts at
-  (`sizes` positive) and no other alias has (one alias per function) — no outside symbol
-  shares (`symInjB`); the CLIF image's symbols read from the link map (`symOkB`).
-  `linkerOkB_place`: the alias-free corollary.
-* `leanLink_linkerOk`: the Lean linker's output satisfies `linkerOkB S.input` (its checks
-  `placeOkB`, the pipeline, `namesOkB`, `sizesOkB`, `aliasShapeB`: `leanLink_spec`).
+* `imgB_of`: aligned code where every address holds one word reads back word by word.
+* `tab_home`: every compiled entry is a placed function.
+* `linkerOkB_place`: consecutive functions separated by a gap word have disjoint code,
+  valid return addresses, distinct nonzero symbol addresses, and the CLIF image's symbols
+  read from the link map.
+* `leanLink_linkerOk`: the Lean linker's output satisfies `linkerOkB S.input`.
 -/
 
 namespace Link
@@ -211,7 +200,7 @@ theorem lineOffset_callShape (a : Art) (j : Nat) :
 theorem tab_layout {S : LinkSpec} (hr : S.input.resultsT.all (·.2.toBool) = true)
     {e : Clif.Function × Art} (he : e ∈ tabOf S.input.resultsT) : e.2.fa.layout = .ok e.2.fb := by
   obtain ⟨k, hk⟩ := List.mem_iff_getElem?.1 he
-  have hkl : k < S.funcs.length + S.aliasFns.length := by
+  have hkl : k < S.funcs.length := by
     have := (List.getElem?_eq_some_iff.1 hk).1
     rwa [tab_length] at this
   obtain ⟨fi, a, -, ha, ht⟩ := tab_entry hr hkl
@@ -219,55 +208,32 @@ theorem tab_layout {S : LinkSpec} (hr : S.input.resultsT.all (·.2.toBool) = tru
   subst ht
   exact (pipeT_layout ha).1
 
-/-- **Every entry of the compiled table has a home**: the `i`-th placed function `ef`, whose
-base, words and call shape it has — it is `ef` itself or `ef`'s self-call alias
-(`tab_alias`, `aliasShapeB`). -/
+/-- **Every entry of the compiled table has a home**: the `i`-th placed function. -/
 theorem tab_home {S : LinkSpec} (hp : S.placeOkB = true)
     (hr : S.input.resultsT.all (·.2.toBool) = true)
     (hn : S.namesOkB (tabOf S.input.resultsT) = true)
     (hs : S.sizesOkB (tabOf S.input.resultsT) = true)
-    (ha : aliasShapeB S.input (tabOf S.input.resultsT) = true)
     {e : Clif.Function × Art} (he : e ∈ tabOf S.input.resultsT) :
     ∃ i < S.funcs.length, ∃ ef, (tabOf S.input.resultsT)[i]? = some ef ∧
       ef.2.base = BitVec.ofNat 64 (S.R + (offs S.sizes 0)[i]!) ∧
       ef.2.fb.words.size = S.sizes[i]! ∧ ef.1.name = S.names[i]! ∧
       e.2.base = ef.2.base ∧ e.2.fb.words = ef.2.fb.words ∧ callShape e.2 = callShape ef.2 ∧
-      (e.1.name = S.names[i]! ∨ (e.1.name, S.names[i]!) ∈ S.aliases) := by
-  have hP := placeOk_of hp
+      e.1.name = S.names[i]! := by
   obtain ⟨k, hk⟩ := List.mem_iff_getElem?.1 he
-  have hkl : k < S.funcs.length + S.aliasFns.length := by
+  have hkl : k < S.funcs.length := by
     have := (List.getElem?_eq_some_iff.1 hk).1
     rwa [tab_length] at this
-  by_cases hkn : k < S.funcs.length
-  · obtain ⟨ef, hef, hb, hsz, hnm, -⟩ := tab_placed hp hr hn hs k hkn
-    rw [hk, Option.some.injEq] at hef
-    subst hef
-    exact ⟨k, hkn, e, hk, hb, hsz, hnm, rfl, rfl, rfl, .inl hnm⟩
-  · obtain ⟨e', ef, he', ⟨i, hi, hef⟩, hb, hl⟩ :=
-      tab_alias hp hr hn hs (k - S.funcs.length) (by omega)
-    rw [show S.funcs.length + (k - S.funcs.length) = k by omega, hk, Option.some.injEq] at he'
-    subst he'
-    obtain ⟨ef', hef', hbf, hszf, hnf, -⟩ := tab_placed hp hr hn hs i hi
-    rw [hef, Option.some.injEq] at hef'
-    subst hef'
-    have hq : (e.1.name, ef.1.name) ∈ S.aliases := mem_of_lookup hl
-    have hnd := tab_names S hP hn
-    have hsh := List.all_eq_true.1 ha _ hq
-    have hfe : (tabOf S.input.resultsT).find? (fun y => y.1.name == e.1.name) = some e :=
-      find?_key hnd he
-    have hff : (tabOf S.input.resultsT).find? (fun y => y.1.name == ef.1.name) = some ef :=
-      find?_key hnd (List.mem_iff_getElem?.2 ⟨i, hef⟩)
-    simp only [hfe, hff, Bool.and_eq_true, beq_iff_eq] at hsh
-    exact ⟨i, hi, ef, hef, hbf, hszf, hnf, hb, hsh.1, hsh.2, .inr (by rw [← hnf]; exact hq)⟩
+  obtain ⟨ef, hef, hb, hsz, hnm, -⟩ := tab_placed hp hr hn hs k hkl
+  rw [hk, Option.some.injEq] at hef
+  subst hef
+  exact ⟨k, hkl, e, hk, hb, hsz, hnm, rfl, rfl, rfl, hnm⟩
 
 /-- **The linker's facts by construction**: a placement passing `placeOkB`, the pipeline
-accepting every function, the compiled code of the placement's sizes (`sizesOkB`), each
-self-call alias with its function's words and call shape (`aliasShapeB`). -/
-theorem linkerOkB_place_alias {S : LinkSpec} (hp : S.placeOkB = true)
+accepting every function, and the compiled code of the placement's sizes (`sizesOkB`). -/
+theorem linkerOkB_place {S : LinkSpec} (hp : S.placeOkB = true)
     (hr : S.input.resultsT.all (·.2.toBool) = true)
     (hn : S.namesOkB (tabOf S.input.resultsT) = true)
-    (hs : S.sizesOkB (tabOf S.input.resultsT) = true)
-    (ha : aliasShapeB S.input (tabOf S.input.resultsT) = true) :
+    (hs : S.sizesOkB (tabOf S.input.resultsT) = true) :
     linkerOkB S.input = true := by
   have hP := placeOk_of hp
   have hR := hP.fits
@@ -280,7 +246,7 @@ theorem linkerOkB_place_alias {S : LinkSpec} (hp : S.placeOkB = true)
   have hbase : ∀ i < S.funcs.length,
       (BitVec.ofNat 64 (S.R + (offs S.sizes 0)[i]!)).toNat = S.R + (offs S.sizes 0)[i]! :=
     fun i hi => by have := hend i hi 0 (Nat.zero_le _); rw [BitVec.toNat_ofNat]; omega
-  have home := fun {e} (he : e ∈ tabOf S.input.resultsT) => tab_home hp hr hn hs ha he
+  have home := fun {e} (he : e ∈ tabOf S.input.resultsT) => tab_home hp hr hn hs he
   unfold linkerOkB linkerOkR
   simp only [Bool.and_eq_true, List.all_eq_true]
   refine ⟨⟨⟨⟨?img, ?raStar⟩, ?symInj⟩, ?symOk⟩, ?fns⟩
@@ -317,17 +283,10 @@ theorem linkerOkB_place_alias {S : LinkSpec} (hp : S.placeOkB = true)
     obtain ⟨e, he, rfl⟩ := List.mem_map.1 hh
     obtain ⟨i, hi, ef, -, -, -, -, -, -, -, hn⟩ :=
       home (List.mem_map_of_mem (f := fun e => (e.1, getOk e.2)) he)
-    have hn : e.1.name = S.names[i]! ∨ (e.1.name, S.names[i]!) ∈ S.aliases := hn
-    -- the entry's address: its function's (`c = 0`) or the gap word after it (an alias)
-    obtain ⟨c, hc, hA, hcase⟩ : ∃ c, c ≤ 4 * S.sizes[i]! ∧
-        S.addrs.lookup e.1.name = some (S.R + (offs S.sizes 0)[i]! + c) ∧
-        ((c = 0 ∧ e.1.name = S.names[i]!) ∨
-          (c = 4 * S.sizes[i]! ∧ (e.1.name, S.names[i]!) ∈ S.aliases)) := by
-      rcases hn with hn | hn
-      · exact ⟨0, Nat.zero_le _, by rw [hn, addrs_name hP hi, Nat.add_zero], .inl ⟨rfl, hn⟩⟩
-      · exact ⟨4 * S.sizes[i]!, Nat.le_refl _,
-          (addrs_alias hP hn).trans (congrArg some (gapIn_name hP hi)), .inr ⟨rfl, hn⟩⟩
-    have hAe := hend i hi c hc
+    have hn : e.1.name = S.names[i]! := hn
+    have hA : S.addrs.lookup e.1.name = some (S.R + (offs S.sizes 0)[i]!) := by
+      rw [hn, addrs_name hP hi]
+    have hAe := hend i hi 0 (Nat.zero_le _)
     simp only [LinkInput.addrOf, input_addrs, hA, Option.getD_some, Bool.and_eq_true,
       decide_eq_true_eq, bne_iff_ne, ne_eq, List.all_eq_true, Bool.or_eq_true, beq_iff_eq]
     refine ⟨⟨by omega, by omega⟩, fun x hx => ?_⟩
@@ -335,32 +294,17 @@ theorem linkerOkB_place_alias {S : LinkSpec} (hp : S.placeOkB = true)
     · exact .inl hx1
     refine .inr fun hxA => hx1 ?_
     unfold LinkSpec.addrs at hx
-    rw [List.mem_append, List.mem_append] at hx
-    rcases hx with (hx | hx) | hx
+    rw [List.mem_append] at hx
+    rcases hx with hx | hx
     · obtain ⟨i', hi', rfl⟩ := List.getElem_of_mem hx
       obtain ⟨hi'', hx'⟩ := progAddrs_getElem hP hi'
       rw [hx'] at hxA ⊢
       have := hend i' hi'' 0 (Nat.zero_le _)
       rw [Nat.mod_eq_of_lt (by omega)] at hxA
-      obtain ⟨hii, hc0⟩ :=
-        addr_inj hP hi'' hi (c := 0) (c' := c) (Nat.zero_le _) hc (by omega)
-      rcases hcase with ⟨-, hn⟩ | ⟨hc4, -⟩
-      · rw [hii]; exact hn.symm
-      · have := sizes_pos hP hi; omega
-    · unfold LinkSpec.aliasAddrs at hx
-      obtain ⟨q, hq, rfl⟩ := List.mem_map.1 hx
-      obtain ⟨i', hi', hni'⟩ := alias_mem_index hP hq
-      have hg := gapIn_name hP hi'
-      rw [hni'] at hg
-      dsimp only at hxA ⊢
-      rw [hg] at hxA
-      have := hend i' hi' (4 * S.sizes[i']!) (Nat.le_refl _)
-      rw [Nat.mod_eq_of_lt (by omega)] at hxA
-      obtain ⟨hii, hc0⟩ := addr_inj hP hi' hi (Nat.le_refl _) hc hxA
-      subst hii
-      rcases hcase with ⟨hc0', -⟩ | ⟨-, hn⟩
-      · have := sizes_pos hP hi'; omega
-      · rw [alias_fn_inj hP hq hn hni'.symm]
+      obtain ⟨hii, -⟩ :=
+        addr_inj hP hi'' hi (c := 0) (c' := 0) (Nat.zero_le _) (Nat.zero_le _) (by omega)
+      rw [hii]
+      exact hn.symm
     · rcases hP.outside x hx with h | h <;> omega
   case symOk =>
     unfold symOkB
@@ -403,7 +347,7 @@ theorem linkerOkB_place_alias {S : LinkSpec} (hp : S.placeOkB = true)
           show (4 : BitVec 64).toNat = 4 from rfl]
         omega
       by_cases hii : i' = i
-      · -- the same code (a function and its alias): the call returns into it
+      · -- a call returns into its own function, not at its entry
         subst hii
         rw [hef, Option.some.injEq] at hef'
         subst hef'
@@ -434,20 +378,11 @@ theorem linkerOkB_place_alias {S : LinkSpec} (hp : S.placeOkB = true)
         · have := off_sep hP h hi'; exact .inl (by omega)
     · rfl
 
-/-- **The linker's facts by construction** without self-call aliases (`aliasShapeB` is then
-vacuous). -/
-theorem linkerOkB_place {S : LinkSpec} (hp : S.placeOkB = true)
-    (hr : S.input.resultsT.all (·.2.toBool) = true)
-    (hn : S.namesOkB (tabOf S.input.resultsT) = true)
-    (hs : S.sizesOkB (tabOf S.input.resultsT) = true) (hal : S.aliases = []) :
-    linkerOkB S.input = true :=
-  linkerOkB_place_alias hp hr hn hs (by simp [aliasShapeB, hal])
-
-/-- **The Lean linker's output satisfies the linker's facts** (`linkerOkB_place_alias`, from
-`leanLink`'s checks `placeOkB`, the pipeline, `namesOkB`, `sizesOkB` and `aliasShapeB`). -/
+/-- **The Lean linker's output satisfies the linker's facts**, from the placement and code
+checks (`leanLink_spec`). -/
 theorem leanLink_linkerOk {S : LinkSpec} {file0 file : ByteArray}
     (h : leanLink S file0 = .ok file) : linkerOkB S.input = true := by
-  obtain ⟨-, -, hp, hr, hn, hs, -, -, ha, -⟩ := leanLink_spec h
-  exact linkerOkB_place_alias hp hr hn hs ha
+  obtain ⟨-, -, hp, hr, hn, hs, -⟩ := leanLink_spec h
+  exact linkerOkB_place hp hr hn hs
 
 end Link

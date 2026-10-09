@@ -1,6 +1,8 @@
 import FV.E2E.LinkArm
 import FV.Opt.Legalize128Pass
 import FV.E2E.Legal
+import FV.E2E.LinkScope
+import FV.E2E.StackBound
 
 /-! # Non-vacuity of `backend_correct_program` (docs/contracts/e2e.md, "Non-vacuity")
 
@@ -17,7 +19,7 @@ stack slot and an outgoing-argument area; it calls
 * `s` with an `sret` pointer to its slot (`s` stores through it, returns the pointer in x0),
 * `k` with 9 arguments (the 9th on the stack, in `f`'s outgoing area),
 * `g` by a `try_call` with a result (`g` calls `h`: a non-leaf program callee),
-* the recursive `r` (`r n = 2 n`): its self-call is `cargo fv`'s alias `r__fvself`, a second
+* the recursive `r` (`r n = 2 n`): its self-call uses the historical alias `r__fvself`, a second
   function with `r`'s body whose self-call names `r` (the two call each other), compiled to the
   same words and loaded at `r`'s address: one copy of the code, each call returning into the
   callee's own code (`raCall`'s second case, `RaOk`),
@@ -288,7 +290,7 @@ def fG : Clif.Function := fn 1
 def fS : Clif.Function := fn 2
 def fK : Clif.Function := fn 3
 def fR : Clif.Function := fn 4
-/-- `r`'s alias (`cargo fv`'s `r__fvself`): `r`'s body, its self-call naming `r`. -/
+/-- `r`'s historical alias `r__fvself`: `r`'s body, its self-call naming `r`. -/
 def fRS : Clif.Function := fn 5
 def fF : Clif.Function := fn 6
 def fQ : Clif.Function := fn 7
@@ -417,20 +419,18 @@ def decU (us : List (Reg × Reg)) : List (Nat × Reg) :=
 def decD (ds : List (Reg × Reg)) : List (Reg × Nat) :=
   ds.map fun p => (p.1, match p.2 with | .vreg n _ => n | _ => 0)
 
-/-- `g` declares `n`, other than itself (`DeclN`). -/
+/-- `g` declares `n`, including itself (`DeclN`). -/
 def declB (g : Clif.Function) (n : String) : Bool :=
-  g.externs.any (fun e => e.2.name == n) && n != g.name
+  g.externs.any (fun e => e.2.name == n)
 
 theorem declB_sound {g : Clif.Function} {n : String} (h : declB g n = true) : DeclN g n := by
-  simp only [declB, Bool.and_eq_true, List.any_eq_true, beq_iff_eq, bne_iff_ne, ne_eq] at h
-  obtain ⟨⟨e, he, hn⟩, hne⟩ := h
-  exact ⟨List.mem_map.mpr ⟨e, he, hn⟩, hne⟩
+  simp only [declB, List.any_eq_true, beq_iff_eq] at h
+  exact List.mem_map.mpr h
 
 theorem declB_of {g : Clif.Function} {n : String} (h : DeclN g n) : declB g n = true := by
-  obtain ⟨hm, hne⟩ := h
-  obtain ⟨e, he, hen⟩ := List.mem_map.mp hm
-  simp only [declB, Bool.and_eq_true, List.any_eq_true, beq_iff_eq, bne_iff_ne, ne_eq]
-  exact ⟨⟨e, he, hen⟩, hne⟩
+  obtain ⟨e, he, hen⟩ := List.mem_map.mp h
+  simp only [declB, List.any_eq_true, beq_iff_eq]
+  exact ⟨e, he, hen⟩
 
 /-- A `blr` site: arguments in the parameter registers, of every function of `P` it may enter
 (`LinkSys.BlrTo`: one the caller may enter through an address, `may`, and at a call through the
@@ -788,7 +788,7 @@ def chks (g : Clif.Function) : List Bool :=
       | none => true),
     entryB g a.vcp, decide (a.base.toNat + 4 * a.fb.words.size ≤ 2 ^ 64), raCallB P A g a,
     decide (frameDrop a.af ≤ 64), !hasTls g, linkFreeB g, Compile.functionE g,
-    g.externs.all (fun e => e.2.name != g.name), sigAbiOk g.sig,
+    sigAbiOk g.sig,
     g.externs.all (fun e => sigAbiOk e.2.sig), indSigsOk g, indB g]
 
 def chk (g : Clif.Function) : Bool := (chks g).all id
@@ -881,7 +881,6 @@ structure Facts (g : Clif.Function) : Prop where
   tls : hasTls g = false
   free : Clif.LinkFree g
   subsetE : Compile.functionE g = true
-  extName : ∀ e ∈ g.externs.map (·.2), e.name ≠ g.name
   abi : sigAbiOk g.sig = true ∧ ∀ e ∈ g.externs, sigAbiOk e.2.sig = true
   indOk : indSigsOk g = true
   ind : indB g = true
@@ -894,12 +893,12 @@ theorem chk_sound {g : Clif.Function} (h : chk g = true) : Facts g := by
     simpa [chk, List.all_eq_true] using h
   simp only [chks, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hall
   obtain ⟨h1, h2, h3, h4, h5, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19,
-    h20, h21, h22, h23, h24, h25, h26⟩ := hall
+    h20, h21, h23, h24, h25, h26⟩ := hall
   simp only [List.all_eq_true, decide_eq_true_eq, Bool.or_eq_true, Bool.not_eq_true',
-    Bool.and_eq_true, beq_iff_eq, bne_iff_ne, ne_eq] at h8 h9 h10 h11 h12 h14 h16 h18 h19 h22 h24
+    Bool.and_eq_true, beq_iff_eq, bne_iff_ne, ne_eq] at h8 h9 h10 h11 h12 h14 h16 h18 h19 h24
   refine ⟨getOk_eq h1, h2, h3, toBool_unit h4, (formsCoveredB_iff _ _).1 h5, h7,
     fun e he hs => ?_, h9, h10, h11, fun hc => ?_, h13, fun e he => ?_, h15, h16, h17, h18, ?_,
-    linkFreeB_sound h20, h21, fun e he => ?_, ⟨h23, h24⟩, h25, h26⟩
+    linkFreeB_sound h20, h21, ⟨h23, h24⟩, h25, h26⟩
   · rcases h8 e he with h | h
     · simp [hs] at h
     · exact h
@@ -915,8 +914,6 @@ theorem chk_sound {g : Clif.Function} (h : chk g = true) : Facts g := by
     simp only [hf, decide_eq_true_eq] at this
     exact this
   · simpa using h19
-  · obtain ⟨⟨fn, e'⟩, hm, rfl⟩ := List.mem_map.1 he
-    simpa using h22 _ hm
 
 theorem facts {g : Clif.Function} (hg : g ∈ P.funcs) : Facts g := by
   have := okB_true
@@ -1108,7 +1105,7 @@ theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
         exact .inl ⟨g, hg, (fn, e'), hm, hname.symm⟩
       · refine ⟨?_, hh'⟩
         simp only [calleeB, Bool.or_eq_true, List.any_eq_true, beq_iff_eq]
-        rcases hm with ⟨hd, -⟩ | ⟨-, hs, -⟩
+        rcases hm with hd | ⟨-, hs, -⟩
         · obtain ⟨⟨fn, e'⟩, hm, hen⟩ := List.mem_map.1 hd
           exact .inl ⟨g, hg, (fn, e'), hm, hen⟩
         · exact .inr (by simpa [L, Option.isSome_iff_ne_none] using hs)
@@ -1186,11 +1183,9 @@ theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
       baseKeepsPlace := fun _ n gsem hn => by simp [L, Clif.Env.empty] at hn
       baseKeepsAllocs := fun _ n gsem hn => by simp [L, Clif.Env.empty] at hn }
   · intro b _ st _ fn args _ e he
-    have hne := (facts hg).extName e (lookup_mem he)
-    simp [L, Clif.Program.only, Clif.Program.func?, Ne.symm hne]
+    exact Clif.Program.bare_func? _ _
   · intro b _ fn args et _ e he
-    have hne := (facts hg).extName e (lookup_mem he)
-    simp [L, Clif.Program.only, Clif.Program.func?, Ne.symm hne]
+    exact Clif.Program.bare_func? _ _
   · intro sig hs
     have := List.all_eq_true.mp (facts hg).indOk sig hs
     simpa [Bool.and_eq_true, decide_eq_true_eq] using this
@@ -1819,12 +1814,12 @@ theorem backend_correct_program_witness :
   have hpS : (L F0).P.func? fS.name = some fS := by show P.func? fS.name = some fS; rw [hns]; exact hps
   have hnmY : ¬ (L F0).MayCall fY fS.name := by
     rintro (hd | ⟨-, -, hall⟩)
-    · have h1 := hd.1; rw [hexty] at h1; simp at h1
+    · simpa [DeclN, hexty] using hd
     · obtain ⟨sig, hs, hm⟩ := hall fS hpS
       exact hnomatchY sig hs hm
   have hnmZ : ¬ (L F0).MayCall fZ fS.name := by
     rintro (hd | ⟨-, -, hall⟩)
-    · have h1 := hd.1; rw [hextz] at h1; simp at h1
+    · simpa [DeclN, hextz] using hd
     · obtain ⟨sig, hs, hm⟩ := hall fS hpS
       exact hnoZ sig hs hm
   have hnmV : ¬ (L F0).MayCall fV fK.name := by
@@ -1874,7 +1869,7 @@ theorem backend_correct_program_witness :
     by simp [L, P], by simp [L, P], hsT, hslT', hsU, hsUK,
     hibU, hNS, hNN, hplace, by simp [L, P], by simp [L, P], ?_,
     fun h => (by rw [indFreeB_of h] at hindD; cases hindD), hextD',
-    (fun h => by have h1 := h.1; rw [hextD'] at h1; simp at h1), regCallsB_sound hregD,
+    (fun h => by simpa [DeclN, hextD'] using h), regCallsB_sound hregD,
     (by simp only [L, hnm']; exact hsm), (by show symsW "vt" = some vtAddr; exact hsvt), hdrop8,
     ?_, by simp [L, P], indFreeB_sound hie, (by rw [hns]; exact declB_sound hde), hpz, hsr,
     gotCallB_sound hgc', by simp [L, P], hniY, (by simp only [L, hns]; exact hsyms), hnmY,
@@ -2050,7 +2045,7 @@ theorem a2_legal {F : BitVec 64 → Prop} {p : Clif.Program} {K : Nat}
       (A fA2).af.slotBase, (RAFrame.compute (A fA2).vcp (A fA2).rf).intBase⟩ fA2
       cs'.frame.slots cs'.mem w₀)
     (htrS : TrapsExplicit Clif.Rust.env p cs)
-    (htr : TrapsExplicit Clif.Rust.env ((L F).P.only fA2) cs') (fuel : Nat) :
+    (htr : TrapsExplicit Clif.Rust.env (L F).P.bare cs') (fuel : Nat) :
     ArmRefinesLegal ((Opt.Legal.groups (srcFn 9).sig.returns).getD []) (A fA2).fb base ra
       (ArmStepX Xb Hb (A fA2).fa) s (Clif.runLoop Clif.Rust.env p fuel cs) := by
   have hL := L_ok (fun _ => True) (fun _ _ => trivial)
@@ -2075,5 +2070,60 @@ theorem a2_legal {F : BitVec 64 → Prop} {p : Clif.Program} {K : Nat}
   obtain ⟨b, vb, k, hb, hk | ⟨ti, hk⟩⟩ := hsite
   · have := allInsts_sound hnc hb hk; simp at this
   · have := allInsts_sound hnc hb hk; simp at this
+
+/-! ## Native direct recursion, without an alias declaration or copied function -/
+
+namespace DirectSelf
+
+def src : String := "function %direct(i64) -> i64 system_v {
+    fn0 = colocated %direct(i64) -> i64 system_v
+block0(v0: i64):
+    brif v0, block1, block2
+block1:
+    v1 = iconst.i64 1
+    v2 = isub v0, v1
+    v3 = call fn0(v2)
+    v4 = iconst.i64 2
+    v5 = iadd v3, v4
+    return v5
+block2:
+    v6 = iconst.i64 0
+    return v6
+}
+"
+
+def fnInput : LinkCheck.FnInput := { clif := src, ra := "{}" }
+
+def func : Clif.Function := fnInput.func
+
+def input : LinkCheck.LinkInput where
+  funcs := [fnInput]
+  addrs := [("direct", 0x10000)]
+  syms := [("direct", 0x10000)]
+  raStar := 0x20000
+  D := 0
+  fallback := true
+
+/-- The actual self-declaring CLIF is in scope and classified as verifiable, without any
+compiler-output hypothesis. Its declaration and call-graph edge name the same function. -/
+theorem checks :
+    func.name = "direct" ∧ input.prog.funcs = [func] ∧
+    LinkCheck.InScopeP input = true ∧ Backend.verifiable func = true ∧
+    DeclN func func.name ∧
+    StackBound.edgeB (fun n => input.syms.lookup n) func func = true := by
+  refine ⟨by native_decide, rfl, ?_⟩
+  unfold DeclN
+  native_decide
+
+/-- Per-activation verification uses the empty function table, not a renamed self callee. -/
+theorem subset : InSubset input.prog.bare func :=
+  InSubset.of_verifiable checks.2.2.2.1 (Clif.Program.bare_func? input.prog)
+
+/-- The self edge is recursive: no depth-independent stack budget is claimed for this entry.
+The executable compiler's actual spill-fallback pipeline supplies the artifacts. -/
+theorem recursive_budget : StackBound.budC input input.resultsT func = none := by
+  native_decide
+
+end DirectSelf
 
 end E2E.LinkWitness
