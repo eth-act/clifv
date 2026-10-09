@@ -179,3 +179,18 @@ axiom checks use standard axioms; both modules have no MCP diagnostics. Full
 capped FV/FVTest/backend/E2E/link-check build passes1264 jobs. No new native
 certificate or heartbeat increase. The selected-rule interpreter bridge and
 whole-driver alias bounds still must establish these premises uniformly.
+
+### Alias/result slice prepared on landed scan-composition main
+
+The alias/result PR is based on main850f92a (#99). It contains the original
+bounded alias/result transfer modules and the shared alias import in scan
+composition; later constant/sinking/load changes are excluded. Exact-branch
+verification: full FV/FVTest/backend/E2E/link-check1264 jobs; crate-proofs959;
+all22 public theorem/witness MCP audits standard-only and diagnostics clean.
+Final backend/executable theorem axiom checks retain the existing fixed native
+certificates only. Corpus114/0/0, extrt22/0/0, runnable runtests4672/0/0,
+E2E1149/0/0not-covered, encoder1292 identical/0differ. The runtime harness
+separately reports7 not-runnable and9054 unsupported lines. Logs use the
+/tmp/stock-alias-results-pr-* prefix; audit receipt is
+ docs/research/stock-alias-results-audit.json. No runtime/CLIF change.
+Final alias interval bounds and complete driver simulation still remain.
