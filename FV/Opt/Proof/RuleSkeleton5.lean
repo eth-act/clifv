@@ -412,9 +412,14 @@ macro "sdc_rest " w:num ic:ident it:ident c:num : tactic => `(tactic| (
     rw [Nat.mod_eq_of_lt (by omega)]
   sdc_eval [hmag, hmc, hsc, hC, hdc, hdc', hsu, beq_self_eq_true, Ty.width, gt_iff_lt,
     Nat.reduceBEq, divc_true_beq_true, divc_false_beq_true]
+  -- Derive the sign cases from the nonzero fact directly. Transport to the
+  -- literal-width presentation by definitional equality, not omega atom matching.
   rcases (show (0 < BitVec.toInt (n := $w) dv ∧ ¬ BitVec.toInt (n := $w) dv < 0 ∧
       0 < dv.toInt ∧ ¬ dv.toInt < 0) ∨ (BitVec.toInt (n := $w) dv < 0 ∧
-      ¬ 0 < BitVec.toInt (n := $w) dv ∧ dv.toInt < 0 ∧ ¬ 0 < dv.toInt) by omega) with
+      ¬ 0 < BitVec.toInt (n := $w) dv ∧ dv.toInt < 0 ∧ ¬ 0 < dv.toInt) from
+        (Int.lt_or_gt_of_ne hdz).elim
+          (fun hneg => Or.inr ⟨hneg, Int.lt_asymm hneg, hneg, Int.lt_asymm hneg⟩)
+          (fun hpos => Or.inl ⟨hpos, Int.lt_asymm hpos, hpos, Int.lt_asymm hpos⟩)) with
     ⟨hd0, hd1, hd0w, hd1w⟩ | ⟨hd0, hd1, hd0w, hd1w⟩
   · sdc_eval [hmag, hd0, hd1, hd0w, hd1w, hmc, hsc, hC, hdc, hdc', hsu, beq_self_eq_true,
       Ty.width, gt_iff_lt, Nat.reduceBEq, divc_true_beq_true, divc_false_beq_true]
@@ -552,7 +557,7 @@ example : Sem.shiftAmt 4 (3#4) = 3 := sdc_shift (by decide) (by decide)
 
 example : (8#4).sdiv (3#4) =
     Sem.binary .iadd (Sem.sshr (10#4) (1#4)) (Sem.ushr (Sem.sshr (10#4) (1#4)) (3#4)) :=
-  sdc_sdiv_seq (Q := -6) (by decide) (by decide) (by decide) (by decide)
+  sdc_sdiv_seq (s := 1) (Q := -6) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide)
 
 example : (Sem.binary .smulhi (8#4) (7#4)).toInt = (8#4).toInt * 7 / 2 ^ 4 :=
