@@ -76,6 +76,25 @@ zero disagreements, encoder1292 identical/0 differing, E2E1149/0 rejected,
 and seven final theorem axiom audits. Whole-driver composition and production
 cutover remain pending.
 
+## Whole-driver allocation bounds landing slice
+
+StockDriverBounds composes #105/#106 through actual branch roots, branch
+argument collection, outgoing edges, original-block scans, critical-edge nodes,
+and complete reverse traversal. Every successful Stock.lower bounds its final
+alias array by the initial allocation frontier, never decreases that frontier,
+and preserves initial exception reservations. These are unconditional output
+facts, not extra compiler acceptance predicates or selected-rule assumptions.
+
+The theorem and actual empty-function success witness pass two Lean MCP and
+exact-branch standard-only axiom audits. Nonempty alias installation, call-output
+allocation and scan witnesses are in the prerequisite modules. Required gates
+pass: full1273, crate959, corpus114/extrt22, runtests4672/0 and zero disagreements,
+encoder1292 identical/0 differing, E2E1149/0 rejected, seven final theorem audits.
+
+Next: prove final alias availability at each recorded scan input, then complete
+global SSA/window exclusions and source simulation. Whole-driver correctness,
+completeness and production cutover remain incomplete.
+
 ## Summary
 
 Implement #60 by changing Lean's lowering driver to follow Cranelift 0.136.1 at
