@@ -1,0 +1,75 @@
+{
+  "modules": [
+    "FV.Backend.Proof.StockRootFlow"
+  ],
+  "source_sha256": {
+    "FV/Backend/Proof/StockRootFlow.lean": "9240854140a73e1ffbaeaf88ff60317b1908a7f7326e511698090af8a366778d"
+  },
+  "results": [
+    {
+      "theorem": "Backend.Stock.Proof.MappedFlow.stock_root_mapped_context_flow",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.MappedFlow.stock_root_mapped_context_flow_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.MappedFlow.stock_root_mapped_flow",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.MappedFlow.stock_root_mapped_flow_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    }
+  ],
+  "targeted_build_jobs": 237,
+  "method": "Complete clean exact-PR lean-mcp diagnostics and four matching standard-only MCP/compiled Lean audits on merged source358e8ee; capped required full/execution gates on the same source.",
+  "scope": "Validated mapped-context whole-root flow with empty exception reservations; existing build-derived theorem retained. Canonical identity context used only as a proof view for source matching; actual runtime context remains mapped. Terminator overrides can use validated mapped context variant; actual exception reservations, full scan transport, final alias availability/noninterference and whole simulation/cutover remain.",
+  "required_full_and_execution_gates": "passed on validated_source_commit; final PR commit changes receipt only",
+  "gates": {
+    "full_build_jobs": 1301,
+    "crate_build_jobs": 958,
+    "corpus_pass": 114,
+    "extrt_pass": 22,
+    "runtests_pass": 4672,
+    "runtests_fail": 0,
+    "runtime_disagreements": 0,
+    "encoder_identical": 1292,
+    "encoder_differ": 0,
+    "e2e_accepted": 1150,
+    "e2e_rejected": 0,
+    "final_theorem_axiom_audits": 7
+  },
+  "validated_source_commit": "358e8ee488aaff42c7a5963c3c2d6e588affe3a7",
+  "validated_main_commit": "d9d04d2607f5686051b2ae1c9052fc5a84f72982",
+  "gate_log_sha256": {
+    "full": "9ed8f6e753178aefe32259bdeca3c8bb55e15e4e39fc51b3bf1a3f352b2bfced",
+    "crates": "42726ff31ff1320598017cbe50943483060f76355f252d30101490e33d8d763e",
+    "runtime": "6fc44567e9cac0a4ed3fd2661b4aad44f7e6b43055d21fb3fe150c1a56303553",
+    "encode": "03615dfbca26e9d0ed30a780c66e8822602b1201d21afe9cd05e6af550e89919",
+    "e2e": "3be4c40847150618865888e05a2035ea78c852af8b8cfbd01f29a465146c8a85",
+    "e2e-axioms": "620761c85c2e59b59c17136e0b0d2ca8efbe83934335f99704fdd30dbd91de6b",
+    "axioms": "6f5fc40fd2fb5fffcc5335c7b1ada5bce7d66e78c5a03d9efced0f6ba549027a"
+  }
+}
