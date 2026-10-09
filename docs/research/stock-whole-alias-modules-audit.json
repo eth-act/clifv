@@ -1,0 +1,156 @@
+{
+  "modules": [
+    "FV.Backend.Proof.StockTraversalRecordOrigin",
+    "FV.Backend.Proof.StockBackwardSuffixSplit",
+    "FV.Backend.Proof.StockCoreScanOrigin",
+    "FV.Backend.Proof.StockRecordFinalAlias"
+  ],
+  "method": "Canonical lean-lsp-mcp complete clean diagnostics and lean_verify; capped targeted build and matching CLI audits",
+  "results": [
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerNodes_newBlockScan",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerNodes_newBlockScan_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_blockScanOrigin",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_blockScanOrigin_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_backward_suffix_split",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_backward_suffix_split_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerBlockCore_scanOrigin",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerBlockCore_scanOrigin_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_record_finalAliasEntry",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_record_finalAliasEntry_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_record_resultAlias_of_record",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_record_resultAlias_of_record_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    }
+  ],
+  "targeted_build_jobs": 188,
+  "scope": "Actual successful traversal/node/core record origins and exact backward suffix derive recorded source-definition alias preservation to final driver state and fresh local-result resolution. Explicit nonempty/source SSA/source mapping premises remain; availability, full simulation/completeness and production cutover remain incomplete.",
+  "required_full_and_execution_gates": "All required exact-source full/crate/runtime/encoder/E2E/final7/new12 gates passed on1655a1b, base476cc66. Latest receipt-head CI/review check required before squash merge.",
+  "source_sha256": {
+    "FV/Backend/Proof/StockTraversalRecordOrigin.lean": "5c6618b3b509106534e986188370e7f025e8661b6528cede660a5f6cd6e6098d",
+    "FV/Backend/Proof/StockBackwardSuffixSplit.lean": "05ce9b0127c4be69c21acca1c00e0acae8e28c5f872cf2e910c0932e99202676",
+    "FV/Backend/Proof/StockCoreScanOrigin.lean": "25f95f9974fbbf6741d22fecb607fb8b4f32cb3342292b8400aad011194aef1f",
+    "FV/Backend/Proof/StockRecordFinalAlias.lean": "f4faf9ccff2521321d29a10c0b1ffea8aa9376973e21692467c7b43437cfc1b2"
+  },
+  "cli_audit_count": 12,
+  "cli_log_sha256": "11705a378e1f451921e44d2ffd7bfdc416a5b10d7172075dc0ee0347c3cbe81d",
+  "targeted_log_sha256": "8e830bbb1bc390092a449a04e5081833b017b054316a020d41d4223d26bfbf03",
+  "validated_main_commit": "476cc6653be5dbe676aa194cbab413b8371e000c",
+  "gates": {
+    "full_build_jobs": 1292,
+    "crate_build_jobs": 958,
+    "corpus_pass": 114,
+    "extrt_pass": 22,
+    "runtests_pass": 4672,
+    "runtests_fail": 0,
+    "runtime_disagreements": 0,
+    "encoder_identical": 1292,
+    "encoder_differ": 0,
+    "e2e_accepted": 1150,
+    "e2e_rejected": 0,
+    "final_theorem_axiom_audits": 7
+  },
+  "validated_source_commit": "1655a1b6b47ce5d474d339cbfdbf0a3d8dde14a7",
+  "gate_log_sha256": {
+    "full": "031ace6df07e592c2e971c55ebd02d5abcde6e8233cbd2efd392db7e8c98b295",
+    "crates": "42726ff31ff1320598017cbe50943483060f76355f252d30101490e33d8d763e",
+    "runtime": "6fc44567e9cac0a4ed3fd2661b4aad44f7e6b43055d21fb3fe150c1a56303553",
+    "encode": "03615dfbca26e9d0ed30a780c66e8822602b1201d21afe9cd05e6af550e89919",
+    "e2e": "35b89bf28790e81d46f96a12c29b0799c970527f63755139f401c951924bc4a5",
+    "e2e-axioms": "620761c85c2e59b59c17136e0b0d2ca8efbe83934335f99704fdd30dbd91de6b",
+    "axioms": "11705a378e1f451921e44d2ffd7bfdc416a5b10d7172075dc0ee0347c3cbe81d"
+  }
+}
