@@ -358,6 +358,39 @@ private theorem node_frontiers {ctx : Ctx} {ranges : Array (Nat × Nat)} {order 
     | simp only [bind, Except.bind, pure, Except.pure] at h
     | split at h
 
+private def BlockFrontiers (cap : Nat) (scans : Array BlockScanEvent) : Prop :=
+  ∀ event ∈ scans.toList, ∀ record ∈ event.output.records,
+    cap ≤ record.input.base.nextVreg
+
+private theorem core_blockFrontiers {cap : Nat} {input : DriverState}
+    {lowered : LoweredBlockCore}
+    (old : BlockFrontiers cap input.blockScans)
+    (inputs : ∀ r ∈ lowered.scan.output.records, cap ≤ r.input.base.nextVreg) :
+    BlockFrontiers cap (input.blockScans.push lowered.scan) := by
+  intro event mem record recorded
+  simp only [Array.toList_push, List.mem_append, List.mem_singleton] at mem
+  rcases mem with mem | rfl
+  · exact old event mem record recorded
+  · exact inputs record recorded
+
+private theorem node_blockFrontiers {ctx : Ctx} {ranges : Array (Nat × Nat)} {order : Order}
+    {f : Clif.Function} {paramBytes : List Nat} {label : Nat} {input output : DriverState}
+    {cap : Nat} {reservations : Array (List Reg × List Reg)}
+    (mapped : ∀ x r, ctx.valueReg? x = some r → ∃ n, r = .vreg n .int ∧ n < cap)
+    (reserved : ∀ (i : Nat) (rs : List Reg × List Reg), reservations[i]? = some rs →
+      ∀ r ∈ rs.1 ++ rs.2, ∃ n, r = .vreg n .int ∧ n < cap)
+    (bound : Within cap reservations input.state) (old : BlockFrontiers cap input.blockScans)
+    (h : lowerNode ctx ranges order f paramBytes label input = .ok output) :
+    BlockFrontiers cap output.blockScans := by
+  unfold lowerNode at h
+  dsimp only at h
+  repeat' first
+    | (solve | cases h)
+    | (solve | cases h; exact old)
+    | (solve | cases h; apply core_blockFrontiers old; exact (block_within mapped reserved bound (by assumption)).2)
+    | simp only [bind, Except.bind, pure, Except.pure] at h
+    | split at h
+
 private theorem fold_bound {α β : Type} (P : α → Prop)
     (step : α → β → Except String α)
     (keeps : ∀ a b next, P a → step a b = .ok next → P next)
@@ -418,6 +451,24 @@ private theorem traversal_frontiers {f : Clif.Function} {ctx : Ctx} {ranges : Ar
     labels ⟨initial_within build, old⟩ h
   exact invariant.2
 
+private theorem traversal_blockFrontiers {f : Clif.Function} {ctx : Ctx}
+    {ranges : Array (Nat × Nat)} {order : Order} {params labels : List Nat}
+    {input output : DriverState}
+    (build : Stock.buildCtx f = .ok (ctx, ranges, input.state))
+    (old : BlockFrontiers input.state.base.nextVreg input.blockScans)
+    (h : labels.foldlM (fun input label => lowerNode ctx ranges order f params label input) input =
+      .ok output) : BlockFrontiers input.state.base.nextVreg output.blockScans := by
+  have invariant := fold_bound
+    (fun d : DriverState => Within input.state.base.nextVreg input.state.tryRegs d.state ∧
+      BlockFrontiers input.state.base.nextVreg d.blockScans)
+    (fun d label => lowerNode ctx ranges order f params label d)
+    (fun a label next bound step =>
+      ⟨node_within (initial_maps build) (buildCtx_reservedBelow build) bound.1 step,
+        node_blockFrontiers (initial_maps build) (buildCtx_reservedBelow build)
+          bound.1 bound.2 step⟩)
+    labels ⟨initial_within build, old⟩ h
+  exact invariant.2
+
 /-- Every successful whole stock driver bounds its final aliases by the initial
 allocation frontier, grows the fresh frontier, and retains exception reservations.
 All premises are facts of the actual run; no additional acceptance check is needed. -/
@@ -454,6 +505,30 @@ theorem stock_lower_scanAliasBounds {f : Clif.Function} {result : Result}
   have frontier := traversal_frontiers (output := driver) build (by simp [ScanFrontiers]) run
   intro event mem
   exact Nat.le_trans final.1 (frontier event mem)
+
+/-- The final alias bound also holds at every record retained inside an actual
+block scan. Normalizing the scan input preserves its allocation frontier, so this
+is the bound needed by emitted source-transfer proofs. -/
+theorem stock_lower_blockScanAliasBounds {f : Clif.Function} {result : Result}
+    (h : Stock.lower f = .ok result) :
+    ∀ event ∈ result.blockScans.toList, ∀ record ∈ event.output.records,
+      result.final.alias.size ≤ (scanState record.input record.inst).base.nextVreg := by
+  have final := stock_lower_allocationBounds h
+  unfold Stock.lower at h
+  dsimp only at h
+  repeat' first
+    | (solve | cases h)
+    | simp only [bind, Except.bind, pure, Except.pure] at h
+    | split at h
+  cases h
+  rename_i _ _ params _ _ _ _ _ source build _ order _ _ driver run
+  have frontier := traversal_blockFrontiers (output := driver) build
+    (by simp [BlockFrontiers]) run
+  intro event mem record recorded
+  have bound := Nat.le_trans final.1 (frontier event mem record recorded)
+  unfold scanState
+  dsimp only
+  split <;> exact bound
 
 private def emptyFunction : Clif.Function := { name := "allocation_bounds", sig := {}, blocks := [] }
 private def emptySource : Ctx := {
@@ -499,5 +574,14 @@ theorem stock_lower_scanAliasBounds_witness :
         emptyResult.final.alias.size ≤ event.input.base.nextVreg) := by
   have run := stock_lower_allocationBounds_witness.1
   exact ⟨run, stock_lower_scanAliasBounds run⟩
+
+/-- The successful actual driver run inhabits the sole compiler-run premise.
+Nonempty scan records are witnessed separately by stock_scanBlock_frontiers_witness. -/
+theorem stock_lower_blockScanAliasBounds_witness :
+    Stock.lower emptyFunction = .ok emptyResult ∧
+      (∀ event ∈ emptyResult.blockScans.toList, ∀ record ∈ event.output.records,
+        emptyResult.final.alias.size ≤ (scanState record.input record.inst).base.nextVreg) := by
+  have run := stock_lower_allocationBounds_witness.1
+  exact ⟨run, stock_lower_blockScanAliasBounds run⟩
 
 end Backend.Stock.Proof
