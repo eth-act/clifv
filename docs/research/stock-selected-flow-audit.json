@@ -1,0 +1,106 @@
+{
+  "modules": [
+    "FV.Backend.Proof.StockConstantRoot",
+    "FV.Backend.Proof.StockSelectedFlow"
+  ],
+  "source_sha256": {
+    "FV/Backend/Proof/StockConstantRoot.lean": "64e1785389d577555f993f401573e901f820f704d738fffe906398cb6e0e0e7e",
+    "FV/Backend/Proof/StockSelectedFlow.lean": "532fb56fbcf6948a144d48b2c74a6f2a63951dbb5ce07668c63041bf2fa21021"
+  },
+  "results": [
+    {
+      "theorem": "Backend.Stock.Proof.stock_statement_selectedConstant",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_statement_selectedConstant_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_statement_selectedConstant_built",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_statement_selectedConstant_built_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_statement_selectedConstant_context",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_statement_selectedConstant_context_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_selected_root_flow",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_selected_root_available",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_selected_root_flow_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_selected_root_available_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    }
+  ],
+  "targeted_build_jobs": 246,
+  "method": "Complete clean canonical Lean MCP diagnostics for both modules; ten matching standard-only MCP/compiled Lean audits; capped targeted build of selected flow and existing binding-flow caller passes.",
+  "scope": "Generated constant root execution parameterized by its actual root-data extractor, preserving all old interfaces. Actual selected-context root origins and source-available mapped outputs across terminator overrides/arbitrary exception reservations. Driver-fuel witness changes actual return data and reserves194/195/196, returns fresh197 while source2 maps193, with actual successful build/LowerScope/Dominated/available2 post-body boundary. Allocator-reserved bounds/separation, binding/final aliases/noninterference, full simulation/completeness and production cutover remain.",
+  "required_full_and_execution_gates": "pending on publication source"
+}

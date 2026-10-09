@@ -106,12 +106,11 @@ private def iconstPrefix : List Rule :=
     rule_lower_3051, rule_lower_3071, rule_lower_3110, rule_lower_3174]
 
 set_option maxHeartbeats 4000000 in
-private theorem iconst_prefix_nomatch {p : Program} (hp : Data p) (hx : NopExtraData p) (st : State) :
-    ∀ r ∈ iconstPrefix, matchArgs p (Stock.sem iconstCtx) st r.args [.inst 0]
+private theorem iconst_prefix_nomatch {p : Program} (hp : Data p) (hx : NopExtraData p) (ctx : Ctx) (hdata : ∀ st : LState, Backend.externExtract ctx T.inst_data_value (.inst 0) st =
+      .ok [.ty (.int 8), .data 152 35 [.data 151 57 [], .int 9]]) (st : State) :
+    ∀ r ∈ iconstPrefix, matchArgs p (Stock.sem ctx) st r.args [.inst 0]
       (Array.replicate r.vars.length none) = .ok none := by
-  have hdata (st : LState) : Backend.externExtract iconstCtx T.inst_data_value (.inst 0) st =
-      .ok [.ty (.int 8), .data 152 35 [.data 151 57 [], .int 9]] := rfl
-  have hfit (st : LState) : Backend.externExtract iconstCtx T.fits_in_64 (.ty (.int 8)) st =
+  have hfit (st : LState) : Backend.externExtract ctx T.fits_in_64 (.ty (.int 8)) st =
       .ok [.ty (.int 8)] := rfl
   intro r hr
   simp only [iconstPrefix, List.mem_cons, List.mem_nil_iff, or_false] at hr
@@ -164,49 +163,49 @@ private theorem iconst_prefix_nomatch {p : Program} (hp : Data p) (hx : NopExtra
   all_goals rfl
 
 
-private theorem iconst_args {p : Program} (hp : Data p) (st : State) :
-    matchArgs p (Stock.sem iconstCtx) st rule_lower_53.args [.inst 0]
+private theorem iconst_args {p : Program} (hp : Data p) (ctx : Ctx) (hdata : ∀ st : LState, Backend.externExtract ctx T.inst_data_value (.inst 0) st =
+      .ok [.ty (.int 8), .data 152 35 [.data 151 57 [], .int 9]]) (st : State) :
+    matchArgs p (Stock.sem ctx) st rule_lower_53.args [.inst 0]
       (Array.replicate rule_lower_53.vars.length none) =
         .ok (some (env2 (.ty (.int 8)) (.int 9))) := by
-  have hdata (st : LState) : Backend.externExtract iconstCtx T.inst_data_value (.inst 0) st =
-      .ok [.ty (.int 8), .data 152 35 [.data 151 57 [], .int 9]] := rfl
-  have hu (st : LState) : Backend.externExtract iconstCtx T.u64_from_imm64 (.int 9) st =
+  have hu (st : LState) : Backend.externExtract ctx T.u64_from_imm64 (.int 9) st =
       .ok [.int 9] := rfl
   isel_eval [hp.t209, hp.t2482, hp.t2341, hp.t144, hdata, hu, Stock.sem, rule_lower_53]
 
-private theorem iconst_apply {p : Program} (hp : Data p) (hx : NopExtraData p) (st : State) :
+private theorem iconst_apply {p : Program} (hp : Data p) (hx : NopExtraData p) (ctx : Ctx) (hdata : ∀ st : LState, Backend.externExtract ctx T.inst_data_value (.inst 0) st =
+      .ok [.ty (.int 8), .data 152 35 [.data 151 57 [], .int 9]]) (st : State) :
     ∃ (next : State) (trace : Array RuleId),
-      (applyTerm p (Stock.sem iconstCtx) {} 1000000
+      (applyTerm p (Stock.sem ctx) {} 1000000
         T.lower.ret T.lower.id [.inst 0]).run (st, #[]) =
           .ok (some (.regsVec [[(st.base.fresh .int).1]]), next, trace.push 582) ∧
-      (evalExpr p (Stock.sem iconstCtx) {} 999999 rule_lower_53.rhs
+      (evalExpr p (Stock.sem ctx) {} 999999 rule_lower_53.rhs
         (env2 (.ty (.int 8)) (.int 9))).run (st, #[]) =
           .ok (some (.regsVec [[(st.base.fresh .int).1]]), next, trace) ∧
-      (matchRule p (Stock.sem iconstCtx) {} 999825 rule_lower_53 [.inst 0]).run
+      (matchRule p (Stock.sem ctx) {} 999825 rule_lower_53 [.inst 0]).run
         (st, #[]) = .ok (some (env2 (.ty (.int 8)) (.int 9)), st, #[]) := by
-  obtain ⟨next, trace, hrhs⟩ := stock_iconst_rhs_nine_large hp iconstCtx st
-  have hmatch : (matchRule p (Stock.sem iconstCtx) {} 999825 rule_lower_53
+  obtain ⟨next, trace, hrhs⟩ := stock_iconst_rhs_nine_large hp ctx st
+  have hmatch : (matchRule p (Stock.sem ctx) {} 999825 rule_lower_53
       [.inst 0]).run (st, #[]) =
         .ok (some (env2 (.ty (.int 8)) (.int 9)), st, #[]) := by
-    have ha := iconst_args hp st
+    have ha := iconst_args hp ctx hdata st
     rw [matchRule.eq_2]
     simp only [M.run_bind, M.run_get, M.except_ok_bind, ha,
       show rule_lower_53.iflets = [] from rfl, matchIfLets.eq_2, isel_monad]
   refine ⟨next, trace, ?_, hrhs, hmatch⟩
-  change (applyTerm p (Stock.sem iconstCtx) {} 1000000 25 686 [.inst 0]).run (st, #[]) = _
+  change (applyTerm p (Stock.sem ctx) {} 1000000 25 686 [.inst 0]).run (st, #[]) = _
   rw [applyTerm_internal_run hp.t686 term_686_kind rfl]
   have hrs : p.rulesOf 686 = iconstPrefix ++ rule_lower_53 :: (p.rulesOf 686).drop 173 := by
     rw [hp.r686]
     rfl
   rw [hrs]
-  have hskip := selectRule_skipArgs (iconst_prefix_nomatch hp hx st)
+  have hskip := selectRule_skipArgs (iconst_prefix_nomatch hp hx ctx hdata st)
     (cfg := {}) (term := T.lower) (s := (st, #[]))
     999825 (rule_lower_53 :: (p.rulesOf 686).drop 173)
-  change (selectRule p (Stock.sem iconstCtx) {} 999999 T.lower
+  change (selectRule p (Stock.sem ctx) {} 999999 T.lower
       (iconstPrefix ++ rule_lower_53 :: (p.rulesOf 686).drop 173) [.inst 0]).run
         (st, #[]) = _ at hskip
   rw [hskip]
-  have hselect : (selectRule p (Stock.sem iconstCtx) {} 999827 T.lower
+  have hselect : (selectRule p (Stock.sem ctx) {} 999827 T.lower
       (rule_lower_53 :: (p.rulesOf 686).drop 173) [.inst 0]).run (st, #[]) =
         .ok (some (rule_lower_53, env2 (.ty (.int 8)) (.int 9)), st, #[]) := by
     rw [selectRule.eq_3, tryRule.eq_2]
@@ -220,7 +219,7 @@ private theorem iconst_run (st : State) :
     ∃ (next : State) (trace : Array RuleId),
       Stock.runTerm iconstCtx "lower" [.inst 0] st =
         .ok (some (.regsVec [[(st.base.fresh .int).1]]), next, (trace.push 582).toList) := by
-  obtain ⟨next, trace, ha, _, _⟩ := iconst_apply data_program nopExtraData_program st
+  obtain ⟨next, trace, ha, _, _⟩ := iconst_apply data_program nopExtraData_program iconstCtx (fun _ => rfl) st
   refine ⟨next, trace, ?_⟩
   unfold Stock.runTerm Interp.run
   rw [program_termByName_lower]
@@ -246,7 +245,7 @@ theorem stock_statement_selectedConstant :
   obtain ⟨_, _, hctx, hmap⟩ := buildCtx_mappedInv_witness
   refine ⟨_, iconstCtx, iconstCtx.insts[0]!, hctx, rfl, rfl, rfl, hmap, ?_⟩
   intro st
-  obtain ⟨next, trace, ha, he, hm⟩ := iconst_apply data_program nopExtraData_program st
+  obtain ⟨next, trace, ha, he, hm⟩ := iconst_apply data_program nopExtraData_program iconstCtx (fun _ => rfl) st
   refine ⟨next, trace, ?_, he, hm⟩
   unfold Stock.runTerm Interp.run
   rw [program_termByName_lower]
@@ -281,7 +280,7 @@ theorem stock_statement_selectedConstant_built :
   obtain ⟨scope, built, _, mapped⟩ := buildCtx_mappedInv_witness
   refine ⟨_, iconstCtx, _, _, iconstCtx.insts[0]!, scope, built, rfl, rfl, rfl, mapped, ?_⟩
   intro st
-  obtain ⟨next, trace, run, _, _⟩ := iconst_apply data_program nopExtraData_program st
+  obtain ⟨next, trace, run, _, _⟩ := iconst_apply data_program nopExtraData_program iconstCtx (fun _ => rfl) st
   exact ⟨next, trace, run⟩
 
 theorem stock_statement_selectedConstant_built_witness :
@@ -296,5 +295,38 @@ theorem stock_statement_selectedConstant_built_witness :
     stock_statement_selectedConstant_built
   obtain ⟨next, trace, actual⟩ := run sinkState
   exact ⟨f, ctx, ranges, initial, info, next, trace, scope, built, hi, hc, results, mapped, actual⟩
+
+/-- The real generated constant root depends on its source data, not on the
+terminator data or exception reservations elsewhere in the context. -/
+theorem stock_statement_selectedConstant_context (ctx : Ctx)
+    (data : ∀ st : LState, Backend.externExtract ctx T.inst_data_value (.inst 0) st =
+      .ok [.ty (.int 8), .data 152 35 [.data 151 57 [], .int 9]]) (st : State) :
+    ∃ (next : State) (trace : Array RuleId),
+      (applyTerm program (Stock.sem ctx) {} 1000000 T.lower.ret T.lower.id [.inst 0]).run
+        (st, #[]) = .ok (some (.regsVec [[(st.base.fresh .int).1]]), next, trace.push 582) := by
+  obtain ⟨next, trace, run, _, _⟩ := iconst_apply data_program nopExtraData_program ctx data st
+  exact ⟨next, trace, run⟩
+
+private def selectedReserved : List Reg × List Reg :=
+  ([.vreg 194 .int], [.vreg 195 .int, .vreg 196 .int])
+private def selectedData : V := (Backend.termData (.ret [2])).toOption.getD (.op .unit)
+private def selectedCtx : Ctx :=
+  { Driver.termCtx iconstCtx 1 selectedData with tryRegs := selectedReserved }
+private def selectedInput : State :=
+  { sinkState with base := { sinkState.base with nextVreg := 197 } }
+
+/-- Actual driver-fuel generated lowering executes after changing the real
+terminator placeholder to return data and installing nonempty exception reserves. -/
+theorem stock_statement_selectedConstant_context_witness :
+    ∃ (next : State) (trace : Array RuleId),
+      iconstCtx.valueReg? 2 = some (.vreg 193 .int) ∧
+      selectedCtx.insts[1]? ≠ iconstCtx.insts[1]? ∧ selectedCtx.tryRegs.2 ≠ [] ∧
+      (applyTerm program (Stock.sem selectedCtx) {} 1000000 T.lower.ret T.lower.id [.inst 0]).run
+        (selectedInput, #[]) = .ok (some (.regsVec [[.vreg 197 .int]]), next, trace.push 582) := by
+  obtain ⟨next, trace, run⟩ := stock_statement_selectedConstant_context selectedCtx (fun _ => rfl) selectedInput
+  refine ⟨next, trace, rfl, ?_, (by decide), run⟩
+  intro same
+  have data := congrArg (fun q => q.map (·.data)) same
+  cases data
 
 end Backend.Stock.Proof
