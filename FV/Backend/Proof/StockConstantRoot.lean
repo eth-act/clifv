@@ -268,4 +268,33 @@ theorem stock_statement_selectedConstant_witness :
   obtain ⟨next, trace, hr, he, hm⟩ := hrun sinkState
   exact ⟨f, ctx, info, next, trace, hc, hres, hmap, hr, he, hm⟩
 
+/-- Successful context construction and source scope for the concrete generated
+constant root, together with its actual interpreter execution. -/
+theorem stock_statement_selectedConstant_built :
+    ∃ (f : Clif.Function) (ctx : Ctx) (ranges : Array (Nat × Nat)) (initial : State)
+      (info : IInfo), LowerScope f ∧ Stock.buildCtx f = .ok (ctx, ranges, initial) ∧
+      ctx.insts[0]? = some info ∧ info.clif = some (.iconst .i8 9) ∧
+      info.results = [2] ∧ ctx.valueReg? 2 = some (.vreg 193 .int) ∧
+      ∀ st, ∃ (next : State) (trace : Array RuleId),
+        (applyTerm program (Stock.sem ctx) {} 1000000 T.lower.ret T.lower.id [.inst 0]).run
+          (st, #[]) = .ok (some (.regsVec [[(st.base.fresh .int).1]]), next, trace.push 582) := by
+  obtain ⟨scope, built, _, mapped⟩ := buildCtx_mappedInv_witness
+  refine ⟨_, iconstCtx, _, _, iconstCtx.insts[0]!, scope, built, rfl, rfl, rfl, mapped, ?_⟩
+  intro st
+  obtain ⟨next, trace, run, _, _⟩ := iconst_apply data_program nopExtraData_program st
+  exact ⟨next, trace, run⟩
+
+theorem stock_statement_selectedConstant_built_witness :
+    ∃ (f : Clif.Function) (ctx : Ctx) (ranges : Array (Nat × Nat)) (initial : State)
+      (info : IInfo) (next : State) (trace : Array RuleId),
+      LowerScope f ∧ Stock.buildCtx f = .ok (ctx, ranges, initial) ∧
+      ctx.insts[0]? = some info ∧ info.clif = some (.iconst .i8 9) ∧
+      info.results = [2] ∧ ctx.valueReg? 2 = some (.vreg 193 .int) ∧
+      (applyTerm program (Stock.sem ctx) {} 1000000 T.lower.ret T.lower.id [.inst 0]).run
+        (sinkState, #[]) = .ok (some (.regsVec [[.vreg 194 .int]]), next, trace.push 582) := by
+  obtain ⟨f, ctx, ranges, initial, info, scope, built, hi, hc, results, mapped, run⟩ :=
+    stock_statement_selectedConstant_built
+  obtain ⟨next, trace, actual⟩ := run sinkState
+  exact ⟨f, ctx, ranges, initial, info, next, trace, scope, built, hi, hc, results, mapped, actual⟩
+
 end Backend.Stock.Proof
