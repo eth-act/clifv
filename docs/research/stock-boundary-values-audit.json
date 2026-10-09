@@ -1,0 +1,52 @@
+{
+  "modules": [
+    "FV.Backend.Proof.StockBoundaryValues"
+  ],
+  "method": "Complete clean canonical lean-lsp-mcp diagnostics; lean_verify4; capped targeted build and compiled-module CLI audits",
+  "results": [
+    {
+      "theorem": "Backend.Stock.Proof.stock_availOf_next_other",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_availOf_next_other_witness",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.ValuesHeld.resolvedResult_frame_between",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.ValuesHeld.resolvedResult_frame_between_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    }
+  ],
+  "source_sha256": {
+    "FV/Backend/Proof/StockBoundaryValues.lean": "3a9659d5fe4cbef87e03e45a82ec0af2d5c31c5ce2576c39378672cf3c8e8ef2"
+  },
+  "targeted_build_jobs": 164,
+  "scope": "Source availOf advances only current statement results; value transfer between different source-boundary need sets preserves other live values without requiring stale result agreement before overwrite. Actual constant-materialization/live-parameter witness proves the old post-boundary relation is false initially. No source-input change. Whole-driver availability transport and resolved noninterference remain incomplete.",
+  "required_full_and_execution_gates": "Pending isolated PR validation.",
+  "cli_audit_count": 4,
+  "cli_log_sha256": "98094c67f0a01e330a07af5e8d9f00fae7056cd0c454856a4a2d255160e71513",
+  "targeted_log_sha256": "65eced1690a0531d9ff4e3b2dec53aceea831e8bd96cfd71b354e8aaa1b081d6",
+  "fixture_scope": "Actual mapped context from Stock.buildCtx; source function returns both the constant and parameter, making the preserved parameter live. The incoming frame is chosen and retains a stale result; no whole-loop reachability claim.",
+  "validated_main_commit": "dcc23a54ada176ad1a6fe3fe3663ddf3ccfdcfe1"
+}
