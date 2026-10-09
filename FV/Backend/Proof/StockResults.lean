@@ -1,4 +1,4 @@
-import FV.Backend.Proof.StockValues
+import FV.Backend.Proof.StockImm
 import FV.Backend.Proof.IselFamAluBIconst
 import FV.Backend.Proof.IselLcf
 import FV.Backend.Proof.LowerAlias
@@ -128,6 +128,49 @@ theorem ValuesHeld.resolvedResult {needed : Nat → Prop} {ctx : Ctx} {fr : Clif
       (n := gn m) (fun mi hmi hmem => Nat.not_le_of_lt hb (hdefs mi hmi _ hmem)) hr
     exact ⟨m, hm, by change VHolds value (ρ' (gn m)); rw [keep]; exact hold⟩
 
+/-- Bind the actual selected constant rule's virtual result. Its base code and
+machine semantics survive the alias update; no result copy is emitted. -/
+theorem stock_iconst_bound {p : Program} (hp : Data p) {f : Clif.Function} {ctx : Ctx}
+    (hctx : MappedCtxInv f ctx) {ii : Nat} {info : IInfo} {inst : Clif.Inst}
+    (hi : ctx.insts[ii]? = some info) (hic : info.clif = some inst)
+    {cfg : Config} (hc : cfg.checkOverlap = false)
+    {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (hR : Refines F isem)
+    {m n : Nat} (hm : 2 ≤ m) (hn : 50 ≤ n)
+    {st s1 st' : State} {tr tr1 tr' : Array RuleId} {env' : Isle.Interp.Env V} {out : V}
+    (hmatch : (matchRule p (Stock.sem ctx) cfg m rule_lower_53 [.inst ii]).run (st, tr) =
+      .ok (some env', s1, tr1))
+    (heval : (evalExpr p (Stock.sem ctx) cfg n rule_lower_53.rhs env').run (s1, tr1) =
+      .ok (some out, st', tr')) {x a : Nat}
+    (hres : info.results = [x]) (hmap : ctx.valueReg? x = some (.vreg a .int)) :
+    ∃ (ty : Clif.Ty) (imm : BitVec ty.width) (ms : List MInst) (d : Nat) (bound : State),
+      inst = .iconst ty imm ∧ out = .regsVec [[.vreg d .int]] ∧
+      bindResults ctx (info.results.zip [[.vreg d .int]]) st' = .ok (bound, #[]) ∧
+      bound = { st' with alias := aliasStep st'.alias (a, d) } ∧
+      CodeShape st.base bound.base ms d st.base.nextVreg ∧
+      ∀ ρ, ∃ ρ', PRun F isem ms ρ ρ' ∧ VHolds ⟨ty, imm⟩ (ρ' d) ∧
+        ∀ (gn : Nat → Nat) (needed : Nat → Prop) (fr : Clif.Frame),
+          ValuesHeld needed ctx fr (fun k => ρ (gn k)) → gn a = d →
+          (∀ y b, needed y → y ≠ x → ctx.valueReg? y = some (.vreg b .int) →
+            (fr.regs y).isSome = true → gn b < st.base.nextVreg) →
+          ValuesHeld needed ctx (withValue fr x ⟨ty, imm⟩) (fun k => ρ' (gn k)) := by
+  obtain ⟨ty, imm, ms, d, hinst, hout, hshape, hrun⟩ :=
+    stock_iconst_ok hp hctx hi hic hc hR hm hn hmatch heval
+  refine ⟨ty, imm, ms, d, _, hinst, hout, ?_, rfl, hshape, ?_⟩
+  · rw [hres]
+    exact bindResults_virtual ctx st' [(x, a, d)] (by
+      intro q hq
+      simp only [List.mem_singleton] at hq
+      subst q
+      exact hmap)
+  · intro ρ
+    obtain ⟨ρ', hr, hv⟩ := hrun ρ
+    refine ⟨ρ', hr, hv, ?_⟩
+    intro gn needed fr held hgn hbelow
+    exact held.resolvedResult hmap hgn hv hbelow
+      (fun mi hmi e he => (hshape.defs mi hmi e he).1) hr
+
+/-! Concrete witnesses retain an existing alias and nonempty demand set. -/
+
 private def aliasInput : State :=
   { sinkState with alias := aliasStep #[] (191, 193), demand := #[1, 1] }
 
@@ -254,5 +297,35 @@ theorem ValuesHeld.resolvedResult_witness :
   rw [h192]
   unfold VHolds
   decide
+
+theorem stock_iconst_bound_witness :
+    ∃ (f : Clif.Function) (ctx : Ctx) (info : IInfo) (st' : State)
+      (tr' : Array RuleId) (ms : List MInst) (bound : State),
+      MappedCtxInv f ctx ∧ ctx.valueReg? 2 = some (.vreg 193 .int) ∧
+      info.results = [2] ∧
+      (matchRule program (Stock.sem ctx) {} 2 rule_lower_53 [.inst 0]).run (sinkState, #[]) =
+        .ok (some (env2 (.ty (.int 8)) (.int 9)), sinkState, #[]) ∧
+      (evalExpr program (Stock.sem ctx) {} 2003 rule_lower_53.rhs
+        (env2 (.ty (.int 8)) (.int 9))).run (sinkState, #[]) =
+        .ok (some (.regsVec [[.vreg 194 .int]]), st', tr') ∧
+      bindResults ctx (info.results.zip [[.vreg 194 .int]]) st' = .ok (bound, #[]) ∧
+      (bound.alias[193]?).join = some 194 ∧ bound.base = st'.base ∧
+      CodeShape sinkState.base bound.base ms 194 sinkState.base.nextVreg ∧
+      ∀ ρ, ∃ ρ', PRun (fun _ => True) ispec ms ρ ρ' ∧
+        VHolds (Clif.Val.ofInt .i8 9) (ρ' 194) := by
+  obtain ⟨f, ctx, info, st', tr', hctx, hmap, hi, hic, hres, hm, he, _⟩ :=
+    stock_iconst_ok_witness
+  obtain ⟨ty, imm, ms, d, bound, hinst, hout, hb, hbound, hshape, hrun⟩ :=
+    stock_iconst_bound data_program hctx hi hic rfl selfRefines (by decide) (by decide)
+      hm he hres hmap
+  cases hout
+  cases hinst
+  refine ⟨f, ctx, info, st', tr', ms, bound, hctx, hmap, hres, hm, he, hb, ?_, ?_, hshape, ?_⟩
+  · rw [hbound]
+    exact (aliasStep_get st'.alias (193, 194) 193).trans (by simp)
+  · rw [hbound]
+  · intro ρ
+    obtain ⟨ρ', hr, hv, _⟩ := hrun ρ
+    exact ⟨ρ', hr, hv⟩
 
 end Backend.Stock.Proof
