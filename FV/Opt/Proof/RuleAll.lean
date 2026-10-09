@@ -40,6 +40,8 @@ import FV.Opt.Proof.RuleArith6
 import FV.Opt.Proof.RuleArith7
 import FV.Opt.Proof.RuleSelects7
 import FV.Opt.Proof.RuleBitops8
+import FV.Opt.Proof.RuleBitops9
+import FV.Opt.Proof.RuleBitops10
 import FV.Opt.Proof.RuleCprop3
 import FV.Opt.Proof.RuleCprop4
 import FV.Opt.Proof.RuleSelects8
