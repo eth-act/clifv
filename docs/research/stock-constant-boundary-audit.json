@@ -1,0 +1,52 @@
+{
+  "modules": [
+    "FV.Backend.Proof.StockConstantBoundary"
+  ],
+  "method": "Complete clean canonical MCP diagnostics/lean_verify2; capped targeted build and compiled-module CLI audits",
+  "results": [
+    {
+      "theorem": "Backend.Stock.Proof.stock_iconst_resolved_boundaries",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_12",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_18",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_23",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_28",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_33",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_7"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_iconst_resolved_boundaries_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_12",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_18",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_23",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_28",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_33",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_7"
+      ],
+      "warnings": []
+    }
+  ],
+  "source_sha256": {
+    "FV/Backend/Proof/StockConstantBoundary.lean": "ae6e6f74e5af68a701b8415c453d4a50c7a786d93b83c80cd2a6eea5d8713b61"
+  },
+  "targeted_build_jobs": 204,
+  "scope": "Actual selected constant and result binder refine resolved code for changing before/after need sets, with no required prior agreement for the overwritten result. Chosen stale-result frame witness uses actual exported selection/binding. Whole-function availability and other-needed register noninterference remain to be derived; compiler behavior/accepted-source scope unchanged.",
+  "required_full_and_execution_gates": "Pending isolated PR validation.",
+  "cli_audit_count": 2,
+  "axiom_baseline": "Exactly same standard axioms and six existing fixed movK_ident certificates as stock_iconst_resolved; no new axiom/certificate.",
+  "log_sha256": {
+    "targeted": "32c181b56e65b5addf6e76affd99a8e7bbf44eb09c1c2ad7737737a14fc67af2",
+    "cli": "748ca3909440c969dfa9ba3440b809d22f6b2d01239b689eb8f26d2dac0a5e67",
+    "baseline": "a793afc9f9f3d32064798fe85eba116cb7190bac0310ae496e031e1ec0dfd935"
+  },
+  "validated_main_commit": "2146715828ac7394e5dc8c07be754009ae8b6b10"
+}
