@@ -1,0 +1,152 @@
+{
+  "modules": [
+    "FV.Backend.Proof.StockDriverBounds",
+    "FV.Backend.Proof.StockNodeAliasConnection",
+    "FV.Backend.Proof.StockTraversalAliasConnection",
+    "FV.Backend.Proof.StockNodeRecordOrigin"
+  ],
+  "method": "Canonical lean-lsp-mcp diagnostics and lean_verify; targeted builds; exact PR source CLI audit",
+  "results": [
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerNode_allocationBounds",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerNode_allocationBounds_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerNodes_allocationBounds",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerNodes_allocationBounds_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_emitBranch_aliasEntry",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerBlockCore_other_aliasEntry",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerBlockCore_other_aliasEntry_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_emitBranch_aliasEntry_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerNode_other_aliasEntry",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerNode_other_aliasEntry_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerNodes_other_aliasEntry",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerNodes_backward_aliasEntry",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerNodes_backward_aliasEntry_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerNodes_other_aliasEntry_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerNode_newBlockScan",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerNode_newBlockScan_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    }
+  ],
+  "validated_main_commit": "045c868e2b754886a8deae6ffc21db60ff2c2a2e",
+  "required_full_and_execution_gates": "Pending on exact PR branch; draft only.",
+  "scope": "99 new allocation-bound lines plus three node/origin/traversal modules655 lines. Actual node/fold allocation bounds, branch/core/node alias frames, backward suffix transport and actual new block-record origin; eight results/eight inhabited witnesses. Complete whole-driver simulation and production cutover remain pending.",
+  "source_sha256": {
+    "FV/Backend/Proof/StockDriverBounds.lean": "bad1ccdd62564b371fdb71415e26e89693ae61b6aa5e33fdc691be5d872c0c8b",
+    "FV/Backend/Proof/StockNodeAliasConnection.lean": "d1eae51d5aa54e8ec37ee91be7f9c257d695c3e7c4936ca6bf10a749b6607397",
+    "FV/Backend/Proof/StockTraversalAliasConnection.lean": "0fd9519a3f086dd8697f22ad832d272c35c384f31bb15ea8f34621cf3fd05c39",
+    "FV/Backend/Proof/StockNodeRecordOrigin.lean": "4a2d63c5d00b6a98dea5e378782f9c0cf0310b4abdf6c8e554f90018827b5890"
+  }
+}
