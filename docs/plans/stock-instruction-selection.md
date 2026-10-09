@@ -2,6 +2,26 @@
 
 User-approved plan for #60. Resumed 2026-10-09 on freshly fetched origin/main 33f03f2, branch agent/stock-driver-production.
 
+
+### Next landing slice: stock constant semantics
+
+The next PR is based directly on main `7a8f263` and contains only the
+constructor-scoped interpreter projection and stock constant-materialization
+proofs (`IselScopedProjection`, `StockImm`), plus their axiom receipt.
+The alias/results prerequisites landed in #100. The slice proves actual stock
+`imm` and `iconst` evaluation reuse the existing machine semantics and preserve
+scheduling fields. Every public result has an inhabited witness. It changes no
+compiler behavior.
+
+Remaining scan, sink, memory and address proof modules stay in the working
+stack. Production cutover and whole-driver correctness remain incomplete.
+All required local gates passed on the isolated PR branch: full1266, crate959,
+corpus114/extrt22/runtests4672zero failures, encoder1292identical/0differing,
+E2E1149accepted/0rejected. All14 new theorem/witness audits and seven final
+backend/executable axiom checks permit only standard axioms and existing fixed
+native certificates. PR101 may merge after green CI.
+
+
 ## Summary
 
 Implement #60 by changing Lean's lowering driver to follow Cranelift 0.136.1 at
