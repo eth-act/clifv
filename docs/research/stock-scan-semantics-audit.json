@@ -1,0 +1,169 @@
+{
+  "checks": [
+    {
+      "theorem": "ScansSpec.fall_refines",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "stock_scanBlock_fall_refines",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "stock_omitted_fall_refines",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "stock_omitted_source_step",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "stock_omittedBlock_fall_refines",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "ScansSpec.fall_refines_witness",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "stock_omitted_fall_refines_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "stock_scanBlock_fall_refines_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "stock_omitted_source_step_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "stock_omittedBlock_fall_refines_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    }
+  ],
+  "build": {
+    "jobs": 1262,
+    "log": "/tmp/stock-scan-semantics-pr-full.log",
+    "result": "passed"
+  },
+  "scope": "Forward source composition of actual backward stock scans and real omitted source steps. Per-record emitted semantics and whole-driver correctness remain obligations.",
+  "source_sha256": {
+    "FV/Backend/Proof/StockScanSemantics.lean": "5318e2b94bd8770f1b9d58fb27f874f092230da69fc1248bd7dfe5e3caf340cd"
+  },
+  "merge_gates": {
+    "crate_proofs": {
+      "jobs": 959,
+      "result": "passed",
+      "log": "/tmp/stock-scan-semantics-pr-crates.log"
+    },
+    "e2e": {
+      "accepted": 1149,
+      "rejected": 0,
+      "not_covered": 0,
+      "log": "/tmp/stock-scan-semantics-pr-e2e.log"
+    },
+    "runtime": {
+      "corpus_pass": 114,
+      "corpus_fail": 0,
+      "corpus_error": 0,
+      "extrt_pass": 22,
+      "runtests_pass": 4672,
+      "runtests_fail": 0,
+      "runtests_error": 0,
+      "runtests_not_runnable": 7,
+      "runtests_unsupported": 9054,
+      "disagree": 0,
+      "exit_code": 0,
+      "log": "/tmp/stock-scan-semantics-pr-runtime.log"
+    },
+    "encoder": {
+      "identical": 1292,
+      "differ": 0,
+      "failing_files": 0,
+      "log": "/tmp/stock-scan-semantics-pr-encode.log"
+    }
+  },
+  "e2e_axiom_checks": [
+    {
+      "theorem": "E2E.backend_correct_final_total_emit_input",
+      "total": 853,
+      "standard": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "existing_fixed_native_certificates": 850,
+      "unexpected": []
+    },
+    {
+      "theorem": "E2E.ExecBytes.binary_correct_exec_proven",
+      "total": 764,
+      "standard": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "existing_fixed_native_certificates": 761,
+      "unexpected": []
+    },
+    {
+      "theorem": "Link.compileExe_correct",
+      "total": 830,
+      "standard": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "existing_fixed_native_certificates": 827,
+      "unexpected": []
+    }
+  ]
+}
