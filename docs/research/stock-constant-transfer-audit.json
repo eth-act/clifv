@@ -1,0 +1,116 @@
+{
+  "checks": [
+    {
+      "theorem": "Backend.Stock.Proof.stock_iconst_bound",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_12",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_18",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_23",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_28",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_33",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_7"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_iconst_bound_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_12",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_18",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_23",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_28",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_33",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_7"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_iconst_resolved",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_12",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_18",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_23",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_28",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_33",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_7"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_iconst_resolved_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_12",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_18",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_23",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_28",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_33",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_7"
+      ],
+      "warnings": []
+    }
+  ],
+  "sources": {
+    "FV/Backend/Proof/StockResults.lean": "038d1e249af8b1d9abc1f1ff8c59c25009940f5b913ee3820fda0cdff48df4ca",
+    "FV/Backend/Proof/StockAliasSemantics.lean": "0288c06057cc6dfa61c7ce2fd3ff935c4254d71744930f5517a4bceb5953ae9f"
+  },
+  "checked_at": "2026-10-09T15:26:23.244378+00:00",
+  "full_build": {
+    "jobs": 1269,
+    "result": "passed",
+    "log": "/tmp/stock-constant-transfer-pr-full.log"
+  },
+  "gates": {
+    "crates": {
+      "jobs": 959,
+      "result": "passed",
+      "log": "/tmp/stock-constant-transfer-pr-crates.log"
+    },
+    "runtime": {
+      "corpus": 114,
+      "extrt": 22,
+      "runnable_runtests": 4672,
+      "failures": 0,
+      "errors": 0,
+      "disagreements": 0,
+      "not_runnable": 7,
+      "unsupported": 9054,
+      "log": "/tmp/stock-constant-transfer-pr-runtime.log"
+    },
+    "encoder": {
+      "identical": 1292,
+      "differing": 0,
+      "log": "/tmp/stock-constant-transfer-pr-encode.log"
+    },
+    "e2e": {
+      "accepted": 1149,
+      "rejected": 0,
+      "log": "/tmp/stock-constant-transfer-pr-e2e.log"
+    },
+    "final_axioms": {
+      "theorems": [
+        "E2E.backend_correct_final_total",
+        "E2E.backend_correct_final_total_emit_input",
+        "E2E.backend_correct_final_total_relaxed",
+        "E2E.LinkCheck.crate_correct_inScope_proven",
+        "Link.compileExe_correct",
+        "Link.compileExe_total",
+        "Link.compileExe_total_alias"
+      ],
+      "result": "standard and existing fixed native certificates only",
+      "log": "/tmp/stock-constant-transfer-pr-e2e-axioms.log"
+    }
+  },
+  "scope": "Actual stock constant/result binding and alias-resolved machine/source transfer. Whole-driver correctness and production cutover remain incomplete."
+}

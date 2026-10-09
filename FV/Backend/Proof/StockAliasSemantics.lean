@@ -1,4 +1,4 @@
-import FV.Backend.Proof.StockValues
+import FV.Backend.Proof.StockResults
 import FV.Backend.Proof.LowerAlias
 import FV.Backend.Proof.IselFamAluBIconst
 import FV.Backend.Proof.IselLcf
@@ -174,6 +174,68 @@ theorem stock_alias_fresh_prun {a : Array (Option Nat)} {lo : Nat}
         (fun m hm hd => Nat.not_le_of_lt (Nat.lt_of_not_ge hn) (hrenDefs m hm _ hd)) hnew
       exact hkeep.trans (ite_eq_right hn).symm
   exact ⟨w', by simpa only [he] using hnew, hw⟩
+
+/-- The actual stock constant root and result binder refine their alias-resolved
+machine code. Availability is interpreted through the final resolver, and other
+needed values may be on either side of this root's allocation interval. -/
+theorem stock_iconst_resolved {p : Program} (hp : Data p) {f : Clif.Function} {ctx : Ctx}
+    (hctx : MappedCtxInv f ctx) {ii : Nat} {info : IInfo} {inst : Clif.Inst}
+    (hi : ctx.insts[ii]? = some info) (hic : info.clif = some inst)
+    {cfg : Config} (hc : cfg.checkOverlap = false)
+    {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (hR : Refines F isem)
+    (hsem : ∀ aliases i, isem (i.mapRegs
+      (Backend.lowerFunction.resolve aliases (aliases.size + 1))) = isem i)
+    {m n : Nat} (hm : 2 ≤ m) (hn : 50 ≤ n)
+    {st s1 st' : State} {tr tr1 tr' : Array RuleId} {env' : Isle.Interp.Env V} {out : V}
+    (hmatch : (matchRule p (Stock.sem ctx) cfg m rule_lower_53 [.inst ii]).run (st, tr) =
+      .ok (some env', s1, tr1))
+    (heval : (evalExpr p (Stock.sem ctx) cfg n rule_lower_53.rhs env').run (s1, tr1) =
+      .ok (some out, st', tr')) {x a : Nat}
+    (hres : info.results = [x]) (hmap : ctx.valueReg? x = some (.vreg a .int)) :
+    ∃ (ty : Clif.Ty) (imm : BitVec ty.width) (ms : List MInst) (d : Nat) (bound : State),
+      inst = .iconst ty imm ∧ out = .regsVec [[.vreg d .int]] ∧
+      bindResults ctx (info.results.zip [[.vreg d .int]]) st' = .ok (bound, #[]) ∧
+      bound = { st' with alias := aliasStep st'.alias (a, d) } ∧
+      CodeShape st.base bound.base ms d st.base.nextVreg ∧
+      ∀ aliases, aliases.size ≤ st.base.nextVreg → ∀ ρ, ∃ ρ',
+        PRun F isem (ms.map (·.mapRegs
+          (Backend.lowerFunction.resolve aliases (aliases.size + 1)))) ρ ρ' ∧
+        VHolds ⟨ty, imm⟩ (ρ' d) ∧
+        ∀ (needed : Nat → Prop) (fr : Clif.Frame),
+          ValuesHeld needed ctx fr (fun k => ρ (aliasNum aliases k)) →
+          aliasNum aliases a = d →
+          (∀ y b, needed y → y ≠ x → ctx.valueReg? y = some (.vreg b .int) →
+            (fr.regs y).isSome = true →
+              aliasNum aliases b < st.base.nextVreg ∨ bound.base.nextVreg ≤ aliasNum aliases b) →
+          ValuesHeld needed ctx (withValue fr x ⟨ty, imm⟩)
+            (fun k => ρ' (aliasNum aliases k)) := by
+  obtain ⟨ty, imm, ms, d, bound, hinst, hout, hb, hbound, hshape, hrun⟩ :=
+    stock_iconst_bound hp hctx hi hic hc hR hm hn hmatch heval hres hmap
+  refine ⟨ty, imm, ms, d, bound, hinst, hout, hb, hbound, hshape, ?_⟩
+  intro aliases ha ρ
+  obtain ⟨ρraw, hr, hv, _⟩ := hrun (fun k => ρ (aliasNum aliases k))
+  have hdefs : ∀ mi ∈ ms, ∀ e ∈ vdefs mi, st.base.nextVreg ≤ e :=
+    fun mi hmi e he => (hshape.defs mi hmi e he).1
+  have huses : ∀ mi ∈ ms, ∀ u ∈ vuseNums mi, st.base.nextVreg ≤ u := by
+    intro mi hmi u hu
+    have := hshape.uses mi hmi u hu
+    omega
+  obtain ⟨ρ', hr', hfresh, _⟩ := stock_alias_fresh_prun ha hdefs huses (hsem aliases) hr
+  have hv' : VHolds ⟨ty, imm⟩ (ρ' d) := by
+    rw [hfresh d hshape.res]
+    exact hv
+  have hresolvedDefs : ∀ mi ∈ ms.map (·.mapRegs
+      (Backend.lowerFunction.resolve aliases (aliases.size + 1))),
+      ∀ e ∈ vdefs mi, st.base.nextVreg ≤ e ∧ e < bound.base.nextVreg := by
+    intro mi hmi e he
+    obtain ⟨raw, hraw, rfl⟩ := List.mem_map.mp hmi
+    rw [renamed_defs] at he
+    obtain ⟨r, hr, rfl⟩ := List.mem_map.mp he
+    rw [alias_fresh ha (hdefs raw hraw r hr)]
+    exact hshape.defs raw hraw r hr
+  refine ⟨ρ', hr', hv', ?_⟩
+  intro needed fr hheld hresult houtside
+  exact hheld.resolvedResult_interval hmap hresult hv' houtside hresolvedDefs hr'
 
 /-! The witnesses use actual constant materialization and the actual array
 resolver. The other live value is in vreg 200, above the fragment [194, 195):
@@ -371,5 +433,49 @@ theorem stock_alias_interval_prun_witness :
   exact ⟨ρ', hr, (hfresh 194 (by decide) (by decide)).trans (upd_same _ _ _),
     hkeep 200 (Or.inr (by decide)), hkeep 192 (Or.inl (by decide)),
     witness_alias_facts.2.2⟩
+
+private def rootAliases : Array (Option Nat) := aliasStep #[] (193, 194)
+
+set_option maxRecDepth 2048 in
+private theorem root_alias_facts :
+    rootAliases.size ≤ 194 ∧ aliasNum rootAliases 193 = 194 := by decide
+
+/-- Actual rule matching, evaluation and binding, followed by semantic execution
+of the real resolver's code and installation of the mapped CLIF result. -/
+theorem stock_iconst_resolved_witness :
+    ∃ (f : Clif.Function) (ctx : Ctx) (info : IInfo) (st' bound : State)
+      (tr' : Array RuleId) (ms : List MInst) (ρ' : Nat → CV),
+      MappedCtxInv f ctx ∧ ctx.valueReg? 2 = some (.vreg 193 .int) ∧
+      (matchRule program (Stock.sem ctx) {} 2 rule_lower_53 [.inst 0]).run (sinkState, #[]) =
+        .ok (some (env2 (.ty (.int 8)) (.int 9)), sinkState, #[]) ∧
+      (evalExpr program (Stock.sem ctx) {} 2003 rule_lower_53.rhs
+        (env2 (.ty (.int 8)) (.int 9))).run (sinkState, #[]) =
+        .ok (some (.regsVec [[.vreg 194 .int]]), st', tr') ∧
+      bindResults ctx (info.results.zip [[.vreg 194 .int]]) st' = .ok (bound, #[]) ∧
+      PRun (fun _ => True) ispec (ms.map (·.mapRegs
+        (Backend.lowerFunction.resolve rootAliases (rootAliases.size + 1)))) witnessRF ρ' ∧
+      VHolds (Clif.Val.ofInt .i8 9) (ρ' 194) ∧
+      ValuesHeld (fun x => x = 2) ctx
+        (withValue { func := f, regs := fun _ => none, slots := [], body := [], term := .ret [2] }
+          2 (.ofInt .i8 9)) (fun k => ρ' (aliasNum rootAliases k)) := by
+  obtain ⟨f, ctx, info, st', tr', hctx, hmap, hi, hic, hres, hm, he, _⟩ :=
+    stock_iconst_ok_witness
+  have hsem : ∀ aliases i, ispec (i.mapRegs
+      (Backend.lowerFunction.resolve aliases (aliases.size + 1))) = ispec i := by
+    intro aliases i
+    funext us w
+    exact ispec_mapRegs (alias_renaming aliases) us w i
+  obtain ⟨ty, imm, ms, d, bound, hinst, hout, hb, _, _, hrun⟩ :=
+    stock_iconst_resolved data_program hctx hi hic rfl witness_selfRefines hsem
+      (by decide) (by decide) hm he hres hmap
+  cases hout
+  cases hinst
+  obtain ⟨ρ', hr, hv, hheld⟩ := hrun rootAliases root_alias_facts.1 witnessRF
+  refine ⟨f, ctx, info, st', bound, tr', ms, ρ', hctx, hmap, hm, he, hb, hr, hv, ?_⟩
+  apply hheld (fun x => x = 2)
+    { func := f, regs := fun _ => none, slots := [], body := [], term := .ret [2] }
+    (by intro x hx v hv; cases hv) root_alias_facts.2
+  intro y b hy hne
+  exact False.elim (hne hy)
 
 end Backend.Stock.Proof

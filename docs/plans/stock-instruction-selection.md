@@ -22,6 +22,22 @@ backend/executable axiom checks permit only standard axioms and existing fixed
 native certificates. PR101 may merge after green CI.
 
 
+### Independent constant-result transfer slice
+
+The actual stock constant root now composes with actual result binding and
+alias-resolved machine execution in `stock_iconst_bound` and
+`stock_iconst_resolved`. Needed mapped source values survive outside the
+constant's fresh allocation interval. These are internal driver simulation
+obligations; source IDs need not equal register IDs. Final-alias bounds and
+noninterference still require the whole-driver invariant.
+
+Both results have inhabited witnesses and pass four Lean MCP checks, with
+standard axioms and the six existing fixed `movK_ident` certificates only.
+Exact main-based full1269/crate959, corpus114/extrt22/runtests4672zero failures,
+encoder1292identical/0differing, E2E1149/0 and seven final theorem axiom audits
+pass. The slice may merge after green CI. Whole-driver and production cutover
+remain incomplete.
+
 ## Summary
 
 Implement #60 by changing Lean's lowering driver to follow Cranelift 0.136.1 at
