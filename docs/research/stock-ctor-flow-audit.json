@@ -1,0 +1,90 @@
+{
+  "modules": [
+    "FV.Backend.Proof.StockCtorFlow"
+  ],
+  "source_sha256": {
+    "FV/Backend/Proof/StockCtorFlow.lean": "73060e20e3baadb9f53b643fb626c86d96d5e863cf55ec1aba831692c3c07036"
+  },
+  "results": [
+    {
+      "theorem": "Backend.Stock.Proof.stock_ctor_output_origin",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_built_ctor_output_origin",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_ctor_output_values",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_ctor_output_instructions",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_ctor_output_origin_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_built_ctor_output_origin_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_ctor_output_values_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_ctor_output_instructions_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    }
+  ],
+  "targeted_build_jobs": 156,
+  "method": "Complete clean canonical lean-mcp diagnostics; all8 standard-only theorem/witness MCP audits; capped targeted build and matching compiled-module CLI audits.",
+  "scope": "All successful actual stock constructors: mapped/argument/fresh/physical register origins in statement contexts, source-value containment, instruction origins including successful sinkability. Actual successful buildCtx supplies the statement-context premise. Nonempty witnesses cover mapped192/fresh194/195, source-value atoms and successful sinkability. Whole-rule flow model, final alias provenance/noninterference and full simulation remain unfinished.",
+  "log_sha256": {
+    "/tmp/stock-ctor-flow-targeted.log": "246d671bc400382682a74ab7f90746482106bf8621c0f448b3377aa6df2cd8a4",
+    "/tmp/stock-ctor-flow-axioms.log": "96f1783dfab57adfd3f4971d7d9adbeeb016f54ecc445f7101d501e7d1f2b5e0"
+  },
+  "required_full_and_execution_gates": "pending on isolated PR source"
+}
