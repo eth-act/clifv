@@ -1,0 +1,74 @@
+{
+  "modules": [
+    "FV.Backend.Proof.StockSelectedProvenance"
+  ],
+  "source_sha256": {
+    "FV/Backend/Proof/StockSelectedProvenance.lean": "acaf403d3fd9e98f8e1fbf83a11a7c22ce6f69b5afd7eea484bc1452bca41f5f"
+  },
+  "results": [
+    {
+      "theorem": "Backend.Stock.Proof.stock_selected_provenance_source",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_selected_provenance_source_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_selected_available_provenance",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_selected_available_provenance_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    }
+  ],
+  "targeted_build_jobs": 225,
+  "method": "Complete clean exact-PR lean-mcp diagnostics and four matching permitted-only MCP/compiled Lean audits; required capped full/execution gates on merged sourceac2d81e.",
+  "scope": "Read-only source provenance and availability transport across actual terminator overrides and arbitrary exception-register reservations; concrete successful build, dense mapping, changed return data and nonempty reservation witnesses. Nonempty-reservation output flow, full scan/final alias availability and production cutover remain.",
+  "required_full_and_execution_gates": "passed on validated_source_commit; final PR commit changes receipt only",
+  "gates": {
+    "full_build_jobs": 1302,
+    "crate_build_jobs": 958,
+    "corpus_pass": 114,
+    "extrt_pass": 22,
+    "runtests_pass": 4672,
+    "runtests_fail": 0,
+    "runtime_disagreements": 0,
+    "encoder_identical": 1292,
+    "encoder_differ": 0,
+    "e2e_accepted": 1150,
+    "e2e_rejected": 0,
+    "final_theorem_axiom_audits": 7
+  },
+  "validated_source_commit": "ac2d81ed29b3d4da6c2a456f037970bd0b98cc80",
+  "validated_main_commit": "1170f8a1ffd2ceb9855a67f2cec20b2a4403b57b",
+  "gate_log_sha256": {
+    "full": "abcaafbd23c5b7d7c0d0dce6261a614a13fe34fee950d193527b965798643d73",
+    "crates": "42726ff31ff1320598017cbe50943483060f76355f252d30101490e33d8d763e",
+    "runtime": "6fc44567e9cac0a4ed3fd2661b4aad44f7e6b43055d21fb3fe150c1a56303553",
+    "encode": "03615dfbca26e9d0ed30a780c66e8822602b1201d21afe9cd05e6af550e89919",
+    "e2e": "3c29ef72041cbbefb4d612b7ab4ab341f03c38c363f040242bcc7ea80cea318f",
+    "e2e-axioms": "620761c85c2e59b59c17136e0b0d2ca8efbe83934335f99704fdd30dbd91de6b",
+    "axioms": "fe3b37c4759d82af6e5e2b99eb98ea6101bacf72a5a8149647e8267942a13037"
+  }
+}
