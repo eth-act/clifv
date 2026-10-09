@@ -32,5 +32,31 @@
     "/tmp/stock-mapped-flow-targeted.log": "409f3d95bd725777f3e9d73522128951164bb2bc21edd7bddc20c572074d3936",
     "/tmp/stock-mapped-flow-axioms.log": "c77ddd2e9abf2f8723f6c1ce652141684e43b21478721413e73f96b3f34ecf29"
   },
-  "required_full_and_execution_gates": "pending on isolated PR source"
+  "required_full_and_execution_gates": "passed on exact isolated source95f9962",
+  "gates": {
+    "full_build_jobs": 1298,
+    "crate_build_jobs": 958,
+    "corpus_pass": 114,
+    "extrt_pass": 22,
+    "runtests_pass": 4672,
+    "runtests_fail": 0,
+    "runtime_disagreements": 0,
+    "encoder_identical": 1292,
+    "encoder_differ": 0,
+    "e2e_accepted": 1150,
+    "e2e_rejected": 0,
+    "final_theorem_axiom_audits": 7
+  },
+  "validated_source_commit": "95f99628af6c2feb2b218dc76e0807d46b5bd4f8",
+  "validated_main_commit": "21730037fc4d0c33eea248d54fea03e5bf52e22a",
+  "gate_log_sha256": {
+    "full": "fe1d179fa54b4719441b28a726e1b89c501bcbce6f827815cfdd4b75d258541c",
+    "crates": "42726ff31ff1320598017cbe50943483060f76355f252d30101490e33d8d763e",
+    "runtime": "6fc44567e9cac0a4ed3fd2661b4aad44f7e6b43055d21fb3fe150c1a56303553",
+    "encode": "03615dfbca26e9d0ed30a780c66e8822602b1201d21afe9cd05e6af550e89919",
+    "e2e": "47099281c19a89ac915f30d3d353bad8d06f0072468be637dcf916d8c7f224d1",
+    "e2e-axioms": "620761c85c2e59b59c17136e0b0d2ca8efbe83934335f99704fdd30dbd91de6b",
+    "axioms": "c77ddd2e9abf2f8723f6c1ce652141684e43b21478721413e73f96b3f34ecf29"
+  },
+  "exact_pr_mcp_diagnostics": "complete clean;2 standard-only MCP/CLI audits match"
 }
