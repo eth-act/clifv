@@ -194,3 +194,21 @@ separately reports7 not-runnable and9054 unsupported lines. Logs use the
 /tmp/stock-alias-results-pr-* prefix; audit receipt is
  docs/research/stock-alias-results-audit.json. No runtime/CLIF change.
 Final alias interval bounds and complete driver simulation still remain.
+
+
+### Independent landing slice: actual sink provenance
+
+The next independent PR contains `StockSinkProvenance`,
+`StockPatternBindings` and `StockPatternSink` directly on main7a8f263.
+Actual pattern matching and iflet/RHS execution identify the selected producer,
+preserve its eligibility and source bindings, and reject effect-only traps.
+Normal and atomic loads have inhabited witnesses. The slice does not depend on
+the pending constant PR and changes no compiler behavior.
+
+All ten public results and ten witnesses passed twenty Lean MCP axiom checks
+using standard axioms only. The full capped build passed1267 jobs.
+Required local gates passed: crate959; corpus114/114, extrt22/22; runnable
+runtests4672/0/0; encoder1292identical/0differ; E2E1149accepted/0rejected.
+Seven final backend/executable theorem audits have only standard axioms and
+existing fixed native certificates. PR102 may merge after green CI. Whole-driver and production cutover
+remain incomplete.
