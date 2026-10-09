@@ -1,0 +1,113 @@
+{
+  "modules": [
+    "FV.Backend.Proof.StockReservedFlow",
+    "FV.Backend.Proof.StockRootFlow"
+  ],
+  "source_sha256": {
+    "FV/Backend/Proof/StockReservedFlow.lean": "4e351b905c2b60af62074899db0866ab259fe96844d8337ef3a39f77640503cf",
+    "FV/Backend/Proof/StockRootFlow.lean": "eaffb8901f23122e0cd327c985e9a264439b90eb0391d9a1fa4c65a9b3e292a7"
+  },
+  "results": [
+    {
+      "theorem": "Backend.Stock.Proof.MappedFlow.stock_root_reserved_context_flow",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.MappedFlow.stock_root_reserved_context_flow_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.MappedFlow.stock_root_mapped_context_flow",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.MappedFlow.stock_root_mapped_context_flow_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.MappedFlow.stock_root_mapped_flow",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.MappedFlow.stock_root_mapped_flow_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.ReservedFlow.stock_apply_reserved_flow",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.ReservedFlow.stock_apply_reserved_flow_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    }
+  ],
+  "targeted_build_jobs": 242,
+  "method": "Complete clean exact-PR Lean MCP diagnostics for both modules; eight matching standard-only MCP/compiled Lean audits; required capped full/execution gates on source4be7e4b.",
+  "scope": "Actual whole-interpreter helper and whole-root register provenance with arbitrary exception reservations. Exact reserved return/payload alternatives; actual checked try-call helper installs195\u2192194, returns194/196 below unchanged frontier197. Actual generated full constant root inhabits whole-root theorem; original stronger empty-reservation interfaces retained. Actual selected-scan/allocator bounds, source-available final alias paths, noninterference and production cutover remain.",
+  "required_full_and_execution_gates": "passed on validated_source_commit; final PR commit changes receipt only",
+  "gates": {
+    "full_build_jobs": 1303,
+    "crate_build_jobs": 958,
+    "corpus_pass": 114,
+    "extrt_pass": 22,
+    "runtests_pass": 4672,
+    "runtests_fail": 0,
+    "runtime_disagreements": 0,
+    "encoder_identical": 1292,
+    "encoder_differ": 0,
+    "e2e_accepted": 1150,
+    "e2e_rejected": 0,
+    "final_theorem_axiom_audits": 7
+  },
+  "validated_source_commit": "4be7e4b472c7dfe19d24b4aa006191192841ee3b",
+  "validated_main_commit": "b07e69246c3970b845eca73585962830be1c248a",
+  "gate_log_sha256": {
+    "full": "7cc4ca9f54da07dd43ad903e632d2c120af1268912259d6dd88e86ca0926d66f",
+    "crates": "42726ff31ff1320598017cbe50943483060f76355f252d30101490e33d8d763e",
+    "runtime": "6fc44567e9cac0a4ed3fd2661b4aad44f7e6b43055d21fb3fe150c1a56303553",
+    "encode": "03615dfbca26e9d0ed30a780c66e8822602b1201d21afe9cd05e6af550e89919",
+    "e2e": "6f1738e98d8395dd77fe7b1eb5e0c83bf64dee0fd47b6ffc2752a7d85cdd3933",
+    "e2e-axioms": "620761c85c2e59b59c17136e0b0d2ca8efbe83934335f99704fdd30dbd91de6b",
+    "axioms": "cbdae97b1235d1731835112a292fbb6d2ac21145452f48e9c58936e8231c73f4"
+  }
+}
