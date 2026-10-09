@@ -185,11 +185,10 @@ theorem symAddr_of_blrTo {I : LinkInput} {B : BaseEnv} (hI : okB I = true)
   simp only [noBlrB, Bool.and_eq_true, Option.isNone_iff_eq_none, List.all_eq_true,
     Bool.or_eq_true, Bool.not_eq_true', List.any_eq_false, beq_iff_eq] at hn
   obtain ⟨⟨hmay, -⟩, hgot⟩ := hb
-  rcases hmay with ⟨hdecl, hne⟩ | ⟨-, hsym, -⟩
-  · rcases hn.2 _ (tab_mem (okB_names hI) hg) with (hx | hx) | hx
+  rcases hmay with hdecl | ⟨-, hsym, -⟩
+  · rcases hn.2 _ (tab_mem (okB_names hI) hg) with hx | hx
     · obtain ⟨x, hx', he⟩ := List.mem_map.1 hdecl
       exact hx x hx' he
-    · exact hne hx.symm
     · obtain ⟨n', hv, hn'⟩ := blrGotB_sound hx hs hd
       exact hn' (hgot n' hv)
   · exact hsym hn.1

@@ -56,7 +56,7 @@ through a pointer), and every function of `T` declaring `n` calls through a regi
 through the GOT entries of other symbols. -/
 def noBlrB (I : LinkInput) (T : List (Clif.Function × Art)) (n : String) : Bool :=
   (I.syms.lookup n).isNone && T.all fun e =>
-    !(e.1.externs.any fun x => x.2.name == n) || e.1.name == n || blrGotB e.2.vcp n
+    !(e.1.externs.any fun x => x.2.name == n) || blrGotB e.2.vcp n
 
 /-- **The code map** of a program's compiled images `T` (a per-program check, a premise of
 `E2E.ExecBytes.binary_correct_exec_static`): every function's link-map address is its load address, or no
