@@ -1,4 +1,4 @@
-import FV.Backend.Proof.LowerAlias
+import FV.Backend.Proof.StockAliasSemantics
 import FV.Backend.Proof.StockBlockScan
 import FV.Backend.Proof.StockOmission
 import FV.Backend.Proof.IselCmpRun
@@ -12,10 +12,6 @@ requires its deferred-effect invariant. -/
 namespace Backend.Stock.Proof
 
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
-
-/-- Numeric component of the final compiler alias resolver. -/
-def aliasNum (a : Array (Option Nat)) (n : Nat) : Nat :=
-  chaseF (fun k => (a[k]?).join) (a.size + 1) n
 
 /-- Source steps indexed by the original context, in execution order. -/
 inductive SourceSteps {S : Type} (step : Nat → S → S → Prop) : List Nat → S → S → Prop where

@@ -1,0 +1,243 @@
+{
+  "checks": [
+    {
+      "theorem": "ValuesHeld.resolvedResult_frame",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "ValuesHeld.resolvedResult_interval",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "stock_alias_interval_prun",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "stock_alias_fresh_prun",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "ValuesHeld.resolvedResult_frame_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "ValuesHeld.resolvedResult_interval_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "stock_alias_fresh_prun_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "stock_alias_interval_prun_witness",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "setAlias_virtual",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "setAlias_virtual_get",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "resolve_bound_fresh",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "bindResults_virtual",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "bindResults_physical",
+      "axioms": [
+        "propext"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "bindResults_reject_multi",
+      "axioms": [
+        "propext"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "ValuesHeld.resolvedResult",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "setAlias_virtual_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "setAlias_virtual_get_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "resolve_bound_fresh_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "bindResults_virtual_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "bindResults_physical_witness",
+      "axioms": [
+        "propext"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "bindResults_reject_multi_witness",
+      "axioms": [
+        "propext"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "ValuesHeld.resolvedResult_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    }
+  ],
+  "e2e_axiom_checks": [
+    {
+      "theorem": "E2E.backend_correct_final_total_emit_input",
+      "total": 853,
+      "unexpected": []
+    },
+    {
+      "theorem": "E2E.ExecBytes.binary_correct_exec_proven",
+      "total": 764,
+      "unexpected": []
+    },
+    {
+      "theorem": "Link.compileExe_correct",
+      "total": 830,
+      "unexpected": []
+    }
+  ],
+  "build": {
+    "jobs": 1264,
+    "result": "passed",
+    "log": "/tmp/stock-alias-results-pr-full.log"
+  },
+  "merge_gates": {
+    "crate_proofs": {
+      "jobs": 959,
+      "result": "passed"
+    },
+    "e2e": {
+      "accepted": 1149,
+      "rejected": 0,
+      "not_covered": 0
+    },
+    "runtime": {
+      "corpus_pass": 114,
+      "extrt_pass": 22,
+      "runtests_pass": 4672,
+      "runtests_fail": 0,
+      "runtests_error": 0,
+      "runtests_not_runnable": 7,
+      "runtests_unsupported": 9054,
+      "disagree": 0,
+      "exit_code": 0
+    },
+    "encoder": {
+      "identical": 1292,
+      "differ": 0,
+      "failing_files": 0
+    }
+  },
+  "scope": "Alias and actual result-binding transfer only; final resolver bounds and global driver proof remain incomplete.",
+  "source_sha256": {
+    "FV/Backend/Proof/StockAliasSemantics.lean": "d5332bf228996bb7e844da2badb7fefe912e903692f69388c3249de6e95c69ae",
+    "FV/Backend/Proof/StockResults.lean": "a1f0d6d89ca2ec0c2dff7ad25fa504133827f7bab7c2bd631f3669a695666e8b",
+    "FV/Backend/Proof/StockScanSemantics.lean": "f4f4145983cc1ebc695a1e3c58aa14d78d25d7f8eaa84ba3b1645dbc0b799c63"
+  }
+}

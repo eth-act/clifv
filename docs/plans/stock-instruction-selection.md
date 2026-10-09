@@ -162,3 +162,35 @@ E2E/executable axiom audits contain only standard axioms and existing fixed
 native certificates. Cached qemu11.1.1/llvm22.1.8 were restored to PATH for the
 runtime/encoder checks. Compiler/CLIF semantics are unchanged, so additional
 CLIF/optimizer gates do not apply. PR CI still must pass before merging.
+
+### Alias/result transfer reconciled
+
+StockAliasSemantics transports fresh and interval-bounded selected fragments
+through the actual final array resolver. Live producer values above the current
+fragment's allocation interval remain held. StockResults proves actual virtual
+alias installation, fresh resolution, ordered result binding including duplicate
+destinations, physical-register copies and rejection of multi-register results.
+These are internal transfer facts, not accepted-source restrictions. Scan
+composition imports the shared alias definition from this semantic module.
+
+Eleven additional public theorems have eleven non-vacuity witnesses, including
+real movz/ALU fragments and the actual result binder. All22 theorem/witness MCP
+axiom checks use standard axioms; both modules have no MCP diagnostics. Full
+capped FV/FVTest/backend/E2E/link-check build passes1264 jobs. No new native
+certificate or heartbeat increase. The selected-rule interpreter bridge and
+whole-driver alias bounds still must establish these premises uniformly.
+
+### Alias/result slice prepared on landed scan-composition main
+
+The alias/result PR is based on main850f92a (#99). It contains the original
+bounded alias/result transfer modules and the shared alias import in scan
+composition; later constant/sinking/load changes are excluded. Exact-branch
+verification: full FV/FVTest/backend/E2E/link-check1264 jobs; crate-proofs959;
+all22 public theorem/witness MCP audits standard-only and diagnostics clean.
+Final backend/executable theorem axiom checks retain the existing fixed native
+certificates only. Corpus114/0/0, extrt22/0/0, runnable runtests4672/0/0,
+E2E1149/0/0not-covered, encoder1292 identical/0differ. The runtime harness
+separately reports7 not-runnable and9054 unsupported lines. Logs use the
+/tmp/stock-alias-results-pr-* prefix; audit receipt is
+ docs/research/stock-alias-results-audit.json. No runtime/CLIF change.
+Final alias interval bounds and complete driver simulation still remain.
