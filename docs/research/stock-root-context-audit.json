@@ -1,0 +1,50 @@
+{
+  "modules": [
+    "FV.Backend.Proof.StockRootFlow"
+  ],
+  "source_sha256": {
+    "FV/Backend/Proof/StockRootFlow.lean": "9240854140a73e1ffbaeaf88ff60317b1908a7f7326e511698090af8a366778d"
+  },
+  "results": [
+    {
+      "theorem": "Backend.Stock.Proof.MappedFlow.stock_root_mapped_context_flow",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.MappedFlow.stock_root_mapped_context_flow_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.MappedFlow.stock_root_mapped_flow",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.MappedFlow.stock_root_mapped_flow_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    }
+  ],
+  "targeted_build_jobs": 237,
+  "method": "Complete clean canonical lean-mcp diagnostics,4 matching standard-only MCP/compiled-module CLI audits and capped targeted build.",
+  "scope": "Validated mapped-context whole-root flow with empty exception reservations; existing build-derived theorem retained. Canonical identity context used only as a proof view for source matching; actual runtime context remains mapped. Terminator overrides can use validated mapped context variant; actual exception reservations, full scan transport, final alias availability/noninterference and whole simulation/cutover remain.",
+  "required_full_and_execution_gates": "pending on isolated PR source"
+}
