@@ -1,0 +1,49 @@
+{
+  "modules": [
+    "FV.Backend.Proof.StockSelectedProvenance"
+  ],
+  "source_sha256": {
+    "FV/Backend/Proof/StockSelectedProvenance.lean": "acaf403d3fd9e98f8e1fbf83a11a7c22ce6f69b5afd7eea484bc1452bca41f5f"
+  },
+  "results": [
+    {
+      "theorem": "Backend.Stock.Proof.stock_selected_provenance_source",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_selected_provenance_source_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_selected_available_provenance",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_selected_available_provenance_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    }
+  ],
+  "targeted_build_jobs": 225,
+  "method": "Complete clean canonical lean-mcp diagnostics; four matching permitted-only MCP/compiled-module CLI axiom audits. Exact publication-source full gates pending.",
+  "scope": "Read-only source provenance and availability transport across actual terminator overrides and arbitrary exception-register reservations; concrete successful build, dense mapping, changed return data and nonempty reservation witnesses. Nonempty-reservation output flow, full scan/final alias availability and production cutover remain.",
+  "required_full_and_execution_gates": "pending on publication branch"
+}
