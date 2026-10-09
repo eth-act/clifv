@@ -50,6 +50,8 @@ import FV.Opt.Proof.RuleSkeleton
 import FV.Opt.Proof.RuleSkeleton2
 import FV.Opt.Proof.RuleSkeleton3
 import FV.Opt.Proof.RuleSkeleton4
+import FV.Opt.Proof.RuleSkeleton5
+import FV.Opt.Proof.RuleSkeleton6
 import FV.Opt.Optimize
 
 /-!
@@ -172,7 +174,7 @@ theorem simplifySound_proven : SimplifySound (RuleSetId.fnWith .proven .cranelif
   simplifySound _ simplifyRulesCorrect_proven (by rw [simplify_rules_length]; decide)
 
 /-- Every allow-listed `simplify_skeleton` rule is `SkelRuleOk` (`Opt.provenSkeletonRules`,
-theorems in `FV/Opt/Proof/RuleSkeleton.lean` .. `RuleSkeleton4.lean`). -/
+theorems in `FV/Opt/Proof/RuleSkeleton.lean` .. `RuleSkeleton6.lean`). -/
 theorem skeleton_allowed_ok : AllowedOk (SkelRuleOk program) RuleAllow.proven.pred
     (program.rulesOf T.«simplify_skeleton».id) :=
   allowed_ok% (SkelRuleOk program) RuleAllow.proven.pred (program.rulesOf T.«simplify_skeleton».id)

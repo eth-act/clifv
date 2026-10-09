@@ -217,7 +217,7 @@ def Isle.Opt.simplifySkeleton {σ} (enodes …) (typeOf …) (make …)
   `simplify` calls, 12 `simplify_skeleton` calls and 930 `simplify` calls over the CLIF corpus
   fire the same rules as a `trace-log` build at `opt_level=speed` (per call, on e-classes whose
   operands are single original nodes).
-  1055 `simplify` roots, 29 `simplify_skeleton` roots and their helpers are proven (see "Rule
+  1055 `simplify` roots, all 37 `simplify_skeleton` roots and their helpers are proven (see "Rule
   proofs").
 
 ## Results (2026-09-28, default configuration: Cranelift rules, 1 round)
@@ -342,7 +342,7 @@ Goal: `Opt.optimize` refines `Clif.run`, and `E2E.backend_correct_final` extends
   rule sets (`E2E.backend_correct_opt_proven`); only the allow-listed rules are proven, so the
   default configuration (all rules) still rests on the differential tests for the rule
   obligations (`SimplifySound`/`SkeletonSound` of the full rule set).
-- Proven: the rule interpreter's soundness, 1055 `simplify` roots and 29 `simplify_skeleton`
+- Proven: the rule interpreter's soundness, 1055 `simplify` roots and all 37 `simplify_skeleton`
   roots ("Rule proofs").
 - Missing Cranelift mid-end features: alias analysis (redundant-load elimination,
   store-to-load forwarding), merging of identical trapping instructions, elaboration-based
@@ -538,8 +538,8 @@ agree, 4321 → 2018 insts; `--opt-proven-only` 114/114, 4321 → 2475 (skeleton
 **Proven rules** (MidRulesInfra2, RulesBitops, RulesIcmpSel, RuleAllScale, RulesShiftsExt, RulesRest, R0): **1055 `simplify` roots** = `Opt.provenSimplifyRules` —
 `arithmetic.isle` 230 of 258 (`RuleArith.lean`, `RuleArith2..8.lean`), `cprop.isle` 68 of 68 (`RuleCprop.lean`, `RuleCprop2..4.lean`), `remat.isle` 12 of 12 (`RuleRemat.lean`),
 `bitops.isle` 447 of 450 (`RuleBitops1..8.lean`, tactics/lemmas in `RuleBitopsEmbed.lean`:
-`rule_auto` 393, `rule_auto_b` 18, `rule_auto_i` 2, `rule_auto_z` 31; R0: `rule_auto_t`/`_tt` 3). **29 `simplify_skeleton` roots**
-(`Opt.provenSkeletonRules`, `RuleSkeleton.lean`, `RuleSkeleton2..4.lean`, see "Skeleton rules" below).
+`rule_auto` 393, `rule_auto_b` 18, `rule_auto_i` 2, `rule_auto_z` 31; R0: `rule_auto_t`/`_tt` 3). **All 37 `simplify_skeleton` roots**
+(`Opt.provenSkeletonRules`, `RuleSkeleton.lean`, `RuleSkeleton2..6.lean`, see "Skeleton rules" below).
 `icmp.isle` 109 of 124 (`RuleIcmp1..10.lean`, `RuleIcmp12.lean`, `RuleIcmp13.lean`) and `selects.isle` 87 of 100 (`RuleSelects1..8.lean`),
 with the template variants of `RuleIcmpEmbed.lean` (`rule_auto_c`/`_ci`: `arr_step` for a value
 variable bound twice, `opt_split_typeof` for a made `icmp` under `subsume`; `_d`/`_di`: `Int`
@@ -624,8 +624,8 @@ Proven-only differential tests have zero failures: corpus 4668 → 2289 instruct
 `runtests/urem.clif` replaces constant i32/i64 remainders with the proven multiply/shift
 sequence; the optimized file passes all 82 run expectations. The E2E and crate axiom checks
 contain only the permitted axioms; `magicU_spec` and `magicS_spec` use only `propext`,
-`Classical.choice` and `Quot.sound`. The four signed `div_const` rule applications remain
-disabled, as listed under "Skeleton rules".
+`Classical.choice` and `Quot.sound`. The four signed `div_const` rule applications were still
+disabled at that checkpoint; R9 completes them below.
 
 **False under the CLIF semantics (findings):** `shifts.isle` 84 and 88 (`sshr`/`ushr (ishl x k) k` to
 `s/uextend ty (ireduce ty_small x)`): `u64_wrapping_sub (ty_bits ty) shift_u64` wraps for shift
@@ -701,15 +701,37 @@ statements. `RuleBase`: `RuleSpecAt fm` / `applyMulti_genAt` (fuel-general lifti
 `skel_brif_cond`, `skel_trapz/trapnz_cond`, `skel_brif_two_then/else`), `skel_auto_div`,
 `skel_auto_div_i`, `skel_auto_br`, `skel_auto_truthy`; `imm64_udiv/urem/sdiv/srem` specs;
 `truthy` soundness (`TruthyOk` for its 11 rules, `truthy_sound`, `truthy_iflet`).
-*Proven* (29): `arithmetic.isle` 79, 80, 130, 131, 132, and by R0 83, 87, 102, 135, 142
+*Proven* (all 37): `arithmetic.isle` 79, 80, 130, 131, 132, and by R0 83, 87, 102, 135, 142
 (power-of-two `div`/`rem`), 114, 117, 157, 160 (unsigned `div_const`); `cprop.isle` 32, 38, 44,
-50; `skeleton.isle` 7, 9, 22, 26, 33, 37, 44, 50, 53, 56, and by R0 80. *Not proven* (proof
-effort; none is known to be false): `arithmetic.isle` 122, 125, 165, 168 (signed `div_const`:
-the magic numbers are proven, `magicS_spec`; the rule wiring — the `iconst_s` range checks of the
-made constants, a `magicS` wrapper taking the rule's facts, and the `smulhi`/`sshr`/`sdiv`/`srem`
-`toInt` finish — is not), `icmp.isle` 461, 466, 471, 475 (the `i128` cases of the made
-`iconst_u`/`band` blow up the term).
-These rewrites replace one instruction by several, so they do not lower the instruction counts.
+50; `skeleton.isle` 7, 9, 22, 26, 33, 37, 44, 50, 53, 56, and by R0 80. R9 adds
+`arithmetic.isle` 122, 125, 165, 168 and `icmp.isle` 461, 466, 471, 475.
+
+**R9 (2026-10-09, `agent/skeleton-r9`):**
+- `RuleSkeleton5.lean` connects `magicS_spec` to the four signed i32/i64 division/remainder
+  rules. The `sdc_*` lemmas prove signed high-half multiplication, range-preserving
+  add/subtract corrections, arithmetic shifts, truncation toward zero, and remainder
+  reconstruction. Concrete witnesses cover signed minima and all multiplier/divisor sign
+  branches. The rule statements and their input premises are unchanged.
+- `RuleSkeleton6.lean` proves the four count-based branch rewrites, including optional
+  `ireduce`. Shared local definitions prevent duplicated graph-constructor states; width-aware
+  denotation supplies the i128 constant extensions. Generic count-zero and bounded-reduction
+  lemmas close branch truthiness directly, without reflecting the generated graph context.
+  A count is at most 128, so even reduction to i8 preserves its zero/nonzero distinction.
+- CLI smoke: all eight roots fire in 66 functions; 798 exact interpreter expectations pass,
+  the Cranelift verifier accepts all 66 optimized functions, and all 798 AArch64 executions
+  agree with Cranelift-native, with no unsupported cases. Coverage includes signed extrema,
+  both divisor signs, all correction branches, and count branches at i8/i16/i32/i64/i128.
+- Proven-only differential run: corpus 4668 → 2289 instructions, runtests 3389 → 3071;
+  zero refinement failures, pass errors or verifier rejections, and no worse file summaries.
+  The optional `/tmp/rust-clif-survey` data was absent. The instruction-count increase from
+  R0's 3010 runtest instructions comes with replacing division/remainder by multi-instruction
+  sequences; it is not a measured latency result.
+- Integration gates: full compiler build (1290 jobs) and crate-proofs build (958 jobs)
+  completed successfully. All 13 audited root/aggregate/E2E/crate theorems use only permitted
+  axioms. Encoding comparison: 1292/1292 identical functions, 54842 words and 1332 relocations.
+  E2E lowering: 1150 accepted, zero rejected, 97 out of scope. Native filetests: corpus
+  136 passed; runtests 4672 passed, zero failed and zero native disagreements (unsupported
+  and out-of-scope cases remain reported separately).
 
 **Proven rule lines** (`rule_<file>_<line>`, ISLE source lines):
 - `arithmetic.isle` (230): 8, 13, 18, 24, 26, 28, 31, 35, 38, 42, 46, 50, 53, 59, 65, 69, 73, 75,
@@ -790,7 +812,7 @@ term 177 = `simplify`):
    `ok_rule_X`" if an id has no proof). Shared files
    (`RuleAuto`, `RuleEmbed`, `RuleNode`, `RuleImm`) need one owner or serialized merges.
 
-Known gaps, by frequency in the failed roots (as of the first fan-out; arithmetic 86, cprop 16 — now 28 and 0, see above; R0 closed items 2 and 3, item 4 for `iabs` and products of negations, and item 5 except the signed `div_const` wiring):
+Known gaps, by frequency in the failed roots (as of the first fan-out; arithmetic 86, cprop 16 — now 28 and 0, see above; R0 closed items 2 and 3, item 4 for `iabs` and products of negations; R9 completes item 5):
 1. If-lets (`rule_no_iflets` only handles `[]`; 30+ arithmetic roots): evaluate `hil` like `hev`
    and split on the `Bool` condition — the right-hand side then runs under that fact.
 2. Internal constructors with if-lets on the right (`iconst_u`/`iconst_s ty k` with `k ≠ 0`,
@@ -800,5 +822,5 @@ Known gaps, by frequency in the failed roots (as of the first fan-out; arithmeti
    `BitVec` amount), `u64_bswap16/32/64`, `imm64_power_of_two`, `u64_*` arithmetic.
 4. `bv_decide` limits: 64-bit multiplication identities that are not AC (`x*(-1)`, `x*2`),
    `iabs` (needs `Sem.iabs` in `bif` form).
-5. Skeleton rules: 29 proven ("Skeleton rules"); `magicU_spec`/`magicS_spec` are proven, the signed
-   `div_const` rules (`arithmetic.isle` 122, 125, 165, 168) are not wired yet.
+5. Skeleton rules: **complete**, all 37 roots proven and enabled, including signed `div_const`
+   and leading/trailing-zero branch conditions ("Skeleton rules").
