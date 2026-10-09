@@ -1,0 +1,237 @@
+{
+  "base": "33f03f2",
+  "checks": [
+    {
+      "theorem": "Isle.Interp.evaluation_scoped_restate",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Isle.Interp.evaluation_scoped_restate_witness",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_imm_projects",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_imm_projects_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_12",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_18",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_23",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_28",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_33",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_7"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_imm_ok",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_12",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_18",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_23",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_28",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_33",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_7"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_imm_ok_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_12",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_18",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_23",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_28",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_33",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_7"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_iconst_match_frame",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_iconst_match_frame_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_12",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_18",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_23",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_28",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_33",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_7"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_iconst_rhs_frame",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_iconst_rhs_frame_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_iconst_ok",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_12",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_18",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_23",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_28",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_33",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_7"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_iconst_ok_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_12",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_18",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_23",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_28",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_33",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_7"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_iconst_rhs_nine_large",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_iconst_rhs_nine_large_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_iconst_bound",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_12",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_18",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_23",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_28",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_33",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_7"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_iconst_bound_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_12",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_18",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_23",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_28",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_33",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_7"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_iconst_resolved",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_12",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_18",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_23",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_28",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_33",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_7"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_iconst_resolved_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_12",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_18",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_23",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_28",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_33",
+        "Backend.Proof.movK_ident._native.bv_decide.ax_1_7"
+      ],
+      "warnings": []
+    }
+  ],
+  "sources": {
+    "FV/Backend/Proof/IselScopedProjection.lean": "b6d6b1c685e75c3dce91ff59b69583d62bc661d0e7a23fe9c3036a54a1fefd8c",
+    "FV/Backend/Proof/StockImm.lean": "ab88fa88584f854944fa7c752b410a1804ca4fbe30e88ef3765da63ebd675ae3",
+    "FV/Backend/Proof/StockResults.lean": "038d1e249af8b1d9abc1f1ff8c59c25009940f5b913ee3820fda0cdff48df4ca",
+    "FV/Backend/Proof/StockAliasSemantics.lean": "0288c06057cc6dfa61c7ce2fd3ff935c4254d71744930f5517a4bceb5953ae9f"
+  },
+  "full_build": {
+    "jobs": 1266,
+    "log": "/tmp/stock-driver-constant-full.log",
+    "result": "passed"
+  },
+  "scope": "Local stock constant interpreter/result/alias transfer. Whole-driver correctness and production cutover not established."
+}
