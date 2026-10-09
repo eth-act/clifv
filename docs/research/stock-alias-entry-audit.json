@@ -130,5 +130,33 @@
   "gates_status": "Targeted StockAliasWrites build and 14 exact-branch CLI audits pass. Pending full build, crate proofs and runtime/encoder/E2E gates; draft only.",
   "scope": "Actual source/exception allocation separation, interpreter alias-entry preservation, and result-binding preservation for other source IDs. Whole-driver SSA/order exclusion, opportunistic scan composition and final resolver transport remain incomplete.",
   "targeted_build_jobs": 145,
-  "exact_branch_cli_axiom_audits": 14
+  "exact_branch_cli_axiom_audits": 14,
+  "gates": {
+    "full_build_jobs": 1276,
+    "crate_build_jobs": 958,
+    "corpus_pass": 114,
+    "extrt_pass": 22,
+    "runtests_pass": 4672,
+    "runtests_fail": 0,
+    "runtime_disagreements": 0,
+    "encoder_identical": 1292,
+    "encoder_differ": 0,
+    "e2e_accepted": 1150,
+    "e2e_rejected": 0,
+    "final_theorem_axiom_audits": 7
+  },
+  "validated_source_commit": "29543982ba9b7cddb065896600bd6381e201648e",
+  "validated_main_commit": "dc279303a07731ed02481616cb28e3ec36de7ff4",
+  "source_sha256": {
+    "FV/Backend/Proof/StockAliasWrites.lean": "930aed42f656e6c5bfca84466feffab4f9d1d335671025d7dddc27433f541e51"
+  },
+  "gate_log_sha256": {
+    "full": "52dbb30340292b2234fcfdad27351c23dda8057c790f00c32a7cf9744073737d",
+    "crates": "42726ff31ff1320598017cbe50943483060f76355f252d30101490e33d8d763e",
+    "runtime": "6fc44567e9cac0a4ed3fd2661b4aad44f7e6b43055d21fb3fe150c1a56303553",
+    "encode": "03615dfbca26e9d0ed30a780c66e8822602b1201d21afe9cd05e6af550e89919",
+    "e2e": "174bb79c1b9c28492a4e6117e94f2ff8ec8999c3fca13a03d194528d11210b7b",
+    "e2e-axioms": "620761c85c2e59b59c17136e0b0d2ca8efbe83934335f99704fdd30dbd91de6b",
+    "axioms": "235c595561491cb93bf313f1f4556d336afa09a2372807df140bb595c410175d"
+  }
 }
