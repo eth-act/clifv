@@ -1,0 +1,162 @@
+{
+  "modules": [
+    "FV.Backend.Proof.StockAliasScanEntries",
+    "FV.Backend.Proof.StockSSAScanConnection"
+  ],
+  "method": "lean-lsp-mcp lean_verify; targeted lake build; exact-working-tree CLI audit",
+  "results": [
+    {
+      "theorem": "Backend.Stock.Proof.stock_scan_aliasEntry",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scanBlock_aliasEntry",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scan_sourceAliasEntry",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scanBlock_sourceAliasEntry",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scan_aliasEntry_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scanBlock_aliasEntry_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scan_sourceAliasEntry_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scanBlock_sourceAliasEntry_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scanBlock_ssa_aliasEntry",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scanBlock_ssa_aliasEntry_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scanBlock_record_aliasEntry",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scan_indices_nodup",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scanBlock_record_aliasEntry_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scan_indices_nodup_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scanBlock_backward_record_aliasEntry",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scanBlock_backward_record_aliasEntry_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    }
+  ],
+  "targeted_build_jobs": 155,
+  "cli_audit_count": 16,
+  "required_full_and_execution_gates": "Pending exact PR branch validation; draft only. Existing 16 MCP/CLI audits and targeted build cover byte-identical canonical modules.",
+  "scope": "Actual instruction/block alias entry frames and actual backward recorded-definition alias transport to block exit; four results/four inhabited witnesses per module. Remaining whole-driver record/node/final resolver composition and production cutover are not claimed.",
+  "validated_main_commit": "95538ba8861e9b04466758951b283928e0d13bd9",
+  "source_sha256": {
+    "FV/Backend/Proof/StockAliasScanEntries.lean": "a7c30f6c7ea16cbb39d9a47d2270403e64b85532ff6ae1c98779db1abcb44048",
+    "FV/Backend/Proof/StockSSAScanConnection.lean": "1ef3ea2b907d5fbd8b98f9e3639f28d16b2306ae6dc5c4c73195cc6951bd06a4"
+  }
+}
