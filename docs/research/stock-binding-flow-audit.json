@@ -1,0 +1,50 @@
+{
+  "modules": [
+    "FV.Backend.Proof.StockBindingFlow"
+  ],
+  "source_sha256": {
+    "FV/Backend/Proof/StockBindingFlow.lean": "f07ec77bac0291544918bf78a7adb40d2f3e1ec5445119c7ae2ae79c3927f2a7"
+  },
+  "results": [
+    {
+      "theorem": "Backend.Stock.Proof.stock_bindResults_aliasOrigins",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_bindResults_aliasOrigins_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_emitInstruction_aliasOrigins",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_emitInstruction_aliasOrigins_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    }
+  ],
+  "targeted_build_jobs": 240,
+  "method": "Complete clean canonical lean-mcp diagnostics,4 matching standard-only MCP/compiled-module CLI audits and capped targeted build.",
+  "scope": "Actual ordered result binder alias origins, including repeated keys; actual successful source-context emitter root and binder derive fresh or mapped operand-provenance alias targets. Actual generated full constant root at driver fuel emits193\u2192194 for source2 mapped193. Selected block contexts, final alias-path source availability, noninterference and whole simulation/cutover remain.",
+  "required_full_and_execution_gates": "pending on isolated PR source"
+}
