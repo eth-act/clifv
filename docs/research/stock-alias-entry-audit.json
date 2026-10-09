@@ -2,7 +2,7 @@
   "modules": [
     "FV.Backend.Proof.StockAliasWrites"
   ],
-  "method": "lean-lsp-mcp lean_verify",
+  "method": "lean-lsp-mcp lean_verify; exact-branch lake env lean",
   "results": [
     {
       "theorem": "Backend.Stock.Proof.allocateRequests_valueReservedDisjoint",
@@ -127,6 +127,8 @@
       "warnings": []
     }
   ],
-  "gates_status": "Pending: exact-branch full build, crate proofs, runtime/encoder/E2E gates and CLI axiom audit; draft only.",
-  "scope": "Actual source/exception allocation separation, interpreter alias-entry preservation, and result-binding preservation for other source IDs. Whole-driver SSA/order exclusion, opportunistic scan composition and final resolver transport remain incomplete."
+  "gates_status": "Targeted StockAliasWrites build and 14 exact-branch CLI audits pass. Pending full build, crate proofs and runtime/encoder/E2E gates; draft only.",
+  "scope": "Actual source/exception allocation separation, interpreter alias-entry preservation, and result-binding preservation for other source IDs. Whole-driver SSA/order exclusion, opportunistic scan composition and final resolver transport remain incomplete.",
+  "targeted_build_jobs": 145,
+  "exact_branch_cli_axiom_audits": 14
 }
