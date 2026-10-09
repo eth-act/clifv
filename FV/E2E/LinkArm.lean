@@ -345,9 +345,9 @@ theorem blrTarget_of {fa : FnAsm} {fb : FnBin} {base : BitVec 64} {lm : Std.Hash
 
 /-! ## The linked system -/
 
-/-- `n` names a declaration of `g` other than `g` itself: the program functions an activation of
+/-- `n` names a declaration of `g`, including `g` itself: the program functions an activation of
 `g` calls directly (and, through a pointer, at least those: `LinkSys.MayCall`). -/
-def DeclN (g : Clif.Function) (n : String) : Prop := n ∈ g.externs.map (·.2.name) ∧ n ≠ g.name
+def DeclN (g : Clif.Function) (n : String) : Prop := n ∈ g.externs.map (·.2.name)
 
 /-- `g` declares `n` as a non-colocated function: a direct call of it is lowered through the GOT
 (`loadExtNameGot t n` and a `blr` of `t`; a colocated one is a `bl n`). -/
@@ -539,7 +539,7 @@ theorem IndSigMatch.returns_length {sig : Clif.Signature} {h : Clif.Function}
   have := congrArg List.length (Clif.Signature.abiMatch_eq_true.mp hm).2.2
   simpa [Clif.AbiParam.tys] using this.symm
 
-/-- The names an activation of `g` may call: the declarations of `g` other than `g` (`DeclN`),
+/-- The names an activation of `g` may call: the declarations of `g` (`DeclN`), including itself,
 and, when `g` has indirect calls, every name with a link-time address (a pointer to a function of
 `P`, e.g. a vtable slot, need not come from `g`'s declarations: `Clif.linkEnvN` resolves it
 program-wide; `g` itself included: a pointer to `g` enters `g`'s whole-program run) that is no
@@ -800,17 +800,17 @@ theorem envR_of {M : Nat} {g : Clif.Function} {n : String}
   · exact h2 h
 
 /-- **The whole-program run of `g` is a run of `P.bare` under `envR`** (`Clif.runLoop_linkN`): a
-function of `P` other than `g` that `g` declares, or one (`g` itself included) that one of its
+function of `P` that `g` declares (including itself), or one that one of its
 indirect calls can enter (a call-site signature matching the callee's,
 `Clif.Signature.abiMatch`), is one `g` may reach. -/
 theorem envR_link {M : Nat} {g : Clif.Function} (hnd : (L.P.funcs.map (·.name)).Nodup) :
-    ∀ h ∈ L.P.funcs, ((h.name ≠ g.name ∧ h.name ∈ g.externs.map (·.2.name)) ∨
+    ∀ h ∈ L.P.funcs, (h.name ∈ g.externs.map (·.2.name) ∨
       (L.syms h.name ≠ none ∧ ∃ d, Clif.IndSig g d ∧ d.abiMatch h.sig = true)) →
       (L.envR M g).extern h.name = (Clif.linkEnvN L.P L.base M).extern h.name := by
   intro h hh hc
   refine L.envR_of (.inr ?_)
-  rcases hc with ⟨hne, hd⟩ | ⟨hsy, d, hdS, hm⟩
-  · exact .inl ⟨hd, hne⟩
+  rcases hc with hd | ⟨hsy, d, hdS, hm⟩
+  · exact .inl hd
   · refine .inr ⟨hdS.not_indFree, hsy, fun h' hpf => ?_⟩
     obtain ⟨hh', hn'⟩ := Clif.Program.func?_some hpf
     rw [Clif.name_inj hnd hh' hh hn']
@@ -1633,7 +1633,7 @@ structure Ok : Prop where
   /-- distinct names, no `return_call` -/
   names : (L.P.funcs.map (·.name)).Nodup
   free : ∀ g ∈ L.P.funcs, Clif.LinkFree g
-  subset : ∀ g ∈ L.P.funcs, InSubset (L.P.only g) g
+  subset : ∀ g ∈ L.P.funcs, InSubset L.P.bare g
   compiled : ∀ g ∈ L.P.funcs, Compiled g (L.A g).k (L.A g).vc (L.A g).vcp (L.A g).rf
     (L.A g).af (L.A g).fa (L.A g).fb
   covered : ∀ g ∈ L.P.funcs, FormsCovered ⟨(L.A g).fa.k, (L.A g).af.slotBase⟩ (L.A g).vcp
@@ -2178,7 +2178,7 @@ theorem progCall (hL : L.Ok) {M : Nat} (hM : 0 < M) (ih : L.Thm κ (M - 1)) {n :
   have hce : ClifEntry h vals cs := clifEntry_initState hpf hinit
   -- the run of the program without functions (program callees at most `M - 1` steps)
   obtain ⟨m, hm⟩ := Clif.runLoop_linkN (base := L.base) (syms := L.syms) (M - 1) hL.names hh
-    hL.free (hL.indScope h hh) (hL.subset h hh).externCalls (hL.subset h hh).tryExterns
+    hL.free (hL.indScope h hh)
     (E := L.envR (M - 1) h) rfl rfl (fun _ hn => L.envR_of (.inl hn))
     (L.envR_link hL.names) M cs (by omega) (runInv_entry hh hce)
     (runInv_entry (by simp [Clif.Program.only]) hce) (fun _ => hsym'.trans hmr.symbols)
@@ -3772,191 +3772,6 @@ theorem indCont_envEq {E₁ E₂ : Clif.Env} {p : Clif.Program} {t : Clif.State}
           Clif.Res.ofOption_some, Clif.Res.ok_bind] at e ⊢
       rw [e]
 
-/-! ## The former run premise: the run of `P.only f` -/
-
-/-- The callee address `indPre` reads is the callee value's (`Val.toNat`). -/
-theorem indPre_addr {fr : Clif.Frame} {sig : Nat} {callee : Clif.ValueId}
-    {args : List Clif.ValueId} {d : Clif.Signature} {a : Nat} {v : List Clif.Val}
-    (h : Clif.indPre fr sig callee args = .ok (d, a, v)) :
-    ∃ cv, fr.get callee = .ok cv ∧ a = cv.toNat := by
-  simp only [Clif.indPre, Opt.Res.bind_eq_ok, Opt.Res.ofOption_eq_ok] at h
-  obtain ⟨d', -, cv, hcv, x, hx, w, -, hp⟩ := h
-  simp only [Opt.Res.pure_eq_ok, Prod.mk.injEq] at hp
-  refine ⟨cv, hcv, ?_⟩
-  rw [← hp.2.1]
-  obtain ⟨t, b⟩ := cv
-  unfold Clif.Val.as? at hx
-  split at hx
-  · rename_i he
-    cases he
-    cases hx
-    rfl
-  · cases hx
-
-/-- With the names of `f`'s declarations among the environment's, `callExternAt` resolves an
-address in `P.bare` as in `P.only f`. -/
-theorem callExternAt_bare_only {env : Clif.Env} {P : Clif.Program} {f : Clif.Function}
-    (hn : ∀ n ∈ f.externs.map (·.2.name), n ∈ env.names) {mem : Clif.Mem} {d : Clif.Signature}
-    {a : Nat} {vals : List Clif.Val} :
-    Clif.callExternAt env P.bare mem d a vals = Clif.callExternAt env (P.only f) mem d a vals := by
-  have hf : (env.names ++ P.bare.externNames).find? (fun n => mem.symbols n == some a) =
-      (env.names ++ (P.only f).externNames).find? (fun n => mem.symbols n == some a) := by
-    have he : (P.only f).externNames = f.externs.map (·.2.name) := by
-      simp [Clif.Program.externNames, Clif.Program.only]
-    rw [Clif.Program.bare_externNames, List.append_nil, he, List.find?_append]
-    cases h1 : env.names.find? (fun n => mem.symbols n == some a) with
-    | some x => rfl
-    | none =>
-      have : (f.externs.map (·.2.name)).find? (fun n => mem.symbols n == some a) = none :=
-        List.find?_eq_none.mpr fun x hx => List.find?_eq_none.mp h1 x (hn x hx)
-      rw [this]; rfl
-  unfold Clif.callExternAt
-  rw [hf]
-
-/-- **A step of `P.bare` is the step of `P.only f`** from a frame of `f` (`LFrame (P.only f)`)
-whose next indirect call does not reach `f`'s address: `f` calls no extern named `f`
-(`InSubset (P.only f)`), and the names of `f`'s declarations are the environment's. -/
-theorem step_bare_eq_only {env : Clif.Env} {P : Clif.Program} {f : Clif.Function}
-    (hn : ∀ n ∈ f.externs.map (·.2.name), n ∈ env.names) (hsub : InSubset (P.only f) f)
-    (hfree : Clif.LinkFree f) {s : Clif.State} (hI : Clif.LFrame (P.only f) s.frame)
-    (hind : ∀ st rest sig callee args, s.frame.body = st :: rest →
-      st.inst = .callIndirect sig callee args → ∀ cv, s.frame.get callee = .ok cv →
-      s.mem.symbols f.name ≠ some cv.toNat)
-    (htind : ∀ callee args et, s.frame.body = [] → s.frame.term = .tryCallIndirect callee args et →
-      ∀ cv, s.frame.get callee = .ok cv → s.mem.symbols f.name ≠ some cv.toNat) :
-    Clif.step env P.bare s = Clif.step env (P.only f) s := by
-  have hfs : s.frame.func = f := by
-    have := hI.1; simpa [Clif.Program.only] using this
-  have hPf : ∀ g ∈ (P.only f).funcs, Clif.LinkFree g := fun g hg => by
-    simp only [Clif.Program.only, List.mem_cons, List.not_mem_nil, or_false] at hg
-    subst hg; exact hfree
-  -- a direct call of an extern other than `f`
-  have hcall : ∀ (t : Clif.State) rest rs ext vals, ext.name ≠ f.name →
-      Opt.callCont env P.bare t rest rs ext vals = Opt.callCont env (P.only f) t rest rs ext vals := by
-    intro t rest rs ext vals hne
-    simp only [Opt.callCont, Clif.Program.bare_func?, Clif.Program.only_func?,
-      Ne.symm hne, ↓reduceIte]
-  -- an indirect call to an address other than `f`'s
-  have hindC : ∀ (t : Clif.State) rest rs sig d a v, t.mem.symbols f.name ≠ some a →
-      Clif.indCont env P.bare t rest rs sig d a v = Clif.indCont env (P.only f) t rest rs sig d a v := by
-    intro t rest rs sig d a v hne
-    have h1 : (P.only f).funcs.find? (fun g => t.mem.symbols g.name == some a) = none := by
-      simp [Clif.Program.only, hne]
-    simp only [Clif.indCont, Clif.Program.bare_funcs, List.find?_nil, h1,
-      callExternAt_bare_only (P := P) hn]
-  -- `f` calls no extern named `f`
-  have hxn : ∀ B ∈ f.blocks, ∀ fn e, f.extern? fn = some e →
-      ((∃ st ∈ B.body, ∃ args, st.inst = .call fn args) ∨ ∃ args et, B.term = .tryCall fn args et) →
-      e.name ≠ f.name := by
-    intro B hB fn e he hc hn'
-    have : (P.only f).func? e.name = none := by
-      rcases hc with ⟨st, hst, args, hi⟩ | ⟨args, et, ht⟩
-      · exact hsub.externCalls B hB st hst fn args hi e he
-      · exact hsub.tryExterns B hB fn args et ht e he
-    simp [Clif.Program.only_func?, hn'] at this
-  rcases Clif.step_shape s with ⟨fn, args, et, hb, ht⟩ | ⟨callee, args, et, hb, ht⟩ |
-    ⟨st, rest, sig, callee, args, hb, hi⟩ | hci
-  · rw [Clif.step_try _ _ s hb ht, Clif.step_try _ _ s hb ht]
-    refine ofRes_congr fun ⟨n, b, bc⟩ _ => ofRes_congr fun ⟨ext, vals⟩ hX => hcall _ _ _ _ _ ?_
-    have hext : f.extern? fn = some ext := by
-      have := Opt.callArgs_extern hX; rw [← hfs]; exact this
-    rcases hI.2 with ⟨B, hB, -, hBt⟩ | ⟨-, bc0, hj⟩
-    · rw [hfs] at hB
-      exact hxn B hB fn ext hext (.inr ⟨args, et, hBt.symm.trans ht⟩)
-    · rw [ht] at hj; cases hj
-  · rw [Clif.step_tryInd _ _ s hb ht, Clif.step_tryInd _ _ s hb ht]
-    refine ofRes_congr fun ⟨n, b, bc⟩ _ => ofRes_congr fun ⟨d, a, v⟩ hX =>
-      hindC _ _ _ _ _ _ _ ?_
-    obtain ⟨cv, hcv, rfl⟩ := indPre_addr hX
-    exact htind callee args et hb ht cv hcv
-  · rw [Clif.step_ind _ _ s hb hi, Clif.step_ind _ _ s hb hi]
-    refine ofRes_congr fun ⟨d, a, v⟩ hX => hindC _ _ _ _ _ _ _ ?_
-    obtain ⟨cv, hcv, rfl⟩ := indPre_addr hX
-    exact hind st rest sig callee args hb hi cv hcv
-  · rw [Opt.step_eq_lift _ _ s hci, Opt.step_eq_lift _ _ s hci]
-    cases hl : Opt.lstep s.frame s.mem with
-    | call ext vals rs rest =>
-      obtain ⟨st, fn, args, hb, hi, -, hca⟩ := Opt.lstep_call_inv hl
-      have hext : f.extern? fn = some ext := by rw [← hfs]; exact Opt.callArgs_extern hca
-      refine hcall s rest rs ext vals ?_
-      rcases hI.2 with ⟨B, hB, hsuf, -⟩ | ⟨hnil, -⟩
-      · rw [hfs] at hB
-        exact hxn B hB fn ext hext
-          (.inl ⟨st, hsuf.subset (by rw [hb]; exact List.mem_cons_self ..), args, hi⟩)
-      · rw [hnil] at hb; cases hb
-    | tail ext vals => exact absurd hl (Clif.lstep_ne_tail hPf hI)
-    | _ => rfl
-
-/-- **The run premises of `P.bare` from those of `P.only f`** (the former run premise of
-`backend_correct_program` and the theorems built on it): from a state of `f`'s frames
-(`LInv (P.only f)`), the run of `P.bare` reaches only states the run of `P.only f` reaches, with
-the same steps — they could differ only at a step entering `f`, which no call of `f` is
-(`InSubset (P.only f)`: no extern named `f`) and no indirect call of `f` is at a reached state
-(`TrapsExplicit`'s `indirect`/`tryIndirect` clauses for `P.only f`); the names of `f`'s
-declarations are the environment's (`hn`, true of `linkEnvN`). -/
-theorem trapsExplicit_bare_of_only {env : Clif.Env} {P : Clif.Program} {f : Clif.Function}
-    (hn : ∀ n ∈ f.externs.map (·.2.name), n ∈ env.names) (hsub : InSubset (P.only f) f)
-    (hfree : Clif.LinkFree f) {cs : Clif.State} (hI : Clif.LInv (P.only f) cs)
-    (h : TrapsExplicit env (P.only f) cs) : TrapsExplicit env P.bare cs := by
-  have hPf : ∀ g ∈ (P.only f).funcs, Clif.LinkFree g := fun g hg => by
-    simp only [Clif.Program.only, List.mem_cons, List.not_mem_nil, or_false] at hg
-    subst hg; exact hfree
-  have hcf : cs.frame.func = f := by
-    have := hI.1.1; simpa [Clif.Program.only] using this
-  have hfP : f ∈ (P.only f).funcs := by simp [Clif.Program.only]
-  -- at a state of the run of `P.only f`, the two steps agree
-  have heq : ∀ s, Reach env (P.only f) cs s → Clif.LInv (P.only f) s →
-      Clif.step env P.bare s = Clif.step env (P.only f) s := by
-    intro s hr hIs
-    have hfs : s.frame.func = f := by
-      have := hIs.1.1; simpa [Clif.Program.only] using this
-    refine step_bare_eq_only hn hsub hfree hIs.1 (fun st rest sig callee args hb hi cv hcv => ?_)
-      fun callee args et hb ht cv hcv => ?_
-    · refine h.indirect s st rest sig callee args hr hb hi ?_ cv hcv f hfP
-      rcases hIs.1.2 with ⟨B, hB, hsuf, -⟩ | ⟨hnil, -⟩
-      · exact ⟨B, by rw [hcf, ← hfs]; exact hB,
-          hsuf.subset (by rw [hb]; exact List.mem_cons_self ..)⟩
-      · rw [hnil] at hb; cases hb
-    · refine h.tryIndirect s callee args et hr hb ht ?_ cv hcv f hfP
-      rcases hIs.1.2 with ⟨B, hB, -, hBt⟩ | ⟨-, bc0, hj⟩
-      · exact ⟨B, by rw [hcf, ← hfs]; exact hB, hBt.symm.trans ht⟩
-      · rw [ht] at hj; cases hj
-  -- the states the run of `P.bare` reaches the run of `P.only f` reaches
-  have hreach : ∀ a b, Reach env P.bare a b → Reach env (P.only f) cs a →
-      Clif.LInv (P.only f) a → Reach env (P.only f) cs b ∧ Clif.LInv (P.only f) b := by
-    intro a b hr
-    induction hr with
-    | refl => exact fun h1 h2 => ⟨h1, h2⟩
-    | step hs _ ih =>
-      intro h1 h2
-      have hs' := (heq _ h1 h2).symm.trans hs
-      exact ih (h1.snoc hs') (Clif.step_next_linv hPf h2 hs').1
-  have hR : ∀ s, Reach env P.bare cs s →
-      Reach env (P.only f) cs s ∧ Clif.step env P.bare s = Clif.step env (P.only f) s := by
-    intro s hr
-    obtain ⟨h1, h2⟩ := hreach cs s hr (.refl _) hI
-    exact ⟨h1, heq s h1 h2⟩
-  refine ⟨fun s c st rest hr hs hb => ?_, fun s c fn args et hr hs hb ht => ?_,
-    fun s c callee args et hr hs hb ht => ?_, fun _ _ _ _ _ _ _ _ _ _ _ _ g hg => by simp at hg,
-    fun _ _ _ _ _ _ _ _ _ _ g hg => by simp at hg⟩
-  · obtain ⟨h1, h2⟩ := hR s hr
-    exact h.stmt s c st rest h1 (h2 ▸ hs) hb
-  · obtain ⟨h1, h2⟩ := hR s hr
-    exact h.tryCall s c fn args et h1 (h2 ▸ hs) hb ht
-  · obtain ⟨h1, h2⟩ := hR s hr
-    exact h.tryCallInd s c callee args et h1 (h2 ▸ hs) hb ht
-
-/-- **The former run premise of `backend_correct_program` implies the present one** under
-`L.Ok` (`subset`, `free`): `TrapsExplicit` of `P.only f` gives `TrapsExplicit` of `P.bare`
-(`trapsExplicit_bare_of_only`; the linked environment's names hold `f`'s declarations). -/
-theorem LinkSys.trapsExplicit_bare_of_only {L : LinkSys} (hL : L.Ok) {f : Clif.Function}
-    (hf : f ∈ L.P.funcs) {M : Nat} {args : List Clif.Val} {cs : Clif.State}
-    (hcs : ClifEntry f args cs) (h : TrapsExplicit (Clif.linkEnvN L.P L.base M) (L.P.only f) cs) :
-    TrapsExplicit (Clif.linkEnvN L.P L.base M) L.P.bare cs :=
-  E2E.trapsExplicit_bare_of_only
-    (fun n hn => show n ∈ L.P.names ++ L.base.names from List.mem_append_left _
-      (Clif.names_extern (by simp only [Clif.Program.externNames, List.mem_flatMap]; exact ⟨f, hf, hn⟩)))
-    (hL.subset f hf) (hL.free f hf) (runInv_entry (by simp [Clif.Program.only]) hcs) h
 
 namespace LinkSys
 
@@ -4106,7 +3921,7 @@ theorem thm_of (hL : L.Ok) (hκ : L.Budget κ) {M : Nat} (ih : 0 < M → L.Thm �
   have hJ : L.ActInv g (spv w₀) cs := ⟨hI, hWE.clif.callers, hWE.place⟩
   have hrun' : Clif.runLoop (L.envOf M g (spv w₀)) L.P.bare fuel cs = .returned rvals cm' := by
     rw [L.runLoop_envOf hL hg fuel cs hJ]; exact hrun
-  have h := backend_correct_world_ni ((hL.subset g hg).retarget (Clif.Program.bare_func? L.P)) hc
+  have h := backend_correct_world_ni (hL.subset g hg) hc
     (X := L.X κ M g F) (syms := L.syms)
     (env := L.envOf M g (spv w₀)) (K := κ M g) (F := F) (c := spv w₀) (hL.covered g hg)
     (L.xCallsOk hL hκ ih hg hWE.img hWE.room hWE.dead hWE.align)
@@ -4188,7 +4003,7 @@ theorem backend_correct_program_budget (L : LinkSys) (hL : L.Ok)
   -- the whole-program run is a run of the program without functions
   have hIf : Clif.LInv (L.P.only f) cs := runInv_entry (by simp [Clif.Program.only]) hcs
   have hlink := Clif.runLoop_linkN (base := L.base) (syms := L.syms) M hL.names hf hL.free
-    (hL.indScope f hf) (hL.subset f hf).externCalls (hL.subset f hf).tryExterns (E := L.envR M f)
+    (hL.indScope f hf) (E := L.envR M f)
     rfl rfl (fun _ hn => L.envR_of (.inl hn))
     (L.envR_link hL.names) (M + 1) cs (Nat.le_refl _) (runInv_entry hf hcs) hIf
     (fun _ => hrel.1.symbols)
@@ -4209,7 +4024,7 @@ theorem backend_correct_program_budget (L : LinkSys) (hL : L.Ok)
     have hJ : L.ActInv f (spv w₀) cs := ⟨hIf, hcs.callers, hpl⟩
     have hm' : Clif.runLoop (L.envOf M f (spv w₀)) L.P.bare m cs = .trapped c := by
       rw [L.runLoop_envOf hL hf m cs hJ]; exact hm
-    have h := backend_correct_world ((hL.subset f hf).retarget (Clif.Program.bare_func? L.P)) hc
+    have h := backend_correct_world (hL.subset f hf) hc
       (X := L.X κ M f L.F) (syms := L.syms)
       (env := L.envOf M f (spv w₀)) (K := κ M f) (F := L.F) (c := spv w₀) (hL.covered f hf)
       (L.xCallsOk hL hκ ih hf hL.imgF hWE.room hWE.dead hWE.align)
@@ -4275,7 +4090,7 @@ theorem backend_correct_program_returned_budget (L : LinkSys) (hL : L.Ok)
     ArmRefines (L.A f).fb (L.A f).base ra (L.mach M f) s (.returned vals cm) := by
   have hIf : Clif.LInv (L.P.only f) cs := runInv_entry (by simp [Clif.Program.only]) hcs
   obtain ⟨m, hm⟩ := Clif.runLoop_linkN (base := L.base) (syms := L.syms) M hL.names hf hL.free
-    (hL.indScope f hf) (hL.subset f hf).externCalls (hL.subset f hf).tryExterns
+    (hL.indScope f hf)
     (E := Clif.linkEnvN L.P L.base M) rfl rfl (fun _ _ => rfl) (fun _ _ _ => rfl)
     (M + 1) cs (Nat.le_refl _) (runInv_entry hf hcs) hIf
     (fun _ => hrel.1.symbols) (by rw [hrun]; exact fun _ h => nomatch h)
