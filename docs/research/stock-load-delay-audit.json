@@ -1,0 +1,56 @@
+{
+  "modules": [
+    "FV.Backend.Proof.StockLoadDelay"
+  ],
+  "source_sha256": {
+    "FV/Backend/Proof/StockLoadDelay.lean": "ee91553ff186f46a2894ac74af26d54e7fc1eaa665dcdc028d04ac4ba70a9348"
+  },
+  "results": [
+    {
+      "theorem": "Backend.Stock.Proof.load_delay_outcome",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.load_delay_window",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.load_delay_quiet_step",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.load_delay_outcome_witness",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.load_delay_window_witness",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.load_delay_quiet_step_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    }
+  ],
+  "scope": "Source-side delayed-load outcome preservation, including traps and stuck outcomes; actual quiet-step address/memory stability and inhabited witnesses. Whole stock-driver simulation and production cutover remain incomplete.",
+  "required_full_and_execution_gates": "pending on exact isolated PR source"
+}
