@@ -1,0 +1,57 @@
+{
+  "module": "FV.Backend.Proof.StockScanBounds",
+  "method": "lean-lsp-mcp lean_verify",
+  "results": [
+    {
+      "theorem": "Backend.Stock.Proof.stock_scan_aliasBelow",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scanBlock_aliasBelow",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scan_aliasBelow_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scanBlock_aliasBelow_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    }
+  ],
+  "exact_branch_check": "lake env lean /tmp/stock-scan-bounds-pr-axioms.lean: all four agree with MCP; standard axioms only",
+  "gates": {
+    "full_build_jobs": 1271,
+    "crate_build_jobs": 959,
+    "corpus_pass": 114,
+    "extrt_pass": 22,
+    "runtests_pass": 4672,
+    "runtests_fail": 0,
+    "runtime_disagreements": 0,
+    "encoder_identical": 1292,
+    "encoder_differ": 0,
+    "e2e_accepted": 1149,
+    "e2e_rejected": 0,
+    "final_theorem_axiom_audits": 7
+  }
+}

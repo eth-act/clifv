@@ -38,6 +38,28 @@ encoder1292identical/0differing, E2E1149/0 and seven final theorem axiom audits
 pass. The slice may merge after green CI. Whole-driver and production cutover
 remain incomplete.
 
+## Continuous landing discipline and scan-bound slice
+
+PRs #99–#104 have landed. This next independent slice adds StockScanBounds:
+actual emission, omission, sunk and opportunistic decisions preserve the initial
+alias cap through full instruction and tail-recursive block scans. The inhabited
+witness installs alias192→197 below cap194, exercising a fresh target above the
+cap. It changes no compiler behavior or acceptance predicate.
+
+Four theorem/witness audits through Lean MCP and an exact-branch CLI check use
+standard axioms only. Required gates pass: full1271, crate959, corpus114,
+extrt22, runtests4672/0 and zero disagreements, encoder1292/0 differences,
+E2E1149/0 rejects, and seven final theorem axiom audits.
+
+Publish independently complete slices promptly, prioritize review fixes and
+verified squash merges, and refresh main and contributor status after every
+merge. Do not accumulate a second ready slice locally while the first awaits
+publication. Keep incomplete drafts explicit and out of merge-ready changes.
+
+Next: fresh-frontier and exception-reservation invariants through scans and the
+whole driver, then the remaining SSA/load-fusion obligations and whole-driver
+correctness/completeness. Production remains legacy; cutover is incomplete.
+
 ## Summary
 
 Implement #60 by changing Lean's lowering driver to follow Cranelift 0.136.1 at
