@@ -1,0 +1,132 @@
+{
+  "modules": [
+    "FV.Backend.Proof.StockTraversalRecordOrigin",
+    "FV.Backend.Proof.StockBackwardSuffixSplit",
+    "FV.Backend.Proof.StockCoreScanOrigin",
+    "FV.Backend.Proof.StockRecordFinalAlias"
+  ],
+  "method": "Canonical lean-lsp-mcp complete clean diagnostics and lean_verify; capped targeted build and matching CLI audits",
+  "results": [
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerNodes_newBlockScan",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerNodes_newBlockScan_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_blockScanOrigin",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_blockScanOrigin_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_backward_suffix_split",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_backward_suffix_split_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerBlockCore_scanOrigin",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerBlockCore_scanOrigin_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_record_finalAliasEntry",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_record_finalAliasEntry_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_record_resultAlias_of_record",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_record_resultAlias_of_record_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    }
+  ],
+  "targeted_build_jobs": 188,
+  "scope": "Actual successful traversal/node/core record origins and exact backward suffix derive recorded source-definition alias preservation to final driver state and fresh local-result resolution. Explicit nonempty/source SSA/source mapping premises remain; availability, full simulation/completeness and production cutover remain incomplete.",
+  "required_full_and_execution_gates": "Pending isolated PR validation; not merge-ready.",
+  "source_sha256": {
+    "FV/Backend/Proof/StockTraversalRecordOrigin.lean": "5c6618b3b509106534e986188370e7f025e8661b6528cede660a5f6cd6e6098d",
+    "FV/Backend/Proof/StockBackwardSuffixSplit.lean": "05ce9b0127c4be69c21acca1c00e0acae8e28c5f872cf2e910c0932e99202676",
+    "FV/Backend/Proof/StockCoreScanOrigin.lean": "25f95f9974fbbf6741d22fecb607fb8b4f32cb3342292b8400aad011194aef1f",
+    "FV/Backend/Proof/StockRecordFinalAlias.lean": "f4faf9ccff2521321d29a10c0b1ffea8aa9376973e21692467c7b43437cfc1b2"
+  },
+  "cli_audit_count": 12,
+  "cli_log_sha256": "11705a378e1f451921e44d2ffd7bfdc416a5b10d7172075dc0ee0347c3cbe81d",
+  "targeted_log_sha256": "8e830bbb1bc390092a449a04e5081833b017b054316a020d41d4223d26bfbf03",
+  "validated_main_commit": "476cc6653be5dbe676aa194cbab413b8371e000c"
+}
