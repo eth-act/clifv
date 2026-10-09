@@ -1,0 +1,162 @@
+{
+  "modules": [
+    "FV.Backend.Proof.StockAliasWrites"
+  ],
+  "method": "lean-lsp-mcp lean_verify; exact-branch lake env lean",
+  "results": [
+    {
+      "theorem": "Backend.Stock.Proof.allocateRequests_valueReservedDisjoint",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.allocateRequests_valueReservedDisjoint_witness",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.buildCtx_valueReservedDisjoint",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.buildCtx_valueReservedDisjoint_witness",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_ctor_aliasEntry",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_ctor_aliasEntry_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_apply_aliasEntry",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_apply_aliasEntry_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_apply_sourceAliasEntry",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_apply_sourceAliasEntry_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_bindResults_aliasEntry",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_bindResults_aliasEntry_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_bindResults_sourceAliasEntry",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_bindResults_sourceAliasEntry_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    }
+  ],
+  "gates_status": "Targeted StockAliasWrites build and 14 exact-branch CLI audits pass. Pending full build, crate proofs and runtime/encoder/E2E gates; draft only.",
+  "scope": "Actual source/exception allocation separation, interpreter alias-entry preservation, and result-binding preservation for other source IDs. Whole-driver SSA/order exclusion, opportunistic scan composition and final resolver transport remain incomplete.",
+  "targeted_build_jobs": 145,
+  "exact_branch_cli_axiom_audits": 14,
+  "gates": {
+    "full_build_jobs": 1279,
+    "crate_build_jobs": 958,
+    "corpus_pass": 114,
+    "extrt_pass": 22,
+    "runtests_pass": 4672,
+    "runtests_fail": 0,
+    "runtime_disagreements": 0,
+    "encoder_identical": 1292,
+    "encoder_differ": 0,
+    "e2e_accepted": 1150,
+    "e2e_rejected": 0,
+    "final_theorem_axiom_audits": 7
+  },
+  "validated_source_commit": "fbb5dce78453fb0daac585c337725974f8d09050",
+  "validated_main_commit": "1ba7a597b1af28116e2fca9acb0c96c6ee981599",
+  "source_sha256": {
+    "FV/Backend/Proof/StockAliasWrites.lean": "930aed42f656e6c5bfca84466feffab4f9d1d335671025d7dddc27433f541e51"
+  },
+  "gate_log_sha256": {
+    "full": "2adb9b05069e4a1d6ca2e2f0e5ec1c6be26aed105470d51c10aa60a967e01bd6",
+    "crates": "42726ff31ff1320598017cbe50943483060f76355f252d30101490e33d8d763e",
+    "runtime": "6fc44567e9cac0a4ed3fd2661b4aad44f7e6b43055d21fb3fe150c1a56303553",
+    "encode": "03615dfbca26e9d0ed30a780c66e8822602b1201d21afe9cd05e6af550e89919",
+    "e2e": "ee13d318636cf32930d3c809adda1f2d71fe2cc5b79dbd2b586fbf7e262c5ce1",
+    "e2e-axioms": "620761c85c2e59b59c17136e0b0d2ca8efbe83934335f99704fdd30dbd91de6b",
+    "axioms": "235c595561491cb93bf313f1f4556d336afa09a2372807df140bb595c410175d"
+  }
+}
