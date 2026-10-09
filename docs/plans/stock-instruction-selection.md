@@ -152,3 +152,13 @@ MCP diagnostics are clean; five public theorem/five non-vacuity witness audits
 use only standard axioms. Runtime/corpus, crate-proofs and final E2E axiom
 gates have not been rerun on this isolated branch, so the PR is a draft rather
 than merge-ready. The remaining local proof stack is excluded from this slice.
+
+All local merge gates for the isolated scan-composition slice have now passed:
+crate-proofs959 jobs; E2E1149 accepted/0rejected/0not-covered; corpus114/0/0,
+extrt22/0/0, runnable runtests4672/0/0, and encoder1292 identical/0differ.
+The runtime harness separately reports seven not-runnable upstream run lines
+and9054 unsupported lines; no runnable result failed or disagreed. Three
+E2E/executable axiom audits contain only standard axioms and existing fixed
+native certificates. Cached qemu11.1.1/llvm22.1.8 were restored to PATH for the
+runtime/encoder checks. Compiler/CLIF semantics are unchanged, so additional
+CLIF/optimizer gates do not apply. PR CI still must pass before merging.
