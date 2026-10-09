@@ -80,7 +80,7 @@ theorem sizes : spec.sizes = spec.sizesOf := by native_decide
 /-- **Non-vacuity of `compileExe_total`**: its hypotheses hold on `a_arith`. -/
 theorem total_witness :
     compileExe spec file0 = .ok (patch file0 (offsetOf phs spec.R) (regionOf spec (Elf.tpOff phs))) :=
-  compileExe_total (by rw [← LinkSpec.inScope_input]; exact inScope) (by native_decide) placeOk
+  compileExe_total (by rw [← LinkSpec.inScope_input]; exact inScope) placeOk
     names sizes (fun e he r hr => List.all_eq_true.1 (List.all_eq_true.1 rangeB e he) r hr) hph
     regionOk outsideOk
 
